@@ -10,6 +10,7 @@ Aqui fica **o que vale para TODA a api**. O que é de um módulo vive no
 | [`src/tenancy/`](src/tenancy/AGENTS.md) | rede, escola, lotação e CPF; buscar profissional na rede |
 | [`src/rostering/`](src/rostering/AGENTS.md) | identidade e enturmamento — **quem escreve pessoa** |
 | [`src/salas/`](src/salas/AGENTS.md) | a missão dentro da turma (ADR-69) |
+| [`src/equipes/`](src/equipes/AGENTS.md) | quem divide um computador na missão (E13, ADR-111) |
 | [`src/recursos/`](src/recursos/AGENTS.md) | disponibilidade: o interruptor da rede (ADR-87, ADR-89) |
 | [`src/prospeccao/`](src/prospeccao/AGENTS.md) | o cadastro de interesse do site — **sem token e sem tenancy** (ADR-107) |
 | [`src/experiencias/`](src/experiencias/AGENTS.md) | catálogo e versão — duas alavancas que não se misturam |

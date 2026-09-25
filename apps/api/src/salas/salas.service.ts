@@ -2,6 +2,7 @@ import { ForbiddenException, Injectable, NotFoundException } from "@nestjs/commo
 import type { Prisma } from "@prisma/client";
 import { disponibilidadeDoCatalogo, exigirRecursoDisponivel } from "../comum/disponibilidade";
 import { turmasDoEstudante } from "../comum/liberacao";
+import { contarEquipesDaTurma } from "../equipes/consulta";
 import { professorLeciona } from "../comum/turmas-do-professor";
 import { PrismaService } from "../prisma/prisma.service";
 import {
@@ -163,7 +164,7 @@ export class SalasService {
         throw new NotFoundException({ mensagem: "Turma não encontrada." });
       }
 
-      const [catalogo, estados, liberacoes] = await Promise.all([
+      const [catalogo, estados, liberacoes, equipes] = await Promise.all([
         this.catalogo(tx, escolaId),
         this.estadosDaTurma(tx, escolaId, turmaId),
         tx.liberacao.findMany({
@@ -175,6 +176,8 @@ export class SalasService {
             professor: { select: { displayName: true } },
           },
         }),
+        /* Uma consulta para a grade inteira (`groupBy`), nunca uma por missão. */
+        contarEquipesDaTurma(tx, escolaId, turmaId),
       ]);
 
       const porExp = new Map(liberacoes.map((l) => [l.expId, l]));
@@ -189,6 +192,9 @@ export class SalasService {
             liberadaPor: linha?.professor.displayName ?? null,
             liberadaEm: linha?.liberadaEm.toISOString() ?? null,
             encerradaEm: linha?.encerradaEm?.toISOString() ?? null,
+            /* Quem divide computador nesta missão (E13, ADR-111): é o número que
+               diz ao professor, na grade, que a sala já tem equipes montadas. */
+            equipes: equipes.get(missao.expId) ?? 0,
           };
         },
       );
