@@ -242,6 +242,8 @@ model Turma {
   quemMandouConteudo Exp05ef1bConteudoTurma[]
   /// A configuração da aula da exp01ef1b (pacote de fotos + o latch da roda).
   fotoContaConfigs   FotoContaTurmaConfig[]
+  /// Quem divide um computador em cada missão desta turma (E13, ADR-111).
+  equipesMontagens   EquipesMontagem[]
 
   @@unique([escolaId, periodoLetivoId, nome])
   @@index([escolaId])
@@ -438,6 +440,8 @@ model User {
   /// jogo da rede?" é a pergunta que se faz às 8h da manhã, e ela some do
   /// painel se o vínculo virar texto solto.
   disponibilidadesQueDefiniu Disponibilidade[]           @relation("DisponibilidadeAutor")
+  /// As equipes de que este estudante faz parte, uma por missão (E13, ADR-111).
+  equipesComoMembro          EquipeMembro[]              @relation("EquipeMembroEstudante")
 
   @@unique([escolaId, username])
   @@index([escolaId, role])
@@ -2620,4 +2624,106 @@ model Exp05ef1bGateTurma {
   @@id([escolaId, turmaId])
   @@index([escolaId])
   @@map("exp05ef1b_gates_turma")
+}
+
+/// A MONTAGEM DAS EQUIPES de uma missão numa turma (E13, ADR-111): quantos
+/// computadores a sala tem hoje, como as equipes nasceram e quem faltou.
+///
+/// **Equipe é quem DIVIDE UM COMPUTADOR**, e não agrupamento pedagógico. A
+/// escola pública tem menos máquinas que crianças, e sem isto a plataforma
+/// contava a sala como se cada estudante tivesse a própria tela — o painel
+/// dizia "12 não começaram" quando os 12 estavam sentados ao lado de quem
+/// começou.
+///
+/// Uma linha por (turma × missão), e é ELA que carrega a `versao` da
+/// concorrência otimista: duas telas do mesmo professor (o computador da sala e
+/// o celular) salvando ao mesmo tempo não podem se sobrescrever em silêncio.
+///
+/// **Sem FK de `exp_id` para `experiencias`**, pelo mesmo motivo de
+/// `liberacoes.exp_id`: aquele catálogo é escrito pelo CI ao publicar, e em dev
+/// está vazio. Quem restringe as missões que aceitam equipe é
+/// `equipes/regras.ts#EXPERIENCIAS_COM_EQUIPE`, no código.
+model EquipesMontagem {
+  escolaId String @map("escola_id")
+  turmaId  String @map("turma_id") @db.Uuid
+  expId    String @map("exp_id")
+
+  /// sorteio | manual — CHECK na migration. `manual` nasce com N equipes
+  /// VAZIAS: quem distribui é o professor, que conhece quem senta com quem.
+  modo String
+
+  /// Quantos computadores a sala tem nesta aula. É o número de equipes do
+  /// sorteio, e muda de aula para aula (o laboratório divide horário).
+  computadores Int
+
+  /// Quem faltou na hora de montar. Fica fora do sorteio, e não é matrícula:
+  /// amanhã a criança volta e entra no próximo.
+  ausentes String[] @default([]) @db.Uuid
+
+  /// A concorrência otimista: o `PUT` diz em qual versão se baseou, e versão
+  /// velha é 409. Começa em 1 — `0` é o que o cliente manda quando não havia
+  /// montagem nenhuma.
+  versao Int @default(1)
+
+  /// Quem salvou por último. Sem FK, de propósito: é carimbo de auditoria, e
+  /// uma FK para `users` faria a saída de um professor da rede apagar (ou
+  /// travar) a montagem da turma inteira.
+  atualizadoPor String   @map("atualizado_por") @db.Uuid
+  atualizadoEm  DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  turma   Turma    @relation(fields: [turmaId], references: [id], onDelete: Cascade)
+  equipes Equipe[]
+
+  @@id([escolaId, turmaId, expId])
+  @@index([escolaId, turmaId])
+  @@map("equipes_montagens")
+}
+
+/// Uma EQUIPE: um computador, um nome e quem senta diante dele.
+///
+/// O nome é o que a criança lê na tela ("Equipe 3") e o professor pode trocar;
+/// o UNIQUE por missão existe porque duas "Equipe 3" no mesmo painel são a
+/// dúvida que ninguém consegue resolver no meio da aula.
+model Equipe {
+  id       String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  escolaId String @map("escola_id")
+  turmaId  String @map("turma_id") @db.Uuid
+  expId    String @map("exp_id")
+
+  /// 1 a 30 caracteres depois do `trim` — CHECK na migration e `NOME_MAX` no
+  /// código. O teto é o que cabe no card do painel sem quebrar a linha.
+  nome String
+
+  /// A ordem em que o professor montou. É a ordem da tela, e não o nome:
+  /// "Equipe 10" viria antes de "Equipe 2" na ordem alfabética.
+  ordem Int
+
+  montagem EquipesMontagem @relation(fields: [escolaId, turmaId, expId], references: [escolaId, turmaId, expId], onDelete: Cascade)
+  membros  EquipeMembro[]
+
+  @@unique([escolaId, turmaId, expId, nome])
+  @@index([escolaId, turmaId, expId])
+  @@map("equipes")
+}
+
+/// Quem está em qual equipe.
+///
+/// `turma_id` e `exp_id` REPETIDOS da equipe, e é isso que torna possível o
+/// UNIQUE que importa: **uma criança, uma equipe por missão**. Sem as colunas
+/// aqui, a regra só existiria no código, e dois `PUT` em paralelo poriam a
+/// mesma criança em dois computadores.
+model EquipeMembro {
+  escolaId    String @map("escola_id")
+  equipeId    String @map("equipe_id") @db.Uuid
+  turmaId     String @map("turma_id") @db.Uuid
+  expId       String @map("exp_id")
+  estudanteId String @map("estudante_id") @db.Uuid
+
+  equipe    Equipe @relation(fields: [equipeId], references: [id], onDelete: Cascade)
+  estudante User   @relation("EquipeMembroEstudante", fields: [estudanteId], references: [id], onDelete: Cascade)
+
+  @@id([equipeId, estudanteId])
+  @@unique([escolaId, turmaId, expId, estudanteId])
+  @@index([escolaId, estudanteId])
+  @@map("equipes_membros")
 }
