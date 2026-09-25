@@ -9,7 +9,7 @@
     "prepare": "git rev-parse --git-dir >/dev/null 2>&1 && git config core.hooksPath .githooks || true",
     "dev": "turbo dev",
     "docker:dev": "docker compose -f docker-compose.dev.yml up -d --remove-orphans",
-    "docker:dev:logs": "docker compose -f docker-compose.dev.yml logs -f api hub exp08ef1b exp04ef1b exp02em1b exp07ef1b app-70 app-90 app-91",
+    "docker:dev:logs": "docker compose -f docker-compose.dev.yml logs -f api hub exp08ef1b exp04ef1b exp02em1b app-70 app-90 app-91",
     "docker:dev:deps": "docker compose -f docker-compose.dev.yml run --rm deps",
     "docker:dev:down": "docker compose -f docker-compose.dev.yml down",
     "build": "turbo build",

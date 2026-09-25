@@ -22,7 +22,6 @@ export const EXPERIENCIAS_DEV: Readonly<Record<string, string>> = {
   "app-91-bem-estar": "http://localhost:5176",
   /** A Missão Tempestade — 2ª série do EM, unidade 1. Próxima porta livre. */
   "exp02em1b": "http://localhost:5178",
-  "exp07ef1b": "http://localhost:5179",
   /**
    * O Rastro do Boato — 6º ano, unidade 2.
    *
