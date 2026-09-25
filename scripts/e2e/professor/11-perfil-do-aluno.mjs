@@ -116,7 +116,13 @@ await suite(
     /* O que a api diz decide o ramo: hoje nenhuma missão tem ficha, e o perfil
        vem vazio. A suíte não pode reprovar o dia em que ele deixar de vir. */
     const leitura = await p.request.get(`${BFF}/evidencias/estudante/${estudanteId}`);
-    if (!r.exigir(leitura.ok(), `a api devolve o perfil de ${nome} (HTTP ${leitura.status()})`)) return;
+    /* A `mensagem` vai junto quando falha: "rota não permitida" é o BFF do hub
+       recusando o prefixo, e a api nem foi chamada — sem ela, o 404 do BFF e o
+       404 da guarda da api ("Estudante não encontrado.") se leem iguais. */
+    const motivo = leitura.ok() ? "" : await leitura.json().then((c) => c?.mensagem ?? "", () => "");
+    if (!r.exigir(leitura.ok(), `a api devolve o perfil de ${nome} (HTTP ${leitura.status()}${motivo ? `: ${motivo}` : ""})`)) {
+      return;
+    }
     const perfil = await leitura.json();
     const missoes = Array.isArray(perfil?.missoes) ? perfil.missoes : [];
 

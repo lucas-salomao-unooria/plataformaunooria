@@ -119,6 +119,23 @@ ainda assim estourar, repete a captura com `emulateMedia({reducedMotion:
 "reduce"})` — o desligamento que os próprios efeitos respeitam, então o quadro
 é o mesmo, parado.
 
+## O 404 do BFF que não é do produto
+
+`GET /api/plataforma/<prefixo>/…` respondendo **404 `{"mensagem":"rota não
+permitida"}`** com o prefixo JÁ escrito na allowlist de
+`apps/hub/app/api/plataforma/[...path]/route.ts` é o `next dev` servindo o
+route handler VELHO. Em 2026-09-25 o `git pull` que trouxe `equipes` e
+`evidencias` para a allowlist recompilou o chunk no disco, mas o processo do hub
+(no ar havia dois dias) seguiu recusando os dois prefixos: a `professor/11`
+reprovou dizendo que "a api devolve 404" para um perfil que a api devolvia com
+200. As páginas se atualizaram — só o route handler não.
+
+Três sinais separam isso de um bug: o log do hub tem `codigo:
+"bff-prefixo-recusado"` com o prefixo novo; a api não tem query nenhuma
+naquele segundo; e a mesma rota, chamada direto na api com um token de
+`/api/exp-token`, responde. O remédio é reiniciar o hub
+(`docker restart unooria-plataforma-hub-1`) e repetir as suítes daquela janela.
+
 ## Evidências
 
 `testes/<papel>/<suíte>/` — os prints, o `passos.json` e um `relatorio.md`

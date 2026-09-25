@@ -52,6 +52,11 @@ o que decide se você precisa abri-lo.
   seção fechada, o Playwright o considera visível e o clique morre interceptado
   pelo contêiner. Abra os collapses antes de procurar (`role="button"` +
   `aria-expanded` no cabeçalho).
+- **Rádio do DS se clica pelo PAPEL, nunca pelo texto do rótulo.** O `<input>`
+  do `RadioGroup` é transparente e cobre o `<label>` inteiro: `getByText(rótulo)`
+  resolve no `<span>`, e o clique morre em "<input> intercepts pointer events"
+  até o timeout (a `professor/10`, 2026-09-25). Use
+  `getByRole("radio", { name, exact: true })`.
 - **Erro provocado de propósito se declara** (`r.provocado(...)`), senão a
   corrida que prova que a trava funciona é a que pinta de vermelho.
 - **`testes/` é descartável e está no `.gitignore`** — prints, deck e vídeos se
