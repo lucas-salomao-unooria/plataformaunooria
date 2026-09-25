@@ -75,6 +75,68 @@ describe("os textos das equipes", () => {
     expect(rotulos.get("m2")).toBe("maria O.");
   });
 
+  /** Os rótulos, na ordem dos nomes. */
+  const rotulosDe = (...nomes: string[]) => {
+    const rotulos = rotulosCurtos(nomes.map((nome, i) => ({ id: `p${i}`, nome })));
+    return nomes.map((_, i) => rotulos.get(`p${i}`));
+  };
+  /** Nenhum rótulo repete — sem caixa e sem acento, como a sala lê. */
+  const semRepetir = (rotulos: (string | undefined)[]) => {
+    const chaves = rotulos.map((r) => r?.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase());
+    expect(new Set(chaves).size).toBe(rotulos.length);
+  };
+
+  test("mesma inicial do sobrenome: sobe para o último sobrenome inteiro (as Gabrielas da 4B do seed)", () => {
+    const rotulos = rotulosDe(
+      "Gabriela Almeida Cardoso",
+      "Gabriela Ribeiro Correia",
+      "Beatriz Almeida Souza",
+      "Beatriz Santana Correia",
+    );
+    expect(rotulos).toEqual(["Gabriela Cardoso", "Gabriela Correia", "Beatriz S.", "Beatriz C."]);
+    semRepetir(rotulos);
+  });
+
+  test("três com o mesmo primeiro nome: só quem continua empatado sobe", () => {
+    const rotulos = rotulosDe("Gabriela Almeida Cardoso", "Gabriela Ribeiro Correia", "Gabriela Souza", "Ana Souza");
+    expect(rotulos).toEqual(["Gabriela Cardoso", "Gabriela Correia", "Gabriela S.", "Ana"]);
+    semRepetir(rotulos);
+  });
+
+  test("empate a três no último sobrenome: entram as iniciais do meio, e o nome inteiro só em último caso", () => {
+    const rotulos = rotulosDe("Maria Clara Santos", "Maria Cecília Santos", "Maria Luiza Santos", "Maria Souza");
+    expect(rotulos).toEqual(["Maria Clara Santos", "Maria Cecília Santos", "Maria L. Santos", "Maria Souza"]);
+    semRepetir(rotulos);
+  });
+
+  test("partícula do sobrenome não vira inicial", () => {
+    expect(rotulosDe("Ana Maria de Souza", "Ana Paula de Souza")).toEqual(["Ana M. Souza", "Ana P. Souza"]);
+  });
+
+  test("acento não desempata: Lívia e Livia, Álvares e Alves", () => {
+    const livias = rotulosDe("Lívia Carvalho Lopes", "Livia Costa Lima");
+    expect(livias).toEqual(["Lívia Lopes", "Livia Lima"]);
+    semRepetir(livias);
+    const anas = rotulosDe("Ana Álvares", "Ana Alves");
+    expect(anas).toEqual(["Ana Álvares", "Ana Alves"]);
+    semRepetir(anas);
+  });
+
+  test("nome sem sobrenome fica como está, e o outro sobe", () => {
+    expect(rotulosDe("Gabriela", "Gabriela Cardoso")).toEqual(["Gabriela", "Gabriela C."]);
+  });
+
+  test("homônimo perfeito não sobe à toa — só quando há um nome diferente no empate", () => {
+    expect(rotulosDe("Ana Souza", "Ana Souza", "Bruno Lima")).toEqual(["Ana", "Ana", "Bruno"]);
+    expect(rotulosDe("Ana Souza", "Ana Souza", "Ana Silva")).toEqual(["Ana Souza", "Ana Souza", "Ana Silva"]);
+  });
+
+  test("a mesma pessoa duas vezes na lista conta uma vez só", () => {
+    const rotulos = rotulosCurtos([ana, ana, { id: "a2", nome: "Ana Lima" }]);
+    expect(rotulos.get("a")).toBe("Ana S.");
+    expect(rotulos.get("a2")).toBe("Ana L.");
+  });
+
   test("o tamanho das equipes sai do número de computadores, com diferença de no máximo 1", () => {
     expect(tamanhoDasEquipes(40, 10)).toBe("40 estudantes em 10 computadores: equipes de 4.");
     expect(tamanhoDasEquipes(25, 10)).toBe("25 estudantes em 10 computadores: equipes de 2 ou 3.");

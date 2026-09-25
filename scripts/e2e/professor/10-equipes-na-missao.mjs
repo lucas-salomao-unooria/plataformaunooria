@@ -226,25 +226,45 @@ await suite(
       const mostrar = p.getByRole("button", { name: "Mostrar equipes", exact: true });
       await hidratado(p, mostrar);
       await mostrar.click();
+      /* Pelo PAPEL e pelo NOME: o nome do diálogo é o título, ligado por
+         `aria-labelledby`. O `Modal` do DS (0.2.2) só faz essa ligação no atalho
+         `title=` — montado com `ModalTitle`, o diálogo nascia SEM nome, o leitor
+         de tela anunciava "diálogo" e mais nada, e este seletor esperava até o
+         timeout com a janela aberta na foto. Quem liga é a tela
+         (`mostrar-equipes.tsx`); se este passo voltar a esperar à toa, é isso. */
       const janela = p.getByRole("dialog", { name: "Equipes", exact: true });
       await janela.waitFor({ timeout: 15_000 });
       const titulos = await janela.locator("h3").count();
       const texto = await janela.innerText();
-      const nomesCompletos = (salvas?.equipes ?? [])
-        .flatMap((e) => e.membros)
-        .map((m) => m.nome)
-        .filter((nome) => nome.trim().split(/\s+/).length > 1);
+      const membros = (salvas?.equipes ?? []).flatMap((e) => e.membros);
+      const nomesCompletos = membros.map((m) => m.nome).filter((nome) => nome.trim().split(/\s+/).length > 1);
       const vazou = nomesCompletos.filter((nome) => texto.includes(nome));
+      /* Cada rótulo projetado desempata: quantos rótulos DIFERENTES há tem de ser
+         quantos NOMES diferentes há — sem caixa e sem acento, como a sala lê. Um
+         homônimo perfeito conta uma vez dos dois lados, então não reprova. */
+      const semAcento = (t) => t.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase().trim();
+      const rotulos = (await janela.locator("section p").allInnerTexts())
+        .flatMap((linha) => linha.split(/, | e /))
+        .map((rotulo) => rotulo.trim())
+        .filter(Boolean);
+      const rotulosDistintos = new Set(rotulos.map(semAcento)).size;
+      const nomesDistintos = new Set(membros.map((m) => semAcento(m.nome))).size;
+      const desempatados = rotulos.filter((rotulo) => /\s/.test(rotulo)).length;
       r.exigir(titulos === COMPUTADORES, `a tela projetada lista as ${titulos} equipes`);
       r.exigir(vazou.length === 0, `nenhum nome completo na tela projetada (${vazou.length} vazaram)`);
+      r.exigir(
+        rotulos.length === membros.length && rotulosDistintos === nomesDistintos,
+        `cada estudante acha o próprio nome: ${rotulosDistintos} rótulos diferentes para ${nomesDistintos} nomes diferentes (${rotulos.length} na tela)`,
+      );
       r.exigir(!/faltou|Sem equipe/.test(texto), "nem quem faltou, nem quem ficou sem equipe aparece para a sala");
       await r.registrar(p, "mostrar-equipes", {
         titulo: "Mostrar equipes, para a turma",
         mostra: "A janela em tela quase cheia: o nome de cada equipe em letra grande e o primeiro nome de quem está nela.",
         prova:
-          "É a tela que a sala inteira lê. Nome completo, falta e desempenho não entram; nome repetido " +
-          "na turma ganha só a inicial do sobrenome, que ninguém de fora identifica.",
-        detalhe: `${titulos} equipes, ${nomesCompletos.length} nomes conferidos`,
+          "É a tela que a sala inteira lê. Nome completo, falta e desempenho não entram. Nome que empata " +
+          "na turma ganha só o que desempata: a inicial do sobrenome e, se duas ainda ficam iguais " +
+          '("Gabriela C."), o último sobrenome inteiro — nunca o nome todo quando algo mais curto separa.',
+        detalhe: `${titulos} equipes, ${nomesCompletos.length} nomes conferidos, ${desempatados} desempatados`,
       });
       await janela.getByRole("button", { name: "Fechar", exact: true }).click();
       await janela.waitFor({ state: "hidden", timeout: 10_000 });
@@ -289,6 +309,7 @@ await suite(
 
       // ── desfazer: o estado final é o inicial ───────────────────────────
       await p.getByRole("button", { name: "Desfazer equipes", exact: true }).click();
+      /* O nome vem do mesmo `aria-labelledby` da janela do projetor. */
       const confirmacao = p.getByRole("dialog", { name: "Desfazer as equipes?", exact: true });
       await confirmacao.waitFor({ timeout: 10_000 });
       await confirmacao.getByRole("button", { name: "Sim, desfazer", exact: true }).click();

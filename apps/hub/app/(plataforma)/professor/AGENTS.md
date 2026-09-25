@@ -149,9 +149,11 @@ importa; as leituras server-side em `lib/equipes-servidor.ts` (`server-only`).
   para esta turma." A api recusaria de qualquer jeito.
 - **"Mostrar equipes" é uma janela do DS (`Modal` `full`), não uma rota**: uma
   página de tela cheia herdaria a trilha e o layout da área. Ela mostra o nome
-  da equipe e o PRIMEIRO nome de cada estudante (a inicial do sobrenome só
-  quando o nome repete na turma) — nada de falta, desempenho ou "Sem equipe": é
-  a tela que a sala inteira lê.
+  da equipe e o PRIMEIRO nome de cada estudante — nada de falta, desempenho ou
+  "Sem equipe": é a tela que a sala inteira lê. Nome que empata na turma sobe só
+  o que desempata (`rotulosCurtos`): a inicial do sobrenome, e o último
+  sobrenome inteiro quando duas ainda ficam "Gabriela C." (a 4B do seed tem esse
+  par, e a tela já as mostrou iguais em equipes diferentes).
 - **A lista de presença e a edição NÃO vão dentro de `Collapse`**: fechado, ele
   deixa ~40 controles focáveis dentro de `aria-hidden`. Renderização condicional.
 - **Na sala, as equipes são uma `Tag` ("N equipes prontas"), não um link**

@@ -126,6 +126,17 @@ caracteres — o jeito barato de medir é montar um `.unooria-metric-card` no DO
 de qualquer rota da plataforma (o CSS do DS é global no bundle do hub) e ler o
 `getBoundingClientRect().width` do valor depois de `document.fonts.ready`.
 
+## `Modal` montado com `ModalTitle` precisa de `aria-labelledby` (2026-09-25)
+
+Lacuna do DS (0.2.2): o `Modal` só liga o título ao `role="dialog"` quando o
+título vem pelo atalho `title=`. Montado com `ModalHeader` + `ModalTitle` — o
+jeito de quase todas as janelas do hub —, o `ModalTitle` ganha um id e o
+diálogo NÃO aponta para ele: fica sem nome acessível, e o leitor de tela anuncia
+"diálogo" sem dizer qual. A compensação é passar os dois lados:
+`const id = useId()`, `<Modal aria-labelledby={id}>` e `<ModalTitle id={id}>`.
+Hoje só as janelas de `equipes/` fazem isso; as outras montadas do mesmo jeito
+continuam sem nome até o DS ligar sozinho (pedido a abrir no `storybook-unooria`).
+
 ## Rolagem: sempre o `ScrollBar` do DS (2026-09-07)
 
 **Nenhuma tela do hub declara `overflow` para rolar.** Área que rola é um

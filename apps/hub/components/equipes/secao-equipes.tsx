@@ -2,7 +2,7 @@
 
 import { dataCurta } from "@edu/sdk";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import {
   Button,
   EmptyState,
@@ -94,6 +94,9 @@ export function SecaoEquipes({
   const [aviso, setAviso] = useState<string | null>(null);
   const [mostrando, setMostrando] = useState(false);
   const [confirmandoDesfazer, setConfirmandoDesfazer] = useState(false);
+  /* O `Modal` do DS não liga o `ModalTitle` ao diálogo sozinho: sem isto a
+     confirmação fica sem nome acessível (ver `mostrar-equipes.tsx`). */
+  const idDoTituloDesfazer = useId();
 
   const turma = useMemo(() => turmaInteira(dados), [dados]);
   const problemas = useMemo(() => (rascunho ? problemasAntesDeSalvar(rascunho.equipes) : []), [rascunho]);
@@ -317,16 +320,22 @@ export function SecaoEquipes({
         </div>
       )}
 
-      <MostrarEquipes aberto={mostrando} onFechar={() => setMostrando(false)} equipes={dados.equipes} />
+      <MostrarEquipes
+        aberto={mostrando}
+        onFechar={() => setMostrando(false)}
+        equipes={dados.equipes}
+        semEquipe={dados.semEquipe}
+      />
 
       <Modal
         isOpen={confirmandoDesfazer}
         onClose={() => (ocupado ? undefined : setConfirmandoDesfazer(false))}
         size="sm"
         theme="light"
+        aria-labelledby={idDoTituloDesfazer}
       >
         <ModalHeader showCloseButton={false}>
-          <ModalTitle>Desfazer as equipes?</ModalTitle>
+          <ModalTitle id={idDoTituloDesfazer}>Desfazer as equipes?</ModalTitle>
         </ModalHeader>
         <ModalBody>
           <p className="text-[14px] text-unooria-neutral-700">
