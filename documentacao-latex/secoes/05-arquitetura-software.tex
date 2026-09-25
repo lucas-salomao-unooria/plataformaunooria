@@ -448,6 +448,21 @@ mora nele, mora em \arq{comum/liberacao.ts}. Fosse um \emph{provider} do
 \arq{salas/}, cada módulo de experiência teria de importá-lo, e uma dependência
 esquecida viraria uma porta aberta em silêncio (\adrr{ADR-69}).
 
+\textbf{\arq{equipes/} é o segundo módulo de plataforma no mesmo molde}
+(\adrr{ADR-111}). Ele diz QUEM DIVIDE UM COMPUTADOR em cada missão de cada
+turma, e a única coisa que sabe de missão é a lista
+\cd{EXPERIENCIAS\_COM\_EQUIPE}. O que cada missão FAZ com a equipe --- o painel
+contando por computador --- é assunto do módulo dela: \arq{unootube/} e
+\arq{unoogpt/} leem \arq{equipes/consulta.ts} (funções livres que recebem o
+\cd{tx}, como \arq{comum/liberacao.ts}) e aplicam \cd{colapsarEmUnidades}, de
+\arq{equipes/regras.ts}, sem injetar provedor nenhum. O sentido inverso --- a
+missão dizendo ao sorteio o lado de cada criança --- é um REGISTRO: o módulo da
+missão chama \cd{EquipesService.registrarFonteDeGrupo} na subida, e
+\arq{equipes/} nunca importa nada dele. No hub, a seção mora na ficha da missão
+(\arq{components/equipes/}), e as chamadas passam pelo BFF
+(\rota{/api/plataforma/equipes/*}), do lado do cliente porque o professor monta
+as equipes na frente da sala.
+
 \textbf{Módulo de domínio não conhece módulo de domínio.} \arq{vila/} não importa
 \arq{unootube/}. Quando duas experiências precisam se comunicar --- o perfil da
 Vila alimentando a largada do Instanooria --- a comunicação é por \emph{tabela de

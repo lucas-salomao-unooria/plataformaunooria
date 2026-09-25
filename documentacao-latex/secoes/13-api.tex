@@ -316,6 +316,70 @@ substituta --- e fica na CRIAÇÃO da sessão, não em toda rota: quem já entro
 fica, porque encerrar fecha a entrada e não expulsa a criança no meio da aula.
 \end{regra}
 
+\subsection{As equipes na missão: quem divide um computador}
+
+Seis rotas no módulo \arq{equipes/} (\adrr{ADR-111}): cinco de professor, todas
+sob \rota{/equipes/turma/\B :turmaId/\B missao/:expId}, e uma de estudante, a literal
+\rota{/equipes/minha}. Os prefixos são distintos de propósito: assim a ordem de
+registro dos \emph{controllers} não decide quem responde, e o do estudante é
+outro arquivo, sem \cd{@Roles} misto.
+
+\begin{itemize}
+  \item \rota{GET /equipes/turma/\B :turmaId/\B missao/:expId} (professor que leciona,
+    gestor, admin) --- a montagem, as equipes com os membros e \cd{semEquipe}
+    (os ausentes inclusive). Missão que não aceita equipe responde \textbf{200}
+    com \cd{permitida: false}, e não 400: é por esta resposta que o hub decide se
+    desenha o bloco.
+  \item \rota{POST .../sugestao} (só professor) --- uma proposta que
+    \textbf{nunca grava}, e por isso responde 200: \cd{sorteio} distribui os
+    presentes por tamanhos que diferem em no máximo 1; \cd{manual} devolve N
+    equipes vazias e todos em \cd{semEquipe}. O \cd{agrupamento} (lados, neutros,
+    equipes mistas) só vem quando a missão registrou uma fonte de lado; hoje,
+    nenhuma registrou.
+  \item \rota{GET .../ultima} (só professor) --- a montagem mais recente da MESMA
+    turma em OUTRA missão com equipe, reprojetada sobre a turma de hoje: quem
+    saiu cai e é contado em \cd{saidas}, quem chegou fica em \cd{semEquipe}, e
+    os ausentes de lá não vêm. Também não grava.
+  \item \rota{PUT .../} (\textbf{só professor com matrícula na turma}) --- grava
+    a montagem INTEIRA. O corpo leva a \cd{versao} em que a tela se baseou
+    (\cd{0} sem montagem); versão velha é \textbf{409}
+    \cd{equipes-\B{}desatualizadas} com \cd{versaoAtual}. Montagem impossível é
+    \textbf{400} \cd{montagem-invalida} com \cd{erros}: a lista INTEIRA, em
+    frases para o professor e sem nome de criança. Missão fora da lista é 400
+    \cd{missao-sem-equipes}; fora do catálogo, 404; ferramenta de professor ou
+    recurso desligado na rede, 403.
+  \item \rota{DELETE .../} (só professor) --- desfaz. \textbf{Idempotente}, e
+    sem checagem de catálogo nem de disponibilidade: missão desligada na rede
+    não pode deixar equipes presas que ninguém consegue apagar.
+  \item \rota{GET /equipes/minha?expId=} (estudante) --- \textbf{sempre 200}:
+    \cd{equipe: null}, ou o nome dela e \cd{colegas} com SÓ o primeiro nome dos
+    outros membros. Um 404 viraria \cd{api-recusou} no log do hub a cada
+    abertura de missão.
+\end{itemize}
+
+Turma que o professor não leciona responde \textbf{404} em todas as rotas de
+professor, nunca 403 --- é o desenho da sala. E três respostas de outros módulos
+mudaram de forma para contar por COMPUTADOR:
+
+\begin{tabularx}{\linewidth}{@{}L{46mm}X@{}}
+\toprule
+\headrow \thd{Rota} & \thd{O que mudou}\\
+\midrule
+\rota{GET /salas/turma/:turmaId} & \cd{missoes[].equipes}: quantas equipes a missão
+  tem na turma, num \cd{groupBy} para a grade inteira. SÓ no \emph{schema} do
+  professor, e não no \cd{MissaoNaGradeSchema}, que também responde
+  \rota{/salas/minhas}: a contagem da sala não é assunto do estudante.\\
+\zebra \rota{GET /unootube/turmas/\B :turmaId/resultados} & Uma linha por
+  computador: cada item de \cd{estudantes} ganha \cd{equipe} (\cd{null}, ou
+  \cd{id}, \cd{nome} e \cd{membros}), com \cd{id}/\cd{estudanteId} do
+  representante --- quem entrou. O \cd{resumo} conta essas linhas e ganha
+  \cd{porComputador}.\\
+\rota{GET /unoogpt/professor/\B turmas/:turmaId} & O mesmo na folha da Missão
+  Tempestade: \cd{linhas[].equipe}, e o \cd{retrato} conta as linhas, com
+  \cd{porComputador}. \enquote{Abrir} leva ao representante.\\
+\bottomrule
+\end{tabularx}
+
 \subsection{Entrada de pessoas: as duas portas, e por que só uma escreve}
 
 Criar pessoa tem duas superfícies e \textbf{um} caminho de escrita. Em lote é

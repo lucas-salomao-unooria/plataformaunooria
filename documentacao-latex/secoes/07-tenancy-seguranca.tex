@@ -160,6 +160,23 @@ contrato, e os contadores que decidem quantos estudantes o botão
 justamente para que a RLS não mascare a ausência do \cd{where}.
 \end{regra}
 
+\begin{atencao}
+\textbf{A armadilha inversa: tabela COM RLS lida fora do \cd{comTenancy} não
+falha --- devolve vazio.} As três tabelas das equipes na missão
+(\cd{equipes\_montagens}, \cd{equipes} e \cd{equipes\_membros},
+\adrr{ADR-111}) entram na política como toda tabela de escola:
+\cd{escola\_id NOT NULL}, \cd{ENABLE} e \cd{FORCE ROW LEVEL SECURITY} e uma
+política por escola em cada uma --- \cd{equipes\_membros} com mais razão, por ser
+a única das três com id de criança. O risco delas é outro: quem as lê são OUTROS
+módulos (os painéis do UnooTube e do unooGPT, a grade da sala), por funções
+livres que recebem o \cd{tx} (\arq{equipes/consulta.ts}), no molde de
+\arq{comum/liberacao.ts}. Chamadas fora da transação de tenancy, elas devolvem um
+mapa vazio, e o painel volta a contar por criança sem que ninguém saiba por quê.
+E como \cd{users} está fora da RLS, a lista de estudantes que a montagem aceita
+sai de \cd{users.turma\_id} com o \cd{escolaId} no \cd{where} --- a regra acima,
+de novo.
+\end{atencao}
+
 \subsection{Como a escola chega ao contexto}
 
 \begin{figure}[H]
@@ -558,6 +575,14 @@ Reiniciar o \emph{run} de um estudante & \rota{POST /runs/:id/reset} &
 \zebra \textbf{Liberar/encerrar missão na turma} & \rota{PUT /salas/turma/:id/\B missoes/:expId} &
   \no & \yes\footnotesize{\ddag} & \no & \no\\
 As salas do estudante (a grade dele) & \rota{GET /salas/minhas} &
+  \yes & \no & \no & \no\\
+\zebra Ler as equipes de uma missão na turma (\adrr{ADR-111}) &
+  \rota{GET /equipes/turma/\B :turmaId/\B missao/:expId} & \no & \yes\footnotesize{\ddag} & \yes & \yes\\
+Propor equipes (sorteio, N vazias, a última missão) --- nunca grava &
+  \rota{POST .../\B sugestao}, \rota{GET .../\B ultima} & \no & \yes\footnotesize{\ddag} & \no & \no\\
+\zebra \textbf{Salvar ou desfazer as equipes} (sempre editáveis) &
+  \rota{PUT}, \rota{DELETE /equipes/\B turma/:turmaId/\B missao/:expId} & \no & \yes\footnotesize{\ddag} & \no & \no\\
+A própria equipe na missão (só primeiros nomes) & \rota{GET /equipes/minha} &
   \yes & \no & \no & \no\\
 \zebra Vila do Lume: agregado da turma & \rota{/vila/agregado/*} & \no & \yes & \yes & \no\\
 \textbf{Vila do Lume: a linha de uma criança} & \rota{/vila/professor/*} &

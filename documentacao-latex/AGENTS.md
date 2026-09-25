@@ -8,8 +8,8 @@ lá, e a Definition of Done exige esta pasta atualizada e o `main.pdf` regerado
 entra sozinho no seu contexto: abra-o antes de escrever `.tex`.** Aqui ficam as
 armadilhas que já custaram tempo e não avisam quando você cai nelas:
 
-- **A PRÓXIMA ADR é a 111.** A numeração vai até ADR-110 (o código da
-  experiência), sem lacuna — e este número envelhece a cada frente, então ele é
+- **A PRÓXIMA ADR é a 112.** A numeração vai até ADR-111 (a equipe que
+  divide um computador na missão), sem lacuna — e este número envelhece a cada frente, então ele é
   ponto de partida, nunca a resposta. Das mais citadas: a 86 é o
   guia da aula, 87 o eixo da disponibilidade, 88 o painel da Unooria só do
   `admin`, 89 o histórico append-only que a rede também lê e 90 a suíte da API
