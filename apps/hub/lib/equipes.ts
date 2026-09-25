@@ -123,7 +123,11 @@ export function juntarNomes(nomes: readonly string[]): string {
   return `${nomes.slice(0, -1).join(", ")} e ${nomes[nomes.length - 1]}`;
 }
 
-/** A faixa do estudante, acima da missão. `colegas` já vêm só com o primeiro nome. */
+/**
+ * A faixa do estudante, acima da missão. `colegas` já vêm da api só com o
+ * primeiro nome, desempatado lá quando repete na equipe — o hub não recebe o
+ * nome inteiro de outra criança para desempatar aqui.
+ */
 export function textoSuaEquipe(equipe: { nome: string; colegas: readonly string[] }): string {
   const base = `Sua equipe: ${equipe.nome}`;
   return equipe.colegas.length > 0 ? `${base} · com ${juntarNomes(equipe.colegas)}` : base;
@@ -190,6 +194,11 @@ function degrausDoRotulo(nome: string): string[] {
  *
  * `pessoas` é a TURMA que a tela pode mostrar: quem desempata com quem é
  * decidido sobre ela inteira, e não só sobre quem está numa equipe agora.
+ *
+ * A faixa do estudante usa a MESMA escada, numa cópia da api
+ * (`apps/api/src/equipes/regras.ts#rotulosSemRepeticao`): a api não importa
+ * código do hub, e o desempate da faixa tem de sair de lá. Os dois testes
+ * afirmam os mesmos casos — mexeu numa escada, mexa na outra.
  */
 export function rotulosCurtos(pessoas: readonly PessoaDaEquipe[]): Map<string, string> {
   const unicas = [...new Map(pessoas.map((pessoa) => [pessoa.id, pessoa])).values()];

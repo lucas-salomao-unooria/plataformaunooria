@@ -49,13 +49,105 @@ export function nomePadrao(i: number): string {
 }
 
 /**
- * O primeiro nome, que é o que a criança lê sobre os colegas de computador.
- *
- * SÓ o primeiro, e é decisão: a tela do estudante diz "você está com a Bia e o
- * Caio" — o nome completo de outra criança não tem o que fazer ali (regra 6).
+ * A chave com que dois rótulos são comparados: sem caixa e SEM ACENTO. "Lívia"
+ * e "Livia" são o mesmo rótulo para quem lê — a criança não tem como saber qual
+ * das duas está no computador dela.
  */
-export function primeiroNome(displayName: string): string {
-  return displayName.trim().split(/\s+/)[0] ?? "";
+function chaveDeComparacao(texto: string): string {
+  return texto
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLocaleLowerCase("pt-BR")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/** Partícula de sobrenome: não ganha inicial ("Ana M. Souza", nunca "Ana M. d. Souza"). */
+const PARTICULAS = new Set(["da", "das", "de", "do", "dos", "e", "di", "du", "del"]);
+
+const inicialDe = (parte: string) => `${parte.charAt(0).toLocaleUpperCase("pt-BR")}.`;
+
+/**
+ * Os rótulos possíveis de uma pessoa, do mais curto ao nome inteiro. Cada degrau
+ * só é usado quando o anterior ainda empata com alguém:
+ *
+ *   "Gabriela" → "Gabriela C." → "Gabriela Cardoso" → "Gabriela A. Cardoso" → o nome inteiro
+ */
+function degrausDoRotulo(nome: string): string[] {
+  const partes = nome.trim().split(/\s+/).filter(Boolean);
+  const [primeiro = "", ...resto] = partes;
+  if (resto.length === 0) return [primeiro];
+  const ultimo = resto[resto.length - 1] as string;
+  const meio = resto.slice(0, -1).filter((parte) => !PARTICULAS.has(parte.toLocaleLowerCase("pt-BR")));
+  const degraus = [
+    primeiro,
+    `${primeiro} ${inicialDe(ultimo)}`,
+    `${primeiro} ${ultimo}`,
+    [primeiro, ...meio.map(inicialDe), ultimo].join(" "),
+    partes.join(" "),
+  ];
+  return degraus.filter((degrau, i) => degraus.indexOf(degrau) === i);
+}
+
+/**
+ * O que a criança lê sobre os colegas de computador: o PRIMEIRO NOME, e mais
+ * nada — a tela do estudante diz "com Bia e Caio", e o nome completo de outra
+ * criança não tem o que fazer ali (regra 6).
+ *
+ * A exceção é o nome que EMPATA — duas Gabrielas no mesmo computador, e a
+ * faixa diria "com Gabriela e Gabriela". Aí o rótulo sobe UM DEGRAU POR VEZ
+ * (`degrausDoRotulo`), só para quem empata e só até desempatar: a inicial do
+ * último sobrenome ("Gabriela C."); se ainda empata, o último sobrenome inteiro
+ * ("Gabriela Cardoso" e "Gabriela Correia"); depois as iniciais do meio, sem
+ * as partículas. O nome inteiro só aparece quando nada mais curto separa duas
+ * pessoas. Caixa e acento não contam como diferença.
+ *
+ * Homônimo PERFEITO (o mesmo nome inteiro) não tem rótulo que o separe, e não
+ * sobe degrau por causa do outro — só por causa de quem tem nome diferente.
+ *
+ * `pessoas` é o universo em que o empate é decidido; quem chama escolhe quem
+ * entra (em `minha`, a equipe inteira, o próprio estudante incluso). A mesma
+ * pessoa duas vezes na lista conta uma vez só. Devolve o rótulo por id.
+ *
+ * É A MESMA ESCADA de `apps/hub/lib/equipes.ts#rotulosCurtos` (a tela
+ * projetada do "Mostrar equipes"), em duas cópias de propósito: a api não
+ * importa código de outra app do monorepo — o hub é app, não pacote de
+ * workspace —, e o desempate da faixa PRECISA sair daqui. Desempatar no hub
+ * exigiria mandar ao navegador de uma criança o nome inteiro dos colegas para
+ * mostrar só o primeiro. Os dois testes (`apps/hub/lib/equipes.test.ts` e
+ * `tests/equipes-regras.spec.ts`) afirmam os MESMOS casos com as mesmas
+ * respostas: mexeu numa escada, mexa na outra e nos dois testes.
+ */
+export function rotulosSemRepeticao(pessoas: readonly MembroDaEquipe[]): Map<string, string> {
+  const unicas = [...new Map(pessoas.map((pessoa) => [pessoa.id, pessoa])).values()];
+  const todas = unicas.map((pessoa) => ({
+    id: pessoa.id,
+    nomeInteiro: chaveDeComparacao(pessoa.nome),
+    degraus: degrausDoRotulo(pessoa.nome),
+    degrau: 0,
+  }));
+  const rotuloDe = (p: (typeof todas)[number]) => p.degraus[p.degrau] as string;
+
+  /* Sobe um degrau quem empata com alguém de nome DIFERENTE, e repete até
+     ninguém mais empatar. Termina: cada volta sobe alguém, e os degraus acabam. */
+  for (let subiu = true; subiu; ) {
+    subiu = false;
+    const grupos = new Map<string, (typeof todas)[number][]>();
+    for (const p of todas) {
+      const chave = chaveDeComparacao(rotuloDe(p));
+      grupos.set(chave, [...(grupos.get(chave) ?? []), p]);
+    }
+    for (const grupo of grupos.values()) {
+      if (new Set(grupo.map((p) => p.nomeInteiro)).size < 2) continue;
+      for (const p of grupo) {
+        if (p.degrau < p.degraus.length - 1) {
+          p.degrau += 1;
+          subiu = true;
+        }
+      }
+    }
+  }
+  return new Map(todas.map((p) => [p.id, rotuloDe(p)]));
 }
 
 /**

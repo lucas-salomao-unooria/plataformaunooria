@@ -28,7 +28,7 @@ export class EquipesEstudanteController {
     query: QueryDaMinhaEquipeSchema,
     resposta: MinhaEquipeSchema,
     notas: [
-      "`colegas` leva SÓ o primeiro nome dos outros membros — o nome completo de outra criança não tem o que fazer nesta tela (regra 6).",
+      "`colegas` leva SÓ o primeiro nome dos outros membros — o nome completo de outra criança não tem o que fazer nesta tela (regra 6). Quando o primeiro nome repete dentro da equipe (o próprio estudante incluso), sobe um degrau por vez só até desempatar: \"Gabriela C.\", depois \"Gabriela Cardoso\".",
       "`expId` ausente ou fora do formato responde **400**; missão que não aceita equipe responde `equipe: null`.",
       "A turma sai da matrícula e do cache (`turmasDoEstudante`), a mesma da porta da sala.",
     ],
