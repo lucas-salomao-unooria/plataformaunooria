@@ -146,8 +146,15 @@ await suite(
       });
 
       // ── sortear ────────────────────────────────────────────────────────
-      await p.getByText("Sortear as equipes", { exact: true }).click();
-      r.exigir(await p.getByRole("radio", { name: /Sortear as equipes/ }).isChecked(), "a opção de sorteio ficou marcada");
+      /* Pelo PAPEL, e não pelo texto: no `RadioGroup` do DS o `<input>` é
+         transparente e cobre o `<label>` inteiro (`position: absolute`,
+         `z-index: 2`). Clicar no `<span>` do rótulo morre em "<input>
+         intercepts pointer events" até o timeout — o span não é o alvo do
+         clique, o input é. O nome acessível do input é o `aria-label`, que o
+         DS preenche com o próprio rótulo. */
+      const sortear = p.getByRole("radio", { name: "Sortear as equipes", exact: true });
+      await sortear.click();
+      r.exigir(await sortear.isChecked(), "a opção de sorteio ficou marcada");
       await p.getByRole("button", { name: "Continuar", exact: true }).click();
       await esperarOuFalharCedo(p.locator("[data-equipe]").nth(COMPUTADORES - 1), erroNaTela(p), {
         timeout: 30_000,
@@ -246,8 +253,10 @@ await suite(
       await p.getByRole("button", { name: "Refazer", exact: true }).click();
       const deNovo = await ajustarComputadores(p, COMPUTADORES);
       r.exigir(deNovo === COMPUTADORES, `o Refazer começa do que está salvo (${deNovo} computadores)`);
-      await p.getByText("Eu separo", { exact: true }).click();
-      r.exigir(await p.getByRole("radio", { name: /Eu separo/ }).isChecked(), 'a opção "Eu separo" ficou marcada');
+      /* Pelo papel, pela mesma razão do sorteio: o input do DS cobre o rótulo. */
+      const euSeparo = p.getByRole("radio", { name: "Eu separo", exact: true });
+      await euSeparo.click();
+      r.exigir(await euSeparo.isChecked(), 'a opção "Eu separo" ficou marcada');
       await p.getByRole("button", { name: "Continuar", exact: true }).click();
       await esperarOuFalharCedo(p.locator("[data-equipe]").nth(COMPUTADORES - 1), erroNaTela(p), {
         timeout: 30_000,
