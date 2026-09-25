@@ -21,8 +21,9 @@ com `escola_id` + RLS forçada:
 
 ## As regras
 
-- **Só três missões aceitam equipe**: `EXPERIENCIAS_COM_EQUIPE` em `regras.ts`
-  (exp08ef1b, exp02em1b, exp04ef1b). Lista no CÓDIGO, não coluna no catálogo:
+- **Só quatro missões aceitam equipe**: `EXPERIENCIAS_COM_EQUIPE` em `regras.ts`
+  (exp08ef1b, exp02em1b, exp04ef1b e exp05ef1b — Quem Mandou Isso? v2.2, que já
+  nasceu com equipe). Lista no CÓDIGO, não coluna no catálogo:
   "funciona com duas crianças numa tela" é propriedade do desenho da missão, e
   missão que entra sem conferência abre para equipe e continua contando por
   criança no painel.
@@ -73,13 +74,15 @@ transação, depois da escrita: eles veem as equipes novas, e um erro neles desf
 a montagem junto. A dependência vai num sentido só — evidencias importa
 equipes, nunca o contrário.
 
-**O UnooTube e o unooGPT já contam por COMPUTADOR.** O painel lê
+**O UnooTube, o unooGPT e Quem Mandou Isso? v2.2 contam por COMPUTADOR.** O painel lê
 `mapaDeEquipes` DENTRO do `comTenancy` e passa as linhas por
 `regras.ts#colapsarEmUnidades`: uma unidade por equipe, representada pela linha
 de quem INICIOU (com dois logins, o mais recente pelo `atualizado_em` da
 sessão), e quem não tem equipe fica sozinho. A linha leva `equipe`, os totais
 contam unidades e o resumo diz `porComputador`. Sem montagem, o painel sai
-exatamente como era. Missão que entra em `EXPERIENCIAS_COM_EQUIPE` faz o mesmo
+exatamente como era. Na exp05ef1b o Termômetro da revelação também conta
+unidades (`quem-mandou-isso/regras/termometro.ts`), e a evidência da EF05CO08
+vai para os colegas de computador pela cópia da E14. Missão que entra em `EXPERIENCIAS_COM_EQUIPE` faz o mesmo
 no painel dela, no mesmo trabalho — senão abre para equipe e segue contando por
 criança.
 

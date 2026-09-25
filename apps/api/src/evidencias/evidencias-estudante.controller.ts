@@ -42,7 +42,7 @@ export class EvidenciasEstudanteController {
   @Contrato({
     resumo: "Uma pergunta de múltipla escolha da ficha da missão — sem o gabarito.",
     descricao:
-      "O enunciado e as alternativas (`id` e `texto`). O nível que cada alternativa vale fica no servidor (regra 3): quem corrige é a api, na resposta.",
+      "O enunciado e as alternativas (`id` e `texto`). O nível que cada alternativa vale fica no servidor (regra 3): quem corrige é a api, na resposta.\n\nAs alternativas saem EMBARALHADAS, numa ordem nova a cada chamada: a ficha as guarda na ordem da régua, e servida assim \"a primeira é a certa\" vira a pista. A tela mostra na ordem que recebeu e responde pelo `id` — nunca pela posição.",
     params: ParamsDaPerguntaSchema,
     resposta: PerguntaSchema,
     notas: [
