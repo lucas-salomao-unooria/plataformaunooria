@@ -245,6 +245,11 @@ model Turma {
   evidenciasMarcas   EvidenciaMarca[]
   evidencias         Evidencia[]
   evidenciasEventos  EvidenciaEvento[]
+  /// Quem Mandou Isso? v2.2 (exp05ef1b): o pacote aprovado é POR TURMA (e é a
+  /// atividade da evidência), a fase é da turma, e a sessão carrega a turma.
+  quemMandouPacotes  Exp05ef1bPacote[]
+  quemMandouGates    Exp05ef1bGateTurma[]
+  quemMandouSessoes  Exp05ef1bSessao[]
 
   @@unique([escolaId, periodoLetivoId, nome])
   @@index([escolaId])
@@ -447,6 +452,8 @@ model User {
   evidenciasMarcas           EvidenciaMarca[]            @relation("EvidenciaMarcaEstudante")
   evidencias                 Evidencia[]                 @relation("EvidenciaEstudante")
   evidenciasEventos          EvidenciaEvento[]           @relation("EvidenciaEventoEstudante")
+  /// Lista: a sessão da exp05ef1b é por (pacote, rodada), não por estudante.
+  quemMandouSessoes          Exp05ef1bSessao[]           @relation("Exp05ef1bEstudante")
 
   @@unique([escolaId, username])
   @@index([escolaId, role])
@@ -2646,4 +2653,163 @@ model EvidenciaEvento {
   @@index([escolaId, turmaId, expId, atividadeId, rodada])
   @@index([escolaId, estudanteId])
   @@map("evidencias_eventos")
+}
+
+// ════════════════════════════════════════ exp05ef1b — quem mandou isso? (v2.2)
+//
+// "Quem Mandou Isso?" v2.2 — 5º ano EF, unidade 1 (a v1 saiu na ADR-114). O
+// estudante recebe 8 mensagens num grupo de WhatsApp simulado, na matriz 2x2
+// (verdadeira/falsa × emocional/neutra), encaminha EXATAMENTE 3 ao Mural da
+// Turma, vota no motivo, e só então o professor abre a revelação. Depois, a
+// regra Se/Então e as duas perguntas de evidência.
+//
+// QUATRO tabelas, e o que não é tabela é decisão:
+//   - o PASSO do estudante não é coluna: é derivado dos carimbos da sessão e
+//     da fase da turma (`regras/passos.ts#passoEfetivo`);
+//   - a SELEÇÃO é `text[]` na sessão (≤ 3), e não tabela 1:N: é lida e escrita
+//     inteira, e o latch fecha as três de uma vez;
+//   - o texto livre do `Então` mora numa tabela à parte (`exp05ef1b_reflexoes`),
+//     confinada — é o dado de menor desta missão.
+//
+// SEM COLUNA DE PONTUAÇÃO: o nível por habilidade é da evidência (E14), que o
+// módulo marca na transação do Mural.
+//
+// CHECKs e RLS vivem na migration `20260926120000_exp05ef1b_quem_mandou_isso_v2`.
+
+/// O PACOTE — as 8 mensagens COM o gabarito — e a ATIVIDADE da evidência (E14).
+///
+/// Uma turma tem no máximo UM pacote ativo e UM rascunho (índices únicos
+/// parciais na migration). Aprovar um pacote novo desativa o anterior, que FICA
+/// (com as sessões e a evidência dele): pacote novo = atividade nova. "Zerar a
+/// turma" é `rodada_atual + 1` no mesmo pacote — nada é apagado.
+model Exp05ef1bPacote {
+  id       String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  escolaId String @map("escola_id")
+  turmaId  String @map("turma_id") @db.Uuid
+
+  /// O componente curricular do recorte (CHECK na migration, `catalogo.ts#DISCIPLINAS`).
+  disciplina String
+  /// A frase que entra na fala da Nina ("Rolou uma confusão sobre {tema}."): ≤ 60 caracteres, ≤ 8 palavras.
+  tema       String
+  /// Os fatos balizadores da aula, 3 a 6.
+  assuntos   String[]
+  contexto   String?
+
+  /// As 8 mensagens COM `veracidade` e `tom`. `Json` e não tabela-filha: o
+  /// pacote é lido e aprovado SEMPRE inteiro. O schema real é o Zod de
+  /// `contrato-de-rotas.ts`; o CHECK cobra array com oito.
+  mensagensJson Json @map("mensagens_json")
+
+  /// ia | padrao (CHECK). `padrao` é o banco curado, não fallback de erro.
+  origem String
+
+  /// O pacote que a turma usa agora. Só com aprovação (CHECK).
+  ativo       Boolean   @default(false)
+  /// A reaplicação: "Zerar a turma" soma 1, e as rodadas anteriores ficam.
+  rodadaAtual Int       @default(1) @map("rodada_atual") @db.SmallInt
+  /// `null` = rascunho. Carimbo e autor andam juntos (CHECK).
+  aprovadoEm  DateTime? @map("aprovado_em") @db.Timestamptz(6)
+  /// Carimbo, sem FK: a saída de um professor da rede não pode travar o pacote da turma.
+  aprovadoPor String?   @map("aprovado_por") @db.Uuid
+
+  criadoEm     DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  turma   Turma             @relation(fields: [turmaId], references: [id], onDelete: Cascade)
+  sessoes Exp05ef1bSessao[]
+
+  /// O alvo da FK composta das sessões: a sessão de uma escola não aponta para o pacote de outra.
+  @@unique([escolaId, id])
+  @@index([escolaId, turmaId])
+  @@map("exp05ef1b_pacotes")
+}
+
+/// O RELÓGIO DA TURMA — os três botões do professor (ADR-93: tabela lida por
+/// polling, não WebSocket). Volta a `triagem` ao aprovar um pacote e ao zerar.
+model Exp05ef1bGateTurma {
+  escolaId String @map("escola_id")
+  turmaId  String @map("turma_id") @db.Uuid
+
+  /// triagem | revelacao | explicar | reflexao (CHECK). Só anda para a frente.
+  fase String @default("triagem")
+
+  atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  turma Turma @relation(fields: [turmaId], references: [id], onDelete: Cascade)
+
+  @@id([escolaId, turmaId])
+  @@map("exp05ef1b_gates_turma")
+}
+
+/// A sessão do estudante numa RODADA de um pacote. Nasce no "Entrar no grupo".
+///
+/// Cada carimbo é um LATCH (CHECKs de ordem na migration): confirmar o Mural
+/// exige 3 na seleção, votar exige ter confirmado, a regra exige o voto, e
+/// concluir exige a regra.
+model Exp05ef1bSessao {
+  escolaId    String @map("escola_id")
+  estudanteId String @map("estudante_id") @db.Uuid
+  pacoteId    String @map("pacote_id") @db.Uuid
+  rodada      Int    @db.SmallInt
+  /// Denormalizada do pacote: o painel lê por turma o tempo todo.
+  turmaId     String @map("turma_id") @db.Uuid
+
+  entrouEm          DateTime  @default(now()) @map("entrou_em") @db.Timestamptz(6)
+  /// 0 a 3 ids do pacote (CHECK). Antes do latch é rascunho; depois, o Mural.
+  selecao           String[]  @default([])
+  /// O LATCH 1 — e o gesto que a EF05CO08 mede.
+  confirmadoEm      DateTime? @map("confirmado_em") @db.Timestamptz(6)
+  /// Segundos entre entrar e confirmar (D0-3). Anda junto do latch 1 (CHECK).
+  tempoFeedSegundos Int?      @map("tempo_feed_segundos")
+  /// urgencia | confianca_remetente | medo_indignacao | imagem_link_real (CHECK).
+  motivo            String?
+  /// O LATCH 2.
+  votouEm           DateTime? @map("votou_em") @db.Timestamptz(6)
+  /// O LATCH 3: a regra Se/Então foi enviada (o texto está em `exp05ef1b_reflexoes`).
+  reflexaoEm        DateTime? @map("reflexao_em") @db.Timestamptz(6)
+  concluidoEm       DateTime? @map("concluido_em") @db.Timestamptz(6)
+  /// A versão do instrumento, na linha, para reprocessar o histórico se ele mudar.
+  versaoInstrumento String    @default("2.2.0") @map("versao_instrumento")
+
+  criadoEm     DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  estudante User               @relation("Exp05ef1bEstudante", fields: [estudanteId], references: [id], onDelete: Cascade)
+  turma     Turma              @relation(fields: [turmaId], references: [id], onDelete: Cascade)
+  pacote    Exp05ef1bPacote    @relation(fields: [escolaId, pacoteId], references: [escolaId, id], onDelete: Cascade)
+  reflexao  Exp05ef1bReflexao?
+
+  @@id([escolaId, estudanteId, pacoteId, rodada])
+  @@index([escolaId, turmaId, pacoteId, rodada])
+  @@map("exp05ef1b_sessoes")
+}
+
+/// A regra Se/Então — **TEXTO LIVRE DE MENOR**, e o dado mais sensível daqui.
+///
+/// Tabela à parte, confinada: não vai a log (`acaoEntao`/`acao_entao`/`entao`
+/// estão na redação), não vai à telemetria, e no painel o `Então` só é
+/// preenchido para o professor que leciona na turma (gestor recebe `null`).
+/// Não é corrigida: a EF05CO04 vem da pergunta P2.
+///
+/// RETENÇÃO: a da vigência contratual, sem rotina de expurgo (DAD-10) — como
+/// nas outras missões. Declarar um prazo aqui seria escrever o que nenhum
+/// scheduler cumpre.
+model Exp05ef1bReflexao {
+  escolaId    String @map("escola_id")
+  estudanteId String @map("estudante_id") @db.Uuid
+  pacoteId    String @map("pacote_id") @db.Uuid
+  rodada      Int    @db.SmallInt
+
+  /// urgente_alarmante | parente_proximo | link_nao_checado | promessa_incrivel (CHECK).
+  condicionalSe String @map("condicional_se")
+  /// 15 a 240 caracteres DEPOIS do `btrim` (CHECK).
+  acaoEntao     String @map("acao_entao") @db.VarChar(240)
+  charsCount    Int    @map("chars_count")
+
+  criadoEm DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
+
+  sessao Exp05ef1bSessao @relation(fields: [escolaId, estudanteId, pacoteId, rodada], references: [escolaId, estudanteId, pacoteId, rodada], onDelete: Cascade)
+
+  @@id([escolaId, estudanteId, pacoteId, rodada])
+  @@map("exp05ef1b_reflexoes")
 }
