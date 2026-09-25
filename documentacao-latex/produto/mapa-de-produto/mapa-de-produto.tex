@@ -1,0 +1,146 @@
+% ============================================================================
+%  Plataforma Unooria — PU-PRD-001
+%  Mapa de produto: épicos, features e histórias de usuário.
+%
+%  Documento de PRODUTO (do PO para o time), não de engenharia: fala de
+%  pessoas, telas e regras de negócio. O detalhe técnico mora na PU-DOC-001
+%  (../../main.tex); a ponte entre os dois é o Apêndice B deste documento.
+%
+%  Compilação (a partir desta pasta):
+%     tectonic -k mapa-de-produto.tex
+%  Reaproveita o preâmbulo da PU-DOC-001 (../../preambulo) para ter as mesmas
+%  cores, caixas e tabelas.
+% ============================================================================
+\documentclass[11pt, a4paper, oneside, openany]{report}
+
+\input{../../preambulo/estilo}
+\graphicspath{{../../}}
+\usetikzlibrary{positioning, arrows.meta}
+\usepackage{xurl}
+\raggedbottom
+
+% Só os capítulos (épicos) são numerados. Features e histórias levam o
+% próprio identificador (F01.1, H01.1.1): numeração do LaTeX ao lado dele
+% seria um segundo número para a mesma coisa.
+\setcounter{secnumdepth}{0}
+\setcounter{tocdepth}{1}
+
+\renewcommand{\docid}{PU-PRD-001}
+\renewcommand{\docversao}{0.1}
+
+\hypersetup{
+  pdftitle={Mapa de produto da Plataforma Unooria},
+  pdfauthor={Lucas Salomao},
+  pdfsubject={Epicos, features e historias de usuario do que a plataforma ja faz e do que falta},
+  pdfcreator={Tectonic / XeTeX}
+}
+
+% ------------------------------------------------------------ vocabulário
+% Selo de estado. \colorbox e não tcbox: o selo vai dentro do título de
+% outra caixa, e caixa dentro de caixa quebra a linha de base.
+\newcommand{\selo}[3]{{\setlength{\fboxsep}{1.6pt}\colorbox{#2}{\scriptsize\bfseries\textcolor{#3}{\,#1\,}}}}
+\newcommand{\pronto}{\selo{PRONTO}{unooGreenWash}{unooGreen}}
+\newcommand{\parcial}{\selo{PARCIAL}{unooOrangeWash}{unooOrange}}
+\newcommand{\afazer}{\selo{A FAZER}{unooLavenderWash}{unooLavenderSoft}}
+\newcommand{\id}[1]{\textbf{\textcolor{unooLavenderSoft}{#1}}}
+
+% Ficha do épico: uma caixa com os campos em lista de descrição.
+\newtcolorbox{fichaepico}{unoobase, colback=unooPaper, colframe=unooNavy,
+  colbacktitle=unooPaper, coltitle=unooNavy, titlerule=0pt,
+  title={FICHA DO ÉPICO}}
+\newlist{campos}{description}{1}
+\setlist[campos]{font=\bfseries\color{unooNavy}, leftmargin=30mm,
+  labelindent=0pt, labelwidth=28mm, labelsep=2mm, align=left, itemsep=3pt,
+  topsep=2pt}
+
+% Feature: seção com identificador e estado logo abaixo do título.
+\newcommand{\feature}[3]{%
+  \section[#1\quad #2]{\textcolor{unooLavenderSoft}{#1}\quad #2}%
+  \noindent{\small\color{unooMuted}Estado da feature:}\enspace #3\par\medskip}
+
+% História de usuário: cartão com identificador, título e estado.
+\newtcolorbox{historia}[3]{unoobase, colback=unooSurface, colframe=unooBlue,
+  colbacktitle=unooBlueWash, coltitle=unooNavy, titlerule=0pt,
+  fonttitle=\bfseries\small,
+  title={\textcolor{unooLavenderSoft}{#1}\enspace #2\hfill #3}}
+\newcommand{\hu}[3]{\textbf{Como} #1, \textbf{quero} #2, \textbf{para} #3.\par}
+\newcommand{\rotulo}[1]{\par\smallskip{\footnotesize\bfseries\color{unooLavenderSoft}#1}\par\nopagebreak}
+\newcommand{\aceite}{\rotulo{CRITÉRIOS DE ACEITE}}
+\newcommand{\aceiteproposta}{\rotulo{CRITÉRIOS DE ACEITE --- PROPOSTA A VALIDAR}}
+\newcommand{\pendencia}[1]{\par\smallskip{\small\textcolor{unooOrange}{\textbf{Pendência:}}\enspace #1}\par}
+\setlist[itemize]{nosep, leftmargin=*}
+
+\begin{document}
+
+% ------------------------------------------------------------------- capa
+\begin{titlepage}
+\thispagestyle{empty}
+\begin{tikzpicture}[remember picture, overlay]
+  \fill[unooNavy] (current page.north west) rectangle
+        ([yshift=-12mm]current page.north east);
+  \fill[unooLavender] ([yshift=-12mm]current page.north west) rectangle
+        ([yshift=-13.8mm]current page.north east);
+  \fill[unooBlue] ([yshift=-13.8mm]current page.north west) rectangle
+        ([yshift=-15.0mm]current page.north east);
+\end{tikzpicture}
+\vspace*{14mm}
+
+\noindent\includegraphics[width=50mm]{figuras/marca/logo_azul_profundo.png}\par
+\vspace{18mm}
+
+{\footnotesize\bfseries\color{unooLavenderSoft} DOCUMENTO DE PRODUTO \quad\textperiodcentered\quad PU-PRD-001\par}
+\vspace{4mm}
+{\fontsize{26}{31}\selectfont\bfseries\color{unooNavy}
+ Mapa de produto da\\Plataforma Unooria\par}
+\vspace{6mm}
+{\large\color{unooInkSoft}
+ O que a plataforma é, para quem existe e o que já faz --- organizado em
+ épicos, features e histórias de usuário, com o que está pronto, o que está
+ pela metade e o que falta\par}
+
+\vfill
+\begin{tabularx}{\linewidth}{@{}L{38mm}X@{}}
+\toprule
+Documento & PU-PRD-001, versão 0.1\\
+Data & 25 de setembro de 2026\\
+Autor & Lucas Salomão\\
+Para quem & Produto (PO) e time de desenvolvimento\\
+Natureza & Retrato do produto \emph{como ele está hoje}, levantado a partir
+  das telas, das regras e dos testes de ponta a ponta da plataforma. Não
+  substitui a documentação técnica (PU-DOC-001); fala a língua de produto.\\
+\bottomrule
+\end{tabularx}
+\end{titlepage}
+
+\pagenumbering{roman}
+\tableofcontents
+\cleardoublepage
+\pagenumbering{arabic}
+\setcounter{page}{1}
+\pagestyle{unoomain}
+
+\input{capitulos/01-como-ler}
+\input{capitulos/02-o-produto}
+\input{capitulos/03-mapa-dos-epicos}
+\input{capitulos/e01-entrar}
+\input{capitulos/e02-rede}
+\input{capitulos/e03-pessoas-e-turmas}
+\input{capitulos/e04-sala-de-aula}
+\input{capitulos/e05-estudante}
+\input{capitulos/e06-missoes}
+\input{capitulos/e07-acompanhamento}
+\input{capitulos/e08-ferramentas-professor}
+\input{capitulos/e09-ia}
+\input{capitulos/e10-painel-unooria}
+\input{capitulos/e11-site}
+\input{capitulos/e12-confianca}
+\input{capitulos/e13-equipes}
+\input{capitulos/90-backlog}
+\input{capitulos/91-decisoes}
+
+\appendix
+\input{capitulos/a-missoes}
+\input{capitulos/b-rastreabilidade}
+\input{capitulos/c-mermaid}
+
+\end{document}

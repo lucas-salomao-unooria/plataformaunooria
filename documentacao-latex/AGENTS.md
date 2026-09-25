@@ -8,6 +8,14 @@ lá, e a Definition of Done exige esta pasta atualizada e o `main.pdf` regerado
 entra sozinho no seu contexto: abra-o antes de escrever `.tex`.** Aqui ficam as
 armadilhas que já custaram tempo e não avisam quando você cai nelas:
 
+- **`produto/` é OUTRA documentação, não um capítulo desta.** O mapa de produto
+  (PU-PRD-001, `produto/mapa-de-produto/`) é premissa do trabalho, tanto quanto
+  a PU-DOC-001, e é escrito em linguagem de produto: pessoas, telas e regras,
+  sem rota, tabela nem módulo. O rastreio técnico fica no Apêndice B dele.
+  Frente que muda tela ou regra troca o selo da história no mesmo PR
+  (`docs/regras/definition-of-done.md`). Ele compila sozinho, na própria pasta,
+  com `tectonic -k mapa-de-produto.tex`, e não pelo `compilar.sh` daqui.
+
 - **A PRÓXIMA ADR é a 112.** A numeração vai até ADR-111 (a equipe que
   divide um computador na missão), sem lacuna — e este número envelhece a cada frente, então ele é
   ponto de partida, nunca a resposta. Das mais citadas: a 86 é o

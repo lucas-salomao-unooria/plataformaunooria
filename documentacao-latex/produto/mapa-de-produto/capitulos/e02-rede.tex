@@ -1,0 +1,152 @@
+% ===========================================================================
+%  E02 — Organizar a rede
+% ===========================================================================
+\chapter{E02 \textperiodcentered{} Organizar a rede}
+\label{ep:e02}
+
+\begin{fichaepico}
+\begin{campos}
+  \item[Objetivo] A rede se organiza na plataforma do mesmo jeito que se
+    organiza na vida real: regionais, escolas, profissionais em várias escolas
+    e o calendário do ano letivo.
+  \item[Para quem] Administrador do contrato; Coordenação regional; quem tem
+    vínculo em várias escolas.
+  \item[Valor] Sem a estrutura da rede não há onde pôr pessoas nem turmas, e a
+    diretoria não consegue acompanhar as escolas dela.
+  \item[Estado] \parcial{} --- regionais, escolas, vínculos e panorama
+    prontos; a virada do ano ainda é manual.
+\end{campos}
+\end{fichaepico}
+
+\begin{tabularx}{\linewidth}{@{}L{16mm}X L{20mm}@{}}
+\toprule
+\headrow \thd{ID} & \thd{Feature} & \thd{Estado}\\
+\midrule
+\id{F02.1} & Regionais & \pronto\\
+\zebra \id{F02.2} & Escolas e vínculos de profissionais & \pronto\\
+\id{F02.3} & Panorama das minhas escolas & \pronto\\
+\zebra \id{F02.4} & Ano letivo e virada do ano & \parcial\\
+\bottomrule
+\end{tabularx}
+
+% ---------------------------------------------------------------------------
+\feature{F02.1}{Regionais}{\pronto}
+
+\begin{historia}{H02.1.1}{Cadastrar e editar as regionais}{\pronto}
+\hu{Administrador do contrato}{cadastrar as regionais da rede (diretoria de
+ensino, polo, secretaria)}{organizar as escolas como a rede já se organiza}
+\aceite
+\begin{itemize}
+  \item A tela \enquote{Regionais} tem busca por \enquote{Nome ou id} e, em cada
+    regional, \enquote{Ver escolas}, \enquote{Editar} e \enquote{Excluir}.
+  \item \enquote{Cadastrar regional} pede Código interno e Nome.
+  \item Uma rede sem divisão ganha automaticamente a \enquote{Regional padrão},
+    com nome editável.
+  \item Toda escola pertence a uma regional, e a rede sempre tem pelo menos
+    uma.
+\end{itemize}
+\end{historia}
+
+\begin{historia}{H02.1.2}{Excluir uma regional sem perder escolas}{\pronto}
+\hu{Administrador do contrato}{excluir uma regional que deixou de
+existir}{que a estrutura na plataforma continue igual à da rede}
+\aceite
+\begin{itemize}
+  \item \enquote{Excluir} sempre abre um diálogo de confirmação.
+  \item Se a regional tem escolas, o diálogo exige dizer para onde elas vão
+    (\enquote{Transferir e excluir}), numa operação só.
+  \item Escola nunca é excluída: ela guarda a história de crianças.
+\end{itemize}
+\end{historia}
+
+% ---------------------------------------------------------------------------
+\feature{F02.2}{Escolas e vínculos de profissionais}{\pronto}
+
+\begin{historia}{H02.2.1}{Cadastrar e editar as escolas}{\pronto}
+\hu{Administrador do contrato}{cadastrar as escolas da rede com os dados
+oficiais}{encontrar cada uma pelo código que a rede já usa}
+\aceite
+\begin{itemize}
+  \item \enquote{Cadastrar escola} pede Código interno, Nome, Regional, Código
+    INEP, Município e UF.
+  \item A lista tem busca por \enquote{Nome, id, INEP ou município}, filtro por
+    regional e as colunas Turmas, Estudantes e Professores.
+  \item Em cada escola: \enquote{Ver turmas}, \enquote{Ver pessoas} e
+    \enquote{Editar}.
+\end{itemize}
+\end{historia}
+
+\begin{historia}{H02.2.2}{Vincular um profissional a várias escolas de uma vez}{\pronto}
+\hu{Administrador do contrato}{procurar um professor ou coordenador na rede
+inteira e vinculá-lo a várias escolas de uma vez}{não repetir o cadastro
+escola por escola}
+\aceite
+\begin{itemize}
+  \item Seleciono as escolas na lista e uso \enquote{Vincular professor ou
+    gestor}.
+  \item A busca procura na rede inteira por nome, usuário, matrícula ou CPF ---
+    e o resultado não mostra o CPF.
+  \item O relatório final diz o que foi criado, reaberto ou ignorado; quem já
+    estava vinculado aparece marcado e não é vinculado de novo (\enquote{Nada
+    a criar}).
+  \item Professor e coordenação podem ter vários vínculos; o estudante tem uma
+    escola ativa por vez.
+\end{itemize}
+\end{historia}
+
+% ---------------------------------------------------------------------------
+\feature{F02.3}{Panorama das minhas escolas}{\pronto}
+
+\begin{historia}{H02.3.1}{Ver a minha regional de uma vez}{\pronto}
+\hu{Coordenação regional}{ver as escolas da minha regional numa tela só, com
+os números somados}{saber onde a implantação está atrasada}
+\aceite
+\begin{itemize}
+  \item \enquote{Minhas escolas} mostra uma linha por escola (Turmas,
+    Estudantes, Professores, \enquote{Sem 1º acesso}) e a soma da regional.
+  \item \enquote{Trocar e abrir} leva para dentro de uma escola.
+  \item Aparecem só as escolas da própria regional, e trabalha-se numa escola
+    por vez.
+\end{itemize}
+\end{historia}
+
+\begin{historia}{H02.3.2}{Ver as escolas em que trabalho}{\pronto}
+\hu{Coordenação com vínculo em várias escolas}{ver uma linha por escola em que
+trabalho}{escolher em qual entrar}
+\aceite
+\begin{itemize}
+  \item Uma linha por escola, com \enquote{Abrir} ou \enquote{Trocar e abrir}.
+  \item Aqui os números \emph{não} são somados: são escolas independentes.
+\end{itemize}
+\end{historia}
+
+% ---------------------------------------------------------------------------
+\feature{F02.4}{Ano letivo e virada do ano}{\parcial}
+
+\begin{historia}{H02.4.1}{Manter o calendário do ano letivo}{\pronto}
+\hu{Coordenação}{registrar os períodos do ano letivo}{que as turmas de um ano
+não se misturem com as do ano seguinte}
+\aceite
+\begin{itemize}
+  \item \enquote{Ano letivo} lista Período, Tipo (ano, semestre, bimestre,
+    trimestre), Turmas e Situação.
+  \item \enquote{Novo período letivo} pede Tipo, Título, Ano, Início e Fim.
+  \item O \enquote{8A de 2026} e o \enquote{8A de 2027} são turmas diferentes:
+    a história do ano anterior não é reescrita.
+\end{itemize}
+\pendencia{a tela diz \enquote{O calendário é do contrato, não da escola}, mas
+a Coordenação da escola consegue criar período. Ver a decisão \id{D01}.}
+\end{historia}
+
+\begin{historia}{H02.4.2}{Virar o ano com ajuda}{\afazer}
+\hu{Coordenação da escola}{um passo a passo para a virada do ano}{não
+refazer tudo à mão em fevereiro}
+\aceiteproposta
+\begin{itemize}
+  \item Um assistente guia: criar o novo período, encerrar as turmas do ano
+    anterior e reenturmar a partir da planilha nova.
+  \item Nada do ano anterior é apagado.
+\end{itemize}
+\pendencia{hoje a virada é manual (criar o período e reimportar). A primeira
+virada real acontece em fevereiro de 2027.}
+\end{historia}

@@ -1,0 +1,200 @@
+% ===========================================================================
+%  E01 — Entrar e circular na plataforma
+% ===========================================================================
+\chapter{E01 \textperiodcentered{} Entrar e circular na plataforma}
+\label{ep:e01}
+
+\begin{fichaepico}
+\begin{campos}
+  \item[Objetivo] Cada pessoa entra com uma conta só, cai direto na área do
+    próprio papel e circula sem se perder --- inclusive quem trabalha em mais
+    de uma escola.
+  \item[Para quem] Todos os seis papéis com conta.
+  \item[Valor] Às 8h da manhã, milhares de crianças entram ao mesmo tempo. Cada
+    segundo de atrito na entrada é tempo de aula perdido.
+  \item[Estado] \parcial{} --- entrar, primeiro acesso e navegação estão
+    prontos; faltam a recuperação de senha e o login único da rede.
+\end{campos}
+\end{fichaepico}
+
+\begin{tabularx}{\linewidth}{@{}L{16mm}X L{20mm}@{}}
+\toprule
+\headrow \thd{ID} & \thd{Feature} & \thd{Estado}\\
+\midrule
+\id{F01.1} & Entrar com usuário e senha & \pronto\\
+\zebra \id{F01.2} & Cada pessoa na sua área & \pronto\\
+\id{F01.3} & Trabalhar em mais de uma escola & \parcial\\
+\zebra \id{F01.4} & Cuidar da própria senha & \afazer\\
+\id{F01.5} & Entrar pelo login único da rede & \afazer\\
+\bottomrule
+\end{tabularx}
+
+% ---------------------------------------------------------------------------
+\feature{F01.1}{Entrar com usuário e senha}{\pronto}
+
+Uma única tela de entrada serve a todos os papéis. É o papel da pessoa que
+decide para onde ela vai depois.
+
+\begin{historia}{H01.1.1}{Entrar e cair na minha área}{\pronto}
+\hu{qualquer pessoa com conta na rede}{entrar com usuário e senha e cair
+direto na minha área}{não ter de procurar por onde começar}
+\aceite
+\begin{itemize}
+  \item A tela se chama \enquote{Entrar na plataforma}, com os campos Usuário
+    e Senha e o botão \enquote{Entrar}.
+  \item Depois de entrar: o Estudante vai para \enquote{Minhas missões}; o
+    Professor para o Início dele; as três coordenações e o Administrador do
+    contrato para \enquote{Usuários}; o Administrador Unooria para
+    \enquote{Recursos}.
+  \item Senha errada, usuário inexistente e conta desativada recebem
+    \emph{a mesma} mensagem: \enquote{Usuário ou senha incorretos.} --- a tela
+    nunca diz qual das duas metades errou, para não confirmar que um usuário
+    existe.
+  \item Depois de muitas tentativas seguidas, aparece \enquote{Muitas
+    tentativas. Aguarde um momento e tente de novo.}
+  \item Se a plataforma estiver com problema, aparece \enquote{Não foi possível
+    entrar agora. Tente de novo em alguns instantes.}
+\end{itemize}
+\end{historia}
+
+\begin{historia}{H01.1.2}{Criar minha senha no primeiro acesso}{\pronto}
+\hu{pessoa que recebeu uma senha provisória (da importação ou de um
+reajuste)}{ser levada a criar a minha própria senha antes de qualquer
+coisa}{que só eu conheça a minha senha}
+\aceite
+\begin{itemize}
+  \item A tela \enquote{Crie sua senha} aparece logo depois de entrar, sem menu
+    e sem saída.
+  \item Campos: \enquote{Senha atual}, \enquote{Nova senha} (pelo menos 8
+    caracteres, diferente da atual) e \enquote{Repita a nova senha}.
+  \item Enquanto a senha não for trocada, nada funciona: nem as telas nem as
+    missões. Digitar o endereço de uma missão não pula esta etapa.
+  \item Vale para todos os papéis, inclusive o Administrador Unooria.
+  \item Trocada a senha, a pessoa segue para a área dela normalmente.
+\end{itemize}
+\end{historia}
+
+\begin{historia}{H01.1.3}{Não cair no meio da aula}{\pronto}
+\hu{Estudante}{que a minha sessão não expire enquanto estou numa
+missão}{não perder a aula tendo de entrar de novo}
+\aceite
+\begin{itemize}
+  \item A sessão expira depois de 2 horas \textbf{sem uso}, igual para todos os
+    papéis.
+  \item Ficar dentro de uma missão conta como uso.
+\end{itemize}
+\end{historia}
+
+\begin{historia}{H01.1.4}{Sair}{\pronto}
+\hu{qualquer pessoa}{sair da plataforma}{que ninguém use a minha conta num
+computador compartilhado da escola}
+\aceite
+\begin{itemize}
+  \item O menu do avatar, no cabeçalho, tem o item \enquote{Sair}.
+  \item Depois de sair, voltar a qualquer tela interna leva ao login.
+\end{itemize}
+\end{historia}
+
+% ---------------------------------------------------------------------------
+\feature{F01.2}{Cada pessoa na sua área}{\pronto}
+
+\begin{historia}{H01.2.1}{Voltar para a minha área sem ver erro}{\pronto}
+\hu{Estudante que digitou o endereço da área do professor}{ser levado de
+volta à minha área, sem mensagem de erro}{não ficar perdido nem assustado}
+\aceite
+\begin{itemize}
+  \item Quem entra no endereço de outra área volta para a própria, sem aviso de
+    \enquote{sem permissão}.
+  \item A proteção não depende disso: os dados de outra área também são
+    recusados, mesmo que alguém tente por outro caminho.
+\end{itemize}
+\end{historia}
+
+\begin{historia}{H01.2.2}{Saber onde estou}{\pronto}
+\hu{qualquer pessoa}{ver onde estou e voltar um nível com um clique}{não me
+perder numa plataforma com muitas telas}
+\aceite
+\begin{itemize}
+  \item O cabeçalho é o mesmo em todas as áreas; a marca leva ao início do
+    papel.
+  \item Toda tela interna tem a trilha de navegação (\enquote{Início \seta{}
+    Entre Redes \seta{} Missão\ldots}), exceto o início de cada papel.
+  \item Dentro de uma missão, o cabeçalho mostra \enquote{\ensuremath{\leftarrow}
+    Missões}.
+  \item O cabeçalho mostra nome, uma linha de apoio (a série do estudante ou o
+    papel) e um avatar com as iniciais.
+  \item As telas de gestão têm menu lateral filtrado pelo papel.
+\end{itemize}
+\pendencia{os menus laterais de gestão e da Unooria mostram um item
+\enquote{Iniciativas} que não faz nada (vem pronto do componente visual e
+precisa ser removido lá).}
+\end{historia}
+
+% ---------------------------------------------------------------------------
+\feature{F01.3}{Trabalhar em mais de uma escola}{\parcial}
+
+\begin{historia}{H01.3.1}{Trocar a escola ativa}{\parcial}
+\hu{Professor ou Coordenação com vínculo em mais de uma escola}{trocar a
+escola em que estou trabalhando pelo cabeçalho}{ver e registrar só o que é
+daquela escola}
+\aceite
+\begin{itemize}
+  \item Com vínculo em 2 ou mais escolas aparece o seletor \enquote{Escola
+    ativa}; com uma escola só, ele não aparece.
+  \item Trocar de escola muda tudo o que a pessoa vê, sem recarregar a página.
+  \item As ferramentas abertas (plano de aula, planejamento) recomeçam na
+    escola nova, para nada ser gravado na escola errada.
+\end{itemize}
+\pendencia{em telas estreitas (celular) o seletor fica escondido, e não há
+como trocar de escola.}
+\end{historia}
+
+% ---------------------------------------------------------------------------
+\feature{F01.4}{Cuidar da própria senha}{\afazer}
+
+Hoje a senha só muda quando uma coordenação usa \enquote{Resetar senha}
+(\id{H03.3.4}). O item \enquote{Trocar senha} ficou fora do menu de propósito,
+para não ser um link que não leva a nada.
+
+\begin{historia}{H01.4.1}{Trocar minha senha quando eu quiser}{\afazer}
+\hu{qualquer pessoa}{trocar a minha senha a qualquer momento}{me proteger se
+alguém descobriu a senha}
+\aceiteproposta
+\begin{itemize}
+  \item O menu do avatar ganha \enquote{Trocar senha}, com as mesmas regras do
+    primeiro acesso (mínimo de 8 caracteres, diferente da atual).
+\end{itemize}
+\end{historia}
+
+\begin{historia}{H01.4.2}{Recuperar a senha esquecida}{\afazer}
+\hu{Professor ou Coordenação}{recuperar a minha senha sem depender de
+alguém}{não ficar sem acesso no dia da aula}
+\aceiteproposta
+\begin{itemize}
+  \item Na tela de entrada, \enquote{Esqueci minha senha} envia um link de uso
+    único para o e-mail cadastrado.
+  \item Para o estudante (que muitas vezes não tem e-mail), o caminho continua
+    sendo a coordenação --- ver a decisão \id{D05} no
+    Capítulo~\ref{cap:decisoes}.
+\end{itemize}
+\end{historia}
+
+% ---------------------------------------------------------------------------
+\feature{F01.5}{Entrar pelo login único da rede}{\afazer}
+
+A rede usa um provedor de identidade central (WSO2), o mesmo dos outros
+sistemas da secretaria. A plataforma já está preparada para ele: a troca é de
+configuração. Falta validar num ambiente de homologação com a rede.
+
+\begin{historia}{H01.5.1}{Usar a conta que eu já tenho na rede}{\afazer}
+\hu{qualquer pessoa da rede}{entrar com a mesma conta que uso nos outros
+sistemas da secretaria}{não ter mais uma senha para decorar}
+\aceiteproposta
+\begin{itemize}
+  \item A tela de entrada leva ao login da rede; ao voltar, a pessoa cai na
+    mesma área de hoje.
+  \item Nada muda dentro das missões nem nas telas.
+  \item O primeiro acesso com senha provisória deixa de existir para quem
+    entra pelo login da rede.
+\end{itemize}
+\end{historia}

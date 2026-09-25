@@ -1,0 +1,103 @@
+% ===========================================================================
+%  1 — Como ler este documento
+% ===========================================================================
+\chapter{Como ler este documento}
+\label{cap:como-ler}
+
+A Plataforma Unooria cresceu depressa: hoje ela tem nove missões para
+estudantes, três ferramentas para professores, uma área inteira de gestão da
+rede e um painel para a equipe da Unooria. Tudo isso foi construído, testado e
+documentado do ponto de vista técnico --- mas nunca tinha sido descrito do
+ponto de vista de \emph{produto}: quem usa, para quê, e o que conta como
+\enquote{pronto}.
+
+Este documento preenche essa lacuna. Ele é o \textbf{retrato do produto em
+25 de setembro de 2026}, levantado a partir das telas, das regras de negócio e
+dos testes de ponta a ponta que a plataforma já passa. Serve para três coisas:
+
+\begin{enumerate}
+  \item \textbf{Dar a todos a mesma visão do produto} --- o que ele é, para
+    quem existe e quais promessas ele faz (Capítulo~\ref{cap:produto}).
+  \item \textbf{Ser o backlog de partida} --- cada história tem estado, e o que
+    está pela metade ou por fazer está consolidado no
+    Capítulo~\ref{cap:backlog}.
+  \item \textbf{Registrar as perguntas que só o produto pode responder} ---
+    o Capítulo~\ref{cap:decisoes} lista as decisões em aberto encontradas no
+    levantamento.
+\end{enumerate}
+
+\section{A hierarquia: épico, feature, história}
+
+\begin{tabularx}{\linewidth}{@{}L{24mm}X L{30mm}@{}}
+\toprule
+\headrow \thd{Nível} & \thd{O que é} & \thd{Identificador}\\
+\midrule
+\textbf{Épico} & Um grande objetivo do produto, que atravessa várias telas e
+  papéis. Ex.: \enquote{Cadastrar pessoas e turmas}. & \id{E01} a \id{E13}\\
+\zebra \textbf{Feature} & Uma capacidade concreta dentro do épico, que alguém
+  consegue usar e reconhecer. Ex.: \enquote{Importar pessoas por planilha}. &
+  \id{F03.1} (épico 03, feature 1)\\
+\textbf{História} & Uma necessidade de uma pessoa, contada do ponto de vista
+  dela, com critérios que dizem quando está atendida. & \id{H03.1.2} (feature
+  F03.1, história 2)\\
+\bottomrule
+\end{tabularx}
+
+\section{O formato de cada história}
+
+Toda história segue o mesmo molde, e o molde é o mesmo para o que já existe e
+para o que falta:
+
+\begin{historia}{H00.0.0}{Título curto da necessidade}{\pronto}
+\hu{\emph{quem} (o papel, com o nome que a tela usa)}{\emph{o quê} (a ação, em
+palavras de quem usa)}{\emph{por quê} (o valor para essa pessoa ou para a rede)}
+\aceite
+\begin{itemize}
+  \item Cada critério é algo que dá para \textbf{verificar olhando a tela}.
+  \item Os textos entre aspas são os que a interface mostra hoje, palavra por
+    palavra.
+\end{itemize}
+\pendencia{quando algo da história ainda falta, aparece aqui.}
+\end{historia}
+
+Nas histórias marcadas \afazer, os critérios de aceite são uma
+\textbf{proposta} para o PO validar, não uma decisão tomada --- o rótulo deixa
+isso explícito.
+
+\section{Os três estados}
+
+\begin{tabularx}{\linewidth}{@{}L{24mm}X@{}}
+\toprule
+\headrow \thd{Estado} & \thd{Significado}\\
+\midrule
+\pronto & Funciona de ponta a ponta hoje, e há um teste automatizado que
+  percorre a tela como uma pessoa faria.\\
+\zebra \parcial & Funciona, mas falta uma parte declarada: um material
+  (áudio, foto), um ajuste de tela, ou uma regra ainda divergente. A
+  pendência está escrita na própria história.\\
+\afazer & Ainda não existe. Está no documento porque apareceu como lacuna,
+  risco ou evolução planejada.\\
+\bottomrule
+\end{tabularx}
+
+\section{O que este documento \emph{não} é}
+
+\begin{itemize}
+  \item \textbf{Não é especificação técnica.} Não há aqui nomes de tabela,
+    endereços internos nem desenho de sistema. Quem precisar desse nível
+    encontra tudo na documentação técnica (PU-DOC-001); o
+    Apêndice~\ref{ap:rastreio} diz em que capítulo dela cada épico mora.
+  \item \textbf{Não é plano de lançamento.} A ordem dos épicos segue o caminho
+    de uso da plataforma, não prioridade. A prioridade está no
+    Capítulo~\ref{cap:backlog}.
+  \item \textbf{Não é definitivo.} É a versão 0.1: o retrato do que existe,
+    feito para ser corrigido pelo PO e mantido junto com o produto.
+\end{itemize}
+
+\begin{nota}
+\textbf{Como manter vivo.} Uma história nova entra com o próximo número da
+feature; uma história que muda de estado troca o selo. Nenhum identificador é
+reaproveitado: se uma história for descartada, ela sai do documento e o número
+fica vago. Assim, um \id{H04.2.3} citado num card ou numa conversa sempre aponta
+para a mesma coisa.
+\end{nota}

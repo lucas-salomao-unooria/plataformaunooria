@@ -1,0 +1,21 @@
+% ===========================================================================
+%  Apêndice C — Fonte Mermaid dos diagramas
+% ===========================================================================
+\chapter{Fonte Mermaid dos diagramas}
+\label{ap:mermaid}
+
+Todo diagrama deste documento tem uma versão em Mermaid, para que qualquer
+pessoa consiga alterá-lo sem saber TikZ.
+
+\textbf{Figura~\ref{fig:caminho} --- O caminho de uma aula}
+
+\begin{lstlisting}[language=mermaid]
+flowchart LR
+  p1["1. Disponibilizar<br/>o produto e as missões existem nesta rede<br/><i>Administrador Unooria</i>"]
+  p2["2. Cadastrar<br/>escolas, pessoas e turmas<br/><i>Coordenação / Adm. do contrato</i>"]
+  p3["3. Preparar e liberar<br/>a missão para a turma<br/><i>Professor</i>"]
+  p4["4. Jogar<br/>a missão, no ritmo da aula<br/><i>Estudante</i>"]
+  p5["5. Conduzir e ler<br/>a turma: debate, revelação, resultados<br/><i>Professor</i>"]
+  p6["6. Acompanhar<br/>a adoção, sem identificar criança<br/><i>Coordenação regional / Adm. do contrato</i>"]
+  p1 --> p2 --> p3 --> p4 --> p5 --> p6
+\end{lstlisting}

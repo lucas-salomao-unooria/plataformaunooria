@@ -1,0 +1,192 @@
+% ===========================================================================
+%  E10 — Painel da Unooria
+% ===========================================================================
+\chapter{E10 \textperiodcentered{} Painel da Unooria}
+\label{ep:e10}
+
+\begin{fichaepico}
+\begin{campos}
+  \item[Objetivo] A equipe da Unooria decide o que existe em cada rede, qual
+    versão de cada missão está no ar e quanto de IA cada perfil pode usar ---
+    e recebe os interessados do site.
+  \item[Para quem] Administrador Unooria. O Administrador do contrato só lê o
+    histórico.
+  \item[Valor] É o que permite vender produtos separadamente, desligar uma
+    missão com problema em minutos e voltar uma versão sem esperar o time.
+  \item[Estado] \pronto{} --- faltam desligar por turma ou por prazo e alguns
+    avisos.
+\end{campos}
+\end{fichaepico}
+
+\begin{tabularx}{\linewidth}{@{}L{16mm}X L{20mm}@{}}
+\toprule
+\headrow \thd{ID} & \thd{Feature} & \thd{Estado}\\
+\midrule
+\id{F10.1} & Ligar e desligar produtos e missões & \pronto\\
+\zebra \id{F10.2} & Histórico que a rede também lê & \pronto\\
+\id{F10.3} & Versões das missões & \pronto\\
+\zebra \id{F10.4} & Uso de IA & \pronto\\
+\id{F10.5} & Prospecção & \pronto\\
+\bottomrule
+\end{tabularx}
+
+\begin{nota}
+\textbf{Por que só a Unooria opera.} O Administrador do contrato pode quase
+tudo na rede dele --- mas não pode ligar o que a rede não contratou. É a única
+capacidade que a Unooria tem e a rede não.
+\end{nota}
+
+% ---------------------------------------------------------------------------
+\feature{F10.1}{Ligar e desligar produtos e missões}{\pronto}
+
+\begin{historia}{H10.1.1}{Desligar um produto ou uma missão}{\pronto}
+\hu{Administrador Unooria}{desligar um produto ou uma missão numa rede, numa
+regional ou numa escola}{respeitar o que foi contratado ou tirar do ar uma
+missão com problema}
+\aceite
+\begin{itemize}
+  \item Em \enquote{Recursos}, escolho o Escopo: \enquote{Rede (contrato
+    inteiro)}, uma regional ou uma escola.
+  \item Vejo os quatro produtos e, dentro de cada um, as missões. Cada
+    interruptor tem três estados: \enquote{Ligado}, \enquote{Desligado} e
+    \enquote{Herda de cima} (na rede, \enquote{Padrão (ligado)}).
+  \item Por padrão tudo está ligado; o escopo mais específico vence (escola,
+    depois regional, depois rede).
+  \item O produto é um teto: desligado, as missões dentro dele ficam
+    desligadas, com o motivo ao lado.
+  \item Desligar exige motivo; na rede, o aviso diz \enquote{Isto vale para a
+    REDE INTEIRA}.
+  \item A missão desligada sai da grade da turma (não fica com cadeado), e
+    para a criança a mensagem é a mesma de missão ainda não aberta.
+  \item Religar devolve a sala como estava: as liberações do professor nunca
+    são apagadas.
+  \item Com o produto desligado, cada pessoa continua podendo apagar os
+    próprios dados.
+\end{itemize}
+\end{historia}
+
+\begin{historia}{H10.1.2}{Missão nova já nasce com interruptor}{\pronto}
+\hu{Administrador Unooria}{que toda missão ou ferramenta nova apareça sozinha
+no painel}{nunca ter uma missão no ar que eu não consiga desligar}
+\aceite
+\begin{itemize}
+  \item A missão nova aparece dentro do produto a que pertence, sem ninguém
+    precisar cadastrá-la à mão.
+  \item O teste de aceite é desligá-la e ver que ela some da sala e do
+    estudante.
+\end{itemize}
+\end{historia}
+
+\begin{historia}{H10.1.3}{Desligar por turma ou por prazo}{\afazer}
+\hu{Administrador Unooria}{desligar um recurso só para uma turma, ou até uma
+data}{atender pilotos e contratos temporários sem mexer na escola inteira}
+\aceiteproposta
+\begin{itemize}
+  \item O Escopo passa a incluir turma.
+  \item Ao desligar, posso informar até quando; na data, o interruptor volta a
+    herdar de cima e isso fica no histórico.
+\end{itemize}
+\end{historia}
+
+% ---------------------------------------------------------------------------
+\feature{F10.2}{Histórico que a rede também lê}{\pronto}
+
+\begin{historia}{H10.2.1}{Saber quem mudou o quê, e por quê}{\pronto}
+\hu{Administrador do contrato}{ver tudo o que a Unooria ligou, desligou ou
+mudou na minha rede}{explicar à secretaria por que algo sumiu}
+\aceite
+\begin{itemize}
+  \item O histórico registra quem, o quê, quando e o motivo; o nome de quem
+    mudou fica como era no dia.
+  \item Ninguém altera o histórico.
+  \item O Administrador do contrato lê em \enquote{Recursos da rede}, só
+    leitura: \enquote{Quem opera estes interruptores é a Unooria; esta tela é
+    o registro.}
+  \item As coordenações não veem esta tela.
+\end{itemize}
+\end{historia}
+
+% ---------------------------------------------------------------------------
+\feature{F10.3}{Versões das missões}{\pronto}
+
+\begin{historia}{H10.3.1}{Voltar para a versão anterior}{\pronto}
+\hu{Administrador Unooria}{voltar uma missão para a versão anterior}{resolver
+em minutos um problema que apareceu numa versão nova}
+\aceite
+\begin{itemize}
+  \item A janela Versão mostra as versões publicadas, com a atual marcada
+    \enquote{(no ar)}, e \enquote{Ativar para a rede}.
+  \item Só se volta para versões que já existiram; a volta restaura também as
+    configurações daquela versão.
+  \item A tela diz se conferiu que a versão está de fato publicada.
+  \item Enquanto isso, a missão aparece com o aviso \enquote{Esta experiência
+    está em rollback}.
+\end{itemize}
+\end{historia}
+
+\begin{historia}{H10.3.2}{Testar uma versão nova numa escola antes}{\pronto}
+\hu{Administrador Unooria}{fixar uma versão numa escola ou regional}{testar
+uma novidade num piloto antes de levar para a rede}
+\aceite
+\begin{itemize}
+  \item Fora do escopo da rede: \enquote{Fixar neste escopo} e \enquote{Soltar
+    a fixação}.
+\end{itemize}
+\end{historia}
+
+\begin{historia}{H10.3.3}{Ser lembrado de uma versão fixada há muito tempo}{\afazer}
+\hu{Administrador Unooria}{ser avisado quando uma versão fixada ficar muito
+tempo sem ser solta}{não deixar uma escola esquecida numa versão antiga}
+\aceiteproposta
+\begin{itemize}
+  \item O painel destaca fixações com mais de 30 dias.
+\end{itemize}
+\end{historia}
+
+% ---------------------------------------------------------------------------
+\feature{F10.4}{Uso de IA}{\pronto}
+
+\begin{historia}{H10.4.1}{Definir quanto de IA cada perfil pode usar}{\pronto}
+\hu{Administrador Unooria}{definir o limite diário de IA dos estudantes e dos
+professores}{manter o custo previsível sem travar a aula}
+\aceite
+\begin{itemize}
+  \item Dois cartões, \enquote{Estudantes} e \enquote{Professores}, com o
+    limite em \enquote{Tokens por dia} traduzido em uso real (partidas da
+    Missão Tempestade, planos anuais).
+  \item Valores iniciais: cerca de 3 partidas por dia para o estudante e 6 a 9
+    planos anuais para o professor.
+  \item Mudar exige motivo e avisa \enquote{Vale para a rede inteira}; vale na
+    próxima chamada, sem esperar o time.
+  \item Zero é recusado: \enquote{para fechar a IA de um produto, desligue o
+    produto em Recursos}.
+  \item Toda mudança vai para o histórico. A rede não vê nem altera.
+\end{itemize}
+\end{historia}
+
+% ---------------------------------------------------------------------------
+\feature{F10.5}{Prospecção}{\pronto}
+
+\begin{historia}{H10.5.1}{Receber os interessados do site}{\pronto}
+\hu{Administrador Unooria}{ver quem se cadastrou no site}{entrar em contato
+com as redes interessadas}
+\aceite
+\begin{itemize}
+  \item \enquote{Prospecção} lista Quando, Nome, E-mail, Telefone,
+    \enquote{Rede, secretaria ou escola} e Cargo, dos mais recentes aos mais
+    antigos (até 5 mil).
+  \item \enquote{Atualizar} e \enquote{Baixar CSV}.
+  \item Só a Unooria vê esta lista.
+\end{itemize}
+\end{historia}
+
+\begin{historia}{H10.5.2}{Eliminar um cadastro a pedido}{\afazer}
+\hu{Administrador Unooria}{apagar o cadastro de quem pedir}{atender o direito
+de eliminação da LGPD sem depender do time técnico}
+\aceiteproposta
+\begin{itemize}
+  \item Cada linha tem \enquote{Eliminar a pedido do titular}, com
+    confirmação; o cadastro nunca é editado, só eliminado.
+\end{itemize}
+\pendencia{hoje o pedido é atendido por um caminho manual.}
+\end{historia}

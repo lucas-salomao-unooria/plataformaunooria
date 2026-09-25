@@ -1,0 +1,86 @@
+% ===========================================================================
+%  91 — Decisões em aberto para o produto
+% ===========================================================================
+\chapter{Decisões em aberto para o produto}
+\label{cap:decisoes}
+
+O levantamento encontrou perguntas que o código não responde e que não são de
+engenharia: são escolhas de produto. Cada uma tem o contexto, as opções e,
+quando há, uma recomendação. Nenhuma foi decidida neste documento.
+
+\newcommand{\decisaoaberta}[4]{%
+  \begin{historia}{#1}{#2}{}
+  \textbf{Contexto.} #3\par\smallskip
+  #4
+  \end{historia}}
+
+\decisaoaberta{D01}{Quem cria o ano letivo?}{A tela \enquote{Ano letivo} diz
+\enquote{O calendário é do contrato, não da escola}, mas a Coordenação da
+escola consegue criar período (\id{H02.4.1}).}{\textbf{Opções:} (a) só o
+Administrador do contrato cria, e a escola consulta; (b) a escola cria, e a
+frase da tela muda. \textbf{Recomendação:} (a), porque um calendário por
+escola quebra o relatório da rede.}
+
+\decisaoaberta{D02}{A Coordenação da escola pode transferir estudante?}{O botão
+\enquote{Transferir de escola} aparece só para o Administrador do contrato; a
+Coordenação consegue o mesmo efeito importando o CPF (\id{H03.6.1}).}{\textbf{Opções:}
+(a) mostrar o botão também para as coordenações; (b) manter só no contrato e
+tratar a importação como caminho oficial da escola.}
+
+\decisaoaberta{D03}{O texto livre da criança é só do professor em todas as
+missões?}{No Quem mandou isso? a gestão vê só \enquote{entregou / não
+entregou}; no Rastro do Boato e no Manifesto da IA, ainda vê o texto
+(\id{H07.1.4}).}{\textbf{Recomendação:} alinhar todas à regra do Quem mandou
+isso?, e tornar a regra obrigatória para toda missão nova (\id{H06.10.1}).}
+
+\decisaoaberta{D04}{A que horas o limite de IA recomeça?}{O contador de cada
+pessoa zera à meia-noite no horário universal, que no Brasil é 21h
+(\id{H09.4.1}). Um professor que planeja à noite pode ver o limite
+\enquote{renascer} no meio do trabalho.}{\textbf{Opções:} (a) meia-noite no
+fuso da rede; (b) manter e explicar na tela.}
+
+\decisaoaberta{D05}{Como o estudante recupera a senha?}{Hoje só a coordenação
+reseta. Estudante dos anos iniciais quase nunca tem e-mail
+(\id{H01.4.2}).}{\textbf{Opções:} (a) recuperação por e-mail só para adultos, e
+o estudante segue pela coordenação; (b) o professor também pode resetar a
+senha dos estudantes da turma dele. Com o login único da rede (\id{H01.5.1}),
+a pergunta pode deixar de existir.}
+
+\decisaoaberta{D06}{A conta terá perfil e foto?}{O menu do avatar tem só
+\enquote{Sair}, e isso foi deliberado.}{Confirmar que continua fora do escopo
+--- foto de criança é dado sensível e não traz valor pedagógico evidente.}
+
+\decisaoaberta{D07}{O estudante terá um histórico fora das missões?}{Hoje ele
+vê só a grade da turma; não há portfólio nem \enquote{o que já fiz}.}{Decidir
+se entra no produto e, se entrar, o que ele mostra sem virar nota.}
+
+\decisaoaberta{D08}{Toda missão terá relatório individual?}{Só unooGPT, Vila
+do Lume e Instanooria têm (\id{H07.1.3}).}{Decidir se passa a ser exigência
+da esteira de missões novas (\id{H06.10.1}) ou se fica a critério de cada
+missão.}
+
+\decisaoaberta{D09}{Por quanto tempo guardamos o dado de criança?}{Não há prazo
+definido, e a Política de Privacidade declara isso como pendência
+(\id{H12.3.1}).}{Definir, com o jurídico, um prazo por tipo de dado --- é
+pré-requisito para o desenvolvimento da rotina de eliminação.}
+
+\decisaoaberta{D10}{Qual é o modelo das próximas missões?}{O Instanooria é a
+única missão com \enquote{atividade} configurável (tema, geração, revisão,
+etapas); as outras seguem \enquote{liberar e conduzir}.}{Decidir o modelo
+padrão: a atividade configurável dá mais controle ao professor e custa bem
+mais para construir e para preparar a aula.}
+
+\decisaoaberta{D11}{A rede verá algum agregado do bem-estar?}{Hoje não existe
+nenhuma visão de gestão, por desenho (\id{H08.3.4}).}{\textbf{Opções:} (a)
+nunca; (b) um agregado anônimo, com grupos mínimos e termo específico com a
+rede. Qualquer caminho diferente de (a) precisa do jurídico antes.}
+
+\decisaoaberta{D12}{A liberação com data entra antes de novembro?}{Hoje o
+professor libera na hora da aula, e é fácil esquecer (\id{H04.2.3}).}{Decidir
+a prioridade.}
+
+\decisaoaberta{D13}{Gravação de sessão por terceiros em tela de criança}{Uma
+ferramenta externa de gravação de sessão é usada nas telas
+(\id{H12.2.1}).}{\textbf{Opções:} (a) declarar no termo de tratamento de dados
+de cada rede; (b) retirar das telas de estudante. \textbf{Recomendação:} (b)
+nas telas de menores.}
