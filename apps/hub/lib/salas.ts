@@ -40,6 +40,11 @@ export interface MissaoDaSalaDoProfessor extends MissaoNaGrade {
   liberadaPor: string | null;
   liberadaEm: string | null;
   encerradaEm: string | null;
+  /**
+   * Quantas equipes salvas esta missão tem NESTA turma (E13). Só a visão do
+   * professor traz o campo — `/salas/minhas`, do estudante, não.
+   */
+  equipes: number;
 }
 
 export interface SalaDoProfessor {

@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { EmptyState, FeedbackAlert } from "@edu/ui/ds";
+import { EquipesDaFicha } from "@/components/equipes/equipes-da-ficha";
 import { LinkButton } from "@/components/link-button";
 import {
   MISSAO_ECO_NO_GRUPO,
@@ -84,6 +85,9 @@ export default async function MissaoPage({
    * comportamentos diferentes por dentro (a lista de atividades filtra, os
    * resultados já vêm com a turma) — sem dizer isso na cara, o professor não
    * tem como saber de qual turma é o que está vendo.
+   *
+   * As EQUIPES (E13) entram logo abaixo dela, e pelo mesmo motivo: são da
+   * turma, não da missão, e a seção decide sozinha se aparece (`permitida`).
    */
   const corpo = (elemento: React.ReactNode) => (
     <div className="flex flex-col gap-6">
@@ -94,6 +98,7 @@ export default async function MissaoPage({
           description="As atividades e os resultados abaixo são desta turma. Para ver as outras, entre pela trilha do Entre Redes."
         />
       ) : null}
+      {turma && missao.expId ? <EquipesDaFicha turmaId={turma.id} expId={missao.expId} /> : null}
       {elemento}
     </div>
   );

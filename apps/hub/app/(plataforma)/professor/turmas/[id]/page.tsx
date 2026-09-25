@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Card, FeedbackAlert, Tag } from "@edu/ui/ds";
 import { RotuloDaTrilha } from "@/components/trilha";
+import { rotuloEquipesProntas } from "@/lib/equipes";
 import { rotaDeConducao } from "@/lib/rotas-da-missao";
 import { copyDaMissao } from "@/lib/missoes-do-estudante";
 import { salaDaTurma, type MissaoDaSalaDoProfessor } from "@/lib/salas";
@@ -150,6 +151,10 @@ function MissoesDaSala({
                       ) : (
                         <Tag>fechada</Tag>
                       )}
+                      {/* As equipes da missão nesta turma (E13). Uma TAG, e não
+                          um link (ADR-100): montar e editar as equipes é na
+                          ficha, pelo mesmo "Conduzir com esta turma". */}
+                      {missao.equipes > 0 ? <Tag variant="info">{rotuloEquipesProntas(missao.equipes)}</Tag> : null}
                     </div>
                     <p className="mt-0.5 text-[13px] text-unooria-neutral-500">
                       {/* Quem liberou é a pergunta que a sala faz quando a missão
