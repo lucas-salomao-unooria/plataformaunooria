@@ -94,8 +94,9 @@ export function SecaoEquipes({
   const [aviso, setAviso] = useState<string | null>(null);
   const [mostrando, setMostrando] = useState(false);
   const [confirmandoDesfazer, setConfirmandoDesfazer] = useState(false);
-  /* O `Modal` do DS não liga o `ModalTitle` ao diálogo sozinho: sem isto a
-     confirmação fica sem nome acessível (ver `mostrar-equipes.tsx`). */
+  /* Até a 0.2.2 o `Modal` do DS não ligava o `ModalTitle` ao diálogo sozinho, e
+     a confirmação ficava sem nome acessível; corrigido na 0.2.3. O id explícito
+     ficou: vence e aponta para o mesmo título (ver `mostrar-equipes.tsx`). */
   const idDoTituloDesfazer = useId();
 
   const turma = useMemo(() => turmaInteira(dados), [dados]);

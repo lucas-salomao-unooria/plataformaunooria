@@ -126,16 +126,19 @@ caracteres — o jeito barato de medir é montar um `.unooria-metric-card` no DO
 de qualquer rota da plataforma (o CSS do DS é global no bundle do hub) e ler o
 `getBoundingClientRect().width` do valor depois de `document.fonts.ready`.
 
-## `Modal` montado com `ModalTitle` precisa de `aria-labelledby` (2026-09-25)
+## `Modal` montado com `ModalTitle`: o nome acessível (2026-09-25)
 
-Lacuna do DS (0.2.2): o `Modal` só liga o título ao `role="dialog"` quando o
-título vem pelo atalho `title=`. Montado com `ModalHeader` + `ModalTitle` — o
-jeito de quase todas as janelas do hub —, o `ModalTitle` ganha um id e o
-diálogo NÃO aponta para ele: fica sem nome acessível, e o leitor de tela anuncia
-"diálogo" sem dizer qual. A compensação é passar os dois lados:
-`const id = useId()`, `<Modal aria-labelledby={id}>` e `<ModalTitle id={id}>`.
-Hoje só as janelas de `equipes/` fazem isso; as outras montadas do mesmo jeito
-continuam sem nome até o DS ligar sozinho (pedido a abrir no `storybook-unooria`).
+Lacuna do DS até a 0.2.2; corrigido na 0.2.3. O `Modal` só ligava o título ao
+`role="dialog"` quando o título vinha pelo atalho `title=`. Montado com
+`ModalHeader` + `ModalTitle` — o jeito de quase todas as janelas do hub —, o
+`ModalTitle` ganhava um id e o diálogo NÃO apontava para ele: ~34 janelas do hub
+ficavam sem nome acessível, e o leitor de tela anunciava "diálogo" sem dizer
+qual. Desde a 0.2.3 o `Modal` liga sozinho o `ModalTitle` (`aria-labelledby`) e
+o `ModalDescription` (`aria-describedby`) — nas seções `chatgpt` e `unootube`
+também. `aria-labelledby`/`aria-label` explícitos continuam vencendo: por isso
+as janelas de `equipes/`, que compensavam com `useId` + `<Modal
+aria-labelledby={id}>` + `<ModalTitle id={id}>`, ficaram como estavam. Janela
+nova não precisa do par — o `ModalTitle` basta.
 
 ## Rolagem: sempre o `ScrollBar` do DS (2026-09-07)
 
