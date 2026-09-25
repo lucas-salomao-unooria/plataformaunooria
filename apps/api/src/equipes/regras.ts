@@ -13,12 +13,15 @@
  *
  * Lista no código, e não coluna no catálogo, porque "esta missão funciona com
  * duas crianças numa tela" é propriedade do DESENHO da experiência (quem
- * clica, quem lê, o que o painel conta), e não configuração da rede. As três
+ * clica, quem lê, o que o painel conta), e não configuração da rede. As quatro
  * foram conferidas uma a uma: o Instanooria (exp08ef1b), a Missão Tempestade
- * (exp02em1b) e o UnooTube (exp04ef1b). Missão que entra aqui sem essa
- * conferência abre para equipe e continua contando por criança no painel.
+ * (exp02em1b), o UnooTube (exp04ef1b) e A Seleção (exp07ef1b) — esta a
+ * primeira que NASCE com equipe (ADR-111): o painel dela conta por computador,
+ * o Mural pareia computadores, e a ficha pedagógica copia o nível para os
+ * colegas de tela. Missão que entra aqui sem essa conferência abre para equipe
+ * e continua contando por criança no painel.
  */
-export const EXPERIENCIAS_COM_EQUIPE = ["exp08ef1b", "exp02em1b", "exp04ef1b"] as const;
+export const EXPERIENCIAS_COM_EQUIPE = ["exp08ef1b", "exp02em1b", "exp04ef1b", "exp07ef1b"] as const;
 export type ExperienciaComEquipe = (typeof EXPERIENCIAS_COM_EQUIPE)[number];
 
 export function permiteEquipes(expId: string): expId is ExperienciaComEquipe {

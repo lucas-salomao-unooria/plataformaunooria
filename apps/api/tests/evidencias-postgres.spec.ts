@@ -34,8 +34,8 @@ import { criarTurmaDeTeste } from "./turma-de-teste";
  * projeção que espera o professor, o ajuste, a pergunta de múltipla escolha,
  * o painel e o perfil.
  *
- * Nenhuma missão tem ficha ainda (`FICHAS` está vazio): a suíte registra uma
- * ficha DE TESTE para a exp08ef1b com `registrarFicha`, e um resolvedor de
+ * A suíte registra uma ficha DE TESTE para a exp08ef1b com `registrarFicha`
+ * (a missão real com ficha, a exp07ef1b, tem a suíte dela), e um resolvedor de
  * contexto que ela controla. Os códigos são da BNCC de verdade — o
  * `registrarFicha` valida como o registro estático.
  *
@@ -782,8 +782,13 @@ describe("a pergunta de múltipla escolha", () => {
     contexto = { turmaId: ids.turma8A, atividadeId: ATV, rodada: 1 };
   });
 
-  test("a pergunta sai SEM o gabarito", async () => {
+  /* A ficha de teste NÃO liga `embaralhar`: a ordem fixa abaixo é a promessa
+     para as fichas que não embaralham (a escala ordinal). A que embaralha — a
+     da exp07ef1b — é conferida em `a-selecao-postgres.spec.ts`, e a mistura
+     em si em `evidencias-regras.spec.ts`. */
+  test("a pergunta sai SEM o gabarito — e, na ficha que não embaralha, na ordem da ficha", async () => {
     const p = PerguntaSchema.parse(await evidencias.pergunta(ESCOLA, ids.ana, INSTA, "p1"));
+    expect(FICHA.perguntas[0]?.embaralhar).toBeUndefined();
     expect(await evidencias.pergunta(ESCOLA, ids.ana, INSTA, "p1")).toEqual({
       enunciado: "Chegou um boato no grupo. O que fazer?",
       alternativas: [

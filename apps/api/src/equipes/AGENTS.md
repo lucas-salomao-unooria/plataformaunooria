@@ -21,8 +21,8 @@ com `escola_id` + RLS forçada:
 
 ## As regras
 
-- **Só três missões aceitam equipe**: `EXPERIENCIAS_COM_EQUIPE` em `regras.ts`
-  (exp08ef1b, exp02em1b, exp04ef1b). Lista no CÓDIGO, não coluna no catálogo:
+- **Só quatro missões aceitam equipe**: `EXPERIENCIAS_COM_EQUIPE` em `regras.ts`
+  (exp08ef1b, exp02em1b, exp04ef1b, exp07ef1b). Lista no CÓDIGO, não coluna no catálogo:
   "funciona com duas crianças numa tela" é propriedade do desenho da missão, e
   missão que entra sem conferência abre para equipe e continua contando por
   criança no painel.
@@ -73,7 +73,7 @@ transação, depois da escrita: eles veem as equipes novas, e um erro neles desf
 a montagem junto. A dependência vai num sentido só — evidencias importa
 equipes, nunca o contrário.
 
-**O UnooTube e o unooGPT já contam por COMPUTADOR.** O painel lê
+**O UnooTube, o unooGPT e A Seleção já contam por COMPUTADOR.** O painel lê
 `mapaDeEquipes` DENTRO do `comTenancy` e passa as linhas por
 `regras.ts#colapsarEmUnidades`: uma unidade por equipe, representada pela linha
 de quem INICIOU (com dois logins, o mais recente pelo `atualizado_em` da
@@ -82,6 +82,13 @@ contam unidades e o resumo diz `porComputador`. Sem montagem, o painel sai
 exatamente como era. Missão que entra em `EXPERIENCIAS_COM_EQUIPE` faz o mesmo
 no painel dela, no mesmo trabalho — senão abre para equipe e segue contando por
 criança.
+
+**A Seleção (exp07ef1b) é a primeira que NASCE com equipe**, e leva o
+computador além do painel: o PAREAMENTO do Mural colapsa as equipes
+(`iniciou` = publicou, recência = a publicação) e pareia computadores, e o "X
+de Y computadores" tira o Y de `computadoresDaMontagem` — o colapso conta
+também os ausentes. O par fica CONGELADO na sessão dela (o rótulo é o nome da
+equipe no momento do pareamento), e nunca `equipe:<id>`: o `PUT` recria os ids.
 
 **O Instanooria é a próxima frente** (`feat/equipes-instanooria`): registrar a
 fonte de lado, equipes do MESMO lado do feed, e o lado da equipe resolvido na

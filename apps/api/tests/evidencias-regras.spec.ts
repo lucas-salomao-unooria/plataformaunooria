@@ -3,10 +3,12 @@ import {
   NIVEL,
   STATUS,
   STATUS_DE_MARCA,
+  alternativasParaExibir,
   copiasDesejadas,
   decidirCopia,
   diferencaDasCopias,
   ehProjecao,
+  embaralharComGerador,
   marcadorDaFicha,
   marcadoresDaPergunta,
   melhor,
@@ -383,5 +385,65 @@ describe("a ficha", () => {
     expect(
       validarFicha({ ...fichaBoa(), habilidades: [], perguntas: [] }, BNCC).some((e) => e.includes("nenhuma habilidade")),
     ).toBe(true);
+  });
+});
+
+/**
+ * O EMBARALHAMENTO das alternativas (`embaralhar` na pergunta da ficha): a
+ * mistura sai de uma função pura com o gerador INJETADO — o molde do sorteio
+ * das equipes —, e o teste passa um gerador com semente.
+ */
+describe("as alternativas como o estudante as vê", () => {
+  /** Um gerador linear congruente com semente: a mesma sequência a cada execução. */
+  function comSemente(semente: number): () => number {
+    let x = semente;
+    return () => {
+      x = (x * 1103515245 + 12345) % 2 ** 31;
+      return x / 2 ** 31;
+    };
+  }
+
+  const pergunta = {
+    alternativas: [
+      { id: "A1", texto: "um", status: "atingiu" as const },
+      { id: "A2", texto: "dois", status: "em_processo" as const },
+      { id: "A3", texto: "três", status: "nao_atingiu" as const },
+    ],
+  };
+
+  test("sem `embaralhar`: a ordem da ficha, e o gerador nem é chamado (escala ordinal não se mistura)", () => {
+    const gerador = jest.fn(() => 0);
+    expect(alternativasParaExibir(pergunta, gerador)).toEqual([
+      { id: "A1", texto: "um" },
+      { id: "A2", texto: "dois" },
+      { id: "A3", texto: "três" },
+    ]);
+    expect(alternativasParaExibir({ ...pergunta, embaralhar: false }, gerador).map((a) => a.id)).toEqual(["A1", "A2", "A3"]);
+    expect(gerador).not.toHaveBeenCalled();
+  });
+
+  test("com `embaralhar`: as mesmas alternativas, sem o nível, numa ordem que o gerador decide", () => {
+    const r = alternativasParaExibir({ ...pergunta, embaralhar: true }, comSemente(7));
+    expect(r.map((a) => a.id).sort()).toEqual(["A1", "A2", "A3"]);
+    expect(JSON.stringify(r)).not.toContain("status");
+    // Determinístico com a mesma semente — é o que torna o teste possível.
+    expect(alternativasParaExibir({ ...pergunta, embaralhar: true }, comSemente(7))).toEqual(r);
+  });
+
+  test("cada alternativa chega à primeira posição — o nível não tem lugar fixo", () => {
+    const primeiras = new Set<string>();
+    for (let semente = 1; semente <= 40; semente++) {
+      primeiras.add(alternativasParaExibir({ ...pergunta, embaralhar: true }, comSemente(semente))[0]!.id);
+    }
+    expect([...primeiras].sort()).toEqual(["A1", "A2", "A3"]);
+  });
+
+  test("Fisher–Yates: não perde nem duplica item, e não mexe na lista de entrada", () => {
+    const itens = Object.freeze(["a", "b", "c", "d", "e"]);
+    const r = embaralharComGerador(itens, comSemente(3));
+    expect([...r].sort()).toEqual(["a", "b", "c", "d", "e"]);
+    expect(itens).toEqual(["a", "b", "c", "d", "e"]);
+    // Gerador sempre 0,999…: o último item troca com ele mesmo em cada passo — identidade.
+    expect(embaralharComGerador(itens, () => 0.9999)).toEqual(["a", "b", "c", "d", "e"]);
   });
 });

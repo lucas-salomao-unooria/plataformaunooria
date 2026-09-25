@@ -46,6 +46,7 @@ export class EvidenciasEstudanteController {
     params: ParamsDaPerguntaSchema,
     resposta: PerguntaSchema,
     notas: [
+      "Quando a ficha da missão pede (`embaralhar`), as alternativas vêm numa ordem NOVA a cada chamada — a tela não pode guardar posição, só o `id`. Sem `embaralhar`, a ordem é a da ficha (é o caso das escalas ordinais).",
       "Pergunta que não existe na ficha da missão responde **404** `pergunta-nao-encontrada`.",
       "Missão não liberada na turma do estudante responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`, se a rede não tem o recurso).",
     ],

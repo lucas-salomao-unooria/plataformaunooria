@@ -1,5 +1,5 @@
 import { EXP_ID_RE } from "../comum/codigo-da-experiencia";
-import type { FichaPedagogica, MarcadorDaFicha } from "./fichas/tipos";
+import type { FichaPedagogica, MarcadorDaFicha, PerguntaDaFicha } from "./fichas/tipos";
 
 /**
  * As regras PURAS da evidência pedagógica (E14). Sem Prisma, sem Nest — é o que
@@ -206,6 +206,40 @@ export function marcadorDaFicha(
     if (marcador) return { habilidade: h.codigo, marcador };
   }
   return null;
+}
+
+/**
+ * Fisher–Yates com o gerador INJETADO — o molde é o `embaralhar` do sorteio das
+ * equipes (`equipes/regras.ts`): o teste passa um gerador com semente e confere
+ * a ordem inteira; a produção passa `Math.random`.
+ */
+export function embaralharComGerador<T>(itens: readonly T[], aleatorio: () => number): T[] {
+  const copia = [...itens];
+  for (let i = copia.length - 1; i > 0; i--) {
+    const j = Math.floor(aleatorio() * (i + 1));
+    const tmp = copia[i] as T;
+    copia[i] = copia[j] as T;
+    copia[j] = tmp;
+  }
+  return copia;
+}
+
+/**
+ * As alternativas de uma pergunta COMO O ESTUDANTE AS VÊ: `id` e `texto`, sem
+ * o nível (o gabarito fica no servidor, regra 3) — e, se a ficha pede
+ * (`embaralhar`), numa ordem nova a cada exibição.
+ *
+ * Embaralhar só tira a POSIÇÃO do nível: o `id` de cada alternativa não muda,
+ * e é por ele que a resposta é corrigida. Sem `embaralhar`, a ordem é a da
+ * ficha, e o gerador nem é chamado — uma escala ordinal ("nunca, às vezes,
+ * sempre") não pode sair de trás para frente.
+ */
+export function alternativasParaExibir(
+  pergunta: Pick<PerguntaDaFicha, "alternativas" | "embaralhar">,
+  aleatorio: () => number = Math.random,
+): { id: string; texto: string }[] {
+  const publicas = pergunta.alternativas.map((a) => ({ id: a.id, texto: a.texto }));
+  return pergunta.embaralhar ? embaralharComGerador(publicas, aleatorio) : publicas;
 }
 
 /** Os marcadores de múltipla escolha que corrigem esta pergunta — pode haver mais de um. */

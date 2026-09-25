@@ -17,6 +17,7 @@ import { FICHAS, type FichaPedagogica } from "./fichas";
 import {
   ATIVIDADE_ID_RE,
   ORIGENS_DE_COPIA,
+  alternativasParaExibir,
   chaveDaEvidencia,
   copiasDesejadas,
   decidirCopia,
@@ -606,6 +607,10 @@ export class EvidenciasService implements OnModuleInit {
    * A PERGUNTA, como o estudante a vê: o enunciado e as alternativas — SEM o
    * nível de cada uma. O gabarito fica aqui (regra 3).
    *
+   * Se a ficha pede (`embaralhar`), as alternativas saem numa ordem NOVA a cada
+   * exibição (`regras.ts#alternativasParaExibir`): o F5 que reabre a enquete
+   * mostra outra ordem, e a resposta continua corrigida pelo `id`.
+   *
    * Passa pela porta da sala (`exigirMissaoLiberada`) como toda entrada de
    * estudante em missão: a pergunta é da missão, e a missão fechada não tem
    * pergunta aberta.
@@ -616,7 +621,7 @@ export class EvidenciasService implements OnModuleInit {
       await exigirMissaoLiberada(tx, escolaId, estudanteId, expId);
       return {
         enunciado: pergunta.enunciado,
-        alternativas: pergunta.alternativas.map((a) => ({ id: a.id, texto: a.texto })),
+        alternativas: alternativasParaExibir(pergunta),
       };
     }, escolaId);
   }

@@ -6,11 +6,10 @@ import { validarFicha } from "../src/evidencias/regras";
 /**
  * TODA FICHA DO REGISTRO É CONFERIDA (E14).
  *
- * Hoje `FICHAS` está vazio — nenhuma missão mede nada ainda —, e este arquivo
- * passa sem conferir ficha nenhuma. Ele existe AGORA para que a primeira ficha
- * já entre com a trava: os códigos existem na BNCC homologada (`curriculo/`),
- * o `expId` existe nos manifestos, o gabarito só usa níveis válidos e todo
- * marcador de pergunta aponta para uma pergunta que existe.
+ * A primeira ficha do registro é a da A Seleção (`exp07ef1b`), e ela entrou
+ * com a trava que este arquivo já tinha: os códigos existem na BNCC homologada
+ * (`curriculo/`), o `expId` existe nos manifestos, o gabarito só usa níveis
+ * válidos e todo marcador de pergunta aponta para uma pergunta que existe.
  *
  * A prova de que a trava FUNCIONA com ficha de verdade (e não só passa por
  * vazio) está nos dois últimos testes: uma ficha boa passa pelo mesmo caminho,
@@ -39,8 +38,12 @@ test("uma ficha por missão", () => {
   expect(ids.length).toBe(new Set(ids).size);
 });
 
-/* Laço, e não `describe.each`: com o registro vazio, o `.each` do Jest estoura
-   ("called with an empty Array of table data"). */
+/* Laço, e não `describe.each`: com o registro vazio — como ele nasceu —, o
+   `.each` do Jest estoura ("called with an empty Array of table data"). */
+test("o registro tem ficha para conferir (senão a trava passaria por vazio)", () => {
+  expect(FICHAS.map((f) => f.expId)).toContain("exp07ef1b");
+});
+
 for (const ficha of FICHAS) {
   test(`a ficha de ${ficha.expId} é válida`, () => {
     expect(problemas(ficha)).toEqual([]);

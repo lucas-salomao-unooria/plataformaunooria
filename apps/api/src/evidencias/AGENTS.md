@@ -9,9 +9,13 @@ missão, rodada a rodada.** A missão já via o que a criança fazia (tirou o po
 do ar, acertou a pergunta) e isso morria dentro da experiência; aqui vira o
 nível que o professor lê, corrige e leva para o boletim.
 
-Nesta frente é **só a PLATAFORMA**: nenhuma missão foi adaptada, `FICHAS` está
-vazio, ninguém chama `marcar` nem `registrarContexto`. As missões entram depois,
-uma a uma, cada uma com a sua ficha.
+A plataforma entrou antes, vazia; as missões entram uma a uma, cada uma com a
+sua ficha. **A primeira é A Seleção (`exp07ef1b`)**: `fichas/exp07ef1b.ts`
+(EF07CO11 pela legenda graduada — o Canal A — e pela enquete P1; EF07CO08 pela
+P2), o contexto registrado no `onModuleInit` de `a-selecao.service.ts` e a
+marca da legenda numa transação SÓ DELA, depois do latch da publicação — a
+IA leva até 6 s, e a transação da jogada não pode esperar. Falhando a IA, não
+há marca: "Não avaliado", e o professor decide.
 
 Três tabelas de PLATAFORMA (sem prefixo, como `liberacoes` e `equipes`), todas
 com `escola_id` + RLS forçada:
@@ -51,6 +55,13 @@ com `escola_id` + RLS forçada:
   sem `status`, responde só a alternativa, e recebe `{ enviada: true }` —
   sempre, na primeira e na segunda. **Vale a PRIMEIRA resposta.** Atividade e
   rodada NUNCA vêm do cliente: saem do resolvedor da missão.
+- **`embaralhar` na pergunta** (opcional, desligado por padrão): as
+  alternativas saem numa ordem NOVA a cada exibição
+  (`regras.ts#alternativasParaExibir`, Fisher–Yates com gerador injetável — o
+  molde do sorteio das equipes). A resposta continua corrigida pelo `id`, e a
+  tela não pode guardar posição. Desligado por padrão porque escala ORDINAL
+  ("nunca, às vezes, sempre") não se embaralha; A Seleção liga nas duas
+  enquetes, onde a primeira opção levaria o toque de quem tem pressa.
 - **O professor ajusta a qualquer momento**, mesmo com a missão encerrada, um ou
   vários (1..200); cada mudança vai para o histórico. **Gestor só LÊ. O
   estudante nunca vê o próprio resultado. Não há ranking em lugar nenhum.**
@@ -75,7 +86,12 @@ Missão com ficha faz TRÊS coisas, no mesmo trabalho:
 
 `registrarFicha` existe **só para teste** (a suíte registra uma ficha da
 exp08ef1b em tempo de execução). A ficha de uma missão real vai no registro
-estático, onde a trava a confere.
+estático, onde a trava a confere — a da exp07ef1b é a primeira.
+
+O resolvedor da missão devolve `null` sempre que a resposta não deve contar:
+na A Seleção, antes da reflexão (a enquete vem depois dela, na ordem do PO) e
+quando a sessão não é mais a (cobertura, rodada) do gate — a professora zerou ou
+trocou o tema, e uma resposta atrasada cairia numa rodada que acabou.
 
 ## As rotas
 
