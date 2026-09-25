@@ -15,8 +15,8 @@ import type { SalvarMontagem } from "./contrato-de-rotas";
 import {
   EXPERIENCIAS_COM_EQUIPE,
   permiteEquipes,
-  primeiroNome,
   propostaManual,
+  rotulosSemRepeticao,
   sortear,
   validarMontagem,
   type Lado,
@@ -497,7 +497,9 @@ export class EquipesService {
 
   /**
    * A EQUIPE DO ESTUDANTE nesta missão: o nome dela e o primeiro nome dos
-   * colegas de computador.
+   * colegas de computador — desempatado (`rotulosSemRepeticao`) quando repete
+   * dentro da equipe. O empate conta o PRÓPRIO estudante: duas Gabrielas no
+   * computador, e a outra aparece como "Gabriela Correia", não como "Gabriela".
    *
    * SEMPRE 200, com `equipe: null` quando não há — um 404 aqui apareceria no
    * log do hub como `api-recusou` a cada abertura de missão, para a imensa
@@ -523,12 +525,14 @@ export class EquipesService {
 
       const equipe = await equipeDoEstudante(tx, escolaId, vinculo.turmaId, expId, estudanteId);
       if (!equipe) return { equipe: null };
+      /* O universo do desempate é a equipe inteira; a resposta leva só os outros. */
+      const rotulos = rotulosSemRepeticao(equipe.membros);
       return {
         equipe: {
           nome: equipe.nome,
           colegas: equipe.membros
             .filter((m) => m.id !== estudanteId)
-            .map((m) => primeiroNome(m.nome))
+            .map((m) => rotulos.get(m.id) ?? "")
             .filter((nome) => nome.length > 0),
         },
       };

@@ -466,6 +466,39 @@ describe("a equipe do estudante", () => {
     });
   });
 
+  /**
+   * Duas Gabrielas no mesmo computador: "com Gabriela e Gabriela" não diz à
+   * criança com quem ela senta. O desempate sobe só o necessário, e conta o
+   * PRÓPRIO estudante — é na 8B, para não mexer na contagem da 8A que as
+   * outras suítes afirmam.
+   */
+  test("primeiro nome repetido na equipe: sobe só até desempatar, contando o próprio estudante", async () => {
+    const estudante = async (username: string, nome: string) =>
+      (
+        await prisma.user.create({
+          data: { escolaId: ESCOLA, username, role: "estudante", displayName: nome, passwordHash: "x", turmaId: ids.turma8B },
+          select: { id: true },
+        })
+      ).id;
+    const cardoso = await estudante("equipes-gabriela-cardoso", "Gabriela Almeida Cardoso");
+    const correia = await estudante("equipes-gabriela-correia", "Gabriela Ribeiro Correia");
+    await equipes.salvar(
+      ESCOLA,
+      ids.turma8B,
+      INSTA,
+      { versao: 0, modo: "manual", computadores: 1, ausentes: [], equipes: [{ nome: "Roxa", membros: [ids.fabi, cardoso, correia] }] },
+      ids.prof8B,
+    );
+
+    expect(MinhaEquipeSchema.parse(await equipes.minha(ESCOLA, ids.fabi, INSTA))).toEqual({
+      equipe: { nome: "Roxa", colegas: ["Gabriela Cardoso", "Gabriela Correia"] },
+    });
+    /* A outra Gabriela empata com a PRÓPRIA criança, e sobe; a Fabi, não. */
+    expect(await equipes.minha(ESCOLA, cardoso, INSTA)).toEqual({
+      equipe: { nome: "Roxa", colegas: ["Fabi", "Gabriela Correia"] },
+    });
+  });
+
   test("a equipe é DAQUELA missão: na outra, a mesma criança continua sem", async () => {
     expect(await equipes.minha(ESCOLA, ids.ana, TUBE)).toEqual({ equipe: null });
     expect(await equipes.minha(ESCOLA, ids.ana, QUEM_MANDOU)).toEqual({ equipe: null });

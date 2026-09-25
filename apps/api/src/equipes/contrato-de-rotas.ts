@@ -115,7 +115,11 @@ export const MinhaEquipeSchema = z.object({
   equipe: z
     .object({
       nome: z.string(),
-      /** O PRIMEIRO nome dos outros membros — nunca o nome completo (regra 6). */
+      /**
+       * O PRIMEIRO nome dos outros membros, desempatado só quando repete na
+       * equipe (`regras.ts#rotulosSemRepeticao`) — nunca o nome completo à
+       * toa (regra 6).
+       */
       colegas: z.array(z.string()),
     })
     .nullable(),

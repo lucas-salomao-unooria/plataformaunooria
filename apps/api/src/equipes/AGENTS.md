@@ -51,7 +51,9 @@ com `escola_id` + RLS forçada:
   `ultima` o conta em `saidas`.
 - **`GET /equipes/minha` é SEMPRE 200** (`equipe: null` quando não há): um 404
   viraria `api-recusou` no log do hub a cada abertura de missão. E `colegas` leva
-  SÓ o primeiro nome (regra 6).
+  SÓ o primeiro nome (regra 6), desempatado AQUI quando repete na equipe, o
+  próprio estudante incluso (`regras.ts#rotulosSemRepeticao`, cópia de
+  `hub/lib/equipes.ts#rotulosCurtos` — mexeu numa escada, mexa na outra).
 - **`GET` de missão sem equipe é 200 com `permitida: false`**, não 400: é por ele
   que o hub decide se desenha o bloco.
 - **A sala do professor mostra a contagem** (`missoes[].equipes`, via
