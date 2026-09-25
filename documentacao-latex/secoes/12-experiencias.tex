@@ -23,25 +23,27 @@ mecânica impõe exigência ao \emph{software} --- e não como material pedagóg
   telemetria, ia & \arq{unoogpt}\\
 \zebra \cd{exp01ef1b} & \cd{1EF} & estudante &
   telemetria, progresso & \arq{foto-conta}\\
-\cd{exp05ef1b} & \cd{5EF} & estudante &
-  telemetria, progresso, avaliacao & \arq{quem-mandou-isso}\\
-\zebra \cd{exp06ef2b} & \cd{6EF} & estudante &
+\cd{exp06ef2b} & \cd{6EF} & estudante &
   telemetria, progresso, avaliacao & \arq{rastro-boato}\\
-\cd{exp07ef1b} & \cd{7EF} & estudante &
+\zebra \cd{exp07ef1b} & \cd{7EF} & estudante &
   telemetria, progresso, avaliacao, ia & \arq{o-eco-no-grupo}\\
-\zebra \cd{exp08ef4b} & \cd{8EF} & estudante &
+\cd{exp08ef4b} & \cd{8EF} & estudante &
   telemetria, progresso, avaliacao & \arq{manifesto-ia}\\
-\cd{app-70-vila-do-lume} & \textbf{transversal} & estudante &
+\zebra \cd{app-70-vila-do-lume} & \textbf{transversal} & estudante &
   telemetria & \arq{vila}\\
-\zebra \cd{app-90-plano-de-aula} & --- & \textbf{professor} &
+\cd{app-90-plano-de-aula} & --- & \textbf{professor} &
   telemetria, ia & \arq{planos}\\
-\cd{app-91-bem-estar} & --- & \textbf{professor} &
+\zebra \cd{app-91-bem-estar} & --- & \textbf{professor} &
   telemetria, ia & \arq{bemestar}\\
-\zebra \cd{app-92-plano-de-ensino} & \textbf{1EF--3EM} & \textbf{professor} &
+\cd{app-92-plano-de-ensino} & \textbf{1EF--3EM} & \textbf{professor} &
   telemetria, ia & \arq{planejamento}, \arq{curriculo}\\
-\arq{\_template} & --- & --- & telemetria, progresso & ---\\
+\zebra \arq{\_template} & --- & --- & telemetria, progresso & ---\\
 \bottomrule
 \end{tabularx}
+
+O 5º ano não tem missão no catálogo: a unidade 1 dele aguarda a v2.2 de Quem
+mandou isso?, que volta com o mesmo código \cd{exp05ef1b} e a partir da 0.2.0
+(\adrr{ADR-114}). A porta 5184 fica reservada para ela.
 
 \begin{tabularx}{\linewidth}{@{}L{28mm}L{18mm}X@{}}
 \toprule
@@ -58,7 +60,6 @@ mecânica impõe exigência ao \emph{software} --- e não como material pedagóg
 \cd{app-92-plano-de-ensino} & \cd{5180} & \rota{/professor/plano-de-ensino}\\
 \zebra \cd{exp08ef4b} & \cd{5182} & \rota{/exp/exp08ef4b}\\
 \cd{exp01ef1b} & \cd{5183} & \rota{/exp/exp01ef1b}\\
-\zebra \cd{exp05ef1b} & \cd{5184} & \rota{/exp/exp05ef1b}\\
 \bottomrule
 \end{tabularx}
 
@@ -936,224 +937,6 @@ acessibilidade de sala sem fone, não \emph{fallback} de mídia ausente --- e
 mostra o botão de ouvir \textbf{desabilitado com o motivo à vista}, em vez de um
 \emph{player} que não toca nada. Quando os arquivos chegarem, entram ao lado do
 texto.
-
-% ---------------------------------------------------------------------------
-\section{exp05ef1b --- Quem mandou isso?}
-\label{sec:exp05ef1b}
-
-\textbf{5º ano · Unidade 1 · clone de mensageiro móvel · \cd{whatsappmobile}}
-
-Oito mensagens sobre uma mudança nas regras do intervalo chegam ao grupo
-\enquote{Turma 5ºB} numa mesma manhã --- três verdadeiras, três falsas e duas
-ambíguas. A coordenação pediu que a turma leve ao \enquote{Mural da Turma} o que
-for importante de verdade. O estudante escolhe, \textbf{confirma} --- e espera.
-Quando a professora acende o telão, o histograma anonimizado da sala mostra que
-a mensagem que quase todo mundo encaminhou é a que era falsa, e que o comunicado
-calmo com o horário certo quase ninguém mandou. Depois, no texto livre, ele
-responde ao áudio do tio no grupo da família. A descoberta não é sobre a
-mentira: é sobre o dedo que a repassou.
-
-\subsection{A missão nasce VAZIA, e a espera é a tela}
-
-Sem lote homologado pela professora daquela turma, o estudante que entra em
-\rota{/exp/exp05ef1b} vê uma \textbf{tela de espera} --- não um
-grupo vazio, não um erro, e \textbf{não} o banco curado da Unooria.
-
-É a diferença desta missão para a exp08ef4b, e ela é deliberada. Lá o pacote não
-homologado cai no catálogo da Unooria e a aula corre, porque os dilemas de
-governança de IA são os mesmos em qualquer escola. Aqui o lote inteiro é escrito
-\emph{em cima do acontecimento que a professora escolheu} --- a fila da cantina,
-o reordenamento do recreio, a obra na quadra. Um lote sobre outro assunto no
-meio da aula dela é pior que esperar: a criança leria oito mensagens sobre um
-fato que não houve na escola dela, e a mecânica que a missão mede --- desconfiar
-de uma urgência que soa familiar --- desmonta na primeira leitura.
-
-O banco curado existe e é homologado (\cd{LOTE\_DEFAULT}, em \arq{catalogo.ts},
-com os oito balões escritos). O que ele \textbf{não} é, aqui, é queda
-automática: ele é o que a professora aprova \emph{com um clique} quando não quer
-gerar nada, e o clique é o portão.
-
-\begin{nota}
-\cd{origem} guarda \cd{ia} ou \cd{padrao}, e \cd{padrao} não registra falha: é a
-resposta a \enquote{a curadoria assistida está sendo usada?}. Um terceiro valor
-inventado apagaria a pergunta em vez de respondê-la.
-\end{nota}
-
-\subsection{O latch, e as duas portas que ele cobra}
-
-\enquote{Confirmar envio} é irreversível. Depois dele o Mural não muda mais, e é
-a linha carimbada que entra na conta da turma. Duas condições o liberam, e as
-duas recusas \textbf{não dizem a mesma coisa}:
-
-\begin{tabularx}{\linewidth}{@{}L{32mm}L{30mm}X@{}}
-\toprule
-\headrow \thd{Porta} & \thd{Recusa} & \thd{O que ela impede}\\
-\midrule
-Piso de \textbf{3} encaminhamentos & 409 \cd{piso-nao-atingido} & Fechar o Mural
-  com uma escolha só. Com uma mensagem não há com o que comparar a barra da
-  turma, e o histograma vira uma fileira de uns.\\
-\zebra Rolagem até a \textbf{8ª} & 409 \cd{leitura-incompleta} & Decidir sobre
-  metade do grupo. As três primeiras mensagens são o comunicado, o boato em
-  caixa alta e o áudio ofegante --- quem para ali nunca vê o esclarecimento do
-  professor, que é a \cd{msg-7}.\\
-\bottomrule
-\end{tabularx}
-
-A tela deixa o botão inerte, e o servidor cobra as duas de novo:
-\rota{POST /quem-mandou-isso/confirmar} é endereço alcançável, e botão
-desabilitado não é uma regra --- é um enfeite sobre uma regra, que mora em
-\arq{regras/curadoria.ts}.
-
-\textbf{Encaminhar duas vezes não conta duas.} A \emph{dedupe} é do servidor (um
-\cd{Set} na regra pura, e um \cd{UNIQUE} no banco como rede) e a segunda chamada
-responde 200 com \cd{novo: false}, nunca erro: dois toques no mesmo balão numa
-sala com trinta tablets é o caminho normal, não a exceção. É a leitura da
-exp06ef2b, e o oposto da exp08ef4b --- lá o cartão já disparado some do seletor, então
-o segundo disparo só chega por defeito.
-
-\subsection{O gabarito atravessa a fronteira UMA vez, e é a professora que abre a porta}
-
-\cd{veracidade}, \cd{tom} e \cd{explicacao} são as três coisas que a missão mede
-o estudante por descobrir sozinho. Elas não descem no lote: o tipo que sai é
-\cd{MensagemPublica}, construído por \cd{Omit} dos três campos --- o vazamento
-reprova no \cd{tsc}, não no DevTools de uma criança de dez anos. Do lado do
-HTTP, \cd{MensagemPublicaSchema} é \emph{allowlist} e não tem campo para eles.
-
-O único lugar em que os três cruzam a fronteira é o bloco \cd{revelacao} da
-resposta, e ele é \cd{null} \textbf{até a professora acender o telão}. Quem abre
-a porta não é o relógio nem o progresso do estudante: é o clique dela em
-\enquote{Iniciar revelação coletiva}, que grava a etapa da turma.
-
-\begin{regra}
-O \cd{tom} é gabarito tanto quanto a \cd{veracidade}. O card de síntese compara
-os encaminhamentos de mensagens \cd{alarmista}/\cd{urgente} com os de
-\cd{neutro}/\cd{ponderado}; com o tom no \emph{bundle}, a criança leria
-\enquote{esta é a que assusta} antes de decidir, e a escolha que a missão mede
-deixaria de ser uma escolha (regra inviolável nº 3).
-\end{regra}
-
-\subsection{Três etapas, dois botões --- e o inverso}
-
-\cd{exp05ef1b\_gates\_turma} guarda uma etapa por turma, e a professora a move por
-\textbf{dois} botões no painel, mais o inverso deles.
-
-\begin{tabularx}{\linewidth}{@{}L{24mm}L{22mm}X@{}}
-\toprule
-\headrow \thd{Etapa} & \thd{Piso} & \thd{Teto --- e por quê}\\
-\midrule
-\cd{exploracao} & \cd{contexto} & \cd{espera}: confirmar é o \emph{latch}, e a
-  espera ativa é o que faz a turma chegar junta à revelação\\
-\zebra \cd{revelacao} & \cd{revelado} & \cd{revelado}: o card de síntese já está
-  ali, e a reflexão vem depois do debate oral\\
-\cd{reflexao} & \cd{revelado} & \cd{fim}\\
-\bottomrule
-\end{tabularx}
-
-Duas diferenças em relação ao Checkpoint~A da exp08ef4b, e as duas saem de a
-revelação ser um \emph{acontecimento} da sala, não uma pausa:
-
-\begin{itemize}
-  \item \textbf{A etapa mexe no PISO}, não só no teto. Quem ainda não tinha
-    confirmado é empurrado para \cd{revelado} quando o telão acende --- deixá-lo
-    continuar encaminhando com o gabarito projetado na parede mediria outra
-    coisa. Ele vê o próprio Mural com os selos, sem o carimbo de confirmação e
-    \textbf{fora} da conta da turma.
-  \item \textbf{O gate não é opcional.} A missão não corre inteira sem clique
-    nenhum: sem \enquote{Iniciar revelação coletiva} não há revelação, porque o
-    \emph{aha} desta missão é coletivo por desenho.
-\end{itemize}
-
-\cd{reflexao} \textbf{não} empurra para \cd{reflexao}, e o piso dela é
-\cd{revelado}: quem chega atrasado vê o Mural com os selos primeiro, e é de lá
-que sai o botão da pergunta. Pular direto para o dilema do tio seria pedir a uma
-criança que respondesse sobre uma cena que ela não viu.
-
-\textbf{O card de síntese não ganhou um terceiro gate.} O PRD separa
-\enquote{revelado} de \enquote{explicação} por mais um avanço docente; aqui a
-síntese entra junto da revelação, ao fim do Mural. Um terceiro botão seria
-controle morto no painel --- a mesma leitura que a exp06ef2b e a exp08ef4b já fizeram,
-pela mesma razão.
-
-\begin{nota}
-\textbf{O \emph{latch} é do estudante, não da turma.} \enquote{Voltar à
-exploração} é o inverso dos dois botões, para quem revelou antes da hora: nada é
-apagado, os snapshots confirmados continuam confirmados, e quem já entregou a
-reflexão fica em \cd{fim}. Uma volta de etapa não desfaz um registro que a
-criança fechou.
-\end{nota}
-
-\subsection{O clone é escuro, e o tema claro do PRD cedeu}
-
-A seção \cd{whatsappmobile} publica exclusivamente o tema escuro. O PRD desta
-missão descreve balões verdes sobre fundo branco --- como o da exp06ef2b e o da
-exp07ef1b descreviam ---, e derivar uma paleta clara a partir dos \cd{--wa-*} é
-proibido. O contraste do escuro passa o \cd{RNF-ACES-001} com folga
-(\adrr{ADR-68}). É a terceira vez que a mesma decisão é tomada pela mesma razão,
-e a repetição é o argumento: clone que não se parece com o aplicativo real não é
-clone, e é a verossimilhança que faz a criança agir como agiria no celular dela.
-
-\subsection{Onde a fronteira do disfarce cai}
-
-O critério é o de sempre --- \textbf{quem está falando}. O grupo, o Mural, os
-selos de veracidade e a contagem \enquote{Encaminhada por X de Y estudantes} são
-o mensageiro: ali quem fala é o aplicativo, e os selos são o que ele passou a
-mostrar. A espera entre o \emph{latch} e o telão, a pergunta sobre o áudio do
-tio e o episódio de recapitulação são a escola.
-
-A tarja de sistema da espera diz \enquote{professor} de propósito, e é a única
-frase da missão fora da ficção: ela é lida \emph{depois} de o \emph{latch} já ter
-fechado a curadoria, quando não há mais comportamento espontâneo a proteger. Um
-\enquote{acesso negado} ali faria a criança achar que perdeu a missão.
-
-\begin{regra}
-\textbf{\enquote{Professor} não entra na lista de termos proibidos em tela}, e a
-ausência é deliberada --- diferente da exp06ef2b. Aqui o grupo é o da TURMA:
-mensagem de estudante sobre \enquote{os professores}, e um \enquote{Prof.\
-Marcelo} escrevendo no grupo, são o WhatsApp real. Proibir a palavra faria a
-régua reprovar a própria \emph{copy} homologada, que tem as duas.
-\end{regra}
-
-\subsection{Sem mídia: a transcrição não é \emph{fallback}, é acessibilidade}
-
-\textbf{Nenhum arquivo binário existe nesta missão, e nenhum precisa existir.} O
-áudio da \cd{msg-3} é transcrição mais um \emph{player} simulado com a duração à
-vista; a \cd{imagem} da \cd{msg-4} é o rótulo do que a foto mostra, composto
-dentro do balão; o \cd{link} da \cd{msg-5} é o card com manchete, veículo e data
---- e a data é justamente o detalhe que torna a mensagem ambígua, então ela
-precisa ser \textbf{texto legível}, não pixel numa miniatura.
-
-A transcrição fica \emph{sempre} na tela (\cd{RNF-ACES-002}): é o que serve a
-uma sala sem fone, e é o que faz a suíte de ponta a ponta percorrer a missão
-inteira sem tocar em mídia nenhuma. O episódio \enquote{Pausa Digital} segue a
-mesma regra --- o roteiro está em \arq{catalogo.ts}, e a locução, quando chegar,
-entra ao lado do texto, nunca no lugar dele.
-
-\begin{nota}
-A composição textual não é economia de \emph{assets}: é o que mantém as oito
-mensagens \textbf{simétricas em forma}. O molde do lote fixa tipo e veracidade
-por posição, e o áudio está numa falsa enquanto o link está numa ambígua de
-propósito --- áudio só nas falsas ensinaria \enquote{áudio é sempre mentira},
-que é o oposto do que a missão quer instalar.
-\end{nota}
-
-\begin{atencao}
-O campo da reflexão é um \cd{<form>}, e por isso o manifesto declara
-\cd{permissoes: ["forms"]}. Sem o \emph{token} de \emph{sandbox} o navegador
-bloqueia o \emph{submit} \textbf{em silêncio} --- a armadilha que custou um
-defeito inteiro na exp02em1b e voltou na exp08ef4b. O \cd{viewport} declarado é de
-\cd{375} por \cd{812}: a missão é um celular, e o \cd{iframe} do hub precisa
-saber disso antes de montar a moldura.
-\end{atencao}
-
-\begin{limitacao}
-\textbf{Zero IA durante a aula.} A única chamada ao provedor é a preparação
-docente, antes da aula, com \emph{structured output} e o molde do lote como
-\emph{schema}. Curadoria, \emph{latch}, histograma e síntese são
-determinísticos, e o \cd{capabilities} do manifesto \textbf{não} declara
-\cd{ia}: a geração acontece no painel do professor, no hub, e não no
-\emph{bundle} da criança. Uma turma de trinta estudantes às oito da manhã não
-pode depender de o Vertex responder.
-\end{limitacao}
 
 % ---------------------------------------------------------------------------
 \section{exp06ef2b --- O Rastro do Boato}
