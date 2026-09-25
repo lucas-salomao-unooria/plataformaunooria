@@ -1,0 +1,388 @@
+% ===========================================================================
+%  E14 — Evidência pedagógica
+% ===========================================================================
+\chapter{E14 \textperiodcentered{} Evidência pedagógica}
+\label{ep:e14}
+
+\begin{fichaepico}
+\begin{campos}
+  \item[Objetivo] A plataforma registra, para cada estudante, quais habilidades
+    da BNCC ele demonstrou numa atividade de uma missão, rodada a rodada, e o
+    professor lê, corrige e leva esse retrato para a avaliação dele.
+  \item[Para quem] Professor (lê, confirma e ajusta) e Estudante (responde às
+    perguntas da missão, sem ver o próprio resultado). A Coordenação e a
+    Administração consultam, sem mexer. A equipe pedagógica da Unooria valida a
+    régua de cada missão.
+  \item[Valor] A missão já via o que a criança fazia --- tirou o post do ar,
+    respondeu a pergunta ---, e isso ficava dentro dela. No fim do bimestre, o
+    professor não tinha como dizer \enquote{a Ana atingiu a EF08CO05 e o Caio
+    ainda está em processo}, que é a frase que a rede pede e que a BNCC
+    organiza.
+  \item[Estado] \parcial{} --- a base está pronta na plataforma; aparece para o
+    professor quando a primeira missão tiver a régua pedagógica, e nenhuma tem
+    ainda.
+\end{campos}
+\end{fichaepico}
+
+\begin{tabularx}{\linewidth}{@{}L{16mm}X L{20mm}@{}}
+\toprule
+\headrow \thd{ID} & \thd{Feature} & \thd{Estado}\\
+\midrule
+\id{F14.1} & A régua pedagógica de cada missão & \parcial\\
+\zebra \id{F14.2} & O registro por atividade e rodada & \parcial\\
+\id{F14.3} & Equipes e aula projetada & \parcial\\
+\zebra \id{F14.4} & O painel e o ajuste do professor & \parcial\\
+\id{F14.5} & A pergunta de múltipla escolha & \parcial\\
+\zebra \id{F14.6} & O perfil do aluno & \parcial\\
+\bottomrule
+\end{tabularx}
+
+\section{O que é uma evidência aqui}
+
+\textbf{Evidência é o nível que um estudante demonstrou numa habilidade da
+BNCC}, dentro de uma atividade de uma missão, numa rodada. Três ideias a
+sustentam:
+
+\begin{itemize}
+  \item \textbf{A atividade é da missão.} Cada missão diz quais são as suas
+    atividades; a plataforma não tem, por ora, uma \enquote{atividade} dela
+    mesma. Hoje só o Instanooria tem atividades --- a que o professor cria a
+    partir da aula (\id{H06.6.1}) ---, e o unooGPT e o UnooTube serão refeitos
+    com atividades numa próxima onda.
+  \item \textbf{A rodada é cada vez que a atividade é feita.} Reiniciar a
+    atividade abre uma rodada nova, e a anterior fica guardada.
+  \item \textbf{A régua pedagógica diz o que a missão mede}: quais habilidades,
+    em quais momentos, qual pergunta e quanto vale cada alternativa. Ela é
+    escrita com a equipe pedagógica e validada por ela antes de entrar.
+\end{itemize}
+
+A escala tem três níveis --- \textbf{atingiu}, \textbf{em processo} e
+\textbf{não atingiu} ---, e a falta de registro é \enquote{Não avaliado}, que
+nunca conta como não atingiu.
+
+\begin{nota}
+\textbf{Pronta na plataforma, invisível para o professor.} As histórias
+marcadas \parcial{} neste épico têm a regra construída e testada, mas nenhuma
+missão foi adaptada: sem régua, a página da atividade não mostra o bloco
+\enquote{Habilidades da BNCC}, e o perfil do estudante fica vazio. Elas passam a
+\pronto{} quando a primeira missão entrar com a régua (\id{H14.1.2}) e houver o
+teste que percorre a tela.
+\end{nota}
+
+\section{O que foi decidido}
+
+\begin{decisao}
+\textbf{Decidido em 25 de setembro de 2026.}
+\begin{itemize}
+  \item \textbf{Esta frente é só a plataforma.} Nenhuma missão foi adaptada; cada
+    uma entra depois, com a régua validada pela equipe pedagógica.
+  \item \textbf{Três níveis e um \enquote{Não avaliado}.} Sem registro, a
+    habilidade é \enquote{Não avaliado}, e nunca conta como não atingiu.
+    \enquote{Não participou} é o \enquote{Não avaliado} que o professor põe à
+    mão.
+  \item \textbf{Vale o melhor.} Dentro de uma rodada, dois momentos que medem a
+    mesma habilidade ficam com o melhor; o resultado da atividade é a melhor
+    rodada de cada habilidade.
+  \item \textbf{Quem vale mais}: o professor, depois o próprio estudante, depois
+    a equipe. A equipe recebe só o nível, nunca texto nenhum.
+  \item \textbf{Trocar a equipe muda só a rodada em andamento.} As rodadas
+    passadas ficam com a equipe que tinham, e o que estiver errado nelas o
+    professor corrige à mão.
+  \item \textbf{Diferente do documento do PO: a aula projetada não vale
+    sozinha.} O pedido era replicar automaticamente para todos, também quando a
+    turma inteira usa um computador só. Na projeção, o resultado chega \enquote{a
+    revisar} e só conta depois de \enquote{Confirmar para a turma}: a criança no
+    fundo da sala não demonstrou o que a turma respondeu no telão.
+  \item \textbf{Cada missão tem as suas atividades.} Uma atividade comum a todas
+    as missões fica para quando houver mais de uma missão com atividades.
+  \item \textbf{A resposta certa fica na plataforma.} Na pergunta de múltipla
+    escolha vale a primeira resposta, e o estudante só vê \enquote{resposta
+    enviada}.
+  \item \textbf{O estudante não vê o próprio resultado, e não há ranking.}
+  \item \textbf{O perfil é por missão e por atividade.} A mesma habilidade
+    medida em duas missões aparece nas duas; juntar as missões é de um painel
+    futuro, com regra pedagógica própria (\id{H14.6.2}).
+\end{itemize}
+\end{decisao}
+
+% ---------------------------------------------------------------------------
+\feature{F14.1}{A régua pedagógica de cada missão}{\parcial}
+
+\begin{historia}{H14.1.1}{Cada missão diz o que mede}{\parcial}
+\hu{Equipe pedagógica da Unooria}{definir, para cada missão, quais habilidades
+da BNCC ela mede e em quais momentos}{que o painel do professor afirme só o que
+a missão de fato observa}
+\aceite
+\begin{itemize}
+  \item A régua lista as habilidades pelo código exato da BNCC (ex.:
+    EF08CO05), os momentos que medem cada uma --- uma ação dentro da missão ou
+    uma pergunta de múltipla escolha --- e, em cada pergunta, quanto vale cada
+    alternativa: atingiu, em processo ou não atingiu.
+  \item A régua diz quem a validou na equipe pedagógica, e quando.
+  \item A plataforma não aceita régua com habilidade que não existe na BNCC,
+    com alternativa fora da escala ou com pergunta que nenhum momento corrige.
+  \item Mudou a régua, muda a versão; cada registro guarda a versão que valia
+    quando foi feito.
+  \item Missão sem régua não mostra evidência nenhuma.
+\end{itemize}
+\pendencia{a base está pronta; nenhuma missão tem régua ainda (\id{H14.1.2}).}
+\end{historia}
+
+\begin{historia}{H14.1.2}{A primeira missão entra com a régua}{\afazer}
+\hu{Professor}{que a primeira missão com atividades venha com a régua
+pedagógica}{ver, na página da atividade, as habilidades que cada estudante
+demonstrou}
+\aceiteproposta
+\begin{itemize}
+  \item A régua é escrita com a equipe pedagógica e validada antes de entrar.
+  \item A missão registra cada momento da régua enquanto a turma joga.
+  \item O bloco \enquote{Habilidades da BNCC} aparece na página da atividade.
+  \item A primeira candidata é o Instanooria, a única missão que já tem
+    atividades.
+\end{itemize}
+\end{historia}
+
+% ---------------------------------------------------------------------------
+\feature{F14.2}{O registro por atividade e rodada}{\parcial}
+
+\begin{historia}{H14.2.1}{Um nível por habilidade, e \enquote{Não avaliado} quando não há}{\parcial}
+\hu{Professor}{ver, para cada estudante e cada habilidade, o nível que ele
+demonstrou}{saber quem atingiu e quem ainda está em processo}
+\aceite
+\begin{itemize}
+  \item A escala tem três níveis: atingiu, em processo e não atingiu.
+  \item Sem registro, a habilidade aparece como \enquote{Não avaliado} --- e
+    nunca conta como não atingiu.
+  \item Quando dois momentos da mesma rodada medem a mesma habilidade, vale o
+    melhor: demonstrar uma vez é demonstrar.
+\end{itemize}
+\pendencia{a base está pronta; aparece para o professor quando a primeira
+missão tiver a régua pedagógica.}
+\end{historia}
+
+\begin{historia}{H14.2.2}{Refazer a atividade sem perder o que já foi demonstrado}{\parcial}
+\hu{Professor}{reiniciar uma atividade para a turma tentar de novo}{dar outra
+chance sem apagar o que cada estudante já tinha mostrado}
+\aceite
+\begin{itemize}
+  \item Cada vez que a atividade é feita é uma rodada: reiniciar abre a rodada
+    seguinte, e a anterior fica guardada.
+  \item O resultado da atividade é a melhor rodada de cada habilidade: quem
+    atingiu uma habilidade na primeira rodada e outra na segunda atingiu as
+    duas.
+  \item Uma rodada pior depois não apaga o que já tinha sido demonstrado.
+\end{itemize}
+\pendencia{a base está pronta; aparece para o professor quando a primeira
+missão tiver a régua pedagógica.}
+\end{historia}
+
+\begin{historia}{H14.2.3}{Sem ranking, e o nível é da habilidade}{\parcial}
+\hu{Professor}{ler a evidência da turma sem ranking nem nota somada}{avaliar
+cada habilidade sem transformar a criança num número}
+\aceite
+\begin{itemize}
+  \item Os estudantes aparecem em ordem alfabética, nunca por desempenho.
+  \item Nenhuma tela soma os níveis numa nota: o nível é de uma habilidade, não
+    da criança.
+\end{itemize}
+\pendencia{a base está pronta; aparece para o professor quando a primeira
+missão tiver a régua pedagógica.}
+\end{historia}
+
+% ---------------------------------------------------------------------------
+\feature{F14.3}{Equipes e aula projetada}{\parcial}
+
+Quando os estudantes dividem um computador (\id{E13}), só um deles entra na
+missão. O que a missão vê naquela tela foi feito pela equipe.
+
+\begin{historia}{H14.3.1}{Quem divide o computador recebe o mesmo nível}{\parcial}
+\hu{Professor}{que o que a equipe fez junto valha para todos da equipe}{não ver
+como \enquote{Não avaliado} quem estava sentado ao lado de quem entrou}
+\aceite
+\begin{itemize}
+  \item Quando o estudante que entrou demonstra uma habilidade, os colegas do
+    mesmo computador recebem o mesmo nível.
+  \item Vai só o nível: nada do que foi escrito passa de um para o outro.
+  \item Quem entrou com o próprio login e passou por aquele momento fica com o
+    que ele mesmo fez, ainda que o colega tenha ido melhor.
+  \item O que o professor ajustou nunca é trocado pelo que veio da equipe.
+  \item Se dois da mesma equipe demonstraram a habilidade, fica o melhor.
+\end{itemize}
+\pendencia{a base está pronta; aparece para o professor quando a primeira
+missão tiver a régua pedagógica.}
+\end{historia}
+
+\begin{historia}{H14.3.2}{Trocar as equipes no meio da atividade}{\parcial}
+\hu{Professor}{mudar as equipes depois que a atividade começou}{corrigir quem
+sentou onde sem mexer nas aulas anteriores}
+\aceite
+\begin{itemize}
+  \item Ao salvar ou desfazer as equipes, a plataforma refaz o que veio da
+    equipe só na rodada em andamento.
+  \item As rodadas passadas ficam com a equipe que tinham naquela aula; o que
+    estiver errado nelas eu corrijo à mão (\id{H14.4.2}).
+  \item Quem saiu da equipe perde o nível que tinha recebido dela; quem entrou
+    recebe.
+  \item Salvar as equipes de novo sem mudar ninguém de lugar não desfaz a
+    confirmação que eu já tinha dado (\id{H14.3.3}).
+\end{itemize}
+\pendencia{a base está pronta; aparece para o professor quando a primeira
+missão tiver a régua pedagógica.}
+\end{historia}
+
+\begin{historia}{H14.3.3}{A aula projetada chega \enquote{a revisar}}{\parcial}
+\hu{Professor}{que o resultado da turma inteira diante de um computador só não
+valha para todos sem eu conferir}{não afirmar que cada criança demonstrou o que
+a turma respondeu junto}
+\aceite
+\begin{itemize}
+  \item Quando a turma inteira usa um computador --- as equipes dizem que há um
+    computador, ou uma equipe tem todos os estudantes ---, o nível chega a cada
+    um como \enquote{a revisar}.
+  \item O que está \enquote{a revisar} não conta no resultado da atividade nem
+    no perfil do estudante.
+  \item \enquote{Confirmar para a turma} faz valer, de uma vez, tudo o que está
+    a revisar naquela rodada; confirmar de novo não muda nada.
+  \item Depois de confirmar, ainda posso ajustar cada estudante (\id{H14.4.2}).
+  \item É diferente do documento do PO, que pedia a replicação automática
+    também aqui.
+\end{itemize}
+\pendencia{a base está pronta; aparece para o professor quando a primeira
+missão tiver a régua pedagógica.}
+\end{historia}
+
+% ---------------------------------------------------------------------------
+\feature{F14.4}{O painel e o ajuste do professor}{\parcial}
+
+\begin{historia}{H14.4.1}{Ver as habilidades da turma na página da atividade}{\parcial}
+\hu{Professor}{ver, na página da atividade, as habilidades da BNCC de cada
+estudante}{saber o que a turma demonstrou e planejar a próxima aula}
+\aceite
+\begin{itemize}
+  \item A página da atividade ganha o bloco \enquote{Habilidades da BNCC} só
+    quando a missão tem régua.
+  \item Cada estudante da turma é uma linha, com a equipe dele na missão, o
+    nível de cada habilidade em cada rodada e o resultado da atividade.
+  \item Cada habilidade vem com o texto da BNCC, e cada nível diz de onde veio:
+    do próprio estudante, da equipe, da aula projetada ou do ajuste do
+    professor.
+  \item O bloco diz quantos níveis de cada rodada estão \enquote{a revisar}.
+  \item Hoje só o Instanooria tem atividades, então é só na página da
+    atividade dele que o bloco pode aparecer.
+\end{itemize}
+\pendencia{a base está pronta; aparece para o professor quando a primeira
+missão tiver a régua pedagógica.}
+\end{historia}
+
+\begin{historia}{H14.4.2}{Ajustar um estudante ou vários}{\parcial}
+\hu{Professor}{corrigir o nível de um estudante, ou de vários de uma vez}{fazer
+valer o que eu vi na sala, mesmo quando a missão não viu}
+\aceite
+\begin{itemize}
+  \item Posso ajustar a qualquer momento, mesmo com a missão encerrada.
+  \item Posso ajustar um estudante ou vários de uma vez, numa habilidade e numa
+    rodada.
+  \item O ajuste vale sobre tudo: nem o que o estudante fizer depois, nem a
+    equipe, o trocam.
+  \item Cada mudança fica no histórico --- de quê para quê, quem mudou e quando
+    ---, e o histórico não pode ser reescrito.
+  \item Só quem dá aula na turma ajusta.
+\end{itemize}
+\pendencia{a base está pronta; aparece para o professor quando a primeira
+missão tiver a régua pedagógica.}
+\end{historia}
+
+\begin{historia}{H14.4.3}{Marcar que o estudante não participou}{\parcial}
+\hu{Professor}{marcar que um estudante não participou de uma atividade}{que
+quem faltou não herde o que a equipe fez}
+\aceite
+\begin{itemize}
+  \item \enquote{Não participou} é um \enquote{Não avaliado} que eu mesmo
+    ponho.
+  \item Ele impede que o nível da equipe chegue a esse estudante, também quando
+    as equipes mudam.
+  \item No perfil, conta como não avaliado --- nunca como não atingiu.
+  \item Só o professor marca; a missão nunca marca \enquote{não participou}.
+\end{itemize}
+\pendencia{a base está pronta; aparece para o professor quando a primeira
+missão tiver a régua pedagógica.}
+\end{historia}
+
+\begin{historia}{H14.4.4}{A coordenação consulta, sem ajustar}{\parcial}
+\hu{Coordenação da escola}{consultar a evidência de uma turma e o perfil de um
+estudante}{acompanhar a aprendizagem sem interferir na avaliação do professor}
+\aceite
+\begin{itemize}
+  \item A Coordenação da escola, a Coordenação regional, o Administrador do
+    contrato e o Administrador Unooria podem ler a evidência de uma turma e o
+    perfil de um estudante.
+  \item Não há confirmar nem ajustar para eles: quem decide é quem dá aula na
+    turma.
+  \item O que se lê é o nível de cada habilidade, nunca o que a criança
+    escreveu.
+  \item É a exceção declarada à regra de que a gestão não lê a linha de uma
+    criança (\id{H07.1.3}): aqui ela lê o nível por habilidade, e nunca o
+    relatório da missão.
+\end{itemize}
+\pendencia{a plataforma já permite a leitura e já recusa o ajuste da
+coordenação, mas as telas desta frente são as do professor: a tela da
+coordenação ainda não existe.}
+\end{historia}
+
+% ---------------------------------------------------------------------------
+\feature{F14.5}{A pergunta de múltipla escolha}{\parcial}
+
+\begin{historia}{H14.5.1}{Responder sem saber se acertei}{\parcial}
+\hu{Estudante}{responder à pergunta da missão}{mostrar o que eu sei sem que a
+missão vire uma prova com nota na hora}
+\aceite
+\begin{itemize}
+  \item A pergunta mostra o enunciado e as alternativas; quanto vale cada
+    alternativa fica na plataforma, e nunca chega ao meu aparelho.
+  \item Depois de responder, vejo só \enquote{resposta enviada} --- e vejo o
+    mesmo se responder de novo.
+  \item Vale a primeira resposta; a segunda não muda nada.
+  \item A resposta conta na atividade e na rodada em que eu estou na missão:
+    não sou eu quem escolhe.
+  \item Se a missão não está aberta na minha turma, a pergunta não abre.
+  \item Não vejo o meu resultado em lugar nenhum da plataforma.
+\end{itemize}
+\pendencia{a base está pronta; aparece quando a primeira missão tiver a régua
+pedagógica, com as perguntas dela.}
+\end{historia}
+
+% ---------------------------------------------------------------------------
+\feature{F14.6}{O perfil do aluno}{\parcial}
+
+\begin{historia}{H14.6.1}{Abrir o perfil de um estudante}{\parcial}
+\hu{Professor}{abrir o perfil de um estudante da minha turma}{ver, missão a
+missão, as habilidades que ele já demonstrou}
+\aceite
+\begin{itemize}
+  \item O perfil abre pela aba Estudantes da turma.
+  \item Em cada missão e em cada atividade, cada habilidade aparece com o nível
+    da melhor rodada.
+  \item Entra só o que vale: nada \enquote{a revisar}, nada de \enquote{não
+    participou}, nada de \enquote{Não avaliado}.
+  \item O perfil diz o que o estudante demonstrou, e não de onde veio (dele, da
+    equipe ou do professor).
+  \item A mesma habilidade medida em duas missões aparece nas duas, separada.
+  \item Só abro o perfil de quem eu ensino; outro estudante aparece como não
+    encontrado.
+\end{itemize}
+\pendencia{a base está pronta; o perfil fica vazio até a primeira missão ter a
+régua pedagógica.}
+\end{historia}
+
+\begin{historia}{H14.6.2}{Juntar as habilidades de todas as missões}{\afazer}
+\hu{Professor}{ver num painel só cada habilidade da BNCC de um estudante,
+somando todas as missões}{acompanhar a Base ao longo do ano, e não missão por
+missão}
+\aceiteproposta
+\begin{itemize}
+  \item A regra de junção --- vale a melhor? a mais recente? pesa o tamanho da
+    missão? --- é definida pela equipe pedagógica antes de qualquer tela.
+  \item O painel mostra de quais missões veio cada nível.
+  \item Continua sem ranking e sem nota somada.
+\end{itemize}
+\end{historia}

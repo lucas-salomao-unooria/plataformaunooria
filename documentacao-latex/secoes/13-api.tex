@@ -4,7 +4,7 @@
 \chapter{Especificação da API}
 \label{cap:api}
 
-A API é um serviço NestJS~\cite{nestjs2026} com 33 módulos (os \cd{imports} de
+A API é um serviço NestJS~\cite{nestjs2026} com 34 módulos (os \cd{imports} de
 \arq{app.module.ts} em 2026-09-25). Este capítulo
 especifica a superfície HTTP: as convenções transversais, os grupos de rotas e a
 autorização de cada um. O catálogo completo, rota por rota, está no
@@ -126,14 +126,19 @@ método e esquema, é o Apêndice~\ref{ap:endpoints}.
   \node[rt, fill=unooBlueWash, draw=unooBlue] (eq) at (13.8,-6.65)
     {\texttt{/equipes/*}\desc{prof.\ monta, gestor lê,\\estudante: \texttt{/minha}}};
 
-  \node[camadalbl, anchor=west] at (0.1,-7.95) {exp08ef1b --- Instanooria};
-  \node[rt] (atv) at (1.95,-9.05)
+  % 5a linha (2026-09-25): coluna nova é linha nova --- /evidencias/* entra
+  % embaixo, e a faixa da exp08ef1b desce 1,85.
+  \node[rt] (evi) at (1.95,-8.5)
+    {\texttt{/evidencias/*}\desc{prof.\ ajusta, gestor lê;\\estudante: só a pergunta}};
+
+  \node[camadalbl, anchor=west] at (0.1,-9.8) {exp08ef1b --- Instanooria};
+  \node[rt] (atv) at (1.95,-10.9)
     {\texttt{/atividades/*}\desc{professor}};
-  \node[rt] (rn) at (5.9,-9.05)
+  \node[rt] (rn) at (5.9,-10.9)
     {\texttt{/runs/*}\desc{estudante (\texttt{/eventos}: professor tb.)}};
-  \node[rt] (po) at (9.85,-9.05)
+  \node[rt] (po) at (9.85,-10.9)
     {\texttt{/posts/:id/\B{}comentarios}\desc{estudante}};
-  \node[rt] (pf) at (13.8,-9.05)
+  \node[rt] (pf) at (13.8,-10.9)
     {\texttt{/perfis/importar}\desc{chave de serviço}};
 
 \end{tikzpicture}}
@@ -146,7 +151,9 @@ método e esquema, é o Apêndice~\ref{ap:endpoints}.
   pelo nome: \texttt{/recursos/*} diz se ela existe NESTA REDE (\adrr{ADR-87}),
   \texttt{/salas/*} se está aberta NESTA TURMA (\adrr{ADR-69}) e
   \texttt{/equipes/*} quem divide um computador nela (\adrr{ADR-111}). Nas duas
-  últimas quem escreve é só quem leciona; o gestor só lê.}
+  últimas quem escreve é só quem leciona; o gestor só lê --- como em
+  \texttt{/evidencias/*} (\adrr{ADR-112}), em que o estudante alcança só a
+  pergunta e a resposta, nunca o próprio resultado.}
 \label{fig:mapa-rotas}
 \end{figure}
 
@@ -456,6 +463,71 @@ mudaram de forma para contar por COMPUTADOR:
   \cd{porComputador}. \enquote{Abrir} leva ao representante.\\
 \bottomrule
 \end{tabularx}
+
+\subsection{A evidência pedagógica: por atividade e rodada}
+
+Seis rotas no módulo \arq{evidencias/} (\adrr{ADR-112}), em dois
+\emph{controllers}: quatro do lado de quem dá aula --- o painel, a confirmação e
+o ajuste de uma atividade, e o perfil de um estudante --- e duas do estudante, a
+pergunta e a resposta. Nenhum caminho de um casa com o
+do outro --- o número de segmentos e as literais diferem ---, então a ordem de
+registro não decide quem responde; e o do estudante é outro arquivo, sem
+\cd{@Roles} misto. As duas escritas do professor devolvem o PAINEL já
+atualizado, para a tela não precisar reler.
+
+\begin{itemize}
+  \item \rota{GET /evidencias/turma/\B :turmaId/\B missao/:expId/\B atividade/:atividadeId}
+    (professor que leciona, gestores, \cd{admin}) --- o painel: as habilidades da
+    ficha com o texto da BNCC, as rodadas que têm evidência, e para cada
+    estudante da turma a equipe dele na missão, \cd{porRodada} (cada habilidade
+    com \cd{status}, \cd{origem} e \cd{situacao}) e o \cd{resultado} --- a
+    melhor rodada por habilidade, só com o que vale. Habilidade ausente é N/A.
+    \cd{pendentes} conta, por rodada, as cópias da projeção a revisar. Missão
+    SEM ficha responde \textbf{200} com \cd{temFicha: false} e tudo vazio, e não
+    400: é por esta resposta que o hub decide se desenha o bloco. A ordem é a
+    alfabética, e nenhum campo soma níveis.
+  \item \rota{POST .../\B rodadas/:rodada/confirmar} (só professor) ---
+    \enquote{Confirmar para a turma}: as cópias \cd{a\_revisar} da rodada
+    passam a \cd{valida}, com UM evento de turma no histórico. Responde 200,
+    e não 201 (\cd{@HttpCode(200)}), porque é ação sobre o que já existe; e
+    repetir não muda nada.
+  \item \rota{PATCH .../\B rodadas/:rodada/ajustes} (\textbf{só professor com
+    matrícula na turma}) --- de 1 a 200 ajustes
+    \cd{\{ estudanteId, habilidade, status \}}, a qualquer momento, mesmo com a
+    missão encerrada. O ajuste é a origem \cd{professor}, que nada sobrescreve
+    depois; \cd{nao\_participou} é o N/A explícito. Estudante fora da turma,
+    habilidade fora da ficha ou o mesmo par duas vezes: \textbf{400}
+    \cd{ajuste-invalido} com \cd{erros}, a lista INTEIRA em frases. Rodada
+    depois da última que a atividade teve: \textbf{400}
+    \cd{rodada-inexistente} (a rodada 1 sempre existe, para a atividade feita
+    fora da missão). Ajuste que repete o que já estava é ignorado, sem evento.
+  \item \rota{GET /evidencias/\B estudante/:estudanteId} (professor, gestores,
+    \cd{admin}) --- o perfil: em cada missão (com o nome do catálogo, ou o
+    \cd{expId} quando ela não está nele), em cada atividade, o nível de cada
+    habilidade --- a melhor rodada, só com o que vale: sem a projeção a
+    revisar, sem N/A e sem \cd{nao\_participou}. Sem origem, e sem juntar
+    missões. O professor só abre quem ele ensina
+    (\cd{professorEnsinaOEstudante}).
+  \item \rota{GET /evidencias/\B :expId/\B perguntas/:perguntaId} (estudante) --- o
+    enunciado e as alternativas, só \cd{id} e \cd{texto}: o nível de cada uma é
+    o gabarito, e fica no servidor. Pergunta fora da ficha: \textbf{404}
+    \cd{pergunta-nao-encontrada}.
+  \item \rota{POST /evidencias/\B :expId/\B perguntas/:perguntaId/resposta}
+    (estudante) --- o corpo leva SÓ \cd{alternativaId}; a atividade e a rodada
+    saem do resolvedor da missão. Responde \textbf{sempre}
+    \mbox{\cd{\{ enviada: true \}}}, na primeira e na segunda vez --- vale a primeira.
+    Sem atividade em andamento (ou sem resolvedor registrado): \textbf{409}
+    \cd{sem-atividade-em-andamento}; alternativa que não é da pergunta:
+    \textbf{400} \cd{alternativa-desconhecida}.
+\end{itemize}
+
+As duas do estudante passam por \cd{exigirMissaoLiberada}: missão não liberada
+na turma dele é \textbf{403} \cd{missao-nao-liberada}, e recurso desligado na
+rede, \cd{recurso-indisponivel}. Turma que o professor não leciona, e estudante
+que ele não ensina, respondem \textbf{404}, nunca 403 --- o desenho da sala. O
+gestor, que tem a escola do \emph{token} vazia quando é
+\cd{gestor\_contrato}, diz a escola em \cd{?escolaId=}. E o estudante
+\textbf{não tem rota que leia o próprio resultado}: a ausência é o contrato.
 
 \subsection{Entrada de pessoas: as duas portas, e por que só uma escreve}
 

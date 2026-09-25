@@ -209,6 +209,7 @@ C4Component
     Component(equipes,"equipes/", "", "Quem divide um computador na missao (ADR-111); consulta.ts e a porta dos paineis")
     Component(recs,   "recursos/", "", "O interruptor da rede e a versao (ADR-87); escrita so admin")
     Component(prosp,  "prospeccao/", "", "Cadastro de interesse do site publico, sem tenant (ADR-107)")
+    Component(evid,   "evidencias/", "", "Habilidade da BNCC por atividade e rodada (ADR-112); a porta marcar das missoes, que nenhuma chama ainda")
 
     %% --- dominio por experiencia (nenhum conhece outro)
     Component(motor,  "motor/ geracao/ dossie/ atividades/ perfis/", "", "exp08ef1b")
@@ -228,6 +229,8 @@ C4Component
   Rel(equipes, prisma, "comTenancy")
   Rel(utube, equipes, "consulta.ts")
   Rel(ugpt, equipes, "consulta.ts")
+  Rel(evid, equipes, "gancho aoMudarEquipes + consulta.ts")
+  Rel(evid, prisma, "comTenancy")
   Rel(motor, prisma, "comTenancy")
   Rel(vila, prisma, "comTenancy")
   Rel(ugpt, prisma, "comTenancy")
@@ -240,6 +243,8 @@ C4Component
 
   %% A figura TikZ desenha a infraestrutura ENTRE a plataforma e o dominio, com
   %% a coluna 2 vazia: e por ela que unootube/ e unoogpt/ sobem ate equipes/.
+  %% evidencias/ chega a equipes/ pelo vao entre a 2a e a 3a linha da
+  %% plataforma, por cima de recursos/ e prospeccao/.
 \end{lstlisting}
 
 % ---------------------------------------------------------------------------
@@ -1059,6 +1064,7 @@ flowchart TB
     rec["/recursos/* - o interruptor da REDE (ADR-87)"]
     sal["/salas/* - prof. libera, gestor le; /minhas: estudante (ADR-69)"]
     eq["/equipes/* - prof. monta, gestor le; /minha: estudante (ADR-111)"]
+    ev["/evidencias/* - prof. confirma e ajusta, gestor le; estudante: so a pergunta e a resposta (ADR-112)"]
   end
   subgraph E01["exp08ef1b - Instanooria"]
     atv["/atividades/* - professor"]; rn["/runs/* - estudante (/eventos: professor tb.)"]

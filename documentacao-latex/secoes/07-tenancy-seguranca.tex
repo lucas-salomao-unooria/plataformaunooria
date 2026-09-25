@@ -177,6 +177,26 @@ sai de \cd{users.turma\_id} com o \cd{escolaId} no \cd{where} --- a regra acima,
 de novo.
 \end{atencao}
 
+\begin{atencao}
+\textbf{Na evidência pedagógica, a mesma política falha ALTO na escrita.} As
+três tabelas do módulo \arq{evidencias/} (\adrr{ADR-112}) ---
+\cd{evidencias\_marcas}, \cd{evidencias} e \cd{evidencias\_eventos}, todas com
+id de criança --- têm \cd{escola\_id NOT NULL}, \cd{ENABLE} e \cd{FORCE ROW LEVEL
+SECURITY} e uma política por escola. Quem ESCREVE a marca é outro módulo: a
+missão chama \cd{EvidenciasService.marcar} com o \cd{tx} DELA, e o serviço não
+abre \cd{comTenancy} de propósito, para a marca cair junto se a jogada cair. Com
+um cliente sem a escola armada, a leitura devolve vazio, como nas equipes, mas o
+\cd{INSERT} é recusado: a política sem \cd{WITH CHECK} vale também para a linha
+nova, e \cd{current\_setting('app.escola\_id', true)} nulo não casa com escola
+nenhuma. O erro de política no log é o sintoma de uma missão marcando fora da
+transação de \emph{tenancy}. O histórico tem uma tranca a mais, no molde de
+\cd{recursos\_auditoria}: a \emph{role} de \emph{runtime} recebe só
+\cd{SELECT, INSERT} em \cd{evidencias\_eventos}, e um \emph{trigger} recusa
+\cd{UPDATE} para qualquer \emph{role}, inclusive a dona da tabela. E, de novo, a
+lista de estudantes da turma sai de \cd{users.turma\_id} com o \cd{escolaId} no
+\cd{where}.
+\end{atencao}
+
 \subsection{Como a escola chega ao contexto}
 
 \begin{figure}[H]
@@ -584,6 +604,19 @@ Propor equipes (sorteio, N vazias, a última missão) --- nunca grava &
   \rota{PUT}, \rota{DELETE /equipes/\B turma/:turmaId/\B missao/:expId} & \no & \yes\footnotesize{\ddag} & \no & \no\\
 A própria equipe na missão (só primeiros nomes) & \rota{GET /equipes/minha} &
   \yes & \no & \no & \no\\
+\zebra O painel da evidência de uma atividade (\adrr{ADR-112}) &
+  \rota{GET /evidencias/\B turma/:turmaId/\B missao/:expId/\B atividade/\B :atividadeId} &
+  \no & \yes\footnotesize{\ddag} & \yes & \yes\\
+\textbf{Confirmar para a turma} a cópia da projeção &
+  \rota{POST .../\B rodadas/:rodada/\B confirmar} & \no & \yes\footnotesize{\ddag} & \no & \no\\
+\zebra \textbf{Ajustar a evidência} (um ou vários, mesmo com a missão encerrada) &
+  \rota{PATCH .../\B rodadas/:rodada/\B ajustes} & \no & \yes\footnotesize{\ddag} & \no & \no\\
+O perfil de evidência de um estudante (sem origem) &
+  \rota{GET /evidencias/\B estudante/\B :estudanteId} & \no & \yes\footnotesize{\ddag} & \yes & \yes\\
+\zebra A pergunta de múltipla escolha, sem o gabarito &
+  \rota{GET /evidencias/\B :expId/\B perguntas/\B :perguntaId} & \yes & \no & \no & \no\\
+A resposta --- que devolve só \enquote{enviada}, nunca o resultado &
+  \rota{POST .../\B resposta} & \yes & \no & \no & \no\\
 \zebra Vila do Lume: agregado da turma & \rota{/vila/agregado/*} & \no & \yes & \yes & \no\\
 \textbf{Vila do Lume: a linha de uma criança} & \rota{/vila/professor/*} &
   \no & \yes\footnotesize{\ddag} & \no & \no\\
@@ -618,12 +651,15 @@ turma}) e para o relógio da aula do unooGPT --- as três coisas que uma prova d
 \normalsize
 
 \begin{regra}
-\textbf{As três ausências mais importantes desta tabela.} \emph{Bem-estar} não
+\textbf{As quatro ausências mais importantes desta tabela.} \emph{Bem-estar} não
 tem uma única rota de gestor nem de agregado --- o instrumento é do professor,
 sobre o professor. No \emph{unooGPT}, o controller do gestor \textbf{não tem
 rota que aceite \cd{estudanteId}}: não é que ele não deva ver a linha de uma
 criança, é que não existe endereço onde ela caiba. E \cd{admin-contrato} não
-alcança a Vila nem o dossiê: ele lê a rede em agregado, nunca a sala.
+alcança a Vila nem o dossiê: ele lê a rede em agregado, nunca a sala. Na
+\emph{evidência pedagógica}, o estudante \textbf{não tem rota que leia o próprio
+resultado} (\adrr{ADR-112}): as duas dele são a pergunta, sem gabarito, e a
+resposta, que devolve \mbox{\cd{\{ enviada: true \}}} na primeira e na segunda vez.
 \end{regra}
 
 \begin{decisao}

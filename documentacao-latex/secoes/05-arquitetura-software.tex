@@ -374,6 +374,8 @@ instrumentação automática do OpenTelemetry precisa alterar \cd{http},
     {\texttt{recursos/}\desc{o interruptor da rede e a versão}};
   \node[c4component, text width=25.5mm, minimum height=16mm] (prosp) at (11.45,-8.1)
     {\texttt{prospeccao/}\desc{o site público, sem \emph{tenant}}};
+  \node[c4component, text width=25.5mm, minimum height=16mm] (evid) at (14.65,-8.1)
+    {\texttt{evidencias/}\desc{habilidade da BNCC por atividade}};
 
   % ---- faixa 3: infraestrutura (coluna 2 vazia: a pista das equipes)
   \node[camadalbl, anchor=east] at (16.1,-9.25) {Infraestrutura --- as portas únicas};
@@ -418,6 +420,11 @@ instrumentação automática do OpenTelemetry precisa alterar \cd{http},
   \node[cxlabel] at (3.6,-7.05) {contagem};
   \draw[c4rel] (salas.south) -- (prisma.north);
   \draw[c4rel] (3.75,-8.9) -- (3.75,-9.25) -- (2.9,-9.25) -- (2.9,-9.6);
+  % evidencias/ -> equipes/: pelo vão entre a 2a e a 3a linha da plataforma,
+  % acima de recursos/ e prospeccao/, e descendo no terço direito de equipes/
+  % (o terço esquerdo é a chegada da contagem da sala).
+  \draw[c4rel] (evid.north) -- (14.65,-7.05) -- (5.6,-7.05) -- (5.6,-7.3);
+  \node[cxlabel] at (10.05,-7.05) {gancho \texttt{aoMudarEquipes} + \texttt{consulta.ts}};
 
   % ---- relações: domínio (as que sobem até equipes/ passam pela coluna vazia)
   \draw[c4rel] (motor.north) -- (1.85,-11.2);
@@ -445,7 +452,11 @@ instrumentação automática do OpenTelemetry precisa alterar \cd{http},
   por papel ---, e nenhum módulo dessa faixa conhece outro. \texttt{equipes/}
   (\adrr{ADR-111}) é lido por \texttt{salas/} (\adrr{ADR-69}), que mostra a
   contagem na sala, e pelos painéis de \texttt{unootube/} e \texttt{unoogpt/},
-  pela porta \texttt{equipes/consulta.ts}. A caixa da direita reúne, sem setas,
+  pela porta \texttt{equipes/consulta.ts}; \texttt{evidencias/}
+  (\adrr{ADR-112}) lê a mesma porta e se registra no gancho
+  \texttt{aoMudarEquipes}, e as missões vão chamá-lo pela porta
+  \texttt{marcar} --- que nenhuma chama ainda, daí a caixa sem seta vinda do
+  domínio. A caixa da direita reúne, sem setas,
   os módulos da exp06ef2b, da exp08ef4b, da exp05ef1b, da exp01ef1b e da
   app-92, na ordem em que aparecem. Todo módulo com dado passa por
   \texttt{comTenancy}: as setas até o \texttt{PrismaService} são uma amostra, e a
@@ -496,6 +507,31 @@ missão chama \cd{EquipesService.registrarFonteDeGrupo} na subida, e
 (\arq{components/equipes/}), e as chamadas passam pelo BFF
 (\rota{/api/plataforma/equipes/*}), do lado do cliente porque o professor monta
 as equipes na frente da sala.
+
+\textbf{\arq{evidencias/} é o terceiro, e o primeiro que as missões CHAMAM}
+(\adrr{ADR-112}). Ele guarda que habilidades da BNCC cada estudante demonstrou
+numa atividade de uma missão, rodada a rodada, e não conhece missão nenhuma pelo
+nome: o que cada uma sabe de si entra por três pontos. A \textbf{ficha} é dado
+estático do módulo (\arq{evidencias/\B fichas/\B <expId>.ts}, no registro
+\cd{FICHAS}, vazio nesta frente), porque o gabarito não pode ir para o
+\emph{bundle}. O \textbf{contexto} --- em que turma, atividade e rodada o
+estudante está agora --- é um REGISTRO, como a fonte de lado das equipes: o módulo
+da missão chama \cd{EvidenciasService.\B{}registrarContexto(expId, resolver)} na
+subida. E a \textbf{marca} é uma chamada, \cd{EvidenciasService.marcar(tx,
+\ldots)}, feita DA transação da missão, sem abrir \cd{comTenancy} --- a marca cai
+junto se a jogada cair. Por isso o módulo exporta o \emph{service}, que é a
+porta das missões, e a dependência vai num sentido só: a missão conhece a
+evidência, e \arq{evidencias/} nunca importa módulo de missão. Com \arq{equipes/} o arranjo é o inverso: \arq{evidencias/} importa
+o \cd{EquipesModule}, lê \arq{equipes/consulta.ts} (\cd{mapaDeEquipes},
+\cd{computadoresDaMontagem}) e registra o recálculo das cópias no gancho
+\cd{EquipesService.\B{}aoMudarEquipes}, que o \cd{salvar} e o \cd{desfazer} chamam
+dentro da própria transação; \arq{equipes/} não sabe que a evidência existe. As
+regras moram em \arq{evidencias/regras.ts}, puras, e os códigos da BNCC vêm de
+\arq{curriculo/} (\cd{habilidadePorCodigo}). No hub, o painel
+\enquote{Habilidades da BNCC} é genérico e entra na página da atividade (hoje
+só o Instanooria tem atividade), desenhado só quando a resposta diz
+\cd{temFicha: true}; o perfil do estudante é uma página nova, aberta pela aba
+Estudantes da turma.
 
 \textbf{Módulo de domínio não conhece módulo de domínio.} \arq{vila/} não importa
 \arq{unootube/}. Quando duas experiências precisam se comunicar --- o perfil da
@@ -798,7 +834,7 @@ são separados e cobrem exatamente o que não dá para afirmar sem ele:
 \headrow \thd{Diretório} & \thd{Conteúdo}\\
 \midrule
 \arq{apps/hub} & Aplicação Next.js: rotas por papel, \emph{embed}, BFF, JWKS.\\
-\zebra \arq{apps/api} & Aplicação NestJS: 33 módulos, Prisma, 39 migrações
+\zebra \arq{apps/api} & Aplicação NestJS: 34 módulos, Prisma, 40 migrações
   (contagem de 2026-09-25).\\
 \arq{apps/experiencias/*} & Uma pasta por experiência, mais \arq{\_template}.\\
 \zebra \arq{packages/sdk} & Contrato da ponte e telemetria.\\
