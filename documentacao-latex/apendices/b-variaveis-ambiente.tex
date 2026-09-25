@@ -87,8 +87,10 @@ inválido} --- e a mensagem não diz qual dos dois lados está errado.
   O antigo \cd{gemini-2.0-flash-exp} \textbf{não existe mais} --- e por isso toda
   geração de imagem caía no \emph{fallback} procedural. Quem trocar precisa
   conferir a proporção devolvida.\\
-\env{VERTEX\_TTS\_MODEL} & \cd{gemini-2.5-flash-tts} & Voz das falas da exp07ef1b
-  (Amara, a moradora, o podcast). \textbf{Não é o \emph{aiplatform}}: a síntese
+\env{VERTEX\_TTS\_MODEL} & \cd{gemini-2.5-flash-tts} & Voz
+  (\cd{generateSpeech}). \textbf{Nenhuma missão sintetiza voz hoje}: quem usava
+  era o Eco no Grupo (retirado, \adrr{ADR-113}), e a variável ficou com a
+  operação. \textbf{Não é o \emph{aiplatform}}: a síntese
   vem da Cloud Text-to-Speech, com os mesmos modelos por trás e o mesmo ADC, e a
   API precisa estar habilitada no projeto. Com ADC de \emph{usuário} ela exige
   \cd{x-goog-user-project} --- o \emph{provider} manda; sem isso, imagem

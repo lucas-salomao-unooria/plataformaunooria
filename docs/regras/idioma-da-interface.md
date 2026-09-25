@@ -43,7 +43,7 @@ curta e cada item tem razão registrada na ADR-91: `fake news` (consagrado no
 Brasil, e a instrução "não anuncie que é uma aula sobre fake news" perde o
 sentido traduzida — o que o professor não deve dizer é a expressão que a criança
 reconhece), `cyberbullying` (BNCC EF07CO09 e Lei 13.185/2015), `print` (é a
-palavra da criança, e a exp06ef2b e a exp07ef1b giram em torno desse objeto), `chat`, `on-line`
+palavra da criança, e a exp06ef2b gira em torno desse objeto), `chat`, `on-line`
 (citação verbatim da BNCC). **Não "corrija" nenhum deles.**
 
 **Rótulo visível em dois lugares muda nos DOIS.** `ROTULO_PASSO` da exp02em1b é

@@ -218,7 +218,6 @@ C4Component
     Component(planos, "planos/", "", "app-90")
     Component(bem,    "bemestar/", "", "app-91")
     Component(ugpt,   "unoogpt/", "", "exp02em1b - motor probabilistico, agente com ferramentas, relogio da turma; painel conta por computador")
-    Component(eco,    "o-eco-no-grupo/", "", "exp07ef1b - gate de turma, texto, imagem e VOZ")
     Component(outros, "rastro-boato/ manifesto-ia/ quem-mandou-isso/ foto-conta/ planejamento/", "", "exp06ef2b, exp08ef4b, exp05ef1b, exp01ef1b, app-92 - sem seta na figura")
   }
 
@@ -238,8 +237,6 @@ C4Component
   Rel(planos, ai, "IA + quota")
   Rel(bem, ai, "IA + quota")
   Rel(planos, store, "bucket privado")
-  Rel(eco, ai, "IA + quota")
-  Rel(eco, store, "midia no bucket")
 
   %% A figura TikZ desenha a infraestrutura ENTRE a plataforma e o dominio, com
   %% a coluna 2 vazia: e por ela que unootube/ e unoogpt/ sobem ate equipes/.
@@ -678,7 +675,7 @@ erDiagram
 
   %% A ausencia de linha em liberacoes E o bloqueio: guardar bloqueio como linha
   %% obrigaria a criar uma por turma x experiencia so para o mundo nascer fechado.
-  %% liberacoes e PRE-CONDICAO do relogio da exp02em1b e dos gates da exp07ef1b, que
+  %% liberacoes e PRE-CONDICAO do relogio da exp02em1b e dos gates da exp06ef2b, que
   %% dizem "a aula comecou" e continuam morando na tabela DA experiencia.
 \end{lstlisting}
 
@@ -1095,11 +1092,6 @@ flowchart TB
     ugp["/unoogpt/professor/* - SO PROFESSOR, transcricao"]
     uga["/unoogpt/agregado/* - gestor, admin - sem estudanteId"]
   end
-  subgraph ECO["exp07ef1b - O Eco no Grupo"]
-    eco["/o-eco-no-grupo/* - estudante"]
-    ecot["/o-eco-no-grupo/turmas/* - prof, gestor, admin - o gate da aula"]
-    ecop["/o-eco-no-grupo/professor/* - prof, gestor - material do guia"]
-  end
   subgraph RB["exp06ef2b - O Rastro do Boato"]
     rb["/rastro-boato/* - estudante"]
     rbt["/rastro-boato/turmas/* - prof, gestor, admin - o gate da aula"]
@@ -1278,7 +1270,5 @@ quadrantChart
   "R-17 latencia de IA":       [0.55, 0.86]
   "R-18 custo de IA exp02em1b":   [0.96, 0.60]
   "R-19 guia da exp02em1b":       [0.96, 0.84]
-  "R-20 midia nao preparada":  [0.55, 0.48]
   "R-21 texto livre de menor": [0.96, 0.52]
-  "R-22 guia da exp07ef1b":       [0.96, 0.46]
 \end{lstlisting}

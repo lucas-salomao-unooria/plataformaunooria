@@ -99,14 +99,15 @@ não abre com alguém achando que configurou a documentação é pior que nenhum
   ```
 
   **A mídia que a api GERA também mora por `expId`**: `experiencias/{expId}/`
-  no mesmo bucket (as fotos e os áudios da exp07ef1b, feitos pelo Vertex no
-  primeiro `preparar-midia`). Com o id novo a api não acha o que já gerou e gera
-  TUDO de novo — custo de Vertex e, na primeira vez, mais de 30 s, que o proxy
-  do hub não espera (a professora vê erro). Copie junto:
+  no mesmo bucket. A única que existia eram as fotos e os áudios do Eco no Grupo
+  (`experiencias/exp-07-o-eco-no-grupo/`, depois `experiencias/exp07ef1b/`), e o
+  Eco saiu da trilha (ADR-113): essa mídia não se copia mais — **apaga-se**,
+  porque o `exp07ef1b` passa a ser A Seleção, que grava a dela em
+  `experiencias/exp07ef1b/selecao/`:
 
   ```bash
-  gcloud storage cp -r -n "gs://{contrato}-assets/experiencias/exp-07-o-eco-no-grupo/*" \
-    gs://{contrato}-assets/experiencias/exp07ef1b/ --project {projeto}
+  gcloud storage rm -r "gs://{contrato}-assets/experiencias/exp-07-o-eco-no-grupo/" --project {projeto}
+  # e, em experiencias/exp07ef1b/, tudo o que NÃO for selecao/
   ```
 
   O build da exp recebe a base pública em `VITE_VIDEOS_BASE_URL`

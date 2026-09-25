@@ -20,7 +20,7 @@ arrasta as seis seções e a tipografia da plataforma para dentro de um clone.
 | `@edu/ui/ds-insta` | `instanooria` | `/instanooria.css` (sem fonte: SF Pro é do sistema) | `--insta-*` | superfície disfarçada da exp08ef1b |
 | `@edu/ui/ds-unootube` | `unootube` | `/unootube.css` + `/fonts/unootube.css` | `--uni-*`, `[data-uni-theme]` | superfície disfarçada da exp04ef1b |
 | `@edu/ui/ds-chatgpt` | `chatgpt` (25) | `/chatgpt.css` + `/fonts/chatgpt.css` | `--gpt-*`, `data-gpt-theme` | a exp02em1b INTEIRA: ela NÃO tem revelação no software, então nunca troca para a seção da plataforma |
-| `@edu/ui/ds-whatsapp` | `whatsappmobile` (29) | `/whatsappmobile.css` + `/fonts/whatsappmobile.css` | `--wa-*`, `data-wa-theme` (**só `dark`**) | a casca móvel da exp07ef1b, da tela de bloqueio à validação de Amara, inclusive os erros diegéticos |
+| `@edu/ui/ds-whatsapp` | `whatsappmobile` (29) | `/whatsappmobile.css` + `/fonts/whatsappmobile.css` | `--wa-*`, `data-wa-theme` (**só `dark`**) | a casca móvel da exp05ef1b e da exp06ef2b, inclusive os erros diegéticos |
 
 **A folha de fonte é uma linha SEPARADA e obrigatória** (0.1.17: as folhas de
 componente não declaram mais `@font-face`). Nas marcas de clone, esquecê-la só
@@ -78,7 +78,7 @@ carregado por baixo.
 estático, agora é o VÍDEO, e o quadro virou `poster`. Passar imagem em `src`
 monta um `<video>` que não carrega. Nenhum dos três é usado neste repo hoje.
 
-**A exp07ef1b abriu quatro pedidos novos em `whatsappmobile`**, e três deles são
+**O Eco no Grupo (retirado, ADR-113) abriu quatro pedidos em `whatsappmobile`** que valem para o próximo clone de mensageiro, e três deles são
 composição, não compensação: `ForwardedBadge` (o selo "Encaminhada com
 frequência" — sai de `Icon name="forward"` + tokens), `PinnedMessageBanner` (a
 barra do alfinete — o *tone* `pin` existe, o **glifo de alfinete não**, e ele é
@@ -91,7 +91,7 @@ E **a seção publica só o tema escuro** (`WaTheme = 'dark'`; o CSS traz
 `:root, [data-wa-theme=dark]` e nada mais). Derivar a paleta clara que os
 wireframes descrevem é proibido, pela mesma regra do `unitube`. Duas armadilhas
 medidas ali: o `ListItem` tem `white-space: nowrap` no título — errado para as
-opções longas da exp07ef1b, que truncariam —, e o `PhoneFrame` da seção **não entra
+opções longas do Eco, que truncariam —, e o `PhoneFrame` da seção **não entra
 na experiência**, porque quem desenha o aparelho é o hub, pelo `viewport` do
 manifesto.
 

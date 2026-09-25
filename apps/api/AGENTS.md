@@ -29,7 +29,6 @@ E os módulos de experiência, um por missão:
 | [`src/comum/insta/`](src/comum/insta/AGENTS.md) | exp08ef1b Instanooria — o relógio da aula (ADR-92) |
 | [`src/unoogpt/`](src/unoogpt/AGENTS.md) | exp02em1b Missão Tempestade |
 | [`src/quem-mandou-isso/`](src/quem-mandou-isso/AGENTS.md) | exp05ef1b Quem Mandou Isso? |
-| [`src/o-eco-no-grupo/`](src/o-eco-no-grupo/AGENTS.md) | exp07ef1b O Eco no Grupo |
 | [`src/vila/`](src/vila/AGENTS.md) | app-70 Vila do Lume |
 | [`src/planos/`](src/planos/AGENTS.md) | app-90 Plano de aula |
 | [`src/bemestar/`](src/bemestar/AGENTS.md) | app-91 Check-in de bem-estar |

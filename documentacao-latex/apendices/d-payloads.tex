@@ -407,57 +407,6 @@ ignorar em silêncio, porque um campo de nome aparecendo é \emph{bug do jogo}.
  */
 \end{lstlisting}
 
-\section{exp07ef1b --- o estado da missão e a cascata}
-
-O que o servidor devolve ao cliente da exp07ef1b é desenhado por \textbf{ausência}:
-não há gabarito, não há letra correta, e não há pontuação até o fim. O campo que
-comanda a tela depois da resposta é \cd{desfecho}, e ele existe justamente para
-que o \emph{bundle} público não precise saber qual das três opções é a checada.
-
-\begin{lstlisting}[language=jsonunoo, caption={\rota{GET /o-eco-no-grupo/sessao} --- o núcleo do estado}]
-{
-  "passo": "podcast",              // JA reconciliado com a etapa da turma
-  "passoDoEstudante": "cards",     // o passo cru dele, antes do gate
-  "aguardandoATurma": true,        // preso esperando != apenas andando
-  "inspecionouMateria": true,
-  "ouviuAudio": true,
-  "ouviuPodcast": false,
-  "cardsLidos": 2,
-  "opcao": null,                   // a letra que ELE marcou, nao a correta
-  "desfecho": null,                // null ate haver resposta
-  "desfazerUsado": 0,
-  "concluidoEm": null,
-  "turma": { "etapa": "aula2" }
-}
-\end{lstlisting}
-
-\begin{lstlisting}[language=jsonunoo, caption={\rota{POST /o-eco-no-grupo/intervencao} --- o desfecho e a cascata}]
-{
-  "...": "todos os campos do estado acima, atualizados",
-  "desfecho": "checada",           // ruido | checada | conflito — decide o SERVIDOR
-  "reacoes": [                     // escritas pela IA, cadenciadas pelo servidor
-    { "autor": "Seu Antonio",  "texto": "...", "atrasoMs": 2000 },
-    { "autor": "Dona Lucia",   "texto": "...", "atrasoMs": 3000 },
-    { "autor": "Admin do grupo","texto": "...", "atrasoMs": 2000 }
-  ],
-  "amaraCelebra": "..."            // so quando o bairro se acalma
-}
-\end{lstlisting}
-
-\begin{nota}
-\textbf{\cd{atrasoMs} vem do servidor, e a tela só obedece.} A espera de
-2\,s\;+\;3\,s\;+\;2\,s \emph{é} o pico da missão --- é nela que a criança vê o
-que a própria mensagem produziu ---, e uma cadência decidida no cliente seria
-alterável pelo DevTools. O balão do estudante, esse sim, aparece
-\textbf{otimista}: a geração leva alguns segundos, e sem isso o toque em
-\enquote{enviar} não produziria nada visível.
-
-\textbf{\cd{null} em \rota{GET /o-eco-no-grupo/midia} é informação}, não falha:
-significa \enquote{esta mídia ainda não foi preparada}, e o cliente cai na
-transcrição (sempre visível, por acessibilidade) e na ilustração procedural em
-vez de esperar um arquivo que não existe.
-\end{nota}
-
 \section{Manifesto de experiência}
 
 \begin{lstlisting}[language=jsonunoo, caption={\arq{public/experiencia.json} --- exp08ef1b, com \cd{viewport}}]
@@ -494,23 +443,23 @@ vez de esperar um arquivo que não existe.
 }
 \end{lstlisting}
 
-\begin{lstlisting}[language=jsonunoo, caption={\arq{public/experiencia.json} --- exp07ef1b, com \cd{permissoes}}]
+\begin{lstlisting}[language=jsonunoo, caption={\arq{public/experiencia.json} --- exp05ef1b, com \cd{permissoes}}]
 {
-  "id": "exp07ef1b",
-  "nome": "O Eco no Grupo: Quem Decide o Que Roda?",
-  "versao": "0.1.2",
+  "id": "exp05ef1b",
+  "nome": "Quem mandou isso?",
+  "versao": "0.1.1",
   "produto": "entre-redes",
-  "series": ["7EF"],
-  "capabilities": ["telemetria", "progresso", "avaliacao", "ia"],
+  "series": ["5EF"],
+  "unidade": 1,
+  "capabilities": ["telemetria", "progresso", "avaliacao"],
   "viewport": { "largura": 375, "altura": 812 },
   "permissoes": ["forms"],
   "publico": "estudante",
   "verbos": {
-    "interacted": "abriu conversa, tocou o audio, inspecionou a materia completa",
-    "attempted":  "marcou uma das tres respostas no menu de intervencao",
-    "scored":     "enviou a contraprova citando o print",
-    "progressed": "avancou nos cards e nos gates da aula",
-    "completed":  "entregou o Meu percurso"
+    "attempted":  "entrou no grupo da turma e confirmou o envio para o Mural",
+    "interacted": "encaminhou mensagens, abriu a transcrição do áudio e o card do link",
+    "progressed": "leu o grupo até o fim e esperou a revelação coletiva da turma",
+    "completed":  "respondeu ao dilema do áudio do tio"
   }
 }
 \end{lstlisting}

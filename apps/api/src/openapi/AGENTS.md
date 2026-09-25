@@ -39,7 +39,7 @@ primeira — a armadilha do `expires_at`.
   `health`, `auth`, `experiencias`, `progresso`, `telemetry`, `ai`, `rostering`
   (escolas, turmas, matrículas, períodos, lotações, estudantes), `usuarios`,
   `planos` (+referências), `bemestar`, `vila`, `unootube`, `portabilidade`,
-  `perfis`, `analise`, `unoogpt`, `o-eco-no-grupo`, `atividades`, `geracao`,
+  `perfis`, `analise`, `unoogpt`, `atividades`, `geracao`,
   `motor` (runs/posts).
   **As 167 rotas estão cobertas, e a lista está VAZIA** — rota nova sem contrato
   fica vermelha.
