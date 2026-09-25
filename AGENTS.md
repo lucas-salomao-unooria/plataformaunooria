@@ -200,4 +200,5 @@ O porquê de cada item está em
 - [ ] Tocou contrato (bridge/telemetria/provider)? Docs atualizados
 - [ ] Regra mudou? O `AGENTS.md` ou o `docs/regras/` afetado, no mesmo commit
 - [ ] **`documentacao-latex/` atualizada e `main.pdf` regerado.** Decisão com
-      alternativa descartada = **ADR nova** em `secoes/18-adr.tex`
+      alternativa descartada = **ADR nova** em `secoes/18-adr.tex`. Mudou tela
+      ou regra? O selo no **mapa de produto** (`produto/`) também

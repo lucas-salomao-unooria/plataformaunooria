@@ -1,0 +1,145 @@
+% ===========================================================================
+%  E07 — Acompanhar a aprendizagem e a rede
+% ===========================================================================
+\chapter{E07 \textperiodcentered{} Acompanhar a aprendizagem e a rede}
+\label{ep:e07}
+
+\begin{fichaepico}
+\begin{campos}
+  \item[Objetivo] Cada nível enxerga o que precisa para agir: o professor, a
+    turma e cada estudante; a diretoria, a adoção nas escolas; a rede, o
+    agregado --- nunca a criança.
+  \item[Para quem] Professor; Coordenação regional; Administrador do contrato.
+  \item[Valor] É o que transforma uma missão jogada em aula avaliável, e o que
+    a secretaria mostra quando presta contas.
+  \item[Estado] \parcial{} --- os resultados da turma estão prontos; os
+    relatórios da rede têm ajustes pendentes.
+\end{campos}
+\end{fichaepico}
+
+\begin{tabularx}{\linewidth}{@{}L{16mm}X L{20mm}@{}}
+\toprule
+\headrow \thd{ID} & \thd{Feature} & \thd{Estado}\\
+\midrule
+\id{F07.1} & Resultados da turma & \parcial\\
+\zebra \id{F07.2} & Relatório da diretoria & \parcial\\
+\id{F07.3} & Análise de produto na rede & \parcial\\
+\bottomrule
+\end{tabularx}
+
+% ---------------------------------------------------------------------------
+\feature{F07.1}{Resultados da turma}{\parcial}
+
+As regras abaixo valem para os resultados de todas as missões. O que é
+específico de cada uma está no épico \id{E06}.
+
+\begin{historia}{H07.1.1}{Ler a turma sem ranking}{\pronto}
+\hu{Professor}{ver como a turma se saiu na missão}{planejar o debate e a aula
+seguinte}
+\aceite
+\begin{itemize}
+  \item Em \enquote{Resultados da turma}, escolho a turma e vejo a folha dela.
+  \item Nenhuma folha tem coluna de pontos, de acerto ou ordena crianças.
+  \item Sem turma escolhida, a tela explica o que fazer.
+  \item A condução ao vivo da aula (largada, Aula 2, debate, revelação) fica na
+    mesma tela dos resultados.
+\end{itemize}
+\end{historia}
+
+\begin{historia}{H07.1.2}{Zerar a turma para repetir a missão}{\pronto}
+\hu{Professor}{apagar os dados de uma missão na minha turma}{rodar a missão de
+novo com a mesma turma}
+\aceite
+\begin{itemize}
+  \item \enquote{Zerar a turma} pede confirmação, porque não tem volta.
+  \item Só aquela missão, naquela turma, é zerada; nenhuma outra missão é
+    tocada.
+\end{itemize}
+\end{historia}
+
+\begin{historia}{H07.1.3}{Ler um estudante sem rotulá-lo}{\pronto}
+\hu{Professor}{abrir o relatório de um estudante}{entender o caminho dele na
+missão}
+\aceite
+\begin{itemize}
+  \item Existe hoje no unooGPT, na Vila do Lume e no Instanooria (o dossiê).
+  \item Uma criança por vez; o relatório nunca afirma omissão a partir de
+    ausência de dado, e um valor com uma única medida não recebe número.
+  \item A Coordenação e a rede não têm acesso ao relatório de uma criança.
+\end{itemize}
+\end{historia}
+
+\begin{historia}{H07.1.4}{O texto da criança é lido só pelo professor dela}{\parcial}
+\hu{família do estudante}{ter certeza de que o que a criança escreve na
+missão é lido só pelo professor da turma}{que ela possa escrever com
+sinceridade}
+\aceite
+\begin{itemize}
+  \item O texto livre da criança aparece só para o professor da turma.
+  \item A Coordenação, a regional e a rede veem apenas \enquote{entregou / não
+    entregou}.
+  \item Conversas com personagens (Amara, no Eco no Grupo) não aparecem para
+    ninguém: o professor vê só quantas mensagens houve.
+\end{itemize}
+\pendencia{atendido no Quem mandou isso?; no Rastro do Boato e no Manifesto da
+IA, o texto do \enquote{Meu percurso} ainda é visível à gestão. Ver a decisão
+\id{D03}.}
+\end{historia}
+
+% ---------------------------------------------------------------------------
+\feature{F07.2}{Relatório da diretoria}{\parcial}
+
+\begin{historia}{H07.2.1}{Acompanhar a adoção na minha regional}{\parcial}
+\hu{Coordenação regional}{ver quais escolas estão usando as missões}{apoiar
+as escolas que estão atrás}
+\aceite
+\begin{itemize}
+  \item \enquote{Relatório} mostra o consolidado por missão e por escola, com
+    \enquote{Turmas abertas}, \enquote{Turmas encerradas} e
+    \enquote{Estudantes com registro}.
+  \item Só a própria regional, sem seletor.
+  \item Sem nome de criança, sem bem-estar, sem ranking.
+  \item \enquote{Baixar CSV}.
+\end{itemize}
+\pendencia{a coluna \enquote{Missão} mostra o código interno (por exemplo
+\enquote{exp08ef1b}) em vez do nome da missão.}
+\end{historia}
+
+\begin{historia}{H07.2.2}{Comparar as regionais}{\pronto}
+\hu{Administrador do contrato}{ver o mesmo relatório para qualquer
+regional}{acompanhar a rede inteira}
+\aceite
+\begin{itemize}
+  \item O mesmo relatório, com um seletor de regional.
+\end{itemize}
+\end{historia}
+
+% ---------------------------------------------------------------------------
+\feature{F07.3}{Análise de produto na rede}{\parcial}
+
+\begin{historia}{H07.3.1}{Saber se a missão funciona entre turmas}{\parcial}
+\hu{Administrador do contrato}{comparar o envolvimento e a eficácia da missão
+entre turmas}{saber onde ela funciona e onde precisa de apoio}
+\aceite
+\begin{itemize}
+  \item \enquote{Análise de produto} mostra, por atividade, Sessões,
+    Envolvimento, Tempo de feed, Inversão, \enquote{Achou a busca},
+    \enquote{Conteúdo morto} e \enquote{Imagens ok}, com o detalhe de cada
+    atividade.
+  \item Nenhum nome de estudante.
+\end{itemize}
+\pendencia{só se chega a esta tela digitando o endereço (não há item de
+menu); cobre só o Instanooria; a escola é digitada à mão; e o CSV existe mas
+não tem botão na tela.}
+\end{historia}
+
+\begin{historia}{H07.3.2}{Ver os números do dia}{\afazer}
+\hu{Administrador do contrato}{ver quantas turmas e estudantes usaram a
+plataforma hoje}{acompanhar a implantação sem esperar o fim do mês}
+\aceiteproposta
+\begin{itemize}
+  \item Um painel com turmas com missão aberta, estudantes que entraram e
+    missões concluídas no dia, por regional.
+  \item Nenhum dado individual.
+\end{itemize}
+\end{historia}

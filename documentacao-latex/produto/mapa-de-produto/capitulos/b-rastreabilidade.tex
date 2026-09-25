@@ -1,0 +1,61 @@
+% ===========================================================================
+%  Apêndice B — Onde cada épico mora na documentação técnica
+% ===========================================================================
+\chapter{Onde cada épico mora na documentação técnica}
+\label{ap:rastreio}
+
+Para o time de desenvolvimento: o detalhe técnico de cada épico está na
+documentação técnica (PU-DOC-001). A tabela aponta o capítulo e as decisões
+registradas (ADR) que explicam por que a feature é como é.
+
+\begin{tabularx}{\linewidth}{@{}L{10mm}L{44mm}X@{}}
+\toprule
+\headrow \thd{Épico} & \thd{Capítulos da PU-DOC-001} & \thd{Decisões (ADR)}\\
+\midrule
+\endhead
+\id{E01} & Multi-tenancy e segurança; Contratos de integração & \adrr{ADR-03}
+  (OIDC genérico), \adrr{ADR-15} (o hub assina a sessão da missão),
+  \adrr{ADR-29} (senha provisória), \adrr{ADR-85} (trocar de escola)\\
+\zebra \id{E02} & Multi-tenancy e segurança; Modelo de dados & \adrr{ADR-80}
+  (seis papéis e a cadeia), \adrr{ADR-81} (panorama da diretoria)\\
+\id{E03} & Multi-tenancy e segurança; Modelo de dados; Especificação da API &
+  \adrr{ADR-54} (pessoa nasce por importação), \adrr{ADR-59} (o balcão delega
+  ao importador), \adrr{ADR-32} (transferência), \adrr{ADR-35} (perfil
+  portátil)\\
+\zebra \id{E04} & Catálogo de experiências & \adrr{ADR-69} (liberação por
+  turma), \adrr{ADR-86} (guia da aula)\\
+\id{E05} & Contratos de integração; Telemetria & \adrr{ADR-01} (missão como
+  arquivo estático), \adrr{ADR-09} (correção no servidor)\\
+\zebra \id{E06} & Catálogo de experiências & \adrr{ADR-09}, \adrr{ADR-12} (sem
+  número com uma medida só), \adrr{ADR-22}, \adrr{ADR-42}, \adrr{ADR-67}
+  (mídia preparada pelo professor), \adrr{ADR-72} (a revelação),
+  \adrr{ADR-110} (código da missão)\\
+\id{E07} & Catálogo de experiências; Multi-tenancy e segurança & \adrr{ADR-12},
+  \adrr{ADR-81}, \adrr{ADR-82} (relatório da diretoria)\\
+\zebra \id{E08} & Catálogo de experiências; Camada de IA & \adrr{ADR-10}
+  (bem-estar sem gestor), \adrr{ADR-76} (planejamento semanal)\\
+\id{E09} & Camada de inteligência artificial & \adrr{ADR-07} (IA só pela
+  plataforma), \adrr{ADR-67}, \adrr{ADR-74}, \adrr{ADR-105} (limite de IA
+  editável)\\
+\zebra \id{E10} & Multi-tenancy e segurança; Engenharia de entrega &
+  \adrr{ADR-87} (disponibilidade), \adrr{ADR-88} (painel só da Unooria),
+  \adrr{ADR-89} (histórico que a rede lê), \adrr{ADR-01} (voltar versão),
+  \adrr{ADR-105}\\
+\id{E11} & Multi-tenancy e segurança & \adrr{ADR-70} (páginas legais),
+  \adrr{ADR-107} (site e cadastro de interesse)\\
+\zebra \id{E12} & Multi-tenancy e segurança; Telemetria; Observabilidade;
+  Riscos e evolução & \adrr{ADR-04} (instalação por rede), \adrr{ADR-08}
+  (isolamento no banco), \adrr{ADR-91} (idioma), \adrr{ADR-98} e
+  \adrr{ADR-99} (fuso)\\
+\id{E13} & Arquitetura de software; Multi-tenancy e segurança; Modelo de
+  dados; Especificação da API & \adrr{ADR-111} (equipe é quem divide um
+  computador)\\
+\bottomrule
+\end{tabularx}
+
+\begin{nota}
+Os casos de uso da PU-DOC-001 (\ucr{UC-01} a \ucr{UC-28}) cobrem uma parte das
+histórias daqui, com outra granularidade: um caso de uso descreve um fluxo do
+sistema; uma história descreve a necessidade de uma pessoa. As duas visões
+convivem --- este documento não substitui o capítulo de casos de uso.
+\end{nota}
