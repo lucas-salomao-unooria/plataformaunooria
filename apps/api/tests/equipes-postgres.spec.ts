@@ -598,6 +598,51 @@ describe("a sala do professor mostra quantas equipes cada missão tem", () => {
 });
 
 /**
+ * O GANCHO `aoMudarEquipes` — por onde a evidência pedagógica (E14) recalcula
+ * as cópias. O que ele promete, e que só o banco prova: roda no `PUT` e no
+ * `DELETE`, DENTRO da transação (vê as equipes novas antes do commit), e um
+ * erro nele desfaz a montagem junto.
+ */
+describe("o gancho de quem depende das equipes", () => {
+  beforeEach(async () => {
+    await prisma.equipesMontagem.deleteMany({ where: { escolaId: ESCOLA } });
+  });
+
+  test("roda no PUT e no DELETE, com o alvo, e já enxerga as equipes novas dentro da transação", async () => {
+    const vistos: { alvo: unknown; membrosDaAna: string[] }[] = [];
+    const comGancho = new EquipesService(prisma);
+    comGancho.aoMudarEquipes(async (tx, alvo) => {
+      const mapa = await mapaDeEquipes(tx, alvo.escolaId, alvo.turmaId, alvo.expId);
+      vistos.push({ alvo, membrosDaAna: mapa.get(ids.ana)?.membros.map((m) => m.id) ?? [] });
+    });
+
+    await comGancho.salvar(ESCOLA, ids.turma8A, INSTA, duasEquipes(0), ids.prof8A);
+    await comGancho.desfazer(ESCOLA, ids.turma8A, INSTA, ids.prof8A);
+
+    const alvo = { escolaId: ESCOLA, turmaId: ids.turma8A, expId: INSTA };
+    expect(vistos).toEqual([
+      { alvo, membrosDaAna: [ids.ana, ids.bia] },
+      { alvo, membrosDaAna: [] },
+    ]);
+  });
+
+  test("um erro no gancho desfaz a montagem — e o serviço sem gancho segue igual", async () => {
+    const quebrado = new EquipesService(prisma);
+    quebrado.aoMudarEquipes(async () => {
+      throw new Error("o interessado falhou");
+    });
+    await expect(quebrado.salvar(ESCOLA, ids.turma8A, INSTA, duasEquipes(0), ids.prof8A)).rejects.toThrow(
+      "o interessado falhou",
+    );
+    expect(await prisma.equipesMontagem.count({ where: { escolaId: ESCOLA } })).toBe(0);
+    expect(await prisma.equipe.count({ where: { escolaId: ESCOLA } })).toBe(0);
+
+    const salvo = await equipes.salvar(ESCOLA, ids.turma8A, INSTA, duasEquipes(0), ids.prof8A);
+    expect(salvo.montagem?.versao).toBe(1);
+  });
+});
+
+/**
  * Por ÚLTIMO, porque muda a turma de uma criança: a reprojeção só se prova com
  * alguém que saiu e alguém que chegou depois da montagem de origem.
  */

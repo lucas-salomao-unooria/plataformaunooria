@@ -106,6 +106,24 @@ export async function equipeDoEstudante(
 }
 
 /**
+ * Quantos computadores a montagem desta missão diz que a sala tem, ou `null`
+ * sem montagem. É o que a evidência pedagógica (E14) lê para saber se uma
+ * equipe é a PROJEÇÃO — um computador só, a turma inteira diante do telão.
+ */
+export async function computadoresDaMontagem(
+  tx: Prisma.TransactionClient,
+  escolaId: string,
+  turmaId: string,
+  expId: string,
+): Promise<number | null> {
+  const montagem = await tx.equipesMontagem.findUnique({
+    where: { escolaId_turmaId_expId: { escolaId, turmaId, expId } },
+    select: { computadores: true },
+  });
+  return montagem?.computadores ?? null;
+}
+
+/**
  * Quantas equipes cada missão tem nesta turma — o número que a grade da sala
  * mostra ao lado da missão. Um `groupBy`, e não uma consulta por missão: a
  * grade tem dezenas delas, e é lida a cada abertura da sala.

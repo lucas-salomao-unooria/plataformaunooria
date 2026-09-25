@@ -62,7 +62,14 @@ com `escola_id` + RLS forçada:
 
 `consulta.ts` é a porta dos outros módulos, no molde de `comum/liberacao.ts`:
 funções livres com `tx`, sem DI — `mapaDeEquipes`, `equipeDoEstudante`,
-`contarEquipesDaTurma`.
+`contarEquipesDaTurma`, `computadoresDaMontagem`.
+
+**Quem depende de a montagem MUDAR se registra em `aoMudarEquipes`** — hoje só a
+evidência pedagógica (E14, `src/evidencias/`), que recalcula as cópias da rodada
+em andamento. O `salvar` e o `desfazer` chamam os registrados DENTRO da
+transação, depois da escrita: eles veem as equipes novas, e um erro neles desfaz
+a montagem junto. A dependência vai num sentido só — evidencias importa
+equipes, nunca o contrário.
 
 **O UnooTube e o unooGPT já contam por COMPUTADOR.** O painel lê
 `mapaDeEquipes` DENTRO do `comTenancy` e passa as linhas por

@@ -41,6 +41,22 @@ export type FonteDeGrupo = (
   turmaId: string,
 ) => Promise<{ grupos: Map<string, Lado | null>; descricao: string; aviso: string | null }>;
 
+/**
+ * QUEM PRECISA SABER QUE AS EQUIPES MUDARAM — hoje, a evidência pedagógica
+ * (E14), que recalcula as cópias da rodada em andamento.
+ *
+ * Roda DENTRO da transação do `PUT`/`DELETE`, depois da escrita: vê as equipes
+ * novas, e um erro nele desfaz a montagem junto — equipe salva com a evidência
+ * contando pela montagem velha seria o painel mentindo sem ninguém ver.
+ *
+ * Registro, e não import: quem depende é o outro módulo (evidencias importa
+ * equipes, nunca o contrário), no molde de `registrarFonteDeGrupo`.
+ */
+export type AoMudarEquipes = (
+  tx: Prisma.TransactionClient,
+  alvo: { escolaId: string; turmaId: string; expId: string },
+) => Promise<void>;
+
 /** Os campos da montagem que as respostas mostram. */
 const CAMPOS_DA_MONTAGEM = {
   modo: true,
@@ -66,6 +82,7 @@ const TURMA_NAO_ENCONTRADA = "Turma não encontrada.";
 @Injectable()
 export class EquipesService {
   private readonly fontesDeGrupo = new Map<string, FonteDeGrupo>();
+  private readonly aoMudar: AoMudarEquipes[] = [];
 
   constructor(private readonly prisma: PrismaService) {}
 
@@ -75,6 +92,23 @@ export class EquipesService {
    */
   registrarFonteDeGrupo(expId: string, fonte: FonteDeGrupo): void {
     this.fontesDeGrupo.set(expId, fonte);
+  }
+
+  /**
+   * O gancho de "as equipes mudaram", chamado por quem depende disso na subida
+   * (`onModuleInit` do `EvidenciasService`). Cada registro ACRESCENTA — são
+   * interessados diferentes, e todos rodam, na ordem em que se registraram.
+   */
+  aoMudarEquipes(callback: AoMudarEquipes): void {
+    this.aoMudar.push(callback);
+  }
+
+  /** Avisa os interessados, dentro da transação de quem mudou. */
+  private async avisarMudanca(
+    tx: Prisma.TransactionClient,
+    alvo: { escolaId: string; turmaId: string; expId: string },
+  ): Promise<void> {
+    for (const callback of this.aoMudar) await callback(tx, alvo);
   }
 
   /**
@@ -346,6 +380,9 @@ export class EquipesService {
    * Depois da versão, TROCA INTEIRA: apaga as equipes (os membros caem por
    * cascata) e grava as novas. Diff por equipe economizaria umas linhas numa
    * tabela de dezenas, e custaria a regra de "quem se moveu para onde".
+   *
+   * Por último, `aoMudarEquipes` avisa quem depende da montagem (a evidência
+   * pedagógica), na MESMA transação — e o `desfazer` também avisa.
    */
   async salvar(
     escolaId: string,
@@ -435,6 +472,7 @@ export class EquipesService {
         if (membros.length > 0) await tx.equipeMembro.createMany({ data: membros });
       }
 
+      await this.avisarMudanca(tx, chave);
       return this.projecao(tx, escolaId, turmaId, expId);
     }, escolaId);
   }
@@ -452,6 +490,7 @@ export class EquipesService {
     return this.prisma.comTenancy(async (tx) => {
       await this.exigirTurma(tx, escolaId, turmaId, professorId);
       await tx.equipesMontagem.deleteMany({ where: { escolaId, turmaId, expId } });
+      await this.avisarMudanca(tx, { escolaId, turmaId, expId });
       return { ok: true as const };
     }, escolaId);
   }
