@@ -248,15 +248,6 @@ método e esquema, é o Apêndice~\ref{ap:endpoints}.
   \node[rt, minimum height=15mm] at (9.05,-15.0)
     {\texttt{/foto-conta/\B{}turmas/*}\desc{prof., gestor --- o \emph{latch} da Roda}};
 
-  % ---- exp05ef1b
-  \node[exprot] at (0.1,-16.925) {\textbf{exp05ef1b}\\Quem mandou isso?};
-  \node[rt, minimum height=18.5mm] at (4.5,-16.925)
-    {\texttt{/quem-mandou-isso/*}\desc{estudante}};
-  \node[rt, minimum height=18.5mm, fill=unooBlueWash, draw=unooBlue] at (9.05,-16.925)
-    {\texttt{/quem-mandou-isso/\B{}turmas/*}\desc{prof., gestor --- o lote E o relógio da turma}};
-  \node[rt, minimum height=18.5mm] at (13.6,-16.925)
-    {\texttt{/quem-mandou-isso/\B{}professor/*}\desc{prof., gestor --- material do guia}};
-
 \end{tikzpicture}}
 \caption[Mapa de rotas da API --- demais experiências]{Mapa das rotas das
   demais experiências: uma linha por experiência, uma coluna por quem chama.
@@ -273,11 +264,7 @@ método e esquema, é o Apêndice~\ref{ap:endpoints}.
   a guarda protege é só o papel (\adrr{ADR-86}). A exp08ef4b \textbf{não} tem uma
   dessas, e a ausência é o desenho: o material de mediação dela é o pacote
   CURADO por turma, então ele mora em \texttt{/manifesto-ia/turmas/:id/conteudo}
-  --- com \emph{tenancy}, porque o conteúdo não é igual para todo contrato. A
-  exp05ef1b tem \textbf{as duas coisas}, e elas respondem perguntas diferentes:
-  \texttt{/quem-mandou-isso/professor/material} é o banco curado da Unooria,
-  igual em todo contrato, e \texttt{/quem-mandou-isso/turmas/:id/conteudo} é o
-  lote que AQUELA professora homologou --- o único que a turma dela vai ler.}
+  --- com \emph{tenancy}, porque o conteúdo não é igual para todo contrato.}
 \label{fig:mapa-rotas-exps}
 \end{figure}
 
@@ -782,122 +769,6 @@ provedor fora do ar ou com a saída reprovada pela validação, ela devolve o
 \textbf{banco curado} com \cd{usouIa: false}, e a tela diz isso. Bloquear o
 professor seria o único jeito de esta rota estragar a aula --- ele precisa poder
 aprovar o pacote curado com o Vertex indisponível.
-\end{atencao}
-
-\subsection{Quem mandou isso? (exp05ef1b)}
-
-% Esta tabela e ESCRITA A MAO; a verdade e o Apendice C (`apendices/c-endpoints.tex`),
-% gerado de `docs/openapi.json`. Confira LINHA A LINHA contra ele antes de mexer.
-% O custo ja pago: a tabela documentava um `POST /quem-mandou-isso/concluir` que
-% nunca existiu (`concluir` e do SDK, por postMessage), chamava a geracao de
-% `gerar-lote` quando o controller expoe `gerar-conteudo`, e omitia
-% `POST /avancar` e `DELETE /encaminhar/:mensagemId` -- as duas rotas que o
-% cliente de fato usa. Quem integra pelo capitulo 13 tomava 404 nas duas
-% primeiras e nao achava as duas ultimas. E a mesma divergencia de
-% `/leitura` vs `/leitura-integral`, que ja tinha sido paga uma vez.
-
-\begin{tabularx}{\linewidth}{@{}L{58mm}L{20mm}X@{}}
-\toprule
-\headrow \thd{Rota} & \thd{Papel} & \thd{O que faz}\\
-\midrule
-\rota{GET /quem-mandou-isso/sessao} & estudante & O estado, o lote da turma
-  \textbf{sem o gabarito} e as constantes da missão --- é o que faz um F5
-  devolver a tela exata. \cd{lote} vem \cd{null} enquanto a professora não
-  homologou, e é isso que a tela de espera lê. O bloco \cd{revelacao} vem
-  \cd{null} até o telão acender.\\
-\zebra \rota{GET /quem-mandou-isso/gate} & estudante & O \emph{polling} de 5~s do
-  relógio da turma (\adrr{ADR-93}). Cinco campos, sem catálogo e sem
-  \emph{join}: é a rota mais chamada da experiência. Devolve o \cd{agora} do
-  SERVIDOR, porque o relógio da máquina da escola atrasa. \textbf{Sem
-  parâmetro:} o passo com que ela reconcilia a etapa vem da LINHA da sessão, e
-  não da tela --- toda mutação já o gravou, e perguntar à tela onde a criança
-  está era o servidor confiando numa \emph{query string}.\\
-\rota{POST /quem-mandou-isso/entrar} & estudante & Carimba \cd{entrou\_em} e
-  abre a curadoria. É daqui que começa a contar o tempo até o primeiro
-  encaminhamento.\\
-\zebra \rota{POST /quem-mandou-isso/encaminhar} & estudante & Manda uma mensagem
-  ao Mural. Reenviar a mesma responde \textbf{200 com \cd{novo: false}}, não
-  erro: reabrir um balão e reencaminhar é comportamento legítimo, e dois toques
-  rápidos são o caminho normal numa sala com trinta tablets.\\
-\rota{DELETE /quem-mandou-isso/\allowbreak{}encaminhar/:mensagemId} & estudante &
-  O \enquote{Apagar para todos} do Mural. A curadoria é revisível \textbf{até o
-  \emph{latch}}: quem repassou no impulso e voltou atrás fez exatamente o que a
-  missão ensina. Idempotente (200 com \cd{novo: false}), e
-  \cd{primeiro\_encaminhamento\_em} \textbf{não} é apagado junto --- o
-  arrependimento não desfaz o impulso que aconteceu.\\
-\zebra \rota{POST /quem-mandou-isso/midia} & estudante & Abriu a transcrição do
-  áudio ou o card do link. Indicativo de leitura, \textbf{nunca} mérito.\\
-\rota{POST /quem-mandou-isso/leitura-integral} & estudante & A rolagem
-  alcançou a 8ª mensagem. \textbf{Sem corpo}, de propósito: a única informação é
-  que aconteceu, e um \cd{\{ leuTudo: true \}} seria o cliente afirmando a
-  própria aprovação numa porta que o servidor cobra.\\
-\zebra \rota{POST /quem-mandou-isso/confirmar} & estudante &
-  \textbf{O \emph{latch}.} Cobra as duas portas --- 409
-  \cd{piso-nao-atingido} e 409 \cd{leitura-incompleta} --- e é irreversível.
-  Depois da revelação responde 409 \cd{revelacao-iniciada}: o Mural fechou para
-  a turma inteira.\\
-\rota{POST /quem-mandou-isso/avancar} & estudante & Sai do Mural revelado e abre
-  a pergunta do dilema do tio. O avanço é do ESTUDANTE, não da professora: ela
-  libera a etapa no painel, ele decide quando terminou de ler os selos. Sem a
-  etapa aberta responde 409 \cd{reflexao-nao-liberada}, que é tarja de espera
-  --- a criança não fez nada errado.\\
-\zebra \rota{POST /quem-mandou-isso/reflexao} & estudante & A resposta ao dilema
-  do tio, 5 a 500 caracteres --- e o carimbo final: grava \cd{concluido\_em} e
-  leva o \cd{passo} a \cd{fim}. \textbf{Não recebe pontuação}: a missão não
-  pontua. Antes de a professora liberar responde 409
-  \cd{reflexao-nao-liberada}, com a frase dizendo que está tudo bem e que é para
-  esperar.\\
-\rota{GET /quem-mandou-isso/turmas} & prof., gestor & As turmas do
-  professor, com a contagem de estudantes.\\
-\zebra \rota{GET /quem-mandou-isso/turmas/:id/painel} & prof., gestor & Progresso e
-  conduta por estudante (leu tudo, ouviu o áudio, abriu o link, confirmou,
-  quando), mais o histograma anonimizado da SALA e a síntese.
-  \textbf{Sem nota, sem nível e sem \enquote{quantas falsas encaminhou}.} O
-  TEXTO da reflexão sai aqui e só aqui, e só para quem \textbf{leciona} a
-  turma: gestor, diretor e \cd{admin} recebem a mesma linha com o campo em
-  \cd{null} e o \cd{entregouReflexao} intacto --- acompanhar a turma não exige
-  ler o parágrafo que a criança escreveu (LGPD art.~14).\\
-\rota{GET /quem-mandou-isso/turmas/:id/conteudo} & prof., gestor & O lote
-  da turma \textbf{com} o gabarito: veracidade, tom e a explicação que aparece
-  sob cada selo.\\
-\zebra \rota{POST .../gerar-conteudo} & prof., gestor & A única chamada de IA da
-  experiência, \textbf{pré-aula}. Devolve \textbf{rascunho} --- não persiste
-  nada.\\
-\rota{POST .../homologar} & prof., gestor & \enquote{Aprovar e liberar
-  para a turma}. Recebe o lote \textbf{inteiro}, porque a professora pode ter
-  editado qualquer texto antes de aprovar, e cobra a paridade 3/3/2. A paridade
-  mora no \cd{.refine} do \emph{schema}, então a recusa chega como 400
-  \cd{payload-invalido} --- não com um código próprio. É o único lugar que liga
-  \cd{aprovado\_por\_professor}.\\
-\zebra \rota{POST .../gate} & prof., gestor & \enquote{Iniciar revelação coletiva},
-  \enquote{Liberar reflexão final} e o inverso dos dois. Idempotente: é o clique
-  que se dá duas vezes.\\
-\rota{DELETE /quem-mandou-isso/turmas/:id} & prof., gestor & Zerar a
-  turma. Apaga a execução e \textbf{preserva} \cd{exp05ef1b\_conteudo\_turma}.\\
-\zebra \rota{GET /quem-mandou-isso/professor/material} & prof., gestor & O banco curado
-  COM gabarito e o roteiro do episódio, para o guia da aula. Catálogo: sem
-  \cd{escolaId} e sem \emph{tenancy} --- o que a guarda protege é só o papel
-  (\adrr{ADR-86}).\\
-\bottomrule
-\end{tabularx}
-
-\begin{regra}
-\textbf{O gabarito sai em quatro respostas de PROFESSOR} --- o painel, o
-conteúdo da turma, o rascunho do preparo e o material do guia --- \textbf{e em
-UMA de estudante}: o bloco \cd{revelacao} de
-\rota{GET /quem-mandou-isso/sessao}, que é \cd{null} até
-\cd{exp05ef1b\_gates\_turma.etapa} passar de \cd{exploracao}. Não há caminho em que
-a veracidade desça ao estudante antes disso: o tipo do lote é construído por
-\cd{Omit} dos três campos, e o \emph{schema} de saída não tem lugar para eles.
-\end{regra}
-
-\begin{atencao}
-\rota{POST .../homologar} é a rota que \textbf{abre} a missão, e sem ela ninguém
-entra. Na exp08ef4b a turma sem pacote aprovado lê o banco curado e a aula corre;
-aqui não há essa queda, e a professora que esqueceu de aprovar tem uma turma
-inteira em tela de espera. A mitigação é de produto, não de código ---
-a tela do professor abre no preparo, e o painel diz, em letra grande, que a turma
-está esperando. A decisão e a consequência estão na \adrr{ADR-108}.
 \end{atencao}
 
 \subsection{As rotas que alimentam o guia da aula}

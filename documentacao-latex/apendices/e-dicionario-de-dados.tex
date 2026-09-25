@@ -4,7 +4,7 @@
 \chapter{Dicionário de dados}
 \label{ap:dicionario}
 
-Catálogo das 73 tabelas de \cd{public}, mais o \emph{schema} \cd{particoes}.
+Catálogo das 68 tabelas de \cd{public}, mais o \emph{schema} \cd{particoes}.
 O número é o de \cd{model} em \arq{apps/api/prisma/schema.prisma} em
 2026-09-25 (todos com \cd{@@map}; a \cd{\_prisma\_migrations} é do Prisma e
 fica fora), e o índice abaixo tem uma linha por \cd{model}: tabela nova sem
@@ -91,21 +91,16 @@ Os diagramas entidade-relacionamento estão no Capítulo~\ref{cap:dados}.
 \zebra \cd{exp08ef4b\_auditorias} & Tenant & Cada questionamento disparado contra a máquina\\
 \cd{exp08ef4b\_respostas\_percurso} & Tenant & O \enquote{Meu percurso} (texto livre do estudante)\\
 \zebra \cd{exp08ef4b\_gates\_turma} & Tenant & O \emph{checkpoint} do debate, por turma\\
-\cd{exp05ef1b\_conteudo\_turma} & Tenant & O lote da turma --- as 8 mensagens homologadas, com o gabarito\\
-\zebra \cd{exp05ef1b\_sessoes} & Tenant & Estado da missão de Quem mandou isso?, com o \emph{latch} da confirmação\\
-\cd{exp05ef1b\_encaminhamentos} & Tenant & Cada mensagem que o estudante mandou ao Mural\\
-\zebra \cd{exp05ef1b\_reflexoes} & Tenant & A reflexão final (texto livre do estudante)\\
-\cd{exp05ef1b\_gates\_turma} & Tenant & O relógio da turma: a etapa da aula\\
-\zebra \cd{app\_70\_sessoes} & Tenant & Uma partida da Vila do Lume\\
-\cd{app\_70\_perfis} & Tenant & Retrato Schwartz recalculado\\
-\zebra \cd{app\_70\_bolhas} & Tenant & Bolha por estudante\\
-\cd{app\_90\_planos} & Tenant+posse & Metadados do plano de aula\\
-\zebra \cd{app\_90\_referencias} & \textbf{Catálogo} & Referências curriculares\\
-\cd{app\_92\_configuracoes} & Tenant+posse & A regência: componente, ano, carga e grade\\
-\zebra \cd{app\_92\_planos\_anuais} & Tenant+posse & Plano anual e a distribuição por período\\
-\cd{app\_92\_planos\_de\_periodo} & Tenant+posse & As aulas da semana ou quinzena\\
-\zebra \cd{app\_91\_ciclos} & Tenant+posse & Ciclo do DASS-21 (\textbf{sensível})\\
-\cd{app\_91\_checkins} & Tenant+posse & \emph{Check-in} diário
+\cd{app\_70\_sessoes} & Tenant & Uma partida da Vila do Lume\\
+\zebra \cd{app\_70\_perfis} & Tenant & Retrato Schwartz recalculado\\
+\cd{app\_70\_bolhas} & Tenant & Bolha por estudante\\
+\zebra \cd{app\_90\_planos} & Tenant+posse & Metadados do plano de aula\\
+\cd{app\_90\_referencias} & \textbf{Catálogo} & Referências curriculares\\
+\zebra \cd{app\_92\_configuracoes} & Tenant+posse & A regência: componente, ano, carga e grade\\
+\cd{app\_92\_planos\_anuais} & Tenant+posse & Plano anual e a distribuição por período\\
+\zebra \cd{app\_92\_planos\_de\_periodo} & Tenant+posse & As aulas da semana ou quinzena\\
+\cd{app\_91\_ciclos} & Tenant+posse & Ciclo do DASS-21 (\textbf{sensível})\\
+\zebra \cd{app\_91\_checkins} & Tenant+posse & \emph{Check-in} diário
   (\textbf{sensível})\\
 \bottomrule
 \end{tabularx}
@@ -1811,197 +1806,6 @@ Duas colunas, e o gate é \textbf{opcional}: a missão corre inteira sem ningué
 apertar nada. Por isso \cd{debate} mexe só no TETO do passo do estudante, nunca
 no piso --- subir o piso empurraria para a frente quem ainda estava auditando a
 máquina, e são justamente essas crianças que o debate tenta alcançar.
-\end{nota}
-
-% ---------------------------------------------------------------------------
-\subsection{\cd{exp05ef1b\_conteudo\_turma}}
-
-\begin{tabularx}{\linewidth}{@{}L{40mm}L{20mm}X@{}}
-\toprule
-\headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
-\midrule
-\pk{(escola\_id, turma\_id)} & PK composta & O lote é \textbf{por turma}: cada
-  professora escreve a missão em cima do acontecimento da escola dela.\\
-\zebra \cd{tema} & \cd{TEXT} & O acontecimento, como ela o digitou no preparo.
-  \textbf{São dois tetos no Zod, e eles não são o mesmo.} O formulário do
-  preparo e a geração cobram \textbf{10 a 60}
-  (\cd{ParametrosDoPreparoSchema}), e o teto é curto porque este campo alimenta
-  um \emph{prompt}: campo longo é injeção de instrução no gerador, e este é o
-  primeiro anteparo. Quem \textbf{escreve a coluna}, porém, é a homologação
-  (\cd{HomologacaoSchema}), que aceita \textbf{10 a 100}. Documentar só o 60
-  aqui faz uma linha de 80 caracteres parecer dado corrompido, quando ela é o
-  que a rota que grava sempre admitiu --- e manda procurar o defeito no lugar
-  errado.\\
-\cd{gatilho} & \cd{TEXT} & \emph{CHECK} \cd{IN ('urgencia','indignacao','medo')}.
-  O foco emocional que o gerador recebe --- é o que faz a mesma missão soar
-  diferente em duas turmas.\\
-\zebra \cd{origem} & \cd{TEXT} & \emph{CHECK} \cd{IN ('ia','padrao')}.
-  \cd{padrao} \textbf{não é \emph{fallback} de erro}: é o banco curado da
-  Unooria, homologado, aprovado com um clique. A coluna existe para responder
-  \enquote{a curadoria assistida está sendo usada?}, e um terceiro valor
-  inventado apagaria a pergunta.\\
-\cd{mensagens\_json} & \cd{JSONB} & As 8 mensagens \textbf{com} \cd{veracidade},
-  \cd{tom} e \cd{explicacao} --- é aqui que mora o gabarito, e é por isso que a
-  RLS desta tabela pesa mais que a das irmãs. \emph{CHECK}
-  \cd{jsonb\_typeof = 'array'} e \cd{jsonb\_array\_length = 8}. A
-  \textbf{paridade} 3/3/2 fica fora do banco: ela só existe na gramática do Zod,
-  e escrevê-la duas vezes é a divergência que o repositório já pagou.\\
-\zebra \cd{aprovado\_por\_professor} & \cd{BOOLEAN} & \textbf{O portão da
-  curadoria humana} (RF-001). Falso = rascunho, e rascunho não abre a missão
-  \textbf{para ninguém}: o estudante vê tela de espera. É onde esta tabela se
-  separa da \cd{exp08ef4b\_conteudo\_turma}, que cai no banco curado.\\
-\bottomrule
-\end{tabularx}
-
-\begin{regra}
-\textbf{Esta é a única tabela da exp05ef1b que sobrevive ao \enquote{Zerar
-turma}}, pela mesma razão da exp08ef4b: o preparo custou tempo da professora, e
-apagá-lo junto com as respostas obrigaria a refazer a curadoria para reaplicar a
-missão na turma seguinte no mesmo dia.
-\end{regra}
-
-% ---------------------------------------------------------------------------
-\subsection{\cd{exp05ef1b\_sessoes}}
-
-\begin{tabularx}{\linewidth}{@{}L{40mm}L{20mm}X@{}}
-\toprule
-\headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
-\midrule
-\pk{(escola\_id, estudante\_id)} & PK composta & Uma sessão por estudante e por
-  escola.\\
-\zebra \cd{turma\_id} & \cd{UUID?} & Desnormalizado da identidade, como na
-  exp06ef2b e na exp08ef4b: o painel e o gate consultam por turma o tempo todo.\\
-\cd{passo} & \cd{TEXT} & \emph{CHECK} \cd{IN ('contexto','curadoria','espera',}
-  \cd{'revelado','reflexao','fim')}. A ordem é \arq{regras/passos.ts};
-  \emph{CHECK} e não \cd{enum} porque um \cd{ALTER TYPE} amarraria toda mudança
-  de roteiro a uma migração.\\
-\zebra \cd{entrou\_em} & \cd{TIMESTAMPTZ?} & O toque em \enquote{entrar no
-  grupo}. \textbf{Não} é o \cd{criado\_em}: a linha nasce ao abrir a
-  experiência, e o relógio da impulsividade só começa quando a primeira mensagem
-  aparece na tela.\\
-\cd{primeiro\_encaminhamento\_em} & \cd{TIMESTAMPTZ?} & Com \cd{entrou\_em} dá o
-  \enquote{tempo até o primeiro encaminhamento} do painel --- o indicativo de
-  impulsividade, que é o dado central da missão. Coluna, e não
-  \cd{MIN(criado\_em)} dos encaminhamentos: a leitura do painel é por turma
-  inteira, e um agregado por estudante a cada \emph{polling} pagaria o mesmo
-  número trinta vezes por aula. \emph{CHECK}
-  \cd{>= entrou\_em} quando ambos existem --- subtração fora de ordem produz
-  segundos negativos, que se leem como defeito do produto.\\
-\zebra \cd{leu\_tudo} & \cd{BOOLEAN} & Rolou até a 8ª mensagem. Junto com o piso
-  de 3, é o que libera \enquote{Confirmar envio}: sem ele a criança fecha o Mural
-  com as três primeiras e nunca lê o esclarecimento do professor, que é a
-  \cd{msg-7}.\\
-\cd{midias\_abertas} & \cd{TEXT[]} & Os ids cuja transcrição do áudio ou card do
-  link foi aberta. \emph{CHECK} \cd{<@ ARRAY['msg-1' … 'msg-8']} --- um id fora
-  da lista seria uma mídia aberta que não existe em balão nenhum, e apareceria no
-  painel como leitura que ninguém fez. Indicativo de conduta, \textbf{nunca}
-  mérito.\\
-\zebra \cd{confirmado\_em} & \cd{TIMESTAMPTZ?} & \textbf{O \emph{latch}.}
-  Irreversível: a partir daqui o Mural não muda, e é esta linha que entra na
-  conta da turma. Nulo = a curadoria ainda está aberta, e o que a criança
-  escolheu não conta para ninguém. \emph{CHECK}
-  \cd{confirmado\_em IS NULL OR passo <> 'contexto'} --- ver a regra do
-  Capítulo~\ref{cap:dados} sobre por que ele não veda mais que isso.\\
-\cd{versao\_instrumento} & \cd{TEXT} & \cd{'1.0.0'}. Na linha, para permitir
-  reprocessamento quando o catálogo mudar (DAD-06).\\
-\zebra \cd{concluido\_em} & \cd{TIMESTAMPTZ?} & \emph{CHECK}:
-  \cd{(passo = 'fim') = (concluido\_em IS NOT NULL)}. Uma tela dizendo
-  \enquote{missão cumprida} sobre uma linha sem carimbo é um relatório que
-  mente.\\
-\bottomrule
-\end{tabularx}
-
-\begin{regra}
-\textbf{Não há coluna de pontuação}, e não há coluna de \enquote{quantas falsas
-encaminhou}. A segunda é a tentação específica desta missão: com o gabarito a um
-\emph{join} de distância, ela é a coluna que se escreve sozinha --- e é um
-\emph{ranking} de quem caiu no boato, com nome de criança do 5º ano ao lado.
-\cd{PROIBIDO\_NO\_PAINEL}, em \arq{invariantes.ts}, tem o teste que cobra a
-ausência. O que existe é o histograma da SALA, por mensagem.
-\end{regra}
-
-% ---------------------------------------------------------------------------
-\subsection{\cd{exp05ef1b\_encaminhamentos}}
-
-\begin{tabularx}{\linewidth}{@{}L{40mm}L{20mm}X@{}}
-\toprule
-\headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
-\midrule
-\pk{id} & \cd{BIGSERIAL} & Exige \cd{GRANT USAGE} na \textbf{sequência} para a
-  \emph{role} de runtime --- a quinta aparição da armadilha, e a de sintoma mais
-  grave: o encaminhamento é o primeiro toque da criança num balão.\\
-\zebra \cd{mensagem\_id} & \cd{TEXT} & \emph{CHECK} contra os oito ids do
-  catálogo, e validado contra o lote DA TURMA antes de gravar. Um \cd{msg-9}
-  viraria uma barra órfã no telão da sala.\\
-\cd{criado\_em} & \cd{TIMESTAMPTZ} & Carimbo do servidor. É dele que sai o
-  \cd{primeiro\_encaminhamento\_em} da sessão, escrito uma vez só.\\
-\bottomrule
-\end{tabularx}
-
-\begin{nota}
-\cd{UNIQUE (escola\_id, estudante\_id, mensagem\_id)}: encaminhar duas vezes não
-conta duas. A regra pura já deduplica com um \cd{Set}; o índice faz a
-\emph{dedupe} valer quando dois toques rápidos no mesmo balão chegam como duas
-requisições em paralelo --- o caminho normal numa sala com trinta tablets, não a
-exceção. A rota responde 200 com \cd{novo: false}, e não erro: reabrir e
-reencaminhar é comportamento legítimo.
-\end{nota}
-
-% ---------------------------------------------------------------------------
-\subsection{\cd{exp05ef1b\_reflexoes}}
-
-\begin{tabularx}{\linewidth}{@{}L{40mm}L{20mm}X@{}}
-\toprule
-\headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
-\midrule
-\pk{(escola\_id, estudante\_id)} & PK composta & Uma reflexão por estudante ---
-  a resposta ao dilema do áudio do tio no grupo da família.\\
-\zebra \cd{texto} & \cd{VARCHAR(500)} & \textbf{Caixa livre escrita por menor de
-  idade}, e o dado mais sensível da missão. \emph{CHECK}
-  \cd{char\_length(btrim(texto)) BETWEEN 5 AND 500} --- o \cd{btrim} cobre o
-  piso, que o tipo não cobre: cinco espaços contariam como reflexão entregue no
-  painel da professora. Está em \cd{CAMPOS\_SENSIVEIS}: fora de \emph{log}, fora
-  da telemetria analítica, e sem rota de gestor que o alcance.\\
-\cd{chars\_count} & \cd{INT} & O tamanho, para a leitura agregada não precisar
-  tocar o texto. \emph{CHECK} 5--500.\\
-\bottomrule
-\end{tabularx}
-
-\begin{regra}
-\textbf{Sem criptografia em nível de aplicação}, e a ausência é decisão
-declarada (\adrr{ADR-108}): o repositório não tem nenhuma, o Cloud SQL já cifra
-em repouso, e uma coluna cifrada só aqui criaria a chave que ninguém sabe onde
-rodar. A proteção é RLS mais o recorte da rota do professor da turma dela.
-
-\textbf{Retenção:} vinculada à vigência contratual escolar, \textbf{sem rotina
-ativa de expurgo programado} (\adrr{ADR-13}), como na exp08ef4b. Declarar \enquote{um
-ano letivo} aqui seria escrever um prazo que nenhum \emph{scheduler} cumpre.
-\end{regra}
-
-% ---------------------------------------------------------------------------
-\subsection{\cd{exp05ef1b\_gates\_turma}}
-
-\begin{tabularx}{\linewidth}{@{}L{40mm}L{20mm}X@{}}
-\toprule
-\headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
-\midrule
-\pk{(escola\_id, turma\_id)} & PK composta & A revelação é da \textbf{turma}.\\
-\zebra \cd{etapa} & \cd{TEXT} & \emph{CHECK}
-  \cd{IN ('exploracao','revelacao','reflexao')}. É \textbf{esta linha} que o
-  \emph{polling} de 5\,s lê, porque não há WebSocket de aplicação no Cloud Run
-  (\adrr{ADR-93}).\\
-\cd{atualizado\_em} & \cd{TIMESTAMPTZ} & Quando a professora moveu a turma. O
-  painel mostra o instante do SERVIDOR: o relógio da máquina da escola atrasa.\\
-\bottomrule
-\end{tabularx}
-
-\begin{nota}
-Duas colunas, três etapas, e o gate \textbf{não é opcional} --- é o oposto do
-Checkpoint~A da exp08ef4b. Sem \enquote{Iniciar revelação coletiva} não há
-revelação, porque o \emph{aha} desta missão é coletivo por desenho. E aqui a
-etapa mexe no \textbf{piso} do passo do estudante, não só no teto: quando o telão
-acende, quem não confirmou é empurrado para \cd{revelado}, porque continuar
-encaminhando com o gabarito projetado na parede mediria outra coisa.
 \end{nota}
 
 \subsection{\cd{app\_91\_ciclos} e \cd{app\_91\_checkins}}

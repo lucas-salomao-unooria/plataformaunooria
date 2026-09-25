@@ -9,7 +9,9 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{112 decisões}, numeradas até ADR-112, \textbf{sem lacunas}. Quando
+São \textbf{113 decisões}, numeradas até ADR-114. A ADR-113 (a retirada do
+Eco no Grupo) é de uma frente paralela que ainda não entrou nesta base; fora
+ela, \textbf{sem lacunas}. Quando
 eram cem, as cinco últimas nasceram no MESMO dia, em três frentes paralelas, e não
 colidiram porque os números foram \textbf{reservados por quem repartia o
 trabalho antes de qualquer uma escrever} --- que é a lição que a colisão de
@@ -152,11 +154,12 @@ que a cercam.
 \zebra \adrr{ADR-105} & A quota de IA é dado, editável pela Unooria, e não variável de ambiente & 2026-09-15 & Aceita\\
 \adrr{ADR-106} & O \cd{\_template} nasce com a fiação inteira e sem componente de interface & 2026-09-16 & Aceita\\
 \zebra \adrr{ADR-107} & O site público entra no hub como porte, e o cadastro de interesse passa pela api & 2026-09-16 & Aceita\\
-\adrr{ADR-108} & A missão de sala nasce vazia, e a revelação é do relógio da turma & 2026-09-17 & Aceita\\
+\adrr{ADR-108} & A missão de sala nasce vazia, e a revelação é do relógio da turma & 2026-09-17 & Aceita como precedente; a v1 saiu (\adrr{ADR-114})\\
 \adrr{ADR-109} & O rótulo da tabela da BNCC de Computação é CENTRADO, e a atribuição é uma partição & 2026-09-17 & Aceita\\
 \zebra \adrr{ADR-110} & O código da experiência diz onde ela mora na trilha & 2026-09-23 & Aceita\\
 \adrr{ADR-111} & Equipe é quem divide um computador, e o painel conta por computador & 2026-09-25 & Aceita\\
 \zebra \adrr{ADR-112} & A evidência é por atividade e rodada, e a melhor rodada vale por habilidade & 2026-09-25 & Aceita\\
+\adrr{ADR-114} & Quem mandou isso? v1 é retirada; a v2.2 entra com o mesmo código & 2026-09-25 & Aceita\\
 \bottomrule
 \end{tabularx}
 
@@ -8571,7 +8574,8 @@ coisas (texto, CSS computado e medidas), e o procedimento está em
 \section{ADR-108 --- A missão de sala nasce VAZIA, e a revelação é do relógio da turma}
 \label{adr:exp05ef1b-sala-sincronizada}
 
-\textbf{Data.} 2026-09-17. \textbf{Status.} Aceita.
+\textbf{Data.} 2026-09-17. \textbf{Status.} Aceita como precedente: a missão
+que a aplicava (a v1 de Quem mandou isso?) saiu da trilha na \adrr{ADR-114}.
 \textbf{Aplica} à exp05ef1b a \adrr{ADR-69} (a liberação por turma), a
 \adrr{ADR-93} (\emph{polling} HTTP, não WebSocket) e a \adrr{ADR-94} (o
 \emph{latch} de turma). \textbf{Rompe}, num ponto declarado abaixo, o padrão que
@@ -9444,3 +9448,126 @@ o UnooTube voltarem com atividades e o id opaco pedir um ciclo de vida comum ---
 aí a atividade vira conceito de plataforma; o painel que junta missões ganhar a
 regra pedagógica; ou uma turma rodar duas atividades da mesma missão em
 paralelo, que a rodada em andamento inferida não distingue.
+
+% ---------------------------------------------------------------------------
+\section{ADR-114 --- Quem mandou isso? v1 é retirada; a v2.2 entra com o mesmo código}
+\label{adr:v1-do-5-ano-retirada}
+
+\textbf{Data.} 2026-09-25. \textbf{Status.} Aceita.
+\textbf{Consequência} da \adrr{ADR-110}: o código da missão é DERIVADO da série e
+da unidade, e a versão nova da missão do 5º ano, unidade 1, cai no mesmo
+\cd{exp05ef1b} da primeira. Segue o caminho que a retirada do Eco no Grupo
+abriu na \adrr{ADR-113}, que corre em paralelo: limpar antes, numa frente
+própria. Deixa a \adrr{ADR-108} como precedente, sem missão que a aplique.
+
+\begin{especificacao}{Contexto}
+A primeira versão de \textbf{Quem mandou isso?} (\cd{exp05ef1b}, 0.1.1, 5º ano,
+unidade 1, clone de mensageiro) entrou em 2026-09-17 e \textbf{nunca saiu de
+\cd{dev-local}}: nenhuma stack em nuvem aplicou a migração dela, e nenhum
+\emph{bundle} dela foi publicado. O documento de requisitos da versão 2.2
+chegou com uma mecânica quase inteira diferente:
+
+\begin{itemize}
+  \item as mensagens se classificam numa \textbf{matriz 2$\times$2} ---
+    verdadeira ou falsa, emocional ou neutra ---, e não em verdadeira, falsa e
+    ambígua;
+  \item o estudante encaminha \textbf{exatamente três}, e não \enquote{pelo
+    menos três};
+  \item entram uma \textbf{enquete de motivo} (por que encaminhou) e a
+    \textbf{reflexão Se/Então}, no lugar do texto livre sobre o áudio do tio;
+  \item a missão passa a marcar \textbf{evidência pedagógica} pela régua da
+    \adrr{ADR-112} e a aceitar \textbf{equipes} (\adrr{ADR-111}) --- a v1 não
+    fazia nenhuma das duas.
+\end{itemize}
+
+O dono do produto fixou a regra para esse caso: \enquote{se já houver missão da
+mesma série e bimestre, primeiro vamos limpar e excluir tudo da antiga}.
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{itemize}
+  \item \textbf{A v1 sai da trilha por completo ANTES de a v2.2 começar}, numa
+    frente própria, e a v2.2 é reconstruída do zero com o mesmo código.
+  \item \textbf{Sai tudo o que é da v1}: a experiência, o módulo da api e as
+    rotas \rota{/quem-mandou-isso/*}, os cinco \emph{models} e as tabelas
+    \cd{exp05ef1b\_*}, as telas do professor (missão, resultados, painel da
+    aula, preparo do lote, zerar a turma, bloco do guia), o guia da aula, a
+    entrada no catálogo (o 5º ano, unidade 1, fica \enquote{em breve}), o prefixo
+    do BFF, a porta do mapa de \emph{dev}, a suíte do estudante, o serviço do
+    \emph{compose} e a liberação do \emph{seed}.
+  \item \textbf{Saem também as linhas de PLATAFORMA que dizem \cd{exp05ef1b}}
+    --- \cd{experiencias}, \cd{experiencias\_versoes}, \cd{liberacoes},
+    \cd{progresso} e \cd{disponibilidades} ---, pela razão da \adrr{ADR-113}:
+    o código vai significar outra coisa, e a turma que liberou a v1 abriria a
+    v2.2 sem ninguém ter liberado. A migração é o molde da \adrr{ADR-110}:
+    tira o FORCE da RLS de \cd{liberacoes} e \cd{progresso}, apaga, confere e
+    devolve.
+  \item \textbf{Ficam}: \cd{telemetria\_eventos} e \cd{recursos\_auditoria}
+    (mesma razão da \adrr{ADR-113}); a ponte \cd{@edu/ui/ds-whatsapp}, que
+    outras missões usam; as chaves \cd{veracidade}, \cd{tom} e
+    \cd{explicacao} na lista de redação do \emph{log}, agora sem consumidor ---
+    a v2.2 classifica as mensagens do mesmo jeito, e chave que sai da lista só
+    afrouxa a rede; a porta 5184 no \cd{CORS\_ORIGINS} da api, reservada; e o
+    teste do dado da habilidade EF05CO08, que prova a correção do extrator e
+    não depende de missão nenhuma.
+  \item \textbf{A v2.2 começa na 0.2.0}, e não na 0.1.x: o caminho
+    \cd{gs://\{contrato\}-exp/exp05ef1b/\{versao\}/} é tratado como imutável, e a
+    telemetria separa as duas versões pelo \cd{exp\_version}.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Evoluir a v1 no lugar.} As tabelas, os passos e o contrato
+    mudam quase todos: a veracidade de três valores vira uma matriz, o piso de
+    encaminhamentos vira número exato, a reflexão muda de forma, e entram
+    enquete, evidência e equipes. O que sobraria da v1 seria o nome das tabelas,
+    e com ele o risco de ler dado velho como se fosse da v2.2. E a evolução
+    pagaria migração de dado sem dado nenhum para migrar: a v1 nunca saiu de
+    \cd{dev-local}.
+  \item \textbf{Retirar a v1 na mesma frente da v2.2.} Um PR só misturaria
+    apagar e construir, e o \emph{diff} deixaria de mostrar o que saiu --- a
+    mesma razão da \adrr{ADR-113}.
+  \item \textbf{Manter a v1 no ar até a v2.2 ficar pronta.} Duas missões com o
+    mesmo código não coexistem na plataforma (pasta, tabelas, \emph{bucket} e a
+    linha em \cd{liberacoes} são as mesmas), e a v1 continuaria acumulando dado
+    local que seria apagado de qualquer jeito.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{O 5º ano fica sem missão até a v2.2 entrar}: a unidade 1
+    aparece \enquote{em breve}, como os anos que ainda não têm nenhuma.
+  \item \textbf{O que a v1 produziu no banco local some}: sessões, mensagens
+    encaminhadas e reflexões saem com as tabelas. Não há dado de estudante real
+    --- a v1 só rodou em \cd{dev-local} ---, mas a demonstração local do 5º ano
+    deixa de existir.
+  \item \textbf{A cópia principal precisa de passos depois do merge}: aplicar a
+    migração no banco do \emph{compose} e remover o contêiner e o volume de
+    \cd{node\_modules} da experiência (\cd{--remove-orphans}). Sem a migração, a
+    grade da sala continua oferecendo a v1 para liberar.
+  \item \textbf{O padrão da \adrr{ADR-108}} (a missão de sala que nasce vazia e
+    a revelação pelo relógio da turma) fica sem missão que o aplique. A v2.2
+    decide se o retoma; até lá ele é precedente, não código.
+  \item \textbf{A v2.2 precisa escrever a própria suíte de ponta a ponta}: a
+    \arq{estudante/10-quem-mandou-isso.mjs} saiu com a v1, e a cobertura do
+    5º ano na suíte do estudante fica vazia até lá.
+\end{itemize}
+
+\textbf{Verificação.} A migração foi aplicada sobre um Postgres descartável
+semeado, com linhas da v1 nas cinco tabelas dela e em \cd{progresso},
+\cd{liberacoes}, \cd{disponibilidades}, \cd{experiencias} e
+\cd{experiencias\_versoes}, e com linhas de controle de outra missão nas mesmas
+tabelas de plataforma: as da v1 sumiram, as de controle ficaram, as cinco
+tabelas, a sequência e as políticas saíram, e o FORCE da RLS voltou. Num banco
+virgem, a cadeia inteira de migrações aplica, e o \emph{diff} entre as migrações
+e o \emph{schema} não acusa nada sobre a missão. A suíte da api (112 suítes) e as
+dos demais pacotes passam sem ela.
+
+\textbf{Gatilho.} A v2.2 atrasar além do bimestre dela --- aí a pergunta
+\enquote{deixar o 5º ano vazio ou trazer a v1 de volta} precisa de resposta
+explícita, e a v1 volta por esta ADR revertida, não por \emph{cherry-pick}; ou
+outra missão nova cair numa unidade já ocupada, que repete a escolha desta ADR
+e da \adrr{ADR-113}.

@@ -28,7 +28,7 @@ import { criarTurmaDeTeste } from "./turma-de-teste";
  *
  * UMA ESCOLA POR SUÍTE (mais a vizinha, para a RLS) — o Jest serializa, mas a
  * limpeza de uma suíte não pode depender da outra. Molde:
- * `quem-mandou-isso-postgres.spec.ts` e `salas-postgres.spec.ts`.
+ * `salas-postgres.spec.ts`.
  */
 
 const URL = process.env.DATABASE_URL ?? "postgresql://postgres:pass@localhost:5432/unooria";
@@ -54,8 +54,8 @@ const salas = new SalasService(prisma);
 const INSTA = "exp08ef1b";
 const TEMPESTADE = "exp02em1b";
 const TUBE = "exp04ef1b";
-/** Missão real que NÃO aceita equipe. */
-const QUEM_MANDOU = "exp05ef1b";
+/** Missão real, do mesmo 8º ano da turma, que NÃO aceita equipe. */
+const MANIFESTO = "exp08ef4b";
 
 const TABELAS = ["equipes_montagens", "equipes", "equipes_membros"] as const;
 
@@ -384,11 +384,11 @@ describe("montar, reler e desfazer", () => {
 
   test("missão fora da lista é 400 no PUT, e o GET responde 200 com `permitida: false`", async () => {
     expect(
-      await recusa(equipes.salvar(ESCOLA, ids.turma8A, QUEM_MANDOU, duasEquipes(0), ids.prof8A)),
+      await recusa(equipes.salvar(ESCOLA, ids.turma8A, MANIFESTO, duasEquipes(0), ids.prof8A)),
     ).toMatchObject({ status: 400, corpo: { codigo: "missao-sem-equipes" } });
 
     const lido = EquipesDaMissaoSchema.parse(
-      await equipes.daMissao(ESCOLA, ids.turma8A, QUEM_MANDOU, ids.prof8A),
+      await equipes.daMissao(ESCOLA, ids.turma8A, MANIFESTO, ids.prof8A),
     );
     expect(lido).toEqual({ permitida: false, montagem: null, equipes: [], semEquipe: [], estudantes: 5 });
   });
@@ -501,7 +501,7 @@ describe("a equipe do estudante", () => {
 
   test("a equipe é DAQUELA missão: na outra, a mesma criança continua sem", async () => {
     expect(await equipes.minha(ESCOLA, ids.ana, TUBE)).toEqual({ equipe: null });
-    expect(await equipes.minha(ESCOLA, ids.ana, QUEM_MANDOU)).toEqual({ equipe: null });
+    expect(await equipes.minha(ESCOLA, ids.ana, MANIFESTO)).toEqual({ equipe: null });
   });
 });
 
@@ -613,7 +613,7 @@ describe("a proposta (sugestão) nunca grava", () => {
   test("missão fora da lista é 400", async () => {
     expect(
       await recusa(
-        equipes.sugerir(ESCOLA, ids.turma8A, QUEM_MANDOU, { modo: "sorteio", computadores: 2, ausentes: [] }, ids.prof8A),
+        equipes.sugerir(ESCOLA, ids.turma8A, MANIFESTO, { modo: "sorteio", computadores: 2, ausentes: [] }, ids.prof8A),
       ),
     ).toMatchObject({ status: 400, corpo: { codigo: "missao-sem-equipes" } });
   });

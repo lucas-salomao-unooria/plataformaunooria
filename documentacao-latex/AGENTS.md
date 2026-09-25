@@ -16,9 +16,11 @@ armadilhas que já custaram tempo e não avisam quando você cai nelas:
   (`docs/regras/definition-of-done.md`). Ele compila sozinho, na própria pasta,
   com `tectonic -k mapa-de-produto.tex`, e não pelo `compilar.sh` daqui.
 
-- **A PRÓXIMA ADR é a 113.** A numeração vai até ADR-112 (a evidência
-  pedagógica por atividade e rodada, com a melhor rodada valendo por
-  habilidade), sem lacuna — e este número envelhece a cada frente, então ele é
+- **A PRÓXIMA ADR é a 115.** A numeração vai até ADR-114 (a primeira versão de
+  Quem mandou isso? retirada, para a v2.2 voltar com o mesmo código); a 113 é a
+  retirada do Eco no Grupo para A Seleção, da frente que corria em paralelo, e
+  a 112 a evidência pedagógica por atividade e rodada, com a melhor rodada
+  valendo por habilidade. Este número envelhece a cada frente, então ele é
   ponto de partida, nunca a resposta. Das mais citadas: a 86 é o
   guia da aula, 87 o eixo da disponibilidade, 88 o painel da Unooria só do
   `admin`, 89 o histórico append-only que a rede também lê e 90 a suíte da API
