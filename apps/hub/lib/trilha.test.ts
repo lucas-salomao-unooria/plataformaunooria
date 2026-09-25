@@ -155,6 +155,16 @@ describe("endereços", () => {
     expect(itens[1]).toEqual({ label: "Entre Redes", href: "/professor/entre-redes" });
   });
 
+  test("o perfil do estudante volta para a ABA de estudantes da turma", () => {
+    expect(itensDaRota("/professor/turmas/t1/estudantes/e1", "professor")).toEqual([
+      { label: "Início", href: "/professor" },
+      { label: "Minhas turmas", href: "/professor/turmas" },
+      { label: "Turma", href: "/professor/turmas/t1" },
+      { label: "Estudantes", href: "/professor/turmas/t1?aba=estudantes" },
+      { label: "Estudante" },
+    ]);
+  });
+
   test("`.../estudantes` devolve para a tela de resultados da própria missão", () => {
     const itens = itensDaRota(
       "/professor/entre-redes/8-ano/unidade-1/estudantes/xyz",

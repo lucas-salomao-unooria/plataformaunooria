@@ -1,9 +1,12 @@
 import { notFound } from "next/navigation";
 
 import { Badge, Card } from "@edu/ui/ds";
+import { PainelDeHabilidades } from "@/components/evidencias/painel-de-habilidades";
 import { LinkButton } from "@/components/link-button";
 import { RotuloDaTrilha } from "@/components/trilha";
 import { apiDoServidor } from "@/lib/api-servidor";
+import { auth } from "@/lib/auth";
+import { painelDeHabilidades } from "@/lib/evidencias-servidor";
 import {
   MISSAO_ATUAL,
   buscarMissao,
@@ -88,6 +91,22 @@ export default async function AtividadePage({
   const parse = antagonismoSchema.safeParse(atividade.antagonismo);
   const antagonismo: Antagonismo | null = parse.success ? parse.data : null;
 
+  /*
+    EVIDÊNCIA PEDAGÓGICA (E14): as habilidades da BNCC de cada estudante nesta
+    atividade. A evidência é por TURMA, então a atividade anterior à coluna
+    `turma_id` (que vale para a escola inteira) não tem painel. E a missão sem
+    ficha pedagógica responde `temFicha: false` — hoje é o caso de todas, e o
+    bloco não aparece; ele acende sozinho no dia em que o Instanooria publicar a
+    ficha dele. `MISSAO_ATUAL` pela mesma razão da missão de origem acima.
+  */
+  const expIdDaAtividade = MISSAO_ATUAL.expId;
+  const [painel, session] = await Promise.all([
+    atividade.turma && expIdDaAtividade
+      ? painelDeHabilidades(atividade.turma.id, expIdDaAtividade, atividade.id)
+      : Promise.resolve(null),
+    auth(),
+  ]);
+
   return (
     <div className="flex flex-col gap-6">
       {/* A trilha é do layout da área; o que só esta página sabe é o NOME da
@@ -169,6 +188,16 @@ export default async function AtividadePage({
           activityId={atividade.id}
           status={atividade.status}
           qtdPostsTese={atividade.qtdPostsTese}
+        />
+      ) : null}
+
+      {atividade.turma && expIdDaAtividade && painel?.temFicha ? (
+        <PainelDeHabilidades
+          turmaId={atividade.turma.id}
+          expId={expIdDaAtividade}
+          atividadeId={atividade.id}
+          inicial={painel}
+          podeEditar={session?.usuario.papel === "professor"}
         />
       ) : null}
 

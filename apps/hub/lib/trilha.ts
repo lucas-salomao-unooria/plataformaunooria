@@ -91,6 +91,11 @@ function resultadosDaMissao(segmentos: Segmentos): string {
   return `/${segmentos.slice(0, -1).join('/')}/resultados`;
 }
 
+/** `/professor/turmas/:id/estudantes` não tem tela: a lista é a aba da sala. */
+function abaDosEstudantes(segmentos: Segmentos): string {
+  return `/${segmentos.slice(0, -1).join('/')}?aba=estudantes`;
+}
+
 /**
  * A hierarquia das rotas da plataforma. Chave = PADRÃO da rota, com `[x]` nos
  * segmentos dinâmicos, exatamente como a pasta em `app/`.
@@ -151,6 +156,11 @@ const NOS: Record<string, NoDaTrilha> = {
 
   '/professor/turmas': { rotulo: 'Minhas turmas' },
   '/professor/turmas/[id]': { rotulo: 'Turma' },
+  // O perfil do estudante (E14) mora DENTRO da turma de onde o professor veio.
+  // `.../estudantes` não é `oculto`: é a aba de onde ele clicou no nome, e sem
+  // ela a volta cai na aba de missões.
+  '/professor/turmas/[id]/estudantes': { rotulo: 'Estudantes', href: abaDosEstudantes },
+  '/professor/turmas/[id]/estudantes/[estudanteId]': { rotulo: 'Estudante' },
 
   // Os três produtos que são experiência embedada. O rótulo é o NOME DO PRODUTO
   // (`lib/produtos.ts`), que é o que o professor clicou no cartão.

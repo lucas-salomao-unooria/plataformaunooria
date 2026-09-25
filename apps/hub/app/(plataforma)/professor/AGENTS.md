@@ -163,3 +163,31 @@ importa; as leituras server-side em `lib/equipes-servidor.ts` (`server-only`).
 Suíte: `professor/10-equipes-na-missao` (4B de ponta a ponta, terminando em
 "Desfazer"; a faixa do estudante na 4A, com as equipes criadas e apagadas pelo
 BFF).
+
+## Evidência pedagógica (E14)
+
+Por estudante, as habilidades da BNCC que ele demonstrou numa ATIVIDADE,
+rodada a rodada. Tipos e regras puras em `lib/evidencias.ts`; leituras em
+`lib/evidencias-servidor.ts`; confirmar e ajustar pelo BFF (`evidencias`). Quem
+decide nível, cópia e o que conta é a api (`apps/api/src/evidencias/`).
+
+- **O painel mora na tela da ATIVIDADE** (`atividades/[id]`, depois da revisão):
+  hoje só o Instanooria tem atividade. Atividade sem turma (anterior à coluna)
+  não tem painel — a evidência é por turma.
+- **Invisível sem ficha, de propósito**: `temFicha: false` não desenha nada, e
+  hoje NENHUMA missão tem ficha. Acende sozinho quando a primeira publicar a
+  dela; "não aparece" não é defeito — confira `temFicha` antes.
+- **Ausência é "Não avaliado", nunca "Não atingiu".** A cópia da aula projetada
+  chega "a revisar" e só conta depois de "Confirmar para a turma".
+- **O perfil** é `turmas/[id]/estudantes/[estudanteId]`, pelo NOME na aba
+  Estudantes; o relatório da Vila, antes destino da linha inteira, virou link ao
+  lado (link dentro de link não existe). A trilha volta para `?aba=estudantes`.
+- **Só o `professor` confirma e ajusta** (`podeEditar`); gestor lê, sem caixas,
+  sem célula clicável, sem confirmar. O estudante nunca vê resultado.
+- **Sem ranking nem ordem por nível.** Alfabética com a equipe junta
+  (`ordenarPorEquipe`), nenhuma coluna `sortable`. A seleção é o `Checkbox` do
+  DS numa coluna, não a `selectable` da `Table`: a dela diz "Selecionar linha
+  N", e a linha é uma criança (lacuna a pedir no `storybook-unooria`).
+
+Suíte: `professor/11-perfil-do-aluno` (4B, até o perfil vazio). O painel ganha
+passo quando a primeira missão tiver ficha.
