@@ -7,7 +7,7 @@ import { ALERTA_DE_ERRO, esperarOuFalharCedo } from "../lib/smoke.mjs";
  *
  * Antes só o Instanooria tinha guia, e ele era uma página escrita à mão. Hoje o
  * conteúdo é dado e a ordem é de um renderizador único — o que esta suíte
- * comprova é justamente o que o typecheck não pega: que as seis missões TÊM
+ * comprova é justamente o que o typecheck não pega: que as cinco missões TÊM
  * guia, que as seções aparecem na mesma ordem em todas, e que o caminho até lá
  * existe a partir da SALA DE AULA, onde o professor está.
  *
@@ -57,20 +57,6 @@ const GUIAS = [
     bncc: "EM13CO12",
   },
   {
-    rota: "/professor/entre-redes/7-ano/unidade-1/guia",
-    missao: "O Eco no Grupo · 7º ano",
-    /* As três respostas e as falas do bairro vêm de
-       `GET /o-eco-no-grupo/professor/material`. O texto exato da opção certa
-       está aqui porque é ele que o professor lê antes da aula — paráfrase no
-       guia deixava a turma comentando uma frase que ninguém viu. */
-    vivo: [
-      /As três respostas e o que o bairro devolve — só para você/i,
-      /Responder citando o print/i,
-      /Dona Lúcia/i,
-    ],
-    bncc: "EF07CO08",
-  },
-  {
     rota: "/professor/entre-redes/6-ano/unidade-2/guia",
     missao: "O Rastro do Boato · 6º ano",
     /* A missão que faltava nesta suíte inteira. As três intervenções vêm de
@@ -116,7 +102,7 @@ await suite(
       "O professor abre o guia na véspera para preparar e na hora para conduzir. Ele é o mesmo " +
       "documento em toda missão — mudam o conteúdo e os blocos que vêm de fonte viva.",
     prova: [
-      "As seis missões publicadas têm guia, e nenhuma cai em 404",
+      "As cinco missões publicadas têm guia, e nenhuma cai em 404",
       "As nove seções aparecem na mesma ordem em todas",
       "Cada guia traz a habilidade da BNCC Computação com o código",
       "Todo guia tem bloco vivo, e todos chegam preenchidos da fonte de verdade",

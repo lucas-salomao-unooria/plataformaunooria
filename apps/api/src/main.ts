@@ -53,8 +53,10 @@ async function bootstrap() {
       // sintoma na tela é a experiência abrindo e morrendo em "Failed to
       // fetch", como se a api estivesse fora do ar.
       //
-      // 5179 (Eco), 5180 (plano de ensino) e 5181 (Rastro do Boato) entraram
-      // depois. A lista viva é `apps/hub/lib/experiencias-dev.ts`.
+      // 5179 (7º ano, unidade 1: sem experiência entre a saída do Eco no Grupo e
+      // a chegada de A Seleção, que volta para ela), 5180 (plano de ensino) e
+      // 5181 (Rastro do Boato) entraram depois. A lista viva é
+      // `apps/hub/lib/experiencias-dev.ts`.
       process.env.CORS_ORIGINS ??
       [
         "http://localhost:3000",

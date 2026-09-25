@@ -125,7 +125,6 @@ export const LIBERACOES_DE_DEMO: Array<{ turma: string; expIds: string[] }> = [
   { turma: "4A", expIds: ["exp04ef1b"] },
   { turma: "5A", expIds: ["exp05ef1b"] },
   { turma: "6A", expIds: ["exp06ef2b"] },
-  { turma: "7A", expIds: ["exp07ef1b"] },
   { turma: "2EM-A", expIds: ["exp02em1b"] },
 ];
 

@@ -19,7 +19,6 @@
 #   app-70  Vite da Vila do Lume, transversal (5177 — a 5176 é da app-91)
 #   app-91  Vite do check-in de bem-estar, ferramenta do professor (5176)
 #   exp02em1b  Vite do unooGPT, a Missão Tempestade (5178)
-#   exp07ef1b  Vite de O Eco no Grupo, o clone de WhatsApp (5179)
 #   exp06ef2b  Vite de O Rastro do Boato, o clone de mensageiro (5181)
 #   exp08ef4b  Vite de O Manifesto da IA, o clone do assistente (5182)
 #   exp01ef1b  Vite de O Que a Foto Conta, o clone do mural (5183)
@@ -63,7 +62,6 @@ x-fonte: &fonte
   - nm-app70:/repo/apps/experiencias/app-70-vila-do-lume/node_modules
   - nm-app91:/repo/apps/experiencias/app-91-bem-estar/node_modules
   - nm-exp02em1b:/repo/apps/experiencias/exp02em1b/node_modules
-  - nm-exp07ef1b:/repo/apps/experiencias/exp07ef1b/node_modules
   - nm-exp06ef2b:/repo/apps/experiencias/exp06ef2b/node_modules
   - nm-exp05ef1b:/repo/apps/experiencias/exp05ef1b/node_modules
   - nm-exp-template:/repo/apps/experiencias/_template/node_modules
@@ -374,16 +372,6 @@ services:
       deps:
         condition: service_completed_successfully
 
-  exp07ef1b:
-    <<: *dev
-    working_dir: /repo/apps/experiencias/exp07ef1b
-    command: pnpm exec vite --host 0.0.0.0 --port 5179 --strictPort
-    ports:
-      - "5179:5179"
-    depends_on:
-      deps:
-        condition: service_completed_successfully
-
   # 5181, e não 5180: a 5180 está reservada para o planejamento de ensino.
   exp06ef2b:
     <<: *dev
@@ -444,7 +432,6 @@ volumes:
   nm-app70:
   nm-app91:
   nm-exp02em1b:
-  nm-exp07ef1b:
   nm-exp06ef2b:
   nm-exp05ef1b:
   nm-exp-template:

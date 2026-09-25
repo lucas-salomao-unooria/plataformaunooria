@@ -52,7 +52,8 @@ export const EnvSchema = z.object({
   // conferir a proporção devolvida — ver PROPORCAO_IMAGEM no vertex.provider.
   VERTEX_IMAGE_MODEL: z.string().default("gemini-3.1-flash-image"),
 
-  // Voz das falas da exp07ef1b (Amara, a moradora do grupo, o podcast). Não é o
+  // Voz (`generateSpeech`). Nenhuma missão sintetiza voz hoje: quem usava era o
+  // Eco no Grupo, retirado pela ADR-113 — a capacidade fica no provider. Não é o
   // aiplatform: a síntese vem da Cloud Text-to-Speech, com os mesmos modelos
   // Gemini por trás e o MESMO ADC — e a API precisa estar habilitada no
   // projeto (`gcloud services enable texttospeech.googleapis.com`), senão a

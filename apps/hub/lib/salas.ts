@@ -5,7 +5,7 @@ import { apiDoServidor } from "./api-servidor";
  * A SALA DE AULA no hub (ADR-69): o que a api responde em `/salas/*`.
  *
  * O contrato é o Zod de `apps/api/src/salas/contrato-de-rotas.ts`; estes tipos
- * são a leitura dele do lado do hub, como `unootube-tipos.ts` e `eco-tipos.ts`.
+ * são a leitura dele do lado do hub, como `unootube-tipos.ts`.
  */
 
 /** `bloqueada` não é estado do banco — é a ausência de linha em `liberacoes`. */

@@ -13,7 +13,7 @@ import { exigirRecursoDisponivel } from "./disponibilidade";
  * é um endereço adivinhável, e antes disto qualquer estudante logado abria
  * qualquer missão digitando a URL.
  *
- * NÃO confunda com o relógio da exp02em1b nem com os gates da exp07ef1b. Aqueles
+ * NÃO confunda com o relógio da exp02em1b nem com os gates das missões de sala. Aqueles
  * dizem "a aula começou" e continuam morando na experiência (ADR-25). Este diz
  * "esta missão está nesta sala", e é PRÉ-CONDIÇÃO deles: sem liberação a
  * pergunta do relógio nem chega a ser feita.

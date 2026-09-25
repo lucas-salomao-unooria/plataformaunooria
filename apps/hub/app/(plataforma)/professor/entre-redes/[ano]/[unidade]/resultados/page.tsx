@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
 
 import {
-  MISSAO_ECO_NO_GRUPO,
   MISSAO_MANIFESTO_IA,
   MISSAO_FOTO_CONTA,
   MISSAO_QUEM_MANDOU_ISSO,
@@ -13,7 +12,6 @@ import {
 
 import { ResultadosManifestoIa } from "./resultados-manifesto-ia";
 import { ResultadosFotoConta } from "./resultados-foto-conta";
-import { ResultadosOEcoNoGrupo } from "./resultados-o-eco-no-grupo";
 import { ResultadosQuemMandouIsso } from "./resultados-quem-mandou-isso";
 import { ResultadosRastroBoato } from "./resultados-rastro-boato";
 import { ResultadosUnooGPT } from "./resultados-unoogpt";
@@ -53,9 +51,6 @@ export default async function ResultadosPage({
   }
   if (missao.expId === MISSAO_UNOOGPT.expId) {
     return <ResultadosUnooGPT missao={missao} turma={turma} />;
-  }
-  if (missao.expId === MISSAO_ECO_NO_GRUPO.expId) {
-    return <ResultadosOEcoNoGrupo missao={missao} turma={turma} />;
   }
   if (missao.expId === MISSAO_RASTRO_BOATO.expId) {
     return <ResultadosRastroBoato missao={missao} turma={turma} />;

@@ -53,7 +53,7 @@ export type OrigemDoLote = "ia" | "padrao";
 export type Polaridade = "urgencia-venceu" | "informativas-venceram" | "empate";
 
 /**
- * O `SeletorDeTurma` é compartilhado com a exp02em1b, a exp06ef2b, a exp07ef1b e a
+ * O `SeletorDeTurma` é compartilhado com a exp02em1b, a exp06ef2b e a
  * exp08ef4b e exige `estudantes`; a api o devolve sempre.
  *
  * `serie` é anulável AQUI e não lá: o contrato da api a declara

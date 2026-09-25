@@ -292,71 +292,6 @@ export const MISSAO_UNOOGPT: Missao = {
  * está aqui entra na grade como "Em breve".
  */
 /**
- * 7º ano · Unidade 1 — O Eco no Grupo (`exp07ef1b`).
- *
- * Clone de WhatsApp móvel, em DUAS aulas com breakpoint entre elas — a
- * primeira missão da trilha em que a professora conduz a turma por etapas
- * (abrir a Aula 2, congelar o debate, liberar a reflexão). É isso que muda o
- * preparo dela em relação às outras: aqui ela tem botões para apertar durante
- * a aula, e a tela dos 30 estudantes anda junto.
- *
- * A copy abaixo sai do sheet congelado da missão (passada 2), com uma exceção
- * declarada: o podcast de recapitulação sai em ~2 min, não nos 3m30 que o
- * brief previu — o roteiro aprovado não dá essa duração, e o cronograma ganha
- * folga em vez de mentir sobre ela.
- */
-export const MISSAO_ECO_NO_GRUPO: Missao = {
-  anoSlug: "7-ano",
-  unidadeSlug: "unidade-1",
-  unidade: 1,
-  expId: "exp07ef1b",
-  titulo: "O Eco no Grupo — Quem decide o que roda?",
-  resumo:
-    "Um boato sobre o festival do bairro corre num grupo de WhatsApp, com print recortado e áudio alarmado. O estudante audita as mensagens, descobre o parágrafo que o print cortou e responde citando a matéria completa — e o grupo se acalma na frente dele.",
-  status: "disponivel",
-  estudante: {
-    titulo: "O Eco no Grupo",
-    chamada:
-      "Amara te chama no privado: o grupo do bairro está em pânico por causa de um print. Descubra de onde saiu essa história.",
-  },
-  ficha: {
-    competencia:
-      "Letramento midiático — reconhecer que print e manchete isolados são recorte intencional, e intervir com a fonte completa em vez de opinião.",
-    duracao: "2 aulas de 30–35 min, com pausa entre elas",
-    formato:
-      "Clone de WhatsApp móvel: um chat privado, um grupo de bairro com 8 mensagens, e a reportagem íntegra em tela cheia",
-    atos: [
-      {
-        rotulo: "1 — Investigar o grupo (Aula 1)",
-        texto:
-          "O estudante entra no grupo 'Comunidade Alerta', ouve o áudio da moradora, lê os textos indignados e toca no print encaminhado. A reportagem completa abre e mostra o parágrafo que foi cortado: o evento tinha alvará e a polícia só organizava o trânsito. Amara fica em silêncio nesta etapa, de propósito — é o estudante que precisa achar o corte.",
-      },
-      {
-        rotulo: "2 — Pausa entre as aulas",
-        texto:
-          "No fim da Aula 1 a missão para numa tela de pausa, com o progresso salvo. Ninguém avança até você abrir a Aula 2 no painel de resultados — é isso que faz a turma chegar junta à decisão.",
-      },
-      {
-        rotulo: "3 — Responder no grupo (Aula 2)",
-        texto:
-          "Depois do episódio de recapitulação, abre o menu com 3 respostas: repassar o áudio alarmado, responder citando a matéria com o link, ou brigar e sair do grupo. Quem responde citando vê o administrador fixar a mensagem no topo do chat. Quem responde no impulso vê o bairro entrar em pânico — e pode apagar para todos e tentar de novo.",
-      },
-      {
-        rotulo: "4 — Sistematizar e registrar",
-        texto:
-          "Três quadros explicam o enquadramento parcial, o contexto omitido e o rótulo de encaminhamento. Você congela as telas para o debate e depois libera o 'Meu percurso', em que cada estudante marca 2 critérios de checagem e uma justificativa.",
-      },
-    ],
-    preparo: [
-      "Conferir fones de ouvido: há dois áudios no chat e um episódio de recapitulação. Sem fone, a transcrição na tela cobre tudo — ela está sempre visível.",
-      "Preparar a mídia da missão no painel de resultados, uma vez por escola. Leva cerca de dois minutos e vale para todas as turmas.",
-      "Você conduz a aula por três botões no painel: abrir a Aula 2, congelar o debate e liberar a reflexão. Sem o primeiro, ninguém passa da investigação.",
-      "Reservar as duas aulas seguidas na agenda: o progresso fica salvo, mas a pausa foi desenhada para uma aula e a seguinte.",
-    ],
-  },
-};
-
-/**
  * 6º ano · Unidade 2 — O Rastro do Boato (`exp06ef2b`).
  *
  * Clone de mensageiro móvel, em DUAS aulas com breakpoint entre elas, como a do
@@ -745,7 +680,6 @@ const MISSOES_PUBLICADAS: Record<string, Missao[]> = {
   "4-ano": [MISSAO_UNOOTUBE],
   "5-ano": [MISSAO_QUEM_MANDOU_ISSO],
   "6-ano": [MISSAO_RASTRO_BOATO],
-  "7-ano": [MISSAO_ECO_NO_GRUPO],
   "8-ano": [MISSAO_ATUAL, MISSAO_MANIFESTO_IA],
   "2-serie": [MISSAO_UNOOGPT],
 };

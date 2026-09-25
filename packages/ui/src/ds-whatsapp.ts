@@ -13,9 +13,9 @@
  * `Dialog`, `Menu`, `ListItem`, `Checkbox`, `Radio` e `TopBar` colidem com os
  * da plataforma, e quem importa daqui sabe que está no clone.
  *
- * ONDE USAR: a casca móvel da exp07ef1b — da tela de bloqueio até a
- * validação de Amara no privado, inclusive os estados de erro, que falam na voz
- * do app ("Conectando...").
+ * ONDE USAR: a casca móvel das missões no clone de mensageiro (exp05ef1b e
+ * exp06ef2b), inclusive os estados de erro, que falam na voz do app
+ * ("Conectando...").
  *
  * ONDE NÃO USAR: as telas da plataforma dentro da mesma missão — o breakpoint
  * entre as aulas, o podcast, os três cards de sistematização e o "Meu percurso".
