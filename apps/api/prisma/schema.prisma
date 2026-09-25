@@ -244,6 +244,11 @@ model Turma {
   fotoContaConfigs   FotoContaTurmaConfig[]
   /// Quem divide um computador em cada missão desta turma (E13, ADR-111).
   equipesMontagens   EquipesMontagem[]
+  /// A evidência pedagógica das missões desta turma (E14). As três relações
+  /// existem só pela FK com cascata — nenhuma leitura parte da turma.
+  evidenciasMarcas   EvidenciaMarca[]
+  evidencias         Evidencia[]
+  evidenciasEventos  EvidenciaEvento[]
 
   @@unique([escolaId, periodoLetivoId, nome])
   @@index([escolaId])
@@ -442,6 +447,12 @@ model User {
   disponibilidadesQueDefiniu Disponibilidade[]           @relation("DisponibilidadeAutor")
   /// As equipes de que este estudante faz parte, uma por missão (E13, ADR-111).
   equipesComoMembro          EquipeMembro[]              @relation("EquipeMembroEstudante")
+  /// A evidência pedagógica deste estudante (E14). FK com cascata pela trava da
+  /// identidade única (`tests/identidade-unica.spec.ts`): toda coluna de pessoa
+  /// aponta para `users` — e a evidência de uma criança sai com ela.
+  evidenciasMarcas           EvidenciaMarca[]            @relation("EvidenciaMarcaEstudante")
+  evidencias                 Evidencia[]                 @relation("EvidenciaEstudante")
+  evidenciasEventos          EvidenciaEvento[]           @relation("EvidenciaEventoEstudante")
 
   @@unique([escolaId, username])
   @@index([escolaId, role])
@@ -2726,4 +2737,142 @@ model EquipeMembro {
   @@unique([escolaId, turmaId, expId, estudanteId])
   @@index([escolaId, estudanteId])
   @@map("equipes_membros")
+}
+
+/// UMA MARCA da ficha pedagógica (E14): o que a missão viu o estudante fazer
+/// numa atividade, numa rodada — uma AÇÃO ("tirou o post do ar") ou a
+/// resposta de uma PERGUNTA de múltipla escolha.
+///
+/// É o DADO BRUTO da evidência, e a única tabela que a missão escreve (pela
+/// porta `EvidenciasService.marcar`). A evidência que o professor lê
+/// (`evidencias`) é DERIVADA daqui: a melhor marca de cada habilidade.
+///
+/// A chave NÃO leva `turma_id`: a marca é da criança naquela atividade e
+/// rodada, e a turma é só o contexto em que ela foi registrada.
+///
+/// **Sem FK de `exp_id` para `experiencias`** (catálogo vazio em dev), como
+/// `liberacoes` e `equipes_montagens`. O `estudante_id` TEM FK (a trava da
+/// identidade única), com cascata: a marca é dado da criança.
+model EvidenciaMarca {
+  escolaId    String @map("escola_id")
+  turmaId     String @map("turma_id") @db.Uuid
+  expId       String @map("exp_id")
+  /// O id da ATIVIDADE, dado pela missão — texto opaco para a plataforma
+  /// (`[A-Za-z0-9_.:-]`, 1 a 100; CHECK na migration e `ATIVIDADE_ID_RE`).
+  atividadeId String @map("atividade_id")
+  /// Reiniciar uma atividade abre uma rodada NOVA (≥ 1); a anterior fica.
+  rodada      Int
+  estudanteId String @map("estudante_id") @db.Uuid
+  /// O código BNCC que este marcador mede, copiado da ficha no registro.
+  habilidade  String
+  /// O id do marcador na ficha.
+  marcador    String
+  /// atingiu | em_processo | nao_atingiu — CHECK na migration.
+  status      String
+  /// acao | multipla_escolha — CHECK na migration. Na ação vale a MELHOR
+  /// marca; na pergunta, a PRIMEIRA resposta.
+  tipo        String
+  /// A versão da ficha em vigor quando a marca foi registrada.
+  versaoFicha Int    @map("versao_ficha")
+
+  /// É por ela que se acha a RODADA EM ANDAMENTO da turma × missão: a da marca
+  /// mais recente. Só ela é recalculada quando as equipes mudam.
+  registradaEm DateTime @default(now()) @map("registrada_em") @db.Timestamptz(6)
+
+  turma     Turma @relation(fields: [turmaId], references: [id], onDelete: Cascade)
+  estudante User  @relation("EvidenciaMarcaEstudante", fields: [estudanteId], references: [id], onDelete: Cascade)
+
+  @@id([escolaId, expId, atividadeId, rodada, estudanteId, marcador])
+  @@index([escolaId, turmaId, expId, registradaEm])
+  @@map("evidencias_marcas")
+}
+
+/// A EVIDÊNCIA de uma habilidade: o nível de UM estudante numa habilidade da
+/// BNCC, numa atividade, numa rodada (E14). É o que o painel do professor lê.
+///
+/// **N/A ("Não avaliado") é a AUSÊNCIA de linha.** `nao_participou` é outra
+/// coisa: um N/A EXPLÍCITO, posto pelo professor, que existe para BARRAR a
+/// cópia da equipe ("ela faltou; não herda o que o colega fez").
+///
+/// A precedência entre as origens é regra de `evidencias/regras.ts`:
+/// professor > própria > cópia da equipe. A cópia da PROJEÇÃO (a turma
+/// inteira diante de um computador só) nasce `a_revisar` e não conta até o
+/// professor confirmar.
+///
+/// `equipe_id` sem FK, de propósito: as equipes são TROCADAS INTEIRAS a cada
+/// `PUT` (ADR-111), e uma FK apagaria (ou travaria) a evidência junto. O
+/// `estudante_id` tem FK com cascata (a trava da identidade única).
+model Evidencia {
+  id          String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  escolaId    String @map("escola_id")
+  turmaId     String @map("turma_id") @db.Uuid
+  expId       String @map("exp_id")
+  atividadeId String @map("atividade_id")
+  rodada      Int
+  estudanteId String @map("estudante_id") @db.Uuid
+  habilidade  String
+
+  /// atingiu | em_processo | nao_atingiu | nao_participou — CHECK na migration.
+  status   String
+  /// propria | equipe | projecao | professor — CHECK na migration.
+  origem   String
+  /// valida | a_revisar — CHECK na migration. `a_revisar` só na projeção.
+  situacao String
+
+  /// De quem a cópia veio (origem `equipe` ou `projecao`), e só nelas.
+  fonteEstudanteId String? @map("fonte_estudante_id") @db.Uuid
+  /// A equipe da cópia no momento em que ela foi feita. Carimbo, sem FK.
+  equipeId         String? @map("equipe_id") @db.Uuid
+  /// Quem ajustou (origem `professor`), e só nela. Carimbo, sem FK.
+  editadoPor       String? @map("editado_por") @db.Uuid
+
+  atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  turma     Turma @relation(fields: [turmaId], references: [id], onDelete: Cascade)
+  estudante User  @relation("EvidenciaEstudante", fields: [estudanteId], references: [id], onDelete: Cascade)
+
+  @@unique([escolaId, expId, atividadeId, rodada, estudanteId, habilidade])
+  @@index([escolaId, turmaId, expId, atividadeId, rodada])
+  @@index([escolaId, estudanteId])
+  @@map("evidencias")
+}
+
+/// O HISTÓRICO da evidência (E14): toda mudança, com de/para, quem e quando.
+///
+/// **APPEND-ONLY no banco**: um trigger recusa `UPDATE` para qualquer role, e
+/// a role de runtime só recebe `SELECT, INSERT`. É o que responde "quem mudou
+/// a nota da Ana, e de quê para quê?" meses depois — reescrever uma linha é o
+/// único jeito de ele mentir.
+///
+/// `estudante_id` e `habilidade` são nulos no evento da TURMA (a
+/// confirmação da projeção vale para todos de uma vez).
+model EvidenciaEvento {
+  id          String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  escolaId    String  @map("escola_id")
+  turmaId     String  @map("turma_id") @db.Uuid
+  expId       String  @map("exp_id")
+  atividadeId String  @map("atividade_id")
+  rodada      Int
+  estudanteId String? @map("estudante_id") @db.Uuid
+  habilidade  String?
+
+  /// marca | copia | recalculo | confirmacao | ajuste — CHECK na migration.
+  tipo String
+  /// O estado ANTES (`null` = não havia linha) e DEPOIS (`null` = a linha saiu).
+  de   Json?
+  para Json?
+
+  /// Quem causou: o estudante na marca, o professor no ajuste e na
+  /// confirmação, `null` no que a plataforma recalculou sozinha.
+  autorId  String?  @map("autor_id") @db.Uuid
+  criadoEm DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
+
+  turma     Turma @relation(fields: [turmaId], references: [id], onDelete: Cascade)
+  /// Cascata, e não `SET NULL`: anular a coluna seria um `UPDATE`, que o
+  /// trigger do append-only recusa — e a saída da criança travaria.
+  estudante User? @relation("EvidenciaEventoEstudante", fields: [estudanteId], references: [id], onDelete: Cascade)
+
+  @@index([escolaId, turmaId, expId, atividadeId, rodada])
+  @@index([escolaId, estudanteId])
+  @@map("evidencias_eventos")
 }
