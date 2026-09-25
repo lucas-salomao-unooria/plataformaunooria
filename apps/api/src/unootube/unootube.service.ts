@@ -3,6 +3,8 @@ import type { Prisma, UnootubeSessao } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
 import { exigirMissaoLiberada } from "../comum/liberacao";
 import { ondeAsTurmasSaoVisiveis, professorLeciona } from "../comum/turmas-do-professor";
+import { mapaDeEquipes } from "../equipes/consulta";
+import { colapsarEmUnidades, type EquipeDoMapa } from "../equipes/regras";
 import { EXP_ID, LIMITE_SALVOS, VIDEOS, semGabarito, type VideoPublico } from "./catalogo";
 import { erroDeJogo } from "./erros";
 import {
@@ -56,10 +58,14 @@ export interface RespostaSessao extends RespostaEstado {
   ranking: RespostaRanking | null;
 }
 
+/** Uma linha do painel = um computador (E13): a do representante, e com quem ele senta. */
+export type LinhaDoPainel = LinhaTurma & { equipe: EquipeDoMapa | null };
+
 export interface RespostaTurma {
   turma: { id: string; nome: string; serie: string };
-  estudantes: LinhaTurma[];
-  resumo: ResumoTurma;
+  estudantes: LinhaDoPainel[];
+  /** `porComputador`: a turma tem equipes nesta missão, e o resumo conta computadores. */
+  resumo: ResumoTurma & { porComputador: boolean };
 }
 
 type Linha = Pick<
@@ -188,6 +194,14 @@ export class UnootubeService {
    * Visão do professor. Parte de `users` (quem não iniciou também aparece);
    * `users`/`turmas` estão fora da RLS, por isso o `escolaId` no `where`.
    *
+   * UMA LINHA POR COMPUTADOR (E13, ADR-111): quando a turma montou equipes
+   * para esta missão, os membros de cada uma viram UMA linha — a de quem
+   * entrou —, e o resumo conta essas linhas. Sem isso, os colegas sentados ao
+   * lado de quem entrou apareciam como "não iniciou" e derrubavam os totais.
+   * Sem equipes, cada estudante é a própria linha, como antes. O mapa é lido
+   * DENTRO do `comTenancy`: fora dele a RLS das equipes devolve vazio, em
+   * silêncio, e o painel voltaria a contar por criança.
+   *
    * Autorização: escola do token E matrícula na turma quando quem pede é
    * professor. Antes de `matriculas` existir, a única prova era "mesma escola",
    * que é a regra de tenancy — não a de quem dá aula naquela sala.
@@ -237,7 +251,24 @@ export class UnootubeService {
         };
       });
 
-      return { turma, estudantes: linhas, resumo: resumirTurma(linhas) };
+      /* "Quem entrou por último" desempata quando mais de um membro abriu a
+         missão: o computador que trocou de login no meio da aula continua na
+         sessão nova. */
+      const atualizadoEm = new Map(estudantes.map((a) => [a.id, a.unootube[0]?.atualizadoEm.getTime() ?? 0]));
+      const mapa = await mapaDeEquipes(tx, escolaId, turmaId, EXP_ID);
+      const unidades = colapsarEmUnidades(
+        linhas,
+        (l) => l.estudanteId,
+        mapa,
+        (l) => l.iniciou,
+        (l) => atualizadoEm.get(l.estudanteId) ?? 0,
+      ).map((u): LinhaDoPainel => ({ ...u.linha, equipe: u.equipe }));
+
+      return {
+        turma,
+        estudantes: unidades,
+        resumo: { ...resumirTurma(unidades), porComputador: mapa.size > 0 },
+      };
     }, escolaId);
   }
 

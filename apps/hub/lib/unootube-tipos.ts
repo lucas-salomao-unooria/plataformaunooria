@@ -2,7 +2,12 @@
  * Shapes de LEITURA do UnooTube — exatamente o que a api devolve em
  * `GET /unootube/turmas` e `GET /unootube/turmas/:turmaId/resultados`
  * (`apps/api/src/unootube/unootube.service.ts`). Datas chegam como string.
+ *
+ * Uma linha é UM COMPUTADOR (E13): sem equipes, o estudante; com equipes, a
+ * linha de quem entrou, com `equipe` preenchida (`lib/equipe-no-painel.ts`).
  */
+import type { EquipeNoPainel } from "./equipe-no-painel";
+
 export interface TurmaResumo {
   id: string;
   nome: string;
@@ -21,6 +26,8 @@ export interface LinhaEstudanteUnootube {
   rankingDesbloqueado: boolean;
   credibilidadeAdicionada: boolean;
   concluidoEm: string | null;
+  /** `null` = sem equipe nesta missão. Com equipe, os campos acima são de quem entrou. */
+  equipe: EquipeNoPainel | null;
 }
 
 
@@ -32,6 +39,8 @@ export interface ResumoTurmaUnootube {
   /** Só entre os que concluíram. */
   distribuicaoFontes: Record<"0" | "1" | "2" | "3", number>;
   mediaFontesConcluidos: number | null;
+  /** A turma tem equipes nesta missão: os números contam computadores, não estudantes. */
+  porComputador: boolean;
 }
 
 export interface ResultadosDaTurma {
@@ -61,13 +70,18 @@ export function situacaoDoEstudante(l: Pick<LinhaEstudanteUnootube, "iniciou" | 
 }
 
 
-/** Concluídos primeiro, depois em andamento, depois quem não iniciou; nome pt-BR dentro do grupo. */
+/**
+ * Concluídos primeiro, depois em andamento, depois quem não iniciou; dentro do
+ * grupo, pelo nome que a primeira célula MOSTRA — o da equipe, quando há — em
+ * ordem pt-BR, com número como número ("Equipe 2" antes de "Equipe 10").
+ */
 export function ordenarEstudantes(estudantes: readonly LinhaEstudanteUnootube[]): LinhaEstudanteUnootube[] {
   const peso = { concluiu: 0, "em-andamento": 1, "nao-iniciou": 2 } as const;
+  const rotulo = (l: LinhaEstudanteUnootube) => l.equipe?.nome ?? l.nome;
   return [...estudantes].sort(
     (a, b) =>
       peso[situacaoDoEstudante(a)] - peso[situacaoDoEstudante(b)] ||
-      a.nome.localeCompare(b.nome, "pt-BR", { sensitivity: "base" }),
+      rotulo(a).localeCompare(rotulo(b), "pt-BR", { sensitivity: "base", numeric: true }),
   );
 }
 

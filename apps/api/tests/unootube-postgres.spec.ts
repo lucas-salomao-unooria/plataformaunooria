@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { HttpException } from "@nestjs/common";
 import { PrismaClient } from "@prisma/client";
 import { PrismaService } from "../src/prisma/prisma.service";
@@ -30,6 +31,8 @@ let estudanteSemTurma = "";
 async function limpar() {
   const escolas = [ESCOLA, OUTRA_ESCOLA];
   await prisma.liberacao.deleteMany({ where: { escolaId: { in: escolas } } });
+  /* Equipes e membros caem por CASCADE da montagem. */
+  await prisma.equipesMontagem.deleteMany({ where: { escolaId: { in: escolas } } });
   await prisma.unootubeSessao.deleteMany({ where: { escolaId: { in: escolas } } });
   await prisma.user.deleteMany({ where: { escolaId: { in: escolas } } });
   await prisma.turma.deleteMany({ where: { escolaId: { in: escolas } } });
@@ -198,6 +201,9 @@ describe("professor", () => {
     const bia = (r.estudantes).find((a) => a.nome === "Bia Teste")!;
     expect(bia).toMatchObject({ iniciou: true, salvos: 1, credibilidadeAdicionada: false });
     expect(r.resumo).toMatchObject({ total: 2, iniciaram: 2, concluiram: 1, distribuicaoFontes: { "3": 1 } });
+    /* Sem equipes, a linha é o estudante e o resumo conta estudantes. */
+    expect(r.resumo.porComputador).toBe(false);
+    expect(r.estudantes.map((a) => a.equipe)).toEqual([null, null]);
     expect(JSON.stringify(r)).not.toContain(estudanteSemTurma);
   });
 
@@ -222,5 +228,90 @@ describe("tenancy", () => {
     const [tabela] = await prisma.$queryRaw<{ relrowsecurity: boolean; relforcerowsecurity: boolean }[]>`
       SELECT relrowsecurity, relforcerowsecurity FROM pg_class WHERE relname = 'exp04ef1b_sessoes'`;
     expect(tabela).toEqual({ relrowsecurity: true, relforcerowsecurity: true });
+  });
+});
+
+/**
+ * EQUIPES NA MISSÃO (E13, ADR-111): quem divide um computador entra com o login
+ * de UM membro, e o painel conta por computador. Turma PRÓPRIA (a 4B), criada
+ * aqui e não no `beforeAll` do arquivo: a lista de turmas acima espera uma só.
+ */
+describe("professor: uma linha por computador", () => {
+  let turma4B = "";
+  const alunos = { caio: "", duda: "", enzo: "", fabi: "" };
+
+  /** A montagem gravada direto no banco — o serviço de equipes tem a suíte dele. */
+  async function montarEquipe(expId: string, nome: string, membros: string[]) {
+    await prisma.equipesMontagem.create({
+      data: { escolaId: ESCOLA, turmaId: turma4B, expId, modo: "manual", computadores: 2, atualizadoPor: randomUUID() },
+    });
+    const equipe = await prisma.equipe.create({
+      data: { escolaId: ESCOLA, turmaId: turma4B, expId, nome, ordem: 0 },
+    });
+    await prisma.equipeMembro.createMany({
+      data: membros.map((estudanteId) => ({ escolaId: ESCOLA, equipeId: equipe.id, turmaId: turma4B, expId, estudanteId })),
+    });
+    return equipe.id;
+  }
+
+  beforeAll(async () => {
+    turma4B = (await criarTurmaDeTeste(prisma, ESCOLA, "4B", "4EF")).id;
+    const criar = async (username: string, displayName: string) =>
+      (
+        await prisma.user.create({
+          data: { role: "estudante", escolaId: ESCOLA, turmaId: turma4B, username, displayName, passwordHash: "x" },
+          select: { id: true },
+        })
+      ).id;
+    alunos.caio = await criar("ut.caio", "Caio Teste");
+    alunos.duda = await criar("ut.duda", "Duda Teste");
+    alunos.enzo = await criar("ut.enzo", "Enzo Teste");
+    alunos.fabi = await criar("ut.fabi", "Fabi Teste");
+    /* Só a Duda entrou — com o computador que divide com o Caio e o Enzo. */
+    await prisma.unootubeSessao.create({ data: { escolaId: ESCOLA, estudanteId: alunos.duda, salvos: [CONFIAVEIS[0]!] } });
+  });
+
+  test("sem equipe NESTA missão, cada estudante é uma linha — equipe de outra missão não conta", async () => {
+    await montarEquipe("exp08ef1b", "Equipe do Insta", [alunos.caio, alunos.duda, alunos.enzo]);
+    const r = await service.resultadosDaTurma(ESCOLA, turma4B);
+    expect(r.estudantes.map((a) => a.nome)).toEqual(["Caio Teste", "Duda Teste", "Enzo Teste", "Fabi Teste"]);
+    expect(r.estudantes.every((a) => a.equipe === null)).toBe(true);
+    expect(r.resumo).toMatchObject({ total: 4, iniciaram: 1, porComputador: false });
+  });
+
+  test("equipe de 3 com 1 login: UMA linha, a de quem entrou, e o resumo conta computadores", async () => {
+    const equipeId = await montarEquipe("exp04ef1b", "Equipe 1", [alunos.caio, alunos.duda, alunos.enzo]);
+    const r = await service.resultadosDaTurma(ESCOLA, turma4B);
+
+    expect(r.estudantes).toHaveLength(2);
+    const [daEquipe, sozinha] = r.estudantes;
+    expect(daEquipe).toMatchObject({ estudanteId: alunos.duda, nome: "Duda Teste", iniciou: true, salvos: 1 });
+    expect(daEquipe!.equipe).toEqual({
+      id: equipeId,
+      nome: "Equipe 1",
+      membros: [
+        { id: alunos.caio, nome: "Caio Teste" },
+        { id: alunos.duda, nome: "Duda Teste" },
+        { id: alunos.enzo, nome: "Enzo Teste" },
+      ],
+    });
+    expect(sozinha).toMatchObject({ estudanteId: alunos.fabi, iniciou: false, equipe: null });
+    /* 2 computadores, 1 começou — e não "4 estudantes, 3 não iniciaram". */
+    expect(r.resumo).toMatchObject({ total: 2, iniciaram: 1, concluiram: 0, porComputador: true });
+  });
+
+  test("dois logins no mesmo computador: representa quem entrou por ÚLTIMO", async () => {
+    await prisma.unootubeSessao.create({
+      data: {
+        escolaId: ESCOLA,
+        estudanteId: alunos.enzo,
+        salvos: [CONFIAVEIS[0]!, CONFIAVEIS[1]!],
+        atualizadoEm: new Date(Date.now() + 60_000),
+      },
+    });
+    const r = await service.resultadosDaTurma(ESCOLA, turma4B);
+    expect(r.estudantes).toHaveLength(2);
+    expect(r.estudantes[0]).toMatchObject({ estudanteId: alunos.enzo, salvos: 2 });
+    expect(r.resumo).toMatchObject({ total: 2, iniciaram: 1, porComputador: true });
   });
 });

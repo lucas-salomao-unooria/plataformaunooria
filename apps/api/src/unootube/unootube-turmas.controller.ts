@@ -64,7 +64,7 @@ export class UnootubeTurmasController {
   @Contrato({
     resumo: "O que a turma fez na missão do UnooTube.",
     descricao:
-      "Uma linha por estudante mais o resumo. `distribuicaoFontes` conta só entre os que CONCLUÍRAM — misturar quem parou no meio faria a média dizer outra coisa.",
+      "Uma linha por COMPUTADOR mais o resumo: sem equipes, cada estudante é uma linha; com equipes nesta missão (E13), os membros viram uma linha só, a de quem entrou, com `equipe` preenchida — e o resumo conta essas linhas (`porComputador: true`). `distribuicaoFontes` conta só entre os que CONCLUÍRAM — misturar quem parou no meio faria a média dizer outra coisa.",
     params: z.object({ turmaId: z.string().uuid() }),
     query: z.object({ escolaId: z.string().optional() }),
     resposta: ResultadosDaTurmaSchema,

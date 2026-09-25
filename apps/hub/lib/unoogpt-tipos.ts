@@ -7,6 +7,7 @@
  * coluna de resgate viraria ranking de crianças — o número vive na tela
  * individual, uma por vez. É a mesma regra da app-70.
  */
+import type { EquipeNoPainel } from "./equipe-no-painel";
 
 export interface RetratoDoRelogio {
   modo: "cronometrado" | "livre";
@@ -23,7 +24,10 @@ export interface RetratoDoRelogio {
   incrementoSeg: number;
 }
 
-/** Uma criança na folha da turma. Conduta, nunca placar. */
+/**
+ * Uma linha da folha da turma. Conduta, nunca placar. É UM COMPUTADOR (E13):
+ * sem equipes, a criança; com equipes, a linha de quem entrou, com `equipe`.
+ */
 export interface LinhaDaTurma {
   estudanteId: string;
   nome: string;
@@ -38,6 +42,12 @@ export interface LinhaDaTurma {
   decidiuNoEscuro: boolean;
   justificouPorIntuicao: boolean;
   tentativas: number;
+  /**
+   * `null` = sem equipe nesta missão. Com equipe, os campos acima são de quem
+   * entrou, e "Abrir" leva à tela dele. Não são as equipes Alfa e Bravo da
+   * cidade: é quem divide o computador.
+   */
+  equipe: EquipeNoPainel | null;
 }
 
 export interface FolhaDaTurma {
@@ -50,6 +60,8 @@ export interface FolhaDaTurma {
     viramConflito: number;
     decidiramNoEscuro: number;
     justificaramPorIntuicao: number;
+    /** A turma tem equipes nesta missão: `estudantes` e os demais contam computadores. */
+    porComputador: boolean;
   };
   linhas: LinhaDaTurma[];
 }

@@ -363,6 +363,11 @@ export const GUIA_EXP04EF1B: GuiaDaAula = {
         "As descrições dos vídeos e as URLs das fontes são texto. Leia em voz alta a descrição de dois vídeos — um de cada tipo — antes de soltar o feed, sem dizer qual é qual.",
     },
     {
+      contexto: "Menos aparelhos que estudantes.",
+      comoAdaptar:
+        "Monte as equipes em “Equipes desta turma”, na ficha da missão (Minhas turmas → a turma → Conduzir com esta turma): diga quantos computadores há e sorteie, ou separe você mesmo. Só um da equipe entra, e ele representa o grupo — os 3 vídeos salvos são da equipe, e nos resultados da turma cada computador é uma linha. Sem fone para todos, combine o volume antes de soltar o feed.",
+    },
+    {
       contexto: "Uma criança terminou muito antes.",
       comoAdaptar:
         "Peça que volte ao feed e escolha o vídeo em que MENOS confiaria, e prepare o motivo para contar no debate. É a mesma habilidade pelo avesso, e rende no debate.",
