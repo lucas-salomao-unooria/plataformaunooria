@@ -35,11 +35,18 @@ export const CHAVES_REDIGIDAS: ReadonlySet<string> = new Set([
   "justificativatexto",
   "justificativa_texto",
   "justificativasugerida",
-  // O GABARITO da exp05ef1b (`CAMPOS_SENSIVEIS` de
-  // `src/quem-mandou-isso/invariantes.ts`). Não é PII: é a resposta que a missão
-  // inteira existe para não entregar antes do telão — e um `err` do Prisma
-  // carrega o lote que o service tentou gravar, com as oito veracidades dentro.
-  // Log de produção é lido por gente da escola.
+  // O GABARITO de missão que classifica mensagens: se cada uma é verdadeira,
+  // em que tom ela foi escrita, e a explicação da resposta. Não é PII: é a
+  // resposta que a missão existe para não entregar antes da revelação — e um
+  // `err` do Prisma carrega o lote que o service tentou gravar, com o gabarito
+  // inteiro dentro. Log de produção é lido por gente da escola.
+  //
+  // Hoje nenhum módulo grava estas três chaves: quem as trouxe foi a primeira
+  // versão da missão do 5º ano, unidade 1, retirada na ADR-114. Elas FICAM de
+  // propósito: a versão que entra no lugar classifica as mensagens do mesmo
+  // jeito (verdadeira/falsa x emocional/neutra), e tirar chave desta lista só
+  // afrouxa a rede — o custo de ela sobrar é redigir um campo que ninguém
+  // manda.
   "veracidade",
   "tom",
   "explicacao",

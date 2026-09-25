@@ -142,8 +142,8 @@ export class EquipesService {
   }
 
   /**
-   * OS ESTUDANTES DA TURMA — a mesma fonte dos painéis de missão (o `painel` da
-   * exp05ef1b): `users.turma_id`, e não `matriculas`. A criança cuja matrícula
+   * OS ESTUDANTES DA TURMA — a mesma fonte dos painéis de missão (o
+   * `resultadosDaTurma` da exp04ef1b): `users.turma_id`, e não `matriculas`. A criança cuja matrícula
    * ainda não existe tem sala na prática e entra na missão; uma equipe que não
    * pudesse tê-la seria a tela negando o que a aula está fazendo.
    *
