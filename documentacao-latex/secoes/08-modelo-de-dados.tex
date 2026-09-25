@@ -4,8 +4,12 @@
 \chapter{Modelo de dados}
 \label{cap:dados}
 
-Um banco, um \emph{schema} lógico, 52 tabelas em \cd{public} e um \emph{schema}
-auxiliar (\cd{particoes}) fora do alcance do ORM. Este capítulo explica a
+Um banco, um \emph{schema} lógico, 70 tabelas em \cd{public} e um \emph{schema}
+auxiliar (\cd{particoes}) fora do alcance do ORM. O número é uma contagem, e
+envelhece a cada migração: são os \cd{model} de
+\arq{apps/api/prisma/schema.prisma} em 2026-09-25, todos com \cd{@@map}, sem a
+\cd{\_prisma\_migrations} do próprio Prisma e sem nenhuma \emph{view}, que o
+banco não tem. Este capítulo explica a
 convenção de nomes, o modelo por área e as decisões de esquema que não são
 óbvias --- que, neste projeto, são a maioria.
 
@@ -258,8 +262,8 @@ clique e não o conteúdo do consentimento.
 Uma rede estadual tem milhares de unidades, professores que dão aula em mais de
 uma e crianças que se transferem entre elas. Três colunas e uma tabela sustentam
 isso, e a decisão que as torna baratas é o que \textbf{não} muda: o \emph{token}
-continua carregando UMA escola, então as 45 tabelas com \cd{escola\_id} e a
-política de RLS forçada nas 42 tabelas de tenant ficam intocadas (\adrr{ADR-30}).
+continua carregando UMA escola, então nenhuma tabela com \cd{escola\_id} muda,
+e a política de RLS forçada das tabelas de tenant fica intocada (\adrr{ADR-30}).
 
 \begin{tabularx}{\linewidth}{@{}L{38mm}X@{}}
 \toprule

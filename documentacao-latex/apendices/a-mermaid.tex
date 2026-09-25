@@ -203,27 +203,43 @@ C4Component
     Component(health, "health/", "", "healthz, readyz")
     Component(analise,"analise/", "", "Turma e rede, CSV")
     Component(comum,  "comum/", "", "Series, rate limit, guardas de liberacao e disponibilidade")
+    Component(rost,   "rostering/", "", "Pessoas, escolas, turmas")
+    Component(port,   "portabilidade/", "", "Perfil portatil")
+    Component(salas,  "salas/", "", "A sala: grade e liberacao por turma (ADR-69)")
+    Component(equipes,"equipes/", "", "Quem divide um computador na missao (ADR-111); consulta.ts e a porta dos paineis")
     Component(recs,   "recursos/", "", "O interruptor da rede e a versao (ADR-87); escrita so admin")
+    Component(prosp,  "prospeccao/", "", "Cadastro de interesse do site publico, sem tenant (ADR-107)")
 
     %% --- dominio por experiencia (nenhum conhece outro)
     Component(motor,  "motor/ geracao/ dossie/ atividades/ perfis/", "", "exp08ef1b")
-    Component(utube,  "unootube/", "", "exp04ef1b")
+    Component(utube,  "unootube/", "", "exp04ef1b - painel conta por computador")
     Component(vila,   "vila/", "", "app-70")
     Component(planos, "planos/", "", "app-90")
     Component(bem,    "bemestar/", "", "app-91")
-    Component(ugpt,   "unoogpt/", "", "exp02em1b - motor probabilistico, agente com ferramentas, relogio da turma")
+    Component(ugpt,   "unoogpt/", "", "exp02em1b - motor probabilistico, agente com ferramentas, relogio da turma; painel conta por computador")
     Component(eco,    "o-eco-no-grupo/", "", "exp07ef1b - gate de turma, texto, imagem e VOZ")
+    Component(outros, "rastro-boato/ manifesto-ia/ quem-mandou-isso/ foto-conta/ planejamento/", "", "exp06ef2b, exp08ef4b, exp05ef1b, exp01ef1b, app-92 - sem seta na figura")
   }
 
   Rel(guard, roles, "antes de")
   Rel(tenint, prisma, "escola do token")
+  Rel(salas, equipes, "contagem na sala")
+  Rel(salas, prisma, "comTenancy")
+  Rel(equipes, prisma, "comTenancy")
+  Rel(utube, equipes, "consulta.ts")
+  Rel(ugpt, equipes, "consulta.ts")
   Rel(motor, prisma, "comTenancy")
   Rel(vila, prisma, "comTenancy")
+  Rel(ugpt, prisma, "comTenancy")
+  Rel(ugpt, ai, "IA com ferramentas + quota")
   Rel(planos, ai, "IA + quota")
   Rel(bem, ai, "IA + quota")
   Rel(planos, store, "bucket privado")
   Rel(eco, ai, "IA + quota")
   Rel(eco, store, "midia no bucket")
+
+  %% A figura TikZ desenha a infraestrutura ENTRE a plataforma e o dominio, com
+  %% a coluna 2 vazia: e por ela que unootube/ e unoogpt/ sobem ate equipes/.
 \end{lstlisting}
 
 % ---------------------------------------------------------------------------
@@ -1024,39 +1040,74 @@ flowchart TB
 \end{lstlisting}
 
 % ---------------------------------------------------------------------------
-\section{Figura~\ref{fig:mapa-rotas} --- Mapa de rotas da API}
+\section{Figuras~\ref{fig:mapa-rotas} e~\ref{fig:mapa-rotas-exps} --- Mapa de rotas da API}
 
 \begin{lstlisting}[language=mermaid]
+%% Figura 13.1 - plataforma e exp08ef1b
 flowchart TB
   subgraph PLAT["Plataforma - serve a todos os papeis"]
     au["/auth/login - sem papel"]; he["/healthz, /readyz - PUBLICO"]
-    ex["/experiencias - GET qualquer; PUT admin-contrato"]
+    ex["/experiencias - GET qualquer; PUT admin"]
     pg["/progresso/:expId - estudante"]; te["/telemetry/* - ver capitulo 10"]
     us["/usuarios/* - gestor, admin"]; ai["/ai/gerar - autenticado + quota"]
     an["/analise/* - ADMIN-CONTRATO"]
+    ro["/rostering/* - gestor, admin"]
+    tu["/turmas/* - prof. (as dele, por MATRICULA), gestor"]
+    mt["/matriculas/:id - gestor, admin"]
+    pll["/periodos-letivos - GET prof.; POST gestor"]
+    pp["/perfis-recebidos - gestor, admin"]
+    rec["/recursos/* - o interruptor da REDE (ADR-87)"]
+    sal["/salas/* - prof. libera, gestor le; /minhas: estudante (ADR-69)"]
+    eq["/equipes/* - prof. monta, gestor le; /minha: estudante (ADR-111)"]
   end
   subgraph E01["exp08ef1b - Instanooria"]
     atv["/atividades/* - professor"]; rn["/runs/* - estudante (/eventos: professor tb.)"]
     po["/posts/:id/comentarios - estudante"]; pf["/perfis/importar - chave de servico"]
   end
-  subgraph OUT["Demais experiencias"]
+\end{lstlisting}
+
+\begin{lstlisting}[language=mermaid]
+%% Figura 13.2 - demais experiencias: uma linha por experiencia,
+%% colunas = estudante | professor e gestao | guia, agregado e servico
+flowchart TB
+  subgraph UT["exp04ef1b - UnooTube"]
     ut["/unootube/* - estudante"]; utt["/unootube/turmas/* - prof, gestor, admin"]
+    utp["/unootube/professor/* - prof, gestor - material do guia"]
+  end
+  subgraph VI["app-70 - Vila do Lume"]
     vi["/vila/sessoes - estudante"]; vp["/vila/professor/* - PROFESSOR"]
-    va["/vila/agregado/* - prof, gestor"]; pl["/planos/* - professor"]
-    pref["/planos/referencias - chave de servico"]
+    va["/vila/agregado/* - prof, gestor"]
+  end
+  subgraph PL["app-90 - Plano de aula"]
+    pl["/planos/* - professor"]; pref["/planos/referencias - chave de servico"]
+  end
+  subgraph BE["app-91 - Bem-estar"]
     be["/bemestar/* - SO PROFESSOR, com posse"]
+  end
+  subgraph UG["exp02em1b - unooGPT"]
     ug["/unoogpt/* - estudante"]
     ugp["/unoogpt/professor/* - SO PROFESSOR, transcricao"]
     uga["/unoogpt/agregado/* - gestor, admin - sem estudanteId"]
+  end
+  subgraph ECO["exp07ef1b - O Eco no Grupo"]
     eco["/o-eco-no-grupo/* - estudante"]
     ecot["/o-eco-no-grupo/turmas/* - prof, gestor, admin - o gate da aula"]
+    ecop["/o-eco-no-grupo/professor/* - prof, gestor - material do guia"]
+  end
+  subgraph RB["exp06ef2b - O Rastro do Boato"]
     rb["/rastro-boato/* - estudante"]
     rbt["/rastro-boato/turmas/* - prof, gestor, admin - o gate da aula"]
-    utp["/unootube/professor/* - prof, gestor - material do guia"]
     rbp["/rastro-boato/professor/* - prof, gestor - material do guia"]
-    ecop["/o-eco-no-grupo/professor/* - prof, gestor - material do guia"]
+  end
+  subgraph MIA["exp08ef4b - O Manifesto da IA"]
+    mia["/manifesto-ia/* - estudante"]
+    miat["/manifesto-ia/turmas/* - prof, gestor - o debate E o conteudo da turma"]
+  end
+  subgraph FC["exp01ef1b - O Que a Foto Conta"]
     fc["/foto-conta/* - estudante"]
     fct["/foto-conta/turmas/* - prof, gestor - o latch da Roda"]
+  end
+  subgraph QM["exp05ef1b - Quem mandou isso?"]
     qm["/quem-mandou-isso/* - estudante"]
     qmt["/quem-mandou-isso/turmas/* - prof, gestor - o lote E o relogio da turma"]
     qmp["/quem-mandou-isso/professor/* - prof, gestor - material do guia"]

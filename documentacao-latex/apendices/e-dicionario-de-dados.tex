@@ -4,7 +4,11 @@
 \chapter{Dicionário de dados}
 \label{ap:dicionario}
 
-Catálogo das 49 tabelas de \cd{public}, mais o \emph{schema} \cd{particoes}.
+Catálogo das 70 tabelas de \cd{public}, mais o \emph{schema} \cd{particoes}.
+O número é o de \cd{model} em \arq{apps/api/prisma/schema.prisma} em
+2026-09-25 (todos com \cd{@@map}; a \cd{\_prisma\_migrations} é do Prisma e
+fica fora), e o índice abaixo tem uma linha por \cd{model}: tabela nova sem
+linha aqui é o sinal de que este apêndice ficou para trás.
 Os diagramas entidade-relacionamento estão no Capítulo~\ref{cap:dados}.
 
 \begin{tabularx}{\linewidth}{@{}L{22mm}X@{}}
@@ -32,57 +36,73 @@ Os diagramas entidade-relacionamento estão no Capítulo~\ref{cap:dados}.
 \zebra \cd{periodos\_letivos} & \textbf{Catálogo} & Ano letivo e seus recortes\\
 \cd{turmas} & Tenant & Turmas por escola, período e série\\
 \zebra \cd{matriculas} & Tenant & \textbf{O enturmamento} (estudante e professor)\\
-\cd{liberacoes} & Tenant & \textbf{A missão dentro da turma} (\adrr{ADR-69})\\
-\zebra \cd{equipes\_montagens} & Tenant & \textbf{Quem divide um computador}: a montagem por turma $\times$ missão (\adrr{ADR-111})\\
-\cd{equipes} & Tenant & Um computador da montagem, com nome e ordem\\
-\zebra \cd{equipes\_membros} & Tenant & Quem senta diante de cada computador --- uma equipe por criança por missão\\
-\cd{users} & Tenant & Pessoas e papéis\\
+\cd{lotacoes} & \textbf{Fora da RLS} & \textbf{A lotação}: pessoa $\times$ escola, datada --- lida no \emph{login}, antes de haver escola (Seção~\ref{sec:rede})\\
+\zebra \cd{liberacoes} & Tenant & \textbf{A missão dentro da turma} (\adrr{ADR-69})\\
+\cd{equipes\_montagens} & Tenant & \textbf{Quem divide um computador}: a montagem por turma $\times$ missão (\adrr{ADR-111})\\
+\zebra \cd{equipes} & Tenant & Um computador da montagem, com nome e ordem\\
+\cd{equipes\_membros} & Tenant & Quem senta diante de cada computador --- uma equipe por criança por missão\\
+\zebra \cd{users} & Tenant & Pessoas e papéis\\
+\cd{perfis\_portateis} & Tenant & O perfil que veio de OUTRA instalação, assinado --- nunca misturado ao dado local (\adrr{ADR-35})\\
 \zebra \cd{experiencias} & \textbf{Catálogo} & Manifesto de versões\\
 \cd{experiencias\_versoes} & \textbf{Catálogo} & Uma linha por versão publicada, com o manifesto inteiro (\adrr{ADR-87})\\
 \zebra \cd{disponibilidades} & \textbf{Catálogo} & \textbf{O interruptor da rede} (\adrr{ADR-87})\\
 \cd{prospeccao\_leads} & \textbf{Sem tenant} & Cadastro de interesse do site público (\adrr{ADR-107}) --- a ÚNICA tabela de dado pessoal sem \cd{escola\_id} e sem RLS\\
-\cd{recursos\_auditoria} & \textbf{Catálogo} & \textbf{Quem mexeu no interruptor} --- append-only (\adrr{ADR-89})\\
-\zebra \cd{progresso} & Tenant & Progresso genérico da SDK\\
-\cd{ia\_uso\_diario} & Tenant & Contador de quota de IA\\
-\zebra \cd{ia\_quotas} & \textbf{Catálogo} & \textbf{O teto diário de IA por perfil} (\adrr{ADR-105})\\
-\cd{telemetria\_eventos} & Tenant, particionada & Canal analítico\\
-\zebra \cd{exp08ef1b\_activities} & Tenant & Atividade preparada pelo professor\\
-\cd{exp08ef1b\_authors} & Tenant & Personas fictícias\\
-\zebra \cd{exp08ef1b\_posts} & Tenant & Posts gerados\\
-\cd{exp08ef1b\_post\_comments} & Tenant & Comentários dos posts\\
-\zebra \cd{exp08ef1b\_generation\_jobs} & Tenant & Fila de geração\\
-\cd{exp08ef1b\_runs} & Tenant & Sessão de um estudante\\
-\zebra \cd{exp08ef1b\_events} & Tenant & Canal \textbf{operacional} de telemetria\\
-\cd{exp08ef1b\_student\_posts} & Tenant & Posts publicados pelo estudante\\
-\zebra \cd{exp08ef1b\_conclusoes} & Tenant & Inclinação escolhida --- a ÚLTIMA em \cd{inclinacao} e a PRIMEIRA em \cd{inclinacao\_inicial}, com \cd{trocas}. A tela convida a mudar de ideia (``vale a última'') e o \cd{upsert} apagava a primeira; \cd{atualizado\_em} existe porque \cd{created\_at} congelava no primeiro envio e passava a mentir (ADR-43)\\
-\cd{exp08ef1b\_reflexoes} & Tenant & Texto de fechamento\\
-\zebra \cd{exp08ef1b\_dossiers} & Tenant & Dossiê calculado\\
-\cd{exp08ef1b\_comentarios\_da\_sessao} & Tenant & Comentários da sessão\\
-\zebra \cd{exp08ef1b\_app\_70\_perfis\_importados} & Tenant &
+\zebra \cd{recursos\_auditoria} & \textbf{Catálogo} & \textbf{Quem mexeu no interruptor} --- append-only (\adrr{ADR-89})\\
+\cd{progresso} & Tenant & Progresso genérico da SDK\\
+\zebra \cd{ia\_uso\_diario} & Tenant & Contador de quota de IA\\
+\cd{ia\_quotas} & \textbf{Catálogo} & \textbf{O teto diário de IA por perfil} (\adrr{ADR-105})\\
+\zebra \cd{telemetria\_eventos} & Tenant, particionada & Canal analítico\\
+\cd{exp08ef1b\_activities} & Tenant & Atividade preparada pelo professor\\
+\zebra \cd{exp08ef1b\_authors} & Tenant & Personas fictícias\\
+\cd{exp08ef1b\_posts} & Tenant & Posts gerados\\
+\zebra \cd{exp08ef1b\_post\_comments} & Tenant & Comentários dos posts\\
+\cd{exp08ef1b\_generation\_jobs} & Tenant & Fila de geração\\
+\zebra \cd{exp08ef1b\_runs} & Tenant & Sessão de um estudante\\
+\cd{exp08ef1b\_events} & Tenant & Canal \textbf{operacional} de telemetria\\
+\zebra \cd{exp08ef1b\_student\_posts} & Tenant & Posts publicados pelo estudante\\
+\cd{exp08ef1b\_conclusoes} & Tenant & Inclinação escolhida --- a ÚLTIMA em \cd{inclinacao} e a PRIMEIRA em \cd{inclinacao\_inicial}, com \cd{trocas}. A tela convida a mudar de ideia (``vale a última'') e o \cd{upsert} apagava a primeira; \cd{atualizado\_em} existe porque \cd{created\_at} congelava no primeiro envio e passava a mentir (ADR-43)\\
+\zebra \cd{exp08ef1b\_reflexoes} & Tenant & Texto de fechamento\\
+\cd{exp08ef1b\_dossiers} & Tenant & Dossiê calculado\\
+\zebra \cd{exp08ef1b\_comentarios\_da\_sessao} & Tenant & Comentários da sessão\\
+\cd{exp08ef1b\_app\_70\_perfis\_importados} & Tenant &
   \textbf{Contrato entre duas experiências}\\
-\cd{exp04ef1b\_sessoes} & Tenant & Estado da missão do UnooTube\\
-\zebra \cd{exp02em1b\_sessoes} & Tenant & Estado da partida da Missão Tempestade\\
-\cd{exp02em1b\_mensagens} & Tenant & A Transcrição (texto livre do estudante)\\
-\zebra \cd{exp02em1b\_marcos} & Tenant & Trilha da decisão\\
-\cd{exp02em1b\_simulacoes} & Tenant & Desfecho por tentativa\\
-\zebra \cd{exp02em1b\_relogio\_turma} & Tenant & O Relógio da Aula, por turma\\
-\cd{exp01ef1b\_turma\_config} & Tenant & A aula da exp01ef1b por turma: pacote aprovado, latch e tentativa\\
-\zebra \cd{exp01ef1b\_runs} & Tenant & Execução por estudante e tentativa (reset arquiva, não apaga)\\
-\cd{exp01ef1b\_posts\_turma} & Tenant & O mural coletivo, assinado pela marca --- sem nome de criança\\
-\zebra \cd{exp07ef1b\_sessoes} & Tenant & Estado da missão de O Eco no Grupo\\
-\cd{exp07ef1b\_mensagens} & Tenant & Conversa com Amara (texto livre do estudante)\\
-\zebra \cd{exp07ef1b\_reflexoes} & Tenant & O \enquote{Meu percurso}, de lista fechada\\
-\cd{exp07ef1b\_gates\_turma} & Tenant & A etapa da aula, por turma\\
-\zebra \cd{app\_70\_sessoes} & Tenant & Uma partida da Vila do Lume\\
-\cd{app\_70\_perfis} & Tenant & Retrato Schwartz recalculado\\
-\zebra \cd{app\_70\_bolhas} & Tenant & Bolha por estudante\\
-\cd{app\_90\_planos} & Tenant+posse & Metadados do plano de aula\\
-\zebra \cd{app\_90\_referencias} & \textbf{Catálogo} & Referências curriculares\\
-\cd{app\_92\_configuracoes} & Tenant+posse & A regência: componente, ano, carga e grade\\
-\zebra \cd{app\_92\_planos\_anuais} & Tenant+posse & Plano anual e a distribuição por período\\
-\cd{app\_92\_planos\_de\_periodo} & Tenant+posse & As aulas da semana ou quinzena\\
-\zebra \cd{app\_91\_ciclos} & Tenant+posse & Ciclo do DASS-21 (\textbf{sensível})\\
-\cd{app\_91\_checkins} & Tenant+posse & \emph{Check-in} diário
+\zebra \cd{exp04ef1b\_sessoes} & Tenant & Estado da missão do UnooTube\\
+\cd{exp02em1b\_sessoes} & Tenant & Estado da partida da Missão Tempestade\\
+\zebra \cd{exp02em1b\_mensagens} & Tenant & A Transcrição (texto livre do estudante)\\
+\cd{exp02em1b\_marcos} & Tenant & Trilha da decisão\\
+\zebra \cd{exp02em1b\_simulacoes} & Tenant & Desfecho por tentativa\\
+\cd{exp02em1b\_relogio\_turma} & Tenant & O Relógio da Aula, por turma\\
+\zebra \cd{exp01ef1b\_turma\_config} & Tenant & A aula da exp01ef1b por turma: pacote aprovado, latch e tentativa\\
+\cd{exp01ef1b\_runs} & Tenant & Execução por estudante e tentativa (reset arquiva, não apaga)\\
+\zebra \cd{exp01ef1b\_posts\_turma} & Tenant & O mural coletivo, assinado pela marca --- sem nome de criança\\
+\cd{exp07ef1b\_sessoes} & Tenant & Estado da missão de O Eco no Grupo\\
+\zebra \cd{exp07ef1b\_mensagens} & Tenant & Conversa com Amara (texto livre do estudante)\\
+\cd{exp07ef1b\_reflexoes} & Tenant & O \enquote{Meu percurso}, de lista fechada\\
+\zebra \cd{exp07ef1b\_gates\_turma} & Tenant & A etapa da aula, por turma\\
+\cd{exp06ef2b\_sessoes} & Tenant & Estado da missão de O Rastro do Boato: passo, opção e latência da decisão\\
+\zebra \cd{exp06ef2b\_auditorias} & Tenant & Cada abertura de \enquote{Dados da mensagem} --- a evidência que a missão mede\\
+\cd{exp06ef2b\_reflexoes} & Tenant & O \enquote{Meu percurso} (texto livre do estudante)\\
+\zebra \cd{exp06ef2b\_gates\_turma} & Tenant & A etapa da aula, por turma\\
+\cd{exp08ef4b\_conteudo\_turma} & Tenant & O pacote curado da turma, homologado pela professora\\
+\zebra \cd{exp08ef4b\_sessoes} & Tenant & Estado da missão de O Manifesto da IA\\
+\cd{exp08ef4b\_auditorias} & Tenant & Cada questionamento disparado contra a máquina\\
+\zebra \cd{exp08ef4b\_respostas\_percurso} & Tenant & O \enquote{Meu percurso} (texto livre do estudante)\\
+\cd{exp08ef4b\_gates\_turma} & Tenant & O \emph{checkpoint} do debate, por turma\\
+\zebra \cd{exp05ef1b\_conteudo\_turma} & Tenant & O lote da turma --- as 8 mensagens homologadas, com o gabarito\\
+\cd{exp05ef1b\_sessoes} & Tenant & Estado da missão de Quem mandou isso?, com o \emph{latch} da confirmação\\
+\zebra \cd{exp05ef1b\_encaminhamentos} & Tenant & Cada mensagem que o estudante mandou ao Mural\\
+\cd{exp05ef1b\_reflexoes} & Tenant & A reflexão final (texto livre do estudante)\\
+\zebra \cd{exp05ef1b\_gates\_turma} & Tenant & O relógio da turma: a etapa da aula\\
+\cd{app\_70\_sessoes} & Tenant & Uma partida da Vila do Lume\\
+\zebra \cd{app\_70\_perfis} & Tenant & Retrato Schwartz recalculado\\
+\cd{app\_70\_bolhas} & Tenant & Bolha por estudante\\
+\zebra \cd{app\_90\_planos} & Tenant+posse & Metadados do plano de aula\\
+\cd{app\_90\_referencias} & \textbf{Catálogo} & Referências curriculares\\
+\zebra \cd{app\_92\_configuracoes} & Tenant+posse & A regência: componente, ano, carga e grade\\
+\cd{app\_92\_planos\_anuais} & Tenant+posse & Plano anual e a distribuição por período\\
+\zebra \cd{app\_92\_planos\_de\_periodo} & Tenant+posse & As aulas da semana ou quinzena\\
+\cd{app\_91\_ciclos} & Tenant+posse & Ciclo do DASS-21 (\textbf{sensível})\\
+\zebra \cd{app\_91\_checkins} & Tenant+posse & \emph{Check-in} diário
   (\textbf{sensível})\\
 \bottomrule
 \end{tabularx}
