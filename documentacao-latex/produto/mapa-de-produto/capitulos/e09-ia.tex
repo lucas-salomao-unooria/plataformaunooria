@@ -1,0 +1,152 @@
+% ===========================================================================
+%  E09 — Inteligência artificial com limites
+% ===========================================================================
+\chapter{E09 \textperiodcentered{} Inteligência artificial com limites}
+\label{ep:e09}
+
+\begin{fichaepico}
+\begin{campos}
+  \item[Objetivo] Usar IA onde ela poupa trabalho do professor ou enriquece a
+    missão --- sem que ela decida nota, conheça a criança ou seja condição
+    para a aula acontecer.
+  \item[Para quem] Professor e Estudante (quem usa); rede (quem precisa
+    confiar).
+  \item[Valor] IA na escola pública só é aceitável com garantia e com custo
+    previsível. Este épico é essa garantia.
+  \item[Estado] \parcial{} --- as garantias estão prontas; duas missões ainda
+    usam IA fora do limite diário.
+\end{campos}
+\end{fichaepico}
+
+\begin{tabularx}{\linewidth}{@{}L{22mm}X X@{}}
+\toprule
+\headrow \thd{Onde} & \thd{O que a IA faz} & \thd{O que ela nunca faz}\\
+\midrule
+Preparo da aula & Adapta legendas, mensagens, casos e mídia ao tema do
+  professor (Foto Conta, Quem mandou isso?, Manifesto, Eco, Instanooria). &
+  Chegar à turma sem aprovação.\\
+\zebra Durante a missão & Responde ao estudante no unooGPT; reações de
+  personagens no Instanooria e na Vila; conversa com Amara no Eco. & Corrigir,
+  pontuar ou receber o nome da criança.\\
+Planejamento & Gera o plano anual e o das semanas. & Decidir quantas aulas
+  cabem ou inventar habilidade da BNCC.\\
+\zebra Bem-estar & Escreve o texto em volta (abertura, acolhimento). &
+  Reescrever o questionário, ou falar quando há sinal de risco.\\
+\bottomrule
+\end{tabularx}
+
+\begin{tabularx}{\linewidth}{@{}L{16mm}X L{20mm}@{}}
+\toprule
+\headrow \thd{ID} & \thd{Feature} & \thd{Estado}\\
+\midrule
+\id{F09.1} & Nada gerado chega à turma sem o professor & \pronto\\
+\zebra \id{F09.2} & Nenhuma aula depende da IA & \pronto\\
+\id{F09.3} & A IA não corrige nem conhece a criança & \pronto\\
+\zebra \id{F09.4} & Limite diário por perfil & \parcial\\
+\bottomrule
+\end{tabularx}
+
+% ---------------------------------------------------------------------------
+\feature{F09.1}{Nada gerado chega à turma sem o professor}{\pronto}
+
+\begin{historia}{H09.1.1}{Aprovar o que a IA preparou}{\pronto}
+\hu{Professor}{revisar e aprovar tudo o que a IA preparou para a minha
+aula}{responder pelo que a turma vê}
+\aceite
+\begin{itemize}
+  \item Nas missões com preparo por IA, nada chega aos estudantes sem
+    \enquote{Aprovar} (ou \enquote{Aprovar e publicar}); no Instanooria, sem
+    \enquote{Ativar}.
+  \item Posso revisar item a item, editar, regerar ou excluir.
+  \item A tela diz: \enquote{nada gerado por inteligência artificial chega aos
+    estudantes sem aprovação}.
+\end{itemize}
+\end{historia}
+
+% ---------------------------------------------------------------------------
+\feature{F09.2}{Nenhuma aula depende da IA}{\pronto}
+
+\begin{historia}{H09.2.1}{Dar a aula mesmo se a IA falhar}{\pronto}
+\hu{Professor}{que a aula aconteça mesmo se a IA estiver fora do ar ou sem
+saldo}{não perder a aula por um problema que não é meu}
+\aceite
+\begin{itemize}
+  \item Sem IA ou sem saldo, entra o material pronto da Unooria, completo
+    (Foto Conta, Manifesto, Quem mandou isso?).
+  \item Sem a mídia preparada, o Eco no Grupo continua jogável pela
+    transcrição.
+  \item No Instanooria, se as reações ao vivo falharem, simplesmente ninguém
+    responde --- a missão segue.
+  \item No bem-estar, entra um texto fixo e o acompanhamento nunca deixa de
+    abrir.
+  \item O estudante nunca espera uma geração, exceto na conversa do unooGPT,
+    que é a própria missão.
+\end{itemize}
+\end{historia}
+
+% ---------------------------------------------------------------------------
+\feature{F09.3}{A IA não corrige nem conhece a criança}{\pronto}
+
+\begin{historia}{H09.3.1}{Nota é da plataforma, não da IA}{\pronto}
+\hu{rede}{que nenhuma nota, correção ou classificação venha da IA}{que o
+resultado seja justo e explicável}
+\aceite
+\begin{itemize}
+  \item Gabarito, correção e classificação são sempre calculados pela
+    plataforma com regras fixas; a IA só redige textos.
+  \item O texto da IA é conferido antes de aparecer (tamanho, termos
+    proibidos); se não passar, é refeito ou substituído pelo texto pronto.
+\end{itemize}
+\end{historia}
+
+\begin{historia}{H09.3.2}{A IA não sabe quem é a criança}{\pronto}
+\hu{família do estudante}{que a IA não receba dados que identifiquem a
+criança}{que o uso de IA não exponha o meu filho}
+\aceite
+\begin{itemize}
+  \item A IA recebe no máximo a série da turma (\enquote{4º ano}), nunca nome,
+    escola ou pontuação.
+  \item As instruções da IA nunca vão para o aparelho do estudante.
+\end{itemize}
+\pendencia{a IA processa fora do Brasil. Isso é aceito, mas precisa constar
+no contrato e no termo de tratamento de dados de cada rede (ver o
+Capítulo~\ref{cap:backlog}).}
+\end{historia}
+
+% ---------------------------------------------------------------------------
+\feature{F09.4}{Limite diário por perfil}{\parcial}
+
+\begin{historia}{H09.4.1}{Saber que cheguei ao limite do dia}{\pronto}
+\hu{Estudante ou Professor}{uma mensagem clara quando atingi o limite de IA do
+dia}{entender o que aconteceu e quando volta}
+\aceite
+\begin{itemize}
+  \item O saldo é conferido \emph{antes} de usar a IA; sem saldo, aparece
+    \enquote{limite do dia atingido} e nada é consumido.
+  \item O limite é por pessoa e por perfil (estudante ou professor), definido
+    pela Unooria (\id{H10.4.1}).
+\end{itemize}
+\pendencia{o contador zera à meia-noite no horário universal, que no Brasil é
+21h. Ver a decisão \id{D04}.}
+\end{historia}
+
+\begin{historia}{H09.4.2}{Toda IA conta no limite}{\afazer}
+\hu{Administrador Unooria}{que todo uso de IA da plataforma conte no limite
+diário}{que o custo de cada rede seja previsível}
+\aceiteproposta
+\begin{itemize}
+  \item A geração e as reações do Instanooria e as reações da Vila do Lume
+    passam a contar no limite, como as demais.
+  \item O limite do professor comporta a preparação de uma atividade completa
+    do Instanooria.
+\end{itemize}
+\end{historia}
+
+\begin{historia}{H09.4.3}{Ser avisado antes do limite estourar}{\afazer}
+\hu{Administrador Unooria}{ser avisado quando o consumo de IA de uma rede se
+aproximar do previsto}{ajustar antes que alguém fique sem IA no meio da aula}
+\aceiteproposta
+\begin{itemize}
+  \item Aviso quando o consumo do dia chega a 80\% do previsto para a rede.
+\end{itemize}
+\end{historia}

@@ -35,3 +35,11 @@ que vence em conflito — e que carrega a versão curta desta lista.
 - [ ] Se a regra mudou: o `AGENTS.md` da pasta afetada mudou no mesmo commit
 - [ ] **`documentacao-latex/` atualizada e `main.pdf` regerado** (tabela acima).
       Decisão com alternativa descartada = ADR nova em `secoes/18-adr.tex`
+- [ ] **Mudou tela ou regra de negócio? O mapa de produto muda no mesmo PR**
+      (`documentacao-latex/produto/mapa-de-produto/`, PU-PRD-001): a história
+      troca o selo, história nova ganha id novo (nunca reaproveitado) e o PDF é
+      recompilado com `tectonic -k mapa-de-produto.tex` na pasta. É a
+      documentação de PRODUTO (pessoas, telas e regras, sem rota, tabela nem
+      módulo), separada da técnica (PU-DOC-001): uma não substitui a outra, e é
+      a de produto que o PO lê. Sem isso ela vira retrato de um dia e para de
+      responder "o que a plataforma faz hoje"

@@ -1,0 +1,11 @@
+# Auxiliares da compilação dos documentos de produto. O PDF É versionado,
+# como o main.pdf: é entregável, e quem o lê não tem TeX instalado.
+*.aux
+*.log
+*.out
+*.toc
+*.lof
+*.lot
+*.bbl
+*.blg
+build.log

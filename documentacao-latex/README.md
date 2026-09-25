@@ -54,9 +54,27 @@ documentacao-latex/
 │   └── capa.tex             capa, ficha técnica e histórico de revisões
 ├── secoes/                  00-siglas … 20-conclusao
 ├── apendices/               a-mermaid … f-operacao
+├── estudos/                 estudos técnicos avulsos (PU-EST-001, teste de carga)
+├── produto/                 documentos de produto (PU-PRD-001, mapa de produto)
 ├── figuras/                 imagens externas (nenhuma hoje)
 └── build/                   pré-visualizações geradas (não versionado)
 ```
+
+## Documentos avulsos
+
+Além da PU-DOC-001, a pasta guarda documentos que reaproveitam o mesmo
+preâmbulo (`\input{../../preambulo/estilo}`) e compilam sozinhos, a partir da
+própria pasta, com `tectonic -k <arquivo>.tex`:
+
+| Documento | Onde | Para quem |
+|---|---|---|
+| PU-EST-001 — teste de carga | `estudos/teste-de-carga/` | engenharia e decisão |
+| PU-PRD-001 — mapa de produto (épicos, features, histórias) | `produto/mapa-de-produto/` | PO e time de desenvolvimento |
+
+**A PU-PRD-001 é escrita em linguagem de produto**: pessoas, telas e regras
+de negócio, sem rota, tabela ou nome de módulo. O rastreio técnico fica no
+Apêndice B dela, que aponta para os capítulos e ADRs daqui. História que muda
+de estado troca o selo; identificador nunca é reaproveitado.
 
 ## Convenções de edição
 
