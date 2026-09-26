@@ -30,6 +30,9 @@ import {
   mudouAEvidencia,
   quadranteDe,
   rotuloDaOpcao,
+  CRITERIO_DA_RUBRICA,
+  HABILIDADE_DA_RUBRICA,
+  type RubricaDaTurma,
 } from "@/lib/quem-mandou-regras";
 import {
   ROTULO_DA_FASE,
@@ -43,6 +46,7 @@ import {
 } from "@/lib/quem-mandou-tipos";
 
 import { EquipeNaLinha } from "./equipe-na-linha";
+import { RubricaDaRegra } from "./rubrica-da-regra";
 import { TermometroQuemMandou } from "./termometro-quem-mandou";
 
 const SEM_REDE = "A conexão falhou. Confira a internet e tente de novo.";
@@ -103,6 +107,7 @@ export function PainelDaAulaQuemMandou({
   mensagens,
   opcoes,
   podeConduzir,
+  rubrica,
 }: {
   turmaId: string;
   inicial: PainelDaTurma;
@@ -112,6 +117,8 @@ export function PainelDaAulaQuemMandou({
   opcoes: OpcoesDaMissao;
   /** Só o professor aperta os botões (a api recusaria o resto). */
   podeConduzir: boolean;
+  /** A rubrica do Se/Então desta rodada (ADR-120) — `null` para quem não classifica. */
+  rubrica?: RubricaDaTurma | null;
 }) {
   const router = useRouter();
   const [, transicionar] = useTransition();
@@ -295,7 +302,14 @@ export function PainelDaAulaQuemMandou({
         </Card>
       ) : null}
 
-      <FolhaDaTurma linhas={painel.linhas} mensagens={mensagens} opcoes={opcoes} porComputador={porComputador} />
+      <FolhaDaTurma
+        turmaId={turmaId}
+        linhas={painel.linhas}
+        mensagens={mensagens}
+        opcoes={opcoes}
+        porComputador={porComputador}
+        rubrica={podeConduzir ? (rubrica ?? null) : null}
+      />
 
       <Modal
         isOpen={confirmando !== null}
@@ -381,15 +395,19 @@ export function PainelDaAulaQuemMandou({
  * papel.
  */
 function FolhaDaTurma({
+  turmaId,
   linhas,
   mensagens,
   opcoes,
   porComputador,
+  rubrica,
 }: {
+  turmaId: string;
   linhas: readonly LinhaDoPainel[];
   mensagens: readonly MensagemDoPacote[];
   opcoes: OpcoesDaMissao;
   porComputador: boolean;
+  rubrica: RubricaDaTurma | null;
 }) {
   const colunas: TableColumn<LinhaDoPainel>[] = [
     {
@@ -448,9 +466,22 @@ function FolhaDaTurma({
         if (!linha.reflexao) return "—";
         const se = rotuloDaOpcao(opcoes.condicoes, linha.reflexao.se);
         return linha.reflexao.entao !== null ? (
-          <span className="block max-w-[320px] text-unooria-neutral-800">
-            Se a mensagem for {se}, então eu {linha.reflexao.entao}
-          </span>
+          <div className="max-w-[320px]">
+            <span className="block text-unooria-neutral-800">
+              Se a mensagem for {se}, então eu {linha.reflexao.entao}
+            </span>
+            {/* O CRIAR da EF05CO04 (ADR-120): só quem lê o texto classifica. */}
+            {rubrica ? (
+              <RubricaDaRegra
+                turmaId={turmaId}
+                pacoteId={rubrica.pacoteId}
+                rodada={rubrica.rodada}
+                estudanteIds={linha.equipe ? linha.equipe.membros.map((m) => m.id) : [linha.estudanteId]}
+                nome={linha.nome}
+                atual={rubrica.classificados[linha.estudanteId]}
+              />
+            ) : null}
+          </div>
         ) : (
           <span className="block max-w-[320px] text-unooria-neutral-700">
             Se a mensagem for {se}, …{" "}
@@ -472,7 +503,11 @@ function FolhaDaTurma({
       <div className="flex flex-col gap-3" data-folha>
         <SectionHeader
           title="Diário de Bordo — Relatório Formativo da Turma"
-          description="Para a sua tela, não para o projetor: aqui estão os nomes e a regra que cada um escreveu."
+          description={
+            rubrica
+              ? `Para a sua tela, não para o projetor: aqui estão os nomes e a regra que cada um escreveu. Ao lado da regra, classifique a ${HABILIDADE_DA_RUBRICA} — Atingiu: ${CRITERIO_DA_RUBRICA.atingiu}; Em processo: ${CRITERIO_DA_RUBRICA.em_processo}; Não atingiu: ${CRITERIO_DA_RUBRICA.nao_atingiu}. O seu clique vale sobre a pergunta da Nina.`
+              : "Para a sua tela, não para o projetor: aqui estão os nomes e a regra que cada um escreveu."
+          }
         />
         <ScrollBar orientation="both" autoHide className="tabela-rolavel">
           <Table<LinhaDoPainel>

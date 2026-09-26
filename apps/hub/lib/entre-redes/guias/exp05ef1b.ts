@@ -70,7 +70,7 @@ export const GUIA_EXP05EF1B: GuiaDaAula = {
       eixo: "Cultura Digital",
       principal: true,
       ondeAcontece:
-        "Etapas 2 e 3: as oito mensagens chegam sem etiqueta, e a criança escolhe as 3 que vão para o Mural. O painel registra o nível pela seleção — três verdadeiras, ou duas e uma falsa emocional, é “atingiu”; duas e uma falsa neutra, “em processo”; duas falsas ou mais, “não atingiu”.",
+        "Etapas 2 e 3: as oito mensagens chegam sem etiqueta, e a criança escolhe as 3 que vão para o Mural. O painel registra o nível pela seleção — três verdadeiras é “atingiu”; duas verdadeiras e uma falsa, seja emocional ou neutra, “em processo”; duas falsas ou mais, “não atingiu”. O tipo da falsa que cada um repassou está na folha da turma, para você conversar. Ao zerar a turma com o mesmo pacote, quem já jogou não é medido de novo: ele já viu a resposta.",
     },
     {
       codigo: "EF05CO03",
@@ -78,7 +78,7 @@ export const GUIA_EXP05EF1B: GuiaDaAula = {
         "Realizar operações de negação, conjunção e disjunção sobre sentenças lógicas e valores 'verdadeiro' e 'falso'.",
       eixo: "Pensamento Computacional",
       ondeAcontece:
-        "Etapa 4, na revelação: cada mensagem ganha DOIS selos independentes — verdadeira ou falsa, e emocional ou neutra —, e a criança vê que “séria” não quer dizer “verdadeira”. O painel registra a habilidade pela primeira pergunta da Nina, no fim da missão.",
+        "Etapa 4, na revelação: cada mensagem ganha DOIS selos independentes — verdadeira ou falsa, e emocional ou neutra —, e a criança vê que “séria” não quer dizer “verdadeira”. O painel registra a habilidade pela primeira pergunta da Nina, no fim da missão: diante de uma mensagem FALSA e EMOCIONAL, a criança escolhe a frase certa entre três com “não”, “e” e “ou”.",
     },
     {
       codigo: "EF05CO04",
@@ -86,7 +86,7 @@ export const GUIA_EXP05EF1B: GuiaDaAula = {
         "Criar e simular algoritmos representados em linguagem oral, escrita ou pictográfica, que incluam sequências, repetições e seleções condicionais para resolver problemas de forma independente e em colaboração.",
       eixo: "Pensamento Computacional",
       ondeAcontece:
-        "Etapa 6: a criança monta a própria regra “Se a mensagem for…, então eu…” para o áudio do tio. O painel registra a habilidade pela segunda pergunta da Nina; a regra escrita não é corrigida pela plataforma — você a lê e ajusta o nível se precisar.",
+        "Etapa 6: a criança monta a própria regra “Se a mensagem for…, então eu…” para o áudio do tio. A segunda pergunta da Nina mede o SIMULAR: a criança segue uma regra pronta no áudio do tio. O CRIAR é a regra que ela escreveu, e quem a classifica é você, com um clique, na folha da turma — o seu clique vale sobre a pergunta.",
     },
   ],
 
@@ -297,7 +297,7 @@ export const GUIA_EXP05EF1B: GuiaDaAula = {
     },
     rubrica: {
       nota:
-        "Formativa, e sobre o RACIOCÍNIO — nunca sobre ter caído no truque. Os níveis da plataforma saem da seleção e das duas perguntas da Nina; esta rubrica é para você ler a regra escrita e o que a criança disse.",
+        "Formativa, e sobre o RACIOCÍNIO — nunca sobre ter caído no truque. Os níveis da plataforma saem da seleção e das duas perguntas da Nina, e a EF05CO04 você também classifica pela regra escrita, na folha da turma; esta rubrica é para você ler a regra escrita e o que a criança disse.",
       criterios: [
         {
           criterio: "Separar tom e verdade (EF05CO03)",
@@ -395,7 +395,7 @@ export const GUIA_EXP05EF1B: GuiaDaAula = {
     {
       pergunta: "Como a missão registra as habilidades da BNCC?",
       resposta:
-        "A EF05CO08 pela seleção do Mural; a EF05CO03 e a EF05CO04 pelas duas perguntas da Nina, no fim. Quem sai antes das perguntas fica “Não avaliado” nelas, nunca “Não atingiu”. Você confere e ajusta tudo no painel de habilidades.",
+        "A EF05CO08 pela seleção do Mural, só três verdadeiras atingem; a EF05CO03 e a EF05CO04 pelas duas perguntas da Nina, no fim; e a EF05CO04 também pela regra que a criança escreveu, que você classifica na folha da turma. Quem sai antes das perguntas fica “Não avaliado” nelas, nunca “Não atingiu”. Refazer com o mesmo pacote não mede de novo quem já jogou. Você confere e ajusta tudo no painel de habilidades.",
     },
   ],
 };
