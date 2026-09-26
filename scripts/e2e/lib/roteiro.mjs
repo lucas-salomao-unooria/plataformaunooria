@@ -213,8 +213,15 @@ export class Roteiro {
        28 verificações VERDES e nenhum defeito de produto.
        `emulateMedia({reducedMotion:"reduce"})` é o desligamento que os próprios
        efeitos já respeitam, então o quadro capturado é o mesmo, parado. */
+    /* `caret: "initial"`: o print NÃO pode escrever na página. Com o padrão
+       ("hide"), o Playwright põe `caret-color: transparent` no `style` de todo
+       input antes de capturar; se o print sai antes de o React hidratar (em dev
+       o HTML do SSR chega antes do bundle), a hidratação acha um `style` que
+       ela não renderizou e acusa "A tree hydrated but some attributes…" — erro
+       de console que pinta a suíte de vermelho sem defeito nenhum no produto
+       (a `estudante/10`, no `NumberButton` das equipes, 2026-09-26). */
     const tirarPrint = (opcoes = {}) =>
-      pagina.screenshot({ path: caminho, fullPage: ficha.inteira ?? false, timeout: 60_000, ...opcoes });
+      pagina.screenshot({ path: caminho, fullPage: ficha.inteira ?? false, timeout: 60_000, caret: "initial", ...opcoes });
     try {
       await tirarPrint();
     } catch (erro) {

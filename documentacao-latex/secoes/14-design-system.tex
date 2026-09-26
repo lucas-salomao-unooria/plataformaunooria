@@ -506,9 +506,8 @@ peças sem frame no arquivo de origem, derivadas dos tokens e das formas que ele
 já tinha. A exp05ef1b é o primeiro consumidor; a seção foi de 29 para 39
 componentes, todos exportados pela ponte \cd{@edu/ui/ds-whatsapp}, e o repositório
 está em \cd{\^{}0.2.7}: a 0.2.5 trouxe as extensões do \cd{instanooria} por cima
-sem mudar a API desta, a 0.2.6 a seta esgotada e a mídia acionável (opcionais:
-sem \cd{exhausted} nem \cd{onClick}, a peça continua como era) e a 0.2.7 a
-segunda leva do \cd{instanooria} e o \cd{AudioPlayer} da plataforma
+sem mudar a API desta, a 0.2.6 fechou as duas lacunas da tabela abaixo, e a 0.2.7
+trouxe a segunda leva do \cd{instanooria} e o \cd{AudioPlayer} da plataforma
 (Seção~\ref{sec:ds-leva-027}).
 
 \begin{tabularx}{\linewidth}{@{}L{34mm}X@{}}
@@ -551,7 +550,7 @@ folha genérica), mas a exp07ef1b e a exp06ef2b \textbf{não foram migradas} ---
 
 \begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
 \toprule
-\headrow \thd{Lacuna medida na 0.2.4} & \thd{Compensação na exp05ef1b}\\
+\headrow \thd{Lacuna medida na 0.2.4} & \thd{Compensação na exp05ef1b (até a 0.2.0)}\\
 \midrule
 \cd{ForwardButton} esmaece só por \cd{:disabled} & E \cd{<button disabled>}
   ENGOLE o toque --- mas a \emph{copy} pede que a quarta seta FALE (\enquote{Limite
@@ -565,10 +564,12 @@ folha genérica), mas a exp07ef1b e a exp06ef2b \textbf{não foram migradas} ---
 \end{tabularx}
 
 \begin{nota}
-As duas são pedidos abertos ao \cd{storybook-unooria} (um estado
-\enquote{esgotado} no \cd{ForwardButton} e um \cd{.Media} acionável), e morrem
-quando ele os publicar. A 0.2.6 publicou os dois (\cd{exhausted} e \cd{onClick}),
-opcionais; tirar as compensações da exp05ef1b é trabalho da frente dela. \textbf{Não são pedido} o desenho do comunicado, da
+As duas viraram pedido ao \cd{storybook-unooria} e \textbf{fecharam na 0.2.6}:
+o \cd{ForwardButton} ganhou \cd{exhausted} (esmaecido, com \cd{aria-disabled}, e
+acionável) e o \cd{.Media} passou a aceitar \cd{onClick} e \cd{actionLabel},
+virando \cd{<button>} com o mesmo desenho. As compensações saíram da exp05ef1b na
+0.2.1. O clique forçado da suíte de ponta a ponta continua: quem recusa
+\cd{aria-disabled} é o Playwright, não o DS. \textbf{Não são pedido} o desenho do comunicado, da
 lâmina e do termômetro: são CONTEÚDO dentro da moldura que o DS já dá, não
 controle.
 \end{nota}

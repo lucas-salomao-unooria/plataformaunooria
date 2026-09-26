@@ -10088,17 +10088,25 @@ carimbos e da fase (\cd{passoEfetivo}), nunca coluna.
     engoliria o toque do aviso de limite) e o toque no comunicado desenhado é um
     \cd{<button>} sem aparência (o \cd{Media} não publica \cd{onClick}). As duas
     são pedidos ao \cd{storybook-unooria}; até lá, a suíte de ponta a ponta
-    clica a seta esgotada com \cd{force}.
+    clica a seta esgotada com \cd{force}. \emph{Atualização de 2026-09-26}: os
+    dois pedidos foram publicados na 0.2.6 (\cd{exhausted} no
+    \cd{ForwardButton}, \cd{onClick} e \cd{actionLabel} no \cd{.Media}) e as
+    compensações saíram na exp05ef1b 0.2.1. O \cd{force} da suíte fica: quem
+    recusa \cd{aria-disabled} é o Playwright.
   \item \textbf{O embaralhamento mudou a rota de plataforma}: toda missão futura
     com pergunta o herda, e a tela dela precisa responder pelo \cd{id} e carregar
     a pergunta uma vez por aba --- cada leitura troca a ordem.
   \item \textbf{A cópia principal precisa de passos depois do merge}: aplicar a
-    migração \arq{20260926120000} no banco do \emph{compose}, subir o serviço da
+    migração \arq{20260926130000} no banco do \emph{compose} (nasceu
+    \arq{20260926120000} e foi renomeada no \emph{merge}, porque a
+    \adrr{ADR-116} chegou antes com o mesmo carimbo), subir o serviço da
     experiência na 5184 (\cd{docker:dev}), reiniciar o hub (o prefixo
     \cd{quem-mandou-isso} voltou à \emph{allowlist} do BFF) e a api, e rodar a
     \arq{estudante/\B{}10-quem-mandou-isso.mjs} e a \arq{professor/10}. A suíte foi
-    escrita nesta frente e ainda não rodou: a missão fica \enquote{parcial} no
-    mapa de produto até ela passar.
+    escrita nesta frente e só rodou depois do \emph{merge}. \emph{Atualização de
+    2026-09-26}: as duas rodaram verdes na cópia principal (21 passos e 69
+    verificações; 9 passos e 33 verificações), e o mapa de produto trocou para
+    \enquote{pronto} as histórias cuja única pendência era o teste.
 \end{itemize}
 
 \textbf{Verificação.} No \emph{worktree}, contra um Postgres descartável migrado

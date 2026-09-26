@@ -122,17 +122,18 @@ ação que o recebeu:
 
 O `Então` nunca vai a `reportarErro`, log ou telemetria: é texto livre de menor.
 
-## Props do DS que enganam (0.2.4/0.2.5)
+## Props do DS que enganam (0.2.4 a 0.2.6)
 
-- `ForwardButton` esmaece só por `:disabled`, e `<button disabled>` ENGOLE o
-  toque. A copy pede que o toque na quarta FALE ("Limite de 3…"): a seta fica
-  acionável com `aria-disabled` e a opacidade é compensação
-  (`.encaminhar--esgotado`). O Playwright recusa clicar em `aria-disabled` —
-  na suíte, `click({ force: true })`.
+- `ForwardButton` com `disabled` ENGOLE o toque, e a copy pede que o toque na
+  quarta FALE ("Limite de 3…"). Por isso a seta esgotada usa `exhausted` (desde
+  a 0.2.6): esmaecida, com `aria-disabled`, e acionável. O Playwright recusa
+  clicar em `aria-disabled` — na suíte, `click({ force: true })`, e isso é do
+  Playwright, não do DS.
 - `MessageBubble.Media` sem `src` desenha `children` com `role="img"` e o `alt`
-  como nome: o texto desenhado precisa estar no `alt`. Ele NÃO publica
-  `onClick` — o toque é um `<button>` sem aparência em volta (compensação
-  `.toque-na-midia`). A `LinkPreview` publica `onClick`.
+  como nome: o texto desenhado precisa estar no `alt`. Com `onClick` (desde a
+  0.2.6) a moldura vira `<button>` com o mesmo desenho; o nome é o
+  `actionLabel` ("Abrir imagem de…"), e ali a mídia desenhada perde o
+  `role="img"` — os filhos de um botão são apresentacionais.
 - `Toast` fica a 40px da base; aqui ele cobriria "Ir para o Mural da Turma"
   e "Confirmar envio" — sobe para 148px (posição, em `globals.css`).
 - `MessageComposer` não tem `disabled` e o placeholder padrão é INGLÊS ("Type a
@@ -144,12 +145,13 @@ O `Então` nunca vai a `reportarErro`, log ou telemetria: é texto livre de meno
 - `Poll` é controlado de ponta a ponta e vive DENTRO de um `MessageBubble`
   (`maxWidth={300}`: as alternativas de P1/P2 são frases longas).
 
-## Compensações abertas (pedidos ao `storybook-unooria`)
+## Compensações sobre o DS: nenhuma aberta
 
-| Compensação | Onde | Pedido |
-|---|---|---|
-| seta esgotada que ainda responde | `.encaminhar--esgotado` | `ForwardButton` com estado esgotado |
-| toque na mídia desenhada | `.toque-na-midia` | `MessageBubble.Media` acionável |
+As duas da 0.2.4 — a seta esgotada que ainda responde (`.encaminhar--esgotado`)
+e o toque na mídia desenhada (`.toque-na-midia`) — viraram pedido ao
+`storybook-unooria`, foram publicadas na 0.2.6 (`exhausted` e `.Media` com
+`onClick`) e saíram daqui na 0.2.1. Compensação nova vai marcada
+`(b) COMPENSAÇÃO` no código, com a lacuna e o pedido, e entra nesta seção.
 
 **Não são pedido**: o desenho do comunicado, da lâmina e do termômetro — são
 CONTEÚDO dentro da moldura que o DS já dá (`.Media` sem `src`), não controle.

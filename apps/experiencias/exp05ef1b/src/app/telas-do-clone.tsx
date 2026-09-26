@@ -275,21 +275,16 @@ export function GrupoDaTurma({
                   aoAbrirMidia={(mensagem) => setMidia({ mensagem, hora })}
                 />
                 {/*
-                  (b) COMPENSAÇÃO — em 3/3 as setas que sobraram ficam a 30%, mas
-                  CONTINUAM respondendo: o toque na quarta é o que dispara
-                  "Limite de 3 mensagens atingido" (`e2.erro.toast_limite_3`). O
-                  `ForwardButton` só esmaece por `:disabled`, e `<button
-                  disabled>` engole o toque — a recusa ficaria muda. Então o
-                  botão fica ACESSÍVEL (`aria-disabled`, que o leitor anuncia) e
-                  a opacidade vem de `.encaminhar--esgotado`. PEDIDO ao
-                  `storybook-unooria`: `ForwardButton` com estado esgotado que
-                  esmaeça sem engolir o toque.
+                  Em 3/3 as setas que sobraram ficam ESGOTADAS (`exhausted`, DS
+                  0.2.6): esmaecem e se anunciam desabilitadas, mas CONTINUAM
+                  respondendo — o toque na quarta é o que dispara "Limite de 3
+                  mensagens atingido" (`e2.erro.toast_limite_3`). `disabled`
+                  engoliria o toque, e a recusa ficaria muda.
                 */}
                 <ForwardButton
                   label={TEXTOS.grupo.encaminharDe(m.remetente)}
                   selected={escolhida}
-                  aria-disabled={esgotada || undefined}
-                  className={esgotada ? "encaminhar--esgotado" : undefined}
+                  exhausted={esgotada}
                   onClick={() => tocarNaSeta(m)}
                 />
               </div>
