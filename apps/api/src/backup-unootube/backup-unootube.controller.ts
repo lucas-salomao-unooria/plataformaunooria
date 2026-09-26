@@ -23,10 +23,10 @@ import {
   SessaoSchema,
   VideoIdSchema,
 } from "./contrato-de-rotas";
-import { UnootubeService } from "./unootube.service";
+import { BackupUnootubeService } from "./backup-unootube.service";
 
 /**
- * Rotas do ESTUDANTE da exp04ef1b. O gabarito (`factual`) fica no servidor:
+ * Rotas do ESTUDANTE do UnooTube arquivado (backup-exp04ef1b). O gabarito (`factual`) fica no servidor:
  * o cliente manda a escolha, a api corrige e devolve inscritos/fontes
  * (regra inviolável nº 3). Identidade sempre do token, nunca do body.
  */
@@ -46,17 +46,17 @@ function videoIdOu400(bruto: unknown): string {
 
 /** Por usuário, nunca por IP (a turma inteira sai pelo mesmo NAT da escola). */
 function limitar(usuarioId: string) {
-  const r = rateLimit(`unootube:${usuarioId}`, 120, 60_000);
+  const r = rateLimit(`backup-unootube:${usuarioId}`, 120, 60_000);
   if (!r.ok) {
     throw new HttpException({ mensagem: "Calma aí — muitas ações em pouco tempo." }, 429);
   }
 }
 
-@Controller("unootube")
+@Controller("backup-unootube")
 @UseGuards(OidcGuard, RolesGuard)
 @Roles("estudante")
-export class UnootubeController {
-  constructor(private readonly unootube: UnootubeService) {}
+export class BackupUnootubeController {
+  constructor(private readonly unootube: BackupUnootubeService) {}
 
   @Get("sessao")
   @Contrato({

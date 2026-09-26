@@ -60,8 +60,8 @@ const runtime = new PrismaService({
 }) as PrismaService & PrismaClient;
 
 const INSTA = "exp08ef1b";
-/** Missão real que aceita equipe e NÃO tem ficha. */
-const TUBE = "exp04ef1b";
+/** Missão real que aceita equipe e NÃO tem ficha (a Missão Tempestade). */
+const SEM_FICHA = "exp02em1b";
 const H1 = "EF08CO01";
 const H2 = "EF08CO02";
 const ATV = "atv-1";
@@ -839,7 +839,7 @@ describe("a pergunta de múltipla escolha", () => {
       status: 404,
       corpo: { codigo: "pergunta-nao-encontrada" },
     });
-    expect(await recusa(evidencias.responder(ESCOLA, ids.ana, TUBE, "p1", "checar"))).toMatchObject({ status: 404 });
+    expect(await recusa(evidencias.responder(ESCOLA, ids.ana, SEM_FICHA, "p1", "checar"))).toMatchObject({ status: 404 });
     expect(await recusa(evidencias.responder(ESCOLA, ids.ana, INSTA, "p1", "talvez"))).toMatchObject({
       status: 400,
       corpo: { codigo: "alternativa-desconhecida" },
@@ -903,7 +903,7 @@ describe("o painel", () => {
   });
 
   test("missão SEM ficha: 200 com `temFicha: false` e tudo vazio", async () => {
-    expect(await evidencias.painel(ESCOLA, ids.turma8A, TUBE, ATV, ids.prof8A)).toEqual({
+    expect(await evidencias.painel(ESCOLA, ids.turma8A, SEM_FICHA, ATV, ids.prof8A)).toEqual({
       temFicha: false,
       habilidades: [],
       rodadas: [],

@@ -41,7 +41,7 @@ em conflito.
   superfícies. O que sai para lá é id opaco e `verbo:objeto`; nome, e-mail e
   resposta de estudante NÃO — a regra 6 continua valendo dentro do Clarity.
 - **Tabela de experiência leva o CÓDIGO dela (ADR-110): `exp08ef1b_`, `app_70_`.** `app_70_sessoes`,
-  `exp04ef1b_sessoes`, `app_91_checkins`. Tabela da PLATAFORMA — que serve a todas
+  `exp02em1b_sessoes`, `app_91_checkins`. Tabela da PLATAFORMA — que serve a todas
   — fica **sem prefixo**: `escolas`, `lotacoes`, `turmas`, `matriculas`,
   `liberacoes`, `periodos_letivos`, `users`, `experiencias`, `progresso`,
   `telemetria_eventos`, `ia_uso_diario`. O motor (feed adaptativo,
@@ -59,8 +59,19 @@ em conflito.
   junto. Duas armadilhas registradas lá: `FOR ... IN SELECT` sobre o catálogo
   relê o que o próprio laço alterou, e `RENAME CONSTRAINT` renomeia também o
   índice que a sustenta — as duas produzem `exp08ef1b_exp08ef1b_..._pkey`.
+- **Experiência ARQUIVADA leva `backup-` antes do código (ADR-116):** pasta
+  `apps/experiencias/backup-exp04ef1b`, módulo `apps/api/src/backup-unootube`,
+  tabela `backup_exp04ef1b_sessoes`, e o id como valor nas tabelas da plataforma.
+  O arquivamento é DERIVADO do id (`apps/api/src/comum/arquivadas.ts`), e o id
+  arquivado NÃO passa no `EXP_ID_RE` — é isso que a tira de rota, catálogo, grade
+  e painel sem um filtro a mais. O código fica no lugar e continua compilando e
+  testando, mas o módulo não entra no `app.module`, o `deploy.yml` não a publica e
+  a linha do catálogo mora em `experiencias_arquivadas`. Quando uma missão nova
+  cai numa unidade ocupada, a escolha entre arquivar e apagar é do dono do
+  produto: apagou-se o Eco (ADR-113) e a v1 do 5º ano (ADR-114); arquivou-se o
+  UnooTube.
 - Lógica de domínio de uma experiência (gabarito, estado da missão, visão do
   professor) vive num módulo próprio da api, prefixo minúsculo igual ao slug:
-  `apps/api/src/unootube/` ↔ `/unootube/*` (regra 3: o client nunca recebe o
+  `apps/api/src/unoogpt/` ↔ `/unoogpt/*` (regra 3: o client nunca recebe o
   gabarito). Padrão: `catalogo.ts` (dados) + `regras.ts` (puro) + service com
   `comTenancy` + controllers por papel.

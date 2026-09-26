@@ -2,6 +2,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 import type { PrismaClient } from "@prisma/client";
 import { EXP_ID_RE } from "../src/comum/codigo-da-experiencia";
+import { CODIGO_ARQUIVADO_RE, codigoDeOrigem } from "../src/comum/arquivadas";
 
 /**
  * O catálogo de experiências e as liberações de demonstração (ADR-69).
@@ -35,10 +36,23 @@ interface Manifesto {
 
 const PASTA_DAS_EXPERIENCIAS = resolve(__dirname, "../../experiencias");
 
-/** Lê os manifestos do monorepo. `_template` fica de fora: não é experiência. */
+/**
+ * Lê os manifestos do monorepo. `_template` fica de fora: não é experiência. E
+ * as ARQUIVADAS (`backup-*`, ADR-116) também: o `EXP_ID_RE` não casa com elas,
+ * e é isso que as tira do catálogo, da grade e do painel sem um filtro a mais.
+ */
 export function lerManifestos(): Manifesto[] {
+  return lerPastas((nome) => EXP_ID_RE.test(nome));
+}
+
+/** As experiências ARQUIVADAS do monorepo: `apps/experiencias/backup-*` (ADR-116). */
+export function lerManifestosArquivados(): Manifesto[] {
+  return lerPastas((nome) => CODIGO_ARQUIVADO_RE.test(nome));
+}
+
+function lerPastas(servePasta: (nome: string) => boolean): Manifesto[] {
   const pastas = readdirSync(PASTA_DAS_EXPERIENCIAS, { withFileTypes: true })
-    .filter((e) => e.isDirectory() && EXP_ID_RE.test(e.name))
+    .filter((e) => e.isDirectory() && servePasta(e.name))
     .map((e) => e.name)
     .sort();
 
@@ -97,6 +111,46 @@ export async function semearCatalogo(prisma: PrismaClient): Promise<number> {
       create: { expId: m.id, versao: m.versao, manifesto: m as object, publicadaPor: "seed" },
     });
   }
+  await semearArquivadas(prisma);
+  return manifestos.length;
+}
+
+/**
+ * Por que cada experiência foi arquivada — a frase que a área `/unooria/arquivados`
+ * mostra. É o MESMO texto que a migração que a arquivou grava; aqui ele só vale
+ * para a stack de desenvolvimento, onde a migração não teve linha para mover.
+ */
+const MOTIVO_DO_ARQUIVAMENTO: Record<string, string> = {
+  "backup-exp04ef1b": "O Jornal da Escola tomou o código exp04ef1b (4º ano, unidade 1).",
+};
+
+/**
+ * Semeia `experiencias_arquivadas` a partir de `apps/experiencias/backup-*`
+ * (ADR-116). Numa stack que já existia, a migração que arquivou MOVEU a linha de
+ * `experiencias` para lá, com a fotografia de turmas e estudantes; numa stack
+ * nova não havia linha, e sem isto a área do admin abriria vazia. Por isso o
+ * `update` é vazio: quando a linha já existe, a da migração vale.
+ */
+export async function semearArquivadas(prisma: PrismaClient): Promise<number> {
+  const manifestos = lerManifestosArquivados();
+  for (const m of manifestos) {
+    const origem = codigoDeOrigem(m.id);
+    if (!origem) continue;
+    await prisma.experienciaArquivada.upsert({
+      where: { expId: m.id },
+      update: {},
+      create: {
+        expId: m.id,
+        codigoDeOrigem: origem,
+        nome: m.nome,
+        versao: m.versao,
+        series: m.series ?? [],
+        unidade: m.unidade ?? null,
+        produto: m.produto ?? null,
+        motivo: MOTIVO_DO_ARQUIVAMENTO[m.id] ?? "Arquivada.",
+      },
+    });
+  }
   return manifestos.length;
 }
 
@@ -122,7 +176,6 @@ export const LIBERACOES_DE_DEMO: Array<{ turma: string; expIds: string[] }> = [
   // suíte `estudante/05-vila-do-lume` + `estudante/02-instanooria` percorre.
   { turma: "8A", expIds: ["app-70-vila-do-lume", "exp08ef1b", "exp08ef4b"] },
   { turma: "1A", expIds: ["exp01ef1b"] },
-  { turma: "4A", expIds: ["exp04ef1b"] },
   { turma: "6A", expIds: ["exp06ef2b"] },
   { turma: "7A", expIds: ["exp07ef1b"] },
   { turma: "2EM-A", expIds: ["exp02em1b"] },

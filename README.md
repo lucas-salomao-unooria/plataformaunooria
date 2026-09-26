@@ -39,7 +39,7 @@ A **experiência** não entra no compose: em produção ela é bundle estático 
 bucket, não um serviço. Para vê-la embedada, rode-a à parte:
 ```bash
 pnpm install && pnpm --filter @edu/exp08ef1b dev   # :5173
-pnpm --filter @edu/exp04ef1b dev                       # :5174 (4º ano; vídeos em public/videos, ver README da exp)
+pnpm --filter @edu/exp02em1b dev                       # :5178 (2ª série EM; as portas em apps/hub/lib/experiencias-dev.ts)
 ```
 
 ## Subir para desenvolver (hot reload)

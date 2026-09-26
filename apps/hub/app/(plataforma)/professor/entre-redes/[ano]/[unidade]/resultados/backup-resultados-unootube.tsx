@@ -9,10 +9,10 @@ import {
 } from "@/lib/entre-redes/catalogo";
 import { rotaDoGuiaDaMissao } from "@/lib/rotas-da-missao";
 import { normalizarSerie } from "@/lib/series";
-import type { ResultadosDaTurma, TurmaResumo } from "@/lib/unootube-tipos";
+import type { ResultadosDaTurma, TurmaResumo } from "@/lib/backup-unootube-tipos";
 
 import { SeletorDeTurma } from "./seletor-de-turma";
-import { TabelaResultados } from "./tabela-resultados";
+import { TabelaResultados } from "./backup-tabela-resultados";
 
 /** "estudante concluiu" / "computadores concluíram" — o sujeito do que o resumo conta. */
 function quemConcluiu(n: number, porComputador: boolean): string {

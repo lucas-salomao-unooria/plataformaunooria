@@ -323,8 +323,9 @@ jobs:
 
       - name: Build
         env:
-          # Mídia pesada (52 MB de mp4 da exp04ef1b) não entra no bundle: o build
-          # aponta para o bucket de assets. Vazio = ./videos (dev).
+          # Mídia pesada (52 MB de mp4 do UnooTube, hoje ARQUIVADO como
+          # backup-exp04ef1b) não entra no bundle: o build aponta para o bucket de
+          # assets, onde a mídia continua em `exp04ef1b/videos`. Vazio = ./videos (dev).
           VITE_VIDEOS_BASE_URL: ${{ vars.ASSETS_BASE_URL }}/exp04ef1b/videos
           FORCAR: ${{ inputs.forcar }}
         # Com `forcar`, o laço de publicação percorre TODAS as experiências —
@@ -344,6 +345,9 @@ jobs:
           for dir in apps/experiencias/*/; do
             exp=$(basename "$dir")
             if [ "$exp" = "_template" ]; then continue; fi
+            # Arquivada (ADR-116) compila e testa, mas não publica nem ativa:
+            # ninguém joga uma experiência arquivada.
+            case "$exp" in backup-*) echo "· $exp arquivada — não publica"; continue ;; esac
             # Pasta de experiencia ainda incompleta (sem package.json, sem
             # manifesto, ou nao buildada) nao e erro de deploy — e trabalho em
             # andamento. Publicar exige as tres coisas.
@@ -469,6 +473,9 @@ jobs:
           for dir in apps/experiencias/*/; do
             exp=$(basename "$dir")
             if [ "$exp" = "_template" ]; then continue; fi
+            # Arquivada (ADR-116) compila e testa, mas não publica nem ativa:
+            # ninguém joga uma experiência arquivada.
+            case "$exp" in backup-*) echo "· $exp arquivada — não publica"; continue ;; esac
             if [ ! -f "$dir/package.json" ] || [ ! -f "$dir/public/experiencia.json" ]; then
               echo "· $exp sem package.json/manifesto — pulando"; continue
             fi

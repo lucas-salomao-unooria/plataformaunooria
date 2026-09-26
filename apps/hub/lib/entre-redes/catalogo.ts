@@ -176,15 +176,16 @@ export const MISSAO_ATUAL: Missao = {
 };
 
 /**
- * 4º ano · Unidade 1 — o UnooTube: fontes confiáveis vs. sensacionalismo num
- * clone do YouTube Shorts. Sem atividades configuráveis: o conteúdo é fixo (21
- * vídeos de História), o professor só entra com a turma e lê os resultados.
+ * O UnooTube, ARQUIVADO (ADR-116) — fontes confiáveis vs. sensacionalismo num
+ * clone do YouTube Shorts. Foi a missão do 4º ano, unidade 1, até o Jornal da
+ * Escola tomar o código `exp04ef1b`. Fica aqui, renomeado, como registro da
+ * ficha: NÃO está em `MISSOES_PUBLICADAS`, e é isso que o tira da grade.
  */
-export const MISSAO_UNOOTUBE: Missao = {
+export const MISSAO_BACKUP_UNOOTUBE: Missao = {
   anoSlug: "4-ano",
   unidadeSlug: "unidade-1",
   unidade: 1,
-  expId: "exp04ef1b",
+  expId: "backup-exp04ef1b",
   titulo: "UnooTube — Em quais fontes você confiaria?",
   resumo:
     "Num feed de vídeos curtos sobre História, o estudante salva as 3 fontes em que confiaria. Quem escolhe sensacionalismo ganha mais inscritos — até a turma descobrir que popularidade não é credibilidade.",
@@ -608,7 +609,6 @@ export const MISSAO_FOTO_CONTA: Missao = {
 
 const MISSOES_PUBLICADAS: Record<string, Missao[]> = {
   "1-ano": [MISSAO_FOTO_CONTA],
-  "4-ano": [MISSAO_UNOOTUBE],
   "6-ano": [MISSAO_RASTRO_BOATO],
   "7-ano": [MISSAO_ECO_NO_GRUPO],
   "8-ano": [MISSAO_ATUAL, MISSAO_MANIFESTO_IA],

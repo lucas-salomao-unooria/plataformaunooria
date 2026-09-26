@@ -13,9 +13,9 @@ import { OidcGuard, type AuthClaims } from "../auth/oidc.guard";
 import { Roles, RolesGuard } from "../auth/roles";
 import { ehUuid } from "../motor/guardas";
 import { Contrato } from "../openapi/contrato";
-import { ResultadosDaTurmaSchema, TurmasDoUnootubeSchema } from "./contrato-de-rotas";
+import { ResultadosDaTurmaSchema, TurmasDoBackupUnootubeSchema } from "./contrato-de-rotas";
 import { erroDeJogo } from "./erros";
-import { UnootubeService } from "./unootube.service";
+import { BackupUnootubeService } from "./backup-unootube.service";
 import { professorDoToken } from "../comum/turmas-do-professor";
 import { GESTORES, ehDoContrato} from "../auth/claims";
 
@@ -41,11 +41,11 @@ function escolaAlvo(auth: AuthClaims, escolaIdPedida?: string): string {
   return auth.escolaId;
 }
 
-@Controller("unootube/turmas")
+@Controller("backup-unootube/turmas")
 @UseGuards(OidcGuard, RolesGuard)
 @Roles("professor", ...GESTORES)
-export class UnootubeTurmasController {
-  constructor(private readonly unootube: UnootubeService) {}
+export class BackupUnootubeTurmasController {
+  constructor(private readonly unootube: BackupUnootubeService) {}
 
   /** Turmas da escola — alimenta o seletor da página de resultados do hub. */
   @Get()
@@ -54,7 +54,7 @@ export class UnootubeTurmasController {
     descricao:
       "Filtradas por MATRÍCULA para o professor; o gestor vê a escola. `gestor_contrato` precisa dizer `?escolaId=` — o token dele tem escola vazia e o TenancyInterceptor não abre contexto.",
     query: z.object({ escolaId: z.string().optional() }),
-    resposta: TurmasDoUnootubeSchema,
+    resposta: TurmasDoBackupUnootubeSchema,
   })
   turmas(@Query("escolaId") escolaIdPedida: string | undefined, @Req() req: Autenticado) {
     return this.unootube.turmas(escolaAlvo(req.auth, escolaIdPedida), professorDoToken(req.auth));

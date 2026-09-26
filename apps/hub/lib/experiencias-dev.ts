@@ -8,6 +8,8 @@
  */
 export const EXPERIENCIAS_DEV: Readonly<Record<string, string>> = {
   "exp08ef1b": "http://localhost:5173",
+  /** O Jornal da Escola (4º ano, unidade 1). A porta era do UnooTube, hoje
+   *  ARQUIVADO como `backup-exp04ef1b` (ADR-116), que não sobe mais em dev. */
   "exp04ef1b": "http://localhost:5174",
   /** Ferramenta do professor — embedada em /professor/plano-de-aula. */
   "app-90-plano-de-aula": "http://localhost:5175",

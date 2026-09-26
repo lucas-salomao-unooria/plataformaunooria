@@ -7,19 +7,19 @@ import { videosParaOProfessor } from "./catalogo";
 import { VideosDoProfessorSchema } from "./contrato-de-rotas";
 
 /**
- * O material do GUIA DA AULA da exp04ef1b — catálogo com gabarito, para quem
+ * O material do GUIA DA AULA do UnooTube arquivado (backup-exp04ef1b) — catálogo com gabarito, para quem
  * conduz.
  *
- * Classe separada de `UnootubeTurmasController` porque não é dado de turma:
+ * Classe separada de `BackupUnootubeTurmasController` porque não é dado de turma:
  * não há `escolaId`, não há tenancy a aplicar e não há `?escolaId=` para o
  * `gestor_contrato` informar. O que a guarda protege aqui é o PAPEL — o mesmo
  * desenho de `unoogpt/professor/fontes`, e pela mesma razão: é a única
  * superfície em que o gabarito da missão é dito com todas as letras.
  */
-@Controller("unootube/professor")
+@Controller("backup-unootube/professor")
 @UseGuards(OidcGuard, RolesGuard)
 @Roles("professor", ...GESTORES)
-export class UnootubeProfessorController {
+export class BackupUnootubeProfessorController {
   /**
    * Os 21 vídeos com `factual`, a contagem real e os números da pontuação.
    *

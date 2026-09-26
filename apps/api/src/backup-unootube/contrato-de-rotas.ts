@@ -81,7 +81,7 @@ export const SessaoSchema = EstadoSchema.extend({
   ranking: RankingSchema.nullable(),
 });
 
-export const TurmasDoUnootubeSchema = z.object({
+export const TurmasDoBackupUnootubeSchema = z.object({
   turmas: z.array(
     z.object({
       id: Uuid,
