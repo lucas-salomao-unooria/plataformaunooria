@@ -398,11 +398,11 @@ export const ENCERRAMENTO_DA_NINA =
 export const FALAS_ANTES_DAS_PERGUNTAS = [
   {
     perguntaId: "p1",
-    fala: "Antes de ir, me ajuda com uma coisa rápida? Uma amiga minha recebeu uma mensagem super séria e organizada, cheia de dados, e me disse: 'Pode confiar, essa é verdadeira — olha como é séria.' O que você acha?",
+    fala: "Antes de ir, me ajuda com uma coisa rápida? Aprendi que toda mensagem tem dois selos. Imagina uma que ganhou FALSA e EMOCIONAL.",
   },
   {
     perguntaId: "p2",
-    fala: "Última! Três colegas meus escreveram regras pra decidir o que fazer antes de repassar uma mensagem. Qual dessas funciona de verdade?",
+    fala: "Última! A minha regra é: SE a mensagem pedir pra repassar rápido, ENTÃO eu procuro a notícia em outro lugar antes de encaminhar.",
   },
 ] as const;
 

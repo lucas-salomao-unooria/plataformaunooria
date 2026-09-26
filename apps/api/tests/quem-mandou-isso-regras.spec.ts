@@ -255,14 +255,30 @@ describe("as falas fixas da experiência (dentro do clone e na casca)", () => {
     expect(contarPalavras(FALA_DO_TIO)).toBe(41);
   });
 
-  test("as falas antes das perguntas são as do PO, e os ids existem na ficha", () => {
+  test("as falas antes das perguntas montam a P1 (os dois selos) e a P2 (a regra), e os ids existem na ficha", () => {
     expect(FALAS_ANTES_DAS_PERGUNTAS.map((f) => f.perguntaId)).toEqual(FICHA_EXP05EF1B.perguntas.map((p) => p.id));
     expect(FALAS_ANTES_DAS_PERGUNTAS[0]?.fala).toBe(
-      "Antes de ir, me ajuda com uma coisa rápida? Uma amiga minha recebeu uma mensagem super séria e organizada, cheia de dados, e me disse: 'Pode confiar, essa é verdadeira — olha como é séria.' O que você acha?",
+      "Antes de ir, me ajuda com uma coisa rápida? Aprendi que toda mensagem tem dois selos. Imagina uma que ganhou FALSA e EMOCIONAL.",
     );
     expect(FALAS_ANTES_DAS_PERGUNTAS[1]?.fala).toBe(
-      "Última! Três colegas meus escreveram regras pra decidir o que fazer antes de repassar uma mensagem. Qual dessas funciona de verdade?",
+      "Última! A minha regra é: SE a mensagem pedir pra repassar rápido, ENTÃO eu procuro a notícia em outro lugar antes de encaminhar.",
     );
+  });
+
+  test("a régua v2: em cada pergunta a certa NÃO é a mais longa, e a P1 exige NÃO, E e OU", () => {
+    for (const p of FICHA_EXP05EF1B.perguntas) {
+      const certa = p.alternativas.find((a) => a.status === "atingiu");
+      const maior = Math.max(...p.alternativas.map((a) => a.texto.length));
+      const empatadas = p.alternativas.filter((a) => a.texto.length === maior);
+      expect({ pergunta: p.id, certaEhAUnicaMaisLonga: empatadas.length === 1 && empatadas[0] === certa }).toEqual({
+        pergunta: p.id,
+        certaEhAUnicaMaisLonga: false,
+      });
+    }
+    const p1 = FICHA_EXP05EF1B.perguntas.find((p) => p.id === "p1");
+    const textos = (p1?.alternativas ?? []).map((a) => a.texto);
+    expect(textos.every((t) => /\bnão\b/.test(t))).toBe(true);
+    expect(textos.some((t) => /\be\b/.test(t)) && textos.some((t) => /\bou\b/.test(t))).toBe(true);
   });
 
   test("tudo que a criança lê: até 45 palavras e nenhum termo proibido", () => {
@@ -360,13 +376,13 @@ describe("o passo efetivo = f(sessão, fase)", () => {
 });
 
 describe("a EF05CO08 pela seleção do Mural", () => {
-  /** A régua do Lucas, escrita À PARTE, por quadrantes — o oráculo não reusa a função testada. */
+  /** A régua v2 (ADR-120), escrita À PARTE, por quadrantes — o oráculo não reusa a função testada. */
   const TABELA: Record<string, "atingiu" | "em_processo" | "nao_atingiu"> = {
     "VE,VE,VN": "atingiu",
     "VE,VN,VN": "atingiu",
-    "FE,VE,VE": "atingiu",
-    "FE,VE,VN": "atingiu",
-    "FE,VN,VN": "atingiu",
+    "FE,VE,VE": "em_processo",
+    "FE,VE,VN": "em_processo",
+    "FE,VN,VN": "em_processo",
     "FN,VE,VE": "em_processo",
     "FN,VE,VN": "em_processo",
     "FN,VN,VN": "em_processo",
@@ -400,10 +416,10 @@ describe("a EF05CO08 pela seleção do Mural", () => {
     expect(divergentes).toEqual([]);
   });
 
-  test("a distribuição: 16 atingiu, 12 em processo, 28 não atingiu", () => {
+  test("a distribuição: 4 atingiu, 24 em processo, 28 não atingiu — o sorteio atinge 7%, não 29%", () => {
     const conta = { atingiu: 0, em_processo: 0, nao_atingiu: 0 };
     for (const trio of combinacoes) conta[nivelCO08(trio)] += 1;
-    expect(conta).toEqual({ atingiu: 16, em_processo: 12, nao_atingiu: 28 });
+    expect(conta).toEqual({ atingiu: 4, em_processo: 24, nao_atingiu: 28 });
   });
 
   test("a régua lê exatamente 3 — nem 2, nem 4", () => {
