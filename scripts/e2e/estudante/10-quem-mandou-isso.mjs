@@ -65,14 +65,15 @@ const ROTULO_DO_TOM = { emocional: "Emocional", neutra: "Neutra" };
 const PALAVRAS_DE_ACERTO = /\b(atingiu|em processo|n[aã]o atingiu|acertou|acertei|errou|errada|correta|incorreta|pontos|nota)\b/i;
 
 /**
- * A régua da EF05CO08 (decisão de 2026-09-25), escrita AQUI de novo, à parte
- * da api: é o oráculo contra o qual a suíte confere o nível que o painel da
+ * A régua da EF05CO08 (a v2, ADR-120), escrita AQUI de novo, à parte da api:
+ * é o oráculo contra o qual a suíte confere o nível que o painel da
  * professora mostra. Se as duas divergirem, uma das duas mudou sem a outra.
+ * Só três verdadeiras atingem; uma falsa, de qualquer tipo, é em processo.
  */
 function nivelEsperadoCO08(escolhidas) {
-  const falsas = escolhidas.filter((m) => m.veracidade === "falsa");
-  if (falsas.length === 0) return "atingiu";
-  if (falsas.length === 1) return falsas[0].tom === "emocional" ? "atingiu" : "em_processo";
+  const falsas = escolhidas.filter((m) => m.veracidade === "falsa").length;
+  if (falsas === 0) return "atingiu";
+  if (falsas === 1) return "em_processo";
   return "nao_atingiu";
 }
 
@@ -154,7 +155,9 @@ await suite(
       "O Termômetro da Turma não tem nome, no painel nem no telão",
       "O Se/Então pede 15 caracteres depois do trim, e o servidor recusa o curto e o sem sentido",
       "As perguntas da Nina respondem só “Resposta enviada” — nenhum acerto chega à criança",
-      "O bloco Habilidades da BNCC mostra EF05CO08, EF05CO03 e EF05CO04 com o nível que a régua dá",
+      "O bloco Habilidades da BNCC mostra EF05CO08, EF05CO03 e EF05CO04 com o nível que a régua v2 dá",
+      "Refazer com o MESMO pacote não mede de novo a EF05CO08 de quem já viu a resposta",
+      "A professora classifica a regra Se/Então na EF05CO04, e o clique vale como ajuste docente",
     ],
     comando: "node scripts/e2e/estudante/10-quem-mandou-isso.mjs",
   },
@@ -991,18 +994,36 @@ await suite(
       `a P1 mede a EF05CO03 e a P2 a EF05CO04 (${JSON.stringify(esperado)})`,
     );
 
+    /* A EF05CO08 mede quem AINDA NÃO VIU a resposta do pacote (ADR-120). Se a
+       suíte zerou a turma e esta criança já foi avaliada numa rodada anterior
+       do MESMO pacote, o Mural fechou sem marca nova. Os dois desfechos são
+       legítimos, e cada um é provado: a régua quando ela é nova, a regra da
+       rodada quando não é. */
+    const caminhoDaEvidencia = `/evidencias/turma/${turmaId}/missao/${EXP_ID}/atividade/${atividade.pacoteId}`;
+    const doEstudante = (c) => c?.estudantes?.find((e) => e.nome === estudante.nome);
+    const antes = doEstudante((await lerApi(prof, caminhoDaEvidencia)).corpo);
+    const rodadaQueMediu = Object.entries(antes?.porRodada ?? {}).find(
+      ([rodada, celulas]) => Number(rodada) < atividade.rodada && celulas.EF05CO08 && celulas.EF05CO08.status !== "nao_participou",
+    )?.[0];
+    const medidasAgora = Object.keys(esperado).filter((c) => !(rodadaQueMediu && c === "EF05CO08"));
     const habilidades = await esperarNaApi(
       prof,
-      `/evidencias/turma/${turmaId}/missao/${EXP_ID}/atividade/${atividade.pacoteId}`,
-      (c) => Object.keys(c?.estudantes?.find((e) => e.nome === estudante.nome)?.porRodada?.[String(atividade.rodada)] ?? {}).length === 3,
-      { oQue: "as três marcas do estudante na evidência" },
+      caminhoDaEvidencia,
+      (c) => Object.keys(doEstudante(c)?.porRodada?.[String(atividade.rodada)] ?? {}).length >= medidasAgora.length,
+      { oQue: `as ${medidasAgora.length} marcas do estudante na evidência` },
     );
     r.exigir(habilidades.temFicha === true, "a exp05ef1b tem ficha pedagógica: o bloco de habilidades acende");
-    const marcas = habilidades.estudantes.find((e) => e.nome === estudante.nome).porRodada[String(atividade.rodada)];
-    for (const [codigo, nivel] of Object.entries(esperado)) {
+    const marcas = doEstudante(habilidades).porRodada[String(atividade.rodada)];
+    if (rodadaQueMediu) {
       r.exigir(
-        marcas[codigo]?.status === nivel,
-        `${codigo}: o painel registra “${marcas[codigo]?.status ?? "nada"}”, e a régua dá “${nivel}”`,
+        !marcas.EF05CO08,
+        `a EF05CO08 não é medida de novo: ${estudante.nome} já foi avaliado na ${rodadaQueMediu}ª rodada deste pacote e viu a resposta`,
+      );
+    }
+    for (const codigo of medidasAgora) {
+      r.exigir(
+        marcas[codigo]?.status === esperado[codigo],
+        `${codigo}: o painel registra “${marcas[codigo]?.status ?? "nada"}”, e a régua dá “${esperado[codigo]}”`,
       );
     }
 
@@ -1019,8 +1040,8 @@ await suite(
       titulo: "Habilidades da BNCC, por estudante",
       mostra: `A ${atividade.rodada}ª rodada da atividade: a EF05CO08 pela seleção do Mural, a EF05CO03 pela P1 e a EF05CO04 pela P2.`,
       prova:
-        "O nível é do servidor e é conferido aqui contra a régua: a EF05CO08 vem das 3 escolhidas " +
-        "(falsa neutra pesa mais que falsa emocional), e a CO03/CO04, da alternativa marcada. " +
+        "O nível é do servidor e é conferido aqui contra a régua v2: a EF05CO08 vem das 3 escolhidas " +
+        "(só três verdadeiras atingem, e só na primeira vez da criança com o pacote), e a CO03/CO04, da alternativa marcada. " +
         "O Se/Então não é corrigido — a professora o lê e ajusta aqui.",
       detalhe: Object.entries(esperado)
         .map(([c, n]) => `${c}=${n}`)
@@ -1044,6 +1065,42 @@ await suite(
       prova:
         "É a tela dela, não a do projetor: tem nome e o texto da criança. Não tem coluna de acerto — " +
         "o nível por habilidade mora no bloco da BNCC, onde ela também o ajusta.",
+    });
+
+    // ═══ A RUBRICA DO SE/ENTÃO: o CRIAR da EF05CO04 (ADR-120) ═════════════
+    /* A P2 mediu o SIMULAR; a regra que a criança escreveu é o CRIAR, e quem a
+       classifica é a professora, com um clique ao lado dela. O clique é um
+       ajuste da evidência: vale sobre a pergunta e aparece como "Ajuste
+       docente" no painel de habilidades. */
+    const rubrica = linhaNaFolha.first().locator("[data-rubrica-co04]");
+    await rubrica.waitFor({ timeout: 20_000 });
+    r.exigir(
+      (await rubrica.getByRole("button").count()) === 3,
+      "ao lado da regra, a rubrica tem os três níveis: Atingiu, Em processo e Não atingiu",
+    );
+    await rubrica.getByRole("button", { name: "Atingiu", exact: true }).click();
+    await esperarOuFalharCedo(rubrica.locator('button[aria-pressed="true"]', { hasText: "Atingiu" }), rubrica.locator(ALERTA_DE_ERRO), {
+      timeout: 30_000,
+      oQue: "classificar a regra na EF05CO04",
+    });
+    const depois = await esperarNaApi(
+      prof,
+      caminhoDaEvidencia,
+      (c) => doEstudante(c)?.porRodada?.[String(atividade.rodada)]?.EF05CO04?.origem === "professor",
+      { oQue: "o ajuste docente da EF05CO04" },
+    );
+    const co04 = doEstudante(depois).porRodada[String(atividade.rodada)].EF05CO04;
+    r.exigir(
+      co04.status === "atingiu" && co04.origem === "professor",
+      `a EF05CO04 passa a ser a da rubrica: “${co04.status}”, por ajuste docente (origem ${co04.origem})`,
+    );
+    await rubrica.scrollIntoViewIfNeeded();
+    await r.registrar(prof, "rubrica-da-regra", {
+      titulo: "A regra, classificada na EF05CO04",
+      mostra: "Ao lado da regra Se/Então da criança, os três níveis da EF05CO04 — e o clique da professora aceso.",
+      prova:
+        "A habilidade tem dois verbos: a pergunta da Nina mede o SIMULAR, e a regra escrita é o CRIAR. " +
+        "Ninguém corrige texto de criança à máquina: a professora lê e classifica, e o clique dela vale sobre a pergunta.",
     });
   },
 );
