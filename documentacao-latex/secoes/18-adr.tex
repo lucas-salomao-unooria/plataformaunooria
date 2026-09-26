@@ -9,10 +9,10 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{118 decisões}, numeradas até ADR-119. A 117 (o Jornal da Escola) é
-de uma frente paralela que ainda não entrou nesta base --- o número foi
-reservado entre as sessões antes de qualquer uma escrever ---; fora ela,
-\textbf{sem lacunas}. Quando
+São \textbf{119 decisões}, numeradas até ADR-121. A 117 (o Jornal da Escola) e a
+120 (a régua v2 de Quem mandou isso?) são de frentes paralelas que ainda não
+entraram nesta base --- os números foram reservados entre as sessões antes de
+qualquer uma escrever ---; fora elas, \textbf{sem lacunas}. Quando
 eram cem, as cinco últimas nasceram no MESMO dia, em três frentes paralelas, e não
 colidiram porque os números foram \textbf{reservados por quem repartia o
 trabalho antes de qualquer uma escrever} --- que é a lição que a colisão de
@@ -166,6 +166,7 @@ que a cercam.
 \zebra \adrr{ADR-116} & A experiência que perde o código é arquivada, não apagada & 2026-09-25 & Aceita\\
 \adrr{ADR-118} & Quem mandou isso? v2.2: atividade é o pacote, rodada é a reaplicação, e a régua mede pela seleção e pelas perguntas do PO & 2026-09-25 & Aceita\\
 \zebra \adrr{ADR-119} & O podcast da A Seleção é do professor, e a IA reescreve só as três falas que dependem do tema & 2026-09-26 & Aceita\\
+\zebra \adrr{ADR-121} & O CI verifica só os PRs para \cd{dev}, \cd{hml} e \cd{main} & 2026-09-26 & Aceita\\
 \bottomrule
 \end{tabularx}
 
@@ -10219,3 +10220,70 @@ não passar na revisão de conteúdo e for preciso gravar em estúdio (entra no
 lugar do episódio, com o mesmo roteiro); ou a síntese passar a devolver o
 episódio inteiro dentro de uma chamada, e a emenda deixar de ser necessária.
 
+\section{ADR-121 --- O CI verifica só os PRs para dev, hml e main}
+\label{adr:ci-so-nos-prs-de-ambiente}
+
+\textbf{Data.} 2026-09-26. \textbf{Status.} Aceita.
+\textbf{Muda} o gatilho do \arq{ci.yml} (Listagem~\ref{lst:ci}, no
+Capítulo~\ref{cap:entrega}); \textbf{não
+muda} o portão do \emph{deploy}, que continua chamando o \arq{ci.yml} por
+\cd{workflow\_call} antes de publicar em \cd{dev} e \cd{hml}.
+
+\begin{especificacao}{Contexto}
+\begin{itemize}
+  \item \textbf{O \arq{ci.yml} rodava em todo PR}, inclusive nos de \emph{branch}
+    de trabalho para \cd{dev-local} (\adrr{ADR-101}), que são quase todos.
+  \item \textbf{Em setembro de 2026 a conta passou dos 2.000 minutos do plano
+    Free do GitHub Actions}, que todos os repositórios privados da conta
+    dividem, e o GitHub parou de iniciar os \emph{jobs}. O \emph{deploy} de
+    \cd{dev} e \cd{hml} parou junto, porque também roda no Actions. Neste
+    repositório, cerca de 550 dos 1.580 minutos do mês foram do CI de PR.
+  \item \textbf{Num PR para \cd{dev-local}, o CI repetia o que a
+    \emph{Definition of Done} já manda rodar} no \emph{worktree}
+    (\cd{pnpm turbo typecheck lint test}), e a promoção \cd{dev-local}
+    \(\to\) \cd{dev} já pede o mesmo na raiz.
+\end{itemize}
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{itemize}
+  \item \textbf{O gatilho \cd{pull\_request} passa a ter
+    \cd{branches: [dev, hml, main]}.} PR para \cd{dev-local}, ou para outra
+    \emph{branch} de trabalho (frente empilhada), não dispara o CI.
+  \item \textbf{No PR para \cd{dev-local}, o portão é a verificação local da
+    \emph{Definition of Done}.} O GitHub não mostra \emph{check} nenhum ali, e
+    isso é o normal.
+  \item \textbf{A promoção \cd{dev-local} \(\to\) \cd{dev} verifica tudo o que
+    acumulou}, no CI e na raiz, como o \emph{template} de promoção já pedia.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Tirar o CI de todos os PRs}, deixando só o portão do
+    \emph{deploy}. O vermelho só apareceria depois do \emph{merge} em \cd{dev}
+    ou \cd{hml}, com o \emph{deploy} já barrado e a \emph{branch} de ambiente
+    quebrada para todo mundo.
+  \item \textbf{Manter o CI em todo PR e cancelar a execução anterior} a cada
+    \emph{push} no mesmo PR (\cd{concurrency} com \cd{cancel-in-progress}).
+    Economiza, mas continua gastando a cota com a verificação que a
+    \emph{Definition of Done} já faz.
+  \item \textbf{Pular os PRs só de documentação} (\cd{paths-ignore}). Corta
+    pouco dos PRs para \cd{dev-local}, que são os que mais gastam.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{Um defeito que só aparece em ambiente limpo} (arquivo não
+    commitado, Prisma Client gerado só na máquina, cache do \cd{turbo}) passa
+    pelo PR para \cd{dev-local} e só aparece na promoção, misturado com o que
+    as outras frentes trouxeram.
+  \item \textbf{Frente empilhada também fica sem CI}: a base dela é outra
+    \emph{branch} de trabalho, e a regra é a mesma.
+\end{itemize}
+
+\textbf{Gatilho.} Um defeito de ambiente passar pela verificação local e só
+aparecer na promoção; ou a conta passar a ter minutos que não acabam (plano pago
+ou repositório público).
