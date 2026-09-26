@@ -1,0 +1,18 @@
+{
+  "id": "exp07ef1b",
+  "nome": "A Seleção",
+  "versao": "1.0.0",
+  "produto": "entre-redes",
+  "series": ["7EF"],
+  "unidade": 1,
+  "capabilities": ["telemetria", "progresso", "ia", "avaliacao"],
+  "viewport": { "largura": 375, "altura": 812 },
+  "permissoes": ["forms"],
+  "publico": "estudante",
+  "verbos": {
+    "attempted": "publicou três posts nos Stories do grêmio com uma legenda",
+    "interacted": "salvou e removeu posts do feed da cobertura",
+    "progressed": "comparou a própria publicação com a do colega no Mural da Turma",
+    "completed": "enviou a reflexão e respondeu às enquetes da Amara"
+  }
+}
