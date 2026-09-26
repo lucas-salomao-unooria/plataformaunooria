@@ -54,8 +54,6 @@ describe("a trava confere de verdade", () => {
   const boa: FichaPedagogica = {
     expId: "exp08ef1b",
     versao: 1,
-    validadaPor: "Coordenação pedagógica (teste)",
-    validadaEm: "2026-09-25",
     habilidades: [{ codigo: "EF08CO01", marcadores: [{ id: "acao-1", tipo: "acao" }] }],
     perguntas: [],
   };

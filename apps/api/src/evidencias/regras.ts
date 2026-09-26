@@ -406,10 +406,6 @@ export function validarFicha(ficha: FichaPedagogica, codigosBncc: Pick<ReadonlyS
 
   if (!EXP_ID_RE.test(ficha.expId)) erros.push(`${rotulo}: expId fora do formato.`);
   if (!Number.isInteger(ficha.versao) || ficha.versao < 1) erros.push(`${rotulo}: versão tem de ser inteira, a partir de 1.`);
-  if (!ficha.validadaPor.trim()) erros.push(`${rotulo}: falta quem validou.`);
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(ficha.validadaEm) || Number.isNaN(Date.parse(ficha.validadaEm))) {
-    erros.push(`${rotulo}: validadaEm tem de ser uma data AAAA-MM-DD.`);
-  }
   if (ficha.habilidades.length === 0) erros.push(`${rotulo}: nenhuma habilidade.`);
 
   const perguntas = new Map(ficha.perguntas.map((p) => [p.id, p]));

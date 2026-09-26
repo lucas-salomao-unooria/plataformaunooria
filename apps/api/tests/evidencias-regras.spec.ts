@@ -285,8 +285,6 @@ const BNCC = new Set(["EF08CO01", "EF08CO02"]);
 const fichaBoa = (): FichaPedagogica => ({
   expId: "exp08ef1b",
   versao: 1,
-  validadaPor: "Coordenação pedagógica (teste)",
-  validadaEm: "2026-09-25",
   habilidades: [
     {
       codigo: "EF08CO01",
@@ -324,8 +322,6 @@ describe("a ficha", () => {
       ...fichaBoa(),
       expId: "exp-01-instanooria",
       versao: 0,
-      validadaPor: "  ",
-      validadaEm: "25/09/2026",
       habilidades: [
         { codigo: "EF99XX99", marcadores: [{ id: "m", tipo: "acao" }] },
         { codigo: "ef08co01", marcadores: [] },
@@ -354,8 +350,6 @@ describe("a ficha", () => {
     const esperados = [
       "expId fora do formato",
       "versão tem de ser inteira",
-      "falta quem validou",
-      "validadaEm tem de ser uma data",
       "EF99XX99 não é um código da BNCC",
       "ef08co01 não é um código da BNCC",
       "ef08co01 não tem marcador",

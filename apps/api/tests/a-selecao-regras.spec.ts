@@ -600,8 +600,6 @@ describe("a ficha pedagógica da A Seleção", () => {
       ["EF07CO08", ["p2"]],
     ]);
     expect(FICHA_EXP07EF1B.perguntas.map((p) => p.id)).toEqual(["p1", "p2"]);
-    expect(FICHA_EXP07EF1B.validadaPor).toBe("Lucas Salomão (dono do produto; validação pedagógica dispensada)");
-    expect(FICHA_EXP07EF1B.validadaEm).toBe("2026-09-25");
   });
 
   test("o gabarito é o do PO: A1/B1 atingiu, A2/B2 em processo, A3/B3 não atingiu", () => {

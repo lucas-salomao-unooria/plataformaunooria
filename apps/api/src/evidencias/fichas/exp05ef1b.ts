@@ -24,8 +24,6 @@ import type { FichaPedagogica } from "./tipos";
 export const FICHA_EXP05EF1B: FichaPedagogica = {
   expId: "exp05ef1b",
   versao: 1,
-  validadaPor: "Produto Unooria — contrato de evidência v2.2 e perguntas de evidência (Canal B)",
-  validadaEm: "2026-09-25",
   habilidades: [
     { codigo: "EF05CO08", marcadores: [{ id: "selecao-do-mural", tipo: "acao" }] },
     {
