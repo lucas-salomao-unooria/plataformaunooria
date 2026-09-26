@@ -28,7 +28,6 @@ E os módulos de experiência, um por missão:
 |---|---|
 | [`src/comum/insta/`](src/comum/insta/AGENTS.md) | exp08ef1b Instanooria — o relógio da aula (ADR-92) |
 | [`src/unoogpt/`](src/unoogpt/AGENTS.md) | exp02em1b Missão Tempestade |
-| [`src/quem-mandou-isso/`](src/quem-mandou-isso/AGENTS.md) | exp05ef1b Quem Mandou Isso? |
 | [`src/a-selecao/`](src/a-selecao/AGENTS.md) | exp07ef1b A Seleção — a primeira com ficha pedagógica e com equipe desde o nascimento |
 | [`src/vila/`](src/vila/AGENTS.md) | app-70 Vila do Lume |
 | [`src/planos/`](src/planos/AGENTS.md) | app-90 Plano de aula |

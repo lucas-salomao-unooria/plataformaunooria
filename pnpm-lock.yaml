@@ -222,7 +222,7 @@ importers:
         version: link:../../../packages/ui
       '@unooria/design-system':
         specifier: ^0.2.5
-        version: 0.2.5(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@types/node@26.5.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+        version: 0.2.5(@babel/core@8.0.1)(@opentelemetry/api@1.9.1)(@types/node@26.5.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       react:
         specifier: ^19.2.0
         version: 19.2.8
@@ -502,43 +502,6 @@ importers:
         specifier: ^3.2.6
         version: 3.2.7(@types/node@26.5.0)(jiti@2.7.0)(jsdom@30.0.1)(terser@5.51.2)(yaml@2.9.0)
 
-  apps/experiencias/exp05ef1b:
-    dependencies:
-      '@edu/sdk':
-        specifier: workspace:*
-        version: link:../../../packages/sdk
-      '@edu/ui':
-        specifier: workspace:*
-        version: link:../../../packages/ui
-      '@unooria/design-system':
-        specifier: ^0.2.5
-        version: 0.2.5(@babel/core@8.0.1)(@opentelemetry/api@1.9.1)(@types/node@26.5.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
-      react:
-        specifier: ^19.2.0
-        version: 19.2.8
-      react-dom:
-        specifier: ^19.2.0
-        version: 19.2.8(react@19.2.8)
-    devDependencies:
-      '@types/react':
-        specifier: ^19.2.0
-        version: 19.2.18
-      '@types/react-dom':
-        specifier: ^19.2.0
-        version: 19.2.5(@types/react@19.2.18)
-      '@vitejs/plugin-react':
-        specifier: ^4.3.0
-        version: 4.7.0(vite@6.4.3(@types/node@26.5.0)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.0))
-      typescript:
-        specifier: ^5.7.0
-        version: 5.9.3
-      vite:
-        specifier: ^6.4.3
-        version: 6.4.3(@types/node@26.5.0)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.0)
-      vitest:
-        specifier: ^3.2.6
-        version: 3.2.7(@types/node@26.5.0)(jiti@2.7.0)(jsdom@30.0.1)(terser@5.51.2)(yaml@2.9.0)
-
   apps/experiencias/exp06ef2b:
     dependencies:
       '@edu/sdk':
@@ -586,7 +549,7 @@ importers:
         version: link:../../../packages/ui
       '@unooria/design-system':
         specifier: ^0.2.5
-        version: 0.2.5(@babel/core@8.0.1)(@opentelemetry/api@1.9.1)(@types/node@26.5.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+        version: 0.2.5(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@types/node@26.5.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       react:
         specifier: ^19.2.0
         version: 19.2.8

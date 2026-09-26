@@ -283,7 +283,7 @@ Deploy (CI deste repo):
    ```bash
    for par in exp-01-instanooria:exp08ef1b exp-02-unootube:exp04ef1b \
        exp-03-unoogpt:exp02em1b exp-04-o-que-a-foto-conta:exp01ef1b \
-       exp-05-quem-mandou-isso:exp05ef1b exp-06-rastro-boato:exp06ef2b \
+       exp-06-rastro-boato:exp06ef2b \
        exp-07-o-eco-no-grupo:exp07ef1b exp-08-manifesto-ia:exp08ef4b \
        exp-70-vila-do-lume:app-70-vila-do-lume exp-90-plano-de-aula:app-90-plano-de-aula \
        exp-91-bem-estar:app-91-bem-estar exp-92-plano-de-ensino:app-92-plano-de-ensino; do
@@ -291,10 +291,16 @@ Deploy (CI deste repo):
    done
    ```
 
+   O 5º ano não está na lista, de propósito: a primeira versão da missão dele
+   nunca chegou a bucket nenhum e saiu da trilha (ADR-114), e a que entra no
+   lugar nasce direto no prefixo novo, a partir da 0.2.0. Copiar o prefixo
+   antigo não traria nada — e, se trouxesse, poria bundles da versão retirada
+   no caminho da nova.
+
    Do lado do Terraform, o que carrega o id antigo: o uptime check
    `{contrato}-exp-ativa` (o caminho do `index.html` da exp08ef1b), painéis e
    alertas que filtram `service.name` (é o `expId`) e métricas de log por
-   `codigo` de experiência (`exp07.*` virou `exp07ef1b.*`; `exp05-*`, `exp05ef1b-*`).
+   `codigo` de experiência (`exp07.*` virou `exp07ef1b.*`).
 
    **A api precisa de `CDN_EXP_URL`** (a mesma base do
    `NEXT_PUBLIC_CDN_EXP_URL` do hub) para conferir, com um HEAD no

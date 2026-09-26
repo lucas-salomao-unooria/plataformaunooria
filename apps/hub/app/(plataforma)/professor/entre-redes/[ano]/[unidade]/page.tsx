@@ -7,7 +7,6 @@ import {
   MISSAO_A_SELECAO,
   MISSAO_FOTO_CONTA,
   MISSAO_MANIFESTO_IA,
-  MISSAO_QUEM_MANDOU_ISSO,
   MISSAO_RASTRO_BOATO,
   MISSAO_UNOOGPT,
   MISSAO_UNOOTUBE,
@@ -20,7 +19,6 @@ import { MissaoASelecao } from "./missao-a-selecao";
 import { MissaoFotoConta } from "./missao-foto-conta";
 import { MissaoInstanooria } from "./missao-instanooria";
 import { MissaoManifestoIa } from "./missao-manifesto-ia";
-import { MissaoQuemMandouIsso } from "./missao-quem-mandou-isso";
 import { MissaoRastroBoato } from "./missao-rastro-boato";
 import { MissaoUnooGPT } from "./missao-unoogpt";
 import { MissaoUnooTube } from "./missao-unootube";
@@ -117,9 +115,6 @@ export default async function MissaoPage({
   }
   if (missao.expId === MISSAO_MANIFESTO_IA.expId) {
     return corpo(<MissaoManifestoIa ano={ano} missao={comFicha} turma={turma} />);
-  }
-  if (missao.expId === MISSAO_QUEM_MANDOU_ISSO.expId) {
-    return corpo(<MissaoQuemMandouIsso ano={ano} missao={comFicha} turma={turma} />);
   }
   if (missao.expId === MISSAO_A_SELECAO.expId) {
     return corpo(<MissaoASelecao ano={ano} missao={comFicha} turma={turma} />);
