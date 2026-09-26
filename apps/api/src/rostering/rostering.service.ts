@@ -785,10 +785,10 @@ export class RosteringService {
       if (truncado) usuarios.length = TETO_DE_ASSENTOS;
       if (usuarios.length === 0) return { total: 0, truncado: false, contas: [] };
       const ids = usuarios.map((u) => u.id);
-      const [runs, vila, unootube, unoogpt] = await Promise.all([
+      const [runs, vila, unootubeArquivado, unoogpt] = await Promise.all([
         tx.run.groupBy({ by: ["estudanteId"], where: { escolaId, estudanteId: { in: ids } }, _count: true }),
         tx.vilaSessao.groupBy({ by: ["estudanteId"], where: { escolaId, estudanteId: { in: ids } }, _count: true }),
-        tx.unootubeSessao.groupBy({ by: ["estudanteId"], where: { escolaId, estudanteId: { in: ids } }, _count: true }),
+        tx.backupUnootubeSessao.groupBy({ by: ["estudanteId"], where: { escolaId, estudanteId: { in: ids } }, _count: true }),
         tx.unoogptSessao.groupBy({ by: ["estudanteId"], where: { escolaId, estudanteId: { in: ids } }, _count: true }),
       ]);
       const somar = (linhas: Array<{ estudanteId: string; _count: number }>, alvo: Map<string, number>) => {
@@ -798,7 +798,7 @@ export class RosteringService {
       const totais = new Map<string, number>();
       somar(runs as never, totais);
       somar(vila as never, totais);
-      somar(unootube as never, totais);
+      somar(unootubeArquivado as never, totais);
       somar(unoogpt as never, totais);
       return {
         total: usuarios.length,

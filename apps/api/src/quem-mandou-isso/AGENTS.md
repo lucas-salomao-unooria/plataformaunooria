@@ -11,7 +11,7 @@ no chat da Nina. **Nasce com ficha (E14) e com equipe (E13).**
 
 Quatro tabelas (`exp05ef1b_pacotes`, `_gates_turma`, `_sessoes`,
 `_reflexoes`); CHECKs, índices parciais e RLS na migration
-`20260926120000_exp05ef1b_quem_mandou_isso_v2`.
+`20260926130000_exp05ef1b_quem_mandou_isso_v2`.
 
 ## O que não é óbvio
 

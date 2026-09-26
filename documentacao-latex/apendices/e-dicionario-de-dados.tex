@@ -4,7 +4,7 @@
 \chapter{Dicionário de dados}
 \label{ap:dicionario}
 
-Catálogo das 72 tabelas de \cd{public}, mais o \emph{schema} \cd{particoes}.
+Catálogo das 73 tabelas de \cd{public}, mais o \emph{schema} \cd{particoes}.
 O número é o de \cd{model} em \arq{apps/api/prisma/schema.prisma} em
 2026-09-25 (todos com \cd{@@map}; a \cd{\_prisma\_migrations} é do Prisma e
 fica fora), e o índice abaixo tem uma linha por \cd{model}: tabela nova sem
@@ -48,6 +48,7 @@ Os diagramas entidade-relacionamento estão no Capítulo~\ref{cap:dados}.
 \zebra \cd{perfis\_portateis} & Tenant & O perfil que veio de OUTRA instalação, assinado --- nunca misturado ao dado local (\adrr{ADR-35})\\
 \cd{experiencias} & \textbf{Catálogo} & Manifesto de versões\\
 \zebra \cd{experiencias\_versoes} & \textbf{Catálogo} & Uma linha por versão publicada, com o manifesto inteiro (\adrr{ADR-87})\\
+\cd{experiencias\_arquivadas} & \textbf{Catálogo} & A experiência arquivada, com a fotografia do arquivamento (\adrr{ADR-116})\\
 \cd{disponibilidades} & \textbf{Catálogo} & \textbf{O interruptor da rede} (\adrr{ADR-87})\\
 \zebra \cd{prospeccao\_leads} & \textbf{Sem tenant} & Cadastro de interesse do site público (\adrr{ADR-107}) --- a ÚNICA tabela de dado pessoal sem \cd{escola\_id} e sem RLS\\
 \cd{recursos\_auditoria} & \textbf{Catálogo} & \textbf{Quem mexeu no interruptor} --- append-only (\adrr{ADR-89})\\
@@ -69,7 +70,7 @@ Os diagramas entidade-relacionamento estão no Capítulo~\ref{cap:dados}.
 \cd{exp08ef1b\_comentarios\_da\_sessao} & Tenant & Comentários da sessão\\
 \zebra \cd{exp08ef1b\_app\_70\_perfis\_importados} & Tenant &
   \textbf{Contrato entre duas experiências}\\
-\cd{exp04ef1b\_sessoes} & Tenant & Estado da missão do UnooTube\\
+\cd{backup\_exp04ef1b\_sessoes} & Tenant & Estado da missão do UnooTube (arquivada, \adrr{ADR-116})\\
 \zebra \cd{exp02em1b\_sessoes} & Tenant & Estado da partida da Missão Tempestade\\
 \cd{exp02em1b\_mensagens} & Tenant & A Transcrição (texto livre do estudante)\\
 \zebra \cd{exp02em1b\_marcos} & Tenant & Trilha da decisão\\
@@ -659,6 +660,34 @@ Unooria oferece no \emph{rollback} (\adrr{ADR-87}). PK composta
 \bottomrule
 \end{tabularx}
 
+\subsection{\cd{experiencias\_arquivadas} (catálogo)}
+
+A experiência \textbf{arquivada}: tirada do produto sem ser apagada
+(\adrr{ADR-116}). A linha SAI de \cd{experiencias} e vem para cá --- uma tabela à
+parte, e não uma coluna, para nenhum dos leitores do catálogo precisar lembrar de
+filtrar. Sem RLS, como \cd{experiencias}: é catálogo, não dado de estudante.
+Quem lê é a área \rota{/unooria/arquivados} (só \cd{admin}) e o documento de
+portabilidade.
+
+\begin{tabularx}{\linewidth}{@{}L{34mm}L{26mm}X@{}}
+\toprule
+\headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
+\midrule
+\pk{exp\_id} & \cd{TEXT} PK & \cd{backup-} mais o código de origem.
+  \emph{CHECK}: \cd{exp\_id = 'backup-' || codigo\_de\_origem}.\\
+\zebra \cd{codigo\_de\_origem} & \cd{TEXT} & O código que ela tinha --- e que outra
+  missão passou a usar.\\
+\cd{nome}, \cd{versao} & \cd{TEXT} & O nome e a versão que estavam no ar.\\
+\zebra \cd{series}, \cd{unidade}, \cd{produto} & & Onde ela ficava na grade.\\
+\cd{motivo} & \cd{TEXT} & Por que foi arquivada, em uma frase.\\
+\zebra \cd{turmas\_guardadas}, \cd{estudantes\_guardados} & \cd{INTEGER} &
+  A FOTOGRAFIA: contadas pela migração que arquivou, com o \cd{FORCE} da RLS
+  fora --- o único momento em que contar atravessa escolas sem pedir nada à RLS.
+  Não são recontadas.\\
+\cd{arquivada\_em} & \cd{TIMESTAMPTZ(6)} & \\
+\bottomrule
+\end{tabularx}
+
 \subsection{\cd{disponibilidades} (catálogo)}
 
 \textbf{O interruptor da rede} (\adrr{ADR-87}): uma linha responde \enquote{este
@@ -1113,7 +1142,10 @@ o canal \emph{operacional}; \cd{telemetria\_eventos} é o analítico
 
 \section{Tabelas das demais experiências}
 
-\subsection{\cd{exp04ef1b\_sessoes}}
+\subsection{\cd{backup\_exp04ef1b\_sessoes}}
+
+O UnooTube \textbf{arquivado} (\adrr{ADR-116}): a tabela ficou com os dados, sem
+rota que a sirva. Era \cd{exp04ef1b\_sessoes}.
 
 \begin{tabularx}{\linewidth}{@{}L{34mm}L{22mm}X@{}}
 \toprule
@@ -1137,7 +1169,7 @@ o canal \emph{operacional}; \cd{telemetria\_eventos} é o analítico
 
 \begin{regra}
 O gabarito (\cd{factual}) \textbf{não está aqui} e não é devolvido em nenhuma rota
-de estudante: vive em \arq{src/unootube/catalogo.ts}. O que \emph{sai} de lá é
+de estudante: vive em \arq{src/backup-unootube/catalogo.ts}. O que \emph{sai} de lá é
 \cd{VideoPublico}, isto é, tudo menos \cd{factual} --- e há teste que enumera os
 campos, para que um campo novo não escape por distração. Desde a 1.1.0 são também
 públicos \cd{visualizacoesRotulo} e \cd{curtidasRotulo}: rótulos

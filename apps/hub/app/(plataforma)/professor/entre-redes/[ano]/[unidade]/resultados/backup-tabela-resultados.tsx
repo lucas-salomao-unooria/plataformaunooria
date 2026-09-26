@@ -7,7 +7,7 @@ import {
   ordenarEstudantes,
   situacaoDoEstudante,
   type LinhaEstudanteUnootube,
-} from "@/lib/unootube-tipos";
+} from "@/lib/backup-unootube-tipos";
 
 import { EquipeNaLinha } from "./equipe-na-linha";
 

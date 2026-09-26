@@ -16,7 +16,7 @@ import type { TurmaDoProfessor } from "@/lib/turmas";
  * aula não começa — a largada do relógio. Por isso a ficha abre com o aviso,
  * em vez de deixar a informação no fim de uma lista de preparo.
  *
- * Molde: `missao-unootube.tsx`. `FeedbackAlert` e não `AlertBox`: o segundo é
+ * Molde: `backup-missao-unootube.tsx` (o UnooTube, hoje arquivado). `FeedbackAlert` e não `AlertBox`: o segundo é
  * diálogo de 436px, e aqui a faixa é de contexto (o prop é `type`, não
  * `variant`).
  */

@@ -10,7 +10,6 @@ import {
   MISSAO_QUEM_MANDOU_ISSO,
   MISSAO_RASTRO_BOATO,
   MISSAO_UNOOGPT,
-  MISSAO_UNOOTUBE,
   buscarMissao,
   rotuloDaMissao,
 } from "@/lib/entre-redes/catalogo";
@@ -23,14 +22,12 @@ import { MissaoOEcoNoGrupo } from "./missao-o-eco-no-grupo";
 import { MissaoQuemMandouIsso } from "./missao-quem-mandou-isso";
 import { MissaoRastroBoato } from "./missao-rastro-boato";
 import { MissaoUnooGPT } from "./missao-unoogpt";
-import { MissaoUnooTube } from "./missao-unootube";
 
 /**
  * Página de uma missão do Entre Redes — DESPACHANTE por `missao.expId`.
  *
  * Cada missão publicada tem o próprio corpo: o Instanooria configura
- * atividades e tem guia; o UnooTube é conteúdo fixo e só mostra resultados; o
- * unooGPT tem uma ação AO VIVO (a largada do relógio da turma) e sem ela a aula
+ * atividades e tem guia; o unooGPT tem uma ação AO VIVO (a largada do relógio da turma) e sem ela a aula
  * não começa. Unidades "em breve" continuam com o aviso honesto abaixo.
  */
 export default async function MissaoPage({
@@ -105,9 +102,6 @@ export default async function MissaoPage({
 
   if (missao.expId === MISSAO_FOTO_CONTA.expId) {
     return corpo(<MissaoFotoConta ano={ano} missao={comFicha} turma={turma} />);
-  }
-  if (missao.expId === MISSAO_UNOOTUBE.expId) {
-    return corpo(<MissaoUnooTube ano={ano} missao={comFicha} turma={turma} />);
   }
   if (missao.expId === MISSAO_UNOOGPT.expId) {
     return corpo(<MissaoUnooGPT ano={ano} missao={comFicha} turma={turma} />);

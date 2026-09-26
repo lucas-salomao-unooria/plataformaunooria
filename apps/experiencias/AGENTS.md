@@ -81,7 +81,7 @@ componente não declaram mais `@font-face`); numa marca de clone, esquecê-la ca
 no fallback — feio, mas não quebra.
 
 **A linha que separa as seções é a REVELAÇÃO, não o arquivo.** O critério é
-"quem está falando?", nunca "é depois no tempo?". Na exp04ef1b: feed, cromo,
+"quem está falando?", nunca "é depois no tempo?". Na backup-exp04ef1b: feed, cromo,
 playlists, canal, o toast e o diálogo de limite falam de dentro da ficção
 (`ds-unootube`); ranking, os dois diálogos da missão, "Concluir missão" e a TELA
 DE ENTRADA falam pela escola (`ds`). A entrada é a única ANTES do feed e não é
@@ -89,7 +89,7 @@ exceção: na tela de entrada quem fala é a escola, e não há disfarce a prote
 porque a criança ainda não viu um Short. O disfarce começa no toque em "Começar missão".
 
 **Tema**: a seção do clone lê `data-uni-theme` na raiz; a da plataforma recebe
-`theme` por PROP. Quem troca escreve nos dois (`exp04ef1b/src/lib/tema.ts`), senão
+`theme` por PROP. Quem troca escreve nos dois (`backup-exp04ef1b/src/lib/tema.ts`), senão
 o estudante escolhe escuro no feed e o ranking volta branco.
 
 **O idioma do disfarce: o nome do app real, em português.** `Shorts`, `Stories`,
@@ -135,7 +135,7 @@ Então, dentro do iframe, a barra continua sendo a do SISTEMA OPERACIONAL, com
 no macOS com trackpad ela some sozinha, no Windows e no ChromeOS é permanente.
 
 **Esconder a barra continua permitido, e é decisão de FIDELIDADE.** As faixas que
-imitam um app sem barra (`.sem-scrollbar` da exp08ef1b, `.feed-scroll` da exp04ef1b)
+imitam um app sem barra (`.sem-scrollbar` da exp08ef1b, `.feed-scroll` da backup-exp04ef1b)
 usam `scrollbar-width: none` + `::-webkit-scrollbar { display: none }`. Se você
 esconder uma barra, diga no CSS QUAL app imitado não a tem — sem essa linha, a
 próxima pessoa lê como defeito e "conserta".

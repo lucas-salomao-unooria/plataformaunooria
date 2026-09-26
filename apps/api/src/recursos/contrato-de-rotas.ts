@@ -253,3 +253,33 @@ export const QuotaAlteradaSchema = QuotaDeIaSchema.extend({
   /** `false` quando o valor pedido já era o que valia: nada foi gravado nem historiado. */
   alterada: z.boolean(),
 });
+
+/* ======================================================================
+   ARQUIVADAS (ADR-116) — o que saiu do produto sem ser apagado
+   ====================================================================== */
+
+export const ExperienciaArquivadaSchema = z.object({
+  /** `backup-` + o código que ela tinha. */
+  expId: z.string(),
+  codigoDeOrigem: z.string(),
+  nome: z.string(),
+  /** A versão que estava no ar quando foi arquivada. */
+  versao: z.string(),
+  series: z.array(z.string()),
+  unidade: z.number().int().nullable(),
+  produto: z.string().nullable(),
+  motivo: z.string(),
+  /**
+   * A FOTOGRAFIA do arquivamento, tirada pela migração: turmas que tinham
+   * liberado a experiência e estudantes com progresso nela. Não é recontada em
+   * tempo de uso — contar `liberacoes` e `progresso` de todas as escolas seria
+   * uma query que atravessa a RLS, e nenhuma rota do `admin` faz isso.
+   */
+  turmasGuardadas: z.number().int(),
+  estudantesGuardados: z.number().int(),
+  arquivadaEm: z.string(),
+});
+
+export const ExperienciasArquivadasSchema = z.object({
+  arquivadas: z.array(ExperienciaArquivadaSchema),
+});

@@ -53,7 +53,6 @@ const salas = new SalasService(prisma);
 
 const INSTA = "exp08ef1b";
 const TEMPESTADE = "exp02em1b";
-const TUBE = "exp04ef1b";
 /** Missão real, do mesmo 8º ano da turma, que NÃO aceita equipe. */
 const MANIFESTO = "exp08ef4b";
 
@@ -165,7 +164,6 @@ beforeAll(async () => {
   for (const [expId, serie] of [
     [INSTA, "8EF"],
     [TEMPESTADE, "2EM"],
-    [TUBE, "4EF"],
   ] as const) {
     await prisma.experiencia.upsert({
       where: { expId },
@@ -500,7 +498,7 @@ describe("a equipe do estudante", () => {
   });
 
   test("a equipe é DAQUELA missão: na outra, a mesma criança continua sem", async () => {
-    expect(await equipes.minha(ESCOLA, ids.ana, TUBE)).toEqual({ equipe: null });
+    expect(await equipes.minha(ESCOLA, ids.ana, TEMPESTADE)).toEqual({ equipe: null });
     expect(await equipes.minha(ESCOLA, ids.ana, MANIFESTO)).toEqual({ equipe: null });
   });
 });
@@ -682,7 +680,7 @@ describe("o gancho de quem depende das equipes", () => {
 describe("a última montagem, reprojetada sobre a turma de hoje", () => {
   test("sem montagem anterior: `origem: null` e todos sem equipe", async () => {
     await prisma.equipesMontagem.deleteMany({ where: { escolaId: ESCOLA } });
-    const r = UltimaMontagemSchema.parse(await equipes.ultima(ESCOLA, ids.turma8A, TUBE, ids.prof8A));
+    const r = UltimaMontagemSchema.parse(await equipes.ultima(ESCOLA, ids.turma8A, TEMPESTADE, ids.prof8A));
     expect(r).toMatchObject({ origem: null, equipes: [], saidas: 0 });
     expect(r.semEquipe).toHaveLength(5);
   });
@@ -709,7 +707,7 @@ describe("a última montagem, reprojetada sobre a turma de hoje", () => {
     await equipes.salvar(
       ESCOLA,
       ids.turma8A,
-      TUBE,
+      TEMPESTADE,
       { versao: 0, modo: "manual", computadores: 1, ausentes: [], equipes: [{ nome: "Só uma", membros: [ids.ana] }] },
       ids.prof8A,
     );
@@ -727,7 +725,7 @@ describe("a última montagem, reprojetada sobre a turma de hoje", () => {
       select: { id: true },
     });
 
-    const r = UltimaMontagemSchema.parse(await equipes.ultima(ESCOLA, ids.turma8A, TUBE, ids.prof8A));
+    const r = UltimaMontagemSchema.parse(await equipes.ultima(ESCOLA, ids.turma8A, TEMPESTADE, ids.prof8A));
     expect(r.origem?.expId).toBe(INSTA);
     expect(r.saidas).toBe(1);
     expect(r.equipes.map((e) => [e.nome, e.membros.map((m) => m.nome)])).toEqual([

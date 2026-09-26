@@ -1,5 +1,5 @@
 /**
- * Catálogo da exp04ef1b — os 21 vídeos e os 39 colegas fictícios.
+ * Catálogo do UnooTube arquivado (backup-exp04ef1b) — os 21 vídeos e os 39 colegas fictícios.
  *
  * `factual` é o GABARITO da missão (regra inviolável nº 3): decide inscritos e
  * fontes confiáveis. Ele NUNCA sai deste módulo sem passar por `semGabarito`.
@@ -19,7 +19,7 @@
  * `id` do `public/experiencia.json`: divergir faz a missão nunca abrir, com a
  * liberação gravada e visível na tela do professor.
  */
-export const EXP_ID = 'exp04ef1b';
+export const EXP_ID = 'backup-exp04ef1b';
 
 export interface Video {
   id: string;

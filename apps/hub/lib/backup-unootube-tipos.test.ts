@@ -4,7 +4,7 @@ import {
   ordenarEstudantes,
   situacaoDoEstudante,
   type LinhaEstudanteUnootube,
-} from "./unootube-tipos";
+} from "./backup-unootube-tipos";
 
 const linha = (nome: string, extra: Partial<LinhaEstudanteUnootube> = {}): LinhaEstudanteUnootube => ({
   estudanteId: nome,

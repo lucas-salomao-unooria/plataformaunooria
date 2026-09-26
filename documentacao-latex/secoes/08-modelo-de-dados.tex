@@ -4,7 +4,7 @@
 \chapter{Modelo de dados}
 \label{cap:dados}
 
-Um banco, um \emph{schema} lógico, 72 tabelas em \cd{public} e um \emph{schema}
+Um banco, um \emph{schema} lógico, 73 tabelas em \cd{public} e um \emph{schema}
 auxiliar (\cd{particoes}) fora do alcance do ORM. O número é uma contagem, e
 envelhece a cada migração: são os \cd{model} de
 \arq{apps/api/prisma/schema.prisma} em 2026-09-25, todos com \cd{@@map}, sem a
@@ -20,12 +20,14 @@ O dicionário de dados campo a campo está no Apêndice~\ref{ap:dicionario}.
 \begin{regra}
 \textbf{Tabela de experiência leva o CÓDIGO dela (\adrr{ADR-110}):
 \cd{exp08ef1b\_} para missão, \cd{app\_70\_} para o resto.} Assim:
-\cd{app\_70\_sessoes}, \cd{exp04ef1b\_sessoes}, \cd{exp02em1b\_sessoes},
-\cd{exp07ef1b\_sessoes}, \cd{exp08ef4b\_sessoes}, \cd{app\_91\_checkins}.
+\cd{app\_70\_sessoes}, \cd{exp02em1b\_sessoes},
+\cd{exp07ef1b\_sessoes}, \cd{exp08ef4b\_sessoes}, \cd{app\_91\_checkins}. A tabela de
+uma experiência \textbf{arquivada} ganha \cd{backup\_} antes do código
+(\adrr{ADR-116}): \cd{backup\_exp04ef1b\_sessoes} é a do UnooTube.
 
 \textbf{Tabela da plataforma --- que serve a todas --- fica sem prefixo}:
 \cd{escolas}, \cd{turmas}, \cd{users}, \cd{experiencias},
-\cd{experiencias\_versoes}, \cd{disponibilidades}, \cd{ia\_quotas},
+\cd{experiencias\_versoes}, \cd{experiencias\_arquivadas}, \cd{disponibilidades}, \cd{ia\_quotas},
 \cd{recursos\_auditoria}, \cd{progresso},
 \cd{telemetria\_eventos}, \cd{ia\_uso\_diario}.
 
@@ -197,6 +199,12 @@ Duas armadilhas registradas naquela migração, ambas produzindo o mesmo sintoma
 \cd{experiencias\_versoes} & Catálogo & Uma linha por versão publicada, com o
   MANIFESTO INTEIRO --- é a lista do \emph{rollback} pela tela, e é o que faz
   voltar a versão voltar também \cd{viewport} e \cd{permissoes} (\adrr{ADR-87}).\\
+\zebra \cd{experiencias\_arquivadas} & Catálogo & A experiência \textbf{arquivada}
+  (\adrr{ADR-116}): a linha SAI de \cd{experiencias} e vem para cá, com a
+  fotografia do arquivamento (turmas que tinham liberado, estudantes com
+  progresso). Tabela à parte, e não coluna, para nenhum dos leitores de
+  \cd{experiencias} precisar lembrar de filtrar. \emph{CHECK}: o id é
+  \cd{backup-} mais o código de origem.\\
 \cd{recursos\_auditoria} & Catálogo & \textbf{Append-only} (\adrr{ADR-89}):
   quem ligou, desligou ou trocou versão, quando e por quê. Existe porque a linha
   de \cd{disponibilidades} é SOBRESCRITA. \cd{UPDATE} recusado por
@@ -824,9 +832,9 @@ tabelas \cd{exp08ef1b\_} mais a tabela de contrato com a app-70.
 \fitwidth{%
 \begin{tikzpicture}[x=1cm, y=1cm]
 
-  \node[camadalbl, anchor=west] at (0.2,2.1) {exp04ef1b --- UnooTube};
+  \node[camadalbl, anchor=west] at (0.2,2.1) {backup-exp04ef1b --- UnooTube (arquivada)};
   \node[tabela, text width=46mm] (u) at (3.4,-0.2)
-    {\etitulo{exp04ef1b\_sessoes}
+    {\etitulo{backup\_exp04ef1b\_sessoes}
      \nodepart{two}
      \pk{escola\_id, estudante\_id} --- 1 linha por estudante\\
      \texttt{salvos[]} --- ids do catálogo, CHECK $\leq$ 3\\
@@ -838,7 +846,7 @@ tabelas \cd{exp08ef1b\_} mais a tabela de contrato com a app-70.
 
   \node[actnote, text width=54mm, anchor=north west] at (7.6,1.2)
     {O gabarito (\texttt{factual}) \textbf{não} está aqui e não é devolvido em
-     nenhuma rota de estudante: vive em \arq{src/unootube/catalogo.ts}. Os
+     nenhuma rota de estudante: vive em \arq{src/backup-unootube/catalogo.ts}. Os
      \emph{CHECK} de cardinalidade dos salvos e de \enquote{conclusão implica
      \texttt{concluido\_em}} vivem na migração, porque o Prisma não os modela.};
 
@@ -893,8 +901,8 @@ tabelas \cd{exp08ef1b\_} mais a tabela de contrato com a app-70.
     node[ercard, pos=0.5, right=2pt]{mesmo estudante};
 
 \end{tikzpicture}}
-\caption[Modelo de dados das exps 02 e 70]{Modelo de dados da exp04ef1b e da
-  app-70. Em \cd{app\_70\_perfis}, \cd{null} \textbf{não é zero}: é valor que não
+\caption[Modelo de dados das exps 02 e 70]{Modelo de dados do UnooTube
+  arquivado (\cd{backup-exp04ef1b}, \adrr{ADR-116}) e da app-70. Em \cd{app\_70\_perfis}, \cd{null} \textbf{não é zero}: é valor que não
   recebeu número. \cd{graus} diz por quê, e é essa distinção que impede um
   relatório de afirmar recusa onde houve ausência de oportunidade.}
 \label{fig:er-exp04ef1b-app70}
@@ -1080,7 +1088,7 @@ em produção, que é onde ela existe.
 \label{sec:tabelas-exp05ef1b}
 
 A v2.2 de Quem mandou isso? (\adrr{ADR-118}), na migração
-\arq{20260926120000\_\B{}exp05ef1b\_\B{}quem\_\B{}mandou\_\B{}isso\_\B{}v2}. As quatro têm
+\arq{20260926130000\_\B{}exp05ef1b\_\B{}quem\_\B{}mandou\_\B{}isso\_\B{}v2}. As quatro têm
 \cd{escola\_id NOT NULL}, RLS \cd{ENABLE} + \cd{FORCE} com a política por escola, e
 nenhuma sequência: as chaves são \cd{uuid} ou compostas, e o \cd{GRANT} à
 \emph{role} de \emph{runtime} é só de tabela.
@@ -1466,7 +1474,16 @@ decisão \emph{futura}, com DPA e \emph{k}-anonimato --- e não sai de um
   \cd{DELETE} e a asserção --- o molde da \arq{20260923120000}. Ficam
   \cd{telemetria\_eventos} (o \cd{exp\_version} separa as duas versões) e
   \cd{recursos\_auditoria}, que é só de inserção.\\
-\arq{20260926120000\_\B{}exp05ef1b\_\B{}quem\_\B{}mandou\_\B{}isso\_\B{}v2} & A v2.2 de
+\arq{20260926120000\_\B{}arquivar\_\B{}unootube} & O UnooTube ARQUIVADO, e não
+  apagado (\adrr{ADR-116}): cria \cd{experiencias\_arquivadas} e move para lá a
+  linha de \cd{experiencias}, com a fotografia de turmas e estudantes;
+  \cd{RENAME} de \cd{exp04ef1b\_sessoes} para \cd{backup\_exp04ef1b\_sessoes}
+  (\emph{constraints}, índices e política junto, por OID); e o código como valor
+  vira \cd{backup-exp04ef1b} em versões, liberações, progresso, equipes,
+  evidência, disponibilidades e auditoria. \cd{equipes\_membros} precisa do
+  próprio \cd{UPDATE}: a FK dela é para \cd{equipes(id)}, e o código ali é
+  cópia. Fica \cd{telemetria\_eventos}. Asserção no fim.\\
+\arq{20260926130000\_\B{}exp05ef1b\_\B{}quem\_\B{}mandou\_\B{}isso\_\B{}v2} & A v2.2 de
   Quem mandou isso? (\adrr{ADR-118}): \cd{exp05ef1b\_pacotes},
   \cd{\_gates\_turma}, \cd{\_sessoes} e \cd{\_reflexoes}, as quatro com RLS
   forçada; os índices únicos parciais (um pacote ativo e um rascunho por turma),

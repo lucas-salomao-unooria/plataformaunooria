@@ -26,7 +26,7 @@ plataforma no feed do estudante quebra a ilusão que a experiência está medind
 |---|---|---|
 | `unooria` | `@edu/ui/ds` | hub (login, `/professor`, `/admin`, `/analise`), header de todos os papéis, telas pós-revelação do estudante |
 | `instanooria` | `@edu/ui/ds-insta` | superfície disfarçada da exp08ef1b |
-| `unitube` | `@edu/ui/ds-unootube` | superfície disfarçada da exp04ef1b |
+| `unitube` | `@edu/ui/ds-unootube` | superfície disfarçada do UnooTube, hoje ARQUIVADO (`backup-exp04ef1b`, ADR-116): nenhuma missão viva a usa |
 | `chatgpt` | `@edu/ui/ds-chatgpt` | a exp02em1b INTEIRA (não tem revelação no software) |
 | `whatsappmobile` | `@edu/ui/ds-whatsapp` | a exp07ef1b, a exp06ef2b e a exp05ef1b, menos as telas da escola — **só tema escuro**. Onde a fronteira cai é a REVELAÇÃO, não o arquivo: na exp06ef2b o mapa da rede fala pela escola porque o app real não tem visualizador de topologia (ADR-72) |
 | `tiktooria` | — | ainda sem consumidor |

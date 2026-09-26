@@ -13,7 +13,6 @@
 #   api     NestJS em `nest start --watch` (3001)
 #   hub     Next.js em `next dev` (3000)
 #   exp08ef1b  Vite da Instanooria (5173)
-#   exp04ef1b  Vite do UnooTube (5174)
 #   app-90  Vite do plano de aula, ferramenta do professor (5175)
 #   app-92  Vite do planejamento de ensino, ferramenta do professor (5180)
 #   app-70  Vite da Vila do Lume, transversal (5177 — a 5176 é da app-91)
@@ -58,7 +57,6 @@ x-fonte: &fonte
   - nm-sdk:/repo/packages/sdk/node_modules
   - nm-ui:/repo/packages/ui/node_modules
   - nm-exp08ef1b:/repo/apps/experiencias/exp08ef1b/node_modules
-  - nm-exp04ef1b:/repo/apps/experiencias/exp04ef1b/node_modules
   - nm-app90:/repo/apps/experiencias/app-90-plano-de-aula/node_modules
   - nm-app70:/repo/apps/experiencias/app-70-vila-do-lume/node_modules
   - nm-app91:/repo/apps/experiencias/app-91-bem-estar/node_modules
@@ -312,16 +310,6 @@ services:
       deps:
         condition: service_completed_successfully
 
-  exp04ef1b:
-    <<: *dev
-    working_dir: /repo/apps/experiencias/exp04ef1b
-    command: pnpm exec vite --host 0.0.0.0 --port 5174 --strictPort
-    ports:
-      - "5174:5174"
-    depends_on:
-      deps:
-        condition: service_completed_successfully
-
   app-90:
     <<: *dev
     working_dir: /repo/apps/experiencias/app-90-plano-de-aula
@@ -439,7 +427,6 @@ volumes:
   nm-sdk:
   nm-ui:
   nm-exp08ef1b:
-  nm-exp04ef1b:
   nm-app90:
   nm-app70:
   nm-app91:

@@ -19,7 +19,7 @@
 # As EXPERIÊNCIAS não entram aqui: em produção são bundles estáticos num
 # bucket, não serviços. Em dev, rode à parte (portas em apps/hub/lib/experiencias-dev.ts):
 #   pnpm --filter @edu/exp08ef1b dev     # :5173
-#   pnpm --filter @edu/exp04ef1b dev        # :5174
+#   pnpm --filter @edu/<exp> dev           # a porta de cada uma em apps/hub/lib/experiencias-dev.ts
 name: unooria-plataforma
 
 services:

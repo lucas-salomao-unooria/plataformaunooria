@@ -31,6 +31,7 @@ E os módulos de experiência, um por missão:
 | [`src/quem-mandou-isso/`](src/quem-mandou-isso/AGENTS.md) | exp05ef1b Quem Mandou Isso? v2.2 — com ficha (E14) e equipe (E13) |
 | [`src/o-eco-no-grupo/`](src/o-eco-no-grupo/AGENTS.md) | exp07ef1b O Eco no Grupo |
 | [`src/vila/`](src/vila/AGENTS.md) | app-70 Vila do Lume |
+| [`src/backup-unootube/`](src/backup-unootube/AGENTS.md) | o UnooTube ARQUIVADO (`backup-exp04ef1b`, ADR-116): compila e é testado, mas não está no `app.module` |
 | [`src/planos/`](src/planos/AGENTS.md) | app-90 Plano de aula |
 | [`src/bemestar/`](src/bemestar/AGENTS.md) | app-91 Check-in de bem-estar |
 

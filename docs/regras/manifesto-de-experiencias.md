@@ -23,7 +23,7 @@ fora disso, e o validador (`EXP_ID_RE`) mora em `apps/api/src/comum/` e em
 O hub monta a URL do iframe com `versaoAtiva`; rollback = trocar `versaoAtiva`
 (`node apps/hub/scripts/publicar-manifesto.mjs <exp> --versao x.y.z`).
 `viewport` presente ⇒ o hub embeda dentro do `DispositivoFrame` (casca de
-aparelho com escala; exp08ef1b é 375×812, exp04ef1b não tem viewport porque foi
+aparelho com escala; exp08ef1b é 375×812, o UnooTube (hoje arquivado) não tinha viewport porque foi
 desenhada para desktop). SEM linha na tabela, o `viewport` é lido do
 `experiencia.json` servido ao lado do index do bundle — não só em dev: uma
 stack com a tabela vazia (compose local, ambiente novo antes do 1º publish do
