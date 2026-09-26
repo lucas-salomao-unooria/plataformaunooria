@@ -184,12 +184,12 @@ await suite(
     });
 
     await q().getByRole("button", { name: /Abrir Feed da Cobertura/i }).click();
-    await q().locator("text=/Posts salvos: 0/").waitFor({ timeout: 20_000 });
+    await q().locator("text=/Posts salvos: 0/").first().waitFor({ timeout: 20_000 });
     for (let i = 0; i < 3; i += 1) {
       await q().getByRole("button", { name: /Salvar publicação/i }).first().click();
       await p.waitForTimeout(300);
     }
-    await q().locator("text=/Posts salvos: 3/").waitFor({ timeout: 10_000 });
+    await q().locator("text=/Posts salvos: 3/").first().waitFor({ timeout: 10_000 });
     await r.registrar(p, "feed-da-cobertura", {
       titulo: "O feed e o marcador",
       mostra: "Os posts dos três perfis intercalados, o contador de salvos e a pílula para a aba Salvos.",
@@ -199,10 +199,12 @@ await suite(
     });
 
     await q().getByRole("button", { name: /Ir para aba Salvos/i }).click();
-    await q().locator("text=/Itens Salvos/").waitFor({ timeout: 15_000 });
+    /* Pelo PAPEL: a tela tem o título escondido para o leitor de tela (`h1.so-leitor`)
+       e o da barra com o mesmo texto — por texto, o localizador casa os dois. */
+    await q().getByRole("heading", { name: "Itens Salvos" }).waitFor({ timeout: 15_000 });
     const grade = q().getByLabel("Posts salvos");
     for (let i = 0; i < 3; i += 1) await grade.locator("button").nth(i).click();
-    await q().locator("text=/3 de 3 selecionados/").waitFor({ timeout: 10_000 });
+    await q().locator("text=/3 de 3 selecionados/").first().waitFor({ timeout: 10_000 });
 
     // ═══ O PORTÃO: legenda curta desabilita, link é recusado ══════════════
     const campo = q().getByRole("textbox").first();
@@ -224,7 +226,7 @@ await suite(
     await campo.pressSequentially(" veja em http://exemplo.com.br agora");
     await publicar.click();
     await q().getByRole("button", { name: /Confirmar publicação/i }).click();
-    await q().locator("text=/Não foi possível publicar/i").waitFor({ timeout: 15_000 });
+    await q().locator("text=/Não foi possível publicar/i").first().waitFor({ timeout: 15_000 });
     await r.registrar(p, "legenda-recusada", {
       titulo: "A legenda com link não passa",
       mostra: "A recusa na voz do clone, pedindo para tirar links, telefones, e-mails e marcações.",
@@ -237,7 +239,7 @@ await suite(
     await campo.pressSequentially(LEGENDA);
     await publicar.click();
     await q().getByRole("button", { name: /Confirmar publicação/i }).click();
-    await q().locator("text=/Publicado! Aguardando o professor/i").waitFor({ timeout: 20_000 });
+    await q().locator("text=/Publicado! Aguardando o professor/i").first().waitFor({ timeout: 20_000 });
     await r.registrar(p, "publicado", {
       titulo: "Publicado, e sem volta",
       mostra: "A prévia dos próprios Stories e a espera pelo Mural da turma.",
@@ -247,7 +249,7 @@ await suite(
     });
 
     await p.reload({ waitUntil: "domcontentloaded" });
-    await q().locator("text=/Publicado! Aguardando o professor/i").waitFor({ timeout: 40_000 });
+    await q().locator("text=/Publicado! Aguardando o professor/i").first().waitFor({ timeout: 40_000 });
     r.exigir(true, "a F5 depois de publicar volta à espera, não ao feed");
 
     // ═══ ESTUDANTE 2: publica pela api, com escolhas DIVERGENTES ═════════
@@ -270,7 +272,7 @@ await suite(
     // ═══ PROFESSORA libera o Mural ═══════════════════════════════════════
     await prof.reload({ waitUntil: "domcontentloaded" });
     await apertar(prof, "mural");
-    await q().locator("text=/Mural de Stories da Turma/i").waitFor({ timeout: 30_000 });
+    await q().getByRole("heading", { name: /Mural de Stories da Turma/i }).first().waitFor({ timeout: 30_000 });
     await q().locator(`text=Publicação de ${PRIMEIRO_NOME_DO_SEGUNDO}`).waitFor({ timeout: 15_000 });
     r.exigir(
       (await q().locator("text=/Ficha Técnica/i").count()) === 0,
@@ -289,7 +291,7 @@ await suite(
     const verDetalhes = q().getByRole("button", { name: /Ver detalhes da postagem/i });
     await verDetalhes.waitFor({ timeout: 30_000 });
     await verDetalhes.click();
-    await q().locator("text=/Ficha Técnica da Curadoria/i").waitFor({ timeout: 15_000 });
+    await q().locator("text=/Ficha Técnica da Curadoria/i").first().waitFor({ timeout: 15_000 });
     await r.registrar(p, "ficha-tecnica", {
       titulo: "A ficha técnica acende",
       mostra: "A fonte ouvida e o ângulo de cada post, e o equilíbrio editorial das duas seleções.",
@@ -320,7 +322,7 @@ await suite(
     await q().getByRole("button", { name: /Ir para a Reflexão/i }).click({ timeout: 45_000 });
 
     // ═══ REFLEXÃO (escola) e as ENQUETES (Amara) ═════════════════════════
-    await q().locator("text=/Reflexão Individual/i").waitFor({ timeout: 20_000 });
+    await q().locator("text=/Reflexão Individual/i").first().waitFor({ timeout: 20_000 });
     const reflexao = q().getByRole("textbox").first();
     await reflexao.click();
     await reflexao.pressSequentially(REFLEXAO);
@@ -332,7 +334,7 @@ await suite(
         "turma, nunca ao colega, nunca à gestão.",
     });
     await q().getByRole("button", { name: /Enviar Reflexão ao Professor/i }).click();
-    await q().locator("text=/Pronto! Sua resposta foi enviada/i").waitFor({ timeout: 20_000 });
+    await q().locator("text=/Pronto! Sua resposta foi enviada/i").first().waitFor({ timeout: 20_000 });
     await q().getByRole("button", { name: /^Continuar/i }).click();
 
     /* As alternativas vêm EMBARALHADAS a cada leitura: casa-se por texto. */
@@ -357,7 +359,7 @@ await suite(
     const fechar = q().getByRole("button", { name: /Fechar conversa/i });
     await fechar.waitFor({ timeout: 30_000 });
     await fechar.click();
-    await q().locator("text=/Missão concluída!/").waitFor({ timeout: 20_000 });
+    await q().locator("text=/Missão concluída!/").first().waitFor({ timeout: 20_000 });
     await r.registrar(p, "concluida", {
       titulo: "Missão concluída",
       mostra: "O fim, na voz da escola.",
