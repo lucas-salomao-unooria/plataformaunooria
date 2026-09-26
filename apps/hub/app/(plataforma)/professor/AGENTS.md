@@ -45,7 +45,7 @@ sintoma de que a ficha não está dando conta** — o lugar de resolver é lá.
 
 **A ficha abre NA TURMA, e isso é o ponto.** O despachante
 (`[ano]/[unidade]/page.tsx`) lê `?turmaId=`, resolve a turma com
-`turmaDaConducao` e a repassa aos sete corpos; a Vila do Lume faz o mesmo na
+`turmaDaConducao` e a repassa aos oito corpos; a Vila do Lume faz o mesmo na
 rota própria. Com turma: a faixa de contexto diz qual é, `comTurma()` repõe o
 parâmetro nos links de dentro (resultados, guia da Vila, nova atividade) e a
 lista de atividades do Instanooria vem filtrada pela api (`?turmaId=`), não por
@@ -59,7 +59,7 @@ continuam oferecendo o próprio seletor.
 ficha não tem como nomear na tela uma turma que não é dele.
 
 **A faixa de contexto é do DESPACHANTE, não dos corpos** — mesma razão da trilha
-(ADR-77) e do `EscopoDaEscola` (ADR-85): são sete corpos, e sete cópias
+(ADR-77) e do `EscopoDaEscola` (ADR-85): são oito corpos, e oito cópias
 divergem.
 
 `/exp/[expId]` confere a liberação ANTES de montar o embed e responde 404 sem
@@ -173,12 +173,11 @@ rodada a rodada. Tipos e regras puras em `lib/evidencias.ts`; leituras em
 `lib/evidencias-servidor.ts`; confirmar e ajustar pelo BFF (`evidencias`). Quem
 decide nível, cópia e o que conta é a api (`apps/api/src/evidencias/`).
 
-- **O painel mora na tela da ATIVIDADE** (`atividades/[id]`, depois da revisão):
-  hoje só o Instanooria tem atividade. Atividade sem turma (anterior à coluna)
-  não tem painel — a evidência é por turma.
-- **Invisível sem ficha, de propósito**: `temFicha: false` não desenha nada, e
-  hoje NENHUMA missão tem ficha. Acende sozinho quando a primeira publicar a
-  dela; "não aparece" não é defeito — confira `temFicha` antes.
+- **O painel mora onde a ATIVIDADE mora**: na tela dela no Instanooria
+  (`atividades/[id]`) e nos resultados da A Seleção, onde a atividade é a
+  COBERTURA (`?cobertura=`; sem ele, a em andamento). Sem turma, sem painel.
+- **Invisível sem ficha, de propósito**: `temFicha: false` não desenha nada. A
+  A Seleção é a primeira com ficha; nas outras, "não aparece" não é defeito.
 - **Ausência é "Não avaliado", nunca "Não atingiu".** A cópia da aula projetada
   chega "a revisar" e só conta depois de "Confirmar para a turma".
 - **O perfil** é `turmas/[id]/estudantes/[estudanteId]`, pelo NOME na aba
@@ -192,4 +191,17 @@ decide nível, cópia e o que conta é a api (`apps/api/src/evidencias/`).
   N", e a linha é uma criança (lacuna a pedir no `storybook-unooria`).
 
 Suíte: `professor/11-perfil-do-aluno` (4B, até o perfil vazio). O painel ganha
-passo quando a primeira missão tiver ficha.
+passo com a suíte da A Seleção.
+
+## A Seleção (exp07ef1b)
+
+A aula inteira mora em `resultados/resultados-a-selecao.tsx`, na ordem da aula:
+preparo, painel ao vivo, folha por computador, zerar e habilidades.
+
+- **Aprovar = atividade nova** (rodada 1), e só acende quando algo mudou;
+  **zerar = rodada nova**, sem apagar nada.
+- **UM botão**, com o rótulo de `proximaEtapa` da api; não volta.
+- **O painel consulta só `…/painel`** a cada 5 s, não `router.refresh()`: a
+  página lê cinco rotas.
+- **As imagens são um laço do cliente** (`continuarGerando`): 2 por chamada,
+  para em `completo` ou quando uma volta não gera nada.

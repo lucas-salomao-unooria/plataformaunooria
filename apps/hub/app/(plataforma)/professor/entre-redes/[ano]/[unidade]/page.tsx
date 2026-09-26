@@ -4,6 +4,7 @@ import { EmptyState, FeedbackAlert } from "@edu/ui/ds";
 import { EquipesDaFicha } from "@/components/equipes/equipes-da-ficha";
 import { LinkButton } from "@/components/link-button";
 import {
+  MISSAO_A_SELECAO,
   MISSAO_FOTO_CONTA,
   MISSAO_MANIFESTO_IA,
   MISSAO_QUEM_MANDOU_ISSO,
@@ -15,6 +16,7 @@ import {
 } from "@/lib/entre-redes/catalogo";
 import { turmaDaConducao } from "@/lib/turmas";
 
+import { MissaoASelecao } from "./missao-a-selecao";
 import { MissaoFotoConta } from "./missao-foto-conta";
 import { MissaoInstanooria } from "./missao-instanooria";
 import { MissaoManifestoIa } from "./missao-manifesto-ia";
@@ -78,7 +80,7 @@ export default async function MissaoPage({
 
   /**
    * A faixa de contexto mora AQUI, e não nos corpos, pela mesma razão da trilha
-   * e do `EscopoDaEscola`: são sete corpos, e sete cópias divergem. Ela existe
+   * e do `EscopoDaEscola`: são oito corpos, e oito cópias divergem. Ela existe
    * porque a ficha aberta pela sala e a aberta pela trilha são a MESMA tela com
    * comportamentos diferentes por dentro (a lista de atividades filtra, os
    * resultados já vêm com a turma) — sem dizer isso na cara, o professor não
@@ -118,6 +120,9 @@ export default async function MissaoPage({
   }
   if (missao.expId === MISSAO_QUEM_MANDOU_ISSO.expId) {
     return corpo(<MissaoQuemMandouIsso ano={ano} missao={comFicha} turma={turma} />);
+  }
+  if (missao.expId === MISSAO_A_SELECAO.expId) {
+    return corpo(<MissaoASelecao ano={ano} missao={comFicha} turma={turma} />);
   }
   /* FALLBACK = INSTANOORIA, e é por isso que ele é perigoso: uma missão
      publicada sem ramo aqui não quebra — ela mostra a tela de OUTRA missão,

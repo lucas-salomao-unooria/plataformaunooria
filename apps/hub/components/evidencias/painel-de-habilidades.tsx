@@ -47,9 +47,10 @@ const SEM_REDE = "Não deu para falar com a plataforma. Confira a conexão e ten
  * EVIDÊNCIA PEDAGÓGICA (E14): as habilidades da BNCC que cada estudante
  * demonstrou numa atividade, rodada a rodada.
  *
- * **Missão sem ficha pedagógica não desenha nada** (`temFicha: false`). Hoje
- * nenhuma missão tem ficha, então este bloco está invisível em toda tela — e
- * acende sozinho quando a primeira missão publicar a dela, sem mudar o hub.
+ * **Missão sem ficha pedagógica não desenha nada** (`temFicha: false`). A
+ * primeira com ficha é A Seleção (exp07ef1b), montada nos resultados dela; nas
+ * outras o bloco segue invisível e acende sozinho quando a ficha publicar, sem
+ * mudar o hub.
  *
  * Não há ranking: a ordem é a alfabética (a equipe junta), nenhuma coluna
  * ordena, e nada soma níveis. O estudante nunca vê esta tela.
