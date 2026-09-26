@@ -1141,7 +1141,8 @@ O \enquote{Então} com \cd{btrim} & \cd{char\_length(btrim(acao\_entao)) BETWEEN
   ouvida, ângulo) em \cd{JSONB}, as URLs da mídia gerada e a \cd{origem}
   (\cd{padrao} $|$ \cd{ia}). Um índice único parcial deixa só uma cobertura
   \cd{ativa} por turma; \emph{CHECK} cobra os 12 posts e o \cd{aprovada\_por} da
-  cobertura de IA.\\
+  cobertura de IA. \cd{podcast} guarda as três falas do Bloco 2 do podcast de
+  recapitulação no tema dela (nulo = as do roteiro aprovado, \adrr{ADR-119}).\\
 \zebra \cd{exp07ef1b\_gates\_turma} & O relógio da turma: \cd{exploracao} $|$
   \cd{mural} $|$ \cd{fichas} $|$ \cd{explicacao}, mais a cobertura e a
   \textbf{rodada}. Zerar incrementa a rodada, não apaga.\\
@@ -1489,6 +1490,10 @@ decisão \emph{futura}, com DPA e \emph{k}-anonimato --- e não sai de um
 \zebra \arq{20260926140000\_\B{}exp07ef1b\_\B{}a\_\B{}selecao} & As quatro tabelas
   da A Seleção (\adrr{ADR-115}), com \cd{escola\_id NOT NULL}, RLS \cd{FORCE},
   \emph{policy} por escola e \emph{grant} guardado para \cd{app\_runtime}.\\
+\arq{20260927090000\_\B{}exp07ef1b\_\B{}podcast} & A coluna \cd{podcast} em
+  \cd{exp07ef1b\_coberturas} (\adrr{ADR-119}), \cd{JSONB} nulo com \emph{CHECK}
+  de objeto; sem \emph{backfill}, porque nulo é a leitura das falas aprovadas, e
+  sem RLS nova --- a tabela já tem a dela.\\
 \bottomrule
 \end{tabularx}
 

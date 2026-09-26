@@ -42548,6 +42548,26 @@
                             "prontas"
                           ],
                           "additionalProperties": false
+                        },
+                        "podcast": {
+                          "type": "object",
+                          "properties": {
+                            "institucional": {
+                              "type": "string"
+                            },
+                            "comunitario": {
+                              "type": "string"
+                            },
+                            "estatistico": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "institucional",
+                            "comunitario",
+                            "estatistico"
+                          ],
+                          "additionalProperties": false
                         }
                       },
                       "required": [
@@ -42558,7 +42578,8 @@
                         "rodada",
                         "etapa",
                         "posts",
-                        "midia"
+                        "midia",
+                        "podcast"
                       ],
                       "additionalProperties": false
                     },
@@ -42850,6 +42871,26 @@
                       },
                       "minItems": 12,
                       "maxItems": 12
+                    },
+                    "podcast": {
+                      "type": "object",
+                      "properties": {
+                        "institucional": {
+                          "type": "string"
+                        },
+                        "comunitario": {
+                          "type": "string"
+                        },
+                        "estatistico": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "institucional",
+                        "comunitario",
+                        "estatistico"
+                      ],
+                      "additionalProperties": false
                     }
                   },
                   "required": [
@@ -42857,7 +42898,8 @@
                     "foco",
                     "origem",
                     "usouIa",
-                    "posts"
+                    "posts",
+                    "podcast"
                   ],
                   "additionalProperties": false
                 }
@@ -42869,7 +42911,7 @@
           "a-selecao"
         ],
         "summary": "Gera um RASCUNHO dos 12 posts com IA, sobre o tema da professora (pré-aula).",
-        "description": "**Não persiste nada**: o que volta é rascunho para a tela editar, e publicar é o `POST homologar`.\n\nSem saldo de IA, com o provedor fora do ar ou com a saída fora do molde, volta o BANCO CURADO com `usouIa: false` e `origem: \"padrao\"` — e a tela diz que o tema padrão foi carregado, em vez de fingir que a IA respondeu.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Quota do PERFIL do professor (ADR-105): `temSaldo` antes, e o que o vendor cobrou é debitado por tentativa, inclusive as recusadas.\n- O lote gerado é recusado — e regerado uma vez — fora do 4:4:4, com legenda fora de 20 a 45 palavras ou com termo que antecipe a revelação (\"viés\", \"enquadramento\", \"lado da história\"…).\n- Os tetos de `tema` (5 a 100) e `foco` (até 100) são a primeira barreira contra injeção de instrução no gerador.",
+        "description": "**Não persiste nada**: o que volta é rascunho para a tela editar, e publicar é o `POST homologar`.\n\nSem saldo de IA, com o provedor fora do ar ou com a saída fora do molde, volta o BANCO CURADO com `usouIa: false` e `origem: \"padrao\"` — e a tela diz que o tema padrão foi carregado, em vez de fingir que a IA respondeu.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Quota do PERFIL do professor (ADR-105): `temSaldo` antes, e o que o vendor cobrou é debitado por tentativa, inclusive as recusadas.\n- O lote gerado é recusado — e regerado uma vez — fora do 4:4:4, com legenda fora de 20 a 45 palavras ou com termo que antecipe a revelação (\"viés\", \"enquadramento\", \"lado da história\"…).\n- `podcast` traz as três falas do Bloco 2 do podcast de recapitulação — o que a Folha Oficial, a Voz Coletiva e a Métrica Urbana mostraram NESTE tema —, escritas junto com o lote e sob a mesma régua (12 a 60 palavras, até 400 bytes, sem link, e-mail nem @). No banco curado, são as do sheet.\n- Os tetos de `tema` (5 a 100) e `foco` (até 100) são a primeira barreira contra injeção de instrução no gerador.",
         "security": [
           {
             "token-da-plataforma": []
@@ -43136,6 +43178,26 @@
                       },
                       "minItems": 12,
                       "maxItems": 12
+                    },
+                    "podcast": {
+                      "type": "object",
+                      "properties": {
+                        "institucional": {
+                          "type": "string"
+                        },
+                        "comunitario": {
+                          "type": "string"
+                        },
+                        "estatistico": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "institucional",
+                        "comunitario",
+                        "estatistico"
+                      ],
+                      "additionalProperties": false
                     }
                   },
                   "required": [
@@ -43145,7 +43207,8 @@
                     "origem",
                     "rodada",
                     "etapa",
-                    "posts"
+                    "posts",
+                    "podcast"
                   ],
                   "additionalProperties": false
                 }
@@ -43157,7 +43220,7 @@
           "a-selecao"
         ],
         "summary": "\"Aprovar Cobertura e Abrir Turma\" — a curadoria humana (ADR-66/67).",
-        "description": "Grava os 12 posts como a professora os deixou e os torna a ATIVIDADE em andamento. **Tema novo é atividade nova**: a cobertura anterior é desativada (fica, com as sessões dela) e o gate volta à rodada 1, na exploração.\n\nO corpo carrega os posts INTEIROS porque curadoria é editar: a professora pode reescrever qualquer legenda antes de aprovar.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- O lote é recusado com **400** `lote-invalido` e a LISTA de problemas em `erros`, em frases para a professora: 12 posts; ids de `post_a_1` a `post_c_4`, cada um uma vez; bloco `a` = `@folhaoficial_`/institucional, `b` = `@voz_coletiva`/comunitário, `c` = `@metrica_urbana`/estatístico (4:4:4); legenda de 20 a 45 palavras; nenhum termo que antecipe a revelação na legenda, na descrição da imagem ou nos comentários. (`.superRefine()` some do OpenAPI; daí esta nota.)\n- As imagens de post com a MESMA descrição da cobertura anterior são herdadas — o arquivo no bucket é o hash da descrição.\n- Homologar no meio da aula recomeça a aula: a etapa volta à exploração.",
+        "description": "Grava os 12 posts como a professora os deixou e os torna a ATIVIDADE em andamento. **Tema novo é atividade nova**: a cobertura anterior é desativada (fica, com as sessões dela) e o gate volta à rodada 1, na exploração.\n\nO corpo carrega os posts INTEIROS porque curadoria é editar: a professora pode reescrever qualquer legenda antes de aprovar.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- O lote é recusado com **400** `lote-invalido` e a LISTA de problemas em `erros`, em frases para a professora: 12 posts; ids de `post_a_1` a `post_c_4`, cada um uma vez; bloco `a` = `@folhaoficial_`/institucional, `b` = `@voz_coletiva`/comunitário, `c` = `@metrica_urbana`/estatístico (4:4:4); legenda de 20 a 45 palavras; nenhum termo que antecipe a revelação na legenda, na descrição da imagem ou nos comentários. (`.superRefine()` some do OpenAPI; daí esta nota.)\n- As imagens de post com a MESMA descrição da cobertura anterior são herdadas — o arquivo no bucket é o hash da descrição.\n- `podcast` é obrigatório: as três falas do Bloco 2 que a professora revisou (no tema curado, as do sheet). Fora de 12 a 60 palavras, acima de 400 bytes, ou com link, e-mail ou @, o 400 `lote-invalido` diz qual fala.\n- Homologar no meio da aula recomeça a aula: a etapa volta à exploração.",
         "security": [
           {
             "token-da-plataforma": []
@@ -43358,12 +43421,39 @@
                     },
                     "minItems": 12,
                     "maxItems": 12
+                  },
+                  "podcast": {
+                    "type": "object",
+                    "properties": {
+                      "institucional": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 600
+                      },
+                      "comunitario": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 600
+                      },
+                      "estatistico": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 600
+                      }
+                    },
+                    "required": [
+                      "institucional",
+                      "comunitario",
+                      "estatistico"
+                    ],
+                    "additionalProperties": false
                   }
                 },
                 "required": [
                   "tema",
                   "origem",
-                  "posts"
+                  "posts",
+                  "podcast"
                 ],
                 "additionalProperties": false
               }
@@ -43489,6 +43579,322 @@
         ],
         "summary": "Gera as próximas imagens dos posts da cobertura em andamento — incremental.",
         "description": "Doze imagens não cabem nos 30 s que o BFF dá a uma chamada: cada chamada gera ATÉ DUAS imagens novas, grava as URLs na cobertura e devolve o progresso. **Repita enquanto `completo` for `false` e a chamada anterior tiver gerado alguma** — `falharam` diz o que não saiu, e esses posts seguem com o card da descrição.\n\nIdempotente: o que já tem URL é pulado, e a imagem de mesma descrição que já está no bucket entra sem custo. Os posts de métricas do banco curado não pedem imagem: a experiência desenha o gráfico.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Quota do professor, com custo ESTIMADO por imagem (a geração não devolve contagem de tokens). Sem saldo responde **429** `sem-saldo-de-ia` — e a missão roda igual, com os cards.\n- Duas chamadas simultâneas para a mesma cobertura recebem o mesmo trabalho (lock de processo).",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/a-selecao/turmas/{turmaId}/podcast": {
+      "get": {
+        "operationId": "ASelecaoTurmasController_podcastDaTurma",
+        "parameters": [
+          {
+            "name": "turmaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "coberturaId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "tema": {
+                      "type": "string"
+                    },
+                    "roteiro": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "bloco": {
+                            "type": "string",
+                            "enum": [
+                              "abertura",
+                              "recapitulacao",
+                              "revelacao",
+                              "provocacao",
+                              "encerramento"
+                            ]
+                          },
+                          "titulo": {
+                            "type": "string"
+                          },
+                          "falas": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "falante": {
+                                  "type": "string",
+                                  "enum": [
+                                    "Lucas",
+                                    "Clara"
+                                  ]
+                                },
+                                "texto": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "falante",
+                                "texto"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "minItems": 1
+                          }
+                        },
+                        "required": [
+                          "bloco",
+                          "titulo",
+                          "falas"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "trechos": {
+                      "type": "object",
+                      "properties": {
+                        "total": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "prontos": {
+                          "type": "integer",
+                          "minimum": 0
+                        }
+                      },
+                      "required": [
+                        "total",
+                        "prontos"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "url": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "coberturaId",
+                    "tema",
+                    "roteiro",
+                    "trechos",
+                    "url"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "a-selecao"
+        ],
+        "summary": "O podcast de recapitulação da cobertura em andamento: o roteiro e o estado do áudio.",
+        "description": "O podcast é do PROFESSOR, para tocar à turma depois da aula se quiser. `roteiro` é o texto inteiro (a transcrição, que fica na tela junto do player): os cinco blocos do sheet aprovado, com as três falas do Bloco 2 que a cobertura trouxe. `url` é o episódio, quando os cinco trechos já foram sintetizados e emendados; `null` enquanto não.\n\n**Não gera nada** — é o `POST gerar-podcast`.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/a-selecao/turmas/{turmaId}/gerar-podcast": {
+      "post": {
+        "operationId": "ASelecaoTurmasController_gerarPodcast",
+        "parameters": [
+          {
+            "name": "turmaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "coberturaId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "tema": {
+                      "type": "string"
+                    },
+                    "roteiro": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "bloco": {
+                            "type": "string",
+                            "enum": [
+                              "abertura",
+                              "recapitulacao",
+                              "revelacao",
+                              "provocacao",
+                              "encerramento"
+                            ]
+                          },
+                          "titulo": {
+                            "type": "string"
+                          },
+                          "falas": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "falante": {
+                                  "type": "string",
+                                  "enum": [
+                                    "Lucas",
+                                    "Clara"
+                                  ]
+                                },
+                                "texto": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "falante",
+                                "texto"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "minItems": 1
+                          }
+                        },
+                        "required": [
+                          "bloco",
+                          "titulo",
+                          "falas"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "trechos": {
+                      "type": "object",
+                      "properties": {
+                        "total": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "prontos": {
+                          "type": "integer",
+                          "minimum": 0
+                        }
+                      },
+                      "required": [
+                        "total",
+                        "prontos"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "url": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "gerado": {
+                      "type": "string",
+                      "enum": [
+                        "abertura",
+                        "recapitulacao",
+                        "revelacao",
+                        "provocacao",
+                        "encerramento"
+                      ],
+                      "nullable": true
+                    },
+                    "falhou": {
+                      "type": "string",
+                      "enum": [
+                        "abertura",
+                        "recapitulacao",
+                        "revelacao",
+                        "provocacao",
+                        "encerramento"
+                      ],
+                      "nullable": true
+                    },
+                    "completo": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "coberturaId",
+                    "tema",
+                    "roteiro",
+                    "trechos",
+                    "url",
+                    "gerado",
+                    "falhou",
+                    "completo"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "a-selecao"
+        ],
+        "summary": "Sintetiza o próximo trecho do podcast e, com os cinco prontos, emenda o episódio — incremental.",
+        "description": "Os cinco blocos não cabem numa chamada de 30 s: cada chamada sintetiza UM trecho (a voz é o TTS do Gemini pelo provider da api, `generateSpeech`, Lucas e Clara numa chamada de diálogo) e, quando os cinco existem, emenda o episódio num MP3 só. **Repita enquanto `completo` for `false` e a chamada anterior tiver gerado um trecho** — `falhou` diz qual bloco não saiu, e a transcrição continua na tela.\n\nIdempotente: o trecho que já está no bucket é pulado. O nome de cada trecho é o hash do texto e do pedido de voz, então os blocos fixos saem UMA vez por contrato e só o Bloco 2 de um tema da IA custa síntese nova.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Quota do professor, com custo ESTIMADO por trecho (a síntese é cobrada por caractere e não devolve contagem). Sem saldo responde **429** `sem-saldo-de-ia`.\n- Duas chamadas simultâneas para o mesmo episódio recebem o mesmo trabalho (lock de processo).",
         "security": [
           {
             "token-da-plataforma": []
