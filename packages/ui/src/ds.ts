@@ -14,6 +14,8 @@
  */
 export {
   AlertBox,
+  // 0.2.7: o player de áudio longo (o podcast de recapitulação da exp07ef1b, na aula do professor).
+  AudioPlayer,
   Avatar,
   AvatarGroup,
   Badge,
@@ -138,6 +140,7 @@ export { tokens } from '@unooria/design-system';
 
 export type {
   AlertBoxProps,
+  AudioPlayerProps,
   HeaderMenuItem,
   HeaderMenuProps,
   AvatarProps,

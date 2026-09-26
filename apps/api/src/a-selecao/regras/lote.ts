@@ -13,6 +13,7 @@ import {
   type PostDaCobertura,
 } from "../catalogo";
 import { termosProibidosEm } from "../invariantes";
+import { problemasDasFalasDoTema, type FalasDoTema } from "../podcast";
 
 /**
  * As regras do LOTE de uma cobertura — os 12 posts que a turma lê no feed —,
@@ -127,21 +128,34 @@ export const PostDaIaSchema = z.object({
 export const LoteDaIaSchema = z.object({
   tema_resolvido: z.string().min(5).max(100),
   posts: z.array(PostDaIaSchema).length(TOTAL_DE_POSTS),
+  /** As três falas do Bloco 2 do podcast, sobre o que cada veículo mostrou (`podcast.ts`). */
+  podcast: z.object({
+    institucional: z.string().max(600),
+    comunitario: z.string().max(600),
+    estatistico: z.string().max(600),
+  }),
 });
 
 export type LoteDaIa = z.infer<typeof LoteDaIaSchema>;
 
 /**
  * Converte o lote da IA no post interno e o CONFERE — lançar aqui faz a
- * tentativa ser regerada (contrato do `generateJson`).
+ * tentativa ser regerada (contrato do `generateJson`). As três falas do
+ * podcast passam pela mesma régua da homologação (`podcast.ts`): fora dela,
+ * a tentativa inteira é regerada, como um post torto.
  *
  * `tag_enquadramento` vira a `tagAngulo`: é o "Ângulo da imagem" da ficha
  * técnica, e o prompt pede ao modelo exatamente isso (o que a foto enquadra),
  * e não o rótulo da lente — "Foco Institucional" na ficha seria dizer a
  * resposta com outras palavras.
  */
-export function postsDaIa(bruto: unknown): { tema: string; posts: PostDaCobertura[] } {
+export function postsDaIa(bruto: unknown): { tema: string; posts: PostDaCobertura[]; podcast: FalasDoTema } {
   const lote = LoteDaIaSchema.parse(bruto);
+  const podcast: FalasDoTema = {
+    institucional: lote.podcast.institucional.trim(),
+    comunitario: lote.podcast.comunitario.trim(),
+    estatistico: lote.podcast.estatistico.trim(),
+  };
   const posts: PostDaCobertura[] = lote.posts.map((p) => ({
     id: p.id as IdDePost,
     perfil: p.perfil,
@@ -164,6 +178,7 @@ export function postsDaIa(bruto: unknown): { tema: string; posts: PostDaCobertur
       problemas.push(`O post ${post.id} veio sem descrição de imagem ou sem tag.`);
     }
   }
+  problemas.push(...problemasDasFalasDoTema(podcast));
   if (problemas.length > 0) throw new Error(problemas.join(" "));
-  return { tema: lote.tema_resolvido.trim(), posts: emOrdemCanonica(posts) };
+  return { tema: lote.tema_resolvido.trim(), posts: emOrdemCanonica(posts), podcast };
 }

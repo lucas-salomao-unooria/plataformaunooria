@@ -4,6 +4,7 @@ import {
   ButtonInsta,
   ConfirmDialog,
   IconInsta,
+  InlineHint,
   MediaGrid,
   StoryComposer,
   TopBar,
@@ -113,9 +114,9 @@ export function Salvos({
         trailing={<BadgeInsta variant="neutral">{E3.statusSelecao(selecao.length)}</BadgeInsta>}
       />
       {aviso && (
-        <p className={`aviso-da-poda${situacao.tipo === "excesso" || recusada ? " aviso-da-poda--atrito" : ""}`} role="status">
+        <InlineHint tone={situacao.tipo === "excesso" || recusada ? "friction" : "neutral"} announce>
           {aviso}
-        </p>
+        </InlineHint>
       )}
       <div className="rolagem">
         {itens.length > 0 ? (

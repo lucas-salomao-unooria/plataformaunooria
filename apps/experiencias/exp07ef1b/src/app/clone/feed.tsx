@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { BadgeInsta, FloatingButton, PostCard, TopBar } from "@edu/ui/ds-insta";
+import { BadgeInsta, FloatingButton, GestureHint, InlineHint, PostCard, TopBar } from "@edu/ui/ds-insta";
 import { dicaDoFeed, nomeDaConta, SALVOS_PARA_A_PILULA, SEGUNDOS_ATE_A_DEMONSTRACAO, SEGUNDOS_ATE_A_DICA } from "../../lib/regras";
 import { telemetria } from "../../lib/telemetria";
 import { CONTAS, E2 } from "../../lib/textos";
@@ -116,9 +116,7 @@ export function Feed({
         }
       />
       {dica && (
-        <p className="dica-do-feed" role="status">
-          {dica === "inatividade" ? E2.dicaInatividade : E2.dicaCurtidas}
-        </p>
+        <InlineHint announce>{dica === "inatividade" ? E2.dicaInatividade : E2.dicaCurtidas}</InlineHint>
       )}
       <div className="rolagem rolagem--sem-barra" onScroll={aoRolar} onWheel={aoRolar} onTouchMove={aoRolar}>
         {posts.map((post) => {
@@ -146,7 +144,7 @@ export function Feed({
           );
         })}
       </div>
-      {demonstrando && <span className="demonstracao-de-rolagem" aria-hidden="true" />}
+      {demonstrando && <GestureHint gesture="swipe-up" />}
       <FloatingButton
         icon="bookmarkFilled"
         placement="bottom"

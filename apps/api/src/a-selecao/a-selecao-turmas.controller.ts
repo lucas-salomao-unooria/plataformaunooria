@@ -29,13 +29,16 @@ import {
   HomologacaoSchema,
   PainelSchema,
   ParametrosDoPreparoSchema,
+  PodcastSchema,
   ProgressoDaMidiaSchema,
+  ProgressoDoPodcastSchema,
   RascunhoSchema,
   TurmasSchema,
   ZerarTurmaSchema,
 } from "./contrato-de-rotas";
 import { erroDeJogo } from "./erros";
 import { MidiaDaExp07ef1bService } from "./midia.service";
+import { PodcastDaExp07ef1bService } from "./podcast.service";
 import { PreparoDaExp07ef1bService } from "./preparo.service";
 
 /**
@@ -96,6 +99,7 @@ export class ASelecaoTurmasController {
     private readonly missao: ASelecaoService,
     private readonly preparo: PreparoDaExp07ef1bService,
     private readonly midia: MidiaDaExp07ef1bService,
+    private readonly podcast: PodcastDaExp07ef1bService,
   ) {}
 
   @Get()
@@ -201,6 +205,7 @@ export class ASelecaoTurmasController {
     notas: [
       "Quota do PERFIL do professor (ADR-105): `temSaldo` antes, e o que o vendor cobrou é debitado por tentativa, inclusive as recusadas.",
       "O lote gerado é recusado — e regerado uma vez — fora do 4:4:4, com legenda fora de 20 a 45 palavras ou com termo que antecipe a revelação (\"viés\", \"enquadramento\", \"lado da história\"…).",
+      "`podcast` traz as três falas do Bloco 2 do podcast de recapitulação — o que a Folha Oficial, a Voz Coletiva e a Métrica Urbana mostraram NESTE tema —, escritas junto com o lote e sob a mesma régua (12 a 60 palavras, até 400 bytes, sem link, e-mail nem @). No banco curado, são as do sheet.",
       "Os tetos de `tema` (5 a 100) e `foco` (até 100) são a primeira barreira contra injeção de instrução no gerador.",
     ],
   })
@@ -226,6 +231,7 @@ export class ASelecaoTurmasController {
       origem: usouIa ? ("ia" as const) : ("padrao" as const),
       usouIa,
       posts: rascunho.posts,
+      podcast: rascunho.podcast,
     };
   }
 
@@ -242,6 +248,7 @@ export class ASelecaoTurmasController {
     notas: [
       "O lote é recusado com **400** `lote-invalido` e a LISTA de problemas em `erros`, em frases para a professora: 12 posts; ids de `post_a_1` a `post_c_4`, cada um uma vez; bloco `a` = `@folhaoficial_`/institucional, `b` = `@voz_coletiva`/comunitário, `c` = `@metrica_urbana`/estatístico (4:4:4); legenda de 20 a 45 palavras; nenhum termo que antecipe a revelação na legenda, na descrição da imagem ou nos comentários. (`.superRefine()` some do OpenAPI; daí esta nota.)",
       "As imagens de post com a MESMA descrição da cobertura anterior são herdadas — o arquivo no bucket é o hash da descrição.",
+      "`podcast` é obrigatório: as três falas do Bloco 2 que a professora revisou (no tema curado, as do sheet). Fora de 12 a 60 palavras, acima de 400 bytes, ou com link, e-mail ou @, o 400 `lote-invalido` diz qual fala.",
       "Homologar no meio da aula recomeça a aula: a etapa volta à exploração.",
     ],
   })
@@ -283,6 +290,53 @@ export class ASelecaoTurmasController {
     const escolaId = escolaAlvo(req.auth, escolaIdPedida);
     limitar(req.auth.usuarioId, "gerar-midia", 20);
     return this.midia.gerar(
+      escolaId,
+      turmaOu400(turmaId),
+      professorDoToken(req.auth),
+      req.auth.usuarioId,
+      req.auth.perfil,
+    );
+  }
+
+  @Get(":turmaId/podcast")
+  @Contrato({
+    resumo: "O podcast de recapitulação da cobertura em andamento: o roteiro e o estado do áudio.",
+    descricao:
+      "O podcast é do PROFESSOR, para tocar à turma depois da aula se quiser. `roteiro` é o texto inteiro (a transcrição, que fica na tela junto do player): os cinco blocos do sheet aprovado, com as três falas do Bloco 2 que a cobertura trouxe. `url` é o episódio, quando os cinco trechos já foram sintetizados e emendados; `null` enquanto não.\n\n**Não gera nada** — é o `POST gerar-podcast`.",
+    params: PARAMS,
+    query: QUERY,
+    resposta: PodcastSchema,
+  })
+  podcastDaTurma(
+    @Param("turmaId") turmaId: string,
+    @Query("escolaId") escolaIdPedida: string | undefined,
+    @Req() req: Autenticado,
+  ) {
+    return this.podcast.estado(escolaAlvo(req.auth, escolaIdPedida), turmaOu400(turmaId), professorDoToken(req.auth));
+  }
+
+  @Post(":turmaId/gerar-podcast")
+  @HttpCode(200)
+  @Contrato({
+    resumo: "Sintetiza o próximo trecho do podcast e, com os cinco prontos, emenda o episódio — incremental.",
+    descricao:
+      "Os cinco blocos não cabem numa chamada de 30 s: cada chamada sintetiza UM trecho (a voz é o TTS do Gemini pelo provider da api, `generateSpeech`, Lucas e Clara numa chamada de diálogo) e, quando os cinco existem, emenda o episódio num MP3 só. **Repita enquanto `completo` for `false` e a chamada anterior tiver gerado um trecho** — `falhou` diz qual bloco não saiu, e a transcrição continua na tela.\n\nIdempotente: o trecho que já está no bucket é pulado. O nome de cada trecho é o hash do texto e do pedido de voz, então os blocos fixos saem UMA vez por contrato e só o Bloco 2 de um tema da IA custa síntese nova.",
+    params: PARAMS,
+    query: QUERY,
+    resposta: ProgressoDoPodcastSchema,
+    notas: [
+      "Quota do professor, com custo ESTIMADO por trecho (a síntese é cobrada por caractere e não devolve contagem). Sem saldo responde **429** `sem-saldo-de-ia`.",
+      "Duas chamadas simultâneas para o mesmo episódio recebem o mesmo trabalho (lock de processo).",
+    ],
+  })
+  gerarPodcast(
+    @Param("turmaId") turmaId: string,
+    @Query("escolaId") escolaIdPedida: string | undefined,
+    @Req() req: Autenticado,
+  ) {
+    const escolaId = escolaAlvo(req.auth, escolaIdPedida);
+    limitar(req.auth.usuarioId, "gerar-podcast", 20);
+    return this.podcast.gerar(
       escolaId,
       turmaOu400(turmaId),
       professorDoToken(req.auth),

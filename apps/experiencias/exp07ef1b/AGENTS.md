@@ -4,7 +4,7 @@ Complementa o `AGENTS.md` da raiz e o de `apps/experiencias`.
 
 | Manifesto | Dev | DS | api | e2e |
 |---|---|---|---|---|
-| `exp07ef1b` · 7EF · unidade 1 · `entre-redes` · `viewport` 375×812 · `permissoes: ["forms"]` · versão **1.0.0** (maior que a 0.1.5 do Eco, por causa do caminho no bucket — ADR-113) | `:5179`, hub `/exp/exp07ef1b` | `@edu/ui/ds-insta` (clone) + `@edu/ui/ds` (escola) | `apps/api/src/a-selecao` ↔ `/a-selecao/*`; enquetes em `/evidencias/exp07ef1b/perguntas/*` (E14) | `scripts/e2e/estudante/11-a-selecao.mjs` (dois estudantes + a professora) — **ainda não escrita** |
+| `exp07ef1b` · 7EF · unidade 1 · `entre-redes` · `viewport` 375×812 · `permissoes: ["forms"]` · versão **1.0.1** (a série começou na 1.0.0, maior que a 0.1.5 do Eco, por causa do caminho no bucket — ADR-113) | `:5179`, hub `/exp/exp07ef1b` | `@edu/ui/ds-insta` (clone) + `@edu/ui/ds` (escola) | `apps/api/src/a-selecao` ↔ `/a-selecao/*`; enquetes em `/evidencias/exp07ef1b/perguntas/*` (E14) | `scripts/e2e/estudante/11-a-selecao.mjs` (dois estudantes + a professora) |
 
 ## O passo manda na tela
 
@@ -17,8 +17,8 @@ LÊ o `passos.ts` da api e reprova divergência nas listas.
 | Passo | Tela | Quem fala | Componentes do DS |
 |---|---|---|---|
 | `desafio` | E1 — a DM da Amara | Amara (clone) | `DirectThread`, `MessageBubble`, `ButtonInsta` |
-| `feed` | E2 — o feed da cobertura | app | `TopBar`, `BadgeInsta`, `PostCard` (`.Header/.Media/.Actions/.Likes/.Caption/.Timestamp`), `FloatingButton`, `TabBar` |
-| `salvos` | E3 — a poda + E3-ALU-02 | app | `TopBar`, `ButtonInsta`+`IconInsta`, `BadgeInsta`, `MediaGrid` (`selectable`), `StoryComposer`, `ConfirmDialog` (`destructive`), `TabBar` |
+| `feed` | E2 — o feed da cobertura | app | `TopBar`, `BadgeInsta`, `InlineHint` (a dica), `GestureHint` (rolar), `PostCard` (`.Header/.Media/.Actions/.Likes/.Caption/.Timestamp`), `FloatingButton`, `TabBar` |
+| `salvos` | E3 — a poda + E3-ALU-02 | app | `TopBar`, `ButtonInsta`+`IconInsta`, `BadgeInsta`, `InlineHint` (o aviso da poda), `MediaGrid` (`selectable`), `StoryComposer`, `ConfirmDialog` (`destructive`), `TabBar` |
 | `publicado` | E3-SIS-01 — a espera | app | `StoryViewer` (a própria tríade, `footer` = a legenda) |
 | `mural` | E4-ALU-01 — o PICO | app | `SegmentedTabs`, `StoryViewer` (3 segmentos, `onNext`/`onPrev`, `footer`) |
 | `fichas` | E4-ALU-02 — a revelação | app | o mesmo + `BottomSheet` não modal (`maxHeight 45%`) com `BadgeInsta` — por `React.lazy` |
@@ -38,8 +38,10 @@ inclusive a revelação, que é a ficha técnica sobre o Story. A reflexão sai 
 clone porque a pergunta é sobre um jornal cobrindo OUTRA escola, e fazê-la dentro
 do Instagram a devolveria à ficção. As enquetes voltam ao clone (é a Amara quem
 pergunta, ordem do PO) e o fim volta à escola. Os avisos globais seguem a mesma
-regra (`app/avisos.tsx`): na tela da escola eles saem pelo `AlertBox`, com copy
-própria — a do sheet fala de "marcações de posts" e da "conta do grêmio".
+regra (`app/avisos.tsx`): no clone, a tarja de rede é o `SnackbarInsta` e a
+sessão é a `BottomSheet` modal; na tela da escola os dois saem pelo `AlertBox`,
+com copy própria — a do sheet fala de "marcações de posts" e da "conta do
+grêmio".
 
 ## O que o bundle NÃO sabe
 
@@ -65,14 +67,16 @@ find dist -type f -name '*.js' | xargs grep -l -F "Folha Oficial"          # só
 find dist -type f -name '*.js' | xargs grep -l -F "Ficha Técnica"          # só ficha-tecnica-*.js
 ```
 
-## Contagem em CODE POINTS, e o contador do DS que conta outra coisa
+## Contagem em CODE POINTS, dos dois lados
 
 A api conta legenda e reflexão em code points (`[...s].length`), depois de
 normalizar (a legenda sem quebra de linha, a reflexão aparada). A tela conta
 igual (`lib/regras.ts`), e é essa régua que acende ou apaga os botões — com
 emoji, `.length` diria o dobro. **O contador VISÍVEL da legenda é o do
-`StoryComposer`, que conta `.length`**: com emoji ele diverge da régua. O da
-reflexão é nosso (`showCounter={false}` no `TextArea`) e conta certo.
+`StoryComposer`, que desde o DS 0.2.7 também conta code points** (e corta o
+excesso na digitação, sem o `maxlength` nativo, que mede UTF-16). O da reflexão
+é nosso (`showCounter={false}` no `TextArea`): o do DS conta `.length` e não diz
+o MÍNIMO, que é o que destrava o botão.
 
 ## Rede, sessão e o latch (`app/conexao.ts`)
 
@@ -128,17 +132,17 @@ execução (`componentes/midia.tsx#lerPaleta`). O `alt` do gráfico é escrito d
 o desenho mostra, não o `imagem.alt` da api (que descreve a imagem que o brief
 pediu, e não foi desenhada).
 
-## Props do DS que enganam (0.2.5)
+## Props do DS que enganam (0.2.7)
 
 - `StoryViewer` e `MediaGrid` exigem `src` e sempre montam `<img>` — daí o
   `data:` URI para o procedural e o gráfico.
-- `PostCard.Media` com `src` que falha tira o `<img>` da árvore, e o `alt` sai
-  junto. A descrição volta pelo `errorLabel` (aceita nó).
-- `StoryComposer` conta `.length` (UTF-16) no contador visível; o `minLength`
-  dele também.
-- `TextArea` da plataforma: o `label` é um `<label>` SEM `htmlFor` — aparece e
-  não dá nome ao campo. Passe `aria-label` junto.
-- `Badge` tem `white-space: nowrap`: tag longa vaza da tela.
+- `PostCard.Media` com `src` que falha tira o `<img>` da árvore; desde a 0.2.7 o
+  `errorDescription` (padrão: o `alt`) devolve a descrição sob o aviso — não
+  remonte a descrição dentro do `errorLabel`, que ela sairia duas vezes.
+- `TextArea` da plataforma conta `.length` no contador dele e não diz o mínimo
+  (daí o `showCounter={false}`). O `label` passou a nomear o campo na 0.2.7:
+  `aria-label` repetindo o rótulo é redundância, não compensação.
+- `Badge` tem `white-space: nowrap` por padrão: tag longa pede `wrap`.
 - `TopBar` e `DirectThread` reservam os 44 px da status bar por padrão, e o
   aparelho do hub não desenha status bar: aqui vão com `withStatusBarInset={false}`.
 - `TabBar` sem `items` desenha as cinco abas do Figma — ver "Ausências".
@@ -158,22 +162,15 @@ pediu, e não foi desenhada).
   da sala (e WCAG 2.2.2).
 - **Sem `PhoneFrame`**: o aparelho é do hub (`viewport`).
 
-## As compensações abertas
+## As compensações — nenhuma aberta
 
-Marcadas `(b) COMPENSAÇÃO` em `src/estilos/globals.css`. Quando chegarem por
-versão, o bloco local sai:
-
-| Compensação | Pedido ao `storybook-unooria` |
-|---|---|
-| a faixa da dica do feed e do aviso da poda | `InlineHint` (tom neutro e de atrito) |
-| o indicador do gesto de rolar ([D0-2]) | `GestureHint` |
-| a tarja "Sem conexão com a rede…" | `Snackbar` na `instanooria` |
-| a tag da ficha que quebra linha | `Badge` com `wrap` |
-
-E três pedidos SEM compensação: o contador do `StoryComposer` em code points (ou
-`count` controlado), o `htmlFor` do `label` do `TextArea` (compensado com
-`aria-label`), e um `errorLabel`/`description` explícito no `PostCard.Media` para
-não perder o `alt` no erro.
+As quatro da 1.0.0 fecharam na 1.0.1, com o DS 0.2.7: a faixa da dica do feed e
+do aviso da poda virou `InlineHint` (tons `neutral` e `friction`, com
+`announce`), o gesto de rolar virou `GestureHint`, a tarja "Sem conexão com a
+rede…" virou `SnackbarInsta` (sempre montado, para o leitor de tela anunciar) e a
+etiqueta da ficha que quebra virou `BadgeInsta wrap`. Os três pedidos sem
+compensação também entraram: o contador do `StoryComposer` em code points, o
+`htmlFor` do `label` do `TextArea` e o `errorDescription` do `PostCard.Media`.
 
 **Não é pedido**: as barras do "Equilíbrio editorial" — o Instagram não desenha
 gráfico, e a ficha é a extensão da ficção que a missão acrescenta (o mesmo
@@ -192,12 +189,10 @@ E um desvio do sheet, de propósito: o card 2 e a DM de fechamento diziam "a mes
 praça", o tema do banco curado; com um tema gerado por IA ficava errado, e virou
 "o mesmo acontecimento".
 
-## Pendências
+## Para quem escreve e2e desta missão
 
-- **A suíte e2e** (`scripts/e2e/estudante/11-a-selecao.mjs`) não existe ainda.
-  Duas armadilhas medidas na verificação visual: o `fill` do Chrome DevTools/
+- As armadilhas que a suíte e2e (`scripts/e2e/estudante/11-a-selecao.mjs`) já
+  contorna, e que valem para quem escrever outra: o `fill` do Chrome DevTools/
   Playwright pode não mover o estado controlado do `TextArea` (o contador fica
-  parado) — digite, ou dispare `input`; e as enquetes vêm embaralhadas a cada GET,
-  então a suíte casa pelo TEXTO da alternativa, nunca pela posição.
-- Registro da porta 5179 no hub (`experiencias-dev.ts`) e no CORS da api: fora
-  desta pasta.
+  parado) — digite, ou dispare `input`; e as enquetes vêm embaralhadas a cada
+  GET, então a suíte casa pelo TEXTO da alternativa, nunca pela posição.

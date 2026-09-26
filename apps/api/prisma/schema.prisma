@@ -2760,6 +2760,11 @@ model Exp07ef1bCobertura {
   /// `GET sessao` de 30 crianças não perguntar ao bucket se cada imagem existe.
   midia Json @default("{}")
 
+  /// As três falas do Bloco 2 do podcast (`a-selecao/podcast.ts`), sobre o que
+  /// cada veículo mostrou NESTE tema. Nulo = as do sheet (a Praça Central); um
+  /// tema da IA as traz do preparo, revisadas junto com os posts (CHECK: objeto).
+  podcast Json?
+
   /// Quem homologou. Carimbo sem FK, como `equipes_montagens.atualizado_por`:
   /// a saída de um professor da rede não pode travar a atividade da turma.
   /// Nulo só na `padrao` que nasceu sozinha (CHECK).

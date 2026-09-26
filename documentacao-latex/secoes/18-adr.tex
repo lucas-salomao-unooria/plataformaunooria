@@ -9,7 +9,7 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{117 decisões}, numeradas até ADR-118. A 117 (o Jornal da Escola) é
+São \textbf{118 decisões}, numeradas até ADR-119. A 117 (o Jornal da Escola) é
 de uma frente paralela que ainda não entrou nesta base --- o número foi
 reservado entre as sessões antes de qualquer uma escrever ---; fora ela,
 \textbf{sem lacunas}. Quando
@@ -165,6 +165,7 @@ que a cercam.
 \adrr{ADR-115} & A Seleção: o par do Mural é do computador, e a IA gradua a legenda & 2026-09-25 & Aceita\\
 \zebra \adrr{ADR-116} & A experiência que perde o código é arquivada, não apagada & 2026-09-25 & Aceita\\
 \adrr{ADR-118} & Quem mandou isso? v2.2: atividade é o pacote, rodada é a reaplicação, e a régua mede pela seleção e pelas perguntas do PO & 2026-09-25 & Aceita\\
+\zebra \adrr{ADR-119} & O podcast da A Seleção é do professor, e a IA reescreve só as três falas que dependem do tema & 2026-09-26 & Aceita\\
 \bottomrule
 \end{tabularx}
 
@@ -10126,3 +10127,95 @@ PO pedir que o Se/Então conte para a evidência; uma segunda missão precisar d
 \enquote{atividade} sem ter um pacote, que é o gatilho da \adrr{ADR-112} para a
 atividade virar conceito de plataforma; ou o DS publicar a seta esgotada e a
 mídia acionável, e as duas compensações saírem.
+
+% ---------------------------------------------------------------------------
+\section{ADR-119 --- O podcast da A Seleção é do professor, e a IA reescreve só as três falas que dependem do tema}
+\label{adr:a-selecao-podcast}
+
+\textbf{Data.} 2026-09-26. \textbf{Status.} Aceita.
+\textbf{Completa} a \adrr{ADR-115} (A Seleção) com o \enquote{Podcast de
+Recapitulação} que o documento de requisitos pedia e a primeira versão deixou
+de fora sem registrar. \textbf{Usa} a voz que a plataforma já tinha
+(\cd{generateSpeech}, o TTS dos modelos Gemini pela Cloud Text-to-Speech, que o
+Eco usava antes da \adrr{ADR-113}) e o molde de mídia gerada pelo professor da
+\adrr{ADR-67}.
+
+\begin{especificacao}{Contexto}
+O documento de requisitos pede \enquote{3m45s de áudio estéreo (Lucas e Clara)
+disponível no Hub pós-aula}, com roteiro fechado no sheet de copy: cinco blocos,
+vinte e uma falas, cerca de 3.200 bytes. Três fatos decidiram a forma:
+
+\begin{itemize}
+  \item \textbf{O texto fala com o estudante} (\enquote{se você acabou de sair da
+    missão\ldots}), mas quem decide a aula é o professor. O dono do produto
+    decidiu que o podcast é \textbf{do professor}, que o toca à turma se quiser.
+  \item \textbf{O Bloco 2 descreve os posts da Praça Central} --- as maquetes da
+    Folha Oficial, a padaria da Voz Coletiva, o orçamento por metro quadrado da
+    Métrica Urbana. Com um tema gerado por IA (\adrr{ADR-115}), esse trecho
+    contaria à turma uma cobertura que ela não leu.
+  \item \textbf{A síntese de voz tem teto por chamada} (4.000 bytes de texto,
+    cerca de 655\,s de áudio) e o BFF do hub corta a chamada em 30\,s; o episódio
+    inteiro numa chamada só não cabe no segundo.
+\end{itemize}
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{itemize}
+  \item \textbf{O podcast mora na aula da turma}, em \enquote{A aula e os
+    resultados}, com o \cd{AudioPlayer} do DS (0.2.7) e a transcrição sempre na
+    tela. Não mora no guia: o guia é igual para todas as turmas, e o Bloco 2 é do
+    tema de cada uma. Nenhuma rota de estudante.
+  \item \textbf{Só três falas mudam com o tema}: as três do Bloco 2 que dizem o
+    que cada veículo mostrou. A primeira e a última fala do Bloco 2 e os Blocos
+    1, 3, 4 e 5 inteiros servem a qualquer tema e ficam como o sheet aprovou.
+    Num tema da IA, as três falas saem do \textbf{mesmo lote} do preparo, sob a
+    mesma régua da aprovação (12 a 60 palavras, até 400 bytes, sem link, e-mail
+    nem \enquote{@}), e a professora as revisa junto com os posts. Moram na
+    cobertura (\cd{exp07ef1b\_coberturas.podcast}); nulo lê as do sheet.
+  \item \textbf{Um trecho por chamada, e a emenda no fim.} Cada bloco é uma
+    chamada de DIÁLOGO (Lucas e Clara numa chamada, com a mesma direção de
+    atuação), e com os cinco prontos a mesma chamada emenda o MP3 --- tirando de
+    cada trecho as etiquetas e o quadro de duração, que diriam ao navegador a
+    duração de um trecho só. Sem ffmpeg, numa função pura.
+  \item \textbf{O arquivo de cada trecho é o hash do texto e do pedido de voz}:
+    os blocos fixos saem uma vez por contrato, e um tema novo paga só o Bloco 2.
+    O custo vai à quota do professor, estimado por trecho.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Podcast para o estudante}, na tela final da missão --- o que o
+    texto sugere. Descartada pelo dono do produto: o professor decide quando a
+    turma ouve.
+  \item \textbf{Podcast só no tema curado}, sumindo com um tema da IA. Deixaria
+    sem recapitulação justamente a turma que personalizou a aula.
+  \item \textbf{Um Bloco 2 genérico}, sem citar os posts. Desviaria do texto
+    aprovado e tiraria do podcast o que ele recapitula.
+  \item \textbf{A IA reescrevendo o roteiro inteiro por tema.} Cinco blocos
+    gerados por turma, a revisar antes de cada aula, para mudar três falas.
+  \item \textbf{O episódio numa chamada só}, ou uma lista de cinco arquivos
+    tocados em sequência no player. A primeira não cabe nos 30\,s; a segunda
+    faria a barra de posição e a duração mentirem entre um trecho e outro.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{O áudio é mono e comprimido pela síntese}, não o MP3 estéreo de
+    128\,kbps de estúdio que o brief previa.
+  \item \textbf{Entre um bloco e outro pode haver uma pausa} que a gravação
+    contínua não teria: cada trecho é uma interpretação à parte, amarrada só pela
+    mesma direção e pelos mesmos timbres.
+  \item \textbf{Em dev e na e2e o áudio não sai}: o mock falha fechado, e o
+    caminho que roda é o da transcrição com o player desabilitado.
+  \item \textbf{O texto fixo cita marcas} (\enquote{Instagram simulado},
+    \enquote{parque da Disney}), porque o sheet aprovado as cita.
+\end{itemize}
+
+\textbf{Gatilho.} O PO pedir o podcast também ao estudante; a voz sintetizada
+não passar na revisão de conteúdo e for preciso gravar em estúdio (entra no
+lugar do episódio, com o mesmo roteiro); ou a síntese passar a devolver o
+episódio inteiro dentro de uma chamada, e a emenda deixar de ser necessária.
+

@@ -1,5 +1,8 @@
 import { describe, expect, test } from "vitest";
 import {
+  continuarGerandoPodcast,
+  problemaDaFala,
+  textoDoProgressoDoPodcast,
   aulaEmAndamento,
   continuarGerando,
   descreverMatriz,
@@ -219,3 +222,43 @@ describe("o laço das imagens", () => {
     expect(textoDoProgressoDaMidia({ total: 0, prontas: 0 })).toBe("Nenhum post desta cobertura pede imagem.");
   });
 });
+
+describe("o podcast de recapitulação", () => {
+  const FALAS = {
+    institucional:
+      "A Folha Oficial vinha com a planta nova da biblioteca, o comunicado da secretaria e a data de entrega, tudo arrumadinho.",
+    comunitario:
+      "Aí logo embaixo você rolava mais um pouco e via a Voz Coletiva: vizinhos reclamando do barulho e da falta de lugar para estudar.",
+    estatistico:
+      "E se não bastasse, tinha a Métrica Urbana com gráficos do custo da reforma e dos empréstimos de livros antes e depois.",
+  };
+
+  test("a régua da fala espelha a da api: palavras, link, e-mail, @ e tamanho", () => {
+    expect(problemaDaFala(FALAS.institucional)).toBeNull();
+    expect(problemaDaFala("")).toBe("A fala não pode ficar vazia.");
+    expect(problemaDaFala("Curta demais.")).toBe("Tem 2 palavras; o mínimo é 12.");
+    expect(problemaDaFala(`${FALAS.comunitario} Veja em www.exemplo.com.br`)).toMatch(/link/);
+    expect(problemaDaFala(`${FALAS.comunitario} Escreva para contato@exemplo.org`)).toMatch(/e-mail/);
+    expect(problemaDaFala(`${FALAS.estatistico} Siga @metrica_urbana.`)).toMatch(/sem @/);
+    expect(problemaDaFala(`${"ação ".repeat(90)}`)).toMatch(/longa demais/);
+  });
+
+  test("editar só uma fala do podcast é mudança: a aprovação acende", () => {
+    const base = { tema: "A biblioteca", foco: null, posts: [], podcast: FALAS };
+    expect(mesmoLote(base, { ...base, podcast: { ...FALAS } })).toBe(true);
+    expect(mesmoLote(base, { ...base, podcast: { ...FALAS, comunitario: `${FALAS.comunitario} Muito barulho.` } })).toBe(false);
+  });
+
+  test("o laço do áudio para com o episódio pronto ou quando uma chamada não anda", () => {
+    expect(continuarGerandoPodcast({ completo: false, gerado: "abertura" })).toBe(true);
+    expect(continuarGerandoPodcast({ completo: true, gerado: "encerramento" })).toBe(false);
+    expect(continuarGerandoPodcast({ completo: false, gerado: null })).toBe(false);
+  });
+
+  test("a linha de estado sob o player", () => {
+    expect(textoDoProgressoDoPodcast({ trechos: { total: 5, prontos: 0 }, url: null })).toBe("O áudio ainda não foi gerado.");
+    expect(textoDoProgressoDoPodcast({ trechos: { total: 5, prontos: 2 }, url: null })).toBe("2 de 5 trechos do áudio prontos.");
+    expect(textoDoProgressoDoPodcast({ trechos: { total: 5, prontos: 5 }, url: "https://x/ep.mp3" })).toBe("O áudio está pronto.");
+  });
+});
+

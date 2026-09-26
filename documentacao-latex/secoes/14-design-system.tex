@@ -141,7 +141,7 @@ pacote direto num componente:
 
 \begin{tabularx}{\linewidth}{@{}L{28mm}L{22mm}X@{}}
 \cd{@edu/ui/ds} & \cd{unooria} & plataforma\\
-\cd{@edu/ui/ds-insta} & \cd{instanooria} & exp08ef1b, exp07ef1b (com as extensões da 0.2.5: \cd{DirectThread}, \cd{MessageBubble}, \cd{DmPoll}, \cd{ConfirmDialog}, \cd{BottomSheet}, \cd{FloatingButton}, \cd{StoryComposer})\\
+\cd{@edu/ui/ds-insta} & \cd{instanooria} & exp08ef1b, exp07ef1b (com as extensões da 0.2.5: \cd{DirectThread}, \cd{MessageBubble}, \cd{DmPoll}, \cd{ConfirmDialog}, \cd{BottomSheet}, \cd{FloatingButton}, \cd{StoryComposer}; e as da 0.2.7: \cd{InlineHint}, \cd{GestureHint} e o \cd{Snackbar} do clone, como \cd{SnackbarInsta})\\
 \cd{@edu/ui/ds-unootube} & \cd{unitube} & backup-exp04ef1b (o UnooTube arquivado, \adrr{ADR-116}: não roda mais)\\
 \cd{@edu/ui/ds-chatgpt} & \cd{chatgpt} & exp02em1b\\
 \cd{@edu/ui/ds-whatsapp} & \cd{whatsappmobile} & exp05ef1b, exp06ef2b\\
@@ -505,8 +505,10 @@ precisava, e a 0.2.4 publicou \textbf{dez extensões} em \cd{whatsappmobile} ---
 peças sem frame no arquivo de origem, derivadas dos tokens e das formas que ele
 já tinha. A exp05ef1b é o primeiro consumidor; a seção foi de 29 para 39
 componentes, todos exportados pela ponte \cd{@edu/ui/ds-whatsapp}, e o repositório
-está em \cd{\^{}0.2.6}: a 0.2.5 trouxe as extensões do \cd{instanooria} por cima
-sem mudar a API desta, e a 0.2.6 fechou as duas lacunas da tabela abaixo.
+está em \cd{\^{}0.2.7}: a 0.2.5 trouxe as extensões do \cd{instanooria} por cima
+sem mudar a API desta, a 0.2.6 fechou as duas lacunas da tabela abaixo, e a 0.2.7
+trouxe a segunda leva do \cd{instanooria} e o \cd{AudioPlayer} da plataforma
+(Seção~\ref{sec:ds-leva-027}).
 
 \begin{tabularx}{\linewidth}{@{}L{34mm}X@{}}
 \toprule
@@ -571,6 +573,43 @@ virando \cd{<button>} com o mesmo desenho. As compensações saíram da exp05ef1
 lâmina e do termômetro: são CONTEÚDO dentro da moldura que o DS já dá, não
 controle.
 \end{nota}
+
+\subsection{A segunda leva do \cd{instanooria} e o \cd{AudioPlayer} na 0.2.7 (exp07ef1b 1.0.1)}
+\label{sec:ds-leva-027}
+
+A A Seleção saiu na 1.0.0 com quatro compensações locais e três pedidos ao DS
+sem compensação. A 0.2.7 fechou os sete, e a 1.0.1 da missão não tem mais
+nenhum bloco \enquote{(b) COMPENSAÇÃO} no CSS dela. A mesma versão trouxe o
+primeiro player de áudio da plataforma, para o podcast de recapitulação
+(\adrr{ADR-119}).
+
+\begin{tabularx}{\linewidth}{@{}L{38mm}X@{}}
+\toprule
+\headrow \thd{Peça} & \thd{O que resolve}\\
+\midrule
+\cd{InlineHint} & A faixa sob a barra, em tom neutro (orientação) ou de atrito
+  (a cor de alerta na borda, o texto sempre primário), com \cd{announce} para o
+  aviso que nasce de um toque. É a dica do feed e o aviso da poda.\\
+\zebra \cd{GestureHint} & A marca de toque que demonstra rolar, deslizar ou tocar
+  uma vez; decorativa, e desligada com movimento reduzido.\\
+\cd{Snackbar} (clone) & O aviso passageiro em cores invertidas, fora do fluxo e
+  sempre montado como região de status. Colide com o da plataforma e sai pela
+  ponte como \cd{SnackbarInsta}.\\
+\zebra \cd{Badge} \cd{wrap} & A etiqueta longa quebra linha; o raio desce para o
+  dos cartões.\\
+\cd{StoryComposer} & Contador, mínimo e máximo em \emph{code points}, sem os
+  atributos nativos que medem UTF-16 --- o emoji valia dois.\\
+\zebra \cd{PostCard.Media} & \cd{errorDescription}: com a imagem quebrada, o
+  \cd{alt} continua na tela sob a mensagem.\\
+\cd{TextField} e \cd{TextArea} & O \cd{label} passou a nomear o campo
+  (\cd{htmlFor} e \cd{id}); antes aparecia e não dava nome nenhum.\\
+\zebra \cd{AudioPlayer} & Ouvir e pausar com rótulo visível, a barra de posição
+  nativa com o tempo dito por extenso ao leitor de tela, e o estado
+  indisponível que mostra o motivo em vez de sumir. Design próprio da seção
+  \cd{unooria}; o glifo de tocar é o \cd{play\_arrow} da mesma biblioteca-base,
+  que o quadro de ícones não publica.\\
+\bottomrule
+\end{tabularx}
 
 \subsection{Lacunas abertas em \cd{chatgpt} na 0.1.19 (exp08ef4b 0.1.0)}
 

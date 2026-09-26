@@ -4,6 +4,7 @@ import { QuotaService } from "../ai/quota.service";
 import type { Perfil } from "../auth/claims";
 import { logger } from "../observabilidade/logger";
 import { POSTS_PADRAO, TEMA_PADRAO, type PostDaCobertura } from "./catalogo";
+import { FALAS_DO_TEMA_PADRAO, type FalasDoTema } from "./podcast";
 import {
   MAX_TOKENS_DO_PREPARO,
   SCHEMA_DO_PREPARO,
@@ -15,7 +16,8 @@ import { postsDaIa } from "./regras/lote";
 
 /**
  * O PREPARO da cobertura com IA — o rascunho dos 12 posts sobre o tema que a
- * professora escolheu, antes da aula.
+ * professora escolheu, antes da aula, e as três falas do podcast que dizem o
+ * que cada veículo mostrou (`podcast.ts`).
  *
  * Três coisas que este serviço não faz, e cada ausência é uma regra:
  *
@@ -43,9 +45,18 @@ export class PreparoDaExp07ef1bService {
     usuarioId: string,
     perfil: Perfil,
     parametros: { tema: string; foco?: string },
-  ): Promise<{ rascunho: { tema: string; foco: string | null; posts: PostDaCobertura[] }; usouIa: boolean; tokens: number }> {
+  ): Promise<{
+    rascunho: { tema: string; foco: string | null; posts: PostDaCobertura[]; podcast: FalasDoTema };
+    usouIa: boolean;
+    tokens: number;
+  }> {
     const curado = () => ({
-      rascunho: { tema: TEMA_PADRAO, foco: null, posts: POSTS_PADRAO.map((p) => ({ ...p })) },
+      rascunho: {
+        tema: TEMA_PADRAO,
+        foco: null,
+        posts: POSTS_PADRAO.map((p) => ({ ...p })),
+        podcast: { ...FALAS_DO_TEMA_PADRAO },
+      },
       usouIa: false,
     });
 
@@ -73,7 +84,12 @@ export class PreparoDaExp07ef1bService {
       });
       await this.quota.consumir(escolaId, usuarioId, tokens);
       return {
-        rascunho: { tema: parametros.tema, foco: parametros.foco?.trim() || null, posts: lote.posts },
+        rascunho: {
+          tema: parametros.tema,
+          foco: parametros.foco?.trim() || null,
+          posts: lote.posts,
+          podcast: lote.podcast,
+        },
         usouIa: true,
         tokens,
       };

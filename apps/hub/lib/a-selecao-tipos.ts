@@ -187,6 +187,8 @@ export interface CoberturasDaTurma {
     etapa: EtapaDaTurma;
     posts: PostDaCobertura[];
     midia: ResumoDaMidia;
+    /** As três falas do podcast desta cobertura (as do sheet, se ela não tem as suas). */
+    podcast: FalasDoPodcast;
   };
   /** Todas as coberturas da turma, a ativa inclusa, da mais nova para a mais velha. */
   historico: Array<{
@@ -208,6 +210,7 @@ export interface RascunhoDaCobertura {
   origem: OrigemDaCobertura;
   usouIa: boolean;
   posts: PostDaCobertura[];
+  podcast: FalasDoPodcast;
 }
 
 /** `POST gerar-midia` — o progresso de UMA chamada (até duas imagens novas). */
@@ -455,11 +458,25 @@ export const FOCO_MAX = 100;
  * legendas (o resto do post não é editável nesta tela).
  */
 export function mesmoLote(
-  a: { tema: string; foco: string | null; posts: readonly Pick<PostDaCobertura, "id" | "legenda">[] },
-  b: { tema: string; foco: string | null; posts: readonly Pick<PostDaCobertura, "id" | "legenda">[] },
+  a: {
+    tema: string;
+    foco: string | null;
+    posts: readonly Pick<PostDaCobertura, "id" | "legenda">[];
+    podcast?: FalasDoPodcast;
+  },
+  b: {
+    tema: string;
+    foco: string | null;
+    posts: readonly Pick<PostDaCobertura, "id" | "legenda">[];
+    podcast?: FalasDoPodcast;
+  },
 ): boolean {
   if (a.tema.trim() !== b.tema.trim()) return false;
   if ((a.foco ?? "").trim() !== (b.foco ?? "").trim()) return false;
+  // Editar só uma fala do podcast também é mudança: é outro Bloco 2 para a turma.
+  if (a.podcast && b.podcast && FALAS_DO_PODCAST.some(({ campo }) => a.podcast![campo].trim() !== b.podcast![campo].trim())) {
+    return false;
+  }
   if (a.posts.length !== b.posts.length) return false;
   const legendaDe = new Map(b.posts.map((p) => [p.id, p.legenda.trim()]));
   return a.posts.every((p) => legendaDe.get(p.id) === p.legenda.trim());
@@ -495,3 +512,90 @@ export function textoDoProgressoDaMidia(m: ResumoDaMidia): string {
   if (m.prontas >= m.total) return m.total === 1 ? "A imagem está pronta." : `As ${m.total} imagens estão prontas.`;
   return `${m.prontas} de ${m.total} ${m.total === 1 ? "imagem pronta" : "imagens prontas"}.`;
 }
+
+// ─────────────────────────────────────────────────────────────── o podcast
+
+/**
+ * As três falas do Bloco 2 do podcast de recapitulação — o que cada veículo
+ * mostrou NESTE tema. Espelho de `apps/api/src/a-selecao/podcast.ts#FalasDoTema`:
+ * no tema da IA a api as escreve junto com o lote, e a professora as revisa no
+ * preparo antes de aprovar; no tema curado são as do sheet.
+ */
+export interface FalasDoPodcast {
+  institucional: string;
+  comunitario: string;
+  estatistico: string;
+}
+
+/** Quem fala cada uma, e de qual veículo — a ordem do Bloco 2. */
+export const FALAS_DO_PODCAST: ReadonlyArray<{
+  campo: keyof FalasDoPodcast;
+  falante: "Lucas" | "Clara";
+  veiculo: string;
+}> = [
+  { campo: "institucional", falante: "Lucas", veiculo: "a Folha Oficial" },
+  { campo: "comunitario", falante: "Clara", veiculo: "a Voz Coletiva" },
+  { campo: "estatistico", falante: "Lucas", veiculo: "a Métrica Urbana" },
+];
+
+/** A régua de cada fala, espelho de `podcast.ts#problemasDasFalasDoTema`. */
+export const PALAVRAS_DA_FALA = { min: 12, max: 60 } as const;
+export const BYTES_DA_FALA = 400;
+
+/**
+ * O que impede UMA fala de ir para o áudio, na frase do campo — ou `null`. A
+ * api confere de novo na aprovação (e é a palavra final); aqui é para a
+ * professora ver o problema enquanto digita, no campo certo.
+ */
+export function problemaDaFala(texto: string): string | null {
+  const n = palavras(texto);
+  if (n === 0) return "A fala não pode ficar vazia.";
+  if (/https?:\/\/|www\.|\.com\b|\.br\b/i.test(texto)) return "Tire o link: ele não se lê em voz alta.";
+  if (/[\w.+-]+@[\w-]+\.[\w.]+/.test(texto)) return "Tire o e-mail: ele não se lê em voz alta.";
+  if (/(^|\s)@\w/.test(texto)) return "Escreva o nome do veículo por extenso, sem @.";
+  if (new TextEncoder().encode(texto.trim()).length > BYTES_DA_FALA) return "Está longa demais para o áudio; encurte um pouco.";
+  if (n < PALAVRAS_DA_FALA.min) return `Tem ${n} palavras; o mínimo é ${PALAVRAS_DA_FALA.min}.`;
+  if (n > PALAVRAS_DA_FALA.max) return `Tem ${n} palavras; o máximo é ${PALAVRAS_DA_FALA.max}.`;
+  return null;
+}
+
+export type BlocoDoPodcast = "abertura" | "recapitulacao" | "revelacao" | "provocacao" | "encerramento";
+
+/** `GET /a-selecao/turmas/:turmaId/podcast` — o roteiro (a transcrição) e o estado do áudio. */
+export interface PodcastDaTurma {
+  coberturaId: string;
+  tema: string;
+  roteiro: Array<{
+    bloco: BlocoDoPodcast;
+    titulo: string;
+    falas: Array<{ falante: "Lucas" | "Clara"; texto: string }>;
+  }>;
+  trechos: { total: number; prontos: number };
+  /** O episódio inteiro, quando os cinco trechos já foram sintetizados e emendados. */
+  url: string | null;
+}
+
+/** `POST gerar-podcast` — o progresso de UMA chamada (um trecho, e a emenda no fim). */
+export interface ProgressoDoPodcast extends PodcastDaTurma {
+  gerado: BlocoDoPodcast | null;
+  falhou: BlocoDoPodcast | null;
+  completo: boolean;
+}
+
+/**
+ * O laço do "Gerar o áudio": a api sintetiza UM trecho por chamada (o BFF corta
+ * em 30 s e o episódio tem cinco). Para quando o episódio existe, ou quando uma
+ * chamada não andou — repetir aí é pedir de novo o trecho que o provedor acabou
+ * de recusar, e cobrar da quota a cada volta.
+ */
+export function continuarGerandoPodcast(p: Pick<ProgressoDoPodcast, "completo" | "gerado">): boolean {
+  return !p.completo && p.gerado !== null;
+}
+
+/** A linha de estado sob o player. */
+export function textoDoProgressoDoPodcast(p: Pick<PodcastDaTurma, "trechos" | "url">): string {
+  if (p.url) return "O áudio está pronto.";
+  if (p.trechos.prontos === 0) return "O áudio ainda não foi gerado.";
+  return `${p.trechos.prontos} de ${p.trechos.total} trechos do áudio prontos.`;
+}
+

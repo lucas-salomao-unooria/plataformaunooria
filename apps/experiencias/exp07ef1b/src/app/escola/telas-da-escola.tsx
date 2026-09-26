@@ -63,7 +63,6 @@ export function Reflexao({
         <TextArea
           value={texto}
           label={E6.rotuloDoCampo}
-          aria-label={E6.rotuloDoCampo}
           maxLength={limites.reflexaoMax}
           showCounter={false}
           rows={7}

@@ -24,6 +24,7 @@ import {
   ReflexaoSchema,
 } from "../src/a-selecao/contrato-de-rotas";
 import { CAMPOS_SENSIVEIS, PROIBIDO_NO_PAINEL, TERMOS_PROIBIDOS_NA_TELA, termosProibidosEm } from "../src/a-selecao/invariantes";
+import { FALAS_DO_TEMA_PADRAO } from "../src/a-selecao/podcast";
 import { promptDoCanalA, semDelimitadores } from "../src/a-selecao/prompts";
 import { LoteDaIaSchema, palavras, postsDaIa, problemasDoLote, type LoteDaIa } from "../src/a-selecao/regras/lote";
 import { distancia, matrizDaSelecao, mediaDaSala, percentuais, type Matriz } from "../src/a-selecao/regras/matriz";
@@ -419,7 +420,12 @@ describe("o banco curado contra o brief de assets", () => {
   });
 
   test("a homologação do banco curado, sem edição, passa no Zod da rota", () => {
-    const r = HomologacaoSchema.safeParse({ tema: "Praça Central", origem: "padrao", posts: POSTS_PADRAO });
+    const r = HomologacaoSchema.safeParse({
+      tema: "Praça Central",
+      origem: "padrao",
+      posts: POSTS_PADRAO,
+      podcast: FALAS_DO_TEMA_PADRAO,
+    });
     expect(r.success).toBe(true);
   });
 
@@ -504,14 +510,23 @@ describe("o Zod do lote gerado por IA (§2.5 do brief)", () => {
         comentarios_simulados_count: 12,
         comentarios_destaque: ["Tomara que fique pronta logo.", "A rua está sem sombra."],
       })),
+      podcast: {
+        institucional:
+          "A Folha Oficial vinha com a planta nova da biblioteca, o comunicado da secretaria e a data de entrega, tudo arrumadinho, dando a sensação de obra perfeita.",
+        comunitario:
+          "Aí logo embaixo você rolava mais um pouco e via a Voz Coletiva: vizinhos reclamando do barulho da obra e da falta de lugar para estudar durante a reforma.",
+        estatistico:
+          "E se não bastasse, tinha a Métrica Urbana com gráficos do custo da reforma e do número de empréstimos de livros antes e depois do fechamento.",
+      },
     };
   }
 
   test("o lote bom passa, e vira o post interno — `tag_enquadramento` é o ÂNGULO", () => {
     expect(palavras(LEGENDA)).toBeGreaterThanOrEqual(20);
     expect(LEGENDA.length).toBeLessThanOrEqual(240);
-    const { posts } = postsDaIa(loteValido());
+    const { posts, podcast } = postsDaIa(loteValido());
     expect(posts.map((p) => p.id)).toEqual([...IDS_DE_POST]);
+    expect(podcast.comunitario).toMatch(/^Aí logo embaixo você rolava/);
     expect(posts[0]).toMatchObject({
       tagAngulo: "Fachada com andaimes",
       tagFonte: "Secretaria de Obras",
@@ -551,6 +566,15 @@ describe("o Zod do lote gerado por IA (§2.5 do brief)", () => {
     const curta = loteValido();
     curta.posts[3]!.legenda = "Obra atrasada de novo na praça central do bairro.";
     expect(() => postsDaIa(curta)).toThrow(/palavras/);
+
+    // As três falas do podcast passam pela régua da homologação: fora dela, a tentativa é regerada.
+    const falaComArroba = loteValido();
+    falaComArroba.podcast.institucional = `${falaComArroba.podcast.institucional} Segue @folhaoficial_ para mais.`;
+    expect(() => postsDaIa(falaComArroba)).toThrow(/podcast sobre a Folha Oficial tem uma menção com @/);
+
+    const falaCurta = loteValido();
+    falaCurta.podcast.estatistico = "Tinha gráfico.";
+    expect(() => postsDaIa(falaCurta)).toThrow(/podcast sobre a Métrica Urbana tem 2 palavra/);
   });
 
   test("a homologação recusa com a LISTA de problemas, em frases para a professora", () => {

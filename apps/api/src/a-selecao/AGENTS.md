@@ -89,13 +89,45 @@ leitura para toda ficha (ADR-118). O resolvedor
 (`contextoDaAtividade`) devolve `null` antes de `enquetes` e quando a sessão não é
 a (cobertura, rodada) do gate — por isso o zerar tranca a resposta atrasada.
 
-## As duas suítes
+## O podcast de recapitulação (é do PROFESSOR)
+
+O "Podcast de Recapitulação" do PRD (Lucas e Clara, ~3m45s) — o roteiro é o do
+sheet aprovado (`podcast.ts`). O texto fala com o estudante, mas a decisão do
+dono do produto (2026-09-26) é que ele é do professor, que toca à turma depois
+da aula se quiser: rotas em `a-selecao-turmas.controller.ts`, nenhuma de
+estudante.
+
+- **Só três falas mudam com o tema** — as do Bloco 2 que dizem o que cada
+  veículo mostrou (`FalasDoTema`). Num tema da IA elas saem do MESMO lote do
+  preparo (`prompts.ts#SCHEMA_DO_PREPARO.podcast`), sob a mesma régua da
+  homologação (`problemasDasFalasDoTema`), e a professora as revisa antes de
+  aprovar. Moram em `exp07ef1b_coberturas.podcast`; NULO = as do sheet.
+- **A voz é o TTS do Gemini pelo provider** (`generateSpeech`: Cloud TTS com os
+  modelos Gemini, `VERTEX_TTS_MODEL`), Lucas e Clara numa chamada de DIÁLOGO por
+  bloco, com a direção do brief (`DIRECAO_DO_PODCAST`). Um trecho por
+  `POST gerar-podcast` — o episódio inteiro não cabe nos 30 s do BFF — e, com os
+  cinco, a mesma chamada emenda o MP3 (`regras/mp3.ts`: tira as ID3 e o quadro
+  Xing/Info de cada trecho, que declararia a duração errada).
+- **O nome do trecho é o hash do texto e do pedido de voz** (`nomeDoTrecho`):
+  os Blocos 1, 3, 4 e 5 saem uma vez por contrato, e só o Bloco 2 de um tema novo
+  custa síntese. Mudou direção, timbre ou texto fixo? Suba
+  `VERSAO_DO_PEDIDO_DE_VOZ`, senão o contrato mistura gravações de dois pedidos.
+- **Sem áudio, nada quebra**: o roteiro É a transcrição, e a tela a mostra
+  sempre. O mock falha fechado, então em dev e na e2e o caminho que roda é o da
+  transcrição com o player desabilitado.
+
+## As suítes
 
 - `tests/a-selecao-regras.spec.ts` — SEM banco: matriz, pareamento, `passoEfetivo`
   × etapa, transições do gate, sanitizador, code points no limite, o catálogo
   contra os critérios do brief (4:4:4, 20–45 palavras, termo proibido), o Zod do
   lote da IA e o Canal A caindo em "Não avaliado" (com provider falso e quota em
   memória).
+- `tests/a-selecao-podcast.spec.ts` — SEM banco: o roteiro (os blocos fixos não
+  mudam com o tema; todo trecho cabe nos 4.000 bytes da síntese), a régua das
+  três falas, os nomes pelo hash, a emenda com quadros MP3 sintéticos e o serviço
+  com provider, bucket e quota falsos (um trecho por chamada, a emenda no fim, o
+  tema novo que só paga o Bloco 2, sem saldo e falha).
 - `tests/a-selecao-postgres.spec.ts` — o que só o banco responde: a RLS ISOLANDO
   (com a role sem `BYPASSRLS`), os CHECKs, o latch sob dois toques, zerar e tema
   novo, pares por computador e o par que sobrevive ao `PUT` das equipes, o recorte

@@ -1096,11 +1096,49 @@ Mídia & A professora gera as imagens no preparo (2 por chamada, porque o BFF
   \cd{experiencias/exp07ef1b/selecao/}. Post sem foto vira um card de texto com
   a MESMA forma para os três perfis, e o bloco de números vira gráfico desenhado
   a partir dos dados.\\
+\zebra O que o DS cobre & Desde a 1.0.1 (DS 0.2.7), \textbf{nenhuma compensação
+  local}: a faixa de dica e o aviso da poda são o \cd{InlineHint}, o gesto de
+  rolar é o \cd{GestureHint}, a tarja de conexão é o \cd{Snackbar} do clone, a
+  etiqueta longa da ficha é o \cd{Badge} com \cd{wrap}, e o contador da
+  legenda do \cd{StoryComposer} conta \emph{code points}, como a api.\\
+\bottomrule
+\end{tabularx}
+
+\subsection{O podcast de recapitulação é do professor}
+
+O documento de requisitos pede um episódio de cerca de 3m45s em que Lucas e
+Clara recapitulam a missão. O texto fala com o estudante, mas o podcast é do
+\textbf{professor}, que o toca à turma depois da aula se quiser
+(\adrr{ADR-119}): ele mora em \enquote{A aula e os resultados}, com o
+\cd{AudioPlayer} do DS e a transcrição sempre na tela, e nenhuma rota de
+estudante o serve.
+
+\begin{tabularx}{\linewidth}{@{}L{34mm}X@{}}
+\toprule
+\headrow \thd{Decisão} & \thd{Como está implementada}\\
+\midrule
+O roteiro & O do sheet aprovado, cinco blocos, em \arq{a-selecao/podcast.ts}.
+  Só \textbf{três falas} mudam com o tema --- as do Bloco 2 que dizem o que a
+  Folha Oficial, a Voz Coletiva e a Métrica Urbana mostraram.\\
+\zebra O tema da IA & As três falas saem do MESMO lote do preparo, sob a régua da
+  aprovação (12 a 60 palavras, até 400 bytes, sem link, e-mail nem \enquote{@}),
+  e a professora as revisa junto com os posts. Ficam em
+  \cd{exp07ef1b\_coberturas.podcast}; nulo lê as do sheet.\\
+A voz & O TTS do Gemini pelo \emph{provider} da api (\cd{generateSpeech}):
+  Lucas e Clara numa chamada de diálogo por bloco, com a direção de atuação do
+  \emph{brief}. Um trecho por chamada, porque o episódio não cabe nos 30\,s do
+  BFF.\\
+\zebra O episódio & Com os cinco trechos, a mesma chamada os emenda num MP3
+  (\arq{regras/mp3.ts}), tirando de cada um as etiquetas e o quadro de duração.
+  Cada trecho é o \emph{hash} do texto e do pedido de voz: os blocos fixos saem
+  uma vez por contrato, e um tema novo paga só o Bloco 2.\\
 \bottomrule
 \end{tabularx}
 
 A suíte \arq{scripts/e2e/estudante/11-a-selecao.mjs} percorre a missão com a
-professora e dois estudantes de escolhas divergentes.
+professora e dois estudantes de escolhas divergentes, e termina no podcast: as
+três falas no preparo, a transcrição e o ramo do áudio que o ambiente permitir
+(pronto com a IA de verdade; a transcrição sozinha com o \emph{mock}).
 
 % ---------------------------------------------------------------------------
 \section{exp06ef2b --- O Rastro do Boato}

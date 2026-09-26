@@ -60,6 +60,7 @@ await suite(
       "A ficha técnica só aparece depois que a professora revela",
       "As duas enquetes da Amara não mostram acerto, e a missão termina",
       "A folha da turma não tem coluna de pontos, e o painel mostra as habilidades da BNCC",
+      "O podcast de recapitulação é da professora: as três falas do tema se revisam no preparo, e a transcrição fica sempre na tela",
     ],
     comando: "node scripts/e2e/estudante/11-a-selecao.mjs",
   },
@@ -147,6 +148,27 @@ await suite(
       inteira: true,
     });
 
+    /* As três falas do podcast moram no preparo, junto dos posts que resumem:
+       abre a grade, confere e fecha — o resto do roteiro não tem o que editar. */
+    await prof.click('[data-acao="mostrar-posts"]');
+    const falas = prof.locator("[data-falas-do-podcast]");
+    await falas.waitFor({ timeout: 10_000 });
+    r.exigir((await falas.locator("textarea").count()) === 3, "o preparo mostra as três falas do podcast");
+    r.exigir(
+      /padaria da esquina/.test(await falas.locator('textarea').nth(1).inputValue()),
+      "no tema curado, as falas são as do roteiro aprovado",
+    );
+    await r.registrar(prof, "preparo-falas-do-podcast", {
+      titulo: "O que o podcast diz de cada veículo",
+      mostra:
+        "No preparo, abaixo dos 12 posts, as três falas do podcast de recapitulação que contam o " +
+        "que a Folha Oficial, a Voz Coletiva e a Métrica Urbana mostraram.",
+      prova:
+        "Só essas três falas mudam com o tema: num tema da IA elas saem do mesmo lote, e a " +
+        "professora as revisa antes de aprovar, junto com os posts. O resto do roteiro é o aprovado.",
+    });
+    await prof.click('[data-acao="mostrar-posts"]');
+
     // ═══ ESTUDANTE 1: a DM, o feed e os salvos ════════════════════════════
     const p = await r.pagina("estudante", { viewport: { width: 1280, height: 950 } });
     await r.entrar(p, PRIMEIRO.login);
@@ -162,12 +184,12 @@ await suite(
     });
 
     await q().getByRole("button", { name: /Abrir Feed da Cobertura/i }).click();
-    await q().locator("text=/Posts salvos: 0/").waitFor({ timeout: 20_000 });
+    await q().locator("text=/Posts salvos: 0/").first().waitFor({ timeout: 20_000 });
     for (let i = 0; i < 3; i += 1) {
       await q().getByRole("button", { name: /Salvar publicação/i }).first().click();
       await p.waitForTimeout(300);
     }
-    await q().locator("text=/Posts salvos: 3/").waitFor({ timeout: 10_000 });
+    await q().locator("text=/Posts salvos: 3/").first().waitFor({ timeout: 10_000 });
     await r.registrar(p, "feed-da-cobertura", {
       titulo: "O feed e o marcador",
       mostra: "Os posts dos três perfis intercalados, o contador de salvos e a pílula para a aba Salvos.",
@@ -177,10 +199,17 @@ await suite(
     });
 
     await q().getByRole("button", { name: /Ir para aba Salvos/i }).click();
-    await q().locator("text=/Itens Salvos/").waitFor({ timeout: 15_000 });
+    /* Pelo PAPEL: a tela tem o título escondido para o leitor de tela (`h1.so-leitor`)
+       e o da barra com o mesmo texto — por texto, o localizador casa os dois. */
+    await q().getByRole("heading", { name: "Itens Salvos" }).waitFor({ timeout: 15_000 });
+    /* Os salvos CHEGAM marcados: com exatamente três, a seleção já está feita.
+       Um toque desmarca (a poda) e outro devolve — é isso que a grade prova. */
     const grade = q().getByLabel("Posts salvos");
-    for (let i = 0; i < 3; i += 1) await grade.locator("button").nth(i).click();
-    await q().locator("text=/3 de 3 selecionados/").waitFor({ timeout: 10_000 });
+    await q().locator("text=/3 de 3 selecionados/").first().waitFor({ timeout: 10_000 });
+    await grade.locator("button").first().click();
+    await q().locator("text=/2 de 3 selecionados/").first().waitFor({ timeout: 10_000 });
+    await grade.locator("button").first().click();
+    await q().locator("text=/3 de 3 selecionados/").first().waitFor({ timeout: 10_000 });
 
     // ═══ O PORTÃO: legenda curta desabilita, link é recusado ══════════════
     const campo = q().getByRole("textbox").first();
@@ -202,7 +231,7 @@ await suite(
     await campo.pressSequentially(" veja em http://exemplo.com.br agora");
     await publicar.click();
     await q().getByRole("button", { name: /Confirmar publicação/i }).click();
-    await q().locator("text=/Não foi possível publicar/i").waitFor({ timeout: 15_000 });
+    await q().locator("text=/Não foi possível publicar/i").first().waitFor({ timeout: 15_000 });
     await r.registrar(p, "legenda-recusada", {
       titulo: "A legenda com link não passa",
       mostra: "A recusa na voz do clone, pedindo para tirar links, telefones, e-mails e marcações.",
@@ -215,7 +244,7 @@ await suite(
     await campo.pressSequentially(LEGENDA);
     await publicar.click();
     await q().getByRole("button", { name: /Confirmar publicação/i }).click();
-    await q().locator("text=/Publicado! Aguardando o professor/i").waitFor({ timeout: 20_000 });
+    await q().locator("text=/Publicado! Aguardando o professor/i").first().waitFor({ timeout: 20_000 });
     await r.registrar(p, "publicado", {
       titulo: "Publicado, e sem volta",
       mostra: "A prévia dos próprios Stories e a espera pelo Mural da turma.",
@@ -225,7 +254,7 @@ await suite(
     });
 
     await p.reload({ waitUntil: "domcontentloaded" });
-    await q().locator("text=/Publicado! Aguardando o professor/i").waitFor({ timeout: 40_000 });
+    await q().locator("text=/Publicado! Aguardando o professor/i").first().waitFor({ timeout: 40_000 });
     r.exigir(true, "a F5 depois de publicar volta à espera, não ao feed");
 
     // ═══ ESTUDANTE 2: publica pela api, com escolhas DIVERGENTES ═════════
@@ -248,7 +277,7 @@ await suite(
     // ═══ PROFESSORA libera o Mural ═══════════════════════════════════════
     await prof.reload({ waitUntil: "domcontentloaded" });
     await apertar(prof, "mural");
-    await q().locator("text=/Mural de Stories da Turma/i").waitFor({ timeout: 30_000 });
+    await q().getByRole("heading", { name: /Mural de Stories da Turma/i }).first().waitFor({ timeout: 30_000 });
     await q().locator(`text=Publicação de ${PRIMEIRO_NOME_DO_SEGUNDO}`).waitFor({ timeout: 15_000 });
     r.exigir(
       (await q().locator("text=/Ficha Técnica/i").count()) === 0,
@@ -264,10 +293,18 @@ await suite(
 
     // ═══ PROFESSORA revela as fichas ═════════════════════════════════════
     await apertar(prof, "fichas");
+    /* A folha chega ABERTA quando a revelação acende (é o momento de ler); só
+       recolhida ela mostra "Ver detalhes da postagem". Espera a UNIÃO dos dois
+       estados, abre se precisar, e prova pelo conteúdo — a fonte ouvida. */
     const verDetalhes = q().getByRole("button", { name: /Ver detalhes da postagem/i });
-    await verDetalhes.waitFor({ timeout: 30_000 });
-    await verDetalhes.click();
-    await q().locator("text=/Ficha Técnica da Curadoria/i").waitFor({ timeout: 15_000 });
+    const fonteOuvida = q().locator("text=/Fonte ouvida:/").first();
+    await verDetalhes.or(fonteOuvida).first().waitFor({ timeout: 30_000 });
+    if (!(await fonteOuvida.isVisible())) await verDetalhes.click();
+    await fonteOuvida.waitFor({ timeout: 15_000 });
+    r.exigir(
+      (await q().locator("text=/Equilíbrio editorial/i").count()) > 0,
+      "a ficha traz o equilíbrio editorial das duas seleções",
+    );
     await r.registrar(p, "ficha-tecnica", {
       titulo: "A ficha técnica acende",
       mostra: "A fonte ouvida e o ângulo de cada post, e o equilíbrio editorial das duas seleções.",
@@ -278,13 +315,24 @@ await suite(
 
     // ═══ PROFESSORA libera a explicação; o estudante lê os 3 cards ═══════
     await apertar(prof, "explicacao");
-    for (let card = 0; card < 2; card += 1) {
+    /* A etapa chega pela sondagem do gate (5s), então a espera é pelo CARD, não
+       pelo botão: o Mural também tem um "Próximo story" (o do `StoryViewer`), e
+       um `/^Próximo/` clicava nele antes de a explicação existir. */
+    await q()
+      .getByRole("heading", { name: /A ilusão da neutralidade/i })
+      .waitFor({ timeout: 20_000 });
+    for (let card = 0; card < 3; card += 1) {
       /* A trava de 8s por card é da missão: o botão "Próximo" acende sozinho,
-         e a espera corre contra ele (habilitado), nunca por tempo cego. */
-      const proximo = q().getByRole("button", { name: /^Próximo/ }).first();
-      await proximo.waitFor({ timeout: 30_000 });
-      await p.waitForFunction(() => true);
+         e a espera corre contra ele (habilitado), nunca por tempo cego. São 3
+         cliques: o do 3º card é o que abre a DM de fechamento. */
+      const proximo = q().getByRole("button", { name: /^Próximo$/ });
       await proximo.click({ timeout: 15_000 });
+      if (card < 2) {
+        await q()
+          .getByText(`${card + 2}/3`, { exact: true })
+          .first()
+          .waitFor({ timeout: 5_000 });
+      }
       if (card === 0) {
         await r.registrar(p, "explicacao", {
           titulo: "Três cards, oito segundos cada",
@@ -298,7 +346,7 @@ await suite(
     await q().getByRole("button", { name: /Ir para a Reflexão/i }).click({ timeout: 45_000 });
 
     // ═══ REFLEXÃO (escola) e as ENQUETES (Amara) ═════════════════════════
-    await q().locator("text=/Reflexão Individual/i").waitFor({ timeout: 20_000 });
+    await q().locator("text=/Reflexão Individual/i").first().waitFor({ timeout: 20_000 });
     const reflexao = q().getByRole("textbox").first();
     await reflexao.click();
     await reflexao.pressSequentially(REFLEXAO);
@@ -310,7 +358,7 @@ await suite(
         "turma, nunca ao colega, nunca à gestão.",
     });
     await q().getByRole("button", { name: /Enviar Reflexão ao Professor/i }).click();
-    await q().locator("text=/Pronto! Sua resposta foi enviada/i").waitFor({ timeout: 20_000 });
+    await q().locator("text=/Pronto! Sua resposta foi enviada/i").first().waitFor({ timeout: 20_000 });
     await q().getByRole("button", { name: /^Continuar/i }).click();
 
     /* As alternativas vêm EMBARALHADAS a cada leitura: casa-se por texto. */
@@ -335,7 +383,7 @@ await suite(
     const fechar = q().getByRole("button", { name: /Fechar conversa/i });
     await fechar.waitFor({ timeout: 30_000 });
     await fechar.click();
-    await q().locator("text=/Missão concluída!/").waitFor({ timeout: 20_000 });
+    await q().locator("text=/Missão concluída!/").first().waitFor({ timeout: 20_000 });
     await r.registrar(p, "concluida", {
       titulo: "Missão concluída",
       mostra: "O fim, na voz da escola.",
@@ -361,6 +409,61 @@ await suite(
         "A legenda e a reflexão aparecem para a professora da turma, e para a gestão só " +
         "\"entregou\". O nível da EF07CO11 veio da enquete; a leitura da legenda por IA não " +
         "marcou nada porque em dev a IA é o mock — e \"Não avaliado\" é o que a regra manda.",
+      inteira: true,
+    });
+
+    // ═══ PROFESSORA: o podcast de recapitulação ══════════════════════════
+    const cartao = prof.locator("[data-podcast-selecao]");
+    await cartao.waitFor({ timeout: 20_000 });
+    await prof.click('[data-acao="ler-transcricao"]');
+    const transcricao = prof.locator("[data-transcricao-podcast]");
+    await transcricao.waitFor({ timeout: 10_000 });
+    const roteiro = await transcricao.innerText();
+    r.exigir(
+      ["Abertura", "Recapitulação", "A revelação", "Provocação e transferência", "Encerramento"].every(
+        (bloco) => roteiro.toUpperCase().includes(bloco.toUpperCase()),
+      ),
+      "a transcrição traz os cinco blocos do roteiro aprovado",
+    );
+    r.exigir(/Lucas:/.test(roteiro) && /Clara:/.test(roteiro), "com as falas de Lucas e de Clara");
+    r.exigir(/Folha Oficial/.test(roteiro) && /Métrica Urbana/.test(roteiro), "e o Bloco 2 fala dos três veículos");
+    await r.registrar(prof, "podcast-transcricao", {
+      titulo: "O podcast de recapitulação, para a professora",
+      mostra:
+        "O player do podcast (Lucas e Clara, cerca de 3 min 45 s) e a transcrição inteira, bloco a bloco.",
+      prova:
+        "O podcast é da professora, que decide tocar para a turma depois da aula. Sem áudio o " +
+        "player não some: diz o porquê, e a transcrição continua na tela.",
+      inteira: true,
+    });
+
+    /* Gerar o áudio. Com o Vertex de verdade o episódio sai trecho a trecho e
+       fica pronto; com o mock, a síntese falha fechada e a tela diz que o
+       trecho não saiu. A espera é pela UNIÃO dos desfechos — nunca pelo
+       relógio —, e o ramo que aconteceu é o que se prova. */
+    if ((await cartao.getAttribute("data-podcast-pronto")) !== "sim") {
+      await prof.click('[data-acao="gerar-podcast"]');
+      await prof
+        .locator(
+          '[data-podcast-pronto="sim"], [data-podcast-selecao] [role="status"], [data-podcast-selecao] :text-matches("não pôde ser gerado|sem saldo|limite", "i")',
+        )
+        .first()
+        .waitFor({ timeout: 300_000 });
+    }
+    const pronto = (await cartao.getAttribute("data-podcast-pronto")) === "sim";
+    if (pronto) {
+      r.exigir((await cartao.locator("audio").count()) === 1, "o episódio emendado toca no player do DS");
+    } else {
+      r.exigir(await transcricao.isVisible(), "sem áudio, a transcrição continua na tela");
+    }
+    await r.registrar(prof, "podcast-audio", {
+      titulo: pronto ? "O episódio pronto" : "Sem áudio, com a transcrição",
+      mostra: pronto
+        ? "Os cinco trechos sintetizados pelo TTS do Gemini e emendados num episódio só, no player."
+        : "A síntese não saiu (em dev a IA é o mock, que falha fechado) e a tela diz isso — a transcrição fica.",
+      prova: pronto
+        ? "Um trecho por chamada, porque o episódio não cabe nos 30 s do BFF; os blocos fixos saem uma vez por contrato."
+        : "Falha de voz não esconde o podcast nem cobra a quota: o trecho que não saiu é dito, e a leitura segue.",
       inteira: true,
     });
   },

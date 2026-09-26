@@ -23,6 +23,7 @@ import {
 import { ClassificacaoService, type EntradaDoCanalA } from "./classificacao.service";
 import { PostDaCoberturaSchema } from "./contrato-de-rotas";
 import { erroDeJogo } from "./erros";
+import { FALAS_DO_TEMA_PADRAO, type FalasDoTema } from "./podcast";
 import { matrizDaSelecao, matrizDoJson, mediaDaSala, percentuais, type Matriz } from "./regras/matriz";
 import { parear, virtualMaisDistante, type VirtualDoMural } from "./regras/pareamento";
 import {
@@ -99,6 +100,8 @@ interface CoberturaLida {
   origem: "padrao" | "ia";
   posts: PostDaCobertura[];
   midia: Record<string, string>;
+  /** As três falas do podcast desta cobertura — as do sheet quando ela não tem as suas. */
+  podcast: FalasDoTema;
 }
 
 interface GateLido {
@@ -156,9 +159,39 @@ function midiaDaLinha(bruto: Prisma.JsonValue): Record<string, string> {
   return midia;
 }
 
-function coberturaDaLinha(
-  linha: { id: string; escolaId: string; tema: string; foco: string | null; origem: string; posts: Prisma.JsonValue; midia: Prisma.JsonValue },
-): CoberturaLida {
+const FalasDaLinhaSchema = z.object({
+  institucional: z.string().min(1),
+  comunitario: z.string().min(1),
+  estatistico: z.string().min(1),
+});
+
+/**
+ * As três falas do podcast da linha. NULO é a leitura das do sheet (a Praça
+ * Central): é o que vale para a cobertura curada que nasceu sozinha e para as
+ * que existiam antes da coluna. Um JSON torto cai no sheet com log, pelo mesmo
+ * motivo de `postsDaLinha` — o podcast não pode deixar de existir por isso.
+ */
+function podcastDaLinha(bruto: Prisma.JsonValue | null, contexto: { escolaId: string; coberturaId: string }): FalasDoTema {
+  if (bruto === null) return { ...FALAS_DO_TEMA_PADRAO };
+  const lido = FalasDaLinhaSchema.safeParse(bruto);
+  if (lido.success) return lido.data;
+  logger.warn(
+    { codigo: "exp07ef1b-podcast-invalido", ...contexto },
+    "falas do podcast com forma inesperada; o áudio segue com as do sheet",
+  );
+  return { ...FALAS_DO_TEMA_PADRAO };
+}
+
+function coberturaDaLinha(linha: {
+  id: string;
+  escolaId: string;
+  tema: string;
+  foco: string | null;
+  origem: string;
+  posts: Prisma.JsonValue;
+  midia: Prisma.JsonValue;
+  podcast: Prisma.JsonValue | null;
+}): CoberturaLida {
   return {
     id: linha.id,
     tema: linha.tema,
@@ -166,6 +199,7 @@ function coberturaDaLinha(
     origem: linha.origem === "ia" ? "ia" : "padrao",
     posts: postsDaLinha(linha.posts, { escolaId: linha.escolaId, coberturaId: linha.id }),
     midia: midiaDaLinha(linha.midia),
+    podcast: podcastDaLinha(linha.podcast, { escolaId: linha.escolaId, coberturaId: linha.id }),
   };
 }
 
@@ -805,6 +839,7 @@ export class ASelecaoService implements OnModuleInit {
           etapa: gate.etapa,
           posts: cobertura.posts,
           midia: resumoDaMidia(cobertura),
+          podcast: cobertura.podcast,
         },
         historico: todas.map((c) => ({
           id: c.id,
@@ -837,7 +872,7 @@ export class ASelecaoService implements OnModuleInit {
     turmaId: string,
     professorId: string | undefined,
     aprovadaPor: string,
-    lote: { tema: string; foco?: string; origem: "padrao" | "ia"; posts: PostDaCobertura[] },
+    lote: { tema: string; foco?: string; origem: "padrao" | "ia"; posts: PostDaCobertura[]; podcast: FalasDoTema },
   ) {
     return this.prisma.comTenancy(async (tx) => {
       await this.turmaVisivel(tx, escolaId, turmaId, professorId);
@@ -845,7 +880,7 @@ export class ASelecaoService implements OnModuleInit {
 
       const anterior = await tx.exp07ef1bCobertura.findFirst({
         where: { escolaId, turmaId, ativa: true },
-        select: { id: true, escolaId: true, tema: true, foco: true, origem: true, posts: true, midia: true },
+        select: { id: true, escolaId: true, tema: true, foco: true, origem: true, posts: true, midia: true, podcast: true },
       });
       const herdada: Record<string, string> = {};
       if (anterior) {
@@ -870,10 +905,15 @@ export class ASelecaoService implements OnModuleInit {
           origem: lote.origem,
           posts: posts as unknown as Prisma.InputJsonValue,
           midia: herdada,
+          podcast: {
+            institucional: lote.podcast.institucional.trim(),
+            comunitario: lote.podcast.comunitario.trim(),
+            estatistico: lote.podcast.estatistico.trim(),
+          },
           aprovadaPor,
           ativa: true,
         },
-        select: { id: true, tema: true, foco: true, origem: true },
+        select: { id: true, tema: true, foco: true, origem: true, podcast: true },
       });
       await tx.exp07ef1bGateTurma.upsert({
         where: { escolaId_turmaId: { escolaId, turmaId } },
@@ -888,6 +928,7 @@ export class ASelecaoService implements OnModuleInit {
         rodada: 1,
         etapa: ETAPA_INICIAL,
         posts,
+        podcast: podcastDaLinha(nova.podcast, { escolaId, coberturaId: nova.id }),
       };
     }, escolaId);
   }
@@ -1103,7 +1144,7 @@ export class ASelecaoService implements OnModuleInit {
     turmaId: string,
   ): Promise<{ gate: GateLido; cobertura: CoberturaLida }> {
     const incluir = {
-      cobertura: { select: { id: true, escolaId: true, tema: true, foco: true, origem: true, posts: true, midia: true } },
+      cobertura: { select: { id: true, escolaId: true, tema: true, foco: true, origem: true, posts: true, midia: true, podcast: true } },
     } satisfies Prisma.Exp07ef1bGateTurmaInclude;
     const chave = { escolaId_turmaId: { escolaId, turmaId } };
 
