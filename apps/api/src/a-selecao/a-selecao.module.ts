@@ -8,6 +8,7 @@ import { ASelecaoController } from "./a-selecao.controller";
 import { ASelecaoService } from "./a-selecao.service";
 import { ClassificacaoService } from "./classificacao.service";
 import { MidiaDaExp07ef1bService } from "./midia.service";
+import { PodcastDaExp07ef1bService } from "./podcast.service";
 import { PreparoDaExp07ef1bService } from "./preparo.service";
 
 /**
@@ -33,7 +34,13 @@ import { PreparoDaExp07ef1bService } from "./preparo.service";
 @Module({
   imports: [AiModule, AssetsModule, EvidenciasModule],
   controllers: [ASelecaoController, ASelecaoTurmasController, ASelecaoProfessorController],
-  providers: [ASelecaoService, ClassificacaoService, PreparoDaExp07ef1bService, MidiaDaExp07ef1bService],
+  providers: [
+    ASelecaoService,
+    ClassificacaoService,
+    PreparoDaExp07ef1bService,
+    MidiaDaExp07ef1bService,
+    PodcastDaExp07ef1bService,
+  ],
   exports: [ASelecaoService],
 })
 export class ASelecaoModule {}

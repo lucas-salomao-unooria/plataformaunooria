@@ -8,6 +8,7 @@ import {
   TIPOS_DE_GRAFICO,
   TOTAL_DE_POSTS,
 } from "./catalogo";
+import { BLOCOS_DO_PODCAST, FalasDoTemaSchema } from "./podcast";
 import { problemasDoLote } from "./regras/lote";
 import { ETAPAS, PASSOS, PASSOS_PEDIDOS } from "./regras/passos";
 import {
@@ -141,9 +142,22 @@ export const HomologacaoSchema = z.object({
     .superRefine((posts, ctx) => {
       for (const problema of problemasDoLote(posts)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: problema });
     }),
+  /**
+   * As três falas do Bloco 2 do podcast — o que cada veículo mostrou —, que a
+   * professora revisou junto com os posts. Sempre vem: no tema curado, com as
+   * do sheet (ou editadas).
+   */
+  podcast: FalasDoTemaSchema,
 });
 
 // --------------------------------------------------------------- saída
+
+/** As três falas do tema, como saem (a régua já valeu na entrada). */
+const FalasDoTemaSaidaSchema = z.object({
+  institucional: z.string(),
+  comunitario: z.string(),
+  estatistico: z.string(),
+});
 
 const PassoSchema = z.enum(PASSOS);
 const EtapaSchema = z.enum(ETAPAS);
@@ -351,6 +365,8 @@ export const CoberturasSchema = z.object({
     etapa: EtapaSchema,
     posts: z.array(PostDaCoberturaSchema),
     midia: MidiaResumoSchema,
+    /** As três falas do podcast desta cobertura (as do sheet, se ela não tem as suas). */
+    podcast: FalasDoTemaSaidaSchema,
   }),
   /** Todas as coberturas da turma, a ativa inclusa — é o `?cobertura=` do painel de habilidades. */
   historico: z.array(
@@ -370,12 +386,41 @@ export const RascunhoSchema = z.object({
   origem: z.enum(["padrao", "ia"]),
   usouIa: z.boolean(),
   posts: z.array(PostDaCoberturaSchema).length(TOTAL_DE_POSTS),
+  podcast: FalasDoTemaSaidaSchema,
 });
 
 export const CoberturaHomologadaSchema = CoberturaResumoSchema.extend({
   rodada: z.number().int().positive(),
   etapa: EtapaSchema,
   posts: z.array(PostDaCoberturaSchema).length(TOTAL_DE_POSTS),
+  podcast: FalasDoTemaSaidaSchema,
+});
+
+const FalaDoPodcastSchema = z.object({ falante: z.enum(["Lucas", "Clara"]), texto: z.string() });
+
+/**
+ * O podcast de recapitulação da cobertura em andamento — o roteiro inteiro (é
+ * a transcrição, que fica na tela junto do player) e o estado do áudio.
+ */
+export const PodcastSchema = z.object({
+  coberturaId: z.string().uuid(),
+  tema: z.string(),
+  roteiro: z.array(
+    z.object({ bloco: z.enum(BLOCOS_DO_PODCAST), titulo: z.string(), falas: z.array(FalaDoPodcastSchema).min(1) }),
+  ),
+  trechos: z.object({ total: z.number().int().min(0), prontos: z.number().int().min(0) }),
+  /** O episódio inteiro, quando os cinco trechos existem e já foram emendados. */
+  url: z.string().nullable(),
+});
+
+/** O progresso de UMA chamada de geração: um trecho por vez, e o episódio no fim. */
+export const ProgressoDoPodcastSchema = PodcastSchema.extend({
+  /** O bloco sintetizado NESTA chamada. */
+  gerado: z.enum(BLOCOS_DO_PODCAST).nullable(),
+  /** O bloco que falhou NESTA chamada — a transcrição continua na tela. */
+  falhou: z.enum(BLOCOS_DO_PODCAST).nullable(),
+  /** `true` quando o episódio existe: o cliente para de repetir. */
+  completo: z.boolean(),
 });
 
 export const ProgressoDaMidiaSchema = z.object({

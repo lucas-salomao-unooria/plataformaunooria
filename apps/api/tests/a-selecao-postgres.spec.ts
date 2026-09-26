@@ -6,6 +6,7 @@ import { ASelecaoService, EXP_ID } from "../src/a-selecao/a-selecao.service";
 import { POSTS_PADRAO, TEMA_PADRAO, type PostDaCobertura } from "../src/a-selecao/catalogo";
 import { ClassificacaoService } from "../src/a-selecao/classificacao.service";
 import { MuralSchema, PainelSchema, SessaoSchema } from "../src/a-selecao/contrato-de-rotas";
+import { FALAS_DO_TEMA_PADRAO } from "../src/a-selecao/podcast";
 import { PROIBIDO_NO_PAINEL } from "../src/a-selecao/invariantes";
 import { ETAPAS, PASSOS } from "../src/a-selecao/regras/passos";
 import { EquipesService } from "../src/equipes/equipes.service";
@@ -635,11 +636,23 @@ describe("atividade × rodada: zerar guarda, tema novo volta à 1", () => {
   test("tema novo é ATIVIDADE nova: a cobertura anterior sai de cena (e fica), e o gate volta à rodada 1", async () => {
     const anterior = await entrar(ids.ana);
     const posts: PostDaCobertura[] = POSTS_PADRAO.map((p) => ({ ...p }));
+    const falasDoTema = {
+      institucional:
+        "A Folha Oficial vinha com a planta nova da biblioteca, o comunicado da secretaria e a data de entrega, tudo arrumadinho.",
+      comunitario:
+        "Aí logo embaixo você rolava mais um pouco e via a Voz Coletiva: vizinhos reclamando do barulho e da falta de lugar para estudar.",
+      estatistico:
+        "E se não bastasse, tinha a Métrica Urbana com gráficos do custo da reforma e dos empréstimos de livros antes e depois.",
+    };
+    // Antes de homologar, a cobertura curada que nasceu sozinha lê as falas do sheet (coluna nula).
+    expect((await service.coberturas(ESCOLA, ids.turma, ids.professora)).ativa.podcast).toEqual(FALAS_DO_TEMA_PADRAO);
     const nova = await service.homologar(ESCOLA, ids.turma, ids.professora, ids.professora, {
       tema: "A reforma da biblioteca do bairro",
       origem: "ia",
       posts,
+      podcast: falasDoTema,
     });
+    expect(nova.podcast).toEqual(falasDoTema);
     expect(nova).toMatchObject({ rodada: 1, etapa: "exploracao", origem: "ia" });
     expect(nova.id).not.toBe(anterior.coberturaId);
 
@@ -649,6 +662,8 @@ describe("atividade × rodada: zerar guarda, tema novo volta à 1", () => {
 
     const coberturas = await service.coberturas(ESCOLA, ids.turma, ids.professora);
     expect(coberturas.ativa.id).toBe(nova.id);
+    // As falas do tema da IA ficam na cobertura: são o Bloco 2 do podcast desta atividade.
+    expect(coberturas.ativa.podcast).toEqual(falasDoTema);
     expect(coberturas.historico.map((c) => [c.ativa, c.rodadas])).toEqual([
       [true, 1],
       [false, 2],

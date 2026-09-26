@@ -45,6 +45,12 @@ Diretrizes obrigatórias:
 - "comentarios_destaque" são 2 comentários curtos de leitores, até 140 caracteres cada, sem ofensa.
 - Sem partidarismo, sem nome de político real, sem dado pessoal real.
 
+Além dos posts, escreva o trecho de um PODCAST que recapitula a cobertura depois da aula, falado por dois jovens educadores (Lucas e Clara) para estudantes de 11 a 13 anos. São três falas curtas, cada uma de 15 a 45 palavras, em linguagem falada e natural:
+- "institucional" (Lucas): o que a Folha Oficial mostrou nos quatro posts dela sobre este evento, e a sensação que isso passava, começando por "A Folha Oficial vinha com".
+- "comunitario" (Clara): o que a Voz Coletiva mostrou, começando por "Aí logo embaixo você rolava mais um pouco e via a Voz Coletiva:".
+- "estatistico" (Lucas): o que a Métrica Urbana mostrou, começando por "E se não bastasse, tinha a Métrica Urbana com".
+Cite só o que os posts de fato mostram. Escreva o nome do veículo por extenso, sem @, sem link e sem as palavras proibidas acima.
+
 Responda exclusivamente no formato JSON pedido.`;
 
 /**
@@ -74,15 +80,24 @@ FOCO>>>
 Os 12 posts, NESTA ORDEM, com estes ids, perfis e enquadramentos:
 ${molde}
 
-Preencha "tema_resolvido" com o tema em uma frase curta (5 a 100 caracteres).`;
+Preencha "tema_resolvido" com o tema em uma frase curta (5 a 100 caracteres), e "podcast" com as três falas do trecho de podcast, coerentes com os posts que você escreveu.`;
 }
 
 /** O schema da saída estruturada do preparo — os nomes do Zod do brief (§2.5). */
 export const SCHEMA_DO_PREPARO: AiJsonSchema = {
   type: "object",
-  required: ["tema_resolvido", "posts"],
+  required: ["tema_resolvido", "posts", "podcast"],
   properties: {
     tema_resolvido: { type: "string", description: "O tema em uma frase curta." },
+    podcast: {
+      type: "object",
+      required: ["institucional", "comunitario", "estatistico"],
+      properties: {
+        institucional: { type: "string", description: "Lucas: o que a Folha Oficial mostrou. De 15 a 45 palavras." },
+        comunitario: { type: "string", description: "Clara: o que a Voz Coletiva mostrou. De 15 a 45 palavras." },
+        estatistico: { type: "string", description: "Lucas: o que a Métrica Urbana mostrou. De 15 a 45 palavras." },
+      },
+    },
     posts: {
       type: "array",
       items: {
@@ -123,7 +138,8 @@ export const SCHEMA_DO_PREPARO: AiJsonSchema = {
 };
 
 /**
- * Teto de saída do preparo. O lote inteiro fica em torno de 2.500 tokens; o
+ * Teto de saída do preparo. O lote inteiro fica em torno de 2.500 tokens (mais
+ * uns 250 das três falas do podcast); o
  * PRD fixa 4.000 por geração (RNF-CUSTO-001), e o teto existe porque JSON
  * truncado não chega como `MAX_TOKENS` legível — chega como `JSON.parse`
  * falhando (ADR-74).
