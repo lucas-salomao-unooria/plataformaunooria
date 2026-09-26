@@ -7,8 +7,8 @@
  * O slug desta experiência no catálogo (`experiencias.exp_id`) e no bucket.
  *
  * É o que a porta da sala (`comum/liberacao.ts`) usa para perguntar se a missão
- * está liberada na turma. Toda experiência declara o seu — a exp07ef1b em
- * `o-eco-no-grupo/midia.ts`, esta aqui —, e o valor tem de bater com o `id` do
+ * está liberada na turma. Toda experiência declara o seu — cada módulo de missão
+ * tem o próprio `EXP_ID`, e este é o do Instanooria —, e o valor tem de bater com o `id` do
  * `public/experiencia.json` dela: divergir faz a missão nunca abrir, com a
  * liberação gravada e visível na tela do professor.
  */

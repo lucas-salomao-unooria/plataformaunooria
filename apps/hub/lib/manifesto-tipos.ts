@@ -21,7 +21,7 @@ export type PassoDoEstudante =
   | "podcast"
   | "fim";
 
-/** O `SeletorDeTurma` é compartilhado com a exp02em1b, a exp06ef2b e a exp07ef1b e
+/** O `SeletorDeTurma` é compartilhado com a exp02em1b e a exp06ef2b e
  *  exige `estudantes`; a api o devolve sempre. */
 export interface TurmaDoManifesto {
   id: string;

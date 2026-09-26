@@ -4,7 +4,6 @@ import { EmptyState, FeedbackAlert } from "@edu/ui/ds";
 import { EquipesDaFicha } from "@/components/equipes/equipes-da-ficha";
 import { LinkButton } from "@/components/link-button";
 import {
-  MISSAO_ECO_NO_GRUPO,
   MISSAO_FOTO_CONTA,
   MISSAO_MANIFESTO_IA,
   MISSAO_QUEM_MANDOU_ISSO,
@@ -18,7 +17,6 @@ import { turmaDaConducao } from "@/lib/turmas";
 import { MissaoFotoConta } from "./missao-foto-conta";
 import { MissaoInstanooria } from "./missao-instanooria";
 import { MissaoManifestoIa } from "./missao-manifesto-ia";
-import { MissaoOEcoNoGrupo } from "./missao-o-eco-no-grupo";
 import { MissaoQuemMandouIsso } from "./missao-quem-mandou-isso";
 import { MissaoRastroBoato } from "./missao-rastro-boato";
 import { MissaoUnooGPT } from "./missao-unoogpt";
@@ -105,9 +103,6 @@ export default async function MissaoPage({
   }
   if (missao.expId === MISSAO_UNOOGPT.expId) {
     return corpo(<MissaoUnooGPT ano={ano} missao={comFicha} turma={turma} />);
-  }
-  if (missao.expId === MISSAO_ECO_NO_GRUPO.expId) {
-    return corpo(<MissaoOEcoNoGrupo ano={ano} missao={comFicha} turma={turma} />);
   }
   if (missao.expId === MISSAO_RASTRO_BOATO.expId) {
     return corpo(<MissaoRastroBoato ano={ano} missao={comFicha} turma={turma} />);

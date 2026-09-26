@@ -37,10 +37,9 @@ token e prefixo de classe próprios. Elas nunca se cruzam.
 \cd{unitube} (30) & \cd{/unitube} & \cd{--uni-*}, \cd{uni-} ---
   \textbf{só escuro} & exp04ef1b\\
 \zebra \cd{whatsappmobile} (39) & \cd{/whatsappmobile} & \cd{--wa-*} --- só escuro
-  & \textbf{exp05ef1b, exp06ef2b e exp07ef1b} --- as três missões de
-  mensageiro. Na exp07ef1b, da tela de bloqueio à validação de Amara, inclusive
-  os erros diegéticos; na exp05ef1b, do convite da Nina à síntese, e de novo nas
-  perguntas finais (a regra Se/Então e o fechamento são da plataforma)\\
+  & \textbf{exp05ef1b e exp06ef2b} --- as duas missões de mensageiro. Na
+  exp05ef1b, do convite da Nina à síntese, e de novo nas perguntas finais (a
+  regra Se/Então e o fechamento são da plataforma)\\
 \cd{chatgpt} (25) & \cd{/chatgpt} & \cd{--gpt-*},
   \cd{data-gpt-theme} & \textbf{exp02em1b inteira} --- ela não tem revelação no
   software, então nunca troca para a seção da plataforma\\
@@ -145,7 +144,7 @@ pacote direto num componente:
 \cd{@edu/ui/ds-insta} & \cd{instanooria} & exp08ef1b\\
 \cd{@edu/ui/ds-unootube} & \cd{unitube} & backup-exp04ef1b (o UnooTube arquivado, \adrr{ADR-116}: não roda mais)\\
 \cd{@edu/ui/ds-chatgpt} & \cd{chatgpt} & exp02em1b\\
-\cd{@edu/ui/ds-whatsapp} & \cd{whatsappmobile} & exp05ef1b, exp06ef2b, exp07ef1b\\
+\cd{@edu/ui/ds-whatsapp} & \cd{whatsappmobile} & exp05ef1b, exp06ef2b\\
 \end{tabularx}
 \end{regra}
 
@@ -407,7 +406,8 @@ compensadas em \arq{packages/ui/styles/plataforma.css} e viraram pedido no
 \cd{Button} monta a classe por interpolação (\cd{unooria-button--variant-\$\{variant\}}),
 então um \cd{variant="tertiary"} produz uma classe que nenhuma folha define: o
 botão perde fundo, cor e borda e fica com os estilos de base. Era o que
-acontecia com \enquote{Zerar a turma} do UnooGPT e do Eco no Grupo, e com o
+acontecia com \enquote{Zerar a turma} do UnooGPT e do Eco no Grupo (retirado,
+\adrr{ADR-113}), e com o
 \enquote{confirmar} do diálogo (\cd{variant="destructive"}). O \emph{typecheck}
 não pega. Ao escrever um \cd{variant}, confira contra \cd{ButtonVariant}.
 \end{atencao}
@@ -453,13 +453,14 @@ que quebrou aquela suíte no dia em que as dez semanas do primeiro bimestre
 ficaram todas planejadas. Quem automatiza a tela abre os bimestres antes de
 procurar.
 
-\subsection{Lacunas abertas em \cd{whatsappmobile} na 0.1.17 (exp07ef1b 0.1.0)}
+\subsection{Lacunas abertas em \cd{whatsappmobile} na 0.1.17}
 
 A seção tem 29 componentes e cobre o cromo inteiro do mensageiro --- barra de
 status, cabeçalho de conversa, balão com mídia e documento, campo de escrever,
-diálogo, folha inferior. As quatro peças que a exp07ef1b pede e ela não publica
-estão abaixo; \textbf{três saem de composição}, e só uma é compensação de
-verdade (\adrr{ADR-68}).
+diálogo, folha inferior. As quatro peças abaixo foram levantadas pelo Eco no
+Grupo (exp07ef1b 0.1.0, retirado pela \adrr{ADR-113}); \textbf{três saem de
+composição}, e só uma é compensação de verdade (\adrr{ADR-68}). O selo de
+encaminhada e o balão de voz continuam em uso na exp05ef1b.
 
 \begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
 \toprule
@@ -486,8 +487,8 @@ verdade (\adrr{ADR-68}).
 
 \begin{atencao}
 \textbf{A seção publica só o tema escuro} (\cd{WaTheme = 'dark'}; o CSS traz
-\cd{:root, [data-wa-theme=dark]} e nada mais). Os wireframes da exp07ef1b descrevem
-telas claras; derivar a paleta é proibido, pela mesma regra do \cd{unitube}. O
+\cd{:root, [data-wa-theme=dark]} e nada mais). Os wireframes das missões de
+mensageiro descrevem telas claras; derivar a paleta é proibido, pela mesma regra do \cd{unitube}. O
 contraste do escuro (\cd{\#D3DAE0} sobre \cd{\#101D25}, cerca de 11:1) passa o
 AA com folga --- ver \adrr{ADR-68}.
 
@@ -960,7 +961,7 @@ coluna, verbo/objeto de telemetria, nome de glifo do Material Symbols
 \textbf{Anglicismo que fica por decisão, não por esquecimento:} \cd{fake news},
 \cd{cyberbullying}, \cd{print}, \cd{chat} e \cd{on-line}. Os dois primeiros são
 o vocabulário da BNCC e da Lei 13.185/2015 que o próprio guia cita; \cd{print} é
-a palavra que a criança usa, e a missão da exp06ef2b e da exp07ef1b gira em torno desse
+a palavra que a criança usa, e a missão da exp06ef2b gira em torno desse
 objeto. A \adrr{ADR-91} tem a razão de cada um. \textbf{Não \enquote{corrija}
 nenhum deles.}
 \end{regra}

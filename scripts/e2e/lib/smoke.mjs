@@ -176,9 +176,9 @@ export async function esperarOuFalharPorHttp(pagina, sucesso, rota, opcoes = {})
   /* Requisição que NÃO chega a ter status — abortada, recusada, DNS — não era
      coberta, e é a que mais engana: o `fetch` do cliente morre sem resposta, o
      estado da tela nunca avança e a suíte paga o timeout inteiro para reportar
-     o seletor. Em 2026-09-10 a `estudante/06` gastou 25s assim, com o
-     `POST /o-eco-no-grupo/intervencao` em `net::ERR_ABORTED` no relatório e
-     nada apontando para ele. */
+     o seletor. Em 2026-09-10 uma suíte de estudante gastou 25s assim, com um
+     `POST` da missão em `net::ERR_ABORTED` no relatório e nada apontando para
+     ele. */
   const falhaDeRede = (async () => {
     let req;
     try {
@@ -218,7 +218,7 @@ export function vigiarFalhasDaApi(pagina, falhas, rotulo = "") {
   pagina.on("response", async (r) => {
     if (r.status() < 400) return;
     const caminho = new URL(r.url()).pathname;
-    if (!/\/(api|planos|bemestar|unoogpt|o-eco-no-grupo|vila|runs|telemetry|ai)\//.test(caminho)) return;
+    if (!/\/(api|planos|bemestar|unoogpt|vila|runs|telemetry|ai)\//.test(caminho)) return;
     /* O CORPO dos 5xx, e não só o status. "500 POST /destilar" manda a pessoa
        procurar no log da api; "500 … quota diária excedida" resolve na hora.
        Só para 5xx: um 404 de sondagem de estado é esperado e o corpo dele é

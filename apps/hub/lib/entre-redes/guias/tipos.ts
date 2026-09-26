@@ -23,8 +23,8 @@
  * de `CONTROLE_DO_PROFESSOR`, a revelação sai de `lib/insta/copy-da-revelacao.ts`
  * (cópia gêmea da que a exp08ef1b carrega — as duas mudam juntas), os
  * cartões da Vila do Lume vêm da api por turma, e o CONTEÚDO que a turma lê na
- * tela — os vieses do unooGPT, os vídeos do UnooTube, as intervenções do Rastro
- * do Boato e as respostas do Eco no Grupo — vem de uma rota `professor-only` de
+ * tela — os vieses do unooGPT, os vídeos do UnooTube e as intervenções do
+ * Rastro do Boato — vem de uma rota `professor-only` de
  * cada módulo. Copiar qualquer um deles para
  * cá criaria a segunda cópia que diverge na primeira revisão de copy — e um
  * guia que projeta uma mensagem que ninguém recebeu põe a turma discutindo uma

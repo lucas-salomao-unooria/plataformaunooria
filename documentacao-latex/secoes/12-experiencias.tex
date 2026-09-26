@@ -27,9 +27,7 @@ mecânica impõe exigência ao \emph{software} --- e não como material pedagóg
   telemetria, progresso, avaliacao & \arq{quem-mandou-isso}\\
 \zebra \cd{exp06ef2b} & \cd{6EF} & estudante &
   telemetria, progresso, avaliacao & \arq{rastro-boato}\\
-\cd{exp07ef1b} & \cd{7EF} & estudante &
-  telemetria, progresso, avaliacao, ia & \arq{o-eco-no-grupo}\\
-\zebra \cd{exp08ef4b} & \cd{8EF} & estudante &
+\cd{exp08ef4b} & \cd{8EF} & estudante &
   telemetria, progresso, avaliacao & \arq{manifesto-ia}\\
 \cd{app-70-vila-do-lume} & \textbf{transversal} & estudante &
   telemetria & \arq{vila}\\
@@ -54,6 +52,10 @@ plataforma dele ganharam o prefixo \cd{backup-}, e ele saiu do catálogo, da gra
 e do \emph{deploy}. A unidade 1 aguarda o Jornal da Escola, que toma o código
 \cd{exp04ef1b}. A porta 5174 fica para ele.
 
+O 7º ano também está sem missão: a unidade 1 aguarda A Seleção, que reocupa
+o código \cd{exp07ef1b} depois da retirada do Eco no Grupo (\adrr{ADR-113}). A
+porta 5179 fica para ela.
+
 \begin{tabularx}{\linewidth}{@{}L{28mm}L{18mm}X@{}}
 \toprule
 \headrow \thd{Experiência} & \thd{Porta em \emph{dev}} & \thd{Onde aparece no hub}\\
@@ -64,12 +66,11 @@ e do \emph{deploy}. A unidade 1 aguarda o Jornal da Escola, que toma o código
 \zebra \cd{app-91-bem-estar} & \cd{5176} & \rota{/professor/bem-estar}\\
 \cd{app-70-vila-do-lume} & \cd{5177} & \rota{/exp/app-70-vila-do-lume}\\
 \zebra \cd{exp02em1b} & \cd{5178} & \rota{/exp/exp02em1b}\\
-\cd{exp07ef1b} & \cd{5179} & \rota{/exp/exp07ef1b}\\
-\zebra \cd{exp06ef2b} & \cd{5181} & \rota{/exp/exp06ef2b}\\
-\cd{app-92-plano-de-ensino} & \cd{5180} & \rota{/professor/plano-de-ensino}\\
-\zebra \cd{exp08ef4b} & \cd{5182} & \rota{/exp/exp08ef4b}\\
-\cd{exp01ef1b} & \cd{5183} & \rota{/exp/exp01ef1b}\\
-\zebra \cd{exp05ef1b} & \cd{5184} & \rota{/exp/exp05ef1b}\\
+\cd{exp06ef2b} & \cd{5181} & \rota{/exp/exp06ef2b}\\
+\zebra \cd{app-92-plano-de-ensino} & \cd{5180} & \rota{/professor/plano-de-ensino}\\
+\cd{exp08ef4b} & \cd{5182} & \rota{/exp/exp08ef4b}\\
+\zebra \cd{exp01ef1b} & \cd{5183} & \rota{/exp/exp01ef1b}\\
+\cd{exp05ef1b} & \cd{5184} & \rota{/exp/exp05ef1b}\\
 \bottomrule
 \end{tabularx}
 
@@ -218,8 +219,6 @@ da missão injeta o que só ela sabe montar:
     ciclo na ordem certa vêm de \rota{GET /rastro-boato/professor/material}.
     Lado a lado aparece o que sustenta a missão: A e C produzem a
     \textbf{mesma} reação do grupo.
-  \item \textbf{exp07ef1b} --- as três respostas e as falas que o bairro devolve
-    em cada desfecho vêm de \rota{GET /o-eco-no-grupo/professor/material}.
   \item \textbf{app-70} --- os cartões das três bolhas vêm de
     \rota{GET /vila/professor/cartoes}, \textbf{por turma}: nos anos iniciais a
     bolha B não é servida, e projetá-la mandaria o professor esperar a reação de
@@ -227,7 +226,8 @@ da missão injeta o que só ela sabe montar:
 \end{itemize}
 
 \textbf{Descrever também é copiar} (\adrr{ADR-86}). As missões da exp04ef1b, da
-exp06ef2b e da exp07ef1b não guardavam o conteúdo: guardavam a paráfrase dele --- e
+exp06ef2b e do Eco no Grupo (retirado, \adrr{ADR-113}) não guardavam o conteúdo:
+guardavam a paráfrase dele --- e
 uma varredura pelo texto exato do catálogo dentro de cada guia devolveu
 \textbf{zero} ocorrências nas três. A do UnooTube dizia \emph{``metade cita
 fonte verificável \dots\ a outra metade é sensacionalista''} quando a divisão
@@ -610,125 +610,6 @@ A ficha do catálogo e o guia foram redigidos a partir das ADRs, dos dois
 passou por playtest em sala} --- estão marcados no código como ponto de partida
 para revisão pedagógica, não palavra final.
 \end{limitacao}
-
-% ---------------------------------------------------------------------------
-\section{exp07ef1b --- O Eco no Grupo}
-\label{sec:exp07ef1b}
-
-\textbf{7º ano · Unidade 1 · clone de WhatsApp móvel · \cd{whatsappmobile}}
-
-Um boato sobre o festival do bairro corre num grupo de mensageria: print
-recortado, áudio alarmado, três moradores indignados e um administrador pedindo
-calma. O estudante audita as mensagens, descobre o parágrafo que o print cortou
---- o evento tinha alvará regular e a polícia só organizava o desvio dos ônibus
---- e responde citando a reportagem completa. O grupo se acalma na frente dele,
-e o administrador fixa a mensagem no topo do chat.
-
-É a \textbf{primeira missão da trilha em duas aulas}, e a segunda não começa
-sozinha.
-
-\subsection{As duas aulas, e quem separa uma da outra}
-
-\cd{exp07ef1b\_gates\_turma} guarda uma etapa por turma
-(\cd{investigacao | aula2 | debate | reflexao}), e a professora a move por três
-botões no painel de resultados. A reconciliação entre a etapa da turma e o passo
-de cada estudante é função pura (\arq{regras/passos.ts}), porque a api e o
-cliente precisam chegar à mesma resposta --- duas implementações divergentes
-seriam a tela discordando do servidor.
-
-A diferença em relação ao relógio da exp02em1b é que aqui a etapa é
-\textbf{piso E teto}:
-
-\begin{tabularx}{\linewidth}{@{}L{28mm}L{28mm}X@{}}
-\toprule
-\headrow \thd{Etapa da turma} & \thd{Piso} & \thd{Teto --- e por quê}\\
-\midrule
-\cd{investigacao} & \cd{chat\_amara} & \cd{breakpoint}: quem investiga rápido
-  não decide e acaba a missão sozinho antes da segunda aula\\
-\zebra \cd{aula2} & \cd{podcast} & \cd{sintese}: a reflexão é depois do debate\\
-\cd{debate} & \cd{sintese} & \cd{sintese} --- piso e teto no mesmo passo: no
-  debate a turma inteira olha a mesma tela, porque a conversa é entre pares\\
-\zebra \cd{reflexao} & \cd{reflexao} & \cd{fim}\\
-\bottomrule
-\end{tabularx}
-
-\begin{nota}
-\textbf{Estudante sem turma não tem gate.} Não há quem dê a largada para ele, e
-prendê-lo no breakpoint seria um beco sem saída: a missão inteira ficaria
-inalcançável para quem chegou à rede sem enturmação. Ele corre no próprio ritmo,
-e o painel não o vê porque ele não está em turma nenhuma.
-\end{nota}
-
-O estudante consulta \rota{GET /o-eco-no-grupo/gate} a cada 5\,s --- rota leve de
-propósito, sem catálogo e sem mídia --- e o \cd{agora} da resposta é o instante
-do \emph{servidor}: o relógio da máquina da escola atrasa, e não é ele que
-decide o momento da aula.
-
-\subsection{O portão que a missão existe para instalar}
-
-Responder no grupo sem ter aberto a matéria íntegra é \textbf{recusado}
-(\cd{sem-inspecao}, 409). Não é validação de formulário: é o comportamento que a
-experiência inteira está tentando desfazer, e é a única regra aqui que vale a
-aula. O portão vive em \arq{regras/sessao.ts}, no servidor.
-
-\subsection{O par casado: o print é um recorte da reportagem}
-
-O print que circula no grupo e a foto da matéria são \textbf{a mesma imagem},
-cortada. Mesma cena, mesma luz, mesmo instante --- e é isso que faz o recorte
-visual espelhar o recorte do texto que o estudante vai descobrir. A foto é
-gerada por IA; o layout do portal (\enquote{Gazeta Regional}), a manchete, os
-metadados e o box do trecho suprimido são \textbf{HTML}, porque modelo de imagem
-erra texto longo e o parágrafo omitido precisa ser legível, selecionável por
-leitor de tela e com contraste medido (\adrr{ADR-67}).
-
-\subsection{A IA escreve a fala, nunca o resultado}
-
-Três superfícies, todas com \cd{QuotaService} antes e depois, e todas com
-falha para o lado seguro (\adrr{ADR-66}):
-
-\begin{itemize}
-  \item \textbf{As reações do bairro} à intervenção. O desfecho
-    (\cd{checada | ruido | conflito}) sai do gabarito do catálogo antes de
-    qualquer modelo ser chamado; a IA escreve como aquilo soa. Sem ela, o
-    roteiro autoral do catálogo assume --- e é ele que a suíte de testes exercita.
-  \item \textbf{Amara no privado}, e só depois da decisão. O silêncio dela na
-    investigação é não-negociável: se apontasse a mensagem falsa, o
-    reconhecimento de padrão que a missão mede deixaria de acontecer.
-  \item \textbf{A devolutiva do \enquote{Meu percurso}}, um parágrafo sobre as
-    escolhas --- que não é nota e não entra no \cd{score}.
-\end{itemize}
-
-\begin{atencao}
-A conversa com Amara é o \textbf{único texto livre} da missão, e o pacote de
-insumos aprovado o declarava inexistente. Ele voltou com cinco travas: 600
-caracteres, teto de 3 turnos, gravado sob RLS, fora de log e de telemetria, e
-sem nenhuma rota de gestor que o alcance (\adrr{ADR-66}).
-\end{atencao}
-
-\subsection{Sem mídia, a missão roda igual}
-
-\rota{GET /o-eco-no-grupo/midia} devolve \cd{null} no que não foi preparado, e
-\cd{null} é informação: o áudio cai na \textbf{transcrição} --- que está sempre
-na tela, por acessibilidade --- e a foto na ilustração procedural. Quem prepara é
-o professor, no painel, e a mídia vale para o contrato inteiro.
-
-\subsection{O que o professor lê}
-
-Sem coluna de pontos. A folha mostra conduta --- quem abriu a matéria antes de
-responder, quem ouviu o episódio, quem apagou e tentou de novo, quem entregou o
-percurso --- e a distribuição A/B/C aparece como percentual da turma, que é o
-material do debate. Listagem é ordenável, e ordenar crianças por acerto viraria
-ranking.
-
-\subsection{O clone é escuro}
-
-A seção \cd{whatsappmobile} do design system publica exclusivamente o tema
-escuro. Os wireframes descrevem telas claras; o que está em produção é o escuro,
-e o contraste dele passa o \cd{RNF-ACES-001} com folga (\adrr{ADR-68}). A ponte
-\cd{@edu/ui/ds-whatsapp} nasceu com esta missão --- a seção era
-\enquote{sem consumidor} até aqui.
-
-
 
 % ---------------------------------------------------------------------------
 \section{exp01ef1b --- O Que a Foto Conta}
@@ -1173,26 +1054,6 @@ pela primeira vez), descobre que o alerta veio de seis encaminhamentos sem autor
 --- e decide o que fazer quando chega um áudio convocando um protesto. Depois vê
 a própria decisão desenhada como topologia de rede.
 
-\subsection{Como ela se separa da exp07ef1b}
-
-As duas são clone de mensageiro sobre boato, com duas aulas e breakpoint. O que
-as separa é o \textbf{objeto de análise}, e a distinção é deliberada:
-
-\begin{tabularx}{\linewidth}{@{}L{26mm}X X@{}}
-\toprule
-\headrow \thd{} & \thd{exp06ef2b (6º ano)} & \thd{exp07ef1b (7º ano)}\\
-\midrule
-O que se audita & dados de ENVIO: saltos, autoria, carimbo &
-  o RECORTE: o parágrafo que o print cortou\\
-\zebra A intervenção & denunciar e fixar o laudo oficial &
-  responder citando a matéria completa\\
-A revelação & a TOPOLOGIA: 1.200 conexões, ou a corrente cortada no nó 3 &
-  a reportagem íntegra, com o trecho suprimido em destaque\\
-\zebra Habilidade & \cd{EF06CO01}, \cd{EF06CO07}, \cd{EF06CO08} &
-  \cd{EF07CO01}\\
-\bottomrule
-\end{tabularx}
-
 \subsection{O portão que a missão existe para instalar}
 
 Decidir sem ter aberto os dados de \textbf{três mensagens distintas} é
@@ -1212,7 +1073,7 @@ numa rolagem, e a Etapa~2 perderia a navegação que ela mede.
 
 \cd{exp06ef2b\_gates\_turma} guarda uma etapa por turma
 (\cd{aula1 | aula2}), e a professora a move por \textbf{um} botão no painel de
-resultados --- e o inverso dele. São duas etapas, não as quatro da exp07ef1b: o
+resultados --- e o inverso dele. São só duas etapas: o
 debate desta missão acontece \emph{depois} do mapa, com a turma toda já na Aula
 2, e não há o que congelar no meio. Gate que ninguém aperta enche o painel de
 controle morto.

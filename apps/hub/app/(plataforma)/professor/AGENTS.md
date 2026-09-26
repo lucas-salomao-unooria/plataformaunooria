@@ -86,7 +86,7 @@ missão que o professor roda ter a informação no mesmo lugar da primeira.
 (`blocos={{ debate: <... /> }}`). **Toda missão publicada tem o seu**: os
 momentos e a revelação do Instanooria, os cartões da Vila por turma, a tabela
 dos vieses do unooGPT, as intervenções do
-Rastro do Boato e as respostas do Eco no Grupo — as três últimas por rota
+Rastro do Boato — as últimas por rota
 `professor-only` da api (`/<slug>/professor/...`). O custo de copiar qualquer um
 deles é o professor projetar para a turma uma mensagem que ninguém recebeu.
 

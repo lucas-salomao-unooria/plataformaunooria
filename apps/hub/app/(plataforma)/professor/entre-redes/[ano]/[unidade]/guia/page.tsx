@@ -8,7 +8,6 @@ import {
   rotaDaMissao,
   rotuloDaMissao,
   MISSAO_ATUAL,
-  MISSAO_ECO_NO_GRUPO,
   MISSAO_QUEM_MANDOU_ISSO,
   MISSAO_RASTRO_BOATO,
   MISSAO_UNOOGPT,
@@ -17,7 +16,6 @@ import { buscarGuia } from "@/lib/entre-redes/guias";
 import type { BlocosVivos } from "@/lib/entre-redes/guias/tipos";
 import type { MaterialDoProfessor } from "@/lib/quem-mandou-tipos";
 
-import { IntervencoesDoEco, type MaterialDoEco } from "./intervencoes-do-eco";
 import { IntervencoesDoRastro, type MaterialDoRastro } from "./intervencoes-do-rastro";
 import { MomentosDoPainel } from "./momentos-do-painel";
 import { QuemMandouOPacote } from "./quem-mandou-o-pacote";
@@ -34,10 +32,10 @@ import { TelasDaRevelacao } from "./telas-da-revelacao";
  * BLOCOS VIVOS cada missão injeta.
  *
  * Bloco vivo é o que tem fonte de verdade em outro lugar e não pode virar texto.
- * Seis missões têm um: os momentos e as telas da revelação do Instanooria, a
+ * Cinco missões têm um: os momentos e as telas da revelação do Instanooria, a
  * tabela dos vieses do unooGPT, os 21 vídeos do UnooTube, as intervenções do
- * Rastro do Boato, as do Eco no Grupo e o pacote curado de Quem Mandou Isso?
- * (com o roteiro da roda e as perguntas de evidência) — as cinco últimas vindas
+ * Rastro do Boato e o pacote curado de Quem Mandou Isso? (com o roteiro da
+ * roda e as perguntas de evidência) — as quatro últimas vindas
  * da api. Ver a nota em `guias/tipos.ts`.
  *
  * **Missão com conteúdo que a turma LÊ na tela não descreve esse conteúdo no
@@ -138,15 +136,6 @@ async function blocosDaMissao(expId: string | undefined): Promise<BlocosVivos | 
         debate: (
           <QuemMandouOPacote
             dados={await apiDoServidor<MaterialDoProfessor>("/quem-mandou-isso/professor/material")}
-          />
-        ),
-      };
-
-    case MISSAO_ECO_NO_GRUPO.expId:
-      return {
-        debate: (
-          <IntervencoesDoEco
-            dados={await apiDoServidor<MaterialDoEco>("/o-eco-no-grupo/professor/material")}
           />
         ),
       };

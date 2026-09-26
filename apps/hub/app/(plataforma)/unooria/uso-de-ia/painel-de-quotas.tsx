@@ -35,7 +35,7 @@ const PERFIS: Record<
 > = {
   estudante: {
     titulo: "Estudantes",
-    quemUsa: "O tutor do Instanooria, a Missão Tempestade e a Amara do Eco no Grupo.",
+    quemUsa: "O tutor do Instanooria e a Missão Tempestade.",
     unidade: "partidas completas da Missão Tempestade",
     custoDaUnidade: 77_000,
   },

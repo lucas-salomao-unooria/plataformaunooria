@@ -186,8 +186,7 @@ const SECOES: SecaoLegal[] = [
         </div>
         <p>
           O Instanooria imita um aplicativo de fotos; o UnooTube, um site de vídeos; o UnooGPT, um
-          assistente de conversa; O Eco no Grupo, um aplicativo de mensagens. A semelhança é
-          proposital: a missão só funciona se o ambiente parecer o de verdade. Mas o ambiente é
+          assistente de conversa. A semelhança é proposital: a missão só funciona se o ambiente parecer o de verdade. Mas o ambiente é
           fechado, e a diferença importa.
         </p>
         <div className="legal-cards">
@@ -466,7 +465,6 @@ const SECOES: SecaoLegal[] = [
         <ul>
           <li>no feed do Instanooria, criando os perfis, as publicações e as reações dos personagens;</li>
           <li>no UnooGPT, na conversa com o personagem que responde às suas perguntas;</li>
-          <li>em O Eco no Grupo, na conversa com a personagem e na devolutiva sobre suas escolhas;</li>
           <li>nas ferramentas do professor: no rascunho do plano de aula e no texto do acompanhamento de bem-estar.</li>
         </ul>
         <h3>O que você precisa saber sobre ela</h3>
@@ -824,7 +822,7 @@ export default function Termos() {
       }
       meta={[
         { rotulo: "Versão", valor: "1.0 — rascunho para revisão jurídica" },
-        { rotulo: "Última atualização", valor: "5 de setembro de 2026" },
+        { rotulo: "Última atualização", valor: "25 de setembro de 2026" },
         { rotulo: "Aplica-se a", valor: "Hub e experiências da plataforma" },
         { rotulo: "Público", valor: "Estudantes, professores e gestão escolar" },
       ]}

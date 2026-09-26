@@ -9,11 +9,10 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{115 decisões}, numeradas até ADR-118. A ADR-113 (a retirada do
-Eco no Grupo), a 115 (A Seleção) e a 117 (o Jornal da Escola) são de frentes
-paralelas que ainda não entraram nesta base --- os números foram reservados
-entre as sessões antes de qualquer uma escrever ---; fora elas, \textbf{sem
-lacunas}. Quando
+São \textbf{116 decisões}, numeradas até ADR-118. A 115 (A Seleção) e a 117
+(o Jornal da Escola) são de frentes paralelas que ainda não entraram nesta base
+--- os números foram reservados entre as sessões antes de qualquer uma escrever
+---; fora elas, \textbf{sem lacunas}. Quando
 eram cem, as cinco últimas nasceram no MESMO dia, em três frentes paralelas, e não
 colidiram porque os números foram \textbf{reservados por quem repartia o
 trabalho antes de qualquer uma escrever} --- que é a lição que a colisão de
@@ -114,9 +113,9 @@ que a cercam.
 \zebra \adrr{ADR-63} & Ingestão de telemetria desacoplada do processamento analítico & 2026-09-04 & Aceita\\
 \adrr{ADR-64} & Relógio da Tempestade: tempo no marco, não em background & 2026-09-05 & Aceita\\
 \zebra \adrr{ADR-65} & Guia da aula é gerado do catálogo, sem tela dedicada & 2026-09-06 & Aceita\\
-\adrr{ADR-66} & exp07ef1b: IA no runtime para conversas, gabarito server-side & 2026-09-06 & Aceita\\
-\zebra \adrr{ADR-67} & Mídias da exp07ef1b: imagens e áudios pré-gerados no bucket & 2026-09-06 & Aceita\\
-\adrr{ADR-68} & exp07ef1b e exp06ef2b: clone de mensageria só no tema escuro & 2026-09-06 & Aceita\\
+\adrr{ADR-66} & exp07ef1b: IA no runtime para conversas, gabarito server-side & 2026-09-06 & Superada (missão retirada, \adrr{ADR-113})\\
+\zebra \adrr{ADR-67} & Mídias da exp07ef1b: imagens e áudios pré-gerados no bucket & 2026-09-06 & Aceita como molde; o Eco saiu (\adrr{ADR-113})\\
+\adrr{ADR-68} & exp07ef1b e exp06ef2b: clone de mensageria só no tema escuro & 2026-09-06 & Aceita (vale para a exp06ef2b; o Eco saiu, \adrr{ADR-113})\\
 \zebra \adrr{ADR-69} & Missão só abre na turma se o professor liberou (\cd{liberacoes}) & 2026-09-06 & Aceita\\
 \adrr{ADR-70} & Página de transparência algorítmica aberta ao público & 2026-09-06 & Aceita\\
 \zebra \adrr{ADR-71} & Fatias verticais por módulo em frentes paralelas & 2026-09-06 & Aceita\\
@@ -161,9 +160,10 @@ que a cercam.
 \zebra \adrr{ADR-110} & O código da experiência diz onde ela mora na trilha & 2026-09-23 & Aceita\\
 \adrr{ADR-111} & Equipe é quem divide um computador, e o painel conta por computador & 2026-09-25 & Aceita\\
 \zebra \adrr{ADR-112} & A evidência é por atividade e rodada, e a melhor rodada vale por habilidade & 2026-09-25 & Aceita\\
-\adrr{ADR-114} & Quem mandou isso? v1 é retirada; a v2.2 entra com o mesmo código & 2026-09-25 & Aceita\\
-\zebra \adrr{ADR-116} & A experiência que perde o código é arquivada, não apagada & 2026-09-25 & Aceita\\
-\adrr{ADR-118} & Quem mandou isso? v2.2: atividade é o pacote, rodada é a reaplicação, e a régua mede pela seleção e pelas perguntas do PO & 2026-09-25 & Aceita\\
+\adrr{ADR-113} & A Seleção substitui o Eco no Grupo, e a limpeza vem antes & 2026-09-25 & Aceita\\
+\zebra \adrr{ADR-114} & Quem mandou isso? v1 é retirada; a v2.2 entra com o mesmo código & 2026-09-25 & Aceita\\
+\adrr{ADR-116} & A experiência que perde o código é arquivada, não apagada & 2026-09-25 & Aceita\\
+\zebra \adrr{ADR-118} & Quem mandou isso? v2.2: atividade é o pacote, rodada é a reaplicação, e a régua mede pela seleção e pelas perguntas do PO & 2026-09-25 & Aceita\\
 \bottomrule
 \end{tabularx}
 
@@ -9454,6 +9454,120 @@ o UnooTube voltarem com atividades e o id opaco pedir um ciclo de vida comum ---
 aí a atividade vira conceito de plataforma; o painel que junta missões ganhar a
 regra pedagógica; ou uma turma rodar duas atividades da mesma missão em
 paralelo, que a rodada em andamento inferida não distingue.
+
+% ---------------------------------------------------------------------------
+\section{ADR-113 --- A Seleção substitui o Eco no Grupo, e a limpeza vem antes}
+\label{adr:a-selecao-substitui-o-eco}
+
+\textbf{Data.} 2026-09-25. \textbf{Status.} Aceita.
+\textbf{Consequência} da \adrr{ADR-110}: o código da missão é DERIVADO da série e
+da unidade, e o formato não tem lugar para duas missões na mesma unidade. Tira
+de circulação o que a \adrr{ADR-66} descrevia (a IA no \emph{runtime} das
+conversas do Eco) e deixa a \adrr{ADR-67} como molde de mídia gerada pelo
+professor, sem missão que a use até a próxima.
+
+\begin{especificacao}{Contexto}
+O documento de requisitos de \textbf{A Seleção} (7º ano, 1º bimestre, clone de
+rede social de fotos) chegou em 2026-09-19 apontando para o código
+\cd{exp07ef1b} --- o mesmo de \textbf{O Eco no Grupo}, publicado desde
+2026-09-03 (7º ano, unidade 1, clone de mensageiro). As duas cobrem a mesma
+unidade do bimestre, e a de fotos é a que acompanha o paradidático dele.
+
+O código não é escolhido: sai de \cd{codigoDaMissao(serie, unidade)}, e um teste
+reprova manifesto cujo \cd{id} não bata com a série e a unidade. Duas missões
+na unidade 1 do 7º ano são, para a plataforma, a mesma pasta, o mesmo prefixo
+de tabela, o mesmo caminho no \emph{bucket} e a mesma linha em
+\cd{liberacoes}.
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{itemize}
+  \item \textbf{A Seleção substitui o Eco por completo}, e o Eco sai da trilha
+    ANTES de a missão nova começar --- numa frente própria, com PR próprio. A
+    frente da missão nova não começa sobre um código ocupado.
+  \item \textbf{Sai tudo o que é do Eco}: a experiência, o módulo da api e as
+    rotas \rota{/o-eco-no-grupo/*}, os quatro \emph{models} e as tabelas
+    \cd{exp07ef1b\_*}, as telas do professor (missão, resultados, painel da aula,
+    zerar a turma, guia), a entrada no catálogo (o 7º ano, unidade 1, fica
+    \enquote{em breve}), a suíte do estudante, o serviço do \emph{compose} e as
+    menções nos Termos de Uso e no painel da quota.
+  \item \textbf{Saem também as linhas de PLATAFORMA que dizem \cd{exp07ef1b}},
+    porque o código vai passar a significar outra missão: \cd{experiencias} e
+    \cd{experiencias\_versoes} (senão a sala ofereceria o Eco para liberar e o
+    \emph{rollback} ofereceria o \emph{bundle} 0.1.5 no lugar da missão nova),
+    \cd{liberacoes} (a turma que liberou o Eco abriria a outra sem ninguém ter
+    liberado), \cd{progresso} (o SDK da missão nova leria o JSON salvo pelo Eco,
+    com a conclusão dele) e \cd{disponibilidades} (inclusive a
+    \cd{versao\_fixa} que prende uma escola a um \emph{bundle}). A migração tira
+    o FORCE da RLS de \cd{liberacoes} e \cd{progresso}, apaga, confere que não
+    sobrou nada e devolve o FORCE --- o molde da \adrr{ADR-110}.
+  \item \textbf{Ficam}: \cd{telemetria\_eventos}, porque o \cd{exp\_version} de
+    cada linha já separa o Eco (0.1.x) da missão nova (1.0.0 em diante), e o
+    \cd{DELETE} varreria todas as partições; \cd{recursos\_auditoria}, porque é o
+    histórico só de inserção do painel da Unooria (\adrr{ADR-89}); a ponte
+    \cd{@edu/ui/ds-whatsapp}, que é uma das cinco que o \cd{packages/ui} promete;
+    e a capacidade de voz do \emph{provider} (\cd{generateSpeech}), agora sem
+    missão que a use. A porta 5179 fica reservada para a missão nova.
+  \item \textbf{A missão nova começa acima da 0.1.5}: o caminho
+    \cd{gs://\{contrato\}-exp/exp07ef1b/\{versao\}/} é tratado como imutável, e
+    ele guarda os \emph{bundles} do Eco. A mídia gerada do Eco, em
+    \cd{experiencias/exp07ef1b/} no \emph{bucket} de \emph{assets}, é apagada
+    fora do repositório; a missão nova grava a dela num subprefixo próprio.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{A Seleção em outra unidade do 7º ano} (\cd{exp07ef2b} a
+    \cd{exp07ef4b}, livres). Manteria o Eco no ar, mas descolaria a missão nova
+    do bimestre cujo paradidático ela reencena --- o documento dela nasce
+    amarrado à unidade 1.
+  \item \textbf{Mudar o formato do código} para caber duas missões por unidade.
+    É o gatilho que a própria \adrr{ADR-110} previu, mas o catálogo tem uma
+    missão por unidade por desenho (48 missões, 12 anos $\times$ 4 unidades), e
+    abrir o formato para um caso que o produto resolveu por substituição
+    espalharia a mudança por pasta, tabela, \emph{bucket}, catálogo do hub e
+    \cd{buscarMissao}.
+  \item \textbf{Reaproveitar o Eco por dentro} (trocar o conteúdo e manter
+    tabelas e rotas). A mecânica, o clone e os dados são outros; o que sobraria
+    do Eco seria só o nome das tabelas, e com ele o risco de ler dado velho como
+    se fosse da missão nova.
+  \item \textbf{Remover o Eco na mesma frente da missão nova.} Um PR só
+    misturaria apagar e construir, e o \emph{diff} deixaria de mostrar o que saiu.
+    O dono do produto pediu a limpeza primeiro.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{O 7º ano fica sem missão entre as duas frentes.} A unidade 1
+    aparece \enquote{em breve} até a missão nova entrar.
+  \item \textbf{O que o Eco já produziu some das telas}: as sessões, as
+    conversas com a Amara e as reflexões são apagadas com as tabelas, e o
+    progresso das crianças que o concluíram deixa de aparecer. A telemetria
+    fica, mas nenhum painel a lê por missão retirada.
+  \item \textbf{Parte da limpeza é fora do repositório}: a mídia do Eco no
+    \emph{bucket}, as métricas de log \cd{exp07ef1b.*} e a sonda de
+    disponibilidade no Terraform. Esquecer a mídia faz o \emph{bucket} guardar
+    arquivos que nenhum código lê; esquecer as métricas faz um painel olhar para
+    uma missão que mudou de natureza.
+  \item \textbf{Comentários nos módulos das missões que vão sair da trilha}
+    (Foto Conta, Quem mandou isso?, Rastro do Boato, Manifesto da IA) ainda
+    citam o Eco como precedente. Ficam: esses módulos saem em seguida, e
+    corrigi-los agora é trabalho descartado.
+\end{itemize}
+
+\textbf{Verificação.} A migração foi aplicada sobre um Postgres descartável já
+semeado, com linhas do Eco em \cd{progresso}, \cd{liberacoes},
+\cd{disponibilidades}, \cd{experiencias} e \cd{experiencias\_versoes}: todas
+sumiram, as de outras missões ficaram, as quatro tabelas saíram e o FORCE da RLS
+voltou. A suíte da api (111 suítes) e as dos demais pacotes passam sem o Eco.
+
+\textbf{Gatilho.} Outra missão nova cair numa unidade já ocupada --- aí a
+pergunta \enquote{substituir ou mudar o formato} volta, e a resposta desta ADR
+não vale sozinha para a próxima; ou o produto pedir o Eco de volta, que volta
+por outra unidade ou por outro código.
 
 % ---------------------------------------------------------------------------
 \section{ADR-114 --- Quem mandou isso? v1 é retirada; a v2.2 entra com o mesmo código}
