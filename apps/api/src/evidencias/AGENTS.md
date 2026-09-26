@@ -87,6 +87,11 @@ Missão com ficha faz TRÊS coisas, no mesmo trabalho:
 3. **A marca**: `EvidenciasService.marcar(tx, {...})` DA TRANSAÇÃO dela, no
    ponto em que a missão já sabe o que a criança fez. Recebe o `tx` e não abre
    `comTenancy`: a marca cai junto se a jogada cair.
+   **Ação que a revelação entrega** (a seleção do Mural da exp05ef1b) pergunta
+   antes `jaAvaliadaAntes(tx, {...})`: se a criança já tem nível daquele
+   marcador numa rodada anterior da mesma atividade (qualquer origem, menos
+   `nao_participou`), a rodada nova mediria memória, e a missão não marca
+   (ADR-120).
 
 `registrarFicha` existe **só para teste** (a suíte registra uma ficha da
 exp08ef1b em tempo de execução). A ficha de uma missão real vai no registro

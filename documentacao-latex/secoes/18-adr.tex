@@ -9,7 +9,7 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{118 decisões}, numeradas até ADR-119. A 117 (o Jornal da Escola) é
+São \textbf{119 decisões}, numeradas até ADR-120. A 117 (o Jornal da Escola) é
 de uma frente paralela que ainda não entrou nesta base --- o número foi
 reservado entre as sessões antes de qualquer uma escrever ---; fora ela,
 \textbf{sem lacunas}. Quando
@@ -164,8 +164,9 @@ que a cercam.
 \zebra \adrr{ADR-114} & Quem mandou isso? v1 é retirada; a v2.2 entra com o mesmo código & 2026-09-25 & Aceita\\
 \adrr{ADR-115} & A Seleção: o par do Mural é do computador, e a IA gradua a legenda & 2026-09-25 & Aceita\\
 \zebra \adrr{ADR-116} & A experiência que perde o código é arquivada, não apagada & 2026-09-25 & Aceita\\
-\adrr{ADR-118} & Quem mandou isso? v2.2: atividade é o pacote, rodada é a reaplicação, e a régua mede pela seleção e pelas perguntas do PO & 2026-09-25 & Aceita\\
+\adrr{ADR-118} & Quem mandou isso? v2.2: atividade é o pacote, rodada é a reaplicação, e a régua mede pela seleção e pelas perguntas do PO & 2026-09-25 & Aceita; a régua foi substituída pela \adrr{ADR-120}\\
 \zebra \adrr{ADR-119} & O podcast da A Seleção é do professor, e a IA reescreve só as três falas que dependem do tema & 2026-09-26 & Aceita\\
+\adrr{ADR-120} & A régua v2 de Quem mandou isso?: cada habilidade pelo verbo dela, e refazer o mesmo pacote não mede memória & 2026-09-26 & Aceita\\
 \bottomrule
 \end{tabularx}
 
@@ -9988,6 +9989,9 @@ produto fechou os quatro primeiros em 2026-09-25, e os três últimos são os
     EF05CO03 vem da P1, e a EF05CO04 \textbf{só} da P2. Da regra Se/Então o
     servidor recusa apenas o que não é resposta (curto, longo, texto sem
     sentido); o professor a lê e ajusta a EF05CO04 pelo painel.
+    \emph{Atualização de 2026-09-26}: esta régua foi substituída pela
+    \adrr{ADR-120} --- a faixa da EF05CO08, as duas perguntas e a rubrica do
+    Se/Então. O resto desta decisão continua valendo.
   \item \textbf{As perguntas do PO ficam no chat da Nina, DEPOIS do Se/Então,
     com a mesma enquete da Etapa 3.} A ordem é casca (a regra) \seta{} clone (P1,
     P2 e a despedida da Nina) \seta{} casca (\enquote{Missão Concluída}): a
@@ -10113,8 +10117,9 @@ atrás do gabarito, repetida no \cd{dist/}); e o \emph{build} de produção do
 hub. A suíte de ponta a ponta tem \cd{node --check} e \emph{lint}, e não
 rodou.
 
-\textbf{Gatilho.} A coordenação pedagógica recusar a régua --- a EF05CO04 só
-pela P2, ou o peso da falsa neutra na EF05CO08 --- e a ficha subir de versão; o
+\textbf{Gatilho.} A régua mudar --- a EF05CO04 só pela P2, ou o peso da falsa
+neutra na EF05CO08 --- e a ficha subir de versão (disparado em 2026-09-26: a
+\adrr{ADR-120}); o
 PO pedir que o Se/Então conte para a evidência; uma segunda missão precisar de
 \enquote{atividade} sem ter um pacote, que é o gatilho da \adrr{ADR-112} para a
 atividade virar conceito de plataforma; ou o DS publicar a seta esgotada e a
@@ -10210,4 +10215,122 @@ vinte e uma falas, cerca de 3.200 bytes. Três fatos decidiram a forma:
 não passar na revisão de conteúdo e for preciso gravar em estúdio (entra no
 lugar do episódio, com o mesmo roteiro); ou a síntese passar a devolver o
 episódio inteiro dentro de uma chamada, e a emenda deixar de ser necessária.
+
+% ---------------------------------------------------------------------------
+\section{ADR-120 --- A régua v2 de Quem mandou isso?: cada habilidade pelo verbo dela, e refazer o mesmo pacote não mede memória}
+\label{adr:regua-v2-quem-mandou}
+
+\textbf{Data.} 2026-09-26. \textbf{Status.} Aceita. \textbf{Substitui} a régua
+da \adrr{ADR-118} (a faixa da EF05CO08 e as duas perguntas); o resto dela ---
+atividade é o pacote, rodada é a reaplicação, as perguntas no chat da Nina ---
+continua valendo. \textbf{Usa} a porta das missões e a rota de ajustes da
+\adrr{ADR-112}.
+
+\begin{especificacao}{Contexto}
+A régua de 25/09 foi relida contra o texto das três habilidades na BNCC, e
+cinco coisas não se sustentavam:
+\begin{itemize}
+  \item \textbf{A EF05CO08 era generosa.} Duas verdadeiras e uma falsa
+    \emph{emocional} davam \cd{atingiu}: a criança repassou uma mentira e
+    \enquote{distinguiu o confiável}. Das 56 combinações de três entre oito,
+    16 atingiam --- 29\% de acerto por sorteio.
+  \item \textbf{A EF05CO03 é lógica} (\enquote{negação, conjunção e disjunção
+    sobre sentenças \ldots\ e valores verdadeiro e falso}), e a P1 perguntava
+    se o tom diz a verdade: parente, mas não exige a operação.
+  \item \textbf{A EF05CO04 tem dois verbos}, criar e simular, e a P2 pedia
+    para \emph{escolher} a melhor regra. O criar --- a regra que a criança
+    escreve --- não contava para nada.
+  \item \textbf{Nas duas perguntas, a alternativa certa era a mais longa} e a
+    mais cheia de nuance: a criança aprende a escolher a maior, e embaralhar a
+    ordem não esconde o tamanho.
+  \item \textbf{A rodada nova do mesmo pacote contava.} Depois da revelação e
+    da roda de conversa a criança já sabe quais eram falsas; com a melhor
+    rodada valendo, reaplicar podia inflar o nível com memória.
+\end{itemize}
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{itemize}
+  \item \textbf{EF05CO08: só três verdadeiras atingem.} Duas verdadeiras e uma
+    falsa, de qualquer tipo, é \cd{em\_processo}; duas falsas ou mais,
+    \cd{nao\_atingiu}. O tipo da falsa vira diagnóstico do professor --- a folha
+    mostra o quadrante de cada escolhida e o Termômetro conta a falsa neutra
+    ---, não nível. Por sorteio atingem 4 das 56 (7\%).
+  \item \textbf{A EF05CO08 é medida uma vez por criança e pacote.} Antes de
+    marcar, a missão pergunta à plataforma se a criança já foi avaliada nessa
+    habilidade numa rodada anterior da mesma atividade
+    (\cd{EvidenciasService.jaAvaliadaAntes}, na mesma transação do
+    \emph{latch}): vale o nível próprio, o da equipe, o da projeção e o do
+    professor, e só \cd{nao\_participou} não conta. Já avaliada, o Mural fecha
+    sem marca nova. Quem faltou é medido na primeira vez que joga. Para medir a
+    turma de novo, aprova-se um pacote novo, e a tela do \enquote{Zerar} diz
+    isso.
+  \item \textbf{EF05CO03 pela P1 nova, que exige a operação.} Diante de uma
+    mensagem \enquote{FALSA e EMOCIONAL}, a criança escolhe a frase certa entre
+    três com \enquote{não}, \enquote{e} e \enquote{ou}: a verdadeira atinge; a
+    que acerta só uma das duas partes está em processo; a que erra as duas não
+    atinge. O exemplo é da pergunta, não do pacote, e serve ao pacote pronto e
+    ao gerado.
+  \item \textbf{EF05CO04 pelos dois verbos.} A P2 nova mede o
+    \emph{simular}: seguir uma regra pronta no áudio do tio. O \emph{criar} é a
+    regra Se/Então que a criança escreveu, e quem a classifica é o professor,
+    com um clique ao lado dela na folha da turma: condição e um gesto de
+    conferir antes de repassar é \cd{atingiu}; condição com ação vaga,
+    \cd{em\_processo}; nada conferido, ou repasse, \cd{nao\_atingiu}. O clique é
+    um ajuste da evidência (a rota de ajustes da \adrr{ADR-112}) e vale sobre a
+    pergunta; sem clique, fica o nível da P2.
+  \item \textbf{A certa nunca é a mais longa.} Nas duas perguntas as três
+    alternativas têm o mesmo tamanho e a mesma forma, e há teste que cobra.
+  \item \textbf{A ficha sobe para a versão 2.} Cada registro guarda a versão
+    que valia quando foi feito, e os da versão 1 ficam como estão.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Manter a régua de 25/09.} Mantém os cinco problemas.
+  \item \textbf{Contar a P1 antiga também para a EF05CO08}, para ter duas
+    observações. Na E14 vale o melhor dos momentos da rodada: uma pergunta
+    acertada no chute (33\%) apagaria a escolha real do Mural.
+  \item \textbf{Corrigir o Se/Então com IA.} É texto livre de menor, e a
+    missão só usa IA no preparo do professor.
+  \item \textbf{Só a rodada 1 do pacote mede.} Mais simples, mas a criança que
+    faltou na primeira aula nunca seria medida naquele pacote.
+  \item \textbf{Uma terceira pergunta para a EF05CO03, mantendo a P1 antiga.}
+    Alonga uma missão de 50 minutos; trocar a P1 mantém duas perguntas.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{Os textos da P1 e da P2 são da equipe} e substituem os do
+    documento do PO (Canal B): entram na revisão do PO, junto com as falas da
+    Nina que as antecedem.
+  \item \textbf{Uma medida por habilidade continua fraca}: chutar uma pergunta
+    de três alternativas acerta em 33\%. O contrapeso da rubrica existe só na
+    EF05CO04, e só quando o professor clica.
+  \item \textbf{A rodada nova mostra \enquote{Não avaliado} na EF05CO08} para
+    quem já jogou o pacote. É a regra, e a tela do \enquote{Zerar} avisa, mas
+    no painel pode parecer falta.
+  \item \textbf{Réguas diferentes no mesmo histórico}: cada registro guarda a
+    versão, mas o painel não separa as rodadas medidas pela v1 das medidas pela
+    v2.
+\end{itemize}
+
+\textbf{Verificação.} Na api, a régua da EF05CO08 nas 56 combinações (4, 24 e
+28), a ficha v2 (marcadores, níveis, a certa que não é a mais longa, a P1 com
+não, e e ou) e, no banco, a Ana e o Caio (este pela equipe) jogando a rodada 2
+sem marca nova, e a Gabi --- que entrou na turma depois --- medida na 2. No hub,
+a rubrica acende só o clique do professor, e só da rodada da aula. De ponta a
+ponta, contra a api e o hub desta frente (Postgres descartável, portas
+alternativas): na primeira corrida, a EF05CO08 pela régua v2 e a regra
+classificada na EF05CO04 como ajuste docente (22 passos, 70 verificações); na
+seguinte, com a turma zerada no mesmo pacote, a EF05CO08 não medida de novo
+(71 verificações); e a das equipes verde.
+
+\textbf{Gatilho.} O PO reescrever a P1 ou a P2; uma segunda missão medir uma
+ação que a revelação entrega, e a regra da rodada virar regra da E14; os
+professores não usarem a rubrica (medir quantas regras recebem clique); ou o
+painel precisar separar as rodadas por versão da ficha.
 
