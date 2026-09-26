@@ -18,7 +18,11 @@ describe("grade do Entre Redes", () => {
   });
 
   test("as missões publicadas continuam no lugar delas", () => {
-    expect(buscarMissao("4-ano", "unidade-1")?.missao.expId).toBe("exp04ef1b");
+    expect(buscarMissao("1-ano", "unidade-1")?.missao.expId).toBe("exp01ef1b");
     expect(buscarMissao("8-ano", "unidade-1")?.missao.expId).toBe("exp08ef1b");
+  });
+
+  test("o UnooTube arquivado (ADR-116) saiu da grade: a unidade 1 do 4º ano fica em breve", () => {
+    expect(buscarMissao("4-ano", "unidade-1")?.missao.status).toBe("em-breve");
   });
 });

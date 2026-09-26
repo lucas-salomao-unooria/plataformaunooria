@@ -11,7 +11,6 @@ import {
   MISSAO_ECO_NO_GRUPO,
   MISSAO_RASTRO_BOATO,
   MISSAO_UNOOGPT,
-  MISSAO_UNOOTUBE,
 } from "@/lib/entre-redes/catalogo";
 import { buscarGuia } from "@/lib/entre-redes/guias";
 import type { BlocosVivos } from "@/lib/entre-redes/guias/tipos";
@@ -20,7 +19,6 @@ import { IntervencoesDoEco, type MaterialDoEco } from "./intervencoes-do-eco";
 import { IntervencoesDoRastro, type MaterialDoRastro } from "./intervencoes-do-rastro";
 import { MomentosDoPainel } from "./momentos-do-painel";
 import { TelasDaRevelacao } from "./telas-da-revelacao";
-import { VideosDoUnootube, type VideosDoProfessor } from "./videos-do-unootube";
 
 /**
  * O guia da aula de uma missão do Entre Redes — DESPACHANTE, como `page.tsx`
@@ -121,15 +119,6 @@ async function blocosDaMissao(expId: string | undefined): Promise<BlocosVivos | 
 
     case MISSAO_UNOOGPT.expId:
       return { debate: await tabelaDeVieses() };
-
-    case MISSAO_UNOOTUBE.expId:
-      return {
-        debate: (
-          <VideosDoUnootube
-            dados={await apiDoServidor<VideosDoProfessor>("/unootube/professor/videos")}
-          />
-        ),
-      };
 
     case MISSAO_RASTRO_BOATO.expId:
       return {

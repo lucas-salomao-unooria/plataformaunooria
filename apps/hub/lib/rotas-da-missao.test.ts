@@ -110,8 +110,8 @@ describe("da sala para a missão", () => {
   });
 
   test("a turma vai na URL, escapada", () => {
-    expect(rotaDeConducao("exp04ef1b", "turma 8a/1")).toBe(
-      "/professor/entre-redes/4-ano/unidade-1?turmaId=turma%208a%2F1",
+    expect(rotaDeConducao("exp02em1b", "turma 8a/1")).toBe(
+      "/professor/entre-redes/2-serie/unidade-1?turmaId=turma%208a%2F1",
     );
   });
 

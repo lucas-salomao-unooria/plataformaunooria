@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 
 import { Card } from "@edu/ui/ds";
-import type { TurmaResumo } from "@/lib/unootube-tipos";
+import type { TurmaResumo } from "@/lib/turmas-tipos";
 
 /**
  * Escolha da turma — vive na URL (`?turmaId=`) para o link ser compartilhável

@@ -19,8 +19,8 @@ import type { GuiaDaAula } from "./tipos";
  * material pedagógico é autoral e ainda não passou por playtest em sala — está
  * escrito para ser corrigido por quem der a primeira aula.
  */
-export const GUIA_EXP04EF1B: GuiaDaAula = {
-  expId: "exp04ef1b",
+export const GUIA_BACKUP_EXP04EF1B: GuiaDaAula = {
+  expId: "backup-exp04ef1b",
   chamada:
     "Uma aula de 50 minutos. A missão dura ~25 min e o resto é a conversa — que é onde a lição acontece: o software mostra a virada, mas quem a explica é você.",
 

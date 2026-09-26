@@ -18,7 +18,7 @@ arrasta as seis seções e a tipografia da plataforma para dentro de um clone.
 |---|---|---|---|---|
 | `@edu/ui/ds` | `unooria` | `/unooria.css` + `/fonts/unooria.css` | `--unooria-*`, `.unooria-theme-dark` | hub (login, `/professor`, `/admin`, `/analise`), header de todos os papéis, **telas pós-revelação do estudante** |
 | `@edu/ui/ds-insta` | `instanooria` | `/instanooria.css` (sem fonte: SF Pro é do sistema) | `--insta-*` | superfície disfarçada da exp08ef1b |
-| `@edu/ui/ds-unootube` | `unootube` | `/unootube.css` + `/fonts/unootube.css` | `--uni-*`, `[data-uni-theme]` | superfície disfarçada da exp04ef1b |
+| `@edu/ui/ds-unootube` | `unootube` | `/unootube.css` + `/fonts/unootube.css` | `--uni-*`, `[data-uni-theme]` | superfície disfarçada do UnooTube, ARQUIVADO (ADR-116): nenhuma missão viva a usa |
 | `@edu/ui/ds-chatgpt` | `chatgpt` (25) | `/chatgpt.css` + `/fonts/chatgpt.css` | `--gpt-*`, `data-gpt-theme` | a exp02em1b INTEIRA: ela NÃO tem revelação no software, então nunca troca para a seção da plataforma |
 | `@edu/ui/ds-whatsapp` | `whatsappmobile` (29) | `/whatsappmobile.css` + `/fonts/whatsappmobile.css` | `--wa-*`, `data-wa-theme` (**só `dark`**) | a casca móvel da exp07ef1b, da tela de bloqueio à validação de Amara, inclusive os erros diegéticos |
 
@@ -35,16 +35,16 @@ vir por lá.
 
 **Custo medido do Material Symbols (2026-08-27):** 5,36 MB num woff2 só. O
 `@font-face` é preguiçoso, então o arquivo só desce se a família for aplicada —
-medido com `document.fonts.check()` dentro do iframe: na exp04ef1b ele fica
+medido com `document.fonts.check()` dentro do iframe: na backup-exp04ef1b ele fica
 `unloaded` do feed até a virada do ranking (as telas da plataforma que ela usa
 não têm ícone de ligadura), e o que desce ali são ~150 KB de Open Sans. Ou seja:
 os 5,36 MB são peso morto no bucket, não download do estudante — e uma armadilha, já
-que um ícone da plataforma acrescentado à exp04ef1b amanhã puxaria tudo. Resolve de
+que um ícone da plataforma acrescentado à backup-exp04ef1b amanhã puxaria tudo. Resolve de
 vez migrando o `Icon` da plataforma para registro SVG (as outras cinco seções já
 são assim).
 
 **A linha que separa as seções é a REVELAÇÃO, não o arquivo.** O critério é
-"quem está falando?", nunca "é depois no tempo?". Na exp04ef1b: feed, cromo,
+"quem está falando?", nunca "é depois no tempo?". Na backup-exp04ef1b: feed, cromo,
 playlists, canal, o toast ("Vídeo salvo!") e o diálogo de limite ("sua playlist
 tem três lugares") usam `ds-unootube` — todos falam de dentro da ficção. Ranking,
 os dois diálogos da missão, o botão "Concluir missão" e a TELA DE ENTRADA usam
@@ -53,18 +53,18 @@ quem fala é a escola, e não há disfarce a proteger porque a criança ainda n�
 um Short. O disfarce começa no toque em "Começar missão" (ADR-22).
 
 **Tema:** a seção do clone lê `data-uni-theme` na raiz; a da plataforma recebe
-`theme` por PROP. Quem troca escreve nos dois (`exp04ef1b/src/lib/tema.ts`), senão
-o estudante escolhe escuro no feed e o ranking volta branco. Na exp04ef1b a escolha é
+`theme` por PROP. Quem troca escreve nos dois (`backup-exp04ef1b/src/lib/tema.ts`), senão
+o estudante escolhe escuro no feed e o ranking volta branco. Na backup-exp04ef1b a escolha é
 do estudante (Perfil → APARÊNCIA) e é lembrada em `localStorage` — que a regra 4
 proíbe para TOKEN, não para preferência de tela.
 
 **Componente que falta no pacote não nasce na experiência.** Vira compensação
 local marcada no CSS (`(b) COMPENSAÇÃO`) e um pedido ao `storybook-unooria` — e
-some quando o pacote publica. Os quatro pedidos abertos pela exp04ef1b na 0.1.14
+some quando o pacote publica. Os quatro pedidos abertos pela backup-exp04ef1b na 0.1.14
 foram atendidos na 0.1.17 (`Modal`/`Snackbar`/`Table`/`EmptyState` em
 `unootube`, `showSubscribe` no `ChannelHeader`, token semântico na capa do
 canal, `@import` duplicado da Roboto), e as compensações correspondentes foram
-apagadas. Sobraram DUAS na exp04ef1b: o girador de carregamento (o
+apagadas. Sobraram DUAS na backup-exp04ef1b: o girador de carregamento (o
 `ShortsPlayer` distingue "parado" de "tocando" mas não "ainda carregando") e a
 etiqueta de estado do diálogo de limite (a seção não publica `Tag` nem `Badge` —
 e por isso ela sai NEUTRA, não âmbar como o Figma pede: a seção não tem token de
