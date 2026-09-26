@@ -388,6 +388,14 @@ await suite(
     const atividade = painel.atividade;
 
     await prof.locator("[data-painel-da-aula]").scrollIntoViewIfNeeded();
+    /* Depois de "Zerar" o painel se relê: contar na hora pegava a lista a meio
+       caminho e reprovava com os três botões na tela (2026-09-26). Espera o
+       terceiro existir — o desfecho, não o relógio — e só então conta. */
+    await prof
+      .locator("[data-painel-da-aula] li[data-gate]")
+      .nth(2)
+      .waitFor({ timeout: 30_000 })
+      .catch(() => {});
     r.exigir(
       (await prof.locator("[data-painel-da-aula] li[data-gate]").count()) === 3,
       "o painel da aula tem os três botões, na ordem: revelação, síntese, reflexão",

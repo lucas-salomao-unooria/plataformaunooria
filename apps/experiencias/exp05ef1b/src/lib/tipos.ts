@@ -27,7 +27,7 @@ export const EXP_ID = "exp05ef1b";
  * `public/experiencia.json`. O CI lê a do manifesto para montar o caminho
  * IMUTÁVEL no bucket; `src/versao.test.ts` compara os três (ADR-84).
  */
-export const EXP_VERSION = "0.2.0";
+export const EXP_VERSION = "0.2.1";
 
 // ──────────────────────────────────────────────────────────── vocabulário
 
