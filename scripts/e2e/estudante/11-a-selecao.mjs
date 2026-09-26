@@ -293,10 +293,18 @@ await suite(
 
     // ═══ PROFESSORA revela as fichas ═════════════════════════════════════
     await apertar(prof, "fichas");
+    /* A folha chega ABERTA quando a revelação acende (é o momento de ler); só
+       recolhida ela mostra "Ver detalhes da postagem". Espera a UNIÃO dos dois
+       estados, abre se precisar, e prova pelo conteúdo — a fonte ouvida. */
     const verDetalhes = q().getByRole("button", { name: /Ver detalhes da postagem/i });
-    await verDetalhes.waitFor({ timeout: 30_000 });
-    await verDetalhes.click();
-    await q().locator("text=/Ficha Técnica da Curadoria/i").first().waitFor({ timeout: 15_000 });
+    const fonteOuvida = q().locator("text=/Fonte ouvida:/").first();
+    await verDetalhes.or(fonteOuvida).first().waitFor({ timeout: 30_000 });
+    if (!(await fonteOuvida.isVisible())) await verDetalhes.click();
+    await fonteOuvida.waitFor({ timeout: 15_000 });
+    r.exigir(
+      (await q().locator("text=/Equilíbrio editorial/i").count()) > 0,
+      "a ficha traz o equilíbrio editorial das duas seleções",
+    );
     await r.registrar(p, "ficha-tecnica", {
       titulo: "A ficha técnica acende",
       mostra: "A fonte ouvida e o ângulo de cada post, e o equilíbrio editorial das duas seleções.",
