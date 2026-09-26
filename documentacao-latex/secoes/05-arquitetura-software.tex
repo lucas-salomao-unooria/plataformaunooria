@@ -401,7 +401,7 @@ instrumentação automática do OpenTelemetry precisa alterar \cd{http},
   \node[c4component, text width=25.5mm, minimum height=19.5mm, fill=unooGreen!22, draw=unooGreen] (eco) at (11.45,-13.075)
     {\texttt{o-eco-no-grupo/}\desc{exp07ef1b --- texto, imagem e VOZ}};
   \node[c4component, text width=27mm, minimum height=35.5mm, fill=unooGreen!22, draw=unooGreen, font=\scriptsize] (outros) at (14.73,-13.875)
-    {\texttt{rastro-boato/}\\\texttt{manifesto-ia/}\\\texttt{foto-conta/}\\\texttt{planejamento/}};
+    {\texttt{rastro-boato/}\\\texttt{manifesto-ia/}\\\texttt{quem-mandou-isso/}\\\texttt{foto-conta/}\\\texttt{planejamento/}};
   \node[c4component, text width=25.5mm, minimum height=13mm, fill=unooGreen!22, draw=unooGreen] (vila) at (3.45,-15.0)
     {\texttt{vila/}\desc{app-70}};
   \node[c4component, text width=25.5mm, minimum height=13mm, fill=unooGreen!22, draw=unooGreen] (ugpt) at (6.65,-15.0)
@@ -454,11 +454,13 @@ instrumentação automática do OpenTelemetry precisa alterar \cd{http},
   contagem na sala, e pelos painéis de \texttt{unootube/} e \texttt{unoogpt/},
   pela porta \texttt{equipes/consulta.ts}; \texttt{evidencias/}
   (\adrr{ADR-112}) lê a mesma porta e se registra no gancho
-  \texttt{aoMudarEquipes}, e as missões vão chamá-lo pela porta
-  \texttt{marcar} --- que nenhuma chama ainda, daí a caixa sem seta vinda do
-  domínio. A caixa da direita reúne, sem setas,
-  os módulos da exp06ef2b, da exp08ef4b, da exp01ef1b e da app-92, na ordem
-  em que aparecem. Todo módulo com dado passa por
+  \texttt{aoMudarEquipes}, e as missões o chamam pela porta \texttt{marcar}
+  --- hoje só \texttt{quem-mandou-isso/} (\adrr{ADR-118}), que também lê
+  \texttt{equipes/consulta.ts} e usa IA com quota no preparo. A caixa da
+  direita reúne, sem setas, os módulos da exp06ef2b, da exp08ef4b, da
+  exp05ef1b, da exp01ef1b e da app-92, na ordem em que aparecem; as setas da
+  exp05ef1b estão no par Mermaid, para não cruzarem a faixa de plataforma.
+  Todo módulo com dado passa por
   \texttt{comTenancy}: as setas até o \texttt{PrismaService} são uma amostra, e a
   fonte Mermaid do Apêndice~\ref{ap:mermaid} lista as relações por módulo.}
 \label{fig:c4l3api}
@@ -513,8 +515,8 @@ as equipes na frente da sala.
 numa atividade de uma missão, rodada a rodada, e não conhece missão nenhuma pelo
 nome: o que cada uma sabe de si entra por três pontos. A \textbf{ficha} é dado
 estático do módulo (\arq{evidencias/\B fichas/\B <expId>.ts}, no registro
-\cd{FICHAS}, vazio nesta frente), porque o gabarito não pode ir para o
-\emph{bundle}. O \textbf{contexto} --- em que turma, atividade e rodada o
+\cd{FICHAS}, que tem uma só: a da exp05ef1b, \adrr{ADR-118}), porque o gabarito
+não pode ir para o \emph{bundle}. O \textbf{contexto} --- em que turma, atividade e rodada o
 estudante está agora --- é um REGISTRO, como a fonte de lado das equipes: o módulo
 da missão chama \cd{EvidenciasService.\B{}registrarContexto(expId, resolver)} na
 subida. E a \textbf{marca} é uma chamada, \cd{EvidenciasService.marcar(tx,
@@ -528,10 +530,11 @@ o \cd{EquipesModule}, lê \arq{equipes/consulta.ts} (\cd{mapaDeEquipes},
 dentro da própria transação; \arq{equipes/} não sabe que a evidência existe. As
 regras moram em \arq{evidencias/regras.ts}, puras, e os códigos da BNCC vêm de
 \arq{curriculo/} (\cd{habilidadePorCodigo}). No hub, o painel
-\enquote{Habilidades da BNCC} é genérico e entra na página da atividade (hoje
-só o Instanooria tem atividade), desenhado só quando a resposta diz
-\cd{temFicha: true}; o perfil do estudante é uma página nova, aberta pela aba
-Estudantes da turma.
+\enquote{Habilidades da BNCC} é genérico, desenhado só quando a resposta diz
+\cd{temFicha: true}: entra na página da atividade do Instanooria (que ainda não
+tem ficha) e nos resultados da exp05ef1b, onde a atividade é o pacote aprovado
+--- é lá que ele aparece hoje. O perfil do estudante é uma página nova, aberta
+pela aba Estudantes da turma.
 
 \textbf{Módulo de domínio não conhece módulo de domínio.} \arq{vila/} não importa
 \arq{unootube/}. Quando duas experiências precisam se comunicar --- o perfil da

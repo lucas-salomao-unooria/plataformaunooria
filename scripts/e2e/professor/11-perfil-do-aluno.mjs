@@ -18,9 +18,10 @@ import { ALERTA_DE_ERRO, esperarOuFalharCedo } from "../lib/smoke.mjs";
  *  - quem não é da turma do professor não existe: a api responde 404, nunca 403.
  *
  * O PAINEL de habilidades da atividade (as rodadas, o ajuste, "Confirmar para a
- * turma") não entra aqui: nenhuma missão tem ficha pedagógica ainda, então a
- * api responde `temFicha: false` e o bloco não aparece em tela nenhuma. Quando a
- * primeira missão publicar a ficha, o painel ganha passo próprio.
+ * turma") não entra aqui: a única missão com ficha pedagógica é Quem mandou
+ * isso? v2.2 (ADR-118), e o painel dela é provado em
+ * `estudante/10-quem-mandou-isso`, na 5A, com o nível de cada habilidade
+ * conferido contra a régua.
  *
  * FIXTURE. Só leitura, numa turma "B" (4B): nada é gravado, e rodar de novo
  * prova a mesma coisa. Com o perfil vazio (o estado de hoje), a prova é o
@@ -63,8 +64,8 @@ await suite(
     contexto:
       "Na sala, o nome de cada estudante leva ao perfil dele: em cada missão, em cada atividade, o nível " +
       "de cada habilidade da BNCC — a melhor rodada, só com o que vale. O painel por atividade, em que o " +
-      "professor ajusta e confirma a aula projetada, só aparece quando a missão tiver ficha pedagógica; " +
-      "hoje nenhuma tem, e por isso ele não é fotografado aqui.",
+      "professor ajusta e confirma a aula projetada, só aparece quando a missão tem ficha pedagógica; " +
+      "hoje só Quem mandou isso? tem, e o painel dela é fotografado na suíte do estudante/10.",
     prova: [
       "Na aba Estudantes da sala, o nome leva ao perfil, dentro da turma",
       "O perfil abre com o nome do estudante",
@@ -113,8 +114,9 @@ await suite(
     const href = (await primeiro.getAttribute("href")) ?? "";
     const estudanteId = href.split("/").pop() ?? "";
 
-    /* O que a api diz decide o ramo: hoje nenhuma missão tem ficha, e o perfil
-       vem vazio. A suíte não pode reprovar o dia em que ele deixar de vir. */
+    /* O que a api diz decide o ramo: na 4B nenhuma missão com ficha rodou, e o
+       perfil costuma vir vazio (a única ficha é a da exp05ef1b, do 5º ano). A
+       suíte não pode reprovar o dia em que ele deixar de vir. */
     const leitura = await p.request.get(`${BFF}/evidencias/estudante/${estudanteId}`);
     /* A `mensagem` vai junto quando falha: "rota não permitida" é o BFF do hub
        recusando o prefixo, e a api nem foi chamada — sem ela, o 404 do BFF e o

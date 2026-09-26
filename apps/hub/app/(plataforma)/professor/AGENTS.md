@@ -164,7 +164,7 @@ importa; as leituras server-side em `lib/equipes-servidor.ts` (`server-only`).
 
 Suíte: `professor/10-equipes-na-missao` (4B de ponta a ponta, terminando em
 "Desfazer"; a faixa do estudante na 4A, com as equipes criadas e apagadas pelo
-BFF).
+BFF; e a ficha da exp05ef1b na 5A, só leitura, com a seção).
 
 ## Evidência pedagógica (E14)
 
@@ -173,12 +173,13 @@ rodada a rodada. Tipos e regras puras em `lib/evidencias.ts`; leituras em
 `lib/evidencias-servidor.ts`; confirmar e ajustar pelo BFF (`evidencias`). Quem
 decide nível, cópia e o que conta é a api (`apps/api/src/evidencias/`).
 
-- **O painel mora na tela da ATIVIDADE** (`atividades/[id]`, depois da revisão):
-  hoje só o Instanooria tem atividade. Atividade sem turma (anterior à coluna)
-  não tem painel — a evidência é por turma.
+- **O painel mora onde a missão tem a ATIVIDADE**: na tela da atividade do
+  Instanooria (`atividades/[id]`, depois da revisão) e nos resultados da
+  exp05ef1b, onde a atividade é o PACOTE aprovado (`atividadeId = pacoteId`,
+  `key` no pacote para remontar quando outro é aprovado). Sem turma, sem painel.
 - **Invisível sem ficha, de propósito**: `temFicha: false` não desenha nada, e
-  hoje NENHUMA missão tem ficha. Acende sozinho quando a primeira publicar a
-  dela; "não aparece" não é defeito — confira `temFicha` antes.
+  hoje só a exp05ef1b tem ficha (ADR-118) — no Instanooria o bloco não aparece,
+  e não é defeito: confira `temFicha` antes.
 - **Ausência é "Não avaliado", nunca "Não atingiu".** A cópia da aula projetada
   chega "a revisar" e só conta depois de "Confirmar para a turma".
 - **O perfil** é `turmas/[id]/estudantes/[estudanteId]`, pelo NOME na aba
@@ -191,5 +192,6 @@ decide nível, cópia e o que conta é a api (`apps/api/src/evidencias/`).
   DS numa coluna, não a `selectable` da `Table`: a dela diz "Selecionar linha
   N", e a linha é uma criança (lacuna a pedir no `storybook-unooria`).
 
-Suíte: `professor/11-perfil-do-aluno` (4B, até o perfil vazio). O painel ganha
-passo quando a primeira missão tiver ficha.
+Suíte: `professor/11-perfil-do-aluno` (4B, até o perfil vazio); o painel com
+ficha é provado em `estudante/10-quem-mandou-isso` (o nível de cada habilidade
+conferido contra a régua).

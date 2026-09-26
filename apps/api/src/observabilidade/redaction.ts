@@ -41,15 +41,19 @@ export const CHAVES_REDIGIDAS: ReadonlySet<string> = new Set([
   // `err` do Prisma carrega o lote que o service tentou gravar, com o gabarito
   // inteiro dentro. Log de produção é lido por gente da escola.
   //
-  // Hoje nenhum módulo grava estas três chaves: quem as trouxe foi a primeira
-  // versão da missão do 5º ano, unidade 1, retirada na ADR-114. Elas FICAM de
-  // propósito: a versão que entra no lugar classifica as mensagens do mesmo
-  // jeito (verdadeira/falsa x emocional/neutra), e tirar chave desta lista só
-  // afrouxa a rede — o custo de ela sobrar é redigir um campo que ninguém
-  // manda.
+  // `veracidade` e `tom` são os dois eixos de Quem Mandou Isso? v2.2
+  // (exp05ef1b) — o pacote de 8 mensagens os leva no JSONB. `explicacao` veio
+  // da primeira versão (ADR-114) e FICA: tirar chave desta lista só afrouxa a
+  // rede, e o custo de ela sobrar é redigir um campo que ninguém manda.
   "veracidade",
   "tom",
   "explicacao",
+  // O `Então` da regra Se/Então da exp05ef1b — TEXTO LIVRE DE MENOR (RF-014).
+  // `entao` no corpo e na resposta, `acaoEntao` no Prisma, `acao_entao` na
+  // coluna: um `err` do Prisma carrega o objeto que o service tentou gravar.
+  "entao",
+  "acaoentao",
+  "acao_entao",
   // As variações de hash de senha que `senha`/`passwordhash` NÃO cobrem: a
   // comparação aqui é por nome INTEIRO em minúsculas, então `senha_hash` e
   // `senhaHash` passavam inteiros.

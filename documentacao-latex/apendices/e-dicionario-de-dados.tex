@@ -4,7 +4,7 @@
 \chapter{Dicionário de dados}
 \label{ap:dicionario}
 
-Catálogo das 68 tabelas de \cd{public}, mais o \emph{schema} \cd{particoes}.
+Catálogo das 73 tabelas de \cd{public}, mais o \emph{schema} \cd{particoes}.
 O número é o de \cd{model} em \arq{apps/api/prisma/schema.prisma} em
 2026-09-25 (todos com \cd{@@map}; a \cd{\_prisma\_migrations} é do Prisma e
 fica fora), e o índice abaixo tem uma linha por \cd{model}: tabela nova sem
@@ -92,6 +92,10 @@ Os diagramas entidade-relacionamento estão no Capítulo~\ref{cap:dados}.
 \zebra \cd{exp08ef4b\_auditorias} & Tenant & Cada questionamento disparado contra a máquina\\
 \cd{exp08ef4b\_respostas\_percurso} & Tenant & O \enquote{Meu percurso} (texto livre do estudante)\\
 \zebra \cd{exp08ef4b\_gates\_turma} & Tenant & O \emph{checkpoint} do debate, por turma\\
+\cd{exp05ef1b\_pacotes} & Tenant & O pacote da turma --- as 8 mensagens com o gabarito; é a atividade da evidência\\
+\zebra \cd{exp05ef1b\_gates\_turma} & Tenant & O relógio da turma: triagem, revelação, síntese, reflexão\\
+\cd{exp05ef1b\_sessoes} & Tenant & A sessão por rodada, com os três \emph{latches} (Mural, voto, regra)\\
+\zebra \cd{exp05ef1b\_reflexoes} & Tenant & A regra Se/Então (texto livre do estudante)\\
 \cd{app\_70\_sessoes} & Tenant & Uma partida da Vila do Lume\\
 \zebra \cd{app\_70\_perfis} & Tenant & Retrato Schwartz recalculado\\
 \cd{app\_70\_bolhas} & Tenant & Bolha por estudante\\
@@ -1839,6 +1843,136 @@ apertar nada. Por isso \cd{debate} mexe só no TETO do passo do estudante, nunca
 no piso --- subir o piso empurraria para a frente quem ainda estava auditando a
 máquina, e são justamente essas crianças que o debate tenta alcançar.
 \end{nota}
+
+% ---------------------------------------------------------------------------
+\subsection{\cd{exp05ef1b\_pacotes}}
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}L{20mm}X@{}}
+\toprule
+\headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
+\midrule
+\pk{id} & \cd{UUID} PK & \textbf{É a atividade da evidência}
+  (\adrr{ADR-118}): o \cd{atividade\_id} de \cd{evidencias\_marcas}. Alvo, com
+  \cd{escola\_id}, da FK composta das sessões (\cd{UNIQUE (escola\_id, id)}).\\
+\zebra \cd{turma\_id} & \cd{UUID} & O pacote é \textbf{por turma}: a professora
+  escreve a missão em cima do assunto da escola dela. FK em cascata.\\
+\cd{disciplina} & \cd{TEXT} & \emph{CHECK} com os dez componentes curriculares
+  de \arq{catalogo.ts\#DISCIPLINAS} (\cd{letramento-digital} \ldots
+  \cd{ensino-religioso}).\\
+\zebra \cd{tema} & \cd{TEXT} & \emph{CHECK}: \cd{btrim} entre 3 e 60 caracteres e
+  até 8 palavras. \textbf{É a frase da Nina} (\enquote{Rolou uma confusão sobre
+  \{tema\}}), e o Zod ainda recusa \enquote{atividade}, \enquote{gabarito},
+  \enquote{nota} e \enquote{exercício}.\\
+\cd{assuntos} & \cd{TEXT[]} & Os fatos balizadores, de 3 a 6. \emph{CHECK}
+  \cd{assuntos IS NOT NULL AND cardinality BETWEEN 3 AND 6} --- o \cd{IS NOT
+  NULL} é explícito porque \cd{cardinality(NULL)} é \cd{NULL}, que um
+  \emph{CHECK} deixa passar.\\
+\zebra \cd{contexto} & \cd{TEXT?} & Opcional, até 300.\\
+\cd{mensagens\_json} & \cd{JSONB} & As 8 mensagens \textbf{com}
+  \cd{veracidade} e \cd{tom} --- é aqui que mora o gabarito. \emph{CHECK}
+  \cd{jsonb\_typeof = 'array'} e \cd{jsonb\_array\_length = 8}; a matriz e o
+  equilíbrio de formato são do Zod.\\
+\zebra \cd{origem} & \cd{TEXT} & \emph{CHECK} \cd{IN ('ia', 'padrao')}.
+  \cd{padrao} é o banco curado, e não falha registrada.\\
+\cd{ativo} & \cd{BOOLEAN} & O pacote que a turma usa. \emph{CHECK}: só com
+  \cd{aprovado\_em}. Índice único parcial \cd{(escola\_id, turma\_id) WHERE
+  ativo}.\\
+\zebra \cd{rodada\_atual} & \cd{SMALLINT} & A reaplicação: \enquote{Zerar} soma
+  1, e as sessões das rodadas anteriores ficam. \emph{CHECK} \cd{>= 1}, e
+  rascunho sempre em 1.\\
+\cd{aprovado\_em}, \cd{aprovado\_por} & \cd{TIMESTAMPTZ?}, \cd{UUID?} & Nulos
+  juntos (\emph{CHECK}) --- nulo é rascunho, e há um rascunho por turma (índice
+  único parcial \cd{WHERE aprovado\_em IS NULL}). O autor é carimbo, sem FK.\\
+\bottomrule
+\end{tabularx}
+
+% ---------------------------------------------------------------------------
+\subsection{\cd{exp05ef1b\_gates\_turma}}
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}L{20mm}X@{}}
+\toprule
+\headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
+\midrule
+\pk{(escola\_id, turma\_id)} & PK composta & A revelação é da \textbf{turma}.\\
+\zebra \cd{fase} & \cd{TEXT} & \emph{CHECK}
+  \cd{IN ('triagem', 'revelacao', 'explicar', 'reflexao')}. Só anda para a frente
+  (\cd{avancarFase}), e volta a \cd{triagem} ao aprovar um pacote e ao zerar. É
+  \textbf{esta linha} que o \emph{polling} de 3\,s do estudante lê
+  (\adrr{ADR-93}).\\
+\cd{atualizado\_em} & \cd{TIMESTAMPTZ} & Quando a professora moveu a turma.\\
+\bottomrule
+\end{tabularx}
+
+% ---------------------------------------------------------------------------
+\subsection{\cd{exp05ef1b\_sessoes}}
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}L{20mm}X@{}}
+\toprule
+\headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
+\midrule
+\pk{(escola\_id, estudante\_id, pacote\_id, rodada)} & PK composta & Uma sessão
+  por estudante, por pacote e por \textbf{rodada}: zerar a turma abre outra
+  linha, e esta fica.\\
+\zebra \cd{turma\_id} & \cd{UUID} & Desnormalizado do pacote: o painel lê por turma
+  o tempo todo.\\
+\cd{entrou\_em} & \cd{TIMESTAMPTZ} & O toque em \enquote{Entrar no grupo} --- a
+  linha nasce aqui, e não ao abrir a missão.\\
+\zebra \cd{selecao} & \cd{TEXT[]} & De 0 a 3 ids do pacote. \emph{CHECK}: não nulo,
+  no máximo três, e \cd{<@ ARRAY['msg\_1' \ldots 'msg\_8']}. Antes do
+  \emph{latch} é rascunho; depois, o Mural.\\
+\cd{confirmado\_em} & \cd{TIMESTAMPTZ?} & \textbf{O latch 1}, e o gesto que a
+  EF05CO08 mede. \emph{CHECK}: exige \cd{cardinality(selecao) = 3}.\\
+\zebra \cd{tempo\_feed\_segundos} & \cd{INT?} & Segundos entre entrar e confirmar.
+  Existe exatamente quando o Mural fechou, e nunca é negativo.\\
+\cd{motivo}, \cd{votou\_em} & \cd{TEXT?}, \cd{TIMESTAMPTZ?} & \textbf{O latch 2}.
+  \emph{CHECK} \cd{IN ('urgencia', 'confianca\_remetente', 'medo\_indignacao',
+  'imagem\_link\_real')}; os dois nulos juntos, e o voto exige
+  \cd{confirmado\_em}.\\
+\zebra \cd{reflexao\_em} & \cd{TIMESTAMPTZ?} & \textbf{O latch 3}: a regra foi
+  enviada (o texto está em \cd{exp05ef1b\_reflexoes}). Exige \cd{votou\_em}.\\
+\cd{concluido\_em} & \cd{TIMESTAMPTZ?} & Exige \cd{reflexao\_em} --- e não as
+  respostas às perguntas: quem sai antes delas fica \enquote{Não avaliado}.\\
+\zebra \cd{versao\_instrumento} & \cd{TEXT} & \cd{'2.2.0'}. Na linha, para
+  reprocessar o histórico se o instrumento mudar.\\
+\bottomrule
+\end{tabularx}
+
+\begin{regra}
+\textbf{Não há coluna de passo, nem de pontuação.} O passo é derivado dos
+carimbos e da fase da turma (\cd{passoEfetivo}); uma coluna seria a terceira
+fonte de uma verdade que os carimbos já dizem. E o nível da criança não é
+coluna daqui: é marca da evidência pedagógica (Seção~\ref{sec:evidencias}),
+lida pelo professor no painel de habilidades.
+\end{regra}
+
+% ---------------------------------------------------------------------------
+\subsection{\cd{exp05ef1b\_reflexoes}}
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}L{20mm}X@{}}
+\toprule
+\headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
+\midrule
+\pk{(escola\_id, estudante\_id, pacote\_id, rodada)} & PK composta & 1:1 com a
+  sessão (FK composta em cascata).\\
+\zebra \cd{condicional\_se} & \cd{TEXT} & O \enquote{Se}: \emph{CHECK}
+  \cd{IN ('urgente\_alarmante', 'parente\_proximo', 'link\_nao\_checado',
+  'promessa\_incrivel')}.\\
+\cd{acao\_entao} & \cd{VARCHAR(240)} & \textbf{Texto livre escrito por menor de
+  idade.} \emph{CHECK} \cd{char\_length(btrim(acao\_entao)) BETWEEN 15 AND 240}.
+  Fora de \emph{log} (redação por nome de chave), fora da telemetria, e
+  preenchido no painel só para quem leciona na turma. \textbf{Não é
+  corrigido}: a EF05CO04 vem da pergunta P2.\\
+\zebra \cd{chars\_count} & \cd{INT} & O tamanho, para a leitura agregada não
+  tocar o texto. \emph{CHECK} 15--240.\\
+\bottomrule
+\end{tabularx}
+
+\begin{regra}
+\textbf{Sem criptografia em nível de aplicação}, como nas outras missões: o
+Cloud SQL cifra em repouso, e a proteção é a RLS mais o recorte do
+\emph{service}. \textbf{Retenção:} a da vigência contratual, sem rotina de
+expurgo (\adrr{ADR-13}).
+\end{regra}
 
 \subsection{\cd{app\_91\_ciclos} e \cd{app\_91\_checkins}}
 

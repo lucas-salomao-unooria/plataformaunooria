@@ -176,6 +176,7 @@ export const LIBERACOES_DE_DEMO: Array<{ turma: string; expIds: string[] }> = [
   // suíte `estudante/05-vila-do-lume` + `estudante/02-instanooria` percorre.
   { turma: "8A", expIds: ["app-70-vila-do-lume", "exp08ef1b", "exp08ef4b"] },
   { turma: "1A", expIds: ["exp01ef1b"] },
+  { turma: "5A", expIds: ["exp05ef1b"] },
   { turma: "6A", expIds: ["exp06ef2b"] },
   { turma: "7A", expIds: ["exp07ef1b"] },
   { turma: "2EM-A", expIds: ["exp02em1b"] },

@@ -4,7 +4,7 @@
 \chapter{Modelo de dados}
 \label{cap:dados}
 
-Um banco, um \emph{schema} lógico, 68 tabelas em \cd{public} e um \emph{schema}
+Um banco, um \emph{schema} lógico, 73 tabelas em \cd{public} e um \emph{schema}
 auxiliar (\cd{particoes}) fora do alcance do ORM. O número é uma contagem, e
 envelhece a cada migração: são os \cd{model} de
 \arq{apps/api/prisma/schema.prisma} em 2026-09-25, todos com \cd{@@map}, sem a
@@ -511,9 +511,9 @@ Três tabelas, e não uma coluna \cd{equipe} & A montagem tem estado próprio --
 de uma missão, rodada a rodada. São três tabelas de plataforma, na migração
 \arq{20260925150000\_\B{}evidencia\_\B{}pedagogica}, e elas separam o que a missão
 VIU (\cd{evidencias\_marcas}) do nível que o professor LÊ e pode corrigir
-(\cd{evidencias}), com toda mudança no histórico (\cd{evidencias\_eventos}). As
-três estão vazias enquanto nenhuma missão tiver ficha pedagógica: nesta frente,
-nenhuma tem.
+(\cd{evidencias}), com toda mudança no histórico (\cd{evidencias\_eventos}). A
+primeira missão a escrever nelas é a exp05ef1b (\adrr{ADR-118}): a marca da
+EF05CO08 na transação do Mural, e as da EF05CO03 e EF05CO04 pelas perguntas.
 
 \begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
 \toprule
@@ -1084,6 +1084,96 @@ em produção, que é onde ela existe.
 \end{atencao}
 
 
+\section{As quatro tabelas da exp05ef1b}
+\label{sec:tabelas-exp05ef1b}
+
+A v2.2 de Quem mandou isso? (\adrr{ADR-118}), na migração
+\arq{20260926130000\_\B{}exp05ef1b\_\B{}quem\_\B{}mandou\_\B{}isso\_\B{}v2}. As quatro têm
+\cd{escola\_id NOT NULL}, RLS \cd{ENABLE} + \cd{FORCE} com a política por escola, e
+nenhuma sequência: as chaves são \cd{uuid} ou compostas, e o \cd{GRANT} à
+\emph{role} de \emph{runtime} é só de tabela.
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
+\toprule
+\headrow \thd{Tabela} & \thd{O que guarda}\\
+\midrule
+\cd{exp05ef1b\_pacotes} & O \textbf{pacote de uma turma}: o recorte do preparo
+  (componente curricular, tema, fatos, contexto) e as oito mensagens
+  \textbf{com} o gabarito em \cd{JSONB} --- lido e aprovado sempre inteiro, então
+  não há tabela-filha. \cd{ativo} marca o que a turma usa, \cd{rodada\_atual} é a
+  reaplicação, \cd{aprovado\_em} nulo é rascunho. \textbf{É a ATIVIDADE da
+  evidência}: o \cd{id} é o \cd{atividade\_id} das marcas.\\
+\zebra \cd{exp05ef1b\_gates\_turma} & O \textbf{relógio da turma} --- \cd{triagem},
+  \cd{revelacao}, \cd{explicar}, \cd{reflexao} ---, que só anda para a frente e
+  volta a \cd{triagem} ao aprovar um pacote e ao zerar. Chave
+  \cd{(escola\_id, turma\_id)}; é a linha que o \emph{polling} de 3~s lê
+  (\adrr{ADR-93}).\\
+\cd{exp05ef1b\_sessoes} & A sessão do estudante numa \textbf{rodada} de um
+  pacote, chave \cd{(escola\_id, estudante\_id, pacote\_id, rodada)}: nasce no
+  \enquote{Entrar no grupo}, e zerar a turma abre outra linha em vez de apagar
+  esta. Guarda a seleção (0 a 3) e os carimbos dos \emph{latches} ---
+  \cd{confirmado\_em}, \cd{votou\_em}, \cd{reflexao\_em}, \cd{concluido\_em} ---,
+  o motivo votado, o \cd{tempo\_feed\_segundos} e a \cd{versao\_instrumento}.
+  \textbf{Não tem coluna de passo} nem de pontuação.\\
+\zebra \cd{exp05ef1b\_reflexoes} & A regra Se/Então, 1:1 com a sessão: a
+  condição (\cd{condicional\_se}) e o \enquote{Então} (\cd{acao\_entao}, 15 a
+  240 caracteres) --- \textbf{texto livre escrito por menor de idade}. Tabela à
+  parte de propósito: não vai a \emph{log} (\cd{acao\_entao}, \cd{acaoEntao} e
+  \cd{entao} estão na redação), não vai à telemetria, e o painel só a preenche
+  para quem leciona na turma.\\
+\bottomrule
+\end{tabularx}
+
+\begin{regra}
+\textbf{Os \emph{latches} estão em ordem no banco.} Cada carimbo exige o
+anterior: confirmar o Mural exige \textbf{exatamente três} na seleção, votar
+exige ter confirmado (e motivo e carimbo andam juntos), a regra exige o voto, e
+concluir exige a regra. O \emph{CHECK} vale por \emph{statement}, então o
+\emph{service} grava carimbo e dado no MESMO \cd{UPDATE} --- a seleção com o
+\cd{confirmado\_em}, o motivo com o \cd{votou\_em} ---, senão o estado
+intermediário reprova. A seleção fica dentro dos oito ids (\cd{<@ ARRAY['msg\_1'
+\ldots 'msg\_8']}) e com no máximo três; o \cd{tempo\_feed\_segundos} existe
+exatamente quando o Mural fechou.
+
+\textbf{Os vocabulários estão em DOIS lugares}, e de propósito: componente
+curricular, origem, fase, motivo e condição são \emph{CHECK} aqui e constante em
+\arq{catalogo.ts} e \arq{regras/passos.ts}, e a suíte de Postgres compara os dois
+textos. É o par que já custou um \emph{deploy} em \cd{permissoes}.
+
+\textbf{A matriz 2$\times$2 NÃO entra no banco.} O \emph{CHECK} cobra que
+\cd{mensagens\_json} é um \emph{array} de oito; contar os quadrantes e o
+equilíbrio de formato exigiria desmontar o \cd{JSONB} dentro do \emph{CHECK}, e o
+gabarito tem uma gramática só --- a de \arq{regras/pacote.ts\#validarPacote}.
+\end{regra}
+
+\begin{tabularx}{\linewidth}{@{}L{44mm}X@{}}
+\toprule
+\headrow \thd{Decisão de esquema} & \thd{Por quê}\\
+\midrule
+Dois índices únicos \textbf{parciais} por turma & Um \cd{WHERE ativo} e um
+  \cd{WHERE aprovado\_em IS NULL}: um pacote ativo e um rascunho por turma. O
+  \cd{@@unique} do Prisma não os expressa, e sem eles dois cliques em
+  \enquote{Aprovar} deixariam a turma com dois pacotes ativos --- e o estudante
+  com o que o \cd{findFirst} achasse primeiro.\\
+\zebra \emph{CHECKs} de aprovação & \cd{ativo} só com \cd{aprovado\_em};
+  \cd{aprovado\_em} e \cd{aprovado\_por} nulos juntos; rascunho sempre na rodada
+  1. \cd{aprovado\_por} é carimbo sem FK: a saída de um professor da rede não
+  pode travar o pacote da turma.\\
+O tema com teto de caracteres E de palavras & \cd{btrim} entre 3 e 60 e até 8
+  palavras: o tema entra na fala da Nina, e cinco espaços não são um tema.\\
+\zebra FK composta \cd{(escola\_id, pacote\_id)} & A sessão de uma escola não pode
+  apontar para o pacote de outra --- o alvo é o \cd{@@unique([escolaId, id])} do
+  pacote.\\
+O \enquote{Então} com \cd{btrim} & \cd{char\_length(btrim(acao\_entao)) BETWEEN
+  15 AND 240}: quinze espaços não são uma regra, e contariam como entregue no
+  painel.\\
+\zebra Retenção & A da vigência contratual, sem rotina de expurgo, como nas
+  outras missões (\adrr{ADR-13}). Declarar um prazo aqui seria escrever o que
+  nenhum \emph{scheduler} cumpre.\\
+\bottomrule
+\end{tabularx}
+
+
 \section{As quatro tabelas da exp06ef2b}
 \label{sec:tabelas-exp06ef2b}
 
@@ -1393,6 +1483,14 @@ decisão \emph{futura}, com DPA e \emph{k}-anonimato --- e não sai de um
   evidência, disponibilidades e auditoria. \cd{equipes\_membros} precisa do
   próprio \cd{UPDATE}: a FK dela é para \cd{equipes(id)}, e o código ali é
   cópia. Fica \cd{telemetria\_eventos}. Asserção no fim.\\
+\arq{20260926130000\_\B{}exp05ef1b\_\B{}quem\_\B{}mandou\_\B{}isso\_\B{}v2} & A v2.2 de
+  Quem mandou isso? (\adrr{ADR-118}): \cd{exp05ef1b\_pacotes},
+  \cd{\_gates\_turma}, \cd{\_sessoes} e \cd{\_reflexoes}, as quatro com RLS
+  forçada; os índices únicos parciais (um pacote ativo e um rascunho por turma),
+  os \emph{CHECKs} de vocabulário e de ordem dos \emph{latches}, o
+  \enquote{Então} de 15 a 240 depois do \cd{btrim}, e o \cd{GRANT} à \emph{role}
+  de \emph{runtime}, guardado. O DDL saiu do \cd{prisma migrate diff} contra um
+  banco sombra, só com os comandos da missão.\\
 \bottomrule
 \end{tabularx}
 

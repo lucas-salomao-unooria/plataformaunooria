@@ -22,6 +22,7 @@
 #   exp06ef2b  Vite de O Rastro do Boato, o clone de mensageiro (5181)
 #   exp08ef4b  Vite de O Manifesto da IA, o clone do assistente (5182)
 #   exp01ef1b  Vite de O Que a Foto Conta, o clone do mural (5183)
+#   exp05ef1b  Vite de Quem mandou isso?, o clone do mensageiro (5184)
 #
 # As experiências ENTRAM aqui — ao contrário do compose de produção, onde elas
 # não existem porque em produção são bundles estáticos num bucket, não serviços.
@@ -62,6 +63,7 @@ x-fonte: &fonte
   - nm-exp02em1b:/repo/apps/experiencias/exp02em1b/node_modules
   - nm-exp07ef1b:/repo/apps/experiencias/exp07ef1b/node_modules
   - nm-exp06ef2b:/repo/apps/experiencias/exp06ef2b/node_modules
+  - nm-exp05ef1b:/repo/apps/experiencias/exp05ef1b/node_modules
   - nm-exp-template:/repo/apps/experiencias/_template/node_modules
   - pnpm-store:/pnpm-store
   # Artefatos de build também em volume, por dois motivos: não competir com o
@@ -401,6 +403,20 @@ services:
       deps:
         condition: service_completed_successfully
 
+  # 5184, a porta reservada desde a retirada da v1 (ADR-114). Com volume PRÓPRIO
+  # de node_modules, como as outras: sem ele o cache do host entra no container
+  # e a tela quebra com "does not provide an export named …" na primeira subida
+  # do DS — foi o que aconteceu com a app-92, que nasceu sem o volume.
+  exp05ef1b:
+    <<: *dev
+    working_dir: /repo/apps/experiencias/exp05ef1b
+    command: pnpm exec vite --host 0.0.0.0 --port 5184 --strictPort
+    ports:
+      - "5184:5184"
+    depends_on:
+      deps:
+        condition: service_completed_successfully
+
 
 volumes:
   pgdata:
@@ -417,6 +433,7 @@ volumes:
   nm-exp02em1b:
   nm-exp07ef1b:
   nm-exp06ef2b:
+  nm-exp05ef1b:
   nm-exp-template:
   hub-next:
   api-dist:
