@@ -78,20 +78,15 @@ export function MidiaDoPost({
   aoRecarregar: () => void;
 }) {
   if (post.imagem.url) {
-    /* No erro, o DS tira o `<img>` da árvore — e o `alt` sai junto. A descrição
-       da imagem continua na tela, sob o aviso ([D0-1]: "mantendo íntegros a
-       manchete, a legenda e o alt text"; RNF-ACES-002): a leitura crítica do
-       post não pode depender de a imagem ter carregado. */
+    /* No erro, a descrição da imagem continua na tela, sob o aviso ([D0-1]:
+       "mantendo íntegros a manchete, a legenda e o alt text"; RNF-ACES-002): a
+       leitura crítica do post não pode depender de a imagem ter carregado. É o
+       `errorDescription` do DS (0.2.7), que por padrão repete o `alt`. */
     return (
       <PostCard.Media
         src={post.imagem.url}
         alt={post.imagem.alt}
-        errorLabel={
-          <>
-            <span className="midia-com-erro__aviso">{E2.midiaErro}</span>
-            <span className="midia-com-erro__descricao">{post.imagem.alt}</span>
-          </>
-        }
+        errorLabel={E2.midiaErro}
         retryLabel={GLOBAL.tentarNovamente}
         onRetry={aoRecarregar}
       />

@@ -9,9 +9,11 @@
  * Os `var(--x, reserva)` servem só para a tela não ficar transparente antes de
  * a folha do DS carregar.
  *
- * **Cada compensação diz QUAL é a lacuna do pacote e o que foi PEDIDO ao
- * `storybook-unooria`** (marcadas `(b) COMPENSAÇÃO`, e listadas no `AGENTS.md`).
- * Elas existem para morrer: quando o componente chegar por versão, o bloco sai.
+ * **Compensação diz QUAL é a lacuna do pacote e o que foi PEDIDO ao
+ * `storybook-unooria`** (marcada `(b) COMPENSAÇÃO`, e listada no `AGENTS.md`).
+ * Elas existem para morrer: as quatro da 1.0.0 (a faixa de dica, o gesto de
+ * rolar, a tarja de conexão e a etiqueta que quebra) morreram na 1.0.1, quando
+ * o DS 0.2.7 publicou `InlineHint`, `GestureHint`, `Snackbar` e `Badge wrap`.
  *
  * Sobrescrever classe do DS exige DOIS seletores (`.x > .insta-y`): o CSS do
  * pacote é injetado pelo módulo do componente, DEPOIS deste arquivo no grafo
@@ -176,93 +178,6 @@ body {
   overflow: hidden;
 }
 
-/* A imagem que não carregou: o aviso do DS e, embaixo, a descrição da imagem
-   (o `alt` que o DS tira da árvore junto com o `<img>` — ver `midia.tsx`). */
-.midia-com-erro__aviso,
-.midia-com-erro__descricao {
-  display: block;
-}
-
-.midia-com-erro__descricao {
-  margin-top: var(--insta-spacing-xs, 8px);
-  font-size: var(--insta-font-caption-md-size, 12px);
-  line-height: 1.4;
-  color: var(--insta-color-text-primary, #262626);
-}
-
-/*
- * (b) COMPENSAÇÃO — a dica do feed (`e2.instrucao.scaffold_*`) e o aviso da
- * poda na aba Salvos. A seção `instanooria` não publica tooltip nem faixa de
- * aviso inline; o pedido ao `storybook-unooria` é `InlineHint` (faixa de texto
- * sob a barra, com tom neutro e de atrito). Até lá: texto com medida e tokens.
- * A cor do texto é sempre a PRIMÁRIA: a secundária do clone (#8E8E93 sobre
- * branco) não passa o contraste AA de 4,5:1 em corpo de 13px.
- */
-.dica-do-feed,
-.aviso-da-poda {
-  flex-shrink: 0;
-  margin: 0;
-  padding: var(--insta-spacing-s, 10px) var(--insta-gutter, 15px);
-  background: var(--insta-color-background-secondary, #fafafa);
-  box-shadow: var(--insta-elevation-hairline-bottom);
-  color: var(--insta-color-text-primary, #262626);
-  font-size: var(--insta-font-label-md-size, 13px);
-  line-height: 1.4;
-}
-
-/* O atrito (excesso de posts, legenda recusada): a faixa ganha a borda da cor
-   de alerta do app. A cor fica na BORDA, não no texto — o vermelho do clone
-   sobre branco não passa o AA como texto. */
-.aviso-da-poda--atrito {
-  border-left: 3px solid var(--insta-color-brand-like, #ed4956);
-}
-
-/*
- * (b) COMPENSAÇÃO — a demonstração do gesto de rolar ([D0-2]): um indicador
- * translúcido de toque que sobe UMA vez, depois de 10 s parado na entrada. A
- * seção não publica dica de gesto; o pedido é `GestureHint`. Decorativo
- * (`aria-hidden`), e desligado com `prefers-reduced-motion` (RNF-ACES-003) —
- * ali ele nem nasce (`feed.tsx`), e esta regra é a segunda trava.
- */
-.demonstracao-de-rolagem {
-  position: absolute;
-  left: 50%;
-  bottom: 32%;
-  width: 44px;
-  height: 44px;
-  border-radius: var(--insta-radius-full, 1000px);
-  background: var(--insta-color-overlay-scrim, rgba(0, 0, 0, 0.3));
-  border: 2px solid var(--insta-color-background-primary, #fff);
-  pointer-events: none;
-  opacity: 0;
-  transform: translate(-50%, 0);
-  animation: demonstracao-de-rolagem 1.8s ease-in-out 1 forwards;
-}
-
-@keyframes demonstracao-de-rolagem {
-  0% {
-    opacity: 0;
-    transform: translate(-50%, 0);
-  }
-  20% {
-    opacity: 1;
-  }
-  80% {
-    opacity: 1;
-    transform: translate(-50%, -140px);
-  }
-  100% {
-    opacity: 0;
-    transform: translate(-50%, -160px);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .demonstracao-de-rolagem {
-    display: none;
-  }
-}
-
 /* ─────────────────────────────────────────── E3: a aba Salvos */
 
 .salvos__vazio {
@@ -333,20 +248,6 @@ body {
   display: flex;
   flex-wrap: wrap;
   gap: var(--insta-spacing-xxs, 6px);
-}
-
-/*
- * (b) COMPENSAÇÃO — o `Badge` da seção tem `white-space: nowrap`, e as tags
- * da ficha ("Ângulo da imagem: Infográfico comparativo de vagas versus
- * visitantes") passam dos 345 px da folha: sem isto, vazam para fora da tela.
- * O pedido é `Badge` com quebra de linha (`wrap`). Enquanto isso, a pílula
- * quebra e o raio desce para o de cartão.
- */
-.ficha__tags > .insta-badge {
-  white-space: normal;
-  text-align: left;
-  border-radius: var(--insta-radius-l, 10px);
-  line-height: 1.35;
 }
 
 .ficha__titulo {
@@ -454,30 +355,6 @@ body {
 
 .dm__grupo {
   display: contents;
-}
-
-/*
- * (b) COMPENSAÇÃO — a tarja "Sem conexão com a rede… Reconectando ao grêmio..."
- * (`global.erro.offline`). A seção não publica aviso transitório; o pedido é
- * `Snackbar` na `instanooria` (o da `unootube` existe desde a 0.1.17). Fixa no
- * rodapé e fora do fluxo: ela aparece enquanto a criança lê, e empurrar o feed
- * faria o dedo dela errar o post que estava mirando. Cores invertidas do app
- * (fundo = texto primário), como o aviso do próprio Instagram.
- */
-.aviso-de-conexao {
-  position: absolute;
-  left: var(--insta-gutter, 15px);
-  right: var(--insta-gutter, 15px);
-  bottom: calc(var(--insta-tabbar-content-height, 50px) + var(--insta-spacing-l, 16px));
-  z-index: 30;
-  margin: 0;
-  padding: var(--insta-spacing-m, 12px) var(--insta-spacing-l, 16px);
-  border-radius: var(--insta-radius-m, 8px);
-  background: var(--insta-color-text-primary, #262626);
-  color: var(--insta-color-background-primary, #fff);
-  font-size: var(--insta-font-label-md-size, 13px);
-  line-height: 1.4;
-  pointer-events: none;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════

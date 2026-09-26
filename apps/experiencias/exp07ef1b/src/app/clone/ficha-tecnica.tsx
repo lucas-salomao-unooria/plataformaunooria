@@ -49,10 +49,10 @@ export default function FichaTecnica({
       <div className="ficha">
         {ficha && (
           <div className="ficha__tags">
-            <BadgeInsta variant="neutral" theme="dark">
+            <BadgeInsta variant="neutral" theme="dark" wrap>
               {FICHA.fonte(ficha.fonte)}
             </BadgeInsta>
-            <BadgeInsta variant="neutral" theme="dark">
+            <BadgeInsta variant="neutral" theme="dark" wrap>
               {FICHA.angulo(ficha.angulo)}
             </BadgeInsta>
           </div>

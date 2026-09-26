@@ -1,5 +1,5 @@
 import { AlertBox } from "@edu/ui/ds";
-import { BottomSheet, ButtonInsta } from "@edu/ui/ds-insta";
+import { BottomSheet, ButtonInsta, SnackbarInsta } from "@edu/ui/ds-insta";
 import { ESCOLA, GLOBAL } from "../lib/textos";
 import type { AvisoDeConexao } from "./conexao";
 
@@ -15,8 +15,9 @@ import type { AvisoDeConexao } from "./conexao";
  *   que não existem ali — e a seção do clone dentro da tela da escola seria a
  *   mistura que a regra de ouro proíbe.
  *
- * A tarja de rede é região VIVA (`role="status"`) e não bloqueia: a criança
- * continua lendo o feed enquanto a chamada se repete. A de sessão é modal,
+ * A tarja de rede é o `Snackbar` do clone (DS 0.2.7): região VIVA sempre
+ * montada — por isso ela não sai do `if` como a folha —, fora do fluxo e sem
+ * bloquear, e a criança continua lendo o feed enquanto a chamada se repete. A de sessão é modal,
  * porque nada do que ela tocar vai funcionar até o token novo chegar — mas ela
  * não se fecha por ESC nem pelo véu: fechar sem revalidar deixaria a tela
  * aceitando toques que não vão a lugar nenhum.
@@ -30,9 +31,8 @@ export function Avisos({
   voz: "clone" | "escola";
   aoRevalidar: () => void;
 }) {
-  if (!aviso) return null;
-
   if (voz === "escola") {
+    if (!aviso) return null;
     return (
       <div className="aviso-da-escola">
         <AlertBox
@@ -46,19 +46,16 @@ export function Avisos({
     );
   }
 
-  if (aviso === "rede") {
-    return (
-      <p className="aviso-de-conexao" role="status">
-        {GLOBAL.offline}
-      </p>
-    );
-  }
-
   return (
-    <BottomSheet open modal title={GLOBAL.sessaoExpirada} onOpenChange={() => undefined}>
-      <ButtonInsta variant="primary" size="lg" block onClick={aoRevalidar}>
-        {GLOBAL.revalidar}
-      </ButtonInsta>
-    </BottomSheet>
+    <>
+      <SnackbarInsta open={aviso === "rede"} message={GLOBAL.offline} />
+      {aviso === "sessao" ? (
+        <BottomSheet open modal title={GLOBAL.sessaoExpirada} onOpenChange={() => undefined}>
+          <ButtonInsta variant="primary" size="lg" block onClick={aoRevalidar}>
+            {GLOBAL.revalidar}
+          </ButtonInsta>
+        </BottomSheet>
+      ) : null}
+    </>
   );
 }
