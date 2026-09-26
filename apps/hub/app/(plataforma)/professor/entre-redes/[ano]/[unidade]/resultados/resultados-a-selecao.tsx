@@ -7,6 +7,7 @@ import {
   type MaterialDaSelecao,
   type PainelDaSelecao,
   type TurmaDaSelecao,
+  type PodcastDaTurma,
 } from "@/lib/a-selecao-tipos";
 import { apiDoServidor } from "@/lib/api-servidor";
 import { auth } from "@/lib/auth";
@@ -19,6 +20,7 @@ import { normalizarSerie } from "@/lib/series";
 import type { TurmaResumo } from "@/lib/turmas-tipos";
 
 import { PainelDaAulaASelecao } from "./painel-da-aula-a-selecao";
+import { PodcastASelecao } from "./podcast-a-selecao";
 import { PreparoASelecao } from "./preparo-a-selecao";
 import { SeletorDeCobertura } from "./seletor-de-cobertura";
 import { SeletorDeTurma } from "./seletor-de-turma";
@@ -41,6 +43,9 @@ const EXP_ID = "exp07ef1b";
  * isso? v2.2 — por isso o painel de habilidades mora aqui, e não só na tela de atividade do Instanooria. A
  * atividade é a COBERTURA (`atividadeId = coberturaId`) e a rodada é o
  * "Zerar"; `?cobertura=` escolhe qual, e o padrão é a em andamento.
+ *
+ * DEPOIS DA AULA, o podcast de recapitulação (`podcast-a-selecao.tsx`): do
+ * professor, com o Bloco 2 no tema desta turma.
  *
  * A REGRA QUE ESTA TELA APLICA: nenhuma coluna de nível, nota ou acerto na
  * folha (`PROIBIDO_NO_PAINEL`, na api). O nível mora no painel de
@@ -77,7 +82,7 @@ export async function ResultadosASelecao({
       : undefined;
 
   const base = `/a-selecao/turmas/${encodeURIComponent(turma)}`;
-  const [painel, coberturas, material, equipes, session] = turma
+  const [painel, coberturas, material, equipes, session, podcast] = turma
     ? await Promise.all([
         apiDoServidor<PainelDaSelecao>(`${base}/painel`),
         apiDoServidor<CoberturasDaTurma>(`${base}/coberturas`),
@@ -88,8 +93,10 @@ export async function ResultadosASelecao({
            equipes da missão, para a primeira célula dizer quem senta ali. */
         equipesDaMissao(turma, EXP_ID),
         auth(),
+        /* O podcast de recapitulação (é do professor): o roteiro e se o áudio já existe. */
+        apiDoServidor<PodcastDaTurma>(`${base}/podcast`),
       ])
-    : [null, null, null, null, null];
+    : [null, null, null, null, null, null];
 
   const membros: Record<string, MembroNoPainel[]> = Object.fromEntries(
     (equipes?.equipes ?? []).map((e) => [e.id, e.membros]),
@@ -171,6 +178,10 @@ export async function ResultadosASelecao({
             posts={coberturas.ativa.posts}
             membros={membros}
           />
+
+          {/* Depois da aula: o podcast. A `key` é a turma, como no preparo — o
+              laço do áudio vive em `useState`. */}
+          {podcast ? <PodcastASelecao key={`podcast-${turma}`} turmaId={turma} inicial={podcast} /> : null}
 
           <ZerarTurmaASelecao turmaId={turma} nomeDaTurma={painel.turma.nome} tema={painel.cobertura.tema} />
 

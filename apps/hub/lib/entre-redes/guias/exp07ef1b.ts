@@ -88,12 +88,17 @@ export const GUIA_EXP07EF1B: GuiaDaAula = {
       {
         titulo: "Decida se vai trocar o tema",
         texto:
-          "Sem preparo, a turma roda a cobertura curada da Unooria: a reforma e ocupação da praça central. Para um tema da sua cidade, vá em A aula e os resultados, escreva o evento, clique em Gerar Lote com IA, edite as legendas que quiser e clique em Aprovar Cobertura e Abrir Turma. Nenhum texto gerado por inteligência artificial chega à turma sem esse clique.",
+          "Sem preparo, a turma roda a cobertura curada da Unooria: a reforma e ocupação da praça central. Para um tema da sua cidade, vá em A aula e os resultados, escreva o evento, clique em Gerar Lote com IA, edite as legendas — e as três falas do podcast sobre os veículos — e clique em Aprovar Cobertura e Abrir Turma. Nenhum texto gerado por inteligência artificial chega à turma sem esse clique.",
       },
       {
         titulo: "Gere as imagens depois de aprovar",
         texto:
           "O botão Gerar imagens trabalha duas por vez e mostra quantas estão prontas; pode levar alguns minutos, então faça antes da aula. Post sem imagem aparece com a descrição da cena, e a missão roda igual. Os posts de números da cobertura curada já têm gráfico e não pedem imagem.",
+      },
+      {
+        titulo: "Gere o áudio do podcast, se for usá-lo",
+        texto:
+          "O podcast de recapitulação é seu: cerca de 3 minutos e 45 segundos em que Lucas e Clara retomam a missão com a turma. Fica em A aula e os resultados, com o botão Gerar o áudio do podcast, que sai um trecho por vez. O trecho sobre os três veículos fala do tema da sua turma; o resto do roteiro é o mesmo para todas. A transcrição está sempre ao lado, mesmo sem áudio.",
       },
       {
         titulo: "Monte as equipes se faltar computador",
@@ -326,6 +331,7 @@ export const GUIA_EXP07EF1B: GuiaDaAula = {
       ],
     },
     desdobramentos: [
+      "O podcast de recapitulação, em A aula e os resultados: toque para a turma no fim da aula ou no começo da seguinte, se ajudar a retomar a conversa. Ele fala com os estudantes, mas quem decide quando ele toca é você.",
       /* Os dois códigos de Língua Portuguesa são os que a spec da missão
          conecta, conferidos em `apps/api/src/curriculo/dados/habilidades-ef.ts`.
          O texto abaixo segue as palavras deles sem citá-los por inteiro. */

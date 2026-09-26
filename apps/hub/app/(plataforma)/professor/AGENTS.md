@@ -207,6 +207,13 @@ preparo, painel ao vivo, folha por computador, zerar e habilidades.
   **zerar = rodada nova**, sem apagar nada.
 - **UM botão**, com o rótulo de `proximaEtapa` da api; não volta.
 - **O painel consulta só `…/painel`** a cada 5 s, não `router.refresh()`: a
-  página lê cinco rotas.
+  página lê seis rotas.
 - **As imagens são um laço do cliente** (`continuarGerando`): 2 por chamada,
   para em `completo` ou quando uma volta não gera nada.
+- **O podcast de recapitulação é do professor** (`podcast-a-selecao.tsx`, entre
+  o painel da aula e o zerar) — e mora AQUI, não no guia: o Bloco 2 conta o que
+  cada veículo mostrou no tema DESTA turma, e o guia é o mesmo para todas. O
+  áudio é outro laço do cliente (`continuarGerandoPodcast`, um trecho por
+  chamada) e a transcrição fica sempre na tela; o player é o `AudioPlayer` do DS.
+  As três falas do Bloco 2 se editam no PREPARO, junto dos posts, e vão na mesma
+  aprovação (`mesmoLote` compara as falas também).

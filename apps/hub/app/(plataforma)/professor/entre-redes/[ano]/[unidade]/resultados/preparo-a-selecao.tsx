@@ -14,6 +14,7 @@ import {
   TextField,
 } from "@edu/ui/ds";
 import {
+  FALAS_DO_PODCAST,
   FOCO_MAX,
   ROTULO_DA_LENTE,
   ROTULO_DA_ORIGEM,
@@ -21,12 +22,14 @@ import {
   continuarGerando,
   falhasAcumuladas,
   mesmoLote,
+  problemaDaFala,
   problemaDaLegenda,
   textoDasRodadas,
   textoDoProgressoDaMidia,
   type CoberturasDaTurma,
   type Enquadramento,
   type ErroDaSelecao,
+  type FalasDoPodcast,
   type OrigemDaCobertura,
   type PostDaCobertura,
   type ProgressoDaMidia,
@@ -62,6 +65,11 @@ import {
  * O que é editável é a LEGENDA. Veículo, lente e as tags (fonte ouvida, ângulo)
  * são do molde e sustentam a matriz do Mural; elas aparecem para a professora
  * — conduzir sem saber quem cada post ouviu é impossível — mas não mudam aqui.
+ *
+ * E as TRÊS FALAS DO PODCAST: o Bloco 2 do podcast de recapitulação diz o que
+ * cada veículo mostrou, e num tema da IA essas falas vêm do mesmo lote. Elas se
+ * revisam aqui, junto dos posts que descrevem, e vão na mesma aprovação — o
+ * resto do roteiro é o texto aprovado, igual em toda turma.
  *
  * AS IMAGENS são um laço do cliente (`continuarGerando`): a api gera até duas
  * por chamada, porque o BFF corta em 30 s e doze não cabem. Elas são da
@@ -99,6 +107,7 @@ export function PreparoASelecao({
   const [foco, setFoco] = useState(ativa.foco ?? "");
   const [origem, setOrigem] = useState<OrigemDaCobertura>(ativa.origem);
   const [posts, setPosts] = useState<PostDaCobertura[]>(ativa.posts);
+  const [podcast, setPodcast] = useState<FalasDoPodcast>(ativa.podcast);
   /* O tema para o qual OS POSTS NA TELA foram escritos. Trocar o texto do
      tema sem gerar um lote novo deixaria o feed falando da praça sob o título
      de outro evento — a tela avisa, sem bloquear (reescrever o tema do mesmo
@@ -131,6 +140,7 @@ export function PreparoASelecao({
     setFoco(ativa.foco ?? "");
     setOrigem(ativa.origem);
     setPosts(ativa.posts);
+    setPodcast(ativa.podcast);
     setTemaDosPosts(ativa.tema);
     setMidia(ativa.midia);
     setUrls({});
@@ -150,7 +160,10 @@ export function PreparoASelecao({
 
   const base = `/api/plataforma/a-selecao/turmas/${encodeURIComponent(turmaId)}`;
 
-  const alterado = !mesmoLote({ tema, foco, posts }, { tema: ativa.tema, foco: ativa.foco, posts: ativa.posts });
+  const alterado = !mesmoLote(
+    { tema, foco, posts, podcast },
+    { tema: ativa.tema, foco: ativa.foco, posts: ativa.posts, podcast: ativa.podcast },
+  );
   const tamanhoDoTema = tema.trim().length;
   const temaInvalido = tamanhoDoTema < TEMA.min || tamanhoDoTema > TEMA.max;
   const problemas = new Map(
@@ -159,7 +172,13 @@ export function PreparoASelecao({
       return problema ? [[p.id, problema] as const] : [];
     }),
   );
-  const podeAprovar = alterado && !temaInvalido && problemas.size === 0;
+  const problemasDoPodcast = new Map(
+    FALAS_DO_PODCAST.flatMap(({ campo }) => {
+      const problema = problemaDaFala(podcast[campo]);
+      return problema ? [[campo, problema] as const] : [];
+    }),
+  );
+  const podeAprovar = alterado && !temaInvalido && problemas.size === 0 && problemasDoPodcast.size === 0;
   const doHistorico = historico.find((h) => h.id === ativa.id);
   const jaRodou = (doHistorico?.rodadas ?? 0) > 0 || ativa.etapa !== "exploracao";
 
@@ -190,6 +209,7 @@ export function PreparoASelecao({
          responde se a curadoria assistida está sendo usada. */
       setOrigem(rascunho.origem);
       setPosts(rascunho.posts);
+      setPodcast(rascunho.podcast);
       setTemaDosPosts(rascunho.tema);
       setAberto(true);
       setAviso(
@@ -197,7 +217,7 @@ export function PreparoASelecao({
           ? {
               tipo: "success",
               texto:
-                "Lote gerado. Leia os 12 posts e edite o que quiser antes de aprovar — nada vai à turma sem o seu clique.",
+                "Lote gerado. Leia os 12 posts e as três falas do podcast, e edite o que quiser antes de aprovar — nada vai à turma sem o seu clique.",
             }
           : { tipo: "warning", texto: AVISO_SEM_IA },
       );
@@ -216,7 +236,7 @@ export function PreparoASelecao({
       const r = await fetch(`${base}/homologar`, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ tema: tema.trim(), foco: foco.trim() || undefined, origem, posts }),
+        body: JSON.stringify({ tema: tema.trim(), foco: foco.trim() || undefined, origem, posts, podcast }),
       });
       if (!r.ok) {
         /* `lote-invalido` traz a LISTA de problemas em frases para a
@@ -243,6 +263,7 @@ export function PreparoASelecao({
     setFoco(ativa.foco ?? "");
     setOrigem(ativa.origem);
     setPosts(ativa.posts);
+    setPodcast(ativa.podcast);
     setAviso(null);
     setErro(null);
   }
@@ -361,11 +382,13 @@ export function PreparoASelecao({
             Nada mudou em relação à cobertura em andamento — a turma já pode entrar com ela. Troque
             o tema e gere um lote, ou edite uma legenda, para aprovar uma cobertura nova.
           </p>
-        ) : temaInvalido || problemas.size > 0 ? (
+        ) : temaInvalido || problemas.size > 0 || problemasDoPodcast.size > 0 ? (
           <p className="text-[12px] leading-snug text-unooria-danger" role="status">
             {temaInvalido
               ? `Falta o tema: escreva de ${TEMA.min} a ${TEMA.max} caracteres no campo acima.`
-              : `${problemas.size === 1 ? "Um dos 12 posts tem" : `${problemas.size} dos 12 posts têm`} legenda fora do limite de 20 a 45 palavras. ${aberto ? "O campo está marcado abaixo." : "Abra os posts para ver qual."}`}
+              : problemas.size > 0
+                ? `${problemas.size === 1 ? "Um dos 12 posts tem" : `${problemas.size} dos 12 posts têm`} legenda fora do limite de 20 a 45 palavras. ${aberto ? "O campo está marcado abaixo." : "Abra os posts para ver qual."}`
+                : `${problemasDoPodcast.size === 1 ? "Uma das falas do podcast precisa" : `${problemasDoPodcast.size} falas do podcast precisam`} de ajuste. ${aberto ? "O campo está marcado abaixo." : "Abra os posts para ver qual."}`}
           </p>
         ) : jaRodou ? (
           <p className="text-[12px] leading-snug text-unooria-neutral-700">
@@ -442,6 +465,43 @@ export function PreparoASelecao({
                     ))}
                 </div>
               ))}
+            </div>
+          ) : null}
+
+          {aberto ? (
+            /* As três falas do Bloco 2 do podcast, junto dos posts que elas
+               resumem: é o único trecho do roteiro que muda com o tema. */
+            <div className="flex flex-col gap-3 rounded-lg border border-unooria-neutral-200 p-4" data-falas-do-podcast>
+              <div className="flex flex-col gap-1">
+                <p className="text-[14px] font-semibold text-unooria-neutral-950">
+                  O podcast de recapitulação: o que ele diz de cada veículo
+                </p>
+                <p className="max-w-3xl text-[12px] leading-snug text-unooria-neutral-600">
+                  O podcast é seu, para tocar à turma depois da aula. O roteiro é o aprovado pela
+                  Unooria; só estas três falas mudam com o tema, porque contam o que cada veículo
+                  mostrou. Elas vão na mesma aprovação dos posts.
+                </p>
+              </div>
+              <div className="grid gap-3 lg:grid-cols-3">
+                {FALAS_DO_PODCAST.map(({ campo, falante, veiculo }) => {
+                  const problema = problemasDoPodcast.get(campo) ?? null;
+                  return (
+                    <TextArea
+                      key={campo}
+                      label={`${falante}, sobre ${veiculo}`}
+                      value={podcast[campo]}
+                      rows={5}
+                      maxLength={600}
+                      error={problema ?? undefined}
+                      helperText={problema ? undefined : "De 12 a 60 palavras, sem link nem @."}
+                      data-fala={campo}
+                      onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                        setPodcast((atual) => ({ ...atual, [campo]: e.target.value }))
+                      }
+                    />
+                  );
+                })}
+              </div>
             </div>
           ) : null}
         </div>
