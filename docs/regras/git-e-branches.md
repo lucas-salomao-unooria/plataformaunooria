@@ -90,8 +90,9 @@ abri-lo.
   vez: `pnpm dev`/`docker:dev`, a suíte e2e, migração. **Nunca**
   `pnpm docker:dev` de um worktree — ele recria os containers da stack
   principal. Arquivos que toda frente toca e brigam no merge: número da ADR
-  (a PRÓXIMA é a **115**: a **114 é a primeira versão de Quem mandou isso?
-      retirada, para a v2.2 voltar com o mesmo código**, e a **113 a retirada
+  (a PRÓXIMA é a **119**: a **116 é o UnooTube arquivado**; 115, 117 e 118,
+      reservadas por frentes abertas; a **114 é a primeira versão de Quem
+      mandou isso? retirada, para a v2.2 voltar com o mesmo código**, e a **113 a retirada
       do Eco no Grupo para A Seleção** — as duas frentes correram em paralelo no
       mesmo dia, e a 114 conferiu a branch aberta da 113 antes de escrever —, a
       **112 é a evidência pedagógica por atividade e

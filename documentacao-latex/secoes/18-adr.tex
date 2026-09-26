@@ -9,9 +9,9 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{113 decisões}, numeradas até ADR-114. A ADR-113 (a retirada do
-Eco no Grupo) é de uma frente paralela que ainda não entrou nesta base; fora
-ela, \textbf{sem lacunas}. Quando
+São \textbf{114 decisões}, numeradas até ADR-116. A ADR-113 (a retirada do
+Eco no Grupo) e a ADR-115 (A Seleção) são de frentes paralelas que ainda não
+entraram nesta base; fora elas, \textbf{sem lacunas}. Quando
 eram cem, as cinco últimas nasceram no MESMO dia, em três frentes paralelas, e não
 colidiram porque os números foram \textbf{reservados por quem repartia o
 trabalho antes de qualquer uma escrever} --- que é a lição que a colisão de
@@ -160,6 +160,7 @@ que a cercam.
 \adrr{ADR-111} & Equipe é quem divide um computador, e o painel conta por computador & 2026-09-25 & Aceita\\
 \zebra \adrr{ADR-112} & A evidência é por atividade e rodada, e a melhor rodada vale por habilidade & 2026-09-25 & Aceita\\
 \adrr{ADR-114} & Quem mandou isso? v1 é retirada; a v2.2 entra com o mesmo código & 2026-09-25 & Aceita\\
+\zebra \adrr{ADR-116} & A experiência que perde o código é arquivada, não apagada & 2026-09-25 & Aceita\\
 \bottomrule
 \end{tabularx}
 
@@ -9571,3 +9572,136 @@ dos demais pacotes passam sem ela.
 explícita, e a v1 volta por esta ADR revertida, não por \emph{cherry-pick}; ou
 outra missão nova cair numa unidade já ocupada, que repete a escolha desta ADR
 e da \adrr{ADR-113}.
+
+\section{ADR-116 --- A experiência que perde o código é arquivada, não apagada}
+\label{adr:arquivar-em-vez-de-apagar}
+
+\textbf{Data.} 2026-09-25. \textbf{Status.} Aceita.
+\textbf{Consequência} da \adrr{ADR-110}: o código da missão é DERIVADO da série e
+da unidade, e o Jornal da Escola, a missão nova do 4º ano, unidade 1, cai no
+\cd{exp04ef1b} do UnooTube. As duas vezes anteriores apagaram a antiga
+(\adrr{ADR-113}, o Eco no Grupo; \adrr{ADR-114}, a v1 de Quem mandou isso?).
+Esta abre o outro caminho, e deixa as duas como a escolha certa para o caso
+delas.
+
+\begin{especificacao}{Contexto}
+O UnooTube foi a primeira missão do 4º ano e a única que \textbf{esteve em
+nuvem}: está publicado em \cd{dev} e \cd{hml} como \cd{exp-02-unootube} (1.2.7),
+e em \cd{dev-local} como \cd{exp04ef1b} (1.2.8). O Eco e a v1 do 5º ano nunca
+tinham dado a guardar; o UnooTube tem sessões, liberações, progresso, equipes
+montadas e o histórico do interruptor.
+
+O dono do produto decidiu, ao receber o Jornal: \enquote{mude tudo para
+prefixo-backup e crie uma área nova de arquivados na plataforma} --- e, entre
+guardar o código numa pasta fora do monorepo ou no lugar, escolheu \textbf{no
+lugar, só renomeado}. A área de arquivados \textbf{só lista}: ninguém joga uma
+experiência arquivada.
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{itemize}
+  \item \textbf{Arquivar é dar o prefixo \cd{backup-}}, e o arquivamento é
+    DERIVADO do id, como o código é derivado do manifesto: não há campo
+    \enquote{arquivada} no manifesto para ficar dessincronizado do nome da
+    pasta. O id arquivado é \cd{backup-} mais um código válido
+    (\arq{comum/arquivadas.ts}), e \textbf{não passa no \cd{EXP\_ID\_RE}}: rota,
+    catálogo, grade da sala e painel de recursos aceitam só experiência viva, e
+    a arquivada some de todos sem um filtro a mais.
+  \item \textbf{O código fica no lugar, renomeado, e continua compilando e
+    testando}: a experiência vira \arq{apps/experiencias/backup-exp04ef1b}, o
+    módulo da api vira \arq{apps/api/src/backup-unootube} (FORA do
+    \cd{app.module}: nenhuma rota é servida), a tabela vira
+    \cd{backup\_exp04ef1b\_sessoes} e as \emph{specs} continuam rodando contra
+    ela. No hub, os arquivos ganham o prefixo e saem só da fiação --- os três
+    despachantes, o registro dos guias e \cd{MISSOES\_PUBLICADAS} (o 4º ano,
+    unidade 1, fica \enquote{em breve} até o Jornal entrar). A suíte de ponta a
+    ponta vai para \arq{scripts/e2e/arquivados}, que o \emph{runner} não percorre.
+  \item \textbf{A linha do catálogo SAI de \cd{experiencias} e vai para
+    \cd{experiencias\_arquivadas}}, com a \textbf{fotografia} do arquivamento:
+    quantas turmas tinham liberado e quantos estudantes tinham progresso.
+    A migração conta enquanto o FORCE da RLS está fora --- o único momento em
+    que contar atravessa escolas sem pedir nada à RLS --- e a tela só lê.
+  \item \textbf{O código como VALOR vira \cd{backup-exp04ef1b}} em
+    \cd{experiencias\_versoes}, \cd{liberacoes}, \cd{progresso}, nas três
+    tabelas de equipes, nas três de evidência e, com o prefixo
+    \cd{experiencia:}, em \cd{disponibilidades} e \cd{recursos\_auditoria}. Sem
+    isso o Jornal nasceria com as liberações, o progresso, as equipes e o
+    histórico do interruptor do UnooTube. As travas afrouxadas dentro da
+    transação são as da \adrr{ADR-110}: o FORCE da RLS e o \emph{trigger}
+    append-only da auditoria. \cd{telemetria\_eventos} fica: o
+    \cd{exp\_version} separa o UnooTube (1.x) do Jornal (2.x).
+  \item \textbf{A área \rota{/unooria/arquivados}} (só \cd{admin},
+    \adrr{ADR-88}) lista o que está arquivado por
+    \rota{GET /recursos/arquivadas}: nome, código de origem, onde ficava na
+    grade, última versão, a fotografia, o motivo e a data. O documento de
+    portabilidade também lê \cd{experiencias\_arquivadas}, para a participação
+    da criança continuar nomeada.
+  \item \textbf{O \emph{deploy} pula \cd{backup-*}} nos dois laços (subir e
+    ativar), o \emph{compose} de desenvolvimento perde o serviço do UnooTube, e
+    a porta 5174 fica para o Jornal. O \emph{seed} escreve a arquivada a partir
+    das pastas \cd{backup-*}, porque num banco novo a migração não tem linha
+    para mover.
+  \item \textbf{\cd{exp04ef1b} sai de \cd{EXPERIENCIAS\_COM\_EQUIPE}}: a lista é
+    por código, e o código mudou de dono. O Jornal volta a entrar quando nascer
+    com equipe.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Apagar, como a \adrr{ADR-113} e a \adrr{ADR-114}.} Certo para
+    quem não tinha o que guardar; o UnooTube esteve em nuvem, e o dono pediu
+    para guardar.
+  \item \textbf{Mover o código para uma pasta fora do monorepo}, sem compilar
+    nem testar. Congelaria a missão como estava, e apodreceria sem aviso: no dia
+    de trazer de volta, nada garantiria que ainda compila. O dono escolheu o
+    custo contrário.
+  \item \textbf{Uma coluna \cd{arquivada\_em} em \cd{experiencias}.} Seis
+    leitores listam aquela tabela (a grade, o catálogo, o painel de recursos, a
+    evidência, a portabilidade, o próprio catálogo de rotas), e cada um teria de
+    lembrar de filtrar; o que esquecesse mostraria o UnooTube de novo.
+  \item \textbf{Recontar turmas e estudantes em tempo de uso.} Seria uma rota
+    do \cd{admin} contando \cd{liberacoes} e \cd{progresso} de todas as escolas,
+    isto é, atravessando a RLS --- uma capacidade que nenhuma rota tem hoje, e
+    que não vale para uma tela que só lista.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{Código arquivado custa manutenção}: continua no \emph{typecheck}
+    e nos testes, e quebra quando o DS, o SDK ou o \emph{schema} mudarem. Quem
+    quebrar conserta ali --- a pasta tem um \arq{AGENTS.md} que diz isso.
+  \item \textbf{O 4º ano fica sem missão até o Jornal entrar}, como a
+    \adrr{ADR-114} deixou o 5º.
+  \item \textbf{A fotografia não se atualiza}, e a tela diz isso. Os dados
+    guardados não mudam, então ela só mente se alguém escrever nas tabelas
+    arquivadas à mão.
+  \item \textbf{O \emph{bucket} continua com o UnooTube}: os \emph{bundles} em
+    \cd{exp-02-unootube/*} e os vídeos em \cd{exp04ef1b/videos}, sem uso. A
+    cópia manual de \cd{exp-02-unootube/*} para \cd{exp04ef1b/} que o
+    \arq{docs/INFRA.md} descrevia \textbf{não deve mais rodar}: poria o UnooTube
+    1.x no caminho do Jornal.
+  \item \textbf{Duas suítes mudaram de missão}: a \arq{professor/10} (equipes)
+    passou para o unooGPT, e a \arq{estudante/01} usa o unooGPT como a missão
+    \enquote{de outra série}.
+  \item \textbf{Os Termos de uso citam o UnooTube} como exemplo de ambiente
+    imitado; a frase fica para o dono do produto revisar, com a do Eco.
+\end{itemize}
+
+\textbf{Verificação.} A migração foi aplicada sobre um Postgres descartável
+semeado com dados do UnooTube em duas escolas --- sessão, liberação, progresso,
+montagem, equipe, membros, interruptor e auditoria --- e com linhas de controle
+de outra missão nas mesmas tabelas. A primeira corrida \textbf{abortou na
+asserção}: \cd{equipes\_membros} guarda o código como cópia, e a FK dela aponta
+para \cd{equipes(id)}, não para a montagem; o UPDATE próprio entrou. Depois
+disso: tudo renomeado, a fotografia com 2 turmas e 3 estudantes, o controle
+intacto, o FORCE da RLS de volta e o \emph{trigger} religado. Num banco virgem,
+a cadeia inteira aplica e a suíte da api passa (112 suítes, 1614 testes); o
+\emph{seed} num banco virgem escreve a arquivada e não libera nada do 4º ano.
+
+\textbf{Gatilho.} A segunda experiência a perder o código (é ela que prova que o
+molde é o molde); alguém precisar ABRIR uma arquivada, e não só listá-la (aí
+entra um modo de demonstração, que hoje não existe); ou o custo de manter o
+código arquivado compilando passar do valor de guardá-lo no lugar.

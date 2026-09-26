@@ -40,7 +40,7 @@ Corpo & JSON com teto de \SI{2}{\mega\byte}; \cd{text/csv} cru com
 Erros & \emph{Exceptions} do Nest (\cd{BadRequestException},
   \cd{ForbiddenException}, \cd{NotFoundException}). Domínio com vocabulário
   próprio de erro usa um \cd{CodigoErro} tipado (ex.:
-  \arq{src/unootube/erros.ts}).\\
+  \arq{src/unoogpt/erros.ts}).\\
 \zebra Assincronia longa & \textbf{202 + \emph{polling}}. Nenhuma rota fica
   aberta esperando modelo de linguagem.\\
 \bottomrule
@@ -178,13 +178,13 @@ método e esquema, é o Apêndice~\ref{ap:endpoints}.
   \node[camadalbl] at (13.6,-0.25) {o guia, o agregado e o serviço};
 
   % ---- exp04ef1b
-  \node[exprot] at (0.1,-1.35) {\textbf{exp04ef1b}\\UnooTube};
+  \node[exprot] at (0.1,-1.35) {\textbf{backup-exp04ef1b}\\UnooTube (arquivada)};
   \node[rt, minimum height=15mm] at (4.5,-1.35)
-    {\texttt{/unootube/*}\desc{estudante}};
+    {\texttt{---}\desc{sem rotas: fora do \cd{app.module} (ADR-116)}};
   \node[rt, minimum height=15mm] at (9.05,-1.35)
-    {\texttt{/unootube/turmas/*}\desc{prof., gestor, admin}};
+    {\texttt{---}\desc{era \texttt{/unootube/turmas/*}}};
   \node[rt, minimum height=15mm] at (13.6,-1.35)
-    {\texttt{/unootube/professor/*}\desc{prof., gestor --- material do guia}};
+    {\texttt{---}\desc{era \texttt{/unootube/professor/*}}};
 
   % ---- app-70
   \node[exprot] at (0.1,-2.925) {\textbf{app-70}\\Vila do Lume};
@@ -311,7 +311,7 @@ export interface ExperienciaHandle {
 \begin{nota}
 Não há método de \enquote{corrigir} nem de \enquote{pontuar} na SDK, e isso é
 intencional: correção é rota de domínio da experiência na API
-(\rota{/unootube/*}, \rota{/vila/*}, \rota{/runs/*}), não capacidade genérica. Uma
+(\rota{/unoogpt/*}, \rota{/vila/*}, \rota{/runs/*}), não capacidade genérica. Uma
 API genérica de avaliação convidaria a mandar a resposta certa junto.
 \end{nota}
 
@@ -440,11 +440,6 @@ mudaram de forma para contar por COMPUTADOR:
   tem na turma, num \cd{groupBy} para a grade inteira. SÓ no \emph{schema} do
   professor, e não no \cd{MissaoNaGradeSchema}, que também responde
   \rota{/salas/minhas}: a contagem da sala não é assunto do estudante.\\
-\zebra \rota{GET /unootube/turmas/\B :turmaId/resultados} & Uma linha por
-  computador: cada item de \cd{estudantes} ganha \cd{equipe} (\cd{null}, ou
-  \cd{id}, \cd{nome} e \cd{membros}), com \cd{id}/\cd{estudanteId} do
-  representante --- quem entrou. O \cd{resumo} conta essas linhas e ganha
-  \cd{porComputador}.\\
 \rota{GET /unoogpt/professor/\B turmas/:turmaId} & O mesmo na folha da Missão
   Tempestade: \cd{linhas[].equipe}, e o \cd{retrato} conta as linhas, com
   \cd{porComputador}. \enquote{Abrir} leva ao representante.\\
@@ -787,9 +782,6 @@ hub divergiria na primeira revisão de \emph{copy}.
   não é servida.\\
 \zebra \rota{GET /unoogpt/professor/fontes} & professor & As 8 fontes do
   cenário com o viés de cada uma, o período e os bairros que cobrem.\\
-\rota{GET /unootube/professor/videos} & prof., gestor & Os 21 vídeos com o
-  \cd{factual} de cada um, mais \cd{resumo} (11 factuais, 10 sensacionalistas)
-  e \cd{pontuacao} --- os dois \textbf{contados} no catálogo.\\
 \zebra \rota{GET /rastro-boato/professor/material} & prof., gestor & As 3
   intervenções com \cd{desfecho} e a reação do grupo, e o ciclo na
   \textbf{ordem certa} --- o contrário do que a tela do estudante recebe.\\
@@ -804,8 +796,8 @@ hub divergiria na primeira revisão de \emph{copy}.
 \end{tabularx}
 
 \begin{regra}
-\textbf{As quatro últimas são catálogo; a da Vila não.} Em
-\rota{/unoogpt/professor/fontes}, \rota{/unootube/professor/videos},
+\textbf{As três últimas são catálogo; a da Vila não.} Em
+\rota{/unoogpt/professor/fontes},
 \rota{/rastro-boato/professor/material} e
 \rota{/o-eco-no-grupo/professor/material} não há \cd{escolaId} nem
 \emph{tenancy} a aplicar --- o conteúdo é igual para todo contrato, e o que a
@@ -985,6 +977,12 @@ na leitura:
     \cd{recursos\_auditoria} (ação \cd{quota-alterada}, \cd{detalhe = \{de,
     para\}}). Vale para a rede inteira na próxima chamada de IA: o
     \cd{QuotaService} lê a linha a cada \cd{temSaldo}, sem \emph{cache}.
+  \item \rota{GET /recursos/arquivadas} (\adrr{ADR-116}) --- as experiências
+    arquivadas, tiradas do produto sem serem apagadas, lidas de
+    \cd{experiencias\_arquivadas}: nome, código de origem, onde ficava na grade,
+    última versão, motivo, data e a FOTOGRAFIA de turmas e estudantes que a
+    migração tirou ao arquivar. Não reconta nada em tempo de uso --- contar
+    \cd{liberacoes} e \cd{progresso} de todas as escolas atravessaria a RLS.
 \end{itemize}
 
 O \rota{GET /recursos/auditoria} ganhou \cd{?prefixo=} (\cd{quota:} recorta as

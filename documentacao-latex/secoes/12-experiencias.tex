@@ -17,8 +17,8 @@ mecânica impõe exigência ao \emph{software} --- e não como material pedagóg
 \cd{exp08ef1b} & \cd{8EF} & estudante &
   telemetria, progresso, ia &
   \arq{motor}, \arq{geracao}, \arq{atividades}, \arq{perfis}, \arq{dossie}\\
-\zebra \cd{exp04ef1b} & \cd{4EF} & estudante &
-  telemetria, progresso & \arq{unootube}\\
+\zebra \cd{backup-exp04ef1b} & \cd{4EF} & \textbf{arquivada} &
+  telemetria, progresso & \arq{backup-unootube} (sem rotas)\\
 \cd{exp02em1b} & \cd{2EM} & estudante &
   telemetria, ia & \arq{unoogpt}\\
 \zebra \cd{exp01ef1b} & \cd{1EF} & estudante &
@@ -45,12 +45,18 @@ O 5º ano não tem missão no catálogo: a unidade 1 dele aguarda a v2.2 de Quem
 mandou isso?, que volta com o mesmo código \cd{exp05ef1b} e a partir da 0.2.0
 (\adrr{ADR-114}). A porta 5184 fica reservada para ela.
 
+O 4º ano também está sem missão: o UnooTube foi \textbf{arquivado}, e não
+apagado (\adrr{ADR-116}) --- a pasta, o módulo, a tabela e as linhas de
+plataforma dele ganharam o prefixo \cd{backup-}, e ele saiu do catálogo, da grade
+e do \emph{deploy}. A unidade 1 aguarda o Jornal da Escola, que toma o código
+\cd{exp04ef1b}. A porta 5174 fica para ele.
+
 \begin{tabularx}{\linewidth}{@{}L{28mm}L{18mm}X@{}}
 \toprule
 \headrow \thd{Experiência} & \thd{Porta em \emph{dev}} & \thd{Onde aparece no hub}\\
 \midrule
 \cd{exp08ef1b} & \cd{5173} & \rota{/exp/exp08ef1b}\\
-\zebra \cd{exp04ef1b} & \cd{5174} & \rota{/exp/exp04ef1b}\\
+\zebra \cd{exp04ef1b} & \cd{5174} & reservada para o Jornal da Escola (o UnooTube arquivado não sobe)\\
 \cd{app-90-plano-de-aula} & \cd{5175} & \rota{/professor/plano-de-aula}\\
 \zebra \cd{app-91-bem-estar} & \cd{5176} & \rota{/professor/bem-estar}\\
 \cd{app-70-vila-do-lume} & \cd{5177} & \rota{/exp/app-70-vila-do-lume}\\
@@ -196,8 +202,9 @@ da missão injeta o que só ela sabe montar:
     \arq{lib/insta/copy-da-revelacao.ts} --- \textbf{cópia gêmea} do arquivo
     homônimo da exp08ef1b, não a mesma fonte: as duas mudam juntas, e nada no
     \emph{build} cobra isso.
-  \item \textbf{exp04ef1b} --- a tabela dos 21 vídeos, com o \cd{factual} de cada
-    um, vem de \rota{GET /unootube/professor/videos}. A criança de nove anos
+  \item \textbf{exp04ef1b} (o UnooTube, arquivado na \adrr{ADR-116}; o bloco saiu
+    do guia com ele) --- a tabela dos 21 vídeos, com o \cd{factual} de cada
+    um, vinha de \rota{GET /unootube/professor/videos}. A criança de nove anos
     cita o vídeo pelo apelido do canal, e sem a lista o professor não sabe de
     qual ela está falando.
   \item \textbf{exp02em1b} --- a tabela dos oito vieses vem de
@@ -328,7 +335,12 @@ Largada por perfil, sorteio ou redistribuição & \arq{perfis/largada.ts},
 \bottomrule
 \end{tabularx}
 
-\section{exp04ef1b --- UnooTube}
+\section{backup-exp04ef1b --- UnooTube (arquivada)}
+
+\textbf{Arquivada em 2026-09-25} (\adrr{ADR-116}): o Jornal da Escola tomou o
+código \cd{exp04ef1b}. O que segue descreve a missão como ela era; o código
+continua no monorepo com o prefixo \cd{backup-}, compilando e testando, mas não
+é servido, publicado nem listado --- só aparece na área \rota{/unooria/arquivados}.
 
 Clone de plataforma de vídeo, para o 4º ano. O estudante salva até três vídeos; ao
 terceiro, o ranking desbloqueia; \enquote{adicionar credibilidade} reordena o
@@ -346,7 +358,7 @@ fazendo, e o terceiro salvo abria o diálogo sozinho --- a palavra
 \headrow \thd{Decisão} & \thd{Motivo}\\
 \midrule
 Gabarito (\cd{factual}) fora do \emph{bundle} & Vive em
-  \arq{src/unootube/catalogo.ts}. A API corrige e devolve inscritos e fontes ---
+  \arq{src/backup-unootube/catalogo.ts}. A API corrige e devolve inscritos e fontes ---
   nunca a resposta (regra 3).\\
 \zebra Ranking com colegas \textbf{fictícios} & Distribuição desenhada para a
   lição. Não há pontuação de menor real exposta a outro menor (LGPD).\\
