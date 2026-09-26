@@ -202,8 +202,13 @@ await suite(
     /* Pelo PAPEL: a tela tem o título escondido para o leitor de tela (`h1.so-leitor`)
        e o da barra com o mesmo texto — por texto, o localizador casa os dois. */
     await q().getByRole("heading", { name: "Itens Salvos" }).waitFor({ timeout: 15_000 });
+    /* Os salvos CHEGAM marcados: com exatamente três, a seleção já está feita.
+       Um toque desmarca (a poda) e outro devolve — é isso que a grade prova. */
     const grade = q().getByLabel("Posts salvos");
-    for (let i = 0; i < 3; i += 1) await grade.locator("button").nth(i).click();
+    await q().locator("text=/3 de 3 selecionados/").first().waitFor({ timeout: 10_000 });
+    await grade.locator("button").first().click();
+    await q().locator("text=/2 de 3 selecionados/").first().waitFor({ timeout: 10_000 });
+    await grade.locator("button").first().click();
     await q().locator("text=/3 de 3 selecionados/").first().waitFor({ timeout: 10_000 });
 
     // ═══ O PORTÃO: legenda curta desabilita, link é recusado ══════════════
