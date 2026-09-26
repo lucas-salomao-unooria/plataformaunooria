@@ -315,13 +315,24 @@ await suite(
 
     // ═══ PROFESSORA libera a explicação; o estudante lê os 3 cards ═══════
     await apertar(prof, "explicacao");
-    for (let card = 0; card < 2; card += 1) {
+    /* A etapa chega pela sondagem do gate (5s), então a espera é pelo CARD, não
+       pelo botão: o Mural também tem um "Próximo story" (o do `StoryViewer`), e
+       um `/^Próximo/` clicava nele antes de a explicação existir. */
+    await q()
+      .getByRole("heading", { name: /A ilusão da neutralidade/i })
+      .waitFor({ timeout: 20_000 });
+    for (let card = 0; card < 3; card += 1) {
       /* A trava de 8s por card é da missão: o botão "Próximo" acende sozinho,
-         e a espera corre contra ele (habilitado), nunca por tempo cego. */
-      const proximo = q().getByRole("button", { name: /^Próximo/ }).first();
-      await proximo.waitFor({ timeout: 30_000 });
-      await p.waitForFunction(() => true);
+         e a espera corre contra ele (habilitado), nunca por tempo cego. São 3
+         cliques: o do 3º card é o que abre a DM de fechamento. */
+      const proximo = q().getByRole("button", { name: /^Próximo$/ });
       await proximo.click({ timeout: 15_000 });
+      if (card < 2) {
+        await q()
+          .getByText(`${card + 2}/3`, { exact: true })
+          .first()
+          .waitFor({ timeout: 5_000 });
+      }
       if (card === 0) {
         await r.registrar(p, "explicacao", {
           titulo: "Três cards, oito segundos cada",
