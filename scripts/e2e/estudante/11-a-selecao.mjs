@@ -60,6 +60,7 @@ await suite(
       "A ficha técnica só aparece depois que a professora revela",
       "As duas enquetes da Amara não mostram acerto, e a missão termina",
       "A folha da turma não tem coluna de pontos, e o painel mostra as habilidades da BNCC",
+      "O podcast de recapitulação é da professora: as três falas do tema se revisam no preparo, e a transcrição fica sempre na tela",
     ],
     comando: "node scripts/e2e/estudante/11-a-selecao.mjs",
   },
@@ -146,6 +147,27 @@ await suite(
         "anda uma etapa por vez, e nenhuma etapa é pulada.",
       inteira: true,
     });
+
+    /* As três falas do podcast moram no preparo, junto dos posts que resumem:
+       abre a grade, confere e fecha — o resto do roteiro não tem o que editar. */
+    await prof.click('[data-acao="mostrar-posts"]');
+    const falas = prof.locator("[data-falas-do-podcast]");
+    await falas.waitFor({ timeout: 10_000 });
+    r.exigir((await falas.locator("textarea").count()) === 3, "o preparo mostra as três falas do podcast");
+    r.exigir(
+      /padaria da esquina/.test(await falas.locator('textarea').nth(1).inputValue()),
+      "no tema curado, as falas são as do roteiro aprovado",
+    );
+    await r.registrar(prof, "preparo-falas-do-podcast", {
+      titulo: "O que o podcast diz de cada veículo",
+      mostra:
+        "No preparo, abaixo dos 12 posts, as três falas do podcast de recapitulação que contam o " +
+        "que a Folha Oficial, a Voz Coletiva e a Métrica Urbana mostraram.",
+      prova:
+        "Só essas três falas mudam com o tema: num tema da IA elas saem do mesmo lote, e a " +
+        "professora as revisa antes de aprovar, junto com os posts. O resto do roteiro é o aprovado.",
+    });
+    await prof.click('[data-acao="mostrar-posts"]');
 
     // ═══ ESTUDANTE 1: a DM, o feed e os salvos ════════════════════════════
     const p = await r.pagina("estudante", { viewport: { width: 1280, height: 950 } });
@@ -361,6 +383,61 @@ await suite(
         "A legenda e a reflexão aparecem para a professora da turma, e para a gestão só " +
         "\"entregou\". O nível da EF07CO11 veio da enquete; a leitura da legenda por IA não " +
         "marcou nada porque em dev a IA é o mock — e \"Não avaliado\" é o que a regra manda.",
+      inteira: true,
+    });
+
+    // ═══ PROFESSORA: o podcast de recapitulação ══════════════════════════
+    const cartao = prof.locator("[data-podcast-selecao]");
+    await cartao.waitFor({ timeout: 20_000 });
+    await prof.click('[data-acao="ler-transcricao"]');
+    const transcricao = prof.locator("[data-transcricao-podcast]");
+    await transcricao.waitFor({ timeout: 10_000 });
+    const roteiro = await transcricao.innerText();
+    r.exigir(
+      ["Abertura", "Recapitulação", "A revelação", "Provocação e transferência", "Encerramento"].every(
+        (bloco) => roteiro.toUpperCase().includes(bloco.toUpperCase()),
+      ),
+      "a transcrição traz os cinco blocos do roteiro aprovado",
+    );
+    r.exigir(/Lucas:/.test(roteiro) && /Clara:/.test(roteiro), "com as falas de Lucas e de Clara");
+    r.exigir(/Folha Oficial/.test(roteiro) && /Métrica Urbana/.test(roteiro), "e o Bloco 2 fala dos três veículos");
+    await r.registrar(prof, "podcast-transcricao", {
+      titulo: "O podcast de recapitulação, para a professora",
+      mostra:
+        "O player do podcast (Lucas e Clara, cerca de 3 min 45 s) e a transcrição inteira, bloco a bloco.",
+      prova:
+        "O podcast é da professora, que decide tocar para a turma depois da aula. Sem áudio o " +
+        "player não some: diz o porquê, e a transcrição continua na tela.",
+      inteira: true,
+    });
+
+    /* Gerar o áudio. Com o Vertex de verdade o episódio sai trecho a trecho e
+       fica pronto; com o mock, a síntese falha fechada e a tela diz que o
+       trecho não saiu. A espera é pela UNIÃO dos desfechos — nunca pelo
+       relógio —, e o ramo que aconteceu é o que se prova. */
+    if ((await cartao.getAttribute("data-podcast-pronto")) !== "sim") {
+      await prof.click('[data-acao="gerar-podcast"]');
+      await prof
+        .locator(
+          '[data-podcast-pronto="sim"], [data-podcast-selecao] [role="status"], [data-podcast-selecao] :text-matches("não pôde ser gerado|sem saldo|limite", "i")',
+        )
+        .first()
+        .waitFor({ timeout: 300_000 });
+    }
+    const pronto = (await cartao.getAttribute("data-podcast-pronto")) === "sim";
+    if (pronto) {
+      r.exigir((await cartao.locator("audio").count()) === 1, "o episódio emendado toca no player do DS");
+    } else {
+      r.exigir(await transcricao.isVisible(), "sem áudio, a transcrição continua na tela");
+    }
+    await r.registrar(prof, "podcast-audio", {
+      titulo: pronto ? "O episódio pronto" : "Sem áudio, com a transcrição",
+      mostra: pronto
+        ? "Os cinco trechos sintetizados pelo TTS do Gemini e emendados num episódio só, no player."
+        : "A síntese não saiu (em dev a IA é o mock, que falha fechado) e a tela diz isso — a transcrição fica.",
+      prova: pronto
+        ? "Um trecho por chamada, porque o episódio não cabe nos 30 s do BFF; os blocos fixos saem uma vez por contrato."
+        : "Falha de voz não esconde o podcast nem cobra a quota: o trecho que não saiu é dito, e a leitura segue.",
       inteira: true,
     });
   },
