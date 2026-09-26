@@ -58,12 +58,12 @@ const pastas = readdirSync(PASTA, { withFileTypes: true })
  * Experiências cujo MANIFESTO chegou antes do resto da pasta — e só elas.
  *
  * **Esta lista só encolhe.** A exp05ef1b v2.2 entrou pela api (a ficha da
- * evidência e o seed precisam do manifesto para conferir o `expId`), e o
- * bundle é de outra frente. Sem `package.json` não há versão para comparar;
- * o teste abaixo cobra que a entrada SAIA daqui no dia em que o `package.json`
- * chegar — senão a comparação de versão continuaria desligada para ela.
+ * evidência e o seed precisam do manifesto para conferir o `expId`) e saiu
+ * daqui quando o bundle chegou com o `package.json` 0.2.0. Vazia é o estado
+ * normal; o teste abaixo cobra que uma entrada nova SAIA no dia em que o
+ * `package.json` chegar — senão a comparação de versão ficaria desligada.
  */
-const SEM_PACOTE_AINDA = new Set<string>(["exp05ef1b"]);
+const SEM_PACOTE_AINDA = new Set<string>([]);
 
 test("há experiências para validar (senão a suíte passaria vazia)", () => {
   expect(pastas.length).toBeGreaterThan(0);

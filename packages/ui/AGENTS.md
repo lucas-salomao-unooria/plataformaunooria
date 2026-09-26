@@ -20,7 +20,7 @@ arrasta as seis seções e a tipografia da plataforma para dentro de um clone.
 | `@edu/ui/ds-insta` | `instanooria` | `/instanooria.css` (sem fonte: SF Pro é do sistema) | `--insta-*` | superfície disfarçada da exp08ef1b |
 | `@edu/ui/ds-unootube` | `unootube` | `/unootube.css` + `/fonts/unootube.css` | `--uni-*`, `[data-uni-theme]` | superfície disfarçada da exp04ef1b |
 | `@edu/ui/ds-chatgpt` | `chatgpt` (25) | `/chatgpt.css` + `/fonts/chatgpt.css` | `--gpt-*`, `data-gpt-theme` | a exp02em1b INTEIRA: ela NÃO tem revelação no software, então nunca troca para a seção da plataforma |
-| `@edu/ui/ds-whatsapp` | `whatsappmobile` (29) | `/whatsappmobile.css` + `/fonts/whatsappmobile.css` | `--wa-*`, `data-wa-theme` (**só `dark`**) | a casca móvel da exp07ef1b, da tela de bloqueio à validação de Amara, inclusive os erros diegéticos |
+| `@edu/ui/ds-whatsapp` | `whatsappmobile` (39) | `/whatsappmobile.css` + `/fonts/whatsappmobile.css` | `--wa-*`, `data-wa-theme` (**só `dark`**) | a casca móvel da exp07ef1b, o mensageiro da exp06ef2b e o grupo da turma da exp05ef1b, inclusive os erros diegéticos |
 
 **A folha de fonte é uma linha SEPARADA e obrigatória** (0.1.17: as folhas de
 componente não declaram mais `@font-face`). Nas marcas de clone, esquecê-la só
@@ -86,6 +86,19 @@ desenhado local junto de `play`/`pause`) e `ReplyQuoteSelectionSheet` (o menu
 das 3 respostas — `Radio` + card de citação). A compensação de verdade é uma só:
 `ChatAudioBubbleWithTranscript`, porque `MessageBubble` aceita texto, `.Media` e
 `.Document`, e a seção não tem player de áudio.
+
+**A 0.2.4 publicou dez EXTENSÕES em `whatsappmobile`** (primeiro consumidor:
+a exp05ef1b), todas exportadas pela ponte: `Button` (`filled | outline`),
+`ForwardButton`, `BottomSheet`, `MediaViewer`, `ChatBanner`, `AdminOnlyNotice`,
+`SystemMessage`, `Poll`, `MessageTag` e `Toast` — e o `MessageBubble` ganhou
+`sender`, `forwardedLabel`, `.LinkPreview`, `.Invite` e `.Media` sem `src` (a
+mídia DESENHADA, `children` + `alt`). Três das compensações acima já têm peça no
+pacote — o selo "Encaminhada" (`forwardedLabel`), a faixa fixa (`ChatBanner`) e a
+folha genérica (`BottomSheet`) —, mas a exp07ef1b e a exp06ef2b NÃO foram migradas
+(outra frente). Duas lacunas medidas na exp05ef1b, com compensação marcada lá:
+o `ForwardButton` só esmaece por `:disabled` (e `disabled` engole o toque) e o
+`.Media` não publica `onClick`. O `Button` da ponte colide no NOME com o da
+plataforma: numa tela que use as duas seções, o alias é obrigatório.
 
 E **a seção publica só o tema escuro** (`WaTheme = 'dark'`; o CSS traz
 `:root, [data-wa-theme=dark]` e nada mais). Derivar a paleta clara que os
