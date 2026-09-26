@@ -1,4 +1,4 @@
-import { COLEGAS, VIDEOS, VIDEO_IDS, semGabarito } from "../src/unootube/catalogo";
+import { COLEGAS, VIDEOS, VIDEO_IDS, semGabarito } from "../src/backup-unootube/catalogo";
 import {
   ESTADO_INICIAL,
   aplicarCredibilidade,
@@ -14,7 +14,7 @@ import {
   resumirTurma,
   type EstadoSessao,
   type LinhaTurma,
-} from "../src/unootube/regras";
+} from "../src/backup-unootube/regras";
 
 /** Regras puras da missão — sem banco. Mecânica herdada do UnooTube original. */
 

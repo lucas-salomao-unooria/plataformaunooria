@@ -2,13 +2,13 @@ import { randomUUID } from "node:crypto";
 import { HttpException } from "@nestjs/common";
 import { PrismaClient } from "@prisma/client";
 import { PrismaService } from "../src/prisma/prisma.service";
-import { VIDEOS } from "../src/unootube/catalogo";
-import { UnootubeService } from "../src/unootube/unootube.service";
+import { VIDEOS } from "../src/backup-unootube/catalogo";
+import { BackupUnootubeService } from "../src/backup-unootube/backup-unootube.service";
 import { liberarParaTeste } from "./liberar-de-teste";
 import { criarTurmaDeTeste } from "./turma-de-teste";
 
 /**
- * Integração da exp04ef1b no Postgres: fluxo completo, corrida em
+ * Integração do UnooTube ARQUIVADO (backup-exp04ef1b, ADR-116) no Postgres: fluxo completo, corrida em
  * "salvar", congelamento e tenancy. UMA ESCOLA POR SUÍTE (o Jest paraleliza
  * suítes; limpeza compartilhada corromperia a outra).
  */
@@ -18,7 +18,7 @@ const ESCOLA = "teste-unootube";
 const OUTRA_ESCOLA = "teste-unootube-outra";
 
 const prisma = new PrismaService({ datasources: { db: { url: URL } } }) as PrismaService & PrismaClient;
-const service = new UnootubeService(prisma);
+const service = new BackupUnootubeService(prisma);
 
 const FAKES = VIDEOS.filter((v) => !v.factual).map((v) => v.id);
 const CONFIAVEIS = VIDEOS.filter((v) => v.factual).map((v) => v.id);
@@ -33,7 +33,7 @@ async function limpar() {
   await prisma.liberacao.deleteMany({ where: { escolaId: { in: escolas } } });
   /* Equipes e membros caem por CASCADE da montagem. */
   await prisma.equipesMontagem.deleteMany({ where: { escolaId: { in: escolas } } });
-  await prisma.unootubeSessao.deleteMany({ where: { escolaId: { in: escolas } } });
+  await prisma.backupUnootubeSessao.deleteMany({ where: { escolaId: { in: escolas } } });
   await prisma.user.deleteMany({ where: { escolaId: { in: escolas } } });
   await prisma.turma.deleteMany({ where: { escolaId: { in: escolas } } });
   await prisma.escola.deleteMany({ where: { id: { in: escolas } } });
@@ -77,7 +77,7 @@ beforeAll(async () => {
   /* A PORTA DA SALA (ADR-69): sem esta linha, `service.sessao` recusa com 403
      `missao-nao-liberada` e a suíte inteira falha. `liberadaPor` é só o nome que
      a tela mostra — nenhuma regra o lê. */
-  await liberarParaTeste(prisma, ESCOLA, turmaId, "exp04ef1b", estudanteA);
+  await liberarParaTeste(prisma, ESCOLA, turmaId, "backup-exp04ef1b", estudanteA);
 });
 
 afterAll(async () => {
@@ -99,7 +99,7 @@ describe("sessão", () => {
     expect(JSON.stringify(r)).not.toContain("factual");
     expect(r.estudante).toEqual({ nome: "Ana Teste", avatar: "A" });
     expect(r.ranking).toBeNull();
-    expect(await prisma.unootubeSessao.count({ where: { escolaId: ESCOLA } })).toBe(0);
+    expect(await prisma.backupUnootubeSessao.count({ where: { escolaId: ESCOLA } })).toBe(0);
   });
 });
 
@@ -164,7 +164,7 @@ describe("corrida", () => {
     const falhas = resultados.filter((r) => r.status === "rejected");
     expect(ok).toHaveLength(2);
     expect(falhas).toHaveLength(1);
-    const linha = await prisma.unootubeSessao.findUniqueOrThrow({
+    const linha = await prisma.backupUnootubeSessao.findUniqueOrThrow({
       where: { escolaId_estudanteId: { escolaId: ESCOLA, estudanteId: estudanteB } },
     });
     expect(linha.salvos).toHaveLength(3);
@@ -176,7 +176,7 @@ describe("corrida", () => {
     await Promise.all([
       service.salvar(ESCOLA, estudanteB, "v02"),
     ]);
-    const linha = await prisma.unootubeSessao.findUniqueOrThrow({
+    const linha = await prisma.backupUnootubeSessao.findUniqueOrThrow({
       where: { escolaId_estudanteId: { escolaId: ESCOLA, estudanteId: estudanteB } },
     });
     expect(linha.salvos).toEqual(["v02"]);
@@ -223,10 +223,10 @@ describe("tenancy", () => {
 
   test("a RLS da tabela nova está armada (policy + FORCE)", async () => {
     const policies = await prisma.$queryRaw<{ policyname: string }[]>`
-      SELECT policyname FROM pg_policies WHERE tablename = 'exp04ef1b_sessoes'`;
-    expect(policies.map((p) => p.policyname)).toEqual(["exp04ef1b_sessoes_por_escola"]);
+      SELECT policyname FROM pg_policies WHERE tablename = 'backup_exp04ef1b_sessoes'`;
+    expect(policies.map((p) => p.policyname)).toEqual(["backup_exp04ef1b_sessoes_por_escola"]);
     const [tabela] = await prisma.$queryRaw<{ relrowsecurity: boolean; relforcerowsecurity: boolean }[]>`
-      SELECT relrowsecurity, relforcerowsecurity FROM pg_class WHERE relname = 'exp04ef1b_sessoes'`;
+      SELECT relrowsecurity, relforcerowsecurity FROM pg_class WHERE relname = 'backup_exp04ef1b_sessoes'`;
     expect(tabela).toEqual({ relrowsecurity: true, relforcerowsecurity: true });
   });
 });
@@ -268,7 +268,7 @@ describe("professor: uma linha por computador", () => {
     alunos.enzo = await criar("ut.enzo", "Enzo Teste");
     alunos.fabi = await criar("ut.fabi", "Fabi Teste");
     /* Só a Duda entrou — com o computador que divide com o Caio e o Enzo. */
-    await prisma.unootubeSessao.create({ data: { escolaId: ESCOLA, estudanteId: alunos.duda, salvos: [CONFIAVEIS[0]!] } });
+    await prisma.backupUnootubeSessao.create({ data: { escolaId: ESCOLA, estudanteId: alunos.duda, salvos: [CONFIAVEIS[0]!] } });
   });
 
   test("sem equipe NESTA missão, cada estudante é uma linha — equipe de outra missão não conta", async () => {
@@ -280,7 +280,7 @@ describe("professor: uma linha por computador", () => {
   });
 
   test("equipe de 3 com 1 login: UMA linha, a de quem entrou, e o resumo conta computadores", async () => {
-    const equipeId = await montarEquipe("exp04ef1b", "Equipe 1", [alunos.caio, alunos.duda, alunos.enzo]);
+    const equipeId = await montarEquipe("backup-exp04ef1b", "Equipe 1", [alunos.caio, alunos.duda, alunos.enzo]);
     const r = await service.resultadosDaTurma(ESCOLA, turma4B);
 
     expect(r.estudantes).toHaveLength(2);
@@ -301,7 +301,7 @@ describe("professor: uma linha por computador", () => {
   });
 
   test("dois logins no mesmo computador: representa quem entrou por ÚLTIMO", async () => {
-    await prisma.unootubeSessao.create({
+    await prisma.backupUnootubeSessao.create({
       data: {
         escolaId: ESCOLA,
         estudanteId: alunos.enzo,

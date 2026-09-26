@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import type { Prisma, UnootubeSessao } from "@prisma/client";
+import type { Prisma, BackupUnootubeSessao } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
 import { exigirMissaoLiberada } from "../comum/liberacao";
 import { ondeAsTurmasSaoVisiveis, professorLeciona } from "../comum/turmas-do-professor";
@@ -69,7 +69,7 @@ export interface RespostaTurma {
 }
 
 type Linha = Pick<
-  UnootubeSessao,
+  BackupUnootubeSessao,
   "salvos" | "curtidos" | "rankingDesbloqueado" | "credibilidadeAdicionada" | "concluidoEm"
 >;
 
@@ -84,7 +84,7 @@ function paraEstado(linha: Linha | null | undefined): EstadoSessao {
   };
 }
 
-function paraColunas(estado: EstadoSessao): Prisma.UnootubeSessaoUpdateInput {
+function paraColunas(estado: EstadoSessao): Prisma.BackupUnootubeSessaoUpdateInput {
   return {
     salvos: estado.salvos,
     curtidos: estado.curtidos,
@@ -108,14 +108,14 @@ function avatarDe(estudante: { displayName: string; avatar: string | null }): st
 }
 
 @Injectable()
-export class UnootubeService {
+export class BackupUnootubeService {
   constructor(private readonly prisma: PrismaService) {}
 
   /** Boot da experiência — READ-ONLY: sem linha devolve o estado inicial. */
   async sessao(escolaId: string, estudanteId: string): Promise<RespostaSessao> {
     return this.prisma.comTenancy(async (tx) => {
       const estudante = await this.estudanteDaEscola(tx, escolaId, estudanteId);
-      const linha = await tx.unootubeSessao.findUnique({
+      const linha = await tx.backupUnootubeSessao.findUnique({
         where: { escolaId_estudanteId: { escolaId, estudanteId: estudanteId } },
       });
       const estado = paraEstado(linha);
@@ -143,7 +143,7 @@ export class UnootubeService {
   async ranking(escolaId: string, estudanteId: string): Promise<RespostaRanking> {
     return this.prisma.comTenancy(async (tx) => {
       const estudante = await this.estudanteDaEscola(tx, escolaId, estudanteId);
-      const linha = await tx.unootubeSessao.findUnique({
+      const linha = await tx.backupUnootubeSessao.findUnique({
         where: { escolaId_estudanteId: { escolaId, estudanteId: estudanteId } },
       });
       const estado = paraEstado(linha);
@@ -227,13 +227,13 @@ export class UnootubeService {
           id: true,
           displayName: true,
           username: true,
-          unootube: { where: { escolaId }, take: 1 },
+          backupUnootube: { where: { escolaId }, take: 1 },
         },
         orderBy: { displayName: "asc" },
       });
 
       const linhas: LinhaTurma[] = estudantes.map((a) => {
-        const sessao = a.unootube[0];
+        const sessao = a.backupUnootube[0];
         const estado = paraEstado(sessao);
         const d = derivados(estado.salvos);
         return {
@@ -254,7 +254,7 @@ export class UnootubeService {
       /* "Quem entrou por último" desempata quando mais de um membro abriu a
          missão: o computador que trocou de login no meio da aula continua na
          sessão nova. */
-      const atualizadoEm = new Map(estudantes.map((a) => [a.id, a.unootube[0]?.atualizadoEm.getTime() ?? 0]));
+      const atualizadoEm = new Map(estudantes.map((a) => [a.id, a.backupUnootube[0]?.atualizadoEm.getTime() ?? 0]));
       const mapa = await mapaDeEquipes(tx, escolaId, turmaId, EXP_ID);
       const unidades = colapsarEmUnidades(
         linhas,
@@ -310,26 +310,26 @@ export class UnootubeService {
     escolaId: string,
     estudanteId: string,
     regra: (estado: EstadoSessao, agora: Date) => ResultadoRegra,
-    extra: Prisma.UnootubeSessaoUpdateInput = {},
+    extra: Prisma.BackupUnootubeSessaoUpdateInput = {},
   ): Promise<RespostaEstado> {
     return this.prisma.comTenancy(async (tx) => {
       // Antes de criar linha: o estudante precisa ser desta escola (users está fora da RLS).
       await this.estudanteDaEscola(tx, escolaId, estudanteId);
       await tx.$executeRaw`
-        INSERT INTO exp04ef1b_sessoes (escola_id, estudante_id)
+        INSERT INTO backup_exp04ef1b_sessoes (escola_id, estudante_id)
         VALUES (${escolaId}, ${estudanteId}::uuid)
         ON CONFLICT DO NOTHING`;
       await tx.$executeRaw`
-        SELECT 1 FROM exp04ef1b_sessoes
+        SELECT 1 FROM backup_exp04ef1b_sessoes
         WHERE escola_id = ${escolaId} AND estudante_id = ${estudanteId}::uuid
         FOR UPDATE`;
-      const atual = await tx.unootubeSessao.findUniqueOrThrow({
+      const atual = await tx.backupUnootubeSessao.findUniqueOrThrow({
         where: { escolaId_estudanteId: { escolaId, estudanteId: estudanteId } },
       });
       const resultado = regra(paraEstado(atual), new Date());
       if (!resultado.ok) erroDeJogo(resultado.codigo);
       if (resultado.mudou) {
-        await tx.unootubeSessao.update({
+        await tx.backupUnootubeSessao.update({
           where: { escolaId_estudanteId: { escolaId, estudanteId: estudanteId } },
           data: { ...paraColunas(resultado.estado), ...extra },
         });
