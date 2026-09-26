@@ -40,8 +40,8 @@ const DESPACHANTE_DA_FICHA = join(CORPOS, "page.tsx");
  * `expId` → arquivo do corpo, lido do despachante da FICHA (`page.tsx`): o
  * `import { MissaoX } from "./missao-…"` diz o arquivo, e o
  * `if (missao.expId === MISSAO_Y.expId) return corpo(<MissaoX …` diz de quem ele
- * é. Antes o arquivo era adivinhado pelo slug do id (`exp-05-quem-mandou-isso`
- * → `missao-quem-mandou-isso.tsx`), o que pulava em silêncio a Foto Conta — o
+ * é. Antes o arquivo era adivinhado pelo slug do id (`exp-06-rastro-boato`
+ * → `missao-rastro-boato.tsx`), o que pulava em silêncio a Foto Conta — o
  * corpo dela é `missao-foto-conta.tsx` — e deixou de existir com o código da
  * ADR-110, que não carrega slug.
  */

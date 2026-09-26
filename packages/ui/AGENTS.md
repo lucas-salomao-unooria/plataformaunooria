@@ -20,7 +20,7 @@ arrasta as seis seções e a tipografia da plataforma para dentro de um clone.
 | `@edu/ui/ds-insta` | `instanooria` | `/instanooria.css` (sem fonte: SF Pro é do sistema) | `--insta-*` | superfície disfarçada da exp08ef1b |
 | `@edu/ui/ds-unootube` | `unootube` | `/unootube.css` + `/fonts/unootube.css` | `--uni-*`, `[data-uni-theme]` | superfície disfarçada da exp04ef1b |
 | `@edu/ui/ds-chatgpt` | `chatgpt` (25) | `/chatgpt.css` + `/fonts/chatgpt.css` | `--gpt-*`, `data-gpt-theme` | a exp02em1b INTEIRA: ela NÃO tem revelação no software, então nunca troca para a seção da plataforma |
-| `@edu/ui/ds-whatsapp` | `whatsappmobile` (29) | `/whatsappmobile.css` + `/fonts/whatsappmobile.css` | `--wa-*`, `data-wa-theme` (**só `dark`**) | a casca móvel da exp05ef1b e da exp06ef2b, inclusive os erros diegéticos |
+| `@edu/ui/ds-whatsapp` | `whatsappmobile` (29) | `/whatsappmobile.css` + `/fonts/whatsappmobile.css` | `--wa-*`, `data-wa-theme` (**só `dark`**) | a casca móvel da exp06ef2b, inclusive os erros diegéticos |
 
 **A folha de fonte é uma linha SEPARADA e obrigatória** (0.1.17: as folhas de
 componente não declaram mais `@font-face`). Nas marcas de clone, esquecê-la só

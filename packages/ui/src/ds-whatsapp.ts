@@ -13,7 +13,7 @@
  * `Dialog`, `Menu`, `ListItem`, `Checkbox`, `Radio` e `TopBar` colidem com os
  * da plataforma, e quem importa daqui sabe que está no clone.
  *
- * ONDE USAR: a casca móvel das missões no clone de mensageiro (exp05ef1b e
+ * ONDE USAR: a casca móvel das missões no clone de mensageiro (hoje, a
  * exp06ef2b), inclusive os estados de erro, que falam na voz do app
  * ("Conectando...").
  *

@@ -26,7 +26,8 @@ export type EquipeDaMissao = EquipeDoMapa & { ordem: number };
  * foi apagada, só se mudou), e sem este filtro a tela do professor mostraria na
  * equipe alguém que nem está mais na sala — e o `PUT` seguinte, devolvendo a
  * mesma equipe, seria recusado por "alguém que não é desta turma". A fonte é
- * `users.turma_id`, a MESMA dos painéis de missão (o `painel` da exp05ef1b):
+ * `users.turma_id`, a MESMA dos painéis de missão (o `resultadosDaTurma` da
+ * exp04ef1b):
  * `users` está fora da RLS, então o `escolaId` aqui é a tranca, não redundância.
  */
 function membrosAtuais(escolaId: string, turmaId: string) {

@@ -26,9 +26,13 @@ puras). Os dois carregam o contexto da requisição via `mixin`.
   dado de pessoa ganha o nome da lista, ou entra na lista — nunca um sinônimo.
   A comparação é por nome INTEIRO em minúsculas, e é por isso que `senha` não
   cobria `senha_hash` nem `senhaHash`: os dois entraram na lista, junto com o
-  GABARITO da exp05ef1b (`veracidade`, `tom`, `explicacao`) — a lista de
-  `CAMPOS_SENSIVEIS` de cada missão tem de estar contida aqui, e
-  `quem-mandou-isso-regras.spec.ts` é quem cobra isso para a exp05ef1b.
+  GABARITO de missão que classifica mensagens (`veracidade`, `tom`,
+  `explicacao`). **Os campos sensíveis de cada missão têm de estar contidos
+  aqui, e quem cobra é a suíte de regras DA MISSÃO** — missão nova com
+  gabarito escreve esse teste. As três chaves ficaram sem consumidor quando a
+  primeira versão da missão do 5º ano saiu (ADR-114), e seguem na lista de
+  propósito: a versão que entra no lugar classifica do mesmo jeito, e chave
+  que sai daqui só afrouxa a rede.
 - **Sem log de requisição da aplicação** (`autoLogging: false`). O Cloud Run
   já grava um por requisição, com trace. O que a api loga é o que ele não
   sabe: escola, motivo de um 4xx, a decisão de degradar.

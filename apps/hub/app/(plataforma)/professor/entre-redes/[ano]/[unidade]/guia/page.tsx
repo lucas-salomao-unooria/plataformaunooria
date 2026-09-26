@@ -8,18 +8,15 @@ import {
   rotaDaMissao,
   rotuloDaMissao,
   MISSAO_ATUAL,
-  MISSAO_QUEM_MANDOU_ISSO,
   MISSAO_RASTRO_BOATO,
   MISSAO_UNOOGPT,
   MISSAO_UNOOTUBE,
 } from "@/lib/entre-redes/catalogo";
 import { buscarGuia } from "@/lib/entre-redes/guias";
 import type { BlocosVivos } from "@/lib/entre-redes/guias/tipos";
-import type { MaterialDoProfessor } from "@/lib/quem-mandou-tipos";
 
 import { IntervencoesDoRastro, type MaterialDoRastro } from "./intervencoes-do-rastro";
 import { MomentosDoPainel } from "./momentos-do-painel";
-import { QuemMandouOLote } from "./quem-mandou-o-lote";
 import { TelasDaRevelacao } from "./telas-da-revelacao";
 import { VideosDoUnootube, type VideosDoProfessor } from "./videos-do-unootube";
 
@@ -34,10 +31,10 @@ import { VideosDoUnootube, type VideosDoProfessor } from "./videos-do-unootube";
  * BLOCOS VIVOS cada missão injeta.
  *
  * Bloco vivo é o que tem fonte de verdade em outro lugar e não pode virar texto.
- * Cinco missões têm um: os momentos e as telas da revelação do Instanooria, a
- * tabela dos vieses do unooGPT, os 21 vídeos do UnooTube, as intervenções do
- * Rastro do Boato e as 8 mensagens do grupo de Quem mandou isso? — as quatro
- * últimas vindas da api. Ver a nota em `guias/tipos.ts`.
+ * Quatro missões têm um: os momentos e as telas da revelação do Instanooria, a
+ * tabela dos vieses do unooGPT, os 21 vídeos do UnooTube e as intervenções do
+ * Rastro do Boato — as três últimas vindas da api. Ver a nota em
+ * `guias/tipos.ts`.
  *
  * **Missão com conteúdo que a turma LÊ na tela não descreve esse conteúdo no
  * guia: injeta um bloco vivo.** A prosa diverge — a do UnooTube dizia "metade…
@@ -137,17 +134,6 @@ async function blocosDaMissao(expId: string | undefined): Promise<BlocosVivos | 
         debate: (
           <IntervencoesDoRastro
             dados={await apiDoServidor<MaterialDoRastro>("/rastro-boato/professor/material")}
-          />
-        ),
-      };
-
-    case MISSAO_QUEM_MANDOU_ISSO.expId:
-      return {
-        debate: (
-          <QuemMandouOLote
-            dados={await apiDoServidor<MaterialDoProfessor>(
-              "/quem-mandou-isso/professor/material",
-            )}
           />
         ),
       };

@@ -88,13 +88,6 @@ const PREFIXOS_PERMITIDOS = [
      de 5s (ADR-93). As guardas de papel estão na api (`@Roles("professor",
      "gestor_escola", "gestor_contrato")`). */
   "manifesto-ia",
-  /* exp05ef1b: o preparo do lote (gerar/aprovar), os DOIS botões mestres da aula
-     — a revelação coletiva e a reflexão final —, o inverso deles e o "zerar
-     turma" são client-side pela mesma razão da exp08ef4b: a professora aperta no
-     meio da aula, na frente da sala, e as 30 telas andam na hora pelo polling
-     de 5s (ADR-93). As guardas de papel estão na api (`@Roles("professor",
-     "gestor_escola", "gestor_contrato")`). */
-  "quem-mandou-isso",
   /* Os cadastros de interesse do site público (ADR-107) — só a LEITURA, e só
      `admin` (o `@Roles` está na api). A ESCRITA não passa por aqui: ela vem de
      visitante sem sessão, e tem rota própria (`/api/cadastro-de-interesse`). */
