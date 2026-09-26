@@ -8,15 +8,18 @@ import {
   rotaDaMissao,
   rotuloDaMissao,
   MISSAO_ATUAL,
+  MISSAO_A_SELECAO,
   MISSAO_QUEM_MANDOU_ISSO,
   MISSAO_RASTRO_BOATO,
   MISSAO_UNOOGPT,
 } from "@/lib/entre-redes/catalogo";
 import { buscarGuia } from "@/lib/entre-redes/guias";
 import type { BlocosVivos } from "@/lib/entre-redes/guias/tipos";
+import type { MaterialDaSelecao } from "@/lib/a-selecao-tipos";
 import type { MaterialDoProfessor } from "@/lib/quem-mandou-tipos";
 
 import { IntervencoesDoRastro, type MaterialDoRastro } from "./intervencoes-do-rastro";
+import { GatilhosDaSelecao, RoteiroDaSelecao } from "./material-da-selecao";
 import { MomentosDoPainel } from "./momentos-do-painel";
 import { QuemMandouOPacote } from "./quem-mandou-o-pacote";
 import { TelasDaRevelacao } from "./telas-da-revelacao";
@@ -33,10 +36,11 @@ import { TelasDaRevelacao } from "./telas-da-revelacao";
  *
  * Bloco vivo é o que tem fonte de verdade em outro lugar e não pode virar texto.
  * Cinco missões têm um: os momentos e as telas da revelação do Instanooria, a
- * tabela dos vieses do unooGPT, os 21 vídeos do UnooTube, as intervenções do
- * Rastro do Boato e o pacote curado de Quem Mandou Isso? (com o roteiro da
- * roda e as perguntas de evidência) — as quatro últimas vindas
- * da api. Ver a nota em `guias/tipos.ts`.
+ * tabela dos vieses do unooGPT, as intervenções do Rastro do Boato, o pacote
+ * curado de Quem Mandou Isso? (com o roteiro da roda e as perguntas de
+ * evidência) e, da A Seleção, os gatilhos dos três botões e o roteiro da Etapa
+ * 4 com os 12 posts — as quatro últimas vindas da api. Os 21 vídeos do UnooTube
+ * eram o sexto, até o arquivamento (ADR-116). Ver a nota em `guias/tipos.ts`.
  *
  * **Missão com conteúdo que a turma LÊ na tela não descreve esse conteúdo no
  * guia: injeta um bloco vivo.** A prosa diverge — a do UnooTube dizia "metade…
@@ -131,6 +135,15 @@ async function blocosDaMissao(expId: string | undefined): Promise<BlocosVivos | 
         ),
       };
 
+    case MISSAO_A_SELECAO.expId: {
+      /* UMA chamada para os dois blocos: são dois momentos da aula (quando
+         apertar, no roteiro; o que perguntar, no debate), da mesma rota. */
+      const material = await apiDoServidor<MaterialDaSelecao>("/a-selecao/professor/material");
+      return {
+        roteiro: <GatilhosDaSelecao dados={material} />,
+        debate: <RoteiroDaSelecao dados={material} />,
+      };
+    }
     case MISSAO_QUEM_MANDOU_ISSO.expId:
       return {
         debate: (

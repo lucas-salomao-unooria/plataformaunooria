@@ -32,8 +32,8 @@ token e prefixo de classe próprios. Elas nunca se cruzam.
   Hub: \emph{landing} (\rota{/}), \emph{login}, \rota{/professor},
   \rota{/admin}, \rota{/analise}; \emph{header} de todos os papéis; telas
   \textbf{pós-revelação} do estudante\\
-\zebra \cd{instanooria} (21) & \cd{/instanooria} & \cd{--insta-*}, \cd{insta-} &
-  exp08ef1b\\
+\zebra \cd{instanooria} (21 + 7 extensões) & \cd{/instanooria} & \cd{--insta-*}, \cd{insta-} &
+  exp08ef1b, exp07ef1b\\
 \cd{unitube} (30) & \cd{/unitube} & \cd{--uni-*}, \cd{uni-} ---
   \textbf{só escuro} & exp04ef1b\\
 \zebra \cd{whatsappmobile} (39) & \cd{/whatsappmobile} & \cd{--wa-*} --- só escuro
@@ -141,7 +141,7 @@ pacote direto num componente:
 
 \begin{tabularx}{\linewidth}{@{}L{28mm}L{22mm}X@{}}
 \cd{@edu/ui/ds} & \cd{unooria} & plataforma\\
-\cd{@edu/ui/ds-insta} & \cd{instanooria} & exp08ef1b\\
+\cd{@edu/ui/ds-insta} & \cd{instanooria} & exp08ef1b, exp07ef1b (com as extensões da 0.2.5: \cd{DirectThread}, \cd{MessageBubble}, \cd{DmPoll}, \cd{ConfirmDialog}, \cd{BottomSheet}, \cd{FloatingButton}, \cd{StoryComposer})\\
 \cd{@edu/ui/ds-unootube} & \cd{unitube} & backup-exp04ef1b (o UnooTube arquivado, \adrr{ADR-116}: não roda mais)\\
 \cd{@edu/ui/ds-chatgpt} & \cd{chatgpt} & exp02em1b\\
 \cd{@edu/ui/ds-whatsapp} & \cd{whatsappmobile} & exp05ef1b, exp06ef2b\\

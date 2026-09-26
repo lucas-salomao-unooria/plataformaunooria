@@ -27,6 +27,8 @@ mecânica impõe exigência ao \emph{software} --- e não como material pedagóg
   telemetria, progresso, avaliacao & \arq{quem-mandou-isso}\\
 \zebra \cd{exp06ef2b} & \cd{6EF} & estudante &
   telemetria, progresso, avaliacao & \arq{rastro-boato}\\
+\zebra \cd{exp07ef1b} & \cd{7EF} & estudante &
+  telemetria, progresso, ia, avaliacao & \arq{a-selecao}, \arq{evidencias}\\
 \cd{exp08ef4b} & \cd{8EF} & estudante &
   telemetria, progresso, avaliacao & \arq{manifesto-ia}\\
 \cd{app-70-vila-do-lume} & \textbf{transversal} & estudante &
@@ -43,8 +45,9 @@ mecânica impõe exigência ao \emph{software} --- e não como material pedagóg
 
 A \cd{exp05ef1b} é a v2.2 de Quem mandou isso?, que voltou com o mesmo código e
 a partir da 0.2.0 depois de a primeira versão sair (\adrr{ADR-114},
-\adrr{ADR-118}). É a única missão com ficha pedagógica: as duas perguntas finais
-passam pelas rotas genéricas de \arq{evidencias}, e não pelo módulo dela.
+\adrr{ADR-118}). Ela e A Seleção (\cd{exp07ef1b}) são as duas missões com ficha
+pedagógica: as perguntas finais passam pelas rotas genéricas de
+\arq{evidencias}, e não pelo módulo de cada uma.
 
 O 4º ano também está sem missão: o UnooTube foi \textbf{arquivado}, e não
 apagado (\adrr{ADR-116}) --- a pasta, o módulo, a tabela e as linhas de
@@ -52,9 +55,8 @@ plataforma dele ganharam o prefixo \cd{backup-}, e ele saiu do catálogo, da gra
 e do \emph{deploy}. A unidade 1 aguarda o Jornal da Escola, que toma o código
 \cd{exp04ef1b}. A porta 5174 fica para ele.
 
-O 7º ano também está sem missão: a unidade 1 aguarda A Seleção, que reocupa
-o código \cd{exp07ef1b} depois da retirada do Eco no Grupo (\adrr{ADR-113}). A
-porta 5179 fica para ela.
+A unidade 1 do 7º ano é A Seleção, que reocupou o código \cd{exp07ef1b} e a
+porta 5179 do Eco no Grupo (\adrr{ADR-113}, \adrr{ADR-115}).
 
 \begin{tabularx}{\linewidth}{@{}L{28mm}L{18mm}X@{}}
 \toprule
@@ -66,11 +68,12 @@ porta 5179 fica para ela.
 \zebra \cd{app-91-bem-estar} & \cd{5176} & \rota{/professor/bem-estar}\\
 \cd{app-70-vila-do-lume} & \cd{5177} & \rota{/exp/app-70-vila-do-lume}\\
 \zebra \cd{exp02em1b} & \cd{5178} & \rota{/exp/exp02em1b}\\
-\cd{exp06ef2b} & \cd{5181} & \rota{/exp/exp06ef2b}\\
-\zebra \cd{app-92-plano-de-ensino} & \cd{5180} & \rota{/professor/plano-de-ensino}\\
-\cd{exp08ef4b} & \cd{5182} & \rota{/exp/exp08ef4b}\\
-\zebra \cd{exp01ef1b} & \cd{5183} & \rota{/exp/exp01ef1b}\\
-\cd{exp05ef1b} & \cd{5184} & \rota{/exp/exp05ef1b}\\
+\cd{exp07ef1b} & \cd{5179} & \rota{/exp/exp07ef1b}\\
+\zebra \cd{exp06ef2b} & \cd{5181} & \rota{/exp/exp06ef2b}\\
+\cd{app-92-plano-de-ensino} & \cd{5180} & \rota{/professor/plano-de-ensino}\\
+\zebra \cd{exp08ef4b} & \cd{5182} & \rota{/exp/exp08ef4b}\\
+\cd{exp01ef1b} & \cd{5183} & \rota{/exp/exp01ef1b}\\
+\zebra \cd{exp05ef1b} & \cd{5184} & \rota{/exp/exp05ef1b}\\
 \bottomrule
 \end{tabularx}
 
@@ -1039,6 +1042,64 @@ professora, antes da aula. Curadoria, \emph{latches}, régua, Termômetro e
 síntese são determinísticos --- uma turma de trinta às oito da manhã não depende
 do Vertex responder.
 \end{limitacao}
+
+% ---------------------------------------------------------------------------
+\section{exp07ef1b --- A Seleção}
+\label{sec:exp07ef1b}
+
+\textbf{7º ano · Unidade 1 · clone de rede social de fotos · \cd{instanooria}}
+
+A Amara pede ajuda para cobrir um evento do bairro nos Stories do grêmio. O feed
+tem 12 posts de três perfis --- o oficial, o comunitário e o de números, 4 de
+cada, intercalados --- e todos contam fatos verdadeiros do mesmo acontecimento.
+O estudante salva o que acha informativo, poda os salvos até EXATAMENTE três,
+escreve uma legenda e publica, sem volta. No Mural, a tríade dele aparece ao lado
+da de um colega que escolheu outra coisa; quando a professora revela as fichas
+técnicas (fonte ouvida, ângulo da imagem e o equilíbrio das três lentes), a sala
+descobre que ninguém mentiu, e que cada seleção deixou dois terços de fora. A
+explicação vem em três cards com trava de 8 s; a reflexão, na voz da escola; e
+as duas enquetes da Amara, na DM, fecham a missão (\adrr{ADR-115}).
+
+\begin{tabularx}{\linewidth}{@{}L{34mm}X@{}}
+\toprule
+\headrow \thd{Decisão} & \thd{Como está implementada}\\
+\midrule
+Atividade e rodada & A ATIVIDADE é a \textbf{cobertura}: o tema homologado pela
+  professora (o banco curado da Praça Central ou um lote gerado por IA). Zerar a
+  turma abre a rodada seguinte e guarda a anterior; tema novo é atividade nova,
+  na rodada 1. É o que a evidência pedagógica exige (\adrr{ADR-112}).\\
+\zebra Um botão só & A professora avança \cd{exploracao} \seta{} \cd{mural}
+  \seta{} \cd{fichas} \seta{} \cd{explicacao}, uma etapa por vez e com o
+  destino explícito --- clique duplo não pula etapa. O estudante lê
+  \rota{GET /a-selecao/gate} por \emph{polling} de 5 s (\adrr{ADR-93}).\\
+O par do Mural & É do COMPUTADOR (\adrr{ADR-111}): \cd{colapsarEmUnidades} sobre
+  as equipes, distância máxima entre as matrizes, nunca dentro da mesma
+  unidade. O par é carimbado por sessão, com o rótulo congelado (o primeiro nome
+  ou o nome da equipe) --- nunca pelo id da equipe, que o \cd{PUT} recria. Sobra
+  de sala ímpar, quem publica depois e a aula de um computador só recebem um
+  colega virtual (Tomás ou Malu).\\
+\zebra O que o bundle não sabe & A lente de cada post, as tags e a matriz vêm da
+  api, e as fichas só depois da etapa \cd{fichas}. A cópia que nomeia as lentes
+  carrega sob demanda, na explicação. Um \emph{grep} no \cd{dist/} prova que não
+  há gabarito, tag nem trecho de prompt no \emph{bundle}.\\
+Legenda e reflexão & Contam \emph{code points} dos dois lados (o Zod e o
+  \emph{CHECK} do banco). A legenda passa por um sanitizador (link, telefone,
+  e-mail, menção, palavrão) porque outro estudante a lê no Mural; a reflexão é
+  só do professor da turma (\adrr{ADR-108}).\\
+\zebra Evidência & A ficha \arq{evidencias/fichas/exp07ef1b.ts}: EF07CO11 com a
+  leitura da legenda por IA (o Canal A) e a enquete \cd{p1}; EF07CO08 com a
+  enquete \cd{p2}. As alternativas são embaralhadas a cada exibição. Sem IA, o
+  Canal A não marca nada, e fica \enquote{Não avaliado}.\\
+Mídia & A professora gera as imagens no preparo (2 por chamada, porque o BFF
+  corta em 30 s), com cache no \emph{bucket} por contrato em
+  \cd{experiencias/exp07ef1b/selecao/}. Post sem foto vira um card de texto com
+  a MESMA forma para os três perfis, e o bloco de números vira gráfico desenhado
+  a partir dos dados.\\
+\bottomrule
+\end{tabularx}
+
+A suíte \arq{scripts/e2e/estudante/11-a-selecao.mjs} percorre a missão com a
+professora e dois estudantes de escolhas divergentes.
 
 % ---------------------------------------------------------------------------
 \section{exp06ef2b --- O Rastro do Boato}

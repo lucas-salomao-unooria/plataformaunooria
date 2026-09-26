@@ -14,6 +14,12 @@ ficha. **A primeira é Quem Mandou Isso? v2.2** (`fichas/exp05ef1b.ts`): a
 EF05CO08 por uma AÇÃO (a seleção do Mural, marcada na transação do latch) e a
 EF05CO03/EF05CO04 por duas perguntas de múltipla escolha — o molde para a
 próxima.
+**A segunda é A Seleção (`exp07ef1b`)**: `fichas/exp07ef1b.ts` (EF07CO11 pela
+legenda graduada por IA — o Canal A — e pela enquete P1; EF07CO08 pela P2),
+o contexto registrado no `onModuleInit` de `a-selecao.service.ts` e a marca da
+legenda numa transação SÓ DELA, depois do latch da publicação: a IA leva até
+6 s, e a transação da jogada não pode esperar. Falhando a IA, não há marca:
+"Não avaliado", e o professor decide.
 
 Três tabelas de PLATAFORMA (sem prefixo, como `liberacoes` e `equipes`), todas
 com `escola_id` + RLS forçada:
@@ -85,6 +91,11 @@ Missão com ficha faz TRÊS coisas, no mesmo trabalho:
 `registrarFicha` existe **só para teste** (a suíte registra uma ficha da
 exp08ef1b em tempo de execução). A ficha de uma missão real vai no registro
 estático, onde a trava a confere.
+
+O resolvedor da missão devolve `null` sempre que a resposta não deve contar:
+na A Seleção, antes da reflexão (a enquete vem depois dela, na ordem do PO) e
+quando a sessão não é mais a (cobertura, rodada) do gate — a professora zerou ou
+trocou o tema, e uma resposta atrasada cairia numa rodada que acabou.
 
 ## As rotas
 

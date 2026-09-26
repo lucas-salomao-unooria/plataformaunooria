@@ -4,7 +4,7 @@
 \chapter{Dicionário de dados}
 \label{ap:dicionario}
 
-Catálogo das 69 tabelas de \cd{public}, mais o \emph{schema} \cd{particoes}.
+Catálogo das 73 tabelas de \cd{public}, mais o \emph{schema} \cd{particoes}.
 O número é o de \cd{model} em \arq{apps/api/prisma/schema.prisma} em
 2026-09-25 (todos com \cd{@@map}; a \cd{\_prisma\_migrations} é do Prisma e
 fica fora), e o índice abaixo tem uma linha por \cd{model}: tabela nova sem
@@ -83,6 +83,10 @@ Os diagramas entidade-relacionamento estão no Capítulo~\ref{cap:dados}.
 \cd{exp06ef2b\_auditorias} & Tenant & Cada abertura de \enquote{Dados da mensagem} --- a evidência que a missão mede\\
 \zebra \cd{exp06ef2b\_reflexoes} & Tenant & O \enquote{Meu percurso} (texto livre do estudante)\\
 \cd{exp06ef2b\_gates\_turma} & Tenant & A etapa da aula, por turma\\
+\zebra \cd{exp07ef1b\_coberturas} & Tenant & A ATIVIDADE da A Seleção: o tema homologado, os 12 posts com o gabarito e as URLs da mídia\\
+\cd{exp07ef1b\_gates\_turma} & Tenant & A etapa da aula, a cobertura e a rodada, por turma\\
+\zebra \cd{exp07ef1b\_sessoes} & Tenant & Uma sessão por estudante, cobertura e rodada: a tríade, a legenda, a matriz e o par\\
+\cd{exp07ef1b\_reflexoes} & Tenant & A reflexão (texto livre do estudante, só do professor)\\
 \zebra \cd{exp08ef4b\_conteudo\_turma} & Tenant & O pacote curado da turma, homologado pela professora\\
 \cd{exp08ef4b\_sessoes} & Tenant & Estado da missão de O Manifesto da IA\\
 \zebra \cd{exp08ef4b\_auditorias} & Tenant & Cada questionamento disparado contra a máquina\\

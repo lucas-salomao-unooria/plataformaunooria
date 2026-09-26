@@ -28,6 +28,14 @@ Plano de aula & app-90, \arq{src/planos/} &
 \zebra Entorno do \emph{check-in} & app-91, \arq{src/bemestar/} &
   Abertura do dia, pergunta aberta e acolhimento. \textbf{Nunca} reescreve um
   item do DASS-21, nunca vê pontuação, nome ou escola.\\
+Preparo da cobertura & exp07ef1b, \arq{src/a-selecao/} &
+  Um lote de 12 posts (4:4:4 por perfil) sobre o tema da professora, e as
+  imagens a partir da descrição de cada um. \textbf{Nada} chega à turma sem a
+  homologação dela; sem IA, roda o banco curado.\\
+\zebra Leitura da legenda & exp07ef1b, \arq{src/a-selecao/} &
+  Um nível de EF07CO11 para a legenda dos Stories (o Canal A), que só o
+  professor vê e corrige. Falha, timeout ou saldo zerado não marcam nada
+  (\adrr{ADR-115}).\\
 \bottomrule
 \end{tabularx}
 
@@ -35,7 +43,10 @@ Plano de aula & app-90, \arq{src/planos/} &
 \textbf{Correção, pontuação e gabarito nunca são gerados por IA.} A IA produz
 \emph{conteúdo} e \emph{texto de entorno}. Tudo que vale nota, classifica ou mede
 é código determinístico e testável --- e roda no servidor
-(Capítulo~\ref{cap:experiencias}).
+(Capítulo~\ref{cap:experiencias}). \textbf{Uma exceção, declarada:} na A Seleção
+a IA \emph{sugere} o nível de EF07CO11 lendo a legenda, com temperatura 0, uma
+tentativa, \emph{schema} fechado e rubrica fixa no servidor. A sugestão não é
+nota, a criança não a vê, e o professor a confere e ajusta (\adrr{ADR-115}).
 \end{regra}
 
 \section{A camada única}

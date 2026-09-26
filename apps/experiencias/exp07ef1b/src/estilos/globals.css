@@ -1,0 +1,545 @@
+/**
+ * Estilos locais da exp07ef1b. Só o que o design system não dá: o layout do
+ * aparelho, o texto que não é controle, e as compensações MARCADAS.
+ *
+ * **Cor nunca se escreve à mão aqui.** Ela sai dos tokens da seção que está
+ * FALANDO: `--insta-*` dentro do clone, `--unooria-*` nas telas da escola. Um
+ * hexadecimal literal é uma cor que não acompanha o pacote quando ele muda —
+ * e, num clone, é a cor que denuncia o disfarce na primeira atualização do DS.
+ * Os `var(--x, reserva)` servem só para a tela não ficar transparente antes de
+ * a folha do DS carregar.
+ *
+ * **Cada compensação diz QUAL é a lacuna do pacote e o que foi PEDIDO ao
+ * `storybook-unooria`** (marcadas `(b) COMPENSAÇÃO`, e listadas no `AGENTS.md`).
+ * Elas existem para morrer: quando o componente chegar por versão, o bloco sai.
+ *
+ * Sobrescrever classe do DS exige DOIS seletores (`.x > .insta-y`): o CSS do
+ * pacote é injetado pelo módulo do componente, DEPOIS deste arquivo no grafo
+ * de importação — com peso igual, ganha sempre o DS.
+ *
+ * O arquivo é separado por SEÇÃO, como a exp05ef1b: primeiro o aparelho, depois
+ * o clone, depois a escola. As duas famílias não se cruzam numa regra.
+ */
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  /* O aparelho é desenhado pelo HUB (`DispositivoFrame`, a partir do
+     `viewport` 375×812 do manifesto). Aqui dentro só se preenche o recorte —
+     o `PhoneFrame` da seção NÃO entra: seria um celular dentro de outro. */
+  background: var(--insta-color-background-primary, #fff);
+  color: var(--insta-color-text-primary, #262626);
+  font-family: var(--insta-font-sans, system-ui, sans-serif);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* `100%` e não `100dvh`: dentro do iframe, `dvh` é a janela do navegador, não
+   o aparelho — e o rodapé sairia do recorte. */
+.app {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.app--centrado {
+  align-items: center;
+  justify-content: center;
+  gap: var(--insta-spacing-l, 16px);
+  padding: var(--insta-spacing-xxl, 24px);
+  text-align: center;
+}
+
+/* O título de cada tela para o leitor de tela. O app real não escreve "Feed"
+   no topo; quem navega por cabeçalhos precisa saber em que tela está. */
+.so-leitor {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   O CLONE — tokens `--insta-*`, e só eles.
+   Do "Abrir Feed da Cobertura" até o fechamento da Amara, e de novo nas
+   enquetes da DM.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.esqueleto__topo {
+  height: var(--insta-topbar-content-height, 44px);
+  background: var(--insta-color-background-secondary, #fafafa);
+  box-shadow: var(--insta-elevation-bar-bottom);
+}
+
+.aviso-de-abertura {
+  margin: 0;
+  max-width: 300px;
+  font-size: var(--insta-font-body-md-size, 15px);
+  line-height: 1.45;
+  color: var(--insta-color-text-primary, #262626);
+}
+
+/* Uma tela do clone. `position: relative` porque a pílula flutuante, o alerta
+   de confirmação e a folha modal do DS se posicionam contra ela. */
+.tela {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--insta-color-background-primary, #fff);
+  color: var(--insta-color-text-primary, #262626);
+}
+
+/* O Story, o Mural e a espera: o app fica escuro (o `data-insta-theme="dark"`
+   do elemento troca os tokens para baixo dele). */
+.tela--story {
+  background: var(--insta-color-background-primary, #000);
+}
+
+/* A área que rola. As experiências NÃO usam o `ScrollBar` do DS — ele é da
+   seção `unooria` e não entra num clone (`apps/experiencias/AGENTS.md`). */
+.rolagem {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* Esconder a barra é decisão de FIDELIDADE: o feed do Instagram não tem barra
+   de rolagem visível. Sem esta nota, a próxima pessoa lê como defeito. */
+.rolagem--sem-barra {
+  scrollbar-width: none;
+}
+
+.rolagem--sem-barra::-webkit-scrollbar {
+  display: none;
+}
+
+/* ─────────────────────────────────────────────── E2: o feed */
+
+.post {
+  border-bottom: 0.33px solid var(--insta-color-border-subtle, rgba(60, 60, 67, 0.29));
+  padding-bottom: var(--insta-spacing-m, 12px);
+}
+
+.post > .post__comentario {
+  margin-top: var(--insta-spacing-4xs, 2px);
+}
+
+/*
+ * O card procedural (o post sem fotografia): a descrição da imagem, na
+ * moldura neutra. É TEXTO de verdade dentro do `PostCard.Media` sem `src` — o
+ * slide que o DS publica —, então isto é só medida e moldura, não componente.
+ * **Igual para os três veículos**, e o desenho em SVG da grade e do Story
+ * (`lib/graficos.ts#svgDoCardProcedural`) repete estas medidas: a categoria não
+ * pode ser adivinhável pela forma (critério 1 do brief).
+ */
+.card-procedural {
+  display: flex;
+  flex: 1 1 auto;
+  padding: 16px;
+  background: var(--insta-color-background-tertiary, #f8f8f8);
+}
+
+.card-procedural__texto {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin: 0;
+  padding: 20px;
+  border: 1.5px solid var(--insta-color-border-default, #c7c7cc);
+  border-radius: 12px;
+  text-align: center;
+  font-size: 17px;
+  line-height: 24px;
+  color: var(--insta-color-text-primary, #262626);
+  overflow: hidden;
+}
+
+/* A imagem que não carregou: o aviso do DS e, embaixo, a descrição da imagem
+   (o `alt` que o DS tira da árvore junto com o `<img>` — ver `midia.tsx`). */
+.midia-com-erro__aviso,
+.midia-com-erro__descricao {
+  display: block;
+}
+
+.midia-com-erro__descricao {
+  margin-top: var(--insta-spacing-xs, 8px);
+  font-size: var(--insta-font-caption-md-size, 12px);
+  line-height: 1.4;
+  color: var(--insta-color-text-primary, #262626);
+}
+
+/*
+ * (b) COMPENSAÇÃO — a dica do feed (`e2.instrucao.scaffold_*`) e o aviso da
+ * poda na aba Salvos. A seção `instanooria` não publica tooltip nem faixa de
+ * aviso inline; o pedido ao `storybook-unooria` é `InlineHint` (faixa de texto
+ * sob a barra, com tom neutro e de atrito). Até lá: texto com medida e tokens.
+ * A cor do texto é sempre a PRIMÁRIA: a secundária do clone (#8E8E93 sobre
+ * branco) não passa o contraste AA de 4,5:1 em corpo de 13px.
+ */
+.dica-do-feed,
+.aviso-da-poda {
+  flex-shrink: 0;
+  margin: 0;
+  padding: var(--insta-spacing-s, 10px) var(--insta-gutter, 15px);
+  background: var(--insta-color-background-secondary, #fafafa);
+  box-shadow: var(--insta-elevation-hairline-bottom);
+  color: var(--insta-color-text-primary, #262626);
+  font-size: var(--insta-font-label-md-size, 13px);
+  line-height: 1.4;
+}
+
+/* O atrito (excesso de posts, legenda recusada): a faixa ganha a borda da cor
+   de alerta do app. A cor fica na BORDA, não no texto — o vermelho do clone
+   sobre branco não passa o AA como texto. */
+.aviso-da-poda--atrito {
+  border-left: 3px solid var(--insta-color-brand-like, #ed4956);
+}
+
+/*
+ * (b) COMPENSAÇÃO — a demonstração do gesto de rolar ([D0-2]): um indicador
+ * translúcido de toque que sobe UMA vez, depois de 10 s parado na entrada. A
+ * seção não publica dica de gesto; o pedido é `GestureHint`. Decorativo
+ * (`aria-hidden`), e desligado com `prefers-reduced-motion` (RNF-ACES-003) —
+ * ali ele nem nasce (`feed.tsx`), e esta regra é a segunda trava.
+ */
+.demonstracao-de-rolagem {
+  position: absolute;
+  left: 50%;
+  bottom: 32%;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--insta-radius-full, 1000px);
+  background: var(--insta-color-overlay-scrim, rgba(0, 0, 0, 0.3));
+  border: 2px solid var(--insta-color-background-primary, #fff);
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, 0);
+  animation: demonstracao-de-rolagem 1.8s ease-in-out 1 forwards;
+}
+
+@keyframes demonstracao-de-rolagem {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 0);
+  }
+  20% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+    transform: translate(-50%, -140px);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -160px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .demonstracao-de-rolagem {
+    display: none;
+  }
+}
+
+/* ─────────────────────────────────────────── E3: a aba Salvos */
+
+.salvos__vazio {
+  margin: 0;
+  padding: var(--insta-spacing-4xl, 48px) var(--insta-gutter, 15px);
+  text-align: center;
+  color: var(--insta-color-text-primary, #262626);
+  font-size: var(--insta-font-body-md-size, 15px);
+}
+
+/* O compositor fica preso acima da barra de abas; quem rola é a grade. */
+.salvos__compositor {
+  flex-shrink: 0;
+  box-shadow: var(--insta-elevation-hairline-top);
+}
+
+/* ───────────────────────────── E3-SIS-01, E4: o Story e o Mural */
+
+.espera__status {
+  flex-shrink: 0;
+  padding: var(--insta-spacing-m, 12px) var(--insta-gutter, 15px);
+  text-align: center;
+}
+
+.espera__titulo {
+  margin: 0;
+  font-size: var(--insta-font-title-sm-size, 14px);
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--insta-color-text-primary, #f9f9f9);
+}
+
+.espera__descricao {
+  margin: var(--insta-spacing-3xs, 4px) 0 0;
+  font-size: var(--insta-font-caption-md-size, 12px);
+  line-height: 1.4;
+  color: var(--insta-color-text-secondary, #979797);
+}
+
+/* O contêiner do `StoryViewer`: a altura que sobra, DEFINIDA (flex com base
+   0 num pai de altura definida), para o `height: 100%` do componente valer. */
+.story {
+  flex: 1 1 0;
+  min-height: 0;
+}
+
+/* A legenda da tríade, no rodapé do Story (o `footer` do `StoryViewer`, que
+   troca o "Enviar mensagem"). É o texto cru da criança — sem rótulo, sem
+   "Legenda de fulano:" —, e cabe nos 94 px do rodapé: são no máximo 140
+   caracteres. */
+.legenda-do-story {
+  margin: 0;
+  max-height: 86px;
+  overflow: hidden;
+  color: var(--insta-color-text-primary, #f9f9f9);
+  font-size: var(--insta-font-body-md-size, 15px);
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.ficha {
+  display: flex;
+  flex-direction: column;
+  gap: var(--insta-spacing-m, 12px);
+}
+
+.ficha__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--insta-spacing-xxs, 6px);
+}
+
+/*
+ * (b) COMPENSAÇÃO — o `Badge` da seção tem `white-space: nowrap`, e as tags
+ * da ficha ("Ângulo da imagem: Infográfico comparativo de vagas versus
+ * visitantes") passam dos 345 px da folha: sem isto, vazam para fora da tela.
+ * O pedido é `Badge` com quebra de linha (`wrap`). Enquanto isso, a pílula
+ * quebra e o raio desce para o de cartão.
+ */
+.ficha__tags > .insta-badge {
+  white-space: normal;
+  text-align: left;
+  border-radius: var(--insta-radius-l, 10px);
+  line-height: 1.35;
+}
+
+.ficha__titulo {
+  margin: 0;
+  font-size: var(--insta-font-title-sm-size, 14px);
+  font-weight: 600;
+}
+
+.ficha__espera {
+  margin: 0;
+  font-size: var(--insta-font-caption-md-size, 12px);
+  color: var(--insta-color-text-secondary, #979797);
+}
+
+/* O "Equilíbrio editorial da seleção" em barras (ver `mural.tsx`: não é
+   compensação de componente — o app real não desenha gráfico, e o `DataViz`
+   da plataforma não entra no clone). A leitura é pelo número; a barra é
+   redundância visual. */
+.equilibrio__rotulo {
+  margin: 0 0 var(--insta-spacing-3xs, 4px);
+  font-size: var(--insta-font-caption-md-size, 12px);
+  font-weight: 600;
+}
+
+.equilibrio__lista {
+  display: flex;
+  flex-direction: column;
+  gap: var(--insta-spacing-3xs, 4px);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.equilibrio__linha {
+  display: grid;
+  grid-template-columns: 96px 1fr 40px;
+  align-items: center;
+  gap: var(--insta-spacing-xs, 8px);
+  font-size: var(--insta-font-caption-md-size, 12px);
+}
+
+.equilibrio__trilha {
+  display: block;
+  height: 8px;
+  border-radius: var(--insta-radius-full, 1000px);
+  background: var(--insta-color-fill-field, rgba(118, 118, 128, 0.24));
+  overflow: hidden;
+}
+
+.equilibrio__barra {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--insta-color-action-primary, #3797ef);
+}
+
+.equilibrio__valor {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─────────────────────────────────────── E5: o carrossel */
+
+/* O slide conceitual dentro do `PostCard.Media` sem `src`: medida e texto. */
+.card-conceitual {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--insta-spacing-m, 12px);
+  padding: var(--insta-spacing-xxl, 24px);
+  background: var(--insta-color-background-tertiary, #f8f8f8);
+}
+
+.card-conceitual__titulo {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--insta-color-text-primary, #262626);
+}
+
+.card-conceitual__corpo {
+  margin: 0;
+  font-size: var(--insta-font-body-md-size, 15px);
+  line-height: 1.5;
+  color: var(--insta-color-text-primary, #262626);
+}
+
+.explicar__avanco {
+  display: flex;
+  flex-direction: column;
+  gap: var(--insta-spacing-xs, 8px);
+  padding: var(--insta-spacing-m, 12px) var(--insta-gutter, 15px) var(--insta-spacing-xl, 20px);
+}
+
+.explicar__trava {
+  margin: 0;
+  text-align: center;
+  font-size: var(--insta-font-label-md-size, 13px);
+  color: var(--insta-color-text-primary, #262626);
+}
+
+/* ────────────────────────────────────────── as enquetes */
+
+.dm__grupo {
+  display: contents;
+}
+
+/*
+ * (b) COMPENSAÇÃO — a tarja "Sem conexão com a rede… Reconectando ao grêmio..."
+ * (`global.erro.offline`). A seção não publica aviso transitório; o pedido é
+ * `Snackbar` na `instanooria` (o da `unootube` existe desde a 0.1.17). Fixa no
+ * rodapé e fora do fluxo: ela aparece enquanto a criança lê, e empurrar o feed
+ * faria o dedo dela errar o post que estava mirando. Cores invertidas do app
+ * (fundo = texto primário), como o aviso do próprio Instagram.
+ */
+.aviso-de-conexao {
+  position: absolute;
+  left: var(--insta-gutter, 15px);
+  right: var(--insta-gutter, 15px);
+  bottom: calc(var(--insta-tabbar-content-height, 50px) + var(--insta-spacing-l, 16px));
+  z-index: 30;
+  margin: 0;
+  padding: var(--insta-spacing-m, 12px) var(--insta-spacing-l, 16px);
+  border-radius: var(--insta-radius-m, 8px);
+  background: var(--insta-color-text-primary, #262626);
+  color: var(--insta-color-background-primary, #fff);
+  font-size: var(--insta-font-label-md-size, 13px);
+  line-height: 1.4;
+  pointer-events: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   A ESCOLA — tokens `--unooria-*`, e só eles.
+   A reflexão (E6), a confirmação do envio, "Missão concluída!" e a missão
+   ainda não liberada.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.escola {
+  flex: 1 1 auto;
+  height: 100%;
+  overflow-y: auto;
+  /* Medida em px: os tokens de espaçamento do clone NÃO entram aqui. Medida é
+     compensação legítima; cor não é, e por isso ela continua vindo de token. */
+  padding: 20px 16px 28px;
+  background: var(--unooria-color-neutral-50, #fff);
+  color: var(--unooria-color-neutral-950, #22272a);
+  font-family: var(--unooria-font-sans, system-ui, sans-serif);
+}
+
+.escola--centrada {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.escola__pilha {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.escola__pergunta {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.escola__contador {
+  margin: -6px 0 0;
+  font-size: 12px;
+  text-align: right;
+  color: var(--unooria-color-neutral-600, #536167);
+  font-variant-numeric: tabular-nums;
+}
+
+.escola__aviso,
+.escola__nota {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--unooria-color-neutral-600, #536167);
+}
+
+/* O aviso de conexão nas telas da escola: o `AlertBox` da plataforma, preso
+   no rodapé e fora do fluxo, pelo mesmo motivo da tarja do clone. */
+.aviso-da-escola {
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 12px;
+  z-index: 30;
+  display: flex;
+  justify-content: center;
+}

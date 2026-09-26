@@ -659,10 +659,133 @@ export const MISSAO_QUEM_MANDOU_ISSO: Missao = {
   },
 };
 
+/**
+ * 7º ano · Unidade 1 — A Seleção (`exp07ef1b`).
+ *
+ * Clone do Instagram (a seção `instanooria` do DS), como a exp08ef1b — mas o
+ * que se mede aqui é outra coisa, e é isso que separa as duas na trilha: no 8º
+ * ano o feed se adapta ao estudante e a bolha é do algoritmo; no 7º o feed é o
+ * MESMO para todos, e a bolha é a própria criança quem monta, escolhendo três
+ * posts de doze. Nenhum veículo mente: a descoberta é que fatos verdadeiros,
+ * selecionados, já contam a história por um lado.
+ *
+ * Substitui O Eco no Grupo, que ocupava esta unidade (decisão de 2026-09-23).
+ *
+ * Tem ficha pedagógica (E14), a segunda depois de Quem Mandou Isso? v2.2: a
+ * atividade é a COBERTURA homologada, a rodada é o "Zerar", e o painel de habilidades mora nos
+ * resultados dela. E nasce com equipe (E13): o Mural pareia COMPUTADORES.
+ *
+ * A professora tem UM botão durante a aula, que sempre mostra a próxima
+ * etapa — Liberar Mural da Turma, Revelar Fichas Técnicas, Liberar Conclusão
+ * Individual — e nunca volta. A missão NÃO nasce vazia, ao contrário da
+ * exp05ef1b: sem preparo, a turma roda a cobertura curada da praça central.
+ */
+export const MISSAO_A_SELECAO: Missao = {
+  anoSlug: "7-ano",
+  unidadeSlug: "unidade-1",
+  unidade: 1,
+  expId: "exp07ef1b",
+  titulo: "A Seleção",
+  resumo:
+    "A Amara, do grêmio, pede ajuda para cobrir um evento do bairro nos Stories. O estudante " +
+    "rola um feed com 12 publicações de três veículos locais sobre o mesmo acontecimento, salva " +
+    "as que acha mais completas, fica com exatamente três e publica com uma legenda — sem volta. " +
+    "Quando você abre o Mural, cada publicação aparece ao lado da de um colega que contou outra " +
+    "história com os mesmos fatos verdadeiros; as fichas técnicas mostram quem cada um decidiu " +
+    "ouvir.",
+  status: "disponivel",
+  estudante: {
+    titulo: "A Seleção",
+    chamada:
+      "A Amara, do grêmio, precisa de uma força: escolha 3 posts da cobertura do bairro e " +
+      "publique nos Stories do grêmio.",
+  },
+  ficha: {
+    competencia:
+      "Letramento midiático — perceber que escolher o que publicar já é contar a história por " +
+      "um lado, e reconhecer que o colega que contou outra versão partiu dos mesmos fatos " +
+      "verdadeiros. BNCC Computação: EF07CO11 (criar, documentar e publicar produtos digitais) " +
+      "e EF07CO08 (empatia sobre opiniões divergentes na web).",
+    duracao: "1 aula de 50 min, com o Mural da Turma no meio",
+    formato:
+      "Clone de rede social de fotos (o Instanooria): um feed com 12 publicações de três " +
+      "veículos locais, a aba Salvos, os Stories do grêmio e o Mural da Turma. A conclusão e a " +
+      "reflexão são na Unooria.",
+    atos: [
+      {
+        rotulo: "1 — O pedido da Amara",
+        texto:
+          "A missão abre com uma mensagem direta da Amara, do grêmio: ela precisa fechar a " +
+          "cobertura do evento de ontem no bairro e pede que o estudante escolha exatamente 3 " +
+          "posts salvos e publique nos Stories do grêmio, com uma legenda explicando a escolha. " +
+          "Nenhuma palavra sobre fontes, lados ou veículos — a Amara só volta no fechamento.",
+      },
+      {
+        rotulo: "2 — O feed da cobertura",
+        texto:
+          "São 12 publicações intercaladas de três veículos locais — @folhaoficial_, " +
+          "@voz_coletiva e @metrica_urbana —, quatro de cada, todas sobre o mesmo acontecimento " +
+          "e todas verdadeiras. O estudante rola, curte e salva o que acha mais completo. Não há " +
+          "busca nem comentário livre.",
+      },
+      {
+        rotulo: "3 — A poda e a publicação",
+        texto:
+          "Na aba Salvos ele corta até ficar com exatamente três, escreve uma legenda de 10 a " +
+          "140 caracteres e confirma: a publicação é definitiva. Depois disso a tela espera por " +
+          "você, mostrando quantos colegas já publicaram. Quem publica atrasado, depois do Mural " +
+          "aberto, ainda entra.",
+      },
+      {
+        rotulo: "4 — O Mural da Turma (o seu primeiro e segundo botões)",
+        texto:
+          "Com cerca de 80% publicado, você aperta Liberar Mural da Turma: cada publicação " +
+          "aparece ao lado da de um colega que escolheu diferente (outro computador, ou um " +
+          "colega virtual quando não há par). A tela fica nua de propósito — é o choque de ver " +
+          "outra história com o mesmo feed. Depois dos primeiros comentários, Revelar Fichas " +
+          "Técnicas acende quem cada post ouviu, o ângulo da imagem e o equilíbrio editorial de " +
+          "cada seleção.",
+      },
+      {
+        rotulo: "5 — A conclusão (o seu terceiro botão)",
+        texto:
+          "Liberar Conclusão Individual abre três cards curtos — a ilusão da neutralidade, as " +
+          "três lentes, e quem fala define a história —, cada um com leitura mínima de 8 " +
+          "segundos, e a mensagem de fechamento da Amara, que liga a aula a A Reportagem Que Não " +
+          "Saiu.",
+      },
+      {
+        rotulo: "6 — A reflexão e as enquetes",
+        texto:
+          "Cada um escreve de 100 a 500 caracteres sobre um repórter que cobre a reforma de uma " +
+          "escola ouvindo só a diretoria. Só você lê. Por fim, duas enquetes de um toque na " +
+          "mensagem da Amara, que alimentam o painel de habilidades da turma.",
+      },
+    ],
+    preparo: [
+      "Nada é obrigatório antes da aula: sem preparo, a turma roda a cobertura curada da " +
+        "Unooria sobre a reforma da praça central, com as 12 publicações e os gráficos prontos.",
+      "Para um tema da sua cidade: em A aula e os resultados, escreva o evento, clique em Gerar " +
+        "Lote com IA, leia e edite as legendas e clique em Aprovar Cobertura e Abrir Turma. " +
+        "Nenhum texto gerado por inteligência artificial chega à turma sem esse clique.",
+      "Depois de aprovar, gere as imagens dos posts no mesmo lugar — elas saem duas por vez e " +
+        "podem levar alguns minutos. Post sem imagem aparece com a descrição da cena, e a missão " +
+        "roda igual.",
+      "Se a turma divide computadores, monte as equipes aqui na ficha, em Equipes desta turma: " +
+        "o Mural pareia computadores, nunca dois estudantes do mesmo aparelho.",
+      "Durante a aula é um botão só, e ele não volta. Espere cerca de 80% dos computadores " +
+        "publicarem antes de liberar o Mural — o número anda sozinho no painel.",
+      "Não leia as perguntas do debate antes do Mural: elas diriam à turma o que procurar no " +
+        "feed, e a seleção deixaria de ser espontânea.",
+    ],
+  },
+};
+
 const MISSOES_PUBLICADAS: Record<string, Missao[]> = {
   "1-ano": [MISSAO_FOTO_CONTA],
   "5-ano": [MISSAO_QUEM_MANDOU_ISSO],
   "6-ano": [MISSAO_RASTRO_BOATO],
+  "7-ano": [MISSAO_A_SELECAO],
   "8-ano": [MISSAO_ATUAL, MISSAO_MANIFESTO_IA],
   "2-serie": [MISSAO_UNOOGPT],
 };

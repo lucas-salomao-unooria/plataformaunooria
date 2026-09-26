@@ -39997,6 +39997,3818 @@
         "x-acesso": "token"
       }
     },
+    "/a-selecao/sessao": {
+      "get": {
+        "operationId": "ASelecaoController_sessao",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "sessaoId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "coberturaId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "rodada": {
+                      "type": "integer",
+                      "exclusiveMinimum": true,
+                      "minimum": 0
+                    },
+                    "etapa": {
+                      "type": "string",
+                      "enum": [
+                        "exploracao",
+                        "mural",
+                        "fichas",
+                        "explicacao"
+                      ]
+                    },
+                    "passo": {
+                      "type": "string",
+                      "enum": [
+                        "desafio",
+                        "feed",
+                        "salvos",
+                        "publicado",
+                        "mural",
+                        "fichas",
+                        "explicacao",
+                        "reflexao",
+                        "enquetes",
+                        "fim"
+                      ]
+                    },
+                    "passoDoEstudante": {
+                      "type": "string",
+                      "enum": [
+                        "desafio",
+                        "feed",
+                        "salvos",
+                        "publicado",
+                        "mural",
+                        "fichas",
+                        "explicacao",
+                        "reflexao",
+                        "enquetes",
+                        "fim"
+                      ]
+                    },
+                    "aguardandoOProfessor": {
+                      "type": "boolean"
+                    },
+                    "publicada": {
+                      "type": "boolean"
+                    },
+                    "publicadaEm": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "selecao": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "post_a_1",
+                          "post_a_2",
+                          "post_a_3",
+                          "post_a_4",
+                          "post_b_1",
+                          "post_b_2",
+                          "post_b_3",
+                          "post_b_4",
+                          "post_c_1",
+                          "post_c_2",
+                          "post_c_3",
+                          "post_c_4"
+                        ]
+                      },
+                      "nullable": true
+                    },
+                    "legenda": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "reflexaoEnviada": {
+                      "type": "boolean"
+                    },
+                    "concluidaEm": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "cobertura": {
+                      "type": "object",
+                      "properties": {
+                        "tema": {
+                          "type": "string"
+                        },
+                        "posts": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "enum": [
+                                  "post_a_1",
+                                  "post_a_2",
+                                  "post_a_3",
+                                  "post_a_4",
+                                  "post_b_1",
+                                  "post_b_2",
+                                  "post_b_3",
+                                  "post_b_4",
+                                  "post_c_1",
+                                  "post_c_2",
+                                  "post_c_3",
+                                  "post_c_4"
+                                ]
+                              },
+                              "perfil": {
+                                "type": "string",
+                                "enum": [
+                                  "@folhaoficial_",
+                                  "@voz_coletiva",
+                                  "@metrica_urbana"
+                                ]
+                              },
+                              "legenda": {
+                                "type": "string"
+                              },
+                              "curtidas": {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              "comentarios": {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              "comentariosDestaque": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                },
+                                "minItems": 2,
+                                "maxItems": 2
+                              },
+                              "imagem": {
+                                "type": "object",
+                                "properties": {
+                                  "url": {
+                                    "type": "string",
+                                    "nullable": true
+                                  },
+                                  "alt": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "url",
+                                  "alt"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "grafico": {
+                                "type": "object",
+                                "properties": {
+                                  "tipo": {
+                                    "type": "string",
+                                    "enum": [
+                                      "barras",
+                                      "linhas",
+                                      "mapa-de-calor"
+                                    ]
+                                  },
+                                  "titulo": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 60
+                                  },
+                                  "unidade": {
+                                    "type": "string",
+                                    "maxLength": 10
+                                  },
+                                  "series": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "rotulo": {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "maxLength": 40
+                                        },
+                                        "valor": {
+                                          "type": "number",
+                                          "minimum": 0
+                                        }
+                                      },
+                                      "required": [
+                                        "rotulo",
+                                        "valor"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    "minItems": 2,
+                                    "maxItems": 6
+                                  },
+                                  "destaque": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 40
+                                  }
+                                },
+                                "required": [
+                                  "tipo",
+                                  "titulo",
+                                  "unidade",
+                                  "series"
+                                ],
+                                "additionalProperties": false,
+                                "nullable": true
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "perfil",
+                              "legenda",
+                              "curtidas",
+                              "comentarios",
+                              "comentariosDestaque",
+                              "imagem",
+                              "grafico"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "minItems": 12,
+                          "maxItems": 12
+                        }
+                      },
+                      "required": [
+                        "tema",
+                        "posts"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "limites": {
+                      "type": "object",
+                      "properties": {
+                        "selecao": {
+                          "type": "integer",
+                          "exclusiveMinimum": true,
+                          "minimum": 0
+                        },
+                        "legendaMin": {
+                          "type": "integer",
+                          "exclusiveMinimum": true,
+                          "minimum": 0
+                        },
+                        "legendaMax": {
+                          "type": "integer",
+                          "exclusiveMinimum": true,
+                          "minimum": 0
+                        },
+                        "reflexaoMin": {
+                          "type": "integer",
+                          "exclusiveMinimum": true,
+                          "minimum": 0
+                        },
+                        "reflexaoMax": {
+                          "type": "integer",
+                          "exclusiveMinimum": true,
+                          "minimum": 0
+                        }
+                      },
+                      "required": [
+                        "selecao",
+                        "legendaMin",
+                        "legendaMax",
+                        "reflexaoMin",
+                        "reflexaoMax"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "sessaoId",
+                    "coberturaId",
+                    "rodada",
+                    "etapa",
+                    "passo",
+                    "passoDoEstudante",
+                    "aguardandoOProfessor",
+                    "publicada",
+                    "publicadaEm",
+                    "selecao",
+                    "legenda",
+                    "reflexaoEnviada",
+                    "concluidaEm",
+                    "cobertura",
+                    "limites"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "a-selecao"
+        ],
+        "summary": "O estado da missão e os 12 posts do feed, sem o gabarito.",
+        "description": "Boot da experiência e o F5. Os posts saem **na ordem do feed** e **sem `enquadramento`, `tagFonte` e `tagAngulo`** — o post público é uma allowlist no servidor, então o gabarito não tem campo onde caber. Ele só desce no `GET /a-selecao/mural`, com as fichas acesas.\n\n**A missão não nasce vazia**: sem homologação, a turma roda o banco curado da Praça Central, e a cobertura `padrao` nasce na primeira entrada. `imagem.url` é `null` enquanto a professora não gerou as imagens — a tela desenha o card com o `alt`.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- `passo` já vem reconciliado com a etapa da turma; `passoDoEstudante` é o gravado. A etapa só conduz quem PUBLICOU: antes do latch, a criança segue no feed ou nos salvos com o Mural aberto ou não.\n- `coberturaId` é a ATIVIDADE e `rodada` é a rodada dela: mudam quando a professora troca o tema ou zera a turma, e a sessão é outra.\n- Missão não liberada na turma responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`). Estudante sem turma responde **409** `sem-turma`.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/a-selecao/gate": {
+      "get": {
+        "operationId": "ASelecaoController_gate",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "etapa": {
+                      "type": "string",
+                      "enum": [
+                        "exploracao",
+                        "mural",
+                        "fichas",
+                        "explicacao"
+                      ]
+                    },
+                    "rodada": {
+                      "type": "integer",
+                      "exclusiveMinimum": true,
+                      "minimum": 0,
+                      "nullable": true
+                    },
+                    "coberturaId": {
+                      "type": "string",
+                      "format": "uuid",
+                      "nullable": true
+                    },
+                    "passoEfetivo": {
+                      "type": "string",
+                      "enum": [
+                        "desafio",
+                        "feed",
+                        "salvos",
+                        "publicado",
+                        "mural",
+                        "fichas",
+                        "explicacao",
+                        "reflexao",
+                        "enquetes",
+                        "fim"
+                      ]
+                    },
+                    "aguardandoOProfessor": {
+                      "type": "boolean"
+                    },
+                    "agora": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "etapa",
+                    "rodada",
+                    "coberturaId",
+                    "passoEfetivo",
+                    "aguardandoOProfessor",
+                    "agora"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "a-selecao"
+        ],
+        "summary": "Em que etapa a turma está (polling de ~5 s).",
+        "description": "Magra de propósito (ADR-93): sem posts, sem contagem da sala, sem JOIN. É o que deixa a professora conduzir 30 telas — o Mural abre para todos ao mesmo tempo.\n\n**Polling HTTP, nunca WebSocket**: a infraestrutura Cloud Run da plataforma não tem WebSocket de aplicação.\n\n`agora` é o instante do SERVIDOR.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- Passa pelo MESMO funil de liberação das outras rotas (ADR-69 e ADR-87): turma sem a missão liberada recebe 403 em vez de descobrir a etapa.\n- Não escreve nada. `rodada` e `coberturaId` são `null` só antes da primeira entrada da turma; quando mudam, a tela recarrega a sessão (a professora zerou ou trocou o tema).",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/a-selecao/passo": {
+      "post": {
+        "operationId": "ASelecaoController_passo",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "sessaoId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "coberturaId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "rodada": {
+                      "type": "integer",
+                      "exclusiveMinimum": true,
+                      "minimum": 0
+                    },
+                    "etapa": {
+                      "type": "string",
+                      "enum": [
+                        "exploracao",
+                        "mural",
+                        "fichas",
+                        "explicacao"
+                      ]
+                    },
+                    "passo": {
+                      "type": "string",
+                      "enum": [
+                        "desafio",
+                        "feed",
+                        "salvos",
+                        "publicado",
+                        "mural",
+                        "fichas",
+                        "explicacao",
+                        "reflexao",
+                        "enquetes",
+                        "fim"
+                      ]
+                    },
+                    "passoDoEstudante": {
+                      "type": "string",
+                      "enum": [
+                        "desafio",
+                        "feed",
+                        "salvos",
+                        "publicado",
+                        "mural",
+                        "fichas",
+                        "explicacao",
+                        "reflexao",
+                        "enquetes",
+                        "fim"
+                      ]
+                    },
+                    "aguardandoOProfessor": {
+                      "type": "boolean"
+                    },
+                    "publicada": {
+                      "type": "boolean"
+                    },
+                    "publicadaEm": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "selecao": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "post_a_1",
+                          "post_a_2",
+                          "post_a_3",
+                          "post_a_4",
+                          "post_b_1",
+                          "post_b_2",
+                          "post_b_3",
+                          "post_b_4",
+                          "post_c_1",
+                          "post_c_2",
+                          "post_c_3",
+                          "post_c_4"
+                        ]
+                      },
+                      "nullable": true
+                    },
+                    "legenda": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "reflexaoEnviada": {
+                      "type": "boolean"
+                    },
+                    "concluidaEm": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "sessaoId",
+                    "coberturaId",
+                    "rodada",
+                    "etapa",
+                    "passo",
+                    "passoDoEstudante",
+                    "aguardandoOProfessor",
+                    "publicada",
+                    "publicadaEm",
+                    "selecao",
+                    "legenda",
+                    "reflexaoEnviada",
+                    "concluidaEm"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "a-selecao"
+        ],
+        "summary": "Registra o passo que a própria criança deu: feed, salvos ou reflexão.",
+        "description": "Existe para o passo andar no SERVIDOR: um F5 nos salvos não pode devolver a criança à DM da Amara.\n\n`feed` vale do desafio ou de volta dos salvos, e só antes do latch. `salvos` só de quem está no feed. `reflexao` só de quem publicou e com a explicação liberada — pedir de novo, ou depois de já ter enviado, devolve o passo em que ela está.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- Depois do latch, `feed` e `salvos` respondem **409** `latch-ja-confirmado`. `salvos` saindo do desafio responde **409** `passo-invalido`.\n- `reflexao` sem publicação responde **409** `stories-nao-publicados`; antes da etapa `explicacao`, **409** `reflexao-nao-liberada`.\n- `tempoFeedS` (0 a 3600) é o tempo de feed que a tela mediu. Indicativo, nunca mérito, e só gravado antes do latch.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "para": {
+                    "type": "string",
+                    "enum": [
+                      "feed",
+                      "salvos",
+                      "reflexao"
+                    ]
+                  },
+                  "tempoFeedS": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 3600
+                  }
+                },
+                "required": [
+                  "para"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/a-selecao/decisao": {
+      "post": {
+        "operationId": "ASelecaoController_decisao",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "sessaoId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "coberturaId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "rodada": {
+                      "type": "integer",
+                      "exclusiveMinimum": true,
+                      "minimum": 0
+                    },
+                    "etapa": {
+                      "type": "string",
+                      "enum": [
+                        "exploracao",
+                        "mural",
+                        "fichas",
+                        "explicacao"
+                      ]
+                    },
+                    "passo": {
+                      "type": "string",
+                      "enum": [
+                        "desafio",
+                        "feed",
+                        "salvos",
+                        "publicado",
+                        "mural",
+                        "fichas",
+                        "explicacao",
+                        "reflexao",
+                        "enquetes",
+                        "fim"
+                      ]
+                    },
+                    "passoDoEstudante": {
+                      "type": "string",
+                      "enum": [
+                        "desafio",
+                        "feed",
+                        "salvos",
+                        "publicado",
+                        "mural",
+                        "fichas",
+                        "explicacao",
+                        "reflexao",
+                        "enquetes",
+                        "fim"
+                      ]
+                    },
+                    "aguardandoOProfessor": {
+                      "type": "boolean"
+                    },
+                    "publicada": {
+                      "type": "boolean"
+                    },
+                    "publicadaEm": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "selecao": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "post_a_1",
+                          "post_a_2",
+                          "post_a_3",
+                          "post_a_4",
+                          "post_b_1",
+                          "post_b_2",
+                          "post_b_3",
+                          "post_b_4",
+                          "post_c_1",
+                          "post_c_2",
+                          "post_c_3",
+                          "post_c_4"
+                        ]
+                      },
+                      "nullable": true
+                    },
+                    "legenda": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "reflexaoEnviada": {
+                      "type": "boolean"
+                    },
+                    "concluidaEm": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "sessaoId",
+                    "coberturaId",
+                    "rodada",
+                    "etapa",
+                    "passo",
+                    "passoDoEstudante",
+                    "aguardandoOProfessor",
+                    "publicada",
+                    "publicadaEm",
+                    "selecao",
+                    "legenda",
+                    "reflexaoEnviada",
+                    "concluidaEm"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "a-selecao"
+        ],
+        "summary": "\"Confirmar publicação\" — os 3 posts e a legenda nos Stories (latch).",
+        "description": "O gesto que a missão mede, e ele é IRREVERSÍVEL. A api confere a tríade contra a cobertura da turma, calcula a matriz de enquadramento AQUI (o cliente nunca a manda) e grava carimbo e passo juntos.\n\nA legenda passa pelo **sanitizador** antes: outro estudante vai lê-la no Mural. Link, telefone, e-mail, `@` de fora da ficção e palavrão respondem **422** com o código do que tirar — `legenda-com-link`, `legenda-com-telefone`, `legenda-com-email`, `legenda-com-mencao`, `legenda-com-palavrao`. As contas da ficção (`@folhaoficial_`, `@voz_coletiva`, `@metrica_urbana`, `@estudante_gremio`) podem ser citadas.\n\nDepois do latch, fora da transação dele, a legenda é graduada para a evidência pedagógica (Canal A). A resposta não diz o resultado: **o estudante não vê o nível**.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- `selecao`: exatamente 3 ids diferentes, de `post_a_1` a `post_c_4`. `legenda`: 10 a 140 caracteres contados em code points, depois de juntar espaços e quebras de linha. (Os `.refine()` somem do OpenAPI; daí esta nota.)\n- Segunda publicação — inclusive duas simultâneas — responde **409** `latch-ja-confirmado`. Id fora da cobertura da turma responde **400** `selecao-invalida`.\n- Com o Mural já aberto, quem publica recebe o par do computador dele, ou o colega virtual mais distante (Tomás ou Malu).\n- A graduação por IA tem teto de ~6 s. Sem saldo, fora do tempo ou com saída inválida, nada é marcado: fica \"Não avaliado\", e o professor decide.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "selecao": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "pattern": "^post_[abc]_[1-4]$"
+                    },
+                    "minItems": 3,
+                    "maxItems": 3
+                  },
+                  "legenda": {
+                    "type": "string",
+                    "maxLength": 2000
+                  }
+                },
+                "required": [
+                  "selecao",
+                  "legenda"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/a-selecao/mural": {
+      "get": {
+        "operationId": "ASelecaoController_mural",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "etapa": {
+                      "type": "string",
+                      "enum": [
+                        "exploracao",
+                        "mural",
+                        "fichas",
+                        "explicacao"
+                      ]
+                    },
+                    "fichasReveladas": {
+                      "type": "boolean"
+                    },
+                    "minha": {
+                      "type": "object",
+                      "properties": {
+                        "posts": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "enum": [
+                                  "post_a_1",
+                                  "post_a_2",
+                                  "post_a_3",
+                                  "post_a_4",
+                                  "post_b_1",
+                                  "post_b_2",
+                                  "post_b_3",
+                                  "post_b_4",
+                                  "post_c_1",
+                                  "post_c_2",
+                                  "post_c_3",
+                                  "post_c_4"
+                                ]
+                              },
+                              "perfil": {
+                                "type": "string",
+                                "enum": [
+                                  "@folhaoficial_",
+                                  "@voz_coletiva",
+                                  "@metrica_urbana"
+                                ]
+                              },
+                              "legenda": {
+                                "type": "string"
+                              },
+                              "curtidas": {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              "comentarios": {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              "comentariosDestaque": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                },
+                                "minItems": 2,
+                                "maxItems": 2
+                              },
+                              "imagem": {
+                                "type": "object",
+                                "properties": {
+                                  "url": {
+                                    "type": "string",
+                                    "nullable": true
+                                  },
+                                  "alt": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "url",
+                                  "alt"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "grafico": {
+                                "type": "object",
+                                "properties": {
+                                  "tipo": {
+                                    "type": "string",
+                                    "enum": [
+                                      "barras",
+                                      "linhas",
+                                      "mapa-de-calor"
+                                    ]
+                                  },
+                                  "titulo": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 60
+                                  },
+                                  "unidade": {
+                                    "type": "string",
+                                    "maxLength": 10
+                                  },
+                                  "series": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "rotulo": {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "maxLength": 40
+                                        },
+                                        "valor": {
+                                          "type": "number",
+                                          "minimum": 0
+                                        }
+                                      },
+                                      "required": [
+                                        "rotulo",
+                                        "valor"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    "minItems": 2,
+                                    "maxItems": 6
+                                  },
+                                  "destaque": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 40
+                                  }
+                                },
+                                "required": [
+                                  "tipo",
+                                  "titulo",
+                                  "unidade",
+                                  "series"
+                                ],
+                                "additionalProperties": false,
+                                "nullable": true
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "perfil",
+                              "legenda",
+                              "curtidas",
+                              "comentarios",
+                              "comentariosDestaque",
+                              "imagem",
+                              "grafico"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "minItems": 3,
+                          "maxItems": 3
+                        },
+                        "legenda": {
+                          "type": "string"
+                        },
+                        "fichas": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "postId": {
+                                "type": "string",
+                                "enum": [
+                                  "post_a_1",
+                                  "post_a_2",
+                                  "post_a_3",
+                                  "post_a_4",
+                                  "post_b_1",
+                                  "post_b_2",
+                                  "post_b_3",
+                                  "post_b_4",
+                                  "post_c_1",
+                                  "post_c_2",
+                                  "post_c_3",
+                                  "post_c_4"
+                                ]
+                              },
+                              "fonte": {
+                                "type": "string"
+                              },
+                              "angulo": {
+                                "type": "string"
+                              },
+                              "enquadramento": {
+                                "type": "string",
+                                "enum": [
+                                  "institucional",
+                                  "comunitario",
+                                  "estatistico"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "postId",
+                              "fonte",
+                              "angulo",
+                              "enquadramento"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "minItems": 3,
+                          "maxItems": 3,
+                          "nullable": true
+                        },
+                        "equilibrio": {
+                          "type": "object",
+                          "properties": {
+                            "institucional": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "comunitario": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "estatistico": {
+                              "type": "integer",
+                              "minimum": 0
+                            }
+                          },
+                          "required": [
+                            "institucional",
+                            "comunitario",
+                            "estatistico"
+                          ],
+                          "additionalProperties": false,
+                          "nullable": true
+                        }
+                      },
+                      "required": [
+                        "posts",
+                        "legenda",
+                        "fichas",
+                        "equilibrio"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "par": {
+                      "type": "object",
+                      "properties": {
+                        "posts": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "enum": [
+                                  "post_a_1",
+                                  "post_a_2",
+                                  "post_a_3",
+                                  "post_a_4",
+                                  "post_b_1",
+                                  "post_b_2",
+                                  "post_b_3",
+                                  "post_b_4",
+                                  "post_c_1",
+                                  "post_c_2",
+                                  "post_c_3",
+                                  "post_c_4"
+                                ]
+                              },
+                              "perfil": {
+                                "type": "string",
+                                "enum": [
+                                  "@folhaoficial_",
+                                  "@voz_coletiva",
+                                  "@metrica_urbana"
+                                ]
+                              },
+                              "legenda": {
+                                "type": "string"
+                              },
+                              "curtidas": {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              "comentarios": {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              "comentariosDestaque": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                },
+                                "minItems": 2,
+                                "maxItems": 2
+                              },
+                              "imagem": {
+                                "type": "object",
+                                "properties": {
+                                  "url": {
+                                    "type": "string",
+                                    "nullable": true
+                                  },
+                                  "alt": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "url",
+                                  "alt"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "grafico": {
+                                "type": "object",
+                                "properties": {
+                                  "tipo": {
+                                    "type": "string",
+                                    "enum": [
+                                      "barras",
+                                      "linhas",
+                                      "mapa-de-calor"
+                                    ]
+                                  },
+                                  "titulo": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 60
+                                  },
+                                  "unidade": {
+                                    "type": "string",
+                                    "maxLength": 10
+                                  },
+                                  "series": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "rotulo": {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "maxLength": 40
+                                        },
+                                        "valor": {
+                                          "type": "number",
+                                          "minimum": 0
+                                        }
+                                      },
+                                      "required": [
+                                        "rotulo",
+                                        "valor"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    "minItems": 2,
+                                    "maxItems": 6
+                                  },
+                                  "destaque": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 40
+                                  }
+                                },
+                                "required": [
+                                  "tipo",
+                                  "titulo",
+                                  "unidade",
+                                  "series"
+                                ],
+                                "additionalProperties": false,
+                                "nullable": true
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "perfil",
+                              "legenda",
+                              "curtidas",
+                              "comentarios",
+                              "comentariosDestaque",
+                              "imagem",
+                              "grafico"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "minItems": 3,
+                          "maxItems": 3
+                        },
+                        "legenda": {
+                          "type": "string"
+                        },
+                        "fichas": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "postId": {
+                                "type": "string",
+                                "enum": [
+                                  "post_a_1",
+                                  "post_a_2",
+                                  "post_a_3",
+                                  "post_a_4",
+                                  "post_b_1",
+                                  "post_b_2",
+                                  "post_b_3",
+                                  "post_b_4",
+                                  "post_c_1",
+                                  "post_c_2",
+                                  "post_c_3",
+                                  "post_c_4"
+                                ]
+                              },
+                              "fonte": {
+                                "type": "string"
+                              },
+                              "angulo": {
+                                "type": "string"
+                              },
+                              "enquadramento": {
+                                "type": "string",
+                                "enum": [
+                                  "institucional",
+                                  "comunitario",
+                                  "estatistico"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "postId",
+                              "fonte",
+                              "angulo",
+                              "enquadramento"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "minItems": 3,
+                          "maxItems": 3,
+                          "nullable": true
+                        },
+                        "equilibrio": {
+                          "type": "object",
+                          "properties": {
+                            "institucional": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "comunitario": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "estatistico": {
+                              "type": "integer",
+                              "minimum": 0
+                            }
+                          },
+                          "required": [
+                            "institucional",
+                            "comunitario",
+                            "estatistico"
+                          ],
+                          "additionalProperties": false,
+                          "nullable": true
+                        },
+                        "rotulo": {
+                          "type": "string"
+                        },
+                        "virtual": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "posts",
+                        "legenda",
+                        "fichas",
+                        "equilibrio",
+                        "rotulo",
+                        "virtual"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "etapa",
+                    "fichasReveladas",
+                    "minha",
+                    "par"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "a-selecao"
+        ],
+        "summary": "O Mural da Turma: a própria tríade ao lado da do par.",
+        "description": "Antes das fichas, só imagem e legenda — a tela nua da Fase 1 do PRD. `fichas` e `equilibrio` são `null` e o gabarito NÃO está na resposta. Com a etapa `fichas` (ou depois), cada post ganha fonte ouvida, ângulo da imagem e lente, e cada tríade o equilíbrio editorial em percentuais.\n\nO par é o que o pareamento CONGELOU na abertura do Mural: um colega da sala (ou a equipe dele), com o rótulo que a tela escreve, ou o colega virtual.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- Sem publicação responde **409** `stories-nao-publicados`; antes da etapa `mural`, **409** `mural-nao-liberado`.\n- `par.rotulo` é o primeiro nome (desempatado quando repete na sala), o nome da equipe, ou Tomás/Malu — nunca o nome completo.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/a-selecao/reflexao": {
+      "post": {
+        "operationId": "ASelecaoController_reflexao",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "sessaoId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "coberturaId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "rodada": {
+                      "type": "integer",
+                      "exclusiveMinimum": true,
+                      "minimum": 0
+                    },
+                    "etapa": {
+                      "type": "string",
+                      "enum": [
+                        "exploracao",
+                        "mural",
+                        "fichas",
+                        "explicacao"
+                      ]
+                    },
+                    "passo": {
+                      "type": "string",
+                      "enum": [
+                        "desafio",
+                        "feed",
+                        "salvos",
+                        "publicado",
+                        "mural",
+                        "fichas",
+                        "explicacao",
+                        "reflexao",
+                        "enquetes",
+                        "fim"
+                      ]
+                    },
+                    "passoDoEstudante": {
+                      "type": "string",
+                      "enum": [
+                        "desafio",
+                        "feed",
+                        "salvos",
+                        "publicado",
+                        "mural",
+                        "fichas",
+                        "explicacao",
+                        "reflexao",
+                        "enquetes",
+                        "fim"
+                      ]
+                    },
+                    "aguardandoOProfessor": {
+                      "type": "boolean"
+                    },
+                    "publicada": {
+                      "type": "boolean"
+                    },
+                    "publicadaEm": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "selecao": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "post_a_1",
+                          "post_a_2",
+                          "post_a_3",
+                          "post_a_4",
+                          "post_b_1",
+                          "post_b_2",
+                          "post_b_3",
+                          "post_b_4",
+                          "post_c_1",
+                          "post_c_2",
+                          "post_c_3",
+                          "post_c_4"
+                        ]
+                      },
+                      "nullable": true
+                    },
+                    "legenda": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "reflexaoEnviada": {
+                      "type": "boolean"
+                    },
+                    "concluidaEm": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "sessaoId",
+                    "coberturaId",
+                    "rodada",
+                    "etapa",
+                    "passo",
+                    "passoDoEstudante",
+                    "aguardandoOProfessor",
+                    "publicada",
+                    "publicadaEm",
+                    "selecao",
+                    "legenda",
+                    "reflexaoEnviada",
+                    "concluidaEm"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "a-selecao"
+        ],
+        "summary": "A reflexão individual da Etapa 6 (latch) — leva às enquetes.",
+        "description": "Texto livre de 100 a 500 caracteres, contados em code points. É caixa escrita por menor de idade: não vai a log nem à telemetria, e só o professor que leciona a turma o lê no painel (LGPD art. 14; recorte da ADR-108).\n\nDepois dela vêm as duas enquetes da DM da Amara, pelas rotas de `/evidencias/exp07ef1b/perguntas`.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- O `trim` é anterior à contagem: cem espaços são uma reflexão em branco.\n- Sem publicação responde **409** `stories-nao-publicados`; antes da etapa `explicacao`, **409** `reflexao-nao-liberada`; a segunda, **409** `reflexao-ja-enviada`.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "texto": {
+                    "type": "string",
+                    "maxLength": 4000
+                  }
+                },
+                "required": [
+                  "texto"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/a-selecao/concluir": {
+      "post": {
+        "operationId": "ASelecaoController_concluir",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "sessaoId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "coberturaId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "rodada": {
+                      "type": "integer",
+                      "exclusiveMinimum": true,
+                      "minimum": 0
+                    },
+                    "etapa": {
+                      "type": "string",
+                      "enum": [
+                        "exploracao",
+                        "mural",
+                        "fichas",
+                        "explicacao"
+                      ]
+                    },
+                    "passo": {
+                      "type": "string",
+                      "enum": [
+                        "desafio",
+                        "feed",
+                        "salvos",
+                        "publicado",
+                        "mural",
+                        "fichas",
+                        "explicacao",
+                        "reflexao",
+                        "enquetes",
+                        "fim"
+                      ]
+                    },
+                    "passoDoEstudante": {
+                      "type": "string",
+                      "enum": [
+                        "desafio",
+                        "feed",
+                        "salvos",
+                        "publicado",
+                        "mural",
+                        "fichas",
+                        "explicacao",
+                        "reflexao",
+                        "enquetes",
+                        "fim"
+                      ]
+                    },
+                    "aguardandoOProfessor": {
+                      "type": "boolean"
+                    },
+                    "publicada": {
+                      "type": "boolean"
+                    },
+                    "publicadaEm": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "selecao": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "post_a_1",
+                          "post_a_2",
+                          "post_a_3",
+                          "post_a_4",
+                          "post_b_1",
+                          "post_b_2",
+                          "post_b_3",
+                          "post_b_4",
+                          "post_c_1",
+                          "post_c_2",
+                          "post_c_3",
+                          "post_c_4"
+                        ]
+                      },
+                      "nullable": true
+                    },
+                    "legenda": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "reflexaoEnviada": {
+                      "type": "boolean"
+                    },
+                    "concluidaEm": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "sessaoId",
+                    "coberturaId",
+                    "rodada",
+                    "etapa",
+                    "passo",
+                    "passoDoEstudante",
+                    "aguardandoOProfessor",
+                    "publicada",
+                    "publicadaEm",
+                    "selecao",
+                    "legenda",
+                    "reflexaoEnviada",
+                    "concluidaEm"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "a-selecao"
+        ],
+        "summary": "\"Missão concluída!\" — idempotente.",
+        "description": "Leva a sessão a `fim` e carimba `concluidaEm`, no mesmo update. As enquetes não são exigidas (a enquete que falha pula para o fim); a reflexão, sim.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- Antes da reflexão responde **409** `reflexao-pendente`. Concluir de novo devolve o mesmo estado.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/a-selecao/turmas": {
+      "get": {
+        "operationId": "ASelecaoTurmasController_turmas",
+        "parameters": [
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "turmas": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "nome": {
+                            "type": "string"
+                          },
+                          "serie": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "estudantes": {
+                            "type": "integer",
+                            "minimum": 0
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "nome",
+                          "serie",
+                          "estudantes"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "turmas"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "a-selecao"
+        ],
+        "summary": "Turmas para o seletor do painel.",
+        "description": "Filtradas por MATRÍCULA para o professor; o gestor vê a escola. `gestor_contrato` precisa dizer `?escolaId=`.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/a-selecao/turmas/{turmaId}/painel": {
+      "get": {
+        "operationId": "ASelecaoTurmasController_painel",
+        "parameters": [
+          {
+            "name": "turmaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "turma": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "nome": {
+                          "type": "string"
+                        },
+                        "serie": {
+                          "type": "string",
+                          "nullable": true
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "nome",
+                        "serie"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "cobertura": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "tema": {
+                          "type": "string"
+                        },
+                        "foco": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "origem": {
+                          "type": "string",
+                          "enum": [
+                            "padrao",
+                            "ia"
+                          ]
+                        },
+                        "midia": {
+                          "type": "object",
+                          "properties": {
+                            "total": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "prontas": {
+                              "type": "integer",
+                              "minimum": 0
+                            }
+                          },
+                          "required": [
+                            "total",
+                            "prontas"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "tema",
+                        "foco",
+                        "origem",
+                        "midia"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "rodada": {
+                      "type": "integer",
+                      "exclusiveMinimum": true,
+                      "minimum": 0
+                    },
+                    "etapa": {
+                      "type": "string",
+                      "enum": [
+                        "exploracao",
+                        "mural",
+                        "fichas",
+                        "explicacao"
+                      ]
+                    },
+                    "proximaEtapa": {
+                      "type": "string",
+                      "enum": [
+                        "exploracao",
+                        "mural",
+                        "fichas",
+                        "explicacao"
+                      ],
+                      "nullable": true
+                    },
+                    "linhas": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "estudanteId": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "nome": {
+                            "type": "string"
+                          },
+                          "usuario": {
+                            "type": "string"
+                          },
+                          "equipe": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              "nome": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "nome"
+                            ],
+                            "additionalProperties": false,
+                            "nullable": true
+                          },
+                          "iniciou": {
+                            "type": "boolean"
+                          },
+                          "passo": {
+                            "type": "string",
+                            "enum": [
+                              "desafio",
+                              "feed",
+                              "salvos",
+                              "publicado",
+                              "mural",
+                              "fichas",
+                              "explicacao",
+                              "reflexao",
+                              "enquetes",
+                              "fim"
+                            ]
+                          },
+                          "publicou": {
+                            "type": "boolean"
+                          },
+                          "publicadaEm": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "selecao": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "enum": [
+                                "post_a_1",
+                                "post_a_2",
+                                "post_a_3",
+                                "post_a_4",
+                                "post_b_1",
+                                "post_b_2",
+                                "post_b_3",
+                                "post_b_4",
+                                "post_c_1",
+                                "post_c_2",
+                                "post_c_3",
+                                "post_c_4"
+                              ]
+                            },
+                            "nullable": true
+                          },
+                          "matriz": {
+                            "type": "object",
+                            "properties": {
+                              "institucional": {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              "comunitario": {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              "estatistico": {
+                                "type": "integer",
+                                "minimum": 0
+                              }
+                            },
+                            "required": [
+                              "institucional",
+                              "comunitario",
+                              "estatistico"
+                            ],
+                            "additionalProperties": false,
+                            "nullable": true
+                          },
+                          "legenda": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "par": {
+                            "type": "object",
+                            "properties": {
+                              "rotulo": {
+                                "type": "string"
+                              },
+                              "virtual": {
+                                "type": "boolean"
+                              }
+                            },
+                            "required": [
+                              "rotulo",
+                              "virtual"
+                            ],
+                            "additionalProperties": false,
+                            "nullable": true
+                          },
+                          "tempoFeedS": {
+                            "type": "integer",
+                            "nullable": true
+                          },
+                          "entregouReflexao": {
+                            "type": "boolean"
+                          },
+                          "reflexaoTexto": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "concluiu": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "estudanteId",
+                          "nome",
+                          "usuario",
+                          "equipe",
+                          "iniciou",
+                          "passo",
+                          "publicou",
+                          "publicadaEm",
+                          "selecao",
+                          "matriz",
+                          "legenda",
+                          "par",
+                          "tempoFeedS",
+                          "entregouReflexao",
+                          "reflexaoTexto",
+                          "concluiu"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "resumo": {
+                      "type": "object",
+                      "properties": {
+                        "total": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "iniciaram": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "publicaram": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "entregaram": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "concluiram": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "computadores": {
+                          "type": "object",
+                          "properties": {
+                            "publicaram": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "total": {
+                              "type": "integer",
+                              "minimum": 0
+                            }
+                          },
+                          "required": [
+                            "publicaram",
+                            "total"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "porComputador": {
+                          "type": "boolean"
+                        },
+                        "distribuicaoMedia": {
+                          "type": "object",
+                          "properties": {
+                            "institucional": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "comunitario": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "estatistico": {
+                              "type": "integer",
+                              "minimum": 0
+                            }
+                          },
+                          "required": [
+                            "institucional",
+                            "comunitario",
+                            "estatistico"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "total",
+                        "iniciaram",
+                        "publicaram",
+                        "entregaram",
+                        "concluiram",
+                        "computadores",
+                        "porComputador",
+                        "distribuicaoMedia"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "turma",
+                    "cobertura",
+                    "rodada",
+                    "etapa",
+                    "proximaEtapa",
+                    "linhas",
+                    "resumo"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "a-selecao"
+        ],
+        "summary": "O painel da aula: o botão da próxima etapa e quem publicou, POR COMPUTADOR.",
+        "description": "Uma linha por computador quando a turma montou equipes para esta missão (`colapsarEmUnidades`), uma por criança quando não — `resumo.porComputador` diz qual. `resumo.computadores` é o \"X de Y computadores publicaram\": o Y sai da montagem das equipes, porque o colapso conta também quem faltou.\n\n`proximaEtapa` é o rótulo do botão único (`null` depois da explicação).\n\n**Sem nível, nota ou acerto por criança** (`PROIBIDO_NO_PAINEL`, com teste). O nível da EF07CO11 mora no painel de habilidades, em `/evidencias/turma/:turmaId/missao/exp07ef1b/atividade/:coberturaId`.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- `legenda` e `reflexaoTexto` são texto livre de menor e só vêm preenchidos para quem LECIONA a turma. Gestor, gestor de contrato e admin recebem `null` e leem `publicou` e `entregouReflexao` (recorte da ADR-108).\n- A primeira leitura de uma turma sem cobertura cria a `padrao` (o banco curado) e o gate na rodada 1.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/a-selecao/turmas/{turmaId}/gate": {
+      "post": {
+        "operationId": "ASelecaoTurmasController_gate",
+        "parameters": [
+          {
+            "name": "turmaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "turma": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "nome": {
+                          "type": "string"
+                        },
+                        "serie": {
+                          "type": "string",
+                          "nullable": true
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "nome",
+                        "serie"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "coberturaId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "rodada": {
+                      "type": "integer",
+                      "exclusiveMinimum": true,
+                      "minimum": 0
+                    },
+                    "etapa": {
+                      "type": "string",
+                      "enum": [
+                        "exploracao",
+                        "mural",
+                        "fichas",
+                        "explicacao"
+                      ]
+                    },
+                    "proximaEtapa": {
+                      "type": "string",
+                      "enum": [
+                        "exploracao",
+                        "mural",
+                        "fichas",
+                        "explicacao"
+                      ],
+                      "nullable": true
+                    },
+                    "pareadas": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "atualizadoEm": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "turma",
+                    "coberturaId",
+                    "rodada",
+                    "etapa",
+                    "proximaEtapa",
+                    "pareadas",
+                    "atualizadoEm"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "a-selecao"
+        ],
+        "summary": "O botão único da aula: \"Liberar Mural\", \"Revelar fichas\", \"Liberar conclusão\".",
+        "description": "O corpo diz a etapa de DESTINO. Anda uma etapa por vez — `exploracao → mural → fichas → explicacao` —, nunca pula e nunca volta; destino igual ao atual é aceito e não muda nada (o segundo clique).\n\nAbrir o **Mural** é o momento do PAREAMENTO: na mesma transação, cada computador que publicou recebe o par de matriz mais distante; quem sobra, quem não tem par divergente e a sala de um computador só recebem o colega virtual (Tomás ou Malu). `pareadas` diz quantas sessões receberam par nesta chamada.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Destino fora de ordem responde **409** `transicao-de-etapa-invalida`, com `etapaAtual` e `proximaEtapa` no corpo.\n- É a linha que o polling de 5 s do estudante lê (`GET /a-selecao/gate`): não há WebSocket de aplicação (ADR-93).",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "para": {
+                    "type": "string",
+                    "enum": [
+                      "exploracao",
+                      "mural",
+                      "fichas",
+                      "explicacao"
+                    ]
+                  }
+                },
+                "required": [
+                  "para"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/a-selecao/turmas/{turmaId}/zerar": {
+      "post": {
+        "operationId": "ASelecaoTurmasController_zerar",
+        "parameters": [
+          {
+            "name": "turmaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "coberturaId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "rodada": {
+                      "type": "integer",
+                      "exclusiveMinimum": true,
+                      "minimum": 0
+                    },
+                    "etapa": {
+                      "type": "string",
+                      "enum": [
+                        "exploracao",
+                        "mural",
+                        "fichas",
+                        "explicacao"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "coberturaId",
+                    "rodada",
+                    "etapa"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "a-selecao"
+        ],
+        "summary": "\"Zerar a turma\" — abre a próxima rodada, sem apagar nada.",
+        "description": "Sobe a rodada da atividade e volta a etapa para a exploração. **Nada é apagado**: as sessões, as tríades, os pares e as reflexões da rodada anterior ficam, e são elas que o painel de habilidades mostra como a rodada passada (ADR-112). A cobertura também fica — o preparo custou tempo da professora.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Repetir o mesmo tema com a mesma turma mede memória, não leitura (PED-13): a tela avisa antes, e o guia recomenda homologar um tema novo, que abre OUTRA atividade na rodada 1.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/a-selecao/turmas/{turmaId}/coberturas": {
+      "get": {
+        "operationId": "ASelecaoTurmasController_coberturas",
+        "parameters": [
+          {
+            "name": "turmaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ativa": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "tema": {
+                          "type": "string"
+                        },
+                        "foco": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "origem": {
+                          "type": "string",
+                          "enum": [
+                            "padrao",
+                            "ia"
+                          ]
+                        },
+                        "rodada": {
+                          "type": "integer",
+                          "exclusiveMinimum": true,
+                          "minimum": 0
+                        },
+                        "etapa": {
+                          "type": "string",
+                          "enum": [
+                            "exploracao",
+                            "mural",
+                            "fichas",
+                            "explicacao"
+                          ]
+                        },
+                        "posts": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "enum": [
+                                  "post_a_1",
+                                  "post_a_2",
+                                  "post_a_3",
+                                  "post_a_4",
+                                  "post_b_1",
+                                  "post_b_2",
+                                  "post_b_3",
+                                  "post_b_4",
+                                  "post_c_1",
+                                  "post_c_2",
+                                  "post_c_3",
+                                  "post_c_4"
+                                ]
+                              },
+                              "perfil": {
+                                "type": "string",
+                                "enum": [
+                                  "@folhaoficial_",
+                                  "@voz_coletiva",
+                                  "@metrica_urbana"
+                                ]
+                              },
+                              "enquadramento": {
+                                "type": "string",
+                                "enum": [
+                                  "institucional",
+                                  "comunitario",
+                                  "estatistico"
+                                ]
+                              },
+                              "autoridadeCitada": {
+                                "type": "string",
+                                "maxLength": 60
+                              },
+                              "descricaoImagem": {
+                                "type": "string",
+                                "minLength": 5,
+                                "maxLength": 200
+                              },
+                              "legenda": {
+                                "type": "string",
+                                "minLength": 20,
+                                "maxLength": 320
+                              },
+                              "tagFonte": {
+                                "type": "string",
+                                "minLength": 2,
+                                "maxLength": 60
+                              },
+                              "tagAngulo": {
+                                "type": "string",
+                                "minLength": 2,
+                                "maxLength": 60
+                              },
+                              "curtidas": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 9999
+                              },
+                              "comentarios": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 999
+                              },
+                              "comentariosDestaque": {
+                                "type": "array",
+                                "minItems": 2,
+                                "maxItems": 2,
+                                "items": [
+                                  {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 140
+                                  },
+                                  {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 140
+                                  }
+                                ]
+                              },
+                              "grafico": {
+                                "type": "object",
+                                "properties": {
+                                  "tipo": {
+                                    "type": "string",
+                                    "enum": [
+                                      "barras",
+                                      "linhas",
+                                      "mapa-de-calor"
+                                    ]
+                                  },
+                                  "titulo": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 60
+                                  },
+                                  "unidade": {
+                                    "type": "string",
+                                    "maxLength": 10
+                                  },
+                                  "series": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "rotulo": {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "maxLength": 40
+                                        },
+                                        "valor": {
+                                          "type": "number",
+                                          "minimum": 0
+                                        }
+                                      },
+                                      "required": [
+                                        "rotulo",
+                                        "valor"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    "minItems": 2,
+                                    "maxItems": 6
+                                  },
+                                  "destaque": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 40
+                                  }
+                                },
+                                "required": [
+                                  "tipo",
+                                  "titulo",
+                                  "unidade",
+                                  "series"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "perfil",
+                              "enquadramento",
+                              "descricaoImagem",
+                              "legenda",
+                              "tagFonte",
+                              "tagAngulo",
+                              "curtidas",
+                              "comentarios",
+                              "comentariosDestaque"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "midia": {
+                          "type": "object",
+                          "properties": {
+                            "total": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "prontas": {
+                              "type": "integer",
+                              "minimum": 0
+                            }
+                          },
+                          "required": [
+                            "total",
+                            "prontas"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "tema",
+                        "foco",
+                        "origem",
+                        "rodada",
+                        "etapa",
+                        "posts",
+                        "midia"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "historico": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "tema": {
+                            "type": "string"
+                          },
+                          "foco": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "origem": {
+                            "type": "string",
+                            "enum": [
+                              "padrao",
+                              "ia"
+                            ]
+                          },
+                          "ativa": {
+                            "type": "boolean"
+                          },
+                          "criadaEm": {
+                            "type": "string"
+                          },
+                          "rodadas": {
+                            "type": "integer",
+                            "minimum": 0
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "tema",
+                          "foco",
+                          "origem",
+                          "ativa",
+                          "criadaEm",
+                          "rodadas"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "ativa",
+                    "historico"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "a-selecao"
+        ],
+        "summary": "A cobertura em andamento, COM o gabarito, e o histórico das atividades da turma.",
+        "description": "**Professor only**: é aqui que `enquadramento`, `tagFonte` e `tagAngulo` de cada post aparecem — são o roteiro de quem conduz. `historico` lista todas as coberturas (a ativa inclusa): cada uma é uma ATIVIDADE, e o `id` dela é o `atividadeId` do painel de habilidades.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- `rodadas` é a maior rodada com sessão daquela cobertura; 0 = nunca rodou.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/a-selecao/turmas/{turmaId}/gerar-conteudo": {
+      "post": {
+        "operationId": "ASelecaoTurmasController_gerarConteudo",
+        "parameters": [
+          {
+            "name": "turmaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "tema": {
+                      "type": "string"
+                    },
+                    "foco": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "origem": {
+                      "type": "string",
+                      "enum": [
+                        "padrao",
+                        "ia"
+                      ]
+                    },
+                    "usouIa": {
+                      "type": "boolean"
+                    },
+                    "posts": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "enum": [
+                              "post_a_1",
+                              "post_a_2",
+                              "post_a_3",
+                              "post_a_4",
+                              "post_b_1",
+                              "post_b_2",
+                              "post_b_3",
+                              "post_b_4",
+                              "post_c_1",
+                              "post_c_2",
+                              "post_c_3",
+                              "post_c_4"
+                            ]
+                          },
+                          "perfil": {
+                            "type": "string",
+                            "enum": [
+                              "@folhaoficial_",
+                              "@voz_coletiva",
+                              "@metrica_urbana"
+                            ]
+                          },
+                          "enquadramento": {
+                            "type": "string",
+                            "enum": [
+                              "institucional",
+                              "comunitario",
+                              "estatistico"
+                            ]
+                          },
+                          "autoridadeCitada": {
+                            "type": "string",
+                            "maxLength": 60
+                          },
+                          "descricaoImagem": {
+                            "type": "string",
+                            "minLength": 5,
+                            "maxLength": 200
+                          },
+                          "legenda": {
+                            "type": "string",
+                            "minLength": 20,
+                            "maxLength": 320
+                          },
+                          "tagFonte": {
+                            "type": "string",
+                            "minLength": 2,
+                            "maxLength": 60
+                          },
+                          "tagAngulo": {
+                            "type": "string",
+                            "minLength": 2,
+                            "maxLength": 60
+                          },
+                          "curtidas": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 9999
+                          },
+                          "comentarios": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 999
+                          },
+                          "comentariosDestaque": {
+                            "type": "array",
+                            "minItems": 2,
+                            "maxItems": 2,
+                            "items": [
+                              {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 140
+                              },
+                              {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 140
+                              }
+                            ]
+                          },
+                          "grafico": {
+                            "type": "object",
+                            "properties": {
+                              "tipo": {
+                                "type": "string",
+                                "enum": [
+                                  "barras",
+                                  "linhas",
+                                  "mapa-de-calor"
+                                ]
+                              },
+                              "titulo": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 60
+                              },
+                              "unidade": {
+                                "type": "string",
+                                "maxLength": 10
+                              },
+                              "series": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "rotulo": {
+                                      "type": "string",
+                                      "minLength": 1,
+                                      "maxLength": 40
+                                    },
+                                    "valor": {
+                                      "type": "number",
+                                      "minimum": 0
+                                    }
+                                  },
+                                  "required": [
+                                    "rotulo",
+                                    "valor"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                "minItems": 2,
+                                "maxItems": 6
+                              },
+                              "destaque": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 40
+                              }
+                            },
+                            "required": [
+                              "tipo",
+                              "titulo",
+                              "unidade",
+                              "series"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "perfil",
+                          "enquadramento",
+                          "descricaoImagem",
+                          "legenda",
+                          "tagFonte",
+                          "tagAngulo",
+                          "curtidas",
+                          "comentarios",
+                          "comentariosDestaque"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "minItems": 12,
+                      "maxItems": 12
+                    }
+                  },
+                  "required": [
+                    "tema",
+                    "foco",
+                    "origem",
+                    "usouIa",
+                    "posts"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "a-selecao"
+        ],
+        "summary": "Gera um RASCUNHO dos 12 posts com IA, sobre o tema da professora (pré-aula).",
+        "description": "**Não persiste nada**: o que volta é rascunho para a tela editar, e publicar é o `POST homologar`.\n\nSem saldo de IA, com o provedor fora do ar ou com a saída fora do molde, volta o BANCO CURADO com `usouIa: false` e `origem: \"padrao\"` — e a tela diz que o tema padrão foi carregado, em vez de fingir que a IA respondeu.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Quota do PERFIL do professor (ADR-105): `temSaldo` antes, e o que o vendor cobrou é debitado por tentativa, inclusive as recusadas.\n- O lote gerado é recusado — e regerado uma vez — fora do 4:4:4, com legenda fora de 20 a 45 palavras ou com termo que antecipe a revelação (\"viés\", \"enquadramento\", \"lado da história\"…).\n- Os tetos de `tema` (5 a 100) e `foco` (até 100) são a primeira barreira contra injeção de instrução no gerador.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "tema": {
+                    "type": "string",
+                    "minLength": 5,
+                    "maxLength": 100
+                  },
+                  "foco": {
+                    "type": "string",
+                    "maxLength": 100
+                  }
+                },
+                "required": [
+                  "tema"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/a-selecao/turmas/{turmaId}/homologar": {
+      "post": {
+        "operationId": "ASelecaoTurmasController_homologar",
+        "parameters": [
+          {
+            "name": "turmaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "tema": {
+                      "type": "string"
+                    },
+                    "foco": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "origem": {
+                      "type": "string",
+                      "enum": [
+                        "padrao",
+                        "ia"
+                      ]
+                    },
+                    "rodada": {
+                      "type": "integer",
+                      "exclusiveMinimum": true,
+                      "minimum": 0
+                    },
+                    "etapa": {
+                      "type": "string",
+                      "enum": [
+                        "exploracao",
+                        "mural",
+                        "fichas",
+                        "explicacao"
+                      ]
+                    },
+                    "posts": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "enum": [
+                              "post_a_1",
+                              "post_a_2",
+                              "post_a_3",
+                              "post_a_4",
+                              "post_b_1",
+                              "post_b_2",
+                              "post_b_3",
+                              "post_b_4",
+                              "post_c_1",
+                              "post_c_2",
+                              "post_c_3",
+                              "post_c_4"
+                            ]
+                          },
+                          "perfil": {
+                            "type": "string",
+                            "enum": [
+                              "@folhaoficial_",
+                              "@voz_coletiva",
+                              "@metrica_urbana"
+                            ]
+                          },
+                          "enquadramento": {
+                            "type": "string",
+                            "enum": [
+                              "institucional",
+                              "comunitario",
+                              "estatistico"
+                            ]
+                          },
+                          "autoridadeCitada": {
+                            "type": "string",
+                            "maxLength": 60
+                          },
+                          "descricaoImagem": {
+                            "type": "string",
+                            "minLength": 5,
+                            "maxLength": 200
+                          },
+                          "legenda": {
+                            "type": "string",
+                            "minLength": 20,
+                            "maxLength": 320
+                          },
+                          "tagFonte": {
+                            "type": "string",
+                            "minLength": 2,
+                            "maxLength": 60
+                          },
+                          "tagAngulo": {
+                            "type": "string",
+                            "minLength": 2,
+                            "maxLength": 60
+                          },
+                          "curtidas": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 9999
+                          },
+                          "comentarios": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 999
+                          },
+                          "comentariosDestaque": {
+                            "type": "array",
+                            "minItems": 2,
+                            "maxItems": 2,
+                            "items": [
+                              {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 140
+                              },
+                              {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 140
+                              }
+                            ]
+                          },
+                          "grafico": {
+                            "type": "object",
+                            "properties": {
+                              "tipo": {
+                                "type": "string",
+                                "enum": [
+                                  "barras",
+                                  "linhas",
+                                  "mapa-de-calor"
+                                ]
+                              },
+                              "titulo": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 60
+                              },
+                              "unidade": {
+                                "type": "string",
+                                "maxLength": 10
+                              },
+                              "series": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "rotulo": {
+                                      "type": "string",
+                                      "minLength": 1,
+                                      "maxLength": 40
+                                    },
+                                    "valor": {
+                                      "type": "number",
+                                      "minimum": 0
+                                    }
+                                  },
+                                  "required": [
+                                    "rotulo",
+                                    "valor"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                "minItems": 2,
+                                "maxItems": 6
+                              },
+                              "destaque": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 40
+                              }
+                            },
+                            "required": [
+                              "tipo",
+                              "titulo",
+                              "unidade",
+                              "series"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "perfil",
+                          "enquadramento",
+                          "descricaoImagem",
+                          "legenda",
+                          "tagFonte",
+                          "tagAngulo",
+                          "curtidas",
+                          "comentarios",
+                          "comentariosDestaque"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "minItems": 12,
+                      "maxItems": 12
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "tema",
+                    "foco",
+                    "origem",
+                    "rodada",
+                    "etapa",
+                    "posts"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "a-selecao"
+        ],
+        "summary": "\"Aprovar Cobertura e Abrir Turma\" — a curadoria humana (ADR-66/67).",
+        "description": "Grava os 12 posts como a professora os deixou e os torna a ATIVIDADE em andamento. **Tema novo é atividade nova**: a cobertura anterior é desativada (fica, com as sessões dela) e o gate volta à rodada 1, na exploração.\n\nO corpo carrega os posts INTEIROS porque curadoria é editar: a professora pode reescrever qualquer legenda antes de aprovar.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- O lote é recusado com **400** `lote-invalido` e a LISTA de problemas em `erros`, em frases para a professora: 12 posts; ids de `post_a_1` a `post_c_4`, cada um uma vez; bloco `a` = `@folhaoficial_`/institucional, `b` = `@voz_coletiva`/comunitário, `c` = `@metrica_urbana`/estatístico (4:4:4); legenda de 20 a 45 palavras; nenhum termo que antecipe a revelação na legenda, na descrição da imagem ou nos comentários. (`.superRefine()` some do OpenAPI; daí esta nota.)\n- As imagens de post com a MESMA descrição da cobertura anterior são herdadas — o arquivo no bucket é o hash da descrição.\n- Homologar no meio da aula recomeça a aula: a etapa volta à exploração.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "tema": {
+                    "type": "string",
+                    "minLength": 5,
+                    "maxLength": 100
+                  },
+                  "foco": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "origem": {
+                    "type": "string",
+                    "enum": [
+                      "padrao",
+                      "ia"
+                    ]
+                  },
+                  "posts": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "enum": [
+                            "post_a_1",
+                            "post_a_2",
+                            "post_a_3",
+                            "post_a_4",
+                            "post_b_1",
+                            "post_b_2",
+                            "post_b_3",
+                            "post_b_4",
+                            "post_c_1",
+                            "post_c_2",
+                            "post_c_3",
+                            "post_c_4"
+                          ]
+                        },
+                        "perfil": {
+                          "type": "string",
+                          "enum": [
+                            "@folhaoficial_",
+                            "@voz_coletiva",
+                            "@metrica_urbana"
+                          ]
+                        },
+                        "enquadramento": {
+                          "type": "string",
+                          "enum": [
+                            "institucional",
+                            "comunitario",
+                            "estatistico"
+                          ]
+                        },
+                        "autoridadeCitada": {
+                          "type": "string",
+                          "maxLength": 60
+                        },
+                        "descricaoImagem": {
+                          "type": "string",
+                          "minLength": 5,
+                          "maxLength": 200
+                        },
+                        "legenda": {
+                          "type": "string",
+                          "minLength": 20,
+                          "maxLength": 320
+                        },
+                        "tagFonte": {
+                          "type": "string",
+                          "minLength": 2,
+                          "maxLength": 60
+                        },
+                        "tagAngulo": {
+                          "type": "string",
+                          "minLength": 2,
+                          "maxLength": 60
+                        },
+                        "curtidas": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9999
+                        },
+                        "comentarios": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 999
+                        },
+                        "comentariosDestaque": {
+                          "type": "array",
+                          "minItems": 2,
+                          "maxItems": 2,
+                          "items": [
+                            {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 140
+                            },
+                            {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 140
+                            }
+                          ]
+                        },
+                        "grafico": {
+                          "type": "object",
+                          "properties": {
+                            "tipo": {
+                              "type": "string",
+                              "enum": [
+                                "barras",
+                                "linhas",
+                                "mapa-de-calor"
+                              ]
+                            },
+                            "titulo": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 60
+                            },
+                            "unidade": {
+                              "type": "string",
+                              "maxLength": 10
+                            },
+                            "series": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "rotulo": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 40
+                                  },
+                                  "valor": {
+                                    "type": "number",
+                                    "minimum": 0
+                                  }
+                                },
+                                "required": [
+                                  "rotulo",
+                                  "valor"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "minItems": 2,
+                              "maxItems": 6
+                            },
+                            "destaque": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 40
+                            }
+                          },
+                          "required": [
+                            "tipo",
+                            "titulo",
+                            "unidade",
+                            "series"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "perfil",
+                        "enquadramento",
+                        "descricaoImagem",
+                        "legenda",
+                        "tagFonte",
+                        "tagAngulo",
+                        "curtidas",
+                        "comentarios",
+                        "comentariosDestaque"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "minItems": 12,
+                    "maxItems": 12
+                  }
+                },
+                "required": [
+                  "tema",
+                  "origem",
+                  "posts"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/a-selecao/turmas/{turmaId}/gerar-midia": {
+      "post": {
+        "operationId": "ASelecaoTurmasController_gerarMidia",
+        "parameters": [
+          {
+            "name": "turmaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "coberturaId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "total": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "prontas": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "faltam": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "geradas": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "post_a_1",
+                          "post_a_2",
+                          "post_a_3",
+                          "post_a_4",
+                          "post_b_1",
+                          "post_b_2",
+                          "post_b_3",
+                          "post_b_4",
+                          "post_c_1",
+                          "post_c_2",
+                          "post_c_3",
+                          "post_c_4"
+                        ]
+                      }
+                    },
+                    "falharam": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "post_a_1",
+                          "post_a_2",
+                          "post_a_3",
+                          "post_a_4",
+                          "post_b_1",
+                          "post_b_2",
+                          "post_b_3",
+                          "post_b_4",
+                          "post_c_1",
+                          "post_c_2",
+                          "post_c_3",
+                          "post_c_4"
+                        ]
+                      }
+                    },
+                    "completo": {
+                      "type": "boolean"
+                    },
+                    "midia": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "required": [
+                    "coberturaId",
+                    "total",
+                    "prontas",
+                    "faltam",
+                    "geradas",
+                    "falharam",
+                    "completo",
+                    "midia"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "a-selecao"
+        ],
+        "summary": "Gera as próximas imagens dos posts da cobertura em andamento — incremental.",
+        "description": "Doze imagens não cabem nos 30 s que o BFF dá a uma chamada: cada chamada gera ATÉ DUAS imagens novas, grava as URLs na cobertura e devolve o progresso. **Repita enquanto `completo` for `false` e a chamada anterior tiver gerado alguma** — `falharam` diz o que não saiu, e esses posts seguem com o card da descrição.\n\nIdempotente: o que já tem URL é pulado, e a imagem de mesma descrição que já está no bucket entra sem custo. Os posts de métricas do banco curado não pedem imagem: a experiência desenha o gráfico.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Quota do professor, com custo ESTIMADO por imagem (a geração não devolve contagem de tokens). Sem saldo responde **429** `sem-saldo-de-ia` — e a missão roda igual, com os cards.\n- Duas chamadas simultâneas para a mesma cobertura recebem o mesmo trabalho (lock de processo).",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/a-selecao/professor/material": {
+      "get": {
+        "operationId": "ASelecaoProfessorController_material",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "tema": {
+                      "type": "string"
+                    },
+                    "posts": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "enum": [
+                              "post_a_1",
+                              "post_a_2",
+                              "post_a_3",
+                              "post_a_4",
+                              "post_b_1",
+                              "post_b_2",
+                              "post_b_3",
+                              "post_b_4",
+                              "post_c_1",
+                              "post_c_2",
+                              "post_c_3",
+                              "post_c_4"
+                            ]
+                          },
+                          "perfil": {
+                            "type": "string",
+                            "enum": [
+                              "@folhaoficial_",
+                              "@voz_coletiva",
+                              "@metrica_urbana"
+                            ]
+                          },
+                          "enquadramento": {
+                            "type": "string",
+                            "enum": [
+                              "institucional",
+                              "comunitario",
+                              "estatistico"
+                            ]
+                          },
+                          "autoridadeCitada": {
+                            "type": "string",
+                            "maxLength": 60
+                          },
+                          "descricaoImagem": {
+                            "type": "string",
+                            "minLength": 5,
+                            "maxLength": 200
+                          },
+                          "legenda": {
+                            "type": "string",
+                            "minLength": 20,
+                            "maxLength": 320
+                          },
+                          "tagFonte": {
+                            "type": "string",
+                            "minLength": 2,
+                            "maxLength": 60
+                          },
+                          "tagAngulo": {
+                            "type": "string",
+                            "minLength": 2,
+                            "maxLength": 60
+                          },
+                          "curtidas": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 9999
+                          },
+                          "comentarios": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 999
+                          },
+                          "comentariosDestaque": {
+                            "type": "array",
+                            "minItems": 2,
+                            "maxItems": 2,
+                            "items": [
+                              {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 140
+                              },
+                              {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 140
+                              }
+                            ]
+                          },
+                          "grafico": {
+                            "type": "object",
+                            "properties": {
+                              "tipo": {
+                                "type": "string",
+                                "enum": [
+                                  "barras",
+                                  "linhas",
+                                  "mapa-de-calor"
+                                ]
+                              },
+                              "titulo": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 60
+                              },
+                              "unidade": {
+                                "type": "string",
+                                "maxLength": 10
+                              },
+                              "series": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "rotulo": {
+                                      "type": "string",
+                                      "minLength": 1,
+                                      "maxLength": 40
+                                    },
+                                    "valor": {
+                                      "type": "number",
+                                      "minimum": 0
+                                    }
+                                  },
+                                  "required": [
+                                    "rotulo",
+                                    "valor"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                "minItems": 2,
+                                "maxItems": 6
+                              },
+                              "destaque": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 40
+                              }
+                            },
+                            "required": [
+                              "tipo",
+                              "titulo",
+                              "unidade",
+                              "series"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "perfil",
+                          "enquadramento",
+                          "descricaoImagem",
+                          "legenda",
+                          "tagFonte",
+                          "tagAngulo",
+                          "curtidas",
+                          "comentarios",
+                          "comentariosDestaque"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "minItems": 12,
+                      "maxItems": 12
+                    },
+                    "roteiroDaEtapa4": {
+                      "type": "object",
+                      "properties": {
+                        "aviso": {
+                          "type": "string"
+                        },
+                        "perguntas": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          },
+                          "minItems": 3,
+                          "maxItems": 3
+                        }
+                      },
+                      "required": [
+                        "aviso",
+                        "perguntas"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "gatilhos": {
+                      "type": "object",
+                      "properties": {
+                        "mural": {
+                          "type": "string"
+                        },
+                        "fichas": {
+                          "type": "string"
+                        },
+                        "explicacao": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "mural",
+                        "fichas",
+                        "explicacao"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "colegasVirtuais": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "enum": [
+                              "tomas",
+                              "malu"
+                            ]
+                          },
+                          "nome": {
+                            "type": "string"
+                          },
+                          "selecao": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "enum": [
+                                "post_a_1",
+                                "post_a_2",
+                                "post_a_3",
+                                "post_a_4",
+                                "post_b_1",
+                                "post_b_2",
+                                "post_b_3",
+                                "post_b_4",
+                                "post_c_1",
+                                "post_c_2",
+                                "post_c_3",
+                                "post_c_4"
+                              ]
+                            },
+                            "minItems": 3,
+                            "maxItems": 3
+                          },
+                          "legenda": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "nome",
+                          "selecao",
+                          "legenda"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "tema",
+                    "posts",
+                    "roteiroDaEtapa4",
+                    "gatilhos",
+                    "colegasVirtuais"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "a-selecao"
+        ],
+        "summary": "O banco curado com o gabarito, o roteiro da Etapa 4 e os colegas virtuais.",
+        "description": "**Professor only.** Alimenta o bloco vivo do guia da aula.\n\nÉ o BANCO CURADO da Unooria (a Praça Central), não a cobertura da turma: se a professora homologou outro tema, ele está em `GET /a-selecao/turmas/:turmaId/coberturas`. Os dois coexistem de propósito — o guia é escrito sobre o banco curado, e uma turma com tema próprio não reescreve o guia.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Nada aqui é escopado por escola: é o catálogo da missão, igual para todo contrato.\n- `roteiroDaEtapa4.aviso` é a proteção do gap: as perguntas não podem ser lidas em voz alta antes de o Mural abrir.\n- `gatilhos` está chaveado pela etapa de DESTINO do botão — a mesma que o `POST :turmaId/gate` recebe.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token"
+      }
+    },
     "/foto-conta/sessao": {
       "get": {
         "operationId": "FotoContaController_sessao",
