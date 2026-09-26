@@ -101,6 +101,45 @@ await suite(
       inteira: true,
     });
 
+    // ── A Seleção (7º ano, unidade 1) ───────────────────────────────────
+    /* A suíte do estudante (estudante/11-a-selecao.mjs) corre ANTES e deixa a
+       turma com duas publicações pareadas: é a folha dela que este passo lê. */
+    const professorSetimo = conta("professor", { serie: "7EF" });
+    await r.entrar(p, professorSetimo.login);
+    await p.goto(`${HUB}/professor/entre-redes/7-ano/unidade-1/resultados`, {
+      waitUntil: "domcontentloaded",
+    });
+    await p.waitForSelector("select#turma", { timeout: 20_000 });
+    await p.waitForTimeout(1500);
+    const opcoesSetimo = await p
+      .locator("select#turma option")
+      .evaluateAll((os) => os.map((o) => ({ value: o.value, label: o.textContent ?? "" })));
+    const alvoSetimo = opcoesSetimo.find((o) => o.value);
+    if (alvoSetimo) {
+      await p.selectOption("select#turma", alvoSetimo.value);
+      await p.waitForURL("**turmaId=**", { timeout: 20_000 });
+      await p.waitForTimeout(2500);
+    }
+    r.exigir(
+      (await p.locator("[data-etapa]").count()) > 0,
+      "o botão único da aula e a etapa atual ficam na MESMA tela dos resultados",
+    );
+    const folhaSetimo = await p.locator("main").innerText().catch(() => "");
+    r.exigir(
+      !/\b(pontos|nota|score|ranking)\b/i.test(folhaSetimo),
+      "a folha da A Seleção não traz coluna de pontos",
+    );
+    await r.registrar(p, "resultados-a-selecao", {
+      titulo: "A aula da A Seleção e os resultados",
+      mostra:
+        "O preparo da cobertura, o botão que avança a turma (Mural, fichas, explicação), a folha " +
+        "por computador e o painel de habilidades da BNCC.",
+      prova:
+        "Conduzir e ler ficam juntos porque a condução acontece DURANTE a aula. A folha mostra " +
+        "o par e as lentes de cada computador, nunca uma nota.",
+      inteira: true,
+    });
+
     // ── unooGPT (2ª série EM, unidade 1) ────────────────────────────────
     const professorEM = conta("professor", { serie: "2EM" });
     await r.entrar(p, professorEM.login);
