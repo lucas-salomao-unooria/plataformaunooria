@@ -1,4 +1,6 @@
-# exp04ef1b — UnooTube
+# backup-exp04ef1b — UnooTube (ARQUIVADA, ADR-116)
+
+> Arquivada: o Jornal da Escola tomou o código `exp04ef1b`. Ver `AGENTS.md`.
 
 Clone educacional do YouTube Shorts sobre **fontes confiáveis vs. sensacionalismo**
 (Entre Redes · 4º ano EF · unidade 1). Portado do projeto standalone `UnooTube`

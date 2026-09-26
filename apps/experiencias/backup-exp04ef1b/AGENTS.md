@@ -1,14 +1,23 @@
-# apps/experiencias/exp04ef1b — em quais fontes você confiaria
+# apps/experiencias/backup-exp04ef1b — o UnooTube ARQUIVADO
 
 Complementa o `AGENTS.md` da raiz e o de `apps/experiencias`.
 
+> **Esta experiência está ARQUIVADA (ADR-116).** O Jornal da Escola tomou o
+> código `exp04ef1b` (4º ano, unidade 1), e o UnooTube ganhou o prefixo
+> `backup-` em vez de ser apagado. Ela **continua compilando e testando** no
+> turbo, mas: não é publicada (`deploy.yml` pula `backup-*`), não sobe no
+> Docker de dev, não aparece no catálogo, na grade nem no painel da Unooria, e o
+> módulo da api (`apps/api/src/backup-unootube`) não está no `app.module`.
+> O que segue descreve a missão como ela era — os caminhos de bucket
+> (`exp04ef1b/videos`) são onde a mídia continua de fato.
+
 | | |
 |---|---|
-| Manifesto | `exp04ef1b` · 4EF · `telemetria, progresso` |
-| Dev | `pnpm --filter @edu/exp04ef1b dev` → :5174 |
+| Manifesto | `backup-exp04ef1b` · 4EF · `telemetria, progresso` (arquivada) |
+| Dev | não sobe mais (a :5174 é do Jornal da Escola) |
 | DS | `@edu/ui/ds-unootube` na ficção, `@edu/ui/ds` na escola (a linha é a REVELAÇÃO — ver `packages/ui/AGENTS.md`) |
-| api | `/unootube/*` (`sessao`, `salvos`, `credibilidade`, `ranking`, `reiniciar`) |
-| e2e | `scripts/e2e/estudante/03-unootube.mjs` |
+| api | `apps/api/src/backup-unootube` — sem rotas servidas (era `/unootube/*`) |
+| e2e | `scripts/e2e/estudante/backup-03-unootube.mjs` — fora do runner |
 
 ## Os 21 vídeos não estão no git nem no bundle
 
