@@ -22,7 +22,7 @@ export type PassoDoEstudante =
   | "percurso"
   | "fim";
 
-/** O `SeletorDeTurma` é compartilhado com a exp02em1b e a exp07ef1b e exige
+/** O `SeletorDeTurma` é compartilhado com a exp02em1b e exige
  *  `estudantes`; a api o devolve sempre. */
 export interface TurmaDoRastro {
   id: string;

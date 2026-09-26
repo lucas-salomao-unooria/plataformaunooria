@@ -1,452 +1,400 @@
 import type { GuiaDaAula } from "./tipos";
 
 /**
- * Guia da aula de **O Eco no Grupo** (exp07ef1b, 7º ano · Unidade 1).
+ * O guia da aula da exp07ef1b — A Seleção, 7º ano, unidade 1.
  *
- * A única missão da trilha em DUAS aulas, e a única em que a professora aperta
- * botões durante a aula: abrir a Aula 2, congelar para o debate e liberar o
- * "Meu percurso". Sem o primeiro, a turma inteira fica na tela de pausa — é o
- * suporte nº 1 desta missão.
+ * O que ele NÃO guarda, e vem da rota professor-only
+ * `GET /a-selecao/professor/material` como BLOCO VIVO
+ * (`guia/material-da-selecao.tsx`):
  *
- * O risco pedagógico específico daqui não é a criança não entender: é ela
- * entender e sair caçando culpado em casa. A tia que encaminha áudio no grupo
- * da família é a primeira pessoa em quem um estudante de 12 anos pensa, e a
- * missão não é sobre ela. Os cuidados desta página existem por causa disso.
+ * - as TRÊS PERGUNTAS da Etapa 4 e o aviso de proteção do gap — verbatim do
+ *   sheet (`design/06-copy-strings-revisada.md`, "Strings do professor"), e na
+ *   api para que corrigir uma pergunta não exija republicar o hub;
+ * - QUANDO apertar cada botão (`prof.gatilho.*`), a mesma frase que o painel
+ *   da aula mostra ao lado do botão;
+ * - as seleções do Tomás e da Malu e os 12 posts com as fichas — é o que a
+ *   turma lê na tela, e descrever também é copiar.
  *
- * **O que ele NÃO guarda são as três respostas.** Elas vêm de
- * `GET /o-eco-no-grupo/professor/material` como BLOCO VIVO, ancorado ao Debate,
- * com o desfecho e as falas que o bairro devolve. É da reação que a turma fala
- * depois, e reação não cabe em paráfrase.
+ * Por isso as perguntas de `debate.perguntas` abaixo NÃO são as três do
+ * roteiro: são a escada para depois das fichas acesas, quando a turma já viu
+ * quem cada post ouviu. As do roteiro são para o Mural nu.
+ *
+ * O que ele guarda é o que só existe aqui: o que NÃO dizer antes do Mural, a
+ * condução de uma sala que acha que o colega "errou", e as duas adaptações que
+ * esta missão trata de um jeito próprio — equipes (o Mural pareia
+ * COMPUTADORES) e a aula projetada (o par é um colega virtual, e a evidência
+ * chega "a revisar").
  */
 export const GUIA_EXP07EF1B: GuiaDaAula = {
   expId: "exp07ef1b",
   chamada:
-    "Duas aulas de 30 a 35 min, com uma pausa entre elas. Você conduz por três botões no painel — e sem o primeiro deles a turma não passa da investigação.",
+    "Uma aula sobre o poder de quem escolhe. Ninguém mente na cobertura: os doze posts são " +
+    "verdadeiros. O ponto de virada é ver no Mural que o colega, com o mesmo feed, contou outra " +
+    "história — e perceber que a sua também tinha um lado.",
 
   avisos: [
     {
-      tom: "warning",
-      titulo: "Esta missão tem duas aulas, e é você que abre a segunda",
+      tom: "error",
+      titulo: "Não leia as perguntas do debate antes do Mural",
       texto:
-        "No fim da Aula 1 a turma trava numa tela de pausa com o progresso salvo. Os três momentos — abrir a Aula 2, congelar para o debate e liberar o Meu percurso — ficam em Resultados da turma. Sem o primeiro, ninguém avança.",
+        "Aviso de proteção do gap: as três perguntas da Etapa 4 só depois que o Mural estiver na " +
+        "tela. Lidas antes, elas dizem à turma o que procurar no feed — e a seleção deixa de ser " +
+        "espontânea, que é justamente o que o Mural compara.",
     },
     {
-      tom: "info",
-      titulo: "Prepare a mídia uma vez, antes da primeira turma",
+      tom: "warning",
+      titulo: "Um botão só conduz a aula, e ele não volta",
       texto:
-        "As vozes e as fotos são geradas e ficam prontas no painel de resultados. Leva cerca de dois minutos e vale para todas as turmas da escola. Sem preparar, a missão roda igual: o áudio cai na transcrição (que está sempre na tela) e a foto na ilustração — mas a cena perde força.",
+        "Em A aula e os resultados, o mesmo botão mostra sempre a próxima etapa: Liberar Mural " +
+        "da Turma, Revelar Fichas Técnicas e Liberar Conclusão Individual. Ele avança uma etapa " +
+        "por vez, para a turma inteira, e não desfaz. Espere cerca de 80% dos computadores " +
+        "publicarem antes do primeiro clique.",
     },
   ],
 
   objetivos: [
-    "Identificar, num conteúdo que circula, o que foi recortado — e distinguir recorte de mentira.",
-    "Localizar a fonte completa de uma informação antes de repassá-la ou responder a ela.",
-    "Explicar por que um selo de “encaminhada com frequência” fala de volume, e não de veracidade.",
-    "Intervir num grupo com a informação verificada, sem hostilizar quem repassou.",
-    "Nomear dois critérios próprios de checagem que caibam no tempo real de quem recebe uma mensagem.",
+    "Selecionar conteúdos de um feed e publicá-los com uma legenda que justifique a escolha.",
+    "Reconhecer que toda seleção de notícias destaca algumas vozes e deixa outras de fora, mesmo quando todos os fatos são verdadeiros.",
+    "Comparar a própria publicação com a de um colega sobre o mesmo acontecimento, identificando quem cada uma ouviu.",
+    "Tratar a versão do colega como legítima, mesmo quando ela contradiz a sua.",
   ],
 
   bncc: [
     {
-      codigo: "EF07CO08",
-      texto: "Demonstrar empatia sobre opiniões divergentes na web.",
+      /* A PRINCIPAL, verbatim do complemento de Computação à BNCC (a mesma
+         linha de `apps/api/src/curriculo/dados/habilidades-computacao.ts`).
+         É a que a ficha pedagógica mede pela legenda (Canal A) e pela
+         primeira enquete da Amara. */
+      codigo: "EF07CO11",
+      texto:
+        "Criar, documentar e publicar, de forma individual ou colaborativa, produtos (vídeos, podcasts, web sites) usando recursos de tecnologia.",
       eixo: "Cultura Digital",
       principal: true,
       ondeAcontece:
-        "A escolha da resposta: a opção que funciona cita a matéria sem atacar ninguém, e a que briga e sai do grupo faz o bairro entrar em pânico na frente do estudante.",
+        "Etapas 2 e 3: o estudante garimpa o feed, poda os salvos até três, documenta a intenção editorial na legenda e publica nos Stories do grêmio — sem volta. A inteligência artificial lê a legenda e sugere um nível no painel de habilidades, que você confere.",
     },
     {
-      codigo: "EF69CO11",
-      texto:
-        "Apresentar conduta e linguagem apropriadas ao se comunicar em ambiente digital, considerando a ética e o respeito.",
+      /* Verbatim do mesmo documento. A segunda enquete da Amara mede esta. */
+      codigo: "EF07CO08",
+      texto: "Demonstrar empatia sobre opiniões divergentes na web.",
       eixo: "Cultura Digital",
       ondeAcontece:
-        "As três respostas são três condutas, e cada uma tem consequência dentro da ficção — inclusive a possibilidade de apagar para todos e tentar de novo.",
-    },
-    {
-      codigo: "EF07CO09",
-      texto: "Reconhecer e debater sobre cyberbullying.",
-      eixo: "Cultura Digital",
-      ondeAcontece:
-        "O debate: o grupo em pânico procura um culpado, e é aí que se conversa sobre o que acontece com a pessoa apontada — inclusive quando ela repassou de boa-fé.",
+        "Etapa 4: no Mural, a publicação do colega conta outra história com os mesmos fatos. A mediação pede que a turma entenda a escolha do outro antes de julgá-la, e a última enquete registra essa leitura.",
     },
   ],
 
   antes: {
     tecnico: [
       {
-        titulo: "Libere a missão para a turma.",
-        texto: "Minhas turmas → a turma → Missões. Sem isso a criança vê cadeado.",
+        titulo: "Decida se vai trocar o tema",
+        texto:
+          "Sem preparo, a turma roda a cobertura curada da Unooria: a reforma e ocupação da praça central. Para um tema da sua cidade, vá em A aula e os resultados, escreva o evento, clique em Gerar Lote com IA, edite as legendas que quiser e clique em Aprovar Cobertura e Abrir Turma. Nenhum texto gerado por inteligência artificial chega à turma sem esse clique.",
       },
       {
-        titulo: "Prepare a mídia da missão no painel.",
+        titulo: "Gere as imagens depois de aprovar",
         texto:
-          "Uma vez por escola, cerca de dois minutos, em Resultados da turma. Vale para todas as turmas — não é por aula.",
+          "O botão Gerar imagens trabalha duas por vez e mostra quantas estão prontas; pode levar alguns minutos, então faça antes da aula. Post sem imagem aparece com a descrição da cena, e a missão roda igual. Os posts de números da cobertura curada já têm gráfico e não pedem imagem.",
       },
       {
-        titulo: "Confira os fones.",
+        titulo: "Monte as equipes se faltar computador",
         texto:
-          "Há dois áudios no chat e um episódio de recapitulação na Aula 2. Sem fone, a transcrição na tela cobre tudo (ela está sempre visível, por acessibilidade), mas o áudio alarmado é metade da força da cena.",
+          "Na ficha da missão, em Equipes desta turma. O Mural pareia COMPUTADORES: dois estudantes no mesmo aparelho nunca são pareados entre si. Veja “Menos aparelhos que estudantes”, em Adaptações.",
       },
       {
-        titulo: "Reserve as duas aulas seguidas na agenda.",
+        titulo: "Deixe o painel aberto no seu computador",
         texto:
-          "O progresso fica salvo, mas a pausa foi desenhada para uma aula e a seguinte. Com uma semana no meio, o episódio de recapitulação vira a única lembrança que a turma tem — e ele foi feito para reforçar, não para substituir.",
-      },
-      {
-        titulo: "Deixe o painel aberto durante as duas aulas.",
-        texto:
-          "É de lá que saem os três botões. Você vai apertá-los no meio da aula, com a turma olhando: não dá para procurar a tela na hora.",
+          "O número de computadores que publicaram anda sozinho, e é por ele que você decide a hora do Mural. O projetor é muito recomendado para o debate — sem ele, cada um vê a comparação na própria tela.",
       },
     ],
     pedagogico: [
       {
-        titulo: "Não anuncie que é uma aula sobre fake news.",
+        titulo: "Leia os 12 posts e as fichas antes",
         texto:
-          "Aos 12 anos essa expressão já vem com resposta pronta (“não pode acreditar em tudo”), e a criança passa a missão inteira procurando a mentira em vez de investigar a história. Anuncie o enredo: “uma amiga te chama, o grupo do bairro está em pânico”.",
+          "Estão no fim da seção do debate. Conhecer as três lentes — quem cada veículo ouviu e que ângulo a imagem mostra — é o que permite reconhecer, no Mural, o que cada publicação deixou de fora.",
       },
       {
-        titulo: "Decida antes como vai tratar o grupo da família.",
+        titulo: "Prepare-se para quem escolhe “um de cada”",
         texto:
-          "Ele VAI aparecer no debate, e com nome de gente real. Prepare a frase que devolve a conversa ao mecanismo: “a sua tia recebeu o mesmo print que vocês receberam aqui. O que ela tinha para saber que faltava um pedaço?”",
+          "Algum estudante vai pegar um post de cada veículo achando que resolveu o problema. Não resolveu, e isso é material de debate: equilibrar também é escolher, e nove posts ficaram de fora do mesmo jeito.",
       },
       {
-        titulo: "Combine que ninguém conta a resposta.",
+        titulo: "Mantenha o debate curto, em dois tempos",
         texto:
-          "Quem chega ao fim da Aula 1 descobre o parágrafo cortado. Se contar em voz alta, tira dos colegas a única coisa que a Aula 1 pede: achar sozinho.",
-      },
-      {
-        titulo: "Guarde 13 minutos da Aula 2 para o debate.",
-        texto:
-          "Os três quadros de sistematização explicam os conceitos, mas nomear não é entender. É no debate que a turma liga o enquadramento parcial ao print que ela mesma quase repassou.",
+          "A avaliação pedagógica apontou que quinze minutos seguidos de conversa com a turma toda dispersam. A aula já divide o debate em dois: um com o Mural nu, outro com as fichas acesas. Cinco a oito minutos em cada.",
       },
     ],
     naoDiga: [
-      "“Uma dessas mensagens é falsa.” — nenhuma é. A foto é real, a moradora está com medo de verdade, e o print não inventou nada: cortou. É esse o assunto.",
-      "“Prestem atenção no print.” — entrega a investigação inteira; a Aula 1 existe para que a criança chegue nele sozinha.",
-      "“Amara vai te ajudar.” — ela fica em silêncio absoluto durante a investigação, de propósito. A criança que espera ajuda dela para de procurar.",
-      "“Vocês vão ver o que acontece com quem repassa boato.” — transforma a missão em punição e a turma passa a responder o que o professor quer ouvir.",
+      '"Hoje vamos falar de viés" (nem de fake news). Anunciado o tema, a turma escolhe um de cada veículo para cumprir a regra, e o Mural deixa de mostrar o recorte de verdade.',
+      '"Escolham os posts mais neutros." Não existe post neutro na cobertura — e a descoberta da aula é exatamente essa.',
+      '"Esse veículo está mentindo." Nenhum mente: os doze posts são verdadeiros. O que muda é quem cada um ouviu.',
+      '"Quem escolheu errado?" Não há seleção errada. A plataforma rotula a publicação (a lente de cada post), nunca a criança.',
     ],
   },
 
   roteiro: {
-    total: "2 aulas de 30–35 min, com pausa entre elas",
+    total: "1 aula · 50 min",
     linhas: [
       {
-        tempo: "Aula 1 · 0–5",
-        momento: "Enquadramento.",
+        tempo: "0–3",
+        momento: "O pedido da Amara",
         professor:
-          "“Uma amiga de vocês, a Amara, vai chamar no privado. O grupo do bairro dela está em pânico por causa de um print. Descubram de onde saiu essa história.” Nada além disso.",
+          "Deixe a mensagem falar sozinha. Se perguntarem o que é “o que realmente aconteceu”, devolva: é você quem decide.",
       },
       {
-        tempo: "Aula 1 · 5–8",
-        momento: "Entrada: Amara chama no privado e manda o estudante olhar o grupo.",
+        tempo: "3–15",
+        momento: "O feed e os salvos",
         professor:
-          "Lembre dos fones. Avise que a transcrição de cada áudio está na tela, para quem não tiver.",
+          "Circule sem comentar fonte nem veículo. Quem travar, lembre só que no fim ficam exatamente três.",
       },
       {
-        tempo: "Aula 1 · 8–25",
-        momento:
-          "Investigação do grupo “Comunidade Alerta”: o áudio da moradora, as mensagens indignadas, o print encaminhado. Tocando no print, a reportagem completa abre — e mostra o parágrafo que foi cortado.",
+        tempo: "15–20",
+        momento: "A legenda e a publicação",
         professor:
-          "Circule em silêncio. Quem perguntar “é verdade ou mentira?”, devolva: “o que dá para saber com o que está aí?”. Se alguém achar o parágrafo e comemorar alto, peça segredo — com cumplicidade, não com bronca.",
+          "Acompanhe no painel quantos computadores já publicaram. Quem publicou espera em silêncio, de propósito — não comente o conteúdo.",
       },
       {
-        tempo: "Aula 1 · 25–30",
-        momento:
-          "A missão para na tela de pausa, com o progresso salvo. A Aula 1 acaba aqui, de propósito.",
+        tempo: "20–28",
+        momento: "O Mural da Turma",
         professor:
-          "Não abra a Aula 2 hoje, mesmo que sobre tempo. A pausa é o que faz a turma chegar junta à decisão — e a noite entre as aulas é onde a criança pensa no assunto sozinha.",
+          "Com cerca de 80% publicado, peça atenção e aperte. Deixe a turma olhar os Stories pareados antes de qualquer pergunta; depois, as perguntas 1 e 2 do roteiro da Etapa 4.",
+        botao: "Liberar Mural da Turma",
       },
       {
-        tempo: "Aula 2 · 0–2",
-        momento: "Retomada e liberação da Aula 2.",
+        tempo: "28–36",
+        momento: "As fichas técnicas",
         professor:
-          "“Onde a gente parou?” Ouça duas respostas antes de apertar o botão — assim quem faltou entra na conversa.",
-        botao: "Abrir a Aula 2",
+          "Aperte depois de ouvir os primeiros comentários sobre as diferenças. As etiquetas mostram quem cada post ouviu; puxe a pergunta 3 e a escada abaixo.",
+        botao: "Revelar Fichas Técnicas",
       },
       {
-        tempo: "Aula 2 · 2–5",
-        momento: "O episódio de recapitulação (cerca de 2 min) recoloca a turma na história.",
-        professor: "Silêncio. É curto.",
+        tempo: "36–44",
+        momento: "A conclusão individual",
+        professor:
+          "Os três cards e a mensagem final da Amara. Cada card segura 8 segundos: não apresse quem está lendo.",
+        botao: "Liberar Conclusão Individual",
       },
       {
-        tempo: "Aula 2 · 5–12",
-        momento:
-          "O menu com as 3 respostas. Quem cita a matéria vê o administrador fixar a mensagem no topo; quem responde no impulso vê o bairro entrar em pânico — e ganha um botão para apagar para todos e tentar de novo.",
+        tempo: "44–50",
+        momento: "A reflexão e as enquetes",
         professor:
-          "Não olhe por cima do ombro de ninguém neste momento. A escolha impulsiva precisa ser possível sem plateia: é o erro com reparo imediato que ensina, e ele não sobrevive à vergonha.",
-      },
-      {
-        tempo: "Aula 2 · 12–15",
-        momento:
-          "Os três quadros de sistematização: enquadramento parcial, contexto omitido e rótulo de encaminhamento.",
-        professor:
-          "Congele as telas quando a maioria tiver respondido. A partir daqui a conversa é da sala, não do aparelho.",
-        botao: "Congelar para o debate",
-      },
-      {
-        tempo: "Aula 2 · 15–28",
-        momento: "Debate com a turma inteira.",
-        professor:
-          "Comece pela foto, não pela mensagem: “a foto do print era falsa?”. A resposta é não, e é dela que sai a aula toda.",
-      },
-      {
-        tempo: "Aula 2 · 28–35",
-        momento:
-          "“Meu percurso”: cada estudante marca 2 critérios de checagem e escreve uma justificativa.",
-        professor:
-          "Libere e deixe escrever em silêncio. Recolha em voz alta três critérios diferentes e escreva na lousa — eles viram o combinado da turma.",
-        botao: "Liberar o Meu percurso",
+          "Diga antes que só você lê o texto, e deixe escrever em silêncio. Feche com a síntese em voz alta.",
       },
     ],
-    nota: "Os três botões são um caminho só, sem volta: abrir a Aula 2, congelar, liberar. Se a turma andar mais rápido que o previsto, adiante — mas não congele antes de a maioria ter respondido, ou o pico da missão (a cascata de reações no grupo) acontece com metade da sala olhando para uma tela parada.",
+    nota:
+      "Em dois blocos de 25 min, corte depois da publicação: a turma volta com tudo salvo, e o Mural abre o segundo bloco. O que não se corta é a espera entre publicar e abrir o Mural — é ela que faz a turma chegar junta.",
   },
 
   debate: {
-    aberturaNaLousa: "A foto do print era verdadeira. Então por que ela enganou o bairro inteiro?",
+    aberturaNaLousa: "Os fatos eram os mesmos. Por que as histórias ficaram tão diferentes?",
     tempo:
-      "13 minutos, na Aula 2, com as telas congeladas. A pergunta da lousa é a única que precisa ser feita exatamente assim: ela recusa de saída a explicação fácil (“era mentira”) e obriga a turma a procurar outra coisa.",
+      "Cerca de 15 minutos, em dois tempos: as três perguntas do roteiro da Etapa 4 (no bloco abaixo) são para o Mural nu; as quatro desta escada, para quando as fichas acenderem.",
     perguntas: [
       {
         nivel: "retomada",
-        pergunta: "O que a moradora dizia no áudio? Ela mentiu?",
-        porQue:
-          "Não mentiu: ela estava com medo, e o medo dela era real. Instalar isso cedo evita que o debate vire caça ao culpado — que é o desfecho errado mais provável desta missão.",
-      },
-      {
-        nivel: "retomada",
         pergunta:
-          "O que aparecia no print? E o que aparecia na foto inteira, na matéria completa?",
+          "Quem cada post da sua publicação ouviu? Olhe a ficha técnica: a fonte ouvida e o ângulo da imagem.",
         porQue:
-          "A mesma cena. O print mostra só a viatura; a foto inteira mostra a feira acontecendo em paz ao lado. Deixe a turma dizer a diferença antes de você nomeá-la.",
-      },
-      {
-        nivel: "analise",
-        pergunta: "Quem cortou a foto tinha que mentir para enganar?",
-        porQue:
-          "É o coração da missão. Recortar é uma escolha sobre o que mostrar, e ela funciona melhor que a mentira justamente porque cada pedaço é verdadeiro e checável.",
+          "Começa pelo que está na tela, não pelo julgamento. Nomear a fonte a partir da ficha — a prefeitura, os moradores, os números — é o que a criança leva para o celular dela.",
       },
       {
         nivel: "analise",
         pergunta:
-          "O parágrafo que sumiu dizia que o evento tinha alvará e que a polícia estava organizando o trânsito. Por que justo esse pedaço?",
+          "Por que a sua seleção pendeu para esse lado? Foi a imagem, a legenda, as curtidas?",
         porQue:
-          "Leva a turma a perceber intenção sem precisar de teoria da conspiração: o pedaço retirado é exatamente o que desmontaria a história. Recorte não é descuido.",
-      },
-      {
-        nivel: "analise",
-        pergunta:
-          "O selo “Encaminhada com frequência” fez vocês confiarem mais ou menos na mensagem? Por quê?",
-        porQue:
-          "O selo diz volume de repasse, e o aplicativo real diz a mesma coisa. Muita gente encaminhando é sinal de que a mensagem é boa de encaminhar — não de que é verdadeira.",
+          "Põe o mecanismo à vista: nessa idade se julga pela forma, e a foto bonita da maquete puxa a escolha tanto quanto o texto. Ninguém precisa dizer que errou para responder.",
       },
       {
         nivel: "generalizacao",
         pergunta:
-          "De quem é a responsabilidade por um boato: de quem inventou ou de quem repassou?",
+          "Dá para publicar uma cobertura sem escolher um lado? E quem escolheu um post de cada veículo — o que ficou de fora mesmo assim?",
         porQue:
-          "A pergunta que abre a conversa sobre empatia (EF07CO08). Não force consenso: o valor está em a turma perceber que quem repassa quase sempre está de boa-fé, e que isso não anula o estrago.",
-      },
-      {
-        nivel: "generalizacao",
-        pergunta:
-          "O que muda quando a resposta certa chega ao grupo de um jeito agressivo?",
-        porQue:
-          "Quem escolheu brigar e sair viu o bairro entrar em pânico. Ligue a consequência à conduta: estar certo não é suficiente para consertar um grupo.",
-      },
-      {
-        nivel: "transferencia",
-        pergunta: "Qual foi a última coisa que você encaminhou sem ter aberto o link?",
-        porQue:
-          "Faça essa pergunta respondendo primeiro, com um exemplo seu. Adulto faz isso o tempo todo, e admitir muda a temperatura da sala inteira.",
+          "É a ilusão da neutralidade, o primeiro card da conclusão. Deixe a turma chegar lá antes do card: a resposta útil é que decidir o que mostrar já é tomar um lado.",
       },
       {
         nivel: "transferencia",
         pergunta:
-          "Chega um print no grupo da sua família agora. O que você faz nos próximos 30 segundos?",
+          "Pense numa notícia sobre a nossa cidade que você viu esta semana. Quem estava falando nela — e quem não apareceu?",
         porQue:
-          "Trinta segundos é o tempo real que a pessoa tem. Recuse respostas que não caibam nele (“pesquisar em três sites”) e peça o gesto possível: procurar a matéria inteira, olhar a data, perguntar de onde veio.",
+          "Tira a lição da ficção e a leva para o feed de verdade. Cace o verbo: perguntar quem foi ouvido. É a mesma pergunta que a reflexão final faz sobre o repórter e a diretoria.",
       },
     ],
   },
 
   observacao: {
     intro:
-      "Marque UMA letra por estudante durante o debate. A tela já registra quem abriu a matéria completa antes de responder; o que ela não registra é como a criança trata quem errou — e é isso que esta missão avalia.",
+      "Anote ao lado do nome (ou da equipe) durante o Mural e o debate. Nada disso é nota — e nada disso é “qual lente ele escolheu”, que a plataforma já mostra sem julgar.",
     marcas: [
-      { letra: "F", texto: "usou o conteúdo da matéria completa para sustentar o que disse" },
-      { letra: "R", texto: "reconheceu o recorte: disse que a foto era verdadeira E enganava" },
-      { letra: "E", texto: "falou de quem repassou sem hostilizar — nomeou o engano, não a pessoa" },
-      { letra: "N", texto: "não participou" },
+      {
+        letra: "C",
+        texto:
+          "Comentou a diferença entre a própria publicação e a do colega antes de você perguntar.",
+      },
+      {
+        letra: "F",
+        texto:
+          "Nomeou quem foi ouvido (a prefeitura, os moradores, os números) em vez de dizer que o outro errou.",
+      },
+      {
+        letra: "O",
+        texto:
+          "Disse o que ficou de fora da própria seleção — não só da do colega.",
+      },
+      {
+        letra: "E",
+        texto:
+          "Defendeu a publicação do colega como verdadeira, mesmo discordando dela.",
+      },
     ],
     nota:
-      "O E é o objetivo principal desta missão (EF07CO08) e o mais fácil de não ver: ele aparece em meia frase, do tipo “ela não sabia”. Vale marcar na hora, porque some do registro escrito.",
+      "O E é a evidência que nenhum número do painel captura: a empatia com a versão do outro acontecendo em voz alta. A última enquete da Amara mede a mesma habilidade, num toque.",
   },
 
   mediacao: [
     {
-      quando: "A turma quer descobrir quem inventou o boato.",
-      faca: "A missão não diz, e isso é resposta: na vida também quase nunca se sabe. Redirecione: “vamos supor que a gente nunca descubra. O que dava para fazer mesmo assim?”",
+      quando: "Alguém diz que o colega “errou” ou “mentiu” na publicação",
+      faca:
+        "Volte à ficha: o post do colega é verdadeiro, só ouviu outra fonte. Pergunte o que aquela escolha mostra que a outra não mostra.",
       naoFaca:
-        "Deixar a caçada correr “só um pouquinho”. Ela consome o tempo do debate e termina em nada, porque não há nada para achar.",
+        "Concordar que alguém escolheu errado. Não há seleção errada, e a próxima turma aprende a esconder o que escolheu.",
     },
     {
-      quando: "Alguém diz que a moradora do áudio mentiu.",
-      faca: "Volte ao áudio: o que ela afirmou de falso? Nada. Ela contou o que viu, com medo, sem o pedaço que faltava — que é exatamente o que aconteceu com a própria turma na Aula 1.",
+      quando: "A turma conclui que “então tudo é mentira”",
+      faca:
+        "Não é: nenhum veículo mentiu. A lição é perguntar quem foi ouvido, não desconfiar de tudo.",
+      naoFaca: "Deixar passar. É a conclusão errada mais comum desta aula, e ela produz cinismo em vez de critério.",
     },
     {
-      quando: "A conversa vira “minha tia vive fazendo isso”.",
-      faca: "Acolha e mova para o mecanismo na mesma frase: “e o que a sua tia tinha, na tela dela, para saber que faltava um pedaço?”. A resposta é “nada” — e aí a conversa deixa de ser sobre a tia.",
-      naoFaca:
-        "Deixar a sala rir da família de alguém. Aos 12 anos isso vira apelido, e o estudante que contou não conta mais nada.",
+      quando: "O Mural de alguém mostra o Tomás ou a Malu",
+      faca:
+        "Diga que é uma seleção pré-gravada, escolhida para contrastar com a dele: acontece com quem publicou depois do Mural aberto, com a sala ímpar ou com a sala de um computador só. A comparação vale igual.",
     },
     {
-      quando: "Um estudante escolheu brigar e sair do grupo.",
-      faca: "Não comente com nome. No debate, pergunte à turma inteira o que acontece quando a resposta certa chega gritando — e deixe que ele reconheça a própria escolha sozinho, se quiser.",
+      quando: "Um computador ainda não publicou quando você abriu o Mural",
+      faca:
+        "Ele continua no feed e publica quando terminar: recebe o par na hora (um colega virtual, se não houver outro livre) e alcança a turma. Não espere todo mundo — espere cerca de 80%.",
     },
     {
-      quando: "Ninguém abriu a matéria completa antes de responder.",
-      faca: "É o melhor debate possível, e você tem o dado no painel. Diga o número sem nomes: “nenhum de vocês abriu a matéria antes de decidir. O que a gente faz com isso?”",
+      quando: "A legenda não passa e aparece um aviso para reescrever",
+      faca:
+        "A legenda vai aparecer para outro colega no Mural, então link, telefone, e-mail, marcação de @ e palavrão são barrados. As contas dos veículos (@folhaoficial_, @voz_coletiva, @metrica_urbana) podem ser citadas — citar a fonte é justamente o que a missão espera.",
     },
     {
-      quando: "A turma conclui que “não dá para acreditar em nada que chega em grupo”.",
-      faca: "Segure o pêndulo com um contraexemplo da própria missão: a matéria completa existia, era acessível, e bastava um toque. O problema não era falta de informação — era ninguém ter ido buscá-la.",
-    },
-    {
-      quando: "Alguém pergunta qual era a resposta certa.",
-      faca: "Diga que a missão avalia o percurso, não a letra — e devolva: “o que o grupo precisava para se acalmar?”. A turma responde “a matéria”, e responde sozinha.",
-      naoFaca:
-        "Confirmar “era a B”. A letra não existe no aparelho de propósito: a tela nunca compara a escolha com um gabarito, e transformar a aula num acerto de alternativa desfaz isso.",
+      quando: "Alguém usa a legenda para provocar o colega",
+      faca:
+        "O filtro barra link, telefone e palavrão, não uma frase maldosa. Leia o Mural com a turma e interrompa: a legenda fala da cobertura, não de quem vai lê-la.",
     },
   ],
 
   depois: {
     sintese: [
-      "“A foto era verdadeira. A matéria era verdadeira. O que enganou o bairro foi o pedaço que ficou de fora.”",
-      "“Encaminhada com frequência quer dizer que muita gente repassou. Não quer dizer que é verdade — o aplicativo real diz exatamente a mesma coisa.”",
-      "“Quem repassou não estava mentindo, estava com medo. Corrigir a informação sem atacar a pessoa é o que faz o grupo se acalmar.”",
+      "Escolher o que publicar já é contar a história por um lado.",
+      "Os fatos podem ser todos verdadeiros e a história, mesmo assim, ficar pela metade.",
+      "Antes de acreditar numa cobertura, pergunte: quem foi ouvido, e quem ficou de fora?",
     ],
     registro:
-      "O “Meu percurso”, dentro da missão: dois critérios de checagem marcados e uma justificativa escrita. Recolha três critérios diferentes em voz alta e escreva na lousa — vira o combinado da turma. Na semana seguinte, quando chegar um print de verdade em algum grupo da escola, aponte para a lousa: é o momento em que essa aula prova que serviu.",
+      "A reflexão individual da Etapa 6 — o repórter que cobre a reforma de uma escola ouvindo só a diretoria. Fica na folha da turma, e só você a lê. As duas enquetes da Amara, logo depois, alimentam o painel de habilidades.",
     produto: {
-      titulo: "Entregável opcional, em duplas (mais uma aula)",
+      titulo: "Os Stories da turma: a cobertura por inteiro",
       itens: [
-        "Reescrevam a mensagem que vocês mandariam no grupo — em no máximo 3 linhas, citando a matéria e sem culpar ninguém.",
-        "Encontrem, num grupo real de vocês (com autorização de quem mandou), uma mensagem encaminhada. Que pedaço dela dá para checar em 30 segundos?",
-        "Escrevam as duas perguntas que vocês fariam para si mesmos antes de encaminhar qualquer coisa.",
+        "Em grupos, escolham três posts que, juntos, ouçam as três lentes — e digam o que ainda ficou de fora.",
+        "Uma legenda coletiva que cite quem foi ouvido em cada post.",
+        "Uma linha final: a voz que nenhum dos doze posts ouviu, e onde a turma a procuraria.",
       ],
     },
     rubrica: {
-      nota: "A escolha da resposta não é nota. A missão dá, de propósito, a chance de apagar para todos e tentar de novo — punir a primeira escolha desfaz o desenho. O que se avalia é o que a criança sustenta no debate e escreve no “Meu percurso”.",
+      nota:
+        "Formativa, e sobre o RACIOCÍNIO — nunca sobre qual lente a criança escolheu. O painel de habilidades já traz a leitura da legenda (sugerida pela IA, que você confere) e as enquetes; esta rubrica é para a conversa e para a reflexão escrita.",
       criterios: [
         {
-          criterio: "Reconhecimento do recorte",
-          emDesenvolvimento: "Diz que o print era mentira.",
-          adequado:
-            "Diz que o print era verdadeiro e ainda assim enganava, porque faltava um pedaço.",
-          avancado:
-            "Aponta QUAL pedaço faltava e por que justamente aquele — percebe que o recorte foi escolhido.",
+          criterio: "Justificar a seleção",
+          emDesenvolvimento: "A legenda diz que os posts são “os melhores”, sem dizer por quê.",
+          adequado: "A legenda diz o que os três posts mostram sobre o acontecimento.",
+          avancado: "A legenda nomeia quem foi ouvido e admite o que ficou de fora.",
         },
         {
-          criterio: "Busca da fonte",
-          emDesenvolvimento: "Confia ou desconfia sem procurar nada.",
-          adequado: "Diz que foi (ou iria) atrás da matéria completa antes de responder.",
-          avancado:
-            "Propõe um jeito de checar que cabe em 30 segundos e explica por que aquele.",
+          criterio: "Reconhecer o recorte",
+          emDesenvolvimento: "Acha que a própria publicação conta a história toda.",
+          adequado: "Percebe que a do colega mostra algo que a sua não mostrou.",
+          avancado: "Explica que toda seleção deixa vozes de fora, inclusive a “equilibrada”.",
         },
         {
-          criterio: "Empatia com quem repassou",
-          emDesenvolvimento: "Culpa quem repassou (“burrice”, “tinha que ver”).",
-          adequado: "Reconhece que quem repassou estava de boa-fé e mesmo assim causou estrago.",
-          avancado:
-            "Formula uma correção que o outro conseguiria aceitar — corrige a informação sem atacar a pessoa.",
-        },
-        {
-          criterio: "Critérios próprios",
-          emDesenvolvimento: "Critério genérico (“ver se é verdade”).",
-          adequado: "Dois critérios aplicáveis: procurar a fonte, olhar a data, ver quem publicou.",
-          avancado:
-            "Critérios aplicáveis e a situação em que cada um serve — sabe que o critério muda conforme o que chega.",
+          criterio: "Respeitar a versão do outro",
+          emDesenvolvimento: "Diz que o colega errou ou foi enganado.",
+          adequado: "Aceita que a publicação do colega também é verdadeira.",
+          avancado: "Usa a publicação do colega para completar a própria leitura do acontecimento.",
         },
       ],
     },
     desdobramentos: [
-      "Língua Portuguesa: comparar a manchete, a legenda da foto e o parágrafo cortado. É análise de enquadramento com material que a turma já viveu — e cabe direto no trabalho com gêneros jornalísticos.",
-      "Arte: recortar uma foto de jornal de três jeitos diferentes, cada um contando uma história. A turma sente o enquadramento fazendo, não ouvindo.",
-      "História: a mesma operação em fonte histórica — a fotografia oficial que mostra a multidão e esconde o cordão de isolamento.",
-      "Convivência / Projeto de vida: escrever o combinado do grupo da turma no WhatsApp real (se houver). É o único desdobramento que muda o comportamento na mesma semana.",
-      "EF07CO09: se o debate levar ao que acontece com a pessoa apontada como culpada, você já está no conteúdo de cyberbullying — não desvie, aprofunde.",
+      /* Os dois códigos de Língua Portuguesa são os que a spec da missão
+         conecta, conferidos em `apps/api/src/curriculo/dados/habilidades-ef.ts`.
+         O texto abaixo segue as palavras deles sem citá-los por inteiro. */
+      "Língua Portuguesa: comparar notícias e reportagens sobre um mesmo fato divulgadas em diferentes mídias (EF07LP02) — os três veículos são o material pronto.",
+      "Língua Portuguesa: identificar em notícias o fato central e a perspectiva de abordagem (EF69LP03) — reescrever um post ouvindo uma voz que ele deixou de fora.",
+      "Leitura do bimestre: A Reportagem Que Não Saiu, o jornal que encerrou o caso ouvindo só o secretário da prefeitura. Peça que a turma diga quem mais deveria ter sido ouvido.",
     ],
   },
 
   cuidados: [
-    "Não deixe a turma sair caçando quem repassa boato na vida real. É o risco desta missão: o alvo mais próximo de um estudante de 12 anos é a própria família. Toda vez que um nome real aparecer, devolva a conversa ao mecanismo.",
-    "Nunca exponha quem escolheu a resposta impulsiva. A missão dá o apagar-para-todos justamente para que o erro tenha reparo — e reparo não convive com plateia.",
-    "Em nenhum momento a tela diz que alguém errou, e você também não deve dizer. O bairro entra em pânico dentro da ficção: a consequência é da história, não da criança.",
-    "Deixe explícito no fechamento que as vozes e as fotos foram geradas por IA para a atividade, e que o bairro, a matéria e as pessoas não existem.",
-    "O clone é escuro e não tem tema claro — é o que o design system publica. Não é preferência do estudante nem defeito.",
-    "Se algum estudante contar que já foi alvo de um boato, pare a aula e trate isso primeiro. É mais importante que o resto do roteiro, e é a única situação em que a missão sai de cena.",
+    "A legenda aparece para o colega pareado no Mural, com o primeiro nome de quem publicou (ou o nome da equipe). O filtro barra link, telefone, e-mail, @ e palavrão, mas não uma frase maldosa: leia o Mural com a turma.",
+    "A reflexão é lida só por você. A coordenação vê apenas que ela foi entregue. Diga isso em voz alta antes de liberar a conclusão: é o que faz a criança escrever o que pensa, e não o que soa bem.",
+    "A inteligência artificial lê a legenda e sugere um nível da EF07CO11 no painel de habilidades. O estudante não vê o nível, e a sugestão não é nota: confira e corrija o que não concordar. Quando a IA não responde, fica “Não avaliado” e quem decide é você.",
+    "Se você trocar o tema por um acontecimento real e quente da cidade, avise que os posts foram escritos para a aula — senão a família recebe em casa uma notícia que nasceu aqui. E evite pessoa real identificável no tema: o gerador recusa, mas quem aprova é você.",
   ],
 
   adaptacoes: [
     {
-      contexto: "Você só tem uma aula, não duas.",
+      contexto: "Menos aparelhos que estudantes.",
       comoAdaptar:
-        "Rode a Aula 1 inteira (investigação) e abra a Aula 2 na sequência, cortando o episódio de recapitulação e reduzindo o debate para 8 minutos. O que não se corta: a descoberta do parágrafo cortado e a pergunta da lousa.",
+        "Monte as equipes em “Equipes desta turma”, na ficha da missão (Minhas turmas → a turma → Conduzir com esta turma): um computador por equipe. Só um da equipe entra, e ele representa o grupo — a seleção e a legenda são negociadas em voz alta, e o Mural pareia COMPUTADORES, nunca dois estudantes do mesmo aparelho. Nos resultados da turma cada computador é uma linha, e o nível de quem entrou vale para a equipe. Na aula projetada, monte uma equipe só, com 1 computador: a turma escolhe junto no seu computador, o par no Mural é um colega virtual, e o resultado da evidência chega “a revisar” para todos até você confirmar, no painel de habilidades.",
     },
     {
-      contexto: "Um estudante faltou à Aula 1.",
+      contexto: "Dois computadores, com a sala em duas alas",
       comoAdaptar:
-        "O progresso é dele e fica salvo, então ele entra na Aula 2 sem ter investigado. Emparelhe-o com um colega durante o episódio de recapitulação e peça que o colega conte o que achou — contar é a melhor revisão que existe.",
+        "Monte duas equipes (Ala A e Ala B), cada uma num computador projetado ou lado a lado. As duas alas são pareadas entre si no Mural — o contraste acontece entre as metades da sala, e o debate fica mais vivo.",
     },
     {
-      contexto: "Não há fones.",
+      contexto: "Turma com leitura ainda em construção",
       comoAdaptar:
-        "A transcrição de cada áudio está sempre na tela, então nada se perde de conteúdo. Se puder, toque o áudio da moradora uma vez na caixa de som da sala, para todos ao mesmo tempo: é o tom da voz que faz o pânico do grupo ser crível.",
+        "Leia a mensagem da Amara em voz alta, uma vez, sem comentar. As legendas dos posts têm no máximo 45 palavras; em dupla, uma pessoa lê e a outra decide o que salvar.",
     },
     {
-      contexto: "Turma agitada, difícil de parar para o debate.",
+      contexto: "Sobrou tempo",
       comoAdaptar:
-        "Use o congelamento a seu favor: aperte o botão e espere em silêncio. Com as telas travadas na mesma imagem, a sala se volta para você sozinha em cerca de 30 segundos — bem mais rápido que pedir silêncio.",
-    },
-    {
-      contexto: "Turma com leitura em desenvolvimento.",
-      comoAdaptar:
-        "A reportagem completa é o texto mais longo da missão, e é justamente o que precisa ser lido. Leia o parágrafo cortado em voz alta depois que todos tiverem chegado nele — antes disso, não.",
+        "Peça que cada um reescreva a própria legenda citando uma voz que ficou de fora. É a aula do avesso, e mostra o quanto é difícil ouvir todo mundo em uma frase.",
     },
   ],
 
   duvidas: [
     {
-      pergunta: "A turma travou numa tela de pausa e não avança.",
+      pergunta: "Preciso preparar alguma coisa antes?",
       resposta:
-        "É o fim da Aula 1, e o desbloqueio é seu: “Abrir a Aula 2”, em Resultados da turma. É o suporte nº 1 desta missão.",
+        "Não é obrigatório. A cobertura curada da Unooria roda sozinha, com os 12 posts e os gráficos prontos. Trocar o tema e gerar as imagens é opcional.",
     },
     {
-      pergunta: "Os áudios não tocam e as fotos são desenhos.",
+      pergunta: "Os posts falam de um lugar de verdade?",
       resposta:
-        "A mídia não foi preparada. Vá ao painel de resultados e prepare — dois minutos, uma vez por escola. A missão funciona sem, com a transcrição e a ilustração no lugar.",
+        "Não. A praça, os três veículos e as pessoas citadas são fictícios. Com um tema seu, a IA escreve sobre o seu evento, mas os veículos e a proporção — quatro posts de cada — são fixos.",
     },
     {
-      pergunta: "Um estudante respondeu errado e quer desfazer.",
+      pergunta: "Apertei o botão cedo demais. Dá para voltar?",
       resposta:
-        "Quem responde no impulso ganha um botão para apagar para todos e tentar de novo, dentro da própria ficção. Não é preciso fazer nada pelo painel.",
+        "Não: o botão avança uma etapa por vez e não volta. Se o Mural abriu antes da hora, quem ainda não publicou continua no feed e publica depois, com o par na hora. Para recomeçar do zero, use Zerar a turma — ele abre uma rodada nova sem apagar a anterior.",
     },
     {
-      pergunta: "Dá para saber quem escolheu cada resposta?",
+      pergunta: "A IA dá nota para a legenda?",
       resposta:
-        "O painel mostra a distribuição das respostas da turma e quem abriu a matéria completa antes de responder. Use para conduzir o debate, não para cobrar ninguém — a lista não tem coluna de pontos de propósito.",
+        "Não dá nota. Ela lê a legenda e sugere um de três níveis da EF07CO11 no painel de habilidades, que só você vê — e vale o melhor entre essa leitura e a primeira enquete. Você confere e corrige. O estudante não vê o nível.",
     },
     {
-      pergunta: "A tela do estudante está escura. Dá para clarear?",
+      pergunta: "Posso aplicar de novo na mesma turma?",
       resposta:
-        "Não, e não é defeito: a seção do design system que veste esta missão publica só o tema escuro. O contraste passa o critério de acessibilidade com folga.",
+        "Pode, com Zerar a turma — mas com o mesmo tema a surpresa do Mural se perde, porque a turma já sabe que a cobertura tem lados. Para reaplicar, prefira um tema novo: ele vira uma atividade nova, e a anterior fica no histórico.",
     },
     {
-      pergunta: "Preciso preparar a mídia para cada turma?",
+      pergunta: "Quem vê a legenda e a reflexão?",
       resposta:
-        "Não. É uma vez por escola e vale para todas as turmas, inclusive as do ano que vem.",
+        "A legenda: você e o colega pareado no Mural. A reflexão: só você. A coordenação vê apenas que cada uma foi entregue — é texto escrito por menor de idade.",
     },
   ],
 };

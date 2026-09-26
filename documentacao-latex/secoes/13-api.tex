@@ -216,36 +216,27 @@ método e esquema, é o Apêndice~\ref{ap:endpoints}.
   \node[rt, minimum height=15mm] at (13.6,-7.3)
     {\texttt{/unoogpt/agregado/*}\desc{gestor, admin --- sem \texttt{estudanteId}}};
 
-  % ---- exp07ef1b
-  \node[exprot] at (0.1,-9.225) {\textbf{exp07ef1b}\\O Eco no Grupo};
-  \node[rt, minimum height=18.5mm] at (4.5,-9.225)
-    {\texttt{/o-eco-no-grupo/*}\desc{estudante}};
-  \node[rt, minimum height=18.5mm] at (9.05,-9.225)
-    {\texttt{/o-eco-no-grupo/\B{}turmas/*}\desc{prof., gestor, admin --- o \emph{gate} da aula}};
-  \node[rt, minimum height=18.5mm] at (13.6,-9.225)
-    {\texttt{/o-eco-no-grupo/\B{}professor/*}\desc{prof., gestor --- material do guia}};
-
   % ---- exp06ef2b
-  \node[exprot] at (0.1,-11.325) {\textbf{exp06ef2b}\\O Rastro do Boato};
-  \node[rt, minimum height=18.5mm] at (4.5,-11.325)
+  \node[exprot] at (0.1,-9.225) {\textbf{exp06ef2b}\\O Rastro do Boato};
+  \node[rt, minimum height=18.5mm] at (4.5,-9.225)
     {\texttt{/rastro-boato/*}\desc{estudante}};
-  \node[rt, minimum height=18.5mm] at (9.05,-11.325)
+  \node[rt, minimum height=18.5mm] at (9.05,-9.225)
     {\texttt{/rastro-boato/\B{}turmas/*}\desc{prof., gestor, admin --- o \emph{gate} da aula}};
-  \node[rt, minimum height=18.5mm] at (13.6,-11.325)
+  \node[rt, minimum height=18.5mm] at (13.6,-9.225)
     {\texttt{/rastro-boato/\B{}professor/*}\desc{prof., gestor --- material do guia}};
 
   % ---- exp08ef4b
-  \node[exprot] at (0.1,-13.25) {\textbf{exp08ef4b}\\O Manifesto da IA};
-  \node[rt, minimum height=15mm] at (4.5,-13.25)
+  \node[exprot] at (0.1,-11.15) {\textbf{exp08ef4b}\\O Manifesto da IA};
+  \node[rt, minimum height=15mm] at (4.5,-11.15)
     {\texttt{/manifesto-ia/*}\desc{estudante}};
-  \node[rt, minimum height=15mm] at (9.05,-13.25)
+  \node[rt, minimum height=15mm] at (9.05,-11.15)
     {\texttt{/manifesto-ia/\B{}turmas/*}\desc{prof., gestor --- o debate E o conteúdo da turma}};
 
   % ---- exp01ef1b
-  \node[exprot] at (0.1,-15.0) {\textbf{exp01ef1b}\\O Que a Foto Conta};
-  \node[rt, minimum height=15mm] at (4.5,-15.0)
+  \node[exprot] at (0.1,-12.9) {\textbf{exp01ef1b}\\O Que a Foto Conta};
+  \node[rt, minimum height=15mm] at (4.5,-12.9)
     {\texttt{/foto-conta/*}\desc{estudante}};
-  \node[rt, minimum height=15mm] at (9.05,-15.0)
+  \node[rt, minimum height=15mm] at (9.05,-12.9)
     {\texttt{/foto-conta/\B{}turmas/*}\desc{prof., gestor --- o \emph{latch} da Roda}};
 
   % ---- exp05ef1b
@@ -265,7 +256,7 @@ método e esquema, é o Apêndice~\ref{ap:endpoints}.
   estudante só existe no controller do professor --- o do gestor \textbf{não tem
   uma rota que aceite \texttt{estudanteId}}, o que torna estrutural, e não
   disciplinar, o limite do que ele alcança (\adrr{ADR-27}). Em
-  \texttt{/o-eco-no-grupo/turmas/*} e \texttt{/rastro-boato/turmas/*} mora o
+  \texttt{/rastro-boato/turmas/*} mora o
   \emph{gate} da aula: é a professora quem move a turma de etapa, e a rota é
   \textbf{idempotente} de propósito --- é o clique que se dá duas vezes. As
   \texttt{/<slug>/professor/*} servem o \textbf{material do guia da aula}:
@@ -390,12 +381,12 @@ Três rotas, e elas são a camada entre \cd{turmas} e \cd{experiencias}
 \adrr{ADR-87} essa porta tem DUAS trancas em série: antes de perguntar se o
 professor liberou, ela pergunta se o recurso EXISTE nesta rede. Toda entrada
 de estudante em experiência --- \rota{POST /runs}, \rota{GET /runs/boot} e o funil
-de sessão do UnooTube, do unooGPT, da Vila e do Eco --- chama
+de sessão do UnooTube, do unooGPT, da Vila e das missões seguintes --- chama
 \cd{exigirMissao\-Liberada} e responde \textbf{403} \cd{missao-nao-liberada} sem
 liberação. O \emph{bundle} é público e \rota{/exp/:expId} é endereço adivinhável:
 antes disto, qualquer estudante logado abria qualquer missão digitando a URL.
 
-A guarda é PRÉ-CONDIÇÃO do relógio da exp02em1b e dos \emph{gates} da exp07ef1b, não
+A guarda é PRÉ-CONDIÇÃO do relógio da exp02em1b e dos \emph{gates} da exp06ef2b, não
 substituta --- e fica na CRIAÇÃO da sessão, não em toda rota: quem já entrou
 fica, porque encerrar fecha a entrada e não expulsa a criança no meio da aula.
 \end{regra}
@@ -877,13 +868,13 @@ hub divergiria na primeira revisão de \emph{copy}.
   não é servida.\\
 \zebra \rota{GET /unoogpt/professor/fontes} & professor & As 8 fontes do
   cenário com o viés de cada uma, o período e os bairros que cobrem.\\
+\rota{GET /a-selecao/professor/material} & prof., gestor & O roteiro da
+  Etapa 4 (as três perguntas do debate), os gatilhos dos três momentos, os 12
+  posts do banco curado com o gabarito e as seleções dos colegas virtuais.\\
 \zebra \rota{GET /rastro-boato/professor/material} & prof., gestor & As 3
   intervenções com \cd{desfecho} e a reação do grupo, e o ciclo na
   \textbf{ordem certa} --- o contrário do que a tela do estudante recebe.\\
-\rota{GET /o-eco-no-grupo/professor/material} & prof., gestor & As 3 respostas
-  com \cd{desfecho} e \cd{correta}, e as falas que o bairro devolve em cada
-  desfecho (o roteiro canônico, sem IA).\\
-\zebra \rota{GET /foto-conta/turmas/:id/projecao} & prof., gestor & A projeção
+\rota{GET /foto-conta/turmas/:id/projecao} & prof., gestor & A projeção
   da Roda da exp01ef1b: o par de fotos, os rótulos, as 3 perguntas do debate e o
   termômetro do \emph{latch} --- o material vem da API para a lousa e os
   tablets nunca discordarem.\\
@@ -896,15 +887,14 @@ hub divergiria na primeira revisão de \emph{copy}.
 \begin{regra}
 \textbf{As de \rota{/<slug>/professor/*} são catálogo; a da Vila não.} Em
 \rota{/unoogpt/professor/fontes},
-\rota{/rastro-boato/professor/material},
-\rota{/o-eco-no-grupo/professor/material} e
+\rota{/rastro-boato/professor/material} e
 \rota{/quem-mandou-isso/professor/material} não há \cd{escolaId} nem
 \emph{tenancy} a aplicar --- o conteúdo é igual para todo contrato, e o que a
 guarda protege é o PAPEL. Por isso vivem em \emph{controller} separado do de
 turmas. \rota{/vila/professor/cartoes} é a exceção: ela recebe \cd{?turmaId=}
 porque a bolha servida depende da série da turma.
 
-As cinco devolvem exatamente os campos que o servidor retira antes de a
+As quatro devolvem exatamente os campos que o servidor retira antes de a
 opção chegar ao estudante (regra inviolável nº 3): o que muda entre as duas
 superfícies é o \textbf{leitor} (\adrr{ADR-86}). No unooGPT isso é mais
 extremo --- a Missão Tempestade não revela nada por \emph{software}, de

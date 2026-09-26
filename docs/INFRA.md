@@ -102,14 +102,16 @@ não abre com alguém achando que configurou a documentação é pior que nenhum
   ```
 
   **A mídia que a api GERA também mora por `expId`**: `experiencias/{expId}/`
-  no mesmo bucket (as fotos e os áudios da exp07ef1b, feitos pelo Vertex no
-  primeiro `preparar-midia`). Com o id novo a api não acha o que já gerou e gera
-  TUDO de novo — custo de Vertex e, na primeira vez, mais de 30 s, que o proxy
-  do hub não espera (a professora vê erro). Copie junto:
+  no mesmo bucket. A única que existia eram as fotos e os áudios do Eco no Grupo
+  (`experiencias/exp-07-o-eco-no-grupo/`, depois `experiencias/exp07ef1b/`), e o
+  Eco saiu da trilha (ADR-113): essa mídia não se copia mais — **apaga-se**,
+  porque o `exp07ef1b` passa a ser A Seleção, que grava a dela em
+  `experiencias/exp07ef1b/selecao/`. Em dev e hml ela nunca chegou ao bucket
+  (conferido em 2026-09-26); o comando é para o contrato em que chegou:
 
   ```bash
-  gcloud storage cp -r -n "gs://{contrato}-assets/experiencias/exp-07-o-eco-no-grupo/*" \
-    gs://{contrato}-assets/experiencias/exp07ef1b/ --project {projeto}
+  gcloud storage rm -r "gs://{contrato}-assets/experiencias/exp-07-o-eco-no-grupo/" --project {projeto}
+  # e, em experiencias/exp07ef1b/, tudo o que NÃO for selecao/
   ```
 
   O build da exp recebe a base pública em `VITE_VIDEOS_BASE_URL`
@@ -285,8 +287,7 @@ Deploy (CI deste repo):
    ```bash
    for par in exp-01-instanooria:exp08ef1b \
        exp-03-unoogpt:exp02em1b exp-04-o-que-a-foto-conta:exp01ef1b \
-       exp-06-rastro-boato:exp06ef2b \
-       exp-07-o-eco-no-grupo:exp07ef1b exp-08-manifesto-ia:exp08ef4b \
+       exp-06-rastro-boato:exp06ef2b exp-08-manifesto-ia:exp08ef4b \
        exp-70-vila-do-lume:app-70-vila-do-lume exp-90-plano-de-aula:app-90-plano-de-aula \
        exp-91-bem-estar:app-91-bem-estar exp-92-plano-de-ensino:app-92-plano-de-ensino; do
      gcloud storage cp -r -n "gs://{contrato}-exp/${par%%:*}/*" "gs://{contrato}-exp/${par##*:}/" --project {projeto}
@@ -306,10 +307,22 @@ Deploy (CI deste repo):
    ativada (o `deploy.yml` pula `backup-*`), então os bundles antigos do UnooTube
    ficam onde estão, sem uso.
 
-   Do lado do Terraform, o que carrega o id antigo: o uptime check
-   `{contrato}-exp-ativa` (o caminho do `index.html` da exp08ef1b), painéis e
-   alertas que filtram `service.name` (é o `expId`) e métricas de log por
-   `codigo` de experiência (`exp07.*` virou `exp07ef1b.*`).
+   O 7º ano também não está, pelo mesmo motivo: o Eco no Grupo saiu (ADR-113) e
+   o código `exp07ef1b` passou à A Seleção, que nasce na 1.0.0. Copiar
+   `exp-07-o-eco-no-grupo/*` para `exp07ef1b/` poria os bundles 0.1.x do Eco no
+   caminho dela. Os do Eco não servem a ninguém depois da migration
+   `20260925180000_remover_eco_no_grupo`; apague-os DEPOIS de ela rodar no
+   contrato (antes, o hub ainda pode apontar para eles):
+
+   ```bash
+   gcloud storage rm -r "gs://{contrato}-exp/exp-07-o-eco-no-grupo/" --project {projeto}
+   ```
+
+   Do lado do Terraform, nada carrega o código de experiência (conferido no
+   repo de infra em 2026-09-26): as métricas de log e os alertas são da
+   plataforma (`codigo=erro-interno`, por serviço do Cloud Run), e o uptime
+   check `{contrato}-exp-ativa` da tabela acima ainda não foi provisionado —
+   quando for, aponta para o prefixo novo (`exp08ef1b/`).
 
    **A api precisa de `CDN_EXP_URL`** (a mesma base do
    `NEXT_PUBLIC_CDN_EXP_URL` do hub) para conferir, com um HEAD no

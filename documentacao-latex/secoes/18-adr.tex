@@ -9,11 +9,10 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{115 decisões}, numeradas até ADR-118. A ADR-113 (a retirada do
-Eco no Grupo), a 115 (A Seleção) e a 117 (o Jornal da Escola) são de frentes
-paralelas que ainda não entraram nesta base --- os números foram reservados
-entre as sessões antes de qualquer uma escrever ---; fora elas, \textbf{sem
-lacunas}. Quando
+São \textbf{117 decisões}, numeradas até ADR-118. A 117 (o Jornal da Escola) é
+de uma frente paralela que ainda não entrou nesta base --- o número foi
+reservado entre as sessões antes de qualquer uma escrever ---; fora ela,
+\textbf{sem lacunas}. Quando
 eram cem, as cinco últimas nasceram no MESMO dia, em três frentes paralelas, e não
 colidiram porque os números foram \textbf{reservados por quem repartia o
 trabalho antes de qualquer uma escrever} --- que é a lição que a colisão de
@@ -114,9 +113,9 @@ que a cercam.
 \zebra \adrr{ADR-63} & Ingestão de telemetria desacoplada do processamento analítico & 2026-09-04 & Aceita\\
 \adrr{ADR-64} & Relógio da Tempestade: tempo no marco, não em background & 2026-09-05 & Aceita\\
 \zebra \adrr{ADR-65} & Guia da aula é gerado do catálogo, sem tela dedicada & 2026-09-06 & Aceita\\
-\adrr{ADR-66} & exp07ef1b: IA no runtime para conversas, gabarito server-side & 2026-09-06 & Aceita\\
-\zebra \adrr{ADR-67} & Mídias da exp07ef1b: imagens e áudios pré-gerados no bucket & 2026-09-06 & Aceita\\
-\adrr{ADR-68} & exp07ef1b e exp06ef2b: clone de mensageria só no tema escuro & 2026-09-06 & Aceita\\
+\adrr{ADR-66} & exp07ef1b: IA no runtime para conversas, gabarito server-side & 2026-09-06 & Superada (missão retirada, \adrr{ADR-113})\\
+\zebra \adrr{ADR-67} & Mídias da exp07ef1b: imagens e áudios pré-gerados no bucket & 2026-09-06 & Aceita como molde; o Eco saiu (\adrr{ADR-113})\\
+\adrr{ADR-68} & exp07ef1b e exp06ef2b: clone de mensageria só no tema escuro & 2026-09-06 & Aceita (vale para a exp06ef2b; o Eco saiu, \adrr{ADR-113})\\
 \zebra \adrr{ADR-69} & Missão só abre na turma se o professor liberou (\cd{liberacoes}) & 2026-09-06 & Aceita\\
 \adrr{ADR-70} & Página de transparência algorítmica aberta ao público & 2026-09-06 & Aceita\\
 \zebra \adrr{ADR-71} & Fatias verticais por módulo em frentes paralelas & 2026-09-06 & Aceita\\
@@ -161,7 +160,9 @@ que a cercam.
 \zebra \adrr{ADR-110} & O código da experiência diz onde ela mora na trilha & 2026-09-23 & Aceita\\
 \adrr{ADR-111} & Equipe é quem divide um computador, e o painel conta por computador & 2026-09-25 & Aceita\\
 \zebra \adrr{ADR-112} & A evidência é por atividade e rodada, e a melhor rodada vale por habilidade & 2026-09-25 & Aceita\\
-\adrr{ADR-114} & Quem mandou isso? v1 é retirada; a v2.2 entra com o mesmo código & 2026-09-25 & Aceita\\
+\adrr{ADR-113} & A Seleção substitui o Eco no Grupo, e a limpeza vem antes & 2026-09-25 & Aceita\\
+\zebra \adrr{ADR-114} & Quem mandou isso? v1 é retirada; a v2.2 entra com o mesmo código & 2026-09-25 & Aceita\\
+\adrr{ADR-115} & A Seleção: o par do Mural é do computador, e a IA gradua a legenda & 2026-09-25 & Aceita\\
 \zebra \adrr{ADR-116} & A experiência que perde o código é arquivada, não apagada & 2026-09-25 & Aceita\\
 \adrr{ADR-118} & Quem mandou isso? v2.2: atividade é o pacote, rodada é a reaplicação, e a régua mede pela seleção e pelas perguntas do PO & 2026-09-25 & Aceita\\
 \bottomrule
@@ -9456,6 +9457,120 @@ regra pedagógica; ou uma turma rodar duas atividades da mesma missão em
 paralelo, que a rodada em andamento inferida não distingue.
 
 % ---------------------------------------------------------------------------
+\section{ADR-113 --- A Seleção substitui o Eco no Grupo, e a limpeza vem antes}
+\label{adr:a-selecao-substitui-o-eco}
+
+\textbf{Data.} 2026-09-25. \textbf{Status.} Aceita.
+\textbf{Consequência} da \adrr{ADR-110}: o código da missão é DERIVADO da série e
+da unidade, e o formato não tem lugar para duas missões na mesma unidade. Tira
+de circulação o que a \adrr{ADR-66} descrevia (a IA no \emph{runtime} das
+conversas do Eco) e deixa a \adrr{ADR-67} como molde de mídia gerada pelo
+professor, sem missão que a use até a próxima.
+
+\begin{especificacao}{Contexto}
+O documento de requisitos de \textbf{A Seleção} (7º ano, 1º bimestre, clone de
+rede social de fotos) chegou em 2026-09-19 apontando para o código
+\cd{exp07ef1b} --- o mesmo de \textbf{O Eco no Grupo}, publicado desde
+2026-09-03 (7º ano, unidade 1, clone de mensageiro). As duas cobrem a mesma
+unidade do bimestre, e a de fotos é a que acompanha o paradidático dele.
+
+O código não é escolhido: sai de \cd{codigoDaMissao(serie, unidade)}, e um teste
+reprova manifesto cujo \cd{id} não bata com a série e a unidade. Duas missões
+na unidade 1 do 7º ano são, para a plataforma, a mesma pasta, o mesmo prefixo
+de tabela, o mesmo caminho no \emph{bucket} e a mesma linha em
+\cd{liberacoes}.
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{itemize}
+  \item \textbf{A Seleção substitui o Eco por completo}, e o Eco sai da trilha
+    ANTES de a missão nova começar --- numa frente própria, com PR próprio. A
+    frente da missão nova não começa sobre um código ocupado.
+  \item \textbf{Sai tudo o que é do Eco}: a experiência, o módulo da api e as
+    rotas \rota{/o-eco-no-grupo/*}, os quatro \emph{models} e as tabelas
+    \cd{exp07ef1b\_*}, as telas do professor (missão, resultados, painel da aula,
+    zerar a turma, guia), a entrada no catálogo (o 7º ano, unidade 1, fica
+    \enquote{em breve}), a suíte do estudante, o serviço do \emph{compose} e as
+    menções nos Termos de Uso e no painel da quota.
+  \item \textbf{Saem também as linhas de PLATAFORMA que dizem \cd{exp07ef1b}},
+    porque o código vai passar a significar outra missão: \cd{experiencias} e
+    \cd{experiencias\_versoes} (senão a sala ofereceria o Eco para liberar e o
+    \emph{rollback} ofereceria o \emph{bundle} 0.1.5 no lugar da missão nova),
+    \cd{liberacoes} (a turma que liberou o Eco abriria a outra sem ninguém ter
+    liberado), \cd{progresso} (o SDK da missão nova leria o JSON salvo pelo Eco,
+    com a conclusão dele) e \cd{disponibilidades} (inclusive a
+    \cd{versao\_fixa} que prende uma escola a um \emph{bundle}). A migração tira
+    o FORCE da RLS de \cd{liberacoes} e \cd{progresso}, apaga, confere que não
+    sobrou nada e devolve o FORCE --- o molde da \adrr{ADR-110}.
+  \item \textbf{Ficam}: \cd{telemetria\_eventos}, porque o \cd{exp\_version} de
+    cada linha já separa o Eco (0.1.x) da missão nova (1.0.0 em diante), e o
+    \cd{DELETE} varreria todas as partições; \cd{recursos\_auditoria}, porque é o
+    histórico só de inserção do painel da Unooria (\adrr{ADR-89}); a ponte
+    \cd{@edu/ui/ds-whatsapp}, que é uma das cinco que o \cd{packages/ui} promete;
+    e a capacidade de voz do \emph{provider} (\cd{generateSpeech}), agora sem
+    missão que a use. A porta 5179 fica reservada para a missão nova.
+  \item \textbf{A missão nova começa acima da 0.1.5}: o caminho
+    \cd{gs://\{contrato\}-exp/exp07ef1b/\{versao\}/} é tratado como imutável, e
+    ele guarda os \emph{bundles} do Eco. A mídia gerada do Eco, em
+    \cd{experiencias/exp07ef1b/} no \emph{bucket} de \emph{assets}, é apagada
+    fora do repositório; a missão nova grava a dela num subprefixo próprio.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{A Seleção em outra unidade do 7º ano} (\cd{exp07ef2b} a
+    \cd{exp07ef4b}, livres). Manteria o Eco no ar, mas descolaria a missão nova
+    do bimestre cujo paradidático ela reencena --- o documento dela nasce
+    amarrado à unidade 1.
+  \item \textbf{Mudar o formato do código} para caber duas missões por unidade.
+    É o gatilho que a própria \adrr{ADR-110} previu, mas o catálogo tem uma
+    missão por unidade por desenho (48 missões, 12 anos $\times$ 4 unidades), e
+    abrir o formato para um caso que o produto resolveu por substituição
+    espalharia a mudança por pasta, tabela, \emph{bucket}, catálogo do hub e
+    \cd{buscarMissao}.
+  \item \textbf{Reaproveitar o Eco por dentro} (trocar o conteúdo e manter
+    tabelas e rotas). A mecânica, o clone e os dados são outros; o que sobraria
+    do Eco seria só o nome das tabelas, e com ele o risco de ler dado velho como
+    se fosse da missão nova.
+  \item \textbf{Remover o Eco na mesma frente da missão nova.} Um PR só
+    misturaria apagar e construir, e o \emph{diff} deixaria de mostrar o que saiu.
+    O dono do produto pediu a limpeza primeiro.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{O 7º ano fica sem missão entre as duas frentes.} A unidade 1
+    aparece \enquote{em breve} até a missão nova entrar.
+  \item \textbf{O que o Eco já produziu some das telas}: as sessões, as
+    conversas com a Amara e as reflexões são apagadas com as tabelas, e o
+    progresso das crianças que o concluíram deixa de aparecer. A telemetria
+    fica, mas nenhum painel a lê por missão retirada.
+  \item \textbf{Parte da limpeza é fora do repositório}: a mídia do Eco no
+    \emph{bucket}, as métricas de log \cd{exp07ef1b.*} e a sonda de
+    disponibilidade no Terraform. Esquecer a mídia faz o \emph{bucket} guardar
+    arquivos que nenhum código lê; esquecer as métricas faz um painel olhar para
+    uma missão que mudou de natureza.
+  \item \textbf{Comentários nos módulos das missões que vão sair da trilha}
+    (Foto Conta, Quem mandou isso?, Rastro do Boato, Manifesto da IA) ainda
+    citam o Eco como precedente. Ficam: esses módulos saem em seguida, e
+    corrigi-los agora é trabalho descartado.
+\end{itemize}
+
+\textbf{Verificação.} A migração foi aplicada sobre um Postgres descartável já
+semeado, com linhas do Eco em \cd{progresso}, \cd{liberacoes},
+\cd{disponibilidades}, \cd{experiencias} e \cd{experiencias\_versoes}: todas
+sumiram, as de outras missões ficaram, as quatro tabelas saíram e o FORCE da RLS
+voltou. A suíte da api (111 suítes) e as dos demais pacotes passam sem o Eco.
+
+\textbf{Gatilho.} Outra missão nova cair numa unidade já ocupada --- aí a
+pergunta \enquote{substituir ou mudar o formato} volta, e a resposta desta ADR
+não vale sozinha para a próxima; ou o produto pedir o Eco de volta, que volta
+por outra unidade ou por outro código.
+
+% ---------------------------------------------------------------------------
 \section{ADR-114 --- Quem mandou isso? v1 é retirada; a v2.2 entra com o mesmo código}
 \label{adr:v1-do-5-ano-retirada}
 
@@ -9577,6 +9692,111 @@ dos demais pacotes passam sem ela.
 explícita, e a v1 volta por esta ADR revertida, não por \emph{cherry-pick}; ou
 outra missão nova cair numa unidade já ocupada, que repete a escolha desta ADR
 e da \adrr{ADR-113}.
+
+\section{ADR-115 --- A Seleção: o par do Mural é do computador, e a IA gradua a legenda}
+\label{adr:a-selecao}
+
+\textbf{Data.} 2026-09-25. \textbf{Status.} Aceita.
+\textbf{Responde} ao gatilho da \adrr{ADR-111} (\enquote{uma missão com equipe
+cujo dado precise ser da EQUIPE}), é a segunda missão com ficha da
+\adrr{ADR-112} (a primeira foi Quem mandou isso? v2.2, \adrr{ADR-118}) e ocupa
+o código que a \adrr{ADR-113} liberou.
+
+\begin{especificacao}{Contexto}
+A Seleção (7º ano, unidade 1) mede se o estudante percebe que publicar é
+recortar. O instrumento é social: a tríade dele ao lado da de um colega que
+escolheu outra coisa do MESMO feed. Quatro fatos da plataforma decidiram a forma:
+a sala divide computador (\adrr{ADR-111}), a evidência é por atividade e rodada
+(\adrr{ADR-112}), a revelação é do relógio da turma (\adrr{ADR-108}) e o
+\emph{bundle} é público (regra inviolável nº 3). E um pedido do produto: o nível
+de EF07CO11 depende de a legenda explicitar um critério editorial --- coisa que
+regra fixa não sabe ler.
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{itemize}
+  \item \textbf{O par do Mural é do COMPUTADOR.} O pareamento roda na passagem para
+    o Mural, numa transação, sobre \cd{colapsarEmUnidades}: distância máxima
+    entre as matrizes de enquadramento, nunca dentro da mesma unidade. O par é
+    carimbado pela \emph{sessão} do representante, com o rótulo congelado (o
+    primeiro nome ou o nome da equipe), e \textbf{nunca} pelo id da equipe --- o
+    \cd{PUT} das equipes recria os ids. Quem sobra, quem publica depois do Mural e a
+    aula de um computador só pareiam com um colega virtual do catálogo.
+  \item \textbf{UM botão percorre quatro etapas} (\cd{exploracao}, \cd{mural},
+    \cd{fichas}, \cd{explicacao}), com o destino explícito na requisição. Não
+    repete o \enquote{controle morto} que a \adrr{ADR-108} recusou: cada clique abre
+    um momento de aula que existe --- o Mural em silêncio, o debate, as fichas, o
+    debate das lentes, a explicação. O destino explícito faz o clique duplo não
+    pular etapa.
+  \item \textbf{A IA gradua a legenda para EF07CO11} (o Canal A), exceção declarada
+    ao princípio de que a IA não decide desfecho (a \adrr{ADR-66} o firmava). As
+    travas: temperatura 0; uma tentativa e teto de cerca de 6 s; saída num
+    \emph{schema} com enum e validada; rubrica fixa no servidor e a legenda
+    delimitada como dado; a quota do estudante verificada antes e debitada em
+    \cd{aoUsarTokens} (inclusive a chamada que perde a corrida); limite de três
+    chamadas em dez minutos. \textbf{Qualquer falha não marca nada} --- fica
+    \enquote{Não avaliado} ---, nenhuma justificativa é gravada, a criança não vê o
+    nível, e o professor o confere e ajusta. A enquete \cd{p1} conta junto, e vale
+    o melhor (\adrr{ADR-112}).
+  \item \textbf{Atividade = cobertura; rodada = zerar.} Zerar abre a rodada
+    seguinte e guarda a anterior, ao contrário do \cd{DELETE} das missões antigas;
+    homologar um tema novo abre uma atividade nova.
+  \item \textbf{As alternativas das enquetes saem embaralhadas a cada leitura},
+    pelo embaralhamento que a \adrr{ADR-118} pôs na plataforma para TODA ficha.
+    Esta frente nasceu com um campo opcional na ficha para isso; quando as duas
+    se encontraram, o campo saiu, para não haver dois caminhos para a mesma
+    regra.
+  \item \textbf{A validação pedagógica da ficha foi dispensada} pelo dono do
+    produto; \cd{validadaPor} diz isso, em vez de simular uma assinatura.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Três botões} no painel. O mesmo resultado com mais coisa para
+    esquecer; um botão que diz a próxima etapa ensina a ordem.
+  \item \textbf{Parear por estudante.} Com computador dividido, só quem entrou tem
+    sessão: juntaria linhas vazias, e dois logins na mesma máquina pareariam a
+    equipe com ela mesma.
+  \item \textbf{Carimbar o par pelo id da equipe.} Some no primeiro
+    \enquote{Salvar equipes}.
+  \item \textbf{IA com piso \enquote{em processo}} para quem publicou. Esconderia
+    a legenda desconexa, e a regra \enquote{vale o melhor} anularia o
+    \enquote{não atingiu} da IA. O dono do produto escolheu os três níveis.
+  \item \textbf{Ficha sem IA} (só as enquetes e o professor). Barata, mas deixaria o
+    produto que a missão pede (a legenda) sem leitura nenhuma.
+  \item \textbf{Zerar apagando.} Contradiz a rodada com histórico da \adrr{ADR-112}.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{Em dev e na e2e a IA é o mock, que sempre falha}: o Canal A nunca
+    marca, e a EF07CO11 só aparece pela enquete. A leitura da legenda só se prova
+    com o Vertex.
+  \item \textbf{A IA pode errar}, e o erro é um rótulo sobre uma criança --- visível
+    só ao professor, que o corrige; a quota do estudante é consumida por algo que
+    ele não vê.
+  \item \textbf{O colega vê a tríade, a legenda e o primeiro nome.} É o instrumento
+    da missão, e os Termos de Uso e a Política de Privacidade dizem isso. O
+    sanitizador barra link, telefone, e-mail, menção e palavrão, mas não
+    moderação semântica.
+  \item \textbf{O par não muda quando as equipes mudam, mas a evidência copiada da
+    rodada em andamento, sim} --- os dois comportamentos são os corretos, e
+    diferem.
+\end{itemize}
+
+\textbf{Verificação.} \arq{a-selecao-regras.spec.ts} e \arq{a-selecao-postgres.spec.ts}
+(RLS nas quatro tabelas, latch concorrente, rodada guardada, par por computador que
+sobrevive ao \cd{PUT} das equipes, recorte do gestor, Canal A com provedor falso
+nos casos válido, inválido, sem saldo e atrasado), e a suíte
+\arq{scripts/e2e/estudante/11-a-selecao.mjs}.
+
+\textbf{Gatilho.} O Vertex rotular com viés sistemático (a calibragem fica
+visível no ajuste do professor); uma missão nova que precise de dado da equipe
+com histórico de composição; ou o produto pedir que a criança veja o próprio
+nível.
 
 \section{ADR-116 --- A experiência que perde o código é arquivada, não apagada}
 \label{adr:arquivar-em-vez-de-apagar}

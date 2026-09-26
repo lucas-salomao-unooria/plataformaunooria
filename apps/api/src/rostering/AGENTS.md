@@ -48,8 +48,8 @@ conhece `sourcedId`, e o `hub:init` não muda (ADR-28).
   da Vila e do unooGPT, os cartões da Vila, os dois relatórios individuais e o
   **relógio da aula** do unooGPT — este último deixava um professor da escola dar
   a largada, ou encerrar, a aula de uma turma que não é dele, no meio dela. O
-  molde certo é o `o-eco-no-grupo`, que nasceu depois da porta e passa
-  `professorDoToken` em todas.
+  molde certo passa `professorDoToken` (`comum/turmas-do-professor.ts`) em
+  todas as rotas de turma, sem exceção.
   **Tela de UMA criança usa `professorEnsinaOEstudante`, não `professorLeciona`**:
   a pergunta ali não é "esta turma é minha?", é "esta criança é de alguma turma
   minha?". Ele aceita a matrícula ativa **ou** o cache `users.turma_id` — as duas

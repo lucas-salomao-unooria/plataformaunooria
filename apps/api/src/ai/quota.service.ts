@@ -6,8 +6,8 @@ import { PrismaService } from "../prisma/prisma.service";
 
 /**
  * Os perfis que TÊM linha em `ia_quotas` — e o CHECK da migration espelha esta
- * tupla. Só dois chamam IA de fato: o estudante (tutor da exp08ef1b, exp02em1b,
- * exp07ef1b) e o professor (exp01ef1b, exp07ef1b, exp08ef4b, app-90, app-91, app-92).
+ * tupla. Só dois chamam IA de fato: o estudante (tutor da exp08ef1b, exp02em1b)
+ * e o professor (exp01ef1b, exp08ef4b, app-90, app-91, app-92).
  * Gestores e `admin` não têm rota de IA hoje; quando tiverem, o perfil entra
  * aqui, no CHECK e na semente — nunca só num dos três.
  */

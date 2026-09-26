@@ -974,51 +974,37 @@ Ranking sem menor real & O ranking da exp04ef1b usa colegas
 \zebra Dado de saúde com posse & \cd{app\_91\_ciclos} e \cd{app\_91\_checkins}
   têm RLS \emph{e} filtro por \cd{professor\_id} em toda \emph{query}, e não
   existe rota de gestor nem agregado. O próprio titular apaga tudo.\\
-Texto de menor com contenção & \textbf{Três} campos livres de estudante, e a
-  diferença entre eles é de finalidade. \cd{exp07ef1b\_mensagens} guarda a
-  conversa da criança com Amara: 600 caracteres, 3 turnos, sanitizador nos dois
-  sentidos, e \textbf{nenhum caminho até o painel} --- a professora vê
-  \emph{quantos} turnos, nunca o quê. \cd{exp06ef2b\_reflexoes} guarda o
+Texto de menor com contenção & \cd{exp06ef2b\_reflexoes} guarda o
   \enquote{Meu percurso}: 280 caracteres que \textbf{a professora da turma lê},
   porque ali o texto \emph{é} o instrumento.
   \cd{exp08ef4b\_respostas\_percurso} guarda a justificativa da cláusula: 800
-  caracteres, mesma finalidade e mesma fronteira --- e com uma trava que os
-  outros dois não têm, o \textbf{filtro de dado pessoal que recusa antes de
-  gravar}. As três ficam sob RLS, fora de log e fora da telemetria. Ver as
-  decisões logo abaixo.\\
+  caracteres, mesma finalidade e mesma fronteira --- e com uma trava que o
+  outro não tem, o \textbf{filtro de dado pessoal que recusa antes de
+  gravar}. Os dois ficam sob RLS, fora de log e fora da telemetria. Ver as
+  decisões logo abaixo. Na A Seleção (\adrr{ADR-115}) a \textbf{legenda} dos
+  Stories vai, com o primeiro nome, ao colega pareado no Mural --- por isso passa
+  por um sanitizador (link, telefone, e-mail, menção, palavrão) antes de
+  gravar ---, e a \cd{exp07ef1b\_reflexoes} só ao professor da turma.\\
 \bottomrule
 \end{tabularx}
 
 \begin{decisao}
-\textbf{A exp07ef1b reabriu o texto livre de menor, e isso é mudança de postura}
-(\adrr{ADR-66}). Até ela, o produto tinha exatamente um campo aberto, e ele era
-de \emph{professor} (o \emph{check-in} de bem-estar); as experiências de
-estudante trabalhavam com vocabulário fechado, e a linha acima sobre
-\cd{app\_70\_sessoes} descreve a trava estrutural que existe justamente por isso.
-
-O que fez valer a pena: a missão mede se a criança consegue \textbf{perguntar
-antes de repassar}, e um menu de perguntas prontas responderia a pergunta no
-lugar dela. O que cerca a abertura: a conversa só existe \emph{depois} da
-decisão (o silêncio de Amara na etapa da decisão é de ofício), o texto nunca sai
-da escola dele, e nenhum caminho o leva a \emph{log}, telemetria, Clarity ou
-painel do professor --- o painel mostra \textbf{quantos} turnos, nunca o quê.
-
-Consequência aceita: existe no banco uma coluna de longa duração com texto
-escrito por criança (\cd{exp07ef1b\_mensagens.texto}), e ela entra no mesmo regime
-de retenção da subseção seguinte. Gatilho de reavaliação: se a conversa deixar de ser opcional, ou se
-algum painel pedir o texto, a decisão volta à mesa.
+\textbf{O texto livre de menor foi reaberto pelo Eco no Grupo, e a mudança de
+postura sobreviveu à missão.} A \adrr{ADR-66}, que a registrou, ficou superada
+com a retirada (\adrr{ADR-113}). Até o Eco, o produto tinha exatamente um campo aberto, e ele era de \emph{professor} (o
+\emph{check-in} de bem-estar); as experiências de estudante trabalhavam com
+vocabulário fechado, e a linha acima sobre \cd{app\_70\_sessoes} descreve a
+trava estrutural que existe justamente por isso. A conversa que abriu o
+precedente saiu com a missão --- a tabela dela caiu na migração
+\cd{20260925180000\_remover\_eco\_no\_grupo} ---, e o que resta são os campos
+das missões seguintes, cada um com a contenção da tabela acima.
 \end{decisao}
 
 \begin{decisao}
-\textbf{A exp06ef2b leva o texto da criança ao painel do professor, e a exp07ef1b
-não --- as duas estão certas.} O que separa os dois casos é a
-\textbf{finalidade}, não o grau de cuidado.
-
-Na exp07ef1b o campo é uma \emph{conversa} com uma personagem: ele existe para a
-criança perguntar antes de repassar, e o que a professora precisa saber é se ela
-perguntou --- daí a contagem de turnos no painel e o texto fora dele. Levá-lo à
-tela do adulto mudaria o que a criança escreve, e a missão mede justamente a
-pergunta espontânea.
+\textbf{A exp06ef2b leva o texto da criança ao painel do professor, e isso está
+certo.} O que decide é a \textbf{finalidade}, não o grau de cuidado: o Eco no
+Grupo mantinha fora do painel uma \emph{conversa} com personagem, porque
+levá-la à tela do adulto mudaria o que a criança escreve.
 
 Na exp06ef2b o campo é o \emph{registro do percurso}: 280 caracteres em que a
 criança nomeia o gatilho que reconheceu e o que fará antes de encaminhar da
@@ -1027,8 +1013,8 @@ mostrasse só \enquote{entregou / não entregou} guardaria a redação para ning
 Quem lê é o professor \emph{da turma dela}: nenhuma rota de gestor o alcança, e
 o campo não existe em nenhum \emph{payload} de telemetria.
 
-Consequência aceita: há agora duas colunas de longa duração com texto de menor,
-e uma delas é visível a um adulto por desenho. Gatilho de reavaliação: se um
+Consequência aceita: a coluna é de longa duração e visível a um adulto por
+desenho. Gatilho de reavaliação: se um
 painel de gestor, de rede ou de análise pedir \cd{exp06ef2b\_reflexoes.texto}, a
 decisão volta à mesa --- a fronteira é o professor da turma, e ela não se move
 por conveniência de relatório.

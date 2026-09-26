@@ -146,7 +146,7 @@ isto a cada render.
 `disponibilidades` está fora da RLS por desenho, então a linha de contrato vale
 para a stack INTEIRA — e o Jest paraleliza. Enquanto ela existe, toda suíte
 concorrente vê o produto desligado. Custou duas suítes vermelhas
-(`vila-postgres` e `o-eco-no-grupo-postgres`) que **passam sozinhas e falham
+(`vila-postgres` e a antiga `o-eco-no-grupo-postgres`) que **passam sozinhas e falham
 juntas**, com o sintoma apontando para a Vila e a causa em
 `disponibilidade-porta-postgres`. Pior: a corrida abortada deixa fixture para
 trás, e a corrida SEGUINTE falha em outra suíte ainda — a cascata esconde a

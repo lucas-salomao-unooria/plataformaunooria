@@ -1,10 +1,10 @@
 {
   "name": "@edu/exp07ef1b",
-  "version": "0.1.5",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite --port 5179",
+    "dev": "vite --port 5179 --strictPort",
     "build": "tsc --noEmit && vite build",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src",

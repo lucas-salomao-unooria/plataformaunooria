@@ -1,16 +1,17 @@
 <!doctype html>
-<html lang="pt-BR">
+<!--
+  `data-insta-theme="light"` na raiz: o CSS da seção troca os tokens do `:root`
+  para o escuro quando o sistema operacional está em modo escuro, e o clone
+  desta missão é o Instagram claro. Os componentes escuros (o Story, o
+  compositor) declaram o próprio tema e não são afetados.
+-->
+<html lang="pt-BR" data-insta-theme="light">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <!--
-      Nada aqui pode denunciar o exercício. O <title> é o do aplicativo que a
-      missão imita, e não o nome da experiência: o estudante vê a aba, e uma
-      aba dizendo "exp07ef1b" entrega em um segundo o que a missão inteira leva
-      duas aulas para revelar. Vale para todo texto visível deste arquivo.
-    -->
-    <title>WhatsApp</title>
-    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <!-- Nome neutro de app: nada aqui pode denunciar o exercício (a mesma regra da exp08ef1b). -->
+    <meta name="theme-color" content="#FFFFFF" />
+    <title>Instanooria</title>
   </head>
   <body>
     <div id="root"></div>

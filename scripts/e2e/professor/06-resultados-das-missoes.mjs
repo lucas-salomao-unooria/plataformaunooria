@@ -27,6 +27,7 @@ await suite(
       "A tela sem turma escolhida ensina o que fazer, em vez de mostrar tabela vazia",
       "O relógio da aula do unooGPT é operável da mesma tela dos resultados",
       "O relatório de um estudante do unooGPT diz QUANDO: até a primeira fala, com quanto relógio, se estourou",
+      "A aula da A Seleção (o botão único e a etapa) mora na mesma tela dos resultados, sem coluna de pontos",
     ],
     comando: "node scripts/e2e/professor/06-resultados-das-missoes.mjs",
   },
@@ -34,43 +35,6 @@ await suite(
     /* O UnooTube abria esta suíte até ser ARQUIVADO (ADR-116): a prova de que a
        tela sem turma ENSINA o próximo passo mudou para o unooGPT, abaixo. */
     const p = await r.pagina("professor", { viewport: { width: 1440, height: 1000 } });
-
-    // ── O Eco no Grupo (7º ano, unidade 1) ──────────────────────────────
-    /* A suíte do estudante (estudante/06-o-eco-no-grupo.mjs) corre ANTES e
-       deixa a turma com percurso entregue: é ele que este passo lê. */
-    const professorSetimo = conta("professor", { serie: "7EF" });
-    await r.entrar(p, professorSetimo.login);
-    await p.goto(`${HUB}/professor/entre-redes/7-ano/unidade-1/resultados`, {
-      waitUntil: "domcontentloaded",
-    });
-    await p.waitForSelector("select#turma", { timeout: 20_000 });
-    await p.waitForTimeout(1500);
-    const opcoesEco = await p
-      .locator("select#turma option")
-      .evaluateAll((os) => os.map((o) => ({ value: o.value, label: o.textContent ?? "" })));
-    const alvoEco = opcoesEco.find((o) => o.value);
-    if (alvoEco) {
-      await p.selectOption("select#turma", alvoEco.value);
-      await p.waitForURL("**turmaId=**", { timeout: 20_000 });
-      await p.waitForTimeout(2500);
-    }
-    const temGates = await p.locator("[data-gate]").count();
-    r.exigir(temGates >= 3, "os três momentos da aula ficam na MESMA tela dos resultados");
-    const folhaEco = await p.locator("table").first().innerText().catch(() => "");
-    r.exigir(
-      !/\b(pontos|nota|score)\b/i.test(folhaEco),
-      "a folha do Eco no Grupo não traz coluna de pontos",
-    );
-    await r.registrar(p, "resultados-o-eco-no-grupo", {
-      titulo: "A aula de duas etapas e os resultados",
-      mostra:
-        "Os três botões que conduzem a turma — abrir a Aula 2, congelar o debate, liberar o " +
-        "percurso — e o retrato de quem abriu a matéria antes de responder.",
-      prova:
-        "É a única missão da trilha em duas aulas, e a segunda não começa sozinha. Conduzir e ler " +
-        "ficam juntos porque a condução acontece DURANTE a aula.",
-      inteira: true,
-    });
 
     // ── unooGPT (2ª série EM, unidade 1) ────────────────────────────────
     const professorEM = conta("professor", { serie: "2EM" });
@@ -158,5 +122,44 @@ await suite(
         inteira: true,
       });
     }
+
+    // ── A Seleção (7º ano, unidade 1) ───────────────────────────────────
+    /* A suíte do estudante (estudante/11-a-selecao.mjs) corre ANTES e deixa a
+       turma com duas publicações pareadas: é a folha dela que este passo lê. */
+    const professorSetimo = conta("professor", { serie: "7EF" });
+    await r.entrar(p, professorSetimo.login);
+    await p.goto(`${HUB}/professor/entre-redes/7-ano/unidade-1/resultados`, {
+      waitUntil: "domcontentloaded",
+    });
+    await p.waitForSelector("select#turma", { timeout: 20_000 });
+    await p.waitForTimeout(1500);
+    const opcoesSetimo = await p
+      .locator("select#turma option")
+      .evaluateAll((os) => os.map((o) => ({ value: o.value, label: o.textContent ?? "" })));
+    const alvoSetimo = opcoesSetimo.find((o) => o.value);
+    if (alvoSetimo) {
+      await p.selectOption("select#turma", alvoSetimo.value);
+      await p.waitForURL("**turmaId=**", { timeout: 20_000 });
+      await p.waitForTimeout(2500);
+    }
+    r.exigir(
+      (await p.locator("[data-etapa]").count()) > 0,
+      "o botão único da aula e a etapa atual ficam na MESMA tela dos resultados",
+    );
+    const folhaSetimo = await p.locator("main").innerText().catch(() => "");
+    r.exigir(
+      !/\b(pontos|nota|score|ranking)\b/i.test(folhaSetimo),
+      "a folha da A Seleção não traz coluna de pontos",
+    );
+    await r.registrar(p, "resultados-a-selecao", {
+      titulo: "A aula da A Seleção e os resultados",
+      mostra:
+        "O preparo da cobertura, o botão que avança a turma (Mural, fichas, explicação), a folha " +
+        "por computador e o painel de habilidades da BNCC.",
+      prova:
+        "Conduzir e ler ficam juntos porque a condução acontece DURANTE a aula. A folha mostra " +
+        "o par e as lentes de cada computador, nunca uma nota.",
+      inteira: true,
+    });
   },
 );

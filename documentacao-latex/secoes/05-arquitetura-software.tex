@@ -398,16 +398,16 @@ instrumentação automática do OpenTelemetry precisa alterar \cd{http},
     {\texttt{unootube/}\desc{exp04ef1b}};
   \node[c4component, text width=25.5mm, minimum height=19.5mm, fill=unooGreen!22, draw=unooGreen] (bem) at (8.25,-13.075)
     {\texttt{bemestar/}\desc{app-91}};
-  \node[c4component, text width=25.5mm, minimum height=19.5mm, fill=unooGreen!22, draw=unooGreen] (eco) at (11.45,-13.075)
-    {\texttt{o-eco-no-grupo/}\desc{exp07ef1b --- texto, imagem e VOZ}};
+  % planos/ ocupa a quarta coluna da linha de cima desde que o o-eco-no-grupo/
+  % saiu (ADR-113): é o módulo que usa as mesmas DUAS portas.
+  \node[c4component, text width=25.5mm, minimum height=19.5mm, fill=unooGreen!22, draw=unooGreen] (planos) at (11.45,-13.075)
+    {\texttt{planos/}\desc{app-90}};
   \node[c4component, text width=27mm, minimum height=35.5mm, fill=unooGreen!22, draw=unooGreen, font=\scriptsize] (outros) at (14.73,-13.875)
     {\texttt{rastro-boato/}\\\texttt{manifesto-ia/}\\\texttt{quem-mandou-isso/}\\\texttt{foto-conta/}\\\texttt{planejamento/}};
   \node[c4component, text width=25.5mm, minimum height=13mm, fill=unooGreen!22, draw=unooGreen] (vila) at (3.45,-15.0)
     {\texttt{vila/}\desc{app-70}};
   \node[c4component, text width=25.5mm, minimum height=13mm, fill=unooGreen!22, draw=unooGreen] (ugpt) at (6.65,-15.0)
     {\texttt{unoogpt/}\desc{exp02em1b}};
-  \node[c4component, text width=25.5mm, minimum height=13mm, fill=unooGreen!22, draw=unooGreen] (planos) at (9.85,-15.0)
-    {\texttt{planos/}\desc{app-90}};
 
   % ---- relações: transversal
   \draw[c4rel] (guard.east) -- (roles.west);
@@ -434,11 +434,10 @@ instrumentação automática do OpenTelemetry precisa alterar \cd{http},
   \draw[c4rel] (6.65,-11.75) -- (7.4,-11.75) -- (7.4,-11.2);
   \node[cxlabel, anchor=west] at (5.15,-9.25) {\texttt{consulta.ts}};
   \draw[c4rel] (bem.north) -- (8.25,-11.2);
-  % eco e planos usam as DUAS portas: um barramento com duas saídas
-  \draw[c4rel] (eco.north) -- (11.45,-11.2);
+  % planos usa as DUAS portas: uma saída sobe ao bucket, a outra desvia para a IA
+  \draw[c4rel] (planos.north) -- (11.45,-11.2);
   \draw[c4rel] (11.45,-11.75) -- (9.2,-11.75) -- (9.2,-11.2);
-  \draw[line width=0.85pt, draw=unooInkSoft] (9.85,-14.35) -- (9.85,-11.75);
-  \fill[unooInkSoft] (9.85,-11.75) circle (1.5pt) (11.45,-11.75) circle (1.5pt)
+  \fill[unooInkSoft] (11.45,-11.75) circle (1.5pt)
                      (6.65,-11.75) circle (1.5pt);
   \node[cxlabel] at (10.65,-11.47) {IA + quota};
   \node[cxlabel, anchor=west] at (11.55,-11.47) {\emph{bucket}};

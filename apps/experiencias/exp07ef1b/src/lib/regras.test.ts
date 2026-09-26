@@ -1,139 +1,296 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, test } from "vitest";
 import {
-  MINUTOS_ATE_O_CUTUCAO,
-  deveCutucar,
-  digitando,
-  duracaoDaCascata,
-  mensagemChave,
-  oQueFaltaParaEnviar,
-  podeEnviar,
-  reacoesVisiveis,
-  superficieDo,
+  alternar,
+  avancar,
+  codePoints,
+  dicaDoFeed,
+  esperaDaTentativa,
+  etapaAntes,
+  faltamNaReflexao,
+  gateMudou,
+  legendaCurta,
+  legendaValida,
+  nomeDaConta,
+  normalizarLegenda,
+  passoEfetivo,
+  precisaDoMural,
+  reflexaoValida,
+  salvosValidos,
+  segundosDesde,
+  selecionados,
+  separarEnunciado,
+  situacaoDaSelecao,
+  telaDoPasso,
+  temaNaFrase,
+  voltar,
+  CURTIDAS_ATE_A_DICA,
+  SEGUNDOS_ATE_A_DICA,
+  TEMPO_DE_FEED_MAX_S,
 } from "./regras";
-import { EXP_VERSION, type Estado, type MensagemDoFeed, type Reacao } from "./tipos";
+import { ETAPAS, PASSOS, type Estado, type Etapa, type Passo, type RespostaGate } from "./tipos";
 
-/** A cadência que o servidor manda, e que a tela só obedece. */
-const CASCATA: Reacao[] = [
-  { autor: "Carlos", texto: "…", atrasoMs: 2000 },
-  { autor: "Dona Lúcia", texto: "…", atrasoMs: 3000 },
-  { autor: "Marcos Admin", texto: "…", atrasoMs: 2000 },
-];
-
-function estado(parcial: Partial<Estado> = {}): Estado {
-  return {
-    passo: "grupo",
-    passoDoEstudante: "grupo",
-    aguardandoATurma: false,
-    inspecionouMateria: false,
-    ouviuAudio: false,
-    ouviuPodcast: false,
-    cardsLidos: 0,
-    opcao: null,
-    desfecho: null,
-    desfazerUsado: 0,
-    concluidoEm: null,
-    turma: { etapa: "investigacao" },
-    ...parcial,
-  };
+/**
+ * A api é a fonte da verdade dos passos e das etapas. O cliente espelha as
+ * duas listas (para o `switch` da tela ser exaustivo) — e este teste LÊ o
+ * arquivo da api e reprova a divergência. Sem ele, um passo novo no servidor
+ * cairia numa tela que não existe, e o typecheck não veria.
+ */
+function listaDoArquivo(caminho: string, nome: string): string[] {
+  const fonte = readFileSync(caminho, "utf8");
+  const bloco = new RegExp(`export const ${nome} = \\[([\\s\\S]*?)\\] as const`).exec(fonte);
+  if (!bloco?.[1]) throw new Error(`${nome} não encontrado em ${caminho}`);
+  return [...bloco[1].matchAll(/"([^"]+)"/g)].map((m) => m[1] ?? "");
 }
 
-describe("a versão", () => {
-  test("bate nos três lugares — manifesto, package.json e código", () => {
-    // O CI lê o manifesto para montar o caminho no bucket, que é IMUTÁVEL, e o
-    // package.json para decidir se republica. Divergir já causou bug, e a
-    // exp04ef1b e a exp02em1b divergem hoje, cada uma com um comentário pedindo para
-    // não divergir. Aqui o teste é a rede.
-    const manifesto = JSON.parse(readFileSync("public/experiencia.json", "utf8"));
-    const pacote = JSON.parse(readFileSync("package.json", "utf8"));
-    expect(manifesto.versao).toBe(EXP_VERSION);
-    expect(pacote.version).toBe(EXP_VERSION);
+const PASSOS_DA_API = "../../api/src/a-selecao/regras/passos.ts";
+
+describe("o espelho dos passos e das etapas da api", () => {
+  test("PASSOS é o da api, na mesma ordem", () => {
+    expect([...PASSOS]).toEqual(listaDoArquivo(PASSOS_DA_API, "PASSOS"));
   });
 
-  test("o manifesto declara a casca de aparelho e a permissão do formulário", () => {
-    const manifesto = JSON.parse(readFileSync("public/experiencia.json", "utf8"));
-    // `viewport` é o que liga o `DispositivoFrame` do hub — sem ele a missão
-    // apareceria esticada na janela, e não num celular.
-    expect(manifesto.viewport).toEqual({ largura: 375, altura: 812 });
-    // Sem `forms`, o navegador BLOQUEIA o submit dentro do sandbox: o estudante
-    // preenche o percurso, aperta enviar e nada acontece, com o único rastro
-    // num aviso de console.
-    expect(manifesto.permissoes).toContain("forms");
-    expect(manifesto.capabilities).toContain("ia");
+  test("ETAPAS é o da api, na mesma ordem", () => {
+    expect([...ETAPAS]).toEqual(listaDoArquivo(PASSOS_DA_API, "ETAPAS"));
   });
 });
 
-describe("a fronteira da revelação", () => {
-  test("o mensageiro desenha o grupo; a escola desenha o que vem depois dele", () => {
-    for (const passo of ["chat_amara", "grupo", "intervencao", "desfecho"] as const) {
-      expect(superficieDo(passo)).toBe("clone");
-    }
-    for (const passo of ["breakpoint", "podcast", "sintese", "reflexao", "fim"] as const) {
-      expect(superficieDo(passo)).toBe("plataforma");
+describe("passoEfetivo — a mesma resposta da api num F5", () => {
+  test("antes de publicar, a etapa não toca a criança", () => {
+    for (const etapa of ETAPAS) {
+      expect(passoEfetivo("desafio", etapa)).toBe("desafio");
+      expect(passoEfetivo("feed", etapa)).toBe("feed");
+      expect(passoEfetivo("salvos", etapa)).toBe("salvos");
     }
   });
-});
 
-describe("a cascata", () => {
-  test("os 7 segundos são a soma dos atrasos que o servidor mandou", () => {
-    expect(duracaoDaCascata(CASCATA)).toBe(7000);
+  test("entre a publicação e a explicação, a etapa é piso e teto", () => {
+    const esperado: Record<Etapa, Passo> = {
+      exploracao: "publicado",
+      mural: "mural",
+      fichas: "fichas",
+      explicacao: "explicacao",
+    };
+    for (const passo of ["publicado", "mural", "fichas", "explicacao"] as const) {
+      for (const etapa of ETAPAS) expect(passoEfetivo(passo, etapa)).toBe(esperado[etapa]);
+    }
   });
 
-  test("as reações aparecem uma a uma, na cadência 2s → 3s → 2s", () => {
-    expect(reacoesVisiveis(CASCATA, 0)).toBe(0);
-    expect(reacoesVisiveis(CASCATA, 1999)).toBe(0);
-    expect(reacoesVisiveis(CASCATA, 2000)).toBe(1);
-    expect(reacoesVisiveis(CASCATA, 4999)).toBe(1);
-    expect(reacoesVisiveis(CASCATA, 5000)).toBe(2);
-    expect(reacoesVisiveis(CASCATA, 7000)).toBe(3);
+  test("da reflexão em diante, o passo é da criança", () => {
+    for (const passo of ["reflexao", "enquetes", "fim"] as const) {
+      for (const etapa of ETAPAS) expect(passoEfetivo(passo, etapa)).toBe(passo);
+    }
   });
 
-  test("quem ainda não falou aparece digitando — é daí que vem a tensão", () => {
-    expect(digitando(CASCATA, 0)).toEqual(["Carlos", "Dona Lúcia", "Marcos Admin"]);
-    expect(digitando(CASCATA, 5000)).toEqual(["Marcos Admin"]);
-    expect(digitando(CASCATA, 7000)).toEqual([]);
-  });
-});
-
-describe("o cutucão de Amara", () => {
-  test("só na investigação, só depois de 4 minutos, e só se a matéria não foi aberta", () => {
-    const parado = MINUTOS_ATE_O_CUTUCAO * 60_000;
-    expect(deveCutucar(estado(), parado)).toBe(true);
-    expect(deveCutucar(estado(), parado - 1)).toBe(false);
-    // Já inspecionou: não há o que cutucar.
-    expect(deveCutucar(estado({ inspecionouMateria: true }), parado)).toBe(false);
-    // Fora da investigação ela estaria falando durante a análise — e o silêncio
-    // dela na Etapa 2 é o que faz o reconhecimento de padrão acontecer.
-    expect(deveCutucar(estado({ passo: "intervencao" }), parado)).toBe(false);
+  test("etapaAntes segue a ordem do botão único da professora", () => {
+    expect(etapaAntes("exploracao", "mural")).toBe(true);
+    expect(etapaAntes("mural", "fichas")).toBe(true);
+    expect(etapaAntes("fichas", "fichas")).toBe(false);
+    expect(etapaAntes("explicacao", "mural")).toBe(false);
   });
 });
 
-describe("o portão de enviar", () => {
-  const pronto = estado({ passo: "intervencao", inspecionouMateria: true, ouviuPodcast: true });
-
-  test("exige a matéria aberta — é o portão que a missão existe para instalar", () => {
-    expect(podeEnviar(estado({ ouviuPodcast: true }), "B")).toBe(false);
-    expect(oQueFaltaParaEnviar(estado({ ouviuPodcast: true }), "B")).toMatch(/matéria completa/);
+describe("a tela de cada passo", () => {
+  test("todo passo tem tela, e o Mural é uma tela só nas duas etapas", () => {
+    const telas = PASSOS.map(telaDoPasso);
+    expect(telas).toEqual([
+      "desafio",
+      "feed",
+      "salvos",
+      "espera",
+      "mural",
+      "mural",
+      "explicacao",
+      "reflexao",
+      "enquetes",
+      "fim",
+    ]);
   });
 
-  test("exige o episódio ouvido e uma opção marcada", () => {
-    expect(oQueFaltaParaEnviar(estado(), "B")).toMatch(/episódio/);
-    expect(oQueFaltaParaEnviar(pronto, null)).toMatch(/Escolha uma/);
-  });
-
-  test("com tudo em ordem, libera e não tem o que dizer", () => {
-    expect(podeEnviar(pronto, "B")).toBe(true);
-    expect(oQueFaltaParaEnviar(pronto, "B")).toBeNull();
+  test("só o Mural e as fichas leem o Mural", () => {
+    expect(PASSOS.filter(precisaDoMural)).toEqual(["mural", "fichas"]);
   });
 });
 
-describe("o feed", () => {
-  test("a mensagem-chave é a única que abre a matéria", () => {
-    const feed: MensagemDoFeed[] = [
-      { id: "m1", autor: "Carlos", hora: "14:31", tipo: "texto", texto: "…" },
-      { id: "m8", autor: "Carlos", hora: "14:46", tipo: "print", texto: "…", abreMateria: true },
-    ];
-    expect(mensagemChave(feed)?.id).toBe("m8");
-    expect(mensagemChave([])).toBeUndefined();
+describe("gateMudou — quando o polling relê a sessão", () => {
+  const estado = {
+    passo: "publicado",
+    etapa: "exploracao",
+    rodada: 1,
+    coberturaId: "c1",
+  } as Estado;
+  const gate = (parte: Partial<RespostaGate>): RespostaGate => ({
+    etapa: "exploracao",
+    rodada: 1,
+    coberturaId: "c1",
+    passoEfetivo: "publicado",
+    aguardandoOProfessor: true,
+    agora: "2026-09-25T08:00:00.000Z",
+    ...parte,
+  });
+
+  test("nada mudou: não relê", () => {
+    expect(gateMudou(estado, gate({}))).toBe(false);
+  });
+
+  test("a professora abriu o Mural", () => {
+    expect(gateMudou(estado, gate({ passoEfetivo: "mural", etapa: "mural" }))).toBe(true);
+  });
+
+  test("a etapa andou mesmo sem o passo andar", () => {
+    expect(gateMudou(estado, gate({ etapa: "mural" }))).toBe(true);
+  });
+
+  test("zerar a turma (rodada) e tema novo (cobertura) relêem", () => {
+    expect(gateMudou(estado, gate({ rodada: 2 }))).toBe(true);
+    expect(gateMudou(estado, gate({ coberturaId: "c2" }))).toBe(true);
+  });
+
+  test("rodada nula (o gate ainda não nasceu) não conta como mudança", () => {
+    expect(gateMudou(estado, gate({ rodada: null, coberturaId: null }))).toBe(false);
+  });
+});
+
+describe("a contagem é em CODE POINTS, como a api", () => {
+  test("um emoji é um caractere, não dois", () => {
+    expect("😀".length).toBe(2);
+    expect(codePoints("😀")).toBe(1);
+  });
+
+  test("dez emojis passam no piso de 10 — o `.length` diria 20", () => {
+    const dez = "😀".repeat(10);
+    expect(legendaValida(dez, 10, 140)).toBe(true);
+    expect(legendaValida("😀".repeat(9), 10, 140)).toBe(false);
+  });
+
+  test("140 emojis cabem; 141 não", () => {
+    expect(legendaValida("😀".repeat(140), 10, 140)).toBe(true);
+    expect(legendaValida("😀".repeat(141), 10, 140)).toBe(false);
+  });
+
+  test("a legenda é contada DEPOIS de normalizada, como a api grava", () => {
+    expect(normalizarLegenda("  a\n\n\n   b  ")).toBe("a b");
+    // Dez caracteres de espaço em volta de três letras não são uma legenda.
+    expect(legendaValida("a          bc", 10, 140)).toBe(false);
+  });
+
+  test("o aviso de legenda curta só aparece depois de começar a escrever", () => {
+    expect(legendaCurta("", 10)).toBe(false);
+    expect(legendaCurta("   ", 10)).toBe(false);
+    expect(legendaCurta("curta", 10)).toBe(true);
+    expect(legendaCurta("agora sim, dez", 10)).toBe(false);
+  });
+
+  test("a reflexão conta o texto aparado, de 100 a 500", () => {
+    expect(faltamNaReflexao("", 100)).toBe(100);
+    expect(faltamNaReflexao(`  ${"a".repeat(98)}  `, 100)).toBe(2);
+    expect(faltamNaReflexao("a".repeat(120), 100)).toBe(0);
+    expect(reflexaoValida("😀".repeat(100), 100, 500)).toBe(true);
+    expect(reflexaoValida("😀".repeat(501), 100, 500)).toBe(false);
+  });
+});
+
+describe("a poda: exatamente três", () => {
+  test("pronta, insuficiente e excesso", () => {
+    expect(situacaoDaSelecao(3, 3)).toEqual({ tipo: "pronta" });
+    expect(situacaoDaSelecao(1, 3)).toEqual({ tipo: "insuficiente", faltam: 2 });
+    expect(situacaoDaSelecao(12, 3)).toEqual({ tipo: "excesso", excesso: 9 });
+  });
+
+  test("a seleção deriva dos salvos, na ordem do salvamento, menos os desmarcados", () => {
+    expect(selecionados(["b", "a", "c", "d"], new Set(["c"]))).toEqual(["b", "a", "d"]);
+  });
+
+  test("alternar liga e desliga preservando a ordem dos outros", () => {
+    expect(alternar(["a", "b"], "c")).toEqual(["a", "b", "c"]);
+    expect(alternar(["a", "b", "c"], "b")).toEqual(["a", "c"]);
+  });
+
+  test("os salvos do F5 que não são desta cobertura caem, e sem repetição", () => {
+    const ids = new Set(["post_a_1", "post_b_1"]);
+    expect(salvosValidos(["post_b_1", "post_x_9", 3, "post_b_1", "post_a_1"], ids)).toEqual(["post_b_1", "post_a_1"]);
+  });
+});
+
+describe("o andaime do feed", () => {
+  test("nenhuma dica enquanto está cedo e ela não curtiu cinco vezes", () => {
+    expect(dicaDoFeed(0, CURTIDAS_ATE_A_DICA - 1, SEGUNDOS_ATE_A_DICA - 1)).toBeNull();
+  });
+
+  test("três minutos sem salvar: a dica do marcador", () => {
+    expect(dicaDoFeed(0, 0, SEGUNDOS_ATE_A_DICA)).toBe("inatividade");
+  });
+
+  test("cinco curtidas sem salvar: a dica de que curtir não leva aos Stories", () => {
+    expect(dicaDoFeed(0, CURTIDAS_ATE_A_DICA, 10)).toBe("curtidas");
+  });
+
+  test("as duas somem no primeiro salvamento", () => {
+    expect(dicaDoFeed(1, 99, 999)).toBeNull();
+  });
+
+  test("o tempo nunca é negativo (o relógio da máquina da escola atrasa) nem passa do teto da api", () => {
+    expect(segundosDesde(10_000, 5_000)).toBe(0);
+    expect(segundosDesde(0, 61_500)).toBe(61);
+    expect(segundosDesde(0, 99_999_999)).toBe(TEMPO_DE_FEED_MAX_S);
+  });
+});
+
+describe("textos que a tela monta", () => {
+  test("o artigo do tema desce para minúscula; o nome próprio não", () => {
+    expect(temaNaFrase("A reforma e ocupação da praça central")).toBe("a reforma e ocupação da praça central");
+    expect(temaNaFrase("Os jogos da escola")).toBe("os jogos da escola");
+    expect(temaNaFrase("Praça Central reaberta")).toBe("Praça Central reaberta");
+    expect(temaNaFrase("Alagamento no bairro")).toBe("Alagamento no bairro");
+  });
+
+  test("a conta aparece sem o @, como no cabeçalho do post", () => {
+    expect(nomeDaConta("@folhaoficial_")).toBe("folhaoficial_");
+  });
+});
+
+describe("o toque no Story do Mural", () => {
+  test("avança dentro da tríade e, no fim da própria, passa à do colega", () => {
+    expect(avancar({ lado: "minha", indice: 0 }, 3)).toEqual({ lado: "minha", indice: 1 });
+    expect(avancar({ lado: "minha", indice: 2 }, 3)).toEqual({ lado: "par", indice: 0 });
+    expect(avancar({ lado: "par", indice: 2 }, 3)).toEqual({ lado: "par", indice: 2 });
+  });
+
+  test("volta do primeiro do colega ao último da própria", () => {
+    expect(voltar({ lado: "par", indice: 0 }, 3)).toEqual({ lado: "minha", indice: 2 });
+    expect(voltar({ lado: "minha", indice: 0 }, 3)).toEqual({ lado: "minha", indice: 0 });
+    expect(voltar({ lado: "par", indice: 2 }, 3)).toEqual({ lado: "par", indice: 1 });
+  });
+});
+
+describe("o enunciado da enquete: a mensagem da Amara e a pergunta", () => {
+  /** Os enunciados REAIS da ficha da api — o teste vale para o texto que vai à tela. */
+  function enunciadosDaFicha(): string[] {
+    const fonte = readFileSync("../../api/src/evidencias/fichas/exp07ef1b.ts", "utf8");
+    return [...fonte.matchAll(/enunciado:\s*"((?:[^"\\]|\\.)*)"/g)].map((m) => JSON.parse(`"${m[1] ?? ""}"`) as string);
+  }
+
+  test("os dois enunciados da ficha se separam em contexto e pergunta", () => {
+    const [p1, p2] = enunciadosDaFicha();
+    expect(p1 && separarEnunciado(p1)).toEqual({
+      contexto:
+        "Antes de fechar, uma curiosidade rápida! Imagina que alguém da escola viu os Stories que você publicou e mandou: 'Valeu pelo resumo! Agora já sei tudo sobre o que aconteceu.' O que você diria?",
+      pergunta: "Sua resposta seria...",
+    });
+    expect(p2 && separarEnunciado(p2).pergunta).toBe("O que você acha?");
+  });
+
+  test("sem a linha em branco, tudo é pergunta — nada some", () => {
+    expect(separarEnunciado("Só a pergunta?")).toEqual({ contexto: null, pergunta: "Só a pergunta?" });
+  });
+
+  test("separador sem pergunta depois não apaga o texto", () => {
+    expect(separarEnunciado("Só o contexto.\n\n   ")).toEqual({ contexto: null, pergunta: "Só o contexto." });
+  });
+});
+
+describe("a espera entre tentativas", () => {
+  test("2 s, 4 s, 8 s e depois 15 s", () => {
+    expect([0, 1, 2, 3, 10].map(esperaDaTentativa)).toEqual([2_000, 4_000, 8_000, 15_000, 15_000]);
   });
 });

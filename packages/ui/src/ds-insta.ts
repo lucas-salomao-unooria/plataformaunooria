@@ -48,4 +48,35 @@ export {
   Button as ButtonInsta,
   Avatar as AvatarInsta,
   Badge as BadgeInsta,
+  Icon as IconInsta,
+} from '@unooria/design-system/instanooria';
+
+/**
+ * As extensões da 0.2.4/0.2.5, nascidas para a exp07ef1b (A Seleção): a DM da
+ * Amara (`DirectThread` + `MessageBubble` + `DmPoll`), o alerta irreversível
+ * da publicação (`ConfirmDialog`), a ficha técnica sobre o Story
+ * (`BottomSheet` não modal), a pílula "Ir para aba Salvos"
+ * (`FloatingButton`), o compositor da legenda (`StoryComposer`) e as variantes
+ * de `MediaGrid` (seleção) e `StoryViewer` (camada e rodapé). `TabBar` e
+ * `SegmentedTabs` são da seção desde a 0.1.x e só não tinham consumidor aqui.
+ */
+export {
+  BottomSheet,
+  ConfirmDialog,
+  DirectThread,
+  DmPoll,
+  FloatingButton,
+  MediaGrid,
+  MessageBubble,
+  SegmentedTabs,
+  StoryComposer,
+  StoryViewer,
+  TabBar,
+} from '@unooria/design-system/instanooria';
+export type {
+  InstaDmPollOption,
+  InstaIconName,
+  InstaMediaItem,
+  InstaSegmentItem,
+  InstaTabItem,
 } from '@unooria/design-system/instanooria';

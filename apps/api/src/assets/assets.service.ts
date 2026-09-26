@@ -75,16 +75,16 @@ export class AssetsService {
   }
 
   /**
-   * Mídia FIXA de uma experiência — as vozes e as fotos que a exp07ef1b gera uma
-   * vez e serve a todo mundo.
+   * Mídia FIXA de uma experiência — a que ela gera uma vez e serve a todo
+   * mundo (nasceu com as vozes e as fotos do Eco no Grupo, retirado pela ADR-113).
    *
    * Três diferenças em relação a `salvarImagemDePost`, e as três são de
    * natureza do dado:
    *
    * - **Não leva `escola_id` no caminho.** Esta mídia é do CONTRATO, não de uma
-   *   escola: a Dona Lúcia do grupo é a MESMA para toda a rede, e uma cópia por
-   *   escola multiplicaria o custo de geração por cem sem nenhum ganho — e faria
-   *   duas turmas ouvirem vozes diferentes no mesmo boato.
+   *   escola: o personagem é o MESMO para toda a rede, e uma cópia por escola
+   *   multiplicaria o custo de geração por cem sem nenhum ganho — e faria duas
+   *   turmas verem mídias diferentes na mesma missão.
    * - **Aceita qualquer tipo**, porque áudio existe: `image/webp` era o único
    *   `contentType` que este serviço sabia produzir.
    * - **A conversão é opcional.** Com `imagem`, converte para webp no tamanho

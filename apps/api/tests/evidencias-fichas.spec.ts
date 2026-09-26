@@ -6,10 +6,10 @@ import { validarFicha } from "../src/evidencias/regras";
 /**
  * TODA FICHA DO REGISTRO É CONFERIDA (E14).
  *
- * A primeira ficha do registro é a de Quem Mandou Isso? v2.2 (exp05ef1b). Cada
- * uma entra com a trava: os códigos existem na BNCC homologada (`curriculo/`),
- * o `expId` existe nos manifestos, o gabarito só usa níveis válidos e todo
- * marcador de pergunta aponta para uma pergunta que existe.
+ * As fichas do registro são a de Quem Mandou Isso? v2.2 (exp05ef1b) e a da A
+ * Seleção (exp07ef1b). Cada uma entra com a trava: os códigos existem na BNCC
+ * homologada (`curriculo/`), o `expId` existe nos manifestos, o gabarito só usa
+ * níveis válidos e todo marcador de pergunta aponta para uma pergunta que existe.
  *
  * A prova de que a trava FUNCIONA com ficha de verdade (e não só passa por
  * vazio) está nos dois últimos testes: uma ficha boa passa pelo mesmo caminho,
@@ -38,8 +38,12 @@ test("uma ficha por missão", () => {
   expect(ids.length).toBe(new Set(ids).size);
 });
 
-/* Laço, e não `describe.each`: com o registro vazio, o `.each` do Jest estoura
-   ("called with an empty Array of table data"). */
+/* Laço, e não `describe.each`: com o registro vazio — como ele nasceu —, o
+   `.each` do Jest estoura ("called with an empty Array of table data"). */
+test("o registro tem ficha para conferir (senão a trava passaria por vazio)", () => {
+  expect(FICHAS.map((f) => f.expId)).toContain("exp07ef1b");
+});
+
 for (const ficha of FICHAS) {
   test(`a ficha de ${ficha.expId} é válida`, () => {
     expect(problemas(ficha)).toEqual([]);

@@ -43,17 +43,16 @@ const GUIAS = [
   },
   {
     rota: "/professor/entre-redes/7-ano/unidade-1/guia",
-    missao: "O Eco no Grupo · 7º ano",
-    /* As três respostas e as falas do bairro vêm de
-       `GET /o-eco-no-grupo/professor/material`. O texto exato da opção certa
-       está aqui porque é ele que o professor lê antes da aula — paráfrase no
-       guia deixava a turma comentando uma frase que ninguém viu. */
+    missao: "A Seleção · 7º ano",
+    /* Os gatilhos dos três momentos, as três perguntas do debate e as seleções
+       dos colegas virtuais vêm de `GET /a-selecao/professor/material`. A
+       pergunta é conferida pelo texto exato: o professor a lê no debate, e
+       paráfrase no guia deixaria a turma comentando uma frase que ninguém viu. */
     vivo: [
-      /As três respostas e o que o bairro devolve — só para você/i,
-      /Responder citando o print/i,
-      /Dona Lúcia/i,
+      /Os colegas virtuais: Tomás e Malu/i,
+      /qual detalhe fundamental do evento ele mostrou/i,
     ],
-    bncc: "EF07CO08",
+    bncc: "EF07CO11",
   },
   {
     rota: "/professor/entre-redes/6-ano/unidade-2/guia",

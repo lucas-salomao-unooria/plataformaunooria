@@ -11,6 +11,9 @@ import { nomesDosMembros, type EquipeNoPainel } from "@/lib/equipe-no-painel";
  *
  * "entrou" só aparece quando alguém de fato entrou: sem isso, a linha traz o
  * primeiro membro como representante, e dizer que ele entrou seria falso.
+ *
+ * Sem membros (a api da exp07ef1b devolve só o nome da equipe, e a tela os
+ * cruza com as equipes da missão), a linha de nomes some em vez de sair vazia.
  */
 export function EquipeNaLinha({
   equipe,
@@ -26,7 +29,9 @@ export function EquipeNaLinha({
       <Tag variant="info" size="sm">
         {equipe.nome}
       </Tag>
-      <span className="text-[11px] leading-snug text-unooria-neutral-600">{nomesDosMembros(equipe)}</span>
+      {equipe.membros.length > 0 ? (
+        <span className="text-[11px] leading-snug text-unooria-neutral-600">{nomesDosMembros(equipe)}</span>
+      ) : null}
       {entrou ? (
         <span className="text-[11px] leading-snug text-unooria-neutral-500">entrou: {representante}</span>
       ) : null}

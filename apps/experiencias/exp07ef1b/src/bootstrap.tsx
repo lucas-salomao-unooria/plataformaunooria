@@ -1,49 +1,73 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { createExperiencia, type ExperienciaHandle } from "@edu/sdk";
-import { api, codigoDoErro, definirExperiencia } from "./lib/api";
-import { ligarTelemetria } from "./lib/telemetria";
+import { ButtonInsta } from "@edu/ui/ds-insta";
+import { Avisos } from "./app/avisos";
+import { useConexao } from "./app/conexao";
+import { Indisponivel } from "./app/escola/telas-da-escola";
+import { SelecaoApp } from "./app/selecao-app";
+import { api, definirExperiencia, reportarErro, tipoDaFalha } from "./lib/api";
+import { ligarTelemetria, telemetria } from "./lib/telemetria";
+import { GLOBAL } from "./lib/textos";
 import { EXP_ID, EXP_VERSION, type RespostaSessao } from "./lib/tipos";
-import { OEcoApp } from "./app/o-eco-app";
+
+type Falha = "bloqueada" | "sem-turma" | "outra";
 
 /**
- * Handshake com o hub e primeira leitura do estado.
+ * Handshake com o hub e primeira leitura do estado — na ordem em que acontecem:
  *
- * Duas etapas, na ordem: `createExperiencia` (que troca `exp:ready`/`hub:init`
- * por postMessage e recebe o token) e `GET /o-eco-no-grupo/sessao`, que devolve
- * o estado, o conteúdo do grupo e o mapa de mídia.
+ * 1. `createExperiencia` troca `exp:ready`/`hub:init` por postMessage e recebe
+ *    o token, o estudante e o `config`. Fora do hub ele nunca resolve: abra por
+ *    `/exp/exp07ef1b` ou pela bancada `/dev-embed?src=http://localhost:5179`.
+ * 2. `GET /a-selecao/sessao` — o estado da criança, reconciliado com a etapa da
+ *    turma, e os 12 posts da cobertura. É ela que CRIA a sessão e o gate na
+ *    primeira entrada (o polling não escreve), e é pelo funil dela que passa a
+ *    guarda de liberação (ADR-69): o 403 chega aqui.
  *
- * **A tela de espera e a de erro falam a língua de um app de verdade.** Nada
- * aqui pode dizer "experiência", "atividade" ou "missão": o estudante acha que
- * abriu um mensageiro, e é essa premissa que a missão mede. Um spinner genérico
- * também não serve — ele denuncia que algo está sendo montado para ele.
+ * A primeira leitura já passa pela `conexao` da missão: sem rede ou sem token
+ * válido, a tela mostra o aviso diegético e repete sozinha — a criança não
+ * precisa saber que existe um F5.
+ *
+ * **A tela de espera e a de erro falam a língua de um app de verdade** (o
+ * esqueleto do cromo, "Não foi possível carregar o feed agora"), menos o 403,
+ * que é a escola falando: a criança não fez nada de errado, e quem resolve é a
+ * professora.
  */
 export function Bootstrap() {
+  const conexao = useConexao();
+  const { executar } = conexao;
+  const [pronto, setPronto] = useState(false);
   const [inicial, setInicial] = useState<RespostaSessao | null>(null);
-  const [falhou, setFalhou] = useState<string | null>(null);
+  const [falha, setFalha] = useState<Falha | null>(null);
+
+  const carregar = useCallback(async () => {
+    setFalha(null);
+    try {
+      const sessao = await executar(() => api.get<RespostaSessao>("/a-selecao/sessao"));
+      setInicial(sessao);
+      telemetria.entrou(sessao.passo);
+    } catch (erro) {
+      const tipo = tipoDaFalha(erro);
+      setFalha(tipo === "bloqueada" ? "bloqueada" : tipo === "conflito" ? "sem-turma" : "outra");
+      // A abertura que falhou DEPOIS do handshake tem token e deixa rastro (ADR-84).
+      if (tipo !== "bloqueada" && tipo !== "conflito") reportarErro(erro);
+    }
+  }, [executar]);
 
   useEffect(() => {
     let vivo = true;
+    let exp: ExperienciaHandle | null = null;
     void (async () => {
-      let exp: ExperienciaHandle | null = null;
       try {
         exp = await createExperiencia({ expId: EXP_ID, expVersion: EXP_VERSION });
         definirExperiencia(exp);
         ligarTelemetria(exp);
-        const sessao = await api.get<RespostaSessao>("/o-eco-no-grupo/sessao");
-        if (vivo) setInicial(sessao);
-      } catch (erro) {
-        // O boot que falha DEPOIS do handshake tem token, e por isso pode
-        // reportar: era esta a falha que o estudante via como "não deu para
-        // abrir agora" e que não deixava rastro nenhum no servidor (ADR-84).
-        // Antes do handshake `exp` é null — ali não há token, e o sinal é a
-        // ausência de `exp:ready`, que o hub observa.
-        exp?.reportarErro(erro);
         if (!vivo) return;
-        setFalhou(
-          codigoDoErro(erro) === "rede"
-            ? "Conectando… Sem conexão com a internet. Suas ações serão sincronizadas assim que o sinal voltar."
-            : "Esta conversa não está disponível agora.",
-        );
+        setPronto(true);
+      } catch (erro) {
+        // Antes do handshake não há token: o sinal é a ausência de `exp:ready`,
+        // que o hub observa. Depois dele, o SDK reporta (ADR-84).
+        exp?.reportarErro(erro);
+        if (vivo) setFalha("outra");
       }
     })();
     return () => {
@@ -51,28 +75,35 @@ export function Bootstrap() {
     };
   }, []);
 
-  if (falhou) {
+  useEffect(() => {
+    if (pronto) void carregar();
+  }, [pronto, carregar]);
+
+  if (falha === "bloqueada") return <Indisponivel />;
+
+  if (falha) {
     return (
-      <div
-        className="app"
-        style={{ alignItems: "center", justifyContent: "center", padding: 24, textAlign: "center" }}
-      >
-        <p style={{ fontSize: 13, color: "var(--wa-color-text-meta)" }}>{falhou}</p>
+      <div className="app app--centrado" data-insta-theme="light">
+        <p className="aviso-de-abertura">{falha === "sem-turma" ? GLOBAL.semTurma : GLOBAL.naoAbriu}</p>
+        {pronto && falha === "outra" && (
+          <ButtonInsta variant="secondary" size="md" onClick={() => void carregar()}>
+            {GLOBAL.tentarNovamente}
+          </ButtonInsta>
+        )}
       </div>
     );
   }
 
   if (!inicial) {
-    // Esqueleto do próprio cliente: a barra de status e o cromo do chat, sem
-    // conteúdo. O estudante vê a moldura do app que ele espera.
+    /* O esqueleto do próprio app — a barra do topo, sem conteúdo —, e não um
+       "carregando" genérico: ele denunciaria que algo está sendo montado. */
     return (
-      <div className="app">
-        <div style={{ height: 28, background: "var(--wa-color-surface-appbar)" }} />
-        <div style={{ height: 56, background: "var(--wa-color-surface-appbar)", opacity: 0.7 }} />
-        <div className="app__corpo" />
+      <div className="app" aria-busy="true">
+        <div className="esqueleto__topo" />
+        <Avisos aviso={conexao.aviso} voz="clone" aoRevalidar={conexao.revalidar} />
       </div>
     );
   }
 
-  return <OEcoApp inicial={inicial} />;
+  return <SelecaoApp inicial={inicial} conexao={conexao} />;
 }

@@ -1,19 +1,18 @@
 {
   "id": "exp07ef1b",
-  "nome": "O Eco no Grupo: Quem Decide o Que Roda?",
-  "versao": "0.1.5",
+  "nome": "A Seleção",
+  "versao": "1.0.0",
   "produto": "entre-redes",
   "series": ["7EF"],
   "unidade": 1,
-  "capabilities": ["telemetria", "progresso", "avaliacao", "ia"],
+  "capabilities": ["telemetria", "progresso", "ia", "avaliacao"],
   "viewport": { "largura": 375, "altura": 812 },
   "permissoes": ["forms"],
   "publico": "estudante",
   "verbos": {
-    "interacted": "abriu conversa, tocou o áudio, inspecionou a matéria completa",
-    "attempted": "marcou uma das três respostas no menu de intervenção",
-    "scored": "enviou a contraprova citando o print",
-    "progressed": "avançou nos cards de sistematização e nos gates da aula",
-    "completed": "entregou o Meu percurso"
+    "attempted": "publicou três posts nos Stories do grêmio com uma legenda",
+    "interacted": "salvou e removeu posts do feed da cobertura",
+    "progressed": "comparou a própria publicação com a do colega no Mural da Turma",
+    "completed": "enviou a reflexão e respondeu às enquetes da Amara"
   }
 }

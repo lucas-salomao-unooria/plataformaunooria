@@ -16,8 +16,8 @@ Complementa o `AGENTS.md` de `apps/api`, que vence em conflito.
 - **Fica na CRIAÇÃO da sessão, não em toda rota.** Quem já entrou fica —
   encerrar fecha a entrada, não expulsa a criança no meio da aula.
 - **Experiência nova declara o próprio `EXP_ID`** (`comum/insta/defaults.ts`,
-  `unootube/catalogo.ts`, `unoogpt/regras/defaults.ts`, `vila/catalogo.ts`,
-  `o-eco-no-grupo/midia.ts`) e ele tem de bater com o `id` do
+  `unootube/catalogo.ts`, `unoogpt/regras/defaults.ts`, `vila/catalogo.ts`)
+  e ele tem de bater com o `id` do
   `public/experiencia.json`. Divergir faz a missão NUNCA abrir, com a liberação
   gravada e visível na tela do professor — não há erro que aponte para isso.
 - **`bloqueada` não é estado do banco**: é a ausência de linha. E ela aparece na

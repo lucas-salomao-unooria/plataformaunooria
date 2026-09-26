@@ -285,13 +285,13 @@ lendo o arquivo.
   plataforma.\\
 \zebra \cd{viewport} & \cd{\{largura, altura\}?} & Presente \implica{} o hub
   embeda dentro do \cd{DispositivoFrame} (casca de aparelho com escala). A
-  exp08ef1b e a exp07ef1b são 375$\times$812; a exp04ef1b \emph{não} tem \cd{viewport},
+  exp08ef1b e a exp06ef2b são 375$\times$812; a exp04ef1b \emph{não} tem \cd{viewport},
   porque foi desenhada para \emph{desktop}. Quem desenha o aparelho é o hub ---
   a experiência \textbf{não} empilha uma casca própria.\\
 \cd{publico} & \cd{estudante|professor} & \cd{professor} \implica{} ferramenta do
   professor, e \rota{/exp/*} responde \textbf{404} para ela.\\
 \zebra \cd{permissoes} & \emph{string[]} & Permissões que o \emph{iframe} daquela
-  experiência precisa: \cd{pointer-lock} (app-70), \cd{forms} (exp02em1b, exp07ef1b) e
+  experiência precisa: \cd{pointer-lock} (app-70), \cd{forms} (exp02em1b, exp08ef4b, exp05ef1b) e
   \cd{downloads} (app-90, app-92), traduzidos pelo \cd{ExpFrame} nos tokens
   \cd{allow-pointer-lock}, \cd{allow-forms} e \cd{allow-downloads}. Vazio (o
   \emph{default}) = nenhuma. \textbf{O vocabulário é fechado em três lugares}
@@ -505,7 +505,7 @@ export interface AiConversaRequest {
 
 export interface AiSpeechRequest {
   texto?: string;                                    // monologo
-  turnos?: Array<{ falante: string; texto: string }>; // dialogo (podcast)
+  turnos?: Array<{ falante: string; texto: string }>; // dialogo
   /** Timbre por falante, NEUTRO de vendor: `jovem-feminino`, `idoso-masculino`...
    *  Quem chama nunca escolhe a voz do catalogo do fornecedor. */
   falantes: AiFalante[];

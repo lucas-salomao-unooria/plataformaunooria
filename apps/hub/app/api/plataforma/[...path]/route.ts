@@ -72,14 +72,9 @@ const PREFIXOS_PERMITIDOS = [
      página. É o único caminho do unooGPT que não passa por `apiDoServidor`.
      As guardas de papel estão na api (`@Roles("professor")`). */
   "unoogpt",
-  /* exp07ef1b: os GATES da aula (abrir a Aula 2, congelar o debate, liberar a
-     reflexão) e o preparo da mídia são client-side — a professora aperta
-     durante a aula e as 30 telas precisam andar na hora, sem recarregar
-     página. As guardas de papel estão na api (`@Roles("professor")`). */
-  "o-eco-no-grupo",
   /* exp06ef2b: o gate da aula (abrir a Aula 2, pausar a simulação) e o "zerar
-     turma" são client-side pela mesma razão da exp07ef1b — a professora aperta no
-     meio da aula e as 30 telas andam na hora. As guardas de papel estão na api
+     turma" são client-side — a professora aperta no meio da aula e as 30 telas
+     andam na hora, sem recarregar a página. As guardas de papel estão na api
      (`@Roles("professor", "gestor_escola", "gestor_contrato")`). */
   "rastro-boato",
   /* exp01ef1b: o latch da Roda (LIBERAR REFLEXÃO FINAL), a preparação do pacote
@@ -102,6 +97,13 @@ const PREFIXOS_PERMITIDOS = [
      aprovar, os botões e zerar são `@Roles("professor")`, e só de quem leciona;
      gestor lê). */
   "quem-mandou-isso",
+  /* exp07ef1b: o preparo da cobertura (gerar/aprovar), a geração das imagens
+     — um laço do cliente, duas por chamada, porque doze não cabem nos 30 s
+     deste BFF —, o botão ÚNICO da aula (Mural, fichas, conclusão), a consulta
+     leve do painel a cada 5 s e o "zerar turma" são client-side: a professora
+     aperta na frente da sala e as telas andam na hora pelo polling (ADR-93).
+     As guardas de papel estão na api (`@Roles("professor", ...GESTORES)`). */
+  "a-selecao",
   /* Os cadastros de interesse do site público (ADR-107) — só a LEITURA, e só
      `admin` (o `@Roles` está na api). A ESCRITA não passa por aqui: ela vem de
      visitante sem sessão, e tem rota própria (`/api/cadastro-de-interesse`). */

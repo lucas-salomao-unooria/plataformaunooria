@@ -1,186 +1,180 @@
 /**
- * O contrato com `apps/api/src/o-eco-no-grupo` — espelho do que a api devolve.
+ * O contrato de `/a-selecao/*` e das enquetes (`/evidencias/exp07ef1b/*`)
+ * como o CLIENTE o vê.
  *
- * **Note a ausência do gabarito.** As opções chegam só com `id` e `texto`; não
- * há campo dizendo qual é a checada, nem qual desfecho cada uma produz, nem
- * quais estratégias do "Meu percurso" a missão considera prioritárias. Isso não
- * é omissão de digitação: o tipo do servidor é `Omit<...>`, e o bundle é
- * público — um campo a mais aqui seria a resposta da missão legível no DevTools
- * (regra inviolável nº 3).
+ * Espelha `apps/api/src/a-selecao/contrato-de-rotas.ts` — e espelha só o que a
+ * TELA precisa ver. **Não existe tipo para o gabarito do post** (enquadramento,
+ * fonte ouvida, ângulo) dentro do feed, nem para a matriz: a api monta a
+ * resposta por allowlist (`PostPublicoSchema`) e esses campos nunca descem
+ * antes de a professora acender as fichas. Acrescentar um campo opcional aqui
+ * "por garantia" seria escrever a suspeita de que eles podem vir — e a próxima
+ * pessoa leria isso como permissão. O gabarito cruza a fronteira UMA vez,
+ * dentro de `FichaDoPost`, no Mural, e só com `fichasReveladas`.
+ *
+ * Os ids de post são `string`, e não a união `post_a_1 … post_c_4`: o cliente
+ * nunca CONSTRÓI um id, ele devolve o que veio da cobertura. (E o bloco do id
+ * é o veículo — uma lista deles aqui seria meia ficha técnica no bundle.)
  */
 
 export const EXP_ID = "exp07ef1b";
 
 /**
- * Sobe JUNTO com `package.json#version` e `public/experiencia.json#versao`.
- *
- * Os três precisam bater: o CI lê a versão do manifesto para montar o caminho
- * no bucket, que é imutável, e o `package.json` para decidir se republica.
- * `regras.test.ts` compara os três — a exp04ef1b e a exp02em1b divergiram aqui, cada
- * uma com um comentário dizendo para não divergir.
+ * A versão vive em TRÊS lugares: aqui, no `package.json` e no
+ * `public/experiencia.json`. O CI lê a do manifesto para montar o caminho
+ * IMUTÁVEL no bucket, e a divergência já causou bug — o `versao.test.ts`
+ * compara os três (ADR-84).
  */
-export const EXP_VERSION = "0.1.5";
+export const EXP_VERSION = "1.0.0";
 
-// ------------------------------------------------------------------ estado
+// ──────────────────────────────────────────────────────────── vocabulário
 
-export type Passo =
-  | "chat_amara"
-  | "grupo"
-  | "breakpoint"
-  | "podcast"
-  | "intervencao"
-  | "desfecho"
-  | "sintese"
-  | "reflexao"
-  | "fim";
+/**
+ * Os passos do estudante, na ordem em que ele os percorre. Espelho declarado de
+ * `PASSOS` em `apps/api/src/a-selecao/regras/passos.ts` — `regras.test.ts` lê
+ * aquele arquivo e reprova a divergência.
+ */
+export const PASSOS = [
+  "desafio",
+  "feed",
+  "salvos",
+  "publicado",
+  "mural",
+  "fichas",
+  "explicacao",
+  "reflexao",
+  "enquetes",
+  "fim",
+] as const;
+export type Passo = (typeof PASSOS)[number];
 
-export type Etapa = "investigacao" | "aula2" | "debate" | "reflexao";
+/** As etapas da turma — o botão único da professora anda uma por vez. */
+export const ETAPAS = ["exploracao", "mural", "fichas", "explicacao"] as const;
+export type Etapa = (typeof ETAPAS)[number];
 
-export type IdDeOpcao = "A" | "B" | "C";
+/** Os passos que a própria criança pede por `POST /a-selecao/passo`. */
+export type PassoPedido = "feed" | "salvos" | "reflexao";
 
+// ───────────────────────────────────────────────────────────── o feed
+
+export type TipoDeGrafico = "barras" | "linhas" | "mapa-de-calor";
+
+/** O gráfico de um post de métricas: a TELA o desenha a partir dos números. */
+export interface Grafico {
+  tipo: TipoDeGrafico;
+  titulo: string;
+  /** "R$", "min", "%" — ou vazio quando a série é contagem. */
+  unidade: string;
+  series: { rotulo: string; valor: number }[];
+  destaque?: string;
+}
+
+/** Um post como o estudante o recebe. Sem gabarito, por construção. */
+export interface PostPublico {
+  id: string;
+  /** O nome da conta, com `@` ("@folhaoficial_"). */
+  perfil: string;
+  legenda: string;
+  curtidas: number;
+  comentarios: number;
+  comentariosDestaque: string[];
+  /** `url: null` enquanto a professora não gerou as imagens: a tela desenha o card. */
+  imagem: { url: string | null; alt: string };
+  /** Só nos posts de métricas: a tela desenha o SVG. */
+  grafico: Grafico | null;
+}
+
+// ──────────────────────────────────────────────────────────────── estado
+
+/** O estado da sessão, como TODA rota de estudante o devolve. */
 export interface Estado {
-  /** Já reconciliado com a etapa da turma — é ELE que decide a tela. */
+  sessaoId: string;
+  /** A ATIVIDADE (a cobertura homologada). Muda quando a professora troca o tema. */
+  coberturaId: string;
+  /** Sobe quando a professora zera a turma: a sessão passa a ser outra. */
+  rodada: number;
+  etapa: Etapa;
+  /** Já reconciliado com a etapa da turma — USE ESTE, nunca o cru. */
   passo: Passo;
-  /** O passo cru do estudante, antes do gate. */
+  /** O passo gravado. Divergente do de cima = a turma o está conduzindo. */
   passoDoEstudante: Passo;
-  /** `true` quando a turma segura o estudante: a tela de espera do breakpoint
-   *  é diferente da tela congelada do debate, e é este par que as distingue. */
-  aguardandoATurma: boolean;
-  inspecionouMateria: boolean;
-  ouviuAudio: boolean;
-  ouviuPodcast: boolean;
-  cardsLidos: number;
-  opcao: IdDeOpcao | null;
-  /**
-   * O que a resposta produziu no bairro. `null` até haver resposta.
-   *
-   * É por ele que a tela decide o que desenhar, e não por `opcao === "B"`: o
-   * bundle é PÚBLICO, e comparar com a letra punha a resposta certa legível no
-   * JS para quem abrisse o DevTools antes de responder (regra 3).
-   */
-  desfecho: "ruido" | "checada" | "conflito" | null;
-  desfazerUsado: number;
-  concluidoEm: string | null;
-  turma: { etapa: Etapa };
+  aguardandoOProfessor: boolean;
+  publicada: boolean;
+  publicadaEm: string | null;
+  /** A tríade do PRÓPRIO estudante, depois do latch. Nunca a de outro. */
+  selecao: string[] | null;
+  legenda: string | null;
+  reflexaoEnviada: boolean;
+  concluidaEm: string | null;
 }
 
-// ---------------------------------------------------------------- catálogo
-
-export type TipoDeMensagem = "texto" | "audio" | "foto" | "print";
-
-export interface MensagemDoFeed {
-  id: string;
-  autor: string;
-  hora: string;
-  tipo: TipoDeMensagem;
-  texto: string;
-  midia?: string;
-  /** Sempre presente em áudio: é o canal principal de acessibilidade, e o
-   *  fallback quando a mídia não foi preparada. */
-  transcricao?: string;
-  duracaoSeg?: number;
-  /** O selo nativo de duas setas. */
-  encaminhada?: boolean;
-  /** Abre o visualizador da matéria íntegra. */
-  abreMateria?: boolean;
-}
-
-export interface Materia {
-  fonte: string;
-  manchetePrint: string;
-  titulo: string;
-  paragrafoExibido: string;
-  paragrafoSuprimido: string;
-  fotoDoPrint: string;
-  fotoDaMateria: string;
-}
-
-export interface OpcaoPublica {
-  id: IdDeOpcao;
-  texto: string;
-}
-
-export interface Card {
-  id: string;
-  titulo: string;
-  corpo: string;
-}
-
-export interface Escolha {
-  id: string;
-  texto: string;
-}
-
-export interface Catalogo {
-  feed: MensagemDoFeed[];
-  materia: Materia;
-  opcoes: OpcaoPublica[];
-  cards: Card[];
-  estrategias: Escolha[];
-  justificativas: Escolha[];
-  amaraCelebra: string;
-  amaraCutucao: string;
-}
-
-// ---------------------------------------------------------------- respostas
-
-export interface Reacao {
-  autor: string;
-  texto: string;
-  /** A cadência do servidor: 2s → 3s → 2s. Não é o cliente que a inventa. */
-  atrasoMs: number;
-}
-
-export interface FalaDeAmara {
-  papel: "estudante" | "amara";
-  texto: string;
+export interface Limites {
+  selecao: number;
+  legendaMin: number;
+  legendaMax: number;
+  reflexaoMin: number;
+  reflexaoMax: number;
 }
 
 export interface RespostaSessao extends Estado {
-  catalogo: Catalogo;
-  /** `id → URL pública`, com `null` no que não foi preparado. */
-  midia: { urls: Record<string, string | null> };
-  reacoes: Reacao[] | null;
-  amara: FalaDeAmara[];
-  reflexao: { estrategias: string[]; justificativa: string; devolutiva: string | null } | null;
-  estudante: { nome: string; avatar: string };
+  cobertura: {
+    tema: string;
+    /** Os 12 posts na ORDEM DO FEED. */
+    posts: PostPublico[];
+  };
+  limites: Limites;
 }
 
-export interface RespostaIntervencao extends Estado {
-  desfecho: "ruido" | "checada" | "conflito";
-  reacoes: Reacao[];
-  /** Só quando o bairro se acalma. */
-  amaraCelebra?: string;
-}
-
-export interface RespostaReflexao extends Estado {
-  score: number;
-  devolutiva: string | null;
-}
-
-export interface RespostaAmara {
-  texto: string;
-  turnosRestantes: number;
-}
-
+/** O polling de 5 s (ADR-93): magro, sem posts. */
 export interface RespostaGate {
   etapa: Etapa;
+  rodada: number | null;
+  coberturaId: string | null;
   passoEfetivo: Passo;
+  aguardandoOProfessor: boolean;
+  /** O instante do SERVIDOR. */
   agora: string;
 }
 
-/** Os códigos que a api devolve e que têm frase de tela. */
-export type CodigoErro =
-  | "aula2-nao-liberada"
-  | "debate-congelado"
-  | "reflexao-nao-liberada"
-  | "sem-inspecao"
-  | "podcast-incompleto"
-  | "resposta-ja-enviada"
-  | "reflexao-ja-enviada"
-  | "amara-em-silencio"
-  | "sem-turno"
-  | "teto-da-sessao"
-  | "amara-indisponivel"
-  | "payload-invalido"
-  | "rede";
+// ─────────────────────────────────────────────────────────────── o Mural
+
+export type Lente = "institucional" | "comunitario" | "estatistico";
+
+/** A ficha técnica de um post — a revelação. Só existe com `fichasReveladas`. */
+export interface FichaDoPost {
+  postId: string;
+  fonte: string;
+  angulo: string;
+  enquadramento: Lente;
+}
+
+/** O "equilíbrio editorial da seleção": percentuais inteiros que somam 100. */
+export type Equilibrio = Record<Lente, number>;
+
+export interface Triade {
+  posts: PostPublico[];
+  legenda: string;
+  fichas: FichaDoPost[] | null;
+  equilibrio: Equilibrio | null;
+}
+
+export interface RespostaMural {
+  etapa: Etapa;
+  fichasReveladas: boolean;
+  minha: Triade;
+  /** `rotulo`: o primeiro nome, o nome da equipe, ou Tomás/Malu. Congelado no pareamento. */
+  par: Triade & { rotulo: string; virtual: boolean };
+}
+
+// ──────────────────────────────────────────────────────────── as enquetes
+
+/** A pergunta de evidência como o estudante a vê: sem o nível de cada alternativa. */
+export interface PerguntaDaEnquete {
+  /** "mensagem da Amara\n\npergunta da enquete". */
+  enunciado: string;
+  /** Embaralhadas a cada chamada: guarde o `id`, nunca a posição. */
+  alternativas: { id: string; texto: string }[];
+}
+
+/** As duas enquetes da DM, na ordem do PO (P1 = EF07CO11, P2 = EF07CO08). */
+export const ENQUETES = ["p1", "p2"] as const;
+export type IdDaEnquete = (typeof ENQUETES)[number];

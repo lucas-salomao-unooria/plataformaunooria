@@ -28,16 +28,14 @@ Plano de aula & app-90, \arq{src/planos/} &
 \zebra Entorno do \emph{check-in} & app-91, \arq{src/bemestar/} &
   Abertura do dia, pergunta aberta e acolhimento. \textbf{Nunca} reescreve um
   item do DASS-21, nunca vê pontuação, nome ou escola.\\
-Eco do grupo & exp07ef1b, \arq{src/o-eco-no-grupo/} &
-  Três superfícies: as reações do grupo à intervenção do estudante, a conversa
-  com Amara depois da decisão, e a devolutiva do \enquote{Meu percurso}. O
-  \textbf{desfecho} (\cd{checada}, \cd{ruido}, \cd{conflito}) e a pontuação saem
-  de \arq{regras/}, não do modelo --- a IA só \emph{redige} o que já foi
-  decidido (\adrr{ADR-66}).\\
-\zebra Mídia da missão & exp07ef1b, \arq{midia.service.ts} &
-  As duas falas de áudio, o episódio de podcast a duas vozes e as fotos do
-  boato. Gerado \textbf{uma vez}, no preparo do professor, e cacheado no bucket;
-  o estudante nunca espera por geração (\adrr{ADR-67}).\\
+Preparo da cobertura & exp07ef1b, \arq{src/a-selecao/} &
+  Um lote de 12 posts (4:4:4 por perfil) sobre o tema da professora, e as
+  imagens a partir da descrição de cada um. \textbf{Nada} chega à turma sem a
+  homologação dela; sem IA, roda o banco curado.\\
+\zebra Leitura da legenda & exp07ef1b, \arq{src/a-selecao/} &
+  Um nível de EF07CO11 para a legenda dos Stories (o Canal A), que só o
+  professor vê e corrige. Falha, timeout ou saldo zerado não marcam nada
+  (\adrr{ADR-115}).\\
 \bottomrule
 \end{tabularx}
 
@@ -45,7 +43,10 @@ Eco do grupo & exp07ef1b, \arq{src/o-eco-no-grupo/} &
 \textbf{Correção, pontuação e gabarito nunca são gerados por IA.} A IA produz
 \emph{conteúdo} e \emph{texto de entorno}. Tudo que vale nota, classifica ou mede
 é código determinístico e testável --- e roda no servidor
-(Capítulo~\ref{cap:experiencias}).
+(Capítulo~\ref{cap:experiencias}). \textbf{Uma exceção, declarada:} na A Seleção
+a IA \emph{sugere} o nível de EF07CO11 lendo a legenda, com temperatura 0, uma
+tentativa, \emph{schema} fechado e rubrica fixa no servidor. A sugestão não é
+nota, a criança não a vê, e o professor a confere e ajusta (\adrr{ADR-115}).
 \end{regra}
 
 \section{A camada única}
@@ -247,8 +248,10 @@ A proporção \cd{4:5} é PEDIDA no \cd{imageConfig} & Sem isso, o 3.1 devolve
 
 \subsection{Voz: a única chamada que não é ao \emph{aiplatform}}
 
-\cd{generateSpeech} chegou ao \cd{AiProvider} com a exp07ef1b (\adrr{ADR-67}) e é a
-exceção do capítulo: as outras três operações batem em
+\cd{generateSpeech} chegou ao \cd{AiProvider} com o Eco no Grupo (\adrr{ADR-67}) e
+ficou no contrato depois que a missão saiu (\adrr{ADR-113}): hoje nenhuma
+experiência sintetiza voz. É a exceção do capítulo: as outras três operações
+batem em
 \cd{\{loc\}-aiplatform.googleapis.com}, e a síntese bate em
 \cd{texttospeech.googleapis.com/v1/text:synthesize} --- mesma credencial ADC,
 mesma família de modelos (\env{VERTEX\_TTS\_MODEL}, \cd{gemini-2.5-flash-tts}),
@@ -265,7 +268,7 @@ outro serviço, que precisa estar \textbf{habilitado} no projeto.
   voz trêmula} é instrução ao modelo, não texto falado. Os dois têm teto de
   \num{4000}~\emph{bytes}, conferido no domínio antes do pedido --- estourar
   devolve 400 sem dizer qual dos dois campos.\\
-\cd{multiSpeakerMarkup} para o podcast & Lucas e Bia numa chamada só, cada turno
+\cd{multiSpeakerMarkup} para diálogo & Duas vozes numa chamada só, cada turno
   com seu \cd{speakerId}. Monólogo usa \cd{voice.name}; diálogo usa
   \cd{multiSpeakerVoiceConfig}. \textbf{Mandar os dois} devolve 400.\\
 \bottomrule
@@ -424,7 +427,7 @@ localidade de processamento como item de conformidade, não de arquitetura.
 \zebra \env{VERTEX\_IMAGE\_MODEL} & \cd{gemini-3.1-flash-image} &
   Quem trocar precisa conferir a proporção devolvida.\\
 \env{VERTEX\_TTS\_MODEL} & \cd{gemini-2.5-flash-tts} & Voz. Serviço à parte
-  (Text-to-Speech), habilitado no projeto.\\
+  (Text-to-Speech), habilitado no projeto. Nenhuma missão sintetiza voz hoje.\\
 \zebra \env{VERTEX\_THINKING\_BUDGET} & \cd{0} & \cd{0} desligado, \cd{-1} dinâmico,
   $>0$ teto.\\
 \env{AI\_DAILY\_TOKEN\_QUOTA\_PER\_ESTUDANTE} & \num{300000} & Quota diária do

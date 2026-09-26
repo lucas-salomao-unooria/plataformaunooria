@@ -17,10 +17,10 @@ arrasta as seis seções e a tipografia da plataforma para dentro de um clone.
 | Ponte | Seção | CSS | Namespace | Onde vale |
 |---|---|---|---|---|
 | `@edu/ui/ds` | `unooria` | `/unooria.css` + `/fonts/unooria.css` | `--unooria-*`, `.unooria-theme-dark` | hub (login, `/professor`, `/admin`, `/analise`), header de todos os papéis, **telas pós-revelação do estudante** |
-| `@edu/ui/ds-insta` | `instanooria` | `/instanooria.css` (sem fonte: SF Pro é do sistema) | `--insta-*` | superfície disfarçada da exp08ef1b |
+| `@edu/ui/ds-insta` | `instanooria` | `/instanooria.css` (sem fonte: SF Pro é do sistema) | `--insta-*` | superfície disfarçada da exp08ef1b e o clone da exp07ef1b; reexporta também as sete extensões da 0.2.5 (`DirectThread`, `MessageBubble`, `DmPoll`, `ConfirmDialog`, `BottomSheet`, `FloatingButton`, `StoryComposer`) |
 | `@edu/ui/ds-unootube` | `unootube` | `/unootube.css` + `/fonts/unootube.css` | `--uni-*`, `[data-uni-theme]` | superfície disfarçada do UnooTube, ARQUIVADO (ADR-116): nenhuma missão viva a usa |
 | `@edu/ui/ds-chatgpt` | `chatgpt` (25) | `/chatgpt.css` + `/fonts/chatgpt.css` | `--gpt-*`, `data-gpt-theme` | a exp02em1b INTEIRA: ela NÃO tem revelação no software, então nunca troca para a seção da plataforma |
-| `@edu/ui/ds-whatsapp` | `whatsappmobile` (39) | `/whatsappmobile.css` + `/fonts/whatsappmobile.css` | `--wa-*`, `data-wa-theme` (**só `dark`**) | a casca móvel da exp07ef1b, o mensageiro da exp06ef2b e o grupo da turma da exp05ef1b, inclusive os erros diegéticos |
+| `@edu/ui/ds-whatsapp` | `whatsappmobile` (39) | `/whatsappmobile.css` + `/fonts/whatsappmobile.css` | `--wa-*`, `data-wa-theme` (**só `dark`**) | o mensageiro da exp06ef2b e o grupo da turma da exp05ef1b, inclusive os erros diegéticos |
 
 **A folha de fonte é uma linha SEPARADA e obrigatória** (0.1.17: as folhas de
 componente não declaram mais `@font-face`). Nas marcas de clone, esquecê-la só
@@ -78,7 +78,7 @@ carregado por baixo.
 estático, agora é o VÍDEO, e o quadro virou `poster`. Passar imagem em `src`
 monta um `<video>` que não carrega. Nenhum dos três é usado neste repo hoje.
 
-**A exp07ef1b abriu quatro pedidos novos em `whatsappmobile`**, e três deles são
+**O Eco no Grupo (retirado, ADR-113) abriu quatro pedidos em `whatsappmobile`**, e três deles são
 composição, não compensação: `ForwardedBadge` (o selo "Encaminhada com
 frequência" — sai de `Icon name="forward"` + tokens), `PinnedMessageBanner` (a
 barra do alfinete — o *tone* `pin` existe, o **glifo de alfinete não**, e ele é
@@ -94,7 +94,7 @@ a exp05ef1b), todas exportadas pela ponte: `Button` (`filled | outline`),
 `sender`, `forwardedLabel`, `.LinkPreview`, `.Invite` e `.Media` sem `src` (a
 mídia DESENHADA, `children` + `alt`). Três das compensações acima já têm peça no
 pacote — o selo "Encaminhada" (`forwardedLabel`), a faixa fixa (`ChatBanner`) e a
-folha genérica (`BottomSheet`) —, mas a exp07ef1b e a exp06ef2b NÃO foram migradas
+folha genérica (`BottomSheet`) —, mas a exp06ef2b NÃO foi migrada
 (outra frente). Duas lacunas medidas na exp05ef1b, com compensação marcada lá:
 o `ForwardButton` só esmaece por `:disabled` (e `disabled` engole o toque) e o
 `.Media` não publica `onClick`. O `Button` da ponte colide no NOME com o da
@@ -104,7 +104,7 @@ E **a seção publica só o tema escuro** (`WaTheme = 'dark'`; o CSS traz
 `:root, [data-wa-theme=dark]` e nada mais). Derivar a paleta clara que os
 wireframes descrevem é proibido, pela mesma regra do `unitube`. Duas armadilhas
 medidas ali: o `ListItem` tem `white-space: nowrap` no título — errado para as
-opções longas da exp07ef1b, que truncariam —, e o `PhoneFrame` da seção **não entra
+opções longas do Eco, que truncariam —, e o `PhoneFrame` da seção **não entra
 na experiência**, porque quem desenha o aparelho é o hub, pelo `viewport` do
 manifesto.
 

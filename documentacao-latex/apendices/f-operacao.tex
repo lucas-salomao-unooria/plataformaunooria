@@ -899,8 +899,9 @@ caiu} &
   configuração velha --- \cd{lsof -nP -iTCP:<porta> -sTCP:LISTEN} diz QUEM está
   lá, e o \cd{EADDRINUSE} no \emph{log} do processo novo é a confirmação.\\
 \textbf{A imagem gerada sai, e a voz responde \cd{403 PERMISSION\_DENIED}} &
-  ADC de \textbf{usuário} sem projeto de cota. A síntese da exp07ef1b não vai ao
-  \cd{aiplatform}: vai à Cloud Text-to-Speech, que exige o cabeçalho
+  ADC de \textbf{usuário} sem projeto de cota. A síntese (\cd{generateSpeech},
+  que nenhuma missão chama hoje) não vai ao \cd{aiplatform}: vai à Cloud
+  Text-to-Speech, que exige o cabeçalho
   \cd{x-goog-user-project}. O \emph{provider} o manda quando
   \env{VERTEX\_PROJECT\_ID} está definida --- confira a variável antes de
   suspeitar de papel IAM. Com \emph{service account} (produção) o sintoma não
@@ -1179,10 +1180,9 @@ Contínuo (fase 0 do Capítulo~\ref{cap:observabilidade}, \textbf{pendente})
   ferramenta de professor. Com a fase 0: o \emph{smoke} do \cd{deploy.yml}
   faz os três e notifica se falhar.\\
 Antes da primeira aula de cada contrato & Conferir \env{ASSETS\_BUCKET} e o
-  \env{ASSETS\_DRIVER=gcs} do \emph{environment}, e mandar o professor preparar
-  a mídia da exp07ef1b no painel da turma. Nada falha se ninguém fizer: a missão
-  cai na transcrição e na ilustração procedural, e o \emph{deploy} fica verde
-  (\cd{R-20}). O precedente é a exp04ef1b, que subiu com o \emph{bucket} vazio.\\
+  \env{ASSETS\_DRIVER=gcs} do \emph{environment}. Nada falha se estiverem
+  errados, e o \emph{deploy} fica verde: o precedente é a exp04ef1b, que subiu
+  com o \emph{bucket} vazio e ficou impossível de concluir.\\
 \zebra \textbf{Semanal, e após \emph{deploy}} & Error Reporting: erro \textbf{novo}
   na revisão que acabou de receber tráfego, e erro de cliente novo por
   \cd{(expId, versao)} --- reverter pelo manifesto antes de investigar.\\

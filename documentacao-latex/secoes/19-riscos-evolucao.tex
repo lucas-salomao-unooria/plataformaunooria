@@ -167,30 +167,14 @@ severidade, e a severidade considera o prazo de novembro de 2026.
   rede \textbf{antes} do primeiro contrato em produção. Desligar é apagar
   \cd{CLARITY\_PROJECT\_ID} do \emph{environment} --- sem \emph{deploy} de
   código, mas com \emph{rebuild} da imagem.\\
-\cd{R-20} & \textbf{Mídia da exp07ef1b não preparada antes da aula.} A voz de
-  Amara, o podcast e as fotos do boato são geradas pelo professor, no painel, e
-  nada falha se ele não clicar. & Média & Médio &
-  Mitigado por desenho: sem mídia, a experiência \textbf{continua jogável} pela
-  transcrição (que está sempre na tela, por acessibilidade) e pela ilustração
-  procedural --- mas a missão perde o pico. A ficha da aula pede o preparo no
-  passo de preparo, e o painel mostra o que já existe. O precedente é caro: a
-  exp04ef1b subiu com o \emph{bucket} vazio e a missão ficou impossível de
-  concluir, sem nada falhar no \emph{deploy} nem no log. \textbf{Conferir
-  \env{ASSETS\_BUCKET} antes da primeira aula de cada contrato.}\\
-\zebra \cd{R-21} & \textbf{Texto livre de menor persistido.} A conversa com
-  Amara reabriu um canal que o produto tinha fechado por desenho. & Certa &
-  Médio &
-  Aceito com contenção (\adrr{ADR-66}): só depois da decisão, teto de 3 turnos e
-  600 caracteres, sanitizador nos dois sentidos, RLS, e nenhum caminho para
-  \emph{log}, telemetria, Clarity ou painel --- o professor vê \emph{quantos}
-  turnos, nunca o quê. Entra no mesmo regime de retenção de \cd{R-02}, e é mais
-  um argumento para fechá-lo.\\
-\cd{R-22} & \textbf{Guia de condução da exp07ef1b não existe.} Como na exp02em1b, a
-  lição fecha no debate da turma, e o roteiro do debate ainda é da professora. &
-  Certa & Médio &
-  A ficha do catálogo traz competência, os três momentos e o preparo; o guia
-  passo a passo, não. \textbf{Pendente} --- e o arquivo dos guias está sendo
-  mexido numa frente paralela, então ele entra por lá, não por aqui.\\
+\cd{R-21} & \textbf{Texto livre de menor persistido.} O Eco no Grupo
+  (retirado, \adrr{ADR-113}) reabriu um canal que o produto tinha fechado por
+  desenho, e as missões seguintes o mantêm aberto (exp06ef2b, exp08ef4b,
+  exp05ef1b). & Certa & Médio &
+  Aceito com contenção: teto de caracteres, RLS, nenhum caminho
+  para \emph{log} ou telemetria, e o texto alcançável só pelo professor da turma
+  --- a exp08ef4b ainda recusa dado pessoal antes de gravar. Entra no mesmo
+  regime de retenção de \cd{R-02}, e é mais um argumento para fechá-lo.\\
 \zebra \cd{R-23} & \textbf{Turma sem missão liberada no dia da aula.} Desde a sala
   de aula (\adrr{ADR-69}) a missão só abre onde o professor liberou --- e um passo
   novo antes da aula é um passo que se esquece com a sala cheia. & Alta & Médio &
@@ -236,10 +220,10 @@ severidade, e a severidade considera o prazo de novembro de 2026.
   % faixa laranja: impacto medio, probabilidade alta/certa
   \node[font=\scriptsize\bfseries\color{unooOrange}] at (3.0,2.10) {R-05  R-07};
   \node[font=\scriptsize\bfseries\color{unooOrange}] at (3.0,1.85) {R-12  R-18};
-  \node[font=\scriptsize\bfseries\color{unooOrange}] at (3.0,1.60) {R-21  R-22};
+  \node[font=\scriptsize\bfseries\color{unooOrange}] at (3.0,1.60) {R-21};
   % restante
   \node[font=\scriptsize\color{unooInkSoft}] at (1.9,2.05) {R-03$^{*}$};
-  \node[font=\scriptsize\color{unooInkSoft}] at (1.9,1.75) {R-15  R-20  R-23};
+  \node[font=\scriptsize\color{unooInkSoft}] at (1.9,1.75) {R-15  R-23};
   \node[font=\scriptsize\color{unooInkSoft}] at (2.9,0.9) {R-09};
   \node[font=\scriptsize\color{unooInkSoft}] at (1.9,0.9) {R-10  R-11  R-13};
   \node[font=\scriptsize\color{unooInkSoft}] at (0.9,1.9) {R-08};
@@ -281,7 +265,8 @@ M4 & Ferramentas de professor: app-90, app-91 & \yes{} Concluído &
 M6 & Hub do estudante, \emph{header} único, casca compartilhada &
   \yes{} Concluído & \rota{/estudante}, \cd{CascaPlataforma}\\
 \zebra M7 & exp02em1b e exp07ef1b: IA em \emph{runtime} dentro da missão &
-  \yes{} Concluído & \adrr{ADR-23}, \adrr{ADR-66}, \adrr{ADR-67}\\
+  \yes{} Concluído & \adrr{ADR-23}, \adrr{ADR-66}, \adrr{ADR-67}; a exp07ef1b
+  (O Eco no Grupo) foi retirada depois (\adrr{ADR-113})\\
 --- & \emph{Stack} \cd{dev} em GCP operacional & \yes{} Concluído &
   CI/CD completo com WIF\\
 \zebra --- & \textbf{Teste de carga} & \no{} Pendente & \cd{R-01}\\
