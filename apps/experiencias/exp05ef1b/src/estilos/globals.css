@@ -1,7 +1,9 @@
 /**
  * Estilos locais da exp05ef1b. Só o que o design system não dá: o layout do
- * aparelho, a mídia DESENHADA (que é conteúdo, não controle) e as compensações
- * marcadas `(b) COMPENSAÇÃO`, cada uma com a lacuna e o pedido.
+ * aparelho e a mídia DESENHADA (que é conteúdo, não controle). As duas
+ * compensações da 0.2.4 — a seta esgotada e o toque na mídia — saíram quando a
+ * 0.2.6 publicou `exhausted` e o `.Media` acionável; uma nova vai marcada
+ * `(b) COMPENSAÇÃO`, com a lacuna e o pedido.
  *
  * Cor NUNCA se escreve à mão aqui — sai dos tokens `--wa-*` (clone) e
  * `--unooria-*` (casca). E a fronteira entre os dois está MARCADA abaixo: token
@@ -145,20 +147,6 @@ body {
   align-self: center;
 }
 
-/*
- * (b) COMPENSAÇÃO — a seta esgotada em 3/3.
- *
- * O `ForwardButton` da 0.2.4 só esmaece por `:disabled`, e `<button disabled>`
- * engole o toque: a quarta tentativa ficaria MUDA, e a copy pede que ela fale
- * ("Limite de 3 mensagens atingido…"). O botão fica acionável com
- * `aria-disabled` e só a opacidade (a mesma 0.3 do pacote) vem daqui.
- * PEDIDO ao `storybook-unooria`: estado "esgotado" no `ForwardButton` que
- * esmaeça sem engolir o toque. Morre quando ele chegar.
- */
-.linha-do-grupo .encaminhar--esgotado {
-  opacity: 0.3;
-}
-
 /* No Mural, o balão enviado com os crachás embaixo, alinhados à direita. */
 .linha-do-mural {
   display: flex;
@@ -183,32 +171,6 @@ body {
 .faixa-tocavel:focus-visible {
   outline: 2px solid var(--wa-color-accent);
   outline-offset: -2px;
-}
-
-/*
- * (b) COMPENSAÇÃO — o toque na mídia desenhada.
- *
- * `MessageBubble.Media` não publica `onClick` (a `LinkPreview` publica). O
- * `<button>` que o envolve não tem aparência nenhuma: só o reset e o anel de
- * foco. PEDIDO: `MessageBubble.Media` acionável.
- */
-.toque-na-midia {
-  display: block;
-  width: 100%;
-  margin: 0;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: inherit;
-  font: inherit;
-  text-align: inherit;
-  cursor: pointer;
-}
-
-.toque-na-midia:focus-visible {
-  outline: 2px solid var(--wa-color-accent);
-  outline-offset: 2px;
-  border-radius: var(--wa-radius-m);
 }
 
 /* O rodapé do clone: a ação da etapa (quando há) acima da tarja só-admin. */

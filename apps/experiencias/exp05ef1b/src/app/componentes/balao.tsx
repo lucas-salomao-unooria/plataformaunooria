@@ -45,29 +45,16 @@ export function BalaoDaMensagem({
       maxWidth={268}
     >
       {mensagem.tipo === "imagem" && mensagem.legenda ? (
-        abrir ? (
-          /*
-           * (b) COMPENSAÇÃO — `MessageBubble.Media` não publica `onClick` (a
-           * `LinkPreview` publica). O toque é um `<button>` SEM aparência
-           * (`.toque-na-midia`, só o reset e o anel de foco): o que se vê é a
-           * moldura do DS, e o nome acessível é o `alt` dela. Morre quando o
-           * `Media` aceitar `onClick`. PEDIDO: `MessageBubble.Media` acionável.
-           */
-          <button
-            type="button"
-            className="toque-na-midia"
-            onClick={abrir}
-            aria-label={TEXTOS.grupo.abrirMidiaDe(mensagem.remetente)}
-          >
-            <MessageBubble.Media alt={TEXTOS.midia.altDoComunicado} ratio="4 / 3">
-              <ComunicadoDesenhado legenda={mensagem.legenda} />
-            </MessageBubble.Media>
-          </button>
-        ) : (
-          <MessageBubble.Media alt={TEXTOS.midia.altDoComunicado} ratio="4 / 3">
-            <ComunicadoDesenhado legenda={mensagem.legenda} />
-          </MessageBubble.Media>
-        )
+        /* Com `onClick` (DS 0.2.6) a moldura é um botão com o mesmo desenho, e
+           o nome dele diz de quem é a imagem que abre. */
+        <MessageBubble.Media
+          alt={TEXTOS.midia.altDoComunicado}
+          ratio="4 / 3"
+          onClick={abrir}
+          actionLabel={abrir ? TEXTOS.grupo.abrirMidiaDe(mensagem.remetente) : undefined}
+        >
+          <ComunicadoDesenhado legenda={mensagem.legenda} />
+        </MessageBubble.Media>
       ) : null}
       {mensagem.tipo === "link" && mensagem.legenda ? <PreviaDoLink legenda={mensagem.legenda} aoAbrir={abrir} /> : null}
       <p className="balao__texto">{mensagem.texto}</p>
