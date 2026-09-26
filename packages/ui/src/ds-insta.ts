@@ -80,3 +80,14 @@ export type {
   InstaSegmentItem,
   InstaTabItem,
 } from '@unooria/design-system/instanooria';
+
+/**
+ * A segunda leva, da 0.2.7 — as compensações que a exp07ef1b deixou abertas:
+ * a faixa de dica sob a barra (`InlineHint`), a demonstração do gesto de rolar
+ * (`GestureHint`) e o aviso passageiro de conexão. O `Snackbar` do clone
+ * COLIDE com o da plataforma (`ds.ts`) e sai como `SnackbarInsta`, pela mesma
+ * regra do sufixo acima. A mesma versão trouxe o `wrap` do `BadgeInsta`, o
+ * contador do `StoryComposer` em code points e o `errorDescription` do
+ * `PostCard.Media`, que não precisam de export novo.
+ */
+export { GestureHint, InlineHint, Snackbar as SnackbarInsta } from '@unooria/design-system/instanooria';
