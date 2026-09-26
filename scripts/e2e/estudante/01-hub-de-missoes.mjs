@@ -32,7 +32,7 @@ await suite(
       "O estudante entra na TURMA dele — a grade é a do ano dela, não o catálogo inteiro",
       "Missão não liberada aparece com CADEADO, e não some da tela",
       "Duas turmas do MESMO ano têm estados diferentes: 8A aberta, 8B fechada",
-      "Missão de outra série não entra na grade (o UnooTube é do 4º ano)",
+      "Missão de outra série não entra na grade (o unooGPT é da 2ª série do EM)",
       "URL direta de missão não liberada responde 404 — o cadeado não é só enfeite",
       "Cada cartão aberto leva ao aparelho certo, em outra origem, com o sandbox que o manifesto pediu",
     ],
@@ -57,14 +57,14 @@ await suite(
       { texto: "Manifesto da IA", expId: "exp08ef4b", declara: ["allow-forms"] },
     ];
     const OPCIONAIS = ["allow-pointer-lock", "allow-forms"];
-    /* Do 4º ano: não pertence à grade do 8º. Não é "bloqueada" — é de outra
+    /* Da 2ª série do EM: não pertence à grade do 8º. Não é "bloqueada" — é de outra
        série, e nem aparece. São coisas diferentes, e a tela precisa distingui-las. */
-    const DE_OUTRA_SERIE = { texto: "UnooTube", expId: "exp04ef1b" };
+    const DE_OUTRA_SERIE = { texto: "unooGPT", expId: "exp02em1b" };
 
     /* O 404 é PROVOCADO: esta suíte digita de propósito a URL de uma missão que
        não é desta turma, e é o servidor recusando que ela existe para provar. */
     r.provocado(
-      /404.*\/exp\/exp04ef1b/,
+      /404.*\/exp\/exp02em1b/,
       "a porta da sala recusando a URL adivinhada de uma missão de outra série",
     );
 
@@ -94,7 +94,7 @@ await suite(
     }
     r.exigir(
       !titulos.some((t) => t.includes(DE_OUTRA_SERIE.texto)),
-      `${DE_OUTRA_SERIE.texto} NÃO entra na grade: é do 4º ano, não desta turma`,
+      `${DE_OUTRA_SERIE.texto} NÃO entra na grade: é da 2ª série do EM, não desta turma`,
     );
     const abertos = await p.locator('[data-estado="liberada"]').count();
     r.exigir(abertos === missoes.length, `as ${missoes.length} missões da 8A estão abertas`);
@@ -120,7 +120,7 @@ await suite(
     );
     await r.registrar(p, "url-direta-recusada", {
       titulo: "A URL adivinhada não abre",
-      mostra: "O endereço da missão do 4º ano, digitado por um estudante do 8º.",
+      mostra: "O endereço da missão da 2ª série do EM, digitado por um estudante do 8º.",
       prova:
         "Esconder o cartão é UX; a porta é do servidor. Antes da sala de aula qualquer estudante " +
         "logado abria qualquer missão digitando /exp/<expId> — o bundle é público e o endereço é " +

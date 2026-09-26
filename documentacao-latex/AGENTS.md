@@ -16,11 +16,16 @@ armadilhas que já custaram tempo e não avisam quando você cai nelas:
   (`docs/regras/definition-of-done.md`). Ele compila sozinho, na própria pasta,
   com `tectonic -k mapa-de-produto.tex`, e não pelo `compilar.sh` daqui.
 
-- **A PRÓXIMA ADR é a 115.** A numeração vai até ADR-114 (a primeira versão de
-  Quem mandou isso? retirada, para a v2.2 voltar com o mesmo código); a 113 é a
-  retirada do Eco no Grupo para A Seleção, da frente que corria em paralelo, e
-  a 112 a evidência pedagógica por atividade e rodada, com a melhor rodada
-  valendo por habilidade. Este número envelhece a cada frente, então ele é
+- **A PRÓXIMA ADR é a 119.** A numeração vai até ADR-118 (Quem mandou isso?
+  v2.2: a atividade é o pacote, a rodada é a reaplicação, e a régua mede pela
+  seleção e pelas perguntas do PO). A 116 é o UnooTube ARQUIVADO, e não apagado,
+  para o Jornal da Escola tomar o código `exp04ef1b`. As 115 (A Seleção) e 117
+  (o Jornal da Escola) estão RESERVADAS para as frentes que correm em paralelo
+  --- o número foi fechado entre as sessões antes de qualquer uma escrever ---,
+  e a 113 é a retirada do Eco no Grupo, que também corre em paralelo. A 114 é a
+  primeira versão de Quem mandou isso? retirada, para a v2.2 voltar com o mesmo
+  código, e a 112 a evidência pedagógica por atividade e rodada, com a melhor
+  rodada valendo por habilidade. Este número envelhece a cada frente, então ele é
   ponto de partida, nunca a resposta. Das mais citadas: a 86 é o
   guia da aula, 87 o eixo da disponibilidade, 88 o painel da Unooria só do
   `admin`, 89 o histórico append-only que a rede também lê e 90 a suíte da API

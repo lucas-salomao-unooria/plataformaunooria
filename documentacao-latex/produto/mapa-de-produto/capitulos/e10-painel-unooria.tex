@@ -27,6 +27,7 @@
 \id{F10.3} & Versões das missões & \pronto\\
 \zebra \id{F10.4} & Uso de IA & \pronto\\
 \id{F10.5} & Prospecção & \pronto\\
+\zebra \id{F10.6} & Experiências arquivadas & \pronto\\
 \bottomrule
 \end{tabularx}
 
@@ -189,4 +190,27 @@ de eliminação da LGPD sem depender do time técnico}
     confirmação; o cadastro nunca é editado, só eliminado.
 \end{itemize}
 \pendencia{hoje o pedido é atendido por um caminho manual.}
+\end{historia}
+
+% ---------------------------------------------------------------------------
+\feature{F10.6}{Experiências arquivadas}{\pronto}
+
+Quando uma missão nova ocupa o lugar de outra na trilha, a antiga não é apagada:
+ela é \textbf{arquivada}. Sai da sala, do catálogo e do painel de recursos, e os
+dados que as turmas produziram ficam guardados.
+
+\begin{historia}{H10.6.1}{Ver o que saiu do produto sem ser apagado}{\pronto}
+\hu{Administrador Unooria}{ver quais missões foram arquivadas e o que ficou
+guardado delas}{saber o que a plataforma já teve e responder por aqueles dados}
+\aceite
+\begin{itemize}
+  \item \enquote{Arquivados} lista cada missão arquivada com o nome, o código de
+    origem, onde ficava na trilha, a última versão, os dados guardados (turmas e
+    estudantes), o motivo e a data.
+  \item Os números de dados guardados são os do dia do arquivamento, e a tela
+    diz isso.
+  \item A lista só mostra: ninguém joga uma missão arquivada, e trazê-la de
+    volta é trabalho do time técnico.
+  \item Só a Unooria vê esta lista.
+\end{itemize}
 \end{historia}

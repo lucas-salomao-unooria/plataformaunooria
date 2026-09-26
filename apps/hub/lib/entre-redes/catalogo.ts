@@ -176,15 +176,16 @@ export const MISSAO_ATUAL: Missao = {
 };
 
 /**
- * 4º ano · Unidade 1 — o UnooTube: fontes confiáveis vs. sensacionalismo num
- * clone do YouTube Shorts. Sem atividades configuráveis: o conteúdo é fixo (21
- * vídeos de História), o professor só entra com a turma e lê os resultados.
+ * O UnooTube, ARQUIVADO (ADR-116) — fontes confiáveis vs. sensacionalismo num
+ * clone do YouTube Shorts. Foi a missão do 4º ano, unidade 1, até o Jornal da
+ * Escola tomar o código `exp04ef1b`. Fica aqui, renomeado, como registro da
+ * ficha: NÃO está em `MISSOES_PUBLICADAS`, e é isso que o tira da grade.
  */
-export const MISSAO_UNOOTUBE: Missao = {
+export const MISSAO_BACKUP_UNOOTUBE: Missao = {
   anoSlug: "4-ano",
   unidadeSlug: "unidade-1",
   unidade: 1,
-  expId: "exp04ef1b",
+  expId: "backup-exp04ef1b",
   titulo: "UnooTube — Em quais fontes você confiaria?",
   resumo:
     "Num feed de vídeos curtos sobre História, o estudante salva as 3 fontes em que confiaria. Quem escolhe sensacionalismo ganha mais inscritos — até a turma descobrir que popularidade não é credibilidade.",
@@ -541,9 +542,126 @@ export const MISSAO_FOTO_CONTA: Missao = {
   },
 };
 
+/**
+ * 5º ano · Unidade 1 — Quem Mandou Isso? v2.2 (`exp05ef1b`).
+ *
+ * A v1 saiu na ADR-114 e esta volta com o MESMO código e outra mecânica: oito
+ * mensagens num grupo do WhatsApp simulado, na matriz verdadeira/falsa ×
+ * emocional/neutra; exatamente três vão para o Mural da Turma, e só a
+ * revelação do professor mostra os dois selos de cada uma. A descoberta
+ * (EF05CO03) é que os dois eixos são INDEPENDENTES: a mensagem séria pode ser
+ * falsa e a alarmada, verdadeira.
+ *
+ * Duas coisas que mudam a condução e não cabem no resumo:
+ *
+ * 1. **A missão NASCE VAZIA.** O tema do pacote entra na fala da Nina ("Rolou
+ *    uma confusão sobre {tema}."), então sem um pacote aprovado pelo professor
+ *    a criança vê espera, não um grupo — nem o banco curado assumindo sozinho.
+ * 2. **São TRÊS botões durante a aula**, só para a frente: a revelação, a
+ *    síntese (que pode ser pulada) e a reflexão.
+ *
+ * As habilidades avaliadas são SÓ as de Computação — EF05CO08 pela seleção do
+ * Mural, EF05CO03 e EF05CO04 pelas duas perguntas finais da Nina (a ficha E14
+ * da api). Os códigos de Língua Portuguesa do one-pager ("a confirmar") não
+ * entram como habilidade avaliada.
+ */
+export const MISSAO_QUEM_MANDOU_ISSO: Missao = {
+  anoSlug: "5-ano",
+  unidadeSlug: "unidade-1",
+  unidade: 1,
+  expId: "exp05ef1b",
+  titulo: "Quem Mandou Isso?",
+  resumo:
+    "A Nina pede ajuda: rolou uma confusão na escola. No grupo da turma chegam 8 mensagens — " +
+    "verdadeiras e falsas, calmas e alarmadas —, e cada estudante encaminha exatamente 3 para o " +
+    "Mural da Turma e diz, numa enquete, o que pesou na escolha. Quando você libera a revelação, o " +
+    "telão mostra o Termômetro da Turma e cada um descobre que a mensagem séria podia ser falsa, e a " +
+    "alarmada, verdadeira.",
+  status: "disponivel",
+  // Sem spoiler: a missão mede o que a criança encaminha quando ninguém avisou
+  // para desconfiar, e a copy dela é só a tarefa.
+  estudante: {
+    titulo: "Quem Mandou Isso?",
+    chamada:
+      "A Nina precisa da sua ajuda: rolou uma confusão na escola. Entre no grupo da turma e veja o que estão falando.",
+  },
+  ficha: {
+    competencia:
+      "Letramento digital, dinâmica de repasse e checagem crítica em mensagens instantâneas " +
+      "(EF05CO08, EF05CO03, EF05CO04).",
+    duracao: "1 aula de 50 min (ou 2 sessões de 25 min)",
+    formato:
+      "Clone do WhatsApp em tema escuro: a conversa com a Nina, o grupo da turma com 8 mensagens, o " +
+      "Mural da Turma e a enquete. A regra final é montada fora do aplicativo, na tela da Unooria.",
+    atos: [
+      {
+        rotulo: "1 — Desafiar: o pedido da Nina",
+        texto:
+          "A missão abre na lista de conversas. A Nina conta que rolou uma confusão sobre o tema que " +
+          "você escreveu no preparo e manda o convite do grupo Turma 5ºB. É por isso que a missão só " +
+          "abre depois que você aprova o pacote: a fala da Nina é sobre ele.",
+      },
+      {
+        rotulo: "2 — Navegar: o grupo da turma",
+        texto:
+          "Oito mensagens de colegas: 4 textos, 2 imagens de comunicado e 2 links com prévia, duas de " +
+          "cada quadrante (verdadeira ou falsa × emocional ou neutra). Ninguém digita — só " +
+          "administradores falam no grupo —, e a única ação é a seta de encaminhar. Nenhuma mensagem " +
+          "chega marcada.",
+      },
+      {
+        rotulo: "3 — Decidir: o Mural e a enquete",
+        texto:
+          "Exatamente 3 mensagens vão para o Mural da Turma. Confirmado o envio, não dá para desfazer, " +
+          "e surge a enquete “O que mais te fez escolher essas mensagens?”, com quatro opções. Depois " +
+          "do voto a tela espera por você.",
+      },
+      {
+        rotulo: "4 — Resultado: a revelação (o seu primeiro botão)",
+        texto:
+          "Você aperta Liberar Revelação: o painel mostra o Termômetro da Turma para projetar, e cada " +
+          "aparelho ganha os dois selos sobre as 3 mensagens encaminhadas, com o motivo votado e o " +
+          "lembrete do bimestre. Quem ainda não tinha confirmado continua, confirma e vê a própria " +
+          "revelação depois.",
+      },
+      {
+        rotulo: "5 — Explicar: a síntese e a roda de conversa",
+        texto:
+          "Apresentar Síntese leva aos aparelhos a ideia central — a embalagem da mensagem desarma a " +
+          "checagem —, e você conduz a roda de conversa com as 3 perguntas do painel, de 5 a 7 " +
+          "minutos. A síntese pode ser pulada.",
+      },
+      {
+        rotulo: "6 — Refletir: a regra Se/Então e as perguntas da Nina",
+        texto:
+          "Liberar Reflexão fecha o aplicativo: na tela da Unooria, a Nina conta do áudio do tio no " +
+          "grupo da família e a criança monta a própria regra, “Se a mensagem for…, então eu…”. De " +
+          "volta ao chat da Nina, ela responde a duas perguntas rápidas. A regra vai para você e para " +
+          "mais ninguém.",
+      },
+    ],
+    preparo: [
+      "Libere a missão para a turma na sala de aula — sem a liberação, o card fica com cadeado para as crianças.",
+      "Aprove o pacote de mensagens da turma em A aula e os resultados: escolha o componente " +
+        "curricular, escreva o tema (ele completa a fala da Nina, “Rolou uma confusão sobre…”), liste " +
+        "de 3 a 6 fatos da aula e gere com IA — ou use o pacote curado padrão, “O Mistério do Passeio " +
+        "ao Museu”. Sem pacote aprovado, a criança entra e vê uma tela de espera.",
+      "Leia as 8 mensagens antes de aprovar: os selos de verdadeira ou falsa e de emocional ou " +
+        "neutra são só seus, e dá para editar qualquer texto. Nada gerado por inteligência artificial " +
+        "chega à turma sem o seu clique em Aprovar Pacote.",
+      "Se a turma divide computadores, monte as equipes nesta ficha: quem entra na missão representa " +
+        "a equipe, e o painel conta por computador.",
+      "Deixe o painel aberto no seu computador: são três botões durante a aula — Liberar Revelação, " +
+        "Apresentar Síntese e Liberar Reflexão —, na ordem, e nenhum deles volta atrás.",
+      "Não diga que a aula é sobre notícia falsa: a missão mede o que a criança encaminha quando " +
+        "ninguém avisou para desconfiar.",
+    ],
+  },
+};
+
 const MISSOES_PUBLICADAS: Record<string, Missao[]> = {
   "1-ano": [MISSAO_FOTO_CONTA],
-  "4-ano": [MISSAO_UNOOTUBE],
+  "5-ano": [MISSAO_QUEM_MANDOU_ISSO],
   "6-ano": [MISSAO_RASTRO_BOATO],
   "8-ano": [MISSAO_ATUAL, MISSAO_MANIFESTO_IA],
   "2-serie": [MISSAO_UNOOGPT],

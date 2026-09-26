@@ -36,9 +36,10 @@ token e prefixo de classe próprios. Elas nunca se cruzam.
   exp08ef1b\\
 \cd{unitube} (30) & \cd{/unitube} & \cd{--uni-*}, \cd{uni-} ---
   \textbf{só escuro} & exp04ef1b\\
-\zebra \cd{whatsappmobile} (29) & \cd{/whatsappmobile} & \cd{--wa-*} --- só escuro
-  & \textbf{exp06ef2b} --- a missão de mensageiro que ficou na trilha, menos
-  as telas da escola\\
+\zebra \cd{whatsappmobile} (39) & \cd{/whatsappmobile} & \cd{--wa-*} --- só escuro
+  & \textbf{exp05ef1b e exp06ef2b} --- as duas missões de mensageiro. Na
+  exp05ef1b, do convite da Nina à síntese, e de novo nas perguntas finais (a
+  regra Se/Então e o fechamento são da plataforma)\\
 \cd{chatgpt} (25) & \cd{/chatgpt} & \cd{--gpt-*},
   \cd{data-gpt-theme} & \textbf{exp02em1b inteira} --- ela não tem revelação no
   software, então nunca troca para a seção da plataforma\\
@@ -141,9 +142,9 @@ pacote direto num componente:
 \begin{tabularx}{\linewidth}{@{}L{28mm}L{22mm}X@{}}
 \cd{@edu/ui/ds} & \cd{unooria} & plataforma\\
 \cd{@edu/ui/ds-insta} & \cd{instanooria} & exp08ef1b\\
-\cd{@edu/ui/ds-unootube} & \cd{unitube} & exp04ef1b\\
+\cd{@edu/ui/ds-unootube} & \cd{unitube} & backup-exp04ef1b (o UnooTube arquivado, \adrr{ADR-116}: não roda mais)\\
 \cd{@edu/ui/ds-chatgpt} & \cd{chatgpt} & exp02em1b\\
-\cd{@edu/ui/ds-whatsapp} & \cd{whatsappmobile} & exp06ef2b\\
+\cd{@edu/ui/ds-whatsapp} & \cd{whatsappmobile} & exp05ef1b, exp06ef2b\\
 \end{tabularx}
 \end{regra}
 
@@ -495,6 +496,78 @@ E o \cd{PhoneFrame} do pacote \textbf{não entra} na experiência: quem desenha 
 aparelho é o hub, pelo \cd{viewport} do manifesto. Empilhar os dois daria um
 celular dentro de outro.
 \end{atencao}
+
+\subsection{As extensões de \cd{whatsappmobile} na 0.2.4 (exp05ef1b 0.2.0)}
+\label{sec:ds-whatsapp-024}
+
+A v2.2 de Quem mandou isso? pediu ao DS as peças de que o grupo da turma
+precisava, e a 0.2.4 publicou \textbf{dez extensões} em \cd{whatsappmobile} ---
+peças sem frame no arquivo de origem, derivadas dos tokens e das formas que ele
+já tinha. A exp05ef1b é o primeiro consumidor; a seção foi de 29 para 39
+componentes, todos exportados pela ponte \cd{@edu/ui/ds-whatsapp}, e o repositório
+está em \cd{\^{}0.2.5}, que trouxe as extensões do \cd{instanooria} por cima sem
+mudar a API desta.
+
+\begin{tabularx}{\linewidth}{@{}L{34mm}X@{}}
+\toprule
+\headrow \thd{Peça} & \thd{Onde a exp05ef1b a usa}\\
+\midrule
+\cd{Button} (\cd{filled} $|$ \cd{outline}) & \enquote{Ir para o Mural da Turma},
+  \enquote{Confirmar envio}, \enquote{Revisar seleção no grupo}. Colide no
+  NOME com o \cd{Button} da plataforma: numa tela com as duas seções, o
+  \emph{alias} é obrigatório.\\
+\zebra \cd{ForwardButton} & A seta de encaminhar de cada balão, com o
+  \cd{tick} quando escolhida.\\
+\cd{BottomSheet} & \enquote{Encaminhar para\ldots}, com um destino só.\\
+\zebra \cd{MediaViewer} & O comunicado e a prévia em tela cheia, com a
+  transcrição.\\
+\cd{ChatBanner} & A faixa \enquote{Encaminhe 3 mensagens\ldots} com o contador
+  N/3, tocável; e o apoio da Nina aos 90~s.\\
+\zebra \cd{AdminOnlyNotice} & A tarja \enquote{Apenas administradores podem
+  enviar mensagens} no lugar do teclado.\\
+\cd{SystemMessage} & A entrada no grupo, a espera, o motivo declarado e a trava
+  da síntese.\\
+\zebra \cd{Poll} & A enquete de motivo (Etapa 3) \textbf{e} as duas perguntas da
+  Nina --- o mesmo componente, controlado de ponta a ponta, dentro de um
+  \cd{MessageBubble}.\\
+\cd{MessageTag} & Os crachás da revelação, pictograma e rótulo, sem variante de
+  cor: quem distingue é a palavra e a forma.\\
+\zebra \cd{Toast} & Os avisos rápidos (limite de 3, faltam mensagens, falha de
+  envio). Sobe para 148~px da base, para não cobrir os botões do rodapé.\\
+\bottomrule
+\end{tabularx}
+
+E o \cd{MessageBubble} ganhou \cd{sender} e \cd{forwardedLabel} (o remetente no
+grupo e o selo \enquote{Encaminhada} no Mural), \cd{.LinkPreview}, \cd{.Invite}
+(o convite da Nina) e o \cd{.Media} \textbf{sem} \cd{src}: a mídia DESENHADA,
+com \cd{children} e o texto no \cd{alt}, que é como o comunicado, o termômetro e
+a lâmina da síntese existem sem arquivo nenhum. Três das compensações da
+exp07ef1b já têm peça no pacote (o selo \enquote{Encaminhada}, a faixa fixa e a
+folha genérica), mas a exp07ef1b e a exp06ef2b \textbf{não foram migradas} ---
+é outra frente.
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
+\toprule
+\headrow \thd{Lacuna medida na 0.2.4} & \thd{Compensação na exp05ef1b}\\
+\midrule
+\cd{ForwardButton} esmaece só por \cd{:disabled} & E \cd{<button disabled>}
+  ENGOLE o toque --- mas a \emph{copy} pede que a quarta seta FALE (\enquote{Limite
+  de 3 mensagens atingido\ldots}). A seta fica acionável com \cd{aria-disabled}, e
+  a opacidade é \cd{.encaminhar--esgotado}. A suíte de ponta a ponta clica essa
+  seta com \cd{force}, porque o Playwright recusa \cd{aria-disabled}.\\
+\zebra \cd{MessageBubble.Media} não publica \cd{onClick} & O toque que abre o
+  comunicado é um \cd{<button>} sem aparência em volta (\cd{.toque-na-midia}); o
+  nome acessível é o do \cd{alt}. A \cd{.LinkPreview} publica \cd{onClick}.\\
+\bottomrule
+\end{tabularx}
+
+\begin{nota}
+As duas são pedidos abertos ao \cd{storybook-unooria} (um estado
+\enquote{esgotado} no \cd{ForwardButton} e um \cd{.Media} acionável), e morrem
+quando ele os publicar. \textbf{Não são pedido} o desenho do comunicado, da
+lâmina e do termômetro: são CONTEÚDO dentro da moldura que o DS já dá, não
+controle.
+\end{nota}
 
 \subsection{Lacunas abertas em \cd{chatgpt} na 0.1.19 (exp08ef4b 0.1.0)}
 

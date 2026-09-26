@@ -126,7 +126,7 @@ function portasDasFrentes(extra) {
 }
 
 /**
- * `api/unootube` vira `apps/api/src/unootube`, e assim por diante. O caminho
+ * `api/unoogpt` vira `apps/api/src/unoogpt`, e assim por diante. O caminho
  * que não existe não reprova — a frente pode estar criando o módulo — mas é
  * DITO, porque o erro de digitação silencioso vira uma fatia que não protege
  * nada: o hook compara com o que está escrito aqui.
@@ -202,7 +202,7 @@ function criar(branch, fatia) {
   if (alvos.length === 0) {
     morre(
       "falta --fatia. TODA frente declara o que vai tocar (ADR-71, ADR-101).\n" +
-        "    Vertical:    --fatia api/unootube,hub/professor,exp/exp04ef1b\n" +
+        "    Vertical:    --fatia api/unoogpt,hub/professor,exp/exp02em1b\n" +
         "    Ferramenta:  --fatia scripts,.githooks\n" +
         "  A fatia vira `<git-dir>/fatia`, e o .githooks/pre-commit recusa commit\n" +
         "  fora dela. Declarar é barato; descobrir no merge que duas frentes\n" +

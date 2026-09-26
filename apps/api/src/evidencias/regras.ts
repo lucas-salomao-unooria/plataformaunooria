@@ -208,6 +208,29 @@ export function marcadorDaFicha(
   return null;
 }
 
+/**
+ * A ORDEM DAS ALTERNATIVAS como o estudante as recebe: EMBARALHADA, a cada
+ * leitura (Fisher–Yates sobre uma cópia; a ficha não muda).
+ *
+ * A ficha guarda as alternativas na ordem em que o pedagógico as escreveu — e
+ * essa ordem quase sempre é a da régua (atingiu, em processo, não atingiu).
+ * Servida assim, "a primeira é a certa" vira a pista que a turma inteira
+ * aprende na segunda missão, e a pergunta passa a medir quem reparou no padrão.
+ * Embaralhar no SERVIDOR, e não na tela, porque o bundle é público e a tela é
+ * de cada missão: a regra vale para todas sem nenhuma precisar lembrar.
+ *
+ * `aleatorio` é injetável para o teste ser determinístico. Não é segurança
+ * (o `status` nunca desce, embaralhado ou não): `Math.random` basta.
+ */
+export function embaralhar<T>(lista: readonly T[], aleatorio: () => number = Math.random): T[] {
+  const copia = [...lista];
+  for (let i = copia.length - 1; i > 0; i--) {
+    const j = Math.min(i, Math.floor(aleatorio() * (i + 1)));
+    [copia[i], copia[j]] = [copia[j] as T, copia[i] as T];
+  }
+  return copia;
+}
+
 /** Os marcadores de múltipla escolha que corrigem esta pergunta — pode haver mais de um. */
 export function marcadoresDaPergunta(ficha: FichaPedagogica, perguntaId: string): string[] {
   return ficha.habilidades.flatMap((h) =>

@@ -1,0 +1,19 @@
+{
+  "id": "exp05ef1b",
+  "nome": "Quem Mandou Isso?",
+  "versao": "0.2.0",
+  "produto": "entre-redes",
+  "series": ["5EF"],
+  "unidade": 1,
+  "capabilities": ["telemetria", "progresso", "avaliacao"],
+  "viewport": { "largura": 375, "altura": 812 },
+  "permissoes": ["forms"],
+  "publico": "estudante",
+  "verbos": {
+    "attempted": "entrou no grupo da turma a convite da Nina",
+    "interacted": "encaminhou mensagens do grupo para o Mural da Turma",
+    "scored": "confirmou as 3 mensagens do Mural e votou na enquete de motivo",
+    "progressed": "passou pela revelação, pela síntese e pela reflexão liberadas pelo professor",
+    "completed": "montou a regra Se/Então e respondeu às perguntas da Nina"
+  }
+}

@@ -34,10 +34,10 @@ import { criarTurmaDeTeste } from "./turma-de-teste";
  * projeção que espera o professor, o ajuste, a pergunta de múltipla escolha,
  * o painel e o perfil.
  *
- * Nenhuma missão tem ficha ainda (`FICHAS` está vazio): a suíte registra uma
- * ficha DE TESTE para a exp08ef1b com `registrarFicha`, e um resolvedor de
- * contexto que ela controla. Os códigos são da BNCC de verdade — o
- * `registrarFicha` valida como o registro estático.
+ * A suíte registra uma ficha DE TESTE para a exp08ef1b com `registrarFicha`
+ * (a única ficha real do registro é a da exp05ef1b, que a suíte dela exercita),
+ * e um resolvedor de contexto que ela controla. Os códigos são da BNCC de
+ * verdade — o `registrarFicha` valida como o registro estático.
  *
  * UMA ESCOLA POR SUÍTE (mais a vizinha, para a RLS). Molde:
  * `equipes-postgres.spec.ts`.
@@ -60,8 +60,8 @@ const runtime = new PrismaService({
 }) as PrismaService & PrismaClient;
 
 const INSTA = "exp08ef1b";
-/** Missão real que aceita equipe e NÃO tem ficha. */
-const TUBE = "exp04ef1b";
+/** Missão real que aceita equipe e NÃO tem ficha (a Missão Tempestade). */
+const SEM_FICHA = "exp02em1b";
 const H1 = "EF08CO01";
 const H2 = "EF08CO02";
 const ATV = "atv-1";
@@ -784,7 +784,7 @@ describe("a pergunta de múltipla escolha", () => {
 
   test("a pergunta sai SEM o gabarito", async () => {
     const p = PerguntaSchema.parse(await evidencias.pergunta(ESCOLA, ids.ana, INSTA, "p1"));
-    expect(await evidencias.pergunta(ESCOLA, ids.ana, INSTA, "p1")).toEqual({
+    expect({ ...p, alternativas: [...p.alternativas].sort((a, b) => a.id.localeCompare(b.id)) }).toEqual({
       enunciado: "Chegou um boato no grupo. O que fazer?",
       alternativas: [
         { id: "checar", texto: "Checar a fonte antes" },
@@ -795,6 +795,28 @@ describe("a pergunta de múltipla escolha", () => {
     const texto = JSON.stringify(p);
     for (const nivel of STATUS) expect(texto).not.toContain(nivel);
     expect(texto).not.toContain("status");
+  });
+
+  /**
+   * A ficha guarda as alternativas na ordem da régua (atingiu primeiro), e é
+   * assim que o pedagógico as escreve. Servidas nessa ordem, "a primeira é a
+   * certa" vira a pista. Com 3 alternativas e 60 leituras, a chance de TODAS
+   * saírem na mesma ordem por acaso é 6 × (1/6)^60 — zero, na prática.
+   */
+  test("as alternativas saem EMBARALHADAS, numa ordem nova a cada leitura", async () => {
+    const ordens = new Set<string>();
+    for (let i = 0; i < 60; i++) {
+      const p = await evidencias.pergunta(ESCOLA, ids.ana, INSTA, "p1");
+      expect(p.alternativas.map((a) => a.id).sort()).toEqual(["checar", "perguntar", "repassar"]);
+      ordens.add(p.alternativas.map((a) => a.id).join(","));
+    }
+    expect(ordens.size).toBeGreaterThan(1);
+    /* A ficha não muda: embaralhar é da resposta, nunca do registro. */
+    expect(evidencias.fichaDe(INSTA)?.perguntas[0]?.alternativas.map((a) => a.id)).toEqual([
+      "checar",
+      "perguntar",
+      "repassar",
+    ]);
   });
 
   test("a PRIMEIRA resposta vale; a segunda é aceita, ignorada, e responde igual", async () => {
@@ -839,7 +861,7 @@ describe("a pergunta de múltipla escolha", () => {
       status: 404,
       corpo: { codigo: "pergunta-nao-encontrada" },
     });
-    expect(await recusa(evidencias.responder(ESCOLA, ids.ana, TUBE, "p1", "checar"))).toMatchObject({ status: 404 });
+    expect(await recusa(evidencias.responder(ESCOLA, ids.ana, SEM_FICHA, "p1", "checar"))).toMatchObject({ status: 404 });
     expect(await recusa(evidencias.responder(ESCOLA, ids.ana, INSTA, "p1", "talvez"))).toMatchObject({
       status: 400,
       corpo: { codigo: "alternativa-desconhecida" },
@@ -903,7 +925,7 @@ describe("o painel", () => {
   });
 
   test("missão SEM ficha: 200 com `temFicha: false` e tudo vazio", async () => {
-    expect(await evidencias.painel(ESCOLA, ids.turma8A, TUBE, ATV, ids.prof8A)).toEqual({
+    expect(await evidencias.painel(ESCOLA, ids.turma8A, SEM_FICHA, ATV, ids.prof8A)).toEqual({
       temFicha: false,
       habilidades: [],
       rodadas: [],

@@ -9,9 +9,11 @@ missão, rodada a rodada.** A missão já via o que a criança fazia (tirou o po
 do ar, acertou a pergunta) e isso morria dentro da experiência; aqui vira o
 nível que o professor lê, corrige e leva para o boletim.
 
-Nesta frente é **só a PLATAFORMA**: nenhuma missão foi adaptada, `FICHAS` está
-vazio, ninguém chama `marcar` nem `registrarContexto`. As missões entram depois,
-uma a uma, cada uma com a sua ficha.
+A plataforma entrou primeiro; as missões entram uma a uma, cada uma com a sua
+ficha. **A primeira é Quem Mandou Isso? v2.2** (`fichas/exp05ef1b.ts`): a
+EF05CO08 por uma AÇÃO (a seleção do Mural, marcada na transação do latch) e a
+EF05CO03/EF05CO04 por duas perguntas de múltipla escolha — o molde para a
+próxima.
 
 Três tabelas de PLATAFORMA (sem prefixo, como `liberacoes` e `equipes`), todas
 com `escola_id` + RLS forçada:
@@ -51,6 +53,13 @@ com `escola_id` + RLS forçada:
   sem `status`, responde só a alternativa, e recebe `{ enviada: true }` —
   sempre, na primeira e na segunda. **Vale a PRIMEIRA resposta.** Atividade e
   rodada NUNCA vêm do cliente: saem do resolvedor da missão.
+- **As alternativas saem EMBARALHADAS, numa ordem nova a cada leitura**
+  (`regras.ts#embaralhar`, Fisher–Yates sobre uma cópia). A ficha as guarda na
+  ordem da régua — atingiu primeiro, porque é assim que o pedagógico escreve —,
+  e servida assim "a primeira é a certa" vira a pista da turma. No SERVIDOR, e
+  não na tela: o bundle é público e a tela é de cada missão; aqui a regra vale
+  para todas sem nenhuma lembrar. A tela responde pelo `id`, nunca pela
+  posição. O teste de Postgres lê 60 vezes e cobra mais de uma ordem.
 - **O professor ajusta a qualquer momento**, mesmo com a missão encerrada, um ou
   vários (1..200); cada mudança vai para o histórico. **Gestor só LÊ. O
   estudante nunca vê o próprio resultado. Não há ranking em lugar nenhum.**

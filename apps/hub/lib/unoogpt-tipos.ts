@@ -181,14 +181,5 @@ export interface RelatorioDoEstudante {
 }
 
 
-/**
- * Uma turma no seletor. A forma tem de casar com a que `SeletorDeTurma` espera
- * (hoje declarada em `unootube-tipos.ts`) — o componente é compartilhado entre
- * as missões, e é ele que define o contrato.
- */
-export interface TurmaResumo {
-  id: string;
-  nome: string;
-  serie: string;
-  estudantes: number;
-}
+/** Uma turma no seletor: o tipo é do `SeletorDeTurma`, compartilhado entre as missões. */
+export type { TurmaResumo } from "./turmas-tipos";

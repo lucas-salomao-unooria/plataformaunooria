@@ -7,6 +7,7 @@ import {
   decidirCopia,
   diferencaDasCopias,
   ehProjecao,
+  embaralhar,
   marcadorDaFicha,
   marcadoresDaPergunta,
   melhor,
@@ -383,5 +384,46 @@ describe("a ficha", () => {
     expect(
       validarFicha({ ...fichaBoa(), habilidades: [], perguntas: [] }, BNCC).some((e) => e.includes("nenhuma habilidade")),
     ).toBe(true);
+  });
+});
+
+describe("a ordem das alternativas (embaralhar)", () => {
+  /** Um gerador determinístico (mulberry32): o sorteio vira reproduzível. */
+  function prng(semente: number): () => number {
+    let a = semente >>> 0;
+    return () => {
+      a = (a + 0x6d2b79f5) >>> 0;
+      let t = a;
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  test("é uma permutação: os mesmos itens, nenhum a mais nem a menos, e a lista original intacta", () => {
+    const original = ["A1", "A2", "A3", "A4"] as const;
+    const saida = embaralhar(original, prng(1));
+    expect([...saida].sort()).toEqual([...original]);
+    expect(original).toEqual(["A1", "A2", "A3", "A4"]);
+  });
+
+  test("as 6 ordens de 3 alternativas aparecem, com frequência parecida", () => {
+    const aleatorio = prng(42);
+    const contagem = new Map<string, number>();
+    for (let i = 0; i < 6000; i++) {
+      const ordem = embaralhar(["A1", "A2", "A3"], aleatorio).join(",");
+      contagem.set(ordem, (contagem.get(ordem) ?? 0) + 1);
+    }
+    expect(contagem.size).toBe(6);
+    /* 1.000 esperadas por ordem; o viés do Fisher–Yates errado (troca com
+       qualquer posição) passaria de 1.250 numa delas. */
+    for (const n of contagem.values()) expect(Math.abs(n - 1000)).toBeLessThan(150);
+  });
+
+  test("com o sorteio travado nas pontas, nunca sai do índice nem perde item", () => {
+    expect(embaralhar(["A1", "A2", "A3"], () => 0).sort()).toEqual(["A1", "A2", "A3"]);
+    expect(embaralhar(["A1", "A2", "A3"], () => 0.9999999).sort()).toEqual(["A1", "A2", "A3"]);
+    expect(embaralhar(["A1", "A2", "A3"], () => 1).sort()).toEqual(["A1", "A2", "A3"]);
+    expect(embaralhar([], Math.random)).toEqual([]);
   });
 });

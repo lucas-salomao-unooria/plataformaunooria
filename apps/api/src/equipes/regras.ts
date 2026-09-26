@@ -15,10 +15,14 @@
  * duas crianças numa tela" é propriedade do DESENHO da experiência (quem
  * clica, quem lê, o que o painel conta), e não configuração da rede. As três
  * foram conferidas uma a uma: o Instanooria (exp08ef1b), a Missão Tempestade
- * (exp02em1b) e o UnooTube (exp04ef1b). Missão que entra aqui sem essa
- * conferência abre para equipe e continua contando por criança no painel.
+ * (exp02em1b) e Quem Mandou Isso? v2.2 (exp05ef1b, que já nasceu com equipe: o
+ * painel e o Termômetro contam por computador). O UnooTube (exp04ef1b) estava aqui
+ * até ser ARQUIVADO (ADR-116): o código passou ao Jornal da Escola, que entra de
+ * novo quando nascer com equipe — lista por CÓDIGO, e o código mudou de dono.
+ * Missão que entra aqui sem essa conferência abre para equipe e continua
+ * contando por criança no painel.
  */
-export const EXPERIENCIAS_COM_EQUIPE = ["exp08ef1b", "exp02em1b", "exp04ef1b"] as const;
+export const EXPERIENCIAS_COM_EQUIPE = ["exp08ef1b", "exp02em1b", "exp05ef1b"] as const;
 export type ExperienciaComEquipe = (typeof EXPERIENCIAS_COM_EQUIPE)[number];
 
 export function permiteEquipes(expId: string): expId is ExperienciaComEquipe {

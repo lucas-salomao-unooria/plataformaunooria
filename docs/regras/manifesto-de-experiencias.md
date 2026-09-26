@@ -23,7 +23,7 @@ fora disso, e o validador (`EXP_ID_RE`) mora em `apps/api/src/comum/` e em
 O hub monta a URL do iframe com `versaoAtiva`; rollback = trocar `versaoAtiva`
 (`node apps/hub/scripts/publicar-manifesto.mjs <exp> --versao x.y.z`).
 `viewport` presente ⇒ o hub embeda dentro do `DispositivoFrame` (casca de
-aparelho com escala; exp08ef1b é 375×812, exp04ef1b não tem viewport porque foi
+aparelho com escala; exp08ef1b é 375×812, o UnooTube (hoje arquivado) não tinha viewport porque foi
 desenhada para desktop). SEM linha na tabela, o `viewport` é lido do
 `experiencia.json` servido ao lado do index do bundle — não só em dev: uma
 stack com a tabela vazia (compose local, ambiente novo antes do 1º publish do
@@ -73,7 +73,8 @@ experiência desaparecer da tela sozinha.
 `/professor/bem-estar`), e `/exp/*` responde 404 para elas. Sem manifesto (dev) o hub cai na raiz do Vite **da
 experiência mapeada em `apps/hub/lib/experiencias-dev.ts`** (uma porta por exp:
 5173 exp08ef1b, 5174 exp04ef1b, 5175 app-90, 5176 app-91, 5177 app-70, 5178 exp02em1b,
-5181 exp06ef2b — a 5180 é da app-92; a 5179 fica para A Seleção, que substitui o Eco no Grupo);
+5181 exp06ef2b, 5182 exp08ef4b, 5183 exp01ef1b, 5184 exp05ef1b — a 5180 é da
+app-92);
 teste local: rota `/dev-embed?src=http://localhost:5174`.
 A montagem do embed (token, manifesto, dev server, origin) é uma só:
 `apps/hub/lib/embed-experiencia.ts`, usada por `/exp/[expId]`, `/dev-embed`,
@@ -97,7 +98,7 @@ não do ano letivo, e o 7º ano viria depois do 8º.
 para `unidade` e para `produto`: esquecer é invisível em dev (o hub lê o arquivo do bundle) e
 quebra em produção, onde ele lê a coluna. E **a versão tem TRÊS fontes** —
 `public/experiencia.json`, `package.json` e a constante `EXP_VERSION` do código.
-A exp06ef2b tem teste cobrando as três (o `_template` também); a exp04ef1b já vivia divergente.
+A exp06ef2b tem teste cobrando as três; a exp04ef1b já vivia divergente.
 
 **A ORIGEM do bundle é do AMBIENTE, não do manifesto.** `montarEmbed` já decidiu
 "estou em dev" por "a tabela `experiencias` está vazia", e isso quebrou no dia em

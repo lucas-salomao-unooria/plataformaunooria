@@ -22,6 +22,7 @@ import {
   decidirCopia,
   diferencaDasCopias,
   ehNivel,
+  embaralhar,
   ehProjecao,
   marcadorDaFicha,
   marcadoresDaPergunta,
@@ -604,7 +605,9 @@ export class EvidenciasService implements OnModuleInit {
 
   /**
    * A PERGUNTA, como o estudante a vê: o enunciado e as alternativas — SEM o
-   * nível de cada uma. O gabarito fica aqui (regra 3).
+   * nível de cada uma, e EMBARALHADAS a cada leitura (`regras.ts#embaralhar`).
+   * O gabarito fica aqui (regra 3), e a ordem da ficha — que costuma ser a da
+   * régua — não desce.
    *
    * Passa pela porta da sala (`exigirMissaoLiberada`) como toda entrada de
    * estudante em missão: a pergunta é da missão, e a missão fechada não tem
@@ -616,7 +619,7 @@ export class EvidenciasService implements OnModuleInit {
       await exigirMissaoLiberada(tx, escolaId, estudanteId, expId);
       return {
         enunciado: pergunta.enunciado,
-        alternativas: pergunta.alternativas.map((a) => ({ id: a.id, texto: a.texto })),
+        alternativas: embaralhar(pergunta.alternativas).map((a) => ({ id: a.id, texto: a.texto })),
       };
     }, escolaId);
   }

@@ -168,7 +168,7 @@ falha --- devolve vazio.} As três tabelas das equipes na missão
 \cd{escola\_id NOT NULL}, \cd{ENABLE} e \cd{FORCE ROW LEVEL SECURITY} e uma
 política por escola em cada uma --- \cd{equipes\_membros} com mais razão, por ser
 a única das três com id de criança. O risco delas é outro: quem as lê são OUTROS
-módulos (os painéis do UnooTube e do unooGPT, a grade da sala), por funções
+módulos (o painel do unooGPT, a grade da sala), por funções
 livres que recebem o \cd{tx} (\arq{equipes/consulta.ts}), no molde de
 \arq{comum/liberacao.ts}. Chamadas fora da transação de tenancy, elas devolvem um
 mapa vazio, e o painel volta a contar por criança sem que ninguém saiba por quê.
@@ -396,6 +396,13 @@ estado não é. \rota{GET /recursos/painel} e as escritas seguem em 403 para o
 IA uma rede pode gastar por dia é o custo variável da fornecedora. Aqui nem a
 leitura volta atrás da linha --- o \cd{gestor\_contrato} recebe 403 no GET e no
 PUT, e a tela \rota{/unooria/uso-de-ia} o manda embora pelo \emph{middleware}.
+
+\textbf{E a lista das experiências arquivadas} (\rota{GET /recursos/arquivadas},
+\adrr{ADR-116}) também é só dele: a rota não conta nada em tempo de uso --- os
+números de turmas e estudantes guardados são a fotografia que a migração tirou ao
+arquivar ---, e por isso não atravessa a RLS. O que a fecha no \cd{admin} é o
+mesmo motivo das outras: o catálogo do que a Unooria já tirou do produto é da
+fornecedora.
 \end{regra}
 
 \begin{tabularx}{\linewidth}{@{}L{28mm}L{38mm}X@{}}
@@ -625,8 +632,6 @@ A resposta --- que devolve só \enquote{enviada}, nunca o resultado &
   \rota{/unoogpt/professor/*} & \no & \yes\footnotesize{\ddag} & \no & \yes\\
 \zebra unooGPT: agregado da escola (sem \cd{estudanteId}) &
   \rota{/unoogpt/agregado/\B escola} & \no & \no & \yes & \yes\\
-unooTube: a própria sessão & \rota{/unootube/*} & \yes & \no & \no & \no\\
-\zebra unooTube: resultados por turma & \rota{/unootube/turmas/*} & \no & \yes & \yes & \yes\\
 \textbf{Bem-estar: o próprio \emph{check-in}, histórico, apagar} &
   \rota{/bemestar/*} & \no & \yes & \no & \no\\
 \zebra Plano de aula: criar, versionar, restaurar & \rota{/planos/*} & \no & \yes & \no & \no\\
@@ -636,7 +641,9 @@ unooTube: a própria sessão & \rota{/unootube/*} & \yes & \no & \no & \no\\
   \yes & \yes & \yes & \yes\\
 \textbf{Alterar o teto diário de IA de um perfil} (só \cd{admin}, \adrr{ADR-105}) &
   \rota{/recursos/quotas-de-ia/*} & \no & \no & \no & \no\\
-\zebra Enviar telemetria & \rota{POST /telemetry/batch} & \yes & \yes & \yes & \yes\\
+\zebra \textbf{Listar as experiências arquivadas} (só \cd{admin}, \adrr{ADR-116}) &
+  \rota{GET /recursos/arquivadas} & \no & \no & \no & \no\\
+Enviar telemetria & \rota{POST /telemetry/batch} & \yes & \yes & \yes & \yes\\
 \bottomrule
 \end{tabularx}
 

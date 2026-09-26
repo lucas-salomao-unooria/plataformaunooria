@@ -6,9 +6,8 @@ import { validarFicha } from "../src/evidencias/regras";
 /**
  * TODA FICHA DO REGISTRO É CONFERIDA (E14).
  *
- * Hoje `FICHAS` está vazio — nenhuma missão mede nada ainda —, e este arquivo
- * passa sem conferir ficha nenhuma. Ele existe AGORA para que a primeira ficha
- * já entre com a trava: os códigos existem na BNCC homologada (`curriculo/`),
+ * A primeira ficha do registro é a de Quem Mandou Isso? v2.2 (exp05ef1b). Cada
+ * uma entra com a trava: os códigos existem na BNCC homologada (`curriculo/`),
  * o `expId` existe nos manifestos, o gabarito só usa níveis válidos e todo
  * marcador de pergunta aponta para uma pergunta que existe.
  *
@@ -72,4 +71,17 @@ describe("a trava confere de verdade", () => {
       "ficha de exp09ef4b: não há manifesto com este expId.",
     ]);
   });
+});
+
+test("a ficha da exp05ef1b está no registro, com as três habilidades da régua", () => {
+  const ficha = FICHAS.find((f) => f.expId === "exp05ef1b");
+  expect(ficha?.habilidades.map((h) => [h.codigo, h.marcadores.map((m) => [m.id, m.tipo, m.perguntaId ?? null])])).toEqual([
+    ["EF05CO08", [["selecao-do-mural", "acao", null]]],
+    ["EF05CO03", [["pergunta-tom-e-veracidade", "multipla_escolha", "p1"]]],
+    ["EF05CO04", [["pergunta-regra-condicional", "multipla_escolha", "p2"]]],
+  ]);
+  expect(ficha?.perguntas.map((p) => [p.id, p.alternativas.map((a) => [a.id, a.status])])).toEqual([
+    ["p1", [["A1", "atingiu"], ["A2", "em_processo"], ["A3", "nao_atingiu"]]],
+    ["p2", [["B1", "atingiu"], ["B2", "em_processo"], ["B3", "nao_atingiu"]]],
+  ]);
 });
