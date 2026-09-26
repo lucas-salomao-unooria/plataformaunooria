@@ -49,10 +49,13 @@ function todosUmaVez(r: ResultadoDoSorteio, presentes: readonly Presente[]) {
 }
 
 describe("as missões que aceitam equipe", () => {
-  test("só as quatro conferidas", () => {
-    expect([...EXPERIENCIAS_COM_EQUIPE]).toEqual(["exp08ef1b", "exp02em1b", "exp04ef1b", "exp07ef1b"]);
-    expect(permiteEquipes("exp04ef1b")).toBe(true);
+  test("só as quatro conferidas (o UnooTube saiu ao ser arquivado, ADR-116)", () => {
+    expect([...EXPERIENCIAS_COM_EQUIPE]).toEqual(["exp08ef1b", "exp02em1b", "exp05ef1b", "exp07ef1b"]);
+    expect(permiteEquipes("exp02em1b")).toBe(true);
+    expect(permiteEquipes("exp05ef1b")).toBe(true);
     expect(permiteEquipes("exp07ef1b")).toBe(true);
+    expect(permiteEquipes("exp04ef1b")).toBe(false);
+    expect(permiteEquipes("backup-exp04ef1b")).toBe(false);
     expect(permiteEquipes("exp08ef4b")).toBe(false);
     expect(permiteEquipes("app-70-vila-do-lume")).toBe(false);
   });

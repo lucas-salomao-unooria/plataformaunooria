@@ -28,8 +28,10 @@ E os módulos de experiência, um por missão:
 |---|---|
 | [`src/comum/insta/`](src/comum/insta/AGENTS.md) | exp08ef1b Instanooria — o relógio da aula (ADR-92) |
 | [`src/unoogpt/`](src/unoogpt/AGENTS.md) | exp02em1b Missão Tempestade |
-| [`src/a-selecao/`](src/a-selecao/AGENTS.md) | exp07ef1b A Seleção — a primeira com ficha pedagógica e com equipe desde o nascimento |
+| [`src/a-selecao/`](src/a-selecao/AGENTS.md) | exp07ef1b A Seleção — com ficha (E14) e o Mural pareado por computador (E13) |
+| [`src/quem-mandou-isso/`](src/quem-mandou-isso/AGENTS.md) | exp05ef1b Quem Mandou Isso? v2.2 — com ficha (E14) e equipe (E13) |
 | [`src/vila/`](src/vila/AGENTS.md) | app-70 Vila do Lume |
+| [`src/backup-unootube/`](src/backup-unootube/AGENTS.md) | o UnooTube ARQUIVADO (`backup-exp04ef1b`, ADR-116): compila e é testado, mas não está no `app.module` |
 | [`src/planos/`](src/planos/AGENTS.md) | app-90 Plano de aula |
 | [`src/bemestar/`](src/bemestar/AGENTS.md) | app-91 Check-in de bem-estar |
 

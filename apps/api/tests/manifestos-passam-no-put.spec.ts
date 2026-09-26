@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { UpsertSchema } from "../src/experiencias/contrato-de-rotas";
 import { EXP_ID_RE } from "../src/comum/codigo-da-experiencia";
@@ -54,6 +54,17 @@ const pastas = readdirSync(PASTA, { withFileTypes: true })
   .map((e) => e.name)
   .sort();
 
+/**
+ * Experiências cujo MANIFESTO chegou antes do resto da pasta — e só elas.
+ *
+ * **Esta lista só encolhe.** A exp05ef1b v2.2 entrou pela api (a ficha da
+ * evidência e o seed precisam do manifesto para conferir o `expId`) e saiu
+ * daqui quando o bundle chegou com o `package.json` 0.2.0. Vazia é o estado
+ * normal; o teste abaixo cobra que uma entrada nova SAIA no dia em que o
+ * `package.json` chegar — senão a comparação de versão ficaria desligada.
+ */
+const SEM_PACOTE_AINDA = new Set<string>([]);
+
 test("há experiências para validar (senão a suíte passaria vazia)", () => {
   expect(pastas.length).toBeGreaterThan(0);
 });
@@ -62,13 +73,20 @@ describe.each(pastas)("%s", (nome) => {
   const manifesto = JSON.parse(
     readFileSync(resolve(PASTA, nome, "public/experiencia.json"), "utf8"),
   ) as Manifesto;
-  const pacote = JSON.parse(readFileSync(resolve(PASTA, nome, "package.json"), "utf8")) as {
-    version?: string;
-  };
-
   test("o corpo do PUT passa no UpsertSchema da rota", () => {
     expect(() => UpsertSchema.parse(corpoDoPut(manifesto, manifesto.versao ?? ""))).not.toThrow();
   });
+
+  if (SEM_PACOTE_AINDA.has(nome)) {
+    test("ainda sem package.json — e a entrada sai de SEM_PACOTE_AINDA quando ele chegar", () => {
+      expect(existsSync(resolve(PASTA, nome, "package.json"))).toBe(false);
+    });
+    return;
+  }
+
+  const pacote = JSON.parse(readFileSync(resolve(PASTA, nome, "package.json"), "utf8")) as {
+    version?: string;
+  };
 
   test("package.json e manifesto dizem a MESMA versão (o CI lê o manifesto)", () => {
     expect(pacote.version).toBe(manifesto.versao);

@@ -468,7 +468,7 @@ export const ARROBAS_DA_FICCAO: readonly string[] = [...PERFIS, CONTA_DO_GREMIO]
 /**
  * O roteiro de mediação da Etapa 4 — as três perguntas do debate, verbatim do
  * sheet (`design/06-copy-strings-revisada.md`, "Strings do professor"). Vêm da
- * api, e não do bundle do hub, pelo mesmo motivo do podcast da exp05ef1b:
+ * api, e não do bundle do hub, pelo mesmo motivo do podcast da v1 da exp05ef1b:
  * corrigir uma pergunta não pode exigir republicar nada.
  */
 export const ROTEIRO_DA_ETAPA_4 = {

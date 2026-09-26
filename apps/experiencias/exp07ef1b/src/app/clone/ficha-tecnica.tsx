@@ -74,7 +74,7 @@ export default function FichaTecnica({
  * NÃO é compensação de componente, e não virou pedido ao `storybook-unooria`:
  * o Instagram não desenha gráfico, e a ficha técnica é a extensão da ficção
  * que a missão acrescenta ao app (o mesmo argumento do mini-infográfico da
- * exp05ef1b). O `DataViz` da plataforma está fora: seria a seção `unooria`
+ * v1 da exp05ef1b). O `DataViz` da plataforma está fora: seria a seção `unooria`
  * dentro do clone. A leitura é por TEXTO ("Institucional 67%"); a barra é
  * redundância visual, escondida do leitor de tela.
  */

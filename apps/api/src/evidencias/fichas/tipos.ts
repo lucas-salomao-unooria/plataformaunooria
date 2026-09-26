@@ -50,17 +50,6 @@ export interface PerguntaDaFicha {
   readonly id: string;
   readonly enunciado: string;
   /**
-   * Embaralhar as alternativas A CADA EXIBIÇÃO (`regras.ts#alternativasParaExibir`).
-   *
-   * Opcional, e desligado por padrão, porque nem toda pergunta aceita: numa
-   * escala ORDINAL ("nunca, às vezes, sempre") a ordem é parte do enunciado, e
-   * misturá-la faria a criança ler a escala de trás para frente. Onde as
-   * alternativas são independentes (as enquetes da A Seleção), embaralhar tira
-   * do nível a posição fixa — o toque de quem tem pressa cai na primeira opção,
-   * e a primeira opção não pode ser sempre a do mesmo nível.
-   */
-  readonly embaralhar?: boolean;
-  /**
    * O `status` de cada alternativa É O GABARITO — e por isso nunca sai para o
    * estudante: `GET /evidencias/:expId/perguntas/:perguntaId` devolve só `id`
    * e `texto`.

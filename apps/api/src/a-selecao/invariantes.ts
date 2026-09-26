@@ -3,7 +3,8 @@
  * importadas pelo preparo (que rejeita o lote de IA que as fere), pela
  * homologação e pelos testes. Alterar aqui obriga a rodar a suíte da api.
  *
- * Molde: `apps/api/src/quem-mandou-isso/invariantes.ts`.
+ * Molde: o `quem-mandou-isso/invariantes.ts` da v1 da exp05ef1b (no histórico
+ * do git desde a ADR-114).
  */
 
 /**
@@ -38,7 +39,7 @@ export const CAMPOS_SENSIVEIS = [
  *   "negativo"), para que a proibição tenha uma trava além da instrução.
  * - **A ficção**: "aluno" (o sheet troca por "estudante" ou "colega" em toda
  *   tela) e "gabarito". "Atividade" e "pesquisa" NÃO entram, e a ausência é
- *   deliberada — diferente da exp05ef1b: aqui o feed é de veículos de notícia
+ *   deliberada — diferente da v1 da exp05ef1b: aqui o feed é de veículos de notícia
  *   cobrindo um polo cultural, e "atividades culturais" e "pesquisa de fluxo"
  *   (o `post_c_3` do banco curado) são o jornalismo real. Proibi-los faria a
  *   régua reprovar a própria copy homologada.

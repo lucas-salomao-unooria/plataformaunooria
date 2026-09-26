@@ -10,14 +10,14 @@ evento, poda os salvos até três, publica nos Stories com uma legenda (o LATCH)
 e no Mural vê a própria tríade ao lado da de um colega que contou outra
 história com os mesmos fatos. Quatro tabelas: `exp07ef1b_coberturas`,
 `exp07ef1b_gates_turma`, `exp07ef1b_sessoes`, `exp07ef1b_reflexoes`. É a
-**primeira missão com ficha pedagógica** (E14) e a **primeira que nasce com
-equipe** (E13).
+**segunda missão com ficha pedagógica** (E14), depois de Quem Mandou Isso? v2.2,
+e a primeira em que o dado do MURAL é do computador (E13, o gatilho da ADR-111).
 
 - **Atividade = a COBERTURA; rodada = o "Zerar".** O gate da turma diz qual
   (cobertura, rodada) está em andamento, e a sessão é por essa dupla. Zerar
   sobe a rodada e volta à exploração **sem apagar nada** — a rodada passada é o
   que o painel de habilidades mostra (ADR-112), e o zerar que apagava (o da
-  exp05ef1b) é o que a evidência não pode ter. Homologar um tema novo DESATIVA a
+  v1 da exp05ef1b, ADR-114) é o que a evidência não pode ter. Homologar um tema novo DESATIVA a
   cobertura anterior (ela fica) e abre a rodada 1 da nova. Uma ativa por turma:
   índice único PARCIAL, que o Prisma não enxerga (não está no schema nem no
   `migrate diff`).
@@ -71,8 +71,8 @@ equipe** (E13).
   ler. As contas da ficção (`ARROBAS_DA_FICCAO`) podem ser citadas: citar a fonte
   É o critério editorial que a EF07CO11 procura.
 - **Code points dos dois lados**: Zod com `[...s].length`, a coluna `chars` com o
-  mesmo número, e o CHECK `chars = char_length(texto)`. O defeito da exp05ef1b
-  (Zod em `length`, banco em `char_length`) não existe aqui.
+  mesmo número, e o CHECK `chars = char_length(texto)`. O defeito da v1 da
+  exp05ef1b (Zod em `length`, banco em `char_length`) não existe aqui.
 - **As imagens** (`midia.service.ts`) são do professor, INCREMENTAIS (até duas
   novas por chamada: o BFF corta em 30 s), com o nome do arquivo = hash da
   descrição em `experiencias/exp07ef1b/selecao/` — a mesma cena serve a rede
@@ -84,7 +84,8 @@ equipe** (E13).
 
 A ficha é `evidencias/fichas/exp07ef1b.ts`: EF07CO11 por `legenda-publicada`
 (ação, o Canal A) e `p1`; EF07CO08 por `p2`. As enquetes usam as rotas genéricas
-`/evidencias/exp07ef1b/perguntas/:id`, com `embaralhar: true`. O resolvedor
+`/evidencias/exp07ef1b/perguntas/:id`, que embaralham as alternativas a cada
+leitura para toda ficha (ADR-118). O resolvedor
 (`contextoDaAtividade`) devolve `null` antes de `enquetes` e quando a sessão não é
 a (cobertura, rodada) do gate — por isso o zerar tranca a resposta atrasada.
 

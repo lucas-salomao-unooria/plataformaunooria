@@ -6,8 +6,8 @@
  * é 2 em JavaScript e `char_length('😀')` é 1 no Postgres; com o Zod contando
  * `length` e o CHECK contando `char_length`, uma reflexão de 99 letras e um
  * emoji passa no Zod como 101 e o banco a recusa como 100 — ou, no teto, o Zod
- * recusa o que o banco aceitaria. O defeito existe na exp05ef1b (o Zod de lá
- * usa `.min()`/`.max()` de `length`). Aqui o Zod usa `codePoints`, a coluna
+ * recusa o que o banco aceitaria. O defeito existia na v1 da exp05ef1b (o Zod de
+ * lá usava `.min()`/`.max()` de `length`). Aqui o Zod usa `codePoints`, a coluna
  * `chars` grava `codePoints`, e o CHECK confere `chars = char_length(texto)`.
  */
 

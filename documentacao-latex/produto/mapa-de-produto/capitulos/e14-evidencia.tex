@@ -18,9 +18,10 @@
     professor não tinha como dizer \enquote{a Ana atingiu a EF08CO05 e o Caio
     ainda está em processo}, que é a frase que a rede pede e que a BNCC
     organiza.
-  \item[Estado] \parcial{} --- a base está pronta na plataforma; aparece para o
-    professor quando a primeira missão tiver a régua pedagógica, e nenhuma tem
-    ainda.
+  \item[Estado] \parcial{} --- a base está pronta na plataforma, e a primeira
+    missão com a régua pedagógica é a versão nova de Quem mandou isso?
+    (\id{H14.1.2}); falta o teste de ponta a ponta rodar e a equipe pedagógica
+    validar a régua.
 \end{campos}
 \end{fichaepico}
 
@@ -46,9 +47,10 @@ sustentam:
 \begin{itemize}
   \item \textbf{A atividade é da missão.} Cada missão diz quais são as suas
     atividades; a plataforma não tem, por ora, uma \enquote{atividade} dela
-    mesma. Hoje só o Instanooria tem atividades --- a que o professor cria a
-    partir da aula (\id{H06.6.1}) ---, e o unooGPT e o UnooTube serão refeitos
-    com atividades numa próxima onda.
+    mesma. No Instanooria é a que o professor cria a partir da aula
+    (\id{H06.6.1}); em Quem mandou isso? é o pacote de mensagens que o
+    professor aprova para a turma (\id{H06.11.1}). O unooGPT será refeito com
+    atividades numa próxima onda (o UnooTube foi arquivado).
   \item \textbf{A rodada é cada vez que a atividade é feita.} Reiniciar a
     atividade abre uma rodada nova, e a anterior fica guardada.
   \item \textbf{A régua pedagógica diz o que a missão mede}: quais habilidades,
@@ -61,12 +63,12 @@ A escala tem três níveis --- \textbf{atingiu}, \textbf{em processo} e
 nunca conta como não atingiu.
 
 \begin{nota}
-\textbf{Pronta na plataforma, invisível para o professor.} As histórias
-marcadas \parcial{} neste épico têm a regra construída e testada, mas nenhuma
-missão foi adaptada: sem régua, a página da atividade não mostra o bloco
-\enquote{Habilidades da BNCC}, e o perfil do estudante fica vazio. Elas passam a
-\pronto{} quando a primeira missão entrar com a régua (\id{H14.1.2}) e houver o
-teste que percorre a tela.
+\textbf{A primeira missão entrou com a régua.} As histórias marcadas
+\parcial{} neste épico têm a regra construída e testada, e desde a versão nova
+de Quem mandou isso? (\id{H14.1.2}) o bloco \enquote{Habilidades da BNCC}
+aparece nos resultados dela. Elas passam a \pronto{} quando o teste que
+percorre a tela --- já escrito --- rodar, e a régua for validada pela equipe
+pedagógica. O Instanooria continua sem régua.
 \end{nota}
 
 \section{O que foi decidido}
@@ -125,25 +127,42 @@ a missão de fato observa}
     quando foi feito.
   \item Missão sem régua não mostra evidência nenhuma.
 \end{itemize}
-\pendencia{a base está pronta; a primeira régua é a da A Seleção (\id{H14.1.2}).}
+\pendencia{as réguas que existem são a de Quem mandou isso? (\id{H14.1.2}), que
+ainda aguarda a validação da equipe pedagógica, e a da A Seleção
+(\id{H06.10.2}); as outras missões não têm régua.}
 \end{historia}
 
 \begin{historia}{H14.1.2}{A primeira missão entra com a régua}{\parcial}
 \hu{Professor}{que a primeira missão com atividades venha com a régua
-pedagógica}{ver, na página da atividade, as habilidades que cada estudante
+pedagógica}{ver, nos resultados da missão, as habilidades que cada estudante
 demonstrou}
-\aceiteproposta
+\aceite
 \begin{itemize}
-  \item A régua é escrita com a equipe pedagógica e validada antes de entrar.
-  \item A missão registra cada momento da régua enquanto a turma joga.
-  \item O bloco \enquote{Habilidades da BNCC} aparece na página da atividade.
-  \item A primeira é A Seleção (\id{H06.10.2}): cada tema que a professora
+  \item A primeira é a versão nova de Quem mandou isso? (\id{F06.11}), e não o
+    Instanooria, que era a candidata: a missão do 5º ano chegou primeiro, já
+    desenhada com as perguntas do PO.
+  \item A régua mede três habilidades de Computação: a EF05CO08 pelas três
+    mensagens que o estudante manda ao Mural --- três verdadeiras, ou duas e uma
+    falsa alarmada, é \enquote{atingiu}; duas e uma falsa de formato sério,
+    \enquote{em processo}; uma verdadeira ou nenhuma, \enquote{não atingiu} ---,
+    a EF05CO03 pela primeira pergunta da Nina e a EF05CO04 só pela segunda.
+  \item A regra \enquote{Se \ldots, então \ldots} que o estudante escreve não é
+    corrigida: o professor a lê e ajusta a EF05CO04 no painel.
+  \item A atividade é o pacote de mensagens aprovado para a turma, e cada
+    \enquote{Zerar Turma para Nova Aplicação} abre a rodada seguinte.
+  \item O bloco \enquote{Habilidades da BNCC} aparece nos resultados da missão.
+  \item Os códigos de Língua Portuguesa do material pedagógico ficam fora da
+    régua.
+  \item A segunda é A Seleção (\id{H06.10.2}): cada tema que a professora
     aprova é uma atividade, e refazer a aula abre uma rodada nova. A régua mede
     duas habilidades --- a legenda dos Stories e a primeira enquete para
-    EF07CO11, e a segunda enquete para EF07CO08.
+    EF07CO11, e a segunda enquete para EF07CO08 ---, e a validação pedagógica
+    dela foi dispensada pelo dono do produto.
 \end{itemize}
-\pendencia{a validação pedagógica da régua foi dispensada pelo dono do
-produto; e a suíte que mostra o bloco com dados roda depois do merge.}
+\pendencia{a régua ainda não foi validada pela equipe pedagógica (a entrada
+diz \enquote{Produto Unooria}, de 25 de setembro de 2026) e, sem isso, a missão
+não sobe para o ambiente do time; o teste que percorre a tela foi escrito e
+ainda não rodou.}
 \end{historia}
 
 % ---------------------------------------------------------------------------
@@ -160,8 +179,9 @@ demonstrou}{saber quem atingiu e quem ainda está em processo}
   \item Quando dois momentos da mesma rodada medem a mesma habilidade, vale o
     melhor: demonstrar uma vez é demonstrar.
 \end{itemize}
-\pendencia{a base está pronta; aparece para o professor quando a primeira
-missão tiver a régua pedagógica.}
+\pendencia{aparece para o professor desde a primeira missão com a régua, a
+versão nova de Quem mandou isso? (\id{H14.1.2}); falta o teste que percorre a
+tela rodar, e a régua ser validada pela equipe pedagógica.}
 \end{historia}
 
 \begin{historia}{H14.2.2}{Refazer a atividade sem perder o que já foi demonstrado}{\parcial}
@@ -176,8 +196,9 @@ chance sem apagar o que cada estudante já tinha mostrado}
     duas.
   \item Uma rodada pior depois não apaga o que já tinha sido demonstrado.
 \end{itemize}
-\pendencia{a base está pronta; aparece para o professor quando a primeira
-missão tiver a régua pedagógica.}
+\pendencia{aparece para o professor desde a primeira missão com a régua, a
+versão nova de Quem mandou isso? (\id{H14.1.2}); falta o teste que percorre a
+tela rodar, e a régua ser validada pela equipe pedagógica.}
 \end{historia}
 
 \begin{historia}{H14.2.3}{Sem ranking, e o nível é da habilidade}{\parcial}
@@ -189,8 +210,9 @@ cada habilidade sem transformar a criança num número}
   \item Nenhuma tela soma os níveis numa nota: o nível é de uma habilidade, não
     da criança.
 \end{itemize}
-\pendencia{a base está pronta; aparece para o professor quando a primeira
-missão tiver a régua pedagógica.}
+\pendencia{aparece para o professor desde a primeira missão com a régua, a
+versão nova de Quem mandou isso? (\id{H14.1.2}); falta o teste que percorre a
+tela rodar, e a régua ser validada pela equipe pedagógica.}
 \end{historia}
 
 % ---------------------------------------------------------------------------
@@ -212,8 +234,9 @@ como \enquote{Não avaliado} quem estava sentado ao lado de quem entrou}
   \item O que o professor ajustou nunca é trocado pelo que veio da equipe.
   \item Se dois da mesma equipe demonstraram a habilidade, fica o melhor.
 \end{itemize}
-\pendencia{a base está pronta; aparece para o professor quando a primeira
-missão tiver a régua pedagógica.}
+\pendencia{aparece para o professor desde a primeira missão com a régua, a
+versão nova de Quem mandou isso? (\id{H14.1.2}); falta o teste que percorre a
+tela rodar, e a régua ser validada pela equipe pedagógica.}
 \end{historia}
 
 \begin{historia}{H14.3.2}{Trocar as equipes no meio da atividade}{\parcial}
@@ -230,8 +253,9 @@ sentou onde sem mexer nas aulas anteriores}
   \item Salvar as equipes de novo sem mudar ninguém de lugar não desfaz a
     confirmação que eu já tinha dado (\id{H14.3.3}).
 \end{itemize}
-\pendencia{a base está pronta; aparece para o professor quando a primeira
-missão tiver a régua pedagógica.}
+\pendencia{aparece para o professor desde a primeira missão com a régua, a
+versão nova de Quem mandou isso? (\id{H14.1.2}); falta o teste que percorre a
+tela rodar, e a régua ser validada pela equipe pedagógica.}
 \end{historia}
 
 \begin{historia}{H14.3.3}{A aula projetada chega \enquote{a revisar}}{\parcial}
@@ -251,8 +275,9 @@ a turma respondeu junto}
   \item É diferente do documento do PO, que pedia a replicação automática
     também aqui.
 \end{itemize}
-\pendencia{a base está pronta; aparece para o professor quando a primeira
-missão tiver a régua pedagógica.}
+\pendencia{aparece para o professor desde a primeira missão com a régua, a
+versão nova de Quem mandou isso? (\id{H14.1.2}); falta o teste que percorre a
+tela rodar, e a régua ser validada pela equipe pedagógica.}
 \end{historia}
 
 % ---------------------------------------------------------------------------
@@ -271,11 +296,13 @@ estudante}{saber o que a turma demonstrou e planejar a próxima aula}
     do próprio estudante, da equipe, da aula projetada ou do ajuste do
     professor.
   \item O bloco diz quantos níveis de cada rodada estão \enquote{a revisar}.
-  \item Hoje só o Instanooria tem atividades, então é só na página da
-    atividade dele que o bloco pode aparecer.
+  \item O bloco aparece nos resultados de Quem mandou isso?, a primeira
+    missão com régua; a página da atividade do Instanooria o mostrará quando
+    ele tiver a sua.
 \end{itemize}
-\pendencia{a base está pronta; aparece para o professor quando a primeira
-missão tiver a régua pedagógica.}
+\pendencia{aparece para o professor desde a primeira missão com a régua, a
+versão nova de Quem mandou isso? (\id{H14.1.2}); falta o teste que percorre a
+tela rodar, e a régua ser validada pela equipe pedagógica.}
 \end{historia}
 
 \begin{historia}{H14.4.2}{Ajustar um estudante ou vários}{\parcial}
@@ -292,8 +319,9 @@ valer o que eu vi na sala, mesmo quando a missão não viu}
     ---, e o histórico não pode ser reescrito.
   \item Só quem dá aula na turma ajusta.
 \end{itemize}
-\pendencia{a base está pronta; aparece para o professor quando a primeira
-missão tiver a régua pedagógica.}
+\pendencia{aparece para o professor desde a primeira missão com a régua, a
+versão nova de Quem mandou isso? (\id{H14.1.2}); falta o teste que percorre a
+tela rodar, e a régua ser validada pela equipe pedagógica.}
 \end{historia}
 
 \begin{historia}{H14.4.3}{Marcar que o estudante não participou}{\parcial}
@@ -308,8 +336,9 @@ quem faltou não herde o que a equipe fez}
   \item No perfil, conta como não avaliado --- nunca como não atingiu.
   \item Só o professor marca; a missão nunca marca \enquote{não participou}.
 \end{itemize}
-\pendencia{a base está pronta; aparece para o professor quando a primeira
-missão tiver a régua pedagógica.}
+\pendencia{aparece para o professor desde a primeira missão com a régua, a
+versão nova de Quem mandou isso? (\id{H14.1.2}); falta o teste que percorre a
+tela rodar, e a régua ser validada pela equipe pedagógica.}
 \end{historia}
 
 \begin{historia}{H14.4.4}{A coordenação consulta, sem ajustar}{\parcial}
@@ -343,6 +372,8 @@ missão vire uma prova com nota na hora}
 \begin{itemize}
   \item A pergunta mostra o enunciado e as alternativas; quanto vale cada
     alternativa fica na plataforma, e nunca chega ao meu aparelho.
+  \item As alternativas chegam em outra ordem a cada vez que a pergunta abre:
+    \enquote{a primeira é a certa} não vira pista.
   \item Depois de responder, vejo só \enquote{resposta enviada} --- e vejo o
     mesmo se responder de novo.
   \item Vale a primeira resposta; a segunda não muda nada.
@@ -351,8 +382,9 @@ missão vire uma prova com nota na hora}
   \item Se a missão não está aberta na minha turma, a pergunta não abre.
   \item Não vejo o meu resultado em lugar nenhum da plataforma.
 \end{itemize}
-\pendencia{a base está pronta; aparece quando a primeira missão tiver a régua
-pedagógica, com as perguntas dela.}
+\pendencia{as primeiras perguntas são as duas da Nina, em Quem mandou isso?
+(\id{H06.11.4}), e chegam com as alternativas embaralhadas a cada vez; falta o
+teste que percorre a tela rodar.}
 \end{historia}
 
 % ---------------------------------------------------------------------------
@@ -374,8 +406,8 @@ missão, as habilidades que ele já demonstrou}
   \item Só abro o perfil de quem eu ensino; outro estudante aparece como não
     encontrado.
 \end{itemize}
-\pendencia{a base está pronta; o perfil fica vazio até a primeira missão ter a
-régua pedagógica.}
+\pendencia{o perfil passa a ter conteúdo com Quem mandou isso?, a primeira
+missão com régua; falta o teste que percorre a tela rodar.}
 \end{historia}
 
 \begin{historia}{H14.6.2}{Juntar as habilidades de todas as missões}{\afazer}

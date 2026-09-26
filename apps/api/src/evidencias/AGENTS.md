@@ -9,13 +9,17 @@ missão, rodada a rodada.** A missão já via o que a criança fazia (tirou o po
 do ar, acertou a pergunta) e isso morria dentro da experiência; aqui vira o
 nível que o professor lê, corrige e leva para o boletim.
 
-A plataforma entrou antes, vazia; as missões entram uma a uma, cada uma com a
-sua ficha. **A primeira é A Seleção (`exp07ef1b`)**: `fichas/exp07ef1b.ts`
-(EF07CO11 pela legenda graduada — o Canal A — e pela enquete P1; EF07CO08 pela
-P2), o contexto registrado no `onModuleInit` de `a-selecao.service.ts` e a
-marca da legenda numa transação SÓ DELA, depois do latch da publicação — a
-IA leva até 6 s, e a transação da jogada não pode esperar. Falhando a IA, não
-há marca: "Não avaliado", e o professor decide.
+A plataforma entrou primeiro; as missões entram uma a uma, cada uma com a sua
+ficha. **A primeira é Quem Mandou Isso? v2.2** (`fichas/exp05ef1b.ts`): a
+EF05CO08 por uma AÇÃO (a seleção do Mural, marcada na transação do latch) e a
+EF05CO03/EF05CO04 por duas perguntas de múltipla escolha — o molde para a
+próxima.
+**A segunda é A Seleção (`exp07ef1b`)**: `fichas/exp07ef1b.ts` (EF07CO11 pela
+legenda graduada por IA — o Canal A — e pela enquete P1; EF07CO08 pela P2),
+o contexto registrado no `onModuleInit` de `a-selecao.service.ts` e a marca da
+legenda numa transação SÓ DELA, depois do latch da publicação: a IA leva até
+6 s, e a transação da jogada não pode esperar. Falhando a IA, não há marca:
+"Não avaliado", e o professor decide.
 
 Três tabelas de PLATAFORMA (sem prefixo, como `liberacoes` e `equipes`), todas
 com `escola_id` + RLS forçada:
@@ -55,13 +59,13 @@ com `escola_id` + RLS forçada:
   sem `status`, responde só a alternativa, e recebe `{ enviada: true }` —
   sempre, na primeira e na segunda. **Vale a PRIMEIRA resposta.** Atividade e
   rodada NUNCA vêm do cliente: saem do resolvedor da missão.
-- **`embaralhar` na pergunta** (opcional, desligado por padrão): as
-  alternativas saem numa ordem NOVA a cada exibição
-  (`regras.ts#alternativasParaExibir`, Fisher–Yates com gerador injetável — o
-  molde do sorteio das equipes). A resposta continua corrigida pelo `id`, e a
-  tela não pode guardar posição. Desligado por padrão porque escala ORDINAL
-  ("nunca, às vezes, sempre") não se embaralha; A Seleção liga nas duas
-  enquetes, onde a primeira opção levaria o toque de quem tem pressa.
+- **As alternativas saem EMBARALHADAS, numa ordem nova a cada leitura**
+  (`regras.ts#embaralhar`, Fisher–Yates sobre uma cópia). A ficha as guarda na
+  ordem da régua — atingiu primeiro, porque é assim que o pedagógico escreve —,
+  e servida assim "a primeira é a certa" vira a pista da turma. No SERVIDOR, e
+  não na tela: o bundle é público e a tela é de cada missão; aqui a regra vale
+  para todas sem nenhuma lembrar. A tela responde pelo `id`, nunca pela
+  posição. O teste de Postgres lê 60 vezes e cobra mais de uma ordem.
 - **O professor ajusta a qualquer momento**, mesmo com a missão encerrada, um ou
   vários (1..200); cada mudança vai para o histórico. **Gestor só LÊ. O
   estudante nunca vê o próprio resultado. Não há ranking em lugar nenhum.**
@@ -86,7 +90,7 @@ Missão com ficha faz TRÊS coisas, no mesmo trabalho:
 
 `registrarFicha` existe **só para teste** (a suíte registra uma ficha da
 exp08ef1b em tempo de execução). A ficha de uma missão real vai no registro
-estático, onde a trava a confere — a da exp07ef1b é a primeira.
+estático, onde a trava a confere.
 
 O resolvedor da missão devolve `null` sempre que a resposta não deve contar:
 na A Seleção, antes da reflexão (a enquete vem depois dela, na ordem do PO) e

@@ -9,7 +9,8 @@ import { ALERTA_DE_ERRO, esperarOuFalharCedo } from "../lib/smoke.mjs";
  * O que esta suíte cobra e nenhuma outra cobre:
  *
  *  - a seção só existe na ficha aberta COM turma e numa missão que a api aceita
- *    (`permitida`) — aqui o UnooTube, do 4º ano;
+ *    (`permitida`) — aqui o unooGPT, da 2ª série do EM (o UnooTube, do 4º ano,
+ *    fazia este papel até ser ARQUIVADO, ADR-116);
  *  - a plataforma SEMPRE pergunta como montar: sortear ou "Eu separo". O
  *    sorteio distribui por tamanho (diferença de no máximo 1); o "Eu separo"
  *    cria as equipes vazias;
@@ -17,22 +18,25 @@ import { ALERTA_DE_ERRO, esperarOuFalharCedo } from "../lib/smoke.mjs";
  *    prontas" — uma tag, não um link (ADR-100);
  *  - "Mostrar equipes", a tela que vai para o projetor, tem o nome da equipe e
  *    o PRIMEIRO nome de cada estudante, e mais nada;
- *  - a faixa "Sua equipe" chega ao ESTUDANTE, acima do aparelho.
+ *  - a faixa "Sua equipe" chega ao ESTUDANTE, acima do aparelho;
+ *  - a ficha de Quem mandou isso? (exp05ef1b, 5º ano) também tem a seção: a
+ *    missão NASCE com equipes (ADR-118), e é a api que diz `permitida` — o
+ *    hub não tem lista de missões com equipe. Só leitura: nada é salvo ali.
  *
- * FIXTURE. O fluxo da professora roda na 4B, e termina DESFAZENDO: o estado
+ * FIXTURE. O fluxo da professora roda na 2EM-B, e termina DESFAZENDO: o estado
  * final é o inicial, então rodar de novo prova a mesma coisa. Nenhuma missão é
- * liberada na 4B — as turmas "B" ficam fechadas para a `professor/01` exercitar
- * o liberar. A faixa do estudante precisa de missão ABERTA, e por isso usa a 4A
- * (o seed libera o UnooTube lá): as equipes entram pelo BFF, com a sessão da
- * professora da 4A, e saem no fim — inclusive quando a suíte quebra no meio.
+ * liberada na 2EM-B — as turmas "B" ficam fechadas para a `professor/01` exercitar
+ * o liberar. A faixa do estudante precisa de missão ABERTA, e por isso usa a 2EM-A
+ * (o seed libera o unooGPT lá): as equipes entram pelo BFF, com a sessão da
+ * professora da 2EM-A, e saem no fim — inclusive quando a suíte quebra no meio.
  */
-const TURMA = process.env.TURMA_EQUIPES ?? "4B";
-const TURMA_ABERTA = process.env.TURMA_EQUIPES_ABERTA ?? "4A";
-const EXP_ID = "exp04ef1b";
-const FICHA = `${HUB}/professor/entre-redes/4-ano/unidade-1`;
+const TURMA = process.env.TURMA_EQUIPES ?? "2EM-B";
+const TURMA_ABERTA = process.env.TURMA_EQUIPES_ABERTA ?? "2EM-A";
+const EXP_ID = "exp02em1b";
+const FICHA = `${HUB}/professor/entre-redes/2-serie/unidade-1`;
 const COMPUTADORES = 10;
 
-/** O docente precisa LECIONAR na turma: `conta` casa o começo da coluna, e ela pode ser "4A + 4B". */
+/** O docente precisa LECIONAR na turma: `conta` casa o começo da coluna, e ela pode ser "2EM-A + 2EM-B". */
 const professorDa = (turma) =>
   contasDe("professor").find((c) => c.turma.split(" + ").includes(turma)) ?? conta("professor", { turma });
 
@@ -94,13 +98,14 @@ await suite(
       '"Eu separo" cria uma equipe vazia por computador',
       "Desfazer apaga as equipes e a turma volta ao estado de antes",
       "O estudante vê a própria equipe numa faixa acima da missão, só com primeiros nomes",
+      "A ficha de Quem mandou isso? (5º ano) nasce com a seção de equipes, ao lado das habilidades que ela mede",
     ],
     comando: "node scripts/e2e/professor/10-equipes-na-missao.mjs",
   },
   async (r) => {
     const erroNaTela = (p) => p.locator(ALERTA_DE_ERRO);
 
-    // ── a professora da 4B, na ficha do UnooTube ────────────────────────
+    // ── a professora da 2EM-B, na ficha do unooGPT ─────────────────────
     const professora = professorDa(TURMA);
     const p = await r.pagina("professor");
     await r.entrar(p, professora.login);
@@ -122,7 +127,7 @@ await suite(
       if (
         !r.exigir(
           apareceu,
-          "a ficha do UnooTube, aberta com a turma, tem a seção Equipes desta turma (a api respondeu permitida)",
+          "a ficha do unooGPT, aberta com a turma, tem a seção Equipes desta turma (a api respondeu permitida)",
         )
       ) {
         return;
@@ -208,14 +213,14 @@ await suite(
         .waitFor({ timeout: 20_000 })
         .then(() => true)
         .catch(() => false);
-      r.exigir(temTag, `a sala da ${TURMA} mostra "${COMPUTADORES} equipes prontas" na linha do UnooTube`);
+      r.exigir(temTag, `a sala da ${TURMA} mostra "${COMPUTADORES} equipes prontas" na linha do unooGPT`);
       r.exigir(
         (await p.locator("a", { hasText: "equipes prontas" }).count()) === 0,
         "a contagem é uma tag, não um link (ADR-100)",
       );
       await r.registrar(p, "tag-na-sala", {
         titulo: "A sala sabe que há equipes",
-        mostra: `A linha do UnooTube na sala da ${TURMA}, com a tag "${COMPUTADORES} equipes prontas".`,
+        mostra: `A linha do unooGPT na sala da ${TURMA}, com a tag "${COMPUTADORES} equipes prontas".`,
         prova:
           "A sala faz UMA pergunta por missão — onde fica? — e o caminho é a ficha. Montar e editar " +
           "equipes mora lá; aqui a tag só avisa, e link novo na sala seria o sintoma de a ficha não dar conta.",
@@ -331,9 +336,52 @@ await suite(
       await p.request.delete(rotaDasEquipes(turmaId)).catch(() => {});
     }
 
-    // ── a faixa do estudante (4A, onde o UnooTube está aberto) ───────────
+    // ── Quem mandou isso? (5º ano): a ficha também monta equipes ─────────
+    /* Só LEITURA, de propósito: montar e desfazer já foi provado acima, no
+       unooGPT. O que falta provar é que a segunda missão com equipe acende a
+       seção sozinha — a lista é da api (`EXPERIENCIAS_COM_EQUIPE`), e uma
+       missão fora dela teria a ficha sem a seção, em silêncio. A professora é
+       a de UMA lotação: com duas, a escola ativa pode ser a outra. */
+    const TURMA_QUEM_MANDOU = process.env.TURMA_QUEM_MANDOU ?? "5A";
+    const professora5 =
+      contasDe("professor").find((c) => c.papel === "professor" && c.turma.split(" + ").includes(TURMA_QUEM_MANDOU)) ??
+      professorDa(TURMA_QUEM_MANDOU);
+    const p5 = await r.pagina("professor-5a");
+    await r.entrar(p5, professora5.login);
+    const turma5Id = await idDaTurma(p5, TURMA_QUEM_MANDOU);
+    if (r.exigir(Boolean(turma5Id), `a professora leciona na ${TURMA_QUEM_MANDOU}`)) {
+      const equipes5 = await p5.request.get(`${BFF}/equipes/turma/${turma5Id}/missao/exp05ef1b`);
+      const corpo5 = equipes5.ok() ? await equipes5.json() : null;
+      r.exigir(
+        corpo5?.permitida === true,
+        `a api aceita equipe na exp05ef1b (GET /equipes/turma/…/missao/exp05ef1b → permitida=${String(corpo5?.permitida)})`,
+      );
+      await p5.goto(`${HUB}/professor/entre-redes/5-ano/unidade-1?turmaId=${turma5Id}`, { waitUntil: "domcontentloaded" });
+      await p5.getByRole("heading", { name: "Quem Mandou Isso?", exact: true }).waitFor({ timeout: 30_000 });
+      const secao5 = await p5
+        .getByRole("heading", { name: "Equipes desta turma" })
+        .waitFor({ timeout: 30_000 })
+        .then(() => true)
+        .catch(() => false);
+      r.exigir(secao5, "a ficha de Quem mandou isso?, aberta com a turma, tem a seção Equipes desta turma");
+      const textoDaFicha = await p5.locator("body").innerText();
+      r.exigir(
+        ["EF05CO08", "EF05CO03", "EF05CO04"].every((codigo) => textoDaFicha.includes(codigo)),
+        "e diz as habilidades que a missão mede: EF05CO08, EF05CO03 e EF05CO04",
+      );
+      await p5.getByRole("heading", { name: "Equipes desta turma" }).scrollIntoViewIfNeeded().catch(() => {});
+      await r.registrar(p5, "ficha-quem-mandou-isso", {
+        titulo: "Quem mandou isso? nasce com equipes",
+        mostra: `A ficha do 5º ano aberta com a ${TURMA_QUEM_MANDOU}: as etapas, as habilidades e a seção Equipes desta turma.`,
+        prova:
+          "A segunda missão com equipe não precisou de uma linha no hub: a seção acende porque a api " +
+          "responde permitida. Quem entra representa a equipe, e o painel da aula conta por computador.",
+      });
+    }
+
+    // ── a faixa do estudante (2EM-A, onde o unooGPT está aberto) ───────
     const professoraAberta = professorDa(TURMA_ABERTA);
-    const pa = await r.pagina("professor-4a");
+    const pa = await r.pagina("professor-aberta");
     await r.entrar(pa, professoraAberta.login);
     const turmaAbertaId = await idDaTurma(pa, TURMA_ABERTA);
     if (!r.exigir(Boolean(turmaAbertaId), `a professora leciona na ${TURMA_ABERTA}`)) return;
@@ -341,7 +389,7 @@ await suite(
     const antes = await lerEquipes(pa, turmaAbertaId);
     const jaTinha = Boolean(antes?.montagem);
     if (jaTinha) {
-      r.ressalva(`a ${TURMA_ABERTA} já tinha equipes no UnooTube: a suíte usa as que estão lá e não as apaga`);
+      r.ressalva(`a ${TURMA_ABERTA} já tinha equipes no unooGPT: a suíte usa as que estão lá e não as apaga`);
     }
     try {
       let equipes = antes;
@@ -376,7 +424,7 @@ await suite(
       const { equipe, id } = naEquipe.get(estudante.nome);
       const colegas = equipe.membros.filter((m) => m.id !== id);
 
-      const pe = await r.pagina("estudante-4a");
+      const pe = await r.pagina("estudante-aberta");
       await r.entrar(pe, estudante.login);
       await pe.goto(`${HUB}/exp/${EXP_ID}`, { waitUntil: "domcontentloaded" });
       const faixa = pe.getByTestId("faixa-da-equipe");

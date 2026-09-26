@@ -57,7 +57,7 @@ API_SERVICE="$(val api_service_name)"
 HUB_SERVICE="$(val frontend_service_name)"
 MIGRATE_JOB="$(val migrate_job_name)"
 EXP_BUCKET="$(val bucket_exp)"
-# Bucket da MIDIA pesada das experiencias (os mp4 da exp04ef1b). O CI nao a
+# Bucket da MIDIA pesada das experiencias (os mp4 do UnooTube, hoje arquivado como backup-exp04ef1b). O CI nao a
 # publica — o runner nao tem os arquivos —, mas confere que ela esta la
 # antes de publicar o bundle que depende dela (ver `midia-externa.json`).
 ASSETS_BUCKET="$(val bucket_assets)"

@@ -126,7 +126,7 @@ export type VarianteDaCelula = "success" | "info" | "warning" | "neutral" | "out
  * há algo quebrado com a criança. "Não avaliado" é contorno, sem cor: é a
  * ausência, e precisa parecer ausência.
  */
-const VARIANTE_DO_STATUS: Record<StatusDaEvidencia, VarianteDaCelula> = {
+export const VARIANTE_DO_STATUS: Record<StatusDaEvidencia, VarianteDaCelula> = {
   atingiu: "success",
   em_processo: "info",
   nao_atingiu: "warning",

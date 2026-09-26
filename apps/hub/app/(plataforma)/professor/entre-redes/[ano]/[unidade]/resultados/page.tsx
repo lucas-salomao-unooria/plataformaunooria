@@ -4,18 +4,18 @@ import {
   MISSAO_A_SELECAO,
   MISSAO_MANIFESTO_IA,
   MISSAO_FOTO_CONTA,
+  MISSAO_QUEM_MANDOU_ISSO,
   MISSAO_RASTRO_BOATO,
   MISSAO_UNOOGPT,
-  MISSAO_UNOOTUBE,
   buscarMissao,
 } from "@/lib/entre-redes/catalogo";
 
 import { ResultadosASelecao } from "./resultados-a-selecao";
 import { ResultadosManifestoIa } from "./resultados-manifesto-ia";
 import { ResultadosFotoConta } from "./resultados-foto-conta";
+import { ResultadosQuemMandouIsso } from "./resultados-quem-mandou-isso";
 import { ResultadosRastroBoato } from "./resultados-rastro-boato";
 import { ResultadosUnooGPT } from "./resultados-unoogpt";
-import { ResultadosUnooTube } from "./resultados-unootube";
 
 /**
  * Resultados de uma missão por turma — DESPACHANTE por `missao.expId`.
@@ -48,9 +48,6 @@ export default async function ResultadosPage({
   if (missao.expId === MISSAO_FOTO_CONTA.expId) {
     return <ResultadosFotoConta missao={missao} turma={turma} />;
   }
-  if (missao.expId === MISSAO_UNOOTUBE.expId) {
-    return <ResultadosUnooTube missao={missao} turma={turma} />;
-  }
   if (missao.expId === MISSAO_UNOOGPT.expId) {
     return <ResultadosUnooGPT missao={missao} turma={turma} />;
   }
@@ -62,6 +59,9 @@ export default async function ResultadosPage({
   }
   if (missao.expId === MISSAO_A_SELECAO.expId) {
     return <ResultadosASelecao missao={missao} turma={turma} cobertura={cobertura?.trim() ?? ""} />;
+  }
+  if (missao.expId === MISSAO_QUEM_MANDOU_ISSO.expId) {
+    return <ResultadosQuemMandouIsso missao={missao} turma={turma} />;
   }
   // Missão sem tela de resultados própria: a trilha não linka para cá.
   notFound();

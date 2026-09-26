@@ -17,10 +17,10 @@ import type { FichaPedagogica } from "./tipos";
  *
  * O texto das perguntas é VERBATIM do PO (recebido em 2026-09-25): a mensagem
  * de contexto da Amara e a enquete, no mesmo enunciado, separadas por uma linha
- * em branco — a experiência as desenha como dois balões da DM. As alternativas
- * são EMBARALHADAS a cada exibição (`embaralhar: true`): numa enquete de toque
- * único, a primeira opção leva o toque de quem tem pressa, e o nível estaria
- * sempre na mesma posição.
+ * em branco — a experiência as desenha como dois balões da DM. A plataforma
+ * EMBARALHA as alternativas a cada leitura, para toda ficha
+ * (`regras.ts#embaralhar`, ADR-118): numa enquete de toque único, a primeira
+ * opção levaria o toque de quem tem pressa.
  *
  * `validadaPor`/`validadaEm`: o dono do produto dispensou a validação
  * pedagógica em 2026-09-25, e a ficha diz isso por extenso — não finge uma
@@ -49,7 +49,6 @@ export const FICHA_EXP07EF1B: FichaPedagogica = {
       id: "p1",
       enunciado:
         "Antes de fechar, uma curiosidade rápida! Imagina que alguém da escola viu os Stories que você publicou e mandou: 'Valeu pelo resumo! Agora já sei tudo sobre o que aconteceu.' O que você diria?\n\nSua resposta seria...",
-      embaralhar: true,
       alternativas: [
         {
           id: "A1",
@@ -73,7 +72,6 @@ export const FICHA_EXP07EF1B: FichaPedagogica = {
       id: "p2",
       enunciado:
         "Última! Lembra quando você viu os Stories do colega no Mural e a história parecia outra? Os dois partiram do mesmo feed. O que faz mais sentido pensar sobre isso?\n\nO que você acha?",
-      embaralhar: true,
       alternativas: [
         {
           id: "B1",

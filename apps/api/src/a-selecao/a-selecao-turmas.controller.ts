@@ -52,7 +52,7 @@ import { PreparoDaExp07ef1bService } from "./preparo.service";
  * `comTenancy`, porque o `TenancyInterceptor` não abre contexto para eles.
  *
  * O gestor da escola alcança as mesmas rotas do professor, inclusive o botão
- * da aula e a homologação — o padrão da exp05ef1b, pelo mesmo motivo: restringir
+ * da aula e a homologação — o padrão da v1 da exp05ef1b, pelo mesmo motivo: restringir
  * ao regente daria ao gestor uma tela em que o botão responde 404 sem dizer por
  * quê. O que o gestor NÃO recebe é o texto livre (recorte da ADR-108).
  */

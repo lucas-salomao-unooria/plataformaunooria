@@ -8,6 +8,8 @@
  */
 export const EXPERIENCIAS_DEV: Readonly<Record<string, string>> = {
   "exp08ef1b": "http://localhost:5173",
+  /** O Jornal da Escola (4º ano, unidade 1). A porta era do UnooTube, hoje
+   *  ARQUIVADO como `backup-exp04ef1b` (ADR-116), que não sobe mais em dev. */
   "exp04ef1b": "http://localhost:5174",
   /** Ferramenta do professor — embedada em /professor/plano-de-aula. */
   "app-90-plano-de-aula": "http://localhost:5175",
@@ -52,9 +54,15 @@ export const EXPERIENCIAS_DEV: Readonly<Record<string, string>> = {
    * ela o boot da missão morre com "Failed to fetch" e o erro não diz por quê.
    */
   "exp01ef1b": "http://localhost:5183",
-  /* A 5184 está RESERVADA (ADR-114): era da missão do 5º ano, unidade 1, que
-     saiu para voltar com o mesmo código, e continua no CORS_ORIGINS da api.
-     Experiência nova pede a próxima livre depois dela. */
+  /**
+   * Quem Mandou Isso? v2.2 — 5º ano EF, unidade 1.
+   *
+   * A MESMA 5184 da v1, que ficou reservada na retirada dela (ADR-114): a v2.2
+   * volta com o mesmo código, e a porta continuou no CORS_ORIGINS da api — sem
+   * ela o boot da missão morre com "Failed to fetch" e o erro não diz por quê.
+   * Experiência nova pede a próxima livre depois dela.
+   */
+  "exp05ef1b": "http://localhost:5184",
 };
 
 export function baseDevDaExperiencia(expId: string, fallback: string): string {

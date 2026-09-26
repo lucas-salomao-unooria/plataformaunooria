@@ -85,8 +85,8 @@ missão que o professor roda ter a informação no mesmo lugar da primeira.
 `ReactNode` que a página da missão ancora ao fim de uma seção
 (`blocos={{ debate: <... /> }}`). **Toda missão publicada tem o seu**: os
 momentos e a revelação do Instanooria, os cartões da Vila por turma, a tabela
-dos vieses do unooGPT, os vídeos do UnooTube com o gabarito e as intervenções do
-Rastro do Boato — as três últimas por rota
+dos vieses do unooGPT, as intervenções do
+Rastro do Boato — as últimas por rota
 `professor-only` da api (`/<slug>/professor/...`). O custo de copiar qualquer um
 deles é o professor projetar para a turma uma mensagem que ninguém recebeu.
 
@@ -164,7 +164,7 @@ importa; as leituras server-side em `lib/equipes-servidor.ts` (`server-only`).
 
 Suíte: `professor/10-equipes-na-missao` (4B de ponta a ponta, terminando em
 "Desfazer"; a faixa do estudante na 4A, com as equipes criadas e apagadas pelo
-BFF).
+BFF; e a ficha da exp05ef1b na 5A, só leitura, com a seção).
 
 ## Evidência pedagógica (E14)
 
@@ -173,11 +173,15 @@ rodada a rodada. Tipos e regras puras em `lib/evidencias.ts`; leituras em
 `lib/evidencias-servidor.ts`; confirmar e ajustar pelo BFF (`evidencias`). Quem
 decide nível, cópia e o que conta é a api (`apps/api/src/evidencias/`).
 
-- **O painel mora onde a ATIVIDADE mora**: na tela dela no Instanooria
-  (`atividades/[id]`) e nos resultados da A Seleção, onde a atividade é a
-  COBERTURA (`?cobertura=`; sem ele, a em andamento). Sem turma, sem painel.
-- **Invisível sem ficha, de propósito**: `temFicha: false` não desenha nada. A
-  A Seleção é a primeira com ficha; nas outras, "não aparece" não é defeito.
+- **O painel mora onde a missão tem a ATIVIDADE**: na tela da atividade do
+  Instanooria (`atividades/[id]`, depois da revisão), nos resultados da
+  exp05ef1b, onde a atividade é o PACOTE aprovado (`atividadeId = pacoteId`,
+  `key` no pacote para remontar quando outro é aprovado), e nos resultados da A
+  Seleção, onde a atividade é a COBERTURA (`?cobertura=`; sem ele, a em
+  andamento). Sem turma, sem painel.
+- **Invisível sem ficha, de propósito**: `temFicha: false` não desenha nada, e
+  hoje só a exp05ef1b (ADR-118) e a exp07ef1b (ADR-115) têm ficha — no
+  Instanooria o bloco não aparece, e não é defeito: confira `temFicha` antes.
 - **Ausência é "Não avaliado", nunca "Não atingiu".** A cópia da aula projetada
   chega "a revisar" e só conta depois de "Confirmar para a turma".
 - **O perfil** é `turmas/[id]/estudantes/[estudanteId]`, pelo NOME na aba
@@ -190,8 +194,9 @@ decide nível, cópia e o que conta é a api (`apps/api/src/evidencias/`).
   DS numa coluna, não a `selectable` da `Table`: a dela diz "Selecionar linha
   N", e a linha é uma criança (lacuna a pedir no `storybook-unooria`).
 
-Suíte: `professor/11-perfil-do-aluno` (4B, até o perfil vazio). O painel ganha
-passo com a suíte da A Seleção.
+Suíte: `professor/11-perfil-do-aluno` (4B, até o perfil vazio); o painel com
+ficha é provado em `estudante/10-quem-mandou-isso` (o nível de cada habilidade
+conferido contra a régua) e em `estudante/11-a-selecao`.
 
 ## A Seleção (exp07ef1b)
 

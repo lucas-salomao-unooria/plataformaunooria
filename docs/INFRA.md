@@ -80,7 +80,10 @@ não abre com alguém achando que configurou a documentação é pior que nenhum
   banco guarda a URL absoluta da CDN. Em dev, `ASSETS_DRIVER=local` e a api
   serve em `/assets`.
   O mesmo bucket guarda a **mídia pesada das experiências** (>2 MB não entra no
-  git nem no bundle): `exp04ef1b/videos/v01.mp4..v21.mp4` (~52 MB),
+  git nem no bundle): `exp04ef1b/videos/v01.mp4..v21.mp4` (~52 MB, os vídeos do
+  UnooTube — hoje ARQUIVADO como `backup-exp04ef1b`, ADR-116: a mídia fica no
+  bucket, sem uso, e o deploy não a confere mais porque pula `backup-*`; o que
+  segue descreve como ela subiu),
   upload manual **uma vez por contrato** — é conteúdo, não recurso Terraform:
 
   ```bash
@@ -281,7 +284,7 @@ Deploy (CI deste repo):
    imutável, então copiar não sobrescreve nada que o deploy já subiu:
 
    ```bash
-   for par in exp-01-instanooria:exp08ef1b exp-02-unootube:exp04ef1b \
+   for par in exp-01-instanooria:exp08ef1b \
        exp-03-unoogpt:exp02em1b exp-04-o-que-a-foto-conta:exp01ef1b \
        exp-06-rastro-boato:exp06ef2b \
        exp-07-o-eco-no-grupo:exp07ef1b exp-08-manifesto-ia:exp08ef4b \
@@ -296,6 +299,13 @@ Deploy (CI deste repo):
    lugar nasce direto no prefixo novo, a partir da 0.2.0. Copiar o prefixo
    antigo não traria nada — e, se trouxesse, poria bundles da versão retirada
    no caminho da nova.
+
+   O 4º ano também não está, e este é o par que MAIS importa deixar de fora: o
+   UnooTube foi ARQUIVADO (ADR-116) e o código `exp04ef1b` passou ao Jornal da
+   Escola, que nasce na 2.0.0. Copiar `exp-02-unootube/*` para `exp04ef1b/` poria
+   os bundles 1.x do UnooTube no caminho do Jornal. Arquivada não é publicada nem
+   ativada (o `deploy.yml` pula `backup-*`), então os bundles antigos do UnooTube
+   ficam onde estão, sem uso.
 
    Do lado do Terraform, o que carrega o id antigo: o uptime check
    `{contrato}-exp-ativa` (o caminho do `index.html` da exp08ef1b), painéis e

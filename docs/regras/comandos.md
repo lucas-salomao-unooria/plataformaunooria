@@ -55,7 +55,7 @@ SEED_MINIMO=1 pnpm --filter @edu/api seed   # só escola + um gestor + um admin:
 # um login que não existe. Aponte para o CSV.
 pnpm --filter @edu/app-90-plano-de-aula dev   # :5175 → hub /professor/plano-de-aula (qualquer prof.* do CSV; seed:demo importa referências demo)
 pnpm --filter @edu/app-91-bem-estar dev       # :5176 → hub /professor/bem-estar (qualquer prof.* do CSV; AI_PROVIDER=mock usa os textos fixos)
-pnpm --filter @edu/exp04ef1b dev    # :5174 (exp08ef1b usa :5173 — portas em apps/hub/lib/experiencias-dev.ts)
+pnpm --filter @edu/exp02em1b dev    # :5178 (exp08ef1b usa :5173 — portas em apps/hub/lib/experiencias-dev.ts)
 pnpm exec playwright install chromium     # PRE-REQUISITO da suíte e2e, uma vez por maquina.
                                           # `npx playwright install` NAO serve: o npx resolve o
                                           # playwright mais NOVO do npm e baixa a build de navegador

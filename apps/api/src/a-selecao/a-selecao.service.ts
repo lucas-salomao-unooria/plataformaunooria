@@ -55,7 +55,8 @@ import { sanitizarLegenda } from "./sanitizador";
 /**
  * Persistência e regras aplicadas da exp07ef1b.
  *
- * Molde: `quem-mandou-isso.service.ts` (o funil, o lock, o gate da turma).
+ * Molde: o `quem-mandou-isso.service.ts` da v1 da exp05ef1b (o funil, o lock,
+ * o gate da turma; no histórico do git desde a ADR-114).
  * Assinaturas recebem `escolaId`/`estudanteId` explícitos, não o request: toda
  * query leva `escola_id` no `where` ALÉM da RLS que o `comTenancy` arma (regra
  * inviolável nº 1, defesa em profundidade).
@@ -130,7 +131,7 @@ const ListaDePostsSchema = z.array(PostDaCoberturaSchema).length(POSTS_PADRAO.le
 /**
  * Lê os 12 posts do `Json` da cobertura. A homologação validou na ESCRITA, mas
  * uma linha gravada por outro caminho chegaria aqui torta — e, diferente da
- * exp05ef1b (em que lote torto é turma em espera), aqui a aula tem de correr:
+ * v1 da exp05ef1b (em que lote torto era turma em espera), aqui a aula tem de correr:
  * cai no banco curado, com um log que impede o "o feed mudou sozinho" de ser
  * mudo para quem diagnostica. Os ids e os blocos são os mesmos nos dois, então
  * matriz e pareamento continuam coerentes.
@@ -755,7 +756,7 @@ export class ASelecaoService implements OnModuleInit {
    * Sobe a rodada e volta a etapa para a exploração. As sessões da rodada
    * anterior ficam, com as tríades, os pares e as reflexões: é a rodada passada
    * que o painel de habilidades mostra (ADR-112), e o "zerar" que apagava — o
-   * da exp05ef1b — é exatamente o que a evidência não pode ter. A cobertura
+   * da v1 da exp05ef1b — é exatamente o que a evidência não pode ter. A cobertura
    * também fica: o preparo custou tempo da professora.
    */
   async zerar(escolaId: string, turmaId: string, professorId?: string) {

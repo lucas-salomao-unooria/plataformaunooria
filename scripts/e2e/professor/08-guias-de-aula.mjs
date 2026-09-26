@@ -34,21 +34,6 @@ const GUIAS = [
     bncc: "EF08CO11",
   },
   {
-    rota: "/professor/entre-redes/4-ano/unidade-1/guia",
-    missao: "UnooTube · 4º ano",
-    /* A tabela dos 21 vídeos vem de `GET /unootube/professor/videos`. Antes o
-       guia DESCREVIA o catálogo — "metade cita fonte verificável" — e a
-       descrição tinha derivado: são 11 e 10 (ADR-86). A contagem entra aqui
-       como número EXATO de propósito: é ela que denuncia a próxima deriva. */
-    vivo: [
-      /Os vídeos e o gabarito — só para você/i,
-      /11 citam fonte verificável/i,
-      /papagaio tradutor/i,
-      /sensacionalista/i,
-    ],
-    bncc: "EF04CO08",
-  },
-  {
     rota: "/professor/entre-redes/2-serie/unidade-1/guia",
     missao: "unooGPT · 2ª série EM",
     /* A tabela dos 8 vieses vem de `GET /unoogpt/professor/fontes`. É a única

@@ -9,19 +9,20 @@ import {
   rotuloDaMissao,
   MISSAO_ATUAL,
   MISSAO_A_SELECAO,
+  MISSAO_QUEM_MANDOU_ISSO,
   MISSAO_RASTRO_BOATO,
   MISSAO_UNOOGPT,
-  MISSAO_UNOOTUBE,
 } from "@/lib/entre-redes/catalogo";
 import { buscarGuia } from "@/lib/entre-redes/guias";
 import type { BlocosVivos } from "@/lib/entre-redes/guias/tipos";
 import type { MaterialDaSelecao } from "@/lib/a-selecao-tipos";
+import type { MaterialDoProfessor } from "@/lib/quem-mandou-tipos";
 
 import { IntervencoesDoRastro, type MaterialDoRastro } from "./intervencoes-do-rastro";
 import { GatilhosDaSelecao, RoteiroDaSelecao } from "./material-da-selecao";
 import { MomentosDoPainel } from "./momentos-do-painel";
+import { QuemMandouOPacote } from "./quem-mandou-o-pacote";
 import { TelasDaRevelacao } from "./telas-da-revelacao";
-import { VideosDoUnootube, type VideosDoProfessor } from "./videos-do-unootube";
 
 /**
  * O guia da aula de uma missão do Entre Redes — DESPACHANTE, como `page.tsx`
@@ -35,10 +36,11 @@ import { VideosDoUnootube, type VideosDoProfessor } from "./videos-do-unootube";
  *
  * Bloco vivo é o que tem fonte de verdade em outro lugar e não pode virar texto.
  * Cinco missões têm um: os momentos e as telas da revelação do Instanooria, a
- * tabela dos vieses do unooGPT, os 21 vídeos do UnooTube, as intervenções do
- * Rastro do Boato e, da A Seleção, os gatilhos dos três botões e o roteiro da
- * Etapa 4 com os 12 posts — as quatro últimas vindas da api. Ver a nota em
- * `guias/tipos.ts`.
+ * tabela dos vieses do unooGPT, as intervenções do Rastro do Boato, o pacote
+ * curado de Quem Mandou Isso? (com o roteiro da roda e as perguntas de
+ * evidência) e, da A Seleção, os gatilhos dos três botões e o roteiro da Etapa
+ * 4 com os 12 posts — as quatro últimas vindas da api. Os 21 vídeos do UnooTube
+ * eram o sexto, até o arquivamento (ADR-116). Ver a nota em `guias/tipos.ts`.
  *
  * **Missão com conteúdo que a turma LÊ na tela não descreve esse conteúdo no
  * guia: injeta um bloco vivo.** A prosa diverge — a do UnooTube dizia "metade…
@@ -124,15 +126,6 @@ async function blocosDaMissao(expId: string | undefined): Promise<BlocosVivos | 
     case MISSAO_UNOOGPT.expId:
       return { debate: await tabelaDeVieses() };
 
-    case MISSAO_UNOOTUBE.expId:
-      return {
-        debate: (
-          <VideosDoUnootube
-            dados={await apiDoServidor<VideosDoProfessor>("/unootube/professor/videos")}
-          />
-        ),
-      };
-
     case MISSAO_RASTRO_BOATO.expId:
       return {
         debate: (
@@ -151,6 +144,14 @@ async function blocosDaMissao(expId: string | undefined): Promise<BlocosVivos | 
         debate: <RoteiroDaSelecao dados={material} />,
       };
     }
+    case MISSAO_QUEM_MANDOU_ISSO.expId:
+      return {
+        debate: (
+          <QuemMandouOPacote
+            dados={await apiDoServidor<MaterialDoProfessor>("/quem-mandou-isso/professor/material")}
+          />
+        ),
+      };
 
     default:
       return undefined;

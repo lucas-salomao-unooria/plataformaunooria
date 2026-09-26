@@ -9,7 +9,10 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{115 decisões}, numeradas até ADR-115, \textbf{sem lacunas}. Quando
+São \textbf{117 decisões}, numeradas até ADR-118. A 117 (o Jornal da Escola) é
+de uma frente paralela que ainda não entrou nesta base --- o número foi
+reservado entre as sessões antes de qualquer uma escrever ---; fora ela,
+\textbf{sem lacunas}. Quando
 eram cem, as cinco últimas nasceram no MESMO dia, em três frentes paralelas, e não
 colidiram porque os números foram \textbf{reservados por quem repartia o
 trabalho antes de qualquer uma escrever} --- que é a lição que a colisão de
@@ -152,7 +155,7 @@ que a cercam.
 \zebra \adrr{ADR-105} & A quota de IA é dado, editável pela Unooria, e não variável de ambiente & 2026-09-15 & Aceita\\
 \adrr{ADR-106} & O \cd{\_template} nasce com a fiação inteira e sem componente de interface & 2026-09-16 & Aceita\\
 \zebra \adrr{ADR-107} & O site público entra no hub como porte, e o cadastro de interesse passa pela api & 2026-09-16 & Aceita\\
-\adrr{ADR-108} & A missão de sala nasce vazia, e a revelação é do relógio da turma & 2026-09-17 & Aceita como precedente; a v1 saiu (\adrr{ADR-114})\\
+\adrr{ADR-108} & A missão de sala nasce vazia, e a revelação é do relógio da turma & 2026-09-17 & Aceita; a v1 saiu (\adrr{ADR-114}) e a v2.2 a retoma (\adrr{ADR-118})\\
 \adrr{ADR-109} & O rótulo da tabela da BNCC de Computação é CENTRADO, e a atribuição é uma partição & 2026-09-17 & Aceita\\
 \zebra \adrr{ADR-110} & O código da experiência diz onde ela mora na trilha & 2026-09-23 & Aceita\\
 \adrr{ADR-111} & Equipe é quem divide um computador, e o painel conta por computador & 2026-09-25 & Aceita\\
@@ -160,6 +163,8 @@ que a cercam.
 \adrr{ADR-113} & A Seleção substitui o Eco no Grupo, e a limpeza vem antes & 2026-09-25 & Aceita\\
 \zebra \adrr{ADR-114} & Quem mandou isso? v1 é retirada; a v2.2 entra com o mesmo código & 2026-09-25 & Aceita\\
 \adrr{ADR-115} & A Seleção: o par do Mural é do computador, e a IA gradua a legenda & 2026-09-25 & Aceita\\
+\zebra \adrr{ADR-116} & A experiência que perde o código é arquivada, não apagada & 2026-09-25 & Aceita\\
+\adrr{ADR-118} & Quem mandou isso? v2.2: atividade é o pacote, rodada é a reaplicação, e a régua mede pela seleção e pelas perguntas do PO & 2026-09-25 & Aceita\\
 \bottomrule
 \end{tabularx}
 
@@ -8574,8 +8579,10 @@ coisas (texto, CSS computado e medidas), e o procedimento está em
 \section{ADR-108 --- A missão de sala nasce VAZIA, e a revelação é do relógio da turma}
 \label{adr:exp05ef1b-sala-sincronizada}
 
-\textbf{Data.} 2026-09-17. \textbf{Status.} Aceita como precedente: a missão
-que a aplicava (a v1 de Quem mandou isso?) saiu da trilha na \adrr{ADR-114}.
+\textbf{Data.} 2026-09-17. \textbf{Status.} Aceita. A missão que a aplicava (a
+v1 de Quem mandou isso?) saiu da trilha na \adrr{ADR-114}, e a v2.2 retoma o
+padrão (\adrr{ADR-118}): nasce vazia e a revelação é do relógio da turma, agora
+com três botões e sem empurrar a triagem.
 \textbf{Aplica} à exp05ef1b a \adrr{ADR-69} (a liberação por turma), a
 \adrr{ADR-93} (\emph{polling} HTTP, não WebSocket) e a \adrr{ADR-94} (o
 \emph{latch} de turma). \textbf{Rompe}, num ponto declarado abaixo, o padrão que
@@ -9686,14 +9693,14 @@ explícita, e a v1 volta por esta ADR revertida, não por \emph{cherry-pick}; ou
 outra missão nova cair numa unidade já ocupada, que repete a escolha desta ADR
 e da \adrr{ADR-113}.
 
-% ---------------------------------------------------------------------------
 \section{ADR-115 --- A Seleção: o par do Mural é do computador, e a IA gradua a legenda}
 \label{adr:a-selecao}
 
 \textbf{Data.} 2026-09-25. \textbf{Status.} Aceita.
 \textbf{Responde} ao gatilho da \adrr{ADR-111} (\enquote{uma missão com equipe
-cujo dado precise ser da EQUIPE}), é a primeira missão com ficha da
-\adrr{ADR-112} e ocupa o código que a \adrr{ADR-113} liberou.
+cujo dado precise ser da EQUIPE}), é a segunda missão com ficha da
+\adrr{ADR-112} (a primeira foi Quem mandou isso? v2.2, \adrr{ADR-118}) e ocupa
+o código que a \adrr{ADR-113} liberou.
 
 \begin{especificacao}{Contexto}
 A Seleção (7º ano, unidade 1) mede se o estudante percebe que publicar é
@@ -9735,8 +9742,11 @@ regra fixa não sabe ler.
   \item \textbf{Atividade = cobertura; rodada = zerar.} Zerar abre a rodada
     seguinte e guarda a anterior, ao contrário do \cd{DELETE} das missões antigas;
     homologar um tema novo abre uma atividade nova.
-  \item \textbf{\cd{embaralhar} é opcional na ficha}, ligado nesta. Escala ordinal
-    de ficha futura não pode ser embaralhada.
+  \item \textbf{As alternativas das enquetes saem embaralhadas a cada leitura},
+    pelo embaralhamento que a \adrr{ADR-118} pôs na plataforma para TODA ficha.
+    Esta frente nasceu com um campo opcional na ficha para isso; quando as duas
+    se encontraram, o campo saiu, para não haver dois caminhos para a mesma
+    regra.
   \item \textbf{A validação pedagógica da ficha foi dispensada} pelo dono do
     produto; \cd{validadaPor} diz isso, em vez de simular uma assinatura.
 \end{itemize}
@@ -9787,3 +9797,324 @@ nos casos válido, inválido, sem saldo e atrasado), e a suíte
 visível no ajuste do professor); uma missão nova que precise de dado da equipe
 com histórico de composição; ou o produto pedir que a criança veja o próprio
 nível.
+
+\section{ADR-116 --- A experiência que perde o código é arquivada, não apagada}
+\label{adr:arquivar-em-vez-de-apagar}
+
+\textbf{Data.} 2026-09-25. \textbf{Status.} Aceita.
+\textbf{Consequência} da \adrr{ADR-110}: o código da missão é DERIVADO da série e
+da unidade, e o Jornal da Escola, a missão nova do 4º ano, unidade 1, cai no
+\cd{exp04ef1b} do UnooTube. As duas vezes anteriores apagaram a antiga
+(\adrr{ADR-113}, o Eco no Grupo; \adrr{ADR-114}, a v1 de Quem mandou isso?).
+Esta abre o outro caminho, e deixa as duas como a escolha certa para o caso
+delas.
+
+\begin{especificacao}{Contexto}
+O UnooTube foi a primeira missão do 4º ano e a única que \textbf{esteve em
+nuvem}: está publicado em \cd{dev} e \cd{hml} como \cd{exp-02-unootube} (1.2.7),
+e em \cd{dev-local} como \cd{exp04ef1b} (1.2.8). O Eco e a v1 do 5º ano nunca
+tinham dado a guardar; o UnooTube tem sessões, liberações, progresso, equipes
+montadas e o histórico do interruptor.
+
+O dono do produto decidiu, ao receber o Jornal: \enquote{mude tudo para
+prefixo-backup e crie uma área nova de arquivados na plataforma} --- e, entre
+guardar o código numa pasta fora do monorepo ou no lugar, escolheu \textbf{no
+lugar, só renomeado}. A área de arquivados \textbf{só lista}: ninguém joga uma
+experiência arquivada.
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{itemize}
+  \item \textbf{Arquivar é dar o prefixo \cd{backup-}}, e o arquivamento é
+    DERIVADO do id, como o código é derivado do manifesto: não há campo
+    \enquote{arquivada} no manifesto para ficar dessincronizado do nome da
+    pasta. O id arquivado é \cd{backup-} mais um código válido
+    (\arq{comum/arquivadas.ts}), e \textbf{não passa no \cd{EXP\_ID\_RE}}: rota,
+    catálogo, grade da sala e painel de recursos aceitam só experiência viva, e
+    a arquivada some de todos sem um filtro a mais.
+  \item \textbf{O código fica no lugar, renomeado, e continua compilando e
+    testando}: a experiência vira \arq{apps/experiencias/backup-exp04ef1b}, o
+    módulo da api vira \arq{apps/api/src/backup-unootube} (FORA do
+    \cd{app.module}: nenhuma rota é servida), a tabela vira
+    \cd{backup\_exp04ef1b\_sessoes} e as \emph{specs} continuam rodando contra
+    ela. No hub, os arquivos ganham o prefixo e saem só da fiação --- os três
+    despachantes, o registro dos guias e \cd{MISSOES\_PUBLICADAS} (o 4º ano,
+    unidade 1, fica \enquote{em breve} até o Jornal entrar). A suíte de ponta a
+    ponta vai para \arq{scripts/e2e/arquivados}, que o \emph{runner} não percorre.
+  \item \textbf{A linha do catálogo SAI de \cd{experiencias} e vai para
+    \cd{experiencias\_arquivadas}}, com a \textbf{fotografia} do arquivamento:
+    quantas turmas tinham liberado e quantos estudantes tinham progresso.
+    A migração conta enquanto o FORCE da RLS está fora --- o único momento em
+    que contar atravessa escolas sem pedir nada à RLS --- e a tela só lê.
+  \item \textbf{O código como VALOR vira \cd{backup-exp04ef1b}} em
+    \cd{experiencias\_versoes}, \cd{liberacoes}, \cd{progresso}, nas três
+    tabelas de equipes, nas três de evidência e, com o prefixo
+    \cd{experiencia:}, em \cd{disponibilidades} e \cd{recursos\_auditoria}. Sem
+    isso o Jornal nasceria com as liberações, o progresso, as equipes e o
+    histórico do interruptor do UnooTube. As travas afrouxadas dentro da
+    transação são as da \adrr{ADR-110}: o FORCE da RLS e o \emph{trigger}
+    append-only da auditoria. \cd{telemetria\_eventos} fica: o
+    \cd{exp\_version} separa o UnooTube (1.x) do Jornal (2.x).
+  \item \textbf{A área \rota{/unooria/arquivados}} (só \cd{admin},
+    \adrr{ADR-88}) lista o que está arquivado por
+    \rota{GET /recursos/arquivadas}: nome, código de origem, onde ficava na
+    grade, última versão, a fotografia, o motivo e a data. O documento de
+    portabilidade também lê \cd{experiencias\_arquivadas}, para a participação
+    da criança continuar nomeada.
+  \item \textbf{O \emph{deploy} pula \cd{backup-*}} nos dois laços (subir e
+    ativar), o \emph{compose} de desenvolvimento perde o serviço do UnooTube, e
+    a porta 5174 fica para o Jornal. O \emph{seed} escreve a arquivada a partir
+    das pastas \cd{backup-*}, porque num banco novo a migração não tem linha
+    para mover.
+  \item \textbf{\cd{exp04ef1b} sai de \cd{EXPERIENCIAS\_COM\_EQUIPE}}: a lista é
+    por código, e o código mudou de dono. O Jornal volta a entrar quando nascer
+    com equipe.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Apagar, como a \adrr{ADR-113} e a \adrr{ADR-114}.} Certo para
+    quem não tinha o que guardar; o UnooTube esteve em nuvem, e o dono pediu
+    para guardar.
+  \item \textbf{Mover o código para uma pasta fora do monorepo}, sem compilar
+    nem testar. Congelaria a missão como estava, e apodreceria sem aviso: no dia
+    de trazer de volta, nada garantiria que ainda compila. O dono escolheu o
+    custo contrário.
+  \item \textbf{Uma coluna \cd{arquivada\_em} em \cd{experiencias}.} Seis
+    leitores listam aquela tabela (a grade, o catálogo, o painel de recursos, a
+    evidência, a portabilidade, o próprio catálogo de rotas), e cada um teria de
+    lembrar de filtrar; o que esquecesse mostraria o UnooTube de novo.
+  \item \textbf{Recontar turmas e estudantes em tempo de uso.} Seria uma rota
+    do \cd{admin} contando \cd{liberacoes} e \cd{progresso} de todas as escolas,
+    isto é, atravessando a RLS --- uma capacidade que nenhuma rota tem hoje, e
+    que não vale para uma tela que só lista.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{Código arquivado custa manutenção}: continua no \emph{typecheck}
+    e nos testes, e quebra quando o DS, o SDK ou o \emph{schema} mudarem. Quem
+    quebrar conserta ali --- a pasta tem um \arq{AGENTS.md} que diz isso.
+  \item \textbf{O 4º ano fica sem missão até o Jornal entrar}, como a
+    \adrr{ADR-114} deixou o 5º.
+  \item \textbf{A fotografia não se atualiza}, e a tela diz isso. Os dados
+    guardados não mudam, então ela só mente se alguém escrever nas tabelas
+    arquivadas à mão.
+  \item \textbf{O \emph{bucket} continua com o UnooTube}: os \emph{bundles} em
+    \cd{exp-02-unootube/*} e os vídeos em \cd{exp04ef1b/videos}, sem uso. A
+    cópia manual de \cd{exp-02-unootube/*} para \cd{exp04ef1b/} que o
+    \arq{docs/INFRA.md} descrevia \textbf{não deve mais rodar}: poria o UnooTube
+    1.x no caminho do Jornal.
+  \item \textbf{Duas suítes mudaram de missão}: a \arq{professor/10} (equipes)
+    passou para o unooGPT, e a \arq{estudante/01} usa o unooGPT como a missão
+    \enquote{de outra série}.
+  \item \textbf{Os Termos de uso citam o UnooTube} como exemplo de ambiente
+    imitado; a frase fica para o dono do produto revisar, com a do Eco.
+\end{itemize}
+
+\textbf{Verificação.} A migração foi aplicada sobre um Postgres descartável
+semeado com dados do UnooTube em duas escolas --- sessão, liberação, progresso,
+montagem, equipe, membros, interruptor e auditoria --- e com linhas de controle
+de outra missão nas mesmas tabelas. A primeira corrida \textbf{abortou na
+asserção}: \cd{equipes\_membros} guarda o código como cópia, e a FK dela aponta
+para \cd{equipes(id)}, não para a montagem; o UPDATE próprio entrou. Depois
+disso: tudo renomeado, a fotografia com 2 turmas e 3 estudantes, o controle
+intacto, o FORCE da RLS de volta e o \emph{trigger} religado. Num banco virgem,
+a cadeia inteira aplica e a suíte da api passa (112 suítes, 1614 testes); o
+\emph{seed} num banco virgem escreve a arquivada e não libera nada do 4º ano.
+
+\textbf{Gatilho.} A segunda experiência a perder o código (é ela que prova que o
+molde é o molde); alguém precisar ABRIR uma arquivada, e não só listá-la (aí
+entra um modo de demonstração, que hoje não existe); ou o custo de manter o
+código arquivado compilando passar do valor de guardá-lo no lugar.
+
+% ---------------------------------------------------------------------------
+\section{ADR-118 --- Quem mandou isso? v2.2: atividade é o pacote, rodada é a reaplicação, e a régua mede pela seleção e pelas perguntas do PO}
+\label{adr:exp05ef1b-v2}
+
+\textbf{Data.} 2026-09-25. \textbf{Status.} Aceita.
+\textbf{Consequência} da \adrr{ADR-114}: a v1 saiu, e a v2.2 volta com o mesmo
+\cd{exp05ef1b}, a partir da 0.2.0. \textbf{Aplica} a \adrr{ADR-112} --- é a
+PRIMEIRA missão com ficha pedagógica --- e a \adrr{ADR-111} (nasce com
+equipes). \textbf{Retoma} o padrão da \adrr{ADR-108}, que ficara sem missão: a
+missão nasce vazia e a revelação é do relógio da turma, por \emph{polling}
+(\adrr{ADR-93}). Segue a \adrr{ADR-69} (a porta da sala) e o critério de
+fronteira da \adrr{ADR-72} (\enquote{quem fala}).
+
+\begin{especificacao}{Contexto}
+O documento de requisitos da v2.2 chegou com as \textbf{perguntas de evidência}
+do PO (o \enquote{Canal B}). O briefing travou só três coisas: o contrato de
+evidência da BNCC, os textos literais das seis etapas e as quantidades --- oito
+mensagens na matriz 2$\times$2 (verdadeira ou falsa, emocional ou neutra),
+\textbf{exatamente} três encaminhamentos ao Mural, o \enquote{Então} com pelo
+menos 15 caracteres e quatro opções de motivo. O resto --- rotas, tabelas,
+nomes, a ordem das telas --- segue o repositório, e não o DDL nem as rotas do
+documento.
+
+Três fatos do repositório pesaram mais que o documento:
+
+\begin{itemize}
+  \item \textbf{A evidência (\adrr{ADR-112}) é por atividade e rodada}, e quem
+    diz qual é a atividade é a missão. Nenhuma missão tinha ficha, e esta seria a
+    primeira a responder o que é \enquote{atividade} e o que é \enquote{rodada}
+    numa aula que não cria atividade nenhuma.
+  \item \textbf{A escola divide computador} (\adrr{ADR-111}): a v1 fora deixada
+    de fora das equipes porque ia sair; a v2.2 não tem esse motivo.
+  \item \textbf{Não há arquivo de mídia}: o documento pede comunicados e prévias
+    de link, e o pacote de cada turma é escrito pela IA no preparo --- que
+    escreve texto, não imagem.
+\end{itemize}
+\end{especificacao}
+
+\textbf{Decisão.} Os itens abaixo são os que tinham alternativa; o dono do
+produto fechou os quatro primeiros em 2026-09-25, e os três últimos são os
+\emph{defaults} da especificação, aplicados sem contestação.
+
+\begin{itemize}
+  \item \textbf{A atividade é o PACOTE aprovado; a rodada é a reaplicação.} O
+    \cd{pacoteId} é o \cd{atividadeId} da evidência. \enquote{Zerar Turma para
+    Nova Aplicação} soma 1 à rodada do mesmo pacote e \textbf{não apaga nada}: as
+    sessões, as regras e as marcas da rodada anterior ficam, e o painel de
+    habilidades mostra as rodadas e fica com a melhor de cada habilidade.
+    Aprovar um pacote DIFERENTE abre atividade nova (o anterior fica inativo,
+    com o histórico); aprovar o MESMO é idempotente --- a comparação é por uma
+    assinatura do conteúdo, porque o JSONB reordena chaves. Os dois voltam a
+    turma à triagem.
+  \item \textbf{A régua mede pela seleção e pelas perguntas, e o Se/Então não é
+    corrigido.} A EF05CO08 sai das três mensagens do Mural --- três verdadeiras,
+    ou duas e uma falsa \emph{emocional}, é \cd{atingiu}; duas e uma falsa
+    \emph{neutra}, \cd{em\_processo}; uma verdadeira ou nenhuma,
+    \cd{nao\_atingiu} ---, marcada NA MESMA transação do \emph{latch} do Mural. A
+    EF05CO03 vem da P1, e a EF05CO04 \textbf{só} da P2. Da regra Se/Então o
+    servidor recusa apenas o que não é resposta (curto, longo, texto sem
+    sentido); o professor a lê e ajusta a EF05CO04 pelo painel.
+  \item \textbf{As perguntas do PO ficam no chat da Nina, DEPOIS do Se/Então,
+    com a mesma enquete da Etapa 3.} A ordem é casca (a regra) \seta{} clone (P1,
+    P2 e a despedida da Nina) \seta{} casca (\enquote{Missão Concluída}): a
+    fronteira do disfarce cruza duas vezes, e cada travessia segue o critério
+    de quem fala. As alternativas descem \textbf{embaralhadas no servidor a cada
+    leitura} e sem o nível, e o recibo é sempre \cd{\{ enviada: true \}} --- o
+    embaralhamento é mudança de PLATAFORMA (\arq{evidencias/}), e vale para toda
+    missão que tiver pergunta. Quem sai antes delas fica \enquote{Não
+    avaliado}, nunca \enquote{não atingiu}.
+  \item \textbf{Nasce com equipes.} A \cd{exp05ef1b} entra na lista de
+    missões com equipe do módulo \arq{equipes/}, e o painel e o Termômetro
+    contam por computador --- o mapa das equipes lido dentro do
+    \cd{comTenancy}, e as linhas colapsadas em unidades, como no UnooTube e no
+    unooGPT.
+  \item \textbf{Mídia desenhada, sem arquivo.} O comunicado é o texto do pacote
+    desenhado como papel (\cd{MessageBubble.Media} sem \cd{src}, com o texto no
+    \cd{alt}); o link é a prévia montada da legenda (\enquote{Nome do site:
+    manchete}); o termômetro e a síntese entram no chat como imagem desenhada.
+    Sem áudio assistivo na V1 (entra quando houver gravação), sem
+    \emph{benchmarking} e sem CSV.
+  \item \textbf{Imagem e link com uma verdadeira e uma falsa cada.} Nos
+    artefatos, os dois links do pacote curado (\enquote{O Mistério do Passeio
+    ao Museu}) eram falsos, e a turma aprenderia \enquote{link é mentira} --- a
+    heurística que a missão existe para desmontar. A régua do pacote passa a
+    exigir o equilíbrio de formato, para o curado e para o gerado; no curado a
+    \cd{msg\_5} (verdadeira) virou link e a \cd{msg\_7} (falsa) virou texto,
+    sem mudar os textos. A versão original reprova, e há teste que prende isso.
+  \item \textbf{Gestor só lê.} Pacote, painel e material respondem a professor e
+    às coordenações; gerar, aprovar, os três botões e o zerar são só do
+    professor. O \enquote{Então} é texto livre de menor: vem preenchido só para
+    quem leciona na turma, e a coordenação recebe \cd{null}.
+\end{itemize}
+
+Do padrão da \adrr{ADR-108}, a v2.2 retoma o \textbf{nascer vazia} (sem pacote
+aprovado a lista de conversas fica vazia, com uma linha de espera, e não há
+queda para o banco curado) e o \textbf{relógio da turma} --- mas com TRÊS botões
+(revelação, síntese, reflexão), só para a frente, e sem empurrar a triagem:
+quem ainda não confirmou quando a revelação abre continua escolhendo e vê a
+própria revelação depois do voto. O passo do estudante é derivado dos
+carimbos e da fase (\cd{passoEfetivo}), nunca coluna.
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{A atividade ser a TURMA} (uma por turma, e cada reaplicação uma
+    rodada). Um pacote novo --- outro tema, outras oito mensagens --- cairia na
+    mesma atividade, e a \enquote{melhor rodada} compararia instrumentos
+    diferentes como se fossem o mesmo.
+  \item \textbf{Zerar apagando}, como a v1 e a exp08ef4b fazem. A política da
+    \adrr{ADR-112} é justamente ver se houve melhora entre as tentativas;
+    apagar a rodada anterior apagaria a pergunta.
+  \item \textbf{Corrigir o Se/Então para a EF05CO04}, por regra ou por IA. É o
+    único texto livre da missão, escrito por uma criança de 10 anos: correção
+    por IA põe um modelo julgando texto de menor, e correção por regra de
+    palavra-chave premia quem copia a fórmula. O PO desenhou uma pergunta para
+    medir a habilidade --- a P2 ---, e o professor continua podendo ajustar.
+  \item \textbf{As perguntas ANTES do Se/Então, ou na casca.} Antes, a P2 (qual
+    regra funciona melhor) entregaria o modelo pronto à criança que vai
+    escrever a própria; na casca, elas perderiam a voz da Nina que as
+    apresenta e a enquete que a turma já conhece da Etapa 3.
+  \item \textbf{Mandar as alternativas na ordem da ficha}, ou embaralhar no
+    cliente. Na ordem da ficha a certa é sempre a primeira, e a posição vira a
+    pista; embaralhar no cliente deixaria a ordem canônica na resposta da rede,
+    legível no DevTools.
+  \item \textbf{Nascer sem equipes} e entrar depois, como as missões que o E13
+    deixou de fora. Não havia a razão delas (sair da trilha), e o painel por
+    computador já nasce no desenho do Termômetro.
+  \item \textbf{Mídia com arquivo} --- foto gerada ou imagem de banco. Exigiria
+    geração de imagem por turma, \emph{bucket} e revisão de cada imagem pelo
+    professor, para o que é, no fundo, um papel com um texto que ele já aprovou.
+  \item \textbf{O pacote curado como veio}, com os dois links falsos.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{A ficha ainda não é validada pela equipe pedagógica.} O
+    \cd{validadaPor} diz \enquote{Produto Unooria --- contrato de evidência v2.2 e
+    perguntas de evidência (Canal B)}, de 2026-09-25; a coordenação pedagógica
+    valida até 2026-09-29, e \textbf{sem isso a missão não sobe para \cd{dev}}.
+    Os códigos de Língua Portuguesa do \emph{one-pager} (EF15LP01, EF05LP15)
+    ficaram fora da régua --- só Computação é medida.
+  \item \textbf{Textos escritos por esta frente esperam a revisão do PO}: a
+    instrução de \enquote{Apresentar Síntese}, a confirmação da regra, a
+    despedida da Nina, a prévia do link da \cd{msg\_5}, os fatos do recorte do
+    pacote curado e o vocabulário de componentes curriculares.
+  \item \textbf{O equilíbrio de formato do pacote curado é \emph{default}}, à
+    espera da resposta do dono do produto (a decisão em aberto está no mapa de
+    produto).
+  \item \textbf{Rodada é contagem que só cresce}: cada \enquote{Zerar} deixa
+    uma rodada no histórico, inclusive a vazia de uma aula desistida no começo.
+  \item \textbf{Duas compensações sobre o DS 0.2.4}: a seta esgotada em 3/3
+    continua respondendo (\cd{aria-disabled} em vez de \cd{disabled}, que
+    engoliria o toque do aviso de limite) e o toque no comunicado desenhado é um
+    \cd{<button>} sem aparência (o \cd{Media} não publica \cd{onClick}). As duas
+    são pedidos ao \cd{storybook-unooria}; até lá, a suíte de ponta a ponta
+    clica a seta esgotada com \cd{force}.
+  \item \textbf{O embaralhamento mudou a rota de plataforma}: toda missão futura
+    com pergunta o herda, e a tela dela precisa responder pelo \cd{id} e carregar
+    a pergunta uma vez por aba --- cada leitura troca a ordem.
+  \item \textbf{A cópia principal precisa de passos depois do merge}: aplicar a
+    migração \arq{20260926120000} no banco do \emph{compose}, subir o serviço da
+    experiência na 5184 (\cd{docker:dev}), reiniciar o hub (o prefixo
+    \cd{quem-mandou-isso} voltou à \emph{allowlist} do BFF) e a api, e rodar a
+    \arq{estudante/\B{}10-quem-mandou-isso.mjs} e a \arq{professor/10}. A suíte foi
+    escrita nesta frente e ainda não rodou: a missão fica \enquote{parcial} no
+    mapa de produto até ela passar.
+\end{itemize}
+
+\textbf{Verificação.} No \emph{worktree}, contra um Postgres descartável migrado
+do zero, \cd{typecheck}, \cd{lint} e \cd{test} do repositório inteiro, pelo
+\cd{turbo}, verdes nas 53 tarefas: a api com 114 suítes e 1.762 testes --- a régua da EF05CO08 conferida
+nas 56 combinações de três entre oito, os \emph{latches} sob toques
+simultâneos, a marca na transação do Mural, a RLS com a \emph{role} sem
+\cd{BYPASSRLS}, o \enquote{Então} só para quem leciona, a rodada nova e o
+pacote novo ---, o hub com 205 testes (as regras da tela, puras) e a experiência
+com 89 (as regras de tela, a versão nos três lugares e a varredura do \cd{src/}
+atrás do gabarito, repetida no \cd{dist/}); e o \emph{build} de produção do
+hub. A suíte de ponta a ponta tem \cd{node --check} e \emph{lint}, e não
+rodou.
+
+\textbf{Gatilho.} A coordenação pedagógica recusar a régua --- a EF05CO04 só
+pela P2, ou o peso da falsa neutra na EF05CO08 --- e a ficha subir de versão; o
+PO pedir que o Se/Então conte para a evidência; uma segunda missão precisar de
+\enquote{atividade} sem ter um pacote, que é o gatilho da \adrr{ADR-112} para a
+atividade virar conceito de plataforma; ou o DS publicar a seta esgotada e a
+mídia acionável, e as duas compensações saírem.

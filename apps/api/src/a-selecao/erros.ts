@@ -6,7 +6,7 @@ import { HttpException } from "@nestjs/common";
  * vai aqui é só a de reserva (na voz seca do clone, para a tela que ainda não
  * conhece o código).
  *
- * Molde: `apps/api/src/quem-mandou-isso/erros.ts`. Como lá, boa parte dos 409
+ * Molde: o `quem-mandou-isso/erros.ts` da v1 da exp05ef1b (ADR-114). Como lá, boa parte dos 409
  * vem do GATE DA TURMA — o Mural ainda não abriu, a explicação ainda não foi
  * liberada. Nesses casos a frase diz para esperar: um "acesso negado" faria a
  * criança achar que perdeu a missão.
@@ -100,7 +100,7 @@ export class ErroDeJogo extends HttpException {
 }
 
 /**
- * RETORNA a exceção, não lança — como na exp05ef1b. Use `throw erroDeJogo(...)`.
+ * RETORNA a exceção, não lança — como na v1 da exp05ef1b. Use `throw erroDeJogo(...)`.
  * As regras puras devolvem `{ ok: false, codigo }` e quem lança é o service.
  */
 export function erroDeJogo(codigo: CodigoErro, extra?: Record<string, unknown>): ErroDeJogo {

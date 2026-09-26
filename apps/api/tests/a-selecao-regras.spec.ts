@@ -570,12 +570,12 @@ describe("o Zod do lote gerado por IA (§2.5 do brief)", () => {
 });
 
 describe("a ficha pedagógica da A Seleção", () => {
-  test("EF07CO11 com a ação da legenda e a P1; EF07CO08 com a P2; as duas embaralham", () => {
+  test("EF07CO11 com a ação da legenda e a P1; EF07CO08 com a P2", () => {
     expect(FICHA_EXP07EF1B.habilidades.map((h) => [h.codigo, h.marcadores.map((m) => m.id)])).toEqual([
       ["EF07CO11", ["legenda-publicada", "p1"]],
       ["EF07CO08", ["p2"]],
     ]);
-    expect(FICHA_EXP07EF1B.perguntas.map((p) => p.embaralhar)).toEqual([true, true]);
+    expect(FICHA_EXP07EF1B.perguntas.map((p) => p.id)).toEqual(["p1", "p2"]);
     expect(FICHA_EXP07EF1B.validadaPor).toBe("Lucas Salomão (dono do produto; validação pedagógica dispensada)");
     expect(FICHA_EXP07EF1B.validadaEm).toBe("2026-09-25");
   });

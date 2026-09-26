@@ -16,7 +16,7 @@ import { equipesDaMissao } from "@/lib/equipes-servidor";
 import { painelDeHabilidades } from "@/lib/evidencias-servidor";
 import { rotaDoGuiaDaMissao } from "@/lib/rotas-da-missao";
 import { normalizarSerie } from "@/lib/series";
-import type { TurmaResumo } from "@/lib/unootube-tipos";
+import type { TurmaResumo } from "@/lib/turmas-tipos";
 
 import { PainelDaAulaASelecao } from "./painel-da-aula-a-selecao";
 import { PreparoASelecao } from "./preparo-a-selecao";
@@ -37,8 +37,8 @@ const EXP_ID = "exp07ef1b";
  * habilidade. O preparo nasce FECHADO (a grade de posts só abre a pedido)
  * para não empurrar o botão para fora da tela no meio da aula.
  *
- * **A PRIMEIRA missão com ficha pedagógica (E14)** — por isso o painel de
- * habilidades mora aqui, e não só na tela de atividade do Instanooria. A
+ * **Missão com ficha pedagógica (E14)**, a segunda depois de Quem mandou
+ * isso? v2.2 — por isso o painel de habilidades mora aqui, e não só na tela de atividade do Instanooria. A
  * atividade é a COBERTURA (`atividadeId = coberturaId`) e a rodada é o
  * "Zerar"; `?cobertura=` escolhe qual, e o padrão é a em andamento.
  *

@@ -419,8 +419,8 @@ export function textoDasRodadas(n: number): string {
  * `apps/api/src/a-selecao/regras/lote.ts`, e quem RECUSA é a api
  * (`lote-invalido`, com a frase). O que mora aqui é o APONTAMENTO — qual post,
  * enquanto ela digita —, que só a tela sabe onde desenhar. É a lição do
- * preparo da exp05ef1b: um 400 sobre doze legendas, sem dizer qual, faz a
- * professora reler todas com a turma esperando. Mudou lá, muda aqui.
+ * preparo da v1 da exp05ef1b: um 400 sobre doze legendas, sem dizer qual, faz a
+ * professora reler todas com a turma esperando.
  */
 export const PALAVRAS_DA_LEGENDA = { min: 20, max: 45 } as const;
 

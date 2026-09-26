@@ -30,6 +30,7 @@ import {
   VersaoAtivadaSchema,
   VersaoFixadaSchema,
   VersoesDaExperienciaSchema,
+  ExperienciasArquivadasSchema,
 } from "./contrato-de-rotas";
 import { ManifestoGuardadoSchema } from "./manifesto-guardado";
 import { registrarAuditoria, type AcaoDeAuditoria } from "./auditoria";
@@ -208,6 +209,38 @@ export class RecursosAdminController {
     });
 
     return { escopo: { escolaId, nome, tipo }, produtos };
+  }
+
+  @Get("arquivadas")
+  @Contrato({
+    resumo: "As experiências arquivadas: tiradas do produto sem serem apagadas (ADR-116).",
+    descricao:
+      "Sai de `experiencias_arquivadas`. Uma experiência é arquivada quando uma missão nova toma o código dela (o código é derivado da série e da unidade, ADR-110): tudo o que era dela ganha o prefixo `backup-` e some da grade, do catálogo e deste painel, com os dados guardados. **Só lista** — ninguém joga uma arquivada, e desarquivar é uma migração.",
+    resposta: ExperienciasArquivadasSchema,
+    notas: [
+      "`turmasGuardadas` e `estudantesGuardados` são a FOTOGRAFIA tirada pela migração que arquivou, não uma recontagem: contar `liberacoes` e `progresso` de todas as escolas atravessaria a RLS.",
+      "A ordem é a do arquivamento, da mais recente para a mais antiga.",
+    ],
+  })
+  async arquivadas() {
+    const linhas = await this.prisma.experienciaArquivada.findMany({
+      orderBy: [{ arquivadaEm: "desc" }, { expId: "asc" }],
+    });
+    return {
+      arquivadas: linhas.map((l) => ({
+        expId: l.expId,
+        codigoDeOrigem: l.codigoDeOrigem,
+        nome: l.nome,
+        versao: l.versao,
+        series: l.series,
+        unidade: l.unidade,
+        produto: l.produto,
+        motivo: l.motivo,
+        turmasGuardadas: l.turmasGuardadas,
+        estudantesGuardados: l.estudantesGuardados,
+        arquivadaEm: l.arquivadaEm.toISOString(),
+      })),
+    };
   }
 
   @Put(":recursoId")

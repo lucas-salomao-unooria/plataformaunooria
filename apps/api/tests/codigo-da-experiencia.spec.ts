@@ -8,6 +8,7 @@ import {
   FORMATO_DO_EXP_ID,
   codigoDaMissao,
 } from "../src/comum/codigo-da-experiencia";
+import { CODIGO_ARQUIVADO_RE, codigoDeOrigem, ehArquivada } from "../src/comum/arquivadas";
 
 /**
  * O CÓDIGO DA EXPERIÊNCIA É DERIVADO, NÃO ESCOLHIDO (ADR-110).
@@ -60,6 +61,18 @@ describe("o formato", () => {
     expect(EXP_ID_RE.source).toBe(uniao);
   });
 
+  it("a ARQUIVADA é backup- + um código válido, e fica fora do EXP_ID_RE (ADR-116)", () => {
+    for (const ok of ["backup-exp04ef1b", "backup-app-70-vila-do-lume"]) {
+      expect(ehArquivada(ok)).toBe(true);
+      expect(EXP_ID_RE.test(ok)).toBe(false);
+    }
+    for (const nao of ["exp04ef1b", "backup-exp-02-unootube", "backup-exp10ef1b", "backup_exp04ef1b", "Backup-exp04ef1b"]) {
+      expect(ehArquivada(nao)).toBe(false);
+    }
+    expect(codigoDeOrigem("backup-exp04ef1b")).toBe("exp04ef1b");
+    expect(codigoDeOrigem("exp04ef1b")).toBeNull();
+  });
+
   it("codigoDaMissao monta pela série e pela unidade", () => {
     expect(codigoDaMissao("8EF", 1)).toBe("exp08ef1b");
     expect(codigoDaMissao("1EF", 1)).toBe("exp01ef1b");
@@ -106,6 +119,24 @@ describe("todo manifesto tem o código certo", () => {
     test("a pasta tem o nome do id", () => {
       expect(manifesto.id).toBe(pasta);
     });
+
+    /* A ARQUIVADA (ADR-116) tem regra própria, e não é pulada: uma pasta `backup-`
+       com código de origem errado tem de reprovar aqui, como qualquer outra. */
+    if (pasta.startsWith("backup-")) {
+      test("arquivada: backup- + um código válido, e fora do EXP_ID_RE", () => {
+        expect(manifesto.id).toMatch(CODIGO_ARQUIVADO_RE);
+        expect(EXP_ID_RE.test(manifesto.id)).toBe(false);
+      });
+      if (manifesto.unidade !== undefined) {
+        test("arquivada de missão: o código de origem é derivado da série e da unidade", () => {
+          expect(manifesto.series).toHaveLength(1);
+          expect(codigoDeOrigem(manifesto.id)).toBe(
+            codigoDaMissao(manifesto.series?.[0] ?? "", manifesto.unidade ?? 0),
+          );
+        });
+      }
+      return;
+    }
 
     test("o id está num dos dois formatos", () => {
       expect(manifesto.id).toMatch(EXP_ID_RE);

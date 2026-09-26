@@ -23,7 +23,8 @@ import { criarTurmaDeTeste } from "./turma-de-teste";
  * falsa, e a cópia para a equipe e a projeção `a_revisar`.
  *
  * UMA ESCOLA POR SUÍTE (mais a vizinha, para a RLS): o Jest paraleliza suítes.
- * Molde: `quem-mandou-isso-postgres.spec.ts` e `evidencias-postgres.spec.ts`.
+ * Molde: o `quem-mandou-isso-postgres.spec.ts` da v1 da exp05ef1b e o
+ * `evidencias-postgres.spec.ts`.
  */
 
 const URL = process.env.DATABASE_URL ?? "postgresql://postgres:pass@localhost:5432/unooria";

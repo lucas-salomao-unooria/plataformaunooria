@@ -97,8 +97,8 @@ export default async function AtividadePage({
     `turma_id` (que vale para a escola inteira) não tem painel. E a missão sem
     ficha pedagógica responde `temFicha: false` — é o caso do Instanooria, e o
     bloco não aparece; ele acende sozinho no dia em que o Instanooria publicar a
-    ficha dele (a primeira com ficha, a A Seleção, monta o painel nos próprios
-    resultados). `MISSAO_ATUAL` pela mesma razão da missão de origem acima.
+    ficha dele (as que já têm, Quem mandou isso? v2.2 e A Seleção, montam o
+    painel nos próprios resultados). `MISSAO_ATUAL` pela mesma razão da missão de origem acima.
   */
   const expIdDaAtividade = MISSAO_ATUAL.expId;
   const [painel, session] = await Promise.all([

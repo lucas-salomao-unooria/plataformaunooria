@@ -13,8 +13,8 @@ import { PreparoDaExp07ef1bService } from "./preparo.service";
 /**
  * Lado server da exp07ef1b. Prisma e Auth são globais.
  *
- * **`EvidenciasModule` entra** porque esta é a primeira missão com ficha
- * pedagógica (E14): o service registra o contexto das enquetes no
+ * **`EvidenciasModule` entra** porque esta missão tem ficha pedagógica
+ * (E14): o service registra o contexto das enquetes no
  * `onModuleInit` e marca a EF07CO11 depois do latch. As equipes NÃO entram
  * como módulo: o painel e o pareamento leem `equipes/consulta.ts`, que são
  * funções livres sobre o `tx` — o desenho que evita a dependência esquecida.

@@ -177,7 +177,7 @@ não perder o `alt` no erro.
 
 **Não é pedido**: as barras do "Equilíbrio editorial" — o Instagram não desenha
 gráfico, e a ficha é a extensão da ficção que a missão acrescenta (o mesmo
-argumento do mini-infográfico da exp05ef1b).
+argumento do mini-infográfico da v1 da exp05ef1b).
 
 ## A copy ESCRITA AQUI (para o PO revisar)
 
