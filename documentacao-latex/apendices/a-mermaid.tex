@@ -209,7 +209,7 @@ C4Component
     Component(equipes,"equipes/", "", "Quem divide um computador na missao (ADR-111); consulta.ts e a porta dos paineis")
     Component(recs,   "recursos/", "", "O interruptor da rede e a versao (ADR-87); escrita so admin")
     Component(prosp,  "prospeccao/", "", "Cadastro de interesse do site publico, sem tenant (ADR-107)")
-    Component(evid,   "evidencias/", "", "Habilidade da BNCC por atividade e rodada (ADR-112); a porta marcar das missoes, que nenhuma chama ainda")
+    Component(evid,   "evidencias/", "", "Habilidade da BNCC por atividade e rodada (ADR-112); a porta marcar das missoes, que a exp05ef1b chama")
 
     %% --- dominio por experiencia (nenhum conhece outro)
     Component(motor,  "motor/ geracao/ dossie/ atividades/ perfis/", "", "exp08ef1b")
@@ -219,7 +219,7 @@ C4Component
     Component(bem,    "bemestar/", "", "app-91")
     Component(ugpt,   "unoogpt/", "", "exp02em1b - motor probabilistico, agente com ferramentas, relogio da turma; painel conta por computador")
     Component(eco,    "o-eco-no-grupo/", "", "exp07ef1b - gate de turma, texto, imagem e VOZ")
-    Component(outros, "rastro-boato/ manifesto-ia/ foto-conta/ planejamento/", "", "exp06ef2b, exp08ef4b, exp01ef1b, app-92 - sem seta na figura")
+    Component(outros, "rastro-boato/ manifesto-ia/ quem-mandou-isso/ foto-conta/ planejamento/", "", "exp06ef2b, exp08ef4b, exp05ef1b, exp01ef1b, app-92 - sem seta na figura")
   }
 
   Rel(guard, roles, "antes de")
@@ -240,6 +240,11 @@ C4Component
   Rel(planos, store, "bucket privado")
   Rel(eco, ai, "IA + quota")
   Rel(eco, store, "midia no bucket")
+  %% quem-mandou-isso/ (exp05ef1b, ADR-118) mora na caixa "outros" da figura, sem
+  %% seta; as relacoes dela ficam aqui: a primeira missao que chama marcar.
+  Rel(outros, evid, "exp05ef1b: marcar na transacao do Mural + registrarContexto")
+  Rel(outros, equipes, "exp05ef1b: consulta.ts (painel por computador)")
+  Rel(outros, ai, "exp05ef1b: IA + quota no preparo")
 
   %% A figura TikZ desenha a infraestrutura ENTRE a plataforma e o dominio, com
   %% a coluna 2 vazia: e por ela que unootube/ e unoogpt/ sobem ate equipes/.
@@ -1112,6 +1117,11 @@ flowchart TB
   subgraph FC["exp01ef1b - O Que a Foto Conta"]
     fc["/foto-conta/* - estudante"]
     fct["/foto-conta/turmas/* - prof, gestor - o latch da Roda"]
+  end
+  subgraph QM["exp05ef1b - Quem mandou isso?"]
+    qm["/quem-mandou-isso/* - estudante - e as perguntas em /evidencias"]
+    qmt["/quem-mandou-isso/turmas/* - prof, gestor - o pacote E o relogio da turma"]
+    qmp["/quem-mandou-isso/professor/* - prof, gestor - material do guia"]
   end
 
   %% Duas areas por AUSENCIA deliberada: bem-estar nao tem rota de gestor nem

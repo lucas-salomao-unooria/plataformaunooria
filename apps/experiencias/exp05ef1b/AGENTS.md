@@ -5,7 +5,7 @@ ADR-114; esta é a v2.2 com o MESMO código, começando na 0.2.0.
 
 | Manifesto | Dev | DS | api | e2e |
 |---|---|---|---|---|
-| `exp05ef1b` · 5EF · unidade 1 · `entre-redes` · `viewport` 375×812 · `permissoes: ["forms"]` | `:5184` (`strictPort`), hub `/exp/exp05ef1b` | `@edu/ui/ds-whatsapp` (clone, DS ≥ 0.2.4) + `@edu/ui/ds` (casca) | `apps/api/src/quem-mandou-isso` ↔ `/quem-mandou-isso/*` e `apps/api/src/evidencias` ↔ `/evidencias/exp05ef1b/perguntas/*` | `scripts/e2e/estudante/10-quem-mandou-isso.mjs` (a escrever; dois contextos) |
+| `exp05ef1b` · 5EF · unidade 1 · `entre-redes` · `viewport` 375×812 · `permissoes: ["forms"]` | `:5184` (`strictPort`), hub `/exp/exp05ef1b` | `@edu/ui/ds-whatsapp` (clone, DS ≥ 0.2.4) + `@edu/ui/ds` (casca) | `apps/api/src/quem-mandou-isso` ↔ `/quem-mandou-isso/*` e `apps/api/src/evidencias` ↔ `/evidencias/exp05ef1b/perguntas/*` | `scripts/e2e/estudante/10-quem-mandou-isso.mjs` (dois contextos) e o passo da ficha em `professor/10-equipes-na-missao.mjs` |
 
 O percurso: lista de conversas → chat da Nina (convite) → grupo "Turma 5ºB"
 (encaminhar exatamente 3 ao Mural) → Mural (confirmar) → enquete do motivo →
