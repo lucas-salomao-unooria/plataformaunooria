@@ -16,11 +16,11 @@ armadilhas que já custaram tempo e não avisam quando você cai nelas:
   (`docs/regras/definition-of-done.md`). Ele compila sozinho, na própria pasta,
   com `tectonic -k mapa-de-produto.tex`, e não pelo `compilar.sh` daqui.
 
-- **A PRÓXIMA ADR é a 115.** A numeração vai até ADR-114 (a primeira versão de
-  Quem mandou isso? retirada, para a v2.2 voltar com o mesmo código); a 113 é a
-  retirada do Eco no Grupo para A Seleção, da frente que corria em paralelo, e
-  a 112 a evidência pedagógica por atividade e rodada, com a melhor rodada
-  valendo por habilidade. Este número envelhece a cada frente, então ele é
+- **A PRÓXIMA ADR LIVRE é a 118**: a 116 e a 117 foram RESERVADAS em
+  2026-09-25 pelas frentes `feat/arquivados` e `exp04ef1b`. A numeração vai até ADR-115 (A Seleção: o par do Mural é do
+  computador, e a IA gradua a legenda); a 114 é a primeira versão de Quem
+  mandou isso? retirada, a 113 a retirada do Eco no Grupo para A Seleção, e a
+  112 a evidência pedagógica por atividade e rodada. Este número envelhece a cada frente, então ele é
   ponto de partida, nunca a resposta. Das mais citadas: a 86 é o
   guia da aula, 87 o eixo da disponibilidade, 88 o painel da Unooria só do
   `admin`, 89 o histórico append-only que a rede também lê e 90 a suíte da API

@@ -9,7 +9,7 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{114 decisões}, numeradas até ADR-114, \textbf{sem lacunas}. Quando
+São \textbf{115 decisões}, numeradas até ADR-115, \textbf{sem lacunas}. Quando
 eram cem, as cinco últimas nasceram no MESMO dia, em três frentes paralelas, e não
 colidiram porque os números foram \textbf{reservados por quem repartia o
 trabalho antes de qualquer uma escrever} --- que é a lição que a colisão de
@@ -159,6 +159,7 @@ que a cercam.
 \zebra \adrr{ADR-112} & A evidência é por atividade e rodada, e a melhor rodada vale por habilidade & 2026-09-25 & Aceita\\
 \adrr{ADR-113} & A Seleção substitui o Eco no Grupo, e a limpeza vem antes & 2026-09-25 & Aceita\\
 \zebra \adrr{ADR-114} & Quem mandou isso? v1 é retirada; a v2.2 entra com o mesmo código & 2026-09-25 & Aceita\\
+\adrr{ADR-115} & A Seleção: o par do Mural é do computador, e a IA gradua a legenda & 2026-09-25 & Aceita\\
 \bottomrule
 \end{tabularx}
 
@@ -9684,3 +9685,105 @@ dos demais pacotes passam sem ela.
 explícita, e a v1 volta por esta ADR revertida, não por \emph{cherry-pick}; ou
 outra missão nova cair numa unidade já ocupada, que repete a escolha desta ADR
 e da \adrr{ADR-113}.
+
+% ---------------------------------------------------------------------------
+\section{ADR-115 --- A Seleção: o par do Mural é do computador, e a IA gradua a legenda}
+\label{adr:a-selecao}
+
+\textbf{Data.} 2026-09-25. \textbf{Status.} Aceita.
+\textbf{Responde} ao gatilho da \adrr{ADR-111} (\enquote{uma missão com equipe
+cujo dado precise ser da EQUIPE}), é a primeira missão com ficha da
+\adrr{ADR-112} e ocupa o código que a \adrr{ADR-113} liberou.
+
+\begin{especificacao}{Contexto}
+A Seleção (7º ano, unidade 1) mede se o estudante percebe que publicar é
+recortar. O instrumento é social: a tríade dele ao lado da de um colega que
+escolheu outra coisa do MESMO feed. Quatro fatos da plataforma decidiram a forma:
+a sala divide computador (\adrr{ADR-111}), a evidência é por atividade e rodada
+(\adrr{ADR-112}), a revelação é do relógio da turma (\adrr{ADR-108}) e o
+\emph{bundle} é público (regra inviolável nº 3). E um pedido do produto: o nível
+de EF07CO11 depende de a legenda explicitar um critério editorial --- coisa que
+regra fixa não sabe ler.
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{itemize}
+  \item \textbf{O par do Mural é do COMPUTADOR.} O pareamento roda na passagem para
+    o Mural, numa transação, sobre \cd{colapsarEmUnidades}: distância máxima
+    entre as matrizes de enquadramento, nunca dentro da mesma unidade. O par é
+    carimbado pela \emph{sessão} do representante, com o rótulo congelado (o
+    primeiro nome ou o nome da equipe), e \textbf{nunca} pelo id da equipe --- o
+    \cd{PUT} das equipes recria os ids. Quem sobra, quem publica depois do Mural e a
+    aula de um computador só pareiam com um colega virtual do catálogo.
+  \item \textbf{UM botão percorre quatro etapas} (\cd{exploracao}, \cd{mural},
+    \cd{fichas}, \cd{explicacao}), com o destino explícito na requisição. Não
+    repete o \enquote{controle morto} que a \adrr{ADR-108} recusou: cada clique abre
+    um momento de aula que existe --- o Mural em silêncio, o debate, as fichas, o
+    debate das lentes, a explicação. O destino explícito faz o clique duplo não
+    pular etapa.
+  \item \textbf{A IA gradua a legenda para EF07CO11} (o Canal A), exceção declarada
+    ao princípio de que a IA não decide desfecho (a \adrr{ADR-66} o firmava). As
+    travas: temperatura 0; uma tentativa e teto de cerca de 6 s; saída num
+    \emph{schema} com enum e validada; rubrica fixa no servidor e a legenda
+    delimitada como dado; a quota do estudante verificada antes e debitada em
+    \cd{aoUsarTokens} (inclusive a chamada que perde a corrida); limite de três
+    chamadas em dez minutos. \textbf{Qualquer falha não marca nada} --- fica
+    \enquote{Não avaliado} ---, nenhuma justificativa é gravada, a criança não vê o
+    nível, e o professor o confere e ajusta. A enquete \cd{p1} conta junto, e vale
+    o melhor (\adrr{ADR-112}).
+  \item \textbf{Atividade = cobertura; rodada = zerar.} Zerar abre a rodada
+    seguinte e guarda a anterior, ao contrário do \cd{DELETE} das missões antigas;
+    homologar um tema novo abre uma atividade nova.
+  \item \textbf{\cd{embaralhar} é opcional na ficha}, ligado nesta. Escala ordinal
+    de ficha futura não pode ser embaralhada.
+  \item \textbf{A validação pedagógica da ficha foi dispensada} pelo dono do
+    produto; \cd{validadaPor} diz isso, em vez de simular uma assinatura.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Três botões} no painel. O mesmo resultado com mais coisa para
+    esquecer; um botão que diz a próxima etapa ensina a ordem.
+  \item \textbf{Parear por estudante.} Com computador dividido, só quem entrou tem
+    sessão: juntaria linhas vazias, e dois logins na mesma máquina pareariam a
+    equipe com ela mesma.
+  \item \textbf{Carimbar o par pelo id da equipe.} Some no primeiro
+    \enquote{Salvar equipes}.
+  \item \textbf{IA com piso \enquote{em processo}} para quem publicou. Esconderia
+    a legenda desconexa, e a regra \enquote{vale o melhor} anularia o
+    \enquote{não atingiu} da IA. O dono do produto escolheu os três níveis.
+  \item \textbf{Ficha sem IA} (só as enquetes e o professor). Barata, mas deixaria o
+    produto que a missão pede (a legenda) sem leitura nenhuma.
+  \item \textbf{Zerar apagando.} Contradiz a rodada com histórico da \adrr{ADR-112}.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{Em dev e na e2e a IA é o mock, que sempre falha}: o Canal A nunca
+    marca, e a EF07CO11 só aparece pela enquete. A leitura da legenda só se prova
+    com o Vertex.
+  \item \textbf{A IA pode errar}, e o erro é um rótulo sobre uma criança --- visível
+    só ao professor, que o corrige; a quota do estudante é consumida por algo que
+    ele não vê.
+  \item \textbf{O colega vê a tríade, a legenda e o primeiro nome.} É o instrumento
+    da missão, e os Termos de Uso e a Política de Privacidade dizem isso. O
+    sanitizador barra link, telefone, e-mail, menção e palavrão, mas não
+    moderação semântica.
+  \item \textbf{O par não muda quando as equipes mudam, mas a evidência copiada da
+    rodada em andamento, sim} --- os dois comportamentos são os corretos, e
+    diferem.
+\end{itemize}
+
+\textbf{Verificação.} \arq{a-selecao-regras.spec.ts} e \arq{a-selecao-postgres.spec.ts}
+(RLS nas quatro tabelas, latch concorrente, rodada guardada, par por computador que
+sobrevive ao \cd{PUT} das equipes, recorte do gestor, Canal A com provedor falso
+nos casos válido, inválido, sem saldo e atrasado), e a suíte
+\arq{scripts/e2e/estudante/11-a-selecao.mjs}.
+
+\textbf{Gatilho.} O Vertex rotular com viés sistemático (a calibragem fica
+visível no ajuste do professor); uma missão nova que precise de dado da equipe
+com histórico de composição; ou o produto pedir que a criança veja o próprio
+nível.

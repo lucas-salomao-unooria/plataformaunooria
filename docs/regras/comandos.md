@@ -97,6 +97,7 @@ pnpm --filter @edu/exp01ef1b dev  # :5183 → hub /exp/exp01ef1b (1º ano,
                                           # unidade 1). 5183 e não 5182: a 5182 é da exp08ef4b. A missão é
                                           # SÍNCRONA: a Roda congela os tablets e o professor libera pelo
                                           # painel (polling 3s, ADR-94).
+pnpm --filter @edu/exp07ef1b dev    # :5179 → hub /exp/exp07ef1b (7º ano, unidade 1: A Seleção).
 pnpm --filter @edu/exp06ef2b dev    # :5181 → hub /exp/exp06ef2b (6º ano, unidade 2).
                                           # 5181 e não 5180: a 5180 é da app-92. Zero IA, e sem áudio
                                           # gravado — a transcrição está sempre na tela.

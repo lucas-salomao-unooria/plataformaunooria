@@ -73,7 +73,7 @@ experiência desaparecer da tela sozinha.
 `/professor/bem-estar`), e `/exp/*` responde 404 para elas. Sem manifesto (dev) o hub cai na raiz do Vite **da
 experiência mapeada em `apps/hub/lib/experiencias-dev.ts`** (uma porta por exp:
 5173 exp08ef1b, 5174 exp04ef1b, 5175 app-90, 5176 app-91, 5177 app-70, 5178 exp02em1b,
-5181 exp06ef2b — a 5180 é da app-92; a 5179 fica para A Seleção, que substitui o Eco no Grupo);
+5179 exp07ef1b, 5181 exp06ef2b — a 5180 é da app-92);
 teste local: rota `/dev-embed?src=http://localhost:5174`.
 A montagem do embed (token, manifesto, dev server, origin) é uma só:
 `apps/hub/lib/embed-experiencia.ts`, usada por `/exp/[expId]`, `/dev-embed`,

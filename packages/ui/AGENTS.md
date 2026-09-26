@@ -17,7 +17,7 @@ arrasta as seis seções e a tipografia da plataforma para dentro de um clone.
 | Ponte | Seção | CSS | Namespace | Onde vale |
 |---|---|---|---|---|
 | `@edu/ui/ds` | `unooria` | `/unooria.css` + `/fonts/unooria.css` | `--unooria-*`, `.unooria-theme-dark` | hub (login, `/professor`, `/admin`, `/analise`), header de todos os papéis, **telas pós-revelação do estudante** |
-| `@edu/ui/ds-insta` | `instanooria` | `/instanooria.css` (sem fonte: SF Pro é do sistema) | `--insta-*` | superfície disfarçada da exp08ef1b |
+| `@edu/ui/ds-insta` | `instanooria` | `/instanooria.css` (sem fonte: SF Pro é do sistema) | `--insta-*` | superfície disfarçada da exp08ef1b e o clone da exp07ef1b; reexporta também as sete extensões da 0.2.5 (`DirectThread`, `MessageBubble`, `DmPoll`, `ConfirmDialog`, `BottomSheet`, `FloatingButton`, `StoryComposer`) |
 | `@edu/ui/ds-unootube` | `unootube` | `/unootube.css` + `/fonts/unootube.css` | `--uni-*`, `[data-uni-theme]` | superfície disfarçada da exp04ef1b |
 | `@edu/ui/ds-chatgpt` | `chatgpt` (25) | `/chatgpt.css` + `/fonts/chatgpt.css` | `--gpt-*`, `data-gpt-theme` | a exp02em1b INTEIRA: ela NÃO tem revelação no software, então nunca troca para a seção da plataforma |
 | `@edu/ui/ds-whatsapp` | `whatsappmobile` (29) | `/whatsappmobile.css` + `/fonts/whatsappmobile.css` | `--wa-*`, `data-wa-theme` (**só `dark`**) | a casca móvel da exp06ef2b, inclusive os erros diegéticos |
