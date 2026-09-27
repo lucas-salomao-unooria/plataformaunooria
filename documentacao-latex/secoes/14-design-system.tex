@@ -27,19 +27,22 @@ token e prefixo de classe próprios. Elas nunca se cruzam.
 \toprule
 \headrow \thd{Seção} & \thd{Import} & \thd{Tokens} & \thd{Onde vale}\\
 \midrule
-\cd{unooria} (39) & raiz do pacote &
+\cd{unooria} (49, oito delas da 0.2.8) & raiz do pacote &
   \cd{--unooria-*}, classe \cd{.unooria-theme-light|dark} &
   Hub: \emph{landing} (\rota{/}), \emph{login}, \rota{/professor},
   \rota{/admin}, \rota{/analise}; \emph{header} de todos os papéis; telas
-  \textbf{pós-revelação} do estudante\\
+  \textbf{pós-revelação} do estudante; e a redação INTEIRA do Jornal da Escola
+  (exp04ef1b), que não é clone de nada\\
 \zebra \cd{instanooria} (21 + 7 extensões) & \cd{/instanooria} & \cd{--insta-*}, \cd{insta-} &
-  exp08ef1b, exp07ef1b\\
+  exp08ef1b, exp07ef1b; e só o \cd{PostCard} na gaveta do Jornal da Escola
+  (Seção~\ref{sec:ds-peca-imitada})\\
 \cd{unitube} (30) & \cd{/unitube} & \cd{--uni-*}, \cd{uni-} ---
-  \textbf{só escuro} & exp04ef1b\\
+  \textbf{só escuro} & backup-exp04ef1b (o UnooTube arquivado)\\
 \zebra \cd{whatsappmobile} (39) & \cd{/whatsappmobile} & \cd{--wa-*} --- só escuro
   & \textbf{exp05ef1b e exp06ef2b} --- as duas missões de mensageiro. Na
   exp05ef1b, do convite da Nina à síntese, e de novo nas perguntas finais (a
-  regra Se/Então e o fechamento são da plataforma)\\
+  regra Se/Então e o fechamento são da plataforma). E só o \cd{MessageBubble}
+  na gaveta e no Desafio Final do Jornal da Escola\\
 \cd{chatgpt} (25) & \cd{/chatgpt} & \cd{--gpt-*},
   \cd{data-gpt-theme} & \textbf{exp02em1b inteira} --- ela não tem revelação no
   software, então nunca troca para a seção da plataforma\\
@@ -117,20 +120,57 @@ uma aproximação, e a experiência mede reconhecimento.
   \draw[c4relhi] (8.0,-2.0) -- (9.0,-2.0) node[cxlabel, midway, above]{revelação};
 
 \end{tikzpicture}}
-\caption[A linha da revelação]{A linha da revelação, na exp04ef1b. As duas seções do
+\caption[A linha da revelação]{A linha da revelação, no UnooTube (hoje \texttt{backup-exp04ef1b}). As duas seções do
   \emph{design system} coexistem no mesmo \emph{bundle} e a fronteira entre elas é
   pedagógica, não técnica.}
 \label{fig:linha-revelacao}
 \end{figure}
 
 \begin{nota}
-\textbf{A linha tem duas pontas, não uma.} A versão 1.1.0 da exp04ef1b abriu com uma
+\textbf{A linha tem duas pontas, não uma.} A versão 1.1.0 do UnooTube abriu com uma
 \textbf{tela de entrada} que explica a missão, e ela usa a seção da
 \textbf{plataforma} --- antes do \emph{feed}, ou seja, \emph{antes} da revelação.
 Não é exceção à regra: é a regra aplicada pelo critério que ela mesma enuncia,
 \enquote{quem está falando?}. No \emph{briefing} quem fala é a escola, e não há
 disfarce a proteger --- a criança ainda não viu um \emph{Short}. O disfarce começa
 no toque em \enquote{Começar missão}. Ver \adrr{ADR-22}.
+\end{nota}
+
+\section{A exceção: a peça que imita outra plataforma, dentro da Unooria}
+\label{sec:ds-peca-imitada}
+
+\begin{regra}
+\textbf{A exceção, e só ela (\adrr{ADR-117}): conteúdo de uma plataforma DENTRO
+de uma tela da Unooria usa a seção da plataforma que ele imita.} O Jornal da
+Escola (exp04ef1b) não é clone de nada: mesa, gaveta, página, Bento, leitores,
+Chave e Desafio Final são \cd{unooria}. Mas a notícia que veio de rede social
+aparece na gaveta como \cd{PostCard} do \cd{instanooria}, e a mensagem
+encaminhada como \cd{MessageBubble} do \cd{whatsappmobile}: a peça imitada fala
+na voz de onde veio, porque um post que não parece post não ensina a reconhecer
+post.
+\end{regra}
+
+A regra é por \textbf{PEÇA}, nunca por tela. O cromo em volta continua sendo da
+Unooria, e a peça do clone não traz a barra, as abas nem o fundo do aplicativo
+--- o balão do WhatsApp vai num contêiner pintado com
+\cd{--wa-color-surface-base}, e não no \cd{ChatWallpaper}, que é o FUNDO do app.
+O post vem sem \cd{Actions}, \cd{Likes} e \cd{Timestamp}, e o balão sem hora nem
+confirmação de entrega: a data é uma pista que a criança revela à parte, e o
+número de curtidas viraria pista falsa de confiabilidade. É o INVERSO do que
+continua proibido --- a plataforma dentro do clone --- e vale só para conteúdo que
+a criança deve reconhecer como vindo daquela plataforma. Cada família mora num
+arquivo (\arq{src/app/pecas/}), que só importa a sua ponte.
+
+\begin{nota}
+\textbf{Três seções na mesma tela, e nenhuma vaza.} A gaveta é a primeira tela
+do repositório com três seções ao mesmo tempo, e a verificação foi feita na
+0.2.8, nas folhas agregadas e nas de cada componente: todo seletor tem o prefixo
+da seção (\cd{.unooria-*}, \cd{.insta-*}, \cd{.wa-*}), nenhuma folha reseta
+\cd{body}, \cd{html}, \cd{*} ou elemento solto, os blocos \cd{:root} só definem
+variáveis do próprio \emph{namespace} e as famílias das folhas de fonte não
+colidem. O tema também não vaza: o \cd{PostCard} com \cd{theme="light"} põe
+\cd{data-insta-theme="light"} no próprio cartão, e o \cd{instanooria} não
+escurece com o sistema em modo escuro. Nada exigiu mexer no DS nem nas pontes.
 \end{nota}
 
 \section{Consumo: sempre pela ponte}
@@ -140,11 +180,11 @@ no toque em \enquote{Começar missão}. Ver \adrr{ADR-22}.
 pacote direto num componente:
 
 \begin{tabularx}{\linewidth}{@{}L{28mm}L{22mm}X@{}}
-\cd{@edu/ui/ds} & \cd{unooria} & plataforma\\
-\cd{@edu/ui/ds-insta} & \cd{instanooria} & exp08ef1b, exp07ef1b (com as extensões da 0.2.5: \cd{DirectThread}, \cd{MessageBubble}, \cd{DmPoll}, \cd{ConfirmDialog}, \cd{BottomSheet}, \cd{FloatingButton}, \cd{StoryComposer}; e as da 0.2.7: \cd{InlineHint}, \cd{GestureHint} e o \cd{Snackbar} do clone, como \cd{SnackbarInsta})\\
+\cd{@edu/ui/ds} & \cd{unooria} & plataforma, e a redação do Jornal da Escola (com as oito peças da 0.2.8: \cd{NewsCard}, \cd{NewsArticle}, \cd{RevealClue}, \cd{BottomSheet}, \cd{NewspaperPage}, \cd{SpeechBubble}, \cd{PuzzleBlock} e \cd{PuzzleTrack}, mais \cd{NEWS\_MEDIUMS} e \cd{NEWSPAPER\_LAYOUTS})\\
+\cd{@edu/ui/ds-insta} & \cd{instanooria} & exp08ef1b, exp07ef1b (com as extensões da 0.2.5: \cd{DirectThread}, \cd{MessageBubble}, \cd{DmPoll}, \cd{ConfirmDialog}, \cd{BottomSheet}, \cd{FloatingButton}, \cd{StoryComposer}; e as da 0.2.7: \cd{InlineHint}, \cd{GestureHint} e o \cd{Snackbar} do clone, como \cd{SnackbarInsta}); e o \cd{PostCard} da gaveta do Jornal\\
 \cd{@edu/ui/ds-unootube} & \cd{unitube} & backup-exp04ef1b (o UnooTube arquivado, \adrr{ADR-116}: não roda mais)\\
 \cd{@edu/ui/ds-chatgpt} & \cd{chatgpt} & exp02em1b\\
-\cd{@edu/ui/ds-whatsapp} & \cd{whatsappmobile} & exp05ef1b, exp06ef2b\\
+\cd{@edu/ui/ds-whatsapp} & \cd{whatsappmobile} & exp05ef1b, exp06ef2b; e o \cd{MessageBubble} da gaveta do Jornal\\
 \end{tabularx}
 \end{regra}
 
@@ -252,9 +292,9 @@ Clone (\cd{unitube}) & Lê \cd{data-uni-theme} na raiz do documento.\\
 \end{tabularx}
 
 \begin{atencao}
-Quem troca o tema escreve nos \textbf{dois} (\arq{exp04ef1b/src/lib/tema.ts}),
+Quem troca o tema escreve nos \textbf{dois} (\arq{backup-exp04ef1b/src/lib/tema.ts}),
 senão o estudante escolhe escuro no \emph{feed} e o ranking volta branco --- porque
-o ranking é da seção da plataforma, que não lê o atributo da raiz. Na exp04ef1b a
+o ranking é da seção da plataforma, que não lê o atributo da raiz. No UnooTube a
 escolha é do estudante (Perfil \seta{} APARÊNCIA) e é lembrada em
 \cd{localStorage}, que a regra 4 proíbe para \emph{token}, não para preferência
 de tela.
@@ -325,7 +365,7 @@ quando o pacote publicar a correção.
 
 \begin{nota}
 As quatro primeiras da tabela abaixo foram \textbf{atendidas na 0.1.17} e as
-compensações correspondentes foram apagadas da exp04ef1b. Duas lacunas novas
+compensações correspondentes foram apagadas do UnooTube (hoje \cd{backup-exp04ef1b}). Duas lacunas novas
 apareceram na 1.1.0 da experiência e estão registradas logo depois.
 \end{nota}
 
@@ -334,9 +374,9 @@ apareceram na 1.1.0 da experiência e estão registradas logo depois.
 \headrow \thd{Lacuna} & \thd{Consequência}\\
 \midrule
 \cd{unitube} não publica \emph{toast}, diálogo, tabela nem estado vazio &
-  Quatro compensações locais na exp04ef1b.\\
+  Quatro compensações locais no UnooTube.\\
 \zebra \cd{ChannelHeader} não tem \cd{showSubscribe} & O botão de inscrever-se é
-  \emph{sempre} desenhado, e o canal da exp04ef1b é o do \textbf{próprio estudante}.\\
+  \emph{sempre} desenhado, e o canal do UnooTube é o do \textbf{próprio estudante}.\\
 \cd{.uni-channel-header\_\_cover} usa a primitiva
   \cd{--uni-color-neutral-50}, não um token semântico & No escuro vira uma laje
   branca.\\
@@ -350,7 +390,7 @@ Não existe componente de seleção (só \cd{TextField}, \cd{TextArea},
 \bottomrule
 \end{tabularx}
 
-\subsection{Lacunas abertas na 0.1.17 (exp04ef1b 1.1.0)}
+\subsection{Lacunas abertas na 0.1.17 (UnooTube 1.1.0)}
 
 \begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
 \toprule
@@ -608,6 +648,81 @@ primeiro player de áudio da plataforma, para o podcast de recapitulação
   indisponível que mostra o motivo em vez de sumir. Design próprio da seção
   \cd{unooria}; o glifo de tocar é o \cd{play\_arrow} da mesma biblioteca-base,
   que o quadro de ícones não publica.\\
+\bottomrule
+\end{tabularx}
+
+\subsection{As oito peças da redação na 0.2.8 (exp04ef1b 2.0.0)}
+\label{sec:ds-jornal-028}
+
+O Jornal da Escola é a primeira missão cuja superfície é da seção \cd{unooria},
+e não de um clone --- e a seção não tinha nada de jornal: nem quadro no Figma,
+nem peça.
+A 0.2.8 publicou \textbf{oito}, todas de design próprio, montadas sobre as medidas
+do \cd{Card}, da \cd{Tag} e do \cd{Button} e reexportadas pela ponte
+\cd{@edu/ui/ds}. A regra que as orienta é a mesma da missão: nenhuma peça sabe o
+gabarito, porque ele mora no servidor.
+
+\begin{tabularx}{\linewidth}{@{}L{30mm}X@{}}
+\toprule
+\headrow \thd{Peça} & \thd{O que é}\\
+\midrule
+\cd{NewsCard} & O cartão da mesa: faixa do meio, imagem 16:9 (ou o desenho do
+  meio), manchete e resumo. O cartão inteiro é UM botão, com a manchete como
+  nome; \enquote{na capa} vai no nome, e não em \cd{aria-pressed}. O vocabulário
+  dos oito meios (\cd{NEWS\_MEDIUMS}, rótulos e glifos) mora ao lado dele.\\
+\zebra \cd{NewsArticle} & A matéria no formato do meio de origem: o recorte de
+  jornal, o boletim de rádio TRANSCRITO (a atividade não depende de som), o
+  quadro de TV com a tarja, o blog, o portal e o aviso do mural. O jornal se
+  reconhece pelo recorte e pelas colunas, e não por uma serifa inventada.\\
+\cd{RevealClue} & A pista que se revela: um botão de 64\,px com o painel logo
+  abaixo, no padrão \emph{disclosure} (\cd{aria-expanded}); fechado, o painel
+  leva \cd{hidden}.\\
+\zebra \cd{BottomSheet} & A gaveta: a folha que sobe de baixo, com o
+  comportamento inteiro do \cd{Modal} (Esc, trava de rolagem, prisão do Tab,
+  devolução do foco). Sem gesto de arrastar. Não é o \cd{BottomSheet} do
+  \cd{instanooria}, que tem o mesmo nome e mora na outra ponte.\\
+\cd{NewspaperPage} & A primeira página: cabeçalho e EXATAMENTE três vagas, nos
+  três \cd{NEWSPAPER\_LAYOUTS} (\cd{classic}, \cd{hero-image}, \cd{columns}) ---
+  a lista que a api valida com \cd{z.enum}. O layout é por CONTÊINER, e a mesma
+  página serve no aparelho, na tela do professor e na miniatura do comparativo.
+  O marcador de cada vaga é o que a Chave põe na revisão.\\
+\zebra \cd{SpeechBubble} & O balão do Bento (\cd{guide}) e dos leitores
+  (\cd{reader}), com humor por cor E ícone com nome --- nunca só cor. É uma
+  \cd{<figure>} com \cd{<blockquote>}, e a figura se nomeia pelo nome de quem
+  fala.\\
+\cd{PuzzleBlock} & A peça da Chave do Editor, tocada para encaixar (sem
+  arraste). Não decide se é certa: desenha o \cd{state} que recebe
+  (\cd{placed}, \cd{returned}, \cd{locked}); \cd{locked} é \cd{aria-disabled},
+  para seguir no Tab.\\
+\zebra \cd{PuzzleTrack} & A calha: as vagas numeradas, que se juntam num bloco
+  só quando a Chave se forma. A região \cd{aria-live} existe sempre, até vazia,
+  para que a formação seja anunciada.\\
+\bottomrule
+\end{tabularx}
+
+\begin{atencao}
+\textbf{Quatro \emph{props} que enganam na 0.2.8}, registradas no
+\arq{AGENTS.md} da missão: o \cd{AlertBox} nasce \cd{role="alertdialog"} com
+\cd{aria-modal}, e dentro da gaveta (que já é o modal) calaria o resto para o
+leitor de tela --- ali ele vai com \cd{role="status"}; as \cd{Tabs} geram ids
+GLOBAIS (\cd{tab-\$\{value\}}), então os valores de aba têm de ser únicos na
+tela; o \cd{RadioGroup} com \cd{value=\{undefined\}} vira não controlado, e sem
+seleção recebe \cd{""}; e o \cd{BottomSheet} devolve o foco a
+\cd{finalFocusRef}, que a mesa aponta para o \cd{NewsCard} que a abriu, porque o
+Safari não foca botão no clique.
+\end{atencao}
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
+\toprule
+\headrow \thd{Lacuna aberta na 0.2.8} & \thd{Compensação na exp04ef1b 2.0.0}\\
+\midrule
+Alvo de toque infantil no \cd{Button}, no \cd{Tab} e no \cd{RadioButton} & O
+  \cd{Button} para em \cd{lg} (52\,px), as abas em 56\,px e a opção do
+  \cd{RadioGroup} tem o tamanho do texto; a missão pede 64\,px, que o
+  \cd{RevealClue}, o \cd{PuzzleBlock} e o \cd{Snackbar} já dão. A compensação é
+  só altura e recuo, marcada \cd{(b) COMPENSAÇÃO} em
+  \arq{estilos/globals.css}, e virou pedido ao \arq{storybook-unooria}: morre
+  quando o tamanho de toque infantil for publicado.\\
 \bottomrule
 \end{tabularx}
 
@@ -1031,8 +1146,8 @@ ainda montam o fundo e a folha dela.
 
 \begin{decisao}
 \textbf{A app-70 está fora da regra do \emph{design system}}, deliberadamente:
-é jogo em \emph{canvas} 3D, sem DOM de interface (\adrr{ADR-18}). A pendência da
-exp04ef1b --- que tinha CSS próprio em \arq{src/estilos} --- foi
+é jogo em \emph{canvas} 3D, sem DOM de interface (\adrr{ADR-18}). A pendência do
+UnooTube (hoje \cd{backup-exp04ef1b}) --- que tinha CSS próprio em \arq{src/estilos} --- foi
 \textbf{resolvida}: ela consome a seção \cd{unitube} pela ponte
 \cd{@edu/ui/ds-unootube}, com a aparência escolhida pelo estudante.
 \end{decisao}

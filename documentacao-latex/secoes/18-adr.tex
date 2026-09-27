@@ -9,10 +9,9 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{120 decisões}, numeradas até ADR-121. A 117 (o Jornal da Escola) é
-de uma frente paralela que ainda não entrou nesta base --- o número foi
-reservado entre as sessões antes de qualquer uma escrever ---; fora ela,
-\textbf{sem lacunas}. Quando
+São \textbf{121 decisões}, numeradas até ADR-121, \textbf{sem lacunas}. A 117
+(o Jornal da Escola) entrou por último, depois da 121: o número tinha sido
+reservado entre as sessões antes de qualquer uma escrever. Quando
 eram cem, as cinco últimas nasceram no MESMO dia, em três frentes paralelas, e não
 colidiram porque os números foram \textbf{reservados por quem repartia o
 trabalho antes de qualquer uma escrever} --- que é a lição que a colisão de
@@ -164,10 +163,11 @@ que a cercam.
 \zebra \adrr{ADR-114} & Quem mandou isso? v1 é retirada; a v2.2 entra com o mesmo código & 2026-09-25 & Aceita\\
 \adrr{ADR-115} & A Seleção: o par do Mural é do computador, e a IA gradua a legenda & 2026-09-25 & Aceita\\
 \zebra \adrr{ADR-116} & A experiência que perde o código é arquivada, não apagada & 2026-09-25 & Aceita\\
-\adrr{ADR-118} & Quem mandou isso? v2.2: atividade é o pacote, rodada é a reaplicação, e a régua mede pela seleção e pelas perguntas do PO & 2026-09-25 & Aceita; a régua foi substituída pela \adrr{ADR-120}\\
-\zebra \adrr{ADR-119} & O podcast da A Seleção é do professor, e a IA reescreve só as três falas que dependem do tema & 2026-09-26 & Aceita\\
-\adrr{ADR-120} & A régua v2 de Quem mandou isso?: cada habilidade pelo verbo dela, e refazer o mesmo pacote não mede memória & 2026-09-26 & Aceita\\
-\zebra \adrr{ADR-121} & O CI verifica só os PRs para \cd{dev}, \cd{hml} e \cd{main} & 2026-09-26 & Aceita\\
+\adrr{ADR-117} & Jornal da Escola: a redação é da Unooria, o professor abre o resultado e a revisão, e a IA só escolhe o layout & 2026-09-27 & Aceita\\
+\zebra \adrr{ADR-118} & Quem mandou isso? v2.2: atividade é o pacote, rodada é a reaplicação, e a régua mede pela seleção e pelas perguntas do PO & 2026-09-25 & Aceita; a régua foi substituída pela \adrr{ADR-120}\\
+\adrr{ADR-119} & O podcast da A Seleção é do professor, e a IA reescreve só as três falas que dependem do tema & 2026-09-26 & Aceita\\
+\zebra \adrr{ADR-120} & A régua v2 de Quem mandou isso?: cada habilidade pelo verbo dela, e refazer o mesmo pacote não mede memória & 2026-09-26 & Aceita\\
+\adrr{ADR-121} & O CI verifica só os PRs para \cd{dev}, \cd{hml} e \cd{main} & 2026-09-26 & Aceita\\
 \bottomrule
 \end{tabularx}
 
@@ -9929,6 +9929,138 @@ a cadeia inteira aplica e a suíte da api passa (112 suítes, 1614 testes); o
 molde é o molde); alguém precisar ABRIR uma arquivada, e não só listá-la (aí
 entra um modo de demonstração, que hoje não existe); ou o custo de manter o
 código arquivado compilando passar do valor de guardá-lo no lugar.
+
+% ---------------------------------------------------------------------------
+\section{ADR-117 --- Jornal da Escola: a redação é da Unooria, o professor abre o resultado e a revisão, e a IA só escolhe o layout}
+\label{adr:jornal-da-escola}
+
+\textbf{Data.} 2026-09-27. \textbf{Status.} Aceita.
+\textbf{Ocupa} o código \cd{exp04ef1b} que a \adrr{ADR-116} liberou ao arquivar o
+UnooTube; \textbf{aplica} a \adrr{ADR-111} (equipe) e a \adrr{ADR-112}
+(evidência por atividade e rodada) e \textbf{estende} a fronteira da
+\adrr{ADR-72} para uma tela que não é clone de nada.
+
+\begin{especificacao}{Contexto}
+O Jornal da Escola (4º ano, unidade 1) põe a criança como editora: oito notícias
+de oito meios, três vagas na capa, uma publicação, o impacto nos leitores e uma
+segunda edição depois de aprender a checar fonte, data e autoria. Chegaram dois
+documentos que divergem: o PRD da esteira, que pôs a redação dentro do clone do
+Instagram por uma regra dos prompts dela (os \enquote{cinco ambientes}, que não
+existe neste repositório), com a pergunta de motivo antes de publicar e o
+resultado sem portão; e a proposta revisada em PDF, que o dono do produto mandou
+seguir à risca: uma redação PRÓPRIA da Unooria, sem imitar rede social, em que a
+IA monta a página e o professor libera o resultado. A missão também mistura na
+mesma tela conteúdo que vem de plataformas diferentes --- um post, uma mensagem
+encaminhada, um recorte de jornal ---, o que nenhuma experiência tinha feito.
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{itemize}
+  \item \textbf{A redação é da Unooria, e o conteúdo de cada plataforma usa a seção
+    dela.} Mesa, página, Bento, leitores e Chave usam a seção \cd{unooria}; na
+    gaveta, a matéria aparece no formato original: o post de rede social com o
+    \cd{PostCard} do \cd{instanooria}, a mensagem encaminhada com o
+    \cd{MessageBubble} do \cd{whatsappmobile}, e os meios que não imitam app
+    nenhum (jornal, rádio, telejornal, blog, portal, mural) com o
+    \cd{NewsArticle} da própria \cd{unooria}. É uma EXCEÇÃO nova ao \enquote{não
+    misturar seções}: a peça imitada fala na voz da plataforma que ela imita,
+    mesmo dentro de uma tela da Unooria. As oito peças da redação nasceram no DS
+    0.2.8.
+  \item \textbf{Dois portões, UM botão.} \cd{exploracao} \seta{} \cd{resultado}
+    \seta{} \cd{revisao}: o professor libera a leitura da 1ª edição e, depois da
+    mediação oral, a revisão. A etapa só conduz quem publicou (a publicação
+    atrasada é caminho previsto) e só até a Chave; dali em diante a criança anda
+    sozinha.
+  \item \textbf{A pergunta de motivo vem DEPOIS do latch}, e antes de a criança ver
+    o resultado. Perguntar no modal de publicar anteciparia a descoberta (PDF,
+    seção 4); perguntar depois do resultado contaminaria a resposta.
+  \item \textbf{A IA diagrama a página em sala, e só escolhe um layout.} A saída é
+    um valor de um enum de três (\cd{classic}, \cd{hero-image}, \cd{columns}),
+    validado, sem nenhum texto: a IA não escolhe notícia, não reordena as vagas e
+    não pode reescrever uma pista (PDF, seção 5). As travas são as da
+    \adrr{ADR-115}: temperatura 0, uma tentativa, teto de cerca de 6 s por
+    \cd{Promise.race}, a quota do \emph{estudante} verificada antes e debitada em
+    \cd{aoUsarTokens}, e um cache por pacote e combinação de vagas, que limita o
+    custo às combinações usadas. Qualquer falha cai no modelo automático, uma
+    regra determinística pelo tamanho do texto e pela imagem da manchete, e a
+    tela não fica sabendo.
+  \item \textbf{As pistas descem pelo servidor.} O texto de fonte, data e autoria
+    não vem na sessão: vem na requisição que abre a pista, que é o registro da
+    EF15CO04. Uma pista lida sem registro seria evidência que a plataforma não vê.
+  \item \textbf{A Chave do Editor tem iscas.} Seis blocos, três deles pilares e
+    três iscas (\enquote{foto}, \enquote{urgência}, \enquote{compartilhada}); a
+    isca volta para a bandeja, e o nível sai do número de tentativas. Sem isca, a
+    EF15CO02 daria \enquote{atingiu} para toda criança que tocasse três blocos.
+  \item \textbf{Atividade = pacote; rodada = zerar}, como na \adrr{ADR-115} e na
+    \adrr{ADR-118}. Sem homologação, a turma roda o banco padrão (\enquote{Feira de
+    Ciências e Notícias da Cidade}), criado na primeira entrada --- a exceção à
+    \adrr{ADR-108} que o PDF pede (seção 10: dá para aplicar sem configurar).
+  \item \textbf{A ficha mede três habilidades}: EF15CO04 pelas pistas abertas antes
+    de publicar, EF15CO02 pela Chave, e EF04CO08 pela 2ª edição e pelas perguntas
+    P1 e P2, valendo o melhor (\adrr{ADR-112}). A síntese final é UMA só: a
+    resposta às perguntas não diz à criança se ela acertou, e uma síntese por
+    nível diria.
+  \item \textbf{A versão nasce em 2.0.0.} O caminho \cd{exp04ef1b/} do bucket já teve
+    o UnooTube 1.x; uma versão 1.x do Jornal poderia cair num caminho tratado como
+    imutável.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{A redação no clone do Instagram}, como o PRD pôs. Contradiz o
+    documento que o dono do produto mandou seguir e faria a criança ler
+    \enquote{jornal} como \enquote{rede social}.
+  \item \textbf{Tudo na seção \cd{unooria}}, redesenhando post e mensagem. Um post
+    que não parece post não ensina a reconhecer post.
+  \item \textbf{O resultado sem portão.} A mediação oral do PDF (seção 7) precisa
+    da sala parada no mesmo lugar.
+  \item \textbf{A IA escrevendo a página} (títulos e textos). Pode alterar a pista
+    que a missão pede para a criança ler --- é exatamente o que o PDF proíbe.
+  \item \textbf{Nenhuma IA em sala} (só o modelo). Deixaria de cumprir o
+    \enquote{a IA monta a edição} do PDF; o modelo fica como reserva.
+  \item \textbf{A Chave aceitando qualquer toque} (sem isca). Não separa quem
+    entendeu.
+  \item \textbf{As pistas no \emph{bundle} ou na sessão.} A tela as abriria sem
+    registro.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{Em dev e na e2e a IA é o mock}, que sempre cai no modelo: a
+    diagramação por IA só se prova com o Vertex.
+  \item \textbf{A quota do estudante paga uma decisão cosmética}, limitada pelo
+    cache e pelo teto baixo de \emph{tokens}.
+  \item \textbf{Abrir uma pista precisa de rede.} Sem conexão a pista não abre, e a
+    tela diz isso na voz da redação.
+  \item \textbf{\enquote{Vale o melhor} afrouxa o \enquote{E} do PRD} na EF04CO08: a
+    P2 sozinha pode dar \enquote{atingiu}.
+  \item \textbf{O critério do livro não foi conferido} (PDF, seção 8): fonte, data e
+    autoria são a referência provisória. O dono do produto revisa depois.
+  \item \textbf{O texto das oito notícias do banco padrão é de IA} e não passou por
+    aprovação pedagógica (decisão do dono do produto); as imagens precisam de
+    revisão humana antes da primeira rede.
+\end{itemize}
+
+\textbf{Verificação.} \arq{jornal-escola-regras.spec.ts} e
+\arq{jornal-escola-postgres.spec.ts} (RLS nas quatro tabelas, latch concorrente das
+duas edições, motivo uma vez, resultado bloqueado antes do portão, rodada guardada,
+colapso por computador, recorte do gestor, diagramação com provedor falso nos casos
+válido, inválido, sem saldo e atrasado), os testes da experiência (fluxo inteiro
+com api falsa, e o \emph{bundle} sem gabarito) e os do hub (o espelho do
+contrato, lido da api como texto, e as regras puras do painel e do preparo). Na
+contagem da frente, a api tem 116 suítes e 1.903 testes, o hub 267 testes e a
+experiência 69. A suíte de ponta a ponta
+(\arq{scripts/\B{}e2e/\B{}estudante/\B{}12-jornal-da-escola.mjs}) roda verde
+(2026-09-27, três execuções seguidas, com o segundo estudante pela api e a turma
+zerada no começo), e o Jornal desliga no painel da Unooria.
+
+\textbf{Gatilho.} O livro do 4º ano trazer outro critério ou uma ordem obrigatória
+(muda a Chave, as pistas e a ficha); o Vertex diagramar mal com frequência (fica só
+o modelo); ou uma segunda missão misturar seções na mesma tela, e a exceção virar
+regra geral.
 
 % ---------------------------------------------------------------------------
 \section{ADR-118 --- Quem mandou isso? v2.2: atividade é o pacote, rodada é a reaplicação, e a régua mede pela seleção e pelas perguntas do PO}

@@ -98,7 +98,9 @@ não do ano letivo, e o 7º ano viria depois do 8º.
 para `unidade` e para `produto`: esquecer é invisível em dev (o hub lê o arquivo do bundle) e
 quebra em produção, onde ele lê a coluna. E **a versão tem TRÊS fontes** —
 `public/experiencia.json`, `package.json` e a constante `EXP_VERSION` do código.
-A exp07ef1b e a exp06ef2b têm teste cobrando as três; a exp04ef1b já vivia divergente.
+A exp07ef1b, a exp06ef2b e a exp04ef1b (o Jornal da Escola, desde a 2.0.0) têm
+teste cobrando as três. O UnooTube, que ocupava o código `exp04ef1b` antes de ser
+arquivado como `backup-exp04ef1b` (ADR-116), chegou a viver com as três divergentes.
 
 **A ORIGEM do bundle é do AMBIENTE, não do manifesto.** `montarEmbed` já decidiu
 "estou em dev" por "a tabela `experiencias` está vazia", e isso quebrou no dia em
