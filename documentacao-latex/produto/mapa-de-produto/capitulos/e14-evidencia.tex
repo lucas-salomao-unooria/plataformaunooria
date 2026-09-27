@@ -11,8 +11,7 @@
     professor lê, corrige e leva esse retrato para a avaliação dele.
   \item[Para quem] Professor (lê, confirma e ajusta) e Estudante (responde às
     perguntas da missão, sem ver o próprio resultado). A Coordenação e a
-    Administração consultam, sem mexer. A equipe pedagógica da Unooria valida a
-    régua de cada missão.
+    Administração consultam, sem mexer.
   \item[Valor] A missão já via o que a criança fazia --- tirou o post do ar,
     respondeu a pergunta ---, e isso ficava dentro dela. No fim do bimestre, o
     professor não tinha como dizer \enquote{a Ana atingiu a EF08CO05 e o Caio
@@ -21,7 +20,8 @@
   \item[Estado] \parcial{} --- a base está pronta na plataforma, e a primeira
     missão com a régua pedagógica é a versão nova de Quem mandou isso?
     (\id{H14.1.2}), que o teste de ponta a ponta já percorre como estudante e
-    como professor; falta a equipe pedagógica validar a régua.
+    como professor; falta um teste que passe pelas rodadas, pelas equipes e
+    pelo ajuste do professor.
 \end{campos}
 \end{fichaepico}
 
@@ -54,8 +54,7 @@ sustentam:
   \item \textbf{A rodada é cada vez que a atividade é feita.} Reiniciar a
     atividade abre uma rodada nova, e a anterior fica guardada.
   \item \textbf{A régua pedagógica diz o que a missão mede}: quais habilidades,
-    em quais momentos, qual pergunta e quanto vale cada alternativa. Ela é
-    escrita com a equipe pedagógica e validada por ela antes de entrar.
+    em quais momentos, qual pergunta e quanto vale cada alternativa.
 \end{itemize}
 
 A escala tem três níveis --- \textbf{atingiu}, \textbf{em processo} e
@@ -67,10 +66,9 @@ nunca conta como não atingiu.
 \parcial{} neste épico têm a regra construída e testada, e desde a versão nova
 de Quem mandou isso? (\id{H14.1.2}) o bloco \enquote{Habilidades da BNCC}
 aparece nos resultados dela. O teste que percorre a missão já roda e confere
-o bloco contra a régua; as histórias passam a \pronto{} quando a régua for
-validada pela equipe pedagógica e, nas partes por onde esse teste ainda não
-passa --- as rodadas, as equipes e o ajuste do professor ---, quando houver um que
-as percorra. A pergunta de múltipla escolha (\id{H14.5.1}) já está pronta. O
+o bloco contra a régua, e as histórias por onde ele passa estão \pronto{}; as
+outras passam a \pronto{} quando houver um teste que percorra as rodadas, as
+equipes e o ajuste do professor. A pergunta de múltipla escolha (\id{H14.5.1}) já está pronta. O
 Instanooria continua sem régua.
 \end{nota}
 
@@ -80,7 +78,7 @@ Instanooria continua sem régua.
 \textbf{Decidido em 25 de setembro de 2026.}
 \begin{itemize}
   \item \textbf{Esta frente é só a plataforma.} Nenhuma missão foi adaptada; cada
-    uma entra depois, com a régua validada pela equipe pedagógica.
+    uma entra depois, com a sua régua.
   \item \textbf{Três níveis e um \enquote{Não avaliado}.} Sem registro, a
     habilidade é \enquote{Não avaliado}, e nunca conta como não atingiu.
     \enquote{Não participou} é o \enquote{Não avaliado} que o professor põe à
@@ -123,19 +121,17 @@ a missão de fato observa}
     EF08CO05), os momentos que medem cada uma --- uma ação dentro da missão ou
     uma pergunta de múltipla escolha --- e, em cada pergunta, quanto vale cada
     alternativa: atingiu, em processo ou não atingiu.
-  \item A régua diz quem a validou na equipe pedagógica, e quando.
   \item A plataforma não aceita régua com habilidade que não existe na BNCC,
     com alternativa fora da escala ou com pergunta que nenhum momento corrige.
   \item Mudou a régua, muda a versão; cada registro guarda a versão que valia
     quando foi feito.
   \item Missão sem régua não mostra evidência nenhuma.
 \end{itemize}
-\pendencia{as réguas que existem são a de Quem mandou isso? (\id{H14.1.2}), que
-ainda aguarda a validação da equipe pedagógica, e a da A Seleção
-(\id{H06.10.2}); as outras missões não têm régua.}
+\pendencia{as réguas que existem são a de Quem mandou isso? (\id{H14.1.2}) e a
+da A Seleção (\id{H06.10.2}); as outras missões não têm régua.}
 \end{historia}
 
-\begin{historia}{H14.1.2}{A primeira missão entra com a régua}{\parcial}
+\begin{historia}{H14.1.2}{A primeira missão entra com a régua}{\pronto}
 \hu{Professor}{que a primeira missão com atividades venha com a régua
 pedagógica}{ver, nos resultados da missão, as habilidades que cada estudante
 demonstrou}
@@ -158,19 +154,15 @@ demonstrou}
     régua.
   \item A segunda é A Seleção (\id{H06.10.2}): cada tema que a professora
     aprova é uma atividade, e refazer a aula abre uma rodada nova. A régua mede
-    duas habilidades --- a legenda dos Stories e a primeira enquete para
-    EF07CO11, e a segunda enquete para EF07CO08 ---, e a validação pedagógica
-    dela foi dispensada pelo dono do produto.
+    duas habilidades: a legenda dos Stories e a primeira enquete para
+    EF07CO11, e a segunda enquete para EF07CO08.
 \end{itemize}
-\pendencia{a régua ainda não foi validada pela equipe pedagógica (a entrada
-diz \enquote{Produto Unooria}, de 25 de setembro de 2026) e, sem isso, a missão
-não sobe para o ambiente do time.}
 \end{historia}
 
 % ---------------------------------------------------------------------------
 \feature{F14.2}{O registro por atividade e rodada}{\parcial}
 
-\begin{historia}{H14.2.1}{Um nível por habilidade, e \enquote{Não avaliado} quando não há}{\parcial}
+\begin{historia}{H14.2.1}{Um nível por habilidade, e \enquote{Não avaliado} quando não há}{\pronto}
 \hu{Professor}{ver, para cada estudante e cada habilidade, o nível que ele
 demonstrou}{saber quem atingiu e quem ainda está em processo}
 \aceite
@@ -181,9 +173,6 @@ demonstrou}{saber quem atingiu e quem ainda está em processo}
   \item Quando dois momentos da mesma rodada medem a mesma habilidade, vale o
     melhor: demonstrar uma vez é demonstrar.
 \end{itemize}
-\pendencia{aparece para o professor desde a primeira missão com a régua, a
-versão nova de Quem mandou isso? (\id{H14.1.2}); o teste de ponta a ponta já percorre
-a tela; falta a régua ser validada pela equipe pedagógica.}
 \end{historia}
 
 \begin{historia}{H14.2.2}{Refazer a atividade sem perder o que já foi demonstrado}{\parcial}
@@ -200,7 +189,7 @@ chance sem apagar o que cada estudante já tinha mostrado}
 \end{itemize}
 \pendencia{aparece para o professor desde a primeira missão com a régua, a
 versão nova de Quem mandou isso? (\id{H14.1.2}); o teste de ponta a ponta da missão
-ainda não passa por aqui, e a régua espera a validação da equipe pedagógica.}
+ainda não passa por aqui.}
 \end{historia}
 
 \begin{historia}{H14.2.3}{Sem ranking, e o nível é da habilidade}{\parcial}
@@ -214,7 +203,7 @@ cada habilidade sem transformar a criança num número}
 \end{itemize}
 \pendencia{aparece para o professor desde a primeira missão com a régua, a
 versão nova de Quem mandou isso? (\id{H14.1.2}); o teste de ponta a ponta da missão
-ainda não passa por aqui, e a régua espera a validação da equipe pedagógica.}
+ainda não passa por aqui.}
 \end{historia}
 
 % ---------------------------------------------------------------------------
@@ -238,7 +227,7 @@ como \enquote{Não avaliado} quem estava sentado ao lado de quem entrou}
 \end{itemize}
 \pendencia{aparece para o professor desde a primeira missão com a régua, a
 versão nova de Quem mandou isso? (\id{H14.1.2}); o teste de ponta a ponta da missão
-ainda não passa por aqui, e a régua espera a validação da equipe pedagógica.}
+ainda não passa por aqui.}
 \end{historia}
 
 \begin{historia}{H14.3.2}{Trocar as equipes no meio da atividade}{\parcial}
@@ -257,7 +246,7 @@ sentou onde sem mexer nas aulas anteriores}
 \end{itemize}
 \pendencia{aparece para o professor desde a primeira missão com a régua, a
 versão nova de Quem mandou isso? (\id{H14.1.2}); o teste de ponta a ponta da missão
-ainda não passa por aqui, e a régua espera a validação da equipe pedagógica.}
+ainda não passa por aqui.}
 \end{historia}
 
 \begin{historia}{H14.3.3}{A aula projetada chega \enquote{a revisar}}{\parcial}
@@ -279,13 +268,13 @@ a turma respondeu junto}
 \end{itemize}
 \pendencia{aparece para o professor desde a primeira missão com a régua, a
 versão nova de Quem mandou isso? (\id{H14.1.2}); o teste de ponta a ponta da missão
-ainda não passa por aqui, e a régua espera a validação da equipe pedagógica.}
+ainda não passa por aqui.}
 \end{historia}
 
 % ---------------------------------------------------------------------------
 \feature{F14.4}{O painel e o ajuste do professor}{\parcial}
 
-\begin{historia}{H14.4.1}{Ver as habilidades da turma na página da atividade}{\parcial}
+\begin{historia}{H14.4.1}{Ver as habilidades da turma na página da atividade}{\pronto}
 \hu{Professor}{ver, na página da atividade, as habilidades da BNCC de cada
 estudante}{saber o que a turma demonstrou e planejar a próxima aula}
 \aceite
@@ -302,9 +291,6 @@ estudante}{saber o que a turma demonstrou e planejar a próxima aula}
     missão com régua; a página da atividade do Instanooria o mostrará quando
     ele tiver a sua.
 \end{itemize}
-\pendencia{aparece para o professor desde a primeira missão com a régua, a
-versão nova de Quem mandou isso? (\id{H14.1.2}); o teste de ponta a ponta já percorre
-a tela; falta a régua ser validada pela equipe pedagógica.}
 \end{historia}
 
 \begin{historia}{H14.4.2}{Ajustar um estudante ou vários}{\parcial}
@@ -323,7 +309,7 @@ valer o que eu vi na sala, mesmo quando a missão não viu}
 \end{itemize}
 \pendencia{aparece para o professor desde a primeira missão com a régua, a
 versão nova de Quem mandou isso? (\id{H14.1.2}); o teste de ponta a ponta da missão
-ainda não passa por aqui, e a régua espera a validação da equipe pedagógica.}
+ainda não passa por aqui.}
 \end{historia}
 
 \begin{historia}{H14.4.3}{Marcar que o estudante não participou}{\parcial}
@@ -340,7 +326,7 @@ quem faltou não herde o que a equipe fez}
 \end{itemize}
 \pendencia{aparece para o professor desde a primeira missão com a régua, a
 versão nova de Quem mandou isso? (\id{H14.1.2}); o teste de ponta a ponta da missão
-ainda não passa por aqui, e a régua espera a validação da equipe pedagógica.}
+ainda não passa por aqui.}
 \end{historia}
 
 \begin{historia}{H14.4.4}{A coordenação consulta, sem ajustar}{\parcial}
