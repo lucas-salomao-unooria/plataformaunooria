@@ -1,0 +1,535 @@
+import { BFF, HUB, suite } from "../lib/roteiro.mjs";
+import { conta, contasDe } from "../lib/credenciais.mjs";
+
+/**
+ * Jornal da Escola: A Edição de Bento (exp04ef1b), nas duas pontas da sala: a
+ * professora prepara e conduz, e dois estudantes da mesma turma editam.
+ *
+ * O que esta suíte cobra, e por que cada item é uma regra do software:
+ *
+ * 1. **A redação é da Unooria, e a peça imitada fala na voz de onde veio**
+ *    (ADR-117): o post abre como o post do Instanooria, a mensagem como o balão
+ *    do WhatsApp — dentro da mesma gaveta da Unooria.
+ * 2. **A pista desce do servidor** quando a criança a abre: o texto não está na
+ *    sessão (é o registro que mede a EF15CO04).
+ * 3. **Publicar é um latch, e o motivo vem DEPOIS dele**: o modal de publicar
+ *    não pergunta nada, e a pergunta aparece só depois de a edição sair.
+ * 4. **O resultado e a revisão são da professora** — UM botão que avança —, e
+ *    chegam pelo polling (ADR-93). Um F5 no meio devolve a mesma tela, e antes
+ *    do botão o resultado não existe nem pela api.
+ * 5. **A Chave tem iscas**: a isca volta à bandeja, e a Chave só se forma com
+ *    fonte, data e autoria.
+ * 6. **A 2ª edição mostra o antes e o depois**, e o desafio final sai da
+ *    redação, sem mostrar acerto.
+ * 7. **O painel da professora não tem nota nem acerto por criança**: o número
+ *    de verificadas só aparece no histograma anônimo, e as habilidades da BNCC
+ *    ficam no painel de habilidades.
+ *
+ * O segundo estudante publica pela api (pelo BFF, com a sessão dele): o que a
+ * suíte precisa dele é uma segunda edição no histograma, não as mesmas capturas
+ * duas vezes.
+ *
+ * Em dev e na e2e a IA é o mock: a diagramação cai sempre no modelo automático
+ * (a tela não fica sabendo) e as imagens não são geradas (o cartão se desenha
+ * pelo meio). Os dois são comportamento declarado (ADR-117), não defeito.
+ *
+ * FIXTURE: a 4A (o seed libera a exp04ef1b lá). O estado é do servidor e
+ * sobrevive ao roteiro, então a suíte aplica o banco padrão (idempotente com o
+ * padrão já ativo) e zera a turma antes de começar — zerar abre a rodada
+ * seguinte sem apagar nada.
+ */
+const SERIE = "4EF";
+const EXP_ID = "exp04ef1b";
+const FICHA = `${HUB}/professor/entre-redes/4-ano/unidade-1`;
+
+/* A turma vem do CSV do seed, não fixada aqui. */
+const PRIMEIRO = conta("estudante", { serie: SERIE });
+const TURMA = process.env.TURMA ?? PRIMEIRO.turma;
+const SEGUNDO = contasDe("estudante").find((c) => c.turma === PRIMEIRO.turma && c.login !== PRIMEIRO.login);
+if (!SEGUNDO) throw new Error(`a turma ${TURMA} precisa de dois estudantes (rode o seed)`);
+
+/**
+ * As manchetes do banco padrão ("Feira de Ciências e Notícias da Cidade",
+ * `apps/api/src/jornal-escola/catalogo.ts`). O gabarito no comentário é o que a
+ * suíte usa para montar uma 1ª edição com UMA verificada e uma 2ª com três —
+ * ele não vem da tela.
+ */
+const N = {
+  feira: /Feira de Ciências da escola abre inscrições/, // n1 portal · publicável
+  robos: /Oficina de robôs solares com medalhas/, // n2 rádio · antiga (data)
+  agua: /Mensagem avisa corte de água na escola/, // n3 mensagem · sem autoria
+  planetario: /Planetário móvel chega à praça central/, // n4 TV · publicável
+  tirolesa: /Tirolesa gigante e grátis no parque/, // n5 rede social · sem fonte
+  horta: /Horta da escola chama famílias para mutirão/, // n6 jornal · publicável
+};
+
+/** O que nunca pode aparecer na tela da criança: carimbo, nota, acerto. */
+const CARIMBO_OU_ACERTO = /\b(fake news|falsa|falso|mentira|errou|acertou|correta|incorreta|pontos|sua nota)\b/i;
+
+/** A api pelo BFF do hub, com a sessão do navegador. */
+async function lerApi(p, caminho) {
+  const resposta = await p.request.get(`${BFF}${caminho}`);
+  return { status: resposta.status(), corpo: await resposta.json().catch(() => null) };
+}
+
+async function mandarApi(p, caminho, dados) {
+  const resposta = await p.request.fetch(`${BFF}${caminho}`, { method: "POST", data: dados ?? {} });
+  return { status: resposta.status(), corpo: await resposta.json().catch(() => null) };
+}
+
+/**
+ * PORTÃO DE HIDRATAÇÃO: em dev o HTML do SSR chega antes do bundle, e um
+ * clique nesse intervalo é aceito pelo Playwright sem chamar handler nenhum.
+ */
+async function hidratado(p, locator) {
+  const alvo = locator.first();
+  await alvo.waitFor({ timeout: 30_000 });
+  await p.waitForFunction((el) => Object.keys(el).some((k) => k.startsWith("__react")), await alvo.elementHandle(), {
+    timeout: 20_000,
+  });
+}
+
+await suite(
+  {
+    slug: "estudante/12-jornal-da-escola",
+    papel: "estudante",
+    titulo: "Jornal da Escola — a edição de Bento",
+    subtitulo: "escolher três de oito notícias, ver o que os leitores sentiram, checar e publicar de novo",
+    contexto:
+      "A redação da escola recebeu oito notícias de oito meios, e a primeira página tem três vagas. A " +
+      "criança escolhe, publica e só depois descobre o que os leitores viveram: uma oficina que já " +
+      "passou, um aviso que ninguém assina. A Chave do Editor ensina a checar fonte, data e autoria, " +
+      "e a segunda edição mostra o antes e o depois.",
+    prova: [
+      "O post abre no formato do Instanooria e a mensagem no do WhatsApp, dentro da redação da Unooria",
+      "A pista de fonte, data e autoria só existe depois que a criança a abre",
+      "Publicar não pergunta nada; a pergunta de motivo vem depois do latch",
+      "O resultado e a revisão chegam pelo botão único da professora, e a F5 volta à mesma tela",
+      "A isca volta para a bandeja, e a Chave só se forma com fonte, data e autoria",
+      "O comparativo mostra 1 de 3 na 1ª edição e 3 de 3 na 2ª",
+      "O desafio final sai da redação e não mostra acerto",
+      "O painel da professora não tem nota por criança, e as habilidades da BNCC aparecem",
+    ],
+    comando: "node scripts/e2e/estudante/12-jornal-da-escola.mjs",
+  },
+  async (r) => {
+    /**
+     * Aperta o botão da aula e espera a etapa nova no painel — e a hidratação,
+     * porque depois de um reload o botão do SSR já está no DOM sem o handler.
+     */
+    const apertar = async (pagina, etapa) => {
+      const botao = pagina.locator(`[data-gate="${etapa}"]`);
+      await hidratado(pagina, botao);
+      await pagina.waitForFunction(
+        (sel) => {
+          const b = document.querySelector(sel);
+          return Boolean(b) && !b.hasAttribute("disabled");
+        },
+        `[data-gate="${etapa}"]`,
+        { timeout: 15_000 },
+      );
+      await botao.click();
+      await pagina.waitForSelector(`[data-etapa="${etapa}"]`, { timeout: 20_000 });
+    };
+
+    // ═══ PROFESSORA: a ficha, o preparo e a turma zerada ══════════════════
+    const professora =
+      contasDe("professor").find((c) => c.escola === PRIMEIRO.escola && c.turma.split(" + ").includes(TURMA)) ??
+      conta("professor", { turma: TURMA });
+    const prof = await r.pagina("professora", { viewport: { width: 1440, height: 1000 } });
+    await r.entrar(prof, professora.login);
+
+    const turmas = await lerApi(prof, "/jornal-escola/turmas");
+    const turmaId = turmas.corpo?.turmas?.find((t) => t.nome === TURMA)?.id ?? null;
+    if (!r.exigir(Boolean(turmaId), `${professora.login} vê a ${TURMA} no seletor do Jornal`)) return;
+
+    await prof.goto(`${FICHA}?turmaId=${turmaId}`, { waitUntil: "domcontentloaded" });
+    await prof.getByRole("heading", { name: /Jornal da Escola/ }).first().waitFor({ timeout: 30_000 });
+    await r.registrar(prof, "ficha-da-missao", {
+      titulo: "A ficha do 4º ano",
+      mostra: "A missão explicada para quem vai conduzir: as etapas, o preparo e os dois portões.",
+      prova:
+        "A professora sabe ANTES que o resultado e a revisão são ela quem libera — e que a missão roda " +
+        "com o banco padrão mesmo sem configurar nada.",
+    });
+
+    const abrirAAula = prof.locator("a", { hasText: "Abrir a aula e os resultados" });
+    await hidratado(prof, abrirAAula);
+    await abrirAAula.click();
+    await prof.waitForURL(/\/resultados\?turmaId=/, { timeout: 30_000 });
+    await prof.locator("[data-preparo-jornal]").waitFor({ timeout: 30_000 });
+
+    /* O banco padrão em um toque. Com a turma que já rodou (a corrida de
+       ontem), a tela pede confirmação antes de trocar o pacote — os dois
+       estados são legítimos, e a espera é pela união. */
+    const usarPadrao = prof.locator('[data-acao="usar-banco-padrao"]');
+    await hidratado(prof, usarPadrao);
+    await usarPadrao.click();
+    const confirmarTroca = prof.locator('[data-acao="confirmar-troca-de-pacote"]');
+    const homologado = prof.getByText(/Pacote homologado com sucesso!/).first();
+    await confirmarTroca.or(homologado).first().waitFor({ timeout: 30_000 });
+    if (await confirmarTroca.isVisible()) {
+      await confirmarTroca.click();
+      await homologado.waitFor({ timeout: 30_000 });
+    }
+    await r.registrar(prof, "preparo-banco-padrao", {
+      titulo: "O banco padrão em um toque",
+      mostra: "As oito notícias da Feira de Ciências e Notícias da Cidade, homologadas para a turma.",
+      prova:
+        "Sem configurar tema, a aula já tem oito notícias de oito meios com o gabarito, as pistas e a " +
+        "consequência de cada uma — e é a professora quem aprova.",
+      inteira: true,
+    });
+
+    /* ZERAR: o estado é do servidor e sobrevive ao roteiro. Sem isto a segunda
+       execução encontra os estudantes já publicados, e o roteiro passa por cima
+       do latch que ele existe para provar. */
+    const zerar = prof.locator("[data-zerar-turma]");
+    await hidratado(prof, zerar);
+    await zerar.click();
+    await prof.getByRole("dialog").getByRole("button", { name: /Zerar a turma/ }).click();
+    await prof.waitForSelector('[data-etapa="exploracao"]', { timeout: 20_000 });
+
+    // ═══ ESTUDANTE 1: o Bento e a mesa ════════════════════════════════════
+    const p = await r.pagina("estudante", { viewport: { width: 1280, height: 950 } });
+    await r.entrar(p, PRIMEIRO.login);
+    await p.goto(`${HUB}/exp/${EXP_ID}`, { waitUntil: "domcontentloaded" });
+    const q = () => p.frameLocator('iframe[title="experiencia"]');
+    /**
+     * O painel da aba do DS entra com um fade (`unooria-tab-fade-in`, 0,2 s): a
+     * captura logo depois da troca saía desbotada, e o deck mostrava uma tela
+     * que ninguém vê. Espera o FIM das animações finitas — a infinita (um
+     * girador) nunca termina e não entra na conta.
+     */
+    const semAnimacao = () =>
+      q()
+        .locator("body")
+        .evaluate(() =>
+          Promise.all(
+            document
+              .getAnimations()
+              .filter((a) => a.effect?.getTiming().iterations !== Infinity)
+              .map((a) => a.finished.catch(() => undefined)),
+          ),
+        );
+    const explorar = q().getByRole("button", { name: /Explorar Mesa de Notícias/ });
+    await explorar.waitFor({ timeout: 40_000 });
+    r.exigir(
+      (await q().locator("text=/A redação recebeu 8 notícias/").count()) > 0,
+      "o Bento apresenta a restrição: oito notícias, três vagas",
+    );
+    await r.registrar(p, "bento-e-a-restricao", {
+      titulo: "Oito notícias, três vagas",
+      mostra: "O Bento, a página vazia com as três vagas e o convite para a mesa.",
+      prova: "A missão abre pelo trabalho do editor, sem dizer o que ele vai descobrir.",
+    });
+
+    await explorar.click();
+    await q().locator("text=Pautas da Semana").first().waitFor({ timeout: 20_000 });
+    r.exigir((await q().locator(".unooria-news-card").count()) === 8, "a mesa tem os oito cartões");
+    r.exigir((await q().locator("text=/Bento/").count()) === 0, "na mesa, o Bento fica calado");
+    await semAnimacao();
+    await r.registrar(p, "mesa-de-noticias", {
+      titulo: "A mesa da redação",
+      mostra: "Os oito cartões, cada um com o meio, a manchete e o resumo.",
+      prova:
+        "Nenhum cartão avisa que a notícia é velha ou anônima: a plataforma não antecipa a descoberta, " +
+        "e notícia bonita não é sinal de nada.",
+    });
+
+    const cartao = (manchete) => q().getByRole("button", { name: manchete }).first();
+    const gaveta = () => q().getByRole("dialog").first();
+    const gavetaFechada = () => q().getByRole("dialog").waitFor({ state: "detached", timeout: 10_000 });
+    const abrir = async (manchete) => {
+      await cartao(manchete).click();
+      await gaveta().waitFor({ timeout: 10_000 });
+    };
+    const voltarParaAMesa = async () => {
+      await gaveta().getByRole("button", { name: /Voltar para a Mesa/ }).click();
+      await gavetaFechada();
+    };
+    /** Abre a pista e ESPERA o desfecho: o botão da pista aberto (`aria-expanded`). */
+    const abrirPista = async (rotulo) => {
+      const pista = gaveta().getByRole("button", { name: new RegExp(`^${rotulo}`) }).first();
+      await pista.click();
+      await gaveta()
+        .locator(`button[aria-expanded="true"]`, { hasText: rotulo })
+        .first()
+        .waitFor({ timeout: 10_000 });
+    };
+    const noJornal = async () => {
+      await gaveta().getByRole("button", { name: /Adicionar ao Jornal/ }).click();
+      await gavetaFechada();
+    };
+    const adicionar = async (manchete) => {
+      await abrir(manchete);
+      await noJornal();
+    };
+
+    // A peça imitada, na seção de onde veio.
+    await abrir(N.tirolesa);
+    r.exigir((await gaveta().locator(".insta-post-card").count()) === 1, "o post abre como o post do Instanooria");
+    await r.registrar(p, "gaveta-post", {
+      titulo: "O post, como post",
+      mostra: "A gaveta da redação com a publicação de rede social desenhada como o Instanooria desenha.",
+      prova:
+        "A redação é da Unooria, mas a peça imitada fala na voz de onde veio (ADR-117): um post que " +
+        "não parece post não ensina a reconhecer post.",
+    });
+    await voltarParaAMesa();
+
+    await abrir(N.agua);
+    r.exigir(
+      (await gaveta().locator(".wa-messagebubble .wa-messagebubble__forwarded").count()) === 1,
+      "a mensagem abre como o balão encaminhado do WhatsApp",
+    );
+    await r.registrar(p, "gaveta-mensagem", {
+      titulo: "A mensagem encaminhada",
+      mostra: "O mesmo aviso no balão do WhatsApp, com o selo de encaminhada, dentro da gaveta.",
+      prova: "O WhatsApp publica só o tema escuro, e o balão vem num contêiner escuro próprio.",
+    });
+    await voltarParaAMesa();
+
+    // As pistas: o texto só existe depois do toque.
+    await abrir(N.robos);
+    const antesDaPista = await gaveta().innerText();
+    for (const tipo of ["Fonte", "Data", "Autoria"]) await abrirPista(tipo);
+    const depoisDaPista = await gaveta().innerText();
+    r.exigir(depoisDaPista.length > antesDaPista.length, "abrir as pistas acrescenta o que o servidor revelou");
+    await r.registrar(p, "pistas-abertas", {
+      titulo: "Fonte, data e autoria",
+      mostra: "O boletim de rádio com as três pistas abertas.",
+      prova:
+        "O texto de cada pista desce do servidor no toque: abrir é o registro que mede a EF15CO04, e " +
+        "uma pista lida sem registro seria evidência que a plataforma não vê.",
+    });
+    await noJornal();
+
+    await abrir(N.feira);
+    for (const tipo of ["Fonte", "Data", "Autoria"]) await abrirPista(tipo);
+    await noJornal();
+    await adicionar(N.tirolesa);
+
+    // A quarta: o aviso da capa cheia.
+    await abrir(N.planetario);
+    r.exigir(
+      (await q().locator("text=/A capa cabe só 3 matérias/").count()) > 0,
+      "com a capa cheia, a quarta notícia não entra e a tela diz por quê",
+    );
+    await voltarParaAMesa();
+
+    // ═══ A primeira página e o latch ═════════════════════════════════════
+    const aba = (nome) => q().getByRole("tab", { name: nome }).or(q().getByRole("button", { name: nome })).first();
+    /** Espera o botão acender: ele fica desabilitado enquanto a redação monta a página. */
+    const acesa = async (botao) => {
+      await botao.waitFor({ timeout: 20_000 });
+      for (let i = 0; i < 40 && (await botao.isDisabled()); i += 1) await p.waitForTimeout(250);
+      r.exigir(!(await botao.isDisabled()), "depois da diagramação, o botão de publicar acende");
+    };
+    await aba(/Primeira Página/).click();
+    const publicar1 = q().getByRole("button", { name: /Publicar 1ª Edição/ });
+    await acesa(publicar1);
+    await semAnimacao();
+    await r.registrar(p, "primeira-pagina", {
+      titulo: "A página tomando forma",
+      mostra: "A manchete principal e as duas secundárias, diagramadas.",
+      prova:
+        "A IA só escolhe o layout, dentro de três modelos fechados; em dev ela é o mock, e o modelo " +
+        "automático diagrama sem a tela ficar sabendo.",
+    });
+    r.ressalva("em dev a diagramação é sempre o modelo automático (a IA é o mock)");
+
+    await publicar1.click();
+    await q().getByText(/Confirmar Publicação da Capa/).first().waitFor({ timeout: 10_000 });
+    r.exigir(
+      (await q().locator("text=/Como a dupla escolheu/").count()) === 0,
+      "o modal de publicar não pergunta o motivo: a pergunta antecipa a descoberta",
+    );
+    await r.registrar(p, "confirmar-publicacao", {
+      titulo: "Publicar, sem volta",
+      mostra: "A confirmação da 1ª edição: distribuir agora ou revisar mais.",
+      prova: "É o latch da 1ª edição — e nenhuma pergunta antes dele.",
+    });
+    await q().getByRole("button", { name: /Distribuir Jornal Agora/ }).click();
+
+    // ═══ O motivo, depois do latch ═══════════════════════════════════════
+    await q().locator("text=/Como a dupla escolheu essas três matérias/").first().waitFor({ timeout: 20_000 });
+    await q().getByRole("radio", { name: /Escolhemos as fotos mais chamativas/ }).click();
+    await r.registrar(p, "motivo", {
+      titulo: "Como a dupla escolheu",
+      mostra: "As duas respostas, a ingênua e a auditada, depois de a edição sair.",
+      prova:
+        "Perguntar depois do latch e antes do resultado: nem antecipa a descoberta, nem contamina a resposta.",
+    });
+    await q().getByRole("button", { name: /Enviar resposta/ }).click();
+    await q().locator("text=Edição em Análise na Escola").first().waitFor({ timeout: 20_000 });
+
+    await p.reload({ waitUntil: "domcontentloaded" });
+    await q().locator("text=Edição em Análise na Escola").first().waitFor({ timeout: 40_000 });
+    r.exigir(true, "a F5 depois de publicar volta à espera, não à mesa");
+    await r.registrar(p, "espera-do-resultado", {
+      titulo: "A edição com os leitores",
+      mostra: "A espera neutra, com a página publicada em miniatura e as curiosidades da imprensa.",
+      prova: "A criança não vê o resultado sozinha: quem abre é a professora, e a espera não dá pista.",
+    });
+
+    // ═══ ESTUDANTE 2: publica pela api, outra edição ═════════════════════
+    const p2 = await r.pagina("estudante-2", { viewport: { width: 1280, height: 950 } });
+    await r.entrar(p2, SEGUNDO.login);
+    await p2.goto(`${HUB}/exp/${EXP_ID}`, { waitUntil: "domcontentloaded" });
+    await p2
+      .frameLocator('iframe[title="experiencia"]')
+      .getByRole("button", { name: /Explorar Mesa de Notícias/ })
+      .waitFor({ timeout: 40_000 });
+    await mandarApi(p2, "/jornal-escola/passo", { para: "mesa" });
+    const publicacao2 = await mandarApi(p2, "/jornal-escola/publicar", {
+      slots: ["n4", "n6", "n7"],
+      layout: "classic",
+      origemDoLayout: "modelo",
+    });
+    r.exigir(publicacao2.status === 200, `o segundo estudante publica (veio ${publicacao2.status})`);
+    await mandarApi(p2, "/jornal-escola/motivo", { motivo: "checagem" });
+    r.provocado(/jornal-escola\/resultado/, "a suíte pede o resultado antes do portão, de propósito: a api recusa");
+    const cedo = await lerApi(p2, "/jornal-escola/resultado");
+    r.exigir(
+      cedo.status === 409 && cedo.corpo?.codigo === "resultado-nao-liberado",
+      "antes do botão da professora, o resultado não existe nem pela api",
+    );
+
+    // ═══ PROFESSORA libera o resultado ═══════════════════════════════════
+    await prof.reload({ waitUntil: "domcontentloaded" });
+    await apertar(prof, "resultado");
+    await r.registrar(prof, "painel-resultado", {
+      titulo: "O painel da aula",
+      mostra: "Quantos computadores publicaram, o histograma anônimo de verificadas e o motivo da sala.",
+      prova:
+        "O número de verificadas só existe agregado, sem nome: não há ranking nem exposição de quem " +
+        "errou. O botão diz a próxima etapa, e não pula nenhuma.",
+      inteira: true,
+    });
+
+    await q().locator("text=/1 de 3 notícias verificadas nesta edição \\(33%\\)/").first().waitFor({ timeout: 30_000 });
+    r.exigir((await q().locator(".unooria-speech-bubble").count()) >= 3, "cada notícia escolhida tem a reação de um leitor");
+    r.exigir(!CARIMBO_OU_ACERTO.test(await q().locator("body").innerText()), "o resultado não carimba notícia nem criança");
+    await r.registrar(p, "resultado-e-leitores", {
+      titulo: "O que os leitores viveram",
+      mostra: "O mural da escola com a reação de um leitor para cada notícia publicada, e o indicador de 1 de 3.",
+      prova:
+        "A consequência é das notícias que a criança ESCOLHEU (PDF, seção 7), e o percentual descreve a " +
+        "seleção, não a criança. Nenhuma palavra de acerto.",
+    });
+
+    // ═══ PROFESSORA libera a revisão; a Chave do Editor ═════════════════
+    await apertar(prof, "revisao");
+    await q().locator("text=Ferramenta de Checagem do Bento").first().waitFor({ timeout: 30_000 });
+    await r.registrar(p, "chave-do-editor", {
+      titulo: "A Chave do Editor",
+      mostra: "O Bento de volta, a calha com três vagas e os seis blocos da bandeja.",
+      prova: "Três blocos são pilares e três são iscas, e nada na forma do bloco diz qual é qual.",
+    });
+    /* Pelo rótulo, sem caixa: a caixa alta é do CSS do `PuzzleBlock`, e o nome
+       acessível é o texto do DOM (`Fonte`, `Foto`). */
+    const bloco = (rotulo) => q().getByRole("button", { name: new RegExp(`^${rotulo}`, "i") }).first();
+    await bloco("FOTO").click();
+    await bloco("FONTE").click();
+    await bloco("DATA").click();
+    await q().locator("text=/Esse bloco não abre a chave/").first().waitFor({ timeout: 15_000 });
+    r.exigir((await q().locator("text=Voltou para a bandeja").count()) > 0, "a isca volta para a bandeja");
+    await r.registrar(p, "isca-devolvida", {
+      titulo: "A isca volta",
+      mostra: "A foto bonita devolvida à bandeja, e fonte e data presas na calha.",
+      prova: "A Chave corrige no servidor, e cada envio conta: é das tentativas que sai a EF15CO02.",
+    });
+    await bloco("AUTORIA").click();
+    await q().locator("text=/Chave do Editor ativada!/").first().waitFor({ timeout: 15_000 });
+
+    // ═══ A revisão e a 2ª edição ═════════════════════════════════════════
+    await q().getByRole("button", { name: /Abrir a Mesa de Revisão/ }).click();
+    await q().locator("text=Mesa de Revisão Pericial").first().waitFor({ timeout: 20_000 });
+    await aba(/Primeira Página/).click();
+    await q().locator("text=Fato que já passou").first().waitFor({ timeout: 15_000 });
+    r.exigir((await q().locator("text=Fonte sem confirmação").count()) > 0, "a vaga do post sem fonte ganha o marcador");
+    r.exigir((await q().locator("text=Matéria verificada").count()) > 0, "a vaga verificada fica marcada como verificada");
+    await semAnimacao();
+    await r.registrar(p, "mesa-de-revisao", {
+      titulo: "A Chave marca as vagas",
+      mostra: "A 1ª edição com um marcador em cada vaga: o fato que já passou, a fonte sem confirmação, a verificada.",
+      prova: "Os marcadores só existem depois de a Chave se formar — antes disso o pilar em falta não desce.",
+    });
+
+    /* A 1ª edição foi [robôs, feira, tirolesa]: troca a 1ª vaga (a antiga) e a
+       3ª (o post sem fonte) por duas publicáveis. */
+    const trocar = (i) => q().getByRole("button", { name: /Trocar Matéria/ }).nth(i);
+    await trocar(0).click();
+    await adicionar(N.planetario);
+    await aba(/Primeira Página/).click();
+    await trocar(2).click();
+    await adicionar(N.horta);
+    await aba(/Primeira Página/).click();
+    const publicar2 = q().getByRole("button", { name: /Publicar 2ª Edição Revisada/ });
+    await acesa(publicar2);
+    await publicar2.click();
+    await q().getByRole("button", { name: /Distribuir Jornal Agora/ }).click();
+
+    await q()
+      .locator("text=/1ª Edição: 1 de 3 verificadas ➔ 2ª Edição: 3 de 3 verificadas!/")
+      .first()
+      .waitFor({ timeout: 30_000 });
+    r.exigir((await q().locator("text=/Agora sim!/").count()) > 0, "com as três verificadas, a comunidade agradece");
+    await r.registrar(p, "comparativo", {
+      titulo: "O antes e o depois",
+      mostra: "As duas edições lado a lado, 1 de 3 e 3 de 3, e a reação da comunidade.",
+      prova: "A devolutiva final mostra o efeito da checagem sobre os leitores, sem nota.",
+    });
+
+    // ═══ O desafio final, fora da redação ════════════════════════════════
+    await q().getByRole("button", { name: /Avançar para Desafio Final/ }).click();
+    await q().locator("text=Desafio Individual de Checagem").first().waitFor({ timeout: 20_000 });
+    r.exigir((await q().locator("text=/Bento/").count()) === 0, "o desafio final sai da redação e não tem o Bento");
+    /* As alternativas vêm EMBARALHADAS a cada leitura: casa-se pelo texto, pelo papel. */
+    await q().getByRole("radio", { name: /canal oficial da prefeitura com data de hoje/ }).click({ timeout: 30_000 });
+    await r.registrar(p, "desafio-final", {
+      titulo: "O boato do corte de água",
+      mostra: "A mensagem encaminhada, sem link, data nem autoridade, e a primeira pergunta.",
+      prova: "A criança transfere o que aprendeu para um caso novo, individualmente; o gabarito fica no servidor.",
+    });
+    await q().getByRole("button", { name: /^Responder/ }).click();
+    await q().getByRole("radio", { name: /Pode fazer a escola inteira parar/ }).click({ timeout: 30_000 });
+    await q().getByRole("button", { name: /^Responder/ }).click();
+    await q().locator("text=/Antes de repassar qualquer aviso/").first().waitFor({ timeout: 20_000 });
+    r.exigir(!CARIMBO_OU_ACERTO.test(await q().locator("body").innerText()), "a síntese não diz se a criança acertou");
+    await q().getByRole("button", { name: /Concluir Missão/ }).click();
+    await q().locator("text=Edição Publicada — Modo Leitura").first().waitFor({ timeout: 20_000 });
+    await r.registrar(p, "modo-leitura", {
+      titulo: "Missão concluída",
+      mostra: "As duas edições em modo leitura.",
+      prova: "A síntese é a mesma para todos: a resposta às perguntas não diz à criança se ela acertou.",
+    });
+
+    // ═══ PROFESSORA: a folha por computador e as habilidades ═════════════
+    await prof.reload({ waitUntil: "domcontentloaded" });
+    await prof.getByText("EF15CO04").first().waitFor({ timeout: 30_000 });
+    const folha = await prof.locator("main").innerText();
+    /* Pelos CABEÇALHOS das colunas, não pelo texto da página: o painel explica
+       à professora que o número "não é nota", e a frase que nega a nota não
+       pode reprovar a suíte que prova a ausência dela. */
+    const colunas = await prof.locator("main").getByRole("columnheader").allInnerTexts();
+    r.exigir(colunas.length > 0, "a folha da turma está na tela, com as colunas");
+    r.exigir(
+      !colunas.some((c) => /\b(pontos|nota|score|ranking|acerto|verificadas)\b/i.test(c)),
+      `a folha da turma não tem coluna de pontos (colunas: ${colunas.join(", ")})`,
+    );
+    r.exigir(
+      ["EF04CO08", "EF15CO04", "EF15CO02"].every((codigo) => folha.includes(codigo)),
+      "o painel de habilidades mostra as três habilidades da ficha",
+    );
+    await r.registrar(prof, "resultados-e-habilidades", {
+      titulo: "A turma por computador, e as habilidades",
+      mostra: "Quem publicou cada edição e formou a Chave, e o painel de habilidades da BNCC do pacote.",
+      prova:
+        "A folha diz só o progresso; o nível de cada habilidade vem das pistas, da Chave, da 2ª edição e " +
+        "das duas perguntas, e fica no painel de habilidades, com o ajuste da professora.",
+      inteira: true,
+    });
+  },
+);

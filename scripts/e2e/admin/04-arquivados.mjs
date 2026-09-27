@@ -61,7 +61,9 @@ await suite(
     r.exigir(/4º ano, unidade 1/.test(textoDaLinha), "e onde a missão ficava na trilha (4º ano, unidade 1)");
     r.exigir(/Jornal da Escola/.test(textoDaLinha), "e o motivo: o Jornal da Escola tomou o código");
     r.exigir(/\bturmas?\b/.test(textoDaLinha) && /\bestudantes?\b/.test(textoDaLinha), "e os dados guardados (turmas e estudantes)");
-    const rodape = await p.locator("main").innerText();
+    /* A página inteira, não `main`: a área `/unooria` não tem o marco `<main>`
+       (só a do professor tem), e o `locator("main")` esperava até o timeout. */
+    const rodape = await p.locator("body").innerText();
     r.exigir(
       /contagem do dia do arquivamento/.test(rodape),
       "a tela diz que os números são os do dia do arquivamento, não uma recontagem",
