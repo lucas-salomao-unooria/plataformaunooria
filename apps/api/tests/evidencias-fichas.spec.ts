@@ -79,8 +79,8 @@ test("a ficha da exp05ef1b está no registro, com as três habilidades da régua
   const ficha = FICHAS.find((f) => f.expId === "exp05ef1b");
   expect(ficha?.habilidades.map((h) => [h.codigo, h.marcadores.map((m) => [m.id, m.tipo, m.perguntaId ?? null])])).toEqual([
     ["EF05CO08", [["selecao-do-mural", "acao", null]]],
-    ["EF05CO03", [["pergunta-tom-e-veracidade", "multipla_escolha", "p1"]]],
-    ["EF05CO04", [["pergunta-regra-condicional", "multipla_escolha", "p2"]]],
+    ["EF05CO03", [["pergunta-dos-selos", "multipla_escolha", "p1"]]],
+    ["EF05CO04", [["pergunta-simular-a-regra", "multipla_escolha", "p2"]]],
   ]);
   expect(ficha?.perguntas.map((p) => [p.id, p.alternativas.map((a) => [a.id, a.status])])).toEqual([
     ["p1", [["A1", "atingiu"], ["A2", "em_processo"], ["A3", "nao_atingiu"]]],

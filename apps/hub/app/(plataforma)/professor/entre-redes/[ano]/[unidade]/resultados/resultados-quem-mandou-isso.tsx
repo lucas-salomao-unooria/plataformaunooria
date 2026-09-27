@@ -7,6 +7,7 @@ import { apiDoServidor } from "@/lib/api-servidor";
 import { auth } from "@/lib/auth";
 import { painelDeHabilidades } from "@/lib/evidencias-servidor";
 import { rotaDaMissao, type Missao } from "@/lib/entre-redes/catalogo";
+import { rubricaDaRodada } from "@/lib/quem-mandou-regras";
 import type { MaterialDoProfessor, PacoteDaTurma, PainelDaTurma } from "@/lib/quem-mandou-tipos";
 import { comTurma, rotaDoGuiaDaMissao } from "@/lib/rotas-da-missao";
 import { salaDaTurma } from "@/lib/salas";
@@ -71,6 +72,9 @@ export async function ResultadosQuemMandouIsso({ missao, turma }: { missao: Miss
   const atividade = painel?.atividade ?? null;
   const habilidades =
     turma && atividade ? await painelDeHabilidades(turma, expId, atividade.pacoteId) : null;
+  /* A rubrica do Se/Então (ADR-120): o que o professor já classificou NESTA rodada. */
+  const rubrica =
+    podeConduzir && atividade && habilidades?.temFicha ? rubricaDaRodada(habilidades.estudantes, atividade) : null;
 
   const naSala = sala?.missoes.find((m) => m.expId === expId);
   const liberacao: LiberacaoNaSala | null = naSala
@@ -151,6 +155,7 @@ export async function ResultadosQuemMandouIsso({ missao, turma }: { missao: Miss
             mensagens={mensagens}
             opcoes={opcoes}
             podeConduzir={podeConduzir}
+            rubrica={rubrica}
           />
 
           {/* EVIDÊNCIA (E14): a atividade é o PACOTE aprovado; a rodada é a

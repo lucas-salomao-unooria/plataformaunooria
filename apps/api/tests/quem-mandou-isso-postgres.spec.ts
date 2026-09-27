@@ -609,7 +609,7 @@ describe("a aula na 5A — os três latches, a evidência e a revelação", () =
 
   test("as perguntas de evidência: embaralhadas, sem nível, e a resposta cai na atividade e na rodada da missão", async () => {
     const p1 = await evidencias.pergunta(ESCOLA, ids.ana, EXP_ID, "p1");
-    expect(p1.enunciado).toBe("O que você diria pra ela?");
+    expect(p1.enunciado).toBe("Qual frase está certa sobre ela?");
     expect(p1.alternativas.map((a) => a.id).sort()).toEqual(["A1", "A2", "A3"]);
     expect(JSON.stringify(p1)).not.toContain("status");
     expect(await evidencias.responder(ESCOLA, ids.ana, EXP_ID, "p1", "A1")).toEqual({ enviada: true });
@@ -619,8 +619,8 @@ describe("a aula na 5A — os três latches, a evidência e a revelação", () =
       orderBy: { habilidade: "asc" },
     });
     expect(marcas.map((m) => [m.habilidade, m.marcador, m.status, m.atividadeId, m.rodada])).toEqual([
-      ["EF05CO03", "pergunta-tom-e-veracidade", "atingiu", pacote5A, 1],
-      ["EF05CO04", "pergunta-regra-condicional", "em_processo", pacote5A, 1],
+      ["EF05CO03", "pergunta-dos-selos", "atingiu", pacote5A, 1],
+      ["EF05CO04", "pergunta-simular-a-regra", "em_processo", pacote5A, 1],
       ["EF05CO08", "selecao-do-mural", "atingiu", pacote5A, 1],
     ]);
   });
@@ -663,10 +663,38 @@ describe("a rodada nova e o pacote novo — o histórico fica", () => {
     await service.enviarAoMural(ESCOLA, ids.ana, ["msg_2", "msg_6", "msg_4"]);
     expect(await prisma.exp05ef1bSessao.count({ where: { escolaId: ESCOLA, estudanteId: ids.ana } })).toBe(2);
     expect(await prisma.exp05ef1bReflexao.count({ where: { escolaId: ESCOLA, estudanteId: ids.ana, rodada: 1 } })).toBe(1);
+    /* O Mural da rodada 2 FECHOU (o latch é dela), mas sem marca nova: a Ana já
+       viu a resposta deste pacote na rodada 1 (ADR-120). */
+    expect((await prisma.exp05ef1bSessao.findFirstOrThrow({ where: { escolaId: ESCOLA, estudanteId: ids.ana, rodada: 2 } })).confirmadoEm).not.toBeNull();
+    expect(await prisma.evidenciaMarca.count({ where: { escolaId: ESCOLA, estudanteId: ids.ana, habilidade: "EF05CO08", rodada: 2 } })).toBe(0);
     const painel = await evidencias.painel(ESCOLA, ids.turma5A, EXP_ID, pacote5A, ids.professora);
-    expect(painel.rodadas).toEqual([1, 2]);
-    /* A melhor rodada por habilidade: a rodada 2 (não atingiu) não apaga o atingiu da 1. */
     expect(painel.estudantes.find((e) => e.id === ids.ana)?.resultado).toMatchObject({ EF05CO08: "atingiu" });
+  });
+
+  test("rodada 2 do MESMO pacote: quem recebeu pela equipe na 1 também já viu — o Caio joga e não é medido de novo", async () => {
+    await service.entrar(ESCOLA, ids.caio);
+    await service.enviarAoMural(ESCOLA, ids.caio, ["msg_1", "msg_3", "msg_5"]);
+    expect(await prisma.evidencia.count({ where: { escolaId: ESCOLA, estudanteId: ids.caio, habilidade: "EF05CO08", rodada: 2 } })).toBe(0);
+    expect(
+      await prisma.evidencia.findFirstOrThrow({ where: { escolaId: ESCOLA, estudanteId: ids.caio, habilidade: "EF05CO08", rodada: 1 } }),
+    ).toMatchObject({ origem: "equipe", status: "nao_atingiu" });
+  });
+
+  test("rodada 2 do MESMO pacote: quem faltou na 1 nunca viu a resposta, e é medida na primeira vez que joga", async () => {
+    /* A Gabi entra na turma DEPOIS da rodada 1 — é quem faltou. A limpeza do
+       fim da suíte é por escola, e a leva junto. */
+    const gabi = (
+      await prisma.user.create({
+        data: { role: "estudante", escolaId: ESCOLA, turmaId: ids.turma5A, username: "qmv2.gabi", displayName: "Gabi Teste", passwordHash: "x" },
+        select: { id: true },
+      })
+    ).id;
+    await service.entrar(ESCOLA, gabi);
+    /* VE + VN + FE: uma falsa → em processo, na régua v2 (na v1 seria atingiu). */
+    await service.enviarAoMural(ESCOLA, gabi, ["msg_1", "msg_3", "msg_7"]);
+    expect(
+      await prisma.evidencia.findFirstOrThrow({ where: { escolaId: ESCOLA, estudanteId: gabi, habilidade: "EF05CO08" } }),
+    ).toMatchObject({ rodada: 2, origem: "propria", status: "em_processo", atividadeId: pacote5A });
   });
 
   test("aprovar um pacote DIFERENTE é atividade nova: id novo, o anterior sai de cena, rodada 1 e triagem", async () => {
@@ -681,7 +709,8 @@ describe("a rodada nova e o pacote novo — o histórico fica", () => {
     expect((await service.gate(ESCOLA, ids.ana)).fase).toBe("triagem");
     expect((await service.sessao(ESCOLA, ids.ana)).atividade).toEqual({ pacoteId: novo.id, rodada: 1 });
     /* O que a turma fez no pacote anterior continua lá. */
-    expect(await prisma.exp05ef1bSessao.count({ where: { escolaId: ESCOLA, pacoteId: pacote5A } })).toBe(4);
+    /* Ana, Bia e Duda na rodada 1; Ana, Caio e Gabi na 2. */
+    expect(await prisma.exp05ef1bSessao.count({ where: { escolaId: ESCOLA, pacoteId: pacote5A } })).toBe(6);
   });
 });
 

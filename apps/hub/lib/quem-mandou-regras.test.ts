@@ -26,6 +26,9 @@ import {
   rotuloDaOpcao,
   textoDosAssuntos,
   trocarCampo,
+  CRITERIO_DA_RUBRICA,
+  NIVEIS_DA_RUBRICA,
+  rubricaDaRodada,
 } from "./quem-mandou-regras";
 import type { MensagemDoPacote, PainelDaTurma } from "./quem-mandou-tipos";
 
@@ -330,5 +333,34 @@ describe("o termômetro e a folha", () => {
     expect(rotuloDaOpcao(opcoes, "urgencia")).toBe("Urgência (precisava avisar logo)");
     expect(rotuloDaOpcao(opcoes, "outro")).toBe("outro");
     expect(rotuloDaOpcao(opcoes, null)).toBeNull();
+  });
+});
+
+describe("a rubrica do Se/Então (EF05CO04, ADR-120)", () => {
+  const celula = (status: string, origem: string) => ({ status, origem });
+  type Linha = { id: string; porRodada: Record<string, Record<string, { status: string; origem: string }>> };
+  const estudantes: Linha[] = [
+    { id: "ana", porRodada: { "2": { EF05CO04: celula("atingiu", "professor") } } },
+    { id: "bia", porRodada: { "2": { EF05CO04: celula("em_processo", "propria") } } },
+    { id: "caio", porRodada: { "1": { EF05CO04: celula("nao_atingiu", "professor") } } },
+    { id: "duda", porRodada: { "2": { EF05CO04: celula("nao_participou", "professor") } } },
+    { id: "enzo", porRodada: { "2": { EF05CO03: celula("atingiu", "professor") } } },
+  ];
+
+  test("acende só o que o PROFESSOR classificou, nesta rodada e nesta habilidade", () => {
+    expect(rubricaDaRodada(estudantes, { pacoteId: "p", rodada: 2 })).toEqual({
+      pacoteId: "p",
+      rodada: 2,
+      classificados: { ana: "atingiu" },
+    });
+  });
+
+  test("a rodada anterior não vaza para a de agora", () => {
+    expect(rubricaDaRodada(estudantes, { pacoteId: "p", rodada: 1 }).classificados).toEqual({ caio: "nao_atingiu" });
+  });
+
+  test("cada nível tem o seu critério, e são os três da régua", () => {
+    expect(NIVEIS_DA_RUBRICA).toEqual(["atingiu", "em_processo", "nao_atingiu"]);
+    for (const n of NIVEIS_DA_RUBRICA) expect(CRITERIO_DA_RUBRICA[n].length).toBeGreaterThan(10);
   });
 });

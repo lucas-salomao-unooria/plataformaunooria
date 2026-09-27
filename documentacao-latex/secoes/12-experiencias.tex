@@ -971,15 +971,21 @@ própria revelação --- junto com o passo da turma, que pode já ser a reflexã
 Nesse caso a experiência mostra o Mural revelado com \enquote{Continuar} antes
 da regra; o servidor não guarda \enquote{já viu}, e um F5 mostra de novo.
 
-\subsection{A régua pedagógica: a seleção e as perguntas do PO}
+\subsection{A régua pedagógica v2: cada habilidade pelo verbo dela}
 
 É a primeira missão com ficha (\arq{evidencias/fichas/exp05ef1b.ts}, versão
-1). A \textbf{EF05CO08} sai das três do Mural (três verdadeiras, ou duas e uma
-falsa emocional, é \cd{atingiu}; duas e uma falsa neutra, \cd{em\_processo};
-uma ou nenhuma verdadeira, \cd{nao\_atingiu} --- \arq{regras/evidencia.ts},
-conferida nas 56 combinações). A \textbf{EF05CO03} vem da P1 e a
-\textbf{EF05CO04} \textbf{só} da P2, pelas rotas genéricas
-\rota{/evidencias/exp05ef1b/perguntas/*}; o Se/Então não é corrigido. O
+2, \adrr{ADR-120}). A \textbf{EF05CO08} sai das três do Mural: só três
+verdadeiras são \cd{atingiu}; duas e uma falsa, de qualquer tipo,
+\cd{em\_processo}; uma ou nenhuma verdadeira, \cd{nao\_atingiu}
+(\arq{regras/evidencia.ts}, conferida nas 56 combinações). Ela é marcada uma
+vez por criança e pacote: quem já foi avaliada numa rodada anterior da mesma
+atividade fecha o Mural sem marca nova (\cd{EvidenciasService.jaAvaliadaAntes}).
+A \textbf{EF05CO03} vem da P1, que pede a frase certa com \enquote{não},
+\enquote{e} e \enquote{ou} sobre os dois selos; a \textbf{EF05CO04}, da P2,
+que pede para seguir uma regra no áudio do tio, e da rubrica com que o
+professor classifica o Se/Então na folha da turma --- um ajuste da evidência,
+que vale sobre a pergunta. As perguntas passam pelas rotas genéricas
+\rota{/evidencias/exp05ef1b/perguntas/*}. O
 resolvedor que a missão registra (\cd{registrarContexto}) diz a turma, o pacote
 ativo e a rodada, e só responde no passo das perguntas: uma P1 por \cd{POST}
 direto antes do Mural é 409 e não mede nada. As alternativas chegam
