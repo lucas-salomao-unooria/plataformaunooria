@@ -11,7 +11,9 @@ que vence em conflito — e que carrega a versão curta desta lista.
 
 ## Definition of Done (qualquer tarefa)
 
-- [ ] Typecheck + lint + testes passando (`pnpm turbo typecheck lint test`)
+- [ ] Typecheck + lint + testes passando (`pnpm turbo typecheck lint test`).
+      No PR para `dev-local` este item É o portão: o CI só roda nos PRs para
+      `dev`, `hml` e `main` (ADR-121), e o GitHub não mostra check nenhum ali.
 - [ ] Se mexeu em tela: a suíte E2E do papel afetado
       (`node scripts/e2e/rodar.mjs <papel>`) — typecheck verde não pega ícone
       virando texto, link sublinhado nem iframe vazio. Tela nova = passo novo na
