@@ -1,0 +1,19 @@
+{
+  "id": "exp04ef1b",
+  "nome": "Jornal da Escola: A Edição de Bento",
+  "versao": "2.0.0",
+  "produto": "entre-redes",
+  "series": ["4EF"],
+  "unidade": 1,
+  "capabilities": ["telemetria", "progresso", "ia", "avaliacao"],
+  "viewport": { "largura": 375, "altura": 812 },
+  "permissoes": ["forms"],
+  "publico": "estudante",
+  "verbos": {
+    "attempted": "entrou na redação do Jornal da Escola",
+    "interacted": "abriu as pistas de fonte, data e autoria das notícias",
+    "scored": "publicou a 1ª e a 2ª edição da primeira página",
+    "progressed": "viu o resultado da edição e montou a Chave do Editor",
+    "completed": "respondeu ao desafio final e concluiu a missão"
+  }
+}
