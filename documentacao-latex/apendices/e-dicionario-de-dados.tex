@@ -4,9 +4,9 @@
 \chapter{Dicionário de dados}
 \label{ap:dicionario}
 
-Catálogo das 73 tabelas de \cd{public}, mais o \emph{schema} \cd{particoes}.
+Catálogo das 77 tabelas de \cd{public}, mais o \emph{schema} \cd{particoes}.
 O número é o de \cd{model} em \arq{apps/api/prisma/schema.prisma} em
-2026-09-25 (todos com \cd{@@map}; a \cd{\_prisma\_migrations} é do Prisma e
+2026-09-27 (todos com \cd{@@map}; a \cd{\_prisma\_migrations} é do Prisma e
 fica fora), e o índice abaixo tem uma linha por \cd{model}: tabela nova sem
 linha aqui é o sinal de que este apêndice ficou para trás.
 Os diagramas entidade-relacionamento estão no Capítulo~\ref{cap:dados}.
@@ -71,6 +71,10 @@ Os diagramas entidade-relacionamento estão no Capítulo~\ref{cap:dados}.
 \zebra \cd{exp08ef1b\_app\_70\_perfis\_importados} & Tenant &
   \textbf{Contrato entre duas experiências}\\
 \cd{backup\_exp04ef1b\_sessoes} & Tenant & Estado da missão do UnooTube (arquivada, \adrr{ADR-116})\\
+\zebra \cd{exp04ef1b\_pacotes} & Tenant & A ATIVIDADE do Jornal da Escola: as 8 notícias com o gabarito e a consequência, e as URLs das imagens\\
+\cd{exp04ef1b\_gates\_turma} & Tenant & A etapa da aula (os dois portões), o pacote e a rodada, por turma\\
+\zebra \cd{exp04ef1b\_sessoes} & Tenant & Uma sessão por estudante, pacote e rodada: as pistas abertas, as duas edições, o motivo e a Chave --- sem texto livre\\
+\cd{exp04ef1b\_diagramacoes} & Tenant & O \emph{cache} do layout escolhido pela IA, por pacote e combinação de vagas\\
 \zebra \cd{exp02em1b\_sessoes} & Tenant & Estado da partida da Missão Tempestade\\
 \cd{exp02em1b\_mensagens} & Tenant & A Transcrição (texto livre do estudante)\\
 \zebra \cd{exp02em1b\_marcos} & Tenant & Trilha da decisão\\
@@ -1176,6 +1180,47 @@ públicos \cd{visualizacoesRotulo} e \cd{curtidasRotulo}: rótulos
 \textbf{cosméticos} de popularidade, sem peso em conta nenhuma, mas escolhidos
 para que o vídeo \emph{fake} seja o dos números grandes --- o contraste que o
 \emph{ranking} desmonta depois.
+\end{regra}
+
+\subsection{\cd{exp04ef1b\_sessoes}}
+
+O Jornal da Escola (\adrr{ADR-117}). A descrição das quatro tabelas e das
+decisões de esquema está na Seção~\ref{sec:tabelas-exp04ef1b}; aqui ficam as
+colunas da sessão, que é onde os \emph{latches} moram.
+
+\begin{tabularx}{\linewidth}{@{}L{34mm}L{22mm}X@{}}
+\toprule
+\headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
+\midrule
+\pk{id} & \cd{UUID} & \cd{UNIQUE} em (escola, turma, estudante, pacote,
+  rodada): uma sessão por rodada.\\
+\zebra \cd{passo} & \cd{TEXT} & O passo GRAVADO, no vocabulário de
+  \arq{regras/passos.ts}. Nunca \cd{resultado} nem \cd{chave}: a etapa da turma os
+  impõe.\\
+\cd{pistas} & \cd{JSONB} & \emph{Array} de \cd{\{noticiaId, tipo, fase, em\}}:
+  um registro por par e FASE (1 = mesa, 2 = revisão). É o dado da EF15CO04.\\
+\zebra \cd{slots\_ed1}, \cd{slots\_ed2} & \cd{TEXT[]} & Vazio ou três ids
+  DIFERENTES entre \cd{n1} e \cd{n8}, na ordem das vagas.\\
+\cd{layout\_ed*}, \cd{origem\_layout\_ed*} & \cd{TEXT?} & \cd{classic} $|$
+  \cd{hero-image} $|$ \cd{columns}, e \cd{ia} $|$ \cd{modelo}. Cosméticos.\\
+\zebra \cd{verificadas\_ed*} & \cd{INTEGER?} & 0 a 3, calculadas no servidor no
+  \emph{latch}.\\
+\cd{motivo\_ed1} & \cd{TEXT?} & \cd{visual} $|$ \cd{checagem}, depois do
+  \emph{latch} da 1ª.\\
+\zebra \cd{chave\_tentativas}, \cd{chave\_formada\_em} & \cd{INTEGER},
+  \cd{TIMESTAMPTZ?} & A base da EF15CO02. Formada exige ao menos uma tentativa.\\
+\cd{publicada1\_em}, \cd{publicada2\_em}, \cd{concluida\_em} &
+  \cd{TIMESTAMPTZ?} & Os \emph{latches}, cada um EQUIVALENTE ao passo gravado.\\
+\zebra \cd{versao\_instrumento} & \cd{TEXT} & \cd{1.0.0}.\\
+\bottomrule
+\end{tabularx}
+
+\begin{regra}
+O gabarito, as pistas e a consequência \textbf{não estão aqui}: moram no
+\cd{JSONB} de \cd{exp04ef1b\_pacotes}, que só rota de professor devolve inteiro.
+O estudante recebe cada parte num portão (Seção~\ref{sec:exp04ef1b}), e as chaves
+\cd{gabarito}, \cd{consequencia} e \cd{pilarEmFalta} estão na redação do
+\emph{log}.
 \end{regra}
 
 \section{Tabelas da exp02em1b}

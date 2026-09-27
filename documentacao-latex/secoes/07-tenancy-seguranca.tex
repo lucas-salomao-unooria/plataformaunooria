@@ -627,6 +627,12 @@ A resposta --- que devolve só \enquote{enviada}, nunca o resultado &
 \zebra Vila do Lume: agregado da turma & \rota{/vila/agregado/*} & \no & \yes & \yes & \no\\
 \textbf{Vila do Lume: a linha de uma criança} & \rota{/vila/professor/*} &
   \no & \yes\footnotesize{\ddag} & \no & \no\\
+\zebra Jornal da Escola: a própria missão (\adrr{ADR-117}) &
+  \rota{/jornal-escola/*} & \yes & \no & \no & \no\\
+\textbf{Jornal da Escola: preparar, conduzir e ler o painel} (pacote, imagens,
+  os dois portões, zerar), e o material do guia &
+  \rota{/jornal-escola/\B turmas/*}, \rota{/professor/\B material} & \no &
+  \yes\footnotesize{\ddag} & \yes & \yes\\
 \zebra unooGPT: a própria partida & \rota{/unoogpt/*} & \yes & \no & \no & \no\\
 \textbf{unooGPT: turma e transcrição individual} &
   \rota{/unoogpt/professor/*} & \no & \yes\footnotesize{\ddag} & \no & \yes\\
@@ -922,8 +928,15 @@ acredita ter declarado algo.
   \item Chamada de IA só existe como \rota{POST /ai/gerar} na API. O
     \emph{prompt} de sistema mora em \arq{apps/api/src/ai/prompts.ts} e nunca é
     devolvido.
-  \item O gabarito da exp04ef1b (\cd{factual}) não é persistido no estado do estudante
-    nem devolvido em nenhuma rota de estudante.
+  \item O gabarito do UnooTube arquivado (\cd{factual}, hoje em
+    \arq{backup-unootube}) não era persistido no estado do estudante nem
+    devolvido em nenhuma rota de estudante.
+  \item O gabarito do Jornal da Escola (se cada notícia é publicável e o pilar
+    que falta), a consequência e o conjunto certo da Chave moram no pacote, no
+    servidor. A notícia do estudante é uma \emph{allowlist}, e cada parte
+    desce num portão: a pista quando ela a abre, a reação com o resultado
+    liberado, o pilar da vaga depois da Chave --- e o conjunto da Chave, nunca
+    (\adrr{ADR-117}).
   \item Os textos dos cartões da app-70 chegam ao jogo \textbf{sem gabarito}, e
     apenas os da bolha daquela criança.
   \item \cd{lado}, \cd{perfil} e \cd{intensidade} dos posts da exp08ef1b são
@@ -968,9 +981,11 @@ Texto sensível fora de log & O texto livre do \emph{check-in} de bem-estar nunc
 \zebra IA sem contexto identificável & O \emph{prompt} de bem-estar recebe
   apenas dia da semana, mês, número do \emph{check-in} e o texto livre
   \emph{delimitado como conteúdo}. Nunca nome, escola, pontuação ou faixa.\\
-Ranking sem menor real & O ranking da exp04ef1b usa colegas
-  \textbf{fictícios}, com distribuição desenhada para a lição. Não há pontuação
-  de criança real exposta a outra criança.\\
+Ranking sem menor real & O ranking do UnooTube (hoje \cd{backup-exp04ef1b})
+  usava colegas \textbf{fictícios}, com distribuição desenhada para a lição. Não
+  há pontuação de criança real exposta a outra criança --- nem no Jornal da
+  Escola, em que o painel só mostra as verificadas num histograma anônimo e a
+  criança não vê a edição de ninguém.\\
 \zebra Dado de saúde com posse & \cd{app\_91\_ciclos} e \cd{app\_91\_checkins}
   têm RLS \emph{e} filtro por \cd{professor\_id} em toda \emph{query}, e não
   existe rota de gestor nem agregado. O próprio titular apaga tudo.\\
@@ -984,7 +999,11 @@ Texto de menor com contenção & \cd{exp06ef2b\_reflexoes} guarda o
   decisões logo abaixo. Na A Seleção (\adrr{ADR-115}) a \textbf{legenda} dos
   Stories vai, com o primeiro nome, ao colega pareado no Mural --- por isso passa
   por um sanitizador (link, telefone, e-mail, menção, palavrão) antes de
-  gravar ---, e a \cd{exp07ef1b\_reflexoes} só ao professor da turma.\\
+  gravar ---, e a \cd{exp07ef1b\_reflexoes} só ao professor da turma. O Jornal
+  da Escola (\adrr{ADR-117}) é o oposto, e de propósito: \textbf{não tem texto
+  livre de menor}. Toda resposta é vocabulário fechado (notícia, tipo de pista,
+  bloco da Chave, motivo, alternativa), e por isso não há recorte de gestor a
+  aplicar --- o gestor lê o mesmo painel que o professor.\\
 \bottomrule
 \end{tabularx}
 

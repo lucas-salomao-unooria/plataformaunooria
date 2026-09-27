@@ -1078,9 +1078,9 @@ flowchart TB
 %% Figura 13.2 - demais experiencias: uma linha por experiencia,
 %% colunas = estudante | professor e gestao | guia, agregado e servico
 flowchart TB
-  subgraph UT["exp04ef1b - UnooTube"]
-    ut["/unootube/* - estudante"]; utt["/unootube/turmas/* - prof, gestor, admin"]
-    utp["/unootube/professor/* - prof, gestor - material do guia"]
+  subgraph UT["backup-exp04ef1b - UnooTube (arquivada, ADR-116)"]
+    ut["sem rotas: fora do app.module"]; utt["era /unootube/turmas/*"]
+    utp["era /unootube/professor/*"]
   end
   subgraph VI["app-70 - Vila do Lume"]
     vi["/vila/sessoes - estudante"]; vp["/vila/professor/* - PROFESSOR"]
@@ -1109,6 +1109,11 @@ flowchart TB
   subgraph FC["exp01ef1b - O Que a Foto Conta"]
     fc["/foto-conta/* - estudante"]
     fct["/foto-conta/turmas/* - prof, gestor - o latch da Roda"]
+  end
+  subgraph JE["exp04ef1b - Jornal da Escola (ADR-117)"]
+    je["/jornal-escola/* - estudante - e as perguntas em /evidencias"]
+    jet["/jornal-escola/turmas/* - prof, gestor - o pacote, os dois portoes e o painel"]
+    jep["/jornal-escola/professor/* - prof, gestor - material do guia"]
   end
   subgraph QM["exp05ef1b - Quem mandou isso?"]
     qm["/quem-mandou-isso/* - estudante - e as perguntas em /evidencias"]

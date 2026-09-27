@@ -36,6 +36,17 @@ Preparo da cobertura & exp07ef1b, \arq{src/a-selecao/} &
   Um nível de EF07CO11 para a legenda dos Stories (o Canal A), que só o
   professor vê e corrige. Falha, timeout ou saldo zerado não marcam nada
   (\adrr{ADR-115}).\\
+Preparo do pacote & exp04ef1b, \arq{src/jornal-escola/} &
+  O texto das oito notícias sobre o tema do professor, num \textbf{molde
+  sorteado no servidor} (que notícia é de que meio e que papel tem no
+  gabarito), e as imagens a partir da descrição de cada uma. \textbf{Nada}
+  chega à turma sem a homologação; sem saldo (429) ou sem provedor (503), o hub
+  oferece o banco padrão.\\
+\zebra Diagramação da página & exp04ef1b, \arq{src/jornal-escola/} &
+  \textbf{Em sala}, com a quota do \emph{estudante}: UM valor de um
+  \emph{enum} de três layouts, e nenhum texto. Não escolhe notícia, não
+  reordena as vagas, não vê o gabarito. Qualquer falha cai no modelo
+  automático (\adrr{ADR-117}).\\
 \bottomrule
 \end{tabularx}
 
@@ -48,6 +59,54 @@ a IA \emph{sugere} o nível de EF07CO11 lendo a legenda, com temperatura 0, uma
 tentativa, \emph{schema} fechado e rubrica fixa no servidor. A sugestão não é
 nota, a criança não a vê, e o professor a confere e ajusta (\adrr{ADR-115}).
 \end{regra}
+
+\subsection{A diagramação do Jornal da Escola: IA em sala, e só um \emph{enum}}
+
+É a segunda chamada de IA com a turma diante da tela, depois da leitura da
+legenda da A Seleção, e segue as mesmas travas (\adrr{ADR-117}). A criança monta
+as três vagas da primeira página, e a tela pede a diagramação uma vez por
+combinação. \arq{diagramacao.service.ts} roda, nesta ordem:
+
+\begin{enumerate}
+  \item o \textbf{\emph{cache}} (\cd{exp04ef1b\_diagramacoes}): a mesma página
+    --- o pacote e as três vagas na ordem --- montada por outra criança não paga
+    outra chamada, e o custo fica limitado às combinações usadas;
+  \item o \textbf{\emph{rate limit}} por estudante, em memória: doze
+    diagramações a cada dez minutos, contra o toque nervoso;
+  \item a \textbf{quota do perfil \cd{estudante}}, com \cd{temSaldo} antes
+    (regra inviolável nº 5);
+  \item o \cd{generateJson}, com temperatura 0, \textbf{uma} tentativa e teto
+    de 32 \emph{tokens} de saída; o \emph{schema} de resposta só tem o
+    \emph{enum} dos três layouts --- não há campo de texto onde a IA escreva
+    ---, e um \cd{validar} Zod confere a saída;
+  \item o \textbf{teto de tempo} de cerca de 6\,s por \cd{Promise.race}, porque o
+    \emph{provider} não tem \emph{timeout};
+  \item o débito em \cd{aoUsarTokens}, que cobra também a chamada que perdeu a
+    corrida para o teto (\adrr{ADR-74}).
+\end{enumerate}
+
+A IA recebe das três notícias só a manchete, o número de palavras do resumo e
+se há imagem, como DADO delimitado --- nunca o gabarito, a pista nem a
+consequência. \textbf{Falhou qualquer passo, o modelo automático diagrama}
+(\arq{regras/layout.ts}): imagem na manchete principal dá \cd{hero-image}, três
+manchetes curtas dão \cd{columns}, e o resto \cd{classic}. É determinístico e
+decide pela FORMA, nunca pelo gabarito, e o resultado do modelo não vai ao
+\emph{cache}. A tela não fica sabendo de onde o layout veio, e o layout não vale
+nada na correção. Em \emph{dev} e na suíte de ponta a ponta a IA é o
+\emph{mock}, e a página é sempre do modelo: a diagramação por IA só se prova com
+o Vertex.
+
+\begin{nota}
+\textbf{O preparo é do professor, e a estrutura é do servidor.} Pedir a um
+modelo \enquote{oito notícias, de três a quatro publicáveis, duas ou três
+antigas, e nenhum meio carregando a resposta} devolve, com frequência, o conjunto
+que a régua recusa --- um modelo de linguagem conta mal. Por isso o molde é
+DADO: \cd{sortearMolde} sorteia a cada geração o meio e o papel de cada id, a IA
+escreve o conteúdo, e o \cd{validar} recusa a saída que mexeu no molde ou fere
+\arq{invariantes.ts}, o que faz a tentativa ser regerada. A quota é a do perfil
+de quem prepara, com o que o \emph{vendor} cobrou debitado por tentativa,
+inclusive as recusadas.
+\end{nota}
 
 \section{A camada única}
 

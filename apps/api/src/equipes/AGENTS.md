@@ -21,11 +21,12 @@ com `escola_id` + RLS forçada:
 
 ## As regras
 
-- **Só quatro missões aceitam equipe**: `EXPERIENCIAS_COM_EQUIPE` em `regras.ts`
-  (exp08ef1b, exp02em1b, exp05ef1b e exp07ef1b — Quem Mandou Isso? v2.2 e A
-  Seleção, as duas nascidas com equipe). O UnooTube (exp04ef1b) saiu ao ser
-  ARQUIVADO (ADR-116): a lista é por código, e o código passou ao Jornal da
-  Escola. Lista no CÓDIGO, não coluna no catálogo:
+- **Só cinco missões aceitam equipe**: `EXPERIENCIAS_COM_EQUIPE` em `regras.ts`
+  (exp08ef1b, exp02em1b, exp05ef1b, exp07ef1b e exp04ef1b — Quem Mandou Isso?
+  v2.2, A Seleção e o Jornal da Escola, as três nascidas com equipe). O
+  exp04ef1b saiu com o UnooTube ARQUIVADO (ADR-116) e VOLTOU com o Jornal, que
+  herdou o código: a lista é por código, e o `backup-exp04ef1b` não entra.
+  Lista no CÓDIGO, não coluna no catálogo:
   "funciona com duas crianças numa tela" é propriedade do desenho da missão, e
   missão que entra sem conferência abre para equipe e continua contando por
   criança no painel.
@@ -76,7 +77,7 @@ transação, depois da escrita: eles veem as equipes novas, e um erro neles desf
 a montagem junto. A dependência vai num sentido só — evidencias importa
 equipes, nunca o contrário.
 
-**O unooGPT, Quem Mandou Isso? v2.2 e A Seleção contam por COMPUTADOR** (o UnooTube contava, até ser arquivado). O painel lê
+**O unooGPT, Quem Mandou Isso? v2.2, A Seleção e o Jornal da Escola contam por COMPUTADOR** (o UnooTube contava, até ser arquivado). O painel lê
 `mapaDeEquipes` DENTRO do `comTenancy` e passa as linhas por
 `regras.ts#colapsarEmUnidades`: uma unidade por equipe, representada pela linha
 de quem INICIOU (com dois logins, o mais recente pelo `atualizado_em` da

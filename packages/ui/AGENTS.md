@@ -43,6 +43,11 @@ que um ícone da plataforma acrescentado à backup-exp04ef1b amanhã puxaria tud
 vez migrando o `Icon` da plataforma para registro SVG (as outras cinco seções já
 são assim).
 
+**O inverso tem UMA exceção (ADR-117):** numa tela da Unooria que mostra
+conteúdo de outra plataforma — a gaveta do Jornal da Escola —, a PEÇA imitada
+(o post, a mensagem) usa a seção dela. A regra está em
+`docs/regras/design-system.md`.
+
 **A linha que separa as seções é a REVELAÇÃO, não o arquivo.** O critério é
 "quem está falando?", nunca "é depois no tempo?". Na backup-exp04ef1b: feed, cromo,
 playlists, canal, o toast ("Vídeo salvo!") e o diálogo de limite ("sua playlist

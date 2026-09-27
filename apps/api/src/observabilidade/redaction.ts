@@ -48,6 +48,13 @@ export const CHAVES_REDIGIDAS: ReadonlySet<string> = new Set([
   "veracidade",
   "tom",
   "explicacao",
+  // O pacote do Jornal da Escola (exp04ef1b): o `gabarito` de cada notícia (se
+  // é publicável e o pilar que falta) e a `consequencia` (a reação do leitor,
+  // que só desce com o portão do professor aberto). A chave inteira some, então
+  // o que está dentro dela também.
+  "gabarito",
+  "consequencia",
+  "pilaremfalta",
   // O `Então` da regra Se/Então da exp05ef1b — TEXTO LIVRE DE MENOR (RF-014).
   // `entao` no corpo e na resposta, `acaoEntao` no Prisma, `acao_entao` na
   // coluna: um `err` do Prisma carrega o objeto que o service tentou gravar.

@@ -239,6 +239,16 @@ método e esquema, é o Apêndice~\ref{ap:endpoints}.
   \node[rt, minimum height=15mm] at (9.05,-12.9)
     {\texttt{/foto-conta/\B{}turmas/*}\desc{prof., gestor --- o \emph{latch} da Roda}};
 
+  % ---- exp04ef1b (o Jornal da Escola, ADR-117): no vão que o Eco e a v1 da
+  % exp05ef1b deixaram, entre a exp01ef1b e a exp05ef1b.
+  \node[exprot] at (0.1,-14.825) {\textbf{exp04ef1b}\\Jornal da Escola};
+  \node[rt, minimum height=18.5mm] at (4.5,-14.825)
+    {\texttt{/jornal-escola/*}\desc{estudante --- e as perguntas em \texttt{/evidencias}}};
+  \node[rt, minimum height=18.5mm, fill=unooBlueWash, draw=unooBlue] at (9.05,-14.825)
+    {\texttt{/jornal-escola/\B{}turmas/*}\desc{prof., gestor --- o pacote, os dois portões e o painel}};
+  \node[rt, minimum height=18.5mm] at (13.6,-14.825)
+    {\texttt{/jornal-escola/\B{}professor/*}\desc{prof., gestor --- material do guia}};
+
   % ---- exp05ef1b
   \node[exprot] at (0.1,-16.925) {\textbf{exp05ef1b}\\Quem mandou isso?};
   \node[rt, minimum height=18.5mm] at (4.5,-16.925)
@@ -268,7 +278,8 @@ método e esquema, é o Apêndice~\ref{ap:endpoints}.
   exp05ef1b tem \textbf{as duas coisas}, e elas respondem perguntas diferentes:
   \texttt{/quem-mandou-isso/professor/material} é o banco curado da Unooria,
   igual em todo contrato, e \texttt{/quem-mandou-isso/turmas/:id/pacote} é o
-  pacote que AQUELA professora aprovou --- o único que a turma dela vai ler.}
+  pacote que AQUELA professora aprovou --- o único que a turma dela vai ler. O
+  Jornal da Escola repete o desenho (\adrr{ADR-117}).}
 \label{fig:mapa-rotas-exps}
 \end{figure}
 
@@ -852,6 +863,106 @@ voto e da revelação aberta pela turma. A turma do estudante é
 \emph{claim} do \emph{token}.
 \end{regra}
 
+\subsection{Jornal da Escola (exp04ef1b)}
+\label{sec:api-jornal-escola}
+
+% Esta tabela e ESCRITA A MAO; a verdade e o Apendice C (`apendices/c-endpoints.tex`),
+% gerado de `docs/openapi.json`. Confira LINHA A LINHA contra ele antes de mexer.
+
+Vinte e três rotas em três \emph{controllers} (\adrr{ADR-117}): treze do
+estudante (\cd{@Roles("estudante")} na classe, e \cd{exigirMissaoLiberada} no
+funil \cd{garantirSessao} de TODAS, com a disponibilidade junto), nove por turma,
+para professor e gestores, e uma de catálogo. A turma do estudante sai do
+\emph{token}, nunca do corpo. As duas perguntas do Desafio Final não são deste
+módulo: passam por \rota{/evidencias/exp04ef1b/perguntas/*}
+(Seção~\ref{sec:api-evidencias}).
+
+\begin{tabularx}{\linewidth}{@{}L{56mm}L{20mm}X@{}}
+\toprule
+\headrow \thd{Rota} & \thd{Papel} & \thd{O que faz}\\
+\midrule
+\rota{GET /jornal-escola/sessao} & estudante & O estado e as 8 notícias na
+  ordem da mesa, \textbf{sem} gabarito, pistas nem consequência; o passo já
+  reconciliado com a etapa; as pistas já abertas, com o texto (o F5); e os seis
+  blocos da Chave na ordem da bandeja, \cd{null} até a revisão abrir. Cria o
+  banco padrão na primeira entrada da turma.\\
+\zebra \rota{GET /jornal-escola/gate} & estudante & O \emph{polling} de 5\,s
+  (\adrr{ADR-93}): etapa, rodada, pacote, passo e o \cd{agora} do SERVIDOR. Sem
+  notícias e sem JOIN.\\
+\rota{POST /jornal-escola/passo} & estudante & Os dois passos que a criança
+  pede: \cd{mesa} e \cd{transferencia}. A escada é de sentido único.\\
+\zebra \rota{POST /jornal-escola/pista} & estudante & Abre fonte, data ou
+  autoria de uma notícia e devolve o texto --- é o registro da EF15CO04.
+  Idempotente por par na mesma fase.\\
+\rota{POST /jornal-escola/diagramar} & estudante & O layout da página com as
+  três vagas de agora. \textbf{Nunca falha por causa da IA}: \emph{cache}, IA
+  com a quota do estudante e teto de cerca de 6\,s, e o modelo automático
+  (Capítulo~\ref{cap:ia}).\\
+\zebra \rota{POST /jornal-escola/publicar} & estudante & \textbf{O latch da 1ª
+  edição}: três ids, as verificadas calculadas AQUI, e a marca da EF15CO04 na
+  mesma transação. A resposta não traz o resultado. Outra publicação, 409
+  \cd{edicao-ja-publicada}; o professor zerou no meio, 409 \cd{rodada-mudou}.\\
+\rota{POST /jornal-escola/motivo} & estudante & A pergunta de depois do latch,
+  uma vez só (\cd{visual} $|$ \cd{checagem}).\\
+\zebra \rota{GET /jornal-escola/resultado} & estudante & As verificadas e uma
+  reação de leitor por vaga, só com o motivo respondido e a etapa
+  \cd{resultado} aberta (antes, 409 \cd{resultado-nao-liberado}).\\
+\rota{POST /jornal-escola/chave} & estudante & Uma tentativa da Chave: três
+  blocos em qualquer ordem, corrigidos no servidor; \cd{devolvidos} são as
+  iscas. Na formação, a marca da EF15CO02. O número da tentativa descarta o
+  reenvio da rede.\\
+\zebra \rota{GET /jornal-escola/revisao} & estudante & O pilar em falta de cada
+  vaga da 1ª edição, depois da Chave.\\
+\rota{POST /jornal-escola/republicar} & estudante & \textbf{O latch da 2ª
+  edição}, com a marca da EF04CO08 (\cd{edicao-2}). Pode repetir as três vagas
+  da 1ª.\\
+\zebra \rota{GET /jornal-escola/comparativo} & estudante & As duas edições, com
+  o que cada uma causou e o pilar que faltava em cada notícia.\\
+\rota{POST /jornal-escola/concluir} & estudante & O fim, sem exigir as
+  perguntas. Idempotente.\\
+\zebra \rota{GET /jornal-escola/turmas} & prof., gestor & O seletor, por
+  matrícula para o professor.\\
+\rota{GET .../turmas/:id/painel} & prof., gestor & O botão da próxima etapa e o
+  progresso POR COMPUTADOR; o histograma anônimo, o motivo agregado e o radar
+  das notícias. Nenhum nível nem verificada por linha. A leitura do professor
+  conta no EVT-P04; a do gestor, não.\\
+\zebra \rota{POST .../gate} & prof., gestor & O botão único:
+  \cd{exploracao} \seta{} \cd{resultado} \seta{} \cd{revisao}. Destino igual
+  ao atual é aceito e não muda nada; fora de ordem, 409.\\
+\rota{POST .../zerar} & prof., gestor & A próxima rodada do mesmo pacote, sem
+  apagar nada.\\
+\zebra \rota{GET .../pacotes} & prof., gestor & O pacote em andamento
+  \textbf{com} o gabarito, e o histórico das atividades da turma (o
+  \cd{?pacote=} do painel de habilidades).\\
+\rota{POST .../gerar-conteudo} & prof., gestor & O rascunho das 8 notícias por
+  IA, \textbf{pré-aula}, no molde sorteado. Não persiste. Sem saldo, 429; sem
+  provedor, 503.\\
+\zebra \rota{POST .../regenerar-noticia} & prof., gestor & Uma notícia nova com
+  o mesmo id, meio e papel. Falha da IA é 200 com \cd{usouIa: false} e a
+  notícia como estava.\\
+\rota{POST .../homologar} & prof., gestor & \enquote{Aprovar Pacote}, com as
+  oito notícias INTEIRAS e a régua de \arq{invariantes.ts} (400
+  \cd{pacote-invalido} com a lista de \cd{erros}). Pacote novo é atividade nova;
+  o mesmo conteúdo é idempotente.\\
+\zebra \rota{POST .../gerar-midia} & prof., gestor & Até duas imagens novas por
+  chamada, com custo estimado na quota do professor; repetir até
+  \cd{completo}.\\
+\rota{GET /jornal-escola/\B{}professor/\B{}material} & prof., gestor & O banco
+  padrão com gabarito, os blocos da Chave com os pilares marcados e o roteiro da
+  mediação. Catálogo, sem \emph{tenancy} (\adrr{ADR-86}).\\
+\bottomrule
+\end{tabularx}
+
+\begin{regra}
+\textbf{O gestor alcança as MESMAS rotas de turma que o professor}, e isso é
+deliberado: a missão não tem texto livre de menor, então não há campo a
+recortar. O que separa os dois é a turma --- \cd{turmaVisivel} devolve 404, e
+não 403, para a turma que o professor não leciona ---, e \cd{gestor\_contrato} e
+\cd{admin} dizem \cd{?escolaId=} (\arq{comum/escola-alvo.ts}), levado explícito
+ao \cd{comTenancy}. As rotas que gastam IA do professor têm, além da quota, um
+teto de requisição por minuto.
+\end{regra}
+
 \subsection{As rotas que alimentam o guia da aula}
 
 Duas rotas existem só para o \textbf{guia da aula} do professor
@@ -881,20 +992,26 @@ hub divergiria na primeira revisão de \emph{copy}.
 \rota{GET /quem-mandou-isso/\B{}professor/\B{}material} & prof., gestor & O banco curado
   da exp05ef1b com o gabarito, o roteiro da roda, as falas da Nina e as
   perguntas de evidência com o nível de cada alternativa.\\
+\zebra \rota{GET /jornal-escola/\B{}professor/\B{}material} & prof., gestor & O
+  banco padrão do Jornal da Escola com o gabarito e a reação de cada notícia,
+  os seis blocos da Chave com os pilares marcados, e o roteiro: o gatilho do
+  resultado, as três perguntas do debate e o gatilho da revisão. É também o
+  \enquote{Usar Banco Padrão} do preparo.\\
 \bottomrule
 \end{tabularx}
 
 \begin{regra}
 \textbf{As de \rota{/<slug>/professor/*} são catálogo; a da Vila não.} Em
 \rota{/unoogpt/professor/fontes},
-\rota{/rastro-boato/professor/material} e
-\rota{/quem-mandou-isso/professor/material} não há \cd{escolaId} nem
+\rota{/rastro-boato/professor/material},
+\rota{/quem-mandou-isso/professor/material} e
+\rota{/jornal-escola/professor/material} não há \cd{escolaId} nem
 \emph{tenancy} a aplicar --- o conteúdo é igual para todo contrato, e o que a
 guarda protege é o PAPEL. Por isso vivem em \emph{controller} separado do de
 turmas. \rota{/vila/professor/cartoes} é a exceção: ela recebe \cd{?turmaId=}
 porque a bolha servida depende da série da turma.
 
-As quatro devolvem exatamente os campos que o servidor retira antes de a
+As cinco devolvem exatamente os campos que o servidor retira antes de a
 opção chegar ao estudante (regra inviolável nº 3): o que muda entre as duas
 superfícies é o \textbf{leitor} (\adrr{ADR-86}). No unooGPT isso é mais
 extremo --- a Missão Tempestade não revela nada por \emph{software}, de

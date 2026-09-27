@@ -252,6 +252,11 @@ model Turma {
   quemMandouPacotes Exp05ef1bPacote[]
   quemMandouGates   Exp05ef1bGateTurma[]
   quemMandouSessoes Exp05ef1bSessao[]
+  /// O Jornal da Escola (exp04ef1b): o pacote homologado é POR TURMA (e é a
+  /// atividade da evidência), o relógio é da turma, e a sessão carrega a turma.
+  jornalPacotes     Exp04ef1bPacote[]
+  jornalGates       Exp04ef1bGateTurma[]
+  jornalSessoes     Exp04ef1bSessao[]
 
   @@unique([escolaId, periodoLetivoId, nome])
   @@index([escolaId])
@@ -440,6 +445,9 @@ model User {
   /// Uma sessão por rodada de cada cobertura da exp07ef1b: zerar a turma abre
   /// outra, e a anterior fica.
   selecaoSessoes             Exp07ef1bSessao[]           @relation("Exp07ef1bEstudante")
+  /// Uma sessão por rodada de cada pacote do Jornal da Escola (exp04ef1b):
+  /// zerar abre outra, e a anterior fica.
+  jornalSessoes              Exp04ef1bSessao[]           @relation("Exp04ef1bEstudante")
   /// Lista porque a run da exp01ef1b é por TENTATIVA (o reset arquiva e abre
   /// outra), então não há unicidade por estudante.
   fotoContaRuns              FotoContaRun[]              @relation("FotoContaEstudante")
@@ -2886,4 +2894,191 @@ model Exp07ef1bReflexao {
 
   @@index([escolaId], map: "exp07ef1b_reflexoes_escola_idx")
   @@map("exp07ef1b_reflexoes")
+}
+
+// ════════════════════════════════════════ exp04ef1b — o jornal da escola
+//
+// "Jornal da Escola: A Edição de Bento" — 4º ano EF, unidade 1, numa redação
+// da Unooria (não é clone de rede social). A criança recebe oito notícias de
+// oito meios, escolhe três para a primeira página e publica (o LATCH da 1ª
+// edição); o professor libera o resultado — as reações dos leitores às
+// notícias ESCOLHIDAS — e depois a revisão: a Chave do Editor (fonte, data,
+// autoria) marca as vagas, e a criança republica (o LATCH da 2ª).
+//
+// QUATRO tabelas. A ATIVIDADE (no sentido da evidência pedagógica, ADR-112) é
+// o PACOTE homologado, e a RODADA é o "Zerar turma": zerar sobe a rodada no
+// gate e as sessões antigas FICAM. Pacote novo é atividade nova, na rodada 1.
+//
+// SEM COLUNA DE NOTA e sem texto livre de menor: as respostas de P1/P2 vivem
+// na evidência (E14), e as verificadas de cada edição descrevem a SELEÇÃO, não
+// a criança — o painel as mostra só num histograma anônimo.
+//
+// CHECKs, RLS e o índice único parcial vivem na migration.
+
+/// Um PACOTE — as oito notícias da mesa, COM o gabarito, as pistas e a
+/// consequência de cada uma. É a atividade.
+///
+/// Um ATIVO por turma (índice único parcial na migration). Sem homologação, a
+/// turma roda o banco padrão ("Feira de Ciências e Notícias da Cidade"): o
+/// pacote `padrao` nasce na primeira entrada, e a missão não nasce vazia.
+model Exp04ef1bPacote {
+  id         String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  escolaId   String  @map("escola_id")
+  turmaId    String  @map("turma_id") @db.Uuid
+  /// O componente curricular que a professora escreveu no preparo.
+  disciplina String
+  tema       String
+  /// Os tópicos que a professora deu ao gerador (até 600 caracteres).
+  topicos    String?
+  /// padrao | ia (CHECK). `padrao` é o banco da Unooria, não fallback de erro.
+  origem     String
+
+  /// As 8 notícias COM `gabarito`, `pistas` e `consequencia`. `Json` porque o
+  /// pacote é lido e escrito sempre inteiro; o schema real é o Zod de
+  /// `jornal-escola/contrato-de-rotas.ts`, e o CHECK cobra array com 8.
+  noticias Json
+
+  /// As URLs das imagens geradas, por id de notícia (`{ "n1": url }`).
+  midia Json @default("{}")
+
+  /// Quem homologou. Carimbo sem FK, como `exp07ef1b_coberturas.aprovada_por`:
+  /// a saída de um professor da rede não pode travar a atividade da turma.
+  /// Nulo só no `padrao` que nasceu sozinho (CHECK). É o EVT-P03.
+  aprovadoPor String?   @map("aprovado_por") @db.Uuid
+  aprovadoEm  DateTime? @map("aprovado_em") @db.Timestamptz(6)
+
+  ativo Boolean @default(true)
+
+  /// EVT-P02: as gerações de rascunho feitas com este pacote em sala (o
+  /// rascunho não persiste, e a turma é o que o PRD mede) e o que custaram.
+  geracoes     Int @default(0)
+  tokensUsados Int @default(0) @map("tokens_usados")
+
+  /// EVT-P04: quantas vezes o professor abriu o painel desta atividade.
+  painelVistoEm DateTime? @map("painel_visto_em") @db.Timestamptz(6)
+  painelVistas  Int       @default(0) @map("painel_vistas")
+
+  criadoEm     DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  turma        Turma                   @relation(fields: [turmaId], references: [id], onDelete: Cascade)
+  gates        Exp04ef1bGateTurma[]
+  sessoes      Exp04ef1bSessao[]
+  diagramacoes Exp04ef1bDiagramacao[]
+
+  @@index([escolaId, turmaId], map: "exp04ef1b_pacotes_escola_turma_idx")
+  @@map("exp04ef1b_pacotes")
+}
+
+/// O RELÓGIO DA TURMA — o botão único do painel ("Liberar resultado", depois
+/// "Liberar revisão"), lido por polling de 5 s (ADR-93).
+///
+/// Diz QUAL atividade e QUAL rodada estão em andamento: a sessão do estudante é
+/// a de (pacote, rodada) deste gate, e o resolvedor da evidência só aceita
+/// resposta de P1/P2 dessa sessão.
+model Exp04ef1bGateTurma {
+  escolaId String @map("escola_id")
+  turmaId  String @map("turma_id") @db.Uuid
+  pacoteId String @map("pacote_id") @db.Uuid
+  /// ≥ 1 (CHECK). "Zerar turma" soma um; pacote novo volta a 1.
+  rodada   Int    @default(1)
+  /// exploracao | resultado | revisao (CHECK; a ordem é `regras/passos.ts`).
+  etapa    String @default("exploracao")
+
+  /// EVT-P05, da rodada em andamento: quando cada portão abriu. Voltam a nulo
+  /// ao zerar e ao homologar (CHECK de coerência com a etapa).
+  resultadoLiberadoEm DateTime? @map("resultado_liberado_em") @db.Timestamptz(6)
+  revisaoLiberadaEm   DateTime? @map("revisao_liberada_em") @db.Timestamptz(6)
+
+  atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  turma  Turma           @relation(fields: [turmaId], references: [id], onDelete: Cascade)
+  pacote Exp04ef1bPacote @relation(fields: [pacoteId], references: [id], onDelete: Cascade)
+
+  @@id([escolaId, turmaId])
+  @@index([pacoteId], map: "exp04ef1b_gates_turma_pacote_idx")
+  @@map("exp04ef1b_gates_turma")
+}
+
+/// A sessão de UM estudante em UMA rodada de UM pacote.
+///
+/// Zerar abre outra rodada e, com ela, outra linha: a anterior fica, imutável,
+/// e é ela que o painel de habilidades lê como a rodada passada.
+model Exp04ef1bSessao {
+  id          String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  escolaId    String @map("escola_id")
+  turmaId     String @map("turma_id") @db.Uuid
+  estudanteId String @map("estudante_id") @db.Uuid
+  pacoteId    String @map("pacote_id") @db.Uuid
+  rodada      Int
+
+  /// desafio | mesa | motivo | publicada | resultado | chave | revisao |
+  /// comparativo | transferencia | fim (CHECK; a ordem é `regras/passos.ts`).
+  /// `resultado` e `chave` nunca são GRAVADOS: a etapa da turma os impõe.
+  passo String @default("desafio")
+
+  /// As pistas abertas, `[{ noticiaId, tipo, fase, em }]`, sem repetir o par
+  /// na mesma fase. É o registro da EF15CO04 (fase 1) e do `edicao-2` (as duas).
+  pistas Json @default("[]")
+
+  /// As 3 vagas da 1ª edição, na ORDEM (a primeira é a manchete principal).
+  /// Vazias antes do latch; com ele, três junto com o layout e o carimbo (CHECK).
+  slotsEd1         String[]  @default([]) @map("slots_ed1")
+  layoutEd1        String?   @map("layout_ed1")
+  /// ia | modelo — quem diagramou a página que a criança viu.
+  origemLayoutEd1  String?   @map("origem_layout_ed1")
+  /// 0 a 3, calculado NO SERVIDOR no latch (regra 3).
+  verificadasEd1   Int?      @map("verificadas_ed1")
+  /// visual | checagem — a pergunta de DEPOIS do latch, uma vez só.
+  motivoEd1        String?   @map("motivo_ed1")
+  publicada1Em     DateTime? @map("publicada1_em") @db.Timestamptz(6)
+
+  /// Cada envio da Chave é uma tentativa (a isca também conta).
+  chaveTentativas  Int       @default(0) @map("chave_tentativas")
+  chaveFormadaEm   DateTime? @map("chave_formada_em") @db.Timestamptz(6)
+
+  slotsEd2         String[]  @default([]) @map("slots_ed2")
+  layoutEd2        String?   @map("layout_ed2")
+  origemLayoutEd2  String?   @map("origem_layout_ed2")
+  verificadasEd2   Int?      @map("verificadas_ed2")
+  publicada2Em     DateTime? @map("publicada2_em") @db.Timestamptz(6)
+
+  concluidaEm DateTime? @map("concluida_em") @db.Timestamptz(6)
+
+  /// A versão do instrumento, para reprocessamento histórico (DAD-06).
+  versaoInstrumento String @default("1.0.0") @map("versao_instrumento")
+
+  criadoEm     DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  turma     Turma           @relation(fields: [turmaId], references: [id], onDelete: Cascade)
+  estudante User            @relation("Exp04ef1bEstudante", fields: [estudanteId], references: [id], onDelete: Cascade)
+  pacote    Exp04ef1bPacote @relation(fields: [pacoteId], references: [id], onDelete: Cascade)
+
+  @@unique([escolaId, turmaId, estudanteId, pacoteId, rodada], map: "exp04ef1b_sessao_unica_por_rodada")
+  @@index([escolaId, turmaId, pacoteId, rodada], map: "exp04ef1b_sessoes_rodada_idx")
+  @@index([escolaId, estudanteId], map: "exp04ef1b_sessoes_estudante_idx")
+  @@map("exp04ef1b_sessoes")
+}
+
+/// O CACHE da diagramação por IA: um layout por (pacote, as três vagas NA
+/// ORDEM). A mesma primeira página, montada por outra criança da turma, não
+/// paga outra chamada — o custo da atividade fica limitado às combinações
+/// usadas. Só entra aqui o que a IA respondeu; o modelo automático não é
+/// gravado (ele é determinístico e de graça).
+model Exp04ef1bDiagramacao {
+  escolaId String @map("escola_id")
+  pacoteId String @map("pacote_id") @db.Uuid
+  /// Os três ids na ordem, separados por vírgula (`n2,n5,n1`) — CHECK.
+  chave    String
+  /// classic | hero-image | columns (CHECK) — o `NEWSPAPER_LAYOUTS` do DS.
+  layout   String
+  tokens   Int      @default(0)
+  criadoEm DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
+
+  pacote Exp04ef1bPacote @relation(fields: [pacoteId], references: [id], onDelete: Cascade)
+
+  @@id([escolaId, pacoteId, chave])
+  @@index([pacoteId], map: "exp04ef1b_diagramacoes_pacote_idx")
+  @@map("exp04ef1b_diagramacoes")
 }

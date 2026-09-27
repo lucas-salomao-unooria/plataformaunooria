@@ -21,9 +21,10 @@ armadilhas que já custaram tempo e não avisam quando você cai nelas:
   (cada habilidade pelo verbo dela). A 119 é o podcast
   da A Seleção (do professor; a IA reescreve só as três falas do tema); a 118 é
   Quem mandou isso? v2.2 (a atividade é o pacote, a rodada é a reaplicação, e a
-  régua mede pela seleção e pelas perguntas do PO). A 117 (o Jornal da Escola) está RESERVADA
-  para a frente que corre em paralelo — o número foi fechado entre as sessões
-  antes de qualquer uma escrever. A 116 é o UnooTube ARQUIVADO, e não apagado,
+  régua mede pela seleção e pelas perguntas do PO). A 117 é o Jornal da Escola
+  (a redação é da Unooria e cada peça usa a seção da plataforma que imita; o
+  professor abre o resultado e a revisão; a IA só escolhe o layout), escrita
+  depois da 121 com o número reservado entre as sessões. A 116 é o UnooTube ARQUIVADO, e não apagado,
   para o Jornal da Escola tomar o código `exp04ef1b`; a 115 é A Seleção (o par
   do Mural é do computador, e a IA gradua a legenda); a 114 a primeira versão de
   Quem mandou isso? retirada, para a v2.2 voltar com o mesmo código; a 113 a

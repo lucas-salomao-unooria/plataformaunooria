@@ -31,6 +31,18 @@ plataforma no feed do estudante quebra a ilusão que a experiência está medind
 | `whatsappmobile` | `@edu/ui/ds-whatsapp` | a exp06ef2b e a exp05ef1b, menos as telas da escola — **só tema escuro**. Onde a fronteira cai é a REVELAÇÃO, não o arquivo: na exp06ef2b o mapa da rede fala pela escola porque o app real não tem visualizador de topologia (ADR-72) |
 | `tiktooria` | — | ainda sem consumidor |
 
+**A exceção, e só ela (ADR-117): conteúdo de uma plataforma DENTRO de uma tela
+da Unooria usa a seção da plataforma que ele imita.** O Jornal da Escola
+(exp04ef1b) não é clone de nada: a redação inteira (mesa, página, Bento,
+leitores, Chave) é `unooria`. Mas uma notícia que veio de rede social aparece na
+gaveta como `PostCard` do `instanooria`, e uma mensagem encaminhada como
+`MessageBubble` do `whatsappmobile` — a peça imitada fala na voz de onde veio,
+porque um post que não parece post não ensina a reconhecer post. A regra é
+por PEÇA, nunca por tela: o cromo em volta continua sendo da Unooria, e a peça
+do clone não traz a barra, as abas nem o fundo do app. É o inverso do que
+continua proibido — a plataforma dentro do clone — e vale só para conteúdo que
+a criança deve reconhecer como vindo daquela plataforma.
+
 `^0.1.x` **não** pega `0.2.0` — caret em `0.x` só sobe patch. Atualizar é ativo:
 `pnpm up -r @unooria/design-system --latest`, commitando lockfile e
 `package.json` juntos. Mecânica completa (CSS, fontes, frames, compensações,

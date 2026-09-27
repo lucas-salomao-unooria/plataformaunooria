@@ -20,6 +20,10 @@ o contexto registrado no `onModuleInit` de `a-selecao.service.ts` e a marca da
 legenda numa transação SÓ DELA, depois do latch da publicação: a IA leva até
 6 s, e a transação da jogada não pode esperar. Falhando a IA, não há marca:
 "Não avaliado", e o professor decide.
+**A terceira é o Jornal da Escola (`exp04ef1b`)**: `fichas/exp04ef1b.ts`
+(EF15CO04 por `pistas`, EF15CO02 por `chave`, EF04CO08 por `edicao-2`, `p1` e
+`p2`), as três ações marcadas DENTRO das transações dos latches e da Chave, cada
+uma depois de `jaAvaliadaAntes` (ADR-120).
 
 Três tabelas de PLATAFORMA (sem prefixo, como `liberacoes` e `equipes`), todas
 com `escola_id` + RLS forçada:
