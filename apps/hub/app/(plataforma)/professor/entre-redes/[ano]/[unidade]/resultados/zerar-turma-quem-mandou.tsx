@@ -96,7 +96,8 @@ export function ZerarTurmaQuemMandou({
       </Button>
       <p className="max-w-3xl text-[12px] leading-snug text-unooria-neutral-600">
         Abre a {rodada + 1}ª rodada com o mesmo pacote e volta a aula ao começo. Nada é apagado: a{" "}
-        {rodada}ª rodada fica no histórico.
+        {rodada}ª rodada fica no histórico. Com o mesmo pacote, a EF05CO08 não é medida de novo para quem já
+        jogou; para medir de novo, aprove um pacote novo.
       </p>
 
       <Modal isOpen={aberto} onClose={fechar} size="sm" theme="light" aria-labelledby={idDoTitulo}>
@@ -114,6 +115,12 @@ export function ZerarTurmaQuemMandou({
               <strong>Nada é apagado.</strong> O que cada estudante escolheu e escreveu na {rodada}ª rodada
               fica guardado, e o painel de habilidades mostra as rodadas e fica com a melhor de cada
               habilidade.
+            </p>
+            <p className="text-[13px] text-unooria-neutral-600">
+              <strong>Com o mesmo pacote, a turma refaz para praticar.</strong> Quem já jogou viu a resposta
+              na revelação, então a EF05CO08 dessa criança não é medida de novo — o Mural fecha normalmente.
+              Quem faltou é medido na primeira vez que jogar. Para medir a turma de novo, aprove um pacote
+              novo no preparo.
             </p>
             <Checkbox
               label="Entendi: a turma recomeça do começo numa rodada nova."

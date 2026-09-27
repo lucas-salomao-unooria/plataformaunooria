@@ -446,3 +446,53 @@ export function rotuloDaOpcao(opcoes: readonly OpcaoDaMissao[], id: string | nul
   if (!id) return null;
   return opcoes.find((o) => o.id === id)?.rotulo ?? id;
 }
+
+// ─────────────────────────────────── a rubrica do Se/Então (régua v2, ADR-120)
+
+/**
+ * A EF05CO04 tem dois verbos — criar e simular. A P2 da Nina mede o SIMULAR;
+ * o CRIAR é a regra Se/Então que a criança escreveu, e quem a lê é o
+ * professor: na folha da turma, ao lado da regra, ele a classifica com um
+ * clique, e o clique é um AJUSTE da evidência (vale sobre a pergunta). A
+ * regra é texto livre de menor — não passa por IA nem sai da tela de quem dá
+ * aula na turma.
+ */
+export const HABILIDADE_DA_RUBRICA = "EF05CO04";
+
+/** Os três níveis da rubrica, na ordem em que aparecem (o N/A é do painel de habilidades). */
+export const NIVEIS_DA_RUBRICA = ["atingiu", "em_processo", "nao_atingiu"] as const;
+export type NivelDaRubrica = (typeof NIVEIS_DA_RUBRICA)[number];
+
+/** O que cada nível quer dizer, na voz da folha — o critério do guia da aula. */
+export const CRITERIO_DA_RUBRICA: Readonly<Record<NivelDaRubrica, string>> = {
+  atingiu: "tem condição e um gesto de conferir antes de repassar",
+  em_processo: "tem condição, mas a ação é vaga",
+  nao_atingiu: "não confere nada, ou repassa",
+};
+
+/** A rubrica de uma rodada: onde gravar o clique e o que o professor já classificou. */
+export interface RubricaDaTurma {
+  pacoteId: string;
+  rodada: number;
+  /** O nível que o PROFESSOR deu a cada estudante nesta rodada. Sem clique, a chave não existe. */
+  classificados: Readonly<Record<string, NivelDaRubrica>>;
+}
+
+/**
+ * Lê do painel de habilidades o que o professor já classificou na rodada — e
+ * SÓ o dele (origem `professor`): o nível que veio da P2 não acende botão,
+ * senão a rubrica pareceria já respondida por quem não a respondeu.
+ */
+export function rubricaDaRodada(
+  estudantes: readonly { id: string; porRodada: Record<string, Record<string, { status: string; origem: string }>> }[],
+  atividade: { pacoteId: string; rodada: number },
+): RubricaDaTurma {
+  const classificados: Record<string, NivelDaRubrica> = {};
+  for (const e of estudantes) {
+    const celula = e.porRodada[String(atividade.rodada)]?.[HABILIDADE_DA_RUBRICA];
+    if (celula?.origem !== "professor") continue;
+    const nivel = NIVEIS_DA_RUBRICA.find((n) => n === celula.status);
+    if (nivel) classificados[e.id] = nivel;
+  }
+  return { pacoteId: atividade.pacoteId, rodada: atividade.rodada, classificados };
+}

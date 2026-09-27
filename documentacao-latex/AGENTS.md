@@ -17,8 +17,8 @@ armadilhas que já custaram tempo e não avisam quando você cai nelas:
   com `tectonic -k mapa-de-produto.tex`, e não pelo `compilar.sh` daqui.
 
 - **A PRÓXIMA ADR é a 122.** A numeração vai até ADR-121 (o CI verifica só os
-  PRs para `dev`, `hml` e `main`); a 120 é a régua v2 de Quem mandou isso?, de
-  uma frente paralela (PR #86) que ainda não entrou nesta base. A 119 é o podcast
+  PRs para `dev`, `hml` e `main`); a 120 é a régua v2 de Quem mandou isso?
+  (cada habilidade pelo verbo dela). A 119 é o podcast
   da A Seleção (do professor; a IA reescreve só as três falas do tema); a 118 é
   Quem mandou isso? v2.2 (a atividade é o pacote, a rodada é a reaplicação, e a
   régua mede pela seleção e pelas perguntas do PO). A 117 (o Jornal da Escola) está RESERVADA

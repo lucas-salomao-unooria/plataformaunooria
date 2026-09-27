@@ -1,85 +1,69 @@
 import type { FichaPedagogica } from "./tipos";
 
 /**
- * A FICHA DE "QUEM MANDOU ISSO?" v2.2 (exp05ef1b, 5º ano, unidade 1).
+ * A FICHA DE "QUEM MANDOU ISSO?" v2.2 (exp05ef1b, 5º ano, unidade 1) — a
+ * RÉGUA v2, de 2026-09-26 (ADR-120), que substitui a de 25/09. Cada
+ * habilidade é medida por um momento que exige o VERBO dela na BNCC:
  *
- * A régua é a decisão do Lucas de 2026-09-25, que não se reabre:
+ *   - **EF05CO08** (distinguir o confiável) pela SELEÇÃO do Mural — marcador
+ *     de AÇÃO gravado no `POST /mural`, na mesma transação do latch. Só três
+ *     verdadeiras atingem (`quem-mandou-isso/regras/evidencia.ts#nivelCO08`), e
+ *     a marca só entra na primeira vez que a criança fecha o Mural com aquele
+ *     pacote: na rodada seguinte ela já viu a resposta.
+ *   - **EF05CO03** (negação, conjunção e disjunção sobre verdadeiro e falso)
+ *     pela P1: avaliar frases com NÃO, E e OU sobre os dois selos de uma
+ *     mensagem. O exemplo é da própria pergunta, e não do pacote — serve ao
+ *     pacote pronto e ao gerado.
+ *   - **EF05CO04** (criar e SIMULAR algoritmos com seleção condicional) pela
+ *     P2: executar uma regra Se/Então no áudio do tio. O CRIAR é o Se/Então da
+ *     Etapa 6, que não é corrigido pela máquina: o professor o classifica na
+ *     rubrica da folha da turma, e o ajuste dele vale sobre a pergunta.
  *
- *   - **EF05CO08** pela SELEÇÃO do Mural — um marcador de AÇÃO que o módulo
- *     `quem-mandou-isso` grava no `POST /mural`, na mesma transação do latch
- *     (a régua é `quem-mandou-isso/regras/evidencia.ts#nivelCO08`);
- *   - **EF05CO03** pela pergunta P1 (tom × veracidade);
- *   - **EF05CO04** SÓ pela P2 (a regra condicional que funciona). O Se/Então da
- *     Etapa 6 NÃO é corrigido: o professor o lê e ajusta pelo painel.
+ * As três alternativas de cada pergunta têm o MESMO tamanho e a mesma forma —
+ * a mais longa não pode ser a certa, e embaralhar não esconde o tamanho. Na
+ * P1, "em processo" acerta uma das duas partes da frase; na P2, trava o
+ * repasse mas não confere nada. Os textos são da equipe (a v1 usava os do
+ * PO, Canal B) e entram na revisão do PO.
  *
- * Enunciados e alternativas são LITERAIS do PO (as perguntas de evidência,
- * Canal B). As falas da Nina que antecedem cada enquete são texto da
- * EXPERIÊNCIA e moram em `quem-mandou-isso/catalogo.ts#FALAS_ANTES_DAS_PERGUNTAS`.
- * A ordem das alternativas aqui é a do PO; o estudante as recebe EMBARALHADAS
- * a cada leitura (`EvidenciasService.pergunta`), e nunca o `status`.
+ * As falas da Nina que antecedem cada enquete são texto da EXPERIÊNCIA e moram
+ * em `quem-mandou-isso/catalogo.ts#FALAS_ANTES_DAS_PERGUNTAS`. O estudante
+ * recebe as alternativas EMBARALHADAS a cada leitura
+ * (`EvidenciasService.pergunta`), e nunca o `status`.
  *
  * Quem sai antes das perguntas fica "Não avaliado" em CO03/CO04 — a AUSÊNCIA
- * de marca —, nunca "não atingiu".
+ * de marca —, nunca "não atingiu". Os registros da v1 guardam a versão 1.
  */
 export const FICHA_EXP05EF1B: FichaPedagogica = {
   expId: "exp05ef1b",
-  versao: 1,
-  validadaPor: "Produto Unooria — contrato de evidência v2.2 e perguntas de evidência (Canal B)",
-  validadaEm: "2026-09-25",
+  versao: 2,
   habilidades: [
     { codigo: "EF05CO08", marcadores: [{ id: "selecao-do-mural", tipo: "acao" }] },
     {
       codigo: "EF05CO03",
-      marcadores: [{ id: "pergunta-tom-e-veracidade", tipo: "multipla_escolha", perguntaId: "p1" }],
+      marcadores: [{ id: "pergunta-dos-selos", tipo: "multipla_escolha", perguntaId: "p1" }],
     },
     {
       codigo: "EF05CO04",
-      marcadores: [{ id: "pergunta-regra-condicional", tipo: "multipla_escolha", perguntaId: "p2" }],
+      marcadores: [{ id: "pergunta-simular-a-regra", tipo: "multipla_escolha", perguntaId: "p2" }],
     },
   ],
   perguntas: [
     {
       id: "p1",
-      enunciado: "O que você diria pra ela?",
+      enunciado: "Qual frase está certa sobre ela?",
       alternativas: [
-        {
-          id: "A1",
-          texto:
-            "Não dá pra saber só pelo tom. Uma mensagem pode ser falsa mesmo parecendo séria, ou verdadeira mesmo sendo exagerada.",
-          status: "atingiu",
-        },
-        {
-          id: "A2",
-          texto: "Ela tem razão de desconfiar menos, mas ainda assim é bom checar.",
-          status: "em_processo",
-        },
-        {
-          id: "A3",
-          texto: "Se a mensagem é séria e organizada, é porque quem escreveu pesquisou. Pode confiar.",
-          status: "nao_atingiu",
-        },
+        { id: "A1", texto: "Ela não era verdadeira e era emocional.", status: "atingiu" },
+        { id: "A2", texto: "Ela era falsa e não era nada emocional.", status: "em_processo" },
+        { id: "A3", texto: "Ela não era falsa ou então era neutra.", status: "nao_atingiu" },
       ],
     },
     {
       id: "p2",
-      enunciado: "Qual regra funciona melhor?",
+      enunciado: "Seguindo a minha regra, o que eu faço com o áudio do tio?",
       alternativas: [
-        {
-          id: "B1",
-          texto:
-            "Se a mensagem pedir pra repassar rápido, então eu primeiro procuro a mesma notícia em outro lugar antes de encaminhar.",
-          status: "atingiu",
-        },
-        {
-          id: "B2",
-          texto: "Se a mensagem parecer estranha, então eu tomo mais cuidado.",
-          status: "em_processo",
-        },
-        {
-          id: "B3",
-          texto: "Eu sempre mando pro grupo porque é melhor avisar do que deixar de avisar.",
-          status: "nao_atingiu",
-        },
+        { id: "B1", texto: "Procuro o aviso no site da escola antes de repassar pro grupo.", status: "atingiu" },
+        { id: "B2", texto: "Não repasso agora e espero alguém do grupo confirmar o aviso.", status: "em_processo" },
+        { id: "B3", texto: "Repasso agora mesmo, porque o tio pediu para mandar bem rápido.", status: "nao_atingiu" },
       ],
     },
   ],

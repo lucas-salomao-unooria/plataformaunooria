@@ -69,8 +69,6 @@ const ATV = "atv-1";
 const FICHA: FichaPedagogica = {
   expId: INSTA,
   versao: 1,
-  validadaPor: "Suíte de integração (teste)",
-  validadaEm: "2026-09-25",
   habilidades: [
     {
       codigo: H1,

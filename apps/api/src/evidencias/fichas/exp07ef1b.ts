@@ -21,16 +21,10 @@ import type { FichaPedagogica } from "./tipos";
  * EMBARALHA as alternativas a cada leitura, para toda ficha
  * (`regras.ts#embaralhar`, ADR-118): numa enquete de toque único, a primeira
  * opção levaria o toque de quem tem pressa.
- *
- * `validadaPor`/`validadaEm`: o dono do produto dispensou a validação
- * pedagógica em 2026-09-25, e a ficha diz isso por extenso — não finge uma
- * validação que não houve.
  */
 export const FICHA_EXP07EF1B: FichaPedagogica = {
   expId: "exp07ef1b",
   versao: 1,
-  validadaPor: "Lucas Salomão (dono do produto; validação pedagógica dispensada)",
-  validadaEm: "2026-09-25",
   habilidades: [
     {
       codigo: "EF07CO11",
