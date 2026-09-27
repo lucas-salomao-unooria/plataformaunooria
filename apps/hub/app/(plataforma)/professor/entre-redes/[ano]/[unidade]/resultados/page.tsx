@@ -4,6 +4,7 @@ import {
   MISSAO_A_SELECAO,
   MISSAO_MANIFESTO_IA,
   MISSAO_FOTO_CONTA,
+  MISSAO_JORNAL_DA_ESCOLA,
   MISSAO_QUEM_MANDOU_ISSO,
   MISSAO_RASTRO_BOATO,
   MISSAO_UNOOGPT,
@@ -13,6 +14,7 @@ import {
 import { ResultadosASelecao } from "./resultados-a-selecao";
 import { ResultadosManifestoIa } from "./resultados-manifesto-ia";
 import { ResultadosFotoConta } from "./resultados-foto-conta";
+import { ResultadosJornalEscola } from "./resultados-jornal-escola";
 import { ResultadosQuemMandouIsso } from "./resultados-quem-mandou-isso";
 import { ResultadosRastroBoato } from "./resultados-rastro-boato";
 import { ResultadosUnooGPT } from "./resultados-unoogpt";
@@ -28,21 +30,22 @@ import { ResultadosUnooGPT } from "./resultados-unoogpt";
  * A turma vem da URL (`?turmaId=`), como a escola em `/analise`: link
  * compartilhável, e nunca "sem turma = todas". A exp07ef1b lê também
  * `?cobertura=` — a atividade que o painel de habilidades mostra (a cobertura
- * homologada; sem o parâmetro, a em andamento).
+ * homologada; sem o parâmetro, a em andamento) —, e a exp04ef1b, `?pacote=`,
+ * pela mesma razão: a atividade dela é o pacote homologado.
  */
 export default async function ResultadosPage({
   params,
   searchParams,
 }: {
   params: Promise<{ ano: string; unidade: string }>;
-  searchParams: Promise<{ turmaId?: string; cobertura?: string }>;
+  searchParams: Promise<{ turmaId?: string; cobertura?: string; pacote?: string }>;
 }) {
   const { ano: anoSlug, unidade: unidadeSlug } = await params;
   const encontrado = buscarMissao(anoSlug, unidadeSlug);
   if (!encontrado) notFound();
   const { missao } = encontrado;
 
-  const { turmaId, cobertura } = await searchParams;
+  const { turmaId, cobertura, pacote } = await searchParams;
   const turma = turmaId?.trim() ?? "";
 
   if (missao.expId === MISSAO_FOTO_CONTA.expId) {
@@ -62,6 +65,9 @@ export default async function ResultadosPage({
   }
   if (missao.expId === MISSAO_QUEM_MANDOU_ISSO.expId) {
     return <ResultadosQuemMandouIsso missao={missao} turma={turma} />;
+  }
+  if (missao.expId === MISSAO_JORNAL_DA_ESCOLA.expId) {
+    return <ResultadosJornalEscola missao={missao} turma={turma} pacote={pacote?.trim() ?? ""} />;
   }
   // Missão sem tela de resultados própria: a trilha não linka para cá.
   notFound();

@@ -48,10 +48,10 @@ const SEM_REDE = "Não deu para falar com a plataforma. Confira a conexão e ten
  * demonstrou numa atividade, rodada a rodada.
  *
  * **Missão sem ficha pedagógica não desenha nada** (`temFicha: false`). As
- * primeiras com ficha são Quem mandou isso? v2.2 (ADR-118) e A Seleção
- * (exp07ef1b), cada uma nos resultados dela; o Instanooria ainda não tem, e na
- * página da atividade dele o bloco não aparece — acende sozinho quando a ficha
- * dele entrar, sem mudar o hub.
+ * primeiras com ficha são Quem mandou isso? v2.2 (ADR-118), A Seleção
+ * (exp07ef1b) e o Jornal da Escola (exp04ef1b), cada uma nos resultados dela;
+ * o Instanooria ainda não tem, e na página da atividade dele o bloco não
+ * aparece — acende sozinho quando a ficha dele entrar, sem mudar o hub.
  *
  * Não há ranking: a ordem é a alfabética (a equipe junta), nenhuma coluna
  * ordena, e nada soma níveis. O estudante nunca vê esta tela.

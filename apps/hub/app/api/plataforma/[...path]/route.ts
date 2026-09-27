@@ -104,6 +104,15 @@ const PREFIXOS_PERMITIDOS = [
      aperta na frente da sala e as telas andam na hora pelo polling (ADR-93).
      As guardas de papel estão na api (`@Roles("professor", ...GESTORES)`). */
   "a-selecao",
+  /* exp04ef1b: o preparo do pacote (gerar, regenerar uma notícia, homologar e o
+     "Usar Banco Padrão", que lê `professor/material` e homologa na hora), as
+     imagens — o mesmo laço do cliente da exp07ef1b, duas por chamada, porque
+     oito não cabem nos 30 s deste BFF —, o botão ÚNICO da aula (Liberar
+     resultado, Liberar revisão), a consulta leve do painel a cada 5 s e o
+     "zerar turma" são client-side: o professor aperta na frente da sala e as
+     telas andam pelo polling do gate (ADR-93). As guardas de papel estão na
+     api (`@Roles("professor", ...GESTORES)`, e `turmaVisivel` por turma). */
+  "jornal-escola",
   /* Os cadastros de interesse do site público (ADR-107) — só a LEITURA, e só
      `admin` (o `@Roles` está na api). A ESCRITA não passa por aqui: ela vem de
      visitante sem sessão, e tem rota própria (`/api/cadastro-de-interesse`). */

@@ -35,7 +35,7 @@ export function ExpHost(props: {
   /**
    * Presente ⇒ a experiência foi desenhada para um APARELHO: roda num iframe de
    * exatamente `largura`×`altura` px, centralizado. Ausente ⇒ foi desenhada
-   * para desktop (exp04ef1b) e ocupa a área inteira.
+   * para desktop (o UnooTube arquivado, `backup-exp04ef1b`) e ocupa a área inteira.
    */
   viewport?: { largura: number; altura: number } | null;
   /** Do manifesto da experiência; segue no spread para o `ExpFrame`. */

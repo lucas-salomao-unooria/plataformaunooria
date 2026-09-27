@@ -218,7 +218,7 @@ export function vigiarFalhasDaApi(pagina, falhas, rotulo = "") {
   pagina.on("response", async (r) => {
     if (r.status() < 400) return;
     const caminho = new URL(r.url()).pathname;
-    if (!/\/(api|planos|bemestar|unoogpt|a-selecao|evidencias|vila|runs|telemetry|ai)\//.test(caminho)) return;
+    if (!/\/(api|planos|bemestar|unoogpt|a-selecao|jornal-escola|evidencias|vila|runs|telemetry|ai)\//.test(caminho)) return;
     /* O CORPO dos 5xx, e não só o status. "500 POST /destilar" manda a pessoa
        procurar no log da api; "500 … quota diária excedida" resolve na hora.
        Só para 5xx: um 404 de sondagem de estado é esperado e o corpo dele é

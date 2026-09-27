@@ -178,7 +178,8 @@ export function ExpFrame(props: {
      * lugar DENTRO do iframe move o foco para a experiência, e o navegador
      * dispara `blur` no documento de cima. Como o `focus` correspondente nunca
      * volta enquanto ele continua ali, um `hub:pause` aqui é definitivo — na
-     * exp04ef1b o vídeo parava no primeiro toque em "Salvar" e não voltava mais.
+     * UnooTube (hoje `backup-exp04ef1b`) o vídeo parava no primeiro toque em
+     * "Salvar" e não voltava mais.
      *
      * Quando o foco foi para a NOSSA experiência, `document.activeElement` é o
      * próprio `<iframe>`. Esse caso não é perda de visibilidade nenhuma.

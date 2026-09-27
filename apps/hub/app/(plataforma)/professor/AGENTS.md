@@ -178,9 +178,10 @@ decide nível, cópia e o que conta é a api (`apps/api/src/evidencias/`).
   exp05ef1b, onde a atividade é o PACOTE aprovado (`atividadeId = pacoteId`,
   `key` no pacote para remontar quando outro é aprovado), e nos resultados da A
   Seleção, onde a atividade é a COBERTURA (`?cobertura=`; sem ele, a em
-  andamento). Sem turma, sem painel.
+  andamento) — e nos do Jornal da Escola, onde é o PACOTE (`?pacote=`). Sem
+  turma, sem painel.
 - **Invisível sem ficha, de propósito**: `temFicha: false` não desenha nada, e
-  hoje só a exp05ef1b (ADR-118) e a exp07ef1b (ADR-115) têm ficha — no
+  hoje só a exp05ef1b (ADR-118), a exp07ef1b (ADR-115) e a exp04ef1b têm ficha — no
   Instanooria o bloco não aparece, e não é defeito: confira `temFicha` antes.
 - **Ausência é "Não avaliado", nunca "Não atingiu".** A cópia da aula projetada
   chega "a revisar" e só conta depois de "Confirmar para a turma".
