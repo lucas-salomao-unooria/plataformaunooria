@@ -26,6 +26,7 @@ import { RastroBoatoModule } from "./rastro-boato/rastro-boato.module";
 import { ManifestoIaModule } from "./manifesto-ia/manifesto-ia.module";
 import { QuemMandouIssoModule } from "./quem-mandou-isso/quem-mandou-isso.module";
 import { ASelecaoModule } from "./a-selecao/a-selecao.module";
+import { JornalEscolaModule } from "./jornal-escola/jornal-escola.module";
 import { SalasModule } from "./salas/salas.module";
 import { EquipesModule } from "./equipes/equipes.module";
 import { EvidenciasModule } from "./evidencias/evidencias.module";
@@ -79,6 +80,7 @@ import { ContratoInterceptor } from "./openapi/contrato.interceptor";
     ManifestoIaModule,
     QuemMandouIssoModule,
     ASelecaoModule,
+    JornalEscolaModule,
     FotoContaModule,
   ],
   providers: [

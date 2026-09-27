@@ -27,7 +27,8 @@ puras). Os dois carregam o contexto da requisição via `mixin`.
   A comparação é por nome INTEIRO em minúsculas, e é por isso que `senha` não
   cobria `senha_hash` nem `senhaHash`: os dois entraram na lista, junto com o
   GABARITO de missão que classifica mensagens (`veracidade`, `tom`,
-  `explicacao`) e o `Então` da regra Se/Então da exp05ef1b (`entao`,
+  `explicacao`; no Jornal da Escola, `gabarito`, `consequencia` e
+  `pilarEmFalta`) e o `Então` da regra Se/Então da exp05ef1b (`entao`,
   `acaoEntao`, `acao_entao` — texto livre de menor). **Os campos sensíveis de
   cada missão têm de estar contidos aqui, e quem cobra é a suíte de regras DA
   MISSÃO** — missão nova com gabarito escreve esse teste

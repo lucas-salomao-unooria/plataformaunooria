@@ -1,3 +1,4 @@
+import { FICHA_EXP04EF1B } from "./exp04ef1b";
 import { FICHA_EXP05EF1B } from "./exp05ef1b";
 import { FICHA_EXP07EF1B } from "./exp07ef1b";
 import type { FichaPedagogica } from "./tipos";
@@ -8,8 +9,8 @@ export type { FichaPedagogica, HabilidadeDaFicha, MarcadorDaFicha, PerguntaDaFic
  * O REGISTRO DAS FICHAS — uma por missão, estático, no código.
  *
  * A plataforma da evidência entrou antes de qualquer missão medir alguma coisa;
- * a primeira foi Quem Mandou Isso? v2.2 (exp05ef1b), e a segunda A Seleção
- * (exp07ef1b). Cada missão que for adaptada acrescenta a ficha dela aqui (um
+ * a primeira foi Quem Mandou Isso? v2.2 (exp05ef1b), a segunda A Seleção
+ * (exp07ef1b) e a terceira o Jornal da Escola (exp04ef1b). Cada missão que for adaptada acrescenta a ficha dela aqui (um
  * arquivo `fichas/<expId>.ts`), no MESMO trabalho que faz a missão chamar
  * `EvidenciasService.marcar` e `registrarContexto`.
  *
@@ -22,4 +23,4 @@ export type { FichaPedagogica, HabilidadeDaFicha, MarcadorDaFicha, PerguntaDaFic
  * existem na BNCC, o `expId` existe nos manifestos, o gabarito só usa níveis
  * válidos e todo marcador de pergunta aponta para uma pergunta que existe.
  */
-export const FICHAS: readonly FichaPedagogica[] = [FICHA_EXP05EF1B, FICHA_EXP07EF1B];
+export const FICHAS: readonly FichaPedagogica[] = [FICHA_EXP05EF1B, FICHA_EXP07EF1B, FICHA_EXP04EF1B];
