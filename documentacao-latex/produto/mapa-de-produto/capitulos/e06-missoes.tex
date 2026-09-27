@@ -14,8 +14,9 @@
     letramento digital pela experiência, não pela aula expositiva.
   \item[Estado] \pronto{} para 6 missões (5 da trilha + Vila do Lume), e
     \parcial{} para a versão nova de Quem mandou isso? (\id{F06.11}), que
-    devolveu ao 5º ano a sua missão, e para A Seleção (\id{F06.12}), que
-    ocupou a Unidade 1 do 7º ano; 41 unidades da trilha em produção. A
+    devolveu ao 5º ano a sua missão, para A Seleção (\id{F06.12}), que
+    ocupou a Unidade 1 do 7º ano, e para o Jornal da Escola (\id{H06.10.4}),
+    que ocupou a Unidade 1 do 4º ano; 40 unidades da trilha em produção. A
     primeira versão de Quem mandou isso? (\id{F06.3}) saiu em 25 de setembro de
     2026 para dar lugar à nova. O UnooTube (\id{F06.2}) foi \textbf{arquivado}
     no mesmo dia: saiu da trilha com os dados guardados, para o Jornal da Escola
@@ -58,7 +59,7 @@ produto:
 \id{F06.7} & O Manifesto da IA & 8º EF, U4 & assistente de IA & \pronto\\
 \zebra \id{F06.8} & unooGPT (Missão Tempestade) & 2ª EM, U1 & assistente de IA & \pronto\\
 \id{F06.9} & Vila do Lume & qualquer ano & jogo 3D próprio & \pronto\\
-\zebra \id{F06.10} & As missões que faltam & 41 unidades & --- & \afazer\\
+\zebra \id{F06.10} & As missões que faltam & 40 unidades & --- & \afazer\\
 \bottomrule
 \end{tabularx}
 
@@ -611,8 +612,8 @@ fotos, em moldura de celular \textperiodcentered{} uma aula
 
 \textbf{Proposta.} Mostrar como um feed decide o que cada pessoa vê e o que
 isso faz com uma opinião em formação (a bolha). Foi a primeira missão com
-\enquote{atividade} configurável pelo professor; hoje Quem mandou isso? e A
-Seleção também têm a sua (\id{E14}).
+\enquote{atividade} configurável pelo professor; hoje Quem mandou isso?, A
+Seleção e o Jornal da Escola também têm a sua (\id{E14}).
 
 \begin{historia}{H06.6.1}{Criar a atividade a partir da minha aula}{\pronto}
 \hu{Professor}{criar uma atividade sobre o tema que estou trabalhando}{que o
@@ -915,12 +916,12 @@ validado. As reações dentro do jogo ainda não contam no limite diário de IA.
 % ---------------------------------------------------------------------------
 \feature{F06.10}{As missões que faltam}{\afazer}
 
-A trilha tem 48 unidades (12 anos $\times$ 4). Estão publicadas 7, mais a Vila
-do Lume. O 2º, o 3º, o 4º e o 9º ano do Fundamental e a 1ª e a 3ª série do
-Médio ainda não têm nenhuma --- o 4º desde 25 de setembro de 2026, quando o
-UnooTube foi arquivado para o Jornal da Escola tomar o código (\id{H06.10.4}).
-Nesse mesmo dia o 5º ficou sem a sua até a versão nova de Quem mandou isso?
-voltar (\id{F06.11}), e o 7º até A Seleção entrar no lugar do Eco no Grupo
+A trilha tem 48 unidades (12 anos $\times$ 4). Estão publicadas 8, mais a Vila
+do Lume. O 2º, o 3º e o 9º ano do Fundamental e a 1ª e a 3ª série do Médio
+ainda não têm nenhuma. Em 25 de setembro de 2026 três anos ficaram sem a sua
+missão por alguns dias: o 4º, até o Jornal da Escola ocupar o lugar do UnooTube
+arquivado (\id{H06.10.4}); o 5º, até a versão nova de Quem mandou isso? voltar
+(\id{F06.11}); e o 7º, até A Seleção entrar no lugar do Eco no Grupo
 (\id{F06.12}). As unidades em produção aparecem para o professor como
 \enquote{em produção}, sem título inventado.
 
@@ -987,22 +988,49 @@ equipe}
 \pendencia{os textos escritos pela equipe aguardam o PO.}
 \end{historia}
 
-\begin{historia}{H06.10.4}{Jornal da Escola (4º ano, Unidade 1)}{\afazer}
+\begin{historia}{H06.10.4}{Jornal da Escola (4º ano, Unidade 1)}{\parcial}
 \hu{Estudante do 4º ano}{ser editor do jornal da escola: escolher três notícias
 entre oito, publicar, ver o que aconteceu com os leitores e publicar de novo}{aprender
 a conferir fonte, data e autoria antes de informar outras pessoas}
-\aceiteproposta
+\aceite
 \begin{itemize}
   \item Ocupa o lugar do UnooTube, que foi arquivado em 25 de setembro de 2026.
-  \item A redação é da própria Unooria, e não imita uma rede social; as notícias
-    vêm de oito meios diferentes, e a publicação de rede social e a mensagem
-    encaminhada aparecem no formato do aplicativo de onde vieram.
-  \item O professor libera o resultado da primeira edição e, depois da conversa
-    com a turma, a revisão; a turma compara as duas edições.
-  \item A missão registra o que cada estudante demonstrou das habilidades
-    (\id{E14}) e aceita equipes num computador dividido (\id{E13}).
-  \item O detalhamento vem do documento de requisitos da missão.
+  \item Entro na redação do jornal da escola, que é da própria Unooria e não
+    imita rede social nenhuma. O Bento, que cuida do jornal, me apresenta o
+    desafio: três vagas na primeira página.
+  \item Na mesa há oito notícias de oito meios diferentes (jornal, rádio,
+    telejornal, blog, portal, rede social, mensagem e mural). Ao abrir uma, vejo
+    a matéria como ela chegou: o post aparece como post da rede social de fotos,
+    e a mensagem encaminhada como mensagem do aplicativo de conversa --- sem
+    curtidas e sem horário.
+  \item Em cada notícia posso abrir três pistas: de onde veio, quando aconteceu
+    e quem assina. Ninguém me obriga a abrir.
+  \item Escolho três notícias e publico a primeira edição. Depois de publicar,
+    não dá para trocar; só então a missão pergunta como eu escolhi --- pelas
+    fotos e pela urgência, ou pela checagem.
+  \item O professor libera o resultado: vejo o que os leitores da escola
+    disseram das três notícias publicadas e quantas estavam verificadas. O
+    resultado fala da edição, nunca de mim, e ninguém vê a edição dos colegas.
+  \item Depois da conversa com a turma, o professor libera a revisão. Monto a
+    Chave do Editor com três blocos entre seis; os blocos que não abrem a Chave
+    voltam para a bandeja, e eu tento de novo.
+  \item Com a Chave, a mesa volta com um aviso em cada vaga da primeira edição.
+    Publico a segunda edição e vejo o antes e o depois, lado a lado.
+  \item No fim, respondo sozinho a um desafio sobre uma mensagem nova, fora da
+    redação. A missão não me diz se acertei.
+  \item O professor escolhe o conteúdo antes da aula: o banco padrão da Unooria
+    (\enquote{Feira de Ciências e Notícias da Cidade}), pronto e já em sala sem
+    preparo nenhum, ou oito notícias geradas por IA sobre o tema dele, que ele
+    revisa, edita notícia a notícia e aprova. Se a IA falhar ou o limite do dia
+    acabar, o banco padrão fica a um toque.
+  \item A missão aceita equipes num computador dividido (\id{E13}) e registra o
+    que cada estudante demonstrou de três habilidades da BNCC (\id{E14}).
 \end{itemize}
+\pendencia{as imagens das notícias do banco padrão ainda não foram geradas nem
+revisadas; o critério do livro do 4º ano --- fonte, data e autoria --- é
+provisório e será revisado pelo dono do produto; e os Termos de Uso ainda não
+citam a IA do Jornal. O teste que percorre a missão como estudante e professora
+já roda verde (27 de setembro de 2026).}
 \end{historia}
 
 \begin{historia}{H06.10.5}{O podcast de recapitulação da A Seleção}{\parcial}
