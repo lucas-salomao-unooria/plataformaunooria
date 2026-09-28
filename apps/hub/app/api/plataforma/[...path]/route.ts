@@ -7,8 +7,29 @@ import { traceparentDeSaida } from "@/lib/otel-propagacao";
 /**
  * Teto maior que o do `apiDoServidor`: por aqui passam exportações (CSV de
  * análise) e importações (planilha de 30 MB), que legitimamente demoram.
+ *
+ * Eram 30 s, calibrados para TRANSFERÊNCIA de arquivo. As rotas de geração por
+ * IA são espera de outra natureza — a api fica parada enquanto o modelo
+ * escreve — e passaram a encostar no teto. MEDIDO em 2026-09-28 (provider
+ * `vertex`, `gemini-3.6-flash`), com o ADC válido e o Vertex respondendo:
+ *
+ *   - `quem-mandou-isso/.../gerar` (8 mensagens) ......... 6 a 13 s
+ *   - `jornal-escola/.../gerar-conteudo` (8 notícias) .... 19 a 24 s
+ *   - `a-selecao/.../gerar-conteudo` (12 posts + 3 falas)  20 a 30,1 s
+ *   - `a-selecao/.../gerar-podcast` (UM trecho por volta)  ~21 s, 5 voltas
+ *
+ * A Seleção virou moeda ao ar: a MESMA chamada deu 200 em 24,9 s e 504 em
+ * 30,1 s na mesma sessão. E o 504 aqui é caro de um jeito que não aparece: o
+ * corte é do lado do hub, a api TERMINA o trabalho e debita a quota de IA do
+ * professor — só que ninguém está mais ouvindo a resposta.
+ *
+ * O número é o teto de UMA chamada, não uma promessa de que a tela espera tudo
+ * isso: o que fazer com a espera é decisão de cada tela (o podcast, por
+ * exemplo, fatia o episódio em um trecho por chamada). Se uma rota precisar de
+ * mais que 3 min, o conserto não é subir daqui de novo — é tirá-la do caminho
+ * síncrono (a api aceita, responde na hora e a tela pergunta depois).
  */
-export const TIMEOUT_DO_BFF_MS = 30_000;
+export const TIMEOUT_DO_BFF_MS = 180_000;
 
 /**
  * BFF: o client do hub NUNCA segura bearer token (a sessão é cookie
