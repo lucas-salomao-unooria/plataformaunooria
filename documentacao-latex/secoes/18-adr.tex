@@ -9,8 +9,8 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{121 decisões}, numeradas até ADR-121, \textbf{sem lacunas}. A 117
-(o Jornal da Escola) entrou por último, depois da 121: o número tinha sido
+São \textbf{122 decisões}, numeradas até ADR-122, \textbf{sem lacunas}. A 117
+(o Jornal da Escola) entrou depois da 121: o número tinha sido
 reservado entre as sessões antes de qualquer uma escrever. Quando
 eram cem, as cinco últimas nasceram no MESMO dia, em três frentes paralelas, e não
 colidiram porque os números foram \textbf{reservados por quem repartia o
@@ -168,6 +168,7 @@ que a cercam.
 \adrr{ADR-119} & O podcast da A Seleção é do professor, e a IA reescreve só as três falas que dependem do tema & 2026-09-26 & Aceita\\
 \zebra \adrr{ADR-120} & A régua v2 de Quem mandou isso?: cada habilidade pelo verbo dela, e refazer o mesmo pacote não mede memória & 2026-09-26 & Aceita\\
 \adrr{ADR-121} & O CI verifica só os PRs para \cd{dev}, \cd{hml} e \cd{main} & 2026-09-26 & Aceita\\
+\zebra \adrr{ADR-122} & A modelagem UML entra no Capítulo 5, com os catorze tipos da UML 2.5.1 e par Mermaid mesmo onde o Mermaid não tem o tipo & 2026-09-27 & Aceita\\
 \bottomrule
 \end{tabularx}
 
@@ -10534,3 +10535,100 @@ muda} o portão do \emph{deploy}, que continua chamando o \arq{ci.yml} por
 \textbf{Gatilho.} Um defeito de ambiente passar pela verificação local e só
 aparecer na promoção; ou a conta passar a ter minutos que não acabam (plano pago
 ou repositório público).
+
+% ---------------------------------------------------------------------------
+\section{ADR-122 --- A modelagem UML entra no Capítulo 5, com os catorze tipos da UML 2.5.1 e par Mermaid mesmo onde o Mermaid não tem o tipo}
+\label{adr:modelagem-uml}
+
+\textbf{Data.} 2026-09-27. \textbf{Status.} Aceita.
+\textbf{Muda} o Capítulo~\ref{cap:arqsw}, que ganha a Seção~\ref{sec:uml}, a
+biblioteca \arq{preambulo/diagramas.tex}, que ganha os elementos UML que faltavam,
+e o Apêndice~\ref{ap:mermaid}. \textbf{Não muda} o C4, que continua sendo a notação
+da arquitetura.
+
+\begin{especificacao}{Contexto}
+\begin{itemize}
+  \item \textbf{O documento descrevia a arquitetura em C4, ER e notação de
+    infraestrutura}, e a UML aparecia em cinco tipos --- casos de uso,
+    sequência, estados, atividades e um diagrama de classes no nível 4 do C4. Não
+    havia notação para interface fornecida e requerida, artefato implantado,
+    instância, prazo nem perfil, e cliente e edital pedem os diagramas UML de
+    uso corrente na indústria.
+  \item \textbf{Número de capítulo é citado fora do documento}: \enquote{cap. 17}
+    aparece dezenas de vezes em comentário de código da observabilidade. Um
+    capítulo novo depois do 5 renumeraria do 6 ao 21, e a citação passaria a
+    apontar para outro capítulo sem quebrar nada --- a mesma armadilha que
+    impede renumerar ADR.
+  \item \textbf{Todo diagrama TikZ exige par Mermaid} (Apêndice~\ref{ap:mermaid}),
+    e o Mermaid não tem nove dos catorze tipos da UML: objetos, pacotes,
+    componentes com interfaces, estrutura composta, implantação, perfil,
+    comunicação, tempo e visão geral de interação.
+\end{itemize}
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{itemize}
+  \item \textbf{Uma seção nova no Capítulo 5, em arquivo próprio}
+    (\arq{secoes/05b-modelagem-uml.tex}, sem \cd{\textbackslash chapter}), com
+    ao menos um exemplar de cada um dos catorze tipos, distribuídos pelas visões
+    4+1 que o capítulo já usava. Onde o documento já tinha o tipo, o catálogo
+    aponta para a figura existente em vez de repeti-la.
+  \item \textbf{Cada exemplar vai onde o tipo mostra o que nenhum outro mostra}:
+    o tempo mostra a janela de 401 da renovação do \emph{token}; os componentes
+    mostram que o JWKS é fornecido pelo hub e requerido pela API; os objetos
+    mostram as três regras da disponibilidade combinadas.
+  \item \textbf{Os nomes nos diagramas são os do código}, e cada figura cita os
+    arquivos de onde saiu. A seção foi conferida contra o código na data desta
+    ADR, e o que a conferência achou de divergente no próprio documento (a SDK
+    importada pela API no grafo do \emph{monorepo}, a quota \enquote{de todos}
+    na camada de IA, os quatro papéis do Capítulo~\ref{cap:casosdeuso}) foi
+    corrigido no mesmo \emph{commit}.
+  \item \textbf{Tudo em TikZ, com par Mermaid para todo diagrama.} Onde o Mermaid
+    não tem o tipo, o par é uma aproximação (\cd{flowchart}, \cd{gantt}), e a
+    primeira linha dele diz o que se perde.
+  \item \textbf{Um perfil UML da plataforma} (Figura~\ref{fig:uml-perfil}) dá nome
+    às regras invioláveis como estereótipos --- \estereo{TabelaDeTenant},
+    \estereo{RotaDeEstudante}, \estereo{ChamadaDeIA} ---, e os outros diagramas
+    os usam.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Um capítulo próprio logo depois do 5.} É onde a modelagem se lê
+    melhor, mas renumera os capítulos 6 a 21, e a citação \enquote{cap. 17} do
+    código passaria a apontar para outro capítulo, em silêncio.
+  \item \textbf{Um capítulo no fim, ou um apêndice.} Não renumera nada, mas põe a
+    arquitetura depois da conclusão, como material de consulta, e separa a
+    visão lógica do C4 que ela complementa.
+  \item \textbf{PlantUML como fonte dos diagramas.} Tem mais tipos UML que o
+    Mermaid, mas exige Java e Graphviz fora do Tectonic, e o GitHub não o
+    renderiza no \emph{pull request} --- que é o lugar para o qual o par Mermaid
+    existe.
+  \item \textbf{Desenhar só os tipos que o Mermaid tem.} O par ficaria fiel, mas
+    a seção perderia justamente os tipos que dizem algo novo: implantação com
+    artefatos, componentes com interface e tempo.
+  \item \textbf{Trocar o C4 pela UML.} A UML não tem notação melhor para contexto
+    e contêiner, e o C4 é o que o time e as ADRs anteriores já leem.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{O Capítulo 5 fica duas vezes maior}, e quem procura a
+    modelagem pelo sumário a encontra dentro da arquitetura de \emph{software}, não
+    num capítulo com o próprio nome.
+  \item \textbf{Nove pares Mermaid são aproximações.} Quem editar o diagrama pelo
+    Mermaid perde notação: o soquete vira nó, a linha de tempo vira
+    \cd{gantt}, a porta vira nó.
+  \item \textbf{Mais figuras para manter.} Mudar a ponte, a quota, a
+    disponibilidade, a sessão ou a implantação passa a tocar também uma figura
+    UML, e diagrama que diverge do código engana com a autoridade de quem o
+    desenhou.
+\end{itemize}
+
+\textbf{Gatilho.} O Mermaid passar a ter os tipos que faltam, ou o GitHub
+renderizar PlantUML; uma figura da Seção~\ref{sec:uml} ser encontrada divergente
+do código numa revisão --- sinal de que o custo de manter passou do valor --- ou
+uma segunda pessoa passar a manter os diagramas e preferir outra fonte.

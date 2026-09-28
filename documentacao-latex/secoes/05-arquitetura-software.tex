@@ -18,17 +18,23 @@ O sistema é descrito por cinco visões complementares, no espírito do modelo
 \toprule
 \headrow \thd{Visão} & \thd{Notação} & \thd{Onde está}\\
 \midrule
-Lógica & C4 níveis 1--3; diagrama de classes &
-  Seções~\ref{sec:c4l1} a~\ref{sec:c4l4}\\
-\zebra Processos & Diagramas de sequência e de estado &
-  Seção~\ref{sec:fluxos}; Cap.~\ref{cap:contratos}\\
-Desenvolvimento & Estrutura do \emph{monorepo} e grafo de dependências &
-  Seção~\ref{sec:monorepo}\\
-\zebra Física / implantação & Diagramas de implantação e de rede &
-  Cap.~\ref{cap:arqnuvem}\\
-Cenários & Casos de uso & Cap.~\ref{cap:casosdeuso}\\
+Lógica & C4 níveis 1--3; UML: classes, objetos e o perfil da plataforma &
+  Seções~\ref{sec:c4l1} a~\ref{sec:c4l4}; \ref{sec:uml-perfil} e~\ref{sec:uml-logica}\\
+\zebra Processos & UML: sequência, estados, atividades, comunicação, tempo e visão
+  geral de interação & Seções~\ref{sec:fluxos} e~\ref{sec:uml-processos};
+  Cap.~\ref{cap:contratos}\\
+Desenvolvimento & Estrutura do \emph{monorepo}; UML: pacotes, componentes e
+  estrutura composta & Seções~\ref{sec:monorepo} e~\ref{sec:uml-desenvolvimento}\\
+\zebra Física / implantação & Diagramas de implantação e de rede; UML: implantação
+  com artefatos & Cap.~\ref{cap:arqnuvem}; Seção~\ref{sec:uml-fisica}\\
+Cenários & Casos de uso & Cap.~\ref{cap:casosdeuso}; Seção~\ref{sec:uml-cenarios}\\
 \bottomrule
 \end{tabularx}
+
+O C4 é a notação da arquitetura e continua sendo. A Seção~\ref{sec:uml} acrescenta
+os catorze tipos de diagrama da UML 2.5.1, cada um onde diz algo que o C4 não tem
+notação para dizer --- tipo, estado, prazo, instância, interface, artefato
+(\adrr{ADR-122}).
 
 \section{Estilo arquitetural e princípios}
 
@@ -808,7 +814,6 @@ são separados e cobrem exatamente o que não dá para afirmar sem ele:
     {\texttt{@unooria/design-system}\desc{npm público, repo \texttt{storybook-unooria}}};
 
   \draw[c4rel] (ds.south) -- (ui.north) node[cxlabel, midway, right=2pt]{versão publicada};
-  \draw[c4rel] (sdk.south) -- (api.north east);
   \draw[c4rel] (sdk.south) -- (hub.north east);
   \draw[c4rel] (sdk.south) -- (e01.north);
   \draw[c4rel] (sdk.south) -- (e02.north);
@@ -823,9 +828,11 @@ são separados e cobrem exatamente o que não dá para afirmar sem ele:
 
 \end{tikzpicture}}
 \caption[Grafo de dependências do monorepo]{Grafo de dependências do
-  \emph{monorepo}. A SDK é consumida por tudo --- é por isso que uma mudança nela
-  precisa testar tudo no mesmo \emph{pull request}, e por isso o
-  \emph{monorepo} (\adrr{ADR-02}). A app-70 não depende de \arq{packages/ui}: é
+  \emph{monorepo}, com uma amostra das experiências. A SDK é consumida pelo hub e
+  por toda experiência --- é por isso que uma mudança nela precisa testar todas
+  no mesmo \emph{pull request}, e por isso o \emph{monorepo} (\adrr{ADR-02}). A API
+  não importa pacote nenhum do \emph{workspace}: valida o que recebe com os
+  próprios \emph{schemas} (Figura~\ref{fig:uml-pacotes}). A app-70 não depende de \arq{packages/ui}: é
   jogo em \emph{canvas} 3D, sem DOM de interface, e é a exceção registrada em ADR
   à regra do \emph{design system}.}
 \label{fig:monorepo}

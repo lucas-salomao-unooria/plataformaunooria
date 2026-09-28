@@ -148,8 +148,11 @@ inclusive as recusadas.
   \node[c4systemext, text width=26mm, minimum height=13mm] (vertex) at (14.4,-9.8)
     {\textbf{Vertex AI}\desc{endpoint \cd{global}}};
 
-  \draw[c4rel] (g.south) -- (2.4,-3.4);
-  \draw[c4rel] (m.south) -- (5.6,-3.4);
+  % geracao/ e as reacoes de motor/ chamam o provider SEM temSaldo (ADR-74,
+  % ai/AGENTS.md): a seta desvia do QuotaService e desce direto ao AiProvider.
+  \draw[c4reldash, draw=unooRed] (g.south) -- (2.4,-2.2) -- (7.2,-2.2) -- (7.2,-3.35);
+  \draw[c4reldash, draw=unooRed] (m.south) -- (5.6,-2.2);
+  \node[cxlabel, text=unooRed] at (4.0,-2.2) {sem quota (\adrr{ADR-74})};
   \draw[c4rel] (p.south) -- (8.8,-3.4);
   \draw[c4rel] (b.south) -- (12.0,-3.4);
   \draw[c4rel] (a.west) -- (13.4,-2.0) -- (13.4,-3.4);
@@ -162,9 +165,13 @@ inclusive as recusadas.
     node[cxlabel, pos=0.55, above]{HTTPS + ADC};
 
 \end{tikzpicture}}
-\caption[Camada de IA]{A camada de IA. Quatro módulos de domínio e uma rota de
-  SDK entram; todos passam por \cd{QuotaService} antes do \emph{provider}.
-  Nenhum módulo fora da fronteira verde conhece o \emph{vendor} do modelo.}
+\caption[Camada de IA]{A camada de IA, com os quatro primeiros módulos de domínio
+  e a rota da SDK --- hoje são onze módulos que chamam o \emph{provider}, além da
+  rota (Figura~\ref{fig:uml-classes-ia}). \arq{planos/}, \arq{bemestar/} e a rota
+  passam por \cd{QuotaService} antes do \emph{provider}; \arq{geracao/} e as
+  reações de \arq{motor/} chamam o \emph{provider} direto, sem quota --- a exceção
+  registrada na \adrr{ADR-74} e em \arq{ai/AGENTS.md}. Nenhum módulo fora da
+  fronteira verde conhece o \emph{vendor} do modelo.}
 \label{fig:camada-ia}
 \end{figure}
 
