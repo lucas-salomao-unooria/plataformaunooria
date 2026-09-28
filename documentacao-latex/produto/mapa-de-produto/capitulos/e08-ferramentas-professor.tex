@@ -1,0 +1,184 @@
+% ===========================================================================
+%  E08 — Ferramentas do professor
+% ===========================================================================
+\chapter{E08 \textperiodcentered{} Ferramentas do professor}
+\label{ep:e08}
+
+\begin{fichaepico}
+\begin{campos}
+  \item[Objetivo] Tirar do professor o trabalho repetitivo do planejamento e
+    cuidar de quem cuida da turma.
+  \item[Para quem] Professor.
+  \item[Valor] São três produtos que a rede pode contratar separadamente do
+    Entre Redes: Gerador de Plano de Aula, Planejamento de Ensino e Como você
+    está?.
+  \item[Estado] \pronto.
+\end{campos}
+\end{fichaepico}
+
+\begin{tabularx}{\linewidth}{@{}L{16mm}X L{20mm}@{}}
+\toprule
+\headrow \thd{ID} & \thd{Feature} & \thd{Estado}\\
+\midrule
+\id{F08.1} & Gerador de Plano de Aula & \pronto\\
+\zebra \id{F08.2} & Planejamento de Ensino & \pronto\\
+\id{F08.3} & Como você está? & \pronto\\
+\bottomrule
+\end{tabularx}
+
+\begin{nota}
+\textbf{Dois planejadores, dois públicos.} O Gerador de Plano de Aula é para a
+rede que já tem currículo próprio e material didático adotado: ele parte desse
+material. O Planejamento de Ensino é para quem parte da BNCC e quer descer até
+a aula de cada semana. Os dois convivem; um não substitui o outro.
+\end{nota}
+
+% ---------------------------------------------------------------------------
+\feature{F08.1}{Gerador de Plano de Aula}{\pronto}
+
+\begin{historia}{H08.1.1}{Gerar o plano anual a partir do material da rede}{\pronto}
+\hu{Professor}{gerar um plano anual da minha disciplina e série}{não começar
+o ano com a página em branco}
+\aceite
+\begin{itemize}
+  \item \enquote{Meus planos de aula} \seta{} \enquote{Novo plano de aula}:
+    escolho disciplina e série.
+  \item Aparecem só as séries com material cadastrado pela rede; disciplinas
+    sem material aparecem como \enquote{em breve}.
+  \item A geração leva alguns minutos, com dicas na tela enquanto espero;
+    posso fechar a tela, e ela continua.
+  \item Um erro aparece como uma frase que eu entendo.
+  \item Usa o meu limite diário de IA.
+\end{itemize}
+\pendencia{depende de a rede ter enviado o material de referência.}
+\end{historia}
+
+\begin{historia}{H08.1.2}{Editar e levar o plano para o Word}{\pronto}
+\hu{Professor}{ajustar o plano gerado e exportar}{entregar à coordenação no
+formato que ela pede}
+\aceite
+\begin{itemize}
+  \item O plano abre como documento editável: salvar (Ctrl/Cmd+S), renomear,
+    excluir.
+  \item \enquote{Restaurar original} volta à versão que a IA gerou, que fica
+    guardada intacta.
+  \item Exportar em .doc (abre no Word).
+  \item O plano é do professor: não fica público.
+\end{itemize}
+\end{historia}
+
+% ---------------------------------------------------------------------------
+\feature{F08.2}{Planejamento de Ensino}{\pronto}
+
+\begin{historia}{H08.2.1}{Declarar a minha regência}{\pronto}
+\hu{Professor}{informar o que eu leciono e a minha grade}{que o planejamento
+tenha as datas reais do meu ano}
+\aceite
+\begin{itemize}
+  \item Informo componente, série, ano letivo e data de início, grade de
+    horários, minutos por aula e divisão do ano (bimestre, trimestre ou
+    semestre).
+  \item A carga horária sugerida vem da mediana de redes reais e aparece como
+    sugestão, que posso mudar.
+  \item Hora-aula não é hora-relógio: a conta respeita os minutos por aula.
+\end{itemize}
+\end{historia}
+
+\begin{historia}{H08.2.2}{Distribuir as habilidades da BNCC no ano}{\pronto}
+\hu{Professor}{colocar cada habilidade da BNCC num período do ano}{garantir
+que nenhuma fique de fora}
+\aceite
+\begin{itemize}
+  \item Cada habilidade vai para um período.
+  \item No Ensino Médio, a tela avisa quando as habilidades são por área.
+  \item Nenhuma habilidade fora do período entra no plano daquele período.
+\end{itemize}
+\end{historia}
+
+\begin{historia}{H08.2.3}{Descer do plano anual à aula da semana}{\pronto}
+\hu{Professor}{ter o plano anual e o plano de cada semana}{chegar à sala
+sabendo o que fazer em cada aula}
+\aceite
+\begin{itemize}
+  \item O plano anual é gerado e eu posso reescrevê-lo.
+  \item As 40 semanas são planejadas uma por vez, com tema, objetivo, quatro
+    momentos, recursos, avaliação, tarefa e adaptações.
+  \item As datas vêm do calendário real: feriado remove a aula. A IA preenche
+    o conteúdo, mas nunca decide quantas aulas cabem nem inventa código de
+    habilidade.
+  \item Marco \enquote{AULA CUMPRIDA} e escrevo observações.
+\end{itemize}
+\end{historia}
+
+\begin{historia}{H08.2.4}{Exportar a semana, a quinzena ou o bimestre}{\pronto}
+\hu{Professor}{baixar o planejamento no recorte que a coordenação
+pede}{entregar sem reformatar}
+\aceite
+\begin{itemize}
+  \item \enquote{Baixar esta semana}, \enquote{Esta e a próxima (quinzena)} e
+    \enquote{Baixar o Nº Bimestre inteiro}, em .doc; ou imprimir.
+  \item Semanas cuja geração falhou não entram no documento.
+  \item Posso excluir o planejamento daquele componente e série.
+\end{itemize}
+\end{historia}
+
+% ---------------------------------------------------------------------------
+\feature{F08.3}{Como você está?}{\pronto}
+
+Um acompanhamento curto do bem-estar do próprio professor: três frases por dia
+de um questionário reconhecido (DASS-21, que olha depressão, ansiedade e
+estresse), e sete dias fecham o retrato da semana. Leva menos de um minuto.
+
+\begin{historia}{H08.3.1}{Responder hoje em menos de um minuto}{\pronto}
+\hu{Professor}{responder três frases sobre como estou}{acompanhar o meu
+bem-estar sem tomar tempo do dia}
+\aceite
+\begin{itemize}
+  \item O cartão no Início mostra se já respondi hoje.
+  \item \enquote{Responder hoje}: três frases numa escala e, se eu quiser, um
+    texto livre; \enquote{Enviar respostas}; recebo uma mensagem de
+    acolhimento.
+  \item Uma resposta por dia.
+  \item A tela diz com clareza que nenhuma pessoa da escola ou da rede lê o
+    texto livre, e que uma IA lê.
+  \item As frases do questionário nunca são reescritas.
+\end{itemize}
+\end{historia}
+
+\begin{historia}{H08.3.2}{Ver o retrato da minha semana}{\pronto}
+\hu{Professor}{ver o resultado ao completar sete dias}{perceber como estou ao
+longo do tempo}
+\aceite
+\begin{itemize}
+  \item \enquote{Falta N dias para o retrato da semana}; no sétimo dia,
+    \enquote{Retrato da sua semana} com a pontuação de cada dimensão e a faixa
+    correspondente.
+  \item Um ciclo que fica 21 dias sem fechar expira, sem pontuação.
+  \item \enquote{Seu histórico} mostra os ciclos concluídos e o que escrevi em
+    cada dia.
+\end{itemize}
+\end{historia}
+
+\begin{historia}{H08.3.3}{Receber apoio quando preciso}{\pronto}
+\hu{Professor que está passando por um momento difícil}{receber orientação de
+onde buscar ajuda}{não ficar sozinho com isso}
+\aceite
+\begin{itemize}
+  \item Se as respostas ou o texto indicam risco, aparece uma mensagem
+    \emph{fixa} com o CVV (188), o SAMU (192) e a orientação de procurar o
+    CAPS ou a UBS.
+  \item Nesse caso, a IA não é chamada.
+\end{itemize}
+\end{historia}
+
+\begin{historia}{H08.3.4}{Só meu, e apagável}{\pronto}
+\hu{Professor}{ter certeza de que ninguém da gestão vê o meu bem-estar, e poder
+apagar tudo}{responder com sinceridade}
+\aceite
+\begin{itemize}
+  \item Não existe tela de gestão, número agregado nem exportação desse dado.
+  \item \enquote{Apagar todas as suas respostas} remove tudo, de todos os
+    ciclos --- e funciona mesmo se a rede desligar o produto.
+  \item O dado de bem-estar nunca entra no perfil portátil.
+\end{itemize}
+\end{historia}

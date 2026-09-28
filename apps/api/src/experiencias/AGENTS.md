@@ -11,7 +11,7 @@ DISPONIBILIDADE, que não se mistura com este, está em
   `unidade`, `produto`), lendo `experiencias_versoes.manifesto`. É o conserto
   do defeito que a fase 0 descobriu: `publicar-manifesto.mjs --versao x.y.z`
   manda o número antigo com o `experiencia.json` ATUAL, então voltar a versão
-  nunca voltou as permissões de iframe — a exp-70 reabria sem
+  nunca voltou as permissões de iframe — a app-70 reabria sem
   `allow-pointer-lock` e a câmera do jogo não girava, sem erro em lugar nenhum.
   Versão fora do histórico é RECUSADA: não se aponta a rede para o desconhecido.
 - **`PUT .../versao`** grava `disponibilidades.versao_fixa` num escopo — o
@@ -42,7 +42,7 @@ DISPONIBILIDADE, que não se mistura com este, está em
 
 `publicar-manifesto.mjs --versao x.y.z` manda o número **antigo** com o
 `experiencia.json` **atual** do repositório. Voltar a versão nunca voltou
-`viewport`, `permissoes`, `series` nem `unidade` — a exp-70 reabria sem
+`viewport`, `permissoes`, `series` nem `unidade` — a app-70 reabria sem
 `allow-pointer-lock`, a criança entrava na Vila e a câmera não girava, sem erro em
 lugar nenhum. Por isso a tabela guarda o **manifesto inteiro** por versão: o
 rollback pela tela reescreve as colunas com o que aquela versão tinha de fato.

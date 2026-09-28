@@ -14,10 +14,16 @@ Contrato entre o bundle, o CI e a tabela `experiencias` da api. Complementa o
 O CI, ao publicar `gs://{contrato}-exp/{expId}/{versao}/`, faz upsert
 (`PUT /experiencias/:expId`, admin-contrato) lendo o `public/experiencia.json`
 da experiência (`id, nome, versao, series, capabilities, viewport?, publico?`).
+O `id` é o **código da experiência** (ADR-110) e é igual ao nome da pasta:
+missão da trilha é `expNNefUb`/`expNNemUb`, DERIVADO de `series[0]` + `unidade`
+(`8EF` + unidade 1 = `exp08ef1b`); o que não é missão — sem `unidade` — é
+`app-NN-nome`. `apps/api/tests/codigo-da-experiencia.spec.ts` reprova manifesto
+fora disso, e o validador (`EXP_ID_RE`) mora em `apps/api/src/comum/` e em
+`packages/sdk/src/`, as duas cópias amarradas pelo mesmo teste.
 O hub monta a URL do iframe com `versaoAtiva`; rollback = trocar `versaoAtiva`
 (`node apps/hub/scripts/publicar-manifesto.mjs <exp> --versao x.y.z`).
 `viewport` presente ⇒ o hub embeda dentro do `DispositivoFrame` (casca de
-aparelho com escala; exp-01 é 375×812, exp-02 não tem viewport porque foi
+aparelho com escala; exp08ef1b é 375×812, o UnooTube (hoje arquivado) não tinha viewport porque foi
 desenhada para desktop). SEM linha na tabela, o `viewport` é lido do
 `experiencia.json` servido ao lado do index do bundle — não só em dev: uma
 stack com a tabela vazia (compose local, ambiente novo antes do 1º publish do
@@ -35,7 +41,7 @@ manifesto e a experiência aparece esticada na janela.
 `pointer-lock`, `forms` e `downloads`, que o `ExpFrame` traduz nos tokens
 `allow-pointer-lock`, `allow-forms` e `allow-downloads`.
 
-**`downloads` (exp-90 e exp-92) tem uma armadilha A MAIS: a rota do hub precisa
+**`downloads` (app-90 e app-92) tem uma armadilha A MAIS: a rota do hub precisa
 REPASSAR `permissoes` ao `ExpFrame`.** `/exp/[expId]` e `/dev-embed` sempre
 repassaram; as três rotas de professor (`plano-de-aula`, `plano-de-ensino`,
 `bem-estar`) renderizam o `ExpFrame` direto e **não passavam** — então declarar
@@ -47,7 +53,7 @@ console) e o `a.click()` volta como se tivesse funcionado: o professor clicava e
 (ADR-76).
 
 **`forms` custou um bug inteiro para ser descoberto**: o `Composer` do DS é um `<form>`, e sem o token o navegador BLOQUEIA
-o submit — o estudante da exp-03 digitava a pergunta, apertava Enter e nada
+o submit — o estudante da exp02em1b digitava a pergunta, apertava Enter e nada
 acontecia. O sintoma engana porque a conversa parece viva (a fala de abertura do
 agente já está na tela) e o único rastro é um aviso de console sobre "form's
 frame is sandboxed". Typecheck, lint e a primeira versão do smoke passaram por
@@ -59,15 +65,16 @@ iframe com sandbox, sem o token o `requestPointerLock()` morre com `SecurityErro
 e com ele funciona — e o Chromium do Playwright não concede pointer lock nem no
 topo da página, então essa verificação exige o Chrome do sistema.
 `series: []` significa **todas as séries**, não nenhuma: é assim que uma
-experiência TRANSVERSAL se declara (exp-70). Quando o filtro por série voltar a
+experiência TRANSVERSAL se declara (app-70). Quando o filtro por série voltar a
 valer, vazio tem de continuar querendo dizer "todas" — o contrário faz a
 experiência desaparecer da tela sozinha.
 `publico: "professor"` ⇒ ferramenta do professor
-(exp-90-plano-de-aula em `/professor/plano-de-aula`; exp-91-bem-estar em
+(app-90-plano-de-aula em `/professor/plano-de-aula`; app-91-bem-estar em
 `/professor/bem-estar`), e `/exp/*` responde 404 para elas. Sem manifesto (dev) o hub cai na raiz do Vite **da
 experiência mapeada em `apps/hub/lib/experiencias-dev.ts`** (uma porta por exp:
-5173 exp-01, 5174 exp-02, 5175 exp-90, 5176 exp-91, 5177 exp-70, 5178 exp-03,
-5179 exp-07, 5181 exp-06 — a 5180 é da exp-92);
+5173 exp08ef1b, 5174 exp04ef1b, 5175 app-90, 5176 app-91, 5177 app-70, 5178 exp02em1b,
+5179 exp07ef1b, 5181 exp06ef2b, 5182 exp08ef4b, 5183 exp01ef1b, 5184 exp05ef1b — a
+5180 é da app-92);
 teste local: rota `/dev-embed?src=http://localhost:5174`.
 A montagem do embed (token, manifesto, dev server, origin) é uma só:
 `apps/hub/lib/embed-experiencia.ts`, usada por `/exp/[expId]`, `/dev-embed`,
@@ -91,18 +98,20 @@ não do ano letivo, e o 7º ano viria depois do 8º.
 para `unidade` e para `produto`: esquecer é invisível em dev (o hub lê o arquivo do bundle) e
 quebra em produção, onde ele lê a coluna. E **a versão tem TRÊS fontes** —
 `public/experiencia.json`, `package.json` e a constante `EXP_VERSION` do código.
-A exp-07 e a exp-06 têm teste cobrando as três; a exp-02 já vivia divergente.
+A exp07ef1b, a exp06ef2b e a exp04ef1b (o Jornal da Escola, desde a 2.0.0) têm
+teste cobrando as três. O UnooTube, que ocupava o código `exp04ef1b` antes de ser
+arquivado como `backup-exp04ef1b` (ADR-116), chegou a viver com as três divergentes.
 
 **A ORIGEM do bundle é do AMBIENTE, não do manifesto.** `montarEmbed` já decidiu
 "estou em dev" por "a tabela `experiencias` está vazia", e isso quebrou no dia em
 que o seed passou a populá-la: com manifesto e sem CDN, a URL versionada caía no
-default `localhost:5173` (o dev server da exp-01), que responde a QUALQUER caminho
+default `localhost:5173` (o dev server da exp08ef1b), que responde a QUALQUER caminho
 com a SPA dele — toda missão abria o Instanooria, com handshake completo e 403 na
 experiência errada. **As TRANSVERSAIS vêm primeiro na lista**: não
 pertencem a ano nenhum, logo não são "depois" de nada, e a Vila do Lume é o Ato 1
 do Instanooria — com ela no fim, a criança encontrava o Ato 2 antes do Ato 1 e
 nada dizia o que faltou. Não há GATE, e não deve haver: falta de partida na Vila
-nunca bloqueia a exp-01, ela só cai no sorteio. O caminho entre as duas fichas do
+nunca bloqueia a exp08ef1b, ela só cai no sorteio. O caminho entre as duas fichas do
 professor agora é clicável nos DOIS sentidos (`AtoDaMissao.link` no catálogo).
 `/estudante` e `/exp/*` são a MESMA área no middleware
 (`lib/papeis.ts`). A trilha do professor cobre a Educação Básica inteira
@@ -133,6 +142,6 @@ o `.map` é gerado, mas o bundle não ganha o comentário `sourceMappingURL` —
 navegador nunca o pede. O CI exclui `*.map` do `rsync` para `gs://{contrato}-exp`
 e os sobe num bucket **privado** à parte (`{project}-exp-mapas`): o bucket dos
 bundles tem acesso uniforme, então qualquer objeto lá é público, e o mapa é o
-fonte — na exp-01, a revelação legível antes da hora. Nunca `sourcemap: true`,
+fonte — na exp08ef1b, a revelação legível antes da hora. Nunca `sourcemap: true`,
 nunca `inline`. Para traduzir a stack de um erro de cliente: o `.map` da
 versão exata está em `gs://{project}-exp-mapas/{expId}/{versao}/`.

@@ -106,11 +106,11 @@ herdada de um nível que não existe. Visto na tela antes de virar teste
   A ordem importa para o DIAGNÓSTICO: produto desligado responde
   `recurso-indisponivel`, não `missao-nao-liberada` — invertido, o log mandaria
   quem investiga procurar na sala de aula um problema que está no painel.
-- **Ferramentas de professor** (exp-90, exp-91, exp-92): não têm liberação por
+- **Ferramentas de professor** (app-90, app-91, app-92): não têm liberação por
   turma e têm **28 rotas** entre as três. Anotar rota por rota é o desenho em que
   a 29ª nasce sem guarda, sem erro e sem sintoma — o produto simplesmente não
   desliga. Por isso é um GUARD DE CLASSE: `DisponibilidadeGuard` +
-  `@Recurso("exp-NN-slug")` no `@Controller`, e a exceção é declarada com
+  `@Recurso("<expId>")` (`@Recurso("app-90-plano-de-aula")`) no `@Controller`, e a exceção é declarada com
   `@SemDisponibilidade()`.
 - **`@SemDisponibilidade()` só para APAGAR os próprios dados.** Desligar um
   produto fecha tudo — é isso que o interruptor significa, e é o que um incidente
@@ -146,7 +146,7 @@ isto a cada render.
 `disponibilidades` está fora da RLS por desenho, então a linha de contrato vale
 para a stack INTEIRA — e o Jest paraleliza. Enquanto ela existe, toda suíte
 concorrente vê o produto desligado. Custou duas suítes vermelhas
-(`vila-postgres` e `o-eco-no-grupo-postgres`) que **passam sozinhas e falham
+(`vila-postgres` e a antiga `o-eco-no-grupo-postgres`) que **passam sozinhas e falham
 juntas**, com o sintoma apontando para a Vila e a causa em
 `disponibilidade-porta-postgres`. Pior: a corrida abortada deixa fixture para
 trás, e a corrida SEGUINTE falha em outra suíte ainda — a cascata esconde a

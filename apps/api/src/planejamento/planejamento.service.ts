@@ -34,8 +34,8 @@ import { PROMPT_PLANO_DE_PERIODO, SCHEMA_PLANO_DE_PERIODO } from "./prompt-plano
 import type { Aula, CriarConfiguracao } from "./contrato-de-rotas";
 
 /**
- * exp-92 — plano de ensino. Dois níveis de geração assíncrona sobre a mesma
- * máquina de estados da exp-90:
+ * app-92 — plano de ensino. Dois níveis de geração assíncrona sobre a mesma
+ * máquina de estados da app-90:
  *
  *   pendente ──claim──▶ gerando ──ok──▶ pronto
  *                          └──falha──▶ erro
@@ -69,7 +69,7 @@ const MAX_TENTATIVAS = 2;
 const MINUTOS_PARA_ORFAO = 12;
 /**
  * O plano anual é o documento mais longo que a plataforma gera. MEDIDO na
- * exp-90: 32k corta o plano no meio e a geração morre em `MAX_TOKENS` sem
+ * app-90: 32k corta o plano no meio e a geração morre em `MAX_TOKENS` sem
  * entregar nada. A família 2.5 do Gemini entrega até 65k de saída.
  */
 const MAX_TOKENS_ANUAL = 64_000;
@@ -504,7 +504,7 @@ export class PlanejamentoService {
       );
     } catch (erro) {
       const mensagem = erro instanceof Error ? erro.message : "falha ao gerar o plano";
-      logger.error({ codigo: "exp-92-plano-anual-falhou", planoId, erro: mensagem, ...detalheDe(erro) });
+      logger.error({ codigo: "app-92-plano-anual-falhou", planoId, erro: mensagem, ...detalheDe(erro) });
       await this.deps.prisma
         .comTenancy(
           (tx) =>
@@ -704,7 +704,7 @@ export class PlanejamentoService {
       );
     } catch (erro) {
       const mensagem = erro instanceof Error ? erro.message : "falha ao gerar o plano do período";
-      logger.error({ codigo: "exp-92-plano-periodo-falhou", periodoId, erro: mensagem, ...detalheDe(erro) });
+      logger.error({ codigo: "app-92-plano-periodo-falhou", periodoId, erro: mensagem, ...detalheDe(erro) });
       await this.deps.prisma
         .comTenancy(
           (tx) =>
@@ -725,7 +725,7 @@ export class PlanejamentoService {
           .consumir(escolaId, professorId, tokens)
           .catch((falha: unknown) =>
             logger.error({
-              codigo: "exp-92-quota-nao-debitada",
+              codigo: "app-92-quota-nao-debitada",
               periodoId,
               tokens,
               erro: falha instanceof Error ? falha.message : "desconhecido",

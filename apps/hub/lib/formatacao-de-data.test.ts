@@ -10,7 +10,7 @@ import { describe, expect, test } from "vitest";
  * container (UTC) e a professora (`America/Sao_Paulo`) discordam por três horas
  * — e entre 21h e a meia-noite isso vira um DIA de diferença. O React acusa
  * "hydration failed", regenera a árvore, e o clique dela cai no vazio: foi
- * assim que a suíte e2e da exp-08 morreu com `page.click: Timeout 30000ms`,
+ * assim que a suíte e2e da exp08ef4b morreu com `page.click: Timeout 30000ms`,
  * um sintoma a três saltos da causa (ADR-98).
  *
  * A correção foi centralizar em `@edu/sdk` (`data`, `dataCurta`, `dataHora`,

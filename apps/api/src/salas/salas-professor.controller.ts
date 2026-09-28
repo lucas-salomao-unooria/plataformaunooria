@@ -24,6 +24,7 @@ import {
 } from "./contrato-de-rotas";
 import { SalasService } from "./salas.service";
 import { GESTORES, ehDoContrato} from "../auth/claims";
+import { FORMATO_DO_EXP_ID } from "../comum/codigo-da-experiencia";
 
 type Autenticado = { auth: AuthClaims };
 
@@ -104,7 +105,7 @@ export class SalasProfessorController {
     resposta: LiberacaoSchema,
     notas: [
       "Não existe estado `bloqueada` no corpo: bloquear é a ausência de linha, e o caminho de volta é `encerrada` — a criança precisa continuar vendo o que fez.",
-      "Recusa experiência de `publico: professor` (exp-90, exp-91): liberar uma delas seria um botão que não abre nada, porque `/exp/*` responde 404 para ferramenta de professor.",
+      "Recusa experiência de `publico: professor` (app-90, app-91): liberar uma delas seria um botão que não abre nada, porque `/exp/*` responde 404 para ferramenta de professor.",
     ],
   })
   definir(
@@ -116,7 +117,7 @@ export class SalasProfessorController {
   ) {
     const dados = DefinirEstadoSchema.parse(corpo);
     const id = ExpId.safeParse(expId);
-    if (!id.success) throw new BadRequestException({ mensagem: "expId no formato exp-<slug>" });
+    if (!id.success) throw new BadRequestException({ mensagem: FORMATO_DO_EXP_ID });
 
     return this.salas.definirEstado(
       escolaAlvo(req.auth, escolaIdPedida),

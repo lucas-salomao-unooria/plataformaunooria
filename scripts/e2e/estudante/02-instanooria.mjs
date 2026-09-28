@@ -110,7 +110,7 @@ await suite(
     const p = await r.pagina("estudante", { viewport: { width: 1280, height: 950 } });
     await r.entrar(p, estudante.login);
 
-    await p.goto(`${HUB}/exp/exp-01-instanooria`, { waitUntil: "domcontentloaded" });
+    await p.goto(`${HUB}/exp/exp08ef1b`, { waitUntil: "domcontentloaded" });
     const aparelho = p.locator('iframe[title="experiencia"]');
     await aparelho.waitFor({ state: "attached", timeout: 20_000 });
     const tela = p.frameLocator('iframe[title="experiencia"]');

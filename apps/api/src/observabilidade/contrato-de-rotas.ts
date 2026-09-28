@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { NOMES_DE_VITAL } from "./metricas";
+import { EXP_ID_RE } from "../comum/codigo-da-experiencia";
 
 /**
  * Contratos das rotas de observabilidade — os sinais que nascem no NAVEGADOR
@@ -8,7 +9,7 @@ import { NOMES_DE_VITAL } from "./metricas";
  * o que um bundle público quiser mandar, e o que passa daqui vira log,
  * métrica ou span num projeto do Google.
  */
-export const EXP_ID_OU_HUB = /^(exp-\d{2}-[a-z0-9-]+|hub)$/;
+export const EXP_ID_OU_HUB = new RegExp(`^(${EXP_ID_RE.source.slice(1, -1)}|hub)$`);
 const HEX32 = /^[0-9a-f]{32}$/i;
 const HEX16 = /^[0-9a-f]{16}$/i;
 const NANOS = /^\d{1,20}$/;

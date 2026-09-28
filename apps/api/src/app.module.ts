@@ -22,11 +22,14 @@ import { GeracaoModule } from "./geracao/geracao.module";
 import { AnaliseModule } from "./analise/analise.module";
 import { PerfisModule } from "./perfis/perfis.module";
 import { FotoContaModule } from "./foto-conta/foto-conta.module";
-import { OEcoNoGrupoModule } from "./o-eco-no-grupo/o-eco-no-grupo.module";
 import { RastroBoatoModule } from "./rastro-boato/rastro-boato.module";
 import { ManifestoIaModule } from "./manifesto-ia/manifesto-ia.module";
+import { QuemMandouIssoModule } from "./quem-mandou-isso/quem-mandou-isso.module";
+import { ASelecaoModule } from "./a-selecao/a-selecao.module";
+import { JornalEscolaModule } from "./jornal-escola/jornal-escola.module";
 import { SalasModule } from "./salas/salas.module";
-import { UnootubeModule } from "./unootube/unootube.module";
+import { EquipesModule } from "./equipes/equipes.module";
+import { EvidenciasModule } from "./evidencias/evidencias.module";
 import { UnoogptModule } from "./unoogpt/unoogpt.module";
 import { VilaModule } from "./vila/vila.module";
 import { StorageModule } from "./object-storage/storage.module";
@@ -59,22 +62,25 @@ import { ContratoInterceptor } from "./openapi/contrato.interceptor";
     RecursosModule,
     ProspeccaoModule,
     SalasModule,
+    EquipesModule,
+    EvidenciasModule,
     MotorModule,
     AssetsModule,
     AtividadesModule,
     GeracaoModule,
     PerfisModule,
     AnaliseModule,
-    UnootubeModule,
     UnoogptModule,
     VilaModule,
     StorageModule,
     PlanosModule,
     PlanejamentoModule,
     BemEstarModule,
-    OEcoNoGrupoModule,
     RastroBoatoModule,
     ManifestoIaModule,
+    QuemMandouIssoModule,
+    ASelecaoModule,
+    JornalEscolaModule,
     FotoContaModule,
   ],
   providers: [

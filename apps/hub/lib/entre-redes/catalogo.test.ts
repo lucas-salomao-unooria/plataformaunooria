@@ -18,7 +18,19 @@ describe("grade do Entre Redes", () => {
   });
 
   test("as missões publicadas continuam no lugar delas", () => {
-    expect(buscarMissao("4-ano", "unidade-1")?.missao.expId).toBe("exp-02-unootube");
-    expect(buscarMissao("8-ano", "unidade-1")?.missao.expId).toBe("exp-01-instanooria");
+    expect(buscarMissao("1-ano", "unidade-1")?.missao.expId).toBe("exp01ef1b");
+    expect(buscarMissao("4-ano", "unidade-1")?.missao.expId).toBe("exp04ef1b");
+    expect(buscarMissao("5-ano", "unidade-1")?.missao.expId).toBe("exp05ef1b");
+    expect(buscarMissao("8-ano", "unidade-1")?.missao.expId).toBe("exp08ef1b");
+  });
+
+  /* O UnooTube foi arquivado (ADR-116) e o Jornal da Escola tomou o código e a
+     unidade dele. O registro da ficha antiga continua no catálogo — e não pode
+     voltar à grade por engano, com o mesmo lugar da missão nova. */
+  test("a unidade 1 do 4º ano é o Jornal da Escola, e o UnooTube arquivado não volta à grade", () => {
+    const quartoAno = buscarMissao("4-ano", "unidade-1")?.missao;
+    expect(quartoAno?.status).toBe("disponivel");
+    expect(quartoAno?.titulo).toBe("Jornal da Escola: A Edição de Bento");
+    expect(ANOS.flatMap((ano) => ano.missoes).some((m) => m.expId === "backup-exp04ef1b")).toBe(false);
   });
 });

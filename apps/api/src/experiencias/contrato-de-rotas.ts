@@ -55,9 +55,9 @@ export const UpsertSchema = z.object({
  * A linha do manifesto como ela sai do banco.
  *
  * `series: []` significa **todas as séries**, não nenhuma — é assim que uma
- * experiência transversal se declara (exp-70). E `viewport` ausente não é falta
+ * experiência transversal se declara (app-70). E `viewport` ausente não é falta
  * de dado: é a experiência dizendo que foi desenhada para a janela, não para
- * uma casca de aparelho (a exp-02 é assim).
+ * uma casca de aparelho (a exp04ef1b é assim).
  *
  * `series`, `capabilities` e `permissoes` saem como `z.string()` e não como os
  * enums acima de propósito: são colunas `String[]` sem CHECK no banco, e uma

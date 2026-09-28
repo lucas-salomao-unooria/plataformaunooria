@@ -39,7 +39,7 @@ export const VERSAO_DOCUMENTO = 1;
  *
  * O QUE NUNCA ENTRA, e isto é decisão, não lacuna:
  *
- * - **Bem-estar (exp-91)**. DASS-21 é dado de saúde (LGPD art.~11), a posse é do
+ * - **Bem-estar (app-91)**. DASS-21 é dado de saúde (LGPD art.~11), a posse é do
  *   professor e não existe rota de gestor nem de agregado para ele em lugar
  *   nenhum desta plataforma. Um documento que o gestor emite não pode carregar o
  *   que nem o gestor pode ler.

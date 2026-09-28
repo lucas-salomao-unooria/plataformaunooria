@@ -20,8 +20,8 @@ rodar** — antes dela nada saiu da sua máquina.
 
 - [ ] `pnpm docker:dev` de pé, e a mudança vista na tela
 - [ ] **`pnpm turbo typecheck lint test` na raiz: verde.** Aqui ele SUBSTITUI o
-      CI: o `ci.yml` não dispara em `dev-local`, então o vermelho se acumula até
-      esta promoção — e costuma aparecer coisa que não é sua
+      CI: o `ci.yml` não roda em nada que vá para `dev-local`, nem no PR nem no
+      merge (ADR-121), então o vermelho se acumula até esta promoção — e costuma aparecer coisa que não é sua
 - [ ] Nenhuma frente de trabalho ficou de pé: `pnpm worktree listar` sem
       sobras (a poda é automática no `git pull`, mas confira — ADR-103)
 

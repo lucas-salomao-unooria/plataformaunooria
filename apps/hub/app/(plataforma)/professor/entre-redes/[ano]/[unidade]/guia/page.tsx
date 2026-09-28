@@ -8,19 +8,24 @@ import {
   rotaDaMissao,
   rotuloDaMissao,
   MISSAO_ATUAL,
-  MISSAO_ECO_NO_GRUPO,
+  MISSAO_A_SELECAO,
+  MISSAO_JORNAL_DA_ESCOLA,
+  MISSAO_QUEM_MANDOU_ISSO,
   MISSAO_RASTRO_BOATO,
   MISSAO_UNOOGPT,
-  MISSAO_UNOOTUBE,
 } from "@/lib/entre-redes/catalogo";
 import { buscarGuia } from "@/lib/entre-redes/guias";
 import type { BlocosVivos } from "@/lib/entre-redes/guias/tipos";
+import type { MaterialDaSelecao } from "@/lib/a-selecao-tipos";
+import type { MaterialDoJornal } from "@/lib/jornal-escola-tipos";
+import type { MaterialDoProfessor } from "@/lib/quem-mandou-tipos";
 
-import { IntervencoesDoEco, type MaterialDoEco } from "./intervencoes-do-eco";
 import { IntervencoesDoRastro, type MaterialDoRastro } from "./intervencoes-do-rastro";
+import { GatilhosDaSelecao, RoteiroDaSelecao } from "./material-da-selecao";
+import { BotoesDoJornal, MesaDoJornal, PerguntasDoJornal } from "./material-do-jornal";
 import { MomentosDoPainel } from "./momentos-do-painel";
+import { QuemMandouOPacote } from "./quem-mandou-o-pacote";
 import { TelasDaRevelacao } from "./telas-da-revelacao";
-import { VideosDoUnootube, type VideosDoProfessor } from "./videos-do-unootube";
 
 /**
  * O guia da aula de uma missão do Entre Redes — DESPACHANTE, como `page.tsx`
@@ -33,10 +38,14 @@ import { VideosDoUnootube, type VideosDoProfessor } from "./videos-do-unootube";
  * BLOCOS VIVOS cada missão injeta.
  *
  * Bloco vivo é o que tem fonte de verdade em outro lugar e não pode virar texto.
- * Cinco missões têm um: os momentos e as telas da revelação do Instanooria, a
- * tabela dos vieses do unooGPT, os 21 vídeos do UnooTube, as intervenções do
- * Rastro do Boato e as do Eco no Grupo — as quatro últimas vindas da api. Ver a
- * nota em `guias/tipos.ts`.
+ * Seis missões têm um: os momentos e as telas da revelação do Instanooria, a
+ * tabela dos vieses do unooGPT, as intervenções do Rastro do Boato, o pacote
+ * curado de Quem Mandou Isso? (com o roteiro da roda e as perguntas de
+ * evidência), da A Seleção os gatilhos dos três botões e o roteiro da Etapa 4
+ * com os 12 posts, e do Jornal da Escola os dois portões com os gatilhos orais,
+ * as três perguntas do resultado e a mesa do banco padrão com o gabarito — as
+ * cinco últimas vindas da api. Os 21 vídeos do UnooTube eram mais um, até o
+ * arquivamento (ADR-116). Ver a nota em `guias/tipos.ts`.
  *
  * **Missão com conteúdo que a turma LÊ na tela não descreve esse conteúdo no
  * guia: injeta um bloco vivo.** A prosa diverge — a do UnooTube dizia "metade…
@@ -108,7 +117,7 @@ export default async function GuiaPage({
  * Era um ternário aninhado com duas missões. Com cinco ele deixaria de ser
  * legível — e a sexta seria a que alguém acrescenta no ramo errado.
  *
- * As quatro chamadas de api são SEQUENCIAIS de propósito: cada render atende a
+ * As cinco chamadas de api são SEQUENCIAIS de propósito: cada render atende a
  * uma missão só, então nunca há duas para paralelizar. `apiDoServidor` devolve
  * `null` em falha (com a linha de log), e cada bloco tem o próprio cartão de
  * "não carregou" — o guia abre inteiro mesmo com a api fora, porque as outras
@@ -122,15 +131,6 @@ async function blocosDaMissao(expId: string | undefined): Promise<BlocosVivos | 
     case MISSAO_UNOOGPT.expId:
       return { debate: await tabelaDeVieses() };
 
-    case MISSAO_UNOOTUBE.expId:
-      return {
-        debate: (
-          <VideosDoUnootube
-            dados={await apiDoServidor<VideosDoProfessor>("/unootube/professor/videos")}
-          />
-        ),
-      };
-
     case MISSAO_RASTRO_BOATO.expId:
       return {
         debate: (
@@ -140,11 +140,30 @@ async function blocosDaMissao(expId: string | undefined): Promise<BlocosVivos | 
         ),
       };
 
-    case MISSAO_ECO_NO_GRUPO.expId:
+    case MISSAO_A_SELECAO.expId: {
+      /* UMA chamada para os dois blocos: são dois momentos da aula (quando
+         apertar, no roteiro; o que perguntar, no debate), da mesma rota. */
+      const material = await apiDoServidor<MaterialDaSelecao>("/a-selecao/professor/material");
+      return {
+        roteiro: <GatilhosDaSelecao dados={material} />,
+        debate: <RoteiroDaSelecao dados={material} />,
+      };
+    }
+    case MISSAO_JORNAL_DA_ESCOLA.expId: {
+      /* UMA chamada para os três blocos: são três momentos da aula (ler a mesa
+         antes, o que dizer em cada botão, o que perguntar entre eles). */
+      const material = await apiDoServidor<MaterialDoJornal>("/jornal-escola/professor/material");
+      return {
+        antes: <MesaDoJornal dados={material} />,
+        roteiro: <BotoesDoJornal dados={material} />,
+        debate: <PerguntasDoJornal dados={material} />,
+      };
+    }
+    case MISSAO_QUEM_MANDOU_ISSO.expId:
       return {
         debate: (
-          <IntervencoesDoEco
-            dados={await apiDoServidor<MaterialDoEco>("/o-eco-no-grupo/professor/material")}
+          <QuemMandouOPacote
+            dados={await apiDoServidor<MaterialDoProfessor>("/quem-mandou-isso/professor/material")}
           />
         ),
       };

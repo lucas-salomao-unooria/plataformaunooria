@@ -24,7 +24,7 @@
  * `id` do `public/experiencia.json`: divergir faz a missão nunca abrir, com a
  * liberação gravada e visível na tela do professor.
  */
-export const EXP_ID = 'exp-03-unoogpt';
+export const EXP_ID = 'exp02em1b';
 
 /**
  * Teto de tokens de SAÍDA do Cientista, por chamada.

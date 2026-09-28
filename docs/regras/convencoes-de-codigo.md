@@ -13,7 +13,7 @@ em conflito.
 ## Convenções de código
 
 - TypeScript strict em tudo. Sem `any` (use `unknown` + narrow). **Uma exceção,
-  registrada em ADR:** o jogo da exp-70 (`public/jogo/`, ~10k linhas de JS
+  registrada em ADR:** o jogo da app-70 (`public/jogo/`, ~10k linhas de JS
   clássico com globais compartilhados, `three.min.js` vendorizado) fica como
   está — é um instrumento com distâncias e tempos calibrados, e o compilador não
   tem como saber que uma refatoração mudou a medida. `public/jogo/**` está nos
@@ -21,7 +21,7 @@ em conflito.
   A rede que substitui o `tsc` ali é o smoke visual.
 - Nomes de domínio em pt-BR (`estudante`, `escola`, `turma`, `experiencia`);
   termos técnicos em inglês (`provider`, `guard`, `batch`).
-- Commits: `feat(exp-12): ...`, `fix(api): ...`, `chore(sdk): ...`.
+- Commits: `feat(exp06ef3b): ...`, `fix(api): ...`, `chore(sdk): ...`.
 - Zod para validar TODO input externo (body, query, postMessage recebido, env).
 - Testes: mínimo = contratos (bridge, telemetria, guards de tenancy). Vitest
   no sdk/experiências, Jest no NestJS.
@@ -40,14 +40,14 @@ em conflito.
   `NEXT_PUBLIC_CLARITY_PROJECT_ID` e **ausente = desligado**, nas duas
   superfícies. O que sai para lá é id opaco e `verbo:objeto`; nome, e-mail e
   resposta de estudante NÃO — a regra 6 continua valendo dentro do Clarity.
-- **Tabela de experiência leva o NÚMERO dela: `exp_NN_`.** `exp_70_sessoes`,
-  `exp_02_sessoes`, `exp_91_checkins`. Tabela da PLATAFORMA — que serve a todas
+- **Tabela de experiência leva o CÓDIGO dela (ADR-110): `exp08ef1b_`, `app_70_`.** `app_70_sessoes`,
+  `exp02em1b_sessoes`, `app_91_checkins`. Tabela da PLATAFORMA — que serve a todas
   — fica **sem prefixo**: `escolas`, `lotacoes`, `turmas`, `matriculas`,
   `liberacoes`, `periodos_letivos`, `users`, `experiencias`, `progresso`,
   `telemetria_eventos`, `ia_uso_diario`. O motor (feed adaptativo,
-  geração, dossiê) é da exp-01 e leva `exp_01_`. Tabela que é CONTRATO entre
-  duas experiências carrega os DOIS números: `exp_01_exp_70_perfis_importados`
-  (a exp-70 escreve, a exp-01 lê) — chamá-la de uma só mentiria sobre quem
+  geração, dossiê) é da exp08ef1b e leva `exp08ef1b_`. Tabela que é CONTRATO entre
+  duas experiências carrega os DOIS códigos: `exp08ef1b_app_70_perfis_importados`
+  (a app-70 escreve, a exp08ef1b lê) — chamá-la de uma só mentiria sobre quem
   depende dela.
   **Um banco, um schema.** Nem banco por experiência (elas não são isoladas: o
   perfil da Vila alimenta a largada do Instanooria, e o Postgres não faz JOIN
@@ -58,9 +58,20 @@ em conflito.
   nunca DROP/CREATE, e renomeando constraints, índices e políticas de RLS
   junto. Duas armadilhas registradas lá: `FOR ... IN SELECT` sobre o catálogo
   relê o que o próprio laço alterou, e `RENAME CONSTRAINT` renomeia também o
-  índice que a sustenta — as duas produzem `exp_01_exp_01_..._pkey`.
+  índice que a sustenta — as duas produzem `exp08ef1b_exp08ef1b_..._pkey`.
+- **Experiência ARQUIVADA leva `backup-` antes do código (ADR-116):** pasta
+  `apps/experiencias/backup-exp04ef1b`, módulo `apps/api/src/backup-unootube`,
+  tabela `backup_exp04ef1b_sessoes`, e o id como valor nas tabelas da plataforma.
+  O arquivamento é DERIVADO do id (`apps/api/src/comum/arquivadas.ts`), e o id
+  arquivado NÃO passa no `EXP_ID_RE` — é isso que a tira de rota, catálogo, grade
+  e painel sem um filtro a mais. O código fica no lugar e continua compilando e
+  testando, mas o módulo não entra no `app.module`, o `deploy.yml` não a publica e
+  a linha do catálogo mora em `experiencias_arquivadas`. Quando uma missão nova
+  cai numa unidade ocupada, a escolha entre arquivar e apagar é do dono do
+  produto: apagou-se o Eco (ADR-113) e a v1 do 5º ano (ADR-114); arquivou-se o
+  UnooTube.
 - Lógica de domínio de uma experiência (gabarito, estado da missão, visão do
   professor) vive num módulo próprio da api, prefixo minúsculo igual ao slug:
-  `apps/api/src/unootube/` ↔ `/unootube/*` (regra 3: o client nunca recebe o
+  `apps/api/src/unoogpt/` ↔ `/unoogpt/*` (regra 3: o client nunca recebe o
   gabarito). Padrão: `catalogo.ts` (dados) + `regras.ts` (puro) + service com
   `comTenancy` + controllers por papel.

@@ -74,7 +74,7 @@ export interface AiJsonRequest<T> {
    * É opcional porque `generateJson` devolve `T` e nem todo consumidor tem
    * quota. **Mas quem chama `QuotaService.temSaldo` TEM de passar isto** — sem
    * ele não há de onde tirar o número, e a alternativa é o que o repo fazia:
-   * a exp-92 não debitava nada e a exp-07 debitava 1.500 fixo, chute que não
+   * a app-92 não debitava nada e a exp07ef1b debitava 1.500 fixo, chute que não
    * acompanha prompt nem modelo. Ver ADR-74.
    */
   aoUsarTokens?: (tokens: number) => void;
@@ -126,7 +126,7 @@ export interface AiConversaRequest {
 }
 
 /**
- * Proporção da imagem, neutra de vendor. Opcional porque a exp-01 — a única
+ * Proporção da imagem, neutra de vendor. Opcional porque a exp08ef1b — a única
  * consumidora até aqui — depende do 4:5 que o `AssetsService` normaliza; quem
  * precisa de outro formato pede, e não recorta depois (o recorte joga fora a
  * composição que o modelo decidiu para o formato errado).

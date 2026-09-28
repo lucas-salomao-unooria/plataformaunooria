@@ -20,10 +20,14 @@ diagrama que só uma pessoa consegue alterar.
 \begin{nota}
 As fontes abaixo usam \cd{C4Context}, \cd{C4Container} e \cd{C4Component} onde o
 diagrama é C4, \cd{sequenceDiagram} onde é sequência, \cd{erDiagram} onde é
-entidade-relacionamento, \cd{stateDiagram-v2} onde é máquina de estados e
-\cd{flowchart} nos demais. Não são idênticas ao TikZ: o Mermaid não expressa
-posicionamento fino nem notas ancoradas, e as notas longas dos diagramas TikZ
-aparecem aqui como \cd{note} ou comentário.
+entidade-relacionamento, \cd{stateDiagram-v2} onde é máquina de estados,
+\cd{classDiagram} onde é de classes (e também no perfil e na taxonomia da UML),
+\cd{gantt} no diagrama de tempo e \cd{flowchart} nos demais. Não são idênticas ao
+TikZ: o Mermaid não expressa posicionamento fino nem notas ancoradas, e as notas
+longas dos diagramas TikZ aparecem aqui como \cd{note} ou comentário. Onde o
+Mermaid não tem o tipo da UML (objetos, pacotes, componentes, estrutura composta,
+perfil, comunicação, tempo, visão geral de interação e implantação), a primeira
+linha da fonte é um comentário que diz a aproximação e o que ela perde.
 \end{nota}
 
 % ---------------------------------------------------------------------------
@@ -62,7 +66,7 @@ C4Container
 
 \begin{lstlisting}[language=mermaid]
 flowchart LR
-  estudante([Estudante]); prof([Professor]); gestor([Gestor escolar]); admin([Admin do contrato])
+  estudante([Estudante]); prof([Professor]); gestor([Gestor de escola]); admin([Gestor do contrato])
   idp[[WSO2 IS]]; vertex[[Vertex AI]]; pubsub[[Pub/Sub]]; ci[[CI/CD]]
 
   subgraph SIS["Plataforma Unooria"]
@@ -80,10 +84,10 @@ flowchart LR
     UC15(("UC-15 Check-in de bem-estar"))
     UC16(("UC-16 Zerar dados da turma"))
     UC20(("UC-20 Importar usuarios por CSV"))
-    UC21(("UC-21 Redefinir senha"))
+    UC21(("UC-21 Editar pessoa e redefinir senha"))
     UC22(("UC-22 Ler agregado da rede"))
     UC23(("UC-23 Publicar manifesto"))
-    UC24(("UC-24 Reverter versao"))
+    UC24(("UC-24 Ativar ou reverter versao"))
   end
 
   estudante --- UC01 & UC02 & UC03 & UC06
@@ -203,27 +207,50 @@ C4Component
     Component(health, "health/", "", "healthz, readyz")
     Component(analise,"analise/", "", "Turma e rede, CSV")
     Component(comum,  "comum/", "", "Series, rate limit, guardas de liberacao e disponibilidade")
+    Component(rost,   "rostering/", "", "Pessoas, escolas, turmas")
+    Component(port,   "portabilidade/", "", "Perfil portatil")
+    Component(salas,  "salas/", "", "A sala: grade e liberacao por turma (ADR-69)")
+    Component(equipes,"equipes/", "", "Quem divide um computador na missao (ADR-111); consulta.ts e a porta dos paineis")
     Component(recs,   "recursos/", "", "O interruptor da rede e a versao (ADR-87); escrita so admin")
+    Component(prosp,  "prospeccao/", "", "Cadastro de interesse do site publico, sem tenant (ADR-107)")
+    Component(evid,   "evidencias/", "", "Habilidade da BNCC por atividade e rodada (ADR-112); a porta marcar das missoes, que a exp05ef1b chama")
 
     %% --- dominio por experiencia (nenhum conhece outro)
-    Component(motor,  "motor/ geracao/ dossie/ atividades/ perfis/", "", "exp-01")
-    Component(utube,  "unootube/", "", "exp-02")
-    Component(vila,   "vila/", "", "exp-70")
-    Component(planos, "planos/", "", "exp-90")
-    Component(bem,    "bemestar/", "", "exp-91")
-    Component(ugpt,   "unoogpt/", "", "exp-03 - motor probabilistico, agente com ferramentas, relogio da turma")
-    Component(eco,    "o-eco-no-grupo/", "", "exp-07 - gate de turma, texto, imagem e VOZ")
+    Component(motor,  "motor/ geracao/ dossie/ atividades/ perfis/", "", "exp08ef1b")
+    Component(utube,  "unootube/", "", "exp04ef1b - painel conta por computador")
+    Component(vila,   "vila/", "", "app-70")
+    Component(planos, "planos/", "", "app-90")
+    Component(bem,    "bemestar/", "", "app-91")
+    Component(ugpt,   "unoogpt/", "", "exp02em1b - motor probabilistico, agente com ferramentas, relogio da turma; painel conta por computador")
+    Component(outros, "rastro-boato/ manifesto-ia/ quem-mandou-isso/ foto-conta/ planejamento/", "", "exp06ef2b, exp08ef4b, exp05ef1b, exp01ef1b, app-92 - sem seta na figura")
   }
 
   Rel(guard, roles, "antes de")
   Rel(tenint, prisma, "escola do token")
+  Rel(salas, equipes, "contagem na sala")
+  Rel(salas, prisma, "comTenancy")
+  Rel(equipes, prisma, "comTenancy")
+  Rel(utube, equipes, "consulta.ts")
+  Rel(ugpt, equipes, "consulta.ts")
+  Rel(evid, equipes, "gancho aoMudarEquipes + consulta.ts")
+  Rel(evid, prisma, "comTenancy")
   Rel(motor, prisma, "comTenancy")
   Rel(vila, prisma, "comTenancy")
+  Rel(ugpt, prisma, "comTenancy")
+  Rel(ugpt, ai, "IA com ferramentas + quota")
   Rel(planos, ai, "IA + quota")
   Rel(bem, ai, "IA + quota")
   Rel(planos, store, "bucket privado")
-  Rel(eco, ai, "IA + quota")
-  Rel(eco, store, "midia no bucket")
+  %% quem-mandou-isso/ (exp05ef1b, ADR-118) mora na caixa "outros" da figura, sem
+  %% seta; as relacoes dela ficam aqui: a primeira missao que chama marcar.
+  Rel(outros, evid, "exp05ef1b: marcar na transacao do Mural + registrarContexto")
+  Rel(outros, equipes, "exp05ef1b: consulta.ts (painel por computador)")
+  Rel(outros, ai, "exp05ef1b: IA + quota no preparo")
+
+  %% A figura TikZ desenha a infraestrutura ENTRE a plataforma e o dominio, com
+  %% a coluna 2 vazia: e por ela que unootube/ e unoogpt/ sobem ate equipes/.
+  %% evidencias/ chega a equipes/ pelo vao entre a 2a e a 3a linha da
+  %% plataforma, por cima de recursos/ e prospeccao/.
 \end{lstlisting}
 
 % ---------------------------------------------------------------------------
@@ -317,13 +344,14 @@ flowchart TB
   sdk["packages/sdk"]
   ui["packages/ui"]
   hub["apps/hub"]; api["apps/api"]
-  e01["exp-01"]; e02["exp-02"]; e70["exp-70"]; e90["exp-90"]; e91["exp-91"]
+  e01["exp08ef1b"]; e02["exp04ef1b"]; e70["app-70"]; e90["app-90"]; e91["app-91"]
   tpl["_template"]
 
   ds -->|versao publicada| ui
-  sdk --> hub & api & e01 & e02 & e70 & e90 & e91 & tpl
+  sdk --> hub & e01 & e02 & e70 & e90 & e91 & tpl
+  %% apps/api NAO importa pacote do workspace: valida o que recebe com os proprios schemas
   ui --> hub & e01 & e02 & e90 & e91
-  %% exp-70 NAO depende de packages/ui: canvas 3D, sem DOM de UI (ADR-18)
+  %% app-70 NAO depende de packages/ui: canvas 3D, sem DOM de UI (ADR-18)
 \end{lstlisting}
 
 % ---------------------------------------------------------------------------
@@ -332,7 +360,7 @@ flowchart TB
 \begin{lstlisting}[language=mermaid]
 sequenceDiagram
   autonumber
-  participant E as Experiencia (exp-01 no iframe)
+  participant E as Experiencia (exp08ef1b no iframe)
   participant C as runs.controller (NestJS)
   participant S as motor/servico
   participant P as PostgreSQL
@@ -369,6 +397,1070 @@ stateDiagram-v2
     duas instancias podem tentar, so uma ganha a linha.
     Menor peca possivel que resolve o problema (ADR-17).
   end note
+\end{lstlisting}
+
+% ---------------------------------------------------------------------------
+\section{Figura~\ref{fig:uml-taxonomia} --- Os catorze tipos de diagrama da UML 2.5.1}
+
+\begin{lstlisting}[language=mermaid]
+classDiagram
+  class Diagrama {
+    <<abstract>>
+  }
+  class Estrutura["Diagrama de estrutura"] {
+    <<abstract>>
+  }
+  class Comportamento["Diagrama de comportamento"] {
+    <<abstract>>
+  }
+  class Interacao["Diagrama de interacao"] {
+    <<abstract>>
+  }
+  Diagrama <|-- Estrutura
+  Diagrama <|-- Comportamento
+
+  %% estrutura: sete folhas
+  class Classes {
+    fig:uml-classes-dominio, fig:uml-classes-ia
+    antes: fig:c4l4, fig:graus
+  }
+  class Objetos {
+    fig:uml-objetos
+  }
+  class Pacotes {
+    fig:uml-pacotes
+    antes: fig:monorepo (grafo)
+  }
+  class Componentes {
+    fig:uml-componentes
+  }
+  class EstruturaComposta["Estrutura composta"] {
+    fig:uml-estrutura
+  }
+  class Implantacao["Implantacao"] {
+    fig:uml-implantacao
+    antes: fig:deploy-contrato (infra)
+  }
+  class Perfil {
+    fig:uml-perfil
+  }
+  Estrutura <|-- Classes
+  Estrutura <|-- Objetos
+  Estrutura <|-- Pacotes
+  Estrutura <|-- Componentes
+  Estrutura <|-- EstruturaComposta
+  Estrutura <|-- Implantacao
+  Estrutura <|-- Perfil
+
+  %% comportamento: tres folhas e o ramo abstrato da interacao
+  class CasosDeUso["Casos de uso"] {
+    fig:uml-casos-gestao
+    antes: fig:casos-de-uso
+  }
+  class Atividades {
+    fig:uml-atividade-disp
+    antes: fig:fluxo-embed, fig:guardrails-bemestar, fig:app92-caminho
+  }
+  class MaquinaDeEstados["Maquina de estados"] {
+    fig:uml-estados-ponte
+    antes: fig:estados-geracao
+  }
+  Comportamento <|-- CasosDeUso
+  Comportamento <|-- Atividades
+  Comportamento <|-- MaquinaDeEstados
+  Comportamento <|-- Interacao
+
+  class Sequencia["Sequencia"] {
+    fig:uml-seq-entrada, fig:uml-seq-ia
+    antes: fig:seq-feed, fig:seq-handshake, fig:seq-erro-cliente
+  }
+  class Comunicacao["Comunicacao"] {
+    fig:uml-comunicacao
+  }
+  class Tempo {
+    fig:uml-tempo
+  }
+  class VisaoGeral["Visao geral de interacao"] {
+    fig:uml-visao-geral
+  }
+  Interacao <|-- Sequencia
+  Interacao <|-- Comunicacao
+  Interacao <|-- Tempo
+  Interacao <|-- VisaoGeral
+
+  note "Como ler: abstract e classificador abstrato - nao existe diagrama<br/>'de estrutura' que nao seja de um tipo concreto. 'antes' aponta para<br/>a figura do mesmo tipo que o documento ja tinha; (grafo) e (infra)<br/>marcam as que cumprem o papel com outra notacao."
+\end{lstlisting}
+
+% ---------------------------------------------------------------------------
+\section{Figura~\ref{fig:uml-perfil} --- Perfil UML da plataforma}
+
+\begin{lstlisting}[language=mermaid]
+%% aproximacao: o Mermaid nao tem diagrama de perfil; a extensao de metaclasse (seta de ponta cheia) vira associacao rotulada "estende", e as restricoes entre chaves vao para notas.
+classDiagram
+  %% [x] no corpo da classe = {x} da figura: chave fecha o corpo no Mermaid.
+  namespace PerfilUnooria {
+    class TabelaDeTenant {
+      <<estereotipo>>
+      prefixo: String [0..1]
+      codigo da experiencia, vazio na plataforma
+    }
+    class Experiencia {
+      <<estereotipo>>
+      id: String, o expId
+      versao: SemVer
+      produto: Produto
+      publico: Publico = estudante
+      permissoes: String [*]
+      viewport: String [0..1]
+    }
+    class Bundle {
+      <<estereotipo>>
+      caminho = gs://[contrato]-exp/[expId]/[versao]/
+    }
+    class RotaDeEstudante {
+      <<estereotipo>>
+      EXP_ID: String
+    }
+    class ChamadaDeIA {
+      <<estereotipo>>
+      perfil: estudante | professor
+    }
+    class Produto {
+      <<enumeracao>>
+      entre-redes
+      plano-de-aula
+      plano-de-ensino
+      bem-estar
+    }
+    class Publico {
+      <<enumeracao>>
+      estudante
+      professor
+    }
+  }
+
+  %% metaclasses da UML, fora do perfil
+  class MClass["Class"] {
+    <<metaclasse>>
+  }
+  class MComponent["Component"] {
+    <<metaclasse>>
+  }
+  class MArtifact["Artifact"] {
+    <<metaclasse>>
+  }
+  class MOperation["Operation"] {
+    <<metaclasse>>
+  }
+
+  TabelaDeTenant --> MClass : estende
+  Experiencia --> MComponent : estende
+  Bundle --> MArtifact : estende
+  RotaDeEstudante --> MOperation : estende
+  ChamadaDeIA --> MOperation : estende
+  Bundle ..> Experiencia : manifesta
+  Experiencia ..> Produto
+
+  note for TabelaDeTenant "{escola_id NOT NULL}<br/>{ENABLE e FORCE ROW LEVEL SECURITY}<br/>{toda query dentro de comTenancy}"
+  note for Experiencia "{gabarito e correcao so na API}<br/>{token so em memoria}"
+  note for Bundle "{imutavel: mudar o conteudo e subir a versao}<br/>{versao igual ao version do package.json}"
+  note for RotaDeEstudante "{chama exigirMissaoLiberada no funil}<br/>{403 sem linha em liberacoes}"
+  note for ChamadaDeIA "{QuotaService.temSaldo antes}<br/>{QuotaService.consumir depois}<br/>{provider so por AI_PROVIDER}"
+  note "Como ler: um elemento marcado TabelaDeTenant em outro diagrama<br/>carrega as tres restricoes sem repeti-las. A seta cheia e extensao<br/>de metaclasse; nao confundir com a heranca, de seta aberta."
+  note "Onde o perfil ainda nao e lei: geracao/ e as reacoes de motor/<br/>chamam o provider sem temSaldo - as excecoes registradas na ADR-74<br/>e em ai/AGENTS.md. Uma ChamadaDeIA nova nao herda a excecao."
+\end{lstlisting}
+
+% ---------------------------------------------------------------------------
+\section{Figura~\ref{fig:uml-casos-gestao} --- Casos de uso da administração da rede}
+
+\begin{lstlisting}[language=mermaid]
+flowchart LR
+  gesc([Gestor de escola]); greg([Gestor regional]); gctr([Gestor do contrato]); gadm(["Admin (Unooria)"])
+  prof([Professor]); ci[[CI/CD]]; visit([Visitante do site])
+
+  %% generalizacao de atores (triangulo aberto na figura): o filho faz tudo o que o pai faz
+  greg ==>|generalizacao| gesc
+  gctr ==>|generalizacao| greg
+  gadm ==>|generalizacao| gctr
+
+  subgraph SIS["Plataforma Unooria - administracao"]
+    UC20(("UC-20 Importar pessoas e enturmar"))
+    UC29(("UC-29 Cadastrar pessoa no balcao"))
+    UC21(("UC-21 Editar pessoa e redefinir senha"))
+    UC30(("UC-30 Conferir a cadeia de atribuicao"))
+    UC32(("UC-32 Trocar a escola ativa"))
+    UC33(("UC-33 Ver o panorama da diretoria"))
+    UC34(("UC-34 Gerar o relatorio da diretoria"))
+    UC31(("UC-31 Criar papel sem escola"))
+    UC35(("UC-35 Manter escolas e regionais"))
+    UC22(("UC-22 Ler o agregado da rede"))
+    UC36(("UC-36 Ler o historico de recursos"))
+    UC37(("UC-37 Ligar ou desligar recurso"))
+    UC39(("UC-39 Editar a quota de IA"))
+    UC40(("UC-40 Ler cadastros de interesse"))
+    UC24(("UC-24 Ativar ou reverter versao"))
+    UC38(("UC-38 Fixar versao por escopo"))
+    UC42(("UC-42 Liberar ou encerrar missao na turma"))
+    UC43(("UC-43 Conferir a disponibilidade"))
+    UC44(("UC-44 Montar as equipes da missao"))
+    UC23(("UC-23 Publicar manifesto"))
+    UC41(("UC-41 Cadastrar interesse"))
+  end
+
+  gesc --- UC20 & UC29 & UC21
+  greg --- UC32 & UC33 & UC34
+  gctr --- UC31 & UC35 & UC22 & UC36
+  gadm --- UC37 & UC39 & UC40
+  prof --- UC42 & UC44
+  ci --- UC23
+  visit --- UC41
+
+  UC29 -.->|include| UC30
+  UC29 -.->|include| UC20
+  UC31 -.->|include| UC30
+  UC42 -.->|include| UC43
+  UC24 -.->|extend| UC37
+  UC38 -.->|extend| UC37
+  UC24 -.->|extend| UC23
+
+  %% caso de uso de suporte (incluido ou extensao)
+  classDef suporte stroke-dasharray: 4 3
+  class UC30,UC24,UC38,UC43 suporte
+\end{lstlisting}
+
+% ---------------------------------------------------------------------------
+\section{Figura~\ref{fig:uml-classes-dominio} --- Classes: o modelo de domínio da plataforma}
+
+\begin{lstlisting}[language=mermaid]
+classDiagram
+  %% [x] no corpo da classe = {x} da figura: chave fecha o corpo no Mermaid.
+  %% As restricoes entre chaves de cada classe estao nas notas.
+  class Escola {
+    nome: String
+    codigoInep: String [0..1]
+    tipo: TipoDeEscola
+    municipio, uf: String [0..1]
+  }
+  class Turma {
+    nome: String
+    serie: String
+    tipo: regular | componente
+    turno: String [0..1]
+  }
+  class PeriodoLetivo {
+    tipo, titulo: String
+    ano: Int
+    inicio, fim: Date
+  }
+  class Lotacao {
+    papel: estudante | professor | gestor_escola
+    principal: Boolean
+    inicio: Date
+    fim: Date [0..1]
+  }
+  class Matricula {
+    <<TabelaDeTenant>>
+    papel: estudante | professor
+    principal: Boolean
+    inicio: Date
+    fim: Date [0..1]
+  }
+  class Liberacao {
+    <<TabelaDeTenant>>
+    estado: liberada | encerrada
+    liberadaEm: DateTime
+    encerradaEm [0..1]
+  }
+  class Usuario {
+    username: String
+    displayName: String
+    role: Papel
+    ativo: Boolean
+    senhaProvisoria: Boolean
+    /escola: Escola [0..1]
+    /turma: Turma [0..1]
+  }
+  class Disponibilidade {
+    ligado: Boolean
+    versaoFixa: String [0..1]
+    motivo: String [0..1]
+    definidoEm: DateTime
+  }
+  class Experiencia {
+    expId: String
+    versaoAtiva: String
+    series: String [*]
+    publico: Publico
+    permissoes: String [*]
+  }
+  class Papel {
+    <<enumeracao>>
+    estudante
+    professor
+    gestor_escola
+    gestor_regional
+    gestor_contrato
+    admin
+  }
+  class Recurso {
+    <<abstract>>
+    /recursoId: String
+    produto:[slug] ou experiencia:[expId]
+  }
+  class Produto {
+    slug: Produto
+    vocabulario em recursos/catalogo.ts
+  }
+
+  Escola "1" -- "*" Turma
+  Turma "*" -- "1" PeriodoLetivo
+  Escola "pai 0..1" -- "filhas *" Escola
+  Escola "1" -- "*" Lotacao
+  Lotacao "*" -- "1" Usuario
+  Turma "1" -- "*" Matricula
+  Matricula "*" -- "1" Usuario
+  Turma "1" -- "*" Liberacao
+  Liberacao "*" -- "1" Experiencia : por expId, sem FK
+  Usuario -- "0..1" Escola : regional
+  Disponibilidade "*" -- "0..1" Escola : escopo
+  Disponibilidade "*" -- "1" Recurso
+  Recurso <|-- Produto
+  Recurso <|-- Experiencia
+  Produto "0..1" -- "*" Experiencia : teto
+  Usuario ..> Papel
+
+  note for Escola "{regional e Escola com tipo = regional}<br/>{o contrato nao e linha: e a stack}"
+  note for Turma "{unica por escola, periodo e nome}<br/>{fora da RLS: o filtro e a tranca}"
+  note for PeriodoLetivo "{do contrato, sem escola}"
+  note for Lotacao "{unica por escola, usuario e papel}"
+  note for Matricula "{no maximo uma principal ativa por estudante}"
+  note for Liberacao "{sem linha = bloqueada}<br/>{unica por turma e expId}"
+  note for Usuario "{escola obrigatoria, salvo papeis sem escola}<br/>{role = gestor_regional se e so se regional nao nula}"
+  note for Disponibilidade "{sem linha = ligado}<br/>{unica por recurso e escopo}<br/>{escopo nulo = o contrato}"
+\end{lstlisting}
+
+% ---------------------------------------------------------------------------
+\section{Figura~\ref{fig:uml-classes-ia} --- Classes: a porta da IA}
+
+\begin{lstlisting}[language=mermaid]
+classDiagram
+  %% [x] no corpo da classe = {x} da figura: chave fecha o corpo no Mermaid.
+  %% Linha sem parenteses cai no compartimento de atributos: as anotacoes
+  %% cinza que a figura poe sob as operacoes aparecem aqui entre os atributos.
+  class AiController {
+    <<controller>>
+    -provider: AiProvider
+    -quota: QuotaService
+    +gerar(corpo) [texto]
+    POST /ai/gerar, so OidcGuard
+  }
+  class PlanosService {
+    <<service>>
+    e mais oito modulos de dominio
+    +gerar(...)
+    temSaldo -> provider -> consumir
+  }
+  class AiResult {
+    <<tipo de dado>>
+    texto: string
+    tokensUsados: number
+    tokensEntrada?, tokensSaida?
+    finishReason?: string
+    voltas?, tentativas?
+  }
+  class QuotaService {
+    -prisma: PrismaService
+    +limite(perfil) Promise~number~
+    +usadoHoje(escolaId, usuarioId) Promise~number~
+    +temSaldo(escolaId, usuarioId, perfil = "estudante") Promise~boolean~
+    +consumir(escolaId, usuarioId, tokens) Promise~number~
+  }
+  class AiProvider {
+    <<interface>>
+    injetado pelo token AI_PROVIDER
+    +generate(req: AiRequest) Promise~AiResult~
+    +generateJson~T~(req) Promise~T~
+    +generateImage(prompt, opcoes?) Promise~Buffer~
+    +generateSpeech(req) Promise~Buffer~
+    +conversar(req) Promise~AiResult~
+  }
+  class AiModule {
+    <<modulo @Global>>
+    exports: [AI_PROVIDER, QuotaService]
+    +useFactory(config, metricas) AiProvider
+  }
+  class VertexProvider {
+    -auth: GoogleAuth
+    ADC, sem chave em env
+    as cinco operacoes, por :generateContent
+  }
+  class MockProvider {
+    deterministico
+    generate, conversar: respondem
+    os outros tres: lancam
+  }
+  class MedidorDeProvider {
+    <<decorador>>
+    -real: AiProvider
+    -metricas: Metricas
+    -modelos: ModelosDoMedidor
+    as cinco operacoes, cada uma por medir(op, modelo, fn)
+  }
+  class ErroDeGeracao {
+    extends Error
+  }
+  class ia_quotas {
+    perfil PK
+    tokens_por_dia
+    sem escola: do contrato
+  }
+  class ia_uso_diario {
+    <<TabelaDeTenant>>
+    escola_id, usuario_id, dia PK
+    tokens_usados
+  }
+
+  VertexProvider ..|> AiProvider
+  MockProvider ..|> AiProvider
+  MedidorDeProvider ..|> AiProvider
+  MedidorDeProvider o-- "1" AiProvider : real
+  MockProvider ..> ErroDeGeracao : lanca
+  AiProvider ..> AiResult : usa
+  AiController ..> QuotaService : injeta
+  AiController ..> AiProvider
+  PlanosService ..> AiProvider : @Inject(AI_PROVIDER)
+  PlanosService ..> QuotaService
+  AiModule ..> MedidorDeProvider : cria
+  QuotaService ..> ia_quotas : le
+  QuotaService ..> ia_uso_diario : upsert
+
+  note for AiModule "A fabrica, no codigo: new MedidorDeProvider(env === 'mock'<br/>? new MockProvider() : new VertexProvider(), metricas, modelos).<br/>Trocar de fornecedor e um arquivo novo em src/ai e uma linha aqui."
+  note for QuotaService "O que o tipo nao garante: nenhum consumidor e obrigado a chamar<br/>temSaldo. Entre o temSaldo e o consumir nao ha trava, entao duas<br/>chamadas simultaneas do mesmo usuario passam as duas e podem<br/>ultrapassar o teto em ate uma resposta cada."
+\end{lstlisting}
+
+% ---------------------------------------------------------------------------
+\section{Figura~\ref{fig:uml-objetos} --- Objetos: um instantâneo da disponibilidade}
+
+\begin{lstlisting}[language=mermaid]
+%% aproximacao: o Mermaid nao tem diagrama de objetos; cada instancia vira um no com os valores dos slots, o nome sublinhado vira a tag u do HTML, e cada link vira aresta rotulada com o papel.
+flowchart TB
+  norte["<u>norte : Escola</u><br/>tipo = 'regional'<br/>nome = 'Regional Norte'"]
+  ef["<u>ef : Escola</u><br/>tipo = 'escola'<br/>nome = 'EE Cora Coralina'"]
+  ee["<u>ee : Escola</u><br/>tipo = 'escola'<br/>nome = 'EE Monteiro Lobato'"]
+
+  d3["<u>d3 : Disponibilidade</u><br/>recursoId =<br/>'experiencia:exp06ef2b'<br/>ligado = false<br/>motivo = 'adiar'"]
+  d4["<u>d4 : Disponibilidade</u><br/>recursoId =<br/>'produto:plano-de-aula'<br/>ligado = false<br/>motivo = 'nao contratado'"]
+  d1["<u>d1 : Disponibilidade</u><br/>recursoId =<br/>'experiencia:exp06ef2b'<br/>escola = nulo (contrato)<br/>ligado = false"]
+  d2["<u>d2 : Disponibilidade</u><br/>recursoId =<br/>'experiencia:exp06ef2b'<br/>ligado = true<br/>motivo = 'piloto'"]
+
+  t6a["<u>t6a : Turma</u><br/>nome = '6A'<br/>serie = '6EF'"]
+  paula["<u>aula : Produto</u><br/>slug = 'plano-de-aula'"]
+  e1["<u>e1 : Experiencia</u><br/>expId = 'exp06ef2b'<br/>produto = 'entre-redes'<br/>series = ['6EF']"]
+  l1["<u>l1 : Liberacao</u><br/>estado = 'liberada'"]
+  e2["<u>e2 : Experiencia</u><br/>expId =<br/>'app-90-plano-de-aula'<br/>publico = 'professor'"]
+
+  ef ---|pai| norte
+  ee ---|pai| norte
+  d3 ---|escopo| ef
+  d4 ---|escopo| ee
+  d2 ---|escopo| norte
+  t6a ---|escola| ee
+  l1 ---|turma| t6a
+  l1 ---|expId| e1
+  d1 ---|recurso| e1
+  d2 ---|recurso| e1
+  d3 ---|recurso| e1
+  d4 ---|recurso| paula
+  e2 ---|"produto (teto)"| paula
+
+  %% d1 nao tem link de escopo: escola nula e o contrato inteiro.
+\end{lstlisting}
+
+% ---------------------------------------------------------------------------
+\section{Figura~\ref{fig:uml-pacotes} --- Pacotes: quem pode importar quem}
+
+\begin{lstlisting}[language=mermaid]
+%% aproximacao: o Mermaid nao tem diagrama de pacotes; cada pacote vira subgraph, e a dependencia de codigo (import/use) vira seta tracejada rotulada.
+flowchart TB
+  subgraph MONO["monorepo - plataforma-unooria"]
+    subgraph APPS["apps"]
+      subgraph HUB["hub"]
+        hub["@edu/hub<br/>Next.js, App Router<br/>rotas por papel, BFF, JWKS,<br/>montagem do embed"]
+      end
+      subgraph EXPS["experiencias"]
+        exps["_template<br/>exp01ef1b ... exp08ef4b<br/>app-70, app-90,<br/>app-91, app-92<br/>13 bundles Vite; backup-*<br/>fora do deploy"]
+      end
+      subgraph API["api - @edu/api - NestJS + Prisma"]
+        subgraph LTR["transversal"]
+          ltr["auth/ tenancy/ observabilidade/ config/"]
+        end
+        subgraph LPL["plataforma"]
+          lpl["usuarios/ rostering/ salas/ equipes/ evidencias/ recursos/<br/>experiencias/ telemetry/ analise/ progress/ comum/ ..."]
+        end
+        subgraph LIN["infraestrutura"]
+          lin["prisma/ ai/ object-storage/ assets/"]
+        end
+        subgraph LDO["dominio {nenhum modulo importa outro}"]
+          ldo["motor/ geracao/ vila/ unoogpt/ quem-mandou-isso/ a-selecao/ ..."]
+        end
+      end
+    end
+    subgraph PKGS["packages"]
+      subgraph SDK["sdk"]
+        sdk["@edu/sdk<br/>TypeScript + Zod<br/>ponte postMessage v2, cliente<br/>HTTP, telemetria em lote"]
+      end
+      subgraph UI["ui"]
+        ui["@edu/ui<br/>as cinco pontes do DS:<br/>'use client', nomes sem<br/>colisao, tree-shaking"]
+      end
+    end
+    subgraph DS["externo - npm"]
+      ds["@unooria/design-system<br/>repo storybook-unooria<br/>componentes + CSS de secao"]
+    end
+  end
+
+  %% dentro da api: toda faixa usa a transversal
+  ldo -.->|import| lpl
+  ldo -.->|import| lin
+  lpl -.->|import| lin
+  lpl -.->|"import - toda faixa usa a transversal"| ltr
+
+  %% entre pacotes do workspace
+  exps -.->|import| sdk
+  exps -.->|import componentes| ui
+  exps -.->|use: so CSS da secao e fontes| ds
+  hub -.->|import| sdk
+  hub -.->|import componentes| ui
+  hub -.->|use: so CSS da secao e fontes| ds
+  ui -.->|import| ds
+
+  %% A api NAO importa nada do workspace (nem @edu/sdk): o contrato da ponte e
+  %% duplicado de proposito, com Zod de cada lado. Hub e api nao se importam:
+  %% falam por HTTP, pelo BFF. A app-70 importa so a SDK (jogo em canvas, sem
+  %% DOM de interface). No dominio, duas experiencias conversam por tabela de
+  %% contrato ou por endpoint de fronteira, nunca por import.
+\end{lstlisting}
+
+% ---------------------------------------------------------------------------
+\section{Figura~\ref{fig:uml-componentes} --- Componentes e interfaces}
+
+\begin{lstlisting}[language=mermaid]
+%% aproximacao: o Mermaid nao tem diagrama de componentes; cada interface vira um no circular, a linha cheia sai de quem a FORNECE (a bola) e a seta tracejada sai de quem a REQUER (o soquete).
+flowchart TB
+  hub["componente<br/>Hub<br/>[Next.js]<br/>sessao, papel, embed,<br/>assinatura do token"]
+  subgraph EXP["componente - Experiencia [Vite + React, bundle]"]
+    sdk["biblioteca<br/>@edu/sdk - ponte, HTTP, telemetria"]
+  end
+  api["componente<br/>API<br/>[NestJS + Prisma]<br/>autorizacao por papel, tenancy, regra de dominio, gabarito, porta da IA"]
+  pg["externo<br/>PostgreSQL<br/>[Cloud SQL]"]
+  ps["externo<br/>Pub/Sub"]
+  vx["externo<br/>Vertex AI"]
+  gcs["externo<br/>Cloud Storage"]
+
+  %% hub e experiencia: a ponte (o hub fornece, a experiencia requer)
+  iPonte(("Ponte postMessage v2<br/>hub:init, hub:token,<br/>hub:pause/resume"))
+  hub --- iPonte
+  EXP -.-> iPonte
+
+  %% hub e api
+  iLogin(("POST /auth/login<br/>Credentials"))
+  iBff(("REST pelo BFF<br/>/api/plataforma/*"))
+  iJwks(("JWKS<br/>/.well-known/jwks.json"))
+  api --- iLogin
+  hub -.-> iLogin
+  api --- iBff
+  hub -.-> iBff
+  hub --- iJwks
+  api -.-> iJwks
+
+  %% experiencia (pela sdk) e api
+  iRest(("REST com Bearer<br/>rotas de dominio"))
+  iTel(("Telemetria<br/>/telemetry/batch<br/>/telemetry/beacon"))
+  api --- iRest
+  sdk -.-> iRest
+  api --- iTel
+  sdk -.-> iTel
+
+  %% api e externos
+  iSql(("SQL + RLS<br/>comTenancy"))
+  iPub(("Publicacao<br/>{contrato}-telemetria"))
+  iIngest(("Ingestao push<br/>/telemetry/ingest"))
+  iGen(("Geracao<br/>ADC, :generateContent"))
+  iObj(("Objetos<br/>assets, planos"))
+  pg --- iSql
+  api -.-> iSql
+  ps --- iPub
+  api -.-> iPub
+  api --- iIngest
+  ps -.-> iIngest
+  vx --- iGen
+  api -.-> iGen
+  gcs --- iObj
+  api -.-> iObj
+
+  %% O Cloud Storage tambem serve o bundle ao navegador pela CDN: e artefato,
+  %% nao interface, e esta no diagrama de implantacao (fig:uml-implantacao).
+\end{lstlisting}
+
+% ---------------------------------------------------------------------------
+\section{Figura~\ref{fig:uml-estrutura} --- Estrutura composta: a página da missão}
+
+\begin{lstlisting}[language=mermaid]
+%% aproximacao: o Mermaid nao tem diagrama de estrutura composta; as partes viram subgraphs aninhados e nos, as portas viram nos pequenos dentro da parte a que pertencem, e a fronteira do sandbox e o subgraph do iframe.
+flowchart LR
+  page["server component<br/>app/exp/[expId]/page.tsx<br/>montarEmbed(): token,<br/>src, expOrigin,<br/>permissoes, viewport"]
+  cdn["CDN<br/>{cdn}/{expId}/{versao}/<br/>index.html?hubOrigin=..."]
+  rprog["BFF<br/>POST /api/plataforma/<br/>progresso/:expId/<br/>concluir"]
+  rtok["route handler<br/>GET /api/exp-token<br/>401/403 -> hub:pause<br/>e o aviso"]
+  rlog["route handler<br/>POST /api/ponte<br/>uma linha de log; 204"]
+
+  subgraph EXPHOST["ExpHost - client component"]
+    pEmbed["porta"]
+    pProg["porta"]
+    subgraph DISP["dispositivo : DispositivoFrame [0..1] - so quando o manifesto declara viewport"]
+      subgraph FRAME["frame : ExpFrame [1]"]
+        pTok["porta"]
+        pLog["porta"]
+        proto["ponte : protocolo v2<br/>postMessage;<br/>ev.origin + Zod"]
+        aviso["aviso : AlertBox [0..1]<br/>'Sua sessao expirou'; substitui o iframe"]
+        subgraph IFRAME["iframe [1] - fronteira do sandbox"]
+          pSrc["porta src"]
+          pPonte["porta ponte"]
+          sbx["um HTMLIFrameElement com<br/>sandbox = 'allow-scripts<br/>allow-same-origin allow-modals'<br/>+ pointer-lock, forms, downloads<br/>se o manifesto pedir<br/>allow = 'autoplay; fullscreen;<br/>clipboard-write'"]
+          bexp["exp : Experiencia (estereotipo)<br/>o bundle, servido pela CDN"]
+          bsdk["sdk : @edu/sdk"]
+          btok["token : string<br/>{so em memoria}"]
+        end
+      end
+    end
+  end
+
+  %% conectores; === marca os dois unicos que atravessam o sandbox
+  page ---|embed| pEmbed
+  pProg ---|progresso| rprog
+  pTok ---|token| rtok
+  pLog ---|sinal| rlog
+  pPonte === proto
+  proto --- pTok
+  proto --- pLog
+  cdn === pSrc
+  pPonte --- bexp
+  bexp --- bsdk
+  bsdk --- btok
+
+  classDef borda stroke:#e8740c,stroke-width:2px
+  class pPonte,pSrc borda
+
+  %% targetOrigin e sempre expOrigin, nunca *: o frame so envia para a origem
+  %% que montarEmbed calculou, e so aceita mensagem cujo ev.origin seja ela.
+  %% O ExpHost tem uma segunda sobreposicao, fora do desenho: 'A missao
+  %% travou', com o hash do erro, quando a experiencia manda exp:erro. E dele,
+  %% nao do frame: sobrevive a remontagem do frame ao recarregar.
+\end{lstlisting}
+
+% ---------------------------------------------------------------------------
+\section{Figura~\ref{fig:uml-atividade-disp} --- Atividades: o resolvedor de disponibilidade}
+
+\begin{lstlisting}[language=mermaid]
+flowchart TB
+  subgraph ESQ["comum/disponibilidade.ts - com banco"]
+    ini([inicio])
+    a1["buscar experiencias[expId]<br/>produto, publico; pode nao existir"]
+    a2["cadeiaDaEscola<br/>[escola] ou [escola, regional]"]
+    a3["linhasDoEscopo<br/>escola nula OU na cadeia; so ids legiveis"]
+    a4["produtoConhecido<br/>fora do vocabulario -> null"]
+    d4{"efetivo.ligado?"}
+    fim(((fim)))
+    a7["lanca 403 recurso-indisponivel"]
+    ff((("X - fim de fluxo")))
+  end
+
+  subgraph DIR["recursos/regras.ts - funcao pura"]
+    d1{"produto?"}
+    a5["maisEspecifica(<br/>'produto:{slug}')"]
+    d2{"linha do produto?"}
+    r1["desligado,<br/>tetoDoProduto"]
+    m1{" "}
+    a6["maisEspecifica(<br/>'experiencia:{expId}')"]
+    d3{"linha da experiencia?"}
+    r2["ligado,<br/>versaoFixa = null"]
+    r3["ligado e versaoFixa<br/>da linha"]
+    m2{" "}
+  end
+
+  ini --> a1 --> a2 --> a3 --> a4
+  a4 -->|resolverExperiencia| d1
+  d1 -->|sim| a5
+  a5 --> d2
+  d2 -->|desligada| r1
+  d2 -->|nenhuma ou ligada| m1
+  d1 -->|nao| m1
+  m1 --> a6 --> d3
+  d3 -->|nenhuma| r2
+  d3 -->|uma linha| r3
+  r2 --> m2
+  r3 --> m2
+  r1 --> m2
+  m2 --> d4
+  d4 -->|sim| fim
+  d4 -->|nao| a7
+  a7 --> ff
+
+  %% m1 e m2 sao nos de juncao. O X e o fim de fluxo pela excecao: a transacao
+  %% de quem chamou desfaz o que tiver feito.
+  %% maisEspecifica percorre a cadeia na ordem - escola, depois regional - e
+  %% devolve a primeira linha do recurso; sem nenhuma, a de escola nula (o
+  %% contrato); sem ela, null. Sobe so um nivel: a rede nao tem arvore mais funda.
+  %% A linha inteira e a decisao: ligado e versaoFixa nao se resolvem em cadeias
+  %% separadas. A tela mostra exatamente a linha que vale.
+  %% Sem linha em experiencias (stack nova, antes do primeiro publish) NAO tranca:
+  %% sem produto, vale so o interruptor da propria experiencia.
+  %% A mensagem depende do publico: 'Este recurso nao esta disponivel para a sua
+  %% rede.' para professor; 'Esta missao nao esta aberta agora.' para estudante.
+\end{lstlisting}
+
+% ---------------------------------------------------------------------------
+\section{Figura~\ref{fig:uml-seq-entrada} --- Sequência: a entrada do estudante na missão}
+
+\begin{lstlisting}[language=mermaid]
+sequenceDiagram
+  participant N as Navegador (hub no cliente)
+  participant H as Hub (servidor)
+  participant A as API (NestJS)
+  participant P as PostgreSQL (Cloud SQL)
+
+  N->>H: GET /exp/:expId (cookie)
+  H->>A: GET /salas/minhas
+  A->>P: turmasDoEstudante + liberacoes
+  P-->>A: matriculas e linhas
+  A-->>H: grade: estado por missao, sem as indisponiveis
+
+  alt missao nao esta liberada na grade
+    H-->>N: 404 (notFound)
+  else liberada
+    H->>H: montarEmbed: assina o token (RS256, 15 min)
+    H->>A: GET /experiencias/:expId e /recursos/efetivos
+    A-->>H: manifesto, versao fixada da escola
+    H-->>N: HTML com ExpFrame
+  end
+
+  %% a linha de vida da experiencia comeca na mensagem create: antes dela, o iframe nao existe
+  create participant E as Experiencia (iframe)
+  N-->>E: create - bundle da CDN
+
+  Note over N,E: ref: handshake exp:ready / hub:init - fig:seq-handshake
+
+  E->>A: 1a rota de estudante (Bearer)
+  A->>A: funil: garantirSessao ou estudanteDaEscola
+  A->>P: exigirRecursoDisponivel (fig:uml-atividade-disp)
+  A->>P: missoesLiberadasPara
+  P-->>A: linhas de disponibilidade e de liberacao
+
+  alt recurso desligado no escopo que vale
+    A-->>E: 403 recurso-indisponivel
+  else sem liberacao liberada nas turmas do estudante
+    A-->>E: 403 missao-nao-liberada
+  else as duas passam
+    A-->>E: 200 - a rota segue
+  end
+
+  %% O primeiro alt (o filtro do hub) e UX; as travas estao no segundo, na API,
+  %% e disparam em serie: disponibilidade antes de liberacao.
+\end{lstlisting}
+
+% ---------------------------------------------------------------------------
+\section{Figura~\ref{fig:uml-seq-ia} --- Sequência: uma chamada de IA com quota}
+
+\begin{lstlisting}[language=mermaid]
+sequenceDiagram
+  participant E as Experiencia (pela SDK)
+  participant G as OidcGuard (auth/)
+  participant C as AiController (ai/)
+  participant Q as QuotaService (ai/)
+  participant P as PostgreSQL (Cloud SQL)
+  participant M as provider (MedidorDeProvider)
+  participant V as Vertex AI (Gemini)
+
+  E->>G: POST /ai/gerar (Bearer)
+  G->>G: TokenService.verificar: JWKS do hub
+  break token ausente ou invalido
+    G-->>E: 401
+  end
+  G->>C: req.auth = {usuarioId, escolaId, perfil}
+  C->>C: GerarSchema.parse (Zod, 400 se invalido)
+  C->>Q: temSaldo(escola, usuario, perfil)
+  Q->>P: limite: ia_quotas, fora do comTenancy
+  P-->>Q: tokens_por_dia
+  Q->>P: usadoHoje: ia_uso_diario, em comTenancy
+  P-->>Q: tokens_usados
+  Q-->>C: usado < limite
+  break sem saldo
+    C-->>E: 429 'Quota diaria de IA atingida'
+  end
+  C->>C: PROMPTS[expId] ?? PROMPTS.tutor
+  C->>P: serieDoPedido: turma.findFirst
+  P-->>C: serie -> '6o ano'
+  C->>M: generate({system, user})
+  M->>M: medir: VertexProvider
+  M->>V: :generateContent (ADC)
+  V-->>M: texto e uso
+  M-->>C: AiResult {texto, tokensUsados}
+  C->>Q: consumir(..., tokensUsados)
+  Q->>P: upsert em comTenancy
+  P-->>Q: tokens_usados
+  C-->>E: 200 {texto}
+
+  %% break e a saida antecipada: quando a guarda vale, o operando roda e o resto
+  %% da interacao NAO acontece. O consumo e gravado DEPOIS da resposta do modelo,
+  %% com os tokens que ele declarou; entre o temSaldo e o consumir nao ha trava.
+\end{lstlisting}
+
+% ---------------------------------------------------------------------------
+\section{Figura~\ref{fig:uml-comunicacao} --- Comunicação: o caminho de um lote de telemetria}
+
+\begin{lstlisting}[language=mermaid]
+%% aproximacao: o Mermaid nao tem diagrama de comunicacao; cada link vira aresta, a mensagem numerada vira o rotulo dela e a seta da a direcao (o detalhe de cada numero esta na tabela que segue a figura).
+flowchart LR
+  exp["<u>:Experiencia</u><br/>codigo da missao"]
+  tel["<u>t : TelemetryClient</u><br/>@edu/sdk"]
+  tok["<u>:TokenService</u><br/>auth/"]
+  ctrl["<u>:TelemetryController</u><br/>telemetry/"]
+  ps["<u>:Topic</u><br/>{contrato}-telemetria"]
+  guard["<u>:PubSubPushGuard</u><br/>ID token do Google"]
+  pg["<u>:telemetria_eventos</u><br/>TabelaDeTenant, por mes"]
+
+  exp -->|"1: track()"| tel
+  tel -->|"1.1: POST /telemetry/batch<br/>3: sendBeacon /beacon"| ctrl
+  ctrl -->|"1.1.1: identidade do token"| ctrl
+  ctrl -->|"3.1: verificar()"| tok
+  ctrl -->|"1.1.2, 3.2: publishMessage()"| ps
+  ps -->|"2: push /ingest"| guard
+  guard -->|"2.1: ingest()"| ctrl
+  ctrl -->|"2.1.1: INSERT ... DO NOTHING"| pg
+
+  %% Tres gatilhos, tres numeros de topo: 1 e o relogio da SDK, 3 e a saida da
+  %% pagina e 2 e o Pub/Sub, quando ele quiser. Nenhum espera o outro.
+  %% Sem TELEMETRIA_TOPIC (compose local, CI), 1.1.2 vira uma linha de debug e
+  %% nada e gravado.
+\end{lstlisting}
+
+% ---------------------------------------------------------------------------
+\section{Figura~\ref{fig:uml-tempo} --- Tempo: \emph{token}, renovação e sessão}
+
+\begin{lstlisting}[language=mermaid]
+%% aproximacao: o Mermaid nao tem diagrama de tempo; cada faixa vira uma secao do gantt e cada estado um intervalo no eixo de minutos, e as mensagens entre faixas ficam em comentario.
+%%{init: {"gantt": {"displayMode": "compact"}}}%%
+gantt
+  title Missao aberta - o pedido de token dos 20 min falha por rede
+  dateFormat mm
+  axisFormat %M
+  tickInterval 5minute
+
+  section Chamadas da experiencia a API
+  200                              :c1, 00, 25m
+  401 {5 min de 401}               :crit, c2, 25, 5m
+  200                              :c3, 30, 10m
+
+  section Token vigente na experiencia
+  A - vale ate 15                  :t1, 00, 10m
+  B - vale ate 25 {15 min}         :t2, 10, 15m
+  B vencido                        :crit, t2v, 25, 5m
+  D - vale ate 45                  :t3, 30, 10m
+
+  section Pedido de token do hub
+  pedindo - ok {10 min}            :p1, 10, 36s
+  pedindo - falhou (rede)          :crit, p2, 20, 36s
+  pedindo - ok                     :p3, 30, 36s
+  pedindo                          :p4, 40, 24s
+
+  section Sessao do hub
+  ativa {expira 2 h depois do ultimo ponto}  :s1, 00, 40m
+  renova o prazo                   :milestone, r0, 00, 0m
+  renova o prazo                   :milestone, r1, 10, 0m
+  renova o prazo                   :milestone, r2, 30, 0m
+
+  %% Fora dos pulsos, o pedido de token esta ocioso.
+  %% Mensagens entre faixas: exp:token-expirando aos 10, 20 e 30 (experiencia
+  %% para o hub); hub:token de volta aos 10,6 e aos 30,6 (so os pedidos ok).
+  %% O token B (emitido aos 10) vence aos 25; o proximo pedido e aos 30; entre
+  %% os dois, toda chamada da experiencia a API recebe 401.
+\end{lstlisting}
+
+% ---------------------------------------------------------------------------
+\section{Figura~\ref{fig:uml-estados-ponte} --- Máquina de estados de protocolo: a ponte}
+
+\begin{lstlisting}[language=mermaid]
+stateDiagram-v2
+  [*] --> AguardandoInit : connectToHub(hubOrigin)
+
+  AguardandoInit --> Conectada : hub:init [trunc(v) = 2] / limpa os temporizadores, resolve
+  AguardandoInit --> Incompativel : hub:init [trunc(v) != 2]
+  AguardandoInit --> TempoEsgotado : after(8 s)
+
+  state Conectada {
+    [*] --> Ativa
+    Ativa --> Pausada : hub:pause
+    Pausada --> Ativa : hub:resume
+  }
+
+  Incompativel : Incompativel
+  Incompativel : reject - 'Protocolo incompativel'
+  TempoEsgotado : TempoEsgotado
+  TempoEsgotado : reject - 'Timeout no handshake'
+  Incompativel --> [*]
+  TempoEsgotado --> [*]
+
+  %% transicoes internas (as que nao mudam de estado): evento [guarda] / efeito
+  note right of AguardandoInit
+    entry / normalizarHubOrigin, envia exp:ready
+    do / reenvia exp:ready a cada 400 ms
+    message [origin != hubOrigin] / descarta
+    message [nao casa HubInitSchema] / ignora
+  end note
+  note right of Conectada
+    hub:token / token := msg.token
+    after(10 min) / envia exp:token-expirando
+    hub:init / ignora (resposta a um exp:ready reenviado)
+    message [nao casa HubParaExpSchema] / avisa e descarta
+  end note
+
+  %% A SDK nao guarda Ativa nem Pausada: repassa as duas mensagens aos handlers
+  %% onPause/onResume, e a experiencia para os proprios cronometros. O hub manda
+  %% hub:pause em visibilitychange, em blur (salvo quando o foco foi para o
+  %% proprio iframe) e antes do aviso de sessao expirada.
+  %% Na pratica, o incompativel termina em tempo esgotado: o ExpFrame confere a
+  %% versao do exp:ready e, se o maior diverge, registra protocolo-incompativel e
+  %% NAO responde. A SDK nunca recebe o hub:init que a levaria a Incompativel:
+  %% cai no after(8 s). O estado existe para o dia em que um hub responder com
+  %% outra versao.
+\end{lstlisting}
+
+% ---------------------------------------------------------------------------
+\section{Figura~\ref{fig:uml-visao-geral} --- Visão geral de interação: a jornada do estudante}
+
+\begin{lstlisting}[language=mermaid]
+%% aproximacao: o Mermaid nao tem diagrama de visao geral de interacao; cada quadro ref vira um no de sub-rotina com a figura em que a interacao esta desenhada, e as barras de bifurcacao e juncao viram nos estreitos.
+flowchart TB
+  ini([inicio])
+  login[["ref: login (UC-01)<br/>signIn('credentials') -> POST /auth/login"]]
+  dsenha{"senha provisoria?"}
+  senha[["ref: trocar a senha<br/>/trocar-senha (UC-25)"]]
+  m1{" "}
+  grade[["ref: a grade do estudante<br/>GET /salas/minhas, sem as indisponiveis"]]
+  dlib{"o card esta liberado?"}
+  cad["cadeado: 'Ainda nao abriu' ou 'Esta voce ja fechou'"]
+  ff1((("X - fim de fluxo")))
+  entra[["ref: entrada na missao<br/>as duas travas (fig:uml-seq-entrada)"]]
+  hand[["ref: handshake<br/>exp:ready/hub:init (fig:seq-handshake)"]]
+  fork["bifurcacao"]
+  dom[["ref: rotas de dominio<br/>e IA com quota (fig:uml-seq-ia)"]]
+  tel[["ref: telemetria em lote<br/>(fig:uml-comunicacao)"]]
+  ren[["ref: renovacao do token<br/>a cada 10 min (fig:uml-tempo)"]]
+  join["juncao"]
+  dfim{"como a missao termina?"}
+  conc[["ref: concluir<br/>POST .../progresso/:expId/concluir"]]
+  exp["aviso 'Sua sessao expirou'; hub:pause"]
+  trav["'A missao travou', com o hash do erro"]
+  f1(((fim))); f2(((fim))); f3(((fim)))
+
+  ini --> login --> dsenha
+  dsenha -->|sim| senha
+  senha --> m1
+  dsenha -->|nao| m1
+  m1 --> grade --> dlib
+  dlib -->|nao| cad --> ff1
+  dlib -->|sim| entra --> hand --> fork
+  fork --> dom & tel & ren
+  dom & tel & ren --> join
+  join --> dfim
+  dfim -->|exp:concluir| conc --> f1
+  dfim -->|"/api/exp-token da 401 ou 403"| exp --> f2
+  dfim -->|exp:erro| trav --> f3
+
+  classDef barra fill:#1f2a44,stroke:#1f2a44,color:#ffffff
+  class fork,join barra
+
+  %% As tres interacoes do meio correm juntas enquanto a missao esta aberta. A
+  %% saida pelo cadeado termina em fim de fluxo: o estudante continua na home.
+\end{lstlisting}
+
+% ---------------------------------------------------------------------------
+\section{Figura~\ref{fig:uml-implantacao} --- Implantação: que artefato roda em que nó}
+
+\begin{lstlisting}[language=mermaid]
+%% aproximacao: o Mermaid nao tem diagrama de implantacao; cada no (e ambiente de execucao) vira subgraph, cada artefato vira um no dentro dele, o caminho de comunicacao vira linha e a dependencia implanta vira seta grossa.
+flowchart LR
+  subgraph NAV["device - Navegador da escola"]
+    subgraph NAVENV["browser - aba do hub"]
+      apag["artefato<br/>pagina do hub"]
+    end
+    subgraph IFR["sandbox - iframe"]
+      bnav["Bundle<br/>{expId}/{versao}/<br/>baixado da CDN; token so em memoria"]
+    end
+  end
+
+  subgraph WSO2["externo - WSO2 IS"]
+    iwso2["projeto proprio; futuro emissor - hoje e o hub"]
+  end
+  subgraph GHA["no - GitHub Actions"]
+    igha["deploy.yml; WIF, sem chave JSON"]
+  end
+
+  subgraph GCP["projeto GCP - uma stack por contrato"]
+    subgraph LB["no - Load Balancer global + Cloud CDN"]
+      ilb["um IP, host rules:<br/>hub, api, exp, assets"]
+    end
+    subgraph RUNHUB["Cloud Run - {contrato}-frontend"]
+      ahub["imagem hub:{sha}<br/>node apps/hub/server.js"]
+    end
+    subgraph RUNAPI["Cloud Run - {contrato}-api"]
+      aapi["imagem api:{sha}<br/>node dist/src/main.js"]
+    end
+    subgraph JOB["Cloud Run Job - {contrato}-migrate"]
+      ajob["imagem api:{sha}<br/>prisma migrate deploy"]
+    end
+    subgraph SM["no - Secret Manager"]
+      ism["sete segredos: database-url, token-signing-key,<br/>auth-secret e mais quatro"]
+    end
+    subgraph GCS["no - Cloud Storage"]
+      igcs["-exp: publico, CDN<br/>-assets: publico, CDN<br/>-planos: PRIVADO<br/>-mapas: sourcemaps, privado"]
+      bgcs["Bundle<br/>{expId}/{versao}/<br/>index.html com max-age=60"]
+    end
+    subgraph SQL["no - Cloud SQL {contrato}-pg"]
+      isql["PostgreSQL, HA + PITR,<br/>so IP privado; role app<br/>sem BYPASSRLS"]
+    end
+    subgraph PS["no - Pub/Sub"]
+      ips["topic {contrato}-telemetria<br/>push -telemetria-ingest"]
+    end
+    subgraph AR["no - Artifact Registry"]
+      iar["hub:{sha}, api:{sha}<br/>push direto do CI"]
+    end
+    subgraph VX["servico gerenciado - Vertex AI"]
+      ivx["Gemini; ADC da conta {contrato}-api"]
+    end
+  end
+
+  %% caminhos de comunicacao
+  NAV ---|HTTPS| LB
+  LB ---|hub| RUNHUB
+  LB ---|api| RUNAPI
+  LB ---|CDN| GCS
+  RUNHUB ---|"HTTPS, API_INTERNAL_URL"| RUNAPI
+  RUNAPI ---|"assets, planos"| GCS
+  RUNAPI ---|"publica; push /telemetry/ingest"| PS
+  RUNAPI ---|VPC| SQL
+  JOB ---|VPC| SQL
+  RUNAPI --- VX
+  SM -.-|env| RUNHUB
+
+  %% o CI implanta cada artefato
+  GHA ==>|implanta| AR
+  GHA ==>|rsync| GCS
+  bgcs ==>|implanta| bnav
+
+  %% A mesma imagem api:{sha} esta implantada em dois nos, e o bundle esta
+  %% armazenado num e executado em outro. O CI ainda executa o job de migracao e
+  %% publica o manifesto (PUT /experiencias/:expId), o que o diagrama deixa no
+  %% texto. Escala, rede e certificados sao do Terraform, em outro repositorio.
 \end{lstlisting}
 
 % ---------------------------------------------------------------------------
@@ -657,29 +1749,29 @@ erDiagram
 
   %% A ausencia de linha em liberacoes E o bloqueio: guardar bloqueio como linha
   %% obrigaria a criar uma por turma x experiencia so para o mundo nascer fechado.
-  %% liberacoes e PRE-CONDICAO do relogio da exp-03 e dos gates da exp-07, que
+  %% liberacoes e PRE-CONDICAO do relogio da exp02em1b e dos gates da exp06ef2b, que
   %% dizem "a aula comecou" e continuam morando na tabela DA experiencia.
 \end{lstlisting}
 
 % ---------------------------------------------------------------------------
-\section{Figuras~\ref{fig:er-exp01a} e~\ref{fig:er-exp01b} --- Modelo da exp-01}
+\section{Figuras~\ref{fig:er-exp08ef1ba} e~\ref{fig:er-exp08ef1bb} --- Modelo da exp08ef1b}
 
 \begin{lstlisting}[language=mermaid]
 erDiagram
-  exp_01_activities ||--o{ exp_01_authors : tem
-  exp_01_authors    ||--o{ exp_01_posts   : escreve
-  exp_01_posts      ||--o{ exp_01_post_comments : tem
-  exp_01_activities ||--o{ exp_01_generation_jobs : enfileira
-  exp_01_activities ||--o{ exp_01_runs : hospeda
-  exp_01_runs ||--o{ exp_01_events : registra
-  exp_01_runs ||--o{ exp_01_student_posts : publica
-  exp_01_runs ||--|| exp_01_conclusoes : conclui
-  exp_01_runs ||--|| exp_01_reflexoes : reflete
-  exp_01_runs ||--|| exp_01_dossiers : gera
-  exp_01_runs ||--o{ exp_01_comentarios_da_sessao : ancora
-  exp_01_activities ||--o{ exp_01_exp_70_perfis_importados : "largada"
+  exp08ef1b_activities ||--o{ exp08ef1b_authors : tem
+  exp08ef1b_authors    ||--o{ exp08ef1b_posts   : escreve
+  exp08ef1b_posts      ||--o{ exp08ef1b_post_comments : tem
+  exp08ef1b_activities ||--o{ exp08ef1b_generation_jobs : enfileira
+  exp08ef1b_activities ||--o{ exp08ef1b_runs : hospeda
+  exp08ef1b_runs ||--o{ exp08ef1b_events : registra
+  exp08ef1b_runs ||--o{ exp08ef1b_student_posts : publica
+  exp08ef1b_runs ||--|| exp08ef1b_conclusoes : conclui
+  exp08ef1b_runs ||--|| exp08ef1b_reflexoes : reflete
+  exp08ef1b_runs ||--|| exp08ef1b_dossiers : gera
+  exp08ef1b_runs ||--o{ exp08ef1b_comentarios_da_sessao : ancora
+  exp08ef1b_activities ||--o{ exp08ef1b_app_70_perfis_importados : "largada"
 
-  exp_01_activities {
+  exp08ef1b_activities {
     uuid id PK
     text escola_id FK
     uuid professor_id FK
@@ -691,7 +1783,7 @@ erDiagram
     jsonb engine_config
     text status
   }
-  exp_01_posts {
+  exp08ef1b_posts {
     uuid id PK
     text lado "VARIAVEL INDEPENDENTE - sanitizada antes de sair"
     text perfil "idem"
@@ -699,24 +1791,24 @@ erDiagram
     text image_status "pendente|ok|fallback"
     boolean aprovado
   }
-  exp_01_runs {
+  exp08ef1b_runs {
     uuid id PK
     text lado_inicial
     text lado_origem "perfil|sorteio|redistribuido - auditoria"
     jsonb engine_state "estado do motor; unidade de LOCK"
     text nome_no_app "a conta e do APARELHO, nao da crianca"
   }
-  exp_01_events {
+  exp08ef1b_events {
     bigint id PK
     text tipo "canal OPERACIONAL: sincrono e transacional"
     jsonb payload "{dwellMs, dwellNorm}"
   }
-  exp_01_comentarios_da_sessao {
+  exp08ef1b_comentarios_da_sessao {
     uuid post_id FK "XOR com student_post_id (CHECK na migration)"
     uuid student_post_id FK
     boolean de_ia "para o professor distinguir na auditoria"
   }
-  exp_01_exp_70_perfis_importados {
+  exp08ef1b_app_70_perfis_importados {
     jsonb escores "4 quadrantes, 0-1"
     text dominante
     text origem "jogo|professor"
@@ -725,23 +1817,23 @@ erDiagram
 \end{lstlisting}
 
 % ---------------------------------------------------------------------------
-\section{Figuras~\ref{fig:er-exp02-70} e~\ref{fig:er-exp90-91} --- Demais experiências}
+\section{Figuras~\ref{fig:er-exp04ef1b-app70} e~\ref{fig:er-app90-91} --- Demais experiências}
 
 \begin{lstlisting}[language=mermaid]
 erDiagram
-  exp_70_sessoes ||--o{ exp_70_perfis : "recalculado pelo servidor"
-  exp_70_perfis  ||..|| exp_70_bolhas : "mesmo estudante"
-  exp_90_planos  ||..o{ exp_90_referencias : "monta o prompt"
-  exp_91_ciclos  ||--o{ exp_91_checkins : "7 check-ins"
+  app_70_sessoes ||--o{ app_70_perfis : "recalculado pelo servidor"
+  app_70_perfis  ||..|| app_70_bolhas : "mesmo estudante"
+  app_90_planos  ||..o{ app_90_referencias : "monta o prompt"
+  app_91_ciclos  ||--o{ app_91_checkins : "7 check-ins"
 
-  exp_02_sessoes {
+  exp04ef1b_sessoes {
     text escola_id PK
     uuid estudante_id PK
     text_array salvos "CHECK cardinality <= 3"
     boolean ranking_desbloqueado "LATCH: nao volta"
     boolean credibilidade_adicionada "congela os salvos"
   }
-  exp_70_sessoes {
+  app_70_sessoes {
     uuid id PK "EMITIDO pela API - o cliente colidia"
     uuid turma_id FK "desnormalizado: turma NO MOMENTO da partida"
     text bolha "A|B|C - do SERVIDOR"
@@ -750,35 +1842,35 @@ erDiagram
     jsonb payload "bruto - unica fonte do reprocessamento"
     jsonb leitura_mensagens
   }
-  exp_70_perfis {
+  app_70_perfis {
     smallint versao_mapeamento "sobe => nasce linha nova"
     jsonb valores "null NAO e zero"
     jsonb graus "scored|indicative|zero|none"
     float abertura_vs_conservacao "NULL se polo nao observado"
     boolean amostra_suficiente "falso => o painel avisa que NAO SABE"
   }
-  exp_70_bolhas {
+  app_70_bolhas {
     text escola_id PK
     uuid estudante_id PK "por ESTUDANTE, nao por partida"
     text bolha
   }
-  exp_90_planos {
+  app_90_planos {
     text status "pendente|gerando|pronto|erro"
     text caminho_gerado_md "IMUTAVEL, bucket privado"
     text caminho_html "o que o editor salvou, sanitizado"
   }
-  exp_90_referencias {
+  app_90_referencias {
     text disciplina PK
     text serie PK "NULL = todas"
     text nome PK
     text texto "catalogo do CONTRATO - sem escola_id, FORA da RLS"
   }
-  exp_91_ciclos {
+  app_91_ciclos {
     uuid id PK
     int_array ordem_itens "permutacao de 1..21"
     int depressao "somas x2, ao concluir - DADO SENSIVEL"
   }
-  exp_91_checkins {
+  app_91_checkins {
     smallint numero "1..7"
     text dia "UNIQUE (escola_id, professor_id, dia)"
     text texto_livre "NUNCA em log nem telemetria"
@@ -833,7 +1925,7 @@ flowchart TB
   frame --> fim([fim])
 
   %% A leitura do experiencia.json NAO e so de dev: stack com a tabela vazia
-  %% servia a exp-01 esticada na janela em vez de dentro do aparelho.
+  %% servia a exp08ef1b esticada na janela em vez de dentro do aparelho.
 \end{lstlisting}
 
 % ---------------------------------------------------------------------------
@@ -841,10 +1933,10 @@ flowchart TB
 
 \begin{lstlisting}[language=mermaid]
 flowchart LR
-  v["exp-70 (Vila do Lume)"] -->|payload bruto| mv["src/vila/ - quadrantes.ts: colapso 10 -> 4"]
-  mv -->|"POST /atividades/:id/perfis/da-vila (professor)"| t["exp_01_exp_70_perfis_importados"]
+  v["app-70 (Vila do Lume)"] -->|payload bruto| mv["src/vila/ - quadrantes.ts: colapso 10 -> 4"]
+  mv -->|"POST /atividades/:id/perfis/da-vila (professor)"| t["exp08ef1b_app_70_perfis_importados"]
   t -->|le| mi["src/perfis/largada.ts - decide o lado do feed"]
-  mi --> i["exp-01 (Instanooria)"]
+  mi --> i["exp08ef1b (Instanooria)"]
 
   %% Duas travas que CUSTAM estudantes, de proposito:
   %%  1. valor nao observado (indicative|none) fica FORA da media — nunca zero
@@ -879,10 +1971,10 @@ C4Component
   title Camada de IA - src/ai e a UNICA porta
 
   Container_Boundary(api, "API") {
-    Component(g, "geracao/", "", "exp-01")
-    Component(m, "motor/", "", "exp-01")
-    Component(p, "planos/", "", "exp-90")
-    Component(b, "bemestar/", "", "exp-91")
+    Component(g, "geracao/", "", "exp08ef1b")
+    Component(m, "motor/", "", "exp08ef1b")
+    Component(p, "planos/", "", "app-90")
+    Component(b, "bemestar/", "", "app-91")
     Component(a, "POST /ai/gerar", "", "SDK")
 
     Container_Boundary(ai, "src/ai/ - a UNICA porta") {
@@ -896,8 +1988,8 @@ C4Component
   }
   System_Ext(vertex, "Vertex AI", "endpoint global")
 
-  Rel(g, q, "1")
-  Rel(m, q, "1")
+  Rel(g, pr, "sem quota (ADR-74)")
+  Rel(m, pr, "sem quota (ADR-74)")
   Rel(p, q, "1")
   Rel(b, q, "1")
   Rel(a, q, "1")
@@ -961,7 +2053,7 @@ classDiagram
 \end{lstlisting}
 
 % ---------------------------------------------------------------------------
-\section{Figura~\ref{fig:exp92-caminho} --- exp-92: o caminho do planejamento}
+\section{Figura~\ref{fig:app92-caminho} --- app-92: o caminho do planejamento}
 
 \begin{lstlisting}[language=mermaid]
 flowchart TB
@@ -980,10 +2072,10 @@ flowchart TB
 
   dados --> dist
 
-  reg --> cfg[("exp_92_configuracoes<br/>e, se a rede ainda nao tinha, periodos_letivos - catalogo do CONTRATO")]
-  dist --> jd[("exp_92_planos_anuais.distribuicao (JSONB)<br/>o insumo do gerador, e o que sobrevive a reescrever o documento")]
+  reg --> cfg[("app_92_configuracoes<br/>e, se a rede ainda nao tinha, periodos_letivos - catalogo do CONTRATO")]
+  dist --> jd[("app_92_planos_anuais.distribuicao (JSONB)<br/>o insumo do gerador, e o que sobrevive a reescrever o documento")]
   anual --> doc[("bucket privado: gerado.md (imutavel) + atual.html (sanitizado)")]
-  aulas --> ja[("exp_92_planos_de_periodo.aulas (JSONB)<br/>dado estruturado, nao prosa")]
+  aulas --> ja[("app_92_planos_de_periodo.aulas (JSONB)<br/>dado estruturado, nao prosa")]
   exp --> rec["tres recortes, so das semanas pronto:<br/>esta semana - esta e a proxima -<br/>o periodo de avaliacao inteiro (bimestre, trimestre ou semestre)"]
 
   %% Onde a IA NAO entra: a extracao da Base; a consulta de habilidades
@@ -995,7 +2087,7 @@ flowchart TB
 \end{lstlisting}
 
 % ---------------------------------------------------------------------------
-\section{Figura~\ref{fig:exp92-semana} --- exp-92: como uma semana nasce}
+\section{Figura~\ref{fig:app92-semana} --- app-92: como uma semana nasce}
 
 \begin{lstlisting}[language=mermaid]
 flowchart TB
@@ -1010,7 +2102,7 @@ flowchart TB
   brief["montarBriefingDePeriodo<br/>um briefing com as aulas que EXISTEM e as habilidades que PODEM entrar"]
   brief --> gen["provider.generateJson (IA)<br/>schema de resposta, modelo longo, temperatura 0.5<br/>devolve SO o conteudo pedagogico das aulas"]
   gen --> cost["costurarAulas - a conciliacao entre o que o modelo devolveu<br/>e as aulas que existem de verdade"]
-  cost --> out[("exp_92_planos_de_periodo.aulas<br/>JSONB estruturado, status = pronto")]
+  cost --> out[("app_92_planos_de_periodo.aulas<br/>JSONB estruturado, status = pronto")]
   out --> edita["O professor edita - PUT /planejamento/periodos/:id/aulas<br/>cumprida e a observacao da aula sao registro DELE, nunca do modelo"]
 
   %% As tres regras da costura:
@@ -1024,39 +2116,78 @@ flowchart TB
 \end{lstlisting}
 
 % ---------------------------------------------------------------------------
-\section{Figura~\ref{fig:mapa-rotas} --- Mapa de rotas da API}
+\section{Figuras~\ref{fig:mapa-rotas} e~\ref{fig:mapa-rotas-exps} --- Mapa de rotas da API}
 
 \begin{lstlisting}[language=mermaid]
+%% Figura 13.1 - plataforma e exp08ef1b
 flowchart TB
   subgraph PLAT["Plataforma - serve a todos os papeis"]
     au["/auth/login - sem papel"]; he["/healthz, /readyz - PUBLICO"]
-    ex["/experiencias - GET qualquer; PUT admin-contrato"]
+    ex["/experiencias - GET qualquer; PUT admin"]
     pg["/progresso/:expId - estudante"]; te["/telemetry/* - ver capitulo 10"]
     us["/usuarios/* - gestor, admin"]; ai["/ai/gerar - autenticado + quota"]
     an["/analise/* - ADMIN-CONTRATO"]
+    ro["/rostering/* - gestor, admin"]
+    tu["/turmas/* - prof. (as dele, por MATRICULA), gestor"]
+    mt["/matriculas/:id - gestor, admin"]
+    pll["/periodos-letivos - GET prof.; POST gestor"]
+    pp["/perfis-recebidos - gestor, admin"]
+    rec["/recursos/* - o interruptor da REDE (ADR-87)"]
+    sal["/salas/* - prof. libera, gestor le; /minhas: estudante (ADR-69)"]
+    eq["/equipes/* - prof. monta, gestor le; /minha: estudante (ADR-111)"]
+    ev["/evidencias/* - prof. confirma e ajusta, gestor le; estudante: so a pergunta e a resposta (ADR-112)"]
   end
-  subgraph E01["exp-01 - Instanooria"]
+  subgraph E01["exp08ef1b - Instanooria"]
     atv["/atividades/* - professor"]; rn["/runs/* - estudante (/eventos: professor tb.)"]
     po["/posts/:id/comentarios - estudante"]; pf["/perfis/importar - chave de servico"]
   end
-  subgraph OUT["Demais experiencias"]
-    ut["/unootube/* - estudante"]; utt["/unootube/turmas/* - prof, gestor, admin"]
+\end{lstlisting}
+
+\begin{lstlisting}[language=mermaid]
+%% Figura 13.2 - demais experiencias: uma linha por experiencia,
+%% colunas = estudante | professor e gestao | guia, agregado e servico
+flowchart TB
+  subgraph UT["backup-exp04ef1b - UnooTube (arquivada, ADR-116)"]
+    ut["sem rotas: fora do app.module"]; utt["era /unootube/turmas/*"]
+    utp["era /unootube/professor/*"]
+  end
+  subgraph VI["app-70 - Vila do Lume"]
     vi["/vila/sessoes - estudante"]; vp["/vila/professor/* - PROFESSOR"]
-    va["/vila/agregado/* - prof, gestor"]; pl["/planos/* - professor"]
-    pref["/planos/referencias - chave de servico"]
+    va["/vila/agregado/* - prof, gestor"]
+  end
+  subgraph PL["app-90 - Plano de aula"]
+    pl["/planos/* - professor"]; pref["/planos/referencias - chave de servico"]
+  end
+  subgraph BE["app-91 - Bem-estar"]
     be["/bemestar/* - SO PROFESSOR, com posse"]
+  end
+  subgraph UG["exp02em1b - unooGPT"]
     ug["/unoogpt/* - estudante"]
     ugp["/unoogpt/professor/* - SO PROFESSOR, transcricao"]
     uga["/unoogpt/agregado/* - gestor, admin - sem estudanteId"]
-    eco["/o-eco-no-grupo/* - estudante"]
-    ecot["/o-eco-no-grupo/turmas/* - prof, gestor, admin - o gate da aula"]
+  end
+  subgraph RB["exp06ef2b - O Rastro do Boato"]
     rb["/rastro-boato/* - estudante"]
     rbt["/rastro-boato/turmas/* - prof, gestor, admin - o gate da aula"]
-    utp["/unootube/professor/* - prof, gestor - material do guia"]
     rbp["/rastro-boato/professor/* - prof, gestor - material do guia"]
-    ecop["/o-eco-no-grupo/professor/* - prof, gestor - material do guia"]
+  end
+  subgraph MIA["exp08ef4b - O Manifesto da IA"]
+    mia["/manifesto-ia/* - estudante"]
+    miat["/manifesto-ia/turmas/* - prof, gestor - o debate E o conteudo da turma"]
+  end
+  subgraph FC["exp01ef1b - O Que a Foto Conta"]
     fc["/foto-conta/* - estudante"]
     fct["/foto-conta/turmas/* - prof, gestor - o latch da Roda"]
+  end
+  subgraph JE["exp04ef1b - Jornal da Escola (ADR-117)"]
+    je["/jornal-escola/* - estudante - e as perguntas em /evidencias"]
+    jet["/jornal-escola/turmas/* - prof, gestor - o pacote, os dois portoes e o painel"]
+    jep["/jornal-escola/professor/* - prof, gestor - material do guia"]
+  end
+  subgraph QM["exp05ef1b - Quem mandou isso?"]
+    qm["/quem-mandou-isso/* - estudante - e as perguntas em /evidencias"]
+    qmt["/quem-mandou-isso/turmas/* - prof, gestor - o pacote E o relogio da turma"]
+    qmp["/quem-mandou-isso/professor/* - prof, gestor - material do guia"]
   end
 
   %% Duas areas por AUSENCIA deliberada: bem-estar nao tem rota de gestor nem
@@ -1082,9 +2213,9 @@ flowchart LR
   %% A linha e a REVELACAO, nao o arquivo. O toast NAO cruza: ele fala de
   %% dentro da ficcao. O criterio nao e "e depois no tempo?", e "quem fala?".
   %%
-  %% CONTRAEXEMPLO, exp-03 (unooGPT): nao ha revelacao no software. O vies de
+  %% CONTRAEXEMPLO, exp02em1b (unooGPT): nao ha revelacao no software. O vies de
   %% cada fonte e o material do debate do professor, e nenhuma tela o entrega.
-  %% Logo a exp-03 e 100% da secao do clone (@edu/ui/ds-chatgpt) e nunca troca
+  %% Logo a exp02em1b e 100% da secao do clone (@edu/ui/ds-chatgpt) e nunca troca
   %% para a da plataforma. A marca institucional entra so como chrome do HUB,
   %% desenhada ACIMA do iframe.
 \end{lstlisting}
@@ -1216,9 +2347,7 @@ quadrantChart
   "R-15 senha compartilhada":  [0.52, 0.52]
   "R-16 replay sobre menor":   [0.88, 0.94]
   "R-17 latencia de IA":       [0.55, 0.86]
-  "R-18 custo de IA exp-03":   [0.96, 0.60]
-  "R-19 guia da exp-03":       [0.96, 0.84]
-  "R-20 midia nao preparada":  [0.55, 0.48]
+  "R-18 custo de IA exp02em1b":   [0.96, 0.60]
+  "R-19 guia da exp02em1b":       [0.96, 0.84]
   "R-21 texto livre de menor": [0.96, 0.52]
-  "R-22 guia da exp-07":       [0.96, 0.46]
 \end{lstlisting}

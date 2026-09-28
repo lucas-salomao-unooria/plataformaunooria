@@ -30,6 +30,7 @@ import {
   VersaoAtivadaSchema,
   VersaoFixadaSchema,
   VersoesDaExperienciaSchema,
+  ExperienciasArquivadasSchema,
 } from "./contrato-de-rotas";
 import { ManifestoGuardadoSchema } from "./manifesto-guardado";
 import { registrarAuditoria, type AcaoDeAuditoria } from "./auditoria";
@@ -40,6 +41,7 @@ import {
   type Efetivo,
   type LinhaDeDisponibilidade,
 } from "./regras";
+import { EXP_ID_RE } from "../comum/codigo-da-experiencia";
 
 /**
  * O PAINEL DA UNOORIA (ADR-87 + ADR-88) — ligar, desligar e ver o que vale.
@@ -53,8 +55,6 @@ import {
  * método: é a mesma razão do unooGPT e da Vila — `@Roles` misto é como uma rota
  * acaba aberta para quem não devia sem ninguém notar.
  */
-/** O mesmo formato que o controller de experiências valida. */
-const EXP_ID_RE = /^exp-[a-z0-9-]+$/;
 
 @Controller("recursos")
 @UseGuards(OidcGuard, RolesGuard)
@@ -209,6 +209,38 @@ export class RecursosAdminController {
     });
 
     return { escopo: { escolaId, nome, tipo }, produtos };
+  }
+
+  @Get("arquivadas")
+  @Contrato({
+    resumo: "As experiências arquivadas: tiradas do produto sem serem apagadas (ADR-116).",
+    descricao:
+      "Sai de `experiencias_arquivadas`. Uma experiência é arquivada quando uma missão nova toma o código dela (o código é derivado da série e da unidade, ADR-110): tudo o que era dela ganha o prefixo `backup-` e some da grade, do catálogo e deste painel, com os dados guardados. **Só lista** — ninguém joga uma arquivada, e desarquivar é uma migração.",
+    resposta: ExperienciasArquivadasSchema,
+    notas: [
+      "`turmasGuardadas` e `estudantesGuardados` são a FOTOGRAFIA tirada pela migração que arquivou, não uma recontagem: contar `liberacoes` e `progresso` de todas as escolas atravessaria a RLS.",
+      "A ordem é a do arquivamento, da mais recente para a mais antiga.",
+    ],
+  })
+  async arquivadas() {
+    const linhas = await this.prisma.experienciaArquivada.findMany({
+      orderBy: [{ arquivadaEm: "desc" }, { expId: "asc" }],
+    });
+    return {
+      arquivadas: linhas.map((l) => ({
+        expId: l.expId,
+        codigoDeOrigem: l.codigoDeOrigem,
+        nome: l.nome,
+        versao: l.versao,
+        series: l.series,
+        unidade: l.unidade,
+        produto: l.produto,
+        motivo: l.motivo,
+        turmasGuardadas: l.turmasGuardadas,
+        estudantesGuardados: l.estudantesGuardados,
+        arquivadaEm: l.arquivadaEm.toISOString(),
+      })),
+    };
   }
 
   @Put(":recursoId")
@@ -370,7 +402,7 @@ export class RecursosAdminController {
   @Contrato({
     resumo: "Ativa uma versão para o CONTRATO (o rollback).",
     descricao:
-      "Troca `experiencias.versao_ativa` e **restaura o manifesto daquela versão** — `viewport`, `permissoes`, `series`, `unidade`, `produto`. Antes disto, rollback era `publicar-manifesto.mjs --versao x.y.z`, que mandava o número antigo com o manifesto ATUAL do repositório: voltar a versão não voltava as permissões de iframe, e a exp-70 reabria sem `allow-pointer-lock` — a criança entrava na Vila e a câmera não girava, sem erro em lugar nenhum.",
+      "Troca `experiencias.versao_ativa` e **restaura o manifesto daquela versão** — `viewport`, `permissoes`, `series`, `unidade`, `produto`. Antes disto, rollback era `publicar-manifesto.mjs --versao x.y.z`, que mandava o número antigo com o manifesto ATUAL do repositório: voltar a versão não voltava as permissões de iframe, e a app-70 reabria sem `allow-pointer-lock` — a criança entrava na Vila e a câmera não girava, sem erro em lugar nenhum.",
     params: z.object({ expId: z.string() }),
     corpo: AtivarVersaoSchema,
     resposta: VersaoAtivadaSchema,

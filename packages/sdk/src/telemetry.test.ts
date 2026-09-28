@@ -11,7 +11,7 @@ const ESTUDANTE = { id: "e1", nome: "x", serie: "6EF", turmaId: "t", escolaId: "
 
 function cliente(fetchMock: typeof fetch, extra: Partial<ConstructorParameters<typeof TelemetryClient>[0]> = {}) {
   return new TelemetryClient({
-    apiUrl: "https://api", getToken: () => "tok", estudante: ESTUDANTE, expId: "exp-01", expVersion: "1.0.0", sessaoId: "s", fetch: fetchMock, ...extra,
+    apiUrl: "https://api", getToken: () => "tok", estudante: ESTUDANTE, expId: "exp08ef1b", expVersion: "1.0.0", sessaoId: "s", fetch: fetchMock, ...extra,
   });
 }
 

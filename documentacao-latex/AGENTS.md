@@ -8,7 +8,31 @@ lá, e a Definition of Done exige esta pasta atualizada e o `main.pdf` regerado
 entra sozinho no seu contexto: abra-o antes de escrever `.tex`.** Aqui ficam as
 armadilhas que já custaram tempo e não avisam quando você cai nelas:
 
-- **A PRÓXIMA ADR é a 91.** A numeração vai até ADR-90, sem lacuna: a 86 é o
+- **`produto/` é OUTRA documentação, não um capítulo desta.** O mapa de produto
+  (PU-PRD-001, `produto/mapa-de-produto/`) é premissa do trabalho, tanto quanto
+  a PU-DOC-001, e é escrito em linguagem de produto: pessoas, telas e regras,
+  sem rota, tabela nem módulo. O rastreio técnico fica no Apêndice B dele.
+  Frente que muda tela ou regra troca o selo da história no mesmo PR
+  (`docs/regras/definition-of-done.md`). Ele compila sozinho, na própria pasta,
+  com `tectonic -k mapa-de-produto.tex`, e não pelo `compilar.sh` daqui.
+
+- **A PRÓXIMA ADR é a 123.** A numeração vai até ADR-122 (a modelagem UML no
+  Capítulo 5, com os catorze tipos da UML 2.5.1 e par Mermaid mesmo onde o
+  Mermaid não tem o tipo); a 121 é o CI só nos PRs para `dev`, `hml` e `main`;
+  a 120 é a régua v2 de Quem mandou isso?
+  (cada habilidade pelo verbo dela). A 119 é o podcast
+  da A Seleção (do professor; a IA reescreve só as três falas do tema); a 118 é
+  Quem mandou isso? v2.2 (a atividade é o pacote, a rodada é a reaplicação, e a
+  régua mede pela seleção e pelas perguntas do PO). A 117 é o Jornal da Escola
+  (a redação é da Unooria e cada peça usa a seção da plataforma que imita; o
+  professor abre o resultado e a revisão; a IA só escolhe o layout), escrita
+  depois da 121 com o número reservado entre as sessões. A 116 é o UnooTube ARQUIVADO, e não apagado,
+  para o Jornal da Escola tomar o código `exp04ef1b`; a 115 é A Seleção (o par
+  do Mural é do computador, e a IA gradua a legenda); a 114 a primeira versão de
+  Quem mandou isso? retirada, para a v2.2 voltar com o mesmo código; a 113 a
+  retirada do Eco no Grupo para A Seleção; e a 112 a evidência pedagógica por
+  atividade e rodada, com a melhor rodada valendo por habilidade. Este número envelhece a cada frente, então ele é
+  ponto de partida, nunca a resposta. Das mais citadas: a 86 é o
   guia da aula, 87 o eixo da disponibilidade, 88 o painel da Unooria só do
   `admin`, 89 o histórico append-only que a rede também lê e 90 a suíte da API
   em um worker. Antes dela: a 65 (que
@@ -31,6 +55,12 @@ armadilhas que já custaram tempo e não avisam quando você cai nelas:
   ficaram ilegíveis em paisagem antes de serem divididos.
 - **Diagrama TikZ novo exige o par Mermaid** em `apendices/a-mermaid.tex`:
   diagrama sem par é diagrama que só uma pessoa consegue alterar.
+- **A modelagem UML mora em `secoes/05b-modelagem-uml.tex`, e ele NÃO tem
+  `\chapter`**: continua o Capítulo 5 (ADR-122). Um capítulo novo no meio
+  renumera os seguintes, e "cap. 17" é citado em comentário de código. Mexeu na
+  ponte, na quota, na disponibilidade, na sessão, nos papéis ou na implantação?
+  A figura UML daquilo muda no mesmo commit — cada uma cita os arquivos de onde
+  saiu.
 - **`apendices/c-endpoints.tex` é GERADO** (`node scripts/gerar-endpoints-tex.mjs`,
   a partir de `docs/openapi.json`). Editar à mão é perder o texto na próxima
   execução.

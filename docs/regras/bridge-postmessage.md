@@ -47,7 +47,7 @@ origem REAL de quem embedou, que VENCE a query string (ADR-46). Sintoma novo:
 O `blur` da janela do hub NÃO é sempre o estudante saindo: clicar dentro do iframe
 move o foco para a experiência e dispara `blur` no documento de cima — e o
 `focus` correspondente não volta enquanto ele continuar ali, então um
-`hub:pause` ali é DEFINITIVO (o vídeo da exp-02 parava no 1º toque em "Salvar").
+`hub:pause` ali é DEFINITIVO (o vídeo da exp04ef1b parava no 1º toque em "Salvar").
 Quando o foco foi para a nossa experiência, `document.activeElement` é o próprio
 `<iframe>`; o `ExpFrame` não emite nada nesse caso.
 Versione com `protocolVersion` (hoje **2**; o major é verificado nos DOIS lados
@@ -73,7 +73,7 @@ Três coisas que valem saber:
 - **O iframe é cross-origin, então a sessão do iframe é OUTRA sessão** do ponto
   de vista do navegador (cookie particionado). O que costura as duas é o
   `identify` com o mesmo UUID do estudante, chamado dos dois lados.
-- **O disfarce vaza no DevTools.** `exp-01`, `exp-02` e `exp-03` têm no
+- **O disfarce vaza no DevTools.** `exp08ef1b`, `exp04ef1b` e `exp02em1b` têm no
   `index.html` o aviso de que nada ali pode denunciar o exercício; requisições
   para `clarity.ms` aparecem na aba de rede. Consequência aceita e registrada na
   ADR-60 — mas não acrescente nada que piore isso (um nome de tag visível, por

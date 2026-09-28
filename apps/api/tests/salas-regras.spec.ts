@@ -23,27 +23,27 @@ const exp = (
 ): ExperienciaDoCatalogo => ({ expId, nome: expId, series, publico, unidade });
 
 const CATALOGO: ExperienciaDoCatalogo[] = [
-  exp("exp-01-instanooria", ["8EF"]),
-  exp("exp-02-unootube", ["4EF"]),
-  exp("exp-03-unoogpt", ["2EM"]),
-  exp("exp-07-o-eco-no-grupo", ["7EF"]),
-  exp("exp-70-vila-do-lume", []),
-  exp("exp-90-plano-de-aula", [], "professor"),
-  exp("exp-91-bem-estar", [], "professor"),
+  exp("exp08ef1b", ["8EF"]),
+  exp("exp04ef1b", ["4EF"]),
+  exp("exp02em1b", ["2EM"]),
+  exp("exp07ef1b", ["7EF"]),
+  exp("app-70-vila-do-lume", []),
+  exp("app-90-plano-de-aula", [], "professor"),
+  exp("app-91-bem-estar", [], "professor"),
 ];
 
 const semLiberacao = new Map<string, EstadoGravado>();
 
 describe("série e transversal", () => {
   test("`series: []` quer dizer TODAS as séries, não nenhuma", () => {
-    const vila = exp("exp-70-vila-do-lume", []);
+    const vila = exp("app-70-vila-do-lume", []);
     expect(serveASerie(vila, "1EF")).toBe(true);
     expect(serveASerie(vila, "3EM")).toBe(true);
     expect(ehTransversal(vila)).toBe(true);
   });
 
   test("a missão de um ano não serve a outro", () => {
-    const insta = exp("exp-01-instanooria", ["8EF"]);
+    const insta = exp("exp08ef1b", ["8EF"]);
     expect(serveASerie(insta, "8EF")).toBe(true);
     expect(serveASerie(insta, "7EF")).toBe(false);
     expect(ehTransversal(insta)).toBe(false);
@@ -53,19 +53,19 @@ describe("série e transversal", () => {
 describe("a grade da turma", () => {
   test("traz a missão da série e as transversais, e nada de outro ano", () => {
     const grade = gradeDaTurma("8EF", CATALOGO, semLiberacao);
-    expect(grade.map((m) => m.expId)).toEqual(["exp-70-vila-do-lume", "exp-01-instanooria"]);
+    expect(grade.map((m) => m.expId)).toEqual(["app-70-vila-do-lume", "exp08ef1b"]);
   });
 
   test("a TRANSVERSAL vem primeiro — a Vila é o Ato 1 do Instanooria", () => {
     const grade = gradeDaTurma("8EF", CATALOGO, semLiberacao);
-    expect(grade[0]?.expId).toBe("exp-70-vila-do-lume");
+    expect(grade[0]?.expId).toBe("app-70-vila-do-lume");
     expect(grade[0]?.transversal).toBe(true);
   });
 
   test("ferramenta de professor NUNCA entra: liberar uma delas seria botão que não abre nada", () => {
     const todas = gradeDaTurma("8EF", CATALOGO, semLiberacao, true);
-    expect(todas.map((m) => m.expId)).not.toContain("exp-90-plano-de-aula");
-    expect(todas.map((m) => m.expId)).not.toContain("exp-91-bem-estar");
+    expect(todas.map((m) => m.expId)).not.toContain("app-90-plano-de-aula");
+    expect(todas.map((m) => m.expId)).not.toContain("app-91-bem-estar");
   });
 
   test("sem linha em `liberacoes`, a missão está BLOQUEADA — e continua na grade", () => {
@@ -78,30 +78,30 @@ describe("a grade da turma", () => {
 
   test("o estado gravado vence a ausência", () => {
     const estados = new Map<string, EstadoGravado>([
-      ["exp-01-instanooria", "liberada"],
-      ["exp-70-vila-do-lume", "encerrada"],
+      ["exp08ef1b", "liberada"],
+      ["app-70-vila-do-lume", "encerrada"],
     ]);
     const grade = gradeDaTurma("8EF", CATALOGO, estados);
     const porId = new Map(grade.map((m) => [m.expId, m.estado]));
-    expect(porId.get("exp-01-instanooria")).toBe("liberada");
+    expect(porId.get("exp08ef1b")).toBe("liberada");
     // Encerrada continua VISÍVEL: o que a criança fez não evapora da tela.
-    expect(porId.get("exp-70-vila-do-lume")).toBe("encerrada");
+    expect(porId.get("app-70-vila-do-lume")).toBe("encerrada");
   });
 
   test("`todas` acrescenta as de outra série, marcadas e no fim", () => {
     const grade = gradeDaTurma("8EF", CATALOGO, semLiberacao, true);
     const ids = grade.map((m) => m.expId);
-    expect(ids).toContain("exp-02-unootube");
+    expect(ids).toContain("exp04ef1b");
 
     const daSerie = grade.filter((m) => !m.deOutraSerie).map((m) => m.expId);
-    expect(daSerie).toEqual(["exp-70-vila-do-lume", "exp-01-instanooria"]);
+    expect(daSerie).toEqual(["app-70-vila-do-lume", "exp08ef1b"]);
     // As de fora vêm depois das da turma — são o extra, não a grade do ano.
     expect(grade.findIndex((m) => m.deOutraSerie)).toBe(daSerie.length);
   });
 
   test("a transversal nunca é `deOutraSerie` — ela é de todas", () => {
     const grade = gradeDaTurma("3EM", CATALOGO, semLiberacao, true);
-    const vila = grade.find((m) => m.expId === "exp-70-vila-do-lume");
+    const vila = grade.find((m) => m.expId === "app-70-vila-do-lume");
     expect(vila?.deOutraSerie).toBe(false);
   });
 });
@@ -109,13 +109,15 @@ describe("a grade da turma", () => {
 describe("a ordem da grade", () => {
   /* O 8º ano com as 4 unidades publicadas, declaradas FORA DE ORDEM no catálogo
      e com `exp_id` que contraria a ordem do ano — é o caso que o `localeCompare`
-     sozinho errava. */
+     sozinho errava. Os ids são FICTÍCIOS e fora do formato da ADR-110 de
+     propósito: com o código real (`exp08ef2b`…) a ordem alfabética já
+     acertaria, e o teste deixaria de provar que a grade ordena pela unidade. */
   const ANO_COMPLETO: ExperienciaDoCatalogo[] = [
     exp("exp-40-quarta", ["8EF"], "estudante", 4),
-    exp("exp-01-instanooria", ["8EF"], "estudante", 1),
+    exp("exp08ef1b", ["8EF"], "estudante", 1),
     exp("exp-30-terceira", ["8EF"], "estudante", 3),
     exp("exp-20-segunda", ["8EF"], "estudante", 2),
-    exp("exp-70-vila-do-lume", []),
+    exp("app-70-vila-do-lume", []),
   ];
 
   test("as unidades saem na ordem do ANO, não na do `exp_id`", () => {
@@ -125,7 +127,7 @@ describe("a ordem da grade", () => {
 
   test("a transversal vem primeiro mesmo sem unidade — ela não é a unidade 1", () => {
     const grade = gradeDaTurma("8EF", ANO_COMPLETO, semLiberacao);
-    expect(grade[0]?.expId).toBe("exp-70-vila-do-lume");
+    expect(grade[0]?.expId).toBe("app-70-vila-do-lume");
     expect(grade[0]?.unidade).toBeNull();
   });
 

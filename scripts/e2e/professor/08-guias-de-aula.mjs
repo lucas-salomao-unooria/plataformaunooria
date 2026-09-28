@@ -28,25 +28,10 @@ const GUIAS = [
   {
     rota: "/professor/entre-redes/8-ano/unidade-1/guia",
     missao: "Instanooria · 8º ano",
-    /* Vem de `CONTROLE_DO_PROFESSOR` e de `@edu/conteudo-exp-01`: se o bloco
+    /* Vem de `CONTROLE_DO_PROFESSOR` e de `@edu/conteudo-exp08ef1b`: se o bloco
        vivo quebrar, o guia continua renderizando e some em silêncio. */
     vivo: [/Você conduz — os \d+ momentos/i, /O que a turma lê na revelação/i],
     bncc: "EF08CO11",
-  },
-  {
-    rota: "/professor/entre-redes/4-ano/unidade-1/guia",
-    missao: "UnooTube · 4º ano",
-    /* A tabela dos 21 vídeos vem de `GET /unootube/professor/videos`. Antes o
-       guia DESCREVIA o catálogo — "metade cita fonte verificável" — e a
-       descrição tinha derivado: são 11 e 10 (ADR-86). A contagem entra aqui
-       como número EXATO de propósito: é ela que denuncia a próxima deriva. */
-    vivo: [
-      /Os vídeos e o gabarito — só para você/i,
-      /11 citam fonte verificável/i,
-      /papagaio tradutor/i,
-      /sensacionalista/i,
-    ],
-    bncc: "EF04CO08",
   },
   {
     rota: "/professor/entre-redes/2-serie/unidade-1/guia",
@@ -58,17 +43,16 @@ const GUIAS = [
   },
   {
     rota: "/professor/entre-redes/7-ano/unidade-1/guia",
-    missao: "O Eco no Grupo · 7º ano",
-    /* As três respostas e as falas do bairro vêm de
-       `GET /o-eco-no-grupo/professor/material`. O texto exato da opção certa
-       está aqui porque é ele que o professor lê antes da aula — paráfrase no
-       guia deixava a turma comentando uma frase que ninguém viu. */
+    missao: "A Seleção · 7º ano",
+    /* Os gatilhos dos três momentos, as três perguntas do debate e as seleções
+       dos colegas virtuais vêm de `GET /a-selecao/professor/material`. A
+       pergunta é conferida pelo texto exato: o professor a lê no debate, e
+       paráfrase no guia deixaria a turma comentando uma frase que ninguém viu. */
     vivo: [
-      /As três respostas e o que o bairro devolve — só para você/i,
-      /Responder citando o print/i,
-      /Dona Lúcia/i,
+      /Os colegas virtuais: Tomás e Malu/i,
+      /qual detalhe fundamental do evento ele mostrou/i,
     ],
-    bncc: "EF07CO08",
+    bncc: "EF07CO11",
   },
   {
     rota: "/professor/entre-redes/6-ano/unidade-2/guia",

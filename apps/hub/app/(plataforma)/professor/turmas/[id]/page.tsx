@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Card, FeedbackAlert, Tag } from "@edu/ui/ds";
 import { RotuloDaTrilha } from "@/components/trilha";
+import { rotuloEquipesProntas } from "@/lib/equipes";
 import { rotaDeConducao } from "@/lib/rotas-da-missao";
 import { copyDaMissao } from "@/lib/missoes-do-estudante";
 import { salaDaTurma, type MissaoDaSalaDoProfessor } from "@/lib/salas";
@@ -81,7 +82,7 @@ export default async function SalaDoProfessorPage({
       {aba === "missoes" ? (
         <MissoesDaSala turmaId={turma.id} missoes={sala.missoes} liberadas={liberadas} />
       ) : (
-        <EstudantesDaSala estudantes={estudantes} professores={professores} />
+        <EstudantesDaSala turmaId={turma.id} estudantes={estudantes} professores={professores} />
       )}
     </div>
   );
@@ -150,6 +151,10 @@ function MissoesDaSala({
                       ) : (
                         <Tag>fechada</Tag>
                       )}
+                      {/* As equipes da missão nesta turma (E13). Uma TAG, e não
+                          um link (ADR-100): montar e editar as equipes é na
+                          ficha, pelo mesmo "Conduzir com esta turma". */}
+                      {missao.equipes > 0 ? <Tag variant="info">{rotuloEquipesProntas(missao.equipes)}</Tag> : null}
                     </div>
                     <p className="mt-0.5 text-[13px] text-unooria-neutral-500">
                       {/* Quem liberou é a pergunta que a sala faz quando a missão
@@ -209,11 +214,21 @@ function MissoesDaSala({
   );
 }
 
-/** A lista NOMINAL — o lugar onde "trackear por estudante" vira coisa que se vê. */
+/**
+ * A lista NOMINAL — o lugar onde "trackear por estudante" vira coisa que se vê.
+ *
+ * O nome leva ao PERFIL do estudante (as habilidades da BNCC que ele demonstrou
+ * nas missões, E14), já dentro desta turma. O relatório da Vila do Lume, que era
+ * o destino da linha inteira, continua ao lado com o nome dele: a linha deixou
+ * de ser um link só porque passou a ter dois destinos, e link dentro de link não
+ * existe.
+ */
 function EstudantesDaSala({
+  turmaId,
   estudantes,
   professores,
 }: {
+  turmaId: string;
   estudantes: NonNullable<Awaited<ReturnType<typeof turmaComPessoas>>>["estudantes"];
   professores: NonNullable<Awaited<ReturnType<typeof turmaComPessoas>>>["professores"];
 }) {
@@ -227,26 +242,33 @@ function EstudantesDaSala({
             </li>
           ) : (
             estudantes.map((estudante) => (
-              <li key={estudante.id} className="linha-de-lista">
-                <Link
-                  href={`/professor/entre-redes/vila-do-lume/estudantes/${estudante.id}`}
-                  className="flex items-center justify-between gap-3 py-3"
-                >
-                  <span className="min-w-0">
-                    <span className="block truncate text-[15px] font-semibold text-unooria-neutral-950">
-                      {estudante.nome}
-                    </span>
-                    <span className="block truncate text-[13px] text-unooria-neutral-500">
-                      {estudante.usuario}
-                      {estudante.matricula ? ` · matrícula ${estudante.matricula}` : ""}
-                    </span>
+              <li key={estudante.id} className="linha-de-lista flex items-center justify-between gap-3 py-3">
+                <span className="min-w-0">
+                  <Link
+                    href={`/professor/turmas/${turmaId}/estudantes/${estudante.id}`}
+                    className="block truncate text-[15px] font-semibold text-unooria-neutral-950 hover:text-unooria-navy-800"
+                  >
+                    {estudante.nome}
+                  </Link>
+                  <span className="block truncate text-[13px] text-unooria-neutral-500">
+                    {estudante.usuario}
+                    {estudante.matricula ? ` · matrícula ${estudante.matricula}` : ""}
                   </span>
+                </span>
+                <span className="flex shrink-0 flex-wrap items-center justify-end gap-3">
                   {!estudante.ativo ? (
                     <Tag>inativo</Tag>
                   ) : estudante.senhaProvisoria ? (
                     <Tag>sem primeiro acesso</Tag>
                   ) : null}
-                </Link>
+                  <Link
+                    href={`/professor/entre-redes/vila-do-lume/estudantes/${estudante.id}`}
+                    aria-label={`Relatório da Vila do Lume de ${estudante.nome}`}
+                    className="text-[13px] font-semibold text-unooria-navy-900 hover:text-unooria-navy-800"
+                  >
+                    Relatório da Vila do Lume
+                  </Link>
+                </span>
               </li>
             ))
           )}

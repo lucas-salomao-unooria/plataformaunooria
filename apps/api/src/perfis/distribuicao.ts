@@ -55,7 +55,7 @@ export async function distribuicaoDaTurma(
   antagonismo: unknown,
   escolaId: string,
   /**
-   * A turma da atividade (`exp_01_activities.turma_id`). `null`/`undefined` =
+   * A turma da atividade (`exp08ef1b_activities.turma_id`). `null`/`undefined` =
    * atividade anterior à migration `20260830090000_atividade_por_turma`, que
    * segue valendo para a escola inteira — o comportamento de antes.
    */

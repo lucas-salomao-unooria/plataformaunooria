@@ -14,48 +14,71 @@ mecânica impõe exigência ao \emph{software} --- e não como material pedagóg
 \toprule
 \headrow \thd{Experiência} & \thd{Séries} & \thd{Público} & \thd{Capabilities} & \thd{Módulo na API}\\
 \midrule
-\cd{exp-01-instanooria} & \cd{8EF} & estudante &
+\cd{exp08ef1b} & \cd{8EF} & estudante &
   telemetria, progresso, ia &
   \arq{motor}, \arq{geracao}, \arq{atividades}, \arq{perfis}, \arq{dossie}\\
-\zebra \cd{exp-02-unootube} & \cd{4EF} & estudante &
-  telemetria, progresso & \arq{unootube}\\
-\cd{exp-03-unoogpt} & \cd{2EM} & estudante &
+\zebra \cd{exp04ef1b} & \cd{4EF} & estudante &
+  telemetria, progresso, ia, avaliacao & \arq{jornal-escola}, \arq{evidencias}\\
+\cd{backup-exp04ef1b} & \cd{4EF} & \textbf{arquivada} &
+  telemetria, progresso & \arq{backup-unootube} (sem rotas)\\
+\zebra \cd{exp02em1b} & \cd{2EM} & estudante &
   telemetria, ia & \arq{unoogpt}\\
-\zebra \cd{exp-04-o-que-a-foto-conta} & \cd{1EF} & estudante &
+\cd{exp01ef1b} & \cd{1EF} & estudante &
   telemetria, progresso & \arq{foto-conta}\\
-\cd{exp-06-rastro-boato} & \cd{6EF} & estudante &
+\zebra \cd{exp05ef1b} & \cd{5EF} & estudante &
+  telemetria, progresso, avaliacao & \arq{quem-mandou-isso}\\
+\cd{exp06ef2b} & \cd{6EF} & estudante &
   telemetria, progresso, avaliacao & \arq{rastro-boato}\\
-\zebra \cd{exp-07-o-eco-no-grupo} & \cd{7EF} & estudante &
-  telemetria, progresso, avaliacao, ia & \arq{o-eco-no-grupo}\\
-\zebra \cd{exp-08-manifesto-ia} & \cd{8EF} & estudante &
+\zebra \cd{exp07ef1b} & \cd{7EF} & estudante &
+  telemetria, progresso, ia, avaliacao & \arq{a-selecao}, \arq{evidencias}\\
+\cd{exp08ef4b} & \cd{8EF} & estudante &
   telemetria, progresso, avaliacao & \arq{manifesto-ia}\\
-\cd{exp-70-vila-do-lume} & \textbf{transversal} & estudante &
+\zebra \cd{app-70-vila-do-lume} & \textbf{transversal} & estudante &
   telemetria & \arq{vila}\\
-\zebra \cd{exp-90-plano-de-aula} & --- & \textbf{professor} &
+\cd{app-90-plano-de-aula} & --- & \textbf{professor} &
   telemetria, ia & \arq{planos}\\
-\cd{exp-91-bem-estar} & --- & \textbf{professor} &
+\zebra \cd{app-91-bem-estar} & --- & \textbf{professor} &
   telemetria, ia & \arq{bemestar}\\
-\zebra \cd{exp-92-plano-de-ensino} & \textbf{1EF--3EM} & \textbf{professor} &
+\cd{app-92-plano-de-ensino} & \textbf{1EF--3EM} & \textbf{professor} &
   telemetria, ia & \arq{planejamento}, \arq{curriculo}\\
-\arq{\_template} & --- & --- & telemetria, progresso & ---\\
+\zebra \arq{\_template} & --- & --- & telemetria, progresso & ---\\
 \bottomrule
 \end{tabularx}
+
+A \cd{exp05ef1b} é a v2.2 de Quem mandou isso?, que voltou com o mesmo código e
+a partir da 0.2.0 depois de a primeira versão sair (\adrr{ADR-114},
+\adrr{ADR-118}). Ela, A Seleção (\cd{exp07ef1b}) e o Jornal da Escola
+(\cd{exp04ef1b}) são as três missões com ficha pedagógica: as perguntas finais
+passam pelas rotas genéricas de \arq{evidencias}, e não pelo módulo de cada uma.
+
+A unidade 1 do 4º ano é o \textbf{Jornal da Escola: A Edição de Bento}
+(\adrr{ADR-117}), que tomou o código \cd{exp04ef1b} e a porta 5174 do UnooTube e
+nasce na 2.0.0. O UnooTube foi \textbf{arquivado}, e não apagado
+(\adrr{ADR-116}) --- a pasta, o módulo, a tabela e as linhas de plataforma dele
+ganharam o prefixo \cd{backup-}, e ele saiu do catálogo, da grade e do
+\emph{deploy}. A 2.0.0 existe por causa dele: o caminho \cd{exp04ef1b/} do
+\emph{bucket} pode guardar o UnooTube 1.2.8, e uma versão 1.x do Jornal cairia
+num caminho tratado como imutável.
+
+A unidade 1 do 7º ano é A Seleção, que reocupou o código \cd{exp07ef1b} e a
+porta 5179 do Eco no Grupo (\adrr{ADR-113}, \adrr{ADR-115}).
 
 \begin{tabularx}{\linewidth}{@{}L{28mm}L{18mm}X@{}}
 \toprule
 \headrow \thd{Experiência} & \thd{Porta em \emph{dev}} & \thd{Onde aparece no hub}\\
 \midrule
-\cd{exp-01-instanooria} & \cd{5173} & \rota{/exp/exp-01-instanooria}\\
-\zebra \cd{exp-02-unootube} & \cd{5174} & \rota{/exp/exp-02-unootube}\\
-\cd{exp-90-plano-de-aula} & \cd{5175} & \rota{/professor/plano-de-aula}\\
-\zebra \cd{exp-91-bem-estar} & \cd{5176} & \rota{/professor/bem-estar}\\
-\cd{exp-70-vila-do-lume} & \cd{5177} & \rota{/exp/exp-70-vila-do-lume}\\
-\zebra \cd{exp-03-unoogpt} & \cd{5178} & \rota{/exp/exp-03-unoogpt}\\
-\cd{exp-07-o-eco-no-grupo} & \cd{5179} & \rota{/exp/exp-07-o-eco-no-grupo}\\
-\zebra \cd{exp-06-rastro-boato} & \cd{5181} & \rota{/exp/exp-06-rastro-boato}\\
-\cd{exp-92-plano-de-ensino} & \cd{5180} & \rota{/professor/plano-de-ensino}\\
-\zebra \cd{exp-08-manifesto-ia} & \cd{5182} & \rota{/exp/exp-08-manifesto-ia}\\
-\zebra \cd{exp-04-o-que-a-foto-conta} & \cd{5183} & \rota{/exp/exp-04-o-que-a-foto-conta}\\
+\cd{exp08ef1b} & \cd{5173} & \rota{/exp/exp08ef1b}\\
+\zebra \cd{exp04ef1b} & \cd{5174} & \rota{/exp/exp04ef1b} (o Jornal da Escola; o UnooTube arquivado não sobe)\\
+\cd{app-90-plano-de-aula} & \cd{5175} & \rota{/professor/plano-de-aula}\\
+\zebra \cd{app-91-bem-estar} & \cd{5176} & \rota{/professor/bem-estar}\\
+\cd{app-70-vila-do-lume} & \cd{5177} & \rota{/exp/app-70-vila-do-lume}\\
+\zebra \cd{exp02em1b} & \cd{5178} & \rota{/exp/exp02em1b}\\
+\cd{exp07ef1b} & \cd{5179} & \rota{/exp/exp07ef1b}\\
+\zebra \cd{exp06ef2b} & \cd{5181} & \rota{/exp/exp06ef2b}\\
+\cd{app-92-plano-de-ensino} & \cd{5180} & \rota{/professor/plano-de-ensino}\\
+\zebra \cd{exp08ef4b} & \cd{5182} & \rota{/exp/exp08ef4b}\\
+\cd{exp01ef1b} & \cd{5183} & \rota{/exp/exp01ef1b}\\
+\zebra \cd{exp05ef1b} & \cd{5184} & \rota{/exp/exp05ef1b}\\
 \bottomrule
 \end{tabularx}
 
@@ -68,7 +91,7 @@ experiência. É esse mapa que o hub usa \textbf{fora de produção}, e é por i
 A escolha era \enquote{sem manifesto na tabela, use o mapa} --- e isso quebrou
 quando o \emph{seed} passou a popular \cd{experiencias} (\adrr{ADR-69}, que precisa
 do catálogo para montar a grade da turma). Sem CDN configurado, a URL versionada
-cai no \emph{default} \cd{localhost:5173}, o \emph{dev server} da exp-01 --- que
+cai no \emph{default} \cd{localhost:5173}, o \emph{dev server} da exp08ef1b --- que
 responde a QUALQUER caminho com a própria SPA. Toda missão abria o Instanooria,
 com o \emph{handshake} completando e o \cd{boot} dando 403 na experiência errada.
 \textbf{De onde vem o \emph{bundle} é pergunta do AMBIENTE; o manifesto responde o
@@ -187,32 +210,41 @@ renderizador aceita um \cd{ReactNode} ancorado ao fim de uma seção, e a págin
 da missão injeta o que só ela sabe montar:
 
 \begin{itemize}
-  \item \textbf{exp-01} --- a tabela dos momentos do painel vem de
+  \item \textbf{exp08ef1b} --- a tabela dos momentos do painel vem de
     \cd{CONTROLE\_DO\_PROFESSOR}, e as sete telas da revelação de
     \arq{lib/insta/copy-da-revelacao.ts} --- \textbf{cópia gêmea} do arquivo
-    homônimo da exp-01, não a mesma fonte: as duas mudam juntas, e nada no
+    homônimo da exp08ef1b, não a mesma fonte: as duas mudam juntas, e nada no
     \emph{build} cobra isso.
-  \item \textbf{exp-02} --- a tabela dos 21 vídeos, com o \cd{factual} de cada
-    um, vem de \rota{GET /unootube/professor/videos}. A criança de nove anos
-    cita o vídeo pelo apelido do canal, e sem a lista o professor não sabe de
-    qual ela está falando.
-  \item \textbf{exp-03} --- a tabela dos oito vieses vem de
+  \item \textbf{exp04ef1b} (o Jornal da Escola) ---
+    \rota{GET /jornal-escola/\B{}professor/\B{}material} devolve, numa chamada
+    só, três blocos. No roteiro, os dois portões com o que dizer à turma ao apertar cada um (a MESMA frase que
+    o painel da aula mostra ao lado do botão); no debate, as três perguntas da
+    mediação, verbatim; e no preparo, as oito notícias do banco padrão com o
+    gabarito e a reação do leitor, e os seis blocos da Chave com as iscas
+    marcadas. O componente que os desenha é
+    \arq{guia/\B{}material-do-jornal.tsx}.
+  \item \textbf{backup-exp04ef1b} (o UnooTube, arquivado na \adrr{ADR-116}; o
+    bloco saiu do guia com ele) --- a tabela dos 21 vídeos, com o \cd{factual} de
+    cada um, vinha de \rota{GET /unootube/professor/videos}. A criança de nove
+    anos cita o vídeo pelo apelido do canal, e sem a lista o professor não sabe
+    de qual ela está falando.
+  \item \textbf{exp02em1b} --- a tabela dos oito vieses vem de
     \rota{GET /unoogpt/professor/fontes}, derivada da própria \cd{instrucao} que
     o agente recebe.
-  \item \textbf{exp-06} --- as três intervenções, com desfecho e reação, e o
+  \item \textbf{exp06ef2b} --- as três intervenções, com desfecho e reação, e o
     ciclo na ordem certa vêm de \rota{GET /rastro-boato/professor/material}.
     Lado a lado aparece o que sustenta a missão: A e C produzem a
     \textbf{mesma} reação do grupo.
-  \item \textbf{exp-07} --- as três respostas e as falas que o bairro devolve
-    em cada desfecho vêm de \rota{GET /o-eco-no-grupo/professor/material}.
-  \item \textbf{exp-70} --- os cartões das três bolhas vêm de
+  \item \textbf{app-70} --- os cartões das três bolhas vêm de
     \rota{GET /vila/professor/cartoes}, \textbf{por turma}: nos anos iniciais a
     bolha B não é servida, e projetá-la mandaria o professor esperar a reação de
     um grupo que não existe na sala dele.
 \end{itemize}
 
-\textbf{Descrever também é copiar} (\adrr{ADR-86}). As missões da exp-02, da
-exp-06 e da exp-07 não guardavam o conteúdo: guardavam a paráfrase dele --- e
+\textbf{Descrever também é copiar} (\adrr{ADR-86}). As missões do UnooTube (hoje
+\cd{backup-exp04ef1b}), da exp06ef2b e do Eco no Grupo (retirado,
+\adrr{ADR-113}) não guardavam o conteúdo:
+guardavam a paráfrase dele --- e
 uma varredura pelo texto exato do catálogo dentro de cada guia devolveu
 \textbf{zero} ocorrências nas três. A do UnooTube dizia \emph{``metade cita
 fonte verificável \dots\ a outra metade é sensacionalista''} quando a divisão
@@ -269,7 +301,7 @@ como \emph{fallback} se um dia ela perder o guia.
 \end{nota}
 
 % ---------------------------------------------------------------------------
-\section{exp-01 --- Instanooria}
+\section{exp08ef1b --- Instanooria}
 
 Clone de rede social de imagens. O estudante navega um \emph{feed} curado por um
 motor adaptativo que o empurra progressivamente para um dos dois lados de uma
@@ -287,7 +319,7 @@ controvérsia; na virada da missão, o dossiê mostra o que ele não viu.
 Gabarito de curadoria fora do cliente & \arq{motor/sanitizador.ts} remove
   \cd{lado}, \cd{perfil} e \cd{intensidade} antes de o \emph{feed} sair.\\
 \zebra Geração de conteúdo em lote, assíncrona & \arq{geracao/}: fila em
-  \cd{exp\_01\_generation\_jobs}, \emph{worker} \emph{in-process}, reciclagem de
+  \cd{exp08ef1b\_generation\_jobs}, \emph{worker} \emph{in-process}, reciclagem de
   órfão por \cd{updated\_at}.\\
 Momento coletivo controlado pelo professor & \cd{activities.etapa} é um relógio
   \textbf{coletivo}: o professor abre e fecha, e a tela do estudante trava
@@ -324,7 +356,180 @@ Largada por perfil, sorteio ou redistribuição & \arq{perfis/largada.ts},
 \bottomrule
 \end{tabularx}
 
-\section{exp-02 --- UnooTube}
+% ---------------------------------------------------------------------------
+\section{exp04ef1b --- Jornal da Escola: A Edição de Bento}
+\label{sec:exp04ef1b}
+
+\textbf{4º ano \textperiodcentered{} Unidade 1 \textperiodcentered{} redação
+própria da Unooria, sem imitar aplicativo \textperiodcentered{} \cd{unooria},
+com o post em \cd{instanooria} e a mensagem em \cd{whatsappmobile}
+\textperiodcentered{} 2.0.0}
+
+O Bento cuida do jornal da escola e pede ajuda com a edição de hoje. A mesa tem
+oito notícias de oito meios --- jornal, rádio, telejornal, blog, portal, rede
+social, mensagem encaminhada e mural --- e a primeira página tem três vagas. A
+criança abre, se quiser, as pistas de cada notícia (de onde veio, quando
+aconteceu, quem assina), põe três na capa e publica, sem volta. Logo depois diz
+como escolheu --- pelas fotos e pela urgência, ou pela checagem --- e espera.
+Quando o professor libera o resultado, os leitores da escola reagem às três
+notícias publicadas, e a tela diz quantas estavam verificadas (0, 33, 67 ou
+100\,\%: a descrição da SELEÇÃO, nunca da criança). Depois da conversa com a
+turma, o professor libera a revisão: a Chave do Editor junta fonte, data e
+autoria, a mesa volta com um marcador em cada vaga, e a criança publica a 2ª
+edição e compara as duas. O Desafio Final, individual e fora da redação, fecha a
+missão com duas perguntas que não mostram acerto. As decisões estão na
+\adrr{ADR-117}; o PDF da proposta revisada vence o PRD da esteira quando os dois
+divergem.
+
+\begin{tabularx}{\linewidth}{@{}L{34mm}X@{}}
+\toprule
+\headrow \thd{Decisão} & \thd{Como está implementada}\\
+\midrule
+A redação e as peças & Mesa, gaveta, página, Bento, leitores, Chave e o Desafio
+  Final são da seção \cd{unooria}, com as oito peças da 0.2.8
+  (Seção~\ref{sec:ds-jornal-028}). Na gaveta, a matéria aparece no formato
+  original: o post de rede social é o \cd{PostCard} do \cd{instanooria}, a
+  mensagem encaminhada é o \cd{MessageBubble} do \cd{whatsappmobile}, e os
+  outros seis meios são o \cd{NewsArticle}. A peça imitada vem SEM o cromo do
+  aplicativo, sem curtidas e sem horário: a data é uma pista, e o carimbo a
+  entregaria antes da hora. Cada família mora num arquivo
+  (\arq{src/app/pecas/}), que só importa a sua ponte.\\
+\zebra Atividade e rodada & A ATIVIDADE é o \textbf{pacote} das oito notícias.
+  A missão \textbf{não nasce vazia}: sem homologação, a turma roda o banco padrão
+  (\enquote{Feira de Ciências e Notícias da Cidade}), criado na primeira leitura
+  --- do estudante ou do painel --- sob o \emph{lock} da turma. Zerar sobe a
+  rodada sem apagar nada; homologar outro pacote abre atividade nova, na rodada
+  1; homologar o mesmo conteúdo do ativo é idempotente (\adrr{ADR-112}).\\
+Dois portões, um botão & \cd{exploracao} \seta{} \cd{resultado} \seta{}
+  \cd{revisao}, uma etapa por vez, sem pular nem voltar (409
+  \cd{transicao-de-etapa-invalida}). A etapa só conduz quem publicou e respondeu
+  o motivo: quem ainda monta a página continua montando (a publicação atrasada
+  é caminho previsto), e da Chave em diante cada um anda sozinho.
+  \cd{passoEfetivo} (\arq{regras/passos.ts}) reconcilia os dois relógios; os
+  passos \cd{resultado} e \cd{chave} nunca são gravados, e um \emph{CHECK}
+  recusa. O estudante lê \rota{GET /jornal-escola/gate} por \emph{polling} de
+  5\,s, e só nas esperas (\adrr{ADR-93}).\\
+\zebra O motivo depois do \emph{latch} & A pergunta vem logo depois da 1ª
+  publicação e antes do resultado, uma vez só e com qualquer etapa. Feita no
+  modal de publicar, anteciparia a descoberta; feita depois do resultado,
+  sairia contaminada pela consequência. O painel mostra só o agregado.\\
+O gabarito desce em portões & A notícia do estudante é uma \emph{allowlist}
+  (\cd{noticiaPublica}): sem gabarito, sem pistas e sem consequência. O texto da
+  pista desce no \rota{POST /jornal-escola/pista}, que é o registro da
+  EF15CO04; as reações, no \rota{GET /jornal-escola/resultado} com a etapa
+  \cd{resultado} aberta, e só das três escolhidas; o pilar em falta de cada
+  vaga, no \rota{GET /jornal-escola/revisao}, depois da Chave; o conjunto certo
+  da Chave, nunca. As verificadas são calculadas no \emph{latch}, NO SERVIDOR.
+  Um \emph{grep} no \cd{dist/} prova que o \emph{bundle} não tem gabarito,
+  prompt nem a lista das iscas.\\
+\zebra A Chave do Editor & Seis blocos --- os três pilares e três ISCAS
+  (\enquote{foto}, \enquote{urgência}, \enquote{compartilhada}) ---, na ordem
+  embaralhada por sessão e estável num F5 (FNV-1a e \emph{mulberry32} sobre o
+  id da sessão). Cada envio é uma tentativa, e a isca volta à bandeja e conta:
+  sem isca, a EF15CO02 daria \enquote{atingiu} para toda criança que tocasse
+  três blocos. O número da tentativa vem da tela, e o reenvio da rede não
+  soma.\\
+A diagramação em sala & A IA escolhe UM de três layouts (\cd{classic},
+  \cd{hero-image}, \cd{columns} --- os \cd{NEWSPAPER\_LAYOUTS} do DS) e nada
+  mais (Capítulo~\ref{cap:ia}). Falhou qualquer coisa, o modelo automático
+  (\arq{regras/layout.ts}) diagrama pela forma --- a imagem da manchete e o
+  tamanho dos títulos ---, nunca pelo gabarito, e a tela não fica sabendo. O
+  layout é cosmético: não vale na correção.\\
+\zebra Equipes & A missão nasce com equipes (\adrr{ADR-111}): o painel, o
+  histograma e o radar contam por COMPUTADOR (\cd{colapsarEmUnidades}), e o
+  \enquote{X de Y publicaram} tira o Y da montagem. A linha do painel é só
+  progresso --- nenhum campo de \cd{PROIBIDO\_NA\_LINHA\_DO\_PAINEL}, com teste
+  ---; as verificadas vivem no histograma anônimo de 0 a 3, e o radar é do
+  OBJETO editorial: em quantas capas cada notícia foi.\\
+Evidência & A ficha \arq{evidencias/fichas/exp04ef1b.ts}, a terceira da
+  plataforma: EF15CO04 pelas pistas abertas antes de publicar (os três tipos em
+  duas notícias é \cd{atingiu}); EF15CO02 pela Chave (uma tentativa,
+  \cd{atingiu}; duas ou três, \cd{em\_processo}); EF04CO08 pela 2ª edição (os
+  pares notícia $\times$ tipo abertos nas duas fases e as verificadas) e pelas
+  perguntas \cd{p1} e \cd{p2}, valendo o melhor --- o que afrouxa o
+  \enquote{E} do PRD. Na rodada nova do mesmo pacote, quem já foi avaliada não
+  é marcada de novo (\adrr{ADR-120}), e as três ações são copiadas aos colegas
+  de computador. A síntese final é UMA só: o recibo das perguntas é
+  \cd{\{ enviada: true \}} para qualquer alternativa.\\
+\zebra Mídia & As imagens são do professor, no preparo: 640 por 360, duas por
+  chamada (o BFF corta em 30\,s), com o nome igual ao \emph{hash} da descrição,
+  em \cd{experiencias/exp04ef1b/jornal/} --- fora de
+  \cd{exp04ef1b/videos/}, que o UnooTube deixou. Sem imagem, o cartão se
+  desenha pelo meio, e a missão roda igual.\\
+Sem texto livre & Toda resposta da criança é vocabulário fechado: ids de
+  notícia, tipo de pista, bloco da Chave, motivo e alternativa. Não há campo
+  aberto a conter, e por isso o gestor lê o mesmo painel que o professor
+  (Capítulo~\ref{cap:tenancy}).\\
+\bottomrule
+\end{tabularx}
+
+\subsection{O preparo: a estrutura é do servidor, o texto é da IA}
+
+O professor prepara a turma em \enquote{A aula e os resultados}, com três
+caminhos: seguir no banco padrão (que já está em sala), \enquote{Usar Banco
+Padrão} em um toque, ou gerar um pacote com IA sobre a disciplina, o tema e os
+tópicos dele. Na geração, o \textbf{molde} --- que notícia é de que meio e que
+papel tem no gabarito (publicável, antiga, sem fonte ou sem autoria) --- é
+SORTEADO no servidor a cada chamada (\arq{regras/molde.ts}), e a IA só escreve o
+conteúdo de cada vaga. O sorteio existe porque os ids são a posição na mesa:
+com o papel amarrado à posição, a turma que já jogou um pacote saberia que
+\enquote{a \cd{n2} é a antiga} em todos os outros. O \cd{validar} do
+\cd{generateJson} recusa a saída que mexeu no molde ou fere
+\arq{invariantes.ts}: pelo menos três publicáveis, duas ou três antigas, duas
+ou três sem confirmação; meios tradicionais e digitais dos dois lados do
+gabarito, e imagem também; pelo menos quatro notícias com imagem, e sempre na
+TV e na rede social; as réguas de palavras; e nenhum termo de carimbo
+(\enquote{falsa}, \enquote{fake news}, \enquote{você errou}) no que a criança
+lê.
+
+\textbf{O preparo não esconde a falha.} Sem saldo, \rota{POST .../gerar-conteudo}
+responde 429; com o provedor fora, 503 --- e o hub oferece o banco padrão em um
+toque. \enquote{Regenerar notícia} mantém o id, o meio e o papel da que sai; se
+a IA falhar, devolve 200 com \cd{usouIa: false} e a notícia como estava. Nada
+chega à turma sem \enquote{Aprovar pacote}, que recebe as oito notícias
+INTEIRAS: curadoria é editar, e editar uma notícia edita também o gabarito e a
+consequência dela. A homologação passa pela mesma régua, e o pacote \cd{ia} sem
+quem o aprovou é recusado pelo banco (Seção~\ref{sec:tabelas-exp04ef1b}).
+
+\subsection{Ausências deliberadas}
+
+\begin{itemize}
+  \item \textbf{Sem arrastar}: \enquote{Adicionar ao Jornal} e \enquote{Trocar
+    Matéria} são o caminho; o arraste é atalho, fora desta versão.
+  \item \textbf{Sem reordenar as vagas}: trocar a manchete é esvaziar a
+    primeira vaga e escolher outra.
+  \item \textbf{O Bento não tem áudio} até haver gravação.
+  \item \textbf{O balão do leitor não diz de qual notícia é}, e a reação é da
+    própria notícia --- nunca uma frase sobre quem escolheu.
+  \item \textbf{Sem ranking da turma} nem exposição de quem escolheu o quê: a
+    criança não vê a edição de ninguém.
+\end{itemize}
+
+\begin{atencao}
+O manifesto declara \cd{viewport} 375 por 812, \cd{permissoes: ["forms"]} (o
+\cd{RadioGroup} do motivo e do Desafio Final) e as capacidades \cd{telemetria},
+\cd{progresso}, \cd{ia} e \cd{avaliacao}. A porta em \emph{dev} é a 5174, com
+\cd{strictPort}. Em \emph{dev} e na suíte de ponta a ponta a IA é o
+\emph{mock}: a diagramação cai sempre no modelo automático, e as imagens não
+são geradas --- os dois são comportamento declarado (\adrr{ADR-117}), não
+defeito.
+\end{atencao}
+
+A suíte \arq{scripts/e2e/estudante/12-jornal-da-escola.mjs} percorre a missão
+com a professora e dois estudantes da mesma turma: a peça imitada na gaveta, a
+pista que desce do servidor, o motivo depois do \emph{latch}, os dois portões
+pelo \emph{polling} com um F5 no meio, a isca que volta à bandeja, o antes e o
+depois, e o painel sem nota por criança. Ela \textbf{roda verde} desde
+2026-09-27. Rodá-la a partir de uma worktree exige a api, o hub e o Vite da
+missão nas portas alternativas (3011, 3010 e 5174) sobre um banco descartável,
+sem subir o \emph{compose}.
+
+\section{backup-exp04ef1b --- UnooTube (arquivada)}
+
+\textbf{Arquivada em 2026-09-25} (\adrr{ADR-116}): o Jornal da Escola tomou o
+código \cd{exp04ef1b}. O que segue descreve a missão como ela era; o código
+continua no monorepo com o prefixo \cd{backup-}, compilando e testando, mas não
+é servido, publicado nem listado --- só aparece na área \rota{/unooria/arquivados}.
 
 Clone de plataforma de vídeo, para o 4º ano. O estudante salva até três vídeos; ao
 terceiro, o ranking desbloqueia; \enquote{adicionar credibilidade} reordena o
@@ -342,7 +547,7 @@ fazendo, e o terceiro salvo abria o diálogo sozinho --- a palavra
 \headrow \thd{Decisão} & \thd{Motivo}\\
 \midrule
 Gabarito (\cd{factual}) fora do \emph{bundle} & Vive em
-  \arq{src/unootube/catalogo.ts}. A API corrige e devolve inscritos e fontes ---
+  \arq{src/backup-unootube/catalogo.ts}. A API corrige e devolve inscritos e fontes ---
   nunca a resposta (regra 3).\\
 \zebra Ranking com colegas \textbf{fictícios} & Distribuição desenhada para a
   lição. Não há pontuação de menor real exposta a outro menor (LGPD).\\
@@ -380,7 +585,7 @@ Métricas de popularidade \textbf{visíveis} & \cd{visualizacoesRotulo} e
 \end{tabularx}
 
 \begin{nota}
-A exp-02 é o caso canônico da \textbf{linha da revelação}
+O UnooTube foi o caso canônico da \textbf{linha da revelação}
 (Capítulo~\ref{cap:ds}): \emph{feed}, cromo, \emph{playlists} e canal usam a
 seção do clone; ranking, os dois diálogos da missão, a tela de entrada e o botão
 \enquote{Concluir missão} usam a seção da plataforma. O \emph{toast} e o diálogo
@@ -398,8 +603,8 @@ e o delta sempre foi derivável de dois quadros seguidos. É o primeiro suspeito
 a distribuição de \cd{fontesConfiaveis} da turma subir de forma anômala.
 \end{regra}
 
-\section{exp-03 --- unooGPT (Missão Tempestade)}
-\label{sec:exp03}
+\section{exp02em1b --- unooGPT (Missão Tempestade)}
+\label{sec:exp02em1b}
 
 Porte de um projeto autônomo (\arq{gpturia}), publicado na trilha do Entre Redes
 em \textbf{2ª série do Ensino Médio, unidade 1}. Um clone de assistente de IA em
@@ -421,9 +626,9 @@ moradores está velho onde a cidade cresceu. Essa distorção --- a
 \textbf{Lacuna} --- é o \textbf{material do debate do professor}, e a experiência
 nunca a revela.
 
-A consequência é arquitetural: \textbf{não há revelação no software}. A exp-02
+A consequência é arquitetural: \textbf{não há revelação no software}. A exp04ef1b
 troca da seção do \emph{design system} do clone para a da plataforma na virada da
-missão; aqui não existe virada, e por isso a exp-03 é 100\% da seção
+missão; aqui não existe virada, e por isso a exp02em1b é 100\% da seção
 \cd{chatgpt} e não importa \arq{unooria.css} nenhum. A marca institucional entra
 só como \emph{chrome} do hub, desenhada acima do \cd{iframe}.
 
@@ -485,7 +690,7 @@ o Passo de ninguém.
 
 \subsection{O que o relatório mede do tempo}
 
-Tudo o que é \emph{quando} entra pela trilha (\cd{exp\_03\_marcos}), nunca
+Tudo o que é \emph{quando} entra pela trilha (\cd{exp02em1b\_marcos}), nunca
 pela telemetria: o canal analítico é preenchido pelo cliente, assíncrono e sem
 leitor, e o que o professor lê não pode vir dele. Cada marco carrega o relógio
 da turma \textbf{recalculado no instante} da gravação (\cd{segundos\_restantes},
@@ -540,7 +745,7 @@ abertura do agente já está na tela, e o único rastro é um aviso de console s
 \enquote{\emph{form's frame is sandboxed}}. Passou pelo \emph{typecheck}, pelo
 \emph{lint} e por duas versões do \emph{smoke} antes de ser encontrado. A correção
 usa o mecanismo que a plataforma já tinha, \cd{permissoes} no manifesto, como o
-\cd{pointer-lock} da exp-70: por experiência, porque permitir \emph{submit} de
+\cd{pointer-lock} da app-70: por experiência, porque permitir \emph{submit} de
 formulário é capacidade de quem declarou.
 
 \subsection{O \emph{smoke} mentiu duas vezes}
@@ -558,7 +763,7 @@ caminho, e as duas passavam com a funcionalidade quebrada:
 \end{enumerate}
 
 A asserção honesta é a conversa \textbf{sobreviver a um F5}, porque aí ela veio de
-\cd{exp\_03\_mensagens}. Teste que passa com a funcionalidade quebrada é pior que
+\cd{exp02em1b\_mensagens}. Teste que passa com a funcionalidade quebrada é pior que
 teste nenhum.
 
 \subsection{O guia da aula, e a tabela dos vieses}
@@ -592,127 +797,8 @@ para revisão pedagógica, não palavra final.
 \end{limitacao}
 
 % ---------------------------------------------------------------------------
-\section{exp-07 --- O Eco no Grupo}
-\label{sec:exp-07}
-
-\textbf{7º ano · Unidade 1 · clone de WhatsApp móvel · \cd{whatsappmobile}}
-
-Um boato sobre o festival do bairro corre num grupo de mensageria: print
-recortado, áudio alarmado, três moradores indignados e um administrador pedindo
-calma. O estudante audita as mensagens, descobre o parágrafo que o print cortou
---- o evento tinha alvará regular e a polícia só organizava o desvio dos ônibus
---- e responde citando a reportagem completa. O grupo se acalma na frente dele,
-e o administrador fixa a mensagem no topo do chat.
-
-É a \textbf{primeira missão da trilha em duas aulas}, e a segunda não começa
-sozinha.
-
-\subsection{As duas aulas, e quem separa uma da outra}
-
-\cd{exp\_07\_gates\_turma} guarda uma etapa por turma
-(\cd{investigacao | aula2 | debate | reflexao}), e a professora a move por três
-botões no painel de resultados. A reconciliação entre a etapa da turma e o passo
-de cada estudante é função pura (\arq{regras/passos.ts}), porque a api e o
-cliente precisam chegar à mesma resposta --- duas implementações divergentes
-seriam a tela discordando do servidor.
-
-A diferença em relação ao relógio da exp-03 é que aqui a etapa é
-\textbf{piso E teto}:
-
-\begin{tabularx}{\linewidth}{@{}L{28mm}L{28mm}X@{}}
-\toprule
-\headrow \thd{Etapa da turma} & \thd{Piso} & \thd{Teto --- e por quê}\\
-\midrule
-\cd{investigacao} & \cd{chat\_amara} & \cd{breakpoint}: quem investiga rápido
-  não decide e acaba a missão sozinho antes da segunda aula\\
-\zebra \cd{aula2} & \cd{podcast} & \cd{sintese}: a reflexão é depois do debate\\
-\cd{debate} & \cd{sintese} & \cd{sintese} --- piso e teto no mesmo passo: no
-  debate a turma inteira olha a mesma tela, porque a conversa é entre pares\\
-\zebra \cd{reflexao} & \cd{reflexao} & \cd{fim}\\
-\bottomrule
-\end{tabularx}
-
-\begin{nota}
-\textbf{Estudante sem turma não tem gate.} Não há quem dê a largada para ele, e
-prendê-lo no breakpoint seria um beco sem saída: a missão inteira ficaria
-inalcançável para quem chegou à rede sem enturmação. Ele corre no próprio ritmo,
-e o painel não o vê porque ele não está em turma nenhuma.
-\end{nota}
-
-O estudante consulta \rota{GET /o-eco-no-grupo/gate} a cada 5\,s --- rota leve de
-propósito, sem catálogo e sem mídia --- e o \cd{agora} da resposta é o instante
-do \emph{servidor}: o relógio da máquina da escola atrasa, e não é ele que
-decide o momento da aula.
-
-\subsection{O portão que a missão existe para instalar}
-
-Responder no grupo sem ter aberto a matéria íntegra é \textbf{recusado}
-(\cd{sem-inspecao}, 409). Não é validação de formulário: é o comportamento que a
-experiência inteira está tentando desfazer, e é a única regra aqui que vale a
-aula. O portão vive em \arq{regras/sessao.ts}, no servidor.
-
-\subsection{O par casado: o print é um recorte da reportagem}
-
-O print que circula no grupo e a foto da matéria são \textbf{a mesma imagem},
-cortada. Mesma cena, mesma luz, mesmo instante --- e é isso que faz o recorte
-visual espelhar o recorte do texto que o estudante vai descobrir. A foto é
-gerada por IA; o layout do portal (\enquote{Gazeta Regional}), a manchete, os
-metadados e o box do trecho suprimido são \textbf{HTML}, porque modelo de imagem
-erra texto longo e o parágrafo omitido precisa ser legível, selecionável por
-leitor de tela e com contraste medido (\adrr{ADR-67}).
-
-\subsection{A IA escreve a fala, nunca o resultado}
-
-Três superfícies, todas com \cd{QuotaService} antes e depois, e todas com
-falha para o lado seguro (\adrr{ADR-66}):
-
-\begin{itemize}
-  \item \textbf{As reações do bairro} à intervenção. O desfecho
-    (\cd{checada | ruido | conflito}) sai do gabarito do catálogo antes de
-    qualquer modelo ser chamado; a IA escreve como aquilo soa. Sem ela, o
-    roteiro autoral do catálogo assume --- e é ele que a suíte de testes exercita.
-  \item \textbf{Amara no privado}, e só depois da decisão. O silêncio dela na
-    investigação é não-negociável: se apontasse a mensagem falsa, o
-    reconhecimento de padrão que a missão mede deixaria de acontecer.
-  \item \textbf{A devolutiva do \enquote{Meu percurso}}, um parágrafo sobre as
-    escolhas --- que não é nota e não entra no \cd{score}.
-\end{itemize}
-
-\begin{atencao}
-A conversa com Amara é o \textbf{único texto livre} da missão, e o pacote de
-insumos aprovado o declarava inexistente. Ele voltou com cinco travas: 600
-caracteres, teto de 3 turnos, gravado sob RLS, fora de log e de telemetria, e
-sem nenhuma rota de gestor que o alcance (\adrr{ADR-66}).
-\end{atencao}
-
-\subsection{Sem mídia, a missão roda igual}
-
-\rota{GET /o-eco-no-grupo/midia} devolve \cd{null} no que não foi preparado, e
-\cd{null} é informação: o áudio cai na \textbf{transcrição} --- que está sempre
-na tela, por acessibilidade --- e a foto na ilustração procedural. Quem prepara é
-o professor, no painel, e a mídia vale para o contrato inteiro.
-
-\subsection{O que o professor lê}
-
-Sem coluna de pontos. A folha mostra conduta --- quem abriu a matéria antes de
-responder, quem ouviu o episódio, quem apagou e tentou de novo, quem entregou o
-percurso --- e a distribuição A/B/C aparece como percentual da turma, que é o
-material do debate. Listagem é ordenável, e ordenar crianças por acerto viraria
-ranking.
-
-\subsection{O clone é escuro}
-
-A seção \cd{whatsappmobile} do design system publica exclusivamente o tema
-escuro. Os wireframes descrevem telas claras; o que está em produção é o escuro,
-e o contraste dele passa o \cd{RNF-ACES-001} com folga (\adrr{ADR-68}). A ponte
-\cd{@edu/ui/ds-whatsapp} nasceu com esta missão --- a seção era
-\enquote{sem consumidor} até aqui.
-
-
-
-% ---------------------------------------------------------------------------
-\section{exp-04 --- O Que a Foto Conta}
-\label{sec:exp-04}
+\section{exp01ef1b --- O Que a Foto Conta}
+\label{sec:exp01ef1b}
 
 \textbf{1º ano · Unidade 1 · clone do Instagram · \cd{instanooria}}
 
@@ -759,8 +845,8 @@ O que define a missão, tecnicamente:
 \end{itemize}
 
 % ---------------------------------------------------------------------------
-\section{exp-08 --- O Manifesto da IA}
-\label{sec:exp-08}
+\section{exp08ef4b --- O Manifesto da IA}
+\label{sec:exp08ef4b}
 
 \textbf{8º ano · Unidade 4 · clone de assistente generativo · \cd{chatgpt} +
 \cd{unooria}}
@@ -813,7 +899,7 @@ a obriga a admitir que herda o passado. Chegar ao pico sem ter visto a
 contradição é decidir sobre o que a aula ainda não mostrou.
 
 \textbf{Distintos} é a palavra que faz o trabalho, e aqui ela se comporta
-DIFERENTE da exp-06: reenviar o mesmo questionamento responde \textbf{409}
+DIFERENTE da exp06ef2b: reenviar o mesmo questionamento responde \textbf{409}
 (\cd{prompt-ja-enviado}), e não 200 com \cd{novo: false}. A razão é o que a tela
 faz: lá reabrir um balão é releitura legítima, e um erro transformaria o
 comportamento desejado em falha; aqui o cartão já disparado fica desabilitado no
@@ -844,7 +930,7 @@ estudante a desconfiar da tela.
 O \cd{Composer} é um \cd{<form>}, e por isso o manifesto declara
 \cd{permissoes: ["forms"]}. Sem o \emph{token} de \emph{sandbox} o navegador
 bloqueia o \emph{submit} em silêncio --- a armadilha que custou um defeito
-inteiro na exp-03. E \cd{clipboard-write} \textbf{não} entra ali, apesar de o
+inteiro na exp02em1b. E \cd{clipboard-write} \textbf{não} entra ali, apesar de o
 botão de cópia precisar da API: o vocabulário de \cd{permissoes} é fechado
 (\cd{pointer-lock | forms | downloads}) e o \cd{allow} do \cd{ExpFrame} já
 concede \emph{clipboard} a todas as experiências. Declará-lo derrubaria o
@@ -872,12 +958,12 @@ só passe o olho.
 \subsection{O Checkpoint A é polling, não WebSocket}
 
 O congelamento da turma para o debate oral de dez minutos é uma linha em
-\cd{exp\_08\_gates\_turma} que a tela lê a cada 5 segundos. O \emph{handoff}
+\cd{exp08ef4b\_gates\_turma} que a tela lê a cada 5 segundos. O \emph{handoff}
 pedia \emph{broadcast} \cd{hub:pause} por WebSocket, e não há WebSocket de
 aplicação no Cloud Run: a decisão inteira, com as quatro alternativas
 descartadas, está na \adrr{ADR-93}.
 
-Duas propriedades desse gate que o separam do da exp-06: ele é
+Duas propriedades desse gate que o separam do da exp06ef2b: ele é
 \textbf{opcional} (a missão corre inteira sem clique nenhum, porque a
 especificação admite a sessão individual assíncrona) e mexe só no \textbf{teto}
 do passo, nunca no piso --- pausar não empurra para a frente quem ainda estava
@@ -935,8 +1021,316 @@ mostra o botão de ouvir \textbf{desabilitado com o motivo à vista}, em vez de 
 texto.
 
 % ---------------------------------------------------------------------------
-\section{exp-06 --- O Rastro do Boato}
-\label{sec:exp-06}
+\section{exp05ef1b --- Quem mandou isso? (v2.2)}
+\label{sec:exp05ef1b}
+
+\textbf{5º ano · Unidade 1 · clone de mensageiro móvel · \cd{whatsappmobile}
+· 0.2.1}
+
+A Nina pede ajuda: \enquote{rolou uma confusão sobre} o tema que a professora
+escreveu no preparo. No grupo \enquote{Turma 5ºB} chegam oito mensagens de
+colegas --- duas em cada quadrante da matriz verdadeira ou falsa $\times$
+emocional ou neutra ---, e a criança encaminha \textbf{exatamente três} ao
+\enquote{Mural da Turma}, confirma e diz, numa enquete, o que pesou na escolha.
+Quando a professora libera a revelação, cada mensagem do Mural ganha
+\textbf{dois} crachás, e a descoberta é que um eixo não prediz o outro: a
+mensagem séria podia ser falsa, e a alarmada, verdadeira. Depois vêm a síntese,
+a regra \enquote{Se a mensagem for\ldots, então eu\ldots} e duas perguntas
+rápidas da Nina. A primeira versão saiu na \adrr{ADR-114}; esta volta com o
+mesmo código, e as decisões dela estão na \adrr{ADR-118}.
+
+\subsection{O pacote é a porta, e é a atividade}
+
+\textbf{A missão nasce vazia} (o padrão da \adrr{ADR-108}, retomado): sem pacote
+aprovado pela professora daquela turma, a lista de conversas não tem a Nina ---
+tem uma linha de espera, e quem tira a criança dali é o \emph{polling}, sozinho,
+quando o pacote é aprovado. Não há queda para o banco curado: a fala da Nina
+leva o \emph{tema} do pacote (\enquote{Rolou uma confusão sobre \{tema\}}), e
+um grupo sobre outro assunto seria uma conversa sobre um fato que não houve na
+escola dela. Por isso o tema herda as réguas do clone: até 60 caracteres, até 8
+palavras, e sem \enquote{atividade}, \enquote{gabarito}, \enquote{nota} nem
+\enquote{exercício}.
+
+O preparo é da professora, em \enquote{A aula e os resultados}: componente
+curricular, tema, de 3 a 6 fatos da aula e o contexto opcional. \enquote{Gerar
+Atividade com IA} escreve as oito mensagens \textbf{pré-aula}, pelo
+\cd{QuotaService} (\cd{temSaldo} antes, \cd{consumir} depois); sem saldo ou com o
+provedor fora, a api devolve o banco curado (\enquote{O Mistério do Passeio ao
+Museu}) como rascunho, e a tela diz por quê. O rascunho é gravado --- o preparo
+custou saldo, e um F5 não pode jogá-lo fora. A curadoria mostra os quatro
+quadrantes com os selos que só ela vê; ela edita qualquer TEXTO, mas não o
+gabarito nem o formato de cada posição. Nada chega à turma sem \enquote{Aprovar
+Pacote}.
+
+\textbf{O pacote aprovado é a ATIVIDADE da evidência pedagógica}
+(\adrr{ADR-112}): o identificador do pacote é o \cd{atividadeId} das marcas.
+\enquote{Zerar Turma para Nova Aplicação} abre a RODADA seguinte do mesmo
+pacote e não apaga nada;
+aprovar um pacote diferente abre atividade nova, e aprovar o mesmo é
+idempotente. Os dois voltam a turma à triagem --- senão a turma nova nasceria
+com a revelação aberta, e o gabarito desceria na entrada.
+
+\subsection{A matriz equilibrada, e o formato que não pode ser pista}
+
+A régua do pacote (\arq{regras/pacote.ts\#validarPacote}) vale igual para o
+gerado e para o curado, e é a mesma que a aprovação cobra: \textbf{duas
+mensagens por quadrante}, quatro textos, duas imagens e dois links, balão até
+45 palavras e legenda até 25 --- e \textbf{imagem e link com uma verdadeira e
+uma falsa cada}. Sem a última, o formato viraria a resposta. A IA não decide a
+estrutura: \cd{sortearMolde} sorteia o tipo e o quadrante de cada posição (a
+posição não pode virar pista entre turmas), o modelo só escreve, e a saída passa
+pela mesma régua da curadoria.
+
+\begin{nota}
+Nos artefatos do documento de requisitos, os dois links do pacote curado eram
+falsos. A régua os reprova de propósito: no curado, a \cd{msg\_5} (verdadeira)
+passou a link e a \cd{msg\_7} (falsa) a texto, sem mudar uma palavra, e a versão
+original reprova num teste que prende isso. É \emph{default} até o dono do
+produto responder (\adrr{ADR-118}).
+\end{nota}
+
+\subsection{Exatamente três, e três \emph{latches}}
+
+O passo do estudante \textbf{não é coluna}: é \cd{passoEfetivo(latches, fase)},
+em \arq{regras/passos.ts}. Os \emph{latches} são carimbos da sessão, cada um com
+\emph{CHECK} exigindo o anterior (Seção~\ref{sec:tabelas-exp05ef1b}):
+
+\begin{tabularx}{\linewidth}{@{}L{30mm}L{34mm}X@{}}
+\toprule
+\headrow \thd{Gesto} & \thd{Rota} & \thd{O que fecha}\\
+\midrule
+A seta de encaminhar & \rota{PUT /selecao} & Nada: é o rascunho da triagem, de 0
+  a 3, guardado para o F5. Quatro é 400 \cd{selecao-acima-do-limite}.\\
+\zebra \enquote{Confirmar envio} & \rota{POST /mural} & O \textbf{latch 1}:
+  exatamente três (2 é 400 \cd{selecao-incompleta}), com a marca da EF05CO08 na
+  MESMA transação. O corpo leva a seleção que a criança está VENDO, e não a
+  última que o \cd{PUT} gravou. Outra seleção depois é 409
+  \cd{mural-ja-enviado}.\\
+O voto & \rota{POST /enquete} & O \textbf{latch 2}: um dos quatro motivos. Quem
+  votou espera a turma.\\
+\zebra \enquote{Salvar e Enviar Reflexão} & \rota{POST /reflexao} & O
+  \textbf{latch 3}, só com a reflexão liberada: a condição e o
+  \enquote{Então} de 15 a 240 caracteres DEPOIS do \cd{trim}, recusado também
+  quando é texto sem sentido (\cd{entao-sem-sentido}).\\
+Depois da P2 & \rota{POST /concluir} & O fim, sem exigir as respostas: quem sai
+  antes delas fica \enquote{Não avaliado}.\\
+\bottomrule
+\end{tabularx}
+
+A quarta seta \textbf{fala}: com três escolhidas, as outras esmaecem mas
+continuam respondendo com o aviso de limite --- o estado \cd{exhausted} do
+\cd{ForwardButton} (DS 0.2.6), com \cd{aria-disabled}, e não \cd{disabled}, que
+engoliria o toque (Seção~\ref{sec:ds-whatsapp-024}).
+
+\subsection{O gabarito desce UMA vez, e só o das três}
+
+As mensagens saem por \cd{mensagensPublicas} (um \cd{Omit} de \cd{veracidade} e
+\cd{tom}), e o \emph{schema} de saída não tem lugar para eles. O bloco
+\cd{revelacao} da sessão é \cd{null} até o estudante \textbf{votar} E a turma
+estar na revelação --- e traz só os dois eixos das TRÊS que ele encaminhou,
+mais o \emph{callback} do motivo votado e as duas barras da turma. O teste da
+api varre as CHAVES, não o texto: a fala da Nina antes da P1 contém
+\enquote{verdadeira}. Na experiência, a varredura é por CONTEÚDO --- o banco
+curado, as alternativas, o par id e eixo ---, no \cd{src/} pelo \cd{vitest} e
+no \cd{dist/} por \cd{grep}: as chaves \cd{veracidade} e os rótulos dos crachás
+existem no \emph{bundle}, e está certo.
+
+\subsection{Três botões, sempre para a frente}
+
+\cd{exp05ef1b\_gates\_turma} guarda a fase da turma --- \cd{triagem},
+\cd{revelacao}, \cd{explicar}, \cd{reflexao} ---, e a professora a move por três
+botões, cada um com confirmação e nenhum com inverso: \enquote{Liberar
+Revelação}, \enquote{Apresentar Síntese} (que pode ser pulada) e
+\enquote{Liberar Reflexão}. O estudante lê \rota{GET /gate} a cada 3~s
+(\adrr{ADR-93}) e relê a sessão quando muda o passo, o preparo, a fase OU a
+atividade --- a fase porque quem ainda está no grupo quando a revelação abre
+continua no grupo, e a atividade porque um \enquote{Zerar} pode coincidir com o
+mesmo passo.
+
+\textbf{A revelação não empurra a triagem}, e é a diferença para a v1: quem não
+tinha confirmado continua escolhendo, confirma, vota e só então recebe a
+própria revelação --- junto com o passo da turma, que pode já ser a reflexão.
+Nesse caso a experiência mostra o Mural revelado com \enquote{Continuar} antes
+da regra; o servidor não guarda \enquote{já viu}, e um F5 mostra de novo.
+
+\subsection{A régua pedagógica v2: cada habilidade pelo verbo dela}
+
+É a primeira missão com ficha (\arq{evidencias/fichas/exp05ef1b.ts}, versão
+2, \adrr{ADR-120}). A \textbf{EF05CO08} sai das três do Mural: só três
+verdadeiras são \cd{atingiu}; duas e uma falsa, de qualquer tipo,
+\cd{em\_processo}; uma ou nenhuma verdadeira, \cd{nao\_atingiu}
+(\arq{regras/evidencia.ts}, conferida nas 56 combinações). Ela é marcada uma
+vez por criança e pacote: quem já foi avaliada numa rodada anterior da mesma
+atividade fecha o Mural sem marca nova (\cd{EvidenciasService.jaAvaliadaAntes}).
+A \textbf{EF05CO03} vem da P1, que pede a frase certa com \enquote{não},
+\enquote{e} e \enquote{ou} sobre os dois selos; a \textbf{EF05CO04}, da P2,
+que pede para seguir uma regra no áudio do tio, e da rubrica com que o
+professor classifica o Se/Então na folha da turma --- um ajuste da evidência,
+que vale sobre a pergunta. As perguntas passam pelas rotas genéricas
+\rota{/evidencias/exp05ef1b/perguntas/*}. O
+resolvedor que a missão registra (\cd{registrarContexto}) diz a turma, o pacote
+ativo e a rodada, e só responde no passo das perguntas: uma P1 por \cd{POST}
+direto antes do Mural é 409 e não mede nada. As alternativas chegam
+embaralhadas a cada leitura, e a tela responde pelo \cd{id} e carrega cada
+pergunta uma vez por aba.
+
+\subsection{Onde a fronteira do disfarce cai --- duas vezes}
+
+O critério é o de sempre, \textbf{quem está falando} (\adrr{ADR-72}), e aqui ele
+produz um vaivém. Do convite até a síntese é o mensageiro, revelação inclusive:
+os crachás são \cd{MessageTag}, e o termômetro e a lâmina da síntese entram como
+IMAGEM enviada no chat --- mensageiro não tem gráfico, mas recebe foto de
+gráfico. A regra Se/Então sai para a \textbf{casca} (\cd{@edu/ui/ds}), porque é
+sobre o grupo da FAMÍLIA do tio, fora da ficção que a revelação desmontou. As
+perguntas P1 e P2 \textbf{voltam ao clone}: são a Nina perguntando, com a mesma
+enquete (\cd{Poll}) da Etapa 3. E \enquote{Missão Concluída} é a casca de novo,
+a escola guardando a regra. Cada família mora num arquivo, e cada arquivo só
+importa a sua ponte.
+
+\subsection{Equipes e o Termômetro}
+
+A missão nasce com equipes (\adrr{ADR-111}): o painel e o Termômetro contam por
+COMPUTADOR, com \cd{mapaDeEquipes} dentro do \cd{comTenancy} e
+\cd{colapsarEmUnidades}. O Termômetro é \cd{null} antes da revelação e não tem
+lugar para nome: a porcentagem das unidades que encaminharam ao menos uma falsa
+neutra, a das verdadeiras emocionais que ficaram de fora ($(2N - \Sigma
+VE)/2N$) e o cruzamento com o motivo votado. Com zero unidades, a tela escreve
+\enquote{sem dados}, nunca 0\%. \enquote{Projetar o Termômetro} abre uma janela
+em tela cheia só com a conta; a folha nominal, com a regra de cada um, é para a
+tela da professora.
+
+\begin{regra}
+\textbf{O \enquote{Então} é texto livre de menor.} Mora numa tabela confinada
+(\cd{exp05ef1b\_reflexoes}), está na redação do \emph{log} (\cd{entao},
+\cd{acaoEntao}, \cd{acao\_entao}), não vai à telemetria nem a
+\cd{reportarErro}, e no painel só vem preenchido para quem LECIONA na turma. A
+distinção mora no \emph{service} (\cd{professorId ? texto : null}), e não no
+\cd{@Roles}: \cd{professorLeciona(undefined)} é verdadeiro para o gestor.
+\end{regra}
+
+\subsection{Sem mídia binária}
+
+Nenhum arquivo existe nesta missão. O comunicado é o texto do pacote desenhado
+como papel (\cd{MessageBubble.Media} sem \cd{src}, com o texto no \cd{alt}); o
+link é a prévia montada da legenda, no formato \enquote{Nome do site: manchete};
+tocar em qualquer um abre a mídia em tela cheia com a transcrição. Não há áudio
+assistivo nesta versão (entra quando houver gravação) e não há botão de ouvir.
+
+\begin{atencao}
+O \cd{TextArea} e o \cd{Selection} da casca são campos de formulário, e o
+manifesto declara \cd{permissoes: ["forms"]} --- sem o \emph{token} de
+\emph{sandbox}, o envio morre em silêncio (a lição da exp02em1b). O
+\cd{viewport} é 375 por 812, e a porta em \emph{dev} é a 5184, com
+\cd{strictPort}.
+\end{atencao}
+
+\begin{limitacao}
+\textbf{A IA vive no preparo, e só.} O \cd{capabilities} do manifesto não
+declara \cd{ia}: a única chamada ao provedor é a geração do pacote, pela
+professora, antes da aula. Curadoria, \emph{latches}, régua, Termômetro e
+síntese são determinísticos --- uma turma de trinta às oito da manhã não depende
+do Vertex responder.
+\end{limitacao}
+
+% ---------------------------------------------------------------------------
+\section{exp07ef1b --- A Seleção}
+\label{sec:exp07ef1b}
+
+\textbf{7º ano · Unidade 1 · clone de rede social de fotos · \cd{instanooria}}
+
+A Amara pede ajuda para cobrir um evento do bairro nos Stories do grêmio. O feed
+tem 12 posts de três perfis --- o oficial, o comunitário e o de números, 4 de
+cada, intercalados --- e todos contam fatos verdadeiros do mesmo acontecimento.
+O estudante salva o que acha informativo, poda os salvos até EXATAMENTE três,
+escreve uma legenda e publica, sem volta. No Mural, a tríade dele aparece ao lado
+da de um colega que escolheu outra coisa; quando a professora revela as fichas
+técnicas (fonte ouvida, ângulo da imagem e o equilíbrio das três lentes), a sala
+descobre que ninguém mentiu, e que cada seleção deixou dois terços de fora. A
+explicação vem em três cards com trava de 8 s; a reflexão, na voz da escola; e
+as duas enquetes da Amara, na DM, fecham a missão (\adrr{ADR-115}).
+
+\begin{tabularx}{\linewidth}{@{}L{34mm}X@{}}
+\toprule
+\headrow \thd{Decisão} & \thd{Como está implementada}\\
+\midrule
+Atividade e rodada & A ATIVIDADE é a \textbf{cobertura}: o tema homologado pela
+  professora (o banco curado da Praça Central ou um lote gerado por IA). Zerar a
+  turma abre a rodada seguinte e guarda a anterior; tema novo é atividade nova,
+  na rodada 1. É o que a evidência pedagógica exige (\adrr{ADR-112}).\\
+\zebra Um botão só & A professora avança \cd{exploracao} \seta{} \cd{mural}
+  \seta{} \cd{fichas} \seta{} \cd{explicacao}, uma etapa por vez e com o
+  destino explícito --- clique duplo não pula etapa. O estudante lê
+  \rota{GET /a-selecao/gate} por \emph{polling} de 5 s (\adrr{ADR-93}).\\
+O par do Mural & É do COMPUTADOR (\adrr{ADR-111}): \cd{colapsarEmUnidades} sobre
+  as equipes, distância máxima entre as matrizes, nunca dentro da mesma
+  unidade. O par é carimbado por sessão, com o rótulo congelado (o primeiro nome
+  ou o nome da equipe) --- nunca pelo id da equipe, que o \cd{PUT} recria. Sobra
+  de sala ímpar, quem publica depois e a aula de um computador só recebem um
+  colega virtual (Tomás ou Malu).\\
+\zebra O que o bundle não sabe & A lente de cada post, as tags e a matriz vêm da
+  api, e as fichas só depois da etapa \cd{fichas}. A cópia que nomeia as lentes
+  carrega sob demanda, na explicação. Um \emph{grep} no \cd{dist/} prova que não
+  há gabarito, tag nem trecho de prompt no \emph{bundle}.\\
+Legenda e reflexão & Contam \emph{code points} dos dois lados (o Zod e o
+  \emph{CHECK} do banco). A legenda passa por um sanitizador (link, telefone,
+  e-mail, menção, palavrão) porque outro estudante a lê no Mural; a reflexão é
+  só do professor da turma (\adrr{ADR-108}).\\
+\zebra Evidência & A ficha \arq{evidencias/fichas/exp07ef1b.ts}: EF07CO11 com a
+  leitura da legenda por IA (o Canal A) e a enquete \cd{p1}; EF07CO08 com a
+  enquete \cd{p2}. As alternativas são embaralhadas a cada exibição. Sem IA, o
+  Canal A não marca nada, e fica \enquote{Não avaliado}.\\
+Mídia & A professora gera as imagens no preparo (2 por chamada, porque o BFF
+  corta em 30 s), com cache no \emph{bucket} por contrato em
+  \cd{experiencias/exp07ef1b/selecao/}. Post sem foto vira um card de texto com
+  a MESMA forma para os três perfis, e o bloco de números vira gráfico desenhado
+  a partir dos dados.\\
+\zebra O que o DS cobre & Desde a 1.0.1 (DS 0.2.7), \textbf{nenhuma compensação
+  local}: a faixa de dica e o aviso da poda são o \cd{InlineHint}, o gesto de
+  rolar é o \cd{GestureHint}, a tarja de conexão é o \cd{Snackbar} do clone, a
+  etiqueta longa da ficha é o \cd{Badge} com \cd{wrap}, e o contador da
+  legenda do \cd{StoryComposer} conta \emph{code points}, como a api.\\
+\bottomrule
+\end{tabularx}
+
+\subsection{O podcast de recapitulação é do professor}
+
+O documento de requisitos pede um episódio de cerca de 3m45s em que Lucas e
+Clara recapitulam a missão. O texto fala com o estudante, mas o podcast é do
+\textbf{professor}, que o toca à turma depois da aula se quiser
+(\adrr{ADR-119}): ele mora em \enquote{A aula e os resultados}, com o
+\cd{AudioPlayer} do DS e a transcrição sempre na tela, e nenhuma rota de
+estudante o serve.
+
+\begin{tabularx}{\linewidth}{@{}L{34mm}X@{}}
+\toprule
+\headrow \thd{Decisão} & \thd{Como está implementada}\\
+\midrule
+O roteiro & O do sheet aprovado, cinco blocos, em \arq{a-selecao/podcast.ts}.
+  Só \textbf{três falas} mudam com o tema --- as do Bloco 2 que dizem o que a
+  Folha Oficial, a Voz Coletiva e a Métrica Urbana mostraram.\\
+\zebra O tema da IA & As três falas saem do MESMO lote do preparo, sob a régua da
+  aprovação (12 a 60 palavras, até 400 bytes, sem link, e-mail nem \enquote{@}),
+  e a professora as revisa junto com os posts. Ficam em
+  \cd{exp07ef1b\_coberturas.podcast}; nulo lê as do sheet.\\
+A voz & O TTS do Gemini pelo \emph{provider} da api (\cd{generateSpeech}):
+  Lucas e Clara numa chamada de diálogo por bloco, com a direção de atuação do
+  \emph{brief}. Um trecho por chamada, porque o episódio não cabe nos 30\,s do
+  BFF.\\
+\zebra O episódio & Com os cinco trechos, a mesma chamada os emenda num MP3
+  (\arq{regras/mp3.ts}), tirando de cada um as etiquetas e o quadro de duração.
+  Cada trecho é o \emph{hash} do texto e do pedido de voz: os blocos fixos saem
+  uma vez por contrato, e um tema novo paga só o Bloco 2.\\
+\bottomrule
+\end{tabularx}
+
+A suíte \arq{scripts/e2e/estudante/11-a-selecao.mjs} percorre a missão com a
+professora e dois estudantes de escolhas divergentes, e termina no podcast: as
+três falas no preparo, a transcrição e o ramo do áudio que o ambiente permitir
+(pronto com a IA de verdade; a transcrição sozinha com o \emph{mock}).
+
+% ---------------------------------------------------------------------------
+\section{exp06ef2b --- O Rastro do Boato}
+\label{sec:exp06ef2b}
 
 \textbf{6º ano · Unidade 2 · clone de mensageiro móvel · \cd{whatsappmobile}}
 
@@ -947,26 +1341,6 @@ de cada mensagem (quantos saltos anônimos, quem assinou, quando ela apareceu
 pela primeira vez), descobre que o alerta veio de seis encaminhamentos sem autor
 --- e decide o que fazer quando chega um áudio convocando um protesto. Depois vê
 a própria decisão desenhada como topologia de rede.
-
-\subsection{Como ela se separa da exp-07}
-
-As duas são clone de mensageiro sobre boato, com duas aulas e breakpoint. O que
-as separa é o \textbf{objeto de análise}, e a distinção é deliberada:
-
-\begin{tabularx}{\linewidth}{@{}L{26mm}X X@{}}
-\toprule
-\headrow \thd{} & \thd{exp-06 (6º ano)} & \thd{exp-07 (7º ano)}\\
-\midrule
-O que se audita & dados de ENVIO: saltos, autoria, carimbo &
-  o RECORTE: o parágrafo que o print cortou\\
-\zebra A intervenção & denunciar e fixar o laudo oficial &
-  responder citando a matéria completa\\
-A revelação & a TOPOLOGIA: 1.200 conexões, ou a corrente cortada no nó 3 &
-  a reportagem íntegra, com o trecho suprimido em destaque\\
-\zebra Habilidade & \cd{EF06CO01}, \cd{EF06CO07}, \cd{EF06CO08} &
-  \cd{EF07CO01}\\
-\bottomrule
-\end{tabularx}
 
 \subsection{O portão que a missão existe para instalar}
 
@@ -985,9 +1359,9 @@ numa rolagem, e a Etapa~2 perderia a navegação que ela mede.
 
 \subsection{As duas aulas, e quem separa uma da outra}
 
-\cd{exp\_06\_gates\_turma} guarda uma etapa por turma
+\cd{exp06ef2b\_gates\_turma} guarda uma etapa por turma
 (\cd{aula1 | aula2}), e a professora a move por \textbf{um} botão no painel de
-resultados --- e o inverso dele. São duas etapas, não as quatro da exp-07: o
+resultados --- e o inverso dele. São só duas etapas: o
 debate desta missão acontece \emph{depois} do mapa, com a turma toda já na Aula
 2, e não há o que congelar no meio. Gate que ninguém aperta enche o painel de
 controle morto.
@@ -1056,7 +1430,7 @@ Os wireframes põem a Etapa~4 dentro do clone, como \enquote{painel de métricas
 do grupo}. O aplicativo real \textbf{não tem} visualizador de topologia de rede
 --- inventar essa tela dentro do disfarce quebraria o teste de fidelidade que o
 próprio QA de design aplicou, e é o oposto da verossimilhança seletiva, que
-admite ausências e não invenções. É a mesma decisão que o ranking da exp-02 já
+admite ausências e não invenções. É a mesma decisão que o ranking da exp04ef1b já
 tinha tomado: \emph{a linha é a revelação, não o arquivo} (\adrr{ADR-72}).
 
 \subsection{O clone é escuro, e o tema claro do PRD cedeu}
@@ -1083,10 +1457,10 @@ codificação; as duas impedem o status \enquote{aprovado} do PRD.
 \end{limitacao}
 
 
-\section{exp-70 --- Vila do Lume}
+\section{app-70 --- Vila do Lume}
 
 Jogo 3D em primeira pessoa, \textbf{transversal} (\cd{series: []}): não pertence a
-ano nenhum. É o \enquote{Ato 1} que alimenta a largada da exp-01.
+ano nenhum. É o \enquote{Ato 1} que alimenta a largada da exp08ef1b.
 
 \subsection{Duas leituras de uma partida, e elas não se tocam}
 
@@ -1166,7 +1540,7 @@ comparáveis).
   \draw[actnoteline] (no) -- (n2);
 
 \end{tikzpicture}}
-\caption[Os quatro graus de medida]{Os quatro graus de medida da exp-70. A API
+\caption[Os quatro graus de medida]{Os quatro graus de medida da app-70. A API
   devolve uma união discriminada em que \textbf{só} a variante \cd{scored} tem
   \cd{numero: number}; as outras têm \cd{null} \emph{por tipo}. O hub fica
   estruturalmente incapaz de imprimir número onde não há medida.}
@@ -1177,7 +1551,7 @@ comparáveis).
 
 \begin{regra}
 \rota{POST /vila/sessoes} atribui a bolha A/B/C \textbf{balanceada dentro da
-turma}, persiste em \cd{exp\_70\_bolhas} (estável entre partidas) e devolve os
+turma}, persiste em \cd{app\_70\_bolhas} (estável entre partidas) e devolve os
 cartões --- \textbf{só os desta criança e sem gabarito}.
 
 Antes era \cd{estudanteSlot \% 3} no navegador, o que punha no \emph{bundle} a
@@ -1237,15 +1611,15 @@ entregou; o segundo, quantos chegaram a aparecer na partida. Zero aparecidos
   \item \textbf{Zerar a turma apaga as BOLHAS junto.} Rodar de novo com a mesma
     bolha serviria à criança o mesmo golpe: ela reconhece, e a segunda rodada não
     mede nada. O que \textbf{não} é tocado é
-    \cd{exp\_01\_exp\_70\_perfis\_importados} --- aquilo pertence à atividade da
-    exp-01, e apagar de lá trocaria os lados de uma aula em andamento.
+    \cd{exp08ef1b\_app\_70\_perfis\_importados} --- aquilo pertence à atividade da
+    exp08ef1b, e apagar de lá trocaria os lados de uma aula em andamento.
 \end{enumerate}
 \end{regra}
 
 \subsection{A exceção de ADR: o jogo em JavaScript clássico}
 
 \begin{decisao}
-\arq{apps/experiencias/exp-70-vila-do-lume/public/jogo/} --- cerca de dez mil
+\arq{apps/experiencias/app-70-vila-do-lume/public/jogo/} --- cerca de dez mil
 linhas de JavaScript clássico com variáveis globais compartilhadas e
 \arq{three.min.js} vendorizado --- \textbf{fica como está}, e está nos
 \cd{ignores} do ESLint (\adrr{ADR-18}).
@@ -1256,7 +1630,7 @@ saber que uma refatoração mudou a \emph{medida}. O \emph{shim} (\arq{src/}, TS
 \cd{tsc} ali é o \emph{smoke} visual.
 \end{decisao}
 
-\section{exp-90 --- Gerador de plano de aula}
+\section{app-90 --- Gerador de plano de aula}
 
 Ferramenta do professor. Detalhada nas Seções~\ref{cap:ia} e~\ref{cap:casosdeuso};
 o que resta registrar é a divisão de responsabilidade de armazenamento.
@@ -1270,11 +1644,11 @@ o que resta registrar é a divisão de responsabilidade de armazenamento.
 \zebra \arq{atual.html} & \emph{Bucket} privado. O que o editor salvou,
   \textbf{sanitizado por \emph{allowlist}}. Versionamento de objetos dá histórico
   de cada \enquote{Salvar}.\\
-Referências curriculares & PostgreSQL (\cd{exp\_90\_referencias}), como
+Referências curriculares & PostgreSQL (\cd{app\_90\_referencias}), como
   \textbf{texto}. Catálogo do contrato, sem \cd{escola\_id}, fora da RLS.
   Importadas por \arq{scripts/importar-referencias-plano.mjs} com
   \env{PLANOS\_IMPORT\_TOKEN}.\\
-\zebra Metadados e estado & PostgreSQL (\cd{exp\_90\_planos}).\\
+\zebra Metadados e estado & PostgreSQL (\cd{app\_90\_planos}).\\
 \bottomrule
 \end{tabularx}
 
@@ -1283,13 +1657,13 @@ Referências curriculares & PostgreSQL (\cd{exp\_90\_referencias}), como
 \textbf{503}, não fica aberta. O mesmo vale para \env{PERFIL\_IMPORT\_TOKEN}.
 \end{atencao}
 
-\section{exp-92 --- Planejamento de ensino}
+\section{app-92 --- Planejamento de ensino}
 \label{exp:plano-de-ensino}
 
 Ferramenta do professor, e o primeiro produto da plataforma cujo insumo é o
 \textbf{currículo estruturado} em vez de texto livre. A decisão está na
 \adrr{ADR-73}; o que resta registrar é a arquitetura do dado e a fronteira com a
-exp-90.
+app-90.
 
 \subsection{O caminho completo}
 
@@ -1300,7 +1674,7 @@ volta à distribuição, remaneja o que não coube e regera o plano do 3º bimes
 aula real.
 
 A \textbf{IA entra em exatamente dois pontos}, os dois marcados na
-Figura~\ref{fig:exp92-caminho}. Todo
+Figura~\ref{fig:app92-caminho}. Todo
 o resto --- a Base como dado, a distribuição, o calendário, a costura e a
 exportação --- é decisão humana ou conta determinística, e é o que faz o
 documento ser auditável.
@@ -1319,7 +1693,7 @@ documento ser auditável.
      PDFs homologados do MEC \seta{} \texttt{scripts/extrair-bncc.mjs}};
   \node[objflow, text width=40mm, anchor=north] (dados) at (-5.9,-1.8)
     {\texttt{api/src/curriculo/dados/*.ts}\\[2pt]
-     1.304 EF · 183 EM · 129 Computação};
+     1.304 EF · 183 EM · 130 Computação};
   \draw[flow] (pdfs.south) -- (dados.north);
 
   % ---- a coluna do professor --------------------------------------------
@@ -1361,18 +1735,18 @@ documento ser auditável.
 
   % ---- o que cada passo deixa gravado ------------------------------------
   \node[objflow, text width=42mm] (cfg) at (6.6,-1.9)
-    {\texttt{exp\_92\_configuracoes}\\[2pt]
+    {\texttt{app\_92\_configuracoes}\\[2pt]
      e, se a rede ainda não tinha, \texttt{periodos\_letivos} --- catálogo do
      CONTRATO};
   \node[objflow, text width=42mm] (jdist) at (6.6,-4.9)
-    {\texttt{exp\_92\_planos\_anuais.}\\\texttt{distribuicao} (JSONB)\\[2pt]
+    {\texttt{app\_92\_planos\_anuais.}\\\texttt{distribuicao} (JSONB)\\[2pt]
      o insumo do gerador, e o que sobrevive a reescrever o documento inteiro};
   \node[objflow, text width=42mm] (docs) at (6.6,-8.0)
     {\emph{bucket} privado:\\
      \texttt{gerado.md} (imutável, o original da IA)\\
      \texttt{atual.html} (sanitizado por \emph{allowlist})};
   \node[objflow, text width=42mm] (jaulas) at (6.6,-11.3)
-    {\texttt{exp\_92\_planos\_de\_}\\\texttt{periodo.aulas} (JSONB)\\[2pt]
+    {\texttt{app\_92\_planos\_de\_}\\\texttt{periodo.aulas} (JSONB)\\[2pt]
      dado estruturado, não prosa: dá para editar quinta sem tocar em terça};
   \node[objflow, text width=42mm] (recortes) at (6.6,-14.3)
     {três recortes, só das semanas \texttt{pronto}: esta semana · esta e a
@@ -1397,21 +1771,21 @@ documento ser auditável.
      rejeitada: o \emph{token} foi gasto.};
 
 \end{tikzpicture}}
-\caption[exp-92: o caminho do planejamento de ensino]{O planejamento de ensino
+\caption[app-92: o caminho do planejamento de ensino]{O planejamento de ensino
   de ponta a ponta, e os dois únicos pontos em que um modelo é chamado. A Base
   chega como dado extraído fora do produto; a distribuição das habilidades pelos
   períodos é decisão do professor e é o insumo das duas gerações; a exportação
   não passa pelo servidor.}
-\label{fig:exp92-caminho}
+\label{fig:app92-caminho}
 \end{figure}
 
-\subsection{Ela coexiste com a exp-90}
+\subsection{Ela coexiste com a app-90}
 
 Não são versões da mesma coisa: são ferramentas para redes diferentes.
 
 \begin{tabularx}{\linewidth}{@{}L{26mm}X X@{}}
 \toprule
-\headrow \thd{} & \thd{exp-90 --- Plano de aula} & \thd{exp-92 --- Plano de ensino}\\
+\headrow \thd{} & \thd{app-90 --- Plano de aula} & \thd{app-92 --- Plano de ensino}\\
 \midrule
 Insumo & Currículo da rede e material didático, importados como \textbf{texto} &
   \textbf{BNCC estruturada}, extraída do PDF homologado\\
@@ -1444,8 +1818,9 @@ BNCC Ensino Fundamental & \textbf{1.304} & 99,8\,\% com unidade temática;
   98\,\% com objeto de conhecimento\\
 \zebra BNCC Ensino Médio & \textbf{183} & agrupadas por competência específica
   de área (a Base do Médio não tem objeto de conhecimento)\\
-BNCC Computação & \textbf{129} & 80\,\% com objeto; \textbf{78\,\% com a
-  explicação e os exemplos} do anexo oficial\\
+BNCC Computação & \textbf{130} & objeto de conhecimento em TODAS as 104 que o
+  têm (as 26 do Médio usam competência específica); \textbf{81\,\% com a
+  explicação} e 45\,\% com os exemplos do anexo oficial\\
 \bottomrule
 \end{tabularx}
 
@@ -1486,17 +1861,17 @@ quem leciona Biologia no 2º ano recebe \enquote{nenhuma habilidade encontrada}.
 \headrow \thd{Artefato} & \thd{Onde vive, e por quê}\\
 \midrule
 A \textbf{distribuição} de habilidades por período & PostgreSQL
-  (\cd{exp\_92\_planos\_anuais.distribuicao}, JSONB). É a decisão HUMANA do
+  (\cd{app\_92\_planos\_anuais.distribuicao}, JSONB). É a decisão HUMANA do
   professor e o insumo do gerador: ele pode reescrever o documento inteiro sem
   que o sistema perca qual habilidade cai em que bimestre.\\
 \zebra \arq{gerado.md} & \emph{Bucket} privado, \textbf{imutável} --- o original
   da IA.\\
 \arq{atual.html} & \emph{Bucket} privado, sanitizado por \emph{allowlist}.\\
 \zebra As \textbf{aulas} do plano de período & PostgreSQL
-  (\cd{exp\_92\_planos\_de\_periodo.aulas}, JSONB) como \textbf{dado
+  (\cd{app\_92\_planos\_de\_periodo.aulas}, JSONB) como \textbf{dado
   estruturado}, não prosa. É o que permite editar a aula de quinta sem tocar na
   de terça, e o que faz o documento impresso nascer do dado.\\
-Metadados e estado & PostgreSQL (\cd{exp\_92\_configuracoes} e as duas acima).\\
+Metadados e estado & PostgreSQL (\cd{app\_92\_configuracoes} e as duas acima).\\
 \bottomrule
 \end{tabularx}
 
@@ -1505,7 +1880,7 @@ Metadados e estado & PostgreSQL (\cd{exp\_92\_configuracoes} e as duas acima).\\
 Número, data, dia da semana e horário saem de \arq{planejamento/calendario.ts},
 calculados da grade real do professor; o modelo preenche apenas o conteúdo
 pedagógico das aulas que já existem, e \arq{planejamento/costura.ts} descarta
-sobra e completa falta. A Figura~\ref{fig:exp92-semana} mostra a conciliação
+sobra e completa falta. A Figura~\ref{fig:app92-semana} mostra a conciliação
 inteira, com as três regras da costura e as três barreiras contra um código de
 habilidade inventado.
 
@@ -1543,7 +1918,7 @@ habilidade inventado.
     {\texttt{costurarAulas} --- a conciliação entre o que o modelo devolveu e
      as aulas que existem de verdade};
   \node[objflow, text width=52mm] (out) at (0,-11.4)
-    {\texttt{exp\_92\_planos\_de\_periodo.aulas}\\[2pt]
+    {\texttt{app\_92\_planos\_de\_periodo.aulas}\\[2pt]
      JSONB estruturado, \texttt{status = pronto}};
   \node[action, text width=52mm] (edita) at (0,-13.8)
     {O professor edita\\[2pt]
@@ -1580,12 +1955,12 @@ habilidade inventado.
   \draw[actnoteline] (barreiras.east) -- (cost.west);
 
 \end{tikzpicture}}
-\caption[exp-92: como uma semana nasce]{Como uma semana de aulas nasce. O modelo
+\caption[app-92: como uma semana nasce]{Como uma semana de aulas nasce. O modelo
   recebe as aulas que existem e as habilidades que podem entrar, e devolve
   apenas conteúdo pedagógico; a costura concilia. Uma resposta malformada
   degrada para \enquote{planejar à mão}, nunca para aulas em dias que não
   existem.}
-\label{fig:exp92-semana}
+\label{fig:app92-semana}
 \end{figure}
 
 \begin{atencao}
@@ -1669,7 +2044,7 @@ produto dirigido pela Base.
 ano \textbf{civil} (01/01--31/12). Como o calendário alinha cada período na
 segunda-feira, o professor que declarava 02/02/2026 recebia um 1º bimestre
 começando em \textbf{29/12/2025}. A coluna
-\cd{exp\_92\_configuracoes.inicio\_do\_ano\_letivo} é o que vale; o catálogo é
+\cd{app\_92\_configuracoes.inicio\_do\_ano\_letivo} é o que vale; o catálogo é
 apenas sugestão do primeiro preenchimento, e um \enquote{ano letivo} que abre em
 1º de janeiro é descartado como ano civil.
 \end{atencao}
@@ -1685,7 +2060,7 @@ inteiro e desalinharia as 40 semanas seguintes. Repor é decisão pedagógica do
 professor, não conta do sistema.
 
 \subsection{O passo é semanal; o recorte é da entrega}
-\label{sec:exp92-semanal}
+\label{sec:app92-semanal}
 
 O planejamento granular tem \textbf{uma} unidade: a \textbf{semana} letiva.
 São 40 no ano, e o professor detalha uma por vez --- planeja a 1ª, depois a 2ª,
@@ -1724,14 +2099,14 @@ leva semana que falhou na geração nem semana que ninguém planejou.
 
 \begin{atencao}
 Como passo de planejamento, a quinzena custava caro:
-\cd{exp\_92\_planos\_de\_periodo} é endereçada por
+\cd{app\_92\_planos\_de\_periodo} é endereçada por
 \cd{(escola, plano anual, ordem)}, e a \textbf{ordem muda de significado} com
 a periodicidade --- a 3ª quinzena não é a 3ª semana. Um plano gravado em modo
 quinzenal e lido em modo semanal casa pela ordem e devolve as datas de um
 recorte com as aulas de outro.
 \end{atencao}
 
-\section{exp-91 --- Acompanhamento de bem-estar}
+\section{app-91 --- Acompanhamento de bem-estar}
 
 Ferramenta do professor, detalhada na Seção~\ref{cap:ia}. O que resta registrar é
 a mecânica de microdoses e a decisão de escopo de leitura.
@@ -1765,11 +2140,13 @@ decisão \emph{futura}, com DPA e \emph{k}-anonimato --- e não sai de um
 \section{Como criar uma experiência nova}
 
 \begin{lstlisting}[language=bashunoo, caption={O caminho completo}, label={lst:novaexp}]
-# 0. Uma branch por experiencia, com o nome do slug
-git switch -c exp-12-fracoes
+# 0. Uma frente por experiencia, com o CODIGO dela (ADR-110):
+#    exp + ano + etapa + unidade + b -- exp06ef3b = 6o ano, unidade 3.
+#    O de missao sai da serie e da unidade; o que nao e missao e app-NN-nome.
+pnpm worktree criar exp06ef3b --fatia exp/exp06ef3b
 
-# 1. Scaffolding do _template (copia e ajusta nomes)
-pnpm new:exp exp-12-fracoes
+# 1. Scaffolding do _template (copia, ajusta nomes, preenche series/unidade)
+pnpm new:exp exp06ef3b
 
 # 2. Implementar em src/App.tsx+
 #    - auth, api e telemetria: SOMENTE pela SDK
@@ -1783,7 +2160,7 @@ pnpm new:exp exp-12-fracoes
 # 4. Documentar verbo/objeto de telemetria no README da experiencia
 
 # 5. Build gera dist/ 100% estatico. Testar embedado:
-pnpm --filter @edu/exp-12-fracoes dev     # porta nova em lib/experiencias-dev.ts
+pnpm --filter @edu/exp06ef3b dev          # porta nova em lib/experiencias-dev.ts
 # e abrir a bancada do hub:
 #   http://localhost:3000/dev-embed?src=http://localhost:5180
 \end{lstlisting}
@@ -1796,7 +2173,7 @@ Módulo de domínio na API & Necessário sempre que houver gabarito, estado de
   missão ou visão de professor. Prefixo minúsculo igual ao slug
   (\arq{src/<slug>/}), com \arq{catalogo.ts} + \arq{regras.ts} + \emph{service}
   com \cd{comTenancy} + \emph{controllers} por papel.\\
-\zebra Tabelas & Prefixo \cd{exp\_NN\_}, \cd{escola\_id NOT NULL} + RLS.\\
+\zebra Tabelas & Prefixo = o código (\cd{exp08ef1b\_}, \cd{app\_70\_}), \cd{escola\_id NOT NULL} + RLS.\\
 Porta de \emph{dev} & Registrada em \arq{apps/hub/lib/experiencias-dev.ts}.\\
 \zebra \cd{allowedHosts} do Vite & Deve incluir \cd{host.docker.internal},
   senão o hub em contêiner não lê o manifesto.\\
@@ -1805,7 +2182,7 @@ Porta de \emph{dev} & Registrada em \arq{apps/hub/lib/experiencias-dev.ts}.\\
   o exclui do \emph{bucket} público e o sobe num \emph{bucket} PRIVADO
   (\cd{\{project\}-exp-mapas}). O \emph{bucket} dos \emph{bundles} tem acesso
   uniforme, então qualquer objeto lá é público, e o mapa é o fonte --- na
-  exp-01, a revelação legível antes da hora. Nunca \cd{true}, nunca
+  exp08ef1b, a revelação legível antes da hora. Nunca \cd{true}, nunca
   \cd{inline}.\\
 \cd{viewport} & Só se a experiência exigir casca de aparelho.\\
 \zebra \cd{permissoes} & Só o que o \cd{iframe} realmente precisa.\\

@@ -26,7 +26,7 @@ export const ESTADOS_GRAVADOS = ["liberada", "encerrada"] as const;
 export interface ExperienciaDoCatalogo {
   expId: string;
   nome: string;
-  /** Vazio = TODAS as séries — é como uma transversal se declara (exp-70). */
+  /** Vazio = TODAS as séries — é como uma transversal se declara (app-70). */
   series: string[];
   /** A unidade do ano (1 a 4). `null` na transversal: ela não mora em unidade. */
   unidade?: number | null;
@@ -63,7 +63,7 @@ export function ehTransversal(experiencia: ExperienciaDoCatalogo): boolean {
  * A GRADE de uma turma: o que pode ser liberado ali, e em que estado está.
  *
  * Só experiência de `publico: "estudante"` entra. As ferramentas do professor
- * (exp-90, exp-91) não são missões de turma — elas nem passam por `/exp/*` — e
+ * (app-90, app-91) não são missões de turma — elas nem passam por `/exp/*` — e
  * uma delas na grade seria um botão de liberar que não liberaria nada.
  *
  * `incluirOutrasSeries` é o "ver outras séries" da tela. Existe porque turma
@@ -96,8 +96,8 @@ export function gradeDaTurma(
       // As de outra série vão para o fim: são o extra, não a grade da turma.
       if (a.deOutraSerie !== b.deOutraSerie) return a.deOutraSerie ? 1 : -1;
       /* Pela UNIDADE, que é a ordem do ano letivo. Sem ela a ordem caía no
-         `exp_id` — numeração da experiência, não do ano: a exp-07 é do 7º ano e
-         a exp-01 do 8º, e por `exp_id` a segunda vinha antes. Quem não declara
+         `exp_id` — numeração da experiência, não do ano: a exp07ef1b é do 7º ano e
+         a exp08ef1b do 8º, e por `exp_id` a segunda vinha antes. Quem não declara
          unidade (transversal, ou missão publicada antes do campo) vai por
          último dentro do próprio grupo, nunca no lugar da unidade 1. */
       const ua = a.unidade ?? Number.POSITIVE_INFINITY;

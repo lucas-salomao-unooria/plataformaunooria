@@ -3,7 +3,7 @@ import { exigirProdutoLigado } from "@/lib/recursos";
 /**
  * O INTERRUPTOR DA REDE na porta do Como você está? (ADR-87).
  *
- * Layout e não página: ele cobre a exp-91 embedada — rota nova
+ * Layout e não página: ele cobre a app-91 embedada — rota nova
  * desta área nasce coberta, sem ninguém lembrar dela. É a mesma razão pela qual
  * a trilha é do layout (ADR-77), e o custo de esquecer aqui é pior: a rota fica
  * aberta e nada acusa.

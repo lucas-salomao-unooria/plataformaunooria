@@ -20,7 +20,7 @@ import {
 } from "./prompts";
 
 /**
- * A ÚNICA superfície de IA da exp-08: o rascunho do pacote da turma, antes da
+ * A ÚNICA superfície de IA da exp08ef4b: o rascunho do pacote da turma, antes da
  * aula.
  *
  * Três coisas que este serviço não faz, e cada ausência é uma regra:
@@ -157,7 +157,7 @@ function validarPacote(bruto: unknown): PacoteDeConteudo {
 }
 
 @Injectable()
-export class PreparoDaExp08Service {
+export class PreparoDaExp08ef4bService {
   constructor(
     @Inject(AI_PROVIDER) private readonly ia: AiProvider,
     private readonly quota: QuotaService,
@@ -182,7 +182,7 @@ export class PreparoDaExp08Service {
     parametros: { nomeEscola: string; casoContextual: string; focoPrioritario: string },
   ): Promise<{ pacote: PacoteDeConteudo; usouIa: boolean; tokens: number }> {
     if (!(await this.quota.temSaldo(escolaId, usuarioId, perfil))) {
-      logger.info({ codigo: "exp08-preparo-sem-saldo", escolaId }, "preparo sem saldo de IA");
+      logger.info({ codigo: "exp08ef4b-preparo-sem-saldo", escolaId }, "preparo sem saldo de IA");
       return { pacote: this.comParametros(parametros), usouIa: false, tokens: 0 };
     }
 
@@ -209,7 +209,7 @@ export class PreparoDaExp08Service {
          seria dar tokens de graça a quem estourou o formato três vezes. */
       if (tokens > 0) await this.quota.consumir(escolaId, usuarioId, tokens);
       logger.warn(
-        { codigo: "exp08-preparo-falhou", escolaId, tokens, err: erro },
+        { codigo: "exp08ef4b-preparo-falhou", escolaId, tokens, err: erro },
         "geração do pacote da turma falhou; devolvendo o banco curado",
       );
       return { pacote: this.comParametros(parametros), usouIa: false, tokens };

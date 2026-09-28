@@ -52,12 +52,12 @@ Depois do merge em `dev-local`, você sobe o Docker local (`pnpm docker:dev`) e
 **vê a coisa rodando**. É esse olhar que autoriza o PR seguinte, `dev-local →
 dev` — o primeiro que custa um deploy e o tempo de outra pessoa.
 
-**Nome da branch:** `exp-NN-slug` para experiência nova (o slug dela, e só ela na
-branch); `tipo/slug` para o resto — `feat`, `fix`, `chore`, `docs`, `ci`,
+**Nome da branch:** o código da experiência nova (`exp06ef3b`,
+`app-93-diario-de-bordo` — ADR-110), e só ela na branch; `tipo/slug` para o resto — `feat`, `fix`, `chore`, `docs`, `ci`,
 `refactor`, `test`, `perf`, `build`, `style`, `hotfix`.
 
-**Mensagem de commit:** `tipo(escopo): o que mudou`, o escopo sendo o slug da
-experiência ou o app/pacote (`feat(exp-12):`, `fix(api):`, `chore(sdk):`).
+**Mensagem de commit:** `tipo(escopo): o que mudou`, o escopo sendo o código da
+experiência ou o app/pacote (`feat(exp06ef3b):`, `fix(api):`, `chore(sdk):`).
 Quebra de contrato leva `!` antes dos dois-pontos.
 
 **O PR fecha quando o CI passa** — `typecheck`, `lint`, `test` e `build`, com um
@@ -199,8 +199,8 @@ a rota do hub e a experiência, juntos.
 
 | Frente | Fatia |
 |---|---|
-| A | `apps/api/src/unootube/` + a rota do hub + `apps/experiencias/exp-02-unootube/` |
-| B | `apps/api/src/bemestar/` + `/professor/bem-estar` + `exp-91-bem-estar/` |
+| A | `apps/api/src/unoogpt/` + a rota do hub + `apps/experiencias/exp02em1b/` |
+| B | `apps/api/src/bemestar/` + `/professor/bem-estar` + `app-91-bem-estar/` |
 | C | `apps/api/src/salas/` + `/professor/turmas` |
 
 Assim api e hub deixam de ser recurso disputado: dentro deles, a fatia de cada
@@ -226,7 +226,7 @@ dentro da frente é o jeito de se atualizar. Faça cedo e várias vezes: deixar 
 véspera do PR é o que transforma quatro conflitos triviais em um difícil.
 
 **A fatia é barreira, não conselho.** `pnpm worktree criar --fatia …` resolve os
-caminhos contra a árvore (`api/unootube` → `apps/api/src/unootube`,
+caminhos contra a árvore (`api/unoogpt` → `apps/api/src/unoogpt`,
 `hub/professor` → `apps/hub/app/(plataforma)/professor`) e grava a lista em
 `<git-dir>/fatia` — que num worktree é `.git/worktrees/<slug>/`, privado daquela
 frente e fora do versionamento. O `.githooks/pre-commit` confere o index contra
@@ -258,14 +258,14 @@ Para ver uma experiência do worktree sem derrubar nada: suba só o Vite dela
 numa porta livre e embede pelo hub que já está no ar.
 
 ```bash
-pnpm --filter @edu/exp-02-unootube dev -- --port 5274     # strictPort continua valendo
+pnpm --filter @edu/exp02em1b dev -- --port 5274     # strictPort continua valendo
 # no navegador, com sessão de estudante:
 #   http://localhost:3000/dev-embed?src=http://localhost:5274
 ```
 
 Funciona porque o `/dev-embed` aceita `?src=` e o hub em container troca só o
 host (`host.docker.internal`), preservando a porta. O que **não** viaja com o
-worktree: `apps/api/.env`, `public/videos/` da exp-02 (52 MB, gitignorado) e
+worktree: `apps/api/.env` e
 qualquer credencial — copie o que precisar, sem commitar.
 
 A DoD exige a suíte e2e do papel afetado para toda tela. Numa frente em

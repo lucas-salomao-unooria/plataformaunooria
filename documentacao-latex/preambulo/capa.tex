@@ -71,7 +71,7 @@
 
 \begin{tabularx}{\linewidth}{@{}L{30mm}@{\hspace{4mm}}X@{}}
   {\footnotesize\color{unooMuted}DOCUMENTO}      & {\footnotesize\bfseries\color{unooInk}\docid{} --- Documentação Técnica Consolidada}\\[3pt]
-  {\footnotesize\color{unooMuted}VERSÃO}         & {\footnotesize\bfseries\color{unooInk}\docversao{} (Revisão Técnica Integral e Alinhamento de Marca)}\\[3pt]
+  {\footnotesize\color{unooMuted}VERSÃO}         & {\footnotesize\bfseries\color{unooInk}\docversao{} (Modelagem UML 2.5.1)}\\[3pt]
   {\footnotesize\color{unooMuted}DATA}           & {\footnotesize\bfseries\color{unooInk}09 de setembro de 2026}\\[3pt]
   {\footnotesize\color{unooMuted}AUTOR}          & {\footnotesize\bfseries\color{unooInk}Lucas Salomão}\\[3pt]
   {\footnotesize\color{unooMuted}REPOSITÓRIO}    & {\footnotesize\bfseries\color{unooInk}\texttt{plataforma-unooria} (\textit{monorepo}, tronco \texttt{main})}\\[3pt]
@@ -157,8 +157,8 @@ qualquer tarefa (Capítulo~\ref{cap:qualidade}).
        ADRs iniciais em \arq{docs/}.\\
   \zebra 0.2 & 25/08/2026 & L. Salomão & Migração para o \textit{monorepo}
        mergeada na \arq{main} (26 \textit{commits}, \textit{fast-forward});
-       \textit{tenancy} com RLS, exp-01 e exp-02.\\
-  0.3 & 26/08/2026 & L. Salomão & exp-70 (Vila do Lume) e exp-91 (bem-estar);
+       \textit{tenancy} com RLS, exp08ef1b e exp04ef1b.\\
+  0.3 & 26/08/2026 & L. Salomão & app-70 (Vila do Lume) e app-91 (bem-estar);
        decisão de retenção sem prazo declarado.\\
   \zebra \textbf{1.0} & \textbf{27/08/2026} & \textbf{L. Salomão} &
        \textbf{Documentação técnica consolidada: requisitos, casos de uso,
@@ -180,6 +180,13 @@ qualquer tarefa (Capítulo~\ref{cap:qualidade}).
        \adrr{ADR-88}, tabelas \cd{disponibilidades} e
        \cd{experiencias\_versoes}, campo \cd{produto} no manifesto de
        experiência.\\
+  \zebra \textbf{1.4} & 27/09/2026 & L. Salomão & Modelagem UML: os catorze tipos
+       de diagrama da UML 2.5.1 no Capítulo~\ref{cap:arqsw}
+       (Seção~\ref{sec:uml}), com o perfil da plataforma, conferidos contra o
+       código, e o par Mermaid de cada um (\adrr{ADR-122}); casos de uso com os
+       seis papéis; correções que a conferência expôs (grafo do
+       \emph{monorepo}, quota na camada de IA). Acumula as \adrr{ADR-89} a
+       \adrr{ADR-121}, registradas desde a 1.3 sem revisão de versão.\\
   \bottomrule
 \end{tabularx}
 

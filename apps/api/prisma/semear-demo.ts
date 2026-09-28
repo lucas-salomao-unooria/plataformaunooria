@@ -15,8 +15,8 @@ import { clientDoSeed } from "./tenancy-do-seed";
 import { ENGINE_CONFIG_DEFAULT, PERFIS, PROPORCOES_DEFAULT } from "../src/comum/insta/defaults";
 
 /* Cliente com a RLS armada na sessão: este seed é de UMA escola do começo ao
-   fim, e várias das tabelas que ele escreve (`exp_01_activities`, `exp_01_posts`,
-   `exp_01_exp_70_perfis_importados`, ...) têm FORCE ROW LEVEL SECURITY. Ver
+   fim, e várias das tabelas que ele escreve (`exp08ef1b_activities`, `exp08ef1b_posts`,
+   `exp08ef1b_app_70_perfis_importados`, ...) têm FORCE ROW LEVEL SECURITY. Ver
    `tenancy-do-seed.ts` para por que sessão e não transação. */
 let prisma: PrismaClient;
 const TITULO = "DEMO — Descobrimento (sem Gemini)";
@@ -254,7 +254,7 @@ async function semear(qtdEstudantes: number) {
 
   /** Perfis do Ato 1 em rodízio pelos 4, para a turma nascer dividida. */
   const estudantes = await prisma.user.findMany({
-    // Só o 8º ano: a turma 4A do seed pertence à exp-02-unootube, não ao Instanooria.
+    // Só o 8º ano: a turma 4A do seed pertence à exp04ef1b, não ao Instanooria.
     where: { role: "estudante", escolaId: ESCOLA_ID, turma: { serie: "8EF" } },
     orderBy: { username: "asc" },
     take: qtdEstudantes,
@@ -286,7 +286,7 @@ async function semear(qtdEstudantes: number) {
 // Sem top-level await: o ts-node compila este arquivo como CJS.
 /**
  * Referências curriculares de DEMONSTRAÇÃO do gerador de plano de aula
- * (exp-90): um trecho "geral" e um específico de 8EF, curtos, para o
+ * (app-90): um trecho "geral" e um específico de 8EF, curtos, para o
  * `Selection` ter o que oferecer e o smoke visual gerar um plano com o
  * provider mock. Em produção elas vêm do `scripts/importar-referencias-plano.mjs`.
  * Catálogo do contrato (sem escola_id) — por isso fora do `apagar()` da escola.

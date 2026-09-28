@@ -25,11 +25,17 @@ const ESCOLA = "teste-salas";
 const prisma = new PrismaService({ datasources: { db: { url: URL } } }) as PrismaService & PrismaClient;
 const salas = new SalasService(prisma);
 
-const INSTA = "exp-01-instanooria";
-const MANIFESTO = "exp-08-manifesto-ia";
-const VILA = "exp-70-vila-do-lume";
-const TUBE = "exp-02-unootube";
-const PLANO = "exp-90-plano-de-aula";
+const INSTA = "exp08ef1b";
+const MANIFESTO = "exp08ef4b";
+const VILA = "app-70-vila-do-lume";
+/**
+ * A "de outra série" da turma do 8º: o unooGPT, da 2ª série do EM. Uma missão com
+ * MANIFESTO de propósito — era o UnooTube até ele ser ARQUIVADO (ADR-116), e um
+ * código sem manifesto faria o `create` abaixo deixar no catálogo uma linha sem
+ * histórico de versão, que `disponibilidades-postgres` acusa (com razão).
+ */
+const DE_OUTRA_SERIE = "exp02em1b";
+const PLANO = "app-90-plano-de-aula";
 /** A segunda missão do 8º ano (unidade 4). Entrou em 2026-09-10. */
 
 const ids = { turma8A: "", turma8B: "", prof8A: "", prof8B: "", ana: "", bruno: "" };
@@ -98,7 +104,7 @@ beforeAll(async () => {
   for (const [expId, series, publico] of [
     [INSTA, ["8EF"], "estudante"],
     [VILA, [], "estudante"],
-    [TUBE, ["4EF"], "estudante"],
+    [DE_OUTRA_SERIE, ["2EM"], "estudante"],
     [PLANO, [], "professor"],
   ] as const) {
     const oQueASuiteExige = { series: [...series], publico };
@@ -175,11 +181,11 @@ describe("a porta da sala", () => {
 });
 
 /**
- * A exp-01 é a única cujas entradas ficam no CONTROLLER, não no service — e
+ * A exp08ef1b é a única cujas entradas ficam no CONTROLLER, não no service — e
  * nenhuma outra suíte a exercita por ali (as do motor chamam o engine direto).
  * Sem este teste, apagar a guarda de `POST /runs` não quebraria nada.
  */
-describe("a porta da exp-01, pelo controller", () => {
+describe("a porta da exp08ef1b, pelo controller", () => {
   const runs = new RunsController(prisma, new MockProvider());
   const req = (usuarioId: string) =>
     ({ auth: { usuarioId, escolaId: ESCOLA, perfil: "estudante" as const } }) as never;
@@ -229,7 +235,7 @@ describe("liberar e encerrar", () => {
 
   test("experiência fora do catálogo é recusada, com a causa dita", async () => {
     await expect(
-      salas.definirEstado(ESCOLA, ids.turma8A, "exp-99-inexistente", "liberada", ids.prof8A),
+      salas.definirEstado(ESCOLA, ids.turma8A, "exp09ef4b", "liberada", ids.prof8A),
     ).rejects.toMatchObject({ status: 404 });
   });
 });
@@ -244,7 +250,7 @@ describe("a sala do professor", () => {
        depois por `unidade` do manifesto — INSTA é a 1 e MANIFESTO é a 4. Sem
        isso a criança encontraria o Ato 2 antes do Ato 1. */
     expect(ids8A).toEqual([VILA, INSTA, MANIFESTO]);
-    expect(ids8A).not.toContain(TUBE);
+    expect(ids8A).not.toContain(DE_OUTRA_SERIE);
 
     const insta = sala.missoes.find((m) => m.expId === INSTA);
     expect(insta?.estado).toBe("liberada");
@@ -253,8 +259,8 @@ describe("a sala do professor", () => {
 
   test("`todas` acrescenta as de outra série", async () => {
     const sala = await salas.daTurma(ESCOLA, ids.turma8A, ids.prof8A, true);
-    const tube = sala.missoes.find((m) => m.expId === TUBE);
-    expect(tube?.deOutraSerie).toBe(true);
+    const deOutraSerie = sala.missoes.find((m) => m.expId === DE_OUTRA_SERIE);
+    expect(deOutraSerie?.deOutraSerie).toBe(true);
   });
 
   test("turma do colega responde 404, não 403", async () => {

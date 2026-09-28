@@ -24,7 +24,7 @@ import type { LinhaDeLeitura, RelatorioDoEstudante } from "@/lib/unoogpt-tipos";
 /**
  * A linha de UMA criança na Missão Tempestade.
  *
- * DUAS REGRAS QUE ESTA TELA CARREGA, e as duas vêm da exp-70:
+ * DUAS REGRAS QUE ESTA TELA CARREGA, e as duas vêm da app-70:
  *
  * 1. O relatório abre pelo que a missão MEDIU, em GRAUS — e `zero` ("teve a
  *    chance e não foi") nunca se confunde com `none` ("a oportunidade não

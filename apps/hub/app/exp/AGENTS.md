@@ -14,7 +14,7 @@ o manifesto estão em `apps/experiencias/AGENTS.md`.
 declara.** Os dois estavam conflatados em `emDev = !manifesto && !emProducao` —
 "tabela vazia logo é dev" — e isso quebrou quando o seed passou a popular
 `experiencias` (ADR-69): sem `NEXT_PUBLIC_CDN_EXP_URL`, a URL versionada caía no
-default `localhost:5173`, o dev server da exp-01, que responde a qualquer caminho
+default `localhost:5173`, o dev server da exp08ef1b, que responde a qualquer caminho
 com a SPA dele. TODA missão abria o Instanooria, o handshake completava e o boot
 dava 403 — nada dizia "endereço errado".
 
@@ -27,7 +27,7 @@ uma linha `codigo: bff-prefixo-recusado` no log — enquanto método ausente dá
 
 O que faz o 404 enganar é que a mesma rota funciona pelo servidor: a tela de
 resultados é Server Component e usa `apiDoServidor`, que vai direto na api. Ela
-CARREGA, com os dados certos, e só as ações do professor morrem. Na exp-08
+CARREGA, com os dados certos, e só as ações do professor morrem. Na exp08ef4b
 (2026-09-11) isso derrubou o preparo, os dois botões do debate e o "zerar turma"
 de uma vez, sem nenhum erro visível na tela.
 

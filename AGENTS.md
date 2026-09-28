@@ -14,7 +14,7 @@ dois lugares, e nenhum repete o outro.
 | `apps/hub/AGENTS.md` | o que vale para TODO o hub (casca, papéis, middleware) — e um `AGENTS.md` por área em `apps/hub/app/*/` |
 | `apps/experiencias/AGENTS.md` | contrato `postMessage`, manifesto, experiência nova, clones do DS |
 | `apps/experiencias/*/AGENTS.md` | por experiência: porta, rota, seção do DS, módulo da api |
-| `packages/AGENTS.md`, `packages/*/AGENTS.md` | o contrato que o `sdk` promete, as 5 pontes do `ui`, o conteúdo da exp-01 |
+| `packages/AGENTS.md`, `packages/*/AGENTS.md` | o contrato que o `sdk` promete, as 5 pontes do `ui`, o conteúdo da exp08ef1b |
 | `scripts/AGENTS.md`, `scripts/e2e/AGENTS.md` | os utilitários, o que é gerado, e o que uma suíte precisa provar |
 | `docs/AGENTS.md`, `documentacao-latex/AGENTS.md` | o que ali é contrato vivo, e as regras de edição do LaTeX |
 
@@ -200,4 +200,5 @@ O porquê de cada item está em
 - [ ] Tocou contrato (bridge/telemetria/provider)? Docs atualizados
 - [ ] Regra mudou? O `AGENTS.md` ou o `docs/regras/` afetado, no mesmo commit
 - [ ] **`documentacao-latex/` atualizada e `main.pdf` regerado.** Decisão com
-      alternativa descartada = **ADR nova** em `secoes/18-adr.tex`
+      alternativa descartada = **ADR nova** em `secoes/18-adr.tex`. Mudou tela
+      ou regra? O selo no **mapa de produto** (`produto/`) também

@@ -3,9 +3,9 @@ import { ALERTA_DE_ERRO, esperarOuFalharCedo } from "../lib/smoke.mjs";
 import { conta } from "../lib/credenciais.mjs";
 
 /**
- * O planejamento de ensino (exp-92), embedado no hub do professor.
+ * O planejamento de ensino (app-92), embedado no hub do professor.
  *
- * A exp-92 vivia sem suíte, e a ausência custou: o plano de aulas quebrou com
+ * A app-92 vivia sem suíte, e a ausência custou: o plano de aulas quebrou com
  * o pedido de IA montado com os nomes de campo do OUTRO método do provider
  * (`user`/`schema` em vez de `prompt`/`responseSchema`), e um `as never` calou
  * o compilador. Typecheck verde, lint verde, e a tela do professor dizia
@@ -182,13 +182,13 @@ await suite(
     await esperarOuFalharCedo(
       exp.getByText(/Lendo as habilidades|Organizando a progressão|Escrevendo estratégias|Redigindo o atendimento/).first(),
       exp.locator(ALERTA_DE_ERRO),
-      { timeout: 60_000, oQue: "o início da geração do plano anual (exp-92)" },
+      { timeout: 60_000, oQue: "o início da geração do plano anual (app-92)" },
     );
     /* A espera corre contra o alerta: com ADC vencido a api falha em ~300ms, e
        uma espera cega pagaria 5 minutos para reportar o seletor que faltou. */
     await esperarOuFalharCedo(exp.locator('[contenteditable="true"]'), exp.locator(ALERTA_DE_ERRO), {
       timeout: 300_000,
-      oQue: "a geração do plano anual (exp-92)",
+      oQue: "a geração do plano anual (app-92)",
     });
     await p.waitForTimeout(1500);
 
@@ -235,7 +235,7 @@ await suite(
        `visibility: hidden` — e descendente FOCÁVEL dentro de `aria-hidden` é
        foco fantasma: o Tab entra, o leitor de tela não anuncia nada. Aqui são
        as ~30 semanas dos três bimestres fechados. A compensação está em
-       `src/estilos/globals.css` da exp-92, e esta verificação é o que impede
+       `src/estilos/globals.css` da app-92, e esta verificação é o que impede
        que ela seja removida sem ninguém notar. */
     const focaveisEscondidas = await exp
       .locator('[role="region"][aria-hidden="true"] button.semana')
@@ -298,7 +298,7 @@ await suite(
        que a própria conclusão remove. O que fica é o cartão da aula. */
     await esperarOuFalharCedo(exp.getByText(/Tema da aula/).first(), exp.locator(ALERTA_DE_ERRO), {
       timeout: 300_000,
-      oQue: "a geração das aulas da semana (exp-92)",
+      oQue: "a geração das aulas da semana (app-92)",
     });
     await p.waitForTimeout(2000);
 
@@ -438,7 +438,7 @@ async function montarRegencia(r, p, exp) {
      a sugestão: `periodos_letivos` é catálogo do CONTRATO e o seed o preenche
      como ano CIVIL (01/01–31/12). Como o calendário alinha cada período na
      segunda-feira, aceitar a sugestão faria o 1º bimestre começar em dezembro
-     do ano anterior — bug já registrado no AGENTS.md da exp-92. */
+     do ano anterior — bug já registrado no AGENTS.md da app-92. */
   await exp.locator('input[type="date"]').first().fill("2026-02-02");
   await p.waitForTimeout(1000);
 

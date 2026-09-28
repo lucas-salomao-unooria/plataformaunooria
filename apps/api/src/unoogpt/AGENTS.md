@@ -1,8 +1,8 @@
-# apps/api/src/unoogpt — Missão Tempestade (exp-03)
+# apps/api/src/unoogpt — Missão Tempestade (exp02em1b)
 
 Complementa o `AGENTS.md` de `apps/api`, que vence em conflito.
 
-## Missão Tempestade (exp-03, `apps/api/src/unoogpt`)
+## Missão Tempestade (exp02em1b, `apps/api/src/unoogpt`)
 
 - **Marco novo leva o relógio do INSTANTE, nunca `sessoes.minutos_gastos`.**
   `gravarMarco(..., estado)` recebe o `EstadoDoRelogio` de `relogioAgora(tx,
@@ -30,3 +30,11 @@ Complementa o `AGENTS.md` de `apps/api`, que vence em conflito.
 - Número de resgate **só na rota individual** (`doEstudante`); a folha da turma
   fala de conduta, e `tests/unoogpt-postgres.spec.ts` quebra se `salvas`
   entrar nela.
+- **A folha da turma conta por COMPUTADOR quando há equipes** (E13, ADR-111):
+  `turmaDoProfessor` colapsa os membros de cada equipe numa linha só — a de
+  quem entrou; com dois logins, o `atualizado_em` da sessão mais recente
+  desempata — com `equipe` preenchida, e o `retrato` conta essas linhas
+  (`porComputador: true`). "Abrir" continua indo para o representante. O mapa
+  é lido DENTRO do `comTenancy`: fora dele a RLS das equipes devolve vazio e a
+  folha volta a contar por criança, em silêncio. A `equipe` da linha é gente
+  diante da mesma tela — não confundir com as equipes Alfa e Bravo da cidade.

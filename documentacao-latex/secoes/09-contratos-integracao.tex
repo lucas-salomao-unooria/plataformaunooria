@@ -64,7 +64,7 @@ hub \seta{} exp & \cd{hub:pause} / \cd{hub:resume} &
 
 \begin{nota}[title={NOTA --- o que o hub faz com o \cd{exp:estado}}]
 O \cd{ExpHost} guarda o último estado publicado e reconhece dois campos, ambos
-da exp-01: \cd{acao: "sair"} (a sessão é do HUB, em \emph{cookie} \cd{httpOnly}
+da exp08ef1b: \cd{acao: "sair"} (a sessão é do HUB, em \emph{cookie} \cd{httpOnly}
 fora do alcance do \emph{iframe}, então a experiência pede e o hub executa) e
 \cd{fase}, que acende a moldura dos posts perdidos e --- com
 \cd{passo: "relatorio"} --- solta o aparelho para o relatório ocupar a área
@@ -74,7 +74,7 @@ Duas consequências de o hub SUBSTITUIR o estado inteiro a cada mensagem:
 publicar só o \cd{passo} apagaria a \cd{fase}, então quem publica leva as duas;
 e é a própria troca de fase seguinte que desfaz o estado anterior, sem
 mensagem de ``desligar''. As outras experiências publicam estado
-(\cd{\{ tela \}} na exp-02, \cd{\{ passo, tentativa \}} na exp-03) e o hub
+(\cd{\{ tela \}} na exp04ef1b, \cd{\{ passo, tentativa \}} na exp02em1b) e o hub
 ignora --- o canal é genérico de propósito.
 \end{nota}
 
@@ -215,7 +215,7 @@ Campo existente muda de tipo ou semântica & \textbf{v2} &
 \cd{hub:pause} e \cd{hub:resume} existem porque \textbf{esconder um
 \cd{iframe} não dispara \cd{visibilitychange} nele}. Sem essas mensagens, o
 cronômetro de \emph{dwell} da experiência correria com o estudante de costas --- e
-\emph{dwell} é a medida central do motor de \emph{feed} da exp-01. O hub escuta
+\emph{dwell} é a medida central do motor de \emph{feed} da exp08ef1b. O hub escuta
 \cd{visibilitychange} \emph{e} \cd{blur}/\cd{focus} da janela, porque trocar de
 janela ou de aplicativo não muda \cd{visibilityState}.
 
@@ -223,7 +223,7 @@ janela ou de aplicativo não muda \cd{visibilityState}.
 \textbf{dentro} do \cd{iframe} move o foco para a experiência, e o navegador
 dispara \cd{blur} no documento de cima. Isso \emph{não} é o estudante saindo --- e
 como o \cd{focus} correspondente não volta enquanto ele continua ali, um
-\cd{hub:pause} nesse caso é definitivo. Na exp-02 o vídeo parava no primeiro
+\cd{hub:pause} nesse caso é definitivo. Na exp04ef1b o vídeo parava no primeiro
 toque em \enquote{Salvar} e não voltava mais. Quando o foco foi para a nossa
 experiência, \cd{document.activeElement} é o próprio \cd{iframe}, e
 \arq{ExpFrame.tsx} não emite nada.
@@ -237,9 +237,9 @@ que devem concordar: o arquivo \arq{public/experiencia.json} dentro do
 \emph{bundle}, e a linha da tabela \cd{experiencias} na API --- que o CI escreve
 lendo o arquivo.
 
-\begin{lstlisting}[language=jsonunoo, caption={\arq{apps/experiencias/exp-70-vila-do-lume/public/experiencia.json}}, label={lst:manifesto}]
+\begin{lstlisting}[language=jsonunoo, caption={\arq{apps/experiencias/app-70-vila-do-lume/public/experiencia.json}}, label={lst:manifesto}]
 {
-  "id": "exp-70-vila-do-lume",
+  "id": "app-70-vila-do-lume",
   "nome": "Vila do Lume — A Noite Longa",
   "versao": "1.1.3",
   "produto": "entre-redes",
@@ -285,14 +285,14 @@ lendo o arquivo.
   plataforma.\\
 \zebra \cd{viewport} & \cd{\{largura, altura\}?} & Presente \implica{} o hub
   embeda dentro do \cd{DispositivoFrame} (casca de aparelho com escala). A
-  exp-01 e a exp-07 são 375$\times$812; a exp-02 \emph{não} tem \cd{viewport},
+  exp08ef1b e a exp06ef2b são 375$\times$812; a exp04ef1b \emph{não} tem \cd{viewport},
   porque foi desenhada para \emph{desktop}. Quem desenha o aparelho é o hub ---
   a experiência \textbf{não} empilha uma casca própria.\\
 \cd{publico} & \cd{estudante|professor} & \cd{professor} \implica{} ferramenta do
   professor, e \rota{/exp/*} responde \textbf{404} para ela.\\
 \zebra \cd{permissoes} & \emph{string[]} & Permissões que o \emph{iframe} daquela
-  experiência precisa: \cd{pointer-lock} (exp-70), \cd{forms} (exp-03, exp-07) e
-  \cd{downloads} (exp-90, exp-92), traduzidos pelo \cd{ExpFrame} nos tokens
+  experiência precisa: \cd{pointer-lock} (app-70), \cd{forms} (exp02em1b, exp08ef4b, exp05ef1b) e
+  \cd{downloads} (app-90, app-92), traduzidos pelo \cd{ExpFrame} nos tokens
   \cd{allow-pointer-lock}, \cd{allow-forms} e \cd{allow-downloads}. Vazio (o
   \emph{default}) = nenhuma. \textbf{O vocabulário é fechado em três lugares}
   --- o Zod da api, o CHECK de \cd{experiencias.permissoes} e o \cd{ExpFrame}
@@ -307,7 +307,7 @@ lendo o arquivo.
 
 \begin{regra}
 \cd{series: []} significa \textbf{todas as séries}, não nenhuma: é assim que uma
-experiência \emph{transversal} se declara (é o caso da exp-70, que não pertence a
+experiência \emph{transversal} se declara (é o caso da app-70, que não pertence a
 ano nenhum). Desde a sala de aula (\adrr{ADR-69}) este campo é \textbf{lido}: é ele
 que decide se a missão entra na grade de uma turma, e vazio continuar querendo
 dizer \enquote{todas} deixou de ser hipótese e virou o que sustenta a transversal
@@ -377,8 +377,8 @@ faz TODA experiência nova nascer errada.
 A leitura do \arq{experiencia.json} do \emph{bundle} \textbf{não é só de
 desenvolvimento}. Antes era, e uma \emph{stack} com a tabela \cd{experiencias}
 vazia --- \emph{compose} local, ou ambiente novo antes do primeiro
-\emph{publish} do CI --- servia a exp-01 \emph{esticada na janela} em vez de
-dentro do aparelho de 375$\times$812. Pelo mesmo motivo, a exp-70 abriria sem
+\emph{publish} do CI --- servia a exp08ef1b \emph{esticada na janela} em vez de
+dentro do aparelho de 375$\times$812. Pelo mesmo motivo, a app-70 abriria sem
 \cd{allow-pointer-lock}: o jogo monta, a câmera não anda, e nada no console diz
 por quê.
 \end{atencao}
@@ -423,7 +423,7 @@ plataforma efetivamente usa.
   "ts":         "ISO-8601",      // relogio do cliente
   "estudanteId":    "...",           // SOBRESCRITO pelo servidor, a partir do token
   "escolaId":   "...",           // SOBRESCRITO pelo servidor
-  "expId":      "exp-01",
+  "expId":      "exp08ef1b",
   "expVersion": "1.2.0",
   "sessaoId":   "uuid",
   "verbo":      "completed | attempted | interacted | scored | progressed | ...",
@@ -505,7 +505,7 @@ export interface AiConversaRequest {
 
 export interface AiSpeechRequest {
   texto?: string;                                    // monologo
-  turnos?: Array<{ falante: string; texto: string }>; // dialogo (podcast)
+  turnos?: Array<{ falante: string; texto: string }>; // dialogo
   /** Timbre por falante, NEUTRO de vendor: `jovem-feminino`, `idoso-masculino`...
    *  Quem chama nunca escolhe a voz do catalogo do fornecedor. */
   falantes: AiFalante[];
@@ -578,7 +578,7 @@ e confundi-los não é erro de digitação: \cd{prompt}/\cd{responseSchema} cont
 compilador, e o pedido chega ao \emph{provider} sem \cd{responseSchema} ---
 a montagem do corpo estoura \emph{antes} da requisição, as três tentativas
 queimam em segundos e o professor vê \enquote{Falhou} com zero token gasto.
-Foi o que aconteceu na exp-92 (plano de aulas). \textbf{Nunca use \cd{as never}
+Foi o que aconteceu na app-92 (plano de aulas). \textbf{Nunca use \cd{as never}
 para satisfazer este contrato}: é justamente ele que o typecheck existe para
 conferir.
 
@@ -602,14 +602,14 @@ direta --- módulos de domínio não se conhecem (Seção~\ref{sec:c4l3}). O con
 \fitwidth{%
 \begin{tikzpicture}[x=1cm, y=1cm]
 
-  \node[bundle, text width=28mm] (v) at (0.8,0) {\textbf{exp-70}\desc{Vila do Lume}};
+  \node[bundle, text width=28mm] (v) at (0.8,0) {\textbf{app-70}\desc{Vila do Lume}};
   \node[c4component, text width=30mm] (mv) at (4.6,0)
     {\arq{src/vila/}\desc{\texttt{quadrantes.ts}: colapso 10 \seta{} 4}};
   \node[c4component, text width=34mm, fill=unooOrangeWash, draw=unooOrange] (t) at (9.2,0)
-    {\texttt{exp\_01\_exp\_70\_}\\\texttt{perfis\_importados}\desc{a tabela de contrato}};
+    {\texttt{exp08ef1b\_app\_70\_}\\\texttt{perfis\_importados}\desc{a tabela de contrato}};
   \node[c4component, text width=30mm] (mi) at (13.6,0)
     {\arq{src/perfis/largada.ts}\desc{decide o lado do \emph{feed}}};
-  \node[bundle, text width=28mm] (i) at (13.6,-3.2) {\textbf{exp-01}\desc{Instanooria}};
+  \node[bundle, text width=28mm] (i) at (13.6,-3.2) {\textbf{exp08ef1b}\desc{Instanooria}};
 
   \node[actnote, text width=52mm, anchor=north west] at (0.2,-2.2)
     {\textbf{Duas travas que custam estudantes, de propósito:} valor não observado

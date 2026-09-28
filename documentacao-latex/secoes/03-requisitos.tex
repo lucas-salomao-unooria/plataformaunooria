@@ -166,14 +166,14 @@ agosto de 2026.
   \cd{pg\_advisory\_xact\_lock}; \arq{tests/motor-concorrencia.spec.ts}\\
 \zebra \rf{RF-43} & Atribuir bolha (A/B/C) balanceada dentro da turma, no
   servidor, e mantê-la estável entre partidas. & M & Implementado &
-  \cd{exp\_70\_bolhas}; \arq{tests/vila-regras.spec.ts}\\
+  \cd{app\_70\_bolhas}; \arq{tests/vila-regras.spec.ts}\\
 \rf{RF-44} & Não servir a bolha B nos anos iniciais (1EF--5EF). & M &
   Implementado & \cd{bolhasElegiveis}\\
 \zebra \rf{RF-45} & Recalcular o perfil de valores no servidor a partir das
   medidas brutas, recusando \emph{payload} que traga o perfil. & M &
   Implementado & \cd{CHAVES\_DE\_PERFIL} em \arq{src/vila/contrato.ts}\\
 \rf{RF-46} & Permitir reprocessar o histórico quando a versão do mapeamento
-  subir. & M & Implementado & \cd{exp\_70\_sessoes.payload};
+  subir. & M & Implementado & \cd{app\_70\_sessoes.payload};
   \cd{versaoMapeamento}\\
 \zebra \rf{RF-47} & Devolver leitura em que só a variante \cd{scored} tem número;
   as outras têm \cd{null} \emph{por tipo}. & M & Implementado &
@@ -198,20 +198,10 @@ agosto de 2026.
 \rf{RF-54} & Permitir ao professor apagar integralmente os próprios dados de
   bem-estar. & M & Implementado & \rota{DELETE /bemestar/dados}\\
 \zebra \rf{RF-55} & Conduzir a turma por etapas, com a etapa servindo de
-  \textbf{piso} para quem ficou para trás e de \textbf{teto} na etapa de debate
-  --- que é o que \enquote{congelar as telas} quer dizer. & M & Implementado &
-  \rota{POST /o-eco-no-grupo/turmas/:turmaId/gate}; \arq{regras/passos.ts}\\
-\rf{RF-56} & Exigir a leitura da matéria completa antes de aceitar a
-  intervenção do estudante, recusando o envio com erro diegético. & M &
-  Implementado & \cd{sem-inspecao} (409); \arq{regras/sessao.ts}\\
-\zebra \rf{RF-57} & Gerar a mídia da missão uma única vez, no preparo do
-  professor, e servi-la do \emph{bucket}; sem mídia preparada, a experiência
-  continua jogável pela transcrição. & S & Implementado &
-  \rota{POST /o-eco-no-grupo/turmas/:turmaId/preparar-midia}\\
-\rf{RF-58} & Permitir ao estudante conversar em texto livre com a personagem
-  \textbf{depois} da decisão, com teto de turnos e sanitização nos dois
-  sentidos, e sem que o texto chegue a \emph{log}, telemetria ou painel. & S &
-  Implementado & \rota{POST /o-eco-no-grupo/amara}; \arq{regras/sanitizador.ts}\\
+  \textbf{piso} para quem ficou para trás e de \textbf{teto} para quem se
+  adiantou: ninguém passa do ponto de parada antes de a aula seguinte ser
+  liberada. & M & Implementado &
+  \rota{POST /rastro-boato/turmas/:turmaId/gate}; \arq{regras/passos.ts}\\
 \bottomrule
 \end{tabularx}
 

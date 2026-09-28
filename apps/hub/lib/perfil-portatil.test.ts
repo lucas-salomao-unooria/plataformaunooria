@@ -16,6 +16,8 @@ describe("hash canônico do perfil portátil", () => {
       documento: "perfil-portatil-unooria",
       versao: 1,
       titular: { cpf: "700.100.200-39", nome: "Ana" },
+      /* O id de ANTES da ADR-110, de propósito: esta fixture fixa o ALGORITMO,
+         e um perfil assinado antes da troca continua carregando esse id. */
       participacoes: [{ expId: "exp-70-vila-do-lume", em: "2026-03-01T12:00:00.000Z" }],
     };
     expect(hashDoPerfil(fixture)).toBe(

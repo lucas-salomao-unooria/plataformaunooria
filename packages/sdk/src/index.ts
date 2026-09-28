@@ -18,6 +18,13 @@ export * from "./clarity";
 export { instalarCapturaDeErros, type ErroDeCliente } from "./erros";
 export { instalarVitais, type Vital } from "./vitals";
 export { lerDispositivo, type DispositivoDoNavegador } from "./dispositivo";
+export {
+  CODIGO_DE_MISSAO_RE,
+  CODIGO_DE_APP_RE,
+  EXP_ID_RE,
+  FORMATO_DO_EXP_ID,
+  codigoDaMissao,
+} from "./codigo-da-experiencia";
 /* O fuso e as funções que formatam data para gente ler. Toda tela do hub e das
    experiências passa por aqui — o porquê está no cabeçalho de `fuso.ts`. */
 export {
@@ -43,7 +50,7 @@ type MetodoHttp = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
 /**
  * Ponto de entrada de TODA experiência:
- *   const exp = await createExperiencia({ expId: "exp-01", expVersion: "1.0.0" });
+ *   const exp = await createExperiencia({ expId: "exp08ef1b", expVersion: "1.0.0" });
  */
 export async function createExperiencia(meta: {
   expId: string;

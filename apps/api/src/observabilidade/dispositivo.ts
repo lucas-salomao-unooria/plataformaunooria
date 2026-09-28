@@ -1,7 +1,7 @@
 /**
  * O user-agent vira RÓTULO FECHADO (ADR-84).
  *
- * A pergunta que isto responde é a que o log sozinho não responde: "a exp-70
+ * A pergunta que isto responde é a que o log sozinho não responde: "a app-70
  * trava no Chromebook?", "a plataforma está lenta no celular?". Para virar
  * rótulo de métrica, a resposta precisa ser um conjunto pequeno e fechado — a
  * regra de cardinalidade do `metricas.ts` continua valendo, e o user-agent CRU

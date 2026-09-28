@@ -1,0 +1,295 @@
+% ===========================================================================
+%  2 — O produto
+% ===========================================================================
+\chapter{O produto}
+\label{cap:produto}
+
+\section{O problema}
+
+Crianças e adolescentes vivem dentro de redes sociais, vídeos curtos,
+aplicativos de mensagem e assistentes de inteligência artificial --- e a
+escola quase nunca consegue falar sobre isso \emph{de dentro}. Falar de
+\enquote{fake news} numa aula expositiva é fácil; fazer a turma
+\emph{sentir} como um boato viaja, como um feed decide o que cada um vê, ou
+por que duas coberturas do mesmo fato contam histórias diferentes, é
+difícil. E o professor da rede pública raramente tem tempo para preparar
+esse tipo de aula do zero.
+
+Ao mesmo tempo, as redes públicas precisam cumprir as habilidades da BNCC de
+Computação, planejar o ano letivo, cadastrar milhares de pessoas e prestar
+contas do que acontece nas escolas --- sem expor dado de criança.
+
+\section{A proposta}
+
+A Plataforma Unooria é uma plataforma educacional vendida para \textbf{redes
+públicas de ensino} (secretarias estaduais e municipais). Ela entrega:
+
+\begin{itemize}
+  \item \textbf{Missões imersivas para os estudantes}: atividades digitais que
+    imitam os aplicativos que eles conhecem (uma rede social de fotos, um
+    grupo de mensagens, um assistente de IA, um jogo em 3D). O estudante age como agiria no próprio celular; depois, a missão
+    revela o que estava acontecendo por trás, e a turma discute.
+  \item \textbf{Ferramentas para o professor}: preparar e conduzir a aula,
+    gerar plano de aula e planejamento de ensino alinhados à BNCC, e cuidar do
+    próprio bem-estar.
+  \item \textbf{Gestão da rede}: cadastrar escolas, pessoas e turmas,
+    acompanhar a adoção e controlar o que cada rede contratou.
+\end{itemize}
+
+\section{Quem compra e quem usa}
+
+O cliente \textbf{não é a escola nem a família}: é a rede. Uma rede contrata a
+plataforma e recebe uma instalação própria, separada das instalações de outras
+redes. Dentro dela, cem ou mais escolas compartilham a mesma plataforma, e
+cada escola só enxerga os próprios dados.
+
+\begin{tabularx}{\linewidth}{@{}L{46mm}X@{}}
+\toprule
+\headrow \thd{Grandeza, por rede} & \thd{Alvo}\\
+\midrule
+Estudantes cadastrados & cerca de \num{10000}\\
+\zebra Pessoas ao mesmo tempo no horário de pico & \num{2000} a \num{4000}, entre
+  7h50 e 8h10 de um dia letivo\\
+Escolas & 100 ou mais\\
+\zebra Faixa atendida & do 1º ano do Ensino Fundamental à 3ª série do Ensino
+  Médio\\
+Missões no catálogo alvo & 48 (12 anos $\times$ 4 unidades)\\
+\zebra Entrada em produção & novembro de 2026\\
+\bottomrule
+\end{tabularx}
+
+\section{Os quatro produtos}
+
+O que a rede contrata são \textbf{produtos}. Cada produto aparece como um
+cartão no início da área do professor, e a Unooria pode ligar ou desligar cada
+um por rede, regional ou escola.
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}L{30mm}X@{}}
+\toprule
+\headrow \thd{Produto (nome na tela)} & \thd{Chamada} & \thd{O que é}\\
+\midrule
+\textbf{Entre Redes} & Letramento digital & A trilha de missões: 4 unidades
+  por ano, uma missão por unidade, do 1º ano EF à 3ª série EM, mais missões
+  \enquote{para qualquer ano}. Hoje: 7 das 48 unidades publicadas, mais a
+  Vila do Lume.\\
+\zebra \textbf{Gerador de Plano de Aula} & Autoria & Gera um plano anual a
+  partir do currículo e do material didático que a rede já adota.\\
+\textbf{Planejamento de Ensino} & Currículo e planejamento & Parte da BNCC e
+  desce do plano anual até o plano de cada semana, com as datas reais do
+  calendário.\\
+\zebra \textbf{Como você está?} & Bem-estar & Um acompanhamento curto e
+  privado do bem-estar do próprio professor.\\
+\bottomrule
+\end{tabularx}
+
+\begin{nota}
+\textbf{Instanooria e unooGPT não são produtos.} São os nomes dos
+aplicativos que as missões imitam (os \enquote{clones}), e vivem todos dentro
+do Entre Redes. O estudante nunca vê a palavra \enquote{produto}: ele vê só as
+missões da turma dele.
+\end{nota}
+
+\section{O caminho de uma aula}
+\label{sec:caminho}
+
+A plataforma é um encadeamento de responsabilidades. Cada pessoa faz a sua
+parte, e a parte seguinte só acontece se a anterior foi feita. A
+Figura~\ref{fig:caminho} mostra o caminho completo de uma missão, da
+contratação até o relatório da diretoria.
+
+\begin{figure}[H]
+\centering
+\fitwidth{%
+\begin{tikzpicture}[
+  node distance=5mm and 6mm,
+  passo/.style={draw=unooBlue, fill=unooBlueWash, rounded corners=2pt,
+    minimum width=38mm, minimum height=19mm, align=center, font=\small,
+    text width=36mm},
+  quem/.style={font=\scriptsize\bfseries, text=unooLavenderSoft},
+  liga/.style={-{Stealth[length=2.4mm]}, thick, draw=unooNavy}
+]
+  \node[passo] (p1) {\textbf{1. Disponibilizar}\\o produto e as missões\\existem nesta rede};
+  \node[passo, right=of p1] (p2) {\textbf{2. Cadastrar}\\escolas, pessoas\\e turmas};
+  \node[passo, right=of p2] (p3) {\textbf{3. Preparar e liberar}\\a missão para\\a turma};
+  \node[passo, below=14mm of p3] (p4) {\textbf{4. Jogar}\\a missão, no ritmo\\da aula};
+  \node[passo, left=of p4] (p5) {\textbf{5. Conduzir e ler}\\a turma: debate,\\revelação, resultados};
+  \node[passo, left=of p5] (p6) {\textbf{6. Acompanhar}\\a adoção, sem\\identificar criança};
+
+  \node[quem, above=1mm of p1] {Administrador Unooria};
+  \node[quem, above=1mm of p2] {Coordenação / Adm. do contrato};
+  \node[quem, above=1mm of p3] {Professor};
+  \node[quem, below=1mm of p4] {Estudante};
+  \node[quem, below=1mm of p5] {Professor};
+  \node[quem, below=1mm of p6] {Coordenação regional / Adm. do contrato};
+
+  \draw[liga] (p1) -- (p2);
+  \draw[liga] (p2) -- (p3);
+  \draw[liga] (p3) -- (p4);
+  \draw[liga] (p4) -- (p5);
+  \draw[liga] (p5) -- (p6);
+\end{tikzpicture}}
+\caption[O caminho de uma aula]{O caminho de uma aula. Cada passo depende do
+  anterior: sem o produto disponível a missão nem aparece; sem turma o
+  estudante não vê missão nenhuma; sem liberação a missão fica com cadeado.}
+\label{fig:caminho}
+\end{figure}
+
+\begin{atencao}
+\textbf{Disponível não é liberado.} São duas perguntas diferentes, feitas por
+pessoas diferentes, e confundir as duas é o erro mais caro de suporte:
+\begin{itemize}
+  \item \textbf{Disponibilidade} --- \enquote{este recurso existe NESTA REDE?}
+    Quem responde é só a Unooria, no painel dela. Por padrão, tudo está
+    ligado; desligar é exceção (não contratado, ou problema numa versão).
+  \item \textbf{Liberação} --- \enquote{esta missão está aberta NESTA TURMA?}
+    Quem responde é o professor, na sala. Por padrão, nada está aberto.
+\end{itemize}
+Um produto desligado tem, para quem está na escola, o mesmo sintoma de um
+estudante mal enturmado: a missão não aparece.
+\end{atencao}
+
+\section{As pessoas}
+\label{sec:pessoas}
+
+São seis papéis com conta, mais o visitante do site. Os nomes abaixo são os
+que a interface mostra; nas telas de gestão diz-se sempre
+\enquote{Coordenação}, nunca \enquote{gestor}.
+
+\begin{tabularx}{\linewidth}{@{}L{36mm}X X@{}}
+\toprule
+\headrow \thd{Papel (nome na tela)} & \thd{Quem é} & \thd{O que mais precisa}\\
+\midrule
+\textbf{Estudante} & Criança ou adolescente da rede, do 1º ano EF à 3ª série
+  EM. É titular de dado de menor. & Entrar sem atrito, achar a missão do dia e
+  jogar sem perder o que fez.\\
+\zebra \textbf{Professor} & Dá aula em uma ou mais turmas, às vezes em mais de
+  uma escola. & Preparar a aula rápido, conduzir o momento coletivo, ler a
+  turma e planejar o ano.\\
+\textbf{Coordenação da escola} & A secretaria ou coordenação pedagógica de uma
+  escola. & Cadastrar e manter pessoas e turmas da escola.\\
+\zebra \textbf{Coordenação regional} & Diretoria de ensino, polo ou secretaria
+  municipal que agrupa escolas. & Ver as escolas da regional, trabalhar numa
+  por vez e acompanhar a adoção.\\
+\textbf{Administrador do contrato} & A equipe da secretaria que contratou a
+  plataforma. & Organizar a rede inteira e ler o agregado, sem entrar na sala
+  de aula.\\
+\zebra \textbf{Administrador Unooria} & A equipe da Unooria. & Decidir o que
+  existe em cada rede, controlar versões e limites de IA, receber
+  interessados.\\
+\textbf{Visitante} & Alguém de uma rede que ainda não é cliente. & Entender a
+  proposta e deixar contato.\\
+\bottomrule
+\end{tabularx}
+
+\medskip
+\textbf{Quem cadastra quem} segue uma cadeia, sempre de cima para baixo:
+Administrador Unooria \seta{} Administrador do contrato \seta{} Coordenação
+regional \seta{} Coordenação da escola \seta{} Professor e Estudante. Cada
+nível cria os que estão abaixo dele, nunca o próprio nível nem um acima.
+
+\section{As nossas promessas}
+\label{sec:promessas}
+
+Algumas regras não são detalhe de tela: são o que a plataforma promete à rede,
+à escola e à família. Elas valem para todas as missões que existem e para todas
+as que vierem, e toda história deste documento respeita todas elas.
+
+\begin{enumerate}
+  \item \textbf{A missão só abre na turma em que o professor a liberou.}
+    Esconder o cartão não basta: digitar o endereço da missão também não abre.
+  \item \textbf{A rede controla o que existe nela --- e desligar nunca apaga.}
+    Tudo pode ser desligado por rede, regional ou escola, com motivo e com um
+    histórico que a própria rede consegue ler.
+  \item \textbf{Nota e correção são da plataforma, nunca do aparelho do
+    estudante.} A resposta certa não chega ao tablet antes da hora.
+  \item \textbf{Não existe ranking de crianças.} Nenhuma tela de professor ou
+    de gestão ordena estudantes por acerto.
+  \item \textbf{O relatório não rotula criança.} Ele não afirma o que não mediu:
+    \enquote{não teve a oportunidade} nunca é lido como \enquote{escolheu não},
+    e um valor com uma única medida não recebe número.
+  \item \textbf{Dado de criança é protegido.} Uma escola nunca vê outra; o que
+    a criança escreve em texto livre é lido pelo professor dela, não pela
+    gestão; os registros de uso não carregam nome.
+  \item \textbf{A IA tem limite e tem garantia.} Nenhuma aula depende da IA
+    estar no ar; nada gerado chega à turma sem o professor aprovar; a IA não
+    dá nota e nunca recebe dado pessoal; cada pessoa tem um teto diário. A
+    única exceção declarada é A Seleção, em que a IA lê a legenda que o
+    estudante publica e dá o nível dela numa habilidade da BNCC: a criança não
+    vê esse nível, e o professor o confere e ajusta (\id{H09.3.1}).
+  \item \textbf{O bem-estar do professor é só dele.} Não existe tela de gestão,
+    agregado nem exportação desse dado.
+  \item \textbf{Tudo em português do Brasil}, com datas no formato brasileiro
+    --- exceto dentro dos aplicativos imitados, que falam como o aplicativo
+    real (\enquote{Feed}, \enquote{Stories}, \enquote{Salvos}).
+\end{enumerate}
+
+\section{Glossário de produto}
+\label{sec:glossario}
+
+\begin{tabularx}{\linewidth}{@{}L{34mm}X@{}}
+\toprule
+\headrow \thd{Termo} & \thd{Significado}\\
+\midrule
+\textbf{Rede} / contrato & A secretaria cliente. Um contrato é uma rede, com
+  instalação própria.\\
+\zebra \textbf{Regional} & O nível que agrupa escolas dentro da rede
+  (diretoria de ensino, polo, secretaria municipal). Toda escola pertence a
+  uma.\\
+\textbf{Escola} & A unidade. Tudo que é dado de estudante pertence a uma
+  escola.\\
+\zebra \textbf{Vínculo} & A ligação de uma pessoa com uma escola, com papel e
+  data. Um professor pode ter vários; um estudante tem um ativo por vez.\\
+\textbf{Turma} & A sala. O estudante tem uma \textbf{turma de referência}
+  (a principal), que é a que as missões usam.\\
+\zebra \textbf{Enturmamento} & O ato de pôr pessoas em turmas.\\
+\textbf{Ano letivo} / período & Ano, semestre, bimestre ou trimestre. O
+  \enquote{8A de 2026} e o \enquote{8A de 2027} são turmas diferentes, o que
+  preserva a história.\\
+\zebra \textbf{Missão} & O que o estudante joga, visto do ponto de vista da
+  aula. É a palavra que professor e estudante leem na tela.\\
+\textbf{Unidade} & Cada ano tem 4 unidades; cada unidade tem uma missão.\\
+\zebra \textbf{Trilha} & O conjunto das missões do Entre Redes, organizado
+  por ano e unidade.\\
+\textbf{Clone} / disfarce & A tela que imita um aplicativo real. Dentro dela,
+  tudo fala a língua do aplicativo imitado.\\
+\zebra \textbf{Revelação} & O momento em que a missão deixa de fingir ser o
+  aplicativo e passa a ser a escola falando: a explicação, o \enquote{Meu
+  percurso}, o debate.\\
+\textbf{Ficha da missão} & A página que o professor lê antes: como a missão
+  funciona e o que ela \emph{não} conta ao estudante.\\
+\zebra \textbf{Guia da aula} & O roteiro de condução: minuto a minuto,
+  perguntas de debate, mediação, avaliação e habilidade da BNCC.\\
+\textbf{Liberar} / encerrar & Abrir e fechar a missão para uma turma.\\
+\zebra \textbf{Zerar a turma} & Recomeçar uma missão numa turma, para
+  repeti-la. Não toca outras missões. Na maioria delas, apaga o que a turma
+  fez; em O Que a Foto Conta, arquiva; em Quem mandou isso? e na A Seleção,
+  abre uma rodada nova e nada é apagado (\id{H07.1.2}).\\
+\textbf{Disponibilidade} & Se um produto ou missão existe numa rede, regional
+  ou escola. Quem decide é a Unooria.\\
+\zebra \textbf{Limite diário de IA} & O quanto cada pessoa pode usar de IA por
+  dia, por perfil (estudante ou professor). Na tela aparece como
+  \enquote{Tokens por dia}.\\
+\textbf{Perfil portátil} & O documento assinado que o estudante leva ao sair
+  da rede, a pedido da família.\\
+\zebra \textbf{Primeiro acesso} & A primeira entrada, em que a pessoa troca a
+  senha provisória pela dela.\\
+\textbf{Equipe} & Quem divide um computador numa missão: dois ou três
+  estudantes diante da mesma tela, com o login de um deles, que representa o
+  grupo. Vale para uma missão numa turma; não é grupo fixo da turma.\\
+\zebra \textbf{Atividade} & Uma tarefa dentro de uma missão, definida pela
+  própria missão --- não existe, por ora, uma atividade comum a todas. Hoje
+  três missões têm atividades: o Instanooria (a que o professor cria a partir
+  da aula), Quem mandou isso? (o pacote de mensagens aprovado para a turma) e
+  A Seleção (a cobertura, o tema aprovado com os seus posts).\\
+\textbf{Rodada} & Cada vez que uma atividade é feita. Reiniciar a atividade
+  abre uma rodada nova, e a anterior fica guardada; o resultado é a melhor
+  rodada de cada habilidade. Em Quem mandou isso? e na A Seleção, quem abre a
+  rodada nova é o \enquote{Zerar} da turma.\\
+\zebra \textbf{Régua pedagógica} / ficha pedagógica & O que uma missão mede:
+  quais habilidades da BNCC, em quais momentos, qual pergunta e quanto vale
+  cada alternativa.\\
+\textbf{Evidência} & O nível que um estudante demonstrou numa habilidade da
+  BNCC, numa atividade, numa rodada: atingiu, em processo ou não atingiu. Sem
+  registro, é \enquote{Não avaliado}, que nunca conta como não atingiu.\\
+\bottomrule
+\end{tabularx}

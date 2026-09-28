@@ -14,6 +14,8 @@
  */
 export {
   AlertBox,
+  // 0.2.7: o player de áudio longo (o podcast de recapitulação da exp07ef1b, na aula do professor).
+  AudioPlayer,
   Avatar,
   AvatarGroup,
   Badge,
@@ -133,11 +135,57 @@ export {
   UNOORIA_DATAVIZ_PALETTE,
 } from '@unooria/design-system';
 
+/**
+ * 0.2.8: as peças da redação do Jornal da Escola (exp04ef1b). A redação é da
+ * Unooria, não um clone — por isso moram nesta ponte. O post de rede social e a
+ * mensagem encaminhada da mesma mesa NÃO são daqui: são o `PostCard` de
+ * `@edu/ui/ds-insta` e o `MessageBubble` de `@edu/ui/ds-whatsapp`, cada peça na
+ * seção da plataforma que ela imita.
+ */
+export {
+  BottomSheet,
+  NewsArticle,
+  NewsCard,
+  NewspaperPage,
+  PuzzleBlock,
+  PuzzleTrack,
+  RevealClue,
+  SpeechBubble,
+  /** O vocabulário dos oito meios, num lugar só (rótulo e glifo de cada um). */
+  NEWS_MEDIUMS,
+  NEWS_MEDIUM_ICONS,
+  NEWS_MEDIUM_LABELS,
+  /** Os três layouts fechados da primeira página — a api valida com `z.enum`. */
+  NEWSPAPER_LAYOUTS,
+} from '@unooria/design-system';
+
+export type {
+  BottomSheetProps,
+  NewsArticleMedium,
+  NewsArticleProps,
+  NewsCardProps,
+  NewsMedium,
+  NewspaperLayout,
+  NewspaperMarkerTone,
+  NewspaperPageProps,
+  NewspaperSlot,
+  NewspaperSlotMarker,
+  PuzzleBlockProps,
+  PuzzleBlockState,
+  PuzzleTrackProps,
+  RevealClueProps,
+  SpeechBubbleMood,
+  SpeechBubbleProps,
+  SpeechBubbleSide,
+  SpeechBubbleTone,
+} from '@unooria/design-system';
+
 /** Tokens em TS (cores, tipografia, espaçamento) para cálculos e SVGs. */
 export { tokens } from '@unooria/design-system';
 
 export type {
   AlertBoxProps,
+  AudioPlayerProps,
   HeaderMenuItem,
   HeaderMenuProps,
   AvatarProps,

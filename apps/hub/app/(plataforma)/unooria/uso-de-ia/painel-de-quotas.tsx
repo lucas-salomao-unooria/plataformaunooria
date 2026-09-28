@@ -26,8 +26,8 @@ import type { PerfilDaQuota, QuotaDeIa } from "./tipos";
  * palavra inventaria uma medida que não existe na fatura. O que a tela faz é
  * dizer, ao lado, quanto isso É em uso real — e as duas medidas são as que
  * foram MEDIDAS no projeto, não estimativas: uma partida completa da Missão
- * Tempestade (exp-03) custa ~77 mil tokens (`unoogpt/regras/defaults.ts`), e um
- * plano anual da exp-90 passa de 220 mil só de prompt.
+ * Tempestade (exp02em1b) custa ~77 mil tokens (`unoogpt/regras/defaults.ts`), e um
+ * plano anual da app-90 passa de 220 mil só de prompt.
  */
 const PERFIS: Record<
   PerfilDaQuota,
@@ -35,7 +35,7 @@ const PERFIS: Record<
 > = {
   estudante: {
     titulo: "Estudantes",
-    quemUsa: "O tutor do Instanooria, a Missão Tempestade e a Amara do Eco no Grupo.",
+    quemUsa: "O tutor do Instanooria, a Missão Tempestade e a leitura da legenda na A Seleção.",
     unidade: "partidas completas da Missão Tempestade",
     custoDaUnidade: 77_000,
   },
@@ -201,7 +201,7 @@ export function PainelDeQuotas({ inicial }: { inicial: QuotaDeIa[] }) {
               id="quota-motivo"
               label="Motivo"
               rows={3}
-              placeholder="A rede contratou o pacote ampliado. / Incidente #123: consumo anormal na exp-03."
+              placeholder="A rede contratou o pacote ampliado. / Incidente #123: consumo anormal na exp02em1b."
               helperText="Obrigatório, e fica no histórico com o valor anterior e o novo. Meses depois é ele que diz se isto foi decisão comercial ou incidente."
               value={motivo}
               onChange={(e) => setMotivo(e.target.value)}

@@ -8,7 +8,8 @@ capacidade que `admin` tem e `gestor_contrato` não.
 Área própria, papel `admin`, layout próprio (e portanto trilha própria).
 `NavUnooria` + `lib/recursos.ts` + `app/(plataforma)/unooria/recursos/` +
 `app/(plataforma)/unooria/uso-de-ia/` (ADR-105) +
-`app/(plataforma)/unooria/prospeccao/` (ADR-107).
+`app/(plataforma)/unooria/prospeccao/` (ADR-107) +
+`app/(plataforma)/unooria/arquivados/` (ADR-116).
 
 ### O segundo item: Uso de IA (ADR-105, 2026-09-15)
 
@@ -183,3 +184,19 @@ na página** — foi o layout.
   linha nova nessa rota.
 - **Não conte produtos na copy.** O texto da home dizia "Quatro produtos"; com um
   deles desligado a frase mente sobre a própria tela.
+
+### O quarto item: Arquivados (ADR-116, 2026-09-25)
+
+`/unooria/arquivados` — as experiências tiradas do produto SEM serem apagadas,
+lidas de `GET /recursos/arquivadas` (prefixo `recursos`, já na allowlist). Uma
+experiência é arquivada quando uma missão nova toma o código dela: tudo o que era
+dela ganha o prefixo `backup-` e some da grade, do catálogo e de Recursos.
+
+- **Só LISTA.** Ninguém joga uma arquivada, e desarquivar é migração — a tela
+  diz isso no rodapé, para ninguém procurar o botão que não existe.
+- **Os números são a FOTOGRAFIA do arquivamento** (`turmasGuardadas`,
+  `estudantesGuardados`), gravada pela migração que arquivou. A tela não reconta:
+  contar `liberacoes` e `progresso` de todas as escolas atravessaria a RLS, e
+  nenhuma rota do `admin` faz isso.
+- **Erro da api não vira lista vazia**: "nada arquivado" e "a api não respondeu"
+  seriam a mesma tela (o mesmo cuidado da Prospecção).

@@ -4,7 +4,7 @@ import { montarEmbed } from "@/lib/embed-experiencia";
 import { EXP_PLANO_DE_ENSINO } from "@/lib/plano-de-ensino";
 
 /**
- * **Planejamento de Ensino** dentro do hub: a exp-92 (Vite, estática) embedada
+ * **Planejamento de Ensino** dentro do hub: a app-92 (Vite, estática) embedada
  * na casca do professor.
  *
  * Renderiza o `ExpFrame` direto (sem `ExpHost`): não há viewport de aparelho nem

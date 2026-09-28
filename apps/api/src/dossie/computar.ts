@@ -475,7 +475,7 @@ async function montarRespostaDossieNaTransacao(
    * A conclusão é anexada AQUI, não no congelamento: o dossiê é computado no
    * `finish`, antes de o estudante escrever. Anexar na leitura também deixa o dado
    * comportamental (congelado) separado do reflexivo (escrito depois) — que é a
-   * distinção que o doc 06 registra ao manter `exp_01_conclusoes` fora de `exp_01_dossiers`.
+   * distinção que o doc 06 registra ao manter `exp08ef1b_conclusoes` fora de `exp08ef1b_dossiers`.
    */
   const dossie: DossierData = {
     ...dados,

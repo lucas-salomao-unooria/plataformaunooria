@@ -14,10 +14,10 @@ import { MISSOES_DISPONIVEIS, type Missao } from "./catalogo";
  * corpo da ficha por `missao.expId`, e o `return` final é o corpo do
  * INSTANOORIA. Quem publica uma missão e não acrescenta o ramo não ganha erro
  * nenhum: a tela ABRE, e mostra a ficha de outra missão — com "Nova atividade",
- * que grava em `exp_01_activities`, e sem "Abrir a aula e os resultados", que é
+ * que grava em `exp08ef1b_activities`, e sem "Abrir a aula e os resultados", que é
  * o único caminho para o painel da turma.
  *
- * Aconteceu duas vezes. A segunda foi a exp-08 (2026-09-11), com o aviso já
+ * Aconteceu duas vezes. A segunda foi a exp08ef4b (2026-09-11), com o aviso já
  * escrito em `missao-rastro-boato.tsx`, no arquivo ao lado — e quem achou foi a
  * suíte e2e, no `click` que estourou 30s. Comentário não é rede; este teste é.
  *
@@ -38,7 +38,7 @@ const DESPACHANTE = join(
  * Entrar aqui é declarar, por escrito, que aquela missão usa o corpo do
  * Instanooria — nunca um jeito de calar o teste.
  */
-const MISSOES_NO_FALLBACK: readonly string[] = ["exp-01-instanooria"];
+const MISSOES_NO_FALLBACK: readonly string[] = ["exp08ef1b"];
 
 /** Nome da constante do catálogo → `expId`, para ler o `page.tsx` sem adivinhar. */
 function expIdsDespachados(fonte: string): Set<string> {

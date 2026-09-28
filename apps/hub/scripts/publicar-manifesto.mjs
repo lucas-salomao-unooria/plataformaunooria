@@ -12,7 +12,7 @@
  *
  * Uso (CI ou manual):
  *   API_URL=https://... HUB_ORIGIN=https://... TOKEN_SIGNING_KEY_PEM="$(gcloud secrets ...)" \
- *     node apps/hub/scripts/publicar-manifesto.mjs apps/experiencias/exp-90-plano-de-aula [--versao 1.0.1]
+ *     node apps/hub/scripts/publicar-manifesto.mjs apps/experiencias/app-90-plano-de-aula [--versao 1.0.1]
  *
  * `--versao` sobrescreve a do experiencia.json — é o ROLLBACK: repetir o PUT
  * apontando para a versão anterior já publicada no bucket.
@@ -81,7 +81,7 @@ const corpo = {
   /* Esquecer este campo aqui é INVISÍVEL em dev e quebra em produção: sem
      manifesto o hub lê `permissoes` do `experiencia.json` do bundle, então a
      bancada funciona; COM manifesto ele lê a coluna, que nasceria `[]`. Para a
-     exp-70 isso significa iframe sem `allow-pointer-lock` — o jogo sobe, a
+     app-70 isso significa iframe sem `allow-pointer-lock` — o jogo sobe, a
      intro aparece, a criança clica em ENTRAR NA VILA e a câmera não gira.
      Campo novo no `experiencia.json` tem de ser adicionado AQUI também. */
   permissoes: manifesto.permissoes ?? [],

@@ -10,6 +10,8 @@ Aqui fica **o que vale para TODA a api**. O que é de um módulo vive no
 | [`src/tenancy/`](src/tenancy/AGENTS.md) | rede, escola, lotação e CPF; buscar profissional na rede |
 | [`src/rostering/`](src/rostering/AGENTS.md) | identidade e enturmamento — **quem escreve pessoa** |
 | [`src/salas/`](src/salas/AGENTS.md) | a missão dentro da turma (ADR-69) |
+| [`src/equipes/`](src/equipes/AGENTS.md) | quem divide um computador na missão (E13, ADR-111) |
+| [`src/evidencias/`](src/evidencias/AGENTS.md) | a evidência pedagógica por habilidade da BNCC — a ficha, a porta `marcar` das missões (E14, ADR-112) |
 | [`src/recursos/`](src/recursos/AGENTS.md) | disponibilidade: o interruptor da rede (ADR-87, ADR-89) |
 | [`src/prospeccao/`](src/prospeccao/AGENTS.md) | o cadastro de interesse do site — **sem token e sem tenancy** (ADR-107) |
 | [`src/experiencias/`](src/experiencias/AGENTS.md) | catálogo e versão — duas alavancas que não se misturam |
@@ -24,12 +26,15 @@ E os módulos de experiência, um por missão:
 
 | Módulo | Experiência |
 |---|---|
-| [`src/comum/insta/`](src/comum/insta/AGENTS.md) | exp-01 Instanooria — o relógio da aula (ADR-92) |
-| [`src/unoogpt/`](src/unoogpt/AGENTS.md) | exp-03 Missão Tempestade |
-| [`src/o-eco-no-grupo/`](src/o-eco-no-grupo/AGENTS.md) | exp-07 O Eco no Grupo |
-| [`src/vila/`](src/vila/AGENTS.md) | exp-70 Vila do Lume |
-| [`src/planos/`](src/planos/AGENTS.md) | exp-90 Plano de aula |
-| [`src/bemestar/`](src/bemestar/AGENTS.md) | exp-91 Check-in de bem-estar |
+| [`src/comum/insta/`](src/comum/insta/AGENTS.md) | exp08ef1b Instanooria — o relógio da aula (ADR-92) |
+| [`src/unoogpt/`](src/unoogpt/AGENTS.md) | exp02em1b Missão Tempestade |
+| [`src/a-selecao/`](src/a-selecao/AGENTS.md) | exp07ef1b A Seleção — com ficha (E14) e o Mural pareado por computador (E13) |
+| [`src/quem-mandou-isso/`](src/quem-mandou-isso/AGENTS.md) | exp05ef1b Quem Mandou Isso? v2.2 — com ficha (E14) e equipe (E13) |
+| [`src/jornal-escola/`](src/jornal-escola/AGENTS.md) | exp04ef1b Jornal da Escola: A Edição de Bento — com ficha (E14), equipe (E13) e a IA que só diagrama |
+| [`src/vila/`](src/vila/AGENTS.md) | app-70 Vila do Lume |
+| [`src/backup-unootube/`](src/backup-unootube/AGENTS.md) | o UnooTube ARQUIVADO (`backup-exp04ef1b`, ADR-116): compila e é testado, mas não está no `app.module` |
+| [`src/planos/`](src/planos/AGENTS.md) | app-90 Plano de aula |
+| [`src/bemestar/`](src/bemestar/AGENTS.md) | app-91 Check-in de bem-estar |
 
 **Módulo novo nasce com `AGENTS.md` + `CLAUDE.md` de uma linha**, e entra nesta
 tabela no mesmo commit — a tabela é o que faz a pasta ser encontrada por quem

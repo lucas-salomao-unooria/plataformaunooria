@@ -6,6 +6,7 @@ import {
   TOTAL_DE_HABILIDADES,
 } from "./consulta";
 import { componentesDoAno, componentePorSlug, anosInvalidos, tipoDeOrganizador } from "./componentes";
+import { habilidadesComputacao } from "./dados/habilidades-computacao";
 import {
   aulasSemanaisDeReferencia,
   horasRelogioNoAno,
@@ -22,8 +23,14 @@ import {
  */
 describe("dado extraído da BNCC", () => {
   it("tem os totais oficiais de cada documento", () => {
-    // 1304 (EF) + 183 (EM) + 129 (Computação, de 130 no anexo).
-    expect(TOTAL_DE_HABILIDADES).toBe(1304 + 183 + 129);
+    // 1304 (EF) + 183 (EM) + 130 (Computação — o anexo INTEIRO).
+    //
+    // Eram 129 até 2026-09-17, e a linha que faltava era a EF05CO011: a BNCC a
+    // publica com TRÊS dígitos, num erro de digitação dela, e o extrator só
+    // reconhecia dois. O número 129 estava escrito aqui como se fosse o
+    // esperado ("de 130 no anexo") — um teste que documentava a perda em vez de
+    // recusá-la.
+    expect(TOTAL_DE_HABILIDADES).toBe(1304 + 183 + 130);
   });
 
   it("preserva o texto do documento HOMOLOGADO, não o do rascunho", () => {
@@ -60,6 +67,102 @@ describe("dado extraído da BNCC", () => {
       "Reconstrução das condições de produção e recepção de textos",
     );
     expect(habilidadePorCodigo("EF01MA01")?.unidadeTematica).toBe("Números");
+  });
+
+  /**
+   * A integridade da BNCC de Computação, que tem um layout só dela: eixo e
+   * objeto de conhecimento CENTRADOS na célula, e não alinhados ao topo como no
+   * resto do documento. O extrator aplicava a regra do resto ("o último rótulo
+   * acima") e errava 80 das 130 linhas — a primeira habilidade de cada ano sem
+   * eixo nenhum, e as das fronteiras com o eixo anterior.
+   *
+   * **Nada disso aparecia.** O tipo é `string | null`, o `tsc` não tem o que
+   * dizer, e a tela do plano de ensino agrupa por eixo e lista o objeto: o
+   * resultado era um agrupamento plausível e inteiramente falso, que a
+   * professora leria como currículo.
+   *
+   * O que estes testes usam é a ESTRUTURA do documento, não uma amostra: os
+   * rótulos ladrilham a coluna, então as habilidades de cada um saem em bloco
+   * CONSECUTIVO, e os três eixos aparecem uma vez cada, na mesma ordem, em todo
+   * ano. Uma reextração que erre a geometria quebra as duas coisas.
+   */
+  describe("BNCC de Computação: a geometria da tabela", () => {
+    const EIXOS = ["PENSAMENTO COMPUTACIONAL", "MUNDO DIGITAL", "CULTURA DIGITAL"];
+    const porAno = () => {
+      const grupos = new Map<string, (typeof habilidadesComputacao)[number][]>();
+      for (const h of habilidadesComputacao) {
+        const chave = h.codigo.slice(0, 6);
+        grupos.set(chave, [...(grupos.get(chave) ?? []), h]);
+      }
+      return grupos;
+    };
+    /** Os valores distintos na ordem em que aparecem, sem repetir vizinhos. */
+    const blocos = (valores: (string | null | undefined)[]) =>
+      valores.filter((v, i) => i === 0 || v !== valores[i - 1]);
+
+    it("dá a cada ano os três eixos, uma vez cada e na ordem do documento", () => {
+      for (const [ano, hs] of porAno()) {
+        if (ano.startsWith("EM13")) continue; // o EM usa competência, não eixo
+        expect({ ano, eixos: blocos(hs.map((h) => h.eixo)) }).toEqual({ ano, eixos: EIXOS });
+      }
+    });
+
+    it("não deixa as habilidades de um mesmo objeto de conhecimento espalhadas", () => {
+      for (const [ano, hs] of porAno()) {
+        const vistos = blocos(hs.map((h) => h.objetoDeConhecimento));
+        // Um valor que reaparece depois de outro é rótulo atribuído fora do
+        // bloco dele: a célula da tabela não se parte em duas.
+        expect({ ano, repetidos: vistos.length - new Set(vistos).size }).toEqual({
+          ano,
+          repetidos: 0,
+        });
+      }
+    });
+
+    it("não grava cabeçalho de tabela como objeto de conhecimento", () => {
+      // "OBJETO DE CONHECIMENTO" no singular é o cabeçalho DESTE documento, e a
+      // lista de ruído do extrator só trazia o plural da BNCC regular: onze
+      // habilidades saíram com o cabeçalho gravado como o objeto delas.
+      const cabecalhos = habilidadesComputacao.filter((h) =>
+        /^(EIXO|OBJETOS? DE CONHECIMENTO|HABILIDADES?|COMPETÊNCIA)/i.test(
+          h.objetoDeConhecimento ?? "",
+        ),
+      );
+      expect(cabecalhos.map((h) => h.codigo)).toEqual([]);
+    });
+
+    it("traz a EF05CO011, que a própria BNCC publica com três dígitos", () => {
+      // O código fica como está no documento oficial. "Corrigi-lo" para
+      // EF05CO11 inventaria um código que nenhuma rede vai procurar.
+      const h = habilidadePorCodigo("EF05CO011");
+      expect(h?.eixo).toBe("CULTURA DIGITAL");
+      expect(h?.anos).toEqual(["5EF"]);
+    });
+
+    it("põe a EF05CO08 no eixo e no objeto do PDF", () => {
+      // Conferida à mão na página 32 do anexo: ela é de CULTURA DIGITAL, e o
+      // dataset a dava como MUNDO DIGITAL com o cabeçalho da tabela no lugar do
+      // objeto de conhecimento. A prova é do DADO: ela não depende de missão
+      // nenhuma usar a habilidade.
+      const h = habilidadePorCodigo("EF05CO08");
+      expect(h?.eixo).toBe("CULTURA DIGITAL");
+      expect(h?.objetoDeConhecimento).toBe("Segurança e responsabilidade no uso da tecnologia");
+      expect(h?.descricao).toBe(
+        "Acessar as informações na Internet de forma crítica para distinguir os conteúdos confiáveis de não confiáveis.",
+      );
+    });
+
+    it("dá eixo a toda habilidade do EF — e a nenhuma do EM", () => {
+      // No Ensino Médio a coluna é COMPETÊNCIA ESPECÍFICA: não há eixo nem
+      // objeto de conhecimento para atribuir, e inventar um seria pior.
+      for (const h of habilidadesComputacao) {
+        const temEixo = h.eixo !== null;
+        expect({ codigo: h.codigo, temEixo }).toEqual({
+          codigo: h.codigo,
+          temEixo: h.etapa === "EF",
+        });
+      }
+    });
   });
 
   it("cobre todos os anos de 1EF a 3EM em Língua Portuguesa e Matemática", () => {

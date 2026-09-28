@@ -1,12 +1,12 @@
 /**
- * Os passos da exp-08 e a regra que reconcilia **a turma** com **o estudante**.
+ * Os passos da exp08ef4b e a regra que reconcilia **a turma** com **o estudante**.
  *
- * Dois relógios, como na exp-06 e na exp-07:
+ * Dois relógios, como na exp06ef2b e na exp07ef1b:
  *
- * - `exp_08_gates_turma.etapa` — o relógio da TURMA, que a professora controla
+ * - `exp08ef4b_gates_turma.etapa` — o relógio da TURMA, que a professora controla
  *   pelo painel. É o Checkpoint A: ela congela 30 telas ao mesmo tempo para o
  *   debate oral de 10 minutos.
- * - `exp_08_sessoes.passo` — a tela daquele estudante. Dentro do mesmo momento
+ * - `exp08ef4b_sessoes.passo` — a tela daquele estudante. Dentro do mesmo momento
  *   eles andam em ritmos diferentes: um ainda lê a segunda réplica da máquina
  *   enquanto o outro já escolheu a cláusula.
  *
@@ -17,7 +17,7 @@
  * ────────────────────────────────────────────────────────────────────────────
  * A DIFERENÇA DESTA MISSÃO: o gate é OPCIONAL e por isso o piso não sobe.
  *
- * Na exp-06 a Aula 2 é uma porta que a professora ABRE — sem o clique dela
+ * Na exp06ef2b a Aula 2 é uma porta que a professora ABRE — sem o clique dela
  * ninguém passa. Aqui é o contrário: a missão corre inteira sozinha, e o
  * congelamento é uma interrupção que ela PODE aplicar (gatilho de handoff 3 do
  * handoff: "caso a sessão seja assíncrona/individual, a ausência de comando
@@ -48,7 +48,7 @@ export type Passo = (typeof PASSOS)[number];
  * Duas, não três: o roteiro do professor tem UM botão e o inverso dele
  * (`Pausar para Debate` / `Retomar Missão`). Um terceiro gate seria controle
  * morto no painel, e controle morto no meio de uma aula é pior que controle
- * nenhum (a mesma leitura que a exp-06 registrou).
+ * nenhum (a mesma leitura que a exp06ef2b registrou).
  */
 export const ETAPAS = ["missao", "debate"] as const;
 

@@ -20,13 +20,13 @@ severidade, e a severidade considera o prazo de novembro de 2026.
   em dez minutos --- \textbf{obrigatório antes de novembro de 2026}.
   \textbf{Não executado.} É o maior risco técnico aberto.\\
 \zebra \cd{R-02} & \textbf{Retenção indefinida de dado de menor.} Não há prazo
-  declarado para \cd{exp\_70\_sessoes} nem para \cd{telemetria\_eventos}. &
+  declarado para \cd{app\_70\_sessoes} nem para \cd{telemetria\_eventos}. &
   Alta & \textbf{Alto} &
   Decisão consciente (\adrr{ADR-13}) em troca de reprocessamento. Com a tabela
   particionada, a rotina de expurgo passou a ser trivial --- o que remove o último
   argumento técnico. \textbf{Pendente de decisão de produto e contrato}, e é da
   plataforma inteira.\\
-\cd{R-17} & \textbf{Latência de IA numa sala inteira.} O turno da exp-03 é
+\cd{R-17} & \textbf{Latência de IA numa sala inteira.} O turno da exp02em1b é
   síncrono e leva de 10 a 30 segundos, e a largada é simultânea: 30 estudantes
   perguntam ao mesmo tempo. & Média & \textbf{Alto} &
   O desenho aceita a latência (a tela cobre com indicador de \enquote{consultando},
@@ -35,14 +35,14 @@ severidade, e a severidade considera o prazo de novembro de 2026.
   teste de carga de \cd{R-01}. Saída conhecida se reprovar:
   \cd{streamGenerateContent} no provider --- mudança dentro de \arq{src/ai}, sem
   tocar o módulo da experiência.\\
-\zebra \cd{R-18} & \textbf{Custo de IA da exp-03.} Uma partida custa duas ordens
+\zebra \cd{R-18} & \textbf{Custo de IA da exp02em1b.} Uma partida custa duas ordens
   de grandeza mais que um turno de tutor. & Certa & Médio &
   \textbf{MEDIDO} em 2026-08-27: \num{71397} tokens numa partida completa de 8
   turnos (\adrr{ADR-24}). Os tetos foram fixados sobre esse número, e a medição
   achou de passagem que a quota diária de \num{20000} recusava o quarto turno ---
   corrigida para \num{300000}. \textbf{Fechado}, com um resíduo: a medição é de
   UMA partida, e o custo varia com o número de voltas que o modelo escolhe dar.\\
-\cd{R-19} & \textbf{Guia de condução do debate da exp-03 não existe.} A missão
+\cd{R-19} & \textbf{Guia de condução do debate da exp02em1b não existe.} A missão
   deliberadamente não revela a Lacuna de nenhuma fonte por software: a lição
   acontece no debate. & Certa & \textbf{Alto} &
   O guia do projeto de origem está vazio. A ficha publicada (competência, quatro
@@ -113,7 +113,7 @@ severidade, e a severidade considera o prazo de novembro de 2026.
   contagem dela é item do \emph{checklist} de operação. Encher = faltou criar
   partição.\\
 \cd{R-09} & \textbf{Mídia pesada publicada à mão.} O CI publica \arq{dist/}; os
-  \SI{52}{\mega\byte} de MP4 da exp-02 vão por \cd{gsutil} manual. & Alta & Baixo &
+  \SI{52}{\mega\byte} de MP4 da exp04ef1b vão por \cd{gsutil} manual. & Alta & Baixo &
   Aceitável para uma experiência; \textbf{não escala para 48}. O passo
   \cd{gsutil rsync} de mídia precisa entrar no CI.\\
 \zebra \cd{R-10} & \textbf{Geração órfã sem retomada no \emph{boot}.} Se todas as
@@ -167,30 +167,14 @@ severidade, e a severidade considera o prazo de novembro de 2026.
   rede \textbf{antes} do primeiro contrato em produção. Desligar é apagar
   \cd{CLARITY\_PROJECT\_ID} do \emph{environment} --- sem \emph{deploy} de
   código, mas com \emph{rebuild} da imagem.\\
-\cd{R-20} & \textbf{Mídia da exp-07 não preparada antes da aula.} A voz de
-  Amara, o podcast e as fotos do boato são geradas pelo professor, no painel, e
-  nada falha se ele não clicar. & Média & Médio &
-  Mitigado por desenho: sem mídia, a experiência \textbf{continua jogável} pela
-  transcrição (que está sempre na tela, por acessibilidade) e pela ilustração
-  procedural --- mas a missão perde o pico. A ficha da aula pede o preparo no
-  passo de preparo, e o painel mostra o que já existe. O precedente é caro: a
-  exp-02 subiu com o \emph{bucket} vazio e a missão ficou impossível de
-  concluir, sem nada falhar no \emph{deploy} nem no log. \textbf{Conferir
-  \env{ASSETS\_BUCKET} antes da primeira aula de cada contrato.}\\
-\zebra \cd{R-21} & \textbf{Texto livre de menor persistido.} A conversa com
-  Amara reabriu um canal que o produto tinha fechado por desenho. & Certa &
-  Médio &
-  Aceito com contenção (\adrr{ADR-66}): só depois da decisão, teto de 3 turnos e
-  600 caracteres, sanitizador nos dois sentidos, RLS, e nenhum caminho para
-  \emph{log}, telemetria, Clarity ou painel --- o professor vê \emph{quantos}
-  turnos, nunca o quê. Entra no mesmo regime de retenção de \cd{R-02}, e é mais
-  um argumento para fechá-lo.\\
-\cd{R-22} & \textbf{Guia de condução da exp-07 não existe.} Como na exp-03, a
-  lição fecha no debate da turma, e o roteiro do debate ainda é da professora. &
-  Certa & Médio &
-  A ficha do catálogo traz competência, os três momentos e o preparo; o guia
-  passo a passo, não. \textbf{Pendente} --- e o arquivo dos guias está sendo
-  mexido numa frente paralela, então ele entra por lá, não por aqui.\\
+\cd{R-21} & \textbf{Texto livre de menor persistido.} O Eco no Grupo
+  (retirado, \adrr{ADR-113}) reabriu um canal que o produto tinha fechado por
+  desenho, e as missões seguintes o mantêm aberto (exp06ef2b, exp08ef4b,
+  exp05ef1b). & Certa & Médio &
+  Aceito com contenção: teto de caracteres, RLS, nenhum caminho
+  para \emph{log} ou telemetria, e o texto alcançável só pelo professor da turma
+  --- a exp08ef4b ainda recusa dado pessoal antes de gravar. Entra no mesmo
+  regime de retenção de \cd{R-02}, e é mais um argumento para fechá-lo.\\
 \zebra \cd{R-23} & \textbf{Turma sem missão liberada no dia da aula.} Desde a sala
   de aula (\adrr{ADR-69}) a missão só abre onde o professor liberou --- e um passo
   novo antes da aula é um passo que se esquece com a sala cheia. & Alta & Médio &
@@ -236,10 +220,10 @@ severidade, e a severidade considera o prazo de novembro de 2026.
   % faixa laranja: impacto medio, probabilidade alta/certa
   \node[font=\scriptsize\bfseries\color{unooOrange}] at (3.0,2.10) {R-05  R-07};
   \node[font=\scriptsize\bfseries\color{unooOrange}] at (3.0,1.85) {R-12  R-18};
-  \node[font=\scriptsize\bfseries\color{unooOrange}] at (3.0,1.60) {R-21  R-22};
+  \node[font=\scriptsize\bfseries\color{unooOrange}] at (3.0,1.60) {R-21};
   % restante
   \node[font=\scriptsize\color{unooInkSoft}] at (1.9,2.05) {R-03$^{*}$};
-  \node[font=\scriptsize\color{unooInkSoft}] at (1.9,1.75) {R-15  R-20  R-23};
+  \node[font=\scriptsize\color{unooInkSoft}] at (1.9,1.75) {R-15  R-23};
   \node[font=\scriptsize\color{unooInkSoft}] at (2.9,0.9) {R-09};
   \node[font=\scriptsize\color{unooInkSoft}] at (1.9,0.9) {R-10  R-11  R-13};
   \node[font=\scriptsize\color{unooInkSoft}] at (0.9,1.9) {R-08};
@@ -271,17 +255,18 @@ M0 & Contratos congelados (\emph{claims}, ponte, telemetria) & \yes{} Concluído
   \arq{packages/sdk}, \arq{src/auth/claims.ts}\\
 \zebra M1 & \emph{Tenancy}, RLS, papéis, importação de usuários &
   \yes{} Concluído & Teste com \emph{role} sem \emph{ownership}\\
-M2 & exp-01 completa: motor, geração, dossiê & \yes{} Concluído &
+M2 & exp08ef1b completa: motor, geração, dossiê & \yes{} Concluído &
   Migração do aplicativo de origem\\
-\zebra M3 & exp-02, domínio por experiência & \yes{} Concluído & \adrr{ADR-09}\\
-M4 & Ferramentas de professor: exp-90, exp-91 & \yes{} Concluído &
+\zebra M3 & exp04ef1b, domínio por experiência & \yes{} Concluído & \adrr{ADR-09}\\
+M4 & Ferramentas de professor: app-90, app-91 & \yes{} Concluído &
   Armazenamento privado, \emph{guardrails}\\
-\zebra M5 & exp-70 e o Ato 1 integrado & \yes{} Concluído &
-  \cd{exp\_01\_exp\_70\_perfis\_importados}\\
+\zebra M5 & app-70 e o Ato 1 integrado & \yes{} Concluído &
+  \cd{exp08ef1b\_app\_70\_perfis\_importados}\\
 M6 & Hub do estudante, \emph{header} único, casca compartilhada &
   \yes{} Concluído & \rota{/estudante}, \cd{CascaPlataforma}\\
-\zebra M7 & exp-03 e exp-07: IA em \emph{runtime} dentro da missão &
-  \yes{} Concluído & \adrr{ADR-23}, \adrr{ADR-66}, \adrr{ADR-67}\\
+\zebra M7 & exp02em1b e exp07ef1b: IA em \emph{runtime} dentro da missão &
+  \yes{} Concluído & \adrr{ADR-23}, \adrr{ADR-66}, \adrr{ADR-67}; a exp07ef1b
+  (O Eco no Grupo) foi retirada depois (\adrr{ADR-113})\\
 --- & \emph{Stack} \cd{dev} em GCP operacional & \yes{} Concluído &
   CI/CD completo com WIF\\
 \zebra --- & \textbf{Teste de carga} & \no{} Pendente & \cd{R-01}\\

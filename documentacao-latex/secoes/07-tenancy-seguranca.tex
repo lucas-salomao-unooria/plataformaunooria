@@ -160,6 +160,43 @@ contrato, e os contadores que decidem quantos estudantes o botão
 justamente para que a RLS não mascare a ausência do \cd{where}.
 \end{regra}
 
+\begin{atencao}
+\textbf{A armadilha inversa: tabela COM RLS lida fora do \cd{comTenancy} não
+falha --- devolve vazio.} As três tabelas das equipes na missão
+(\cd{equipes\_montagens}, \cd{equipes} e \cd{equipes\_membros},
+\adrr{ADR-111}) entram na política como toda tabela de escola:
+\cd{escola\_id NOT NULL}, \cd{ENABLE} e \cd{FORCE ROW LEVEL SECURITY} e uma
+política por escola em cada uma --- \cd{equipes\_membros} com mais razão, por ser
+a única das três com id de criança. O risco delas é outro: quem as lê são OUTROS
+módulos (o painel do unooGPT, a grade da sala), por funções
+livres que recebem o \cd{tx} (\arq{equipes/consulta.ts}), no molde de
+\arq{comum/liberacao.ts}. Chamadas fora da transação de tenancy, elas devolvem um
+mapa vazio, e o painel volta a contar por criança sem que ninguém saiba por quê.
+E como \cd{users} está fora da RLS, a lista de estudantes que a montagem aceita
+sai de \cd{users.turma\_id} com o \cd{escolaId} no \cd{where} --- a regra acima,
+de novo.
+\end{atencao}
+
+\begin{atencao}
+\textbf{Na evidência pedagógica, a mesma política falha ALTO na escrita.} As
+três tabelas do módulo \arq{evidencias/} (\adrr{ADR-112}) ---
+\cd{evidencias\_marcas}, \cd{evidencias} e \cd{evidencias\_eventos}, todas com
+id de criança --- têm \cd{escola\_id NOT NULL}, \cd{ENABLE} e \cd{FORCE ROW LEVEL
+SECURITY} e uma política por escola. Quem ESCREVE a marca é outro módulo: a
+missão chama \cd{EvidenciasService.marcar} com o \cd{tx} DELA, e o serviço não
+abre \cd{comTenancy} de propósito, para a marca cair junto se a jogada cair. Com
+um cliente sem a escola armada, a leitura devolve vazio, como nas equipes, mas o
+\cd{INSERT} é recusado: a política sem \cd{WITH CHECK} vale também para a linha
+nova, e \cd{current\_setting('app.escola\_id', true)} nulo não casa com escola
+nenhuma. O erro de política no log é o sintoma de uma missão marcando fora da
+transação de \emph{tenancy}. O histórico tem uma tranca a mais, no molde de
+\cd{recursos\_auditoria}: a \emph{role} de \emph{runtime} recebe só
+\cd{SELECT, INSERT} em \cd{evidencias\_eventos}, e um \emph{trigger} recusa
+\cd{UPDATE} para qualquer \emph{role}, inclusive a dona da tabela. E, de novo, a
+lista de estudantes da turma sai de \cd{users.turma\_id} com o \cd{escolaId} no
+\cd{where}.
+\end{atencao}
+
 \subsection{Como a escola chega ao contexto}
 
 \begin{figure}[H]
@@ -315,9 +352,9 @@ migração não a \enquote{conserte}: ligar RLS ali faz TODO produto parecer lig
     experiências já passam por aquele funil, e um ponto único torna impossível
     existir liberação valendo num recurso que a rede não tem. A ordem importa
     para o diagnóstico: o \cd{codigo} do 403 diz em qual dos dois eixos procurar.
-  \item \emph{Ferramentas de professor} (exp-90, exp-91, exp-92) --- não têm
+  \item \emph{Ferramentas de professor} (app-90, app-91, app-92) --- não têm
     liberação por turma e somam \textbf{28 rotas}. A guarda é um
-    \cd{DisponibilidadeGuard} de CLASSE, com \cd{@Recurso("exp-NN-slug")} no
+    \cd{DisponibilidadeGuard} de CLASSE, com \cd{@Recurso("app-90-plano-de-aula")} no
     \cd{@Controller}: rota nova nasce coberta. Anotar rota por rota é o desenho
     em que a 29ª nasce sem guarda, sem erro e sem sintoma --- o produto
     simplesmente deixa de poder ser desligado.
@@ -359,6 +396,13 @@ estado não é. \rota{GET /recursos/painel} e as escritas seguem em 403 para o
 IA uma rede pode gastar por dia é o custo variável da fornecedora. Aqui nem a
 leitura volta atrás da linha --- o \cd{gestor\_contrato} recebe 403 no GET e no
 PUT, e a tela \rota{/unooria/uso-de-ia} o manda embora pelo \emph{middleware}.
+
+\textbf{E a lista das experiências arquivadas} (\rota{GET /recursos/arquivadas},
+\adrr{ADR-116}) também é só dele: a rota não conta nada em tempo de uso --- os
+números de turmas e estudantes guardados são a fotografia que a migração tirou ao
+arquivar ---, e por isso não atravessa a RLS. O que a fecha no \cd{admin} é o
+mesmo motivo das outras: o catálogo do que a Unooria já tirou do produto é da
+fornecedora.
 \end{regra}
 
 \begin{tabularx}{\linewidth}{@{}L{28mm}L{38mm}X@{}}
@@ -399,7 +443,7 @@ redirecionado para a própria casa, porque estudante que tropeça em
   O \emph{hub} de missões e o aparelho da experiência (\rota{/exp/:expId}).
   São a MESMA área: o hub escolhe, o \cd{iframe} joga.\\
 \zebra \cd{professor} & \rota{/professor} &
-  Atividades (exp-01), turmas, guia, plano de aula (exp-90), bem-estar (exp-91)
+  Atividades (exp08ef1b), turmas, guia, plano de aula (app-90), bem-estar (app-91)
   e \enquote{entre redes} --- os resultados por unidade.\\
 \cd{gestor} & \rota{/admin/usuarios} &
   Usuários, turmas, importar, ano letivo. E \enquote{minhas escolas}, que só
@@ -542,7 +586,7 @@ atribui \cd{gestor\_regional}; \cd{gestor\_contrato} pedindo outro
 \endhead
 Realizar experiência e salvar progresso &
   \rota{/progresso/:expId}, \rota{/runs/*} & \yes & \no & \no & \no\\
-\zebra Preparar e conduzir atividade (exp-01) & \rota{/atividades/*} &
+\zebra Preparar e conduzir atividade (exp08ef1b) & \rota{/atividades/*} &
   \no & \yes & \no & \no\\
 Destilar, gerar e regenerar o \emph{feed} com IA &
   \rota{/atividades/:id/\B destilar}, \rota{/gerar}, \rota{/posts/:id/\B regenerar} &
@@ -559,16 +603,41 @@ Reiniciar o \emph{run} de um estudante & \rota{POST /runs/:id/reset} &
   \no & \yes\footnotesize{\ddag} & \no & \no\\
 As salas do estudante (a grade dele) & \rota{GET /salas/minhas} &
   \yes & \no & \no & \no\\
+\zebra Ler as equipes de uma missão na turma (\adrr{ADR-111}) &
+  \rota{GET /equipes/turma/\B :turmaId/\B missao/:expId} & \no & \yes\footnotesize{\ddag} & \yes & \yes\\
+Propor equipes (sorteio, N vazias, a última missão) --- nunca grava &
+  \rota{POST .../\B sugestao}, \rota{GET .../\B ultima} & \no & \yes\footnotesize{\ddag} & \no & \no\\
+\zebra \textbf{Salvar ou desfazer as equipes} (sempre editáveis) &
+  \rota{PUT}, \rota{DELETE /equipes/\B turma/:turmaId/\B missao/:expId} & \no & \yes\footnotesize{\ddag} & \no & \no\\
+A própria equipe na missão (só primeiros nomes) & \rota{GET /equipes/minha} &
+  \yes & \no & \no & \no\\
+\zebra O painel da evidência de uma atividade (\adrr{ADR-112}) &
+  \rota{GET /evidencias/\B turma/:turmaId/\B missao/:expId/\B atividade/\B :atividadeId} &
+  \no & \yes\footnotesize{\ddag} & \yes & \yes\\
+\textbf{Confirmar para a turma} a cópia da projeção &
+  \rota{POST .../\B rodadas/:rodada/\B confirmar} & \no & \yes\footnotesize{\ddag} & \no & \no\\
+\zebra \textbf{Ajustar a evidência} (um ou vários, mesmo com a missão encerrada) &
+  \rota{PATCH .../\B rodadas/:rodada/\B ajustes} & \no & \yes\footnotesize{\ddag} & \no & \no\\
+O perfil de evidência de um estudante (sem origem) &
+  \rota{GET /evidencias/\B estudante/\B :estudanteId} & \no & \yes\footnotesize{\ddag} & \yes & \yes\\
+\zebra A pergunta de múltipla escolha, sem o gabarito &
+  \rota{GET /evidencias/\B :expId/\B perguntas/\B :perguntaId} & \yes & \no & \no & \no\\
+A resposta --- que devolve só \enquote{enviada}, nunca o resultado &
+  \rota{POST .../\B resposta} & \yes & \no & \no & \no\\
 \zebra Vila do Lume: agregado da turma & \rota{/vila/agregado/*} & \no & \yes & \yes & \no\\
 \textbf{Vila do Lume: a linha de uma criança} & \rota{/vila/professor/*} &
   \no & \yes\footnotesize{\ddag} & \no & \no\\
+\zebra Jornal da Escola: a própria missão (\adrr{ADR-117}) &
+  \rota{/jornal-escola/*} & \yes & \no & \no & \no\\
+\textbf{Jornal da Escola: preparar, conduzir e ler o painel} (pacote, imagens,
+  os dois portões, zerar), e o material do guia &
+  \rota{/jornal-escola/\B turmas/*}, \rota{/professor/\B material} & \no &
+  \yes\footnotesize{\ddag} & \yes & \yes\\
 \zebra unooGPT: a própria partida & \rota{/unoogpt/*} & \yes & \no & \no & \no\\
 \textbf{unooGPT: turma e transcrição individual} &
   \rota{/unoogpt/professor/*} & \no & \yes\footnotesize{\ddag} & \no & \yes\\
 \zebra unooGPT: agregado da escola (sem \cd{estudanteId}) &
   \rota{/unoogpt/agregado/\B escola} & \no & \no & \yes & \yes\\
-unooTube: a própria sessão & \rota{/unootube/*} & \yes & \no & \no & \no\\
-\zebra unooTube: resultados por turma & \rota{/unootube/turmas/*} & \no & \yes & \yes & \yes\\
 \textbf{Bem-estar: o próprio \emph{check-in}, histórico, apagar} &
   \rota{/bemestar/*} & \no & \yes & \no & \no\\
 \zebra Plano de aula: criar, versionar, restaurar & \rota{/planos/*} & \no & \yes & \no & \no\\
@@ -578,7 +647,9 @@ unooTube: a própria sessão & \rota{/unootube/*} & \yes & \no & \no & \no\\
   \yes & \yes & \yes & \yes\\
 \textbf{Alterar o teto diário de IA de um perfil} (só \cd{admin}, \adrr{ADR-105}) &
   \rota{/recursos/quotas-de-ia/*} & \no & \no & \no & \no\\
-\zebra Enviar telemetria & \rota{POST /telemetry/batch} & \yes & \yes & \yes & \yes\\
+\zebra \textbf{Listar as experiências arquivadas} (só \cd{admin}, \adrr{ADR-116}) &
+  \rota{GET /recursos/arquivadas} & \no & \no & \no & \no\\
+Enviar telemetria & \rota{POST /telemetry/batch} & \yes & \yes & \yes & \yes\\
 \bottomrule
 \end{tabularx}
 
@@ -593,12 +664,15 @@ turma}) e para o relógio da aula do unooGPT --- as três coisas que uma prova d
 \normalsize
 
 \begin{regra}
-\textbf{As três ausências mais importantes desta tabela.} \emph{Bem-estar} não
+\textbf{As quatro ausências mais importantes desta tabela.} \emph{Bem-estar} não
 tem uma única rota de gestor nem de agregado --- o instrumento é do professor,
 sobre o professor. No \emph{unooGPT}, o controller do gestor \textbf{não tem
 rota que aceite \cd{estudanteId}}: não é que ele não deva ver a linha de uma
 criança, é que não existe endereço onde ela caiba. E \cd{admin-contrato} não
-alcança a Vila nem o dossiê: ele lê a rede em agregado, nunca a sala.
+alcança a Vila nem o dossiê: ele lê a rede em agregado, nunca a sala. Na
+\emph{evidência pedagógica}, o estudante \textbf{não tem rota que leia o próprio
+resultado} (\adrr{ADR-112}): as duas dele são a pergunta, sem gabarito, e a
+resposta, que devolve \mbox{\cd{\{ enviada: true \}}} na primeira e na segunda vez.
 \end{regra}
 
 \begin{decisao}
@@ -709,7 +783,7 @@ aparecer na folha e a tela dele responder \enquote{não encontrado}.
 \begin{decisao}
 \textbf{Numa REDE, a pessoa atravessa escolas; o \emph{token} não.} O professor
 lotado em duas unidades escolhe em qual está trabalhando, e o \emph{token} leva
-\textbf{essa} --- então a política de RLS e as 37 tabelas com \cd{escola\_id}
+\textbf{essa} --- então a política de RLS e as tabelas com \cd{escola\_id}
 continuam exatamente como estavam (\adrr{ADR-30}). A troca de escola ativa é
 validada contra as lotações \emph{pela API}, nunca contra a lista que o
 \emph{cookie} carrega: \emph{cookie} é dado do cliente.
@@ -808,7 +882,7 @@ Cada token do \emph{sandbox} está lá por um motivo medido:
 \cd{allow-same-origin} porque, sem ele, a \emph{origin} do \cd{iframe}
 cross-origin vira \cd{"null"} e a validação de \emph{origin} quebra dos dois
 lados; \cd{allow-modals} porque, sem ele, o navegador \emph{ignora}
-\cd{confirm()} do \cd{iframe} silenciosamente (devolve \cd{false}), e a exp-90
+\cd{confirm()} do \cd{iframe} silenciosamente (devolve \cd{false}), e a app-90
 confirma exclusão assim; \cd{allow-pointer-lock} porque, num \cd{iframe} com
 \emph{sandbox}, \cd{requestPointerLock()} morre com \cd{SecurityError} sem ele
 --- verificado em \arq{scripts/probe-pointerlock.mjs}, que precisa do Chrome do
@@ -854,11 +928,18 @@ acredita ter declarado algo.
   \item Chamada de IA só existe como \rota{POST /ai/gerar} na API. O
     \emph{prompt} de sistema mora em \arq{apps/api/src/ai/prompts.ts} e nunca é
     devolvido.
-  \item O gabarito da exp-02 (\cd{factual}) não é persistido no estado do estudante
-    nem devolvido em nenhuma rota de estudante.
-  \item Os textos dos cartões da exp-70 chegam ao jogo \textbf{sem gabarito}, e
+  \item O gabarito do UnooTube arquivado (\cd{factual}, hoje em
+    \arq{backup-unootube}) não era persistido no estado do estudante nem
+    devolvido em nenhuma rota de estudante.
+  \item O gabarito do Jornal da Escola (se cada notícia é publicável e o pilar
+    que falta), a consequência e o conjunto certo da Chave moram no pacote, no
+    servidor. A notícia do estudante é uma \emph{allowlist}, e cada parte
+    desce num portão: a pista quando ela a abre, a reação com o resultado
+    liberado, o pilar da vaga depois da Chave --- e o conjunto da Chave, nunca
+    (\adrr{ADR-117}).
+  \item Os textos dos cartões da app-70 chegam ao jogo \textbf{sem gabarito}, e
     apenas os da bolha daquela criança.
-  \item \cd{lado}, \cd{perfil} e \cd{intensidade} dos posts da exp-01 são
+  \item \cd{lado}, \cd{perfil} e \cd{intensidade} dos posts da exp08ef1b são
     removidos pelo sanitizador antes de o \emph{feed} sair da API --- são a
     variável independente do experimento.
 \end{itemize}
@@ -889,7 +970,7 @@ Telemetria sem PII & O evento carrega \cd{estudante\_id} opaco (UUID), nunca nom
   \emph{e-mail}. A identidade é derivada do \emph{token} no servidor, não do
   corpo enviado pelo cliente --- o que é, ao mesmo tempo, anti-\emph{spoof} e
   garantia de que o cliente não \emph{pode} enviar PII no lugar do id.\\
-\zebra Sem canal de texto arbitrário & Em \cd{exp\_70\_sessoes.payload}, o campo
+\zebra Sem canal de texto arbitrário & Em \cd{app\_70\_sessoes.payload}, o campo
   \cd{eventos[].dados} aceita apenas número, booleano ou \emph{string} de um
   \textbf{vocabulário fechado}. O campo \cd{texto} livre que existia era o único
   canal de texto arbitrário do \emph{payload} --- e o caminho por onde o nome de
@@ -900,74 +981,66 @@ Texto sensível fora de log & O texto livre do \emph{check-in} de bem-estar nunc
 \zebra IA sem contexto identificável & O \emph{prompt} de bem-estar recebe
   apenas dia da semana, mês, número do \emph{check-in} e o texto livre
   \emph{delimitado como conteúdo}. Nunca nome, escola, pontuação ou faixa.\\
-Ranking sem menor real & O ranking da exp-02 usa colegas
-  \textbf{fictícios}, com distribuição desenhada para a lição. Não há pontuação
-  de criança real exposta a outra criança.\\
-\zebra Dado de saúde com posse & \cd{exp\_91\_ciclos} e \cd{exp\_91\_checkins}
+Ranking sem menor real & O ranking do UnooTube (hoje \cd{backup-exp04ef1b})
+  usava colegas \textbf{fictícios}, com distribuição desenhada para a lição. Não
+  há pontuação de criança real exposta a outra criança --- nem no Jornal da
+  Escola, em que o painel só mostra as verificadas num histograma anônimo e a
+  criança não vê a edição de ninguém.\\
+\zebra Dado de saúde com posse & \cd{app\_91\_ciclos} e \cd{app\_91\_checkins}
   têm RLS \emph{e} filtro por \cd{professor\_id} em toda \emph{query}, e não
   existe rota de gestor nem agregado. O próprio titular apaga tudo.\\
-Texto de menor com contenção & \textbf{Três} campos livres de estudante, e a
-  diferença entre eles é de finalidade. \cd{exp\_07\_mensagens} guarda a
-  conversa da criança com Amara: 600 caracteres, 3 turnos, sanitizador nos dois
-  sentidos, e \textbf{nenhum caminho até o painel} --- a professora vê
-  \emph{quantos} turnos, nunca o quê. \cd{exp\_06\_reflexoes} guarda o
+Texto de menor com contenção & \cd{exp06ef2b\_reflexoes} guarda o
   \enquote{Meu percurso}: 280 caracteres que \textbf{a professora da turma lê},
   porque ali o texto \emph{é} o instrumento.
-  \cd{exp\_08\_respostas\_percurso} guarda a justificativa da cláusula: 800
-  caracteres, mesma finalidade e mesma fronteira --- e com uma trava que os
-  outros dois não têm, o \textbf{filtro de dado pessoal que recusa antes de
-  gravar}. As três ficam sob RLS, fora de log e fora da telemetria. Ver as
-  decisões logo abaixo.\\
+  \cd{exp08ef4b\_respostas\_percurso} guarda a justificativa da cláusula: 800
+  caracteres, mesma finalidade e mesma fronteira --- e com uma trava que o
+  outro não tem, o \textbf{filtro de dado pessoal que recusa antes de
+  gravar}. Os dois ficam sob RLS, fora de log e fora da telemetria. Ver as
+  decisões logo abaixo. Na A Seleção (\adrr{ADR-115}) a \textbf{legenda} dos
+  Stories vai, com o primeiro nome, ao colega pareado no Mural --- por isso passa
+  por um sanitizador (link, telefone, e-mail, menção, palavrão) antes de
+  gravar ---, e a \cd{exp07ef1b\_reflexoes} só ao professor da turma. O Jornal
+  da Escola (\adrr{ADR-117}) é o oposto, e de propósito: \textbf{não tem texto
+  livre de menor}. Toda resposta é vocabulário fechado (notícia, tipo de pista,
+  bloco da Chave, motivo, alternativa), e por isso não há recorte de gestor a
+  aplicar --- o gestor lê o mesmo painel que o professor.\\
 \bottomrule
 \end{tabularx}
 
 \begin{decisao}
-\textbf{A exp-07 reabriu o texto livre de menor, e isso é mudança de postura}
-(\adrr{ADR-66}). Até ela, o produto tinha exatamente um campo aberto, e ele era
-de \emph{professor} (o \emph{check-in} de bem-estar); as experiências de
-estudante trabalhavam com vocabulário fechado, e a linha acima sobre
-\cd{exp\_70\_sessoes} descreve a trava estrutural que existe justamente por isso.
-
-O que fez valer a pena: a missão mede se a criança consegue \textbf{perguntar
-antes de repassar}, e um menu de perguntas prontas responderia a pergunta no
-lugar dela. O que cerca a abertura: a conversa só existe \emph{depois} da
-decisão (o silêncio de Amara na etapa da decisão é de ofício), o texto nunca sai
-da escola dele, e nenhum caminho o leva a \emph{log}, telemetria, Clarity ou
-painel do professor --- o painel mostra \textbf{quantos} turnos, nunca o quê.
-
-Consequência aceita: existe no banco uma coluna de longa duração com texto
-escrito por criança (\cd{exp\_07\_mensagens.texto}), e ela entra no mesmo regime
-de retenção da subseção seguinte. Gatilho de reavaliação: se a conversa deixar de ser opcional, ou se
-algum painel pedir o texto, a decisão volta à mesa.
+\textbf{O texto livre de menor foi reaberto pelo Eco no Grupo, e a mudança de
+postura sobreviveu à missão.} A \adrr{ADR-66}, que a registrou, ficou superada
+com a retirada (\adrr{ADR-113}). Até o Eco, o produto tinha exatamente um campo aberto, e ele era de \emph{professor} (o
+\emph{check-in} de bem-estar); as experiências de estudante trabalhavam com
+vocabulário fechado, e a linha acima sobre \cd{app\_70\_sessoes} descreve a
+trava estrutural que existe justamente por isso. A conversa que abriu o
+precedente saiu com a missão --- a tabela dela caiu na migração
+\cd{20260925180000\_remover\_eco\_no\_grupo} ---, e o que resta são os campos
+das missões seguintes, cada um com a contenção da tabela acima.
 \end{decisao}
 
 \begin{decisao}
-\textbf{A exp-06 leva o texto da criança ao painel do professor, e a exp-07
-não --- as duas estão certas.} O que separa os dois casos é a
-\textbf{finalidade}, não o grau de cuidado.
+\textbf{A exp06ef2b leva o texto da criança ao painel do professor, e isso está
+certo.} O que decide é a \textbf{finalidade}, não o grau de cuidado: o Eco no
+Grupo mantinha fora do painel uma \emph{conversa} com personagem, porque
+levá-la à tela do adulto mudaria o que a criança escreve.
 
-Na exp-07 o campo é uma \emph{conversa} com uma personagem: ele existe para a
-criança perguntar antes de repassar, e o que a professora precisa saber é se ela
-perguntou --- daí a contagem de turnos no painel e o texto fora dele. Levá-lo à
-tela do adulto mudaria o que a criança escreve, e a missão mede justamente a
-pergunta espontânea.
-
-Na exp-06 o campo é o \emph{registro do percurso}: 280 caracteres em que a
+Na exp06ef2b o campo é o \emph{registro do percurso}: 280 caracteres em que a
 criança nomeia o gatilho que reconheceu e o que fará antes de encaminhar da
 próxima vez. Ali o texto \textbf{é} o instrumento formativo --- um painel que
 mostrasse só \enquote{entregou / não entregou} guardaria a redação para ninguém.
 Quem lê é o professor \emph{da turma dela}: nenhuma rota de gestor o alcança, e
 o campo não existe em nenhum \emph{payload} de telemetria.
 
-Consequência aceita: há agora duas colunas de longa duração com texto de menor,
-e uma delas é visível a um adulto por desenho. Gatilho de reavaliação: se um
-painel de gestor, de rede ou de análise pedir \cd{exp\_06\_reflexoes.texto}, a
+Consequência aceita: a coluna é de longa duração e visível a um adulto por
+desenho. Gatilho de reavaliação: se um
+painel de gestor, de rede ou de análise pedir \cd{exp06ef2b\_reflexoes.texto}, a
 decisão volta à mesa --- a fronteira é o professor da turma, e ela não se move
 por conveniência de relatório.
 \end{decisao}
 
 \begin{decisao}
-\textbf{A exp-08 RECUSA o dado pessoal em vez de guardá-lo com \emph{flag}}, e
+\textbf{A exp08ef4b RECUSA o dado pessoal em vez de guardá-lo com \emph{flag}}, e
 essa é a primeira vez que o produto trata a caixa livre de menor de forma ativa,
 não só contida.
 
@@ -1012,7 +1085,7 @@ gravar.
 \subsection{Retenção: uma decisão explícita de não declarar prazo}
 
 \begin{decisao}
-\textbf{Não há prazo de retenção declarado} para \cd{exp\_70\_sessoes} nem para
+\textbf{Não há prazo de retenção declarado} para \cd{app\_70\_sessoes} nem para
 \cd{telemetria\_eventos} (decisão de 2026-08-26, \adrr{ADR-13}).
 
 Havia uma coluna \cd{expires\_at} de 90 dias no \emph{schema} e \emph{nenhuma

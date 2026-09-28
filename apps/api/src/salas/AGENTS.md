@@ -10,14 +10,14 @@ Complementa o `AGENTS.md` de `apps/api`, que vence em conflito.
 - **A porta é `comum/liberacao.ts#exigirMissaoLiberada`**, e ela fica no FUNIL
   das rotas de estudante de cada experiência — `estudanteDaEscola` no UnooTube e
   no Eco, `garantirSessao` no unooGPT, `abrir` na Vila, e o controller em
-  `POST /runs` + `GET /runs/boot` (a exp-01 é a única cuja entrada está no
+  `POST /runs` + `GET /runs/boot` (a exp08ef1b é a única cuja entrada está no
   controller). Pô-la só na rota de leitura deixa a de escrita aberta a quem
   chamar direto: no UnooTube, `POST /salvos` cria a sessão sozinho.
 - **Fica na CRIAÇÃO da sessão, não em toda rota.** Quem já entrou fica —
   encerrar fecha a entrada, não expulsa a criança no meio da aula.
 - **Experiência nova declara o próprio `EXP_ID`** (`comum/insta/defaults.ts`,
-  `unootube/catalogo.ts`, `unoogpt/regras/defaults.ts`, `vila/catalogo.ts`,
-  `o-eco-no-grupo/midia.ts`) e ele tem de bater com o `id` do
+  `unootube/catalogo.ts`, `unoogpt/regras/defaults.ts`, `vila/catalogo.ts`)
+  e ele tem de bater com o `id` do
   `public/experiencia.json`. Divergir faz a missão NUNCA abrir, com a liberação
   gravada e visível na tela do professor — não há erro que aponte para isso.
 - **`bloqueada` não é estado do banco**: é a ausência de linha. E ela aparece na
@@ -28,12 +28,16 @@ Complementa o `AGENTS.md` de `apps/api`, que vence em conflito.
   (`prisma/catalogo-e-liberacoes.ts`, lendo os mesmos manifestos que o CI envia)
   — **sem catálogo não há grade**, e o professor abre a sala sem nada para liberar.
 - **Estudante sem turma não vê missão nenhuma**, e isso mudou o comportamento da
-  exp-03 (que servia o relógio "aguardando" a quem estava solto). Sem sala não há
+  exp02em1b (que servia o relógio "aguardando" a quem estava solto). Sem sala não há
   missão; quem explica é a tela do hub, porque um erro dentro do aparelho não
   diria "peça para a coordenação te matricular" sem sair do disfarce.
 - **Fixture de teste que abre experiência precisa de `tests/liberar-de-teste.ts`.**
   Quatro suítes quebraram quando a guarda entrou — quem quebrar com
   `missao-nao-liberada` não tem bug, tem fixture faltando.
+- **A sala do professor diz quantas equipes cada missão tem** (`missoes[].equipes`,
+  E13/ADR-111, de `equipes/consulta.ts#contarEquipesDaTurma`) — só no schema do
+  PROFESSOR: `MissaoNaGradeSchema` também responde `/salas/minhas`, e a contagem da
+  sala inteira não é assunto do estudante.
 
 **Pessoa NASCE por importação — e o cadastro unitário DELEGA a ela.** As
 chamadas que ESCREVEM em `users` continuam sendo duas:

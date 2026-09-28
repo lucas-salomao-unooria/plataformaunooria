@@ -402,23 +402,42 @@ export const RelogioDoProfessorSchema = RelogioPublicoSchema.extend({
 });
 
 /**
+ * A equipe de UM COMPUTADOR na sala (E13, ADR-111) — quem divide a tela com o
+ * login desta linha. Não confundir com as equipes Alfa e Bravo da missão: essas
+ * são personagens da cidade; esta é gente sentada diante da mesma máquina.
+ */
+export const EquipeDaFolhaSchema = z.object({
+  id: Uuid,
+  nome: z.string(),
+  /** Inclui quem entrou. `nome` é o `displayName`. */
+  membros: z.array(z.object({ id: Uuid, nome: z.string() })),
+});
+
+/**
  * A folha da turma. O RETRATO fala de **conduta, não de nota** — e é por isso
  * que ele conta "decidiram no escuro" e "justificaram por intuição" em vez de
  * somar acertos: a Missão não tem resposta certa.
+ *
+ * UMA LINHA POR COMPUTADOR: com equipes nesta missão, os membros viram uma
+ * linha só, a de quem entrou, e o retrato conta essas linhas.
  */
 export const TurmaDoProfessorSchema = z.object({
   turma: z.object({ id: Uuid, nome: z.string(), serie: z.string() }),
   relogio: RelogioDoProfessorSchema,
   retrato: z.object({
+    /** Quantas LINHAS a folha tem — computadores, quando `porComputador`. */
     estudantes: z.number().int().nonnegative().optional(),
     comecaram: z.number().int().nonnegative(),
     concluiram: z.number().int().nonnegative(),
     viramConflito: z.number().int().nonnegative(),
     decidiramNoEscuro: z.number().int().nonnegative(),
     justificaramPorIntuicao: z.number().int().nonnegative(),
+    /** A turma tem equipes nesta missão: o retrato conta computadores, não crianças. */
+    porComputador: z.boolean(),
   }),
   linhas: z.array(
     z.object({
+      /** Do representante, quando há equipe — é para ele que "Abrir" leva. */
       id: Uuid.optional(),
       estudanteId: Uuid.optional(),
       nome: z.string(),
@@ -431,6 +450,8 @@ export const TurmaDoProfessorSchema = z.object({
       decidiuNoEscuro: z.boolean(),
       justificouPorIntuicao: z.boolean(),
       tentativas: z.number().int().nonnegative(),
+      /** `null` = sem equipe nesta missão: a linha é só deste estudante. */
+      equipe: EquipeDaFolhaSchema.nullable(),
     }),
   ),
 });

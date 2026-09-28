@@ -11,7 +11,9 @@ que vence em conflito — e que carrega a versão curta desta lista.
 
 ## Definition of Done (qualquer tarefa)
 
-- [ ] Typecheck + lint + testes passando (`pnpm turbo typecheck lint test`)
+- [ ] Typecheck + lint + testes passando (`pnpm turbo typecheck lint test`).
+      No PR para `dev-local` este item É o portão: o CI só roda nos PRs para
+      `dev`, `hml` e `main` (ADR-121), e o GitHub não mostra check nenhum ali.
 - [ ] Se mexeu em tela: a suíte E2E do papel afetado
       (`node scripts/e2e/rodar.mjs <papel>`) — typecheck verde não pega ícone
       virando texto, link sublinhado nem iframe vazio. Tela nova = passo novo na
@@ -35,3 +37,11 @@ que vence em conflito — e que carrega a versão curta desta lista.
 - [ ] Se a regra mudou: o `AGENTS.md` da pasta afetada mudou no mesmo commit
 - [ ] **`documentacao-latex/` atualizada e `main.pdf` regerado** (tabela acima).
       Decisão com alternativa descartada = ADR nova em `secoes/18-adr.tex`
+- [ ] **Mudou tela ou regra de negócio? O mapa de produto muda no mesmo PR**
+      (`documentacao-latex/produto/mapa-de-produto/`, PU-PRD-001): a história
+      troca o selo, história nova ganha id novo (nunca reaproveitado) e o PDF é
+      recompilado com `tectonic -k mapa-de-produto.tex` na pasta. É a
+      documentação de PRODUTO (pessoas, telas e regras, sem rota, tabela nem
+      módulo), separada da técnica (PU-DOC-001): uma não substitui a outra, e é
+      a de produto que o PO lê. Sem isso ela vira retrato de um dia e para de
+      responder "o que a plataforma faz hoje"

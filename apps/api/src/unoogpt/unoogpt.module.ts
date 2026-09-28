@@ -5,7 +5,7 @@ import { UnoogptController } from "./unoogpt.controller";
 import { UnoogptService } from "./unoogpt.service";
 
 /**
- * exp-03-unoogpt — a Missão Tempestade.
+ * exp02em1b — a Missão Tempestade.
  *
  * `PrismaModule`, `AuthModule` e `AiModule` são `@Global`: não se importam aqui
  * (ver o comentário em `bemestar.module.ts`).

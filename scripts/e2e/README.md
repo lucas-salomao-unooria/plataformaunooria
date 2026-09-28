@@ -27,6 +27,7 @@ que a checagem de pointer lock não valeu.
 | `professor/` | o docente | turmas, trilha, criar atividade, conduzir, plano de aula, bem-estar, resultados, guias de aula, planejamento de ensino |
 | `gestor/` | a secretaria da escola | importar, enturmar, senhas, quem trabalha em duas escolas |
 | `admin-contrato/` | a rede | escolas, regionais, OneRoster, períodos, transferência, análise de produto |
+| `arquivados/` | NINGUÉM — não é papel | as suítes das experiências arquivadas (ADR-116), guardadas como estavam e FORA do runner: uma arquivada não abre para ninguém, e a suíte só reprovaria (ver `arquivados/AGENTS.md`) |
 
 Por papel, e não por experiência, porque é o crachá que decide o que a pessoa
 alcança — e porque a organização antiga, pelo nome da experiência, escondia as
@@ -88,7 +89,7 @@ Uma geração de IA que falha em 306 ms deixava o roteiro esperando 180 s por um
   espera cega paga o timeout inteiro para reportar o seletor.
 
 **Vigiar alerta só depois de o estado novo COMEÇAR.** Quando o botão que dispara
-a ação está DENTRO do alerta de erro anterior (o "Tentar de novo" da exp-92 é o
+a ação está DENTRO do alerta de erro anterior (o "Tentar de novo" da app-92 é o
 caso), o `esperarOuFalharCedo` seguinte vê o alerta ANTIGO e aborta antes de a
 ação começar. Espere primeiro o estado `gerando` com `waitFor` puro — vigiar o
 alerta ali é vigiar o passado. Em 2026-09-10 isso fez a `professor/09` reportar
@@ -118,6 +119,23 @@ chegou a passar dos 30s numa página de 20 000 px e derrubou o deploy de hml com
 ainda assim estourar, repete a captura com `emulateMedia({reducedMotion:
 "reduce"})` — o desligamento que os próprios efeitos respeitam, então o quadro
 é o mesmo, parado.
+
+## O 404 do BFF que não é do produto
+
+`GET /api/plataforma/<prefixo>/…` respondendo **404 `{"mensagem":"rota não
+permitida"}`** com o prefixo JÁ escrito na allowlist de
+`apps/hub/app/api/plataforma/[...path]/route.ts` é o `next dev` servindo o
+route handler VELHO. Em 2026-09-25 o `git pull` que trouxe `equipes` e
+`evidencias` para a allowlist recompilou o chunk no disco, mas o processo do hub
+(no ar havia dois dias) seguiu recusando os dois prefixos: a `professor/11`
+reprovou dizendo que "a api devolve 404" para um perfil que a api devolvia com
+200. As páginas se atualizaram — só o route handler não.
+
+Três sinais separam isso de um bug: o log do hub tem `codigo:
+"bff-prefixo-recusado"` com o prefixo novo; a api não tem query nenhuma
+naquele segundo; e a mesma rota, chamada direto na api com um token de
+`/api/exp-token`, responde. O remédio é reiniciar o hub
+(`docker restart unooria-plataforma-hub-1`) e repetir as suítes daquela janela.
 
 ## Evidências
 

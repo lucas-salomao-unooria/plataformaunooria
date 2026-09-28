@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { HttpException } from "@nestjs/common";
 import { PrismaClient } from "@prisma/client";
 import { MockProvider } from "../src/ai/mock.provider";
@@ -8,7 +9,7 @@ import { liberarParaTeste } from "./liberar-de-teste";
 import { criarTurmaDeTeste } from "./turma-de-teste";
 
 /**
- * Integração da exp-03-unoogpt no Postgres: a largada da TURMA, o orçamento de
+ * Integração da exp02em1b no Postgres: a largada da TURMA, o orçamento de
  * perguntas, a alocação com justificativa, a tempestade, o teto por sessão e
  * TENANCY.
  *
@@ -41,6 +42,8 @@ let deOutraEscola = "";
 async function limpar() {
   const escolas = [ESCOLA, OUTRA_ESCOLA];
   await prisma.liberacao.deleteMany({ where: { escolaId: { in: escolas } } });
+  /* Equipes e membros caem por CASCADE da montagem. */
+  await prisma.equipesMontagem.deleteMany({ where: { escolaId: { in: escolas } } });
   await prisma.unoogptSessao.deleteMany({ where: { escolaId: { in: escolas } } });
   await prisma.unoogptRelogioTurma.deleteMany({ where: { escolaId: { in: escolas } } });
   await prisma.iaUsoDiario.deleteMany({ where: { escolaId: { in: escolas } } });
@@ -93,9 +96,9 @@ beforeAll(async () => {
   /* A PORTA DA SALA: sem estas linhas `garantirSessao` recusa com 403
      `missao-nao-liberada` e a suíte inteira falha. */
   for (const t of [turmaId, turmaBId]) {
-    await liberarParaTeste(prisma, ESCOLA, t, "exp-03-unoogpt", ana);
+    await liberarParaTeste(prisma, ESCOLA, t, "exp02em1b", ana);
   }
-  await liberarParaTeste(prisma, OUTRA_ESCOLA, outraTurmaId, "exp-03-unoogpt", deOutraEscola);
+  await liberarParaTeste(prisma, OUTRA_ESCOLA, outraTurmaId, "exp02em1b", deOutraEscola);
 });
 
 afterAll(async () => {
@@ -537,5 +540,82 @@ describe("zerar a turma", () => {
     // O relógio vai junto: rodar de novo com a aula "já começada" faria a
     // segunda rodada nascer no meio da tempestade.
     expect(await prisma.unoogptRelogioTurma.count({ where: { escolaId: ESCOLA, turmaId } })).toBe(0);
+  });
+});
+
+/**
+ * EQUIPES NA MISSÃO (E13, ADR-111): quem divide um computador entra com o login
+ * de UM membro, e a folha conta por computador. Turma PRÓPRIA (a 2C): as
+ * suítes acima contam as linhas da 2A.
+ */
+describe("a folha conta por COMPUTADOR quando a turma tem equipes", () => {
+  let turma2C = "";
+  const alunos = { caio: "", duda: "", enzo: "", fabi: "" };
+
+  /** A montagem gravada direto no banco — o serviço de equipes tem a suíte dele. */
+  async function montarEquipe(expId: string, nome: string, membros: string[]) {
+    await prisma.equipesMontagem.create({
+      data: { escolaId: ESCOLA, turmaId: turma2C, expId, modo: "manual", computadores: 2, atualizadoPor: randomUUID() },
+    });
+    const equipe = await prisma.equipe.create({
+      data: { escolaId: ESCOLA, turmaId: turma2C, expId, nome, ordem: 0 },
+    });
+    await prisma.equipeMembro.createMany({
+      data: membros.map((estudanteId) => ({ escolaId: ESCOLA, equipeId: equipe.id, turmaId: turma2C, expId, estudanteId })),
+    });
+    return equipe.id;
+  }
+
+  beforeAll(async () => {
+    turma2C = (await criarTurmaDeTeste(prisma, ESCOLA, "2C", "2EM")).id;
+    const criar = async (username: string) =>
+      (
+        await prisma.user.create({
+          data: { role: "estudante", escolaId: ESCOLA, turmaId: turma2C, username, displayName: username, passwordHash: "x" },
+          select: { id: true },
+        })
+      ).id;
+    alunos.caio = await criar("ug.caio");
+    alunos.duda = await criar("ug.duda");
+    alunos.enzo = await criar("ug.enzo");
+    alunos.fabi = await criar("ug.fabi");
+    /* Só a Duda entrou — com o computador que divide com o Caio e o Enzo. Passo
+       fora da abertura = começou. */
+    await prisma.unoogptSessao.create({
+      data: { escolaId: ESCOLA, estudanteId: alunos.duda, turmaId: turma2C, passo: "investigacao" },
+    });
+  });
+
+  it("sem equipe NESTA missão, cada estudante é uma linha — equipe de outra missão não conta", async () => {
+    await montarEquipe("exp04ef1b", "Equipe do UnooTube", [alunos.caio, alunos.duda, alunos.enzo]);
+    const folha = await service.turmaDoProfessor(ESCOLA, turma2C);
+    expect(folha.linhas.map((l) => l.usuario)).toEqual(["ug.caio", "ug.duda", "ug.enzo", "ug.fabi"]);
+    expect(folha.linhas.every((l) => l.equipe === null)).toBe(true);
+    expect(folha.retrato).toMatchObject({ estudantes: 4, comecaram: 1, porComputador: false });
+  });
+
+  it("equipe de 3 com 1 login: UMA linha, a de quem entrou, e o retrato conta computadores", async () => {
+    const equipeId = await montarEquipe("exp02em1b", "Equipe 1", [alunos.caio, alunos.duda, alunos.enzo]);
+    const folha = await service.turmaDoProfessor(ESCOLA, turma2C);
+
+    expect(folha.linhas).toHaveLength(2);
+    const [daEquipe, sozinha] = folha.linhas;
+    /* A linha é a do REPRESENTANTE: é para a tela dele que "Abrir" leva. */
+    expect(daEquipe).toMatchObject({ estudanteId: alunos.duda, usuario: "ug.duda", comecou: true });
+    expect(daEquipe!.equipe).toEqual({
+      id: equipeId,
+      nome: "Equipe 1",
+      membros: [
+        { id: alunos.caio, nome: "ug.caio" },
+        { id: alunos.duda, nome: "ug.duda" },
+        { id: alunos.enzo, nome: "ug.enzo" },
+      ],
+    });
+    expect(sozinha).toMatchObject({ estudanteId: alunos.fabi, comecou: false, equipe: null });
+    /* 2 computadores, 1 começou — e não "4 estudantes, 3 não começaram". */
+    expect(folha.retrato).toMatchObject({ estudantes: 2, comecaram: 1, concluiram: 0, porComputador: true });
+    /* A equipe não abre porta para o número de resgate na listagem. */
+    const cru = JSON.stringify(folha.linhas);
+    for (const proibido of ["salvas", "resgatadas", "vitimas"]) expect(cru).not.toContain(proibido);
   });
 });

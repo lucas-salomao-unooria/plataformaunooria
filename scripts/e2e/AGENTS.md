@@ -29,7 +29,7 @@ o que decide se você precisa abri-lo.
   e o culpado apontado foi o produto.
 - **Vigie o alerta só DEPOIS de o estado novo começar.** Quando o botão que
   dispara a ação fica dentro do alerta de erro anterior (o "Tentar de novo" da
-  exp-92), a vigilância vê o alerta ANTIGO e aborta antes de a ação começar —
+  app-92), a vigilância vê o alerta ANTIGO e aborta antes de a ação começar —
   espere primeiro o estado `gerando` com `waitFor` puro. Em 2026-09-10 isso fez
   a `professor/09` reportar vermelho enquanto o banco gravava `pronto` na mesma
   corrida: falso negativo que manda investigar um produto que funcionou.
@@ -52,6 +52,19 @@ o que decide se você precisa abri-lo.
   seção fechada, o Playwright o considera visível e o clique morre interceptado
   pelo contêiner. Abra os collapses antes de procurar (`role="button"` +
   `aria-expanded` no cabeçalho).
+- **Rádio do DS se clica pelo PAPEL, nunca pelo texto do rótulo.** O `<input>`
+  do `RadioGroup` é transparente e cobre o `<label>` inteiro: `getByText(rótulo)`
+  resolve no `<span>`, e o clique morre em "<input> intercepts pointer events"
+  até o timeout (a `professor/10`, 2026-09-25). Use
+  `getByRole("radio", { name, exact: true })`.
+- **Diálogo do DS sem NOME é defeito da tela, não do seletor.** Até a 0.2.2 o
+  `Modal` só punha `aria-labelledby` no `role="dialog"` com o atalho `title=`;
+  montado com `ModalTitle`, o diálogo ficava sem nome e
+  `getByRole("dialog", { name })` esperava até o timeout com a janela aberta na
+  foto (a `professor/10`, 2026-09-25). Corrigido na 0.2.3: o `Modal` liga o
+  `ModalTitle` sozinho. Se voltar a acontecer, o conserto é na TELA
+  (`aria-labelledby` + `id` no `ModalTitle`) ou no DS, nunca no seletor: sem
+  nome, o leitor de tela também só diz "diálogo".
 - **Erro provocado de propósito se declara** (`r.provocado(...)`), senão a
   corrida que prova que a trava funciona é a que pinta de vermelho.
 - **`testes/` é descartável e está no `.gitignore`** — prints, deck e vídeos se

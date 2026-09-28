@@ -65,7 +65,7 @@ export class PortabilidadeService {
     });
     if (!estudante || (estudante.role !== "estudante" && (estudante.role as string) !== "estudante") || !estudante.cpf) return null;
 
-    const [lotacoes, matriculas, progresso, experiencias] = await Promise.all([
+    const [lotacoes, matriculas, progresso, experiencias, arquivadas] = await Promise.all([
       this.prisma.lotacao.findMany({
         where: { usuarioId: estudanteId, papel: "estudante" },
         include: { escola: { select: { id: true, nome: true, municipio: true, uf: true } } },
@@ -89,6 +89,9 @@ export class PortabilidadeService {
         orderBy: [{ atualizadoEm: "asc" }, { escolaId: "asc" }, { expId: "asc" }],
       }),
       this.prisma.experiencia.findMany({ select: { expId: true, nome: true } }),
+      /* A participação numa experiência ARQUIVADA (ADR-116) continua sendo dado
+         da criança: o progresso ficou, com o id `backup-`, e o nome vem daqui. */
+      this.prisma.experienciaArquivada.findMany({ select: { expId: true, nome: true } }),
     ]);
 
     /* `matriculas` tem RLS, e este `findMany` roda FORA de `comTenancy` de
@@ -96,7 +99,7 @@ export class PortabilidadeService {
        consulta é por `usuarioId`, nunca por escola, e o resultado nunca sai
        daqui sem ser o documento da própria criança. */
     const nomeDaEscola = new Map(lotacoes.map((l) => [l.escola.id, l.escola.nome]));
-    const nomeDaExp = new Map(experiencias.map((e) => [e.expId, e.nome]));
+    const nomeDaExp = new Map([...experiencias, ...arquivadas].map((e) => [e.expId, e.nome]));
 
     const resultados = await this.resultadosDasEscolas(
       estudanteId,
@@ -140,7 +143,7 @@ export class PortabilidadeService {
    *
    * Lê `vilaPerfil` direto em vez de chamar o `VilaService`: o que este módulo
    * precisa é a LEITURA (as funções puras de `vila/leitura.ts`), não o relatório
-   * de tela. Depender do service inteiro arrastaria o módulo da exp-70 para
+   * de tela. Depender do service inteiro arrastaria o módulo da app-70 para
    * dentro da portabilidade sem nada em troca.
    *
    * `versaoMapeamento` viaja junto e é o motivo de o resultado ser exportável:
@@ -168,7 +171,7 @@ export class PortabilidadeService {
       );
       resultados.push({
         tipo: "perfil-de-valores",
-        expId: "exp-70-vila-do-lume",
+        expId: "app-70-vila-do-lume",
         instrumento: "Vila do Lume — retrato de valores (Schwartz)",
         versaoMapeamento: perfil.versaoMapeamento,
         em: perfil.createdAt.toISOString(),

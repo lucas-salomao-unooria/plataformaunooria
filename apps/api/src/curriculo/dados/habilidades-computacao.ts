@@ -1,6 +1,6 @@
 // GERADO por scripts/extrair-bncc.mjs a partir de bncc-computacao-2022.pdf.
 // NÃO edite à mão: a próxima execução sobrescreve o arquivo.
-// Documento: BNCC Computação — 129 habilidades.
+// Documento: BNCC Computação — 130 habilidades.
 
 import type { HabilidadeBncc } from "../tipos";
 
@@ -14,8 +14,8 @@ export const habilidadesComputacao: readonly HabilidadeBncc[] = [
     ],
     "componente": "computacao",
     "area": "computacao",
-    "eixo": null,
-    "objetoDeConhecimento": "OBJETO DE CONHECIMENTO",
+    "eixo": "PENSAMENTO COMPUTACIONAL",
+    "objetoDeConhecimento": "Organização de objetos",
     "explicacao": "Objetos de um mesmo conjunto podem ser organizados e agrupados de diferentes maneiras, enfatizando as características desejadas. A organização adequada pode facilitar a busca por um objeto específico dentro deste conjunto.",
     "exemplos": "O professor pode pedir que os alunos organizem um conjunto de personagens por gênero, cor dos olhos, idade, tamanho, nacionalidade etc. Também pode sugerir que os alunos organizem um conjunto de figuras geométricas por cor, por tipo de figura, por tamanho das figuras etc."
   },
@@ -29,7 +29,7 @@ export const habilidadesComputacao: readonly HabilidadeBncc[] = [
     "componente": "computacao",
     "area": "computacao",
     "eixo": "PENSAMENTO COMPUTACIONAL",
-    "objetoDeConhecimento": "Organização de objetos",
+    "objetoDeConhecimento": "Conceituação de Algoritmos",
     "explicacao": "O objetivo é que os alunos possam identificar passos que fazem parte da execução de uma tarefa, bem como seguir uma sequência de passos para realizar uma tarefa (resolver um problema).",
     "exemplos": "O professor pode fornecer sequências de passos para resolver problemas como construir origamis simples, seguir caminhos, executar uma receita, construir figuras com Tangram, entre outros, e solicitar que os alunos as executem."
   },
@@ -56,8 +56,8 @@ export const habilidadesComputacao: readonly HabilidadeBncc[] = [
     ],
     "componente": "computacao",
     "area": "computacao",
-    "eixo": "PENSAMENTO COMPUTACIONAL",
-    "objetoDeConhecimento": "Conceituação de Algoritmos",
+    "eixo": "MUNDO DIGITAL",
+    "objetoDeConhecimento": "Codificação da informação",
     "explicacao": "O objetivo é fazer com que o aluno compreenda o conceito de informação, que uma mesma informação pode ser descrita de diversas formas (usando linguagem oral, imagens, sons etc.) e que tal descrição pode ser armazenada e transmitida. Por exemplo, a informação sobre a existência de um cachorro pode ser representada como uma imagem ou como o som de seu latido, que pode ser transmitida repassando a folha com a imagem para outra pessoa ou reproduzindo o som para outra pessoa (como na brincadeira telefone sem fio) e depois pode ser armazenada em uma pasta ou gravação.",
     "exemplos": "Transmitir uma palavra por ‘telefone sem fio’, enviar um desenho para um colega, gravar uma mensagem de áudio e reproduzi-la para um colega, entre outros."
   },
@@ -84,7 +84,7 @@ export const habilidadesComputacao: readonly HabilidadeBncc[] = [
     ],
     "componente": "computacao",
     "area": "computacao",
-    "eixo": "MUNDO DIGITAL",
+    "eixo": "CULTURA DIGITAL",
     "objetoDeConhecimento": "Uso de artefatos computacionais",
     "explicacao": "Esta habilidade tem como proposta a identificação e exploração de tecnologias físicas ou digitais, como por exemplo computador, tablets, brinquedos eletrônicos, ferramentas do cotidiano (martelo, alavancas, rampa).",
     "exemplos": "O professor poderá utilizar um jogo educacional em ferramentas como computador, tablet, mesas interativas, celular, em que os alunos possam experimentar seus recursos."
@@ -113,7 +113,7 @@ export const habilidadesComputacao: readonly HabilidadeBncc[] = [
     "componente": "computacao",
     "area": "computacao",
     "eixo": "PENSAMENTO COMPUTACIONAL",
-    "objetoDeConhecimento": "OBJETO DE CONHECIMENTO",
+    "objetoDeConhecimento": "Modelagem de objetos",
     "explicacao": "Um modelo é construído ao se identificar características essenciais de objetos. Modelos são importantes para classificar objetos e a escolha das características define os agrupamentos.",
     "exemplos": "O professor pode distribuir um conjunto de imagens de veículos como motos, bicicletas, automóveis, trens, aviões, caminhões, helicópteros, jet-skis, barcos a vela, lanchas etc., e solicitar que os alunos agrupem as imagens dos veículos que voam ou que possuem rodas, ou ainda os que possuem motor, entre outras características. Chamar a atenção de que diferentes características podem gerar diferentes agrupamentos."
   },
@@ -127,7 +127,7 @@ export const habilidadesComputacao: readonly HabilidadeBncc[] = [
     "componente": "computacao",
     "area": "computacao",
     "eixo": "PENSAMENTO COMPUTACIONAL",
-    "objetoDeConhecimento": "Modelagem de objetos",
+    "objetoDeConhecimento": "Algoritmos com repetições simples",
     "explicacao": "Usar linguagem oral, textual ou pictográfica para descrever algoritmos, percebendo a importância de descrevê-los com precisão para que possam ser executados por outras pessoas (ou máquinas). Os algoritmos aqui devem ser descritos através de sequências de instruções (preestabelecidas ou criadas pelos alunos) que podem ser repetidas um determinado número de vezes. Os ciclos de repetição devem ser simples, isto é, não devem conter outros ciclos.",
     "exemplos": "Os alunos podem construir algoritmos com conjuntos de instruções pré-definidas, como ações para avançar, virar à direita, virar à esquerda, bem como definir seus próprios conjuntos de instruções. Para descrever a tarefa de andar 10 passos, virar a esquerda e andar mais 5 passos, pode-se definir o seguinte algoritmo: 'Ande um passo 10 vezes; vire à esquerda; e ande um passo 5 vezes'"
   },
@@ -140,8 +140,8 @@ export const habilidadesComputacao: readonly HabilidadeBncc[] = [
     ],
     "componente": "computacao",
     "area": "computacao",
-    "eixo": "PENSAMENTO COMPUTACIONAL",
-    "objetoDeConhecimento": "Algoritmos com repetições simples",
+    "eixo": "MUNDO DIGITAL",
+    "objetoDeConhecimento": "Instrução de máquina",
     "explicacao": "Para compreender o funcionamento dos computadores, é importante entender que uma máquina disponibiliza um conjunto de instruções (as operações) que, se realizadas em uma dada sequência (algoritmo), produzem algum resultado.",
     "exemplos": "Nesta etapa, o aluno poderia começar a identificar que alguns conjuntos de instruções bem definidos (operações aritméticas simples de uma calculadora, operações de dobradura etc.) podem ser usados em sequências bem definidas para produzir coisas (o cálculo de uma expressão simples, um origami etc.)."
   },
@@ -155,7 +155,7 @@ export const habilidadesComputacao: readonly HabilidadeBncc[] = [
     "componente": "computacao",
     "area": "computacao",
     "eixo": "MUNDO DIGITAL",
-    "objetoDeConhecimento": "Instrução de máquina",
+    "objetoDeConhecimento": "Hardware e software",
     "explicacao": "O objetivo da habilidade é mostrar aos alunos que em seu cotidiano existem dispositivos físicos (celulares, computadores, calculadoras, máquinas de costura etc.) que são controlados por algo que segue uma sequência de passos lógicos (um App do celular, uma pessoa com a calculadora, uma costureira) etc.",
     "exemplos": "Pode-se utilizar dispositivos do cotidiano do aluno para diferenciar o dispositivo físico (hardware) daquilo que o controla (software)."
   },
@@ -168,7 +168,7 @@ export const habilidadesComputacao: readonly HabilidadeBncc[] = [
     ],
     "componente": "computacao",
     "area": "computacao",
-    "eixo": "MUNDO DIGITAL",
+    "eixo": "CULTURA DIGITAL",
     "objetoDeConhecimento": "Uso de artefatos computacionais",
     "explicacao": "A proposta nessa habilidade é que o aluno verifique as diferentes características das tecnologias de informação e comunicação, identificando como funcionam, principais aspectos, bem como reconhecendo os diferentes usos no dia a dia das pessoas dentro e fora da escola.",
     "exemplos": "O professor pode apresentar imagens de diferentes tecnologias (celular, tablets, computador, dentre outros) destacando características de cada uma delas como tamanho, tipos, bem como diferentes usos do no seu cotidiano, celular para ligações, acessar informações, computador para trabalhar com documentos, produzir conteúdo, dentre outros. Criar um portfólio de tecnologias com imagens de tecnologias;"
@@ -196,8 +196,8 @@ export const habilidadesComputacao: readonly HabilidadeBncc[] = [
     ],
     "componente": "computacao",
     "area": "computacao",
-    "eixo": null,
-    "objetoDeConhecimento": "OBJETO DE CONHECIMENTO",
+    "eixo": "PENSAMENTO COMPUTACIONAL",
+    "objetoDeConhecimento": "Lógica computacional",
     "explicacao": "As sentenças lógicas são sentenças declarativas que representam a constatação de um fato pelo emissor, podendo ser afirmativas ou negativas. Quando se faz uma declaração, ela pode ser \"verdadeira\" ou \"falsa\". Esses termos definem os possíveis valores (verdade) para as sentenças lógicas. Comparações de tamanho, peso ou cor de objetos tem como resultado um valor lógico (\"verdadeiro\" ou \"falso\"). O valor de uma sentença lógica pode ser modificado usando a operação de negação, indicada por termos como NÃO e NÃO É VERDADE QUE.",
     "exemplos": "O professor pode apresentar diferentes sentenças lógicas e solicitar que os alunos determinem seus valores verdade, como por exemplo: Cinco é maior que seis. (Falso) Cinco NÃO é maior que seis. (Verdadeiro) A raiz é uma das partes de uma planta. (Verdadeiro) A raiz NÃO é uma das partes de uma planta. (Falso)"
   },
@@ -211,7 +211,7 @@ export const habilidadesComputacao: readonly HabilidadeBncc[] = [
     "componente": "computacao",
     "area": "computacao",
     "eixo": "PENSAMENTO COMPUTACIONAL",
-    "objetoDeConhecimento": "Lógica computacional",
+    "objetoDeConhecimento": "Algoritmos com repetições condicionais simples",
     "explicacao": "Os algoritmos aqui devem ser descritos através de sequências de instruções que podem ser repetidas um número de vezes que não é conhecido de antemão. Nestes casos, esta repetição é controlada por alguma condição (sentença lógica). Os ciclos de repetição devem ser simples, isto é, não devem conter outros ciclos.",
     "exemplos": "Os alunos podem construir algoritmos com conjuntos de instruções como ações para avançar, virar à direita, virar à esquerda. Para descrever a tarefa de andar em um tabuleiro até encontrar um obstáculo, pode-se definir o seguinte algoritmo: \"Enquanto a próxima posição estiver vazia, ande um passo\". Nesse exemplo, o número de vezes em que a ação \"andar um passo\" será repetida é determinado pelo valor lógico da sentença \"a próxima posição está vazia\". Caso o valor seja \"verdadeiro\", o ciclo de repetição continua, caso contrário ele será interrompido."
   },
@@ -225,7 +225,7 @@ export const habilidadesComputacao: readonly HabilidadeBncc[] = [
     "componente": "computacao",
     "area": "computacao",
     "eixo": "PENSAMENTO COMPUTACIONAL",
-    "objetoDeConhecimento": "Algoritmos com repetições condicionais simples",
+    "objetoDeConhecimento": "Decomposição",
     "explicacao": "Decomposição é uma das principais técnicas de resolução de problemas, na qual um problema é dividido em subproblemas, os quais são resolvidos independentemente, e cujas soluções são combinadas para construir a solução do problema original. Algumas vantagens da decomposição são: - permitir uma melhor organização e visualização do problema e da solução; - facilitar o trabalho em grupo; - permitir que possamos reutilizar as soluções dos subproblemas em outros problemas.",
     "exemplos": "Criar uma receita (algoritmo) que descreva a tarefa (problema) de preparar o café da manhã, pode-se dividir essa tarefa em duas etapas (subproblemas): preparar o café e fazer um sanduíche. Cada etapa pode ser descrita por receitas independentes, criadas pela mesma pessoa ou pessoas diferentes. A solução do problema inicial é obtida combinando as duas receitas (algoritmos). Uma possível combinação é realizar todos os passos da receita do sanduíche e depois todos os passos da receita do café. Outra combinação poderia intercalar os passos das duas receitas, podendo, por exemplo, iniciar aquecendo a água para o café, após preparar o sanduíche e por fim terminar o café."
   },
@@ -238,8 +238,8 @@ export const habilidadesComputacao: readonly HabilidadeBncc[] = [
     ],
     "componente": "computacao",
     "area": "computacao",
-    "eixo": "PENSAMENTO COMPUTACIONAL",
-    "objetoDeConhecimento": "OBJETO DE CONHECIMENTO",
+    "eixo": "MUNDO DIGITAL",
+    "objetoDeConhecimento": "Codificação da informação",
     "explicacao": null,
     "exemplos": null
   },
@@ -267,7 +267,7 @@ export const habilidadesComputacao: readonly HabilidadeBncc[] = [
     "componente": "computacao",
     "area": "computacao",
     "eixo": "MUNDO DIGITAL",
-    "objetoDeConhecimento": "Codificação da informação",
+    "objetoDeConhecimento": "Interface física",
     "explicacao": null,
     "exemplos": null
   },
@@ -280,8 +280,8 @@ export const habilidadesComputacao: readonly HabilidadeBncc[] = [
     ],
     "componente": "computacao",
     "area": "computacao",
-    "eixo": "MUNDO DIGITAL",
-    "objetoDeConhecimento": "OBJETO DE CONHECIMENTO",
+    "eixo": "CULTURA DIGITAL",
+    "objetoDeConhecimento": "Uso de tecnologias computacionais",
     "explicacao": "Nesta habilidade temos a perspectiva que o aluno possa explorar diferentes navegadores e buscadores, conhecendo aspectos gerais das ferramentas de busca como associação de palavras, as abas em cada um deles, filtros, dentre outros. Além disso, por meio das pesquisas apresentar os cuidados na busca das informações desejadas.",
     "exemplos": "O professor pode solicitar uma pesquisa simples em algum site de escolha do docente, sobre temas como um personagem de desenho animado por exemplo, em que os alunos poderão verificar os diferentes resultados da busca, verificando filtros de pesquisa, testando novas palavras associadas a escolhida primeiramente e assim os diferentes tipos de informação sobre um mesmo assunto."
   },
@@ -322,8 +322,8 @@ export const habilidadesComputacao: readonly HabilidadeBncc[] = [
     ],
     "componente": "computacao",
     "area": "computacao",
-    "eixo": null,
-    "objetoDeConhecimento": "OBJETO DE CONHECIMENTO",
+    "eixo": "PENSAMENTO COMPUTACIONAL",
+    "objetoDeConhecimento": "Matrizes e registros",
     "explicacao": null,
     "exemplos": null
   },
@@ -351,7 +351,7 @@ export const habilidadesComputacao: readonly HabilidadeBncc[] = [
     "componente": "computacao",
     "area": "computacao",
     "eixo": "PENSAMENTO COMPUTACIONAL",
-    "objetoDeConhecimento": "OBJETO DE CONHECIMENTO",
+    "objetoDeConhecimento": "Algoritmos com repetições simples e aninhadas",
     "explicacao": "Os algoritmos aqui devem ser descritos através de sequências de instruções que podem ser repetidas. As repetições, aqui, podem ser aninhadas, isto é, um ciclo de repetição pode conter outro.",
     "exemplos": "Imaginando que alguém quer lavar as janelas de um prédio com 10 andares e 20 janelas por andar. A pessoas pode lavar as 20 janelas de um andar, e depois ir para o próximo andar (até chegar ao último andar). Este é um algoritmo que envolve uma repetição aninhada: A pessoa vai repetir 10 vezes a tarefa de lavar 20 janelas, que por sua vez, repete 20 vezes a tarefa de lavar uma janela."
   },
@@ -364,8 +364,8 @@ export const habilidadesComputacao: readonly HabilidadeBncc[] = [
     ],
     "componente": "computacao",
     "area": "computacao",
-    "eixo": "PENSAMENTO COMPUTACIONAL",
-    "objetoDeConhecimento": "Algoritmos com repetições simples e aninhadas",
+    "eixo": "MUNDO DIGITAL",
+    "objetoDeConhecimento": "Codificação da informação",
     "explicacao": "Um processador é formado por circuitos eletrônicos que operam apenas em dois níveis de tensão. Por isso, o sistema binário (0 e 1) é o sistema de numeração usado para codificação em formato digital. Isso implica que para que um computador possa guardar, manipular e transmitir dados, precisamos codificá-los utilizando diferentes estratégias.",
     "exemplos": "Pode-se utilizar a tabela ASCII de codificação de caracteres. Por exemplo, quando se utiliza a tabela ASCII de codificação, a letra \"A\" é representada pelo número decimal 65, que é codificado em binário como 1000001."
   },
@@ -392,7 +392,7 @@ export const habilidadesComputacao: readonly HabilidadeBncc[] = [
     ],
     "componente": "computacao",
     "area": "computacao",
-    "eixo": "MUNDO DIGITAL",
+    "eixo": "CULTURA DIGITAL",
     "objetoDeConhecimento": "Uso de tecnologias computacionais",
     "explicacao": "O objetivo desta habilidade é que o aluno possa explorar diversas ferramentas computacionais como editor de texto, editor de imagem, editor de apresentações, programa de história em quadrinhos, animação dentre outros, para produzir conteúdo em projetos, atividades diversas.",
     "exemplos": "O professor poderá propor um projeto de criação de uma história digital ou um vídeo de curta duração, em que os alunos experimentam os recursos de um editor de texto ou de vídeo."
@@ -407,7 +407,7 @@ export const habilidadesComputacao: readonly HabilidadeBncc[] = [
     "componente": "computacao",
     "area": "computacao",
     "eixo": "CULTURA DIGITAL",
-    "objetoDeConhecimento": "Uso de tecnologias computacionais",
+    "objetoDeConhecimento": "Segurança e responsabilidade no uso da tecnologia",
     "explicacao": "Propõe-se que o aluno reflita sobre aspectos éticos relacionados a manipulação de dados, como por exemplo quando assiste e faz download, compartilha uma imagem, dentre outros.",
     "exemplos": "Construção de um painel, a partir das imagens de tecnologias como o celular e computador, em que os alunos poderão destacar ações importantes de quando se manipula um dado como imagem, música, vídeo, informação, como verificar as permissões, autoria, dentre outros."
   },
@@ -434,8 +434,8 @@ export const habilidadesComputacao: readonly HabilidadeBncc[] = [
     ],
     "componente": "computacao",
     "area": "computacao",
-    "eixo": null,
-    "objetoDeConhecimento": "OBJETO DE CONHECIMENTO",
+    "eixo": "PENSAMENTO COMPUTACIONAL",
+    "objetoDeConhecimento": "Listas e grafos",
     "explicacao": "Listas são estruturas de dados que agrupam itens organizados (logicamente) um depois do outro. As listas não têm um tamanho prédefinido, o que permite a resolução de problemas que tratam argumentos de diferentes tamanhos (um algoritmo que descreve como gerenciar uma fila de pessoas em um caixa é o mesmo, independentemente do tamanho da fila). A ideia aqui é que os alunos consigam identificar objetos estruturados no mundo real que possam ser caracterizados como listas e usem algum tipo de representação (podendo ser visual) para ilustrálos. Além disso, devem realizar manipulações simples sobre essas representações como recuperar, alterar e inserir informações nas listas. Exemplos de objetos que podem ser representados usando listas: filas de pessoas, pilhas de cartas, lista de itens, pilha de pratos, lista de alunos de uma turma, lista de notas musicais etc.",
     "exemplos": null
   },
@@ -477,7 +477,7 @@ export const habilidadesComputacao: readonly HabilidadeBncc[] = [
     "componente": "computacao",
     "area": "computacao",
     "eixo": "PENSAMENTO COMPUTACIONAL",
-    "objetoDeConhecimento": "OBJETO DE CONHECIMENTO",
+    "objetoDeConhecimento": "Algoritmos com seleção condicional",
     "explicacao": "Além de construir algoritmos com sequências de instruções, repetidas ou não, muitas vezes é necessário fazer escolhas sobre qual ação a ser executada a seguir. Escolhas são feitas a partir de situações (condições definidas por sentenças lógicas), como, por exemplo, ao chegar em um semáforo, dependendo de sua cor, a ação a ser realizada é diferente.",
     "exemplos": "O professor pode solicitar que os alunos simulem um algoritmo que descreve o que fazer para atravessar uma rua com semáforo usando a instrução de seleção condicional: um trecho deste algoritmo poderia ser: \"se o semáforo estiver vermelho OU amarelo, aguardar na calçada, caso contrário, atravessar a rua\". Além disso, pode solicitar que os alunos determinem os passos de um algoritmo que faça uso da seleção condicional, como por exemplo, definir as ações que devem ser realizadas ao chegar em algum local caso este esteja aberto ou fechado."
   },
@@ -490,7 +490,7 @@ export const habilidadesComputacao: readonly HabilidadeBncc[] = [
     ],
     "componente": "computacao",
     "area": "computacao",
-    "eixo": "PENSAMENTO COMPUTACIONAL",
+    "eixo": "MUNDO DIGITAL",
     "objetoDeConhecimento": "Arquitetura de computadores",
     "explicacao": "O objetivo é começar a ensinar ao aluno os elementos principais que compõem a arquitetura de um computador: dispositivos de entrada/saída, processadores e dispositivos de armazenamento temporários (ex: memória RAM) e persistentes (ex: disco rígido).",
     "exemplos": "Explicar os componentes básicos dos computadores e suas funções: processador, memória, e exemplos de diferentes dispositivos de entrada e saída."
@@ -532,10 +532,10 @@ export const habilidadesComputacao: readonly HabilidadeBncc[] = [
     ],
     "componente": "computacao",
     "area": "computacao",
-    "eixo": "MUNDO DIGITAL",
-    "objetoDeConhecimento": "OBJETO DE CONHECIMENTO",
-    "explicacao": null,
-    "exemplos": null
+    "eixo": "CULTURA DIGITAL",
+    "objetoDeConhecimento": "Segurança e responsabilidade no uso da tecnologia",
+    "explicacao": "Nesta habilidade é importante que os alunos possam refletir e acessar informações em buscas na Internet criticamente, identificando características de conteúdos prejudiciais, informações confiáveis, notícias falsas.",
+    "exemplos": "O professor pode propor um estudo comparativo entre sites de jornais oficiais e blogs para falar sobre as fontes de informação, considerando sua confiabilidade."
   },
   {
     "codigo": "EF05CO09",
@@ -546,10 +546,10 @@ export const habilidadesComputacao: readonly HabilidadeBncc[] = [
     ],
     "componente": "computacao",
     "area": "computacao",
-    "eixo": "MUNDO DIGITAL",
+    "eixo": "CULTURA DIGITAL",
     "objetoDeConhecimento": "Segurança e responsabilidade no uso da tecnologia",
-    "explicacao": null,
-    "exemplos": null
+    "explicacao": "O objetivo desta habilidade é que o aluno possa utilizar informações e dados na Internet reconhecendo os direitos autorais, como por exemplo de uma música, um filme, um livro, e os cuidados em seu compartilhamento e uso pessoal.",
+    "exemplos": "O aluno poderá criar um portfólio com imagens de personagens de desenhos animados em que ele poderá citar as fontes e propor um formato em que considera todos os direitos autorais"
   },
   {
     "codigo": "EF05CO10",
@@ -561,9 +561,23 @@ export const habilidadesComputacao: readonly HabilidadeBncc[] = [
     "componente": "computacao",
     "area": "computacao",
     "eixo": "CULTURA DIGITAL",
-    "objetoDeConhecimento": "Segurança e responsabilidade no uso da tecnologia",
-    "explicacao": null,
-    "exemplos": null
+    "objetoDeConhecimento": "Uso de tecnologias computacionais",
+    "explicacao": "Espera-se que o aluno possa expressar-se crítica e criativamente por meio de dispositivos computacionais ou não, demonstrando compreensão das mudanças que as tecnologias trazem ao cotidiano, incluindo mundo do trabalho.",
+    "exemplos": "Nessa habilidade, o aluno poderá criar uma animação em computador ou papel sobre alguma impressão que ele tenha sobre um impacto da tecnologia na sociedade, como por exemplo uso do celular para mandar mensagem de áudio ao invés de uma chamada, comum no cotidiano das pessoas."
+  },
+  {
+    "codigo": "EF05CO011",
+    "descricao": "Identificar a adequação de diferentes tecnologias computacionais na resolução de problemas.",
+    "etapa": "EF",
+    "anos": [
+      "5EF"
+    ],
+    "componente": "computacao",
+    "area": "computacao",
+    "eixo": "CULTURA DIGITAL",
+    "objetoDeConhecimento": "Uso de tecnologias computacionais",
+    "explicacao": "Nesta habilidade propõe-se que os alunos possam compreender diferentes necessidades de uso das tecnologias computacionais, como por exemplo porque usamos um computador para criar uma história em quadrinhos e usamos um celular para fazer uma ligação telefônica.",
+    "exemplos": "O professor pode propor um jogo em que apresenta alguns problemas que precisam de solução usando diferentes tecnologias e os alunos individualmente ou em grupos buscam a solução escolhendo a melhor tecnologia considerando diferentes critérios."
   },
   {
     "codigo": "EF06CO01",
@@ -574,8 +588,8 @@ export const habilidadesComputacao: readonly HabilidadeBncc[] = [
     ],
     "componente": "computacao",
     "area": "computacao",
-    "eixo": null,
-    "objetoDeConhecimento": "OBJETO DE CONHECIMENTO",
+    "eixo": "PENSAMENTO COMPUTACIONAL",
+    "objetoDeConhecimento": "Tipos de dados",
     "explicacao": "As informações são armazenadas de diferentes maneiras, dependendo do tipo de dado que ela representa. Basicamente existem três tipos primitivos de dados: inteiros, real e string.",
     "exemplos": "Encontrar um Ás em um baralho, precisa-se de um baralho (lista de cartas) e, o resultado é uma carta; para calcular a média das provas dos alunos de uma turma, precisa-se da lista de provas dos alunos, e o resultado é um número."
   },
@@ -588,7 +602,7 @@ export const habilidadesComputacao: readonly HabilidadeBncc[] = [
     ],
     "componente": "computacao",
     "area": "computacao",
-    "eixo": null,
+    "eixo": "PENSAMENTO COMPUTACIONAL",
     "objetoDeConhecimento": "Construir e analisar soluções computacionais de problemas de diferentes áreas do conhecimento, de forma individual ou colaborativa, selecionando as estruturas de dados adequadas (registros, matrizes, listas e grafos), aperfeiçoando e articulando saberes escolares.",
     "explicacao": "Existem diferentes linguagens de programação que podem ser usadas para descrever algoritmos em diferentes níveis de abstração, como linguagens visuais, orientadas a objetos, funcionais, entre outras. Uma ou mais linguagens podem ser escolhidas para serem adotadas.",
     "exemplos": "Calcular a média de notas de uma turma em uma dada disciplina e informar se o resultado está acima da média do colégio."
@@ -602,7 +616,7 @@ export const habilidadesComputacao: readonly HabilidadeBncc[] = [
     ],
     "componente": "computacao",
     "area": "computacao",
-    "eixo": null,
+    "eixo": "PENSAMENTO COMPUTACIONAL",
     "objetoDeConhecimento": "Linguagem de programação",
     "explicacao": "É importante que se consiga expressar a solução do problema (algoritmo) em português, compreendendo que o programa é apenas uma descrição deste algoritmo em uma linguagem de programação. O aluno precisa entender que o mais importante é a construção do algoritmo. Notem que a ideia aqui não é apenas descrever as linhas de código em português, mas sim descrever em um alto nível de abstração como o problema é resolvido.",
     "exemplos": "Desenvolver um programa que: (1) \"Se o ponteiro do mouse tocar no animal então o animal andará 10 passos, 10 vezes seguidas.\" (2) \"Dada uma pilha de cartas, se a pilha estiver vazia, dizer que não há ás; se a primeira carta for um ás, dizer que há ás na pilha, senão, remover a primeira carta e verificar se há ás no resto da pilha.\""
@@ -617,7 +631,7 @@ export const habilidadesComputacao: readonly HabilidadeBncc[] = [
     "componente": "computacao",
     "area": "computacao",
     "eixo": "PENSAMENTO COMPUTACIONAL",
-    "objetoDeConhecimento": "Linguagem de programação",
+    "objetoDeConhecimento": "Decomposição",
     "explicacao": "Decomposição é uma das principais técnicas de resolução de problemas, onde um problema é dividido em subproblemas, os quais são resolvidos independentemente, e cujas soluções são combinadas para construir a solução do problema original. Algumas vantagens da decomposição são: permitir uma melhor organização e visualização do problema e da solução; facilitar o trabalho em grupo; permitir que possamos reutilizar as soluções dos subproblemas em outros problemas.",
     "exemplos": "Decompor o problema de desenhar imagens em subproblemas de desenhar formas básicas, compondo as subsoluções por meio de operações sobre imagens (sobrepor, posicionar ao lado etc.). Decompor o problema de desenhar uma casa em subproblemas de desenhar polígonos regulares (retângulos, quadrados, triângulos), compondo essas formas com as operações sobre imagens (rotação, sobreposição etc.)."
   },
@@ -658,8 +672,8 @@ export const habilidadesComputacao: readonly HabilidadeBncc[] = [
     ],
     "componente": "computacao",
     "area": "computacao",
-    "eixo": "PENSAMENTO COMPUTACIONAL",
-    "objetoDeConhecimento": "HABILIDADE",
+    "eixo": "MUNDO DIGITAL",
+    "objetoDeConhecimento": "Fundamentos de transmissão de dados",
     "explicacao": "O processo de transmissão de dados envolve em dividir a informação em pedaços para que ela seja mais facilmente enviada através da rede de comunicação. Esses pedaços são transmitidos através de caminhos compostos por diferentes equipamentos. Finalmente, a informação é remontada no destino. Ao ser dividida, problemas que ocorram na transmissão em alguns pedaços da informação podem ser solucionados pelo reenvio de pedaços faltantes, corrompidos, ou fora de ordem.",
     "exemplos": null
   },
@@ -673,7 +687,7 @@ export const habilidadesComputacao: readonly HabilidadeBncc[] = [
     "componente": "computacao",
     "area": "computacao",
     "eixo": "MUNDO DIGITAL",
-    "objetoDeConhecimento": "Armazenamento e Transmissão de dados",
+    "objetoDeConhecimento": "Gestão de dados",
     "explicacao": "O gerenciamento de dados é frequentemente realizado através do conceito de arquivo. Neste contexto, os arquivos são criados considerando alguma lógica interna e armazenados em memória secundária. Posteriormente, esses arquivos podem ser recarregados a fim de seus dados serem utilizados ou mesmo editados. Finalmente, os arquivos podem ser compactados para diminuir o espaço ocupado na memória secundária.",
     "exemplos": null
   },
@@ -686,7 +700,7 @@ export const habilidadesComputacao: readonly HabilidadeBncc[] = [
     ],
     "componente": "computacao",
     "area": "computacao",
-    "eixo": "MUNDO DIGITAL",
+    "eixo": "CULTURA DIGITAL",
     "objetoDeConhecimento": "Entender que as tecnologias devem ser utilizadas de maneira segura, ética e responsável, respeitando direitos autorais, de imagem e as leis vigentes.",
     "explicacao": "Nesta habilidade é importante que os alunos possam vivenciar, discutir e refletir sobre o comportamento ao se comunicar em ambiente digital, principalmente na internet mas não limitada a ela(por exemplo também em aplicativos de conversa).",
     "exemplos": null
@@ -714,8 +728,8 @@ export const habilidadesComputacao: readonly HabilidadeBncc[] = [
     ],
     "componente": "computacao",
     "area": "computacao",
-    "eixo": null,
-    "objetoDeConhecimento": "OBJETO DE CONHECIMENTO",
+    "eixo": "PENSAMENTO COMPUTACIONAL",
+    "objetoDeConhecimento": "Programação usando registros e matrizes",
     "explicacao": null,
     "exemplos": null
   },
@@ -729,7 +743,7 @@ export const habilidadesComputacao: readonly HabilidadeBncc[] = [
     "componente": "computacao",
     "area": "computacao",
     "eixo": "PENSAMENTO COMPUTACIONAL",
-    "objetoDeConhecimento": "Programação",
+    "objetoDeConhecimento": "Análise de programas",
     "explicacao": null,
     "exemplos": null
   },
@@ -743,7 +757,7 @@ export const habilidadesComputacao: readonly HabilidadeBncc[] = [
     "componente": "computacao",
     "area": "computacao",
     "eixo": "PENSAMENTO COMPUTACIONAL",
-    "objetoDeConhecimento": "Análise de programas",
+    "objetoDeConhecimento": "Projetos com programação",
     "explicacao": null,
     "exemplos": null
   },
@@ -784,7 +798,7 @@ export const habilidadesComputacao: readonly HabilidadeBncc[] = [
     ],
     "componente": "computacao",
     "area": "computacao",
-    "eixo": "PENSAMENTO COMPUTACIONAL",
+    "eixo": "MUNDO DIGITAL",
     "objetoDeConhecimento": "Protocolos de comunicação em redes",
     "explicacao": null,
     "exemplos": null
@@ -812,8 +826,8 @@ export const habilidadesComputacao: readonly HabilidadeBncc[] = [
     ],
     "componente": "computacao",
     "area": "computacao",
-    "eixo": "MUNDO DIGITAL",
-    "objetoDeConhecimento": "OBJETO DE CONHECIMENTO",
+    "eixo": "CULTURA DIGITAL",
+    "objetoDeConhecimento": "Cyberbullying",
     "explicacao": "Nesta habilidade considera-se a discussão e reflexão de colocar-se em posição do outro e respeito em relação as opiniões divergentes na internet, como opiniões de estilos de música, de filmes, de roupas, dentre outros. Espera-se que o aluno possa ser capaz de reconhecer a importância de respeitar as opiniões diferentes da sua.",
     "exemplos": null
   },
@@ -826,8 +840,8 @@ export const habilidadesComputacao: readonly HabilidadeBncc[] = [
     ],
     "componente": "computacao",
     "area": "computacao",
-    "eixo": "MUNDO DIGITAL",
-    "objetoDeConhecimento": "Cyberbullying",
+    "eixo": "CULTURA DIGITAL",
+    "objetoDeConhecimento": "Entender que as tecnologias devem ser utilizadas de maneira segura, ética e responsável, respeitando direitos autorais, de imagem e as leis vigentes.",
     "explicacao": "O contexto desta habilidade é a de proporcionar ao aluno a reflexão e discussão sobre cyberbullying, trazendo sua definição. Além disso, espera-se que o aluno reflita sobre a importância de se combater o cyberbullying (essa prática de intimidação, humilhação, exposição, dentre outros em meio digital)",
     "exemplos": null
   },
@@ -841,7 +855,7 @@ export const habilidadesComputacao: readonly HabilidadeBncc[] = [
     "componente": "computacao",
     "area": "computacao",
     "eixo": "CULTURA DIGITAL",
-    "objetoDeConhecimento": "Cyberbullying",
+    "objetoDeConhecimento": "Impactos da tecnologia digital",
     "explicacao": "Esta habilidade sugere a reflexão e discussão sobre a relação da sustentabilidade e o impacto na produção e descarte de lixo eletrônico. Considera-se importante enfatizar o descarte de material tecnológico e as diferenças para outros tipos de lixo. Como localidade, tipos de reciclagem.",
     "exemplos": null
   },
@@ -855,7 +869,7 @@ export const habilidadesComputacao: readonly HabilidadeBncc[] = [
     "componente": "computacao",
     "area": "computacao",
     "eixo": "CULTURA DIGITAL",
-    "objetoDeConhecimento": "Uso de tecnologias computacionais",
+    "objetoDeConhecimento": "Produção Digital",
     "explicacao": "Nesta habilidade espera-se que o aluno utilize recursos e ferramentas digitais como editores de vídeo, editor de áudio, de blogs, para produzir um vídeo, um áudio, uma página na internet, criando e publicando conteúdo, individualmente e colaborativamente. Nesse sentido, experimentar diferentes recursos e ferramentas, inclusive integrando um recurso de vídeo e um blog por exemplo!",
     "exemplos": null
   },
@@ -868,8 +882,8 @@ export const habilidadesComputacao: readonly HabilidadeBncc[] = [
     ],
     "componente": "computacao",
     "area": "computacao",
-    "eixo": null,
-    "objetoDeConhecimento": "OBJETO DE CONHECIMENTO",
+    "eixo": "PENSAMENTO COMPUTACIONAL",
+    "objetoDeConhecimento": "Programação com listas e recursão",
     "explicacao": "O conceito de recursão permite exercitar o pensamento indutivo na resolução de problemas, ou seja, recursão não deve ser entendida como uma questão sintática e sim como uma forma poderosa de resolver problemas. O raciocínio indutivo é muito útil na resolução de problemas, pois permite que se trabalhe em um nível de abstração mais elevado do que usando raciocínio dedutivo, o que em muitas situações facilita encontrar soluções (grande parte dos algoritmos clássicos da Computação são bem mais fáceis de compreender nas suas versões recursivas).",
     "exemplos": "(1) Solução recursiva para definir o tamanho de uma lista: \"se a lista for vazia, o tamanho é zero, senão o tamanho é um mais o tamanho do resto da lista.\" (2) Solução recursiva para encontrar o número de ascendentes de olhos azuis em uma árvore genealógica: Se a árvore estiver vazia, o resultado é zero, senão se a pessoa da raiz da árvore tiver olhos azuis, soma 1 ao número de ascendentes de olhos azuis por parte de pai e de mãe desta pessoa, se ela não tiver olhos azuis, o resultado é o número de ascendentes de olhos azuis (por parte de pai e mãe) desta pessoa."
   },
@@ -911,7 +925,7 @@ export const habilidadesComputacao: readonly HabilidadeBncc[] = [
     "componente": "computacao",
     "area": "computacao",
     "eixo": "PENSAMENTO COMPUTACIONAL",
-    "objetoDeConhecimento": "Algoritmos clássicos",
+    "objetoDeConhecimento": "Projetos com programação",
     "explicacao": "Uma estrutura de dados em ciência da computação, é uma coleção tanto de valores (e seus relacionamentos) quanto de operações (sobre os valores e estruturas decorrentes). É uma implementação concreta de um tipo abstrato de dado ou um tipo de dado básico ou primitivo.",
     "exemplos": "Analisar a proposição e os requisitos de um programa e identificar qual a estrutura de dados adequada a ser empregada: um programa que manipula imagens pode manipular os pixels dessa imagem a partir de um vetor ou uma matriz, um jogo no Scratch pode armazenar a pontuação dos usuários numa lista e salvar esses dados na nuvem, dentre outros."
   },
@@ -924,7 +938,7 @@ export const habilidadesComputacao: readonly HabilidadeBncc[] = [
     ],
     "componente": "computacao",
     "area": "computacao",
-    "eixo": "PENSAMENTO COMPUTACIONAL",
+    "eixo": "MUNDO DIGITAL",
     "objetoDeConhecimento": "Fundamentos de sistemas distribuídos",
     "explicacao": "O aluno deve compreender que o paralelismo permite a utilização de diferentes recursos para executar partes de uma tarefa que podem ser realizadas simultaneamente. Paralelismo ocorre quando mais de uma tarefa é executada ao mesmo tempo. Normalmente, se usa paralelismo para melhorar o tempo de execução de uma solução, mas também para que o processo possa ser executado por várias pessoas trabalhando concomitantemente. Para construir uma solução usando paralelismo, deve-se identificar quais partes da solução são independentes, podendo ser executadas simultaneamente. Pode-se também replicar a mesma tarefa para otimizar a execução.",
     "exemplos": "A partir da especificação de um sistema web não implementado ou real, os estudantes podem analisar quais as funcionalidades que dependem de concorrência ou armazenamento distribuídos. A própria Internet é considerada um sistema distribuído, além de Aplicações e serviços baseados na Computação em Nuvem."
@@ -939,7 +953,7 @@ export const habilidadesComputacao: readonly HabilidadeBncc[] = [
     "componente": "computacao",
     "area": "computacao",
     "eixo": "MUNDO DIGITAL",
-    "objetoDeConhecimento": "Sistemas distribuídos e internet",
+    "objetoDeConhecimento": "Internet",
     "explicacao": "A internet é uma rede composta por muitas redes, as quais compartilham o protocolo Internet. Essas redes são agrupadas em sistemas autônomos, conjuntos de redes que possuem uma política de operação comum. A definição desses sistemas autônomos é realizada por entidades que operam na organização dos recursos da Internet.",
     "exemplos": "Usar a lógica de um modelo em camadas e mostrar como uma língua comum pode ser utilizada para traduzir comunicações entre 2 línguas que não possuem tradutores (ex: tradutores português-inglês e inglês-Espanhol -> português-espanhol)."
   },
@@ -952,8 +966,8 @@ export const habilidadesComputacao: readonly HabilidadeBncc[] = [
     ],
     "componente": "computacao",
     "area": "computacao",
-    "eixo": "MUNDO DIGITAL",
-    "objetoDeConhecimento": "HABILIDADE",
+    "eixo": "CULTURA DIGITAL",
+    "objetoDeConhecimento": "Redes sociais e segurança da informação",
     "explicacao": "A perspectiva desta habilidade é que o aluno tenha a vivência das redes sociais, identifique seu funcionamento como regras, cadastro, dentre outros aspectos operacionais. Além disso, espera-se que o aluno possa refletir sobre o uso responsável das redes sociais, discutindo ética e respeito ao interagir com o outro em meio digital.",
     "exemplos": null
   },
@@ -966,7 +980,7 @@ export const habilidadesComputacao: readonly HabilidadeBncc[] = [
     ],
     "componente": "computacao",
     "area": "computacao",
-    "eixo": "MUNDO DIGITAL",
+    "eixo": "CULTURA DIGITAL",
     "objetoDeConhecimento": "Redes sociais e segurança da informação",
     "explicacao": "Nesta habilidade importante que o aluno identifique os tipos de dados pessoais (nome, endereço, documento de identidade) que são exigidos em diferentes espaços como jogos online, redes sociais, bem como refletir sobre os riscos de de compartilhar esses dados em espaços digitais como a internet.",
     "exemplos": null
@@ -980,8 +994,8 @@ export const habilidadesComputacao: readonly HabilidadeBncc[] = [
     ],
     "componente": "computacao",
     "area": "computacao",
-    "eixo": "MUNDO DIGITAL",
-    "objetoDeConhecimento": "Segurança e responsabilidade no uso da tecnologia",
+    "eixo": "CULTURA DIGITAL",
+    "objetoDeConhecimento": "Entender que as tecnologias devem ser utilizadas de maneira segura, ética e responsável, respeitando direitos autorais, de imagem e as leis vigentes.",
     "explicacao": "Espera-se que o aluno possa discutir e analisar os termos e políticas de uso das redes sociais e demais plataformas, refletindo sobre suas implicações, como por exemplo em nossos dados pessoais que ficam armazenados.",
     "exemplos": null
   },
@@ -1022,8 +1036,8 @@ export const habilidadesComputacao: readonly HabilidadeBncc[] = [
     ],
     "componente": "computacao",
     "area": "computacao",
-    "eixo": null,
-    "objetoDeConhecimento": "OBJETO DE CONHECIMENTO",
+    "eixo": "PENSAMENTO COMPUTACIONAL",
+    "objetoDeConhecimento": "Programação usando grafos e árvores",
     "explicacao": "Grafos e árvores podem ser usados para representar uma gama enorme de informações. Para que possamos construir programas de computador, essas estruturas precisam ser formalizadas e descritas em linguagens de programação. Grafos são estruturas que permitem representar objetos e relacionamentos entre esses objetos (como redes sociais, mapas de cidades, a internet etc.). Uma árvore é um grafo com elementos organizados hierarquicamente. Exemplos de árvores são árvores genealógicas, organogramas, mapas mentais, chaveamento de times etc.",
     "exemplos": null
   },
@@ -1037,7 +1051,7 @@ export const habilidadesComputacao: readonly HabilidadeBncc[] = [
     "componente": "computacao",
     "area": "computacao",
     "eixo": "PENSAMENTO COMPUTACIONAL",
-    "objetoDeConhecimento": "Construir e analisar soluções computacionais de problemas de diferentes áreas do conhecimento, de forma individual ou colaborativa, selecionando as estruturas de dados adequadas (registros, matrizes, listas e grafos), aperfeiçoando e articulando saberes escolares.",
+    "objetoDeConhecimento": "Projetos com programação",
     "explicacao": "Uma estrutura de dados em ciência da computação, é uma coleção tanto de valores (e seus relacionamentos) quanto de operações (sobre os valores e estruturas decorrentes). É uma implementação concreta de um tipo abstrato de dado ou um tipo de dado básico ou primitivo.",
     "exemplos": null
   },
@@ -1051,7 +1065,7 @@ export const habilidadesComputacao: readonly HabilidadeBncc[] = [
     "componente": "computacao",
     "area": "computacao",
     "eixo": "PENSAMENTO COMPUTACIONAL",
-    "objetoDeConhecimento": "Programação",
+    "objetoDeConhecimento": "Autômatos e linguagens baseadas em eventos",
     "explicacao": "Linguagens baseadas em eventos permitem descrever sistemas que são orientados pela ocorrência de eventos (como cliques de mouse, pressionamento de alguma tecla, sinal de algum sensor). Este tipo de linguagem tem muitas aplicações como por exemplo, o projeto de interfaces ou aplicações de robótica. Para se desenvolver um programa orientado a eventos, é muito útil construir como primeiro passo uma especificação abstrata do sistema usando autômatos (ou sistemas de transição), que são modelos que representam os estados do sistema e as transições possíveis dependendo dos eventos que ocorrerem.",
     "exemplos": null
   },
@@ -1065,7 +1079,7 @@ export const habilidadesComputacao: readonly HabilidadeBncc[] = [
     "componente": "computacao",
     "area": "computacao",
     "eixo": "MUNDO DIGITAL",
-    "objetoDeConhecimento": "Segurança cibernética",
+    "objetoDeConhecimento": "Entender os fundamentos de sistemas distribuídos e da internet.",
     "explicacao": "Software malicioso, ou malware, são programas nocivos que obtêm acesso ilegal a dispositivos digitais. Eles podem acessar um computador ou dispositivo por meio de anexos de e-mail, pendrives ou sites desprotegidos. O malware pode invadir um computador e causar estragos. Esses programas podem desacelerar um dispositivo, enviar e-mails de spam ou até mesmo roubar ou excluir dados pessoais. O malware é classificado com base em como entra no computador e no que faz quando está lá. Alguns exemplos de malware são: vírus, worms, rootkits, spyware, trojans, backdoors, ransomware, entre outros.",
     "exemplos": null
   },
@@ -1079,7 +1093,7 @@ export const habilidadesComputacao: readonly HabilidadeBncc[] = [
     "componente": "computacao",
     "area": "computacao",
     "eixo": "MUNDO DIGITAL",
-    "objetoDeConhecimento": "Segurança cibernética (cont.)",
+    "objetoDeConhecimento": "Entender os fundamentos de sistemas distribuídos e da internet. (cont.)",
     "explicacao": "A criptografia é o processo de pegar uma mensagem e torná-la ilegível para todos, exceto para a pessoa a quem se destina. Historicamente, a razão mais popular para criptografar informações era permitir a comunicação entre líderes militares, espiões ou chefes de estado. Mais recentemente, com o advento da internet e das compras online, a criptografia está se tornando cada vez mais importante. Por exemplo, é usado para manter o dinheiro dos clientes seguro durante as transações.",
     "exemplos": null
   },
@@ -1092,8 +1106,8 @@ export const habilidadesComputacao: readonly HabilidadeBncc[] = [
     ],
     "componente": "computacao",
     "area": "computacao",
-    "eixo": "MUNDO DIGITAL",
-    "objetoDeConhecimento": "Segurança cibernética (cont.)",
+    "eixo": "CULTURA DIGITAL",
+    "objetoDeConhecimento": "Tecnologia digital e sociedade",
     "explicacao": "Espera-se que o aluno utilize recursos digitais para analisar problemas sociais de seu cotidiano, como por exemplo em pesquisa, comparação de informação, documentação da pesquisa, seja em sua cidade ou estado, propondo soluções a esses problemas.",
     "exemplos": null
   },
@@ -1106,8 +1120,8 @@ export const habilidadesComputacao: readonly HabilidadeBncc[] = [
     ],
     "componente": "computacao",
     "area": "computacao",
-    "eixo": "MUNDO DIGITAL",
-    "objetoDeConhecimento": "Segurança cibernética (cont.)",
+    "eixo": "CULTURA DIGITAL",
+    "objetoDeConhecimento": "Tecnologia digital e sociedade",
     "explicacao": "Importante nessa habilidade que o aluno possa refletir, discutir as diversas aplicações das tecnologias em nosso cotidiano, considerando propor soluções aos desafios da atualidade do ser humano em qualquer área, como por exemplo no meio ambiente, na saúde, na economia, acessibilidade, transporte, dentre outros.",
     "exemplos": null
   },
@@ -1121,7 +1135,7 @@ export const habilidadesComputacao: readonly HabilidadeBncc[] = [
     "componente": "computacao",
     "area": "computacao",
     "eixo": "CULTURA DIGITAL",
-    "objetoDeConhecimento": "Segurança e responsabilidad e no uso da tecnologia",
+    "objetoDeConhecimento": "Entender que as tecnologias devem ser utilizadas de maneira segura, ética e responsável, respeitando direitos autorais, de imagem e as leis vigentes.",
     "explicacao": "Nesta habilidade espera-se que o aluno possa refletir sobre o acesso as tecnologias pelas pessoas e seus impactos na igualdade, desenvolvimento sustentável, e poder, como por exemplo sobre os custos de determinada tecnologia e quem pode comprá-la, trazendo assim questões como pobreza, acesso ao poder, dentre outros.",
     "exemplos": null
   },
@@ -1135,7 +1149,7 @@ export const habilidadesComputacao: readonly HabilidadeBncc[] = [
     "componente": "computacao",
     "area": "computacao",
     "eixo": "CULTURA DIGITAL",
-    "objetoDeConhecimento": "Segurança e responsabilidad e no uso da tecnologia",
+    "objetoDeConhecimento": "Autoria em meio digital",
     "explicacao": "Espera-se que o aluno possa utilizar recursos como editores de texto, planilha, apresentações, editores de vídeo, blogs, programas de animação, linguagens de programação, para criar conteúdos diversos considerando o cuidado com direitos autorais.",
     "exemplos": null
   },
@@ -1166,8 +1180,8 @@ export const habilidadesComputacao: readonly HabilidadeBncc[] = [
     ],
     "componente": "computacao",
     "area": "computacao",
-    "eixo": null,
-    "objetoDeConhecimento": "OBJETO DE CONHECIMENTO",
+    "eixo": "PENSAMENTO COMPUTACIONAL",
+    "objetoDeConhecimento": "Organização e representação da informação",
     "explicacao": null,
     "exemplos": null
   },
@@ -1184,8 +1198,8 @@ export const habilidadesComputacao: readonly HabilidadeBncc[] = [
     ],
     "componente": "computacao",
     "area": "computacao",
-    "eixo": null,
-    "objetoDeConhecimento": "Organização e representação da informação",
+    "eixo": "PENSAMENTO COMPUTACIONAL",
+    "objetoDeConhecimento": "Algoritmos",
     "explicacao": null,
     "exemplos": null
   },
@@ -1221,7 +1235,7 @@ export const habilidadesComputacao: readonly HabilidadeBncc[] = [
     "componente": "computacao",
     "area": "computacao",
     "eixo": "PENSAMENTO COMPUTACIONAL",
-    "objetoDeConhecimento": "Lógica computacional",
+    "objetoDeConhecimento": "Decomposição",
     "explicacao": null,
     "exemplos": null
   },
@@ -1238,8 +1252,8 @@ export const habilidadesComputacao: readonly HabilidadeBncc[] = [
     ],
     "componente": "computacao",
     "area": "computacao",
-    "eixo": "PENSAMENTO COMPUTACIONAL",
-    "objetoDeConhecimento": "OBJETO DE CONHECIMENTO",
+    "eixo": "MUNDO DIGITAL",
+    "objetoDeConhecimento": "Codificação da informação",
     "explicacao": null,
     "exemplos": null
   },
@@ -1292,7 +1306,7 @@ export const habilidadesComputacao: readonly HabilidadeBncc[] = [
     ],
     "componente": "computacao",
     "area": "computacao",
-    "eixo": "MUNDO DIGITAL",
+    "eixo": "CULTURA DIGITAL",
     "objetoDeConhecimento": "Uso de artefatos computacionais",
     "explicacao": null,
     "exemplos": null
@@ -1327,8 +1341,8 @@ export const habilidadesComputacao: readonly HabilidadeBncc[] = [
     ],
     "componente": "computacao",
     "area": "computacao",
-    "eixo": null,
-    "objetoDeConhecimento": "OBJETO DE CONHECIMENTO",
+    "eixo": "PENSAMENTO COMPUTACIONAL",
+    "objetoDeConhecimento": "Tipos de dados",
     "explicacao": "Para encontrar uma carta do tipo Ás em um baralho, precisa-se de um baralho (lista de cartas) e, o resultado é uma carta; para calcular a média das provas dos alunos de uma turma, precisase da lista de provas dos alunos, e o resultado é um número.",
     "exemplos": null
   },
@@ -1344,8 +1358,8 @@ export const habilidadesComputacao: readonly HabilidadeBncc[] = [
     ],
     "componente": "computacao",
     "area": "computacao",
-    "eixo": null,
-    "objetoDeConhecimento": "Tipos de dados",
+    "eixo": "PENSAMENTO COMPUTACIONAL",
+    "objetoDeConhecimento": "Construir e analisar soluções computacionais de problemas de diferentes áreas do conhecimento, de forma individual ou colaborativa, selecionando as estruturas de dados adequadas (registros, matrizes, listas e grafos), aperfeiçoando e articulando saberes escolares.",
     "explicacao": "Existem diferentes linguagens de programação que podem ser usadas para descrever algoritmos em diferentes níveis de abstração, como linguagens visuais, orientadas a objetos, funcionais, entre outras. Uma ou mais linguagens podem ser escolhidas para serem adotadas.",
     "exemplos": null
   },
@@ -1361,7 +1375,7 @@ export const habilidadesComputacao: readonly HabilidadeBncc[] = [
     ],
     "componente": "computacao",
     "area": "computacao",
-    "eixo": null,
+    "eixo": "PENSAMENTO COMPUTACIONAL",
     "objetoDeConhecimento": "Linguagem de Programação",
     "explicacao": "É importante que se consiga expressar a solução do problema (algoritmo) em português, compreendendo que o programa é apenas uma descrição deste algoritmo em uma linguagem de programação. O aluno precisa entender que o mais importante é a construção do algoritmo. Notem que a ideia aqui não é apenas descrever as linhas de código em português, mas sim descrever em um alto nível de abstração como o problema é resolvido.",
     "exemplos": null
@@ -1379,7 +1393,7 @@ export const habilidadesComputacao: readonly HabilidadeBncc[] = [
     "componente": "computacao",
     "area": "computacao",
     "eixo": "PENSAMENTO COMPUTACIONAL",
-    "objetoDeConhecimento": "Linguagem de Programação",
+    "objetoDeConhecimento": "Decomposição",
     "explicacao": "Decomposição é uma das principais técnicas de resolução de problemas, onde um problema é dividido em subproblemas, os quais são resolvidos independentemente, e cujas soluções são combinadas para construir a solução do problema original. Algumas vantagens da decomposição são: permitir uma melhor organização e visualização do problema e da solução; facilitar o trabalho em grupo; permitir que possamos reutilizar as soluções dos subproblemas em outros problemas.",
     "exemplos": null
   },
@@ -1429,8 +1443,8 @@ export const habilidadesComputacao: readonly HabilidadeBncc[] = [
     ],
     "componente": "computacao",
     "area": "computacao",
-    "eixo": "PENSAMENTO COMPUTACIONAL",
-    "objetoDeConhecimento": "HABILIDADE",
+    "eixo": "MUNDO DIGITAL",
+    "objetoDeConhecimento": "Fundamentos de transmissão de dados",
     "explicacao": "O processo de transmissão de dados envolve em dividir a informação em pedaços para que ela seja mais facilmente enviada através da rede de comunicação. Esses pedaços são transmitidos através de caminhos compostos por diferentes equipamentos. Finalmente, a informação é remontada no destino. Ao ser dividida, problemas que ocorram na transmissão em alguns pedaços da informação, podem ser solucionados pelo reenvio de pedaços faltantes, corrompidos, ou fora de ordem.",
     "exemplos": null
   },
@@ -1446,8 +1460,8 @@ export const habilidadesComputacao: readonly HabilidadeBncc[] = [
     ],
     "componente": "computacao",
     "area": "computacao",
-    "eixo": "PENSAMENTO COMPUTACIONAL",
-    "objetoDeConhecimento": "Armazenamento e Transmissão de dados",
+    "eixo": "MUNDO DIGITAL",
+    "objetoDeConhecimento": "Gestão de dados",
     "explicacao": "O gerenciamento de dados é frequentemente realizado através do conceito de arquivo. Neste contexto, os arquivos são criados considerando alguma lógica interna e armazenados em memória secundária. Posteriormente, esses arquivos podem ser recarregados a fim de seus dados serem utilizados ou mesmo editados. Finalmente, os arquivos podem ser compactados para diminuir o espaço ocupado na memória secundária.",
     "exemplos": null
   },
@@ -1464,7 +1478,7 @@ export const habilidadesComputacao: readonly HabilidadeBncc[] = [
     "componente": "computacao",
     "area": "computacao",
     "eixo": "MUNDO DIGITAL",
-    "objetoDeConhecimento": "Gestão de dados",
+    "objetoDeConhecimento": "Fundamentos de sistemas distribuídos",
     "explicacao": "O aluno deve compreender que o paralelismo permite a utilização de diferentes recursos para executar partes de uma tarefa que podem ser realizadas simultaneamente. Paralelismo ocorre quando mais de uma tarefa é executada ao mesmo tempo. Normalmente, se usa paralelismo para melhorar o tempo de execução de uma solução, mas também para que o processo possa ser executado por várias pessoas trabalhando concomitantemente. Para construir uma solução usando paralelismo, deve-se identificar quais partes da solução são independentes, podendo ser executadas simultaneamente. Pode-se também replicar a mesma tarefa para otimizar a execução.",
     "exemplos": null
   },
@@ -1481,7 +1495,7 @@ export const habilidadesComputacao: readonly HabilidadeBncc[] = [
     "componente": "computacao",
     "area": "computacao",
     "eixo": "MUNDO DIGITAL",
-    "objetoDeConhecimento": "Sistemas distribuídos e internet",
+    "objetoDeConhecimento": "Internet",
     "explicacao": "A internet é uma rede composta por muitas redes, as quais compartilham o protocolo Internet. Essas redes são agrupadas em sistemas autônomos, conjuntos de redes que possuem uma política de operação comum. A definição desses sistemas autônomos é realizada por entidades que operam na organização dos recursos da Internet.",
     "exemplos": null
   },
@@ -1497,7 +1511,7 @@ export const habilidadesComputacao: readonly HabilidadeBncc[] = [
     ],
     "componente": "computacao",
     "area": "computacao",
-    "eixo": "MUNDO DIGITAL",
+    "eixo": "CULTURA DIGITAL",
     "objetoDeConhecimento": "Entender que as tecnologias devem ser utilizadas de maneira segura, ética e responsável, respeitando direitos autorais, de imagem e as leis vigentes.",
     "explicacao": "Nesta habilidade é importante destacar as formas de comunicação na internet, em fóruns, em sites, em redes sociais, considerando a empatia, os direitos e deveres, as leis como o marco civil. Importante que o aluno possa refletir sobre as consequências de sua conduta online.",
     "exemplos": null

@@ -80,7 +80,7 @@ export const ListaDeAtividadesSchema = z.object({
   atividades: z.array(AtividadeEmListaSchema),
 });
 
-/** A linha crua de `exp_01_activities` mais os agregados. `_count` espelha o
+/** A linha crua de `exp08ef1b_activities` mais os agregados. `_count` espelha o
  *  select do Prisma da página de origem — o porte dos painéis consome esse
  *  shape, e os agregados nomeados ficam junto. */
 export const DetalheDaAtividadeSchema = z.object({

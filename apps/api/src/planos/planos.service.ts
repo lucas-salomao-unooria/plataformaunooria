@@ -14,7 +14,7 @@ import { sanitizarHtmlDoPlano } from "./sanitizar";
 import { TEMPLATE_PLANO } from "./template-plano";
 
 /**
- * Plano de aula (exp-90): geração ASSÍNCRONA de um plano anual + persistência
+ * Plano de aula (app-90): geração ASSÍNCRONA de um plano anual + persistência
  * do que o professor edita.
  *
  * É o `geracao/worker.ts` em miniatura: uma única chamada de IA por plano, sem

@@ -29,7 +29,7 @@ import { ManifestoIaService } from "./manifesto-ia.service";
 import { PASSOS } from "./regras/passos";
 
 /**
- * Rotas do ESTUDANTE da exp-08-manifesto-ia.
+ * Rotas do ESTUDANTE da exp08ef4b.
  *
  * Duas regras do `AGENTS.md` atravessam este arquivo, e nenhuma é visível aqui
  * por acaso:
@@ -100,7 +100,7 @@ export class ManifestoIaController {
   @Contrato({
     resumo: "Em que etapa a turma está — o polling de 5s do Checkpoint A.",
     descricao:
-      "Leve de propósito: sem catálogo e sem conversa. **É a alternativa ao WebSocket** (ADR-93): a infraestrutura Cloud Run da plataforma não tem WebSocket de aplicação, e o congelamento da turma para o debate oral é uma linha em `exp_08_gates_turma` que a tela do estudante lê a cada 5 segundos durante a Etapa 4.\n\n`agora` é o instante do SERVIDOR: o relógio da máquina da escola atrasa, e não é ele que decide o momento da aula.",
+      "Leve de propósito: sem catálogo e sem conversa. **É a alternativa ao WebSocket** (ADR-93): a infraestrutura Cloud Run da plataforma não tem WebSocket de aplicação, e o congelamento da turma para o debate oral é uma linha em `exp08ef4b_gates_turma` que a tela do estudante lê a cada 5 segundos durante a Etapa 4.\n\n`agora` é o instante do SERVIDOR: o relógio da máquina da escola atrasa, e não é ele que decide o momento da aula.",
     query: z.object({ passo: z.enum(PASSOS).optional() }),
     resposta: GatePublicoSchema,
     notas: [

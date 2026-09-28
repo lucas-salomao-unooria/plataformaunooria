@@ -4,7 +4,7 @@ import { PrismaClient } from "@prisma/client";
  * O vocabulário de `experiencias.permissoes` vive em DOIS lugares: o `z.enum`
  * do controller e o CHECK da migration. Eles têm que dizer a mesma coisa.
  *
- * Quando divergiram, o custo foi um deploy inteiro: a exp-03 declarou `forms`,
+ * Quando divergiram, o custo foi um deploy inteiro: a exp02em1b declarou `forms`,
  * o Zod aceitou, e o banco recusou com 500 no `PUT /experiencias/:expId` — no
  * CI, com o motivo visível só no log da api. Local nunca pega, porque em dev o
  * hub lê o manifesto do dev server do Vite e não encosta nesta tabela.

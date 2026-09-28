@@ -1,0 +1,150 @@
+% ===========================================================================
+%  90 — Backlog: o que está pela metade ou por fazer
+% ===========================================================================
+\chapter{Backlog: o que falta}
+\label{cap:backlog}
+
+Este capítulo junta, num lugar só, tudo o que as histórias marcaram como
+\parcial{} ou \afazer{}, mais o que o levantamento encontrou fora das telas.
+Está organizado por \textbf{horizonte}, não por épico. A coluna \enquote{Quem}
+diz de onde vem o trabalho: nem tudo é desenvolvimento.
+
+\begin{tabularx}{\linewidth}{@{}L{22mm}X@{}}
+\toprule
+\headrow \thd{Quem} & \thd{Significado}\\
+\midrule
+Dev & Trabalho do time de desenvolvimento.\\
+\zebra Conteúdo & Material pedagógico ou de mídia: áudio, foto, revisão de
+  guia, teste em sala.\\
+Jurídico & Contrato, termo de tratamento de dados, documentos legais.\\
+\zebra Produto & Decisão do PO antes de qualquer desenvolvimento (ver o
+  Capítulo~\ref{cap:decisoes}).\\
+Operação & Configuração ou publicação em cada rede.\\
+\zebra Externo & Serviço contratado fora da Unooria, como a revisão de
+  segurança.\\
+\bottomrule
+\end{tabularx}
+
+\section{Bloqueia a entrada em produção (novembro de 2026)}
+
+\begin{tabularx}{\linewidth}{@{}L{15mm}X L{20mm}@{}}
+\toprule
+\headrow \thd{Ref.} & \thd{O que falta} & \thd{Quem}\\
+\midrule
+\endhead
+\id{H12.4.1} & Teste de carga: 2 a 4 mil pessoas entrando e abrindo missão em
+  10 minutos, com turmas inteiras usando IA ao mesmo tempo. Nunca foi feito. &
+  Dev\\
+\zebra \id{H12.5.1} & Monitoramento e alertas em homologação e produção (hoje
+  só em desenvolvimento), com teste do canal de e-mail e alerta de custo. &
+  Dev\\
+\id{H12.3.1} & Prazos de guarda e eliminação do dado de criança, e a rotina
+  que os cumpre. & Produto, Jurídico, Dev\\
+\zebra --- & Revisão de segurança externa e teste de intrusão. & Externo\\
+\id{H09.3.2} & Contrato e termo de tratamento de dados de cada rede declarando
+  que a IA processa fora do Brasil. & Jurídico\\
+\zebra \id{H12.2.1} & Ferramenta de gravação de sessão de terceiros nas telas:
+  declarar no termo de cada rede ou retirar das telas de menores (\id{D13}). &
+  Produto, Jurídico\\
+\id{H01.5.1} & Login único da rede (WSO2) validado em homologação. & Dev,
+  Operação\\
+\zebra \id{H11.3.1} & Razão social e CNPJ nos documentos legais. & Jurídico\\
+\bottomrule
+\end{tabularx}
+
+\section{Esperado na primeira rede}
+
+\begin{tabularx}{\linewidth}{@{}L{15mm}X L{20mm}@{}}
+\toprule
+\headrow \thd{Ref.} & \thd{O que falta} & \thd{Quem}\\
+\midrule
+\endhead
+\id{H07.1.4} & Texto livre só para o professor também no Rastro do Boato e no
+  Manifesto da IA (\id{D03}). & Dev\\
+\zebra \id{H09.4.2} & IA do Instanooria e da Vila do Lume dentro do limite
+  diário. & Dev\\
+\id{H12.6.1} & Acessibilidade verificada (contraste, foco, teclado, leitor de
+  tela) --- costuma ser exigência de edital. & Dev\\
+\zebra \id{H01.4.1} \id{H01.4.2} & Trocar a senha por conta própria e recuperar
+  a senha esquecida (\id{D05}). & Dev, Produto\\
+\id{H03.4.2} & Escolher a escola numa lista, em vez de digitar o código. & Dev\\
+\zebra \id{H07.2.1} & Nome da missão (e não o código) no relatório da
+  diretoria. & Dev\\
+\id{H07.3.1} & Análise de produto no menu, com botão de exportar e seleção de
+  escola. & Dev\\
+\zebra \id{H11.1.2} & Botão \enquote{Entrar} e links para os documentos legais
+  no site; link da Política de Privacidade no cadastro (\id{H11.2.1}). & Dev\\
+\id{H01.3.1} & Trocar de escola também no celular. & Dev\\
+\zebra \id{H03.3.1} & Filtro Papel completo em Usuários. & Dev\\
+\id{H01.2.2} & Retirar o item \enquote{Iniciativas}, que não faz nada, dos
+  menus laterais. & Dev\\
+\zebra \id{H06.1.1} & Fotos reais e locuções do O Que a Foto Conta. & Conteúdo\\
+\id{H06.7.4} \id{H06.4.4} & Áudios do Manifesto da IA e do Rastro do Boato. &
+  Conteúdo\\
+\zebra \id{H06.8.4} \id{H04.4.1} & Revisão pedagógica e teste em sala do
+  guia do unooGPT; autor e revisor do gabarito do Rastro. &
+  Conteúdo\\
+\id{H10.5.2} & Eliminar um cadastro de prospecção pela tela. & Dev\\
+\zebra \id{H06.10.2} \id{H06.12.1} \id{H06.12.4} \id{H06.12.5} & A Seleção (7º ano,
+  Unidade 1, \id{F06.12}), já construída e percorrida pelo teste: revisar as
+  imagens geradas, conferir com a IA de verdade os níveis que ela dá à legenda
+  e revisar os textos escritos pela equipe. & Conteúdo, Dev, Produto\\
+\id{H06.10.5} \id{H06.12.6} & Revisar a voz gerada do podcast da A
+  Seleção; se não passar, gravar o episódio em estúdio, com o mesmo roteiro. &
+  Conteúdo\\
+\zebra \id{H06.10.3} \id{H06.11.1} \id{H06.11.4} \id{H06.11.5} & Quem mandou isso?
+  versão nova (5º ano, Unidade 1, \id{F06.11}): revisar os textos escritos pela
+  equipe e decidir o equilíbrio do pacote pronto (\id{D14}). & Dev, Conteúdo,
+  Produto\\
+\id{H06.10.4} & Jornal da Escola (4º ano, Unidade 1): gerar e revisar as
+  imagens do banco padrão, revisar o critério do livro do 4º ano (fonte, data e
+  autoria) e citar a IA do Jornal nos Termos de Uso, junto com a frase do
+  UnooTube (\id{H11.3.1}). & Conteúdo, Produto, Jurídico\\
+\zebra \id{H11.3.1} & Revisar a frase dos Termos de Uso que ainda cita o UnooTube,
+  arquivado, como aplicativo imitado. & Produto\\
+\id{H14.2.3} \id{H14.3.1} \id{H14.3.2} \id{H14.3.3} \id{H14.4.2}
+  \id{H14.4.3} \id{H14.6.1} & Teste de ponta a ponta da evidência pedagógica
+  que passe pelo que o de hoje não percorre: as equipes, a aula projetada
+  (\enquote{a revisar} e \enquote{Confirmar para a turma}), o ajuste de vários
+  estudantes e o histórico, o \enquote{Não participou}, a ordem da lista e um
+  perfil com conteúdo. & Dev\\
+\zebra \id{F13.4} \id{H13.4.1} \id{H13.4.2} \id{H13.4.3} \id{H13.4.4} & Equipes do
+  mesmo lado do feed no Instanooria: o sorteio agrupa pelo lado, quem entra
+  recebe o lado da equipe, a redistribuição fica desligada e o monitor mostra
+  as equipes. É a próxima frente de \id{E13}. & Dev\\
+\bottomrule
+\end{tabularx}
+
+\section{Evolução}
+
+\begin{tabularx}{\linewidth}{@{}L{15mm}X L{20mm}@{}}
+\toprule
+\headrow \thd{Ref.} & \thd{O que falta} & \thd{Quem}\\
+\midrule
+\endhead
+\id{H04.2.3} & Liberar a missão com data de abertura e fechamento (\id{D12}). &
+  Dev\\
+\zebra \id{H10.1.3} & Desligar recurso por turma ou até uma data. & Dev\\
+\id{H10.3.3} & Aviso de versão fixada há muito tempo. & Dev\\
+\zebra \id{H02.4.2} & Virada do ano assistida (a primeira real é em fevereiro de
+  2027). & Dev\\
+\id{H09.4.3} & Aviso quando o consumo de IA de uma rede chegar a 80\%. & Dev\\
+\zebra \id{H07.3.2} & Números do dia para a rede. & Dev\\
+\id{H05.2.2} & Guardar os registros de uso sem conexão. & Dev\\
+\zebra \id{F06.10} \id{H06.10.1} & As 40 unidades da trilha ainda em produção,
+  cada uma entrando pelo mesmo caminho, já completa (\id{H06.10.1}). &
+  Conteúdo, Dev\\
+\id{H08.3.4} & Visão agregada e anônima do bem-estar para a rede --- só se
+  decidida (\id{D11}). & Produto, Jurídico\\
+\zebra \id{H14.1.1} & A régua pedagógica nas outras missões. A primeira ---
+  Quem mandou isso?, versão nova --- já entrou e tornou visível ao professor o
+  que \id{E14} faz, e A Seleção e o Jornal da Escola vieram em seguida; o
+  Instanooria é a próxima candidata. & Conteúdo, Dev\\
+\id{F14.1} & O unooGPT refeito com atividades, para entrar na
+  evidência pedagógica. & Dev, Conteúdo\\
+\zebra \id{H14.4.4} & A tela em que a coordenação consulta a evidência (a
+  leitura já é permitida). & Dev\\
+\id{H14.6.2} & O painel que junta as habilidades de todas as missões, com a
+  regra definida pela equipe pedagógica. & Produto, Conteúdo, Dev\\
+\bottomrule
+\end{tabularx}

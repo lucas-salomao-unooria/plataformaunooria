@@ -21,11 +21,11 @@ function req(
   return { auth: { usuarioId, escolaId: "e1", perfil }, headers: { "user-agent": userAgent } };
 }
 const CORPO = {
-  expId: "exp-02-unootube",
+  expId: "exp04ef1b",
   versao: "0.3.1",
   mensagem: "Cannot read properties of undefined (reading 'video') — maria@escola.gov.br",
   stack: "TypeError: Cannot read properties of undefined\n    at feed.tsx:42:11 cpf 12345678909",
-  url: "https://exp/exp-02-unootube/0.3.1/index.html",
+  url: "https://exp/exp04ef1b/0.3.1/index.html",
   sessaoId: "6f1a1d1e-9c2b-4a4e-8f1e-1234567890ab",
 };
 
@@ -44,7 +44,7 @@ describe("POST /observabilidade/erros-cliente", () => {
     const [obj, mensagem] = erro.mock.calls[0] as [Record<string, unknown>, string];
     expect(obj).toMatchObject({
       "@type": TIPO_ERRO_REPORTADO,
-      serviceContext: { service: "exp-02-unootube", version: "0.3.1" },
+      serviceContext: { service: "exp04ef1b", version: "0.3.1" },
       codigo: "erro-cliente",
       usuarioId: "u-erro-1",
       sessaoId: CORPO.sessaoId,
@@ -92,10 +92,10 @@ describe("POST /observabilidade/vitals", () => {
     const { metricas, pontos, encerrar } = metricasEmMemoria();
     const ctrl = new ObservabilidadeController(metricas, new ProxyOtlpService(metricas));
     ctrl.vitals({ nome: "LCP", valor: 1832, rota: "/professor/turmas/abc", superficie: "hub" }, req("u-vital", "professor"));
-    ctrl.vitals({ nome: "CLS", valor: 0.04, rota: "exp-02-unootube", superficie: "exp" }, req("u-vital"));
+    ctrl.vitals({ nome: "CLS", valor: 0.04, rota: "exp04ef1b", superficie: "exp" }, req("u-vital"));
     const lcp = await pontos("unooria.web.lcp");
     expect(lcp[0]?.attributes).toEqual({ superficie: "hub", rota: "/professor/:secao", perfil: "professor", tipo_dispositivo: "desktop" });
-    expect((await pontos("unooria.web.cls"))[0]?.attributes).toEqual({ superficie: "exp", rota: "exp-02-unootube", perfil: "estudante", tipo_dispositivo: "desktop" });
+    expect((await pontos("unooria.web.cls"))[0]?.attributes).toEqual({ superficie: "exp", rota: "exp04ef1b", perfil: "estudante", tipo_dispositivo: "desktop" });
     expect(erro).not.toHaveBeenCalled();
     expect(() => ctrl.vitals({ nome: "FID", valor: 1, rota: "/", superficie: "hub" }, req("u-vital"))).toThrow();
     await encerrar();

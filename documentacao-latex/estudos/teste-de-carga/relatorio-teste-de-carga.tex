@@ -1,0 +1,1007 @@
+% ============================================================================
+%  Plataforma Unooria — Estudo PU-EST-001
+%  Teste de carga para uma rede de 800 mil usuários: o que medir, com que
+%  números e como executar.
+%
+%  Compilação (a partir desta pasta):
+%     tectonic relatorio-teste-de-carga.tex
+%  Reaproveita o preâmbulo da PU-DOC-001 (../../preambulo) para ter as mesmas
+%  cores, caixas, tabelas e a bibliografia ABNT.
+% ============================================================================
+\documentclass[11pt, a4paper, oneside, openany]{report}
+
+\input{../../preambulo/estilo}
+\graphicspath{{../../}}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+% URLs longas da bibliografia quebram em qualquer caractere, e as páginas não
+% esticam o espaço vertical para encher o pé (a bibliografia ficava com
+% buracos entre entradas).
+\usepackage{xurl}
+\raggedbottom
+
+\renewcommand{\docid}{PU-EST-001}
+\renewcommand{\docversao}{0.1}
+
+\hypersetup{
+  pdftitle={Teste de carga da Plataforma Unooria para uma rede de 800 mil usuarios},
+  pdfauthor={Lucas Salomao},
+  pdfsubject={Modelo de carga, tipos de teste, criterios de aprovacao e plano de execucao},
+  pdfcreator={Tectonic / XeTeX}
+}
+
+\begin{document}
+
+% ------------------------------------------------------------------- capa
+\begin{titlepage}
+\thispagestyle{empty}
+\begin{tikzpicture}[remember picture, overlay]
+  \fill[unooNavy] (current page.north west) rectangle
+        ([yshift=-12mm]current page.north east);
+  \fill[unooLavender] ([yshift=-12mm]current page.north west) rectangle
+        ([yshift=-13.8mm]current page.north east);
+  \fill[unooBlue] ([yshift=-13.8mm]current page.north west) rectangle
+        ([yshift=-15.0mm]current page.north east);
+\end{tikzpicture}
+\vspace*{14mm}
+
+\noindent\includegraphics[width=50mm]{figuras/marca/logo_azul_profundo.png}\par
+\vspace{18mm}
+
+{\footnotesize\bfseries\color{unooLavenderSoft} ESTUDO TÉCNICO \quad\textperiodcentered\quad PU-EST-001\par}
+\vspace{4mm}
+{\fontsize{26}{31}\selectfont\bfseries\color{unooNavy}
+ Teste de carga para uma rede\\de 800 mil usuários\par}
+\vspace{6mm}
+{\large\color{unooInkSoft}
+ Como converter usuários cadastrados em carga simultânea, o que medir,
+ com quais critérios de aprovação e em que ordem executar\par}
+
+\vfill
+\begin{tabularx}{\linewidth}{@{}L{38mm}X@{}}
+\toprule
+Documento & PU-EST-001, versão 0.1 (rascunho para decisão)\\
+Data & 23 de setembro de 2026\\
+Autor & Lucas Salomão\\
+Relaciona-se a & PU-DOC-001: \rf{RNF-01}, riscos \cd{R-01} e \cd{R-17},
+  Capítulo 17 (SLOs)\\
+Estado & Nenhum teste executado. Os números são estimativas com premissas
+  declaradas, feitas para serem substituídas por medição.\\
+\bottomrule
+\end{tabularx}
+\end{titlepage}
+
+\pagenumbering{roman}
+\tableofcontents
+\cleardoublepage
+\pagenumbering{arabic}
+\setcounter{page}{1}
+\pagestyle{unoomain}
+
+% ============================================================================
+\chapter{Resumo executivo}
+% ============================================================================
+
+\textbf{A pergunta}: a rede informou 800 mil usuários. Como testar a carga de
+uma plataforma quando é óbvio que esses 800 mil não entram ao mesmo tempo?
+
+\textbf{A resposta curta}: o número de cadastrados não é a carga. A carga é a
+\emph{taxa de chegada} de sessões e de requisições, e ela se deriva de três
+coisas: quantos estudantes estão na escola no turno mais cheio, quantas turmas
+usam uma missão na mesma aula, e quanto tempo dura uma sessão. A Lei de Little
+($N = \lambda W$) liga essas grandezas~\cite{little1961}, e a literatura de
+teste de desempenho manda modelar \emph{sessões} em vez de \enquote{usuários
+simultâneos}~\cite{meier2007cap12}, com pelo menos três cenários de uso (esperado,
+melhor e pior caso).
+
+\begin{destaque}
+Com as premissas do Capítulo~\ref{cap:modelo}, a rede de 800 mil gera, no
+horário mais cheio:
+\begin{itemize}[nosep]
+  \item \textbf{cenário esperado}: \textasciitilde\num{50000} estudantes
+    simultâneos em missão, \textasciitilde210 \emph{logins} por segundo no
+    primeiro minuto da aula e \textasciitilde\num{40000} requisições por segundo
+    à API em regime;
+  \item \textbf{cenário baixo}: metade disso; \textbf{cenário alto}: o dobro;
+  \item e um \textbf{teste de ruptura} que continua subindo até quebrar, para
+    saber quanta folga existe além do cenário alto.
+\end{itemize}
+\end{destaque}
+
+Três conclusões mudam o plano, e aparecem antes de qualquer teste rodar:
+
+\begin{enumerate}
+  \item \textbf{A premissa de arquitetura foi escrita para outra escala.} A
+    PU-DOC-001 dimensiona \textasciitilde\num{10000} estudantes e
+    \num{2000}--\num{4000} simultâneos \emph{por contrato}, numa
+    \enquote{instância pequena} de Cloud SQL. Uma rede de 800 mil numa única
+    \emph{stack} é 80 vezes isso. Antes do teste, é preciso decidir se a rede é
+    um contrato (uma \emph{stack}) ou vários (Capítulo~\ref{cap:decisoes}).
+  \item \textbf{O código já aponta os gargalos prováveis}, e o teste deve
+    começar por eles: o \emph{hash} de senha roda em JavaScript no
+    \emph{event loop} (\textasciitilde100\,ms por \emph{login}); o
+    \emph{polling} de 5\,s por estudante passa pela guarda de liberação, que
+    faz de 5 a 6 \emph{queries}; o painel do professor relê todos os eventos da
+    atividade a cada 5\,s; e o \emph{pool} de conexões do Prisma está no padrão
+    (Capítulo~\ref{cap:hipoteses}).
+  \item \textbf{O gargalo do estudante pode nem estar na nuvem.} A média de
+    banda nas escolas públicas monitoradas é de 0,26\,Mbps por aluno, e só 11\%
+    delas atingem a meta de 1\,Mbps por aluno~\cite{nicbr2024}. O teste de
+    navegador precisa simular a rede da escola, não a fibra do escritório.
+\end{enumerate}
+
+\textbf{O que se propõe}: k6 como ferramenta, carga em \emph{modelo aberto}
+(taxa de chegada, não número fixo de usuários virtuais), sete testes em
+sequência (\emph{smoke}, capacidade unitária, carga média, a \enquote{parede
+das 8h}, estresse e ruptura, resistência e IA isolada), mais uma pequena
+fração de navegadores reais medindo Web Vitals. Os critérios de aprovação são
+os SLOs que a plataforma já declarou no Capítulo 17 da PU-DOC-001.
+
+% ============================================================================
+\chapter{Por que 800 mil não é o número do teste}
+\label{cap:porque}
+% ============================================================================
+
+\section{Cadastrado, ativo, simultâneo}
+
+São três populações diferentes, e confundir as duas primeiras com a terceira é
+o erro mais comum ao planejar um teste de carga:
+
+\begin{tabularx}{\linewidth}{@{}L{32mm}X L{30mm}@{}}
+\toprule
+\headrow \thd{População} & \thd{Definição} & \thd{Ordem de grandeza}\\
+\midrule
+Cadastrados & Contas existentes no banco. Determinam o \emph{volume de dados}
+  (tamanho de tabela, índice, \emph{backup}), não a carga. & \num{800000}\\
+\zebra Ativos no dia & Quem entra pelo menos uma vez num dia letivo. Depende da
+  adoção pedagógica: quantas aulas por semana usam uma missão. & dezenas a
+  centenas de milhares\\
+Simultâneos & Quem tem uma sessão aberta \emph{no mesmo instante}. É o que
+  ocupa instância, conexão e memória. & dezenas de milhares\\
+\bottomrule
+\end{tabularx}
+
+O guia de testes de desempenho da Microsoft é direto sobre isso: em vez de
+modelar a experiência com base em usuários simultâneos, \enquote{\emph{it is
+more useful to base your model on user sessions}}, e o exemplo do capítulo mostra
+23 sessões numa hora produzindo de 9 a 10 usuários simultâneos~\cite{meier2007cap12}.
+O \emph{syllabus} de desempenho do ISTQB faz o mesmo alerta com um exemplo
+numérico: 500 usuários que fazem uma consulta curta por minuto geram
+\num{30000} consultas por hora; os mesmos 500 fazendo uma por hora geram 500 ---
+uma diferença de 60 vezes com o \enquote{mesmo número de usuários}~\cite{istqb2018pt}.
+
+\section{A Lei de Little}
+
+A ponte entre sessões e simultaneidade é a Lei de Little~\cite{little1961}:
+\begin{equation}
+  N = \lambda \cdot W
+\end{equation}
+em que $N$ é o número médio de sessões abertas, $\lambda$ é a taxa de chegada
+de sessões (sessões por segundo) e $W$ é a duração média de uma sessão. Ela vale
+para qualquer sistema estável, sem hipótese sobre a distribuição das chegadas.
+O ISTQB traz a mesma relação escrita para usuários virtuais: vazão $=$
+usuários $/$ (tempo de processamento $+$ tempo de pensamento)~\cite{istqb2018pt}.
+
+No contexto da plataforma, isso se lê assim: se as turmas abrem missões de 45
+minutos, uma taxa de chegada de 18 estudantes por segundo sustenta cerca de
+\num{50000} sessões simultâneas ($18 \times 2700\,\text{s} \approx \num{48600}$).
+E o inverso: se a concentração do início da aula faz $\lambda$ disparar por
+alguns minutos, é esse disparo --- não a média --- que derruba o \emph{login}.
+
+\section{Modelo aberto, não fechado}
+
+Há duas formas de gerar carga~\cite{schroeder2006}:
+\begin{itemize}
+  \item \textbf{modelo fechado}: um número fixo de usuários virtuais, cada um
+    só manda a próxima requisição quando a anterior volta;
+  \item \textbf{modelo aberto}: as chegadas acontecem numa taxa definida,
+    \emph{independentemente} de o servidor ter respondido.
+\end{itemize}
+
+Schroeder, Wierman e Harchol-Balter mostram que, para a mesma carga, o tempo de
+resposta médio é \emph{significativamente menor} no modelo fechado do que no
+aberto~\cite{schroeder2006}. O motivo é que, no modelo fechado, um servidor
+lento \emph{desacelera o próprio gerador}: os usuários virtuais esperam, a taxa
+de chegada cai, e a latência medida sai otimista. Gil Tene chamou esse efeito de
+\emph{coordinated omission}: a maior parte dos artefatos de alta latência do
+servidor simplesmente não é registrada~\cite{tene2013,tenewrk2}. A documentação
+do k6 descreve o mesmo sintoma e recomenda os executores de taxa de chegada
+(\cd{constant-arrival-rate} e \cd{ramping-arrival-rate}) para o modelo
+aberto~\cite{k6openclosed}.
+
+\begin{decisao}
+\textbf{O teste usa o modelo aberto.} As crianças não esperam a API responder
+para chegar à escola: às 7h30 elas entram na sala e o professor pede que abram
+a missão, com o servidor lento ou não. Isso é um sistema aberto por natureza. O
+modelo fechado entra só onde ele descreve o comportamento real --- o
+\emph{polling} de uma aba já aberta, que espera a resposta anterior.
+\end{decisao}
+
+% ============================================================================
+\chapter{Da rede ao número: o modelo de carga}
+\label{cap:modelo}
+% ============================================================================
+
+\section{Premissas}
+
+Toda estimativa abaixo é uma cadeia de premissas. Elas estão numeradas para que
+a rede possa corrigir cada uma isoladamente, e o resultado se recalcula sem
+reescrever o método.
+
+\begin{tabularx}{\linewidth}{@{}L{9mm}L{50mm}L{22mm}X@{}}
+\toprule
+\headrow \thd{ID} & \thd{Premissa} & \thd{Valor} & \thd{Origem}\\
+\midrule
+\endhead
+P1 & Usuários cadastrados & \num{800000} & Informado pela rede.\\
+\zebra P2 & Fração de estudantes & 95\% (\num{760000}) & Premissa; o resto são
+  professores e gestores. \textbf{Pedir o número à rede.}\\
+P3 & Estudantes no turno mais cheio & 55\% (\textasciitilde\num{420000}) &
+  Premissa. O Censo Escolar 2024 mostra que 99,9\% dos anos finais do
+  fundamental e 82,5\% do ensino médio estudam no diurno, e que 22,9\% das
+  matrículas públicas são de tempo integral~\cite{inep2024}; a divisão
+  manhã/tarde não é publicada em agregado e tem de vir dos microdados ou da
+  rede.\\
+\zebra P4 & Tamanho médio de turma & 30 & Premissa, coerente com o \cd{R-17}
+  da PU-DOC-001.\\
+P5 & Aulas por turno e por semana & 5 por dia, 25 por semana & Premissa de
+  grade típica.\\
+\zebra P6 & Aulas por semana, por turma, que usam uma missão ($k$) & 1, 2 ou 4
+  & \textbf{É a premissa que mais pesa}, e é pedagógica: depende de quantas
+  missões o currículo da rede encaixa por semana.\\
+P7 & Fator de concentração ($f$) & 1,5 & Premissa: a aula mais disputada tem
+  50\% mais turmas usando a plataforma que a média (primeira aula, por
+  exemplo).\\
+\zebra P8 & Duração média de uma sessão ($W$) & 45 min & Uma hora-aula de 50
+  minutos, menos a acomodação da turma.\\
+P9 & Janela de entrada & 50\% nos 2 primeiros minutos, o resto em 8 & Premissa
+  do \enquote{podem abrir agora} do professor. É a \enquote{parede} descrita na
+  PU-DOC-001.\\
+\bottomrule
+\end{tabularx}
+
+\section{Simultâneos no horário mais cheio}
+
+A fração de turmas numa aula com missão é $k/25$, e a simultaneidade no horário
+mais cheio é:
+\begin{equation}
+  N_{\text{sim}} = E_{\text{turno}} \times \frac{k}{25} \times f
+\end{equation}
+
+\begin{tabularx}{\linewidth}{@{}L{34mm}C{16mm}C{26mm}C{24mm}X@{}}
+\toprule
+\headrow \thd{Cenário} & \thd{$k$} & \thd{Simultâneos} & \thd{Turmas ativas} &
+  \thd{Leitura}\\
+\midrule
+A --- baixo & 1 & \num{25200} & 840 & Início do contrato, adoção parcial.\\
+\zebra B --- esperado & 2 & \num{50400} & \num{1680} & Duas missões por turma
+  por semana.\\
+C --- alto & 4 & \num{100800} & \num{3360} & Adoção plena, ou um
+  \enquote{dia D} pedido pela secretaria.\\
+\zebra D --- referência documental & --- & \num{152000} & \num{5070} & A razão
+  da PU-DOC-001 (20\% dos cadastrados, o piso de
+  \num{2000}--\num{4000} em \num{10000}) aplicada a \num{760000}.\\
+\bottomrule
+\end{tabularx}
+
+\begin{nota}
+\textbf{Por que o cenário D não é o alvo, mas entra no teste.} A razão de
+20--40\% de simultâneos sobre cadastrados foi escrita para uma rede pequena e
+não é plausível em 800 mil: o TIC Educação e o NIC.br mostram que só 29\% das
+escolas públicas têm dispositivo para os alunos, cerca de um para cada dez, e
+que o uso do celular pessoal na escola caiu de 55\% para
+45\%~\cite{nicbr2024,cetic2025}. Os dispositivos são um teto natural da
+simultaneidade. Mesmo assim, o cenário D serve de marco no teste de ruptura:
+saber se a plataforma chega nele, ou onde para antes, custa só mais alguns
+minutos de rampa.
+\end{nota}
+
+\section{A parede das 8h: taxa de \emph{login}}
+
+Pela premissa P9, metade das sessões da aula chega nos dois primeiros minutos:
+
+\begin{tabularx}{\linewidth}{@{}L{34mm}C{30mm}C{30mm}X@{}}
+\toprule
+\headrow \thd{Cenário} & \thd{Pico (2 min)} & \thd{Restante (8 min)} &
+  \thd{CPU só de \emph{hash}}\\
+\midrule
+A & 105 \emph{logins}/s & 26/s & \textasciitilde10,5 vCPU no pico\\
+\zebra B & 210 \emph{logins}/s & 52/s & \textasciitilde21 vCPU no pico\\
+C & 420 \emph{logins}/s & 105/s & \textasciitilde42 vCPU no pico\\
+\bottomrule
+\end{tabularx}
+
+A última coluna usa o custo medido em desenvolvimento: \textasciitilde100\,ms de
+CPU por comparação \cd{bcryptjs} com custo 10
+(\arq{apps/hub/lib/auth.ts:41-43}). É o pior caso --- quem já tem sessão válida
+de 2\,h não refaz \emph{login} ---, e é por isso que ele é o pior caso certo
+para testar: o primeiro turno do dia começa com todas as sessões vencidas.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  width=0.92\linewidth, height=58mm,
+  xlabel={minutos desde o início da aula}, ylabel={\emph{logins} por segundo},
+  xmin=0, xmax=14, ymin=0, ymax=240,
+  grid=major, grid style={unooGrid},
+  axis line style={unooAxis}, tick label style={font=\footnotesize},
+  label style={font=\footnotesize},
+  legend style={font=\footnotesize, draw=none, at={(0.98,0.95)}, anchor=north east}
+]
+\addplot[very thick, color=unooNavy, const plot]
+  coordinates {(0,0) (1,210) (3,52) (11,0) (14,0)};
+\addlegendentry{cenário B: chegada modelada}
+\addplot[thick, dashed, color=unooLavender]
+  coordinates {(0,5) (14,5)};
+\addlegendentry{regime: renovação e retardatários}
+\end{axis}
+\end{tikzpicture}
+\caption[Perfil de chegada da parede das 8h]{O perfil de chegada que o teste da
+parede reproduz: um degrau de dois minutos, a cauda de oito, e o regime depois.
+O Google recomenda testar tanto a rampa quanto o degrau, porque o efeito de
+\emph{cache} faz os dois darem resultados diferentes~\cite{srecascading}.}
+\label{fig:parede}
+\end{figure}
+
+\section{Requisições por segundo em regime}
+
+Depois que a missão abre, cada aba de estudante gera tráfego próprio. O
+levantamento do código (Capítulo~\ref{cap:hipoteses}) dá a composição:
+
+\begin{tabularx}{\linewidth}{@{}L{46mm}L{24mm}X@{}}
+\toprule
+\headrow \thd{Fonte} & \thd{Taxa por aba} & \thd{Onde}\\
+\midrule
+\emph{Polling} de estado (fase, relógio, portão) & 1 a cada 5\,s &
+  \arq{exp08ef1b}, \arq{exp02em1b}, \arq{exp06ef2b}\\
+\zebra Eventos do motor (Instanooria) & lote a cada 4\,s &
+  \arq{exp08ef1b/\B{}src/\B{}lib/\B{}eventos.ts:\B{}51-52}\\
+Telemetria & até 6 por minuto & \arq{packages/\B{}sdk/\B{}src/\B{}telemetry.ts}\\
+\zebra Ações da missão & \textasciitilde1 por minuto & rotas \cd{POST} de cada
+  etapa\\
+\emph{Preflight} CORS & até $\times 2$ & \arq{apps/api/src/main.ts:48}: sem
+  \cd{maxAge}, o navegador guarda o \emph{preflight} por poucos segundos\\
+\bottomrule
+\end{tabularx}
+
+Somado, dá de 0,35 a 1,2 requisições por segundo por aba; o valor central de
+0,8 dá \textasciitilde\num{20000} req/s no cenário A,
+\textasciitilde\num{40000} no B e \textasciitilde\num{80000} no C. Esse é o
+número que dimensiona a API, e ele é dominado pelo \emph{polling}, não pelo que
+a criança faz. A documentação do k6 recomenda justamente descrever carga de API
+por taxa de requisições, e converter para taxa de iterações dividindo pelo
+número de requisições por iteração~\cite{k6apitesting}.
+
+\begin{atencao}
+Estes números são ordem de grandeza. O objetivo deles é escolher a escala do
+gerador e da cota de nuvem, não prever o resultado. O primeiro teste
+(capacidade unitária, Seção~\ref{sec:unitaria}) substitui a estimativa pela
+medida.
+\end{atencao}
+
+% ============================================================================
+\chapter{O que testar}
+\label{cap:oque}
+% ============================================================================
+
+\section{As jornadas}
+
+O teste não exercita rotas soltas: exercita as jornadas que acontecem numa
+aula, na proporção em que acontecem. Uma jornada é uma sequência de requisições
+com tempo de pensamento entre elas~\cite{meier2007cap12}.
+
+\begin{tabularx}{\linewidth}{@{}L{8mm}L{40mm}X L{14mm}@{}}
+\toprule
+\headrow \thd{J} & \thd{Jornada} & \thd{Sequência (requisições reais)} &
+  \thd{Peso}\\
+\midrule
+\endhead
+J1 & \emph{Login} do estudante &
+  \rota{GET /login} \seta{} \rota{/api/auth/providers} \seta{}
+  \rota{/api/auth/csrf} \seta{} \rota{POST /api/auth/callback/credentials}
+  (que chama \rota{POST /auth/login} na API) \seta{} \rota{/api/auth/session}
+  \seta{} \rota{GET /estudante} (que chama \rota{GET /salas/minhas}). Cerca de
+  8 requisições ao hub e 2 à API. & 1 por sessão\\
+\zebra J2 & Abrir a missão &
+  \rota{GET /exp/:expId}: \rota{/salas/minhas}, \rota{/experiencias/:expId},
+  \rota{/recursos/efetivos} (3 chamadas à API, 2 assinaturas RS256) \seta{}
+  \emph{bundle} da CDN \seta{} \emph{handshake} \cd{exp:ready}/\cd{hub:init}
+  \seta{} rota de entrada da experiência (passa por
+  \cd{exigirMissaoLiberada}). & 1 por sessão\\
+J3 & Missão sem IA (Rastro do Boato, \arq{exp06ef2b}) &
+  \rota{GET /rastro-boato/sessao}, \rota{POST /entrar}, \emph{polling} de
+  \rota{/gate} a cada 5\,s, \rota{POST} de auditoria, decisão, modelagem e
+  reflexão. & 50\%\\
+\zebra J4 & Missão com motor de eventos (Instanooria, \arq{exp08ef1b}) &
+  \rota{GET /runs/boot}, \rota{POST /runs}, \rota{/entrar}, \rota{/feed},
+  \emph{polling} de \rota{/fase} a cada 5\,s, \rota{POST /runs/:id/eventos} a
+  cada 4\,s, \rota{student-post} (IA opcional). & 35\%\\
+J5 & Missão com IA síncrona (unooGPT, \arq{exp02em1b}) &
+  \rota{GET /unoogpt/sessao}, \emph{polling} de \rota{/relogio}, \rota{POST
+  /unoogpt/pergunta} (10--30\,s, até 6 voltas de ferramenta). & 15\%\\
+\zebra J6 & Painel do professor & Uma aba por turma ativa: monitor a cada 5\,s
+  (\rota{GET /atividades/:id/monitor}) ou \cd{router.refresh()} a cada 5--10\,s,
+  conforme a missão. & 1 por turma\\
+J7 & Renovação do \emph{token} & \rota{GET /api/exp-token} a cada 10 minutos por
+  aba aberta. & contínuo\\
+\zebra J8 & Telemetria & \rota{POST /telemetry/batch} \seta{} Pub/Sub \seta{}
+  \rota{POST /telemetry/ingest}. Mede-se a fila, não só a rota. & contínuo\\
+\bottomrule
+\end{tabularx}
+
+Os pesos de J3 a J5 são premissa e devem refletir o calendário pedagógico da
+rede no mês do teste. O que importa é que as três classes de missão estejam
+presentes: a que só lê e grava, a que grava eventos em alta frequência e a que
+segura a requisição por dezenas de segundos esperando a IA.
+
+\section{Fora do escopo desta rodada}
+
+\begin{itemize}
+  \item \textbf{O provedor de identidade (WSO2).} Hoje o hub é o emissor, e o
+    WSO2 entra depois. Quando entrar, precisa de teste próprio: em agosto de
+    2020, o primeiro dia de aulas de distritos de San Antonio (EUA) caiu às
+    6h45 porque o portal de \emph{login} não aguentou o volume, e a falha
+    arrastou em cascata o Google Classroom e o Zoom, que dependiam
+    dele~\cite{carnett2020}.
+  \item \textbf{A CDN em si.} Ela é um serviço gerenciado com capacidade muito
+    acima da nossa; o que interessa medir é a taxa de acerto de
+    \emph{cache}, porque o Google avisa que nenhuma requisição tem garantia de
+    sair do \emph{cache}~\cite{gcdnoverview}. Seguindo a recomendação do k6, os
+    testes de protocolo excluem os \emph{assets} da CDN e os testes de
+    navegador os incluem~\cite{k6websites}.
+  \item \textbf{Telas de gestão} (importação, relatórios da diretoria): baixo
+    volume, com limite próprio; entram só no teste de resistência como ruído de
+    fundo.
+\end{itemize}
+
+% ============================================================================
+\chapter{Hipóteses de gargalo que o código já aponta}
+\label{cap:hipoteses}
+% ============================================================================
+
+Um teste de carga bem feito começa com hipóteses: sem elas, a equipe olha o
+painel no dia e não sabe o que procurar. O levantamento do código em 23 de
+setembro de 2026 aponta oito, e cada teste do Capítulo~\ref{cap:tipos} existe
+para confirmar ou descartar pelo menos uma delas. \textbf{Nenhuma foi medida
+ainda}: são leituras do código.
+
+\begin{tabularx}{\linewidth}{@{}L{8mm}L{44mm}X L{22mm}@{}}
+\toprule
+\headrow \thd{H} & \thd{Hipótese} & \thd{Por que o código sugere} &
+  \thd{Teste que decide}\\
+\midrule
+\endhead
+H1 & O \emph{login} satura a CPU da API &
+  \cd{bcryptjs} (JavaScript puro) com custo 10, no \emph{event loop}:
+  \textasciitilde100\,ms por comparação, e uma instância Node faz no máximo
+  \textasciitilde10 por segundo enquanto bloqueia todo o resto
+  (\arq{apps/\B{}api/\B{}src/\B{}auth/\B{}auth.controller.ts:\B{}141,154-167}). &
+  Parede das 8h\\
+\zebra H2 & A busca do \emph{login} não tem índice &
+  \cd{user.findMany(\{username, ativo\})}, mas o único índice é o
+  \cd{UNIQUE (escola\_id, username)} (\arq{schema.prisma:442}). Com 800 mil
+  linhas, a busca sem \cd{escola\_id} pode varrer a tabela. &
+  Capacidade unitária\\
+H3 & O \emph{pool} de conexões esgota antes da CPU &
+  Nenhum \cd{connection\_limit} no código: vale o padrão do Prisma
+  ($2 \times \text{vCPU} + 1$). Cada \cd{comTenancy} abre uma transação
+  interativa (há 239 chamadas), com \cd{maxWait} de 2\,s. O
+  \emph{pooler} está declarado na documentação e não aparece no repositório. &
+  Carga média, estresse\\
+\zebra H4 & O \emph{polling} multiplica a guarda de liberação &
+  Toda rota de estudante, inclusive o \emph{polling} de 5\,s do portão, passa
+  por \cd{exigirMissaoLiberada}, que faz de 5 a 6 \emph{queries}
+  (\arq{apps/\B{}api/\B{}src/\B{}comum/\B{}liberacao.ts:\B{}104-130}). No cenário B, se todos
+  estivessem nessa missão, seriam \textasciitilde\num{60000} \emph{queries}/s
+  só de guarda. & Carga média\\
+H5 & O monitor do professor cresce durante a aula &
+  \rota{GET /atividades/:id/monitor} a cada 5\,s lê todas as \emph{runs} e todos
+  os eventos da atividade, sem \cd{take}
+  (\arq{apps/\B{}api/\B{}src/\B{}analise/\B{}metricas.ts:\B{}123-160}). O custo por chamada
+  aumenta a cada minuto de aula. & Resistência\\
+\zebra H6 & A IA prende a capacidade da API &
+  \rota{POST /unoogpt/pergunta} leva 10--30\,s. Pela Lei de Little, 5 mil
+  estudantes perguntando uma vez a cada 5 minutos, com 20\,s de espera, mantêm
+  \textasciitilde330 requisições em voo; a largada simultânea da turma
+  multiplica isso por 5. Cada uma ocupa um dos 80 lugares de concorrência da
+  instância. & IA isolada\\
+H7 & Limites em memória viram $N$ vezes o declarado &
+  O \emph{rate limit} e as quotas locais são um \cd{Map} por instância
+  (\arq{apps/\B{}api/\B{}src/\B{}comum/\B{}rate-limit.ts}). Com 50 instâncias, o \enquote{8
+  por minuto} vira até 400. Não é gargalo: é proteção que some sob carga. &
+  Estresse\\
+\zebra H8 & O hub assina demais &
+  Cada chamada do hub à API assina um JWT RS256 novo
+  (\arq{apps/\B{}hub/\B{}lib/\B{}api-servidor.ts:\B{}80,121}), e cada abertura de missão faz
+  duas. A API verifica cada uma. & Parede das 8h\\
+\bottomrule
+\end{tabularx}
+
+\begin{nota}
+O teste não corrige nada disso: ele mede. A regra do projeto é \enquote{nenhuma
+peça de infraestrutura sem gargalo medido} (RE-01 da PU-DOC-001), e esta lista
+existe para que o gargalo, quando aparecer, já tenha um nome e um arquivo.
+\end{nota}
+
+% ============================================================================
+\chapter{Os tipos de teste e a ordem de execução}
+\label{cap:tipos}
+% ============================================================================
+
+A classificação segue a documentação do k6~\cite{k6testtypes} e o
+\emph{syllabus} do ISTQB~\cite{istqb2018pt}. A ordem importa: cada teste só roda
+se o anterior passou, porque um teste de estresse num sistema que falha no
+\emph{smoke} só mede o defeito já conhecido.
+
+\begin{tabularx}{\linewidth}{@{}L{6mm}L{30mm}L{30mm}X@{}}
+\toprule
+\headrow \thd{\#} & \thd{Teste} & \thd{Carga e duração} & \thd{Pergunta que
+  responde}\\
+\midrule
+\endhead
+1 & \emph{Smoke} & 5--10 usuários, 2 min & O roteiro funciona? \emph{Login},
+  \emph{token}, missão e painel respondem 2xx?\\
+\zebra 2 & Capacidade unitária & 1 instância fixa da API e do hub, rampa até
+  quebrar & Quantas req/s \emph{uma} instância aguenta dentro do SLO? É o
+  número que dimensiona tudo.\\
+3 & Carga média & Cenário B, 30--60 min & O sistema se mantém dentro do SLO na
+  carga esperada?\\
+\zebra 4 & Parede das 8h (\emph{spike}) & Degrau da
+  Figura~\ref{fig:parede}, 15 min & O \emph{autoscaling} acompanha o degrau? Há
+  429 ou 5xx no primeiro minuto?\\
+5 & Estresse e ruptura (\emph{breakpoint}) & Cenário C, depois rampa até D e
+  além & Onde quebra, e como? Degrada com 429 e volta sozinho, ou cai em
+  cascata?\\
+\zebra 6 & Resistência (\emph{soak}) & Cenário A ou B, 5 h (um turno inteiro) &
+  Vazamento de memória, \emph{pool} que não devolve conexão, fila de telemetria
+  que cresce, monitor do professor ficando lento.\\
+7 & IA isolada & Turmas inteiras de J5 largando juntas & \cd{R-17}: quantos
+  turnos simultâneos cabem na cota do Vertex e na concorrência da API?\\
+\bottomrule
+\end{tabularx}
+
+\section{Capacidade unitária: o teste que mais ensina}
+\label{sec:unitaria}
+
+Com o \emph{autoscaling} desligado (mínimo e máximo de instâncias iguais a 1),
+sobe-se a taxa de chegada até que o p95 passe do SLO ou a taxa de erro passe de
+1\%. O resultado é a capacidade $c$ de uma instância, em req/s. A partir dela:
+\begin{equation}
+  \text{instâncias necessárias} = \frac{\text{req/s do cenário}}{c \times 0{,}6}
+\end{equation}
+em que 0,6 vem do alvo de 60\% de CPU e de concorrência que o
+\emph{autoscaler} do Cloud Run persegue~\cite{gcrautoscaling}. O Google
+recomenda repetir o teste em cargas diferentes para confirmar que o serviço
+escala de forma linear~\cite{gcrloadtest} --- e ele não escala: a Lei Universal
+de Escalabilidade de Gunther descreve por que contenção e coerência fazem a
+curva dobrar~\cite{gunther2007}. É por isso que o teste 3 existe mesmo depois
+do 2.
+
+\section{Carga híbrida: protocolo mais navegador}
+
+O k6 recomenda gerar a maior parte da carga em nível de protocolo e rodar,
+junto, um número pequeno de navegadores reais~\cite{k6websites}. Os navegadores
+medem o que o protocolo não vê --- o LCP, o INP e o tempo até o
+\emph{handshake} da ponte --- e o módulo de navegador do k6 exporta essas
+métricas diretamente~\cite{k6browsermetrics}. Proposta: 50 a 100 navegadores
+durante os testes 3 e 4, com a rede limitada a um perfil de escola (ver
+Seção~\ref{sec:banda}).
+
+% ============================================================================
+\chapter{Critérios de aprovação e de parada}
+\label{cap:criterios}
+% ============================================================================
+
+\section{Aprovação: os SLOs que a plataforma já declarou}
+
+O teste não inventa critério: usa os SLOs do Capítulo 17 da PU-DOC-001, porque
+são as promessas que a operação vai cobrar depois. O livro de SRE do Google
+insiste em percentis, não em médias, porque a média esconde a cauda que o
+usuário sente~\cite{sreslo}. No k6, cada linha vira um \emph{threshold}, que é
+o critério de aprovação ou reprovação do teste~\cite{k6thresholds}.
+
+\begin{tabularx}{\linewidth}{@{}L{44mm}L{36mm}X@{}}
+\toprule
+\headrow \thd{Critério} & \thd{Limite} & \thd{Origem}\\
+\midrule
+\endhead
+Erros 5xx na API e no hub & $< 0{,}5\%$ & SLO de disponibilidade de 99,5\%\\
+\zebra Latência de \rota{/runs/:id/feed}, \rota{/experiencias/:id},
+  \rota{/auth/*} & p95 $< 800$\,ms & SLO de latência da API\\
+\emph{Login} completo (J1 inteira) & p95 $< 3$\,s & Proposta deste estudo\\
+\zebra \emph{Handshake} da ponte & 99\% em até 8\,s & SLO da ponte\\
+Turno de IA & 98\% concluídos; p95 $< 30$\,s & SLO de IA e alerta B\\
+\zebra Fila de telemetria & mensagem mais antiga $< 5$\,min & SLO de
+  ingestão\\
+LCP e INP (navegador) & p75: LCP $\leq 2{,}5$\,s, INP $\leq 200$\,ms &
+  Core Web Vitals~\cite{webvitals}\\
+\zebra Respostas 429 no degrau & $< 1\%$ no primeiro minuto & O Cloud Run
+  segura requisições por até 10\,s sem instância livre e depois responde
+  429~\cite{gcrautoscaling}\\
+\bottomrule
+\end{tabularx}
+
+\section{Parada: quando interromper}
+
+\begin{itemize}
+  \item Taxa de erro acima de 5\% por mais de um minuto: o k6 aborta sozinho
+    com \cd{abortOnFail}~\cite{k6thresholds}.
+  \item CPU do Cloud SQL acima de 90\% por cinco minutos, ou conexões no
+    limite: o banco é compartilhado por todas as escolas e não se recupera
+    sozinho de uma fila de conexões.
+  \item \textbf{O gerador passou de 80\% de CPU ou 90\% de memória.} Aí o
+    resultado é do gerador, não do sistema~\cite{k6largetests}.
+  \item Gasto de IA acima do teto aprovado para o teste.
+\end{itemize}
+
+\section{O que observar do lado do servidor}
+
+A observabilidade do Capítulo 17 já está no ar e é o que torna o teste legível.
+Durante cada rodada:
+
+\begin{itemize}
+  \item \textbf{Cloud Run}: instâncias, concorrência por instância, CPU,
+    memória, latência de \emph{startup}, contagem de 429;
+  \item \textbf{Cloud SQL}: CPU, conexões ativas, esperas por \emph{lock},
+    \cd{pg\_stat\_statements} (as dez \emph{queries} mais caras), Query
+    Insights;
+  \item \textbf{API}: erros \cd{P2024} do Prisma (espera por conexão do
+    \emph{pool}), \emph{queries} acima de 500\,ms (o log lento já existe),
+    latência de IA por rota;
+  \item \textbf{Pub/Sub}: \cd{oldest\_unacked\_message\_age} e fila morta;
+  \item \textbf{Vertex}: respostas 429 por cota.
+\end{itemize}
+
+O Google recomenda exportar os logs para o BigQuery e analisar a latência por
+lá depois do teste~\cite{gcrloadtest}.
+
+% ============================================================================
+\chapter{Ambiente, dados e ferramentas}
+\label{cap:ambiente}
+% ============================================================================
+
+\section{Onde rodar}
+
+\begin{decisao}
+\textbf{Na \emph{stack} de produção da rede, antes do lançamento, com dados
+sintéticos, e apagando tudo depois.} Até novembro de 2026 a produção não tem
+nenhum estudante real: é a única janela em que dá para testar a configuração
+exata que vai atender a rede (\emph{tier} do banco, cotas, rede, CDN) sem
+arriscar dado de menor. Depois do lançamento, o teste passa para uma cópia da
+\emph{stack} em homologação, e nunca volta para produção.
+\end{decisao}
+
+\begin{itemize}
+  \item \textbf{Região}: a de produção (\cd{southamerica-east1}). O Google
+    sugere \cd{europe-west1} para testes de carga no Cloud Run por causa da
+    cota~\cite{gcrloadtest}, mas testar noutra região mede outro sistema; a
+    alternativa é pedir aumento de cota na região real.
+  \item \textbf{Cotas}: o máximo padrão do Cloud Run é de 100 instâncias por
+    serviço, e o Google pede que se fale com a equipe da conta quando o teste
+    for passar disso~\cite{gcrloadtest}. É provável que o cenário B já passe.
+  \item \textbf{Aviso ao Google}: nenhuma fonte oficial exige aviso prévio para
+    teste de carga nos próprios projetos; o FAQ de segurança dispensa até o de
+    teste de invasão, desde que respeitada a política de uso
+    aceitável~\cite{gcppentestfaq}. O que existe é a conversa de cota acima.
+  \item \textbf{Gerador}: não usar o Pub/Sub para gerar carga, que o próprio
+    Google desaconselha~\cite{gcrloadtest}. Usar máquinas na mesma região, fora
+    da VPC da aplicação, para que o tráfego entre pelo \emph{load balancer} como
+    o de uma escola.
+\end{itemize}
+
+\section{Dados sintéticos, nunca reais}
+
+\begin{regra}
+Nenhum dado real de estudante entra no teste, nem anonimizado. A LGPD exige que o
+tratamento de dados de crianças e adolescentes seja feito no melhor interesse
+deles (art. 14) e limitado ao mínimo necessário (art. 6º, III), e o dado
+anonimizado volta a ser pessoal se a anonimização for revertida
+(art. 12)~\cite{lgpd2018}. Um teste de carga não precisa de nenhuma pessoa real.
+\end{regra}
+
+A massa é gerada pelo mesmo caminho da produção --- o importador (ADR-54 e
+ADR-59), que é quem escreve pessoa ---, com o gerador determinístico que já
+existe no repositório (\arq{apps/\B{}api/\B{}prisma/\B{}pessoas-demo.ts}):
+
+\begin{itemize}
+  \item \num{800000} usuários em \textasciitilde\num{2200} escolas sintéticas
+    (\textasciitilde350 estudantes por escola), turmas de 30, professores
+    lotados;
+  \item liberações criadas para todas as turmas que o cenário usa, porque sem
+    elas a guarda responde 403 e o teste mede o 403;
+  \item \textbf{um único \emph{hash} de senha reaproveitado}: 800 mil
+    \cd{bcrypt} de custo 10 custariam \textasciitilde22 horas de CPU; como o
+    sal viaja dentro do \emph{hash}, a mesma string vale para todos;
+  \item o arquivo de credenciais do gerador fica fora do repositório.
+\end{itemize}
+
+Carregar os 800 mil pelo importador é, de quebra, o primeiro teste: é o volume
+de uma importação inicial real.
+
+\section{IA: simulada em escala, real em amostra}
+
+A IA custa dinheiro por \emph{token} e tem cota própria. Uma partida da
+unooGPT custou \num{71397} \emph{tokens} (medido em 27/08/2026); 5 mil estudantes
+jogando ao mesmo tempo seriam \textasciitilde9 milhões de \emph{tokens} por
+minuto. Proposta:
+
+\begin{itemize}
+  \item nos testes 3 a 6, o \emph{provider} \cd{mock} com \emph{latência
+    sintética} de 10--30\,s --- o que interessa ali é quanto a espera prende a
+    API, não o texto (a memória do projeto registra que o \emph{mock} atual
+    lança em \cd{generateJson}, o que precisa ser resolvido antes);
+  \item no teste 7, o Vertex real, com um teto de gasto fixado antes, para
+    medir a cota e a latência sob concorrência. O capítulo de sobrecarga do
+    livro de SRE descreve as ferramentas para quando a cota morder: cota por
+    cliente, \emph{throttling} adaptativo e níveis de
+    criticidade~\cite{sreoverload}.
+\end{itemize}
+
+\section{Banda da escola}
+\label{sec:banda}
+
+O MEC fixou em 2024 a meta de 1\,Mbps por aluno no turno de maior
+matrícula~\cite{enec2024}; o NIC.br mediu que só 11\% das escolas monitoradas
+chegam lá e que a média nacional é de 0,26\,Mbps por aluno~\cite{nicbr2024}.
+Numa escola de 600 estudantes no turno, isso é \textasciitilde156\,Mbps. Se três
+turmas de 30 abrem juntas uma missão de \textasciitilde8\,MB, são
+\textasciitilde720\,MB, ou \textasciitilde37\,s com o \emph{link} inteiro
+dedicado a isso. Os vídeos da \arq{exp04ef1b} somam 52\,MB.
+
+Por isso os navegadores do teste híbrido rodam com a rede limitada, e o LCP
+entra como critério. O Khan Academy atribuiu ter aguentado 2,5 vezes o tráfego
+em duas semanas, em 2020, a exatamente duas coisas: servidor sem estado e CDN
+agressiva~\cite{kosarchyn2020} --- a mesma aposta da ADR-01 da plataforma.
+
+\section{Ferramenta}
+
+\begin{tabularx}{\linewidth}{@{}L{22mm}L{26mm}L{38mm}X@{}}
+\toprule
+\headrow \thd{Ferramenta} & \thd{Roteiro em} & \thd{Modelo aberto} &
+  \thd{Navegador real}\\
+\midrule
+\textbf{k6} & JavaScript & nativo (\cd{arrival-rate})~\cite{k6openclosed} &
+  sim, com Web Vitals~\cite{k6browsermetrics}\\
+\zebra Gatling & Scala, Java, Kotlin & \cd{injectOpen}
+  explícito~\cite{gatlinginjection} & não\\
+Locust & Python & por taxa de usuários~\cite{locustdocs} & não\\
+\zebra JMeter & GUI, Java & por plano & não; trabalha em nível de protocolo e
+  não executa JavaScript~\cite{jmeter}\\
+\bottomrule
+\end{tabularx}
+
+\begin{decisao}
+\textbf{k6.} O roteiro é JavaScript, a linguagem do projeto inteiro; o modelo
+aberto é nativo; o mesmo roteiro roda os navegadores; e a PU-DOC-001 já o
+nomeia no \cd{R-01}. A execução distribuída pode ser feita com várias máquinas
+rodando k6 por fatia do cenário, ou com um serviço gerenciado. O tutorial do
+Google de teste distribuído com Locust em GKE foi arquivado em agosto de 2026 e
+não deve ser seguido~\cite{gcpgkelocust}.
+\end{decisao}
+
+\textbf{Escala do gerador.} No modelo aberto, o número de usuários virtuais que
+o k6 precisa é a taxa de chegada vezes a duração da iteração (Little de novo).
+Modelar a sessão inteira de 45 minutos como uma iteração exigiria
+\textasciitilde\num{50000} VUs no cenário B; a 1--5\,MB por VU, isso é de
+50 a 250\,GB de memória~\cite{k6largetests}. A saída prática é separar os
+cenários: a jornada completa (J1 e J2) como iteração curta, e o regime (o
+\emph{polling}, os eventos, o painel) como taxa de requisições por rota, na
+proporção medida. O Apêndice~\ref{ap:k6} mostra o esqueleto.
+
+% ============================================================================
+\chapter{Contas de capacidade para levar ao teste}
+\label{cap:contas}
+% ============================================================================
+
+\section{Conexões com o banco}
+
+Duas regras do Google limitam as conexões: cada instância do Cloud Run abre no
+máximo 100 conexões com o Cloud SQL~\cite{gcsqlconnectrun}, e o
+\cd{max\_connections} padrão do Postgres depende da memória da instância ---
+100 entre 3,75 e 6\,GB, 400 entre 7,5 e 15\,GB, 500 entre 15 e 30\,GB,
+\num{1000} a partir de 120\,GB~\cite{gcsqlflags}. A condição a respeitar é:
+\begin{equation}
+  \text{máx. instâncias da API} \times \text{\emph{pool} por instância}
+  \;\leq\; \texttt{max\_connections} - \text{reserva}
+\end{equation}
+Com o \emph{pool} padrão do Prisma numa instância de 2 vCPU (5 conexões), 100
+instâncias pedem 500 conexões --- mais que qualquer \emph{tier} até 30\,GB. Ou
+o \emph{pooler} existe de fato (a documentação diz que sim, o repositório não
+mostra), ou o máximo de instâncias fica preso pelo banco. O Google recomenda
+\emph{pool} pequeno por instância, com \emph{timeout} e \emph{backoff}
+exponencial~\cite{gcsqlmanageconn}. Este é o primeiro número a confirmar, antes
+do primeiro teste com mais de uma instância.
+
+\section{IA pela Lei de Little}
+
+Requisições de IA em voo $=$ taxa de perguntas $\times$ duração da pergunta.
+Com 5 mil estudantes na unooGPT (15\% do cenário B, arredondado), uma pergunta a
+cada 5 minutos por estudante e 20\,s de espera:
+\begin{equation}
+  N_{\text{IA}} = \frac{5000}{300\,\text{s}} \times 20\,\text{s} \approx 333
+\end{equation}
+Na largada, quando 30 estudantes de cada turma perguntam no mesmo minuto, o
+número sobe para \textasciitilde\num{1700}. Com concorrência 80 por instância,
+são de 4 a 21 instâncias fazendo nada além de esperar o Vertex --- e cada
+uma dessas requisições é também um lugar que o estudante do lado, fazendo uma
+chamada de 50\,ms, não consegue ocupar. É o \cd{R-17}; a saída já registrada é
+\emph{streaming} no \emph{provider}.
+
+\section{\emph{Login}}
+
+A capacidade de \emph{login} por instância é limitada por
+$1 / 0{,}1\,\text{s} = 10$ por vCPU enquanto o \emph{hash} rodar no
+\emph{event loop}. Para os 210/s do cenário B, são pelo menos 21 vCPU só de
+\emph{hash}, e cada \emph{login} bloqueia por 100\,ms todas as outras
+requisições da mesma instância. Se H1 se confirmar, é a primeira correção a
+fazer, e ela está dentro da API.
+
+% ============================================================================
+\chapter{Decisões que o teste não toma}
+\label{cap:decisoes}
+% ============================================================================
+
+O teste mede. Algumas perguntas vêm antes dele e não são técnicas:
+
+\begin{enumerate}
+  \item \textbf{A rede de 800 mil é um contrato ou vários?} A ADR-04 define
+    \enquote{1 contrato $=$ 1 \emph{stack}}, com a escala pensada para
+    \textasciitilde\num{10000} estudantes. Uma \emph{stack} para 800 mil muda o
+    \emph{tier} do banco, as cotas e o custo, e concentra o risco: um incidente
+    para a rede inteira. Dividir por regional (várias \emph{stacks} para o mesmo
+    cliente) mantém cada uma perto da escala desenhada, e custa operar
+    várias. \textbf{O teste deve rodar sobre a forma escolhida.}
+  \item \textbf{Qual é a adoção esperada ($k$)?} Uma, duas ou quatro missões por
+    turma por semana mudam a carga em quatro vezes. Isso é do planejamento
+    pedagógico da rede.
+  \item \textbf{Qual é o horário de início das aulas e a divisão entre
+    turnos?} As fontes nacionais não publicam isso em agregado; a rede tem o
+    dado.
+  \item \textbf{Quanto se pode gastar no teste?} Instâncias, banco maior
+    durante o teste e \emph{tokens} de IA do teste 7 precisam de teto aprovado.
+\end{enumerate}
+
+\begin{nota}
+Ao responder, atualize as premissas P2, P3, P6 e P7 do
+Capítulo~\ref{cap:modelo}: as tabelas de cenário se recalculam com a mesma
+fórmula.
+\end{nota}
+
+% ============================================================================
+\chapter{Plano de execução}
+\label{cap:plano}
+% ============================================================================
+
+Com produção prevista para novembro de 2026, sobram cerca de seis semanas.
+
+\begin{tabularx}{\linewidth}{@{}L{20mm}X L{36mm}@{}}
+\toprule
+\headrow \thd{Semana} & \thd{Entrega} & \thd{Sai daqui}\\
+\midrule
+\endhead
+1 (até 02/10) & Respostas do Capítulo~\ref{cap:decisoes}; conferir
+  \emph{pooler}, \cd{connection\_limit} e \emph{tier}; pedido de cota; massa
+  sintética carregada pelo importador; \emph{mock} de IA com latência. &
+  Ambiente pronto\\
+\zebra 2 & Roteiros k6 das jornadas J1--J8; teste 1 (\emph{smoke}); teste 2
+  (capacidade unitária). & Capacidade $c$ por instância\\
+3 & Correções das hipóteses confirmadas no teste 2 (provavelmente H1, H2,
+  H3); repetir o teste 2. & $c$ corrigido\\
+\zebra 4 & Teste 3 (carga média) e teste 4 (parede das 8h), com navegadores. &
+  Aprovação no cenário B\\
+5 & Teste 5 (estresse e ruptura) e teste 6 (resistência de 5\,h). & Ponto de
+  ruptura; vazamentos\\
+\zebra 6 & Teste 7 (IA real); relatório final; atualização da PU-DOC-001
+  (\rf{RNF-01}, \cd{R-01}, \cd{R-17}, Capítulo 6); limpeza da massa
+  sintética. & \cd{R-01} fechado ou reclassificado\\
+\bottomrule
+\end{tabularx}
+
+\begin{atencao}
+A semana 3 é a que costuma faltar. Todo teste de carga que acha um gargalo
+precisa de tempo para corrigir e \emph{repetir}; um cronograma sem essa semana
+só descobre o problema, não o resolve. Os incidentes recorrentes no primeiro dia
+de inscrição do Enem, atribuídos pela imprensa ao volume de acessos
+simultâneos, mostram que o risco se repete quando nada muda entre uma edição e
+a próxima~\cite{techtudo2024,querobolsa2026}.
+\end{atencao}
+
+% ============================================================================
+\appendix
+\chapter{Esqueleto do roteiro k6}
+\label{ap:k6}
+% ============================================================================
+
+Esqueleto para orientar a escrita, \textbf{não testado}. Os nomes de rota são
+os do código em 23 de setembro de 2026, e o fluxo de \emph{login} segue o
+NextAuth com o \emph{provider} de credenciais.
+
+\begin{lstlisting}[language=tsunoo]
+import http from "k6/http";
+import { check, sleep } from "k6";
+import { SharedArray } from "k6/data";
+
+const HUB = __ENV.HUB_URL;
+const API = __ENV.API_URL;
+const contas = new SharedArray("contas", () =>
+  open("./contas-sinteticas.csv").split("\n").slice(1).map((l) => l.split(",")));
+
+export const options = {
+  scenarios: {
+    // J1 + J2: a parede das 8h (cenario B), modelo aberto.
+    parede: {
+      executor: "ramping-arrival-rate",
+      exec: "entrarNaAula",
+      startRate: 0, timeUnit: "1s",
+      preAllocatedVUs: 2000, maxVUs: 8000,
+      stages: [
+        { target: 210, duration: "1m" },  // o degrau
+        { target: 210, duration: "1m" },
+        { target: 52,  duration: "30s" },
+        { target: 52,  duration: "7m30s" },
+        { target: 0,   duration: "1m" },
+      ],
+    },
+    // Regime: polling do portao, na taxa por rota (e nao por usuario).
+    regime: {
+      executor: "constant-arrival-rate",
+      exec: "pollingDoPortao",
+      rate: 10000, timeUnit: "1s", duration: "30m",
+      preAllocatedVUs: 3000, maxVUs: 12000,
+      startTime: "10m",
+    },
+  },
+  thresholds: {
+    http_req_failed: [{ threshold: "rate<0.005", abortOnFail: true,
+                        delayAbortEval: "1m" }],
+    "http_req_duration{grupo:api-slo}": ["p(95)<800"],
+    "http_req_duration{grupo:login}":   ["p(95)<3000"],
+    dropped_iterations: ["count<100"],  // o gerador nao acompanhou
+  },
+};
+
+export function entrarNaAula() {
+  const [usuario, senha, expId] = contas[Math.floor(Math.random() * contas.length)];
+  const csrf = http.get(`${HUB}/api/auth/csrf`, { tags: { grupo: "login" } })
+                   .json("csrfToken");
+  const r = http.post(`${HUB}/api/auth/callback/credentials`,
+    { csrfToken: csrf, username: usuario, password: senha },
+    { tags: { grupo: "login" }, redirects: 0 });
+  check(r, { "login aceito": (x) => x.status === 302 || x.status === 200 });
+  http.get(`${HUB}/estudante`, { tags: { grupo: "login" } });
+  http.get(`${HUB}/exp/${expId}`, { tags: { grupo: "abrir" } });
+  const token = http.get(`${HUB}/api/exp-token`).json("token");
+  http.get(`${API}/rastro-boato/sessao`, {
+    headers: { Authorization: `Bearer ${token}` }, tags: { grupo: "api-slo" } });
+}
+
+export function pollingDoPortao() {
+  // Tokens pre-emitidos para evitar que o regime refaca login.
+  // ...
+}
+\end{lstlisting}
+
+O detalhe que mais importa está em \cd{dropped\_iterations}: no modelo aberto,
+quando os usuários virtuais pré-alocados acabam, o k6 descarta iterações em vez
+de desacelerar. Contá-las é o que separa \enquote{o sistema aguentou} de
+\enquote{o gerador não conseguiu mandar}.
+
+% ============================================================================
+\chapter{Referências de método sem citação direta no texto}
+% ============================================================================
+
+As três obras abaixo são a base clássica de caracterização de carga e
+planejamento de capacidade, e sustentam o método do Capítulo~\ref{cap:modelo}
+sem que uma passagem específica tenha sido citada: \citeonline{jain1991},
+\citeonline{menasce2002} e a norma de qualidade de produto
+\citeonline{iso25010}, cuja característica de \emph{eficiência de
+desempenho} (comportamento no tempo, uso de recursos e capacidade) é a que este
+teste verifica. O modelo RAIL~\cite{rail} complementa os Web Vitals com os
+limites de resposta de interação. A classificação do \emph{syllabus} ISTQB e a
+do guia da Microsoft~\cite{meier2007} coincidem com a do k6 usada no
+Capítulo~\ref{cap:tipos}.
+
+\bibliography{referencias}
+
+\end{document}

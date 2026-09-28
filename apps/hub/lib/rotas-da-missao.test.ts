@@ -34,6 +34,41 @@ const CORPOS = join(
   "../app/(plataforma)/professor/entre-redes/[ano]/[unidade]",
 );
 
+const DESPACHANTE_DA_FICHA = join(CORPOS, "page.tsx");
+
+/**
+ * `expId` → arquivo do corpo, lido do despachante da FICHA (`page.tsx`): o
+ * `import { MissaoX } from "./missao-…"` diz o arquivo, e o
+ * `if (missao.expId === MISSAO_Y.expId) return corpo(<MissaoX …` diz de quem ele
+ * é. Antes o arquivo era adivinhado pelo slug do id (`exp-06-rastro-boato`
+ * → `missao-rastro-boato.tsx`), o que pulava em silêncio a Foto Conta — o
+ * corpo dela é `missao-foto-conta.tsx` — e deixou de existir com o código da
+ * ADR-110, que não carrega slug.
+ */
+function corposPorExpId(fonte: string): Map<string, string> {
+  const arquivoDoComponente = new Map<string, string>();
+  for (const [, componente, arquivo] of fonte.matchAll(/import \{ (Missao\w+) \} from "\.\/(missao-[\w-]+)";/g)) {
+    if (componente && arquivo) arquivoDoComponente.set(componente, `${arquivo}.tsx`);
+  }
+  const corpos = new Map<string, string>();
+  for (const [, nome, componente] of fonte.matchAll(
+    /missao\.expId === (MISSAO_\w+)\.expId\) \{\s*return corpo\(<(Missao\w+)/g,
+  )) {
+    const missao = (catalogo as Record<string, unknown>)[nome ?? ""] as Missao | undefined;
+    const arquivo = arquivoDoComponente.get(componente ?? "");
+    if (missao?.expId && arquivo) corpos.set(missao.expId, arquivo);
+  }
+  /* O que não tem ramo cai no fallback (o último `return corpo(<…`). */
+  const fallback = [...fonte.matchAll(/return corpo\(<(Missao\w+)/g)].at(-1)?.[1];
+  const arquivoDoFallback = arquivoDoComponente.get(fallback ?? "");
+  for (const missao of MISSOES_DISPONIVEIS) {
+    if (missao.expId && !corpos.has(missao.expId) && arquivoDoFallback) {
+      corpos.set(missao.expId, arquivoDoFallback);
+    }
+  }
+  return corpos;
+}
+
 /** Nome da constante do catálogo → `expId`, para ler o `page.tsx` sem adivinhar. */
 function expIdsDespachados(fonte: string): Set<string> {
   const despachados = new Set<string>();
@@ -69,19 +104,19 @@ describe("da sala para a missão", () => {
   });
 
   test("a missão do card (Instanooria) abre a ficha na turma", () => {
-    expect(rotaDeConducao("exp-01-instanooria", TURMA)).toBe(
+    expect(rotaDeConducao("exp08ef1b", TURMA)).toBe(
       `/professor/entre-redes/8-ano/unidade-1?turmaId=${TURMA}`,
     );
   });
 
   test("a turma vai na URL, escapada", () => {
-    expect(rotaDeConducao("exp-02-unootube", "turma 8a/1")).toBe(
-      "/professor/entre-redes/4-ano/unidade-1?turmaId=turma%208a%2F1",
+    expect(rotaDeConducao("exp02em1b", "turma 8a/1")).toBe(
+      "/professor/entre-redes/2-serie/unidade-1?turmaId=turma%208a%2F1",
     );
   });
 
   test("missão que o hub não conhece não ganha link", () => {
-    expect(rotaDeConducao("exp-99-inexistente", TURMA)).toBeNull();
+    expect(rotaDeConducao("exp09ef4b", TURMA)).toBeNull();
   });
 });
 
@@ -104,18 +139,13 @@ describe("o corpo da missão não promete tela que não existe", () => {
     /* A sala não aponta mais para `.../resultados`, mas os CORPOS apontam — e
        lá o 404 voltaria pelo mesmo buraco, só que um clique mais fundo. */
     const despachados = expIdsDespachados(readFileSync(DESPACHANTE_DE_RESULTADOS, "utf8"));
+    const corpos = corposPorExpId(readFileSync(DESPACHANTE_DA_FICHA, "utf8"));
 
     const orfas = MISSOES_DISPONIVEIS.filter((missao) => {
       if (!missao.expId || !("anoSlug" in missao)) return false;
-      const arquivo = join(CORPOS, `missao-${missao.expId.replace(/^exp-\d+-/, "")}.tsx`);
-      let fonte: string;
-      try {
-        fonte = readFileSync(arquivo, "utf8");
-      } catch {
-        /* Corpo com outro nome de arquivo: o teste do despachante da ficha
-           (`despachante-da-ficha.test.ts`) é quem cobra a existência do ramo. */
-        return false;
-      }
+      const corpo = corpos.get(missao.expId);
+      expect(corpo, `${missao.expId} não tem corpo no despachante da ficha`).toBeDefined();
+      const fonte = readFileSync(join(CORPOS, corpo ?? ""), "utf8");
       return fonte.includes("/resultados") && !despachados.has(missao.expId);
     }).map((missao) => missao.expId);
 

@@ -5,7 +5,7 @@ import { FotoContaService } from "./foto-conta.service";
 import { IaDaFotoContaService } from "./ia.service";
 
 /**
- * Lado server da exp-04-o-que-a-foto-conta. Prisma, Auth e Ai são globais.
+ * Lado server da exp01ef1b. Prisma, Auth e Ai são globais.
  *
  * Dois serviços, e a separação é de responsabilidade (molde do
  * o-eco-no-grupo): `FotoContaService` é o estado da missão e não sabe falar

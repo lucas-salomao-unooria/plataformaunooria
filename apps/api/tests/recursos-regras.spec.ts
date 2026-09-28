@@ -15,7 +15,7 @@ import {
  * do contrato em silêncio.
  */
 
-const EXP = "exp-70-vila-do-lume";
+const EXP = "app-70-vila-do-lume";
 
 const linha = (
   recursoId: string,

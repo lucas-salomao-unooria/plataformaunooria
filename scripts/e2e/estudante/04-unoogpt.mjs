@@ -2,7 +2,7 @@ import { HUB, suite } from "../lib/roteiro.mjs";
 import { conta } from "../lib/credenciais.mjs";
 
 /**
- * A Missão Tempestade (exp-03), nas duas pontas da sala.
+ * A Missão Tempestade (exp02em1b), nas duas pontas da sala.
  *
  * O relógio é da TURMA: sem a largada do professor, o estudante entra, vê o mapa
  * e NÃO consegue falar com o Cientista. O roteiro prova as duas metades —
@@ -12,7 +12,7 @@ import { conta } from "../lib/credenciais.mjs";
  * A experiência inteira roda na seção `chatgpt` do design system, sem
  * revelação no software: aqui a mediação é do professor, na sala.
  *
- * Os seletores são CONTRATO com a experiência (README da exp-03).
+ * Os seletores são CONTRATO com a experiência (README da exp02em1b).
  */
 const SERIE = "2EM";
 /* A turma vem do CSV do seed, não fixada aqui: o seed já renomeou "2A" para
@@ -103,7 +103,7 @@ await suite(
     const p = await r.pagina("estudante", { viewport: { width: 1440, height: 1000 } });
     await r.entrar(p, estudante.login);
 
-    await p.goto(`${HUB}/exp/exp-03-unoogpt`, { waitUntil: "domcontentloaded" });
+    await p.goto(`${HUB}/exp/exp02em1b`, { waitUntil: "domcontentloaded" });
     const quadro = p.frameLocator('iframe[title="experiencia"]');
     await quadro.locator("text=/Não dá para atender todos/i").waitFor({ timeout: 40_000 });
     await r.registrar(p, "a-missao", {
@@ -197,7 +197,7 @@ await suite(
       mostra: "A conversa com a pergunta da criança e a resposta do agente, e o orçamento debitado.",
       prova:
         "O orçamento é debitado NO SERVIDOR: três perguntas por tentativa. E a conversa voltou " +
-        "inteira depois de um F5 — ela está em `exp_03_mensagens`, não na memória da aba.",
+        "inteira depois de um F5 — ela está em `exp02em1b_mensagens`, não na memória da aba.",
       detalhe: orcamento.replace(/\s+/g, " ").trim(),
     });
 

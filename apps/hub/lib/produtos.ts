@@ -5,11 +5,11 @@
  * com dois produtos independentes:
  *
  * 1. **Gerador de Plano de Aula** — ferramenta de autoria; a experiência
- *    `exp-90` embedada em `/professor/plano-de-aula` (`lib/plano-de-aula.ts`).
+ *    `app-90` embedada em `/professor/plano-de-aula` (`lib/plano-de-aula.ts`).
  * 2. **Entre Redes** — trilha de missões de letramento digital, dentro da
  *    plataforma (`lib/entre-redes/catalogo.ts`).
  * 3. **Como você está?** — check-in de bem-estar do professor (DASS-21 em
- *    microdoses); a experiência `exp-91` embedada em `/professor/bem-estar`
+ *    microdoses); a experiência `app-91` embedada em `/professor/bem-estar`
  *    (`lib/bem-estar.ts`). O card mostra se o check-in de hoje já foi feito.
  *
  * Por isso o header do professor não carrega mais atalhos para "Guia da aula" e

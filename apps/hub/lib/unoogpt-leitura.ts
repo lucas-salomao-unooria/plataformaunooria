@@ -1,7 +1,7 @@
 import type { MarcoDaTrilha, MotivoDoFim, RodadaDoEstudante } from "./unoogpt-tipos";
 
 /**
- * Como a tela do professor escreve TEMPO e MARCO da exp-03. Puro.
+ * Como a tela do professor escreve TEMPO e MARCO da exp02em1b. Puro.
  *
  * O texto mora aqui e não no banco pelo mesmo motivo da linha do tempo do
  * estudante: o payload guarda fato, e frase envelhece. E mora no hub, não

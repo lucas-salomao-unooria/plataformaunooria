@@ -25,11 +25,23 @@ plataforma no feed do estudante quebra a ilusão que a experiência está medind
 | Seção | Ponte | Onde vale |
 |---|---|---|
 | `unooria` | `@edu/ui/ds` | hub (login, `/professor`, `/admin`, `/analise`), header de todos os papéis, telas pós-revelação do estudante |
-| `instanooria` | `@edu/ui/ds-insta` | superfície disfarçada da exp-01 |
-| `unitube` | `@edu/ui/ds-unootube` | superfície disfarçada da exp-02 |
-| `chatgpt` | `@edu/ui/ds-chatgpt` | a exp-03 INTEIRA (não tem revelação no software) |
-| `whatsappmobile` | `@edu/ui/ds-whatsapp` | a exp-07 e a exp-06, menos as telas da escola — **só tema escuro**. Onde a fronteira cai é a REVELAÇÃO, não o arquivo: na exp-06 o mapa da rede fala pela escola porque o app real não tem visualizador de topologia (ADR-72) |
+| `instanooria` | `@edu/ui/ds-insta` | superfície disfarçada da exp08ef1b e a exp07ef1b inteira no clone (as telas da escola vão pela `@edu/ui/ds`); as sete extensões da 0.2.5 (DM, enquete, diálogo, folha, pílula, compositor de Stories) e as três da 0.2.7 (faixa de dica, gesto e aviso passageiro) entraram para ela |
+| `unitube` | `@edu/ui/ds-unootube` | superfície disfarçada do UnooTube, hoje ARQUIVADO (`backup-exp04ef1b`, ADR-116): nenhuma missão viva a usa |
+| `chatgpt` | `@edu/ui/ds-chatgpt` | a exp02em1b INTEIRA (não tem revelação no software) |
+| `whatsappmobile` | `@edu/ui/ds-whatsapp` | a exp06ef2b e a exp05ef1b, menos as telas da escola — **só tema escuro**. Onde a fronteira cai é a REVELAÇÃO, não o arquivo: na exp06ef2b o mapa da rede fala pela escola porque o app real não tem visualizador de topologia (ADR-72) |
 | `tiktooria` | — | ainda sem consumidor |
+
+**A exceção, e só ela (ADR-117): conteúdo de uma plataforma DENTRO de uma tela
+da Unooria usa a seção da plataforma que ele imita.** O Jornal da Escola
+(exp04ef1b) não é clone de nada: a redação inteira (mesa, página, Bento,
+leitores, Chave) é `unooria`. Mas uma notícia que veio de rede social aparece na
+gaveta como `PostCard` do `instanooria`, e uma mensagem encaminhada como
+`MessageBubble` do `whatsappmobile` — a peça imitada fala na voz de onde veio,
+porque um post que não parece post não ensina a reconhecer post. A regra é
+por PEÇA, nunca por tela: o cromo em volta continua sendo da Unooria, e a peça
+do clone não traz a barra, as abas nem o fundo do app. É o inverso do que
+continua proibido — a plataforma dentro do clone — e vale só para conteúdo que
+a criança deve reconhecer como vindo daquela plataforma.
 
 `^0.1.x` **não** pega `0.2.0` — caret em `0.x` só sobe patch. Atualizar é ativo:
 `pnpm up -r @unooria/design-system --latest`, commitando lockfile e

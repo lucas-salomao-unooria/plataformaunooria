@@ -1,11 +1,11 @@
 /**
- * Os passos da exp-06 e a regra que reconcilia **a turma** com **o estudante**.
+ * Os passos da exp06ef2b e a regra que reconcilia **a turma** com **o estudante**.
  *
- * Dois relógios, como na exp-07:
+ * Dois relógios, como na exp07ef1b:
  *
- * - `exp_06_gates_turma.etapa` — o relógio da TURMA, que a professora controla.
+ * - `exp06ef2b_gates_turma.etapa` — o relógio da TURMA, que a professora controla.
  *   É o que fecha a Aula 1 em 30 telas ao mesmo tempo.
- * - `exp_06_sessoes.passo` — a tela daquele estudante. Dentro do mesmo momento
+ * - `exp06ef2b_sessoes.passo` — a tela daquele estudante. Dentro do mesmo momento
  *   eles andam em ritmos diferentes: um ainda audita o terceiro balão enquanto
  *   o outro já decidiu.
  *
@@ -13,7 +13,7 @@
  * porque a api e o cliente precisam chegar à MESMA resposta. Duas
  * implementações divergentes seriam a tela discordando do servidor.
  *
- * **Duas etapas, não quatro.** A exp-07 tem quatro porque a professora congela
+ * **Duas etapas, não quatro.** A exp07ef1b tem quatro porque a professora congela
  * o debate e libera a reflexão em momentos separados. Aqui o PRD pede UM botão
  * ("Liberar Aula 2") e o seu inverso ("Pausar simulação"): inventar gates que
  * ninguém aperta encheria o painel de controles mortos.

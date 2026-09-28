@@ -13,9 +13,9 @@
  * `Dialog`, `Menu`, `ListItem`, `Checkbox`, `Radio` e `TopBar` colidem com os
  * da plataforma, e quem importa daqui sabe que está no clone.
  *
- * ONDE USAR: a casca móvel da exp-07-o-eco-no-grupo — da tela de bloqueio até a
- * validação de Amara no privado, inclusive os estados de erro, que falam na voz
- * do app ("Conectando...").
+ * ONDE USAR: o mensageiro da exp06ef2b e o grupo da turma da exp05ef1b (do
+ * convite da Nina à síntese, e de volta ao chat da Nina nas perguntas finais),
+ * inclusive os estados de erro, que falam na voz do app ("Conectando...").
  *
  * ONDE NÃO USAR: as telas da plataforma dentro da mesma missão — o breakpoint
  * entre as aulas, o podcast, os três cards de sistematização e o "Meu percurso".
@@ -74,6 +74,49 @@ export { Dialog, Menu, AttachmentSheet, EncryptionNotice } from '@unooria/design
  */
 export { Icon, waIcons, waIconNames } from '@unooria/design-system/whatsappmobile';
 
+/**
+ * As EXTENSÕES da 0.2.4 — peças de conversa em grupo que o arquivo de origem
+ * do Figma não publica e que o `storybook-unooria` desenhou só com tokens e
+ * glifos da seção (primeiro consumidor: a exp05ef1b). Cada uma substitui uma
+ * compensação que as missões anteriores faziam à mão:
+ *
+ * - `Button` — o botão preenchido/contornado (`filled | outline`, `md | lg`,
+ *   `block`). Colide no NOME com o `Button` da plataforma: quem importa daqui
+ *   está no clone, e numa tela que use as duas seções o alias é obrigatório.
+ * - `ForwardButton` — a seta de encaminhar ao lado do balão; `selected` vira o
+ *   tique (`aria-pressed`). Desabilitado, 30% — e ENGOLE o toque, porque é um
+ *   `<button disabled>`.
+ * - `BottomSheet` — a folha inferior genérica ("Encaminhar para..."), com véu,
+ *   foco preso e ESC.
+ * - `MediaViewer` — a mídia em tela cheia, com a legenda embaixo.
+ * - `ChatBanner` — a faixa fixa sob o cabeçalho (a mensagem fixada), com
+ *   `trailing` para um contador.
+ * - `AdminOnlyNotice` — a barra "só administradores" no lugar do compositor,
+ *   com o cadeado.
+ * - `SystemMessage` — a pílula de aviso de sistema da conversa.
+ * - `Poll` — a enquete, CONTROLADA: ela devolve o `id` e não sabe qual opção é
+ *   "certa". Vive dentro de um `MessageBubble`.
+ * - `MessageTag` — a etiqueta presa a uma mensagem; pictograma + rótulo, nunca
+ *   só cor.
+ * - `Toast` — o aviso rápido na base da tela (região viva sempre montada).
+ *
+ * E o `MessageBubble` ganhou, na mesma versão, `sender`, `forwardedLabel`,
+ * `.LinkPreview`, `.Invite` e `.Media` sem `src` (a mídia DESENHADA, com
+ * `children` + `alt`).
+ */
+export {
+  Button,
+  ForwardButton,
+  BottomSheet,
+  MediaViewer,
+  ChatBanner,
+  AdminOnlyNotice,
+  SystemMessage,
+  Poll,
+  MessageTag,
+  Toast,
+} from '@unooria/design-system/whatsappmobile';
+
 /** Tokens, para o CSS local não escrever cor à mão. */
 export {
   waColorTokens,
@@ -102,4 +145,19 @@ export type {
   WaStatusBarProps,
   WaTextButtonProps,
   WaTopBarProps,
+  WaAdminOnlyNoticeProps,
+  WaBottomSheetProps,
+  WaButtonProps,
+  WaButtonSize,
+  WaButtonVariant,
+  WaChatBannerProps,
+  WaForwardButtonProps,
+  WaMediaViewerProps,
+  WaMessageInviteProps,
+  WaMessageLinkPreviewProps,
+  WaMessageTagProps,
+  WaPollOption,
+  WaPollProps,
+  WaSystemMessageProps,
+  WaToastProps,
 } from '@unooria/design-system/whatsappmobile';

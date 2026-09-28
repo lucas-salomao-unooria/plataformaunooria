@@ -7,9 +7,9 @@ import type { TurmaDoProfessor } from "@/lib/turmas";
 /**
  * Corpo de O RASTRO DO BOATO (6º ano · Unidade 2).
  *
- * Precisa existir mesmo parecendo o da exp-07: sem entrada no despachante, uma
+ * Precisa existir mesmo parecendo o da exp07ef1b: sem entrada no despachante, uma
  * missão publicada cai no corpo do INSTANOORIA, que oferece "Nova atividade" —
- * e a professora criaria uma configuração em `exp_01_activities` que esta
+ * e a professora criaria uma configuração em `exp08ef1b_activities` que esta
  * missão nunca lê. O bloco de atividades é do Instanooria, não da trilha.
  *
  * A ficha abre com o aviso das duas aulas em vez de deixá-lo no fim de uma

@@ -1,0 +1,176 @@
+% ===========================================================================
+%  E04 — Sala de aula: o professor abre a missão
+% ===========================================================================
+\chapter{E04 \textperiodcentered{} Sala de aula: o professor abre a missão}
+\label{ep:e04}
+
+\begin{fichaepico}
+\begin{campos}
+  \item[Objetivo] O professor conhece as missões, escolhe a da aula e a abre
+    para a turma certa, no dia certo.
+  \item[Para quem] Professor. A Coordenação consulta, sem mexer.
+  \item[Valor] A missão acontece \emph{na aula}, com o professor presente. Se
+    ela abrisse sozinha, o estudante jogaria em casa, sem o debate --- e o
+    debate é onde a aprendizagem acontece.
+  \item[Estado] \pronto{} --- falta a liberação com data marcada.
+\end{campos}
+\end{fichaepico}
+
+\begin{tabularx}{\linewidth}{@{}L{16mm}X L{20mm}@{}}
+\toprule
+\headrow \thd{ID} & \thd{Feature} & \thd{Estado}\\
+\midrule
+\id{F04.1} & Minhas turmas & \pronto\\
+\zebra \id{F04.2} & Liberar e encerrar missões na sala & \pronto\\
+\id{F04.3} & Conhecer a trilha e a ficha da missão & \pronto\\
+\zebra \id{F04.4} & Guia da aula & \pronto\\
+\bottomrule
+\end{tabularx}
+
+% ---------------------------------------------------------------------------
+\feature{F04.1}{Minhas turmas}{\pronto}
+
+\begin{historia}{H04.1.1}{Começar pelo meu dia}{\pronto}
+\hu{Professor}{ver no início os produtos que a minha rede contratou e as
+minhas turmas}{ir direto ao que vou usar hoje}
+\aceite
+\begin{itemize}
+  \item O Início (\enquote{Olá, \{nome\}}) mostra os cartões dos produtos:
+    Gerador de Plano de Aula, Planejamento de Ensino, Entre Redes e Como você
+    está?. O do bem-estar mostra a situação do dia (ex.: \enquote{Você já
+    respondeu hoje \textperiodcentered{} 2 de 7}).
+  \item Produto desligado para a rede não aparece --- nem como cartão
+    desativado.
+  \item \enquote{Minhas turmas} mostra as 4 primeiras, com \enquote{Ver
+    todas}.
+  \item \enquote{Continue de onde parou} mostra as atividades recentes do
+    Instanooria.
+\end{itemize}
+\end{historia}
+
+\begin{historia}{H04.1.2}{Ver só as turmas em que dou aula}{\pronto}
+\hu{Professor}{ver as minhas turmas}{não me confundir com as turmas dos
+colegas}
+\aceite
+\begin{itemize}
+  \item \enquote{Minhas turmas} lista nome, série, turno, número de estudantes
+    e período --- só das turmas em que estou matriculado.
+  \item Sem turma, a tela orienta: \enquote{Quem faz o enturmamento é a
+    coordenação da escola}.
+  \item A turma de outro professor, aberta pelo endereço, não é encontrada.
+\end{itemize}
+\end{historia}
+
+% ---------------------------------------------------------------------------
+\feature{F04.2}{Liberar e encerrar missões na sala}{\pronto}
+
+\begin{historia}{H04.2.1}{Liberar uma missão para a turma}{\pronto}
+\hu{Professor}{liberar a missão para a minha turma no dia da aula}{que só essa
+turma entre, e só quando eu estiver com ela}
+\aceite
+\begin{itemize}
+  \item Na sala da turma, a aba Missões mostra a grade da série, com a
+    etiqueta de cada missão: \enquote{aberta}, \enquote{fechada} ou
+    \enquote{encerrada}.
+  \item \enquote{Liberar} abre a missão, e a linha mostra \enquote{aberta por
+    \{nome\} em \{data\}}.
+  \item Só quem dá aula na turma consegue liberar.
+  \item Sem liberação, o estudante vê o cartão com cadeado --- e digitar o
+    endereço da missão também não abre.
+  \item Sem nenhuma missão liberada, a sala avisa: \enquote{Nenhuma missão está
+    aberta para esta turma}.
+  \item Cada missão tem um único caminho a partir da sala: \enquote{Conduzir
+    com esta turma}.
+\end{itemize}
+\end{historia}
+
+\begin{historia}{H04.2.2}{Encerrar uma missão}{\pronto}
+\hu{Professor}{encerrar a missão quando a sequência de aulas acabar}{a turma
+seguir para a próxima}
+\aceite
+\begin{itemize}
+  \item \enquote{Encerrar} fecha a entrada, mas não expulsa quem está jogando
+    naquele momento.
+  \item Nada do que a turma fez é apagado; a missão continua visível como
+    \enquote{encerrada}.
+\end{itemize}
+\end{historia}
+
+\begin{historia}{H04.2.3}{Programar a abertura e o fechamento}{\afazer}
+\hu{Professor}{deixar a missão programada para abrir e fechar em datas
+certas}{não depender de lembrar de liberar na hora da aula}
+\aceiteproposta
+\begin{itemize}
+  \item Ao liberar, posso escolher \enquote{agora} ou uma janela (abre em
+    \ldots{}, fecha em \ldots{}).
+  \item A sala mostra a janela programada.
+\end{itemize}
+\end{historia}
+
+\begin{historia}{H04.2.4}{Ver os estudantes da turma}{\pronto}
+\hu{Professor}{ver quem está na turma e quem ainda não entrou}{ajudar quem está
+com problema antes da aula}
+\aceite
+\begin{itemize}
+  \item A aba Estudantes lista nome, usuário e matrícula, com as etiquetas
+    \enquote{inativo} e \enquote{sem primeiro acesso}.
+  \item O nome do estudante abre o perfil dele, com as habilidades da BNCC que
+    ele já demonstrou (\id{H14.6.1}); ao lado, \enquote{Relatório da Vila do
+    Lume} abre o relatório dele na Vila.
+  \item O bloco \enquote{Também nesta turma} mostra os outros professores.
+\end{itemize}
+\end{historia}
+
+% ---------------------------------------------------------------------------
+\feature{F04.3}{Conhecer a trilha e a ficha da missão}{\pronto}
+
+\begin{historia}{H04.3.1}{Consultar a trilha por ano}{\pronto}
+\hu{Professor}{ver quais missões existem para cada ano}{planejar quando usar
+cada uma}
+\aceite
+\begin{itemize}
+  \item A trilha Entre Redes é organizada por etapa (Anos Iniciais, Anos
+    Finais, Ensino Médio); o bloco \enquote{Para qualquer ano} vem primeiro.
+  \item Anos com missão mostram \enquote{N de 4 unidades publicadas}; anos sem
+    missão aparecem numa linha, \enquote{4 unidades em produção} --- sem
+    título inventado.
+  \item Faixa fixa: \enquote{Aqui você conhece as missões; quem abre para a
+    turma é você, na sala}.
+\end{itemize}
+\end{historia}
+
+\begin{historia}{H04.3.2}{Ler a ficha antes de levar para a turma}{\pronto}
+\hu{Professor}{entender a missão antes de rodá-la}{conduzir sem estragar a
+surpresa da revelação}
+\aceite
+\begin{itemize}
+  \item A ficha tem \enquote{Como a missão funciona}, \enquote{Antes de rodar
+    com a turma}, \enquote{O que o software NÃO conta ao estudante} e o
+    roteiro.
+  \item Botões \enquote{Abrir guia da aula} e \enquote{Abrir a aula e os
+    resultados}.
+  \item Vindo da sala, aparece a faixa \enquote{Conduzindo com a turma
+    \{nome\}}.
+  \item Unidade ainda não publicada: \enquote{\{missão\} ainda está em
+    produção}.
+\end{itemize}
+\end{historia}
+
+% ---------------------------------------------------------------------------
+\feature{F04.4}{Guia da aula}{\pronto}
+
+\begin{historia}{H04.4.1}{Ter um roteiro pronto para a aula}{\pronto}
+\hu{Professor}{um roteiro de condução pronto para cada missão}{dar a aula sem
+precisar prepará-la do zero}
+\aceite
+\begin{itemize}
+  \item O guia tem nove seções fixas: objetivos e habilidade da BNCC
+    Computação; preparo; o que não dizer; roteiro minuto a minuto; banco de
+    perguntas; mediação; rubrica; adaptações; e o conteúdo real que a turma
+    vê.
+  \item Pode ser impresso.
+  \item Existe para as nove missões publicadas.
+\end{itemize}
+\pendencia{o guia do unooGPT ainda não passou por revisão pedagógica em
+sala.}
+\end{historia}

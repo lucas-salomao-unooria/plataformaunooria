@@ -6,7 +6,7 @@ import { Button, Card, FeedbackAlert } from "@edu/ui/ds";
 import { ROTULO_DA_ETAPA, type EtapaDaTurma } from "@/lib/manifesto-tipos";
 
 /**
- * O CHECKPOINT A da exp-08 — onde a professora congela 30 telas para o debate.
+ * O CHECKPOINT A da exp08ef4b — onde a professora congela 30 telas para o debate.
  *
  * Client component de propósito: ela aperta no meio da aula e precisa de
  * resposta na hora, sem recarregar. A mutação vai pelo BFF
@@ -14,7 +14,7 @@ import { ROTULO_DA_ETAPA, type EtapaDaTurma } from "@/lib/manifesto-tipos";
  * nunca segura bearer.
  *
  * **Não há WebSocket** (ADR-93). Este clique muda UMA linha em
- * `exp_08_gates_turma`, e a tela de cada estudante a lê por polling HTTP de 5
+ * `exp08ef4b_gates_turma`, e a tela de cada estudante a lê por polling HTTP de 5
  * segundos durante a Etapa 4. O atraso máximo é de 5s, e ele é aceitável: o
  * congelamento serve a um debate de 10 minutos, não a um jogo em tempo real.
  *

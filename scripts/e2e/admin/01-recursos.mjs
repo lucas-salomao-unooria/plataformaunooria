@@ -360,7 +360,7 @@ await suite(
         "Ativar troca a versão E RESTAURA o manifesto daquela versão — viewport, permissões de " +
         "iframe, séries. É o defeito que o histórico existe para consertar: " +
         "'publicar-manifesto.mjs --versao' mandava o número antigo com o manifesto ATUAL, e a " +
-        "exp-70 reabria sem 'allow-pointer-lock' — a criança entrava na Vila e a câmera não " +
+        "app-70 reabria sem 'allow-pointer-lock' — a criança entrava na Vila e a câmera não " +
         "girava, sem erro em lugar nenhum.",
       detalhe: `ações oferecidas no escopo da rede: ${acoesOferecidas.filter(Boolean).join(" | ")}`,
       inteira: true,

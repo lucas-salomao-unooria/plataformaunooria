@@ -1,33 +1,35 @@
 import { notFound } from "next/navigation";
 
 import { EmptyState, FeedbackAlert } from "@edu/ui/ds";
+import { EquipesDaFicha } from "@/components/equipes/equipes-da-ficha";
 import { LinkButton } from "@/components/link-button";
 import {
-  MISSAO_ECO_NO_GRUPO,
+  MISSAO_A_SELECAO,
   MISSAO_FOTO_CONTA,
+  MISSAO_JORNAL_DA_ESCOLA,
   MISSAO_MANIFESTO_IA,
+  MISSAO_QUEM_MANDOU_ISSO,
   MISSAO_RASTRO_BOATO,
   MISSAO_UNOOGPT,
-  MISSAO_UNOOTUBE,
   buscarMissao,
   rotuloDaMissao,
 } from "@/lib/entre-redes/catalogo";
 import { turmaDaConducao } from "@/lib/turmas";
 
+import { MissaoASelecao } from "./missao-a-selecao";
 import { MissaoFotoConta } from "./missao-foto-conta";
 import { MissaoInstanooria } from "./missao-instanooria";
+import { MissaoJornalEscola } from "./missao-jornal-escola";
 import { MissaoManifestoIa } from "./missao-manifesto-ia";
-import { MissaoOEcoNoGrupo } from "./missao-o-eco-no-grupo";
+import { MissaoQuemMandouIsso } from "./missao-quem-mandou-isso";
 import { MissaoRastroBoato } from "./missao-rastro-boato";
 import { MissaoUnooGPT } from "./missao-unoogpt";
-import { MissaoUnooTube } from "./missao-unootube";
 
 /**
  * Página de uma missão do Entre Redes — DESPACHANTE por `missao.expId`.
  *
  * Cada missão publicada tem o próprio corpo: o Instanooria configura
- * atividades e tem guia; o UnooTube é conteúdo fixo e só mostra resultados; o
- * unooGPT tem uma ação AO VIVO (a largada do relógio da turma) e sem ela a aula
+ * atividades e tem guia; o unooGPT tem uma ação AO VIVO (a largada do relógio da turma) e sem ela a aula
  * não começa. Unidades "em breve" continuam com o aviso honesto abaixo.
  */
 export default async function MissaoPage({
@@ -77,11 +79,14 @@ export default async function MissaoPage({
 
   /**
    * A faixa de contexto mora AQUI, e não nos corpos, pela mesma razão da trilha
-   * e do `EscopoDaEscola`: são sete corpos, e sete cópias divergem. Ela existe
+   * e do `EscopoDaEscola`: são oito corpos, e oito cópias divergem. Ela existe
    * porque a ficha aberta pela sala e a aberta pela trilha são a MESMA tela com
    * comportamentos diferentes por dentro (a lista de atividades filtra, os
    * resultados já vêm com a turma) — sem dizer isso na cara, o professor não
    * tem como saber de qual turma é o que está vendo.
+   *
+   * As EQUIPES (E13) entram logo abaixo dela, e pelo mesmo motivo: são da
+   * turma, não da missão, e a seção decide sozinha se aparece (`permitida`).
    */
   const corpo = (elemento: React.ReactNode) => (
     <div className="flex flex-col gap-6">
@@ -92,6 +97,7 @@ export default async function MissaoPage({
           description="As atividades e os resultados abaixo são desta turma. Para ver as outras, entre pela trilha do Entre Redes."
         />
       ) : null}
+      {turma && missao.expId ? <EquipesDaFicha turmaId={turma.id} expId={missao.expId} /> : null}
       {elemento}
     </div>
   );
@@ -99,14 +105,8 @@ export default async function MissaoPage({
   if (missao.expId === MISSAO_FOTO_CONTA.expId) {
     return corpo(<MissaoFotoConta ano={ano} missao={comFicha} turma={turma} />);
   }
-  if (missao.expId === MISSAO_UNOOTUBE.expId) {
-    return corpo(<MissaoUnooTube ano={ano} missao={comFicha} turma={turma} />);
-  }
   if (missao.expId === MISSAO_UNOOGPT.expId) {
     return corpo(<MissaoUnooGPT ano={ano} missao={comFicha} turma={turma} />);
-  }
-  if (missao.expId === MISSAO_ECO_NO_GRUPO.expId) {
-    return corpo(<MissaoOEcoNoGrupo ano={ano} missao={comFicha} turma={turma} />);
   }
   if (missao.expId === MISSAO_RASTRO_BOATO.expId) {
     return corpo(<MissaoRastroBoato ano={ano} missao={comFicha} turma={turma} />);
@@ -114,9 +114,18 @@ export default async function MissaoPage({
   if (missao.expId === MISSAO_MANIFESTO_IA.expId) {
     return corpo(<MissaoManifestoIa ano={ano} missao={comFicha} turma={turma} />);
   }
+  if (missao.expId === MISSAO_A_SELECAO.expId) {
+    return corpo(<MissaoASelecao ano={ano} missao={comFicha} turma={turma} />);
+  }
+  if (missao.expId === MISSAO_QUEM_MANDOU_ISSO.expId) {
+    return corpo(<MissaoQuemMandouIsso ano={ano} missao={comFicha} turma={turma} />);
+  }
+  if (missao.expId === MISSAO_JORNAL_DA_ESCOLA.expId) {
+    return corpo(<MissaoJornalEscola ano={ano} missao={comFicha} turma={turma} />);
+  }
   /* FALLBACK = INSTANOORIA, e é por isso que ele é perigoso: uma missão
      publicada sem ramo aqui não quebra — ela mostra a tela de OUTRA missão,
      com "Nova atividade" e sem o caminho para os resultados. Foi o que
-     aconteceu com a exp-08 até 2026-09-11, e só a suíte e2e pegou. */
+     aconteceu com a exp08ef4b até 2026-09-11, e só a suíte e2e pegou. */
   return corpo(<MissaoInstanooria ano={ano} missao={comFicha} turma={turma} />);
 }

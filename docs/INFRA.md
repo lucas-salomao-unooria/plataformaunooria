@@ -80,16 +80,42 @@ não abre com alguém achando que configurou a documentação é pior que nenhum
   banco guarda a URL absoluta da CDN. Em dev, `ASSETS_DRIVER=local` e a api
   serve em `/assets`.
   O mesmo bucket guarda a **mídia pesada das experiências** (>2 MB não entra no
-  git nem no bundle): `exp-02-unootube/videos/v01.mp4..v21.mp4` (~52 MB),
+  git nem no bundle): `exp04ef1b/videos/v01.mp4..v21.mp4` (~52 MB, os vídeos do
+  UnooTube — hoje ARQUIVADO como `backup-exp04ef1b`, ADR-116: a mídia fica no
+  bucket, sem uso, e o deploy não a confere mais porque pula `backup-*`; o que
+  segue descreve como ela subiu),
   upload manual **uma vez por contrato** — é conteúdo, não recurso Terraform:
 
   ```bash
-  gcloud storage rsync -r apps/experiencias/exp-02-unootube/public/videos \
-    gs://{contrato}-assets/exp-02-unootube/videos/ --project {projeto}
+  gcloud storage rsync -r apps/experiencias/exp04ef1b/public/videos \
+    gs://{contrato}-assets/exp04ef1b/videos/ --project {projeto}
+  ```
+
+  **A troca de código de 2026-09 (ADR-110) mudou este prefixo** — era
+  `exp-02-unootube/videos/`. Em contrato que já tinha os vídeos, copie uma vez
+  para o prefixo novo antes do primeiro deploy depois da troca (a conferência
+  abaixo reprova o deploy até lá, que é o comportamento certo):
+
+  ```bash
+  gcloud storage cp -r gs://{contrato}-assets/exp-02-unootube/videos \
+    gs://{contrato}-assets/exp04ef1b/ --project {projeto}
+  ```
+
+  **A mídia que a api GERA também mora por `expId`**: `experiencias/{expId}/`
+  no mesmo bucket. A única que existia eram as fotos e os áudios do Eco no Grupo
+  (`experiencias/exp-07-o-eco-no-grupo/`, depois `experiencias/exp07ef1b/`), e o
+  Eco saiu da trilha (ADR-113): essa mídia não se copia mais — **apaga-se**,
+  porque o `exp07ef1b` passa a ser A Seleção, que grava a dela em
+  `experiencias/exp07ef1b/selecao/`. Em dev e hml ela nunca chegou ao bucket
+  (conferido em 2026-09-26); o comando é para o contrato em que chegou:
+
+  ```bash
+  gcloud storage rm -r "gs://{contrato}-assets/experiencias/exp-07-o-eco-no-grupo/" --project {projeto}
+  # e, em experiencias/exp07ef1b/, tudo o que NÃO for selecao/
   ```
 
   O build da exp recebe a base pública em `VITE_VIDEOS_BASE_URL`
-  (`https://<cdn-assets>/exp-02-unootube/videos`); vazio = `./videos` (dev,
+  (`https://<cdn-assets>/exp04ef1b/videos`); vazio = `./videos` (dev,
   `public/videos/` gitignorado).
 
   **O CI não publica essa mídia** — o runner faz checkout do git, e os mp4 não
@@ -99,7 +125,7 @@ não abre com alguém achando que configurou a documentação é pior que nenhum
   faltar algo. Isso exige a var `ASSETS_BUCKET` no environment do GitHub
   (escrita por `scripts/configurar-github-ci.sh`); sem ela o passo só avisa.
 
-  Por que a conferência e não a publicação: em 2026-09-01 a exp-02 subiu no
+  Por que a conferência e não a publicação: em 2026-09-01 a exp04ef1b subiu no
   contrato `entre-redes-dev` com o bucket de assets vazio. Os 21 mp4 responderam
   404, o feed ficou em "Carregando o vídeo…" para sempre e — porque Salvar e
   Curtir são desabilitados enquanto o vídeo carrega — a missão ficou impossível
@@ -121,10 +147,10 @@ não abre com alguém achando que configurou a documentação é pior que nenhum
   `TOKEN_SIGNING_KEY_PEM` é obrigatória em produção.
 - **api com CPU sempre alocada e `min-instances >= 1`**: o worker de geração de
   conteúdo roda in-process (fila em `generation_jobs` + advisory lock por
-  atividade) — e a geração de planos de aula (exp-90) também: uma chamada de
+  atividade) — e a geração de planos de aula (app-90) também: uma chamada de
   IA de minutos por plano, claim atômico em `planos_de_aula`.
 - **Bucket de planos** (`{contrato}-planos`, 2026-08): o gerador de plano de
-  aula deixou de ser um Cloud Run separado e virou a experiência exp-90 + o
+  aula deixou de ser um Cloud Run separado e virou a experiência app-90 + o
   módulo `planos` da api. O conteúdo autoral do professor
   (`planos/{escolaId}/{planoId}/{gerado.md,atual.html}`) fica em bucket
   **privado** — nunca no de assets, que é público — e só sai pela api
@@ -137,7 +163,7 @@ não abre com alguém achando que configurou a documentação é pior que nenhum
   `/unooria/uso-de-ia`. As referências curriculares (texto)
   vivem no Postgres e entram por `scripts/importar-referencias-plano.mjs`.
   O Cloud Run `planodeaula` antigo pode ser desligado após o smoke em produção.
-- **Vila do Lume** (exp-70, transversal, 2026-08): jogo 3D estático no bucket de
+- **Vila do Lume** (app-70, transversal, 2026-08): jogo 3D estático no bucket de
   bundles como qualquer experiência — **sem serviço novo e sem bucket novo**. Não
   produz documento autoral, não chama IA (zero token, zero quota) e não precisa
   de fila: o perfil é função pura, calculada no request de conclusão. Três
@@ -165,7 +191,7 @@ não abre com alguém achando que configurou a documentação é pior que nenhum
   `estudante_id` de TODAS as experiências, também sem prazo — se a resposta importar,
   ela é da plataforma inteira, não de um módulo.
 
-- **Check-in de bem-estar** (exp-91, 2026-08): sem recurso novo de infra —
+- **Check-in de bem-estar** (app-91, 2026-08): sem recurso novo de infra —
   duas tabelas com RLS (`bem_estar_ciclos`, `bem_estar_checkins`; a migration
   dá `GRANT` à `app_runtime`) e IA pelo mesmo Vertex/quota do professor. O
   texto livre do professor vai ao Vertex (endpoint `global`): consta do DPA
@@ -188,7 +214,7 @@ Em dev (host ou container) a mesma cadeia lê o ADC do
 **Telemetria: fica no Postgres, e sem serviço novo** (decisão de 2026-08-27).
 Avaliamos mandar o canal analítico para o BigQuery por subscription nativa do
 Pub/Sub. Não foi: os relatórios do professor NÃO leem `telemetria_eventos` (leem
-`exp_01_events`, o canal síncrono do motor), então o BigQuery não resolvia
+`exp08ef1b_events`, o canal síncrono do motor), então o BigQuery não resolvia
 problema nenhum hoje e criava uma segunda plataforma de dados para operar. O que
 entrou no lugar, tudo dentro do que já existe: `INSERT` multi-linha no
 `/telemetry/ingest` (era um por evento, em laço) e partição mensal de
@@ -211,7 +237,7 @@ Cloud Run. Quando a fase 0 for provisionada, este repo passa a esperar, por cont
 | Recurso | Nome esperado | Observação |
 |---|---|---|
 | Notification channels | `{contrato}-alerta-acorda` (e-mail + push do app Cloud Console), `{contrato}-alerta-amanha` (e-mail + Google Chat/Slack) | duas severidades, só |
-| Uptime checks (3 regiões, 60 s, valida conteúdo) | `{contrato}-jwks` (`{hub}/.well-known/jwks.json` contém `"keys"`), `{contrato}-api-readyz`, `{contrato}-hub-healthz` (rota nova do hub), `{contrato}-landing`, `{contrato}-exp-ativa` (index.html da versão ativa da exp-01) | o `/readyz` passa a ser chamado por alguém |
+| Uptime checks (3 regiões, 60 s, valida conteúdo) | `{contrato}-jwks` (`{hub}/.well-known/jwks.json` contém `"keys"`), `{contrato}-api-readyz`, `{contrato}-hub-healthz` (rota nova do hub), `{contrato}-landing`, `{contrato}-exp-ativa` (index.html da versão ativa da exp08ef1b) | o `/readyz` passa a ser chamado por alguém |
 | Alert policies | 13 aplicadas (ver cap. 17). A 13ª, `spans do navegador descartados`, é a primeira sobre métrica DA APLICAÇÃO — `prometheus.googleapis.com/unooria.observabilidade.spans_descartados/counter`, recurso `prometheus_target` | por sintoma; nenhuma de CPU/memória. **Alerta sobre métrica da aplicação só pode ser criado depois que a série existe**: o Cloud Monitoring responde 404 `Cannot find metric(s) that match type`, e o contador só cria a série ao incrementar. Por isso `obs_alerta_erro_de_cliente` nasce `false` — ligar depois do deploy da ADR-84. **Em 2026-09-14 essa política pagou o próprio custo**: o que ela apontou foi defeito de CÓDIGO (o proxy OTLP nunca recebia o cliente, por `import type` num token de injeção do Nest), não de infraestrutura. `GCP_PROJECT_ID` já estava nos dois serviços desde 03/09, então **`motivo=sem-projeto` não é evidência de env faltando** — confira a env do serviço antes de abrir tarefa no repo de Terraform |
 | SLOs (service monitoring) | disponibilidade do `-frontend` e do `-api` a 99,5 %/30 dias, com alerta de burn rate | |
 | Dashboard | `{contrato}-plataforma` (JSON versionado no Terraform) | igual em todo contrato |
@@ -246,8 +272,57 @@ Deploy (CI deste repo):
    O `publicar-manifesto.mjs <exp> --versao <anterior>` continua funcionando e
    é o caminho de quem não tem a tela à mão, mas ele manda o número antigo com o
    `experiencia.json` **atual do repositório**: voltar a versão por ele NÃO volta
-   as permissões de iframe, e a exp-70 reabre sem `allow-pointer-lock` — o jogo
+   as permissões de iframe, e a app-70 reabre sem `allow-pointer-lock` — o jogo
    sobe e a câmera não gira, sem erro em lugar nenhum.
+
+   **A troca de código de 2026-09 (ADR-110) mudou o `{expId}` de todo bundle**
+   (`exp-01-instanooria` virou `exp08ef1b`; o de-para está na ADR). O primeiro
+   deploy depois dela publica cada experiência no prefixo novo; as versões
+   ANTERIORES continuam só no prefixo antigo, e a linha delas em
+   `experiencias_versoes` (já com o id novo, pela migration
+   `20260923120000_codigo_das_experiencias`) apontaria o rollback para um
+   caminho vazio. Uma vez por contrato, copie o histórico — o caminho é
+   imutável, então copiar não sobrescreve nada que o deploy já subiu:
+
+   ```bash
+   for par in exp-01-instanooria:exp08ef1b \
+       exp-03-unoogpt:exp02em1b exp-04-o-que-a-foto-conta:exp01ef1b \
+       exp-06-rastro-boato:exp06ef2b exp-08-manifesto-ia:exp08ef4b \
+       exp-70-vila-do-lume:app-70-vila-do-lume exp-90-plano-de-aula:app-90-plano-de-aula \
+       exp-91-bem-estar:app-91-bem-estar exp-92-plano-de-ensino:app-92-plano-de-ensino; do
+     gcloud storage cp -r -n "gs://{contrato}-exp/${par%%:*}/*" "gs://{contrato}-exp/${par##*:}/" --project {projeto}
+   done
+   ```
+
+   O 5º ano não está na lista, de propósito: a primeira versão da missão dele
+   nunca chegou a bucket nenhum e saiu da trilha (ADR-114), e a que entra no
+   lugar nasce direto no prefixo novo, a partir da 0.2.0. Copiar o prefixo
+   antigo não traria nada — e, se trouxesse, poria bundles da versão retirada
+   no caminho da nova.
+
+   O 4º ano também não está, e este é o par que MAIS importa deixar de fora: o
+   UnooTube foi ARQUIVADO (ADR-116) e o código `exp04ef1b` passou ao Jornal da
+   Escola, que nasce na 2.0.0. Copiar `exp-02-unootube/*` para `exp04ef1b/` poria
+   os bundles 1.x do UnooTube no caminho do Jornal. Arquivada não é publicada nem
+   ativada (o `deploy.yml` pula `backup-*`), então os bundles antigos do UnooTube
+   ficam onde estão, sem uso.
+
+   O 7º ano também não está, pelo mesmo motivo: o Eco no Grupo saiu (ADR-113) e
+   o código `exp07ef1b` passou à A Seleção, que nasce na 1.0.0. Copiar
+   `exp-07-o-eco-no-grupo/*` para `exp07ef1b/` poria os bundles 0.1.x do Eco no
+   caminho dela. Os do Eco não servem a ninguém depois da migration
+   `20260925180000_remover_eco_no_grupo`; apague-os DEPOIS de ela rodar no
+   contrato (antes, o hub ainda pode apontar para eles):
+
+   ```bash
+   gcloud storage rm -r "gs://{contrato}-exp/exp-07-o-eco-no-grupo/" --project {projeto}
+   ```
+
+   Do lado do Terraform, nada carrega o código de experiência (conferido no
+   repo de infra em 2026-09-26): as métricas de log e os alertas são da
+   plataforma (`codigo=erro-interno`, por serviço do Cloud Run), e o uptime
+   check `{contrato}-exp-ativa` da tabela acima ainda não foi provisionado —
+   quando for, aponta para o prefixo novo (`exp08ef1b/`).
 
    **A api precisa de `CDN_EXP_URL`** (a mesma base do
    `NEXT_PUBLIC_CDN_EXP_URL` do hub) para conferir, com um HEAD no
@@ -255,7 +330,7 @@ Deploy (CI deste repo):
    Ausente, a ativação acontece e a tela DIZ que não deu para conferir — o que
    é aceitável em dev e não em produção: apontar a rede para uma versão que não
    subiu é tela branca para todo mundo. Experiência com
-   mídia externa (exp-02) builda com `VITE_VIDEOS_BASE_URL` apontando para a
+   mídia externa (exp04ef1b) builda com `VITE_VIDEOS_BASE_URL` apontando para a
    CDN de assets do contrato.
    O `deploy.yml` faz o `rsync` **e** o `PUT` do manifesto, e grava
    `Cache-Control: max-age=60` no `index.html` (o resto do caminho carrega a

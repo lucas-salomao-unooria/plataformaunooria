@@ -11,9 +11,9 @@ pnpm docker:dev                           # a stack INTEIRA em container (pg/api
                                           # código do host por bind mount: salvar arquivo recompila
                                           # lá dentro, sem build. Mesmas portas do `pnpm dev`, então
                                           # é um OU outro. `:logs` `:deps` `:down` completam.
-pnpm turbo build --filter=@edu/exp-01     # builda 1 experiência (+ deps)
+pnpm turbo build --filter=@edu/exp08ef1b     # builda 1 experiência (+ deps)
 pnpm turbo build --filter='...[HEAD^]'    # só o que mudou (CI usa isso)
-pnpm new:exp exp-12-fracoes               # scaffolda experiência do _template
+pnpm new:exp exp06ef3b                    # scaffolda do _template; o código diz série e unidade (ADR-110)
 pnpm worktree criar fix/<slug> --fatia api/<mod>,hub/<rota>,exp/<id>
                                           # COMEÇA TODA TAREFA (ADR-61/71/100): worktree sobre
                                           # origin/dev-local, .env copiados, install + prisma
@@ -53,9 +53,9 @@ SEED_MINIMO=1 pnpm --filter @edu/api seed   # só escola + um gestor + um admin:
 # `semear-demo.ts` diz por quê — login fixo reacopla o script a um nome inventado.
 # Não escreva conta de demo em documentação: ela envelhece e manda a pessoa tentar
 # um login que não existe. Aponte para o CSV.
-pnpm --filter @edu/exp-90-plano-de-aula dev   # :5175 → hub /professor/plano-de-aula (qualquer prof.* do CSV; seed:demo importa referências demo)
-pnpm --filter @edu/exp-91-bem-estar dev       # :5176 → hub /professor/bem-estar (qualquer prof.* do CSV; AI_PROVIDER=mock usa os textos fixos)
-pnpm --filter @edu/exp-02-unootube dev    # :5174 (exp-01 usa :5173 — portas em apps/hub/lib/experiencias-dev.ts)
+pnpm --filter @edu/app-90-plano-de-aula dev   # :5175 → hub /professor/plano-de-aula (qualquer prof.* do CSV; seed:demo importa referências demo)
+pnpm --filter @edu/app-91-bem-estar dev       # :5176 → hub /professor/bem-estar (qualquer prof.* do CSV; AI_PROVIDER=mock usa os textos fixos)
+pnpm --filter @edu/exp02em1b dev    # :5178 (exp08ef1b usa :5173 — portas em apps/hub/lib/experiencias-dev.ts)
 pnpm exec playwright install chromium     # PRE-REQUISITO da suíte e2e, uma vez por maquina.
                                           # `npx playwright install` NAO serve: o npx resolve o
                                           # playwright mais NOVO do npm e baixa a build de navegador
@@ -83,26 +83,25 @@ node scripts/e2e/publico/01-landing.mjs   # cada suíte também roda sozinha, di
 node scripts/e2e/ferramentas/gerar-deck.mjs             # só o deck
 node scripts/e2e/ferramentas/gerar-videos.mjs           # só os vídeos (um por papel; o estudante, um por missão)
 node scripts/e2e/ferramentas/gerar-videos.mjs --amostra # um quadro em JPEG, p/ conferir o layout sem codificar
-EXP_MAPAS_BUCKET=<bucket> node scripts/mapear-stack.mjs exp-02-unootube 1.2.3 < stack.txt  # stack de erro de cliente -> fonte:linha (mapas no bucket PRIVADO)
-pnpm --filter @edu/exp-70-vila-do-lume dev    # :5177 → hub /exp/exp-70-vila-do-lume (transversal, sem série)
-pnpm --filter @edu/exp-03-unoogpt dev         # :5178 → hub /exp/exp-03-unoogpt (2ª série EM, unidade 1)
-pnpm --filter @edu/exp-92-plano-de-ensino dev # :5180 → hub /professor/plano-de-ensino. Planejamento dirigido
+EXP_MAPAS_BUCKET=<bucket> node scripts/mapear-stack.mjs exp04ef1b 1.2.3 < stack.txt  # stack de erro de cliente -> fonte:linha (mapas no bucket PRIVADO)
+pnpm --filter @edu/app-70-vila-do-lume dev    # :5177 → hub /exp/app-70-vila-do-lume (transversal, sem série)
+pnpm --filter @edu/exp02em1b dev         # :5178 → hub /exp/exp02em1b (2ª série EM, unidade 1)
+pnpm --filter @edu/app-92-plano-de-ensino dev # :5180 → hub /professor/plano-de-ensino. Planejamento dirigido
                                           # pela BNCC: plano anual + plano de aulas, 1ºEF ao 3ºEM, todos os
                                           # componentes. Toda porta de exp entra no CORS_ORIGINS da api —
                                           # sem a :5180 o boot morre com "Failed to fetch".
 node scripts/extrair-bncc.mjs             # BNCC dos PDFs oficiais → apps/api/src/curriculo/dados/*.ts
                                           # (GERADOS). Exige poppler (pdftotext/pdfinfo) e os PDFs em
                                           # documentos-fonte/bncc/ — que NÃO são versionados (>2MB).
-pnpm --filter @edu/exp-07-o-eco-no-grupo dev   # :5179 → hub /exp/exp-07-o-eco-no-grupo (7º ano, unidade 1;
-                                          # o professor prepara a mídia no painel antes da aula)
-pnpm --filter @edu/exp-04-o-que-a-foto-conta dev  # :5183 → hub /exp/exp-04-o-que-a-foto-conta (1º ano,
-                                          # unidade 1). 5183 e não 5182: a 5182 é da exp-08. A missão é
+pnpm --filter @edu/exp01ef1b dev  # :5183 → hub /exp/exp01ef1b (1º ano,
+                                          # unidade 1). 5183 e não 5182: a 5182 é da exp08ef4b. A missão é
                                           # SÍNCRONA: a Roda congela os tablets e o professor libera pelo
                                           # painel (polling 3s, ADR-94).
-pnpm --filter @edu/exp-06-rastro-boato dev    # :5181 → hub /exp/exp-06-rastro-boato (6º ano, unidade 2).
-                                          # 5181 e não 5180: a 5180 é da exp-92. Zero IA, e sem áudio
+pnpm --filter @edu/exp07ef1b dev    # :5179 → hub /exp/exp07ef1b (7º ano, unidade 1: A Seleção).
+pnpm --filter @edu/exp06ef2b dev    # :5181 → hub /exp/exp06ef2b (6º ano, unidade 2).
+                                          # 5181 e não 5180: a 5180 é da app-92. Zero IA, e sem áudio
                                           # gravado — a transcrição está sempre na tela.
-pnpm --filter @edu/exp-08-manifesto-ia dev    # :5182 → hub /exp/exp-08-manifesto-ia (8º ano, unidade 4).
+pnpm --filter @edu/exp08ef4b dev    # :5182 → hub /exp/exp08ef4b (8º ano, unidade 4).
                                           # Clone do ChatGPT. IA SÓ no preparo do professor, antes da
                                           # aula: o motor de sala é determinístico e gasta zero token.
                                           # NÃO existe cláusula certa — as 4 são válidas, e o painel

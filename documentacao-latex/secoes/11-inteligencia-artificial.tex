@@ -15,29 +15,38 @@ uso de produzir dano.
 \toprule
 \headrow \thd{Uso} & \thd{Onde} & \thd{O que gera, e o que NÃO gera}\\
 \midrule
-Geração de \emph{feed} & exp-01, \arq{src/geracao/} &
+Geração de \emph{feed} & exp08ef1b, \arq{src/geracao/} &
   Personas fictícias, \emph{captions}, \emph{hashtags} e arte dos posts. O
   \emph{mix} (quantos posts de cada lado, perfil e intensidade) é decidido pelo
   \textbf{servidor}; a IA só preenche.\\
-\zebra Reação ao vivo & exp-01, \arq{src/motor/} &
+\zebra Reação ao vivo & exp08ef1b, \arq{src/motor/} &
   Comentários de persona reagindo ao que o estudante publicou. Desligável pelo
   professor no meio da aula, sem \emph{deploy} (\cd{ia\_ao\_vivo}).\\
-Plano de aula & exp-90, \arq{src/planos/} &
+Plano de aula & app-90, \arq{src/planos/} &
   Um plano anual completo em Markdown, a partir do currículo da rede e das
   unidades do ano. \textbf{Não} decide nota nem avalia estudante.\\
-\zebra Entorno do \emph{check-in} & exp-91, \arq{src/bemestar/} &
+\zebra Entorno do \emph{check-in} & app-91, \arq{src/bemestar/} &
   Abertura do dia, pergunta aberta e acolhimento. \textbf{Nunca} reescreve um
   item do DASS-21, nunca vê pontuação, nome ou escola.\\
-Eco do grupo & exp-07, \arq{src/o-eco-no-grupo/} &
-  Três superfícies: as reações do grupo à intervenção do estudante, a conversa
-  com Amara depois da decisão, e a devolutiva do \enquote{Meu percurso}. O
-  \textbf{desfecho} (\cd{checada}, \cd{ruido}, \cd{conflito}) e a pontuação saem
-  de \arq{regras/}, não do modelo --- a IA só \emph{redige} o que já foi
-  decidido (\adrr{ADR-66}).\\
-\zebra Mídia da missão & exp-07, \arq{midia.service.ts} &
-  As duas falas de áudio, o episódio de podcast a duas vozes e as fotos do
-  boato. Gerado \textbf{uma vez}, no preparo do professor, e cacheado no bucket;
-  o estudante nunca espera por geração (\adrr{ADR-67}).\\
+Preparo da cobertura & exp07ef1b, \arq{src/a-selecao/} &
+  Um lote de 12 posts (4:4:4 por perfil) sobre o tema da professora, e as
+  imagens a partir da descrição de cada um. \textbf{Nada} chega à turma sem a
+  homologação dela; sem IA, roda o banco curado.\\
+\zebra Leitura da legenda & exp07ef1b, \arq{src/a-selecao/} &
+  Um nível de EF07CO11 para a legenda dos Stories (o Canal A), que só o
+  professor vê e corrige. Falha, timeout ou saldo zerado não marcam nada
+  (\adrr{ADR-115}).\\
+Preparo do pacote & exp04ef1b, \arq{src/jornal-escola/} &
+  O texto das oito notícias sobre o tema do professor, num \textbf{molde
+  sorteado no servidor} (que notícia é de que meio e que papel tem no
+  gabarito), e as imagens a partir da descrição de cada uma. \textbf{Nada}
+  chega à turma sem a homologação; sem saldo (429) ou sem provedor (503), o hub
+  oferece o banco padrão.\\
+\zebra Diagramação da página & exp04ef1b, \arq{src/jornal-escola/} &
+  \textbf{Em sala}, com a quota do \emph{estudante}: UM valor de um
+  \emph{enum} de três layouts, e nenhum texto. Não escolhe notícia, não
+  reordena as vagas, não vê o gabarito. Qualquer falha cai no modelo
+  automático (\adrr{ADR-117}).\\
 \bottomrule
 \end{tabularx}
 
@@ -45,8 +54,59 @@ Eco do grupo & exp-07, \arq{src/o-eco-no-grupo/} &
 \textbf{Correção, pontuação e gabarito nunca são gerados por IA.} A IA produz
 \emph{conteúdo} e \emph{texto de entorno}. Tudo que vale nota, classifica ou mede
 é código determinístico e testável --- e roda no servidor
-(Capítulo~\ref{cap:experiencias}).
+(Capítulo~\ref{cap:experiencias}). \textbf{Uma exceção, declarada:} na A Seleção
+a IA \emph{sugere} o nível de EF07CO11 lendo a legenda, com temperatura 0, uma
+tentativa, \emph{schema} fechado e rubrica fixa no servidor. A sugestão não é
+nota, a criança não a vê, e o professor a confere e ajusta (\adrr{ADR-115}).
 \end{regra}
+
+\subsection{A diagramação do Jornal da Escola: IA em sala, e só um \emph{enum}}
+
+É a segunda chamada de IA com a turma diante da tela, depois da leitura da
+legenda da A Seleção, e segue as mesmas travas (\adrr{ADR-117}). A criança monta
+as três vagas da primeira página, e a tela pede a diagramação uma vez por
+combinação. \arq{diagramacao.service.ts} roda, nesta ordem:
+
+\begin{enumerate}
+  \item o \textbf{\emph{cache}} (\cd{exp04ef1b\_diagramacoes}): a mesma página
+    --- o pacote e as três vagas na ordem --- montada por outra criança não paga
+    outra chamada, e o custo fica limitado às combinações usadas;
+  \item o \textbf{\emph{rate limit}} por estudante, em memória: doze
+    diagramações a cada dez minutos, contra o toque nervoso;
+  \item a \textbf{quota do perfil \cd{estudante}}, com \cd{temSaldo} antes
+    (regra inviolável nº 5);
+  \item o \cd{generateJson}, com temperatura 0, \textbf{uma} tentativa e teto
+    de 32 \emph{tokens} de saída; o \emph{schema} de resposta só tem o
+    \emph{enum} dos três layouts --- não há campo de texto onde a IA escreva
+    ---, e um \cd{validar} Zod confere a saída;
+  \item o \textbf{teto de tempo} de cerca de 6\,s por \cd{Promise.race}, porque o
+    \emph{provider} não tem \emph{timeout};
+  \item o débito em \cd{aoUsarTokens}, que cobra também a chamada que perdeu a
+    corrida para o teto (\adrr{ADR-74}).
+\end{enumerate}
+
+A IA recebe das três notícias só a manchete, o número de palavras do resumo e
+se há imagem, como DADO delimitado --- nunca o gabarito, a pista nem a
+consequência. \textbf{Falhou qualquer passo, o modelo automático diagrama}
+(\arq{regras/layout.ts}): imagem na manchete principal dá \cd{hero-image}, três
+manchetes curtas dão \cd{columns}, e o resto \cd{classic}. É determinístico e
+decide pela FORMA, nunca pelo gabarito, e o resultado do modelo não vai ao
+\emph{cache}. A tela não fica sabendo de onde o layout veio, e o layout não vale
+nada na correção. Em \emph{dev} e na suíte de ponta a ponta a IA é o
+\emph{mock}, e a página é sempre do modelo: a diagramação por IA só se prova com
+o Vertex.
+
+\begin{nota}
+\textbf{O preparo é do professor, e a estrutura é do servidor.} Pedir a um
+modelo \enquote{oito notícias, de três a quatro publicáveis, duas ou três
+antigas, e nenhum meio carregando a resposta} devolve, com frequência, o conjunto
+que a régua recusa --- um modelo de linguagem conta mal. Por isso o molde é
+DADO: \cd{sortearMolde} sorteia a cada geração o meio e o papel de cada id, a IA
+escreve o conteúdo, e o \cd{validar} recusa a saída que mexeu no molde ou fere
+\arq{invariantes.ts}, o que faz a tentativa ser regerada. A quota é a do perfil
+de quem prepara, com o que o \emph{vendor} cobrou debitado por tentativa,
+inclusive as recusadas.
+\end{nota}
 
 \section{A camada única}
 
@@ -58,10 +118,10 @@ Eco do grupo & exp-07, \arq{src/o-eco-no-grupo/} &
   \draw[c4zone] (0.6,0.6) rectangle (15.4,-8.6);
   \node[c4boundarylbl, fill=unooSurface] at (1.0,0.75) {API --- \arq{apps/api/src}};
 
-  \node[c4component, text width=24mm] (g) at (2.4,-0.4) {\arq{geracao/}\desc{exp-01}};
-  \node[c4component, text width=24mm] (m) at (5.6,-0.4) {\arq{motor/}\desc{exp-01}};
-  \node[c4component, text width=24mm] (p) at (8.8,-0.4) {\arq{planos/}\desc{exp-90}};
-  \node[c4component, text width=24mm] (b) at (12.0,-0.4) {\arq{bemestar/}\desc{exp-91}};
+  \node[c4component, text width=24mm] (g) at (2.4,-0.4) {\arq{geracao/}\desc{exp08ef1b}};
+  \node[c4component, text width=24mm] (m) at (5.6,-0.4) {\arq{motor/}\desc{exp08ef1b}};
+  \node[c4component, text width=24mm] (p) at (8.8,-0.4) {\arq{planos/}\desc{app-90}};
+  \node[c4component, text width=24mm] (b) at (12.0,-0.4) {\arq{bemestar/}\desc{app-91}};
   \node[c4component, text width=20mm] (a) at (14.6,-2.0) {\rota{POST /ai/gerar}\desc{SDK}};
 
   \draw[c4boundary, draw=unooGreen!70] (1.4,-3.0) rectangle (14.6,-7.9);
@@ -88,8 +148,11 @@ Eco do grupo & exp-07, \arq{src/o-eco-no-grupo/} &
   \node[c4systemext, text width=26mm, minimum height=13mm] (vertex) at (14.4,-9.8)
     {\textbf{Vertex AI}\desc{endpoint \cd{global}}};
 
-  \draw[c4rel] (g.south) -- (2.4,-3.4);
-  \draw[c4rel] (m.south) -- (5.6,-3.4);
+  % geracao/ e as reacoes de motor/ chamam o provider SEM temSaldo (ADR-74,
+  % ai/AGENTS.md): a seta desvia do QuotaService e desce direto ao AiProvider.
+  \draw[c4reldash, draw=unooRed] (g.south) -- (2.4,-2.2) -- (7.2,-2.2) -- (7.2,-3.35);
+  \draw[c4reldash, draw=unooRed] (m.south) -- (5.6,-2.2);
+  \node[cxlabel, text=unooRed] at (4.0,-2.2) {sem quota (\adrr{ADR-74})};
   \draw[c4rel] (p.south) -- (8.8,-3.4);
   \draw[c4rel] (b.south) -- (12.0,-3.4);
   \draw[c4rel] (a.west) -- (13.4,-2.0) -- (13.4,-3.4);
@@ -102,9 +165,13 @@ Eco do grupo & exp-07, \arq{src/o-eco-no-grupo/} &
     node[cxlabel, pos=0.55, above]{HTTPS + ADC};
 
 \end{tikzpicture}}
-\caption[Camada de IA]{A camada de IA. Quatro módulos de domínio e uma rota de
-  SDK entram; todos passam por \cd{QuotaService} antes do \emph{provider}.
-  Nenhum módulo fora da fronteira verde conhece o \emph{vendor} do modelo.}
+\caption[Camada de IA]{A camada de IA, com os quatro primeiros módulos de domínio
+  e a rota da SDK --- hoje são onze módulos que chamam o \emph{provider}, além da
+  rota (Figura~\ref{fig:uml-classes-ia}). \arq{planos/}, \arq{bemestar/} e a rota
+  passam por \cd{QuotaService} antes do \emph{provider}; \arq{geracao/} e as
+  reações de \arq{motor/} chamam o \emph{provider} direto, sem quota --- a exceção
+  registrada na \adrr{ADR-74} e em \arq{ai/AGENTS.md}. Nenhum módulo fora da
+  fronteira verde conhece o \emph{vendor} do modelo.}
 \label{fig:camada-ia}
 \end{figure}
 
@@ -118,7 +185,7 @@ Eco do grupo & exp-07, \arq{src/o-eco-no-grupo/} &
 (\adrr{ADR-74}): ele devolve \cd{T}, não \cd{AiResult}, e sem o \emph{callback}
 não há número para debitar. Um \cd{temSaldo} sem \cd{aoUsarTokens} é meia
 regra --- barra quem já estourou o teto e faz o teto nunca ser alcançado. Foi
-o que aconteceu no plano de aulas da exp-92, a operação mais repetida da
+o que aconteceu no plano de aulas da app-92, a operação mais repetida da
 ferramenta.
 \end{regra}
 
@@ -146,8 +213,8 @@ Uma linha por (escola, usuário, dia), com incremento atômico, resolve os dois.
 \end{decisao}
 
 \begin{decisao}
-\textbf{O limite depende do PERFIL.} O estudante interage com o tutor da exp-01
-e com os turnos da exp-03 (Missão Tempestade), onde uma partida completa gasta
+\textbf{O limite depende do PERFIL.} O estudante interage com o tutor da exp08ef1b
+e com os turnos da exp02em1b (Missão Tempestade), onde uma partida completa gasta
 cerca de \num{77000} \emph{tokens} medidos: o teto de estudante é calibrado em
 \num{300000} \emph{tokens}/dia, o que cabe três partidas completas. O valor
 inicial de \num{20000} estourava no quarto turno com erro de sala fechada. O
@@ -198,7 +265,7 @@ nem em \arq{.env.example}.
 Antes dessa mudança havia \textbf{só} o \emph{metadata server}, e por isso
 \emph{nenhuma} chamada de IA funcionava fora do Cloud Run --- nem no \emph{host},
 nem no contêiner, onde \cd{metadata.google.internal} não resolve. Em
-desenvolvimento a API ficava presa em \env{AI\_PROVIDER=mock} e a exp-90 devolvia
+desenvolvimento a API ficava presa em \env{AI\_PROVIDER=mock} e a app-90 devolvia
 um plano \textbf{falso}, o que é pior que falhar: parecia funcionar. Os dois
 \emph{compose} montam o ADC do \emph{host} em \arq{/adc} somente leitura; em
 Cloud Run a conta de serviço do serviço já \emph{é} a credencial, e ela precisa de
@@ -247,8 +314,10 @@ A proporção \cd{4:5} é PEDIDA no \cd{imageConfig} & Sem isso, o 3.1 devolve
 
 \subsection{Voz: a única chamada que não é ao \emph{aiplatform}}
 
-\cd{generateSpeech} chegou ao \cd{AiProvider} com a exp-07 (\adrr{ADR-67}) e é a
-exceção do capítulo: as outras três operações batem em
+\cd{generateSpeech} chegou ao \cd{AiProvider} com o Eco no Grupo (\adrr{ADR-67}) e
+ficou no contrato depois que a missão saiu (\adrr{ADR-113}): hoje nenhuma
+experiência sintetiza voz. É a exceção do capítulo: as outras três operações
+batem em
 \cd{\{loc\}-aiplatform.googleapis.com}, e a síntese bate em
 \cd{texttospeech.googleapis.com/v1/text:synthesize} --- mesma credencial ADC,
 mesma família de modelos (\env{VERTEX\_TTS\_MODEL}, \cd{gemini-2.5-flash-tts}),
@@ -265,7 +334,7 @@ outro serviço, que precisa estar \textbf{habilitado} no projeto.
   voz trêmula} é instrução ao modelo, não texto falado. Os dois têm teto de
   \num{4000}~\emph{bytes}, conferido no domínio antes do pedido --- estourar
   devolve 400 sem dizer qual dos dois campos.\\
-\cd{multiSpeakerMarkup} para o podcast & Lucas e Bia numa chamada só, cada turno
+\cd{multiSpeakerMarkup} para diálogo & Duas vozes numa chamada só, cada turno
   com seu \cd{speakerId}. Monólogo usa \cd{voice.name}; diálogo usa
   \cd{multiSpeakerVoiceConfig}. \textbf{Mandar os dois} devolve 400.\\
 \bottomrule
@@ -424,7 +493,7 @@ localidade de processamento como item de conformidade, não de arquitetura.
 \zebra \env{VERTEX\_IMAGE\_MODEL} & \cd{gemini-3.1-flash-image} &
   Quem trocar precisa conferir a proporção devolvida.\\
 \env{VERTEX\_TTS\_MODEL} & \cd{gemini-2.5-flash-tts} & Voz. Serviço à parte
-  (Text-to-Speech), habilitado no projeto.\\
+  (Text-to-Speech), habilitado no projeto. Nenhuma missão sintetiza voz hoje.\\
 \zebra \env{VERTEX\_THINKING\_BUDGET} & \cd{0} & \cd{0} desligado, \cd{-1} dinâmico,
   $>0$ teto.\\
 \env{AI\_DAILY\_TOKEN\_QUOTA\_PER\_ESTUDANTE} & \num{300000} & Quota diária do

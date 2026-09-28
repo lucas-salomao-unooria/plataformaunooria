@@ -1,0 +1,224 @@
+/* ---------------------------------------------------------------------------
+ * Camada de aplicação da app-90 (porte do `globals.css` do app origem, sem
+ * Tailwind e sem o header — o chrome é do hub).
+ *
+ * Só existe aqui o que o @unooria/design-system não entrega como componente:
+ * o shell da página e a moldura do rodízio de insights. Nenhuma cor,
+ * espaçamento ou tamanho é escrito à mão — tudo lê as CSS variables do DS.
+ * ------------------------------------------------------------------------ */
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family: var(--unooria-font-sans);
+  background-color: var(--unooria-color-neutral-100);
+  color: var(--unooria-color-neutral-900);
+}
+
+.app-shell {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--unooria-color-neutral-100);
+}
+
+.app-main {
+  flex: 1;
+  padding: var(--unooria-spacing-l) var(--unooria-spacing-m) var(--unooria-spacing-xxl);
+}
+
+/* Coluna de leitura: cheia no mobile; 8 colunas centrais no desktop. */
+.app-col-main {
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.app-stack {
+  display: flex;
+  flex-direction: column;
+}
+
+.app-fields {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--unooria-spacing-s);
+}
+
+@media (min-width: 768px) {
+  .app-fields {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* Superfície branca para painéis largos (`.unooria-card` fixa max-width 398px). */
+.app-surface {
+  background-color: var(--unooria-color-neutral-50);
+  border: 1px solid var(--unooria-color-neutral-150);
+  border-radius: 16px;
+  box-sizing: border-box;
+}
+
+/* Barra de ações do resultado: Salvar/Exportar/Restaurar + estado. */
+.app-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--unooria-spacing-xxs);
+}
+
+.app-acoes__estado {
+  margin-left: auto;
+  font-size: var(--unooria-size-body-xs);
+  line-height: var(--unooria-line-height-body-xs);
+  color: var(--unooria-color-neutral-600);
+  white-space: nowrap;
+}
+
+.app-acoes__estado--sujo {
+  color: var(--unooria-color-warning-700, #8a5a00);
+  font-weight: var(--unooria-weight-semibold);
+}
+
+/* Lista "Meus planos". */
+.app-lista {
+  display: flex;
+  flex-direction: column;
+}
+
+.app-lista__item {
+  display: flex;
+  align-items: center;
+  gap: var(--unooria-spacing-s);
+  padding: var(--unooria-spacing-xs) var(--unooria-spacing-s);
+  border-bottom: 1px solid var(--unooria-color-neutral-150);
+}
+
+.app-lista__item:last-child {
+  border-bottom: none;
+}
+
+.app-lista__texto {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.app-lista__titulo {
+  font-size: var(--unooria-size-body-s);
+  line-height: var(--unooria-line-height-body-s);
+  font-weight: var(--unooria-weight-semibold);
+  color: var(--unooria-color-neutral-950);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.app-lista__apoio {
+  font-size: var(--unooria-size-body-xs);
+  line-height: var(--unooria-line-height-body-xs);
+  color: var(--unooria-color-neutral-600);
+}
+
+.app-lista__acoes {
+  display: flex;
+  align-items: center;
+  gap: var(--unooria-spacing-xxs);
+  flex-shrink: 0;
+}
+
+/* Título editável do plano. */
+.app-titulo {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--unooria-spacing-xxs);
+}
+
+.app-titulo > :first-child {
+  flex: 1;
+}
+
+/* -------------------------------------------------------------- insights -- */
+
+.app-insight {
+  border: 1px solid var(--unooria-color-neutral-150);
+  border-radius: 16px;
+  background-color: var(--unooria-color-neutral-100);
+  overflow: hidden;
+}
+
+.app-insight__item {
+  animation: app-insight-in 420ms ease-out both;
+}
+
+@keyframes app-insight-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.app-insight__nav {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--unooria-spacing-xxs);
+  padding: 0 var(--unooria-spacing-xs) var(--unooria-spacing-xxs);
+}
+
+.app-insight__counter {
+  font-size: var(--unooria-size-body-xxs);
+  line-height: var(--unooria-line-height-body-xxs);
+  color: var(--unooria-color-neutral-500);
+  min-width: 6ch;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-insight__item {
+    animation: none;
+  }
+}
+
+/* ------------------------------------------------------- documento no editor -- */
+/*
+ * O RichTextEditor do DS não estiliza tabelas nem citações; um plano anual é
+ * cheio de tabelas (habilidades, cronograma). Mesma paleta do `.doc` exportado.
+ */
+.app-shell [contenteditable] table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: var(--unooria-spacing-xs) 0 var(--unooria-spacing-s);
+}
+
+.app-shell [contenteditable] th,
+.app-shell [contenteditable] td {
+  border: 1px solid var(--unooria-color-neutral-200);
+  padding: 6px 10px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.app-shell [contenteditable] th {
+  background-color: var(--unooria-color-neutral-100);
+  font-weight: var(--unooria-weight-semibold);
+}
+
+.app-shell [contenteditable] blockquote {
+  border-left: 3px solid var(--unooria-color-brandnavy-300, #bdd0ef);
+  margin: var(--unooria-spacing-xs) 0;
+  padding-left: var(--unooria-spacing-xs);
+  color: var(--unooria-color-neutral-600);
+}

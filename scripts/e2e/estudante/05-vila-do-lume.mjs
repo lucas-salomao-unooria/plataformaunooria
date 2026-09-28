@@ -10,7 +10,7 @@ import { conta } from "../lib/credenciais.mjs";
 /* global state, zones, openDM, buildResults, gatilhoAtendido, construirPayloadSessao */
 
 /**
- * A Vila do Lume (exp-70): o jogo 3D em primeira pessoa dentro do iframe.
+ * A Vila do Lume (app-70): o jogo 3D em primeira pessoa dentro do iframe.
  *
  * Aqui o typecheck não cobre quase nada — o jogo é JavaScript clássico fora do
  * `tsc` (ADR-0001 da experiência), e as três coisas que podem quebrar são todas
@@ -38,7 +38,7 @@ import { conta } from "../lib/credenciais.mjs";
  * checagem que falha por limitação do ambiente e não diz isso é pior que
  * checagem nenhuma.
  */
-const EXP = "exp-70-vila-do-lume";
+const EXP = "app-70-vila-do-lume";
 
 await suite(
   {
@@ -135,7 +135,7 @@ await suite(
     const fogueiras = await tela.locator("#scoreStars").innerText();
 
     /* O FRAME DO JOGO, não a página: `f.url().includes(EXP)` casaria a página do
-       hub também — a rota dela é `/exp/exp-70-vila-do-lume` —, e a checagem
+       hub também — a rota dela é `/exp/app-70-vila-do-lume` —, e a checagem
        leria o `document` errado. Filtro por `parentFrame()`. */
     const quadro = p.frames().find((f) => f.parentFrame() !== null);
     const preso = quadro ? await quadro.evaluate(() => document.pointerLockElement !== null) : false;

@@ -4,7 +4,7 @@ import { PrismaClient } from "@prisma/client";
  * Tenancy para os SEEDS.
  *
  * Os seeds escrevem em tabelas com `FORCE ROW LEVEL SECURITY` (`matriculas`,
- * `exp_01_*`, `progresso`, ...). Em desenvolvimento passa despercebido porque a
+ * `exp08ef1b_*`, `progresso`, ...). Em desenvolvimento passa despercebido porque a
  * `DATABASE_URL` local aponta para `postgres`, que é SUPERUSUÁRIO e ignora RLS.
  * Em produção a conexão é com `app`, que não ignora — e o seed morre com
  * `new row violates row-level security policy for table "matriculas"`.

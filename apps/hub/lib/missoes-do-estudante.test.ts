@@ -45,7 +45,7 @@ describe("copy das missões do estudante", () => {
   test("expId desconhecido devolve null em vez de quebrar a tela", () => {
     // A api pode liberar uma experiência que o catálogo do hub ainda não
     // conhece (bundle publicado antes de a copy ser escrita). A tela pula.
-    expect(copyDaMissao("exp-99-que-nao-existe")).toBeNull();
+    expect(copyDaMissao("exp09ef4b")).toBeNull();
   });
 
   test("a copy do estudante não repete a do professor (que entrega a virada)", () => {

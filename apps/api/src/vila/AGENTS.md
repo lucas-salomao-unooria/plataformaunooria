@@ -1,8 +1,8 @@
-# apps/api/src/vila — Vila do Lume (exp-70)
+# apps/api/src/vila — Vila do Lume (app-70)
 
 Complementa o `AGENTS.md` de `apps/api`, que vence em conflito.
 
-## Vila do Lume (exp-70, `apps/api/src/vila`)
+## Vila do Lume (app-70, `apps/api/src/vila`)
 Jogo 3D **transversal** — não pertence a ano nenhum (`series: []`), e é o "Ato 1"
 que o catálogo do Entre Redes sempre descreveu: *"fora da plataforma, um jogo
 mede o perfil de valores do estudante"*. O perfil dele alimenta `perfis_importados`
@@ -90,7 +90,7 @@ terceiro segue valendo: `AlertBox` é diálogo de 436px; para faixa de contexto,
 (`theme.extend: {}`). Classe de cor que não existe ali não é erro em lugar
 nenhum: em texto ela herda a cor e passa desapercebida, em FUNDO o elemento fica
 branco no branco. Foi o que aconteceu com `bg-unooria-neutral-900` (letra da
-bolha invisível). O smoke da exp-70 checa o `backgroundColor` COMPUTADO do
+bolha invisível). O smoke da app-70 checa o `backgroundColor` COMPUTADO do
 círculo por isso — `toBeVisible()` não pega. Só existem hoje:
 `bg-unooria-{navy-800,neutral-50,neutral-100,neutral-200}`,
 `border-unooria-neutral-200`,
@@ -114,7 +114,7 @@ redistribuição que ele fez antes da aula.
 
 **O perfil importado guarda a PARTIDA e a VERSÃO** (`vila_sessao_id`,
 `versao_mapeamento` — ADR-50). Sem elas, subir `VERSAO_MAPEAMENTO` recalculava
-`exp_70_perfis` e deixava a CÓPIA que decide o feed na geração anterior, em
+`app_70_perfis` e deixava a CÓPIA que decide o feed na geração anterior, em
 silêncio: a armadilha do `expires_at` de novo. **Sem FK** para `vila_sessoes`, de
 propósito — zerar a turma na Vila apaga sessões, e a cascata levaria o perfil que
 está decidindo o lado de uma aula em andamento; é rastro da medida, não

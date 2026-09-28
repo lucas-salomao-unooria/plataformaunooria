@@ -3,7 +3,7 @@ import { ALERTA_DE_ERRO, esperarOuFalharCedo } from "../lib/smoke.mjs";
 import { conta } from "../lib/credenciais.mjs";
 
 /**
- * O plano de aula (exp-90), embedado no hub do professor.
+ * O plano de aula (app-90), embedado no hub do professor.
  *
  * É a única experiência de FERRAMENTA que o docente usa sozinho, e o ciclo
  * inteiro dela é destrutivo em algum ponto: gerar, editar, salvar, reabrir,
@@ -84,7 +84,7 @@ await suite(
     await exp.getByRole("button", { name: "Gerar plano de aula" }).click();
     await esperarOuFalharCedo(exp.locator("table"), exp.locator(ALERTA_DE_ERRO), {
       timeout: 180_000,
-      oQue: "a geração do plano (exp-90)",
+      oQue: "a geração do plano (app-90)",
     });
     await p.waitForTimeout(1500);
     await r.registrar(p, "plano-gerado", {

@@ -1,8 +1,10 @@
 import { notFound } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { montarEmbed } from "@/lib/embed-experiencia";
+import { minhaEquipe } from "@/lib/equipes-servidor";
 import { minhasSalas, podeEntrar } from "@/lib/salas";
 import { ExpHost } from "@/components/ExpHost";
+import { FaixaDaEquipe } from "@/components/equipes/faixa-da-equipe";
 import { HeaderPlataforma } from "@/components/header-plataforma";
 
 /**
@@ -18,6 +20,7 @@ export default async function ExpPage({ params }: { params: Promise<{ expId: str
   const { expId } = await params;
   const session = await auth();
   const usuario = session!.usuario; // middleware garante sessão nesta rota
+  let equipe: Awaited<ReturnType<typeof minhaEquipe>> = null;
 
   /* A PORTA DA SALA (ADR-69), ANTES de montar o embed: sem liberação na turma,
      a missão não abre. A api recusaria de qualquer jeito (403
@@ -29,7 +32,10 @@ export default async function ExpPage({ params }: { params: Promise<{ expId: str
      manda cada papel para a própria área), e `/dev-embed` continua sem porta,
      porque é ferramenta de desenvolvimento. */
   if (usuario.papel === "estudante") {
-    const salas = await minhasSalas();
+    /* A equipe (E13) vem junto da porta, em paralelo: é a faixa "Sua equipe"
+       acima do aparelho. `null` — sem equipe ou api fora — é só não desenhar. */
+    const [salas, daMissao] = await Promise.all([minhasSalas(), minhaEquipe(expId)]);
+    equipe = daMissao;
     /* `null` é a api fora do ar. Deixar passar aqui não abre nada: a api recusa
        a entrada logo em seguida, e um 404 por indisponibilidade diria à criança
        que a missão não existe. */
@@ -41,7 +47,7 @@ export default async function ExpPage({ params }: { params: Promise<{ expId: str
 
   const embed = await montarEmbed(expId, usuario);
 
-  // Ferramenta de professor (exp-90) não é uma experiência do estudante: a api
+  // Ferramenta de professor (app-90) não é uma experiência do estudante: a api
   // recusaria as chamadas com 403, mas a tela quebraria feio. 404 é o certo.
   if (
     embed.manifesto &&
@@ -54,6 +60,7 @@ export default async function ExpPage({ params }: { params: Promise<{ expId: str
   return (
     <>
       <HeaderPlataforma voltar={{ href: "/estudante", rotulo: "Missões" }} />
+      {equipe ? <FaixaDaEquipe equipe={equipe} /> : null}
       <ExpHost
         expId={expId}
         src={embed.src}

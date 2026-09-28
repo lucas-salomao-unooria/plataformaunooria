@@ -44,7 +44,7 @@ import { CHAVES_REDIGIDAS } from "../src/observabilidade/redaction";
 import { PercursoSchema } from "../src/manifesto-ia/contrato-de-rotas";
 
 /**
- * Regras puras da exp-08 — sem Prisma, sem HTTP.
+ * Regras puras da exp08ef4b — sem Prisma, sem HTTP.
  *
  * O que estes testes protegem não é "a função devolve X": é a mecânica
  * pedagógica e as quatro ressalvas da banca. Cada bloco corresponde a um
@@ -395,7 +395,7 @@ describe("invariantes de produto", () => {
   test('"atividade" SOZINHA não é proibida — a cláusula 4 fala de redes sociais', () => {
     // Este teste é o registro de um achado: a régua reprovou a própria copy
     // homologada na primeira corrida, por causa de "atividades em redes
-    // sociais" no Art. 4º. Mesmo caso que a exp-06 teve com "nota".
+    // sociais" no Art. 4º. Mesmo caso que a exp06ef2b teve com "nota".
     expect(TERMOS_PROIBIDOS_NA_TELA as readonly string[]).not.toContain("atividade");
     expect(TERMOS_PROIBIDOS_NA_TELA as readonly string[]).toContain("esta atividade");
     expect(termosProibidosEm("cruzado com atividades em redes sociais")).toHaveLength(0);
@@ -409,7 +409,7 @@ describe("invariantes de produto", () => {
 
   test("a copy aprovada da missão passa pela própria régua", () => {
     // Sem isto, a régua poderia reprovar o texto homologado — foi o que a
-    // exp-06 registrou ao proibir a palavra "nota" sozinha.
+    // exp06ef2b registrou ao proibir a palavra "nota" sozinha.
     const visiveis = [
       CONTEXTO_DEFAULT.premissaIaAutoritaria,
       CONCESSAO_DO_BOT,

@@ -10,6 +10,8 @@ import {
   professorEnsinaOEstudante,
   professorLeciona,
 } from "../comum/turmas-do-professor";
+import { mapaDeEquipes } from "../equipes/consulta";
+import { colapsarEmUnidades } from "../equipes/regras";
 import { MISSAO_TEMPESTADE } from "./cenario";
 
 /** Quanto cada toque em "+2 min" acrescenta ao relógio da aula. */
@@ -65,7 +67,7 @@ import {
 import { coberturaDoRisco, percentilEntre, posicaoNaFaixa } from "./regras/desfecho";
 
 /**
- * O serviço da exp-03-unoogpt — a Missão Tempestade.
+ * O serviço da exp02em1b — a Missão Tempestade.
  *
  * Porte de `lib/missao/servico.ts` do projeto `gpturia`, com quatro diferenças
  * que vêm da plataforma e não do jogo:
@@ -1047,6 +1049,13 @@ export class UnoogptService {
    * de resgatados viraria ranking de crianças. O que a lista mostra é conduta —
    * se leu antes de decidir, se viu fontes discordando, se justificou por
    * intuição — e o número de resgate fica na tela individual, uma por vez.
+   *
+   * UMA LINHA POR COMPUTADOR (E13, ADR-111): com equipes montadas para esta
+   * missão, os membros de cada uma viram UMA linha, a de quem entrou (o mais
+   * recente, se mais de um entrou), e o retrato conta essas linhas. Sem isso,
+   * quem senta ao lado de quem digita contava como "não começou". Sem equipes,
+   * cada estudante é a própria linha, como antes. O mapa é lido DENTRO do
+   * `comTenancy` — fora dele a RLS das equipes devolve vazio, em silêncio.
    */
   async turmaDoProfessor(escolaId: string, turmaId: string, professorId?: string) {
     const agora = new Date();
@@ -1060,9 +1069,11 @@ export class UnoogptService {
         select: { id: true, displayName: true, username: true },
       });
 
-      const linhas = await Promise.all(
+      const atualizadoEm = new Map<string, number>();
+      const porEstudante = await Promise.all(
         estudantes.map(async (a) => {
           const sinais = await this.sinaisDaPartida(tx, escolaId, a.id);
+          atualizadoEm.set(a.id, sinais.atualizadoEm?.getTime() ?? 0);
           return {
             id: a.id,
             estudanteId: a.id,
@@ -1081,6 +1092,15 @@ export class UnoogptService {
         }),
       );
 
+      const mapa = await mapaDeEquipes(tx, escolaId, turmaId, EXP_ID);
+      const linhas = colapsarEmUnidades(
+        porEstudante,
+        (l) => l.estudanteId,
+        mapa,
+        (l) => l.comecou,
+        (l) => atualizadoEm.get(l.estudanteId) ?? 0,
+      ).map((u) => ({ ...u.linha, equipe: u.equipe }));
+
       return {
         turma: { id: turma.id, nome: turma.nome, serie: turma.serie },
         relogio: this.retratoDoRelogio(relogio, agora),
@@ -1092,6 +1112,7 @@ export class UnoogptService {
           viramConflito: linhas.filter((l) => l.viuConflito).length,
           decidiramNoEscuro: linhas.filter((l) => l.decidiuNoEscuro).length,
           justificaramPorIntuicao: linhas.filter((l) => l.justificouPorIntuicao).length,
+          porComputador: mapa.size > 0,
         },
         linhas,
       };
@@ -1414,7 +1435,7 @@ export class UnoogptService {
     tx: Prisma.TransactionClient,
     escolaId: string,
     estudanteId: string,
-  ): Promise<SinaisDaPartida & { justificouPorIntuicao: boolean }> {
+  ): Promise<SinaisDaPartida & { justificouPorIntuicao: boolean; atualizadoEm: Date | null }> {
     const sessao = await tx.unoogptSessao.findUnique({
       where: { escolaId_estudanteId: { escolaId, estudanteId: estudanteId } },
     });
@@ -1471,6 +1492,9 @@ export class UnoogptService {
       concluiu: simulacoes.length > 0,
       justificouPorIntuicao:
         sessao?.justificativaAlfa === INTUICAO || sessao?.justificativaBravo === INTUICAO,
+      /* Só para o painel escolher o representante de uma equipe de computador
+         (o login mais recente). Não vai para resposta nenhuma. */
+      atualizadoEm: sessao?.atualizadoEm ?? null,
     };
   }
 
