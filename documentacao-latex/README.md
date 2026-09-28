@@ -5,10 +5,10 @@ Fonte da **documentação técnica consolidada** da Plataforma Unooria
 
 Este documento é **normativo** para o projeto: cobre contexto de negócio,
 requisitos rastreáveis, casos de uso, arquitetura de software nos quatro níveis
-do modelo C4, arquitetura de nuvem e implantação em GCP, multi-tenancy e
+do modelo C4 e nos catorze diagramas da UML 2.5.1, arquitetura de nuvem e implantação em GCP, multi-tenancy e
 segurança, modelo de dados, contratos de integração, telemetria, camada de IA,
 catálogo de experiências, especificação da API, design system, engenharia de
-entrega, qualidade, observabilidade, as ADRs (até a ADR-121), riscos e evolução.
+entrega, qualidade, observabilidade, as ADRs (até a ADR-122), riscos e evolução.
 
 ## Compilar
 
@@ -46,13 +46,13 @@ saída sai formatada em ABNT do mesmo jeito.
 ```
 documentacao-latex/
 ├── main.tex                 documento mestre (ordem dos capítulos)
-├── referencias.bib          bibliografia (52 entradas, ABNT na saída)
+├── referencias.bib          bibliografia (53 entradas, ABNT na saída)
 ├── compilar.sh              script de build
 ├── preambulo/
 │   ├── estilo.tex           tipografia, cores, tabelas, código, títulos, rodapé
 │   ├── diagramas.tex        biblioteca TikZ (C4, UML, ER, infra, estados)
 │   └── capa.tex             capa, ficha técnica e histórico de revisões
-├── secoes/                  00-siglas … 20-conclusao
+├── secoes/                  00-siglas … 21-pendencias; 05b-modelagem-uml continua o cap. 5
 ├── apendices/               a-mermaid … f-operacao
 ├── estudos/                 estudos técnicos avulsos (PU-EST-001, teste de carga)
 ├── produto/                 documentos de produto (PU-PRD-001, mapa de produto)
@@ -105,6 +105,22 @@ de estado troca o selo; identificador nunca é reaproveitado.
   figura. Diagrama sem par Mermaid é diagrama que só uma pessoa consegue alterar.
 - **Quebra em célula estreita**: `\B` insere ponto de quebra sem hífen em
   caminho longo (identificador monoespaçado não hifeniza e transborda a caixa).
+  A primeira palavra de uma célula também não hifeniza: `\hspace{0pt}` antes
+  dela resolve (foi o caso de "Desenvolvimento" numa coluna de 21 mm).
+- **Elementos UML** (pacote, componente com bola e soquete, nó de implantação,
+  artefato, objeto, parte e porta, fragmento, tempo, perfil) estão no fim de
+  `preambulo/diagramas.tex`, com os macros `\pacote`, `\nodo`, `\bola`,
+  `\soquete`, `\msgcom`, `\ctitulo` e `\estereo`. Três armadilhas que
+  custaram tempo ao escrevê-los:
+  - **`\newcommand` dentro de uma figura em `\fitwidth`/`\fitpage` quebra**
+    ("Command already defined"): o `adjustbox` processa o conteúdo duas vezes.
+    Use `\def`.
+  - **Coordenada com vírgula dentro de uma chave do TikZ vai entre chaves**:
+    `fit={(0,0) (4,-2)}`, nunca `fit=(0,0) (4,-2)` — o `pgfkeys` parte na
+    vírgula e o erro é "Argument of \pgfkeys@@normal has an extra }".
+  - **`\fpeval` não existe** no LaTeX que o Tectonic empacota (é de 2022). Conta
+    em coordenada se faz com a aritmética do próprio TikZ, dentro de chaves:
+    `({4.3+0.32*(10)},-1)`.
 
 ## Manutenção — obrigatória
 
@@ -115,6 +131,7 @@ atualiza o capítulo correspondente **e regera o `main.pdf` no mesmo commit**.
 | Se você mudou… | Atualize |
 |---|---|
 | Módulo, componente ou fronteira | `secoes/05-arquitetura-software.tex` (e o C4 correspondente) |
+| Ponte, quota de IA, disponibilidade, sessão/*token*, papéis, implantação | a figura UML em `secoes/05b-modelagem-uml.tex` (cada uma cita os arquivos de onde saiu) e o par Mermaid |
 | Recurso de nuvem, rede, CI/CD | `secoes/06-arquitetura-nuvem.tex`, `secoes/15-entrega.tex` |
 | RLS, papel, guard, sandbox | `secoes/07-tenancy-seguranca.tex` |
 | Migração, tabela, coluna | `secoes/08-modelo-de-dados.tex` + `apendices/e-dicionario-de-dados.tex` |

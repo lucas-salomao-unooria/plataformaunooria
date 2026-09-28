@@ -16,8 +16,10 @@ armadilhas que já custaram tempo e não avisam quando você cai nelas:
   (`docs/regras/definition-of-done.md`). Ele compila sozinho, na própria pasta,
   com `tectonic -k mapa-de-produto.tex`, e não pelo `compilar.sh` daqui.
 
-- **A PRÓXIMA ADR é a 122.** A numeração vai até ADR-121 (o CI verifica só os
-  PRs para `dev`, `hml` e `main`); a 120 é a régua v2 de Quem mandou isso?
+- **A PRÓXIMA ADR é a 123.** A numeração vai até ADR-122 (a modelagem UML no
+  Capítulo 5, com os catorze tipos da UML 2.5.1 e par Mermaid mesmo onde o
+  Mermaid não tem o tipo); a 121 é o CI só nos PRs para `dev`, `hml` e `main`;
+  a 120 é a régua v2 de Quem mandou isso?
   (cada habilidade pelo verbo dela). A 119 é o podcast
   da A Seleção (do professor; a IA reescreve só as três falas do tema); a 118 é
   Quem mandou isso? v2.2 (a atividade é o pacote, a rodada é a reaplicação, e a
@@ -53,6 +55,12 @@ armadilhas que já custaram tempo e não avisam quando você cai nelas:
   ficaram ilegíveis em paisagem antes de serem divididos.
 - **Diagrama TikZ novo exige o par Mermaid** em `apendices/a-mermaid.tex`:
   diagrama sem par é diagrama que só uma pessoa consegue alterar.
+- **A modelagem UML mora em `secoes/05b-modelagem-uml.tex`, e ele NÃO tem
+  `\chapter`**: continua o Capítulo 5 (ADR-122). Um capítulo novo no meio
+  renumera os seguintes, e "cap. 17" é citado em comentário de código. Mexeu na
+  ponte, na quota, na disponibilidade, na sessão, nos papéis ou na implantação?
+  A figura UML daquilo muda no mesmo commit — cada uma cita os arquivos de onde
+  saiu.
 - **`apendices/c-endpoints.tex` é GERADO** (`node scripts/gerar-endpoints-tex.mjs`,
   a partir de `docs/openapi.json`). Editar à mão é perder o texto na próxima
   execução.

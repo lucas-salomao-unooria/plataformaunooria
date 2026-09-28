@@ -19,9 +19,19 @@ Estudante & Primário & Estudante da rede. Escolhe a missão no hub próprio e e
   experiência. É titular de dado de menor.\\
 \zebra Professor & Primário & Prepara e conduz a aula, lê a turma, gera plano de
   aula e faz o próprio \emph{check-in} de bem-estar.\\
-Gestor escolar & Primário & Administra usuários da escola.\\
-\zebra Admin do contrato & Primário & Único papel autorizado a atravessar
-  escolas. Publica manifestos e lê o agregado da rede.\\
+Gestor de escola & Primário & \cd{gestor\_escola}. Importa e mantém as pessoas,
+  as turmas e o ano letivo da escola.\\
+\zebra Gestor regional & Primário & \cd{gestor\_regional}. Tudo o que o gestor de
+  escola faz, em uma escola da regional por vez; lê o panorama e o relatório da
+  diretoria.\\
+Gestor do contrato & Primário & \cd{gestor\_contrato}. Tudo o que o regional
+  faz, com a rede inteira como escopo; mantém escolas e regionais, lê o agregado
+  da rede e o histórico de recursos.\\
+\zebra Admin (Unooria) & Primário & \cd{admin}. Tudo o que o gestor do contrato
+  faz, e mais o painel da Unooria: disponibilidade, quota de IA e cadastros de
+  interesse (\adrr{ADR-88}).\\
+Visitante do site & Primário & Quem preenche o cadastro de interesse do site
+  público, sem conta (\adrr{ADR-107}).\\
 Provedor de identidade & Secundário & WSO2 Identity Server (futuro). Hoje o
   papel de emissor é exercido pelo próprio hub.\\
 \zebra Vertex AI (Gemini) & Secundário & Geração de texto e de imagem, sempre
@@ -47,8 +57,8 @@ Pub/Sub & Secundário & Transporte durável do canal analítico de telemetria.\\
   % ---- atores primarios (esquerda)
   \ator{estudante}{(1.4,-2.4)}{Estudante}
   \ator{prof}{(1.4,-7.4)}{Professor}
-  \ator{gestor}{(1.4,-12.4)}{Gestor escolar}
-  \ator{admin}{(1.4,-15.6)}{Admin do contrato}
+  \ator{gestor}{(1.4,-12.4)}{Gestor de escola}
+  \ator{admin}{(1.4,-15.6)}{Gestor do contrato}
 
   % ---- atores secundarios (direita)
   \atorsys{idp}{(15.3,-2.2)}{WSO2 IS}
@@ -75,10 +85,10 @@ Pub/Sub & Secundário & Transporte durável do canal analítico de telemetria.\\
 
   % ---- casos de uso: gestor / admin
   \node[ucase] (uc20) at (6.2,-13.1) {\ucr{UC-20} Importar pessoas e enturmar};
-  \node[ucase] (uc21) at (6.2,-14.6) {\ucr{UC-21} Redefinir senha};
+  \node[ucase] (uc21) at (6.2,-14.6) {\ucr{UC-21} Editar pessoa e redefinir senha};
   \node[ucase] (uc22) at (10.6,-14.2) {\ucr{UC-22} Ler agregado da rede};
   \node[ucase] (uc23) at (10.6,-15.7) {\ucr{UC-23} Publicar manifesto};
-  \node[ucasesec] (uc24) at (6.2,-16.0) {\ucr{UC-24} Reverter versão};
+  \node[ucasesec] (uc24) at (6.2,-16.0) {\ucr{UC-24} Ativar ou reverter versão};
 
   % ---- relacoes: estudante
   \draw[ucrel] (estudante) -- (uc01);
@@ -118,9 +128,10 @@ Pub/Sub & Secundário & Transporte durável do canal analítico de telemetria.\\
 \end{tikzpicture}}
 \caption[Casos de uso da plataforma]{Casos de uso da plataforma. As elipses em
   tom claro são casos de uso de \emph{suporte}, incluídos por outros e nunca
-  iniciados diretamente por um ator humano. Os quatro papéis são mutuamente
-  exclusivos: o \emph{middleware} do hub redireciona quem entra na área de outro
-  papel.}
+  iniciados diretamente por um ator humano. Cada papel tem a sua área, e o
+  \emph{middleware} do hub redireciona quem entra na de outro. Os seis papéis, e
+  a generalização entre os quatro de gestão, estão na
+  Figura~\ref{fig:uml-casos-gestao}.}
 \label{fig:casos-de-uso}
 \end{figure}
 
@@ -455,7 +466,7 @@ mais rápida da plataforma, e existe por desenho (\adrr{ADR-01}).
 \ucr{UC-16} & \rf{RF-50} & botão de zerar turma & \arq{vila}\\
 \zebra \ucr{UC-20} & \rf{RF-06} & \rota{/admin/importar}, \rota{/admin/turmas}
   & \arq{rostering}\\
-\ucr{UC-21} & \rf{RF-07} & \rota{/admin/usuarios} & \arq{usuarios}\\
+\ucr{UC-21} & \rf{RF-07} & \rota{/admin/usuarios} (editar e redefinir senha) & \arq{usuarios}\\
 \zebra \ucr{UC-25} & \rf{RF-01} & \rota{/trocar-senha} & \arq{auth}\\
 \ucr{UC-26} & \rf{RF-06} & \rota{/professor/turmas} & \arq{rostering}\\
 \zebra \ucr{UC-27} & \rf{RF-06} & \rota{/admin/escolas} (lotação em lote),
@@ -464,6 +475,31 @@ mais rápida da plataforma, e existe por desenho (\adrr{ADR-01}).
   \arq{portabilidade}\\
 \zebra \ucr{UC-22} & \rf{RF-52} & \rota{/analise} & \arq{analise}\\
 \ucr{UC-23} & \rf{RF-10} & CI/CD & \arq{experiencias}\\
-\zebra \ucr{UC-24} & \rf{RF-11} & \emph{script} & \arq{experiencias}\\
+\zebra \ucr{UC-24} & \rf{RF-11} & \emph{script} e \rota{/unooria/recursos} & \arq{experiencias}, \arq{recursos}\\
+\ucr{UC-29} & --- & \rota{/admin/usuarios} (balcão) & \arq{usuarios}, \arq{rostering}\\
+\zebra \ucr{UC-30} & --- & incluído por \ucr{UC-29} e \ucr{UC-31} & \arq{usuarios} (\arq{regras.ts})\\
+\ucr{UC-31} & --- & \rota{/admin/usuarios} (papel sem escola) & \arq{usuarios}\\
+\zebra \ucr{UC-32} & --- & seletor do cabeçalho (\rota{/api/\B{}escola-ativa}) & \arq{rostering}\\
+\ucr{UC-33} & --- & \rota{/admin/\B{}minhas-escolas} & \arq{rostering}\\
+\zebra \ucr{UC-34} & --- & \rota{/admin/relatorios} & \arq{rostering}\\
+\ucr{UC-35} & --- & \rota{/admin/escolas}, \rota{/admin/regionais} & \arq{rostering}\\
+\zebra \ucr{UC-36} & --- & \rota{/admin/recursos} & \arq{recursos}\\
+\ucr{UC-37} & --- & \rota{/unooria/recursos} & \arq{recursos}\\
+\zebra \ucr{UC-38} & --- & \rota{/unooria/recursos} & \arq{recursos}\\
+\ucr{UC-39} & \rf{RF-31} & \rota{/unooria/\B{}uso-de-ia} & \arq{recursos}, \arq{ai}\\
+\zebra \ucr{UC-40} & --- & \rota{/unooria/\B{}prospeccao} & \arq{prospeccao}\\
+\ucr{UC-41} & --- & site público (\rota{/}) & \arq{prospeccao}\\
+\zebra \ucr{UC-42} & --- & \rota{/professor/\B{}turmas/\B{}[id]} & \arq{salas}\\
+\ucr{UC-43} & --- & incluído por \ucr{UC-42} & \arq{comum}, \arq{recursos}\\
+\zebra \ucr{UC-44} & --- & \rota{/professor/\B{}entre-redes/\B{}[ano]/\B{}[unidade]} & \arq{equipes}\\
 \bottomrule
 \end{tabularx}
+
+\begin{nota}
+\textbf{Os casos \ucr{UC-29} a \ucr{UC-44} nasceram da modelagem UML}
+(Figura~\ref{fig:uml-casos-gestao}, Seção~\ref{sec:uml-cenarios}) e, com
+exceção do \ucr{UC-39}, ainda não têm requisito funcional no
+Capítulo~\ref{cap:requisitos}: disponibilidade, liberação por turma, equipes,
+panorama e prospecção entraram no produto por ADR, sem RF. Escrever esses RFs é
+pendência, e o travessão na coluna diz exatamente isso.
+\end{nota}

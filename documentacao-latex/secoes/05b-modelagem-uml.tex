@@ -1,0 +1,2090 @@
+% ===========================================================================
+%  5 (continuação) — Modelagem UML
+%
+%  Sem \chapter DE PROPÓSITO (ADR-122): este arquivo continua o Capítulo 5.
+%  Um capítulo novo depois do 5 renumeraria do 6 ao 21, e "cap. 17" é citado
+%  dezenas de vezes em comentário de código da observabilidade --- renumerar
+%  não quebra a citação, faz ela apontar para outro capítulo em silêncio.
+%
+%  Todo diagrama daqui foi conferido contra o código em 2026-09-27 e cita os
+%  arquivos de onde saiu. Mudou a peça? O diagrama muda no MESMO commit, e o
+%  par Mermaid no Apêndice A também.
+% ===========================================================================
+\section{Modelagem UML}
+\label{sec:uml}
+
+O C4 das seções anteriores responde \emph{que peças existem e quem fala com
+quem}. Ele não tem notação --- por escolha de quem o desenhou~\cite{c4model} ---
+para o que uma peça \emph{é} (tipo, multiplicidade, herança, interface), para o
+que ela \emph{faz ao longo do tempo} (estado, prazo, ordem de mensagens) nem para
+\emph{uma situação concreta} (instâncias com valores). É o que a UML cobre. Esta
+seção desenha a plataforma nos catorze tipos de diagrama da UML
+2.5.1~\cite{omg2017uml}, distribuídos pelas cinco visões do modelo
+4+1~\cite{kruchten1995views} que abrem este capítulo (\adrr{ADR-122}).
+
+Nem todo tipo rende o mesmo, e a seção não finge que rende. Onde o documento já
+tinha um diagrama daquele tipo --- casos de uso, sequência, máquina de estados,
+atividades ---, a Tabela~\ref{tab:uml-catalogo} aponta para ele e a seção
+acrescenta só o que faltava. Onde não tinha, cada diagrama foi posto no lugar em
+que o tipo mostra algo que nenhum outro mostra. O de tempo, por exemplo, é o
+único em que a janela de 401 entre o \emph{token} de 15 minutos e o pedido de
+renovação a cada 10 aparece sem conta de cabeça (Figura~\ref{fig:uml-tempo}).
+
+\begin{regra}
+\textbf{Diagrama que diverge do código é pior do que diagrama nenhum}, porque
+quem lê acredita nele. Cada figura desta seção cita os arquivos de onde saiu, e
+todas foram conferidas contra o código em 2026-09-27. Quem muda a peça muda o
+diagrama e o par Mermaid do Apêndice~\ref{ap:mermaid} no mesmo \emph{commit}. Os
+nomes são os do código (\cd{QuotaService}, \cd{exigirMissaoLiberada}), porque é
+por eles que se procura; o texto em volta é em português.
+\end{regra}
+
+\subsection{Os catorze diagramas e onde cada um está}
+\label{sec:uml-catalogo}
+
+A UML separa os diagramas em dois ramos. Os \textbf{de estrutura} descrevem o que
+existe e como se compõe, sem tempo. Os \textbf{de comportamento} descrevem o que
+acontece, e quatro deles --- os \textbf{de interação} --- descrevem o que acontece
+\emph{entre} participantes, por mensagens. A Figura~\ref{fig:uml-taxonomia} é a
+própria taxonomia desenhada como diagrama de classes, com o número das figuras
+deste documento em cada folha.
+
+\begin{figure}[H]
+\centering
+\fitwidth{%
+\begin{tikzpicture}[x=1cm, y=1cm]
+  \tikzset{
+    tx/.style={rectangle, draw=unooNavy, line width=0.8pt, fill=unooSurface,
+      font=\scriptsize, text width=38mm, minimum height=9.8mm, inner sep=3pt,
+      align=left},
+    txabs/.style={tx, fill=unooNavy, text=white, align=center,
+      font=\scriptsize\bfseries\itshape},
+  }
+  \def\fg#1{{\color{unooInkSoft}\scriptsize #1}}
+
+  % --- raiz e os dois ramos
+  \node[txabs] (diag) at (8.3,0) {Diagrama};
+  \node[txabs] (est)  at (3.4,-1.9) {Diagrama de estrutura};
+  \node[txabs] (comp) at (12.4,-1.9) {Diagrama de comportamento};
+  \draw[associa] (est.north) -- (3.4,-0.95) -- (12.4,-0.95) -- (comp.north);
+  \draw[hered] (8.3,-0.95) -- (diag.south);
+
+  % --- estrutura: sete folhas num tronco
+  \foreach \nome/\figs/\y in {
+      Classes/{\ref{fig:uml-classes-dominio}, \ref{fig:uml-classes-ia}; antes: \ref{fig:c4l4}, \ref{fig:graus}}/-3.3,
+      Objetos/{\ref{fig:uml-objetos}}/-4.6,
+      Pacotes/{\ref{fig:uml-pacotes}; antes: \ref{fig:monorepo} (grafo)}/-5.9,
+      Componentes/{\ref{fig:uml-componentes}}/-7.2,
+      Estrutura composta/{\ref{fig:uml-estrutura}}/-8.5,
+      Implantação/{\ref{fig:uml-implantacao}; antes: \ref{fig:deploy-contrato} (infra)}/-9.8,
+      Perfil/{\ref{fig:uml-perfil}}/-11.1} {
+    \node[tx, anchor=west] at (2.7,\y) {\textbf{\nome}\\\fg{Fig. \figs}};
+    \draw[associa] (2.1,\y) -- (2.7,\y);
+  }
+  \draw[hered] (2.1,-11.1) -- (2.1,-2.39);
+
+  % --- comportamento: tres folhas e o ramo abstrato da interacao
+  \foreach \nome/\figs/\y in {
+      Casos de uso/{\ref{fig:uml-casos-gestao}; antes: \ref{fig:casos-de-uso}}/-3.3,
+      Atividades/{\ref{fig:uml-atividade-disp}; antes: \ref{fig:fluxo-embed}, \ref{fig:guardrails-bemestar}, \ref{fig:app92-caminho}}/-4.6,
+      Máquina de estados/{\ref{fig:uml-estados-ponte}; antes: \ref{fig:estados-geracao}}/-5.9} {
+    \node[tx, anchor=west] at (11.4,\y) {\textbf{\nome}\\\fg{Fig. \figs}};
+    \draw[associa] (10.8,\y) -- (11.4,\y);
+  }
+  \node[txabs, anchor=west] (inter) at (11.4,-7.2) {Diagrama de interação};
+  \draw[associa] (10.8,-7.2) -- (inter.west);
+  \draw[hered] (10.8,-7.2) -- (10.8,-2.39);
+
+  \foreach \nome/\figs/\y in {
+      Sequência/{\ref{fig:uml-seq-entrada}, \ref{fig:uml-seq-ia}; antes: \ref{fig:seq-feed}, \ref{fig:seq-handshake}, \ref{fig:seq-erro-cliente}}/-8.5,
+      Comunicação/{\ref{fig:uml-comunicacao}}/-9.8,
+      Tempo/{\ref{fig:uml-tempo}}/-11.1,
+      Visão geral de interação/{\ref{fig:uml-visao-geral}}/-12.4} {
+    \node[tx, anchor=west, text width=34mm] at (12.6,\y) {\textbf{\nome}\\\fg{Fig. \figs}};
+    \draw[associa] (12.0,\y) -- (12.6,\y);
+  }
+  \draw[hered] (12.0,-12.4) -- (12.0,-7.69);
+
+  \node[actnote, text width=58mm, anchor=north west] at (2.1,-12.0)
+    {\textbf{Como ler:} caixa escura em itálico é classificador
+     \emph{abstrato} --- não existe diagrama \enquote{de estrutura} que não seja de
+     um tipo concreto. \enquote{Antes} aponta para a figura do mesmo tipo que o
+     documento já tinha; \enquote{(grafo)} e \enquote{(infra)} marcam as que
+     cumprem o papel com outra notação.};
+\end{tikzpicture}}
+\caption[Os catorze tipos de diagrama da UML 2.5.1]{Os catorze tipos de diagrama
+  da UML 2.5.1, desenhados como a especificação os organiza: uma hierarquia de
+  generalização com três classificadores abstratos. Cada folha traz o número das
+  figuras deste documento daquele tipo.}
+\label{fig:uml-taxonomia}
+\end{figure}
+
+A Tabela~\ref{tab:uml-catalogo} diz, para cada tipo, a pergunta que ele responde
+\emph{nesta} plataforma --- que é o critério pelo qual cada exemplar foi escolhido.
+
+\begin{tabularx}{\linewidth}{@{}L{26mm}L{21mm}X L{16mm}@{}}
+\caption{Os catorze diagramas UML e a pergunta que cada um responde aqui}
+\label{tab:uml-catalogo}\\
+\toprule
+\headrow \thd{Diagrama} & \thd{Visão 4+1} & \thd{A pergunta que ele responde aqui} & \thd{Figuras}\\
+\midrule
+\endfirsthead
+\toprule
+\headrow \thd{Diagrama} & \thd{Visão 4+1} & \thd{A pergunta que ele responde aqui} & \thd{Figuras}\\
+\midrule
+\endhead
+\multicolumn{4}{@{}l}{\textbf{\textcolor{unooNavy}{Estrutura}}}\\
+Perfil & --- & Que estereótipos a plataforma acrescenta à UML, e que
+  restrição cada um carrega? & \ref{fig:uml-perfil}\\
+\zebra Classes & Lógica & Que conceitos existem, com que multiplicidade --- e onde a
+  regra é restrição do modelo e não só do código? A porta da IA: que interface,
+  que implementações, quem decora quem? & \ref{fig:uml-classes-dominio},
+  \ref{fig:uml-classes-ia}\\
+Objetos & Lógica & Numa rede concreta, com três linhas em
+  \cd{disponibilidades}, o que fica ligado e por quê? & \ref{fig:uml-objetos}\\
+\zebra Pacotes & \hspace{0pt}Desenvolvimento & Quem pode importar quem no \emph{monorepo} e dentro
+  da API? & \ref{fig:uml-pacotes}\\
+Componentes & \hspace{0pt}Desenvolvimento & Que interface cada peça \emph{fornece} e qual
+  \emph{requer} --- quais delas são HTTP e qual é \cd{postMessage}? &
+  \ref{fig:uml-componentes}\\
+\zebra Estrutura composta & \hspace{0pt}Desenvolvimento & Por dentro da página da missão: que
+  partes, que portas, e por onde o \emph{token} atravessa o \emph{sandbox}? &
+  \ref{fig:uml-estrutura}\\
+Implantação & Física & Que artefato roda em que nó, e por que caminho de
+  comunicação? & \ref{fig:uml-implantacao}\\
+\multicolumn{4}{@{}l}{\textbf{\textcolor{unooNavy}{Comportamento}}}\\
+\zebra Casos de uso & Cenários & Quem administra a rede, e o que cada papel da
+  cadeia pode fazer que o de baixo não pode? & \ref{fig:uml-casos-gestao},
+  \ref{fig:casos-de-uso}\\
+Atividades & Processos & Qual é o algoritmo que decide se um recurso está ligado,
+  e que parte dele é pura? & \ref{fig:uml-atividade-disp}\\
+\zebra Máquina de estados & Processos & Em que estados a ponte pode estar, do lado
+  da experiência, e o que a tira de cada um? & \ref{fig:uml-estados-ponte},
+  \ref{fig:estados-geracao}\\
+Sequência & Processos & Em que ordem as duas travas da entrada na missão
+  disparam? E a quota da IA: o que roda antes e o que roda depois do
+  \emph{provider}? & \ref{fig:uml-seq-entrada}, \ref{fig:uml-seq-ia}\\
+\zebra Comunicação & Processos & Que objetos um lote de telemetria atravessa, em que
+  ordem numerada, até virar linha no banco? & \ref{fig:uml-comunicacao}\\
+Tempo & Processos & Quando o \emph{token}, a sessão e o relógio da SDK vencem, um em
+  relação ao outro? & \ref{fig:uml-tempo}\\
+\zebra Visão geral de interação & Processos & Como as interações anteriores se
+  encadeiam numa jornada do estudante, do \emph{login} à missão? &
+  \ref{fig:uml-visao-geral}\\
+\bottomrule
+\end{tabularx}
+
+\subsection{O perfil da plataforma}
+\label{sec:uml-perfil}
+
+Um \textbf{perfil} é o mecanismo que a UML oferece para uma plataforma estender a
+linguagem sem alterá-la: cada \emph{estereótipo} se aplica a uma metaclasse da UML
+(\cd{Class}, \cd{Component}\ldots) e carrega \emph{valores etiquetados} e
+\emph{restrições}. Ele vem primeiro porque os diagramas seguintes usam os
+estereótipos dele, e porque escrever as regras invioláveis do \arq{AGENTS.md}
+como restrição de estereótipo mostra a que elemento cada uma se aplica. As
+restrições são as do código: \cd{escola\_id NOT NULL} e RLS forçada nas tabelas
+com dado de estudante (Seção~\ref{sec:c4l4} e Capítulo~\ref{cap:tenancy}), a
+guarda de liberação no funil das rotas de estudante (\adrr{ADR-69}), a quota antes
+e depois da IA (\adrr{ADR-105}) e o caminho imutável do \emph{bundle}.
+
+\begin{figure}[H]
+\centering
+\fitwidth{%
+\begin{tikzpicture}[x=1cm, y=1cm]
+
+  % --- estereotipos, em coluna; cada um logo abaixo do anterior
+  \node[classe, text width=50mm, anchor=north west] (sTab) at (4.6,-1.2)
+    {\ctitulo{estereótipo}{TabelaDeTenant}
+     \nodepart{two}
+     \texttt{prefixo: String [0..1]}\\
+     {\color{unooMuted}código da experiência; vazio na plataforma}
+     \nodepart{three}
+     \{\texttt{escola\_id} NOT NULL\}\\
+     \{ENABLE e FORCE ROW LEVEL SECURITY\}\\
+     \{toda \emph{query} dentro de \texttt{comTenancy}\}};
+
+  \node[classe, text width=50mm, anchor=north west] (sExp)
+      at ([yshift=-7mm]sTab.south west)
+    {\ctitulo{estereótipo}{Experiencia}
+     \nodepart{two}
+     \texttt{id: String} {\color{unooMuted}(o \texttt{expId})}\\
+     \texttt{versao: SemVer}\\
+     \texttt{produto: Produto}\\
+     \texttt{publico: Publico = estudante}\\
+     \texttt{permissoes: String [*]}\\
+     \texttt{viewport: String [0..1]}
+     \nodepart{three}
+     \{gabarito e correção só na API\}\\
+     \{\emph{token} só em memória\}};
+
+  \node[classe, text width=50mm, anchor=north west] (sBun)
+      at ([yshift=-9mm]sExp.south west)
+    {\ctitulo{estereótipo}{Bundle}
+     \nodepart{two}
+     \texttt{caminho = gs://\{contrato\}-exp/}\\
+     \texttt{\ \ \{expId\}/\{versao\}/}
+     \nodepart{three}
+     \{imutável: mudar o conteúdo é subir a \texttt{versao}\}\\
+     \{\texttt{versao} igual ao \texttt{version} do \texttt{package.json}\}};
+
+  \node[classe, text width=50mm, anchor=north west] (sRota)
+      at ([yshift=-7mm]sBun.south west)
+    {\ctitulo{estereótipo}{RotaDeEstudante}
+     \nodepart{two}
+     \texttt{EXP\_ID: String}
+     \nodepart{three}
+     \{chama \texttt{exigirMissaoLiberada} no funil\}\\
+     \{403 sem linha em \texttt{liberacoes}\}};
+
+  \node[classe, text width=50mm, anchor=north west] (sIA)
+      at ([xshift=8mm]sRota.north east)
+    {\ctitulo{estereótipo}{ChamadaDeIA}
+     \nodepart{two}
+     \texttt{perfil: estudante | professor}
+     \nodepart{three}
+     \{\texttt{QuotaService.temSaldo} antes\}\\
+     \{\texttt{QuotaService.consumir} depois\}\\
+     \{\emph{provider} só por \texttt{AI\_PROVIDER}\}};
+
+  % --- metaclasses da UML, fora do perfil, na altura do seu estereotipo
+  \node[metaclasse] (mClass) at (sTab.west -| 1.6,0) {\estereo{metaclasse}\\\textbf{Class}};
+  \node[metaclasse] (mComp)  at (sExp.west -| 1.6,0) {\estereo{metaclasse}\\\textbf{Component}};
+  \node[metaclasse] (mArt)   at (sBun.west -| 1.6,0) {\estereo{metaclasse}\\\textbf{Artifact}};
+  \node[metaclasse] (mOp)    at (sRota.west -| 1.6,0) {\estereo{metaclasse}\\\textbf{Operation}};
+
+  % --- coluna da direita: nota, enumeracoes, nota
+  \node[actnote, text width=50mm, anchor=north west] (n1) at (sTab.north east -| sIA.west)
+    {\textbf{Como ler:} um elemento marcado \estereo{TabelaDeTenant} em outro
+     diagrama carrega as três restrições sem repeti-las. A seta cheia é
+     \emph{extensão} de metaclasse; não confundir com a herança, de seta
+     aberta.};
+  \node[enumeracao, text width=26mm, anchor=north west] (eProd) at (sExp.north east -| sIA.west)
+    {\ctitulo{enumeração}{Produto}
+     \nodepart{two}
+     \texttt{entre-redes}\\
+     \texttt{plano-de-aula}\\
+     \texttt{plano-de-ensino}\\
+     \texttt{bem-estar}};
+  \node[enumeracao, text width=20mm, anchor=north west] (ePub) at ([xshift=4mm]eProd.north east)
+    {\ctitulo{enumeração}{Publico}
+     \nodepart{two}
+     \texttt{estudante}\\
+     \texttt{professor}};
+  \node[actnote, text width=50mm, anchor=north west] (n2) at (sBun.north east -| sIA.west)
+    {\textbf{Onde o perfil ainda não é lei:} \texttt{geracao/} e as reações de
+     \texttt{motor/} chamam o \emph{provider} sem \texttt{temSaldo} --- as
+     exceções registradas na \textbf{ADR-74} e em \texttt{ai/AGENTS.md}. Uma
+     \estereo{ChamadaDeIA} nova não herda a exceção.};
+
+  % --- o pacote do perfil, no fundo
+  \begin{scope}[on background layer]
+    \pacote[fill=unooBlue!3]{perfil}{($(sTab.north west)+(-0.45,0.45)$)}%
+      {($(sIA.south east)+(0.45,-0.95)$)}{\estereo{perfil} Unooria}
+  \end{scope}
+
+  % --- extensoes (seta cheia: estende a metaclasse)
+  \draw[estende] (sTab.west) -- (mClass.east);
+  \draw[estende] (sExp.west) -- (mComp.east);
+  \draw[estende] (sBun.west) -- (mArt.east);
+  \draw[estende] (sRota.west) -- (mOp.east);
+  \draw[estende] (sIA.south) -- ++(0,-0.6) -| (mOp.south);
+
+  % --- o artefato manifesta o componente; a experiencia usa as enumeracoes
+  \draw[depend] (sBun.north) -- (sExp.south)
+    node[cxlabel, midway, right=3pt]{\estereo{manifesta}};
+  \draw[depend] (sExp.east |- eProd.west) -- (eProd.west);
+
+\end{tikzpicture}}
+\caption[Perfil UML da plataforma]{O perfil UML da plataforma: cinco estereótipos
+  sobre quatro metaclasses. As restrições entre chaves são as regras
+  invioláveis do \arq{AGENTS.md} ditas no lugar a que se aplicam. Fontes:
+  \arq{recursos/catalogo.ts} (produtos), \arq{comum/liberacao.ts},
+  \arq{ai/quota.service.ts}, \arq{prisma/prisma.service.ts} e
+  \arq{public/experiencia.json} de cada experiência.}
+\label{fig:uml-perfil}
+\end{figure}
+
+% ---------------------------------------------------------------------------
+\subsection{Visão de cenários: a administração da rede}
+\label{sec:uml-cenarios}
+
+O diagrama de casos de uso do Capítulo~\ref{cap:casosdeuso}
+(Figura~\ref{fig:casos-de-uso}) cobre a sala de aula e foi desenhado antes do
+modelo de seis papéis (\adrr{ADR-80}). A Figura~\ref{fig:uml-casos-gestao} cobre
+o que ele não cobre: quem administra a rede. A notação que carrega a regra é a
+\textbf{generalização de atores}. Um ator filho faz tudo o que o pai faz, e o
+código confirma a cadeia inteira: toda rota \cd{GESTORES} abre para os quatro
+papéis de gestão, toda rota \cd{GESTORES\_DO\_CONTRATO} inclui o \cd{admin}, e
+as únicas rotas que separam um papel do de cima são \cd{@Roles("admin")} (o painel
+da Unooria, \adrr{ADR-88}) e o relatório da diretoria (\cd{gestor\_regional} em
+diante, \adrr{ADR-82}). O que muda de um papel para o outro, fora essas rotas, é
+o \emph{escopo} e não a capacidade: o \cd{gestor\_regional} trabalha uma escola
+da regional por vez, e o \cd{gestor\_contrato} escolhe a escola por
+\cd{?escolaId=} porque o \emph{token} dele não tem escola.
+
+A cadeia de \emph{atribuição} é outra relação e não se confunde com a
+generalização. Ela diz quem cria quem (\cd{ATRIBUI\_DIRETAMENTE}, em
+\arq{usuarios/regras.ts}), e entra no diagrama como o caso de suporte
+\ucr{UC-30}, incluído pelos dois caminhos de cadastro. O \ucr{UC-29} (balcão) não
+escreve em \cd{users}: monta uma linha de planilha e inclui o \ucr{UC-20}, o
+importador (\adrr{ADR-54}, \adrr{ADR-59}).
+
+\begin{figure}[H]
+\centering
+\fitpage{%
+\begin{tikzpicture}[x=1cm, y=1cm]
+
+  % ---- fronteira do sistema
+  \draw[ucsystem] (3.3,0.4) rectangle (14.2,-19.0);
+  \node[font=\small\bfseries\color{unooNavy}, anchor=north] at (8.75,0.2)
+    {Plataforma Unooria --- administração};
+
+  % ---- atores da cadeia (esquerda): o filho faz tudo o que o pai faz
+  \ator{gesc}{(1.5,-2.2)}{Gestor de escola}
+  \ator{greg}{(1.5,-6.5)}{Gestor regional}
+  \ator{gctr}{(1.5,-11.4)}{Gestor do contrato}
+  \ator{gadm}{(1.5,-16.2)}{Admin (Unooria)}
+  \draw[ucgen] (greg.west) -- ++(-0.95,0) |- (gesc.west);
+  \draw[ucgen] (gctr.west) -- ++(-0.95,0) |- ([yshift=-2mm]greg.west);
+  \draw[ucgen] (gadm.west) -- ++(-0.95,0) |- ([yshift=-2mm]gctr.west);
+
+  % ---- atores da direita
+  \ator{prof}{(16.3,-3.0)}{Professor}
+  \atorsys{ci}{(16.3,-11.4)}{CI/CD}
+  \ator{visit}{(16.3,-17.3)}{Visitante do site}
+
+  % ---- gestor de escola
+  \node[ucase] (uc20) at (6.1,-0.9) {\ucr{UC-20} Importar pessoas e enturmar};
+  \node[ucase] (uc29) at (6.1,-2.3) {\ucr{UC-29} Cadastrar pessoa no balcão};
+  \node[ucase] (uc21) at (6.1,-3.7) {\ucr{UC-21} Editar pessoa e redefinir senha};
+  \node[ucasesec] (uc30) at (11.1,-5.6) {\ucr{UC-30} Conferir a cadeia de atribuição};
+
+  % ---- gestor regional
+  \node[ucase] (uc32) at (6.1,-5.3) {\ucr{UC-32} Trocar a escola ativa};
+  \node[ucase] (uc33) at (6.1,-6.7) {\ucr{UC-33} Ver o panorama da diretoria};
+  \node[ucase] (uc34) at (6.1,-8.1) {\ucr{UC-34} Gerar o relatório da diretoria};
+
+  % ---- gestor do contrato
+  \node[ucase] (uc31) at (6.1,-9.8) {\ucr{UC-31} Criar papel sem escola};
+  \node[ucase] (uc35) at (6.1,-11.2) {\ucr{UC-35} Manter escolas e regionais};
+  \node[ucase] (uc22) at (6.1,-12.6) {\ucr{UC-22} Ler o agregado da rede};
+  \node[ucase] (uc36) at (6.1,-14.0) {\ucr{UC-36} Ler o histórico de recursos};
+
+  % ---- admin
+  \node[ucase] (uc37) at (6.1,-15.6) {\ucr{UC-37} Ligar ou desligar recurso};
+  \node[ucase] (uc39) at (6.1,-17.0) {\ucr{UC-39} Editar a quota de IA};
+  \node[ucase] (uc40) at (6.1,-18.4) {\ucr{UC-40} Ler cadastros de interesse};
+  \node[ucasesec] (uc24) at (11.1,-14.6) {\ucr{UC-24} Ativar ou reverter versão};
+  \node[ucasesec] (uc38) at (11.1,-16.2) {\ucr{UC-38} Fixar versão por escopo};
+
+  % ---- professor, CI, visitante
+  \node[ucase] (uc42) at (11.1,-1.0) {\ucr{UC-42} Liberar ou encerrar missão na turma};
+  \node[ucase] (uc44) at (11.1,-7.9) {\ucr{UC-44} Montar as equipes da missão};
+  \node[ucasesec] (uc43) at (11.1,-2.6) {\ucr{UC-43} Conferir a disponibilidade};
+  \node[ucase] (uc23) at (11.1,-11.4) {\ucr{UC-23} Publicar manifesto};
+  \node[ucase] (uc41) at (11.1,-18.0) {\ucr{UC-41} Cadastrar interesse};
+
+  % ---- associacoes
+  \foreach \u in {uc20, uc29, uc21} \draw[ucrel] (gesc) -- (\u);
+  \foreach \u in {uc32, uc33, uc34} \draw[ucrel] (greg) -- (\u);
+  \foreach \u in {uc31, uc35, uc22, uc36} \draw[ucrel] (gctr) -- (\u);
+  \foreach \u in {uc37, uc39, uc40} \draw[ucrel] (gadm) -- (\u);
+  \draw[ucrel] (prof) -- (uc42);
+  \draw[ucrel] (prof) -- (uc44);
+  \draw[ucrel] (ci) -- (uc23);
+  \draw[ucrel] (visit) -- (uc41);
+
+  % ---- include / extend
+  \draw[ucinclude] (uc29.east) -- (uc30.north west) node[ucnote, pos=0.55, right=2pt]{\estereo{include}};
+  \draw[ucinclude] (uc29.south west) to[bend left=35] (uc20.west);
+  \node[ucnote, anchor=east] at (3.9,-1.55) {\estereo{include}};
+  \draw[ucinclude] (uc31.north east) -- (uc30.south west)
+    node[ucnote, pos=0.22, right=3pt]{\estereo{include}};
+  \draw[ucinclude] (uc42) -- (uc43) node[ucnote, pos=0.5, left=2pt]{\estereo{include}};
+  \draw[ucextend] (uc24) -- (uc37) node[ucnote, pos=0.45, above=1pt]{\estereo{extend}};
+  \draw[ucextend] (uc38) -- (uc37) node[ucnote, pos=0.45, below=1pt]{\estereo{extend}};
+  \draw[ucextend] (uc24) -- (uc23) node[ucnote, pos=0.5, right=2pt]{\estereo{extend}};
+
+\end{tikzpicture}}
+\caption[Casos de uso da administração da rede]{Casos de uso da administração da
+  rede, com os seis papéis da \adrr{ADR-80}. A seta de generalização entre atores é
+  a regra: o \emph{admin} faz tudo o que o gestor do contrato faz, e mais o painel
+  da Unooria (\ucr{UC-37} a \ucr{UC-40}, \adrr{ADR-88}); o gestor do contrato faz
+  tudo o que o regional faz, com a rede inteira como escopo. Fontes:
+  \arq{auth/claims.ts} (\cd{GESTORES}, \cd{GESTORES\_DO\_CONTRATO}),
+  \arq{usuarios/regras.ts} (\cd{ATRIBUI\_DIRETAMENTE}) e os \cd{@Roles} de cada
+  \emph{controller}.}
+\label{fig:uml-casos-gestao}
+\end{figure}
+
+\begin{legendadiag}
+\amostra{ucase} caso de uso primário \quad
+\amostra{ucasesec} caso de uso de suporte (incluído ou extensão) \quad
+seta de triângulo aberto entre atores: generalização
+\end{legendadiag}
+
+\begin{nota}
+\textbf{Três ausências deliberadas.} O professor não herda de gestor nenhum: a
+gestão dele é da turma em que leciona (\ucr{UC-42} exige matrícula de professor
+ativa, e o gestor só lê a sala). \enquote{Ver o consumo de IA} não existe como
+caso de uso: a tela de \ucr{UC-39} mostra os tetos, e o contador
+\cd{ia\_uso\_diario} não sai por rota nenhuma. E o \ucr{UC-24} estende dois
+casos: pelo painel (\ucr{UC-37}, o caminho preferido) e pelo
+\cd{publicar-manifesto.mjs --versao} (\ucr{UC-23}), que continua valendo para
+quem opera pelo terminal.
+\end{nota}
+
+% ---------------------------------------------------------------------------
+\subsection{Visão lógica: classes e objetos}
+\label{sec:uml-logica}
+
+\subsubsection{O modelo de domínio da plataforma}
+
+O modelo entidade-relacionamento do Capítulo~\ref{cap:dados} diz como as tabelas
+se ligam. O diagrama de classes da Figura~\ref{fig:uml-classes-dominio} diz outra
+coisa: que \emph{conceitos} a plataforma tem, e quais regras são restrição do
+modelo em vez de detalhe de consulta. Três notações carregam o que o ER não
+carrega. O \textbf{atributo derivado} (barra antes do nome) marca os dois
+\emph{caches} de \cd{users}: \cd{/escola} é a lotação principal e \cd{/turma} é a
+matrícula principal, e quem escreve os dois é \cd{matricularEm}, nunca a tela. A
+\textbf{classe abstrata} \cd{Recurso} é a da \adrr{ADR-87}: produto e experiência
+são recursos, e o \emph{produto} é o teto das experiências que declara. E as
+\textbf{restrições entre chaves} dizem, no próprio elemento, o que é invariável.
+Duas delas são o contraste da regra 8 do \arq{AGENTS.md}: ausência de linha é
+\emph{bloqueada} em \cd{Liberacao} e \emph{ligada} em \cd{Disponibilidade}.
+
+\begin{figure}[H]
+\centering
+\fitpage{%
+\begin{tikzpicture}[x=1cm, y=1cm]
+
+  % ---- linha 1: escola, turma, periodo
+  \node[classe, text width=42mm, anchor=north] (esc) at (2.6,0)
+    {\etitulo{Escola}
+     \nodepart{two}
+     \texttt{nome: String}\\
+     \texttt{codigoInep: String [0..1]}\\
+     \texttt{tipo: TipoDeEscola}\\
+     \texttt{municipio, uf: String [0..1]}
+     \nodepart{three}
+     \{regional é Escola com \texttt{tipo = regional}\}\\
+     \{o contrato não é linha: é a \emph{stack}\}};
+
+  \node[classe, text width=40mm, anchor=north] (tur) at (8.6,0)
+    {\etitulo{Turma}
+     \nodepart{two}
+     \texttt{nome: String}\\
+     \texttt{serie: String}\\
+     \texttt{tipo: regular | componente}\\
+     \texttt{turno: String [0..1]}
+     \nodepart{three}
+     \{única por escola, período e nome\}\\
+     \{fora da RLS: o filtro é a tranca\}};
+
+  \node[classe, text width=34mm, anchor=north] (per) at (14.4,0)
+    {\etitulo{PeriodoLetivo}
+     \nodepart{two}
+     \texttt{tipo, titulo: String}\\
+     \texttt{ano: Int}\\
+     \texttt{inicio, fim: Date}
+     \nodepart{three}
+     \{do contrato, sem escola\}};
+
+  % ---- linha 2: lotacao, matricula, liberacao
+  \node[classe, text width=42mm, anchor=north] (lot) at (2.6,-5.0)
+    {\etitulo{Lotacao}
+     \nodepart{two}
+     \texttt{papel: estudante | professor}\\
+     \texttt{\ \ | gestor\_escola}\\
+     \texttt{principal: Boolean}\\
+     \texttt{inicio: Date}\\
+     \texttt{fim: Date [0..1]}
+     \nodepart{three}
+     \{única por escola, usuário e papel\}};
+
+  \node[classe, text width=40mm, anchor=north] (mat) at (8.6,-5.0)
+    {\ctitulo{TabelaDeTenant}{Matricula}
+     \nodepart{two}
+     \texttt{papel: estudante | professor}\\
+     \texttt{principal: Boolean}\\
+     \texttt{inicio: Date}\\
+     \texttt{fim: Date [0..1]}
+     \nodepart{three}
+     \{no máximo uma principal ativa\\
+     \ \ por estudante\}};
+
+  \node[classe, text width=34mm, anchor=north] (lib) at (14.4,-5.0)
+    {\ctitulo{TabelaDeTenant}{Liberacao}
+     \nodepart{two}
+     \texttt{estado: liberada}\\
+     \texttt{\ \ | encerrada}\\
+     \texttt{liberadaEm: DateTime}\\
+     \texttt{encerradaEm [0..1]}
+     \nodepart{three}
+     \{sem linha = bloqueada\}\\
+     \{única por turma e \texttt{expId}\}};
+
+  % ---- linha 3: usuario, disponibilidade, experiencia
+  \node[classe, text width=42mm, anchor=north] (usu) at (2.6,-10.1)
+    {\etitulo{Usuario}
+     \nodepart{two}
+     \texttt{username: String}\\
+     \texttt{displayName: String}\\
+     \texttt{role: Papel}\\
+     \texttt{ativo: Boolean}\\
+     \texttt{senhaProvisoria: Boolean}\\
+     \texttt{/escola: Escola [0..1]}\\
+     \texttt{/turma: Turma [0..1]}
+     \nodepart{three}
+     \{escola obrigatória, salvo\\
+     \ \ papéis sem escola\}\\
+     \{\texttt{role = gestor\_regional} \texttt{<=>}\\
+     \ \ \texttt{regional} não nula\}};
+
+  \node[classe, text width=40mm, anchor=north] (dis) at (8.6,-10.1)
+    {\etitulo{Disponibilidade}
+     \nodepart{two}
+     \texttt{ligado: Boolean}\\
+     \texttt{versaoFixa: String [0..1]}\\
+     \texttt{motivo: String [0..1]}\\
+     \texttt{definidoEm: DateTime}
+     \nodepart{three}
+     \{sem linha = ligado\}\\
+     \{única por recurso e escopo\}\\
+     \{escopo nulo = o contrato\}};
+
+  \node[entidade, text width=34mm, anchor=north] (exp) at (14.4,-10.1)
+    {\etitulo{Experiencia}
+     \nodepart{two}
+     \texttt{expId: String}\\
+     \texttt{versaoAtiva: String}\\
+     \texttt{series: String [*]}\\
+     \texttt{publico: Publico}\\
+     \texttt{permissoes: String [*]}};
+
+  % ---- linha 4: papel, recurso, produto
+  \node[enumeracao, text width=30mm, anchor=north] (pap) at (2.6,-16.3)
+    {\ctitulo{enumeração}{Papel}
+     \nodepart{two}
+     \texttt{estudante}\\
+     \texttt{professor}\\
+     \texttt{gestor\_escola}\\
+     \texttt{gestor\_regional}\\
+     \texttt{gestor\_contrato}\\
+     \texttt{admin}};
+
+  \node[entidade, text width=40mm, anchor=north,
+        rectangle split part fill={unooInkSoft, unooSurface}] (rec) at (8.6,-15.4)
+    {\textcolor{white}{\textbf{\textit{Recurso}}}
+     \nodepart{two}
+     \texttt{/recursoId: String}\\
+     {\color{unooMuted}\texttt{produto:<slug>} ou \texttt{experiencia:<expId>}}};
+
+  \node[entidade, text width=34mm, anchor=north] (pro) at (14.4,-15.4)
+    {\etitulo{Produto}
+     \nodepart{two}
+     \texttt{slug: Produto}\\
+     {\color{unooMuted}vocabulário em \texttt{recursos/catalogo.ts}}};
+
+  % ---- associacoes
+  % escola -- turma
+  \draw[associa] (esc.east |- 0,-1.3) -- (tur.west |- 0,-1.3)
+    node[multip, pos=0.1, above]{1} node[multip, pos=0.9, above]{*};
+  % turma -- periodo
+  \draw[associa] (tur.east |- 0,-1.3) -- (per.west |- 0,-1.3)
+    node[multip, pos=0.12, above]{*} node[multip, pos=0.88, above]{1};
+  % escola (pai) -- escola (filhas)
+  \draw[associa] ([xshift=10mm]esc.north) -- ++(0,0.5) -- ++(1.85,0)
+    |- ([yshift=-4mm]esc.north east);
+  \node[papelassoc, anchor=south east] at ([xshift=10mm, yshift=0.5cm]esc.north) {filhas *};
+  \node[papelassoc, anchor=south west] at ([yshift=-4mm]esc.north east) {pai 0..1};
+  % escola -- lotacao -- usuario
+  \draw[associa] (esc.south) -- (lot.north)
+    node[multip, pos=0.15, right]{1} node[multip, pos=0.85, right]{*};
+  \draw[associa] (lot.south) -- (usu.north)
+    node[multip, pos=0.15, right]{*} node[multip, pos=0.85, right]{1};
+  % turma -- matricula -- usuario
+  \draw[associa] (tur.south) -- (mat.north)
+    node[multip, pos=0.15, right]{1} node[multip, pos=0.85, right]{*};
+  \draw[associa] (mat.south west) -- (usu.north east)
+    node[multip, pos=0.12, left=2pt]{*} node[multip, pos=0.88, above=2pt]{1};
+  % turma -- liberacao -- experiencia
+  \draw[associa] (tur.south east) -- (lib.north west)
+    node[multip, pos=0.12, above=2pt]{1} node[multip, pos=0.88, above=2pt]{*};
+  \draw[associa] (lib.south) -- (exp.north)
+    node[multip, pos=0.15, right]{*} node[multip, pos=0.85, right]{1}
+    node[papelassoc, midway, left=2pt, align=right]{por \texttt{expId},\\sem FK};
+  % usuario -- escola (regional do gestor)
+  \draw[associa] (usu.west) -- ++(-0.55,0) |- (esc.west);
+  \node[papelassoc, anchor=south east] at (esc.west) {regional 0..1};
+  % disponibilidade -- escola (escopo), pelo corredor entre as colunas
+  \draw[associa] (dis.north west) -- ++(-0.35,0) coordinate (dc) -- (dc |- 0,-3.9) -| (esc.south east)
+    node[papelassoc, pos=0.2, above]{escopo 0..1};
+  \node[multip, anchor=north east] at ([xshift=-1pt]dis.north west) {*};
+  % disponibilidade -- recurso
+  \draw[associa] (dis.south) -- (rec.north)
+    node[multip, pos=0.2, right]{*} node[multip, pos=0.8, right]{1};
+  % recurso <|-- produto, experiencia
+  \draw[hered] (pro.west) -- (rec.east);
+  \draw[hered] (exp.south west) -- (rec.north east);
+  % produto -- experiencia (o teto)
+  \draw[associa] (pro.north) -- (exp.south)
+    node[multip, pos=0.15, right]{0..1} node[multip, pos=0.85, right]{*}
+    node[papelassoc, midway, left=2pt]{teto};
+  % usuario -- papel
+  \draw[depend] (usu.south) -- (pap.north);
+
+\end{tikzpicture}}
+\caption[Classes: o modelo de domínio da plataforma]{O modelo de domínio da
+  plataforma. \estereo{TabelaDeTenant} marca só as duas tabelas com RLS forçada;
+  \cd{users}, \cd{turmas} e \cd{lotacoes} têm \cd{escola\_id} mas ficam fora da
+  RLS, porque o \emph{login} as lê antes de saber a escola --- nelas o filtro da
+  aplicação é a única tranca (Capítulo~\ref{cap:tenancy}). Fontes:
+  \arq{apps/api/prisma/schema.prisma}, os CHECKs das migrações
+  \arq{modelo\_de\_papeis}, \arq{nivel\_regional} e \arq{liberacoes\_por\_turma},
+  \arq{rostering/matricula.ts} e \arq{recursos/regras.ts}.}
+\label{fig:uml-classes-dominio}
+\end{figure}
+
+\subsubsection{A porta da IA: estratégia, decorador e quota}
+
+A regra 5 do \arq{AGENTS.md} --- IA só por \arq{src/ai}, quota antes e depois ---
+tem uma forma de projeto, e é ela que a Figura~\ref{fig:uml-classes-ia} mostra.
+São dois padrões conhecidos. A \textbf{estratégia} é a interface \cd{AiProvider}
+com duas implementações trocáveis por \emph{env} (\env{AI\_PROVIDER}: \cd{vertex}
+ou \cd{mock}). O \textbf{decorador} é o \cd{MedidorDeProvider}, que implementa a
+mesma interface e embrulha a implementação real para medir latência, \emph{tokens}
+e \cd{finishReason} (Capítulo~\ref{cap:observabilidade}). Quem monta os dois é a
+fábrica do \cd{AiModule}, e nenhum consumidor sabe qual veio: todos injetam o
+\emph{token} de injeção \cd{AI\_PROVIDER}. Não existe \cd{AiService} de fachada
+--- a busca no código não o encontra, e o diagrama não o inventa. Cada
+consumidor chama o \emph{provider} e o \cd{QuotaService} por conta própria, e é por
+isso que a quota é regra de revisão e não de tipo: nada impede um \emph{service}
+novo de injetar o \emph{provider} e esquecer o \cd{temSaldo}.
+
+\begin{figure}[H]
+\centering
+\fitwidth{%
+\begin{tikzpicture}[x=1cm, y=1cm]
+
+  % ---- consumidores (linha de cima)
+  \node[classe, text width=40mm, anchor=north] (ctrl) at (2.8,0)
+    {\ctitulo{controller}{AiController}
+     \nodepart{two}
+     \texttt{- provider: AiProvider}\\
+     \texttt{- quota: QuotaService}
+     \nodepart{three}
+     \texttt{+ gerar(corpo): \{texto\}}\\
+     {\color{unooMuted}\texttt{POST /ai/gerar}, só \texttt{OidcGuard}}};
+
+  \node[classe, text width=40mm, anchor=north] (dom) at (8.9,0)
+    {\ctitulo{service}{PlanosService}
+     \nodepart{two}
+     {\color{unooMuted}e mais oito módulos de domínio}
+     \nodepart{three}
+     \texttt{+ gerar(\ldots)}\\
+     {\color{unooMuted}\texttt{temSaldo} \seta{} \emph{provider} \seta{} \texttt{consumir}}};
+
+  \node[entidade, text width=36mm, anchor=north,
+        rectangle split part fill={unooMuted, unooSurface}] (tipos) at (15.3,0)
+    {\ctitulo{tipo de dado}{AiResult}
+     \nodepart{two}
+     \texttt{texto: string}\\
+     \texttt{tokensUsados: number}\\
+     \texttt{tokensEntrada?, tokensSaida?}\\
+     \texttt{finishReason?: string}\\
+     \texttt{voltas?, tentativas?}};
+
+  % ---- linha do meio: quota, interface, modulo
+  \node[classe, text width=54mm, anchor=north] (quota) at (2.9,-4.3)
+    {\etitulo{QuotaService}
+     \nodepart{two}
+     \texttt{- prisma: PrismaService}
+     \nodepart{three}
+     \texttt{+ limite(perfil): Promise<number>}\\
+     \texttt{+ usadoHoje(escolaId, usuarioId)}\\
+     \texttt{\ \ \ \ : Promise<number>}\\
+     \texttt{+ temSaldo(escolaId, usuarioId,}\\
+     \texttt{\ \ \ \ perfil = "estudante")}\\
+     \texttt{\ \ \ \ : Promise<boolean>}\\
+     \texttt{+ consumir(escolaId, usuarioId,}\\
+     \texttt{\ \ \ \ tokens): Promise<number>}};
+
+  \node[interface, text width=60mm, anchor=north] (prov) at (9.6,-4.3)
+    {\ctitulo{interface}{AiProvider}
+     \nodepart{two}
+     {\color{unooMuted}injetado pelo token \texttt{AI\_PROVIDER}}
+     \nodepart{three}
+     \texttt{+ generate(req: AiRequest): Promise<AiResult>}\\
+     \texttt{+ generateJson<T>(req): Promise<T>}\\
+     \texttt{+ generateImage(prompt, opcoes?)}\\
+     \texttt{\ \ \ \ : Promise<Buffer>}\\
+     \texttt{+ generateSpeech(req): Promise<Buffer>}\\
+     \texttt{+ conversar(req): Promise<AiResult>}};
+
+  \node[classe, text width=40mm, anchor=north] (mod) at (15.6,-4.3)
+    {\ctitulo{módulo @Global}{AiModule}
+     \nodepart{two}
+     \texttt{exports: [AI\_PROVIDER,}\\
+     \texttt{\ \ QuotaService]}
+     \nodepart{three}
+     \texttt{+ useFactory(config,}\\
+     \texttt{\ \ metricas): AiProvider}};
+
+  % ---- implementacoes (linha de baixo)
+  \node[classe, text width=36mm, anchor=north] (vert) at (6.0,-10.6)
+    {\etitulo{VertexProvider}
+     \nodepart{two}
+     \texttt{- auth: GoogleAuth}\\
+     {\color{unooMuted}ADC, sem chave em \emph{env}}
+     \nodepart{three}
+     {\color{unooMuted}as cinco operações;}\\
+     {\color{unooMuted}\texttt{:generateContent}}};
+
+  \node[classe, text width=36mm, anchor=north] (mock) at (10.3,-10.6)
+    {\etitulo{MockProvider}
+     \nodepart{two}
+     {\color{unooMuted}determinístico}
+     \nodepart{three}
+     \texttt{generate}, \texttt{conversar}: respondem\\
+     os outros três: \textbf{lançam}};
+
+  \node[classe, text width=40mm, anchor=north] (med) at (15.6,-10.6)
+    {\ctitulo{decorador}{MedidorDeProvider}
+     \nodepart{two}
+     \texttt{- real: AiProvider}\\
+     \texttt{- metricas: Metricas}\\
+     \texttt{- modelos: ModelosDoMedidor}
+     \nodepart{three}
+     {\color{unooMuted}as cinco operações, cada uma}\\
+     {\color{unooMuted}por \texttt{medir(op, modelo, fn)}}};
+
+  \node[entidade, text width=30mm, anchor=north] (erro) at (10.3,-14.4)
+    {\etitulo{ErroDeGeracao}
+     \nodepart{two}
+     \texttt{extends Error}};
+
+  \node[tabela, text width=36mm, anchor=north] (tq) at (1.7,-10.6)
+    {\etitulo{ia\_quotas}
+     \nodepart{two}
+     \pk{perfil} \texttt{PK}\\
+     \texttt{tokens\_por\_dia}\\
+     {\color{unooMuted}sem escola: do contrato}};
+  \node[tabela, text width=36mm, anchor=north] (tu) at (1.7,-13.3)
+    {\ctitulo{TabelaDeTenant}{ia\_uso\_diario}
+     \nodepart{two}
+     \pk{escola\_id, usuario\_id, dia}\\
+     \texttt{tokens\_usados}};
+
+  % ---- realizacoes e o decorador
+  \draw[realiza] (vert.north) -- (vert.north |- 0,-9.3) -| ([xshift=-12mm]prov.south);
+  \draw[realiza] (mock.north) -- ([xshift=8mm]prov.south);
+  \draw[realiza] (med.north west) -- (prov.south east);
+  \draw[agrega] ([xshift=-8mm]med.north) |- (prov.east |- 0,-8.55)
+    node[papelassoc, pos=0.75, above]{\texttt{real} 1};
+  \draw[depend] (mock.south) -- (erro.north) node[cxlabel, midway, right=2pt]{\estereo{lança}};
+  \draw[depend] (prov.north east) -- (tipos.south west) node[cxlabel, pos=0.5, below right=-1pt]{\estereo{usa}};
+
+  % ---- quem usa quem
+  \draw[depend] (ctrl.south) -- (quota.north) node[cxlabel, midway, right=2pt]{\estereo{injeta}};
+  \draw[depend] (dom.south) -- ([xshift=-3mm]prov.north) node[cxlabel, pos=0.45, right=2pt]{\texttt{@Inject(AI\_PROVIDER)}};
+  \draw[depend] (ctrl.east) -- ++(0.35,0) |- ([xshift=-14mm, yshift=4mm]prov.north) -- ([xshift=-14mm]prov.north);
+  \draw[depend] (dom.south west) -- (quota.north east);
+  \draw[depend] ([xshift=12mm]mod.south) -- ([xshift=12mm]med.north)
+    node[cxlabel, midway, right=1pt]{\estereo{cria}};
+  \draw[depend] (quota.south -| tq.north) -- (tq.north) node[cxlabel, midway, right=2pt]{lê};
+  \draw[depend] ([xshift=2mm]quota.south west) -- ++(0,-0.3) -- ++(-0.7,0) |- (tu.west)
+    node[cxlabel, pos=0.5, left=1pt]{\emph{upsert}};
+
+  \node[actnote, text width=46mm, anchor=north west] at (-1.0,-15.9)
+    {\textbf{A fábrica, no código:} \texttt{new MedidorDeProvider(env ===
+     "mock" ? new MockProvider() : new VertexProvider(), metricas,
+     modelos)}. Trocar de fornecedor é um arquivo novo em \texttt{src/ai} e uma
+     linha aqui.};
+  \node[actnote, text width=52mm, anchor=north west] at (12.5,-14.4)
+    {\textbf{O que o tipo não garante:} nenhum consumidor é obrigado a chamar
+     \texttt{temSaldo}. Entre o \texttt{temSaldo} e o \texttt{consumir} não há trava,
+     então duas chamadas simultâneas do mesmo usuário passam as duas e podem
+     ultrapassar o teto em até uma resposta cada.};
+
+\end{tikzpicture}}
+\caption[Classes: a porta da IA]{A porta da IA como diagrama de classes de
+  projeto: estratégia (\cd{AiProvider} com duas implementações) e decorador
+  (\cd{MedidorDeProvider}), montados pela fábrica do \cd{AiModule} e
+  injetados pelo \emph{token} \cd{AI\_PROVIDER}. A quota é um serviço à parte,
+  que cada consumidor chama. Fontes: \arq{ai/provider.ts}, \arq{ai/ai.module.ts},
+  \arq{ai/medidor.provider.ts}, \arq{ai/quota.service.ts},
+  \arq{ai/ai.controller.ts}.}
+\label{fig:uml-classes-ia}
+\end{figure}
+
+\subsubsection{Um instantâneo da disponibilidade}
+
+As três regras da disponibilidade --- o escopo mais específico ganha, o produto é
+teto, ausência de linha é ligado --- são fáceis de enunciar e fáceis de errar
+quando se combinam. O diagrama de objetos da Figura~\ref{fig:uml-objetos} congela
+uma rede com uma regional, duas escolas e quatro linhas em \cd{disponibilidades},
+e a Tabela~\ref{tab:uml-objetos} diz o que \cd{exigirRecursoDisponivel} decide
+em cada combinação. Os valores são de exemplo; os campos, os códigos de
+experiência e os \emph{slugs} de produto são os reais.
+
+\begin{figure}[H]
+\centering
+\fitwidth{%
+\begin{tikzpicture}[x=1cm, y=1cm]
+  \tikzset{ob/.style={objeto, text width=38mm}}
+
+  % ---- a arvore da rede
+  \node[ob, anchor=north] (norte) at (8.45,0)
+    {\underline{\textbf{norte : Escola}}
+     \nodepart{two}
+     \texttt{tipo = "regional"}\\
+     \texttt{nome = "Regional Norte"}};
+  \node[ob, anchor=north] (ef) at (6.2,-2.9)
+    {\underline{\textbf{ef : Escola}}
+     \nodepart{two}
+     \texttt{tipo = "escola"}\\
+     \texttt{nome = "EE Cora Coralina"}};
+  \node[ob, anchor=north] (ee) at (10.7,-2.9)
+    {\underline{\textbf{ee : Escola}}
+     \nodepart{two}
+     \texttt{tipo = "escola"}\\
+     \texttt{nome = "EE Monteiro Lobato"}};
+
+  % ---- as quatro linhas de disponibilidade
+  \node[ob, anchor=north] (d3) at (1.7,-2.9)
+    {\underline{\textbf{d3 : Disponibilidade}}
+     \nodepart{two}
+     \texttt{recursoId =}\\
+     \texttt{"experiencia:exp06ef2b"}\\
+     \texttt{ligado = false}\\
+     \texttt{motivo = "adiar"}};
+  \node[ob, anchor=north] (d4) at (15.2,-2.9)
+    {\underline{\textbf{d4 : Disponibilidade}}
+     \nodepart{two}
+     \texttt{recursoId =}\\
+     \texttt{"produto:plano-de-aula"}\\
+     \texttt{ligado = false}\\
+     \texttt{motivo = "não contratado"}};
+  \node[ob, anchor=north] (d1) at (1.7,-6.9)
+    {\underline{\textbf{d1 : Disponibilidade}}
+     \nodepart{two}
+     \texttt{recursoId =}\\
+     \texttt{"experiencia:exp06ef2b"}\\
+     \texttt{escola = nulo} {\color{unooMuted}(contrato)}\\
+     \texttt{ligado = false}};
+  \node[ob, anchor=north] (d2) at (6.2,-6.9)
+    {\underline{\textbf{d2 : Disponibilidade}}
+     \nodepart{two}
+     \texttt{recursoId =}\\
+     \texttt{"experiencia:exp06ef2b"}\\
+     \texttt{ligado = true}\\
+     \texttt{motivo = "piloto"}};
+
+  % ---- sala, recursos
+  \node[ob, anchor=north] (t6a) at (10.7,-6.9)
+    {\underline{\textbf{t6a : Turma}}
+     \nodepart{two}
+     \texttt{nome = "6A"}\\
+     \texttt{serie = "6EF"}};
+  \node[ob, anchor=north] (paula) at (15.2,-6.9)
+    {\underline{\textbf{aula : Produto}}
+     \nodepart{two}
+     \texttt{slug = "plano-de-aula"}};
+  \node[ob, anchor=north] (e1) at (3.95,-11.0)
+    {\underline{\textbf{e1 : Experiencia}}
+     \nodepart{two}
+     \texttt{expId = "exp06ef2b"}\\
+     \texttt{produto = "entre-redes"}\\
+     \texttt{series = ["6EF"]}};
+  \node[ob, anchor=north] (l1) at (10.7,-11.0)
+    {\underline{\textbf{l1 : Liberacao}}
+     \nodepart{two}
+     \texttt{estado = "liberada"}};
+  \node[ob, anchor=north] (e2) at (15.2,-11.0)
+    {\underline{\textbf{e2 : Experiencia}}
+     \nodepart{two}
+     \texttt{expId =}\\
+     \texttt{"app-90-plano-de-aula"}\\
+     \texttt{publico = "professor"}};
+
+  % ---- links (instancias das associacoes da Figura de classes)
+  \draw[objetolink] (ef.north) -- (norte.south west) node[papelassoc, pos=0.45, left=2pt]{pai};
+  \draw[objetolink] (ee.north) -- (norte.south east) node[papelassoc, pos=0.45, right=2pt]{pai};
+  \draw[objetolink] (d3.east |- ef.west) -- (ef.west) node[papelassoc, midway, above]{escopo};
+  \draw[objetolink] (d4.west |- ee.east) -- (ee.east) node[papelassoc, midway, above]{escopo};
+  \draw[objetolink] (d2.north) -- ++(0,0.35) -| (norte.south)
+    node[papelassoc, pos=0.62, left=1pt]{escopo};
+  \draw[objetolink] (t6a.north) -- (ee.south) node[papelassoc, midway, right=2pt]{escola};
+  \draw[objetolink] (l1.north) -- (t6a.south) node[papelassoc, midway, right=2pt]{turma};
+  \draw[objetolink] (l1.west) -- (e1.east |- l1.west) node[papelassoc, midway, above]{\texttt{expId}};
+  \draw[objetolink] (d1.south) -- (d1.south |- e1.north) node[papelassoc, midway, left=2pt]{recurso};
+  \draw[objetolink] (d2.south) -- (d2.south |- e1.north) node[papelassoc, midway, right=2pt]{recurso};
+  \draw[objetolink] (d3.west) -- ++(-0.35,0) |- (e1.west) node[papelassoc, pos=0.9, above]{recurso};
+  \draw[objetolink] (d4.south) -- (paula.north) node[papelassoc, midway, right=2pt]{recurso};
+  \draw[objetolink] (e2.north) -- (paula.south) node[papelassoc, midway, right=2pt]{produto (teto)};
+
+\end{tikzpicture}}
+\caption[Objetos: um instantâneo da disponibilidade]{Diagrama de objetos: uma rede
+  com uma regional, duas escolas e quatro linhas de disponibilidade. Cada caixa é
+  uma instância (nome sublinhado) e cada linha é um \emph{link}, instância de uma
+  associação da Figura~\ref{fig:uml-classes-dominio}. \texttt{d1} não tem
+  \emph{link} de escopo: escola nula é o contrato inteiro.}
+\label{fig:uml-objetos}
+\end{figure}
+
+\begin{tabularx}{\linewidth}{@{}L{42mm}L{20mm}X@{}}
+\caption{O que o resolvedor decide no instantâneo da Figura~\ref{fig:uml-objetos}}
+\label{tab:uml-objetos}\\
+\toprule
+\headrow \thd{Recurso, na escola} & \thd{Decisão} & \thd{Por quê (\texttt{recursos/regras.ts})}\\
+\midrule
+\endfirsthead
+\toprule
+\headrow \thd{Recurso, na escola} & \thd{Decisão} & \thd{Por quê}\\
+\midrule
+\endhead
+\cd{exp06ef2b} em \texttt{ee} & ligada & \texttt{ee} não tem linha; a regional
+  tem \texttt{d2}, que vence a do contrato (\texttt{d1}).\\
+\zebra \cd{exp06ef2b} em \texttt{ef} & desligada & \texttt{d3} é da própria escola
+  e vence a regional: o mais específico ganha, nos dois sentidos.\\
+\cd{exp06ef2b} numa escola de outra regional & desligada & Nem escola nem
+  regional têm linha; vale \texttt{d1}, do contrato. Um estudante com a missão
+  liberada recebe 403 \cd{recurso-indisponivel} --- a liberação \texttt{l1} não
+  muda nada, porque disponibilidade é pré-condição.\\
+\zebra \cd{app-90-plano-de-aula} em \texttt{ee} & desligada & \texttt{d4} desliga o
+  \emph{produto} na escola, e o produto é teto: nenhuma linha de experiência
+  religaria. O professor lê \enquote{Este recurso não está disponível para a sua
+  rede.}\\
+\cd{app-90-plano-de-aula} em \texttt{ef} & ligada & Nenhuma linha em nenhum
+  escopo, nem do produto nem da experiência.\\
+\zebra \cd{exp05ef1b} em qualquer escola & ligada & Ausência de linha é
+  \emph{ligado}: o interruptor é mecanismo de exceção.\\
+\bottomrule
+\end{tabularx}
+
+% ---------------------------------------------------------------------------
+\subsection{Visão de desenvolvimento: pacotes, componentes e estrutura composta}
+\label{sec:uml-desenvolvimento}
+
+\subsubsection{Quem pode importar quem}
+
+O diagrama de pacotes da Figura~\ref{fig:uml-pacotes} tem uma pergunta só: que
+dependência de código é permitida. As setas saem das declarações reais --- os
+\arq{package.json} do \emph{workspace} e os \cd{import} da API --- e duas
+ausências valem tanto quanto as setas. \textbf{A API não importa pacote nenhum do
+\emph{workspace}}: ela não depende de \cd{@edu/sdk}, e o que a SDK envia (o
+lote de telemetria, por exemplo) é validado de novo do lado da API, com o Zod
+dela. E
+\textbf{hub e API não se importam}: falam por HTTP, pelo BFF, e um tipo
+compartilhado entre os dois seria o primeiro passo para o hub assumir regra de
+domínio.
+
+\begin{figure}[H]
+\centering
+\fitwidth{%
+\begin{tikzpicture}[x=1cm, y=1cm]
+  \tikzset{pk/.style={font=\scriptsize, align=left, anchor=north west, inner sep=2pt}}
+
+  % ---- o monorepo e os dois pacotes de topo
+  \pacote[fill=unooPaper]{mono}{(0,0)}{(17.2,-15.2)}{\estereo{monorepo} plataforma-unooria}
+  \pacote[fill=unooSurface]{apps}{(0.35,-0.85)}{(16.85,-10.35)}{apps}
+  \pacote[fill=unooSurface]{pkgs}{(0.35,-11.25)}{(11.2,-14.85)}{packages}
+
+  % ---- hub e experiencias
+  \pacote{hub}{(0.75,-1.75)}{(4.75,-4.6)}{hub}
+  \node[pk, text width=38mm] at (0.8,-1.85)
+    {\texttt{@edu/hub}\\Next.js, App Router\\rotas por papel, BFF, JWKS,\\montagem do \emph{embed}};
+  \pacote{exps}{(0.75,-5.5)}{(4.75,-9.95)}{experiencias}
+  \node[pk, text width=38mm] at (0.8,-5.6)
+    {\texttt{\_template}\\\texttt{exp01ef1b} \ldots{} \texttt{exp08ef4b}\\\texttt{app-70}, \texttt{app-90},\\\texttt{app-91}, \texttt{app-92}\\{\color{unooMuted}12 \emph{bundles} Vite publicados;\\\texttt{\_template} e \texttt{backup-*}\\ficam fora do \emph{deploy}}};
+
+  % ---- a api e as quatro faixas
+  \pacote{api}{(5.6,-1.75)}{(16.45,-9.95)}{api}
+  \node[pk] at (5.65,-1.85) {\texttt{@edu/api} --- NestJS + Prisma};
+  \pacote[fill=unooSurface]{ltr}{(6.0,-2.8)}{(14.2,-3.75)}{transversal}
+  \node[pk, text width=78mm] at (6.05,-2.85) {\texttt{auth/} \ \texttt{tenancy/} \ \texttt{observabilidade/} \ \texttt{config/}};
+  \pacote[fill=unooSurface]{lpl}{(6.0,-4.55)}{(14.2,-5.95)}{plataforma}
+  \node[pk, text width=80mm] at (6.05,-4.6) {\texttt{usuarios/ rostering/ salas/ equipes/ evidencias/ recursos/}\\\texttt{experiencias/ telemetry/ analise/ progress/ comum/} \ldots};
+  \pacote[fill=unooSurface]{lin}{(6.0,-6.75)}{(14.2,-7.7)}{infraestrutura}
+  \node[pk, text width=78mm] at (6.05,-6.8) {\texttt{prisma/} \ \texttt{ai/} \ \texttt{object-storage/} \ \texttt{assets/}};
+  \pacote[fill=unooGreen!10]{ldo}{(6.0,-8.5)}{(14.2,-9.55)}{domínio \{nenhum módulo importa outro\}}
+  \node[pk, text width=80mm] at (6.05,-8.55) {\texttt{motor/ geracao/ vila/ unoogpt/ quem-mandou-isso/ a-selecao/} \ldots};
+
+  % dependencias entre faixas, na pista da direita (x = 14.6 a 15.9)
+  \draw[pacotedep] (ldo.east |- 0,-9.2) -- (15.9,-9.2) -- (15.9,-5.25) -- (lpl.east |- 0,-5.25);
+  \draw[pacotedep] (ldo.east |- 0,-8.85) -- (15.25,-8.85) -- (15.25,-7.4) -- (lin.east |- 0,-7.4);
+  \draw[pacotedep] (lpl.east |- 0,-5.6) -- (14.6,-5.6) -- (14.6,-7.05) -- (lin.east |- 0,-7.05);
+  \draw[pacotedep] (lpl.north -| 10.1,0) -- (ltr.south -| 10.1,0);
+  \node[cxlabel, anchor=west] at (10.2,-4.15) {\estereo{import} --- toda faixa usa a transversal};
+  \node[cxlabel, rotate=90, anchor=south] at (15.9,-7.2) {\estereo{import}};
+
+  % ---- sdk e ui
+  \pacote{sdk}{(0.75,-12.15)}{(5.3,-14.45)}{sdk}
+  \node[pk, text width=42mm] at (0.8,-12.25)
+    {\texttt{@edu/sdk}\\TypeScript + Zod\\ponte \texttt{postMessage} v2, cliente\\HTTP, telemetria em lote};
+  \pacote{ui}{(6.0,-12.15)}{(10.8,-14.45)}{ui}
+  \node[pk, text width=44mm] at (6.05,-12.25)
+    {\texttt{@edu/ui}\\as cinco pontes do DS:\\\texttt{'use client'}, nomes sem\\colisão, \emph{tree-shaking}};
+
+  % ---- externo
+  \pacote[fill=unooPaper, draw=unooInkSoft]{ds}{(12.2,-12.15)}{(16.85,-14.45)}{\estereo{externo} npm}
+  \node[pk, text width=44mm] at (12.25,-12.25)
+    {\texttt{@unooria/design-system}\\repo \texttt{storybook-unooria}\\componentes + CSS de seção};
+
+  % ---- dependencias entre pacotes do workspace: cada origem tem a sua pista
+  % experiencias
+  \draw[pacotedep] (exps.south -| 1.6,0) -- (sdk.north -| 1.6,0);
+  \draw[pacotedep] (exps.south -| 3.0,0) -- (3.0,-10.95) -- (7.6,-10.95) -- (ui.north -| 7.6,0);
+  \draw[pacotedep] (exps.south -| 4.2,0) -- (4.2,-10.6) -- (14.0,-10.6) -- (ds.north -| 14.0,0);
+  % hub: pela margem esquerda ate a SDK, e pelo vao entre hub e api ate ui e DS
+  \draw[pacotedep] (hub.west |- 0,-2.4) -- (0.55,-2.4) -- (0.55,-13.3) -- (sdk.west |- 0,-13.3);
+  \draw[pacotedep] (hub.east |- 0,-2.6) -- (5.0,-2.6) -- (5.0,-11.15) -- (8.4,-11.15) -- (ui.north -| 8.4,0);
+  \draw[pacotedep] (hub.east |- 0,-3.4) -- (5.3,-3.4) -- (5.3,-10.4) -- (14.8,-10.4) -- (ds.north -| 14.8,0);
+  % rotulos, um por destino
+  \node[cxlabel, anchor=west] at (1.65,-11.6) {\estereo{import}};
+  \node[cxlabel] at (6.35,-11.15) {\estereo{import} componentes};
+  \node[cxlabel] at (10.4,-10.4) {\estereo{use} só CSS da seção e fontes};
+  \draw[pacotedep] (ui.east) -- (ds.west) node[cxlabel, midway, above]{\estereo{import}};
+
+\end{tikzpicture}}
+\caption[Pacotes: quem pode importar quem]{Diagrama de pacotes do
+  \emph{monorepo}. As setas tracejadas são dependências de código declaradas: o
+  hub e as experiências importam a SDK e os componentes pela ponte do DS, e o CSS
+  da seção direto do pacote publicado; a API não importa nada do
+  \emph{workspace}. A \texttt{app-70} importa só a SDK: é jogo em \emph{canvas},
+  sem DOM de interface. No domínio, duas experiências conversam por tabela de
+  contrato ou por \emph{endpoint} de fronteira, nunca por \texttt{import}. Fontes: os \arq{package.json} do \emph{workspace} e a faixa de cada
+  módulo na Figura~\ref{fig:c4l3api}.}
+\label{fig:uml-pacotes}
+\end{figure}
+
+\subsubsection{Quem fornece e quem requer}
+
+O C4 nível 2 (Figura~\ref{fig:c4l2}) desenha as mesmas peças e diz quem chama
+quem. O diagrama de componentes da Figura~\ref{fig:uml-componentes} diz a
+\emph{direção da dependência de interface}: o pirulito é a interface que o
+componente \textbf{fornece}, o soquete é a que ele \textbf{requer}, e o encaixe dos
+dois é um conector de montagem. Duas direções surpreendem quem conhece só o
+C4. \textbf{O JWKS é fornecido pelo hub e requerido pela API}: a API depende do
+hub para validar qualquer \emph{token}, e é por isso que trocar para o WSO2 é
+trocar \env{OIDC\_JWKS\_URI} e \env{OIDC\_ISSUER} sem tocar o \emph{guard}. E
+\textbf{a ingestão da telemetria é fornecida pela API e requerida pelo Pub/Sub}:
+não há \emph{worker}; é a assinatura \emph{push} que chama
+\rota{POST /telemetry/ingest}, autenticada por ID \emph{token} do Google.
+
+\begin{figure}[H]
+\centering
+\fitwidth{%
+\begin{tikzpicture}[x=1cm, y=1cm]
+  % conectores de montagem: bola do lado de quem fornece, soquete do de quem requer
+  \def\montBaixo#1#2#3#4{% x, borda de quem requer (acima), borda do fornecedor (abaixo), y da bola
+    \draw[associa] (#1,#3) -- (#1,#4-0.13);
+    \draw[associa] (#1,#2) -- (#1,#4+0.22);
+    \bola{(#1,#4)} \soquete{(#1,#4)}{-90}}
+  \def\montCima#1#2#3#4{% x, borda do fornecedor (acima), borda de quem requer (abaixo), y da bola
+    \draw[associa] (#1,#2) -- (#1,#4+0.13);
+    \draw[associa] (#1,#3) -- (#1,#4-0.22);
+    \bola{(#1,#4)} \soquete{(#1,#4)}{90}}
+
+  % ---- componentes de cima
+  \node[componente, text width=58mm, minimum height=22mm] (hub) at (3.6,0)
+    {\estereo{componente}\\\textbf{Hub}\\{\scriptsize\itshape [Next.js]}\\[2pt]
+     sessão, papel, \emph{embed},\\assinatura do \emph{token}};
+  \node[componente, text width=46mm, minimum height=30mm, text depth=16mm] (exp) at (12.6,0.35)
+    {\estereo{componente}\\\textbf{Experiência}\\{\scriptsize\itshape [Vite + React, \emph{bundle}]}};
+  \node[componente, fill=unooSurface, text width=38mm, minimum height=11mm] (sdk) at (12.6,-0.45)
+    {\estereo{biblioteca}\\\textbf{@edu/sdk} --- ponte, HTTP, telemetria};
+
+  % ---- a API, larga, para os conectores descerem retos
+  \node[componente, text width=140mm, minimum height=20mm] (api) at (7.85,-5.6)
+    {\estereo{componente}\\\textbf{API}\\{\scriptsize\itshape [NestJS + Prisma]}\\[2pt]
+     autorização por papel, \emph{tenancy}, regra de domínio, gabarito, porta da IA};
+
+  % ---- externos
+  \node[componenteext, text width=26mm, minimum height=13mm] (pg) at (1.9,-10.6)
+    {\estereo{externo}\\\textbf{PostgreSQL}\\{\scriptsize\itshape [Cloud SQL]}};
+  \node[componenteext, text width=26mm, minimum height=13mm] (ps) at (6.1,-10.6)
+    {\estereo{externo}\\\textbf{Pub/Sub}};
+  \node[componenteext, text width=26mm, minimum height=13mm] (vx) at (10.3,-10.6)
+    {\estereo{externo}\\\textbf{Vertex AI}};
+  \node[componenteext, text width=26mm, minimum height=13mm] (gcs) at (14.5,-10.6)
+    {\estereo{externo}\\\textbf{Cloud Storage}};
+
+  % ---- hub <-> experiencia: a ponte (o hub fornece, a experiencia requer)
+  \draw[associa] (hub.east |- 0,0.35) -- (8.3,0.35);
+  \draw[associa] (exp.west |- 0,0.35) -- (8.65,0.35);
+  \bola{(8.43,0.35)} \soquete{(8.43,0.35)}{180}
+  \node[ifacelbl, above=7pt] at (8.43,0.35) {Ponte \texttt{postMessage} v2};
+  \node[ifacelbl, below=7pt, text width=26mm] at (8.43,0.35)
+    {\texttt{hub:init}, \texttt{hub:token},\\\texttt{hub:pause}/\texttt{resume}};
+
+  % ---- hub <-> api
+  \montBaixo{1.2}{-1.1}{-4.6}{-2.9}
+  \node[ifacelbl, anchor=east, align=right] at (1.0,-2.9) {\texttt{POST /auth/login}\\{\color{unooMuted}\emph{Credentials}}};
+  \montBaixo{3.2}{-1.1}{-4.6}{-2.9}
+  \node[ifacelbl, anchor=west, align=left] at (3.4,-2.9) {REST pelo BFF\\{\color{unooMuted}\texttt{/api/plataforma/*}}};
+  \montCima{6.3}{-1.1}{-4.6}{-2.3}
+  \node[ifacelbl, anchor=west, align=left] at (6.5,-2.15) {JWKS\\{\color{unooMuted}\texttt{/.well-known/jwks.json}}};
+
+  % ---- experiencia (pela sdk) <-> api
+  \montBaixo{11.4}{-1.1}{-4.6}{-2.9}
+  \node[ifacelbl, anchor=east, align=right] at (11.2,-2.9) {REST com \emph{Bearer}\\{\color{unooMuted}rotas de domínio}};
+  \montBaixo{13.8}{-1.1}{-4.6}{-2.9}
+  \node[ifacelbl, anchor=west, align=left] at (14.0,-2.9) {Telemetria\\{\color{unooMuted}\texttt{/telemetry/batch}}\\{\color{unooMuted}\texttt{/telemetry/beacon}}};
+
+  % ---- api <-> externos
+  \montBaixo{1.9}{-6.6}{-9.95}{-8.3}
+  \node[ifacelbl, anchor=east, align=right] at (1.7,-8.3) {SQL + RLS\\{\color{unooMuted}\texttt{comTenancy}}};
+  \montBaixo{5.5}{-6.6}{-9.95}{-8.3}
+  \node[ifacelbl, anchor=east, align=right] at (5.3,-8.3) {Publicação\\{\color{unooMuted}\texttt{\{contrato\}-telemetria}}};
+  \montCima{6.7}{-6.6}{-9.95}{-8.3}
+  \node[ifacelbl, anchor=west, align=left] at (6.9,-8.3) {Ingestão \emph{push}\\{\color{unooMuted}\texttt{/telemetry/ingest}}};
+  \montBaixo{10.3}{-6.6}{-9.95}{-8.3}
+  \node[ifacelbl, anchor=west, align=left] at (10.5,-8.3) {Geração\\{\color{unooMuted}ADC, \texttt{:generateContent}}};
+  \montBaixo{14.5}{-6.6}{-9.95}{-8.3}
+  \node[ifacelbl, anchor=west, align=left] at (14.7,-8.3) {Objetos\\{\color{unooMuted}\emph{assets}, planos}};
+
+\end{tikzpicture}}
+\caption[Componentes e interfaces]{Diagrama de componentes: bola é interface
+  fornecida, soquete é interface requerida, e o encaixe é o conector de montagem.
+  A experiência requer a ponte do hub e, pela SDK, o REST e a telemetria da API;
+  a API requer o JWKS do hub. O Cloud Storage também serve o \emph{bundle} ao
+  navegador pela CDN, o que é artefato e não interface --- está na
+  Figura~\ref{fig:uml-implantacao}. Fontes: \arq{hub/components/ExpFrame.tsx},
+  \arq{hub/app/.well-known/jwks.json/route.ts}, \arq{api/src/auth/token.service.ts},
+  \arq{api/src/telemetry/telemetry.controller.ts} e
+  \arq{packages/sdk/src/types.ts}.}
+\label{fig:uml-componentes}
+\end{figure}
+
+\subsubsection{Por dentro da página da missão}
+
+O diagrama de estrutura composta abre um classificador e mostra as
+\emph{partes} que ele contém, as \emph{portas} por onde ele fala com o exterior e
+os \emph{conectores} entre elas. A Figura~\ref{fig:uml-estrutura} abre o
+\cd{ExpHost}, o componente cliente que a página \rota{/exp/[expId]} renderiza, e
+mostra por onde cada coisa atravessa a fronteira do \emph{sandbox} (a linha
+laranja). O \emph{token} entra uma vez, como propriedade vinda do servidor
+(\cd{montarEmbed}), e é renovado pela porta \cd{token} do \cd{ExpFrame}, nunca
+pela experiência: ela só \emph{pede}, pela ponte, e recebe \cd{hub:token} de
+volta. O \emph{bundle} entra pela porta \cd{src}, direto da CDN. Entre o hub e
+a experiência, é só isso que atravessa. O que a experiência fala com a API não
+passa pelo hub: sai direto do \cd{iframe}, com o \emph{token} da memória
+(Figura~\ref{fig:uml-componentes}).
+
+\begin{figure}[H]
+\centering
+\fitwidth{%
+\begin{tikzpicture}[x=1cm, y=1cm]
+  \tikzset{
+    rotulo/.style={font=\scriptsize, anchor=north west, inner sep=2.5pt, align=left},
+    externo2/.style={rectangle, draw=unooInkSoft, line width=0.8pt, fill=unooPaper,
+      font=\scriptsize, text width=30mm, inner sep=3pt, align=left},
+  }
+
+  % ---- o classificador estruturado
+  \draw[draw=unooNavy, line width=1pt, fill=unooSurface] (3.8,0) rectangle (15.2,-10.6);
+  \node[rotulo] at (3.8,0) {\textbf{ExpHost} \ \estereo{client component}};
+  \draw[draw=unooNavy, line width=0.6pt] (3.8,-0.55) -- (15.2,-0.55);
+
+  % partes
+  \draw[draw=unooNavy, line width=0.85pt, fill=unooBlueWash] (4.2,-1.0) rectangle (14.8,-10.2);
+  \node[rotulo] at (4.2,-1.0) {\textbf{dispositivo : DispositivoFrame [0..1]}\\
+    {\color{unooMuted}só quando o manifesto declara \texttt{viewport}}};
+  \draw[draw=unooNavy, line width=0.85pt, fill=unooSurface] (4.6,-2.15) rectangle (14.4,-9.8);
+  \node[rotulo] at (4.6,-2.15) {\textbf{frame : ExpFrame [1]}};
+
+  % o iframe: a fronteira do sandbox
+  \draw[iframe] (5.0,-2.9) rectangle (10.4,-9.4);
+  \node[iframelbl] at (5.1,-2.75) {\texttt{iframe [1]}};
+  \node[font=\scriptsize, anchor=north west, text width=50mm, align=left] at (5.15,-3.2)
+    {{\color{unooMuted}um \texttt{HTMLIFrameElement} com}\\
+     \texttt{sandbox = "allow-scripts}\\
+     \texttt{\ \ allow-same-origin allow-modals"}\\
+     {\color{unooMuted}+ \texttt{pointer-lock}, \texttt{forms}, \texttt{downloads}}\\
+     {\color{unooMuted}\ \ se o manifesto pedir}\\
+     \texttt{allow = "autoplay; fullscreen;}\\
+     \texttt{\ \ clipboard-write"}};
+  \node[parte, text width=40mm, anchor=north west, fill=unooGreenWash, draw=unooGreen!60!black]
+      (bexp) at (5.35,-6.1)
+    {\textbf{exp : \estereo{Experiencia}}\\{\color{unooMuted}o \emph{bundle}, servido pela CDN}};
+  \node[parte, text width=18mm, anchor=north west] (bsdk) at (5.35,-7.65)
+    {\textbf{sdk : @edu/sdk}};
+  \node[parte, text width=19mm, anchor=north west] (btok) at (7.75,-7.65)
+    {\textbf{token : string}\\{\color{unooMuted}\{só em memória\}}};
+
+  % partes do frame fora do sandbox
+  \node[parte, text width=26mm, anchor=north west] (proto) at (11.3,-5.9)
+    {\textbf{ponte : protocolo v2}\\{\color{unooMuted}\texttt{postMessage};}\\{\color{unooMuted}\texttt{ev.origin} + Zod}};
+  \node[parte, text width=26mm, anchor=north west, fill=unooOrangeWash, draw=unooOrange] (aviso) at (11.3,-2.9)
+    {\textbf{aviso : AlertBox [0..1]}\\{\color{unooMuted}\enquote{Sua sessão expirou}; substitui o \texttt{iframe}}};
+
+  % ---- portas
+  \node[porta] (pEmbed) at (3.8,-5.2) {};
+  \node[porta] (pProg) at (15.2,-1.55) {};
+  \node[porta] (pTok) at (14.4,-6.1) {};
+  \node[porta] (pLog) at (14.4,-8.0) {};
+  \node[portaborda] (pPonte) at (10.4,-6.5) {};
+  \node[portaborda] (pSrc) at (8.4,-2.9) {};
+  \node[font=\scriptsize\bfseries\color{unooOrange}, anchor=south east, align=right] at (pPonte.north west) {ponte};
+  \node[font=\scriptsize\bfseries\color{unooOrange}, anchor=south west] at (pSrc.north east) {src};
+
+  % ---- externos
+  \node[externo2, text width=34mm, anchor=east] (page) at (2.7,-5.2)
+    {\estereo{server component}\\\textbf{app/exp/[expId]/}\\\textbf{page.tsx}\\\texttt{montarEmbed()}: \emph{token},\\\texttt{src}, \texttt{expOrigin},\\\texttt{permissoes}, \texttt{viewport}};
+  \node[externo2, text width=34mm, anchor=west] (rtok) at (16.7,-6.1)
+    {\estereo{route handler}\\\textbf{GET /api/exp-token}\\401/403 \seta{} \texttt{hub:pause}\\e o aviso};
+  \node[externo2, text width=34mm, anchor=west] (rlog) at (16.7,-8.4)
+    {\estereo{route handler}\\\textbf{POST /api/ponte}\\uma linha de log; 204};
+  \node[externo2, text width=34mm, anchor=west] (rprog) at (16.7,-1.55)
+    {\estereo{BFF}\\\textbf{POST /api/plataforma/}\\\textbf{progresso/:expId/}\\\textbf{concluir}};
+  \node[externo2, text width=36mm, anchor=south] (cdn) at (8.4,0.75)
+    {\estereo{CDN}\\\texttt{\{cdn\}/\{expId\}/\{versao\}/}\\\texttt{index.html?hubOrigin=\ldots}};
+
+  % ---- conectores
+  \draw[conector] (page.east) -- (pEmbed.west) node[cxlabel, midway, above=1pt]{embed};
+  \draw[conector] (pProg.east) -- (rprog.west) node[cxlabel, midway, above=1pt]{progresso};
+  \draw[conector] (pTok.east) -- (rtok.west |- pTok) node[cxlabel, midway, above=1pt]{token};
+  \draw[conector] (pLog.east) -- ++(0.45,0) |- (rlog.west) node[cxlabel, pos=0.75, below=1pt]{sinal};
+  \draw[conector, draw=unooOrange, line width=1pt] (pPonte.east) -- (proto.west |- pPonte);
+  \draw[conector] (proto.east |- pTok) -- (pTok.west);
+  \draw[conector] (proto.south) |- (pLog.west);
+  \draw[conector, draw=unooOrange, line width=1pt] (cdn.south) -- (pSrc.north);
+  \draw[conector] (pPonte.west) -- (bexp.east |- pPonte);
+  \draw[conector] (bexp.south -| bsdk.north) -- (bsdk.north);
+  \draw[conector] (bsdk.east) -- (btok.west);
+
+  \node[actnote, text width=46mm, anchor=north west] at (3.8,-11.0)
+    {\textbf{\texttt{targetOrigin} é sempre \texttt{expOrigin}}, nunca \texttt{*}: o
+     \texttt{frame} só envia para a origem que \texttt{montarEmbed} calculou, e só
+     aceita mensagem cujo \texttt{ev.origin} seja ela.};
+  \node[actnote, text width=56mm, anchor=north west] at (9.4,-11.0)
+    {\textbf{O \texttt{ExpHost} tem uma segunda sobreposição}, fora do
+     desenho: \enquote{A missão travou}, com o \emph{hash} do erro, quando a
+     experiência manda \texttt{exp:erro}. É dele, não do \texttt{frame}: sobrevive
+     à remontagem do \texttt{frame} ao recarregar.};
+
+\end{tikzpicture}}
+\caption[Estrutura composta: a página da missão]{Diagrama de estrutura composta do
+  \cd{ExpHost}. Partes são instâncias dentro do classificador (com multiplicidade);
+  quadrados na borda são portas; a linha laranja tracejada é a fronteira do
+  \emph{sandbox}, e as portas laranja são as duas únicas ligações entre o hub e
+  o que roda dentro dela; as chamadas da experiência à API saem direto do
+  \texttt{iframe}. Fontes: \arq{hub/components/ExpHost.tsx},
+  \arq{hub/components/ExpFrame.tsx}, \arq{hub/components/DispositivoFrame.tsx},
+  \arq{hub/lib/embed-experiencia.ts} e \arq{hub/app/api/exp-token/route.ts}.}
+\label{fig:uml-estrutura}
+\end{figure}
+
+% ---------------------------------------------------------------------------
+\subsection{Visão de processos: atividades, interações e tempo}
+\label{sec:uml-processos}
+
+\subsubsection{O algoritmo da disponibilidade}
+
+O diagrama de atividades da Figura~\ref{fig:uml-atividade-disp} é o
+\cd{exigirRecursoDisponivel}, a primeira das duas travas de toda entrada em
+experiência. As duas \emph{partições} são os dois arquivos, e é a divisão que
+importa: a da esquerda lê o banco dentro da transação de quem chama; a da direita
+é função pura, testada em milissegundos sem PostgreSQL. As regras da
+Tabela~\ref{tab:uml-objetos} moram inteiras na partição da direita.
+
+\begin{figure}[H]
+\centering
+\fitpage{%
+\begin{tikzpicture}[x=1cm, y=1cm]
+  \tikzset{
+    ac/.style={action, text width=40mm},
+    dc/.style={decision, text width=22mm, aspect=2.2},
+    flowfinal/.style={circle, draw=unooInk, line width=0.9pt, fill=unooSurface,
+      minimum size=4.6mm, inner sep=0pt,
+      path picture={\draw[unooInk, line width=0.8pt]
+        (path picture bounding box.south west) -- (path picture bounding box.north east)
+        (path picture bounding box.north west) -- (path picture bounding box.south east);}},
+  }
+
+  % ---- particoes
+  \draw[lane] (0,0.2) rectangle (7.4,-20.2);
+  \draw[lane] (7.4,0.2) rectangle (18.0,-20.2);
+  \node[lanehdr, minimum width=74mm, minimum height=7mm, anchor=north west] at (0,0.2)
+    {\texttt{comum/disponibilidade.ts} --- com banco};
+  \node[lanehdr, minimum width=106mm, minimum height=7mm, anchor=north west] at (7.4,0.2)
+    {\texttt{recursos/regras.ts} --- função pura};
+
+  % ---- particao da esquerda: ler
+  \node[actstart] (ini) at (3.7,-1.2) {};
+  \node[ac] (a1) at (3.7,-2.3) {buscar \texttt{experiencias[expId]}\\{\color{unooMuted}\texttt{produto}, \texttt{publico}; pode não existir}};
+  \node[ac] (a2) at (3.7,-3.8) {\texttt{cadeiaDaEscola}\\{\color{unooMuted}\texttt{[escola]} ou \texttt{[escola, regional]}}};
+  \node[ac] (a3) at (3.7,-5.3) {\texttt{linhasDoEscopo}\\{\color{unooMuted}escola nula \textbf{ou} na cadeia; só \emph{ids} legíveis}};
+  \node[ac] (a4) at (3.7,-6.8) {\texttt{produtoConhecido}\\{\color{unooMuted}fora do vocabulário \seta{} \texttt{null}}};
+
+  % ---- particao da direita: decidir
+  \node[dc] (d1) at (12.4,-6.8) {produto?};
+  \node[ac] (a5) at (12.4,-8.4) {\texttt{maisEspecifica(}\\\texttt{"produto:<slug>")}};
+  \node[dc] (d2) at (12.4,-10.0) {linha do produto?};
+  \node[actionerr, text width=30mm] (r1) at (16.2,-10.0) {desligado,\\\texttt{tetoDoProduto}};
+  \node[escolha] (m1) at (12.4,-11.5) {};
+  \node[ac] (a6) at (12.4,-12.6) {\texttt{maisEspecifica(}\\\texttt{"experiencia:<expId>")}};
+  \node[dc] (d3) at (12.4,-14.2) {linha da experiência?};
+  \node[actionok, text width=26mm] (r2) at (9.4,-15.8) {ligado,\\\texttt{versaoFixa = null}};
+  \node[action, text width=32mm] (r3) at (13.4,-15.8) {\texttt{ligado} e \texttt{versaoFixa}\\da linha};
+  \node[escolha] (m2) at (12.4,-17.4) {};
+
+  % ---- de volta a esquerda: agir
+  \node[dc] (d4) at (3.7,-18.1) {\texttt{efetivo.ligado}?};
+  \node[actend] (fim) at (0.9,-18.1) {};
+  \node[actionerr, text width=40mm] (a7) at (3.7,-19.5) {lança 403 \texttt{recurso-indisponivel}};
+  \node[flowfinal] (ff) at (6.6,-19.5) {};
+
+  % ---- fluxos
+  \draw[flow] (ini) -- (a1);
+  \draw[flow] (a1) -- (a2);
+  \draw[flow] (a2) -- (a3);
+  \draw[flow] (a3) -- (a4);
+  \draw[flow] (a4) -- (d1) node[flowlbl, midway, above]{\texttt{resolverExperiencia}};
+  \draw[flow] (d1) -- (a5) node[flowlbl, midway, right=2pt]{[sim]};
+  \draw[flow] (a5) -- (d2);
+  \draw[flow] (d2) -- (r1) node[flowlbl, midway, above]{[desligada]};
+  \draw[flow] (d2) -- (m1) node[flowlbl, midway, right=2pt]{[nenhuma ou ligada]};
+  \draw[flow] (d1.west) -- (9.2,-6.8) -- (9.2,-11.5) -- (m1.west) node[flowlbl, pos=0.12, above]{[não]};
+  \draw[flow] (m1) -- (a6);
+  \draw[flow] (a6) -- (d3);
+  \draw[flow] (d3.west) -| (r2.north) node[flowlbl, pos=0.3, above]{[nenhuma]};
+  \draw[flow] (d3.south) -- (d3.south |- r3.north) node[flowlbl, midway, right=2pt]{[uma linha]};
+  \draw[flow] (r2.south) |- (m2.west);
+  \draw[flow] (r3.south -| 12.4,0) -- (m2.north);
+  \draw[flow] (r1.south) -- (16.2,-17.4) -- (m2.east);
+  \draw[flow] (m2.south) |- (d4.east);
+  \draw[flow] (d4) -- (fim) node[flowlbl, midway, above]{[sim]};
+  \draw[flow] (d4) -- (a7) node[flowlbl, midway, left=2pt]{[não]};
+  \draw[flow] (a7) -- (ff);
+
+  % ---- notas
+  \node[actnote, text width=46mm, anchor=north west] (n1) at (12.9,-0.9)
+    {\textbf{\texttt{maisEspecifica}} percorre a cadeia na ordem --- escola,
+     depois regional --- e devolve a primeira linha do recurso; sem nenhuma,
+     a de escola nula (o contrato); sem ela, \texttt{null}. Sobe só um nível:
+     a rede não tem árvore mais funda.};
+  \node[actnote, text width=40mm, anchor=north west] (n2) at (7.8,-0.9)
+    {\textbf{A linha inteira é a decisão:} \texttt{ligado} e \texttt{versaoFixa}
+     não se resolvem em cadeias separadas. A tela mostra exatamente a linha que
+     vale.};
+  \node[actnote, text width=30mm, anchor=north west] at (0.35,-8.2)
+    {\textbf{Sem linha em \texttt{experiencias}} (\emph{stack} nova, antes do
+     primeiro \emph{publish}) \textbf{não tranca}: sem produto, vale só o
+     interruptor da própria experiência.};
+  \node[actnote, text width=30mm, anchor=north west] at (3.9,-8.2)
+    {\textbf{A mensagem depende do público:} \enquote{Este recurso não está
+     disponível para a sua rede.} para professor; \enquote{Esta missão não está
+     aberta agora.} para estudante.};
+
+\end{tikzpicture}}
+\caption[Atividades: o resolvedor de disponibilidade]{Diagrama de atividades do
+  \cd{exigirRecursoDisponivel}, com uma partição por arquivo. A da direita é
+  \cd{resolverExperiencia}, pura; os losangos vazios são nós de junção. A
+  terminação em \emph{X} é o fim de fluxo pela exceção: a transação de quem
+  chamou desfaz o que tiver feito. Fontes: \arq{comum/disponibilidade.ts} e
+  \arq{recursos/regras.ts}.}
+\label{fig:uml-atividade-disp}
+\end{figure}
+
+\subsubsection{A entrada na missão: onde cada trava dispara}
+
+A regra 7 do \arq{AGENTS.md} diz que filtrar o \emph{card} no hub é UX e que a
+trava é da API. O diagrama de sequência da Figura~\ref{fig:uml-seq-entrada} mostra
+por quê, na ordem em que as coisas acontecem. O hub consulta a grade e devolve 404
+para missão que não está liberada --- mas é a mesma grade que o estudante vê, e o
+\emph{bundle} é público: quem digita \rota{/exp/:expId} de uma missão fechada, ou
+chama a API direto, só encontra a trava de verdade na primeira rota de estudante,
+no funil \cd{garantirSessao}/\cd{estudanteDaEscola}. Ali as duas travas disparam
+em série, disponibilidade antes de liberação.
+
+\begin{figure}[H]
+\centering
+\fitpage{%
+\begin{tikzpicture}[x=1cm, y=1cm]
+
+  \raia{1.3}{-21.6}{Navegador}{hub no cliente}
+  \raia{5.0}{-21.6}{Hub}{servidor}
+  \raia{12.4}{-21.6}{API}{NestJS}
+  \raiaext{16.0}{-21.6}{PostgreSQL}{Cloud SQL}
+
+  % ---- a grade
+  \msgs{1.3}{5.0}{-1.1}{\texttt{GET /exp/:expId} (\emph{cookie})}
+  \msgs{5.0}{12.4}{-1.9}{\texttt{GET /salas/minhas}}
+  \msgs{12.4}{16.0}{-2.7}{\texttt{turmasDoEstudante} + \texttt{liberacoes}}
+  \msgr{16.0}{12.4}{-3.5}{matrículas e linhas}
+  \msgr{12.4}{5.0}{-4.3}{grade: estado por missão, sem as indisponíveis}
+
+  % ---- alt: o filtro do hub
+  \draw[seqframe] (0.4,-4.75) rectangle (13.3,-9.95);
+  \node[frameop] at (0.4,-4.75) {alt};
+  \node[guarda] at (1.45,-5.05) {[missão não está \texttt{liberada} na grade]};
+  \msgr{5.0}{1.3}{-5.6}{404 (\texttt{notFound})}
+  \draw[seqframe, dashed] (0.4,-5.95) -- (13.3,-5.95);
+  \node[guarda] at (0.5,-6.25) {[\texttt{liberada}]};
+  \msgself{5.0}{-6.65}{\texttt{montarEmbed}: assina o \emph{token} (RS256, 15 min)}
+  \msgs{5.0}{12.4}{-7.75}{\texttt{GET /experiencias/:expId} e \texttt{/recursos/efetivos}}
+  \msgr{12.4}{5.0}{-8.55}{manifesto; versão fixada da escola}
+  \msgr{5.0}{1.3}{-9.4}{HTML com \texttt{ExpFrame}}
+
+  % ---- a experiencia nasce
+  \node[seqheadact] (hexp) at (8.7,-10.75) {\textbf{Experiência}\\[0.5pt]{\scriptsize\itshape \texttt{iframe}}};
+  \draw[seqline] (8.7,-11.27) -- (8.7,-21.6);
+  \draw[seqret] (1.3,-10.75) -- (hexp.west)
+    node[seqlbl, midway, above=0.4pt]{\estereo{create} \emph{bundle} da CDN};
+
+  % ---- ref: o handshake
+  \draw[seqframe, fill=unooSurface] (0.4,-11.65) rectangle (9.6,-12.55);
+  \node[frameop] at (0.4,-11.65) {ref};
+  \node[font=\scriptsize] at (5.3,-12.12)
+    {\emph{handshake} \texttt{exp:ready} / \texttt{hub:init} --- Figura~\ref{fig:seq-handshake}};
+
+  % ---- a primeira rota de estudante: as duas travas
+  \msgs{8.7}{12.4}{-13.4}{1ª rota de estudante (\emph{Bearer})}
+  \msgself{12.4}{-14.1}{funil: \texttt{garantirSessao} ou \texttt{estudanteDaEscola}}
+  \msgs{12.4}{16.0}{-15.2}{\texttt{exigirRecursoDisponivel} (Fig.~\ref{fig:uml-atividade-disp})}
+  \msgs{12.4}{16.0}{-16.0}{\texttt{missoesLiberadasPara}}
+  \msgr{16.0}{12.4}{-16.8}{linhas de disponibilidade e de liberação}
+
+  \draw[seqframe] (7.8,-17.25) rectangle (17.1,-21.3);
+  \node[frameop] at (7.8,-17.25) {alt};
+  \node[guarda] at (8.85,-17.6) {[recurso desligado no escopo que vale]};
+  \msgr{12.4}{8.7}{-18.3}{403 \texttt{recurso-indisponivel}}
+  \draw[seqframe, dashed] (7.8,-18.6) -- (17.1,-18.6);
+  \node[guarda] at (7.9,-18.95) {[sem liberação \texttt{liberada} nas turmas do estudante]};
+  \msgr{12.4}{8.7}{-19.65}{403 \texttt{missao-nao-liberada}}
+  \draw[seqframe, dashed] (7.8,-19.95) -- (17.1,-19.95);
+  \node[guarda] at (7.9,-20.3) {[as duas passam]};
+  \msgr{12.4}{8.7}{-21.0}{200 --- a rota segue}
+
+\end{tikzpicture}}
+\caption[Sequência: a entrada do estudante na missão]{Sequência da entrada do
+  estudante na missão. O filtro do hub (o primeiro \texttt{alt}) é UX; as travas
+  estão no segundo, na API, e disparam em série. A linha de vida da experiência
+  começa na mensagem \estereo{create}: antes dela, o \texttt{iframe} não existe.
+  Fontes: \arq{hub/app/exp/[expId]/page.tsx}, \arq{hub/lib/embed-experiencia.ts},
+  \arq{api/src/comum/liberacao.ts}, \arq{api/src/comum/disponibilidade.ts} e
+  \arq{api/src/salas/salas.service.ts}.}
+\label{fig:uml-seq-entrada}
+\end{figure}
+
+\begin{nota}
+\textbf{Os dois 403 chegam iguais à experiência.} A SDK não repassa o corpo do
+erro: \cd{call} lança \cd{Error("API GET \ldots{} \seta{} 403")}, e cada experiência tira
+o \emph{status} da mensagem. A exp05ef1b e a exp04ef1b mostram o aviso dentro do
+disfarce (\enquote{Este grupo ainda não abriu para a sua turma}); o hub não mostra
+nada, porque não existe mensagem de ponte para isso. Se um dia a diferença entre
+\enquote{não liberada} e \enquote{indisponível na rede} precisar chegar ao
+estudante, o caminho é a SDK expor o \cd{codigo}, não a experiência adivinhar.
+\end{nota}
+
+\subsubsection{Uma chamada de IA: o que roda antes e depois do \emph{provider}}
+
+A Figura~\ref{fig:uml-seq-ia} é a única porta de IA aberta ao cliente,
+\rota{POST /ai/gerar}, na ordem do código. Os dois fragmentos \texttt{break} são
+as saídas antecipadas: quando a guarda do \texttt{break} vale, o operando roda e o
+resto da interação \emph{não} acontece. O que o diagrama deixa ver e o texto
+esconde: a leitura do teto (\cd{ia\_quotas}) roda \emph{fora} do
+\cd{comTenancy}, porque a linha é do contrato e não tem escola; a do consumo
+(\cd{ia\_uso\_diario}) roda dentro, porque tem. E o prompt de sistema é escolhido
+e montado dentro do \emph{controller}, com a série resolvida da turma do
+\emph{token} --- nunca vinda do corpo.
+
+\begin{figure}[H]
+\centering
+\fitpage{%
+\begin{tikzpicture}[x=1cm, y=1cm]
+
+  \raia{1.3}{-21.3}{Experiência}{pela SDK}
+  \raia{4.2}{-21.3}{\texttt{OidcGuard}}{\texttt{auth/}}
+  \raia{7.1}{-21.3}{\texttt{AiController}}{\texttt{ai/}}
+  \raia{10.0}{-21.3}{\texttt{QuotaService}}{\texttt{ai/}}
+  \raiaext{12.9}{-21.3}{PostgreSQL}{Cloud SQL}
+  \raia{15.8}{-21.3}{\texttt{provider}}{\texttt{MedidorDeProvider}}
+  \raiaext{18.7}{-21.3}{Vertex AI}{Gemini}
+
+  \msgs{1.3}{4.2}{-1.1}{\texttt{POST /ai/gerar} (\emph{Bearer})}
+  \msgself{4.2}{-1.75}{\texttt{TokenService.verificar}: JWKS do hub}
+
+  \draw[seqframe] (0.4,-2.55) rectangle (8.0,-3.8);
+  \node[frameop] at (0.4,-2.55) {break};
+  \node[guarda] at (1.55,-2.85) {[\emph{token} ausente ou inválido]};
+  \msgr{4.2}{1.3}{-3.5}{401}
+
+  \msgs{4.2}{7.1}{-4.45}{\texttt{req.auth = \{usuarioId, escolaId, perfil\}}}
+  \msgself{7.1}{-5.1}{\texttt{GerarSchema.parse} (Zod; 400 se inválido)}
+  \msgs{7.1}{10.0}{-6.15}{\texttt{temSaldo(escola, usuario, perfil)}}
+  \msgs{10.0}{12.9}{-6.95}{\texttt{limite}: \texttt{ia\_quotas}, fora do \texttt{comTenancy}}
+  \msgr{12.9}{10.0}{-7.7}{\texttt{tokens\_por\_dia}}
+  \msgs{10.0}{12.9}{-8.45}{\texttt{usadoHoje}: \texttt{ia\_uso\_diario}, em \texttt{comTenancy}}
+  \msgr{12.9}{10.0}{-9.2}{\texttt{tokens\_usados}}
+  \msgr{10.0}{7.1}{-9.95}{\texttt{usado < limite}}
+
+  \draw[seqframe] (0.4,-10.35) rectangle (10.9,-11.6);
+  \node[frameop] at (0.4,-10.35) {break};
+  \node[guarda] at (1.55,-10.65) {[sem saldo]};
+  \msgr{7.1}{1.3}{-11.3}{429 \enquote{Quota diária de IA atingida}}
+
+  \msgself{7.1}{-12.05}{\texttt{PROMPTS[expId] ?? PROMPTS.tutor}}
+  \msgs{7.1}{12.9}{-13.1}{\texttt{serieDoPedido}: \texttt{turma.findFirst}}
+  \msgr{12.9}{7.1}{-13.85}{\texttt{serie} \seta{} \enquote{6º ano}}
+  \msgs{7.1}{15.8}{-14.6}{\texttt{generate(\{system, user\})}}
+  \msgself{15.8}{-15.25}{\texttt{medir}: \texttt{VertexProvider}}
+  \msgs{15.8}{18.7}{-16.3}{\texttt{:generateContent} (ADC)}
+  \msgr{18.7}{15.8}{-17.05}{texto e uso}
+  \msgr{15.8}{7.1}{-17.8}{\texttt{AiResult \{texto, tokensUsados\}}}
+  \msgs{7.1}{10.0}{-18.55}{\texttt{consumir(\ldots, tokensUsados)}}
+  \msgs{10.0}{12.9}{-19.3}{\emph{upsert} em \texttt{comTenancy}}
+  \msgr{12.9}{10.0}{-20.05}{\texttt{tokens\_usados}}
+  \msgr{7.1}{1.3}{-20.8}{200 \texttt{\{texto\}}}
+
+\end{tikzpicture}}
+\caption[Sequência: uma chamada de IA com quota]{Sequência de \rota{POST /ai/gerar}.
+  \texttt{break} é a saída antecipada: 401 sem \emph{token} válido, 429 sem saldo.
+  O consumo é gravado \emph{depois} da resposta do modelo, com os \emph{tokens} que
+  ele declarou; entre o \texttt{temSaldo} e o \texttt{consumir} não há trava. Fontes:
+  \arq{ai/ai.controller.ts}, \arq{ai/quota.service.ts},
+  \arq{ai/medidor.provider.ts}, \arq{auth/oidc.guard.ts}.}
+\label{fig:uml-seq-ia}
+\end{figure}
+
+\begin{limitacao}
+\textbf{\rota{/ai/gerar} não tem \emph{rate limit}.} A quota limita o custo do dia;
+a rajada dentro do dia só é contida nas rotas que chamam \cd{rateLimit} ---
+\arq{planos}, \arq{bemestar}, \arq{manifesto-ia}, \arq{vila} e as reações do
+\arq{motor}. O \arq{unoogpt} chama \cd{rateLimit} e ignora o retorno, o que faz o
+limite de 12 por minuto que o contrato da rota promete não valer. E o
+\cd{Map} do \cd{rateLimit} é por instância: com \cd{min-instances} acima de um, o
+limite efetivo é multiplicado. Os três pontos estão fora desta frente; ficam
+registrados aqui para quem desenhar a próxima rota de IA.
+\end{limitacao}
+
+\subsubsection{O caminho de um lote de telemetria}
+
+O diagrama de comunicação mostra os mesmos fatos de um diagrama de sequência,
+arrumados de outro jeito: os objetos ficam onde a topologia os põe, as linhas são
+os \emph{links} que existem entre eles, e a ordem vai no número de cada mensagem
+(\texttt{1.1.2} acontece dentro de \texttt{1.1}, que acontece dentro de \texttt{1}).
+Para a telemetria, é a forma certa: o interessante não é o tempo, é
+\emph{quem fala com quem}, e três gatilhos independentes (o relógio da SDK, o
+\cd{pagehide} e a entrega do Pub/Sub) atravessam os mesmos objetos. A
+Figura~\ref{fig:uml-comunicacao} corrige uma leitura comum da tabela de
+arquitetura: \textbf{não existe \emph{worker}}. Quem consome o tópico é a própria
+API, pela assinatura \emph{push}, e o destino é o PostgreSQL, numa tabela
+particionada por mês.
+
+\begin{figure}[H]
+\centering
+\fitwidth{%
+\begin{tikzpicture}[x=1cm, y=1cm]
+  \tikzset{ob1/.style={objetoum, text width=34mm, align=center}}
+
+  \node[ob1] (exp) at (1.9,0) {\underline{\textbf{:Experiência}}\\{\color{unooMuted}código da missão}};
+  \node[ob1] (tel) at (1.9,-5.0) {\underline{\textbf{t : TelemetryClient}}\\{\color{unooMuted}\texttt{@edu/sdk}}};
+  \node[ob1] (tok) at (10.0,-0.6) {\underline{\textbf{:TokenService}}\\{\color{unooMuted}\texttt{auth/}}};
+  \node[ob1] (ctrl) at (10.0,-5.0) {\underline{\textbf{:TelemetryController}}\\{\color{unooMuted}\texttt{telemetry/}}};
+  \node[ob1] (ps) at (17.0,-5.0) {\underline{\textbf{:Topic}}\\{\color{unooMuted}\texttt{\{contrato\}-telemetria}}};
+  \node[ob1] (guard) at (17.0,-10.0) {\underline{\textbf{:PubSubPushGuard}}\\{\color{unooMuted}ID \emph{token} do Google}};
+  \node[ob1, fill=unooGreenWash, draw=unooGreen!60!black] (pg) at (10.0,-10.0)
+    {\underline{\textbf{:telemetria\_eventos}}\\{\color{unooMuted}\estereo{TabelaDeTenant}, por mês}};
+
+  % links
+  \draw[objetolink] (exp) -- (tel);
+  \draw[objetolink] (tel) -- (ctrl);
+  \draw[objetolink] (ctrl) -- (tok);
+  \draw[objetolink] (ctrl) -- (ps);
+  \draw[objetolink] (ps) -- (guard);
+  \draw[objetolink] (guard) -- (ctrl);
+  \draw[objetolink] (ctrl) -- (pg);
+  % auto-link do controller (1.1.1 e 3.1 acontecem nele)
+  \draw[objetolink] ([xshift=-8mm]ctrl.south) -- ++(0,-0.6) -- ++(-1.4,0) |- ([yshift=-1.5mm]ctrl.west);
+
+  % mensagens numeradas (o detalhe de cada uma esta na tabela abaixo)
+  \msgcom[right]{(1.9,-2.5)}{-90}{\texttt{1: track()}}
+  \msgcom[above]{(5.95,-5.0)}{0}{\texttt{1.1: POST /telemetry/batch}}
+  \msgcom[below]{(5.95,-5.0)}{0}{\texttt{3: sendBeacon /beacon}}
+  \node[msgcomlbl, anchor=north east] at (8.0,-6.1) {\texttt{1.1.1: identidade do token}};
+  \msgcom[right]{(10.0,-2.8)}{90}{\texttt{3.1: verificar()}}
+  \msgcom[above]{(13.5,-5.0)}{0}{\texttt{1.1.2, 3.2:}\\\texttt{publishMessage()}}
+  \msgcom[right]{(17.0,-7.5)}{-90}{\texttt{2: push /ingest}}
+  \msgcom[above right]{(13.5,-7.5)}{144.5}{\texttt{2.1: ingest()}}
+  \msgcom[left]{(10.0,-7.9)}{-90}{\texttt{2.1.1: INSERT ... DO NOTHING}}
+
+  % notas
+  \node[actnote, text width=44mm, anchor=north west] at (12.3,0.6)
+    {\textbf{Três gatilhos, três números de topo:} \texttt{1} é o relógio da SDK,
+     \texttt{3} é a saída da página e \texttt{2} é o Pub/Sub, quando ele quiser.
+     Nenhum espera o outro.};
+  \node[actnote, text width=40mm, anchor=north west] at (0.0,-8.4)
+    {\textbf{Sem \texttt{TELEMETRIA\_TOPIC}} (\emph{compose} local, CI),
+     \texttt{1.1.2} vira uma linha de \emph{debug} e nada é gravado.};
+
+\end{tikzpicture}}
+\caption[Comunicação: o caminho de um lote de telemetria]{Diagrama de comunicação da
+  telemetria. Objetos com nome sublinhado; \emph{links} como linhas; mensagens
+  numeradas pela aninhação. O \texttt{ON CONFLICT (event\_id, ts) DO NOTHING}
+  torna a reentrega do Pub/Sub inofensiva, e a gravação é agrupada por escola,
+  uma transação \cd{comTenancy} por grupo. Fontes:
+  \arq{packages/sdk/src/telemetry.ts}, \arq{api/src/telemetry/telemetry.controller.ts},
+  \arq{api/src/telemetry/pubsub-push.guard.ts} e \arq{docs/INFRA.md}.}
+\label{fig:uml-comunicacao}
+\end{figure}
+
+\begin{tabularx}{\linewidth}{@{}L{11mm}L{36mm}X@{}}
+\caption{As mensagens da Figura~\ref{fig:uml-comunicacao}}
+\label{tab:uml-comunicacao}\\
+\toprule
+\headrow \thd{Nº} & \thd{Gatilho ou guarda} & \thd{O que acontece}\\
+\midrule
+\endfirsthead
+\toprule
+\headrow \thd{Nº} & \thd{Gatilho ou guarda} & \thd{O que acontece}\\
+\midrule
+\endhead
+\texttt{1} & a missão registra um evento & Entra no \emph{buffer}; acima de 500 eventos,
+  sai o mais antigo.\\
+\zebra \texttt{1.1} & a cada 10 s, ou ao chegar a 50 & \rota{POST /telemetry/batch}
+  com \emph{Bearer} e \cd{keepalive}; um lote em voo por vez, e a falha devolve o
+  lote ao \emph{buffer} com \emph{backoff} de 1 a 60 s.\\
+\texttt{1.1.1} & --- & O Zod descarta \cd{estudanteId} e \cd{escolaId} do corpo; o
+  \emph{controller} põe os do \emph{token}. O \cd{estudante\_id} é o \cd{sub}: id
+  interno, não nome nem e-mail --- e também não é \emph{hash}.\\
+\zebra \texttt{1.1.2} & \env{TELEMETRIA\_TOPIC} definida & \cd{publishMessage(\{json:
+  \{eventos\}\})}. A resposta \cd{\{ok, recebidos\}} conta o que foi
+  \emph{publicado}, não o que foi gravado.\\
+\texttt{2} & entrega do Pub/Sub, \emph{at least once} & \emph{Push} para
+  \rota{POST /telemetry/ingest}; o \emph{guard} confere emissor, audiência e o
+  e-mail da conta de serviço do \emph{push}. Sem as \emph{envs}, 401.\\
+\zebra \texttt{2.1} & o \emph{guard} passou & Decodifica \cd{message.data} (base64) e
+  valida com Zod.\\
+\texttt{2.1.1} & --- & Agrupa por escola e grava um \cd{INSERT} de várias linhas
+  por grupo, dentro de \cd{comTenancy}, com \cd{ON CONFLICT (event\_id, ts) DO
+  NOTHING}: reentrega é rotina.\\
+\zebra \texttt{3} & \cd{pagehide} ou aba oculta & \cd{sendBeacon} para
+  \rota{/telemetry/beacon}, com o \emph{token} no corpo --- o \emph{beacon} não leva
+  cabeçalho. Retorno \cd{false} mantém o lote no \emph{buffer}.\\
+\texttt{3.1} & --- & \cd{TokenService.verificar} no \emph{token} do corpo; se falha,
+  descarta com métrica.\\
+\zebra \texttt{3.2} & --- & O mesmo \cd{publishMessage} de \texttt{1.1.2}. A rota
+  responde 204 sempre.\\
+\bottomrule
+\end{tabularx}
+
+\subsubsection{Três relógios: \emph{token}, renovação e sessão}
+
+O diagrama de tempo põe o tempo no eixo horizontal e o estado de cada participante
+numa faixa. É o único tipo da UML em que \emph{prazo} é notação de primeira classe
+(as restrições entre chaves medem distância no eixo), e é por isso que ele mostra o
+que as outras figuras escondem. São três relógios independentes: o \emph{token} de
+experiência vive 15 minutos (\arq{hub/lib/chave-token.ts}); a SDK pede um novo a
+cada 10, por relógio fixo, sem ler o \cd{exp} do JWT e sem reagir a 401
+(\arq{packages/sdk/src/index.ts}); e a sessão do hub morre 2 horas depois da última
+renovação (\adrr{ADR-95}), que o próprio pedido de \emph{token} provoca
+(\adrr{ADR-96}). A Figura~\ref{fig:uml-tempo} desenha o caso em que o pedido dos
+20 minutos falha por rede.
+
+\begin{figure}[H]
+\centering
+\fitwidth{%
+\begin{tikzpicture}[x=1cm, y=1cm]
+  % x(t) = 4.3 + 0.32 t, com t em minutos
+  \def\T#1{{4.3+0.32*(#1)}}
+
+  % ---- faixas
+  \foreach \yt/\yb/\nome in {0/-1.55/Chamadas da\\experiência à API,
+                             -1.85/-3.2/\emph{Token} vigente\\na experiência,
+                             -3.5/-5.05/Pedido de \emph{token}\\do hub,
+                             -5.35/-6.7/Sessão do hub} {
+    \draw[tempofaixa] (0,\yt) rectangle (17.6,\yb);
+    \node[font=\scriptsize\bfseries\color{unooNavy}, align=left, anchor=west, text width=26mm] at (0.1,{(\yt+\yb)/2}) {\nome};
+  }
+  \draw[unooAxis, line width=0.6pt] (2.85,0) -- (2.85,-6.7);
+
+  % ---- marcas verticais dos instantes que importam
+  \foreach \t in {10,20,25,30} \draw[tempomarca] (\T{\t},0.2) -- (\T{\t},-7.0);
+
+  % ---- faixa 1: 200 ou 401 (estado)
+  \node[tempoestado] at (4.15,-0.45) {200};
+  \node[tempoestado] at (4.15,-1.15) {401};
+  \draw[tempolinha] (\T{0},-0.45) -- (\T{25},-0.45) -- (\T{25},-1.15)
+    -- (\T{30},-1.15) -- (\T{30},-0.45) -- (\T{40},-0.45);
+  \draw[tempolinha, draw=unooRed] (\T{25},-1.15) -- (\T{30},-1.15);
+  \draw[<->, draw=unooRed, line width=0.7pt] (\T{25},-1.42) -- (\T{30},-1.42);
+  \node[font=\scriptsize\bfseries\color{unooRed}, anchor=west] at (\T{30.3},-1.15) {\{5 min de 401\}};
+
+  % ---- faixa 2: linha de valor (qual token esta em uso)
+  \def\valor#1#2#3{% t0, t1, rotulo
+    \draw[tempolinha, line width=0.8pt] (\T{#1+0.35},-2.2) -- (\T{#2-0.35},-2.2)
+      -- (\T{#2},-2.525) -- (\T{#2-0.35},-2.85) -- (\T{#1+0.35},-2.85) -- (\T{#1},-2.525) -- cycle;
+    \node[font=\scriptsize] at (\T{(#1+#2)/2},-2.525) {#3};}
+  \valor{0}{10}{\texttt{A}: vale até 15}
+  \valor{10}{30}{\texttt{B}: vale até 25}
+  \valor{30}{40}{\texttt{D}: vale até 45}
+  \fill[pattern={Lines[angle=45, distance=3pt, line width=0.4pt]}, pattern color=unooRed]
+    (\T{25},-2.2) rectangle (\T{30-0.35},-2.85);
+  \draw[<->, draw=unooNavy, line width=0.6pt] (\T{10},-3.05) -- (\T{25},-3.05)
+    node[restricao, midway]{\{15 min\}};
+
+  % ---- faixa 3: o pedido de token (pulsos a cada 10 min)
+  \node[tempoestado] at (4.15,-3.85) {ocioso};
+  \node[tempoestado] at (4.15,-4.6) {pedindo};
+  \draw[tempolinha] (\T{0},-3.85)
+    -- (\T{10},-3.85) -- (\T{10},-4.6) -- (\T{10.6},-4.6) -- (\T{10.6},-3.85)
+    -- (\T{20},-3.85) -- (\T{20},-4.6) -- (\T{20.6},-4.6) -- (\T{20.6},-3.85)
+    -- (\T{30},-3.85) -- (\T{30},-4.6) -- (\T{30.6},-4.6) -- (\T{30.6},-3.85)
+    -- (\T{40},-3.85) -- (\T{40},-4.6) -- (\T{40.4},-4.6);
+  \node[font=\scriptsize\color{unooGreen!70!black}, anchor=south west] at (\T{10.7},-4.6) {ok};
+  \node[font=\scriptsize\bfseries\color{unooRed}, anchor=south west] at (\T{20.7},-4.6) {falhou (rede)};
+  \node[font=\scriptsize\color{unooGreen!70!black}, anchor=south west] at (\T{30.7},-4.6) {ok};
+  \draw[<->, draw=unooNavy, line width=0.6pt] (\T{10},-4.85) -- (\T{20},-4.85)
+    node[restricao, midway]{\{10 min\}};
+
+  % ---- faixa 4: a sessao desliza a cada pedido que chega
+  \node[tempoestado] at (4.15,-5.75) {ativa};
+  \node[tempoestado] at (4.15,-6.35) {expirada};
+  \draw[tempolinha] (\T{0},-5.75) -- (\T{40},-5.75);
+  \foreach \t in {0,10,30} \fill[unooNavy] (\T{\t},-5.75) circle (1.6pt);
+  \node[font=\scriptsize\color{unooInkSoft}, anchor=north west, align=left] at (\T{0.3},-5.85)
+    {cada ponto renova o prazo: \{expira 2 h depois do último\}};
+
+  % ---- mensagens entre faixas (os pedidos e as respostas)
+  \foreach \t in {10,20,30} \draw[seqmsg, line width=0.6pt] (\T{\t-0.18},-0.45) -- (\T{\t-0.18},-3.85);
+  \node[font=\scriptsize, anchor=east, fill=unooSurface, inner sep=1pt] at (\T{9.8},-1.6) {\texttt{exp:token-expirando}};
+  \foreach \t in {10.6,30.6} \draw[seqret, line width=0.6pt] (\T{\t},-3.85) -- (\T{\t},-2.85);
+  \node[font=\scriptsize, anchor=west, fill=unooSurface, inner sep=1pt] at (\T{10.7},-3.3) {\texttt{hub:token}};
+
+  % ---- eixo do tempo
+  \draw[->, draw=unooInkSoft, line width=0.7pt] (4.1,-7.05) -- (17.5,-7.05);
+  \foreach \t in {0,5,...,40} {
+    \draw[unooInkSoft] (\T{\t},-7.0) -- (\T{\t},-7.12);
+    \node[tempotick, below] at (\T{\t},-7.1) {\t};
+  }
+  \node[tempotick, anchor=west] at (17.5,-7.05) {min};
+
+\end{tikzpicture}}
+\caption[Tempo: \emph{token}, renovação e sessão]{Diagrama de tempo de uma missão
+  aberta, no cenário em que o pedido de \emph{token} dos 20 minutos falha por rede.
+  O \emph{token} \texttt{B} (emitido aos 10) vence aos 25; o próximo pedido é aos
+  30; entre os dois, toda chamada da experiência à API recebe 401. As restrições
+  entre chaves são de duração. Fontes: \arq{packages/sdk/src/index.ts},
+  \arq{hub/components/ExpFrame.tsx}, \arq{hub/lib/chave-token.ts},
+  \arq{hub/app/api/exp-token/route.ts} e \arq{hub/lib/sessao.ts}.}
+\label{fig:uml-tempo}
+\end{figure}
+
+\begin{limitacao}
+\textbf{A falha transitória da renovação custa 5 minutos de 401, não zero.} O
+comentário do \cd{ExpFrame} diz que \enquote{o \emph{token} atual ainda vale alguns
+minutos e a SDK pede de novo em 10} --- as duas metades são verdade, mas os
+números não fecham: sobram 5 minutos de validade para 10 de espera. O efeito na
+sala é uma missão que falha por 5 minutos e volta sozinha, sem aviso, e a
+experiência vê só \enquote{API \ldots{} \seta{} 401}. Consertos possíveis, todos
+fora desta frente: a SDK reagir a 401 pedindo \emph{token} na hora, o
+\cd{ExpFrame} tentar de novo em segundos em vez de esperar o próximo tique, ou o
+relógio da SDK ler o \cd{exp} do JWT. O inverso também vale e é a consequência
+aceita na \adrr{ADR-96}: enquanto a aba estiver aberta e a rede responder, a
+sessão nunca expira, porque cada tique a renova.
+\end{limitacao}
+
+\subsubsection{A ponte como máquina de estados de protocolo}
+
+A sequência do \emph{handshake} (Figura~\ref{fig:seq-handshake}) mostra \emph{uma}
+conversa que dá certo. A máquina de estados de protocolo da
+Figura~\ref{fig:uml-estados-ponte} mostra \emph{todas} as conversas permitidas,
+do lado da experiência: em que estado a SDK pode estar, que mensagem é aceita em
+cada um e o que acontece com o resto. Não há \cd{enum} de estado no código ---
+\arq{packages/sdk/src/bridge.ts} guarda a máquina em uma \emph{flag}
+(\cd{conectado}) e dois temporizadores ---, e é por isso que desenhá-la vale: é o
+único lugar em que os quatro estados aparecem juntos.
+
+\begin{figure}[H]
+\centering
+\fitwidth{%
+\begin{tikzpicture}[x=1cm, y=1cm]
+  \tikzset{
+    estc/.style={rectangle split, rectangle split parts=2, rounded corners=6pt,
+      draw=unooBlue, line width=0.85pt, fill=unooBlueWash, font=\scriptsize,
+      text width=58mm, inner sep=4pt,
+      every text node part/.style={align=center},
+      every two node part/.style={align=left}},
+    esterr/.style={estado, text width=34mm, fill=unooRedWash, draw=unooRed},
+  }
+
+  % ---- o estado inicial
+  \node[actstart] (ini) at (0.6,0.3) {};
+  \node[estc, anchor=north west] (agu) at (1.6,-0.6)
+    {\textbf{AguardandoInit}
+     \nodepart{two}
+     \textit{entry} / \texttt{normalizarHubOrigin}; envia \texttt{exp:ready}\\
+     \textit{do} / reenvia \texttt{exp:ready} a cada 400 ms\\
+     \texttt{message} [\texttt{origin} $\neq$ \texttt{hubOrigin}] / descarta\\
+     \texttt{message} [não casa \texttt{HubInitSchema}] / ignora};
+
+  % ---- conectada: estado composto
+  \draw[estadocomposto] (10.4,0.9) rectangle (19.2,-7.6);
+  \node[font=\scriptsize\bfseries, anchor=north west] at (10.55,0.8) {Conectada};
+  \node[font=\scriptsize, anchor=north west, text width=84mm, align=left] at (10.55,0.35)
+    {\texttt{hub:token} / \texttt{token := msg.token}\\
+     \textit{after}(10 min) / envia \texttt{exp:token-expirando}\\
+     \texttt{hub:init} / ignora (resposta a um \texttt{exp:ready} reenviado)\\
+     \texttt{message} [\texttt{origin} $\neq$ \texttt{hubOrigin}] / descarta\\
+     \texttt{message} [não casa \texttt{HubParaExpSchema}] / avisa e descarta};
+  \draw[draw=unooBlue, line width=0.6pt] (10.4,-1.85) -- (19.2,-1.85);
+  \node[actstart, minimum size=3.6mm] (ini2) at (11.1,-2.7) {};
+  \node[estado, text width=26mm] (ativa) at (13.0,-4.0) {Ativa};
+  \node[estado, text width=26mm] (pausa) at (17.3,-4.0) {Pausada};
+  \draw[trans] (ini2) |- (ativa.west);
+  \draw[trans] ([yshift=1.5mm]ativa.east) -- ([yshift=1.5mm]pausa.west)
+    node[translbl, midway, above]{\texttt{hub:pause}};
+  \draw[trans] ([yshift=-1.5mm]pausa.west) -- ([yshift=-1.5mm]ativa.east)
+    node[translbl, midway, below]{\texttt{hub:resume}};
+  \node[font=\scriptsize\color{unooInkSoft}, anchor=north west, text width=82mm, align=left] at (10.6,-5.2)
+    {A SDK não guarda \emph{Ativa} nem \emph{Pausada}: repassa as duas mensagens aos
+     \emph{handlers} \texttt{onPause}/\texttt{onResume}, e a experiência para os
+     próprios cronômetros. O hub manda \texttt{hub:pause} em
+     \texttt{visibilitychange}, em \texttt{blur} (salvo quando o foco foi para o
+     próprio \texttt{iframe}) e antes do aviso de sessão expirada.};
+
+  % ---- os dois fins com erro
+  \node[esterr, anchor=north west] (inc) at (1.6,-5.0) {\textbf{Incompatível}\\{\color{unooInkSoft}\texttt{reject}: \enquote{Protocolo incompatível}}};
+  \node[esterr, anchor=north west] (esg) at (5.6,-5.0) {\textbf{TempoEsgotado}\\{\color{unooInkSoft}\texttt{reject}: \enquote{Timeout no \emph{handshake}}}};
+  \node[actend] (f1) at ([yshift=-11mm]inc.south) {};
+  \node[actend] (f2) at ([yshift=-11mm]esg.south) {};
+
+  % ---- transicoes
+  \draw[trans] (ini) |- ([yshift=-5mm]agu.north west)
+    node[translbl, pos=0.25, left=1pt, align=right]{\texttt{connectToHub}\\(\texttt{hubOrigin})};
+  \draw[trans] (agu.east |- 0,-1.6) -- (10.4,-1.6)
+    node[translbl, midway, above, align=center]{\texttt{hub:init}\\{[}\texttt{trunc(v) = 2}{]}}
+    node[translbl, midway, below, align=center]{/ limpa os\\temporizadores;\\\texttt{resolve}};
+  \draw[trans] (inc.north |- agu.south) -- (inc.north)
+    node[translbl, midway, left=1pt, align=right]{\texttt{hub:init}\\{[}\texttt{trunc(v)} $\neq$ \texttt{2}{]}};
+  \draw[trans] (esg.north |- agu.south) -- (esg.north)
+    node[translbl, midway, right=1pt, align=left]{\textit{after}(8 s)};
+  \draw[trans] (inc) -- (f1);
+  \draw[trans] (esg) -- (f2);
+
+  \node[actnote, text width=58mm, anchor=north west] at (10.4,-8.0)
+    {\textbf{Na prática, o incompatível termina em tempo esgotado.} O
+     \texttt{ExpFrame} confere a versão do \texttt{exp:ready} e, se o maior
+     diverge, registra \texttt{protocolo-incompativel} e \emph{não responde}. A
+     SDK nunca recebe o \texttt{hub:init} que a levaria a \emph{Incompatível}: cai
+     no \emph{after}(8 s). O estado existe para o dia em que um hub responder com
+     outra versão.};
+
+\end{tikzpicture}}
+\caption[Máquina de estados de protocolo: a ponte]{Máquina de estados de protocolo da
+  ponte, do lado da experiência (\cd{connectToHub} e \cd{createExperiencia}). Os
+  compartimentos listam as transições internas --- as que não mudam de estado ---
+  no formato \emph{evento} [\emph{guarda}] / \emph{efeito}. Fontes:
+  \arq{packages/sdk/src/bridge.ts}, \arq{packages/sdk/src/index.ts},
+  \arq{packages/sdk/src/types.ts} (\cd{PROTOCOL\_VERSION = 2}) e
+  \arq{hub/components/ExpFrame.tsx}.}
+\label{fig:uml-estados-ponte}
+\end{figure}
+
+\subsubsection{A jornada do estudante, do \emph{login} à missão}
+
+O diagrama de visão geral de interação é um diagrama de atividades em que cada nó
+é uma \emph{interação}: um quadro \texttt{ref} aponta para uma sequência desenhada
+em outro lugar, e o fluxo entre eles tem as decisões, as bifurcações e os fins de
+um diagrama de atividades. É o índice das interações das seções anteriores. A
+Figura~\ref{fig:uml-visao-geral} costura a jornada de um estudante numa manhã de
+aula: cada quadro diz em que figura a conversa está desenhada por inteiro.
+
+\begin{figure}[H]
+\centering
+\fitpage{%
+\begin{tikzpicture}[x=1cm, y=1cm]
+  \tikzset{
+    rf/.style={refint, text width=#1, inner ysep=4.5pt,
+      label={[frameop, anchor=north west, inner sep=1.4pt]north west:ref}},
+    rf/.default=44mm,
+    dc/.style={decision, text width=24mm, aspect=2.4},
+    flowfinal/.style={circle, draw=unooInk, line width=0.9pt, fill=unooSurface,
+      minimum size=4.6mm, inner sep=0pt,
+      path picture={\draw[unooInk, line width=0.8pt]
+        (path picture bounding box.south west) -- (path picture bounding box.north east)
+        (path picture bounding box.north west) -- (path picture bounding box.south east);}},
+  }
+
+  \node[actstart] (ini) at (8.2,0.4) {};
+  \node[rf] (login) at (8.2,-0.9)
+    {\emph{login} (\ucr{UC-01})\\\texttt{signIn("credentials")} \seta{} \texttt{POST /auth/login}};
+  \node[dc] (dsenha) at (8.2,-2.55) {senha provisória?};
+  \node[rf=36mm] (senha) at (13.6,-2.55) {trocar a senha\\\texttt{/trocar-senha} (\ucr{UC-25})};
+  \node[escolha] (m1) at (8.2,-3.85) {};
+  \node[rf] (grade) at (8.2,-5.0)
+    {a grade do estudante\\\texttt{GET /salas/minhas}, sem as indisponíveis};
+  \node[dc] (dlib) at (8.2,-6.65) {o \emph{card} está liberado?};
+  \node[action, text width=34mm] (cad) at (2.6,-6.65) {cadeado: \enquote{Ainda não abriu} ou \enquote{Esta você já fechou}};
+  \node[flowfinal] (ff1) at (2.6,-7.85) {};
+  \node[rf] (entra) at (8.2,-8.55)
+    {entrada na missão\\as duas travas (Figura~\ref{fig:uml-seq-entrada})};
+  \node[rf] (hand) at (8.2,-9.95)
+    {\emph{handshake}\\\texttt{exp:ready}/\texttt{hub:init} (Figura~\ref{fig:seq-handshake})};
+  \node[bar, minimum width=120mm] (fork) at (8.2,-11.05) {};
+  \node[rf=40mm] (dom) at (2.9,-12.3)
+    {rotas de domínio\\e IA com quota (Fig.~\ref{fig:uml-seq-ia})};
+  \node[rf=40mm] (tel) at (8.2,-12.3)
+    {telemetria em lote\\(Figura~\ref{fig:uml-comunicacao})};
+  \node[rf=40mm] (ren) at (13.5,-12.3)
+    {renovação do \emph{token}\\a cada 10 min (Fig.~\ref{fig:uml-tempo})};
+  \node[bar, minimum width=120mm] (join) at (8.2,-13.55) {};
+  \node[dc] (dfim) at (8.2,-14.8) {como a missão termina?};
+  \node[rf=40mm] (conc) at (2.9,-16.8)
+    {concluir\\\texttt{POST .../progresso/:expId/concluir}};
+  \node[actionerr, text width=38mm] (exp) at (8.2,-16.8) {aviso \enquote{Sua sessão expirou}; \texttt{hub:pause}};
+  \node[actionerr, text width=38mm] (trav) at (13.5,-16.8) {\enquote{A missão travou}, com o \emph{hash} do erro};
+  \node[actend] (f1) at (2.9,-18.1) {};
+  \node[actend] (f2) at (8.2,-18.1) {};
+  \node[actend] (f3) at (13.5,-18.1) {};
+
+  \draw[flow] (ini) -- (login);
+  \draw[flow] (login) -- (dsenha);
+  \draw[flow] (dsenha) -- (senha) node[flowlbl, midway, above]{[sim]};
+  \draw[flow] (senha.south) |- (m1.east);
+  \draw[flow] (dsenha) -- (m1) node[flowlbl, midway, left=2pt]{[não]};
+  \draw[flow] (m1) -- (grade);
+  \draw[flow] (grade) -- (dlib);
+  \draw[flow] (dlib) -- (cad) node[flowlbl, midway, above]{[não]};
+  \draw[flow] (cad) -- (ff1);
+  \draw[flow] (dlib) -- (entra) node[flowlbl, midway, left=2pt]{[sim]};
+  \draw[flow] (entra) -- (hand);
+  \draw[flow] (hand) -- (fork);
+  \foreach \n in {dom, tel, ren} {
+    \draw[flow] (fork.south -| \n.north) -- (\n.north);
+    \draw[flow] (\n.south) -- (join.north -| \n.south);
+  }
+  \draw[flow] (join) -- (dfim);
+  \draw[flow] (dfim.west) -| (conc.north) node[flowlbl, pos=0.25, above]{[\texttt{exp:concluir}]};
+  \draw[flow] (dfim.south) -- (exp.north) node[flowlbl, midway, right=2pt, align=left]{[\texttt{/api/exp-token}\\dá 401 ou 403]};
+  \draw[flow] (dfim.east) -| (trav.north) node[flowlbl, pos=0.25, above]{[\texttt{exp:erro}]};
+  \draw[flow] (conc) -- (f1);
+  \draw[flow] (exp) -- (f2);
+  \draw[flow] (trav) -- (f3);
+
+\end{tikzpicture}}
+\caption[Visão geral de interação: a jornada do estudante]{Visão geral de interação da
+  jornada do estudante. Cada quadro \texttt{ref} é um uso de interação desenhada
+  por inteiro na figura indicada; as barras são bifurcação e junção --- as três
+  interações do meio correm juntas enquanto a missão está aberta. A saída pelo
+  cadeado termina em \emph{X} (fim de fluxo): o estudante continua na \emph{home}.
+  Fontes: \arq{hub/app/(plataforma)/login/login-form.tsx},
+  \arq{hub/middleware.ts}, \arq{hub/components/cartao-missao-estudante.tsx},
+  \arq{hub/components/ExpHost.tsx} e \arq{hub/components/ExpFrame.tsx}.}
+\label{fig:uml-visao-geral}
+\end{figure}
+
+% ---------------------------------------------------------------------------
+\subsection{Visão física: a implantação de um contrato}
+\label{sec:uml-fisica}
+
+O Capítulo~\ref{cap:arqnuvem} desenha a implantação com a notação de
+infraestrutura: rede, sub-rede, serviço gerenciado, a seta pública e a privada. O
+diagrama de implantação da UML (Figura~\ref{fig:uml-implantacao}) responde outra
+pergunta: \emph{que artefato roda em que nó}. Um nó é um recurso computacional
+(caixa em perspectiva); um ambiente de execução é um nó que hospeda software;
+um \textbf{artefato} é o arquivo que o CI produz e alguém executa, e é ele que
+liga o diagrama ao \emph{pipeline} do Capítulo~\ref{cap:entrega}. Três leituras
+saem daqui. A imagem da API é implantada \emph{duas} vezes: no serviço e no
+\emph{job} de migração, que roda \cd{prisma migrate deploy} na VPC antes de todo
+\emph{deploy} da API. O \emph{bundle} é armazenado num nó e executado em outro: vive
+no \emph{bucket}, roda no navegador, e a versão que vale não está no \emph{bucket},
+está na linha de \cd{experiencias} na API. E nenhum artefato é implantado à mão:
+cada seta \estereo{implanta} é um passo do \arq{deploy.yml}.
+
+\begin{figure}[H]
+\centering
+\fitpage{%
+\begin{tikzpicture}[x=1cm, y=1cm]
+  \tikzset{
+    art/.style={artefato, text width=#1},
+    art/.default=30mm,
+    nl/.style={font=\scriptsize, anchor=north west, align=left, text width=#1, inner sep=2pt},
+    nl/.default=34mm,
+  }
+
+  % ---- o navegador
+  \nodo{nav}{(0,0)}{(4.2,-7.4)}{\estereo{device}\\\textbf{Navegador} da escola}
+  \nodo[fill=unooBlueWash]{navenv}{(0.3,-1.1)}{(3.9,-3.1)}{\estereo{browser} aba do hub}
+  \node[art=28mm] at (2.1,-2.35) {\estereo{artefato}\\página do hub};
+  \nodo[fill=unooOrangeWash, draw=unooOrange]{ifr}{(0.3,-3.6)}{(3.9,-7.0)}{\estereo{sandbox} \texttt{iframe}}
+  \node[art=28mm] (bnav) at (2.1,-5.1) {\estereo{Bundle}\\\texttt{\{expId\}/\{versao\}/}};
+  \node[font=\scriptsize\color{unooMuted}, align=center] at (2.1,-6.35) {baixado da CDN;\\\emph{token} só em memória};
+
+  % ---- a stack do contrato
+  \draw[nuvem] (4.9,0.8) rectangle (19.4,-14.0);
+  \node[nuvemlbl] at (5.1,0.95) {\estereo{projeto GCP} uma \emph{stack} por contrato};
+
+  \nodo{lb}{(5.4,-0.2)}{(9.2,-2.7)}{\estereo{nó} \textbf{Load Balancer}\\global + Cloud CDN}
+  \node[nl=36mm] at (5.45,-1.2) {um IP, \emph{host rules}:\\\texttt{hub}, \texttt{api}, \texttt{exp}, \texttt{assets}};
+
+  \nodo[fill=unooBlueWash]{runhub}{(10.2,-0.2)}{(14.4,-3.4)}{\estereo{Cloud Run} \texttt{\{contrato\}-frontend}}
+  \node[art=36mm] at (12.3,-2.1) {\estereo{imagem} \texttt{hub:\{sha\}}\\\texttt{node apps/hub/server.js}};
+
+  \nodo[fill=unooBlueWash]{runapi}{(10.2,-4.3)}{(14.4,-7.5)}{\estereo{Cloud Run} \texttt{\{contrato\}-api}}
+  \node[art=36mm] (aapi) at (12.3,-6.2) {\estereo{imagem} \texttt{api:\{sha\}}\\\texttt{node dist/src/main.js}};
+
+  \nodo[fill=unooBlueWash]{job}{(15.2,-4.3)}{(19.0,-7.5)}{\estereo{Cloud Run Job}\\\texttt{\{contrato\}-migrate}}
+  \node[art=32mm] (ajob) at (17.1,-6.35) {\estereo{imagem} \texttt{api:\{sha\}}\\\texttt{prisma migrate deploy}};
+
+  \nodo{sm}{(15.2,-0.2)}{(19.0,-3.4)}{\estereo{nó} \textbf{Secret Manager}}
+  \node[nl=36mm] at (15.25,-1.2) {sete segredos: \texttt{database-url}, \texttt{token-signing-key}, \texttt{auth-secret} e mais quatro};
+
+  \nodo{gcs}{(5.4,-3.6)}{(9.2,-10.0)}{\estereo{nó} \textbf{Cloud Storage}}
+  \node[nl=36mm] at (5.45,-4.5) {\texttt{-exp}: público, CDN\\\texttt{-assets}: público, CDN\\\texttt{-planos}: \textbf{privado}\\\texttt{bucket\_exp\_mapas}: \emph{sourcemaps},\\\ \ privado};
+  \node[art=32mm] (bgcs) at (7.3,-8.6) {\estereo{Bundle}\\\texttt{\{expId\}/\{versao\}/}\\{\color{unooMuted}\texttt{index.html} com \texttt{max-age=60}}};
+
+  \nodo{sql}{(15.2,-8.3)}{(19.0,-10.8)}{\estereo{nó} \textbf{Cloud SQL}\\\texttt{\{contrato\}-pg}}
+  \node[nl=36mm] at (15.25,-9.35) {PostgreSQL, HA + PITR,\\só IP privado; \emph{role} \texttt{app}\\sem \texttt{BYPASSRLS}};
+
+  \nodo{ps}{(10.2,-8.3)}{(14.4,-10.8)}{\estereo{nó} \textbf{Pub/Sub}}
+  \node[nl=40mm] at (10.25,-9.2) {\emph{topic} \texttt{\{contrato\}-telemetria}\\\emph{push} \texttt{-telemetria-ingest}};
+
+  \nodo{ar}{(5.4,-11.0)}{(9.2,-13.6)}{\estereo{nó} \textbf{Artifact Registry}}
+  \node[nl=36mm] at (5.45,-11.95) {\texttt{hub:\{sha\}}, \texttt{api:\{sha\}}\\\emph{push} direto do CI};
+
+  \nodo[fill=unooPaper, draw=unooInkSoft]{vx}{(10.2,-11.6)}{(14.4,-13.6)}{\estereo{serviço gerenciado} \textbf{Vertex AI}}
+  \node[nl=40mm] at (10.25,-12.55) {Gemini; ADC da conta \texttt{\{contrato\}-api}};
+
+  % ---- fora da stack
+  \nodo[fill=unooPaper, draw=unooInkSoft]{wso2}{(0,-8.4)}{(4.2,-10.4)}{\estereo{externo} \textbf{WSO2 IS}}
+  \node[nl=38mm] at (0.05,-9.35) {projeto próprio; futuro emissor --- hoje é o hub};
+  \nodo[fill=unooPaper, draw=unooInkSoft]{gha}{(0,-11.4)}{(4.2,-13.6)}{\estereo{nó} \textbf{GitHub Actions}}
+  \node[nl=38mm] at (0.05,-12.4) {\texttt{deploy.yml}; WIF, sem chave JSON};
+
+  % ---- caminhos de comunicacao
+  \draw[caminhocom] (nav.east |- 0,-1.45) -- (lb.west |- 0,-1.45) node[cxlabel, midway, above]{HTTPS};
+  \draw[caminhocom] (lb.east |- 0,-1.0) -- (runhub.west |- 0,-1.0) node[cxlabel, midway, above]{\texttt{hub}};
+  \draw[caminhocom] (lb.east |- 0,-2.2) -- (9.7,-2.2) |- (runapi.west |- 0,-4.9) node[cxlabel, pos=0.3, left]{\texttt{api}};
+  \draw[caminhocom] (lb.south) -- (gcs.north) node[cxlabel, midway, right]{CDN};
+  \draw[caminhocom] (runhub.south) -- (runapi.north) node[cxlabel, midway, right, align=left]{HTTPS, \texttt{API\_INTERNAL\_URL}};
+  \draw[caminhocom] (runapi.west |- 0,-5.6) -- (gcs.east |- 0,-5.6) node[cxlabel, midway, above]{\emph{assets}, planos};
+  \draw[caminhocom] (runapi.south) -- (ps.north) node[cxlabel, midway, right, align=left]{publica; \emph{push}\\\texttt{/telemetry/ingest}};
+  \draw[caminhocom] (runapi.east |- 0,-7.1) -- (14.8,-7.1) |- (sql.west |- 0,-9.0) node[cxlabel, pos=0.75, above]{VPC};
+  \draw[caminhocom] (job.south) -- (sql.north) node[cxlabel, midway, right]{VPC};
+  \draw[caminhocom] (runapi.east |- 0,-6.6) -- (14.65,-6.6) -- (14.65,-12.6) -- (vx.east |- 0,-12.6);
+  \draw[caminhocom, dashed] (sm.west |- 0,-2.6) -- (runhub.east |- 0,-2.6) node[cxlabel, midway, below]{\emph{env}};
+
+  % ---- o CI implanta cada artefato
+  \draw[implanta] (gha.east |- 0,-12.3) -- (ar.west |- 0,-12.3) node[cxlabel, midway, above]{\estereo{implanta}};
+  \draw[implanta] (gha.north east) -- ++(0.35,0.35) |- (gcs.west |- 0,-9.3) node[cxlabel, pos=0.75, above]{\texttt{rsync}};
+  \draw[implanta] (bgcs.west) -- ++(-0.45,0) |- (bnav.east) node[cxlabel, pos=0.25, left]{\estereo{implanta}};
+
+\end{tikzpicture}}
+\caption[Implantação: que artefato roda em que nó]{Diagrama de implantação de um
+  contrato. Caixas em perspectiva são nós; as azuis são ambientes de execução;
+  as verdes com a folha dobrada são artefatos. A mesma imagem \texttt{api:\{sha\}}
+  está implantada em dois nós, e o \emph{bundle} está armazenado num e executado em
+  outro. O CI ainda executa o \emph{job} de migração e publica o manifesto
+  (\rota{PUT /experiencias/:expId}), o que o diagrama deixa no texto para não
+  cruzar a figura. Escala, rede e certificados são do Terraform, em outro
+  repositório (Capítulo~\ref{cap:arqnuvem}). Fontes: \arq{apps/api/Dockerfile},
+  \arq{apps/hub/Dockerfile}, \arq{.github/workflows/deploy.yml} e
+  \arq{docs/INFRA.md}.}
+\label{fig:uml-implantacao}
+\end{figure}
