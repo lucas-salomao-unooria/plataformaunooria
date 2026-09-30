@@ -8,7 +8,7 @@ requisitos rastreáveis, casos de uso, arquitetura de software nos quatro nívei
 do modelo C4 e nos catorze diagramas da UML 2.5.1, arquitetura de nuvem e implantação em GCP, multi-tenancy e
 segurança, modelo de dados, contratos de integração, telemetria, camada de IA,
 catálogo de experiências, especificação da API, design system, engenharia de
-entrega, qualidade, observabilidade, as ADRs (até a ADR-122), riscos e evolução.
+entrega, qualidade, observabilidade, as ADRs, riscos e evolução.
 
 ## Compilar
 

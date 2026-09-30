@@ -1633,7 +1633,18 @@ saber que uma refatoração mudou a \emph{medida}. O \emph{shim} (\arq{src/}, TS
 \section{app-90 --- Gerador de plano de aula}
 
 Ferramenta do professor. Detalhada nas Seções~\ref{cap:ia} e~\ref{cap:casosdeuso};
-o que resta registrar é a divisão de responsabilidade de armazenamento.
+o que resta registrar é a estrutura do plano e a divisão de responsabilidade de
+armazenamento.
+
+\textbf{O plano gerado tem uma estrutura só}, definida pelo \emph{prompt}
+(\adrr{ADR-123}): cabeçalho, fundamentação, objetivos gerais, o percurso do ano
+numa tabela e, em cada bimestre, questão norteadora, conteúdos, habilidades,
+estratégias, formas de avaliação e produto de síntese; fecham metodologia geral,
+avaliação geral e referências. O template que acompanha os documentos do professor
+é apenas um exemplo de formato, de outra disciplina, e
+\arq{tests/planos-estrutura.spec.ts} impede que \emph{prompt}, exemplo e
+\emph{mock} divirjam e confere cada habilidade do exemplo contra a BNCC do
+repositório.
 
 \begin{tabularx}{\linewidth}{@{}L{34mm}X@{}}
 \toprule
