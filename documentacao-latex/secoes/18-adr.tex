@@ -169,6 +169,7 @@ que a cercam.
 \zebra \adrr{ADR-120} & A régua v2 de Quem mandou isso?: cada habilidade pelo verbo dela, e refazer o mesmo pacote não mede memória & 2026-09-26 & Aceita\\
 \adrr{ADR-121} & O CI verifica só os PRs para \cd{dev}, \cd{hml} e \cd{main} & 2026-09-26 & Aceita\\
 \zebra \adrr{ADR-122} & A modelagem UML entra no Capítulo 5, com os catorze tipos da UML 2.5.1 e par Mermaid mesmo onde o Mermaid não tem o tipo & 2026-09-27 & Aceita\\
+\adrr{ADR-124} & O \arq{CLAUDE.md} admite o bloco que uma ferramenta escreve, e só ele & 2026-09-30 & Aceita; emenda a \adrr{ADR-55} e a \adrr{ADR-102}\\
 \bottomrule
 \end{tabularx}
 
@@ -10632,3 +10633,71 @@ da arquitetura.
 renderizar PlantUML; uma figura da Seção~\ref{sec:uml} ser encontrada divergente
 do código numa revisão --- sinal de que o custo de manter passou do valor --- ou
 uma segunda pessoa passar a manter os diagramas e preferir outra fonte.
+
+
+\section{ADR-124 --- O \arq{CLAUDE.md} admite o bloco que uma ferramenta escreve, e só ele}
+\label{adr:claude-md-bloco-de-ferramenta}
+
+\textbf{Data.} 2026-09-30. \textbf{Status.} Aceita.
+\textbf{Emenda} à \adrr{ADR-55} (\arq{AGENTS.md} canônico, \arq{CLAUDE.md} ponteiro de
+uma linha) e à \adrr{ADR-102}.
+
+\begin{especificacao}{Contexto}
+\begin{itemize}
+  \item \textbf{A regra era absoluta.} A \adrr{ADR-55} fixou que o \arq{CLAUDE.md} é
+    \cd{@AGENTS.md} e nada mais, porque um \arq{CLAUDE.md} com texto próprio é uma
+    segunda fonte de verdade sobre a mesma pasta, e duas fontes divergem.
+  \item \textbf{A ferramenta não a conhecia.} O \cd{graphify claude install}
+    escreveu no \arq{CLAUDE.md} da raiz um bloco \cd{\#\# graphify} de dez linhas,
+    que manda consultar o grafo do código antes de responder e atualizá-lo depois
+    de mexer. A regra continuou dizendo \enquote{uma linha}, e o repositório passou
+    a descumpri-la sem que ninguém tivesse decidido isso.
+  \item \textbf{O bloco precisa ficar.} A decisão do dono do produto é usar o
+    graphify, e a ferramenta reescreve o bloco sempre que roda: apagá-lo só recria
+    uma alteração não commitada, o mesmo que o bloco do Next em
+    \arq{apps/hub/AGENTS.md} já ensinou.
+\end{itemize}
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{itemize}
+  \item \textbf{O \arq{CLAUDE.md} é \cd{@AGENTS.md} e, no máximo, o bloco que uma
+    ferramenta escreve e reescreve} --- hoje, o do graphify. Conteúdo do projeto
+    continua só no \arq{AGENTS.md}.
+  \item \textbf{É a única exceção}, e vale para bloco de ferramenta, não para texto
+    de pessoa. A regra está escrita onde ela é lida: \arq{docs/regras/arquivos-de-instrucao.md},
+    \arq{docs/regras/o-que-nao-fazer.md} e o \arq{AGENTS.md} da raiz.
+  \item \textbf{Um teste confere a forma}: toda pasta com \arq{AGENTS.md} tem um
+    \arq{CLAUDE.md} que é só o ponteiro, e o da raiz é o ponteiro mais, no máximo, o
+    bloco do graphify (\arq{apps/api/tests/regras-de-agentes.spec.ts}).
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Mover o bloco para o \arq{AGENTS.md}.} Serviria também a Codex e Cursor,
+    mas o \cd{graphify install} o recria no \arq{CLAUDE.md}, e é o Claude Code que o
+    precisa ali.
+  \item \textbf{Deixar de usar o graphify.} Resolveria o conflito apagando a ferramenta, o
+    contrário do que o dono do produto decidiu.
+  \item \textbf{Manter a regra e tolerar o bloco sem registrar.} Uma regra que o próprio
+    repositório descumpre deixa de ser regra, e o próximo agente a \enquote{corrige}
+    apagando o bloco.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{O \arq{CLAUDE.md} da raiz deixa de ser uma linha}, e isso abre
+    precedente: a próxima ferramenta que escrever no arquivo vai pedir a mesma exceção.
+  \item \textbf{O bloco descreve um grafo que não existe num clone limpo}:
+    \cd{graphify-out/} é ignorado pelo \emph{git}, e só a primeira regra do bloco é
+    condicional a ele. Cada máquina, e cada \emph{worktree}, constrói o seu.
+  \item \textbf{O bloco está em inglês}, num repositório em pt-BR. Não é interface, e a
+    ferramenta o reescreveria.
+\end{itemize}
+
+\textbf{Gatilho.} A ferramenta passar a escrever mais de um bloco, ou fora do
+\arq{CLAUDE.md}; uma segunda ferramenta pedir o mesmo; ou o graphify deixar de ser
+usado --- e o bloco sair junto.
