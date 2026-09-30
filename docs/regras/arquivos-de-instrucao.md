@@ -150,4 +150,7 @@ perto do teto. Só as regras de `docs/regras/` têm teste do teto
 **Pasta nova com `AGENTS.md` entra na tabela do `AGENTS.md` do nível acima, no
 mesmo commit.** A tabela é o que faz a pasta ser encontrada por quem não sabe
 que ela existe — e um `AGENTS.md` que ninguém abre custa o mesmo que um que não
-existe.
+existe. O
+`regras-de-agentes.spec.ts` confere que alguém acima cita a pasta, por nome ou por
+glob (`apps/experiencias/*`): a raiz lista as experiências de uma vez, e exigir o
+nome de cada uma numa segunda tabela seria a lista que ninguém atualiza.

@@ -1,7 +1,7 @@
 ## O que muda, e por quê
 
 <!-- Uma frase sobre o efeito para quem usa (estudante, professor, gestor,
-     admin-contrato). O "como" está no diff; o "por quê" só está aqui. -->
+     admin). O "como" está no diff; o "por quê" só está aqui. -->
 
 ## Como verifiquei
 

@@ -19,7 +19,7 @@ Vertex AI (Gemini) <── api/src/ai (provider plugável, quota por estudante)
 - Nível 2 — escola: `escola_id` em toda tabela de dados + Postgres RLS.
 - Nível 3 — turma/estudante: autorização na api via claims do JWT.
 - JWT (WSO2) carrega: `sub` (estudanteId), `escola_id`, `turma_id`, `perfil`
-  (estudante|professor|gestor|admin-contrato). API valida assinatura via JWKS.
+  (estudante|professor|gestor_escola|gestor_regional|gestor_contrato|admin). API valida assinatura via JWKS.
 
 ## Fluxo de uma experiência
 1. Estudante loga no hub (OIDC WSO2) → sessão.
