@@ -4,7 +4,7 @@ Complementa o `AGENTS.md` da raiz e o de `apps/experiencias`.
 
 | Manifesto | Dev | DS | api | e2e |
 |---|---|---|---|---|
-| `exp07ef1b` · 7EF · unidade 1 · `entre-redes` · `viewport` 375×812 · `permissoes: ["forms"]` · versão **1.0.1** (a série começou na 1.0.0, maior que a 0.1.5 do Eco, por causa do caminho no bucket — ADR-113) | `:5179`, hub `/exp/exp07ef1b` | `@edu/ui/ds-insta` (clone) + `@edu/ui/ds` (escola) | `apps/api/src/a-selecao` ↔ `/a-selecao/*`; enquetes em `/evidencias/exp07ef1b/perguntas/*` (E14) | `scripts/e2e/estudante/11-a-selecao.mjs` (dois estudantes + a professora) |
+| `exp07ef1b` · 7EF · unidade 1 · `entre-redes` · `viewport` 375×812 · `permissoes: ["forms"]` · versão **1.0.1** (maior que a do dono anterior do caminho no bucket, o Eco — ADR-113) | `:5179`, hub `/exp/exp07ef1b` | `@edu/ui/ds-insta` (clone) + `@edu/ui/ds` (escola) | `apps/api/src/a-selecao` ↔ `/a-selecao/*`; enquetes em `/evidencias/exp07ef1b/perguntas/*` (E14) | `scripts/e2e/estudante/11-a-selecao.mjs` (dois estudantes + a professora) |
 
 ## O passo manda na tela
 
@@ -164,30 +164,20 @@ pediu, e não foi desenhada).
 
 ## As compensações — nenhuma aberta
 
-As quatro da 1.0.0 fecharam na 1.0.1, com o DS 0.2.7: a faixa da dica do feed e
-do aviso da poda virou `InlineHint` (tons `neutral` e `friction`, com
-`announce`), o gesto de rolar virou `GestureHint`, a tarja "Sem conexão com a
-rede…" virou `SnackbarInsta` (sempre montado, para o leitor de tela anunciar) e a
-etiqueta da ficha que quebra virou `BadgeInsta wrap`. Os três pedidos sem
-compensação também entraram: o contador do `StoryComposer` em code points, o
-`htmlFor` do `label` do `TextArea` e o `errorDescription` do `PostCard.Media`.
+Tudo que a missão precisava do DS ele publica: a faixa da dica do feed e do aviso
+da poda é o `InlineHint` (tons `neutral` e `friction`, com `announce`), o gesto de
+rolar é o `GestureHint`, a tarja "Sem conexão com a rede…" é o `SnackbarInsta`
+(sempre montado, para o leitor de tela anunciar) e a etiqueta da ficha que quebra
+é `BadgeInsta wrap`.
 
 **Não é pedido**: as barras do "Equilíbrio editorial" — o Instagram não desenha
-gráfico, e a ficha é a extensão da ficção que a missão acrescenta (o mesmo
-argumento do mini-infográfico da v1 da exp05ef1b).
+gráfico, e a ficha é a extensão da ficção que a missão acrescenta.
 
-## A copy ESCRITA AQUI (para o PO revisar)
+## A copy ESCRITA AQUI
 
-Marcada `ESCRITA AQUI` em `lib/textos.ts`: a conta da Amara (`amara.gremio`,
-"Ativa agora"), "N curtidas", "Ver todos os N comentários", os nomes acessíveis
-(abas, grade, campo, voltar), "Não foi possível carregar o feed agora.", a recusa
-do sanitizador, "Continuar" (da confirmação às enquetes), o encerramento da Amara
-("Valeu pela força com a cobertura! Até a próxima."), "Fechar conversa", o corpo
-de "Missão concluída!", a tela de missão não liberada e os dois avisos globais na
-voz da escola. E dois plurais resolvidos no sheet ("Remova 1 post", "mais 1 caractere").
-E um desvio do sheet, de propósito: o card 2 e a DM de fechamento diziam "a mesma
-praça", o tema do banco curado; com um tema gerado por IA ficava errado, e virou
-"o mesmo acontecimento".
+O que o sheet não tinha e a tela precisou está marcado `ESCRITA AQUI` em
+`lib/textos.ts`. O inventário para o PO revisar mora no `README.md` desta pasta,
+não aqui.
 
 ## Para quem escreve e2e desta missão
 

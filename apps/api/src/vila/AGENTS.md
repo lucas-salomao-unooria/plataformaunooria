@@ -5,7 +5,7 @@ Complementa o `AGENTS.md` de `apps/api`, que vence em conflito.
 ## Vila do Lume (app-70, `apps/api/src/vila`)
 Jogo 3D **transversal** — não pertence a ano nenhum (`series: []`), e é o "Ato 1"
 que o catálogo do Entre Redes sempre descreveu: *"fora da plataforma, um jogo
-mede o perfil de valores do estudante"*. O perfil dele alimenta `perfis_importados`
+mede o perfil de valores do estudante"*. O perfil dele alimenta `exp08ef1b_app_70_perfis_importados`
 (a largada do Instanooria) — M5.
 
 **Duas leituras de uma partida, e elas NÃO SE TOCAM.** O retrato Schwartz
@@ -28,7 +28,7 @@ diferença entre `zero` ("teve a chance e não foi", entra na média) e `none` (
 oportunidade não chegou", sai da conta) é a coisa mais importante do modelo.
 
 **A bolha é do SERVIDOR.** `POST /vila/sessoes` atribui A/B/C balanceada dentro
-da TURMA, persiste em `vila_bolhas` (estável entre partidas: a folha do professor
+da TURMA, persiste em `app_70_bolhas` (estável entre partidas: a folha do professor
 diz "esse estava na C") e devolve os cartões — **só os desta criança e sem
 gabarito**, como o `factual` do UnooTube. Era `estudanteSlot % 3` no navegador, o que
 punha no bundle a condição do próprio instrumento e deixava as três versões
@@ -46,7 +46,7 @@ segundo, quantos chegaram a aparecer. Zero aparecidos ⇒ a tela diz "as mensage
 não chegaram nesta partida", **nunca** "ela ignorou tudo" — é a mesma distinção
 entre `zero` e `none`.
 
-**Sem tabela de evento fino.** O bruto vive em `vila_sessoes.payload` (fonte do
+**Sem tabela de evento fino.** O bruto vive em `app_70_sessoes.payload` (fonte do
 reprocessamento) e o canal analítico do SDK já grava em `telemetria_eventos`.
 `eventos[].dados` só aceita número, booleano ou string de um **vocabulário
 fechado** — o `texto` livre que existia era o único canal de texto arbitrário do
@@ -64,7 +64,7 @@ pela mesma regra de `abrir` (`bolhasElegiveis`).
 
 **Zerar a turma apaga as BOLHAS junto.** Rodar de novo com a mesma bolha serviria
 à criança o mesmo golpe: ela reconhece, e a segunda rodada não mede nada. O que
-NÃO é tocado é `perfis_importados` — aquilo pertence à atividade do Instanooria, e
+NÃO é tocado é `exp08ef1b_app_70_perfis_importados` — aquilo pertence à atividade do Instanooria, e
 apagar de lá trocaria os lados de uma aula em andamento. O `/guia` projeta as mensagens das TRÊS bolhas lado a lado — é a
 revelação da missão, e a primeira vez que a turma vê as outras versões. Os textos
 vêm de `GET /vila/professor/cartoes` (COM gabarito, professor only), nunca de
@@ -77,12 +77,11 @@ criança por vez, com o grau ao lado. O agregado (`/vila/agregado/*`) abre para
 gestor; a linha de uma criança, não — são controllers separados, e não um
 `@Roles` misto com exceção por método.
 
-**Dois avisos do repo de origem sobre o DS estão OBSOLETOS na 0.1.11**, medidos
-no pacote: o `MetricCard` **não inventa mais tendência** (o prop é `tagText?` e a
-doc diz "sem ela a etiqueta não é renderizada"), e o `PositiveNegativeBarChart`
-tem escala **fixa** em ±100 (`h = (val / 100) * 110`) — é exatamente o que os
-eixos do circumplexo pedem, então a barra divergente NÃO é mais escrita à mão. O
-terceiro segue valendo: `AlertBox` é diálogo de 436px; para faixa de contexto,
+**Do DS, o que a Vila usa** (conferido no pacote): o `MetricCard` **não inventa
+tendência** (o prop é `tagText?` e sem ela a etiqueta não é renderizada), e o
+`PositiveNegativeBarChart` tem escala **fixa** em ±100 (`h = (val / 100) * 110`)
+— é exatamente o que os eixos do circumplexo pedem, então a barra divergente NÃO
+se escreve à mão. `AlertBox` é diálogo de 436px; para faixa de contexto,
 `FeedbackAlert` (o prop é `type`, não `variant`).
 
 **Cor da plataforma vem de classe escrita à mão** em
@@ -98,7 +97,7 @@ círculo por isso — `toBeVisible()` não pega. Só existem hoje:
 
 **Ato 1 do Instanooria: deixou de ser externo.** `POST
 /atividades/:id/perfis/da-vila` (professor) colapsa o perfil da Vila nos quatro
-quadrantes e grava em `perfis_importados` com `origem: "jogo"` — é o que decide
+quadrantes e grava em `exp08ef1b_app_70_perfis_importados` com `origem: "jogo"` — é o que decide
 de que lado o feed nasce (`largada.ts`). `PERFIL_IMPORT_TOKEN` e
 `POST /perfis/importar` continuam vivos como compatibilidade.
 O colapso (`vila/quadrantes.ts`) tem duas travas que CUSTAM estudantes, de propósito:
@@ -115,7 +114,7 @@ redistribuição que ele fez antes da aula.
 **O perfil importado guarda a PARTIDA e a VERSÃO** (`vila_sessao_id`,
 `versao_mapeamento` — ADR-50). Sem elas, subir `VERSAO_MAPEAMENTO` recalculava
 `app_70_perfis` e deixava a CÓPIA que decide o feed na geração anterior, em
-silêncio: a armadilha do `expires_at` de novo. **Sem FK** para `vila_sessoes`, de
+silêncio: a armadilha do `expires_at` de novo. **Sem FK** para `app_70_sessoes`, de
 propósito — zerar a turma na Vila apaga sessões, e a cascata levaria o perfil que
 está decidindo o lado de uma aula em andamento; é rastro da medida, não
 integridade. Gravadas no `create` E no `update`, senão reimportar não tiraria a

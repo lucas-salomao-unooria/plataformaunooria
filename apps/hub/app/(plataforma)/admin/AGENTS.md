@@ -1,21 +1,21 @@
 # apps/hub/app/(plataforma)/admin — a área do gestor
 
-Complementa o `AGENTS.md` de `apps/hub`, que vence em conflito. Gestor e
-`admin-contrato` dividem esta MESMA área do middleware: quem os separa é o
-`RolesGuard` da api, não o hub.
+Complementa o `AGENTS.md` de `apps/hub`, que vence em conflito. Os quatro papéis
+de gestão (`gestor_escola`, `gestor_regional`, `gestor_contrato` e `admin`) dividem
+esta MESMA área do middleware: quem os separa é o `RolesGuard` da api, não o hub.
 
 ## Regionais e Escolas são DUAS telas (ADR-79)
 
 `/admin/regionais` antes de `/admin/escolas` no menu — a ordem da hierarquia, e a
-ordem em que quem chega lê a lateral. As duas são `admin-contrato` (o id novo
+ordem em que quem chega lê a lateral. As duas são do contrato, `gestor_contrato` e `admin` (o id novo
 entrou em `SO_ADMIN_DO_CONTRATO` de `components/nav-admin.tsx`, e a página faz
 `redirect` como a de escolas já fazia).
 
-**Era uma tela só, e a mistura era o problema**: os três níveis na mesma `Table`
-com o tipo numa `Tag`, `"—"` nas colunas de turma e estudante das linhas de
-regional, um resumo que somava níveis diferentes ("3 registros · 2 unidades") e
-um filtro de **Tipo** cuja única função era desfazer a mistura. Separar as telas
-REMOVEU um controle — se o filtro de Tipo voltar a `/admin/escolas`, é porque a
+**Não junte os níveis numa tela só — a mistura é o problema**: os três níveis na
+mesma `Table` com o tipo numa `Tag` pedem `"—"` nas colunas de turma e estudante
+das linhas de regional, um resumo que soma níveis diferentes ("3 registros · 2
+unidades") e um filtro de **Tipo** cuja única função é desfazer a mistura.
+Separar as telas REMOVEU um controle — se o filtro de Tipo voltar a `/admin/escolas`, é porque a
 tabela voltou a misturar. A suíte e2e cobra isso.
 
 **Três armadilhas de rótulo que a separação corrigiu, e que valem para qualquer
@@ -35,7 +35,7 @@ tela de lista:**
   unidade pertence.
 
 **A tela de Regionais não soma turma nem estudante das unidades.** É permitido
-(`admin-contrato` é a exceção cross-escola) e seria útil, mas aproxima a tela da
+(`gestor_contrato` e `admin` são a exceção cross-escola) e seria útil, mas aproxima a tela da
 visão somada de diretoria que a ADR-34 recusa, e custaria uma agregação sobre
 cinco mil escolas. O único número dela é `unidades` — quantas escolas agrupa —, e
 ele vem de um `groupBy` FORA do filtro da consulta: com `tipo=regional` as filhas
@@ -44,23 +44,24 @@ não estão no resultado, e contá-las ali daria zero em toda linha.
 **O botão Excluir abre SEMPRE o diálogo**, mesmo quando a exclusão é impossível.
 Decidir na hora do clique e não fazer nada é indistinguível de botão quebrado: o
 diálogo é onde a última regional da rede e a regional com escolas explicam o
-impedimento (e, no segundo caso, oferecem a transferência). Os textos e os
-códigos de conflito estão em `apps/api/AGENTS.md`.
+impedimento (e, no segundo caso, oferecem a transferência). Os códigos de
+conflito (`regional-unica`, `regional-com-escolas`) estão em
+`apps/api/src/tenancy/AGENTS.md`.
 
 ## O modal de vínculo busca na REDE (ADR-80)
 
-O campo "Onde a pessoa está hoje" **saiu**, e não por gosto: ele filtrava por
-`users.escola_id`, que é o cache da lotação PRINCIPAL — quem trabalha em duas
-escolas só era achado pela principal, e procurando pela outra a lista voltava
-vazia. Agora é `GET /escolas/profissionais`, sem escola de origem.
+**Não filtre por "onde a pessoa está hoje"**: `users.escola_id` é o cache da
+lotação PRINCIPAL — quem trabalha em duas escolas só seria achado pela
+principal, e procurando pela outra a lista voltaria vazia. A busca é
+`GET /escolas/profissionais`, sem escola de origem.
 
 - **Quatro estados de busca distintos**: inicial (orienta), buscando, vazia
   (só DEPOIS de uma busca concluída) e erro. A tela dizia "nenhum professor
   encontrado nesta escola" **antes** de qualquer busca — afirmação sobre uma
   consulta que nunca aconteceu.
 - **O botão fica sempre visível**, e a seleção da tabela é SUGESTÃO de destino,
-  editável. Antes ele só aparecia com linha marcada, e duplicava o botão da barra
-  de seleção — dois botões idênticos lado a lado.
+  editável. Aparecer só com linha marcada duplicaria o botão da barra de
+  seleção — dois botões idênticos lado a lado.
 - **Destino já vinculado é marcado e sai da criação**; se todos estiverem, a tela
   diz que não há o que criar e o botão não habilita.
 - **UM perfil no resumo, com a frase dizendo que vale em todas as escolas.**

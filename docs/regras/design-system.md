@@ -25,9 +25,9 @@ plataforma no feed do estudante quebra a ilusão que a experiência está medind
 | Seção | Ponte | Onde vale |
 |---|---|---|
 | `unooria` | `@edu/ui/ds` | hub (login, `/professor`, `/admin`, `/analise`), header de todos os papéis, telas pós-revelação do estudante |
-| `instanooria` | `@edu/ui/ds-insta` | superfície disfarçada da exp08ef1b e a exp07ef1b inteira no clone (as telas da escola vão pela `@edu/ui/ds`); as sete extensões da 0.2.5 (DM, enquete, diálogo, folha, pílula, compositor de Stories) e as três da 0.2.7 (faixa de dica, gesto e aviso passageiro) entraram para ela |
-| `unitube` | `@edu/ui/ds-unootube` | superfície disfarçada do UnooTube, hoje ARQUIVADO (`backup-exp04ef1b`, ADR-116): nenhuma missão viva a usa |
-| `chatgpt` | `@edu/ui/ds-chatgpt` | a exp02em1b INTEIRA (não tem revelação no software) |
+| `instanooria` | `@edu/ui/ds-insta` | superfície disfarçada da exp08ef1b e a exp07ef1b inteira no clone (as telas da escola vão pela `@edu/ui/ds`); as telas de clone (E2–E4) da exp01ef1b; a peça `PostCard` da exp04ef1b (ADR-117); as sete extensões da 0.2.5 (DM, enquete, diálogo, folha, pílula, compositor de Stories) e as três da 0.2.7 (faixa de dica, gesto e aviso passageiro) entraram para ela |
+| `unootube` | `@edu/ui/ds-unootube` | superfície disfarçada do UnooTube, hoje ARQUIVADO (`backup-exp04ef1b`, ADR-116): nenhuma missão viva a usa |
+| `chatgpt` | `@edu/ui/ds-chatgpt` | a exp02em1b INTEIRA (não tem revelação no software) e a conversa da exp08ef4b (o briefing, o Meu Percurso e o fechamento dela são `unooria`) |
 | `whatsappmobile` | `@edu/ui/ds-whatsapp` | a exp06ef2b e a exp05ef1b, menos as telas da escola — **só tema escuro**. Onde a fronteira cai é a REVELAÇÃO, não o arquivo: na exp06ef2b o mapa da rede fala pela escola porque o app real não tem visualizador de topologia (ADR-72) |
 | `tiktooria` | — | ainda sem consumidor |
 
@@ -43,10 +43,15 @@ do clone não traz a barra, as abas nem o fundo do app. É o inverso do que
 continua proibido — a plataforma dentro do clone — e vale só para conteúdo que
 a criança deve reconhecer como vindo daquela plataforma.
 
-`^0.1.x` **não** pega `0.2.0` — caret em `0.x` só sobe patch. Atualizar é ativo:
+`^0.2.8` **não** pega `0.3.0` — caret em `0.x` só sobe patch. Atualizar é ativo:
 `pnpm up -r @unooria/design-system --latest`, commitando lockfile e
 `package.json` juntos. Mecânica completa (CSS, fontes, frames, compensações,
 armadilhas de migração) em `packages/ui/AGENTS.md`.
+
+**Precedência sobre a skill `frontend-design`.** Ela serve para arte e peças fora
+do DS (a exceção declarada em `packages/ui/AGENTS.md`, o site público, o
+conteúdo de um clone). Ela NUNCA substitui esta regra: a interface do hub e das
+experiências vem do `@unooria/design-system`.
 
 ### O procedimento, antes de escrever QUALQUER interface
 
@@ -71,8 +76,8 @@ de controle, é componente, e componente nasce no `storybook-unooria`.
 
 **Componente que existe e não é usado custa igual a componente que falta.** Em
 2026-09-07 descobriu-se que o DS publica `ScrollBar` (vertical, horizontal, com
-`autoHide`) desde a 0.1.x e o hub tinha **24 tabelas** rolando em `<div>` com
-`overflow` na mão, além de mais 6 áreas roláveis soltas — barra de sistema em
+`autoHide`) desde a 0.1.x e o hub tinha as tabelas rolando em `<div>` com
+`overflow` na mão, além de outras áreas roláveis soltas — barra de sistema em
 cada tela, sem auto-hide e diferente por sistema operacional. Ninguém "decidiu"
 não usar: o passo 1 não foi dado. Por isso ele está escrito aqui.
 

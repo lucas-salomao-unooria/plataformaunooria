@@ -13,7 +13,7 @@ a pula pelo nome).
 | Arquivo | O que é | O que trocar primeiro |
 |---|---|---|
 | `public/experiencia.json` | manifesto completo: `id, nome, versao, produto, series, unidade, publico, capabilities, permissoes, verbos` | tudo — e `permissoes` só com o que o iframe precisa (`forms` se houver `<form>` do DS) |
-| `package.json` | scripts iguais aos das outras experiências; DS `^0.2.7` + `@edu/ui` + `vitest` | a porta do `dev` (próxima livre em `apps/hub/lib/experiencias-dev.ts`, e no `CORS_ORIGINS` da api) |
+| `package.json` | scripts iguais aos das outras experiências; o DS (a faixa está no próprio `package.json`) + `@edu/ui` + `vitest` | a porta do `dev` (próxima livre em `apps/hub/lib/experiencias-dev.ts`, e no `CORS_ORIGINS` da api) |
 | `src/main.tsx` | folhas da seção `unooria` (componente + FONTE) | acrescentar a seção do clone (`<secao>.css` + `fonts/<secao>.css`) |
 | `src/bootstrap.tsx` | handshake `createExperiencia`, singleton, telemetria, primeira leitura, erro reportado pelo SDK | a primeira leitura: `progresso` → `GET /<slug>/sessao` quando houver módulo na api |
 | `src/App.tsx` | a tela de exemplo, só com `Button` de `@edu/ui/ds` | tudo |
@@ -43,6 +43,6 @@ mostra ONDE a experiência o chama (`bootstrap.tsx`, `lib/api.ts`).
 Não. A experiência nasce **copiada, não linkada**: o que mudar aqui vale para a
 próxima, e as que já existem ficam como estão. Mudança de fiação que precisa
 valer para todas é mudança no `@edu/sdk`. Por isso este template segue de perto
-a experiência mais recente (exp08ef4b): quando uma missão nova consolidar um
+a fiação da exp08ef4b (ADR-106): quando uma missão nova consolidar um
 padrão melhor, ele volta para cá no mesmo PR — senão a próxima nasce velha,
 como a exp01ef1b nasceu em React 18 porque o template estava em 18.

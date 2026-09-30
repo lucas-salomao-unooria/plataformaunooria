@@ -1,7 +1,7 @@
 # apps/experiencias/exp05ef1b — Quem Mandou Isso? v2.2
 
 Complementa o `AGENTS.md` da raiz e o de `apps/experiencias`. A v1 saiu na
-ADR-114; esta é a v2.2 com o MESMO código, começando na 0.2.0.
+ADR-114; esta é a v2.2, com o MESMO código de experiência.
 
 | Manifesto | Dev | DS | api | e2e |
 |---|---|---|---|---|
@@ -36,8 +36,8 @@ aqui ele produz um vaivém que parece inconsistência e não é:
 
 Arquivo por família: `telas-do-clone.tsx` importa só `@edu/ui/ds-whatsapp`;
 `telas-da-escola.tsx` só `@edu/ui/ds`. No CSS a fronteira está MARCADA — token
-`--wa-*` numa tela da casca não quebra nada, só some sobre o branco
-(`fronteira-do-disfarce-e-tokens` nas memórias). Na casca a rolagem é o
+`--wa-*` numa tela da casca não quebra nada, só some sobre o branco.
+Na casca a rolagem é o
 `ScrollBar` do DS (a seção ali É a `unooria`); no clone é a barra do sistema,
 como em toda experiência.
 
@@ -147,10 +147,8 @@ O `Então` nunca vai a `reportarErro`, log ou telemetria: é texto livre de meno
 
 ## Compensações sobre o DS: nenhuma aberta
 
-As duas da 0.2.4 — a seta esgotada que ainda responde (`.encaminhar--esgotado`)
-e o toque na mídia desenhada (`.toque-na-midia`) — viraram pedido ao
-`storybook-unooria`, foram publicadas na 0.2.6 (`exhausted` e `.Media` com
-`onClick`) e saíram daqui na 0.2.1. Compensação nova vai marcada
+A seta esgotada que ainda responde (`exhausted`) e o toque na mídia desenhada
+(`.Media` com `onClick`) são do DS, e nenhum CSS local os compensa. Compensação nova vai marcada
 `(b) COMPENSAÇÃO` no código, com a lacuna e o pedido, e entra nesta seção.
 
 **Não são pedido**: o desenho do comunicado, da lâmina e do termômetro — são

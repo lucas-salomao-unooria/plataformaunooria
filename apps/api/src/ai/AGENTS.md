@@ -27,12 +27,14 @@ em hora diferente. Todo perfil que não é `estudante` cai em `professor`
 - **Perfil novo com IA** (gestor, admin) entra em TRÊS lugares no mesmo commit:
   a tupla, o CHECK da migration e a semente. Um só é o modo de falhar mudo.
 - Continuam FORA do funil, e são cartão à parte: o motor da exp08ef1b (`geracao/`)
-  e as reações da Vila do Lume (`motor/runs.controller.ts`), já apontados na
+  e as reações ao vivo dele (`motor/runs.controller.ts`), já apontados na
   ADR-74. Quota configurável só vale para quem chama `temSaldo`.
 
 ## Provider de IA (`apps/api/src/ai/provider.ts`)
-Interface única `AiProvider { generate(req): Promise<AiResult> }`. Implementações:
-`vertex.provider.ts` (default), `mock.provider.ts` (testes). Para trocar de
+Interface única `AiProvider` (`generate`, `generateJson`, `conversar`,
+`generateImage`, `generateSpeech`). Implementações: `vertex.provider.ts`
+(default), `mock.provider.ts` (testes); `medidor.provider.ts` é o decorator que
+mede latência e tokens e embrulha o real na factory do `AiModule`. Para trocar de
 provedor, cria-se novo arquivo — nada fora de `src/ai` conhece o vendor.
 
 **O mock falha FECHADO em `generateJson` e `generateImage`** (lançam sempre) e
@@ -40,42 +42,41 @@ NÃO falha em `conversar` — conversa não tem fallback autorado, e falhar ali
 deixaria a exp02em1b sem abrir em dev. Quem chama `generateJson` precisa decidir o
 que fazer com isso: reações ao vivo caem em lista vazia, geração de posts vira
 job falho que o painel mostra, e **`/destilar` devolve 503 com a causa** (ADR-52)
-— era o único sem tratamento, e em `AI_PROVIDER=mock` fazia criar atividade
-responder 500 opaco. Consumidor novo de `generateJson` decide isso explicitamente.
+— sem esse tratamento, em `AI_PROVIDER=mock` criar atividade responderia 500
+opaco. Consumidor novo de `generateJson` decide isso explicitamente.
 `AiRequest.modelo: "padrao" | "longo"` escolhe a família (o `longo` mapeia para
-`VERTEX_MODEL_LONGO`, Gemini 2.5, saída até 65k — planos anuais); quem gera texto
-longo checa `AiResult.finishReason` (`MAX_TOKENS` = conteúdo cortado, é erro).
+`VERTEX_MODEL_LONGO`, hoje o mesmo modelo do `padrao`; existe para saída longa —
+planos anuais); quem gera texto longo checa `AiResult.finishReason` (`MAX_TOKENS` = conteúdo cortado, é erro).
 
 **Credencial: ADC, nunca chave de API.** O provider pega o token com
 `google-auth-library`, que resolve na mesma ordem nos três ambientes:
 `GOOGLE_APPLICATION_CREDENTIALS` → arquivo do `gcloud auth application-default
-login` → metadata server (Cloud Run). Antes daqui só havia o metadata server, e
-por isso NENHUMA chamada de IA funcionava fora do Cloud Run — nem no host nem no
-container, onde `metadata.google.internal` não resolve; em dev a api ficava presa
-no `AI_PROVIDER=mock` e a app-90 devolvia um plano falso. Os dois compose montam
+login` → metadata server (Cloud Run). Só o metadata server não serviria: fora do
+Cloud Run — no host e no container, onde `metadata.google.internal` não
+resolve — nenhuma chamada de IA funcionaria, a api ficaria presa no
+`AI_PROVIDER=mock` em dev e a app-90 devolveria um plano falso. Os dois compose montam
 o ADC do host em `/adc` (só leitura); em Cloud Run a service account do serviço
 já é a credencial, e ela precisa de `roles/aiplatform.user`.
 
-**Modelo × região (decisão, 2026-08).** O modelo é `gemini-3.6-flash` e a
-localização é `global` — para texto E para o plano de aula. Medido no projeto do
-contrato: o 3.6-flash dá 404 em `southamerica-east1`, `us-east1` e `us-central1`;
-só o endpoint `global` (sem host regional) o serve. A consequência é explícita e
-foi aceita: o tráfego de IA sai de São Paulo, inclusive o do estudante. Voltar para
+**Modelo × região.** O modelo é `gemini-3.6-flash` e a localização é `global` —
+para texto E para o plano de aula. Medido no projeto do contrato: o 3.6-flash dá
+404 em `southamerica-east1`, `us-east1` e `us-central1`; só o endpoint `global`
+(sem host regional) o serve. A consequência é explícita e aceita: o tráfego de
+IA sai de São Paulo, inclusive o do estudante. Voltar para
 `VERTEX_LOCATION=southamerica-east1` é possível a qualquer momento, mas exige
 trocar TAMBÉM o modelo pelo que a região publica (família 2.5 — a 2.0 saiu do
 catálogo e a 3.x nunca esteve lá). A arte da exp08ef1b usa `gemini-3.1-flash-image`
-(o `gemini-2.0-flash-exp` que era o default não existe mais em lugar nenhum, e
-por isso toda geração de imagem caía no fallback procedural), e PEDE a proporção
+(o `gemini-2.0-flash-exp` não existe mais em lugar nenhum: usá-lo faz toda
+geração de imagem cair no fallback procedural), e PEDE a proporção
 `4:5` no `imageConfig`: sem isso o 3.1 devolve 1408×768 e o `cover` do
 `AssetsService` (1080×1350) descarta mais da metade da largura. O modelo aceita
 1:1, 2:3, 3:2, 3:4, 4:3, 4:5, 5:4, 9:16, 16:9 e 21:9 pelo MESMO custo em tokens —
 experiência com outro formato deve pedir o formato, não recortar depois.
 
 **Raciocínio conta como saída.** Nos modelos 2.5 e 3.x os tokens de pensamento saem do
-`maxOutputTokens`: com pensamento livre o plano anual voltava VAZIO com
+`maxOutputTokens`: com pensamento livre o plano anual volta VAZIO com
 `finishReason: MAX_TOKENS`. `VERTEX_THINKING_BUDGET` (default `0`, desligado)
-mantém a paridade com o app origem, que usava Claude sem essa etapa; `-1` volta
-ao dinâmico.
+evita isso; `-1` volta ao dinâmico.
 
 **Voz (`generateSpeech`) não é o aiplatform** — é a **Cloud Text-to-Speech**
 (`texttospeech.googleapis.com/v1/text:synthesize`), com os mesmos modelos Gemini

@@ -6,11 +6,6 @@ uma custou. O que é verdade sobre a estrutura (onde mora o quê, como rodar, o 
 vive em `README.md`; o que o jogo É vive em `docs/GAME_DESIGN.md`; o vocabulário, em
 `docs/CONTEXT.md`.
 
-> **Reescrito em 26/08/2026.** A versão anterior era o guia do app de origem (`vila-coleta`)
-> e descrevia `public/jogo/` dentro de um Next na porta 3100, `localStorage` como rede de
-> segurança, `vilaExportarTudo()`, importação de `.json` e um `tests/jogo/smoke.js` que não
-> existe. Nada disso sobreviveu ao porte. O que sobreviveu é o que está abaixo: as regras.
-
 ## As duas camadas nunca se cruzam
 
 **Camada 1** é o que a criança vive. **Camada 2** é a instrumentação, e ela é invisível: a
@@ -114,10 +109,6 @@ node scripts/e2e/rodar.mjs professor/05    # as telas do professor e as três tr
 pnpm --filter @edu/api test                # contrato, bolha, correção, tenancy
 node --check public/jogo/src/<arquivo>.js  # erro de sintaxe antes de recarregar
 ```
-
-Os dois `scripts/walkthrough-*-vila.mjs` que este arquivo mandava rodar até
-2026-09-01 **não existem** desde que a suíte passou a ser organizada por papel
-(ADR-51). Substituídos pelas duas suítes acima.
 
 O jogo é servido de `public/`, sem HMR: editar um `.js` exige **recarregar a página** — e é
 aí que o cache do navegador engana. Ver `README.md` para as portas e o embed.

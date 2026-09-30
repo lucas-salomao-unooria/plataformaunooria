@@ -18,9 +18,13 @@ pacote).
   api-indisponivel | api-timeout`) com rota, status e o `requestIdDaApi` que a
   api devolveu no corpo do 500. Antes, "a api caiu" e "não há dados" eram a
   mesma coisa. **Toda chamada tem teto**: `TIMEOUT_DA_API_MS` (10 s) no
-  `apiDoServidor`, `TIMEOUT_DO_BFF_MS` (30 s) no BFF, que repassa CSV e
-  planilha. Falha de rede vira `Response` sintética 599 (598 no timeout): quem
-  chama trata status, não exceção.
+  `apiDoServidor`, `TIMEOUT_DO_BFF_MS` (3 min) no BFF, que repassa CSV,
+  planilha e a geração por IA. O teto do BFF é o de UMA chamada de geração, e o
+  porquê está no comentário dele em `app/api/plataforma/[...path]/route.ts`: com
+  30 s a mesma chamada dava 200 em 24,9 s e 504 em 30,1 s, e a api TERMINAVA o
+  trabalho e debitava a quota sem ninguém ouvindo. No `apiDoServidor`, falha de
+  rede vira `Response` sintética 599 (598 no timeout): quem chama trata status,
+  não exceção. O BFF responde 502 (falha) ou 504 (timeout).
 - **O `traceparent` da requisição de origem segue para a api** nos dois
   caminhos (`apiDoServidor` e BFF): é o que põe o render do professor e o span
   da api no mesmo trace. Sem cabeçalho de origem (build, teste), nada é
@@ -38,7 +42,8 @@ pacote).
   relato e o Logs Explorer sem inventar id. A `TelaDeErro` importa o CSS do DS
   por conta própria porque o `error.tsx` da raiz renderiza fora da
   `CascaPlataforma`. Erro de render no CLIENTE não tem digest e não passa pelo
-  servidor: o registro dele entra com a captura de erros de cliente (fase 2).
+  servidor: o registro dele é a captura de erros de cliente (`lib/erros-do-hub.ts`,
+  em "Sinais do navegador" abaixo).
 - **`server-only` nos testes**: o pacote real LANÇA fora de um RSC. O
   `vitest.config.ts` aponta o alias para `lib/stub-server-only.ts`; sem isso
   qualquer teste que toque `lib/log.ts` ou `lib/api-servidor.ts` morre na
@@ -91,8 +96,8 @@ render. Instalar o `http` duplicaria o span raiz. Só o `undici` entra, para o
   dois enums e um número, e `sendBeacon` não garante cookie.
 - **Erros de cliente do hub**: `instrumentation-client.ts` instala a captura da
   SDK (`lib/erros-do-hub.ts`) com `expId: "hub"` e `versao =
-  NEXT_PUBLIC_HUB_VERSAO` (o SHA do build, ARG do Dockerfile — a segunda e
-  última `NEXT_PUBLIC_*` que chega ao bundle, junto com a do Clarity). Posta pelo
+  NEXT_PUBLIC_HUB_VERSAO` (o SHA do build, ARG do Dockerfile — uma das duas
+  `NEXT_PUBLIC_*` que chegam ao bundle do client, com a do Clarity). Posta pelo
   BFF (`observabilidade` entrou na allowlist); sem sessão o BFF dá 401 e fica no
   console. `error.tsx`/`global-error.tsx` reportam pelo mesmo caminho.
 - **Web Vitals do hub**: `components/vitals-hub.tsx` no layout raiz
@@ -128,10 +133,12 @@ página só no painel.
 é a mesma fonte que as experiências injetam dentro do iframe. Colar o script no
 layout cria a segunda cópia.
 
-**`NEXT_PUBLIC_CLARITY_PROJECT_ID` é a única `NEXT_PUBLIC_*` do hub que chega ao
-bundle do CLIENT** — as outras duas são lidas só em código server-only, e por
-isso são env de runtime. Esta é inlinada no `next build`, entra por `ARG` no
-`Dockerfile`, e trocá-la exige rebuild. Ela é lida num lugar só,
-`lib/clarity.ts`: a referência a `process.env` precisa ser estática para o Next
+**`NEXT_PUBLIC_CLARITY_PROJECT_ID` é uma das DUAS `NEXT_PUBLIC_*` do hub que
+chegam ao bundle do CLIENT** (a outra é `NEXT_PUBLIC_HUB_VERSAO`, o SHA do build)
+— `NEXT_PUBLIC_API_URL` e `NEXT_PUBLIC_CDN_EXP_URL` são lidas só em código
+server-only, e por isso são env de runtime. As duas do bundle são inlinadas no
+`next build`, entram por `ARG` no `Dockerfile`, e trocá-las exige rebuild. A do
+Clarity é lida num lugar só, `lib/clarity.ts`: a referência a `process.env`
+precisa ser estática para o Next
 substituir o literal, e `process.env[nome]` calculado chegaria `undefined` sem
 erro nenhum.

@@ -33,9 +33,11 @@ que vence em conflito — e que carrega a versão curta desta lista.
       `exigirProdutoLigado`, e rota de api nova da ferramenta herda o
       `DisponibilidadeGuard` da classe. O modo de falhar é MUDO: tudo funciona
       e o produto deixa de poder ser desligado
-- [ ] Se tocou contrato (bridge/telemetria/provider): docs atualizados aqui
-- [ ] Se a regra mudou: o `AGENTS.md` da pasta afetada mudou no mesmo commit
-- [ ] **`documentacao-latex/` atualizada e `main.pdf` regerado** (tabela acima).
+- [ ] Se tocou contrato (bridge/telemetria/provider): docs atualizados
+      (`docs/regras/bridge-postmessage.md` e `secoes/09-contratos-integracao.tex`)
+- [ ] Se a regra mudou: o `AGENTS.md` da pasta ou o `docs/regras/` afetado mudou no mesmo commit
+- [ ] **`documentacao-latex/` atualizada e `main.pdf` regerado** (a tabela "Se você mudou…" está em
+      `docs/regras/documentacao-latex.md`).
       Decisão com alternativa descartada = ADR nova em `secoes/18-adr.tex`
 - [ ] **Mudou tela ou regra de negócio? O mapa de produto muda no mesmo PR**
       (`documentacao-latex/produto/mapa-de-produto/`, PU-PRD-001): a história

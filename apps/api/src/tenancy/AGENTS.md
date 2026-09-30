@@ -6,7 +6,7 @@ Complementa o `AGENTS.md` de `apps/api`, que vence em conflito.
 
 **Uma rede estadual não é uma escola grande.** São milhares de unidades,
 professores em mais de uma, e crianças que se transferem. A decisão que torna
-isso barato é o que NÃO muda: **o token continua carregando UMA escola**. As 31
+isso barato é o que NÃO muda: **o token continua carregando UMA escola**. As
 tabelas com `escola_id` e a política de RLS ficam intocadas, e a regra 1 continua
 literalmente verdadeira (ADR-30).
 
@@ -20,7 +20,7 @@ literalmente verdadeira (ADR-30).
   (`components/seletor-de-escola.tsx`); a troca passa por `POST /api/escola-ativa`,
   que valida contra `GET /escolas/minhas` **da api** — nunca contra a lista que o
   cookie carrega. `users.escola_id` é o cache da lotação principal.
-- **Criar escola é `admin-contrato` e ninguém mais**, inclusive no `orgs.csv`:
+- **Criar escola é dos perfis de contrato (`gestor_contrato` e `admin`) e de mais ninguém**, inclusive no `orgs.csv`:
   escola é tenant, e abrir inquilino com RLS e dados de menores por trás não é
   operação de quem administra uma unidade. `/admin/escolas` é a tela.
 - **A REGIONAL agrupa; quem autoriza é a lotação** (ADR-34). `escolas.tipo` tem
@@ -67,11 +67,10 @@ literalmente verdadeira (ADR-30).
   em duas chamadas existiria a janela em que as escolas já mudaram de regional e a
   antiga continua na lista. A regional PADRÃO não tem proteção própria — depois
   que a rede se organizou, ela é a sobra que se quer remover.
-- **A importação `orgs.csv` mudou de política** (ADR-79). Antes a escola entrava
-  com `pai_id` nulo e um aviso quando o `parentSourcedId` era desconhecido. Agora:
-  com UMA regional na rede, vínculo automático + aviso; com VÁRIAS, a linha é
-  **erro** com o número dela. É mudança observável para quem já usa — `orgs.csv`
-  que hoje importa passa a falhar.
+- **A importação `orgs.csv` não cria escola sem regional** (ADR-79): com UMA
+  regional na rede, `parentSourcedId` ausente ou desconhecido vira vínculo
+  automático + aviso; com VÁRIAS, a linha é **erro** com o número dela. Pai nulo
+  deixaria a escola órfã, que o CHECK do banco recusa.
 - **O panorama da diretoria SOMA** (ADR-81, revendo a ADR-34).
   `GET /escolas/minhas/resumo` devolve **uma linha por escola**; quem soma é a
   TELA (`/admin/minhas-escolas`) — ela já somava turmas e estudantes antes desta

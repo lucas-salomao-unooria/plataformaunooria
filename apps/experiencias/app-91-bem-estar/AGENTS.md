@@ -13,7 +13,7 @@ Complementa o `AGENTS.md` da raiz e o de `apps/experiencias`.
 | Manifesto | `app-91-bem-estar` · `publico: "professor"` · `series: []` · `telemetria, ia` |
 | Dev | `pnpm --filter @edu/app-91-bem-estar dev` → :5176 · hub `/professor/bem-estar` |
 | DS | `@edu/ui/ds` |
-| api | `/bemestar/*` (`hoje`, `historico`, `dados`) — as decisões estão em `apps/api/AGENTS.md` |
+| api | `/bemestar/*` (`hoje`, `historico`, `dados`) — as decisões estão em `apps/api/src/bemestar/AGENTS.md` |
 | e2e | `scripts/e2e/professor/04-bem-estar.mjs` (`AI_PROVIDER=mock` usa os textos fixos) |
 
 ## Instrumento, não conversa: os 21 itens são verbatim

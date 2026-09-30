@@ -12,9 +12,9 @@ para `gestor_regional` (a própria regional) e os perfis de contrato
   abrindo a tranca **uma escola por vez** (`comTenancy` por escola, em lotes de
   8 com `aosPares`), somando na aplicação. A política **não** é tocada. É o mesmo
   padrão de `lotarEmLote` e da transferência.
-  **Afrouxar a política seria UMA linha** (ela é gerada por laço sobre ~29
-  tabelas) — o custo não é escrever, é que ela É a garantia de que a escola A
-  nunca vê a criança da escola B. O laço mantém a garantia literal.
+  **Afrouxar a política seria UMA linha** (ela é gerada por laço sobre as
+  tabelas com `escola_id`) — o custo não é escrever, é que ela É a garantia de
+  que a escola A nunca vê a criança da escola B. O laço mantém a garantia literal.
 - **A autorização mora em `regionalDoRelatorio`**, um método, não no controller.
   Para `gestor_regional` a regional vem de `users.regional_id` e o
   `?regionalId=` é **IGNORADO** — ignorado, e não validado contra o dele: o

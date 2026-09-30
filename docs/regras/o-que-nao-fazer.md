@@ -12,7 +12,7 @@ que vence em conflito — e que carrega a versão curta desta lista.
 - Não escrever migração que remova `escola_id` ou afrouxe RLS.
 - Não chamar provedores de IA fora de `apps/api/src/ai`.
 - Não rodar Snyk (CLI ou MCP): a varredura é do CI. Ver "Ferramentas externas".
-- Não escrever conteúdo em `CLAUDE.md`: ele é o ponteiro `@AGENTS.md` de uma linha.
+- Não escrever conteúdo em `CLAUDE.md`: ele é o ponteiro `@AGENTS.md`, mais o bloco que o graphify escreve e reescreve (ADR-124).
 - Não escrever componente de UI local (nem em `packages/ui`, nem na experiência)
   quando a seção do DS já tem: o lugar do componente novo é o `storybook-unooria`.
 - **Não escrever interface sem antes procurar no DS** (o procedimento de três
@@ -56,5 +56,6 @@ que vence em conflito — e que carrega a versão curta desta lista.
   do handshake e obriga a subir `PROTOCOL_VERSION`.
 - Não misturar seções do DS: componente/token da plataforma dentro do clone de uma
   experiência (ou o contrário) quebra a fidelidade que a experiência mede.
-- Não travar a versão do DS: `^0.1.x` não sobe minor — atualizar de propósito.
+- Não deixar o DS parado: em 0.x o caret (`^0.2.8`) só sobe patch, então subir minor é
+  decisão ativa (`pnpm up -r @unooria/design-system --latest`).
 - Não commitar assets binários pesados (>2MB): vão para o bucket, referenciados por URL.

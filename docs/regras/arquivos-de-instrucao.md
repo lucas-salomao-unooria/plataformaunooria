@@ -17,7 +17,7 @@ Três arquivos, três papéis que não se misturam:
 | Arquivo | Para quem | Regra |
 |---|---|---|
 | `AGENTS.md` | qualquer agente | **canônico.** O único lugar onde a doutrina daquela pasta é escrita |
-| `CLAUDE.md` | Claude Code | **uma linha, `@AGENTS.md`.** Nunca conteúdo próprio |
+| `CLAUDE.md` | Claude Code | **`@AGENTS.md` e nada mais**, salvo o bloco que uma FERRAMENTA escreve e reescreve (hoje o do graphify, ADR-124). Nunca conteúdo do projeto |
 | `README.md` | pessoa | o que a pasta é e como rodar. NÃO entra sozinho no contexto do agente |
 
 Por que dois e não um: `AGENTS.md` é o nome que a maioria das ferramentas lê;
@@ -52,9 +52,10 @@ esta seção inteira existe para evitar.
 com o porquê junto da regra — regra sem custo declarado é a primeira a ser
 "otimizada" por quem chega depois.
 
-**Bloco gerado por ferramenta** (o do Next em `apps/hub/AGENTS.md`) fica entre os
-marcadores dela, intocado, e o conteúdo do projeto vem depois — a ferramenta
-reescreve o bloco, e apagá-lo só recria a alteração não commitada.
+**Bloco gerado por ferramenta** (o do Next em `apps/hub/AGENTS.md`; o do graphify no
+`CLAUDE.md` da raiz, ADR-124) fica intocado, e o conteúdo do projeto vem depois — a
+ferramenta reescreve o bloco, e apagá-lo só recria a alteração não commitada. O
+bloco de ferramenta é a ÚNICA exceção à regra de que `CLAUDE.md` é só o ponteiro.
 
 **Manutenção.** Mudou a regra, muda o `AGENTS.md` **no mesmo commit** — mesma
 razão do LaTeX: instrução desatualizada é pior que instrução nenhuma, porque o
@@ -82,7 +83,7 @@ eixo, não o `Status`. Ver `docs/agents/triage-labels.md`.
 ### Domain docs
 
 Layout próprio, não o das skills: o glossário é o `CONTEXT.md` da raiz, o mapa
-de contextos é a tabela de pastas deste arquivo, cada contexto é o `AGENTS.md`
+de contextos é a tabela de pastas do `AGENTS.md` da raiz, cada contexto é o `AGENTS.md`
 da sua pasta, e **não existe `docs/adr/`** — as ADRs estão em
 `documentacao-latex/secoes/18-adr.tex`. Ver `docs/agents/domain.md`.
 
@@ -105,6 +106,19 @@ para ela.** Isso não é preferência: é a única forma de servir três ferrame
 sem criar as cópias que esta página inteira existe para evitar. Editar a regra
 em `docs/regras/` muda o que todas leem, no mesmo instante.
 
+**As duas pastas NÃO têm o mesmo conteúdo, e é de propósito.** `.agents/rules/`
+tem TODAS as regras: o Antigravity lê tudo o que está lá. `.claude/rules/` tem
+SÓ as que declaram `paths:` no frontmatter, porque o Claude Code carrega regra
+**sem** `paths:` no início de TODA sessão (a com `paths:`, só quando mexe em
+arquivo que combina — documentação oficial do Claude Code). Linkar `comandos`,
+`ferramentas-externas`, `git-e-branches`, `infra` ou `o-que-nao-fazer` ali as
+poria, inteiras, em toda conversa: cerca de 28 mil caracteres que competem com a
+tarefa. Essas cinco chegam ao Claude pela tabela por assunto do `AGENTS.md` da
+raiz ("abra a do seu assunto antes de escrever"). **Regra de bolso: regra com
+`paths:` ganha symlink nas DUAS pastas; regra sem `paths:` só em
+`.agents/rules/`.** `apps/api/tests/regras-de-agentes.spec.ts` confere as duas
+pastas, e o teto de 12.000 caracteres por regra, em todo `pnpm turbo test`.
+
 ### Os dois tetos, e o que cada um custa
 
 - **12.000 caracteres por arquivo** — o corte do Antigravity. Acima disso, a
@@ -118,18 +132,19 @@ em `docs/regras/` muda o que todas leem, no mesmo instante.
 dois arquivos — e a divisão certa é por ASSUNTO, não por tamanho: partir uma
 regra ao meio deixa a consequência longe da decisão.
 
-Quatro arquivos ainda estão acima do teto de 12k e estão registrados aqui para
-não passarem por decisão: `packages/ui/AGENTS.md` (14,0 KB),
-`apps/experiencias/app-92-plano-de-ensino/AGENTS.md` (12,4 KB) e o `AGENTS.md`
-da raiz (12,2 KB). Os três estão a menos de 20% do limite; quebrá-los exige
-achar a fronteira de assunto, que ainda não é óbvia em nenhum.
+**`AGENTS.md` de pasta que passar de 12k se divide por ASSUNTO** — foi assim com
+`professor/` (a ficha do Entre Redes foi para `professor/entre-redes/`) e com
+`packages/ui/` (as compensações do DS foram para `packages/ui/styles/`). Meça com
+`wc -m` (caracteres; `wc -c` conta o acento em dobro), sobretudo nos que vivem
+perto do teto. Só as regras de `docs/regras/` têm teste do teto
+(`apps/api/tests/regras-de-agentes.spec.ts`): o resto depende de quem edita.
 
 ### Onde uma regra vai morar
 
 | A regra vale para… | Vai em |
 |---|---|
 | uma pasta onde se trabalha a tarefa inteira | o `AGENTS.md` dela (+ `CLAUDE.md` de uma linha) |
-| um assunto que atravessa pastas | `docs/regras/<assunto>.md` + symlink nas duas pastas de rules |
+| um assunto que atravessa pastas | `docs/regras/<assunto>.md` + symlink em `.agents/rules/` e, se tiver `paths:`, em `.claude/rules/` |
 | um contrato entre dois ou mais consumidores | `docs/regras/`, nunca a pasta de um dos lados |
 
 **Pasta nova com `AGENTS.md` entra na tabela do `AGENTS.md` do nível acima, no

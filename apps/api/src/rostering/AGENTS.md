@@ -34,22 +34,22 @@ conhece `sourcedId`, e o `hub:init` não muda (ADR-28).
   2026 em silêncio.
 - **`matriculas.papel` só admite `estudante` e `professor`.** Gestor é papel da
   ESCOLA (o `roles.csv` do padrão), não matrícula de turma — e é por isso que ele
-  continua vendo a escola inteira. "Coordenação" é `gestor`: `PAPEIS` é contrato
+  continua vendo a escola inteira. "Coordenação" é `gestor_escola`: `PAPEIS` é contrato
   congelado, e o CSV aceita sinônimos (`coordenacao`, `diretor`, `principal`).
 - **As turmas do professor são as em que ele tem matrícula.** `comum/turmas-do-professor.ts`
   (`ondeAsTurmasSaoVisiveis`, `professorLeciona`, `professorEnsinaOEstudante`) é a
-  porta única; os seletores do
-  UnooTube, da Vila e do unooGPT passam por ela. Antes, qualquer professor abria
-  bem-estar e Vila de qualquer turma da escola, porque a única prova exigida era
-  "mesma escola", que é a regra de tenancy e não a de quem dá aula ali.
+  porta única; os seletores da Vila e do unooGPT passam por ela. Sem ela, qualquer
+  professor abre bem-estar e Vila de qualquer turma da escola, porque a única
+  prova exigida seria "mesma escola", que é a regra de tenancy e não a de quem dá
+  aula ali.
   **Rota de professor que recebe `turmaId` ou `estudanteId` passa pela porta —
-  TODA, inclusive a que só lê e a que APAGA.** Seis ficaram de fora até
-  2026-09-05, e o `@Roles("professor")` não protegia nada nelas: o "zerar turma"
-  da Vila e do unooGPT, os cartões da Vila, os dois relatórios individuais e o
-  **relógio da aula** do unooGPT — este último deixava um professor da escola dar
-  a largada, ou encerrar, a aula de uma turma que não é dele, no meio dela. O
-  molde certo passa `professorDoToken` (`comum/turmas-do-professor.ts`) em
-  todas as rotas de turma, sem exceção.
+  TODA, inclusive a que só lê e a que APAGA.** O `@Roles("professor")` não
+  protege nada disso: sem a porta, o "zerar turma" da Vila e do unooGPT, os
+  cartões da Vila, os relatórios individuais e o **relógio da aula** do unooGPT
+  ficam abertos a qualquer professor da escola — este último deixaria dar a
+  largada, ou encerrar, a aula de uma turma que não é dele, no meio dela. O molde
+  passa `professorDoToken` (`comum/turmas-do-professor.ts`) em todas as rotas de
+  turma, sem exceção.
   **Tela de UMA criança usa `professorEnsinaOEstudante`, não `professorLeciona`**:
   a pergunta ali não é "esta turma é minha?", é "esta criança é de alguma turma
   minha?". Ele aceita a matrícula ativa **ou** o cache `users.turma_id` — as duas

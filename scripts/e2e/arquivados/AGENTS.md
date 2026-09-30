@@ -3,7 +3,7 @@
 Complementa o `AGENTS.md` de `scripts/e2e`, que vence em conflito.
 
 O runner (`rodar.mjs`) só percorre as pastas dos PAPÉIS (`estudante`,
-`professor`, `gestor`, `admin`…). Esta pasta não é um papel, e é por isso que ela
+`professor`, `gestor_escola`, `gestor_contrato`, `admin`…). Esta pasta não é um papel, e é por isso que ela
 existe: aqui ficam as suítes das experiências arquivadas, guardadas como estavam
 e **fora da execução** — uma experiência arquivada não abre para ninguém, então a
 suíte dela só poderia reprovar.
