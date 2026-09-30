@@ -29,8 +29,8 @@ fechada na api. O que substitui "nunca é escrito no localStorage" é mais forte
 serializado** — `verificarSemNome()` bloqueia antes de entregar, e `semNomeDeCrianca()`
 recusa com 422 do outro lado.
 
-**A premissa caiu: a plataforma SABE quem é a criança.** `vila_sessoes.estudante_id` e
-`vila_perfis.estudante_id` são FK para `users`, que tem `display_name`. A proteção já não vem da
+**A premissa caiu: a plataforma SABE quem é a criança.** `app_70_sessoes.estudante_id` e
+`app_70_perfis.estudante_id` (tabelas que nasceram como `vila_*`, ADR-110) são FK para `users`, que tem `display_name`. A proteção já não vem da
 ausência de identidade — vem de **não deixar o nome viajar junto do retrato**: as tabelas
 `vila_*` guardam só o uuid, o `payload` JSONB não tem campo de nome, e a telemetria carrega
 `estudante_id` opaco.
@@ -41,11 +41,11 @@ existia no bundle de origem, e o `payload` não tem prazo para sair do banco.
 **Consequências reescritas:**
 
 - ~~O painel não consegue distinguir partidas de crianças diferentes no mesmo aparelho~~ —
-  resolvido. Cada partida é uma linha própria em `vila_sessoes`, e o "JOGAR DE NOVO" abre
+  resolvido. Cada partida é uma linha própria em `app_70_sessoes`, e o "JOGAR DE NOVO" abre
   partida **nova** (`window.VILA.reabrir()`). No app de origem o replay sobrescrevia a chave
   do `localStorage`.
 - ~~Quando o banco existir, a chave é um `sessionId` opaco~~ — o banco existe. A chave é
-  `vila_sessoes.id`, uuid **emitido pela api** na abertura; o cliente não escolhe mais a
+  `app_70_sessoes.id`, uuid **emitido pela api** na abertura; o cliente não escolhe mais a
   própria chave, o que resolveu de raiz a colisão entre duas crianças na mesma máquina.
 - O leitor não é mais "o responsável": é o **professor**, escopado pelas próprias turmas, e o
   relatório abre pelo estudante, não pela data e hora.

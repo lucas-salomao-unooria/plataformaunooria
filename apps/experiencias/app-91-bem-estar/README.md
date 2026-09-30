@@ -20,7 +20,7 @@ os 21 itens, e um espaço livre para o professor dizer como está.
   (×2) e classifica pelas faixas publicadas. O bundle só exibe.
 - **Segurança**: item 17 ou 21 ≥ 2, ou termo de risco no texto livre → mensagem
   fixa de apoio (CVV 188, SAMU 192, CAPS/UBS) e a IA não é chamada.
-- **Persistência**: `bem_estar_ciclos` + `bem_estar_checkins` (RLS por escola,
+- **Persistência**: `app_91_ciclos` + `app_91_checkins` (RLS por escola,
   posse por professor). Dado sensível: só o professor lê; `DELETE /bemestar/dados`
   apaga tudo (LGPD).
 

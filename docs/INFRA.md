@@ -167,7 +167,7 @@ não abre com alguém achando que configurou a documentação é pior que nenhum
   bundles como qualquer experiência — **sem serviço novo e sem bucket novo**. Não
   produz documento autoral, não chama IA (zero token, zero quota) e não precisa
   de fila: o perfil é função pura, calculada no request de conclusão. Três
-  tabelas no Postgres (`vila_sessoes`, `vila_perfis`, `vila_bolhas`), todas com
+  tabelas no Postgres (`app_70_sessoes`, `app_70_perfis`, `app_70_bolhas`), todas com
   `escola_id` + RLS. **Nenhuma env.**
   **Tamanho, MEDIDO (2026-08-26)**: o `payload` de uma partida dá ~1,1 KB de
   JSON (1,5 KB na coluna JSONB). A estimativa anterior — centenas de MB a 2,4 GB
@@ -192,7 +192,7 @@ não abre com alguém achando que configurou a documentação é pior que nenhum
   ela é da plataforma inteira, não de um módulo.
 
 - **Check-in de bem-estar** (app-91, 2026-08): sem recurso novo de infra —
-  duas tabelas com RLS (`bem_estar_ciclos`, `bem_estar_checkins`; a migration
+  duas tabelas com RLS (`app_91_ciclos`, `app_91_checkins`; a migration
   dá `GRANT` à `app_runtime`) e IA pelo mesmo Vertex/quota do professor. O
   texto livre do professor vai ao Vertex (endpoint `global`): consta do DPA
   junto com o resto da IA. Nenhum bucket, nenhuma rota pública.
@@ -262,7 +262,7 @@ Deploy (CI deste repo):
 3. hub/api mudou → `docker build` + push direto no Artifact Registry (sem Cloud
    Build) → `gcloud run deploy` (revisions = rollback)
 4. exp mudou → `gcloud storage rsync -r dist/ gs://{contrato}-exp/{expId}/{versao}/`
-   e `PUT {api}/experiencias/{expId}` (admin-contrato) com o conteúdo do
+   e `PUT {api}/experiencias/{expId}` (`gestor_contrato` ou `admin`) com o conteúdo do
    `public/experiencia.json` — é esse upsert que o hub lê para montar a URL do
    bundle. Feito por `apps/hub/scripts/publicar-manifesto.mjs`, que assina um
    token de 5 min com `token-signing-key` (vars `API_URL`, `HUB_ORIGIN`).
