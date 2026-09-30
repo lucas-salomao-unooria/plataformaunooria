@@ -144,30 +144,29 @@ Tab passar: botões focáveis atrás de um véu é a mesma classe de defeito que
   a missão roda em uma aula, e trocar de tema no meio não é caminho que alguém
   percorra — um controle a mais no cromo é um alvo que distrai.
 
-## O que a suíte e2e achou na primeira corrida (2026-09-11)
+## O que só a suíte e2e alcança
 
-A suíte só rodou de verdade quando a stack ficou de pé, e ela achou **cinco**
-coisas que o typecheck, os testes de regra pura e a spec de Postgres não
-alcançavam. Três eram de produto, e as três tinham a mesma forma: **cada metade
-estava certa lida sozinha** (ADR-92).
+O typecheck, os testes de regra pura e a spec de Postgres não pegam estas
+armadilhas de produto, e todas têm a mesma forma: **cada metade está certa lida
+sozinha** (ADR-92).
 
-- **A ficha da professora era a do Instanooria.** Faltava o ramo no despachante
-  de `page.tsx` do hub, e o `return` final é o corpo da exp08ef1b. A tela ABRIA —
-  com "Nova atividade" e sem o caminho para o painel. Hoje há
-  `apps/hub/lib/entre-redes/despachante-da-ficha.test.ts` cobrando o ramo.
-- **Todo botão da professora respondia 404.** `manifesto-ia` não estava em
-  `PREFIXOS_PERMITIDOS` do BFF. A tela de resultados carregava (Server
-  Component, vai direto na api) e só as ações morriam: o preparo, os dois
-  botões do debate e o "zerar turma".
-- **O congelamento não acendia para quem estava em `manifesto`.** O polling
-  recalculava `aguardandoATurma` como `passoEfetivo !== passo`, e parado no
-  primeiro passo congelado os dois são iguais. **A api agora AFIRMA
-  `aguardandoATurma` no `GET /manifesto-ia/gate`, e a tela obedece** — não
-  deduza esse booleano de novo, em lugar nenhum.
-- **A tela de confirmação do percurso era inalcançável.** A api avança o passo
-  para `podcast` ao gravar (é o estado real da criança, e é o que o polling do
-  gate lê), e `aplicar(novo)` levava a tela junto — pulando a devolutiva do
-  gesto mais importante da missão. Hoje `registrarPercurso` aplica
+- **A ficha da professora precisa do ramo no despachante** de `page.tsx` do hub. Sem
+  ele o `return` final é o corpo da exp08ef1b, e a tela ABRE — com "Nova atividade"
+  e sem o caminho para o painel.
+  `apps/hub/lib/entre-redes/despachante-da-ficha.test.ts` cobra o ramo.
+- **`manifesto-ia` tem de estar em `PREFIXOS_PERMITIDOS` do BFF.** Sem ele todo botão da
+  professora responde 404: a tela de resultados carrega (Server Component, vai
+  direto na api) e só as ações morrem — o preparo, os dois botões do debate e o
+  "zerar turma".
+- **O congelamento não se deduz no cliente.** `aguardandoATurma` calculado como
+  `passoEfetivo !== passo` não acende para quem está parado no primeiro passo
+  congelado, porque os dois são iguais. **A api AFIRMA `aguardandoATurma` no
+  `GET /manifesto-ia/gate`, e a tela obedece** — não deduza esse booleano de novo,
+  em lugar nenhum.
+- **A tela de confirmação do percurso só existe se a tela NÃO seguir o passo.** A api
+  avança o passo para `podcast` ao gravar (é o estado real da criança, e é o que o
+  polling do gate lê); se `aplicar(novo)` levasse a tela junto, pularia a devolutiva
+  do gesto mais importante da missão. `registrarPercurso` aplica
   `{ ...novo, passo: "percurso" }`: a TELA fica, o ESTUDANTE avança.
 
 E duas do roteiro, que valem para qualquer suíte desta experiência:

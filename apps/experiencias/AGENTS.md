@@ -30,8 +30,9 @@ e chegam sozinhos pelas pontes de cada ferramenta (ADR-102):
    de propósito (`_template/AGENTS.md` diz o que trocar primeiro).
 2. Implementar em `src/App.tsx`+; usar SOMENTE a SDK para auth/api/telemetria e
    SOMENTE o `@unooria/design-system` para interface — a seção do clone que a
-   experiência imita (`instanooria`, `unitube`, `chatgpt`, `whatsappmobile`,
-   `tiktooria`) pela ponte em `packages/ui`. Falta componente? Ele nasce no repo
+   experiência imita (`instanooria`, `unootube`, `chatgpt`, `whatsappmobile`; a
+   `tiktooria` já está no DS, mas `packages/ui` ainda não tem ponte para ela)
+   pela ponte em `packages/ui`. Falta componente? Ele nasce no repo
    `storybook-unooria` e chega por versão nova, não como arquivo local.
 3. Declarar capabilities no `experiencia.json` (`telemetria`, `progresso`,
    `ia`, `avaliacao`, `tempo-real`) — o hub e a api usam isso. **E `produto`**
@@ -51,7 +52,7 @@ e chegam sozinhos pelas pontes de cada ferramenta (ADR-102):
 
 ## Toda experiência é React 19, e a divergência só aparece no CI
 
-O `@unooria/design-system` 0.2.x é compilado contra os tipos do **React 19**. Uma
+O `@unooria/design-system` é compilado contra os tipos do **React 19**. Uma
 experiência em React 18 resolve `@types/react@18` para si e vê a cópia 19 chegando
 pelo DS: o `tsc` então recusa QUALQUER componente do pacote com
 `TS2786: 'Button' cannot be used as a JSX component` — e a pista real
@@ -60,14 +61,13 @@ numa mensagem aninhada que o resumo do turbo não mostra.
 
 **O sintoma é de ambiente, não de código: passa na máquina e falha no CI.** O
 `node_modules` local cresceu por instalações incrementais e mantém uma resolução;
-o runner faz `--frozen-lockfile` do zero e resolve outra. Foi o que aconteceu com
-a exp01ef1b em 2026-09-14 — a única que nasceu em 18, porque o `_template` estava em
-18. Os dois subiram para `^19.2.0` juntos, e é assim que tem de continuar: **o
-template é a fonte de toda experiência nova**, e uma divergência ali reaparece na
-próxima que alguém criar. Pelo mesmo motivo, desde 2026-09-16 o template traz o
-DS `^0.2.2`, o `@edu/ui` e a fiação da exp08ef4b (ADR-106): antes, cada missão nova
-refazia à mão o bootstrap, a telemetria e o teste de versão — e a exp01ef1b nasceu
-sem eles.
+o runner faz `--frozen-lockfile` do zero e resolve outra. A exp01ef1b foi a única
+que nasceu em 18, porque o `_template` estava em 18. Toda experiência e o template
+ficam em `^19.2.0` juntos, e é assim que tem de continuar: **o template é a fonte de
+toda experiência nova**, e uma divergência ali reaparece na próxima que alguém
+criar. Pelo mesmo motivo o template traz o DS, o `@edu/ui` e a fiação da exp08ef4b
+(ADR-106): sem eles, cada missão nova refazia à mão o bootstrap, a telemetria e o
+teste de versão.
 
 Mudou dependência de uma experiência? O bundle mudou: **sobe a versão nos três
 lugares** e commita o `pnpm-lock.yaml` junto com o `package.json`.
@@ -76,8 +76,8 @@ lugares** e commita o `pnpm-lock.yaml` junto com o `package.json`.
 
 A seção do clone entra pela ponte de `packages/ui` — nunca o `styles.css`
 consolidado, que arrasta os tokens da plataforma para dentro do disfarce. **A
-folha de fonte é uma linha SEPARADA e obrigatória** (0.1.17: as folhas de
-componente não declaram mais `@font-face`); numa marca de clone, esquecê-la cai
+folha de fonte é uma linha SEPARADA e obrigatória** (as folhas de componente não
+declaram `@font-face`); numa marca de clone, esquecê-la cai
 no fallback — feio, mas não quebra.
 
 **A linha que separa as seções é a REVELAÇÃO, não o arquivo.** O critério é
@@ -106,33 +106,38 @@ Duas armadilhas de experiência, das quais uma já cobrou:
   Quando o `Briefing` virou `A missão`, mudar só a experiência faria a trilha do
   estudante divergir do que a api devolve — e o typecheck não vê.
 - **A versão vive em TRÊS lugares, não dois.** Mudou texto visível? Sobe
-  `public/experiencia.json`, `package.json` **e** o `EXP_VERSION` do código
-  (`src/lib/versao.ts`, ou `src/lib/tipos.ts` na exp02em1b). O `versao.test.ts` de
-  cada experiência cobra os três — foi ele que pegou o esquecimento na troca de
-  terminologia, e a ADR-84 conta o que o terceiro lugar esquecido custou.
+  `public/experiencia.json`, `package.json` **e** o `EXP_VERSION` do código, que mora
+  em `src/lib/versao.ts` ou em `src/lib/tipos.ts`, conforme a experiência
+  (`grep -rn "EXP_VERSION =" src`). O `src/versao.test.ts` cobra os três — foi ele
+  que pegou o esquecimento na troca de terminologia, e a ADR-84 conta o que o
+  terceiro lugar esquecido custou. **A exceção é a app-70**: o `EXP_VERSION` dela está
+  em `src/main.ts` e ela não tem `versao.test.ts`, então nada cobra o terceiro
+  lugar — confira à mão.
 
 Detalhes de mecânica (CSS, frames, compensações) em `packages/ui/AGENTS.md`.
 O específico de cada experiência está no `AGENTS.md` da pasta dela.
 
 ## app-70: `public/jogo/` é zona congelada
 
-~10k linhas de JS clássico com globais compartilhados e `three.min.js`
-vendorizado. É um instrumento com distâncias e tempos calibrados, e o compilador
+JS clássico com globais compartilhados e `three.min.js` vendorizado. É um instrumento com distâncias e tempos calibrados, e o compilador
 não tem como saber que uma refatoração mudou a medida. Está nos `ignores` do
 ESLint; o shim (`src/`, TS strict) é a única porta: `window.VILA`. A rede que
 substitui o `tsc` ali é a suíte de ponta a ponta (`scripts/e2e/estudante/05-vila-do-lume.mjs`).
 
-## Barra de rolagem: as experiências NÃO usam o `ScrollBar` do DS
+## Barra de rolagem: `ScrollBar` do DS só nas telas da seção `unooria`
 
-O hub passou a rolar com o `<ScrollBar>` do design system (ADR-75). **Aqui não**,
-e isso é decisão, não pendência: o `ScrollBar` é da seção `unooria`, e a regra
-das duas famílias proíbe que ele entre num clone — uma barra com o token da
-plataforma dentro do Instanooria é do mesmo tipo de vazamento que um `Button`
-institucional no feed.
+O hub rola com o `<ScrollBar>` do design system (ADR-75), e ele é da seção
+`unooria`. A regra das duas famílias decide o resto: **em tela da seção `unooria` o
+contêiner que rola pode ser o `ScrollBar`; dentro de um clone ele NÃO entra** — uma
+barra com o token da plataforma dentro do Instanooria é do mesmo tipo de vazamento
+que um `Button` institucional no feed. Hoje o usam a redação inteira da exp04ef1b e
+a casca da exp05ef1b (`telas-da-escola.tsx`); o clone dela (`telas-do-clone.tsx`)
+não importa o componente.
 
-Então, dentro do iframe, a barra continua sendo a do SISTEMA OPERACIONAL, com
-`overflow-y: auto` no contêiner que rola. O que muda por sistema fica como está:
-no macOS com trackpad ela some sozinha, no Windows e no ChromeOS é permanente.
+No clone, e nas experiências que não adotaram o `ScrollBar`, a barra continua sendo
+a do SISTEMA OPERACIONAL, com `overflow-y: auto` no contêiner que rola. O que muda
+por sistema fica como está: no macOS com trackpad ela some sozinha, no Windows e no
+ChromeOS é permanente.
 
 **Esconder a barra continua permitido, e é decisão de FIDELIDADE.** As faixas que
 imitam um app sem barra (`.sem-scrollbar` da exp08ef1b, `.feed-scroll` da backup-exp04ef1b)

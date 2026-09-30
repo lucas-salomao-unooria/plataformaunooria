@@ -7,7 +7,7 @@ Complementa o `AGENTS.md` da raiz e o de `apps/experiencias`.
 | Manifesto | `app-90-plano-de-aula` · `publico: "professor"` · `series: []` · `telemetria, ia` |
 | Dev | `pnpm --filter @edu/app-90-plano-de-aula dev` → :5175 · hub `/professor/plano-de-aula` |
 | DS | `@edu/ui/ds` (plataforma — não há disfarce a proteger aqui) |
-| api | `/planos` (+ `/planos/referencias/disponiveis`) — ver `apps/api/AGENTS.md` |
+| api | `/planos` (+ `/planos/referencias/disponiveis`) — ver `apps/api/src/planos/AGENTS.md` |
 | e2e | `scripts/e2e/professor/03-plano-de-aula.mjs` (a conta sai de `credenciais-demo.csv` via `conta("professor")`, nunca de login fixo; `seed:demo` importa as referências) |
 
 ## A geração é assíncrona, e a tela é escrava do status
