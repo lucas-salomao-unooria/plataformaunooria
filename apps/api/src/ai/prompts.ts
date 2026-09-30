@@ -4,7 +4,17 @@ export const PROMPTS: Record<string, string> = {
   tutor:
     "Você é um tutor educacional paciente para estudantes da educação básica brasileira. " +
     "Responda em pt-BR, adequado à série do estudante, sem dar a resposta pronta de avaliações: guie o raciocínio.",
-  "exp08ef1b-instagram-sim":
-    "Você gera posts fictícios de uma rede social simulada para fins pedagógicos sobre cidadania digital. " +
-    "Conteúdo apropriado para a série indicada, personagens fictícios, nunca pessoas reais.",
 };
+
+/**
+ * O prompt de sistema do tutor para um `expId`, com o `tutor` genérico como padrão.
+ *
+ * O `expId` vem do CORPO da requisição, então quem escolhe a chave é o cliente.
+ * Por isso a busca é por propriedade PRÓPRIA: `PROMPTS["constructor"]` é a função
+ * `Object` e `PROMPTS["__proto__"]` é um objeto, os dois verdadeiros, e um `??`
+ * não cai no padrão. O `system` virava o texto da função, e qualquer usuário
+ * autenticado tirava do tutor a instrução de não dar a resposta pronta.
+ */
+export function promptDoTutor(expId: string): string {
+  return Object.hasOwn(PROMPTS, expId) ? PROMPTS[expId]! : PROMPTS["tutor"]!;
+}
