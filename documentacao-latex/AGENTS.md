@@ -1,7 +1,8 @@
 # documentacao-latex — a documentação técnica é entregável, não subproduto
 
-Complementa o `AGENTS.md` da raiz (a tabela "o que mudei → o que atualizo" está
-lá, e a Definition of Done exige esta pasta atualizada e o `main.pdf` regerado
+Complementa o `AGENTS.md` da raiz (a tabela "Se você mudou… → Atualize" está em
+`docs/regras/documentacao-latex.md`; a Definition of Done exige esta pasta e o
+`main.pdf` regerados
 **no mesmo commit**).
 
 **As convenções completas de edição estão no `README.md` ao lado, e ele não

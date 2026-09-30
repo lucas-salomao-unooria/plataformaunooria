@@ -25,8 +25,8 @@ que a checagem de pointer lock não valeu.
 | `publico/` | ninguém logado | landing, login, roteamento por papel |
 | `estudante/` | a criança | hub de missões e as quatro missões, ponta a ponta |
 | `professor/` | o docente | turmas, trilha, criar atividade, conduzir, plano de aula, bem-estar, resultados, guias de aula, planejamento de ensino |
-| `gestor/` | a secretaria da escola | importar, enturmar, senhas, quem trabalha em duas escolas |
-| `admin-contrato/` | a rede | escolas, regionais, OneRoster, períodos, transferência, análise de produto |
+| `gestor_escola/` | a secretaria da escola | importar, enturmar, senhas, quem trabalha em duas escolas |
+| `gestor_contrato/` | a rede | escolas, regionais, OneRoster, períodos, transferência, análise de produto |
 | `arquivados/` | NINGUÉM — não é papel | as suítes das experiências arquivadas (ADR-116), guardadas como estavam e FORA do runner: uma arquivada não abre para ninguém, e a suíte só reprovaria (ver `arquivados/AGENTS.md`) |
 
 Por papel, e não por experiência, porque é o crachá que decide o que a pessoa
@@ -36,7 +36,7 @@ descartadas, está na **ADR-51**.
 
 **A ordem importa** e está fixada no runner: `publico` não depende de nada;
 `estudante` PRODUZ o estado (runs, partidas, sessões) que `professor` lê; e
-`gestor`/`admin-contrato` vêm por último porque importam gente e trocam senha.
+`gestor_escola`/`gestor_contrato` vêm por último porque importam gente e trocam senha.
 
 ## O manifesto é a fonte do deck e dos vídeos
 
