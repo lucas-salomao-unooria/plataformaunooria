@@ -13,8 +13,9 @@ em conflito.
 ## Convenções de código
 
 - TypeScript strict em tudo. Sem `any` (use `unknown` + narrow). **Uma exceção,
-  registrada em ADR:** o jogo da app-70 (`public/jogo/`, ~10k linhas de JS
-  clássico com globais compartilhados, `three.min.js` vendorizado) fica como
+  registrada em ADR:** o jogo da app-70 (`public/jogo/`, JS clássico
+  em `public/jogo/src/01…18-*.js` com globais compartilhados, `three.min.js`
+  vendorizado) fica como
   está — é um instrumento com distâncias e tempos calibrados, e o compilador não
   tem como saber que uma refatoração mudou a medida. `public/jogo/**` está nos
   `ignores` do ESLint. O shim (`src/`, TS strict) é a única porta: `window.VILA`.
@@ -27,7 +28,7 @@ em conflito.
   no sdk/experiências, Jest no NestJS.
 - UI: **não inventar componente**. Hub e experiências montam interface com
   `@unooria/design-system` (seção `unooria` para a plataforma, seção do clone
-  para a experiência), sempre na última versão — ver "Design System" nesta página
+  para a experiência), sempre na última versão — ver `docs/regras/design-system.md`
   e a mecânica em `packages/ui/AGENTS.md`. O
   `_template` continua cru de INTERFACE de propósito: o que ele NÃO traz, o DS
   traz. A FIAÇÃO (manifesto completo, handshake, `lib/api`, `lib/telemetria`,

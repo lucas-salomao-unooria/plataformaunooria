@@ -11,7 +11,7 @@ em conflito.
 ## Documentação técnica (`documentacao-latex/`) — ATUALIZAR SEMPRE
 
 A documentação técnica consolidada do projeto é **LaTeX versionado**, em
-`documentacao-latex/`, e compila em `main.pdf` (~730 páginas, `PU-DOC-001`).
+`documentacao-latex/`, e compila em `main.pdf` (`PU-DOC-001`).
 Ela é a fonte única de: contexto de negócio, requisitos rastreáveis (RF/RNF),
 casos de uso, **arquitetura de software nos 4 níveis do C4** e **nos 14
 diagramas da UML 2.5.1**, **arquitetura de
