@@ -70,7 +70,8 @@ const MINUTOS_PARA_ORFAO = 12;
 /**
  * O plano anual é o documento mais longo que a plataforma gera. MEDIDO na
  * app-90: 32k corta o plano no meio e a geração morre em `MAX_TOKENS` sem
- * entregar nada. A família 2.5 do Gemini entrega até 65k de saída.
+ * entregar nada. Até 65k de saída foi a medição histórica no gemini-2.5-flash;
+ * reconferir no modelo atual (`VERTEX_MODEL_LONGO`) antes de tratar 64k como teto.
  */
 const MAX_TOKENS_ANUAL = 64_000;
 /** Uma semana tem no máximo ~10 aulas; o JSON de cada uma é generoso. */

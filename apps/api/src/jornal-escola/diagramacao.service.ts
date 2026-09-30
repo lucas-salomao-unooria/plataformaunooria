@@ -30,7 +30,8 @@ import { LAYOUTS, type Layout, type OrigemDoLayout } from "./vocabulario";
  *   4. `generateJson` com o modelo padrão, temperatura 0, UMA tentativa, o
  *      `responseSchema` com SÓ o enum de layout (não há campo de texto onde a
  *      IA escreva), um `validar` Zod e um teto de saída de 32 tokens.
- *   5. TETO DE TEMPO por `Promise.race` (~6 s): o provider não tem timeout.
+ *   5. TETO DE TEMPO por `Promise.race` (~6 s): o provider só corta em 15 min e
+ *      não aceita `signal`, então o teto de N s é `Promise.race`.
  *   6. O débito vai no `aoUsarTokens`, para cobrar também a chamada que perde a
  *      corrida para o teto (ADR-74).
  *

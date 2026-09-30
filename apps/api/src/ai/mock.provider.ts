@@ -14,34 +14,78 @@ import { ErroDeGeracao } from "./provider";
  * tabela): é o que o smoke visual do gerador de plano de aula precisa para
  * exercitar `marked` + `RichTextEditor` sem gastar Vertex em dev.
  */
-const PLANO_MOCK = `# Plano Anual — [mock]
+export const PLANO_MOCK = `# Plano Anual de Componente [mock] — Ano [mock]
 
-## Objetivos gerais
+**Componente curricular:** [mock]
+**Ano escolar:** [mock]
+**Carga horária:** A definir pela rede de ensino.
+**Organização:** dois bimestres de exemplo
+**Material didático:** [mock]
+**Referências curriculares:** [mock]
+
+# Fundamentação
+
+Texto gerado pelo **provider mock** — troque \`AI_PROVIDER\` para \`vertex\` para um plano real.
+
+# Objetivos gerais
 
 - Compreender o tema como resultado de escolhas humanas no tempo.
 - Desenvolver leitura crítica de fontes, inclusive digitais.
 
-## 1º bimestre — Ponto de partida
+# Percurso do ano
 
-### Conteúdos
+| Período | Questão norteadora | Aprendizagem central | Produto de síntese |
+|---|---|---|---|
+| 1º bimestre | Como começamos a investigar? | Reconhecer fontes | Mural coletivo com fontes comparadas |
+| 2º bimestre | Como aprofundamos a investigação? | Comparar versões | — |
+
+observar → comparar → produzir
+
+# 1º bimestre — Ponto de partida
+
+## Questão norteadora
+
+Como começamos a investigar?
+
+## Conteúdos
 
 - Noções iniciais e vocabulário do componente.
 - Fontes: o que são e como se leem.
 
-### Habilidades
+## Habilidades mobilizadas
 
-| Código | Habilidade |
-|---|---|
-| EF0XCO01 | Reconhecer o papel das tecnologias digitais no cotidiano. |
-| EF0XCO02 | Identificar critérios para avaliar informações. |
+- EF0XCO01 — Reconhecer o papel das tecnologias digitais no cotidiano.
+- EF0XCO02 — Identificar critérios para avaliar informações.
 
-### Avaliação
+## Estratégias metodológicas
 
-Produto de síntese: mural coletivo com fontes comparadas.
+- Leitura orientada de fontes.
 
-## 2º bimestre — Aprofundamento
+## Formas de avaliação
 
-Conteúdo gerado pelo **provider mock** — troque \`AI_PROVIDER\` para \`vertex\` para um plano real.
+- Identifica critérios para avaliar uma informação (EF0XCO02).
+
+## Produto de síntese
+
+Mural coletivo com fontes comparadas.
+
+# 2º bimestre — Aprofundamento
+
+## Questão norteadora
+
+Como aprofundamos a investigação?
+
+# Metodologia geral
+
+Aulas dialogadas e atividades práticas (texto do mock).
+
+# Avaliação geral
+
+Diagnóstica, processual e formativa (texto do mock).
+
+# Referências de elaboração
+
+- Documentos do professor (mock).
 `;
 
 export class MockProvider implements AiProvider {

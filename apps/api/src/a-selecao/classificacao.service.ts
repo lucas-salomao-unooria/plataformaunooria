@@ -29,8 +29,9 @@ import {
  *      `responseSchema` com o enum dos níveis e o código do motivo, um
  *      `validar` Zod que recusa motivo incoerente com o nível, e um teto de
  *      saída de 64 tokens.
- *   4. TETO DE TEMPO por `Promise.race` (~6 s): o provider não tem timeout nem
- *      `signal`, e a publicação da criança espera esta resposta.
+ *   4. TETO DE TEMPO por `Promise.race` (~6 s): o provider só corta em 15 min e
+ *      não aceita `signal`, então o teto de N s é `Promise.race`, e a
+ *      publicação da criança espera esta resposta.
  *   5. O débito da quota vai no `aoUsarTokens`, e não depois do `await`: a
  *      chamada que PERDE a corrida para o teto chega depois, e é cobrada igual
  *      — ela foi paga ao vendor (ADR-74).

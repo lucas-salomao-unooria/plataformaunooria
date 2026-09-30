@@ -180,7 +180,7 @@ Os ${spec.quantidade} posts precisam ser bem diferentes entre si: ângulos, form
 
 ${GUARDRAILS}
 
-Responda apenas o JSON do schema. Português do Brasil.
+Português do Brasil.
 `.trim();
 
   return provider.generateJson({

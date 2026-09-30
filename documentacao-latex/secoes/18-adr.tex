@@ -169,7 +169,8 @@ que a cercam.
 \zebra \adrr{ADR-120} & A régua v2 de Quem mandou isso?: cada habilidade pelo verbo dela, e refazer o mesmo pacote não mede memória & 2026-09-26 & Aceita\\
 \adrr{ADR-121} & O CI verifica só os PRs para \cd{dev}, \cd{hml} e \cd{main} & 2026-09-26 & Aceita\\
 \zebra \adrr{ADR-122} & A modelagem UML entra no Capítulo 5, com os catorze tipos da UML 2.5.1 e par Mermaid mesmo onde o Mermaid não tem o tipo & 2026-09-27 & Aceita\\
-\adrr{ADR-124} & O \arq{CLAUDE.md} admite o bloco que uma ferramenta escreve, e só ele & 2026-09-30 & Aceita; emenda a \adrr{ADR-55} e a \adrr{ADR-102}\\
+\adrr{ADR-123} & O plano anual tem uma estrutura só, definida pelo prompt, e o template é exemplo de formato & 2026-09-30 & Aceita\\
+\zebra \adrr{ADR-124} & O \arq{CLAUDE.md} admite o bloco que uma ferramenta escreve, e só ele & 2026-09-30 & Aceita; emenda a \adrr{ADR-55} e a \adrr{ADR-102}\\
 \bottomrule
 \end{tabularx}
 
@@ -10634,6 +10635,102 @@ renderizar PlantUML; uma figura da Seção~\ref{sec:uml} ser encontrada divergen
 do código numa revisão --- sinal de que o custo de manter passou do valor --- ou
 uma segunda pessoa passar a manter os diagramas e preferir outra fonte.
 
+
+\section{ADR-123 --- O plano anual tem uma estrutura só, definida pelo \emph{prompt}, e o template é exemplo de formato}
+\label{adr:plano-estrutura}
+
+\textbf{Data.} 2026-09-30. \textbf{Status.} Aceita.
+\textbf{Muda} o \emph{prompt} de sistema do gerador de plano anual
+(\arq{planos/prompt-plano-de-aula.ts}), o template de exemplo
+(\arq{planos/template-plano.ts}), as duas mensagens que o serviço monta para o
+modelo e o texto do \emph{provider} \emph{mock}. \textbf{Não muda} a geração
+assíncrona, o armazenamento, a quota nem a app-92.
+
+\begin{especificacao}{Contexto}
+\begin{itemize}
+  \item \textbf{O modelo recebia duas definições da estrutura.} O \emph{prompt}
+    pedia nove blocos (fundamentação, objetivos, cinco seções por bimestre,
+    metodologia, avaliação, duas tabelas e referências); o template mostrava
+    seis; e a mensagem ao modelo mandava \enquote{seguir rigorosamente a
+    estrutura do template}. A forma do plano dependia de a qual delas o modelo
+    obedecia em cada geração.
+  \item \textbf{O template ensinava o que o \emph{prompt} proíbe.} O \emph{prompt}
+    diz para nunca inventar código de habilidade, e o exemplo trazia a EF04HI03
+    com o texto da EF04HI04 e uma EF04HI06 cujo texto não consta na BNCC do
+    repositório. Avaliava também por participação e por produção de cartaz,
+    quando o \emph{prompt} afirma que isso não basta.
+  \item \textbf{O arco do ano só aparecia no fim.} Duas tabelas depois dos
+    bimestres (produtos e progressão) repetiam o que cada bimestre já dizia, e o
+    professor só via a trajetória do ano depois de ler todo o detalhe.
+\end{itemize}
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{itemize}
+  \item \textbf{A estrutura é definida num lugar só: a seção \enquote{Estrutura
+    obrigatória do \emph{output}} do \emph{prompt}.} O template passa a ser um
+    exemplo de formato, tom e nível de detalhe, de outra disciplina, e as duas
+    mensagens ao modelo dizem isso: a estrutura é a das instruções e o conteúdo do
+    exemplo não se reaproveita.
+  \item \textbf{Uma seção \enquote{Percurso do ano} no início}, em uma tabela
+    (período, questão norteadora, aprendizagem central, produto de síntese) e uma
+    frase de progressão, no lugar das duas tabelas do fim. O professor vê o ano
+    inteiro antes do detalhe, e o modelo planeja a progressão antes de escrevê-la.
+  \item \textbf{Cada bimestre traz questão norteadora, conteúdos, habilidades,
+    estratégias, formas de avaliação e, quando houver, produto de síntese.}
+  \item \textbf{A avaliação é por evidência}: cada item diz o que o estudante
+    mostra que aprendeu e se liga a uma habilidade do bimestre. Os instrumentos
+    formais que o currículo da rede exigir (prova bimestral, recuperação) continuam,
+    dizendo o que verificam.
+  \item \textbf{Habilidade entra com o código e o texto exatos do documento de
+    origem}, sem paráfrase.
+  \item \textbf{Os títulos e os limites de itens vivem em
+    \arq{planos/estrutura-do-plano.ts}}; o \emph{prompt} interpola os limites, e
+    \arq{tests/planos-estrutura.spec.ts} confere \emph{prompt}, exemplo e
+    \emph{mock} contra ele, e cada habilidade do exemplo contra a BNCC do
+    repositório. Verificado que o teste reprova o template antigo e o texto
+    trocado da EF04HI03.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{O template manda, e o \emph{prompt} só descreve o conteúdo de
+    cada seção.} Mantém o formato que a rede já conhecia, mas perde a questão
+    norteadora, o produto de síntese e o percurso, que são o que dá progressão ao
+    plano, e faz de um exemplo de uma disciplina a forma de todas.
+  \item \textbf{Manter as duas tabelas no fim e acrescentar as seções ao
+    template.} Conserva o \emph{prompt} como estava, mas diz a mesma coisa três
+    vezes (bimestre, produtos, progressão) e mantém o arco do ano escondido no fim.
+  \item \textbf{Montar o documento por seção, com uma chamada de IA para cada
+    uma.} Garantiria a forma, mas custa uma chamada por seção e tira do modelo a
+    coerência entre os bimestres, que é justamente a progressão.
+  \item \textbf{Passar ao \emph{prompt} as habilidades da BNCC do repositório em
+    vez de confiar nos documentos da rede.} É o que a app-92 faz, mas o Gerador
+    de Plano de Aula existe para a rede que já tem currículo e material próprios.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{O efeito no plano gerado não foi medido com uma geração real do
+    Vertex.} O teste garante o que está escrito no \emph{prompt}, no exemplo e no
+    \emph{mock}; não garante como o modelo os segue.
+  \item \textbf{Planos novos saem com outra forma.} Os já salvos não mudam
+    (\arq{gerado.md} é imutável), e quem conhecia as tabelas do fim passa a
+    encontrá-las unidas no início.
+  \item \textbf{O exemplo ficou cerca de cinco mil caracteres maior}, em cada
+    geração, diante de um \emph{prompt} de cerca de \num{190000} \emph{tokens}.
+  \item \textbf{A redação pedagógica do exemplo é uma escolha de quem
+    desenvolveu}, e ainda não passou por quem ensina.
+\end{itemize}
+
+\textbf{Gatilho.} Uma geração real em que o modelo ignore a estrutura ou copie o
+conteúdo do exemplo; uma rede pedir outro formato de plano; a revisão pedagógica do
+exemplo apontar uma estrutura melhor; ou o Gerador de Plano de Aula passar a
+receber as habilidades como dado, como a app-92, caso em que a origem das
+habilidades muda.
 
 \section{ADR-124 --- O \arq{CLAUDE.md} admite o bloco que uma ferramenta escreve, e só ele}
 \label{adr:claude-md-bloco-de-ferramenta}

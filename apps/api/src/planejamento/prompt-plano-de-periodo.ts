@@ -98,11 +98,7 @@ do meio desenvolvem e exercitam, e o período fecha com sistematização ou
 avaliação. Se o período tem aula suficiente, reserve a última para consolidação.
 Aulas consecutivas do mesmo dia (duas aulas seguidas) podem formar um bloco de
 90 ou 100 minutos — quando for o caso, diga isso no desenvolvimento.
-
-# SAÍDA
-
-Somente o JSON do schema fornecido. Sem texto antes ou depois, sem cercas de
-código, sem comentário.`;
+`;
 
 /**
  * O schema da resposta. Neutro de vendor (`AiJsonSchema`), como exige
