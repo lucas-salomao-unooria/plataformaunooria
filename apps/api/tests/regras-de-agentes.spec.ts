@@ -1,5 +1,5 @@
 import { existsSync, lstatSync, readdirSync, readFileSync, realpathSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { dirname, join, relative, resolve } from "node:path";
 
 /**
  * AS REGRAS DOS AGENTES TÊM UMA FONTE E DUAS PORTAS (ADR-102).
@@ -126,4 +126,47 @@ describe("CLAUDE.md: o ponteiro (ADR-55, ADR-124)", () => {
     const titulos = linhas.filter((l) => /^#{1,6} /.test(l));
     expect(titulos.filter((t) => t !== "## graphify")).toEqual([]);
   });
+});
+
+/**
+ * UMA PASTA COM `AGENTS.md` TEM DE SER ACHADA (docs/regras/arquivos-de-instrucao.md).
+ *
+ * A tabela do nível acima é o que leva a pasta a quem não sabe que ela existe: um
+ * `AGENTS.md` que ninguém cita custa o mesmo que um que não existe, e a falha é muda.
+ * "Citada" é por NOME (`src/tenancy/`, `app/(plataforma)/unooria/`) ou por GLOB que a
+ * cobre (`apps/experiencias/*`, `apps/api/src/*`), em QUALQUER `AGENTS.md` acima dela,
+ * a raiz inclusive: a raiz já descreve `apps/experiencias/*\/AGENTS.md` de uma vez, e
+ * exigir o nome de cada experiência numa segunda tabela seria a lista que ninguém
+ * atualiza. O teste prova que a pasta é ENCONTRÁVEL, não que está listada pelo nome.
+ */
+/** Os `AGENTS.md` acima de `pasta`, do mais próximo até a raiz. */
+function agentsAcima(pasta: string): string[] {
+  const achados: string[] = [];
+  for (let d = dirname(pasta); ; d = dirname(d)) {
+    if (existsSync(join(d, "AGENTS.md"))) achados.push(d);
+    if (d === RAIZ) return achados;
+  }
+}
+
+function formasDeCitar(pasta: string, ancestral: string): string[] {
+  const pai = dirname(pasta);
+  const formas = [relativa(pasta), relative(ancestral, pasta)];
+  if (pai !== RAIZ) formas.push(`${relative(RAIZ, pai)}/*`);
+  if (pai !== ancestral) formas.push(`${relative(ancestral, pai)}/*`);
+  return formas;
+}
+
+const citadaAcima = (pasta: string) =>
+  agentsAcima(pasta).some((a) => {
+    const texto = readFileSync(join(a, "AGENTS.md"), "utf8");
+    return formasDeCitar(pasta, a).some((forma) => texto.includes(forma));
+  });
+
+describe("AGENTS.md de pasta: alguém acima o cita (nome ou glob)", () => {
+  test.each(pastas.filter((p) => p !== RAIZ).map((p) => [relativa(p), p] as const))(
+    "%s é citada num AGENTS.md acima",
+    (_nome, pasta) => {
+      expect(citadaAcima(pasta)).toBe(true);
+    },
+  );
 });
