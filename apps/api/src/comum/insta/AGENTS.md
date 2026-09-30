@@ -18,9 +18,7 @@ por teto compila e sai errado em 30 telas ao mesmo tempo, no meio de uma aula.
   (sem isso o relatório abre vazio) e, ao voltar, apaga o dossiê e zera
   `finished_at` de quem volta ao `feed`. **Mexeu num, mexa no outro**: com o
   congelamento sem o par, o retorno é `voltou: true, movidos: 0` — a turma
-  inteira presa na tela da resposta com o painel dizendo "Investigação". Foi
-  assim por meses, porque o ramo do `feed` em `faseAoVoltar` era INALCANÇÁVEL:
-  a condição que o guardava (`sessaoCongelada`) era sempre verdadeira.
+  inteira presa na tela da resposta com o painel dizendo "Investigação".
 - **Apagar o dossiê é o que o torna recomputável.** `encerrarRun` é idempotente
   PELO DOSSIÊ: existindo a linha, devolve a de antes sem recomputar. Zerar só o
   `finished_at` deixaria o relatório seguinte sem nada do que a criança fizer

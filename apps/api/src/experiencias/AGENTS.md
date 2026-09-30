@@ -25,7 +25,7 @@ DISPONIBILIDADE, que não se mistura com este, está em
   — trocaria a versão sem restaurar o manifesto, reabrindo o defeito acima.
 - **`experiencias_versoes.manifesto` tem DUAS formas** em circulação: o corpo do
   PUT do CI (`versaoAtiva`) e o `experiencia.json` cru do backfill e do seed
-  (`versao`). `manifesto-guardado.ts` lê só os campos que precisam voltar, e
+  (`versao`). `recursos/manifesto-guardado.ts` lê só os campos que precisam voltar, e
   nenhum deles é a versão — que vem do parâmetro da rota. Manifesto ILEGÍVEL
   troca só o número em vez de recusar o rollback: rollback é operação de
   incidente.

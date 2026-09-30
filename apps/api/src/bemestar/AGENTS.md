@@ -18,7 +18,7 @@ por dia, 7 check-ins fecham os 21 itens, um texto livre opcional. Decisões:
   (×2) e classifica pelas faixas publicadas. `pontuar`/`faixaDe` em `regras.ts`.
 - **Sinal de apoio**: item 17 ou 21 ≥ 2, ou termo de risco no texto ⇒ mensagem
   FIXA de apoio (CVV 188, SAMU 192, CAPS/UBS) e a IA não é chamada.
-- **Dado sensível (LGPD art. 11)**: `bem_estar_ciclos`/`bem_estar_checkins`
+- **Dado sensível (LGPD art. 11)**: `app_91_ciclos`/`app_91_checkins`
   com RLS + posse por `professor_id` em toda query; **nenhuma rota de gestor
   ou agregado** — só o professor lê, e `DELETE /bemestar/dados` apaga tudo.
   Texto livre nunca vai a log nem à telemetria (só contagens).
