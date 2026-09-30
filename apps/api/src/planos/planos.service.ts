@@ -45,7 +45,8 @@ const MINUTOS_PARA_ORFAO = 12;
  * gemini-2.5-flash com o material real (currículo de Cajamar + 4 unidades do
  * 8º ano): o plano é cortado em 32k e a geração termina em `MAX_TOKENS`, sem
  * plano nenhum. A família 2.5 entrega até 65k de saída; 64k dá a folga que
- * falta sem chegar no limite duro.
+ * falta sem chegar no limite duro. (Medição do 2.5: o modelo atual de `longo`
+ * não foi remedido.)
  */
 const MAX_TOKENS_SAIDA = 64_000;
 
@@ -129,13 +130,13 @@ export class PlanosService {
     }
 
     const blocos: string[] = [
-      `DOCUMENTO DE REFERÊNCIA OBRIGATÓRIA: o texto a seguir é o template de estrutura que TODOS os planos de aula devem seguir. Use exatamente esta organização de seções, formatação e nível de detalhe como modelo. Adapte o conteúdo à disciplina e ano solicitados, mas mantenha a mesma estrutura.\n\n${TEMPLATE_PLANO}`,
+      `DOCUMENTO DE REFERÊNCIA DE FORMATO: o texto a seguir é um EXEMPLO de plano anual já pronto, de outra disciplina e ano. Use-o como modelo de formato, tom e nível de detalhe. A estrutura de seções é a definida nas suas instruções. Não reaproveite dele disciplina, habilidades, temas nem produtos: o conteúdo do plano sai dos documentos do professor, abaixo.\n\n${TEMPLATE_PLANO}`,
       ...gerais.map(
         (r) =>
           `--- DOCUMENTO DE REFERÊNCIA GERAL DA DISCIPLINA (vale para todos os anos): ${r.nome} ---\n\n${r.texto}`,
       ),
       ...especificas.map((r) => `--- DOCUMENTO DE REFERÊNCIA DA REDE: ${r.nome} ---\n\n${r.texto}`),
-      `Por favor, gere o Plano Anual para:\n\n- Ano escolar: ${rotuloDaSerie(serie)}\n- Componente curricular: ${rotuloDaDisciplina(disciplina)}\n\nUtilize os documentos do professor como base (currículo da rede e material didático). Siga RIGOROSAMENTE a estrutura do template de referência fornecido e os critérios de qualidade definidos nas suas instruções.`,
+      `Por favor, gere o Plano Anual para:\n\n- Ano escolar: ${rotuloDaSerie(serie)}\n- Componente curricular: ${rotuloDaDisciplina(disciplina)}\n\nUtilize os documentos do professor como base (currículo da rede e material didático). Siga a estrutura de seções e os critérios de qualidade definidos nas suas instruções; o exemplo de referência vale só como modelo de formato e de nível de detalhe.`,
     ];
     return blocos.join("\n\n");
   }
