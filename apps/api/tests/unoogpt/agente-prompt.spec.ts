@@ -1,4 +1,5 @@
 import { VERSAO_PROMPT, montarSystemPrompt } from '../../src/unoogpt/agente/prompt';
+import { TETO_DE_CARACTERES, TETO_DE_FRASES } from '../../src/unoogpt/agente/tamanho';
 import { protocoloDoTurno } from '../../src/unoogpt/agente/turno';
 import { MISSAO_TEMPESTADE } from '../../src/unoogpt/cenario';
 import { CONJUNTOS } from '../../src/unoogpt/modelo/conjuntos';
@@ -46,6 +47,27 @@ describe('o prompt do Cientista', () => {
   it('a abertura só entra na primeira fala', () => {
     expect(montar({ primeiraFala: true })).toContain('ESTA É A PRIMEIRA FALA');
     expect(montar({ primeiraFala: false })).not.toContain('ESTA É A PRIMEIRA FALA');
+  });
+
+  it('não manda evitar "tendência" numa linha e dizê-la em outra (auditoria H3)', () => {
+    // A regra de fala proíbe "tendência"; a abertura mandava dizer "mostrar
+    // tendências" no mesmo system. O modelo obedece a uma das duas ao acaso.
+    const p = montar({ primeiraFala: true });
+    expect(p).toContain('Evite também "tendência"');
+    expect(p.match(/tendência/gi)).toHaveLength(1);
+  });
+
+  it('a primeira fala é a exceção DECLARADA ao teto de 4 frases (M09)', () => {
+    // tamanho.ts recusa acima de 5 frases / 450 caracteres; a abertura pede 5
+    // passos. Sem dizer que a abertura é a exceção, o prompt pedia "no máximo 4"
+    // e "no máximo 5" ao mesmo tempo.
+    const primeira = montar({ primeiraFala: true });
+    expect(primeira).toContain('EXCEÇÃO ao teto de 4 frases');
+    expect(primeira.trimEnd().split('\n').at(-1)).toContain('na primeira fala, até 5');
+    expect(primeira).toContain(`${TETO_DE_CARACTERES} caracteres`);
+    expect(primeira).toContain(`${TETO_DE_FRASES} frases`);
+    // nas demais falas o LEMBRE do fim segue sem exceção
+    expect(montar().trimEnd().split('\n').at(-1)).not.toContain('primeira fala');
   });
 
   it('manda apontar dois bairros em vez de reescrever o quadro', () => {
