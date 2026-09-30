@@ -1196,7 +1196,7 @@ sequenceDiagram
   break sem saldo
     C-->>E: 429 'Quota diaria de IA atingida'
   end
-  C->>C: PROMPTS[expId] ?? PROMPTS.tutor
+  C->>C: promptDoTutor(expId)
   C->>P: serieDoPedido: turma.findFirst
   P-->>C: serie -> '6o ano'
   C->>M: generate({system, user})
