@@ -4,7 +4,7 @@ import { rotuloDaSerie, SerieSchema } from "../comum/series";
 import { Contrato } from "../openapi/contrato";
 import { PrismaService } from "../prisma/prisma.service";
 import { GerarRespostaSchema, GerarSchema } from "./contrato-de-rotas";
-import { PROMPTS } from "./prompts";
+import { promptDoTutor } from "./prompts";
 import { AI_PROVIDER, type AiProvider } from "./provider";
 import { QuotaService } from "./quota.service";
 
@@ -62,12 +62,14 @@ export class AiController {
       throw new HttpException("Quota diária de IA atingida", 429);
     }
 
-    const system = PROMPTS[expId] ?? PROMPTS["tutor"]!;
     const serie = await this.serieDoPedido(req.auth);
-    const contexto = serie ? `Série do estudante: ${serie}. ` : "";
     const result = await this.provider.generate({
-      system: `${system}\n${contexto}Atividade: ${atividade}.`,
-      user: mensagem,
+      // O system leva só o que o SERVIDOR sabe: o prompt do tutor e a série da
+      // turma do token. `atividade` é texto do cliente (até 200 caracteres): no
+      // papel de sistema ele teria a autoridade de reescrever o tutor, então vai
+      // no turno do usuário, junto da pergunta.
+      system: serie ? `${promptDoTutor(expId)}\nSérie do estudante: ${serie}.` : promptDoTutor(expId),
+      user: `Atividade: ${atividade}.\n\n${mensagem}`,
     });
 
     await this.quota.consumir(escolaId, usuarioId, result.tokensUsados);
