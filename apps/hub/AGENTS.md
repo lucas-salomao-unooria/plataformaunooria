@@ -52,17 +52,18 @@ dados no Brasil, consentimento). Suíte: `publico/03-documentos-legais`.
 
 **Header: um só para todos os papéis.** `components/header-plataforma.tsx`
 (marca → home do papel, e o `MenuDaConta` com nome, série/papel e avatar) é o header de
-`/estudante`, `/professor`, `/admin`, `/analise` E de `/exp/*` — antes cada área
-copiava o seu e a experiência não tinha nenhum. A casca visual (CSS do DS,
-compensações, fontes) saiu do layout do grupo `(plataforma)` para
-`components/casca-plataforma.tsx`, porque `/exp/*` e `/dev-embed` estão fora do
-grupo e também precisam dela. A regra de ouro passou a valer um nível abaixo: o
-header é chrome do HUB, desenhado ACIMA do aparelho — dentro do iframe nada da
-marca institucional entra.
+`/estudante`, `/professor`, `/admin`, `/analise` E de `/exp/*` — uma cópia por
+área diverge, e a experiência ficaria sem nenhum. A casca visual (CSS do DS,
+compensações, fontes) mora em `components/casca-plataforma.tsx`, e não no layout
+do grupo `(plataforma)`, porque `/exp/*` e `/dev-embed` estão fora do grupo e
+também precisam dela. A regra de ouro vale um nível abaixo: o header é chrome do
+HUB, desenhado ACIMA do aparelho — dentro do iframe nada da marca institucional
+entra.
 
 **O "Sair" mora no menu do avatar, não na barra** (`components/menu-da-conta.tsx`,
-`HeaderMenu` do DS 0.1.19). Era um `Button variant="ghost"` solto: a ação mais
-destrutiva do header com o mesmo peso visual da marca, a um clique de distância.
+`HeaderMenu` do DS). Solto na barra como um `Button variant="ghost"`, seria a
+ação mais destrutiva do header com o mesmo peso visual da marca, a um clique de
+distância.
 Duas coisas para saber antes de mexer nele:
 
 - **O nome e o papel moram DENTRO do `MenuDaConta`, e é obrigatório.** A tira do
@@ -84,7 +85,8 @@ sessão abre a pasta:
 |---|---|
 | [`app/`](app/AGENTS.md) | os layouts de área: a trilha, e o remonte ao trocar de escola |
 | [`app/(plataforma)/admin/`](<app/(plataforma)/admin/AGENTS.md>) | a área do gestor: regionais e escolas, vínculo, relatórios, vocabulário |
-| [`app/(plataforma)/professor/`](<app/(plataforma)/professor/AGENTS.md>) | a sala de aula, o guia, a ficha da missão |
+| [`app/(plataforma)/professor/`](<app/(plataforma)/professor/AGENTS.md>) | a sala de aula e o guia da aula |
+| [`app/(plataforma)/professor/entre-redes/`](<app/(plataforma)/professor/entre-redes/AGENTS.md>) | a ficha da missão: o despachante, equipes, evidência, A Seleção |
 | [`app/(plataforma)/unooria/`](<app/(plataforma)/unooria/AGENTS.md>) | o painel da fornecedora e o interruptor na porta do produto |
 | [`app/exp/`](app/exp/AGENTS.md) | o embed da experiência, e a allowlist do BFF |
 | [`components/`](components/AGENTS.md) | a casca e as medidas: marca, fontes, alturas, rolagem |
@@ -97,7 +99,7 @@ no mesmo commit.
 ## Papéis e roteamento
 
 `lib/papeis.ts` é contrato congelado com a api (`apps/api/src/auth/claims.ts`):
-quatro papéis, replicados em quatro fontes que precisam concordar sem
+seis papéis (a seção "Papéis: seis" abaixo), replicados em quatro fontes que precisam concordar sem
 compartilhar código — o validador do token, este arquivo (que o middleware edge
 importa), o `CHECK` no Postgres e o atributo `perfil` do WSO2. `/estudante` e
 `/exp/*` são a MESMA área no middleware.
@@ -121,8 +123,8 @@ deixa a pessoa em "Entrando…" para sempre, sem mensagem.
 
 ## Papéis: seis, e o formulário sai da cadeia (ADR-80)
 
-`lib/papeis.ts` é a cópia edge-safe do vocabulário da api, e agora carrega
-também a **cadeia de atribuição** (`papeisQueCria`). Duas coisas a respeitar:
+`lib/papeis.ts` é a cópia edge-safe do vocabulário da api, e também carrega
+a **cadeia de atribuição** (`papeisQueCria`). Duas coisas a respeitar:
 
 - **`rotuloDoPapel` é um `Record` EXAUSTIVO, não uma escada de `if`.** Papel novo
   sem rótulo passa a ser erro de compilação; com a escada, ele caía no `return`
@@ -134,6 +136,6 @@ também a **cadeia de atribuição** (`papeisQueCria`). Duas coisas a respeitar:
   oferecer o que ela recusa.
 - Os quatro papéis de gestão dividem a MESMA área do middleware. Quem separa o
   que cada um pode é o `RolesGuard` da api, item a item — nunca o middleware.
-- **"Coordenação", não "Gestor"**, na interface: é a palavra que a rede usa, e era
-  a que já estava no filtro de Usuários enquanto o modal dizia "gestor" para a
-  MESMA coisa.
+- **"Coordenação", não "Gestor"**, na interface: é a palavra que a rede usa, e
+  ela vale no filtro de Usuários e no modal: um dizendo "coordenação" e o outro
+  "gestor" para a MESMA coisa confunde quem opera.

@@ -5,18 +5,19 @@ Complementa o `AGENTS.md` de `apps/hub`, que vence em conflito. O contrato
 
 ## Embed de experiência
 
-A montagem (token, manifesto, dev server, origin) é uma só:
+A montagem (token, manifesto, dev server, origin) é uma só: `montarEmbed`, em
 `lib/embed-experiencia.ts`, usada por `/exp/[expId]`, `/dev-embed`,
-`/professor/plano-de-aula` e `/professor/bem-estar`. O contrato `postMessage` e
-o manifesto estão em `apps/experiencias/AGENTS.md`.
+`/professor/plano-de-aula`, `/professor/plano-de-ensino` e
+`/professor/bem-estar`.
 
 **A origem do bundle é do AMBIENTE; o manifesto diz o que a experiência
-declara.** Os dois estavam conflatados em `emDev = !manifesto && !emProducao` —
-"tabela vazia logo é dev" — e isso quebrou quando o seed passou a popular
-`experiencias` (ADR-69): sem `NEXT_PUBLIC_CDN_EXP_URL`, a URL versionada caía no
-default `localhost:5173`, o dev server da exp08ef1b, que responde a qualquer caminho
-com a SPA dele. TODA missão abria o Instanooria, o handshake completava e o boot
-dava 403 — nada dizia "endereço errado".
+declara.** Não derive um do outro: `emDev = !manifesto && !emProducao` —
+"tabela vazia logo é dev" — quebrou quando o seed passou a popular
+`experiencias` (ADR-69), e hoje é `emDev = !emProducao`. Sem
+`NEXT_PUBLIC_CDN_EXP_URL`, a URL versionada cai no default `localhost:5173`, o
+dev server da exp08ef1b, que responde a qualquer caminho com a SPA dele: TODA
+missão abre o Instanooria, o handshake completa e o boot dá 403 — nada diz
+"endereço errado".
 
 ## Prefixo fora da allowlist do BFF dá 404, e a tela some inteira
 
