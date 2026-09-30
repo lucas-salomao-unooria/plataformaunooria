@@ -1528,7 +1528,7 @@ e montado dentro do \emph{controller}, com a série resolvida da turma do
   \node[guarda] at (1.55,-10.65) {[sem saldo]};
   \msgr{7.1}{1.3}{-11.3}{429 \enquote{Quota diária de IA atingida}}
 
-  \msgself{7.1}{-12.05}{\texttt{PROMPTS[expId] ?? PROMPTS.tutor}}
+  \msgself{7.1}{-12.05}{\texttt{promptDoTutor(expId)}}
   \msgs{7.1}{12.9}{-13.1}{\texttt{serieDoPedido}: \texttt{turma.findFirst}}
   \msgr{12.9}{7.1}{-13.85}{\texttt{serie} \seta{} \enquote{6º ano}}
   \msgs{7.1}{15.8}{-14.6}{\texttt{generate(\{system, user\})}}
@@ -1546,7 +1546,7 @@ e montado dentro do \emph{controller}, com a série resolvida da turma do
   \texttt{break} é a saída antecipada: 401 sem \emph{token} válido, 429 sem saldo.
   O consumo é gravado \emph{depois} da resposta do modelo, com os \emph{tokens} que
   ele declarou; entre o \texttt{temSaldo} e o \texttt{consumir} não há trava. Fontes:
-  \arq{ai/ai.controller.ts}, \arq{ai/quota.service.ts},
+  \arq{ai/ai.controller.ts}, \arq{ai/prompts.ts}, \arq{ai/quota.service.ts},
   \arq{ai/medidor.provider.ts}, \arq{auth/oidc.guard.ts}.}
 \label{fig:uml-seq-ia}
 \end{figure}
