@@ -38,13 +38,15 @@ Complementa o `AGENTS.md` da raiz, que vence em conflito. **O fluxo inteiro**
   `.githooks/pre-commit` recusa arquivo fora da fatia da frente — só quando
   existe `<git-dir>/fatia`, então a cópia principal segue livre. O
   `.githooks/post-merge` não recusa nada: ele **poda as frentes já mergeadas**
-  no `git pull` de `dev-local` (ADR-103), e nunca derruba o pull. Instalados pelo `prepare` no `pnpm install` (`core.hooksPath`).
+  (ADR-103) e **atualiza o grafo do graphify** em segundo plano (ADR-125) no
+  `git pull` de `dev-local`, e nunca derruba o pull. Instalados pelo `prepare` no `pnpm install` (`core.hooksPath`).
   Escapes nomeados: `PERMITIR_PUSH_DIRETO=1`, `PERMITIR_BRANCH_FORA_DO_PADRAO=1`,
   `PERMITIR_FORA_DA_FATIA=1`.
 - **TODA tarefa começa num worktree, e a base vai ESCRITA** (ADR-61, ADR-101):
   `pnpm worktree criar <tipo/slug> --fatia api/<mod>,hub/<rota>,exp/<id>` faz o
   caminho inteiro (worktree sobre `origin/dev-local`, `.env` copiados,
-  `install` + `prisma generate`, porta de Vite reservada, briefing impresso).
+  `install` + `prisma generate`, grafo do graphify copiado, porta de Vite
+  reservada, briefing impresso).
   Não é só para paralelismo: a cópia principal é onde a stack RODA, e editar
   nela mistura o que subiu com o que ainda está sendo escrito. Nenhuma
   ferramenta adivinha a base — a `default_branch` do GitHub é `dev`, clone

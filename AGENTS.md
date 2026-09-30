@@ -40,9 +40,11 @@ de escrever**: cada uma traz o custo já pago que produziu a regra.
 E na raiz: [`CONTEXT.md`](CONTEXT.md) (o glossário, com a fonte de verdade de
 cada termo) e [`CONTRIBUTING.md`](CONTRIBUTING.md) (o fluxo de git inteiro).
 
-**Portas diferentes** (ADR-102): Claude Code lê `.claude/rules/` (só as com `paths:`,
-sob demanda; as outras vêm por esta tabela), Antigravity `.agents/rules/` (todas),
-Codex e Cursor este arquivo. As duas pastas são **symlinks para `docs/regras/`**.
+`.claude/rules/` e `.agents/rules/` são **symlinks para `docs/regras/`** (ADR-102); o
+Claude só carrega as com `paths:` — as outras chegam por esta tabela.
+
+**Quem chama quem? Não abra arquivo: `graphify explain "Nome"` ou `path "A" "B"`**
+(275–875 tokens; já vem no worktree; custos em `comandos.md`).
 
 ## Contexto de negócio (não violar)
 
@@ -164,8 +166,7 @@ proibições:
 - **Não escrever interface sem antes procurar no DS**, nem componente local
   silencioso, nem `overflow` onde há `ScrollBar`, nem `<select>` onde há
   `Selection`. E não misturar seções do DS (plataforma dentro do clone).
-- Não deixar o DS parado: em `0.x` o caret (`^0.2.8`) só sobe patch; subir minor é
-  decisão ativa.
+- Não deixar o DS parado: em `0.x` o caret só sobe patch; minor é decisão ativa.
 - **Não escrever breadcrumb numa página do hub, nem deixar página sem ele**: a
   trilha é do layout da área (ADR-77).
 - **Não escrever texto de interface em inglês, nem traduzir o nome do clone**

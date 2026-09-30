@@ -20,7 +20,7 @@
  * um diff cheio de commit que já estava lá (ADR-61, ADR-71, ADR-101).
  */
 import { execFileSync, execSync } from "node:child_process";
-import { copyFileSync, existsSync, mkdirSync, readdirSync, writeFileSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -74,6 +74,16 @@ const ENVS = [
   "apps/hub/.env.local",
   "apps/hub/.env.development.local",
 ];
+
+/**
+ * O grafo do graphify (ADR-125). `graphify-out/` é ignorado pelo git, então o
+ * worktree nasceria sem ele e o `graphify query` falharia ("graph file not
+ * found") — justamente onde o agente mais consulta. Só o `graph.json` basta.
+ * Sai da cópia PRINCIPAL, que o `.githooks/post-merge` mantém fresca.
+ */
+const GRAFO = "graphify-out/graph.json";
+/** Acima disto o aviso manda atualizar: o grafo é um retrato do código de um dia. */
+const GRAFO_VELHO_EM_DIAS = 2;
 
 const ESC = "\u001b";
 const cor = (c, s) => (process.stdout.isTTY ? `${ESC}[${c}m${s}${ESC}[0m` : s);
@@ -260,6 +270,20 @@ function criar(branch, fatia) {
     copiados++;
   }
   ok(`${copiados} arquivo(s) de ambiente copiado(s)`);
+
+  passo("copiando o grafo do graphify (ignorado pelo git, não viaja com o worktree)");
+  const grafoDeOrigem = [PRINCIPAL, RAIZ].map((r) => join(r, GRAFO)).find((c) => existsSync(c));
+  if (grafoDeOrigem) {
+    mkdirSync(dirname(join(destino, GRAFO)), { recursive: true });
+    copyFileSync(grafoDeOrigem, join(destino, GRAFO));
+    const dias = Math.floor((Date.now() - statSync(grafoDeOrigem).mtimeMs) / 86_400_000);
+    ok(`grafo copiado (de ${dias === 0 ? "hoje" : `${dias} dia(s) atrás`}): consulte com \`graphify query "…"\` antes de buscar arquivo`);
+    if (dias >= GRAFO_VELHO_EM_DIAS) {
+      console.log(`${cor(33, "!")} grafo com ${dias} dias: rode \`graphify update .\` (só código, sem custo de IA) para ele enxergar o que mudou`);
+    }
+  } else {
+    console.log(`${cor(33, "!")} a cópia principal não tem grafo: rode \`graphify update .\` nela para o próximo worktree já nascer com ele`);
+  }
 
   if (process.argv.includes("--sem-instalar")) {
     passo("--sem-instalar: pulando pnpm install e prisma generate");

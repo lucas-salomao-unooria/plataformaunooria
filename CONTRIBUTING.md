@@ -467,7 +467,7 @@ pnpm install          # o `prepare` roda: git config core.hooksPath .githooks
 | `pre-push` | nome de branch fora do padrão | `PERMITIR_BRANCH_FORA_DO_PADRAO=1` |
 | `commit-msg` | assunto fora de Conventional Commits | `git commit --no-verify` |
 | `pre-commit` | arquivo fora da fatia declarada da frente (só quando existe `<git-dir>/fatia` — a cópia principal segue livre) | `PERMITIR_FORA_DA_FATIA=1` |
-| `post-merge` | **não recusa nada** — poda as frentes já mergeadas no `git pull` de `dev-local`. Nunca derruba o pull (ADR-103) | `PULAR_PODA_DE_WORKTREE=1` |
+| `post-merge` | **não recusa nada** — no `git pull` de `dev-local`, atualiza o grafo do graphify em segundo plano (ADR-125) e poda as frentes já mergeadas (ADR-103). Nunca derruba o pull | `PULAR_GRAFO=1`, `PULAR_PODA_DE_WORKTREE=1` |
 
 Os escapes existem e são nomeados de propósito: emergência acontece, e é melhor
 que ela deixe rastro numa variável explícita do que numa flag genérica. **Hook é
