@@ -34,6 +34,19 @@ pnpm worktree limpar [--seco]             # PODA as frentes já mergeadas em ori
                                           # de dev-local (.githooks/post-merge) e antes de cada `criar`.
                                           # Pula worktree sujo, a frente em uso e branch sem commit
                                           # próprio — `--seco` mostra o que sairia sem remover nada.
+graphify explain "NomeDoSimbolo"          # o grafo (graphify-out/graph.json) JÁ EXISTE: não se cria nem se
+                                          # commita (ADR-125). Custo MEDIDO aqui, em tokens: `explain` de
+                                          # nome que você já conhece 275–875; `path "A" "B"` ~30; `query
+                                          # "pergunta"` ~1.600 FIXOS — serve para área que você não sabe
+                                          # nomear, e sai mais caro que um grep preciso quando você já sabe
+                                          # o nome. grep de 1 definição: 110–1.500. Ler os arquivos que o
+                                          # grep acha: 9.500–139.000. É aí que o grafo paga: ele troca a
+                                          # LEITURA inteira por um subgrafo. Antes de abrir arquivo para
+                                          # entender quem chama quem, `explain`/`path`.
+                                          # Cobre só CÓDIGO (AST): AGENTS.md e LaTeX não estão nele. Ele se
+                                          # atualiza sozinho no `git pull` de dev-local (post-merge, em
+                                          # segundo plano, grátis); no worktree, depois de editar código
+                                          # que você vai consultar de novo: `graphify update .`
 pnpm --filter @edu/api test
 pnpm --filter @edu/api exec prisma migrate reset --force --skip-seed  # ZERA o banco (dev)
 npx ts-node --transpile-only apps/api/scripts/gerar-openapi.ts   # docs/openapi.json (roda da pasta apps/api)
