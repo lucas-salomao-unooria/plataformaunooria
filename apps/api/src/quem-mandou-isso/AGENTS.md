@@ -31,11 +31,15 @@ Quatro tabelas (`exp05ef1b_pacotes`, `_gates_turma`, `_sessoes`,
   P1 contém "verdadeira", e um `toContain` sobre a resposta inteira reprovaria
   em falso.
 - **A atividade da evidência é o PACOTE aprovado; a rodada é a reaplicação.**
-  Aprovar um pacote DIFERENTE desativa o anterior (que fica, com as sessões e a
-  evidência) e abre atividade nova; aprovar o MESMO de novo é idempotente (a
-  comparação é por `assinatura`, porque o JSONB reordena as chaves). "Zerar a
-  turma" é `rodada_atual + 1` — NADA é apagado. Os dois voltam a fase a
-  `triagem`: senão a turma nova nasceria com a revelação aberta.
+  Aprovar cria a atividade PRONTA (ADR-130): o pacote em andamento continua, e
+  a fase da turma não muda; aprovar de novo o MESMO que o aprovado mais recente
+  é idempotente (a comparação é por `assinatura`, porque o JSONB reordena as
+  chaves). Quem põe no ar é `colocarEmAndamento` (`POST
+  :turmaId/pacotes/:pacoteId/em-andamento`): liga `ativo` no escolhido, abre a
+  rodada SEGUINTE à última com sessão e volta a fase a `triagem` — senão a
+  atividade nova nasceria com a revelação aberta. A lista das atividades é
+  `GET :turmaId/pacotes` (os APROVADOS; o rascunho não é atividade). "Zerar a
+  turma" é `rodada_atual + 1` — NADA é apagado.
 - **A marca da EF05CO08 é da MESMA transação do latch do Mural.** Se a
   evidência falhar, o Mural não fecha (há teste com o `marcar` quebrado). A
   régua é `regras/evidencia.ts#nivelCO08` (a v2, ADR-120: só três verdadeiras

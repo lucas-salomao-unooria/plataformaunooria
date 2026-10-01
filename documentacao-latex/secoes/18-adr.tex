@@ -9,7 +9,7 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{129 decisões}, numeradas até ADR-129, \textbf{sem lacunas}. A 117
+São \textbf{130 decisões}, numeradas até ADR-130, \textbf{sem lacunas}. A 117
 (o Jornal da Escola) entrou depois da 121: o número tinha sido
 reservado entre as sessões antes de qualquer uma escrever. Quando
 eram cem, as cinco últimas nasceram no MESMO dia, em três frentes paralelas, e não
@@ -176,6 +176,7 @@ que a cercam.
 \adrr{ADR-127} & Só \emph{data store}, inclusive para as habilidades da BNCC & 2026-09-30 & Aceita, em avaliação; recorta a \adrr{ADR-73}\\
 \zebra \adrr{ADR-128} & SSE só no chat do agente & 2026-09-30 & Aceita\\
 \adrr{ADR-129} & O \emph{markdown} do agente vira HTML no navegador & 2026-09-30 & Aceita\\
+\adrr{ADR-130} & A atividade é do professor, e a equipe é da atividade & 2026-10-01 & Aceita\\
 \bottomrule
 \end{tabularx}
 
@@ -11320,3 +11321,99 @@ tabela só fecha várias linhas depois.
 \emph{markdown} não expressa (e a tentação de ligar HTML cru); ou um segundo
 produto querer o mesmo componente, caso em que ele sobe para o DS com a
 configuração travada.
+
+% ---------------------------------------------------------------------------
+\section{ADR-130 --- A atividade é do professor, e a equipe é da atividade}
+\label{adr:atividade-e-equipe}
+
+\textbf{Data.} 2026-10-01. \textbf{Status.} Aceita. \textbf{Supera em parte} a
+\adrr{ADR-111} (a montagem das equipes deixa de ser por turma $\times$ missão)
+e muda o nascimento do conteúdo da A Seleção (exp07ef1b) e do Jornal da Escola
+(exp04ef1b), que nasciam com o banco curado criado sozinho.
+
+\begin{especificacao}{Contexto}
+O Instanooria (exp08ef1b) tinha, desde o começo, uma lista \enquote{Suas
+atividades nesta missão}: cada atividade é uma configuração da missão para um
+tema do professor. As outras missões com ficha pedagógica já tinham a mesma
+coisa POR BAIXO --- a cobertura da A Seleção, o pacote do Jornal e o do Quem
+Mandou Isso? (exp05ef1b) eram, na api, a atividade da evidência (\adrr{ADR-112})
+---, mas a tela escondia isso em \enquote{A aula e os resultados}, onde aprovar
+um tema novo TROCAVA a aula em andamento. E as equipes eram uma seção solta no
+alto da ficha, uma montagem por turma $\times$ missão: duas atividades da mesma
+missão na mesma turma (uma por conteúdo, em dias diferentes, com o laboratório
+dividido de outro jeito) dividiam, em silêncio, as mesmas equipes. O dono do
+produto pediu as quatro missões como o Instanooria, com a equipe DENTRO da
+construção da atividade.
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{itemize}
+  \item \textbf{A missão é o esqueleto narrativo; a atividade é a missão que a
+    turma faz de fato, e a plataforma nunca a cria.} Acabou a cobertura
+    \cd{padrao} criada na primeira entrada da A Seleção e o pacote \cd{padrao}
+    do Jornal: sem atividade em andamento, a api responde 403
+    \cd{atividade-nao-preparada} --- a mesma porta fechada que a experiência já
+    mostra para a liberação (\adrr{ADR-69}), e por isso nenhum \emph{bundle}
+    muda. O banco curado vira ponto de partida editável da criação.
+  \item \textbf{Criar não põe no ar.} A atividade nasce PRONTA, e o professor
+    escolhe, na lista, qual está EM ANDAMENTO (\enquote{Usar esta atividade
+    agora}); uma por turma. Pôr no ar abre a rodada SEGUINTE à última que rodou,
+    na etapa inicial: retomar a mesma depois do Mural seria o \enquote{voltar}
+    que o botão único proíbe. No Instanooria, \enquote{Ativar} passou de
+    \enquote{uma ativa por professor} a \enquote{uma ativa por turma}.
+  \item \textbf{A criação é um assistente de quatro passos} no hub (turma,
+    conteúdo, equipes, revisar e criar), o mesmo para as missões; o passo do
+    conteúdo é de cada uma. O Instanooria mantém a criação dele (a geração dos
+    posts é longa e assíncrona) e as equipes entram na página da atividade,
+    antes do \enquote{Ativar}.
+  \item \textbf{A equipe é da atividade}: \cd{atividade\_id} (texto opaco, o
+    alfabeto de \cd{evidencias\_marcas}) nas três tabelas de equipes e na chave;
+    a missão sem atividade (o unooGPT, até ser refeito) usa o id fixo
+    \cd{turma}. A atividade em andamento de cada missão é lida num
+    \cd{Record} exaustivo (\arq{equipes/atividades.ts}), e é ela que vale para a
+    faixa do estudante e para a sala.
+  \item \textbf{Terceiro modo, \enquote{um aluno por computador}}
+    (\cd{individual}): grava a montagem, sem equipes e com \cd{computadores}
+    nulo --- o painel volta a contar por criança.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Uma tabela geral de atividades na plataforma}: obrigaria a
+    migrar quatro modelos que já funcionam (e já são a atividade da evidência)
+    para um quinto; o \cd{atividade\_id} opaco faz o mesmo papel nas equipes, como
+    já fazia na evidência.
+  \item \textbf{Manter a equipe por turma $\times$ missão e só mover a tela}:
+    resolvia a tela e mantinha o defeito --- a segunda atividade herdando as
+    equipes da primeira.
+  \item \textbf{Manter o conteúdo padrão criado sozinho}: a lista teria uma
+    atividade que o professor não criou, e \enquote{a plataforma não cria nada}
+    deixaria de valer justamente nas duas missões em que ela criava.
+  \item \textbf{Criar já em andamento} (a regra de antes): preparar a próxima
+    aula tiraria do ar a de agora.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{A missão só abre com uma atividade em andamento.} Professor que
+    libera a missão na sala e não cria atividade vê a turma diante da porta
+    fechada; a lista da ficha diz isso, mas é um passo a mais do que antes.
+  \item \textbf{Criar e montar equipes não são uma transação}: são dois
+    módulos. Se a equipe falhar depois de a atividade nascer, a atividade fica,
+    e a página dela mostra o que faltou --- nunca se apaga o conteúdo por causa
+    da equipe.
+  \item \textbf{Quem faltou só se sabe no dia}: o sorteio da criação é sobre a
+    turma inteira, e a página da atividade é onde se marca a falta e se refaz.
+  \item \textbf{As montagens que já existiam} foram para a atividade em
+    andamento da turma; a que não tinha atividade em andamento saiu.
+\end{itemize}
+
+\textbf{Gatilho de reavaliação.} O unooGPT ser refeito com atividades (o id fixo
+\cd{turma} sai); uma quinta missão com atividade (entra no \cd{Record} de
+\arq{equipes/atividades.ts} e em \cd{MISSOES\_COM\_ATIVIDADE} no hub); ou a
+necessidade de reabrir a MESMA rodada de uma atividade, que pediria guardar a
+etapa por atividade, e não só no gate da turma.
+

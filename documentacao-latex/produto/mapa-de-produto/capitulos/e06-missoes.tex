@@ -60,6 +60,7 @@ produto:
 \zebra \id{F06.8} & unooGPT (Missão Tempestade) & 2ª EM, U1 & assistente de IA & \pronto\\
 \id{F06.9} & Vila do Lume & qualquer ano & jogo 3D próprio & \pronto\\
 \zebra \id{F06.10} & As missões que faltam & 40 unidades & --- & \afazer\\
+\id{F06.13} & As atividades da missão & as quatro com atividade & --- & \pronto\\
 \bottomrule
 \end{tabularx}
 
@@ -448,8 +449,10 @@ os 12 posts antes da aula}{que a turma leia uma cobertura que pareça a da
 cidade dela}
 \aceite
 \begin{itemize}
-  \item Sem preparo nenhum, a turma roda a cobertura pronta da Unooria, sobre a
-    reforma da praça central: a missão nunca abre vazia.
+  \item A cobertura é a atividade, e quem a cria sou eu, pela \enquote{Nova
+    atividade} da ficha (\id{F06.13}). A cobertura pronta da Unooria, sobre a
+    reforma da praça central, é um ponto de partida que eu leio e edito: sem
+    atividade em andamento, a turma vê a missão fechada.
   \item Em \enquote{Preparação da Missão: A Seleção}, escrevo o
     \enquote{Evento central coberto pelos veículos} e, se quiser, \enquote{Um
     detalhe da sua cidade ou escola (opcional)}. \enquote{Gerar Lote com IA}
@@ -459,12 +462,11 @@ cidade dela}
   \item Leio e edito os 12 posts, com as fichas que só eu vejo (a fonte ouvida
     e o ângulo de cada um). Cada legenda tem de 20 a 45 palavras, e a tela
     aponta a que sair do limite.
-  \item Nada chega à turma sem \enquote{Aprovar Cobertura e Abrir Turma}, que
-    só acende quando algo mudou. Aprovar um tema novo abre uma atividade nova, e
-    a turma recomeça na primeira rodada; a tela avisa antes, e a cobertura
-    anterior fica guardada.
-  \item Depois de aprovar, \enquote{Gerar imagens} cria as imagens dos posts,
-    duas por vez. Post sem imagem mostra a descrição da cena, e a missão roda
+  \item Nada chega à turma sem \enquote{Criar atividade} --- e nem ele põe no
+    ar: a cobertura nova fica pronta na lista até eu escolher \enquote{Usar esta
+    atividade agora} (\id{H06.13.3}). A cobertura que estava no ar fica guardada.
+  \item Na página da atividade, \enquote{Gerar imagens} cria as imagens dos
+    posts, duas por vez --- também numa atividade pronta, antes da aula. Post sem imagem mostra a descrição da cena, e a missão roda
     igual; os posts de números da cobertura pronta já vêm com gráfico.
 \end{itemize}
 \pendencia{as imagens geradas precisam da revisão do conteúdo antes da
@@ -604,6 +606,81 @@ se não passar, o episódio é gravado em estúdio, com o mesmo roteiro.}
 \end{historia}
 
 % ---------------------------------------------------------------------------
+% ---------------------------------------------------------------------------
+\feature{F06.13}{As atividades da missão}{\pronto}
+
+A missão é o roteiro; a \textbf{atividade} é a missão que a turma faz de fato,
+com o conteúdo que o professor escolheu. Vale para o Instanooria, A Seleção, o
+Jornal da Escola e Quem mandou isso?: a ficha de cada uma tem a mesma lista, no
+molde da que o Instanooria já tinha. A plataforma não cria atividade nenhuma
+sozinha.
+
+\begin{historia}{H06.13.1}{Ver as atividades da turma}{\pronto}
+\hu{Professor}{ver, na ficha da missão, as atividades que criei para a turma}{saber
+o que a turma está fazendo e o que está pronto para a próxima aula}
+\aceite
+\begin{itemize}
+  \item \enquote{Suas atividades com a turma\ldots} lista cada atividade com o
+    tema, de onde veio o conteúdo, quantas rodadas já rodou e quando foi criada,
+    e o estado: \enquote{Em andamento}, \enquote{Pronta} ou, no Instanooria,
+    \enquote{Em preparo}. A em andamento vem primeiro.
+  \item Aberta sem turma, a ficha pede para escolher uma: a atividade é sempre
+    de uma turma.
+  \item Sem nenhuma em andamento, a ficha avisa que a turma vê a missão fechada.
+\end{itemize}
+\end{historia}
+
+\begin{historia}{H06.13.2}{Criar a atividade em quatro passos}{\pronto}
+\hu{Professor}{criar uma atividade escolhendo a turma, o conteúdo e como a sala
+vai se sentar}{montar a aula inteira num lugar só}
+\aceite
+\begin{itemize}
+  \item \enquote{Nova atividade} abre os passos \enquote{Turma},
+    \enquote{Conteúdo}, \enquote{Equipes} e \enquote{Revisar e criar}; a turma
+    já vem escolhida quando eu chego pela sala.
+  \item O conteúdo é o de cada missão: gerado com IA sobre o meu tema, ou a
+    partir do conteúdo pronto da Unooria, que eu leio e edito antes.
+  \item As equipes se escolhem ali mesmo (\id{H13.1.8}).
+  \item Nada é gravado antes de \enquote{Criar atividade}. Se as equipes não
+    puderem ser salvas, a atividade é criada mesmo assim, e a tela diz o que
+    faltou.
+  \item O Instanooria mantém a criação dele, porque os posts levam alguns
+    minutos para ficar prontos; as equipes entram na página da atividade, antes
+    de \enquote{Ativar}.
+\end{itemize}
+\end{historia}
+
+\begin{historia}{H06.13.3}{Escolher qual atividade a turma faz}{\pronto}
+\hu{Professor}{escolher qual das minhas atividades a turma faz agora}{preparar a
+próxima aula sem tirar do ar a de hoje}
+\aceite
+\begin{itemize}
+  \item Criar não põe a atividade no ar: ela fica \enquote{Pronta}. No último
+    passo da criação posso marcar \enquote{Pôr esta atividade no ar agora}, que
+    já vem marcado quando a turma não tem nada em andamento.
+  \item \enquote{Usar esta atividade agora} põe a escolhida em andamento. Se a
+    turma estiver fazendo outra, a tela pergunta antes: quem está jogando passa
+    para a nova, e a outra volta a ficar pronta, com tudo guardado.
+  \item Uma atividade em andamento por turma. No Instanooria, duas turmas do
+    mesmo professor podem rodar ao mesmo tempo.
+  \item Voltar a uma atividade que já rodou começa uma rodada nova; as
+    anteriores continuam no painel de habilidades.
+\end{itemize}
+\end{historia}
+
+\begin{historia}{H06.13.4}{A página da atividade}{\pronto}
+\hu{Professor}{abrir uma atividade e ter nela tudo o que faço com ela}{preparar e
+conduzir a aula sem procurar em outra tela}
+\aceite
+\begin{itemize}
+  \item A página mostra o tema e o estado, as equipes da atividade, as imagens
+    (quando a missão tem) e o painel de habilidades.
+  \item O painel da aula, com os botões que avançam a turma e o
+    \enquote{Zerar}, só aparece na atividade em andamento; na pronta, a página
+    oferece \enquote{Usar esta atividade agora}.
+\end{itemize}
+\end{historia}
+
 \feature{F06.6}{Instanooria --- O conteúdo que não chegou}{\pronto}
 
 \textbf{8º ano EF, Unidade 1} \textperiodcentered{} imita uma rede social de

@@ -55,8 +55,10 @@ com `escola_id` + RLS forçada:
   tem a turma inteira) copia como `projecao`/`a_revisar` e **não conta** —
   nem no resultado, nem no perfil — até "Confirmar para a turma" (`valida`).
   Depois o professor ainda ajusta um a um.
-- **Equipe mudou → recalcula SÓ a rodada em andamento**: a (atividade, rodada)
-  da marca mais recente da turma × missão. Rodada passada nunca muda por troca
+- **Equipe mudou → recalcula SÓ a rodada em andamento DA ATIVIDADE cuja
+  montagem mudou** (ADR-130: a equipe é da atividade, e o `alvo` do gancho a
+  traz): a rodada da marca mais recente dela na turma. A cópia para os colegas
+  usa a equipe DAQUELA atividade (`mapaDeEquipes(..., m.atividadeId)`). Rodada passada nunca muda por troca
   de equipe; corrige-se no ajuste. Cópia que não mudou de nível nem de origem
   FICA com a confirmação que tinha (`diferencaDasCopias`).
 - **Múltipla escolha: o gabarito é do servidor.** O estudante recebe a pergunta

@@ -38,9 +38,9 @@ Os diagramas entidade-relacionamento estão no Capítulo~\ref{cap:dados}.
 \zebra \cd{matriculas} & Tenant & \textbf{O enturmamento} (estudante e professor)\\
 \cd{lotacoes} & \textbf{Fora da RLS} & \textbf{A lotação}: pessoa $\times$ escola, datada --- lida no \emph{login}, antes de haver escola (Seção~\ref{sec:rede})\\
 \zebra \cd{liberacoes} & Tenant & \textbf{A missão dentro da turma} (\adrr{ADR-69})\\
-\cd{equipes\_montagens} & Tenant & \textbf{Quem divide um computador}: a montagem por turma $\times$ missão (\adrr{ADR-111})\\
+\cd{equipes\_montagens} & Tenant & \textbf{Quem divide um computador}: a montagem por turma $\times$ missão $\times$ atividade (\adrr{ADR-111}, \adrr{ADR-130})\\
 \zebra \cd{equipes} & Tenant & Um computador da montagem, com nome e ordem\\
-\cd{equipes\_membros} & Tenant & Quem senta diante de cada computador --- uma equipe por criança por missão\\
+\cd{equipes\_membros} & Tenant & Quem senta diante de cada computador --- uma equipe por criança por atividade\\
 \zebra \cd{evidencias\_marcas} & Tenant & \textbf{A evidência pedagógica} (\adrr{ADR-112}): o que a missão viu, por marcador da ficha, atividade e rodada\\
 \cd{evidencias} & Tenant & O nível de um estudante numa habilidade da BNCC, por atividade e rodada --- N/A é a ausência de linha\\
 \zebra \cd{evidencias\_eventos} & Tenant & O histórico da evidência --- append-only no banco\\
@@ -308,7 +308,8 @@ que é o que torna liberar idempotente --- e índice por
 \subsection{\cd{equipes\_montagens}}
 
 As equipes na missão (\adrr{ADR-111}): a decisão da aula, uma linha por turma
-$\times$ missão. Equipe é quem DIVIDE UM COMPUTADOR, e não agrupamento
+$\times$ missão $\times$ ATIVIDADE (\adrr{ADR-130}) --- duas atividades da mesma
+missão na turma são duas aulas, com o laboratório dividido de jeitos diferentes. Equipe é quem DIVIDE UM COMPUTADOR, e não agrupamento
 pedagógico. Não confundir com as equipes Alfa e Bravo da Missão Tempestade, que
 são personagens da cidade: esta é gente sentada diante da mesma máquina.
 
@@ -316,17 +317,25 @@ são personagens da cidade: esta é gente sentada diante da mesma máquina.
 \toprule
 \headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
 \midrule
-\pk{(escola\_id, turma\_id, exp\_id)} & PK composta & Uma montagem por missão por
-  sala. \cd{escola\_id} é a coluna da \textbf{RLS}.\\
+\pk{(escola\_id, turma\_id, exp\_id, atividade\_id)} & PK composta & Uma montagem
+  por atividade por sala. \cd{escola\_id} é a coluna da \textbf{RLS}.\\
+\zebra \cd{atividade\_id} & \cd{TEXT} & O id que a MISSÃO dá à atividade (a
+  cobertura, o pacote, a \cd{activity} do Instanooria): opaco, \emph{CHECK}
+  \cd{\textasciicircum[A-Za-z0-9\_.:-]\{1,100\}\$} --- o alfabeto de
+  \cd{evidencias\_marcas.atividade\_id}. Sem FK: são quatro tabelas donas. A
+  missão sem atividade (o unooGPT) usa o fixo \cd{turma}.\\
 \zebra \fk{turma\_id} & \cd{UUID} FK & Para \cd{turmas}, \cd{ON DELETE CASCADE}.\\
 \cd{exp\_id} & \cd{TEXT} & \textbf{Sem FK} para \cd{experiencias}, pela razão de
   \cd{liberacoes.exp\_id}. Quem restringe as missões que aceitam equipe é
   \cd{EXPERIENCIAS\_COM\_EQUIPE}, no código.\\
-\zebra \cd{modo} & \cd{TEXT} & \cd{sorteio} $|$ \cd{manual} --- \emph{CHECK}
-  \cd{equipes\_montagens\_modo\_check}, o MESMO vocabulário de \cd{MODOS}
-  (\arq{equipes/regras.ts}). \cd{manual} nasce com N equipes VAZIAS.\\
-\cd{computadores} & \cd{INTEGER} & \emph{CHECK} \cd{>= 1}. Zero não é aula com
-  equipes: quem desfaz apaga a montagem, não grava zero.\\
+\zebra \cd{modo} & \cd{TEXT} & \cd{sorteio} $|$ \cd{manual} $|$ \cd{individual}
+  --- \emph{CHECK} \cd{equipes\_montagens\_modo\_check}, o MESMO vocabulário de
+  \cd{MODOS} (\arq{equipes/regras.ts}). \cd{manual} nasce com N equipes VAZIAS;
+  \cd{individual} (\enquote{um aluno por computador}) grava a montagem sem
+  equipe nenhuma.\\
+\cd{computadores} & \cd{INTEGER} & Nulo SÓ no \cd{individual}, e \cd{>= 1} nos
+  outros --- \emph{CHECK} com \cd{IS NOT NULL} explícito, porque um \emph{CHECK}
+  que dá NULL passa. Zero não é aula com equipes: quem desfaz apaga a montagem.\\
 \zebra \cd{ausentes} & \cd{UUID[]} & Padrão vazio. Quem faltou na hora de montar:
   fica fora do sorteio. \textbf{Não é frequência}, e não é matrícula --- amanhã a
   criança volta e entra na próxima.\\
@@ -336,8 +345,8 @@ são personagens da cidade: esta é gente sentada diante da mesma máquina.
 \zebra \cd{atualizado\_por} & \cd{UUID} & Quem salvou por último. \textbf{Sem FK},
   de propósito: é carimbo, e uma FK para \cd{users} faria a saída de um professor
   da rede apagar ou travar a montagem da turma.\\
-\cd{atualizado\_em} & \cd{TIMESTAMPTZ} & É por ele que \enquote{Manter as equipes
-  da última missão} escolhe a montagem mais recente da turma.\\
+\cd{atualizado\_em} & \cd{TIMESTAMPTZ} & É por ele que \enquote{Usar as equipes da
+  atividade anterior} escolhe a montagem mais recente da turma.\\
 \bottomrule
 \end{tabularx}
 
@@ -354,7 +363,7 @@ Um computador da montagem.
 \headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
 \midrule
 \pk{id} & \cd{UUID} PK & \cd{gen\_random\_uuid()}.\\
-\zebra \fk{(escola\_id, turma\_id, exp\_id)} & FK composta & Para
+\zebra \fk{(escola\_id, turma\_id, exp\_id, atividade\_id)} & FK composta & Para
   \cd{equipes\_montagens}, \cd{ON DELETE CASCADE}: desfazer a montagem leva as
   equipes junto, e salvar de novo APAGA as equipes e grava as novas. \textbf{RLS}
   por \cd{escola\_id}.\\
@@ -368,10 +377,10 @@ Um computador da montagem.
 \bottomrule
 \end{tabularx}
 
-\cd{UNIQUE (escola\_id, turma\_id, exp\_id, nome)} --- duas \enquote{Equipe 3} no
+\cd{UNIQUE (escola\_id, turma\_id, exp\_id, atividade\_id, nome)} --- duas \enquote{Equipe 3} no
 mesmo painel são a dúvida que ninguém resolve no meio da aula; a repetição que só
 difere em maiúsculas é recusada antes, em \cd{validarMontagem} --- e índice por
-\cd{(escola\_id, turma\_id, exp\_id)}.
+\cd{(escola\_id, turma\_id, exp\_id, atividade\_id)}.
 
 \subsection{\cd{equipes\_membros}}
 
@@ -384,17 +393,18 @@ Quem senta diante de cada computador. É a única das três com id de criança.
 \pk{(equipe\_id, estudante\_id)} & PK composta & \\
 \zebra \fk{escola\_id} & \cd{TEXT} & \textbf{RLS} por esta coluna.\\
 \fk{equipe\_id} & \cd{UUID} FK & Para \cd{equipes}, \cd{ON DELETE CASCADE}.\\
-\zebra \cd{turma\_id}, \cd{exp\_id} & \cd{UUID}, \cd{TEXT} & REPETIDOS da equipe,
-  e sem FK própria: existem para o \cd{UNIQUE} abaixo. Sem elas aqui, a regra de
-  uma equipe por criança só existiria no código.\\
+\zebra \cd{turma\_id}, \cd{exp\_id}, \cd{atividade\_id} & \cd{UUID}, \cd{TEXT},
+  \cd{TEXT} & REPETIDOS da equipe, e sem FK própria: existem para o \cd{UNIQUE}
+  abaixo. Sem elas aqui, a regra de uma equipe por criança por atividade só
+  existiria no código.\\
 \fk{estudante\_id} & \cd{UUID} FK & Para \cd{users}, \cd{ON DELETE CASCADE}. A
   linha NÃO some quando a criança muda de turma: a leitura filtra por
   \cd{users.turma\_id} (\arq{equipes/consulta.ts}).\\
 \bottomrule
 \end{tabularx}
 
-\cd{UNIQUE (escola\_id, turma\_id, exp\_id, estudante\_id)} --- \textbf{uma
-criança, uma equipe por missão}, garantida pelo banco mesmo com dois \cd{PUT} em
+\cd{UNIQUE (escola\_id, turma\_id, exp\_id, atividade\_id, estudante\_id)} ---
+\textbf{uma criança, uma equipe por atividade}, garantida pelo banco mesmo com dois \cd{PUT} em
 paralelo --- e índice por \cd{(escola\_id, estudante\_id)}, que é a leitura de
 \rota{GET /equipes/minha}.
 

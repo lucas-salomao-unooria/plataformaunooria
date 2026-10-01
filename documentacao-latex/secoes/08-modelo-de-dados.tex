@@ -237,17 +237,19 @@ Duas armadilhas registradas naquela migração, ambas produzindo o mesmo sintoma
   contenção do CPF --- o número é o conteúdo do documento, e alterá-lo
   destruiria a assinatura.\\
 \cd{equipes\_montagens} & \emph{Tenant} & A decisão da aula por turma
-  $\times$ missão (\adrr{ADR-111}): \cd{modo}, \cd{computadores},
-  \cd{ausentes} e a \cd{versao} da concorrência otimista. PK composta
-  \cd{(escola\_id, turma\_id, exp\_id)}. Ver Seção~\ref{sec:equipes}.\\
+  $\times$ missão $\times$ ATIVIDADE (\adrr{ADR-111}, \adrr{ADR-130}):
+  \cd{modo} (\cd{sorteio}, \cd{manual} ou \cd{individual}), \cd{computadores}
+  (nulo só no \cd{individual}), \cd{ausentes} e a \cd{versao} da concorrência
+  otimista. PK composta \cd{(escola\_id, turma\_id, exp\_id, atividade\_id)}.
+  Ver Seção~\ref{sec:equipes}.\\
 \zebra \cd{equipes} & \emph{Tenant} & Um computador da montagem: \cd{nome}
   (1 a 30 caracteres depois do \emph{trim}) e \cd{ordem}. Nome único dentro da
-  missão --- duas \enquote{Equipe 3} no mesmo painel são a dúvida que ninguém
-  resolve no meio da aula.\\
+  atividade --- duas \enquote{Equipe 3} no mesmo painel são a dúvida que
+  ninguém resolve no meio da aula.\\
 \cd{equipes\_membros} & \emph{Tenant} & Quem senta diante de cada computador,
-  com \cd{turma\_id} e \cd{exp\_id} repetidos da equipe para o \cd{UNIQUE} de
-  \textbf{uma equipe por criança por missão}. A única das três com id de
-  criança.\\
+  com \cd{turma\_id}, \cd{exp\_id} e \cd{atividade\_id} repetidos da equipe
+  para o \cd{UNIQUE} de \textbf{uma equipe por criança por atividade}. A única
+  das três com id de criança.\\
 \zebra \cd{evidencias\_marcas} & \emph{Tenant} & O DADO BRUTO da evidência
   pedagógica (\adrr{ADR-112}): o que a missão viu o estudante fazer, uma linha
   por marcador da ficha $\times$ atividade $\times$ rodada. Só a missão escreve,
@@ -513,9 +515,10 @@ Três tabelas, e não uma coluna \cd{equipe} & A montagem tem estado próprio --
   quantos computadores, sorteio ou manual, quem faltou, a \cd{versao} --- que não
   pertence a criança nenhuma. Uma coluna na tabela da experiência exigiria a
   mesma coluna em cada missão com equipe, e cada painel reinventaria a regra.\\
-\zebra \cd{turma\_id} e \cd{exp\_id} repetidos em \cd{equipes\_membros} & É o
-  que torna possível \cd{UNIQUE (escola\_id, turma\_id, exp\_id,
-  estudante\_id)}: uma criança, uma equipe por missão. Sem as colunas ali, a
+\zebra \cd{turma\_id}, \cd{exp\_id} e \cd{atividade\_id} repetidos em
+  \cd{equipes\_membros} & É o que torna possível \cd{UNIQUE (escola\_id,
+  turma\_id, exp\_id, atividade\_id, estudante\_id)}: uma criança, uma equipe
+  por atividade (\adrr{ADR-130}). Sem as colunas ali, a
   regra só existiria no código, e dois \cd{PUT} em paralelo poriam a mesma
   criança em dois computadores.\\
 \cd{versao} começa em 1, com \emph{CHECK} & O cliente manda \cd{0} quando não
