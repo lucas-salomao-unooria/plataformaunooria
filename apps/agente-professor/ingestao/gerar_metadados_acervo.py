@@ -61,6 +61,20 @@ DOCUMENTOS_DA_BNCC: dict[str, dict[str, Any]] = {
         "titulo": "BNCC Computação — Complemento à BNCC (2022)",
         "componente_slug": ["computacao", "todos"],
     },
+    # Os cadernos de Temas Contemporâneos Transversais do MEC: atravessam todos
+    # os componentes, por isso "todos".
+    "tct-economia-2022.pdf": {
+        "titulo": "Temas Contemporâneos Transversais na BNCC — Economia (2022)",
+        "componente_slug": ["todos"],
+    },
+    "tct-meio-ambiente-2022.pdf": {
+        "titulo": "Temas Contemporâneos Transversais na BNCC — Meio Ambiente (2022)",
+        "componente_slug": ["todos"],
+    },
+    "tct-saude-2022.pdf": {
+        "titulo": "Temas Contemporâneos Transversais na BNCC — Saúde (2022)",
+        "componente_slug": ["todos"],
+    },
 }
 
 
