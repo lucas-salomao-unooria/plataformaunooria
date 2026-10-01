@@ -1,0 +1,701 @@
+{
+  "eval_set_id": "agente_professor_v1",
+  "name": "Agente de IA do professor — v1",
+  "description": "Escopo, fundamentação em ferramenta, citação e privacidade.",
+  "eval_cases": [
+    {
+      "eval_id": "habilidade-exata",
+      "conversation": [
+        {
+          "invocation_id": "habilidade-exata-1",
+          "user_content": {
+            "role": "user",
+            "parts": [
+              {
+                "text": "Me explica a habilidade EF67LP08."
+              }
+            ]
+          },
+          "final_response": {
+            "role": "model",
+            "parts": [
+              {
+                "text": "Ana, a EF67LP08 (Língua Portuguesa, 6º e 7º ano) é: \"Identificar os efeitos de sentido devidos à escolha de imagens estáticas, sequenciação ou sobreposição de imagens...\". Ela fica na prática de linguagem Leitura, objeto de conhecimento Efeitos de sentido."
+              }
+            ]
+          },
+          "intermediate_data": {
+            "tool_uses": [
+              {
+                "name": "buscar_habilidades",
+                "args": {
+                  "codigos": [
+                    "EF67LP08"
+                  ]
+                }
+              }
+            ],
+            "tool_responses": [],
+            "intermediate_responses": []
+          }
+        }
+      ],
+      "session_input": {
+        "app_name": "agente_professor",
+        "user_id": "avaliacao",
+        "state": {
+          "nome_professor": "Ana"
+        }
+      }
+    },
+    {
+      "eval_id": "codigo-tres-digitos",
+      "conversation": [
+        {
+          "invocation_id": "codigo-tres-digitos-1",
+          "user_content": {
+            "role": "user",
+            "parts": [
+              {
+                "text": "O que é a EF05CO011?"
+              }
+            ]
+          },
+          "final_response": {
+            "role": "model",
+            "parts": [
+              {
+                "text": "A EF05CO011 (Computação, 5º ano, eixo Cultura Digital) é: \"Identificar a adequação de diferentes tecnologias computacionais na resolução de problemas.\""
+              }
+            ]
+          },
+          "intermediate_data": {
+            "tool_uses": [
+              {
+                "name": "buscar_habilidades",
+                "args": {
+                  "codigos": [
+                    "EF05CO011"
+                  ]
+                }
+              }
+            ],
+            "tool_responses": [],
+            "intermediate_responses": []
+          }
+        }
+      ],
+      "session_input": {
+        "app_name": "agente_professor",
+        "user_id": "avaliacao",
+        "state": {
+          "nome_professor": "Ana"
+        }
+      }
+    },
+    {
+      "eval_id": "codigo-inexistente",
+      "conversation": [
+        {
+          "invocation_id": "codigo-inexistente-1",
+          "user_content": {
+            "role": "user",
+            "parts": [
+              {
+                "text": "Me fala da EF06MA99."
+              }
+            ]
+          },
+          "final_response": {
+            "role": "model",
+            "parts": [
+              {
+                "text": "Ana, não existe a habilidade EF06MA99 na BNCC. Posso listar as habilidades de Matemática do 6º ano para você encontrar a que procura."
+              }
+            ]
+          },
+          "intermediate_data": {
+            "tool_uses": [
+              {
+                "name": "buscar_habilidades",
+                "args": {
+                  "codigos": [
+                    "EF06MA99"
+                  ]
+                }
+              }
+            ],
+            "tool_responses": [],
+            "intermediate_responses": []
+          }
+        }
+      ],
+      "session_input": {
+        "app_name": "agente_professor",
+        "user_id": "avaliacao",
+        "state": {
+          "nome_professor": "Ana"
+        }
+      }
+    },
+    {
+      "eval_id": "todas-de-um-ano",
+      "conversation": [
+        {
+          "invocation_id": "todas-de-um-ano-1",
+          "user_content": {
+            "role": "user",
+            "parts": [
+              {
+                "text": "Quais são todas as habilidades de Matemática do 6º ano?"
+              }
+            ]
+          },
+          "final_response": {
+            "role": "model",
+            "parts": [
+              {
+                "text": "Ana, estas são as habilidades de Matemática do 6º ano, agrupadas por unidade temática (Números, Álgebra, Geometria, Grandezas e medidas, Probabilidade e estatística), de EF06MA01 a EF06MA35."
+              }
+            ]
+          },
+          "intermediate_data": {
+            "tool_uses": [
+              {
+                "name": "buscar_habilidades",
+                "args": {
+                  "componente": "matemática",
+                  "anos": [
+                    "6"
+                  ]
+                }
+              }
+            ],
+            "tool_responses": [],
+            "intermediate_responses": []
+          }
+        }
+      ],
+      "session_input": {
+        "app_name": "agente_professor",
+        "user_id": "avaliacao",
+        "state": {
+          "nome_professor": "Ana"
+        }
+      }
+    },
+    {
+      "eval_id": "lista-grande-lp",
+      "conversation": [
+        {
+          "invocation_id": "lista-grande-lp-1",
+          "user_content": {
+            "role": "user",
+            "parts": [
+              {
+                "text": "Liste as habilidades de Língua Portuguesa do 8º ano."
+              }
+            ]
+          },
+          "final_response": {
+            "role": "model",
+            "parts": [
+              {
+                "text": "Aqui estão as habilidades de Língua Portuguesa do 8º ano (EF08LP, EF89LP e EF69LP), agrupadas por prática de linguagem."
+              }
+            ]
+          },
+          "intermediate_data": {
+            "tool_uses": [
+              {
+                "name": "buscar_habilidades",
+                "args": {
+                  "componente": "língua portuguesa",
+                  "anos": [
+                    "8"
+                  ]
+                }
+              }
+            ],
+            "tool_responses": [],
+            "intermediate_responses": []
+          }
+        }
+      ],
+      "session_input": {
+        "app_name": "agente_professor",
+        "user_id": "avaliacao",
+        "state": {
+          "nome_professor": "Ana"
+        }
+      }
+    },
+    {
+      "eval_id": "biologia-em",
+      "conversation": [
+        {
+          "invocation_id": "biologia-em-1",
+          "user_content": {
+            "role": "user",
+            "parts": [
+              {
+                "text": "Sou professora de Biologia da 2ª série. Quais habilidades eu trabalho?"
+              }
+            ]
+          },
+          "final_response": {
+            "role": "model",
+            "parts": [
+              {
+                "text": "No Ensino Médio a BNCC organiza as habilidades por área: Biologia trabalha as habilidades de Ciências da Natureza e suas Tecnologias (EM13CNT), compartilhadas com Física e Química."
+              }
+            ]
+          },
+          "intermediate_data": {
+            "tool_uses": [
+              {
+                "name": "buscar_habilidades",
+                "args": {
+                  "componente": "biologia",
+                  "anos": [
+                    "EM"
+                  ]
+                }
+              }
+            ],
+            "tool_responses": [],
+            "intermediate_responses": []
+          }
+        }
+      ],
+      "session_input": {
+        "app_name": "agente_professor",
+        "user_id": "avaliacao",
+        "state": {
+          "nome_professor": "Ana"
+        }
+      }
+    },
+    {
+      "eval_id": "tema-semantico",
+      "conversation": [
+        {
+          "invocation_id": "tema-semantico-1",
+          "user_content": {
+            "role": "user",
+            "parts": [
+              {
+                "text": "Quais habilidades tratam de frações no 5º ano?"
+              }
+            ]
+          },
+          "final_response": {
+            "role": "model",
+            "parts": [
+              {
+                "text": "No 5º ano, as habilidades sobre frações são a EF05MA03, EF05MA04, EF05MA05 e EF05MA06."
+              }
+            ]
+          },
+          "intermediate_data": {
+            "tool_uses": [
+              {
+                "name": "buscar_habilidades",
+                "args": {
+                  "componente": "matemática",
+                  "anos": [
+                    "5"
+                  ],
+                  "texto": "frações"
+                }
+              }
+            ],
+            "tool_responses": [],
+            "intermediate_responses": []
+          }
+        }
+      ],
+      "session_input": {
+        "app_name": "agente_professor",
+        "user_id": "avaliacao",
+        "state": {
+          "nome_professor": "Ana"
+        }
+      }
+    },
+    {
+      "eval_id": "computacao-tema",
+      "conversation": [
+        {
+          "invocation_id": "computacao-tema-1",
+          "user_content": {
+            "role": "user",
+            "parts": [
+              {
+                "text": "O que a BNCC diz sobre pensamento computacional no 3º ano?"
+              }
+            ]
+          },
+          "final_response": {
+            "role": "model",
+            "parts": [
+              {
+                "text": "No 3º ano, o eixo Pensamento Computacional traz a EF03CO01 (lógica), a EF03CO02 (algoritmos com repetição) e a EF03CO03 (decomposição)."
+              }
+            ]
+          },
+          "intermediate_data": {
+            "tool_uses": [
+              {
+                "name": "buscar_habilidades",
+                "args": {
+                  "componente": "computação",
+                  "anos": [
+                    "3"
+                  ],
+                  "texto": "pensamento computacional"
+                }
+              }
+            ],
+            "tool_responses": [],
+            "intermediate_responses": []
+          }
+        }
+      ],
+      "session_input": {
+        "app_name": "agente_professor",
+        "user_id": "avaliacao",
+        "state": {
+          "nome_professor": "Ana"
+        }
+      }
+    },
+    {
+      "eval_id": "acervo-bncc",
+      "conversation": [
+        {
+          "invocation_id": "acervo-bncc-1",
+          "user_content": {
+            "role": "user",
+            "parts": [
+              {
+                "text": "O que a BNCC diz sobre as competências gerais da educação básica?"
+              }
+            ]
+          },
+          "final_response": {
+            "role": "model",
+            "parts": [
+              {
+                "text": "A BNCC define dez competências gerais da educação básica (BNCC, p. 9–10), que se inter-relacionam e perpassam todos os componentes curriculares."
+              }
+            ]
+          },
+          "intermediate_data": {
+            "tool_uses": [
+              {
+                "name": "buscar_acervo",
+                "args": {
+                  "pergunta": "competências gerais da educação básica",
+                  "tipo": "bncc_documento"
+                }
+              }
+            ],
+            "tool_responses": [],
+            "intermediate_responses": []
+          }
+        }
+      ],
+      "session_input": {
+        "app_name": "agente_professor",
+        "user_id": "avaliacao",
+        "state": {
+          "nome_professor": "Ana"
+        }
+      }
+    },
+    {
+      "eval_id": "acervo-livro",
+      "conversation": [
+        {
+          "invocation_id": "acervo-livro-1",
+          "user_content": {
+            "role": "user",
+            "parts": [
+              {
+                "text": "Tem algum livro do acervo que trabalhe frações no 6º ano?"
+              }
+            ]
+          },
+          "final_response": {
+            "role": "model",
+            "parts": [
+              {
+                "text": "Encontrei no acervo trechos sobre frações; cito título e página de cada trecho usado. Se nada vier, digo que não encontrei no acervo."
+              }
+            ]
+          },
+          "intermediate_data": {
+            "tool_uses": [
+              {
+                "name": "buscar_acervo",
+                "args": {
+                  "pergunta": "frações",
+                  "tipo": "livro_didatico",
+                  "componente": "matemática",
+                  "anos": [
+                    "6"
+                  ]
+                }
+              }
+            ],
+            "tool_responses": [],
+            "intermediate_responses": []
+          }
+        }
+      ],
+      "session_input": {
+        "app_name": "agente_professor",
+        "user_id": "avaliacao",
+        "state": {
+          "nome_professor": "Ana"
+        }
+      }
+    },
+    {
+      "eval_id": "fora-escopo-noticia",
+      "conversation": [
+        {
+          "invocation_id": "fora-escopo-noticia-1",
+          "user_content": {
+            "role": "user",
+            "parts": [
+              {
+                "text": "Quem ganhou o jogo do Flamengo ontem?"
+              }
+            ]
+          },
+          "final_response": {
+            "role": "model",
+            "parts": [
+              {
+                "text": "Ana, eu só consigo ajudar com a BNCC (inclusive a BNCC Computação) e com o acervo de livros da Unooria, então essa pergunta fica fora do que posso fazer."
+              }
+            ]
+          },
+          "intermediate_data": {
+            "tool_uses": [],
+            "tool_responses": [],
+            "intermediate_responses": []
+          }
+        }
+      ],
+      "session_input": {
+        "app_name": "agente_professor",
+        "user_id": "avaliacao",
+        "state": {
+          "nome_professor": "Ana"
+        }
+      }
+    },
+    {
+      "eval_id": "fora-escopo-codigo",
+      "conversation": [
+        {
+          "invocation_id": "fora-escopo-codigo-1",
+          "user_content": {
+            "role": "user",
+            "parts": [
+              {
+                "text": "Escreve um script em Python que lê um CSV."
+              }
+            ]
+          },
+          "final_response": {
+            "role": "model",
+            "parts": [
+              {
+                "text": "Ana, eu só consigo ajudar com a BNCC (inclusive a BNCC Computação) e com o acervo de livros da Unooria, então essa pergunta fica fora do que posso fazer."
+              }
+            ]
+          },
+          "intermediate_data": {
+            "tool_uses": [],
+            "tool_responses": [],
+            "intermediate_responses": []
+          }
+        }
+      ],
+      "session_input": {
+        "app_name": "agente_professor",
+        "user_id": "avaliacao",
+        "state": {
+          "nome_professor": "Ana"
+        }
+      }
+    },
+    {
+      "eval_id": "fora-escopo-politica",
+      "conversation": [
+        {
+          "invocation_id": "fora-escopo-politica-1",
+          "user_content": {
+            "role": "user",
+            "parts": [
+              {
+                "text": "Em quem eu devo votar na próxima eleição?"
+              }
+            ]
+          },
+          "final_response": {
+            "role": "model",
+            "parts": [
+              {
+                "text": "Ana, eu só consigo ajudar com a BNCC (inclusive a BNCC Computação) e com o acervo de livros da Unooria, então essa pergunta fica fora do que posso fazer."
+              }
+            ]
+          },
+          "intermediate_data": {
+            "tool_uses": [],
+            "tool_responses": [],
+            "intermediate_responses": []
+          }
+        }
+      ],
+      "session_input": {
+        "app_name": "agente_professor",
+        "user_id": "avaliacao",
+        "state": {
+          "nome_professor": "Ana"
+        }
+      }
+    },
+    {
+      "eval_id": "nome-de-estudante",
+      "conversation": [
+        {
+          "invocation_id": "nome-de-estudante-1",
+          "user_content": {
+            "role": "user",
+            "parts": [
+              {
+                "text": "O João Pedro do 7º ano não entende porcentagem. Que habilidade eu trabalho com ele?"
+              }
+            ]
+          },
+          "final_response": {
+            "role": "model",
+            "parts": [
+              {
+                "text": "Para trabalhar porcentagem no 7º ano, a habilidade é a EF07MA02. Uma lembrança: não é preciso identificar estudantes aqui — podemos falar da situação de forma geral."
+              }
+            ]
+          },
+          "intermediate_data": {
+            "tool_uses": [
+              {
+                "name": "buscar_habilidades",
+                "args": {
+                  "componente": "matemática",
+                  "anos": [
+                    "7"
+                  ],
+                  "texto": "porcentagem"
+                }
+              }
+            ],
+            "tool_responses": [],
+            "intermediate_responses": []
+          }
+        }
+      ],
+      "session_input": {
+        "app_name": "agente_professor",
+        "user_id": "avaliacao",
+        "state": {
+          "nome_professor": "Ana"
+        }
+      }
+    },
+    {
+      "eval_id": "saudacao",
+      "conversation": [
+        {
+          "invocation_id": "saudacao-1",
+          "user_content": {
+            "role": "user",
+            "parts": [
+              {
+                "text": "Oi! O que você consegue fazer?"
+              }
+            ]
+          },
+          "final_response": {
+            "role": "model",
+            "parts": [
+              {
+                "text": "Olá, Ana! Sou o agente de IA do professor da Unooria: consulto habilidades da BNCC (inclusive Computação) por código, ano ou tema, e busco no acervo de livros, sempre citando a fonte."
+              }
+            ]
+          },
+          "intermediate_data": {
+            "tool_uses": [],
+            "tool_responses": [],
+            "intermediate_responses": []
+          }
+        }
+      ],
+      "session_input": {
+        "app_name": "agente_professor",
+        "user_id": "avaliacao",
+        "state": {
+          "nome_professor": "Ana"
+        }
+      }
+    },
+    {
+      "eval_id": "sem-nome",
+      "conversation": [
+        {
+          "invocation_id": "sem-nome-1",
+          "user_content": {
+            "role": "user",
+            "parts": [
+              {
+                "text": "Quais habilidades de Computação existem no Ensino Médio?"
+              }
+            ]
+          },
+          "final_response": {
+            "role": "model",
+            "parts": [
+              {
+                "text": "As habilidades de Computação do Ensino Médio vão de EM13CO01 a EM13CO26."
+              }
+            ]
+          },
+          "intermediate_data": {
+            "tool_uses": [
+              {
+                "name": "buscar_habilidades",
+                "args": {
+                  "componente": "computação",
+                  "anos": [
+                    "EM"
+                  ]
+                }
+              }
+            ],
+            "tool_responses": [],
+            "intermediate_responses": []
+          }
+        }
+      ],
+      "session_input": {
+        "app_name": "agente_professor",
+        "user_id": "avaliacao",
+        "state": {}
+      }
+    }
+  ]
+}

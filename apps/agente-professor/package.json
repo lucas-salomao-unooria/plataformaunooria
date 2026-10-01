@@ -1,0 +1,12 @@
+{
+  "name": "@edu/agente-professor",
+  "version": "0.1.0",
+  "private": true,
+  "description": "O agente de IA do professor (Python/Google ADK) e a ingestão dos data stores. Requer uv.",
+  "scripts": {
+    "lint": "node scripts/uv.mjs ruff check",
+    "typecheck": "node scripts/uv.mjs pyright",
+    "test": "node scripts/uv.mjs pytest -q",
+    "shim": "node scripts/uv.mjs python -m agente_professor.shim"
+  }
+}
