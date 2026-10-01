@@ -386,7 +386,7 @@ await suite(
 
     /* As alternativas vêm EMBARALHADAS a cada leitura: casa-se por texto. */
     await q()
-      .getByRole("button", { name: /Cuidado — eu só escolhi 3 posts/i })
+      .getByRole("button", { name: /Cuidado, eu só escolhi 3 posts/i })
       .click({ timeout: 30_000 });
     await q().locator("text=/Resposta enviada ✓/").first().waitFor({ timeout: 15_000 });
     r.exigir(

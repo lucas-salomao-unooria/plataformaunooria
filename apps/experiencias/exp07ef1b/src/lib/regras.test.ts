@@ -270,14 +270,18 @@ describe("o enunciado da enquete: a mensagem da Amara e a pergunta", () => {
     return [...fonte.matchAll(/enunciado:\s*"((?:[^"\\]|\\.)*)"/g)].map((m) => JSON.parse(`"${m[1] ?? ""}"`) as string);
   }
 
-  test("os dois enunciados da ficha se separam em contexto e pergunta", () => {
+  test("os dois enunciados da ficha são só a pergunta do PO, sem balão de contexto", () => {
     const [p1, p2] = enunciadosDaFicha();
     expect(p1 && separarEnunciado(p1)).toEqual({
-      contexto:
-        "Antes de fechar, uma curiosidade rápida! Imagina que alguém da escola viu os Stories que você publicou e mandou: 'Valeu pelo resumo! Agora já sei tudo sobre o que aconteceu.' O que você diria?",
-      pergunta: "Sua resposta seria...",
+      contexto: null,
+      pergunta:
+        "Imagina que alguém da escola viu os Stories que você publicou e mandou: 'Valeu pelo resumo! Agora já sei tudo sobre o que aconteceu.' O que você diria?",
     });
-    expect(p2 && separarEnunciado(p2).pergunta).toBe("O que você acha?");
+    expect(p2 && separarEnunciado(p2)).toEqual({
+      contexto: null,
+      pergunta:
+        "Lembra quando você viu os Stories do colega no Mural e a história parecia outra? Os dois partiram do mesmo feed. O que faz mais sentido pensar sobre isso?",
+    });
   });
 
   test("sem a linha em branco, tudo é pergunta — nada some", () => {
