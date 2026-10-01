@@ -52,6 +52,7 @@ await suite(
       "escreve uma legenda achando que contou o que aconteceu; no Mural, ao lado da seleção de um " +
       "colega, descobre que cada um mostrou um recorte.",
     prova: [
+      "A atividade nasce da professora, pelo assistente — turma, conteúdo, equipes e criar — e só a que está em andamento abre para a turma",
       "Publicar exige EXATAMENTE 3 posts e uma legenda de 10 caracteres ou mais",
       "Legenda com link é recusada antes de outro estudante poder lê-la",
       "Publicar é irreversível, e a F5 volta ao mesmo passo",
@@ -60,7 +61,7 @@ await suite(
       "A ficha técnica só aparece depois que a professora revela",
       "As duas enquetes da Amara não mostram acerto, e a missão termina",
       "A folha da turma não tem coluna de pontos, e o painel mostra as habilidades da BNCC",
-      "O podcast de recapitulação é da professora: as três falas do tema se revisam no preparo, e a transcrição fica sempre na tela",
+      "O podcast de recapitulação é da professora: as três falas do tema se revisam na criação da atividade, e a transcrição fica sempre na tela",
     ],
     comando: "node scripts/e2e/estudante/11-a-selecao.mjs",
   },
@@ -101,7 +102,7 @@ await suite(
         { caminho, corpo },
       );
 
-    // ═══ PROFESSORA: a ficha, o preparo e a turma zerada ══════════════════
+    // ═══ PROFESSORA: a ficha, a criação da atividade e o painel ══════════
     const prof = await r.pagina("professora", { viewport: { width: 1440, height: 1000 } });
     await r.entrar(prof, conta("professor", { serie: SERIE }).login);
     await prof.goto(`${HUB}/professor/entre-redes/7-ano/unidade-1`, {
@@ -116,58 +117,80 @@ await suite(
         "libera — e que não deve ler as perguntas do debate antes do Mural.",
     });
 
-    await prof.click("text=Abrir a aula e os resultados");
-    await prof.waitForURL("**/resultados**", { timeout: 20_000 });
-    const seletor = prof.locator("select#turma");
-    await seletor.waitFor({ timeout: 15_000 });
-    const opcoes = await seletor
-      .locator("option")
-      .evaluateAll((os) => os.map((o) => ({ value: o.value, label: o.textContent ?? "" })));
-    const alvo = opcoes.find((o) => o.label.includes(TURMA) && o.value);
-    if (!alvo) throw new Error(`turma ${TURMA} não está no seletor (rode o seed)`);
-    await prof.selectOption("select#turma", alvo.value);
-    await prof.waitForURL("**turmaId=**", { timeout: 20_000 });
-
-    /* ZERAR PRIMEIRO: o estado é server-side e sobrevive ao roteiro. Zerar
-       abre uma rodada nova com a etapa em "exploracao" (a anterior fica no
-       histórico, que é o que a evidência exige). Sem isto a segunda execução
-       encontra os estudantes já publicados, e o roteiro passa por cima do
-       latch que ele existe para provar. */
-    await prof.locator("[data-zerar-turma]").waitFor({ timeout: 20_000 });
-    await prof.click("[data-zerar-turma]");
-    await prof.locator("text=/Zerar a turma/i").last().click();
-    await prof.waitForSelector('[data-etapa="exploracao"]', { timeout: 20_000 });
-    await r.registrar(prof, "preparo-e-painel", {
-      titulo: "O preparo e o botão que move a sala",
+    /* A TURMA pela api (o seletor da criação é o `Selection` do DS, não um
+       <select>): a ficha abre NA turma, como a sala de aula a abre. */
+    const turmasDaSelecao = await api(prof, "a-selecao/turmas");
+    const daTurma = (turmasDaSelecao.corpo.turmas ?? []).find((t) => t.nome === TURMA);
+    if (!daTurma) throw new Error(`turma ${TURMA} não está entre as do professor (rode o seed)`);
+    await prof.goto(`${HUB}/professor/entre-redes/7-ano/unidade-1?turmaId=${daTurma.id}`, {
+      waitUntil: "domcontentloaded",
+    });
+    await prof.locator("[data-atividades-da-missao]").waitFor({ timeout: 20_000 });
+    await r.registrar(prof, "atividades-da-missao", {
+      titulo: "As atividades da missão na turma",
       mostra:
-        "O tema da cobertura com os 12 posts e as tags à vista da professora, e o painel da aula " +
-        "com UM botão que mostra a próxima etapa.",
+        "A lista \"Suas atividades com a turma\", com a em andamento primeiro, e o botão Nova atividade.",
       prova:
-        "As tags de fonte e de ângulo só a professora vê antes da revelação. Um botão só, que " +
-        "anda uma etapa por vez, e nenhuma etapa é pulada.",
+        "A missão é o roteiro; a atividade é o que a turma faz de fato, e quem a cria é a " +
+        "professora — a plataforma não cria nada (ADR-130).",
+    });
+
+    /* NOVA ATIVIDADE pelo assistente: a turma já vem da ficha, o conteúdo
+       parte da cobertura pronta da Unooria (a praça central), um aluno por
+       computador, e a atividade entra no ar ao criar. Criar SEMPRE abre a
+       rodada 1 de uma atividade nova — é o que dispensa zerar a turma. */
+    /* `LinkButton` é o `Button` do DS com `as={Link}`, e o DS põe
+       `role="button"` em todo elemento que não é <button>: pelo PAPEL não é
+       link. A âncora pelo texto é o mesmo caminho da estudante/10. */
+    await prof.locator("a", { hasText: "Nova atividade" }).click();
+    await prof.waitForURL("**/atividades/nova**", { timeout: 20_000 });
+    await prof.locator('[data-acao="usar-cobertura-pronta"]').waitFor({ timeout: 20_000 });
+    await prof.waitForTimeout(600); // hidratação: o clique do SSR não tem `onClick`
+    await prof.click('[data-acao="usar-cobertura-pronta"]');
+    await prof.locator("[data-grade-de-posts]").waitFor({ timeout: 20_000 });
+    const falas = prof.locator("[data-falas-do-podcast]");
+    r.exigir((await falas.locator("textarea").count()) === 3, "a criação mostra as três falas do podcast");
+    r.exigir(
+      /padaria da esquina/.test(await falas.locator("textarea").nth(1).inputValue()),
+      "na cobertura pronta, as falas são as do roteiro aprovado",
+    );
+    await r.registrar(prof, "criacao-conteudo", {
+      titulo: "O conteúdo da atividade",
+      mostra:
+        "O passo de conteúdo da criação: o tema, os 12 posts com as tags que só a professora vê e as " +
+        "três falas do podcast de recapitulação.",
+      prova:
+        "A cobertura pronta da Unooria é ponto de partida, não atividade: nada vai à turma sem o " +
+        "clique em Criar. Só as três falas do podcast mudam com o tema.",
       inteira: true,
     });
-
-    /* As três falas do podcast moram no preparo, junto dos posts que resumem:
-       abre a grade, confere e fecha — o resto do roteiro não tem o que editar. */
-    await prof.click('[data-acao="mostrar-posts"]');
-    const falas = prof.locator("[data-falas-do-podcast]");
-    await falas.waitFor({ timeout: 10_000 });
-    r.exigir((await falas.locator("textarea").count()) === 3, "o preparo mostra as três falas do podcast");
-    r.exigir(
-      /padaria da esquina/.test(await falas.locator('textarea').nth(1).inputValue()),
-      "no tema curado, as falas são as do roteiro aprovado",
-    );
-    await r.registrar(prof, "preparo-falas-do-podcast", {
-      titulo: "O que o podcast diz de cada veículo",
-      mostra:
-        "No preparo, abaixo dos 12 posts, as três falas do podcast de recapitulação que contam o " +
-        "que a Folha Oficial, a Voz Coletiva e a Métrica Urbana mostraram.",
-      prova:
-        "Só essas três falas mudam com o tema: num tema da IA elas saem do mesmo lote, e a " +
-        "professora as revisa antes de aprovar, junto com os posts. O resto do roteiro é o aprovado.",
+    await prof.click('[data-acao="continuar-criacao"]');
+    await prof.getByRole("radio", { name: "Um aluno por computador", exact: true }).click();
+    await r.registrar(prof, "criacao-equipes", {
+      titulo: "As equipes, dentro da criação",
+      mostra: "O passo de equipes: sortear, eu separo ou um aluno por computador.",
+      prova: "A equipe é da atividade (ADR-130): a mesma turma pode sentar diferente em cada aula.",
     });
-    await prof.click('[data-acao="mostrar-posts"]');
+    await prof.click('[data-acao="continuar-criacao"]');
+    /* "Pôr no ar agora" nasce desligado quando a turma já tem uma em andamento
+       (a de uma corrida anterior): liga, para a turma entrar nesta. */
+    const noAr = prof.getByLabel("Pôr esta atividade no ar agora");
+    await noAr.waitFor({ timeout: 10_000 });
+    if (!(await noAr.isChecked())) await noAr.click();
+    await prof.click('[data-acao="criar-atividade"]');
+    await prof.waitForURL("**/resultados?**cobertura=**", { timeout: 30_000 });
+    await prof.waitForSelector('[data-estado-da-atividade="em-andamento"]', { timeout: 20_000 });
+    await prof.waitForSelector('[data-etapa="exploracao"]', { timeout: 20_000 });
+    await r.registrar(prof, "preparo-e-painel", {
+      titulo: "A atividade em andamento e o botão que move a sala",
+      mostra:
+        "A página da atividade criada: em andamento, as equipes (um aluno por computador), as imagens " +
+        "e o painel da aula com UM botão que mostra a próxima etapa.",
+      prova:
+        "Criar com \"Pôr no ar agora\" abriu a rodada 1 da atividade nova. Um botão só, que anda uma " +
+        "etapa por vez, e nenhuma etapa é pulada.",
+      inteira: true,
+    });
 
     // ═══ ESTUDANTE 1: a DM, o feed e os salvos ════════════════════════════
     const p = await r.pagina("estudante", { viewport: { width: 1280, height: 950 } });
@@ -363,7 +386,7 @@ await suite(
 
     /* As alternativas vêm EMBARALHADAS a cada leitura: casa-se por texto. */
     await q()
-      .getByRole("button", { name: /Cuidado — eu só escolhi 3 posts/i })
+      .getByRole("button", { name: /Cuidado, eu só escolhi 3 posts/i })
       .click({ timeout: 30_000 });
     await q().locator("text=/Resposta enviada ✓/").first().waitFor({ timeout: 15_000 });
     r.exigir(

@@ -1,9 +1,10 @@
 import { BFF, HUB, suite } from "../lib/roteiro.mjs";
 import { conta, contasDe } from "../lib/credenciais.mjs";
+import { ALERTA_DE_ERRO, esperarOuFalharCedo } from "../lib/smoke.mjs";
 
 /**
  * Jornal da Escola: A Edição de Bento (exp04ef1b), nas duas pontas da sala: a
- * professora prepara e conduz, e dois estudantes da mesma turma editam.
+ * professora cria a atividade e conduz, e dois estudantes da mesma turma editam.
  *
  * O que esta suíte cobra, e por que cada item é uma regra do software:
  *
@@ -33,10 +34,15 @@ import { conta, contasDe } from "../lib/credenciais.mjs";
  * (a tela não fica sabendo) e as imagens não são geradas (o cartão se desenha
  * pelo meio). Os dois são comportamento declarado (ADR-117), não defeito.
  *
+ * A ATIVIDADE é da professora (ADR-130): a suíte a cria pelo assistente
+ * ("Nova atividade" na ficha), a partir do banco pronto da Unooria, um aluno
+ * por computador, e a põe no ar ao criar. A plataforma não cria nada.
+ *
  * FIXTURE: a 4A (o seed libera a exp04ef1b lá). O estado é do servidor e
- * sobrevive ao roteiro, então a suíte aplica o banco padrão (idempotente com o
- * padrão já ativo) e zera a turma antes de começar — zerar abre a rodada
- * seguinte sem apagar nada.
+ * sobrevive ao roteiro. Criar de novo EXATAMENTE o pacote mais recente devolve
+ * a mesma atividade; se ela já estava no ar (a corrida de ontem), a suíte zera
+ * a turma na página da atividade — zerar abre a rodada seguinte sem apagar
+ * nada. Atividade nova, ou que volta ao ar, já começa numa rodada nova.
  */
 const SERIE = "4EF";
 const EXP_ID = "exp04ef1b";
@@ -101,6 +107,7 @@ await suite(
       "passou, um aviso que ninguém assina. A Chave do Editor ensina a checar fonte, data e autoria, " +
       "e a segunda edição mostra o antes e o depois.",
     prova: [
+      "A atividade nasce da professora, pelo assistente — o banco pronto carrega sem gravar, e criar com “no ar agora” abre a turma",
       "O post abre no formato do Instanooria e a mensagem no do WhatsApp, dentro da redação da Unooria",
       "A pista de fonte, data e autoria só existe depois que a criança a abre",
       "Publicar não pergunta nada; a pergunta de motivo vem depois do latch",
@@ -132,7 +139,7 @@ await suite(
       await pagina.waitForSelector(`[data-etapa="${etapa}"]`, { timeout: 20_000 });
     };
 
-    // ═══ PROFESSORA: a ficha, o preparo e a turma zerada ══════════════════
+    // ═══ PROFESSORA: a ficha, a criação da atividade e o painel ══════════
     const professora =
       contasDe("professor").find((c) => c.escola === PRIMEIRO.escola && c.turma.split(" + ").includes(TURMA)) ??
       conta("professor", { turma: TURMA });
@@ -143,52 +150,162 @@ await suite(
     const turmaId = turmas.corpo?.turmas?.find((t) => t.nome === TURMA)?.id ?? null;
     if (!r.exigir(Boolean(turmaId), `${professora.login} vê a ${TURMA} no seletor do Jornal`)) return;
 
+    /* O que a turma JÁ TEM no ar (ADR-130). Criar de novo EXATAMENTE o pacote
+       mais recente é idempotente — devolve a mesma atividade —, e pôr no ar a
+       que já está no ar não muda nada: é só nesse caso que o estado de ontem
+       sobrevive e a turma precisa ser zerada. */
+    const pacotesAntes = await lerApi(prof, `/jornal-escola/turmas/${turmaId}/pacotes`);
+    if (pacotesAntes.status !== 200) {
+      throw new Error(
+        `a api não listou as atividades da ${TURMA} (HTTP ${pacotesAntes.status}): ${JSON.stringify(pacotesAntes.corpo).slice(0, 200)}`,
+      );
+    }
+    const noArAntes = pacotesAntes.corpo?.ativo ?? null;
+
     await prof.goto(`${FICHA}?turmaId=${turmaId}`, { waitUntil: "domcontentloaded" });
     await prof.getByRole("heading", { name: /Jornal da Escola/ }).first().waitFor({ timeout: 30_000 });
+    await prof.locator("[data-atividades-da-missao]").waitFor({ timeout: 20_000 });
     await r.registrar(prof, "ficha-da-missao", {
       titulo: "A ficha do 4º ano",
-      mostra: "A missão explicada para quem vai conduzir: as etapas, o preparo e os dois portões.",
+      mostra:
+        "A missão explicada para quem vai conduzir — as etapas, o preparo e os dois portões — e a lista " +
+        "“Suas atividades com a turma”, com Nova atividade.",
       prova:
-        "A professora sabe ANTES que o resultado e a revisão são ela quem libera — e que a missão roda " +
-        "com o banco padrão mesmo sem configurar nada.",
+        "A professora sabe ANTES que o resultado e a revisão são ela quem libera — e que a missão só abre " +
+        "com uma atividade dela em andamento: a plataforma não cria nada (ADR-130).",
     });
 
-    const abrirAAula = prof.locator("a", { hasText: "Abrir a aula e os resultados" });
-    await hidratado(prof, abrirAAula);
-    await abrirAAula.click();
-    await prof.waitForURL(/\/resultados\?turmaId=/, { timeout: 30_000 });
-    await prof.locator("[data-preparo-jornal]").waitFor({ timeout: 30_000 });
+    /* NOVA ATIVIDADE pelo assistente: a turma já vem da ficha, o conteúdo parte
+       do banco pronto da Unooria, um aluno por computador, e a atividade entra
+       no ar ao criar. O `LinkButton` é um `<a>` com `role="button"` (o `Button`
+       do DS polimórfico): pelo elemento, e não pelo papel. */
+    await prof.locator("a", { hasText: "Nova atividade" }).first().click();
+    await prof.waitForURL("**/atividades/nova**", { timeout: 30_000 });
+    await prof.locator("[data-assistente-de-atividade]").waitFor({ timeout: 30_000 });
+    await prof.locator("[data-passo-conteudo] [data-preparo-jornal]").waitFor({ timeout: 30_000 });
+    r.exigir(
+      (await prof.locator("[data-mesa-vazia]").count()) === 1 && (await prof.locator("[data-mesa-do-preparo]").count()) === 0,
+      "a criação nasce VAZIA: nenhuma notícia na mesa antes de a professora escolher o ponto de partida",
+    );
 
-    /* O banco padrão em um toque. Com a turma que já rodou (a corrida de
-       ontem), a tela pede confirmação antes de trocar o pacote — os dois
-       estados são legítimos, e a espera é pela união. */
-    const usarPadrao = prof.locator('[data-acao="usar-banco-padrao"]');
-    await hidratado(prof, usarPadrao);
-    await usarPadrao.click();
-    const confirmarTroca = prof.locator('[data-acao="confirmar-troca-de-pacote"]');
-    const homologado = prof.getByText(/Pacote homologado com sucesso!/).first();
-    await confirmarTroca.or(homologado).first().waitFor({ timeout: 30_000 });
-    if (await confirmarTroca.isVisible()) {
-      await confirmarTroca.click();
-      await homologado.waitFor({ timeout: 30_000 });
-    }
-    await r.registrar(prof, "preparo-banco-padrao", {
-      titulo: "O banco padrão em um toque",
-      mostra: "As oito notícias da Feira de Ciências e Notícias da Cidade, homologadas para a turma.",
+    /* O banco pronto CARREGA para dentro da mesa, e não grava nada. */
+    const bancoPronto = prof.locator('[data-acao="usar-banco-pronto"]');
+    await hidratado(prof, bancoPronto);
+    await bancoPronto.click();
+    await esperarOuFalharCedo(
+      prof.getByText(/^O banco pronto da Unooria foi carregado\./),
+      prof.locator("[data-preparo-jornal]").locator(ALERTA_DE_ERRO),
+      { timeout: 30_000, oQue: "carregar o banco pronto da Unooria" },
+    );
+    await prof.locator("[data-mesa-do-preparo]").waitFor({ timeout: 10_000 });
+    const noticiasNaMesa = await prof
+      .locator("[data-mesa-do-preparo] [data-noticia]")
+      .evaluateAll((ns) => ns.map((n) => n.getAttribute("data-noticia")));
+    r.exigir(
+      noticiasNaMesa.length === 8 && ["n1", "n2", "n3", "n4", "n5", "n6", "n7", "n8"].every((id) => noticiasNaMesa.includes(id)),
+      `a mesa da criação tem as oito notícias do banco pronto (${noticiasNaMesa.join(", ")})`,
+    );
+    await r.registrar(prof, "criacao-banco-pronto", {
+      titulo: "O conteúdo da atividade: o banco pronto",
+      mostra:
+        "O passo Conteúdo da criação com as oito notícias da Feira de Ciências e Notícias da Cidade na mesa, " +
+        "para a professora ler e editar.",
       prova:
-        "Sem configurar tema, a aula já tem oito notícias de oito meios com o gabarito, as pistas e a " +
-        "consequência de cada uma — e é a professora quem aprova.",
+        "O banco pronto é ponto de partida, não atividade: carregar não grava nada, e nada vai à turma sem o " +
+        "clique em Criar. Oito notícias de oito meios, com o gabarito, as pistas e a consequência de cada uma.",
       inteira: true,
     });
 
-    /* ZERAR: o estado é do servidor e sobrevive ao roteiro. Sem isto a segunda
-       execução encontra os estudantes já publicados, e o roteiro passa por cima
-       do latch que ele existe para provar. */
-    const zerar = prof.locator("[data-zerar-turma]");
-    await hidratado(prof, zerar);
-    await zerar.click();
-    await prof.getByRole("dialog").getByRole("button", { name: /Zerar a turma/ }).click();
+    await prof.locator('[data-acao="continuar-criacao"]').click();
+    /* Rádio do DS pelo PAPEL: o `<input>` transparente cobre o rótulo inteiro. */
+    const umPorComputador = prof.getByRole("radio", { name: "Um aluno por computador", exact: true });
+    await umPorComputador.click();
+    r.exigir(await umPorComputador.isChecked(), "o passo de equipes marca “Um aluno por computador”");
+    await r.registrar(prof, "criacao-equipes", {
+      titulo: "As equipes, dentro da criação",
+      mostra: "O passo Equipes: sortear, eu separo ou um aluno por computador — este, marcado.",
+      prova: "A equipe é da atividade (ADR-130): a mesma turma pode sentar diferente em cada aula.",
+    });
+
+    await prof.locator('[data-acao="continuar-criacao"]').click();
+    await prof.locator("[data-revisao-da-criacao]").waitFor({ timeout: 10_000 });
+    /* "Pôr no ar agora" nasce desligado quando a turma já tem uma em andamento
+       (a de uma corrida anterior): liga, para a turma entrar nesta. */
+    const noAr = prof.getByLabel("Pôr esta atividade no ar agora");
+    await noAr.waitFor({ timeout: 10_000 });
+    if (!(await noAr.isChecked())) await noAr.click();
+    r.exigir(await noAr.isChecked(), "“Pôr esta atividade no ar agora” fica ligado");
+    await r.registrar(prof, "criacao-revisar", {
+      titulo: "Revisar e criar",
+      mostra:
+        "O último passo: a turma, o tema e as 8 notícias, um aluno por computador e o interruptor " +
+        "“Pôr esta atividade no ar agora”, ligado.",
+      prova:
+        "Criar não põe no ar sozinho: a atividade nasce PRONTA, e é este interruptor que a torna a em " +
+        "andamento. Desligado, ela espera na lista — e a aula que está rodando não muda.",
+    });
+
+    await prof.locator('[data-acao="criar-atividade"]').click();
+    /* O desfecho é a PÁGINA DA ATIVIDADE em andamento; a corrida é contra o
+       erro da criação e contra o aviso "A atividade foi criada" (criou, mas
+       não entrou no ar), que ficam no passo final. */
+    await esperarOuFalharCedo(
+      prof.locator('[data-estado-da-atividade="em-andamento"]'),
+      prof.locator("[data-revisao-da-criacao]").locator(`${ALERTA_DE_ERRO}, .unooria-feedback-alert--warning`),
+      { timeout: 60_000, oQue: "criar a atividade e pô-la no ar" },
+    );
+    await prof.waitForURL("**/resultados?**pacote=**", { timeout: 30_000 });
+    const atividadeId = new URL(prof.url()).searchParams.get("pacote");
+    if (!r.exigir(Boolean(atividadeId), `a página da atividade leva o id dela na URL (${prof.url()})`)) return;
+    await prof.locator(`[data-pacote="${atividadeId}"]`).waitFor({ timeout: 20_000 });
+    await prof.locator("[data-imagens-do-pacote]").waitFor({ timeout: 20_000 });
+    await prof.locator("[data-etapa]").waitFor({ timeout: 20_000 });
+    const pacotesDepois = (await lerApi(prof, `/jornal-escola/turmas/${turmaId}/pacotes`)).corpo;
+    r.exigir(
+      pacotesDepois?.ativo?.id === atividadeId,
+      "a atividade criada é a EM ANDAMENTO da turma (GET /jornal-escola/turmas/:turmaId/pacotes)",
+    );
+    const jaExistia = (pacotesAntes.corpo?.historico ?? []).some((h) => h.id === atividadeId);
+    if (!jaExistia) {
+      r.exigir(
+        pacotesDepois?.ativo?.rodada === 1,
+        `a atividade nova começa na 1ª rodada (veio ${pacotesDepois?.ativo?.rodada ?? "nada"})`,
+      );
+    }
+
+    /* ZERAR só quando a atividade criada é a que JÁ estava no ar (a mesma de
+       ontem, pela idempotência): o estado é do servidor e sobrevive ao
+       roteiro, e sem isto a segunda execução encontra os estudantes já
+       publicados, e o roteiro passa por cima do latch que ele existe para
+       provar. Atividade nova começa na 1ª rodada; a que volta ao ar abre a
+       seguinte — nas duas, a turma já está na exploração. O "Zerar" só existe
+       na página da atividade em andamento — esta. */
+    if (noArAntes?.id === atividadeId) {
+      const rodada = noArAntes.rodada;
+      const zerar = prof.locator("[data-zerar-turma]");
+      await hidratado(prof, zerar);
+      await zerar.click();
+      await prof.getByRole("dialog").getByRole("button", { name: /Zerar a turma/ }).click();
+      await esperarOuFalharCedo(
+        prof.locator(`[data-pacote="${atividadeId}"]`, { hasText: `rodada ${rodada + 1} em andamento` }),
+        prof.getByRole("dialog").locator(ALERTA_DE_ERRO),
+        { timeout: 30_000, oQue: "zerar a turma" },
+      );
+      r.ressalva(
+        `a atividade criada é a que já estava no ar (corrida anterior, mesmo banco pronto): a turma foi zerada para a ${rodada + 1}ª rodada`,
+      );
+    }
     await prof.waitForSelector('[data-etapa="exploracao"]', { timeout: 20_000 });
+    await r.registrar(prof, "atividade-em-andamento", {
+      titulo: "A atividade em andamento e o botão que move a sala",
+      mostra:
+        "A página da atividade criada: em andamento, as equipes (um aluno por computador), as imagens do " +
+        "pacote e o painel da aula com o botão único na exploração.",
+      prova:
+        "Criar com “Pôr no ar agora” abriu uma rodada nova desta atividade. As imagens são do pacote GRAVADO " +
+        "e se geram aqui, depois de criar — gerar para um rascunho gastaria a quota à toa.",
+      inteira: true,
+    });
 
     // ═══ ESTUDANTE 1: o Bento e a mesa ════════════════════════════════════
     const p = await r.pagina("estudante", { viewport: { width: 1280, height: 950 } });

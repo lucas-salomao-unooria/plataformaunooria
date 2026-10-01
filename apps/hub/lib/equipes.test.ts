@@ -248,7 +248,7 @@ describe("o rascunho da edição", () => {
   test("manter as da última missão tira quem faltou hoje", () => {
     const r = rascunhoDaUltima(
       {
-        origem: { expId: "exp04ef1b", atualizadoEm: "2026-09-20T12:00:00Z" },
+        origem: { expId: "exp04ef1b", atividadeId: "turma", atualizadoEm: "2026-09-20T12:00:00Z" },
         equipes: [{ nome: "Equipe 1", membros: [ana, davi] }, { nome: "Equipe 2", membros: [bruno] }],
         semEquipe: [caio],
         saidas: 0,

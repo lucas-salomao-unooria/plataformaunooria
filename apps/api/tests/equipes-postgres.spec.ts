@@ -1,6 +1,6 @@
 import { HttpException } from "@nestjs/common";
 import { PrismaClient } from "@prisma/client";
-import { contarEquipesDaTurma, mapaDeEquipes } from "../src/equipes/consulta";
+import { computadoresDaMontagem, contarEquipesDaTurma, mapaDeEquipes } from "../src/equipes/consulta";
 import {
   EquipesDaMissaoSchema,
   MinhaEquipeSchema,
@@ -8,7 +8,8 @@ import {
   UltimaMontagemSchema,
 } from "../src/equipes/contrato-de-rotas";
 import { EquipesService } from "../src/equipes/equipes.service";
-import { MODOS, NOME_MAX } from "../src/equipes/regras";
+import type { AlvoDaMontagem } from "../src/equipes/equipes.service";
+import { ATIVIDADE_DA_TURMA, MODOS, NOME_MAX } from "../src/equipes/regras";
 import { PrismaService } from "../src/prisma/prisma.service";
 import { SalaDoProfessorSchema } from "../src/salas/contrato-de-rotas";
 import { SalasService } from "../src/salas/salas.service";
@@ -72,12 +73,37 @@ const ids = {
   enzo: "",
   fabi: "",
   vizinho: "",
+  /** As atividades do Instanooria (ADR-130): a equipe é de UMA delas. */
+  insta8A: "",
+  /** A segunda atividade da 8A, PRONTA — não está em andamento. */
+  insta8A2: "",
+  insta8B: "",
+  instaVizinha: "",
 };
+
+/**
+ * A chave de uma montagem com a atividade de sempre: a em andamento da turma
+ * no Instanooria, e o fixo `turma` nas missões sem atividade. A suíte inteira
+ * é sobre UMA atividade por turma; as poucas que comparam duas passam a
+ * segunda explicitamente.
+ */
+function A(escolaId: string, turmaId: string, expId: string, atividadeId?: string): AlvoDaMontagem {
+  const padrao =
+    expId !== INSTA
+      ? ATIVIDADE_DA_TURMA
+      : turmaId === ids.turma8A
+        ? ids.insta8A
+        : turmaId === ids.turma8B
+          ? ids.insta8B
+          : ids.instaVizinha;
+  return { escolaId, turmaId, expId, atividadeId: atividadeId ?? padrao };
+}
 
 async function limpar() {
   const escolas = [ESCOLA, OUTRA_ESCOLA];
   /* Equipes e membros caem por CASCADE da montagem. */
   await prisma.equipesMontagem.deleteMany({ where: { escolaId: { in: escolas } } });
+  await prisma.activity.deleteMany({ where: { escolaId: { in: escolas } } });
   await prisma.matricula.deleteMany({ where: { escolaId: { in: escolas } } });
   await prisma.user.deleteMany({ where: { escolaId: { in: escolas } } });
   await prisma.turma.deleteMany({ where: { escolaId: { in: escolas } } });
@@ -154,6 +180,33 @@ beforeAll(async () => {
   await lecionar(ESCOLA, ids.turma8B, ids.prof8B);
   await lecionar(OUTRA_ESCOLA, ids.turmaVizinha, ids.profVizinho);
 
+  /* As atividades do Instanooria: a montagem é DELAS (ADR-130), e o serviço
+     confere que a atividade existe e é da turma. */
+  const atividade = async (escolaId: string, turmaId: string, professorId: string, status: string) =>
+    (
+      await prisma.activity.create({
+        data: {
+          escolaId,
+          turmaId,
+          professorId,
+          titulo: "Atividade de teste",
+          disciplina: "Língua Portuguesa",
+          temaGeral: "tema",
+          recorte: "recorte",
+          perguntaChave: "pergunta?",
+          estiloVisual: "fotografico",
+          proporcoes: {},
+          engineConfig: {},
+          status,
+        },
+        select: { id: true },
+      })
+    ).id;
+  ids.insta8A = await atividade(ESCOLA, ids.turma8A, ids.prof8A, "ativa");
+  ids.insta8A2 = await atividade(ESCOLA, ids.turma8A, ids.prof8A, "revisao");
+  ids.insta8B = await atividade(ESCOLA, ids.turma8B, ids.prof8B, "ativa");
+  ids.instaVizinha = await atividade(OUTRA_ESCOLA, ids.turmaVizinha, ids.profVizinho, "ativa");
+
   /**
    * O catálogo é GLOBAL e o `globalSetup` já o preenche com os manifestos
    * reais. O `upsert` aqui é a garantia mínima do que o `PUT` exige — existir e
@@ -183,12 +236,8 @@ afterAll(async () => {
 describe("tenancy no banco (regra inviolável nº 1)", () => {
   beforeAll(async () => {
     await prisma.equipesMontagem.deleteMany({ where: { escolaId: { in: [ESCOLA, OUTRA_ESCOLA] } } });
-    await equipes.salvar(ESCOLA, ids.turma8A, INSTA, duasEquipes(0), ids.prof8A);
-    await equipes.salvar(
-      OUTRA_ESCOLA,
-      ids.turmaVizinha,
-      INSTA,
-      { versao: 0, modo: "sorteio", computadores: 1, ausentes: [], equipes: [{ nome: "Equipe 1", membros: [ids.vizinho] }] },
+    await equipes.salvar(A(ESCOLA, ids.turma8A, INSTA), duasEquipes(0), ids.prof8A);
+    await equipes.salvar(A(OUTRA_ESCOLA, ids.turmaVizinha, INSTA), { versao: 0, modo: "sorteio", computadores: 1, ausentes: [], equipes: [{ nome: "Equipe 1", membros: [ids.vizinho] }] },
       ids.profVizinho,
     );
   });
@@ -241,12 +290,8 @@ describe("tenancy no banco (regra inviolável nº 1)", () => {
 
   test("a role sem ownership monta e relê pelo serviço — os GRANTs e o WITH CHECK da política", async () => {
     const pelaRuntime = new EquipesService(runtime);
-    const lido = await pelaRuntime.daMissao(ESCOLA, ids.turma8A, INSTA, ids.prof8A);
-    const salvo = await pelaRuntime.salvar(
-      ESCOLA,
-      ids.turma8A,
-      INSTA,
-      { ...duasEquipes(lido.montagem?.versao ?? 0) },
+    const lido = await pelaRuntime.daMissao(A(ESCOLA, ids.turma8A, INSTA), ids.prof8A);
+    const salvo = await pelaRuntime.salvar(A(ESCOLA, ids.turma8A, INSTA), { ...duasEquipes(lido.montagem?.versao ?? 0) },
       ids.prof8A,
     );
     expect(salvo.equipes.map((e) => e.nome)).toEqual(["Equipe 1", "Verde"]);
@@ -254,7 +299,7 @@ describe("tenancy no banco (regra inviolável nº 1)", () => {
 
   test("UMA equipe por criança por missão: o UNIQUE segura mesmo com o código errado", async () => {
     const outra = await prisma.equipe.create({
-      data: { escolaId: ESCOLA, turmaId: ids.turma8A, expId: INSTA, nome: "Intrusa", ordem: 9 },
+      data: { escolaId: ESCOLA, turmaId: ids.turma8A, expId: INSTA, atividadeId: ids.insta8A, nome: "Intrusa", ordem: 9 },
     });
     await expect(
       prisma.equipeMembro.create({
@@ -263,6 +308,7 @@ describe("tenancy no banco (regra inviolável nº 1)", () => {
           equipeId: outra.id,
           turmaId: ids.turma8A,
           expId: INSTA,
+          atividadeId: ids.insta8A,
           estudanteId: ids.ana,
         },
       }),
@@ -289,7 +335,7 @@ describe("tenancy no banco (regra inviolável nº 1)", () => {
     ).rejects.toThrow();
     await expect(
       prisma.equipe.create({
-        data: { escolaId: ESCOLA, turmaId: ids.turma8A, expId: INSTA, nome: "   ", ordem: 7 },
+        data: { escolaId: ESCOLA, turmaId: ids.turma8A, expId: INSTA, atividadeId: ids.insta8A, nome: "   ", ordem: 7 },
       }),
     ).rejects.toThrow();
   });
@@ -301,7 +347,7 @@ describe("montar, reler e desfazer", () => {
   });
 
   test("sem montagem: todo mundo sem equipe, e a resposta segue o contrato", async () => {
-    const lido = EquipesDaMissaoSchema.parse(await equipes.daMissao(ESCOLA, ids.turma8A, INSTA, ids.prof8A));
+    const lido = EquipesDaMissaoSchema.parse(await equipes.daMissao(A(ESCOLA, ids.turma8A, INSTA), ids.prof8A));
     expect(lido).toMatchObject({ permitida: true, montagem: null, equipes: [], estudantes: 5 });
     expect(lido.semEquipe.map((e) => e.nome)).toEqual([
       "Ana Clara Souza",
@@ -314,9 +360,9 @@ describe("montar, reler e desfazer", () => {
 
   test("PUT e GET dão a mesma montagem — nome sem espaço, ordem, ausente em `semEquipe`", async () => {
     const salvo = EquipesDaMissaoSchema.parse(
-      await equipes.salvar(ESCOLA, ids.turma8A, INSTA, duasEquipes(0), ids.prof8A),
+      await equipes.salvar(A(ESCOLA, ids.turma8A, INSTA), duasEquipes(0), ids.prof8A),
     );
-    const lido = EquipesDaMissaoSchema.parse(await equipes.daMissao(ESCOLA, ids.turma8A, INSTA, ids.prof8A));
+    const lido = EquipesDaMissaoSchema.parse(await equipes.daMissao(A(ESCOLA, ids.turma8A, INSTA), ids.prof8A));
     expect(lido).toEqual(salvo);
 
     expect(lido.montagem).toMatchObject({ modo: "manual", computadores: 2, ausentes: [ids.enzo], versao: 1 });
@@ -328,16 +374,16 @@ describe("montar, reler e desfazer", () => {
   });
 
   test("gestor (sem professorId) lê as equipes da turma", async () => {
-    await equipes.salvar(ESCOLA, ids.turma8A, INSTA, duasEquipes(0), ids.prof8A);
-    const lido = await equipes.daMissao(ESCOLA, ids.turma8A, INSTA, undefined);
+    await equipes.salvar(A(ESCOLA, ids.turma8A, INSTA), duasEquipes(0), ids.prof8A);
+    const lido = await equipes.daMissao(A(ESCOLA, ids.turma8A, INSTA), undefined);
     expect(lido.equipes).toHaveLength(2);
   });
 
   test("versão velha é 409 com a versão atual — as duas telas não se sobrescrevem", async () => {
-    await equipes.salvar(ESCOLA, ids.turma8A, INSTA, duasEquipes(0), ids.prof8A);
+    await equipes.salvar(A(ESCOLA, ids.turma8A, INSTA), duasEquipes(0), ids.prof8A);
 
     /* A segunda tela abriu ANTES da primeira salvar: acha que não havia nada. */
-    expect(await recusa(equipes.salvar(ESCOLA, ids.turma8A, INSTA, duasEquipes(0), ids.prof8A))).toEqual({
+    expect(await recusa(equipes.salvar(A(ESCOLA, ids.turma8A, INSTA), duasEquipes(0), ids.prof8A))).toEqual({
       status: 409,
       corpo: {
         codigo: "equipes-desatualizadas",
@@ -346,27 +392,23 @@ describe("montar, reler e desfazer", () => {
       },
     });
 
-    const segunda = await equipes.salvar(ESCOLA, ids.turma8A, INSTA, duasEquipes(1), ids.prof8A);
+    const segunda = await equipes.salvar(A(ESCOLA, ids.turma8A, INSTA), duasEquipes(1), ids.prof8A);
     expect(segunda.montagem?.versao).toBe(2);
-    expect((await recusa(equipes.salvar(ESCOLA, ids.turma8A, INSTA, duasEquipes(1), ids.prof8A))).corpo).toMatchObject({
+    expect((await recusa(equipes.salvar(A(ESCOLA, ids.turma8A, INSTA), duasEquipes(1), ids.prof8A))).corpo).toMatchObject({
       versaoAtual: 2,
     });
   });
 
   test("versão > 0 sem montagem nenhuma também é 409, com `versaoAtual: 0`", async () => {
-    expect((await recusa(equipes.salvar(ESCOLA, ids.turma8A, INSTA, duasEquipes(3), ids.prof8A))).corpo).toMatchObject({
+    expect((await recusa(equipes.salvar(A(ESCOLA, ids.turma8A, INSTA), duasEquipes(3), ids.prof8A))).corpo).toMatchObject({
       codigo: "equipes-desatualizadas",
       versaoAtual: 0,
     });
   });
 
   test("salvar de novo TROCA a montagem inteira", async () => {
-    await equipes.salvar(ESCOLA, ids.turma8A, INSTA, duasEquipes(0), ids.prof8A);
-    const trocada = await equipes.salvar(
-      ESCOLA,
-      ids.turma8A,
-      INSTA,
-      {
+    await equipes.salvar(A(ESCOLA, ids.turma8A, INSTA), duasEquipes(0), ids.prof8A);
+    const trocada = await equipes.salvar(A(ESCOLA, ids.turma8A, INSTA), {
         versao: 1,
         modo: "sorteio",
         computadores: 1,
@@ -382,11 +424,11 @@ describe("montar, reler e desfazer", () => {
 
   test("missão fora da lista é 400 no PUT, e o GET responde 200 com `permitida: false`", async () => {
     expect(
-      await recusa(equipes.salvar(ESCOLA, ids.turma8A, MANIFESTO, duasEquipes(0), ids.prof8A)),
+      await recusa(equipes.salvar(A(ESCOLA, ids.turma8A, MANIFESTO), duasEquipes(0), ids.prof8A)),
     ).toMatchObject({ status: 400, corpo: { codigo: "missao-sem-equipes" } });
 
     const lido = EquipesDaMissaoSchema.parse(
-      await equipes.daMissao(ESCOLA, ids.turma8A, MANIFESTO, ids.prof8A),
+      await equipes.daMissao(A(ESCOLA, ids.turma8A, MANIFESTO), ids.prof8A),
     );
     expect(lido).toEqual({ permitida: false, montagem: null, equipes: [], semEquipe: [], estudantes: 5 });
   });
@@ -397,7 +439,7 @@ describe("montar, reler e desfazer", () => {
       equipes: [{ nome: "Equipe 1", membros: [ids.ana, ids.fabi] }],
     };
     const { status, corpo: resposta } = await recusa(
-      equipes.salvar(ESCOLA, ids.turma8A, INSTA, corpo, ids.prof8A),
+      equipes.salvar(A(ESCOLA, ids.turma8A, INSTA), corpo, ids.prof8A),
     );
     expect(status).toBe(400);
     expect(resposta).toMatchObject({
@@ -409,31 +451,31 @@ describe("montar, reler e desfazer", () => {
 
   test("professor que não leciona a turma recebe 404 — em ler, montar, propor e desfazer", async () => {
     const naoEncontrada = { status: 404, corpo: { mensagem: "Turma não encontrada." } };
-    expect(await recusa(equipes.daMissao(ESCOLA, ids.turma8A, INSTA, ids.prof8B))).toEqual(naoEncontrada);
-    expect(await recusa(equipes.salvar(ESCOLA, ids.turma8A, INSTA, duasEquipes(0), ids.prof8B))).toEqual(
+    expect(await recusa(equipes.daMissao(A(ESCOLA, ids.turma8A, INSTA), ids.prof8B))).toEqual(naoEncontrada);
+    expect(await recusa(equipes.salvar(A(ESCOLA, ids.turma8A, INSTA), duasEquipes(0), ids.prof8B))).toEqual(
       naoEncontrada,
     );
     expect(
       await recusa(
-        equipes.sugerir(ESCOLA, ids.turma8A, INSTA, { modo: "sorteio", computadores: 2, ausentes: [] }, ids.prof8B),
+        equipes.sugerir(A(ESCOLA, ids.turma8A, INSTA), { modo: "sorteio", computadores: 2, ausentes: [] }, ids.prof8B),
       ),
     ).toEqual(naoEncontrada);
-    expect(await recusa(equipes.ultima(ESCOLA, ids.turma8A, INSTA, ids.prof8B))).toEqual(naoEncontrada);
-    expect(await recusa(equipes.desfazer(ESCOLA, ids.turma8A, INSTA, ids.prof8B))).toEqual(naoEncontrada);
+    expect(await recusa(equipes.ultima(A(ESCOLA, ids.turma8A, INSTA), ids.prof8B))).toEqual(naoEncontrada);
+    expect(await recusa(equipes.desfazer(A(ESCOLA, ids.turma8A, INSTA), ids.prof8B))).toEqual(naoEncontrada);
   });
 
   test("turma de outra escola é 404 também — a escola do token é a tranca", async () => {
-    expect((await recusa(equipes.daMissao(ESCOLA, ids.turmaVizinha, INSTA, undefined))).status).toBe(404);
+    expect((await recusa(equipes.daMissao(A(ESCOLA, ids.turmaVizinha, INSTA), undefined))).status).toBe(404);
   });
 
   test("DESFAZER apaga montagem, equipes e membros; e repetir devolve o mesmo `ok`", async () => {
-    await equipes.salvar(ESCOLA, ids.turma8A, INSTA, duasEquipes(0), ids.prof8A);
-    expect(await equipes.desfazer(ESCOLA, ids.turma8A, INSTA, ids.prof8A)).toEqual({ ok: true });
-    expect(await equipes.desfazer(ESCOLA, ids.turma8A, INSTA, ids.prof8A)).toEqual({ ok: true });
+    await equipes.salvar(A(ESCOLA, ids.turma8A, INSTA), duasEquipes(0), ids.prof8A);
+    expect(await equipes.desfazer(A(ESCOLA, ids.turma8A, INSTA), ids.prof8A)).toEqual({ ok: true });
+    expect(await equipes.desfazer(A(ESCOLA, ids.turma8A, INSTA), ids.prof8A)).toEqual({ ok: true });
 
     expect(await prisma.equipe.count({ where: { escolaId: ESCOLA } })).toBe(0);
     expect(await prisma.equipeMembro.count({ where: { escolaId: ESCOLA } })).toBe(0);
-    const lido = await equipes.daMissao(ESCOLA, ids.turma8A, INSTA, ids.prof8A);
+    const lido = await equipes.daMissao(A(ESCOLA, ids.turma8A, INSTA), ids.prof8A);
     expect(lido.montagem).toBeNull();
     expect(lido.semEquipe).toHaveLength(5);
   });
@@ -449,11 +491,7 @@ describe("a equipe do estudante", () => {
   });
 
   test("com equipe: o nome dela e o PRIMEIRO nome dos outros — nunca o completo, nunca o próprio", async () => {
-    await equipes.salvar(
-      ESCOLA,
-      ids.turma8A,
-      INSTA,
-      { versao: 0, modo: "manual", computadores: 1, ausentes: [], equipes: [{ nome: "Azul", membros: [ids.ana, ids.bia, ids.caio] }] },
+    await equipes.salvar(A(ESCOLA, ids.turma8A, INSTA), { versao: 0, modo: "manual", computadores: 1, ausentes: [], equipes: [{ nome: "Azul", membros: [ids.ana, ids.bia, ids.caio] }] },
       ids.prof8A,
     );
     expect(MinhaEquipeSchema.parse(await equipes.minha(ESCOLA, ids.ana, INSTA))).toEqual({
@@ -480,11 +518,7 @@ describe("a equipe do estudante", () => {
       ).id;
     const cardoso = await estudante("equipes-gabriela-cardoso", "Gabriela Almeida Cardoso");
     const correia = await estudante("equipes-gabriela-correia", "Gabriela Ribeiro Correia");
-    await equipes.salvar(
-      ESCOLA,
-      ids.turma8B,
-      INSTA,
-      { versao: 0, modo: "manual", computadores: 1, ausentes: [], equipes: [{ nome: "Roxa", membros: [ids.fabi, cardoso, correia] }] },
+    await equipes.salvar(A(ESCOLA, ids.turma8B, INSTA), { versao: 0, modo: "manual", computadores: 1, ausentes: [], equipes: [{ nome: "Roxa", membros: [ids.fabi, cardoso, correia] }] },
       ids.prof8B,
     );
 
@@ -506,12 +540,12 @@ describe("a equipe do estudante", () => {
 describe("as leituras que os painéis vão usar", () => {
   test("`mapaDeEquipes` e `contarEquipesDaTurma` dentro da tenancy", async () => {
     await prisma.equipesMontagem.deleteMany({ where: { escolaId: ESCOLA } });
-    await equipes.salvar(ESCOLA, ids.turma8A, INSTA, duasEquipes(0), ids.prof8A);
+    await equipes.salvar(A(ESCOLA, ids.turma8A, INSTA), duasEquipes(0), ids.prof8A);
 
     const [mapa, contagem] = await prisma.comTenancy(
       (tx) =>
         Promise.all([
-          mapaDeEquipes(tx, ESCOLA, ids.turma8A, INSTA),
+          mapaDeEquipes(tx, ESCOLA, ids.turma8A, INSTA, ids.insta8A),
           contarEquipesDaTurma(tx, ESCOLA, ids.turma8A),
         ]),
       ESCOLA,
@@ -531,11 +565,7 @@ describe("a proposta (sugestão) nunca grava", () => {
 
   test("sorteio sem os ausentes, e o banco continua vazio", async () => {
     const r = SugestaoSchema.parse(
-      await equipes.sugerir(
-        ESCOLA,
-        ids.turma8A,
-        INSTA,
-        { modo: "sorteio", computadores: 2, ausentes: [ids.enzo] },
+      await equipes.sugerir(A(ESCOLA, ids.turma8A, INSTA), { modo: "sorteio", computadores: 2, ausentes: [ids.enzo] },
         ids.prof8A,
       ),
     );
@@ -556,7 +586,7 @@ describe("a proposta (sugestão) nunca grava", () => {
 
   test("manual: N equipes vazias e todos os presentes esperando", async () => {
     const r = SugestaoSchema.parse(
-      await equipes.sugerir(ESCOLA, ids.turma8A, INSTA, { modo: "manual", computadores: 3, ausentes: [] }, ids.prof8A),
+      await equipes.sugerir(A(ESCOLA, ids.turma8A, INSTA), { modo: "manual", computadores: 3, ausentes: [] }, ids.prof8A),
     );
     expect(r.equipes.map((e) => [e.nome, e.membros.length])).toEqual([
       ["Equipe 1", 0],
@@ -580,11 +610,7 @@ describe("a proposta (sugestão) nunca grava", () => {
       aviso: null,
     }));
     const r = SugestaoSchema.parse(
-      await comFonte.sugerir(
-        ESCOLA,
-        ids.turma8A,
-        TEMPESTADE,
-        { modo: "sorteio", computadores: 2, ausentes: [] },
+      await comFonte.sugerir(A(ESCOLA, ids.turma8A, TEMPESTADE), { modo: "sorteio", computadores: 2, ausentes: [] },
         ids.prof8A,
       ),
     );
@@ -598,11 +624,7 @@ describe("a proposta (sugestão) nunca grava", () => {
     expect(r.equipes.map((e) => e.grupo).sort()).toEqual(["A", "B"]);
 
     /* A fonte é da missão: em outra, o sorteio ignora lados. */
-    const semFonte = await comFonte.sugerir(
-      ESCOLA,
-      ids.turma8A,
-      INSTA,
-      { modo: "sorteio", computadores: 2, ausentes: [] },
+    const semFonte = await comFonte.sugerir(A(ESCOLA, ids.turma8A, INSTA), { modo: "sorteio", computadores: 2, ausentes: [] },
       ids.prof8A,
     );
     expect(semFonte.agrupamento).toBeNull();
@@ -611,7 +633,7 @@ describe("a proposta (sugestão) nunca grava", () => {
   test("missão fora da lista é 400", async () => {
     expect(
       await recusa(
-        equipes.sugerir(ESCOLA, ids.turma8A, MANIFESTO, { modo: "sorteio", computadores: 2, ausentes: [] }, ids.prof8A),
+        equipes.sugerir(A(ESCOLA, ids.turma8A, MANIFESTO), { modo: "sorteio", computadores: 2, ausentes: [] }, ids.prof8A),
       ),
     ).toMatchObject({ status: 400, corpo: { codigo: "missao-sem-equipes" } });
   });
@@ -620,7 +642,7 @@ describe("a proposta (sugestão) nunca grava", () => {
 describe("a sala do professor mostra quantas equipes cada missão tem", () => {
   test("`equipes` na grade, e zero onde não há", async () => {
     await prisma.equipesMontagem.deleteMany({ where: { escolaId: ESCOLA } });
-    await equipes.salvar(ESCOLA, ids.turma8A, INSTA, duasEquipes(0), ids.prof8A);
+    await equipes.salvar(A(ESCOLA, ids.turma8A, INSTA), duasEquipes(0), ids.prof8A);
 
     const sala = SalaDoProfessorSchema.parse(await salas.daTurma(ESCOLA, ids.turma8A, ids.prof8A));
     expect(sala.missoes.find((m) => m.expId === INSTA)?.equipes).toBe(2);
@@ -643,14 +665,14 @@ describe("o gancho de quem depende das equipes", () => {
     const vistos: { alvo: unknown; membrosDaAna: string[] }[] = [];
     const comGancho = new EquipesService(prisma);
     comGancho.aoMudarEquipes(async (tx, alvo) => {
-      const mapa = await mapaDeEquipes(tx, alvo.escolaId, alvo.turmaId, alvo.expId);
+      const mapa = await mapaDeEquipes(tx, alvo.escolaId, alvo.turmaId, alvo.expId, alvo.atividadeId);
       vistos.push({ alvo, membrosDaAna: mapa.get(ids.ana)?.membros.map((m) => m.id) ?? [] });
     });
 
-    await comGancho.salvar(ESCOLA, ids.turma8A, INSTA, duasEquipes(0), ids.prof8A);
-    await comGancho.desfazer(ESCOLA, ids.turma8A, INSTA, ids.prof8A);
+    await comGancho.salvar(A(ESCOLA, ids.turma8A, INSTA), duasEquipes(0), ids.prof8A);
+    await comGancho.desfazer(A(ESCOLA, ids.turma8A, INSTA), ids.prof8A);
 
-    const alvo = { escolaId: ESCOLA, turmaId: ids.turma8A, expId: INSTA };
+    const alvo = A(ESCOLA, ids.turma8A, INSTA);
     expect(vistos).toEqual([
       { alvo, membrosDaAna: [ids.ana, ids.bia] },
       { alvo, membrosDaAna: [] },
@@ -662,14 +684,154 @@ describe("o gancho de quem depende das equipes", () => {
     quebrado.aoMudarEquipes(async () => {
       throw new Error("o interessado falhou");
     });
-    await expect(quebrado.salvar(ESCOLA, ids.turma8A, INSTA, duasEquipes(0), ids.prof8A)).rejects.toThrow(
+    await expect(quebrado.salvar(A(ESCOLA, ids.turma8A, INSTA), duasEquipes(0), ids.prof8A)).rejects.toThrow(
       "o interessado falhou",
     );
     expect(await prisma.equipesMontagem.count({ where: { escolaId: ESCOLA } })).toBe(0);
     expect(await prisma.equipe.count({ where: { escolaId: ESCOLA } })).toBe(0);
 
-    const salvo = await equipes.salvar(ESCOLA, ids.turma8A, INSTA, duasEquipes(0), ids.prof8A);
+    const salvo = await equipes.salvar(A(ESCOLA, ids.turma8A, INSTA), duasEquipes(0), ids.prof8A);
     expect(salvo.montagem?.versao).toBe(1);
+  });
+});
+
+/**
+ * A EQUIPE É DA ATIVIDADE (ADR-130). Duas atividades da mesma missão na mesma
+ * turma são duas aulas, e cada uma tem a própria montagem — a criança está
+ * numa equipe em cada uma, e a que vale para ela é a da atividade EM ANDAMENTO.
+ */
+describe("a montagem por atividade (ADR-130)", () => {
+  beforeEach(async () => {
+    await prisma.equipesMontagem.deleteMany({ where: { escolaId: ESCOLA } });
+  });
+
+  test("duas atividades da mesma missão na turma: duas montagens, e a criança numa equipe em cada", async () => {
+    await equipes.salvar(A(ESCOLA, ids.turma8A, INSTA), duasEquipes(0), ids.prof8A);
+    await equipes.salvar(
+      A(ESCOLA, ids.turma8A, INSTA, ids.insta8A2),
+      { versao: 0, modo: "manual", computadores: 1, ausentes: [], equipes: [{ nome: "Todos", membros: [ids.ana, ids.caio] }] },
+      ids.prof8A,
+    );
+    const [primeira, segunda] = await Promise.all([
+      equipes.daMissao(A(ESCOLA, ids.turma8A, INSTA), ids.prof8A),
+      equipes.daMissao(A(ESCOLA, ids.turma8A, INSTA, ids.insta8A2), ids.prof8A),
+    ]);
+    expect(primeira.equipes.map((e) => e.nome)).toEqual(["Equipe 1", "Verde"]);
+    expect(segunda.equipes.map((e) => e.nome)).toEqual(["Todos"]);
+    expect(await prisma.equipeMembro.count({ where: { escolaId: ESCOLA, estudanteId: ids.ana } })).toBe(2);
+  });
+
+  test("a faixa do estudante e a sala contam SÓ a atividade em andamento", async () => {
+    /* Só a atividade PRONTA tem montagem: para a criança, nada está valendo. */
+    await equipes.salvar(
+      A(ESCOLA, ids.turma8A, INSTA, ids.insta8A2),
+      { versao: 0, modo: "manual", computadores: 1, ausentes: [], equipes: [{ nome: "Todos", membros: [ids.ana, ids.caio] }] },
+      ids.prof8A,
+    );
+    expect(await equipes.minha(ESCOLA, ids.ana, INSTA)).toEqual({ equipe: null });
+    const semAndamento = await prisma.comTenancy((tx) => contarEquipesDaTurma(tx, ESCOLA, ids.turma8A), ESCOLA);
+    expect(semAndamento.get(INSTA)).toBeUndefined();
+
+    await equipes.salvar(A(ESCOLA, ids.turma8A, INSTA), duasEquipes(0), ids.prof8A);
+    expect(await equipes.minha(ESCOLA, ids.ana, INSTA)).toEqual({ equipe: { nome: "Equipe 1", colegas: ["Bia"] } });
+    const comAndamento = await prisma.comTenancy((tx) => contarEquipesDaTurma(tx, ESCOLA, ids.turma8A), ESCOLA);
+    expect(comAndamento.get(INSTA)).toBe(2);
+  });
+
+  test("atividade de outra turma, inventada, ou o fixo `turma` numa missão com atividade: 404", async () => {
+    const naoEncontrada = { status: 404, corpo: expect.objectContaining({ codigo: "atividade-nao-encontrada" }) };
+    expect(await recusa(equipes.daMissao(A(ESCOLA, ids.turma8A, INSTA, ids.insta8B), ids.prof8A))).toEqual(naoEncontrada);
+    expect(
+      await recusa(equipes.salvar(A(ESCOLA, ids.turma8A, INSTA, "00000000-0000-4000-8000-000000000000"), duasEquipes(0), ids.prof8A)),
+    ).toEqual(naoEncontrada);
+    expect(
+      await recusa(equipes.salvar(A(ESCOLA, ids.turma8A, INSTA, ATIVIDADE_DA_TURMA), duasEquipes(0), ids.prof8A)),
+    ).toEqual(naoEncontrada);
+    /* E o contrário: a missão SEM atividade só aceita o fixo. */
+    expect(
+      await recusa(equipes.salvar(A(ESCOLA, ids.turma8A, TEMPESTADE, ids.insta8A), duasEquipes(0), ids.prof8A)),
+    ).toEqual(naoEncontrada);
+    expect(await prisma.equipesMontagem.count({ where: { escolaId: ESCOLA } })).toBe(0);
+  });
+
+  test("um aluno por computador: grava a montagem SEM equipes e com `computadores` nulo", async () => {
+    const salvo = await equipes.salvar(
+      A(ESCOLA, ids.turma8A, INSTA),
+      { versao: 0, modo: "individual", computadores: null, ausentes: [], equipes: [] },
+      ids.prof8A,
+    );
+    expect(EquipesDaMissaoSchema.parse(salvo)).toMatchObject({
+      montagem: { modo: "individual", computadores: null, versao: 1 },
+      equipes: [],
+    });
+    expect(salvo.semEquipe).toHaveLength(5);
+    const [computadores, mapa] = await prisma.comTenancy(
+      (tx) =>
+        Promise.all([
+          computadoresDaMontagem(tx, ESCOLA, ids.turma8A, INSTA, ids.insta8A),
+          mapaDeEquipes(tx, ESCOLA, ids.turma8A, INSTA, ids.insta8A),
+        ]),
+      ESCOLA,
+    );
+    /* O painel volta a contar por criança, como sem montagem. */
+    expect(computadores).toBeNull();
+    expect(mapa.size).toBe(0);
+    expect(await equipes.minha(ESCOLA, ids.ana, INSTA)).toEqual({ equipe: null });
+
+    /* O número de computadores, mesmo mandado, não é gravado. */
+    const regravado = await equipes.salvar(
+      A(ESCOLA, ids.turma8A, INSTA),
+      { versao: 1, modo: "individual", computadores: 4, ausentes: [], equipes: [] },
+      ids.prof8A,
+    );
+    expect(regravado.montagem?.computadores).toBeNull();
+  });
+
+  test("individual com equipes, ou sorteio sem computadores: 400 com a frase", async () => {
+    expect(
+      (
+        await recusa(
+          equipes.salvar(
+            A(ESCOLA, ids.turma8A, INSTA),
+            { versao: 0, modo: "individual", computadores: null, ausentes: [], equipes: [{ nome: "E", membros: [ids.ana] }] },
+            ids.prof8A,
+          ),
+        )
+      ).corpo,
+    ).toMatchObject({ codigo: "montagem-invalida", erros: ["Com um aluno por computador não há equipes para salvar."] });
+    expect(
+      (
+        await recusa(
+          equipes.salvar(
+            A(ESCOLA, ids.turma8A, INSTA),
+            { versao: 0, modo: "sorteio", computadores: null, ausentes: [], equipes: [{ nome: "E", membros: [ids.ana] }] },
+            ids.prof8A,
+          ),
+        )
+      ).corpo,
+    ).toMatchObject({ codigo: "montagem-invalida", erros: ["Diga quantos computadores a sala tem."] });
+  });
+
+  test("o CHECK do banco segura `individual` com computadores e `sorteio` sem", async () => {
+    await equipes.salvar(A(ESCOLA, ids.turma8A, INSTA), duasEquipes(0), ids.prof8A);
+    const onde = `WHERE escola_id = '${ESCOLA}' AND atividade_id = '${ids.insta8A}'`;
+    await expect(prisma.$executeRawUnsafe(`UPDATE equipes_montagens SET modo = 'individual' ${onde}`)).rejects.toThrow();
+    await expect(prisma.$executeRawUnsafe(`UPDATE equipes_montagens SET computadores = NULL ${onde}`)).rejects.toThrow();
+    await expect(
+      prisma.$executeRawUnsafe(`UPDATE equipes_montagens SET atividade_id = 'com espaço' ${onde}`),
+    ).rejects.toThrow();
+  });
+
+  test("a atividade anterior serve de ponto de partida — da mesma missão também, e o `individual` não", async () => {
+    await equipes.salvar(A(ESCOLA, ids.turma8A, INSTA), duasEquipes(0), ids.prof8A);
+    await equipes.salvar(
+      A(ESCOLA, ids.turma8A, TEMPESTADE),
+      { versao: 0, modo: "individual", computadores: null, ausentes: [], equipes: [] },
+      ids.prof8A,
+    );
+    const r = UltimaMontagemSchema.parse(await equipes.ultima(A(ESCOLA, ids.turma8A, INSTA, ids.insta8A2), ids.prof8A));
+    expect(r.origem).toMatchObject({ expId: INSTA, atividadeId: ids.insta8A });
+    expect(r.equipes.map((e) => e.nome)).toEqual(["Equipe 1", "Verde"]);
   });
 });
 
@@ -680,18 +842,14 @@ describe("o gancho de quem depende das equipes", () => {
 describe("a última montagem, reprojetada sobre a turma de hoje", () => {
   test("sem montagem anterior: `origem: null` e todos sem equipe", async () => {
     await prisma.equipesMontagem.deleteMany({ where: { escolaId: ESCOLA } });
-    const r = UltimaMontagemSchema.parse(await equipes.ultima(ESCOLA, ids.turma8A, TEMPESTADE, ids.prof8A));
+    const r = UltimaMontagemSchema.parse(await equipes.ultima(A(ESCOLA, ids.turma8A, TEMPESTADE), ids.prof8A));
     expect(r).toMatchObject({ origem: null, equipes: [], saidas: 0 });
     expect(r.semEquipe).toHaveLength(5);
   });
 
   test("quem saiu cai (e é contado), quem chegou fica sem equipe, e a missão ATUAL não conta", async () => {
     await prisma.equipesMontagem.deleteMany({ where: { escolaId: ESCOLA } });
-    await equipes.salvar(
-      ESCOLA,
-      ids.turma8A,
-      INSTA,
-      {
+    await equipes.salvar(A(ESCOLA, ids.turma8A, INSTA), {
         versao: 0,
         modo: "manual",
         computadores: 2,
@@ -704,11 +862,7 @@ describe("a última montagem, reprojetada sobre a turma de hoje", () => {
       ids.prof8A,
     );
     /* A montagem da PRÓPRIA missão é a que se quer substituir — nunca a origem. */
-    await equipes.salvar(
-      ESCOLA,
-      ids.turma8A,
-      TEMPESTADE,
-      { versao: 0, modo: "manual", computadores: 1, ausentes: [], equipes: [{ nome: "Só uma", membros: [ids.ana] }] },
+    await equipes.salvar(A(ESCOLA, ids.turma8A, TEMPESTADE), { versao: 0, modo: "manual", computadores: 1, ausentes: [], equipes: [{ nome: "Só uma", membros: [ids.ana] }] },
       ids.prof8A,
     );
 
@@ -725,7 +879,7 @@ describe("a última montagem, reprojetada sobre a turma de hoje", () => {
       select: { id: true },
     });
 
-    const r = UltimaMontagemSchema.parse(await equipes.ultima(ESCOLA, ids.turma8A, TEMPESTADE, ids.prof8A));
+    const r = UltimaMontagemSchema.parse(await equipes.ultima(A(ESCOLA, ids.turma8A, TEMPESTADE), ids.prof8A));
     expect(r.origem?.expId).toBe(INSTA);
     expect(r.saidas).toBe(1);
     expect(r.equipes.map((e) => [e.nome, e.membros.map((m) => m.nome)])).toEqual([
@@ -735,7 +889,7 @@ describe("a última montagem, reprojetada sobre a turma de hoje", () => {
     expect(r.semEquipe.map((e) => e.id)).toEqual([gabi.id]);
 
     /* E a tela da missão de origem também já não mostra quem saiu. */
-    const lido = await equipes.daMissao(ESCOLA, ids.turma8A, INSTA, ids.prof8A);
+    const lido = await equipes.daMissao(A(ESCOLA, ids.turma8A, INSTA), ids.prof8A);
     expect(lido.equipes.flatMap((e) => e.membros.map((m) => m.id))).not.toContain(ids.enzo);
   });
 });

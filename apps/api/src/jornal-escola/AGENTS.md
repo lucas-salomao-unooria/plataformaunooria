@@ -23,18 +23,20 @@ em silêncio.
 
 - **Atividade = o PACOTE; rodada = o "Zerar".** O gate diz qual (pacote,
   rodada) está em andamento, e a sessão é por essa dupla. Zerar sobe a rodada e
-  volta à exploração **sem apagar nada**; homologar outro pacote desativa o
-  anterior (fica) e abre a rodada 1. Um ativo por turma: índice único PARCIAL
-  (`exp04ef1b_pacotes_um_ativo`), que o Prisma não enxerga.
-- **A missão NÃO nasce vazia.** Sem homologação, a turma roda o banco padrão
-  (`catalogo.ts`, "Feira de Ciências e Notícias da Cidade"): `garantirPacote`
-  cria o pacote `padrao` e o gate na primeira leitura — de estudante OU do
-  painel/pacotes do professor —, com o lock exclusivo da turma só quando falta o
-  gate, e RELÊ depois do lock (nasce um só sob concorrência).
-- **Homologar o MESMO conteúdo do ativo é idempotente** (mesma origem, tema e
-  notícias, comparadas com as chaves em ordem — o JSONB as reordena): devolve o
-  ativo, só carimba `aprovado_por` se estava nulo, não zera a aula nem cria
-  histórico. É o "Usar Banco Padrão" apertado com o padrão já em sala.
+  volta à exploração **sem apagar nada**. Um ativo (= EM ANDAMENTO) por turma:
+  índice único PARCIAL (`exp04ef1b_pacotes_um_ativo`), que o Prisma não enxerga.
+- **A plataforma NUNCA cria o pacote (ADR-130).** `homologar` cria a atividade
+  PRONTA (`ativo: false`) — o em andamento continua —, e `colocarEmAndamento`
+  (`POST :turmaId/pacotes/:pacoteId/em-andamento`) é o "Usar esta atividade
+  agora": desliga o anterior, liga o escolhido e aponta o gate para a rodada
+  SEGUINTE à última com sessão, com os portões fechados. Sem gate, `exigirPacote`
+  responde 403 `atividade-nao-preparada` — a tela de "ainda não foi aberta" que
+  a experiência já mostra. O banco da Unooria (`catalogo.ts`, "Feira de Ciências
+  e Notícias da Cidade", em `GET professor/material`) virou o ponto de partida
+  da CRIAÇÃO. `gerar-midia` aceita `?pacoteId=`: o professor prepara o pronto.
+- **Criar o MESMO conteúdo do pacote mais recente é idempotente** (mesma origem,
+  tema e notícias, comparadas com as chaves em ordem — o JSONB as reordena):
+  devolve aquele pacote, sem criar outro. É o segundo clique em "Criar atividade".
 - **O gabarito desce em portões, nunca antes.** A notícia do estudante é uma
   ALLOWLIST (`noticiaPublica`); o texto da pista desce no `POST pista` (é o
   REGISTRO da EF15CO04, e uma pista lida sem registro seria evidência

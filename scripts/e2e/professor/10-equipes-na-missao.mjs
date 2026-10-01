@@ -19,9 +19,9 @@ import { ALERTA_DE_ERRO, esperarOuFalharCedo } from "../lib/smoke.mjs";
  *  - "Mostrar equipes", a tela que vai para o projetor, tem o nome da equipe e
  *    o PRIMEIRO nome de cada estudante, e mais nada;
  *  - a faixa "Sua equipe" chega ao ESTUDANTE, acima do aparelho;
- *  - a ficha de Quem mandou isso? (exp05ef1b, 5º ano) também tem a seção: a
- *    missão NASCE com equipes (ADR-118), e é a api que diz `permitida` — o
- *    hub não tem lista de missões com equipe. Só leitura: nada é salvo ali.
+ *  - na ficha de Quem mandou isso? (exp05ef1b, 5º ano) a seção de equipes NÃO
+ *    existe mais: a equipe é de cada atividade (ADR-130) e mora na página
+ *    dela; a ficha mostra a lista das atividades. Só leitura: nada é salvo ali.
  *
  * FIXTURE. O fluxo da professora roda na 2EM-B, e termina DESFAZENDO: o estado
  * final é o inicial, então rodar de novo prova a mesma coisa. Nenhuma missão é
@@ -40,7 +40,9 @@ const COMPUTADORES = 10;
 const professorDa = (turma) =>
   contasDe("professor").find((c) => c.turma.split(" + ").includes(turma)) ?? conta("professor", { turma });
 
-const rotaDasEquipes = (turmaId) => `${BFF}/equipes/turma/${turmaId}/missao/${EXP_ID}`;
+/* O unooGPT é a missão SEM atividade (ADR-130): uma montagem por turma, com o
+   id fixo `turma` — e é por isso que ela continua montando equipes na ficha. */
+const rotaDasEquipes = (turmaId) => `${BFF}/equipes/turma/${turmaId}/missao/${EXP_ID}/atividade/turma`;
 
 async function idDaTurma(p, nome) {
   const resposta = await p.request.get(`${BFF}/turmas/minhas`);
@@ -145,7 +147,7 @@ await suite(
         mostra: `A seção na ficha da ${TURMA}: ${COMPUTADORES} computadores, a lista de quem faltou e a pergunta — sortear ou "Eu separo".`,
         prova:
           "A pergunta é SEMPRE feita, sem opção marcada: um padrão escolhido pela plataforma viraria a " +
-          "resposta de quem não leu. A terceira opção, manter as da última missão, só aparece quando a " +
+          "resposta de quem não leu. A opção de usar as equipes da atividade anterior só aparece quando a " +
           "turma tem equipes salvas em outra missão.",
         detalhe: `${opcoes} opção(ões) de montagem`,
       });
@@ -350,32 +352,44 @@ await suite(
     await r.entrar(p5, professora5.login);
     const turma5Id = await idDaTurma(p5, TURMA_QUEM_MANDOU);
     if (r.exigir(Boolean(turma5Id), `a professora leciona na ${TURMA_QUEM_MANDOU}`)) {
-      const equipes5 = await p5.request.get(`${BFF}/equipes/turma/${turma5Id}/missao/exp05ef1b`);
-      const corpo5 = equipes5.ok() ? await equipes5.json() : null;
-      r.exigir(
-        corpo5?.permitida === true,
-        `a api aceita equipe na exp05ef1b (GET /equipes/turma/…/missao/exp05ef1b → permitida=${String(corpo5?.permitida)})`,
-      );
+      /* A EQUIPE É DA ATIVIDADE (ADR-130): na exp05ef1b ela mora na página de
+         cada atividade (o pacote), não na ficha. A atividade da 5A é a que a
+         estudante/10 criou e pôs no ar, antes desta suíte. */
+      const pacotes5 = await p5.request.get(`${BFF}/quem-mandou-isso/turmas/${turma5Id}/pacotes`);
+      const lista5 = pacotes5.ok() ? await pacotes5.json() : null;
+      const atividade5 = lista5?.emAndamento?.pacoteId ?? lista5?.historico?.[0]?.id ?? null;
+      if (atividade5) {
+        const equipes5 = await p5.request.get(`${BFF}/equipes/turma/${turma5Id}/missao/exp05ef1b/atividade/${atividade5}`);
+        const corpo5 = equipes5.ok() ? await equipes5.json() : null;
+        r.exigir(
+          corpo5?.permitida === true,
+          `a api aceita equipe na atividade da exp05ef1b (GET /equipes/…/atividade/:pacote → permitida=${String(corpo5?.permitida)})`,
+        );
+      }
       await p5.goto(`${HUB}/professor/entre-redes/5-ano/unidade-1?turmaId=${turma5Id}`, { waitUntil: "domcontentloaded" });
       await p5.getByRole("heading", { name: "Quem Mandou Isso?", exact: true }).waitFor({ timeout: 30_000 });
-      const secao5 = await p5
-        .getByRole("heading", { name: "Equipes desta turma" })
+      const lista = await p5
+        .locator("[data-atividades-da-missao]")
         .waitFor({ timeout: 30_000 })
         .then(() => true)
         .catch(() => false);
-      r.exigir(secao5, "a ficha de Quem mandou isso?, aberta com a turma, tem a seção Equipes desta turma");
+      r.exigir(lista, "a ficha de Quem mandou isso?, aberta com a turma, tem a lista das atividades da turma");
+      r.exigir(
+        (await p5.getByRole("heading", { name: "Equipes desta turma" }).count()) === 0,
+        "e NÃO tem mais a seção de equipes da turma: a equipe é de cada atividade",
+      );
       const textoDaFicha = await p5.locator("body").innerText();
       r.exigir(
         ["EF05CO08", "EF05CO03", "EF05CO04"].every((codigo) => textoDaFicha.includes(codigo)),
         "e diz as habilidades que a missão mede: EF05CO08, EF05CO03 e EF05CO04",
       );
-      await p5.getByRole("heading", { name: "Equipes desta turma" }).scrollIntoViewIfNeeded().catch(() => {});
+      await p5.locator("[data-atividades-da-missao]").scrollIntoViewIfNeeded().catch(() => {});
       await r.registrar(p5, "ficha-quem-mandou-isso", {
-        titulo: "Quem mandou isso? nasce com equipes",
-        mostra: `A ficha do 5º ano aberta com a ${TURMA_QUEM_MANDOU}: as etapas, as habilidades e a seção Equipes desta turma.`,
+        titulo: "Quem mandou isso? e as atividades da turma",
+        mostra: `A ficha do 5º ano aberta com a ${TURMA_QUEM_MANDOU}: as etapas, as habilidades e as atividades da turma.`,
         prova:
-          "A segunda missão com equipe não precisou de uma linha no hub: a seção acende porque a api " +
-          "responde permitida. Quem entra representa a equipe, e o painel da aula conta por computador.",
+          "A equipe é de cada atividade (ADR-130): ela se monta na criação e se ajusta na página da " +
+          "atividade. Quem entra representa a equipe, e o painel da aula conta por computador.",
       });
     }
 

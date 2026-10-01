@@ -255,30 +255,25 @@ describe("as falas fixas da experiência (dentro do clone e na casca)", () => {
     expect(contarPalavras(FALA_DO_TIO)).toBe(41);
   });
 
-  test("as falas antes das perguntas montam a P1 (os dois selos) e a P2 (a regra), e os ids existem na ficha", () => {
+  test("as perguntas são as do PO, LITERAIS: o contexto na fala da Nina e a última frase no título da enquete", () => {
     expect(FALAS_ANTES_DAS_PERGUNTAS.map((f) => f.perguntaId)).toEqual(FICHA_EXP05EF1B.perguntas.map((p) => p.id));
-    expect(FALAS_ANTES_DAS_PERGUNTAS[0]?.fala).toBe(
-      "Antes de ir, me ajuda com uma coisa rápida? Aprendi que toda mensagem tem dois selos. Imagina uma que ganhou FALSA e EMOCIONAL.",
+    const [p1, p2] = FICHA_EXP05EF1B.perguntas;
+    expect(`${FALAS_ANTES_DAS_PERGUNTAS[0]?.fala} ${p1?.enunciado}`).toBe(
+      "Uma colega sua recebeu uma mensagem com tom calmo e formal, cheia de dados e números. Ela diz: 'Pode confiar, essa é verdadeira, olha como é séria.' Você concorda?",
     );
-    expect(FALAS_ANTES_DAS_PERGUNTAS[1]?.fala).toBe(
-      "Última! A minha regra é: SE a mensagem pedir pra repassar rápido, ENTÃO eu procuro a notícia em outro lugar antes de encaminhar.",
+    expect(`${FALAS_ANTES_DAS_PERGUNTAS[1]?.fala} ${p2?.enunciado}`).toBe(
+      "Três colegas escreveram regras pra decidir o que fazer antes de repassar uma mensagem. Qual dessas funciona de verdade?",
     );
-  });
-
-  test("a régua v2: em cada pergunta a certa NÃO é a mais longa, e a P1 exige NÃO, E e OU", () => {
-    for (const p of FICHA_EXP05EF1B.perguntas) {
-      const certa = p.alternativas.find((a) => a.status === "atingiu");
-      const maior = Math.max(...p.alternativas.map((a) => a.texto.length));
-      const empatadas = p.alternativas.filter((a) => a.texto.length === maior);
-      expect({ pergunta: p.id, certaEhAUnicaMaisLonga: empatadas.length === 1 && empatadas[0] === certa }).toEqual({
-        pergunta: p.id,
-        certaEhAUnicaMaisLonga: false,
-      });
-    }
-    const p1 = FICHA_EXP05EF1B.perguntas.find((p) => p.id === "p1");
-    const textos = (p1?.alternativas ?? []).map((a) => a.texto);
-    expect(textos.every((t) => /\bnão\b/.test(t))).toBe(true);
-    expect(textos.some((t) => /\be\b/.test(t)) && textos.some((t) => /\bou\b/.test(t))).toBe(true);
+    expect(p1?.alternativas.map((a) => [a.id, a.status, a.texto])).toEqual([
+      ["A1", "atingiu", "Não dá pra saber só pelo tom. Uma mensagem pode ser falsa mesmo parecendo séria, ou verdadeira mesmo sendo exagerada."],
+      ["A2", "em_processo", "Ela tem razão de desconfiar menos, mas ainda assim é bom checar."],
+      ["A3", "nao_atingiu", "Se a mensagem é séria e organizada, é porque quem escreveu pesquisou. Pode confiar."],
+    ]);
+    expect(p2?.alternativas.map((a) => [a.id, a.status, a.texto])).toEqual([
+      ["B1", "atingiu", "Se a mensagem pedir pra repassar rápido, então eu primeiro procuro a mesma notícia em outro lugar antes de encaminhar."],
+      ["B2", "em_processo", "Se a mensagem parecer estranha, então eu tomo mais cuidado."],
+      ["B3", "nao_atingiu", "Eu sempre mando pro grupo porque é melhor avisar do que deixar de avisar."],
+    ]);
   });
 
   test("tudo que a criança lê: até 45 palavras e nenhum termo proibido", () => {

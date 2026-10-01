@@ -402,10 +402,24 @@ export class AtividadesController {
         throw new HttpException({ mensagem: pendencias.join(" "), pendencias }, 422);
       }
 
-      // Uma turma por vez: ativar encerra a atividade ativa anterior do
-      // professor, senão `POST /runs` (que pega a mais recente) sequestraria a turma.
+      /*
+       * UMA EM ANDAMENTO POR TURMA (ADR-130). Ativar encerra a ativa da MESMA
+       * turma — de qualquer professor dela: duas ativas na sala e o `POST /runs`
+       * (que pega a mais recente) escolheria por ordem de criação, não pelo que
+       * o professor pôs no ar. A da turma do lado fica: era "uma por PROFESSOR",
+       * e o 8A e o 8B do mesmo professor não rodavam juntos.
+       *
+       * A atividade antiga SEM turma vale para a escola inteira; ativá-la
+       * mantém a regra de antes — encerra as ativas do professor —, porque ela
+       * concorre com todas as turmas dele.
+       */
       await tx.activity.updateMany({
-        where: { professorId: req.auth.usuarioId, escolaId: req.auth.escolaId, status: "ativa", id: { not: id } },
+        where: {
+          escolaId: req.auth.escolaId,
+          status: "ativa",
+          id: { not: id },
+          ...(atividade.turmaId ? { turmaId: atividade.turmaId } : { professorId: req.auth.usuarioId }),
+        },
         data: { status: "encerrada" },
       });
       await tx.activity.update({ where: { id }, data: { status: "ativa" } });

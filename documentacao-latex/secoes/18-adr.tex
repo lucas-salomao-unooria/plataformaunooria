@@ -9,7 +9,7 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{129 decisões}, numeradas até ADR-129, \textbf{sem lacunas}. A 117
+São \textbf{131 decisões}, numeradas até ADR-131, \textbf{sem lacunas}. A 117
 (o Jornal da Escola) entrou depois da 121: o número tinha sido
 reservado entre as sessões antes de qualquer uma escrever. Quando
 eram cem, as cinco últimas nasceram no MESMO dia, em três frentes paralelas, e não
@@ -166,7 +166,7 @@ que a cercam.
 \adrr{ADR-117} & Jornal da Escola: a redação é da Unooria, o professor abre o resultado e a revisão, e a IA só escolhe o layout & 2026-09-27 & Aceita\\
 \zebra \adrr{ADR-118} & Quem mandou isso? v2.2: atividade é o pacote, rodada é a reaplicação, e a régua mede pela seleção e pelas perguntas do PO & 2026-09-25 & Aceita; a régua foi substituída pela \adrr{ADR-120}\\
 \adrr{ADR-119} & O podcast da A Seleção é do professor, e a IA reescreve só as três falas que dependem do tema & 2026-09-26 & Aceita\\
-\zebra \adrr{ADR-120} & A régua v2 de Quem mandou isso?: cada habilidade pelo verbo dela, e refazer o mesmo pacote não mede memória & 2026-09-26 & Aceita\\
+\zebra \adrr{ADR-120} & A régua v2 de Quem mandou isso?: cada habilidade pelo verbo dela, e refazer o mesmo pacote não mede memória & 2026-09-26 & Aceita; as perguntas voltaram às do PO (\adrr{ADR-131})\\
 \adrr{ADR-121} & O CI verifica só os PRs para \cd{dev}, \cd{hml} e \cd{main} & 2026-09-26 & Aceita\\
 \zebra \adrr{ADR-122} & A modelagem UML entra no Capítulo 5, com os catorze tipos da UML 2.5.1 e par Mermaid mesmo onde o Mermaid não tem o tipo & 2026-09-27 & Aceita\\
 \adrr{ADR-123} & O plano anual tem uma estrutura só, definida pelo prompt, e o template é exemplo de formato & 2026-09-30 & Aceita\\
@@ -176,6 +176,8 @@ que a cercam.
 \adrr{ADR-127} & Só \emph{data store}, inclusive para as habilidades da BNCC & 2026-09-30 & Aceita, em avaliação; recorta a \adrr{ADR-73}\\
 \zebra \adrr{ADR-128} & SSE só no chat do agente & 2026-09-30 & Aceita\\
 \adrr{ADR-129} & O \emph{markdown} do agente vira HTML no navegador & 2026-09-30 & Aceita\\
+\adrr{ADR-130} & A atividade é do professor, e a equipe é da atividade & 2026-10-01 & Aceita\\
+\zebra \adrr{ADR-131} & As perguntas de evidência de Quem mandou isso? são as do PO, literais & 2026-10-01 & Aceita\\
 \bottomrule
 \end{tabularx}
 
@@ -10419,6 +10421,7 @@ cinco coisas não se sustentavam:
     sem marca nova. Quem faltou é medido na primeira vez que joga. Para medir a
     turma de novo, aprova-se um pacote novo, e a tela do \enquote{Zerar} diz
     isso.
+  \item \emph{Substituído pela \adrr{ADR-131}: as duas perguntas voltaram às do PO.}
   \item \textbf{EF05CO03 pela P1 nova, que exige a operação.} Diante de uma
     mensagem \enquote{FALSA e EMOCIONAL}, a criança escolhe a frase certa entre
     três com \enquote{não}, \enquote{e} e \enquote{ou}: a verdadeira atinge; a
@@ -11320,3 +11323,155 @@ tabela só fecha várias linhas depois.
 \emph{markdown} não expressa (e a tentação de ligar HTML cru); ou um segundo
 produto querer o mesmo componente, caso em que ele sobe para o DS com a
 configuração travada.
+
+% ---------------------------------------------------------------------------
+\section{ADR-130 --- A atividade é do professor, e a equipe é da atividade}
+\label{adr:atividade-e-equipe}
+
+\textbf{Data.} 2026-10-01. \textbf{Status.} Aceita. \textbf{Supera em parte} a
+\adrr{ADR-111} (a montagem das equipes deixa de ser por turma $\times$ missão)
+e muda o nascimento do conteúdo da A Seleção (exp07ef1b) e do Jornal da Escola
+(exp04ef1b), que nasciam com o banco curado criado sozinho.
+
+\begin{especificacao}{Contexto}
+O Instanooria (exp08ef1b) tinha, desde o começo, uma lista \enquote{Suas
+atividades nesta missão}: cada atividade é uma configuração da missão para um
+tema do professor. As outras missões com ficha pedagógica já tinham a mesma
+coisa POR BAIXO --- a cobertura da A Seleção, o pacote do Jornal e o do Quem
+Mandou Isso? (exp05ef1b) eram, na api, a atividade da evidência (\adrr{ADR-112})
+---, mas a tela escondia isso em \enquote{A aula e os resultados}, onde aprovar
+um tema novo TROCAVA a aula em andamento. E as equipes eram uma seção solta no
+alto da ficha, uma montagem por turma $\times$ missão: duas atividades da mesma
+missão na mesma turma (uma por conteúdo, em dias diferentes, com o laboratório
+dividido de outro jeito) dividiam, em silêncio, as mesmas equipes. O dono do
+produto pediu as quatro missões como o Instanooria, com a equipe DENTRO da
+construção da atividade.
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{itemize}
+  \item \textbf{A missão é o esqueleto narrativo; a atividade é a missão que a
+    turma faz de fato, e a plataforma nunca a cria.} Acabou a cobertura
+    \cd{padrao} criada na primeira entrada da A Seleção e o pacote \cd{padrao}
+    do Jornal: sem atividade em andamento, a api responde 403
+    \cd{atividade-nao-preparada} --- a mesma porta fechada que a experiência já
+    mostra para a liberação (\adrr{ADR-69}), e por isso nenhum \emph{bundle}
+    muda. O banco curado vira ponto de partida editável da criação.
+  \item \textbf{Criar não põe no ar.} A atividade nasce PRONTA, e o professor
+    escolhe, na lista, qual está EM ANDAMENTO (\enquote{Usar esta atividade
+    agora}); uma por turma. Pôr no ar abre a rodada SEGUINTE à última que rodou,
+    na etapa inicial: retomar a mesma depois do Mural seria o \enquote{voltar}
+    que o botão único proíbe. No Instanooria, \enquote{Ativar} passou de
+    \enquote{uma ativa por professor} a \enquote{uma ativa por turma}.
+  \item \textbf{A criação é um assistente de quatro passos} no hub (turma,
+    conteúdo, equipes, revisar e criar), o mesmo para as missões; o passo do
+    conteúdo é de cada uma. O Instanooria mantém a criação dele (a geração dos
+    posts é longa e assíncrona) e as equipes entram na página da atividade,
+    antes do \enquote{Ativar}.
+  \item \textbf{A equipe é da atividade}: \cd{atividade\_id} (texto opaco, o
+    alfabeto de \cd{evidencias\_marcas}) nas três tabelas de equipes e na chave;
+    a missão sem atividade (o unooGPT, até ser refeito) usa o id fixo
+    \cd{turma}. A atividade em andamento de cada missão é lida num
+    \cd{Record} exaustivo (\arq{equipes/atividades.ts}), e é ela que vale para a
+    faixa do estudante e para a sala.
+  \item \textbf{Terceiro modo, \enquote{um aluno por computador}}
+    (\cd{individual}): grava a montagem, sem equipes e com \cd{computadores}
+    nulo --- o painel volta a contar por criança.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Uma tabela geral de atividades na plataforma}: obrigaria a
+    migrar quatro modelos que já funcionam (e já são a atividade da evidência)
+    para um quinto; o \cd{atividade\_id} opaco faz o mesmo papel nas equipes, como
+    já fazia na evidência.
+  \item \textbf{Manter a equipe por turma $\times$ missão e só mover a tela}:
+    resolvia a tela e mantinha o defeito --- a segunda atividade herdando as
+    equipes da primeira.
+  \item \textbf{Manter o conteúdo padrão criado sozinho}: a lista teria uma
+    atividade que o professor não criou, e \enquote{a plataforma não cria nada}
+    deixaria de valer justamente nas duas missões em que ela criava.
+  \item \textbf{Criar já em andamento} (a regra de antes): preparar a próxima
+    aula tiraria do ar a de agora.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{A missão só abre com uma atividade em andamento.} Professor que
+    libera a missão na sala e não cria atividade vê a turma diante da porta
+    fechada; a lista da ficha diz isso, mas é um passo a mais do que antes.
+  \item \textbf{Criar e montar equipes não são uma transação}: são dois
+    módulos. Se a equipe falhar depois de a atividade nascer, a atividade fica,
+    e a página dela mostra o que faltou --- nunca se apaga o conteúdo por causa
+    da equipe.
+  \item \textbf{Quem faltou só se sabe no dia}: o sorteio da criação é sobre a
+    turma inteira, e a página da atividade é onde se marca a falta e se refaz.
+  \item \textbf{As montagens que já existiam} foram para a atividade em
+    andamento da turma; a que não tinha atividade em andamento saiu.
+\end{itemize}
+
+\textbf{Gatilho de reavaliação.} O unooGPT ser refeito com atividades (o id fixo
+\cd{turma} sai); uma quinta missão com atividade (entra no \cd{Record} de
+\arq{equipes/atividades.ts} e em \cd{MISSOES\_COM\_ATIVIDADE} no hub); ou a
+necessidade de reabrir a MESMA rodada de uma atividade, que pediria guardar a
+etapa por atividade, e não só no gate da turma.
+
+% ---------------------------------------------------------------------------
+\section{ADR-131 --- As perguntas de evidência de Quem mandou isso? são as do PO, literais}
+\label{adr:perguntas-do-po-quem-mandou}
+
+\textbf{Data.} 2026-10-01. \textbf{Status.} Aceita. \textbf{Substitui} a parte
+das perguntas da \adrr{ADR-120}; o resto dela --- a faixa da EF05CO08, a
+EF05CO08 medida uma vez por criança e pacote, e a rubrica do Se/Então --- continua
+valendo.
+
+\begin{especificacao}{Contexto}
+A \adrr{ADR-120} reescreveu as duas perguntas da Nina: a P1 passou a pedir a
+frase certa com \enquote{não}, \enquote{e} e \enquote{ou}, e a P2, seguir uma
+regra pronta no áudio do tio. Os textos eram da equipe e trocavam os do
+documento de evidência do PO. O dono do produto decidiu que as perguntas são
+as do PO.
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{itemize}
+  \item \textbf{A P1 (EF05CO03) e a P2 (EF05CO04) são as do PO}, com o
+    enunciado, as alternativas A1 a A3 e B1 a B3 e os níveis do documento,
+    palavra por palavra. A ficha sobe para a versão 3; as marcas das versões 1
+    e 2 guardam a versão delas.
+  \item \textbf{A pergunta do PO chega em duas partes}: o contexto é a fala da
+    Nina que antecede a enquete, e a última frase (\enquote{Você concorda?},
+    \enquote{Qual dessas funciona de verdade?}) é o título da enquete. Juntas,
+    são o texto do PO sem uma palavra a mais, e há teste que cobra a soma.
+  \item \textbf{A rubrica do Se/Então fica}: a nota do próprio PO diz que
+    classificar a regra escrita \enquote{exigiria IA ou leitura do professor},
+    e é a leitura do professor que a rubrica oferece. A P2 mede reconhecer; a
+    rubrica, criar.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Manter as perguntas da \adrr{ADR-120}.} Era texto da equipe no
+    lugar do texto do PO, e a decisão sobre o instrumento é do produto.
+  \item \textbf{A pergunta inteira do PO no título da enquete}, com uma fala
+    genérica antes. O título de uma enquete é curto no aplicativo real, e a fala
+    da Nina já é o lugar do contexto.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{Nas duas perguntas, a alternativa certa volta a ser a mais
+    longa}, a pista que a \adrr{ADR-120} tinha tirado. O teste que a cobrava saiu.
+  \item \textbf{Três versões da ficha no histórico}: o painel não separa as
+    rodadas medidas por cada uma.
+\end{itemize}
+
+\textbf{Gatilho.} O PO trocar o texto das perguntas (a ficha sobe de versão), ou
+os professores relatarem que a turma acerta pelo tamanho da alternativa.
+

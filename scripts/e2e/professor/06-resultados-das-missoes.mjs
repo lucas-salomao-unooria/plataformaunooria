@@ -136,7 +136,9 @@ await suite(
     const opcoesSetimo = await p
       .locator("select#turma option")
       .evaluateAll((os) => os.map((o) => ({ value: o.value, label: o.textContent ?? "" })));
-    const alvoSetimo = opcoesSetimo.find((o) => o.value);
+    /* A turma em que a estudante/11 CRIOU a atividade e a pôs no ar (ADR-130):
+       sem atividade em andamento, a página da missão não tem aula para mostrar. */
+    const alvoSetimo = opcoesSetimo.find((o) => o.value && o.label.includes("7A")) ?? opcoesSetimo.find((o) => o.value);
     if (alvoSetimo) {
       await p.selectOption("select#turma", alvoSetimo.value);
       await p.waitForURL("**turmaId=**", { timeout: 20_000 });
@@ -144,7 +146,7 @@ await suite(
     }
     r.exigir(
       (await p.locator("[data-etapa]").count()) > 0,
-      "o botão único da aula e a etapa atual ficam na MESMA tela dos resultados",
+      "o botão único da aula e a etapa atual ficam na MESMA tela da atividade em andamento",
     );
     const folhaSetimo = await p.locator("main").innerText().catch(() => "");
     r.exigir(
@@ -152,10 +154,10 @@ await suite(
       "a folha da A Seleção não traz coluna de pontos",
     );
     await r.registrar(p, "resultados-a-selecao", {
-      titulo: "A aula da A Seleção e os resultados",
+      titulo: "A atividade da A Seleção: a aula e os resultados",
       mostra:
-        "O preparo da cobertura, o botão que avança a turma (Mural, fichas, explicação), a folha " +
-        "por computador e o painel de habilidades da BNCC.",
+        "A atividade em andamento: as equipes, as imagens, o botão que avança a turma (Mural, " +
+        "fichas, explicação), a folha por computador e o painel de habilidades da BNCC.",
       prova:
         "Conduzir e ler ficam juntos porque a condução acontece DURANTE a aula. A folha mostra " +
         "o par e as lentes de cada computador, nunca uma nota.",

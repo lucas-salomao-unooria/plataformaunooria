@@ -4,7 +4,8 @@ import { PrismaService } from "../prisma/prisma.service";
 import { exigirMissaoLiberada } from "../comum/liberacao";
 import { ondeAsTurmasSaoVisiveis, professorLeciona } from "../comum/turmas-do-professor";
 import { mapaDeEquipes } from "../equipes/consulta";
-import { colapsarEmUnidades, type EquipeDoMapa } from "../equipes/regras";
+/* `ATIVIDADE_DA_TURMA`: missão SEM atividade (ADR-130) — uma montagem por turma. */
+import { ATIVIDADE_DA_TURMA, colapsarEmUnidades, type EquipeDoMapa } from "../equipes/regras";
 import { EXP_ID, LIMITE_SALVOS, VIDEOS, semGabarito, type VideoPublico } from "./catalogo";
 import { erroDeJogo } from "./erros";
 import {
@@ -255,7 +256,7 @@ export class BackupUnootubeService {
          missão: o computador que trocou de login no meio da aula continua na
          sessão nova. */
       const atualizadoEm = new Map(estudantes.map((a) => [a.id, a.backupUnootube[0]?.atualizadoEm.getTime() ?? 0]));
-      const mapa = await mapaDeEquipes(tx, escolaId, turmaId, EXP_ID);
+      const mapa = await mapaDeEquipes(tx, escolaId, turmaId, EXP_ID, ATIVIDADE_DA_TURMA);
       const unidades = colapsarEmUnidades(
         linhas,
         (l) => l.estudanteId,

@@ -33,7 +33,8 @@ export type CodigoErro =
   | "preparo-invalido"
   | "rodada-desatualizada"
   | "payload-invalido"
-  | "turma-nao-encontrada";
+  | "turma-nao-encontrada"
+  | "atividade-nao-encontrada";
 
 export const STATUS: Readonly<Record<CodigoErro, number>> = {
   "grupo-em-preparo": 409,
@@ -58,6 +59,7 @@ export const STATUS: Readonly<Record<CodigoErro, number>> = {
   "rodada-desatualizada": 409,
   "payload-invalido": 400,
   "turma-nao-encontrada": 404,
+  "atividade-nao-encontrada": 404,
 };
 
 export const MENSAGENS: Readonly<Record<CodigoErro, string>> = {
@@ -86,6 +88,7 @@ export const MENSAGENS: Readonly<Record<CodigoErro, string>> = {
   "rodada-desatualizada": "A turma já está em outra rodada. Recarregue o painel.",
   "payload-invalido": "Não entendi o que veio da tela.",
   "turma-nao-encontrada": "Turma não encontrada.",
+  "atividade-nao-encontrada": "Atividade não encontrada nesta turma.",
 };
 
 export class ErroDeJogo extends HttpException {

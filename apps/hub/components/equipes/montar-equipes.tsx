@@ -2,7 +2,14 @@
 
 import { dataCurta } from "@edu/sdk";
 import { useState } from "react";
-import { Button, Card, Checkbox, Icon, NumberButton, RadioGroup } from "@edu/ui/ds";
+import {
+  Button,
+  Card,
+  Checkbox,
+  Icon,
+  NumberButton,
+  RadioGroup,
+} from "@edu/ui/ds";
 import {
   MISSAO_QUE_AGRUPA_POR_LADO,
   tamanhoDasEquipes,
@@ -10,15 +17,15 @@ import {
   type UltimasEquipes,
 } from "@/lib/equipes";
 
-export type EscolhaDeMontagem = "sorteio" | "manual" | "ultima";
+export type EscolhaDeMontagem = "sorteio" | "manual" | "individual" | "ultima";
 
 /**
  * O começo: quantos computadores, quem faltou, e COMO montar.
  *
- * A pergunta "sortear ou eu separo" é SEMPRE feita, sem opção marcada de
- * antemão — é decisão do professor, e um padrão escolhido por nós viraria a
- * resposta de quem não leu. A terceira opção só aparece quando a turma tem
- * equipes salvas em outra missão.
+ * A pergunta "sortear, eu separo ou um aluno por computador" é SEMPRE feita,
+ * sem opção marcada de antemão — é decisão do professor, e um padrão escolhido
+ * por nós viraria a resposta de quem não leu. A quarta opção só aparece quando
+ * a turma tem equipes salvas em outra atividade.
  *
  * A lista de presença abre por renderização condicional, e não dentro de um
  * `Collapse` do DS: fechado, ele deixa os ~40 checkboxes da turma focáveis
@@ -44,7 +51,11 @@ export function MontarEquipes({
   tituloDaUltima: string | null;
   ocupado: boolean;
   podeCancelar: boolean;
-  onContinuar: (escolha: EscolhaDeMontagem, computadores: number, ausentes: string[]) => void;
+  onContinuar: (
+    escolha: EscolhaDeMontagem,
+    computadores: number,
+    ausentes: string[],
+  ) => void;
   onCancelar: () => void;
 }) {
   const [computadores, setComputadores] = useState(computadoresIniciais);
@@ -61,7 +72,9 @@ export function MontarEquipes({
   const valor = Math.min(Math.max(1, computadores), maximo);
 
   const alternarFalta = (id: string, faltou: boolean) =>
-    setAusentes((atual) => (faltou ? [...new Set([...atual, id])] : atual.filter((x) => x !== id)));
+    setAusentes((atual) =>
+      faltou ? [...new Set([...atual, id])] : atual.filter((x) => x !== id),
+    );
 
   const opcoes = [
     {
@@ -75,29 +88,47 @@ export function MontarEquipes({
       label: "Eu separo",
       helperText: `A plataforma cria ${valor} ${valor === 1 ? "equipe vazia" : "equipes vazias"} e você põe cada estudante numa delas.`,
     },
-    ...(ultima?.origem ? [{ value: "ultima", label: "Manter as equipes da última missão", helperText: textoDaUltima(ultima, tituloDaUltima, expId) }] : []),
+    {
+      value: "individual",
+      label: "Um aluno por computador",
+      helperText:
+        "Cada estudante entra no próprio computador. Nenhuma equipe é montada.",
+    },
+    ...(ultima?.origem
+      ? [
+          {
+            value: "ultima",
+            label: "Usar as equipes da atividade anterior",
+            helperText: textoDaUltima(ultima, tituloDaUltima, expId),
+          },
+        ]
+      : []),
   ];
 
   return (
     <Card variant="outlined">
       <div className="flex flex-col gap-6">
-        <div className="flex flex-col gap-2">
-          <span className="text-[15px] font-semibold text-unooria-neutral-950">
-            Quantos computadores vocês vão usar?
-          </span>
-          <div>
-            <NumberButton
-              value={valor}
-              min={1}
-              max={maximo}
-              onChange={setComputadores}
-              ariaLabel="Quantos computadores vocês vão usar?"
-              ariaLabelDecrement="Um computador a menos"
-              ariaLabelIncrement="Um computador a mais"
-            />
+        {escolha === "individual" ? null : (
+          <div className="flex flex-col gap-2">
+            <span className="text-[15px] font-semibold text-unooria-neutral-950">
+              Quantos computadores vocês vão usar?
+            </span>
+            <div>
+              <NumberButton
+                value={valor}
+                min={1}
+                max={maximo}
+                onChange={setComputadores}
+                ariaLabel="Quantos computadores vocês vão usar?"
+                ariaLabelDecrement="Um computador a menos"
+                ariaLabelIncrement="Um computador a mais"
+              />
+            </div>
+            <p className="text-[13px] text-unooria-neutral-500">
+              {tamanhoDasEquipes(presentes, valor)}
+            </p>
           </div>
-          <p className="text-[13px] text-unooria-neutral-500">{tamanhoDasEquipes(presentes, valor)}</p>
-        </div>
+        )}
 
         <div className="flex flex-col gap-3">
           <div>
@@ -106,7 +137,14 @@ export function MontarEquipes({
               size="sm"
               onClick={() => setVendoPresenca((aberto) => !aberto)}
               aria-expanded={vendoPresenca}
-              rightIcon={<Icon name={vendoPresenca ? "expand_less" : "expand_more"} size="xs" color="currentColor" aria-hidden />}
+              rightIcon={
+                <Icon
+                  name={vendoPresenca ? "expand_less" : "expand_more"}
+                  size="xs"
+                  color="currentColor"
+                  aria-hidden
+                />
+              }
             >
               Quem faltou hoje?
             </Button>
@@ -114,7 +152,8 @@ export function MontarEquipes({
           {vendoPresenca ? (
             <div className="flex flex-col gap-2">
               <p className="text-[13px] text-unooria-neutral-500">
-                Marque quem faltou: fica fora do sorteio e aparece em &quot;Sem equipe&quot;.
+                Marque quem faltou: fica fora do sorteio e aparece em &quot;Sem
+                equipe&quot;.
               </p>
               <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                 {turma.map((pessoa) => (
@@ -130,7 +169,9 @@ export function MontarEquipes({
             </div>
           ) : ausentes.length > 0 ? (
             <p className="text-[13px] text-unooria-neutral-700">
-              {ausentes.length === 1 ? "1 falta marcada." : `${ausentes.length} faltas marcadas.`}
+              {ausentes.length === 1
+                ? "1 falta marcada."
+                : `${ausentes.length} faltas marcadas.`}
             </p>
           ) : null}
         </div>
@@ -155,7 +196,12 @@ export function MontarEquipes({
             Continuar
           </Button>
           {podeCancelar ? (
-            <Button variant="ghost" size="md" isDisabled={ocupado} onClick={onCancelar}>
+            <Button
+              variant="ghost"
+              size="md"
+              isDisabled={ocupado}
+              onClick={onCancelar}
+            >
               Cancelar
             </Button>
           ) : null}
@@ -165,9 +211,15 @@ export function MontarEquipes({
   );
 }
 
-function textoDaUltima(ultima: UltimasEquipes, titulo: string | null, expId: string): string {
-  const quando = ultima.origem ? ` em ${dataCurta(ultima.origem.atualizadoEm)}` : "";
-  const onde = titulo ? `no ${titulo}` : "na missão anterior";
+function textoDaUltima(
+  ultima: UltimasEquipes,
+  titulo: string | null,
+  expId: string,
+): string {
+  const quando = ultima.origem
+    ? ` em ${dataCurta(ultima.origem.atualizadoEm)}`
+    : "";
+  const onde = titulo ? `no ${titulo}` : "na atividade anterior";
   const saidas =
     ultima.saidas === 0
       ? ""

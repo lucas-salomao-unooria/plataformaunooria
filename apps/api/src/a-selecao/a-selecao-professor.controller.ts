@@ -12,6 +12,7 @@ import {
   TEMA_PADRAO,
 } from "./catalogo";
 import { MaterialDoProfessorSchema } from "./contrato-de-rotas";
+import { FALAS_DO_TEMA_PADRAO } from "./podcast";
 
 /**
  * O material do GUIA DA AULA da exp07ef1b — o banco curado COM gabarito e o
@@ -46,6 +47,9 @@ export class ASelecaoProfessorController {
     return {
       tema: TEMA_PADRAO,
       posts: POSTS_PADRAO.map((p) => ({ ...p })),
+      /* O ponto de partida da criação (ADR-130): "Usar a cobertura pronta da
+         Unooria" leva os posts E as falas do podcast do sheet. */
+      podcast: { ...FALAS_DO_TEMA_PADRAO },
       roteiroDaEtapa4: { aviso: ROTEIRO_DA_ETAPA_4.aviso, perguntas: [...ROTEIRO_DA_ETAPA_4.perguntas] },
       gatilhos: { ...GATILHOS_DO_PROFESSOR },
       colegasVirtuais: COLEGAS_VIRTUAIS_IDS.map((id) => ({

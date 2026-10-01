@@ -8,8 +8,9 @@ import { colapsarEmUnidades } from "../equipes/regras";
 import { EvidenciasService, type ContextoDaAtividade } from "../evidencias/evidencias.service";
 import type { Nivel } from "../evidencias/regras";
 import { logger } from "../observabilidade/logger";
+import { ehUuid } from "../motor/guardas";
 import { PrismaService } from "../prisma/prisma.service";
-import { BLOCOS_DA_CHAVE, DISCIPLINA_PADRAO, TEMA_PADRAO, noticiasPadrao } from "./catalogo";
+import { BLOCOS_DA_CHAVE, noticiasPadrao } from "./catalogo";
 import { NoticiaDoPacoteSchema, type NoticiaDoPacote } from "./contrato-de-rotas";
 import { DiagramacaoService } from "./diagramacao.service";
 import { erroDeJogo } from "./erros";
@@ -701,7 +702,7 @@ export class JornalEscolaService implements OnModuleInit {
   async painel(escolaId: string, turmaId: string, professorId?: string) {
     return this.prisma.comTenancy(async (tx) => {
       const turma = await this.turmaVisivel(tx, escolaId, turmaId, professorId);
-      const { gate, pacote } = await this.garantirPacote(tx, escolaId, turmaId);
+      const { gate, pacote } = await this.exigirPacote(tx, escolaId, turmaId);
       if (professorId) {
         await tx.exp04ef1bPacote.updateMany({
           where: { id: pacote.id, escolaId },
@@ -723,8 +724,9 @@ export class JornalEscolaService implements OnModuleInit {
           },
           orderBy: { displayName: "asc" },
         }),
-        mapaDeEquipes(tx, escolaId, turmaId, EXP_ID),
-        computadoresDaMontagem(tx, escolaId, turmaId, EXP_ID),
+        /* A equipe é da ATIVIDADE (ADR-130): a deste pacote. */
+        mapaDeEquipes(tx, escolaId, turmaId, EXP_ID, gate.pacoteId),
+        computadoresDaMontagem(tx, escolaId, turmaId, EXP_ID, gate.pacoteId),
       ]);
 
       const linhas = estudantes.map((e) => {
@@ -830,7 +832,7 @@ export class JornalEscolaService implements OnModuleInit {
     return this.prisma.comTenancy(async (tx) => {
       const turma = await this.turmaVisivel(tx, escolaId, turmaId, professorId);
       await this.travarTurma(tx, escolaId, turmaId, "exclusivo");
-      const { gate } = await this.garantirPacote(tx, escolaId, turmaId);
+      const { gate } = await this.exigirPacote(tx, escolaId, turmaId);
 
       const r = transicaoDoGate(gate.etapa, para);
       if (!r.ok) throw erroDeJogo(r.codigo, { etapaAtual: gate.etapa, proximaEtapa: proximaEtapa(gate.etapa) });
@@ -870,7 +872,7 @@ export class JornalEscolaService implements OnModuleInit {
     return this.prisma.comTenancy(async (tx) => {
       await this.turmaVisivel(tx, escolaId, turmaId, professorId);
       await this.travarTurma(tx, escolaId, turmaId, "exclusivo");
-      const { gate } = await this.garantirPacote(tx, escolaId, turmaId);
+      const { gate } = await this.exigirPacote(tx, escolaId, turmaId);
       const linha = await tx.exp04ef1bGateTurma.update({
         where: { escolaId_turmaId: { escolaId, turmaId } },
         data: { rodada: gate.rodada + 1, etapa: ETAPA_INICIAL, resultadoLiberadoEm: null, revisaoLiberadaEm: null },
@@ -881,14 +883,18 @@ export class JornalEscolaService implements OnModuleInit {
   }
 
   /**
-   * Os pacotes da turma: o ATIVO inteiro, com o gabarito (é a tela do preparo),
-   * e o histórico — que é o seletor `?pacote=` do painel de habilidades, porque
-   * cada pacote é uma atividade.
+   * As ATIVIDADES da turma (ADR-130): o pacote em andamento inteiro, com o
+   * gabarito, e a lista de todos — que é a lista de atividades da ficha e o
+   * seletor `?pacote=` do painel de habilidades. `ativo` é `null` quando o
+   * professor ainda não pôs nenhum em andamento: a plataforma não cria atividade.
    */
   async pacotes(escolaId: string, turmaId: string, professorId?: string) {
     return this.prisma.comTenancy(async (tx) => {
       await this.turmaVisivel(tx, escolaId, turmaId, professorId);
-      const { gate, pacote } = await this.garantirPacote(tx, escolaId, turmaId);
+      const emAndamento = await tx.exp04ef1bGateTurma.findUnique({
+        where: { escolaId_turmaId: { escolaId, turmaId } },
+        include: { pacote: { select: SELECAO_DO_PACOTE } },
+      });
       const [todos, rodadas] = await Promise.all([
         tx.exp04ef1bPacote.findMany({
           where: { escolaId, turmaId },
@@ -898,21 +904,14 @@ export class JornalEscolaService implements OnModuleInit {
         tx.exp04ef1bSessao.groupBy({ by: ["pacoteId"], where: { escolaId, turmaId }, _max: { rodada: true } }),
       ]);
       const maiorRodada = new Map(rodadas.map((r) => [r.pacoteId, r._max.rodada ?? 0]));
-      const imagens: Record<string, string> = {};
-      for (const [id, url] of Object.entries(pacote.midia)) if (url) imagens[id] = url;
       return {
-        ativo: {
-          id: pacote.id,
-          disciplina: pacote.disciplina,
-          tema: pacote.tema,
-          origem: pacote.origem,
-          rodada: gate.rodada,
-          etapa: gate.etapa,
-          topicos: pacote.topicos,
-          noticias: pacote.noticias,
-          midia: resumoDaMidia(pacote),
-          imagens,
-        },
+        ativo: emAndamento
+          ? {
+              ...this.pacoteParaATela(pacoteDaLinha(emAndamento.pacote)),
+              rodada: emAndamento.rodada,
+              etapa: normalizarEtapa(emAndamento.etapa),
+            }
+          : null,
         historico: todos.map((p) => ({
           id: p.id,
           disciplina: p.disciplina,
@@ -927,16 +926,107 @@ export class JornalEscolaService implements OnModuleInit {
   }
 
   /**
-   * "Aprovar Pacote" — a curadoria humana (ADR-66/67), e o ÚNICO lugar que
+   * UM pacote, inteiro e com o gabarito — a página da atividade, esteja ou não
+   * em andamento. É de onde o professor prepara as imagens de uma atividade
+   * PRONTA antes de pô-la no ar.
+   */
+  async pacote(escolaId: string, turmaId: string, professorId: string | undefined, pacoteId: string) {
+    return this.prisma.comTenancy(async (tx) => {
+      await this.turmaVisivel(tx, escolaId, turmaId, professorId);
+      const linha = await this.pacoteDaTurma(tx, escolaId, turmaId, pacoteId);
+      const [gate, rodadas] = await Promise.all([
+        this.lerGate(tx, escolaId, turmaId),
+        tx.exp04ef1bSessao.aggregate({ where: { escolaId, turmaId, pacoteId }, _max: { rodada: true } }),
+      ]);
+      const emAndamento = gate?.pacoteId === pacoteId;
+      return {
+        ...this.pacoteParaATela(pacoteDaLinha(linha)),
+        ativo: emAndamento,
+        rodada: emAndamento && gate ? gate.rodada : null,
+        etapa: emAndamento && gate ? gate.etapa : null,
+        criadoEm: linha.criadoEm.toISOString(),
+        rodadas: rodadas._max.rodada ?? 0,
+      };
+    }, escolaId);
+  }
+
+  /**
+   * "USAR ESTA ATIVIDADE AGORA" (ADR-130): o professor escolhe, na lista, qual
+   * atividade a turma faz. O pacote que estava em andamento volta a ser PRONTO
+   * — fica, com as sessões e as rodadas —, e o gate passa a apontar o escolhido,
+   * com os portões fechados.
+   *
+   * A RODADA: o pacote que nunca rodou começa na 1; o que já rodou abre a
+   * SEGUINTE à última — retomar a mesma depois do resultado liberado seria o
+   * "voltar" que o botão único proíbe. Nada se perde: as rodadas anteriores
+   * continuam no painel de habilidades (ADR-112).
+   *
+   * Idempotente: pôr no ar o que já está no ar não muda nada.
+   */
+  async colocarEmAndamento(escolaId: string, turmaId: string, professorId: string | undefined, pacoteId: string) {
+    return this.prisma.comTenancy(async (tx) => {
+      await this.turmaVisivel(tx, escolaId, turmaId, professorId);
+      await this.travarTurma(tx, escolaId, turmaId, "exclusivo");
+      await this.pacoteDaTurma(tx, escolaId, turmaId, pacoteId);
+
+      const atual = await this.lerGate(tx, escolaId, turmaId);
+      if (atual?.pacoteId === pacoteId) {
+        return { pacoteId, rodada: atual.rodada, etapa: atual.etapa, mudou: false };
+      }
+
+      const ultima = await tx.exp04ef1bSessao.aggregate({ where: { escolaId, turmaId, pacoteId }, _max: { rodada: true } });
+      const rodada = (ultima._max.rodada ?? 0) + 1;
+      await tx.exp04ef1bPacote.updateMany({ where: { escolaId, turmaId, ativo: true }, data: { ativo: false } });
+      await tx.exp04ef1bPacote.update({ where: { id: pacoteId }, data: { ativo: true } });
+      const gate = { pacoteId, rodada, etapa: ETAPA_INICIAL, resultadoLiberadoEm: null, revisaoLiberadaEm: null };
+      await tx.exp04ef1bGateTurma.upsert({
+        where: { escolaId_turmaId: { escolaId, turmaId } },
+        create: { escolaId, turmaId, ...gate },
+        update: gate,
+      });
+      return { pacoteId, rodada, etapa: ETAPA_INICIAL, mudou: true };
+    }, escolaId);
+  }
+
+  /** O pacote como as telas do professor o mostram, com o gabarito. */
+  private pacoteParaATela(pacote: PacoteLido) {
+    const imagens: Record<string, string> = {};
+    for (const [id, url] of Object.entries(pacote.midia)) if (url) imagens[id] = url;
+    return {
+      id: pacote.id,
+      disciplina: pacote.disciplina,
+      tema: pacote.tema,
+      origem: pacote.origem,
+      topicos: pacote.topicos,
+      noticias: pacote.noticias,
+      midia: resumoDaMidia(pacote),
+      imagens,
+    };
+  }
+
+  /** O pacote desta turma, ou 404 — o de outra turma não tem a existência confirmada. */
+  private async pacoteDaTurma(tx: Prisma.TransactionClient, escolaId: string, turmaId: string, pacoteId: string) {
+    const linha = ehUuid(pacoteId)
+      ? await tx.exp04ef1bPacote.findFirst({
+          where: { id: pacoteId, escolaId, turmaId },
+          select: { ...SELECAO_DO_PACOTE, criadoEm: true },
+        })
+      : null;
+    if (!linha) throw erroDeJogo("atividade-nao-encontrada");
+    return linha;
+  }
+
+  /**
+   * "Criar atividade" — a curadoria humana (ADR-66/67), e o ÚNICO lugar que
    * liga `aprovado`.
    *
-   * Pacote novo é ATIVIDADE nova: o anterior é DESATIVADO (fica, com as sessões
-   * dele), o novo entra ativo e o gate volta à rodada 1, na exploração, com os
-   * portões fechados. O índice único parcial garante um ativo por turma, e o
-   * lock exclusivo põe duas homologações simultâneas em fila.
+   * Pacote novo é ATIVIDADE nova, e ela nasce PRONTA, não no ar (ADR-130):
+   * quem escolhe o que a turma faz é o professor, na lista de atividades
+   * (`colocarEmAndamento`). O em andamento continua em andamento — criar a
+   * próxima aula não pode tirar do ar a de agora.
    *
-   * As imagens de notícia com a MESMA descrição do pacote anterior são
-   * herdadas: o arquivo no bucket é o hash da descrição.
+   * As imagens de notícia com a MESMA descrição de um pacote recente da turma
+   * são herdadas: o arquivo no bucket é o hash da descrição.
    */
   async homologar(
     escolaId: string,
@@ -949,49 +1039,41 @@ export class JornalEscolaService implements OnModuleInit {
       await this.turmaVisivel(tx, escolaId, turmaId, professorId);
       await this.travarTurma(tx, escolaId, turmaId, "exclusivo");
 
-      const anterior = await tx.exp04ef1bPacote.findFirst({
-        where: { escolaId, turmaId, ativo: true },
-        select: { ...SELECAO_DO_PACOTE, aprovadoPor: true },
+      const recentes = await tx.exp04ef1bPacote.findMany({
+        where: { escolaId, turmaId },
+        orderBy: { criadoEm: "desc" },
+        take: 5,
+        select: { ...SELECAO_DO_PACOTE, ativo: true },
       });
-      const herdada: Record<string, string> = {};
       const noticias = emOrdemDaMesa(corpo.noticias);
 
-      /* O MESMO conteúdo do ativo não é atividade nova: é o "Usar Banco Padrão"
-         apertado com o padrão já em sala, ou o segundo clique em "Aprovar". Sem
-         isto, cada toque zeraria a aula e criaria uma entrada no histórico. Só
-         carimba quem aprovou, se ninguém tinha aprovado. */
-      if (anterior && this.mesmoConteudo(pacoteDaLinha(anterior), corpo.origem, corpo.tema, noticias)) {
-        if (!anterior.aprovadoPor) {
-          await tx.exp04ef1bPacote.updateMany({
-            where: { id: anterior.id, escolaId, aprovadoPor: null },
-            data: { aprovadoPor, aprovadoEm: new Date() },
-          });
-        }
-        const gate = (await this.lerGate(tx, escolaId, turmaId)) ?? (await this.garantirPacote(tx, escolaId, turmaId)).gate;
-        const lido = pacoteDaLinha(anterior);
+      /* O MESMO conteúdo do pacote mais recente não é atividade nova: é o
+         segundo clique em "Criar atividade". Sem isto, cada toque criaria uma
+         entrada na lista de atividades. */
+      const [ultimo] = recentes;
+      if (ultimo && this.mesmoConteudo(pacoteDaLinha(ultimo), corpo.origem, corpo.tema, noticias)) {
+        const lido = pacoteDaLinha(ultimo);
         return {
           id: lido.id,
           disciplina: lido.disciplina,
           tema: lido.tema,
           origem: lido.origem,
-          rodada: gate.rodada,
-          etapa: gate.etapa,
+          ativo: ultimo.ativo,
           noticias: lido.noticias,
         };
       }
 
-      if (anterior) {
-        const velho = pacoteDaLinha(anterior);
-        const urlDaDescricao = new Map<string, string>();
+      const urlDaDescricao = new Map<string, string>();
+      for (const velho of recentes.map(pacoteDaLinha).reverse()) {
         for (const n of velho.noticias) {
           const url = velho.midia[n.id];
           if (n.descricaoImagem && url) urlDaDescricao.set(n.descricaoImagem, url);
         }
-        for (const n of noticias) {
-          const url = n.descricaoImagem ? urlDaDescricao.get(n.descricaoImagem) : undefined;
-          if (url) herdada[n.id] = url;
-        }
-        await tx.exp04ef1bPacote.updateMany({ where: { escolaId, turmaId, ativo: true }, data: { ativo: false } });
+      }
+      const herdada: Record<string, string> = {};
+      for (const n of noticias) {
+        const url = n.descricaoImagem ? urlDaDescricao.get(n.descricaoImagem) : undefined;
+        if (url) herdada[n.id] = url;
       }
 
       const novo = await tx.exp04ef1bPacote.create({
@@ -1006,23 +1088,16 @@ export class JornalEscolaService implements OnModuleInit {
           midia: herdada,
           aprovadoPor,
           aprovadoEm: new Date(),
-          ativo: true,
+          ativo: false,
         },
         select: { id: true, disciplina: true, tema: true, origem: true },
-      });
-      const gate = { pacoteId: novo.id, rodada: 1, etapa: ETAPA_INICIAL, resultadoLiberadoEm: null, revisaoLiberadaEm: null };
-      await tx.exp04ef1bGateTurma.upsert({
-        where: { escolaId_turmaId: { escolaId, turmaId } },
-        create: { escolaId, turmaId, ...gate },
-        update: gate,
       });
       return {
         id: novo.id,
         disciplina: novo.disciplina,
         tema: novo.tema,
         origem: novo.origem === "ia" ? ("ia" as const) : ("padrao" as const),
-        rodada: 1,
-        etapa: ETAPA_INICIAL,
+        ativo: false,
         noticias,
       };
     }, escolaId);
@@ -1037,13 +1112,16 @@ export class JornalEscolaService implements OnModuleInit {
    * O EVT-P02: uma geração de rascunho (ou regeneração) que chamou a IA, e o
    * que custou. O rascunho não persiste, então a conta vai no pacote que estava
    * em sala — a soma dos pacotes da turma é o total que o PRD mede (T16, T20).
+   * Sem pacote em andamento (a primeira atividade da turma sendo criada), não
+   * há onde contar, e a geração não é contada.
    */
   async registrarGeracao(escolaId: string, turmaId: string, tokens: number): Promise<void> {
     try {
       await this.prisma.comTenancy(async (tx) => {
-        const { pacote } = await this.garantirPacote(tx, escolaId, turmaId);
+        const gate = await this.lerGate(tx, escolaId, turmaId);
+        if (!gate) return;
         await tx.exp04ef1bPacote.updateMany({
-          where: { id: pacote.id, escolaId },
+          where: { id: gate.pacoteId, escolaId },
           data: { geracoes: { increment: 1 }, tokensUsados: { increment: Math.max(0, Math.round(tokens)) } },
         });
       }, escolaId);
@@ -1053,11 +1131,16 @@ export class JornalEscolaService implements OnModuleInit {
     }
   }
 
-  /** O pacote em andamento, para o preparo das imagens (`midia.service.ts`). */
-  async pacoteParaMidia(escolaId: string, turmaId: string, professorId?: string): Promise<PacoteLido> {
+  /**
+   * O pacote das imagens (`midia.service.ts`): o pedido, ou o em andamento sem
+   * pedido. O pedido é a atividade PRONTA que o professor prepara antes de pôr
+   * no ar (ADR-130).
+   */
+  async pacoteParaMidia(escolaId: string, turmaId: string, professorId?: string, pacoteId?: string): Promise<PacoteLido> {
     return this.prisma.comTenancy(async (tx) => {
       await this.turmaVisivel(tx, escolaId, turmaId, professorId);
-      return (await this.garantirPacote(tx, escolaId, turmaId)).pacote;
+      if (pacoteId) return pacoteDaLinha(await this.pacoteDaTurma(tx, escolaId, turmaId, pacoteId));
+      return (await this.exigirPacote(tx, escolaId, turmaId)).pacote;
     }, escolaId);
   }
 
@@ -1201,47 +1284,24 @@ export class JornalEscolaService implements OnModuleInit {
   }
 
   /**
-   * O gate da turma e o pacote em andamento — criando os dois na PRIMEIRA
-   * entrada: o pacote `padrao` (o banco da Unooria) e o gate na rodada 1.
+   * O gate da turma e o pacote EM ANDAMENTO — ou 403 `atividade-nao-preparada`.
    *
-   * O lock exclusivo da turma só é pedido quando falta o gate — uma vez na
-   * vida da turma. As outras 29 crianças das 8h leem o gate e seguem, sem fila;
-   * as que chegaram juntas na primeira vez esperam o lock e RELEEM, então nasce
-   * um pacote só (e o índice único parcial é a segunda tranca).
+   * **A plataforma nunca cria a atividade** (ADR-130): a missão é o esqueleto
+   * narrativo, e o pacote é o que o professor criou e PÔS EM ANDAMENTO na lista
+   * de atividades. Antes, a primeira entrada da turma criava sozinha o pacote
+   * da Feira de Ciências; agora o banco da Unooria é só o ponto de partida do
+   * preparo. O 403 é a porta fechada que a experiência já sabe dizer.
    */
-  private async garantirPacote(
+  private async exigirPacote(
     tx: Prisma.TransactionClient,
     escolaId: string,
     turmaId: string,
   ): Promise<{ gate: GateLido; pacote: PacoteLido }> {
-    const incluir = { pacote: { select: SELECAO_DO_PACOTE } } satisfies Prisma.Exp04ef1bGateTurmaInclude;
-    const chave = { escolaId_turmaId: { escolaId, turmaId } };
-
-    let linha = await tx.exp04ef1bGateTurma.findUnique({ where: chave, include: incluir });
-    if (!linha) {
-      await this.travarTurma(tx, escolaId, turmaId, "exclusivo");
-      linha = await tx.exp04ef1bGateTurma.findUnique({ where: chave, include: incluir });
-    }
-    if (!linha) {
-      const ativo =
-        (await tx.exp04ef1bPacote.findFirst({ where: { escolaId, turmaId, ativo: true }, select: { id: true } })) ??
-        (await tx.exp04ef1bPacote.create({
-          data: {
-            escolaId,
-            turmaId,
-            disciplina: DISCIPLINA_PADRAO,
-            tema: TEMA_PADRAO,
-            origem: "padrao",
-            noticias: noticiasPadrao() as unknown as Prisma.InputJsonValue,
-            ativo: true,
-          },
-          select: { id: true },
-        }));
-      linha = await tx.exp04ef1bGateTurma.create({
-        data: { escolaId, turmaId, pacoteId: ativo.id, rodada: 1, etapa: ETAPA_INICIAL },
-        include: incluir,
-      });
-    }
+    const linha = await tx.exp04ef1bGateTurma.findUnique({
+      where: { escolaId_turmaId: { escolaId, turmaId } },
+      include: { pacote: { select: SELECAO_DO_PACOTE } },
+    });
+    if (!linha) throw erroDeJogo("atividade-nao-preparada");
     return {
       gate: {
         pacoteId: linha.pacoteId,
@@ -1272,7 +1332,7 @@ export class JornalEscolaService implements OnModuleInit {
     const turma = await tx.turma.findFirst({ where: { id: turmaId, escolaId }, select: { id: true } });
     if (!turma) throw erroDeJogo("turma-nao-encontrada");
 
-    const { gate, pacote } = await this.garantirPacote(tx, escolaId, turmaId);
+    const { gate, pacote } = await this.exigirPacote(tx, escolaId, turmaId);
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`jornal-escola:estudante:${escolaId}:${estudanteId}`}, 0))`;
     const chave = { escolaId, turmaId, estudanteId, pacoteId: gate.pacoteId, rodada: gate.rodada };
     /* `createMany` com `skipDuplicates` é um INSERT ... ON CONFLICT DO NOTHING:

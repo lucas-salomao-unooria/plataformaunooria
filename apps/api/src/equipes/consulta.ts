@@ -1,4 +1,5 @@
 import type { Prisma } from "@prisma/client";
+import { atividadeEmAndamento } from "./atividades";
 import type { EquipeDoMapa } from "./regras";
 
 /**
@@ -14,6 +15,10 @@ import type { EquipeDoMapa } from "./regras";
  * ARMADILHA: as três tabelas têm RLS. Fora de `comTenancy` tudo aqui volta
  * VAZIO, em silêncio — e o painel voltaria a contar por criança sem ninguém
  * saber por quê.
+ *
+ * TODA leitura é de UMA ATIVIDADE (ADR-130): a equipe é da atividade, e o
+ * painel que pergunta já sabe qual está lendo (o `coberturaId` do gate, o
+ * `pacoteId` da sessão). A missão sem atividade passa `ATIVIDADE_DA_TURMA`.
  */
 
 /** Uma equipe com os membros e a posição dela na montagem. */
@@ -57,18 +62,19 @@ async function carregarEquipes(
   }));
 }
 
-/** As equipes de uma missão nesta turma, na ordem da montagem. */
+/** As equipes de uma atividade nesta turma, na ordem da montagem. */
 export function equipesDaMissao(
   tx: Prisma.TransactionClient,
   escolaId: string,
   turmaId: string,
   expId: string,
+  atividadeId: string,
 ): Promise<EquipeDaMissao[]> {
-  return carregarEquipes(tx, escolaId, turmaId, { expId });
+  return carregarEquipes(tx, escolaId, turmaId, { expId, atividadeId });
 }
 
 /**
- * ESTUDANTE → EQUIPE, para a missão nesta turma. É o que
+ * ESTUDANTE → EQUIPE, para a atividade nesta turma. É o que
  * `regras.ts#colapsarEmUnidades` recebe para contar o painel por computador.
  *
  * Quem não está no mapa não tem equipe — e é contado sozinho, que é o certo:
@@ -79,8 +85,9 @@ export async function mapaDeEquipes(
   escolaId: string,
   turmaId: string,
   expId: string,
+  atividadeId: string,
 ): Promise<Map<string, EquipeDoMapa>> {
-  const equipes = await equipesDaMissao(tx, escolaId, turmaId, expId);
+  const equipes = await equipesDaMissao(tx, escolaId, turmaId, expId, atividadeId);
   const mapa = new Map<string, EquipeDoMapa>();
   for (const { id, nome, membros } of equipes) {
     const equipe: EquipeDoMapa = { id, nome, membros };
@@ -89,25 +96,28 @@ export async function mapaDeEquipes(
   return mapa;
 }
 
-/** A equipe deste estudante nesta missão e turma, ou `null`. */
+/** A equipe deste estudante nesta atividade e turma, ou `null`. */
 export async function equipeDoEstudante(
   tx: Prisma.TransactionClient,
   escolaId: string,
   turmaId: string,
   expId: string,
+  atividadeId: string,
   estudanteId: string,
 ): Promise<EquipeDoMapa | null> {
   const linha = await tx.equipeMembro.findFirst({
-    where: { escolaId, turmaId, expId, estudanteId },
+    where: { escolaId, turmaId, expId, atividadeId, estudanteId },
     select: { equipeId: true },
   });
   if (!linha) return null;
-  const [equipe] = await carregarEquipes(tx, escolaId, turmaId, { id: linha.equipeId, expId });
+  const [equipe] = await carregarEquipes(tx, escolaId, turmaId, { id: linha.equipeId, expId, atividadeId });
   return equipe ? { id: equipe.id, nome: equipe.nome, membros: equipe.membros } : null;
 }
 
 /**
- * Quantos computadores a montagem desta missão diz que a sala tem, ou `null`
+ * Quantos computadores a montagem desta atividade diz que a sala tem, ou
+ * `null` sem montagem — e também no modo `individual`, em que o número não é
+ * dito (são tantos quantas crianças): quem lê volta a contar por criança, como
  * sem montagem. É o que a evidência pedagógica (E14) lê para saber se uma
  * equipe é a PROJEÇÃO — um computador só, a turma inteira diante do telão.
  */
@@ -116,9 +126,10 @@ export async function computadoresDaMontagem(
   escolaId: string,
   turmaId: string,
   expId: string,
+  atividadeId: string,
 ): Promise<number | null> {
   const montagem = await tx.equipesMontagem.findUnique({
-    where: { escolaId_turmaId_expId: { escolaId, turmaId, expId } },
+    where: { escolaId_turmaId_expId_atividadeId: { escolaId, turmaId, expId, atividadeId } },
     select: { computadores: true },
   });
   return montagem?.computadores ?? null;
@@ -126,8 +137,13 @@ export async function computadoresDaMontagem(
 
 /**
  * Quantas equipes cada missão tem nesta turma — o número que a grade da sala
- * mostra ao lado da missão. Um `groupBy`, e não uma consulta por missão: a
- * grade tem dezenas delas, e é lida a cada abertura da sala.
+ * mostra ao lado da missão. Conta a atividade EM ANDAMENTO de cada missão
+ * (ADR-130): a sala responde "a aula de hoje está pronta?", e a montagem de
+ * uma atividade que o professor ainda não pôs no ar não é a de hoje.
+ *
+ * Um `groupBy` só, e não uma consulta de equipes por missão: a grade tem
+ * dezenas delas e é lida a cada abertura da sala. A atividade em andamento é
+ * perguntada só às missões que TÊM montagem na turma — as poucas do `groupBy`.
  */
 export async function contarEquipesDaTurma(
   tx: Prisma.TransactionClient,
@@ -135,9 +151,19 @@ export async function contarEquipesDaTurma(
   turmaId: string,
 ): Promise<Map<string, number>> {
   const grupos = await tx.equipe.groupBy({
-    by: ["expId"],
+    by: ["expId", "atividadeId"],
     where: { escolaId, turmaId },
     _count: { _all: true },
   });
-  return new Map(grupos.map((g) => [g.expId, g._count._all]));
+  const missoes = [...new Set(grupos.map((g) => g.expId))];
+  const emAndamento = new Map(
+    await Promise.all(
+      missoes.map(async (expId) => [expId, await atividadeEmAndamento(tx, escolaId, turmaId, expId)] as const),
+    ),
+  );
+  const contagem = new Map<string, number>();
+  for (const g of grupos) {
+    if (emAndamento.get(g.expId) === g.atividadeId) contagem.set(g.expId, g._count._all);
+  }
+  return contagem;
 }

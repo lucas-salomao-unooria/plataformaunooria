@@ -115,6 +115,10 @@ const NOS: Record<string, NoDaTrilha> = {
   '/professor/entre-redes/[ano]/[unidade]/resultados': {
     rotulo: 'Resultados da turma',
   },
+  // A criação da atividade (ADR-130). O segmento `atividades` não tem tela: a
+  // lista das atividades é a própria ficha da missão.
+  '/professor/entre-redes/[ano]/[unidade]/atividades': { rotulo: 'Atividades', oculto: true },
+  '/professor/entre-redes/[ano]/[unidade]/atividades/nova': { rotulo: 'Nova atividade' },
   '/professor/entre-redes/[ano]/[unidade]/estudantes': {
     rotulo: 'Resultados da turma',
     href: resultadosDaMissao,

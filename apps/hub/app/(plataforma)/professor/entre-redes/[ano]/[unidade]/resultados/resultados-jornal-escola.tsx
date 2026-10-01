@@ -1,67 +1,90 @@
 import Link from "next/link";
-import { Card, EmptyState } from "@edu/ui/ds";
+import { Badge, Card, EmptyState, FeedbackAlert } from "@edu/ui/ds";
+import { UsarEstaAtividade } from "@/components/atividades/usar-esta-atividade";
+import { EquipesDaAtividade } from "@/components/equipes/equipes-da-ficha";
 import { PainelDeHabilidades } from "@/components/evidencias/painel-de-habilidades";
+import { LinkButton } from "@/components/link-button";
 import { RotuloDaTrilha } from "@/components/trilha";
 import { apiDoServidor } from "@/lib/api-servidor";
 import { auth } from "@/lib/auth";
+import { ROTULO_DO_ESTADO, textoDasRodadas } from "@/lib/entre-redes/atividades";
 import { rotaDaMissao, type Missao } from "@/lib/entre-redes/catalogo";
 import type { MembroNoPainel } from "@/lib/equipe-no-painel";
 import { equipesDaMissao } from "@/lib/equipes-servidor";
 import { painelDeHabilidades } from "@/lib/evidencias-servidor";
-import type { MaterialDoJornal, PacotesDaTurma, PainelDoJornal, TurmaDoJornal } from "@/lib/jornal-escola-tipos";
+import {
+  ROTULO_DA_ORIGEM,
+  type MaterialDoJornal,
+  type PacoteDaAtividade,
+  type PacotesDaTurma,
+  type PainelDoJornal,
+  type TurmaDoJornal,
+} from "@/lib/jornal-escola-tipos";
 import { rotaDoGuiaDaMissao } from "@/lib/rotas-da-missao";
 import { normalizarSerie } from "@/lib/series";
 
 import { EscolhaDeTurma } from "./escolha-de-turma";
+import { ImagensDoPacote } from "./imagens-do-pacote";
 import { PainelDaAulaJornalEscola } from "./painel-da-aula-jornal-escola";
-import { PreparoJornalEscola } from "./preparo-jornal-escola";
-import { SeletorDePacote } from "./seletor-de-pacote";
 import { ZerarTurmaJornalEscola } from "./zerar-turma-jornal-escola";
 
 const EXP_ID = "exp04ef1b";
 
 /**
- * A aula do JORNAL DA ESCOLA: tudo o que o professor faz com a turma, numa
- * página, nesta ordem — (a) o preparo do pacote, (b) o painel ao vivo com o
- * botão único, o gráfico para projetar, o radar e a folha por computador, (c) o
- * zerar e (d) o painel de habilidades.
+ * A PÁGINA DE UMA ATIVIDADE do JORNAL DA ESCOLA (ADR-130) — o pacote de
+ * notícias que o professor criou, com tudo o que se faz com ele, nesta ordem:
+ * pô-lo no ar (se está pronto), as equipes, as imagens, a aula ao vivo com o
+ * botão único, o gráfico para projetar, o radar e a folha por computador, o
+ * zerar (só o em andamento) e o painel de habilidades. Molde:
+ * `resultados-a-selecao.tsx` (exp07ef1b).
  *
- * A ORDEM é a da aula, e não a da importância: antes da aula o professor
- * prepara; durante, olha o botão e o "X de Y publicaram"; depois, lê a
- * habilidade. A mesa do preparo nasce FECHADA para não empurrar o botão para
- * fora da tela no meio da aula. Molde: `resultados-a-selecao.tsx` (exp07ef1b).
+ * A atividade vem de `?pacote=` — o card da lista de atividades da ficha —, e
+ * sem ele é a em andamento. A CRIAÇÃO não mora mais aqui: é o "Nova atividade"
+ * da ficha (`atividades/nova`, `criar-jornal-escola.tsx`), porque criar não põe
+ * no ar e o preparo de uma aula não pode trocar, por engano, a que está
+ * rodando. E esta missão deixou de nascer com o banco padrão em andamento: sem
+ * atividade, a turma vê a missão fechada.
  *
  * Como cada rota da api é consumida (o contrato é
  * `apps/api/src/jornal-escola/contrato-de-rotas.ts`):
  *
  * - **daqui (servidor, `apiDoServidor`)**: `GET /jornal-escola/turmas`, `GET
- *   .../painel`, `GET .../pacotes` (o ativo COM gabarito e o histórico), `GET
+ *   .../pacotes` (qual está em andamento, e o histórico que valida o
+ *   `?pacote=`), `GET .../pacotes/:pacoteId` (a atividade COM gabarito), e —
+ *   só com ela em andamento — `GET .../painel` e `GET
  *   /jornal-escola/professor/material` (o roteiro da mediação que o painel
- *   mostra ao lado do botão), as equipes da missão e o painel de habilidades
- *   com `atividadeId = pacoteId`;
- * - **do navegador, pelo BFF** (`/api/plataforma/jornal-escola/...`): gerar,
- *   regenerar, homologar, o banco padrão de 1 toque, as imagens, o gate, o
- *   zerar e o `GET .../painel` do polling.
+ *   mostra ao lado do botão); as equipes DESTA atividade e o painel de
+ *   habilidades com `atividadeId = pacoteId`;
+ * - **do navegador, pelo BFF** (`/api/plataforma/jornal-escola/...`): pôr em
+ *   andamento, as imagens (`gerar-midia?pacoteId=`), o gate, o zerar e o `GET
+ *   .../painel` do polling.
  *
- * **Missão com ficha pedagógica (E14)**: a atividade é o PACOTE, a rodada é o
- * "Zerar", e `?pacote=` escolhe qual — o padrão é o em andamento.
+ * O painel, o gate e o zerar respondem 403 `atividade-nao-preparada` sem nada
+ * em andamento — e são da turma, não do pacote: com uma atividade PRONTA na
+ * tela, mostrá-los conduziria a outra. Por isso só aparecem quando a desta
+ * página é a em andamento.
  *
- * A REGRA QUE ESTA TELA APLICA: nenhuma coluna de nível, nota ou acerto na
- * folha (`PROIBIDO_NA_LINHA_DO_PAINEL`, na api). Quantas notícias cada um
- * verificou existe só no histograma anônimo; o nível mora no painel de
+ * **Missão com ficha pedagógica (E14)**: a atividade é o PACOTE e a rodada é o
+ * "Zerar". A REGRA QUE ESTA TELA APLICA: nenhuma coluna de nível, nota ou
+ * acerto na folha (`PROIBIDO_NA_LINHA_DO_PAINEL`, na api). Quantas notícias
+ * cada um verificou existe só no histograma anônimo; o nível mora no painel de
  * habilidades, com a origem e o ajuste do professor.
  */
 export async function ResultadosJornalEscola({
   missao,
   turma,
   pacote,
+  separar,
 }: {
   missao: Missao;
   turma: string;
-  /** `?pacote=` — a atividade que o painel de habilidades lê. Vazio = o em andamento. */
+  /** `?pacote=` — a atividade desta página. Vazio = a em andamento. */
   pacote: string;
+  /** `?separar=N` — vindo da criação com "Eu separo": as N equipes vazias já abrem. */
+  separar: number | null;
 }) {
   const rotaBase = `${rotaDaMissao(missao)}/resultados`;
+  const ficha = turma ? `${rotaDaMissao(missao)}?turmaId=${encodeURIComponent(turma)}` : rotaDaMissao(missao);
   const guia = missao.expId ? rotaDoGuiaDaMissao(missao.expId) : null;
 
   const lista = await apiDoServidor<{ turmas: TurmaDoJornal[] }>("/jornal-escola/turmas");
@@ -76,57 +99,80 @@ export async function ResultadosJornalEscola({
       : undefined;
 
   const base = `/jornal-escola/turmas/${encodeURIComponent(turma)}`;
-  const [painel, pacotes, material, equipes, session] = turma
-    ? await Promise.all([
-        apiDoServidor<PainelDoJornal>(`${base}/painel`),
-        apiDoServidor<PacotesDaTurma>(`${base}/pacotes`),
-        /* O roteiro da mediação (copy revisada, §4b) mora na api, junto do
-           guia: a frase que o professor diz ao apertar muda sem republicar o hub. */
-        apiDoServidor<MaterialDoJornal>("/jornal-escola/professor/material"),
-        /* A linha desta api traz só o NOME da equipe; os membros vêm das
-           equipes da missão, para a primeira célula dizer quem senta ali. */
-        equipesDaMissao(turma, EXP_ID),
-        auth(),
-      ])
-    : [null, null, null, null, null];
+  const pacotes = turma ? await apiDoServidor<PacotesDaTurma>(`${base}/pacotes`) : null;
+  /* A atividade da página: a pedida, se ela é DESTA turma, e senão a em
+     andamento. Um id de outra turma (link velho, colado à mão) não chega à api
+     como se fosse desta. */
+  const historico = pacotes?.historico ?? [];
+  const atividadeId = historico.find((h) => h.id === pacote)?.id ?? pacotes?.ativo?.id ?? null;
+  const detalhe = atividadeId
+    ? await apiDoServidor<PacoteDaAtividade>(`${base}/pacotes/${encodeURIComponent(atividadeId)}`)
+    : null;
+  const emAndamento = detalhe?.ativo === true;
+
+  const [painel, material, equipes, session, habilidades] =
+    detalhe && atividadeId
+      ? await Promise.all([
+          emAndamento ? apiDoServidor<PainelDoJornal>(`${base}/painel`) : Promise.resolve(null),
+          /* O roteiro da mediação (copy revisada, §4b) mora na api, junto do
+             guia: a frase que o professor diz ao apertar muda sem republicar o hub. */
+          emAndamento ? apiDoServidor<MaterialDoJornal>("/jornal-escola/professor/material") : Promise.resolve(null),
+          /* A linha desta api traz só o NOME da equipe; os membros vêm das
+             equipes DESTA atividade, para a primeira célula dizer quem senta ali. */
+          equipesDaMissao(turma, EXP_ID, atividadeId),
+          auth(),
+          /* Pacote que nunca rodou não tem o que mostrar no painel de
+             habilidades — e a leitura dele custaria uma chamada à toa. */
+          detalhe.rodadas > 0 || emAndamento ? painelDeHabilidades(turma, EXP_ID, atividadeId) : Promise.resolve(null),
+        ])
+      : [null, null, null, null, null];
 
   const membros: Record<string, MembroNoPainel[]> = Object.fromEntries(
     (equipes?.equipes ?? []).map((e) => [e.id, e.membros]),
   );
-
-  /* A atividade do painel de habilidades: a pedida, se ela é DESTA turma, e
-     senão a em andamento. Um id de outra turma (link velho, colado à mão) não
-     chega à api como se fosse desta. */
-  const historico = pacotes?.historico ?? [];
-  const pedido = historico.find((h) => h.id === pacote);
-  const atividadeId = pedido?.id ?? pacotes?.ativo.id ?? painel?.pacote.id ?? null;
-  const habilidades =
-    turma && atividadeId && missao.expId ? await painelDeHabilidades(turma, missao.expId, atividadeId) : null;
+  const estado = ROTULO_DO_ESTADO[emAndamento ? "em-andamento" : "pronta"];
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Esta missão chama a tela de "A aula e os resultados" (ela prepara o
-          pacote e libera as etapas, não só relata): o rótulo do registro de
-          rotas é o genérico e quem o corrige é a página. */}
-      <RotuloDaTrilha valor="A aula e os resultados" />
+      {/* O rótulo do registro de rotas é o genérico; quem dá o nome próprio é a
+          página: o tema da atividade, ou "A aula e os resultados" sem ela. */}
+      {detalhe ? <RotuloDaTrilha valor={`“${detalhe.tema}”`} /> : <RotuloDaTrilha valor="A aula e os resultados" />}
 
-      <header className="flex flex-col gap-1">
+      <header className="flex flex-col gap-2">
         <p className="text-[12px] uppercase tracking-widest text-unooria-neutral-500">{missao.titulo}</p>
-        <h1 className="text-[24px] font-bold leading-tight text-unooria-neutral-950">A aula e os resultados</h1>
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="text-[24px] font-bold leading-tight text-unooria-neutral-950">
+            {detalhe ? `“${detalhe.tema}”` : "A aula e os resultados"}
+          </h1>
+          {detalhe ? (
+            <Badge variant={estado.variante} data-estado-da-atividade={emAndamento ? "em-andamento" : "pronta"}>
+              {estado.rotulo}
+            </Badge>
+          ) : null}
+        </div>
+        {detalhe ? (
+          <p className="text-[13px] text-unooria-neutral-600" data-pacote={detalhe.id}>
+            {detalhe.disciplina} · {ROTULO_DA_ORIGEM[detalhe.origem]} · {textoDasRodadas(detalhe.rodadas)}
+            {emAndamento && detalhe.rodada ? ` · rodada ${detalhe.rodada} em andamento` : ""}
+          </p>
+        ) : null}
         <p className="max-w-3xl text-[14px] leading-relaxed text-unooria-neutral-700">
-          É daqui que você prepara o pacote de notícias, libera o resultado e a revisão com o botão da aula, e
-          lê o retrato da turma: não quem acertou, mas <strong>o que cada capa publicou</strong> e o que mudou
-          da 1ª para a 2ª edição. O gráfico anônimo pode ir para o projetor; o radar e a folha, não.
+          Com a atividade em andamento, é daqui que você libera o resultado e a revisão com o botão da aula, e lê o
+          retrato da turma: não quem acertou, mas <strong>o que cada capa publicou</strong> e o que mudou da 1ª para
+          a 2ª edição. O gráfico anônimo pode ir para o projetor; o radar e a folha, não.
         </p>
-        {/* O guia à mão: é aqui que o professor está DURANTE a aula, e é daqui
-            que ele relê o roteiro sem perder o painel de vista. */}
-        {guia ? (
-          <p className="text-[13px] font-semibold">
+        <p className="flex flex-wrap gap-4 text-[13px] font-semibold">
+          <Link href={ficha} className="text-unooria-navy-900 hover:text-unooria-neutral-950">
+            Ver as atividades da turma
+          </Link>
+          {/* O guia à mão: é aqui que o professor está DURANTE a aula, e é daqui
+              que ele relê o roteiro sem perder o painel de vista. */}
+          {guia ? (
             <Link href={guia} className="text-unooria-navy-900 hover:text-unooria-neutral-950">
               Abrir o guia da aula
             </Link>
-          </p>
-        ) : null}
+          ) : null}
+        </p>
       </header>
 
       <EscolhaDeTurma turmas={turmas} turmaId={turma} rotaBase={rotaBase} aviso={aviso} />
@@ -134,11 +180,11 @@ export async function ResultadosJornalEscola({
       {turma === "" ? (
         <Card variant="elevated">
           <p className="text-[14px] text-unooria-neutral-700">
-            Escolha a turma acima. O pacote de notícias, os dois portões da aula e a folha são por turma, e valem
-            só para a que você escolher.
+            Escolha a turma acima. As atividades, os dois portões da aula e a folha são por turma, e valem só para a
+            que você escolher.
           </p>
         </Card>
-      ) : painel === null || pacotes === null ? (
+      ) : pacotes === null ? (
         <EmptyState
           variant="no-data"
           size="lg"
@@ -147,40 +193,85 @@ export async function ResultadosJornalEscola({
           title="Não conseguimos abrir esta turma"
           description="Confira se a turma é desta escola e tente de novo."
         />
+      ) : !atividadeId || !detalhe ? (
+        /* A plataforma não cria atividade (ADR-130): sem nenhuma em andamento, a
+           turma vê a missão fechada, e o caminho é a lista da ficha. */
+        <div className="flex flex-col gap-3" data-sem-atividade>
+          <EmptyState
+            variant="no-data"
+            size="lg"
+            bordered
+            fullWidth
+            title="Nenhuma atividade em andamento nesta turma"
+            description="A turma vê a missão fechada até você criar uma atividade e pô-la no ar."
+          />
+          <div>
+            <LinkButton href={ficha}>Ver as atividades da turma</LinkButton>
+          </div>
+        </div>
       ) : (
         <>
-          {/* A `key` NÃO é otimização: todo o preparo vive em `useState`, e o
-              seletor troca de turma com `router.push` para esta MESMA rota.
-              Sem ela o formulário da turma anterior fica na tela — e "Aprovar"
-              publica na turma nova o pacote da antiga. */}
-          <PreparoJornalEscola key={turma} turmaId={turma} inicial={pacotes} />
+          {!emAndamento ? (
+            <Card variant="outlined">
+              <div className="flex flex-col gap-3" data-atividade-pronta>
+                <FeedbackAlert
+                  type="info"
+                  title="Esta atividade está pronta, e a turma ainda não a vê"
+                  description={
+                    pacotes.ativo
+                      ? `A turma está fazendo “${pacotes.ativo.tema}”. Quando for a vez desta, use o botão abaixo: quem estiver jogando passa para ela, numa rodada nova.`
+                      : "Nenhuma atividade está em andamento: a turma vê a missão fechada. Prepare as equipes e as imagens, e use o botão abaixo quando a turma for fazer."
+                  }
+                />
+                {session?.usuario.papel === "professor" ? (
+                  <UsarEstaAtividade
+                    expId={EXP_ID}
+                    turmaId={turma}
+                    atividadeId={detalhe.id}
+                    titulo={detalhe.tema}
+                    emAndamentoAgora={pacotes.ativo?.tema ?? null}
+                    variante="primary"
+                  />
+                ) : null}
+              </div>
+            </Card>
+          ) : null}
 
-          <PainelDaAulaJornalEscola
-            key={`aula-${turma}`}
+          <EquipesDaAtividade
+            key={`equipes-${detalhe.id}`}
             turmaId={turma}
-            inicial={painel}
-            roteiro={material?.roteiro ?? null}
-            membros={membros}
+            expId={EXP_ID}
+            atividadeId={detalhe.id}
+            separarAoAbrir={separar}
           />
 
-          <ZerarTurmaJornalEscola turmaId={turma} nomeDaTurma={painel.turma.nome} tema={painel.pacote.tema} />
+          {/* A `key` é a atividade: o laço das imagens vive em `useState`. */}
+          <ImagensDoPacote key={`imagens-${detalhe.id}`} turmaId={turma} pacoteId={detalhe.id} inicial={detalhe.midia} />
+
+          {emAndamento && painel ? (
+            <>
+              <PainelDaAulaJornalEscola
+                key={`aula-${turma}-${detalhe.id}`}
+                turmaId={turma}
+                inicial={painel}
+                roteiro={material?.roteiro ?? null}
+                membros={membros}
+              />
+              <ZerarTurmaJornalEscola turmaId={turma} nomeDaTurma={painel.turma.nome} tema={detalhe.tema} />
+            </>
+          ) : null}
 
           {/* O painel de habilidades (E14) — invisível sem ficha
               (`temFicha: false`), e só o `professor` confirma e ajusta: a
               coordenação lê. A `key` é a atividade: trocar de pacote recomeça o
               recorte e a seleção dele. */}
-          {habilidades?.temFicha && atividadeId ? (
+          {habilidades?.temFicha ? (
             <div className="flex flex-col gap-3" data-habilidades-do-jornal>
-              {historico.length > 1 ? (
-                <div className="max-w-xl">
-                  <SeletorDePacote historico={historico} pacoteId={atividadeId} rotaBase={rotaBase} turmaId={turma} />
-                </div>
-              ) : null}
               <PainelDeHabilidades
-                key={atividadeId}
+                key={detalhe.id}
                 turmaId={turma}
                 expId={EXP_ID}
-                atividadeId={atividadeId}
+                atividadeId={detalhe.id}
                 inicial={habilidades}
                 podeEditar={session?.usuario.papel === "professor"}
               />

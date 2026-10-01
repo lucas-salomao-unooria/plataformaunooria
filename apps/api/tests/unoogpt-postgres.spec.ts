@@ -555,13 +555,29 @@ describe("a folha conta por COMPUTADOR quando a turma tem equipes", () => {
   /** A montagem gravada direto no banco — o serviço de equipes tem a suíte dele. */
   async function montarEquipe(expId: string, nome: string, membros: string[]) {
     await prisma.equipesMontagem.create({
-      data: { escolaId: ESCOLA, turmaId: turma2C, expId, modo: "manual", computadores: 2, atualizadoPor: randomUUID() },
+      /* Missão sem atividade (ADR-130): o id fixo `turma`, uma montagem por turma. */
+      data: {
+        escolaId: ESCOLA,
+        turmaId: turma2C,
+        expId,
+        atividadeId: "turma",
+        modo: "manual",
+        computadores: 2,
+        atualizadoPor: randomUUID(),
+      },
     });
     const equipe = await prisma.equipe.create({
-      data: { escolaId: ESCOLA, turmaId: turma2C, expId, nome, ordem: 0 },
+      data: { escolaId: ESCOLA, turmaId: turma2C, expId, atividadeId: "turma", nome, ordem: 0 },
     });
     await prisma.equipeMembro.createMany({
-      data: membros.map((estudanteId) => ({ escolaId: ESCOLA, equipeId: equipe.id, turmaId: turma2C, expId, estudanteId })),
+      data: membros.map((estudanteId) => ({
+        escolaId: ESCOLA,
+        equipeId: equipe.id,
+        turmaId: turma2C,
+        expId,
+        atividadeId: "turma",
+        estudanteId,
+      })),
     });
     return equipe.id;
   }

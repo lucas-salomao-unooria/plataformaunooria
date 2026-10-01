@@ -1,8 +1,10 @@
 import { Badge, Card, FeedbackAlert, Tag } from "@edu/ui/ds";
 import { LinkButton } from "@/components/link-button";
-import { rotaDaMissao, rotuloDaMissao, type Ano, type Missao } from "@/lib/entre-redes/catalogo";
-import { comTurma, rotaDoGuiaDaMissao } from "@/lib/rotas-da-missao";
+import { rotuloDaMissao, type Ano, type Missao } from "@/lib/entre-redes/catalogo";
+import { rotaDoGuiaDaMissao } from "@/lib/rotas-da-missao";
 import type { TurmaDoProfessor } from "@/lib/turmas";
+
+import { AtividadesDaMissao } from "./atividades-da-missao";
 
 /**
  * Corpo de A SELEÇÃO (7º ano · Unidade 1).
@@ -32,7 +34,6 @@ export function MissaoASelecao({
   turma: TurmaDoProfessor | null;
 }) {
   const { ficha } = missao;
-  const rotaResultados = comTurma(`${rotaDaMissao(missao)}/resultados`, turma?.id);
   const guia = missao.expId ? rotaDoGuiaDaMissao(missao.expId) : null;
 
   return (
@@ -64,7 +65,7 @@ export function MissaoASelecao({
       <FeedbackAlert
         type="warning"
         title="A aula é conduzida por um botão só, e ele não volta"
-        description="Em A aula e os resultados, o mesmo botão mostra sempre a próxima etapa: Liberar Mural da Turma, Revelar Fichas Técnicas e Liberar Conclusão Individual. Sem o primeiro clique, quem publicou fica esperando. Antes da aula você pode trocar o tema da cobertura e gerar as imagens — sem nada disso, a turma roda a cobertura da praça central, curada pela Unooria."
+        description="Na página da atividade, o mesmo botão mostra sempre a próxima etapa: Liberar Mural da Turma, Revelar Fichas Técnicas e Liberar Conclusão Individual. Sem o primeiro clique, quem publicou fica esperando. A missão só abre para a turma com uma atividade sua em andamento: crie a cobertura (pode partir da praça central, curada pela Unooria), gere as imagens e use a atividade quando a turma for fazer."
       />
 
       <section className="grid gap-4 lg:grid-cols-2">
@@ -126,26 +127,7 @@ export function MissaoASelecao({
         </div>
       </Card>
 
-      <Card variant="elevated" title="A aula e os resultados">
-        <div className="flex flex-col gap-3">
-          <p className="max-w-3xl text-[14px] leading-relaxed text-unooria-neutral-700">
-            É de lá que você prepara a cobertura, gera as imagens, acompanha quantos computadores
-            já publicaram e aperta o botão das etapas. E é lá que está o retrato: a seleção de cada
-            computador em linguagem de sala (Oficial, Comunitária, Números), com quem ele foi
-            pareado no Mural, a legenda e a reflexão — e, no fim, o painel de habilidades da
-            turma.{" "}
-            <strong className="text-unooria-neutral-950">
-              Nenhum texto gerado por inteligência artificial chega aos estudantes sem a sua
-              aprovação
-            </strong>{" "}
-            — gerar produz rascunho, e o que publica é o seu clique. As imagens você gera depois
-            de aprovar, e cada uma entra no feed assim que fica pronta.
-          </p>
-          <div>
-            <LinkButton href={rotaResultados}>Abrir a aula e os resultados</LinkButton>
-          </div>
-        </div>
-      </Card>
+      <AtividadesDaMissao missao={missao} expId="exp07ef1b" turma={turma} />
     </div>
   );
 }

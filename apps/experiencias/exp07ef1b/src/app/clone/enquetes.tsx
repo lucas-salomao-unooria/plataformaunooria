@@ -23,9 +23,10 @@ interface EnqueteNaTela {
  * (a ordem do PO: perguntar antes sugeriria a resposta escrita).
  *
  * É a Amara quem pergunta, então é o clone: a mesma `DirectThread` do desafio,
- * a mensagem de contexto num balão e a enquete (`DmPoll`) no seguinte. O
- * `enunciado` da api traz os dois juntos, separados por uma linha em branco
- * (`regras.ts#separarEnunciado`).
+ * com a enquete (`DmPoll`). Se o `enunciado` da api trouxer uma mensagem de
+ * contexto antes da pergunta, separada por uma linha em branco, ela vai num
+ * balão antes da enquete (`regras.ts#separarEnunciado`). Os da versão do PO de
+ * 2026-10-01 são só a pergunta.
  *
  * **Nunca mostra acerto.** O `DmPoll` não sabe qual opção é "certa" e a api
  * devolve `{ enviada: true }` para qualquer uma — o nível de cada alternativa

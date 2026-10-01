@@ -153,6 +153,32 @@ export interface AtividadeDaMissao {
   rodada: number;
 }
 
+/**
+ * `GET :turmaId/pacotes` — as ATIVIDADES da turma (ADR-130): os pacotes
+ * APROVADOS, do mais recente ao mais antigo. O rascunho não entra.
+ */
+export interface PacotesDaTurmaQuemMandou {
+  /** O em andamento, ou `null` quando o professor ainda não pôs nenhum no ar. */
+  emAndamento: AtividadeDaMissao | null;
+  historico: Array<{
+    id: string;
+    disciplina: string;
+    tema: string;
+    origem: Origem;
+    /** Em andamento na turma? */
+    ativo: boolean;
+    aprovadoEm: string;
+    /** A maior rodada com sessão; 0 = nunca rodou. */
+    rodadas: number;
+  }>;
+}
+
+/** `GET :turmaId/pacotes/:pacoteId` — UMA atividade, em andamento ou pronta. */
+export interface PacoteDaAtividadeQuemMandou extends PacoteDoProfessor {
+  /** A maior rodada com sessão; 0 = nunca rodou. */
+  rodadas: number;
+}
+
 /** `POST /quem-mandou-isso/turmas/:turmaId/gate`. */
 export interface GateDaTurma {
   turma: TurmaDaMissao;

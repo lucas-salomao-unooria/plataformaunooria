@@ -17,14 +17,21 @@ e a primeira em que o dado do MURAL é do computador (E13, o gatilho da ADR-111)
   (cobertura, rodada) está em andamento, e a sessão é por essa dupla. Zerar
   sobe a rodada e volta à exploração **sem apagar nada** — a rodada passada é o
   que o painel de habilidades mostra (ADR-112): zerar que apaga é o que a
-  evidência não pode ter (ADR-114). Homologar um tema novo DESATIVA a
-  cobertura anterior (ela fica) e abre a rodada 1 da nova. Uma ativa por turma:
+  evidência não pode ter (ADR-114). Uma ativa (= EM ANDAMENTO) por turma:
   índice único PARCIAL, que o Prisma não enxerga (não está no schema nem no
   `migrate diff`).
-- **A missão NÃO nasce vazia** — o contrário da exp05ef1b. Sem homologação, a
-  turma roda o banco curado da Praça Central: a cobertura `padrao` nasce na
-  primeira entrada (`garantirGate`, com o lock exclusivo da turma só quando falta
-  o gate). Aqui o banco curado é uma cobertura completa, e não um tema alheio.
+- **A plataforma NUNCA cria a cobertura (ADR-130).** `homologar` cria a
+  atividade PRONTA (`ativa: false`) — a em andamento continua —, e
+  `colocarEmAndamento` (`POST :turmaId/coberturas/:coberturaId/em-andamento`) é
+  o "Usar esta atividade agora": desliga a anterior, liga a escolhida e aponta o
+  gate para a rodada SEGUINTE à última com sessão, na exploração (retomar a
+  mesma depois do Mural seria o "voltar" proibido). Sem gate, `exigirGate`
+  responde 403 `atividade-nao-preparada` em toda rota que lê a em andamento —
+  a tela de "ainda não foi aberta" que a experiência já mostra, sem mudar o
+  bundle. O banco curado da Praça Central virou o ponto de partida da CRIAÇÃO
+  (`GET professor/material` traz também as falas do podcast).
+- **Imagens e podcast aceitam `?coberturaId=`**: a professora prepara a
+  atividade PRONTA antes de pô-la no ar. Sem o parâmetro, a em andamento.
 - **O gabarito do post (enquadramento, fonte, ângulo) e a matriz só descem no
   Mural, com `etapa ≥ fichas`.** O post do estudante sai por `postPublico`, uma
   ALLOWLIST: campo novo no catálogo nasce fora da resposta. A matriz é calculada

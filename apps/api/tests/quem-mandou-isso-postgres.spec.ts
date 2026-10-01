@@ -25,6 +25,7 @@ import {
   MaterialSchema,
   PacoteDaTurmaSchema,
   PacoteDoProfessorSchema,
+  PacotesDaTurmaSchema,
   PainelSchema,
   SessaoSchema,
 } from "../src/quem-mandou-isso/contrato-de-rotas";
@@ -297,6 +298,8 @@ describe("o professor: 404, nunca 403, na turma que não leciona", () => {
       () => aprovar(ids.turma5A, ids.profOutra, corpoDoPreset()),
       () => service.mudarGate(ESCOLA, ids.turma5A, ids.profOutra, "liberar_revelacao"),
       () => service.novaRodada(ESCOLA, ids.turma5A, ids.profOutra, 1),
+      () => service.pacotes(ESCOLA, ids.turma5A, ids.profOutra),
+      () => service.colocarEmAndamento(ESCOLA, ids.turma5A, ids.profOutra, "00000000-0000-4000-8000-000000000000"),
     ]) {
       expect(await recusa(chamada())).toEqual(naoEncontrada);
     }
@@ -398,12 +401,26 @@ describe("o preparo e a aprovação", () => {
     expect(await prisma.exp05ef1bPacote.count({ where: { escolaId: ESCOLA, ativo: true } })).toBe(0);
   });
 
-  test("aprovar: o rascunho VIRA o pacote ativo (mesmo id), na rodada 1, com a turma na triagem", async () => {
+  /**
+   * CRIAR NÃO PÕE NO AR (ADR-130): o pacote aprovado é uma atividade PRONTA, e
+   * quem escolhe o que a turma joga é o professor ("Usar esta atividade agora").
+   */
+  test("aprovar: o rascunho VIRA uma atividade pronta (mesmo id); pô-la no ar abre a rodada 1, na triagem", async () => {
     const rascunho = await prisma.exp05ef1bPacote.findFirstOrThrow({ where: { escolaId: ESCOLA, turmaId: ids.turma5A, aprovadoEm: null } });
     const aprovado = PacoteDoProfessorSchema.parse(await aprovar(ids.turma5A, ids.professora, corpoDoPreset()));
-    expect(aprovado).toMatchObject({ id: rascunho.id, ativo: true, rodadaAtual: 1, origem: "padrao", disciplina: "letramento-digital" });
+    expect(aprovado).toMatchObject({ id: rascunho.id, ativo: false, rodadaAtual: 1, origem: "padrao", disciplina: "letramento-digital" });
     expect(aprovado.aprovadoEm).not.toBeNull();
     pacote5A = aprovado.id;
+    /* Pronta: a turma ainda espera. */
+    expect((await service.sessao(ESCOLA, ids.ana)).preparada).toBe(false);
+    expect(PacotesDaTurmaSchema.parse(await service.pacotes(ESCOLA, ids.turma5A, ids.professora))).toEqual({
+      emAndamento: null,
+      historico: [expect.objectContaining({ id: pacote5A, ativo: false, rodadas: 0 })],
+    });
+
+    const r = await service.colocarEmAndamento(ESCOLA, ids.turma5A, ids.professora, pacote5A);
+    expect(r).toEqual({ atividade: { pacoteId: pacote5A, rodada: 1 }, fase: "triagem", mudou: true });
+    expect(await service.colocarEmAndamento(ESCOLA, ids.turma5A, ids.professora, pacote5A)).toMatchObject({ mudou: false });
     expect(await prisma.exp05ef1bGateTurma.findUnique({ where: { escolaId_turmaId: { escolaId: ESCOLA, turmaId: ids.turma5A } } })).toMatchObject({
       fase: "triagem",
     });
@@ -495,10 +512,9 @@ describe("a aula na 5A — os três latches, a evidência e a revelação", () =
   });
 
   test("equipe: Bia e Caio num computador — Bia joga (com uma falsa neutra) e o Caio recebe a CÓPIA do nível", async () => {
+    /* A equipe é da ATIVIDADE (ADR-130): o pacote aprovado da 5A. */
     await equipes.salvar(
-      ESCOLA,
-      ids.turma5A,
-      EXP_ID,
+      { escolaId: ESCOLA, turmaId: ids.turma5A, expId: EXP_ID, atividadeId: pacote5A },
       { versao: 0, modo: "manual", computadores: 3, ausentes: [], equipes: [{ nome: "Equipe 1", membros: [ids.bia, ids.caio] }] },
       ids.professora,
     );
@@ -609,7 +625,7 @@ describe("a aula na 5A — os três latches, a evidência e a revelação", () =
 
   test("as perguntas de evidência: embaralhadas, sem nível, e a resposta cai na atividade e na rodada da missão", async () => {
     const p1 = await evidencias.pergunta(ESCOLA, ids.ana, EXP_ID, "p1");
-    expect(p1.enunciado).toBe("Qual frase está certa sobre ela?");
+    expect(p1.enunciado).toBe("Você concorda?");
     expect(p1.alternativas.map((a) => a.id).sort()).toEqual(["A1", "A2", "A3"]);
     expect(JSON.stringify(p1)).not.toContain("status");
     expect(await evidencias.responder(ESCOLA, ids.ana, EXP_ID, "p1", "A1")).toEqual({ enviada: true });
@@ -619,8 +635,8 @@ describe("a aula na 5A — os três latches, a evidência e a revelação", () =
       orderBy: { habilidade: "asc" },
     });
     expect(marcas.map((m) => [m.habilidade, m.marcador, m.status, m.atividadeId, m.rodada])).toEqual([
-      ["EF05CO03", "pergunta-dos-selos", "atingiu", pacote5A, 1],
-      ["EF05CO04", "pergunta-simular-a-regra", "em_processo", pacote5A, 1],
+      ["EF05CO03", "pergunta-tom-e-veracidade", "atingiu", pacote5A, 1],
+      ["EF05CO04", "pergunta-regra-condicional", "em_processo", pacote5A, 1],
       ["EF05CO08", "selecao-do-mural", "atingiu", pacote5A, 1],
     ]);
   });
@@ -697,20 +713,62 @@ describe("a rodada nova e o pacote novo — o histórico fica", () => {
     ).toMatchObject({ rodada: 2, origem: "propria", status: "em_processo", atividadeId: pacote5A });
   });
 
-  test("aprovar um pacote DIFERENTE é atividade nova: id novo, o anterior sai de cena, rodada 1 e triagem", async () => {
+  test("aprovar um pacote DIFERENTE é atividade nova e PRONTA: a aula de agora segue até o professor trocar", async () => {
     await service.mudarGate(ESCOLA, ids.turma5A, ids.professora, "liberar_revelacao");
     const editadas = mensagensDoPadrao().map((m) =>
       m.id === "msg_8" ? { ...m, texto: "Informo que os monitores da exposição aguardam o 5º ano no saguão principal." } : m,
     );
     const novo = await aprovar(ids.turma5A, ids.professora, corpoDoPreset(editadas));
     expect(novo.id).not.toBe(pacote5A);
-    expect(novo).toMatchObject({ ativo: true, rodadaAtual: 1 });
+    expect(novo).toMatchObject({ ativo: false, rodadaAtual: 1 });
+    /* Criar não mexe na aula de agora: o anterior segue no ar, com a revelação aberta. */
+    expect((await service.gate(ESCOLA, ids.ana)).fase).toBe("revelacao");
+    expect((await service.sessao(ESCOLA, ids.ana)).atividade).toEqual({ pacoteId: pacote5A, rodada: 2 });
+
+    expect(await service.colocarEmAndamento(ESCOLA, ids.turma5A, ids.professora, novo.id)).toEqual({
+      atividade: { pacoteId: novo.id, rodada: 1 },
+      fase: "triagem",
+      mudou: true,
+    });
     expect(await prisma.exp05ef1bPacote.findUniqueOrThrow({ where: { id: pacote5A } })).toMatchObject({ ativo: false, rodadaAtual: 2 });
     expect((await service.gate(ESCOLA, ids.ana)).fase).toBe("triagem");
     expect((await service.sessao(ESCOLA, ids.ana)).atividade).toEqual({ pacoteId: novo.id, rodada: 1 });
     /* O que a turma fez no pacote anterior continua lá. */
     /* Ana, Bia e Duda na rodada 1; Ana, Caio e Gabi na 2. */
     expect(await prisma.exp05ef1bSessao.count({ where: { escolaId: ESCOLA, pacoteId: pacote5A } })).toBe(6);
+    const lista = PacotesDaTurmaSchema.parse(await service.pacotes(ESCOLA, ids.turma5A, ids.professora));
+    expect(lista.emAndamento).toEqual({ pacoteId: novo.id, rodada: 1 });
+    expect(lista.historico.map((p) => [p.id, p.ativo, p.rodadas])).toEqual([
+      /* Ler a sessão não a cria: quem cria é o `entrar`. */
+      [novo.id, true, 0],
+      [pacote5A, false, 2],
+    ]);
+    expect(await service.pacote(ESCOLA, ids.turma5A, ids.professora, pacote5A)).toMatchObject({ ativo: false, rodadas: 2 });
+
+    /* Voltar ao anterior, que rodou duas rodadas, abre a TERCEIRA. */
+    expect(await service.colocarEmAndamento(ESCOLA, ids.turma5A, ids.professora, pacote5A)).toMatchObject({
+      atividade: { pacoteId: pacote5A, rodada: 3 },
+      mudou: true,
+    });
+    expect(await prisma.exp05ef1bPacote.count({ where: { escolaId: ESCOLA, turmaId: ids.turma5A, ativo: true } })).toBe(1);
+    /* E o novo volta ao ar — o `pacote5A` fica PRONTO para os CHECKs abaixo. */
+    await service.colocarEmAndamento(ESCOLA, ids.turma5A, ids.professora, novo.id);
+  });
+
+  test("o rascunho e o pacote de outra turma não são atividade daqui: 404", async () => {
+    const daVizinha = await aprovar(ids.turmaVizinha, ids.profVizinho, corpoDoPreset(), OUTRA_ESCOLA);
+    expect(await codigo(service.pacote(ESCOLA, ids.turma5A, ids.professora, daVizinha.id))).toBe("atividade-nao-encontrada");
+    expect(await codigo(service.colocarEmAndamento(ESCOLA, ids.turma5A, ids.professora, daVizinha.id))).toBe(
+      "atividade-nao-encontrada",
+    );
+    const { rascunho } = await service.gerar(ESCOLA, ids.turma5A, ids.professora, "professor", {
+      disciplina: "ciencias",
+      tema: "a feira de livros",
+      assuntos: ["um", "dois", "três"],
+    });
+    expect(await codigo(service.colocarEmAndamento(ESCOLA, ids.turma5A, ids.professora, rascunho.id))).toBe(
+      "atividade-nao-encontrada",
+    );
   });
 });
 
@@ -718,7 +776,7 @@ describe("tenancy no banco (regra 1)", () => {
   beforeAll(async () => {
     /* A vizinha com linha nas QUATRO tabelas — a desta escola já tem. */
     const aprovado = await aprovar(ids.turmaVizinha, ids.profVizinho, corpoDoPreset(), OUTRA_ESCOLA);
-    expect(aprovado.ativo).toBe(true);
+    await service.colocarEmAndamento(OUTRA_ESCOLA, ids.turmaVizinha, ids.profVizinho, aprovado.id);
     await service.entrar(OUTRA_ESCOLA, ids.vizinho);
     await service.enviarAoMural(OUTRA_ESCOLA, ids.vizinho, ["msg_1", "msg_3", "msg_8"]);
     await service.votar(OUTRA_ESCOLA, ids.vizinho, "urgencia");

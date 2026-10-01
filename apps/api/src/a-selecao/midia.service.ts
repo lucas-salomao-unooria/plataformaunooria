@@ -94,8 +94,10 @@ export class MidiaDaExp07ef1bService {
     professorId: string | undefined,
     usuarioId: string,
     perfil: Perfil,
+    /** A atividade PRONTA sendo preparada; sem ela, a em andamento (ADR-130). */
+    coberturaId?: string,
   ): Promise<ProgressoDaMidia> {
-    const cobertura = await this.selecao.coberturaParaMidia(escolaId, turmaId, professorId);
+    const cobertura = await this.selecao.coberturaParaMidia(escolaId, turmaId, professorId, coberturaId);
     const emCurso = emPreparo.get(cobertura.id);
     if (emCurso) return emCurso;
 

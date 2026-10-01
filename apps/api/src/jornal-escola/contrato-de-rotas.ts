@@ -452,17 +452,24 @@ export const ZerarTurmaSchema = z.object({
   etapa: EtapaSchema,
 });
 
+/** O pacote como as telas do professor o mostram, com o gabarito. */
+const PacoteNaTelaSchema = PacoteResumoSchema.extend({
+  topicos: z.string().nullable(),
+  noticias: z.array(NoticiaDoPacoteSchema),
+  midia: MidiaResumoSchema,
+  /** As URLs já geradas, por id de notícia. */
+  imagens: z.record(z.string()),
+});
+
 export const PacotesSchema = z.object({
-  /** A atividade em andamento, COM o gabarito (é a tela do preparo). */
-  ativo: PacoteResumoSchema.extend({
+  /**
+   * A atividade EM ANDAMENTO, COM o gabarito — ou `null` quando o professor
+   * ainda não pôs nenhuma no ar: a plataforma não cria atividade (ADR-130).
+   */
+  ativo: PacoteNaTelaSchema.extend({
     rodada: z.number().int().positive(),
     etapa: EtapaSchema,
-    topicos: z.string().nullable(),
-    noticias: z.array(NoticiaDoPacoteSchema),
-    midia: MidiaResumoSchema,
-    /** As URLs já geradas, por id de notícia. */
-    imagens: z.record(z.string()),
-  }),
+  }).nullable(),
   /** Todos os pacotes da turma, o ativo incluso — é o `?pacote=` do painel de habilidades. */
   historico: z.array(
     PacoteResumoSchema.extend({
@@ -486,10 +493,38 @@ export const RascunhoSchema = z.object({
 
 export const NoticiaRegeneradaSchema = z.object({ noticia: NoticiaDoPacoteSchema, usouIa: z.boolean() });
 
+/**
+ * A atividade criada: nasce PRONTA (ADR-130). `ativo` só é `true` no segundo
+ * clique em "Criar atividade" sobre um pacote que já estava no ar.
+ */
 export const PacoteHomologadoSchema = PacoteResumoSchema.extend({
+  ativo: z.boolean(),
+  noticias: z.array(NoticiaDoPacoteSchema).length(TOTAL_DE_NOTICIAS),
+});
+
+/** UM pacote, em andamento ou não — a página da atividade. */
+export const PacoteDetalheSchema = PacoteNaTelaSchema.extend({
+  ativo: z.boolean(),
+  /** A rodada e a etapa do gate, só quando em andamento. */
+  rodada: z.number().int().positive().nullable(),
+  etapa: EtapaSchema.nullable(),
+  criadoEm: z.string(),
+  /** A maior rodada com sessão; 0 = nunca rodou. */
+  rodadas: z.number().int().min(0),
+});
+
+export const EmAndamentoSchema = z.object({
+  pacoteId: z.string().uuid(),
   rodada: z.number().int().positive(),
   etapa: EtapaSchema,
-  noticias: z.array(NoticiaDoPacoteSchema).length(TOTAL_DE_NOTICIAS),
+  /** `false` = ele já estava em andamento (o segundo clique). */
+  mudou: z.boolean(),
+});
+
+/** `?pacoteId=` da rota de imagens: a atividade PRONTA sendo preparada. */
+export const QueryDoPacoteSchema = z.object({
+  escolaId: z.string().optional(),
+  pacoteId: z.string().uuid().optional(),
 });
 
 export const ProgressoDaMidiaSchema = z.object({
