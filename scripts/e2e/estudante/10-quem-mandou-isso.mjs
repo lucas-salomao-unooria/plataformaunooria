@@ -1170,7 +1170,7 @@ await suite(
     });
 
     // ═══ A RUBRICA DO SE/ENTÃO: o CRIAR da EF05CO04 (ADR-120) ═════════════
-    /* A P2 mediu o SIMULAR; a regra que a criança escreveu é o CRIAR, e quem a
+    /* A P2 mediu o RECONHECER da regra completa; a regra escrita é o CRIAR, e quem a
        classifica é a professora, com um clique ao lado dela. O clique é um
        ajuste da evidência: vale sobre a pergunta e aparece como "Ajuste
        docente" no painel de habilidades. */
@@ -1201,7 +1201,7 @@ await suite(
       titulo: "A regra, classificada na EF05CO04",
       mostra: "Ao lado da regra Se/Então da criança, os três níveis da EF05CO04 — e o clique da professora aceso.",
       prova:
-        "A habilidade tem dois verbos: a pergunta da Nina mede o SIMULAR, e a regra escrita é o CRIAR. " +
+        "A pergunta da Nina mede se a criança reconhece a regra completa; a regra que ela escreveu é o CRIAR. " +
         "Ninguém corrige texto de criança à máquina: a professora lê e classifica, e o clique dela vale sobre a pergunta.",
     });
   },

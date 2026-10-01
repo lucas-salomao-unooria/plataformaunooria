@@ -78,7 +78,7 @@ export const GUIA_EXP05EF1B: GuiaDaAula = {
         "Realizar operações de negação, conjunção e disjunção sobre sentenças lógicas e valores 'verdadeiro' e 'falso'.",
       eixo: "Pensamento Computacional",
       ondeAcontece:
-        "Etapa 4, na revelação: cada mensagem ganha DOIS selos independentes — verdadeira ou falsa, e emocional ou neutra —, e a criança vê que “séria” não quer dizer “verdadeira”. O painel registra a habilidade pela primeira pergunta da Nina, no fim da missão: diante de uma mensagem FALSA e EMOCIONAL, a criança escolhe a frase certa entre três com “não”, “e” e “ou”.",
+        "Etapa 4, na revelação: cada mensagem ganha DOIS selos independentes — verdadeira ou falsa, e emocional ou neutra —, e a criança vê que “séria” não quer dizer “verdadeira”. O painel registra a habilidade pela primeira pergunta da Nina, no fim da missão: uma colega diz que a mensagem calma e cheia de números é verdadeira “porque é séria”, e a criança diz se concorda.",
     },
     {
       codigo: "EF05CO04",
@@ -86,7 +86,7 @@ export const GUIA_EXP05EF1B: GuiaDaAula = {
         "Criar e simular algoritmos representados em linguagem oral, escrita ou pictográfica, que incluam sequências, repetições e seleções condicionais para resolver problemas de forma independente e em colaboração.",
       eixo: "Pensamento Computacional",
       ondeAcontece:
-        "Etapa 6: a criança monta a própria regra “Se a mensagem for…, então eu…” para o áudio do tio. A segunda pergunta da Nina mede o SIMULAR: a criança segue uma regra pronta no áudio do tio. O CRIAR é a regra que ela escreveu, e quem a classifica é você, com um clique, na folha da turma — o seu clique vale sobre a pergunta.",
+        "Etapa 6: a criança monta a própria regra “Se a mensagem for…, então eu…” para o áudio do tio. Na segunda pergunta da Nina a criança reconhece, entre três regras de colegas, a que funciona de verdade — condição que dá para conferir, ação concreta e a ordem certa. O CRIAR é a regra que ela escreveu, e quem a classifica é você, com um clique, na folha da turma — o seu clique vale sobre a pergunta.",
     },
   ],
 

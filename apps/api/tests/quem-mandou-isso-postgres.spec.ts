@@ -625,7 +625,7 @@ describe("a aula na 5A — os três latches, a evidência e a revelação", () =
 
   test("as perguntas de evidência: embaralhadas, sem nível, e a resposta cai na atividade e na rodada da missão", async () => {
     const p1 = await evidencias.pergunta(ESCOLA, ids.ana, EXP_ID, "p1");
-    expect(p1.enunciado).toBe("Qual frase está certa sobre ela?");
+    expect(p1.enunciado).toBe("Você concorda?");
     expect(p1.alternativas.map((a) => a.id).sort()).toEqual(["A1", "A2", "A3"]);
     expect(JSON.stringify(p1)).not.toContain("status");
     expect(await evidencias.responder(ESCOLA, ids.ana, EXP_ID, "p1", "A1")).toEqual({ enviada: true });
@@ -635,8 +635,8 @@ describe("a aula na 5A — os três latches, a evidência e a revelação", () =
       orderBy: { habilidade: "asc" },
     });
     expect(marcas.map((m) => [m.habilidade, m.marcador, m.status, m.atividadeId, m.rodada])).toEqual([
-      ["EF05CO03", "pergunta-dos-selos", "atingiu", pacote5A, 1],
-      ["EF05CO04", "pergunta-simular-a-regra", "em_processo", pacote5A, 1],
+      ["EF05CO03", "pergunta-tom-e-veracidade", "atingiu", pacote5A, 1],
+      ["EF05CO04", "pergunta-regra-condicional", "em_processo", pacote5A, 1],
       ["EF05CO08", "selecao-do-mural", "atingiu", pacote5A, 1],
     ]);
   });

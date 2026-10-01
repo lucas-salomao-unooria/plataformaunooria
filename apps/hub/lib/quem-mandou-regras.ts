@@ -450,8 +450,8 @@ export function rotuloDaOpcao(opcoes: readonly OpcaoDaMissao[], id: string | nul
 // ─────────────────────────────────── a rubrica do Se/Então (régua v2, ADR-120)
 
 /**
- * A EF05CO04 tem dois verbos — criar e simular. A P2 da Nina mede o SIMULAR;
- * o CRIAR é a regra Se/Então que a criança escreveu, e quem a lê é o
+ * A EF05CO04 tem dois verbos — criar e simular. A P2 da Nina (a do PO) mede
+ * o RECONHECER da regra completa; o CRIAR é a regra Se/Então que a criança escreveu, e quem a lê é o
  * professor: na folha da turma, ao lado da regra, ele a classifica com um
  * clique, e o clique é um AJUSTE da evidência (vale sobre a pergunta). A
  * regra é texto livre de menor — não passa por IA nem sai da tela de quem dá
