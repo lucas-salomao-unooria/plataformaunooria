@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { EmptyState, FeedbackAlert } from "@edu/ui/ds";
 import { EquipesDaFicha } from "@/components/equipes/equipes-da-ficha";
 import { LinkButton } from "@/components/link-button";
+import { temAtividades } from "@/lib/entre-redes/atividades";
 import {
   MISSAO_A_SELECAO,
   MISSAO_FOTO_CONTA,
@@ -85,8 +86,10 @@ export default async function MissaoPage({
    * resultados já vêm com a turma) — sem dizer isso na cara, o professor não
    * tem como saber de qual turma é o que está vendo.
    *
-   * As EQUIPES (E13) entram logo abaixo dela, e pelo mesmo motivo: são da
-   * turma, não da missão, e a seção decide sozinha se aparece (`permitida`).
+   * As EQUIPES (E13) entram logo abaixo dela SÓ na missão sem atividade (o
+   * unooGPT, até ser refeito): nas outras, a equipe é de cada ATIVIDADE
+   * (ADR-130) e mora na página dela. A seção decide sozinha se aparece
+   * (`permitida`).
    */
   const corpo = (elemento: React.ReactNode) => (
     <div className="flex flex-col gap-6">
@@ -97,7 +100,9 @@ export default async function MissaoPage({
           description="As atividades e os resultados abaixo são desta turma. Para ver as outras, entre pela trilha do Entre Redes."
         />
       ) : null}
-      {turma && missao.expId ? <EquipesDaFicha turmaId={turma.id} expId={missao.expId} /> : null}
+      {turma && missao.expId && !temAtividades(missao.expId) ? (
+        <EquipesDaFicha turmaId={turma.id} expId={missao.expId} />
+      ) : null}
       {elemento}
     </div>
   );

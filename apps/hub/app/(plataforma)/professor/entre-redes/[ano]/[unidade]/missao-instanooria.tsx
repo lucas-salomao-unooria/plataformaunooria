@@ -1,41 +1,22 @@
 import Link from "next/link";
 
-import { Badge, Card, EmptyState, Tag } from "@edu/ui/ds";
-import { CartaoAtividade } from "@/components/cartao-atividade";
+import { Badge, Card, Tag } from "@edu/ui/ds";
 import { LinkButton } from "@/components/link-button";
-import { apiDoServidor } from "@/lib/api-servidor";
 import {
   rotuloDaMissao,
   type Ano,
   type Missao,
 } from "@/lib/entre-redes/catalogo";
-import { comTurma, rotaDoGuiaDaMissao } from "@/lib/rotas-da-missao";
+import { rotaDoGuiaDaMissao } from "@/lib/rotas-da-missao";
 import type { TurmaDoProfessor } from "@/lib/turmas";
-import { statusDaAtividade } from "@/lib/status-atividade";
 
-/** O que a api devolve em GET /atividades (escopado ao professor do token). */
-type RespostaAtividades = {
-  atividades: Array<{
-    id: string;
-    /** A turma da atividade (a api passou a devolver junto com o filtro). */
-    turmaId: string | null;
-    titulo: string;
-    disciplina: string;
-    recorte: string;
-    perguntaChave: string;
-    status: string;
-    etapa: string;
-    criadoEm: string;
-    estudantes?: number;
-    posts: number;
-    sessoes: number;
-  }>;
-};
+import { AtividadesDaMissao } from "./atividades-da-missao";
 
 /**
  * Corpo da missão do INSTANOORIA (8º ano · Unidade 1): ficha, guia e a lista
- * de atividades que o professor configurou. Recebe a missão já resolvida pelo
- * despachante em `page.tsx`.
+ * de atividades que o professor configurou — a lista que virou o molde das
+ * outras missões (ADR-130), e que mora em `atividades-da-missao.tsx`. Recebe a
+ * missão já resolvida pelo despachante em `page.tsx`.
  */
 export async function MissaoInstanooria({
   ano,
@@ -49,21 +30,6 @@ export async function MissaoInstanooria({
 }) {
   const { ficha } = missao;
   const guia = missao.expId ? rotaDoGuiaDaMissao(missao.expId) : null;
-
-  // MISSÃO ÚNICA: com uma só missão publicada, toda atividade do professor é
-  // desta missão (nota de modelagem em lib/entre-redes/catalogo.ts).
-  // No origem era `prisma.activity.findMany(...)`; a api devolve a lista já
-  // ordenada por criação (desc) e escopada ao professor do token.
-  //
-  // Com turma (ADR-100), a lista é DAQUELA TURMA: quem chegou aqui pela sala
-  // está conduzindo uma turma específica, e as atividades das outras turmas
-  // dele são ruído — pior, são o convite a abrir o painel da turma errada. O
-  // filtro é da api (`?turmaId=`), não um `filter` aqui: a resposta já não
-  // traria as outras.
-  const resposta = await apiDoServidor<RespostaAtividades>(
-    turma ? `/atividades?turmaId=${encodeURIComponent(turma.id)}` : "/atividades",
-  );
-  const atividades = resposta?.atividades ?? [];
 
   return (
     <div className="flex flex-col gap-8">
@@ -134,59 +100,7 @@ export async function MissaoInstanooria({
         </Card>
       </section>
 
-      <section className="flex flex-col gap-4">
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h2 className="text-[18px] font-bold text-unooria-neutral-950">
-              {turma ? `Suas atividades com a turma ${turma.nome}` : "Suas atividades nesta missão"}
-            </h2>
-            <p className="text-[13px] text-unooria-neutral-500">
-              {turma
-                ? "Cada atividade é uma configuração da missão para um tema seu. Aqui estão as desta turma — as das outras ficam na trilha do Entre Redes."
-                : "Cada atividade é uma configuração da missão para um tema seu. Você pode ter quantas quiser — uma por turma, uma por conteúdo."}
-            </p>
-          </div>
-          <LinkButton href={comTurma("/professor/atividades/nova", turma?.id)}>
-            Nova atividade
-          </LinkButton>
-        </div>
-
-        {atividades.length === 0 ? (
-          <EmptyState
-            variant="no-data"
-            size="lg"
-            bordered
-            fullWidth
-            title={
-              turma
-                ? `Nenhuma atividade com a turma ${turma.nome} ainda`
-                : "Nenhuma atividade por aqui ainda"
-            }
-            description="Comece pelo tema da sua disciplina — a IA propõe a pergunta-chave e você escolhe."
-          />
-        ) : (
-          <ul className="grid gap-4 sm:grid-cols-2">
-            {atividades.map((atividade) => (
-              <li key={atividade.id}>
-                <CartaoAtividade
-                  atividade={{
-                    id: atividade.id,
-                    titulo: atividade.titulo,
-                    disciplina: atividade.disciplina,
-                    recorte: atividade.recorte,
-                    perguntaChave: atividade.perguntaChave,
-                    status: statusDaAtividade(atividade.status),
-                    posts: atividade.posts,
-                    sessoes: atividade.sessoes,
-                    estudantes: atividade.estudantes ?? 0,
-                    criadoEm: atividade.criadoEm,
-                  }}
-                />
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+      <AtividadesDaMissao missao={missao} expId="exp08ef1b" turma={turma} />
     </div>
   );
 }

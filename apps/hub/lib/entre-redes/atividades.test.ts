@@ -1,0 +1,171 @@
+import { describe, expect, test } from "vitest";
+import {
+  atividadesDaSelecao,
+  atividadesDoInstanooria,
+  caminhoDoEmAndamento,
+  estadoDoInstanooria,
+  ordenarAtividades,
+  rotaDaAtividade,
+  rotaDaNovaAtividade,
+  serieDaMissao,
+  temAtividades,
+  textoDasRodadas,
+} from "./atividades";
+import { concluirCriacao, destinoDepoisDeCriar } from "./criar-atividade";
+
+/**
+ * AS ATIVIDADES DA MISSÃO (ADR-130): a lista da ficha, para onde cada uma
+ * leva, e o fim da criação — pôr no ar e montar as equipes, na ordem certa.
+ */
+describe("a lista de atividades", () => {
+  test("as quatro missões com atividade — o mesmo par da api", () => {
+    expect(["exp08ef1b", "exp07ef1b", "exp04ef1b", "exp05ef1b"].every(temAtividades)).toBe(true);
+    expect(temAtividades("exp02em1b")).toBe(false);
+    expect(temAtividades(undefined)).toBe(false);
+  });
+
+  test("a série sai do código da missão", () => {
+    expect(serieDaMissao("exp07ef1b")).toBe("7EF");
+    expect(serieDaMissao("exp04ef1b")).toBe("4EF");
+    expect(serieDaMissao("exp02em1b")).toBe("2EM");
+    expect(serieDaMissao("app-90-plano-de-aula")).toBeNull();
+  });
+
+  test("o Instanooria em três estados: ativa, pronta (revisão ou encerrada), em preparo", () => {
+    expect(estadoDoInstanooria("ativa")).toBe("em-andamento");
+    expect(estadoDoInstanooria("revisao")).toBe("pronta");
+    expect(estadoDoInstanooria("encerrada")).toBe("pronta");
+    expect(estadoDoInstanooria("gerando")).toBe("em-preparo");
+    const [a] = atividadesDoInstanooria([
+      {
+        id: "a1",
+        turmaId: "t",
+        titulo: "Revolução",
+        disciplina: "História",
+        recorte: "França",
+        perguntaChave: "Conquista ou terror?",
+        status: "ativa",
+        criadoEm: "2026-10-01T10:00:00Z",
+        posts: 120,
+        sessoes: 0,
+      },
+    ]);
+    expect(a).toMatchObject({ estado: "em-andamento", rodadas: 0, complemento: "Conquista ou terror?", exclusao: { posts: 120, sessoes: 0 } });
+  });
+
+  test("a em andamento vem primeiro, e depois da mais nova à mais velha", () => {
+    const lista = atividadesDaSelecao({
+      ativa: null,
+      historico: [
+        { id: "velha", tema: "Velha", foco: null, origem: "padrao", ativa: false, criadaEm: "2026-09-01T00:00:00Z", rodadas: 2 },
+        { id: "no-ar", tema: "No ar", foco: "Bairro", origem: "ia", ativa: true, criadaEm: "2026-09-10T00:00:00Z", rodadas: 1 },
+        { id: "nova", tema: "Nova", foco: null, origem: "ia", ativa: false, criadaEm: "2026-09-20T00:00:00Z", rodadas: 0 },
+      ],
+    });
+    expect(ordenarAtividades(lista).map((a) => a.id)).toEqual(["no-ar", "nova", "velha"]);
+    expect(lista.find((a) => a.id === "no-ar")?.detalhe).toBe("Bairro · gerada com IA");
+  });
+
+  test("as rodadas em palavras", () => {
+    expect(textoDasRodadas(0)).toBe("nunca rodou");
+    expect(textoDasRodadas(1)).toBe("1 rodada");
+    expect(textoDasRodadas(3)).toBe("3 rodadas");
+  });
+});
+
+describe("para onde a atividade leva", () => {
+  const rota = "/professor/entre-redes/7-ano/unidade-1";
+
+  test("o Instanooria tem a tela dele; as outras, os resultados com a atividade na URL", () => {
+    expect(rotaDaAtividade(rota, "exp08ef1b", "t1", "a1")).toBe("/professor/atividades/a1");
+    expect(rotaDaAtividade(rota, "exp07ef1b", "t1", "c1")).toBe(`${rota}/resultados?turmaId=t1&cobertura=c1`);
+    expect(rotaDaAtividade(rota, "exp04ef1b", "t1", "p1")).toBe(`${rota}/resultados?turmaId=t1&pacote=p1`);
+    expect(rotaDaAtividade(rota, "exp05ef1b", "t1", "p1")).toBe(`${rota}/resultados?turmaId=t1&pacote=p1`);
+  });
+
+  test("a criação: a do Instanooria é a dele", () => {
+    expect(rotaDaNovaAtividade(rota, "exp08ef1b", "t1")).toBe("/professor/atividades/nova?turmaId=t1");
+    expect(rotaDaNovaAtividade(rota, "exp07ef1b", "t1")).toBe(`${rota}/atividades/nova?turmaId=t1`);
+  });
+
+  test("o 'Usar esta atividade agora' de cada missão", () => {
+    expect(caminhoDoEmAndamento("exp08ef1b", "t", "a")).toBe("/atividades/a/ativar");
+    expect(caminhoDoEmAndamento("exp07ef1b", "t", "c")).toBe("/a-selecao/turmas/t/coberturas/c/em-andamento");
+    expect(caminhoDoEmAndamento("exp04ef1b", "t", "p")).toBe("/jornal-escola/turmas/t/pacotes/p/em-andamento");
+    expect(caminhoDoEmAndamento("exp05ef1b", "t", "p")).toBe("/quem-mandou-isso/turmas/t/pacotes/p/em-andamento");
+  });
+
+  test("'Eu separo' leva o número de computadores para a página", () => {
+    expect(destinoDepoisDeCriar("/r?turmaId=t", { modo: "manual", computadores: 4 })).toBe("/r?turmaId=t&separar=4");
+    expect(destinoDepoisDeCriar("/r?turmaId=t", { modo: "sorteio", computadores: 4 })).toBe("/r?turmaId=t");
+  });
+});
+
+describe("o fim da criação", () => {
+  type Chamada = { url: string; metodo: string; corpo: unknown };
+
+  function buscaFalsa(respostas: Record<string, { status: number; corpo: unknown }>) {
+    const chamadas: Chamada[] = [];
+    const busca = async (url: string, init?: RequestInit) => {
+      const metodo = init?.method ?? "GET";
+      chamadas.push({ url, metodo, corpo: init?.body ? JSON.parse(String(init.body)) : null });
+      const chave = Object.keys(respostas).find((k) => `${metodo} ${url}`.endsWith(k));
+      const r = chave ? respostas[chave] : { status: 200, corpo: {} };
+      return new Response(JSON.stringify(r?.corpo ?? {}), { status: r?.status ?? 200 });
+    };
+    return { busca, chamadas };
+  }
+
+  const alvo = { expId: "exp07ef1b" as const, turmaId: "t", atividadeId: "c" };
+
+  test("sorteio: põe no ar, pede o sorteio e grava o que a api sorteou — nessa ordem", async () => {
+    const { busca, chamadas } = buscaFalsa({
+      "/sugestao": {
+        status: 200,
+        corpo: { modo: "sorteio", computadores: 2, equipes: [{ nome: "Equipe 1", membros: [{ id: "e1", nome: "Ana" }], grupo: null, mista: false }], semEquipe: [], agrupamento: null },
+      },
+    });
+    const fim = await concluirCriacao({ ...alvo, equipes: { modo: "sorteio", computadores: 2 }, porNoAr: true }, busca);
+    expect(fim.avisos).toEqual([]);
+    expect(chamadas.map((c) => `${c.metodo} ${c.url}`)).toEqual([
+      "POST /api/plataforma/a-selecao/turmas/t/coberturas/c/em-andamento",
+      "POST /api/plataforma/equipes/turma/t/missao/exp07ef1b/atividade/c/sugestao",
+      "PUT /api/plataforma/equipes/turma/t/missao/exp07ef1b/atividade/c",
+    ]);
+    expect(chamadas[2]?.corpo).toEqual({
+      versao: 0,
+      modo: "sorteio",
+      computadores: 2,
+      ausentes: [],
+      equipes: [{ nome: "Equipe 1", membros: ["e1"] }],
+    });
+  });
+
+  test("um aluno por computador grava a montagem sem equipes; 'Eu separo' não grava nada", async () => {
+    const individual = buscaFalsa({});
+    await concluirCriacao({ ...alvo, equipes: { modo: "individual" }, porNoAr: false }, individual.busca);
+    expect(individual.chamadas).toEqual([
+      {
+        url: "/api/plataforma/equipes/turma/t/missao/exp07ef1b/atividade/c",
+        metodo: "PUT",
+        corpo: { versao: 0, modo: "individual", computadores: null, ausentes: [], equipes: [] },
+      },
+    ]);
+
+    const manual = buscaFalsa({});
+    await concluirCriacao({ ...alvo, equipes: { modo: "manual", computadores: 3 }, porNoAr: false }, manual.busca);
+    expect(manual.chamadas).toEqual([]);
+  });
+
+  test("uma falha no meio NÃO desfaz nada: a atividade existe, e o aviso diz o que faltou", async () => {
+    const { busca } = buscaFalsa({
+      "/em-andamento": { status: 403, corpo: { mensagem: "Recurso desligado." } },
+      "/sugestao": { status: 400, corpo: { mensagem: "Turma sem estudantes." } },
+    });
+    const fim = await concluirCriacao({ ...alvo, equipes: { modo: "sorteio", computadores: 2 }, porNoAr: true }, busca);
+    expect(fim.avisos).toEqual([
+      "A atividade foi criada, mas não entrou em andamento: Recurso desligado.",
+      "A atividade foi criada, mas as equipes não foram salvas: Turma sem estudantes.",
+    ]);
+  });
+});

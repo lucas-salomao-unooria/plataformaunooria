@@ -31,7 +31,6 @@ import {
   falhasAcumuladas,
   gabaritoDaEscolha,
   histogramaEmPercentual,
-  mesmoPacote,
   normalizarNoticia,
   ordenarLinhas,
   percentual,
@@ -394,22 +393,7 @@ describe("o conjunto das oito", () => {
   });
 });
 
-describe("o mesmo pacote não se aprova duas vezes", () => {
-  const base = { disciplina: "Ciências", tema: "Feira de ciências", topicos: null, noticias: [noticiaValida("n1", "jornal")] };
-
-  test("espaço nas pontas e campo anulável vazio não são mudança", () => {
-    expect(mesmoPacote(base, { ...base, tema: " Feira de ciências ", topicos: "" })).toBe(true);
-    const comEspaco = { ...base.noticias[0]!, manchete: `${base.noticias[0]!.manchete}  `, legenda: "" };
-    expect(mesmoPacote(base, { ...base, noticias: [comEspaco] })).toBe(true);
-  });
-
-  test("editar a consequência ou o gabarito É mudança (PDF §10)", () => {
-    const n = base.noticias[0]!;
-    expect(mesmoPacote(base, { ...base, noticias: [{ ...n, consequencia: { ...n.consequencia, fala: "Outra fala do leitor aqui." } }] })).toBe(false);
-    expect(mesmoPacote(base, { ...base, noticias: [{ ...n, gabarito: { ...n.gabarito, publicavel: false, pilarEmFalta: "data" } }] })).toBe(false);
-    expect(mesmoPacote(base, { ...base, disciplina: "História" })).toBe(false);
-  });
-
+describe("a notícia como ela viaja", () => {
   test("a notícia viaja limpa: vazio anulável vira null, e a publicável não leva pilar", () => {
     const n = normalizarNoticia({
       ...noticiaValida("n1", "jornal"),

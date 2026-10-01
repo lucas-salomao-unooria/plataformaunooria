@@ -28,7 +28,16 @@ import {
  * mock falha fechado em dev, e o provedor pode estar fora — o podcast não
  * some, só não toca. O `AudioPlayer` do DS diz o porquê no lugar da barra.
  */
-export function PodcastASelecao({ turmaId, inicial }: { turmaId: string; inicial: PodcastDaTurma }) {
+export function PodcastASelecao({
+  turmaId,
+  coberturaId,
+  inicial,
+}: {
+  turmaId: string;
+  /** A atividade do podcast (ADR-130): a da página, em andamento ou pronta. */
+  coberturaId: string;
+  inicial: PodcastDaTurma;
+}) {
   const [estado, setEstado] = useState<PodcastDaTurma>(inicial);
   const [gerando, setGerando] = useState(false);
   const [falhou, setFalhou] = useState(false);
@@ -66,7 +75,9 @@ export function PodcastASelecao({ turmaId, inicial }: { turmaId: string; inicial
     const tetoDeVoltas = Math.max(estado.trechos.total, 1) + 2;
     try {
       for (let volta = 0; volta < tetoDeVoltas && vivo.current; volta += 1) {
-        const r = await fetch(`${base}/gerar-podcast`, { method: "POST" });
+        const r = await fetch(`${base}/gerar-podcast?coberturaId=${encodeURIComponent(coberturaId)}`, {
+          method: "POST",
+        });
         if (!r.ok) {
           /* 429 `sem-saldo-de-ia` (a quota do professor) ou o limite por
              minuto: a mensagem da api já está na voz certa. */

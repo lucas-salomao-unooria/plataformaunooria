@@ -1,8 +1,10 @@
 import { Badge, Card, FeedbackAlert, Tag } from "@edu/ui/ds";
 import { LinkButton } from "@/components/link-button";
-import { rotaDaMissao, rotuloDaMissao, type Ano, type Missao } from "@/lib/entre-redes/catalogo";
-import { comTurma, rotaDoGuiaDaMissao } from "@/lib/rotas-da-missao";
+import { rotuloDaMissao, type Ano, type Missao } from "@/lib/entre-redes/catalogo";
+import { rotaDoGuiaDaMissao } from "@/lib/rotas-da-missao";
 import type { TurmaDoProfessor } from "@/lib/turmas";
+
+import { AtividadesDaMissao } from "./atividades-da-missao";
 
 /**
  * Corpo do JORNAL DA ESCOLA: A EDIÇÃO DE BENTO (4º ano · Unidade 1).
@@ -31,7 +33,6 @@ export function MissaoJornalEscola({
   turma: TurmaDoProfessor | null;
 }) {
   const { ficha } = missao;
-  const rotaResultados = comTurma(`${rotaDaMissao(missao)}/resultados`, turma?.id);
   const guia = missao.expId ? rotaDoGuiaDaMissao(missao.expId) : null;
 
   return (
@@ -57,7 +58,7 @@ export function MissaoJornalEscola({
       <FeedbackAlert
         type="warning"
         title="A aula tem dois portões, num botão só, e ele não volta"
-        description="Em A aula e os resultados, o mesmo botão mostra sempre a próxima etapa: primeiro Liberar resultado, depois Liberar revisão. Sem o primeiro clique, quem publicou fica esperando. Antes da aula você pode trocar o pacote de notícias e gerar as imagens — sem nada disso, a turma roda o banco padrão da Unooria, “Feira de Ciências e Notícias da Cidade”."
+        description="Na página da atividade, o mesmo botão mostra sempre a próxima etapa: primeiro Liberar resultado, depois Liberar revisão. Sem o primeiro clique, quem publicou fica esperando. A missão só abre para a turma com uma atividade sua em andamento: crie o pacote de notícias (pode partir do banco da Unooria, “Feira de Ciências e Notícias da Cidade”), gere as imagens e use a atividade quando a turma for fazer."
       />
 
       <section className="grid gap-4 lg:grid-cols-2">
@@ -117,23 +118,7 @@ export function MissaoJornalEscola({
         </div>
       </Card>
 
-      <Card variant="elevated" title="A aula e os resultados">
-        <div className="flex flex-col gap-3">
-          <p className="max-w-3xl text-[14px] leading-relaxed text-unooria-neutral-700">
-            É de lá que você prepara o pacote de notícias, gera as imagens, acompanha quantos
-            computadores já publicaram e aperta o botão das etapas. E é lá que está o gráfico anônimo
-            para projetar, o radar das notícias que mais foram para a capa e, no fim, o painel de
-            habilidades da turma.{" "}
-            <strong className="text-unooria-neutral-950">
-              Nenhum texto gerado por inteligência artificial chega aos estudantes sem a sua aprovação
-            </strong>{" "}
-            — gerar produz rascunho, e o que publica é o seu clique em Aprovar Pacote.
-          </p>
-          <div>
-            <LinkButton href={rotaResultados}>Abrir a aula e os resultados</LinkButton>
-          </div>
-        </div>
-      </Card>
+      <AtividadesDaMissao missao={missao} expId="exp04ef1b" turma={turma} />
     </div>
   );
 }

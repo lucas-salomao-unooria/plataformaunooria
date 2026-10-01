@@ -472,6 +472,8 @@ export const ProgressoDaMidiaSchema = z.object({
 export const MaterialDoProfessorSchema = z.object({
   tema: z.string(),
   posts: z.array(PostDaCoberturaSchema).length(TOTAL_DE_POSTS),
+  /** As três falas do podcast do sheet — o ponto de partida da cobertura pronta (ADR-130). */
+  podcast: FalasDoTemaSaidaSchema,
   roteiroDaEtapa4: z.object({ aviso: z.string(), perguntas: z.array(z.string()).length(3) }),
   gatilhos: z.object({ mural: z.string(), fichas: z.string(), explicacao: z.string() }),
   colegasVirtuais: z.array(

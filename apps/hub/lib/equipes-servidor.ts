@@ -1,6 +1,6 @@
 import "server-only";
 import { apiDoServidor } from "./api-servidor";
-import type { EquipesDaMissao, MinhaEquipe, UltimasEquipes } from "./equipes";
+import { caminhoDasEquipes, type EquipesDaMissao, type MinhaEquipe, type UltimasEquipes } from "./equipes";
 
 /**
  * As leituras server-side das EQUIPES NA MISSÃO (E13). Os tipos e as regras
@@ -11,17 +11,26 @@ import type { EquipesDaMissao, MinhaEquipe, UltimasEquipes } from "./equipes";
  * frente da sala e vão pelo BFF (`/api/plataforma/equipes/...`).
  */
 
-const caminho = (turmaId: string, expId: string) =>
-  `/equipes/turma/${encodeURIComponent(turmaId)}/missao/${encodeURIComponent(expId)}`;
-
-/** `null` é a api fora do ar (ou sem a rota): a ficha simplesmente não mostra a seção. */
-export async function equipesDaMissao(turmaId: string, expId: string): Promise<EquipesDaMissao | null> {
-  return apiDoServidor<EquipesDaMissao>(caminho(turmaId, expId));
+/**
+ * As equipes de UMA atividade (ADR-130). `null` é a api fora do ar (ou sem a
+ * rota, ou a atividade que não é desta turma): a tela simplesmente não mostra
+ * a seção.
+ */
+export async function equipesDaMissao(
+  turmaId: string,
+  expId: string,
+  atividadeId: string,
+): Promise<EquipesDaMissao | null> {
+  return apiDoServidor<EquipesDaMissao>(caminhoDasEquipes(turmaId, expId, atividadeId));
 }
 
-/** As equipes da última missão da turma, para "Manter as equipes da última missão". */
-export async function ultimasEquipes(turmaId: string, expId: string): Promise<UltimasEquipes | null> {
-  return apiDoServidor<UltimasEquipes>(`${caminho(turmaId, expId)}/ultima`);
+/** As equipes da atividade anterior da turma, para "Usar as equipes da atividade anterior". */
+export async function ultimasEquipes(
+  turmaId: string,
+  expId: string,
+  atividadeId: string,
+): Promise<UltimasEquipes | null> {
+  return apiDoServidor<UltimasEquipes>(`${caminhoDasEquipes(turmaId, expId, atividadeId)}/ultima`);
 }
 
 /** A equipe do estudante logado nesta missão. A api responde 200 com `null` quando não há. */
