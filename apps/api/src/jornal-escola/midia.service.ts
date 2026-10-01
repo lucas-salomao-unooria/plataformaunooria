@@ -86,8 +86,10 @@ export class MidiaDaExp04ef1bService {
     professorId: string | undefined,
     usuarioId: string,
     perfil: Perfil,
+    /** A atividade PRONTA sendo preparada; sem ela, a em andamento (ADR-130). */
+    pacoteId?: string,
   ): Promise<ProgressoDaMidia> {
-    const pacote = await this.jornal.pacoteParaMidia(escolaId, turmaId, professorId);
+    const pacote = await this.jornal.pacoteParaMidia(escolaId, turmaId, professorId, pacoteId);
     const emCurso = emPreparo.get(pacote.id);
     if (emCurso) return emCurso;
 

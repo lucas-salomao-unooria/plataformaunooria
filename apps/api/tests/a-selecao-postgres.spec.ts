@@ -119,7 +119,24 @@ const REFLEXAO =
   "Se o repórter ouvir só a diretoria, as salas quebradas e o calor que a gente passa ficam invisíveis. Nos Stories eu fiz igual: escolhi um lado só.";
 
 /** Tudo da missão, das equipes, da evidência e da quota das duas escolas — entre um bloco e outro. */
-async function zerarMissao() {
+/**
+ * A atividade que a professora criaria e poria no ar: a plataforma não cria
+ * atividade (ADR-130), então a suíte faz o caminho dela — criar (pronta) e
+ * "Usar esta atividade agora". É o banco curado, como o preparo oferece.
+ */
+async function prepararAtividade(turmaId = ids.turma, escolaId = ESCOLA): Promise<string> {
+  const criada = await service.homologar(escolaId, turmaId, undefined, ids.professora, {
+    tema: TEMA_PADRAO,
+    origem: "padrao",
+    posts: POSTS_PADRAO.map((p) => ({ ...p })),
+    podcast: { ...FALAS_DO_TEMA_PADRAO },
+  });
+  await service.colocarEmAndamento(escolaId, turmaId, undefined, criada.id);
+  return criada.id;
+}
+
+/** Tudo da missão, sem atividade nenhuma — a turma que o professor ainda não preparou. */
+async function limparMissao() {
   /* A cobertura leva o gate e as sessões por cascata, e a sessão leva a reflexão. */
   await prisma.exp07ef1bCobertura.deleteMany({ where: { escolaId: { in: ESCOLAS } } });
   await prisma.evidenciaEvento.deleteMany({ where: { escolaId: { in: ESCOLAS } } });
@@ -131,8 +148,14 @@ async function zerarMissao() {
   ia.atrasoMs = 0;
 }
 
+/** Tudo da missão, e uma atividade em andamento na turma. */
+async function zerarMissao() {
+  await limparMissao();
+  await prepararAtividade();
+}
+
 async function limpar() {
-  await zerarMissao();
+  await limparMissao();
   await prisma.liberacao.deleteMany({ where: { escolaId: { in: ESCOLAS } } });
   await prisma.matricula.deleteMany({ where: { escolaId: { in: ESCOLAS } } });
   await prisma.user.deleteMany({ where: { escolaId: { in: ESCOLAS } } });
@@ -168,14 +191,11 @@ const etapa = (para: (typeof ETAPAS)[number]) => service.mudarEtapa(ESCOLA, ids.
 
 /** A atividade em andamento na turma — a montagem das equipes é dela (ADR-130). */
 async function atividadeAtual(): Promise<string> {
-  const linha = await prisma.exp07ef1bCobertura.findFirst({
+  const linha = await prisma.exp07ef1bCobertura.findFirstOrThrow({
     where: { escolaId: ESCOLA, turmaId: ids.turma, ativa: true },
     select: { id: true },
   });
-  if (linha) return linha.id;
-  /* A primeira leitura do painel cria a atividade padrão da turma. */
-  await service.painel(ESCOLA, ids.turma, ids.professora);
-  return atividadeAtual();
+  return linha.id;
 }
 
 async function montarEquipes(grupos: string[][], computadores: number, ausentes: string[] = [], nomes?: string[]) {
@@ -268,6 +288,7 @@ const TABELAS = ["exp07ef1b_coberturas", "exp07ef1b_gates_turma", "exp07ef1b_ses
 describe("tenancy no banco (regra inviolável nº 1)", () => {
   beforeAll(async () => {
     await zerarMissao();
+    await prepararAtividade(ids.turmaVizinha, OUTRA_ESCOLA);
     await entrar(ids.ana);
     await entrar(ids.vizinho, ids.turmaVizinha, OUTRA_ESCOLA);
     /* A reflexão entra CRUA: no fluxo ela só existe depois da explicação, e a
@@ -407,7 +428,7 @@ describe("os CHECKs recusam o que dizem recusar", () => {
     await falha(
       `INSERT INTO exp07ef1b_coberturas (escola_id, turma_id, tema, origem, posts, ativa) VALUES ('${ESCOLA}', '${ids.turma}'::uuid, 'Tema curto', 'padrao', '[]'::jsonb, false)`,
     );
-    // O índice único PARCIAL: a turma já tem a cobertura ativa que nasceu na entrada da Ana.
+    // O índice único PARCIAL: a turma já tem a cobertura que a professora pôs no ar.
     expect(coberturaId).not.toBe("");
     await falha(
       `INSERT INTO exp07ef1b_coberturas (escola_id, turma_id, tema, origem, posts, ativa) VALUES ('${ESCOLA}', '${ids.turma}'::uuid, 'Outra ativa', 'padrao', '${posts.replace(/'/g, "''")}'::jsonb, true)`,
@@ -416,7 +437,7 @@ describe("os CHECKs recusam o que dizem recusar", () => {
 });
 
 describe("a porta da sala e a primeira entrada", () => {
-  beforeAll(zerarMissao);
+  beforeAll(limparMissao);
 
   test("sem liberação na turma: 403 `missao-nao-liberada`, na sessão E no polling", async () => {
     expect(await codigoDe(entrar(ids.fabi, ids.turmaSemLiberacao))).toBe("missao-nao-liberada");
@@ -424,13 +445,29 @@ describe("a porta da sala e a primeira entrada", () => {
     expect(await prisma.exp07ef1bSessao.count({ where: { escolaId: ESCOLA, estudanteId: ids.fabi } })).toBe(0);
   });
 
-  test("a primeira entrada cria a cobertura `padrao` e o gate — e a missão não nasce vazia", async () => {
+  /**
+   * A PLATAFORMA NUNCA CRIA A ATIVIDADE (ADR-130). Antes, a primeira entrada
+   * criava a cobertura da Praça Central sozinha; agora a turma sem atividade em
+   * andamento é a porta fechada — 403, a tela de "ainda não foi aberta" que a
+   * experiência já mostra para a liberação — e NADA nasce no banco.
+   */
+  test("sem atividade em andamento: 403 `atividade-nao-preparada` — e nada é criado", async () => {
+    expect(await codigoDe(entrar(ids.ana))).toBe("atividade-nao-preparada");
+    expect(await codigoDe(service.painel(ESCOLA, ids.turma, ids.professora))).toBe("atividade-nao-preparada");
+    expect(await codigoDe(service.zerar(ESCOLA, ids.turma, ids.professora))).toBe("atividade-nao-preparada");
+    /* O polling não escreve nem recusa: devolve a etapa inicial, sem rodada. */
+    expect(await service.gate(ESCOLA, ids.ana, ids.turma)).toMatchObject({ rodada: null, coberturaId: null });
+    expect((await service.coberturas(ESCOLA, ids.turma, ids.professora)).ativa).toBeNull();
+    expect(await prisma.exp07ef1bCobertura.count({ where: { escolaId: ESCOLA } })).toBe(0);
+    expect(await prisma.exp07ef1bGateTurma.count({ where: { escolaId: ESCOLA } })).toBe(0);
+  });
+
+  test("com a atividade da professora em andamento, a entrada abre a rodada 1 dela", async () => {
+    const coberturaId = await prepararAtividade();
     const s = SessaoSchema.parse(await entrar(ids.ana));
-    expect(s).toMatchObject({ rodada: 1, etapa: "exploracao", passo: "desafio", publicada: false, selecao: null });
+    expect(s).toMatchObject({ coberturaId, rodada: 1, etapa: "exploracao", passo: "desafio", publicada: false, selecao: null });
     expect(s.cobertura.tema).toBe(TEMA_PADRAO);
     expect(s.cobertura.posts).toHaveLength(12);
-    const cobertura = await prisma.exp07ef1bCobertura.findFirstOrThrow({ where: { escolaId: ESCOLA, ativa: true } });
-    expect(cobertura).toMatchObject({ origem: "padrao", aprovadaPor: null, id: s.coberturaId });
     // A segunda entrada (outra criança, o F5) não cria outra.
     await entrar(ids.bia);
     await entrar(ids.ana);
@@ -620,7 +657,7 @@ describe("a sala de UM computador (projeção)", () => {
   });
 });
 
-describe("atividade × rodada: zerar guarda, tema novo volta à 1", () => {
+describe("atividade × rodada: zerar guarda, a atividade nova nasce pronta", () => {
   beforeAll(zerarMissao);
 
   test("zerar abre a rodada 2 e a sessão da rodada 1 FICA, com a tríade", async () => {
@@ -646,7 +683,11 @@ describe("atividade × rodada: zerar guarda, tema novo volta à 1", () => {
     ]);
   });
 
-  test("tema novo é ATIVIDADE nova: a cobertura anterior sai de cena (e fica), e o gate volta à rodada 1", async () => {
+  /**
+   * CRIAR NÃO PÕE NO AR (ADR-130): a professora prepara a próxima aula com a de
+   * hoje rodando. Quem troca o que a turma faz é o "Usar esta atividade agora".
+   */
+  test("tema novo é ATIVIDADE nova: nasce pronta, e a em andamento continua até a professora trocar", async () => {
     const anterior = await entrar(ids.ana);
     const posts: PostDaCobertura[] = POSTS_PADRAO.map((p) => ({ ...p }));
     const falasDoTema = {
@@ -657,8 +698,8 @@ describe("atividade × rodada: zerar guarda, tema novo volta à 1", () => {
       estatistico:
         "E se não bastasse, tinha a Métrica Urbana com gráficos do custo da reforma e dos empréstimos de livros antes e depois.",
     };
-    // Antes de homologar, a cobertura curada que nasceu sozinha lê as falas do sheet (coluna nula).
-    expect((await service.coberturas(ESCOLA, ids.turma, ids.professora)).ativa.podcast).toEqual(FALAS_DO_TEMA_PADRAO);
+    // A cobertura curada lê as falas do sheet.
+    expect((await service.coberturas(ESCOLA, ids.turma, ids.professora)).ativa?.podcast).toEqual(FALAS_DO_TEMA_PADRAO);
     const nova = await service.homologar(ESCOLA, ids.turma, ids.professora, ids.professora, {
       tema: "A reforma da biblioteca do bairro",
       origem: "ia",
@@ -666,17 +707,32 @@ describe("atividade × rodada: zerar guarda, tema novo volta à 1", () => {
       podcast: falasDoTema,
     });
     expect(nova.podcast).toEqual(falasDoTema);
-    expect(nova).toMatchObject({ rodada: 1, etapa: "exploracao", origem: "ia" });
+    expect(nova).toMatchObject({ ativa: false, origem: "ia" });
     expect(nova.id).not.toBe(anterior.coberturaId);
+
+    /* Pronta: a turma segue na anterior, na mesma rodada. */
+    expect(await entrar(ids.ana)).toMatchObject({ coberturaId: anterior.coberturaId, rodada: 2 });
+    expect(await service.cobertura(ESCOLA, ids.turma, ids.professora, nova.id)).toMatchObject({
+      ativa: false,
+      rodada: null,
+      etapa: null,
+      rodadas: 0,
+      tema: "A reforma da biblioteca do bairro",
+    });
+
+    const trocou = await service.colocarEmAndamento(ESCOLA, ids.turma, ids.professora, nova.id);
+    expect(trocou).toMatchObject({ coberturaId: nova.id, rodada: 1, etapa: "exploracao", mudou: true });
+    /* O segundo clique não muda nada. */
+    expect(await service.colocarEmAndamento(ESCOLA, ids.turma, ids.professora, nova.id)).toMatchObject({ mudou: false });
 
     const s = await entrar(ids.ana);
     expect(s).toMatchObject({ coberturaId: nova.id, rodada: 1, publicada: false });
     expect(s.cobertura.tema).toBe("A reforma da biblioteca do bairro");
 
     const coberturas = await service.coberturas(ESCOLA, ids.turma, ids.professora);
-    expect(coberturas.ativa.id).toBe(nova.id);
+    expect(coberturas.ativa?.id).toBe(nova.id);
     // As falas do tema da IA ficam na cobertura: são o Bloco 2 do podcast desta atividade.
-    expect(coberturas.ativa.podcast).toEqual(falasDoTema);
+    expect(coberturas.ativa?.podcast).toEqual(falasDoTema);
     expect(coberturas.historico.map((c) => [c.ativa, c.rodadas])).toEqual([
       [true, 1],
       [false, 2],
@@ -685,6 +741,24 @@ describe("atividade × rodada: zerar guarda, tema novo volta à 1", () => {
     expect(await prisma.exp07ef1bSessao.count({ where: { escolaId: ESCOLA, coberturaId: anterior.coberturaId } })).toBe(2);
     const cobertura = await prisma.exp07ef1bCobertura.findUniqueOrThrow({ where: { id: nova.id } });
     expect(cobertura.aprovadaPor).toBe(ids.professora);
+
+    /* Voltar à anterior, que já rodou duas rodadas, abre a TERCEIRA: retomar a
+       segunda depois do Mural seria o "voltar" que o botão único proíbe. */
+    const voltou = await service.colocarEmAndamento(ESCOLA, ids.turma, ids.professora, anterior.coberturaId);
+    expect(voltou).toMatchObject({ coberturaId: anterior.coberturaId, rodada: 3, etapa: "exploracao", mudou: true });
+    expect(await entrar(ids.ana)).toMatchObject({ coberturaId: anterior.coberturaId, rodada: 3, publicada: false });
+    expect(await prisma.exp07ef1bCobertura.count({ where: { escolaId: ESCOLA, turmaId: ids.turma, ativa: true } })).toBe(1);
+  });
+
+  test("a cobertura de OUTRA turma não é desta: 404 ao ler e ao pôr no ar", async () => {
+    const daVizinha = await prepararAtividade(ids.turmaVizinha, OUTRA_ESCOLA);
+    expect(await codigoDe(service.cobertura(ESCOLA, ids.turma, ids.professora, daVizinha))).toBe("atividade-nao-encontrada");
+    expect(await codigoDe(service.colocarEmAndamento(ESCOLA, ids.turma, ids.professora, daVizinha))).toBe(
+      "atividade-nao-encontrada",
+    );
+    expect(await codigoDe(service.colocarEmAndamento(ESCOLA, ids.turma, ids.professora, "nao-e-uuid"))).toBe(
+      "atividade-nao-encontrada",
+    );
   });
 
   test("turma que o professor não leciona é 404, nunca 403", async () => {

@@ -22,8 +22,10 @@ import { ehUuid } from "../motor/guardas";
 import { Contrato } from "../openapi/contrato";
 import { ASelecaoService } from "./a-selecao.service";
 import {
+  CoberturaDetalheSchema,
   CoberturaHomologadaSchema,
   CoberturasSchema,
+  EmAndamentoSchema,
   GateDaTurmaSchema,
   GateSchema,
   HomologacaoSchema,
@@ -31,6 +33,7 @@ import {
   ParametrosDoPreparoSchema,
   PodcastSchema,
   ProgressoDaMidiaSchema,
+  QueryDaCoberturaSchema,
   ProgressoDoPodcastSchema,
   RascunhoSchema,
   TurmasSchema,
@@ -63,12 +66,24 @@ import { PreparoDaExp07ef1bService } from "./preparo.service";
 type Autenticado = { auth: AuthClaims };
 
 const PARAMS = z.object({ turmaId: z.string().uuid() });
+const PARAMS_DA_COBERTURA = z.object({ turmaId: z.string().uuid(), coberturaId: z.string().uuid() });
 const QUERY = z.object({ escolaId: z.string().optional() });
 
 function turmaOu400(turmaId: string): string {
   if (!ehUuid(turmaId)) throw new BadRequestException({ codigo: "turma-nao-encontrada", mensagem: "Turma inválida." });
   return turmaId;
 }
+
+/** O `?coberturaId=` opcional: inválido é 404, como a cobertura de outra turma. */
+function coberturaOpcional(coberturaId: string | undefined): string | undefined {
+  if (coberturaId === undefined || coberturaId === "") return undefined;
+  if (!ehUuid(coberturaId)) throw erroDeJogo("atividade-nao-encontrada");
+  return coberturaId;
+}
+
+/** A nota de toda rota que lê a atividade em andamento (ADR-130). */
+const NOTA_SEM_ATIVIDADE =
+  "Sem atividade em andamento na turma, **403** `atividade-nao-preparada`: a plataforma não cria atividade — a professora cria e põe em andamento (`POST :turmaId/coberturas/:coberturaId/em-andamento`).";
 
 /** As rotas que gastam IA do professor têm um teto a mais: o de requisição. */
 function limitar(usuarioId: string, rota: string, teto: number) {
@@ -124,7 +139,7 @@ export class ASelecaoTurmasController {
     resposta: PainelSchema,
     notas: [
       "`legenda` e `reflexaoTexto` são texto livre de menor e só vêm preenchidos para quem LECIONA a turma. Gestor, gestor de contrato e admin recebem `null` e leem `publicou` e `entregouReflexao` (recorte da ADR-108).",
-      "A primeira leitura de uma turma sem cobertura cria a `padrao` (o banco curado) e o gate na rodada 1.",
+      NOTA_SEM_ATIVIDADE,
     ],
   })
   painel(@Param("turmaId") turmaId: string, @Query("escolaId") escolaIdPedida: string | undefined, @Req() req: Autenticado) {
@@ -144,6 +159,7 @@ export class ASelecaoTurmasController {
     notas: [
       "Destino fora de ordem responde **409** `transicao-de-etapa-invalida`, com `etapaAtual` e `proximaEtapa` no corpo.",
       "É a linha que o polling de 5 s do estudante lê (`GET /a-selecao/gate`): não há WebSocket de aplicação (ADR-93).",
+      NOTA_SEM_ATIVIDADE,
     ],
   })
   gate(
@@ -171,7 +187,8 @@ export class ASelecaoTurmasController {
     query: QUERY,
     resposta: ZerarTurmaSchema,
     notas: [
-      "Repetir o mesmo tema com a mesma turma mede memória, não leitura (PED-13): a tela avisa antes, e o guia recomenda homologar um tema novo, que abre OUTRA atividade na rodada 1.",
+      "Repetir o mesmo tema com a mesma turma mede memória, não leitura (PED-13): a tela avisa antes, e o guia recomenda criar um tema novo, que é OUTRA atividade.",
+      NOTA_SEM_ATIVIDADE,
     ],
   })
   zerar(@Param("turmaId") turmaId: string, @Query("escolaId") escolaIdPedida: string | undefined, @Req() req: Autenticado) {
@@ -180,9 +197,9 @@ export class ASelecaoTurmasController {
 
   @Get(":turmaId/coberturas")
   @Contrato({
-    resumo: "A cobertura em andamento, COM o gabarito, e o histórico das atividades da turma.",
+    resumo: "As atividades da turma: a em andamento, COM o gabarito, e a lista de todas.",
     descricao:
-      "**Professor only**: é aqui que `enquadramento`, `tagFonte` e `tagAngulo` de cada post aparecem — são o roteiro de quem conduz. `historico` lista todas as coberturas (a ativa inclusa): cada uma é uma ATIVIDADE, e o `id` dela é o `atividadeId` do painel de habilidades.",
+      "**Professor only**: é aqui que `enquadramento`, `tagFonte` e `tagAngulo` de cada post aparecem — são o roteiro de quem conduz. `historico` lista todas as coberturas (a em andamento inclusa, com `ativa: true`): cada uma é uma ATIVIDADE, e o `id` dela é o `atividadeId` das equipes e do painel de habilidades (ADR-130).\n\n`ativa` é `null` quando nenhuma está em andamento: a plataforma não cria atividade.",
     params: PARAMS,
     query: QUERY,
     resposta: CoberturasSchema,
@@ -190,6 +207,59 @@ export class ASelecaoTurmasController {
   })
   coberturas(@Param("turmaId") turmaId: string, @Query("escolaId") escolaIdPedida: string | undefined, @Req() req: Autenticado) {
     return this.missao.coberturas(escolaAlvo(req.auth, escolaIdPedida), turmaOu400(turmaId), professorDoToken(req.auth));
+  }
+
+  @Get(":turmaId/coberturas/:coberturaId")
+  @Contrato({
+    resumo: "UMA atividade, inteira e COM o gabarito — em andamento ou pronta.",
+    descricao:
+      "A página da atividade. `rodada` e `etapa` só vêm quando ela está em andamento; `rodadas` é a maior rodada com sessão (0 = nunca rodou).",
+    params: PARAMS_DA_COBERTURA,
+    query: QUERY,
+    resposta: CoberturaDetalheSchema,
+    notas: ["Cobertura de outra turma, ou que não existe, responde **404** `atividade-nao-encontrada`."],
+  })
+  cobertura(
+    @Param("turmaId") turmaId: string,
+    @Param("coberturaId") coberturaId: string,
+    @Query("escolaId") escolaIdPedida: string | undefined,
+    @Req() req: Autenticado,
+  ) {
+    return this.missao.cobertura(
+      escolaAlvo(req.auth, escolaIdPedida),
+      turmaOu400(turmaId),
+      professorDoToken(req.auth),
+      coberturaOpcional(coberturaId) ?? "",
+    );
+  }
+
+  @Post(":turmaId/coberturas/:coberturaId/em-andamento")
+  @HttpCode(200)
+  @Contrato({
+    resumo: '"Usar esta atividade agora" — a professora escolhe o que a turma faz (ADR-130).',
+    descricao:
+      "A escolhida passa a ser a ATIVIDADE EM ANDAMENTO da turma; a que estava volta a ser pronta — fica, com as sessões e as rodadas. A etapa volta à exploração.\n\nA RODADA: a atividade que nunca rodou começa na 1; a que já rodou abre a SEGUINTE à última — retomar a mesma rodada depois do Mural seria o \"voltar\" que o botão único proíbe. As rodadas anteriores continuam no painel de habilidades.",
+    params: PARAMS_DA_COBERTURA,
+    query: QUERY,
+    resposta: EmAndamentoSchema,
+    notas: [
+      "**Idempotente**: pôr no ar a que já está no ar devolve `mudou: false` e não muda nada.",
+      "Trocar com a aula correndo leva quem está jogando para a atividade nova: a experiência nota o `coberturaId` novo no polling do gate e recarrega. A tela pede confirmação antes.",
+      "Cobertura de outra turma responde **404** `atividade-nao-encontrada`.",
+    ],
+  })
+  emAndamento(
+    @Param("turmaId") turmaId: string,
+    @Param("coberturaId") coberturaId: string,
+    @Query("escolaId") escolaIdPedida: string | undefined,
+    @Req() req: Autenticado,
+  ) {
+    return this.missao.colocarEmAndamento(
+      escolaAlvo(req.auth, escolaIdPedida),
+      turmaOu400(turmaId),
+      professorDoToken(req.auth),
+      coberturaOpcional(coberturaId) ?? "",
+    );
   }
 
   @Post(":turmaId/gerar-conteudo")
@@ -238,18 +308,17 @@ export class ASelecaoTurmasController {
   @Post(":turmaId/homologar")
   @HttpCode(200)
   @Contrato({
-    resumo: '"Aprovar Cobertura e Abrir Turma" — a curadoria humana (ADR-66/67).',
+    resumo: '"Criar atividade" — a curadoria humana (ADR-66/67).',
     descricao:
-      "Grava os 12 posts como a professora os deixou e os torna a ATIVIDADE em andamento. **Tema novo é atividade nova**: a cobertura anterior é desativada (fica, com as sessões dela) e o gate volta à rodada 1, na exploração.\n\nO corpo carrega os posts INTEIROS porque curadoria é editar: a professora pode reescrever qualquer legenda antes de aprovar.",
+      "Grava os 12 posts como a professora os deixou, numa ATIVIDADE NOVA que nasce **pronta, não no ar** (ADR-130): a em andamento continua em andamento, e quem escolhe o que a turma faz é a professora (`POST :turmaId/coberturas/:coberturaId/em-andamento`).\n\nO corpo carrega os posts INTEIROS porque curadoria é editar: a professora pode reescrever qualquer legenda antes de aprovar.",
     params: PARAMS,
     query: QUERY,
     corpo: HomologacaoSchema,
     resposta: CoberturaHomologadaSchema,
     notas: [
       "O lote é recusado com **400** `lote-invalido` e a LISTA de problemas em `erros`, em frases para a professora: 12 posts; ids de `post_a_1` a `post_c_4`, cada um uma vez; bloco `a` = `@folhaoficial_`/institucional, `b` = `@voz_coletiva`/comunitário, `c` = `@metrica_urbana`/estatístico (4:4:4); legenda de 20 a 45 palavras; nenhum termo que antecipe a revelação na legenda, na descrição da imagem ou nos comentários. (`.superRefine()` some do OpenAPI; daí esta nota.)",
-      "As imagens de post com a MESMA descrição da cobertura anterior são herdadas — o arquivo no bucket é o hash da descrição.",
+      "As imagens de post com a MESMA descrição de uma cobertura recente da turma são herdadas — o arquivo no bucket é o hash da descrição.",
       "`podcast` é obrigatório: as três falas do Bloco 2 que a professora revisou (no tema curado, as do sheet). Fora de 12 a 60 palavras, acima de 400 bytes, ou com link, e-mail ou @, o 400 `lote-invalido` diz qual fala.",
-      "Homologar no meio da aula recomeça a aula: a etapa volta à exploração.",
     ],
   })
   homologar(
@@ -271,13 +340,14 @@ export class ASelecaoTurmasController {
   @Post(":turmaId/gerar-midia")
   @HttpCode(200)
   @Contrato({
-    resumo: "Gera as próximas imagens dos posts da cobertura em andamento — incremental.",
+    resumo: "Gera as próximas imagens dos posts de uma atividade — incremental.",
     descricao:
       "Doze imagens não cabem nos 30 s que o BFF dá a uma chamada: cada chamada gera ATÉ DUAS imagens novas, grava as URLs na cobertura e devolve o progresso. **Repita enquanto `completo` for `false` e a chamada anterior tiver gerado alguma** — `falharam` diz o que não saiu, e esses posts seguem com o card da descrição.\n\nIdempotente: o que já tem URL é pulado, e a imagem de mesma descrição que já está no bucket entra sem custo. Os posts de métricas do banco curado não pedem imagem: a experiência desenha o gráfico.",
     params: PARAMS,
-    query: QUERY,
+    query: QueryDaCoberturaSchema,
     resposta: ProgressoDaMidiaSchema,
     notas: [
+      "`?coberturaId=` diz a atividade (a pronta, preparada antes de ir ao ar); sem ele, a em andamento — e sem nenhuma, **403** `atividade-nao-preparada`.",
       "Quota do professor, com custo ESTIMADO por imagem (a geração não devolve contagem de tokens). Sem saldo responde **429** `sem-saldo-de-ia` — e a missão roda igual, com os cards.",
       "Duas chamadas simultâneas para a mesma cobertura recebem o mesmo trabalho (lock de processo).",
     ],
@@ -285,6 +355,7 @@ export class ASelecaoTurmasController {
   gerarMidia(
     @Param("turmaId") turmaId: string,
     @Query("escolaId") escolaIdPedida: string | undefined,
+    @Query("coberturaId") coberturaId: string | undefined,
     @Req() req: Autenticado,
   ) {
     const escolaId = escolaAlvo(req.auth, escolaIdPedida);
@@ -295,24 +366,32 @@ export class ASelecaoTurmasController {
       professorDoToken(req.auth),
       req.auth.usuarioId,
       req.auth.perfil,
+      coberturaOpcional(coberturaId),
     );
   }
 
   @Get(":turmaId/podcast")
   @Contrato({
-    resumo: "O podcast de recapitulação da cobertura em andamento: o roteiro e o estado do áudio.",
+    resumo: "O podcast de recapitulação de uma atividade: o roteiro e o estado do áudio.",
     descricao:
       "O podcast é do PROFESSOR, para tocar à turma depois da aula se quiser. `roteiro` é o texto inteiro (a transcrição, que fica na tela junto do player): os cinco blocos do sheet aprovado, com as três falas do Bloco 2 que a cobertura trouxe. `url` é o episódio, quando os cinco trechos já foram sintetizados e emendados; `null` enquanto não.\n\n**Não gera nada** — é o `POST gerar-podcast`.",
     params: PARAMS,
-    query: QUERY,
+    query: QueryDaCoberturaSchema,
     resposta: PodcastSchema,
+    notas: ["`?coberturaId=` diz a atividade; sem ele, a em andamento — e sem nenhuma, **403** `atividade-nao-preparada`."],
   })
   podcastDaTurma(
     @Param("turmaId") turmaId: string,
     @Query("escolaId") escolaIdPedida: string | undefined,
+    @Query("coberturaId") coberturaId: string | undefined,
     @Req() req: Autenticado,
   ) {
-    return this.podcast.estado(escolaAlvo(req.auth, escolaIdPedida), turmaOu400(turmaId), professorDoToken(req.auth));
+    return this.podcast.estado(
+      escolaAlvo(req.auth, escolaIdPedida),
+      turmaOu400(turmaId),
+      professorDoToken(req.auth),
+      coberturaOpcional(coberturaId),
+    );
   }
 
   @Post(":turmaId/gerar-podcast")
@@ -322,9 +401,10 @@ export class ASelecaoTurmasController {
     descricao:
       "Os cinco blocos não cabem numa chamada de 30 s: cada chamada sintetiza UM trecho (a voz é o TTS do Gemini pelo provider da api, `generateSpeech`, Lucas e Clara numa chamada de diálogo) e, quando os cinco existem, emenda o episódio num MP3 só. **Repita enquanto `completo` for `false` e a chamada anterior tiver gerado um trecho** — `falhou` diz qual bloco não saiu, e a transcrição continua na tela.\n\nIdempotente: o trecho que já está no bucket é pulado. O nome de cada trecho é o hash do texto e do pedido de voz, então os blocos fixos saem UMA vez por contrato e só o Bloco 2 de um tema da IA custa síntese nova.",
     params: PARAMS,
-    query: QUERY,
+    query: QueryDaCoberturaSchema,
     resposta: ProgressoDoPodcastSchema,
     notas: [
+      "`?coberturaId=` diz a atividade; sem ele, a em andamento.",
       "Quota do professor, com custo ESTIMADO por trecho (a síntese é cobrada por caractere e não devolve contagem). Sem saldo responde **429** `sem-saldo-de-ia`.",
       "Duas chamadas simultâneas para o mesmo episódio recebem o mesmo trabalho (lock de processo).",
     ],
@@ -332,6 +412,7 @@ export class ASelecaoTurmasController {
   gerarPodcast(
     @Param("turmaId") turmaId: string,
     @Query("escolaId") escolaIdPedida: string | undefined,
+    @Query("coberturaId") coberturaId: string | undefined,
     @Req() req: Autenticado,
   ) {
     const escolaId = escolaAlvo(req.auth, escolaIdPedida);
@@ -342,6 +423,7 @@ export class ASelecaoTurmasController {
       professorDoToken(req.auth),
       req.auth.usuarioId,
       req.auth.perfil,
+      coberturaOpcional(coberturaId),
     );
   }
 }

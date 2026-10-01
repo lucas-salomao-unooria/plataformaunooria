@@ -7,6 +7,7 @@ import { computadoresDaMontagem, equipeDoEstudante, mapaDeEquipes } from "../equ
 import { colapsarEmUnidades, rotulosSemRepeticao, type EquipeDoMapa } from "../equipes/regras";
 import { EvidenciasService, type ContextoDaAtividade } from "../evidencias/evidencias.service";
 import { logger } from "../observabilidade/logger";
+import { ehUuid } from "../motor/guardas";
 import { PrismaService } from "../prisma/prisma.service";
 import {
   ARROBAS_DA_FICCAO,
@@ -14,7 +15,6 @@ import {
   COLEGAS_VIRTUAIS_IDS,
   ORDEM_DO_FEED,
   POSTS_PADRAO,
-  TEMA_PADRAO,
   ehIdDePost,
   type ColegaVirtual,
   type IdDePost,
@@ -182,6 +182,18 @@ function podcastDaLinha(bruto: Prisma.JsonValue | null, contexto: { escolaId: st
   return { ...FALAS_DO_TEMA_PADRAO };
 }
 
+/** O que `coberturaDaLinha` precisa da linha — o `select` de toda leitura de cobertura. */
+const CAMPOS_DA_COBERTURA = {
+  id: true,
+  escolaId: true,
+  tema: true,
+  foco: true,
+  origem: true,
+  posts: true,
+  midia: true,
+  podcast: true,
+} satisfies Prisma.Exp07ef1bCoberturaSelect;
+
 function coberturaDaLinha(linha: {
   id: string;
   escolaId: string;
@@ -323,9 +335,10 @@ export class ASelecaoService implements OnModuleInit {
   // ───────────────────────────────────────────────────── rotas do estudante
 
   /**
-   * Boot da experiência e o F5. Na PRIMEIRA entrada da turma nasce a cobertura
-   * `padrao` (o banco curado) e o gate; na primeira do estudante na rodada,
-   * a sessão. Os posts saem na ORDEM DO FEED e sem gabarito.
+   * Boot da experiência e o F5. Sem atividade em andamento na turma, 403
+   * `atividade-nao-preparada` — a experiência mostra a porta fechada; na
+   * primeira entrada do estudante na rodada, nasce a sessão. Os posts saem na
+   * ORDEM DO FEED e sem gabarito.
    */
   async sessao(escolaId: string, estudanteId: string, turmaId: string | null) {
     return this.prisma.comTenancy(async (tx) => {
@@ -653,7 +666,7 @@ export class ASelecaoService implements OnModuleInit {
   async painel(escolaId: string, turmaId: string, professorId?: string) {
     return this.prisma.comTenancy(async (tx) => {
       const turma = await this.turmaVisivel(tx, escolaId, turmaId, professorId);
-      const { gate, cobertura } = await this.garantirGate(tx, escolaId, turmaId);
+      const { gate, cobertura } = await this.exigirGate(tx, escolaId, turmaId);
 
       const [estudantes, mapa, computadores] = await Promise.all([
         tx.user.findMany({
@@ -757,7 +770,7 @@ export class ASelecaoService implements OnModuleInit {
     return this.prisma.comTenancy(async (tx) => {
       const turma = await this.turmaVisivel(tx, escolaId, turmaId, professorId);
       await this.travarTurma(tx, escolaId, turmaId, "exclusivo");
-      const { gate, cobertura } = await this.garantirGate(tx, escolaId, turmaId);
+      const { gate, cobertura } = await this.exigirGate(tx, escolaId, turmaId);
 
       const r = transicaoDoGate(gate.etapa, para);
       if (!r.ok) throw erroDeJogo(r.codigo, { etapaAtual: gate.etapa, proximaEtapa: proximaEtapa(gate.etapa) });
@@ -798,7 +811,7 @@ export class ASelecaoService implements OnModuleInit {
     return this.prisma.comTenancy(async (tx) => {
       await this.turmaVisivel(tx, escolaId, turmaId, professorId);
       await this.travarTurma(tx, escolaId, turmaId, "exclusivo");
-      const { gate } = await this.garantirGate(tx, escolaId, turmaId);
+      const { gate } = await this.exigirGate(tx, escolaId, turmaId);
       const linha = await tx.exp07ef1bGateTurma.update({
         where: { escolaId_turmaId: { escolaId, turmaId } },
         data: { rodada: gate.rodada + 1, etapa: ETAPA_INICIAL },
@@ -809,14 +822,20 @@ export class ASelecaoService implements OnModuleInit {
   }
 
   /**
-   * As coberturas da turma: a ATIVA inteira, com o gabarito (é a tela do
-   * preparo), e o histórico — que é o seletor `?cobertura=` do painel de
-   * habilidades, porque cada cobertura é uma atividade.
+   * As ATIVIDADES da turma (ADR-130): a em andamento inteira, com o gabarito, e
+   * a lista de todas — que é a lista de atividades da ficha e o seletor
+   * `?cobertura=` do painel de habilidades. `ativa` é `null` quando o professor
+   * ainda não pôs nenhuma em andamento: a plataforma não cria atividade.
    */
   async coberturas(escolaId: string, turmaId: string, professorId?: string) {
     return this.prisma.comTenancy(async (tx) => {
       await this.turmaVisivel(tx, escolaId, turmaId, professorId);
-      const { gate, cobertura } = await this.garantirGate(tx, escolaId, turmaId);
+      const emAndamento = await tx.exp07ef1bGateTurma.findUnique({
+        where: { escolaId_turmaId: { escolaId, turmaId } },
+        include: { cobertura: { select: CAMPOS_DA_COBERTURA } },
+      });
+      const gate = emAndamento ? { rodada: emAndamento.rodada, etapa: normalizarEtapa(emAndamento.etapa) } : null;
+      const cobertura = emAndamento ? coberturaDaLinha(emAndamento.cobertura) : null;
       const [todas, rodadas] = await Promise.all([
         tx.exp07ef1bCobertura.findMany({
           where: { escolaId, turmaId },
@@ -831,17 +850,20 @@ export class ASelecaoService implements OnModuleInit {
       ]);
       const maiorRodada = new Map(rodadas.map((r) => [r.coberturaId, r._max.rodada ?? 0]));
       return {
-        ativa: {
-          id: cobertura.id,
-          tema: cobertura.tema,
-          foco: cobertura.foco,
-          origem: cobertura.origem,
-          rodada: gate.rodada,
-          etapa: gate.etapa,
-          posts: cobertura.posts,
-          midia: resumoDaMidia(cobertura),
-          podcast: cobertura.podcast,
-        },
+        ativa:
+          cobertura && gate
+            ? {
+                id: cobertura.id,
+                tema: cobertura.tema,
+                foco: cobertura.foco,
+                origem: cobertura.origem,
+                rodada: gate.rodada,
+                etapa: gate.etapa,
+                posts: cobertura.posts,
+                midia: resumoDaMidia(cobertura),
+                podcast: cobertura.podcast,
+              }
+            : null,
         historico: todas.map((c) => ({
           id: c.id,
           tema: c.tema,
@@ -856,17 +878,90 @@ export class ASelecaoService implements OnModuleInit {
   }
 
   /**
-   * "Aprovar Cobertura e Abrir Turma" — a curadoria humana (ADR-66/67).
+   * UMA atividade, inteira e com o gabarito — a página dela, esteja ou não em
+   * andamento. É de onde a professora prepara as imagens e o podcast de uma
+   * atividade PRONTA antes de pô-la no ar.
+   */
+  async cobertura(escolaId: string, turmaId: string, professorId: string | undefined, coberturaId: string) {
+    return this.prisma.comTenancy(async (tx) => {
+      await this.turmaVisivel(tx, escolaId, turmaId, professorId);
+      const linha = await this.coberturaDaTurma(tx, escolaId, turmaId, coberturaId);
+      const [gate, rodadas] = await Promise.all([
+        this.lerGate(tx, escolaId, turmaId),
+        tx.exp07ef1bSessao.aggregate({ where: { escolaId, turmaId, coberturaId }, _max: { rodada: true } }),
+      ]);
+      const cobertura = coberturaDaLinha(linha);
+      const emAndamento = gate?.coberturaId === coberturaId;
+      return {
+        id: cobertura.id,
+        tema: cobertura.tema,
+        foco: cobertura.foco,
+        origem: cobertura.origem,
+        ativa: emAndamento,
+        rodada: emAndamento && gate ? gate.rodada : null,
+        etapa: emAndamento && gate ? gate.etapa : null,
+        criadaEm: linha.criadaEm.toISOString(),
+        rodadas: rodadas._max.rodada ?? 0,
+        posts: cobertura.posts,
+        midia: resumoDaMidia(cobertura),
+        podcast: cobertura.podcast,
+      };
+    }, escolaId);
+  }
+
+  /**
+   * "USAR ESTA ATIVIDADE AGORA" (ADR-130): a professora escolhe, na lista, qual
+   * atividade a turma faz. A que estava em andamento volta a ser PRONTA — fica,
+   * com as sessões e as rodadas —, e o gate passa a apontar a escolhida.
    *
-   * Tema novo é ATIVIDADE nova: a cobertura anterior é DESATIVADA (fica, com
-   * as sessões dela), a nova entra ativa e o gate volta à rodada 1, na
-   * exploração. O índice único parcial garante uma ativa por turma, e o lock
-   * exclusivo põe duas homologações simultâneas em fila.
+   * A RODADA: a atividade que nunca rodou começa na 1; a que já rodou abre a
+   * SEGUINTE à última. Retomar a mesma rodada exigiria lembrar a etapa de cada
+   * atividade — o gate é um só por turma —, e voltar uma rodada à exploração
+   * depois do Mural é o "voltar" que o botão único proíbe. Nada se perde: as
+   * rodadas anteriores continuam no painel de habilidades (ADR-112).
    *
-   * As imagens de post com a MESMA descrição da cobertura anterior são
-   * herdadas: o arquivo no bucket é o hash da descrição, então ele já existe, e
-   * obrigar a professora a "gerar" de novo a imagem que está na tela seria
-   * pedir um clique que não produz nada.
+   * Idempotente: pôr no ar a que já está no ar não muda nada (o segundo clique).
+   * O lock exclusivo da turma põe duas trocas simultâneas em fila.
+   */
+  async colocarEmAndamento(escolaId: string, turmaId: string, professorId: string | undefined, coberturaId: string) {
+    return this.prisma.comTenancy(async (tx) => {
+      await this.turmaVisivel(tx, escolaId, turmaId, professorId);
+      await this.travarTurma(tx, escolaId, turmaId, "exclusivo");
+      await this.coberturaDaTurma(tx, escolaId, turmaId, coberturaId);
+
+      const atual = await this.lerGate(tx, escolaId, turmaId);
+      if (atual?.coberturaId === coberturaId) {
+        return { coberturaId, rodada: atual.rodada, etapa: atual.etapa, mudou: false };
+      }
+
+      const ultima = await tx.exp07ef1bSessao.aggregate({
+        where: { escolaId, turmaId, coberturaId },
+        _max: { rodada: true },
+      });
+      const rodada = (ultima._max.rodada ?? 0) + 1;
+      await tx.exp07ef1bCobertura.updateMany({ where: { escolaId, turmaId, ativa: true }, data: { ativa: false } });
+      await tx.exp07ef1bCobertura.update({ where: { id: coberturaId }, data: { ativa: true } });
+      await tx.exp07ef1bGateTurma.upsert({
+        where: { escolaId_turmaId: { escolaId, turmaId } },
+        create: { escolaId, turmaId, coberturaId, rodada, etapa: ETAPA_INICIAL },
+        update: { coberturaId, rodada, etapa: ETAPA_INICIAL },
+      });
+      return { coberturaId, rodada, etapa: ETAPA_INICIAL, mudou: true };
+    }, escolaId);
+  }
+
+  /**
+   * "Criar atividade" — a curadoria humana (ADR-66/67).
+   *
+   * Tema novo é ATIVIDADE nova, e ela nasce PRONTA, não no ar (ADR-130): quem
+   * escolhe o que a turma faz é a professora, na lista de atividades
+   * (`colocarEmAndamento`). A que estiver em andamento continua em andamento —
+   * criar a próxima aula não pode tirar do ar a de agora.
+   *
+   * As imagens de post com a MESMA descrição de uma cobertura anterior da turma
+   * são herdadas: o arquivo no bucket é o hash da descrição, então ele já
+   * existe, e obrigar a professora a "gerar" de novo a imagem que está na tela
+   * seria pedir um clique que não produz nada.
    */
   async homologar(
     escolaId: string,
@@ -879,21 +974,26 @@ export class ASelecaoService implements OnModuleInit {
       await this.turmaVisivel(tx, escolaId, turmaId, professorId);
       await this.travarTurma(tx, escolaId, turmaId, "exclusivo");
 
-      const anterior = await tx.exp07ef1bCobertura.findFirst({
-        where: { escolaId, turmaId, ativa: true },
-        select: { id: true, escolaId: true, tema: true, foco: true, origem: true, posts: true, midia: true, podcast: true },
+      /* A herança olha as coberturas RECENTES da turma, não só a em andamento:
+         a professora que prepara três atividades seguidas sobre o mesmo tema
+         não paga as mesmas imagens três vezes. */
+      const anteriores = await tx.exp07ef1bCobertura.findMany({
+        where: { escolaId, turmaId },
+        orderBy: { criadaEm: "desc" },
+        take: 5,
+        select: CAMPOS_DA_COBERTURA,
       });
-      const herdada: Record<string, string> = {};
-      if (anterior) {
-        const velha = coberturaDaLinha(anterior);
-        const urlDaDescricao = new Map(
-          velha.posts.filter((p) => velha.midia[p.id]).map((p) => [p.descricaoImagem, velha.midia[p.id] as string]),
-        );
-        for (const p of lote.posts) {
-          const url = urlDaDescricao.get(p.descricaoImagem);
-          if (url && !p.grafico) herdada[p.id] = url;
+      const urlDaDescricao = new Map<string, string>();
+      for (const velha of anteriores.map(coberturaDaLinha).reverse()) {
+        for (const p of velha.posts) {
+          const url = velha.midia[p.id];
+          if (url) urlDaDescricao.set(p.descricaoImagem, url);
         }
-        await tx.exp07ef1bCobertura.updateMany({ where: { escolaId, turmaId, ativa: true }, data: { ativa: false } });
+      }
+      const herdada: Record<string, string> = {};
+      for (const p of lote.posts) {
+        const url = urlDaDescricao.get(p.descricaoImagem);
+        if (url && !p.grafico) herdada[p.id] = url;
       }
 
       const posts = emOrdemCanonica(lote.posts);
@@ -912,22 +1012,16 @@ export class ASelecaoService implements OnModuleInit {
             estatistico: lote.podcast.estatistico.trim(),
           },
           aprovadaPor,
-          ativa: true,
+          ativa: false,
         },
         select: { id: true, tema: true, foco: true, origem: true, podcast: true },
-      });
-      await tx.exp07ef1bGateTurma.upsert({
-        where: { escolaId_turmaId: { escolaId, turmaId } },
-        create: { escolaId, turmaId, coberturaId: nova.id, rodada: 1, etapa: ETAPA_INICIAL },
-        update: { coberturaId: nova.id, rodada: 1, etapa: ETAPA_INICIAL },
       });
       return {
         id: nova.id,
         tema: nova.tema,
         foco: nova.foco,
         origem: nova.origem === "ia" ? ("ia" as const) : ("padrao" as const),
-        rodada: 1,
-        etapa: ETAPA_INICIAL,
+        ativa: false,
         posts,
         podcast: podcastDaLinha(nova.podcast, { escolaId, coberturaId: nova.id }),
       };
@@ -939,11 +1033,21 @@ export class ASelecaoService implements OnModuleInit {
     await this.prisma.comTenancy((tx) => this.turmaVisivel(tx, escolaId, turmaId, professorId), escolaId);
   }
 
-  /** A cobertura em andamento, para o preparo das imagens (`midia.service.ts`). */
-  async coberturaParaMidia(escolaId: string, turmaId: string, professorId?: string): Promise<CoberturaLida> {
+  /**
+   * A cobertura das imagens e do podcast (`midia.service.ts`,
+   * `podcast.service.ts`): a pedida, ou a em andamento sem pedido. A pedida é
+   * a atividade PRONTA que a professora prepara antes de pôr no ar (ADR-130).
+   */
+  async coberturaParaMidia(
+    escolaId: string,
+    turmaId: string,
+    professorId?: string,
+    coberturaId?: string,
+  ): Promise<CoberturaLida> {
     return this.prisma.comTenancy(async (tx) => {
       await this.turmaVisivel(tx, escolaId, turmaId, professorId);
-      return (await this.garantirGate(tx, escolaId, turmaId)).cobertura;
+      if (coberturaId) return coberturaDaLinha(await this.coberturaDaTurma(tx, escolaId, turmaId, coberturaId));
+      return (await this.exigirGate(tx, escolaId, turmaId)).cobertura;
     }, escolaId);
   }
 
@@ -1128,6 +1232,18 @@ export class ASelecaoService implements OnModuleInit {
     return pareadas;
   }
 
+  /** A cobertura desta turma, ou 404 — a de outra turma não tem a existência confirmada. */
+  private async coberturaDaTurma(tx: Prisma.TransactionClient, escolaId: string, turmaId: string, coberturaId: string) {
+    const linha = ehUuid(coberturaId)
+      ? await tx.exp07ef1bCobertura.findFirst({
+          where: { id: coberturaId, escolaId, turmaId },
+          select: { ...CAMPOS_DA_COBERTURA, criadaEm: true },
+        })
+      : null;
+    if (!linha) throw erroDeJogo("atividade-nao-encontrada");
+    return linha;
+  }
+
   /** O gate e a cobertura dele, sem criar — `null` sem gate. */
   private async lerGate(tx: Prisma.TransactionClient, escolaId: string, turmaId: string): Promise<GateLido | null> {
     const linha = await tx.exp07ef1bGateTurma.findUnique({
@@ -1140,46 +1256,25 @@ export class ASelecaoService implements OnModuleInit {
   }
 
   /**
-   * O gate da turma e a cobertura em andamento — criando os dois na PRIMEIRA
-   * entrada: a cobertura `padrao` (o banco curado) e o gate na rodada 1.
+   * O gate da turma e a cobertura EM ANDAMENTO — ou 403
+   * `atividade-nao-preparada`.
    *
-   * O lock exclusivo da turma só é pedido quando falta o gate — uma vez na
-   * vida da turma. As outras 29 crianças das 8h leem o gate e seguem, sem fila.
+   * **A plataforma nunca cria a atividade** (ADR-130): a missão é o esqueleto
+   * narrativo, e a cobertura é a que o professor criou e PÔS EM ANDAMENTO na
+   * lista de atividades. Antes, a primeira entrada da turma criava sozinha a
+   * cobertura da Praça Central; agora o banco curado é só o ponto de partida
+   * do preparo. O 403 é a porta fechada que a experiência já sabe dizer.
    */
-  private async garantirGate(
+  private async exigirGate(
     tx: Prisma.TransactionClient,
     escolaId: string,
     turmaId: string,
   ): Promise<{ gate: GateLido; cobertura: CoberturaLida }> {
-    const incluir = {
-      cobertura: { select: { id: true, escolaId: true, tema: true, foco: true, origem: true, posts: true, midia: true, podcast: true } },
-    } satisfies Prisma.Exp07ef1bGateTurmaInclude;
-    const chave = { escolaId_turmaId: { escolaId, turmaId } };
-
-    let linha = await tx.exp07ef1bGateTurma.findUnique({ where: chave, include: incluir });
-    if (!linha) {
-      await this.travarTurma(tx, escolaId, turmaId, "exclusivo");
-      linha = await tx.exp07ef1bGateTurma.findUnique({ where: chave, include: incluir });
-    }
-    if (!linha) {
-      const ativa =
-        (await tx.exp07ef1bCobertura.findFirst({ where: { escolaId, turmaId, ativa: true }, select: { id: true } })) ??
-        (await tx.exp07ef1bCobertura.create({
-          data: {
-            escolaId,
-            turmaId,
-            tema: TEMA_PADRAO,
-            origem: "padrao",
-            posts: POSTS_PADRAO as unknown as Prisma.InputJsonValue,
-            ativa: true,
-          },
-          select: { id: true },
-        }));
-      linha = await tx.exp07ef1bGateTurma.create({
-        data: { escolaId, turmaId, coberturaId: ativa.id, rodada: 1, etapa: ETAPA_INICIAL },
-        include: incluir,
-      });
-    }
+    const linha = await tx.exp07ef1bGateTurma.findUnique({
+      where: { escolaId_turmaId: { escolaId, turmaId } },
+      include: { cobertura: { select: CAMPOS_DA_COBERTURA } },
+    });
+    if (!linha) throw erroDeJogo("atividade-nao-preparada");
     return {
       gate: {
         coberturaId: linha.coberturaId,
@@ -1211,7 +1306,7 @@ export class ASelecaoService implements OnModuleInit {
     const turma = await tx.turma.findFirst({ where: { id: turmaId, escolaId }, select: { id: true } });
     if (!turma) throw erroDeJogo("turma-nao-encontrada");
 
-    const { gate, cobertura } = await this.garantirGate(tx, escolaId, turmaId);
+    const { gate, cobertura } = await this.exigirGate(tx, escolaId, turmaId);
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`a-selecao:estudante:${escolaId}:${estudanteId}`}, 0))`;
     const chave = { escolaId, turmaId, estudanteId, coberturaId: gate.coberturaId, rodada: gate.rodada };
     /* `createMany` com `skipDuplicates` é um INSERT ... ON CONFLICT DO NOTHING:

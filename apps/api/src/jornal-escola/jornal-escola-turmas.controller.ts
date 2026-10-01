@@ -9,15 +9,18 @@ import { professorDoToken } from "../comum/turmas-do-professor";
 import { ehUuid } from "../motor/guardas";
 import { Contrato } from "../openapi/contrato";
 import {
+  EmAndamentoSchema,
   GateDaTurmaSchema,
   GateSchema,
   HomologacaoSchema,
   NoticiaRegeneradaSchema,
+  PacoteDetalheSchema,
   PacoteHomologadoSchema,
   PacotesSchema,
   PainelSchema,
   ParametrosDoPreparoSchema,
   ProgressoDaMidiaSchema,
+  QueryDoPacoteSchema,
   RascunhoSchema,
   RegenerarNoticiaSchema,
   TurmasSchema,
@@ -45,6 +48,18 @@ import { PreparoDaExp04ef1bService } from "./preparo.service";
 type Autenticado = { auth: AuthClaims };
 
 const PARAMS = z.object({ turmaId: z.string().uuid() });
+const PARAMS_DO_PACOTE = z.object({ turmaId: z.string().uuid(), pacoteId: z.string().uuid() });
+
+/** A nota de toda rota que lê a atividade em andamento (ADR-130). */
+const NOTA_SEM_ATIVIDADE =
+  "Sem atividade em andamento na turma, **403** `atividade-nao-preparada`: a plataforma não cria atividade — o professor cria e põe em andamento (`POST :turmaId/pacotes/:pacoteId/em-andamento`).";
+
+/** O `?pacoteId=` opcional: inválido é 404, como o pacote de outra turma. */
+function pacoteOpcional(pacoteId: string | undefined): string | undefined {
+  if (pacoteId === undefined || pacoteId === "") return undefined;
+  if (!ehUuid(pacoteId)) throw erroDeJogo("atividade-nao-encontrada");
+  return pacoteId;
+}
 const QUERY = z.object({ escolaId: z.string().optional() });
 
 function turmaOu404(turmaId: string): string {
@@ -110,7 +125,7 @@ export class JornalEscolaTurmasController {
     query: QUERY,
     resposta: PainelSchema,
     notas: [
-      "A primeira leitura de uma turma sem pacote cria o `padrao` (o banco da Unooria) e o gate na rodada 1.",
+      NOTA_SEM_ATIVIDADE,
       "A leitura do PROFESSOR conta o EVT-P04 (`painel_visto_em`, `painel_vistas`); a do gestor não.",
       "Turma que o professor não leciona responde **404** `turma-nao-encontrada`.",
     ],
@@ -132,6 +147,7 @@ export class JornalEscolaTurmasController {
     notas: [
       "Destino fora de ordem responde **409** `transicao-de-etapa-invalida`, com `etapaAtual` e `proximaEtapa` no corpo.",
       "É a linha que o polling de 5 s do estudante lê (`GET /jornal-escola/gate`): não há WebSocket de aplicação (ADR-93).",
+      NOTA_SEM_ATIVIDADE,
     ],
   })
   gate(
@@ -154,7 +170,8 @@ export class JornalEscolaTurmasController {
     query: QUERY,
     resposta: ZerarTurmaSchema,
     notas: [
-      "Na rodada nova do MESMO pacote, quem já foi avaliado numa anterior refaz sem marca nova nas ações (ADR-120): já viu o resultado e a Chave. O guia recomenda homologar outro pacote, que abre OUTRA atividade na rodada 1.",
+      "Na rodada nova do MESMO pacote, quem já foi avaliado numa anterior refaz sem marca nova nas ações (ADR-120): já viu o resultado e a Chave. O guia recomenda criar outro pacote, que é OUTRA atividade.",
+      NOTA_SEM_ATIVIDADE,
     ],
   })
   zerar(@Param("turmaId") turmaId: string, @Query("escolaId") escolaIdPedida: string | undefined, @Req() req: Autenticado) {
@@ -163,9 +180,9 @@ export class JornalEscolaTurmasController {
 
   @Get(":turmaId/pacotes")
   @Contrato({
-    resumo: "O pacote em andamento, COM o gabarito, e o histórico das atividades da turma.",
+    resumo: "As atividades da turma: o pacote em andamento, COM o gabarito, e a lista de todos.",
     descricao:
-      "**Professor e gestores**: é aqui que o gabarito, as pistas e a consequência de cada notícia aparecem — são o roteiro de quem conduz e a tela do preparo. `historico` lista todos os pacotes (o ativo incluso): cada um é uma ATIVIDADE, e o `id` dele é o `atividadeId` do painel de habilidades.",
+      "**Professor e gestores**: é aqui que o gabarito, as pistas e a consequência de cada notícia aparecem — são o roteiro de quem conduz e a tela do preparo. `historico` lista todos os pacotes (o em andamento incluso, com `ativo: true`): cada um é uma ATIVIDADE, e o `id` dele é o `atividadeId` das equipes e do painel de habilidades (ADR-130).\n\n`ativo` é `null` quando nenhum está em andamento: a plataforma não cria atividade.",
     params: PARAMS,
     query: QUERY,
     resposta: PacotesSchema,
@@ -173,6 +190,59 @@ export class JornalEscolaTurmasController {
   })
   pacotes(@Param("turmaId") turmaId: string, @Query("escolaId") escolaIdPedida: string | undefined, @Req() req: Autenticado) {
     return this.missao.pacotes(escolaAlvo(req.auth, escolaIdPedida), turmaOu404(turmaId), professorDoToken(req.auth));
+  }
+
+  @Get(":turmaId/pacotes/:pacoteId")
+  @Contrato({
+    resumo: "UMA atividade, inteira e COM o gabarito — em andamento ou pronta.",
+    descricao:
+      "A página da atividade. `rodada` e `etapa` só vêm quando ela está em andamento; `rodadas` é a maior rodada com sessão (0 = nunca rodou).",
+    params: PARAMS_DO_PACOTE,
+    query: QUERY,
+    resposta: PacoteDetalheSchema,
+    notas: ["Pacote de outra turma, ou que não existe, responde **404** `atividade-nao-encontrada`."],
+  })
+  pacote(
+    @Param("turmaId") turmaId: string,
+    @Param("pacoteId") pacoteId: string,
+    @Query("escolaId") escolaIdPedida: string | undefined,
+    @Req() req: Autenticado,
+  ) {
+    return this.missao.pacote(
+      escolaAlvo(req.auth, escolaIdPedida),
+      turmaOu404(turmaId),
+      professorDoToken(req.auth),
+      pacoteOpcional(pacoteId) ?? "",
+    );
+  }
+
+  @Post(":turmaId/pacotes/:pacoteId/em-andamento")
+  @HttpCode(200)
+  @Contrato({
+    resumo: '"Usar esta atividade agora" — o professor escolhe o que a turma faz (ADR-130).',
+    descricao:
+      "O escolhido passa a ser a ATIVIDADE EM ANDAMENTO da turma; o que estava volta a ser pronto — fica, com as sessões e as rodadas. A etapa volta à exploração, com os portões fechados.\n\nA RODADA: o pacote que nunca rodou começa na 1; o que já rodou abre a SEGUINTE à última — retomar a mesma depois do resultado liberado seria o \"voltar\" que o botão único proíbe. As rodadas anteriores continuam no painel de habilidades.",
+    params: PARAMS_DO_PACOTE,
+    query: QUERY,
+    resposta: EmAndamentoSchema,
+    notas: [
+      "**Idempotente**: pôr no ar o que já está no ar devolve `mudou: false` e não muda nada.",
+      "Trocar com a aula correndo leva quem está jogando para a atividade nova: a experiência nota o `pacoteId` novo no polling do gate e recarrega. A tela pede confirmação antes.",
+      "Pacote de outra turma responde **404** `atividade-nao-encontrada`.",
+    ],
+  })
+  emAndamento(
+    @Param("turmaId") turmaId: string,
+    @Param("pacoteId") pacoteId: string,
+    @Query("escolaId") escolaIdPedida: string | undefined,
+    @Req() req: Autenticado,
+  ) {
+    return this.missao.colocarEmAndamento(
+      escolaAlvo(req.auth, escolaIdPedida),
+      turmaOu404(turmaId),
+      professorDoToken(req.auth),
+      pacoteOpcional(pacoteId) ?? "",
+    );
   }
 
   @Post(":turmaId/gerar-conteudo")
@@ -256,17 +326,16 @@ export class JornalEscolaTurmasController {
   @Post(":turmaId/homologar")
   @HttpCode(200)
   @Contrato({
-    resumo: '"Aprovar Pacote" — a curadoria humana (ADR-66/67).',
+    resumo: '"Criar atividade" — a curadoria humana (ADR-66/67).',
     descricao:
-      "Grava as 8 notícias como o professor as deixou e as torna a ATIVIDADE em andamento. **Pacote novo é atividade nova**: o anterior é desativado (fica, com as sessões dele) e o gate volta à rodada 1, na exploração.\n\nO corpo carrega as notícias INTEIRAS porque curadoria é editar — e editar uma notícia edita também o gabarito e a consequência dela (PDF §10). O banco padrão também passa por aqui (`origem: \"padrao\"`) quando o professor o aprova em um toque.",
+      "Grava as 8 notícias como o professor as deixou, numa ATIVIDADE NOVA que nasce **pronta, não no ar** (ADR-130): o pacote em andamento continua em andamento, e quem escolhe o que a turma faz é o professor (`POST :turmaId/pacotes/:pacoteId/em-andamento`). O mesmo conteúdo do pacote mais recente não cria outro: é o segundo clique.\n\nO corpo carrega as notícias INTEIRAS porque curadoria é editar — e editar uma notícia edita também o gabarito e a consequência dela (PDF §10). O banco padrão também passa por aqui (`origem: \"padrao\"`) quando o professor o aprova em um toque.",
     params: PARAMS,
     query: QUERY,
     corpo: HomologacaoSchema,
     resposta: PacoteHomologadoSchema,
     notas: [
       "O pacote é recusado com **400** `pacote-invalido` e a LISTA de problemas em `erros`, em frases para o professor: 8 notícias com os ids `n1` a `n8`, nesta ordem; os oito meios, um por notícia; pelo menos 3 publicáveis, 2 ou 3 antigas apresentadas como atuais e 2 ou 3 sem confirmação ou sem autoria; publicáveis e não publicáveis misturando meios tradicionais e digitais, e com imagem; pelo menos 4 notícias com imagem, e sempre na TV e na rede social; locutor no rádio e perfil com @ na rede social; manchete de 3 a 10 palavras, resumo de 25 a 35, texto de 15 a 80; e nenhum termo de carimbo (\"falsa\", \"fake news\", \"você errou\"...) no que a criança lê. (`.superRefine()` some do OpenAPI; daí esta nota.)",
-      "As imagens de notícia com a MESMA descrição do pacote anterior são herdadas — o arquivo no bucket é o hash da descrição.",
-      "Homologar no meio da aula recomeça a aula: a etapa volta à exploração.",
+      "As imagens de notícia com a MESMA descrição de um pacote recente da turma são herdadas — o arquivo no bucket é o hash da descrição.",
     ],
   })
   homologar(
@@ -288,13 +357,14 @@ export class JornalEscolaTurmasController {
   @Post(":turmaId/gerar-midia")
   @HttpCode(200)
   @Contrato({
-    resumo: "Gera as próximas imagens das notícias do pacote em andamento — incremental.",
+    resumo: "Gera as próximas imagens das notícias de uma atividade — incremental.",
     descricao:
       "As imagens não cabem nos 30 s que o BFF dá a uma chamada: cada chamada gera ATÉ DUAS novas, grava as URLs no pacote e devolve o progresso. **Repita enquanto `completo` for `false` e a chamada anterior tiver gerado alguma** — `falharam` diz o que não saiu, e essas notícias seguem com o cartão desenhado pelo meio.\n\nIdempotente: o que já tem URL é pulado, e a imagem de mesma descrição que já está no bucket entra sem custo.",
     params: PARAMS,
-    query: QUERY,
+    query: QueryDoPacoteSchema,
     resposta: ProgressoDaMidiaSchema,
     notas: [
+      "`?pacoteId=` diz a atividade (a pronta, preparada antes de ir ao ar); sem ele, a em andamento — e sem nenhuma, **403** `atividade-nao-preparada`.",
       "Quota do professor, com custo ESTIMADO por imagem (a geração não devolve contagem de tokens). Sem saldo responde **429** `sem-saldo-de-ia` — e a missão roda igual, com os cartões pelo meio.",
       "Duas chamadas simultâneas para o mesmo pacote recebem o mesmo trabalho (lock de processo).",
     ],
@@ -302,10 +372,18 @@ export class JornalEscolaTurmasController {
   gerarMidia(
     @Param("turmaId") turmaId: string,
     @Query("escolaId") escolaIdPedida: string | undefined,
+    @Query("pacoteId") pacoteId: string | undefined,
     @Req() req: Autenticado,
   ) {
     const escolaId = escolaAlvo(req.auth, escolaIdPedida);
     limitar(req.auth.usuarioId, "gerar-midia", 20);
-    return this.midia.gerar(escolaId, turmaOu404(turmaId), professorDoToken(req.auth), req.auth.usuarioId, req.auth.perfil);
+    return this.midia.gerar(
+      escolaId,
+      turmaOu404(turmaId),
+      professorDoToken(req.auth),
+      req.auth.usuarioId,
+      req.auth.perfil,
+      pacoteOpcional(pacoteId),
+    );
   }
 }

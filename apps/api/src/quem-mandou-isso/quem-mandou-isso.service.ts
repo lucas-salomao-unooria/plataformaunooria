@@ -9,6 +9,7 @@ import { colapsarEmUnidades, type EquipeDoMapa } from "../equipes/regras";
 import { EvidenciasService, type ContextoDaAtividade } from "../evidencias/evidencias.service";
 import { FICHA_EXP05EF1B } from "../evidencias/fichas/exp05ef1b";
 import { logger } from "../observabilidade/logger";
+import { ehUuid } from "../motor/guardas";
 import { PrismaService } from "../prisma/prisma.service";
 import {
   CALLBACK_DO_MOTIVO,
@@ -558,16 +559,17 @@ export class QuemMandouIssoService implements OnModuleInit {
   }
 
   /**
-   * "Aprovar Pacote" — o portão da curadoria humana (RF-003).
+   * "Criar atividade" — o portão da curadoria humana (RF-003).
    *
-   * **Aprovar um pacote novo = ATIVIDADE nova** (a evidência E14 é por pacote):
-   * o ativo anterior sai de cena (fica no banco, com o histórico dele), o novo
-   * nasce na rodada 1 e a fase da turma volta à triagem — senão a turma nova
-   * nasceria com a revelação aberta, e o gabarito desceria na entrada.
+   * **Aprovar um pacote novo = ATIVIDADE nova** (a evidência E14 é por pacote),
+   * e ela nasce PRONTA, não no ar (ADR-130): quem escolhe o que a turma faz é o
+   * professor, na lista de atividades (`colocarEmAndamento`). O pacote em
+   * andamento continua em andamento — criar a próxima aula não pode tirar do
+   * ar a de agora, nem mexer na fase da turma.
    *
-   * Idempotente: aprovar de novo EXATAMENTE o pacote ativo devolve o mesmo
-   * pacote, sem atividade nova (o duplo clique de um professor nervoso). O
-   * rascunho, se houver, é o que vira o aprovado (mesmo id).
+   * Idempotente: aprovar de novo EXATAMENTE o pacote aprovado mais recente
+   * devolve o mesmo pacote, sem atividade nova (o duplo clique de um professor
+   * nervoso). O rascunho, se houver, é o que vira o aprovado (mesmo id).
    */
   async aprovar(escolaId: string, turmaId: string, professorId: string, corpo: CorpoDaAprovacao) {
     return this.prisma.comTenancy(async (tx) => {
@@ -575,13 +577,15 @@ export class QuemMandouIssoService implements OnModuleInit {
       await this.travarTurma(tx, escolaId, turmaId);
       const conteudo = { ...recorteLimpo(corpo), mensagens: normalizarMensagens(corpo.mensagens) };
 
-      const ativo = await tx.exp05ef1bPacote.findFirst({ where: { escolaId, turmaId, ativo: true } });
-      if (ativo) {
-        const mensagens = lerMensagens(ativo.mensagensJson);
-        if (mensagens && assinatura({ ...ativo, mensagens }) === assinatura(conteudo)) {
-          return this.exigirParaProfessor(ativo);
+      const ultimo = await tx.exp05ef1bPacote.findFirst({
+        where: { escolaId, turmaId, aprovadoEm: { not: null } },
+        orderBy: { aprovadoEm: "desc" },
+      });
+      if (ultimo) {
+        const mensagens = lerMensagens(ultimo.mensagensJson);
+        if (mensagens && assinatura({ ...ultimo, mensagens }) === assinatura(conteudo)) {
+          return this.exigirParaProfessor(ultimo);
         }
-        await tx.exp05ef1bPacote.update({ where: { id: ativo.id }, data: { ativo: false } });
       }
 
       const dados = {
@@ -591,7 +595,7 @@ export class QuemMandouIssoService implements OnModuleInit {
         contexto: conteudo.contexto,
         origem: corpo.origem,
         mensagensJson: conteudo.mensagens as unknown as Prisma.InputJsonValue,
-        ativo: true,
+        ativo: false,
         rodadaAtual: 1,
         aprovadoEm: new Date(),
         aprovadoPor: professorId,
@@ -603,9 +607,85 @@ export class QuemMandouIssoService implements OnModuleInit {
       const aprovado = rascunho
         ? await tx.exp05ef1bPacote.update({ where: { id: rascunho.id }, data: dados })
         : await tx.exp05ef1bPacote.create({ data: { escolaId, turmaId, ...dados } });
-
-      await this.voltarATriagem(tx, escolaId, turmaId);
       return this.exigirParaProfessor(aprovado);
+    }, escolaId);
+  }
+
+  /**
+   * As ATIVIDADES da turma (ADR-130): os pacotes APROVADOS, do mais recente ao
+   * mais antigo, com o que está em andamento marcado — a lista de atividades da
+   * ficha e o seletor do painel de habilidades. O rascunho não entra: ainda não
+   * é atividade.
+   */
+  async pacotes(escolaId: string, turmaId: string, professorId?: string) {
+    return this.prisma.comTenancy(async (tx) => {
+      await this.turmaVisivel(tx, escolaId, turmaId, professorId);
+      const [aprovados, rodadas] = await Promise.all([
+        tx.exp05ef1bPacote.findMany({
+          where: { escolaId, turmaId, aprovadoEm: { not: null } },
+          orderBy: { aprovadoEm: "desc" },
+          select: { id: true, disciplina: true, tema: true, origem: true, ativo: true, rodadaAtual: true, aprovadoEm: true },
+        }),
+        tx.exp05ef1bSessao.groupBy({ by: ["pacoteId"], where: { escolaId, turmaId }, _max: { rodada: true } }),
+      ]);
+      const maiorRodada = new Map(rodadas.map((r) => [r.pacoteId, r._max.rodada ?? 0]));
+      const emAndamento = aprovados.find((p) => p.ativo);
+      return {
+        emAndamento: emAndamento ? { pacoteId: emAndamento.id, rodada: emAndamento.rodadaAtual } : null,
+        historico: aprovados.map((p) => ({
+          id: p.id,
+          disciplina: p.disciplina as Disciplina,
+          tema: p.tema,
+          origem: (p.origem === "ia" ? "ia" : "padrao") as Origem,
+          ativo: p.ativo,
+          aprovadoEm: (p.aprovadoEm as Date).toISOString(),
+          rodadas: maiorRodada.get(p.id) ?? 0,
+        })),
+      };
+    }, escolaId);
+  }
+
+  /** UM pacote aprovado, inteiro e com o gabarito — a página da atividade, em andamento ou não. */
+  async pacote(escolaId: string, turmaId: string, professorId: string | undefined, pacoteId: string) {
+    return this.prisma.comTenancy(async (tx) => {
+      await this.turmaVisivel(tx, escolaId, turmaId, professorId);
+      const linha = await this.pacoteAprovadoDaTurma(tx, escolaId, turmaId, pacoteId);
+      const rodadas = await tx.exp05ef1bSessao.aggregate({ where: { escolaId, turmaId, pacoteId }, _max: { rodada: true } });
+      return { ...this.exigirParaProfessor(linha), rodadas: rodadas._max.rodada ?? 0 };
+    }, escolaId);
+  }
+
+  /**
+   * "USAR ESTA ATIVIDADE AGORA" (ADR-130): o professor escolhe, na lista, qual
+   * pacote a turma joga. O que estava em andamento volta a ser PRONTO — fica,
+   * com as sessões e a evidência —, e a fase da turma volta à triagem: senão a
+   * atividade nova abriria com a revelação aberta, e o gabarito desceria na
+   * entrada.
+   *
+   * A RODADA: o pacote que nunca rodou fica na 1; o que já rodou abre a
+   * SEGUINTE à última com sessão — retomar a mesma depois da revelação seria o
+   * "voltar" que os botões proíbem. As anteriores continuam no painel de
+   * habilidades (ADR-112).
+   *
+   * Idempotente: pôr no ar o que já está no ar não muda nada.
+   */
+  async colocarEmAndamento(escolaId: string, turmaId: string, professorId: string, pacoteId: string) {
+    return this.prisma.comTenancy(async (tx) => {
+      await this.turmaVisivel(tx, escolaId, turmaId, professorId);
+      await this.travarTurma(tx, escolaId, turmaId);
+      const pacote = await this.pacoteAprovadoDaTurma(tx, escolaId, turmaId, pacoteId);
+      if (pacote.ativo) {
+        const gate = await tx.exp05ef1bGateTurma.findUnique({ where: { escolaId_turmaId: { escolaId, turmaId } } });
+        return { atividade: { pacoteId, rodada: pacote.rodadaAtual }, fase: normalizarFase(gate?.fase), mudou: false };
+      }
+
+      const ultima = await tx.exp05ef1bSessao.aggregate({ where: { escolaId, turmaId, pacoteId }, _max: { rodada: true } });
+      const rodada = (ultima._max.rodada ?? 0) + 1;
+      /* Desliga antes de ligar: o índice único PARCIAL aceita um ativo por turma. */
+      await tx.exp05ef1bPacote.updateMany({ where: { escolaId, turmaId, ativo: true }, data: { ativo: false } });
+      await tx.exp05ef1bPacote.update({ where: { id: pacoteId }, data: { ativo: true, rodadaAtual: rodada } });
+      await this.voltarATriagem(tx, escolaId, turmaId);
+      return { atividade: { pacoteId, rodada }, fase: FASE_INICIAL, mudou: true };
     }, escolaId);
   }
 
@@ -1001,6 +1081,15 @@ export class QuemMandouIssoService implements OnModuleInit {
   /** Lock por TURMA: dois professores (ou dois cliques) não intercalam aprovação, fase e rodada. */
   private async travarTurma(tx: Prisma.TransactionClient, escolaId: string, turmaId: string) {
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`exp05ef1b-turma:${escolaId}:${turmaId}`}, 0))`;
+  }
+
+  /** O pacote APROVADO desta turma, ou 404 — o rascunho e o de outra turma não são atividade daqui. */
+  private async pacoteAprovadoDaTurma(tx: Prisma.TransactionClient, escolaId: string, turmaId: string, pacoteId: string) {
+    const linha = ehUuid(pacoteId)
+      ? await tx.exp05ef1bPacote.findFirst({ where: { id: pacoteId, escolaId, turmaId, aprovadoEm: { not: null } } })
+      : null;
+    if (!linha) throw erroDeJogo("atividade-nao-encontrada");
+    return linha;
   }
 
   private async exigirPacoteAtivo(tx: Prisma.TransactionClient, escolaId: string, turmaId: string) {

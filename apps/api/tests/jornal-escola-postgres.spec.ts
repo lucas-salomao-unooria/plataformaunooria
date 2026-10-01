@@ -4,7 +4,7 @@ import type { AiJsonRequest, AiProvider, AiResult } from "../src/ai/provider";
 import { QuotaService, perfilDaQuota } from "../src/ai/quota.service";
 import { EquipesService } from "../src/equipes/equipes.service";
 import { EvidenciasService } from "../src/evidencias/evidencias.service";
-import { NOTICIAS_PADRAO, TEMA_PADRAO, noticiasPadrao } from "../src/jornal-escola/catalogo";
+import { DISCIPLINA_PADRAO, NOTICIAS_PADRAO, TEMA_PADRAO, noticiasPadrao } from "../src/jornal-escola/catalogo";
 import {
   ComparativoSchema,
   EstadoSchema,
@@ -124,8 +124,24 @@ const ids = {
   corrida: [] as string[],
 };
 
-/** Tudo da missão, das equipes, da evidência e da quota das duas escolas — entre um bloco e outro. */
-async function zerarMissao() {
+/**
+ * A atividade que o professor criaria e poria no ar: a plataforma não cria
+ * atividade (ADR-130), então a suíte faz o caminho dele — criar (pronta) e
+ * "Usar esta atividade agora". É o banco da Unooria, como o preparo oferece.
+ */
+async function prepararAtividade(turmaId = ids.turma, escolaId = ESCOLA): Promise<string> {
+  const criado = await service.homologar(escolaId, turmaId, undefined, ids.professora, {
+    disciplina: DISCIPLINA_PADRAO,
+    tema: TEMA_PADRAO,
+    origem: "padrao",
+    noticias: noticiasPadrao(),
+  });
+  await service.colocarEmAndamento(escolaId, turmaId, undefined, criado.id);
+  return criado.id;
+}
+
+/** Tudo da missão, sem atividade nenhuma — a turma que o professor ainda não preparou. */
+async function limparMissao() {
   /* O pacote leva o gate, as sessões e as diagramações por cascata. */
   await prisma.exp04ef1bPacote.deleteMany({ where: { escolaId: { in: ESCOLAS } } });
   await prisma.evidenciaEvento.deleteMany({ where: { escolaId: { in: ESCOLAS } } });
@@ -137,8 +153,14 @@ async function zerarMissao() {
   ia.atrasoMs = 0;
 }
 
+/** Tudo da missão, e uma atividade em andamento na turma. */
+async function zerarMissao() {
+  await limparMissao();
+  await prepararAtividade();
+}
+
 async function limpar() {
-  await zerarMissao();
+  await limparMissao();
   await prisma.liberacao.deleteMany({ where: { escolaId: { in: ESCOLAS } } });
   await prisma.matricula.deleteMany({ where: { escolaId: { in: ESCOLAS } } });
   await prisma.user.deleteMany({ where: { escolaId: { in: ESCOLAS } } });
@@ -297,6 +319,7 @@ const TABELAS = ["exp04ef1b_pacotes", "exp04ef1b_gates_turma", "exp04ef1b_sessoe
 describe("tenancy no banco (regra inviolável nº 1)", () => {
   beforeAll(async () => {
     await zerarMissao();
+    await prepararAtividade(ids.turmaVizinha, OUTRA_ESCOLA);
     const daqui = await entrar(ids.ana);
     const dela = await entrar(ids.vizinho, ids.turmaVizinha, OUTRA_ESCOLA);
     /* A diagramação entra CRUA: no fluxo ela só existe quando a IA responde. */
@@ -434,8 +457,8 @@ describe("os CHECKs recusam o que dizem recusar", () => {
   });
 });
 
-describe("a porta da sala, a primeira entrada e garantirPacote", () => {
-  beforeAll(zerarMissao);
+describe("a porta da sala, a primeira entrada e a atividade em andamento", () => {
+  beforeAll(limparMissao);
 
   test("sem liberação na turma: 403 `missao-nao-liberada`, na sessão E no polling", async () => {
     expect(await codigoDe(entrar(ids.fabi, ids.turmaSemLiberacao))).toBe("missao-nao-liberada");
@@ -443,13 +466,29 @@ describe("a porta da sala, a primeira entrada e garantirPacote", () => {
     expect(await prisma.exp04ef1bSessao.count({ where: { escolaId: ESCOLA, estudanteId: ids.fabi } })).toBe(0);
   });
 
-  test("a primeira entrada cria o pacote `padrao` e o gate — e a missão não nasce vazia", async () => {
+  /**
+   * A PLATAFORMA NUNCA CRIA A ATIVIDADE (ADR-130). Antes, a primeira entrada
+   * criava o pacote da Feira de Ciências sozinha; agora a turma sem atividade
+   * em andamento é a porta fechada — 403, a tela de "ainda não foi aberta" que a
+   * experiência já mostra para a liberação — e NADA nasce no banco.
+   */
+  test("sem atividade em andamento: 403 `atividade-nao-preparada` — e nada é criado", async () => {
+    expect(await codigoDe(entrar(ids.ana))).toBe("atividade-nao-preparada");
+    expect(await codigoDe(service.painel(ESCOLA, ids.turma, ids.professora))).toBe("atividade-nao-preparada");
+    expect(await codigoDe(service.zerar(ESCOLA, ids.turma, ids.professora))).toBe("atividade-nao-preparada");
+    expect(await service.gate(ESCOLA, ids.ana, ids.turma)).toMatchObject({ rodada: null });
+    const pacotes = PacotesSchema.parse(await service.pacotes(ESCOLA, ids.turma, ids.professora));
+    expect(pacotes).toEqual({ ativo: null, historico: [] });
+    expect(await prisma.exp04ef1bPacote.count({ where: { escolaId: ESCOLA } })).toBe(0);
+    expect(await prisma.exp04ef1bGateTurma.count({ where: { escolaId: ESCOLA } })).toBe(0);
+  });
+
+  test("com a atividade do professor em andamento, a entrada abre a rodada 1 dela", async () => {
+    const pacoteId = await prepararAtividade();
     const s = SessaoSchema.parse(await entrar(ids.ana));
-    expect(s).toMatchObject({ rodada: 1, etapa: "exploracao", passo: "desafio", edicao1: null, blocos: null, chaveTentativas: 0 });
+    expect(s).toMatchObject({ pacoteId, rodada: 1, etapa: "exploracao", passo: "desafio", edicao1: null, blocos: null, chaveTentativas: 0 });
     expect(s.pacote.tema).toBe(TEMA_PADRAO);
     expect(s.pacote.noticias.map((n) => n.id)).toEqual(["n1", "n2", "n3", "n4", "n5", "n6", "n7", "n8"]);
-    const pacote = await prisma.exp04ef1bPacote.findFirstOrThrow({ where: { escolaId: ESCOLA, ativo: true } });
-    expect(pacote).toMatchObject({ origem: "padrao", aprovadoPor: null, id: s.pacoteId });
     await entrar(ids.bia);
     await entrar(ids.ana);
     expect(await prisma.exp04ef1bPacote.count({ where: { escolaId: ESCOLA, turmaId: ids.turma } })).toBe(1);
@@ -467,7 +506,8 @@ describe("a porta da sala, a primeira entrada e garantirPacote", () => {
     }
   });
 
-  test("seis primeiras entradas SIMULTÂNEAS numa turma nova: um pacote e um gate", async () => {
+  test("seis primeiras entradas SIMULTÂNEAS: um pacote, um gate e uma sessão por criança", async () => {
+    await prepararAtividade(ids.turmaCorrida);
     const r = await Promise.all(ids.corrida.map((id) => entrar(id, ids.turmaCorrida)));
     expect(new Set(r.map((s) => s.pacoteId)).size).toBe(1);
     expect(await prisma.exp04ef1bPacote.count({ where: { escolaId: ESCOLA, turmaId: ids.turmaCorrida } })).toBe(1);
@@ -475,13 +515,23 @@ describe("a porta da sala, a primeira entrada e garantirPacote", () => {
     expect(await prisma.exp04ef1bSessao.count({ where: { escolaId: ESCOLA, turmaId: ids.turmaCorrida } })).toBe(6);
   });
 
-  test("o preparo de uma turma sem nenhuma entrada também tem pacote (GET pacotes e painel)", async () => {
+  test("o professor lê a lista e o painel da atividade em andamento — e a pronta não aparece no painel", async () => {
+    const pronta = await service.homologar(ESCOLA, ids.turmaVazia, undefined, ids.professora, {
+      disciplina: DISCIPLINA_PADRAO,
+      tema: "Uma pronta para a semana que vem",
+      origem: "padrao",
+      noticias: noticiasPadrao(),
+    });
     const pacotes = PacotesSchema.parse(await service.pacotes(ESCOLA, ids.turmaVazia, undefined));
-    expect(pacotes.ativo).toMatchObject({ origem: "padrao", rodada: 1, etapa: "exploracao", tema: TEMA_PADRAO });
-    expect(pacotes.ativo.noticias).toHaveLength(8);
-    expect(pacotes.historico).toHaveLength(1);
+    expect(pacotes.ativo).toBeNull();
+    expect(pacotes.historico.map((p) => [p.id, p.ativo, p.rodadas])).toEqual([[pronta.id, false, 0]]);
+    expect(await codigoDe(service.painel(ESCOLA, ids.turmaVazia, undefined))).toBe("atividade-nao-preparada");
+
+    await service.colocarEmAndamento(ESCOLA, ids.turmaVazia, undefined, pronta.id);
+    const depois = PacotesSchema.parse(await service.pacotes(ESCOLA, ids.turmaVazia, undefined));
+    expect(depois.ativo).toMatchObject({ id: pronta.id, rodada: 1, etapa: "exploracao" });
+    expect(depois.ativo?.noticias).toHaveLength(8);
     PainelSchema.parse(await service.painel(ESCOLA, ids.turmaVazia, undefined));
-    expect(await prisma.exp04ef1bPacote.count({ where: { escolaId: ESCOLA, turmaId: ids.turmaVazia } })).toBe(1);
   });
 
   test("o polling do gate é magro e responde a etapa, a rodada e o passo", async () => {
@@ -760,7 +810,7 @@ describe("a Chave, a revisão, a 2ª edição e o Desafio Final", () => {
   });
 });
 
-describe("atividade × rodada: pacote novo volta à 1, o mesmo é idempotente", () => {
+describe("atividade × rodada: o pacote novo nasce pronto, o mesmo é idempotente", () => {
   beforeAll(zerarMissao);
 
   const corpo = (tema: string, noticias: NoticiaDoPacote[] = noticiasPadrao(), origem: "padrao" | "ia" = "ia") => ({
@@ -770,39 +820,73 @@ describe("atividade × rodada: pacote novo volta à 1, o mesmo é idempotente", 
     noticias,
   });
 
-  test("homologar o banco padrão com o padrão já ativo não cria atividade: só carimba quem aprovou", async () => {
+  test("o segundo clique em Criar, com o mesmo conteúdo do mais recente, não cria outra atividade", async () => {
     const antes = await entrar(ids.ana);
     const r = await service.homologar(ESCOLA, ids.turma, ids.professora, ids.professora, {
       ...corpo(TEMA_PADRAO, noticiasPadrao(), "padrao"),
       disciplina: "Projeto interdisciplinar",
     });
-    expect(r.id).toBe(antes.pacoteId);
-    const pacote = await prisma.exp04ef1bPacote.findUniqueOrThrow({ where: { id: antes.pacoteId } });
-    expect(pacote.aprovadoPor).toBe(ids.professora);
-    expect(pacote.aprovadoEm).not.toBeNull();
+    expect(r).toMatchObject({ id: antes.pacoteId, ativo: true });
     expect(await prisma.exp04ef1bPacote.count({ where: { escolaId: ESCOLA, turmaId: ids.turma } })).toBe(1);
   });
 
-  test("pacote novo é ATIVIDADE nova: o anterior sai de cena (e fica), e o gate volta à rodada 1", async () => {
+  /**
+   * CRIAR NÃO PÕE NO AR (ADR-130): o professor prepara a próxima aula com a de
+   * hoje rodando. Quem troca o que a turma faz é o "Usar esta atividade agora".
+   */
+  test("pacote novo é ATIVIDADE nova: nasce pronto, e o em andamento continua até o professor trocar", async () => {
     const anterior = await entrar(ids.ana);
     await service.zerar(ESCOLA, ids.turma, ids.professora);
     const noticias = noticiasPadrao().map((n) => (n.id === "n1" ? { ...n, manchete: "Feira de Ciências abre inscrições para toda a escola" } : n));
     const novo = await service.homologar(ESCOLA, ids.turma, ids.professora, ids.professora, corpo("A feira da escola", noticias));
-    expect(novo).toMatchObject({ rodada: 1, etapa: "exploracao", origem: "ia" });
+    expect(novo).toMatchObject({ ativo: false, origem: "ia" });
     expect(novo.id).not.toBe(anterior.pacoteId);
+    /* Pronto: a turma segue no anterior, na rodada 2 do "zerar". */
+    expect(await entrar(ids.ana)).toMatchObject({ pacoteId: anterior.pacoteId, rodada: 2 });
+    expect(await service.pacote(ESCOLA, ids.turma, ids.professora, novo.id)).toMatchObject({
+      ativo: false,
+      rodada: null,
+      etapa: null,
+      rodadas: 0,
+    });
+
+    expect(await service.colocarEmAndamento(ESCOLA, ids.turma, ids.professora, novo.id)).toMatchObject({
+      pacoteId: novo.id,
+      rodada: 1,
+      etapa: "exploracao",
+      mudou: true,
+    });
     const s = await entrar(ids.ana);
     expect(s).toMatchObject({ pacoteId: novo.id, rodada: 1, passo: "desafio" });
     const pacotes = PacotesSchema.parse(await service.pacotes(ESCOLA, ids.turma, ids.professora));
-    expect(pacotes.ativo.id).toBe(novo.id);
+    expect(pacotes.ativo?.id).toBe(novo.id);
     expect(pacotes.historico.map((p) => [p.ativo, p.rodadas])).toEqual([
       [true, 1],
-      [false, 1],
+      [false, 2],
     ]);
-    // O mesmo conteúdo de novo (o segundo clique em Aprovar) não cria nada, nem zera a aula.
+    // O mesmo conteúdo de novo (o segundo clique em Criar) não cria nada, nem zera a aula.
     await etapa("resultado");
     const deNovo = await service.homologar(ESCOLA, ids.turma, ids.professora, ids.professora, corpo("A feira da escola", noticias));
-    expect(deNovo).toMatchObject({ id: novo.id, etapa: "resultado", rodada: 1 });
+    expect(deNovo).toMatchObject({ id: novo.id, ativo: true });
+    expect(await service.gate(ESCOLA, ids.ana, ids.turma)).toMatchObject({ etapa: "resultado", rodada: 1 });
     expect(await prisma.exp04ef1bPacote.count({ where: { escolaId: ESCOLA, turmaId: ids.turma } })).toBe(2);
+
+    /* Voltar ao anterior, que já rodou duas rodadas, abre a TERCEIRA. */
+    expect(await service.colocarEmAndamento(ESCOLA, ids.turma, ids.professora, anterior.pacoteId)).toMatchObject({
+      rodada: 3,
+      mudou: true,
+    });
+    expect(await service.colocarEmAndamento(ESCOLA, ids.turma, ids.professora, anterior.pacoteId)).toMatchObject({
+      mudou: false,
+    });
+  });
+
+  test("o pacote de OUTRA turma não é desta: 404 ao ler e ao pôr no ar", async () => {
+    const daVizinha = await prepararAtividade(ids.turmaVizinha, OUTRA_ESCOLA);
+    expect(await codigoDe(service.pacote(ESCOLA, ids.turma, ids.professora, daVizinha))).toBe("atividade-nao-encontrada");
+    expect(await codigoDe(service.colocarEmAndamento(ESCOLA, ids.turma, ids.professora, daVizinha))).toBe(
+      "atividade-nao-encontrada",
+    );
   });
 
   test("turma que o professor não leciona é 404, nunca 403", async () => {
