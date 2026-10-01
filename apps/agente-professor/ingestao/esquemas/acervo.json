@@ -10,7 +10,6 @@
     "titulo": {
       "type": "string",
       "retrievable": true,
-      "searchable": true,
       "keyPropertyMapping": "title"
     },
     "componente_slug": {
