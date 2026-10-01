@@ -47,8 +47,8 @@ Quatro tabelas (`exp05ef1b_pacotes`, `_gates_turma`, `_sessoes`,
   da criança com o pacote**: antes, o service pergunta
   `EvidenciasService.jaAvaliadaAntes` — na rodada nova do MESMO pacote, quem já
   tem nível (próprio, da equipe, da projeção ou do professor) fecha o Mural sem
-  marca; quem faltou é medido. CO03 vem da P1 (frases com não/e/ou) e CO04 da
-  P2 (simular a regra) e da RUBRICA do Se/Então, que o professor clica na
+  marca; quem faltou é medido. CO03 vem da P1 e CO04 da P2 — as perguntas do PO,
+  literais (ficha v3, ADR-131) — e CO04 também da RUBRICA do Se/Então, que o professor clica na
   folha (um ajuste da evidência; a máquina não corrige o texto).
 - **O resolvedor da E14 só responde no passo `perguntas`** (regra enviada,
   missão não concluída). Antes ou depois, a resposta é 409
