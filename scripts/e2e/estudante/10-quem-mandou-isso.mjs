@@ -4,15 +4,17 @@ import { ALERTA_DE_ERRO, esperarOuFalharCedo, esperarOuFalharPorHttp } from "../
 
 /**
  * Quem mandou isso? v2.2 (exp05ef1b), nas duas pontas da sala: a professora
- * prepara e conduz, o estudante joga. Dois contextos de navegador, porque
+ * cria a atividade e conduz, o estudante joga. Dois contextos de navegador, porque
  * metade do que a missão instala só se prova com as duas telas vivas.
  *
  * O que esta suíte cobra, e por que cada item é uma regra do software:
  *
- * 1. **A missão NASCE VAZIA** (a fala da Nina leva o tema do pacote). Sem o
- *    clique em "Aprovar Pacote" a lista de conversas fica vazia — e, na
- *    corrida em que a turma ainda não tem pacote, o estudante vê a Nina
- *    chegar SOZINHA, pelo polling, quando a professora aprova.
+ * 1. **A missão NASCE VAZIA** (a fala da Nina leva o tema do pacote). Sem uma
+ *    atividade da professora EM ANDAMENTO a lista de conversas fica vazia — e,
+ *    na corrida em que a turma ainda não tem nenhuma no ar, o estudante vê a
+ *    Nina chegar SOZINHA, pelo polling, quando a professora cria a atividade
+ *    com "Pôr esta atividade no ar agora" (ADR-130: a plataforma não cria
+ *    atividade, e criar não põe no ar sozinho).
  * 2. **O gabarito não desce antes da hora.** A sessão do estudante é lida
  *    CRUA (pelo BFF, com a sessão dele) antes de entrar, depois do voto e só
  *    então depois da revelação: as mensagens nunca têm `veracidade` nem `tom`,
@@ -35,14 +37,18 @@ import { ALERTA_DE_ERRO, esperarOuFalharCedo, esperarOuFalharPorHttp } from "../
  *
  * A suíte NÃO aperta "Gerar Atividade com IA": uma corrida que depende do
  * Vertex reprova por fornecedor e reporta como se o produto tivesse quebrado.
- * Ela aprova o pacote curado padrão, que também é curadoria (passa pelos olhos
- * da professora e pelo clique dela).
+ * Ela cria a atividade pelo assistente ("Nova atividade" na ficha) a partir do
+ * pacote curado padrão, que também é curadoria (passa pelos olhos da
+ * professora e pelo clique dela em "Criar atividade").
  *
  * FIXTURE: a turma A do 5º ano (o seed libera a exp05ef1b lá). O estado é do
- * servidor e sobrevive ao roteiro, então a suíte começa pelo que a turma TEM:
- * se o pacote já estava aprovado (a corrida de ontem), ela o reaprova (é
- * idempotente — mesma atividade) e, se a turma já andou, aperta "Zerar Turma
- * para Nova Aplicação", que abre a rodada seguinte sem apagar nada.
+ * servidor e sobrevive ao roteiro, então a suíte começa pelo que a turma TEM.
+ * Criar de novo EXATAMENTE o pacote mais recente é idempotente (a mesma
+ * atividade, o mesmo id): na corrida de ontem a atividade criada agora é a
+ * mesma, e se ela já estava em andamento e a turma andou, a suíte aperta
+ * "Zerar Turma para Nova Aplicação" na página da atividade, que abre a rodada
+ * seguinte sem apagar nada. Uma atividade que volta ao ar (estava pronta) ou
+ * que nasce agora já começa numa rodada nova, e zerar não é preciso.
  */
 const SERIE = "5EF";
 const EXP_ID = "exp05ef1b";
@@ -146,7 +152,8 @@ await suite(
       "revelação, cada mensagem ganha dois selos; depois vêm a síntese, a regra Se/Então fora " +
       "do aplicativo e duas perguntas rápidas da Nina.",
     prova: [
-      "Sem o pacote aprovado pela professora a missão não abre; aprovado, a Nina chega sozinha",
+      "A atividade nasce da professora, pelo assistente — conteúdo, equipes e criar —, e sem uma em andamento a missão não abre",
+      "Criada com “Pôr no ar agora”, a Nina chega sozinha à tela do estudante, sem recarregar",
       "Antes da revelação a sessão do estudante não carrega veracidade nem tom de mensagem nenhuma",
       "A quarta seta avisa o limite e não abre a folha; o servidor recusa 4 e recusa 2",
       "Confirmado, o Mural não muda mais — nem pela tela, nem por chamada direta",
@@ -186,9 +193,20 @@ await suite(
         `a api não abriu o pacote da ${TURMA} (HTTP ${pacoteAntes.status}): ${JSON.stringify(pacoteAntes.corpo).slice(0, 200)}`,
       );
     }
-    /* Tela com DOIS estados legítimos no começo: a turma sem pacote (a missão
-       nasce vazia, e a suíte prova a espera) ou com o pacote de uma corrida
-       anterior (a espera não se prova, e a suíte diz isso). */
+    /* As atividades que a turma já tem (ADR-130): é por elas que a suíte sabe,
+       depois de criar, se a atividade é NOVA ou a de ontem (criar de novo o
+       mesmo pacote é idempotente). */
+    const pacotesAntes = await lerApi(prof, `${daTurma}/pacotes`);
+    if (pacotesAntes.status !== 200) {
+      throw new Error(
+        `a api não listou as atividades da ${TURMA} (HTTP ${pacotesAntes.status}): ${JSON.stringify(pacotesAntes.corpo).slice(0, 200)}`,
+      );
+    }
+    const historicoAntes = pacotesAntes.corpo.historico ?? [];
+    /* Tela com DOIS estados legítimos no começo: a turma sem atividade em
+       andamento (a missão nasce vazia, e a suíte prova a espera) ou com a de
+       uma corrida anterior no ar (a espera não se prova, e a suíte diz isso).
+       `ativo` é o pacote EM ANDAMENTO da turma. */
     const nasceVazia = pacoteAntes.corpo.ativo === null;
     const padrao = pacoteAntes.corpo.padrao;
 
@@ -212,7 +230,7 @@ await suite(
       );
     }
 
-    // ═══ ESTUDANTE (só na turma sem pacote): a missão nasce vazia ═══════════
+    // ═══ ESTUDANTE (só na turma sem atividade no ar): a missão nasce vazia ══
     let p = null;
     let q = null;
     const abrirAMissao = async () => {
@@ -240,54 +258,53 @@ await suite(
       const vazia = await lerApi(p, "/quem-mandou-isso/sessao");
       r.exigir(
         vazia.corpo?.preparada === false && vazia.corpo?.pacote === null,
-        `sem pacote aprovado a sessão diz preparada=false e não tem grupo (preparada=${vazia.corpo?.preparada})`,
+        `sem atividade em andamento a sessão diz preparada=false e não tem grupo (preparada=${vazia.corpo?.preparada})`,
       );
       await r.registrar(p, "grupo-em-preparo", {
         titulo: "A missão nasce vazia",
         mostra: "A lista de conversas sem a Nina, com a linha de espera: o grupo da turma ainda está sendo organizado.",
         prova:
-          "O tema do pacote entra na fala da Nina, então sem a aprovação da professora não há conversa " +
-          "nenhuma — e a tela não culpa ninguém nem denuncia o exercício: diz que falta pouco.",
+          "O tema do pacote entra na fala da Nina, então sem uma atividade da professora em andamento não " +
+          "há conversa nenhuma — e a tela não culpa ninguém nem denuncia o exercício: diz que falta pouco.",
       });
     } else {
       r.ressalva(
-        `a ${TURMA} já tinha pacote aprovado (corrida anterior): a espera do preparo só se prova numa turma sem pacote`,
+        `a ${TURMA} já tinha uma atividade em andamento (corrida anterior): a espera só se prova numa turma sem nenhuma no ar`,
       );
     }
 
-    // ═══ PROFESSORA: a ficha e o preparo ══════════════════════════════════
+    // ═══ PROFESSORA: a ficha e as atividades da turma ═════════════════════
     await prof.goto(`${FICHA}?turmaId=${turmaId}`, { waitUntil: "domcontentloaded" });
     await prof.getByRole("heading", { name: "Quem Mandou Isso?", exact: true }).waitFor({ timeout: 30_000 });
-    await prof.getByText(/A missão só abre depois que você aprova o pacote/).first().waitFor({ timeout: 15_000 });
+    await prof
+      .getByText(/A missão só abre com uma atividade sua em andamento — e a revelação é você quem libera/)
+      .first()
+      .waitFor({ timeout: 15_000 });
+    await prof.locator("[data-atividades-da-missao]").waitFor({ timeout: 20_000 });
     await r.registrar(prof, "ficha-da-missao", {
       titulo: "A ficha do 5º ano",
       mostra:
-        "As seis etapas da missão, o preparo e o aviso que muda a condução: sem o pacote aprovado " +
-        "a missão não abre, e os três botões da aula são dela.",
+        "As seis etapas da missão, o aviso que muda a condução — a missão só abre com uma atividade dela em " +
+        "andamento, e os três botões da aula são dela — e a lista “Suas atividades com a turma”, com Nova atividade.",
       prova:
-        "A professora precisa saber ANTES que esta missão nasce vazia. Descobrir isso com trinta " +
-        "crianças diante de uma tela de espera é o chamado de suporte que a faixa existe para evitar.",
+        "A professora precisa saber ANTES que esta missão nasce vazia: a plataforma não cria atividade " +
+        "(ADR-130). Descobrir isso com trinta crianças diante de uma tela de espera é o chamado de suporte " +
+        "que a faixa existe para evitar.",
     });
 
-    /* O `LinkButton` é um `<a>` com `role="button"` (o `Button` do DS polimórfico):
-       pelo elemento, e não pelo papel, que aqui diz "botão" para um link. */
-    const abrirAAula = prof.locator("a", { hasText: "Abrir a aula e os resultados" });
-    await hidratado(prof, abrirAAula);
-    await abrirAAula.click();
-    await prof.waitForURL(/\/resultados\?turmaId=/, { timeout: 30_000 });
-    await prof.locator("[data-preparo]").waitFor({ timeout: 30_000 });
-
-    if (!nasceVazia) {
-      /* Com pacote ativo o recorte fica fechado: o preparo de um pacote novo é
-         um gesto próprio, e aprovar o MESMO pacote é idempotente (a mesma
-         atividade, e nada volta ao começo). */
-      const preparar = prof.locator('[data-acao="preparar-novo"]');
-      await hidratado(prof, preparar);
-      await preparar.click();
-    }
+    /* NOVA ATIVIDADE pelo assistente: a turma já vem da ficha, o conteúdo parte
+       do pacote curado, um aluno por computador, e a atividade entra no ar ao
+       criar. O `LinkButton` é um `<a>` com `role="button"` (o `Button` do DS
+       polimórfico): pelo elemento, e não pelo papel, que aqui diz "botão" para
+       um link. */
+    await prof.locator("a", { hasText: "Nova atividade" }).first().click();
+    await prof.waitForURL("**/atividades/nova**", { timeout: 30_000 });
+    await prof.locator("[data-assistente-de-atividade]").waitFor({ timeout: 30_000 });
+    await prof.locator("[data-passo-conteudo] [data-preparo]").waitFor({ timeout: 30_000 });
 
     /* O componente curricular é um `Selection` do DS (combobox + listbox). O
-       portão é o próprio listbox: sem hidratação o clique não abre nada. */
+       portão é o próprio listbox: sem hidratação o clique não abre nada. Vem
+       ANTES do pacote curado, que guarda a disciplina escolhida. */
     const disciplina = prof.getByRole("combobox", { name: /^Componente curricular/ });
     await hidratado(prof, disciplina);
     await disciplina.click();
@@ -298,12 +315,16 @@ await suite(
     const rotuloDaDisciplina = (await primeiraDisciplina.locator(".unooria-selection-option__label").innerText()).trim();
     await primeiraDisciplina.click();
 
-    const usarPadrao = prof.locator('[data-acao="usar-padrao"]');
-    await usarPadrao.click();
-    await esperarOuFalharCedo(prof.locator("[data-curadoria]"), prof.locator(ALERTA_DE_ERRO), {
-      timeout: 20_000,
-      oQue: "carregar o pacote curado na curadoria",
-    });
+    /* "Usar Pacote Curado Padrão" CARREGA o pacote na curadoria e não grava
+       nada. O desfecho é o recado dele — a curadoria pode já estar na tela com
+       o rascunho de uma geração anterior, e esperar só por ela seria esperar o
+       passado. */
+    await prof.locator('[data-acao="usar-padrao"]').click();
+    await esperarOuFalharCedo(
+      prof.getByText(`Pacote curado “${padrao.nome}” carregado.`),
+      prof.locator("[data-preparo]").locator(ALERTA_DE_ERRO),
+      { timeout: 20_000, oQue: "carregar o pacote curado na curadoria" },
+    );
     const cartoes = await prof.locator("[data-curadoria] [data-mensagem]").count();
     const porQuadrante = await prof
       .locator("[data-curadoria] [data-quadrante]")
@@ -313,44 +334,123 @@ await suite(
       porQuadrante.length === 4 && porQuadrante.every((n) => n === 2),
       `nos 4 quadrantes, 2 em cada (${porQuadrante.join(", ")}) — os selos são só da tela dela`,
     );
+    r.exigir(
+      (await prof.locator("[data-curadoria]").getByText("8 / 8 validados", { exact: true }).count()) === 1,
+      "a curadoria marca “8 / 8 validados”: o pacote curado passa na régua da matriz",
+    );
+    r.exigir(
+      (await prof.getByText(/^Para continuar, ajuste:/).count()) === 0,
+      "e nada fica por ajustar para continuar",
+    );
     await prof.locator("[data-curadoria]").scrollIntoViewIfNeeded();
     await r.registrar(prof, "curadoria-do-pacote", {
-      titulo: "A curadoria do pacote, na matriz 2x2",
-      mostra: `O pacote curado “${padrao.nome}” nos quatro quadrantes — verdadeira ou falsa, emocional ou neutra —, com o texto editável e o componente curricular ${rotuloDaDisciplina}.`,
+      titulo: "O conteúdo da atividade, na matriz 2x2",
+      mostra: `O passo Conteúdo da criação: o pacote curado “${padrao.nome}” nos quatro quadrantes — verdadeira ou falsa, emocional ou neutra —, com o texto editável, o componente curricular ${rotuloDaDisciplina} e o selo “8 / 8 validados”.`,
       prova:
-        "Os selos de gabarito são só da professora: o gabarito e o formato de cada posição não têm " +
-        "campo, porque sustentam a matriz equilibrada, e a api recusaria a troca.",
+        "O pacote curado é ponto de partida, não atividade: nada é gravado antes de “Criar atividade”. Os " +
+        "selos de gabarito são só da professora, e o gabarito e o formato de cada posição não têm campo, " +
+        "porque sustentam a matriz equilibrada — a api recusaria a troca.",
     });
 
-    await prof.locator('[data-acao="aprovar-pacote"]').click();
-    if (!nasceVazia) {
-      /* Com pacote ativo, aprovar pede confirmação: um pacote DIFERENTE abriria
-         atividade nova. O nome do diálogo vem do `ModalTitle` (DS 0.2.3+). */
-      const confirmacao = prof.getByRole("dialog", { name: "Aprovar um pacote novo para a turma?" });
-      await confirmacao.waitFor({ timeout: 10_000 });
-      await confirmacao.getByRole("button", { name: "Aprovar Pacote", exact: true }).click();
-    }
+    await prof.locator('[data-acao="continuar-criacao"]').click();
+    /* Rádio do DS pelo PAPEL: o `<input>` transparente cobre o rótulo inteiro. */
+    const umPorComputador = prof.getByRole("radio", { name: "Um aluno por computador", exact: true });
+    await umPorComputador.click();
+    r.exigir(await umPorComputador.isChecked(), "o passo de equipes marca “Um aluno por computador”");
+    await r.registrar(prof, "criacao-equipes", {
+      titulo: "As equipes, dentro da criação",
+      mostra: "O passo Equipes: sortear, eu separo ou um aluno por computador — este, marcado.",
+      prova:
+        "A equipe é da atividade (ADR-130): a mesma turma pode sentar diferente em cada aula, e quem faltou " +
+        "se marca no dia, na página da atividade.",
+    });
+
+    await prof.locator('[data-acao="continuar-criacao"]').click();
+    await prof.locator("[data-revisao-da-criacao]").waitFor({ timeout: 10_000 });
+    /* "Pôr no ar agora" nasce desligado quando a turma já tem uma em andamento
+       (a de uma corrida anterior): liga, para a turma entrar nesta. */
+    const noAr = prof.getByLabel("Pôr esta atividade no ar agora");
+    await noAr.waitFor({ timeout: 10_000 });
+    if (!(await noAr.isChecked())) await noAr.click();
+    r.exigir(await noAr.isChecked(), "“Pôr esta atividade no ar agora” fica ligado");
+    await r.registrar(prof, "criacao-revisar", {
+      titulo: "Revisar e criar",
+      mostra:
+        "O último passo: a turma, o tema e as 8 mensagens, um aluno por computador e o interruptor " +
+        "“Pôr esta atividade no ar agora”, ligado.",
+      prova:
+        "Criar não põe no ar sozinho: a atividade nasce PRONTA, e é este interruptor que a torna a em " +
+        "andamento. Desligado, ela fica na lista até a professora escolher — e a aula que está rodando não muda.",
+    });
+
+    await prof.locator('[data-acao="criar-atividade"]').click();
+    /* O desfecho é a PÁGINA DA ATIVIDADE em andamento; a corrida é contra o
+       erro da criação e contra o aviso "A atividade foi criada" (criou, mas
+       não entrou no ar ou a equipe não salvou), que ficam no passo final. */
     await esperarOuFalharCedo(
-      prof.getByText("Pacote aprovado para a turma.", { exact: true }),
-      prof.locator(ALERTA_DE_ERRO),
-      { timeout: 30_000, oQue: "aprovar o pacote da turma" },
+      prof.locator('[data-estado-da-atividade="em-andamento"]'),
+      prof.locator("[data-revisao-da-criacao]").locator(`${ALERTA_DE_ERRO}, .unooria-feedback-alert--warning`),
+      { timeout: 60_000, oQue: "criar a atividade e pô-la no ar" },
     );
-    const pacoteDepois = await esperarNaApi(prof, `${daTurma}/pacote`, (c) => c?.ativo !== null, {
-      oQue: "o pacote aprovado",
+    await prof.waitForURL("**/resultados?**pacote=**", { timeout: 30_000 });
+    const atividadeId = new URL(prof.url()).searchParams.get("pacote");
+    if (!r.exigir(Boolean(atividadeId), `a página da atividade leva o id dela na URL (${prof.url()})`)) return;
+
+    const pacoteDepois = await esperarNaApi(prof, `${daTurma}/pacote`, (c) => c?.ativo?.id === atividadeId, {
+      oQue: "a atividade criada em andamento",
     });
     const ativo = pacoteDepois.ativo;
-    if (!nasceVazia) {
+    const gabarito = new Map(ativo.mensagens.map((m) => [m.id, m]));
+    const historicoDepois = (await lerApi(prof, `${daTurma}/pacotes`)).corpo?.historico ?? [];
+    /* Criar de novo EXATAMENTE o pacote mais recente é idempotente: os dois
+       desfechos são legítimos, e cada um é provado. */
+    const jaExistia = historicoAntes.some((h) => h.id === atividadeId);
+    if (jaExistia) {
       r.exigir(
-        ativo.id === pacoteAntes.corpo.ativo.id,
-        "reaprovar o MESMO pacote é idempotente: a atividade continua a mesma (a evidência é por pacote)",
+        historicoDepois.length === historicoAntes.length,
+        "criar de novo o MESMO pacote não abre atividade nova: é a mesma da lista (a evidência é por pacote)",
+      );
+    } else {
+      r.exigir(
+        historicoDepois.length === historicoAntes.length + 1 && historicoDepois.some((h) => h.id === atividadeId),
+        `criar abre UMA atividade nova na lista da turma (${historicoAntes.length} → ${historicoDepois.length})`,
       );
     }
-    const gabarito = new Map(ativo.mensagens.map((m) => [m.id, m]));
+
+    const pacoteNaPagina = prof.locator(`[data-pacote-da-atividade="${atividadeId}"]`);
+    await pacoteNaPagina.waitFor({ timeout: 20_000 });
+    r.exigir(
+      (await prof.locator('[data-liberacao-na-sala="liberada"]').count()) === 1,
+      `a página da atividade diz que a missão está liberada na sala da ${TURMA} (o seed a libera)`,
+    );
+    const verMensagens = prof.locator('[data-acao="ver-mensagens"]');
+    await hidratado(prof, verMensagens);
+    await verMensagens.click();
+    await prof.locator('[data-acao="ver-mensagens"][aria-expanded="true"]').waitFor({ timeout: 10_000 });
+    await pacoteNaPagina.scrollIntoViewIfNeeded();
+    await r.registrar(prof, "atividade-em-andamento", {
+      titulo: "A página da atividade, em andamento",
+      mostra:
+        "O tema da atividade com o selo Em andamento, os links para a lista da turma e para o guia da aula, " +
+        "o pacote com o componente e a origem, a liberação na sala e as 8 mensagens abertas.",
+      prova:
+        "São DUAS portas, e as duas são da professora: a atividade em andamento escolhe o pacote, e a " +
+        "liberação na sala tira o cadeado do card (ADR-69). Uma sem a outra deixa a turma do lado de fora.",
+    });
+    await verMensagens.click();
 
     // ─── estado de ONTEM não reprova hoje: zerar abre a rodada seguinte ────
-    let painel = await esperarNaApi(prof, `${daTurma}/painel`, (c) => c?.atividade !== null, { oQue: "o painel" });
+    /* Só a atividade em andamento tem o painel e o "Zerar" — e é a desta
+       página. Uma atividade nova, ou que voltou ao ar, já está numa rodada
+       nova; a de ontem, ainda no ar, pode ter a turma no meio do caminho. */
+    let painel = await esperarNaApi(prof, `${daTurma}/painel`, (c) => c?.atividade?.pacoteId === ativo.id, {
+      oQue: "o painel da atividade em andamento",
+    });
     const linhaDele = (c) => (c?.linhas ?? []).find((l) => l.nome === estudante.nome) ?? null;
     const turmaAndou = painel.fase !== "triagem" || (linhaDele(painel)?.passo ?? "abertura") !== "abertura";
+    if (!jaExistia) {
+      r.exigir(painel.atividade.rodada === 1, `a atividade nova começa na 1ª rodada (veio ${painel.atividade.rodada}ª)`);
+    }
     if (turmaAndou) {
       const rodada = painel.atividade.rodada;
       const zerar = prof.locator("[data-zerar-turma]").getByRole("button", { name: "Zerar Turma para Nova Aplicação" });
@@ -379,14 +479,16 @@ await suite(
       await prof.locator("[data-zerar-turma]").scrollIntoViewIfNeeded();
       await r.registrar(prof, "turma-zerada", {
         titulo: "Zerar abre uma rodada nova, e nada é apagado",
-        mostra: `A ${painel.turma.nome} na ${rodada + 1}ª rodada, com o mesmo pacote; a ${rodada}ª fica no histórico.`,
+        mostra: `Na página da atividade em andamento, a ${painel.turma.nome} na ${rodada + 1}ª rodada, com o mesmo pacote; a ${rodada}ª fica no histórico.`,
         prova:
           "É a reaplicação da evidência (E14): a rodada anterior não some — o painel de habilidades " +
           "fica com a melhor de cada habilidade. E a confirmação é deliberada: um toque perdido no " +
           "botão não move a sala inteira para o começo.",
       });
     } else {
-      r.ressalva("a turma estava no começo da rodada: zerar não foi preciso nesta corrida");
+      r.ressalva(
+        "a atividade estava no começo de uma rodada (criada agora, ou posta no ar de novo): zerar não foi preciso nesta corrida",
+      );
     }
     const atividade = painel.atividade;
 
@@ -417,11 +519,11 @@ await suite(
          polling do gate (`preparada` mudou). */
       await esperarOuFalharPorHttp(p, q.locator(".wa-chatlistitem"), /quem-mandou-isso\/(gate|sessao)/, {
         timeout: 30_000,
-        oQue: "a Nina chegar depois da aprovação",
+        oQue: "a Nina chegar depois de a atividade entrar no ar",
       }).catch((erro) => {
         if (/Timeout/i.test(String(erro))) {
           throw new Error(
-            "a aprovação não chegou à tela do estudante em 30 s sem recarregar: o polling do gate não viu `preparada` mudar",
+            "a atividade em andamento não chegou à tela do estudante em 30 s sem recarregar: o polling do gate não viu `preparada` mudar",
           );
         }
         throw erro;
@@ -434,7 +536,7 @@ await suite(
     const s0 = sessaoInicial.corpo;
     r.exigir(
       sessaoInicial.status === 200 && s0?.passo === "abertura" && s0?.preparada === true,
-      `a sessão do estudante começa na abertura, com o pacote aprovado (passo=${s0?.passo})`,
+      `a sessão do estudante começa na abertura, com a atividade em andamento (passo=${s0?.passo})`,
     );
     r.exigir(
       s0?.atividade?.pacoteId === atividade.pacoteId && s0?.atividade?.rodada === atividade.rodada,
@@ -447,7 +549,7 @@ await suite(
     r.exigir(s0?.revelacao === null, "e a revelação é nula: não há o que esconder no bundle porque não há o que baixar");
     r.exigir(
       (s0?.textos?.nina?.convite ?? "").includes(`Rolou uma confusão sobre ${ativo.tema}`),
-      `a fala da Nina leva o tema do pacote aprovado ("${ativo.tema}")`,
+      `a fala da Nina leva o tema da atividade em andamento ("${ativo.tema}")`,
     );
 
     await q.locator(".wa-chatlistitem .wa-listitem__main").click();
@@ -710,7 +812,7 @@ await suite(
       (revelacao?.mensagens ?? []).every(
         (m) => gabarito.get(m.id)?.veracidade === m.veracidade && gabarito.get(m.id)?.tom === m.tom,
       ),
-      "e os dois eixos de cada uma são os do pacote aprovado (conferidos pela rota da professora)",
+      "e os dois eixos de cada uma são os do pacote da atividade (conferidos pela rota da professora)",
     );
     r.exigir(
       semGabarito(revelada.corpo?.pacote?.mensagens),
