@@ -32,8 +32,8 @@ import os
 from collections.abc import AsyncIterator, Iterator
 from typing import Any
 
-from fastapi import FastAPI, encoders, responses
-from pydantic import BaseModel
+from fastapi import FastAPI, Request, encoders, responses
+from pydantic import BaseModel, ValidationError
 
 logger = logging.getLogger(__name__)
 
@@ -44,6 +44,21 @@ _MODOS_DE_STREAM = ("stream", "async_stream")
 class Pedido(BaseModel):
     class_method: str
     input: dict[str, Any] | None = None
+
+
+async def ler_pedido(requisicao: Request) -> Pedido:
+    """O corpo `{class_method, input}`, lido sem depender do `Content-Type`.
+
+    O Agent Engine repassa o `:query`/`:streamQuery` ao container sem
+    `Content-Type: application/json` — o FastAPI então não decodifica e a validação
+    recebe o corpo como TEXTO: 400 "Input should be a valid dictionary" na primeira
+    sessão em dev (2026-10-01), com o shim local passando liso. Decodifica aqui, e
+    aceita também o JSON codificado duas vezes (uma string JSON contendo o objeto).
+    """
+    dados: Any = json.loads(await requisicao.body() or b"{}")
+    if isinstance(dados, str):
+        dados = json.loads(dados)
+    return Pedido.model_validate(dados)
 
 
 def serializar(valor: Any) -> Any:
@@ -96,7 +111,11 @@ def criar_servidor(adk_app: Any) -> FastAPI:
         return {"status": "ok"}
 
     @servidor.post("/api/reasoning_engine")
-    async def consulta(pedido: Pedido) -> responses.JSONResponse:
+    async def consulta(requisicao: Request) -> responses.JSONResponse:
+        try:
+            pedido = await ler_pedido(requisicao)
+        except (ValueError, ValidationError) as erro:
+            return _erro(400, erro)
         if pedido.class_method not in unarios:
             return _erro(400, f"Method {pedido.class_method} not found on agent")
         metodo = getattr(adk_app, pedido.class_method)
@@ -111,8 +130,12 @@ def criar_servidor(adk_app: Any) -> FastAPI:
 
     @servidor.post("/api/stream_reasoning_engine", response_model=None)
     async def consulta_em_stream(
-        pedido: Pedido,
+        requisicao: Request,
     ) -> responses.StreamingResponse | responses.JSONResponse:
+        try:
+            pedido = await ler_pedido(requisicao)
+        except (ValueError, ValidationError) as erro:
+            return _erro(400, erro)
         if pedido.class_method not in de_stream:
             return _erro(400, f"Method {pedido.class_method} not found on agent")
         metodo = getattr(adk_app, pedido.class_method)

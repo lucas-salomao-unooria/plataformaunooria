@@ -11,7 +11,6 @@
     "titulo": {
       "type": "string",
       "retrievable": true,
-      "searchable": true,
       "keyPropertyMapping": "title"
     },
     "etapa": {
@@ -59,7 +58,6 @@
     "descricao": {
       "type": "string",
       "retrievable": true,
-      "searchable": true,
       "keyPropertyMapping": "description"
     },
     "explicacao": {
@@ -71,6 +69,10 @@
       "type": "string",
       "retrievable": true,
       "searchable": true
+    },
+    "fonte_pagina": {
+      "type": "integer",
+      "retrievable": true
     }
   }
 }

@@ -279,6 +279,31 @@ def test_esquemas_tornam_filtraveis_os_campos_do_filtro() -> None:
             assert alvo.get("indexable") is True, (nome, campo)
 
 
+def test_campo_chave_nao_leva_searchable_nem_indexable() -> None:
+    # A Discovery Engine recusa o PATCH do esquema inteiro com 400 ("Key property
+    # titulo should not contain searchable or indexable annotation") — medido no
+    # primeiro `importar esquema` em dev, 2026-10-01. O campo-chave (title,
+    # description) já é buscado por ser chave; a marcação a mais só derruba.
+    for nome in ("habilidades", "acervo"):
+        esquema = json.loads((importar.ESQUEMAS / f"{nome}.json").read_text())
+        for campo, definicao in esquema["properties"].items():
+            if "keyPropertyMapping" in definicao:
+                proibidas = {"searchable", "indexable"} & definicao.keys()
+                assert not proibidas, (nome, campo, proibidas)
+
+
+def test_esquema_de_habilidades_nao_remove_campo_do_terraform() -> None:
+    # O Terraform da fundação criou o esquema com `fonte_pagina`, e a Discovery
+    # Engine NÃO deixa remover campo num PATCH ("Fields fonte_pagina cannot be
+    # removed", dev, 2026-10-01). Todo campo que já nasceu lá tem de continuar aqui.
+    esquema = json.loads((importar.ESQUEMAS / "habilidades.json").read_text())
+    criados_no_terraform = {
+        "codigo", "etapa", "anos", "componente", "componente_slug", "area",
+        "organizador", "objeto_conhecimento", "descricao", "fonte_pagina", "titulo",
+    }
+    assert criados_no_terraform <= esquema["properties"].keys()
+
+
 # ---------------------------------------------------------------- avaliar
 
 
