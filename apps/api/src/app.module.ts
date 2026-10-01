@@ -36,6 +36,7 @@ import { StorageModule } from "./object-storage/storage.module";
 import { PlanosModule } from "./planos/planos.module";
 import { PlanejamentoModule } from "./planejamento/planejamento.module";
 import { BemEstarModule } from "./bemestar/bemestar.module";
+import { AgenteProfessorModule } from "./agente-professor/agente-professor.module";
 import { TenancyInterceptor } from "./tenancy/tenancy.interceptor";
 import { ContratoInterceptor } from "./openapi/contrato.interceptor";
 
@@ -76,6 +77,7 @@ import { ContratoInterceptor } from "./openapi/contrato.interceptor";
     PlanosModule,
     PlanejamentoModule,
     BemEstarModule,
+    AgenteProfessorModule,
     RastroBoatoModule,
     ManifestoIaModule,
     QuemMandouIssoModule,
