@@ -117,3 +117,16 @@ missão não pontua criança, e o nível das habilidades é do servidor.
 Onde cada medida é LIDA: `exp07ef1b_sessoes` e `exp07ef1b_reflexoes`, pelo painel
 da professora (`GET /a-selecao/turmas/:id/painel`); as enquetes e o Canal A da
 legenda, pelo painel de habilidades (`/evidencias`).
+
+## A copy ESCRITA AQUI (para o PO revisar)
+
+Marcada `ESCRITA AQUI` em `lib/textos.ts`: a conta da Amara (`amara.gremio`,
+"Ativa agora"), "N curtidas", "Ver todos os N comentários", os nomes acessíveis
+(abas, grade, campo, voltar), "Não foi possível carregar o feed agora.", a recusa
+do sanitizador, "Continuar" (da confirmação às enquetes), o encerramento da Amara
+("Valeu pela força com a cobertura! Até a próxima."), "Fechar conversa", o corpo
+de "Missão concluída!", a tela de missão não liberada e os dois avisos globais na
+voz da escola. E dois plurais resolvidos no sheet ("Remova 1 post", "mais 1 caractere").
+E um desvio do sheet, de propósito: o card 2 e a DM de fechamento diziam "a mesma
+praça", o tema do banco curado; com um tema gerado por IA ficava errado, e virou
+"o mesmo acontecimento".

@@ -144,7 +144,7 @@ describe("referências e prompt", () => {
   test("prompt: template → gerais → específicas na ordem, com as molduras do origem", async () => {
     const prompt = await service.montarPrompt(DISCIPLINA, "8EF");
     const posicoes = [
-      prompt.indexOf("DOCUMENTO DE REFERÊNCIA OBRIGATÓRIA"),
+      prompt.indexOf("DOCUMENTO DE REFERÊNCIA DE FORMATO"),
       prompt.indexOf("DOCUMENTO DE REFERÊNCIA GERAL DA DISCIPLINA (vale para todos os anos): Currículo da rede"),
       prompt.indexOf("DOCUMENTO DE REFERÊNCIA DA REDE: Unidade 1"),
       prompt.indexOf("DOCUMENTO DE REFERÊNCIA DA REDE: Unidade 2"),

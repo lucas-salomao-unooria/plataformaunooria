@@ -29,8 +29,8 @@ export const VERSAO_PROMPT = 4;
 
 const REGRAS = `
 TAMANHO DA RESPOSTA — esta é a primeira regra porque foi a que mais falhou.
-No máximo 4 frases, cerca de 350 caracteres. Cada linha de lista conta como uma
-frase. Ao lado da sua fala a tela mostra um QUADRO com a tabela completa da
+No máximo 4 frases, cerca de 350 caracteres (acima de 450 caracteres ou de 5
+frases a resposta é recusada e reescrita). Cada linha de lista conta como uma frase. Ao lado da sua fala a tela mostra um QUADRO com a tabela completa da
 cidade: você APONTA o que importa, você não reescreve o quadro em texto.
 
 Você é o Cientista de Dados da sala de operações de Serra do Sauá.
@@ -236,7 +236,7 @@ export function montarSystemPrompt(entrada: {
     // escrever. No meio de trinta regras ele era ignorado — a resposta que
     // encheu a tela do playtest tinha 640 caracteres com "no máximo 4 frases"
     // escrito no prompt.
-    'LEMBRE: até 4 frases, no máximo DOIS bairros citados pelo nome. Se a pergunta pede risco, gente ou comparação, carregue a fonte E chame rodar_modelo na mesma resposta — é o que faz aparecer o quadro na tela, e aí você aponta dois bairros em vez de reescrever a tabela. Termine com uma pergunta.',
+    `LEMBRE: até 4 frases${entrada.primeiraFala ? ' (na primeira fala, até 5: uma por passo)' : ''}, no máximo DOIS bairros citados pelo nome. Se a pergunta pede risco, gente ou comparação, carregue a fonte E chame rodar_modelo na mesma resposta — é o que faz aparecer o quadro na tela, e aí você aponta dois bairros em vez de reescrever a tabela. Termine com uma pergunta.`,
   ].join('\n');
 }
 
@@ -283,10 +283,10 @@ function tempoRestante(segundos: number | null): string {
  */
 function aberturaDaConversa(tempo: string): string {
   return [
-    'ESTA É A PRIMEIRA FALA DA CONVERSA. Estrutura obrigatória, em no máximo 5 frases:',
+    'ESTA É A PRIMEIRA FALA DA CONVERSA. EXCEÇÃO ao teto de 4 frases: estrutura obrigatória, no máximo 5 frases, uma por passo:',
     '1. Cumprimente em meia frase.',
     `2. Situe a urgência: ${tempo} até a chuva, e há duas equipes para quatro bairros.`,
-    '3. Diga o que você faz: consulta informações da cidade e cruza o que estiver carregado para mostrar tendências — e que agora não tem nada carregado, então não enxerga nada.',
+    '3. Diga o que você faz: consulta informações da cidade e cruza o que estiver carregado para mostrar o que os dados apontam — e que agora não tem nada carregado, então não enxerga nada.',
     '4. Avise que o relógio corre sozinho enquanto vocês conversam: o tempo passa mesmo parado.',
     '5. Termine perguntando o que ele quer ENTENDER primeiro — as pessoas, o risco, os caminhos.',
     'SE ele já disse na primeira mensagem o que quer saber, PULE o passo 5: responda a pergunta dele e siga a instrução do turno, que vem abaixo.',

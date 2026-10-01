@@ -32,7 +32,8 @@ export class RecursosController {
       "Resolve a cadeia escola → regional → contrato e aplica o TETO do produto. É daqui que o hub monta os cards do professor e decide o 404 das rotas de produto — **esconder o card é UX**; a porta é `exigirMissaoLiberada` / `DisponibilidadeGuard`, no servidor.",
     resposta: RecursosEfetivosSchema,
     notas: [
-      "`produtos` traz SEMPRE os quatro, ligados ou não: um mapa que só lista o ligado obriga quem lê a saber a lista completa de cor.",
+      "`produtos` traz SEMPRE todos os produtos do vocabulário (hoje cinco), ligados ou não: um mapa que só lista o ligado obriga quem lê a saber a lista completa de cor.",
+      "`agente-professor` é produto SEM experiência: o hub lê `produtos[\"agente-professor\"].ligado` para montar (ou não) o botão flutuante do layout do professor.",
       "Perfil de contrato (`gestor_contrato`, `admin`) não tem escola no token, então a resposta é a do CONTRATO — a cadeia fica vazia e só as linhas de escopo-contrato valem.",
       "Não devolve `motivo` nem quem desligou: isso é conversa entre a Unooria e a rede, e vive no painel.",
     ],

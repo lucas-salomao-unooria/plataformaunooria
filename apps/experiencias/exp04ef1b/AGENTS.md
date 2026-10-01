@@ -8,7 +8,7 @@ vence o PRD da esteira quando divergem.
 
 | Manifesto | Dev | DS | api | e2e |
 |---|---|---|---|---|
-| `exp04ef1b` · 4EF · unidade 1 · `entre-redes` · `viewport` 375×812 · `permissoes: ["forms"]` · capabilities `telemetria progresso ia avaliacao` · versão **2.0.0** (acima do UnooTube 1.2.8 que o caminho `exp04ef1b/` do bucket pode ter, ADR-116) | `:5174` (`--strictPort`), hub `/exp/exp04ef1b` | `@edu/ui/ds` (a redação inteira) + `@edu/ui/ds-insta` (SÓ o post) + `@edu/ui/ds-whatsapp` (SÓ a mensagem) — ADR-117 | `apps/api/src/jornal-escola` ↔ `/jornal-escola/*`; P1/P2 em `/evidencias/exp04ef1b/perguntas/*` (E14) | `scripts/e2e/estudante/12-jornal-da-escola.mjs` |
+| `exp04ef1b` · 4EF · unidade 1 · `entre-redes` · `viewport` 375×812 · `permissoes: ["forms"]` · capabilities `telemetria progresso ia avaliacao` · versão **2.0.0** (maior que a do dono anterior do caminho `exp04ef1b/` no bucket, o UnooTube — ADR-116) | `:5174` (`--strictPort`), hub `/exp/exp04ef1b` | `@edu/ui/ds` (a redação inteira) + `@edu/ui/ds-insta` (SÓ o post) + `@edu/ui/ds-whatsapp` (SÓ a mensagem) — ADR-117 | `apps/api/src/jornal-escola` ↔ `/jornal-escola/*`; P1/P2 em `/evidencias/exp04ef1b/perguntas/*` (E14) | `scripts/e2e/estudante/12-jornal-da-escola.mjs` |
 
 ## A redação é da Unooria; cada PEÇA fala na seção de onde veio (ADR-117)
 
@@ -28,9 +28,9 @@ desafio final são a seção `unooria`. A exceção é por PEÇA, nunca por tela
 a criança revela à parte; o carimbo a entregaria antes da hora. Sem curtidas pelo
 mesmo motivo (PDF §1 — e número de curtidas vira pista falsa de confiabilidade).
 
-### CSS: três seções na mesma tela, e nenhuma vaza (verificado em 2026-09-27, DS 0.2.8)
+### CSS: três seções na mesma tela, e nenhuma vaza
 
-A gaveta é a primeira tela do repo com três seções ao mesmo tempo. Verificado nas
+A gaveta é a primeira tela do repo com três seções ao mesmo tempo. O que vale, nas
 folhas agregadas (`unooria.css`, `instanooria.css`, `whatsappmobile.css` e as de
 fonte) E nas de cada componente (que o módulo importa sozinho):
 
@@ -38,15 +38,13 @@ fonte) E nas de cada componente (que o módulo importa sozinho):
   reset de `body`, `html`, `*` ou elemento solto — as únicas regras globais do
   `dist/` são as de `estilos/globals.css`;
 - os blocos `:root` só definem variáveis do próprio namespace; as famílias das
-  folhas de fonte não colidem (Open Sans e Material Symbols × PT Sans e Poppins);
+  folhas de fonte não colidem;
 - **tema**: o Instanooria escurece os `--insta-*` com o sistema em modo escuro
   (`@media (prefers-color-scheme: dark) { :root:not([data-insta-theme=light]) }`),
   e o `PostCard theme="light"` põe `data-insta-theme="light"` no próprio cartão;
   o WhatsApp só publica tema escuro, e o balão vai no contêiner `.peca-whatsapp`
   pintado com `--wa-color-surface-base` — não o `ChatWallpaper`, que é o FUNDO do
   app (a peça não traz o fundo).
-
-Nada exigiu mexer no DS nem nas pontes.
 
 ## O passo manda na tela
 
@@ -73,14 +71,14 @@ otimista. É o que torna os dois latches à prova de rede ruim.
 
 ## As duas decisões que mudaram o PRD, e por quê
 
-- **O motivo vem DEPOIS do latch** (decisão de 2026-09-25). O PRD punha "Como a
+- **O motivo vem DEPOIS do latch.** O PRD punha "Como a
   dupla escolheu essas três matérias?" dentro do modal de publicar. Perguntar
   antes se a escolha foi pelas fotos ou pela checagem ANTECIPA a descoberta — o
   PDF §4 é explícito: "também não perguntamos se ele escolheu pela beleza ou pela
   confiabilidade". Depois do latch a resposta não muda a edição, só registra
   como a dupla ACHA que escolheu (é o agregado do painel); e antes do resultado,
-  senão sairia contaminada pela consequência. O modal ficou com título, uma
-  linha de aviso e os dois botões ("Distribuir Jornal Agora" / "Revisar mais").
+  senão sairia contaminada pela consequência. O modal ficou só com título, aviso e os
+  dois botões.
 - **A síntese final é ÚNICA** (`e6.feedback.sintese_inicial` para todos). O
   recibo de P1/P2 é `{ enviada: true }` para qualquer alternativa: a criança
   nunca sabe o nível, e a tela também não. As outras duas sínteses do sheet
@@ -97,9 +95,9 @@ resultado"), o pilar de cada vaga no `GET revisao` (depois da Chave) e no
 comparativo. A lista dos seis blocos é SÓ tipo (`IdDeBloco`): uma constante com
 eles na ordem da api (pilares primeiro) seria o conjunto certo no bundle; o
 `Record` de ícones é alfabético pelo mesmo motivo. O grep do `dist/` que prova
-isso está no `README.md`; o único nome do gabarito que aparece no bundle é
-`pilarEmFalta`, uma vez, e está certo: é o CAMPO que a tela lê da resposta do
-`GET revisao`/`comparativo` (o marcador da vaga), não dado.
+isso está no `README.md`; o único nome do gabarito no bundle é `pilarEmFalta`,
+uma vez, e está certo: é o CAMPO que a tela lê do `GET revisao`/`comparativo` (o
+marcador da vaga), não dado.
 
 ## As pistas são reveladas pelo SERVIDOR
 
@@ -124,9 +122,7 @@ fechado, e o toque registra a fase 2.
   combinação (cache por ids na ordem), com "A redação está montando a página…";
   publicar espera o layout. Sem repetição: se a rede cair, a reserva da TELA
   (`classic`, `origem: "modelo"`) vale na hora, sem mensagem de erro.
-- **A Chave** vai sozinha ao `POST /chave` com a terceira vaga cheia. As iscas
-  voltam à bandeja no estado `returned` (com o aviso escrito do `PuzzleBlock`), os
-  pilares ficam na calha. Cada envio conta no servidor e leva o NÚMERO dele
+- **A Chave** vai sozinha ao `POST /chave` com a terceira vaga cheia. Cada envio conta no servidor e leva o NÚMERO dele
   (`estado.chaveTentativas` + 1, calculado antes da repetição): a api descarta a
   repetição da rede. Formada, a casca segura a tela até "Abrir a Mesa de
   Revisão". Os rótulos vêm da api em caixa normal: a caixa alta é do CSS.

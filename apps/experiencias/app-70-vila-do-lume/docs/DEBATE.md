@@ -5,7 +5,7 @@
 > leitura de hoje:
 >
 > - **Onde diz "painel do responsável" e "um pai lendo", leia "relatório do professor".** Os
->   papéis da plataforma são estudante/professor/gestor/admin-contrato — não há responsável. O
+>   papéis da plataforma são estudante/professor/gestor_escola/gestor_regional/gestor_contrato/admin — não há responsável. O
 >   risco de C-19 continua valendo (a assimetria adulto→criança é a mesma, e o professor
 >   decide sobre ela); o cenário doméstico — jantar, comparação entre irmãos — não é o
 >   cenário do produto.

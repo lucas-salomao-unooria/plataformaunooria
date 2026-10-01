@@ -96,11 +96,10 @@ de Y computadores" tira o Y de `computadoresDaMontagem` — o colapso conta
 também os ausentes. O par fica CONGELADO na sessão dela (o rótulo é o nome da
 equipe no momento do pareamento), e nunca `equipe:<id>`: o `PUT` recria os ids.
 
-**O Instanooria é a próxima frente** (`feat/equipes-instanooria`): registrar a
-fonte de lado, equipes do MESMO lado do feed, e o lado da equipe resolvido na
-LARGADA do run (o run de um colega, ou a maioria; origem de lado `'equipe'`).
-Nunca numa tabela pendurada em `equipes`: o `PUT` troca tudo e a cascata a
-apagaria a cada edição (ADR-111).
+**O Instanooria ainda não registra fonte de lado**: quando entrar, as equipes
+ficam do MESMO lado do feed, com o lado resolvido na LARGADA do run (o run de um
+colega, ou a maioria; origem de lado `'equipe'`). Nunca numa tabela pendurada em `equipes`: o `PUT`
+troca tudo e a cascata a apagaria a cada edição (ADR-111).
 
 ## Armadilhas
 

@@ -1,7 +1,8 @@
 # documentacao-latex — a documentação técnica é entregável, não subproduto
 
-Complementa o `AGENTS.md` da raiz (a tabela "o que mudei → o que atualizo" está
-lá, e a Definition of Done exige esta pasta atualizada e o `main.pdf` regerado
+Complementa o `AGENTS.md` da raiz (a tabela "Se você mudou… → Atualize" está em
+`docs/regras/documentacao-latex.md`; a Definition of Done exige esta pasta e o
+`main.pdf` regerados
 **no mesmo commit**).
 
 **As convenções completas de edição estão no `README.md` ao lado, e ele não
@@ -16,37 +17,14 @@ armadilhas que já custaram tempo e não avisam quando você cai nelas:
   (`docs/regras/definition-of-done.md`). Ele compila sozinho, na própria pasta,
   com `tectonic -k mapa-de-produto.tex`, e não pelo `compilar.sh` daqui.
 
-- **A PRÓXIMA ADR é a 123.** A numeração vai até ADR-122 (a modelagem UML no
-  Capítulo 5, com os catorze tipos da UML 2.5.1 e par Mermaid mesmo onde o
-  Mermaid não tem o tipo); a 121 é o CI só nos PRs para `dev`, `hml` e `main`;
-  a 120 é a régua v2 de Quem mandou isso?
-  (cada habilidade pelo verbo dela). A 119 é o podcast
-  da A Seleção (do professor; a IA reescreve só as três falas do tema); a 118 é
-  Quem mandou isso? v2.2 (a atividade é o pacote, a rodada é a reaplicação, e a
-  régua mede pela seleção e pelas perguntas do PO). A 117 é o Jornal da Escola
-  (a redação é da Unooria e cada peça usa a seção da plataforma que imita; o
-  professor abre o resultado e a revisão; a IA só escolhe o layout), escrita
-  depois da 121 com o número reservado entre as sessões. A 116 é o UnooTube ARQUIVADO, e não apagado,
-  para o Jornal da Escola tomar o código `exp04ef1b`; a 115 é A Seleção (o par
-  do Mural é do computador, e a IA gradua a legenda); a 114 a primeira versão de
-  Quem mandou isso? retirada, para a v2.2 voltar com o mesmo código; a 113 a
-  retirada do Eco no Grupo para A Seleção; e a 112 a evidência pedagógica por
-  atividade e rodada, com a melhor rodada valendo por habilidade. Este número envelhece a cada frente, então ele é
-  ponto de partida, nunca a resposta. Das mais citadas: a 86 é o
-  guia da aula, 87 o eixo da disponibilidade, 88 o painel da Unooria só do
-  `admin`, 89 o histórico append-only que a rede também lê e 90 a suíte da API
-  em um worker. Antes dela: a 65 (que
-  ficou vaga numa colisão entre frentes paralelas) já foi ocupada pelo guia da
-  aula; a 80 é o modelo de seis papéis, 81 o panorama da diretoria, 82 o
-  relatório dela, 83 o header full-bleed, 84 a observabilidade sem sessão e
-  85 a remontagem do miolo ao trocar de escola. **Confira na HORA de escrever o número, e confira `origin/dev-local`**,
-  que é a base de toda frente (ADR-101) — mais as branches de trabalho abertas.
-  `origin/dev` não basta: ele fica ATRÁS. Em 2026-09-07 duas frentes
-  simultâneas reservaram a 76 e uma teve de ceder, e a 79 nasceu sobre
-  `dev-local`, que já tinha 78 enquanto `dev` tinha 71. **Número de ADR nunca é
-  reaproveitado nem renumerado**: ele já viaja em mensagem de commit, PR e PDF
-  distribuído, e renumerar não quebra a referência — faz ela apontar para outra
-  decisão, em silêncio.
+- **O número da próxima ADR se lê em `secoes/18-adr.tex`, não aqui**: é o seguinte ao
+  maior que o arquivo tem. **Confira na HORA de escrever o número, e confira
+  `origin/dev-local`**, que é a base de toda frente (ADR-101), mais as branches de
+  trabalho abertas — `origin/dev` não basta, porque fica ATRÁS, e frentes
+  paralelas já reservaram o mesmo número (a 76 em 2026-09-07; a 65 ficou vaga
+  numa colisão). **Número de ADR nunca é reaproveitado nem renumerado**: ele já
+  viaja em mensagem de commit, PR e PDF distribuído, e renumerar não quebra a
+  referência — faz ela apontar para outra decisão, em silêncio.
 - **Dentro de `tikzpicture`, `\texttt{}` cru** — as macros `\cd`/`\arq`/`\rota`
   têm cor pensada para fundo claro e ficam invisíveis em nó escuro.
 - **Setas são `\seta` e `\implica`**, nunca `→`/`⇒` literais: a Roboto não tem o

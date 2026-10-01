@@ -6,10 +6,6 @@ Complementa o `AGENTS.md` da raiz, que vence em conflito. **O fluxo inteiro**
 
 ## Git e branches
 
-**O fluxo inteiro — promoção, hotfix, retro-merge, tag/release, rollback por
-camada — está em `CONTRIBUTING.md`.** Aqui fica só o que decide se você precisa
-abri-lo.
-
 - **QUATRO ambientes, e cada um tem um testador diferente** (ADR-53, ADR-101):
 
   | Branch | Ambiente | Quem testa | O merge dispara |
@@ -42,13 +38,15 @@ abri-lo.
   `.githooks/pre-commit` recusa arquivo fora da fatia da frente — só quando
   existe `<git-dir>/fatia`, então a cópia principal segue livre. O
   `.githooks/post-merge` não recusa nada: ele **poda as frentes já mergeadas**
-  no `git pull` de `dev-local` (ADR-103), e nunca derruba o pull. Instalados pelo `prepare` no `pnpm install` (`core.hooksPath`).
+  (ADR-103) e **atualiza o grafo do graphify** em segundo plano (ADR-125) no
+  `git pull` de `dev-local`, e nunca derruba o pull. Instalados pelo `prepare` no `pnpm install` (`core.hooksPath`).
   Escapes nomeados: `PERMITIR_PUSH_DIRETO=1`, `PERMITIR_BRANCH_FORA_DO_PADRAO=1`,
   `PERMITIR_FORA_DA_FATIA=1`.
 - **TODA tarefa começa num worktree, e a base vai ESCRITA** (ADR-61, ADR-101):
   `pnpm worktree criar <tipo/slug> --fatia api/<mod>,hub/<rota>,exp/<id>` faz o
   caminho inteiro (worktree sobre `origin/dev-local`, `.env` copiados,
-  `install` + `prisma generate`, porta de Vite reservada, briefing impresso).
+  `install` + `prisma generate`, grafo do graphify copiado, porta de Vite
+  reservada, briefing impresso).
   Não é só para paralelismo: a cópia principal é onde a stack RODA, e editar
   nela mistura o que subiu com o que ainda está sendo escrito. Nenhuma
   ferramenta adivinha a base — a `default_branch` do GitHub é `dev`, clone
@@ -90,65 +88,13 @@ abri-lo.
   vez: `pnpm dev`/`docker:dev`, a suíte e2e, migração. **Nunca**
   `pnpm docker:dev` de um worktree — ele recria os containers da stack
   principal. Arquivos que toda frente toca e brigam no merge: número da ADR
-  (a PRÓXIMA é a **123** — da 119 à 121 passaram sem corrigi-la —: a **118 é
-      Quem mandou isso? v2.2**, a **117 o Jornal da Escola**, a **116 o UnooTube
-      arquivado**, a **115 A Seleção**; a **114 é a primeira versão de Quem mandou isso?
-      retirada, para a v2.2 voltar com o mesmo código**, e a **113 a retirada
-      do Eco no Grupo para A Seleção** — as duas frentes correram em paralelo no
-      mesmo dia, e a 114 conferiu a branch aberta da 113 antes de escrever —, a
-      **112 é a evidência pedagógica por atividade e
-      rodada, com a melhor rodada valendo por habilidade**, a **111 a equipe
-      como quem divide um computador na missão, com o painel contando por
-      computador**, a **110 o
-      código da experiência**, a **109 o rótulo CENTRADO da BNCC de
-      Computação** e a **108 a missão de sala que nasce vazia** — as três
-      gastaram o número sem corrigir esta linha, que seguiu anunciando a 108
-      como livre até a 111 —, a **107 é o site público portado para o hub,
-      com o cadastro de interesse passando pela api**, a **106 o `_template`
-      com a fiação inteira** — que gastou o número sem corrigir esta linha, o
-      modo de falhar que ela mesma descreve —, a **105 a quota de IA como dado,
-      editável só pelo `admin`**, a **104 o realinhamento automático da
-      base depois da promoção**, a **103 a poda automática da frente
-      mergeada**, a **102 a doutrina numa fonte só, lida por
-      quatro agentes**, a **101 o fluxo de quatro ambientes, com
-      `dev-local` como base de toda frente**, e a **100 o caminho único da sala
-      para a missão** — que ocupou o número em 2026-09-15 e mergeou SEM
-      atualizar esta linha, que ainda anunciava a 100 como livre. É o modo de
-      falhar desta lista: ela só vale se quem gasta o número a corrige no
-      MESMO commit. Antes delas, a 93 é a sincronização de sala por polling da
-      exp08ef4b, a 94 o latch por polling da exp01ef1b, a 95 a sessão de 2h de
-      inatividade, a 96 a renovação de sessão dentro da missão, a 97 a recusa
-      de login na tela, a **98 o fuso único da plataforma** e a **99 esse fuso
-      vindo de uma variável de ambiente** — as quatro foram alocadas por quem repartia o trabalho ANTES de
-      qualquer frente escrever, e é assim que a colisão de 2026-09-06 e
-      2026-09-07 deixa de acontecer; a 86 foi ocupada pelo guia da aula, a 87 e a 88
-      pelo eixo da disponibilidade e pelo painel da Unooria, a 89 pelo
-      histórico append-only que a rede também lê, a 90 pela suíte da api em um
-      worker, a 91 pelas três zonas do idioma da interface, a 92 pelo
-      retorno de etapa que reabre a sessão do Instanooria, a **93 pela
-      sincronização de sala por polling HTTP em vez de WebSocket** e a **94
-      reservada para a frente paralela que corria no mesmo dia** — as duas
-      foram alocadas por quem repartia o trabalho, ANTES de qualquer uma
-      escrever, e é assim que a colisão de 2026-09-06 e 2026-09-07 deixa de
-      acontecer; a 65 foi ocupada pelo guia da aula, a 72 pela
-      fronteira do disfarce da exp06ef2b, a 73 pelo planejamento dirigido pela
-      BNCC, a 74 pela contabilidade de tokens do `generateJson`, a 75 pela
-      rolagem com o `ScrollBar` do DS, a 76 pelo passo semanal do
-      planejamento + `allow-downloads`, a 77 pela trilha que virou do layout
-      e a 78 pelo logoff no menu do avatar — três frentes fecharam ADR em
-      2026-09-06 e duas colidiram na 65, e **em 2026-09-07 aconteceu de
-      novo**: duas frentes simultâneas reservaram a 76, uma cedeu e foi para
-      a 77/78, a 79 é o vínculo obrigatório escola/regional e a 80 o modelo
-      de seis papéis, a 81 o panorama da diretoria, a 82 o
-      relatório dela, a 83 o header que ancora na janela, a 84 o sinal do
-      navegador sem sessão e a **85 a remontagem do miolo da área ao trocar de
-      escola**. Conferir
-      só a branch de integração NÃO basta — em 2026-09-08 `origin/dev` parava
-      na 71 enquanto as branches de trabalho já iam até a 83 —, e conferir uma
-      vez no começo da frente também
-      não: confira as branches de trabalho abertas E `origin/dev-local`, na
-      HORA de escrever o número — e é `origin/dev-local`, não `origin/dev`, que
-      é a base de toda frente e costuma estar à frente),
+  (colide mais que os outros porque só existe no texto: duas frentes que escrevem
+  ADR ao mesmo tempo escolhem o mesmo "próximo". O último gasto está no fim de
+  `documentacao-latex/secoes/18-adr.tex`; confira ali, em `origin/dev-local` — a
+  base de toda frente, que costuma estar à frente de `origin/dev` — e nas
+  branches de trabalho abertas, NA HORA de escrever o número: conferir uma vez no
+  começo da frente não basta. Quem reparte o trabalho entre frentes paralelas
+  aloca os números antes de qualquer uma escrever),
   `main.pdf` (regera, não escolhe lado),  `AGENTS.md` da raiz, `pnpm-lock.yaml`. Receita em `CONTRIBUTING.md`.
 - **Uma branch por experiência nova**, com o CÓDIGO dela (ADR-110):
   `exp06ef3b` para missão da trilha, `app-93-diario-de-bordo` para o que não é

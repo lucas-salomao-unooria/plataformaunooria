@@ -1,5 +1,6 @@
 import type { AiJsonSchema, AiProvider } from "../../ai/provider";
 import { filtrarReacoes, MAX_CARACTERES, type Reacao } from "./reacao-segura";
+import { PUBLICO_ALVO } from "../../comum/insta/defaults";
 import { logger } from "../../observabilidade/logger";
 
 /**
@@ -52,7 +53,7 @@ const ESQUEMA: AiJsonSchema = {
 
 const REGRAS = `
 REGRAS DURAS. Quebrar qualquer uma faz a reação ser descartada:
-- Escreva como adolescente brasileiro de 13 a 14 anos escreve num comentário: curto,
+- Escreva como adolescente brasileiro de ${PUBLICO_ALVO.idade} anos escreve num comentário: curto,
   informal, no máximo ${MAX_CARACTERES} caracteres. Uma frase, no máximo duas.
 - Use SOMENTE os handles do elenco abaixo. Nunca invente perfil.
 - Discorde da IDEIA quando fizer sentido. Nunca ofenda a pessoa.
@@ -121,7 +122,7 @@ export async function gerarReacoes(
       prompt: prompt({ ...opts, quantas }),
       system:
         "Você escreve comentários curtos de perfis fictícios para adolescentes. " +
-        "Obedece às regras duras sem exceção. Devolve apenas JSON.",
+        "Obedece às regras duras sem exceção.",
       responseSchema: ESQUEMA,
       // Uma tentativa só: o estudante está esperando. Regerar dobraria a espera.
       tentativas: 1,

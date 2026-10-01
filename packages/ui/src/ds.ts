@@ -180,6 +180,46 @@ export type {
   SpeechBubbleTone,
 } from '@unooria/design-system';
 
+/**
+ * 0.2.10: as peças do AGENTE DE IA DO PROFESSOR — o chat flutuante do layout
+ * de `/professor` (`apps/hub/components/agente-professor/`). São da seção
+ * `unooria`, e não do `chatgpt` nem do `unooriaai`: aqueles são CLONES, e o
+ * agente é a Unooria falando com o professor. O mascote vem embutido no
+ * `AgentAvatar` (não há PNG no hub). O DS NÃO converte markdown, NÃO formata
+ * data e NÃO move o foco: isso é do produto (contrato em
+ * `docs/regras/agente-professor.md`).
+ */
+export {
+  AgentAvatar,
+  ChatComposer,
+  ChatHistory,
+  ChatLauncher,
+  ChatMessage,
+  ChatPanel,
+  ChatPanelAction,
+  RichContent,
+  /** O `table` do react-markdown: a tabela larga dentro de um `ScrollBar` horizontal. */
+  RichContentTable,
+  TypingIndicator,
+} from '@unooria/design-system';
+
+export type {
+  AgentAvatarProps,
+  ChatComposerProps,
+  ChatHistoryItem,
+  ChatHistoryProps,
+  ChatLauncherProps,
+  ChatMessageProps,
+  ChatMessageSource,
+  ChatMessageStatus,
+  ChatPanelActionProps,
+  ChatPanelProps,
+  ChatPanelSize,
+  RichContentProps,
+  RichContentTableProps,
+  TypingIndicatorProps,
+} from '@unooria/design-system';
+
 /** Tokens em TS (cores, tipografia, espaçamento) para cálculos e SVGs. */
 export { tokens } from '@unooria/design-system';
 

@@ -1,7 +1,9 @@
+import { AgenteFlutuante } from "@/components/agente-professor/agente-flutuante";
 import { HeaderPlataforma } from "@/components/header-plataforma";
 import { EscopoDaEscola } from "@/components/escopo-da-escola";
 import { ProvedorDaTrilha, TrilhaDaRota } from "@/components/trilha";
 import { auth } from "@/lib/auth";
+import { produtoLigado } from "@/lib/recursos";
 
 /**
  * Casca das superfícies do professor.
@@ -33,10 +35,23 @@ import { auth } from "@/lib/auth";
  * experiência descontavam 64 — a página transbordava 1px e ganhava uma barra de
  * rolagem vertical PARADA na tela, visível sem ter o que rolar. Altura de irmão
  * não se estima: quem distribui é o flex.
+ *
+ * **O agente de IA do professor é IRMÃO do `main`, DEPOIS dele — nunca dentro.**
+ * Dentro, ele seria mais um filho do `main` e as três telas de embed perderiam
+ * o `main:has(> .tela-cheia)` só por existir um botão flutuante (ele é `fixed`:
+ * o lugar dele na árvore não muda onde aparece). Só é montado com o produto
+ * LIGADO para a escola (`produtoLigado`, resolvido aqui no servidor, ADR-87):
+ * desligado, não há botão, painel nem chamada — e não há card na home, de
+ * propósito (`docs/regras/agente-professor.md`). A `key` é a escola ativa, pela
+ * mesma razão do `EscopoDaEscola` (ADR-85): a conversa pertence a (professor,
+ * escola), e trocar de escola no cabeçalho termina num `router.refresh()`, que
+ * NÃO remonta um Client Component — sem a `key` a lista e o turno no ar seriam
+ * os da escola de antes.
  */
 export default async function ProfessorLayout({ children }: { children: React.ReactNode }) {
   // O middleware garante sessão de professor em /professor/**.
   const session = await auth();
+  const agenteLigado = await produtoLigado("agente-professor");
 
   return (
     <div className="flex min-h-dvh flex-col unooria-surface">
@@ -50,6 +65,8 @@ export default async function ProfessorLayout({ children }: { children: React.Re
           <EscopoDaEscola>{children}</EscopoDaEscola>
         </ProvedorDaTrilha>
       </main>
+
+      {agenteLigado ? <AgenteFlutuante key={session!.usuario.escolaId || "sem-escola"} /> : null}
     </div>
   );
 }

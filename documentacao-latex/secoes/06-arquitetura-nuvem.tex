@@ -277,8 +277,47 @@ Load Balancer & Um só, global: hub em \cd{\{hub\_domain\}}, API em
   \cd{\{assets\_domain\}} --- mesmo IP, \emph{host rules} & DNS\\
 \zebra WIF para GitHub Actions & \emph{pool} \cd{github} &
   \arq{deploy.yml} (sem chave JSON)\\
+\emph{Bucket} do agente & \cd{<projeto>-agente-professor} --- privado,
+  versionado; prefixos \cd{bncc/}, \cd{livros/}, \cd{habilidades/},
+  \cd{metadados/}, \cd{import-erros/} & \arq{apps/agente-professor/ingestao}
+  (fora do Terraform); os \emph{data stores} leem dele\\
+\zebra \emph{Data stores} (Vertex AI Search, \cd{global}) &
+  \cd{agente-professor-habilidades} (estruturado, esquema próprio) e
+  \cd{agente-professor-acervo} (\emph{parser} de \emph{layout},
+  \emph{chunking} de 500 \emph{tokens} com títulos ancestrais) &
+  o agente (\cd{discoveryengine.viewer})\\
+Agent Engine & \cd{agente-professor} em \cd{us-east1} (dev e hml; produção a
+  decidir). \textbf{Nasce só no segundo \emph{apply}}, quando
+  \cd{agente\_professor\_imagem} aponta para uma imagem publicada &
+  API (\env{AGENTE\_PROFESSOR\_ENGINE}); \arq{deploy.yml} (\cd{PATCH} da imagem)\\
+\zebra SA do agente & \cd{\{prefixo\}-agente} (o id de SA tem teto de 30
+  caracteres): \cd{aiplatform.user}, \cd{discoveryengine.viewer}, log, rastro,
+  métrica e leitura do \emph{bucket} & o Agent Engine\\
+Papéis custom no engine & \cd{agenteProfessorInvocador} (SA da API:
+  \cd{reasoningEngines.get/query}, \cd{sessions.get/update}) e
+  \cd{agenteProfessorPublicador} (CI: \cd{reasoningEngines.get/update}) &
+  API; \arq{deploy.yml}\\
 \bottomrule
 \end{tabularx}
+
+\begin{nota}
+\textbf{Os recursos do agente de IA do professor} (\adrr{ADR-126},
+\adrr{ADR-127}) vivem em \arq{agente\_professor.tf} no repositório de
+fundação, que subiu o \emph{provider} \cd{google} para \cd{\textasciitilde> 7.46}
+(o \cd{google\_vertex\_ai\_reasoning\_engine} com \cd{container\_spec} e o IAM do
+engine não existem na 6.x). Três coisas ficam FORA do Terraform: a importação
+dos documentos (\cd{documents:import}, pelo \arq{ingestao/} do \emph{monorepo}
+--- dado não é infraestrutura), os \emph{service agents} do Discovery Engine e
+do Agent Engine (criados uma vez por projeto com
+\cd{gcloud beta services identity create}; o recurso que faria isso só existe
+no \emph{provider} beta), e o \textbf{aumento de quota do Agent Engine}
+(90 \cd{streamQuery} e 300 eventos de sessão por minuto, por projeto e região),
+que se pede no console antes do \emph{go-live}. O \emph{chunking} do acervo nasce
+certo ou não nasce: a configuração de processamento é imutável, e trocá-la é
+recriar o \emph{data store} e reimportar tudo. Apagar o engine apaga o histórico
+de todos os professores; o \cd{deletion\_policy} padrão recusa engine com
+sessões, e não se troca para \cd{FORCE}.
+\end{nota}
 
 \begin{decisao}
 \textbf{Uma \emph{role} de banco, não duas.} O desenho original previa duas
@@ -310,6 +349,15 @@ API \seta{} Cloud SQL & \textbf{Privada}, VPC & O banco não tem IP público.\\
 \zebra Cloud Run Job \seta{} Cloud SQL & \textbf{Privada}, VPC &
   Único caminho para rodar migração.\\
 API \seta{} Vertex AI & Pública, TLS + ADC & Endpoint \cd{global}.\\
+\zebra Navegador \seta{} LB \seta{} hub \seta{} API \seta{} Agent Engine &
+  Pública, TLS; SSE em cada salto & O chat do agente (\adrr{ADR-128}). A API
+  chama \cd{\{região\}-aiplatform.googleapis.com} com o ADC dela; teto de
+  240\,s na API, 250\,s na rota de \emph{stream} do hub, 300\,s no Cloud Run do
+  hub, 900\,s no da API e 60 minutos fixos
+  no LB com NEG \emph{serverless}.\\
+Agent Engine \seta{} Gemini e \emph{data stores} & Pública, TLS + SA do
+  agente & Modelo em \cd{global} com reserva em \cd{us}; \emph{data stores} em
+  \cd{global}. O navegador nunca chega aqui.\\
 \zebra API \seta{} Pub/Sub \emph{topic} & Pública, TLS + SA &
   Publicação do lote analítico.\\
 Pub/Sub \seta{} API (\rota{/telemetry/ingest}) & Pública, TLS +
@@ -410,6 +458,10 @@ sem nenhuma linha no log da API.
 \zebra \env{TELEMETRIA\_PUSH\_SA}, \env{TELEMETRIA\_PUSH\_AUDIENCE} &
   \emph{env} em texto plano & Identificam quem pode chamar
   \rota{/telemetry/ingest}. Ausentes = rota 401.\\
+\env{AGENTE\_\B PROFESSOR\_\B MODO}, \env{AGENTE\_\B PROFESSOR\_\B ENGINE} &
+  \emph{env} em texto plano & \cd{desligado} enquanto o engine não existe;
+  \cd{agent-engine} e o \emph{resource name} completo depois do segundo
+  \emph{apply}. Não são segredo: quem autoriza é o IAM do engine.\\
 \bottomrule
 \end{tabularx}
 

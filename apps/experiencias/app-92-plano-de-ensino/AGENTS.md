@@ -52,14 +52,14 @@ o que o modelo devolveu. Nenhuma sozinha basta.
 
 ## O `Collapse` do DS sequestra o teclado, e a compensação é obrigatória
 
-**LACUNA REAL DO DS (0.1.19).** O `Collapse` esconde o corpo com
+**LACUNA REAL DO DS.** O `Collapse` esconde o corpo com
 `grid-template-rows: 0fr` + `opacity: 0` + `aria-hidden="true"`, e nada disso
 remove do FOCO — nem `inert`, nem `visibility`, nem `display: none`. Descendente
 focável dentro de `aria-hidden="true"` é foco fantasma: o Tab entra e o leitor
 de tela não anuncia nada, porque para ele aquilo não existe.
 
-Medido nesta tela em 2026-09-10: os três bimestres fechados deixavam **30 botões
-de semana** recebendo foco. A compensação está em `src/estilos/globals.css`
+Sem ela, os três bimestres fechados deixam **30 botões de semana** recebendo
+foco. A compensação está em `src/estilos/globals.css`
 (`visibility: hidden` no corpo com `aria-hidden="true"`, com o delay que preserva
 a animação), marcada, e **morre quando o pacote publicar `inert`** — pedido
 aberto no `storybook-unooria`.
@@ -134,15 +134,13 @@ branch com a api criada em outra frente deixa a api sem a 5180 — e o erro é
 idêntico ao de esquecer a porta no arquivo, embora o arquivo esteja certo.
 Confira com `docker exec unooria-plataforma-api-1 printenv CORS_ORIGINS`; para
 corrigir, `docker compose -f docker-compose.dev.yml up -d --no-deps
---force-recreate api`. O `docker-compose.dev.yml` lista as portas de todas as
-frentes justamente para reduzir o custo dessa troca.
+--force-recreate api`.
 
 ## O passo é SEMANAL. A quinzena é recorte de exportação (ADR-76)
 
-Havia uma `periodicidade` (semanal | quinzenal) na regência, e ela saiu em
-2026-09-07: coluna dropada, campo do formulário removido,
-`janelasDePlanejamento` virou `semanasDoAnoLetivo`. **Não reintroduza um enum de
-passo.** A pergunta que a quinzena respondia é de ENTREGA — a escola que recolhe
+Não existe `periodicidade` (semanal | quinzenal) na regência: a coluna foi
+dropada, o campo saiu do formulário e `janelasDePlanejamento` virou
+`semanasDoAnoLetivo`. **Não reintroduza um enum de passo.** A pergunta que a quinzena respondia é de ENTREGA — a escola que recolhe
 planejamento de quinze em quinze dias — e isso hoje é um botão de exportação:
 "Esta e a próxima (quinzena)" e "Baixar o Nº Bimestre inteiro", que juntam
 semanas `pronto` num documento, uma por página.
@@ -150,9 +148,7 @@ semanas `pronto` num documento, uma por página.
 **Por que não podia ser configurável:** `app_92_planos_de_periodo` é endereçada
 por (escola, plano anual, `ordem`), e a `ordem` MUDA DE SIGNIFICADO com o passo —
 a 3ª quinzena não é a 3ª semana. Um plano gravado num modo e lido no outro casa
-pela ordem e devolve as datas de um recorte com as aulas de outro. A migration
-`20260907120000_...` apaga os planos de período das regências quinzenais por
-causa disso.
+pela ordem e devolve as datas de um recorte com as aulas de outro.
 
 **"Janela" era o nome de quando o passo variava.** Hoje é SEMANA, em toda
 superfície: `rotuloDaSemana()` (api) é a fonte única do `"3ª Semana"` que vai
@@ -166,8 +162,7 @@ devolve só as `pronto`. Semana que falhou na geração não entra no documento.
 
 ## Export: `.doc`, impressão — e o `allow-downloads` do sandbox
 
-O `.doc` é HTML com os namespaces do MS Office (Word, Google Docs e LibreOffice
-abrem como documento). Não é DOCX — mesma escolha da app-90, e por isso as cores
+O `.doc` é HTML com os namespaces do MS Office. Não é DOCX — mesma escolha da app-90, e por isso as cores
 vão como literais de token: o Word não resolve CSS variable.
 
 **O download precisa de TRÊS coisas, e a que falta não diz nada.** O botão
@@ -207,10 +202,9 @@ impedir o professor de apagar o próprio planejamento. Rede em
 
 ## O `Button` do DS não tem `variant="tertiary"` nem a prop `loading`
 
-As variantes são `primary | secondary | outline | ghost | danger`, e a prop é
-`isLoading`. **`ButtonProps` tem `[key: string]: unknown`**, então o typecheck
+As variantes são `primary | secondary | outline | ghost | danger | light | ai`,
+e a prop é `isLoading`. **`ButtonProps` tem `[key: string]: unknown`**, então o typecheck
 aceita qualquer prop inventada em silêncio: `tertiary` gerava a classe
 `unooria-button--variant-tertiary`, que o `styles.css` não define, e o botão
-ficava sem cor de variante nenhuma; `loading` não mostrava spinner. Eram 12 + 8
-ocorrências nesta experiência, corrigidas em 2026-09-07. Prop nova de componente
+ficava sem cor de variante nenhuma; `loading` não mostrava spinner. Prop nova de componente
 do DS se confere no `.d.ts` do pacote, não no typecheck.

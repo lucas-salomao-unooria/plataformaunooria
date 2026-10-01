@@ -12,7 +12,7 @@ Contrato entre o bundle, o CI e a tabela `experiencias` da api. Complementa o
 
 ## Manifesto de experiências (tabela `experiencias` na api)
 O CI, ao publicar `gs://{contrato}-exp/{expId}/{versao}/`, faz upsert
-(`PUT /experiencias/:expId`, admin-contrato) lendo o `public/experiencia.json`
+(`PUT /experiencias/:expId`, `gestor_contrato` ou `admin`) lendo o `public/experiencia.json`
 da experiência (`id, nome, versao, series, capabilities, viewport?, publico?`).
 O `id` é o **código da experiência** (ADR-110) e é igual ao nome da pasta:
 missão da trilha é `expNNefUb`/`expNNemUb`, DERIVADO de `series[0]` + `unidade`
@@ -42,13 +42,13 @@ manifesto e a experiência aparece esticada na janela.
 `allow-pointer-lock`, `allow-forms` e `allow-downloads`.
 
 **`downloads` (app-90 e app-92) tem uma armadilha A MAIS: a rota do hub precisa
-REPASSAR `permissoes` ao `ExpFrame`.** `/exp/[expId]` e `/dev-embed` sempre
-repassaram; as três rotas de professor (`plano-de-aula`, `plano-de-ensino`,
-`bem-estar`) renderizam o `ExpFrame` direto e **não passavam** — então declarar
-a permissão no manifesto não tinha efeito nenhum ali. Sem o token, o navegador
-bloqueia o download em silêncio (o Chrome registra no painel Issues, não no
-console) e o `a.click()` volta como se tivesse funcionado: o professor clicava em
-"Baixar .doc" e nada acontecia. Confira com
+REPASSAR `permissoes` ao `ExpFrame`.** `/exp/[expId]` e `/dev-embed` repassam, e as
+três rotas de professor (`plano-de-aula`, `plano-de-ensino`, `bem-estar`)
+renderizam o `ExpFrame` direto, então cada uma tem de repassar também: declarar a
+permissão no manifesto não tem efeito nenhum numa rota que não a passa adiante.
+Sem o token, o navegador bloqueia o download em silêncio (o Chrome registra no
+painel Issues, não no console) e o `a.click()` volta como se tivesse funcionado:
+o professor clica em "Baixar .doc" e nada acontece. Confira com
 `document.querySelector('iframe').getAttribute('sandbox')` no console do hub
 (ADR-76).
 
@@ -58,7 +58,7 @@ acontecia. O sintoma engana porque a conversa parece viva (a fala de abertura do
 agente já está na tela) e o único rastro é um aviso de console sobre "form's
 frame is sandboxed". Typecheck, lint e a primeira versão do smoke passaram por
 cima disso.
-Vazio (o default) = nenhuma, que é o que toda experiência tinha antes. É POR
+Vazio (o default) = nenhuma permissão. É POR
 EXPERIÊNCIA de propósito: prender o ponteiro do estudante é capacidade de quem
 declarou, não default do frame. Medido em `scripts/probe-pointerlock.mjs`: num
 iframe com sandbox, sem o token o `requestPointerLock()` morre com `SecurityError`
@@ -78,18 +78,17 @@ experiência mapeada em `apps/hub/lib/experiencias-dev.ts`** (uma porta por exp:
 teste local: rota `/dev-embed?src=http://localhost:5174`.
 A montagem do embed (token, manifesto, dev server, origin) é uma só:
 `apps/hub/lib/embed-experiencia.ts`, usada por `/exp/[expId]`, `/dev-embed`,
-`/professor/plano-de-aula` e `/professor/bem-estar`.
+`/professor/plano-de-aula`, `/professor/plano-de-ensino` e `/professor/bem-estar`.
 O estudante tem hub próprio (`/estudante`), e desde a sala de aula (ADR-69) ele
 abre pela TURMA: `GET /salas/minhas` devolve a grade da série dela, e o estudante
 só entra no que o professor LIBEROU naquela sala. Missão bloqueada aparece com
 CADEADO — não some —, e a encerrada fica com o rótulo. `apps/hub/lib/missoes-do-estudante.ts`
-deixou de ser a lista e é só a COPY (`copyDaMissao`); missão sem copy de
+é só a COPY (`copyDaMissao`), não a lista; missão sem copy de
 estudante não vai à tela, mesmo liberada — a do professor entrega a virada.
 
-**`series` do manifesto agora é LIDO**: é ele que decide se a missão entra na
+**`series` do manifesto é LIDO**: é ele que decide se a missão entra na
 grade de uma turma, e `series: []` continua querendo dizer TODAS (a transversal).
-Errar esse campo tira a missão da tela sozinha. **`unidade` (1 a 4) entrou junto**
-e é o que ORDENA a grade: ausente na transversal e na ferramenta de professor, que
+Errar esse campo tira a missão da tela sozinha. **`unidade` (1 a 4) ORDENA a grade**: ausente na transversal e na ferramenta de professor, que
 não moram numa unidade. Sem ela a ordem cai no `expId` — numeração de experiência,
 não do ano letivo, e o 7º ano viria depois do 8º.
 
@@ -98,21 +97,20 @@ não do ano letivo, e o 7º ano viria depois do 8º.
 para `unidade` e para `produto`: esquecer é invisível em dev (o hub lê o arquivo do bundle) e
 quebra em produção, onde ele lê a coluna. E **a versão tem TRÊS fontes** —
 `public/experiencia.json`, `package.json` e a constante `EXP_VERSION` do código.
-A exp07ef1b, a exp06ef2b e a exp04ef1b (o Jornal da Escola, desde a 2.0.0) têm
-teste cobrando as três. O UnooTube, que ocupava o código `exp04ef1b` antes de ser
+Toda experiência, exceto a app-70, tem `src/versao.test.ts` cobrando as três. O UnooTube, que ocupava o código `exp04ef1b` antes de ser
 arquivado como `backup-exp04ef1b` (ADR-116), chegou a viver com as três divergentes.
 
-**A ORIGEM do bundle é do AMBIENTE, não do manifesto.** `montarEmbed` já decidiu
-"estou em dev" por "a tabela `experiencias` está vazia", e isso quebrou no dia em
-que o seed passou a populá-la: com manifesto e sem CDN, a URL versionada caía no
-default `localhost:5173` (o dev server da exp08ef1b), que responde a QUALQUER caminho
-com a SPA dele — toda missão abria o Instanooria, com handshake completo e 403 na
-experiência errada. **As TRANSVERSAIS vêm primeiro na lista**: não
+**A ORIGEM do bundle é do AMBIENTE, não do manifesto** (`emDev = !emProducao`, em
+`montarEmbed`). Decidir "estou em dev" por "a tabela `experiencias` está vazia"
+quebra assim que o seed a popula: com manifesto e sem CDN, a URL versionada cai
+no default `localhost:5173` (o dev server da exp08ef1b), que responde a QUALQUER
+caminho com a SPA dele — toda missão abre o Instanooria, com handshake completo e
+403 na experiência errada. **As TRANSVERSAIS vêm primeiro na lista**: não
 pertencem a ano nenhum, logo não são "depois" de nada, e a Vila do Lume é o Ato 1
-do Instanooria — com ela no fim, a criança encontrava o Ato 2 antes do Ato 1 e
-nada dizia o que faltou. Não há GATE, e não deve haver: falta de partida na Vila
+do Instanooria — com ela no fim, a criança encontraria o Ato 2 antes do Ato 1 e
+nada diria o que faltou. Não há GATE, e não deve haver: falta de partida na Vila
 nunca bloqueia a exp08ef1b, ela só cai no sorteio. O caminho entre as duas fichas do
-professor agora é clicável nos DOIS sentidos (`AtoDaMissao.link` no catálogo).
+professor é clicável nos DOIS sentidos (`AtoDaMissao.link` no catálogo).
 `/estudante` e `/exp/*` são a MESMA área no middleware
 (`lib/papeis.ts`). A trilha do professor cobre a Educação Básica inteira
 (1º–9º ano + 3 séries do EM), 4 unidades por ano.

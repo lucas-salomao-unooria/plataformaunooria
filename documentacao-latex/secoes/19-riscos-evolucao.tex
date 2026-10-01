@@ -185,6 +185,51 @@ severidade, e a severidade considera o prazo de novembro de 2026.
   aponta para a causa em vez de virar chamado. O que \textbf{falta} é janela de
   datas (\enquote{abre segunda, fecha sexta}), e ela não nasce sem rotina que a
   cumpra: é a armadilha do \cd{expires\_at}.\\
+\cd{R-27} & \textbf{Quota do Agent Engine.} O padrão é 90 \cd{streamQuery} e 300
+  eventos de sessão por minuto, por projeto e região, e uma mensagem gasta um
+  \cd{streamQuery} e vários eventos (\adrr{ADR-126}). & Alta & \textbf{Alto} &
+  O \emph{rate limit} da api (10 mensagens por minuto por professor) protege o
+  professor, não o projeto: a rede inteira às 8h passa de 90 por minuto. O
+  aumento se pede no console e leva dias. \textbf{Pendente: pedir antes do
+  \emph{go-live}}, e medir no mesmo teste de carga de \cd{R-01}.\\
+\zebra \cd{R-28} & \textbf{O ADK muda a cada duas semanas.} O contrato que a api
+  lê do \emph{stream} (parciais, final agregado repetido, título no
+  \cd{state\_delta}, \emph{tokens} no \cd{usage\_metadata}) é comportamento medido,
+  não documentado. & Alta & Médio &
+  Versão fixada (\cd{google-adk\textasciitilde=2.10.0} no \arq{uv.lock}) e as
+  medições em \arq{tests/test\_e2e.py} do agente. Subir de versão é refazê-las;
+  o \cd{DeduplicadorDeTexto} e a soma de \emph{tokens} são os dois pontos que
+  quebram em silêncio (resposta duplicada; quota errada).\\
+\cd{R-29} & \textbf{\emph{Stream} truncado depois de ferramenta.} Se a conexão
+  com o engine terminar limpa logo depois do retorno de uma ferramenta, sem o
+  texto final e sem evento de erro, a api toma o fim do corpo como fim do turno.
+  & Média & Médio &
+  As duas formas de falha medidas (evento com \cd{error\_code}; conexão cortada)
+  viram \cd{AGENTE\_INDISPONIVEL}. O corte limpo, não: o professor vê uma
+  resposta vazia ou pela metade terminando em \cd{fim}. \textbf{Aberto}; a saída
+  é exigir texto do agente depois da última resposta de ferramenta antes de
+  emitir \cd{fim}.\\
+\zebra \cd{R-30} & \textbf{Residência do agente.} A sessão (o histórico, que
+  pode trazer nome de estudante) fica no Agent Engine em \cd{us-east1}; o modelo
+  e os \emph{data stores}, em \cd{global}. & Certa & Médio &
+  Mesma consequência de \cd{R-03}, agora com dado guardado, não só processado.
+  A região de produção está \textbf{a decidir}, e precisa constar do DPA. Apagar
+  exige o engine no ar (o \rota{DELETE} responde 503 e a linha fica).\\
+\cd{R-31} & \textbf{O máximo do \cd{expire\_time} não é documentado.} A api pede
+  dez anos e renova a cada mensagem; a documentação só diz o mínimo (24\,h) e o
+  padrão (365 dias). & Média & Médio &
+  Se o engine recusar o pedido, a criação repete sem ele e a sessão nasce com
+  365 dias; a renovação a cada mensagem a mantém viva, mas a conversa sem
+  mensagem por mais que o TTL some da lista. \textbf{Confirmar em \cd{dev}} antes
+  de prometer \enquote{histórico sem limite}.\\
+\zebra \cd{R-32} & \textbf{\emph{Data store} de habilidades não avaliado.} A
+  resposta exata depende de o filtro casar com o dado (\adrr{ADR-127}). &
+  Média & \textbf{Alto} &
+  O relatório de recall por componente $\times$ ano
+  (\arq{ingestao/avaliar\_habilidades}) \textbf{não rodou contra o data store
+  real}. A conferência de códigos da api pega código INVENTADO, não habilidade
+  OMITIDA --- e a omissão é o plano que descumpre o currículo. Recall abaixo de
+  100\% devolve o produto à ferramenta exata sobre \arq{src/curriculo}.\\
 \bottomrule
 \end{tabularx}
 
@@ -273,6 +318,9 @@ M6 & Hub do estudante, \emph{header} único, casca compartilhada &
 --- & \textbf{Observabilidade (fases 0--2)} & \no{} Pendente &
   \cd{R-05}; estudo e roteiro no Capítulo~\ref{cap:observabilidade}\\
 \zebra --- & \textbf{WSO2 como emissor} & \no{} Pendente & \adrr{ADR-15}\\
+--- & Agente de IA do professor & \yes{} Código; \no{} engine &
+  \adrr{ADR-126}: api, agente e ingestão prontos; o engine nasce no segundo
+  \emph{apply}; \cd{R-27}, \cd{R-32}\\
 --- & 41 experiências restantes & \no{} Em aberto & Gabarito estabelecido\\
 \bottomrule
 \end{tabularx}
@@ -300,6 +348,10 @@ M6 & Hub do estudante, \emph{header} único, casca compartilhada &
   \item \textbf{DPA por rede} contemplando a localidade de processamento de IA.
   \item \textbf{WSO2 como emissor}, com o \cd{iss} \emph{tenant-qualified} copiado
     literalmente do \emph{discovery}.
+  \item \textbf{Agente de IA do professor}: pedir o aumento de quota do Agent
+    Engine (\cd{R-27}), rodar o relatório de recall das habilidades (\cd{R-32}),
+    decidir a região de produção (\cd{R-30}) e confirmar o máximo do
+    \cd{expire\_time} (\cd{R-31}).
 \end{enumerate}
 
 \subsection{Depois, por ordem de retorno}

@@ -841,6 +841,54 @@ ou seja, \emph{depois} do CSS da experiência no grafo de importação. Com peso
 igual, quem ganha é sempre o pacote.
 \end{atencao}
 
+\section{O chat do agente de IA do professor: as peças da 0.2.10}
+\label{sec:ds-chat-agente}
+
+O agente de IA do professor (\adrr{ADR-126}) é a primeira superfície de conversa
+da seção \cd{unooria} --- os chats que já existiam eram de clone (\cd{chatgpt},
+\cd{unoochat}, \cd{whatsappmobile}) e imitam outra plataforma, o que aqui seria
+a fronteira errada: quem fala é a Unooria. A 0.2.10 (PR \#9 do
+\arq{storybook-unooria}) publicou as peças na seção \cd{unooria}, e o hub as
+consome pela ponte, como todo o resto. Em 2026-09-30 a versão publicada no npm
+ainda era a 0.2.9.
+
+\begin{tabularx}{\linewidth}{@{}L{34mm}X@{}}
+\toprule
+\headrow \thd{Peça} & \thd{O que é}\\
+\midrule
+\cd{AgentAvatar} & O rosto do agente: o mascote, \textbf{embutido no pacote} (não
+  há \cd{src}), nos tamanhos do \cd{Avatar}. Sem iniciais, status nem selo --- o
+  agente não é uma pessoa. \cd{decorative} o tira da árvore acessível quando o
+  nome já está escrito ao lado.\\
+\zebra \cd{ChatLauncher} & O botão flutuante que abre o painel, com
+  \cd{aria-controls} apontando para ele.\\
+\cd{ChatPanel} & O painel \textbf{NÃO modal}: sem véu e sem prisão de foco, a
+  página continua usável ao lado. Dois tamanhos, \cd{compacto} (até
+  400\,$\times$\,640\,px, acima do botão) e \cd{expandido} (até 960\,px ou 90\% da
+  largura, 85\% da altura); abaixo de 600\,px, os dois viram quase tela cheia.
+  Fechado, continua montado com \cd{hidden}: o rascunho e a rolagem
+  sobrevivem. O corpo rola dentro do \cd{ScrollBar}; Esc fecha.\\
+\zebra \cd{ChatPanelAction} & Os botões do cabeçalho (expandir, histórico,
+  fechar).\\
+\cd{ChatMessage} & Uma fala, do professor ou do agente, com lugar para as fontes.\\
+\zebra \cd{ChatComposer} & O campo de escrever e enviar.\\
+\cd{TypingIndicator} & O \enquote{escrevendo} enquanto o primeiro \cd{delta} não
+  chega.\\
+\zebra \cd{RichContent}, \cd{RichContentTable} & A tipografia do texto do agente
+  (títulos, listas, tabelas de habilidades), aplicada ao HTML que o
+  \cd{react-markdown} produz no navegador (\adrr{ADR-129}).\\
+\cd{ChatHistory} & A coluna das conversas guardadas, com o título de cada uma e
+  a confirmação de apagar (que trata o próprio Esc, para o painel não fechar
+  junto).\\
+\bottomrule
+\end{tabularx}
+
+\begin{nota}
+O painel leva \cd{data-clarity-mask} (Capítulo~\ref{cap:tenancy}): o professor
+pode escrever o nome de um estudante, e o Clarity grava a tela. A máscara é do
+hub, não do DS --- o componente não sabe que existe Clarity.
+\end{nota}
+
 \section{O menu da conta: o componente que faltava, e a lacuna que ele trouxe}
 
 O \cd{HeaderMenu} chegou na \textbf{0.1.19} para tirar o \enquote{Sair} da barra
@@ -1132,6 +1180,16 @@ faltou, nunca a causa. E rótulo visível com espelho na api muda nos DOIS lados
 divergência.
 
 \section{Exceção registrada}
+
+\begin{decisao}
+\textbf{O \cd{AgentAvatar} carrega um \emph{bitmap} dentro do pacote}, contra a
+regra de que imagem não entra no \emph{design system} (vai para o \emph{bucket} de
+\emph{assets}). O mascote do agente é desenho, não ícone vetorial, e é identidade
+da marca como o \cd{Logo}: embutido em WebP, ele aparece igual em toda superfície
+sem depender de URL, CDN ou variável de ambiente, e não há \cd{src} para errar. A
+exceção é dele só: imagem de conteúdo continua indo para o \emph{bucket}, e o peso
+do WebP entra no pacote de quem importar a peça.
+\end{decisao}
 
 \begin{decisao}
 \textbf{O site público \cd{/} está fora da regra do \emph{design system}}

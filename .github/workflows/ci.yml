@@ -51,6 +51,15 @@ jobs:
       # derrubou o primeiro deploy, com 365 erros de tipo.
       - run: pnpm install --frozen-lockfile
 
+      # `apps/agente-professor` é Python: lint, typecheck e test passam pelo
+      # `uv`. Sem ele no runner o pacote FALHA de propósito (scripts/uv.mjs) —
+      # um pacote que some da verificação sem avisar seria um verde falso.
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.12.7"
+          enable-cache: true
+          cache-dependency-glob: apps/agente-professor/uv.lock
+
       - name: Schema no banco de teste
         run: pnpm --filter @edu/api migrate:deploy
 

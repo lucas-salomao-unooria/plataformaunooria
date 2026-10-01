@@ -17,11 +17,11 @@ Complementa o `AGENTS.md` da raiz e o de `apps/experiencias`.
 | Dev | não sobe mais (a :5174 é do Jornal da Escola) |
 | DS | `@edu/ui/ds-unootube` na ficção, `@edu/ui/ds` na escola (a linha é a REVELAÇÃO — ver `packages/ui/AGENTS.md`) |
 | api | `apps/api/src/backup-unootube` — sem rotas servidas (era `/unootube/*`) |
-| e2e | `scripts/e2e/estudante/backup-03-unootube.mjs` — fora do runner |
+| e2e | `scripts/e2e/arquivados/backup-03-unootube.mjs` — fora do runner |
 
 ## Os 21 vídeos não estão no git nem no bundle
 
-~52 MB de mp4. Em dev, `public/videos/` (gitignorado) é servido pelo Vite em
+~52 MB de mp4. Em dev, `public/videos/` (não versionado: deve estar no `.gitignore`) é servido pelo Vite em
 `./videos`; em produção o build recebe `VITE_VIDEOS_BASE_URL` apontando para o
 bucket de assets via CDN (`docs/INFRA.md`). O `base: "./"` do Vite é o que
 mantém o caminho relativo válido dentro do path versionado do bucket. Clone

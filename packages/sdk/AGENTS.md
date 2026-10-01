@@ -65,7 +65,7 @@ ou num layout cria a segunda cópia que ninguém atualiza junto.
 motivos, os dois já custaram tempo em outros pontos deste repo: (1) o hub
 transpila este pacote (`transpilePackages`), e `import.meta.env` aqui quebra o
 build dele; (2) por `config`, uma env só do hub liga as duas superfícies e
-desligar não exige republicar as seis experiências. O `config` é
+desligar não exige republicar as experiências. O `config` é
 `Record<string, unknown>` e aditivo — campo novo ali **não** sobe
 `PROTOCOL_VERSION`.
 
@@ -78,7 +78,7 @@ acrescentar um destino, mantenha essa separação.
 Clarity (`friendlyName`) fica de fora de propósito: é dado de menor indo para
 processador de terceiro.
 
-### Mexeu aqui? Suba a versão das SEIS experiências
+### Mexeu aqui? Suba a versão de TODAS as experiências
 
 O filtro de mudanças do `deploy.yml` inclui `packages/sdk`, então **qualquer**
 alteração neste pacote republica todas as experiências. O `rsync` do deploy roda

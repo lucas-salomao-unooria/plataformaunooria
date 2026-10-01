@@ -1,8 +1,14 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { auth } from "@/lib/auth";
-import { assinarTokenExperiencia } from "@/lib/chave-token";
+import {
+  cabecalhosParaApi,
+  motivoDaFalha,
+  passagemDaSessao,
+  respostaDeQuemDesistiu,
+  sinalDaChamada,
+  tokenCurto,
+  urlDaApi,
+} from "@/lib/bff";
 import { cabecalhosComoObjeto, logDaRequisicao } from "@/lib/log";
-import { traceparentDeSaida } from "@/lib/otel-propagacao";
 
 /**
  * Teto maior que o do `apiDoServidor`: por aqui passam exportações (CSV de
@@ -142,6 +148,12 @@ const PREFIXOS_PERMITIDOS = [
      pela mesma rota que a SDK usa dentro do iframe, mas o client do hub não
      tem bearer — passa por aqui. A api aplica cota e redaction. */
   "observabilidade",
+  /* O AGENTE DE IA DO PROFESSOR (`docs/regras/agente-professor.md`): listar,
+     criar, ler e apagar conversas. O TURNO (`POST .../conversas/:id/mensagens`)
+     NÃO passa por aqui: é SSE de até 4 min e tem rota estática própria
+     (`agente-professor/conversas/[id]/mensagens/route.ts`), que vence este
+     catch-all. As guardas (`@Roles("professor")`, `@Produto`) estão na api. */
+  "agente-professor",
 ] as const;
 
 /**
@@ -164,16 +176,10 @@ function ehSinalDoNavegador(request: NextRequest, path: string[]): boolean {
 }
 
 async function proxy(request: NextRequest, path: string[]) {
-  const session = await auth();
   const sinalDoNavegador = ehSinalDoNavegador(request, path);
-  const semSessao = !session?.usuario;
-  if (semSessao && !sinalDoNavegador) {
-    return NextResponse.json({ mensagem: "sem sessão" }, { status: 401 });
-  }
-  // Preso na troca de senha ainda é gente usando uma tela: o erro dela conta.
-  if (session?.usuario?.precisaTrocarSenha && !sinalDoNavegador) {
-    return NextResponse.json({ mensagem: "troque a senha antes de continuar" }, { status: 403 });
-  }
+  const passagem = await passagemDaSessao({ aceitaSemSessao: sinalDoNavegador });
+  if ("recusa" in passagem) return passagem.recusa;
+
   const prefixo = path[0] ?? "";
   const cabecalhos = cabecalhosComoObjeto(request.headers);
   if (!PREFIXOS_PERMITIDOS.includes(prefixo as (typeof PREFIXOS_PERMITIDOS)[number])) {
@@ -184,32 +190,22 @@ async function proxy(request: NextRequest, path: string[]) {
     return NextResponse.json({ mensagem: "rota não permitida" }, { status: 404 });
   }
 
-  const u = session?.usuario;
-  const token = u
-    ? await assinarTokenExperiencia({
-        sub: u.id,
-        escola_id: u.escolaId,
-        turma_id: u.turmaId,
-        perfil: u.papel,
-      })
-    : null;
+  const u = passagem.usuario;
+  const token = u ? await tokenCurto(u) : null;
 
-  const apiUrl = process.env.API_INTERNAL_URL ?? "http://localhost:3001";
   // Sem sessão, o mesmo sinal vai para o par público da rota.
-  const caminho = token ? path.join("/") : `observabilidade/publico/${path[1]}`;
-  const destino = new URL(`${apiUrl}/${caminho}`);
+  const destino = urlDaApi(token ? path.join("/") : `observabilidade/publico/${path[1]}`);
   request.nextUrl.searchParams.forEach((valor, chave) => destino.searchParams.set(chave, valor));
 
   const temCorpo = request.method !== "GET" && request.method !== "HEAD";
-  // O `traceparent` do navegador (ou do LB) segue para a api: é o que faz a
-  // chamada do painel do professor aparecer no mesmo trace que o span da api.
-  const traceparent = traceparentDeSaida(cabecalhos);
   let resposta: Response;
   try {
     resposta = await fetch(destino, {
       method: request.method,
       headers: {
-        ...(token ? { authorization: `Bearer ${token}` } : {}),
+        // O `traceparent` do navegador (ou do LB) segue para a api: é o que faz a
+        // chamada do painel do professor aparecer no mesmo trace que o span da api.
+        ...cabecalhosParaApi(request, { token, temCorpo }),
         /*
          * O `user-agent` do NAVEGADOR só é repassado para os sinais de
          * observabilidade, e é o que os torna úteis: é dele que a api deriva
@@ -222,15 +218,22 @@ async function proxy(request: NextRequest, path: string[]) {
         ...(sinalDoNavegador && request.headers.get("user-agent")
           ? { "user-agent": request.headers.get("user-agent") as string }
           : {}),
-        ...(traceparent ? { traceparent } : {}),
-        ...(temCorpo ? { "content-type": request.headers.get("content-type") ?? "application/json" } : {}),
       },
       body: temCorpo ? await request.arrayBuffer() : undefined,
       cache: "no-store",
-      signal: AbortSignal.timeout(TIMEOUT_DO_BFF_MS),
+      /* O teto E a desistência do navegador: fechar a aba no meio de uma
+         exportação (ou de uma geração por IA) cancela a chamada à api, em vez
+         de o hub seguir esperando uma resposta que ninguém vai ler. */
+      signal: sinalDaChamada(request, TIMEOUT_DO_BFF_MS),
     });
   } catch (erro) {
-    const timeout = erro instanceof Error && erro.name === "TimeoutError";
+    const motivo = motivoDaFalha(erro, request);
+    if (motivo === "cliente-desistiu") {
+      // Não é falha da api nem do hub: quem pediu foi embora. Sem `warn`.
+      logDaRequisicao(cabecalhos).info({ prefixo, metodo: request.method, codigo: motivo }, "o navegador desistiu da chamada");
+      return respostaDeQuemDesistiu();
+    }
+    const timeout = motivo === "timeout";
     logDaRequisicao(cabecalhos).warn(
       { prefixo, metodo: request.method, codigo: timeout ? "api-timeout" : "api-indisponivel", err: erro },
       timeout ? "a api não respondeu ao BFF no teto" : "a api não respondeu ao BFF",

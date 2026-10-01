@@ -9,7 +9,7 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{122 decisões}, numeradas até ADR-122, \textbf{sem lacunas}. A 117
+São \textbf{129 decisões}, numeradas até ADR-129, \textbf{sem lacunas}. A 117
 (o Jornal da Escola) entrou depois da 121: o número tinha sido
 reservado entre as sessões antes de qualquer uma escrever. Quando
 eram cem, as cinco últimas nasceram no MESMO dia, em três frentes paralelas, e não
@@ -53,7 +53,7 @@ que a cercam.
 \zebra \adrr{ADR-04} & Uma \emph{stack} por contrato; escolas por RLS & 2026-08 & Aceita\\
 \adrr{ADR-05} & Cloud SQL HA, não AlloyDB & 2026-08 & Aceita\\
 \zebra \adrr{ADR-06} & Pub/Sub para telemetria desde o início & 2026-08 & Aceita\\
-\adrr{ADR-07} & IA atrás de um \emph{gateway} na própria API & 2026-08 & Aceita\\
+\adrr{ADR-07} & IA atrás de um \emph{gateway} na própria API & 2026-08 & Aceita; revista para o agente do professor (\adrr{ADR-126})\\
 \zebra \adrr{ADR-08} & RLS forçada e uma porta única de banco & 2026-08-24 & Aceita\\
 \adrr{ADR-09} & Domínio por experiência na API; gabarito \emph{server-side} & 2026-08-24 & Aceita\\
 \zebra \adrr{ADR-10} & Bem-estar: DASS-21 fixo, IA só no entorno, sem visão de gestor & 2026-08-25 & Aceita\\
@@ -119,7 +119,7 @@ que a cercam.
 \adrr{ADR-70} & Página de transparência algorítmica aberta ao público & 2026-09-06 & Aceita\\
 \zebra \adrr{ADR-71} & Fatias verticais por módulo em frentes paralelas & 2026-09-06 & Aceita\\
 \adrr{ADR-72} & Fronteira do disfarce da exp06ef2b: mapa da rede fala pela escola & 2026-09-06 & Aceita\\
-\zebra \adrr{ADR-73} & Planejamento curricular dirigido pela BNCC (app-92) & 2026-09-06 & Aceita\\
+\zebra \adrr{ADR-73} & Planejamento curricular dirigido pela BNCC (app-92) & 2026-09-06 & Aceita; recortada para o agente do professor (\adrr{ADR-127})\\
 \adrr{ADR-74} & Contabilidade de tokens de IA com callback \cd{aoUsarTokens} & 2026-09-06 & Aceita\\
 \zebra \adrr{ADR-75} & Rolagem unificada via \cd{ScrollBar} do Design System & 2026-09-07 & Aceita\\
 \adrr{ADR-76} & Planejamento semanal estruturado com suporte a downloads & 2026-09-07 & Aceita\\
@@ -169,6 +169,13 @@ que a cercam.
 \zebra \adrr{ADR-120} & A régua v2 de Quem mandou isso?: cada habilidade pelo verbo dela, e refazer o mesmo pacote não mede memória & 2026-09-26 & Aceita\\
 \adrr{ADR-121} & O CI verifica só os PRs para \cd{dev}, \cd{hml} e \cd{main} & 2026-09-26 & Aceita\\
 \zebra \adrr{ADR-122} & A modelagem UML entra no Capítulo 5, com os catorze tipos da UML 2.5.1 e par Mermaid mesmo onde o Mermaid não tem o tipo & 2026-09-27 & Aceita\\
+\adrr{ADR-123} & O plano anual tem uma estrutura só, definida pelo prompt, e o template é exemplo de formato & 2026-09-30 & Aceita\\
+\zebra \adrr{ADR-124} & O \arq{CLAUDE.md} admite o bloco que uma ferramenta escreve, e só ele & 2026-09-30 & Aceita; emenda a \adrr{ADR-55} e a \adrr{ADR-102}\\
+\adrr{ADR-125} & O grafo do código nasce copiado em cada \emph{worktree} e se atualiza sozinho no \emph{pull}, e fica fora do \emph{git} & 2026-09-30 & Aceita; completa a \adrr{ADR-124}\\
+\zebra \adrr{ADR-126} & O agente de IA do professor roda no Vertex AI Agent Engine, atrás da api & 2026-09-30 & Aceita; revisa a \adrr{ADR-07}\\
+\adrr{ADR-127} & Só \emph{data store}, inclusive para as habilidades da BNCC & 2026-09-30 & Aceita, em avaliação; recorta a \adrr{ADR-73}\\
+\zebra \adrr{ADR-128} & SSE só no chat do agente & 2026-09-30 & Aceita\\
+\adrr{ADR-129} & O \emph{markdown} do agente vira HTML no navegador & 2026-09-30 & Aceita\\
 \bottomrule
 \end{tabularx}
 
@@ -347,6 +354,12 @@ custo de latência das gerações longas, o que obriga o padrão 202 +
 
 \textbf{Gatilho.} Volume de IA que justifique isolar o consumo, ou requisito de
 GPU própria.
+
+\textbf{Revisão.} O agente de IA do professor roda fora da api, no Vertex AI
+Agent Engine, por decisão do dono do produto e sem que nenhum dos dois gatilhos
+tenha disparado (\adrr{ADR-126}). A api continua sendo a única porta --- papel,
+disponibilidade, \emph{rate limit}, quota e posse da conversa ---, e o resto da IA
+segue esta decisão.
 
 % ---------------------------------------------------------------------------
 \section{ADR-08 --- RLS forçada e uma porta única de banco}
@@ -5004,6 +5017,12 @@ a do Ensino Médio desde a Lei 14.945/2024); a publicação de uma exportação
 oficial máquina-legível estável pelo MEC; ou o primeiro contrato cujo currículo
 próprio precise ser exibido AO LADO da Base --- caso em que a fronteira entre
 app-90 e app-92 deixa de fazer sentido e as duas convergem.
+
+\textbf{Recorte posterior.} Para o agente de IA do professor, e só para ele, o
+dono do produto decidiu buscar as habilidades num \emph{data store} e avaliar
+(\adrr{ADR-127}); a exatidão foi preservada pela forma do dado (uma linha por
+habilidade, filtro exato e paginação até o fim), e a volta para a consulta sobre
+\arq{src/curriculo} é o gatilho daquela decisão. Aqui nada muda.
 \section{ADR-74 --- \cd{generateJson} informa o que o vendor cobrou por um
 \emph{callback}, e não pelo retorno}
 \label{adr:74}
@@ -10632,3 +10651,672 @@ da arquitetura.
 renderizar PlantUML; uma figura da Seção~\ref{sec:uml} ser encontrada divergente
 do código numa revisão --- sinal de que o custo de manter passou do valor --- ou
 uma segunda pessoa passar a manter os diagramas e preferir outra fonte.
+
+
+\section{ADR-123 --- O plano anual tem uma estrutura só, definida pelo \emph{prompt}, e o template é exemplo de formato}
+\label{adr:plano-estrutura}
+
+\textbf{Data.} 2026-09-30. \textbf{Status.} Aceita.
+\textbf{Muda} o \emph{prompt} de sistema do gerador de plano anual
+(\arq{planos/prompt-plano-de-aula.ts}), o template de exemplo
+(\arq{planos/template-plano.ts}), as duas mensagens que o serviço monta para o
+modelo e o texto do \emph{provider} \emph{mock}. \textbf{Não muda} a geração
+assíncrona, o armazenamento, a quota nem a app-92.
+
+\begin{especificacao}{Contexto}
+\begin{itemize}
+  \item \textbf{O modelo recebia duas definições da estrutura.} O \emph{prompt}
+    pedia nove blocos (fundamentação, objetivos, cinco seções por bimestre,
+    metodologia, avaliação, duas tabelas e referências); o template mostrava
+    seis; e a mensagem ao modelo mandava \enquote{seguir rigorosamente a
+    estrutura do template}. A forma do plano dependia de a qual delas o modelo
+    obedecia em cada geração.
+  \item \textbf{O template ensinava o que o \emph{prompt} proíbe.} O \emph{prompt}
+    diz para nunca inventar código de habilidade, e o exemplo trazia a EF04HI03
+    com o texto da EF04HI04 e uma EF04HI06 cujo texto não consta na BNCC do
+    repositório. Avaliava também por participação e por produção de cartaz,
+    quando o \emph{prompt} afirma que isso não basta.
+  \item \textbf{O arco do ano só aparecia no fim.} Duas tabelas depois dos
+    bimestres (produtos e progressão) repetiam o que cada bimestre já dizia, e o
+    professor só via a trajetória do ano depois de ler todo o detalhe.
+\end{itemize}
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{itemize}
+  \item \textbf{A estrutura é definida num lugar só: a seção \enquote{Estrutura
+    obrigatória do \emph{output}} do \emph{prompt}.} O template passa a ser um
+    exemplo de formato, tom e nível de detalhe, de outra disciplina, e as duas
+    mensagens ao modelo dizem isso: a estrutura é a das instruções e o conteúdo do
+    exemplo não se reaproveita.
+  \item \textbf{Uma seção \enquote{Percurso do ano} no início}, em uma tabela
+    (período, questão norteadora, aprendizagem central, produto de síntese) e uma
+    frase de progressão, no lugar das duas tabelas do fim. O professor vê o ano
+    inteiro antes do detalhe, e o modelo planeja a progressão antes de escrevê-la.
+  \item \textbf{Cada bimestre traz questão norteadora, conteúdos, habilidades,
+    estratégias, formas de avaliação e, quando houver, produto de síntese.}
+  \item \textbf{A avaliação é por evidência}: cada item diz o que o estudante
+    mostra que aprendeu e se liga a uma habilidade do bimestre. Os instrumentos
+    formais que o currículo da rede exigir (prova bimestral, recuperação) continuam,
+    dizendo o que verificam.
+  \item \textbf{Habilidade entra com o código e o texto exatos do documento de
+    origem}, sem paráfrase.
+  \item \textbf{Os títulos e os limites de itens vivem em
+    \arq{planos/estrutura-do-plano.ts}}; o \emph{prompt} interpola os limites, e
+    \arq{tests/planos-estrutura.spec.ts} confere \emph{prompt}, exemplo e
+    \emph{mock} contra ele, e cada habilidade do exemplo contra a BNCC do
+    repositório. Verificado que o teste reprova o template antigo e o texto
+    trocado da EF04HI03.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{O template manda, e o \emph{prompt} só descreve o conteúdo de
+    cada seção.} Mantém o formato que a rede já conhecia, mas perde a questão
+    norteadora, o produto de síntese e o percurso, que são o que dá progressão ao
+    plano, e faz de um exemplo de uma disciplina a forma de todas.
+  \item \textbf{Manter as duas tabelas no fim e acrescentar as seções ao
+    template.} Conserva o \emph{prompt} como estava, mas diz a mesma coisa três
+    vezes (bimestre, produtos, progressão) e mantém o arco do ano escondido no fim.
+  \item \textbf{Montar o documento por seção, com uma chamada de IA para cada
+    uma.} Garantiria a forma, mas custa uma chamada por seção e tira do modelo a
+    coerência entre os bimestres, que é justamente a progressão.
+  \item \textbf{Passar ao \emph{prompt} as habilidades da BNCC do repositório em
+    vez de confiar nos documentos da rede.} É o que a app-92 faz, mas o Gerador
+    de Plano de Aula existe para a rede que já tem currículo e material próprios.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{O efeito no plano gerado não foi medido com uma geração real do
+    Vertex.} O teste garante o que está escrito no \emph{prompt}, no exemplo e no
+    \emph{mock}; não garante como o modelo os segue.
+  \item \textbf{Planos novos saem com outra forma.} Os já salvos não mudam
+    (\arq{gerado.md} é imutável), e quem conhecia as tabelas do fim passa a
+    encontrá-las unidas no início.
+  \item \textbf{O exemplo ficou cerca de cinco mil caracteres maior}, em cada
+    geração, diante de um \emph{prompt} de cerca de \num{190000} \emph{tokens}.
+  \item \textbf{A redação pedagógica do exemplo é uma escolha de quem
+    desenvolveu}, e ainda não passou por quem ensina.
+\end{itemize}
+
+\textbf{Gatilho.} Uma geração real em que o modelo ignore a estrutura ou copie o
+conteúdo do exemplo; uma rede pedir outro formato de plano; a revisão pedagógica do
+exemplo apontar uma estrutura melhor; ou o Gerador de Plano de Aula passar a
+receber as habilidades como dado, como a app-92, caso em que a origem das
+habilidades muda.
+
+\section{ADR-124 --- O \arq{CLAUDE.md} admite o bloco que uma ferramenta escreve, e só ele}
+\label{adr:claude-md-bloco-de-ferramenta}
+
+\textbf{Data.} 2026-09-30. \textbf{Status.} Aceita.
+\textbf{Emenda} à \adrr{ADR-55} (\arq{AGENTS.md} canônico, \arq{CLAUDE.md} ponteiro de
+uma linha) e à \adrr{ADR-102}.
+
+\begin{especificacao}{Contexto}
+\begin{itemize}
+  \item \textbf{A regra era absoluta.} A \adrr{ADR-55} fixou que o \arq{CLAUDE.md} é
+    \cd{@AGENTS.md} e nada mais, porque um \arq{CLAUDE.md} com texto próprio é uma
+    segunda fonte de verdade sobre a mesma pasta, e duas fontes divergem.
+  \item \textbf{A ferramenta não a conhecia.} O \cd{graphify claude install}
+    escreveu no \arq{CLAUDE.md} da raiz um bloco \cd{\#\# graphify} de dez linhas,
+    que manda consultar o grafo do código antes de responder e atualizá-lo depois
+    de mexer. A regra continuou dizendo \enquote{uma linha}, e o repositório passou
+    a descumpri-la sem que ninguém tivesse decidido isso.
+  \item \textbf{O bloco precisa ficar.} A decisão do dono do produto é usar o
+    graphify, e a ferramenta reescreve o bloco sempre que roda: apagá-lo só recria
+    uma alteração não commitada, o mesmo que o bloco do Next em
+    \arq{apps/hub/AGENTS.md} já ensinou.
+\end{itemize}
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{itemize}
+  \item \textbf{O \arq{CLAUDE.md} é \cd{@AGENTS.md} e, no máximo, o bloco que uma
+    ferramenta escreve e reescreve} --- hoje, o do graphify. Conteúdo do projeto
+    continua só no \arq{AGENTS.md}.
+  \item \textbf{É a única exceção}, e vale para bloco de ferramenta, não para texto
+    de pessoa. A regra está escrita onde ela é lida: \arq{docs/regras/arquivos-de-instrucao.md},
+    \arq{docs/regras/o-que-nao-fazer.md} e o \arq{AGENTS.md} da raiz.
+  \item \textbf{Um teste confere a forma}: toda pasta com \arq{AGENTS.md} tem um
+    \arq{CLAUDE.md} que é só o ponteiro, e o da raiz é o ponteiro mais, no máximo, o
+    bloco do graphify (\arq{apps/api/tests/regras-de-agentes.spec.ts}).
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Mover o bloco para o \arq{AGENTS.md}.} Serviria também a Codex e Cursor,
+    mas o \cd{graphify install} o recria no \arq{CLAUDE.md}, e é o Claude Code que o
+    precisa ali.
+  \item \textbf{Deixar de usar o graphify.} Resolveria o conflito apagando a ferramenta, o
+    contrário do que o dono do produto decidiu.
+  \item \textbf{Manter a regra e tolerar o bloco sem registrar.} Uma regra que o próprio
+    repositório descumpre deixa de ser regra, e o próximo agente a \enquote{corrige}
+    apagando o bloco.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{O \arq{CLAUDE.md} da raiz deixa de ser uma linha}, e isso abre
+    precedente: a próxima ferramenta que escrever no arquivo vai pedir a mesma exceção.
+  \item \textbf{O bloco descreve um grafo que não existe num clone limpo}:
+    \cd{graphify-out/} é ignorado pelo \emph{git}, e só a primeira regra do bloco é
+    condicional a ele. Cada máquina, e cada \emph{worktree}, constrói o seu.
+  \item \textbf{O bloco está em inglês}, num repositório em pt-BR. Não é interface, e a
+    ferramenta o reescreveria.
+\end{itemize}
+
+\textbf{Gatilho.} A ferramenta passar a escrever mais de um bloco, ou fora do
+\arq{CLAUDE.md}; uma segunda ferramenta pedir o mesmo; ou o graphify deixar de ser
+usado --- e o bloco sair junto.
+
+\section{ADR-125 --- O grafo do código nasce copiado em cada \emph{worktree} e se atualiza sozinho no \emph{pull}, e fica fora do \emph{git}}
+\label{adr:grafo-nas-worktrees}
+
+\textbf{Data.} 2026-09-30. \textbf{Status.} Aceita.
+\textbf{Completa} a \adrr{ADR-124}, cuja segunda consequência ruim era justamente um
+grafo que \enquote{cada máquina, e cada \emph{worktree}, constrói o seu}.
+
+\begin{especificacao}{Contexto}
+\begin{itemize}
+  \item \textbf{Toda tarefa começa num \emph{worktree}} (\adrr{ADR-101}), e o
+    \cd{graphify-out/} é ignorado pelo \emph{git}: o \emph{worktree} nascia sem grafo,
+    e o bloco do \arq{CLAUDE.md} mandava consultá-lo mesmo assim.
+  \item \textbf{A cópia principal também envelhecia.} O grafo só mudava quando alguém
+    lembrava de rodar \cd{graphify update .}, e um símbolo entregue por um PR mergeado
+    não aparecia nas consultas seguintes.
+  \item \textbf{O ganho é de leitura, não de pergunta.} Medido neste repositório, em
+    \emph{tokens}: \cd{explain} de um nome conhecido custa de 275 a 875; \cd{path}, cerca
+    de 30; \cd{query} com pergunta em linguagem natural, cerca de 1\,600 \textbf{fixos};
+    um \cd{grep} preciso, de 110 a 1\,500; \textbf{ler os arquivos que o \cd{grep}
+    encontra, de 9\,500 a 139\,000}. O grafo paga quando troca a leitura inteira por um
+    subgrafo, e \textbf{não} paga quando já se sabe o nome e basta um \cd{grep}.
+\end{itemize}
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{itemize}
+  \item \textbf{\cd{pnpm worktree criar} copia o \cd{graph.json}} da cópia principal para
+    o \emph{worktree} novo, avisa a idade do grafo e recomenda \cd{graphify update .}
+    quando ele tem dois dias ou mais. Sem grafo na principal, o passo só avisa.
+  \item \textbf{O \arq{.githooks/post-merge} atualiza o grafo em segundo plano} quando o
+    \cd{git pull} de \cd{dev-local} traz o merge do PR. É o \cd{graphify update .}, só
+    AST e sem custo de IA, com trava de quinze minutos em
+    \cd{graphify-out/.atualizando} e log em \cd{graphify-out/atualizacao.log}. Nunca
+    derruba o \emph{pull}, não cria grafo onde nunca existiu e tem escape
+    (\cd{PULAR\_GRAFO=1}).
+  \item \textbf{O grafo \emph{não} entra no \emph{git}.} Ele é um artefato de cada
+    máquina, regenerável, e a instalação dos \emph{hooks} do próprio graphify continua
+    desligada.
+  \item \textbf{O uso está escrito onde é lido}: o \arq{AGENTS.md} da raiz manda
+    \cd{explain}/\cd{path} para \enquote{quem chama quem}, e os custos medidos ficam em
+    \arq{docs/regras/comandos.md}. O \cd{query} fica para a área que não se sabe nomear.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Versionar o \cd{graph.json}.} Resolveria o \emph{worktree} cego, mas o
+    arquivo tem cerca de 18\,MB e muda a cada \cd{update}: todo PR o alteraria, dois PRs
+    em paralelo conflitariam nele (como o \arq{main.pdf}, mas sem ninguém que o
+    regenere), e o histórico engordaria 18\,MB por alteração, contra a regra de não
+    commitar asset acima de 2\,MB.
+  \item \textbf{Instalar os \emph{hooks} do graphify.} Ele escreve em \arq{.githooks/}
+    quando o \cd{core.hooksPath} está definido, e passaria a rodar a cada commit e
+    troca de \emph{branch}, em todas as máquinas, sem que o fluxo de git do repositório
+    o tivesse decidido.
+  \item \textbf{Cada \emph{worktree} reconstruir o seu.} Gasta a reconstrução inteira
+    toda vez que uma frente abre, e o grafo novo nasce da mesma base que a cópia já tem.
+  \item \textbf{Gerar no CI e baixar.} O CI não roda nos PRs para \cd{dev-local}
+    (\adrr{ADR-121}), e um artefato de rede para uma consulta local troca um problema
+    simples por um de credencial.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{A cópia é um retrato da principal, não do \emph{worktree}.} Símbolo
+    criado na frente só aparece depois de \cd{graphify update .} nela, e o que outras
+    frentes abertas escrevem não está lá.
+  \item \textbf{O \emph{post-merge} só dispara no \cd{pull} da cópia principal.} Quem
+    nunca puxa por ali, ou cria o \emph{worktree} enquanto a atualização ainda roda,
+    copia um grafo anterior.
+  \item \textbf{O grafo cobre código, não instrução nem documentação.}
+    \arq{AGENTS.md} e LaTeX estão fora; a camada de documentos exige \cd{/graphify
+    --update}, que custa IA, e não foi adotada.
+  \item \textbf{O bloco do graphify no \arq{CLAUDE.md} aconselha \cd{query} primeiro}, e a
+    medição diz que \cd{explain} e \cd{path} saem mais baratos. A ferramenta reescreve o
+    bloco, então a correção vive no \arq{AGENTS.md}, que vence em conflito.
+  \item \textbf{Cada \emph{worktree} carrega 18\,MB a mais} em disco.
+\end{itemize}
+
+\textbf{Gatilho.} A medição passar a mostrar que \cd{explain}/\cd{path} não poupam
+leitura neste código; o grafo crescer a ponto de a cópia ou a atualização atrapalharem o
+\cd{git pull}; o graphify deixar de atualizar sem IA; ou mais de uma pessoa passar a
+depender do grafo, caso em que vale reavaliar um artefato compartilhado.
+
+% ---------------------------------------------------------------------------
+\section{ADR-126 --- O agente de IA do professor roda no Vertex AI Agent Engine, atrás da api}
+\label{adr:agente-professor-engine}
+
+\textbf{Data.} 2026-09-30. \textbf{Status.} Aceita. \textbf{Revisa} a
+\adrr{ADR-07} (IA atrás de um \emph{gateway} na própria API) \textbf{para este
+produto}, e abre a única exceção a duas proibições da raiz: \enquote{não chamar
+provedores de IA fora de \arq{apps/api/src/ai}} e, no espírito, \enquote{não criar
+serviço novo sem necessidade demonstrada}. Recurso de IA novo \textbf{não} herda a
+exceção.
+
+\begin{especificacao}{Contexto}
+\begin{itemize}
+  \item \textbf{O produto.} Um chat flutuante no layout de \rota{/professor}: o
+    professor pergunta sobre a BNCC e sobre o acervo de livros didáticos da
+    Unooria, recebe a resposta em pedaços, com as fontes (título e página do
+    PDF), e as conversas ficam guardadas, com título, até ele apagá-las.
+  \item \textbf{O que a ADR-07 descartou.} \enquote{Serviço de IA separado: um
+    Cloud Run a mais para operar, sem ganho}, com o gatilho \enquote{volume que
+    justifique isolar o consumo, ou GPU própria}. \textbf{Nenhum dos dois gatilhos
+    disparou}: a revisão é decisão do dono do produto, não medida, e é por isso
+    que ela fica escrita aqui com as consequências inteiras.
+  \item \textbf{O que este produto pede e as outras rotas de IA não têm}:
+    conversa de vários turnos com memória (sessão), ferramentas que buscam em
+    índice (os dois \emph{data stores} da \adrr{ADR-127}) e resposta transmitida
+    (\adrr{ADR-128}).
+  \item \textbf{A escolha do dono do produto}: Google ADK, em Python, servido
+    pelo Vertex AI Agent Engine --- que \textbf{gerencia a sessão} (eventos,
+    estado, expiração).
+\end{itemize}
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{itemize}
+  \item \textbf{O agente é um pacote Python do \emph{monorepo}}:
+    \arq{apps/\B agente-professor}, Python 3.12, \cd{google-\B adk\B\textasciitilde=2.10.0}
+    fixado no \arq{uv.lock}, servido por uma imagem de \emph{container} que segue o
+    contrato de \emph{runtime} do Agent Engine (porta 8080,
+    \rota{/api/\B reasoning\_engine} e \rota{/api/\B stream\_\B reasoning\_engine}). O
+    \emph{prompt}, as ferramentas e os modelos moram nele: a conversa em
+    \cd{AGENTE\_MODELO}, a guarda de escopo e o título em
+    \cd{AGENTE\_\B MODELO\_\B ESCOPO}, ambos em \cd{global} com reserva em \cd{us}
+    pelo \cd{client\_\B kwargs} do \cd{Gemini}. \textbf{\env{GOOGLE\_\B CLOUD\_\B LOCATION}
+    é reservada no engine} e vale a região do \emph{deploy}: configurar o modelo
+    por ela o mandaria para \cd{us-east1}, onde ele pode nem existir.
+  \item \textbf{A api é a ÚNICA porta.} O navegador nunca fala com o engine nem
+    com o \emph{data store}. Na api: \cd{@Roles("professor")} e só ele (a
+    coordenação ficou fora por decisão do dono); \cd{Disponibilidade\B Guard} com
+    \cd{@Produto(\B"agente-\B professor")} na classe --- o primeiro produto sem
+    experiência (\adrr{ADR-87}); \emph{rate limit} de 10 mensagens por minuto por
+    professor; e o \cd{QuotaService} do perfil \cd{professor}, com \cd{temSaldo}
+    \textbf{antes} de abrir o \emph{stream} e \cd{consumir} num \cd{finally} com a
+    \textbf{soma dos \emph{tokens} dos eventos NÃO parciais} do turno --- o que
+    inclui a guarda de escopo e o título, que o agente soma ao
+    \cd{usage\_metadata} do evento seguinte.
+  \item \textbf{Só \arq{src/ai/agent-engine.client.ts} conhece o engine}; o
+    módulo \arq{src/agente-professor} fala com a \cd{AgenteProfessorPort}.
+    Porta própria, e não um método a mais no \cd{AiProvider}, porque modelo,
+    ferramentas e instrução moram no agente: a api só conduz a sessão.
+  \item \textbf{A posse mora no Postgres}: \cd{agente\_\B professor\_\B conversas}
+    (\cd{escola\_id}, \cd{usuario\_id}, \cd{sessao\_id}, \cd{titulo}), com RLS. Os
+    \emph{endpoints} de sessão do engine pedidos por nome de recurso
+    \textbf{não conferem o usuário}, e a SA da api enxerga todas as sessões do
+    engine: sem a linha, quem soubesse um \cd{sessao\_id} leria a conversa de
+    outro professor. A checagem do ADK (\enquote{does not belong to user}) é
+    defesa em profundidade, não a tranca. Toda rota confere \cd{usuario\_id}
+    \emph{e} \cd{escola\_id}; outro dono é 404.
+  \item \textbf{Identidade só do \emph{token}}: o \cd{user\_id} no engine é o
+    \cd{users.id}; o \cd{nome\_professor} do estado é o primeiro nome de
+    \cd{users.display\_name}, lido do banco.
+  \item \textbf{O título é do agente}: o LLM dele escreve
+    \cd{state.titulo\_conversa} depois do primeiro turno, e a api o espelha na
+    coluna \cd{titulo} --- que é \emph{cache} do estado, não fonte.
+  \item \textbf{Histórico sem limite, com exclusão.} A sessão nasce com
+    \cd{expire\_time} distante (dez anos pedidos) e é renovada por
+    \cd{PATCH \ldots/sessions/\{id\}?updateMask=expireTime} na API nativa a cada
+    mensagem entregue; apagar é \cd{async\_delete\_session} mais a linha, e o
+    \rota{DELETE} é a única rota com \cd{@SemDisponibilidade}.
+  \item \textbf{Região}: \cd{us-east1} em \cd{dev} e \cd{hml}; produção fica a
+    decidir. Na api, \env{AGENTE\_PROFESSOR\_MODO} ausente vale \cd{desligado}, em
+    qualquer \cd{NODE\_ENV}: o engine nasce por contrato em momentos diferentes,
+    e derrubar a api por falta dele tiraria todos os produtos do ar para
+    proteger um.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Um \cd{conversar()} na própria api, com a ADR-07 de pé.} Era o
+    caminho de menor custo operacional: o \emph{function calling} já está no
+    \cd{AiProvider} (\adrr{ADR-23}) e o \arq{unoogpt/} já tem agente com
+    ferramentas. O dono do produto escolheu o ADK pelo que ele entrega pronto e
+    a api teria de construir: a sessão gerenciada (eventos, estado e expiração,
+    sem tabela de mensagens própria nem formato de histórico a versionar), o
+    laço de ferramentas transmitido, os \emph{plugins} (guarda de escopo, título,
+    poda de contexto) e a avaliação por \cd{adk eval}.
+  \item \textbf{Um Cloud Run próprio com \cd{adk api\_server}.} Os
+    \emph{endpoints} são outros (a api teria dois clientes, um por ambiente), a
+    sessão iria para um banco pelo \cd{DatabaseSessionService} e seria o serviço
+    Cloud Run novo que a doutrina recusa sem gargalo medido.
+  \item \textbf{\cd{DatabaseSessionService} no Cloud SQL}, com ou sem o engine.
+    O ADK cria as próprias tabelas: sem \cd{escola\_id}, sem RLS, fora do Prisma e
+    das migrações --- a regra inviolável nº~1 quebrada por um esquema que o
+    projeto não controla, numa segunda conexão ao banco vinda de outro processo.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{Um segundo \emph{runtime}}: Python e \cd{uv} no CI
+    (\cd{astral-sh/setup-uv}), uma segunda imagem e um segundo \emph{job} de
+    \emph{deploy}. Sem \cd{uv} na máquina, o \cd{pnpm turbo} da raiz falha de
+    propósito.
+  \item \textbf{Um segundo lugar onde moram \emph{prompt} e modelo}
+    (\arq{instrucoes.py}, \arq{modelos.py}), fora de \arq{src/ai/prompts.ts}. O
+    \cd{MedidorDeProvider} não mede o agente; a métrica dele é a linha de log
+    \cd{agente-professor.turno}.
+  \item \textbf{As quotas do Agent Engine}: 90 \cd{streamQuery} por minuto e 300
+    eventos de sessão por minuto, por projeto e região. Uma mensagem gasta um
+    \cd{streamQuery} e vários eventos. O aumento se pede no console e leva dias:
+    \textbf{tem de ser pedido antes do \emph{go-live}}.
+  \item \textbf{\emph{Cold start}}: o primeiro turno depois de o engine ficar
+    ocioso paga a subida do \emph{container}.
+  \item \textbf{O conteúdo da conversa mora fora do Postgres.} O professor pode
+    escrever o nome de um estudante, e esse texto fica no engine, fora do PITR e
+    das exportações do banco. Apagar exige o engine no ar: com ele fora, o
+    \rota{DELETE} responde 503 e a linha \textbf{fica} --- apagar só a linha
+    deixaria a conversa guardada sem dono alcançável. E apagar o engine apaga o
+    histórico de todos (o \cd{deletion\_policy} padrão recusa engine com
+    sub-recursos; não se troca para \cd{FORCE}).
+  \item \textbf{O modelo processa em \cd{global}}, sem garantia de residência no
+    Brasil --- como já era na api (\arq{docs/INFRA.md}); consta do DPA.
+  \item \textbf{O máximo do \cd{expire\_time} não está documentado} (só o mínimo
+    de 24\,h e o padrão de 365 dias). Se o engine recusar o pedido, a criação
+    repete sem ele, e é a renovação a cada mensagem que mantém a conversa viva:
+    a que passar o TTL sem mensagem some da lista no próximo \rota{GET}.
+  \item \textbf{O papel custom da SA da api não tranca nada hoje}: ela já tem
+    \cd{roles/aiplatform.user} no projeto por causa do Gemini. Ele existe para o
+    dia em que o papel amplo for estreitado.
+\end{itemize}
+
+\textbf{Gatilho de reavaliação.} O volume do chat bater nas quotas do Agent
+Engine mesmo depois do aumento; o ADK ou o Agent Engine mudarem de contrato a
+ponto de o cliente da api pedir manutenção recorrente; produção exigir região que
+o Agent Engine não tem; ou o segundo recurso de IA pedir a mesma exceção --- aí a
+pergunta é se o engine vira a camada de agentes da plataforma (e a ADR-07 é
+revista de vez) ou se o agente volta para dentro da api.
+
+% ---------------------------------------------------------------------------
+\section{ADR-127 --- Só \emph{data store}, inclusive para as habilidades da BNCC}
+\label{adr:agente-professor-data-store}
+
+\textbf{Data.} 2026-09-30. \textbf{Status.} Aceita, em avaliação.
+\textbf{Recorta} a \adrr{ADR-73} \textbf{para este produto}: a recusa de RAG para
+as habilidades continua valendo para o planejamento de ensino (app-92).
+
+\begin{especificacao}{Contexto}
+\begin{itemize}
+  \item \textbf{A ADR-73 recusou busca sobre os PDFs para as habilidades}:
+    \enquote{busca vetorial responderia com aproximação onde existe resposta
+    certa}. As habilidades viraram dado extraído (\arq{src/curriculo}), com
+    código, ano, componente e texto oficial.
+  \item \textbf{O agente precisa de duas coisas diferentes}: a lista
+    \emph{exata} (\enquote{todas as habilidades de Matemática do 6º ano}, o
+    texto oficial de um código) e \emph{trechos} da BNCC completa, do anexo de
+    Computação e dos livros didáticos, com a página para citar.
+  \item \textbf{A escolha do dono do produto}: usar só \emph{data store} (Vertex
+    AI Search, o \enquote{Agent Search} da documentação de 2026) para as duas, e
+    avaliar.
+  \item \textbf{A lição que pesa contra}: em 22/09 o \cd{gerador-missoes}
+    inventou eixo e texto para uma habilidade real. Modelo citando código é o
+    lugar onde a aproximação vira erro de currículo.
+\end{itemize}
+\end{especificacao}
+
+\textbf{Decisão.} A resposta exata é preservada \textbf{pela forma do dado e da
+consulta}, não pela confiança no modelo:
+
+\begin{itemize}
+  \item \textbf{Habilidades num \emph{data store} ESTRUTURADO}
+    (\cd{agente-professor-\B habilidades}), \textbf{uma linha por habilidade}, com
+    esquema próprio (\cd{dynamic = false}). O JSONL sai de \arq{src/curriculo/dados}
+    e o \cd{exportar\_\B habilidades} \textbf{aborta} se os totais não forem
+    1.304 EF + 183 EM + 130 Computação --- o \emph{import} usa
+    \cd{reconciliation\B Mode:} \cd{FULL}, que apaga o que falta.
+  \item \textbf{Consulta exata}: \cd{buscar\_habilidades} manda \emph{query}
+    vazia com filtro exato (\cd{codigo}, \cd{anos}, \cd{componente\_slug},
+    \cd{etapa}) e \textbf{pagina até o fim}; com \cd{texto}, faz busca semântica
+    sob o mesmo filtro. Um dicionário só (\arq{curriculo.py}) normaliza
+    componente, ano e etapa para quem escreve o \emph{data store} e para quem
+    consulta.
+  \item \textbf{Os PDFs num OUTRO \emph{data store}}
+    (\cd{agente-professor-acervo}), não estruturado, com \emph{parser} de
+    \emph{layout} e \emph{chunking} de 500 \emph{tokens} com títulos ancestrais; o
+    modo \cd{CHUNKS} devolve o \cd{pageSpan}, convertido para a página do PDF
+    original quando o arquivo foi dividido. São dois porque um \emph{engine} de
+    busca com \emph{data store} estruturado é forçado a \cd{DOCUMENTS} e perde os
+    trechos. Não há \emph{engine} (app) de busca: responde o
+    \cd{servingConfigs/default\_search} do próprio \emph{data store}.
+  \item \textbf{Ferramentas próprias sobre o REST do Discovery Engine, nunca
+    \cd{VertexAiSearchTool}}: ela tem teto de 10 resultados, não pagina e, com
+    outra ferramenta no agente, é trocada em silêncio por um substituto que
+    descarta a página.
+  \item \textbf{Conferência determinística na api.} Todo código citado no texto
+    do turno é conferido contra \cd{habilidade\B Por\B Codigo} de \arq{src/curriculo};
+    o que não existe vira o evento \cd{aviso} (\cd{habilidade-\B inexistente}) no
+    fim do turno. É aviso, não censura: o texto já está na tela, e o aviso diz
+    para conferir antes de pôr num plano.
+  \item \textbf{Escopo fechado}: só BNCC e acervo. A guarda de escopo, com o
+    modelo leve, recusa pelo nome antes de chamar o modelo principal.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Ferramenta exata sobre \arq{src/curriculo}} --- a ADR-73 aplicada
+    ao agente. Garante a resposta certa por construção; descartada pelo dono para
+    avaliar o \emph{data store}, e é a volta prevista no gatilho. Custaria levar
+    o dado ao agente Python (hoje são \cd{.ts} gerados) ou uma ferramenta que
+    chama a api.
+  \item \textbf{Um \emph{data store} só, com tudo.} O estruturado perde os
+    trechos; o não estruturado perde o filtro exato.
+  \item \textbf{\cd{VertexAiSearchTool}}, pelos três defeitos acima: \enquote{as
+    habilidades de Matemática do 6º ano} voltando com dez é um plano que
+    descumpre o currículo, e ninguém vê.
+  \item \textbf{Índice vetorial próprio no Postgres}: extensão nova, \emph{pipeline}
+    de \emph{embeddings} a manter, e a mesma aproximação.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{A exatidão depende de o filtro casar com o dado.} Um
+    \emph{slug} divergente entre a ingestão e a consulta não dá erro: dá
+    \enquote{nenhuma habilidade encontrada}. O caso que mais custa é o EM
+    (Biologia, Física e Química viram \cd{ciencias-da-natureza}).
+  \item \textbf{Ainda não avaliado.} O relatório de
+    \arq{ingestao/avaliar\_habilidades} (\emph{recall} por componente $\times$
+    ano) não rodou contra o \emph{data store} real até esta data.
+  \item \textbf{Dois \emph{data stores} a manter e reimportar} quando um PDF
+    muda; o \emph{chunking} nasce certo ou não nasce (a configuração de
+    processamento é imutável: trocá-la é recriar e reimportar tudo).
+  \item \textbf{Contexto caro}: a Língua Portuguesa do 8º ano inteira tem cerca
+    de \num{58000} caracteres, e a poda de \cd{buscar\_habilidades} foi
+    levantada para \num{120000} para não cortar o plano.
+  \item \textbf{A página citada é a do leitor de PDF}, não a impressa (na BNCC
+    completa, impressa = PDF $-$ 2).
+  \item \textbf{O aviso chega depois do texto}: o professor já leu o código
+    inexistente quando o aviso aparece.
+\end{itemize}
+
+\textbf{Gatilho de reavaliação.} \textbf{O relatório de
+\arq{apps/\B agente-professor/\B ingestao/\B avaliar\_\B habilidades}}: se o \emph{recall}
+não for 100\% em todo componente $\times$ ano, volta a ferramenta exata sobre
+\arq{src/curriculo}. E o primeiro \cd{aviso} de \cd{habilidade-\B inexistente} visto
+em uso real conta como evidência a favor da volta.
+
+% ---------------------------------------------------------------------------
+\section{ADR-128 --- SSE só no chat do agente}
+\label{adr:agente-professor-sse}
+
+\textbf{Data.} 2026-09-30. \textbf{Status.} Aceita. \textbf{Não revê} a
+\adrr{ADR-93}: a sala continua em \emph{polling} curto.
+
+\begin{especificacao}{Contexto}
+\begin{itemize}
+  \item \textbf{A ADR-93 descartou SSE para sincronizar a sala}: conexão longa
+    num Cloud Run com teto de \emph{request timeout}, para um dado de dois
+    valores lido durante dez minutos.
+  \item \textbf{Aqui o problema é outro.} Um turno do agente leva de segundos a
+    minutos (guarda, busca, geração), e o texto nasce em pedaços. Sem
+    transmissão, o professor olha um indicador de espera por um minuto; com o
+    padrão 202 + \emph{polling} das gerações (\adrr{ADR-07}), o texto parcial
+    teria de ser guardado em algum lugar e reenviado inteiro a cada consulta.
+\end{itemize}
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{itemize}
+  \item \textbf{SSE de ponta a ponta}: o engine (\cd{:stream\B Query?\B alt=sse}, que
+    responde ora linhas \cd{data:}, ora NDJSON --- o cliente da api decide por
+    linha, não pelo \cd{content-type}) \seta{} a api (\cd{text/\B event-stream}) \seta{}
+    o hub \seta{} o navegador, que lê com \cd{fetch} POST e o \emph{stream} do
+    corpo: o \cd{EventSource} só faz GET, e a pergunta iria na URL.
+  \item \textbf{Rota de \emph{stream} própria no hub}
+    (\rota{/api/\B plataforma/\B agente-professor/\B conversas/\B [id]/\B mensagens}),
+    exceção ao BFF genérico, que tem teto de 180\,s e devolve o corpo sem os
+    cabeçalhos de \emph{stream}. Ela usa a mesma sessão e o mesmo \emph{token}
+    curto do BFF (\arq{lib/bff.ts}), tem teto de 250\,s (acima dos 240\,s da
+    api, que cortam antes com o evento \cd{erro}) e responde
+    \cd{cache-control:} \cd{no-cache,} \cd{no-transform} --- sem o \cd{no-transform}, a
+    compressão do servidor do Next segura os pedaços e o texto chega todo no
+    fim.
+  \item \textbf{Eventos fechados}: \cd{delta}, \cd{fontes}, \cd{titulo},
+    \cd{aviso}, \cd{fim} e \cd{erro}, com \cd{: ping} a cada 15\,s; o
+    \emph{stream} termina em \cd{fim} \textbf{ou} em \cd{erro}, nunca nos dois.
+  \item \textbf{Toda recusa em JSON ANTES de abrir o \emph{stream}}: corpo (400),
+    posse (404), \cd{RATE\_LIMIT} e \cd{QUOTA} (429). Aberto o
+    \cd{text/event-stream}, o \emph{status} já foi 200.
+  \item \textbf{Tetos}: 240\,s na api (\cd{TEMPO\_ESGOTADO}); o Cloud Run do hub
+    corta em 300\,s e o da api em 900\,s; o \emph{load balancer} com NEG
+    \emph{serverless} tem 60 minutos fixos. O elo mais curto é o da própria api,
+    de propósito.
+  \item \textbf{Cancelamento em cada salto}: \enquote{Parar}, trocar de conversa
+    ou fechar a aba abortam o \cd{fetch} do navegador, o hub repassa o
+    \cd{request.signal}, a api ouve o \cd{close} da RESPOSTA e aborta a chamada
+    ao Vertex. \textbf{Fechar o painel NÃO aborta} (decisão do dono do produto):
+    o painel fica montado e escondido, o turno segue, e a resposta que termina
+    com ele fechado acende o selo do botão --- abortar ali seria cobrar a quota
+    e jogar a resposta fora. Os \emph{tokens} gerados até um abandono são
+    consumidos assim mesmo.
+  \item \textbf{Não vale para nenhuma outra rota.} A segunda rota que pedir
+    \emph{stream} pede uma ADR nova.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{202 + \emph{polling}}: o parcial teria de morar no banco ou na
+    memória de uma instância, e cada consulta reenviaria o texto inteiro.
+  \item \textbf{WebSocket}: bidirecional sem necessidade e sem infraestrutura,
+    pela mesma razão da \adrr{ADR-93}.
+  \item \textbf{\cd{EventSource}}: só GET, sem corpo --- a pergunta do professor
+    (até 4.000 caracteres, possivelmente com nome de estudante) iria na URL e
+    nos registros do \emph{load balancer}.
+  \item \textbf{Repassar pelo BFF genérico}: o teto de 180\,s cortaria o turno
+    longo, e a resposta sairia sem os cabeçalhos de \emph{stream} --- comprimida,
+    chegando de uma vez no fim.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{Conexão longa no Cloud Run}: cada turno ocupa uma requisição
+    concorrente na api e outra no hub por até 240\,s.
+  \item \textbf{O alerta de p95 da api (10\,s) fica inflado pelos
+    \emph{streams}}, e a métrica \cd{run.\B googleapis.\B com/\B request\_\B latencies} não
+    tem rótulo de caminho. A proposta --- uma métrica de log de distribuição
+    sobre o \emph{request log} do Cloud Run da api, excluindo o caminho do
+    agente --- está registrada no RUNBOOK do repositório de fundação e
+    \textbf{não foi implementada}.
+  \item \textbf{O \cd{ContratoInterceptor} não confere o SSE} (a rota escreve na
+    resposta crua). Quem confere cada \cd{data:} é o teste, contra
+    \cd{DADOS\_POR\_EVENTO}; evento novo entra lá.
+  \item \textbf{O ADK em SSE repete o texto} no evento final agregado; a api
+    deduplica por segmento, e mudar isso duplica a resposta na tela.
+\end{itemize}
+
+\textbf{Gatilho de reavaliação.} A segunda rota que pedir transmissão; o alerta
+de p95 da api ficar inútil antes de a métrica filtrada existir; ou o Cloud Run, o
+\emph{load balancer} ou o Agent Engine mudarem os tetos de que este desenho
+depende.
+
+% ---------------------------------------------------------------------------
+\section{ADR-129 --- O \emph{markdown} do agente vira HTML no navegador}
+\label{adr:agente-professor-markdown}
+
+\textbf{Data.} 2026-09-30. \textbf{Status.} Aceita. \textbf{Excepciona} o
+precedente de \arq{planos/} (app-90), em que o \cd{marked} e o
+\cd{sanitize-html} rodam na api e \enquote{o cliente não converte nada}.
+
+\begin{especificacao}{Contexto}
+O agente responde em \emph{markdown} (listas, tabelas de habilidades, negrito), e
+o texto chega em pedaços pelo SSE da \adrr{ADR-128}. No \arq{planos/} o documento
+chega inteiro, uma vez, e converter na api é o mais seguro: o navegador só exibe
+HTML já saneado. Com transmissão, o HTML de um pedaço não existe sozinho --- uma
+tabela só fecha várias linhas depois.
+\end{especificacao}
+
+\textbf{Decisão.} O hub converte, \textbf{no navegador}, com
+\cd{react-markdown} + \cd{remark-gfm}, e a segurança vem do que fica desligado:
+
+\begin{itemize}
+  \item \textbf{HTML cru desligado}, sem \cd{rehype-raw}: \emph{tag} escrita pelo
+    modelo vira TEXTO escapado, nunca elemento --- e não some (\cd{skipHtml}
+    apagaria o trecho, e a resposta a \enquote{como explico a \emph{tag}
+    \cd{<p>}?} perderia o assunto).
+  \item \textbf{Links só absolutos \cd{http}, \cd{https} e \cd{mailto}},
+    conferidos pelo \cd{URL} do navegador e não por expressão regular, abertos em
+    nova guia com \cd{rel="noopener noreferrer"}; \cd{javascript:} e \cd{data:}
+    não viram link. Imagem vira o texto alternativo.
+  \item \textbf{Nada de \cd{dangerouslySetInnerHTML}.}
+  \item \textbf{A tipografia é do DS}: \cd{RichContent} e \cd{RichContentTable}
+    da seção \cd{unooria} (0.2.10).
+  \item \textbf{O painel leva \cd{data-clarity-mask}}: o professor pode escrever
+    o nome de um estudante, e o Clarity grava a tela (\adrr{ADR-60}).
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Converter na api a cada \cd{delta}}: o HTML do turno inteiro
+    teria de ser reconvertido e reenviado a cada pedaço, e o evento deixaria de
+    ser incremental.
+  \item \textbf{Converter só no fim}: o professor leria \emph{markdown} cru
+    (asteriscos, barras de tabela) durante toda a transmissão, e a tela pularia
+    de forma no último evento.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{Dois conversores de \emph{markdown} na plataforma}, com regras
+    diferentes (\cd{marked} na api, \cd{react-\B markdown} no hub), e duas
+    dependências a acompanhar.
+  \item \textbf{A segurança passa a depender de configuração no cliente}: ligar
+    \cd{rehype-raw} ou aceitar outro esquema de link reabre o vetor, e nenhum
+    saneador na api o pega depois.
+  \item \textbf{O histórico é reconvertido a cada abertura} da conversa; o custo
+    é do navegador do professor.
+\end{itemize}
+
+\textbf{Gatilho de reavaliação.} A resposta do agente precisar de elemento que o
+\emph{markdown} não expressa (e a tentação de ligar HTML cru); ou um segundo
+produto querer o mesmo componente, caso em que ele sobe para o DS com a
+configuração travada.

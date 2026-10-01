@@ -60,7 +60,19 @@ export class MedidorDeProvider implements AiProvider {
   }
 
   generateJson<T>(req: AiJsonRequest<T>): Promise<T> {
-    return this.medir("generateJson", this.modelos.padrao, () => this.real.generateJson(req), false);
+    // `generateJson` devolve `T`, não `AiResult`: os tokens só chegam pelo
+    // `aoUsarTokens`, chamado uma vez por tentativa (inclusive as rejeitadas por
+    // `validar`, que foram pagas). O decorator se encaixa nele sem tirar o
+    // callback de quem chamou (a quota) e sem mudar a interface do provider.
+    const modelo = this.modeloDe(req.modelo);
+    const comMedicao: AiJsonRequest<T> = {
+      ...req,
+      aoUsarTokens: (tokens) => {
+        if (tokens > 0) this.metricas.iaTokens.add(tokens, { modelo, direcao: "total" });
+        req.aoUsarTokens?.(tokens);
+      },
+    };
+    return this.medir("generateJson", modelo, () => this.real.generateJson(comMedicao), false);
   }
 
   generateImage(prompt: string, opcoes?: AiImagemOpcoes): Promise<Buffer> {

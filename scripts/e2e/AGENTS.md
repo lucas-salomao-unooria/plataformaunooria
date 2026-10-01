@@ -57,14 +57,15 @@ o que decide se você precisa abri-lo.
   resolve no `<span>`, e o clique morre em "<input> intercepts pointer events"
   até o timeout (a `professor/10`, 2026-09-25). Use
   `getByRole("radio", { name, exact: true })`.
-- **Diálogo do DS sem NOME é defeito da tela, não do seletor.** Até a 0.2.2 o
-  `Modal` só punha `aria-labelledby` no `role="dialog"` com o atalho `title=`;
-  montado com `ModalTitle`, o diálogo ficava sem nome e
-  `getByRole("dialog", { name })` esperava até o timeout com a janela aberta na
-  foto (a `professor/10`, 2026-09-25). Corrigido na 0.2.3: o `Modal` liga o
-  `ModalTitle` sozinho. Se voltar a acontecer, o conserto é na TELA
+- **Diálogo do DS sem NOME é defeito da tela, não do seletor.** O `Modal` liga o
+  `ModalTitle` ao `role="dialog"` sozinho (`aria-labelledby`); diálogo que aparece
+  sem nome faz `getByRole("dialog", { name })` esperar até o timeout com a
+  janela aberta na foto (a `professor/10`, 2026-09-25). O conserto é na TELA
   (`aria-labelledby` + `id` no `ModalTitle`) ou no DS, nunca no seletor: sem
   nome, o leitor de tela também só diz "diálogo".
+- **`arquivados/` não é papel, e o runner não a percorre.** Guarda as suítes das
+  experiências arquivadas (ADR-116), fora da execução; a doutrina dela está em
+  `arquivados/AGENTS.md`.
 - **Erro provocado de propósito se declara** (`r.provocado(...)`), senão a
   corrida que prova que a trava funciona é a que pinta de vermelho.
 - **`testes/` é descartável e está no `.gitignore`** — prints, deck e vídeos se

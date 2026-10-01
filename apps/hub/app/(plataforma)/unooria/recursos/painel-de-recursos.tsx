@@ -18,7 +18,7 @@ import {
   Tag,
   TextArea,
 } from "@edu/ui/ds";
-import { buscarProduto, type Produto } from "@/lib/produtos";
+import { buscarProduto, type CopyDoProduto, type SlugDeProduto } from "@/lib/produtos";
 import { HistoricoDeRecursos } from "@/components/historico-de-recursos";
 import { ModalDeVersao } from "./modal-de-versao";
 import type {
@@ -430,9 +430,9 @@ export function PainelDeRecursos({
 
 /** A copy do produto vive em `lib/produtos.ts`; slug desconhecido não quebra a
  *  tela — ele aparece pelo próprio slug, que é o que o operador precisa ver. */
-function copyDoProduto(slug: string): Produto | null {
+function copyDoProduto(slug: string): CopyDoProduto | null {
   try {
-    return buscarProduto(slug as Produto["slug"]);
+    return buscarProduto(slug as SlugDeProduto);
   } catch {
     return null;
   }

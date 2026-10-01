@@ -12,7 +12,7 @@ A seção `whatsappmobile` do `@unooria/design-system` publica **só o tema
 escuro** (`WaTheme = 'dark'`; o CSS traz `:root, [data-wa-theme=dark]` e nada
 mais). O PRD e os wireframes cravam "tema claro forçado" e descrevem balões
 verdes sobre fundo branco — **não existe paleta clara no pacote, e derivar uma
-aqui é proibido**, pela mesma regra do `unitube` e da exp07ef1b. O contraste do
+aqui é proibido**, pela mesma regra da `unootube` e da exp07ef1b. O contraste do
 escuro (`#D3DAE0` sobre `#101D25`, ~11:1) passa o `RNF-A11Y-001` com folga.
 
 Se um dia o pacote publicar o tema claro, é ele que muda — não este código.
@@ -101,20 +101,24 @@ O polling é de 5 s e compara só o `passoEfetivo`; quando ele diverge, relê a
 sessão inteira. Falha de rede ali é **silenciosa de propósito** — um alerta a
 cada 5 s sobre algo que não afeta o estudante seria pior que o silêncio.
 
-## As duas compensações abertas
+## As compensações abertas
 
-O pacote não publica duas coisas que esta missão precisa. As duas estão marcadas
-`(b) COMPENSAÇÃO` em `src/estilos/globals.css` ou em `componentes/glifos.tsx`, e
-as duas são PEDIDO ao `storybook-unooria` — quando chegarem por versão, o código
-local sai e o componente entra pela ponte:
+O pacote não publica quatro coisas que esta missão precisa. Todas estão marcadas
+`(b) COMPENSAÇÃO` no código (`src/estilos/globals.css`, `app/componentes/glifos.tsx`
+e `app/componentes/voz.tsx`), e todas são PEDIDO ao `storybook-unooria` — quando
+chegarem por versão, o código local sai e o componente entra pela ponte:
 
-1. **`play`/`pause`** — não há player de áudio na seção, então também não há o
-   triângulo. Sem ele, um balão de voz sem alvo de toque.
-2. **`ChatAudioBubbleWithTranscript`** — o balão de voz inteiro. É a lacuna que
-   não dá para compor: `MessageBubble` aceita texto, `.Media` e `.Document`.
+1. **`play`/`pause`** (`glifos.tsx`) — não há player de áudio na seção, então
+   também não há o triângulo. Sem ele, um balão de voz sem alvo de toque.
+2. **`ChatAudioBubbleWithTranscript`** (`voz.tsx` + `.voz`) — o balão de voz
+   inteiro. É a lacuna que não dá para compor: `MessageBubble` aceita texto,
+   `.Media` e `.Document`.
+3. **`ForwardedBadge`** (`.selo-encaminhada`) — o selo composto "Encaminhada com
+   frequência" acima do balão. O ícone `forward` existe; o selo pronto, não.
+4. **`ContagionTicker`** (`.contagio`) — a faixa de contágio ativo no topo do chat.
+   O ícone `sbAlert` existe; a faixa persistente, não.
 
-O selo de encaminhada, o anexo do laudo e o banner de contágio **não** são
-compensações: `forward`, `filePdf` e `sbAlert` existem no pacote e vêm pela
+O anexo do laudo **não** é compensação: `MessageBubble.Document` existe e vem pela
 ponte.
 
 ## Props que o pacote realmente tem

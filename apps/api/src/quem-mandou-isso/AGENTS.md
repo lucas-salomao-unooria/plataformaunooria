@@ -2,8 +2,8 @@
 
 Complementa o `AGENTS.md` de `apps/api`, que vence em conflito.
 
-Missão do 5º ano, unidade 1. A v1 saiu na ADR-114; esta é a v2.2 com o MESMO
-código. Oito mensagens num grupo de WhatsApp simulado, na matriz 2x2
+Missão do 5º ano, unidade 1. Esta é a v2.2, que substitui a v1 com o MESMO
+código (ADR-114). Oito mensagens num grupo de WhatsApp simulado, na matriz 2x2
 (verdadeira/falsa × emocional/neutra); o estudante encaminha EXATAMENTE três
 ao Mural da Turma, vota no motivo, e só então o professor abre a revelação.
 Depois, a síntese, a regra Se/Então na casca e as duas perguntas de evidência

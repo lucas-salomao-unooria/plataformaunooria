@@ -8,7 +8,8 @@ import {
 import { Reflector } from "@nestjs/core";
 import type { AuthClaims } from "../auth/claims";
 import { PrismaService } from "../prisma/prisma.service";
-import { exigirRecursoDisponivel } from "./disponibilidade";
+import type { Produto as SlugDoProduto } from "../recursos/catalogo";
+import { exigirProdutoDisponivel, exigirRecursoDisponivel } from "./disponibilidade";
 
 /**
  * A PORTA DAS FERRAMENTAS DE PROFESSOR (ADR-87).
@@ -29,6 +30,18 @@ import { exigirRecursoDisponivel } from "./disponibilidade";
  *   @Recurso("app-91-bem-estar")
  *   export class BemEstarController { ... }
  *
+ * **Produto sem experiência** (`agente-professor`) declara `@Produto(slug)` no
+ * lugar de `@Recurso(expId)`: não há linha em `experiencias` para resolver, e a
+ * pergunta é a do TETO — "este produto existe nesta rede?". Uma classe declara
+ * UM dos dois; os dois juntos lançam, porque o teto do produto já está dentro da
+ * resolução da experiência, e declarar os dois seria sugerir duas decisões onde
+ * há uma.
+ *
+ *   @Controller("agente-professor")
+ *   @UseGuards(OidcGuard, RolesGuard, DisponibilidadeGuard)
+ *   @Roles("professor")
+ *   @Produto("agente-professor")
+ *
  * Lê as tabelas fora de transação de tenancy de propósito: `disponibilidades`,
  * `experiencias` e `escolas` estão todas FORA da RLS (é configuração da rede,
  * não dado de estudante), então não há contexto a abrir — e abrir um aqui, num
@@ -39,6 +52,11 @@ export const RECURSO_KEY = "recurso-da-rota";
 
 /** Declara de que experiência esta classe (ou rota) é a superfície. */
 export const Recurso = (expId: string) => SetMetadata(RECURSO_KEY, expId);
+
+export const PRODUTO_KEY = "produto-da-rota";
+
+/** Declara de que PRODUTO esta classe é a superfície — só para produto sem experiência. */
+export const Produto = (produto: SlugDoProduto) => SetMetadata(PRODUTO_KEY, produto);
 
 export const SEM_DISPONIBILIDADE_KEY = "sem-disponibilidade";
 
@@ -74,13 +92,23 @@ export class DisponibilidadeGuard implements CanActivate {
       ctx.getHandler(),
       ctx.getClass(),
     ]);
-    /* LANÇA em vez de liberar. Guard montado sem `@Recurso` é erro de
-       programação, e o modo de falhar de "liberar em silêncio" é justamente o
-       que este arquivo existe para impedir: o produto deixa de poder ser
-       desligado e nada acusa. 500 na primeira requisição é o retorno certo. */
-    if (!expId) {
+    const produto = this.reflector.getAllAndOverride<SlugDoProduto | undefined>(PRODUTO_KEY, [
+      ctx.getHandler(),
+      ctx.getClass(),
+    ]);
+    /* LANÇA em vez de liberar. Guard montado sem `@Recurso` nem `@Produto` é
+       erro de programação, e o modo de falhar de "liberar em silêncio" é
+       justamente o que este arquivo existe para impedir: o produto deixa de
+       poder ser desligado e nada acusa. Recusar na primeira requisição é o
+       retorno certo. */
+    if (!expId && !produto) {
       throw new ForbiddenException(
-        "DisponibilidadeGuard sem @Recurso: declare de que experiência esta rota é a superfície",
+        "DisponibilidadeGuard sem @Recurso nem @Produto: declare de que experiência ou produto esta rota é a superfície",
+      );
+    }
+    if (expId && produto) {
+      throw new ForbiddenException(
+        "DisponibilidadeGuard com @Recurso E @Produto: declare um só (o teto do produto já está na resolução da experiência)",
       );
     }
 
@@ -93,7 +121,8 @@ export class DisponibilidadeGuard implements CanActivate {
        duas respostas para a mesma pergunta. */
     if (!auth.escolaId) return true;
 
-    await exigirRecursoDisponivel(this.prisma, auth.escolaId, expId);
+    if (produto) await exigirProdutoDisponivel(this.prisma, auth.escolaId, produto);
+    else if (expId) await exigirRecursoDisponivel(this.prisma, auth.escolaId, expId);
     return true;
   }
 }

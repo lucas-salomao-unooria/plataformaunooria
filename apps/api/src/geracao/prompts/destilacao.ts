@@ -159,7 +159,7 @@ ${tarefaDaPergunta}
      equilíbrio do topo, linguagem direta para quem vai conduzir o debate) por
      que a bolha não se formaria, e proponha de 2 a 3
      "reformulacoes_sugeridas": versões da pergunta que criam disputa real.
-   - Quando ok = true, "aviso" deve ser null e "reformulacoes_sugeridas" vazio.
+   - Quando ok = true, "aviso" deve ser uma string vazia ("") e "reformulacoes_sugeridas" vazio.
    Copie o equilíbrio da candidata escolhida para o campo "equilibrio" do topo.
 
 3) Destile os dois lados do antagonismo DA CANDIDATA ESCOLHIDA (ladoA e ladoB):
@@ -197,7 +197,7 @@ ${tarefaDaPergunta}
    REGRAS DURAS:
    - Julgue pela LINGUAGEM e pelo enquadramento de cada lado, não por juízo moral
      sobre eles. Os dois lados são defensáveis.
-   - As justificativas serão MOSTRADAS ao estudante de 13 anos no relatório final:
+   - As justificativas serão MOSTRADAS ao estudante de ${PUBLICO_ALVO.idade} anos no relatório final:
      escreva em português simples, sem jargão de psicologia. Cada estudante lê a
      justificativa DO PERFIL DELE, então as quatro precisam funcionar sozinhas.
    - Complete a frase "o lado que fala essa língua é X porque…": a justificativa
@@ -215,7 +215,7 @@ ${tarefaDaPergunta}
 
 ${GUARDRAILS}
 
-Responda apenas o JSON do schema. Português do Brasil.
+Português do Brasil.
 `.trim();
 
   return provider.generateJson({

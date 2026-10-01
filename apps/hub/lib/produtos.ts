@@ -18,6 +18,14 @@
  *
  * Nada aqui aparece para o estudante: o aparelho não menciona aula, plano nem
  * professor (regra de ouro 1 do CLAUDE.md).
+ *
+ * **Produto SEM card** (`PRODUTOS_SEM_CARD`): o agente de IA do professor. A
+ * superfície dele é o botão flutuante do layout de `/professor`, não um card na
+ * home (`docs/regras/agente-professor.md`). Ele mora numa lista SEPARADA, e não
+ * como `PRODUTOS` com uma marca "sem card", porque a home itera `PRODUTOS` e o
+ * `ICONES` de `components/cartao-produto.tsx` é exaustivo sobre o slug: na mesma
+ * lista, ele viraria card na primeira tela que esquecesse o filtro. Aqui ele só
+ * dá NOME ao interruptor do painel da Unooria (`buscarProduto`).
  */
 
 import { MISSOES_DISPONIVEIS } from "@/lib/entre-redes/catalogo";
@@ -93,9 +101,26 @@ export const PRODUTOS: Produto[] = [
   },
 ];
 
-export function buscarProduto(slug: Produto["slug"]): Produto {
-  const produto = PRODUTOS.find((item) => item.slug === slug);
+/** A COPY de um produto — o que o painel da Unooria precisa para nomear o interruptor. */
+export type CopyDoProduto = Pick<Produto, "nome" | "chamada" | "descricao"> & { slug: SlugDeProduto };
+
+/** Os produtos que existem e NÃO têm card na home do professor. */
+export const PRODUTOS_SEM_CARD = [
+  {
+    slug: "agente-professor",
+    nome: "Agente de IA do professor",
+    chamada: "Dúvidas sobre a BNCC e o material",
+    descricao:
+      "Um chat no canto das telas do professor, que responde sobre a BNCC — inclusive a de Computação — e sobre os livros da Unooria, citando a fonte e a página.",
+  },
+] as const satisfies ReadonlyArray<{ slug: string; nome: string; chamada: string; descricao: string }>;
+
+/** Todo slug de produto que o hub conhece — a cópia do `PRODUTOS` da api (`src/recursos/catalogo.ts`). */
+export type SlugDeProduto = Produto["slug"] | (typeof PRODUTOS_SEM_CARD)[number]["slug"];
+
+export function buscarProduto(slug: SlugDeProduto): CopyDoProduto {
+  const produto = [...PRODUTOS, ...PRODUTOS_SEM_CARD].find((item) => item.slug === slug);
   // O catálogo é estático: um slug ausente é erro de programação, não de dado.
   if (!produto) throw new Error(`Produto desconhecido: ${slug}`);
-  return produto;
+  return { slug: produto.slug, nome: produto.nome, chamada: produto.chamada, descricao: produto.descricao };
 }

@@ -16,8 +16,8 @@ e a primeira em que o dado do MURAL é do computador (E13, o gatilho da ADR-111)
 - **Atividade = a COBERTURA; rodada = o "Zerar".** O gate da turma diz qual
   (cobertura, rodada) está em andamento, e a sessão é por essa dupla. Zerar
   sobe a rodada e volta à exploração **sem apagar nada** — a rodada passada é o
-  que o painel de habilidades mostra (ADR-112), e o zerar que apagava (o da
-  v1 da exp05ef1b, ADR-114) é o que a evidência não pode ter. Homologar um tema novo DESATIVA a
+  que o painel de habilidades mostra (ADR-112): zerar que apaga é o que a
+  evidência não pode ter (ADR-114). Homologar um tema novo DESATIVA a
   cobertura anterior (ela fica) e abre a rodada 1 da nova. Uma ativa por turma:
   índice único PARCIAL, que o Prisma não enxerga (não está no schema nem no
   `migrate diff`).
@@ -49,7 +49,7 @@ e a primeira em que o dado do MURAL é do computador (E13, o gatilho da ADR-111)
   `par_rotulo` (o nome da equipe, ou o primeiro nome por `rotulosSemRepeticao`).
   Nunca `equipe:<id>`: o `PUT` das equipes recria os ids, e o Mural de quem já viu
   a sala perderia o par. Renomear a equipe depois não muda o rótulo.
-- **O painel conta por computador** (como o UnooTube). O "X de Y computadores"
+- **O painel conta por computador.** O "X de Y computadores"
   tira o Y de `computadoresDaMontagem`, porque o colapso conta também quem faltou.
   O representante do computador é quem PUBLICOU antes de quem só entrou.
 - **O recorte da ADR-108**: `legenda` e `reflexaoTexto` só vêm preenchidos com
@@ -71,8 +71,8 @@ e a primeira em que o dado do MURAL é do computador (E13, o gatilho da ADR-111)
   ler. As contas da ficção (`ARROBAS_DA_FICCAO`) podem ser citadas: citar a fonte
   É o critério editorial que a EF07CO11 procura.
 - **Code points dos dois lados**: Zod com `[...s].length`, a coluna `chars` com o
-  mesmo número, e o CHECK `chars = char_length(texto)`. O defeito da v1 da
-  exp05ef1b (Zod em `length`, banco em `char_length`) não existe aqui.
+  mesmo número, e o CHECK `chars = char_length(texto)`. Zod em `length` com banco
+  em `char_length` divergem em emoji (dois code units, um code point).
 - **As imagens** (`midia.service.ts`) são do professor, INCREMENTAIS (até duas
   novas por chamada: o BFF corta em 30 s), com o nome do arquivo = hash da
   descrição em `experiencias/exp07ef1b/selecao/` — a mesma cena serve a rede
@@ -93,7 +93,7 @@ a (cobertura, rodada) do gate — por isso o zerar tranca a resposta atrasada.
 
 O "Podcast de Recapitulação" do PRD (Lucas e Clara, ~3m45s) — o roteiro é o do
 sheet aprovado (`podcast.ts`). O texto fala com o estudante, mas a decisão do
-dono do produto (2026-09-26) é que ele é do professor, que toca à turma depois
+dono do produto é que ele é do professor, que toca à turma depois
 da aula se quiser: rotas em `a-selecao-turmas.controller.ts`, nenhuma de
 estudante.
 

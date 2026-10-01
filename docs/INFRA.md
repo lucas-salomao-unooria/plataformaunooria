@@ -28,6 +28,10 @@ Este repo NÃO cria recursos GCP. O repo de infra provisiona, por contrato:
 | Service Accounts | `{contrato}-api` (Vertex, Pub/Sub publisher, `objectAdmin` nos buckets de assets e de planos), `{contrato}-run` (hub/storybook), `{contrato}-push` (assina o push da telemetria) | |
 | Load Balancer | um só, global: hub em `{hub_domain}`, api em `{api_domain}`, bundles em `{exp_domain}`, assets em `{assets_domain}` — mesmo IP, host rules | DNS |
 | WIF p/ GitHub Actions | pool `github` | deploy.yml (sem chave JSON) |
+| Bucket **agente** | `{project_id}-agente-professor` (privado, versionado; prefixos `bncc/`, `livros/`, `habilidades/`, `metadados/`, `import-erros/`) | `apps/agente-professor/ingestao` (fora do Terraform) |
+| Data stores (Vertex AI Search, `global`) | `agente-professor-habilidades` (estruturado, schema próprio), `agente-professor-acervo` (parser de layout, chunk de 500 tokens com títulos) | o agente (`AGENTE_DATASTORE_*`) |
+| Agent Engine | `agente-professor` em `us-east1` (dev/hml; prd a decidir) — **nasce só com `agente_professor_imagem` preenchida** (apply 2) | api (`AGENTE_PROFESSOR_ENGINE`), deploy.yml (`PATCH` da `imageUri`, `vars.AGENTE_PROFESSOR_ENGINE`) |
+| SA do agente | `{contrato}-agente` (id de SA tem teto de 30 caracteres) | o Agent Engine |
 
 Variáveis que a app espera: ver `.env.example`. Terraform injeta via Cloud Run env/secrets.
 `OIDC_ISSUER`/`OIDC_JWKS_URI` NÃO são segredo (são URLs públicas do hub) e vão
@@ -167,7 +171,7 @@ não abre com alguém achando que configurou a documentação é pior que nenhum
   bundles como qualquer experiência — **sem serviço novo e sem bucket novo**. Não
   produz documento autoral, não chama IA (zero token, zero quota) e não precisa
   de fila: o perfil é função pura, calculada no request de conclusão. Três
-  tabelas no Postgres (`vila_sessoes`, `vila_perfis`, `vila_bolhas`), todas com
+  tabelas no Postgres (`app_70_sessoes`, `app_70_perfis`, `app_70_bolhas`), todas com
   `escola_id` + RLS. **Nenhuma env.**
   **Tamanho, MEDIDO (2026-08-26)**: o `payload` de uma partida dá ~1,1 KB de
   JSON (1,5 KB na coluna JSONB). A estimativa anterior — centenas de MB a 2,4 GB
@@ -192,7 +196,7 @@ não abre com alguém achando que configurou a documentação é pior que nenhum
   ela é da plataforma inteira, não de um módulo.
 
 - **Check-in de bem-estar** (app-91, 2026-08): sem recurso novo de infra —
-  duas tabelas com RLS (`bem_estar_ciclos`, `bem_estar_checkins`; a migration
+  duas tabelas com RLS (`app_91_ciclos`, `app_91_checkins`; a migration
   dá `GRANT` à `app_runtime`) e IA pelo mesmo Vertex/quota do professor. O
   texto livre do professor vai ao Vertex (endpoint `global`): consta do DPA
   junto com o resto da IA. Nenhum bucket, nenhuma rota pública.
@@ -210,6 +214,40 @@ IA NÃO fica em São Paulo, e isso precisa constar do contrato/DPA da rede. Volt
 Em dev (host ou container) a mesma cadeia lê o ADC do
 `gcloud auth application-default login` — os compose montam esse arquivo em
 `/adc` como somente leitura.
+
+**Agente de IA do professor** (2026-09-30, ADR-126/127/128; contrato das quatro
+pontas em `docs/regras/agente-professor.md`; passo a passo em
+`RUNBOOK-AGENTE-PROFESSOR.md` no repo de infra). O que a app espera:
+
+- **Envs da api**: `AGENTE_PROFESSOR_MODO` — `desligado` enquanto o engine não
+  existe (ausente também é `desligado`: a api sobe e o chat responde
+  `AGENTE_INDISPONIVEL`), `agent-engine` depois do apply 2 — e
+  `AGENTE_PROFESSOR_ENGINE` com o resource name completo
+  (`projects/<p>/locations/us-east1/reasoningEngines/<id>`). `mock`/`local` são
+  recusados em produção.
+- **IAM**: a SA da api com um papel custom NO engine — `reasoningEngines.get/query`
+  e `sessions.get/update` (a renovação do `expireTime` a cada mensagem sustenta o
+  histórico sem limite; sem `sessions.update` sai `agente-professor.renovacao-falhou`).
+  O CI com `reasoningEngines.get/update` no engine e `iam.serviceAccountUser` na
+  SA do agente. A SA do agente: `aiplatform.user`, `discoveryengine.viewer`,
+  log/trace/métrica e leitura do bucket.
+- **Timeout do Cloud Run da api ≥ 240 s** (a api limita o stream a 240 s; o hub
+  corta em 300 s). O LB com NEG serverless tem 60 min fixos.
+- **Cloud Armor**: a 921150 (CR/LF) fora de `/agente-professor/` (host da api) e
+  de `/api/plataforma/agente-professor/` (host do hub). As outras assinaturas
+  seguem valendo.
+- **Fora do Terraform**: os service agents do Discovery Engine e do Agent Engine
+  (`gcloud beta services identity create`, uma vez por projeto), a importação dos
+  documentos (`ingestao/`) e o **aumento de quota do Agent Engine** (90
+  `streamQuery` e 300 eventos de sessão por minuto por projeto e região) antes do
+  go-live.
+- **Ordem**: apply 1 (tudo menos o engine) → ingestão → CI publica a imagem →
+  apply 2 (engine, IAM nele, api com `agent-engine`) → daí em diante o CI faz o
+  `PATCH` da `imageUri` (o Terraform tem `ignore_changes` nela).
+- **Alerta de p95 da api (10 s)**: os streams o inflam, e
+  `run.googleapis.com/request_latencies` não tem rótulo de caminho. A métrica de
+  log de distribuição que exclui `/agente-professor/` está proposta no RUNBOOK e
+  **não aplicada**.
 
 **Telemetria: fica no Postgres, e sem serviço novo** (decisão de 2026-08-27).
 Avaliamos mandar o canal analítico para o BigQuery por subscription nativa do
@@ -262,7 +300,7 @@ Deploy (CI deste repo):
 3. hub/api mudou → `docker build` + push direto no Artifact Registry (sem Cloud
    Build) → `gcloud run deploy` (revisions = rollback)
 4. exp mudou → `gcloud storage rsync -r dist/ gs://{contrato}-exp/{expId}/{versao}/`
-   e `PUT {api}/experiencias/{expId}` (admin-contrato) com o conteúdo do
+   e `PUT {api}/experiencias/{expId}` (`gestor_contrato` ou `admin`) com o conteúdo do
    `public/experiencia.json` — é esse upsert que o hub lê para montar a URL do
    bundle. Feito por `apps/hub/scripts/publicar-manifesto.mjs`, que assina um
    token de 5 min com `token-signing-key` (vars `API_URL`, `HUB_ORIGIN`).
