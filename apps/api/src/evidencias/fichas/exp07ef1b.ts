@@ -15,9 +15,10 @@ import type { FichaPedagogica } from "./tipos";
  * - **EF07CO08** (empatia sobre opiniões divergentes na web):
  *   - `p2` — a enquete P2, sobre o Mural.
  *
- * O texto das perguntas é VERBATIM do PO (recebido em 2026-09-25): a mensagem
- * de contexto da Amara e a enquete, no mesmo enunciado, separadas por uma linha
- * em branco — a experiência as desenha como dois balões da DM. A plataforma
+ * O texto das perguntas é VERBATIM do PO, na versão de 2026-10-01: uma frase
+ * só, sem a abertura da Amara ("Antes de fechar…", "Última!") nem o rótulo da
+ * enquete, que a versão de 2026-09-25 tinha. Sem linha em branco no enunciado,
+ * a experiência mostra a enquete sem balão de contexto antes. A plataforma
  * EMBARALHA as alternativas a cada leitura, para toda ficha
  * (`regras.ts#embaralhar`, ADR-118): numa enquete de toque único, a primeira
  * opção levaria o toque de quem tem pressa.
@@ -42,12 +43,12 @@ export const FICHA_EXP07EF1B: FichaPedagogica = {
     {
       id: "p1",
       enunciado:
-        "Antes de fechar, uma curiosidade rápida! Imagina que alguém da escola viu os Stories que você publicou e mandou: 'Valeu pelo resumo! Agora já sei tudo sobre o que aconteceu.' O que você diria?\n\nSua resposta seria...",
+        "Imagina que alguém da escola viu os Stories que você publicou e mandou: 'Valeu pelo resumo! Agora já sei tudo sobre o que aconteceu.' O que você diria?",
       alternativas: [
         {
           id: "A1",
           texto:
-            "Cuidado — eu só escolhi 3 posts de vários que tinham. O que eu publiquei mostra um lado, não a história toda.",
+            "Cuidado, eu só escolhi 3 posts de vários que tinham. O que eu publiquei mostra um lado, não a história toda.",
           status: "atingiu",
         },
         {
@@ -65,7 +66,7 @@ export const FICHA_EXP07EF1B: FichaPedagogica = {
     {
       id: "p2",
       enunciado:
-        "Última! Lembra quando você viu os Stories do colega no Mural e a história parecia outra? Os dois partiram do mesmo feed. O que faz mais sentido pensar sobre isso?\n\nO que você acha?",
+        "Lembra quando você viu os Stories do colega no Mural e a história parecia outra? Os dois partiram do mesmo feed. O que faz mais sentido pensar sobre isso?",
       alternativas: [
         {
           id: "B1",

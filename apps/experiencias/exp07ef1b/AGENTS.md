@@ -4,7 +4,7 @@ Complementa o `AGENTS.md` da raiz e o de `apps/experiencias`.
 
 | Manifesto | Dev | DS | api | e2e |
 |---|---|---|---|---|
-| `exp07ef1b` · 7EF · unidade 1 · `entre-redes` · `viewport` 375×812 · `permissoes: ["forms"]` · versão **1.0.1** (maior que a do dono anterior do caminho no bucket, o Eco — ADR-113) | `:5179`, hub `/exp/exp07ef1b` | `@edu/ui/ds-insta` (clone) + `@edu/ui/ds` (escola) | `apps/api/src/a-selecao` ↔ `/a-selecao/*`; enquetes em `/evidencias/exp07ef1b/perguntas/*` (E14) | `scripts/e2e/estudante/11-a-selecao.mjs` (dois estudantes + a professora) |
+| `exp07ef1b` · 7EF · unidade 1 · `entre-redes` · `viewport` 375×812 · `permissoes: ["forms"]` · versão **1.0.2** (maior que a do dono anterior do caminho no bucket, o Eco — ADR-113) | `:5179`, hub `/exp/exp07ef1b` | `@edu/ui/ds-insta` (clone) + `@edu/ui/ds` (escola) | `apps/api/src/a-selecao` ↔ `/a-selecao/*`; enquetes em `/evidencias/exp07ef1b/perguntas/*` (E14) | `scripts/e2e/estudante/11-a-selecao.mjs` (dois estudantes + a professora) |
 
 ## O passo manda na tela
 
