@@ -485,6 +485,28 @@ async function main() {
     new Map(professores.map((p) => [p.turma.nome, p.id])),
   );
 
+  /**
+   * Professor em TODAS as turmas de `ESCOLA_NOME`, de propósito — é a conta
+   * que serve para exercitar telas que listam/filtram por turma sem precisar
+   * logar com N professores diferentes. Nasce por ÚLTIMO entre as pessoas do
+   * seed: qualquer chamada anterior a `fabrica.pessoa()` consome o próximo
+   * nome da sequência determinística, e inserir esta no meio deslocaria o
+   * nome/CPF de todo mundo gerado depois dela num reseed.
+   */
+  const docenteDeTodas = fabrica.pessoa("prof.");
+  const criadoDocenteDeTodas = await upsertPessoa(docenteDeTodas, "professor");
+  await lotar(ESCOLA_ID, criadoDocenteDeTodas.id, "professor", true);
+  for (const turma of turmas) {
+    await matricular(turma.id, criadoDocenteDeTodas.id, "professor");
+  }
+  anotar(
+    docenteDeTodas,
+    `professor (${turmas.length} turmas)`,
+    ESCOLA_NOME,
+    turmas.map((t) => t.nome).join(" + "),
+    turmas.map((t) => t.serie).join(" + "),
+  );
+
   escreverCredenciais();
 
   const total = await prisma.user.count();
