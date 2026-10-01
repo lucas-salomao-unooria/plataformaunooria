@@ -19,7 +19,9 @@ const EfetivoSchema = z.object({
 });
 
 export const RecursosEfetivosSchema = z.object({
-  /** Um por produto do vocabulário, sempre os quatro — nunca só os ligados. */
+  /** Um por produto do vocabulário, SEMPRE todos (hoje cinco) — nunca só os
+   *  ligados. Inclui o produto sem experiência (`agente-professor`): é por aqui
+   *  que o hub decide montar o botão flutuante. */
   produtos: z.record(z.enum(PRODUTOS), EfetivoSchema),
   /** Uma por experiência do catálogo desta instalação. */
   experiencias: z.record(z.string(), EfetivoSchema),

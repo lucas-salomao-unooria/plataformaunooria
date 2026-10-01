@@ -110,3 +110,32 @@ timbre → voz é a única tradução, e vive no `vertex.provider.ts`.
 `generateImage`: um MP3 de silêncio seria pior que a ausência (o estudante
 apertaria o play e concluiria que o áudio quebrou). Quem chama cai na
 transcrição, que já está na tela por acessibilidade.
+
+## O segundo vendor: o Agent Engine (agente de IA do professor)
+
+`agent-engine.client.ts` é a ÚNICA peça da api que conhece o Vertex AI Agent
+Engine; o resto fala com `AgenteProfessorPort` (`agente-professor.port.ts`,
+token `AGENTE_PROFESSOR`). Contrato das quatro pontas:
+`docs/regras/agente-professor.md`. **Fica aqui, e não no módulo, pela mesma
+regra do `AiProvider`**: nenhum vendor de IA fora de `src/ai`. É porta própria,
+e não método no `AiProvider`, porque o modelo, as ferramentas e a instrução
+moram NO AGENTE (Python/ADK); a api só conduz a sessão. Por isso o
+`MedidorDeProvider` não o mede — a métrica dele é o log `agente-professor.turno`.
+
+- **Um cliente, dois alvos**: `agent-engine` (`:query` / `:streamQuery?alt=sse`,
+  ADC) e `local` (o shim, mesmo corpo, sem token). `mock` é o da suíte e2e
+  (turno enlatado; os parciais trazem `tokens: 999` de propósito, para provar que
+  não entram na soma). `desligado` é o PADRÃO, em qualquer `NODE_ENV` — ao
+  contrário do `AI_PROVIDER`: o engine é provisionado por contrato em momentos
+  diferentes, e derrubar a api inteira por falta dele tiraria todos os produtos
+  do ar para proteger um. `mock`/`local` não sobem em produção (Zod).
+- **`fetch` e `Agent` do MESMO pacote `undici`** (ver `vertex.provider.ts`).
+- **O parser decide por LINHA, não pelo `content-type`**: NDJSON e `data:`
+  convivem no mesmo corpo. Linha que não é JSON é contada e vira log, nunca
+  derruba o turno.
+- **Renovar a sessão exige a API NATIVA** (`PATCH v1beta1/.../sessions/{id}?updateMask=expireTime`):
+  o `:query` do ADK não tem método de atualizar. Isso pede à SA da api mais que
+  `reasoningEngines.query` — sem a permissão, a renovação falha em log
+  (`agente-professor.renovacao-falhou`) e a sessão vive o `expire_time` da
+  criação. `expire_time` vai pelos `**kwargs` do `async_create_session`; se o
+  engine o recusar, a criação repete SEM ele (TTL padrão de 365 dias).

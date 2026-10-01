@@ -127,6 +127,11 @@ describe("GET /recursos/painel", () => {
        sob outro. */
     expect(bemEstar?.experiencias.map((e) => e.expId)).toContain("app-91-bem-estar");
     expect(bemEstar?.experiencias.map((e) => e.expId)).not.toContain(VILA);
+    /* O produto SEM experiência aparece com a lista VAZIA — e com interruptor
+       próprio: é o botão flutuante do professor que ele liga e desliga. */
+    const agente = r.produtos.find((p) => p.slug === "agente-professor");
+    expect(agente?.experiencias).toEqual([]);
+    expect(agente?.efetivo).toMatchObject({ ligado: true, origem: "padrao" });
     // E cada uma traz a versão que o hub monta hoje.
     expect(entreRedes?.experiencias[0]?.versaoAtiva).toMatch(/^\d+\.\d+\.\d+$/);
   });
