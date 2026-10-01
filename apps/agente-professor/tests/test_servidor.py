@@ -152,3 +152,32 @@ async def test_falha_do_modelo_vira_evento_com_error_code_e_o_stream_termina(
 async def test_saude(busca: DiscoveryEngineFalso) -> None:
     async with _cliente(LlmRoteirizado(roteiro=[])) as cliente:
         assert (await cliente.get("/healthz")).json() == {"status": "ok"}
+
+
+async def test_corpo_sem_content_type_json_como_o_agent_engine_manda(
+    busca: DiscoveryEngineFalso,
+) -> None:
+    # Medido no primeiro deploy em dev (2026-10-01): o engine repassa o corpo ao
+    # container sem `Content-Type: application/json`, e o FastAPI, validando direto,
+    # respondia 400 "Input should be a valid dictionary". O shim local passava liso
+    # porque o httpx manda o cabeçalho.
+    corpo = json.dumps(
+        {"class_method": "async_create_session", "input": {"user_id": "u-1", "state": {}}}
+    )
+    async with _cliente(LlmRoteirizado(roteiro=[])) as cliente:
+        for conteudo, tipo in (
+            (corpo, "text/plain"),
+            (corpo, "application/octet-stream"),
+            (json.dumps(corpo), "application/json"),  # JSON codificado duas vezes
+        ):
+            resposta = await cliente.post(
+                "/api/reasoning_engine", content=conteudo, headers={"content-type": tipo}
+            )
+            assert resposta.status_code == 200, (tipo, resposta.text)
+            assert resposta.json()["output"]["user_id"] == "u-1"
+        lixo = await cliente.post(
+            "/api/stream_reasoning_engine",
+            content="não é json",
+            headers={"content-type": "text/plain"},
+        )
+        assert lixo.status_code == 400
