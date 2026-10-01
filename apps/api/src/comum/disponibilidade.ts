@@ -107,6 +107,30 @@ export async function disponibilidadeDoProduto(
   return resolverProduto(linhas, produto, cadeia);
 }
 
+/** A mensagem das ferramentas de PROFESSOR: sem disfarce a proteger, ela diz o que houve. */
+const INDISPONIVEL_PARA_A_REDE = "Este recurso não está disponível para a sua rede.";
+
+/**
+ * Recusa a entrada quando o PRODUTO está desligado nesta escola — a porta do
+ * produto SEM experiência (`agente-professor`), que não tem linha em
+ * `experiencias` para o `exigirRecursoDisponivel` resolver.
+ *
+ * Mesma cadeia (escola → regional → contrato → padrão) e mesma regra de
+ * ausência de linha = LIGADO, porque é o MESMO resolvedor
+ * (`disponibilidadeDoProduto` → `resolverProduto`). Uma segunda leitura da
+ * tabela, com regra própria, seria o painel dizendo "desligado" e a porta
+ * abrindo.
+ */
+export async function exigirProdutoDisponivel(
+  tx: Prisma.TransactionClient,
+  escolaId: string,
+  produto: Produto,
+): Promise<void> {
+  const efetivo = await disponibilidadeDoProduto(tx, escolaId, produto);
+  if (efetivo.ligado) return;
+  throw new ForbiddenException({ codigo: RECURSO_INDISPONIVEL, mensagem: INDISPONIVEL_PARA_A_REDE });
+}
+
 /**
  * Recusa a entrada quando o recurso não está disponível nesta rede.
  *
@@ -147,8 +171,6 @@ export async function exigirRecursoDisponivel(
   throw new ForbiddenException({
     codigo: RECURSO_INDISPONIVEL,
     mensagem:
-      experiencia?.publico === "professor"
-        ? "Este recurso não está disponível para a sua rede."
-        : "Esta missão não está aberta agora.",
+      experiencia?.publico === "professor" ? INDISPONIVEL_PARA_A_REDE : "Esta missão não está aberta agora.",
   });
 }

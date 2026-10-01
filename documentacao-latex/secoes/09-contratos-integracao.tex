@@ -8,7 +8,9 @@ Há quatro fronteiras nesta plataforma cuja quebra é caríssima, porque atinge
 código que já está publicado e não pode ser atualizado em conjunto: o protocolo
 \cd{postMessage} entre hub e experiência, o formato do evento de telemetria, o
 manifesto de experiências e a interface do \emph{provider} de IA. Este capítulo
-especifica os quatro e a política de versionamento de cada um.
+especifica os quatro e a política de versionamento de cada um --- e, desde
+2026-09-30, um quinto, que tem quatro pontas em vez de duas: o do agente de IA do
+professor (Seção~\ref{sec:contrato-agente}).
 
 \begin{regra}
 \textbf{Mudança em contrato exige cuidado extremo e atualização deste
@@ -590,6 +592,152 @@ são passageiros e seguem no laço. Sem essa distinção o corpo de erro do
 \emph{vendor} --- que não tem \cd{candidates} --- virava \enquote{resposta
 vazia}, e a causa real morria atrás de uma mensagem genérica.
 \end{regra}
+
+\section{Contrato do agente de IA do professor}
+\label{sec:contrato-agente}
+
+O agente (\adrr{ADR-126}) é o único contrato da plataforma com \textbf{quatro
+pontas}: o agente em Python (\arq{apps/agente-professor}), a api
+(\arq{src/agente-professor} + \arq{src/ai/agent-engine.client.ts}), o hub (o chat
+flutuante e a rota de \emph{stream}) e a infraestrutura (o repositório de
+fundação). A fonte normativa é \arq{docs/regras/agente-professor.md}; esta seção
+o resume para quem lê a arquitetura, e os \emph{payloads} estão no
+Apêndice~\ref{ap:payloads}.
+
+\begin{lstlisting}[language=tsunoo, caption={\arq{apps/api/src/ai/agente-professor.port.ts} --- a segunda porta de \arq{src/ai} (abreviado)}, label={lst:agenteport}]
+export interface EventoAgente {        // um Event do ADK, NORMALIZADO
+  autor: string;                       // "user" ou o nome do agente
+  parcial: boolean;                    // partial=true do ADK em modo SSE
+  textos: string[];                    // sem as partes de raciocinio
+  chamadasDeFerramenta: Array<{ nome: string; args: Record<string, unknown> }>;
+  respostasDeFerramenta: Array<{ nome: string; resposta: unknown }>;
+  estadoDelta?: Record<string, unknown>;   // por aqui chega titulo_conversa
+  tokens?: number;                     // usage_metadata; so vale nos NAO parciais
+  erro?: { codigo: string; mensagem?: string };
+}
+
+export interface AgenteProfessorPort {
+  readonly modo: "agent-engine" | "local" | "mock" | "desligado";
+  criarSessao(usuarioId: string, estado: Record<string, unknown>,
+              expiraEm?: Date): Promise<{ sessaoId: string }>;
+  lerSessao(usuarioId: string, sessaoId: string): Promise<SessaoAgente>;
+  apagarSessao(usuarioId: string, sessaoId: string): Promise<void>; // idempotente
+  renovarSessao?(sessaoId: string, expiraEm: Date): Promise<void>;  // so agent-engine
+  enviar(usuarioId: string, sessaoId: string, texto: string,
+         signal: AbortSignal): AsyncIterable<EventoAgente>;
+}
+\end{lstlisting}
+
+\begin{regra}
+\textbf{Só \arq{agent-engine.client.ts} conhece o engine}, pela mesma regra do
+\cd{AiProvider}. É porta própria, e não um método a mais no \cd{AiProvider},
+porque modelo, ferramentas e instrução moram no agente: a api só conduz a
+sessão. \textbf{Um cliente, dois alvos}: \cd{agent-engine} (\cd{:query} e
+\cd{:streamQuery?alt=sse} do Agent Engine, com o ADC) e \cd{local} (o
+\emph{shim} de \arq{apps/agente-professor}, que expõe O MESMO contrato em
+\rota{/api/reasoning\_engine} e \rota{/api/stream\_reasoning\_engine}, sem
+\emph{token}). \cd{mock} é o da suíte e2e; \cd{desligado} é o padrão.
+\end{regra}
+
+\subsection{O que a api pede ao engine}
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
+\toprule
+\headrow \thd{Chamada} & \thd{Uso}\\
+\midrule
+\cd{async\_create\_session} (\cd{:query}) & Cria a sessão com
+  \cd{user\_id = users.id}, o estado \cd{\{nome\_professor\}} e
+  \cd{expire\_time} distante pelos \cd{**kwargs}. Se o engine recusar o campo, a
+  criação repete sem ele (TTL padrão de 365 dias).\\
+\zebra \cd{async\_get\_session} (\cd{:query}) & Monta o histórico da tela (só o
+  texto do professor e o texto FINAL do agente) e lê o título quando o
+  \emph{stream} terminou sem ele. \enquote{Não existe} vira 404 e apaga a linha.\\
+\cd{async\_delete\_session} (\cd{:query}) & Apagar. Idempotente: sessão que já
+  não existe não é erro.\\
+\zebra \cd{async\_stream\_query} (\cd{:streamQuery?alt=sse}) & O turno, com
+  \cd{run\_config.streaming\_mode = "sse"}. A resposta vem em linhas \cd{data:}
+  \emph{ou} NDJSON --- o cliente decide por linha, e linha que não é JSON é
+  contada e vai a log, sem derrubar o turno.\\
+\cd{PATCH v1beta1/\ldots/sessions/\{id\}?\B updateMask=expireTime} & A renovação
+  depois de cada turno entregue. É a API NATIVA: o \cd{:query} do ADK não tem
+  método de atualizar sessão, e a SA da api precisa de \cd{sessions.update}.
+  Falha é só log (\cd{agente-professor.renovacao-falhou}).\\
+\bottomrule
+\end{tabularx}
+
+\subsection{As chaves de estado e as ferramentas}
+
+\begin{tabularx}{\linewidth}{@{}L{30mm}L{30mm}X@{}}
+\toprule
+\headrow \thd{Chave} & \thd{Quem escreve} & \thd{Quem lê}\\
+\midrule
+\cd{nome\_professor} & a api, na criação (primeiro nome de
+  \cd{users.display\_name}) & a instrução do agente\\
+\zebra \cd{titulo\_conversa} & \textbf{o agente}, com o próprio LLM, depois do
+  primeiro turno & a api (no \cd{actions.state\_delta} do \emph{stream}, ou numa
+  leitura da sessão) e o hub\\
+\bottomrule
+\end{tabularx}
+
+As duas ferramentas são de \emph{data store} (\adrr{ADR-127}).
+\cd{buscar\_habilidades} consulta o estruturado com filtro exato e paginação;
+\cd{buscar\_acervo} devolve trechos dos PDFs, e as chaves de cada trecho ---
+\cd{titulo}, \cd{pagina\_inicio}, \cd{pagina\_fim}, \cd{trecho}, \cd{fonte\_id}
+--- \textbf{são lidas pela api} para o evento \cd{fontes}. Renomear uma delas sem
+mudar a api junto faz as fontes sumirem da tela, sem erro.
+
+\subsection{O que a api emite ao navegador}
+
+\rota{POST /agente-professor/conversas/:id/mensagens} \cd{\{ texto \}} (1 a 4.000
+caracteres) responde \cd{text/event-stream} (\adrr{ADR-128}):
+
+\begin{tabularx}{\linewidth}{@{}L{18mm}X@{}}
+\toprule
+\headrow \thd{\cd{event:}} & \thd{\cd{data:}}\\
+\midrule
+\cd{delta} & \cd{\{ texto \}} --- dos eventos parciais, e do final agregado SÓ no
+  que os parciais não cobriram (a recusa de escopo chega num evento final sem
+  parcial antes, com \cd{custom\_metadata.fora\_do\_escopo = true}).\\
+\zebra \cd{fontes} & \cd{\{ fontes: [\{ titulo, paginaInicio, paginaFim \}] \}}, dos
+  retornos de \cd{buscar\_acervo}, sem repetição.\\
+\cd{titulo} & \cd{\{ titulo \}}, só quando muda.\\
+\zebra \cd{aviso} & \cd{\{ codigo: "habilidade-inexistente", mensagem \}}, um por
+  código citado que \cd{habilidadePorCodigo} não conhece.\\
+\cd{fim} & \cd{\{\}}.\\
+\zebra \cd{erro} & \cd{\{ codigo, mensagem \}}, com \cd{codigo} em \cd{QUOTA},
+  \cd{RATE\_LIMIT}, \cd{AGENTE\_INDISPONIVEL} ou \cd{TEMPO\_ESGOTADO}.\\
+\bottomrule
+\end{tabularx}
+
+Mais \cd{: ping} a cada 15\,s. O \emph{stream} termina em \cd{fim} \textbf{ou} em
+\cd{erro}; fontes, título, avisos e \cd{fim} saem depois do último evento do
+agente, nessa ordem. Tudo o que recusa responde JSON \textbf{antes} de abrir o
+\emph{stream}.
+
+\begin{atencao}
+\textbf{Três armadilhas medidas, que nenhum tipo pega.}
+\begin{enumerate}
+  \item \textbf{O ADK em SSE emite os parciais E um evento final agregado que
+    REPETE o texto inteiro.} Repassar os dois duplica a resposta na tela; o
+    \cd{DeduplicadorDeTexto} deixa passar do final só o que faltou, por segmento
+    (uma chamada ao modelo).
+  \item \textbf{\cd{:streamQuery?alt=sse} responde ora \cd{data:}, ora NDJSON}
+    (\emph{issue} aberta no \cd{python-aiplatform}). O \emph{parser} aceita os dois,
+    por linha.
+  \item \textbf{\emph{Tokens} só dos eventos NÃO parciais}, somados: um turno com
+    ferramenta faz mais de uma chamada ao modelo, e os parciais repetem o
+    \cd{usage\_metadata}. A guarda de escopo e o título somam os deles ao
+    primeiro evento não parcial seguinte.
+\end{enumerate}
+\end{atencao}
+
+\textbf{Política de evolução.} O \cd{ContratoInterceptor} não confere o SSE: quem
+confere cada \cd{data:} é o teste, contra \cd{DADOS\_POR\_EVENTO} de
+\arq{contrato-de-rotas.ts}, e \textbf{evento novo entra lá antes de sair da api}.
+O ADK está fixado no \arq{uv.lock} (\cd{\textasciitilde=2.10.0}); subir de versão
+é refazer as medições de \arq{tests/test\_e2e.py} do agente, porque é delas que
+saem as três armadilhas acima. Chave de estado, nome de ferramenta e chave de
+trecho mudam nas quatro pontas no mesmo PR.
 
 \section{Contrato entre duas experiências}
 

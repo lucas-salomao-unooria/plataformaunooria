@@ -21,6 +21,7 @@ Aqui fica **o que vale para TODA a api**. O que é de um módulo vive no
 | [`src/portabilidade/`](src/portabilidade/AGENTS.md) | perfil portátil: sair da rede |
 | [`src/openapi/`](src/openapi/AGENTS.md) | OpenAPI derivado do Zod |
 | [`src/ai/`](src/ai/AGENTS.md) | o provider de IA — **nenhuma chamada acontece fora daqui** |
+| [`src/agente-professor/`](src/agente-professor/AGENTS.md) | o agente de IA do professor: posse da conversa e o SSE do turno (contrato em `docs/regras/agente-professor.md`) |
 
 E os módulos de experiência, um por missão:
 

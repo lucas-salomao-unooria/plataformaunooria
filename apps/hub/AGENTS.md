@@ -91,6 +91,7 @@ sessão abre a pasta:
 | [`app/exp/`](app/exp/AGENTS.md) | o embed da experiência, e a allowlist do BFF |
 | [`components/`](components/AGENTS.md) | a casca e as medidas: marca, fontes, alturas, rolagem |
 | [`components/site/`](components/site/AGENTS.md) | o site público: o que é porte literal e como conferir |
+| [`components/agente-professor/`](components/agente-professor/AGENTS.md) | o chat do agente de IA do professor: a rota de stream (exceção ao BFF de 180 s), quem aborta o turno, o markdown seguro |
 | [`lib/`](lib/AGENTS.md) | log, OpenTelemetry, Clarity e os sinais do navegador |
 
 **Área nova ganha `AGENTS.md` + `CLAUDE.md` de uma linha**, e entra nesta tabela

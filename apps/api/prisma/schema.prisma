@@ -83,6 +83,9 @@ model Escola {
   /// (`tipo='escola'`) quanto para uma regional, que é o nível de cima na mesma
   /// tabela. As do CONTRATO não aparecem aqui: elas têm `escola_id` nulo.
   disponibilidades  Disponibilidade[]
+  /// As conversas do agente de IA do professor NESTA escola (a posse é por
+  /// professor E escola ativa — `docs/regras/agente-professor.md`).
+  agenteProfessorConversas AgenteProfessorConversa[]
 
   @@map("escolas")
 }
@@ -466,6 +469,9 @@ model User {
   evidenciasEventos          EvidenciaEvento[]           @relation("EvidenciaEventoEstudante")
   /// Lista: a sessão da exp05ef1b é por (pacote, rodada), não por estudante.
   quemMandouSessoes          Exp05ef1bSessao[]           @relation("Exp05ef1bEstudante")
+  /// As conversas deste professor com o agente de IA — a POSSE da sessão do
+  /// Agent Engine mora aqui, não no engine.
+  agenteProfessorConversas   AgenteProfessorConversa[]   @relation("AgenteProfessorConversaUsuario")
 
   @@unique([escolaId, username])
   @@index([escolaId, role])
@@ -3081,4 +3087,37 @@ model Exp04ef1bDiagramacao {
   @@id([escolaId, pacoteId, chave])
   @@index([pacoteId], map: "exp04ef1b_diagramacoes_pacote_idx")
   @@map("exp04ef1b_diagramacoes")
+}
+
+/// Uma conversa do AGENTE DE IA DO PROFESSOR — a POSSE de uma sessão do Vertex
+/// AI Agent Engine (contrato: `docs/regras/agente-professor.md`).
+///
+/// Tabela da PLATAFORMA (sem prefixo de experiência): o agente não é uma
+/// experiência, é o produto `agente-professor`. O conteúdo da conversa NÃO mora
+/// aqui — mora na sessão do engine; esta linha é o que diz de quem ela é. A
+/// razão de existir: os endpoints de sessão do engine por nome de recurso não
+/// conferem o usuário, e a SA da api enxerga todas as sessões. Sem esta linha,
+/// quem soubesse um `sessao_id` leria a conversa de outro professor.
+///
+/// A conversa pertence a (professor, ESCOLA ATIVA): trocar de escola troca a
+/// lista. RLS por `escola_id` (regra inviolável nº 1) — o professor pode
+/// escrever o nome de um estudante no título que o agente gera.
+model AgenteProfessorConversa {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  escolaId     String   @map("escola_id")
+  usuarioId    String   @map("usuario_id") @db.Uuid
+  /// O id da sessão no Agent Engine. Único: uma sessão tem um dono só.
+  sessaoId     String   @unique @map("sessao_id")
+  /// CACHE do `titulo_conversa` do estado da sessão (quem escreve é o agente).
+  /// Nulo até o fim do 1º turno.
+  titulo       String?
+  criadaEm     DateTime @default(now()) @map("criada_em") @db.Timestamptz(6)
+  atualizadaEm DateTime @default(now()) @map("atualizada_em") @db.Timestamptz(6)
+
+  escola  Escola @relation(fields: [escolaId], references: [id], onDelete: Cascade)
+  usuario User   @relation("AgenteProfessorConversaUsuario", fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  /// A lista do painel: as do professor nesta escola, a mais recente primeiro.
+  @@index([escolaId, usuarioId, atualizadaEm(sort: Desc)], map: "agente_professor_conversas_lista_idx")
+  @@map("agente_professor_conversas")
 }

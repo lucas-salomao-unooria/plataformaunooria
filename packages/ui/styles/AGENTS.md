@@ -75,6 +75,15 @@ punha uma barra de rolagem PARADA na tela). Duas coisas medidas ao escrevê-la:
 flex por `:has(> .tela-cheia)` — sem esse recorte, as outras páginas do
 professor mudariam de contexto de layout por causa de três telas.
 
+E uma regra de POSICIONAMENTO, também da casca e não de componente: **a folga
+embaixo do `main` quando o botão do agente de IA do professor está montado**
+(`:has(> [data-agente-professor]) > main`, só abaixo de 1168px de janela). O
+`ChatLauncher` é `fixed` no canto e o `main` deixava 32px embaixo: o fim da
+página — e o de uma `.tela-cheia` — ficava debaixo do botão, sem rolagem que o
+tirasse dali. Afastar o botão (`--unooria-chat-offset`) não resolve, só o sobe.
+O gancho é um atributo NOSSO, não a classe do DS, que muda de nome entre
+versões.
+
 ### Rolagem: `ScrollBar` do DS, e o que sobrou para a compensação
 
 **Toda área rolável do hub é um `<ScrollBar>` do DS** — as tabelas, o sumário

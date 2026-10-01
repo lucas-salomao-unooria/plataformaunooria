@@ -48,7 +48,8 @@ missão com problema}
 \begin{itemize}
   \item Em \enquote{Recursos}, escolho o Escopo: \enquote{Rede (contrato
     inteiro)}, uma regional ou uma escola.
-  \item Vejo os quatro produtos e, dentro de cada um, as missões. Cada
+  \item Vejo os cinco produtos e, dentro de cada um, as missões (o agente de IA
+    do professor não tem missões dentro). Cada
     interruptor tem três estados: \enquote{Ligado}, \enquote{Desligado} e
     \enquote{Herda de cima} (na rede, \enquote{Padrão (ligado)}).
   \item Por padrão tudo está ligado; o escopo mais específico vence (escola,
@@ -87,6 +88,23 @@ data}{atender pilotos e contratos temporários sem mexer na escola inteira}
   \item Ao desligar, posso informar até quando; na data, o interruptor volta a
     herdar de cima e isso fica no histórico.
 \end{itemize}
+\end{historia}
+
+\begin{historia}{H10.1.4}{Desligar o agente de IA do professor numa rede}{\parcial}
+\hu{Administrador Unooria}{ligar e desligar o agente de IA do professor como
+qualquer produto}{oferecê-lo só a quem contratou, ou tirá-lo do ar num
+problema}
+\aceite
+\begin{itemize}
+  \item O agente aparece em \enquote{Recursos} como um produto, com o mesmo
+    interruptor de três estados e o mesmo escopo (rede, regional, escola).
+  \item Desligado, o botão do agente some das telas do professor naquela
+    escola, e nenhuma conversa nova nem mensagem passa.
+  \item Mesmo desligado, o professor continua podendo apagar as próprias
+    conversas.
+\end{itemize}
+\pendencia{o interruptor já funciona; o agente em si ainda não está no ar nos
+ambientes da rede (\id{F08.4}).}
 \end{historia}
 
 % ---------------------------------------------------------------------------

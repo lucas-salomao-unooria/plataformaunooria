@@ -1162,6 +1162,46 @@ o que já SUBIU} &
   \cd{token\_format: access\_token} no \cd{auth@v2} e entregam o \emph{token}
   ao \cd{docker/login-action} --- um processo a menos no caminho do
   \emph{push}. Se voltar a acontecer, é transitório: re-rode o \emph{job}.\\
+\zebra \textbf{O chat do agente de IA do professor responde \enquote{O agente de
+  IA do professor não respondeu agora} a toda mensagem, e abrir conversa nova
+  dá 503} &
+  Antes de procurar defeito: \env{AGENTE\_\B PROFESSOR\_\B MODO=desligado}. É o
+  PADRÃO da api (ausente = \cd{desligado}, em qualquer ambiente) e é o que o
+  Terraform põe enquanto o Agent Engine não existe --- ele só nasce no segundo
+  \emph{apply}, depois de o CI publicar a imagem (Capítulo~\ref{cap:entrega}).
+  Com o modo certo, a linha \cd{agente-professor.\B indisponivel} traz o
+  \emph{status}: 403 é a SA da api sem o papel no engine; sem \emph{status}, o
+  ADC (em \emph{dev}, \cd{gcloud auth application-default login} e reiniciar a
+  api).\\
+\textbf{A pergunta fora do escopo não mostra resposta nenhuma: o balão do agente
+  fica vazio e o turno termina} &
+  A recusa NÃO vem em pedaços: é um evento final único, sem parcial antes
+  (não houve modelo principal), com \cd{custom\_metadata.fora\_do\_escopo}. A api
+  tem de emiti-la como \cd{delta} --- o \cd{DeduplicadorDeTexto} passa o final
+  inteiro quando não houve parcial. Quem \enquote{simplifica} o dedupe para
+  repassar só os parciais apaga a recusa da tela, sem erro em lugar nenhum. O
+  sintoma inverso, a resposta aparecendo DUAS vezes, é o mesmo arquivo: o final
+  agregado do ADK repete o texto dos parciais.\\
+\zebra \textbf{O professor cola um trecho de SQL, de HTML ou de código na
+  pergunta e a mensagem falha como \enquote{falha de rede}, sem linha no log da
+  api} &
+  Cloud Armor. A exclusão da regra 1106 tira só a 921150 (CR/LF) dos caminhos do
+  chat; os conjuntos de SQLi, XSS e os demais continuam valendo, e o 403 do LB não
+  carrega cabeçalho de CORS --- o navegador reporta falha de rede, e a
+  requisição morre antes do Cloud Run. Confira no log do LB
+  (\cd{enforced\B Security\B Policy}) qual assinatura casou. Antes da 1106, bastava um
+  Shift+Enter para dar o mesmo sintoma.\\
+\textbf{Uma conversa some da lista do professor sozinha} &
+  A sessão expirou no engine: o \rota{GET} da conversa recebe \enquote{não
+  existe}, apaga a linha de \cd{agente\_\B professor\_\B conversas} e responde 404 (a
+  linha \cd{agente-professor.\B sessao-sumiu}). Acontece se o engine recusou o
+  \cd{expire\_time} pedido e a conversa ficou mais que o TTL padrão sem mensagem,
+  ou se a renovação vem falhando (\cd{agente-professor.\B renovacao-falhou}: a SA
+  da api sem \cd{sessions.update}).\\
+\zebra \textbf{Apagar uma conversa do agente dá erro e ela continua na lista} &
+  De propósito: com o engine fora do ar, o \rota{DELETE} responde 503 e a linha
+  FICA, porque apagar só a linha deixaria a conversa guardada no engine sem
+  ninguém capaz de alcançá-la. Volte quando o engine responder.\\
 \bottomrule
 \end{tabularx}
 

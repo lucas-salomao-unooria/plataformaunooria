@@ -363,3 +363,31 @@ main:has(> .tela-cheia) {
   min-height: 0;
   flex: 1 1 0%;
 }
+
+/*
+ * O BOTÃO DO AGENTE DE IA DO PROFESSOR não pode cobrir o fim da página.
+ *
+ * NÃO É LACUNA DO DS: é POSICIONAMENTO da casca, a compensação legítima. O
+ * `ChatLauncher` é `fixed` no canto inferior direito — 64px
+ * (`--unooria-chat-launcher-size`) a 24px da borda (`--unooria-chat-offset`) —,
+ * e o `main` do professor só deixava 32px (`py-8`) embaixo. Na rolagem máxima,
+ * o que mora no canto da coluna (o "Salvar" de um formulário, o fim da
+ * experiência de uma `.tela-cheia`) ficava DEBAIXO do botão, sem jeito de
+ * rolar para fora. Afastar o botão (`--unooria-chat-offset`) não resolve: ele
+ * continua no mesmo canto, só que mais alto. Quem abre espaço é a casca.
+ *
+ * Só onde a coluna encosta no botão: o `main` tem `max-w-5xl` (1024px) e
+ * `px-6`, então a borda do conteúdo fica a `(janela - 1024) / 2 + 24` px da
+ * direita, e o botão ocupa de 24 a 88 px. Abaixo de 1168px de janela os dois
+ * se cruzam (com 8px de folga); acima, o botão mora na margem e nada muda.
+ *
+ * Só com o agente MONTADO (produto ligado): o atributo vem do próprio botão
+ * (`components/agente-professor/agente-flutuante.tsx`), irmão do `main` na
+ * casca do professor — por atributo nosso, e não pela classe do DS, que muda
+ * de nome entre versões sem ninguém ver.
+ */
+@media (max-width: 1167.98px) {
+  :has(> [data-agente-professor]) > main {
+    padding-bottom: calc(var(--unooria-chat-offset, 24px) + var(--unooria-chat-launcher-size, 64px) + 16px);
+  }
+}

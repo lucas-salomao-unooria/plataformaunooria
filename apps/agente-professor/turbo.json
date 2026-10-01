@@ -1,0 +1,27 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    "lint": {
+      "env": ["AGENTE_PROFESSOR_PULAR_SEM_UV"],
+      "inputs": ["agente_professor/**", "ingestao/**/*.py", "tests/**", "pyproject.toml", "uv.lock"]
+    },
+    "typecheck": {
+      "env": ["AGENTE_PROFESSOR_PULAR_SEM_UV"],
+      "inputs": ["agente_professor/**", "ingestao/**/*.py", "tests/**", "pyproject.toml", "uv.lock"]
+    },
+    "test": {
+      "env": ["AGENTE_PROFESSOR_PULAR_SEM_UV"],
+      "inputs": [
+        "agente_professor/**",
+        "ingestao/**",
+        "!ingestao/saida/**",
+        "!ingestao/relatorios/**",
+        "tests/**",
+        "pyproject.toml",
+        "uv.lock",
+        "$TURBO_ROOT$/apps/api/src/curriculo/dados/**"
+      ]
+    }
+  }
+}

@@ -95,7 +95,7 @@ describe(".claude/rules: só as regras com `paths:`, por symlink", () => {
 });
 
 /** Pastas com `AGENTS.md`, sem descer no que não é do repositório. */
-const PULAR = new Set(["node_modules", ".git", ".next", ".turbo", "dist", "coverage", "worktrees", "graphify-out", "storage", "storage-privado"]);
+const PULAR = new Set(["node_modules", ".git", ".next", ".turbo", "dist", "coverage", "worktrees", "graphify-out", "storage", "storage-privado", ".venv"]);
 function pastasComAgents(dir: string, achadas: string[] = []): string[] {
   for (const e of readdirSync(dir, { withFileTypes: true })) {
     if (e.isDirectory() && !PULAR.has(e.name)) pastasComAgents(join(dir, e.name), achadas);

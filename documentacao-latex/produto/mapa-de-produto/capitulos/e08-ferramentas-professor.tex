@@ -9,10 +9,11 @@
   \item[Objetivo] Tirar do professor o trabalho repetitivo do planejamento e
     cuidar de quem cuida da turma.
   \item[Para quem] Professor.
-  \item[Valor] São três produtos que a rede pode contratar separadamente do
-    Entre Redes: Gerador de Plano de Aula, Planejamento de Ensino e Como você
-    está?.
-  \item[Estado] \pronto.
+  \item[Valor] São quatro produtos que a rede pode contratar separadamente do
+    Entre Redes: Gerador de Plano de Aula, Planejamento de Ensino, Como você
+    está? e o agente de IA do professor.
+  \item[Estado] \pronto{} --- o agente de IA do professor (\id{F08.4}) está
+    construído e ainda não está no ar.
 \end{campos}
 \end{fichaepico}
 
@@ -23,6 +24,7 @@
 \id{F08.1} & Gerador de Plano de Aula & \pronto\\
 \zebra \id{F08.2} & Planejamento de Ensino & \pronto\\
 \id{F08.3} & Como você está? & \pronto\\
+\zebra \id{F08.4} & Agente de IA do professor & \parcial\\
 \bottomrule
 \end{tabularx}
 
@@ -187,4 +189,171 @@ apagar tudo}{responder com sinceridade}
     ciclos --- e funciona mesmo se a rede desligar o produto.
   \item O dado de bem-estar nunca entra no perfil portátil.
 \end{itemize}
+\end{historia}
+
+% ---------------------------------------------------------------------------
+\feature{F08.4}{Agente de IA do professor}{\parcial}
+
+Um chat que acompanha o professor em qualquer tela da área dele: ele pergunta
+sobre a BNCC (inclusive a de Computação) e sobre os livros didáticos da
+Unooria, e o agente responde dizendo de que documento e de que página tirou a
+informação. Não tem cartão na página inicial: é um botão no canto da tela.
+
+\begin{nota}
+\textbf{O que o agente não faz.} Ele não planeja a aula pelo professor, não
+avalia estudante e não responde sobre outros assuntos. O Planejamento de Ensino
+(\id{F08.2}) continua sendo o lugar do plano do ano e da semana.
+\end{nota}
+
+\begin{historia}{H08.4.1}{Abrir o agente de qualquer tela}{\parcial}
+\hu{Professor}{chamar o agente de IA de onde eu estiver na plataforma}{tirar
+uma dúvida sem largar o que estou fazendo}
+\aceite
+\begin{itemize}
+  \item Um botão com o mascote do agente fica no canto inferior direito de todas
+    as telas do professor; não há cartão dele na página inicial.
+  \item O painel abre ao lado da tela, sem cobri-la nem travá-la: continuo
+    usando a página atrás dele. O cursor já vem no campo de escrever; fechar (ou
+    a tecla Esc) devolve o foco ao botão.
+  \item A conversa nova começa com a apresentação do agente: \enquote{Olá! Sou o
+    agente de IA do professor. Tiro dúvidas sobre a BNCC --- inclusive a de
+    Computação --- e sobre os livros da Unooria\ldots}.
+  \item Junto do campo, fixo: \enquote{Não escreva nomes de estudantes.}
+  \item Só o Professor tem o agente; a coordenação não.
+\end{itemize}
+\pendencia{o agente ainda não está no ar nos ambientes da rede: o serviço do
+Google que o hospeda só é criado depois da primeira publicação, e até lá o
+chat responde que o agente não respondeu. O teste de ponta a ponta da tela
+roda com respostas de exemplo, não com o agente de verdade.}
+\end{historia}
+
+\begin{historia}{H08.4.2}{Perguntar sobre a BNCC e os livros}{\parcial}
+\hu{Professor}{perguntar em palavras minhas quais habilidades trabalhar, o que
+um código significa ou onde um tema aparece no livro}{planejar com a Base e o
+material da rede na mão, sem procurar em PDF}
+\aceite
+\begin{itemize}
+  \item A resposta aparece aos poucos, enquanto é escrita; um indicador mostra
+    que o agente está escrevendo até a primeira palavra chegar.
+  \item Posso \enquote{Parar} no meio: fica o que já chegou, marcado
+    \enquote{Resposta interrompida.}
+  \item Quando peço as habilidades de um componente num ano, vêm \emph{todas}, e
+    não uma amostra.
+  \item Se eu fechar o painel com uma resposta a caminho, ela continua chegando;
+    o botão mostra um selo quando ela termina.
+  \item Cada mensagem conta no meu limite diário de IA; sem saldo, a mensagem
+    diz que a cota do dia acabou e que ela renova amanhã, e não oferece
+    \enquote{Tentar de novo}. Muitas mensagens seguidas pedem para esperar um
+    instante.
+\end{itemize}
+\pendencia{o agente ainda não está no ar nos ambientes da rede: o serviço do
+Google que o hospeda só é criado depois da primeira publicação, e até lá o
+chat responde que o agente não respondeu. O teste de ponta a ponta da tela
+roda com respostas de exemplo, não com o agente de verdade.}
+\pendencia{a busca das habilidades ainda não foi conferida contra a Base
+inteira (componente por componente, ano por ano). Se faltar alguma, a forma de
+buscar muda antes de o agente entrar no ar.}
+\end{historia}
+
+\begin{historia}{H08.4.3}{Ver de onde veio a resposta}{\parcial}
+\hu{Professor}{saber de que documento e de que página o agente tirou o que
+disse}{conferir no original antes de usar}
+\aceite
+\begin{itemize}
+  \item Quando a resposta usa um documento, ela termina com \enquote{Fontes:} e
+    o título do documento com a página (ou as páginas).
+  \item A página é a do arquivo, a que o leitor de PDF mostra.
+  \item As fontes voltam junto quando reabro a conversa.
+\end{itemize}
+\pendencia{o agente ainda não está no ar nos ambientes da rede: o serviço do
+Google que o hospeda só é criado depois da primeira publicação, e até lá o
+chat responde que o agente não respondeu. O teste de ponta a ponta da tela
+roda com respostas de exemplo, não com o agente de verdade.}
+\end{historia}
+
+\begin{historia}{H08.4.4}{Ser avisado quando um código não existe}{\parcial}
+\hu{Professor}{ser avisado quando a resposta citar um código de habilidade que
+não existe na BNCC}{não levar para o meu plano uma habilidade inventada}
+\aceite
+\begin{itemize}
+  \item Depois da resposta, aparece um aviso para cada código citado que não
+    existe: \enquote{O código \ldots{} citado na resposta não existe na BNCC.
+    Confira antes de usá-lo.}
+  \item O texto não é apagado: o aviso diz o que conferir.
+\end{itemize}
+\pendencia{o agente ainda não está no ar nos ambientes da rede: o serviço do
+Google que o hospeda só é criado depois da primeira publicação, e até lá o
+chat responde que o agente não respondeu. O teste de ponta a ponta da tela
+roda com respostas de exemplo, não com o agente de verdade.}
+\end{historia}
+
+\begin{historia}{H08.4.5}{Receber uma recusa educada fora do assunto}{\parcial}
+\hu{Professor}{que o agente me diga com clareza quando a pergunta está fora do
+que ele sabe}{não confundir uma resposta inventada com uma resposta da Base}
+\aceite
+\begin{itemize}
+  \item Pergunta que não é sobre a BNCC nem sobre o acervo da Unooria recebe uma
+    recusa curta, pelo meu nome, dizendo do que o agente trata.
+  \item A recusa aparece na conversa como qualquer resposta (não some da tela).
+\end{itemize}
+\pendencia{o agente ainda não está no ar nos ambientes da rede: o serviço do
+Google que o hospeda só é criado depois da primeira publicação, e até lá o
+chat responde que o agente não respondeu. O teste de ponta a ponta da tela
+roda com respostas de exemplo, não com o agente de verdade.}
+\end{historia}
+
+\begin{historia}{H08.4.6}{Reencontrar as minhas conversas, com título}{\parcial}
+\hu{Professor}{voltar a uma conversa de outro dia, achando-a pelo título}{continuar
+de onde parei}
+\aceite
+\begin{itemize}
+  \item \enquote{Histórico de conversas} lista as minhas conversas, a mais
+    recente primeiro, com o título e a hora da última mensagem (\enquote{Hoje,
+    14:32}); a aberta fica marcada.
+  \item O título é escrito pelo agente depois da primeira resposta; até lá a
+    conversa se chama \enquote{Nova conversa}.
+  \item \enquote{Nova conversa} começa outra sem apagar a anterior.
+  \item As conversas não expiram: ficam até eu apagar.
+  \item Vejo só as minhas, e só as da escola em que estou: trocar de escola
+    troca a lista.
+\end{itemize}
+\pendencia{o agente ainda não está no ar nos ambientes da rede: o serviço do
+Google que o hospeda só é criado depois da primeira publicação, e até lá o
+chat responde que o agente não respondeu. O teste de ponta a ponta da tela
+roda com respostas de exemplo, não com o agente de verdade.}
+\end{historia}
+
+\begin{historia}{H08.4.7}{Apagar uma conversa}{\parcial}
+\hu{Professor}{apagar uma conversa que não quero mais guardada}{decidir o que
+fica guardado do que eu escrevi}
+\aceite
+\begin{itemize}
+  \item No histórico, a linha da conversa pergunta \enquote{Excluir esta
+    conversa?}, com \enquote{Cancelar} e \enquote{Excluir}.
+  \item Excluir é definitivo: a conversa some da lista e não volta.
+  \item Consigo apagar mesmo com o agente desligado para a minha rede.
+  \item Se o agente estiver fora do ar, a exclusão não acontece e a conversa
+    continua na lista --- nunca some da tela sem ter sido apagada de verdade.
+\end{itemize}
+\pendencia{o agente ainda não está no ar nos ambientes da rede: o serviço do
+Google que o hospeda só é criado depois da primeira publicação, e até lá o
+chat responde que o agente não respondeu. O teste de ponta a ponta da tela
+roda com respostas de exemplo, não com o agente de verdade.}
+\end{historia}
+
+\begin{historia}{H08.4.8}{Abrir o painel grande para ler}{\parcial}
+\hu{Professor}{aumentar o painel quando a resposta for longa}{ler uma tabela de
+habilidades sem rolar a cada linha}
+\aceite
+\begin{itemize}
+  \item \enquote{Expandir} aumenta o painel; \enquote{Recolher} volta ao
+    tamanho pequeno.
+  \item A escolha fica lembrada neste navegador; a conversa não fica guardada
+    nele.
+  \item No celular, o painel ocupa quase a tela inteira.
+\end{itemize}
+\pendencia{o agente ainda não está no ar nos ambientes da rede: o serviço do
+Google que o hospeda só é criado depois da primeira publicação, e até lá o
+chat responde que o agente não respondeu. O teste de ponta a ponta da tela
+roda com respostas de exemplo, não com o agente de verdade.}
 \end{historia}

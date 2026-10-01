@@ -96,7 +96,7 @@ deste documento em cada folha.
   \draw[hered] (10.8,-7.2) -- (10.8,-2.39);
 
   \foreach \nome/\figs/\y in {
-      Sequência/{\ref{fig:uml-seq-entrada}, \ref{fig:uml-seq-ia}; antes: \ref{fig:seq-feed}, \ref{fig:seq-handshake}, \ref{fig:seq-erro-cliente}}/-8.5,
+      Sequência/{\ref{fig:uml-seq-entrada}, \ref{fig:uml-seq-ia}, \ref{fig:uml-seq-agente}; antes: \ref{fig:seq-feed}, \ref{fig:seq-handshake}, \ref{fig:seq-erro-cliente}}/-8.5,
       Comunicação/{\ref{fig:uml-comunicacao}}/-9.8,
       Tempo/{\ref{fig:uml-tempo}}/-11.1,
       Visão geral de interação/{\ref{fig:uml-visao-geral}}/-12.4} {
@@ -163,7 +163,7 @@ Atividades & Processos & Qual é o algoritmo que decide se um recurso está liga
   \ref{fig:estados-geracao}\\
 Sequência & Processos & Em que ordem as duas travas da entrada na missão
   disparam? E a quota da IA: o que roda antes e o que roda depois do
-  \emph{provider}? & \ref{fig:uml-seq-entrada}, \ref{fig:uml-seq-ia}\\
+  \emph{provider}? & \ref{fig:uml-seq-entrada}, \ref{fig:uml-seq-ia}, \ref{fig:uml-seq-agente}\\
 \zebra Comunicação & Processos & Que objetos um lote de telemetria atravessa, em que
   ordem numerada, até virar linha no banco? & \ref{fig:uml-comunicacao}\\
 Tempo & Processos & Quando o \emph{token}, a sessão e o relógio da SDK vencem, um em
@@ -265,7 +265,8 @@ e depois da IA (\adrr{ADR-105}) e o caminho imutável do \emph{bundle}.
      \texttt{entre-redes}\\
      \texttt{plano-de-aula}\\
      \texttt{plano-de-ensino}\\
-     \texttt{bem-estar}};
+     \texttt{bem-estar}\\
+     \texttt{agente-professor}};
   \node[enumeracao, text width=20mm, anchor=north west] (ePub) at ([xshift=4mm]eProd.north east)
     {\ctitulo{enumeração}{Publico}
      \nodepart{two}
@@ -1390,6 +1391,19 @@ Tabela~\ref{tab:uml-objetos} moram inteiras na partição da direita.
 \label{fig:uml-atividade-disp}
 \end{figure}
 
+\begin{nota}
+\textbf{O produto sem experiência entra por um atalho do mesmo algoritmo.} O
+agente de IA do professor não tem linha em \cd{experiencias}, então a classe
+declara \cd{@Produto("agente-professor")} em vez de \cd{@Recurso(expId)}, e o
+\cd{DisponibilidadeGuard} chama \cd{exigirProdutoDisponivel}: só o ramo do
+TETO do diagrama acima (\cd{disponibilidadeDoProduto} \seta{} \cd{resolverProduto},
+escola \seta{} regional \seta{} contrato \seta{} padrão, ausência de linha =
+ligado), sem a etapa da experiência. É o MESMO resolvedor de propósito: uma
+segunda leitura da tabela com regra própria seria o painel dizendo
+\enquote{desligado} e a porta abrindo. Declarar os dois decoradores na mesma
+classe lança, como declarar nenhum.
+\end{nota}
+
 \subsubsection{A entrada na missão: onde cada trava dispara}
 
 A regra 7 do \arq{AGENTS.md} diz que filtrar o \emph{card} no hub é UX e que a
@@ -1561,6 +1575,87 @@ limite de 12 por minuto que o contrato da rota promete não valer. E o
 limite efetivo é multiplicado. Os três pontos estão fora desta frente; ficam
 registrados aqui para quem desenhar a próxima rota de IA.
 \end{limitacao}
+
+\subsubsection{Um turno do agente de IA do professor: a quota antes e depois do \emph{stream}}
+
+A Figura~\ref{fig:uml-seq-agente} é \rota{POST /agente-professor/conversas/:id/mensagens},
+a única rota da plataforma que responde \cd{text/event-stream} (\adrr{ADR-128}),
+na ordem do código. Ela é a Figura~\ref{fig:uml-seq-ia} com três diferenças que só
+o diagrama deixa ver juntas. \textbf{Toda recusa sai antes do \emph{stream}}, em
+JSON: depois do 200 só existe o evento \cd{erro}. \textbf{O consumo da quota mora
+num \cd{finally}}, e soma os \emph{tokens} dos eventos NÃO parciais --- o professor
+pode apertar \enquote{Parar} ou fechar a aba no meio, e o que o modelo gerou foi
+pago. E \textbf{a posse é
+conferida no Postgres}, porque o Agent Engine não confere o usuário numa sessão
+pedida por nome (\adrr{ADR-126}). O laço de ferramentas dentro do agente aparece
+com uma ferramenta só; num turno real o modelo pode chamar \cd{buscar\_habilidades}
+e \cd{buscar\_acervo} mais de uma vez.
+
+\begin{figure}[H]
+\centering
+\fitpage{%
+\begin{tikzpicture}[x=1cm, y=1cm]
+
+  \raia{1.3}{-22.0}{Navegador}{painel do chat}
+  \raia{4.2}{-22.0}{Hub}{rota de \emph{stream}}
+  \raia{7.1}{-22.0}{\texttt{AgenteProfessor}}{\emph{controller} + \emph{service}}
+  \raiaext{10.0}{-22.0}{PostgreSQL}{Cloud SQL}
+  \raia{12.9}{-22.0}{Agente}{ADK no Agent Engine}
+  \raiaext{15.8}{-22.0}{Gemini}{\texttt{global} \seta{} \texttt{us}}
+  \raiaext{18.7}{-22.0}{\emph{Data store}}{Vertex AI Search}
+
+  \msgs{1.3}{4.2}{-1.1}{\texttt{POST} \texttt{\{texto\}}}
+  \msgs{4.2}{7.1}{-1.85}{\texttt{POST /agente-professor/\ldots/mensagens}}
+  \msgself{7.1}{-2.5}{\texttt{OidcGuard}, \texttt{RolesGuard} (\texttt{professor}), \texttt{@Produto}}
+  \msgs{7.1}{10.0}{-3.55}{\texttt{daPosse}: \texttt{usuario\_id} e \texttt{escola\_id}}
+  \msgr{10.0}{7.1}{-4.3}{\texttt{sessao\_id}}
+  \msgs{7.1}{10.0}{-5.05}{\texttt{temSaldo}: \texttt{ia\_quotas}, \texttt{ia\_uso\_diario}}
+  \msgr{10.0}{7.1}{-5.8}{\texttt{usado < limite}}
+
+  \draw[seqframe] (0.4,-6.2) rectangle (10.9,-7.45);
+  \node[frameop] at (0.4,-6.2) {break};
+  \node[guarda] at (1.55,-6.5) {[corpo inválido, outro dono, mais de 10/min, sem saldo]};
+  \msgr{7.1}{1.3}{-7.15}{400 $|$ 404 $|$ 429 em JSON, antes do \emph{stream}}
+
+  \msgr{7.1}{4.2}{-8.0}{200 \texttt{text/event-stream}}
+  \msgr{4.2}{1.3}{-8.75}{repassa o corpo}
+  \msgs{7.1}{12.9}{-9.5}{\texttt{:streamQuery?alt=sse} \texttt{\{user\_id, session\_id, message\}}}
+  \msgself{12.9}{-10.15}{guarda de escopo (modelo leve)}
+  \msgs{12.9}{15.8}{-11.2}{gerar, em \emph{stream}}
+  \msgr{15.8}{12.9}{-11.95}{\texttt{function\_call}}
+  \msgs{12.9}{18.7}{-12.7}{\texttt{buscar\_habilidades}: filtro exato, paginando}
+  \msgr{18.7}{12.9}{-13.45}{habilidades}
+  \msgs{12.9}{15.8}{-14.2}{com o retorno}
+  \msgr{15.8}{12.9}{-14.95}{texto em pedaços}
+
+  \draw[seqframe] (0.4,-15.35) rectangle (13.8,-17.4);
+  \node[frameop] at (0.4,-15.35) {loop};
+  \node[guarda] at (1.55,-15.65) {[cada evento do agente]};
+  \msgr{12.9}{7.1}{-16.2}{evento: parcial, final ou \texttt{state\_delta}}
+  \msgr{7.1}{1.3}{-17.0}{\texttt{event: delta} (sem a repetição do final agregado)}
+
+  \msgself{7.1}{-17.8}{fontes, título, conferência dos códigos (\texttt{habilidadePorCodigo})}
+  \msgr{7.1}{1.3}{-18.85}{\texttt{fontes}, \texttt{titulo}, \texttt{aviso}, \texttt{fim}}
+  \msgs{7.1}{10.0}{-19.6}{\texttt{finally}: \texttt{consumir}(soma dos não parciais)}
+  \msgs{7.1}{10.0}{-20.35}{\texttt{atualizada\_em}, \texttt{titulo}}
+  \msgs{7.1}{12.9}{-21.1}{\texttt{PATCH} \texttt{expireTime} (renovar a sessão)}
+
+\end{tikzpicture}}
+\caption[Sequência: um turno do agente de IA do professor]{Sequência de
+  \rota{POST /agente-professor/conversas/:id/mensagens}. \texttt{break} é a saída
+  antecipada, sempre em JSON e antes do \emph{stream}. Durante o \texttt{loop} a api
+  escreve \texttt{: ping} a cada 15\,s; \enquote{Parar} (ou fechar a aba) aborta
+  cada salto até o Vertex --- fechar o \emph{painel} não aborta, o turno segue e
+  acende o selo do botão ---, e o teto de 240\,s vira \texttt{event: erro} \texttt{TEMPO\_ESGOTADO}. O
+  consumo roda no \texttt{finally} também no abandono e no erro; a renovação só
+  depois de \texttt{fim}, e a falha dela é só log. Nenhuma transação
+  \texttt{comTenancy} fica aberta durante o \emph{stream}. Fontes:
+  \arq{agente-professor/agente-professor.controller.ts},
+  \arq{agente-professor/agente-professor.service.ts},
+  \arq{agente-professor/regras.ts}, \arq{ai/agent-engine.client.ts},
+  \arq{apps/agente-professor/agente\_professor/plugins.py}.}
+\label{fig:uml-seq-agente}
+\end{figure}
 
 \subsubsection{O caminho de um lote de telemetria}
 
@@ -1995,7 +2090,9 @@ saem daqui. A imagem da API é implantada \emph{duas} vezes: no serviço e no
 \emph{deploy} da API. O \emph{bundle} é armazenado num nó e executado em outro: vive
 no \emph{bucket}, roda no navegador, e a versão que vale não está no \emph{bucket},
 está na linha de \cd{experiencias} na API. E nenhum artefato é implantado à mão:
-cada seta \estereo{implanta} é um passo do \arq{deploy.yml}.
+cada seta \estereo{implanta} é um passo do \arq{deploy.yml} --- inclusive a do
+agente de IA do professor, cuja imagem não roda num Cloud Run, e sim no Vertex AI
+Agent Engine, chamado só pela API.
 
 \begin{figure}[H]
 \centering
@@ -2046,10 +2143,14 @@ cada seta \estereo{implanta} é um passo do \arq{deploy.yml}.
   \node[nl=40mm] at (10.25,-9.2) {\emph{topic} \texttt{\{contrato\}-telemetria}\\\emph{push} \texttt{-telemetria-ingest}};
 
   \nodo{ar}{(5.4,-11.0)}{(9.2,-13.6)}{\estereo{nó} \textbf{Artifact Registry}}
-  \node[nl=36mm] at (5.45,-11.95) {\texttt{hub:\{sha\}}, \texttt{api:\{sha\}}\\\emph{push} direto do CI};
+  \node[nl=36mm] at (5.45,-11.95) {\texttt{hub:\{sha\}}, \texttt{api:\{sha\}},\\\texttt{agente-professor:\{sha\}};\\\emph{push} direto do CI};
 
   \nodo[fill=unooPaper, draw=unooInkSoft]{vx}{(10.2,-11.6)}{(14.4,-13.6)}{\estereo{serviço gerenciado} \textbf{Vertex AI}}
   \node[nl=40mm] at (10.25,-12.55) {Gemini; ADC da conta \texttt{\{contrato\}-api}};
+
+  % ---- o agente de IA do professor (ADR-126): nasce no apply 2, com a imagem
+  \nodo[fill=unooBlueWash]{eng}{(15.2,-11.25)}{(19.0,-13.6)}{\estereo{Agent Engine} \texttt{us-east1}}
+  \node[art=33mm] (aeng) at (17.1,-12.75) {\estereo{imagem} \texttt{agente-professor:\{sha\}}\\SA \texttt{\{prefixo\}-agente}};
 
   % ---- fora da stack
   \nodo[fill=unooPaper, draw=unooInkSoft]{wso2}{(0,-8.4)}{(4.2,-10.4)}{\estereo{externo} \textbf{WSO2 IS}}
@@ -2069,11 +2170,13 @@ cada seta \estereo{implanta} é um passo do \arq{deploy.yml}.
   \draw[caminhocom] (job.south) -- (sql.north) node[cxlabel, midway, right]{VPC};
   \draw[caminhocom] (runapi.east |- 0,-6.6) -- (14.65,-6.6) -- (14.65,-12.6) -- (vx.east |- 0,-12.6);
   \draw[caminhocom, dashed] (sm.west |- 0,-2.6) -- (runhub.east |- 0,-2.6) node[cxlabel, midway, below]{\emph{env}};
+  \draw[caminhocom] (runapi.east |- 0,-6.85) -- (14.95,-6.85) -- (14.95,-11.9) -- (eng.west |- 0,-11.9) node[cxlabel, pos=0.55, right]{SSE};
 
   % ---- o CI implanta cada artefato
   \draw[implanta] (gha.east |- 0,-12.3) -- (ar.west |- 0,-12.3) node[cxlabel, midway, above]{\estereo{implanta}};
   \draw[implanta] (gha.north east) -- ++(0.35,0.35) |- (gcs.west |- 0,-9.3) node[cxlabel, pos=0.75, above]{\texttt{rsync}};
   \draw[implanta] (bgcs.west) -- ++(-0.45,0) |- (bnav.east) node[cxlabel, pos=0.25, left]{\estereo{implanta}};
+  \draw[implanta] (gha.south east) -- ++(0.3,-0.25) -- (19.2,-13.85) -- (19.2,-12.75) -- (aeng.east) node[cxlabel, pos=0.5, right]{\texttt{PATCH}};
 
 \end{tikzpicture}}
 \caption[Implantação: que artefato roda em que nó]{Diagrama de implantação de um
@@ -2082,7 +2185,10 @@ cada seta \estereo{implanta} é um passo do \arq{deploy.yml}.
   está implantada em dois nós, e o \emph{bundle} está armazenado num e executado em
   outro. O CI ainda executa o \emph{job} de migração e publica o manifesto
   (\rota{PUT /experiencias/:expId}), o que o diagrama deixa no texto para não
-  cruzar a figura. Escala, rede e certificados são do Terraform, em outro
+  cruzar a figura. O nó do Agent Engine só existe depois do segundo
+  \emph{apply} do Terraform; daí em diante o CI troca a imagem dele por
+  \texttt{PATCH} da \texttt{imageUri} (\adrr{ADR-126}), e os dois \emph{data stores}
+  e o Gemini que ele chama ficam em \texttt{global}. Escala, rede e certificados são do Terraform, em outro
   repositório (Capítulo~\ref{cap:arqnuvem}). Fontes: \arq{apps/api/Dockerfile},
   \arq{apps/hub/Dockerfile}, \arq{.github/workflows/deploy.yml} e
   \arq{docs/INFRA.md}.}

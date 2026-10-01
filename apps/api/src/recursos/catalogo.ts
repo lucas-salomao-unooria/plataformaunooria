@@ -42,6 +42,12 @@ export const PRODUTOS = [
   "plano-de-aula",
   "plano-de-ensino",
   "bem-estar",
+  /* O primeiro produto SEM experiência: a superfície é o botão flutuante do
+     layout do professor, e a api o tranca pela classe com `@Produto(...)`
+     (`comum/disponibilidade.guard.ts`). No painel aparece com `experiencias: []`
+     — a composição é derivada de `experiencias.produto`, e nenhuma aponta
+     para ele. Contrato: `docs/regras/agente-professor.md`. */
+  "agente-professor",
 ] as const;
 
 export type Produto = (typeof PRODUTOS)[number];

@@ -4,9 +4,9 @@
 \chapter{Dicionário de dados}
 \label{ap:dicionario}
 
-Catálogo das 77 tabelas de \cd{public}, mais o \emph{schema} \cd{particoes}.
+Catálogo das 78 tabelas de \cd{public}, mais o \emph{schema} \cd{particoes}.
 O número é o de \cd{model} em \arq{apps/api/prisma/schema.prisma} em
-2026-09-27 (todos com \cd{@@map}; a \cd{\_prisma\_migrations} é do Prisma e
+2026-09-30 (todos com \cd{@@map}; a \cd{\_prisma\_migrations} é do Prisma e
 fica fora), e o índice abaixo tem uma linha por \cd{model}: tabela nova sem
 linha aqui é o sinal de que este apêndice ficou para trás.
 Os diagramas entidade-relacionamento estão no Capítulo~\ref{cap:dados}.
@@ -49,12 +49,13 @@ Os diagramas entidade-relacionamento estão no Capítulo~\ref{cap:dados}.
 \cd{experiencias} & \textbf{Catálogo} & Manifesto de versões\\
 \zebra \cd{experiencias\_versoes} & \textbf{Catálogo} & Uma linha por versão publicada, com o manifesto inteiro (\adrr{ADR-87})\\
 \cd{experiencias\_arquivadas} & \textbf{Catálogo} & A experiência arquivada, com a fotografia do arquivamento (\adrr{ADR-116})\\
-\cd{disponibilidades} & \textbf{Catálogo} & \textbf{O interruptor da rede} (\adrr{ADR-87})\\
-\zebra \cd{prospeccao\_leads} & \textbf{Sem tenant} & Cadastro de interesse do site público (\adrr{ADR-107}) --- a ÚNICA tabela de dado pessoal sem \cd{escola\_id} e sem RLS\\
-\cd{recursos\_auditoria} & \textbf{Catálogo} & \textbf{Quem mexeu no interruptor} --- append-only (\adrr{ADR-89})\\
-\zebra \cd{progresso} & Tenant & Progresso genérico da SDK\\
-\cd{ia\_uso\_diario} & Tenant & Contador de quota de IA\\
-\zebra \cd{ia\_quotas} & \textbf{Catálogo} & \textbf{O teto diário de IA por perfil} (\adrr{ADR-105})\\
+\zebra \cd{disponibilidades} & \textbf{Catálogo} & \textbf{O interruptor da rede} (\adrr{ADR-87})\\
+\cd{prospeccao\_leads} & \textbf{Sem tenant} & Cadastro de interesse do site público (\adrr{ADR-107}) --- a ÚNICA tabela de dado pessoal sem \cd{escola\_id} e sem RLS\\
+\zebra \cd{recursos\_auditoria} & \textbf{Catálogo} & \textbf{Quem mexeu no interruptor} --- append-only (\adrr{ADR-89})\\
+\cd{progresso} & Tenant & Progresso genérico da SDK\\
+\zebra \cd{ia\_uso\_diario} & Tenant & Contador de quota de IA\\
+\cd{ia\_quotas} & \textbf{Catálogo} & \textbf{O teto diário de IA por perfil} (\adrr{ADR-105})\\
+\zebra \cd{agente\_professor\_conversas} & Tenant & \textbf{A posse} das conversas do agente de IA do professor; o conteúdo mora no Agent Engine (\adrr{ADR-126})\\
 \cd{telemetria\_eventos} & Tenant, particionada & Canal analítico\\
 \zebra \cd{exp08ef1b\_activities} & Tenant & Atividade preparada pelo professor\\
 \cd{exp08ef1b\_authors} & Tenant & Personas fictícias\\
@@ -614,8 +615,10 @@ principal. O \emph{login} e o \emph{claim} \cd{turma\_id} do \emph{token}
   ordena continua sendo a unidade: a transversal e a ferramenta não têm uma, e a
   ordem da grade não pode depender da forma de um identificador.\\
 \zebra \cd{produto} & \cd{TEXT?} & \cd{entre-redes} $|$ \cd{plano-de-aula} $|$
-  \cd{plano-de-ensino} $|$ \cd{bem-estar}, com \emph{CHECK} espelhando
-  \cd{PRODUTOS} do código. Declarado no \cd{public/\allowbreak{}experiencia.json}.
+  \cd{plano-de-ensino} $|$ \cd{bem-estar} $|$ \cd{agente-professor}, com
+  \emph{CHECK} espelhando \cd{PRODUTOS} do código --- o último não tem
+  experiência nenhuma apontando para ele (\adrr{ADR-126}), mas o \emph{CHECK}
+  espelha a tupla inteira. Declarado no \cd{public/\allowbreak{}experiencia.json}.
   É o que põe a experiência no painel da Unooria e o que lhe dá o TETO do
   produto (\adrr{ADR-87}); \cd{NULL} \implica{} ela responde só pelo próprio
   interruptor. Quem cobra o campo é um teste que varre os manifestos, não o Zod
@@ -877,6 +880,43 @@ estudante, e não há \cd{escola\_id} --- a linha vale para o contrato inteiro.
 \emph{Grant} da role de runtime: \cd{SELECT, INSERT, UPDATE}, sem \cd{DELETE}
 --- a linha de um perfil não se apaga; sem ela, vale a constante do código e o
 registro acusa \cd{ia-quota-sem-linha}.
+
+\subsection{\cd{agente\_professor\_conversas}}
+
+\textbf{A posse das conversas do agente de IA do professor} (\adrr{ADR-126}).
+O conteúdo da conversa --- mensagens, estado, expiração --- é a sessão do Vertex AI
+Agent Engine; esta linha diz \textbf{de quem ela é}, porque o engine não confere o
+usuário numa sessão pedida por nome e a SA da api enxerga todas. Toda rota de
+\rota{/agente-professor/*} confere \cd{usuario\_id} \emph{e} \cd{escola\_id} aqui
+antes de tocar a sessão.
+
+\begin{tabularx}{\linewidth}{@{}L{28mm}L{26mm}X@{}}
+\toprule
+\headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
+\midrule
+\pk{id} & \cd{UUID} PK & \cd{gen\_random\_uuid()}. É o id que o hub conhece
+  --- nunca o \cd{sessao\_id}.\\
+\zebra \fk{escola\_id} & \cd{TEXT} & \cd{NOT NULL}, \cd{ON DELETE CASCADE}; a
+  escola ATIVA de quem abriu. Trocar de escola troca a lista.\\
+\fk{usuario\_id} & \cd{UUID} & \cd{NOT NULL}, FK para \cd{users},
+  \cd{ON DELETE CASCADE}. É também o \cd{user\_id} da sessão no engine.\\
+\zebra \cd{sessao\_id} & \cd{TEXT} & \textbf{Único}: uma sessão tem um dono só.
+  \emph{CHECK} de 1 a 200 caracteres.\\
+\cd{titulo} & \cd{TEXT?} & \textbf{CACHE} do \cd{titulo\_conversa} que o AGENTE
+  escreve no estado da sessão depois do primeiro turno; nulo até lá. \emph{CHECK}
+  de 1 a 120 caracteres (espelha \cd{TAMANHO\_MAXIMO\_DO\_TITULO}).\\
+\zebra \cd{criada\_em}, \cd{atualizada\_em} & \cd{TIMESTAMPTZ(6)} &
+  \cd{atualizada\_em} sobe a cada turno entregue e ordena a lista.\\
+\bottomrule
+\end{tabularx}
+
+\textbf{RLS} \cd{ENABLE} + \cd{FORCE}, política
+\cd{agente\_\B professor\_\B conversas\_\B por\_\B escola}: o título sai da pergunta, e a
+pergunta pode trazer o nome de um estudante. Índice
+\cd{agente\_\B professor\_\B conversas\_\B lista\_\B idx} em
+\cd{(escola\_id, usuario\_id, atualizada\_em DESC)}. \emph{Grant} da role de
+runtime: \cd{SELECT, INSERT, UPDATE, DELETE} --- apagar a conversa apaga a linha,
+depois da sessão. Migração \arq{20260930120000\_\B agente\_\B professor}.
 
 \subsection{\cd{progresso}}
 

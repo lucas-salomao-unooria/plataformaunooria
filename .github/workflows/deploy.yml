@@ -51,6 +51,7 @@ jobs:
       api: ${{ steps.mudou.outputs.api }}
       hub: ${{ steps.mudou.outputs.hub }}
       exps: ${{ steps.mudou.outputs.exps }}
+      agente: ${{ steps.mudou.outputs.agente }}
     steps:
       # Guarda do workflow_dispatch: disparado de uma branch que nao e de
       # ambiente, nada pode subir — e referenciar um environment inexistente
@@ -83,6 +84,8 @@ jobs:
             echo "api=$(mudou apps/api packages pnpm-lock.yaml)"
             echo "hub=$(mudou apps/hub packages pnpm-lock.yaml)"
             echo "exps=$(mudou apps/experiencias packages pnpm-lock.yaml)"
+            # O agente é Python e não lê nada de packages/ nem do lockfile do pnpm.
+            echo "agente=$(mudou apps/agente-professor)"
           } >> "$GITHUB_OUTPUT"
 
   # --- api: imagem -> migrations -> serviço ---------------------------------
@@ -184,6 +187,81 @@ jobs:
             sleep 10
           done
           echo "::error::a api não respondeu {\"ok\":true} em $API_URL/readyz em 2 minutos"
+          exit 1
+
+  # --- agente de IA do professor: imagem -> patch do Agent Engine ------------
+  # docs/regras/agente-professor.md e o RUNBOOK-AGENTE-PROFESSOR.md do repo de
+  # fundação. O engine NASCE no Terraform só depois que existe uma imagem
+  # (`count` sobre `agente_professor_imagem`): no primeiro deploy este job só
+  # publica a imagem, e o apply 2 cria o engine apontando para ela. Daí em
+  # diante o job faz o PATCH da `imageUri` — e o Terraform ignora esse campo
+  # (`ignore_changes`), senão cada apply desfaria o deploy.
+  # `vars.AGENTE_PROFESSOR_ENGINE` vazio = engine ainda não existe = sem patch.
+  deploy-agente-professor:
+    needs: [verificar, mudancas]
+    if: needs.mudancas.outputs.agente == 'true'
+    runs-on: ubuntu-latest
+    environment: ${{ github.ref_name == 'main' && 'prd' || github.ref_name }}
+    permissions: { contents: read, id-token: write }
+    env:
+      ENGINE: ${{ vars.AGENTE_PROFESSOR_ENGINE }}
+      IMG: ${{ vars.REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT }}/${{ vars.AR_REPO }}/agente-professor:${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: google-github-actions/auth@v2
+        id: auth
+        with:
+          workload_identity_provider: ${{ vars.WIF_PROVIDER }}
+          service_account: ${{ vars.DEPLOY_SA }}
+          token_format: access_token
+      - uses: google-github-actions/setup-gcloud@v2
+      - uses: docker/setup-buildx-action@v3
+      # Token direto no Docker, como nos jobs da api e do hub (o credential
+      # helper do gcloud já falhou no meio de um push — apêndice F).
+      - name: Autenticar o Docker no Artifact Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ vars.REGION }}-docker.pkg.dev
+          username: oauth2accesstoken
+          password: ${{ steps.auth.outputs.access_token }}
+      - name: Imagem do agente
+        uses: docker/build-push-action@v6
+        with:
+          context: apps/agente-professor
+          file: apps/agente-professor/Dockerfile
+          push: true
+          tags: ${{ env.IMG }}
+          cache-from: type=gha,scope=agente-professor-${{ github.ref_name }}
+          cache-to: type=gha,scope=agente-professor-${{ github.ref_name }},mode=max
+      - name: Imagem publicada (para o apply 2, se o engine ainda não existe)
+        if: env.ENGINE == ''
+        run: |
+          echo "::notice::engine ainda não existe — preencha agente_professor_imagem = \"$IMG\" no tfvars e rode o apply 2"
+      # PATCH só da imageUri; o resto da spec (envs, métodos, SA) é do Terraform.
+      # A resposta é uma operação longa: o passo espera ela terminar e falha se
+      # ela terminar com erro (engine que não sobe com a imagem nova).
+      - name: Atualizar o Agent Engine
+        if: env.ENGINE != ''
+        run: |
+          set -euo pipefail
+          REGIAO=$(echo "$ENGINE" | cut -d/ -f4)
+          BASE="https://${REGIAO}-aiplatform.googleapis.com/v1"
+          TOKEN=$(gcloud auth print-access-token)
+          OP=$(curl -fsS -X PATCH "$BASE/$ENGINE?updateMask=spec.containerSpec.imageUri" \
+            -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+            -d "{\"spec\":{\"containerSpec\":{\"imageUri\":\"$IMG\"}}}" | python3 -c 'import json,sys; print(json.load(sys.stdin)["name"])')
+          for i in $(seq 1 60); do
+            R=$(curl -fsS "$BASE/$OP" -H "Authorization: Bearer $TOKEN")
+            if echo "$R" | python3 -c 'import json,sys; d=json.load(sys.stdin); sys.exit(0 if d.get("done") else 1)'; then
+              if echo "$R" | python3 -c 'import json,sys; sys.exit(1 if "error" in json.load(sys.stdin) else 0)'; then
+                echo "engine atualizado para $IMG"; exit 0
+              fi
+              echo "::error::o Agent Engine recusou a imagem nova: $(echo "$R" | python3 -c 'import json,sys; print(json.load(sys.stdin)["error"].get("message",""))')"
+              exit 1
+            fi
+            sleep 15
+          done
+          echo "::error::o PATCH do Agent Engine não terminou em 15 minutos ($OP)"
           exit 1
 
   # --- hub ------------------------------------------------------------------

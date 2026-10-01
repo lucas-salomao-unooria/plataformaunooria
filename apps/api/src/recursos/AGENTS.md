@@ -107,16 +107,18 @@ herdada de um nível que não existe. Visto na tela antes de virar teste
   turma e têm dezenas de rotas entre as três. Anotar rota por rota é o desenho em
   que a próxima nasce sem guarda, sem erro e sem sintoma — o produto simplesmente
   não desliga. Por isso é um GUARD DE CLASSE: `DisponibilidadeGuard` +
-  `@Recurso("<expId>")` (`@Recurso("app-90-plano-de-aula")`) no `@Controller`, e
-  a exceção é `@SemDisponibilidade()`.
+  `@Recurso("app-90-plano-de-aula")` no `@Controller`, e a exceção é
+  `@SemDisponibilidade()`. **Produto SEM experiência** (`agente-professor`) usa
+  `@Produto("<slug>")`: sem linha em `experiencias`, a porta é o teto pelo
+  MESMO resolvedor (`exigirProdutoDisponivel`). No painel, `experiencias: []`.
 - **`@SemDisponibilidade()` só para APAGAR os próprios dados.** Desligar um
   produto fecha tudo — é isso que o interruptor significa, e é o que um incidente
   exige. A única exceção é apagar o que já existe: "não consigo apagar meus dados
   porque o produto foi desligado" é indefensável, e mais ainda no check-in de
   bem-estar, que é DASS-21. Interruptor nunca pode prender dado de ninguém.
   Não use o escape para leitura, edição ou exportação.
-- **Guard montado sem `@Recurso` LANÇA**, em vez de liberar. Liberar em silêncio
-  é exatamente a falha que o guard existe para impedir.
+- **Guard sem `@Recurso` nem `@Produto` LANÇA**, em vez de liberar. Liberar em
+  silêncio é exatamente a falha que o guard existe para impedir.
 - **A grade da sala filtra, e a missão SAI** (`salas.service.ts#catalogo`) —
   não fica com cadeado. Cadeado quer dizer "o professor ainda não abriu", e é um
   convite: existe alguém que pode abri-lo. Recurso que a rede não tem não abre

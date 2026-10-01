@@ -407,6 +407,85 @@ ignorar em silêncio, porque um campo de nome aparecendo é \emph{bug do jogo}.
  */
 \end{lstlisting}
 
+\section{Agente de IA do professor --- o \emph{stream} e o engine}
+\label{sec:payload-agente}
+
+O contrato das quatro pontas está na Seção~\ref{sec:contrato-agente} e em
+\arq{docs/\B regras/\B agente-professor.md}; os \emph{schemas} das respostas JSON
+e de cada \cd{data:}, no \arq{contrato-de-rotas.ts} do módulo
+\arq{src/\B agente-professor} da api.
+
+\begin{lstlisting}[language=jsonunoo, caption={\rota{POST /agente-professor/conversas/:id/mensagens} --- corpo}]
+{ "texto": "Quais habilidades de Matematica do 6o ano tratam de fracoes?" }
+// 1 a 4000 caracteres depois do trim; .strict(): campo a mais e 400
+\end{lstlisting}
+
+\begin{lstlisting}[language=bashunoo, caption={A resposta: \cd{text/event-stream} (um turno com fonte, título e aviso)}]
+event: delta
+data: {"texto":"No 6o ano, as habilidades de fracoes sao "}
+
+: ping
+
+event: delta
+data: {"texto":"EF06MA07, EF06MA08 e EF06MA09."}
+
+event: fontes
+data: {"fontes":[{"titulo":"BNCC - Ensino Fundamental","paginaInicio":300,"paginaFim":301}]}
+
+event: titulo
+data: {"titulo":"Fracoes no 6o ano"}
+
+event: aviso
+data: {"codigo":"habilidade-inexistente","mensagem":"O codigo EF99ZZ99 citado na resposta nao existe na BNCC. Confira antes de usa-lo."}
+
+event: fim
+data: {}
+\end{lstlisting}
+
+\begin{lstlisting}[language=jsonunoo, caption={Recusa ANTES do \emph{stream} --- 429 em JSON}]
+{ "codigo": "RATE_LIMIT", "mensagem": "Muitas mensagens seguidas. ...", "retryAfterSeconds": 42 }
+{ "codigo": "QUOTA",      "mensagem": "Voce usou toda a cota de IA de hoje. ..." }
+// 404 { "codigo": "conversa-inexistente" } para conversa de outro dono
+// 403 { "codigo": "recurso-indisponivel" } com o produto desligado na escola
+\end{lstlisting}
+
+\begin{lstlisting}[language=jsonunoo, caption={A api \seta{} o Agent Engine: \cd{:query} e \cd{:streamQuery?alt=sse}}]
+// POST https://us-east1-aiplatform.googleapis.com/v1/{engine}:query
+{ "class_method": "async_create_session",
+  "input": { "user_id": "8f2c1a44-...",              // users.id, do token
+             "state": { "nome_professor": "Ana" },
+             "expire_time": "2036-09-30T12:00:00.000Z" } }
+
+// POST .../v1/{engine}:streamQuery?alt=sse
+{ "class_method": "async_stream_query",
+  "input": { "user_id": "8f2c1a44-...", "session_id": "<sessao_id>",
+             "message": "<texto do professor>",
+             "run_config": { "streaming_mode": "sse" } } }
+
+// PATCH .../v1beta1/{engine}/sessions/{sessao_id}?updateMask=expireTime
+{ "expireTime": "2036-09-30T12:05:00.000Z" }
+\end{lstlisting}
+
+\begin{lstlisting}[language=jsonunoo, caption={Um evento do ADK no \emph{stream} (abreviado), e o que a api lê dele}]
+{ "author": "agente_professor",
+  "partial": false,                                 // so os NAO parciais contam tokens
+  "content": { "parts": [ { "text": "..." } ] },   // texto final agregado: REPETE os parciais
+  "usage_metadata": { "total_token_count": 1834 },
+  "actions": { "state_delta": { "titulo_conversa": "Fracoes no 6o ano" } },
+  "custom_metadata": { "fora_do_escopo": true,    // so na recusa de escopo
+                       "tokens_auxiliares": 41 } } // guarda + titulo, ja somados
+// retorno de buscar_acervo, de onde sai o evento "fontes":
+{ "trechos": [ { "titulo": "...", "pagina_inicio": 300, "pagina_fim": 301,
+                 "trecho": "...", "fonte_id": "..." } ] }
+\end{lstlisting}
+
+\begin{nota}
+O corpo do \cd{:streamQuery} chega em linhas \cd{data: \{...\}} \textbf{ou} em
+NDJSON puro, no mesmo serviço; o cliente decide por linha, não pelo
+\cd{content-type}. O ADK aceita \emph{snake\_case} e o REST das sessões devolve
+\emph{camelCase}: o cliente normaliza os dois em \cd{EventoAgente}.
+\end{nota}
+
 \section{Manifesto de experiência}
 
 \begin{lstlisting}[language=jsonunoo, caption={\arq{public/experiencia.json} --- exp08ef1b, com \cd{viewport}}]

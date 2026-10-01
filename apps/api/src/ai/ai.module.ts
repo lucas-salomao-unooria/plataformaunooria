@@ -7,6 +7,8 @@ import { QuotaService } from "./quota.service";
 import { VertexProvider } from "./vertex.provider";
 import { Metricas } from "../observabilidade/metricas";
 import { MedidorDeProvider } from "./medidor.provider";
+import { AGENTE_PROFESSOR, type ModoDoAgente } from "./agente-professor.port";
+import { criarAgenteProfessor } from "./agent-engine.client";
 
 /** Global: o MotorModule (reações ao vivo) e o GeracaoModule injetam o
  *  provider pelo token AI_PROVIDER — nenhum deles conhece o vendor. */
@@ -33,7 +35,20 @@ import { MedidorDeProvider } from "./medidor.provider";
           },
         ),
     },
+    {
+      /* O agente de IA do professor (Agent Engine). Porta separada do
+         `AI_PROVIDER`: aqui o modelo e as ferramentas moram no agente, e a api
+         só conduz a sessão. As envs já passaram pelo Zod do boot. */
+      provide: AGENTE_PROFESSOR,
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) =>
+        criarAgenteProfessor({
+          modo: config.get<ModoDoAgente>("AGENTE_PROFESSOR_MODO") ?? "desligado",
+          engine: config.get<string>("AGENTE_PROFESSOR_ENGINE"),
+          urlLocal: config.get<string>("AGENTE_PROFESSOR_URL_LOCAL"),
+        }),
+    },
   ],
-  exports: [AI_PROVIDER, QuotaService],
+  exports: [AI_PROVIDER, QuotaService, AGENTE_PROFESSOR],
 })
 export class AiModule {}

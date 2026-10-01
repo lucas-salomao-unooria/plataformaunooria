@@ -86,6 +86,8 @@ services:
       VERTEX_LOCATION: ${VERTEX_LOCATION:-global}
       VERTEX_MODEL: ${VERTEX_MODEL:-gemini-3.6-flash}
       VERTEX_MODEL_LONGO: ${VERTEX_MODEL_LONGO:-gemini-3.6-flash}
+      # Agente de IA do professor: `mock` é o turno enlatado (docs/regras/agente-professor.md).
+      AGENTE_PROFESSOR_MODO: ${AGENTE_PROFESSOR_MODO:-mock}
       VERTEX_IMAGE_MODEL: ${VERTEX_IMAGE_MODEL:-gemini-3.1-flash-image}
       VERTEX_THINKING_BUDGET: ${VERTEX_THINKING_BUDGET:-0}
       GOOGLE_APPLICATION_CREDENTIALS: /adc/application_default_credentials.json

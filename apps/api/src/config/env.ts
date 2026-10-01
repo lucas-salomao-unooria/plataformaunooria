@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { ENV_DO_FUSO, FUSO_PADRAO, fusoEhValido } from "../comum/fuso";
+import { ENGINE_RE, MODOS_DO_AGENTE } from "../ai/agente-professor.port";
 
 /**
  * Validação de env com Zod no BOOT (regra do CLAUDE.md: Zod em todo input
@@ -66,6 +67,31 @@ export const EnvSchema = z.object({
   // 0 = desligado (paridade com o app origem, que usava Claude sem thinking e
   // é o que garante que o plano anual caiba no teto de saída); -1 = dinâmico.
   VERTEX_THINKING_BUDGET: z.coerce.number().int().min(-1).default(0),
+
+  /**
+   * O agente de IA do professor (`docs/regras/agente-professor.md`).
+   *
+   * `AGENTE_PROFESSOR_MODO`: `agent-engine` (Vertex AI Agent Engine, ADC) |
+   * `local` (o shim de `apps/agente-professor`) | `mock` (enlatado, o da suíte
+   * e2e) | `desligado`. **Ausente = `desligado`, em qualquer NODE_ENV** — e é
+   * aqui que ele diverge do `AI_PROVIDER`, cujo padrão é `vertex` e derruba a
+   * subida sem projeto. O `AI_PROVIDER` serve a produtos que JÁ existem em toda
+   * stack; o agente depende de um engine que o Terraform de cada contrato
+   * provisiona em momentos diferentes. Derrubar a api inteira por falta dele
+   * tiraria do ar todos os produtos para proteger um; desligado, o produto
+   * responde `AGENTE_INDISPONIVEL` e o resto segue. O `mock` também NÃO é o
+   * padrão de teste: quem testa escolhe o modo explicitamente.
+   *
+   * `AGENTE_PROFESSOR_ENGINE`: o resource name COMPLETO
+   * (`projects/<p>/locations/<r>/reasoningEngines/<id>`) — a região sai dele.
+   * `AGENTE_PROFESSOR_URL_LOCAL`: a base do shim (ex.: `http://localhost:8080`).
+   */
+  AGENTE_PROFESSOR_MODO: z.enum(MODOS_DO_AGENTE).default("desligado"),
+  AGENTE_PROFESSOR_ENGINE: z
+    .string()
+    .regex(ENGINE_RE, "resource name completo: projects/<p>/locations/<r>/reasoningEngines/<id>")
+    .optional(),
+  AGENTE_PROFESSOR_URL_LOCAL: z.string().url().optional(),
 
   // Imagens geradas: local (dev, servido pela api em /assets) | gcs (bucket
   // {contrato}-assets atrás da CDN — docs/INFRA.md).
@@ -169,6 +195,32 @@ export const EnvSchema = z.object({
       path: ["VERTEX_PROJECT_ID"],
       message:
         "obrigatório com AI_PROVIDER=vertex (em dev, use AI_PROVIDER=mock para subir sem GCP)",
+    });
+  }
+
+  // Modo escolhido sem o endereço dele: falha na SUBIDA, não no primeiro
+  // "AGENTE_INDISPONIVEL" que um professor vê.
+  if (env.AGENTE_PROFESSOR_MODO === "agent-engine" && !env.AGENTE_PROFESSOR_ENGINE) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["AGENTE_PROFESSOR_ENGINE"],
+      message: "obrigatório com AGENTE_PROFESSOR_MODO=agent-engine",
+    });
+  }
+  if (env.AGENTE_PROFESSOR_MODO === "local" && !env.AGENTE_PROFESSOR_URL_LOCAL) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["AGENTE_PROFESSOR_URL_LOCAL"],
+      message: "obrigatório com AGENTE_PROFESSOR_MODO=local",
+    });
+  }
+  // Em produção, resposta enlatada ou um shim sem autenticação seriam um
+  // professor recebendo texto falso como se fosse o agente.
+  if (env.NODE_ENV === "production" && (env.AGENTE_PROFESSOR_MODO === "mock" || env.AGENTE_PROFESSOR_MODO === "local")) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["AGENTE_PROFESSOR_MODO"],
+      message: "mock e local não sobem em produção: use agent-engine ou desligado",
     });
   }
 

@@ -317,6 +317,77 @@ que \cd{ia\_quotas} não tem: o titular pode revogar e pedir a eliminação
 \textbf{Não há rota de exclusão}; o pedido é atendido por acesso direto ao
 banco, e a tela de Prospecção diz isso em vez de prometer um botão inexistente.
 
+\section{A conversa do agente: a posse no Postgres, o conteúdo fora dele}
+\label{sec:agente-professor-posse}
+
+O agente de IA do professor (\adrr{ADR-126}) é o primeiro produto em que o dado
+de uma pessoa \textbf{não mora no Postgres}: o conteúdo da conversa é a sessão do
+Vertex AI Agent Engine. O que o Postgres guarda é \textbf{de quem ela é}, e é essa
+linha que faz o isolamento valer.
+
+\begin{itemize}
+  \item \textbf{Por que a posse não pode ficar no engine.} Os \emph{endpoints} de
+    sessão pedidos por nome de recurso não conferem o usuário, e a SA da api
+    enxerga \emph{todas} as sessões do engine. Sem a linha, quem soubesse um
+    \cd{sessao\_id} leria a conversa de outro professor --- de outra escola,
+    inclusive. A checagem do ADK (\enquote{does not belong to user}) é defesa em
+    profundidade.
+  \item \textbf{\cd{agente\_professor\_conversas} tem \cd{escola\_id NOT NULL},
+    \cd{ENABLE} e \cd{FORCE ROW LEVEL SECURITY}}, com a mesma política das outras
+    tabelas, porque o título que o agente gera sai da pergunta --- e a pergunta
+    pode trazer o nome de um estudante. A RLS tranca a escola; o \cd{daPosse}
+    acrescenta o \cd{usuario\_id}, e \textbf{toda rota passa por ele antes de
+    tocar a sessão}. Conversa de outro professor, ou de outra escola, é
+    \textbf{404, nunca 403} (403 confirmaria que o id existe); id que não é UUID
+    também é 404. A conversa pertence a (professor, escola ativa): trocar de
+    escola troca a lista.
+  \item \textbf{Identidade só do \emph{token}.} O \cd{user\_id} no engine é o
+    \cd{usuarioId} do \emph{token}, e o \cd{nome\_professor} vem de
+    \cd{users.display\_name}; nada vem do corpo.
+  \item \textbf{Só \cd{professor}.} A classe tem \cd{@Roles("professor")}, e o chat
+    só é montado no \emph{layout} de \rota{/professor}. A coordenação ficou fora por
+    decisão do dono do produto, e a ausência é estrutural: não há rota.
+  \item \textbf{Nenhuma transação \cd{comTenancy} fica aberta durante o
+    \emph{stream}}: posse antes, atualização depois, cada uma curta. Um turno dura
+    dezenas de segundos, e uma transação pendurada nesse tempo seria uma conexão
+    do \emph{pool} presa por professor.
+\end{itemize}
+
+\begin{atencao}
+\textbf{Dado de professor --- e de estudante citado por engano --- fora do
+Postgres.} O texto da conversa fica na sessão do engine (\cd{us-east1} em
+\cd{dev} e \cd{hml}), fora do PITR, das exportações e do Capítulo~\ref{cap:dados};
+o modelo processa em \cd{global}. Três consequências. \textbf{Apagar exige o
+engine no ar}: com ele fora, o \rota{DELETE} responde 503 e a linha fica, porque
+apagar só a linha deixaria a conversa guardada sem dono alcançável. \textbf{O
+histórico não tem prazo}: a sessão nasce com expiração distante e é renovada a
+cada mensagem, e quem apaga é o professor. E \textbf{nenhum registro leva texto}
+--- nem a pergunta, nem a resposta, nem o título, nem o corpo de erro do engine,
+na api e no agente: só ids, contagens, códigos, duração e \emph{tokens}.
+\end{atencao}
+
+\begin{itemize}
+  \item \textbf{O painel INTEIRO leva \cd{data-clarity-mask="true"}}: o Microsoft
+    Clarity grava a tela do hub (\adrr{ADR-60}), e o professor pode escrever o
+    nome de um estudante na pergunta. Junto do campo fica o aviso fixo
+    \enquote{Não escreva nomes de estudantes.} --- aviso, não trava. E o
+    \cd{localStorage} guarda só o tamanho do painel; conversa, título e texto
+    nunca vão para lá.
+  \item \textbf{O \emph{markdown} da resposta vira HTML no navegador sem HTML
+    cru} e com links só \cd{http}, \cd{https} e \cd{mailto} absolutos
+    (\adrr{ADR-129}): é o que impede o
+    modelo, ou um trecho de PDF, de injetar elemento na página.
+  \item \textbf{Cloud Armor: a 921150 sai, as outras ficam.} A assinatura de
+    injeção de cabeçalho (CR/LF) casa qualquer corpo com quebra de linha, que o
+    professor produz ao colar texto ou usar Shift+Enter. A regra 1106 a exclui em
+    \rota{/agente-professor/} (\emph{host} da api) e
+    \rota{/api/\B plataforma/\B agente-professor/} (\emph{host} do hub) --- os dois saltos
+    passam pelo LB. Os conjuntos de SQLi, XSS, LFI, RFI, RCE e \emph{scan}
+    \textbf{continuam valendo}: o professor que colar um trecho de SQL ou de HTML
+    na pergunta é barrado no LB, e o sintoma é uma falha de rede sem linha no log
+    da api (Apêndice~\ref{ap:operacao}).
+\end{itemize}
+
 \section{O interruptor da rede: um nível que não é de tenancy}
 
 A \adrr{ADR-87} acrescentou um eixo que decide se algo abre e que \textbf{não é
@@ -363,8 +434,15 @@ migração não a \enquote{conserte}: ligar RLS ali faz TODO produto parecer lig
     exceção existe porque \enquote{não consigo apagar meus dados porque o produto
     foi desligado} é indefensável, e mais ainda no \emph{check-in} de bem-estar,
     que é DASS-21.
-  \item \emph{Guard montado sem \cd{@Recurso} LANÇA}, em vez de liberar ---
-    liberar em silêncio é exatamente a falha que ele existe para impedir.
+  \item \emph{Produto sem experiência} --- o agente de IA do professor ---
+    declara \cd{@Produto(\B"agente-\B professor")} no lugar de \cd{@Recurso}: não há
+    linha em \cd{experiencias} a resolver, e a pergunta é a do TETO, pelo mesmo
+    resolvedor (\cd{exigir\B Produto\B Disponivel}). O escape é o mesmo: só o
+    \rota{DELETE} da conversa tem \cd{@Sem\B Disponibilidade}.
+  \item \emph{Guard montado sem \cd{@Recurso} nem \cd{@Produto} LANÇA}, em vez de
+    liberar --- liberar em silêncio é exatamente a falha que ele existe para
+    impedir. Os dois juntos também lançam: o teto do produto já está dentro da
+    resolução da experiência.
 \end{itemize}
 
 \textbf{A mensagem que chega ao estudante é a MESMA} de \cd{missao-nao-liberada}:
@@ -641,15 +719,17 @@ A resposta --- que devolve só \enquote{enviada}, nunca o resultado &
 \textbf{Bem-estar: o próprio \emph{check-in}, histórico, apagar} &
   \rota{/bemestar/*} & \no & \yes & \no & \no\\
 \zebra Plano de aula: criar, versionar, restaurar & \rota{/planos/*} & \no & \yes & \no & \no\\
-\textbf{Análise de produto, na rede} (+CSV) & \rota{/analise/*} &
+\textbf{Conversar com o agente de IA do professor} --- só as PRÓPRIAS conversas,
+  na escola ativa (\adrr{ADR-126}) & \rota{/agente-professor/*} & \no & \yes & \no & \no\\
+\zebra \textbf{Análise de produto, na rede} (+CSV) & \rota{/analise/*} &
   \no & \no & \no & \yes\\
-\zebra Chamar a IA (com quota diária POR PERFIL) & \rota{POST /ai/gerar} &
+Chamar a IA (com quota diária POR PERFIL) & \rota{POST /ai/gerar} &
   \yes & \yes & \yes & \yes\\
-\textbf{Alterar o teto diário de IA de um perfil} (só \cd{admin}, \adrr{ADR-105}) &
+\zebra \textbf{Alterar o teto diário de IA de um perfil} (só \cd{admin}, \adrr{ADR-105}) &
   \rota{/recursos/quotas-de-ia/*} & \no & \no & \no & \no\\
-\zebra \textbf{Listar as experiências arquivadas} (só \cd{admin}, \adrr{ADR-116}) &
+\textbf{Listar as experiências arquivadas} (só \cd{admin}, \adrr{ADR-116}) &
   \rota{GET /recursos/arquivadas} & \no & \no & \no & \no\\
-Enviar telemetria & \rota{POST /telemetry/batch} & \yes & \yes & \yes & \yes\\
+\zebra Enviar telemetria & \rota{POST /telemetry/batch} & \yes & \yes & \yes & \yes\\
 \bottomrule
 \end{tabularx}
 
@@ -1124,6 +1204,11 @@ estudante}, e isso precisa constar do contrato e do DPA da rede. Voltar à regi�
 possível a qualquer momento, mas exige trocar \emph{também} o modelo pelo que a
 região publica (lá, a família 2.5) --- as duas variáveis mudam juntas ou a
 geração para de funcionar.
+
+O agente de IA do professor segue a mesma regra por outro caminho: o modelo dele
+está em \cd{global} (com reserva em \cd{us}), os dois \emph{data stores} em
+\cd{global} e a sessão --- o histórico das conversas --- no Agent Engine em
+\cd{us-east1}. Nenhum dos três fica no Brasil.
 \end{atencao}
 
 \section{Verificação}

@@ -74,6 +74,8 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 24, cache: pnpm }
       - run: pnpm install --frozen-lockfile
+      - uses: astral-sh/setup-uv@v6   # apps/agente-professor e Python (ADR-126)
+        with: { version: "0.12.7", enable-cache: true }
       - run: pnpm --filter @edu/api migrate:deploy
       - run: |
           if [ "$COMPLETO" = "true" ]; then
@@ -227,6 +229,55 @@ Pub/Sub: env ausente é porta fechada, não porta aberta.
   publicam por último, depois dos dois.}
 \label{fig:pipeline-deploy}
 \end{figure}
+
+\subsection{O agente de IA do professor: imagem, \cd{PATCH} e a ordem dos \emph{applies}}
+
+O agente (\adrr{ADR-126}) não é um Cloud Run, e a figura acima não o desenha: é
+um quarto \emph{job}, \cd{deploy-agente-professor}, em paralelo com os da api e
+do hub, disparado quando o \emph{job} \cd{mudancas} vê \arq{apps/agente-professor}
+no \emph{diff} (o pacote é Python e não lê nada de \arq{packages/} nem do
+\emph{lockfile} do pnpm). Ele constrói a imagem pelo \arq{Dockerfile} do pacote
+(\cd{uv sync --locked}), publica
+\cd{\{região\}-docker.pkg.dev/\ldots/agente-professor:\{sha\}} no mesmo Artifact
+Registry e, se o engine já existe, faz \cd{PATCH} do engine com
+\cd{updateMask=spec.containerSpec.imageUri} e espera a operação longa terminar
+--- falha se o engine recusar a imagem, ou se a operação passar de 15 minutos.
+O resto da \cd{spec} (variáveis, métodos, SA) é do Terraform, que ignora a
+\cd{imageUri} (\cd{ignore\_changes}); sem isso, cada \emph{apply} desfaria o
+\emph{deploy}.
+
+\textbf{O engine só nasce depois da primeira imagem}, e isso dá uma ordem que o
+CI não resolve sozinho:
+
+\begin{enumerate}
+  \item \textbf{Uma vez por projeto}, os \emph{service agents} do Discovery Engine
+    e do Agent Engine (\cd{gcloud beta services identity create}); e o
+    \cd{terraform init -upgrade} do \emph{provider} \cd{google} 7.46.
+  \item \textbf{\emph{Apply} 1}, com \cd{agente\_professor\_imagem = ""}:
+    \emph{bucket}, \emph{data stores}, esquema das habilidades, SA, papéis e a
+    exclusão do Cloud Armor. A api ganha \env{AGENTE\_PROFESSOR\_MODO=desligado}.
+  \item \textbf{Ingestão}, fora do Terraform: \cd{importar esquema},
+    \cd{exportar\_\B habilidades}, \cd{importar habilidades}, os PDFs no
+    \emph{bucket}, \cd{dividir\_\B pdfs}, \cd{gerar\_\B metadados\_\B acervo},
+    \cd{importar acervo} e o relatório \cd{avaliar\_\B habilidades}.
+  \item \textbf{O CI publica a primeira imagem.} Com
+    \cd{vars.AGENTE\_PROFESSOR\_ENGINE} vazia, o \emph{job} só publica e deixa um
+    aviso com a referência a pôr no \cd{tfvars}.
+  \item \textbf{\emph{Apply} 2}, com \cd{agente\_professor\_imagem} preenchida:
+    o engine (minutos; o \emph{timeout} do \emph{provider} é 20), o IAM nele e a
+    api com \env{AGENTE\_PROFESSOR\_MODO=agent-engine} e o \emph{resource name}.
+    A \cd{var} \cd{AGENTE\_PROFESSOR\_ENGINE} do ambiente no GitHub recebe o
+    mesmo \emph{resource name}.
+  \item \textbf{Daí em diante, quem troca a imagem é o CI.}
+\end{enumerate}
+
+\begin{atencao}
+\textbf{Até o \emph{apply} 2, o chat responde \enquote{agente indisponível}} ---
+é o \cd{desligado} fazendo o que deve, não uma falha. E o \emph{runner} do CI
+precisa do \cd{uv}: sem ele, o \cd{pnpm turbo} da raiz \textbf{falha} com a
+instrução de instalação, para que um pacote que some da verificação não vire um
+verde falso (\env{AGENTE\_PROFESSOR\_PULAR\_SEM\_UV=1} pula com aviso).
+\end{atencao}
 
 \subsection{Sonda, \emph{smoke} e aviso (2026-09-02)}
 
