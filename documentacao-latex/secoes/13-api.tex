@@ -130,6 +130,8 @@ método e esquema, é o Apêndice~\ref{ap:endpoints}.
   % embaixo, e a faixa da exp08ef1b desce 1,85.
   \node[rt] (evi) at (1.95,-8.5)
     {\texttt{/evidencias/*}\desc{prof.\ ajusta, gestor lê;\\estudante: só a pergunta}};
+  \node[rt, fill=unooRedWash, draw=unooRed] (agp) at (5.9,-8.5)
+    {\texttt{/agente-professor/*}\desc{\textbf{só professor}, posse;\\a mensagem responde SSE}};
 
   \node[camadalbl, anchor=west] at (0.1,-9.8) {exp08ef1b --- Instanooria};
   \node[rt] (atv) at (1.95,-10.9)
@@ -153,7 +155,9 @@ método e esquema, é o Apêndice~\ref{ap:endpoints}.
   \texttt{/equipes/*} quem divide um computador nela (\adrr{ADR-111}). Nas duas
   últimas quem escreve é só quem leciona; o gestor só lê --- como em
   \texttt{/evidencias/*} (\adrr{ADR-112}), em que o estudante alcança só a
-  pergunta e a resposta, nunca o próprio resultado.}
+  pergunta e a resposta, nunca o próprio resultado. \texttt{/agente-professor/*}
+  é só do professor, e cada um alcança só as próprias conversas na escola ativa
+  (\adrr{ADR-126}).}
 \label{fig:mapa-rotas}
 \end{figure}
 
@@ -621,6 +625,55 @@ vale nas duas portas.
 \bottomrule
 \end{tabularx}
 
+\subsection{O agente de IA do professor}
+\label{sec:api-agente}
+
+\adrr{ADR-126}. Classe com \cd{@Roles("professor")}, \cd{Disponibilidade\B Guard} e
+\cd{@Produto(\B"agente-\B professor")}: rota nova nasce coberta pelo interruptor, e o
+único escape é o \rota{DELETE}. O id de todas as rotas é o da linha de
+\cd{agente\_\B professor\_\B conversas}, nunca o \cd{sessao\_id} do engine; id que não é
+UUID responde como inexistente.
+
+\begin{tabularx}{\linewidth}{@{}L{44mm}L{16mm}X@{}}
+\toprule
+\headrow \thd{Rota} & \thd{Código} & \thd{Semântica}\\
+\midrule
+\rota{GET /agente-professor/\B conversas} & 200 & As do professor na escola ativa,
+  a mais recente primeiro. \cd{titulo} é \cd{null} até o fim do primeiro turno.
+  Sai do Postgres; não toca o engine.\\
+\zebra \rota{POST /agente-professor/\B conversas} & \textbf{201} & Cria a sessão no engine
+  (com \cd{nome\_professor} e expiração distante) e a linha da posse. Não chama o
+  modelo: não consome quota. 503 \cd{AGENTE\_INDISPONIVEL} com o agente fora do
+  ar ou \cd{desligado}.\\
+\rota{GET /agente-professor/\B conversas/:id} & 200 & Título e mensagens, montados
+  da sessão: o texto do professor e o texto FINAL do agente, com as fontes de
+  cada turno. Sessão que sumiu do engine apaga a linha e responde 404.\\
+\zebra \rota{POST /agente-professor/\B conversas/:id/\B mensagens} & 200 SSE & O turno
+  (Seção~\ref{sec:contrato-agente}): \cd{text/event-stream} com
+  \cd{delta}, \cd{fontes}, \cd{titulo}, \cd{aviso}, \cd{fim} e \cd{erro}. Antes
+  de abrir o \emph{stream}, em JSON: 400 (corpo), 404 (posse), 429
+  \cd{RATE\_LIMIT} (10 por minuto) e 429 \cd{QUOTA}.\\
+\rota{DELETE /agente-professor/\B conversas/:id} & \textbf{204} & Apaga a sessão e a
+  linha. \cd{@SemDisponibilidade}: com o produto desligado, o professor continua
+  apagando o que é dele. Engine fora do ar: 503, e a linha FICA.\\
+\bottomrule
+\end{tabularx}
+
+\begin{regra}
+\textbf{Outro dono é 404, nunca 403} --- 403 confirmaria que o id existe. E os
+\emph{rate limits} são por professor: 10 mensagens, 10 conversas novas, 30
+exclusões e 120 leituras por minuto. O \cd{Map} do \cd{rateLimit} é por instância,
+como nas outras rotas.
+\end{regra}
+
+\begin{atencao}
+\textbf{O \cd{ContratoInterceptor} não confere a rota de mensagens}: ela escreve na
+resposta crua (\cd{@Res()}, \cd{tipoDaResposta: text/event-stream}). Quem confere
+cada \cd{data:} é o teste, contra \cd{DADOS\_POR\_EVENTO} de
+\arq{contrato-de-rotas.ts}; no OpenAPI a resposta aparece como \cd{string}. E é a
+rota que infla o p95 da api (\adrr{ADR-128}).
+\end{atencao}
+
 \subsection{Planejamento de ensino (app-92)}
 
 Duas famílias: a \textbf{regência} (o que o professor leciona) e o que pende
@@ -1074,9 +1127,14 @@ produto:
 \begin{itemize}
   \item \rota{GET /recursos/efetivos} (\textbf{qualquer autenticado}) --- resolve
     a cadeia escola \seta{} regional \seta{} contrato, aplica o TETO do produto e
-    devolve \cd{\{produtos, experiencias\}}. \cd{produtos} traz SEMPRE os quatro,
-    ligados ou não: um mapa que só lista o ligado obriga quem lê a saber a lista
-    completa de cor --- e o hub passaria a ter a segunda fonte do vocabulário.
+    devolve \cd{\{produtos, experiencias\}}. \cd{produtos} traz SEMPRE todos os
+    do vocabulário (hoje cinco), ligados ou não: um mapa que só lista o ligado
+    obriga quem lê a saber a lista completa de cor --- e o hub passaria a ter a
+    segunda fonte do vocabulário. O quinto, \cd{agente-professor}, é o primeiro
+    produto SEM experiência: no painel da Unooria ele aparece com
+    \cd{experiencias: []} (a composição é derivada de \cd{experiencias.\B produto}, e
+    nenhuma aponta para ele), e é por \cd{produtos[\B"agente-\B professor"]\B.ligado} que
+    o hub decide montar o botão flutuante do professor (\adrr{ADR-126}).
 \end{itemize}
 
 Três decisões dentro dessa rota. O escopo sai do \textbf{token} (o claim

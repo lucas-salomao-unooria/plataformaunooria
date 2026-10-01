@@ -156,6 +156,8 @@ C4Container
     ContainerDb(pg, "PostgreSQL", "Cloud SQL HA + PITR", "Unico banco, unico schema; RLS por escola")
     ContainerQueue(ps, "Pub/Sub", "", "Canal analitico de telemetria")
     Container(buckets, "Object Storage", "Cloud Storage", "bundles, assets publicos, planos privados")
+    Container(engine, "Agente do professor", "Python + ADK, Vertex AI Agent Engine", "Sessao, ferramentas, guarda de escopo e titulo; so a API o chama (ADR-126)")
+    ContainerDb(ds, "Vertex AI Search", "dois data stores, global", "habilidades (estruturado) e acervo (PDFs) - ADR-127")
   }
 
   System_Ext(vertex, "Vertex AI")
@@ -173,6 +175,9 @@ C4Container
   Rel(ps, api, "push /telemetry/ingest")
   Rel(api, buckets, "assets, planos")
   Rel(api, vertex, "HTTPS + ADC")
+  Rel(api, engine, ":query / :streamQuery, ADC")
+  Rel(engine, vertex, "Gemini")
+  Rel(engine, ds, "busca")
   Rel(hub, idp, "OIDC")
   Rel(buckets, exp, "CDN serve o bundle")
 \end{lstlisting}
@@ -223,6 +228,10 @@ C4Component
     Component(bem,    "bemestar/", "", "app-91")
     Component(ugpt,   "unoogpt/", "", "exp02em1b - motor probabilistico, agente com ferramentas, relogio da turma; painel conta por computador")
     Component(outros, "rastro-boato/ manifesto-ia/ quem-mandou-isso/ foto-conta/ planejamento/", "", "exp06ef2b, exp08ef4b, exp05ef1b, exp01ef1b, app-92 - sem seta na figura")
+
+    %% --- plataforma, fora da figura TikZ (2026-09-30, ADR-126)
+    Component(agente, "agente-professor/", "", "Agente de IA do professor: posse da conversa, SSE, conferencia de codigos; @Produto('agente-professor')")
+    Component(porta, "AgenteProfessorPort", "ai/agent-engine.client.ts", "A segunda porta de ai/: so ela conhece o Vertex AI Agent Engine")
   }
 
   Rel(guard, roles, "antes de")
@@ -246,6 +255,9 @@ C4Component
   Rel(outros, evid, "exp05ef1b: marcar na transacao do Mural + registrarContexto")
   Rel(outros, equipes, "exp05ef1b: consulta.ts (painel por computador)")
   Rel(outros, ai, "exp05ef1b: IA + quota no preparo")
+  Rel(agente, prisma, "comTenancy: agente_professor_conversas")
+  Rel(agente, ai, "QuotaService: temSaldo antes, consumir no finally")
+  Rel(agente, porta, "criar/ler/apagar sessao, enviar, renovar")
 
   %% A figura TikZ desenha a infraestrutura ENTRE a plataforma e o dominio, com
   %% a coluna 2 vazia: e por ela que unootube/ e unoogpt/ sobem ate equipes/.
@@ -531,6 +543,7 @@ classDiagram
       plano-de-aula
       plano-de-ensino
       bem-estar
+      agente-professor
     }
     class Publico {
       <<enumeracao>>
@@ -1215,6 +1228,55 @@ sequenceDiagram
 \end{lstlisting}
 
 % ---------------------------------------------------------------------------
+\section{Figura~\ref{fig:uml-seq-agente} --- Sequência: um turno do agente de IA do professor}
+
+\begin{lstlisting}[language=mermaid]
+sequenceDiagram
+  participant N as Navegador (painel do chat)
+  participant H as Hub (rota de stream)
+  participant A as AgenteProfessor (controller + service)
+  participant P as PostgreSQL (Cloud SQL)
+  participant E as Agente (ADK no Agent Engine)
+  participant G as Gemini (global -> us)
+  participant D as Data store (Vertex AI Search)
+
+  N->>H: POST {texto}
+  H->>A: POST /agente-professor/conversas/:id/mensagens (token curto)
+  A->>A: OidcGuard, RolesGuard (professor), @Produto
+  A->>P: daPosse: usuario_id e escola_id
+  P-->>A: sessao_id
+  A->>P: temSaldo: ia_quotas, ia_uso_diario
+  P-->>A: usado < limite
+  break corpo invalido, outro dono, mais de 10/min, sem saldo
+    A-->>N: 400 | 404 | 429 em JSON, antes do stream
+  end
+  A-->>H: 200 text/event-stream
+  H-->>N: repassa o corpo
+  A->>E: :streamQuery?alt=sse {user_id, session_id, message}
+  E->>E: guarda de escopo (modelo leve)
+  E->>G: gerar, em stream
+  G-->>E: function_call
+  E->>D: buscar_habilidades: filtro exato, paginando
+  D-->>E: habilidades
+  E->>G: com o retorno
+  G-->>E: texto em pedacos
+  loop cada evento do agente
+    E-->>A: evento: parcial, final ou state_delta
+    A-->>N: event: delta (sem a repeticao do final agregado)
+  end
+  A->>A: fontes, titulo, conferencia dos codigos (habilidadePorCodigo)
+  A-->>N: fontes, titulo, aviso, fim
+  A->>P: finally: consumir(soma dos nao parciais)
+  A->>P: atualizada_em, titulo
+  A->>E: PATCH expireTime (renovar a sessao)
+
+  %% Durante o loop a api escreve ": ping" a cada 15 s. "Parar" (ou fechar a
+  %% aba) aborta cada salto ate o Vertex; fechar o PAINEL nao aborta; o teto de 240 s vira event: erro TEMPO_ESGOTADO. O
+  %% consumo roda no finally tambem no abandono e no erro; a renovacao so depois
+  %% de fim, e a falha dela e so log.
+\end{lstlisting}
+
+% ---------------------------------------------------------------------------
 \section{Figura~\ref{fig:uml-comunicacao} --- Comunicação: o caminho de um lote de telemetria}
 
 \begin{lstlisting}[language=mermaid]
@@ -1432,10 +1494,13 @@ flowchart LR
       ips["topic {contrato}-telemetria<br/>push -telemetria-ingest"]
     end
     subgraph AR["no - Artifact Registry"]
-      iar["hub:{sha}, api:{sha}<br/>push direto do CI"]
+      iar["hub:{sha}, api:{sha},<br/>agente-professor:{sha};<br/>push direto do CI"]
     end
     subgraph VX["servico gerenciado - Vertex AI"]
       ivx["Gemini; ADC da conta {contrato}-api"]
+    end
+    subgraph ENG["Agent Engine - us-east1 (nasce no apply 2)"]
+      aeng["imagem agente-professor:{sha}<br/>SA {prefixo}-agente"]
     end
   end
 
@@ -1450,12 +1515,14 @@ flowchart LR
   RUNAPI ---|VPC| SQL
   JOB ---|VPC| SQL
   RUNAPI --- VX
+  RUNAPI ---|SSE| ENG
   SM -.-|env| RUNHUB
 
   %% o CI implanta cada artefato
   GHA ==>|implanta| AR
   GHA ==>|rsync| GCS
   bgcs ==>|implanta| bnav
+  GHA ==>|"PATCH imageUri"| aeng
 
   %% A mesma imagem api:{sha} esta implantada em dois nos, e o bundle esta
   %% armazenado num e executado em outro. O CI ainda executa o job de migracao e
@@ -2136,6 +2203,7 @@ flowchart TB
     sal["/salas/* - prof. libera, gestor le; /minhas: estudante (ADR-69)"]
     eq["/equipes/* - prof. monta, gestor le; /minha: estudante (ADR-111)"]
     ev["/evidencias/* - prof. confirma e ajusta, gestor le; estudante: so a pergunta e a resposta (ADR-112)"]
+    agp["/agente-professor/* - SO PROFESSOR, posse; a mensagem responde SSE (ADR-126)"]
   end
   subgraph E01["exp08ef1b - Instanooria"]
     atv["/atividades/* - professor"]; rn["/runs/* - estudante (/eventos: professor tb.)"]

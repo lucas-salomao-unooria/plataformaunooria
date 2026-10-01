@@ -258,6 +258,10 @@ Duas armadilhas registradas naquela migração, ambas produzindo o mesmo sintoma
 \zebra \cd{evidencias\_eventos} & \emph{Tenant} & O histórico da evidência, com
   de/para, quem e quando. \textbf{Append-only no banco}: \emph{trigger} contra
   \cd{UPDATE}, e a \emph{role} de \emph{runtime} só com \cd{SELECT, INSERT}.\\
+\cd{agente\_professor\_conversas} & \emph{Tenant} & A POSSE das conversas do
+  agente de IA do professor (\adrr{ADR-126}): de quem é cada sessão do Agent
+  Engine. O conteúdo não mora aqui. Ver
+  Seção~\ref{sec:agente-professor-dados}.\\
 \bottomrule
 \end{tabularx}
 
@@ -275,6 +279,40 @@ Duas colunas merecem nota no modelo: \cd{email} é guardado em minúsculas por
 \emph{CHECK} (é a chave do \emph{dedupe} de uma hora) e o aceite é
 \cd{consentimento\_texto}, a FRASE marcada --- não um booleano, que provaria o
 clique e não o conteúdo do consentimento.
+
+\section{A posse das conversas do agente: \cd{agente\_professor\_conversas}}
+\label{sec:agente-professor-dados}
+
+\adrr{ADR-126}. A conversa do agente de IA do professor é a sessão do Vertex AI
+Agent Engine --- eventos, estado, expiração ---, e o banco \textbf{não a
+replica}. Esta tabela guarda só o que o engine não garante: \textbf{de quem a
+sessão é}. Os \emph{endpoints} de sessão do engine pedidos por nome não conferem o
+usuário, e a SA da api enxerga todas as sessões; sem a linha, um \cd{sessao\_id}
+conhecido abriria a conversa de outro professor (Capítulo~\ref{cap:tenancy}).
+
+\begin{itemize}
+  \item \textbf{Tabela de PLATAFORMA, sem prefixo de experiência}: o agente é o
+    produto \cd{agente-professor}, não uma experiência
+    (\adrr{ADR-110}).
+  \item \cd{escola\_id NOT NULL}, RLS \cd{ENABLE} + \cd{FORCE} com a política por
+    escola, FKs para \cd{escolas} e \cd{users} com \cd{ON DELETE CASCADE}, e o
+    \cd{GRANT} à \emph{role} de \emph{runtime}, guardado.
+  \item \cd{sessao\_id} \textbf{único}: uma sessão tem um dono só. \emph{CHECK} de
+    1 a 200 caracteres.
+  \item \cd{titulo} é \textbf{CACHE} do \cd{titulo\_conversa} que o AGENTE escreve
+    no estado da sessão depois do primeiro turno: nulo até lá, e um \emph{CHECK}
+    de 1 a 120 caracteres impede que um estado inesperado vire uma linha de lista
+    enorme (espelha \cd{TAMANHO\_MAXIMO\_DO\_TITULO}).
+  \item O índice \cd{(escola\_id, usuario\_id, atualizada\_em DESC)} é a lista do
+    painel: as do professor na escola ativa, a mais recente primeiro.
+  \item \textbf{Sessão que sumiu do engine apaga a linha} no \rota{GET} seguinte;
+    a lista nunca carrega uma conversa que não abre.
+\end{itemize}
+
+A mesma migração acrescenta \cd{agente-professor} ao \emph{CHECK}
+\cd{ck\_experiencias\_produto}. Nenhuma experiência aponta para ele --- é o
+primeiro produto SEM experiência ---, mas o \emph{CHECK} espelha a tupla
+\cd{PRODUTOS} inteira, e um teste compara os dois textos.
 
 \section{A rede: escola, lotação e o CPF}
 \label{sec:rede}
@@ -1587,6 +1625,11 @@ decisão \emph{futura}, com DPA e \emph{k}-anonimato --- e não sai de um
   \emph{role} de \emph{runtime}, guardado. Os nomes de índice e de \cd{UNIQUE}
   são dados à mão: o que o Prisma inventaria para cinco colunas passa de 63
   caracteres, e o Postgres o cortaria em silêncio.\\
+\arq{20260930120000\_\B{}agente\_\B{}professor} & A posse das conversas do agente
+  de IA do professor (\adrr{ADR-126}): \cd{agente\_professor\_conversas} com
+  \cd{escola\_id NOT NULL}, RLS \cd{FORCE}, \cd{sessao\_id} único, os \emph{CHECKs}
+  de título (1 a 120) e de \cd{sessao\_id}, o índice da lista e o \cd{GRANT},
+  guardado. E \cd{agente-professor} no \emph{CHECK} \cd{ck\_experiencias\_produto}.\\
 \bottomrule
 \end{tabularx}
 

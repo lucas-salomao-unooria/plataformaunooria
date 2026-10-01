@@ -7602,7 +7602,8 @@
                       "entre-redes",
                       "plano-de-aula",
                       "plano-de-ensino",
-                      "bem-estar"
+                      "bem-estar",
+                      "agente-professor"
                     ],
                     "nullable": true
                   },
@@ -8057,7 +8058,8 @@
                               "entre-redes",
                               "plano-de-aula",
                               "plano-de-ensino",
-                              "bem-estar"
+                              "bem-estar",
+                              "agente-professor"
                             ]
                           },
                           "estadoAqui": {
@@ -8751,7 +8753,8 @@
                         "entre-redes",
                         "plano-de-aula",
                         "plano-de-ensino",
-                        "bem-estar"
+                        "bem-estar",
+                        "agente-professor"
                       ],
                       "properties": {
                         "entre-redes": {
@@ -8821,6 +8824,23 @@
                             "versao"
                           ],
                           "additionalProperties": false
+                        },
+                        "agente-professor": {
+                          "type": "object",
+                          "properties": {
+                            "ligado": {
+                              "type": "boolean"
+                            },
+                            "versao": {
+                              "type": "string",
+                              "nullable": true
+                            }
+                          },
+                          "required": [
+                            "ligado",
+                            "versao"
+                          ],
+                          "additionalProperties": false
                         }
                       },
                       "additionalProperties": false
@@ -8860,7 +8880,7 @@
           "recursos"
         ],
         "summary": "O que está disponível para a escola do token.",
-        "description": "Resolve a cadeia escola → regional → contrato e aplica o TETO do produto. É daqui que o hub monta os cards do professor e decide o 404 das rotas de produto — **esconder o card é UX**; a porta é `exigirMissaoLiberada` / `DisponibilidadeGuard`, no servidor.\n\n**Papéis:** qualquer papel autenticado.\n\n**Restrições:**\n- `produtos` traz SEMPRE os quatro, ligados ou não: um mapa que só lista o ligado obriga quem lê a saber a lista completa de cor.\n- Perfil de contrato (`gestor_contrato`, `admin`) não tem escola no token, então a resposta é a do CONTRATO — a cadeia fica vazia e só as linhas de escopo-contrato valem.\n- Não devolve `motivo` nem quem desligou: isso é conversa entre a Unooria e a rede, e vive no painel.",
+        "description": "Resolve a cadeia escola → regional → contrato e aplica o TETO do produto. É daqui que o hub monta os cards do professor e decide o 404 das rotas de produto — **esconder o card é UX**; a porta é `exigirMissaoLiberada` / `DisponibilidadeGuard`, no servidor.\n\n**Papéis:** qualquer papel autenticado.\n\n**Restrições:**\n- `produtos` traz SEMPRE todos os produtos do vocabulário (hoje cinco), ligados ou não: um mapa que só lista o ligado obriga quem lê a saber a lista completa de cor.\n- `agente-professor` é produto SEM experiência: o hub lê `produtos[\"agente-professor\"].ligado` para montar (ou não) o botão flutuante do layout do professor.\n- Perfil de contrato (`gestor_contrato`, `admin`) não tem escola no token, então a resposta é a do CONTRATO — a cadeia fica vazia e só as linhas de escopo-contrato valem.\n- Não devolve `motivo` nem quem desligou: isso é conversa entre a Unooria e a rede, e vive no painel.",
         "security": [
           {
             "token-da-plataforma": []
@@ -31088,6 +31108,308 @@
           "professor"
         ],
         "x-acesso": "token"
+      }
+    },
+    "/agente-professor/conversas": {
+      "get": {
+        "operationId": "AgenteProfessorController_listar",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "titulo": {
+                        "type": "string",
+                        "nullable": true
+                      },
+                      "criadaEm": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "atualizadaEm": {
+                        "type": "string",
+                        "format": "date-time"
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "titulo",
+                      "criadaEm",
+                      "atualizadaEm"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "agente-professor"
+        ],
+        "summary": "As conversas do professor na escola ativa, a mais recente primeiro.",
+        "description": "Sai do Postgres (`agente_professor_conversas`), que é a fonte da POSSE — o Agent Engine não confere o usuário numa sessão pedida por nome. Trocar de escola troca a lista: a conversa pertence a (professor, escola ativa).\n\n**Papéis:** professor.\n\n**Restrições:**\n- `titulo` é `null` até o fim do 1º turno: quem escreve o título é o agente (`titulo_conversa` no estado da sessão).",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor"
+        ],
+        "x-acesso": "token"
+      },
+      "post": {
+        "operationId": "AgenteProfessorController_criar",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "required": [
+                    "id"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "agente-professor"
+        ],
+        "summary": "Abre uma conversa nova com o agente de IA do professor.",
+        "description": "Cria a sessão no Agent Engine com o estado `nome_professor` (primeiro nome de `users.display_name`, lido do banco) e expiração distante, e grava a linha da posse. Não chama o modelo — não consome quota.\n\n**Papéis:** professor.\n\n**Restrições:**\n- **503** `{ codigo: \"AGENTE_INDISPONIVEL\" }` quando o agente não responde (ou `AGENTE_PROFESSOR_MODO=desligado`).\n- **403** `{ codigo: \"recurso-indisponivel\" }` com o produto `agente-professor` desligado para a escola.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/agente-professor/conversas/{id}": {
+      "get": {
+        "operationId": "AgenteProfessorController_ler",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "titulo": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "mensagens": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "autor": {
+                            "type": "string",
+                            "enum": [
+                              "professor",
+                              "agente"
+                            ]
+                          },
+                          "texto": {
+                            "type": "string"
+                          },
+                          "fontes": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "titulo": {
+                                  "type": "string"
+                                },
+                                "paginaInicio": {
+                                  "type": "integer",
+                                  "nullable": true
+                                },
+                                "paginaFim": {
+                                  "type": "integer",
+                                  "nullable": true
+                                }
+                              },
+                              "required": [
+                                "titulo",
+                                "paginaInicio",
+                                "paginaFim"
+                              ],
+                              "additionalProperties": false
+                            }
+                          }
+                        },
+                        "required": [
+                          "autor",
+                          "texto"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "titulo",
+                    "mensagens"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "agente-professor"
+        ],
+        "summary": "Uma conversa: título e mensagens, montados da sessão no agente.",
+        "description": "Confere a posse (professor E escola) antes de tocar a sessão. As mensagens são o texto do professor e o texto FINAL do agente, sem os parciais do stream; `fontes` vem dos retornos de `buscar_acervo` daquele turno.\n\n**Papéis:** professor.\n\n**Restrições:**\n- Conversa de OUTRO professor, ou de outra escola, é **404** — nunca 403, que confirmaria que o id existe.\n- Se a sessão sumiu do agente (expirou), a linha é apagada e a resposta é 404.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor"
+        ],
+        "x-acesso": "token"
+      },
+      "delete": {
+        "operationId": "AgenteProfessorController_apagar",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Sucesso, sem corpo."
+          }
+        },
+        "tags": [
+          "agente-professor"
+        ],
+        "summary": "Apaga a conversa: a sessão no agente e a linha da posse.",
+        "description": "Escapa do interruptor (`@SemDisponibilidade`): com o produto desligado, o professor continua podendo apagar o que é dele. Sessão que já não existe no agente não é erro.\n\n**Papéis:** professor.\n\n**Restrições:**\n- Agente fora do ar: **503** e a linha FICA — apagar só a linha deixaria a conversa guardada no agente sem ninguém capaz de alcançá-la.\n- Conversa de outro professor ou de outra escola: **404**.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/agente-professor/conversas/{id}/mensagens": {
+      "post": {
+        "operationId": "AgenteProfessorController_enviar",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "agente-professor"
+        ],
+        "summary": "Envia uma mensagem e recebe a resposta do agente em SSE.",
+        "description": "Responde `text/event-stream` com os eventos `delta` / `fontes` / `titulo` / `aviso` / `fim` / `erro` de `docs/regras/agente-professor.md`, e `: ping` a cada 15 s. O stream termina em `fim` OU em `erro`. Teto de 240 s (`TEMPO_ESGOTADO`); fechar a conexão aborta a chamada ao agente.\n\n**Papéis:** professor.\n\n**Restrições:**\n- `texto`: 1 a 4000 caracteres depois do `trim` — fora disso, **400** JSON.\n- **429 JSON ANTES do stream**: `{ codigo: \"RATE_LIMIT\" }` acima de 10 mensagens por minuto, `{ codigo: \"QUOTA\" }` sem saldo diário de IA (perfil `professor`, `ia_quotas`).\n- Os tokens consumidos são a soma dos eventos NÃO parciais do turno, contados mesmo se o professor fechar o painel.\n- Conversa de outro professor ou de outra escola: **404** JSON, antes do stream.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "texto": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 4000
+                  }
+                },
+                "required": [
+                  "texto"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
       }
     },
     "/rastro-boato/sessao": {

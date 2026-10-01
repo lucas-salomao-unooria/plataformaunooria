@@ -4,7 +4,7 @@
 \chapter{Camada de inteligência artificial}
 \label{cap:ia}
 
-A IA generativa é usada em quatro lugares da plataforma, com propósitos e riscos
+A IA generativa é usada em vários lugares da plataforma, com propósitos e riscos
 muito diferentes. Este capítulo descreve a camada única por onde todos passam, a
 economia de \emph{tokens} que a sustenta e os \emph{guardrails} que impedem cada
 uso de produzir dano.
@@ -47,6 +47,13 @@ Preparo do pacote & exp04ef1b, \arq{src/jornal-escola/} &
   \emph{enum} de três layouts, e nenhum texto. Não escolhe notícia, não
   reordena as vagas, não vê o gabarito. Qualquer falha cai no modelo
   automático (\adrr{ADR-117}).\\
+Agente de IA do professor & produto \cd{agente-professor}, \arq{apps/agente-professor}
+  + \arq{src/agente-professor/} &
+  Respostas sobre a BNCC e o acervo de livros da Unooria, com as fontes (título
+  e página). \textbf{Fora} da api: o agente roda no Vertex AI Agent Engine
+  (\adrr{ADR-126}). Recusa o que está fora do escopo; não planeja aula nem
+  avalia estudante, e o código de habilidade que cita é conferido pela api
+  (\adrr{ADR-127}).\\
 \bottomrule
 \end{tabularx}
 
@@ -475,6 +482,66 @@ com o resto do uso de IA --- e é a razão de a Seção~\ref{cap:tenancy} tratar
 localidade de processamento como item de conformidade, não de arquitetura.
 \end{nota}
 
+\section{O segundo \emph{vendor}: o agente de IA do professor}
+\label{sec:ia-agente}
+
+O agente de IA do professor é a \textbf{única} IA da plataforma que não passa pelo
+\cd{AiProvider} (\adrr{ADR-126}). O modelo, a instrução e as ferramentas moram num
+agente Google ADK em Python (\arq{apps/agente-professor}), servido pelo Vertex AI
+Agent Engine; a api chama o engine por uma porta própria de \arq{src/ai},
+\cd{AgenteProfessorPort}, que só \arq{agent-engine.client.ts} implementa
+(Seção~\ref{sec:contrato-agente}). O que a regra da camada única protege
+continua na api: papel, disponibilidade, \emph{rate limit}, quota e a posse da
+conversa.
+
+\begin{tabularx}{\linewidth}{@{}L{34mm}X@{}}
+\toprule
+\headrow \thd{Peça do agente} & \thd{O que faz}\\
+\midrule
+\cd{LlmAgent} \cd{agente\_professor} & A conversa: \cd{AGENTE\_MODELO}
+  (\cd{gemini-3.7-flash}), temperatura 0,3, com as duas ferramentas.\\
+\zebra Guarda de escopo & \emph{Plugin} \cd{before\_agent}: o modelo leve
+  (\cd{AGENTE\_MODELO\_ESCOPO}, \cd{gemini-3.5-flash-lite}) decide se a pergunta é
+  de BNCC ou do acervo; fora disso, recusa pelo nome \textbf{sem chamar o modelo
+  principal}, num evento com \cd{custom\_metadata.fora\_do\_escopo}.\\
+Título & \emph{Plugin} \cd{after\_agent}: depois do primeiro turno, o mesmo modelo
+  leve escreve \cd{state.titulo\_conversa}. Turno recusado ou falha do modelo de
+  título: não há título, e o turno seguinte tenta de novo.\\
+\zebra Poda de contexto & Até \num{6000} caracteres por \emph{string} e
+  \num{24000} por resposta de ferramenta, \textbf{exceto}
+  \cd{buscar\_habilidades} (\num{120000}: a Língua Portuguesa do 8º ano inteira
+  tem cerca de \num{58000}); retorno de ferramenta de turno anterior vira resumo
+  com os códigos.\\
+Modelo com reserva & \cd{global}, e \cd{us} quando \cd{global} responde 404, 429
+  ou 5xx --- só ANTES do primeiro pedaço da resposta; depois, trocar duplicaria o
+  texto na tela.\\
+\bottomrule
+\end{tabularx}
+
+\begin{atencao}
+\textbf{\env{GOOGLE\_CLOUD\_LOCATION} é reservada no Agent Engine} e vale a região
+do \emph{deploy} (\cd{us-east1}). Configurar o modelo por ela o mandaria para a
+região do engine, onde ele pode nem existir --- um 404 que só aparece em
+produção. A location do modelo se configura em \arq{modelos.py}, pelo
+\cd{client\_kwargs} do \cd{Gemini} (\cd{AGENTE\_MODELO\_LOCATION}).
+\end{atencao}
+
+\textbf{A quota é a mesma, contada de outro jeito.} O turno usa o perfil
+\cd{professor} de \cd{ia\_quotas}: \cd{temSaldo} antes de abrir o \emph{stream}, e
+\cd{consumir} num \cd{finally} com a \textbf{soma dos \cd{usage\_metadata} dos
+eventos NÃO parciais} --- os parciais repetem o uso, e um turno com ferramenta faz
+mais de uma chamada ao modelo. Os \emph{tokens} da guarda e do título chegam somados
+ao evento seguinte. O escape conhecido: quando o modelo de título responde mas o
+saneamento zera o texto, não há evento, e cerca de 40 \emph{tokens} ficam fora da
+quota. O \cd{MedidorDeProvider} não vê o agente; a métrica dele é a linha de log
+\cd{agente-professor.turno} (Capítulo~\ref{cap:observabilidade}).
+
+\textbf{A avaliação mora no agente}: 16 casos em
+\arq{avaliacao/\B agente\_\B professor.\B evalset.json} (escopo, código exato, a lista
+inteira de um ano, tema, acervo com citação, nome de estudante), rodados por
+\cd{adk eval} contra o \cd{dev}; e o relatório de recall das habilidades
+(\arq{ingestao/\B avaliar\_\B habilidades}) é o gatilho da \adrr{ADR-127}.
+
 \section{Variáveis de configuração da IA}
 
 \begin{tabularx}{\linewidth}{@{}L{46mm}L{22mm}X@{}}
@@ -496,10 +563,13 @@ localidade de processamento como item de conformidade, não de arquitetura.
   (Text-to-Speech), habilitado no projeto. Nenhuma missão sintetiza voz hoje.\\
 \zebra \env{VERTEX\_THINKING\_BUDGET} & \cd{0} & \cd{0} desligado, \cd{-1} dinâmico,
   $>0$ teto.\\
-\env{AI\_DAILY\_TOKEN\_QUOTA\_PER\_ESTUDANTE} & \num{300000} & Quota diária do
-  estudante.\\
-\zebra \env{AI\_DAILY\_TOKEN\_QUOTA\_PER\_PROFESSOR} & \num{2000000} & Quota diária de
-  professor, gestor e admin.\\
+\env{AI\_DAILY\_TOKEN\_QUOTA\_PER\_*} & \textbf{removidas} & A quota diária por
+  perfil é a tabela \cd{ia\_quotas} desde a \adrr{ADR-105}, editada pelo
+  \cd{admin}; não há \emph{env} de \emph{fallback}.\\
+\zebra \env{AGENTE\_PROFESSOR\_MODO} & \cd{desligado} & \cd{agent-engine} $|$ \cd{local}
+  $|$ \cd{mock} $|$ \cd{desligado}. Ausente = \cd{desligado} em qualquer
+  \cd{NODE\_ENV} --- ao contrário do \env{AI\_PROVIDER}; \cd{mock} e \cd{local}
+  são recusados em produção. Ver Apêndice~\ref{ap:envs}.\\
 \bottomrule
 \end{tabularx}
 

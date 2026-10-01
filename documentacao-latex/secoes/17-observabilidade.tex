@@ -694,6 +694,39 @@ dia acima de duas vezes a média móvel de 7 dias (\emph{amanhã}: é custo ou
 laço). O \cd{R-14} mediu uma partida em 71.397 \emph{tokens} à mão; com isto,
 a medida é contínua.
 
+\textbf{O agente de IA do professor não passa pelo medidor} (\adrr{ADR-126}): o
+modelo é chamado de dentro do Agent Engine. O sinal dele é \textbf{uma linha de
+log por turno}, emitida no \cd{finally} do \emph{service}, inclusive no abandono:
+
+\begin{tabularx}{\linewidth}{@{}L{34mm}X@{}}
+\toprule
+\headrow \thd{Campo de \cd{agente-professor.turno}} & \thd{Conteúdo}\\
+\midrule
+\cd{resultado} & \cd{fim} $|$ \cd{erro} $|$ \cd{abortado} (o professor apertou
+  \enquote{Parar}, trocou de conversa ou fechou a aba) $|$ \cd{tempo} (o teto de
+  240\,s).\\
+\zebra \cd{falha} & No \cd{erro}, só o \emph{status} HTTP do engine
+  (\cd{http-503}), o código do evento de erro do ADK, \cd{sessao-inexistente} ou
+  o NOME do tipo de erro --- nunca o corpo da resposta, que pode ecoar a
+  pergunta.\\
+\cd{conversaId}, \cd{modo} & O id da linha da posse e o modo do cliente
+  (\cd{agent-engine}, \cd{local}, \cd{mock}).\\
+\zebra \cd{duracaoMs}, \cd{tokens}, \cd{eventos} & Duração do turno, soma dos
+  \emph{tokens} dos eventos não parciais (o que a quota consumiu) e quantos
+  eventos o engine mandou.\\
+\bottomrule
+\end{tabularx}
+
+Ao lado dela, os códigos de exceção: \cd{agente-professor.\B indisponivel} (o
+engine não respondeu), \cd{.sessao-sumiu}, \cd{.renovacao-falhou} (a SA sem
+\cd{sessions.\B update}, ou o engine fora), \cd{.linhas-\B descartadas} (linha do
+\emph{stream} que não era JSON, só a contagem), \cd{.quota-\B nao-\B consumida},
+\cd{.conversa-\B nao-\B atualizada} e \cd{.turno-com-erro}. \textbf{O que NUNCA vai a
+log}, na api e no agente: a pergunta, a resposta, o título, o \cd{texto} da
+busca e o corpo de erro do engine --- só ids, contagens, códigos, duração e
+\emph{tokens}. O professor pode escrever o nome de um estudante; o
+\arq{test\_plugins.py} do agente confere o lado Python.
+
 \subsection{Entrega}
 
 O \cd{deploy.yml} ganha três passos que hoje não existem: um
@@ -1250,7 +1283,16 @@ Alerta por \emph{burn rate} do SLO & Ficou de fora. \emph{Burn rate} precisa de
 p95 por rota, isentando \rota{/ai/*} e \rota{/unoogpt/*} & Impossível sem tocar
   a aplicação: \cd{run.googleapis.com/request\_latencies} não tem rótulo de
   rota. O limite da API ficou folgado (10\,s) justamente porque as rotas de IA
-  moram nesse serviço; o corte fino exige métrica própria da aplicação\\
+  moram nesse serviço; o corte fino exige métrica própria da aplicação.
+  \textbf{Desde o agente de IA do professor, nem o folgado basta}: um
+  \emph{stream} de 1 a 3 minutos por mensagem (\adrr{ADR-128}) empurra o p95 da
+  API acima de 10\,s assim que o chat tiver uso. A proposta --- métrica de log de
+  distribuição sobre o \emph{request log} do Cloud Run da API, com
+  \cd{NOT httpRequest.requestUrl:"/agente-professor/"} no filtro e
+  \cd{httpRequest.latency} como valor, e o alerta passando a ler essa métrica ---
+  está no RUNBOOK do repositório de fundação e \textbf{não foi aplicada}; antes,
+  conferir em \cd{dev} que a métrica recebe ponto (extrator que não casa deixa o
+  alerta mudo, pior que barulhento)\\
 \zebra \emph{Push} para severidade A & Só e-mail. O canal ainda não foi
   verificado --- vale disparar um alerta de teste antes de confiar nele, porque
   alerta que não chega é pior que alerta que não existe\\

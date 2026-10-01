@@ -114,6 +114,31 @@ nem aqui, nem em \arq{.env.example}. A credencial é sempre ADC
 (\adrr{ADR-16}).
 \end{nota}
 
+\subsection{Agente de IA do professor (\adrr{ADR-126})}
+
+\begin{tabularx}{\linewidth}{@{}L{46mm}L{24mm}X@{}}
+\toprule
+\headrow \thd{Variável} & \thd{Default} & \thd{Papel}\\
+\midrule
+\env{AGENTE\_PROFESSOR\_MODO} & \cd{desligado} & \cd{agent-engine} (Vertex AI
+  Agent Engine, ADC) $|$ \cd{local} (o \emph{shim} de \arq{apps/agente-professor})
+  $|$ \cd{mock} (turno enlatado, o da suíte e2e) $|$ \cd{desligado}.
+  \textbf{Fecha}: ausente = \cd{desligado} em QUALQUER \cd{NODE\_ENV}, e o chat
+  responde \cd{AGENTE\_INDISPONIVEL} (503) --- ao contrário do
+  \env{AI\_PROVIDER}, porque o engine nasce por contrato em momentos diferentes
+  e derrubar a api por falta dele tiraria todos os produtos do ar.
+  \cd{mock} e \cd{local} são \textbf{recusados em produção} pelo Zod.\\
+\zebra \env{AGENTE\_PROFESSOR\_ENGINE} & --- & \textbf{Obrigatória com
+  \cd{agent-engine}}: o \emph{resource name} COMPLETO
+  (\cd{projects/<p>/locations/<r>/\B reasoningEngines/<id>}). A região sai dele
+  --- uma variável a menos para divergir. O Terraform a preenche no segundo
+  \emph{apply}.\\
+\env{AGENTE\_PROFESSOR\_URL\_LOCAL} & --- & \textbf{Obrigatória com \cd{local}}: a
+  base do \emph{shim} (\cd{http://localhost:8090}; no \cd{docker:dev},
+  \cd{http://host.docker.internal:8090}).\\
+\bottomrule
+\end{tabularx}
+
 \subsection{Armazenamento}
 
 \begin{tabularx}{\linewidth}{@{}L{34mm}L{20mm}X@{}}
@@ -362,6 +387,43 @@ explicitamente em \arq{.env.example}, para que a ausência seja lida como decis�
 não como esquecimento.
 \end{nota}
 
+\section{Agente de IA do professor --- \arq{apps/agente-professor}}
+
+Lidas pelo pacote (\arq{agente\_professor/config.py}, \arq{servidor.py} e
+\arq{shim.py}), no Agent Engine --- pela \cd{spec} que o Terraform escreve --- e no
+\emph{shim} local.
+
+\begin{tabularx}{\linewidth}{@{}L{50mm}L{40mm}X@{}}
+\toprule
+\headrow \thd{Variável} & \thd{Default} & \thd{Papel}\\
+\midrule
+\env{AGENTE\_PROJETO} & \env{GOOGLE\_\B CLOUD\_\B PROJECT} & Projeto dos \emph{data
+  stores} e do Gemini.\\
+\zebra \env{AGENTE\_MODELO} & \cd{gemini-3.7-flash} & Modelo da conversa.\\
+\env{AGENTE\_\B MODELO\_\B LOCATION} & \cd{global} & Location do modelo.\\
+\zebra \env{AGENTE\_\B MODELO\_\B LOCATION\_\B RESERVA} & \cd{us} & Para onde vai quando
+  \cd{global} responde 404, 429 ou 5xx --- só antes do primeiro pedaço.\\
+\env{AGENTE\_\B MODELO\_\B ESCOPO} & \cd{gemini-3.5-\B flash-lite} & Guarda de escopo e
+  título.\\
+\zebra \env{AGENTE\_\B BUSCA\_\B LOCATION} & \cd{global} & Location dos \emph{data stores}.\\
+\env{AGENTE\_\B DATASTORE\_\B HABILIDADES} & \cd{agente-professor-\B habilidades} & \\
+\zebra \env{AGENTE\_\B DATASTORE\_\B ACERVO} & \cd{agente-professor-\B acervo} & \\
+\env{AGENTE\_LOG} & \cd{INFO} & Nível de log do servidor.\\
+\zebra \env{AGENTE\_SHIM\_PORTA} & \cd{8090} & Porta do \emph{shim} local.\\
+\env{AGENTE\_\B PROFESSOR\_\B PULAR\_\B SEM\_UV} & --- & \cd{1} pula o pacote no
+  \cd{pnpm turbo} quando a máquina não tem \cd{uv}, com aviso em destaque. Sem
+  ela, a falta do \cd{uv} \textbf{falha} o \emph{build}.\\
+\bottomrule
+\end{tabularx}
+
+\begin{atencao}
+\textbf{Nunca defina \env{GOOGLE\_CLOUD\_LOCATION}, \env{GOOGLE\_CLOUD\_PROJECT}
+nem \env{PORT} no Agent Engine}: são reservadas, e o engine as preenche (a
+location vale a região do \emph{deploy}, \cd{us-east1}). O modelo em \cd{global} se
+configura por \env{AGENTE\_MODELO\_LOCATION}; trocar pela reservada manda o modelo
+para a região do engine.
+\end{atencao}
+
 \section{\cd{vars} do repositório (CI/CD)}
 
 O \emph{workflow} de \emph{deploy} não conhece o nome de nenhum recurso: tudo
@@ -389,6 +451,11 @@ entra por \cd{vars} do repositório, cujos valores saem de
 \cd{API\_URL}, \cd{HUB\_ORIGIN} & Endereços públicos, usados pelo
   \emph{script} de manifesto.\\
 \zebra \cd{WIF\_PROVIDER}, \cd{DEPLOY\_SA} & Identidade federada do CI.\\
+\cd{AGENTE\_PROFESSOR\_ENGINE} & \emph{Resource name} do Agent Engine, por
+  \emph{environment}. \textbf{Vazia} = o engine ainda não existe: o \emph{job}
+  \cd{deploy-agente-professor} só publica a imagem e avisa; preenchida, ele faz
+  o \cd{PATCH} da \cd{imageUri}. Sai de \cd{terraform output
+  agente\_professor\_engine} depois do segundo \emph{apply}.\\
 \bottomrule
 \end{tabularx}
 
@@ -410,6 +477,7 @@ DATABASE_URL=postgresql://postgres:pass@localhost:5432/unooria
 OIDC_ISSUER=http://localhost:3000
 OIDC_JWKS_URI=http://localhost:3000/.well-known/jwks.json
 AI_PROVIDER=mock          # sem GCP nenhum; devolve texto de exemplo
+AGENTE_PROFESSOR_MODO=mock  # o chat do agente com turno enlatado (ausente: desligado)
 ASSETS_DRIVER=local       # a API serve /assets
 PLANOS_DRIVER=local       # grava em storage-privado/
 TELEMETRIA_TOPIC=         # vazio: eventos so no console

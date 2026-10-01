@@ -152,9 +152,11 @@ degradam para texto fixo (app-91) ou recusam a geração com mensagem clara
 \label{sec:c4l2}
 
 O nível de contêineres é onde a assimetria da arquitetura aparece. Há
-\emph{quatro} contêineres de execução e um número crescente de \emph{artefatos}
+\emph{cinco} contêineres de execução e um número crescente de \emph{artefatos}
 que não são contêineres --- e tratá-los como se fossem seria o erro que este
-desenho existe para evitar.
+desenho existe para evitar. O quinto, desde 2026-09-30, é o agente de IA do
+professor no Vertex AI Agent Engine (\adrr{ADR-126}): o único contêiner que
+\textbf{só a API chama}, e o único escrito em Python.
 
 \begin{figure}[H]
 \centering
@@ -162,7 +164,7 @@ desenho existe para evitar.
 \begin{tikzpicture}[x=1cm, y=1cm]
 
   % --- fronteira do sistema
-  \draw[c4zone] (0.6,-1.6) rectangle (15.4,-13.4);
+  \draw[c4zone] (0.6,-1.6) rectangle (15.4,-17.4);
   \node[c4boundarylbl, fill=unooSurface] at (1.0,-1.45)
     {Plataforma Unooria --- \emph{stack} de um contrato};
 
@@ -212,6 +214,14 @@ desenho existe para evitar.
   \node[c4containerext, text width=26mm, minimum height=12mm] (idp) at (11.6,-12.2)
     {\textbf{WSO2 IS}\desc{externo à \emph{stack}}};
 
+  % --- o agente de IA do professor (ADR-126/127): so a API o chama
+  \node[c4container, text width=30mm, minimum height=15mm] (engine) at (7.6,-15.4)
+    {\textbf{Agente do professor}\tech{Python + ADK, Agent Engine}\desc{Sessão,
+     ferramentas, guarda de escopo e título}};
+  \node[c4db, text width=30mm, minimum height=15mm] (ds) at (12.4,-15.6)
+    {\textbf{Vertex AI Search}\tech{dois \emph{data stores}, \texttt{global}}\desc{habilidades
+     (estruturado) e acervo (PDFs)}};
+
   % --- relações
   \draw[c4rel] (estudante.south) -- (3.6,-3.1) node[cxlabel, pos=0.45, left=1pt]{HTTPS};
   \draw[c4rel] (prof.south) -- (5.0,-3.1) node[cxlabel, pos=0.45, right=1pt]{HTTPS};
@@ -231,6 +241,11 @@ desenho existe para evitar.
   \draw[c4rel] (api.south) -- (buckets.north east)
     node[cxlabel, pos=0.5, left=1pt]{assets, planos};
   \draw[c4rel] (api.south) -- (vertex.north);
+  \draw[c4rel] (5.4,-10.5) -- (5.4,-15.4) -- (engine.west)
+    node[cxlabel, pos=0.3, left=1pt]{\texttt{:streamQuery}, ADC};
+  \draw[c4rel] (engine.north) -- (vertex.south)
+    node[cxlabel, midway, right=1pt]{Gemini};
+  \draw[c4rel] (engine.east) -- (engine.east -| ds.west) node[cxlabel, midway, above]{busca};
   \draw[c4reldash] (hub.west) -- (0.9,-4.0) -- (0.9,-12.2) -- (idp.west)
     node[cxlabel, pos=0.86, above]{OIDC};
   \draw[c4reldash] (buckets.north) -- (2.6,-6.6) -- (9.2,-6.6)
@@ -238,7 +253,9 @@ desenho existe para evitar.
 
 \end{tikzpicture}}
 \caption[C4 nível 2 --- contêineres]{C4 nível 2: contêineres. Só o hub, a API, o
-  banco e o Pub/Sub são peças em execução. A experiência é um \emph{artefato}
+  banco, o Pub/Sub e o agente de IA do professor são peças em execução; o agente
+  roda no Vertex AI Agent Engine e só a API o chama --- o navegador nunca fala
+  com ele nem com os \emph{data stores} (\adrr{ADR-126}). A experiência é um \emph{artefato}
   servido pela CDN e executado no navegador; a SDK é biblioteca dentro dele. A
   linha tracejada laranja é a fronteira do \emph{sandbox} do \cd{iframe} --- a
   fronteira de segurança mais importante do desenho de \emph{frontend}.}
@@ -288,6 +305,15 @@ Pub/Sub & Contêiner gerenciado & Pub/Sub &
 \zebra Object Storage & Artefato & Cloud Storage &
   Três \emph{buckets} com regimes diferentes: \emph{bundles} (público, imutável),
   \emph{assets} (público, CDN), planos (\textbf{privado}, versionado).\\
+\arq{apps/\B agente-professor} & Contêiner gerenciado & Python 3.12, Google ADK, Vertex AI Agent Engine &
+  O agente de IA do professor: instrução, ferramentas, guarda de escopo, título
+  e a sessão (histórico). \textbf{Só a API o chama}; não conhece papel, escola
+  nem quota --- a posse da conversa é do Postgres (\adrr{ADR-126}).\\
+\zebra \emph{Data stores} & Contêiner gerenciado & Vertex AI Search, \cd{global} &
+  \cd{agente-professor-\B habilidades} (estruturado, uma linha por habilidade) e
+  \cd{agente-professor-\B acervo} (PDFs, \emph{chunking} por \emph{layout}), alimentados
+  do \emph{bucket} \cd{<projeto>-\B agente-professor} por \arq{ingestao/}
+  (\adrr{ADR-127}).\\
 \bottomrule
 \end{tabularx}
 
@@ -319,6 +345,18 @@ objeto, em vez de abri-lo), o \emph{logger} pino com \emph{redaction}, o
 que é a \textbf{primeira importação} do \arq{main.ts}, porque a
 instrumentação automática do OpenTelemetry precisa alterar \cd{http},
 \cd{express}, \cd{undici} e o Prisma antes de o Nest os carregar.
+
+Há um segundo componente que a figura não desenha, de 2026-09-30:
+\arq{agente-professor/}, o módulo do agente de IA do professor
+(\adrr{ADR-126}). Ele é de \textbf{plataforma}, não de experiência --- o agente é
+um produto sem experiência, trancado por \cd{@Produto(\B"agente-\B professor")} ---, e
+usa três portas: \cd{comTenancy} para a posse da conversa
+(\cd{agente\_\B professor\_\B conversas}), o \cd{QuotaService} de \arq{ai/} para o
+saldo e o consumo, e a \cd{AgenteProfessorPort}, a segunda porta de \arq{ai/},
+que só \arq{ai/\B agent-engine.\B client.ts} implementa. De \arq{curriculo/} ele lê
+\cd{habilidade\B Por\B Codigo}, como \arq{evidencias/}, para conferir os códigos que o
+agente cita (\adrr{ADR-127}). O par Mermaid do
+Apêndice~\ref{ap:mermaid} traz as relações dele.
 
 \begin{figure}[H]
 \centering
@@ -636,6 +674,22 @@ esquece --- 15 telas sem \emph{breadcrumb}, quatro larguras de coluna sem razão
 registrada e quatro telas que não reagiam à troca de escola. \textbf{Área nova
 precisa de \emph{layout} novo}, e é o \emph{layout} que faz as três coisas; sem
 ele a área nasce com os três defeitos, como \rota{/admin} nasceu.
+\end{decisao}
+
+\begin{decisao}
+\textbf{O chat do agente de IA do professor é do \emph{layout} de
+\rota{/professor}, não de uma página} (\adrr{ADR-126}). O botão flutuante
+(\cd{ChatLauncher} do DS) e o painel não modal (\cd{ChatPanel}, compacto ou
+expandido) moram em \arq{components/agente-professor/}, montados pelo
+\emph{layout} da área só quando o produto \cd{agente-professor} está ligado
+para a escola --- o produto não tem \emph{card} na \emph{home}: a superfície é o
+botão. Duas peças fogem do desenho do resto do hub. A \textbf{rota de
+\emph{stream}} (\rota{/api/plataforma/agente-professor/\ldots}) é própria, fora do
+BFF genérico, porque ele tem teto de 180\,s e devolve o corpo sem os cabeçalhos
+de \emph{stream} (\adrr{ADR-128}); a sessão e o \emph{token} curto são os mesmos
+(\arq{lib/bff.ts}). Listar, criar, ler e apagar seguem pelo BFF. E o \textbf{\emph{markdown} vira HTML no navegador}, com
+\cd{react-markdown} sem HTML cru, porque o texto chega em pedaços
+(\adrr{ADR-129}). O painel leva \cd{data-clarity-mask}.
 \end{decisao}
 
 \begin{nota}
