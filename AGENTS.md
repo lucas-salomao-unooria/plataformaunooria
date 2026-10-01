@@ -14,6 +14,7 @@ dois lugares, e nenhum repete o outro.
 | `apps/hub/AGENTS.md` | todo o hub (casca, papéis, middleware) — e um `AGENTS.md` por área em `apps/hub/app/*/` |
 | `apps/experiencias/AGENTS.md` | contrato `postMessage`, manifesto, experiência nova, clones do DS |
 | `apps/experiencias/*/AGENTS.md` | por experiência: porta, rota, seção do DS, módulo da api |
+| `apps/agente-professor/AGENTS.md` | o agente de IA do professor (Python/ADK no Agent Engine) e a ingestão dos data stores |
 | `packages/AGENTS.md`, `packages/*/AGENTS.md` | o contrato que o `sdk` promete, as 5 pontes do `ui`, o conteúdo da exp08ef1b |
 | `scripts/AGENTS.md`, `scripts/e2e/AGENTS.md` | utilitários, o que é gerado, o que uma suíte precisa provar |
 | `docs/AGENTS.md`, `documentacao-latex/AGENTS.md` | o que ali é contrato vivo, e as regras de edição do LaTeX |
@@ -35,6 +36,7 @@ de escrever**: cada uma traz o custo já pago que produziu a regra.
 | [`arquivos-de-instrucao.md`](docs/regras/arquivos-de-instrucao.md) | ao mexer em `AGENTS.md`/`CLAUDE.md` ou nas skills |
 | [`ferramentas-externas.md`](docs/regras/ferramentas-externas.md) | o que o agente NÃO dispara (Snyk é do CI) |
 | [`infra.md`](docs/regras/infra.md) | Terraform vive em outro repo |
+| [`agente-professor.md`](docs/regras/agente-professor.md) | o agente de IA do professor: o contrato entre agente, api, hub e infra |
 | [`bridge-postmessage.md`](docs/regras/bridge-postmessage.md) · [`manifesto-de-experiencias.md`](docs/regras/manifesto-de-experiencias.md) | os dois contratos da experiência |
 
 E na raiz: [`CONTEXT.md`](CONTEXT.md) (o glossário, com a fonte de verdade de
@@ -66,6 +68,7 @@ Claude só carrega as com `paths:` — as outras chegam por esta tabela.
 | `apps/experiencias/*` | Vite + React + `@edu/sdk` | Cloud Storage + CDN (estático) |
 | Auth | WSO2 Identity Server via **OIDC genérico** | externo, único p/ vários contratos |
 | IA | Vertex Gemini via `apps/api/src/ai` (provider plugável) | dentro da api |
+| `apps/agente-professor` | Python + Google ADK (agente de IA do professor) | Vertex AI Agent Engine — só a api o chama |
 | Telemetria | SDK → `POST /telemetry/batch` → Pub/Sub → worker | |
 
 Experiências NUNCA viram serviços no Cloud Run. São bundles estáticos:
@@ -159,7 +162,7 @@ proibições:
 - Não criar serviço Cloud Run novo sem necessidade demonstrada (a api absorve).
 - Não adicionar Redis/filas/libs de estado sem gargalo medido.
 - Não escrever migração que remova `escola_id` ou afrouxe RLS.
-- Não chamar provedores de IA fora de `apps/api/src/ai`.
+- Não chamar provedores de IA fora de `apps/api/src/ai` (a exceção é o agente de IA do professor, ADR-126).
 - Não rodar Snyk (CLI ou MCP): a varredura é do CI.
 - Não escrever conteúdo em `CLAUDE.md`: é o ponteiro `@AGENTS.md`, mais o bloco que
   o graphify escreve e reescreve (ADR-124).

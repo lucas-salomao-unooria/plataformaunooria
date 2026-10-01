@@ -10,7 +10,13 @@ que vence em conflito — e que carrega a versão curta desta lista.
   de telemetria, que já é decisão tomada).
 - Não usar localStorage para token. Não usar `targetOrigin: "*"`.
 - Não escrever migração que remova `escola_id` ou afrouxe RLS.
-- Não chamar provedores de IA fora de `apps/api/src/ai`.
+- Não chamar provedores de IA fora de `apps/api/src/ai`. **Uma exceção, e só
+  ela: o agente de IA do professor** (`apps/agente-professor`, ADR-126), que
+  roda no Vertex AI Agent Engine e chama o Gemini e os data stores de dentro
+  dele. A api continua sendo a única porta — papel, disponibilidade, rate
+  limit, quota e posse da conversa —, e só `src/ai/agent-engine.client.ts`
+  conhece o engine. Recurso de IA novo NÃO herda a exceção: o custo dela é um
+  segundo runtime (Python) e um segundo lugar onde prompt e modelo moram.
 - Não rodar Snyk (CLI ou MCP): a varredura é do CI. Ver "Ferramentas externas".
 - Não escrever conteúdo em `CLAUDE.md`: ele é o ponteiro `@AGENTS.md`, mais o bloco que o graphify escreve e reescreve (ADR-124).
 - Não escrever componente de UI local (nem em `packages/ui`, nem na experiência)
