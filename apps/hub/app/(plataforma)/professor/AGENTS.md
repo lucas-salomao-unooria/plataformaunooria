@@ -71,6 +71,32 @@ segue sem porta (é bancada de desenvolvimento). A api recusaria de qualquer
 jeito, mas aí o aparelho carregaria e quebraria por dentro, com o token já
 assinado.
 
+## O agente de IA do professor no layout (2026-09-30)
+
+O chat flutuante (`components/agente-professor/`, contrato em
+`docs/regras/agente-professor.md`) é montado pelo LAYOUT desta área — toda tela
+do professor o tem sem a página lembrar dele. Três coisas que quebram em
+silêncio:
+
+- **Ele é IRMÃO do `<main>`, DEPOIS dele — nunca dentro.** Dentro, seria mais
+  um filho do `main` e as telas de embed perderiam o `main:has(> .tela-cheia)`:
+  a barra de rolagem parada voltaria por causa de um botão `fixed`, cujo lugar
+  na árvore nem muda onde ele aparece.
+- **Só monta com o produto LIGADO** (`produtoLigado("agente-professor")`,
+  resolvido no servidor). Desligado, não há botão, painel nem chamada. E **não
+  há card na home, de propósito**: o slug mora em `PRODUTOS_SEM_CARD`
+  (`lib/produtos.ts`), fora da lista que a home itera, só para dar nome ao
+  interruptor do painel da Unooria.
+- **`key` na escola ativa** (`session.usuario.escolaId`), pela razão do
+  `EscopoDaEscola` (ADR-85): a conversa pertence a (professor, escola), e o
+  `router.refresh()` da troca de escola não remonta Client Component — sem a
+  `key`, a lista e o turno no ar seriam os da escola de antes.
+
+Em janela estreita (< 1168px) o botão cruza a coluna do conteúdo, e a casca dá
+ao `main` uma folga embaixo do tamanho dele (`packages/ui/styles/plataforma.css`,
+gancho `data-agente-professor`) — sem ela, o fim de um formulário e o rodapé
+das telas `.tela-cheia` ficavam debaixo do botão, sem como rolar para fora.
+
 ## O guia da aula (ADR-65)
 
 Toda missão publicada tem guia em `/professor/.../guia`, e **missão nova nasce

@@ -24,7 +24,16 @@ pacote).
   30 s a mesma chamada dava 200 em 24,9 s e 504 em 30,1 s, e a api TERMINAVA o
   trabalho e debitava a quota sem ninguém ouvindo. No `apiDoServidor`, falha de
   rede vira `Response` sintética 599 (598 no timeout): quem chama trata status,
-  não exceção. O BFF responde 502 (falha) ou 504 (timeout).
+  não exceção. O BFF responde 502 (falha) ou 504 (timeout). **A exceção é o
+  turno do agente de IA do professor** (SSE, teto de 250 s, rota própria — ver
+  `components/agente-professor/AGENTS.md`). A sessão, o token curto e os
+  cabeçalhos das DUAS rotas saem de `lib/bff.ts`: regra de passagem (401, 403
+  de quem está preso na troca de senha) copiada numa rota nova é a porta dos
+  fundos que esquece uma linha.
+- **O BFF repassa o `request.signal`** (combinado com o teto, `sinalDaChamada`):
+  fechar a aba cancela a chamada à api em vez de o hub seguir esperando. A
+  desistência do navegador responde 499 e loga `info` (`cliente-desistiu`), não
+  `warn` — não é falha de ninguém.
 - **O `traceparent` da requisição de origem segue para a api** nos dois
   caminhos (`apiDoServidor` e BFF): é o que põe o render do professor e o span
   da api no mesmo trace. Sem cabeçalho de origem (build, teste), nada é

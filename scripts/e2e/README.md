@@ -24,7 +24,7 @@ que a checagem de pointer lock não valeu.
 |---|---|---|
 | `publico/` | ninguém logado | landing, login, roteamento por papel |
 | `estudante/` | a criança | hub de missões e as quatro missões, ponta a ponta |
-| `professor/` | o docente | turmas, trilha, criar atividade, conduzir, plano de aula, bem-estar, resultados, guias de aula, planejamento de ensino |
+| `professor/` | o docente | turmas, trilha, criar atividade, conduzir, plano de aula, bem-estar, resultados, guias de aula, planejamento de ensino, o agente de IA do professor (api em `AGENTE_PROFESSOR_MODO=mock`) |
 | `gestor_escola/` | a secretaria da escola | importar, enturmar, senhas, quem trabalha em duas escolas |
 | `gestor_contrato/` | a rede | escolas, regionais, OneRoster, períodos, transferência, análise de produto |
 | `arquivados/` | NINGUÉM — não é papel | as suítes das experiências arquivadas (ADR-116), guardadas como estavam e FORA do runner: uma arquivada não abre para ninguém, e a suíte só reprovaria (ver `arquivados/AGENTS.md`) |
