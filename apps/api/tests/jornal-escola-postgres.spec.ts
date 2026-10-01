@@ -184,12 +184,25 @@ async function publicar(estudanteId: string, slots: IdDeNoticia[]) {
 
 const etapa = (para: (typeof ETAPAS)[number]) => service.mudarEtapa(ESCOLA, ids.turma, ids.professora, para);
 
+/** A atividade em andamento na turma — a montagem das equipes é dela (ADR-130). */
+async function atividadeAtual(): Promise<string> {
+  const linha = await prisma.exp04ef1bPacote.findFirst({
+    where: { escolaId: ESCOLA, turmaId: ids.turma, ativo: true },
+    select: { id: true },
+  });
+  if (linha) return linha.id;
+  /* A primeira leitura do painel cria a atividade padrão da turma. */
+  await service.painel(ESCOLA, ids.turma, ids.professora);
+  return atividadeAtual();
+}
+
 async function montarEquipes(grupos: string[][], computadores: number, ausentes: string[] = []) {
-  const atual = await equipes.daMissao(ESCOLA, ids.turma, EXP_ID, ids.professora);
+  /* A equipe é da ATIVIDADE (ADR-130): a em andamento na turma. */
+  const atividadeId = await atividadeAtual();
+  const alvo = { escolaId: ESCOLA, turmaId: ids.turma, expId: EXP_ID, atividadeId };
+  const atual = await equipes.daMissao(alvo, ids.professora);
   return equipes.salvar(
-    ESCOLA,
-    ids.turma,
-    EXP_ID,
+    alvo,
     {
       versao: atual.montagem?.versao ?? 0,
       modo: "manual",

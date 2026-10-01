@@ -875,7 +875,11 @@ export class QuemMandouIssoService implements OnModuleInit {
       nome: e.displayName,
       sessao: sessaoDe.get(e.id) ?? null,
     }));
-    const mapa: Map<string, EquipeDoMapa> = await mapaDeEquipes(tx, escolaId, turmaId, EXP_ID);
+    /* A equipe é da ATIVIDADE (ADR-130): a deste pacote. Sem pacote aprovado
+       não há atividade, e o painel conta por criança. */
+    const mapa: Map<string, EquipeDoMapa> = pacote
+      ? await mapaDeEquipes(tx, escolaId, turmaId, EXP_ID, pacote.id)
+      : new Map();
     const unidades = colapsarEmUnidades(
       linhas,
       (l) => l.estudanteId,

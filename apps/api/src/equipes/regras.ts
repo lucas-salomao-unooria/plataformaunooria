@@ -33,6 +33,48 @@ export function permiteEquipes(expId: string): expId is ExperienciaComEquipe {
 }
 
 /**
+ * A EQUIPE É DA ATIVIDADE (ADR-130). A missão é o esqueleto narrativo; a
+ * atividade é a missão que a turma faz de fato, criada pelo professor — e é na
+ * criação dela que ele diz quem senta com quem.
+ *
+ * Estas são as missões que TÊM atividade: cada uma é dona das próprias (a
+ * cobertura da exp07ef1b, o pacote da exp04ef1b e da exp05ef1b, a `activity`
+ * da exp08ef1b), e registra no `EquipesService` como descobrir a que está em
+ * andamento na turma (`registrarAtividades`). A plataforma só guarda o id,
+ * opaco, como a evidência pedagógica.
+ */
+export const EXPERIENCIAS_COM_ATIVIDADE = ["exp08ef1b", "exp07ef1b", "exp04ef1b", "exp05ef1b"] as const;
+
+export function temAtividades(expId: string): boolean {
+  return (EXPERIENCIAS_COM_ATIVIDADE as readonly string[]).includes(expId);
+}
+
+/**
+ * O id de atividade da missão que NÃO tem atividade — o unooGPT, até ser
+ * refeito com elas, e o UnooTube arquivado: uma montagem por turma, como era
+ * antes da ADR-130.
+ */
+export const ATIVIDADE_DA_TURMA = "turma";
+
+/**
+ * O alfabeto do id da atividade: o MESMO de `evidencias_marcas.atividade_id`
+ * (a evidência re-exporta daqui) e do CHECK
+ * `equipes_montagens_atividade_id_check`.
+ */
+export const ATIVIDADE_ID_RE = /^[A-Za-z0-9_.:-]{1,100}$/;
+export const FORMATO_DO_ATIVIDADE_ID = "atividadeId: 1 a 100 caracteres entre letras, dígitos e _ . : -";
+
+/**
+ * O id de atividade casa com a missão? Missão com atividade NUNCA usa o fixo
+ * `turma` — seria a montagem solta que a ADR-130 aposentou; missão sem
+ * atividade SÓ usa ele.
+ */
+export function atividadeCasaComMissao(expId: string, atividadeId: string): boolean {
+  if (!ATIVIDADE_ID_RE.test(atividadeId)) return false;
+  return temAtividades(expId) ? atividadeId !== ATIVIDADE_DA_TURMA : atividadeId === ATIVIDADE_DA_TURMA;
+}
+
+/**
  * Como a montagem nasceu. O MESMO vocabulário do CHECK
  * `equipes_montagens_modo_check` — o par que já custou um deploy em
  * `permissoes`, e que o teste de Postgres compara.
@@ -40,8 +82,11 @@ export function permiteEquipes(expId: string): expId is ExperienciaComEquipe {
  * - `sorteio`: a plataforma distribui os presentes pelos computadores.
  * - `manual`: nascem N equipes VAZIAS, e o professor arrasta — é ele quem sabe
  *   que aqueles dois não podem sentar juntos.
+ * - `individual`: um aluno por computador (ADR-130). GRAVA a montagem — é a
+ *   resposta do passo de equipes na criação da atividade — e nenhuma equipe;
+ *   `computadores` fica nulo, e o painel conta por criança, como sem montagem.
  */
-export const MODOS = ["sorteio", "manual"] as const;
+export const MODOS = ["sorteio", "manual", "individual"] as const;
 export type Modo = (typeof MODOS)[number];
 
 /** O teto do nome — o mesmo do CHECK da migration. É o que cabe no card do painel. */
@@ -422,6 +467,8 @@ export function propostaManual<T extends { id: string }>(
 
 /** O que `validarMontagem` precisa do corpo do `PUT`. */
 export interface MontagemProposta {
+  modo: Modo;
+  computadores?: number | null;
   ausentes: readonly string[];
   equipes: readonly { nome: string; membros: readonly string[] }[];
 }
@@ -443,7 +490,14 @@ export interface MontagemProposta {
  */
 export function validarMontagem(corpo: MontagemProposta, idsDaTurma: ReadonlySet<string>): string[] {
   const erros = new Set<string>();
-  if (corpo.equipes.length === 0) erros.add("Monte pelo menos uma equipe.");
+  if (corpo.modo === "individual") {
+    /* Um aluno por computador não tem equipe nenhuma: uma lista aqui é corpo
+       forjado, ou a tela mandando o sorteio com o modo errado. */
+    if (corpo.equipes.length > 0) erros.add("Com um aluno por computador não há equipes para salvar.");
+  } else {
+    if (corpo.equipes.length === 0) erros.add("Monte pelo menos uma equipe.");
+    if (corpo.computadores == null) erros.add("Diga quantos computadores a sala tem.");
+  }
 
   const nomes = new Map<string, number>();
   /* Por POSIÇÃO, e não por nome: duas equipes com o mesmo nome são duas. */

@@ -670,8 +670,9 @@ export class ASelecaoService implements OnModuleInit {
           },
           orderBy: { displayName: "asc" },
         }),
-        mapaDeEquipes(tx, escolaId, turmaId, EXP_ID),
-        computadoresDaMontagem(tx, escolaId, turmaId, EXP_ID),
+        /* A equipe é da ATIVIDADE (ADR-130): a desta cobertura. */
+        mapaDeEquipes(tx, escolaId, turmaId, EXP_ID, gate.coberturaId),
+        computadoresDaMontagem(tx, escolaId, turmaId, EXP_ID, gate.coberturaId),
       ]);
 
       const linhas = estudantes.map((e) => {
@@ -1011,7 +1012,14 @@ export class ASelecaoService implements OnModuleInit {
     ctx: ContextoDoEstudante,
     matriz: Matriz,
   ): Promise<{ parSessaoId?: string | null; parVirtual?: string | null; parRotulo?: string | null }> {
-    const equipe = await equipeDoEstudante(tx, escolaId, ctx.turmaId, EXP_ID, ctx.sessao.estudanteId);
+    const equipe = await equipeDoEstudante(
+      tx,
+      escolaId,
+      ctx.turmaId,
+      EXP_ID,
+      ctx.sessao.coberturaId,
+      ctx.sessao.estudanteId,
+    );
     if (equipe) {
       const colegas = equipe.membros.map((m) => m.id).filter((id) => id !== ctx.sessao.estudanteId);
       const doComputador = colegas.length
@@ -1068,8 +1076,8 @@ export class ASelecaoService implements OnModuleInit {
         select: { id: true, estudanteId: true, publicadaEm: true, matriz: true, selecao: true },
         orderBy: [{ publicadaEm: "asc" }, { id: "asc" }],
       }),
-      mapaDeEquipes(tx, escolaId, turmaId, EXP_ID),
-      computadoresDaMontagem(tx, escolaId, turmaId, EXP_ID),
+      mapaDeEquipes(tx, escolaId, turmaId, EXP_ID, gate.coberturaId),
+      computadoresDaMontagem(tx, escolaId, turmaId, EXP_ID, gate.coberturaId),
       tx.user.findMany({ where: { escolaId, turmaId, role: "estudante" }, select: { id: true, displayName: true } }),
     ]);
 

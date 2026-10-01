@@ -1,4 +1,5 @@
 import { EXP_ID_RE } from "../comum/codigo-da-experiencia";
+import { ATIVIDADE_ID_RE, FORMATO_DO_ATIVIDADE_ID } from "../equipes/regras";
 import type { FichaPedagogica, MarcadorDaFicha } from "./fichas/tipos";
 
 /**
@@ -62,9 +63,13 @@ export type TipoDeEvento = (typeof TIPOS_DE_EVENTO)[number];
  * O id da ATIVIDADE: da missão, e opaco aqui — mas vai para o endereço da
  * rota do painel, então só caracteres que dispensam escape. O MESMO padrão do
  * CHECK `*_atividade_id_check` da migration.
+ *
+ * Mora em `equipes/regras.ts` desde a ADR-130: a montagem das equipes passou a
+ * ser por atividade, e os dois CHECKs (o da marca e o da montagem) têm de
+ * aceitar o mesmo id. A dependência vai no sentido de sempre — evidencias
+ * importa equipes.
  */
-export const ATIVIDADE_ID_RE = /^[A-Za-z0-9_.:-]{1,100}$/;
-export const FORMATO_DO_ATIVIDADE_ID = "atividadeId: 1 a 100 caracteres entre letras, dígitos e _ . : -";
+export { ATIVIDADE_ID_RE, FORMATO_DO_ATIVIDADE_ID };
 
 /** Os ids DENTRO da ficha (marcador, pergunta, alternativa): o mesmo alfabeto. */
 export const ID_DA_FICHA_RE = ATIVIDADE_ID_RE;

@@ -495,10 +495,9 @@ describe("a aula na 5A — os três latches, a evidência e a revelação", () =
   });
 
   test("equipe: Bia e Caio num computador — Bia joga (com uma falsa neutra) e o Caio recebe a CÓPIA do nível", async () => {
+    /* A equipe é da ATIVIDADE (ADR-130): o pacote aprovado da 5A. */
     await equipes.salvar(
-      ESCOLA,
-      ids.turma5A,
-      EXP_ID,
+      { escolaId: ESCOLA, turmaId: ids.turma5A, expId: EXP_ID, atividadeId: pacote5A },
       { versao: 0, modo: "manual", computadores: 3, ausentes: [], equipes: [{ nome: "Equipe 1", membros: [ids.bia, ids.caio] }] },
       ids.professora,
     );

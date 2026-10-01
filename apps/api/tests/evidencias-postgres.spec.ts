@@ -64,7 +64,13 @@ const INSTA = "exp08ef1b";
 const SEM_FICHA = "exp02em1b";
 const H1 = "EF08CO01";
 const H2 = "EF08CO02";
-const ATV = "atv-1";
+/**
+ * A atividade da 8A: uma `activity` REAL do Instanooria, criada no
+ * `beforeAll` — desde a ADR-130 a montagem das equipes é da atividade, e o
+ * serviço confere que ela existe e é da turma. As outras (`atv-2`…) seguem
+ * opacas: só levam marca, nunca montagem.
+ */
+let ATV = "";
 
 const FICHA: FichaPedagogica = {
   expId: INSTA,
@@ -132,6 +138,7 @@ async function zerar() {
 
 async function limpar() {
   await zerar();
+  await prisma.activity.deleteMany({ where: { escolaId: { in: ESCOLAS } } });
   await prisma.liberacao.deleteMany({ where: { escolaId: { in: ESCOLAS } } });
   await prisma.matricula.deleteMany({ where: { escolaId: { in: ESCOLAS } } });
   await prisma.user.deleteMany({ where: { escolaId: { in: ESCOLAS } } });
@@ -197,11 +204,10 @@ async function evidenciaDe(estudanteId: string, habilidade: string, rodada = 1, 
 
 /** Monta as equipes da 8A nesta missão, como o professor faria. */
 async function montar(grupos: string[][], computadores = grupos.length) {
-  const atual = await equipes.daMissao(ESCOLA, ids.turma8A, INSTA, ids.prof8A);
+  const alvo = { escolaId: ESCOLA, turmaId: ids.turma8A, expId: INSTA, atividadeId: ATV };
+  const atual = await equipes.daMissao(alvo, ids.prof8A);
   return equipes.salvar(
-    ESCOLA,
-    ids.turma8A,
-    INSTA,
+    alvo,
     {
       versao: atual.montagem?.versao ?? 0,
       modo: "manual",
@@ -267,6 +273,26 @@ beforeAll(async () => {
   await lecionar(ESCOLA, ids.turma8A, ids.prof8A);
   await lecionar(ESCOLA, ids.turma8B, ids.prof8B);
   await lecionar(OUTRA_ESCOLA, ids.turmaVizinha, ids.profVizinho);
+
+  ATV = (
+    await prisma.activity.create({
+      data: {
+        escolaId: ESCOLA,
+        turmaId: ids.turma8A,
+        professorId: ids.prof8A,
+        titulo: "Atividade de teste",
+        disciplina: "Língua Portuguesa",
+        temaGeral: "tema",
+        recorte: "recorte",
+        perguntaChave: "pergunta?",
+        estiloVisual: "fotografico",
+        proporcoes: {},
+        engineConfig: {},
+        status: "ativa",
+      },
+      select: { id: true },
+    })
+  ).id;
 
   /* A missão aberta SÓ na 8A: a 8B é a turma sem liberação. */
   await liberarParaTeste(prisma, ESCOLA, ids.turma8A, INSTA, ids.prof8A);
@@ -583,7 +609,7 @@ describe("quando as equipes mudam", () => {
     await marcar(ids.ana, "h1-acao", "atingiu");
     expect((await evidenciaDe(ids.bia, H1))?.origem).toBe("equipe");
 
-    await equipes.desfazer(ESCOLA, ids.turma8A, INSTA, ids.prof8A);
+    await equipes.desfazer({ escolaId: ESCOLA, turmaId: ids.turma8A, expId: INSTA, atividadeId: ATV }, ids.prof8A);
     expect(await evidenciaDe(ids.bia, H1)).toBeNull();
     expect((await evidenciaDe(ids.ana, H1))?.origem).toBe("propria");
   });
@@ -611,9 +637,7 @@ describe("quando as equipes mudam", () => {
     });
     await expect(
       quebrado.salvar(
-        ESCOLA,
-        ids.turma8A,
-        INSTA,
+        { escolaId: ESCOLA, turmaId: ids.turma8A, expId: INSTA, atividadeId: ATV },
         { versao: 0, modo: "manual", computadores: 1, ausentes: [], equipes: [{ nome: "Única", membros: [ids.ana] }] },
         ids.prof8A,
       ),
@@ -982,10 +1006,11 @@ describe("o perfil do estudante", () => {
         {
           expId: INSTA,
           nome: catalogo?.nome,
+          /* Na ordem do id da atividade — o `ATV` é um UUID real (ADR-130). */
           atividades: [
             { atividadeId: ATV, habilidades: [{ codigo: H1, descricao: expect.any(String), status: "atingiu" }] },
             { atividadeId: "atv-2", habilidades: [{ codigo: H2, descricao: expect.any(String), status: "nao_atingiu" }] },
-          ],
+          ].sort((a, b) => a.atividadeId.localeCompare(b.atividadeId)),
         },
       ],
     });

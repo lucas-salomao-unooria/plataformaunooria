@@ -723,8 +723,9 @@ export class JornalEscolaService implements OnModuleInit {
           },
           orderBy: { displayName: "asc" },
         }),
-        mapaDeEquipes(tx, escolaId, turmaId, EXP_ID),
-        computadoresDaMontagem(tx, escolaId, turmaId, EXP_ID),
+        /* A equipe é da ATIVIDADE (ADR-130): a deste pacote. */
+        mapaDeEquipes(tx, escolaId, turmaId, EXP_ID, gate.pacoteId),
+        computadoresDaMontagem(tx, escolaId, turmaId, EXP_ID, gate.pacoteId),
       ]);
 
       const linhas = estudantes.map((e) => {
