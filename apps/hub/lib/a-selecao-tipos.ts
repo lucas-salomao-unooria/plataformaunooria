@@ -177,7 +177,10 @@ export interface GateDaTurma {
 
 /** `GET /a-selecao/turmas/:turmaId/coberturas`. */
 export interface CoberturasDaTurma {
-  /** A atividade em andamento, COM o gabarito (é a tela do preparo). */
+  /**
+   * A atividade EM ANDAMENTO, COM o gabarito — ou `null` quando a professora
+   * ainda não pôs nenhuma no ar: a plataforma não cria atividade (ADR-130).
+   */
   ativa: {
     id: string;
     tema: string;
@@ -189,7 +192,7 @@ export interface CoberturasDaTurma {
     midia: ResumoDaMidia;
     /** As três falas do podcast desta cobertura (as do sheet, se ela não tem as suas). */
     podcast: FalasDoPodcast;
-  };
+  } | null;
   /** Todas as coberturas da turma, a ativa inclusa, da mais nova para a mais velha. */
   historico: Array<{
     id: string;
@@ -228,10 +231,40 @@ export interface ProgressoDaMidia {
   midia: Record<string, string>;
 }
 
-/** `GET /a-selecao/professor/material` — o bloco vivo do guia. */
+/** `GET /a-selecao/turmas/:turmaId/coberturas/:coberturaId` — UMA atividade, em andamento ou pronta. */
+export interface CoberturaDaAtividade {
+  id: string;
+  tema: string;
+  foco: string | null;
+  origem: OrigemDaCobertura;
+  /** Em andamento na turma? */
+  ativa: boolean;
+  /** A rodada e a etapa do gate, só quando em andamento. */
+  rodada: number | null;
+  etapa: EtapaDaTurma | null;
+  criadaEm: string;
+  /** A maior rodada com sessão; 0 = nunca rodou. */
+  rodadas: number;
+  posts: PostDaCobertura[];
+  midia: ResumoDaMidia;
+  podcast: FalasDoPodcast;
+}
+
+/** `POST /a-selecao/turmas/:turmaId/homologar` — a atividade criada, PRONTA (ADR-130). */
+export interface CoberturaCriada {
+  id: string;
+  tema: string;
+  foco: string | null;
+  origem: OrigemDaCobertura;
+  ativa: false;
+}
+
+/** `GET /a-selecao/professor/material` — o bloco vivo do guia, e o ponto de partida da criação. */
 export interface MaterialDaSelecao {
   tema: string;
   posts: PostDaCobertura[];
+  /** As três falas do podcast do banco curado — o ponto de partida da cobertura pronta. */
+  podcast: FalasDoPodcast;
   roteiroDaEtapa4: { aviso: string; perguntas: string[] };
   /** Quando apertar cada botão. A chave é a etapa de DESTINO. */
   gatilhos: Record<Exclude<EtapaDaTurma, "exploracao">, string>;

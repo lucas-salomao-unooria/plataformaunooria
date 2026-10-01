@@ -267,6 +267,44 @@ export const GateDaTurmaSchema = z.object({
 
 export const NovaRodadaRespostaSchema = z.object({ atividade: AtividadeSchema, fase: FaseSchema });
 
+/** O endereço de UMA atividade: a turma e o pacote. */
+export const ParamsDoPacoteSchema = z.object({ turmaId: z.string().uuid(), pacoteId: z.string().uuid() });
+
+/**
+ * As ATIVIDADES da turma (ADR-130): os pacotes APROVADOS, do mais recente ao
+ * mais antigo. O rascunho não entra — ainda não é atividade.
+ */
+export const PacotesDaTurmaSchema = z.object({
+  /** O em andamento, ou `null` quando o professor ainda não pôs nenhum no ar. */
+  emAndamento: AtividadeSchema.nullable(),
+  historico: z.array(
+    z.object({
+      id: z.string().uuid(),
+      disciplina: DisciplinaSchema,
+      tema: z.string(),
+      origem: z.enum(ORIGENS),
+      /** Em andamento na turma? */
+      ativo: z.boolean(),
+      aprovadoEm: z.string(),
+      /** A maior rodada com sessão; 0 = nunca rodou. */
+      rodadas: z.number().int().min(0),
+    }),
+  ),
+});
+
+/** UMA atividade, em andamento ou não — a página dela. */
+export const PacoteDetalheSchema = PacoteDoProfessorSchema.extend({
+  /** A maior rodada com sessão; 0 = nunca rodou. */
+  rodadas: z.number().int().min(0),
+});
+
+export const EmAndamentoSchema = z.object({
+  atividade: AtividadeSchema,
+  fase: FaseSchema,
+  /** `false` = ele já estava em andamento (o segundo clique). */
+  mudou: z.boolean(),
+});
+
 const ProgressoSchema = z.object({
   unidades: z.number().int().nonnegative(),
   entraram: z.number().int().nonnegative(),

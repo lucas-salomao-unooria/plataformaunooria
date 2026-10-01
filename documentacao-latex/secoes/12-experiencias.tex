@@ -394,12 +394,15 @@ A redação e as peças & Mesa, gaveta, página, Bento, leitores, Chave e o Desa
   aplicativo, sem curtidas e sem horário: a data é uma pista, e o carimbo a
   entregaria antes da hora. Cada família mora num arquivo
   (\arq{src/app/pecas/}), que só importa a sua ponte.\\
-\zebra Atividade e rodada & A ATIVIDADE é o \textbf{pacote} das oito notícias.
-  A missão \textbf{não nasce vazia}: sem homologação, a turma roda o banco padrão
-  (\enquote{Feira de Ciências e Notícias da Cidade}), criado na primeira leitura
-  --- do estudante ou do painel --- sob o \emph{lock} da turma. Zerar sobe a
-  rodada sem apagar nada; homologar outro pacote abre atividade nova, na rodada
-  1; homologar o mesmo conteúdo do ativo é idempotente (\adrr{ADR-112}).\\
+\zebra Atividade e rodada & A ATIVIDADE é o \textbf{pacote} das oito notícias,
+  e quem a cria é o professor (\adrr{ADR-130}): a plataforma não cria nada, e
+  sem atividade em andamento a missão responde 403
+  \cd{atividade-nao-preparada} --- a porta fechada que a experiência já mostra.
+  O banco da Unooria (\enquote{Feira de Ciências e Notícias da Cidade}) é ponto
+  de partida da criação. Criar não põe no ar: o pacote nasce pronto, e o
+  professor escolhe o em andamento na lista; pô-lo no ar abre a rodada seguinte
+  à última. Zerar sobe a rodada sem apagar nada; criar o mesmo conteúdo do mais
+  recente é idempotente (\adrr{ADR-112}).\\
 Dois portões, um botão & \cd{exploracao} \seta{} \cd{resultado} \seta{}
   \cd{revisao}, uma etapa por vez, sem pular nem voltar (409
   \cd{transicao-de-etapa-invalida}). A etapa só conduz quem publicou e respondeu
@@ -1253,10 +1256,13 @@ as duas enquetes da Amara, na DM, fecham a missão (\adrr{ADR-115}).
 \toprule
 \headrow \thd{Decisão} & \thd{Como está implementada}\\
 \midrule
-Atividade e rodada & A ATIVIDADE é a \textbf{cobertura}: o tema homologado pela
-  professora (o banco curado da Praça Central ou um lote gerado por IA). Zerar a
-  turma abre a rodada seguinte e guarda a anterior; tema novo é atividade nova,
-  na rodada 1. É o que a evidência pedagógica exige (\adrr{ADR-112}).\\
+Atividade e rodada & A ATIVIDADE é a \textbf{cobertura}: o tema que a
+  professora cria (partindo do banco curado da Praça Central ou de um lote
+  gerado por IA). A plataforma não cria nada (\adrr{ADR-130}): sem cobertura em
+  andamento, 403 \cd{atividade-nao-preparada}. Criar não põe no ar --- a
+  professora escolhe a em andamento na lista, e pô-la no ar abre a rodada
+  seguinte à última. Zerar a turma abre a rodada seguinte e guarda a anterior.
+  É o que a evidência pedagógica exige (\adrr{ADR-112}).\\
 \zebra Um botão só & A professora avança \cd{exploracao} \seta{} \cd{mural}
   \seta{} \cd{fichas} \seta{} \cd{explicacao}, uma etapa por vez e com o
   destino explícito --- clique duplo não pula etapa. O estudante lê

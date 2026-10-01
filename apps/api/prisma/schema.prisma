@@ -2299,7 +2299,8 @@ model ProspeccaoLead {
 /// dizia "12 não começaram" quando os 12 estavam sentados ao lado de quem
 /// começou.
 ///
-/// Uma linha por (turma × missão), e é ELA que carrega a `versao` da
+/// Uma linha por (turma × missão × ATIVIDADE) — ADR-130: a equipe é da
+/// atividade, e não da missão. É ela que carrega a `versao` da
 /// concorrência otimista: duas telas do mesmo professor (o computador da sala e
 /// o celular) salvando ao mesmo tempo não podem se sobrescrever em silêncio.
 ///
@@ -2308,17 +2309,24 @@ model ProspeccaoLead {
 /// está vazio. Quem restringe as missões que aceitam equipe é
 /// `equipes/regras.ts#EXPERIENCIAS_COM_EQUIPE`, no código.
 model EquipesMontagem {
-  escolaId String @map("escola_id")
-  turmaId  String @map("turma_id") @db.Uuid
-  expId    String @map("exp_id")
+  escolaId    String @map("escola_id")
+  turmaId     String @map("turma_id") @db.Uuid
+  expId       String @map("exp_id")
+  /// O id da ATIVIDADE, dado pela missão — texto opaco, o alfabeto de
+  /// `evidencias_marcas.atividade_id` (CHECK na migration). A missão sem
+  /// atividade usa o fixo `turma` (`regras.ts#ATIVIDADE_DA_TURMA`).
+  atividadeId String @map("atividade_id")
 
-  /// sorteio | manual — CHECK na migration. `manual` nasce com N equipes
-  /// VAZIAS: quem distribui é o professor, que conhece quem senta com quem.
+  /// sorteio | manual | individual — CHECK na migration. `manual` nasce com N
+  /// equipes VAZIAS: quem distribui é o professor, que conhece quem senta com
+  /// quem. `individual` é "um aluno por computador": grava a montagem e
+  /// nenhuma equipe.
   modo String
 
   /// Quantos computadores a sala tem nesta aula. É o número de equipes do
-  /// sorteio, e muda de aula para aula (o laboratório divide horário).
-  computadores Int
+  /// sorteio, e muda de aula para aula (o laboratório divide horário). NULO
+  /// só no `individual` (CHECK na migration): lá são tantos quantas crianças.
+  computadores Int?
 
   /// Quem faltou na hora de montar. Fica fora do sorteio, e não é matrícula:
   /// amanhã a criança volta e entra no próximo.
@@ -2338,7 +2346,7 @@ model EquipesMontagem {
   turma   Turma    @relation(fields: [turmaId], references: [id], onDelete: Cascade)
   equipes Equipe[]
 
-  @@id([escolaId, turmaId, expId])
+  @@id([escolaId, turmaId, expId, atividadeId])
   @@index([escolaId, turmaId])
   @@map("equipes_montagens")
 }
@@ -2349,10 +2357,11 @@ model EquipesMontagem {
 /// o UNIQUE por missão existe porque duas "Equipe 3" no mesmo painel são a
 /// dúvida que ninguém consegue resolver no meio da aula.
 model Equipe {
-  id       String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  escolaId String @map("escola_id")
-  turmaId  String @map("turma_id") @db.Uuid
-  expId    String @map("exp_id")
+  id          String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  escolaId    String @map("escola_id")
+  turmaId     String @map("turma_id") @db.Uuid
+  expId       String @map("exp_id")
+  atividadeId String @map("atividade_id")
 
   /// 1 a 30 caracteres depois do `trim` — CHECK na migration e `NOME_MAX` no
   /// código. O teto é o que cabe no card do painel sem quebrar a linha.
@@ -2362,18 +2371,19 @@ model Equipe {
   /// "Equipe 10" viria antes de "Equipe 2" na ordem alfabética.
   ordem Int
 
-  montagem EquipesMontagem @relation(fields: [escolaId, turmaId, expId], references: [escolaId, turmaId, expId], onDelete: Cascade)
+  montagem EquipesMontagem @relation(fields: [escolaId, turmaId, expId, atividadeId], references: [escolaId, turmaId, expId, atividadeId], onDelete: Cascade)
   membros  EquipeMembro[]
 
-  @@unique([escolaId, turmaId, expId, nome])
-  @@index([escolaId, turmaId, expId])
+  @@unique([escolaId, turmaId, expId, atividadeId, nome])
+  @@index([escolaId, turmaId, expId, atividadeId])
   @@map("equipes")
 }
 
 /// Quem está em qual equipe.
 ///
-/// `turma_id` e `exp_id` REPETIDOS da equipe, e é isso que torna possível o
-/// UNIQUE que importa: **uma criança, uma equipe por missão**. Sem as colunas
+/// `turma_id`, `exp_id` e `atividade_id` REPETIDOS da equipe, e é isso que
+/// torna possível o UNIQUE que importa: **uma criança, uma equipe por
+/// atividade**. Sem as colunas
 /// aqui, a regra só existiria no código, e dois `PUT` em paralelo poriam a
 /// mesma criança em dois computadores.
 model EquipeMembro {
@@ -2381,13 +2391,14 @@ model EquipeMembro {
   equipeId    String @map("equipe_id") @db.Uuid
   turmaId     String @map("turma_id") @db.Uuid
   expId       String @map("exp_id")
+  atividadeId String @map("atividade_id")
   estudanteId String @map("estudante_id") @db.Uuid
 
   equipe    Equipe @relation(fields: [equipeId], references: [id], onDelete: Cascade)
   estudante User   @relation("EquipeMembroEstudante", fields: [estudanteId], references: [id], onDelete: Cascade)
 
   @@id([equipeId, estudanteId])
-  @@unique([escolaId, turmaId, expId, estudanteId])
+  @@unique([escolaId, turmaId, expId, atividadeId, estudanteId])
   @@index([escolaId, estudanteId])
   @@map("equipes_membros")
 }

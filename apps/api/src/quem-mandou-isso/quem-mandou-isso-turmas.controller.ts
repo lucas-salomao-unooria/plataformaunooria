@@ -8,6 +8,7 @@ import { professorDoToken } from "../comum/turmas-do-professor";
 import { Contrato } from "../openapi/contrato";
 import {
   AprovarSchema,
+  EmAndamentoSchema,
   GateDaTurmaSchema,
   GateSchema,
   GerarRespostaSchema,
@@ -15,9 +16,12 @@ import {
   NovaRodadaRespostaSchema,
   NovaRodadaSchema,
   PacoteDaTurmaSchema,
+  PacoteDetalheSchema,
   PacoteDoProfessorSchema,
+  PacotesDaTurmaSchema,
   PainelSchema,
   ParamsDaTurmaSchema,
+  ParamsDoPacoteSchema,
   QueryDaEscolaSchema,
 } from "./contrato-de-rotas";
 import { erroDeJogo } from "./erros";
@@ -40,6 +44,13 @@ function corpoDe<S extends z.ZodTypeAny>(schema: S, corpo: unknown, codigo: "pac
     throw erroDeJogo("payload-invalido", r.error.issues.map((i) => `${i.path.join(".") || "corpo"}: ${i.message}`));
   }
   return r.data as z.output<S>;
+}
+
+/** O id do pacote do caminho: inválido é 404, como o pacote de outra turma. */
+function pacoteDoCaminho(pacoteId: string): string {
+  const r = ParamsDoPacoteSchema.shape.pacoteId.safeParse(pacoteId);
+  if (!r.success) throw erroDeJogo("atividade-nao-encontrada");
+  return r.data;
 }
 
 const NOTA_DO_404 =
@@ -115,9 +126,9 @@ export class QuemMandouIssoTurmasController {
   @HttpCode(200)
   @Roles("professor")
   @Contrato({
-    resumo: '"Aprovar Pacote" — põe o pacote diante da turma (atividade nova).',
+    resumo: '"Criar atividade" — aprova o pacote como uma atividade PRONTA da turma.',
     descricao:
-      "O corpo carrega o pacote INTEIRO como o professor o deixou: a curadoria é editar qualquer texto antes de aprovar.\n\n**Aprovar um pacote novo é uma ATIVIDADE nova** da evidência (E14): o ativo anterior sai de cena (fica no banco, com o histórico), o novo começa na rodada 1 e a fase da turma volta à triagem. Aprovar de novo EXATAMENTE o pacote ativo é idempotente (mesmo id, sem atividade nova).",
+      "O corpo carrega o pacote INTEIRO como o professor o deixou: a curadoria é editar qualquer texto antes de aprovar.\n\n**Aprovar um pacote novo é uma ATIVIDADE nova** da evidência (E14), e ela nasce **pronta, não no ar** (ADR-130): o pacote em andamento continua em andamento, e a fase da turma não muda. Quem escolhe o que a turma joga é o professor (`POST :turmaId/pacotes/:pacoteId/em-andamento`). Aprovar de novo EXATAMENTE o pacote aprovado mais recente é idempotente (mesmo id, sem atividade nova).",
     params: ParamsDaTurmaSchema,
     query: QueryDaEscolaSchema,
     corpo: AprovarSchema,
@@ -203,5 +214,74 @@ export class QuemMandouIssoTurmasController {
   ) {
     const { rodada } = corpoDe(NovaRodadaSchema, corpo, "payload-invalido");
     return this.missao.novaRodada(escolaAlvo(req.auth, escolaIdPedida), turmaDoCaminho(turmaId), req.auth.usuarioId, rodada);
+  }
+
+  @Get(":turmaId/pacotes")
+  @Roles("professor", ...GESTORES)
+  @Contrato({
+    resumo: "As atividades da turma: os pacotes aprovados, com o em andamento marcado.",
+    descricao:
+      "A lista de atividades da ficha (ADR-130) e o seletor do painel de habilidades: cada pacote APROVADO é uma ATIVIDADE, e o `id` dele é o `atividadeId` das equipes e da evidência. O rascunho não entra — ainda não é atividade.\n\n`emAndamento` é `null` quando o professor ainda não pôs nenhum no ar: a plataforma não cria atividade.",
+    params: ParamsDaTurmaSchema,
+    query: QueryDaEscolaSchema,
+    resposta: PacotesDaTurmaSchema,
+    notas: [NOTA_DO_404, "`rodadas` é a maior rodada com sessão daquele pacote; 0 = nunca rodou."],
+  })
+  pacotes(@Param("turmaId") turmaId: string, @Query("escolaId") escolaIdPedida: string | undefined, @Req() req: Autenticado) {
+    return this.missao.pacotes(escolaAlvo(req.auth, escolaIdPedida), turmaDoCaminho(turmaId), professorDoToken(req.auth));
+  }
+
+  @Get(":turmaId/pacotes/:pacoteId")
+  @Roles("professor", ...GESTORES)
+  @Contrato({
+    resumo: "UMA atividade, inteira e COM o gabarito — em andamento ou pronta.",
+    descricao: "A página da atividade. `ativo` diz se ela está em andamento; `rodadas` é a maior rodada com sessão (0 = nunca rodou).",
+    params: ParamsDoPacoteSchema,
+    query: QueryDaEscolaSchema,
+    resposta: PacoteDetalheSchema,
+    notas: [NOTA_DO_404, "O rascunho, ou o pacote de outra turma, responde **404** `atividade-nao-encontrada`."],
+  })
+  pacoteDetalhe(
+    @Param("turmaId") turmaId: string,
+    @Param("pacoteId") pacoteId: string,
+    @Query("escolaId") escolaIdPedida: string | undefined,
+    @Req() req: Autenticado,
+  ) {
+    return this.missao.pacote(
+      escolaAlvo(req.auth, escolaIdPedida),
+      turmaDoCaminho(turmaId),
+      professorDoToken(req.auth),
+      pacoteDoCaminho(pacoteId),
+    );
+  }
+
+  @Post(":turmaId/pacotes/:pacoteId/em-andamento")
+  @HttpCode(200)
+  @Roles("professor")
+  @Contrato({
+    resumo: '"Usar esta atividade agora" — o professor escolhe o que a turma joga (ADR-130).',
+    descricao:
+      "O escolhido passa a ser a ATIVIDADE EM ANDAMENTO da turma; o que estava volta a ser pronto — fica, com as sessões e a evidência. A fase volta à triagem.\n\nA RODADA: o pacote que nunca rodou fica na 1; o que já rodou abre a SEGUINTE à última com sessão — retomar a mesma depois da revelação seria o \"voltar\" que os botões proíbem. As anteriores continuam no painel de habilidades.",
+    params: ParamsDoPacoteSchema,
+    query: QueryDaEscolaSchema,
+    resposta: EmAndamentoSchema,
+    notas: [
+      NOTA_DO_404,
+      "**Idempotente**: pôr no ar o que já está no ar devolve `mudou: false` e não muda nada.",
+      "O rascunho, ou o pacote de outra turma, responde **404** `atividade-nao-encontrada`.",
+    ],
+  })
+  emAndamento(
+    @Param("turmaId") turmaId: string,
+    @Param("pacoteId") pacoteId: string,
+    @Query("escolaId") escolaIdPedida: string | undefined,
+    @Req() req: Autenticado,
+  ) {
+    return this.missao.colocarEmAndamento(
+      escolaAlvo(req.auth, escolaIdPedida),
+      turmaDoCaminho(turmaId),
+      req.auth.usuarioId,
+      pacoteDoCaminho(pacoteId),
+    );
   }
 }

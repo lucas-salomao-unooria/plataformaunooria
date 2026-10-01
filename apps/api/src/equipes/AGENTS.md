@@ -15,13 +15,40 @@ com `escola_id` + RLS forçada:
 
 | Tabela | O que guarda |
 |---|---|
-| `equipes_montagens` | a decisão da aula por turma × missão: `modo`, `computadores`, `ausentes`, e a `versao` da concorrência otimista |
+| `equipes_montagens` | a decisão da aula por turma × missão × ATIVIDADE: `modo`, `computadores`, `ausentes`, e a `versao` da concorrência otimista |
 | `equipes` | cada computador: nome (1–30 depois do `trim`) e `ordem` |
-| `equipes_membros` | quem senta diante de cada um — `turma_id`/`exp_id` repetidos para o UNIQUE de **uma equipe por criança por missão** |
+| `equipes_membros` | quem senta diante de cada um — `turma_id`/`exp_id`/`atividade_id` repetidos para o UNIQUE de **uma equipe por criança por atividade** |
+
+## A equipe é da ATIVIDADE (ADR-130)
+
+- **`atividade_id` está na chave das três tabelas.** É o id que a MISSÃO dá à
+  atividade — a cobertura da exp07ef1b, o pacote da exp04ef1b e da exp05ef1b,
+  a `activity` da exp08ef1b —, opaco, com o alfabeto de
+  `evidencias_marcas.atividade_id` (`ATIVIDADE_ID_RE`, que a evidência
+  re-exporta daqui). Sem FK: são quatro tabelas donas. A missão SEM atividade
+  (o unooGPT, até ser refeito; o UnooTube arquivado) usa o fixo
+  `ATIVIDADE_DA_TURMA = "turma"`, e `atividadeCasaComMissao` recusa a troca
+  dos dois — 404 `atividade-nao-encontrada`, como a atividade de outra turma.
+- **Qual atividade está em andamento** sai de `atividades.ts`: leitura direta
+  das tabelas das missões num `Record` EXAUSTIVO por
+  `EXPERIENCIAS_COM_ATIVIDADE` — missão nova com atividade sem fonte ali não
+  compila. É o que decide a faixa do estudante (`minha`) e a etiqueta da sala
+  (`contarEquipesDaTurma`): a equipe que vale é a da atividade EM ANDAMENTO.
+- **Modo `individual`** ("um aluno por computador"): grava a montagem, nenhuma
+  equipe, `computadores` NULO — o CHECK tem `IS NOT NULL` explícito no outro
+  ramo, porque CHECK que dá NULL passa (o teste pegou). `computadoresDaMontagem`
+  devolve `null`, e o painel conta por criança, como sem montagem. A `sugestao`
+  não aceita `individual`: não há proposta nele.
+- **`ultima` virou "a atividade anterior"**: a montagem mais recente da turma em
+  QUALQUER outra atividade (desta missão ou de outra), menos as `individual`.
+- **A criação da atividade NÃO é transação com as equipes**: o hub cria a
+  atividade e depois chama sugestão + `PUT` (`hub/lib/entre-redes/criar-atividade.ts`).
+  A equipe que falhar deixa a atividade de pé.
 
 ## As regras
 
 - **Só cinco missões aceitam equipe**: `EXPERIENCIAS_COM_EQUIPE` em `regras.ts`
+  (e as quatro com atividade são `EXPERIENCIAS_COM_ATIVIDADE`, o unooGPT fora)
   (exp08ef1b, exp02em1b, exp05ef1b, exp07ef1b e exp04ef1b — Quem Mandou Isso?
   v2.2, A Seleção e o Jornal da Escola, as três nascidas com equipe). O
   exp04ef1b saiu com o UnooTube ARQUIVADO (ADR-116) e VOLTOU com o Jornal, que

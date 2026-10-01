@@ -70,9 +70,12 @@ export class PodcastDaExp07ef1bService {
     private readonly selecao: ASelecaoService,
   ) {}
 
-  /** O roteiro e o estado do áudio da cobertura em andamento. NÃO gera nada. */
-  async estado(escolaId: string, turmaId: string, professorId?: string): Promise<EstadoDoPodcast> {
-    const cobertura = await this.selecao.coberturaParaMidia(escolaId, turmaId, professorId);
+  /**
+   * O roteiro e o estado do áudio da cobertura pedida, ou da em andamento sem
+   * pedido (ADR-130). NÃO gera nada.
+   */
+  async estado(escolaId: string, turmaId: string, professorId?: string, coberturaId?: string): Promise<EstadoDoPodcast> {
+    const cobertura = await this.selecao.coberturaParaMidia(escolaId, turmaId, professorId, coberturaId);
     const roteiro = roteiroDoPodcast(cobertura.podcast);
     const prontos = await this.trechosProntos(roteiro);
     return {
@@ -94,8 +97,9 @@ export class PodcastDaExp07ef1bService {
     professorId: string | undefined,
     usuarioId: string,
     perfil: Perfil,
+    coberturaId?: string,
   ): Promise<ProgressoDoPodcast> {
-    const cobertura = await this.selecao.coberturaParaMidia(escolaId, turmaId, professorId);
+    const cobertura = await this.selecao.coberturaParaMidia(escolaId, turmaId, professorId, coberturaId);
     const roteiro = roteiroDoPodcast(cobertura.podcast);
     const chave = nomeDoEpisodio(roteiro);
     const emCurso = emPreparo.get(chave);

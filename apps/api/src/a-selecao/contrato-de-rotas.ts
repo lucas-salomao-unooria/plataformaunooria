@@ -359,7 +359,10 @@ export const ZerarTurmaSchema = z.object({
 });
 
 export const CoberturasSchema = z.object({
-  /** A atividade em andamento, COM o gabarito (é a tela do preparo). */
+  /**
+   * A atividade EM ANDAMENTO, COM o gabarito — ou `null` quando a professora
+   * ainda não pôs nenhuma no ar: a plataforma não cria atividade (ADR-130).
+   */
   ativa: CoberturaResumoSchema.extend({
     rodada: z.number().int().positive(),
     etapa: EtapaSchema,
@@ -367,7 +370,7 @@ export const CoberturasSchema = z.object({
     midia: MidiaResumoSchema,
     /** As três falas do podcast desta cobertura (as do sheet, se ela não tem as suas). */
     podcast: FalasDoTemaSaidaSchema,
-  }),
+  }).nullable(),
   /** Todas as coberturas da turma, a ativa inclusa — é o `?cobertura=` do painel de habilidades. */
   historico: z.array(
     CoberturaResumoSchema.extend({
@@ -389,11 +392,40 @@ export const RascunhoSchema = z.object({
   podcast: FalasDoTemaSaidaSchema,
 });
 
+/** A atividade recém-criada: nasce PRONTA, nunca no ar (ADR-130). */
 export const CoberturaHomologadaSchema = CoberturaResumoSchema.extend({
-  rodada: z.number().int().positive(),
-  etapa: EtapaSchema,
+  ativa: z.literal(false),
   posts: z.array(PostDaCoberturaSchema).length(TOTAL_DE_POSTS),
   podcast: FalasDoTemaSaidaSchema,
+});
+
+/** UMA atividade, em andamento ou não — a página dela. */
+export const CoberturaDetalheSchema = CoberturaResumoSchema.extend({
+  /** Em andamento na turma? */
+  ativa: z.boolean(),
+  /** A rodada e a etapa do gate, só quando em andamento. */
+  rodada: z.number().int().positive().nullable(),
+  etapa: EtapaSchema.nullable(),
+  criadaEm: z.string(),
+  /** A maior rodada com sessão; 0 = nunca rodou. */
+  rodadas: z.number().int().min(0),
+  posts: z.array(PostDaCoberturaSchema),
+  midia: MidiaResumoSchema,
+  podcast: FalasDoTemaSaidaSchema,
+});
+
+export const EmAndamentoSchema = z.object({
+  coberturaId: z.string().uuid(),
+  rodada: z.number().int().positive(),
+  etapa: EtapaSchema,
+  /** `false` = ela já estava em andamento (o segundo clique). */
+  mudou: z.boolean(),
+});
+
+/** `?coberturaId=` das rotas de imagem e de podcast: a atividade PRONTA sendo preparada. */
+export const QueryDaCoberturaSchema = z.object({
+  escolaId: z.string().optional(),
+  coberturaId: z.string().uuid().optional(),
 });
 
 const FalaDoPodcastSchema = z.object({ falante: z.enum(["Lucas", "Clara"]), texto: z.string() });
@@ -440,6 +472,8 @@ export const ProgressoDaMidiaSchema = z.object({
 export const MaterialDoProfessorSchema = z.object({
   tema: z.string(),
   posts: z.array(PostDaCoberturaSchema).length(TOTAL_DE_POSTS),
+  /** As três falas do podcast do sheet — o ponto de partida da cobertura pronta (ADR-130). */
+  podcast: FalasDoTemaSaidaSchema,
   roteiroDaEtapa4: z.object({ aviso: z.string(), perguntas: z.array(z.string()).length(3) }),
   gatilhos: z.object({ mural: z.string(), fichas: z.string(), explicacao: z.string() }),
   colegasVirtuais: z.array(

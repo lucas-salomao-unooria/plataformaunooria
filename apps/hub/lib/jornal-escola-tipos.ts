@@ -24,8 +24,9 @@ import type { NewsMedium } from "@edu/ui/ds";
  * `NoticiaDoPacote`, que só rota de professor devolve. Quem o esconde do
  * estudante é a api, pela allowlist da notícia pública — não esta camada.
  *
- * As funções daqui são PURAS: o painel ao vivo e o preparo são client
- * components e importam deste arquivo, e o `vitest` do hub só varre `lib/`.
+ * As funções daqui são PURAS: o painel ao vivo e a criação da atividade são
+ * client components e importam deste arquivo, e o `vitest` do hub só varre
+ * `lib/`.
  */
 
 // ─────────────────────────────────────────────────────────────── o vocabulário
@@ -228,18 +229,22 @@ export interface TurmaZerada {
   etapa: EtapaDaTurma;
 }
 
+/** O pacote como as telas do professor o mostram, com o gabarito. */
+export interface PacoteComGabarito extends PacoteResumo {
+  topicos: string | null;
+  noticias: NoticiaDoPacote[];
+  midia: ResumoDaMidia;
+  /** As URLs já geradas, por id de notícia. */
+  imagens: Record<string, string>;
+}
+
 /** `GET /jornal-escola/turmas/:turmaId/pacotes`. */
 export interface PacotesDaTurma {
-  /** A atividade em andamento, COM o gabarito (é a tela do preparo). */
-  ativo: PacoteResumo & {
-    rodada: number;
-    etapa: EtapaDaTurma;
-    topicos: string | null;
-    noticias: NoticiaDoPacote[];
-    midia: ResumoDaMidia;
-    /** As URLs já geradas, por id de notícia. */
-    imagens: Record<string, string>;
-  };
+  /**
+   * A atividade EM ANDAMENTO, COM o gabarito — ou `null` quando o professor
+   * ainda não pôs nenhuma no ar: a plataforma não cria atividade (ADR-130).
+   */
+  ativo: (PacoteComGabarito & { rodada: number; etapa: EtapaDaTurma }) | null;
   /** Todos os pacotes da turma, o ativo incluso — é o `?pacote=` do painel de habilidades. */
   historico: Array<
     PacoteResumo & {
@@ -274,11 +279,25 @@ export interface NoticiaRegenerada {
   usouIa: boolean;
 }
 
-/** `POST homologar`. */
+/**
+ * `POST homologar` — a atividade criada, PRONTA (ADR-130). `ativo` só é
+ * `true` no segundo clique sobre um pacote que já estava no ar.
+ */
 export interface PacoteHomologado extends PacoteResumo {
-  rodada: number;
-  etapa: EtapaDaTurma;
+  ativo: boolean;
   noticias: NoticiaDoPacote[];
+}
+
+/** `GET :turmaId/pacotes/:pacoteId` — UMA atividade, em andamento ou pronta. */
+export interface PacoteDaAtividade extends PacoteComGabarito {
+  /** Em andamento na turma? */
+  ativo: boolean;
+  /** A rodada e a etapa do gate, só quando em andamento. */
+  rodada: number | null;
+  etapa: EtapaDaTurma | null;
+  criadoEm: string;
+  /** A maior rodada com sessão; 0 = nunca rodou. */
+  rodadas: number;
 }
 
 /** `POST gerar-midia` — o progresso de UMA chamada (até duas imagens novas). */
@@ -298,7 +317,8 @@ export interface ProgressoDaMidia {
 /**
  * `GET /jornal-escola/professor/material` — o BANCO PADRÃO com gabarito, a
  * Chave com os pilares marcados e o roteiro da mediação (copy revisada, §4b).
- * É o "Usar Banco Padrão" do preparo, o roteiro do painel e o bloco vivo do guia.
+ * É o "Usar o banco pronto da Unooria" da criação da atividade, o roteiro do
+ * painel e o bloco vivo do guia.
  */
 export interface MaterialDoJornal {
   disciplina: string;
@@ -837,7 +857,7 @@ function limparOpcional(texto: string | null): string | null {
 /**
  * A notícia como ela VIAJA: sem espaço nas pontas, e os três campos anuláveis
  * (`falante`, `legenda`, `descricaoImagem`) vazios viram `null`. As chaves na
- * ordem do contrato — é também a forma que `mesmoPacote` compara.
+ * ordem do contrato.
  */
 export function normalizarNoticia(n: NoticiaDoPacote): NoticiaDoPacote {
   return {
@@ -858,30 +878,6 @@ export function normalizarNoticia(n: NoticiaDoPacote): NoticiaDoPacote {
     },
     consequencia: { leitor: n.consequencia.leitor.trim(), fala: n.consequencia.fala.trim() },
   };
-}
-
-interface PacoteNaTela {
-  disciplina: string;
-  tema: string;
-  topicos: string | null;
-  noticias: readonly NoticiaDoPacote[];
-}
-
-/**
- * O pacote na tela é o MESMO que está em andamento? Aprovar de novo o que já
- * roda criaria uma atividade nova idêntica — e a turma voltaria à rodada 1 sem
- * nada ter mudado, com o painel de habilidades partido em duas atividades
- * iguais. Compara tudo o que o professor pode mexer, sem espaço nas pontas.
- */
-export function mesmoPacote(a: PacoteNaTela, b: PacoteNaTela): boolean {
-  if (a.disciplina.trim() !== b.disciplina.trim()) return false;
-  if (a.tema.trim() !== b.tema.trim()) return false;
-  if ((a.topicos ?? "").trim() !== (b.topicos ?? "").trim()) return false;
-  if (a.noticias.length !== b.noticias.length) return false;
-  return a.noticias.every((n, i) => {
-    const outra = b.noticias[i];
-    return outra !== undefined && JSON.stringify(normalizarNoticia(n)) === JSON.stringify(normalizarNoticia(outra));
-  });
 }
 
 // ─────────────────────────────────────────────────────────────── as imagens

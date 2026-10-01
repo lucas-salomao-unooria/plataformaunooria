@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { EXP_ID_RE, FORMATO_DO_EXP_ID } from "../comum/codigo-da-experiencia";
-import { COMPUTADORES_MAX, MODOS } from "./regras";
+import { ATIVIDADE_ID_RE, COMPUTADORES_MAX, FORMATO_DO_ATIVIDADE_ID, MODOS } from "./regras";
 
 /**
  * Os schemas das rotas de `/equipes` (E13, ADR-111). O OpenAPI é derivado daqui
@@ -11,10 +11,14 @@ export const ExpId = z.string().regex(EXP_ID_RE, FORMATO_DO_EXP_ID);
 export const Uuid = z.string().uuid();
 
 export const ModoSchema = z.enum(MODOS);
+/** O que a `sugestao` propõe: o `individual` não tem proposta — não há equipe nele. */
+export const ModoDaSugestaoSchema = z.enum(["sorteio", "manual"]);
+/** O id da atividade, dado pela missão (ADR-130). A missão sem atividade usa `turma`. */
+export const AtividadeId = z.string().regex(ATIVIDADE_ID_RE, FORMATO_DO_ATIVIDADE_ID);
 export const LadoSchema = z.enum(["A", "B"]);
 
-/** O endereço de toda rota do professor: a turma e a missão. */
-export const ParamsDaMissaoSchema = z.object({ turmaId: Uuid, expId: ExpId });
+/** O endereço de toda rota do professor: a turma, a missão e a atividade. */
+export const ParamsDaMissaoSchema = z.object({ turmaId: Uuid, expId: ExpId, atividadeId: AtividadeId });
 /** `gestor_contrato` tem escola vazia no token (regra 1) e precisa dizer `?escolaId=`. */
 export const QueryDaEscolaSchema = z.object({ escolaId: z.string().optional() });
 
@@ -25,7 +29,8 @@ const ComputadoresSchema = z.number().int().min(1).max(COMPUTADORES_MAX);
 
 export const MontagemSchema = z.object({
   modo: ModoSchema,
-  computadores: z.number().int().positive(),
+  /** Nulo só no `individual`: lá são tantos computadores quantas crianças. */
+  computadores: z.number().int().positive().nullable(),
   ausentes: z.array(Uuid),
   versao: z.number().int().positive(),
   atualizadoEm: z.string().datetime(),
@@ -51,7 +56,7 @@ export const EquipesDaMissaoSchema = z.object({
 });
 
 export const PedidoDeSugestaoSchema = z.object({
-  modo: ModoSchema,
+  modo: ModoDaSugestaoSchema,
   computadores: ComputadoresSchema,
   ausentes: z.array(Uuid).default([]),
 });
@@ -66,7 +71,7 @@ export const AgrupamentoSchema = z.object({
 });
 
 export const SugestaoSchema = z.object({
-  modo: ModoSchema,
+  modo: ModoDaSugestaoSchema,
   computadores: z.number().int().positive(),
   equipes: z.array(
     z.object({
@@ -82,7 +87,7 @@ export const SugestaoSchema = z.object({
 
 export const UltimaMontagemSchema = z.object({
   origem: z
-    .object({ expId: z.string(), atualizadoEm: z.string().datetime() })
+    .object({ expId: z.string(), atividadeId: z.string(), atualizadoEm: z.string().datetime() })
     .nullable(),
   equipes: z.array(z.object({ nome: z.string(), membros: z.array(MembroSchema) })),
   semEquipe: z.array(MembroSchema),
@@ -99,7 +104,11 @@ export const SalvarMontagemSchema = z.object({
   /** A versão em que a tela se baseou. `0` quando não havia montagem. */
   versao: z.number().int().min(0),
   modo: ModoSchema,
-  computadores: ComputadoresSchema,
+  /**
+   * Obrigatório no `sorteio` e no `manual`; no `individual` é ignorado (e
+   * gravado nulo). A falta é dita por `validarMontagem`, em frase.
+   */
+  computadores: ComputadoresSchema.nullable().default(null),
   ausentes: z.array(Uuid).default([]),
   equipes: z
     .array(z.object({ nome: z.string(), membros: z.array(Uuid) }))

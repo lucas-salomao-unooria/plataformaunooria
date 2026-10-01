@@ -19,6 +19,8 @@ export type CodigoErro =
   | "payload-invalido"
   | "turma-nao-encontrada"
   | "sem-turma"
+  | "atividade-nao-preparada"
+  | "atividade-nao-encontrada"
   | "passo-invalido"
   | "selecao-invalida"
   | "latch-ja-confirmado"
@@ -41,6 +43,11 @@ export const STATUS: Record<CodigoErro, number> = {
   "payload-invalido": 400,
   "turma-nao-encontrada": 404,
   "sem-turma": 409,
+  /* 403, e não 409: é o "a missão ainda não abriu" que a experiência JÁ sabe
+     dizer (a tela de indisponível da liberação) — a turma sem atividade em
+     andamento é, para a criança, a mesma porta fechada (ADR-130). */
+  "atividade-nao-preparada": 403,
+  "atividade-nao-encontrada": 404,
   "passo-invalido": 409,
   "selecao-invalida": 400,
   "latch-ja-confirmado": 409,
@@ -66,6 +73,10 @@ export const MENSAGENS: Record<CodigoErro, string> = {
   // Sem turma não há relógio da aula nem Mural — e a tela do hub é quem
   // explica que falta enturmar; aqui dentro do app a frase fica na ficção.
   "sem-turma": "Sua conta do grêmio ainda não está ligada a nenhuma turma.",
+  // A plataforma nunca cria a atividade (ADR-130): sem a do professor em
+  // andamento, a missão não abriu.
+  "atividade-nao-preparada": "Quando o seu professor liberar, ela aparece aqui.",
+  "atividade-nao-encontrada": "Atividade não encontrada nesta turma.",
   "passo-invalido": "Essa tela não está disponível agora.",
   // Um id que não é desta cobertura é uma tela velha falando com um feed novo.
   "selecao-invalida": "Selecione exatamente 3 posts salvos para habilitar a publicação.",

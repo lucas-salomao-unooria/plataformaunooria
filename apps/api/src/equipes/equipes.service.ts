@@ -10,10 +10,11 @@ import { exigirRecursoDisponivel } from "../comum/disponibilidade";
 import { turmasDoEstudante } from "../comum/liberacao";
 import { professorLeciona } from "../comum/turmas-do-professor";
 import { PrismaService } from "../prisma/prisma.service";
+import { atividadeDaTurma, atividadeEmAndamento } from "./atividades";
 import { equipeDoEstudante, equipesDaMissao } from "./consulta";
 import type { SalvarMontagem } from "./contrato-de-rotas";
 import {
-  EXPERIENCIAS_COM_EQUIPE,
+  atividadeCasaComMissao,
   permiteEquipes,
   propostaManual,
   rotulosSemRepeticao,
@@ -54,8 +55,16 @@ export type FonteDeGrupo = (
  */
 export type AoMudarEquipes = (
   tx: Prisma.TransactionClient,
-  alvo: { escolaId: string; turmaId: string; expId: string },
+  alvo: AlvoDaMontagem,
 ) => Promise<void>;
+
+/** A chave de uma montagem: a turma, a missão e a ATIVIDADE (ADR-130). */
+export interface AlvoDaMontagem {
+  escolaId: string;
+  turmaId: string;
+  expId: string;
+  atividadeId: string;
+}
 
 /** Os campos da montagem que as respostas mostram. */
 const CAMPOS_DA_MONTAGEM = {
@@ -67,6 +76,7 @@ const CAMPOS_DA_MONTAGEM = {
 } satisfies Prisma.EquipesMontagemSelect;
 
 const TURMA_NAO_ENCONTRADA = "Turma não encontrada.";
+const ATIVIDADE_NAO_ENCONTRADA = "Atividade não encontrada nesta turma.";
 
 /**
  * AS EQUIPES NA MISSÃO (E13, ADR-111): quem divide um computador.
@@ -104,10 +114,7 @@ export class EquipesService {
   }
 
   /** Avisa os interessados, dentro da transação de quem mudou. */
-  private async avisarMudanca(
-    tx: Prisma.TransactionClient,
-    alvo: { escolaId: string; turmaId: string; expId: string },
-  ): Promise<void> {
+  private async avisarMudanca(tx: Prisma.TransactionClient, alvo: AlvoDaMontagem): Promise<void> {
     for (const callback of this.aoMudar) await callback(tx, alvo);
   }
 
@@ -128,6 +135,23 @@ export class EquipesService {
     });
     if (!turma || !(await professorLeciona(tx, escolaId, turmaId, professorId))) {
       throw new NotFoundException({ mensagem: TURMA_NAO_ENCONTRADA });
+    }
+  }
+
+  /**
+   * A atividade é desta missão e desta turma? 404, como a turma: a atividade
+   * de outra turma (ou de outro professor da escola) não pode ter a existência
+   * confirmada por um "sem permissão". O id fixo `turma` só vale para a missão
+   * sem atividade, e a missão com atividade nunca o aceita — seria a montagem
+   * solta que a ADR-130 aposentou.
+   */
+  private async exigirAtividade(tx: Prisma.TransactionClient, alvo: AlvoDaMontagem): Promise<void> {
+    const { escolaId, turmaId, expId, atividadeId } = alvo;
+    if (
+      !atividadeCasaComMissao(expId, atividadeId) ||
+      !(await atividadeDaTurma(tx, escolaId, turmaId, expId, atividadeId))
+    ) {
+      throw new NotFoundException({ codigo: "atividade-nao-encontrada", mensagem: ATIVIDADE_NAO_ENCONTRADA });
     }
   }
 
@@ -163,19 +187,15 @@ export class EquipesService {
   }
 
   /** A resposta do `GET` (e do `PUT`), já dentro da transação. */
-  private async projecao(
-    tx: Prisma.TransactionClient,
-    escolaId: string,
-    turmaId: string,
-    expId: string,
-  ) {
+  private async projecao(tx: Prisma.TransactionClient, alvo: AlvoDaMontagem) {
+    const { escolaId, turmaId, expId, atividadeId } = alvo;
     const [estudantes, montagem, equipes] = await Promise.all([
       this.estudantesDaTurma(tx, escolaId, turmaId),
       tx.equipesMontagem.findUnique({
-        where: { escolaId_turmaId_expId: { escolaId, turmaId, expId } },
+        where: { escolaId_turmaId_expId_atividadeId: alvo },
         select: CAMPOS_DA_MONTAGEM,
       }),
-      equipesDaMissao(tx, escolaId, turmaId, expId),
+      equipesDaMissao(tx, escolaId, turmaId, expId, atividadeId),
     ]);
 
     const emEquipe = new Set(equipes.flatMap((e) => e.membros.map((m) => m.id)));
@@ -197,20 +217,22 @@ export class EquipesService {
   }
 
   /**
-   * AS EQUIPES DESTA MISSÃO NESTA TURMA.
+   * AS EQUIPES DESTA ATIVIDADE NESTA TURMA.
    *
    * Missão sem equipe responde 200 com `permitida: false`, e não 400: é por
    * esta resposta que o hub decide se desenha o bloco de equipes, e um erro
    * ali viraria `api-recusou` no log a cada abertura de missão sem equipe.
    */
-  async daMissao(escolaId: string, turmaId: string, expId: string, professorId?: string) {
+  async daMissao(alvo: AlvoDaMontagem, professorId?: string) {
+    const { escolaId, turmaId, expId } = alvo;
     return this.prisma.comTenancy(async (tx) => {
       await this.exigirTurma(tx, escolaId, turmaId, professorId);
       if (!permiteEquipes(expId)) {
         const estudantes = await tx.user.count({ where: { escolaId, turmaId, role: "estudante" } });
         return { permitida: false, montagem: null, equipes: [], semEquipe: [], estudantes };
       }
-      return this.projecao(tx, escolaId, turmaId, expId);
+      await this.exigirAtividade(tx, alvo);
+      return this.projecao(tx, alvo);
     }, escolaId);
   }
 
@@ -227,15 +249,15 @@ export class EquipesService {
    * computadores que presentes, as equipes são uma por criança.
    */
   async sugerir(
-    escolaId: string,
-    turmaId: string,
-    expId: string,
-    pedido: { modo: Modo; computadores: number; ausentes: string[] },
+    alvo: AlvoDaMontagem,
+    pedido: { modo: Exclude<Modo, "individual">; computadores: number; ausentes: string[] },
     professorId: string,
   ) {
+    const { escolaId, turmaId, expId } = alvo;
     return this.prisma.comTenancy(async (tx) => {
       await this.exigirTurma(tx, escolaId, turmaId, professorId);
       this.exigirMissaoComEquipe(expId);
+      await this.exigirAtividade(tx, alvo);
 
       const ausentes = new Set(pedido.ausentes);
       const presentes = (await this.estudantesDaTurma(tx, escolaId, turmaId)).filter(
@@ -293,30 +315,39 @@ export class EquipesService {
   }
 
   /**
-   * AS EQUIPES DA ÚLTIMA MISSÃO, como ponto de partida desta.
+   * AS EQUIPES DA ATIVIDADE ANTERIOR, como ponto de partida desta.
    *
    * Quem divide computador numa aula costuma dividir na seguinte — a sala é a
    * mesma, as máquinas são as mesmas. A montagem mais recente da MESMA turma em
-   * OUTRA missão com equipe é reprojetada sobre a turma de HOJE: quem saiu da
-   * turma cai (e é contado em `saidas`, para a tela dizer por que uma equipe
-   * encolheu), equipe que ficou vazia some, e quem chegou depois fica em
-   * `semEquipe`. Os AUSENTES de lá não vêm: falta é da aula, não da criança.
+   * QUALQUER OUTRA atividade (desta missão ou de outra, ADR-130) que tenha
+   * equipes é reprojetada sobre a turma de HOJE: quem saiu da turma cai (e é
+   * contado em `saidas`, para a tela dizer por que uma equipe encolheu), equipe
+   * que ficou vazia some, e quem chegou depois fica em `semEquipe`. Os AUSENTES
+   * de lá não vêm: falta é da aula, não da criança. A montagem `individual`
+   * não conta — não há equipe nela para reaproveitar.
    *
    * Nada é gravado: é uma proposta, como a `sugestao`.
    */
-  async ultima(escolaId: string, turmaId: string, expId: string, professorId: string) {
+  async ultima(alvo: AlvoDaMontagem, professorId: string) {
+    const { escolaId, turmaId, expId, atividadeId } = alvo;
     return this.prisma.comTenancy(async (tx) => {
       await this.exigirTurma(tx, escolaId, turmaId, professorId);
       this.exigirMissaoComEquipe(expId);
+      await this.exigirAtividade(tx, alvo);
 
-      const outras = EXPERIENCIAS_COM_EQUIPE.filter((e) => e !== expId);
       const [estudantes, origem] = await Promise.all([
         this.estudantesDaTurma(tx, escolaId, turmaId),
         tx.equipesMontagem.findFirst({
-          where: { escolaId, turmaId, expId: { in: [...outras] } },
+          where: {
+            escolaId,
+            turmaId,
+            modo: { not: "individual" },
+            NOT: { expId, atividadeId },
+          },
           orderBy: { atualizadoEm: "desc" },
           select: {
             expId: true,
+            atividadeId: true,
             atualizadoEm: true,
             equipes: {
               where: { escolaId },
@@ -350,7 +381,11 @@ export class EquipesService {
         .filter((e) => e.membros.length > 0);
 
       return {
-        origem: { expId: origem.expId, atualizadoEm: origem.atualizadoEm.toISOString() },
+        origem: {
+          expId: origem.expId,
+          atividadeId: origem.atividadeId,
+          atualizadoEm: origem.atualizadoEm.toISOString(),
+        },
         equipes,
         semEquipe: estudantes.filter((e) => !colocados.has(e.id)),
         saidas: saidas.size,
@@ -384,16 +419,12 @@ export class EquipesService {
    * Por último, `aoMudarEquipes` avisa quem depende da montagem (a evidência
    * pedagógica), na MESMA transação — e o `desfazer` também avisa.
    */
-  async salvar(
-    escolaId: string,
-    turmaId: string,
-    expId: string,
-    corpo: SalvarMontagem,
-    professorId: string,
-  ) {
+  async salvar(alvo: AlvoDaMontagem, corpo: SalvarMontagem, professorId: string) {
+    const { escolaId, turmaId, expId } = alvo;
     return this.prisma.comTenancy(async (tx) => {
       await this.exigirTurma(tx, escolaId, turmaId, professorId);
       this.exigirMissaoComEquipe(expId);
+      await this.exigirAtividade(tx, alvo);
 
       const experiencia = await tx.experiencia.findUnique({
         where: { expId },
@@ -425,10 +456,11 @@ export class EquipesService {
         });
       }
 
-      const chave = { escolaId, turmaId, expId };
+      const chave = alvo;
       const campos = {
         modo: corpo.modo,
-        computadores: corpo.computadores,
+        /* `individual` não diz quantos computadores (CHECK da migration). */
+        computadores: corpo.modo === "individual" ? null : corpo.computadores,
         ausentes: [...new Set(corpo.ausentes)],
         atualizadoPor: professorId,
         atualizadoEm: new Date(),
@@ -445,7 +477,7 @@ export class EquipesService {
             });
       if (gravou.count === 0) {
         const atual = await tx.equipesMontagem.findUnique({
-          where: { escolaId_turmaId_expId: chave },
+          where: { escolaId_turmaId_expId_atividadeId: chave },
           select: { versao: true },
         });
         throw new ConflictException({
@@ -473,24 +505,26 @@ export class EquipesService {
       }
 
       await this.avisarMudanca(tx, chave);
-      return this.projecao(tx, escolaId, turmaId, expId);
+      return this.projecao(tx, alvo);
     }, escolaId);
   }
 
   /**
-   * DESFAZER AS EQUIPES desta missão: a montagem sai, e as equipes e os
+   * DESFAZER AS EQUIPES desta atividade: a montagem sai, e as equipes e os
    * membros caem por cascata. Idempotente — apagar o que não existe devolve o
    * mesmo `ok`, porque o estado final é o mesmo.
    *
-   * Sem checagem de catálogo nem de disponibilidade, de propósito: desfazer é
-   * sempre seguro, e uma missão desligada na rede não pode deixar equipes
-   * presas que ninguém consegue apagar.
+   * Sem checagem de catálogo, de disponibilidade nem de que a atividade ainda
+   * exista, de propósito: desfazer é sempre seguro, e uma missão desligada na
+   * rede (ou uma atividade apagada) não pode deixar equipes presas que ninguém
+   * consegue apagar. A tranca é a turma, e o `where` pela chave inteira.
    */
-  async desfazer(escolaId: string, turmaId: string, expId: string, professorId: string) {
+  async desfazer(alvo: AlvoDaMontagem, professorId: string) {
+    const { escolaId, turmaId } = alvo;
     return this.prisma.comTenancy(async (tx) => {
       await this.exigirTurma(tx, escolaId, turmaId, professorId);
-      await tx.equipesMontagem.deleteMany({ where: { escolaId, turmaId, expId } });
-      await this.avisarMudanca(tx, { escolaId, turmaId, expId });
+      await tx.equipesMontagem.deleteMany({ where: alvo });
+      await this.avisarMudanca(tx, alvo);
       return { ok: true as const };
     }, escolaId);
   }
@@ -510,6 +544,9 @@ export class EquipesService {
    * mesma missão), vale a primeira que o banco devolver — caso que a tela do
    * professor não produz hoje, porque a montagem só aceita quem tem a turma
    * como `users.turma_id`.
+   *
+   * A equipe que vale é a da atividade EM ANDAMENTO na turma (ADR-130): é nela
+   * que a criança vai entrar. A das outras atividades da missão é de outra aula.
    */
   async minha(escolaId: string, estudanteId: string, expId: string) {
     if (!permiteEquipes(expId)) return { equipe: null };
@@ -517,13 +554,17 @@ export class EquipesService {
       const turmaIds = await turmasDoEstudante(tx, escolaId, estudanteId);
       if (turmaIds.length === 0) return { equipe: null };
 
-      const vinculo = await tx.equipeMembro.findFirst({
+      const vinculos = await tx.equipeMembro.findMany({
         where: { escolaId, estudanteId, expId, turmaId: { in: turmaIds } },
-        select: { turmaId: true },
+        select: { turmaId: true, atividadeId: true },
       });
-      if (!vinculo) return { equipe: null };
-
-      const equipe = await equipeDoEstudante(tx, escolaId, vinculo.turmaId, expId, estudanteId);
+      let equipe = null;
+      for (const vinculo of vinculos) {
+        const emAndamento = await atividadeEmAndamento(tx, escolaId, vinculo.turmaId, expId);
+        if (emAndamento !== vinculo.atividadeId) continue;
+        equipe = await equipeDoEstudante(tx, escolaId, vinculo.turmaId, expId, vinculo.atividadeId, estudanteId);
+        if (equipe) break;
+      }
       if (!equipe) return { equipe: null };
       /* O universo do desempate é a equipe inteira; a resposta leva só os outros. */
       const rotulos = rotulosSemRepeticao(equipe.membros);

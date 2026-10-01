@@ -28,25 +28,29 @@ import { ResultadosUnooGPT } from "./resultados-unoogpt";
  * duplicaria o seletor de turma e o breadcrumb.
  *
  * A turma vem da URL (`?turmaId=`), como a escola em `/analise`: link
- * compartilhável, e nunca "sem turma = todas". A exp07ef1b lê também
- * `?cobertura=` — a atividade que o painel de habilidades mostra (a cobertura
- * homologada; sem o parâmetro, a em andamento) —, e a exp04ef1b, `?pacote=`,
- * pela mesma razão: a atividade dela é o pacote homologado.
+ * compartilhável, e nunca "sem turma = todas". Nas missões com atividade
+ * (ADR-130) esta é a PÁGINA DA ATIVIDADE: a exp07ef1b lê `?cobertura=`, e a
+ * exp04ef1b e a exp05ef1b, `?pacote=` — o card da lista de atividades da ficha
+ * leva até aqui com a atividade na URL; sem o parâmetro, é a em andamento.
  */
 export default async function ResultadosPage({
   params,
   searchParams,
 }: {
   params: Promise<{ ano: string; unidade: string }>;
-  searchParams: Promise<{ turmaId?: string; cobertura?: string; pacote?: string }>;
+  searchParams: Promise<{ turmaId?: string; cobertura?: string; pacote?: string; separar?: string }>;
 }) {
   const { ano: anoSlug, unidade: unidadeSlug } = await params;
   const encontrado = buscarMissao(anoSlug, unidadeSlug);
   if (!encontrado) notFound();
   const { missao } = encontrado;
 
-  const { turmaId, cobertura, pacote } = await searchParams;
+  const { turmaId, cobertura, pacote, separar: separarBruto } = await searchParams;
   const turma = turmaId?.trim() ?? "";
+  /* `?separar=N` vem da criação da atividade com "Eu separo" (ADR-130): as N
+     equipes vazias já abrem na página. Número inválido é ignorado. */
+  const nSeparar = Number(separarBruto);
+  const separar = Number.isInteger(nSeparar) && nSeparar > 0 && nSeparar <= 200 ? nSeparar : null;
 
   if (missao.expId === MISSAO_FOTO_CONTA.expId) {
     return <ResultadosFotoConta missao={missao} turma={turma} />;
@@ -61,13 +65,13 @@ export default async function ResultadosPage({
     return <ResultadosManifestoIa missao={missao} turma={turma} />;
   }
   if (missao.expId === MISSAO_A_SELECAO.expId) {
-    return <ResultadosASelecao missao={missao} turma={turma} cobertura={cobertura?.trim() ?? ""} />;
+    return <ResultadosASelecao missao={missao} turma={turma} cobertura={cobertura?.trim() ?? ""} separar={separar} />;
   }
   if (missao.expId === MISSAO_QUEM_MANDOU_ISSO.expId) {
-    return <ResultadosQuemMandouIsso missao={missao} turma={turma} />;
+    return <ResultadosQuemMandouIsso missao={missao} turma={turma} pacote={pacote?.trim() ?? ""} separar={separar} />;
   }
   if (missao.expId === MISSAO_JORNAL_DA_ESCOLA.expId) {
-    return <ResultadosJornalEscola missao={missao} turma={turma} pacote={pacote?.trim() ?? ""} />;
+    return <ResultadosJornalEscola missao={missao} turma={turma} pacote={pacote?.trim() ?? ""} separar={separar} />;
   }
   // Missão sem tela de resultados própria: a trilha não linka para cá.
   notFound();

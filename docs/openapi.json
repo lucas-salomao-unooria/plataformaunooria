@@ -9565,7 +9565,7 @@
         "x-acesso": "token"
       }
     },
-    "/equipes/turma/{turmaId}/missao/{expId}": {
+    "/equipes/turma/{turmaId}/missao/{expId}/atividade/{atividadeId}": {
       "get": {
         "operationId": "EquipesProfessorController_ler",
         "parameters": [
@@ -9585,6 +9585,15 @@
             "schema": {
               "type": "string",
               "pattern": "^(exp(0[1-9]ef|0[1-3]em)[1-4]b|app-\\d{2}-[a-z0-9]+(-[a-z0-9]+)*)$"
+            }
+          },
+          {
+            "name": "atividadeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_.:-]{1,100}$"
             }
           },
           {
@@ -9614,13 +9623,15 @@
                           "type": "string",
                           "enum": [
                             "sorteio",
-                            "manual"
+                            "manual",
+                            "individual"
                           ]
                         },
                         "computadores": {
                           "type": "integer",
                           "exclusiveMinimum": true,
-                          "minimum": 0
+                          "minimum": 0,
+                          "nullable": true
                         },
                         "ausentes": {
                           "type": "array",
@@ -9736,8 +9747,8 @@
         "tags": [
           "equipes"
         ],
-        "summary": "As equipes de uma missão nesta turma: a montagem, as equipes e quem está sem equipe.",
-        "description": "Equipe é quem DIVIDE UM COMPUTADOR na missão. `semEquipe` são os estudantes da turma fora de qualquer equipe — os ausentes da montagem inclusive.\n\nMissão que não aceita equipe responde **200** com `permitida: false` e listas vazias, e não 400: é por esta resposta que o hub decide se desenha o bloco de equipes.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Turma em que o professor não tem matrícula responde **404**, não 403: um \"sem permissão\" já contaria que a turma existe.\n- Gestor e admin leem a escola inteira, de propósito — e não montam.\n- Membro que saiu da turma não aparece: a fonte dos estudantes é `users.turma_id`, a mesma dos painéis de missão.",
+        "summary": "As equipes de uma atividade nesta turma: a montagem, as equipes e quem está sem equipe.",
+        "description": "Equipe é quem DIVIDE UM COMPUTADOR na missão. `semEquipe` são os estudantes da turma fora de qualquer equipe — os ausentes da montagem inclusive.\n\nMissão que não aceita equipe responde **200** com `permitida: false` e listas vazias, e não 400: é por esta resposta que o hub decide se desenha o bloco de equipes.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Turma em que o professor não tem matrícula responde **404**, não 403: um \"sem permissão\" já contaria que a turma existe.\n- Gestor e admin leem a escola inteira, de propósito — e não montam.\n- Membro que saiu da turma não aparece: a fonte dos estudantes é `users.turma_id`, a mesma dos painéis de missão.\n- A equipe é da ATIVIDADE (ADR-130): `atividadeId` é o id que a missão dá (a cobertura, o pacote, a atividade do Instanooria). Atividade que não é desta turma responde **404** `atividade-nao-encontrada`; a missão sem atividade (o unooGPT) usa o id fixo `turma`.",
         "security": [
           {
             "token-da-plataforma": []
@@ -9774,6 +9785,15 @@
             }
           },
           {
+            "name": "atividadeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_.:-]{1,100}$"
+            }
+          },
+          {
             "name": "escolaId",
             "in": "query",
             "required": false,
@@ -9800,13 +9820,15 @@
                           "type": "string",
                           "enum": [
                             "sorteio",
-                            "manual"
+                            "manual",
+                            "individual"
                           ]
                         },
                         "computadores": {
                           "type": "integer",
                           "exclusiveMinimum": true,
-                          "minimum": 0
+                          "minimum": 0,
+                          "nullable": true
                         },
                         "ausentes": {
                           "type": "array",
@@ -9922,8 +9944,8 @@
         "tags": [
           "equipes"
         ],
-        "summary": "Grava a montagem inteira das equipes desta missão, com concorrência otimista.",
-        "description": "**Só quem tem matrícula de professor na turma.** Troca a montagem INTEIRA: as equipes anteriores saem e as do corpo entram, na ordem em que vieram.\n\n`versao` é a versão em que a tela se baseou (`0` quando não havia montagem). Versão velha responde **409** com `versaoAtual` — o computador da sala e o celular do professor salvando ao mesmo tempo não se sobrescrevem em silêncio.\n\n**Papéis:** professor.\n\n**Restrições:**\n- Montagem impossível responde **400** `montagem-invalida` com `erros`: a lista INTEIRA, em frases para o professor — membro ou ausente de fora da turma, estudante em duas equipes, ausente dentro de equipe, nome vazio, repetido (sem distinguir maiúsculas) ou com mais de 30 caracteres, equipe sem ninguém, nenhuma equipe.\n- Missão que não aceita equipe responde **400** `missao-sem-equipes`; fora do catálogo, **404**; ferramenta de professor, **403**; recurso desligado na rede, **403** `recurso-indisponivel`.",
+        "summary": "Grava a montagem inteira das equipes desta atividade, com concorrência otimista.",
+        "description": "**Só quem tem matrícula de professor na turma.** Troca a montagem INTEIRA: as equipes anteriores saem e as do corpo entram, na ordem em que vieram.\n\n`versao` é a versão em que a tela se baseou (`0` quando não havia montagem). Versão velha responde **409** com `versaoAtual` — o computador da sala e o celular do professor salvando ao mesmo tempo não se sobrescrevem em silêncio.\n\n**Papéis:** professor.\n\n**Restrições:**\n- Montagem impossível responde **400** `montagem-invalida` com `erros`: a lista INTEIRA, em frases para o professor — membro ou ausente de fora da turma, estudante em duas equipes, ausente dentro de equipe, nome vazio, repetido (sem distinguir maiúsculas) ou com mais de 30 caracteres, equipe sem ninguém, nenhuma equipe.\n- Missão que não aceita equipe responde **400** `missao-sem-equipes`; fora do catálogo, **404**; ferramenta de professor, **403**; recurso desligado na rede, **403** `recurso-indisponivel`.\n- `individual` (um aluno por computador) grava a montagem SEM equipes e com `computadores` nulo; `sorteio` e `manual` exigem `computadores` e ao menos uma equipe.\n- A equipe é da ATIVIDADE (ADR-130): `atividadeId` é o id que a missão dá (a cobertura, o pacote, a atividade do Instanooria). Atividade que não é desta turma responde **404** `atividade-nao-encontrada`; a missão sem atividade (o unooGPT) usa o id fixo `turma`.",
         "security": [
           {
             "token-da-plataforma": []
@@ -9948,13 +9970,16 @@
                     "type": "string",
                     "enum": [
                       "sorteio",
-                      "manual"
+                      "manual",
+                      "individual"
                     ]
                   },
                   "computadores": {
                     "type": "integer",
                     "minimum": 1,
-                    "maximum": 200
+                    "maximum": 200,
+                    "nullable": true,
+                    "default": null
                   },
                   "ausentes": {
                     "type": "array",
@@ -9992,7 +10017,6 @@
                 "required": [
                   "versao",
                   "modo",
-                  "computadores",
                   "equipes"
                 ],
                 "additionalProperties": false
@@ -10020,6 +10044,15 @@
             "schema": {
               "type": "string",
               "pattern": "^(exp(0[1-9]ef|0[1-3]em)[1-4]b|app-\\d{2}-[a-z0-9]+(-[a-z0-9]+)*)$"
+            }
+          },
+          {
+            "name": "atividadeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_.:-]{1,100}$"
             }
           },
           {
@@ -10058,8 +10091,8 @@
         "tags": [
           "equipes"
         ],
-        "summary": "Desfaz as equipes desta missão na turma.",
-        "description": "A montagem sai, e as equipes e os membros caem junto. **Idempotente**: apagar o que não existe devolve o mesmo `ok`.\n\n**Papéis:** professor.\n\n**Restrições:**\n- Sem checagem de catálogo nem de disponibilidade: desfazer é sempre seguro, e missão desligada na rede não pode deixar equipes presas.",
+        "summary": "Desfaz as equipes desta atividade na turma.",
+        "description": "A montagem sai, e as equipes e os membros caem junto. **Idempotente**: apagar o que não existe devolve o mesmo `ok`.\n\n**Papéis:** professor.\n\n**Restrições:**\n- Sem checagem de catálogo, de disponibilidade nem de que a atividade ainda exista: desfazer é sempre seguro, e missão desligada na rede não pode deixar equipes presas.",
         "security": [
           {
             "token-da-plataforma": []
@@ -10071,7 +10104,7 @@
         "x-acesso": "token"
       }
     },
-    "/equipes/turma/{turmaId}/missao/{expId}/sugestao": {
+    "/equipes/turma/{turmaId}/missao/{expId}/atividade/{atividadeId}/sugestao": {
       "post": {
         "operationId": "EquipesProfessorController_sugerir",
         "parameters": [
@@ -10091,6 +10124,15 @@
             "schema": {
               "type": "string",
               "pattern": "^(exp(0[1-9]ef|0[1-3]em)[1-4]b|app-\\d{2}-[a-z0-9]+(-[a-z0-9]+)*)$"
+            }
+          },
+          {
+            "name": "atividadeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_.:-]{1,100}$"
             }
           },
           {
@@ -10241,8 +10283,8 @@
         "tags": [
           "equipes"
         ],
-        "summary": "Uma proposta de equipes (sorteio ou N equipes vazias) — nunca grava.",
-        "description": "`sorteio` distribui os presentes (a turma menos `ausentes`) por `computadores` equipes de tamanhos que diferem em no máximo 1. `manual` devolve N equipes VAZIAS e todos os presentes em `semEquipe`, para o professor arrastar.\n\nSe a missão tem lados (o Instanooria), o sorteio evita juntar os dois lados na mesma tela e conta em `agrupamento.equipesMistas` quando a aritmética não fecha. Sem fonte de lado, `agrupamento` volta `null`.\n\n**Papéis:** professor.\n\n**Restrições:**\n- Missão que não aceita equipe responde **400** `missao-sem-equipes`.\n- Com mais computadores que presentes, cada criança fica numa equipe só dela — é a sala com um computador por estudante.\n- Ausente que não é da turma é ignorado aqui; o `PUT` o recusa.",
+        "summary": "Uma proposta de equipes (sorteio ou N equipes vazias) — nunca grava. O `individual` não tem proposta.",
+        "description": "`sorteio` distribui os presentes (a turma menos `ausentes`) por `computadores` equipes de tamanhos que diferem em no máximo 1. `manual` devolve N equipes VAZIAS e todos os presentes em `semEquipe`, para o professor arrastar.\n\nSe a missão tem lados (o Instanooria), o sorteio evita juntar os dois lados na mesma tela e conta em `agrupamento.equipesMistas` quando a aritmética não fecha. Sem fonte de lado, `agrupamento` volta `null`.\n\n**Papéis:** professor.\n\n**Restrições:**\n- Missão que não aceita equipe responde **400** `missao-sem-equipes`.\n- Com mais computadores que presentes, cada criança fica numa equipe só dela — é a sala com um computador por estudante.\n- Ausente que não é da turma é ignorado aqui; o `PUT` o recusa.\n- A equipe é da ATIVIDADE (ADR-130): `atividadeId` é o id que a missão dá (a cobertura, o pacote, a atividade do Instanooria). Atividade que não é desta turma responde **404** `atividade-nao-encontrada`; a missão sem atividade (o unooGPT) usa o id fixo `turma`.",
         "security": [
           {
             "token-da-plataforma": []
@@ -10291,7 +10333,7 @@
         }
       }
     },
-    "/equipes/turma/{turmaId}/missao/{expId}/ultima": {
+    "/equipes/turma/{turmaId}/missao/{expId}/atividade/{atividadeId}/ultima": {
       "get": {
         "operationId": "EquipesProfessorController_ultima",
         "parameters": [
@@ -10311,6 +10353,15 @@
             "schema": {
               "type": "string",
               "pattern": "^(exp(0[1-9]ef|0[1-3]em)[1-4]b|app-\\d{2}-[a-z0-9]+(-[a-z0-9]+)*)$"
+            }
+          },
+          {
+            "name": "atividadeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_.:-]{1,100}$"
             }
           },
           {
@@ -10336,6 +10387,9 @@
                         "expId": {
                           "type": "string"
                         },
+                        "atividadeId": {
+                          "type": "string"
+                        },
                         "atualizadoEm": {
                           "type": "string",
                           "format": "date-time"
@@ -10343,6 +10397,7 @@
                       },
                       "required": [
                         "expId",
+                        "atividadeId",
                         "atualizadoEm"
                       ],
                       "additionalProperties": false,
@@ -10424,8 +10479,8 @@
         "tags": [
           "equipes"
         ],
-        "summary": "As equipes da última missão desta turma, reprojetadas sobre a turma de hoje.",
-        "description": "A montagem mais recente da MESMA turma em OUTRA missão com equipe. Quem saiu da turma cai (e é contado em `saidas`), equipe que ficou vazia some, e quem chegou depois fica em `semEquipe`. Os ausentes de lá não vêm: falta é da aula.\n\nSem montagem anterior, `origem` volta `null` e todos os estudantes em `semEquipe`. Nada é gravado.\n\n**Papéis:** professor.\n\n**Restrições:**\n- Missão que não aceita equipe responde **400** `missao-sem-equipes`.",
+        "summary": "As equipes da atividade anterior desta turma, reprojetadas sobre a turma de hoje.",
+        "description": "A montagem mais recente da MESMA turma em QUALQUER OUTRA atividade (desta missão ou de outra) que tenha equipes — a `individual` não conta. Quem saiu da turma cai (e é contado em `saidas`), equipe que ficou vazia some, e quem chegou depois fica em `semEquipe`. Os ausentes de lá não vêm: falta é da aula.\n\nSem montagem anterior, `origem` volta `null` e todos os estudantes em `semEquipe`. Nada é gravado.\n\n**Papéis:** professor.\n\n**Restrições:**\n- Missão que não aceita equipe responde **400** `missao-sem-equipes`.\n- A equipe é da ATIVIDADE (ADR-130): `atividadeId` é o id que a missão dá (a cobertura, o pacote, a atividade do Instanooria). Atividade que não é desta turma responde **404** `atividade-nao-encontrada`; a missão sem atividade (o unooGPT) usa o id fixo `turma`.",
         "security": [
           {
             "token-da-plataforma": []
@@ -39225,8 +39280,8 @@
         "tags": [
           "quem-mandou-isso"
         ],
-        "summary": "\"Aprovar Pacote\" — põe o pacote diante da turma (atividade nova).",
-        "description": "O corpo carrega o pacote INTEIRO como o professor o deixou: a curadoria é editar qualquer texto antes de aprovar.\n\n**Aprovar um pacote novo é uma ATIVIDADE nova** da evidência (E14): o ativo anterior sai de cena (fica no banco, com o histórico), o novo começa na rodada 1 e a fase da turma volta à triagem. Aprovar de novo EXATAMENTE o pacote ativo é idempotente (mesmo id, sem atividade nova).\n\n**Papéis:** professor.\n\n**Restrições:**\n- Turma em que o professor não tem matrícula responde **404** `turma-nao-encontrada`, não 403: um \"sem permissão\" já contaria que a turma existe.\n- A régua do pacote é cobrada por regra (e some do documento, por ser `.superRefine()`): exatamente 8 mensagens (`msg_1` a `msg_8`, uma vez cada); exatamente 2 verdadeiras emocionais, 2 verdadeiras neutras, 2 falsas emocionais e 2 falsas neutras; exatamente 4 textos, 2 imagens e 2 links; a imagem e o link com UMA verdadeira e UMA falsa cada (senão o formato entrega a resposta); `legenda` obrigatória na imagem e no link e ausente no texto; texto até 45 palavras e legenda até 25; remetente de 2 a 30 caracteres; nenhum \"atividade\", \"gabarito\", \"nota\" nem \"exercício\" no que a criança lê; e o mesmo recorte do `POST /gerar`. Fora disso: **400** `pacote-invalido` com `erros`.",
+        "summary": "\"Criar atividade\" — aprova o pacote como uma atividade PRONTA da turma.",
+        "description": "O corpo carrega o pacote INTEIRO como o professor o deixou: a curadoria é editar qualquer texto antes de aprovar.\n\n**Aprovar um pacote novo é uma ATIVIDADE nova** da evidência (E14), e ela nasce **pronta, não no ar** (ADR-130): o pacote em andamento continua em andamento, e a fase da turma não muda. Quem escolhe o que a turma joga é o professor (`POST :turmaId/pacotes/:pacoteId/em-andamento`). Aprovar de novo EXATAMENTE o pacote aprovado mais recente é idempotente (mesmo id, sem atividade nova).\n\n**Papéis:** professor.\n\n**Restrições:**\n- Turma em que o professor não tem matrícula responde **404** `turma-nao-encontrada`, não 403: um \"sem permissão\" já contaria que a turma existe.\n- A régua do pacote é cobrada por regra (e some do documento, por ser `.superRefine()`): exatamente 8 mensagens (`msg_1` a `msg_8`, uma vez cada); exatamente 2 verdadeiras emocionais, 2 verdadeiras neutras, 2 falsas emocionais e 2 falsas neutras; exatamente 4 textos, 2 imagens e 2 links; a imagem e o link com UMA verdadeira e UMA falsa cada (senão o formato entrega a resposta); `legenda` obrigatória na imagem e no link e ausente no texto; texto até 45 palavras e legenda até 25; remetente de 2 a 30 caracteres; nenhum \"atividade\", \"gabarito\", \"nota\" nem \"exercício\" no que a criança lê; e o mesmo recorte do `POST /gerar`. Fora disso: **400** `pacote-invalido` com `erros`.",
         "security": [
           {
             "token-da-plataforma": []
@@ -40023,6 +40078,448 @@
             }
           }
         }
+      }
+    },
+    "/quem-mandou-isso/turmas/{turmaId}/pacotes": {
+      "get": {
+        "operationId": "QuemMandouIssoTurmasController_pacotes",
+        "parameters": [
+          {
+            "name": "turmaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "emAndamento": {
+                      "type": "object",
+                      "properties": {
+                        "pacoteId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "rodada": {
+                          "type": "integer",
+                          "exclusiveMinimum": true,
+                          "minimum": 0
+                        }
+                      },
+                      "required": [
+                        "pacoteId",
+                        "rodada"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true
+                    },
+                    "historico": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "disciplina": {
+                            "type": "string",
+                            "enum": [
+                              "letramento-digital",
+                              "lingua-portuguesa",
+                              "matematica",
+                              "ciencias",
+                              "historia",
+                              "geografia",
+                              "arte",
+                              "educacao-fisica",
+                              "lingua-inglesa",
+                              "ensino-religioso"
+                            ]
+                          },
+                          "tema": {
+                            "type": "string"
+                          },
+                          "origem": {
+                            "type": "string",
+                            "enum": [
+                              "ia",
+                              "padrao"
+                            ]
+                          },
+                          "ativo": {
+                            "type": "boolean"
+                          },
+                          "aprovadoEm": {
+                            "type": "string"
+                          },
+                          "rodadas": {
+                            "type": "integer",
+                            "minimum": 0
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "disciplina",
+                          "tema",
+                          "origem",
+                          "ativo",
+                          "aprovadoEm",
+                          "rodadas"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "emAndamento",
+                    "historico"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "quem-mandou-isso"
+        ],
+        "summary": "As atividades da turma: os pacotes aprovados, com o em andamento marcado.",
+        "description": "A lista de atividades da ficha (ADR-130) e o seletor do painel de habilidades: cada pacote APROVADO é uma ATIVIDADE, e o `id` dele é o `atividadeId` das equipes e da evidência. O rascunho não entra — ainda não é atividade.\n\n`emAndamento` é `null` quando o professor ainda não pôs nenhum no ar: a plataforma não cria atividade.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Turma em que o professor não tem matrícula responde **404** `turma-nao-encontrada`, não 403: um \"sem permissão\" já contaria que a turma existe.\n- `rodadas` é a maior rodada com sessão daquele pacote; 0 = nunca rodou.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/quem-mandou-isso/turmas/{turmaId}/pacotes/{pacoteId}": {
+      "get": {
+        "operationId": "QuemMandouIssoTurmasController_pacoteDetalhe",
+        "parameters": [
+          {
+            "name": "turmaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "pacoteId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "disciplina": {
+                      "type": "string",
+                      "enum": [
+                        "letramento-digital",
+                        "lingua-portuguesa",
+                        "matematica",
+                        "ciencias",
+                        "historia",
+                        "geografia",
+                        "arte",
+                        "educacao-fisica",
+                        "lingua-inglesa",
+                        "ensino-religioso"
+                      ]
+                    },
+                    "tema": {
+                      "type": "string"
+                    },
+                    "assuntos": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "contexto": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "origem": {
+                      "type": "string",
+                      "enum": [
+                        "ia",
+                        "padrao"
+                      ]
+                    },
+                    "mensagens": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "enum": [
+                              "msg_1",
+                              "msg_2",
+                              "msg_3",
+                              "msg_4",
+                              "msg_5",
+                              "msg_6",
+                              "msg_7",
+                              "msg_8"
+                            ]
+                          },
+                          "remetente": {
+                            "type": "string",
+                            "maxLength": 60
+                          },
+                          "tipo": {
+                            "type": "string",
+                            "enum": [
+                              "texto",
+                              "imagem",
+                              "link"
+                            ]
+                          },
+                          "texto": {
+                            "type": "string",
+                            "maxLength": 800
+                          },
+                          "legenda": {
+                            "type": "string",
+                            "maxLength": 400
+                          },
+                          "veracidade": {
+                            "type": "string",
+                            "enum": [
+                              "verdadeira",
+                              "falsa"
+                            ]
+                          },
+                          "tom": {
+                            "type": "string",
+                            "enum": [
+                              "emocional",
+                              "neutra"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "remetente",
+                          "tipo",
+                          "texto",
+                          "veracidade",
+                          "tom"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "aprovadoEm": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "ativo": {
+                      "type": "boolean"
+                    },
+                    "rodadaAtual": {
+                      "type": "integer",
+                      "exclusiveMinimum": true,
+                      "minimum": 0
+                    },
+                    "criadoEm": {
+                      "type": "string"
+                    },
+                    "atualizadoEm": {
+                      "type": "string"
+                    },
+                    "rodadas": {
+                      "type": "integer",
+                      "minimum": 0
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "disciplina",
+                    "tema",
+                    "assuntos",
+                    "contexto",
+                    "origem",
+                    "mensagens",
+                    "aprovadoEm",
+                    "ativo",
+                    "rodadaAtual",
+                    "criadoEm",
+                    "atualizadoEm",
+                    "rodadas"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "quem-mandou-isso"
+        ],
+        "summary": "UMA atividade, inteira e COM o gabarito — em andamento ou pronta.",
+        "description": "A página da atividade. `ativo` diz se ela está em andamento; `rodadas` é a maior rodada com sessão (0 = nunca rodou).\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Turma em que o professor não tem matrícula responde **404** `turma-nao-encontrada`, não 403: um \"sem permissão\" já contaria que a turma existe.\n- O rascunho, ou o pacote de outra turma, responde **404** `atividade-nao-encontrada`.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/quem-mandou-isso/turmas/{turmaId}/pacotes/{pacoteId}/em-andamento": {
+      "post": {
+        "operationId": "QuemMandouIssoTurmasController_emAndamento",
+        "parameters": [
+          {
+            "name": "turmaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "pacoteId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "atividade": {
+                      "type": "object",
+                      "properties": {
+                        "pacoteId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "rodada": {
+                          "type": "integer",
+                          "exclusiveMinimum": true,
+                          "minimum": 0
+                        }
+                      },
+                      "required": [
+                        "pacoteId",
+                        "rodada"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "fase": {
+                      "type": "string",
+                      "enum": [
+                        "triagem",
+                        "revelacao",
+                        "explicar",
+                        "reflexao"
+                      ]
+                    },
+                    "mudou": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "atividade",
+                    "fase",
+                    "mudou"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "quem-mandou-isso"
+        ],
+        "summary": "\"Usar esta atividade agora\" — o professor escolhe o que a turma joga (ADR-130).",
+        "description": "O escolhido passa a ser a ATIVIDADE EM ANDAMENTO da turma; o que estava volta a ser pronto — fica, com as sessões e a evidência. A fase volta à triagem.\n\nA RODADA: o pacote que nunca rodou fica na 1; o que já rodou abre a SEGUINTE à última com sessão — retomar a mesma depois da revelação seria o \"voltar\" que os botões proíbem. As anteriores continuam no painel de habilidades.\n\n**Papéis:** professor.\n\n**Restrições:**\n- Turma em que o professor não tem matrícula responde **404** `turma-nao-encontrada`, não 403: um \"sem permissão\" já contaria que a turma existe.\n- **Idempotente**: pôr no ar o que já está no ar devolve `mudou: false` e não muda nada.\n- O rascunho, ou o pacote de outra turma, responde **404** `atividade-nao-encontrada`.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor"
+        ],
+        "x-acesso": "token"
       }
     },
     "/quem-mandou-isso/professor/material": {
@@ -42381,7 +42878,7 @@
           "a-selecao"
         ],
         "summary": "O painel da aula: o botão da próxima etapa e quem publicou, POR COMPUTADOR.",
-        "description": "Uma linha por computador quando a turma montou equipes para esta missão (`colapsarEmUnidades`), uma por criança quando não — `resumo.porComputador` diz qual. `resumo.computadores` é o \"X de Y computadores publicaram\": o Y sai da montagem das equipes, porque o colapso conta também quem faltou.\n\n`proximaEtapa` é o rótulo do botão único (`null` depois da explicação).\n\n**Sem nível, nota ou acerto por criança** (`PROIBIDO_NO_PAINEL`, com teste). O nível da EF07CO11 mora no painel de habilidades, em `/evidencias/turma/:turmaId/missao/exp07ef1b/atividade/:coberturaId`.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- `legenda` e `reflexaoTexto` são texto livre de menor e só vêm preenchidos para quem LECIONA a turma. Gestor, gestor de contrato e admin recebem `null` e leem `publicou` e `entregouReflexao` (recorte da ADR-108).\n- A primeira leitura de uma turma sem cobertura cria a `padrao` (o banco curado) e o gate na rodada 1.",
+        "description": "Uma linha por computador quando a turma montou equipes para esta missão (`colapsarEmUnidades`), uma por criança quando não — `resumo.porComputador` diz qual. `resumo.computadores` é o \"X de Y computadores publicaram\": o Y sai da montagem das equipes, porque o colapso conta também quem faltou.\n\n`proximaEtapa` é o rótulo do botão único (`null` depois da explicação).\n\n**Sem nível, nota ou acerto por criança** (`PROIBIDO_NO_PAINEL`, com teste). O nível da EF07CO11 mora no painel de habilidades, em `/evidencias/turma/:turmaId/missao/exp07ef1b/atividade/:coberturaId`.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- `legenda` e `reflexaoTexto` são texto livre de menor e só vêm preenchidos para quem LECIONA a turma. Gestor, gestor de contrato e admin recebem `null` e leem `publicou` e `entregouReflexao` (recorte da ADR-108).\n- Sem atividade em andamento na turma, **403** `atividade-nao-preparada`: a plataforma não cria atividade — a professora cria e põe em andamento (`POST :turmaId/coberturas/:coberturaId/em-andamento`).",
         "security": [
           {
             "token-da-plataforma": []
@@ -42504,7 +43001,7 @@
           "a-selecao"
         ],
         "summary": "O botão único da aula: \"Liberar Mural\", \"Revelar fichas\", \"Liberar conclusão\".",
-        "description": "O corpo diz a etapa de DESTINO. Anda uma etapa por vez — `exploracao → mural → fichas → explicacao` —, nunca pula e nunca volta; destino igual ao atual é aceito e não muda nada (o segundo clique).\n\nAbrir o **Mural** é o momento do PAREAMENTO: na mesma transação, cada computador que publicou recebe o par de matriz mais distante; quem sobra, quem não tem par divergente e a sala de um computador só recebem o colega virtual (Tomás ou Malu). `pareadas` diz quantas sessões receberam par nesta chamada.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Destino fora de ordem responde **409** `transicao-de-etapa-invalida`, com `etapaAtual` e `proximaEtapa` no corpo.\n- É a linha que o polling de 5 s do estudante lê (`GET /a-selecao/gate`): não há WebSocket de aplicação (ADR-93).",
+        "description": "O corpo diz a etapa de DESTINO. Anda uma etapa por vez — `exploracao → mural → fichas → explicacao` —, nunca pula e nunca volta; destino igual ao atual é aceito e não muda nada (o segundo clique).\n\nAbrir o **Mural** é o momento do PAREAMENTO: na mesma transação, cada computador que publicou recebe o par de matriz mais distante; quem sobra, quem não tem par divergente e a sala de um computador só recebem o colega virtual (Tomás ou Malu). `pareadas` diz quantas sessões receberam par nesta chamada.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Destino fora de ordem responde **409** `transicao-de-etapa-invalida`, com `etapaAtual` e `proximaEtapa` no corpo.\n- É a linha que o polling de 5 s do estudante lê (`GET /a-selecao/gate`): não há WebSocket de aplicação (ADR-93).\n- Sem atividade em andamento na turma, **403** `atividade-nao-preparada`: a plataforma não cria atividade — a professora cria e põe em andamento (`POST :turmaId/coberturas/:coberturaId/em-andamento`).",
         "security": [
           {
             "token-da-plataforma": []
@@ -42609,7 +43106,7 @@
           "a-selecao"
         ],
         "summary": "\"Zerar a turma\" — abre a próxima rodada, sem apagar nada.",
-        "description": "Sobe a rodada da atividade e volta a etapa para a exploração. **Nada é apagado**: as sessões, as tríades, os pares e as reflexões da rodada anterior ficam, e são elas que o painel de habilidades mostra como a rodada passada (ADR-112). A cobertura também fica — o preparo custou tempo da professora.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Repetir o mesmo tema com a mesma turma mede memória, não leitura (PED-13): a tela avisa antes, e o guia recomenda homologar um tema novo, que abre OUTRA atividade na rodada 1.",
+        "description": "Sobe a rodada da atividade e volta a etapa para a exploração. **Nada é apagado**: as sessões, as tríades, os pares e as reflexões da rodada anterior ficam, e são elas que o painel de habilidades mostra como a rodada passada (ADR-112). A cobertura também fica — o preparo custou tempo da professora.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Repetir o mesmo tema com a mesma turma mede memória, não leitura (PED-13): a tela avisa antes, e o guia recomenda criar um tema novo, que é OUTRA atividade.\n- Sem atividade em andamento na turma, **403** `atividade-nao-preparada`: a plataforma não cria atividade — a professora cria e põe em andamento (`POST :turmaId/coberturas/:coberturaId/em-andamento`).",
         "security": [
           {
             "token-da-plataforma": []
@@ -42903,7 +43400,8 @@
                         "midia",
                         "podcast"
                       ],
-                      "additionalProperties": false
+                      "additionalProperties": false,
+                      "nullable": true
                     },
                     "historico": {
                       "type": "array",
@@ -42965,8 +43463,426 @@
         "tags": [
           "a-selecao"
         ],
-        "summary": "A cobertura em andamento, COM o gabarito, e o histórico das atividades da turma.",
-        "description": "**Professor only**: é aqui que `enquadramento`, `tagFonte` e `tagAngulo` de cada post aparecem — são o roteiro de quem conduz. `historico` lista todas as coberturas (a ativa inclusa): cada uma é uma ATIVIDADE, e o `id` dela é o `atividadeId` do painel de habilidades.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- `rodadas` é a maior rodada com sessão daquela cobertura; 0 = nunca rodou.",
+        "summary": "As atividades da turma: a em andamento, COM o gabarito, e a lista de todas.",
+        "description": "**Professor only**: é aqui que `enquadramento`, `tagFonte` e `tagAngulo` de cada post aparecem — são o roteiro de quem conduz. `historico` lista todas as coberturas (a em andamento inclusa, com `ativa: true`): cada uma é uma ATIVIDADE, e o `id` dela é o `atividadeId` das equipes e do painel de habilidades (ADR-130).\n\n`ativa` é `null` quando nenhuma está em andamento: a plataforma não cria atividade.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- `rodadas` é a maior rodada com sessão daquela cobertura; 0 = nunca rodou.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/a-selecao/turmas/{turmaId}/coberturas/{coberturaId}": {
+      "get": {
+        "operationId": "ASelecaoTurmasController_cobertura",
+        "parameters": [
+          {
+            "name": "turmaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "coberturaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "tema": {
+                      "type": "string"
+                    },
+                    "foco": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "origem": {
+                      "type": "string",
+                      "enum": [
+                        "padrao",
+                        "ia"
+                      ]
+                    },
+                    "ativa": {
+                      "type": "boolean"
+                    },
+                    "rodada": {
+                      "type": "integer",
+                      "exclusiveMinimum": true,
+                      "minimum": 0,
+                      "nullable": true
+                    },
+                    "etapa": {
+                      "type": "string",
+                      "enum": [
+                        "exploracao",
+                        "mural",
+                        "fichas",
+                        "explicacao"
+                      ],
+                      "nullable": true
+                    },
+                    "criadaEm": {
+                      "type": "string"
+                    },
+                    "rodadas": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "posts": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "enum": [
+                              "post_a_1",
+                              "post_a_2",
+                              "post_a_3",
+                              "post_a_4",
+                              "post_b_1",
+                              "post_b_2",
+                              "post_b_3",
+                              "post_b_4",
+                              "post_c_1",
+                              "post_c_2",
+                              "post_c_3",
+                              "post_c_4"
+                            ]
+                          },
+                          "perfil": {
+                            "type": "string",
+                            "enum": [
+                              "@folhaoficial_",
+                              "@voz_coletiva",
+                              "@metrica_urbana"
+                            ]
+                          },
+                          "enquadramento": {
+                            "type": "string",
+                            "enum": [
+                              "institucional",
+                              "comunitario",
+                              "estatistico"
+                            ]
+                          },
+                          "autoridadeCitada": {
+                            "type": "string",
+                            "maxLength": 60
+                          },
+                          "descricaoImagem": {
+                            "type": "string",
+                            "minLength": 5,
+                            "maxLength": 200
+                          },
+                          "legenda": {
+                            "type": "string",
+                            "minLength": 20,
+                            "maxLength": 320
+                          },
+                          "tagFonte": {
+                            "type": "string",
+                            "minLength": 2,
+                            "maxLength": 60
+                          },
+                          "tagAngulo": {
+                            "type": "string",
+                            "minLength": 2,
+                            "maxLength": 60
+                          },
+                          "curtidas": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 9999
+                          },
+                          "comentarios": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 999
+                          },
+                          "comentariosDestaque": {
+                            "type": "array",
+                            "minItems": 2,
+                            "maxItems": 2,
+                            "items": [
+                              {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 140
+                              },
+                              {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 140
+                              }
+                            ]
+                          },
+                          "grafico": {
+                            "type": "object",
+                            "properties": {
+                              "tipo": {
+                                "type": "string",
+                                "enum": [
+                                  "barras",
+                                  "linhas",
+                                  "mapa-de-calor"
+                                ]
+                              },
+                              "titulo": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 60
+                              },
+                              "unidade": {
+                                "type": "string",
+                                "maxLength": 10
+                              },
+                              "series": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "rotulo": {
+                                      "type": "string",
+                                      "minLength": 1,
+                                      "maxLength": 40
+                                    },
+                                    "valor": {
+                                      "type": "number",
+                                      "minimum": 0
+                                    }
+                                  },
+                                  "required": [
+                                    "rotulo",
+                                    "valor"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                "minItems": 2,
+                                "maxItems": 6
+                              },
+                              "destaque": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 40
+                              }
+                            },
+                            "required": [
+                              "tipo",
+                              "titulo",
+                              "unidade",
+                              "series"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "perfil",
+                          "enquadramento",
+                          "descricaoImagem",
+                          "legenda",
+                          "tagFonte",
+                          "tagAngulo",
+                          "curtidas",
+                          "comentarios",
+                          "comentariosDestaque"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "midia": {
+                      "type": "object",
+                      "properties": {
+                        "total": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "prontas": {
+                          "type": "integer",
+                          "minimum": 0
+                        }
+                      },
+                      "required": [
+                        "total",
+                        "prontas"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "podcast": {
+                      "type": "object",
+                      "properties": {
+                        "institucional": {
+                          "type": "string"
+                        },
+                        "comunitario": {
+                          "type": "string"
+                        },
+                        "estatistico": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "institucional",
+                        "comunitario",
+                        "estatistico"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "tema",
+                    "foco",
+                    "origem",
+                    "ativa",
+                    "rodada",
+                    "etapa",
+                    "criadaEm",
+                    "rodadas",
+                    "posts",
+                    "midia",
+                    "podcast"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "a-selecao"
+        ],
+        "summary": "UMA atividade, inteira e COM o gabarito — em andamento ou pronta.",
+        "description": "A página da atividade. `rodada` e `etapa` só vêm quando ela está em andamento; `rodadas` é a maior rodada com sessão (0 = nunca rodou).\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Cobertura de outra turma, ou que não existe, responde **404** `atividade-nao-encontrada`.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/a-selecao/turmas/{turmaId}/coberturas/{coberturaId}/em-andamento": {
+      "post": {
+        "operationId": "ASelecaoTurmasController_emAndamento",
+        "parameters": [
+          {
+            "name": "turmaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "coberturaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "coberturaId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "rodada": {
+                      "type": "integer",
+                      "exclusiveMinimum": true,
+                      "minimum": 0
+                    },
+                    "etapa": {
+                      "type": "string",
+                      "enum": [
+                        "exploracao",
+                        "mural",
+                        "fichas",
+                        "explicacao"
+                      ]
+                    },
+                    "mudou": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "coberturaId",
+                    "rodada",
+                    "etapa",
+                    "mudou"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "a-selecao"
+        ],
+        "summary": "\"Usar esta atividade agora\" — a professora escolhe o que a turma faz (ADR-130).",
+        "description": "A escolhida passa a ser a ATIVIDADE EM ANDAMENTO da turma; a que estava volta a ser pronta — fica, com as sessões e as rodadas. A etapa volta à exploração.\n\nA RODADA: a atividade que nunca rodou começa na 1; a que já rodou abre a SEGUINTE à última — retomar a mesma rodada depois do Mural seria o \"voltar\" que o botão único proíbe. As rodadas anteriores continuam no painel de habilidades.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- **Idempotente**: pôr no ar a que já está no ar devolve `mudou: false` e não muda nada.\n- Trocar com a aula correndo leva quem está jogando para a atividade nova: a experiência nota o `coberturaId` novo no polling do gate e recarrega. A tela pede confirmação antes.\n- Cobertura de outra turma responde **404** `atividade-nao-encontrada`.",
         "security": [
           {
             "token-da-plataforma": []
@@ -43322,18 +44238,10 @@
                         "ia"
                       ]
                     },
-                    "rodada": {
-                      "type": "integer",
-                      "exclusiveMinimum": true,
-                      "minimum": 0
-                    },
-                    "etapa": {
-                      "type": "string",
+                    "ativa": {
+                      "type": "boolean",
                       "enum": [
-                        "exploracao",
-                        "mural",
-                        "fichas",
-                        "explicacao"
+                        false
                       ]
                     },
                     "posts": {
@@ -43527,8 +44435,7 @@
                     "tema",
                     "foco",
                     "origem",
-                    "rodada",
-                    "etapa",
+                    "ativa",
                     "posts",
                     "podcast"
                   ],
@@ -43541,8 +44448,8 @@
         "tags": [
           "a-selecao"
         ],
-        "summary": "\"Aprovar Cobertura e Abrir Turma\" — a curadoria humana (ADR-66/67).",
-        "description": "Grava os 12 posts como a professora os deixou e os torna a ATIVIDADE em andamento. **Tema novo é atividade nova**: a cobertura anterior é desativada (fica, com as sessões dela) e o gate volta à rodada 1, na exploração.\n\nO corpo carrega os posts INTEIROS porque curadoria é editar: a professora pode reescrever qualquer legenda antes de aprovar.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- O lote é recusado com **400** `lote-invalido` e a LISTA de problemas em `erros`, em frases para a professora: 12 posts; ids de `post_a_1` a `post_c_4`, cada um uma vez; bloco `a` = `@folhaoficial_`/institucional, `b` = `@voz_coletiva`/comunitário, `c` = `@metrica_urbana`/estatístico (4:4:4); legenda de 20 a 45 palavras; nenhum termo que antecipe a revelação na legenda, na descrição da imagem ou nos comentários. (`.superRefine()` some do OpenAPI; daí esta nota.)\n- As imagens de post com a MESMA descrição da cobertura anterior são herdadas — o arquivo no bucket é o hash da descrição.\n- `podcast` é obrigatório: as três falas do Bloco 2 que a professora revisou (no tema curado, as do sheet). Fora de 12 a 60 palavras, acima de 400 bytes, ou com link, e-mail ou @, o 400 `lote-invalido` diz qual fala.\n- Homologar no meio da aula recomeça a aula: a etapa volta à exploração.",
+        "summary": "\"Criar atividade\" — a curadoria humana (ADR-66/67).",
+        "description": "Grava os 12 posts como a professora os deixou, numa ATIVIDADE NOVA que nasce **pronta, não no ar** (ADR-130): a em andamento continua em andamento, e quem escolhe o que a turma faz é a professora (`POST :turmaId/coberturas/:coberturaId/em-andamento`).\n\nO corpo carrega os posts INTEIROS porque curadoria é editar: a professora pode reescrever qualquer legenda antes de aprovar.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- O lote é recusado com **400** `lote-invalido` e a LISTA de problemas em `erros`, em frases para a professora: 12 posts; ids de `post_a_1` a `post_c_4`, cada um uma vez; bloco `a` = `@folhaoficial_`/institucional, `b` = `@voz_coletiva`/comunitário, `c` = `@metrica_urbana`/estatístico (4:4:4); legenda de 20 a 45 palavras; nenhum termo que antecipe a revelação na legenda, na descrição da imagem ou nos comentários. (`.superRefine()` some do OpenAPI; daí esta nota.)\n- As imagens de post com a MESMA descrição de uma cobertura recente da turma são herdadas — o arquivo no bucket é o hash da descrição.\n- `podcast` é obrigatório: as três falas do Bloco 2 que a professora revisou (no tema curado, as do sheet). Fora de 12 a 60 palavras, acima de 400 bytes, ou com link, e-mail ou @, o 400 `lote-invalido` diz qual fala.",
         "security": [
           {
             "token-da-plataforma": []
@@ -43804,6 +44711,15 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "coberturaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
@@ -43899,8 +44815,8 @@
         "tags": [
           "a-selecao"
         ],
-        "summary": "Gera as próximas imagens dos posts da cobertura em andamento — incremental.",
-        "description": "Doze imagens não cabem nos 30 s que o BFF dá a uma chamada: cada chamada gera ATÉ DUAS imagens novas, grava as URLs na cobertura e devolve o progresso. **Repita enquanto `completo` for `false` e a chamada anterior tiver gerado alguma** — `falharam` diz o que não saiu, e esses posts seguem com o card da descrição.\n\nIdempotente: o que já tem URL é pulado, e a imagem de mesma descrição que já está no bucket entra sem custo. Os posts de métricas do banco curado não pedem imagem: a experiência desenha o gráfico.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Quota do professor, com custo ESTIMADO por imagem (a geração não devolve contagem de tokens). Sem saldo responde **429** `sem-saldo-de-ia` — e a missão roda igual, com os cards.\n- Duas chamadas simultâneas para a mesma cobertura recebem o mesmo trabalho (lock de processo).",
+        "summary": "Gera as próximas imagens dos posts de uma atividade — incremental.",
+        "description": "Doze imagens não cabem nos 30 s que o BFF dá a uma chamada: cada chamada gera ATÉ DUAS imagens novas, grava as URLs na cobertura e devolve o progresso. **Repita enquanto `completo` for `false` e a chamada anterior tiver gerado alguma** — `falharam` diz o que não saiu, e esses posts seguem com o card da descrição.\n\nIdempotente: o que já tem URL é pulado, e a imagem de mesma descrição que já está no bucket entra sem custo. Os posts de métricas do banco curado não pedem imagem: a experiência desenha o gráfico.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- `?coberturaId=` diz a atividade (a pronta, preparada antes de ir ao ar); sem ele, a em andamento — e sem nenhuma, **403** `atividade-nao-preparada`.\n- Quota do professor, com custo ESTIMADO por imagem (a geração não devolve contagem de tokens). Sem saldo responde **429** `sem-saldo-de-ia` — e a missão roda igual, com os cards.\n- Duas chamadas simultâneas para a mesma cobertura recebem o mesmo trabalho (lock de processo).",
         "security": [
           {
             "token-da-plataforma": []
@@ -43935,6 +44851,15 @@
             "required": false,
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "name": "coberturaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
             }
           }
         ],
@@ -44043,8 +44968,8 @@
         "tags": [
           "a-selecao"
         ],
-        "summary": "O podcast de recapitulação da cobertura em andamento: o roteiro e o estado do áudio.",
-        "description": "O podcast é do PROFESSOR, para tocar à turma depois da aula se quiser. `roteiro` é o texto inteiro (a transcrição, que fica na tela junto do player): os cinco blocos do sheet aprovado, com as três falas do Bloco 2 que a cobertura trouxe. `url` é o episódio, quando os cinco trechos já foram sintetizados e emendados; `null` enquanto não.\n\n**Não gera nada** — é o `POST gerar-podcast`.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.",
+        "summary": "O podcast de recapitulação de uma atividade: o roteiro e o estado do áudio.",
+        "description": "O podcast é do PROFESSOR, para tocar à turma depois da aula se quiser. `roteiro` é o texto inteiro (a transcrição, que fica na tela junto do player): os cinco blocos do sheet aprovado, com as três falas do Bloco 2 que a cobertura trouxe. `url` é o episódio, quando os cinco trechos já foram sintetizados e emendados; `null` enquanto não.\n\n**Não gera nada** — é o `POST gerar-podcast`.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- `?coberturaId=` diz a atividade; sem ele, a em andamento — e sem nenhuma, **403** `atividade-nao-preparada`.",
         "security": [
           {
             "token-da-plataforma": []
@@ -44079,6 +45004,15 @@
             "required": false,
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "name": "coberturaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
             }
           }
         ],
@@ -44216,7 +45150,7 @@
           "a-selecao"
         ],
         "summary": "Sintetiza o próximo trecho do podcast e, com os cinco prontos, emenda o episódio — incremental.",
-        "description": "Os cinco blocos não cabem numa chamada de 30 s: cada chamada sintetiza UM trecho (a voz é o TTS do Gemini pelo provider da api, `generateSpeech`, Lucas e Clara numa chamada de diálogo) e, quando os cinco existem, emenda o episódio num MP3 só. **Repita enquanto `completo` for `false` e a chamada anterior tiver gerado um trecho** — `falhou` diz qual bloco não saiu, e a transcrição continua na tela.\n\nIdempotente: o trecho que já está no bucket é pulado. O nome de cada trecho é o hash do texto e do pedido de voz, então os blocos fixos saem UMA vez por contrato e só o Bloco 2 de um tema da IA custa síntese nova.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Quota do professor, com custo ESTIMADO por trecho (a síntese é cobrada por caractere e não devolve contagem). Sem saldo responde **429** `sem-saldo-de-ia`.\n- Duas chamadas simultâneas para o mesmo episódio recebem o mesmo trabalho (lock de processo).",
+        "description": "Os cinco blocos não cabem numa chamada de 30 s: cada chamada sintetiza UM trecho (a voz é o TTS do Gemini pelo provider da api, `generateSpeech`, Lucas e Clara numa chamada de diálogo) e, quando os cinco existem, emenda o episódio num MP3 só. **Repita enquanto `completo` for `false` e a chamada anterior tiver gerado um trecho** — `falhou` diz qual bloco não saiu, e a transcrição continua na tela.\n\nIdempotente: o trecho que já está no bucket é pulado. O nome de cada trecho é o hash do texto e do pedido de voz, então os blocos fixos saem UMA vez por contrato e só o Bloco 2 de um tema da IA custa síntese nova.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- `?coberturaId=` diz a atividade; sem ele, a em andamento.\n- Quota do professor, com custo ESTIMADO por trecho (a síntese é cobrada por caractere e não devolve contagem). Sem saldo responde **429** `sem-saldo-de-ia`.\n- Duas chamadas simultâneas para o mesmo episódio recebem o mesmo trabalho (lock de processo).",
         "security": [
           {
             "token-da-plataforma": []
@@ -44412,6 +45346,26 @@
                       "minItems": 12,
                       "maxItems": 12
                     },
+                    "podcast": {
+                      "type": "object",
+                      "properties": {
+                        "institucional": {
+                          "type": "string"
+                        },
+                        "comunitario": {
+                          "type": "string"
+                        },
+                        "estatistico": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "institucional",
+                        "comunitario",
+                        "estatistico"
+                      ],
+                      "additionalProperties": false
+                    },
                     "roteiroDaEtapa4": {
                       "type": "object",
                       "properties": {
@@ -44507,6 +45461,7 @@
                   "required": [
                     "tema",
                     "posts",
+                    "podcast",
                     "roteiroDaEtapa4",
                     "gatilhos",
                     "colegasVirtuais"
@@ -48088,7 +49043,7 @@
           "jornal-escola"
         ],
         "summary": "O painel da aula: o botão da próxima etapa e o progresso, POR COMPUTADOR.",
-        "description": "Uma linha por computador quando a turma montou equipes para esta missão (`colapsarEmUnidades`), uma por criança quando não — `resumo.porComputador` diz qual. `resumo.computadores` é o \"X de Y computadores publicaram\": o Y sai da montagem das equipes, porque o colapso conta também quem faltou.\n\n**Só progresso por linha.** Quantas verificadas cada computador teve NÃO está na linha: está no histograma anônimo (`resumo.histograma`, [0, 1, 2, 3 verificadas]). O radar é do OBJETO editorial — em quantas capas cada notícia foi —, e o nível por habilidade mora no painel de habilidades (`/evidencias/turma/:turmaId/missao/exp04ef1b/atividade/:pacoteId`).\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- A primeira leitura de uma turma sem pacote cria o `padrao` (o banco da Unooria) e o gate na rodada 1.\n- A leitura do PROFESSOR conta o EVT-P04 (`painel_visto_em`, `painel_vistas`); a do gestor não.\n- Turma que o professor não leciona responde **404** `turma-nao-encontrada`.",
+        "description": "Uma linha por computador quando a turma montou equipes para esta missão (`colapsarEmUnidades`), uma por criança quando não — `resumo.porComputador` diz qual. `resumo.computadores` é o \"X de Y computadores publicaram\": o Y sai da montagem das equipes, porque o colapso conta também quem faltou.\n\n**Só progresso por linha.** Quantas verificadas cada computador teve NÃO está na linha: está no histograma anônimo (`resumo.histograma`, [0, 1, 2, 3 verificadas]). O radar é do OBJETO editorial — em quantas capas cada notícia foi —, e o nível por habilidade mora no painel de habilidades (`/evidencias/turma/:turmaId/missao/exp04ef1b/atividade/:pacoteId`).\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Sem atividade em andamento na turma, **403** `atividade-nao-preparada`: a plataforma não cria atividade — o professor cria e põe em andamento (`POST :turmaId/pacotes/:pacoteId/em-andamento`).\n- A leitura do PROFESSOR conta o EVT-P04 (`painel_visto_em`, `painel_vistas`); a do gestor não.\n- Turma que o professor não leciona responde **404** `turma-nao-encontrada`.",
         "security": [
           {
             "token-da-plataforma": []
@@ -48204,7 +49159,7 @@
           "jornal-escola"
         ],
         "summary": "O botão único da aula: \"Liberar resultado\", depois \"Liberar revisão\".",
-        "description": "O corpo diz a etapa de DESTINO. Anda uma etapa por vez — `exploracao → resultado → revisao` —, nunca pula e nunca volta; destino igual ao atual é aceito e não muda nada (o segundo clique). Grava quando cada portão abriu (EVT-P05).\n\nQuem ainda não publicou continua montando a página com o portão aberto: a publicação atrasada é caminho previsto.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Destino fora de ordem responde **409** `transicao-de-etapa-invalida`, com `etapaAtual` e `proximaEtapa` no corpo.\n- É a linha que o polling de 5 s do estudante lê (`GET /jornal-escola/gate`): não há WebSocket de aplicação (ADR-93).",
+        "description": "O corpo diz a etapa de DESTINO. Anda uma etapa por vez — `exploracao → resultado → revisao` —, nunca pula e nunca volta; destino igual ao atual é aceito e não muda nada (o segundo clique). Grava quando cada portão abriu (EVT-P05).\n\nQuem ainda não publicou continua montando a página com o portão aberto: a publicação atrasada é caminho previsto.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Destino fora de ordem responde **409** `transicao-de-etapa-invalida`, com `etapaAtual` e `proximaEtapa` no corpo.\n- É a linha que o polling de 5 s do estudante lê (`GET /jornal-escola/gate`): não há WebSocket de aplicação (ADR-93).\n- Sem atividade em andamento na turma, **403** `atividade-nao-preparada`: a plataforma não cria atividade — o professor cria e põe em andamento (`POST :turmaId/pacotes/:pacoteId/em-andamento`).",
         "security": [
           {
             "token-da-plataforma": []
@@ -48307,7 +49262,7 @@
           "jornal-escola"
         ],
         "summary": "\"Zerar a turma\" — abre a próxima rodada, sem apagar nada.",
-        "description": "Sobe a rodada da atividade e volta a etapa para a exploração, com os portões fechados. **Nada é apagado**: as sessões, as edições e as pistas da rodada anterior ficam, e são elas que o painel de habilidades mostra como a rodada passada (ADR-112). O pacote também fica.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Na rodada nova do MESMO pacote, quem já foi avaliado numa anterior refaz sem marca nova nas ações (ADR-120): já viu o resultado e a Chave. O guia recomenda homologar outro pacote, que abre OUTRA atividade na rodada 1.",
+        "description": "Sobe a rodada da atividade e volta a etapa para a exploração, com os portões fechados. **Nada é apagado**: as sessões, as edições e as pistas da rodada anterior ficam, e são elas que o painel de habilidades mostra como a rodada passada (ADR-112). O pacote também fica.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Na rodada nova do MESMO pacote, quem já foi avaliado numa anterior refaz sem marca nova nas ações (ADR-120): já viu o resultado e a Chave. O guia recomenda criar outro pacote, que é OUTRA atividade.\n- Sem atividade em andamento na turma, **403** `atividade-nao-preparada`: a plataforma não cria atividade — o professor cria e põe em andamento (`POST :turmaId/pacotes/:pacoteId/em-andamento`).",
         "security": [
           {
             "token-da-plataforma": []
@@ -48371,19 +49326,6 @@
                           "enum": [
                             "padrao",
                             "ia"
-                          ]
-                        },
-                        "rodada": {
-                          "type": "integer",
-                          "exclusiveMinimum": true,
-                          "minimum": 0
-                        },
-                        "etapa": {
-                          "type": "string",
-                          "enum": [
-                            "exploracao",
-                            "resultado",
-                            "revisao"
                           ]
                         },
                         "topicos": {
@@ -48574,6 +49516,19 @@
                           "additionalProperties": {
                             "type": "string"
                           }
+                        },
+                        "rodada": {
+                          "type": "integer",
+                          "exclusiveMinimum": true,
+                          "minimum": 0
+                        },
+                        "etapa": {
+                          "type": "string",
+                          "enum": [
+                            "exploracao",
+                            "resultado",
+                            "revisao"
+                          ]
                         }
                       },
                       "required": [
@@ -48581,14 +49536,15 @@
                         "disciplina",
                         "tema",
                         "origem",
-                        "rodada",
-                        "etapa",
                         "topicos",
                         "noticias",
                         "midia",
-                        "imagens"
+                        "imagens",
+                        "rodada",
+                        "etapa"
                       ],
-                      "additionalProperties": false
+                      "additionalProperties": false,
+                      "nullable": true
                     },
                     "historico": {
                       "type": "array",
@@ -48649,8 +49605,412 @@
         "tags": [
           "jornal-escola"
         ],
-        "summary": "O pacote em andamento, COM o gabarito, e o histórico das atividades da turma.",
-        "description": "**Professor e gestores**: é aqui que o gabarito, as pistas e a consequência de cada notícia aparecem — são o roteiro de quem conduz e a tela do preparo. `historico` lista todos os pacotes (o ativo incluso): cada um é uma ATIVIDADE, e o `id` dele é o `atividadeId` do painel de habilidades.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- `rodadas` é a maior rodada com sessão daquele pacote; 0 = nunca rodou.",
+        "summary": "As atividades da turma: o pacote em andamento, COM o gabarito, e a lista de todos.",
+        "description": "**Professor e gestores**: é aqui que o gabarito, as pistas e a consequência de cada notícia aparecem — são o roteiro de quem conduz e a tela do preparo. `historico` lista todos os pacotes (o em andamento incluso, com `ativo: true`): cada um é uma ATIVIDADE, e o `id` dele é o `atividadeId` das equipes e do painel de habilidades (ADR-130).\n\n`ativo` é `null` quando nenhum está em andamento: a plataforma não cria atividade.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- `rodadas` é a maior rodada com sessão daquele pacote; 0 = nunca rodou.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/jornal-escola/turmas/{turmaId}/pacotes/{pacoteId}": {
+      "get": {
+        "operationId": "JornalEscolaTurmasController_pacote",
+        "parameters": [
+          {
+            "name": "turmaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "pacoteId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "disciplina": {
+                      "type": "string"
+                    },
+                    "tema": {
+                      "type": "string"
+                    },
+                    "origem": {
+                      "type": "string",
+                      "enum": [
+                        "padrao",
+                        "ia"
+                      ]
+                    },
+                    "topicos": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "noticias": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "enum": [
+                              "n1",
+                              "n2",
+                              "n3",
+                              "n4",
+                              "n5",
+                              "n6",
+                              "n7",
+                              "n8"
+                            ]
+                          },
+                          "meio": {
+                            "type": "string",
+                            "enum": [
+                              "jornal",
+                              "radio",
+                              "tv",
+                              "blog",
+                              "portal",
+                              "rede_social",
+                              "mensagem",
+                              "mural"
+                            ]
+                          },
+                          "veiculo": {
+                            "type": "string",
+                            "minLength": 2,
+                            "maxLength": 60
+                          },
+                          "falante": {
+                            "type": "string",
+                            "minLength": 2,
+                            "maxLength": 60,
+                            "nullable": true
+                          },
+                          "manchete": {
+                            "type": "string",
+                            "minLength": 5,
+                            "maxLength": 120
+                          },
+                          "resumo": {
+                            "type": "string",
+                            "minLength": 20,
+                            "maxLength": 320
+                          },
+                          "corpo": {
+                            "type": "string",
+                            "minLength": 20,
+                            "maxLength": 700
+                          },
+                          "legenda": {
+                            "type": "string",
+                            "minLength": 2,
+                            "maxLength": 160,
+                            "nullable": true
+                          },
+                          "descricaoImagem": {
+                            "type": "string",
+                            "minLength": 5,
+                            "maxLength": 240,
+                            "nullable": true
+                          },
+                          "pistas": {
+                            "type": "object",
+                            "properties": {
+                              "fonte": {
+                                "type": "string",
+                                "minLength": 2,
+                                "maxLength": 200
+                              },
+                              "data": {
+                                "type": "string",
+                                "minLength": 2,
+                                "maxLength": 200
+                              },
+                              "autoria": {
+                                "type": "string",
+                                "minLength": 2,
+                                "maxLength": 200
+                              }
+                            },
+                            "required": [
+                              "fonte",
+                              "data",
+                              "autoria"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "gabarito": {
+                            "type": "object",
+                            "properties": {
+                              "publicavel": {
+                                "type": "boolean"
+                              },
+                              "pilarEmFalta": {
+                                "type": "string",
+                                "enum": [
+                                  "fonte",
+                                  "data",
+                                  "autoria"
+                                ],
+                                "nullable": true
+                              },
+                              "explicacao": {
+                                "type": "string",
+                                "minLength": 5,
+                                "maxLength": 280
+                              }
+                            },
+                            "required": [
+                              "publicavel",
+                              "pilarEmFalta",
+                              "explicacao"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "consequencia": {
+                            "type": "object",
+                            "properties": {
+                              "leitor": {
+                                "type": "string",
+                                "minLength": 2,
+                                "maxLength": 60
+                              },
+                              "fala": {
+                                "type": "string",
+                                "minLength": 5,
+                                "maxLength": 220
+                              }
+                            },
+                            "required": [
+                              "leitor",
+                              "fala"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "meio",
+                          "veiculo",
+                          "falante",
+                          "manchete",
+                          "resumo",
+                          "corpo",
+                          "legenda",
+                          "descricaoImagem",
+                          "pistas",
+                          "gabarito",
+                          "consequencia"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "midia": {
+                      "type": "object",
+                      "properties": {
+                        "total": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "prontas": {
+                          "type": "integer",
+                          "minimum": 0
+                        }
+                      },
+                      "required": [
+                        "total",
+                        "prontas"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "imagens": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "string"
+                      }
+                    },
+                    "ativo": {
+                      "type": "boolean"
+                    },
+                    "rodada": {
+                      "type": "integer",
+                      "exclusiveMinimum": true,
+                      "minimum": 0,
+                      "nullable": true
+                    },
+                    "etapa": {
+                      "type": "string",
+                      "enum": [
+                        "exploracao",
+                        "resultado",
+                        "revisao"
+                      ],
+                      "nullable": true
+                    },
+                    "criadoEm": {
+                      "type": "string"
+                    },
+                    "rodadas": {
+                      "type": "integer",
+                      "minimum": 0
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "disciplina",
+                    "tema",
+                    "origem",
+                    "topicos",
+                    "noticias",
+                    "midia",
+                    "imagens",
+                    "ativo",
+                    "rodada",
+                    "etapa",
+                    "criadoEm",
+                    "rodadas"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "jornal-escola"
+        ],
+        "summary": "UMA atividade, inteira e COM o gabarito — em andamento ou pronta.",
+        "description": "A página da atividade. `rodada` e `etapa` só vêm quando ela está em andamento; `rodadas` é a maior rodada com sessão (0 = nunca rodou).\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Pacote de outra turma, ou que não existe, responde **404** `atividade-nao-encontrada`.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/jornal-escola/turmas/{turmaId}/pacotes/{pacoteId}/em-andamento": {
+      "post": {
+        "operationId": "JornalEscolaTurmasController_emAndamento",
+        "parameters": [
+          {
+            "name": "turmaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "pacoteId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "pacoteId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "rodada": {
+                      "type": "integer",
+                      "exclusiveMinimum": true,
+                      "minimum": 0
+                    },
+                    "etapa": {
+                      "type": "string",
+                      "enum": [
+                        "exploracao",
+                        "resultado",
+                        "revisao"
+                      ]
+                    },
+                    "mudou": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "pacoteId",
+                    "rodada",
+                    "etapa",
+                    "mudou"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "jornal-escola"
+        ],
+        "summary": "\"Usar esta atividade agora\" — o professor escolhe o que a turma faz (ADR-130).",
+        "description": "O escolhido passa a ser a ATIVIDADE EM ANDAMENTO da turma; o que estava volta a ser pronto — fica, com as sessões e as rodadas. A etapa volta à exploração, com os portões fechados.\n\nA RODADA: o pacote que nunca rodou começa na 1; o que já rodou abre a SEGUINTE à última — retomar a mesma depois do resultado liberado seria o \"voltar\" que o botão único proíbe. As rodadas anteriores continuam no painel de habilidades.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- **Idempotente**: pôr no ar o que já está no ar devolve `mudou: false` e não muda nada.\n- Trocar com a aula correndo leva quem está jogando para a atividade nova: a experiência nota o `pacoteId` novo no polling do gate e recarrega. A tela pede confirmação antes.\n- Pacote de outra turma responde **404** `atividade-nao-encontrada`.",
         "security": [
           {
             "token-da-plataforma": []
@@ -49329,18 +50689,8 @@
                         "ia"
                       ]
                     },
-                    "rodada": {
-                      "type": "integer",
-                      "exclusiveMinimum": true,
-                      "minimum": 0
-                    },
-                    "etapa": {
-                      "type": "string",
-                      "enum": [
-                        "exploracao",
-                        "resultado",
-                        "revisao"
-                      ]
+                    "ativo": {
+                      "type": "boolean"
                     },
                     "noticias": {
                       "type": "array",
@@ -49511,8 +50861,7 @@
                     "disciplina",
                     "tema",
                     "origem",
-                    "rodada",
-                    "etapa",
+                    "ativo",
                     "noticias"
                   ],
                   "additionalProperties": false
@@ -49524,8 +50873,8 @@
         "tags": [
           "jornal-escola"
         ],
-        "summary": "\"Aprovar Pacote\" — a curadoria humana (ADR-66/67).",
-        "description": "Grava as 8 notícias como o professor as deixou e as torna a ATIVIDADE em andamento. **Pacote novo é atividade nova**: o anterior é desativado (fica, com as sessões dele) e o gate volta à rodada 1, na exploração.\n\nO corpo carrega as notícias INTEIRAS porque curadoria é editar — e editar uma notícia edita também o gabarito e a consequência dela (PDF §10). O banco padrão também passa por aqui (`origem: \"padrao\"`) quando o professor o aprova em um toque.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- O pacote é recusado com **400** `pacote-invalido` e a LISTA de problemas em `erros`, em frases para o professor: 8 notícias com os ids `n1` a `n8`, nesta ordem; os oito meios, um por notícia; pelo menos 3 publicáveis, 2 ou 3 antigas apresentadas como atuais e 2 ou 3 sem confirmação ou sem autoria; publicáveis e não publicáveis misturando meios tradicionais e digitais, e com imagem; pelo menos 4 notícias com imagem, e sempre na TV e na rede social; locutor no rádio e perfil com @ na rede social; manchete de 3 a 10 palavras, resumo de 25 a 35, texto de 15 a 80; e nenhum termo de carimbo (\"falsa\", \"fake news\", \"você errou\"...) no que a criança lê. (`.superRefine()` some do OpenAPI; daí esta nota.)\n- As imagens de notícia com a MESMA descrição do pacote anterior são herdadas — o arquivo no bucket é o hash da descrição.\n- Homologar no meio da aula recomeça a aula: a etapa volta à exploração.",
+        "summary": "\"Criar atividade\" — a curadoria humana (ADR-66/67).",
+        "description": "Grava as 8 notícias como o professor as deixou, numa ATIVIDADE NOVA que nasce **pronta, não no ar** (ADR-130): o pacote em andamento continua em andamento, e quem escolhe o que a turma faz é o professor (`POST :turmaId/pacotes/:pacoteId/em-andamento`). O mesmo conteúdo do pacote mais recente não cria outro: é o segundo clique.\n\nO corpo carrega as notícias INTEIRAS porque curadoria é editar — e editar uma notícia edita também o gabarito e a consequência dela (PDF §10). O banco padrão também passa por aqui (`origem: \"padrao\"`) quando o professor o aprova em um toque.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- O pacote é recusado com **400** `pacote-invalido` e a LISTA de problemas em `erros`, em frases para o professor: 8 notícias com os ids `n1` a `n8`, nesta ordem; os oito meios, um por notícia; pelo menos 3 publicáveis, 2 ou 3 antigas apresentadas como atuais e 2 ou 3 sem confirmação ou sem autoria; publicáveis e não publicáveis misturando meios tradicionais e digitais, e com imagem; pelo menos 4 notícias com imagem, e sempre na TV e na rede social; locutor no rádio e perfil com @ na rede social; manchete de 3 a 10 palavras, resumo de 25 a 35, texto de 15 a 80; e nenhum termo de carimbo (\"falsa\", \"fake news\", \"você errou\"...) no que a criança lê. (`.superRefine()` some do OpenAPI; daí esta nota.)\n- As imagens de notícia com a MESMA descrição de um pacote recente da turma são herdadas — o arquivo no bucket é o hash da descrição.",
         "security": [
           {
             "token-da-plataforma": []
@@ -49764,6 +51113,15 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "pacoteId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
@@ -49851,8 +51209,8 @@
         "tags": [
           "jornal-escola"
         ],
-        "summary": "Gera as próximas imagens das notícias do pacote em andamento — incremental.",
-        "description": "As imagens não cabem nos 30 s que o BFF dá a uma chamada: cada chamada gera ATÉ DUAS novas, grava as URLs no pacote e devolve o progresso. **Repita enquanto `completo` for `false` e a chamada anterior tiver gerado alguma** — `falharam` diz o que não saiu, e essas notícias seguem com o cartão desenhado pelo meio.\n\nIdempotente: o que já tem URL é pulado, e a imagem de mesma descrição que já está no bucket entra sem custo.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Quota do professor, com custo ESTIMADO por imagem (a geração não devolve contagem de tokens). Sem saldo responde **429** `sem-saldo-de-ia` — e a missão roda igual, com os cartões pelo meio.\n- Duas chamadas simultâneas para o mesmo pacote recebem o mesmo trabalho (lock de processo).",
+        "summary": "Gera as próximas imagens das notícias de uma atividade — incremental.",
+        "description": "As imagens não cabem nos 30 s que o BFF dá a uma chamada: cada chamada gera ATÉ DUAS novas, grava as URLs no pacote e devolve o progresso. **Repita enquanto `completo` for `false` e a chamada anterior tiver gerado alguma** — `falharam` diz o que não saiu, e essas notícias seguem com o cartão desenhado pelo meio.\n\nIdempotente: o que já tem URL é pulado, e a imagem de mesma descrição que já está no bucket entra sem custo.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- `?pacoteId=` diz a atividade (a pronta, preparada antes de ir ao ar); sem ele, a em andamento — e sem nenhuma, **403** `atividade-nao-preparada`.\n- Quota do professor, com custo ESTIMADO por imagem (a geração não devolve contagem de tokens). Sem saldo responde **429** `sem-saldo-de-ia` — e a missão roda igual, com os cartões pelo meio.\n- Duas chamadas simultâneas para o mesmo pacote recebem o mesmo trabalho (lock de processo).",
         "security": [
           {
             "token-da-plataforma": []

@@ -1,7 +1,11 @@
 import {
   colapsarEmUnidades,
+  ATIVIDADE_DA_TURMA,
+  EXPERIENCIAS_COM_ATIVIDADE,
   EXPERIENCIAS_COM_EQUIPE,
   MODOS,
+  atividadeCasaComMissao,
+  temAtividades,
   NOME_MAX,
   nomePadrao,
   permiteEquipes,
@@ -60,8 +64,8 @@ describe("as missões que aceitam equipe", () => {
     expect(permiteEquipes("app-70-vila-do-lume")).toBe(false);
   });
 
-  test("os dois modos e o nome padrão", () => {
-    expect([...MODOS]).toEqual(["sorteio", "manual"]);
+  test("os três modos e o nome padrão", () => {
+    expect([...MODOS]).toEqual(["sorteio", "manual", "individual"]);
     expect(nomePadrao(0)).toBe("Equipe 1");
     expect(nomePadrao(9)).toBe("Equipe 10");
   });
@@ -330,9 +334,28 @@ describe("o modo manual", () => {
   });
 });
 
+describe("a atividade da montagem (ADR-130)", () => {
+  test("as quatro missões com atividade, e o fixo `turma` só nas outras", () => {
+    expect([...EXPERIENCIAS_COM_ATIVIDADE]).toEqual(["exp08ef1b", "exp07ef1b", "exp04ef1b", "exp05ef1b"]);
+    expect(temAtividades("exp02em1b")).toBe(false);
+    const uuid = "3f2a8c1e-0b4d-4c2a-9f1e-2d3c4b5a6f70";
+    expect(atividadeCasaComMissao("exp07ef1b", uuid)).toBe(true);
+    expect(atividadeCasaComMissao("exp07ef1b", ATIVIDADE_DA_TURMA)).toBe(false);
+    expect(atividadeCasaComMissao("exp02em1b", ATIVIDADE_DA_TURMA)).toBe(true);
+    expect(atividadeCasaComMissao("exp02em1b", uuid)).toBe(false);
+    expect(atividadeCasaComMissao("exp07ef1b", "com espaço")).toBe(false);
+  });
+
+  test("toda missão com atividade aceita equipe", () => {
+    for (const expId of EXPERIENCIAS_COM_ATIVIDADE) expect(permiteEquipes(expId)).toBe(true);
+  });
+});
+
 describe("validar a montagem", () => {
   const turma = new Set(["e1", "e2", "e3", "e4"]);
   const ok = {
+    modo: "manual" as const,
+    computadores: 2,
     ausentes: ["e4"],
     equipes: [
       { nome: "Equipe 1", membros: ["e1", "e2"] },
@@ -345,14 +368,25 @@ describe("validar a montagem", () => {
   });
 
   test("nenhuma equipe", () => {
-    expect(validarMontagem({ ausentes: [], equipes: [] }, turma)).toEqual([
+    expect(validarMontagem({ modo: "manual", computadores: 2, ausentes: [], equipes: [] }, turma)).toEqual([
       "Monte pelo menos uma equipe.",
     ]);
   });
 
+  test("um aluno por computador: sem equipes é o certo, e sem número de computadores também", () => {
+    expect(validarMontagem({ modo: "individual", computadores: null, ausentes: ["e4"], equipes: [] }, turma)).toEqual([]);
+    expect(validarMontagem({ ...ok, modo: "individual" }, turma)).toEqual([
+      "Com um aluno por computador não há equipes para salvar.",
+    ]);
+  });
+
+  test("sorteio e manual sem dizer quantos computadores", () => {
+    expect(validarMontagem({ ...ok, computadores: null }, turma)).toEqual(["Diga quantos computadores a sala tem."]);
+  });
+
   test("membro de fora da turma", () => {
     const erros = validarMontagem(
-      { ausentes: [], equipes: [{ nome: "Equipe 1", membros: ["e1", "intruso"] }] },
+      { modo: "manual", computadores: 2, ausentes: [], equipes: [{ nome: "Equipe 1", membros: ["e1", "intruso"] }] },
       turma,
     );
     expect(erros).toEqual(['A equipe "Equipe 1" tem alguém que não é desta turma.']);
@@ -367,6 +401,8 @@ describe("validar a montagem", () => {
     expect(
       validarMontagem(
         {
+          modo: "manual",
+          computadores: 2,
           ausentes: [],
           equipes: [
             { nome: "Equipe 1", membros: ["e1"] },
@@ -377,7 +413,7 @@ describe("validar a montagem", () => {
       ),
     ).toEqual(['Há um estudante em duas equipes ("Equipe 1" e "Equipe 2").']);
     expect(
-      validarMontagem({ ausentes: [], equipes: [{ nome: "Equipe 1", membros: ["e1", "e1"] }] }, turma),
+      validarMontagem({ modo: "manual", computadores: 2, ausentes: [], equipes: [{ nome: "Equipe 1", membros: ["e1", "e1"] }] }, turma),
     ).toEqual(['Há um estudante repetido na equipe "Equipe 1".']);
   });
 
@@ -388,16 +424,16 @@ describe("validar a montagem", () => {
 
   test("nome vazio (depois do trim), longo demais e repetido sem distinguir maiúsculas", () => {
     expect(
-      validarMontagem({ ausentes: [], equipes: [{ nome: "   ", membros: ["e1"] }] }, turma),
+      validarMontagem({ modo: "manual", computadores: 2, ausentes: [], equipes: [{ nome: "   ", membros: ["e1"] }] }, turma),
     ).toEqual(["A equipe na posição 1 está sem nome."]);
 
     const longo = "x".repeat(NOME_MAX + 1);
     expect(
-      validarMontagem({ ausentes: [], equipes: [{ nome: longo, membros: ["e1"] }] }, turma),
+      validarMontagem({ modo: "manual", computadores: 2, ausentes: [], equipes: [{ nome: longo, membros: ["e1"] }] }, turma),
     ).toEqual([`O nome "${longo}" passa de ${NOME_MAX} caracteres.`]);
     expect(
       validarMontagem(
-        { ausentes: [], equipes: [{ nome: "x".repeat(NOME_MAX), membros: ["e1"] }] },
+        { modo: "manual", computadores: 2, ausentes: [], equipes: [{ nome: "x".repeat(NOME_MAX), membros: ["e1"] }] },
         turma,
       ),
     ).toEqual([]);
@@ -405,6 +441,8 @@ describe("validar a montagem", () => {
     expect(
       validarMontagem(
         {
+          modo: "manual",
+          computadores: 2,
           ausentes: [],
           equipes: [
             { nome: "Azul", membros: ["e1"] },
@@ -420,6 +458,8 @@ describe("validar a montagem", () => {
     expect(
       validarMontagem(
         {
+          modo: "manual",
+          computadores: 2,
           ausentes: [],
           equipes: [
             { nome: "Azul", membros: ["e1"] },
@@ -438,6 +478,8 @@ describe("validar a montagem", () => {
     expect(
       validarMontagem(
         {
+          modo: "manual",
+          computadores: 2,
           ausentes: [],
           equipes: [
             { nome: "Equipe 1", membros: ["e1"] },
@@ -452,6 +494,8 @@ describe("validar a montagem", () => {
   test("todos os problemas de uma vez, e não o primeiro", () => {
     const erros = validarMontagem(
       {
+        modo: "manual",
+        computadores: 2,
         ausentes: ["e2"],
         equipes: [
           { nome: "", membros: [] },

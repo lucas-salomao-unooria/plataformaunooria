@@ -11,7 +11,8 @@ import {
   professorLeciona,
 } from "../comum/turmas-do-professor";
 import { mapaDeEquipes } from "../equipes/consulta";
-import { colapsarEmUnidades } from "../equipes/regras";
+/* `ATIVIDADE_DA_TURMA`: missão SEM atividade (ADR-130) — uma montagem por turma. */
+import { ATIVIDADE_DA_TURMA, colapsarEmUnidades } from "../equipes/regras";
 import { MISSAO_TEMPESTADE } from "./cenario";
 
 /** Quanto cada toque em "+2 min" acrescenta ao relógio da aula. */
@@ -1092,7 +1093,7 @@ export class UnoogptService {
         }),
       );
 
-      const mapa = await mapaDeEquipes(tx, escolaId, turmaId, EXP_ID);
+      const mapa = await mapaDeEquipes(tx, escolaId, turmaId, EXP_ID, ATIVIDADE_DA_TURMA);
       const linhas = colapsarEmUnidades(
         porEstudante,
         (l) => l.estudanteId,

@@ -13,7 +13,25 @@
  * primeiro import.
  */
 
-export type ModoDeMontagem = "sorteio" | "manual";
+/**
+ * `individual` é "um aluno por computador" (ADR-130): a montagem existe — é a
+ * resposta do passo de equipes na criação da atividade — e não tem equipe.
+ */
+export type ModoDeMontagem = "sorteio" | "manual" | "individual";
+/** O que a `sugestao` propõe: o `individual` não tem proposta. */
+export type ModoDaSugestao = Exclude<ModoDeMontagem, "individual">;
+
+/**
+ * A EQUIPE É DA ATIVIDADE (ADR-130): o id que a missão dá (a cobertura, o
+ * pacote, a atividade do Instanooria). A missão sem atividade — o unooGPT, até
+ * ser refeito — usa o fixo `turma`, o mesmo de `equipes/regras.ts` na api.
+ */
+export const ATIVIDADE_DA_TURMA = "turma";
+
+/** O caminho das rotas de equipes de UMA atividade, sem o prefixo do BFF. */
+export function caminhoDasEquipes(turmaId: string, expId: string, atividadeId: string): string {
+  return `/equipes/turma/${encodeURIComponent(turmaId)}/missao/${encodeURIComponent(expId)}/atividade/${encodeURIComponent(atividadeId)}`;
+}
 
 /** O lado do feed no Instanooria — a única missão que agrupa por lado. */
 export type LadoDoFeed = "A" | "B";
@@ -25,7 +43,8 @@ export interface PessoaDaEquipe {
 
 export interface MontagemDeEquipes {
   modo: ModoDeMontagem;
-  computadores: number;
+  /** `null` só no `individual`: lá são tantos computadores quantas crianças. */
+  computadores: number | null;
   /** Quem faltou no dia da montagem — ficam em `semEquipe`. */
   ausentes: string[];
   /** Controle de concorrência do `PUT`: a api responde 409 quando mudou. */
@@ -40,7 +59,7 @@ export interface EquipeSalva {
   membros: PessoaDaEquipe[];
 }
 
-/** `GET /equipes/turma/:turmaId/missao/:expId` — e também a resposta do `PUT`. */
+/** `GET /equipes/turma/:turmaId/missao/:expId/atividade/:atividadeId` — e também a resposta do `PUT`. */
 export interface EquipesDaMissao {
   permitida: boolean;
   montagem: MontagemDeEquipes | null;
@@ -67,16 +86,16 @@ export interface AgrupamentoDaSugestao {
 
 /** `POST …/sugestao` — não grava nada. */
 export interface SugestaoDeEquipes {
-  modo: ModoDeMontagem;
+  modo: ModoDaSugestao;
   computadores: number;
   equipes: EquipeSugerida[];
   semEquipe: PessoaDaEquipe[];
   agrupamento: AgrupamentoDaSugestao | null;
 }
 
-/** `GET …/ultima` — as equipes salvas mais recentes da turma, em OUTRA missão. */
+/** `GET …/ultima` — as equipes salvas mais recentes da turma, em OUTRA atividade (desta missão ou de outra). */
 export interface UltimasEquipes {
-  origem: { expId: string; atualizadoEm: string } | null;
+  origem: { expId: string; atividadeId: string; atualizadoEm: string } | null;
   equipes: { nome: string; membros: PessoaDaEquipe[] }[];
   semEquipe: PessoaDaEquipe[];
   /** Quantos daquela montagem não estão mais na turma. */
@@ -87,7 +106,8 @@ export interface UltimasEquipes {
 export interface CorpoDasEquipes {
   versao: number;
   modo: ModoDeMontagem;
-  computadores: number;
+  /** `null` no `individual`. */
+  computadores: number | null;
   ausentes: string[];
   equipes: { nome: string; membros: string[] }[];
 }

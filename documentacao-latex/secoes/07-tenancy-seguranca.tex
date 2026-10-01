@@ -683,7 +683,7 @@ As salas do estudante (a grade dele) & \rota{GET /salas/minhas} &
   \yes & \no & \no & \no\\
 \zebra Ler as equipes de uma missão na turma (\adrr{ADR-111}) &
   \rota{GET /equipes/turma/\B :turmaId/\B missao/:expId} & \no & \yes\footnotesize{\ddag} & \yes & \yes\\
-Propor equipes (sorteio, N vazias, a última missão) --- nunca grava &
+Propor equipes (sorteio, N vazias, a atividade anterior) --- nunca grava &
   \rota{POST .../\B sugestao}, \rota{GET .../\B ultima} & \no & \yes\footnotesize{\ddag} & \no & \no\\
 \zebra \textbf{Salvar ou desfazer as equipes} (sempre editáveis) &
   \rota{PUT}, \rota{DELETE /equipes/\B turma/:turmaId/\B missao/:expId} & \no & \yes\footnotesize{\ddag} & \no & \no\\

@@ -10,7 +10,7 @@ import { exigirMissaoLiberada } from "../comum/liberacao";
 import { professorEnsinaOEstudante, professorLeciona } from "../comum/turmas-do-professor";
 import { habilidadePorCodigo } from "../curriculo/consulta";
 import { computadoresDaMontagem, mapaDeEquipes } from "../equipes/consulta";
-import { EquipesService } from "../equipes/equipes.service";
+import { EquipesService, type AlvoDaMontagem } from "../equipes/equipes.service";
 import { PrismaService } from "../prisma/prisma.service";
 import type { Ajustes } from "./contrato-de-rotas";
 import { FICHAS, type FichaPedagogica } from "./fichas";
@@ -437,13 +437,12 @@ export class EvidenciasService implements OnModuleInit {
   /** A equipe é a turma inteira? (`regras.ts#ehProjecao`) */
   private async ehProjecaoDaEquipe(
     tx: Prisma.TransactionClient,
-    escolaId: string,
-    turmaId: string,
-    expId: string,
+    alvo: AlvoDaMontagem,
     membros: readonly string[],
   ): Promise<boolean> {
+    const { escolaId, turmaId, expId, atividadeId } = alvo;
     const [computadores, estudantes] = await Promise.all([
-      computadoresDaMontagem(tx, escolaId, turmaId, expId),
+      computadoresDaMontagem(tx, escolaId, turmaId, expId, atividadeId),
       tx.user.findMany({ where: { escolaId, turmaId, role: "estudante" }, select: { id: true } }),
     ]);
     return ehProjecao({ computadores, membros, estudantesDaTurma: estudantes.map((e) => e.id) });
@@ -459,7 +458,8 @@ export class EvidenciasService implements OnModuleInit {
     habilidade: string,
     status: Nivel,
   ): Promise<number> {
-    const mapa = await mapaDeEquipes(tx, m.escolaId, m.turmaId, m.expId);
+    /* A equipe é da ATIVIDADE (ADR-130): a desta marca. */
+    const mapa = await mapaDeEquipes(tx, m.escolaId, m.turmaId, m.expId, m.atividadeId);
     const equipe = mapa.get(m.estudanteId);
     if (!equipe) return 0;
     const colegas = equipe.membros.map((x) => x.id).filter((id) => id !== m.estudanteId);
@@ -467,7 +467,11 @@ export class EvidenciasService implements OnModuleInit {
 
     const daRodada = { escolaId: m.escolaId, expId: m.expId, atividadeId: m.atividadeId, rodada: m.rodada };
     const [projecao, comMarca, linhas] = await Promise.all([
-      this.ehProjecaoDaEquipe(tx, m.escolaId, m.turmaId, m.expId, equipe.membros.map((x) => x.id)),
+      this.ehProjecaoDaEquipe(
+        tx,
+        { escolaId: m.escolaId, turmaId: m.turmaId, expId: m.expId, atividadeId: m.atividadeId },
+        equipe.membros.map((x) => x.id),
+      ),
       tx.evidenciaMarca.findMany({
         where: { ...daRodada, habilidade, estudanteId: { in: colegas } },
         select: { estudanteId: true },
@@ -554,8 +558,9 @@ export class EvidenciasService implements OnModuleInit {
    * `EquipesService.aoMudarEquipes`, e roda na transação do `PUT`/`DELETE` das
    * equipes.
    *
-   * SÓ A RODADA EM ANDAMENTO: a (atividade, rodada) da marca mais recente desta
-   * turma × missão. Rodada passada NUNCA muda por troca de equipe — a aula de
+   * SÓ A RODADA EM ANDAMENTO DA ATIVIDADE CUJA MONTAGEM MUDOU (ADR-130): a
+   * equipe é da atividade, e o `alvo` diz qual — a rodada é a da marca mais
+   * recente dela nesta turma. Rodada passada NUNCA muda por troca de equipe — a aula de
    * ontem não pode mudar de resultado porque hoje a sala tem menos
    * computadores; o que estiver errado lá se corrige no ajuste do professor.
    *
@@ -564,24 +569,21 @@ export class EvidenciasService implements OnModuleInit {
    * (`diferencaDasCopias`): sai quem saiu da equipe, entra quem entrou, e a
    * cópia que não mudou fica com a confirmação que tinha.
    */
-  async recalcularCopias(
-    tx: Prisma.TransactionClient,
-    alvo: { escolaId: string; turmaId: string; expId: string },
-  ): Promise<void> {
+  async recalcularCopias(tx: Prisma.TransactionClient, alvo: AlvoDaMontagem): Promise<void> {
     if (!this.fichas.has(alvo.expId)) return;
-    const { escolaId, turmaId, expId } = alvo;
+    const { escolaId, turmaId, expId, atividadeId } = alvo;
 
     const ultima = await tx.evidenciaMarca.findFirst({
-      where: { escolaId, turmaId, expId },
+      where: { escolaId, turmaId, expId, atividadeId },
       orderBy: [{ registradaEm: "desc" }, { rodada: "desc" }],
-      select: { atividadeId: true, rodada: true },
+      select: { rodada: true },
     });
     if (!ultima) return;
 
-    const daRodada = { escolaId, expId, atividadeId: ultima.atividadeId, rodada: ultima.rodada };
+    const daRodada = { escolaId, expId, atividadeId, rodada: ultima.rodada };
     const [mapa, computadores, estudantes] = await Promise.all([
-      mapaDeEquipes(tx, escolaId, turmaId, expId),
-      computadoresDaMontagem(tx, escolaId, turmaId, expId),
+      mapaDeEquipes(tx, escolaId, turmaId, expId, atividadeId),
+      computadoresDaMontagem(tx, escolaId, turmaId, expId, atividadeId),
       tx.user.findMany({ where: { escolaId, turmaId, role: "estudante" }, select: { id: true } }),
     ]);
     const idsDaTurma = estudantes.map((e) => e.id);
@@ -725,7 +727,7 @@ export class EvidenciasService implements OnModuleInit {
 
     const [estudantes, mapa, linhas] = await Promise.all([
       this.estudantesDaTurma(tx, escolaId, turmaId),
-      mapaDeEquipes(tx, escolaId, turmaId, expId),
+      mapaDeEquipes(tx, escolaId, turmaId, expId, atividadeId),
       tx.evidencia.findMany({
         where: { escolaId, turmaId, expId, atividadeId },
         select: { estudanteId: true, rodada: true, habilidade: true, status: true, origem: true, situacao: true },

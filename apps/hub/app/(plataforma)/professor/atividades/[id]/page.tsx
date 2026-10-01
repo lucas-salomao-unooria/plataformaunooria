@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { Badge, Card } from "@edu/ui/ds";
+import { EquipesDaAtividade } from "@/components/equipes/equipes-da-ficha";
 import { PainelDeHabilidades } from "@/components/evidencias/painel-de-habilidades";
 import { LinkButton } from "@/components/link-button";
 import { RotuloDaTrilha } from "@/components/trilha";
@@ -170,6 +171,17 @@ export default async function AtividadePage({
         />
       ) : null}
 
+      {/*
+        As EQUIPES desta atividade (ADR-130): a equipe é da atividade, e não da
+        missão. Aparecem a partir de `revisao` — com o conteúdo de pé, antes do
+        "Ativar" — e só na atividade com turma: a antiga, sem turma, vale para a
+        escola inteira e não tem sala para dividir.
+      */}
+      {atividade.turma &&
+      (atividade.status === "revisao" || atividade.status === "ativa" || atividade.status === "encerrada") ? (
+        <EquipesDaAtividade turmaId={atividade.turma.id} expId="exp08ef1b" atividadeId={atividade.id} />
+      ) : null}
+
       {atividade.status === "gerando" ? (
         <PainelProgresso activityId={atividade.id} />
       ) : null}
@@ -206,7 +218,7 @@ export default async function AtividadePage({
         <LinkButton
           href={
             missaoDaAtividade
-              ? rotaDaMissao(missaoDaAtividade.missao)
+              ? `${rotaDaMissao(missaoDaAtividade.missao)}${atividade.turma ? `?turmaId=${encodeURIComponent(atividade.turma.id)}` : ""}`
               : "/professor"
           }
           variant="outline"

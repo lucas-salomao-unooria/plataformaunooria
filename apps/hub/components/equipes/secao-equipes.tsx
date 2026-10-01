@@ -2,7 +2,7 @@
 
 import { dataCurta } from "@edu/sdk";
 import { useRouter } from "next/navigation";
-import { useId, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import {
   Button,
   EmptyState,
@@ -15,6 +15,7 @@ import {
   Snackbar,
 } from "@edu/ui/ds";
 import {
+  caminhoDasEquipes,
   computadoresPadrao,
   corpoParaSalvar,
   problemasAntesDeSalvar,
@@ -22,8 +23,9 @@ import {
   rascunhoDaSugestao,
   rascunhoDaUltima,
   turmaInteira,
+  type CorpoDasEquipes,
   type EquipesDaMissao,
-  type ModoDeMontagem,
+  type ModoDaSugestao,
   type RascunhoDeEquipes,
   type SugestaoDeEquipes,
   type UltimasEquipes,
@@ -47,7 +49,8 @@ function mensagemDoCorpo(corpo: unknown, padrao: string): string {
 }
 
 /**
- * EQUIPES NA MISSÃO (E13): a seção da ficha, na turma que a sala mandou.
+ * EQUIPES NA MISSÃO (E13): a seção das equipes de UMA ATIVIDADE (ADR-130) — na
+ * página da atividade, e na ficha só da missão sem atividade (o unooGPT).
  *
  * Três estados, e nenhum é uma rota: VER (há equipes salvas), MONTAR (não há,
  * ou o professor pediu para refazer) e EDITAR (um rascunho — da sugestão da
@@ -61,18 +64,28 @@ function mensagemDoCorpo(corpo: unknown, padrao: string): string {
 export function SecaoEquipes({
   turmaId,
   expId,
+  atividadeId,
   inicial,
   podeEditar,
   ultima,
   tituloDaUltima,
+  separarAoAbrir,
 }: {
   turmaId: string;
   expId: string;
+  /** A atividade dona da montagem; `turma` na missão sem atividade. */
+  atividadeId: string;
   inicial: EquipesDaMissao;
   /** Só o professor escreve. A coordenação lê (e a api recusaria o resto). */
   podeEditar: boolean;
   ultima: UltimasEquipes | null;
   tituloDaUltima: string | null;
+  /**
+   * Quem escolheu "Eu separo" na criação da atividade chega aqui com o número
+   * de computadores: as equipes vazias já abrem para arrastar, sem perguntar
+   * de novo o que acabou de ser respondido. Só vale sem montagem salva.
+   */
+  separarAoAbrir?: number | null;
 }) {
   const router = useRouter();
 
@@ -101,18 +114,31 @@ export function SecaoEquipes({
 
   const turma = useMemo(() => turmaInteira(dados), [dados]);
   const problemas = useMemo(() => (rascunho ? problemasAntesDeSalvar(rascunho.equipes) : []), [rascunho]);
-  const base = `/api/plataforma/equipes/turma/${encodeURIComponent(turmaId)}/missao/${encodeURIComponent(expId)}`;
+  const base = `/api/plataforma${caminhoDasEquipes(turmaId, expId, atividadeId)}`;
   const { montagem } = dados;
 
+  /* "Eu separo" escolhido na criação: as N equipes vazias abrem sozinhas, UMA
+     vez. O `useRef` segura o Strict Mode, que roda o efeito duas vezes. */
+  const separou = useRef(false);
+  useEffect(() => {
+    if (!podeEditar || montagem || !separarAoAbrir || separou.current) return;
+    separou.current = true;
+    void pedirSugestao("manual", separarAoAbrir, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- uma vez, na chegada da criação
+  }, []);
+
   if (!podeEditar) {
+    if (montagem?.modo === "individual") {
+      return <p className="text-[14px] text-unooria-neutral-700">Um aluno por computador: sem equipes nesta atividade.</p>;
+    }
     return montagem ? (
       <CartoesDasEquipes equipes={dados.equipes} semEquipe={dados.semEquipe} ausentes={montagem.ausentes} />
     ) : (
-      <EmptyState variant="no-data" size="sm" bordered fullWidth title="Nenhuma equipe montada para esta turma." />
+      <EmptyState variant="no-data" size="sm" bordered fullWidth title="Nenhuma equipe montada para esta atividade." />
     );
   }
 
-  async function pedirSugestao(modo: ModoDeMontagem, computadores: number, ausentes: string[]) {
+  async function pedirSugestao(modo: ModoDaSugestao, computadores: number, ausentes: string[]) {
     setOcupado(true);
     setErro(null);
     try {
@@ -140,6 +166,11 @@ export function SecaoEquipes({
   }
 
   function continuar(escolha: EscolhaDeMontagem, computadores: number, ausentes: string[]) {
+    if (escolha === "individual") {
+      /* Um aluno por computador não tem rascunho para revisar: grava direto. */
+      void gravar({ versao: montagem?.versao ?? 0, modo: "individual", computadores: null, ausentes, equipes: [] });
+      return;
+    }
     if (escolha === "ultima") {
       if (!ultima) return;
       setErro(null);
@@ -154,7 +185,9 @@ export function SecaoEquipes({
   function editarSalvas() {
     setErro(null);
     setRascunho(rascunhoDasSalvas(dados));
-    setEntradas(montagem ? { computadores: montagem.computadores, ausentes: montagem.ausentes } : null);
+    setEntradas(
+      montagem ? { computadores: montagem.computadores ?? dados.equipes.length, ausentes: montagem.ausentes } : null,
+    );
   }
 
   function cancelar() {
@@ -165,13 +198,17 @@ export function SecaoEquipes({
 
   async function salvar() {
     if (!rascunho || problemas.length > 0) return;
+    await gravar(corpoParaSalvar(rascunho, montagem?.versao ?? 0));
+  }
+
+  async function gravar(corpoDoPut: CorpoDasEquipes) {
     setOcupado(true);
     setErro(null);
     try {
       const resposta = await fetch(base, {
         method: "PUT",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify(corpoParaSalvar(rascunho, montagem?.versao ?? 0)),
+        body: JSON.stringify(corpoDoPut),
       });
       const corpo: unknown = await resposta.json().catch(() => null);
       if (resposta.status === 409) {
@@ -285,7 +322,7 @@ export function SecaoEquipes({
           key={`${montagem?.versao ?? 0}-${montando ? "refazer" : "nova"}`}
           expId={expId}
           turma={turma}
-          computadoresIniciais={computadoresPadrao(turma.length || dados.estudantes, montagem?.computadores)}
+          computadoresIniciais={computadoresPadrao(turma.length || dados.estudantes, montagem?.computadores ?? null)}
           ausentesIniciais={montagem?.ausentes ?? []}
           ultima={ultima}
           tituloDaUltima={tituloDaUltima}
@@ -294,6 +331,17 @@ export function SecaoEquipes({
           onContinuar={continuar}
           onCancelar={cancelar}
         />
+      ) : montagem.modo === "individual" ? (
+        <div className="flex flex-wrap items-center justify-between gap-3" data-equipes-individual>
+          <p className="text-[14px] text-unooria-neutral-700">
+            Um aluno por computador · sem equipes nesta atividade · salvo em {dataCurta(montagem.atualizadoEm)}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="secondary" size="sm" onClick={() => setMontando(true)}>
+              Montar equipes
+            </Button>
+          </div>
+        </div>
       ) : (
         <div className="flex flex-col gap-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -340,7 +388,7 @@ export function SecaoEquipes({
         </ModalHeader>
         <ModalBody>
           <p className="text-[14px] text-unooria-neutral-700">
-            As equipes desta missão nesta turma deixam de existir. Dá para montar de novo quando quiser.
+            As equipes desta atividade deixam de existir. Dá para montar de novo quando quiser.
           </p>
         </ModalBody>
         <ModalFooter>

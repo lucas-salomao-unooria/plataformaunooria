@@ -1,8 +1,10 @@
 import { Badge, Card, FeedbackAlert, Tag } from "@edu/ui/ds";
 import { LinkButton } from "@/components/link-button";
-import { rotaDaMissao, rotuloDaMissao, type Ano, type Missao } from "@/lib/entre-redes/catalogo";
-import { comTurma, rotaDoGuiaDaMissao } from "@/lib/rotas-da-missao";
+import { rotuloDaMissao, type Ano, type Missao } from "@/lib/entre-redes/catalogo";
+import { rotaDoGuiaDaMissao } from "@/lib/rotas-da-missao";
 import type { TurmaDoProfessor } from "@/lib/turmas";
+
+import { AtividadesDaMissao } from "./atividades-da-missao";
 
 /**
  * Corpo de QUEM MANDOU ISSO? v2.2 (5º ano · Unidade 1).
@@ -14,9 +16,8 @@ import type { TurmaDoProfessor } from "@/lib/turmas";
  * Aconteceu duas vezes (exp06ef2b e exp08ef4b), e o
  * `despachante-da-ficha.test.ts` é a rede.
  *
- * As EQUIPES (E13) não são deste corpo: a seção "Equipes desta turma" entra
- * pelo `corpo()` do despachante, acima, sozinha — a exp05ef1b está em
- * `EXPERIENCIAS_COM_EQUIPE` na api, e é a api que responde `permitida`.
+ * As EQUIPES (E13) não são deste corpo: são de cada ATIVIDADE (ADR-130), e
+ * moram na página dela — a criação da atividade já pergunta o modo.
  *
  * A ficha abre com o fato que muda a condução, e ele não pode estar no fim de
  * uma lista: **sem o pacote aprovado a missão não abre para ninguém**, porque o
@@ -37,7 +38,6 @@ export function MissaoQuemMandouIsso({
   turma: TurmaDoProfessor | null;
 }) {
   const { ficha } = missao;
-  const rotaResultados = comTurma(`${rotaDaMissao(missao)}/resultados`, turma?.id);
   const guia = missao.expId ? rotaDoGuiaDaMissao(missao.expId) : null;
 
   return (
@@ -68,8 +68,8 @@ export function MissaoQuemMandouIsso({
 
       <FeedbackAlert
         type="warning"
-        title="A missão só abre depois que você aprova o pacote — e a revelação é você quem libera"
-        description="O tema do pacote entra na fala da Nina, então sem o seu clique em Aprovar Pacote o estudante entra e vê uma tela de espera. Durante a aula são três botões seus, em A aula e os resultados, sempre para a frente: Liberar Revelação, Apresentar Síntese e Liberar Reflexão."
+        title="A missão só abre com uma atividade sua em andamento — e a revelação é você quem libera"
+        description="O tema do pacote entra na fala da Nina, então sem uma atividade em andamento o estudante entra e vê uma tela de espera. Durante a aula são três botões seus, na página da atividade, sempre para a frente: Liberar Revelação, Apresentar Síntese e Liberar Reflexão."
       />
 
       <section className="grid gap-4 lg:grid-cols-2">
@@ -129,24 +129,7 @@ export function MissaoQuemMandouIsso({
         </div>
       </Card>
 
-      <Card variant="elevated" title="A aula e os resultados">
-        <div className="flex flex-col gap-3">
-          <p className="max-w-3xl text-[14px] leading-relaxed text-unooria-neutral-700">
-            É de lá que você prepara o pacote de mensagens da turma, libera a revelação, a síntese e
-            a reflexão, e projeta o Termômetro. E é lá que está o retrato: o que cada estudante
-            encaminhou, o motivo que ele votou, a regra que escreveu e as habilidades da BNCC — a
-            EF05CO08 pela seleção do Mural, a EF05CO03 e a EF05CO04 pelas duas perguntas finais da
-            Nina.{" "}
-            <strong className="text-unooria-neutral-950">
-              Nada gerado por inteligência artificial chega aos estudantes sem a sua aprovação
-            </strong>{" "}
-            — gerar produz rascunho, e o que vai para a turma é o seu clique.
-          </p>
-          <div>
-            <LinkButton href={rotaResultados}>Abrir a aula e os resultados</LinkButton>
-          </div>
-        </div>
-      </Card>
+      <AtividadesDaMissao missao={missao} expId="exp05ef1b" turma={turma} />
     </div>
   );
 }

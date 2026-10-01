@@ -22,19 +22,47 @@ do Instanooria de propósito.
 
 **Missão nova = ramo no despachante + `missao-<slug>.tsx`, no mesmo trabalho.**
 
+## As atividades da missão (ADR-130)
+
+**A missão é o esqueleto narrativo; a ATIVIDADE é a missão que a turma faz de
+fato, e a plataforma nunca a cria.** As quatro missões com atividade
+(`MISSOES_COM_ATIVIDADE` em `lib/entre-redes/atividades.ts`, o par da api)
+dividem a seção **"Suas atividades"** da ficha (`[ano]/[unidade]/atividades-da-missao.tsx`,
+no molde da lista do Instanooria) e o card `components/cartao-atividade.tsx`.
+
+- **A lista é da TURMA.** Sem `?turmaId=`, a seção pede a turma (as do professor
+  da série da missão). A em andamento vem primeiro.
+- **Criar não põe no ar.** A atividade nasce PRONTA; "Usar esta atividade agora"
+  (`components/atividades/usar-esta-atividade.tsx`) escolhe a EM ANDAMENTO, uma
+  por turma, e pede confirmação quando troca a que está no ar. No Instanooria o
+  caminho é o "Ativar" (que pode devolver 422 com as pendências).
+- **A criação é o assistente de quatro passos** (`components/atividades/assistente-de-atividade.tsx`:
+  turma, conteúdo, equipes, revisar e criar) em `[unidade]/atividades/nova`; o
+  passo do CONTEÚDO é de cada missão (`atividades/nova/criar-<missão>.tsx`), e o
+  fim (pôr no ar, montar as equipes) é `lib/entre-redes/criar-atividade.ts`. O
+  Instanooria mantém a criação dele (`/professor/atividades/nova`).
+- **A página da atividade** é a `.../resultados` com `?cobertura=` (A Seleção) ou
+  `?pacote=` (Jornal, Quem Mandou), e a `/professor/atividades/[id]` no
+  Instanooria. O painel da aula e o zerar só aparecem na EM ANDAMENTO; a pronta
+  mostra o "Usar esta atividade agora". As imagens se geram ali, com o id da
+  atividade (a pronta também).
+
 ## Equipes na missão (E13)
 
 Quando a turma divide computadores, quem entra na missão representa a equipe. A
-seção **"Equipes desta turma"** mora na FICHA, entra UMA vez pelo `corpo()` do
-despachante (`components/equipes/equipes-da-ficha.tsx`, logo abaixo da faixa da
-turma) e só aparece com `?turmaId=` e quando a api responde `permitida` — a
-lista de missões com equipe é da api, não do hub. Os tipos e as regras puras
+**equipe é da ATIVIDADE** (ADR-130): a criação pergunta o modo (sortear, eu
+separo, um aluno por computador) e a seção **"Equipes desta atividade"**
+(`EquipesDaAtividade`, `components/equipes/equipes-da-ficha.tsx`) mora na PÁGINA
+da atividade — `?separar=N` abre direto as N equipes vazias de quem escolheu "Eu
+separo". Na FICHA, a seção "Equipes desta turma" (`EquipesDaFicha`, id fixo
+`turma`) só existe na missão SEM atividade, o unooGPT. Ela só aparece quando a
+api responde `permitida` — a lista de missões com equipe é da api, não do hub. Os tipos e as regras puras
 (mover, remover, o que impede salvar) estão em `lib/equipes.ts`, que o cliente
 importa; as leituras server-side em `lib/equipes-servidor.ts` (`server-only`).
 
-- **A plataforma sempre pergunta** "Sortear as equipes" ou "Eu separo", sem
-  opção marcada; "Manter as equipes da última missão" só existe quando a turma
-  tem equipes salvas em outra missão.
+- **A plataforma sempre pergunta** "Sortear as equipes", "Eu separo" ou "Um aluno
+  por computador", sem opção marcada; "Usar as equipes da atividade anterior" só
+  existe quando a turma tem equipes salvas em outra atividade.
 - **Só o `professor` escreve.** Gestor lê: cartões ou "Nenhuma equipe montada
   para esta turma." A api recusaria de qualquer jeito.
 - **"Mostrar equipes" é uma janela do DS (`Modal` `full`), não uma rota**: uma
@@ -91,12 +119,13 @@ conferido contra a régua) e em `estudante/11-a-selecao`.
 
 ## A Seleção (exp07ef1b)
 
-A aula inteira mora em `[ano]/[unidade]/resultados/resultados-a-selecao.tsx`, na
-ordem da aula:
-preparo, painel ao vivo, folha por computador, zerar e habilidades.
+A página de UMA atividade mora em `[ano]/[unidade]/resultados/resultados-a-selecao.tsx`,
+na ordem da aula: pô-la no ar (se pronta), equipes, imagens, painel ao vivo com a
+folha por computador, zerar, podcast e habilidades. A criação é
+`atividades/nova/criar-a-selecao.tsx`.
 
-- **Aprovar = atividade nova** (rodada 1), e só acende quando algo mudou;
-  **zerar = rodada nova**, sem apagar nada.
+- **Criar = atividade nova, PRONTA**; pô-la no ar abre a rodada seguinte à
+  última; **zerar = rodada nova**, sem apagar nada.
 - **UM botão**, com o rótulo de `proximaEtapa` da api; não volta.
 - **O painel consulta só `…/painel`** a cada 5 s, não `router.refresh()`: a
   página lê seis rotas.
@@ -107,5 +136,5 @@ preparo, painel ao vivo, folha por computador, zerar e habilidades.
   cada veículo mostrou no tema DESTA turma, e o guia é o mesmo para todas. O
   áudio é outro laço do cliente (`continuarGerandoPodcast`, um trecho por
   chamada) e a transcrição fica sempre na tela; o player é o `AudioPlayer` do DS.
-  As três falas do Bloco 2 se editam no PREPARO, junto dos posts, e vão na mesma
-  aprovação (`mesmoLote` compara as falas também).
+  As três falas do Bloco 2 se editam na CRIAÇÃO, junto dos posts, e vão na
+  mesma gravação.

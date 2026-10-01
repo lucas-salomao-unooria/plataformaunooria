@@ -87,9 +87,12 @@ volta a \parcial{}, com a pendência escrita.
 % ---------------------------------------------------------------------------
 \feature{F13.1}{Montar as equipes}{\pronto}
 
-As equipes se montam na ficha da missão, aberta pela sala (\enquote{Conduzir
-com esta turma}), na seção \enquote{Equipes desta turma}: \enquote{Para quando
-alunos dividem um computador: quem entra na missão representa a equipe.}
+A equipe é de cada \textbf{atividade} (\id{F06.13}): a mesma turma pode sentar
+diferente em cada aula. O professor escolhe o jeito ao criar a atividade
+(\id{H13.1.8}) e ajusta na página dela, na seção \enquote{Equipes desta
+atividade}: \enquote{Para quando alunos dividem um computador: quem entra na
+missão representa a equipe.} Só a Missão Tempestade, que ainda não tem
+atividades, monta as equipes na ficha, em \enquote{Equipes desta turma}.
 
 \begin{historia}{H13.1.1}{Dizer quantos computadores há e quem faltou}{\pronto}
 \hu{Professor}{dizer quantos computadores a turma vai usar e quem faltou
@@ -114,8 +117,10 @@ eu mesmo separo}{usar o que eu sei da minha turma quando for preciso}
 \aceite
 \begin{itemize}
   \item A plataforma \textbf{sempre pergunta} \enquote{Como montar as
-    equipes?}, com \enquote{Sortear as equipes} e \enquote{Eu separo}, sem
-    nenhuma opção já marcada.
+    equipes?}, com \enquote{Sortear as equipes}, \enquote{Eu separo} e
+    \enquote{Um aluno por computador}, sem nenhuma opção já marcada.
+  \item \enquote{Um aluno por computador}: cada estudante entra no próprio
+    computador, e nenhuma equipe é montada.
   \item \enquote{Sortear as equipes} divide quem está presente em equipes de
     tamanho parecido, e dá para mudar quem fica onde antes de salvar;
     \enquote{Sortear de novo} refaz o sorteio.
@@ -166,18 +171,36 @@ prontas}{chegar na aula com a turma já organizada}
 \end{itemize}
 \end{historia}
 
-\begin{historia}{H13.1.5}{Repetir as equipes da última missão}{\pronto}
+\begin{historia}{H13.1.5}{Repetir as equipes da atividade anterior}{\pronto}
 \hu{Professor}{reaproveitar as equipes que a turma já usou}{não montar tudo de
-novo a cada missão}
+novo a cada aula}
 \aceite
 \begin{itemize}
-  \item Quando a turma já tem equipes salvas em outra missão, aparece uma
-    terceira opção: \enquote{Manter as equipes da última missão}, que diz de
-    qual missão elas vêm e quando foram salvas.
+  \item Quando a turma já tem equipes salvas em outra atividade, desta missão
+    ou de outra, aparece mais uma opção: \enquote{Usar as equipes da atividade
+    anterior}, que diz de qual missão elas vêm e quando foram salvas.
   \item Quem faltou hoje sai da equipe e fica em \enquote{Sem equipe}; quem saiu
     da turma desde então não volta, e a tela diz quantos são.
   \item Nada fica valendo antes de eu salvar: posso ajustar como em
     \id{H13.1.3}.
+\end{itemize}
+\end{historia}
+
+\begin{historia}{H13.1.8}{Montar as equipes ao criar a atividade}{\pronto}
+\hu{Professor}{dizer, já na criação da atividade, como a turma vai se sentar}{que
+a aula fique pronta de uma vez}
+\aceite
+\begin{itemize}
+  \item O passo \enquote{Equipes} da criação pergunta \enquote{Como montar as
+    equipes?} e, para sortear ou separar, \enquote{Quantos computadores vocês
+    vão usar?}.
+  \item \enquote{Sortear as equipes} já deixa as equipes salvas; \enquote{Eu
+    separo} leva para a página da atividade com as equipes vazias abertas para
+    eu pôr cada estudante; \enquote{Um aluno por computador} salva sem equipes.
+  \item Quem faltou eu marco no dia da aula, na página da atividade, e refaço o
+    sorteio se precisar.
+  \item Cada atividade tem as suas equipes: o aluno vê a da atividade que está
+    em andamento na turma.
 \end{itemize}
 \end{historia}
 
