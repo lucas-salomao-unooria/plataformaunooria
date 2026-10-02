@@ -146,10 +146,11 @@ describe("o fim da criação", () => {
     expect(fim.avisos).toEqual([]);
     expect(chamadas.map((c) => `${c.metodo} ${c.url}`)).toEqual([
       "POST /api/plataforma/a-selecao/turmas/t/coberturas/c/em-andamento",
+      "GET /api/plataforma/equipes/turma/t/missao/exp07ef1b/atividade/c",
       "POST /api/plataforma/equipes/turma/t/missao/exp07ef1b/atividade/c/sugestao",
       "PUT /api/plataforma/equipes/turma/t/missao/exp07ef1b/atividade/c",
     ]);
-    expect(chamadas[2]?.corpo).toEqual({
+    expect(chamadas[3]?.corpo).toEqual({
       versao: 0,
       modo: "sorteio",
       computadores: 2,
@@ -162,6 +163,7 @@ describe("o fim da criação", () => {
     const individual = buscaFalsa({});
     await concluirCriacao({ ...alvo, equipes: { modo: "individual" }, porNoAr: false }, individual.busca);
     expect(individual.chamadas).toEqual([
+      { url: "/api/plataforma/equipes/turma/t/missao/exp07ef1b/atividade/c", metodo: "GET", corpo: null },
       {
         url: "/api/plataforma/equipes/turma/t/missao/exp07ef1b/atividade/c",
         metodo: "PUT",
@@ -172,6 +174,18 @@ describe("o fim da criação", () => {
     const manual = buscaFalsa({});
     await concluirCriacao({ ...alvo, equipes: { modo: "manual", computadores: 3 }, porNoAr: false }, manual.busca);
     expect(manual.chamadas).toEqual([]);
+  });
+
+  test("atividade que JÁ tinha equipes (o 'Criar atividade' idempotente): grava com a versão atual, sem 409", async () => {
+    const { busca, chamadas } = buscaFalsa({
+      "GET /api/plataforma/equipes/turma/t/missao/exp07ef1b/atividade/c": {
+        status: 200,
+        corpo: { permitida: true, montagem: { versao: 3 }, equipes: [] },
+      },
+    });
+    const fim = await concluirCriacao({ ...alvo, equipes: { modo: "individual" }, porNoAr: false }, busca);
+    expect(fim.avisos).toEqual([]);
+    expect(chamadas.find((c) => c.metodo === "PUT")?.corpo).toMatchObject({ versao: 3, modo: "individual" });
   });
 
   test("uma falha no meio NÃO desfaz nada: a atividade existe, e o aviso diz o que faltou", async () => {
