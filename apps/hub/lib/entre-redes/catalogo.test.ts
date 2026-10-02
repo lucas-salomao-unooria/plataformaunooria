@@ -21,6 +21,8 @@ describe("grade do Entre Redes", () => {
     expect(buscarMissao("1-ano", "unidade-1")?.missao.expId).toBe("exp01ef1b");
     expect(buscarMissao("4-ano", "unidade-1")?.missao.expId).toBe("exp04ef1b");
     expect(buscarMissao("5-ano", "unidade-1")?.missao.expId).toBe("exp05ef1b");
+    expect(buscarMissao("6-ano", "unidade-1")?.missao.expId).toBe("exp06ef1b");
+    expect(buscarMissao("6-ano", "unidade-2")?.missao.expId).toBe("exp06ef2b");
     expect(buscarMissao("8-ano", "unidade-1")?.missao.expId).toBe("exp08ef1b");
   });
 
@@ -32,5 +34,19 @@ describe("grade do Entre Redes", () => {
     expect(quartoAno?.status).toBe("disponivel");
     expect(quartoAno?.titulo).toBe("Jornal da Escola: A Edição de Bento");
     expect(ANOS.flatMap((ano) => ano.missoes).some((m) => m.expId === "backup-exp04ef1b")).toBe(false);
+  });
+
+  /* A ficha do Júri cita as habilidades do briefing (decisão de 2026-10-02): a
+     EF06CO10 que a esteira pôs no lugar da EF06CO07 saiu — o texto oficial dela
+     é consumo de tecnologia e obsolescência, não algoritmo. E a invisibilidade
+     é o número REAL de cada sessão: nenhum percentual cravado na copy. */
+  test("o Júri Estadual cita EF06CO01, EF06CO03 e EF06CO07, e nenhum número de invisibilidade", () => {
+    const juri = buscarMissao("6-ano", "unidade-1")?.missao;
+    expect(juri?.titulo).toBe("O Júri Estadual de Projetos");
+    const competencia = juri?.ficha?.competencia ?? "";
+    for (const codigo of ["EF06CO01", "EF06CO03", "EF06CO07"]) expect(competencia).toContain(codigo);
+    const texto = JSON.stringify(juri);
+    expect(texto).not.toContain("EF06CO10");
+    expect(texto).not.toMatch(/\d+\s?%/);
   });
 });
