@@ -1,7 +1,7 @@
 # Documentação técnica — LaTeX
 
 Fonte da **documentação técnica consolidada** da Plataforma Unooria
-(`PU-DOC-001`). Compila em `main.pdf` (~730 páginas).
+(`PU-DOC-001`). Compila em `main.pdf` (~860 páginas).
 
 Este documento é **normativo** para o projeto: cobre contexto de negócio,
 requisitos rastreáveis, casos de uso, arquitetura de software nos quatro níveis

@@ -4,11 +4,13 @@
 \chapter{Dicionário de dados}
 \label{ap:dicionario}
 
-Catálogo das 78 tabelas de \cd{public}, mais o \emph{schema} \cd{particoes}.
+Catálogo das 83 tabelas de \cd{public}, mais o \emph{schema} \cd{particoes}.
 O número é o de \cd{model} em \arq{apps/api/prisma/schema.prisma} em
-2026-09-30 (todos com \cd{@@map}; a \cd{\_prisma\_migrations} é do Prisma e
+2026-10-02 (todos com \cd{@@map}; a \cd{\_prisma\_migrations} é do Prisma e
 fica fora), e o índice abaixo tem uma linha por \cd{model}: tabela nova sem
-linha aqui é o sinal de que este apêndice ficou para trás.
+linha aqui é o sinal de que este apêndice ficou para trás. Hoje faltam as
+duas da Ajuda com avatar (\cd{ajuda\_sessoes} e \cd{ajuda\_limites}), que
+esperam a seção da \adrr{ADR-132}.
 Os diagramas entidade-relacionamento estão no Capítulo~\ref{cap:dados}.
 
 \begin{tabularx}{\linewidth}{@{}L{22mm}X@{}}
@@ -88,29 +90,32 @@ Os diagramas entidade-relacionamento estão no Capítulo~\ref{cap:dados}.
 \cd{exp06ef2b\_auditorias} & Tenant & Cada abertura de \enquote{Dados da mensagem} --- a evidência que a missão mede\\
 \zebra \cd{exp06ef2b\_reflexoes} & Tenant & O \enquote{Meu percurso} (texto livre do estudante)\\
 \cd{exp06ef2b\_gates\_turma} & Tenant & A etapa da aula, por turma\\
-\zebra \cd{exp07ef1b\_coberturas} & Tenant & A ATIVIDADE da A Seleção: o tema homologado, os 12 posts com o gabarito, as URLs da mídia e as três falas do podcast\\
-\cd{exp07ef1b\_gates\_turma} & Tenant & A etapa da aula, a cobertura e a rodada, por turma\\
-\zebra \cd{exp07ef1b\_sessoes} & Tenant & Uma sessão por estudante, cobertura e rodada: a tríade, a legenda, a matriz e o par\\
-\cd{exp07ef1b\_reflexoes} & Tenant & A reflexão (texto livre do estudante, só do professor)\\
-\zebra \cd{exp08ef4b\_conteudo\_turma} & Tenant & O pacote curado da turma, homologado pela professora\\
-\cd{exp08ef4b\_sessoes} & Tenant & Estado da missão de O Manifesto da IA\\
-\zebra \cd{exp08ef4b\_auditorias} & Tenant & Cada questionamento disparado contra a máquina\\
-\cd{exp08ef4b\_respostas\_percurso} & Tenant & O \enquote{Meu percurso} (texto livre do estudante)\\
-\zebra \cd{exp08ef4b\_gates\_turma} & Tenant & O \emph{checkpoint} do debate, por turma\\
-\cd{exp05ef1b\_pacotes} & Tenant & O pacote da turma --- as 8 mensagens com o gabarito; é a atividade da evidência\\
-\zebra \cd{exp05ef1b\_gates\_turma} & Tenant & O relógio da turma: triagem, revelação, síntese, reflexão\\
-\cd{exp05ef1b\_sessoes} & Tenant & A sessão por rodada, com os três \emph{latches} (Mural, voto, regra)\\
-\zebra \cd{exp05ef1b\_reflexoes} & Tenant & A regra Se/Então (texto livre do estudante)\\
-\cd{app\_70\_sessoes} & Tenant & Uma partida da Vila do Lume\\
-\zebra \cd{app\_70\_perfis} & Tenant & Retrato Schwartz recalculado\\
-\cd{app\_70\_bolhas} & Tenant & Bolha por estudante\\
-\zebra \cd{app\_90\_planos} & Tenant+posse & Metadados do plano de aula\\
-\cd{app\_90\_referencias} & \textbf{Catálogo} & Referências curriculares\\
-\zebra \cd{app\_92\_configuracoes} & Tenant+posse & A regência: componente, ano, carga e grade\\
-\cd{app\_92\_planos\_anuais} & Tenant+posse & Plano anual e a distribuição por período\\
-\zebra \cd{app\_92\_planos\_de\_periodo} & Tenant+posse & As aulas da semana ou quinzena\\
-\cd{app\_91\_ciclos} & Tenant+posse & Ciclo do DASS-21 (\textbf{sensível})\\
-\zebra \cd{app\_91\_checkins} & Tenant+posse & \emph{Check-in} diário
+\zebra \cd{exp06ef1b\_pacotes} & Tenant & A ATIVIDADE do Júri Estadual de Projetos: as 4 áreas e os 16 projetos que a IA gerou e o professor aprovou, e as URLs das imagens\\
+\cd{exp06ef1b\_gates\_turma} & Tenant & A etapa da aula (a Galeria Oculta), a atividade em andamento e a rodada, por turma\\
+\zebra \cd{exp06ef1b\_sessoes} & Tenant & Uma sessão por estudante, pacote e rodada: o feed servido, as curtidas, os dois votos, a auditoria da galeria, os pacotes, a cadeia e os cartões --- sem texto livre\\
+\cd{exp07ef1b\_coberturas} & Tenant & A ATIVIDADE da A Seleção: o tema homologado, os 12 posts com o gabarito, as URLs da mídia e as três falas do podcast\\
+\zebra \cd{exp07ef1b\_gates\_turma} & Tenant & A etapa da aula, a cobertura e a rodada, por turma\\
+\cd{exp07ef1b\_sessoes} & Tenant & Uma sessão por estudante, cobertura e rodada: a tríade, a legenda, a matriz e o par\\
+\zebra \cd{exp07ef1b\_reflexoes} & Tenant & A reflexão (texto livre do estudante, só do professor)\\
+\cd{exp08ef4b\_conteudo\_turma} & Tenant & O pacote curado da turma, homologado pela professora\\
+\zebra \cd{exp08ef4b\_sessoes} & Tenant & Estado da missão de O Manifesto da IA\\
+\cd{exp08ef4b\_auditorias} & Tenant & Cada questionamento disparado contra a máquina\\
+\zebra \cd{exp08ef4b\_respostas\_percurso} & Tenant & O \enquote{Meu percurso} (texto livre do estudante)\\
+\cd{exp08ef4b\_gates\_turma} & Tenant & O \emph{checkpoint} do debate, por turma\\
+\zebra \cd{exp05ef1b\_pacotes} & Tenant & O pacote da turma --- as 8 mensagens com o gabarito; é a atividade da evidência\\
+\cd{exp05ef1b\_gates\_turma} & Tenant & O relógio da turma: triagem, revelação, síntese, reflexão\\
+\zebra \cd{exp05ef1b\_sessoes} & Tenant & A sessão por rodada, com os três \emph{latches} (Mural, voto, regra)\\
+\cd{exp05ef1b\_reflexoes} & Tenant & A regra Se/Então (texto livre do estudante)\\
+\zebra \cd{app\_70\_sessoes} & Tenant & Uma partida da Vila do Lume\\
+\cd{app\_70\_perfis} & Tenant & Retrato Schwartz recalculado\\
+\zebra \cd{app\_70\_bolhas} & Tenant & Bolha por estudante\\
+\cd{app\_90\_planos} & Tenant+posse & Metadados do plano de aula\\
+\zebra \cd{app\_90\_referencias} & \textbf{Catálogo} & Referências curriculares\\
+\cd{app\_92\_configuracoes} & Tenant+posse & A regência: componente, ano, carga e grade\\
+\zebra \cd{app\_92\_planos\_anuais} & Tenant+posse & Plano anual e a distribuição por período\\
+\cd{app\_92\_planos\_de\_periodo} & Tenant+posse & As aulas da semana ou quinzena\\
+\zebra \cd{app\_91\_ciclos} & Tenant+posse & Ciclo do DASS-21 (\textbf{sensível})\\
+\cd{app\_91\_checkins} & Tenant+posse & \emph{Check-in} diário
   (\textbf{sensível})\\
 \bottomrule
 \end{tabularx}
@@ -1271,6 +1276,57 @@ O gabarito, as pistas e a consequência \textbf{não estão aqui}: moram no
 O estudante recebe cada parte num portão (Seção~\ref{sec:exp04ef1b}), e as chaves
 \cd{gabarito}, \cd{consequencia} e \cd{pilarEmFalta} estão na redação do
 \emph{log}.
+\end{regra}
+
+\subsection{\cd{exp06ef1b\_sessoes}}
+
+O Júri Estadual de Projetos (\adrr{ADR-137}). A descrição das três tabelas e
+das decisões de esquema está na Seção~\ref{sec:tabelas-exp06ef1b}; aqui ficam
+as colunas da sessão, que é onde o feed e os \emph{latches} moram.
+
+\begin{tabularx}{\linewidth}{@{}L{34mm}L{22mm}X@{}}
+\toprule
+\headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
+\midrule
+\pk{id} & \cd{UUID} & \cd{UNIQUE} em (pacote, rodada, estudante):
+  \cd{exp06ef1b\_sessao\_unica\_por\_rodada}.\\
+\zebra \cd{passo} & \cd{TEXT} & O passo GRAVADO, no vocabulário de
+  \arq{regras/passos.ts}. Nunca \cd{galeria}: a etapa da turma o impõe.\\
+\cd{semente} & \cd{TEXT} & De 8 a 64 caracteres, aleatória, do servidor. Dela
+  saem a abertura, o embaralhamento e os ids opacos --- o F5 rende o mesmo
+  feed.\\
+\zebra \cd{posts\_\B{}servidos}, \cd{curtidos}, \cd{permanencias} & \cd{JSONB} &
+  \emph{Arrays} de ids de post (\cd{proj-b2:bastidor}); os servidos, até dez. Os
+  pesos por área são derivados delas, nunca gravados.\\
+\cd{voto\_\B{}projeto}, \cd{conviccao}, \cd{votado\_em} & \cd{TEXT?},
+  \cd{TIMESTAMPTZ?} & O \emph{latch} 1, juntos. A convicção é
+  \cd{examinei\_bem} $|$ \cd{vi\_tudo} --- as duas afirmam certeza.\\
+\zebra \cd{auditoria} & \cd{JSONB} & \cd{\{abertos: string[], buscas: [\{tipo,
+  area\}]\}}: o que a criança abriu e buscou na galeria, a base da EF06CO01. O
+  texto digitado nunca chega aqui.\\
+\cd{revisao\_acao}, \cd{voto\_\B{}revisado}, \cd{revisado\_em} & \cd{TEXT?},
+  \cd{TIMESTAMPTZ?} & O \emph{latch} 2: \cd{manter} (o voto final repete o
+  lacrado) $|$ \cd{trocar} (outro dos dezesseis).\\
+\zebra \cd{pacotes\_\B{}tentativas}, \cd{pacotes\_\B{}remontados\_em} & \cd{INTEGER},
+  \cd{TIMESTAMPTZ?} & A base da EF06CO07. Remontada exige ao menos uma
+  tentativa.\\
+\cd{cadeia\_\B{}tentativas}, \cd{cadeia\_\B{}montada\_em} & \cd{INTEGER},
+  \cd{TIMESTAMPTZ?} & A base da EF06CO03, com a mesma régua.\\
+\zebra \cd{mecanismo}, \cd{atitude}, \cd{cartoes\_em} & \cd{TEXT?},
+  \cd{TIMESTAMPTZ?} & O caso Mariana: \cd{m1}--\cd{m3} e \cd{t1}--\cd{t2}. Não é
+  evidência.\\
+\cd{concluida\_em} & \cd{TIMESTAMPTZ?} & EQUIVALENTE ao passo \cd{fim}.\\
+\zebra \cd{versao\_instrumento} & \cd{TEXT} & \cd{1.0.0}.\\
+\bottomrule
+\end{tabularx}
+
+\begin{regra}
+A ordem certa dos pacotes e da cadeia e o cartão certo de Mariana \textbf{não
+estão no banco}: são o esqueleto da missão, em \arq{conteudo.ts}, e só
+\rota{GET /juri-estadual/professor/material} os devolve. A mostra --- os
+dezesseis projetos --- mora no \cd{JSONB} de \cd{exp06ef1b\_pacotes}, e o
+estudante só recebe os posts que o feed serviu até a galeria abrir
+(Seção~\ref{sec:exp06ef1b}). A chave \cd{certo} está na redação do \emph{log}.
 \end{regra}
 
 \section{Tabelas da exp02em1b}
