@@ -260,6 +260,11 @@ model Turma {
   jornalPacotes     Exp04ef1bPacote[]
   jornalGates       Exp04ef1bGateTurma[]
   jornalSessoes     Exp04ef1bSessao[]
+  /// O Júri Estadual de Projetos (exp06ef1b): o pacote homologado é POR TURMA
+  /// (e é a atividade da evidência), o relógio é da turma, e a sessão carrega a turma.
+  juriPacotes       Exp06ef1bPacote[]
+  juriGates         Exp06ef1bGateTurma[]
+  juriSessoes       Exp06ef1bSessao[]
 
   @@unique([escolaId, periodoLetivoId, nome])
   @@index([escolaId])
@@ -451,6 +456,9 @@ model User {
   /// Uma sessão por rodada de cada pacote do Jornal da Escola (exp04ef1b):
   /// zerar abre outra, e a anterior fica.
   jornalSessoes              Exp04ef1bSessao[]           @relation("Exp04ef1bEstudante")
+  /// Uma sessão por rodada de cada pacote do Júri Estadual (exp06ef1b):
+  /// zerar abre outra, e a anterior fica.
+  juriSessoes                Exp06ef1bSessao[]           @relation("Exp06ef1bEstudante")
   /// Lista porque a run da exp01ef1b é por TENTATIVA (o reset arquiva e abre
   /// outra), então não há unicidade por estudante.
   fotoContaRuns              FotoContaRun[]              @relation("FotoContaEstudante")
@@ -3176,4 +3184,180 @@ model AjudaLimite {
   atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
 
   @@map("ajuda_limites")
+}
+
+// ════════════════════════════════════════ exp06ef1b — o júri estadual de projetos
+//
+// "O Júri Estadual de Projetos" — 6º ano EF, unidade 1, no Unoovista (clone de
+// rede social). O estudante é jurado de uma mostra científica estadual: rola um
+// feed de dez posts que as curtidas dele AFUNILAM em silêncio (o motor roda no
+// servidor, `juri-estadual/regras/afunilamento.ts`), vota numa cédula lacrada
+// (LATCH 1) e espera o professor liberar a Galeria Oculta, onde vê o que nunca
+// chegou ao feed dele, com a taxa REAL de invisibilidade, e mantém ou troca o
+// voto (LATCH 2). Depois remonta a curtida em pacotes (EF06CO07), monta a
+// cadeia Interações → Dados → Algoritmo → Bolha (EF06CO03), resolve o caso
+// Mariana e responde as enquetes (P1–P3, pela evidência).
+//
+// TRÊS tabelas. A ATIVIDADE (no sentido da evidência pedagógica, ADR-112) é o
+// PACOTE homologado — os dezesseis projetos gerados por IA no preparo, sem
+// acervo padrão (decisão de 2026-10-02) —, e a RODADA é o "Zerar turma".
+//
+// SEM COLUNA DE NOTA e sem texto livre de menor: o texto da busca da galeria
+// nunca é gravado (só o tipo e a área que casou), e as respostas de P1–P3
+// vivem na evidência (E14).
+//
+// CHECKs, RLS e o índice único parcial vivem na migration.
+
+/// Um PACOTE — a mostra da aula: as quatro áreas e os dezesseis projetos,
+/// gerados por IA e homologados pelo professor. É a atividade.
+///
+/// Um ATIVO (= EM ANDAMENTO) por turma: índice único parcial na migration.
+/// Nasce PRONTO (`ativo = false`, ADR-130): quem põe no ar é o professor.
+model Exp06ef1bPacote {
+  id         String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  escolaId   String  @map("escola_id")
+  turmaId    String  @map("turma_id") @db.Uuid
+  /// ia (CHECK). A missão não tem acervo padrão.
+  origem     String
+  /// O slug de `juri-estadual/vocabulario.ts#DISCIPLINAS` (CHECK).
+  disciplina String
+  /// O tema da mostra como o estudante o lê (o `conteudo.tema`).
+  tema       String
+  /// Os assuntos que o professor deu ao gerador (de 10 a 600 caracteres).
+  assuntos   String
+  /// O contexto opcional da turma (até 120 caracteres).
+  contexto   String?
+
+  /// As quatro categorias e os dezesseis projetos. `Json` porque o pacote é
+  /// lido e escrito sempre inteiro; o schema real é o Zod de
+  /// `juri-estadual/contrato-de-rotas.ts#ConteudoDoPacoteSchema`, e o CHECK
+  /// cobra a forma (4 categorias, 16 projetos).
+  conteudo Json
+
+  /// As URLs das imagens geradas, por id de projeto (`{ "proj-a1": url }`).
+  midia Json @default("{}")
+
+  ativo Boolean @default(false)
+
+  /// Quem homologou. Carimbo sem FK, como `exp07ef1b_coberturas.aprovada_por`:
+  /// a saída de um professor da rede não pode travar a atividade da turma.
+  criadoPor String @map("criado_por") @db.Uuid
+
+  criadoEm     DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  /// As gerações de rascunho feitas com este pacote em sala (o rascunho não
+  /// persiste, e a turma é o que se mede) e o que custaram.
+  iaGeracoes Int @default(0) @map("ia_geracoes")
+  iaTokens   Int @default(0) @map("ia_tokens")
+
+  turma   Turma                @relation(fields: [turmaId], references: [id], onDelete: Cascade)
+  gates   Exp06ef1bGateTurma[]
+  sessoes Exp06ef1bSessao[]
+
+  @@index([escolaId, turmaId], map: "exp06ef1b_pacotes_escola_turma_idx")
+  @@map("exp06ef1b_pacotes")
+}
+
+/// O RELÓGIO DA TURMA — o botão único do painel ("Liberar a Galeria Oculta"),
+/// lido por polling de 3 s.
+///
+/// Diz QUAL atividade e QUAL rodada estão em andamento: a sessão do estudante é
+/// a de (pacote, rodada) deste gate, e o resolvedor da evidência só aceita
+/// resposta das enquetes dessa sessão.
+model Exp06ef1bGateTurma {
+  turmaId  String @id @map("turma_id") @db.Uuid
+  escolaId String @map("escola_id")
+  pacoteId String @map("pacote_id") @db.Uuid
+  /// ≥ 1 (CHECK). "Zerar turma" soma um; pacote novo abre a seguinte à última.
+  rodada   Int    @default(1)
+  /// exploracao | galeria (CHECK; a ordem é `regras/passos.ts`).
+  etapa    String @default("exploracao")
+
+  /// Quando a galeria abriu NESTA rodada. Volta a nulo ao zerar (CHECK).
+  galeriaLiberadaEm DateTime? @map("galeria_liberada_em") @db.Timestamptz(6)
+
+  atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  turma  Turma           @relation(fields: [turmaId], references: [id], onDelete: Cascade)
+  pacote Exp06ef1bPacote @relation(fields: [pacoteId], references: [id], onDelete: Cascade)
+
+  @@index([escolaId], map: "exp06ef1b_gates_turma_escola_idx")
+  @@index([pacoteId], map: "exp06ef1b_gates_turma_pacote_idx")
+  @@map("exp06ef1b_gates_turma")
+}
+
+/// A sessão de UM estudante em UMA rodada de UM pacote.
+///
+/// Zerar abre outra rodada e, com ela, outra linha: a anterior fica, imutável,
+/// e é ela que o painel de habilidades lê como a rodada passada.
+model Exp06ef1bSessao {
+  id          String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  escolaId    String @map("escola_id")
+  turmaId     String @map("turma_id") @db.Uuid
+  pacoteId    String @map("pacote_id") @db.Uuid
+  rodada      Int
+  estudanteId String @map("estudante_id") @db.Uuid
+
+  /// credencial | feed | lacrada | pacotes | cadeia | mariana | enquetes | fim
+  /// (CHECK; a ordem é `regras/passos.ts`). `galeria` NUNCA é gravado: a etapa
+  /// da turma o impõe a quem está em `lacrada`.
+  passo   String @default("credencial")
+  /// O texto estável que sorteia esta sessão: a abertura e o feed, os ids
+  /// opacos e a ordem de chegada dos pacotes e dos blocos. Nasce no servidor,
+  /// aleatório, e não muda — o F5 rende o mesmo feed.
+  semente String
+
+  /// Os ids de post que o feed serviu, na ordem da tela (até dez).
+  postsServidos Json @default("[]") @map("posts_servidos")
+  /// Os posts curtidos AGORA (descurtir tira daqui).
+  curtidos      Json @default("[]")
+  /// Os posts em que o estudante ficou mais de 5 s (uma vez por post).
+  permanencias  Json @default("[]")
+
+  /// O LATCH 1: o projeto da cédula, a convicção e o carimbo, juntos (CHECK).
+  votoProjeto String?   @map("voto_projeto")
+  /// examinei_bem | vi_tudo (CHECK).
+  conviccao   String?
+  votadoEm    DateTime? @map("votado_em") @db.Timestamptz(6)
+
+  /// O que a criança fez na Galeria Oculta: `{ abertos: [ids], buscas: [{ tipo,
+  /// area }] }`. O TEXTO da busca nunca entra (texto livre de menor).
+  auditoria Json @default("{\"abertos\": [], \"buscas\": []}")
+
+  /// O LATCH 2: manter | trocar (CHECK), o voto FINAL (o mesmo do inicial
+  /// quando manteve) e o carimbo, juntos.
+  revisaoAcao  String?   @map("revisao_acao")
+  votoRevisado String?   @map("voto_revisado")
+  revisadoEm   DateTime? @map("revisado_em") @db.Timestamptz(6)
+
+  /// Cada envio da remontagem é uma tentativa (EF06CO07).
+  pacotesTentativas   Int       @default(0) @map("pacotes_tentativas")
+  pacotesRemontadosEm DateTime? @map("pacotes_remontados_em") @db.Timestamptz(6)
+  /// Cada envio da cadeia é uma tentativa (EF06CO03).
+  cadeiaTentativas    Int       @default(0) @map("cadeia_tentativas")
+  cadeiaMontadaEm     DateTime? @map("cadeia_montada_em") @db.Timestamptz(6)
+
+  /// O caso Mariana: a escolha de um cartão de mecanismo e um de atitude. Não
+  /// vira nota: a evidência da missão está nas três habilidades.
+  mecanismo String?
+  atitude   String?
+  cartoesEm DateTime? @map("cartoes_em") @db.Timestamptz(6)
+
+  concluidaEm DateTime? @map("concluida_em") @db.Timestamptz(6)
+
+  /// A versão do instrumento, para reprocessamento histórico.
+  versaoInstrumento String @default("1.0.0") @map("versao_instrumento")
+
+  criadoEm     DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  turma     Turma           @relation(fields: [turmaId], references: [id], onDelete: Cascade)
+  estudante User            @relation("Exp06ef1bEstudante", fields: [estudanteId], references: [id], onDelete: Cascade)
+  pacote    Exp06ef1bPacote @relation(fields: [pacoteId], references: [id], onDelete: Cascade)
+
+  @@unique([pacoteId, rodada, estudanteId], map: "exp06ef1b_sessao_unica_por_rodada")
+  @@index([escolaId, turmaId, pacoteId, rodada], map: "exp06ef1b_sessoes_rodada_idx")
+  @@index([escolaId, estudanteId], map: "exp06ef1b_sessoes_estudante_idx")
+  @@map("exp06ef1b_sessoes")
 }

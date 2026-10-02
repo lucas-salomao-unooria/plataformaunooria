@@ -47,10 +47,11 @@ com `escola_id` + RLS forçada:
 
 ## As regras
 
-- **Só cinco missões aceitam equipe**: `EXPERIENCIAS_COM_EQUIPE` em `regras.ts`
-  (e as quatro com atividade são `EXPERIENCIAS_COM_ATIVIDADE`, o unooGPT fora)
-  (exp08ef1b, exp02em1b, exp05ef1b, exp07ef1b e exp04ef1b — Quem Mandou Isso?
-  v2.2, A Seleção e o Jornal da Escola, as três nascidas com equipe). O
+- **Só seis missões aceitam equipe**: `EXPERIENCIAS_COM_EQUIPE` em `regras.ts`
+  (e as cinco com atividade são `EXPERIENCIAS_COM_ATIVIDADE`, o unooGPT fora)
+  (exp08ef1b, exp02em1b, exp05ef1b, exp07ef1b, exp04ef1b e exp06ef1b — Quem
+  Mandou Isso? v2.2, A Seleção, o Jornal da Escola e o Júri Estadual, as quatro
+  nascidas com equipe). O
   exp04ef1b saiu com o UnooTube ARQUIVADO (ADR-116) e VOLTOU com o Jornal, que
   herdou o código: a lista é por código, e o `backup-exp04ef1b` não entra.
   Lista no CÓDIGO, não coluna no catálogo:

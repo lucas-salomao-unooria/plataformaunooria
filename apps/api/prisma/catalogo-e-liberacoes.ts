@@ -181,7 +181,9 @@ export const LIBERACOES_DE_DEMO: Array<{ turma: string; expIds: string[] }> = [
   // É a turma da suíte `estudante/12-jornal-da-escola`.
   { turma: "4A", expIds: ["exp04ef1b"] },
   { turma: "5A", expIds: ["exp05ef1b"] },
-  { turma: "6A", expIds: ["exp06ef2b"] },
+  // O 6º ano abre as duas missões da série: a unidade 2 (exp06ef2b) e o Júri
+  // Estadual de Projetos (exp06ef1b, unidade 1).
+  { turma: "6A", expIds: ["exp06ef2b", "exp06ef1b"] },
   { turma: "7A", expIds: ["exp07ef1b"] },
   { turma: "2EM-A", expIds: ["exp02em1b"] },
 ];
