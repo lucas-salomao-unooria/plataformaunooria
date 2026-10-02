@@ -9,6 +9,7 @@ import type { TurmaDoAssistente } from "@/components/atividades/assistente-de-at
 
 import { CriarASelecao } from "./criar-a-selecao";
 import { CriarJornalEscola } from "./criar-jornal-escola";
+import { CriarJuriEstadual } from "./criar-juri-estadual";
 import { CriarQuemMandou } from "./criar-quem-mandou";
 
 /**
@@ -70,6 +71,8 @@ export default async function NovaAtividadePage({
         <CriarASelecao {...props} />
       ) : expId === "exp04ef1b" ? (
         <CriarJornalEscola {...props} />
+      ) : expId === "exp06ef1b" ? (
+        <CriarJuriEstadual {...props} />
       ) : (
         <CriarQuemMandou {...props} />
       )}
