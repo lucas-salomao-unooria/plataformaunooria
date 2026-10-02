@@ -1,5 +1,5 @@
 import { AlertBox } from "@edu/ui/ds";
-import { BottomSheet, ButtonInsta, SnackbarInsta } from "@edu/ui/ds-insta";
+import { BottomSheetUnv, ButtonUnv, SnackbarUnv } from "@edu/ui/ds-unoovista";
 import { ESCOLA, GLOBAL } from "../lib/textos";
 import type { AvisoDeConexao } from "./conexao";
 
@@ -48,13 +48,13 @@ export function Avisos({
 
   return (
     <>
-      <SnackbarInsta open={aviso === "rede"} message={GLOBAL.offline} />
+      <SnackbarUnv open={aviso === "rede"} message={GLOBAL.offline} />
       {aviso === "sessao" ? (
-        <BottomSheet open modal title={GLOBAL.sessaoExpirada} onOpenChange={() => undefined}>
-          <ButtonInsta variant="primary" size="lg" block onClick={aoRevalidar}>
+        <BottomSheetUnv open modal title={GLOBAL.sessaoExpirada} onOpenChange={() => undefined}>
+          <ButtonUnv variant="primary" size="lg" block onClick={aoRevalidar}>
             {GLOBAL.revalidar}
-          </ButtonInsta>
-        </BottomSheet>
+          </ButtonUnv>
+        </BottomSheetUnv>
       ) : null}
     </>
   );

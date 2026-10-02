@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { ButtonInsta, DirectThread, MessageBubble } from "@edu/ui/ds-insta";
+import { ButtonUnv, DirectThread, MessageBubble } from "@edu/ui/ds-unoovista";
 import { CONTAS } from "../../lib/textos";
 
 /**
@@ -56,8 +56,8 @@ export function AcaoDaDm({
   ocupado?: boolean;
 }) {
   return (
-    <ButtonInsta variant="primary" size="lg" block disabled={ocupado} aria-busy={ocupado || undefined} onClick={aoTocar}>
+    <ButtonUnv variant="primary" size="lg" block disabled={ocupado} aria-busy={ocupado || undefined} onClick={aoTocar}>
       {children}
-    </ButtonInsta>
+    </ButtonUnv>
   );
 }

@@ -20,7 +20,7 @@ import type { Grafico } from "./tipos";
  * pedem `src` (o `PostCard.Media` do gráfico, o `MediaGrid` da aba Salvos e o
  * `StoryViewer` do Mural). Dentro de um `<img>` o SVG não enxerga as variáveis
  * CSS da página — por isso a cor chega por PARÂMETRO (`Paleta`), lida dos
- * tokens `--insta-*` em tempo de execução (`componentes/midia.tsx`), e nunca
+ * tokens `--unv-*` em tempo de execução (`componentes/midia.tsx`), e nunca
  * escrita aqui.
  *
  * Todo texto que entra no SVG passa por `escaparXml`: o rótulo da série e a

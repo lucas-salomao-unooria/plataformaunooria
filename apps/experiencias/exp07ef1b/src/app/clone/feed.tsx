@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { BadgeInsta, FloatingButton, GestureHint, InlineHint, PostCard, TopBar } from "@edu/ui/ds-insta";
+import { BadgeUnv, FloatingButton, GestureHint, InlineHint, PostCard, TopBar } from "@edu/ui/ds-unoovista";
 import { dicaDoFeed, nomeDaConta, SALVOS_PARA_A_PILULA, SEGUNDOS_ATE_A_DEMONSTRACAO, SEGUNDOS_ATE_A_DICA } from "../../lib/regras";
 import { telemetria } from "../../lib/telemetria";
 import { CONTAS, E2 } from "../../lib/textos";
@@ -110,9 +110,9 @@ export function Feed({
         title={CONTAS.estudante}
         withStatusBarInset={false}
         trailing={
-          <BadgeInsta variant="neutral" aria-live="polite">
+          <BadgeUnv variant="neutral" aria-live="polite">
             {E2.contadorSalvos(salvos.length)}
-          </BadgeInsta>
+          </BadgeUnv>
         }
       />
       {dica && (
@@ -148,7 +148,7 @@ export function Feed({
       <FloatingButton
         icon="bookmarkFilled"
         placement="bottom"
-        offset="calc(var(--insta-tabbar-content-height) + var(--insta-spacing-l))"
+        offset="calc(var(--unv-tabbar-height) + var(--unv-spacing-xs))"
         hidden={salvos.length < SALVOS_PARA_A_PILULA}
         disabled={ocupado}
         onClick={aoIrParaSalvos}

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ButtonInsta, PostCard, TopBar } from "@edu/ui/ds-insta";
+import { ButtonUnv, PostCard, TopBar } from "@edu/ui/ds-unoovista";
 import { SEGUNDOS_POR_CARD, TOTAL_DE_CARDS } from "../../lib/regras";
 import { telemetria } from "../../lib/telemetria";
 import { CONTAS } from "../../lib/textos";
@@ -111,9 +111,9 @@ export default function Explicar({
         </PostCard>
         <div className="explicar__avanco">
           {travado && <p className="explicar__trava">{E5.travaTempo(restante)}</p>}
-          <ButtonInsta variant="primary" size="lg" block disabled={travado} onClick={proximo}>
+          <ButtonUnv variant="primary" size="lg" block disabled={travado} onClick={proximo}>
             {E5.proximo}
-          </ButtonInsta>
+          </ButtonUnv>
         </div>
       </div>
     </div>
