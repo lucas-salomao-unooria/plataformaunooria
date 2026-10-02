@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-unc-theme="light">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -9,11 +9,13 @@
       cai primeiro — inclusive no DevTools, que a criança de 10 anos abre por
       curiosidade (ADR-60). Nada aqui pode denunciar o exercício.
 
-      `#101D25` é o fundo da seção `whatsappmobile`, que só publica tema escuro.
-      Escrever aqui a cor da plataforma daria uma faixa branca no topo do
-      aparelho antes de a folha do DS carregar.
+      O mensageiro é o Unoochat (ADR-134), no tema CLARO, escrito aqui na raiz
+      (`data-unc-theme`) e não só herdado do `:root` da folha: quem ler o HTML
+      sabe o tema sem abrir o pacote. `#FFFFFF` é o `--unc-color-surface-canvas`
+      claro, o fundo da barra do aparelho — outra cor daria uma faixa no topo
+      antes de a folha do DS carregar.
     -->
-    <meta name="theme-color" content="#101D25" />
+    <meta name="theme-color" content="#FFFFFF" />
     <title>Conversas</title>
   </head>
   <body>

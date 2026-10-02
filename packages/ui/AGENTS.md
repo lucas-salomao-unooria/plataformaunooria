@@ -6,7 +6,7 @@ cruzam). Aqui está a mecânica.
 
 `@edu/ui` **não é onde componente novo nasce** — ele nasce no repo
 `storybook-unooria` e chega por versão publicada. O que existe aqui são as
-seis pontes de re-export, uma por seção, e nada mais.
+sete pontes de re-export, uma por seção, e nada mais.
 
 ## Design System: consumo pela ponte
 
@@ -21,7 +21,8 @@ arrasta as seis seções e a tipografia da plataforma para dentro de um clone.
 | `@edu/ui/ds-insta` | `instanooria` | `/instanooria.css` (sem fonte: SF Pro é do sistema) | `--insta-*` | o clone da exp07ef1b (a exp08ef1b saiu dela na ADR-133); reexporta também as sete extensões da 0.2.5 (`DirectThread`, `MessageBubble`, `DmPoll`, `ConfirmDialog`, `BottomSheet`, `FloatingButton`, `StoryComposer`) e as três da 0.2.7 (`InlineHint`, `GestureHint` e o `Snackbar` do clone, como `SnackbarInsta` porque colide com o da plataforma) |
 | `@edu/ui/ds-unootube` | `unootube` | `/unootube.css` + `/fonts/unootube.css` | `--uni-*`, `[data-uni-theme]` | superfície disfarçada do UnooTube, ARQUIVADO (ADR-116): nenhuma missão viva a usa |
 | `@edu/ui/ds-chatgpt` | `chatgpt` | `/chatgpt.css` + `/fonts/chatgpt.css` | `--gpt-*`, `data-gpt-theme` | a exp02em1b INTEIRA: ela NÃO tem revelação no software, então nunca troca para a seção da plataforma |
-| `@edu/ui/ds-whatsapp` | `whatsappmobile` | `/whatsappmobile.css` + `/fonts/whatsappmobile.css` | `--wa-*`, `data-wa-theme` (**só `dark`**) | o mensageiro da exp06ef2b e o grupo da turma da exp05ef1b, inclusive os erros diegéticos |
+| `@edu/ui/ds-whatsapp` | `whatsappmobile` | `/whatsappmobile.css` + `/fonts/whatsappmobile.css` | `--wa-*`, `data-wa-theme` (**só `dark`**) | o mensageiro da exp06ef2b, inclusive os erros diegéticos, e o `MessageBubble` da gaveta do Jornal |
+| `@edu/ui/ds-unoochat` | `unoochat` | `/unoochat.css` + `/fonts/unoochat.css` (**obrigatória**: `Icon` é ligadura) | `--unc-*`, `data-unc-theme` (`light` \| `dark`, `:root` = claro) | o grupo da turma da exp05ef1b, em tema claro (ADR-134) — cópia estrutural do `whatsappmobile` com a identidade da Unooria |
 
 **As peças do agente de IA do professor (0.2.10) são da seção `unooria`, e não
 do `chatgpt` nem do `unooriaai`**: aqueles são CLONES, e o agente é a Unooria

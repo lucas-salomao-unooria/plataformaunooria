@@ -9,7 +9,10 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{131 decisões}, numeradas até ADR-131, \textbf{sem lacunas}. A 117
+São \textbf{133 decisões}, numeradas até ADR-134, com uma lacuna
+temporária: a 132 (a Ajuda com avatar) já está no código e ainda não tem
+seção aqui. A 133 e a 134 nasceram no mesmo dia, em frentes paralelas
+(Unoovista e Unoochat), e entraram juntas no merge. A 117
 (o Jornal da Escola) entrou depois da 121: o número tinha sido
 reservado entre as sessões antes de qualquer uma escrever. Quando
 eram cem, as cinco últimas nasceram no MESMO dia, em três frentes paralelas, e não
@@ -179,6 +182,7 @@ que a cercam.
 \adrr{ADR-130} & A atividade é do professor, e a equipe é da atividade & 2026-10-01 & Aceita\\
 \zebra \adrr{ADR-131} & As perguntas de evidência de Quem mandou isso? são as do PO, literais & 2026-10-01 & Aceita\\
 \adrr{ADR-133} & A missão do 8º ano troca o Instanooria pelo Unoovista & 2026-10-02 & Aceita\\
+\zebra \adrr{ADR-134} & Quem mandou isso? troca o clone do WhatsApp pelo Unoochat & 2026-10-02 & Aceita\\
 \bottomrule
 \end{tabularx}
 
@@ -11577,3 +11581,82 @@ sobre a mídia, avatar em \emph{squircle} para quem tem história).
 referência por bloco, botão só de glifo, seletor de avatar) --- cada
 compensação morre com a peça dela --- ou o peso da fonte de ícones aparecer na
 medição de carga da escola.
+
+% ---------------------------------------------------------------------------
+\section{ADR-134 --- Quem mandou isso? troca o clone do WhatsApp pelo Unoochat}
+\label{adr:exp05ef1b-unoochat}
+
+\textbf{Data.} 2026-10-02. \textbf{Status.} Aceita. O número 133 está
+reservado pela frente paralela do Unoovista (a missão do 8º ano), e este pula
+para o 134 para não colidir.
+
+\begin{especificacao}{Contexto}
+A exp05ef1b (Quem mandou isso?) imitava o mensageiro com a seção
+\cd{whatsappmobile} do Design System, derivada de um arquivo de telas do
+WhatsApp, e por isso presa ao tema escuro e à paleta verde do aplicativo real.
+Desde a 0.2.9 o pacote publica a seção \cd{unoochat}: uma cópia
+\textbf{estrutural} do \cd{whatsappmobile} --- os mesmos 39 componentes, as
+mesmas props e as mesmas medidas --- com a identidade da Unooria (roxo, Open
+Sans, Material Symbols) e tema claro e escuro, cada valor um degrau nomeado da
+paleta da plataforma. Ela existe para que a interface de mensageria não
+reproduza a identidade visual de um aplicativo de terceiros.
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{itemize}
+  \item \textbf{O mensageiro inteiro da missão usa a seção \cd{unoochat}}, por
+    uma ponte nova, \arq{packages/ui/src/ds-unoochat.ts}
+    (\cd{@edu/ui/ds-unoochat}). A troca é de importação, não de composição:
+    os 19 componentes usados (lista, cabeçalho, balões com
+    \cd{.Media}/\cd{.LinkPreview}/\cd{.Invite}, seta de encaminhar com
+    \cd{exhausted}, folha, faixa, enquete, etiquetas, aviso rápido, janela)
+    existem com o mesmo nome e as mesmas props.
+  \item \textbf{Tema claro}, escrito em \cd{data-unc-theme="light"} na raiz
+    do \arq{index.html}. O escuro existe e é legítimo, mas a casca da escola é
+    clara e a missão não tem seletor de tema.
+  \item \textbf{Os \emph{tokens} do CSS local passam de \cd{--wa-*} a
+    \cd{--unc-*}}: dezoito têm par de mesmo nome; o \cd{accent-badge} vira o
+    \cd{accent} (o Unoochat consolidou os onze acentos num só) e o
+    \cd{text-meta}, o \cd{text-secondary}. O papel do comunicado desenhado, que
+    invertia texto claro e fundo escuro, passa a ser a tela do app com o filete
+    divisor --- a inversão daria branco sobre lavanda no tema claro.
+  \item \textbf{O que mede não mudou}: a api, o gabarito, a régua e os eventos
+    são os mesmos; a suíte de ponta a ponta troca só as classes (\cd{.wa-*}
+    para \cd{.unc-*}). A experiência sobe para a versão \textbf{0.3.0}.
+  \item \textbf{O \cd{whatsappmobile} continua vivo} para quem o usa: a
+    exp06ef2b (O Rastro do Boato) e o \cd{MessageBubble} da gaveta do Jornal
+    da Escola. As duas seções coexistem e não se misturam.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Manter o \cd{whatsappmobile}.} Continuaria reproduzindo a
+    identidade de um aplicativo de terceiros, que é exatamente o motivo de o
+    Unoochat existir.
+  \item \textbf{O tema escuro do Unoochat}, o mais próximo do que a missão
+    mostrava. Faria a missão alternar entre um mensageiro escuro e a casca
+    clara da escola sem razão de produto.
+  \item \textbf{Migrar também a exp06ef2b no mesmo PR.} Fica para outra
+    frente: ela é outra missão e não foi pedida.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{A fronteira do disfarce fica menos visível no CSS}: o
+    Unoochat copia os literais da paleta da Unooria, então um \emph{token}
+    \cd{--unc-*} numa tela da escola não destoa --- passa. Antes ele sumia
+    sobre o branco, o que pelo menos aparecia num print.
+  \item \textbf{A folha de fonte do clone passa a carregar o Material
+    Symbols}: sem ela o ícone vira o nome escrito, como na seção da
+    plataforma. O \emph{woff2} é o mesmo que a casca já pedia.
+  \item \textbf{O avatar de iniciais do cabeçalho não tem círculo visível}:
+    o fundo dele é o da barra. Já era assim no \cd{whatsappmobile}; é do
+    pacote, e não foi compensado aqui.
+\end{itemize}
+
+\textbf{Gatilho.} O pacote publicar uma diferença de API entre as duas seções
+que a missão use, o dono do produto pedir o tema escuro, ou a exp06ef2b migrar
+--- aí a ponte \cd{@edu/ui/ds-whatsapp} perde o último consumidor de missão.

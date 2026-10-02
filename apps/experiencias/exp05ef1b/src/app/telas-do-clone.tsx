@@ -17,7 +17,7 @@ import {
   SystemMessage,
   TabBar,
   TopBar,
-} from "@edu/ui/ds-whatsapp";
+} from "@edu/ui/ds-unoochat";
 import {
   HORA_DA_NINA,
   HORA_DO_APARELHO,
@@ -34,7 +34,7 @@ import { LaminaDaSintese, TermometroDaTurma, altDoTermometro } from "./component
 
 /**
  * As telas de DENTRO do mensageiro. Aqui quem fala é o APP clonado, e só ele:
- * nenhum componente, token ou palavra da plataforma entra (`@edu/ui/ds-whatsapp`
+ * nenhum componente, token ou palavra da plataforma entra (`@edu/ui/ds-unoochat`
  * e mais nada). O disfarce vale do convite da Nina até a síntese, e volta a
  * valer no chat da Nina das perguntas finais — ver o `AGENTS.md` da pasta.
  *
