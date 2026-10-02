@@ -7603,7 +7603,8 @@
                       "plano-de-aula",
                       "plano-de-ensino",
                       "bem-estar",
-                      "agente-professor"
+                      "agente-professor",
+                      "ajuda"
                     ],
                     "nullable": true
                   },
@@ -7863,6 +7864,195 @@
         }
       }
     },
+    "/recursos/limites-da-ajuda": {
+      "get": {
+        "operationId": "LimitesDaAjudaController_limites",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "limites": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "chave": {
+                            "type": "string",
+                            "enum": [
+                              "minutos-por-dia",
+                              "minutos-por-sessao"
+                            ]
+                          },
+                          "minutos": {
+                            "type": "integer",
+                            "exclusiveMinimum": true,
+                            "minimum": 0
+                          },
+                          "motivo": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "definidoPorNome": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "definidoEm": {
+                            "type": "string",
+                            "format": "date-time"
+                          }
+                        },
+                        "required": [
+                          "chave",
+                          "minutos",
+                          "motivo",
+                          "definidoPorNome",
+                          "definidoEm"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "limites"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "recursos"
+        ],
+        "summary": "Os limites de minutos da Ajuda com avatar.",
+        "description": "Uma linha por chave de `ajuda_limites` (`minutos-por-dia`, `minutos-por-sessao`), escopo do contrato inteiro. É o que a Ajuda consulta ao abrir cada sessão: o teto da sessão é o menor entre o limite por sessão e o que sobra do dia da pessoa.\n\n**Papéis:** admin.\n\n**Restrições:**\n- Só `admin` (ADR-88/132). O uso de cada pessoa (`ajuda_sessoes`) NÃO sai aqui.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "admin"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/recursos/limites-da-ajuda/{chave}": {
+      "put": {
+        "operationId": "LimitesDaAjudaController_definir",
+        "parameters": [
+          {
+            "name": "chave",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "minutos-por-dia",
+                "minutos-por-sessao"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "chave": {
+                      "type": "string",
+                      "enum": [
+                        "minutos-por-dia",
+                        "minutos-por-sessao"
+                      ]
+                    },
+                    "minutos": {
+                      "type": "integer",
+                      "exclusiveMinimum": true,
+                      "minimum": 0
+                    },
+                    "motivo": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "definidoPorNome": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "definidoEm": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "alterado": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "chave",
+                    "minutos",
+                    "motivo",
+                    "definidoPorNome",
+                    "definidoEm",
+                    "alterado"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "recursos"
+        ],
+        "summary": "Define um limite de minutos da Ajuda.",
+        "description": "Sobrescreve a linha da chave em `ajuda_limites`. **Motivo obrigatório sempre.** A mudança entra no histórico do painel (`recursos_auditoria`, ação `quota-alterada`, `recurso_id` `ajuda:<chave>`, com `{ de, para }`).\n\n**Papéis:** admin.\n\n**Restrições:**\n- Zero é recusado: fechar a Ajuda é desligar o produto `ajuda` (ADR-87), não zerar o limite.\n- Tetos de sanidade: 600 minutos por dia e 60 por sessão (Zod e CHECK).\n- Vale na PRÓXIMA sessão aberta; a que está no ar mantém o teto com que nasceu.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "admin"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "minutos": {
+                    "type": "integer",
+                    "exclusiveMinimum": true,
+                    "minimum": 0,
+                    "maximum": 600
+                  },
+                  "motivo": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 500
+                  }
+                },
+                "required": [
+                  "minutos",
+                  "motivo"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
     "/recursos/auditoria": {
       "get": {
         "operationId": "RecursosAuditoriaController_auditoria",
@@ -8059,7 +8249,8 @@
                               "plano-de-aula",
                               "plano-de-ensino",
                               "bem-estar",
-                              "agente-professor"
+                              "agente-professor",
+                              "ajuda"
                             ]
                           },
                           "estadoAqui": {
@@ -8754,7 +8945,8 @@
                         "plano-de-aula",
                         "plano-de-ensino",
                         "bem-estar",
-                        "agente-professor"
+                        "agente-professor",
+                        "ajuda"
                       ],
                       "properties": {
                         "entre-redes": {
@@ -8826,6 +9018,23 @@
                           "additionalProperties": false
                         },
                         "agente-professor": {
+                          "type": "object",
+                          "properties": {
+                            "ligado": {
+                              "type": "boolean"
+                            },
+                            "versao": {
+                              "type": "string",
+                              "nullable": true
+                            }
+                          },
+                          "required": [
+                            "ligado",
+                            "versao"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "ajuda": {
                           "type": "object",
                           "properties": {
                             "ligado": {
@@ -31465,6 +31674,250 @@
             }
           }
         }
+      }
+    },
+    "/ajuda/llm/models": {
+      "get": {
+        "operationId": "AjudaLlmController_modelos",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "object": {
+                      "type": "string",
+                      "enum": [
+                        "list"
+                      ]
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "object": {
+                            "type": "string",
+                            "enum": [
+                              "model"
+                            ]
+                          },
+                          "owned_by": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "object",
+                          "owned_by"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "object",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "ajuda"
+        ],
+        "summary": "Lista o modelo da Ajuda, no formato OpenAI (o vendor consulta ao abrir a sessão).",
+        "description": "O vendor faz `GET {base_url}/models` ao abrir a sala (medido no spike). Responde um modelo só, `unooria-ajuda`; o modelo de verdade é o da api (`VERTEX_MODEL`) e não é anunciado.\n\n**Acesso:** chave de serviço em cabeçalho, não token de pessoa. Com a variável de ambiente ausente a rota responde **503**.\n\n**Restrições:**\n- Exige `Authorization: Bearer <AJUDA_LLM_SEGREDO>`; sem a env, **503**.",
+        "security": [],
+        "x-papeis": [],
+        "x-acesso": "servico"
+      }
+    },
+    "/ajuda/llm/chat/completions": {
+      "post": {
+        "operationId": "AjudaLlmController_conversar",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "ajuda"
+        ],
+        "summary": "Um turno do atendente da Ajuda, no formato `chat/completions` do OpenAI.",
+        "description": "Chamado pelo vendor do avatar a cada fala da pessoa. A mensagem `system` que ele manda é DESCARTADA — só o token da sessão é lido dela (`[sessao:<token>]`); o prompt de verdade e a base de conhecimento moram na api. O histórico `user`/`assistant` vai ao `AiProvider` e a resposta volta em `chat.completion.chunk` (SSE) — ou num `chat.completion` inteiro quando `stream` é falso.\n\n**Acesso:** chave de serviço em cabeçalho, não token de pessoa. Com a variável de ambiente ausente a rota responde **503**.\n\n**Restrições:**\n- **401** sem o segredo certo em `Authorization`, ou sem token de sessão válido (vencido, adulterado, de sessão já encerrada). Sem `AJUDA_LLM_SEGREDO`/`AJUDA_SESSAO_CHAVE`, **503**.\n- Recusa de NEGÓCIO não é status: produto `ajuda` desligado para a escola, ou mais de 20 turnos por minuto, viram uma FALA do atendente — o vendor fica mudo diante de erro.\n- **Fora da quota de tokens** (exceção à regra 5, ADR-132): o custo da Ajuda é limitado pelos minutos de `ajuda_limites`. Os tokens continuam medidos pelo `MedidorDeProvider`.\n- Falha do modelo vira a fala de desculpa (`FALA_DE_FALHA`), em 200. A pergunta e a resposta não vão ao log.",
+        "security": [],
+        "x-papeis": [],
+        "x-acesso": "servico",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "messages": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "role": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 20
+                        },
+                        "content": {}
+                      },
+                      "required": [
+                        "role"
+                      ],
+                      "additionalProperties": true
+                    },
+                    "minItems": 1,
+                    "maxItems": 200
+                  },
+                  "model": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "stream": {
+                    "type": "boolean"
+                  },
+                  "stream_options": {
+                    "type": "object",
+                    "properties": {
+                      "include_usage": {
+                        "type": "boolean"
+                      }
+                    },
+                    "additionalProperties": true
+                  }
+                },
+                "required": [
+                  "messages"
+                ],
+                "additionalProperties": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ajuda/sessoes": {
+      "post": {
+        "operationId": "AjudaController_abrir",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "tokenDaSessao": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "duracaoMaximaS": {
+                      "type": "integer",
+                      "exclusiveMinimum": true,
+                      "minimum": 0
+                    },
+                    "segundosRestantesHoje": {
+                      "type": "integer",
+                      "minimum": 0
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "tokenDaSessao",
+                    "duracaoMaximaS",
+                    "segundosRestantesHoje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "ajuda"
+        ],
+        "summary": "Abre a Ajuda: reserva os minutos e pede a sala de vídeo do atendente.",
+        "description": "Confere os minutos de hoje (`ajuda_limites` × `ajuda_sessoes`), fecha a sessão anterior da pessoa que tenha ficado aberta, e pede ao vendor do avatar uma sessão com o teto calculado. Devolve o token que o SDK do vendor usa NO NAVEGADOR — a chave da conta nunca sai da api. A conversa não passa por esta rota: o vendor chama `POST /ajuda/llm/chat/completions`.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- **503** `{ codigo: \"AJUDA_INDISPONIVEL\" }` quando a stack não tem o vendor configurado (as envs `LIVEAVATAR_*` e `AJUDA_*`).\n- **429** `{ codigo: \"SEM_MINUTOS\", minutosPorDia }` quando o que sobra do dia é menos de 1 minuto. **429** `{ codigo: \"RATE_LIMIT\" }` acima de 6 aberturas por minuto.\n- **502** `{ codigo: \"AVATAR_FALHOU\" }` quando o vendor não abre a sala — a linha reservada fecha com duração zero e não conta minuto.\n- **403** `{ codigo: \"recurso-indisponivel\" }` com o produto `ajuda` desligado para a escola.\n- O dia é o do fuso da plataforma (ADR-99). Sessão sem `fim` conta o teto inteiro.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/ajuda/sessoes/{id}/encerrar": {
+      "post": {
+        "operationId": "AjudaController_encerrar",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Sucesso, sem corpo."
+          }
+        },
+        "tags": [
+          "ajuda"
+        ],
+        "summary": "Encerra a sessão de vídeo da Ajuda.",
+        "description": "Grava o fim da sessão (é o tempo real que passa a contar no dia) e pede ao vendor que feche a sala. Idempotente: sessão já encerrada, inexistente ou de outra pessoa responde 204 do mesmo jeito.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Escapa do interruptor (`@SemDisponibilidade`): desligar o produto não pode deixar a sala cobrando.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token"
       }
     },
     "/rastro-boato/sessao": {

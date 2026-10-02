@@ -48,6 +48,10 @@ export const PRODUTOS = [
      — a composição é derivada de `experiencias.produto`, e nenhuma aponta
      para ele. Contrato: `docs/regras/agente-professor.md`. */
   "agente-professor",
+  /* A Ajuda com avatar (ADR-132): também SEM experiência. A superfície é o item
+     "Ajuda" do menu da conta, em TODAS as áreas menos a do estudante, e a api
+     tranca `POST /ajuda/sessoes` pela classe com `@Produto("ajuda")`. */
+  "ajuda",
 ] as const;
 
 export type Produto = (typeof PRODUTOS)[number];

@@ -102,7 +102,8 @@ como imutável. O porquê inteiro, e a separação entre *subir* e *ativar*, em
    editada só pelo `admin` em `/unooria/uso-de-ia`.
    Não recrie `AI_DAILY_TOKEN_QUOTA_PER_*` como fallback. E rate limit por
    usuário. Nunca exponha chamada de IA sem passar pelo `QuotaService`
-   (`temSaldo(escola, usuario, perfil)` ANTES, `consumir` depois).
+   (`temSaldo(escola, usuario, perfil)` ANTES, `consumir` depois). **Exceção
+   única: a Ajuda com avatar** (ADR-132), limitada por minutos (`ajuda_limites`).
 6. Dados de menores (LGPD): não logar PII em texto claro; telemetria carrega
    `estudante_id` opaco, nunca nome/email.
 7. **A missão só abre na turma em que o professor a liberou** (ADR-69). Toda

@@ -195,6 +195,14 @@ services:
       # porta 8090), que expõe o mesmo contrato do Agent Engine.
       AGENTE_PROFESSOR_MODO: ${AGENTE_PROFESSOR_MODO:-mock}
       AGENTE_PROFESSOR_URL_LOCAL: ${AGENTE_PROFESSOR_URL_LOCAL:-http://host.docker.internal:8090}
+      # Ajuda com avatar (ADR-132). Vazias = a Ajuda responde 503 e nada mais muda.
+      # O vendor precisa ALCANÇAR a api (/ajuda/llm): em dev local, só com túnel.
+      LIVEAVATAR_API_KEY: ${LIVEAVATAR_API_KEY:-}
+      LIVEAVATAR_CONTEXT_ID: ${LIVEAVATAR_CONTEXT_ID:-}
+      LIVEAVATAR_LLM_CONFIG_ID: ${LIVEAVATAR_LLM_CONFIG_ID:-}
+      LIVEAVATAR_SANDBOX: ${LIVEAVATAR_SANDBOX:-1}
+      AJUDA_LLM_SEGREDO: ${AJUDA_LLM_SEGREDO:-}
+      AJUDA_SESSAO_CHAVE: ${AJUDA_SESSAO_CHAVE:-}
       GOOGLE_APPLICATION_CREDENTIALS: /adc/application_default_credentials.json
       # A quota diaria de IA por perfil NAO e env desde a ADR-105: e a tabela
       # `ia_quotas`, semeada pela migration e editada pelo admin em
