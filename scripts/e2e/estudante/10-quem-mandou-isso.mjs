@@ -240,7 +240,7 @@ await suite(
       q = p.frameLocator('iframe[title="experiencia"]');
       await esperarOuFalharPorHttp(
         p,
-        q.locator(".wa-chatlistitem, .lista__vazia, .aviso-de-rede"),
+        q.locator(".unc-chatlistitem, .lista__vazia, .aviso-de-rede"),
         /quem-mandou-isso\/sessao/,
         { timeout: 40_000, oQue: "o boot da missão" },
       );
@@ -369,9 +369,13 @@ await suite(
     await prof.locator("[data-revisao-da-criacao]").waitFor({ timeout: 10_000 });
     /* "Pôr no ar agora" nasce desligado quando a turma já tem uma em andamento
        (a de uma corrida anterior): liga, para a turma entrar nesta. */
+    /* O `<input>` do `Toggle` do DS é invisível de propósito (opacidade 0,
+       aresta 0, sem ponteiro): esperar `visible` nunca resolve, e o clique
+       pelo Playwright morre no `pointer-events: none`. Espera-se o input no
+       DOM e o toque vai como evento — o `onChange` do React escuta o `click`. */
     const noAr = prof.getByLabel("Pôr esta atividade no ar agora");
-    await noAr.waitFor({ timeout: 10_000 });
-    if (!(await noAr.isChecked())) await noAr.click();
+    await noAr.waitFor({ state: "attached", timeout: 10_000 });
+    if (!(await noAr.isChecked())) await noAr.dispatchEvent("click");
     r.exigir(await noAr.isChecked(), "“Pôr esta atividade no ar agora” fica ligado");
     await r.registrar(prof, "criacao-revisar", {
       titulo: "Revisar e criar",
@@ -517,7 +521,7 @@ await suite(
     if (nasceVazia) {
       /* O MESMO frame, sem recarregar: quem tira a criança da espera é o
          polling do gate (`preparada` mudou). */
-      await esperarOuFalharPorHttp(p, q.locator(".wa-chatlistitem"), /quem-mandou-isso\/(gate|sessao)/, {
+      await esperarOuFalharPorHttp(p, q.locator(".unc-chatlistitem"), /quem-mandou-isso\/(gate|sessao)/, {
         timeout: 30_000,
         oQue: "a Nina chegar depois de a atividade entrar no ar",
       }).catch((erro) => {
@@ -552,7 +556,7 @@ await suite(
       `a fala da Nina leva o tema da atividade em andamento ("${ativo.tema}")`,
     );
 
-    await q.locator(".wa-chatlistitem .wa-listitem__main").click();
+    await q.locator(".unc-chatlistitem .unc-listitem__main").click();
     const entrarNoGrupo = q.getByRole("button", { name: "Entrar no grupo", exact: true });
     await entrarNoGrupo.waitFor({ timeout: 15_000 });
     await r.registrar(p, "convite-da-nina", {
@@ -588,13 +592,13 @@ await suite(
     /* A faixa é tocável como a mensagem fixada do app real: com menos de 3 a
        recusa FALA (`e2.erro.toast_menor_3`). */
     await q.locator(".faixa-tocavel").click();
-    await q.locator(".wa-toast", { hasText: "exatamente 3 mensagens" }).waitFor({ timeout: 5_000 }).catch(() => {
+    await q.locator(".unc-toast", { hasText: "exatamente 3 mensagens" }).waitFor({ timeout: 5_000 }).catch(() => {
       throw new Error("tocar a faixa com 0/3 não disse o que faltava: alvo mudo ensina a desconfiar da tela");
     });
 
     const folha = q.getByRole("dialog", { name: "Encaminhar para..." });
     for (let i = 0; i < 3; i += 1) {
-      await linhas.nth(i).locator(".wa-forwardbutton").click();
+      await linhas.nth(i).locator(".unc-forwardbutton").click();
       await folha.waitFor({ timeout: 10_000 });
       if (i === 0) {
         await r.registrar(p, "folha-de-encaminhar", {
@@ -606,7 +610,7 @@ await suite(
         });
       }
       await folha.getByRole("button", { name: "Enviar", exact: true }).click();
-      await linhas.nth(i).locator('.wa-forwardbutton[aria-pressed="true"]').waitFor({ timeout: 10_000 });
+      await linhas.nth(i).locator('.unc-forwardbutton[aria-pressed="true"]').waitFor({ timeout: 10_000 });
     }
     r.exigir(
       (await q.locator(".faixa-tocavel").innerText()).includes("3/3"),
@@ -618,18 +622,18 @@ await suite(
        a experiência compensa com `aria-disabled`). O Playwright recusa clicar
        em `aria-disabled`, e é por isso que o clique é forçado: o que se prova
        é o que a criança vê quando toca. */
-    const quarta = linhas.nth(3).locator(".wa-forwardbutton");
+    const quarta = linhas.nth(3).locator(".unc-forwardbutton");
     r.exigir(
       (await quarta.getAttribute("aria-disabled")) === "true",
       "com 3 escolhidas, as outras setas ficam esgotadas (aria-disabled, que o leitor de tela anuncia)",
     );
     await quarta.click({ force: true });
-    await q.locator(".wa-toast", { hasText: "Limite de 3 mensagens atingido" }).waitFor({ timeout: 5_000 }).catch(() => {
+    await q.locator(".unc-toast", { hasText: "Limite de 3 mensagens atingido" }).waitFor({ timeout: 5_000 }).catch(() => {
       throw new Error("a quarta seta não avisou o limite: a recusa ficou muda");
     });
     r.exigir((await folha.count()) === 0, "e a folha de encaminhar não abre para a quarta");
     r.exigir(
-      (await q.locator('.linha-do-grupo .wa-forwardbutton[aria-pressed="true"]').count()) === 3,
+      (await q.locator('.linha-do-grupo .unc-forwardbutton[aria-pressed="true"]').count()) === 3,
       "a seleção continua com 3",
     );
     await r.registrar(p, "trava-de-3", {
@@ -670,11 +674,11 @@ await suite(
     await confirmarEnvio.waitFor({ timeout: 15_000 });
     r.exigir((await q.locator(".linha-do-mural").count()) === 3, "o Mural mostra as 3 escolhidas");
     r.exigir(
-      (await q.locator(".linha-do-mural .wa-messagebubble__forwarded").count()) === 3,
+      (await q.locator(".linha-do-mural .unc-messagebubble__forwarded").count()) === 3,
       "cada uma com o selo Encaminhada, como no aplicativo real",
     );
     r.exigir(
-      (await q.locator(".linha-do-mural .wa-messagebubble__sender").count()) === 0,
+      (await q.locator(".linha-do-mural .unc-messagebubble__sender").count()) === 0,
       "e sem o remetente: a autoria se perde no primeiro repasse — é o título da missão",
     );
     await r.registrar(p, "mural-antes-de-confirmar", {
@@ -686,7 +690,7 @@ await suite(
     });
 
     await confirmarEnvio.click();
-    await esperarOuFalharPorHttp(p, q.locator(".wa-poll"), /quem-mandou-isso\/mural/, {
+    await esperarOuFalharPorHttp(p, q.locator(".unc-poll"), /quem-mandou-isso\/mural/, {
       timeout: 30_000,
       oQue: "confirmar o envio ao Mural",
     });
@@ -713,7 +717,7 @@ await suite(
     r.exigir(confirmada.corpo?.revelacao === null, "e confirmar não revela nada: o gabarito continua do outro lado");
 
     // ═══ A ENQUETE E A ESPERA ═════════════════════════════════════════════
-    const opcoesDaEnquete = q.locator(".wa-poll .wa-poll__option");
+    const opcoesDaEnquete = q.locator(".unc-poll .unc-poll__option");
     r.exigir(
       (await opcoesDaEnquete.count()) === (s0.opcoes?.motivos?.length ?? -1) && (await opcoesDaEnquete.count()) === 4,
       `a enquete “O que mais te fez escolher essas mensagens?” tem as 4 opções (${await opcoesDaEnquete.count()})`,
@@ -722,14 +726,14 @@ await suite(
        escondido). O botão Votar só acende com uma escolha — é o portão de que
        o `onChange` chegou ao React. */
     await opcoesDaEnquete.first().click();
-    const votar = q.locator(".wa-poll__vote:not([disabled])");
+    const votar = q.locator(".unc-poll__vote:not([disabled])");
     await votar.waitFor({ timeout: 10_000 }).catch(() => {
       throw new Error("escolher uma opção da enquete não acendeu o Votar: o toque não moveu o estado da tela");
     });
-    const motivoEscolhido = await q.locator(".wa-poll input[type=radio]:checked").getAttribute("value");
+    const motivoEscolhido = await q.locator(".unc-poll input[type=radio]:checked").getAttribute("value");
     await r.registrar(p, "enquete-do-motivo", {
       titulo: "O que mais te fez escolher essas mensagens?",
-      mostra: "A enquete do WhatsApp no Mural, com as quatro opções e o histórico esmaecido atrás.",
+      mostra: "A enquete do Unoochat no Mural, com as quatro opções e o histórico esmaecido atrás.",
       prova:
         "O motivo é declarado ANTES da revelação — depois dela a resposta seria a que a criança acha " +
         "certa. É o dado que o Termômetro cruza com o que a turma encaminhou.",
@@ -822,7 +826,7 @@ await suite(
     const naOrdemDoGrupo = idsDoPacote.filter((id) => escolhidas.includes(id));
     const crachasNaTela = await q
       .locator(".linha-do-mural")
-      .evaluateAll((ls) => ls.map((l) => [...l.querySelectorAll(".wa-messagetag__label")].map((t) => t.textContent.trim())));
+      .evaluateAll((ls) => ls.map((l) => [...l.querySelectorAll(".unc-messagetag__label")].map((t) => t.textContent.trim())));
     const crachasEsperados = naOrdemDoGrupo.map((id) => {
       const m = gabarito.get(id);
       return [ROTULO_DA_VERACIDADE[m.veracidade], ROTULO_DO_TOM[m.tom]];
@@ -921,7 +925,7 @@ await suite(
     await apertarBotaoDaAula("liberar_reflexao", "Liberar Reflexão", "Liberar a reflexão?", "reflexao");
     await chegaSemRecarregar(q.getByText("Monte sua regra de decisão antes de encaminhar:"), "a reflexão");
     r.exigir(
-      (await q.locator(".escola .wa-messagebubble").count()) === 0,
+      (await q.locator(".escola .unc-messagebubble").count()) === 0,
       "a regra é montada na casca da escola: nada do mensageiro dentro dela (a fronteira do disfarce)",
     );
     r.exigir(
@@ -1009,13 +1013,13 @@ await suite(
 
     const alternativaDe = {};
     for (const [indice, perguntaId] of idsDasPerguntas.entries()) {
-      const enquete = q.locator(".wa-poll:not(.wa-poll--voted)");
+      const enquete = q.locator(".unc-poll:not(.unc-poll--voted)");
       await enquete.first().waitFor({ timeout: 20_000 });
-      const opcao = enquete.first().locator(".wa-poll__option").first();
+      const opcao = enquete.first().locator(".unc-poll__option").first();
       await opcao.click();
       /* O Votar acende quando a escolha chegou ao estado da tela — só então o
          rádio marcado diz qual alternativa (pelo id, nunca pela posição). */
-      const votarNaPergunta = enquete.first().locator(".wa-poll__vote:not([disabled])");
+      const votarNaPergunta = enquete.first().locator(".unc-poll__vote:not([disabled])");
       await votarNaPergunta.waitFor({ timeout: 10_000 });
       alternativaDe[perguntaId] = await enquete.first().locator("input[type=radio]:checked").getAttribute("value");
       /* A resposta do iframe é cross-origin: quem a vê com certeza é o CONTEXTO. */
@@ -1026,7 +1030,7 @@ await suite(
           timeout: 30_000,
         });
       await votarNaPergunta.click();
-      await esperarOuFalharPorHttp(p, q.locator(".wa-poll--voted").nth(indice), /evidencias\/exp05ef1b\/perguntas/, {
+      await esperarOuFalharPorHttp(p, q.locator(".unc-poll--voted").nth(indice), /evidencias\/exp05ef1b\/perguntas/, {
         timeout: 30_000,
         oQue: `responder a pergunta ${perguntaId}`,
       });
@@ -1037,7 +1041,7 @@ await suite(
       );
     }
     r.exigir(
-      (await q.locator(".wa-poll__voted", { hasText: "Resposta enviada" }).count()) === 2,
+      (await q.locator(".unc-poll__voted", { hasText: "Resposta enviada" }).count()) === 2,
       "as duas enquetes mostram “Resposta enviada”, e nada mais",
     );
     const textoDasPerguntas = await q.locator(".conversa").innerText();
