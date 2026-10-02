@@ -1,0 +1,686 @@
+/**
+ * Estilos locais da exp06ef1b. Só o que o design system não dá: o layout do
+ * aparelho, o texto que não é controle, e as compensações MARCADAS.
+ *
+ * **Cor nunca se escreve à mão aqui.** Ela sai dos tokens da seção que está
+ * FALANDO: `--unv-*` dentro do clone, `--unooria-*` nas telas da escola. Os
+ * `var(--x, reserva)` servem só para a tela não ficar transparente antes de a
+ * folha do DS carregar.
+ *
+ * **Compensação diz QUAL é a lacuna do pacote e o que foi PEDIDO ao
+ * `storybook-unooria`** (marcada `(b) COMPENSAÇÃO`, e listada no `AGENTS.md`).
+ *
+ * Sobrescrever classe do DS exige DOIS seletores (`.x > .unv-y`): o CSS do
+ * pacote é injetado pelo módulo do componente, DEPOIS deste arquivo no grafo
+ * de importação — com peso igual, ganha sempre o DS.
+ *
+ * O arquivo é separado por SEÇÃO: primeiro o aparelho, depois o clone, depois
+ * a escola. As duas famílias não se cruzam numa regra.
+ */
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  /* O aparelho é desenhado pelo HUB (`DispositivoFrame`, a partir do
+     `viewport` 375×812 do manifesto): o `PhoneFrame` da seção NÃO entra. */
+  background: var(--unv-color-background-primary, #fff);
+  color: var(--unv-color-text-primary, #22272a);
+  font-family: var(--unv-font-sans, "Open Sans", system-ui, sans-serif);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* `100%` e não `100dvh`: dentro do iframe, `dvh` é a janela do navegador. */
+.app {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.app--centrado {
+  align-items: center;
+  justify-content: center;
+  gap: var(--unv-spacing-l, 16px);
+  padding: var(--unv-spacing-xxl, 24px);
+  text-align: center;
+}
+
+.so-leitor {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   O CLONE — tokens `--unv-*`, e só eles.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.esqueleto__topo {
+  height: var(--unv-topbar-content-height, 44px);
+  background: var(--unv-color-background-secondary, #f7f6fa);
+  box-shadow: var(--unv-elevation-bar-bottom);
+}
+
+.aviso-de-abertura {
+  margin: 0;
+  max-width: 300px;
+  font-size: var(--unv-font-body-md-size, 14px);
+  line-height: 1.45;
+}
+
+/* Uma tela do clone. `position: relative` porque a pílula flutuante, a folha
+   modal e o aviso passageiro do DS se posicionam contra ela. */
+.tela {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--unv-color-background-primary, #fff);
+  color: var(--unv-color-text-primary, #22272a);
+}
+
+.tela--story {
+  background: var(--unv-color-background-primary, #0e1039);
+}
+
+/* A área que rola. O `ScrollBar` do DS é da seção `unooria` e não entra num
+   clone (`apps/experiencias/AGENTS.md`): aqui é a barra do sistema. */
+.rolagem {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* Esconder a barra é decisão de FIDELIDADE: o feed de uma rede social de fotos
+   no celular não mostra barra de rolagem. Sem esta nota, parece defeito. */
+.rolagem--sem-barra {
+  scrollbar-width: none;
+}
+
+.rolagem--sem-barra::-webkit-scrollbar {
+  display: none;
+}
+
+/* A faixa dos botões no rodapé de uma tela do clone. */
+.doca {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--unv-spacing-xs, 8px);
+  padding: var(--unv-spacing-m, 12px) var(--unv-gutter, 16px) var(--unv-spacing-l, 16px);
+  background: var(--unv-color-background-primary, #fff);
+  box-shadow: var(--unv-elevation-hairline-top);
+}
+
+
+/* ─────────────────────────────────────────── E1: o crachá */
+
+.cracha__corpo {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--unv-spacing-xs, 8px);
+  padding: var(--unv-spacing-xxl, 24px);
+  text-align: center;
+  background: var(--unv-color-background-tertiary, #efeef5);
+}
+
+.cracha__titulo {
+  margin: 0;
+  font-size: var(--unv-font-title-lg-size, 18px);
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.cracha__funcao,
+.cracha__tema {
+  margin: 0;
+  font-size: var(--unv-font-body-md-size, 14px);
+  line-height: 1.4;
+  color: var(--unv-color-text-secondary, #475157);
+}
+
+.cracha__rotulo {
+  margin: var(--unv-spacing-m, 12px) 0 0;
+  font-size: var(--unv-font-caption-md-size, 12px);
+  font-weight: 600;
+  color: var(--unv-color-text-secondary, #475157);
+}
+
+.cracha__areas {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--unv-spacing-xxs, 6px);
+}
+
+.cracha__mandato {
+  margin: 0;
+  padding: 0 var(--unv-gutter, 16px) var(--unv-spacing-xl, 20px);
+  font-size: var(--unv-font-body-lg-size, 16px);
+  line-height: 1.5;
+}
+
+/* ─────────────────────────────────────────── E2: o feed */
+
+.post {
+  border-bottom: 0.33px solid var(--unv-color-border-subtle, #dfddeb);
+}
+
+/* O deslize do carrossel é do produto (o DS publica os pontos, não o gesto):
+   a rolagem vertical continua com o navegador. */
+.post > .midia-deslizavel {
+  touch-action: pan-y;
+  user-select: none;
+  cursor: grab;
+}
+
+.post > .midia-deslizavel:focus-visible {
+  outline: 2px solid var(--unv-color-action-primary, #716c98);
+  outline-offset: 2px;
+}
+
+/*
+ * A camada da dica do gesto, POSICIONAMENTO puro. Ela vem ANTES da mídia no DOM
+ * (depois dela quebraria o `.unv-post-card__media + .unv-post-card__actions`
+ * que põe a pílula sobre a imagem), tem altura zero e desconta o `gap` do
+ * cartão; o palco dentro dela é um quadrado com a largura da mídia, por cima
+ * dela, e é contra ele que o `GestureHint` se posiciona.
+ */
+.post > .gesto-do-carrossel {
+  position: relative;
+  z-index: 2;
+  height: 0;
+  margin-bottom: calc(-1 * var(--unv-post-card-gap, 8px));
+  pointer-events: none;
+}
+
+.gesto-do-carrossel__palco {
+  position: absolute;
+  top: var(--unv-post-card-gap, 8px);
+  left: 0;
+  right: 0;
+  aspect-ratio: 1 / 1;
+}
+
+/* A 2ª lâmina: a ficha técnica em texto, dentro do slide sem fotografia do DS.
+   A folga da base é a pílula de ações e os pontos, que ficam POR CIMA da mídia
+   no Unoovista (as medidas são as do próprio `PostCard`). */
+.ficha-tecnica {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: var(--unv-spacing-xs, 8px);
+  padding: var(--unv-spacing-l, 16px);
+  padding-bottom: calc(
+    var(--unv-post-card-pill-inset, 12px) + var(--unv-post-card-pill-height, 52px) + var(--unv-spacing-xxl, 24px)
+  );
+  overflow: hidden;
+}
+
+.ficha-tecnica__titulo {
+  margin: 0;
+  font-size: var(--unv-font-title-md-size, 16px);
+  font-weight: 700;
+}
+
+.ficha-tecnica__lista,
+.ficha__lista {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--unv-spacing-3xs, 4px) var(--unv-spacing-m, 12px);
+  margin: 0;
+  font-size: var(--unv-font-body-md-size, 14px);
+  line-height: 1.35;
+}
+
+.ficha-tecnica__lista dt,
+.ficha__lista dt {
+  font-weight: 600;
+  color: var(--unv-color-text-secondary, #475157);
+}
+
+.ficha-tecnica__lista dd,
+.ficha__lista dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.ficha-tecnica__nota {
+  margin: 0;
+  font-size: var(--unv-font-caption-md-size, 12px);
+  color: var(--unv-color-text-secondary, #475157);
+}
+
+/* O "...mais" é o `Button` `link` do DS, em linha com a legenda. */
+.unv-post-card__caption > .legenda__mais {
+  display: inline;
+  min-height: 0;
+  padding: 0;
+  vertical-align: baseline;
+}
+
+.feed__carregando {
+  margin: 0;
+  padding: var(--unv-spacing-l, 16px);
+  text-align: center;
+  font-size: var(--unv-font-caption-md-size, 12px);
+  color: var(--unv-color-text-secondary, #475157);
+}
+
+/* Folga para a pílula da cédula não cobrir o fim do último post. */
+.feed__respiro {
+  height: var(--unv-spacing-4xl, 48px);
+}
+
+/* ─────────────────────────────────────── E3: a cédula e o lacre */
+
+.cedula {
+  display: flex;
+  flex-direction: column;
+  gap: var(--unv-spacing-m, 12px);
+}
+
+.cedula__instrucao {
+  margin: 0;
+  font-size: var(--unv-font-body-md-size, 14px);
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+/* O botão da folha fica preso na base dela enquanto a lista rola (posição).
+   O recuo negativo cobre o respiro de base do corpo da folha
+   (`--unv-spacing-l`), senão a lista aparece por baixo do botão. */
+.cedula__confirmar {
+  position: sticky;
+  bottom: calc(-1 * var(--unv-spacing-l, 16px));
+  margin-bottom: calc(-1 * var(--unv-spacing-l, 16px));
+  padding: var(--unv-spacing-xs, 8px) 0 var(--unv-spacing-l, 16px);
+  background: var(--unv-color-background-elevated, #fff);
+}
+
+.cedula__certeza {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--unv-spacing-xs, 8px);
+}
+
+.escolha {
+  display: flex;
+  flex-direction: column;
+}
+
+/*
+ * (b) COMPENSAÇÃO — o `ListItem` do Unoovista corta título e subtítulo numa
+ * linha (`white-space: nowrap` + reticências), certo para uma lista de
+ * conversas e errado para um cartão de 20 palavras do caso Mariana ou o título
+ * de um estande. Aqui só a QUEBRA de linha e o alinhamento à esquerda do
+ * `<button>`; pedido ao `storybook-unooria`: uma prop `wrap` no `ListItem`.
+ */
+.escolha > .unv-list-item {
+  width: 100%;
+  text-align: left;
+  padding-top: var(--unv-spacing-xs, 8px);
+  padding-bottom: var(--unv-spacing-xs, 8px);
+}
+
+.escolha > .unv-list-item .unv-list-item__title,
+.escolha > .unv-list-item .unv-list-item__subtitle {
+  white-space: normal;
+  overflow: visible;
+}
+
+.lacre {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--unv-spacing-xl, 20px);
+  padding: var(--unv-spacing-xxl, 24px);
+  text-align: center;
+}
+
+/* O carimbo: moldura e medida (o desenho do selo é o glifo do DS). */
+.lacre__carimbo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--unv-spacing-xs, 8px);
+  padding: var(--unv-spacing-xl, 20px) var(--unv-spacing-xxl, 24px);
+  border: 2px dashed var(--unv-color-action-primary, #716c98);
+  border-radius: var(--unv-radius-l, 16px);
+  transform: rotate(-3deg);
+}
+
+.lacre__titulo {
+  margin: 0;
+  font-size: var(--unv-font-title-lg-size, 18px);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--unv-color-action-primary, #716c98);
+}
+
+.lacre__projeto {
+  margin: 0;
+  font-size: var(--unv-font-body-md-size, 14px);
+}
+
+.lacre__protocolo {
+  margin: 0;
+  font-size: var(--unv-font-caption-md-size, 12px);
+  color: var(--unv-color-text-secondary, #475157);
+}
+
+/* ─────────────────────────────── E4: a plenária — o PICO (3 elementos) */
+
+.plenaria {
+  align-items: center;
+  justify-content: center;
+  gap: var(--unv-spacing-xxl, 24px);
+  padding: var(--unv-spacing-3xl, 32px);
+  text-align: center;
+}
+
+.plenaria__ordem {
+  margin: 0;
+  max-width: 300px;
+  font-size: var(--unv-font-title-lg-size, 18px);
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.plenaria__pulso {
+  margin: 0;
+  font-size: var(--unv-font-body-md-size, 14px);
+  color: var(--unv-color-text-secondary, #475157);
+  animation: pulso-da-mesa 1.8s ease-in-out infinite;
+}
+
+@keyframes pulso-da-mesa {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .plenaria__pulso {
+    animation: none;
+  }
+}
+
+/* ─────────────────────────────────────── E4: a Galeria Oculta */
+
+.galeria__cabeca {
+  display: flex;
+  flex-direction: column;
+  gap: var(--unv-spacing-m, 12px);
+  padding: var(--unv-spacing-m, 12px) var(--unv-gutter, 16px);
+}
+
+.galeria__comunicado {
+  margin: 0;
+  font-size: var(--unv-font-title-md-size, 16px);
+  font-weight: 700;
+}
+
+.galeria__instrucao {
+  margin: 0;
+  font-size: var(--unv-font-body-md-size, 14px);
+  line-height: 1.45;
+}
+
+.galeria__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--unv-spacing-xs, 8px);
+}
+
+.galeria__vazia {
+  margin: 0;
+  padding: var(--unv-spacing-xxl, 24px) var(--unv-gutter, 16px);
+  text-align: center;
+  font-size: var(--unv-font-body-md-size, 14px);
+  line-height: 1.45;
+}
+
+.ficha {
+  display: flex;
+  flex-direction: column;
+  gap: var(--unv-spacing-m, 12px);
+}
+
+.ficha__etiquetas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--unv-spacing-xxs, 6px);
+}
+
+.ficha__imagem {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: var(--unv-radius-m, 12px);
+}
+
+.ficha__legenda,
+.ficha__hashtags {
+  margin: 0;
+  font-size: var(--unv-font-body-md-size, 14px);
+  line-height: 1.5;
+}
+
+.ficha__hashtags {
+  color: var(--unv-color-text-link, #716c98);
+}
+
+/* ─────────────────────────────────────── E6: o caso Mariana */
+
+.mariana {
+  padding-bottom: var(--unv-spacing-l, 16px);
+}
+
+.mariana__instrucao {
+  margin: 0;
+  padding: var(--unv-spacing-m, 12px) var(--unv-gutter, 16px) 0;
+  font-size: var(--unv-font-body-md-size, 14px);
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.mariana__grupo {
+  margin: 0;
+  padding: var(--unv-spacing-l, 16px) var(--unv-gutter, 16px) var(--unv-spacing-3xs, 4px);
+  font-size: var(--unv-font-caption-md-size, 12px);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--unv-color-text-secondary, #475157);
+}
+
+/* ─────────────────────────────── a consulta nos Stories (tema escuro) */
+
+/* O contêiner do `StoryViewer`: a altura que sobra, DEFINIDA, para o
+   `height: 100%` do componente valer. */
+.story {
+  flex: 1 1 0;
+  min-height: 0;
+}
+
+.story__rodape {
+  flex: 1 1 auto;
+  width: 100%;
+  margin: 0;
+  padding: var(--unv-spacing-xs, 8px) 0;
+  text-align: center;
+  font-size: var(--unv-font-label-md-size, 14px);
+  font-weight: 600;
+  color: var(--unv-color-text-primary, #f5f5f5);
+}
+
+/*
+ * (b) COMPENSAÇÃO TEMPORÁRIA — a `DmPoll` (enquete de CONVERSA) no lugar do
+ * `StoryPoll` (enquete de HISTÓRIA), que o DS publica na 0.2.12 (PR aberto no
+ * `storybook-unooria`, pedido por esta missão). Aqui só POSIÇÃO e MEDIDA: o
+ * centro do palco da história e o teto de largura que o `StoryPoll` terá
+ * (320 px). O `StoryPoll` se centraliza sozinho (`.unv-story-viewer__overlay >
+ * .unv-story-poll`): quando ele chegar, esta regra e `figurinha-de-enquete.tsx`
+ * morrem juntas.
+ */
+.figurinha-de-enquete {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(320px, calc(100% - 2 * var(--unv-gutter, 16px)));
+  transform: translate(-50%, -50%);
+}
+
+.consulta__encerrada {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  margin: 0;
+  padding: 0 var(--unv-gutter, 16px);
+  transform: translateY(-50%);
+  text-align: center;
+  font-size: var(--unv-font-title-md-size, 16px);
+  font-weight: 600;
+  color: var(--unv-color-text-on-media, #fff);
+}
+
+/* ─────────────────────────────────────────── o fim */
+
+.fim__carimbo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--unv-spacing-xs, 8px);
+  margin: 0;
+  padding: var(--unv-spacing-m, 12px) var(--unv-gutter, 16px) 0;
+  font-size: var(--unv-font-title-sm-size, 14px);
+  font-weight: 700;
+  color: var(--unv-color-action-primary, #716c98);
+}
+
+.fim__leitura {
+  margin: 0;
+  padding: 0 var(--unv-gutter, 16px) var(--unv-spacing-m, 12px);
+  font-size: var(--unv-font-body-md-size, 14px);
+  line-height: 1.5;
+}
+
+.infografico {
+  padding: 0 var(--unv-gutter, 16px) var(--unv-spacing-xxl, 24px);
+}
+
+.infografico__titulo {
+  margin: 0 0 var(--unv-spacing-xs, 8px);
+  font-size: var(--unv-font-title-md-size, 16px);
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.infografico__passos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--unv-spacing-m, 12px);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* A mesma quebra de linha da `.escolha` (o `ListItem` corta numa linha). */
+.infografico__passos > .unv-list-item .unv-list-item__subtitle,
+.infografico__passos > .unv-list-item .unv-list-item__title {
+  white-space: normal;
+  overflow: visible;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   A ESCOLA — tokens `--unooria-*`, e só eles.
+   Os pacotes, a cadeia e a missão ainda não aberta.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* O `ScrollBar` do DS é o contêiner que rola (aqui a seção É a `unooria`);
+   esta classe dá o fundo. Na tela de missão fechada, que não rola, é só fundo. */
+.escola {
+  flex: 1 1 auto;
+  height: 100%;
+  background: var(--unooria-color-neutral-50, #fff);
+  color: var(--unooria-color-neutral-950, #22272a);
+  font-family: var(--unooria-font-sans, system-ui, sans-serif);
+}
+
+.escola--centrada {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 16px;
+}
+
+/* Medida em px: os tokens de espaçamento do clone NÃO entram aqui. */
+.escola__pilha {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px 16px 28px;
+}
+
+.escola__marca {
+  align-self: flex-start;
+}
+
+.escola__rotulo {
+  margin: 0 0 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--unooria-color-neutral-600, #536167);
+}
+
+.calha__bandeja {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* O aviso de conexão nas telas da escola: o `AlertBox` da plataforma, preso
+   no rodapé e fora do fluxo, pelo mesmo motivo da tarja do clone. */
+.aviso-da-escola {
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 12px;
+  z-index: 30;
+  display: flex;
+  justify-content: center;
+}
