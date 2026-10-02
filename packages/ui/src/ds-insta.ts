@@ -15,7 +15,8 @@
  * ONDE USAR: a superfície do estudante das experiências que imitam o
  * Instagram — as telas do CLONE da exp01ef1b (E2–E4; a casca dela fala pela
  * escola e usa `ds.ts`). A exp07ef1b, para quem as extensões abaixo nasceram,
- * mudou-se para o Unoovista (`ds-unoovista.ts`). É o inverso de `ds.ts`, que vale
+ * mudou-se para o Unoovista (`ds-unoovista.ts`), e o `PostCard` da gaveta do
+ * Jornal da Escola também (ADR-136). É o inverso de `ds.ts`, que vale
  * só para as superfícies da plataforma. Os dois nunca se cruzam.
  *
  * DUAS FORMAS DE IMPORTAÇÃO COEXISTEM AQUI, e a diferença é histórica, não

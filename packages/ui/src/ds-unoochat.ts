@@ -24,7 +24,9 @@
  *
  * ONDE USAR: o grupo da turma da exp05ef1b (do convite da Nina à síntese, e de
  * volta ao chat da Nina nas perguntas finais), inclusive os erros diegéticos
- * ("Conectando..."). A exp06ef2b continua no `@edu/ui/ds-whatsapp`.
+ * ("Conectando..."), e o `MessageBubble` da mensagem encaminhada na gaveta do
+ * Jornal da Escola (exp04ef1b, ADR-136). A exp06ef2b continua no
+ * `@edu/ui/ds-whatsapp`.
  *
  * ONDE NÃO USAR: as telas da escola dentro da mesma missão. Ali quem fala é a
  * escola, e a ponte é `@edu/ui/ds`. **A linha é a REVELAÇÃO, não o arquivo.**

@@ -21,9 +21,9 @@
  * pelo namespace `UnoovistaUI`: o subcaminho preserva o tree-shaking.
  *
  * ONDE USAR: as superfícies disfarçadas da exp08ef1b e da exp07ef1b (A
- * Seleção). A `instanooria` continua viva e intacta para quem ainda a usa (o
- * clone da exp01ef1b e o `PostCard` da exp04ef1b) — as duas seções coexistem e
- * não se misturam.
+ * Seleção), e o `PostCard` da gaveta do Jornal da Escola (exp04ef1b, ADR-136).
+ * A `instanooria` continua viva e intacta para quem ainda a usa (o clone da
+ * exp01ef1b) — as duas seções coexistem e não se misturam.
  *
  * Os nomes que COLIDEM com a plataforma (`ds.ts`) ganham o sufixo `Unv`, o
  * prefixo dos tipos da própria seção (`UnvIconName`), pela mesma regra do
