@@ -33,6 +33,25 @@ type Busca = (url: string, init?: RequestInit) => Promise<Response>;
 const BFF = "/api/plataforma";
 const json = { "content-type": "application/json" };
 
+/**
+ * A versão da montagem que a atividade JÁ tem, ou 0 se ela não tem nenhuma.
+ *
+ * "Criar atividade" é idempotente em várias missões: o mesmo conteúdo do pacote
+ * mais recente devolve AQUELE pacote. Se ele já tinha equipes (o segundo
+ * clique, ou uma corrida anterior da e2e), gravar com `versao: 0` era um 409
+ * "As equipes foram alteradas em outra tela" — e o professor lia "a atividade
+ * foi criada, mas as equipes não foram salvas" sem ter feito nada errado. Com
+ * a versão atual, vale a escolha que ele ACABOU de fazer no assistente (a
+ * equipe muda só a rodada em andamento, pela política da E14).
+ */
+async function versaoDaMontagem(base: string, busca: Busca): Promise<number> {
+  const r = await busca(base, { method: "GET" });
+  if (!r.ok) return 0;
+  const corpo = (await r.json().catch(() => null)) as { montagem?: { versao?: unknown } | null } | null;
+  const versao = corpo?.montagem?.versao;
+  return typeof versao === "number" ? versao : 0;
+}
+
 async function mensagem(resposta: Response, padrao: string): Promise<string> {
   const corpo = (await resposta.json().catch(() => null)) as { mensagem?: unknown } | null;
   return typeof corpo?.mensagem === "string" && corpo.mensagem ? corpo.mensagem : padrao;
@@ -78,9 +97,10 @@ export async function concluirCriacao(
   const base = `${BFF}${caminhoDasEquipes(turmaId, expId, atividadeId)}`;
   const falhou = (detalhe: string) => avisos.push(`A atividade foi criada, mas as equipes não foram salvas: ${detalhe}`);
   try {
+    const versao = await versaoDaMontagem(base, busca);
     let corpo: unknown;
     if (equipes.modo === "individual") {
-      corpo = { versao: 0, modo: "individual", computadores: null, ausentes: [], equipes: [] };
+      corpo = { versao, modo: "individual", computadores: null, ausentes: [], equipes: [] };
     } else {
       const s = await busca(`${base}/sugestao`, {
         method: "POST",
@@ -93,7 +113,7 @@ export async function concluirCriacao(
       }
       const sugestao = (await s.json()) as SugestaoDeEquipes;
       corpo = {
-        versao: 0,
+        versao,
         modo: "sorteio",
         computadores: equipes.computadores,
         ausentes: [],
