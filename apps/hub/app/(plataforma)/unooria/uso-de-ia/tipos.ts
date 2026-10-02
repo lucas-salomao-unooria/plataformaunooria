@@ -21,3 +21,19 @@ export interface QuotaDeIa {
 export interface QuotasDeIa {
   quotas: QuotaDeIa[];
 }
+
+/** O contrato de `GET /recursos/limites-da-ajuda` (ADR-132) — mesma cópia deliberada. */
+export type ChaveDeLimite = "minutos-por-dia" | "minutos-por-sessao";
+
+export interface LimiteDaAjuda {
+  chave: ChaveDeLimite;
+  minutos: number;
+  motivo: string | null;
+  /** `null` = veio da migration; ninguém decidiu ainda. */
+  definidoPorNome: string | null;
+  definidoEm: string;
+}
+
+export interface LimitesDaAjuda {
+  limites: LimiteDaAjuda[];
+}

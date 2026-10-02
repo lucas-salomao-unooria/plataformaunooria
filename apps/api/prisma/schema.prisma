@@ -3132,3 +3132,48 @@ model AgenteProfessorConversa {
   @@index([escolaId, usuarioId, atualizadaEm(sort: Desc)], map: "agente_professor_conversas_lista_idx")
   @@map("agente_professor_conversas")
 }
+
+/// A AJUDA com avatar (ADR-132): uma linha por sessão de vídeo aberta.
+///
+/// É o MEDIDOR do custo da Ajuda — o vendor cobra por minuto de avatar, e o
+/// limite diário por pessoa (`ajuda_limites`) é a soma destas linhas no dia.
+/// Não guarda conversa nenhuma: nem pergunta, nem resposta, nem transcrição.
+///
+/// **`escola_id` NULO e SEM RLS, de propósito**: a Ajuda vale para
+/// `gestor_contrato` e `admin`, que não têm escola no token — com `NOT NULL` +
+/// RLS eles não teriam como abrir a Ajuda (é o mesmo defeito que o
+/// `QuotaService` tem com esses dois papéis). Toda query é escopada por
+/// `usuario_id` do TOKEN; a escola, quando há, é só o rótulo de onde a pessoa
+/// estava. Não é dado de estudante (estudante não abre a Ajuda — CHECK).
+model AjudaSessao {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  usuarioId      String    @map("usuario_id") @db.Uuid
+  /// NULO para os papéis de contrato. Sem FK: é rótulo, não posse.
+  escolaId       String?   @map("escola_id")
+  perfil         String
+  /// O id da sessão no vendor — é com ele que a api encerra a sessão. Nulo só
+  /// no instante entre reservar a linha e o vendor responder.
+  avatarSessaoId String?   @map("avatar_sessao_id")
+  inicio         DateTime  @default(now()) @db.Timestamptz(6)
+  /// O teto pedido ao vendor. Sessão não encerrada conta INTEIRA no dia.
+  duracaoMaxS    Int       @map("duracao_max_s")
+  fim            DateTime? @db.Timestamptz(6)
+
+  @@index([usuarioId, inicio(sort: Desc)], map: "ajuda_sessoes_por_pessoa_idx")
+  @@map("ajuda_sessoes")
+}
+
+/// Os limites de MINUTOS da Ajuda (ADR-132), escopo do contrato inteiro — o
+/// mesmo desenho de `ia_quotas`: uma linha por chave, editada só pelo `admin`
+/// no painel da Unooria, sem RLS e sem `escola_id`.
+model AjudaLimite {
+  /// `minutos-por-dia` | `minutos-por-sessao` — CHECK na migration.
+  chave        String   @id
+  valor        Int
+  motivo       String?
+  definidoPor  String?  @map("definido_por") @db.Uuid
+  definidoEm   DateTime @default(now()) @map("definido_em") @db.Timestamptz(6)
+  atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  @@map("ajuda_limites")
+}

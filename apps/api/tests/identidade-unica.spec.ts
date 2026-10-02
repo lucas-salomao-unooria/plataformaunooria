@@ -28,6 +28,10 @@ const SEM_CHAVE_POR_DECISAO = new Set([
   "telemetria_eventos.estudante_id",
   "progresso.estudante_id",
   "ia_uso_diario.usuario_id",
+  // O medidor de minutos da Ajuda com avatar (ADR-132), pelo motivo de
+  // `ia_uso_diario`: é contador de custo, e uma FK com RESTRICT travaria a
+  // exclusão de quem já usou a Ajuda. Não guarda conversa nem dado de estudante.
+  "ajuda_sessoes.usuario_id",
 ]);
 
 describe("identidade única", () => {

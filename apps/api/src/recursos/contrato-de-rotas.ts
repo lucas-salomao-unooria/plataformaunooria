@@ -2,6 +2,7 @@ import { z } from "zod";
 import { PERFIS_COM_QUOTA } from "../ai/quota.service";
 import { PRODUTOS } from "./catalogo";
 import { DetalheDeQuotaSchema } from "./auditoria";
+import { CHAVES_DE_LIMITE, MAXIMO_POR_DIA } from "../ajuda/regras";
 
 /**
  * O que o hub precisa saber para montar os cards e trancar as rotas de produto.
@@ -254,6 +255,46 @@ export const DefinirQuotaDeIaSchema = z.object({
 export const QuotaAlteradaSchema = QuotaDeIaSchema.extend({
   /** `false` quando o valor pedido já era o que valia: nada foi gravado nem historiado. */
   alterada: z.boolean(),
+});
+
+/* ==========================================================================
+   OS MINUTOS DA AJUDA (ADR-132) — só `admin`, como a quota de IA
+
+   A Ajuda com avatar fica FORA da quota de tokens; o que a limita é o tempo de
+   vídeo, que é o que o vendor cobra. Mesmo desenho de `ia_quotas`: uma linha
+   por chave, escopo do contrato, motivo obrigatório, histórico em
+   `recursos_auditoria` (`quota-alterada`, `recurso_id` = `ajuda:<chave>`).
+   ========================================================================== */
+
+export const ChaveDeLimiteSchema = z.enum(CHAVES_DE_LIMITE);
+
+export const LimiteDaAjudaSchema = z.object({
+  chave: ChaveDeLimiteSchema,
+  minutos: z.number().int().positive(),
+  motivo: z.string().nullable(),
+  /** `null` = veio da migration; ninguém decidiu ainda. */
+  definidoPorNome: z.string().nullable(),
+  definidoEm: z.string().datetime(),
+});
+
+export const LimitesDaAjudaSchema = z.object({
+  /** Sempre uma por chave de `CHAVES_DE_LIMITE`, na ordem da tupla. */
+  limites: z.array(LimiteDaAjudaSchema),
+});
+
+export const DefinirLimiteDaAjudaSchema = z.object({
+  minutos: z
+    .number()
+    .int("o limite é um número inteiro de minutos")
+    .positive("o limite tem de ser maior que zero — para fechar a Ajuda, desligue o produto")
+    .max(MAXIMO_POR_DIA, `acima do teto de sanidade (${MAXIMO_POR_DIA} minutos)`),
+  /** Obrigatório SEMPRE, como na quota de IA. */
+  motivo: z.string().trim().min(3, "diga por quê — o motivo fica no histórico").max(500),
+});
+
+export const LimiteAlteradoSchema = LimiteDaAjudaSchema.extend({
+  /** `false` quando o valor pedido já era o que valia: nada foi gravado nem historiado. */
+  alterado: z.boolean(),
 });
 
 /* ======================================================================

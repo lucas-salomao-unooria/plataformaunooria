@@ -154,6 +154,10 @@ const PREFIXOS_PERMITIDOS = [
      (`agente-professor/conversas/[id]/mensagens/route.ts`), que vence este
      catch-all. As guardas (`@Roles("professor")`, `@Produto`) estão na api. */
   "agente-professor",
+  /* A Ajuda com avatar (ADR-132): abrir e encerrar a sessão de vídeo. É
+     client-side porque o modal abre no MENU, em qualquer tela; a conversa em si
+     não passa por aqui — o vendor fala direto com a api. */
+  "ajuda",
 ] as const;
 
 /**

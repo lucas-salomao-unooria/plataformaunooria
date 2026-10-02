@@ -24,7 +24,7 @@ Este repo NÃO cria recursos GCP. O repo de infra provisiona, por contrato:
 | Bucket **planos** | `{contrato}-planos` (**privado**, sem CDN, versionamento de objetos ligado) | api (`PLANOS_BUCKET`) |
 | Cloud SQL | `{contrato}-pg` (HA, PITR, pooler ativo) | api DATABASE_URL |
 | Pub/Sub | topic `{contrato}-telemetria` + **push** sub `{contrato}-telemetria-ingest` → `POST {api}/telemetry/ingest` | api |
-| Secret Manager | `{contrato}-database-url`, `{contrato}-db-password`, `{contrato}-token-signing-key`, `{contrato}-auth-secret`, `{contrato}-perfil-import-token`, `{contrato}-planos-import-token`, `{contrato}-swagger-senha` | Cloud Run env |
+| Secret Manager | `{contrato}-database-url`, `{contrato}-db-password`, `{contrato}-token-signing-key`, `{contrato}-auth-secret`, `{contrato}-perfil-import-token`, `{contrato}-planos-import-token`, `{contrato}-swagger-senha`, `{contrato}-liveavatar-api-key`, `{contrato}-ajuda-llm-segredo`, `{contrato}-ajuda-sessao-chave` | Cloud Run env |
 | Service Accounts | `{contrato}-api` (Vertex, Pub/Sub publisher, `objectAdmin` nos buckets de assets e de planos), `{contrato}-run` (hub/storybook), `{contrato}-push` (assina o push da telemetria) | |
 | Load Balancer | um só, global: hub em `{hub_domain}`, api em `{api_domain}`, bundles em `{exp_domain}`, assets em `{assets_domain}` — mesmo IP, host rules | DNS |
 | WIF p/ GitHub Actions | pool `github` | deploy.yml (sem chave JSON) |
@@ -248,6 +248,35 @@ pontas em `docs/regras/agente-professor.md`; passo a passo em
   `run.googleapis.com/request_latencies` não tem rótulo de caminho. A métrica de
   log de distribuição que exclui `/agente-professor/` está proposta no RUNBOOK e
   **não aplicada**.
+
+**Ajuda com avatar** (2026-10-02, ADR-132; doutrina em `apps/api/src/ajuda/AGENTS.md`).
+Vendor externo: LiveAvatar (HeyGen), FULL Mode com o LLM NOSSO. O que a app espera:
+
+- **Segredos → env da api**: `{contrato}-liveavatar-api-key` → `LIVEAVATAR_API_KEY`
+  (a chave da conta; nunca vai ao hub), `{contrato}-ajuda-llm-segredo` →
+  `AJUDA_LLM_SEGREDO` (o Bearer que o vendor manda; o MESMO valor fica guardado
+  na conta do vendor) e `{contrato}-ajuda-sessao-chave` → `AJUDA_SESSAO_CHAVE`
+  (assina o token da sessão; só a api conhece). Todos com 32+ caracteres.
+- **Envs comuns da api**: `LIVEAVATAR_CONTEXT_ID` e `LIVEAVATAR_LLM_CONFIG_ID`,
+  impressos por `scripts/liveavatar-configurar.mjs <ambiente> <url>` (um conjunto
+  por contrato/ambiente, fora do Terraform). `LIVEAVATAR_SANDBOX=0` fora de dev
+  (o Zod recusa `1` em produção). Faltou qualquer uma: a Ajuda responde 503 e a
+  api sobe normal — dá para aplicar o Terraform antes do script.
+- **A api precisa de URL PÚBLICA** alcançável pelo vendor (servidores na AWS,
+  `us-east-2` no spike): `POST <api>/ajuda/llm/chat/completions` e
+  `GET <api>/ajuda/llm/models`, sem token de usuário (trancados por segredo +
+  token da sessão). O caminho não pode ficar atrás de IAP nem de allowlist por IP
+  do LB. **Cloud Armor**: o corpo é JSON OpenAI com o prompt do contexto — conferir
+  que nenhuma assinatura recusa `/ajuda/llm/`. Resposta em SSE: o primeiro byte
+  tem de sair em menos de 10 s (é o timeout do vendor), então nada de buffering no LB.
+- **Firewall das escolas** (o navegador fala direto com o vendor): `*.livekit.cloud`
+  TCP 443 (WSS), `*.turn.livekit.cloud` 443 (TURN/TLS), `*.host.livekit.cloud`
+  UDP 3478 e `api.liveavatar.com` 443; recomendado UDP 50000–60000. Rede que
+  bloqueia WebRTC mostra "não conseguimos conectar o vídeo" no modal.
+- **Custo e dado**: o vendor cobra 2 créditos por minuto de sessão (plano pago
+  necessário — a conta de testes tem 10 créditos). Voz e texto de PROFISSIONAIS
+  (nunca de estudante) passam pelo vendor nos EUA: precisa constar do
+  contrato/DPA da rede e da página de privacidade.
 
 **Telemetria: fica no Postgres, e sem serviço novo** (decisão de 2026-08-27).
 Avaliamos mandar o canal analítico para o BigQuery por subscription nativa do

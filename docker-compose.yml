@@ -88,6 +88,14 @@ services:
       VERTEX_MODEL_LONGO: ${VERTEX_MODEL_LONGO:-gemini-3.6-flash}
       # Agente de IA do professor: `mock` é o turno enlatado (docs/regras/agente-professor.md).
       AGENTE_PROFESSOR_MODO: ${AGENTE_PROFESSOR_MODO:-mock}
+      # Ajuda com avatar (ADR-132). Vazias = a Ajuda responde 503 e nada mais muda.
+      # O vendor precisa ALCANÇAR a api (/ajuda/llm): em dev local, só com túnel.
+      LIVEAVATAR_API_KEY: ${LIVEAVATAR_API_KEY:-}
+      LIVEAVATAR_CONTEXT_ID: ${LIVEAVATAR_CONTEXT_ID:-}
+      LIVEAVATAR_LLM_CONFIG_ID: ${LIVEAVATAR_LLM_CONFIG_ID:-}
+      LIVEAVATAR_SANDBOX: ${LIVEAVATAR_SANDBOX:-1}
+      AJUDA_LLM_SEGREDO: ${AJUDA_LLM_SEGREDO:-}
+      AJUDA_SESSAO_CHAVE: ${AJUDA_SESSAO_CHAVE:-}
       VERTEX_IMAGE_MODEL: ${VERTEX_IMAGE_MODEL:-gemini-3.1-flash-image}
       VERTEX_THINKING_BUDGET: ${VERTEX_THINKING_BUDGET:-0}
       GOOGLE_APPLICATION_CREDENTIALS: /adc/application_default_credentials.json

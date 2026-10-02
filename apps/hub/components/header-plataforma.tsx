@@ -5,6 +5,7 @@ import { MenuDaConta } from "@/components/menu-da-conta";
 import { SeletorDeEscola } from "@/components/seletor-de-escola";
 import { auth } from "@/lib/auth";
 import { homeDoPapel, rotuloDoPapel } from "@/lib/papeis";
+import { produtoLigado } from "@/lib/recursos";
 
 /**
  * O gutter do chrome — e o MESMO da coluna de conteúdo de cada área.
@@ -61,6 +62,11 @@ export async function HeaderPlataforma({
   // a série (quando há) ou o papel.
   const apoio = legenda ?? usuario.serie ?? rotuloDoPapel(usuario.papel);
 
+  // A Ajuda com atendente (ADR-132) é de todo papel MENOS o estudante — e o
+  // header é o mesmo dentro de `/exp`, o aparelho da criança. Quem tranca de
+  // verdade é a api (`@Roles` + `@Produto("ajuda")`); aqui é não mostrar a porta.
+  const comAjuda = usuario.papel !== "estudante" && (await produtoLigado("ajuda"));
+
   return (
     <header className="border-b border-unooria-neutral-200 bg-unooria-neutral-50">
       <div className={`flex h-16 w-full items-center justify-between gap-4 ${GUTTER}`}>
@@ -101,7 +107,7 @@ export async function HeaderPlataforma({
               barra. O nome e o papel foram para dentro do `MenuDaConta` porque
               a tira do `HeaderMenu` abre POR CIMA do que está à esquerda do
               gatilho; o porquê inteiro está lá. */}
-          <MenuDaConta nome={usuario.nome} apoio={apoio} />
+          <MenuDaConta nome={usuario.nome} apoio={apoio} comAjuda={comAjuda} />
         </div>
       </div>
     </header>

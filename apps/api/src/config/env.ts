@@ -10,6 +10,15 @@ import { ENGINE_RE, MODOS_DO_AGENTE } from "../ai/agente-professor.port";
 /** A porta do `/docs` fica na internet, então a senha não pode ser de teclado. */
 export const TAMANHO_MINIMO_DA_SENHA_DO_DOCS = 16;
 
+/**
+ * Variável opcional em que `""` vale como AUSENTE. O compose repassa
+ * `${NOME:-}`, e sem isto a variável não definida chegaria vazia e reprovaria o
+ * `min(32)` — derrubando a subida de quem nem usa a Ajuda.
+ */
+function vazioEhAusente<T extends z.ZodTypeAny>(schema: T) {
+  return z.preprocess((v) => (v === "" ? undefined : v), schema.optional());
+}
+
 export const EnvSchema = z.object({
   // Lido pela verificação do perfil portátil, que só aceita JWKS por http fora
   // de produção. Fica no schema em vez de `process.env` solto porque a regra da
@@ -92,6 +101,40 @@ export const EnvSchema = z.object({
     .regex(ENGINE_RE, "resource name completo: projects/<p>/locations/<r>/reasoningEngines/<id>")
     .optional(),
   AGENTE_PROFESSOR_URL_LOCAL: z.string().url().optional(),
+
+  /**
+   * A AJUDA com avatar (ADR-132): o atendente em vídeo do LiveAvatar, com o LLM
+   * NOSSO (o vendor chama `POST /ajuda/llm/chat/completions`).
+   *
+   * **Desligada é o padrão, e faltar peça NÃO derruba a subida** — ao contrário
+   * do `/docs`. A chave da conta e os ids nascem em momentos diferentes
+   * (`scripts/liveavatar-configurar.mjs` cria o contexto e a configuração de LLM
+   * DEPOIS de a api estar no ar com URL pública), e derrubar a api inteira por
+   * um produto em montagem tiraria todos os outros do ar. Sem o conjunto
+   * completo, `POST /ajuda/sessoes` responde 503 e o log `ajuda-desligada` diz
+   * o que falta.
+   *
+   * `LIVEAVATAR_API_KEY`: a chave da conta (Secret Manager). NUNCA vai ao hub.
+   * `LIVEAVATAR_CONTEXT_ID` / `LIVEAVATAR_LLM_CONFIG_ID`: os ids que o script
+   *   de configuração imprime — sem contexto o avatar fica mudo, sem LLM
+   *   configurado ele responderia com o LLM da HeyGen.
+   * `LIVEAVATAR_AVATAR_ID`: o "Silas Customer Support" do catálogo público.
+   * `LIVEAVATAR_SANDBOX=1`: o avatar de testes do vendor (~1 min, sem crédito).
+   *   Recusado em produção.
+   * `AJUDA_LLM_SEGREDO`: o que o vendor manda em `Authorization: Bearer` ao
+   *   nosso endpoint de LLM (guardado lá como segredo `OPENAI_API_KEY`).
+   * `AJUDA_SESSAO_CHAVE`: assina o token curto que identifica a pessoa dentro
+   *   do prompt do contexto (`dynamic_variables`).
+   */
+  LIVEAVATAR_API_KEY: vazioEhAusente(z.string().min(1)),
+  LIVEAVATAR_API_URL: z.string().url().default("https://api.liveavatar.com"),
+  LIVEAVATAR_AVATAR_ID: z.string().uuid().default("dc2935cf-5863-4f08-943b-c7478aea59fb"),
+  LIVEAVATAR_VOICE_ID: vazioEhAusente(z.string().uuid()),
+  LIVEAVATAR_CONTEXT_ID: vazioEhAusente(z.string().uuid()),
+  LIVEAVATAR_LLM_CONFIG_ID: vazioEhAusente(z.string().uuid()),
+  LIVEAVATAR_SANDBOX: z.enum(["0", "1"]).default("0"),
+  AJUDA_LLM_SEGREDO: vazioEhAusente(z.string().min(32)),
+  AJUDA_SESSAO_CHAVE: vazioEhAusente(z.string().min(32)),
 
   // Imagens geradas: local (dev, servido pela api em /assets) | gcs (bucket
   // {contrato}-assets atrás da CDN — docs/INFRA.md).
@@ -221,6 +264,16 @@ export const EnvSchema = z.object({
       code: z.ZodIssueCode.custom,
       path: ["AGENTE_PROFESSOR_MODO"],
       message: "mock e local não sobem em produção: use agent-engine ou desligado",
+    });
+  }
+
+  // O avatar de testes só dura um minuto e não é o atendente: em produção seria
+  // uma Ajuda que cai sozinha no meio da explicação.
+  if (env.NODE_ENV === "production" && env.LIVEAVATAR_SANDBOX === "1") {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["LIVEAVATAR_SANDBOX"],
+      message: "o sandbox do LiveAvatar não sobe em produção",
     });
   }
 

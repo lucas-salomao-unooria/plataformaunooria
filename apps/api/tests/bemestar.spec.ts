@@ -40,6 +40,9 @@ class ProviderFake implements AiProvider {
   generateSpeech(): Promise<Buffer> {
     throw new Error("não usado");
   }
+  conversarEmFluxo(): never {
+    throw new Error("conversarEmFluxo não é usado nesta suíte");
+  }
   conversar(): Promise<AiResult> {
     throw new Error("não usado");
   }
