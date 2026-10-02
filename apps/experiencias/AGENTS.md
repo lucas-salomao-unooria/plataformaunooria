@@ -30,7 +30,7 @@ e chegam sozinhos pelas pontes de cada ferramenta (ADR-102):
    de propósito (`_template/AGENTS.md` diz o que trocar primeiro).
 2. Implementar em `src/App.tsx`+; usar SOMENTE a SDK para auth/api/telemetria e
    SOMENTE o `@unooria/design-system` para interface — a seção do clone que a
-   experiência imita (`instanooria`, `unootube`, `chatgpt`, `whatsappmobile`, `unoochat`; a
+   experiência imita (`unoovista`, `instanooria`, `unootube`, `chatgpt`, `whatsappmobile`, `unoochat`; a
    `tiktooria` já está no DS, mas `packages/ui` ainda não tem ponte para ela)
    pela ponte em `packages/ui`. Falta componente? Ele nasce no repo
    `storybook-unooria` e chega por versão nova, não como arquivo local.
@@ -129,7 +129,7 @@ substitui o `tsc` ali é a suíte de ponta a ponta (`scripts/e2e/estudante/05-vi
 O hub rola com o `<ScrollBar>` do design system (ADR-75), e ele é da seção
 `unooria`. A regra das duas famílias decide o resto: **em tela da seção `unooria` o
 contêiner que rola pode ser o `ScrollBar`; dentro de um clone ele NÃO entra** — uma
-barra com o token da plataforma dentro do Instanooria é do mesmo tipo de vazamento
+barra com o token da plataforma dentro do Unoovista é do mesmo tipo de vazamento
 que um `Button` institucional no feed. Hoje o usam a redação inteira da exp04ef1b e
 a casca da exp05ef1b (`telas-da-escola.tsx`); o clone dela (`telas-do-clone.tsx`)
 não importa o componente.

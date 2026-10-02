@@ -27,7 +27,7 @@ const TURMA = process.env.TURMA ?? "8A";
 const GUIAS = [
   {
     rota: "/professor/entre-redes/8-ano/unidade-1/guia",
-    missao: "Instanooria · 8º ano",
+    missao: "Unoovista · 8º ano",
     /* Vem de `CONTROLE_DO_PROFESSOR` e de `@edu/conteudo-exp08ef1b`: se o bloco
        vivo quebrar, o guia continua renderizando e some em silêncio. */
     vivo: [/Você conduz — os \d+ momentos/i, /O que a turma lê na revelação/i],
@@ -190,7 +190,7 @@ await suite(
         "conduzir com esta turma.",
       prova:
         "É aqui que o professor decide o que rodar hoje, com a turma na frente. Um link só, " +
-        "porque a sala não tem como saber o que cada missão oferece: o Instanooria não tem " +
+        "porque a sala não tem como saber o que cada missão oferece: o Unoovista não tem " +
         "tela de resultados e o Rastro do Boato não tem guia. Quem responde isso é a ficha.",
       inteira: true,
     });

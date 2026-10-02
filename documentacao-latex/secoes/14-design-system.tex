@@ -34,8 +34,13 @@ token e prefixo de classe próprios. Elas nunca se cruzam.
   \textbf{pós-revelação} do estudante; e a redação INTEIRA do Jornal da Escola
   (exp04ef1b), que não é clone de nada\\
 \zebra \cd{instanooria} (21 + 7 extensões) & \cd{/instanooria} & \cd{--insta-*}, \cd{insta-} &
-  exp08ef1b, exp07ef1b; e só o \cd{PostCard} na gaveta do Jornal da Escola
+  exp07ef1b; e só o \cd{PostCard} na gaveta do Jornal da Escola
   (Seção~\ref{sec:ds-peca-imitada})\\
+\cd{unoovista} (21 + 10 extensões, 0.2.11) & \cd{/unoovista} & \cd{--unv-*},
+  \cd{data-unv-theme} & a superfície disfarçada da \textbf{exp08ef1b}
+  (\adrr{ADR-133}): a cópia estrutural do \cd{instanooria} com a identidade da
+  Unooria. Ícone por ligadura do Material Symbols --- a folha de fonte é
+  obrigatória\\
 \cd{unitube} (30) & \cd{/unitube} & \cd{--uni-*}, \cd{uni-} ---
   \textbf{só escuro} & backup-exp04ef1b (o UnooTube arquivado)\\
 \zebra \cd{whatsappmobile} (39) & \cd{/whatsappmobile} & \cd{--wa-*} --- só escuro
@@ -183,7 +188,8 @@ pacote direto num componente:
 
 \begin{tabularx}{\linewidth}{@{}L{28mm}L{22mm}X@{}}
 \cd{@edu/ui/ds} & \cd{unooria} & plataforma, e a redação do Jornal da Escola (com as oito peças da 0.2.8: \cd{NewsCard}, \cd{NewsArticle}, \cd{RevealClue}, \cd{BottomSheet}, \cd{NewspaperPage}, \cd{SpeechBubble}, \cd{PuzzleBlock} e \cd{PuzzleTrack}, mais \cd{NEWS\_MEDIUMS} e \cd{NEWSPAPER\_LAYOUTS})\\
-\cd{@edu/ui/ds-insta} & \cd{instanooria} & exp08ef1b, exp07ef1b (com as extensões da 0.2.5: \cd{DirectThread}, \cd{MessageBubble}, \cd{DmPoll}, \cd{ConfirmDialog}, \cd{BottomSheet}, \cd{FloatingButton}, \cd{StoryComposer}; e as da 0.2.7: \cd{InlineHint}, \cd{GestureHint} e o \cd{Snackbar} do clone, como \cd{SnackbarInsta}); e o \cd{PostCard} da gaveta do Jornal\\
+\cd{@edu/ui/ds-insta} & \cd{instanooria} & exp07ef1b (com as extensões da 0.2.5: \cd{DirectThread}, \cd{MessageBubble}, \cd{DmPoll}, \cd{ConfirmDialog}, \cd{BottomSheet}, \cd{FloatingButton}, \cd{StoryComposer}; e as da 0.2.7: \cd{InlineHint}, \cd{GestureHint} e o \cd{Snackbar} do clone, como \cd{SnackbarInsta}); e o \cd{PostCard} da gaveta do Jornal\\
+\cd{@edu/ui/ds-unoovista} & \cd{unoovista} & exp08ef1b; os nomes que colidem com a plataforma saem com o sufixo \cd{Unv} (\cd{ButtonUnv}, \cd{AvatarUnv}, \cd{IconUnv}\ldots)\\
 \cd{@edu/ui/ds-unootube} & \cd{unitube} & backup-exp04ef1b (o UnooTube arquivado, \adrr{ADR-116}: não roda mais)\\
 \cd{@edu/ui/ds-chatgpt} & \cd{chatgpt} & exp02em1b\\
 \cd{@edu/ui/ds-whatsapp} & \cd{whatsappmobile} & exp06ef2b; e o \cd{MessageBubble} da gaveta do Jornal\\

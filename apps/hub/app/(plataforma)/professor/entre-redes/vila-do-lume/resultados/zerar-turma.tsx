@@ -106,7 +106,7 @@ export function ZerarTurma({
               golpe outra vez, reconheceria, e a segunda rodada não mediria nada.
             </p>
             <p className="text-[14px] leading-relaxed text-unooria-neutral-800">
-              Perfis que você já <strong>trouxe para uma atividade</strong> do Instanooria
+              Perfis que você já <strong>trouxe para uma atividade</strong> do Unoovista
               ficam como estão: eles pertencem à atividade, e mudá-los agora trocaria os lados
               de uma aula em andamento.
             </p>
