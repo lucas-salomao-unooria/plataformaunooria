@@ -23,7 +23,7 @@
     "build": "echo 'sem build (fonte TS direto)'"
   },
   "dependencies": {
-    "@unooria/design-system": "^0.2.13"
+    "@unooria/design-system": "^0.2.14"
   },
   "peerDependencies": {
     "react": ">=19"
