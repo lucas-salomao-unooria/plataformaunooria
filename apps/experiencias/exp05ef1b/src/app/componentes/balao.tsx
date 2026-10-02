@@ -1,4 +1,4 @@
-import { MediaViewer, MessageBubble, type WaMessageDelivery } from "@edu/ui/ds-whatsapp";
+import { MediaViewer, MessageBubble, type UncMessageDelivery } from "@edu/ui/ds-unoochat";
 import { dividirLegenda } from "../../lib/regras";
 import { TEXTOS } from "../../lib/textos";
 import type { MensagemPublica } from "../../lib/tipos";
@@ -31,7 +31,7 @@ export function BalaoDaMensagem({
   hora: string;
   comRemetente?: boolean;
   encaminhada?: boolean;
-  entrega?: WaMessageDelivery;
+  entrega?: UncMessageDelivery;
   aoAbrirMidia?: (m: MensagemPublica) => void;
 }) {
   const abrir = aoAbrirMidia ? () => aoAbrirMidia(mensagem) : undefined;

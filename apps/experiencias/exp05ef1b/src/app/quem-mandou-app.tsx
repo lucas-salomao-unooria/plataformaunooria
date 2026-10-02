@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Dialog, TextButton, Toast } from "@edu/ui/ds-whatsapp";
+import { Dialog, TextButton, Toast } from "@edu/ui/ds-unoochat";
 import { api, classificar, concluir, enviarEstado, reportarErro } from "../lib/api";
 import {
   INTERVALO_DO_GATE_MS,
