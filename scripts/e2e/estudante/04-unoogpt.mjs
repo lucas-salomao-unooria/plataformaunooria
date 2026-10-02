@@ -9,8 +9,8 @@ import { conta } from "../lib/credenciais.mjs";
  * primeiro que ele está bloqueado, depois que a largada o libera. Um roteiro de
  * um contexto só passaria com o relógio quebrado.
  *
- * A experiência inteira roda na seção `chatgpt` do design system, sem
- * revelação no software: aqui a mediação é do professor, na sala.
+ * A experiência inteira roda na seção `unooriaai` do design system (ADR-138),
+ * sem revelação no software: aqui a mediação é do professor, na sala.
  *
  * Os seletores são CONTRATO com a experiência (README da exp02em1b).
  */
@@ -24,7 +24,7 @@ await suite(
   {
     slug: "estudante/04-unoogpt",
     papel: "estudante",
-    titulo: "unooGPT — a Missão Tempestade",
+    titulo: "UnooriaAI — a Missão Tempestade",
     subtitulo: "o relógio da turma, o orçamento de perguntas e o mapa que começa vazio",
     contexto:
       "Uma emergência climática: equipes limitadas, bairros demais, e um assistente de IA que " +

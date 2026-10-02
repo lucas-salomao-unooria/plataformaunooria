@@ -181,7 +181,7 @@ export function Navegavel({
         arrasto.current = null;
         setArrastando(false);
       }}
-      className={`relative h-full w-full overflow-hidden rounded-gpt-2xl border border-gpt-borda bg-gpt-superficie ${
+      className={`relative h-full w-full overflow-hidden rounded-uai-2xl border border-uai-borda bg-uai-superficie ${
         arrastando ? 'cursor-grabbing' : 'cursor-grab'
       }`}
     >

@@ -35,7 +35,7 @@ const GUIAS = [
   },
   {
     rota: "/professor/entre-redes/2-serie/unidade-1/guia",
-    missao: "unooGPT · 2ª série EM",
+    missao: "UnooriaAI · 2ª série EM",
     /* A tabela dos 8 vieses vem de `GET /unoogpt/professor/fontes`. É a única
        superfície em que o viés é dito, e o hub não guarda cópia dela. */
     vivo: [/As 8 fontes e o viés de cada uma/i, /Em que ela engana/i, /Histórico de ocorrências/i],

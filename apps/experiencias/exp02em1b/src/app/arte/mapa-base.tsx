@@ -13,8 +13,8 @@
  * próprio: o terreno é ILUSTRAÇÃO, não interface. Verde de mata e verde de
  * quarteirão não são decisão de Design System — são as duas cores de uma
  * paisagem, e `@unooria/design-system` não publica paleta de paisagem (o verde
- * que ele tem, `--gpt-color-green-500`, é o verde de "deu certo", saturado
- * demais para ser campo).
+ * que a seção tem, `--uai-status-success`, é o verde de "deu certo", saturado
+ * demais para ser campo — e ela não publica cor primitiva nenhuma).
  *
  * Tudo que é INTERFACE dentro do desenho vem do pacote: as vias, a ferrovia, a
  * água e os rótulos usam token. A paleta de terreno abaixo é declarada uma vez
@@ -29,9 +29,10 @@ const TERRENO = {
   mata: '#DCE8D3',
   bosque: '#D3E2C8',
   quarteirao: '#E1EADB',
-  // A água é paisagem pelo mesmo motivo que os verdes. O azul que o pacote tem
-  // (`--gpt-color-blue-400`) é azul de LINK: usado no rio, ele acende a cidade
-  // inteira e puxa o olho para onde não há informação nenhuma.
+  // A água é paisagem pelo mesmo motivo que os verdes. O azul que a seção tem
+  // (`--uai-status-info`) é azul de AVISO, e é também a cor da Equipe Alfa:
+  // usado no rio, ele acende a cidade inteira e puxa o olho para onde não há
+  // informação nenhuma.
   rio: '#CFE3F5',
   'rio-raso': '#DDEDF9',
 } as const;
@@ -40,12 +41,12 @@ const TERRENO = {
  * O que é interface dentro do mapa. Tudo token de `@unooria/design-system`.
  */
 const MALHA = {
-  via: 'var(--gpt-bg-primary)',
-  ferrovia: 'var(--gpt-color-gray-200)',
+  via: 'var(--uai-bg-primary)',
+  ferrovia: 'var(--uai-border-default)',
   /** As duas vias frágeis: cinza, porque não são caminho garantido. */
-  fragil: 'var(--gpt-text-soft-30)',
-  rotulo: 'var(--gpt-text-soft-60)',
-  bussola: 'var(--gpt-text-soft-40)',
+  fragil: 'var(--uai-text-soft-30)',
+  rotulo: 'var(--uai-text-soft-60)',
+  bussola: 'var(--uai-text-soft-40)',
 } as const;
 
 /** Quarteirões: retângulos claros que dão textura urbana entre as vias. */

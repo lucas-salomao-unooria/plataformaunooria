@@ -14,6 +14,7 @@
     "./ds-chatgpt": "./src/ds-chatgpt.ts",
     "./ds-whatsapp": "./src/ds-whatsapp.ts",
     "./ds-unoochat": "./src/ds-unoochat.ts",
+    "./ds-unooriaai": "./src/ds-unooriaai.ts",
     "./styles/plataforma.css": "./styles/plataforma.css"
   },
   "scripts": {

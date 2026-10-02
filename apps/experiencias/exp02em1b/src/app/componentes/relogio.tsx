@@ -90,9 +90,9 @@ export function RelogioDaTempestade({
 }) {
   if (estado.fase === "aguardando") {
     return (
-      <span className="flex items-center gap-2 rounded-gpt-md border border-gpt-borda px-3 py-2">
-        <span className="text-sm text-gpt-suave-60">Aguardando o professor</span>
-        <span className="font-mono text-lg font-bold tabular-nums text-gpt-suave-60">
+      <span className="flex items-center gap-2 rounded-uai-md border border-uai-borda px-3 py-2">
+        <span className="text-sm text-uai-suave-60">Aguardando o professor</span>
+        <span className="font-mono text-lg font-bold tabular-nums text-uai-suave-60">
           {cronometroDe(segundos ?? RELOGIO_DA_TELA.duracaoRealEmSegundos)}
         </span>
       </span>
@@ -101,9 +101,9 @@ export function RelogioDaTempestade({
 
   if (segundos === null) {
     return (
-      <span className="flex items-center gap-2 rounded-gpt-md border border-gpt-borda px-3 py-2">
-        <span className="text-sm font-semibold text-gpt-tinta">Sem tempo marcado</span>
-        <span className="text-xs text-gpt-suave-60">até o professor encerrar</span>
+      <span className="flex items-center gap-2 rounded-uai-md border border-uai-borda px-3 py-2">
+        <span className="text-sm font-semibold text-uai-tinta">Sem tempo marcado</span>
+        <span className="text-xs text-uai-suave-60">até o professor encerrar</span>
       </span>
     );
   }
@@ -115,7 +115,7 @@ export function RelogioDaTempestade({
   return (
     <span className="grid gap-1">
       <span className="flex items-center justify-end gap-2">
-        <span className="text-sm text-gpt-suave-60">
+        <span className="text-sm text-uai-suave-60">
           {fechado
             ? estado.motivoDoFim === "professor"
               ? "Investigação encerrada"
@@ -124,16 +124,16 @@ export function RelogioDaTempestade({
         </span>
         <span
           className={`font-mono text-lg font-bold tabular-nums ${
-            fechado || apertado ? "text-gpt-erro" : "text-gpt-tinta"
+            fechado || apertado ? "text-uai-erro" : "text-uai-tinta"
           }`}
         >
           {cronometroDe(segundos)}
         </span>
       </span>
-      <span className="h-1 w-full overflow-hidden rounded-gpt-full bg-gpt-superficie">
+      <span className="h-1 w-full overflow-hidden rounded-uai-full bg-uai-superficie">
         <span
-          className={`block h-full rounded-gpt-full transition-all ${
-            fechado || apertado ? "bg-gpt-erro" : "bg-gpt-inverso"
+          className={`block h-full rounded-uai-full transition-all ${
+            fechado || apertado ? "bg-uai-erro" : "bg-uai-inverso"
           }`}
           style={{ width: `${decorrido * 100}%` }}
         />
