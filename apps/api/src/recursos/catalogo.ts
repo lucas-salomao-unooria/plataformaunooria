@@ -56,6 +56,27 @@ export const PRODUTOS = [
 
 export type Produto = (typeof PRODUTOS)[number];
 
+/**
+ * Os produtos que nascem DESLIGADOS — a exceção a "ausência de linha = ligado"
+ * (regra 8). É o estado de um produto em TESTE INTERNO: sem linha em escopo
+ * nenhum ele não aparece para ninguém, e o `admin` o liga no painel da Unooria
+ * para a escola (ou a rede) onde quer testar, como liga qualquer outro.
+ *
+ * Mora no RESOLVEDOR, e não numa linha semeada por migration, de propósito:
+ * `disponibilidades.definido_por` é NOT NULL com FK para `users`, e numa stack
+ * nova (ou no banco do CI) ainda não existe usuário para assinar a decisão.
+ *
+ * A Ajuda com avatar (ADR-132) entrou aqui a pedido do dono do produto, em
+ * 2026-10-02: cobra minuto de vídeo, e por ora só a equipe a usa. Sair da lista
+ * é a decisão de lançar — e muda o padrão de TODAS as redes de uma vez.
+ */
+export const PRODUTOS_DESLIGADOS_POR_PADRAO: readonly Produto[] = ["ajuda"];
+
+/** O que vale quando ninguém decidiu nada, em escopo nenhum. */
+export function ligadoPorPadrao(produto: Produto): boolean {
+  return !PRODUTOS_DESLIGADOS_POR_PADRAO.includes(produto);
+}
+
 export const ProdutoSchema = z.enum(PRODUTOS);
 
 /** Os dois tipos de recurso. Fechado: id fora disto é erro de programação. */

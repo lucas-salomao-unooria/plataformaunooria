@@ -7,7 +7,7 @@ import {
 } from "../src/comum/disponibilidade";
 import { PrismaService } from "../src/prisma/prisma.service";
 import { RecursosController } from "../src/recursos/recursos.controller";
-import { PRODUTOS } from "../src/recursos/catalogo";
+import { PRODUTOS, ligadoPorPadrao } from "../src/recursos/catalogo";
 import { SalasService } from "../src/salas/salas.service";
 import { criarTurmaDeTeste } from "./turma-de-teste";
 
@@ -303,7 +303,10 @@ describe("GET /recursos/efetivos — o que o hub lê para montar os cards", () =
     // Um mapa que só lista o ligado obriga quem lê a saber a lista completa de
     // cor — e o hub passaria a ter a segunda fonte do vocabulário.
     expect(Object.keys(r.produtos).sort()).toEqual([...PRODUTOS].sort());
-    expect(Object.values(r.produtos).every((p) => p.ligado)).toBe(true);
+    // Sem linha, cada produto vale o SEU padrão: ligado, salvo o que está em
+    // teste interno (a Ajuda com avatar, `PRODUTOS_DESLIGADOS_POR_PADRAO`).
+    for (const slug of PRODUTOS) expect(r.produtos[slug]?.ligado).toBe(ligadoPorPadrao(slug));
+    expect(r.produtos.ajuda?.ligado).toBe(false);
   });
 
   test("reflete o desligamento e aplica o teto nas experiências do produto", async () => {

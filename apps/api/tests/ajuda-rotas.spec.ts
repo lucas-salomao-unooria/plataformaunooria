@@ -49,7 +49,11 @@ class PrismaFalso {
     { chave: "minutos-por-dia", valor: 30 },
     { chave: "minutos-por-sessao", valor: 10 },
   ];
-  disponibilidades: Array<{ recursoId: string; escolaId: string | null; ligado: boolean; versaoFixa: null; motivo: string }> = [];
+  /* A Ajuda nasce DESLIGADA (teste interno, `PRODUTOS_DESLIGADOS_POR_PADRAO`):
+     aqui ela começa ligada na rede, como o admin faria no painel. */
+  disponibilidades: Array<{ recursoId: string; escolaId: string | null; ligado: boolean; versaoFixa: null; motivo: string }> = [
+    { recursoId: "produto:ajuda", escolaId: null, ligado: true, versaoFixa: null, motivo: "teste interno" },
+  ];
   private seq = 100;
 
   private casa(s: Sessao, w: Partial<Record<string, unknown>>): boolean {
@@ -381,10 +385,18 @@ describe("POST /ajuda/llm/chat/completions — a resposta", () => {
     };
     const m = montar({ ia });
     const { system } = await abrirEDevolverSystem(m);
-    m.prisma.disponibilidades.push({ recursoId: "produto:ajuda", escolaId: null, ligado: false, versaoFixa: null, motivo: "teste" });
+    m.prisma.disponibilidades = [{ recursoId: "produto:ajuda", escolaId: null, ligado: false, versaoFixa: null, motivo: "teste" }];
     const res = await chamarLlm(m, { messages: [{ role: "system", content: system }, { role: "user", content: "oi" }] });
     expect(res.fala).toMatch(/desligada para a sua rede/);
     expect(chamou).toBe(false);
+  });
+
+  it("sem linha nenhuma a Ajuda está DESLIGADA (nasce desligada, teste interno)", async () => {
+    const m = montar();
+    const { system } = await abrirEDevolverSystem(m);
+    m.prisma.disponibilidades = [];
+    const res = await chamarLlm(m, { messages: [{ role: "system", content: system }, { role: "user", content: "oi" }] });
+    expect(res.fala).toMatch(/desligada para a sua rede/);
   });
 
   it("GET /ajuda/llm/models exige o segredo e anuncia um modelo só", () => {

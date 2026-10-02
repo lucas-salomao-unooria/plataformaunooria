@@ -8253,6 +8253,9 @@
                               "ajuda"
                             ]
                           },
+                          "ligadoPorPadrao": {
+                            "type": "boolean"
+                          },
                           "estadoAqui": {
                             "type": "string",
                             "enum": [
@@ -8370,6 +8373,7 @@
                         },
                         "required": [
                           "slug",
+                          "ligadoPorPadrao",
                           "estadoAqui",
                           "efetivo",
                           "experiencias"
