@@ -188,7 +188,7 @@ const SECOES: SecaoLegal[] = [
         </div>
         <p>
           O Unoovista e o Instanooria imitam aplicativos de fotos (é no Unoovista que acontece A Seleção); o UnooTube, um
-          site de vídeos; o UnooGPT, um assistente de conversa. A semelhança é proposital: a missão só funciona se o ambiente parecer o de verdade. Mas o ambiente é
+          site de vídeos; o UnooriaAI, um assistente de conversa. A semelhança é proposital: a missão só funciona se o ambiente parecer o de verdade. Mas o ambiente é
           fechado, e a diferença importa.
         </p>
         <div className="legal-cards">
@@ -468,7 +468,7 @@ const SECOES: SecaoLegal[] = [
         <p>Hoje a IA aparece nestes lugares:</p>
         <ul>
           <li>no feed do Unoovista, criando os perfis, as publicações e as reações dos personagens;</li>
-          <li>no UnooGPT, na conversa com o personagem que responde às suas perguntas;</li>
+          <li>no UnooriaAI, na conversa com o personagem que responde às suas perguntas;</li>
           <li>na A Seleção, lendo a legenda que você publica nos Stories para sugerir ao professor um nível de habilidade;</li>
           <li>nas ferramentas do professor: no rascunho do plano de aula, no preparo das publicações e das imagens da A Seleção e no texto do acompanhamento de bem-estar.</li>
         </ul>

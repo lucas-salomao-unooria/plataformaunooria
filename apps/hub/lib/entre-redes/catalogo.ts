@@ -359,12 +359,12 @@ export const MISSAO_UNOOGPT: Missao = {
   unidadeSlug: "unidade-1",
   unidade: 1,
   expId: "exp02em1b",
-  titulo: "unooGPT — Decidir com o que os dados mostram",
+  titulo: "UnooriaAI — Decidir com o que os dados mostram",
   resumo:
     "Uma tempestade chega em uma hora e há 2 equipes para 4 bairros. O estudante conversa com um assistente de IA, pede os dados que quiser e decide — com 3 perguntas e o relógio correndo. Cada fonte mostra um pedaço distorcido da cidade, e é essa distorção que a turma discute depois.",
   status: "disponivel",
   estudante: {
-    titulo: "unooGPT",
+    titulo: "UnooriaAI",
     chamada:
       "Uma tempestade chega a Serra do Sauá em uma hora. Você tem duas equipes, quatro bairros e um assistente que consulta os dados da cidade. Decida para onde mandar cada equipe.",
   },
