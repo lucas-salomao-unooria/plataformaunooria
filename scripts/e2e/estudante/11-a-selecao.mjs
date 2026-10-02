@@ -174,9 +174,13 @@ await suite(
     await prof.click('[data-acao="continuar-criacao"]');
     /* "Pôr no ar agora" nasce desligado quando a turma já tem uma em andamento
        (a de uma corrida anterior): liga, para a turma entrar nesta. */
+    /* O `<input>` do `Toggle` do DS é invisível de propósito (opacidade 0, sem
+       ponteiro): espera-se o input no DOM e o toque vai como evento — o
+       `onChange` do React escuta o `click`. Esperar `visible` estoura o tempo
+       com o interruptor na tela (a receita da 10 e da 13). */
     const noAr = prof.getByLabel("Pôr esta atividade no ar agora");
-    await noAr.waitFor({ timeout: 10_000 });
-    if (!(await noAr.isChecked())) await noAr.click();
+    await noAr.waitFor({ state: "attached", timeout: 10_000 });
+    if (!(await noAr.isChecked())) await noAr.dispatchEvent("click");
     await prof.click('[data-acao="criar-atividade"]');
     await prof.waitForURL("**/resultados?**cobertura=**", { timeout: 30_000 });
     await prof.waitForSelector('[data-estado-da-atividade="em-andamento"]', { timeout: 20_000 });
