@@ -9,10 +9,9 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{136 decisões}, numeradas até ADR-138, com duas lacunas
-temporárias: a 132 (a Ajuda com avatar) já está no código e ainda não tem
-seção aqui, e a 137 (o Júri Estadual) foi reservada por uma frente paralela e
-entra com ela. A 133 e a 134 nasceram no mesmo dia, em frentes paralelas
+São \textbf{137 decisões}, numeradas até ADR-138, com uma lacuna
+temporária: a 132 (a Ajuda com avatar) já está no código e ainda não tem
+seção aqui. A 133 e a 134 nasceram no mesmo dia, em frentes paralelas
 (Unoovista e Unoochat), e entraram juntas no merge; a 135 e a 136 levaram as
 duas redes para A Seleção e para o Jornal da Escola no mesmo dia. A 117
 (o Jornal da Escola) entrou depois da 121: o número tinha sido
@@ -187,7 +186,8 @@ que a cercam.
 \zebra \adrr{ADR-134} & Quem mandou isso? troca o clone do WhatsApp pelo Unoochat & 2026-10-02 & Aceita\\
 \adrr{ADR-135} & A Seleção troca o Instanooria pelo Unoovista & 2026-10-02 & Aceita\\
 \zebra \adrr{ADR-136} & As peças da gaveta do Jornal da Escola passam para o Unoovista e o Unoochat & 2026-10-02 & Aceita\\
-\adrr{ADR-138} & A missão da 2ª série do EM troca o clone do ChatGPT pelo UnooriaAI & 2026-10-02 & Aceita\\
+\adrr{ADR-137} & O Júri Estadual de Projetos nasce no Unoovista e mede o que o briefing pediu & 2026-10-02 & Aceita\\
+\zebra \adrr{ADR-138} & A missão da 2ª série do EM troca o clone do ChatGPT pelo UnooriaAI & 2026-10-02 & Aceita\\
 \bottomrule
 \end{tabularx}
 
@@ -11802,6 +11802,105 @@ subcomponentes e as mesmas props.
 a seguir o modo escuro do sistema. Com esta, a ponte \cd{@edu/ui/ds-insta} fica
 só com o clone da exp01ef1b, e a \cd{@edu/ui/ds-whatsapp} só com a exp06ef2b.
 
+% ---------------------------------------------------------------------------
+\section{ADR-137 --- O Júri Estadual de Projetos: a missão do 6º ano, Unidade 1, nasce no Unoovista e mede o que o briefing pediu}
+\label{adr:exp06ef1b-juri-estadual}
+
+\textbf{Data.} 2026-10-02. \textbf{Status.} Aceita. Segue a \adrr{ADR-130}
+(a atividade é do professor), a \adrr{ADR-111} (equipes), a \adrr{ADR-112} e a
+\adrr{ADR-120} (evidência) e a \adrr{ADR-133} (o Unoovista no lugar do
+Instanooria).
+
+\begin{especificacao}{Contexto}
+A esteira de geração de missões entregou o PRD, o \emph{handoff} e a copy de
+uma missão nova para o 6º ano, 1º bimestre: o estudante é jurado de uma mostra
+científica estadual num feed de rede social; as curtidas afunilam o feed em
+silêncio, o voto é lacrado, a turma descobre na Galeria Oculta o que nunca
+chegou à tela de cada um, e a missão termina na cadeia
+interações--dados--algoritmo--bolha e numa transferência cívica. O briefing
+exigia, \emph{obrigatoriamente}, a EF06CO01, a EF06CO03 e a EF06CO07. Os
+artefatos foram escritos para a seção \cd{instanooria}, para uma porta e duas
+ADRs que já tinham dono neste repositório, e com quatro contradições internas
+que nenhuma banca pegou.
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{itemize}
+  \item \textbf{A missão mede o que o briefing pediu: EF06CO01, EF06CO03 e
+    EF06CO07.} A esteira tinha trocado a EF06CO07 pela EF06CO10 (a adequação
+    pedagógica achou a primeira ``decorativa''). Mas o texto oficial da
+    EF06CO10 é o consumo de tecnologia, a obsolescência e a sustentabilidade, e
+    o painel de habilidades mostraria essa descrição para uma ação que não a
+    exercita. A EF06CO07 volta com uma mecânica de verdade: o \textbf{rastro da
+    curtida}. O voto do estudante sai do celular em quatro pacotes numerados,
+    cada um por um caminho de equipamentos, chega fora de ordem, e a criança o
+    remonta no destino.
+  \item \textbf{A taxa de invisibilidade é o número real}, calculado no
+    servidor sobre os posts que o feed serviu. Os ``75\,\% / 12 projetos
+    ocultos'' da spec não fecham com as regras dela mesma (quatro posts de
+    abertura, um por área; dez rolagens; quatro projetos por área): quem
+    afunila vê sete projetos e deixa nove ocultos. A galeria tem tamanho
+    variável, a área líder repete o projeto com um segundo post (o bastidor)
+    para fechar as dez rolagens, e quem não interagiu vê o próprio número,
+    menor --- o contraponto honesto.
+  \item \textbf{O feed é decidido no servidor} (o cliente mede curtida e
+    permanência, a api serve o próximo post), com uma regra pura e
+    determinística por sessão: curtida vale 3, permanência acima de 5 s vale
+    1; com 6 numa área, o resto do feed é dela; abaixo do limiar, o feed já
+    puxa para a área de maior peso. É a regra que a enquete da EF06CO03
+    pergunta.
+  \item \textbf{Não há acervo padrão}: os dezesseis estandes, texto e imagem,
+    são gerados pelo professor na criação da atividade, como na missão do 8º
+    ano. Sem saldo de IA, não há atividade. O que é fixo --- os pacotes, os
+    blocos, o caso Mariana, os cartões e as perguntas --- é o esqueleto da
+    missão e vive na api. O podcast da spec sai: não estava em nenhuma tela nem
+    no orçamento de tempo.
+  \item \textbf{As enquetes ficam em histórias, e o DS ganha o
+    \cd{StoryPoll}} (0.2.12, ainda em PR): a figurinha de enquete sobre a mídia
+    do \cd{StoryViewer}, com o contrato da \cd{DmPoll} (voto único, sem
+    contagem, sem gabarito). Até a 0.2.12 sair, a \cd{DmPoll} ocupa o lugar
+    dele, como compensação temporária e marcada
+    (Seção~\ref{sec:ds-juri-0211}). A remontagem dos pacotes e a cadeia ficam na tela da escola
+    (\cd{unooria}), por toque sequencial (\cd{PuzzleTrack}): o DS não tem
+    arrastar.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Implementar a spec como veio}, com a EF06CO10. O painel diria
+    ``analisar o consumo de tecnologia e a obsolescência'' sobre um estudante
+    que revisou um voto; e o briefing ficaria sem uma habilidade obrigatória.
+  \item \textbf{Medir as quatro.} O Canal B passaria a quatro itens, e a
+    própria esteira já alertava que o fim da aula de 50 minutos aperta.
+  \item \textbf{Cravar os 75\,\%}, tirando a abertura equilibrada para o feed
+    afunilar já nas duas primeiras curtidas. O estudante não veria que existia
+    variedade antes de a bolha fechar, e o ``aha'' enfraquece.
+  \item \textbf{As enquetes numa DM da comissão}, com a \cd{DmPoll} que já
+    existia. Não exigia componente novo, mas a spec e a ficção pediam histórias.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{A sobreposição com a missão do 8º ano é alta}: feed que esconde
+    conteúdo, revelação do que não chegou. A diferença está no eixo (áreas, e
+    não dois lados de um tema), na regra explícita e ensinada, na busca ativa
+    com revisão do voto e na transferência para uma eleição escolar.
+  \item \textbf{Sem saldo de IA, o professor não cria a atividade}, e não há
+    banco padrão para a aula sair mesmo assim.
+  \item \textbf{A remontagem dos pacotes é simples}: ordenar pelo número. É o
+    conceito (a numeração é o que permite remontar no destino), mas não exercita
+    roteamento nem perda de pacote.
+\end{itemize}
+
+\textbf{Gatilho.} O livro do 6º ano trazer outra habilidade como foco da
+Unidade 1; o piloto mostrar que menos de 80\,\% dos que curtem duas vezes a
+mesma área fecham a bolha (então o peso da curtida sobe para 4); ou a rede
+pedir a aula sem IA.
+
+% ---------------------------------------------------------------------------
 \section{ADR-138 --- A missão da 2ª série do EM troca o clone do ChatGPT pelo UnooriaAI}
 \label{adr:exp02em1b-unooriaai}
 

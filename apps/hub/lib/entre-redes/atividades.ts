@@ -1,5 +1,6 @@
 import type { CoberturasDaTurma } from "../a-selecao-tipos";
 import type { PacotesDaTurma } from "../jornal-escola-tipos";
+import type { PacotesDoJuri } from "../juri-estadual-tipos";
 import type { PacotesDaTurmaQuemMandou } from "../quem-mandou-tipos";
 
 /**
@@ -8,16 +9,16 @@ import type { PacotesDaTurmaQuemMandou } from "../quem-mandou-tipos";
  * A missão é o esqueleto narrativo; a ATIVIDADE é a missão que a turma faz de
  * fato, e quem a cria é sempre o professor — a plataforma não cria nada. Cada
  * missão é DONA das próprias atividades na api (a cobertura da exp07ef1b, o
- * pacote da exp04ef1b e da exp05ef1b, a `activity` da exp08ef1b); este módulo
- * traduz as quatro respostas para a MESMA lista da ficha, e diz para onde cada
- * atividade leva.
+ * pacote da exp04ef1b, da exp05ef1b e da exp06ef1b, a `activity` da
+ * exp08ef1b); este módulo traduz as cinco respostas para a MESMA lista da
+ * ficha, e diz para onde cada atividade leva.
  *
  * Puro, e vale no cliente: o botão "Usar esta atividade agora" importa daqui.
  * As leituras server-side moram em `atividades-servidor.ts`.
  */
 
 /** As missões com atividade — o mesmo par de `equipes/regras.ts#EXPERIENCIAS_COM_ATIVIDADE` na api. */
-export const MISSOES_COM_ATIVIDADE = ["exp08ef1b", "exp07ef1b", "exp04ef1b", "exp05ef1b"] as const;
+export const MISSOES_COM_ATIVIDADE = ["exp08ef1b", "exp07ef1b", "exp04ef1b", "exp05ef1b", "exp06ef1b"] as const;
 export type MissaoComAtividade = (typeof MISSOES_COM_ATIVIDADE)[number];
 
 export function temAtividades(expId: string | null | undefined): expId is MissaoComAtividade {
@@ -37,7 +38,7 @@ export const ROTULO_DO_ESTADO: Record<EstadoDaAtividade, { rotulo: string; varia
   "em-preparo": { rotulo: "Em preparo", variante: "warning" },
 };
 
-/** Uma atividade como a ficha a lista — a mesma forma para as quatro missões. */
+/** Uma atividade como a ficha a lista — a mesma forma para as cinco missões. */
 export interface AtividadeNaLista {
   id: string;
   titulo: string;
@@ -73,7 +74,7 @@ export function serieDaMissao(expId: string): string | null {
 
 /**
  * Para onde a atividade leva — a PÁGINA DA ATIVIDADE. No Instanooria é a tela
- * dela, que já existia; nas outras três, a aula e os resultados da missão com
+ * dela, que já existia; nas outras, a aula e os resultados da missão com
  * a atividade escolhida na URL (o mesmo `?cobertura=`/`?pacote=` que o painel de
  * habilidades já lia).
  */
@@ -108,6 +109,8 @@ export function caminhoDoEmAndamento(expId: MissaoComAtividade, turmaId: string,
       return `/jornal-escola/turmas/${t}/pacotes/${a}/em-andamento`;
     case "exp05ef1b":
       return `/quem-mandou-isso/turmas/${t}/pacotes/${a}/em-andamento`;
+    case "exp06ef1b":
+      return `/juri-estadual/turmas/${t}/pacotes/${a}/em-andamento`;
   }
 }
 
@@ -178,6 +181,18 @@ export function atividadesDoQuemMandou(
     detalhe: [rotuloDaDisciplina(h.disciplina), ORIGEM[h.origem]].join(" · "),
     estado: h.ativo ? "em-andamento" : "pronta",
     criadaEm: h.aprovadoEm,
+    rodadas: h.rodadas,
+  }));
+}
+
+/** O Júri Estadual: o pacote homologado é a atividade, como no Jornal. A disciplina vem em slug. */
+export function atividadesDoJuri(p: PacotesDoJuri, rotuloDaDisciplina: (slug: string) => string): AtividadeNaLista[] {
+  return p.historico.map((h) => ({
+    id: h.id,
+    titulo: h.tema,
+    detalhe: [rotuloDaDisciplina(h.disciplina), ORIGEM[h.origem]].join(" · "),
+    estado: h.ativo ? "em-andamento" : "pronta",
+    criadaEm: h.criadoEm,
     rodadas: h.rodadas,
   }));
 }

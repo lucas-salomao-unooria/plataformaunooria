@@ -711,6 +711,12 @@ A resposta --- que devolve só \enquote{enviada}, nunca o resultado &
   os dois portões, zerar), e o material do guia &
   \rota{/jornal-escola/\B turmas/*}, \rota{/professor/\B material} & \no &
   \yes\footnotesize{\ddag} & \yes & \yes\\
+\zebra O Júri Estadual de Projetos: a própria missão (\adrr{ADR-137}) &
+  \rota{/juri-estadual/*} & \yes & \no & \no & \no\\
+\textbf{O Júri Estadual: preparar a mostra, conduzir e ler a lousa} (atividades,
+  imagens, a Galeria Oculta, zerar), e o material do guia &
+  \rota{/juri-estadual/\B turmas/*}, \rota{/professor/\B material} & \no &
+  \yes\footnotesize{\ddag} & \yes & \yes\\
 \zebra unooGPT: a própria partida & \rota{/unoogpt/*} & \yes & \no & \no & \no\\
 \textbf{unooGPT: turma e transcrição individual} &
   \rota{/unoogpt/professor/*} & \no & \yes\footnotesize{\ddag} & \no & \yes\\
@@ -1017,6 +1023,12 @@ acredita ter declarado algo.
     desce num portão: a pista quando ela a abre, a reação com o resultado
     liberado, o pilar da vaga depois da Chave --- e o conjunto da Chave, nunca
     (\adrr{ADR-117}).
+  \item No Júri Estadual de Projetos (\adrr{ADR-137}), o \emph{bundle} não
+    recebe o acervo nem a regra: os pesos e o limiar do motor do feed, a área
+    líder e os estandes que o feed não serviu ficam no servidor até a Galeria
+    Oculta abrir; a ordem certa dos pacotes e da cadeia não desce (os ids são
+    opacos por sessão), nem o cartão certo do caso Mariana (\cd{certo} está na
+    redação do \emph{log}), nem o nível das alternativas das enquetes.
   \item Os textos dos cartões da app-70 chegam ao jogo \textbf{sem gabarito}, e
     apenas os da bolha daquela criança.
   \item \cd{lado}, \cd{perfil} e \cd{intensidade} dos posts da exp08ef1b são
@@ -1065,7 +1077,10 @@ Ranking sem menor real & O ranking do UnooTube (hoje \cd{backup-exp04ef1b})
   usava colegas \textbf{fictícios}, com distribuição desenhada para a lição. Não
   há pontuação de criança real exposta a outra criança --- nem no Jornal da
   Escola, em que o painel só mostra as verificadas num histograma anônimo e a
-  criança não vê a edição de ninguém.\\
+  criança não vê a edição de ninguém, nem no Júri Estadual de Projetos, cujo
+  painel é PROJETADO na lousa: a linha de cada computador diz só progresso, e o
+  voto e a taxa de invisibilidade aparecem apenas no agregado por área, sem
+  nome (\adrr{ADR-137}).\\
 \zebra Dado de saúde com posse & \cd{app\_91\_ciclos} e \cd{app\_91\_checkins}
   têm RLS \emph{e} filtro por \cd{professor\_id} em toda \emph{query}, e não
   existe rota de gestor nem agregado. O próprio titular apaga tudo.\\
@@ -1083,7 +1098,11 @@ Texto de menor com contenção & \cd{exp06ef2b\_reflexoes} guarda o
   da Escola (\adrr{ADR-117}) é o oposto, e de propósito: \textbf{não tem texto
   livre de menor}. Toda resposta é vocabulário fechado (notícia, tipo de pista,
   bloco da Chave, motivo, alternativa), e por isso não há recorte de gestor a
-  aplicar --- o gestor lê o mesmo painel que o professor.\\
+  aplicar --- o gestor lê o mesmo painel que o professor. O Júri Estadual de
+  Projetos (\adrr{ADR-137}) também não tem: o que a criança digita na busca da
+  Galeria Oculta \textbf{nunca sai do aparelho} --- a api recebe só o tipo da
+  busca e a área que casou ---, e o resto é vocabulário fechado (curtida, voto,
+  convicção, ids opacos, cartão, alternativa).\\
 \bottomrule
 \end{tabularx}
 

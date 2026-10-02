@@ -2257,6 +2257,11 @@ flowchart TB
     qmt["/quem-mandou-isso/turmas/* - prof, gestor - o pacote E o relogio da turma"]
     qmp["/quem-mandou-isso/professor/* - prof, gestor - material do guia"]
   end
+  subgraph JU["exp06ef1b - O Juri Estadual de Projetos (ADR-137)"]
+    ju["/juri-estadual/* - estudante - e as enquetes em /evidencias"]
+    jut["/juri-estadual/turmas/* - prof, gestor - a mostra, a Galeria Oculta e a lousa"]
+    jup["/juri-estadual/professor/* - prof, gestor - material do guia (so o esqueleto)"]
+  end
 
   %% Duas areas por AUSENCIA deliberada: bem-estar nao tem rota de gestor nem
   %% de agregado; e no unoogpt o controller do gestor nao tem NENHUMA rota que

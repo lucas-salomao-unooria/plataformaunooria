@@ -25,7 +25,7 @@ do Instanooria de propósito.
 ## As atividades da missão (ADR-130)
 
 **A missão é o esqueleto narrativo; a ATIVIDADE é a missão que a turma faz de
-fato, e a plataforma nunca a cria.** As quatro missões com atividade
+fato, e a plataforma nunca a cria.** As cinco missões com atividade
 (`MISSOES_COM_ATIVIDADE` em `lib/entre-redes/atividades.ts`, o par da api)
 dividem a seção **"Suas atividades"** da ficha (`[ano]/[unidade]/atividades-da-missao.tsx`,
 no molde da lista do Instanooria) e o card `components/cartao-atividade.tsx`.
@@ -42,7 +42,7 @@ no molde da lista do Instanooria) e o card `components/cartao-atividade.tsx`.
   fim (pôr no ar, montar as equipes) é `lib/entre-redes/criar-atividade.ts`. O
   Instanooria mantém a criação dele (`/professor/atividades/nova`).
 - **A página da atividade** é a `.../resultados` com `?cobertura=` (A Seleção) ou
-  `?pacote=` (Jornal, Quem Mandou), e a `/professor/atividades/[id]` no
+  `?pacote=` (Jornal, Quem Mandou, Júri Estadual), e a `/professor/atividades/[id]` no
   Instanooria. O painel da aula e o zerar só aparecem na EM ANDAMENTO; a pronta
   mostra o "Usar esta atividade agora". As imagens se geram ali, com o id da
   atividade (a pronta também).
@@ -96,10 +96,10 @@ decide nível, cópia e o que conta é a api (`apps/api/src/evidencias/`).
   exp05ef1b, onde a atividade é o PACOTE aprovado (`atividadeId = pacoteId`,
   `key` no pacote para remontar quando outro é aprovado), e nos resultados da A
   Seleção, onde a atividade é a COBERTURA (`?cobertura=`; sem ele, a em
-  andamento) — e nos do Jornal da Escola, onde é o PACOTE (`?pacote=`). Sem
-  turma, sem painel.
+  andamento) — e nos do Jornal da Escola e do Júri Estadual, onde é o PACOTE
+  (`?pacote=`). Sem turma, sem painel.
 - **Invisível sem ficha, de propósito**: `temFicha: false` não desenha nada, e
-  hoje só a exp05ef1b (ADR-118), a exp07ef1b (ADR-115) e a exp04ef1b têm ficha — no
+  hoje só a exp05ef1b (ADR-118), a exp07ef1b (ADR-115), a exp04ef1b e a exp06ef1b têm ficha — no
   Instanooria o bloco não aparece, e não é defeito: confira `temFicha` antes.
 - **Ausência é "Não avaliado", nunca "Não atingiu".** A cópia da aula projetada
   chega "a revisar" e só conta depois de "Confirmar para a turma".
@@ -138,3 +138,18 @@ folha por computador, zerar, podcast e habilidades. A criação é
   chamada) e a transcrição fica sempre na tela; o player é o `AudioPlayer` do DS.
   As três falas do Bloco 2 se editam na CRIAÇÃO, junto dos posts, e vão na
   mesma gravação.
+
+## O Júri Estadual de Projetos (exp06ef1b)
+
+A página da atividade é `resultados/resultados-juri-estadual.tsx`; a criação,
+`atividades/nova/criar-juri-estadual.tsx`; o espelho do contrato,
+`lib/juri-estadual-tipos.ts` (com teste que lê a api como texto).
+
+- **Não há banco padrão** (decisão de 2026-10-02): o 429 da geração diz que o
+  saldo acabou e NÃO oferece atalho — oferecer um seria prometer o que não
+  existe. As imagens são da página da atividade, como no Jornal.
+- **A invisibilidade média só vai para a lousa depois de liberar a galeria**:
+  projetada no pico, ela contaria à turma o que a Galeria Oculta mostra a cada
+  um. O número é o da api; nenhum percentual é cravado na copy nem no guia.
+- **O gráfico de votos usa "Área A"… no eixo** (o `BarChart` corta acima de ~8
+  caracteres) e o nome da área na legenda; as barras vão em % dos votos.

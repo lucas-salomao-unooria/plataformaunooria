@@ -5,6 +5,7 @@ import {
   atividadesDaSelecao,
   atividadesDoInstanooria,
   atividadesDoJornal,
+  atividadesDoJuri,
   atividadesDoQuemMandou,
   ordenarAtividades,
   type AtividadeDoInstanooria,
@@ -12,6 +13,7 @@ import {
   type MissaoComAtividade,
 } from "./entre-redes/atividades";
 import type { PacotesDaTurma } from "./jornal-escola-tipos";
+import { caminhoDaTurma, rotuloDaDisciplina, type PacotesDoJuri } from "./juri-estadual-tipos";
 import type { PacoteDaTurma, PacotesDaTurmaQuemMandou } from "./quem-mandou-tipos";
 
 /**
@@ -48,6 +50,12 @@ export async function atividadesDaMissao(
       if (!r) return null;
       const rotulo = new Map((preparo?.disciplinas ?? []).map((d) => [d.slug, d.rotulo]));
       return ordenarAtividades(atividadesDoQuemMandou(r, (slug) => rotulo.get(slug) ?? slug));
+    }
+    case "exp06ef1b": {
+      /* A disciplina vem em slug, do vocabulário fechado da missão; o rótulo
+         sai do espelho do hub (`juri-estadual-tipos.ts`), com teste. */
+      const r = await apiDoServidor<PacotesDoJuri>(`${caminhoDaTurma(turmaId)}/pacotes`);
+      return r ? ordenarAtividades(atividadesDoJuri(r, rotuloDaDisciplina)) : null;
     }
   }
 }

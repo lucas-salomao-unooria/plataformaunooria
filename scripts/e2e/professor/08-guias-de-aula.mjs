@@ -70,6 +70,22 @@ const GUIAS = [
     bncc: "EF06CO08",
   },
   {
+    rota: "/professor/entre-redes/6-ano/unidade-1/guia",
+    missao: "O Júri Estadual de Projetos · 6º ano",
+    /* Os dois blocos vivos vêm de `GET /juri-estadual/professor/material`: a
+       regra do feed com o gabarito (o caminho dos pacotes, a cadeia na ordem
+       certa, os cartões do caso Mariana) e as quatro perguntas da plenária. A
+       pergunta é conferida pelo texto exato: é a mesma que o painel da aula
+       projeta, e paráfrase no guia deixaria a turma comentando outra frase. */
+    vivo: [
+      /A regra do feed e o gabarito — só para você/i,
+      /Formação de bolha temática/,
+      /As quatro perguntas da plenária — entre o voto e a galeria/i,
+      /como a turma votou em áreas tão diferentes/i,
+    ],
+    bncc: "EF06CO01",
+  },
+  {
     rota: "/professor/entre-redes/vila-do-lume/guia",
     missao: "Vila do Lume · transversal",
     vivo: [/não foi um colega de verdade/i],

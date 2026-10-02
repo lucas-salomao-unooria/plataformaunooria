@@ -20,12 +20,14 @@
  * exp05ef1b o painel e o Termômetro contam por computador; na A Seleção o
  * painel conta por computador, o Mural pareia computadores e a ficha pedagógica
  * copia o nível para os colegas de tela; no Jornal o painel, o histograma e o
- * radar contam por computador, e as três ações da ficha são copiadas. O
+ * radar contam por computador, e as três ações da ficha são copiadas; no Júri
+ * Estadual (exp06ef1b) o painel e a lousa do pico contam por computador, e as
+ * três ações da ficha são copiadas. O
  * UnooTube estava aqui como exp04ef1b até ser ARQUIVADO (ADR-116): o código
  * passou ao Jornal, e a lista é por CÓDIGO. Missão que entra aqui sem essa
  * conferência abre para equipe e continua contando por criança no painel.
  */
-export const EXPERIENCIAS_COM_EQUIPE = ["exp08ef1b", "exp02em1b", "exp05ef1b", "exp07ef1b", "exp04ef1b"] as const;
+export const EXPERIENCIAS_COM_EQUIPE = ["exp08ef1b", "exp02em1b", "exp05ef1b", "exp07ef1b", "exp04ef1b", "exp06ef1b"] as const;
 export type ExperienciaComEquipe = (typeof EXPERIENCIAS_COM_EQUIPE)[number];
 
 export function permiteEquipes(expId: string): expId is ExperienciaComEquipe {
@@ -38,12 +40,12 @@ export function permiteEquipes(expId: string): expId is ExperienciaComEquipe {
  * criação dela que ele diz quem senta com quem.
  *
  * Estas são as missões que TÊM atividade: cada uma é dona das próprias (a
- * cobertura da exp07ef1b, o pacote da exp04ef1b e da exp05ef1b, a `activity`
- * da exp08ef1b), e registra no `EquipesService` como descobrir a que está em
+ * cobertura da exp07ef1b, o pacote da exp04ef1b, da exp05ef1b e da exp06ef1b,
+ * a `activity` da exp08ef1b), e registra no `EquipesService` como descobrir a que está em
  * andamento na turma (`registrarAtividades`). A plataforma só guarda o id,
  * opaco, como a evidência pedagógica.
  */
-export const EXPERIENCIAS_COM_ATIVIDADE = ["exp08ef1b", "exp07ef1b", "exp04ef1b", "exp05ef1b"] as const;
+export const EXPERIENCIAS_COM_ATIVIDADE = ["exp08ef1b", "exp07ef1b", "exp04ef1b", "exp05ef1b", "exp06ef1b"] as const;
 
 export function temAtividades(expId: string): boolean {
   return (EXPERIENCIAS_COM_ATIVIDADE as readonly string[]).includes(expId);

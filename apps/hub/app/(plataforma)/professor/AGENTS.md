@@ -48,7 +48,7 @@ sintoma de que a ficha não está dando conta** — o lugar de resolver é lá.
 
 **A ficha abre NA TURMA, e isso é o ponto.** O despachante
 (`[ano]/[unidade]/page.tsx`) lê `?turmaId=`, resolve a turma com
-`turmaDaConducao` e a repassa aos oito corpos; a Vila do Lume faz o mesmo na
+`turmaDaConducao` e a repassa aos nove corpos; a Vila do Lume faz o mesmo na
 rota própria. Com turma: a faixa de contexto diz qual é, `comTurma()` repõe o
 parâmetro nos links de dentro (resultados, guia da Vila, nova atividade) e a
 lista de atividades do Instanooria vem filtrada pela api (`?turmaId=`), não por
@@ -62,7 +62,7 @@ continuam oferecendo o próprio seletor.
 ficha não tem como nomear na tela uma turma que não é dele.
 
 **A faixa de contexto é do DESPACHANTE, não dos corpos** — mesma razão da trilha
-(ADR-77) e do `EscopoDaEscola` (ADR-85): são oito corpos, e oito cópias
+(ADR-77) e do `EscopoDaEscola` (ADR-85): são nove corpos, e nove cópias
 divergem.
 
 `/exp/[expId]` confere a liberação ANTES de montar o embed e responde 404 sem
@@ -115,7 +115,8 @@ missão que o professor roda ter a informação no mesmo lugar da primeira.
 (`blocos={{ debate: <... /> }}`). **Toda missão publicada tem o seu**: os
 momentos e a revelação do Instanooria, os cartões da Vila por turma, a tabela
 dos vieses do unooGPT, as intervenções do
-Rastro do Boato — as últimas por rota
+Rastro do Boato, a regra do feed com o gabarito e as perguntas da plenária do
+Júri Estadual — as últimas por rota
 `professor-only` da api (`/<slug>/professor/...`). O custo de copiar qualquer um
 deles é o professor projetar para a turma uma mensagem que ninguém recebeu.
 

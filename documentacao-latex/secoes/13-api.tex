@@ -262,6 +262,15 @@ método e esquema, é o Apêndice~\ref{ap:endpoints}.
   \node[rt, minimum height=18.5mm] at (13.6,-16.925)
     {\texttt{/quem-mandou-isso/\B{}professor/*}\desc{prof., gestor --- material do guia}};
 
+  % ---- exp06ef1b (O Júri Estadual de Projetos, ADR-137)
+  \node[exprot] at (0.1,-19.025) {\textbf{exp06ef1b}\\Júri Estadual};
+  \node[rt, minimum height=18.5mm] at (4.5,-19.025)
+    {\texttt{/juri-estadual/*}\desc{estudante --- e as enquetes em \texttt{/evidencias}}};
+  \node[rt, minimum height=18.5mm, fill=unooBlueWash, draw=unooBlue] at (9.05,-19.025)
+    {\texttt{/juri-estadual/\B{}turmas/*}\desc{prof., gestor --- a mostra, a Galeria Oculta e a lousa}};
+  \node[rt, minimum height=18.5mm] at (13.6,-19.025)
+    {\texttt{/juri-estadual/\B{}professor/*}\desc{prof., gestor --- material do guia}};
+
 \end{tikzpicture}}
 \caption[Mapa de rotas da API --- demais experiências]{Mapa das rotas das
   demais experiências: uma linha por experiência, uma coluna por quem chama.
@@ -283,7 +292,9 @@ método e esquema, é o Apêndice~\ref{ap:endpoints}.
   \texttt{/quem-mandou-isso/professor/material} é o banco curado da Unooria,
   igual em todo contrato, e \texttt{/quem-mandou-isso/turmas/:id/pacote} é o
   pacote que AQUELA professora aprovou --- o único que a turma dela vai ler. O
-  Jornal da Escola repete o desenho (\adrr{ADR-117}).}
+  Jornal da Escola repete o desenho (\adrr{ADR-117}), e o Júri Estadual de
+  Projetos também, com uma diferença: o material do guia é só o esqueleto da
+  missão, porque a mostra é sempre a da atividade (\adrr{ADR-137}).}
 \label{fig:mapa-rotas-exps}
 \end{figure}
 
@@ -1016,6 +1027,108 @@ ao \cd{comTenancy}. As rotas que gastam IA do professor têm, além da quota, um
 teto de requisição por minuto.
 \end{regra}
 
+\subsection{O Júri Estadual de Projetos (exp06ef1b)}
+\label{sec:api-juri-estadual}
+
+% Esta tabela e ESCRITA A MAO; a verdade e o Apendice C (`apendices/c-endpoints.tex`),
+% gerado de `docs/openapi.json`. Confira LINHA A LINHA contra ele antes de mexer.
+
+Vinte e quatro rotas em três \emph{controllers} (\adrr{ADR-137}): doze do
+estudante (\cd{@Roles("estudante")} na classe, e \cd{exigirMissaoLiberada} no
+funil \cd{garantirSessao} de TODAS, com a disponibilidade junto), onze por
+turma, para professor e gestores, e uma de catálogo. A turma do estudante sai do
+\emph{token}, nunca do corpo. Sem atividade em andamento, toda rota de estudante
+responde 403 \cd{atividade-nao-preparada}: a plataforma não cria atividade. As
+três enquetes não são deste módulo: passam por
+\rota{/evidencias/exp06ef1b/perguntas/*} (Seção~\ref{sec:api-evidencias}).
+
+\begin{tabularx}{\linewidth}{@{}L{56mm}L{20mm}X@{}}
+\toprule
+\headrow \thd{Rota} & \thd{Papel} & \thd{O que faz}\\
+\midrule
+\rota{GET /juri-estadual/sessao} & estudante & O estado: o passo já
+  reconciliado com a etapa, o feed SERVIDO até aqui (nunca o acervo, nem peso
+  ou área líder), o voto e os blocos do fim (pacotes na ordem de chegada,
+  cadeia embaralhada, Mariana), cada um só do passo dele em diante, com ids
+  opacos estáveis num F5.\\
+\zebra \rota{GET /juri-estadual/gate} & estudante & O \emph{polling} de 3\,s da
+  plenária (\adrr{ADR-93}): etapa, rodada e atividade. Sem acervo e sem JOIN.\\
+\rota{POST /juri-estadual/passo} & estudante & Da credencial para o feed, com a
+  ABERTURA: quatro posts, um de cada área.\\
+\zebra \rota{POST /juri-estadual/\B{}feed/\B{}eventos} & estudante & As curtidas (estado)
+  e as permanências (fato) que a tela mediu e, com \cd{proximo: true}, um post a
+  mais, até dez. Post que o feed não serviu, 400 \cd{post-desconhecido}; depois
+  do voto, 409 \cd{voto-ja-lacrado}.\\
+\rota{POST /juri-estadual/voto} & estudante & \textbf{O latch 1}: projeto,
+  convicção, carimbo e passo \cd{lacrada} juntos. Com menos de dez servidos, 409
+  \cd{feed-incompleto}; projeto que não apareceu no feed DESTA criança, 409
+  \cd{projeto-fora-do-feed}.\\
+\zebra \rota{GET /juri-estadual/galeria} & estudante & Os dezesseis estandes,
+  os ocultos primeiro, e a \cd{invisibilidade} REAL da sessão. Antes do voto e da
+  etapa, 403 \cd{galeria-nao-liberada}.\\
+\rota{POST /juri-estadual/\B{}galeria/\B{}acoes} & estudante & Abrir um estande ou
+  buscar --- da busca, só o tipo e a área, nunca o texto. 204 sem corpo.\\
+\zebra \rota{POST /juri-estadual/revisao} & estudante & \textbf{O latch 2}:
+  manter ou trocar o voto, com a marca da EF06CO01 (\cd{auditoria}) na mesma
+  transação. A segunda, 409 \cd{voto-ja-revisado}; o professor zerou no meio,
+  409 \cd{rodada-mudou}.\\
+\rota{POST /juri-estadual/pacotes} & estudante & Uma tentativa de remontar a
+  curtida; na certa, a marca da EF06CO07 pelo número de tentativas. A resposta
+  não diz qual vaga errou.\\
+\zebra \rota{POST /juri-estadual/cadeia} & estudante & Uma tentativa da cadeia,
+  com a mesma régua e a marca da EF06CO03.\\
+\rota{POST /juri-estadual/cartoes} & estudante & O caso Mariana: um mecanismo e
+  uma atitude. Sem evidência e sem dizer o certo.\\
+\zebra \rota{POST /juri-estadual/concluir} & estudante & O crachá homologado,
+  sem exigir as enquetes. Idempotente.\\
+\rota{GET /juri-estadual/turmas} & prof., gestor & O seletor, por matrícula
+  para o professor.\\
+\zebra \rota{GET .../\B{}turmas/\B{}:id/\B{}painel} & prof., gestor & O botão da galeria, o
+  progresso POR COMPUTADOR e a lousa do pico: votos por área (o lacrado e o
+  final), a taxa média e quantos mantiveram ou trocaram, tudo anônimo. Nenhum
+  voto, taxa ou nível por linha.\\
+\rota{POST .../gate} & prof., gestor & \enquote{Liberar a Galeria Oculta}:
+  \cd{exploracao} \seta{} \cd{galeria}. O segundo clique não muda nada; não
+  volta.\\
+\zebra \rota{POST .../zerar} & prof., gestor & A próxima rodada da mesma
+  atividade, sem apagar nada.\\
+\rota{GET .../pacotes} & prof., gestor & A atividade em andamento, inteira, e
+  a lista de todas; \cd{ativo} é \cd{null} sem nenhuma no ar.\\
+\zebra \rota{GET .../\B{}pacotes/\B{}:pacoteId} & prof., gestor & A página de UMA
+  atividade, em andamento ou pronta, com as imagens já geradas.\\
+\rota{POST .../\B{}pacotes/\B{}:pacoteId/\B{}em-andamento} & prof., gestor & \enquote{Usar
+  esta atividade agora} (\adrr{ADR-130}): a escolhida vai ao ar, na rodada
+  seguinte à última com sessão. Idempotente.\\
+\zebra \rota{POST .../\B{}gerar-conteudo} & prof., gestor & O rascunho da mostra
+  por IA, \textbf{pré-aula}. Não persiste. Sem saldo, 429; sem provedor, 503 ---
+  e não há acervo padrão.\\
+\rota{POST .../\B{}regenerar-projeto} & prof., gestor & Um estande novo com o
+  mesmo id e a mesma área. Falha da IA é 200 com \cd{usouIa: false}.\\
+\zebra \rota{POST .../homologar} & prof., gestor & \enquote{Criar atividade},
+  PRONTA e não no ar, com a régua de \arq{invariantes.ts} (400
+  \cd{pacote-invalido} com a lista de \cd{erros}). O mesmo conteúdo do pacote
+  mais recente não cria outro.\\
+\rota{POST .../gerar-midia} & prof., gestor & Até duas imagens novas por
+  chamada, de uma atividade pronta ou da em andamento; repetir até
+  \cd{completo}.\\
+\zebra \rota{GET /juri-estadual/\B{}professor/\B{}material} & prof., gestor & O
+  esqueleto com gabarito: os pacotes e a cadeia na ordem certa, o caso Mariana
+  com os cartões certos, as perguntas da plenária e os números do motor.
+  Catálogo, sem \emph{tenancy} (\adrr{ADR-86}).\\
+\bottomrule
+\end{tabularx}
+
+\begin{regra}
+\textbf{O gestor alcança as MESMAS rotas de turma que o professor}, como no
+Jornal: a missão não tem texto livre de menor. O que separa os dois é a turma
+(\cd{turmaVisivel} devolve 404 para a turma que o professor não leciona), e
+\cd{gestor\_contrato} e \cd{admin} dizem \cd{?escolaId=}. \cd{gerar-conteudo}
+e \cd{regenerar-projeto} têm, além da quota, um teto de requisição por minuto.
+As três jogadas que MARCAM evidência (revisão, pacotes e cadeia) tomam o
+\emph{lock} da turma compartilhado e relêem o \emph{gate} depois dele; o botão,
+zerar, homologar e pôr no ar o tomam exclusivo.
+\end{regra}
+
 \subsection{As rotas que alimentam o guia da aula}
 
 Duas rotas existem só para o \textbf{guia da aula} do professor
@@ -1050,6 +1163,11 @@ hub divergiria na primeira revisão de \emph{copy}.
   os seis blocos da Chave com os pilares marcados, e o roteiro: o gatilho do
   resultado, as três perguntas do debate e o gatilho da revisão. É também o
   \enquote{Usar Banco Padrão} do preparo.\\
+\rota{GET /juri-estadual/\B{}professor/\B{}material} & prof., gestor & O
+  esqueleto do Júri Estadual com o gabarito --- os quatro pacotes e a cadeia na
+  ordem certa, o caso Mariana com os cartões certos ---, as quatro perguntas da
+  plenária e os números do motor do feed. A mostra NÃO está aqui: é da
+  atividade.\\
 \bottomrule
 \end{tabularx}
 
@@ -1057,14 +1175,15 @@ hub divergiria na primeira revisão de \emph{copy}.
 \textbf{As de \rota{/<slug>/professor/*} são catálogo; a da Vila não.} Em
 \rota{/unoogpt/professor/fontes},
 \rota{/rastro-boato/professor/material},
-\rota{/quem-mandou-isso/professor/material} e
-\rota{/jornal-escola/professor/material} não há \cd{escolaId} nem
+\rota{/quem-mandou-isso/professor/material},
+\rota{/jornal-escola/professor/material} e
+\rota{/juri-estadual/professor/material} não há \cd{escolaId} nem
 \emph{tenancy} a aplicar --- o conteúdo é igual para todo contrato, e o que a
 guarda protege é o PAPEL. Por isso vivem em \emph{controller} separado do de
 turmas. \rota{/vila/professor/cartoes} é a exceção: ela recebe \cd{?turmaId=}
 porque a bolha servida depende da série da turma.
 
-As cinco devolvem exatamente os campos que o servidor retira antes de a
+As seis devolvem exatamente os campos que o servidor retira antes de a
 opção chegar ao estudante (regra inviolável nº 3): o que muda entre as duas
 superfícies é o \textbf{leitor} (\adrr{ADR-86}). No unooGPT isso é mais
 extremo --- a Missão Tempestade não revela nada por \emph{software}, de

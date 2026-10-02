@@ -899,11 +899,130 @@ export const MISSAO_A_SELECAO: Missao = {
   },
 };
 
+/**
+ * 6º ano · Unidade 1 — O Júri Estadual de Projetos (`exp06ef1b`).
+ *
+ * O estudante é jurado de uma mostra científica estadual num feed de rede
+ * social (o Unoovista). As curtidas dele afunilam o feed em silêncio; depois de
+ * dez posts ele lacra o voto e espera — é o PICO: o professor projeta como os
+ * votos da turma se dividiram e libera a Galeria Oculta, onde cada um vê o que
+ * nunca chegou à tela dele, com a taxa REAL de invisibilidade (calculada na
+ * api para cada sessão: quem curte duas vezes a mesma área vê menos; quem não
+ * curte nada vê mais). Nenhum número cravado na copy, de propósito.
+ *
+ * As habilidades são as do briefing — EF06CO01, EF06CO03 e EF06CO07 (decisão
+ * de 2026-10-02: a habilidade de consumo de tecnologia que a esteira pôs no
+ * lugar da EF06CO07 saiu, porque o texto oficial dela não é sobre algoritmo).
+ *
+ * Tem ficha pedagógica (E14): a atividade é o PACOTE homologado e a rodada é o
+ * "Zerar". E NÃO tem acervo padrão, como a exp08ef1b: os dezesseis estandes
+ * são gerados por IA no preparo; sem saldo de IA, não há atividade.
+ */
+export const MISSAO_JURI_ESTADUAL: Missao = {
+  anoSlug: "6-ano",
+  unidadeSlug: "unidade-1",
+  unidade: 1,
+  expId: "exp06ef1b",
+  titulo: "O Júri Estadual de Projetos",
+  resumo:
+    "O estudante é jurado de uma mostra científica estadual num feed de rede social: dezesseis " +
+    "estandes de quatro áreas, escritos sobre o tema da sua aula. As curtidas dele mudam o que o " +
+    "feed mostra, sem aviso. Depois de dez publicações ele lacra o voto, e a turma espera junta " +
+    "enquanto você projeta como os votos se dividiram. Quando você libera a Galeria Oculta, cada " +
+    "um vê os estandes que nunca chegaram à tela dele, com a parte real que ficou de fora, e " +
+    "mantém ou troca o voto.",
+  status: "disponivel",
+  // Sem spoiler: é o mandato da credencial (`e1.instrucao.missao_jurado`), e
+  // nada nele diz que o feed se adapta.
+  estudante: {
+    titulo: "O Júri Estadual de Projetos",
+    chamada:
+      "Você foi nomeado jurado oficial. Explore as publicações das escolas concorrentes e eleja o " +
+      "Grande Campeão Estadual.",
+  },
+  ficha: {
+    competencia:
+      "Letramento digital — perceber que um feed que se adapta às curtidas esconde parte do que " +
+      "existe, e que essa engrenagem é uma regra que se pode descrever. BNCC Computação: EF06CO01 " +
+      "(classificar informações em coleções e tipos de dados), EF06CO03 (descrever com precisão a " +
+      "solução de um problema, construindo o programa) e EF06CO07 (a informação quebrada em " +
+      "pacotes e reconstruída no destino).",
+    duracao: "1 aula de 50 min (ou 2 de 25 min)",
+    formato:
+      "Clone de rede social de fotos (o Unoovista): a credencial de jurado, o feed da mostra, a " +
+      "cédula lacrada, a Galeria Oculta com a busca por hashtag e as enquetes nos Stories. Os " +
+      "pacotes da curtida, a cadeia do feed e o caso Mariana são numa tela da Unooria.",
+    atos: [
+      {
+        rotulo: "1 — A credencial de jurado",
+        texto:
+          "A Comissão Estadual da Mostra nomeia o estudante jurado oficial: ele vai explorar as " +
+          "publicações das escolas concorrentes e eleger o grande campeão. Nenhuma palavra sobre " +
+          "algoritmo, bolha ou filtro.",
+      },
+      {
+        rotulo: "2 — O feed da mostra",
+        texto:
+          "As quatro primeiras publicações são uma de cada área. Daí em diante, cada curtida e " +
+          "cada parada longa num post mudam o que vem a seguir, sem nenhum aviso na tela: quem " +
+          "curte duas vezes a mesma área passa a receber só ela. Depois de dez publicações, a " +
+          "cédula abre.",
+      },
+      {
+        rotulo: "3 — A cédula lacrada",
+        texto:
+          "O estudante escolhe um dos estandes que viu e declara a convicção (as duas opções " +
+          "afirmam certeza, de propósito). O voto é lacrado e não volta. A tela entra em espera, " +
+          "pedindo atenção à projeção da sala.",
+      },
+      {
+        rotulo: "4 — A plenária e a Galeria Oculta (o seu botão)",
+        texto:
+          "Com a maioria votada, você projeta o gráfico dos votos por área e conduz as perguntas " +
+          "da plenária: como a turma se dividiu tanto, se estava todo mundo na mesma mostra? Aí " +
+          "você aperta Liberar a Galeria Oculta. Cada computador vê os estandes que não chegaram " +
+          "ao feed dele, com a parte real que ficou de fora — diferente para cada um —, busca por " +
+          "hashtag e mantém ou troca o voto.",
+      },
+      {
+        rotulo: "5 — O caminho da curtida e a cadeia",
+        texto:
+          "Numa tela da Unooria, o estudante remonta a própria curtida a partir de quatro pacotes " +
+          "que chegaram fora de ordem, e depois monta a engrenagem que controlou o feed: " +
+          "interações, dados, algoritmo, bolha.",
+      },
+      {
+        rotulo: "6 — Mariana e as enquetes",
+        texto:
+          "O caso da eleição do grêmio da escola de Mariana leva a lição para fora da mostra: " +
+          "um cartão para o que aconteceu com o feed dela e outro para o que fazer. Por fim, três " +
+          "enquetes nos Stories, que alimentam o painel de habilidades, e o crachá homologado.",
+      },
+    ],
+    preparo: [
+      "Libere a missão para a turma na sala de aula — sem a liberação, o card fica com cadeado para as crianças.",
+      "Crie a atividade aqui na ficha, em Nova atividade: escolha o componente curricular, escreva o tema " +
+        "da feira e os assuntos da semana, e a inteligência artificial escreve os dezesseis estandes. Não há " +
+        "banco pronto: sem saldo de geração com IA, a atividade não sai — prepare com antecedência.",
+      "Revise os estandes antes de criar: título, legenda e bastidor de cada um, e regenere o que não servir. " +
+        "Nada gerado por inteligência artificial chega à turma sem a sua revisão.",
+      "Depois de criar, gere as imagens na página da atividade: elas saem duas por vez. Estande sem imagem " +
+        "aparece com uma arte desenhada, e a missão roda igual.",
+      "Se a turma divide computadores, escolha as equipes na criação. Com 2 a 4 por computador, combine o " +
+        "revezamento antes de começar (está no guia da aula). O painel conta por computador.",
+      "Durante a aula é um botão só — Liberar a Galeria Oculta — e ele não volta. Deixe o projetor pronto: " +
+        "o gráfico dos votos é para a lousa.",
+      "Não diga que a aula é sobre algoritmo, bolha ou filtro: a missão mede o que a turma vota quando " +
+        "ninguém avisou que o feed se adapta.",
+    ],
+  },
+};
+
 const MISSOES_PUBLICADAS: Record<string, Missao[]> = {
   "1-ano": [MISSAO_FOTO_CONTA],
   "4-ano": [MISSAO_JORNAL_DA_ESCOLA],
   "5-ano": [MISSAO_QUEM_MANDOU_ISSO],
-  "6-ano": [MISSAO_RASTRO_BOATO],
+  "6-ano": [MISSAO_JURI_ESTADUAL, MISSAO_RASTRO_BOATO],
   "7-ano": [MISSAO_A_SELECAO],
   "8-ano": [MISSAO_ATUAL, MISSAO_MANIFESTO_IA],
   "2-serie": [MISSAO_UNOOGPT],
