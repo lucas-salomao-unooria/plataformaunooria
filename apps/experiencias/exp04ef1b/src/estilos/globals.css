@@ -4,8 +4,8 @@
  * altura, posição). Botão, aba, gaveta, balão, página, bloco: vêm do pacote.
  *
  * **Cor NUNCA se escreve à mão**: sai dos tokens da seção que está falando —
- * `--unooria-*` na redação e no desafio final, `--insta-*` só dentro do post,
- * `--wa-*` só dentro da mensagem. As três famílias estão SEPARADAS por seção
+ * `--unooria-*` na redação e no desafio final, `--unv-*` só dentro do post,
+ * `--unc-*` só dentro da mensagem. As três famílias estão SEPARADAS por seção
  * deste arquivo, e a fronteira é a PEÇA (ADR-117): token de uma seção fora da
  * peça dela não quebra nada, só some — e é o defeito mais difícil de ver.
  * Os `var(--x, fallback)` existem só para a tela não ficar transparente antes
@@ -263,14 +263,14 @@ body {
   padding: var(--unooria-spacing-xs, 12px);
 }
 
-/* ══════════════════════════ o post de rede social (instanooria, SÓ a peça) */
+/* ════════════════════════════ o post de rede social (unoovista, SÓ a peça) */
 
-/* A moldura do post dentro da gaveta: o cartão do Instanooria vai de ponta a
+/* A moldura do post dentro da gaveta: o cartão do Unoovista vai de ponta a
    ponta num app, e aqui ele é uma peça sobre a redação — um fio da própria
-   seção o separa do fundo. Nenhuma barra, aba ou fundo do app. */
-.peca-instanooria {
+   seção o separa do fundo. Nenhuma barra, doca ou fundo do app. */
+.peca-unoovista {
   overflow: hidden;
-  border: 1px solid var(--insta-color-border-subtle, rgba(60, 60, 67, 0.29));
+  border: 1px solid var(--unv-color-border-subtle, #dfddeb);
   border-radius: 12px;
 }
 
@@ -283,30 +283,30 @@ body {
   width: 100%;
   height: 100%;
   padding: 24px;
-  background: var(--insta-color-background-secondary, #fafafa);
+  background: var(--unv-color-background-secondary, #f7f6fa);
 }
 
 .post-desenhado__texto {
   margin: 0;
-  color: var(--insta-color-text-primary, #262626);
-  font-family: var(--insta-font-sans, system-ui, sans-serif);
+  color: var(--unv-color-text-primary, #22272a);
+  font-family: var(--unv-font-sans, system-ui, sans-serif);
   font-size: 22px;
   font-weight: 600;
   line-height: 1.3;
   text-align: center;
 }
 
-/* ═════════════════════ a mensagem encaminhada (whatsappmobile, SÓ a peça) */
+/* ═══════════════════════════ a mensagem encaminhada (unoochat, SÓ a peça) */
 
-/* O contêiner ESCURO da mensagem: a seção só publica tema escuro, e o balão
-   foi calibrado para o fundo dela. É o retângulo do tamanho da peça, pintado
-   com o `--wa-color-surface-base` — não o `ChatWallpaper` (que é o FUNDO do
-   app, e a peça não traz o fundo, ADR-117). */
-.peca-whatsapp {
+/* O contêiner LAVANDA da mensagem: o balão recebido é branco e foi calibrado
+   para o fundo do app, e sobre o branco da redação ele some. É o retângulo do
+   tamanho da peça, pintado com o `--unc-color-surface-base` — não o
+   `ChatWallpaper` (que é o FUNDO do app, e a peça não traz o fundo, ADR-117). */
+.peca-unoochat {
   display: flex;
   flex-direction: column;
-  gap: var(--wa-spacing-xxs, 6px);
-  padding: var(--wa-spacing-m, 16px) var(--wa-spacing-l, 20px);
+  gap: var(--unc-spacing-xxs, 6px);
+  padding: var(--unc-spacing-m, 12px) var(--unc-spacing-l, 16px);
   border-radius: 12px;
-  background: var(--wa-color-surface-base, #101d25);
+  background: var(--unc-color-surface-base, #efeef5);
 }

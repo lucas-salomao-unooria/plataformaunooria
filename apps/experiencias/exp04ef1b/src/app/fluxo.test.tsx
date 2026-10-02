@@ -129,13 +129,13 @@ describe("o fluxo principal, da mesa ao modo leitura", () => {
     expect(document.querySelectorAll(".unooria-news-card")).toHaveLength(8);
     expect(textoDaTela()).not.toContain("Bento");
 
-    // A gaveta: a matéria original na seção de cada meio (o post no Instanooria, a mensagem no WhatsApp).
+    // A gaveta: a matéria original na seção de cada meio (o post no Unoovista, a mensagem no Unoochat).
     await abrirCartao("Manchete da notícia n6");
-    expect(dialogo().querySelector(".insta-post-card")).not.toBeNull();
+    expect(dialogo().querySelector(".unv-post-card")).not.toBeNull();
     await tocar(botao("Voltar para a Mesa"));
     await abrirCartao("Manchete da notícia n7");
-    expect(dialogo().querySelector(".wa-messagebubble .wa-messagebubble__forwarded")).not.toBeNull();
-    expect(dialogo().querySelector('.peca-whatsapp[data-wa-theme="dark"]')).not.toBeNull();
+    expect(dialogo().querySelector(".unc-messagebubble .unc-messagebubble__forwarded")).not.toBeNull();
+    expect(dialogo().querySelector('.peca-unoochat[data-unc-theme="light"]')).not.toBeNull();
     await tocar(botao("Voltar para a Mesa"));
 
     // A pista é revelada pelo SERVIDOR: o texto só existe depois do POST.
@@ -244,7 +244,7 @@ describe("o fluxo principal, da mesa ao modo leitura", () => {
     await ate(() => textoDaTela().includes("Desafio Individual de Checagem"), "o desafio final");
     await ate(() => textoDaTela().includes(BOATO_DE_TESTE), "o boato");
     expect(textoDaTela()).toContain(DETALHE_DE_TESTE);
-    expect(document.querySelector(".peca-whatsapp .wa-messagebubble__forwarded")).not.toBeNull();
+    expect(document.querySelector(".peca-unoochat .unc-messagebubble__forwarded")).not.toBeNull();
     expect(textoDaTela()).not.toContain("Bento");
     await tocar(radio("Se veio de canal oficial"));
     await tocar(botao("Responder"));

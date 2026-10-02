@@ -85,9 +85,9 @@ describe("o vocabulário da api traduzido para o do design system", () => {
     expect(new Set(mediums).size).toBe(MEIOS.length);
   });
 
-  test("o post é do Instanooria, a mensagem é do WhatsApp, o resto é da redação", () => {
-    expect(PECA_DO_MEIO.rede_social).toEqual({ secao: "instanooria" });
-    expect(PECA_DO_MEIO.mensagem).toEqual({ secao: "whatsappmobile" });
+  test("o post é do Unoovista, a mensagem é do Unoochat, o resto é da redação", () => {
+    expect(PECA_DO_MEIO.rede_social).toEqual({ secao: "unoovista" });
+    expect(PECA_DO_MEIO.mensagem).toEqual({ secao: "unoochat" });
     for (const meio of MEIOS.filter((m) => m !== "rede_social" && m !== "mensagem")) {
       const peca = PECA_DO_MEIO[meio];
       expect(peca.secao).toBe("unooria");

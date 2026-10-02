@@ -1,12 +1,13 @@
-import { PostCard } from "@edu/ui/ds-insta";
+import { PostCard } from "@edu/ui/ds-unoovista";
 import { ERROS } from "../../lib/textos";
 import type { NoticiaPublica } from "../../lib/tipos";
 
 /**
  * A matéria original de uma notícia que veio de REDE SOCIAL — o `PostCard` da
- * seção `instanooria` (ADR-117: a peça fala na voz de onde veio, porque um post
- * que não parece post não ensina a reconhecer post). Este arquivo importa SÓ a
- * ponte `@edu/ui/ds-insta`: a peça é do clone, a moldura em volta é da redação.
+ * seção `unoovista` (ADR-117: a peça fala na voz de onde veio, porque um post
+ * que não parece post não ensina a reconhecer post; ADR-136: a rede é a
+ * Unoovista, não o clone do Instagram). Este arquivo importa SÓ a ponte
+ * `@edu/ui/ds-unoovista`: a peça é da rede, a moldura em volta é da redação.
  *
  * **A peça, e só ela.** Nada da barra, das abas nem do fundo do app. E também
  * nada do que o PDF §1 tira da redação: sem `Actions` (curtir, comentar,
@@ -14,14 +15,15 @@ import type { NoticiaPublica } from "../../lib/tipos";
  * confiabilidade —, e sem `Timestamp`: a DATA é uma pista que a criança revela à
  * parte, e o carimbo do post a entregaria antes da hora.
  *
- * `theme="light"` fixa o tema no próprio cartão (`data-insta-theme`): a folha
- * da seção troca os tokens do `:root` para o escuro quando o sistema está em
- * modo escuro, e a redação em volta é clara.
+ * `theme="light"` fixa o tema no próprio cartão. O `:root` da seção já é claro
+ * (ela não segue o modo escuro do sistema, ao contrário do Instanooria), mas o
+ * cartão sem `theme` herda o `data-unv-theme` de quem estiver em volta, e
+ * a redação em volta é clara.
  */
 export function PostDeRedeSocial({ noticia, aoFalharMidia }: { noticia: NoticiaPublica; aoFalharMidia: () => void }) {
   const url = noticia.imagem?.url ?? undefined;
   return (
-    <div className="peca-instanooria">
+    <div className="peca-unoovista">
       <PostCard theme="light">
         <PostCard.Header username={noticia.veiculo} />
         {url ? (

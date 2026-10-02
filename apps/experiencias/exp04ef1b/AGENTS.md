@@ -8,7 +8,7 @@ vence o PRD da esteira quando divergem.
 
 | Manifesto | Dev | DS | api | e2e |
 |---|---|---|---|---|
-| `exp04ef1b` · 4EF · unidade 1 · `entre-redes` · `viewport` 375×812 · `permissoes: ["forms"]` · capabilities `telemetria progresso ia avaliacao` · versão **2.0.0** (maior que a do dono anterior do caminho `exp04ef1b/` no bucket, o UnooTube — ADR-116) | `:5174` (`--strictPort`), hub `/exp/exp04ef1b` | `@edu/ui/ds` (a redação inteira) + `@edu/ui/ds-insta` (SÓ o post) + `@edu/ui/ds-whatsapp` (SÓ a mensagem) — ADR-117 | `apps/api/src/jornal-escola` ↔ `/jornal-escola/*`; P1/P2 em `/evidencias/exp04ef1b/perguntas/*` (E14) | `scripts/e2e/estudante/12-jornal-da-escola.mjs` |
+| `exp04ef1b` · 4EF · unidade 1 · `entre-redes` · `viewport` 375×812 · `permissoes: ["forms"]` · capabilities `telemetria progresso ia avaliacao` · versão **2.1.0** (a série é a 2.x: maior que a do dono anterior do caminho `exp04ef1b/` no bucket, o UnooTube — ADR-116) | `:5174` (`--strictPort`), hub `/exp/exp04ef1b` | `@edu/ui/ds` (a redação inteira) + `@edu/ui/ds-unoovista` (SÓ o post) + `@edu/ui/ds-unoochat` (SÓ a mensagem) — ADR-117, ADR-136 | `apps/api/src/jornal-escola` ↔ `/jornal-escola/*`; P1/P2 em `/evidencias/exp04ef1b/perguntas/*` (E14) | `scripts/e2e/estudante/12-jornal-da-escola.mjs` |
 
 ## A redação é da Unooria; cada PEÇA fala na seção de onde veio (ADR-117)
 
@@ -17,9 +17,14 @@ desafio final são a seção `unooria`. A exceção é por PEÇA, nunca por tela
 
 | Peça | Onde aparece | Seção | Componente | Arquivo |
 |---|---|---|---|---|
-| post de rede social | gaveta (meio `rede_social`) | `instanooria` | `PostCard` (`.Header`, `.Media`, `.Caption`) — sem `Actions`, `Likes` nem `Timestamp` | `app/pecas/post-de-rede-social.tsx` (só `ds-insta`) |
-| mensagem encaminhada | gaveta (meio `mensagem`) e o boato da E6 | `whatsappmobile` | `MessageBubble` com `forwardedLabel` — sem `time` nem `delivery` | `app/pecas/mensagem-encaminhada.tsx` (só `ds-whatsapp`) |
+| post de rede social | gaveta (meio `rede_social`) | `unoovista` | `PostCard` (`.Header`, `.Media`, `.Caption`) — sem `Actions`, `Likes` nem `Timestamp` | `app/pecas/post-de-rede-social.tsx` (só `ds-unoovista`) |
+| mensagem encaminhada | gaveta (meio `mensagem`) e o boato da E6 | `unoochat` | `MessageBubble` com `forwardedLabel` — sem `time` nem `delivery` | `app/pecas/mensagem-encaminhada.tsx` (só `ds-unoochat`) |
 | jornal, rádio, telejornal, blog, portal, mural | gaveta | `unooria` | `NewsArticle` | `app/redacao/materia-original.tsx` |
+
+Até a 2.0.0 as duas peças eram o `instanooria` e o `whatsappmobile`, clones de
+aplicativos reais; a 2.1.0 as passou para as redes da própria Unooria, as mesmas da
+exp08ef1b/exp07ef1b e da exp05ef1b (ADR-136). A API das seções é idêntica: a troca
+foi de ponte, de token e de tema, e a criança faz exatamente o mesmo.
 
 `Meio` → `NewsMedium` é um `Record` exaustivo em `lib/meios.ts` (`MEIO_PARA_MEDIUM`,
 `PECA_DO_MEIO`); o `espelho.test.ts` cobra que os oito meios da api têm desenho.
@@ -31,19 +36,22 @@ mesmo motivo (PDF §1 — e número de curtidas vira pista falsa de confiabilida
 ### CSS: três seções na mesma tela, e nenhuma vaza
 
 A gaveta é a primeira tela do repo com três seções ao mesmo tempo. O que vale, nas
-folhas agregadas (`unooria.css`, `instanooria.css`, `whatsappmobile.css` e as de
-fonte) E nas de cada componente (que o módulo importa sozinho):
+folhas agregadas (`unooria.css`, `unoovista.css`, `unoochat.css` e as de fonte)
+E nas de cada componente (que o módulo importa sozinho):
 
-- todo seletor tem o prefixo da seção (`.unooria-*`, `.insta-*`, `.wa-*`); nenhum
+- todo seletor tem o prefixo da seção (`.unooria-*`, `.unv-*`, `.unc-*`); nenhum
   reset de `body`, `html`, `*` ou elemento solto — as únicas regras globais do
   `dist/` são as de `estilos/globals.css`;
-- os blocos `:root` só definem variáveis do próprio namespace; as famílias das
-  folhas de fonte não colidem;
-- **tema**: o Instanooria escurece os `--insta-*` com o sistema em modo escuro
-  (`@media (prefers-color-scheme: dark) { :root:not([data-insta-theme=light]) }`),
-  e o `PostCard theme="light"` põe `data-insta-theme="light"` no próprio cartão;
-  o WhatsApp só publica tema escuro, e o balão vai no contêiner `.peca-whatsapp`
-  pintado com `--wa-color-surface-base` — não o `ChatWallpaper`, que é o FUNDO do
+- os blocos `:root` só definem variáveis do próprio namespace;
+- as folhas de fonte das três seções declaram as MESMAS faces (Open Sans +
+  Material Symbols, as mesmas URLs): a repetição não baixa nada a mais, e as três
+  ficam importadas porque o `Icon` de ligadura escreve o NOME do glifo sem a dele;
+- **tema**: as duas seções têm claro e escuro, o `:root` é o claro e nenhuma segue
+  o modo escuro do sistema. Cada peça fixa o claro mesmo assim — `PostCard
+  theme="light"` e `data-unc-theme="light"` no contêiner `.peca-unoochat` —,
+  porque sem isso herdariam o tema de quem estiver em volta. O contêiner da
+  mensagem é pintado com `--unc-color-surface-base` (lavanda): o balão recebido é
+  branco e sumiria no branco da redação. Não é o `ChatWallpaper`, que é o FUNDO do
   app (a peça não traz o fundo).
 
 ## O passo manda na tela
@@ -62,7 +70,7 @@ A api devolve o passo JÁ reconciliado com a etapa da turma
 | `chave` | E5 — a Chave do Editor | Bento | `SpeechBubble`, `PuzzleTrack`, 6 `PuzzleBlock` (`placed`/`returned`/`locked`) |
 | `revisao` | EREV-ALU-01 — a mesma mesa, com os marcadores | redação | a mesa + `NewspaperSlot.marker` + `AlertBox` do aviso da Chave |
 | `comparativo` | EREV-ALU-02 — o antes e o depois | leitores | duas `NewspaperPage` em miniatura, `SpeechBubble` |
-| `transferencia` | E6 — o desafio individual, fora da redação e sem Bento | Unooria | `SectionHeader`, `MessageBubble` (whatsapp, o boato), `RadioGroup`, `Card`, `Button` |
+| `transferencia` | E6 — o desafio individual, fora da redação e sem Bento | Unooria | `SectionHeader`, `MessageBubble` (unoochat, o boato), `RadioGroup`, `Card`, `Button` |
 | `fim` | E6-ALU-04 — o modo leitura | redação | `Tabs` ("Ver 1ª Edição" \| "Ver 2ª Edição"), `NewspaperPage` `readOnly` |
 | 403 | missão não aberta aqui | Unooria | `AlertBox` |
 
