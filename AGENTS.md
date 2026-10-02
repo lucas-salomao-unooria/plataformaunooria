@@ -170,7 +170,7 @@ proibições:
 - **Não escrever interface sem antes procurar no DS**, nem componente local
   silencioso, nem `overflow` onde há `ScrollBar`, nem `<select>` onde há
   `Selection`. E não misturar seções do DS (plataforma dentro do clone).
-- Não deixar o DS parado: em `0.x` o caret só sobe patch; minor é decisão ativa.
+- Não deixar o DS parado nem dividido: UMA versão para tudo; `0.x` só sobe patch.
 - **Não escrever breadcrumb numa página do hub, nem deixar página sem ele**: a
   trilha é do layout da área (ADR-77).
 - **Não escrever texto de interface em inglês, nem traduzir o nome do clone**

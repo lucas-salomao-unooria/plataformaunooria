@@ -223,8 +223,8 @@ importers:
         specifier: workspace:*
         version: link:../../../packages/ui
       '@unooria/design-system':
-        specifier: ^0.2.8
-        version: 0.2.8(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@types/node@26.5.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+        specifier: ^0.2.12
+        version: 0.2.12(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@types/node@26.5.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       react:
         specifier: ^19.2.0
         version: 19.2.8
@@ -276,8 +276,8 @@ importers:
         specifier: workspace:*
         version: link:../../../packages/ui
       '@unooria/design-system':
-        specifier: ^0.2.8
-        version: 0.2.8(@babel/core@8.0.1)(@opentelemetry/api@1.9.1)(@types/node@26.5.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+        specifier: ^0.2.12
+        version: 0.2.12(@babel/core@8.0.1)(@opentelemetry/api@1.9.1)(@types/node@26.5.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       react:
         specifier: ^19.2.0
         version: 19.2.8
@@ -313,8 +313,8 @@ importers:
         specifier: workspace:*
         version: link:../../../packages/ui
       '@unooria/design-system':
-        specifier: ^0.2.8
-        version: 0.2.8(@babel/core@8.0.1)(@opentelemetry/api@1.9.1)(@types/node@26.5.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+        specifier: ^0.2.12
+        version: 0.2.12(@babel/core@8.0.1)(@opentelemetry/api@1.9.1)(@types/node@26.5.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       react:
         specifier: ^19.2.0
         version: 19.2.8
@@ -350,8 +350,8 @@ importers:
         specifier: workspace:*
         version: link:../../../packages/ui
       '@unooria/design-system':
-        specifier: ^0.2.8
-        version: 0.2.8(@babel/core@8.0.1)(@opentelemetry/api@1.9.1)(@types/node@26.5.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+        specifier: ^0.2.12
+        version: 0.2.12(@babel/core@8.0.1)(@opentelemetry/api@1.9.1)(@types/node@26.5.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       react:
         specifier: ^19.2.0
         version: 19.2.8
@@ -387,8 +387,8 @@ importers:
         specifier: workspace:*
         version: link:../../../packages/ui
       '@unooria/design-system':
-        specifier: ^0.2.8
-        version: 0.2.8(@babel/core@8.0.1)(@opentelemetry/api@1.9.1)(@types/node@26.5.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+        specifier: ^0.2.12
+        version: 0.2.12(@babel/core@8.0.1)(@opentelemetry/api@1.9.1)(@types/node@26.5.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       react:
         specifier: ^19.2.0
         version: 19.2.8
@@ -430,8 +430,8 @@ importers:
         specifier: ^5.1.0
         version: 5.3.0
       '@unooria/design-system':
-        specifier: ^0.2.8
-        version: 0.2.8(@babel/core@8.0.1)(@opentelemetry/api@1.9.1)(@types/node@26.5.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+        specifier: ^0.2.12
+        version: 0.2.12(@babel/core@8.0.1)(@opentelemetry/api@1.9.1)(@types/node@26.5.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       react:
         specifier: ^19.2.0
         version: 19.2.8
@@ -467,8 +467,8 @@ importers:
         specifier: workspace:*
         version: link:../../../packages/ui
       '@unooria/design-system':
-        specifier: ^0.2.11
-        version: 0.2.11(@babel/core@8.0.1)(@opentelemetry/api@1.9.1)(@types/node@26.5.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+        specifier: ^0.2.12
+        version: 0.2.12(@babel/core@8.0.1)(@opentelemetry/api@1.9.1)(@types/node@26.5.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       react:
         specifier: ^19.2.0
         version: 19.2.8
@@ -513,8 +513,8 @@ importers:
         specifier: workspace:*
         version: link:../../../packages/ui
       '@unooria/design-system':
-        specifier: ^0.2.11
-        version: 0.2.11(@babel/core@8.0.1)(@opentelemetry/api@1.9.1)(@types/node@26.5.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+        specifier: ^0.2.12
+        version: 0.2.12(@babel/core@8.0.1)(@opentelemetry/api@1.9.1)(@types/node@26.5.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       react:
         specifier: ^19.2.0
         version: 19.3.0
@@ -553,8 +553,8 @@ importers:
         specifier: workspace:*
         version: link:../../../packages/ui
       '@unooria/design-system':
-        specifier: ^0.2.11
-        version: 0.2.11(@babel/core@8.0.1)(@opentelemetry/api@1.9.1)(@types/node@26.5.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+        specifier: ^0.2.12
+        version: 0.2.12(@babel/core@8.0.1)(@opentelemetry/api@1.9.1)(@types/node@26.5.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       react:
         specifier: ^19.2.0
         version: 19.2.8
@@ -627,8 +627,8 @@ importers:
         specifier: workspace:*
         version: link:../../../packages/ui
       '@unooria/design-system':
-        specifier: ^0.2.8
-        version: 0.2.8(@babel/core@8.0.1)(@opentelemetry/api@1.9.1)(@types/node@26.5.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+        specifier: ^0.2.12
+        version: 0.2.12(@babel/core@8.0.1)(@opentelemetry/api@1.9.1)(@types/node@26.5.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       react:
         specifier: ^19.2.0
         version: 19.2.8
@@ -664,8 +664,8 @@ importers:
         specifier: workspace:*
         version: link:../../../packages/ui
       '@unooria/design-system':
-        specifier: ^0.2.11
-        version: 0.2.11(@babel/core@8.0.1)(@opentelemetry/api@1.9.1)(@types/node@26.5.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+        specifier: ^0.2.12
+        version: 0.2.12(@babel/core@8.0.1)(@opentelemetry/api@1.9.1)(@types/node@26.5.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       react:
         specifier: ^19.2.0
         version: 19.2.8
@@ -701,8 +701,8 @@ importers:
         specifier: workspace:*
         version: link:../../../packages/ui
       '@unooria/design-system':
-        specifier: ^0.2.11
-        version: 0.2.11(@babel/core@8.0.1)(@opentelemetry/api@1.9.1)(@types/node@26.5.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+        specifier: ^0.2.12
+        version: 0.2.12(@babel/core@8.0.1)(@opentelemetry/api@1.9.1)(@types/node@26.5.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       react:
         specifier: ^19.2.0
         version: 19.2.8
@@ -747,8 +747,8 @@ importers:
         specifier: workspace:*
         version: link:../../../packages/ui
       '@unooria/design-system':
-        specifier: ^0.2.8
-        version: 0.2.8(@babel/core@8.0.1)(@opentelemetry/api@1.9.1)(@types/node@26.5.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+        specifier: ^0.2.12
+        version: 0.2.12(@babel/core@8.0.1)(@opentelemetry/api@1.9.1)(@types/node@26.5.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       react:
         specifier: ^19.2.0
         version: 19.2.8
@@ -820,8 +820,8 @@ importers:
         specifier: ^1.43.0
         version: 1.43.0
       '@unooria/design-system':
-        specifier: ^0.2.11
-        version: 0.2.11(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@types/node@22.20.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+        specifier: ^0.2.12
+        version: 0.2.12(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@types/node@22.20.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       google-auth-library:
         specifier: ^11.0.2
         version: 11.0.2
@@ -3005,20 +3005,8 @@ packages:
   '@ungap/structured-clone@1.4.0':
     resolution: {integrity: sha512-1mEZtMKPM09vDmQt5y7YvmN2+DFTP7Tg0EWXdic8/C6VRnpb33e4ghisCIE3WZjsE2N8mf+QV1Zqh7ZFYLWInQ==}
 
-  '@unooria/design-system@0.2.11':
-    resolution: {integrity: sha512-5OV0Ud6bpGa2RJXf17QJvKsnagDUqNbLamdx1ciNlayQ/yTT3aqQc8B0OXsjbgPYeKqIqiWaVChsSmJgcrwzBg==}
-    peerDependencies:
-      react: '>=18.0.0'
-      react-dom: '>=18.0.0'
-
   '@unooria/design-system@0.2.12':
     resolution: {integrity: sha512-llqsUKfa8hGk5wCkUK1Ye69RYLOljTG5OqvVvK8ivWhD/8qiKnNkCkyv/9uNjUb7ETd5xAE4tmqQJVbwxB36oA==}
-    peerDependencies:
-      react: '>=18.0.0'
-      react-dom: '>=18.0.0'
-
-  '@unooria/design-system@0.2.8':
-    resolution: {integrity: sha512-qtm/gLH2h/ltz9EUUQup8jiVQwSc4Gdz+rwQyl/aZ2n0RUDP9Ak2BDQQ6G+Mke+2Xxi9v/JeqGRBTib2Yc4sYw==}
     peerDependencies:
       react: '>=18.0.0'
       react-dom: '>=18.0.0'
@@ -8896,7 +8884,7 @@ snapshots:
 
   '@ungap/structured-clone@1.4.0': {}
 
-  '@unooria/design-system@0.2.11(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@types/node@22.20.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)':
+  '@unooria/design-system@0.2.12(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@types/node@22.20.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)':
     dependencies:
       next: 16.3.3(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@types/node@22.20.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       react: 19.2.8
@@ -8910,25 +8898,11 @@ snapshots:
       - babel-plugin-react-compiler
       - sass
 
-  '@unooria/design-system@0.2.11(@babel/core@8.0.1)(@opentelemetry/api@1.9.1)(@types/node@26.5.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)':
+  '@unooria/design-system@0.2.12(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@types/node@26.5.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)':
     dependencies:
-      next: 16.3.3(@babel/core@8.0.1)(@opentelemetry/api@1.9.1)(@types/node@26.5.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      next: 16.3.3(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@types/node@26.5.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       react: 19.2.8
       react-dom: 19.2.8(react@19.2.8)
-    transitivePeerDependencies:
-      - '@babel/core'
-      - '@opentelemetry/api'
-      - '@playwright/test'
-      - '@types/node'
-      - babel-plugin-macros
-      - babel-plugin-react-compiler
-      - sass
-
-  '@unooria/design-system@0.2.11(@babel/core@8.0.1)(@opentelemetry/api@1.9.1)(@types/node@26.5.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)':
-    dependencies:
-      next: 16.3.3(@babel/core@8.0.1)(@opentelemetry/api@1.9.1)(@types/node@26.5.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
-      react: 19.3.0
-      react-dom: 19.3.0(react@19.3.0)
     transitivePeerDependencies:
       - '@babel/core'
       - '@opentelemetry/api'
@@ -8966,25 +8940,11 @@ snapshots:
       - babel-plugin-react-compiler
       - sass
 
-  '@unooria/design-system@0.2.8(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@types/node@26.5.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)':
+  '@unooria/design-system@0.2.12(@babel/core@8.0.1)(@opentelemetry/api@1.9.1)(@types/node@26.5.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)':
     dependencies:
-      next: 16.3.3(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@types/node@26.5.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
-      react: 19.2.8
-      react-dom: 19.2.8(react@19.2.8)
-    transitivePeerDependencies:
-      - '@babel/core'
-      - '@opentelemetry/api'
-      - '@playwright/test'
-      - '@types/node'
-      - babel-plugin-macros
-      - babel-plugin-react-compiler
-      - sass
-
-  '@unooria/design-system@0.2.8(@babel/core@8.0.1)(@opentelemetry/api@1.9.1)(@types/node@26.5.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)':
-    dependencies:
-      next: 16.3.3(@babel/core@8.0.1)(@opentelemetry/api@1.9.1)(@types/node@26.5.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
-      react: 19.2.8
-      react-dom: 19.2.8(react@19.2.8)
+      next: 16.3.3(@babel/core@8.0.1)(@opentelemetry/api@1.9.1)(@types/node@26.5.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      react: 19.3.0
+      react-dom: 19.3.0(react@19.3.0)
     transitivePeerDependencies:
       - '@babel/core'
       - '@opentelemetry/api'

@@ -47,10 +47,23 @@ do clone não traz a barra, as abas nem o fundo do app. É o inverso do que
 continua proibido — a plataforma dentro do clone — e vale só para conteúdo que
 a criança deve reconhecer como vindo daquela plataforma.
 
-`^0.2.8` **não** pega `0.3.0` — caret em `0.x` só sobe patch. Atualizar é ativo:
-`pnpm up -r @unooria/design-system --latest`, commitando lockfile e
-`package.json` juntos. Mecânica completa (CSS, fontes, frames, compensações,
-armadilhas de migração) em `packages/ui/AGENTS.md`.
+**Uma versão só, e todo mundo sobe junto** (decisão de 2026-10-02). O hub, a
+ponte `packages/ui` e TODAS as experiências declaram o MESMO intervalo de
+`@unooria/design-system`, e o lockfile resolve UMA versão:
+`apps/api/tests/design-system-versao-unica.spec.ts` reprova o contrário. O custo
+que pagamos: no mesmo dia conviviam 0.2.8, 0.2.11 e 0.2.12, e a divergência é
+muda — a ponte `@edu/ui/ds-*` resolve o DS pela versão DELA, e a folha de CSS
+pela da experiência; o JS e o CSS do mesmo componente saíam de versões
+diferentes, sem erro nenhum.
+
+Subir é UM passo para todos: `pnpm up -r @unooria/design-system@^X.Y.Z` (nunca
+`--filter`: deixa importador para trás), lockfile e `package.json` no mesmo
+commit. Depois, compile cada experiência ANTES e DEPOIS e compare o hash do
+`dist/`: **a que mudou sobe a versão nos três lugares** (o caminho no bucket é
+imutável); a que saiu idêntica byte a byte não sobe. `^0.2.8` não pega `0.3.0`
+— caret em `0.x` só sobe patch, e minor é decisão ativa. Mecânica completa
+(CSS, fontes, frames, compensações, armadilhas de migração) em
+`packages/ui/AGENTS.md`.
 
 **Precedência sobre a skill `frontend-design`.** Ela serve para arte e peças fora
 do DS (a exceção declarada em `packages/ui/AGENTS.md`, o site público, o
