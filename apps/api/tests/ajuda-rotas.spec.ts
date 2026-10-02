@@ -9,7 +9,7 @@ import { ROLES_KEY } from "../src/auth/roles";
 import { PRODUTO_KEY, SEM_DISPONIBILIDADE_KEY } from "../src/comum/disponibilidade.guard";
 import { AjudaLlmController } from "../src/ajuda/ajuda-llm.controller";
 import { AjudaController } from "../src/ajuda/ajuda.controller";
-import { AjudaService, type RespostaDoStream } from "../src/ajuda/ajuda.service";
+import { AjudaService, FALA_DE_ESPERA, type RespostaDoStream } from "../src/ajuda/ajuda.service";
 import { FALA_DE_FALHA, MARCADOR_DA_SESSAO } from "../src/ajuda/regras";
 import type { PrismaService } from "../src/prisma/prisma.service";
 
@@ -349,6 +349,27 @@ describe("POST /ajuda/llm/chat/completions — a resposta", () => {
     const res = await chamarLlm(m, { messages: [{ role: "system", content: system }, { role: "user", content: "oi" }] });
     expect(res.statusCode).toBe(200);
     expect(res.fala).toBe(FALA_DE_FALHA);
+  });
+
+  it("modelo demorando: a fala de espera sai antes, e a resposta vem no mesmo turno", async () => {
+    const ia = new MockProvider();
+    ia.conversarEmFluxo = async function* () {
+      await new Promise((r) => setTimeout(r, 60));
+      yield { tipo: "texto", texto: "Primeiro, abra Minhas turmas." } satisfies AiFluxoEvento;
+      yield { tipo: "fim", resultado: { texto: "Primeiro, abra Minhas turmas.", tokensUsados: 1 } } satisfies AiFluxoEvento;
+    };
+    const m = montar({ ia });
+    m.service.esperaAteAFalaDeEsperaMs = 10;
+    const { system } = await abrirEDevolverSystem(m);
+    const res = await chamarLlm(m, { messages: [{ role: "system", content: system }, { role: "user", content: "oi" }] });
+    expect(res.fala).toBe(`${FALA_DE_ESPERA}Primeiro, abra Minhas turmas.`);
+  });
+
+  it("modelo rápido: nenhuma fala de espera", async () => {
+    const m = montar();
+    const { system } = await abrirEDevolverSystem(m);
+    const res = await chamarLlm(m, { messages: [{ role: "system", content: system }, { role: "user", content: "oi" }] });
+    expect(res.fala).not.toContain(FALA_DE_ESPERA);
   });
 
   it("produto desligado na escola vira FALA, sem chamar o modelo", async () => {
