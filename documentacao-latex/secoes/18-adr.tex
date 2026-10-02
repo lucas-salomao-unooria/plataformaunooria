@@ -11660,3 +11660,72 @@ reproduza a identidade visual de um aplicativo de terceiros.
 \textbf{Gatilho.} O pacote publicar uma diferença de API entre as duas seções
 que a missão use, o dono do produto pedir o tema escuro, ou a exp06ef2b migrar
 --- aí a ponte \cd{@edu/ui/ds-whatsapp} perde o último consumidor de missão.
+
+% ---------------------------------------------------------------------------
+\section{ADR-135 --- A Seleção troca o Instanooria pelo Unoovista}
+\label{adr:exp07ef1b-unoovista}
+
+\textbf{Data.} 2026-10-02. \textbf{Status.} Aceita. Revoga, para a exp07ef1b,
+o item \enquote{o Instanooria continua vivo para quem o usa} da
+\adrr{ADR-133}.
+
+\begin{especificacao}{Contexto}
+A exp07ef1b (A Seleção, 7º ano, Unidade 1) ficou no \cd{instanooria} quando a
+missão do 8º ano migrou para o \cd{unoovista} (\adrr{ADR-133}). Ao contrário da
+exp08ef1b, ela já montava o clone inteiro com componentes do pacote --- os
+dezenove que usa existem no \cd{unoovista} com o mesmo nome e as mesmas props.
+As únicas diferenças de API entre as seções que a missão toca são aditivas
+(\cd{TopBar.Action}, \cd{shortLabel} da \cd{TabBar}, \cd{frictionLabel} do
+\cd{InlineHint}), e o \cd{Icon} passa de SVG a ligadura.
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{itemize}
+  \item \textbf{O clone inteiro usa a seção \cd{unoovista}}, pela ponte
+    \cd{@edu/ui/ds-unoovista}, que ganha os oito componentes que a missão
+    trouxe do Instanooria: \cd{DirectThread}, \cd{MessageBubble},
+    \cd{DmPoll}, \cd{ConfirmDialog}, \cd{FloatingButton}, \cd{InlineHint},
+    \cd{GestureHint} e \cd{SegmentedTabs}. A troca é de importação, de tema
+    (\cd{data-unv-theme}) e de \emph{token} (\cd{--unv-*}, todos com par de
+    mesmo nome). As telas da escola não mudam.
+  \item \textbf{O aplicativo passa a se chamar Unoovista}, como o do 8º ano:
+    o título da página e os Termos. A copy da missão não nomeava o app.
+  \item \textbf{Três medidas locais leem o pacote}, porque a composição do
+    Unoovista é outra: a pílula \enquote{Ir para aba Salvos} sobe pela altura
+    da barra de navegação flutuante; os cards sem foto e os do carrossel
+    ganham respiro acima das ações em pílula, que ficam sobre a mídia; e a
+    trilha das barras do equilíbrio editorial usa a cor de borda, porque a do
+    campo tem, no tema escuro, a mesma cor da folha da ficha.
+  \item \textbf{O que mede não mudou}: a api, o gabarito, a régua, as enquetes
+    e os eventos são os mesmos. A experiência sobe para a versão
+    \textbf{1.1.0}.
+  \item \textbf{O Instanooria continua vivo} para o clone da exp01ef1b (O Que
+    a Foto Conta) e o \cd{PostCard} da gaveta do Jornal da Escola.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Manter A Seleção no Instanooria.} Duas missões da mesma
+    trilha imitariam a mesma rede de fotos com duas caras, e a do 7º ano
+    continuaria reproduzindo a de um aplicativo real.
+  \item \textbf{Manter o nome Instanooria com a interface nova.} O mesmo
+    motivo da \adrr{ADR-133}.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{O Material Symbols desce para o estudante} também nesta
+    missão, pelo mesmo motivo da \adrr{ADR-133}.
+  \item \textbf{As etiquetas da ficha técnica perdem a cápsula}: no tema
+    escuro, o \cd{Badge} \cd{neutral} do Unoovista tem o fundo da folha. É do
+    pacote, e não foi compensado aqui.
+  \item \textbf{O desenho em SVG do card sem foto} (na grade e no Story) usa
+    a pilha de fontes do Unoovista, mas, dentro de um \cd{<img>}, a Open Sans
+    não carrega: ele cai na fonte do sistema, como já caía no Instanooria.
+\end{itemize}
+
+\textbf{Gatilho.} O pacote mudar a API de uma das duas seções, ou a exp01ef1b
+migrar --- aí a ponte \cd{@edu/ui/ds-insta} fica só com a gaveta do Jornal.
