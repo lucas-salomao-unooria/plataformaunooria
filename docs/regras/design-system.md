@@ -60,7 +60,9 @@ Subir é UM passo para todos: `pnpm up -r @unooria/design-system@^X.Y.Z` (nunca
 `--filter`: deixa importador para trás), lockfile e `package.json` no mesmo
 commit. Depois, compile cada experiência ANTES e DEPOIS e compare o hash do
 `dist/`: **a que mudou sobe a versão nos três lugares** (o caminho no bucket é
-imutável); a que saiu idêntica byte a byte não sobe. `^0.2.8` não pega `0.3.0`
+imutável); a que saiu idêntica byte a byte não sobe; e a que mudou mas JÁ está
+numa versão à frente da do `dev` (subiu desde a última promoção, nunca foi
+publicada) também não sobe de novo — compare com `git show origin/dev:<pasta>/public/experiencia.json`. `^0.2.8` não pega `0.3.0`
 — caret em `0.x` só sobe patch, e minor é decisão ativa. Mecânica completa
 (CSS, fontes, frames, compensações, armadilhas de migração) em
 `packages/ui/AGENTS.md`.

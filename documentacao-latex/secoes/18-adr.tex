@@ -12026,7 +12026,11 @@ não via nada.
     \cd{--filter}), e a versão de cada experiência sobe \textbf{só se o
     \emph{bundle} mudou}: compila-se cada uma antes e depois e compara-se o
     \emph{hash} do \cd{dist/}. O caminho no \emph{bucket} é imutável, e subir
-    versão de bundle idêntico seria publicar a mesma coisa duas vezes.
+    versão de bundle idêntico seria publicar a mesma coisa duas vezes. A que
+    mudou mas já está numa versão à frente da do \cd{dev} (subiu desde a
+    última promoção e nunca foi publicada) não sobe de novo: na 0.2.14, doze
+    mudaram e nenhuma subiu, porque todas já tinham subido na 0.2.13 ou eram
+    novas.
   \item \textbf{A primeira subida assim foi a 0.2.13} (o canto do
     \cd{StoryPoll}): dez experiências mudaram e subiram um \emph{patch} ---
     app-90 1.2.6, app-91 1.1.9, app-92 1.1.6, backup-exp04ef1b 1.2.9,
