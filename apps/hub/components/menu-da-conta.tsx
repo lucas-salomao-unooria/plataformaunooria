@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { signOut } from "next-auth/react";
 import { HeaderMenu, type HeaderMenuItem } from "@edu/ui/ds";
+import { ModalDaAjuda } from "@/components/ajuda/modal-da-ajuda";
 
 /**
  * A identidade de quem está logado e o menu do avatar — onde o "Sair" mora.
@@ -31,17 +32,37 @@ import { HeaderMenu, type HeaderMenuItem } from "@edu/ui/ds";
  * da raiz define. Morre no dia em que o `HeaderMenu` souber empurrar o
  * conteúdo à esquerda em vez de cobri-lo (pedido no `storybook-unooria`).
  *
- * **Um item só, de propósito.** O componente aceita vários, e a tentação é
- * preencher com "Meu perfil" e "Configurações" — telas que não existem. Item de
- * menu que não leva a lugar nenhum é pior que menu curto. O candidato real,
- * "Trocar senha", também está fora: `middleware.ts` redireciona quem já trocou
- * para fora de `/trocar-senha`, então o item seria um link morto até o produto
- * ganhar troca voluntária de senha.
+ * **Dois itens, e só os que levam a algum lugar.** O componente aceita vários,
+ * e a tentação é preencher com "Meu perfil" e "Configurações" — telas que não
+ * existem. Item de menu que não leva a lugar nenhum é pior que menu curto. O
+ * candidato real, "Trocar senha", também está fora: `middleware.ts` redireciona
+ * quem já trocou para fora de `/trocar-senha`, então o item seria um link morto
+ * até o produto ganhar troca voluntária de senha.
+ *
+ * **"Ajuda" (ADR-132)** abre o atendente em vídeo, num `Modal` — não é rota,
+ * é a mesma janela em qualquer tela. Fica ANTES do "Sair" (a ação destrutiva
+ * continua colada no avatar) e só aparece com `comAjuda`: o header decide pelo
+ * papel (nunca estudante) e pelo interruptor do produto `ajuda`.
  */
-export function MenuDaConta({ nome, apoio }: { nome: string; apoio: string }) {
+export function MenuDaConta({ nome, apoio, comAjuda = false }: { nome: string; apoio: string; comAjuda?: boolean }) {
   const [aberto, setAberto] = useState(false);
+  const [ajudaAberta, setAjudaAberta] = useState(false);
 
   const itens: HeaderMenuItem[] = [
+    ...(comAjuda
+      ? [
+          {
+            key: "ajuda",
+            label: "Ajuda",
+            // `help` é a interrogação do Material Symbols, já usada no pacote.
+            icon: "help",
+            onClick: () => {
+              setAberto(false);
+              setAjudaAberta(true);
+            },
+          } satisfies HeaderMenuItem,
+        ]
+      : []),
     {
       key: "sair",
       label: "Sair",
@@ -72,6 +93,7 @@ export function MenuDaConta({ nome, apoio }: { nome: string; apoio: string }) {
         open={aberto}
         onOpenChange={setAberto}
       />
+      {comAjuda ? <ModalDaAjuda aberto={ajudaAberta} aoFechar={() => setAjudaAberta(false)} /> : null}
     </div>
   );
 }

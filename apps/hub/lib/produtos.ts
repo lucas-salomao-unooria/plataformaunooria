@@ -113,6 +113,15 @@ export const PRODUTOS_SEM_CARD = [
     descricao:
       "Um chat no canto das telas do professor, que responde sobre a BNCC — inclusive a de Computação — e sobre os livros da Unooria, citando a fonte e a página.",
   },
+  {
+    /* A Ajuda com avatar (ADR-132): o item "Ajuda" do menu da conta, em todas
+       as áreas menos a do estudante. Sem card — é suporte, não ferramenta. */
+    slug: "ajuda",
+    nome: "Ajuda com atendente",
+    chamada: "Tire dúvidas sobre a plataforma",
+    descricao:
+      "Um atendente em vídeo, aberto pelo menu da conta, que explica por voz ou por texto como usar a plataforma. Para professores e equipes de gestão; estudantes não veem.",
+  },
 ] as const satisfies ReadonlyArray<{ slug: string; nome: string; chamada: string; descricao: string }>;
 
 /** Todo slug de produto que o hub conhece — a cópia do `PRODUTOS` da api (`src/recursos/catalogo.ts`). */
