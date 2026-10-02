@@ -27,29 +27,37 @@ mecânica impõe exigência ao \emph{software} --- e não como material pedagóg
   telemetria, progresso & \arq{foto-conta}\\
 \zebra \cd{exp05ef1b} & \cd{5EF} & estudante &
   telemetria, progresso, avaliacao & \arq{quem-mandou-isso}\\
-\cd{exp06ef2b} & \cd{6EF} & estudante &
+\cd{exp06ef1b} & \cd{6EF} & estudante &
+  telemetria, progresso, ia, avaliacao & \arq{juri-estadual}, \arq{evidencias}\\
+\zebra \cd{exp06ef2b} & \cd{6EF} & estudante &
   telemetria, progresso, avaliacao & \arq{rastro-boato}\\
-\zebra \cd{exp07ef1b} & \cd{7EF} & estudante &
+\cd{exp07ef1b} & \cd{7EF} & estudante &
   telemetria, progresso, ia, avaliacao & \arq{a-selecao}, \arq{evidencias}\\
-\cd{exp08ef4b} & \cd{8EF} & estudante &
+\zebra \cd{exp08ef4b} & \cd{8EF} & estudante &
   telemetria, progresso, avaliacao & \arq{manifesto-ia}\\
-\zebra \cd{app-70-vila-do-lume} & \textbf{transversal} & estudante &
+\cd{app-70-vila-do-lume} & \textbf{transversal} & estudante &
   telemetria & \arq{vila}\\
-\cd{app-90-plano-de-aula} & --- & \textbf{professor} &
+\zebra \cd{app-90-plano-de-aula} & --- & \textbf{professor} &
   telemetria, ia & \arq{planos}\\
-\zebra \cd{app-91-bem-estar} & --- & \textbf{professor} &
+\cd{app-91-bem-estar} & --- & \textbf{professor} &
   telemetria, ia & \arq{bemestar}\\
-\cd{app-92-plano-de-ensino} & \textbf{1EF--3EM} & \textbf{professor} &
+\zebra \cd{app-92-plano-de-ensino} & \textbf{1EF--3EM} & \textbf{professor} &
   telemetria, ia & \arq{planejamento}, \arq{curriculo}\\
-\zebra \arq{\_template} & --- & --- & telemetria, progresso & ---\\
+\arq{\_template} & --- & --- & telemetria, progresso & ---\\
 \bottomrule
 \end{tabularx}
 
 A \cd{exp05ef1b} é a v2.2 de Quem mandou isso?, que voltou com o mesmo código e
 a partir da 0.2.0 depois de a primeira versão sair (\adrr{ADR-114},
-\adrr{ADR-118}). Ela, A Seleção (\cd{exp07ef1b}) e o Jornal da Escola
-(\cd{exp04ef1b}) são as três missões com ficha pedagógica: as perguntas finais
-passam pelas rotas genéricas de \arq{evidencias}, e não pelo módulo de cada uma.
+\adrr{ADR-118}). Ela, A Seleção (\cd{exp07ef1b}), o Jornal da Escola
+(\cd{exp04ef1b}) e O Júri Estadual de Projetos (\cd{exp06ef1b}) são as quatro
+missões com ficha pedagógica: as perguntas finais passam pelas rotas genéricas
+de \arq{evidencias}, e não pelo módulo de cada uma.
+
+A unidade 1 do 6º ano é \textbf{O Júri Estadual de Projetos}
+(\adrr{ADR-137}), no Unoovista, que nasce na 0.1.0, na porta 5185. O 6º ano
+passa a ter duas missões: ela e O Rastro do Boato (\cd{exp06ef2b}), da
+unidade 2.
 
 A unidade 1 do 4º ano é o \textbf{Jornal da Escola: A Edição de Bento}
 (\adrr{ADR-117}), que tomou o código \cd{exp04ef1b} e a porta 5174 do UnooTube e
@@ -79,6 +87,7 @@ porta 5179 do Eco no Grupo (\adrr{ADR-113}, \adrr{ADR-115}).
 \zebra \cd{exp08ef4b} & \cd{5182} & \rota{/exp/exp08ef4b}\\
 \cd{exp01ef1b} & \cd{5183} & \rota{/exp/exp01ef1b}\\
 \zebra \cd{exp05ef1b} & \cd{5184} & \rota{/exp/exp05ef1b}\\
+\cd{exp06ef1b} & \cd{5185} & \rota{/exp/exp06ef1b}\\
 \bottomrule
 \end{tabularx}
 
@@ -223,6 +232,16 @@ da missão injeta o que só ela sabe montar:
     gabarito e a reação do leitor, e os seis blocos da Chave com as iscas
     marcadas. O componente que os desenha é
     \arq{guia/\B{}material-do-jornal.tsx}.
+  \item \textbf{exp06ef1b} (O Júri Estadual de Projetos) ---
+    \rota{GET /juri-estadual/\B{}professor/\B{}material} devolve o esqueleto
+    da missão COM o gabarito: as quatro perguntas de contraste da plenária (as
+    MESMAS que o painel da aula mostra ao lado do botão), a regra do feed que o
+    motor executou (os pesos e o limiar), os quatro pacotes da curtida na ordem
+    certa, a cadeia na ordem certa e o caso Mariana com os cartões certos
+    marcados. O componente é \arq{guia/\B{}material-do-juri.tsx}. O guia
+    \textbf{não crava taxa de invisibilidade}: a da galeria é a de cada
+    sessão, e um número no guia faria o professor anunciar à turma o que a
+    tela de quase ninguém mostra.
   \item \textbf{backup-exp04ef1b} (o UnooTube, arquivado na \adrr{ADR-116}; o
     bloco saiu do guia com ele) --- a tabela dos 21 vídeos, com o \cd{factual} de
     cada um, vinha de \rota{GET /unootube/professor/videos}. A criança de nove
@@ -301,11 +320,19 @@ como \emph{fallback} se um dia ela perder o guia.
 \end{nota}
 
 % ---------------------------------------------------------------------------
-\section{exp08ef1b --- Instanooria}
+\section{exp08ef1b --- Unoovista}
 
 Clone de rede social de imagens. O estudante navega um \emph{feed} curado por um
 motor adaptativo que o empurra progressivamente para um dos dois lados de uma
 controvérsia; na virada da missão, o dossiê mostra o que ele não viu.
+
+\begin{nota}
+Desde a versão 1.2.0 (\adrr{ADR-133}) o app se chama \textbf{Unoovista} e a
+superfície disfarçada é a seção \cd{unoovista} do Design System, pela ponte
+\cd{@edu/ui/ds-unoovista}. Até a 1.1.7 era o Instanooria, com componentes
+locais imitando o aplicativo real. O motor, os eventos e a medida de
+\emph{dwell} não mudaram.
+\end{nota}
 
 \begin{tabularx}{\linewidth}{@{}L{36mm}X@{}}
 \toprule
@@ -606,14 +633,16 @@ e o delta sempre foi derivável de dois quadros seguidos. É o primeiro suspeito
 a distribuição de \cd{fontesConfiaveis} da turma subir de forma anômala.
 \end{regra}
 
-\section{exp02em1b --- unooGPT (Missão Tempestade)}
+\section{exp02em1b --- UnooriaAI (Missão Tempestade)}
 \label{sec:exp02em1b}
 
 Porte de um projeto autônomo (\arq{gpturia}), publicado na trilha do Entre Redes
 em \textbf{2ª série do Ensino Médio, unidade 1}. Um clone de assistente de IA em
 que o estudante decide, sob incerteza e com o relógio correndo, onde alocar duas
 equipes de resgate entre quatro bairros de uma cidade fictícia antes de uma
-tempestade.
+tempestade. O assistente se chamou unooGPT, com a cara do ChatGPT, até a
+versão 1.2.7; desde a 1.3.0 é o UnooriaAI, com a identidade da Unooria
+(\adrr{ADR-138}).
 
 \begin{destaque}
 O propósito \textbf{não é acertar a alocação}. É experimentar que perguntas
@@ -632,7 +661,7 @@ nunca a revela.
 A consequência é arquitetural: \textbf{não há revelação no software}. A exp04ef1b
 troca da seção do \emph{design system} do clone para a da plataforma na virada da
 missão; aqui não existe virada, e por isso a exp02em1b é 100\% da seção
-\cd{chatgpt} e não importa \arq{unooria.css} nenhum. A marca institucional entra
+\cd{unooriaai} e não importa \arq{unooria.css} nenhum. A marca institucional entra
 só como \emph{chrome} do hub, desenhada acima do \cd{iframe}.
 
 O que isso proíbe no \emph{bundle}, verificado por \cd{grep} no \arq{dist/} como
@@ -1027,8 +1056,8 @@ texto.
 \section{exp05ef1b --- Quem mandou isso? (v2.2)}
 \label{sec:exp05ef1b}
 
-\textbf{5º ano · Unidade 1 · clone de mensageiro móvel · \cd{whatsappmobile}
-· 0.2.1}
+\textbf{5º ano · Unidade 1 · clone de mensageiro móvel · \cd{unoochat}
+(tema claro, \adrr{ADR-134}) · 0.3.0}
 
 A Nina pede ajuda: \enquote{rolou uma confusão sobre} o tema que a professora
 escreveu no preparo. No grupo \enquote{Turma 5ºB} chegam oito mensagens de
@@ -1333,6 +1362,185 @@ A suíte \arq{scripts/e2e/estudante/11-a-selecao.mjs} percorre a missão com a
 professora e dois estudantes de escolhas divergentes, e termina no podcast: as
 três falas no preparo, a transcrição e o ramo do áudio que o ambiente permitir
 (pronto com a IA de verdade; a transcrição sozinha com o \emph{mock}).
+
+% ---------------------------------------------------------------------------
+\section{exp06ef1b --- O Júri Estadual de Projetos}
+\label{sec:exp06ef1b}
+
+\textbf{6º ano \textperiodcentered{} Unidade 1 \textperiodcentered{} clone de
+rede social de fotos \textperiodcentered{} \cd{unoovista}, com a tela da escola
+em \cd{unooria} \textperiodcentered{} 0.1.0}
+
+O estudante é jurado de uma mostra científica estadual, dentro do Unoovista. A
+comissão entrega o crachá, e ele rola um feed de dez posts dos estandes ---
+quatro áreas, quatro projetos por área ---, curtindo o que quiser. As curtidas
+\textbf{afunilam o feed em silêncio}: duas na mesma área bastam para o resto do
+feed ser só dela. Depois do décimo post ele vota numa cédula lacrada, com uma
+convicção que afirma certeza (o \emph{latch} 1), e espera a turma: é o PICO, em
+que o professor projeta na lousa a dispersão dos votos por área e conduz a
+plenária. Quando o professor libera a \textbf{Galeria Oculta}, cada um vê os
+dezesseis estandes, os que nunca chegaram ao feed dele primeiro, e a
+\textbf{taxa de invisibilidade} REAL da própria sessão; busca por \emph{hashtag}
+e mantém ou troca o voto (o \emph{latch} 2). Fora do aplicativo, na tela da
+escola, remonta a própria curtida a partir de quatro pacotes que chegaram fora
+de ordem (o \textbf{rastro da curtida}, EF06CO07) e monta a cadeia Interações
+\seta{} Dados \seta{} Algoritmo \seta{} Bolha (EF06CO03). De volta ao clone,
+resolve o caso Mariana (a transferência para uma eleição de grêmio), responde a
+três enquetes nos Stories da comissão e recebe o crachá homologado. As decisões
+estão na \adrr{ADR-137}.
+
+\begin{tabularx}{\linewidth}{@{}L{34mm}X@{}}
+\toprule
+\headrow \thd{Decisão} & \thd{Como está implementada}\\
+\midrule
+O motor do feed é do servidor & \arq{regras/afunilamento.ts}, puro e
+  determinístico por sessão (a \cd{semente} é aleatória, de servidor, e o F5
+  rende o mesmo feed). O cliente só MEDE --- a curtida é estado, a permanência
+  de mais de 5\,s com 60\,\% do post visível é um fato por post --- e manda em
+  \rota{POST /juri-estadual/feed/eventos}; o servidor aplica as curtidas ANTES
+  de escolher o próximo e serve um a mais, até dez. A abertura são quatro
+  posts, um de cada área. Curtida vale 3, permanência vale 1, e com 6 numa área
+  o resto do feed é dela; abaixo do limiar, o feed já puxa para a área de maior
+  peso. Os pesos são DERIVADOS das três listas da sessão, nunca gravados. É a
+  regra que a cadeia ensina e a enquete \cd{p3} pergunta.\\
+\zebra A taxa é a real & \cd{invisibilidade} é calculada no servidor sobre os
+  posts que o feed serviu: os projetos nunca exibidos sobre os dezesseis. Quem
+  curte duas vezes a mesma área fica com cerca de 56\,\% (9 de 16); quem não
+  interage, perto de 38\,\% (6 de 16). Nenhum número é cravado na \emph{copy}
+  nem no guia, e a grade da galeria tem tamanho variável. Cada projeto tem dois
+  posts --- a apresentação e o bastidor --- para o feed afunilado fechar as dez
+  rolagens com a área líder.\\
+O acervo não desce antes da galeria & O post é uma \emph{allowlist}
+  (\arq{regras/publico.ts}): antes da galeria a sessão traz só os posts
+  SERVIDOS, sem peso nem área líder, e a \cd{descricao} da imagem (o pedido ao
+  gerador) nunca desce. \rota{GET /juri-estadual/galeria} exige o passo
+  efetivo \cd{galeria} --- o voto E a etapa: quem não votou não a abre nem com
+  a etapa aberta (403 \cd{galeria-nao-liberada}).\\
+\zebra Atividade e rodada & A ATIVIDADE é o \textbf{pacote}: as quatro áreas e
+  os dezesseis projetos que a IA gerou e o professor homologou. \textbf{Não há
+  acervo padrão}: sem atividade em andamento, 403
+  \cd{atividade-nao-preparada}, e sem saldo de IA não há atividade. Criar
+  (\rota{POST .../homologar}) não põe no ar (\adrr{ADR-130}); \enquote{Usar
+  esta atividade agora} desliga a anterior, liga a escolhida e aponta o
+  \emph{gate} para a rodada SEGUINTE à última com sessão. Zerar abre a rodada
+  seguinte sem apagar nada (\adrr{ADR-112}).\\
+Um botão só & \cd{exploracao} \seta{} \cd{galeria}, sem volta (409
+  \cd{transicao-de-etapa-invalida}). \cd{passoEfetivo} (\arq{regras/passos.ts})
+  impõe \cd{galeria} a quem está em \cd{lacrada}, e o passo \cd{galeria}
+  \textbf{nunca} é gravado (um \emph{CHECK} recusa). O estudante lê
+  \rota{GET /juri-estadual/gate} por \emph{polling} de 3\,s, só na plenária
+  (\adrr{ADR-93}). Quem ainda não votou continua no feed com a galeria
+  liberada: o voto atrasado é caminho previsto.\\
+\zebra Ids opacos e a ordem nunca certa & Pacotes e blocos descem com ids
+  OPACOS por sessão (\cd{pk-} e \cd{bl-} seguidos de três caracteres derivados
+  da semente, estáveis num F5), na ordem de \cd{embaralhar(\ldots, semente,
+  rótulo)} (\arq{regras/ordem.ts}), que nunca coincide com a certa. Os cartões
+  de Mariana descem embaralhados e sem \cd{certo}. A resposta de uma tentativa
+  diz só se a ordem confere, nunca qual vaga errou.\\
+A galeria não manda texto & Da busca, a api recebe só o tipo (\cd{hashtag}
+  $|$ \cd{texto}) e a área que casou, ou \cd{null}; o que a criança digitou
+  \textbf{nunca sai do aparelho}. \cd{galeria/acoes} deduplica os estandes
+  abertos e guarda até 30 buscas no \cd{JSONB} \cd{auditoria}. A revisão do
+  voto espera a fila de ações esvaziar: a EF06CO01 é marcada no \emph{latch}
+  sobre o que a api já gravou.\\
+\zebra Evidência & A ficha \arq{evidencias/fichas/exp06ef1b.ts}, a quarta da
+  plataforma: EF06CO01 por \cd{auditoria} (abriu estandes ocultos de ao menos
+  duas áreas fora da do voto, ou buscou outra área e abriu um oculto =
+  \cd{atingiu}; abriu ou buscou alguma coisa = \cd{em\_processo}), marcada no
+  \emph{latch} da revisão; EF06CO07 por \cd{pacotes} e EF06CO03 por
+  \cd{cadeia}, pelo número de tentativas (1 = \cd{atingiu}; 2 ou 3 =
+  \cd{em\_processo}; mais = \cd{nao\_atingiu}); e as enquetes \cd{p1} a
+  \cd{p3}, uma por habilidade, valendo o melhor. Na rodada nova do mesmo
+  pacote, quem já foi avaliada não é marcada de novo (\adrr{ADR-120}). O caso
+  Mariana grava a escolha e não vira evidência.\\
+Equipes & A missão nasce com equipes (\adrr{ADR-111}): o painel conta por
+  COMPUTADOR (\cd{colapsarEmUnidades}, e o representante é quem votou). O
+  painel é PROJETADO na lousa no pico, então a linha diz só progresso ---
+  nenhum campo de \cd{PROIBIDO\_NA\_LINHA\_DO\_PAINEL} (voto, área, taxa,
+  nível), com teste por chave e por valor ---, e o que a turma escolheu vive no
+  resumo anônimo: os votos por área (o lacrado e o final), a taxa média e
+  quantos mantiveram ou trocaram.\\
+\zebra Mídia & As imagens são do professor, no preparo: dezesseis, 4:3 em 800
+  por 600, duas por chamada (o BFF corta em 30\,s), com o nome igual ao
+  \emph{hash} da descrição, em \cd{experiencias/exp06ef1b/mostra/}. Sem imagem,
+  a tela desenha a arte procedural do estande, e a missão roda igual. O podcast
+  da proposta não existe.\\
+\bottomrule
+\end{tabularx}
+
+\subsection{O preparo: sem acervo padrão, e a régua é uma só}
+
+O professor cria a atividade em \enquote{Nova atividade}: disciplina, tema da
+feira, de três a seis assuntos da semana e, se quiser, um contexto da escola.
+\enquote{Gerar Mostra Personalizada com IA} devolve um RASCUNHO das quatro áreas
+e dos dezesseis estandes (personas de 11 e 12 anos, nomes brasileiros com
+gênero equilibrado, escolas fictícias), que ele lê e edita; \enquote{Regenerar}
+troca um estande mantendo o id e a área. O \cd{validar} do \cd{generateJson}
+normaliza o cosmético (sem exclamação, \emph{hashtag} e perfil em minúsculas, a
+\emph{hashtag} da área primeiro) e recusa o resto pelo MESMO
+\cd{ConteudoDoPacoteSchema} da homologação (\arq{invariantes.ts}): quatro
+categorias com \emph{hashtags} diferentes, os dezesseis ids \cd{proj-a1} a
+\cd{proj-d4} cada um na área que o id diz, perfil com @, legenda até 60
+palavras e bastidor até 40, e nenhuma marca ou plataforma real
+(\cd{TERMOS\_PROIBIDOS}). Duas tentativas, com o que o \emph{vendor} cobrou
+debitado por tentativa, inclusive as recusadas.
+
+\textbf{Sem IA, não há aula}, e isso é decisão declarada (\adrr{ADR-137}): sem
+saldo, 429 \cd{sem-saldo-de-ia}; com o provedor fora, 503
+\cd{ia-indisponivel}. A tela diz \enquote{Prepare antes: esta missão não tem
+mostra pronta}. O que é fixo --- os pacotes, os blocos, o caso Mariana, os
+cartões e as perguntas da plenária --- é o esqueleto da missão, em
+\arq{conteudo.ts}, e desce com o gabarito só ao professor. O rascunho não
+persiste: só \enquote{Criar atividade} grava.
+
+\subsection{Ausências deliberadas}
+
+\begin{itemize}
+  \item \textbf{Sem acervo padrão} nem podcast: a mostra é sempre a da turma.
+  \item \textbf{Sem arrastar}: a remontagem dos pacotes e a cadeia são por
+    toque sequencial, na tela da escola.
+  \item \textbf{Barra inferior com duas abas} (Feed e Cédula), sem DM, sem
+    comentários e sem busca antes do pico; a busca é a ferramenta da galeria.
+  \item \textbf{Sem contagem de curtidas} no post e \textbf{sem contador da
+    sala} na plenária: a api não tem o número, e o pico tem três elementos.
+  \item \textbf{Sem avanço automático} dos Stories (WCAG 2.2.2).
+  \item \textbf{Sem nome ligado a escolha} na lousa: os votos aparecem só por
+    área, no agregado.
+\end{itemize}
+
+\begin{atencao}
+O manifesto declara \cd{viewport} 375 por 812, \cd{permissoes: ["forms"]} e as
+capacidades \cd{telemetria}, \cd{progresso}, \cd{ia} e \cd{avaliacao}, e o
+\cd{produto} \cd{entre-redes}. A porta em \emph{dev} é a 5185, com
+\cd{strictPort}. A versão é a 0.1.0 nos três lugares (\arq{experiencia.json},
+\arq{package.json} e \cd{EXP\_VERSION}). Um \emph{grep} no \cd{dist/} prova que o
+\emph{bundle} não tem \cd{certo:}, \cd{LIMIAR\_DA\_BOLHA},
+\cd{PESO\_DA\_CURTIDA} nem o rótulo do último bloco da cadeia. \textbf{Com o
+\emph{mock} de IA, a missão não tem aula}: o \cd{generateJson} do \emph{mock}
+sempre falha, o preparo responde 503 e nenhuma atividade nasce. As suítes da
+api usam a mostra de \arq{tests/\B{}juri-estadual-\B{}fixture.ts}; a de ponta a
+ponta tenta a IA de verdade e, quando a geração falha, responde o
+\rota{POST .../gerar-conteudo} pelo \cd{page.route} do Playwright com uma cópia
+dessa mesma mostra --- só a resposta do gerador é \emph{fixture}, e o resto do
+caminho (curadoria, criar, imagens, a aula) é o real.
+\end{atencao}
+
+Duas suítes da api cobrem o motor, a taxa, os ids opacos em 400 sementes, as
+réguas, os \emph{latches} concorrentes, o portão, o resolvedor das enquetes,
+zerar e a \adrr{ADR-120}: a de regras, sem banco
+(\arq{tests/\B{}juri-estadual-\B{}regras.spec.ts}), e a de Postgres, com a RLS
+isolando (\arq{tests/\B{}juri-estadual-\B{}postgres.spec.ts}).
+
+A suíte de ponta a ponta \arq{scripts/e2e/estudante/\B{}13-juri-estadual.mjs}
+está \textbf{escrita e ainda não foi rodada}: 28 passos, com a professora e dois
+estudantes da mesma turma --- um que curte e outro que não ---, da criação da
+mostra ao crachá homologado. Ela cobra que os dois chegam à Galeria Oculta com
+taxas DIFERENTES (a de quem curtiu, maior), o pico de três elementos, o F5 nos
+dois \emph{latches}, a lousa anônima com um botão só, a engrenagem que devolve à
+bandeja sem dizer a vaga errada e o painel sem voto, taxa nem nível por criança.
+\textbf{A corrida é PENDENTE}: ela só roda na cópia principal, depois do
+\emph{merge}, que é onde a \emph{stack} sobe. Até lá, nada aqui afirma que ela
+passa.
 
 % ---------------------------------------------------------------------------
 \section{exp06ef2b --- O Rastro do Boato}

@@ -27,6 +27,7 @@ import { ManifestoIaModule } from "./manifesto-ia/manifesto-ia.module";
 import { QuemMandouIssoModule } from "./quem-mandou-isso/quem-mandou-isso.module";
 import { ASelecaoModule } from "./a-selecao/a-selecao.module";
 import { JornalEscolaModule } from "./jornal-escola/jornal-escola.module";
+import { JuriEstadualModule } from "./juri-estadual/juri-estadual.module";
 import { SalasModule } from "./salas/salas.module";
 import { EquipesModule } from "./equipes/equipes.module";
 import { EvidenciasModule } from "./evidencias/evidencias.module";
@@ -37,6 +38,7 @@ import { PlanosModule } from "./planos/planos.module";
 import { PlanejamentoModule } from "./planejamento/planejamento.module";
 import { BemEstarModule } from "./bemestar/bemestar.module";
 import { AgenteProfessorModule } from "./agente-professor/agente-professor.module";
+import { AjudaModule } from "./ajuda/ajuda.module";
 import { TenancyInterceptor } from "./tenancy/tenancy.interceptor";
 import { ContratoInterceptor } from "./openapi/contrato.interceptor";
 
@@ -78,11 +80,13 @@ import { ContratoInterceptor } from "./openapi/contrato.interceptor";
     PlanejamentoModule,
     BemEstarModule,
     AgenteProfessorModule,
+    AjudaModule,
     RastroBoatoModule,
     ManifestoIaModule,
     QuemMandouIssoModule,
     ASelecaoModule,
     JornalEscolaModule,
+    JuriEstadualModule,
     FotoContaModule,
   ],
   providers: [

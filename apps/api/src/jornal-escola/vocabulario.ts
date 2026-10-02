@@ -28,7 +28,7 @@ export const ID_DE_NOTICIA_RE = /^n[1-8]$/;
  *
  * `rede_social` e `mensagem` são conteúdo SIMULADO dentro da redação, sem
  * navegação pela plataforma: na gaveta, o post é desenhado com o `PostCard` do
- * Instanooria e a mensagem com o `MessageBubble` do WhatsApp — cada peça na
+ * Unoovista e a mensagem com o `MessageBubble` do Unoochat — cada peça na
  * seção da plataforma que ela imita. Os outros seis são da redação (Unooria).
  *
  * O espelho na experiência traduz cada um para o `NewsMedium` do DS

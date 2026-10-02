@@ -22,6 +22,7 @@ Aqui fica **o que vale para TODA a api**. O que é de um módulo vive no
 | [`src/openapi/`](src/openapi/AGENTS.md) | OpenAPI derivado do Zod |
 | [`src/ai/`](src/ai/AGENTS.md) | o provider de IA — **nenhuma chamada acontece fora daqui** |
 | [`src/agente-professor/`](src/agente-professor/AGENTS.md) | o agente de IA do professor: posse da conversa e o SSE do turno (contrato em `docs/regras/agente-professor.md`) |
+| [`src/ajuda/`](src/ajuda/AGENTS.md) | a Ajuda com avatar (ADR-132): o LLM OpenAI-compatível que o LiveAvatar chama, o token da sessão dentro do prompt e o medidor de minutos — **fora da quota de tokens** |
 
 E os módulos de experiência, um por missão:
 
@@ -32,6 +33,7 @@ E os módulos de experiência, um por missão:
 | [`src/a-selecao/`](src/a-selecao/AGENTS.md) | exp07ef1b A Seleção — com ficha (E14) e o Mural pareado por computador (E13) |
 | [`src/quem-mandou-isso/`](src/quem-mandou-isso/AGENTS.md) | exp05ef1b Quem Mandou Isso? v2.2 — com ficha (E14) e equipe (E13) |
 | [`src/jornal-escola/`](src/jornal-escola/AGENTS.md) | exp04ef1b Jornal da Escola: A Edição de Bento — com ficha (E14), equipe (E13) e a IA que só diagrama |
+| [`src/juri-estadual/`](src/juri-estadual/AGENTS.md) | exp06ef1b O Júri Estadual de Projetos — o motor do feed no servidor, a mostra gerada por IA (sem acervo padrão), ficha (E14) e equipe (E13) |
 | [`src/vila/`](src/vila/AGENTS.md) | app-70 Vila do Lume |
 | [`src/backup-unootube/`](src/backup-unootube/AGENTS.md) | o UnooTube ARQUIVADO (`backup-exp04ef1b`, ADR-116): compila e é testado, mas não está no `app.module` |
 | [`src/planos/`](src/planos/AGENTS.md) | app-90 Plano de aula |

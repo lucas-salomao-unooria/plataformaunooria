@@ -35,18 +35,20 @@ const ESCOPO_CONTRATO = "__contrato__";
 /**
  * O rótulo de `herda` DEPENDE do escopo, e isso não é cosmético.
  *
- * No contrato não existe "de cima": ali `herda` é o padrão do código, que é
- * LIGADO. Numa escola, `herda` é seguir a regional ou o contrato. Chamar as duas
- * coisas de "Herda" faria o operador do escopo-contrato procurar um nível que
- * não existe.
+ * No contrato não existe "de cima": ali `herda` é o padrão do código — LIGADO
+ * para quase tudo, DESLIGADO para o produto em teste interno (a Ajuda com
+ * avatar, `ligadoPorPadrao: false` vindo da api). Numa escola, `herda` é seguir
+ * a regional ou o contrato. Chamar as duas coisas de "Herda" faria o operador
+ * do escopo-contrato procurar um nível que não existe.
  */
-function rotuloDeHerda(noContrato: boolean): string {
-  return noContrato ? "Padrão (ligado)" : "Herda de cima";
+function rotuloDeHerda(noContrato: boolean, ligadoPorPadrao: boolean): string {
+  if (!noContrato) return "Herda de cima";
+  return ligadoPorPadrao ? "Padrão (ligado)" : "Padrão (desligado)";
 }
 
-function opcoesDoInterruptor(noContrato: boolean) {
+function opcoesDoInterruptor(noContrato: boolean, ligadoPorPadrao = true) {
   return [
-    { value: "herda", label: rotuloDeHerda(noContrato) },
+    { value: "herda", label: rotuloDeHerda(noContrato, ligadoPorPadrao) },
     { value: "ligado", label: "Ligado" },
     { value: "desligado", label: "Desligado" },
   ];
@@ -58,7 +60,11 @@ function explicacaoDoEfetivo(item: ProdutoNoPainel | ExperienciaNoPainel): strin
   if ("tetoDoProduto" in item && item.tetoDoProduto) {
     return "O produto está desligado neste escopo — nada dentro dele abre.";
   }
-  if (efetivo.origem === "padrao") return "Ninguém decidiu: vale o padrão, que é ligado.";
+  if (efetivo.origem === "padrao") {
+    return efetivo.ligado
+      ? "Ninguém decidiu: vale o padrão, que é ligado."
+      : "Ninguém decidiu: vale o padrão, que é desligado — produto em teste interno. Ligue aqui para testar.";
+  }
   if (efetivo.origem === "aqui") {
     return efetivo.motivo
       ? `Decidido neste escopo: ${efetivo.motivo}`
@@ -266,7 +272,7 @@ export function PainelDeRecursos({
                     id={`interruptor-${produto.slug}`}
                     label="Neste escopo"
                     value={produto.estadoAqui}
-                    options={opcoesDoInterruptor(noContrato)}
+                    options={opcoesDoInterruptor(noContrato, produto.ligadoPorPadrao)}
                     disabled={ocupado}
                     onChange={(v) =>
                       pedirMudanca(recursoId, copy?.nome ?? produto.slug, String(v) as EstadoAqui)

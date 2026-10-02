@@ -11,8 +11,8 @@ import { PostDeRedeSocial } from "../pecas/post-de-rede-social";
  *
  * - jornal, rádio, telejornal, blog, portal e mural: o `NewsArticle` da seção
  *   `unooria` (a redação desenha o recorte, o boletim transcrito, o quadro…);
- * - rede social: o `PostCard` do `instanooria` (`pecas/post-de-rede-social.tsx`);
- * - mensagem: o `MessageBubble` do `whatsappmobile` (`pecas/mensagem-encaminhada.tsx`).
+ * - rede social: o `PostCard` do `unoovista` (`pecas/post-de-rede-social.tsx`);
+ * - mensagem: o `MessageBubble` do `unoochat` (`pecas/mensagem-encaminhada.tsx`).
  *
  * O `veiculo` vai no cabeçalho da peça (o nome do jornal, a conta do post), e é
  * o que a criança leria no recorte de verdade; o que ele É — canal oficial,
@@ -21,9 +21,9 @@ import { PostDeRedeSocial } from "../pecas/post-de-rede-social";
 export function MateriaOriginal({ noticia, aoFalharMidia }: { noticia: NoticiaPublica; aoFalharMidia: () => void }) {
   const peca = PECA_DO_MEIO[noticia.meio];
 
-  if (peca.secao === "instanooria") return <PostDeRedeSocial noticia={noticia} aoFalharMidia={aoFalharMidia} />;
+  if (peca.secao === "unoovista") return <PostDeRedeSocial noticia={noticia} aoFalharMidia={aoFalharMidia} />;
 
-  if (peca.secao === "whatsappmobile") {
+  if (peca.secao === "unoochat") {
     const url = noticia.imagem?.url;
     return (
       <MensagemEncaminhada

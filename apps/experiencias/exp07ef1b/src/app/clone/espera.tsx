@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { StoryViewer } from "@edu/ui/ds-insta";
+import { StoryViewer } from "@edu/ui/ds-unoovista";
 import { E4, ESPERA } from "../../lib/textos";
 import type { PostPublico } from "../../lib/tipos";
 import { altDoPost, srcDoPost, usePaleta } from "../componentes/midia";
@@ -30,7 +30,7 @@ export function Espera({ posts, legenda }: { posts: PostPublico[]; legenda: stri
   if (!post) return null;
 
   return (
-    <div className="tela tela--story" data-insta-theme="dark">
+    <div className="tela tela--story" data-unv-theme="dark">
       <div className="espera__status" role="status">
         <p className="espera__titulo">{ESPERA.publicado}</p>
         <p className="espera__descricao">{ESPERA.descricao}</p>

@@ -17,6 +17,14 @@ que vence em conflito — e que carrega a versão curta desta lista.
   limit, quota e posse da conversa —, e só `src/ai/agent-engine.client.ts`
   conhece o engine. Recurso de IA novo NÃO herda a exceção: o custo dela é um
   segundo runtime (Python) e um segundo lugar onde prompt e modelo moram.
+- **Não estender a exceção da Ajuda com avatar** (ADR-132). Ela é a ÚNICA
+  chamada de IA fora do `QuotaService` (decisão do dono do produto: o custo
+  dela é o minuto de vídeo, que `ajuda_limites` limita) e a única rota de IA sem
+  token de usuário (`POST /ajuda/llm/chat/completions`, chamada pelo servidor do
+  vendor, trancada por segredo + token da sessão). Recurso de IA novo não herda
+  nenhuma das duas. E **não escrever prompt nem base no contexto do LiveAvatar**:
+  o prompt de lá é só o marcador `[sessao:${sessao}]`, e o que o vendor manda na
+  mensagem `system` é descartado — o prompt de verdade mora na api (regra 2).
 - Não rodar Snyk (CLI ou MCP): a varredura é do CI. Ver "Ferramentas externas".
 - Não escrever conteúdo em `CLAUDE.md`: ele é o ponteiro `@AGENTS.md`, mais o bloco que o graphify escreve e reescreve (ADR-124).
 - Não escrever componente de UI local (nem em `packages/ui`, nem na experiência)

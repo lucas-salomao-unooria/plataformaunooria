@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { createExperiencia, type ExperienciaHandle } from "@edu/sdk";
-import { StatusBar, TopBar } from "@edu/ui/ds-whatsapp";
+import { StatusBar, TopBar } from "@edu/ui/ds-unoochat";
 import { api, classificar, definirExperiencia } from "./lib/api";
 import { HORA_DO_APARELHO, INTERVALO_DO_GATE_MS } from "./lib/regras";
 import { ligarTelemetria } from "./lib/telemetria";

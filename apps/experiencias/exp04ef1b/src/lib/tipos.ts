@@ -25,7 +25,7 @@ export const EXP_ID = "exp04ef1b";
  * IMUTÁVEL no bucket — e o `exp04ef1b/` pode ter o UnooTube 1.2.8 lá (ADR-116),
  * por isso a série do Jornal começa na 2.0.0. `versao.test.ts` compara os três.
  */
-export const EXP_VERSION = "2.0.0";
+export const EXP_VERSION = "2.1.1";
 
 // ──────────────────────────────────────────────── vocabulário (espelho)
 

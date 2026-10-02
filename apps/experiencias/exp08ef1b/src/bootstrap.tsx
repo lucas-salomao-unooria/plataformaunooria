@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { createExperiencia, type ExperienciaHandle } from "@edu/sdk";
+import { LogoUnv } from "@edu/ui/ds-unoovista";
 
 import { EXP_VERSION } from "./lib/versao";
 
@@ -49,7 +50,7 @@ export function Bootstrap() {
         const dados = await api.get<Boot>("/runs/boot");
         if (ativo) setBoot(dados);
       } catch (falha) {
-        console.error("[instanooria] boot falhou", falha);
+        console.error("[unoovista] boot falhou", falha);
         // O boot que falha DEPOIS do handshake tem token, e por isso pode
         // reportar: era esta a falha que o estudante via como "não deu para
         // abrir agora" e que não deixava rastro nenhum no servidor (ADR-84).
@@ -66,8 +67,8 @@ export function Bootstrap() {
 
   if (erro) {
     return (
-      <main className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-surface px-8 text-center">
-        <p className="instanooria-wordmark text-[34px] leading-none">Instanooria</p>
+      <main className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-canvas px-8 text-center">
+        <LogoUnv height={30} title="Unoovista" />
         <p className="text-[15px] leading-relaxed text-ink/70">{erro}</p>
       </main>
     );
@@ -76,8 +77,8 @@ export function Bootstrap() {
   if (!boot) {
     // Splash neutro enquanto o handshake e o boot correm (rede de escola).
     return (
-      <main className="flex min-h-dvh items-center justify-center bg-surface">
-        <p className="instanooria-wordmark animar-skeleton text-[40px] leading-none">Instanooria</p>
+      <main className="flex min-h-dvh items-center justify-center bg-canvas">
+        <LogoUnv height={36} title="Unoovista" className="animar-skeleton" />
       </main>
     );
   }

@@ -1,4 +1,4 @@
-import { SidebarRow, WebSidebar, gptGlyphs } from '@edu/ui/ds-chatgpt';
+import { Icon, SidebarRow, WebSidebar } from '@edu/ui/ds-unooriaai';
 import { PASSOS, type Passo } from '../../lib/tipos';
 import { ROTULO_PASSO } from '../../lib/textos';
 
@@ -22,22 +22,21 @@ function podeIr(de: Passo, para: Passo): boolean {
 const VISIVEIS = PASSOS.filter((p) => p !== 'orientacao');
 
 /**
- * Barra lateral da Missão — o `WebSidebar` do módulo `chatgpt`.
+ * Barra lateral da Missão — o `WebSidebar` da seção `unooriaai`.
  *
- * ESTA É A RÉGUA DO CLIENTE WEB, e não a da página de design system. O pacote
- * publica as duas, medidas de páginas diferentes do mesmo arquivo Figma, e a
- * regra é que uma nunca substitui a outra: `WebSidebar` tem 282px e fundo
- * transparente separado por um fio; `Sidebar` tem 260px e superfície própria.
- * `SidebarRow` tem 48px, raio 12 e ícone VETORIAL de 24; `NavItem` tem 36px,
- * raio 8 e glifo tipográfico de 14.
+ * ESTA É A RÉGUA DO CLIENTE WEB, e não a da página de design system. A seção
+ * publica as duas, e a regra é que uma nunca substitui a outra: `WebSidebar`
+ * tem 282px e fundo transparente separado por um fio; `Sidebar` tem 260px e
+ * superfície própria. `SidebarRow` tem 48px, raio 12 e ícone de 24; `NavItem`
+ * tem 36px e raio 8.
  *
  * Antes esta tela usava `Sidebar` + `NavItem`, que é a régua de documentação.
- * Trocar para a do cliente web é o que faz a Missão parecer o ChatGPT que o
+ * A do cliente web é o que faz a Missão parecer o assistente de conversa que o
  * estudante abre fora da aula — e é isso que a Missão inteira está ensinando.
  *
- * Os Passos entram como as conversas entram na barra do arquivo (`chatText`),
- * e Recomeçar entra no rodapé com `trash`, que é exatamente onde e como o
- * arquivo põe "Clear conversations".
+ * Os Passos entram como as conversas entram na barra de um cliente de conversa
+ * (`chatText`), e Recomeçar entra no rodapé com `trash`, onde esses clientes
+ * põem "Limpar conversas".
  *
  * Colapsável porque a Investigação precisa de largura: o mapa e a conversa
  * disputam a tela, e a trilha é orientação, não trabalho. Colapsada, mantém os
@@ -66,18 +65,19 @@ export function Trilha({
   return (
     <WebSidebar height="100%" aria-label="Passos da Missão" className={aberta ? '' : '!w-[76px]'}>
       <WebSidebar.Section>
-        {/* Progresso. O cliente web não tem barra de progresso — o ChatGPT não
-            tem o que medir. Esta é do produto, montada só com token do pacote. */}
+        {/* Progresso. O cliente web não tem barra de progresso — um assistente
+            de conversa não tem o que medir. Esta é do produto, montada só com
+            token do pacote. */}
         <div className={`px-3 pb-2 ${aberta ? '' : 'px-0 text-center'}`}>
-          <p className="text-xs font-semibold tabular-nums text-gpt-tinta">
+          <p className="text-xs font-semibold tabular-nums text-uai-tinta">
             {indice + 1}/{VISIVEIS.length}
           </p>
           {aberta && (
             <>
-              <p className="mt-0.5 text-xs text-gpt-suave-60">Missão 3: Tempestade</p>
-              <span className="mt-2 block h-1 w-full overflow-hidden rounded-gpt-full bg-gpt-fill-8">
+              <p className="mt-0.5 text-xs text-uai-suave-60">Missão 3: Tempestade</p>
+              <span className="mt-2 block h-1 w-full overflow-hidden rounded-uai-full bg-uai-fill-8">
                 <span
-                  className="block h-full rounded-gpt-full bg-gpt-destaque transition-all"
+                  className="block h-full rounded-uai-full bg-uai-destaque transition-all"
                   style={{ width: `${pct}%` }}
                 />
               </span>
@@ -106,7 +106,7 @@ export function Trilha({
 
       <WebSidebar.Section bordered>
         {onRecomecar && (
-          // `trash` no rodapé é onde e como o arquivo põe "Clear conversations".
+          // `trash` no rodapé é onde e como um cliente de conversa põe "Limpar conversas".
           <SidebarRow
             icon="trash"
             title="Recomeçar a Missão"
@@ -118,19 +118,12 @@ export function Trilha({
           </SidebarRow>
         )}
 
-        {/* Recolher. O arquivo não publica este controle, e a iconografia dele
-            tem 13 vetores — nenhum é uma seta de painel. Em vez de desenhar um
-            (proibido pelo DS, §7.4), a seta é o glifo PUBLICADO `→`, girado por
-            CSS: símbolo do arquivo, sentido dado pela folha de estilo. */}
+        {/* Recolher. A seção não publica este controle, e o registro dela não
+            tem seta de painel. Em vez de desenhar uma (proibido pelo DS, §7.4),
+            a seta é o `arrowForward` PUBLICADO, girado pelo próprio `Icon`
+            (`rotate`): glifo do pacote, sentido dado pela prop. */}
         <SidebarRow
-          iconNode={
-            <span
-              aria-hidden
-              className={`inline-block text-lg leading-none ${aberta ? 'rotate-180' : ''}`}
-            >
-              {gptGlyphs.arrowRight}
-            </span>
-          }
+          iconNode={<Icon name="arrowForward" size={24} rotate={aberta ? 180 : 0} aria-hidden />}
           onClick={onAlternar}
           aria-label={aberta ? 'Recolher os passos' : 'Expandir os passos'}
           aria-expanded={aberta}

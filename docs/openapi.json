@@ -7603,7 +7603,8 @@
                       "plano-de-aula",
                       "plano-de-ensino",
                       "bem-estar",
-                      "agente-professor"
+                      "agente-professor",
+                      "ajuda"
                     ],
                     "nullable": true
                   },
@@ -7863,6 +7864,195 @@
         }
       }
     },
+    "/recursos/limites-da-ajuda": {
+      "get": {
+        "operationId": "LimitesDaAjudaController_limites",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "limites": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "chave": {
+                            "type": "string",
+                            "enum": [
+                              "minutos-por-dia",
+                              "minutos-por-sessao"
+                            ]
+                          },
+                          "minutos": {
+                            "type": "integer",
+                            "exclusiveMinimum": true,
+                            "minimum": 0
+                          },
+                          "motivo": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "definidoPorNome": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "definidoEm": {
+                            "type": "string",
+                            "format": "date-time"
+                          }
+                        },
+                        "required": [
+                          "chave",
+                          "minutos",
+                          "motivo",
+                          "definidoPorNome",
+                          "definidoEm"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "limites"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "recursos"
+        ],
+        "summary": "Os limites de minutos da Ajuda com avatar.",
+        "description": "Uma linha por chave de `ajuda_limites` (`minutos-por-dia`, `minutos-por-sessao`), escopo do contrato inteiro. É o que a Ajuda consulta ao abrir cada sessão: o teto da sessão é o menor entre o limite por sessão e o que sobra do dia da pessoa.\n\n**Papéis:** admin.\n\n**Restrições:**\n- Só `admin` (ADR-88/132). O uso de cada pessoa (`ajuda_sessoes`) NÃO sai aqui.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "admin"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/recursos/limites-da-ajuda/{chave}": {
+      "put": {
+        "operationId": "LimitesDaAjudaController_definir",
+        "parameters": [
+          {
+            "name": "chave",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "minutos-por-dia",
+                "minutos-por-sessao"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "chave": {
+                      "type": "string",
+                      "enum": [
+                        "minutos-por-dia",
+                        "minutos-por-sessao"
+                      ]
+                    },
+                    "minutos": {
+                      "type": "integer",
+                      "exclusiveMinimum": true,
+                      "minimum": 0
+                    },
+                    "motivo": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "definidoPorNome": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "definidoEm": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "alterado": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "chave",
+                    "minutos",
+                    "motivo",
+                    "definidoPorNome",
+                    "definidoEm",
+                    "alterado"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "recursos"
+        ],
+        "summary": "Define um limite de minutos da Ajuda.",
+        "description": "Sobrescreve a linha da chave em `ajuda_limites`. **Motivo obrigatório sempre.** A mudança entra no histórico do painel (`recursos_auditoria`, ação `quota-alterada`, `recurso_id` `ajuda:<chave>`, com `{ de, para }`).\n\n**Papéis:** admin.\n\n**Restrições:**\n- Zero é recusado: fechar a Ajuda é desligar o produto `ajuda` (ADR-87), não zerar o limite.\n- Tetos de sanidade: 600 minutos por dia e 60 por sessão (Zod e CHECK).\n- Vale na PRÓXIMA sessão aberta; a que está no ar mantém o teto com que nasceu.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "admin"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "minutos": {
+                    "type": "integer",
+                    "exclusiveMinimum": true,
+                    "minimum": 0,
+                    "maximum": 600
+                  },
+                  "motivo": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 500
+                  }
+                },
+                "required": [
+                  "minutos",
+                  "motivo"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
     "/recursos/auditoria": {
       "get": {
         "operationId": "RecursosAuditoriaController_auditoria",
@@ -8059,8 +8249,12 @@
                               "plano-de-aula",
                               "plano-de-ensino",
                               "bem-estar",
-                              "agente-professor"
+                              "agente-professor",
+                              "ajuda"
                             ]
+                          },
+                          "ligadoPorPadrao": {
+                            "type": "boolean"
                           },
                           "estadoAqui": {
                             "type": "string",
@@ -8179,6 +8373,7 @@
                         },
                         "required": [
                           "slug",
+                          "ligadoPorPadrao",
                           "estadoAqui",
                           "efetivo",
                           "experiencias"
@@ -8754,7 +8949,8 @@
                         "plano-de-aula",
                         "plano-de-ensino",
                         "bem-estar",
-                        "agente-professor"
+                        "agente-professor",
+                        "ajuda"
                       ],
                       "properties": {
                         "entre-redes": {
@@ -8826,6 +9022,23 @@
                           "additionalProperties": false
                         },
                         "agente-professor": {
+                          "type": "object",
+                          "properties": {
+                            "ligado": {
+                              "type": "boolean"
+                            },
+                            "versao": {
+                              "type": "string",
+                              "nullable": true
+                            }
+                          },
+                          "required": [
+                            "ligado",
+                            "versao"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "ajuda": {
                           "type": "object",
                           "properties": {
                             "ligado": {
@@ -31467,6 +31680,250 @@
         }
       }
     },
+    "/ajuda/llm/models": {
+      "get": {
+        "operationId": "AjudaLlmController_modelos",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "object": {
+                      "type": "string",
+                      "enum": [
+                        "list"
+                      ]
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "object": {
+                            "type": "string",
+                            "enum": [
+                              "model"
+                            ]
+                          },
+                          "owned_by": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "object",
+                          "owned_by"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "object",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "ajuda"
+        ],
+        "summary": "Lista o modelo da Ajuda, no formato OpenAI (o vendor consulta ao abrir a sessão).",
+        "description": "O vendor faz `GET {base_url}/models` ao abrir a sala (medido no spike). Responde um modelo só, `unooria-ajuda`; o modelo de verdade é o da api (`VERTEX_MODEL`) e não é anunciado.\n\n**Acesso:** chave de serviço em cabeçalho, não token de pessoa. Com a variável de ambiente ausente a rota responde **503**.\n\n**Restrições:**\n- Exige `Authorization: Bearer <AJUDA_LLM_SEGREDO>`; sem a env, **503**.",
+        "security": [],
+        "x-papeis": [],
+        "x-acesso": "servico"
+      }
+    },
+    "/ajuda/llm/chat/completions": {
+      "post": {
+        "operationId": "AjudaLlmController_conversar",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "ajuda"
+        ],
+        "summary": "Um turno do atendente da Ajuda, no formato `chat/completions` do OpenAI.",
+        "description": "Chamado pelo vendor do avatar a cada fala da pessoa. A mensagem `system` que ele manda é DESCARTADA — só o token da sessão é lido dela (`[sessao:<token>]`); o prompt de verdade e a base de conhecimento moram na api. O histórico `user`/`assistant` vai ao `AiProvider` e a resposta volta em `chat.completion.chunk` (SSE) — ou num `chat.completion` inteiro quando `stream` é falso.\n\n**Acesso:** chave de serviço em cabeçalho, não token de pessoa. Com a variável de ambiente ausente a rota responde **503**.\n\n**Restrições:**\n- **401** sem o segredo certo em `Authorization`, ou sem token de sessão válido (vencido, adulterado, de sessão já encerrada). Sem `AJUDA_LLM_SEGREDO`/`AJUDA_SESSAO_CHAVE`, **503**.\n- Recusa de NEGÓCIO não é status: produto `ajuda` desligado para a escola, ou mais de 20 turnos por minuto, viram uma FALA do atendente — o vendor fica mudo diante de erro.\n- **Fora da quota de tokens** (exceção à regra 5, ADR-132): o custo da Ajuda é limitado pelos minutos de `ajuda_limites`. Os tokens continuam medidos pelo `MedidorDeProvider`.\n- Falha do modelo vira a fala de desculpa (`FALA_DE_FALHA`), em 200. A pergunta e a resposta não vão ao log.",
+        "security": [],
+        "x-papeis": [],
+        "x-acesso": "servico",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "messages": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "role": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 20
+                        },
+                        "content": {}
+                      },
+                      "required": [
+                        "role"
+                      ],
+                      "additionalProperties": true
+                    },
+                    "minItems": 1,
+                    "maxItems": 200
+                  },
+                  "model": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "stream": {
+                    "type": "boolean"
+                  },
+                  "stream_options": {
+                    "type": "object",
+                    "properties": {
+                      "include_usage": {
+                        "type": "boolean"
+                      }
+                    },
+                    "additionalProperties": true
+                  }
+                },
+                "required": [
+                  "messages"
+                ],
+                "additionalProperties": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ajuda/sessoes": {
+      "post": {
+        "operationId": "AjudaController_abrir",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "tokenDaSessao": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "duracaoMaximaS": {
+                      "type": "integer",
+                      "exclusiveMinimum": true,
+                      "minimum": 0
+                    },
+                    "segundosRestantesHoje": {
+                      "type": "integer",
+                      "minimum": 0
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "tokenDaSessao",
+                    "duracaoMaximaS",
+                    "segundosRestantesHoje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "ajuda"
+        ],
+        "summary": "Abre a Ajuda: reserva os minutos e pede a sala de vídeo do atendente.",
+        "description": "Confere os minutos de hoje (`ajuda_limites` × `ajuda_sessoes`), fecha a sessão anterior da pessoa que tenha ficado aberta, e pede ao vendor do avatar uma sessão com o teto calculado. Devolve o token que o SDK do vendor usa NO NAVEGADOR — a chave da conta nunca sai da api. A conversa não passa por esta rota: o vendor chama `POST /ajuda/llm/chat/completions`.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- **503** `{ codigo: \"AJUDA_INDISPONIVEL\" }` quando a stack não tem o vendor configurado (as envs `LIVEAVATAR_*` e `AJUDA_*`).\n- **429** `{ codigo: \"SEM_MINUTOS\", minutosPorDia }` quando o que sobra do dia é menos de 1 minuto. **429** `{ codigo: \"RATE_LIMIT\" }` acima de 6 aberturas por minuto.\n- **502** `{ codigo: \"AVATAR_FALHOU\" }` quando o vendor não abre a sala — a linha reservada fecha com duração zero e não conta minuto.\n- **403** `{ codigo: \"recurso-indisponivel\" }` com o produto `ajuda` desligado para a escola.\n- O dia é o do fuso da plataforma (ADR-99). Sessão sem `fim` conta o teto inteiro.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/ajuda/sessoes/{id}/encerrar": {
+      "post": {
+        "operationId": "AjudaController_encerrar",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Sucesso, sem corpo."
+          }
+        },
+        "tags": [
+          "ajuda"
+        ],
+        "summary": "Encerra a sessão de vídeo da Ajuda.",
+        "description": "Grava o fim da sessão (é o tempo real que passa a contar no dia) e pede ao vendor que feche a sala. Idempotente: sessão já encerrada, inexistente ou de outra pessoa responde 204 do mesmo jeito.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Escapa do interruptor (`@SemDisponibilidade`): desligar o produto não pode deixar a sala cobrando.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token"
+      }
+    },
     "/rastro-boato/sessao": {
       "get": {
         "operationId": "RastroBoatoController_sessao",
@@ -51486,6 +51943,3808 @@
         ],
         "summary": "O banco padrão com o gabarito, os blocos da Chave e o roteiro da mediação.",
         "description": "**Professor e gestores.** É o \"Usar Banco Padrão: Feira de Ciências e Notícias da Cidade\" do preparo — o hub o manda de volta no `POST :turmaId/homologar` com `origem: \"padrao\"` — e o bloco vivo do guia: com um computador só, o professor projeta as notícias e conduz a turma (PDF §11).\n\nÉ o BANCO PADRÃO da Unooria, não o pacote da turma: se o professor homologou outro, ele está em `GET /jornal-escola/turmas/:turmaId/pacotes`.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Nada aqui é escopado por escola: é o catálogo da missão, igual para todo contrato.\n- `blocos[].pilar` diz quais três formam a Chave — é gabarito, e só existe nesta rota de professor.\n- `roteiro` é o da copy revisada (§4b): o gatilho do resultado, as três perguntas do debate e o gatilho da revisão.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/juri-estadual/sessao": {
+      "get": {
+        "operationId": "JuriEstadualController_sessao",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "pacoteId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "rodada": {
+                      "type": "integer",
+                      "exclusiveMinimum": true,
+                      "minimum": 0
+                    },
+                    "passo": {
+                      "type": "string",
+                      "enum": [
+                        "credencial",
+                        "feed",
+                        "lacrada",
+                        "galeria",
+                        "pacotes",
+                        "cadeia",
+                        "mariana",
+                        "enquetes",
+                        "fim"
+                      ]
+                    },
+                    "passoDoEstudante": {
+                      "type": "string",
+                      "enum": [
+                        "credencial",
+                        "feed",
+                        "lacrada",
+                        "galeria",
+                        "pacotes",
+                        "cadeia",
+                        "mariana",
+                        "enquetes",
+                        "fim"
+                      ]
+                    },
+                    "etapa": {
+                      "type": "string",
+                      "enum": [
+                        "exploracao",
+                        "galeria"
+                      ]
+                    },
+                    "aguardandoOProfessor": {
+                      "type": "boolean"
+                    },
+                    "tema": {
+                      "type": "string"
+                    },
+                    "categorias": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "area": {
+                            "type": "string",
+                            "enum": [
+                              "area_a",
+                              "area_b",
+                              "area_c",
+                              "area_d"
+                            ]
+                          },
+                          "nome": {
+                            "type": "string"
+                          },
+                          "hashtag": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "area",
+                          "nome",
+                          "hashtag"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "minItems": 4,
+                      "maxItems": 4
+                    },
+                    "feed": {
+                      "type": "object",
+                      "properties": {
+                        "posts": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "pattern": "^proj-[a-d][1-4]:(apresentacao|bastidor)$"
+                              },
+                              "projetoId": {
+                                "type": "string",
+                                "pattern": "^proj-[a-d][1-4]$"
+                              },
+                              "tipo": {
+                                "type": "string",
+                                "enum": [
+                                  "apresentacao",
+                                  "bastidor"
+                                ]
+                              },
+                              "area": {
+                                "type": "string",
+                                "enum": [
+                                  "area_a",
+                                  "area_b",
+                                  "area_c",
+                                  "area_d"
+                                ]
+                              },
+                              "titulo": {
+                                "type": "string"
+                              },
+                              "escola": {
+                                "type": "string"
+                              },
+                              "perfil": {
+                                "type": "string"
+                              },
+                              "texto": {
+                                "type": "string"
+                              },
+                              "hashtags": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                }
+                              },
+                              "imagem": {
+                                "type": "object",
+                                "properties": {
+                                  "url": {
+                                    "type": "string",
+                                    "nullable": true
+                                  },
+                                  "alt": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "url",
+                                  "alt"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "projetoId",
+                              "tipo",
+                              "area",
+                              "titulo",
+                              "escola",
+                              "perfil",
+                              "texto",
+                              "hashtags",
+                              "imagem"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "maxItems": 10
+                        },
+                        "curtidos": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "pattern": "^proj-[a-d][1-4]:(apresentacao|bastidor)$"
+                          }
+                        },
+                        "completo": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "posts",
+                        "curtidos",
+                        "completo"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "voto": {
+                      "type": "object",
+                      "properties": {
+                        "projetoId": {
+                          "type": "string",
+                          "pattern": "^proj-[a-d][1-4]$"
+                        },
+                        "conviccao": {
+                          "type": "string",
+                          "enum": [
+                            "examinei_bem",
+                            "vi_tudo"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "projetoId",
+                        "conviccao"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true
+                    },
+                    "revisao": {
+                      "type": "object",
+                      "properties": {
+                        "acao": {
+                          "type": "string",
+                          "enum": [
+                            "manter",
+                            "trocar"
+                          ]
+                        },
+                        "projetoId": {
+                          "type": "string",
+                          "pattern": "^proj-[a-d][1-4]$",
+                          "nullable": true
+                        }
+                      },
+                      "required": [
+                        "acao",
+                        "projetoId"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true
+                    },
+                    "pacotes": {
+                      "type": "object",
+                      "properties": {
+                        "itens": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "pattern": "^[a-z]{2}-[a-z0-9]{3}$"
+                              },
+                              "numero": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 4
+                              },
+                              "trecho": {
+                                "type": "string"
+                              },
+                              "rota": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                },
+                                "minItems": 2
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "numero",
+                              "trecho",
+                              "rota"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "minItems": 4,
+                          "maxItems": 4
+                        },
+                        "tentativas": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "remontados": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "itens",
+                        "tentativas",
+                        "remontados"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true
+                    },
+                    "cadeia": {
+                      "type": "object",
+                      "properties": {
+                        "blocos": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "pattern": "^[a-z]{2}-[a-z0-9]{3}$"
+                              },
+                              "rotulo": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "rotulo"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "minItems": 4,
+                          "maxItems": 4
+                        },
+                        "tentativas": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "montada": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "blocos",
+                        "tentativas",
+                        "montada"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true
+                    },
+                    "mariana": {
+                      "type": "object",
+                      "properties": {
+                        "caso": {
+                          "type": "string"
+                        },
+                        "mecanismos": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "texto": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "texto"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "atitudes": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "texto": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "texto"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "escolha": {
+                          "type": "object",
+                          "properties": {
+                            "mecanismo": {
+                              "type": "string"
+                            },
+                            "atitude": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "mecanismo",
+                            "atitude"
+                          ],
+                          "additionalProperties": false,
+                          "nullable": true
+                        }
+                      },
+                      "required": [
+                        "caso",
+                        "mecanismos",
+                        "atitudes",
+                        "escolha"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true
+                    },
+                    "concluida": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "pacoteId",
+                    "rodada",
+                    "passo",
+                    "passoDoEstudante",
+                    "etapa",
+                    "aguardandoOProfessor",
+                    "tema",
+                    "categorias",
+                    "feed",
+                    "voto",
+                    "revisao",
+                    "pacotes",
+                    "cadeia",
+                    "mariana",
+                    "concluida"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "juri-estadual"
+        ],
+        "summary": "O estado da missão: o passo, o feed servido até aqui, o voto e os blocos do fim.",
+        "description": "Boot da experiência e o F5. O feed traz **só os posts que o motor serviu** — o acervo da mostra existe só no servidor até a Galeria Oculta. Nenhum peso, nenhuma área líder: a regra do feed é o que a Etapa 5 ensina, e a criança a descobre depois.\n\n`pacotes` (a curtida em quatro pacotes, na ORDEM DE CHEGADA desta sessão), `cadeia` (os quatro blocos embaralhados) e `mariana` (o caso e os cartões) só vêm do passo deles em diante, com ids OPACOS e estáveis num F5. Nenhum diz a posição certa, e nenhum cartão diz se é o certo.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- `passo` já vem reconciliado com a etapa da turma; `passoDoEstudante` é o gravado. A etapa só conduz quem votou: quem ainda está no feed continua no feed com a galeria liberada.\n- `pacoteId` é a ATIVIDADE e `rodada` é a rodada dela: mudam quando o professor põe outra atividade no ar ou zera a turma, e a sessão é outra.\n- `imagem.url` é `null` enquanto o professor não gerou as imagens — a tela desenha a arte procedural do estande.\n- Missão não liberada na turma responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`); sem atividade em andamento, **403** `atividade-nao-preparada`. Estudante sem turma responde **409** `sem-turma`. Corpo fora do formato responde **400** `payload-invalido`.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/juri-estadual/gate": {
+      "get": {
+        "operationId": "JuriEstadualController_gate",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "pacoteId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "rodada": {
+                      "type": "integer",
+                      "exclusiveMinimum": true,
+                      "minimum": 0
+                    },
+                    "etapa": {
+                      "type": "string",
+                      "enum": [
+                        "exploracao",
+                        "galeria"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "pacoteId",
+                    "rodada",
+                    "etapa"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "juri-estadual"
+        ],
+        "summary": "Em que etapa a turma está (polling de ~3 s, na espera da plenária).",
+        "description": "Magra de propósito: sem acervo, sem contagem da sala, sem JOIN. **Polling HTTP, nunca WebSocket.** Quando `pacoteId` ou `rodada` mudam, a tela recarrega a sessão.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- Passa pelo MESMO funil de liberação das outras rotas (ADR-69 e ADR-87): turma sem a missão liberada recebe 403 em vez de descobrir a etapa.\n- Não escreve nada. Sem atividade em andamento, **403** `atividade-nao-preparada`.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/juri-estadual/passo": {
+      "post": {
+        "operationId": "JuriEstadualController_passo",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "posts": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "pattern": "^proj-[a-d][1-4]:(apresentacao|bastidor)$"
+                          },
+                          "projetoId": {
+                            "type": "string",
+                            "pattern": "^proj-[a-d][1-4]$"
+                          },
+                          "tipo": {
+                            "type": "string",
+                            "enum": [
+                              "apresentacao",
+                              "bastidor"
+                            ]
+                          },
+                          "area": {
+                            "type": "string",
+                            "enum": [
+                              "area_a",
+                              "area_b",
+                              "area_c",
+                              "area_d"
+                            ]
+                          },
+                          "titulo": {
+                            "type": "string"
+                          },
+                          "escola": {
+                            "type": "string"
+                          },
+                          "perfil": {
+                            "type": "string"
+                          },
+                          "texto": {
+                            "type": "string"
+                          },
+                          "hashtags": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "imagem": {
+                            "type": "object",
+                            "properties": {
+                              "url": {
+                                "type": "string",
+                                "nullable": true
+                              },
+                              "alt": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "url",
+                              "alt"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "projetoId",
+                          "tipo",
+                          "area",
+                          "titulo",
+                          "escola",
+                          "perfil",
+                          "texto",
+                          "hashtags",
+                          "imagem"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "maxItems": 10
+                    },
+                    "curtidos": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "pattern": "^proj-[a-d][1-4]:(apresentacao|bastidor)$"
+                      }
+                    },
+                    "completo": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "posts",
+                    "curtidos",
+                    "completo"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "juri-estadual"
+        ],
+        "summary": "\"Acessar o feed da mostra\" — da credencial para o feed, com a abertura.",
+        "description": "Grava o passo `feed` e, com o feed vazio, serve a ABERTURA: quatro posts, a apresentação de um projeto de cada área, em ordem sorteada pela sessão — a criança vê que a mostra é variada antes de a bolha fechar. Pedir de novo devolve o feed como está; depois do voto, também (a escada é de sentido único).\n\n**Papéis:** estudante.\n\n**Restrições:**\n- Missão não liberada na turma responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`); sem atividade em andamento, **403** `atividade-nao-preparada`. Estudante sem turma responde **409** `sem-turma`. Corpo fora do formato responde **400** `payload-invalido`.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "para": {
+                    "type": "string",
+                    "enum": [
+                      "feed"
+                    ]
+                  }
+                },
+                "required": [
+                  "para"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/juri-estadual/feed/eventos": {
+      "post": {
+        "operationId": "JuriEstadualController_eventos",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "posts": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "pattern": "^proj-[a-d][1-4]:(apresentacao|bastidor)$"
+                          },
+                          "projetoId": {
+                            "type": "string",
+                            "pattern": "^proj-[a-d][1-4]$"
+                          },
+                          "tipo": {
+                            "type": "string",
+                            "enum": [
+                              "apresentacao",
+                              "bastidor"
+                            ]
+                          },
+                          "area": {
+                            "type": "string",
+                            "enum": [
+                              "area_a",
+                              "area_b",
+                              "area_c",
+                              "area_d"
+                            ]
+                          },
+                          "titulo": {
+                            "type": "string"
+                          },
+                          "escola": {
+                            "type": "string"
+                          },
+                          "perfil": {
+                            "type": "string"
+                          },
+                          "texto": {
+                            "type": "string"
+                          },
+                          "hashtags": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "imagem": {
+                            "type": "object",
+                            "properties": {
+                              "url": {
+                                "type": "string",
+                                "nullable": true
+                              },
+                              "alt": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "url",
+                              "alt"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "projetoId",
+                          "tipo",
+                          "area",
+                          "titulo",
+                          "escola",
+                          "perfil",
+                          "texto",
+                          "hashtags",
+                          "imagem"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "maxItems": 10
+                    },
+                    "curtidos": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "pattern": "^proj-[a-d][1-4]:(apresentacao|bastidor)$"
+                      }
+                    },
+                    "completo": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "posts",
+                    "curtidos",
+                    "completo"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "juri-estadual"
+        ],
+        "summary": "O que a tela mediu (curtidas e permanências) e, se pedido, o próximo post.",
+        "description": "A curtida é ESTADO (`curtiu: true/false`; descurtir devolve o peso), a permanência é FATO (mais de 5 s num post, uma vez por post). As curtidas entram antes de o motor escolher o próximo, porque é a curtida que afunila: com duas curtidas na mesma área, o resto do feed é dela. `proximo: true` quando a tela chegou ao último post servido: o servidor serve UM a mais, até dez.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- Post que o feed não serviu responde **400** `post-desconhecido` — o cliente não inventa post.\n- Depois do voto responde **409** `voto-ja-lacrado`; antes do feed, **409** `passo-invalido`.\n- Missão não liberada na turma responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`); sem atividade em andamento, **403** `atividade-nao-preparada`. Estudante sem turma responde **409** `sem-turma`. Corpo fora do formato responde **400** `payload-invalido`.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "curtidas": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "postId": {
+                          "type": "string",
+                          "pattern": "^proj-[a-d][1-4]:(apresentacao|bastidor)$"
+                        },
+                        "curtiu": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "postId",
+                        "curtiu"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "maxItems": 20,
+                    "default": []
+                  },
+                  "permanencias": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "pattern": "^proj-[a-d][1-4]:(apresentacao|bastidor)$"
+                    },
+                    "maxItems": 20,
+                    "default": []
+                  },
+                  "proximo": {
+                    "type": "boolean",
+                    "default": false
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/juri-estadual/voto": {
+      "post": {
+        "operationId": "JuriEstadualController_voto",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "passo": {
+                      "type": "string",
+                      "enum": [
+                        "credencial",
+                        "feed",
+                        "lacrada",
+                        "galeria",
+                        "pacotes",
+                        "cadeia",
+                        "mariana",
+                        "enquetes",
+                        "fim"
+                      ]
+                    },
+                    "etapa": {
+                      "type": "string",
+                      "enum": [
+                        "exploracao",
+                        "galeria"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "passo",
+                    "etapa"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "juri-estadual"
+        ],
+        "summary": "A cédula lacrada — o voto e a convicção (latch).",
+        "description": "O gesto que a missão confronta, e ele é IRREVERSÍVEL: grava o projeto, a convicção, o carimbo e o passo `lacrada` juntos. Depois dele, a criança espera a turma (o pico): o professor projeta a dispersão de votos e libera a Galeria Oculta.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- Com menos de dez posts servidos responde **409** `feed-incompleto`; projeto que não apareceu no feed DESTA criança, **409** `projeto-fora-do-feed`.\n- O segundo voto — inclusive dois simultâneos — responde **409** `voto-ja-lacrado`.\n- Missão não liberada na turma responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`); sem atividade em andamento, **403** `atividade-nao-preparada`. Estudante sem turma responde **409** `sem-turma`. Corpo fora do formato responde **400** `payload-invalido`.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "projetoId": {
+                    "type": "string",
+                    "pattern": "^proj-[a-d][1-4]$"
+                  },
+                  "conviccao": {
+                    "type": "string",
+                    "enum": [
+                      "examinei_bem",
+                      "vi_tudo"
+                    ]
+                  }
+                },
+                "required": [
+                  "projetoId",
+                  "conviccao"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/juri-estadual/galeria": {
+      "get": {
+        "operationId": "JuriEstadualController_galeria",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "invisibilidade": {
+                      "type": "object",
+                      "properties": {
+                        "vistos": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "ocultos": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "total": {
+                          "type": "number",
+                          "enum": [
+                            16
+                          ]
+                        },
+                        "percentual": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 100
+                        }
+                      },
+                      "required": [
+                        "vistos",
+                        "ocultos",
+                        "total",
+                        "percentual"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "projetos": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "pattern": "^proj-[a-d][1-4]$"
+                          },
+                          "area": {
+                            "type": "string",
+                            "enum": [
+                              "area_a",
+                              "area_b",
+                              "area_c",
+                              "area_d"
+                            ]
+                          },
+                          "titulo": {
+                            "type": "string"
+                          },
+                          "escola": {
+                            "type": "string"
+                          },
+                          "perfil": {
+                            "type": "string"
+                          },
+                          "legenda": {
+                            "type": "string"
+                          },
+                          "hashtags": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "imagem": {
+                            "type": "object",
+                            "properties": {
+                              "url": {
+                                "type": "string",
+                                "nullable": true
+                              },
+                              "alt": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "url",
+                              "alt"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "exibidoNoSeuFeed": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "area",
+                          "titulo",
+                          "escola",
+                          "perfil",
+                          "legenda",
+                          "hashtags",
+                          "imagem",
+                          "exibidoNoSeuFeed"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "minItems": 16,
+                      "maxItems": 16
+                    }
+                  },
+                  "required": [
+                    "invisibilidade",
+                    "projetos"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "juri-estadual"
+        ],
+        "summary": "A Galeria Oculta: os 16 estandes, os que não chegaram ao feed primeiro, e a taxa REAL.",
+        "description": "`invisibilidade` é o número desta sessão, calculado no servidor: os projetos que o feed nunca mostrou sobre os dezesseis. Quem curtiu duas vezes a mesma área fica perto de 56%; quem não interagiu, perto de 38%. Nada é cravado na copy, e a grade tem tamanho variável. `exibidoNoSeuFeed` diz quais chegaram.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- Antes de a galeria abrir para esta criança (sem voto, ou com a etapa da turma ainda na exploração) responde **403** `galeria-nao-liberada`.\n- Missão não liberada na turma responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`); sem atividade em andamento, **403** `atividade-nao-preparada`. Estudante sem turma responde **409** `sem-turma`. Corpo fora do formato responde **400** `payload-invalido`.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/juri-estadual/galeria/acoes": {
+      "post": {
+        "operationId": "JuriEstadualController_acaoDaGaleria",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": "Sucesso, sem corpo."
+          }
+        },
+        "tags": [
+          "juri-estadual"
+        ],
+        "summary": "Registra o que a criança fez na galeria: abriu um estande ou buscou.",
+        "description": "É o registro da EF06CO01, lido no latch da revisão do voto. Abrir de novo o mesmo estande não conta. Da busca, só o TIPO (`hashtag` ou `texto`) e a área que casou, ou `null` — **o texto digitado nunca sai do aparelho** (texto livre de menor). Até 30 buscas são gravadas.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- Só na galeria: antes, **403** `galeria-nao-liberada`; depois da revisão do voto, **409** `passo-invalido`.\n- Missão não liberada na turma responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`); sem atividade em andamento, **403** `atividade-nao-preparada`. Estudante sem turma responde **409** `sem-turma`. Corpo fora do formato responde **400** `payload-invalido`.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "tipo": {
+                        "type": "string",
+                        "enum": [
+                          "abrir"
+                        ]
+                      },
+                      "projetoId": {
+                        "type": "string",
+                        "pattern": "^proj-[a-d][1-4]$"
+                      }
+                    },
+                    "required": [
+                      "tipo",
+                      "projetoId"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "tipo": {
+                        "type": "string",
+                        "enum": [
+                          "buscar"
+                        ]
+                      },
+                      "busca": {
+                        "type": "string",
+                        "enum": [
+                          "hashtag",
+                          "texto"
+                        ]
+                      },
+                      "area": {
+                        "type": "string",
+                        "enum": [
+                          "area_a",
+                          "area_b",
+                          "area_c",
+                          "area_d"
+                        ],
+                        "nullable": true
+                      }
+                    },
+                    "required": [
+                      "tipo",
+                      "busca",
+                      "area"
+                    ],
+                    "additionalProperties": false
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/juri-estadual/revisao": {
+      "post": {
+        "operationId": "JuriEstadualController_revisao",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "passo": {
+                      "type": "string",
+                      "enum": [
+                        "credencial",
+                        "feed",
+                        "lacrada",
+                        "galeria",
+                        "pacotes",
+                        "cadeia",
+                        "mariana",
+                        "enquetes",
+                        "fim"
+                      ]
+                    },
+                    "etapa": {
+                      "type": "string",
+                      "enum": [
+                        "exploracao",
+                        "galeria"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "passo",
+                    "etapa"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "juri-estadual"
+        ],
+        "summary": "Manter ou trocar o voto, depois da galeria (latch).",
+        "description": "`trocar` aceita qualquer um dos dezesseis estandes (a galeria mostrou todos), menos o do voto lacrado. Grava a ação, o voto final, o carimbo e o passo `pacotes` juntos, e marca a EF06CO01 (`auditoria`) pelo que a criança fez na galeria antes de decidir.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- `trocar` para o mesmo projeto do voto responde **400** `payload-invalido`.\n- A segunda revisão — inclusive duas simultâneas — responde **409** `voto-ja-revisado`. Antes da galeria, **403** `galeria-nao-liberada`. Com a rodada trocada no meio (o professor zerou), **409** `rodada-mudou`.\n- Missão não liberada na turma responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`); sem atividade em andamento, **403** `atividade-nao-preparada`. Estudante sem turma responde **409** `sem-turma`. Corpo fora do formato responde **400** `payload-invalido`.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "acao": {
+                        "type": "string",
+                        "enum": [
+                          "manter"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "acao"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "acao": {
+                        "type": "string",
+                        "enum": [
+                          "trocar"
+                        ]
+                      },
+                      "projetoId": {
+                        "type": "string",
+                        "pattern": "^proj-[a-d][1-4]$"
+                      }
+                    },
+                    "required": [
+                      "acao",
+                      "projetoId"
+                    ],
+                    "additionalProperties": false
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/juri-estadual/pacotes": {
+      "post": {
+        "operationId": "JuriEstadualController_pacotes",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "correta": {
+                      "type": "boolean"
+                    },
+                    "tentativas": {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "passo": {
+                      "type": "string",
+                      "enum": [
+                        "credencial",
+                        "feed",
+                        "lacrada",
+                        "galeria",
+                        "pacotes",
+                        "cadeia",
+                        "mariana",
+                        "enquetes",
+                        "fim"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "correta",
+                    "tentativas",
+                    "passo"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "juri-estadual"
+        ],
+        "summary": "Uma tentativa de remontar a curtida: os quatro pacotes na ordem dos números.",
+        "description": "Cada envio é uma TENTATIVA. A resposta diz só se a ordem confere — nunca qual vaga errou. Na certa, o passo vai a `cadeia` e a EF06CO07 (`pacotes`) é marcada pelo número de tentativas (1 = atingiu, 2–3 = em processo, mais = não atingiu). Com a curtida já remontada, responde `correta: true` sem contar outra tentativa.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- `ordem`: os quatro ids OPACOS desta sessão (`pk-` e três caracteres), sem repetir. (O `.refine()` some do OpenAPI; daí esta nota.) Id de outra sessão responde **400** `payload-invalido`.\n- Fora do passo `pacotes` responde **409** `passo-invalido`; com a rodada trocada no meio, **409** `rodada-mudou`.\n- Missão não liberada na turma responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`); sem atividade em andamento, **403** `atividade-nao-preparada`. Estudante sem turma responde **409** `sem-turma`. Corpo fora do formato responde **400** `payload-invalido`.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "ordem": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "pattern": "^[a-z]{2}-[a-z0-9]{3}$"
+                    },
+                    "minItems": 4,
+                    "maxItems": 4
+                  }
+                },
+                "required": [
+                  "ordem"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/juri-estadual/cadeia": {
+      "post": {
+        "operationId": "JuriEstadualController_cadeia",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "correta": {
+                      "type": "boolean"
+                    },
+                    "tentativas": {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "passo": {
+                      "type": "string",
+                      "enum": [
+                        "credencial",
+                        "feed",
+                        "lacrada",
+                        "galeria",
+                        "pacotes",
+                        "cadeia",
+                        "mariana",
+                        "enquetes",
+                        "fim"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "correta",
+                    "tentativas",
+                    "passo"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "juri-estadual"
+        ],
+        "summary": "Uma tentativa de montar a cadeia: Interações → Dados → Algoritmo → Bolha.",
+        "description": "A mesma régua dos pacotes. Na certa, o passo vai a `mariana` e a EF06CO03 (`cadeia`) é marcada pelo número de tentativas. Com a cadeia já montada, responde `correta: true` sem contar.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- `ordem`: os quatro ids OPACOS desta sessão (`bl-` e três caracteres), sem repetir. Id de outra sessão responde **400** `payload-invalido`.\n- Fora do passo `cadeia` responde **409** `passo-invalido`; com a rodada trocada no meio, **409** `rodada-mudou`.\n- Missão não liberada na turma responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`); sem atividade em andamento, **403** `atividade-nao-preparada`. Estudante sem turma responde **409** `sem-turma`. Corpo fora do formato responde **400** `payload-invalido`.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "ordem": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "pattern": "^[a-z]{2}-[a-z0-9]{3}$"
+                    },
+                    "minItems": 4,
+                    "maxItems": 4
+                  }
+                },
+                "required": [
+                  "ordem"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/juri-estadual/cartoes": {
+      "post": {
+        "operationId": "JuriEstadualController_cartoes",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "passo": {
+                      "type": "string",
+                      "enum": [
+                        "credencial",
+                        "feed",
+                        "lacrada",
+                        "galeria",
+                        "pacotes",
+                        "cadeia",
+                        "mariana",
+                        "enquetes",
+                        "fim"
+                      ]
+                    },
+                    "etapa": {
+                      "type": "string",
+                      "enum": [
+                        "exploracao",
+                        "galeria"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "passo",
+                    "etapa"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "juri-estadual"
+        ],
+        "summary": "O caso Mariana: um cartão de mecanismo e um de atitude.",
+        "description": "Grava a escolha e o passo `enquetes`. **Não marca evidência e não diz qual é o certo**: é a transferência, conversada na plenária. Escolher de novo devolve o estado, sem trocar a primeira escolha.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- Fora do passo `mariana` responde **409** `passo-invalido`.\n- Missão não liberada na turma responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`); sem atividade em andamento, **403** `atividade-nao-preparada`. Estudante sem turma responde **409** `sem-turma`. Corpo fora do formato responde **400** `payload-invalido`.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "mecanismo": {
+                    "type": "string",
+                    "enum": [
+                      "m1",
+                      "m2",
+                      "m3"
+                    ]
+                  },
+                  "atitude": {
+                    "type": "string",
+                    "enum": [
+                      "t1",
+                      "t2"
+                    ]
+                  }
+                },
+                "required": [
+                  "mecanismo",
+                  "atitude"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/juri-estadual/concluir": {
+      "post": {
+        "operationId": "JuriEstadualController_concluir",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "passo": {
+                      "type": "string",
+                      "enum": [
+                        "credencial",
+                        "feed",
+                        "lacrada",
+                        "galeria",
+                        "pacotes",
+                        "cadeia",
+                        "mariana",
+                        "enquetes",
+                        "fim"
+                      ]
+                    },
+                    "etapa": {
+                      "type": "string",
+                      "enum": [
+                        "exploracao",
+                        "galeria"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "passo",
+                    "etapa"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "juri-estadual"
+        ],
+        "summary": "O crachá homologado — conclui a missão, idempotente.",
+        "description": "Leva a sessão de `enquetes` a `fim` e carimba a conclusão, no mesmo update. As três enquetes vão pelas rotas genéricas de `/evidencias/exp06ef1b/perguntas`, e não são exigidas para concluir.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- Antes das enquetes responde **409** `passo-invalido`. Concluir de novo devolve o mesmo estado.\n- Missão não liberada na turma responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`); sem atividade em andamento, **403** `atividade-nao-preparada`. Estudante sem turma responde **409** `sem-turma`. Corpo fora do formato responde **400** `payload-invalido`.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/juri-estadual/turmas": {
+      "get": {
+        "operationId": "JuriEstadualTurmasController_turmas",
+        "parameters": [
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "turmas": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "nome": {
+                            "type": "string"
+                          },
+                          "serie": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "estudantes": {
+                            "type": "integer",
+                            "minimum": 0
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "nome",
+                          "serie",
+                          "estudantes"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "turmas"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "juri-estadual"
+        ],
+        "summary": "Turmas para o seletor do painel.",
+        "description": "Filtradas por MATRÍCULA para o professor; o gestor vê a escola. `gestor_contrato` precisa dizer `?escolaId=`.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/juri-estadual/turmas/{turmaId}/painel": {
+      "get": {
+        "operationId": "JuriEstadualTurmasController_painel",
+        "parameters": [
+          {
+            "name": "turmaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "turma": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "nome": {
+                          "type": "string"
+                        },
+                        "serie": {
+                          "type": "string",
+                          "nullable": true
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "nome",
+                        "serie"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "pacote": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "disciplina": {
+                          "type": "string",
+                          "enum": [
+                            "lingua-portuguesa",
+                            "ciencias",
+                            "historia",
+                            "geografia",
+                            "matematica",
+                            "arte",
+                            "educacao-fisica",
+                            "lingua-inglesa",
+                            "projeto-interdisciplinar"
+                          ]
+                        },
+                        "tema": {
+                          "type": "string"
+                        },
+                        "origem": {
+                          "type": "string",
+                          "enum": [
+                            "ia"
+                          ]
+                        },
+                        "midia": {
+                          "type": "object",
+                          "properties": {
+                            "total": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "prontas": {
+                              "type": "integer",
+                              "minimum": 0
+                            }
+                          },
+                          "required": [
+                            "total",
+                            "prontas"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "disciplina",
+                        "tema",
+                        "origem",
+                        "midia"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "rodada": {
+                      "type": "integer",
+                      "exclusiveMinimum": true,
+                      "minimum": 0
+                    },
+                    "etapa": {
+                      "type": "string",
+                      "enum": [
+                        "exploracao",
+                        "galeria"
+                      ]
+                    },
+                    "proximaEtapa": {
+                      "type": "string",
+                      "enum": [
+                        "exploracao",
+                        "galeria"
+                      ],
+                      "nullable": true
+                    },
+                    "linhas": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "estudanteId": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "nome": {
+                            "type": "string"
+                          },
+                          "usuario": {
+                            "type": "string"
+                          },
+                          "equipe": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              "nome": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "nome"
+                            ],
+                            "additionalProperties": false,
+                            "nullable": true
+                          },
+                          "entrou": {
+                            "type": "boolean"
+                          },
+                          "passo": {
+                            "type": "string",
+                            "enum": [
+                              "credencial",
+                              "feed",
+                              "lacrada",
+                              "galeria",
+                              "pacotes",
+                              "cadeia",
+                              "mariana",
+                              "enquetes",
+                              "fim"
+                            ]
+                          },
+                          "votou": {
+                            "type": "boolean"
+                          },
+                          "abriuAGaleria": {
+                            "type": "boolean"
+                          },
+                          "buscou": {
+                            "type": "boolean"
+                          },
+                          "revisou": {
+                            "type": "boolean"
+                          },
+                          "concluiu": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "estudanteId",
+                          "nome",
+                          "usuario",
+                          "equipe",
+                          "entrou",
+                          "passo",
+                          "votou",
+                          "abriuAGaleria",
+                          "buscou",
+                          "revisou",
+                          "concluiu"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "resumo": {
+                      "type": "object",
+                      "properties": {
+                        "total": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "entraram": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "votaram": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "revisaram": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "concluiram": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "computadores": {
+                          "type": "object",
+                          "properties": {
+                            "votaram": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "total": {
+                              "type": "integer",
+                              "minimum": 0
+                            }
+                          },
+                          "required": [
+                            "votaram",
+                            "total"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "porComputador": {
+                          "type": "boolean"
+                        },
+                        "votosPorArea": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "area": {
+                                "type": "string",
+                                "enum": [
+                                  "area_a",
+                                  "area_b",
+                                  "area_c",
+                                  "area_d"
+                                ]
+                              },
+                              "nome": {
+                                "type": "string"
+                              },
+                              "hashtag": {
+                                "type": "string"
+                              },
+                              "votos": {
+                                "type": "integer",
+                                "minimum": 0
+                              }
+                            },
+                            "required": [
+                              "area",
+                              "nome",
+                              "hashtag",
+                              "votos"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "minItems": 4,
+                          "maxItems": 4
+                        },
+                        "invisibilidadeMedia": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 100,
+                          "nullable": true
+                        },
+                        "revisao": {
+                          "type": "object",
+                          "properties": {
+                            "mantiveram": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "trocaram": {
+                              "type": "integer",
+                              "minimum": 0
+                            }
+                          },
+                          "required": [
+                            "mantiveram",
+                            "trocaram"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "votosRevisadosPorArea": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "area": {
+                                "type": "string",
+                                "enum": [
+                                  "area_a",
+                                  "area_b",
+                                  "area_c",
+                                  "area_d"
+                                ]
+                              },
+                              "nome": {
+                                "type": "string"
+                              },
+                              "hashtag": {
+                                "type": "string"
+                              },
+                              "votos": {
+                                "type": "integer",
+                                "minimum": 0
+                              }
+                            },
+                            "required": [
+                              "area",
+                              "nome",
+                              "hashtag",
+                              "votos"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "minItems": 4,
+                          "maxItems": 4
+                        }
+                      },
+                      "required": [
+                        "total",
+                        "entraram",
+                        "votaram",
+                        "revisaram",
+                        "concluiram",
+                        "computadores",
+                        "porComputador",
+                        "votosPorArea",
+                        "invisibilidadeMedia",
+                        "revisao",
+                        "votosRevisadosPorArea"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "turma",
+                    "pacote",
+                    "rodada",
+                    "etapa",
+                    "proximaEtapa",
+                    "linhas",
+                    "resumo"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "juri-estadual"
+        ],
+        "summary": "O painel da aula: o botão da galeria, o progresso POR COMPUTADOR e a lousa do pico.",
+        "description": "Uma linha por computador quando a turma montou equipes para esta atividade (`colapsarEmUnidades`), uma por criança quando não — `resumo.porComputador` diz qual. `resumo.computadores` é o \"X de Y computadores votaram\": o Y sai da montagem das equipes.\n\n**Só progresso por linha.** O painel é PROJETADO na lousa no pico, então o voto, a taxa e o nível de cada criança NÃO estão na linha. A lousa lê o resumo ANÔNIMO: `votosPorArea` (o voto lacrado), `invisibilidadeMedia` (a média da taxa real de quem votou), `revisao` (quantos mantiveram e trocaram) e `votosRevisadosPorArea` (o voto final). O nível por habilidade mora no painel de habilidades (`/evidencias/turma/:turmaId/missao/exp06ef1b/atividade/:pacoteId`).\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Sem atividade em andamento na turma, **403** `atividade-nao-preparada`: a plataforma não cria atividade — o professor gera, cria e põe em andamento (`POST :turmaId/pacotes/:pacoteId/em-andamento`).\n- Turma que o professor não leciona responde **404** `turma-nao-encontrada`.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/juri-estadual/turmas/{turmaId}/gate": {
+      "post": {
+        "operationId": "JuriEstadualTurmasController_gate",
+        "parameters": [
+          {
+            "name": "turmaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "turma": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "nome": {
+                          "type": "string"
+                        },
+                        "serie": {
+                          "type": "string",
+                          "nullable": true
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "nome",
+                        "serie"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "pacoteId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "rodada": {
+                      "type": "integer",
+                      "exclusiveMinimum": true,
+                      "minimum": 0
+                    },
+                    "etapa": {
+                      "type": "string",
+                      "enum": [
+                        "exploracao",
+                        "galeria"
+                      ]
+                    },
+                    "proximaEtapa": {
+                      "type": "string",
+                      "enum": [
+                        "exploracao",
+                        "galeria"
+                      ],
+                      "nullable": true
+                    },
+                    "atualizadoEm": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "turma",
+                    "pacoteId",
+                    "rodada",
+                    "etapa",
+                    "proximaEtapa",
+                    "atualizadoEm"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "juri-estadual"
+        ],
+        "summary": "\"Liberar a Galeria Oculta\" — o botão único da aula.",
+        "description": "O corpo diz a etapa de DESTINO: `exploracao → galeria`, nunca volta; destino igual ao atual é aceito e não muda nada (o segundo clique). Grava quando o portão abriu.\n\nQuem ainda não votou continua no feed com a galeria liberada: o voto atrasado é caminho previsto, e a galeria abre para ele depois do voto.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Destino fora de ordem responde **409** `transicao-de-etapa-invalida`, com `etapaAtual` e `proximaEtapa` no corpo.\n- É a linha que o polling de 3 s do estudante lê (`GET /juri-estadual/gate`): não há WebSocket de aplicação (ADR-93).\n- Sem atividade em andamento na turma, **403** `atividade-nao-preparada`: a plataforma não cria atividade — o professor gera, cria e põe em andamento (`POST :turmaId/pacotes/:pacoteId/em-andamento`).",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "para": {
+                    "type": "string",
+                    "enum": [
+                      "exploracao",
+                      "galeria"
+                    ]
+                  }
+                },
+                "required": [
+                  "para"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/juri-estadual/turmas/{turmaId}/zerar": {
+      "post": {
+        "operationId": "JuriEstadualTurmasController_zerar",
+        "parameters": [
+          {
+            "name": "turmaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "pacoteId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "rodada": {
+                      "type": "integer",
+                      "exclusiveMinimum": true,
+                      "minimum": 0
+                    },
+                    "etapa": {
+                      "type": "string",
+                      "enum": [
+                        "exploracao",
+                        "galeria"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "pacoteId",
+                    "rodada",
+                    "etapa"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "juri-estadual"
+        ],
+        "summary": "\"Zerar a turma\" — abre a próxima rodada, sem apagar nada.",
+        "description": "Sobe a rodada da atividade e volta a etapa para a exploração, com a galeria fechada. **Nada é apagado**: as sessões, os votos e o que cada criança fez na galeria ficam, e são eles que o painel de habilidades mostra como a rodada passada (ADR-112).\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Na rodada nova do MESMO pacote, quem já foi avaliado numa anterior refaz sem marca nova nas ações (ADR-120): já viu a galeria e a regra. O guia recomenda criar outra atividade.\n- Sem atividade em andamento na turma, **403** `atividade-nao-preparada`: a plataforma não cria atividade — o professor gera, cria e põe em andamento (`POST :turmaId/pacotes/:pacoteId/em-andamento`).",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/juri-estadual/turmas/{turmaId}/pacotes": {
+      "get": {
+        "operationId": "JuriEstadualTurmasController_pacotes",
+        "parameters": [
+          {
+            "name": "turmaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ativo": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "disciplina": {
+                          "type": "string",
+                          "enum": [
+                            "lingua-portuguesa",
+                            "ciencias",
+                            "historia",
+                            "geografia",
+                            "matematica",
+                            "arte",
+                            "educacao-fisica",
+                            "lingua-inglesa",
+                            "projeto-interdisciplinar"
+                          ]
+                        },
+                        "tema": {
+                          "type": "string"
+                        },
+                        "origem": {
+                          "type": "string",
+                          "enum": [
+                            "ia"
+                          ]
+                        },
+                        "assuntos": {
+                          "type": "string"
+                        },
+                        "conteudo": {},
+                        "midia": {
+                          "type": "object",
+                          "properties": {
+                            "total": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "prontas": {
+                              "type": "integer",
+                              "minimum": 0
+                            }
+                          },
+                          "required": [
+                            "total",
+                            "prontas"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "imagens": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "rodada": {
+                          "type": "integer",
+                          "exclusiveMinimum": true,
+                          "minimum": 0
+                        },
+                        "etapa": {
+                          "type": "string",
+                          "enum": [
+                            "exploracao",
+                            "galeria"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "disciplina",
+                        "tema",
+                        "origem",
+                        "assuntos",
+                        "conteudo",
+                        "midia",
+                        "imagens",
+                        "rodada",
+                        "etapa"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true
+                    },
+                    "historico": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "disciplina": {
+                            "type": "string",
+                            "enum": [
+                              "lingua-portuguesa",
+                              "ciencias",
+                              "historia",
+                              "geografia",
+                              "matematica",
+                              "arte",
+                              "educacao-fisica",
+                              "lingua-inglesa",
+                              "projeto-interdisciplinar"
+                            ]
+                          },
+                          "tema": {
+                            "type": "string"
+                          },
+                          "origem": {
+                            "type": "string",
+                            "enum": [
+                              "ia"
+                            ]
+                          },
+                          "ativo": {
+                            "type": "boolean"
+                          },
+                          "criadoEm": {
+                            "type": "string"
+                          },
+                          "rodadas": {
+                            "type": "integer",
+                            "minimum": 0
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "disciplina",
+                          "tema",
+                          "origem",
+                          "ativo",
+                          "criadoEm",
+                          "rodadas"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "ativo",
+                    "historico"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "juri-estadual"
+        ],
+        "summary": "As atividades da turma: a mostra em andamento, inteira, e a lista de todas.",
+        "description": "**Professor e gestores.** `historico` lista todos os pacotes (o em andamento incluso, com `ativo: true`): cada um é uma ATIVIDADE, e o `id` dele é o `atividadeId` das equipes e do painel de habilidades (ADR-130).\n\n`ativo` é `null` quando nenhum está em andamento: a plataforma não cria atividade.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- `rodadas` é a maior rodada com sessão daquele pacote; 0 = nunca rodou.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/juri-estadual/turmas/{turmaId}/pacotes/{pacoteId}": {
+      "get": {
+        "operationId": "JuriEstadualTurmasController_pacote",
+        "parameters": [
+          {
+            "name": "turmaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "pacoteId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "disciplina": {
+                      "type": "string",
+                      "enum": [
+                        "lingua-portuguesa",
+                        "ciencias",
+                        "historia",
+                        "geografia",
+                        "matematica",
+                        "arte",
+                        "educacao-fisica",
+                        "lingua-inglesa",
+                        "projeto-interdisciplinar"
+                      ]
+                    },
+                    "tema": {
+                      "type": "string"
+                    },
+                    "origem": {
+                      "type": "string",
+                      "enum": [
+                        "ia"
+                      ]
+                    },
+                    "assuntos": {
+                      "type": "string"
+                    },
+                    "conteudo": {},
+                    "midia": {
+                      "type": "object",
+                      "properties": {
+                        "total": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "prontas": {
+                          "type": "integer",
+                          "minimum": 0
+                        }
+                      },
+                      "required": [
+                        "total",
+                        "prontas"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "imagens": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "string"
+                      }
+                    },
+                    "ativo": {
+                      "type": "boolean"
+                    },
+                    "rodada": {
+                      "type": "integer",
+                      "exclusiveMinimum": true,
+                      "minimum": 0,
+                      "nullable": true
+                    },
+                    "etapa": {
+                      "type": "string",
+                      "enum": [
+                        "exploracao",
+                        "galeria"
+                      ],
+                      "nullable": true
+                    },
+                    "criadoEm": {
+                      "type": "string"
+                    },
+                    "rodadas": {
+                      "type": "integer",
+                      "minimum": 0
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "disciplina",
+                    "tema",
+                    "origem",
+                    "assuntos",
+                    "conteudo",
+                    "midia",
+                    "imagens",
+                    "ativo",
+                    "rodada",
+                    "etapa",
+                    "criadoEm",
+                    "rodadas"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "juri-estadual"
+        ],
+        "summary": "UMA atividade, inteira — em andamento ou pronta.",
+        "description": "A página da atividade. `rodada` e `etapa` só vêm quando ela está em andamento; `rodadas` é a maior rodada com sessão (0 = nunca rodou). `imagens` traz as URLs já geradas, por projeto.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Pacote de outra turma, ou que não existe, responde **404** `atividade-nao-encontrada`.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/juri-estadual/turmas/{turmaId}/pacotes/{pacoteId}/em-andamento": {
+      "post": {
+        "operationId": "JuriEstadualTurmasController_emAndamento",
+        "parameters": [
+          {
+            "name": "turmaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "pacoteId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "pacoteId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "rodada": {
+                      "type": "integer",
+                      "exclusiveMinimum": true,
+                      "minimum": 0
+                    },
+                    "etapa": {
+                      "type": "string",
+                      "enum": [
+                        "exploracao",
+                        "galeria"
+                      ]
+                    },
+                    "mudou": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "pacoteId",
+                    "rodada",
+                    "etapa",
+                    "mudou"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "juri-estadual"
+        ],
+        "summary": "\"Usar esta atividade agora\" — o professor escolhe o que a turma faz (ADR-130).",
+        "description": "O escolhido passa a ser a ATIVIDADE EM ANDAMENTO da turma; o que estava volta a ser pronto — fica, com as sessões e as rodadas. A etapa volta à exploração, com a galeria fechada.\n\nA RODADA: o pacote que nunca rodou começa na 1; o que já rodou abre a SEGUINTE à última — retomar a mesma depois da galeria liberada seria o \"voltar\" que o botão único proíbe.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- **Idempotente**: pôr no ar o que já está no ar devolve `mudou: false` e não muda nada.\n- Trocar com a aula correndo leva quem está jogando para a atividade nova: a experiência nota o `pacoteId` novo no polling do gate e recarrega.\n- Pacote de outra turma responde **404** `atividade-nao-encontrada`.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/juri-estadual/turmas/{turmaId}/gerar-conteudo": {
+      "post": {
+        "operationId": "JuriEstadualTurmasController_gerarConteudo",
+        "parameters": [
+          {
+            "name": "turmaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "parametros": {
+                      "type": "object",
+                      "properties": {
+                        "disciplina": {
+                          "type": "string",
+                          "enum": [
+                            "lingua-portuguesa",
+                            "ciencias",
+                            "historia",
+                            "geografia",
+                            "matematica",
+                            "arte",
+                            "educacao-fisica",
+                            "lingua-inglesa",
+                            "projeto-interdisciplinar"
+                          ]
+                        },
+                        "tema": {
+                          "type": "string",
+                          "minLength": 3,
+                          "maxLength": 60
+                        },
+                        "assuntos": {
+                          "type": "string",
+                          "minLength": 10,
+                          "maxLength": 600
+                        },
+                        "contexto": {
+                          "type": "string",
+                          "maxLength": 120
+                        }
+                      },
+                      "required": [
+                        "disciplina",
+                        "tema",
+                        "assuntos"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "conteudo": {}
+                  },
+                  "required": [
+                    "parametros",
+                    "conteudo"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "juri-estadual"
+        ],
+        "summary": "Gera um RASCUNHO da mostra com IA: 4 áreas e 16 projetos sobre o tema do professor.",
+        "description": "**Não persiste nada**: o que volta é rascunho para a tela editar, e criar a atividade é o `POST homologar`. A IA escreve as quatro áreas e os dezesseis projetos (personas de 11 e 12 anos, escolas brasileiras fictícias); a saída que fere as regras da missão é regerada uma vez.\n\n**Não há acervo padrão**: sem saldo ou com a IA fora do ar, a resposta é o ERRO, e não há atividade até a IA responder.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Quota do PERFIL do professor (ADR-105): `temSaldo` antes, e o que o vendor cobrou é debitado por tentativa, inclusive as recusadas. Sem saldo responde **429** `sem-saldo-de-ia`; com o provedor fora do ar ou a saída fora das regras, **503** `ia-indisponivel`.\n- Os tetos de `tema` (3 a 60), `assuntos` (10 a 600) e `contexto` (até 120) são a primeira barreira contra injeção de instrução no gerador.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "disciplina": {
+                    "type": "string",
+                    "enum": [
+                      "lingua-portuguesa",
+                      "ciencias",
+                      "historia",
+                      "geografia",
+                      "matematica",
+                      "arte",
+                      "educacao-fisica",
+                      "lingua-inglesa",
+                      "projeto-interdisciplinar"
+                    ]
+                  },
+                  "tema": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 60
+                  },
+                  "assuntos": {
+                    "type": "string",
+                    "minLength": 10,
+                    "maxLength": 600
+                  },
+                  "contexto": {
+                    "type": "string",
+                    "maxLength": 120
+                  }
+                },
+                "required": [
+                  "disciplina",
+                  "tema",
+                  "assuntos"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/juri-estadual/turmas/{turmaId}/regenerar-projeto": {
+      "post": {
+        "operationId": "JuriEstadualTurmasController_regenerarProjeto",
+        "parameters": [
+          {
+            "name": "turmaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "projeto": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "pattern": "^proj-[a-d][1-4]$"
+                        },
+                        "area": {
+                          "type": "string",
+                          "enum": [
+                            "area_a",
+                            "area_b",
+                            "area_c",
+                            "area_d"
+                          ]
+                        },
+                        "titulo": {
+                          "type": "string",
+                          "minLength": 3,
+                          "maxLength": 60
+                        },
+                        "escola": {
+                          "type": "string",
+                          "minLength": 3,
+                          "maxLength": 60
+                        },
+                        "perfil": {
+                          "type": "string"
+                        },
+                        "legenda": {
+                          "type": "string",
+                          "minLength": 10,
+                          "maxLength": 420
+                        },
+                        "bastidor": {
+                          "type": "string",
+                          "minLength": 10,
+                          "maxLength": 280
+                        },
+                        "hashtags": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          },
+                          "minItems": 2,
+                          "maxItems": 4
+                        },
+                        "imagem": {
+                          "type": "object",
+                          "properties": {
+                            "descricao": {
+                              "type": "string",
+                              "minLength": 10,
+                              "maxLength": 240
+                            },
+                            "alt": {
+                              "type": "string",
+                              "minLength": 3,
+                              "maxLength": 140
+                            }
+                          },
+                          "required": [
+                            "descricao",
+                            "alt"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "area",
+                        "titulo",
+                        "escola",
+                        "perfil",
+                        "legenda",
+                        "bastidor",
+                        "hashtags",
+                        "imagem"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "usouIa": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "projeto",
+                    "usouIa"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "juri-estadual"
+        ],
+        "summary": "Regenera UM projeto do rascunho, mantendo o id e a área.",
+        "description": "O novo projeto mantém o id e a ÁREA do que sai (a hashtag da área primeiro), não repete o título de outro, e o pacote inteiro, com ele no lugar, continua válido. Não persiste.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- A mesma quota do `gerar-conteudo`: sem saldo responde **429** `sem-saldo-de-ia`. Com a IA fora do ar ou a saída fora das regras, responde **200** com `usouIa: false` e o projeto COMO ESTAVA no rascunho enviado.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "disciplina": {
+                    "type": "string",
+                    "enum": [
+                      "lingua-portuguesa",
+                      "ciencias",
+                      "historia",
+                      "geografia",
+                      "matematica",
+                      "arte",
+                      "educacao-fisica",
+                      "lingua-inglesa",
+                      "projeto-interdisciplinar"
+                    ]
+                  },
+                  "tema": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 60
+                  },
+                  "assuntos": {
+                    "type": "string",
+                    "minLength": 10,
+                    "maxLength": 600
+                  },
+                  "contexto": {
+                    "type": "string",
+                    "maxLength": 120
+                  },
+                  "conteudo": {
+                    "type": "object",
+                    "properties": {
+                      "tema": {
+                        "type": "string",
+                        "minLength": 3,
+                        "maxLength": 60
+                      },
+                      "categorias": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "area": {
+                              "type": "string",
+                              "enum": [
+                                "area_a",
+                                "area_b",
+                                "area_c",
+                                "area_d"
+                              ]
+                            },
+                            "nome": {
+                              "type": "string",
+                              "minLength": 2,
+                              "maxLength": 30
+                            },
+                            "hashtag": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "area",
+                            "nome",
+                            "hashtag"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "minItems": 4,
+                        "maxItems": 4
+                      },
+                      "projetos": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "pattern": "^proj-[a-d][1-4]$"
+                            },
+                            "area": {
+                              "type": "string",
+                              "enum": [
+                                "area_a",
+                                "area_b",
+                                "area_c",
+                                "area_d"
+                              ]
+                            },
+                            "titulo": {
+                              "type": "string",
+                              "minLength": 3,
+                              "maxLength": 60
+                            },
+                            "escola": {
+                              "type": "string",
+                              "minLength": 3,
+                              "maxLength": 60
+                            },
+                            "perfil": {
+                              "type": "string"
+                            },
+                            "legenda": {
+                              "type": "string",
+                              "minLength": 10,
+                              "maxLength": 420
+                            },
+                            "bastidor": {
+                              "type": "string",
+                              "minLength": 10,
+                              "maxLength": 280
+                            },
+                            "hashtags": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              },
+                              "minItems": 2,
+                              "maxItems": 4
+                            },
+                            "imagem": {
+                              "type": "object",
+                              "properties": {
+                                "descricao": {
+                                  "type": "string",
+                                  "minLength": 10,
+                                  "maxLength": 240
+                                },
+                                "alt": {
+                                  "type": "string",
+                                  "minLength": 3,
+                                  "maxLength": 140
+                                }
+                              },
+                              "required": [
+                                "descricao",
+                                "alt"
+                              ],
+                              "additionalProperties": false
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "area",
+                            "titulo",
+                            "escola",
+                            "perfil",
+                            "legenda",
+                            "bastidor",
+                            "hashtags",
+                            "imagem"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "minItems": 16,
+                        "maxItems": 16
+                      }
+                    },
+                    "required": [
+                      "tema",
+                      "categorias",
+                      "projetos"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "projetoId": {
+                    "type": "string",
+                    "pattern": "^proj-[a-d][1-4]$"
+                  }
+                },
+                "required": [
+                  "disciplina",
+                  "tema",
+                  "assuntos",
+                  "conteudo",
+                  "projetoId"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/juri-estadual/turmas/{turmaId}/homologar": {
+      "post": {
+        "operationId": "JuriEstadualTurmasController_homologar",
+        "parameters": [
+          {
+            "name": "turmaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "disciplina": {
+                      "type": "string",
+                      "enum": [
+                        "lingua-portuguesa",
+                        "ciencias",
+                        "historia",
+                        "geografia",
+                        "matematica",
+                        "arte",
+                        "educacao-fisica",
+                        "lingua-inglesa",
+                        "projeto-interdisciplinar"
+                      ]
+                    },
+                    "tema": {
+                      "type": "string"
+                    },
+                    "origem": {
+                      "type": "string",
+                      "enum": [
+                        "ia"
+                      ]
+                    },
+                    "ativo": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "disciplina",
+                    "tema",
+                    "origem",
+                    "ativo"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "juri-estadual"
+        ],
+        "summary": "\"Criar atividade\" — a curadoria humana (ADR-66/67).",
+        "description": "Grava a mostra como o professor a deixou, numa ATIVIDADE NOVA que nasce **pronta, não no ar** (ADR-130): o pacote em andamento continua em andamento, e quem escolhe o que a turma faz é o professor (`POST :turmaId/pacotes/:pacoteId/em-andamento`). O mesmo conteúdo do pacote mais recente não cria outro: é o segundo clique.\n\nAs imagens de projeto com a MESMA descrição de um pacote recente da turma são herdadas — o arquivo no bucket é o hash da descrição.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- O pacote é recusado com **400** `pacote-invalido` e a LISTA de problemas em `erros`, em frases para o professor: quatro categorias, uma por área, com hashtags diferentes no formato `#minusculas`; os dezesseis projetos `proj-a1` a `proj-d4`, cada um na área que o id diz e começando pela hashtag da área; perfil com @; legenda até 60 palavras e bastidor até 40; e nenhuma marca ou plataforma real no que a criança lê. (`.superRefine()` some do OpenAPI; daí esta nota.)",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "parametros": {
+                    "type": "object",
+                    "properties": {
+                      "disciplina": {
+                        "type": "string",
+                        "enum": [
+                          "lingua-portuguesa",
+                          "ciencias",
+                          "historia",
+                          "geografia",
+                          "matematica",
+                          "arte",
+                          "educacao-fisica",
+                          "lingua-inglesa",
+                          "projeto-interdisciplinar"
+                        ]
+                      },
+                      "tema": {
+                        "type": "string",
+                        "minLength": 3,
+                        "maxLength": 60
+                      },
+                      "assuntos": {
+                        "type": "string",
+                        "minLength": 10,
+                        "maxLength": 600
+                      },
+                      "contexto": {
+                        "type": "string",
+                        "maxLength": 120
+                      }
+                    },
+                    "required": [
+                      "disciplina",
+                      "tema",
+                      "assuntos"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "conteudo": {
+                    "type": "object",
+                    "properties": {
+                      "tema": {
+                        "type": "string",
+                        "minLength": 3,
+                        "maxLength": 60
+                      },
+                      "categorias": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "area": {
+                              "type": "string",
+                              "enum": [
+                                "area_a",
+                                "area_b",
+                                "area_c",
+                                "area_d"
+                              ]
+                            },
+                            "nome": {
+                              "type": "string",
+                              "minLength": 2,
+                              "maxLength": 30
+                            },
+                            "hashtag": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "area",
+                            "nome",
+                            "hashtag"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "minItems": 4,
+                        "maxItems": 4
+                      },
+                      "projetos": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "pattern": "^proj-[a-d][1-4]$"
+                            },
+                            "area": {
+                              "type": "string",
+                              "enum": [
+                                "area_a",
+                                "area_b",
+                                "area_c",
+                                "area_d"
+                              ]
+                            },
+                            "titulo": {
+                              "type": "string",
+                              "minLength": 3,
+                              "maxLength": 60
+                            },
+                            "escola": {
+                              "type": "string",
+                              "minLength": 3,
+                              "maxLength": 60
+                            },
+                            "perfil": {
+                              "type": "string"
+                            },
+                            "legenda": {
+                              "type": "string",
+                              "minLength": 10,
+                              "maxLength": 420
+                            },
+                            "bastidor": {
+                              "type": "string",
+                              "minLength": 10,
+                              "maxLength": 280
+                            },
+                            "hashtags": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              },
+                              "minItems": 2,
+                              "maxItems": 4
+                            },
+                            "imagem": {
+                              "type": "object",
+                              "properties": {
+                                "descricao": {
+                                  "type": "string",
+                                  "minLength": 10,
+                                  "maxLength": 240
+                                },
+                                "alt": {
+                                  "type": "string",
+                                  "minLength": 3,
+                                  "maxLength": 140
+                                }
+                              },
+                              "required": [
+                                "descricao",
+                                "alt"
+                              ],
+                              "additionalProperties": false
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "area",
+                            "titulo",
+                            "escola",
+                            "perfil",
+                            "legenda",
+                            "bastidor",
+                            "hashtags",
+                            "imagem"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "minItems": 16,
+                        "maxItems": 16
+                      }
+                    },
+                    "required": [
+                      "tema",
+                      "categorias",
+                      "projetos"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "parametros",
+                  "conteudo"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/juri-estadual/turmas/{turmaId}/gerar-midia": {
+      "post": {
+        "operationId": "JuriEstadualTurmasController_gerarMidia",
+        "parameters": [
+          {
+            "name": "turmaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pacoteId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "pacoteId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "total": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "prontas": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "faltam": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "geradas": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "pattern": "^proj-[a-d][1-4]$"
+                      }
+                    },
+                    "falharam": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "pattern": "^proj-[a-d][1-4]$"
+                      }
+                    },
+                    "completo": {
+                      "type": "boolean"
+                    },
+                    "imagens": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "required": [
+                    "pacoteId",
+                    "total",
+                    "prontas",
+                    "faltam",
+                    "geradas",
+                    "falharam",
+                    "completo",
+                    "imagens"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "juri-estadual"
+        ],
+        "summary": "Gera as próximas imagens dos estandes de uma atividade — incremental.",
+        "description": "As dezesseis imagens não cabem nos 30 s que o BFF dá a uma chamada: cada chamada gera ATÉ DUAS novas (4:3), grava as URLs no pacote e devolve o progresso. **Repita enquanto `completo` for `false` e a chamada anterior tiver gerado alguma** — `falharam` diz o que não saiu, e esses estandes seguem com a arte procedural.\n\nIdempotente: o que já tem URL é pulado, e a imagem de mesma descrição que já está no bucket entra sem custo.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- `?pacoteId=` diz a atividade (a pronta, preparada antes de ir ao ar); sem ele, a em andamento — e sem nenhuma, **403** `atividade-nao-preparada`.\n- Quota do professor, com custo ESTIMADO por imagem (a geração não devolve contagem de tokens). Sem saldo responde **429** `sem-saldo-de-ia` — e a missão roda igual, com a arte procedural.\n- Duas chamadas simultâneas para o mesmo pacote recebem o mesmo trabalho (lock de processo).",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/juri-estadual/professor/material": {
+      "get": {
+        "operationId": "JuriEstadualProfessorController_material",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "pacotes": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "numero": {
+                            "type": "integer"
+                          },
+                          "trecho": {
+                            "type": "string"
+                          },
+                          "rota": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "required": [
+                          "numero",
+                          "trecho",
+                          "rota"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "blocos": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "posicao": {
+                            "type": "integer"
+                          },
+                          "rotulo": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "posicao",
+                          "rotulo"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "mariana": {
+                      "type": "object",
+                      "properties": {
+                        "caso": {
+                          "type": "string"
+                        },
+                        "mecanismos": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "texto": {
+                                "type": "string"
+                              },
+                              "certo": {
+                                "type": "boolean"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "texto",
+                              "certo"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "atitudes": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "texto": {
+                                "type": "string"
+                              },
+                              "certo": {
+                                "type": "boolean"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "texto",
+                              "certo"
+                            ],
+                            "additionalProperties": false
+                          }
+                        }
+                      },
+                      "required": [
+                        "caso",
+                        "mecanismos",
+                        "atitudes"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "plenaria": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "regra": {
+                      "type": "object",
+                      "properties": {
+                        "pesoDaCurtida": {
+                          "type": "integer"
+                        },
+                        "pesoDaPermanencia": {
+                          "type": "integer"
+                        },
+                        "limiar": {
+                          "type": "integer"
+                        },
+                        "postsNoFeed": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "pesoDaCurtida",
+                        "pesoDaPermanencia",
+                        "limiar",
+                        "postsNoFeed"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "pacotes",
+                    "blocos",
+                    "mariana",
+                    "plenaria",
+                    "regra"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "juri-estadual"
+        ],
+        "summary": "O esqueleto da missão com o gabarito, a plenária e a regra do feed.",
+        "description": "**Professor e gestores.** É o bloco vivo do guia: os quatro pacotes na ordem certa (com o molde do trecho, `{projeto}` e `{hashtag}`), a cadeia Interações → Dados → Algoritmo → Bolha, o caso Mariana com os cartões certos marcados, as quatro perguntas de contraste da plenária e os números do motor (o que a Etapa 5 ensina: duas curtidas na mesma área fecham a bolha).\n\nA MOSTRA da turma não está aqui: ela é da atividade, em `GET /juri-estadual/turmas/:turmaId/pacotes`.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Nada aqui é escopado por escola: é o catálogo da missão, igual para todo contrato.\n- `mecanismos[].certo` e `atitudes[].certo` são gabarito, e só existem nesta rota de professor.",
         "security": [
           {
             "token-da-plataforma": []

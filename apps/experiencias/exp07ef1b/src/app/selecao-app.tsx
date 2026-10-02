@@ -398,7 +398,7 @@ export function SelecaoApp({ inicial, conexao }: { inicial: RespostaSessao; cone
         return publicados.length > 0 ? (
           <Espera posts={publicados} legenda={sessao.legenda ?? ""} />
         ) : (
-          <div className="tela tela--story" data-insta-theme="dark" aria-busy="true" />
+          <div className="tela tela--story" data-unv-theme="dark" aria-busy="true" />
         );
       }
 
@@ -406,7 +406,7 @@ export function SelecaoApp({ inicial, conexao }: { inicial: RespostaSessao; cone
         return mural ? (
           <Mural key={sessao.sessaoId} mural={mural} />
         ) : (
-          <div className="tela tela--story" data-insta-theme="dark" aria-busy="true" />
+          <div className="tela tela--story" data-unv-theme="dark" aria-busy="true" />
         );
 
       case "explicacao":

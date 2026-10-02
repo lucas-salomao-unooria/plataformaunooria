@@ -5,7 +5,7 @@ ADR-114; esta é a v2.2, com o MESMO código de experiência.
 
 | Manifesto | Dev | DS | api | e2e |
 |---|---|---|---|---|
-| `exp05ef1b` · 5EF · unidade 1 · `entre-redes` · `viewport` 375×812 · `permissoes: ["forms"]` | `:5184` (`strictPort`), hub `/exp/exp05ef1b` | `@edu/ui/ds-whatsapp` (clone, DS ≥ 0.2.4) + `@edu/ui/ds` (casca) | `apps/api/src/quem-mandou-isso` ↔ `/quem-mandou-isso/*` e `apps/api/src/evidencias` ↔ `/evidencias/exp05ef1b/perguntas/*` | `scripts/e2e/estudante/10-quem-mandou-isso.mjs` (dois contextos) e o passo da ficha em `professor/10-equipes-na-missao.mjs` |
+| `exp05ef1b` · 5EF · unidade 1 · `entre-redes` · `viewport` 375×812 · `permissoes: ["forms"]` | `:5184` (`strictPort`), hub `/exp/exp05ef1b` | `@edu/ui/ds-unoochat` (clone, tema claro, DS ≥ 0.2.9) + `@edu/ui/ds` (casca) | `apps/api/src/quem-mandou-isso` ↔ `/quem-mandou-isso/*` e `apps/api/src/evidencias` ↔ `/evidencias/exp05ef1b/perguntas/*` | `scripts/e2e/estudante/10-quem-mandou-isso.mjs` (dois contextos) e o passo da ficha em `professor/10-equipes-na-missao.mjs` |
 
 O percurso: lista de conversas → chat da Nina (convite) → grupo "Turma 5ºB"
 (encaminhar exatamente 3 ao Mural) → Mural (confirmar) → enquete do motivo →
@@ -34,9 +34,10 @@ aqui ele produz um vaivém que parece inconsistência e não é:
    missão (`textos.perguntas`).
 4. **"Missão Concluída" é a casca de novo**: a escola guardando a regra.
 
-Arquivo por família: `telas-do-clone.tsx` importa só `@edu/ui/ds-whatsapp`;
-`telas-da-escola.tsx` só `@edu/ui/ds`. No CSS a fronteira está MARCADA — token
-`--wa-*` numa tela da casca não quebra nada, só some sobre o branco.
+Arquivo por família: `telas-do-clone.tsx` importa só `@edu/ui/ds-unoochat`;
+`telas-da-escola.tsx` só `@edu/ui/ds`. No CSS a fronteira está MARCADA — e
+importa MAIS que antes: o Unoochat copia os literais da paleta da Unooria, então
+token `--unc-*` numa tela da casca não destoa nem some, passa.
 Na casca a rolagem é o
 `ScrollBar` do DS (a seção ali É a `unooria`); no clone é a barra do sistema,
 como em toda experiência.
@@ -122,7 +123,30 @@ ação que o recebeu:
 
 O `Então` nunca vai a `reportarErro`, log ou telemetria: é texto livre de menor.
 
-## Props do DS que enganam (0.2.4 a 0.2.6)
+## O mensageiro é o Unoochat, não o clone do WhatsApp (ADR-134, 0.3.0)
+
+Até a 0.2.1 o clone era a seção `whatsappmobile` (só escuro, paleta do app
+real). O Unoochat é cópia ESTRUTURAL dela — mesmos componentes, props e medidas
+—, com a identidade da Unooria e dois temas; a missão usa o CLARO
+(`data-unc-theme="light"` no `index.html`). O que a troca pediu, e o que morde
+quem mexer depois:
+
+- **A dependência do DS NA EXPERIÊNCIA** tem de ser `≥ 0.2.9`: a pasta resolve a
+  própria cópia do pacote para as folhas de CSS, e a 0.2.8 que ela tinha não
+  publica `unoochat.css` (o `@edu/ui` já estava na 0.2.11 — duas cópias).
+- **A folha de fonte do clone é obrigatória**: o `Icon` do Unoochat é ligadura
+  do Material Symbols, e sem `fonts/unoochat.css` o ícone vira o nome escrito.
+- **Dois tokens sem par de nome**: `--wa-color-accent-badge` → `--unc-color-accent`
+  (os acentos foram consolidados) e `--wa-color-text-meta` →
+  `--unc-color-text-secondary`. O papel do comunicado era a INVERSÃO de dois
+  tokens do tema escuro; no claro daria branco sobre lavanda, então é
+  `surface-canvas` + `border-divider`.
+- **A suíte casa por classe do DS** (`.unc-poll`, `.unc-forwardbutton`…):
+  trocar de seção é trocar o prefixo nela também.
+- O avatar de iniciais do `ChatHeader` não tem círculo visível (o fundo é o da
+  barra) — já era assim no `whatsappmobile`; é do pacote.
+
+## Props do DS que enganam (0.2.4 a 0.2.6, iguais no Unoochat)
 
 - `ForwardButton` com `disabled` ENGOLE o toque, e a copy pede que o toque na
   quarta FALE ("Limite de 3…"). Por isso a seta esgotada usa `exhausted` (desde
@@ -136,8 +160,9 @@ O `Então` nunca vai a `reportarErro`, log ou telemetria: é texto livre de meno
   `role="img"` — os filhos de um botão são apresentacionais.
 - `Toast` fica a 40px da base; aqui ele cobriria "Ir para o Mural da Turma"
   e "Confirmar envio" — sobe para 148px (posição, em `globals.css`).
-- `MessageComposer` não tem `disabled` e o placeholder padrão é INGLÊS ("Type a
-  message"): passa "Mensagem" e o contêiner é `inert`.
+- `MessageComposer` não tem `disabled`: passa "Mensagem" (no `whatsappmobile` o
+  padrão era inglês; no Unoochat já é pt-BR, mas a copy é nossa) e o contêiner
+  é `inert`.
 - `ChatHeader` sempre desenha voltar e as duas chamadas; sem callback, são
   inertes (como na exp07ef1b).
 - `CardHeader` (seção `unooria`) declara `avatar` no tipo e não o desenha: use

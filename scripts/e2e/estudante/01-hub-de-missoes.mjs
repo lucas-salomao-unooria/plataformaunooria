@@ -32,7 +32,7 @@ await suite(
       "O estudante entra na TURMA dele — a grade é a do ano dela, não o catálogo inteiro",
       "Missão não liberada aparece com CADEADO, e não some da tela",
       "Duas turmas do MESMO ano têm estados diferentes: 8A aberta, 8B fechada",
-      "Missão de outra série não entra na grade (o unooGPT é da 2ª série do EM)",
+      "Missão de outra série não entra na grade (o UnooriaAI é da 2ª série do EM)",
       "URL direta de missão não liberada responde 404 — o cadeado não é só enfeite",
       "Cada cartão aberto leva ao aparelho certo, em outra origem, com o sandbox que o manifesto pediu",
     ],
@@ -40,7 +40,7 @@ await suite(
   },
   async (r) => {
     /* A grade do 8º ano: a transversal (Vila, `series: []`) e as missões do ano
-       (Instanooria na unidade 1, Manifesto da IA na 4 — as duas com
+       (Unoovista na unidade 1, Manifesto da IA na 4 — as duas com
        `series: ["8EF"]`). O seed libera TODAS na 8A e NENHUMA na 8B — as turmas
        "B" ficam fechadas de propósito, para o professor exercitar liberar sem
        interferir em suíte de estudante.
@@ -53,13 +53,13 @@ await suite(
        `apps/api/tests/salas-postgres.spec.ts`. */
     const missoes = [
       { texto: "Vila do Lume", expId: "app-70-vila-do-lume", declara: ["allow-pointer-lock"] },
-      { texto: "Instanooria", expId: "exp08ef1b", declara: [] },
+      { texto: "Unoovista", expId: "exp08ef1b", declara: [] },
       { texto: "Manifesto da IA", expId: "exp08ef4b", declara: ["allow-forms"] },
     ];
     const OPCIONAIS = ["allow-pointer-lock", "allow-forms"];
     /* Da 2ª série do EM: não pertence à grade do 8º. Não é "bloqueada" — é de outra
        série, e nem aparece. São coisas diferentes, e a tela precisa distingui-las. */
-    const DE_OUTRA_SERIE = { texto: "unooGPT", expId: "exp02em1b" };
+    const DE_OUTRA_SERIE = { texto: "UnooriaAI", expId: "exp02em1b" };
 
     /* O 404 é PROVOCADO: esta suíte digita de propósito a URL de uma missão que
        não é desta turma, e é o servidor recusando que ela existe para provar. */
@@ -105,7 +105,7 @@ await suite(
       mostra: `A turma ${daOitoA.turma} no topo e um cartão por missão da grade do ano — ${titulos.join(", ")}.`,
       prova:
         "A lista não é mais o catálogo inteiro: é a grade da TURMA. A copy é a do estudante, nunca " +
-        "a do professor — a ficha docente do Instanooria entrega a virada da missão, e lê-la antes " +
+        "a do professor — a ficha docente do Unoovista entrega a virada da missão, e lê-la antes " +
         "destruiria a experiência que ela mede.",
       detalhe: `${titulos.length} missões, ${abertos} abertas`,
     });

@@ -2,19 +2,18 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 
 /**
- * Só a seção Instanooria do DS (50 KB). O `styles.css` completo traria os
- * tokens, os componentes e a fonte Open Sans da plataforma para dentro do
- * clone — proibido pela regra de disfarce e verificado no teste do origem.
+ * Só a seção Unoovista do DS: tokens `--unv-*` e as folhas dos componentes. O
+ * `styles.css` completo traria os tokens, os componentes e a tipografia da
+ * plataforma para dentro do disfarce.
  */
-import "@unooria/design-system/instanooria.css";
+import "@unooria/design-system/unoovista.css";
 /**
- * Tipografia self-hosted (@fontsource), empacotada pelo Vite — nenhuma URL
- * externa no bundle. No origem era next/font; o Figma usa SF Pro (Apple, não
- * empacotável) e Inter é o desenho livre mais próximo; Grand Hotel é a
- * aproximação consagrada do logotipo em script.
+ * A folha de FONTE é uma linha separada e obrigatória: Open Sans e o Material
+ * Symbols Rounded, auto-hospedados no pacote (nenhuma URL externa no bundle).
+ * Sem ela, o `Icon` do Unoovista — que é ligadura — escreve o NOME do glifo no
+ * lugar do desenho ("favorite" onde devia haver um coração).
  */
-import "@fontsource-variable/inter";
-import "@fontsource/grand-hotel";
+import "@unooria/design-system/fonts/unoovista.css";
 import "./estilos/globals.css";
 
 import { Bootstrap } from "./bootstrap";

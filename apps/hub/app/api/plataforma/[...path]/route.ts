@@ -140,6 +140,15 @@ const PREFIXOS_PERMITIDOS = [
      telas andam pelo polling do gate (ADR-93). As guardas de papel estão na
      api (`@Roles("professor", ...GESTORES)`, e `turmaVisivel` por turma). */
   "jornal-escola",
+  /* exp06ef1b: o preparo da mostra (gerar os dezesseis estandes, regenerar um
+     estande e homologar — não há banco padrão: sem saldo de IA, 429 e nada a
+     oferecer), as imagens — o mesmo laço do cliente do Jornal, duas por
+     chamada —, o botão ÚNICO da aula (Liberar a Galeria Oculta), a consulta
+     leve do painel a cada 5 s e o "zerar turma" são client-side: o professor
+     aperta na frente da sala e as telas andam pelo polling do gate de 3 s
+     (ADR-93). As guardas de papel estão na api (`@Roles("professor",
+     ...GESTORES)`, e a turma conferida por escola). */
+  "juri-estadual",
   /* Os cadastros de interesse do site público (ADR-107) — só a LEITURA, e só
      `admin` (o `@Roles` está na api). A ESCRITA não passa por aqui: ela vem de
      visitante sem sessão, e tem rota própria (`/api/cadastro-de-interesse`). */
@@ -154,6 +163,10 @@ const PREFIXOS_PERMITIDOS = [
      (`agente-professor/conversas/[id]/mensagens/route.ts`), que vence este
      catch-all. As guardas (`@Roles("professor")`, `@Produto`) estão na api. */
   "agente-professor",
+  /* A Ajuda com avatar (ADR-132): abrir e encerrar a sessão de vídeo. É
+     client-side porque o modal abre no MENU, em qualquer tela; a conversa em si
+     não passa por aqui — o vendor fala direto com a api. */
+  "ajuda",
 ] as const;
 
 /**

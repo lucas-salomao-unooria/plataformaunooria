@@ -15,7 +15,7 @@ dois lugares, e nenhum repete o outro.
 | `apps/experiencias/AGENTS.md` | contrato `postMessage`, manifesto, experiência nova, clones do DS |
 | `apps/experiencias/*/AGENTS.md` | por experiência: porta, rota, seção do DS, módulo da api |
 | `apps/agente-professor/AGENTS.md` | o agente de IA do professor (Python/ADK no Agent Engine) e a ingestão dos data stores |
-| `packages/AGENTS.md`, `packages/*/AGENTS.md` | o contrato que o `sdk` promete, as 5 pontes do `ui`, o conteúdo da exp08ef1b |
+| `packages/AGENTS.md`, `packages/*/AGENTS.md` | o contrato que o `sdk` promete, as 8 pontes do `ui`, o conteúdo da exp08ef1b |
 | `scripts/AGENTS.md`, `scripts/e2e/AGENTS.md` | utilitários, o que é gerado, o que uma suíte precisa provar |
 | `docs/AGENTS.md`, `documentacao-latex/AGENTS.md` | o que ali é contrato vivo, e as regras de edição do LaTeX |
 
@@ -102,7 +102,8 @@ como imutável. O porquê inteiro, e a separação entre *subir* e *ativar*, em
    editada só pelo `admin` em `/unooria/uso-de-ia`.
    Não recrie `AI_DAILY_TOKEN_QUOTA_PER_*` como fallback. E rate limit por
    usuário. Nunca exponha chamada de IA sem passar pelo `QuotaService`
-   (`temSaldo(escola, usuario, perfil)` ANTES, `consumir` depois).
+   (`temSaldo(escola, usuario, perfil)` ANTES, `consumir` depois). **Exceção
+   única: a Ajuda com avatar** (ADR-132), limitada por minutos (`ajuda_limites`).
 6. Dados de menores (LGPD): não logar PII em texto claro; telemetria carrega
    `estudante_id` opaco, nunca nome/email.
 7. **A missão só abre na turma em que o professor a liberou** (ADR-69). Toda
@@ -120,8 +121,8 @@ como imutável. O porquê inteiro, e a separação entre *subir* e *ativar*, em
    bug de enturmamento.
    - Tabela `disponibilidades`: uma linha por (recurso `produto:<slug>` ou
      `experiencia:<expId>`, escopo escola, regional ou contrato). **Ausência de
-     linha = LIGADO** — o contrário de `liberacoes`, porque este interruptor é
-     mecanismo de EXCEÇÃO. **O escopo mais específico ganha** e **o produto é um
+     linha = LIGADO** (salvo produto em teste interno, que nasce desligado) — o
+     contrário de `liberacoes`, porque este interruptor é mecanismo de EXCEÇÃO. **O escopo mais específico ganha** e **o produto é um
      TETO**: desligado no escopo que vale, nada dentro dele liga. Detalhe em
      `apps/api/src/recursos/AGENTS.md`.
    - **Experiência nova entra no painel declarando `produto` no
@@ -169,7 +170,7 @@ proibições:
 - **Não escrever interface sem antes procurar no DS**, nem componente local
   silencioso, nem `overflow` onde há `ScrollBar`, nem `<select>` onde há
   `Selection`. E não misturar seções do DS (plataforma dentro do clone).
-- Não deixar o DS parado: em `0.x` o caret só sobe patch; minor é decisão ativa.
+- Não deixar o DS parado nem dividido: UMA versão para tudo; `0.x` só sobe patch.
 - **Não escrever breadcrumb numa página do hub, nem deixar página sem ele**: a
   trilha é do layout da área (ADR-77).
 - **Não escrever texto de interface em inglês, nem traduzir o nome do clone**

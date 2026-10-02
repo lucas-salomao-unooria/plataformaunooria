@@ -6,6 +6,8 @@ import type {
   AiRequest,
   AiResult,
   AiSpeechRequest,
+  AiFluxoEvento,
+  AiFluxoRequest,
 } from "./provider";
 import { ErroDeGeracao } from "./provider";
 
@@ -135,6 +137,18 @@ export class MockProvider implements AiProvider {
    * As falas não têm DÍGITO nenhum: é comum a regra de domínio recusar número
    * que não tenha vindo de ferramenta, e o mock não deve tropeçar nela.
    */
+  /**
+   * Fluxo determinístico, em DOIS pedaços — para o teste exercitar a costura
+   * de pedaços, que é a parte nova do contrato. Não falha fechado: a Ajuda em
+   * dev precisa responder alguma coisa, e o texto diz que é do mock.
+   */
+  async *conversarEmFluxo(req: AiFluxoRequest): AsyncGenerator<AiFluxoEvento> {
+    const ultima = [...req.historico].reverse().find((m) => m.papel === "pessoa")?.texto ?? "";
+    const partes = ["[mock] Entendi a sua dúvida. ", `Você perguntou: ${ultima.slice(0, 80)}`];
+    for (const texto of partes) yield { tipo: "texto", texto };
+    yield { tipo: "fim", resultado: { texto: partes.join(""), tokensUsados: 64, finishReason: "STOP" } };
+  }
+
   async conversar(req: AiConversaRequest): Promise<AiResult> {
     const tentativas = req.tentativas ?? 3;
     const maxVoltas = req.maxVoltas ?? 6;

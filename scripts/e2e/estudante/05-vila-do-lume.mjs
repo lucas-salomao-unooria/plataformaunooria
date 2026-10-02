@@ -50,7 +50,7 @@ await suite(
       "Uma vila em primeira pessoa onde a criança recebe mensagens de desconhecidos enquanto " +
       "acende fogueiras. As mensagens são golpes de três níveis de sofisticação, e cada criança " +
       "recebe apenas UMA das três bolhas — o que ela vê não é o que o colega ao lado vê. " +
-      "É o Ato 1 do Instanooria: o perfil medido aqui decide de que lado o feed nasce lá.",
+      "É o Ato 1 do Unoovista: o perfil medido aqui decide de que lado o feed nasce lá.",
     prova: [
       "Os 19 scripts do jogo injetam na ordem certa e o WebGL desenha dentro do iframe",
       "A identidade da sessão chega ao jogo — uma partida sem estudante não se atribui a ninguém",

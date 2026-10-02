@@ -1,4 +1,4 @@
-import { Button, Icon, gptGlyphs } from '@edu/ui/ds-chatgpt';
+import { Button, Icon } from '@edu/ui/ds-unooriaai';
 import type { BairroPublico } from '../../lib/tipos';
 import { TETO_DE_PERGUNTAS } from '../../lib/textos';
 import type { RelogioPublico } from '../../lib/tipos';
@@ -36,13 +36,12 @@ import { MapaBase } from '../arte/mapa-base';
  * descobrir, e entregar de graça no briefing mataria a Missão.
  */
 /**
- * Os três passos. Os ícones são do REGISTRO do pacote (`gptIcons`), não mais
- * `<path>` desenhados aqui: desde a 0.1.14 o módulo `chatgpt` publica 13
- * vetores literais, exportados nó a nó do arquivo Figma, e desenhar à mão um
- * substituto é proibido pelo DS (§7.4).
+ * Os três passos. Os ícones são do REGISTRO do pacote (`uaiIcons`), não
+ * `<path>` desenhados aqui: desenhar à mão um substituto de ícone que o pacote
+ * publica é proibido pelo DS (§7.4).
  *
- * `chats` é o ícone da coluna `Examples` — perguntar. `stars`, o de
- * `Capabilities` — o que dá para fazer. `paperPlaneRight` é o envio do
+ * `chats` é o ícone da coluna de exemplos — perguntar. `stars`, o das
+ * capacidades — o que dá para fazer. `paperPlaneRight` é o envio do
  * compositor — mandar. Os três dizem o que o passo faz sem legenda.
  */
 const PASSOS = [
@@ -64,8 +63,8 @@ const PASSOS = [
 ] as const;
 
 const COR_EQUIPE = {
-  alfa: 'var(--gpt-color-blue-500)',
-  bravo: 'var(--gpt-color-purple-600)',
+  alfa: 'var(--uai-status-info)',
+  bravo: 'var(--uai-bg-brand)',
 } as const;
 
 export function Abertura({
@@ -100,13 +99,14 @@ export function Abertura({
     // deixava um terço de tela vazio numa de 1366.
     <div className="grid min-h-0 flex-1 grid-cols-1 grid-rows-[minmax(min-content,1fr)] gap-5 overflow-y-auto p-6 lg:grid-cols-[minmax(0,1fr)_340px]">
       {/* A história e o dilema no mesmo painel, com a cidade atrás. */}
-      {/* `data-gpt-theme="dark"` em vez de inverter cor a cor: o pacote já
+      {/* `data-uai-theme="dark"` em vez de inverter cor a cor: o pacote já
           espelha a escada translúcida e os cinzas de texto no tema escuro, e é
-          isso que faz a chuva a 4% e os contornos a 8% existirem sem nenhum
-          rgba escrito à mão. */}
+          isso que faz a chuva e os contornos translúcidos existirem sem nenhum
+          rgba escrito à mão. No escuro da `unooriaai` o painel é roxo profundo
+          (`brandpurple-900`), não grafite. */}
       <section
-        data-gpt-theme="dark"
-        className="relative flex flex-col justify-center gap-6 overflow-hidden rounded-gpt-2xl bg-gpt-fundo p-6 text-gpt-tinta lg:gap-7 lg:p-8"
+        data-uai-theme="dark"
+        className="relative flex flex-col justify-center gap-6 overflow-hidden rounded-uai-2xl bg-uai-fundo p-6 text-uai-tinta lg:gap-7 lg:p-8"
       >
         {/* O terreno do mapa, apagado: é a mesma cidade que ele vai investigar
             daqui a um clique, vista de longe e sob a chuva. Cenário, não dado. */}
@@ -123,26 +123,31 @@ export function Abertura({
           className="pointer-events-none absolute inset-0"
           style={{
             backgroundImage:
-              'radial-gradient(70% 60% at 85% -10%, color-mix(in srgb, var(--gpt-color-blue-400) 35%, transparent), transparent 70%)',
+              'radial-gradient(70% 60% at 85% -10%, color-mix(in srgb, var(--uai-status-info) 35%, transparent), transparent 70%)',
           }}
         />
+        {/* `fill-2`, e não `fill-4`: a escada da `unooriaai` é mais forte que
+            a da `chatgpt` (5/10/20/30% contra 2/4/8/10%), e a chuva medida no
+            briefing era a 4%. O degrau mais próximo é o de 5%. */}
         <div
           aria-hidden
           className="animate-chuva pointer-events-none absolute -inset-y-24 -inset-x-8"
           style={{
             backgroundImage:
-              'repeating-linear-gradient(115deg, transparent 0, transparent 14px, var(--gpt-fill-4) 14px, var(--gpt-fill-4) 15px)',
+              'repeating-linear-gradient(115deg, transparent 0, transparent 14px, var(--uai-fill-2) 14px, var(--uai-fill-2) 15px)',
           }}
         />
-        {/* Escurece a base para o texto ganhar contraste sobre o mapa. */}
+        {/* Escurece a base para o texto ganhar contraste sobre o mapa. A seção
+            tem um véu só (roxo a 50%, da mesma tinta do fundo do painel), então
+            a base parte do próprio fundo e passa pelo véu até sumir. */}
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 bg-gradient-to-t from-gpt-veu-80 via-gpt-veu-40 to-transparent"
+          className="pointer-events-none absolute inset-0 bg-gradient-to-t from-uai-fundo via-uai-veu-escuro to-transparent"
         />
 
         <div className="relative">
-          <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-gpt-info">
-            <span className="inline-block h-2 w-2 animate-pulse rounded-gpt-full bg-gpt-alerta" />
+          <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-uai-info">
+            <span className="inline-block h-2 w-2 animate-pulse rounded-uai-full bg-uai-alerta" />
             Defesa Civil de Serra do Sauá · 17h00
           </p>
           <h1 className="mt-3 max-w-xl text-3xl font-bold leading-[1.1] tracking-tight xl:text-[2.75rem]">
@@ -150,7 +155,7 @@ export function Abertura({
           </h1>
         </div>
 
-        <div className="relative rounded-gpt-2xl border border-gpt-borda bg-gpt-fill-8 p-5 backdrop-blur-sm lg:p-6">
+        <div className="relative rounded-uai-2xl border border-uai-borda bg-uai-fill-8 p-5 backdrop-blur-sm lg:p-6">
           <div className="grid gap-5 sm:grid-cols-2">
             {/* Os quarteirões: quatro, e o estudante CONTA — não lê um "4". */}
             <div>
@@ -158,11 +163,11 @@ export function Abertura({
                 {bairros.map((b) => (
                   <span
                     key={b.slug}
-                    className="grid h-12 w-12 place-items-center rounded-gpt-md border border-gpt-borda bg-gpt-fill-10"
+                    className="grid h-12 w-12 place-items-center rounded-uai-md border border-uai-borda bg-uai-fill-10"
                   >
                     <svg
                       viewBox="0 0 24 24"
-                      className="h-6 w-6 fill-none stroke-gpt-suave-80"
+                      className="h-6 w-6 fill-none stroke-uai-suave-80"
                       strokeWidth="1.8"
                     >
                       <path d="M3 21V9l9-6 9 6v12M9 21v-6h6v6" />
@@ -170,28 +175,32 @@ export function Abertura({
                   </span>
                 ))}
               </div>
-              <p className="mt-2 text-sm text-gpt-suave-60">
-                <strong className="text-2xl font-bold text-gpt-tinta">
+              <p className="mt-2 text-sm text-uai-suave-60">
+                <strong className="text-2xl font-bold text-uai-tinta">
                   {bairros.length}
                 </strong>{' '}
                 bairros em risco
               </p>
             </div>
-            {/* As equipes, nas cores que elas têm no mapa. */}
+            {/* As equipes, nas cores que elas têm no mapa. O tema CLARO nas
+                duas fichas é o que garante isso: as cores da equipe são token
+                semântico, e no escuro do painel elas trocariam de degrau
+                (azul e lilás claros) — o estudante veria aqui um par e no mapa
+                outro. Com o claro, a letra é a tinta invertida (branca). */}
             <div>
-              <div className="flex gap-2">
+              <div data-uai-theme="light" className="flex gap-2">
                 {(['alfa', 'bravo'] as const).map((eq) => (
                   <span
                     key={eq}
                     style={{ backgroundColor: COR_EQUIPE[eq] }}
-                    className="grid h-12 w-12 place-items-center rounded-gpt-md text-lg font-bold text-gpt-tinta shadow-gpt-lg"
+                    className="grid h-12 w-12 place-items-center rounded-uai-md text-lg font-bold text-uai-tinta-inv shadow-uai-overlay"
                   >
                     {eq === 'alfa' ? 'A' : 'B'}
                   </span>
                 ))}
               </div>
-              <p className="mt-2 text-sm text-gpt-suave-60">
-                <strong className="text-2xl font-bold text-gpt-tinta">2</strong> equipes para mandar
+              <p className="mt-2 text-sm text-uai-suave-60">
+                <strong className="text-2xl font-bold text-uai-tinta">2</strong> equipes para mandar
               </p>
             </div>
           </div>
@@ -203,14 +212,14 @@ export function Abertura({
         {/* 80% e não 40%: sobre o escuro, a escada baixa do kit é para
             contorno e legenda, não para o parágrafo que um adolescente vai ler
             de longe, numa tela projetada. */}
-        <p className="relative max-w-md leading-relaxed text-gpt-suave-80">
+        <p className="relative max-w-md leading-relaxed text-uai-suave-80">
           O Cientista de Dados mostra o que as informações da cidade dizem, e avisa quando não sabe.
           Ele não decide nada — quem decide é você.
         </p>
       </section>
 
-      <aside className="flex flex-col gap-5 rounded-gpt-2xl border border-gpt-borda bg-gpt-fundo p-5 lg:p-6">
-        <p className="text-xs font-bold uppercase tracking-wider text-gpt-suave-40">
+      <aside className="flex flex-col gap-5 rounded-uai-2xl border border-uai-borda bg-uai-fundo p-5 lg:p-6">
+        <p className="text-xs font-bold uppercase tracking-wider text-uai-suave-40">
           Como funciona
         </p>
 
@@ -218,17 +227,17 @@ export function Abertura({
           {PASSOS.map((passo, i) => (
             <li key={passo.titulo} className="flex gap-3">
               <span className="flex flex-col items-center">
-                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-gpt-xl bg-gpt-inverso text-gpt-tinta-inv">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-uai-xl bg-uai-inverso text-uai-tinta-inv">
                   <Icon name={passo.icone} size={20} />
                 </span>
-                {i < PASSOS.length - 1 && <span className="my-1 w-px flex-1 bg-gpt-borda" />}
+                {i < PASSOS.length - 1 && <span className="my-1 w-px flex-1 bg-uai-borda" />}
               </span>
               <span className="pb-4 pt-1 leading-snug">
-                <strong className="block text-gpt-tinta">
-                  <span className="mr-1.5 text-xs font-bold text-gpt-suave-40">{i + 1}</span>
+                <strong className="block text-uai-tinta">
+                  <span className="mr-1.5 text-xs font-bold text-uai-suave-40">{i + 1}</span>
                   {passo.titulo}
                 </strong>
-                <span className="text-sm text-gpt-suave-60">{passo.texto}</span>
+                <span className="text-sm text-uai-suave-60">{passo.texto}</span>
               </span>
             </li>
           ))}
@@ -236,10 +245,10 @@ export function Abertura({
 
         {/* O relógio fica colado no botão: é a última coisa que ele lê antes de
             começar, e é a que muda o comportamento dele lá dentro. */}
-        <p className="flex items-start gap-2.5 rounded-gpt-xl bg-gpt-superficie p-3 text-sm leading-snug text-gpt-tinta">
+        <p className="flex items-start gap-2.5 rounded-uai-xl bg-uai-superficie p-3 text-sm leading-snug text-uai-tinta">
           <svg
             viewBox="0 0 24 24"
-            className="mt-0.5 h-4 w-4 shrink-0 fill-none stroke-gpt-suave-60"
+            className="mt-0.5 h-4 w-4 shrink-0 fill-none stroke-uai-suave-60"
             strokeWidth="2"
             strokeLinecap="round"
           >
@@ -249,15 +258,14 @@ export function Abertura({
           {tempo}
         </p>
 
-        {/* O glifo de avançar é o do arquivo de design (`gptGlyphs.arrowRight`),
-            não um vetor desenhado aqui: o kit não tem biblioteca de ícones —
-            ele usa caractere tipográfico, e reproduzir isso é o caminho fiel. */}
+        {/* A seta é o `arrowForward` do registro da seção, no tamanho que o
+            `Button` pede para o `lg` (24px). */}
         <Button
           size="lg"
           variant="secondary"
           block
           onClick={onComecar}
-          trailingIcon={gptGlyphs.arrowRight}
+          trailingIcon={<Icon name="arrowForward" size={24} />}
         >
           Começar
         </Button>

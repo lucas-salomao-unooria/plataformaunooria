@@ -27,7 +27,7 @@ const TURMA = process.env.TURMA ?? "8A";
 const GUIAS = [
   {
     rota: "/professor/entre-redes/8-ano/unidade-1/guia",
-    missao: "Instanooria · 8º ano",
+    missao: "Unoovista · 8º ano",
     /* Vem de `CONTROLE_DO_PROFESSOR` e de `@edu/conteudo-exp08ef1b`: se o bloco
        vivo quebrar, o guia continua renderizando e some em silêncio. */
     vivo: [/Você conduz — os \d+ momentos/i, /O que a turma lê na revelação/i],
@@ -35,7 +35,7 @@ const GUIAS = [
   },
   {
     rota: "/professor/entre-redes/2-serie/unidade-1/guia",
-    missao: "unooGPT · 2ª série EM",
+    missao: "UnooriaAI · 2ª série EM",
     /* A tabela dos 8 vieses vem de `GET /unoogpt/professor/fontes`. É a única
        superfície em que o viés é dito, e o hub não guarda cópia dela. */
     vivo: [/As 8 fontes e o viés de cada uma/i, /Em que ela engana/i, /Histórico de ocorrências/i],
@@ -68,6 +68,22 @@ const GUIAS = [
       /O ciclo, na ordem certa/i,
     ],
     bncc: "EF06CO08",
+  },
+  {
+    rota: "/professor/entre-redes/6-ano/unidade-1/guia",
+    missao: "O Júri Estadual de Projetos · 6º ano",
+    /* Os dois blocos vivos vêm de `GET /juri-estadual/professor/material`: a
+       regra do feed com o gabarito (o caminho dos pacotes, a cadeia na ordem
+       certa, os cartões do caso Mariana) e as quatro perguntas da plenária. A
+       pergunta é conferida pelo texto exato: é a mesma que o painel da aula
+       projeta, e paráfrase no guia deixaria a turma comentando outra frase. */
+    vivo: [
+      /A regra do feed e o gabarito — só para você/i,
+      /Formação de bolha temática/,
+      /As quatro perguntas da plenária — entre o voto e a galeria/i,
+      /como a turma votou em áreas tão diferentes/i,
+    ],
+    bncc: "EF06CO01",
   },
   {
     rota: "/professor/entre-redes/vila-do-lume/guia",
@@ -190,7 +206,7 @@ await suite(
         "conduzir com esta turma.",
       prova:
         "É aqui que o professor decide o que rodar hoje, com a turma na frente. Um link só, " +
-        "porque a sala não tem como saber o que cada missão oferece: o Instanooria não tem " +
+        "porque a sala não tem como saber o que cada missão oferece: o Unoovista não tem " +
         "tela de resultados e o Rastro do Boato não tem guia. Quem responde isso é a ficha.",
       inteira: true,
     });

@@ -1,5 +1,5 @@
 import { Suspense, useEffect, useRef, useState } from "react";
-import { SegmentedTabs, StoryViewer } from "@edu/ui/ds-insta";
+import { SegmentedTabs, StoryViewer } from "@edu/ui/ds-unoovista";
 import { avancar, voltar, type Lado, type PosicaoNoMural } from "../../lib/regras";
 import { telemetria } from "../../lib/telemetria";
 import { E4 } from "../../lib/textos";
@@ -58,7 +58,7 @@ export function Mural({ mural }: { mural: RespostaMural }) {
   const ficha = triade.fichas?.find((f) => f.postId === post.id) ?? null;
 
   return (
-    <div className="tela tela--story" data-insta-theme="dark">
+    <div className="tela tela--story" data-unv-theme="dark">
       <h1 className="so-leitor">{E4.titulo}</h1>
       <SegmentedTabs
         theme="dark"

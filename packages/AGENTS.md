@@ -6,7 +6,7 @@ Complementa o `AGENTS.md` da raiz. Cada pacote tem o seu `AGENTS.md` (e o
 | Pacote | O que é | Doutrina |
 |---|---|---|
 | `@edu/sdk` | a única porta da experiência para fora: handshake, token, chamada de api, telemetria | `sdk/AGENTS.md` |
-| `@edu/ui` | as cinco pontes para as seções do `@unooria/design-system` | `ui/AGENTS.md` |
+| `@edu/ui` | as oito pontes para as seções do `@unooria/design-system` | `ui/AGENTS.md` |
 | `@edu/ui` — `styles/` | as compensações da seção `unooria` que o hub aplica sobre o DS (`plataforma.css`: tabela rolável, `.tela-cheia`, `ScrollBar`, `Button`) | `ui/styles/AGENTS.md` |
 
 Comum aos dois: **TypeScript puro, sem dependência pesada**, consumidos por

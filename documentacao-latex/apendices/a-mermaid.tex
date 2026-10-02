@@ -2257,6 +2257,11 @@ flowchart TB
     qmt["/quem-mandou-isso/turmas/* - prof, gestor - o pacote E o relogio da turma"]
     qmp["/quem-mandou-isso/professor/* - prof, gestor - material do guia"]
   end
+  subgraph JU["exp06ef1b - O Juri Estadual de Projetos (ADR-137)"]
+    ju["/juri-estadual/* - estudante - e as enquetes em /evidencias"]
+    jut["/juri-estadual/turmas/* - prof, gestor - a mostra, a Galeria Oculta e a lousa"]
+    jup["/juri-estadual/professor/* - prof, gestor - material do guia (so o esqueleto)"]
+  end
 
   %% Duas areas por AUSENCIA deliberada: bem-estar nao tem rota de gestor nem
   %% de agregado; e no unoogpt o controller do gestor nao tem NENHUMA rota que
@@ -2281,9 +2286,9 @@ flowchart LR
   %% A linha e a REVELACAO, nao o arquivo. O toast NAO cruza: ele fala de
   %% dentro da ficcao. O criterio nao e "e depois no tempo?", e "quem fala?".
   %%
-  %% CONTRAEXEMPLO, exp02em1b (unooGPT): nao ha revelacao no software. O vies de
+  %% CONTRAEXEMPLO, exp02em1b (UnooriaAI): nao ha revelacao no software. O vies de
   %% cada fonte e o material do debate do professor, e nenhuma tela o entrega.
-  %% Logo a exp02em1b e 100% da secao do clone (@edu/ui/ds-chatgpt) e nunca troca
+  %% Logo a exp02em1b e 100% da secao do clone (@edu/ui/ds-unooriaai) e nunca troca
   %% para a da plataforma. A marca institucional entra so como chrome do HUB,
   %% desenhada ACIMA do iframe.
 \end{lstlisting}

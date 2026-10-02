@@ -48,6 +48,14 @@ describe("copy das missões do estudante", () => {
     expect(copyDaMissao("exp09ef4b")).toBeNull();
   });
 
+  /* O Júri Estadual mede o voto dado SEM saber que o feed se adapta: a copy do
+     card é o mandato da credencial, e nada nela pode anunciar a bolha. */
+  test("a copy do Júri Estadual não entrega a virada", () => {
+    const copy = copyDaMissao("exp06ef1b");
+    expect(copy?.titulo).toBe("O Júri Estadual de Projetos");
+    expect(`${copy?.titulo} ${copy?.chamada}`).not.toMatch(/algoritmo|bolha|filtro|invis[ií]ve|ocult|galeria/i);
+  });
+
   test("a copy do estudante não repete a do professor (que entrega a virada)", () => {
     for (const missao of publicadas) {
       const copy = missao.estudante!;

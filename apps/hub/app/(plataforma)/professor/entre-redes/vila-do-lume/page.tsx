@@ -115,22 +115,22 @@ export default async function VilaDoLumePage({
             <strong>E esse retrato alimenta outra missão.</strong> Hoje, o{" "}
             {/* Rota DERIVADA do catálogo: se a missão mudar de ano ou de unidade,
                 o link acompanha. Fixá-la aqui criaria uma segunda verdade sobre
-                onde o Instanooria mora. */}
+                onde o Unoovista mora. */}
             <Link
               href={rotaDaMissao(MISSAO_ATUAL)}
               className="font-semibold text-unooria-navy-900 underline"
             >
-              Instanooria
+              Unoovista
             </Link>{" "}
             (8º ano · Unidade 1): é o perfil da Vila que decide
             de que lado o feed de cada estudante nasce lá — o &quot;Ato 1&quot; que a ficha
-            daquela missão descreve. Na tela da atividade do Instanooria há um botão{" "}
+            daquela missão descreve. Na tela da atividade do Unoovista há um botão{" "}
             <em>Trazer perfis da Vila do Lume</em>. Quem não jogou entra no sorteio
             balanceado, e você pode completar à mão.
           </p>
           <p className="text-[13px] text-unooria-neutral-600">
             Não é obrigatório usar as duas: a Vila funciona sozinha, com o debate dela. E o
-            Instanooria funciona sem a Vila, sorteando os lados.
+            Unoovista funciona sem a Vila, sorteando os lados.
           </p>
         </div>
       </Card>
@@ -162,7 +162,7 @@ export default async function VilaDoLumePage({
           </li>
           <li>
             <strong>Depois, se quiser:</strong> leia o relatório de um estudante específico, e/ou
-            traga os perfis para uma atividade do Instanooria.
+            traga os perfis para uma atividade do Unoovista.
           </li>
         </ol>
       </Card>

@@ -75,6 +75,14 @@ Duas coisas para saber antes de mexer nele:
   próximo item óbvio e é um link morto: `middleware.ts` devolve quem já trocou
   para a home do papel. Menu curto é melhor que menu com item que não leva a
   lugar nenhum.
+- **"Ajuda" é o segundo item, e abre JANELA, não rota** (ADR-132): o atendente
+  em vídeo (`components/ajuda/`), para todo papel MENOS o estudante — o header
+  é o mesmo dentro de `/exp`, então quem esconde é o `papel !== "estudante"` do
+  header, junto do interruptor `produtoLigado("ajuda")`. Quem tranca é a api.
+  A sala do vendor abre na MONTAGEM do conteúdo do modal e fecha na
+  desmontagem: renderizar o conteúdo com o modal fechado abriria sessões (e
+  cobraria minutos) sem ninguém ver. O microfone começa desligado; o SDK do
+  vendor só carrega por `import()` quando a janela abre.
 
 ## O detalhe está na pasta
 

@@ -1,22 +1,22 @@
-import { Badge, Button, Modal } from '@edu/ui/ds-chatgpt';
+import { Badge, Button, Modal } from '@edu/ui/ds-unooriaai';
 import type { BairroPublico } from '../../lib/tipos';
 import type { OpcaoDeJustificativa, Projecao } from '../../lib/tipos';
 import { agruparEmpatados } from '../../lib/visao';
 import { AVISO_FALTA_JUSTIFICAR, faltaJustificar } from '../../lib/textos';
 
-const COR_EQUIPE = { alfa: 'bg-gpt-azul', bravo: 'bg-gpt-roxo' } as const;
+const COR_EQUIPE = { alfa: 'bg-uai-equipe-alfa', bravo: 'bg-uai-equipe-bravo' } as const;
 
 /**
  * O `<select>` nativo, vestido com os tokens do pacote.
  *
- * LACUNA DECLARADA do Design System: o módulo `chatgpt` publica `Input`,
+ * LACUNA DECLARADA do Design System: a seção `unooriaai` publica `Input`,
  * `SearchInput` e `ChatInput`, mas não tem campo de seleção — o cliente de
  * conversa que ele reproduz não tem nenhum. Enquanto não tiver, o controle é o
  * nativo (que é o mais acessível de qualquer forma, sobretudo no celular da
- * escola) e só a pintura vem de `--gpt-*`.
+ * escola) e só a pintura vem de `--uai-*`.
  */
 const CAMPO =
-  'w-full rounded-gpt-md border bg-gpt-fundo p-2 text-sm text-gpt-tinta focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gpt-borda-marca';
+  'w-full rounded-uai-md border bg-uai-fundo p-2 text-sm text-uai-tinta focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-uai-borda-marca';
 
 function milhar(n: number) {
   return n.toLocaleString('pt-BR');
@@ -103,21 +103,21 @@ export function Decisao({
     >
       <Modal.Header onClose={onFechar}>A decisão até agora</Modal.Header>
       <Modal.Body>
-        <p className="text-sm leading-snug text-gpt-suave-60">
+        <p className="text-sm leading-snug text-uai-suave-60">
           Você pode trocar o destino de cada equipe aqui.
         </p>
 
         <div className="mt-4 grid gap-2.5">
           {p.rotas.map((r) => (
-            <div key={r.equipe} className="rounded-gpt-xl border border-gpt-borda p-3.5">
+            <div key={r.equipe} className="rounded-uai-xl border border-uai-borda p-3.5">
               <div className="flex items-center justify-between gap-3">
                 <span className="flex items-center gap-2">
                   <span
-                    className={`grid h-6 w-6 place-items-center rounded-gpt-md text-xs font-bold text-gpt-tinta-inv ${COR_EQUIPE[r.equipe]}`}
+                    className={`grid h-6 w-6 place-items-center rounded-uai-md text-xs font-bold text-uai-tinta-inv ${COR_EQUIPE[r.equipe]}`}
                   >
                     {r.equipe.charAt(0).toUpperCase()}
                   </span>
-                  <span className="text-xs font-semibold uppercase tracking-wider text-gpt-suave-60">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-uai-suave-60">
                     Equipe {r.equipe}
                   </span>
                 </span>
@@ -127,13 +127,13 @@ export function Decisao({
                   escolhe. Ele existia só depois de registrar a decisão, numa
                   aba do mapa que ninguém abre sob cronômetro — e a escolha
                   saía do número de pessoas, ignorando se dava para chegar. */}
-              {r.aviso && <p className="mt-1.5 text-xs leading-snug text-gpt-alerta">{r.aviso}</p>}
+              {r.aviso && <p className="mt-1.5 text-xs leading-snug text-uai-alerta">{r.aviso}</p>}
               <select
                 aria-label={`Destino da equipe ${r.equipe}`}
                 value={r.bairro ?? ''}
                 disabled={ocupado}
                 onChange={(e) => onTrocar(r.equipe, e.target.value)}
-                className={`mt-2.5 border-gpt-borda ${CAMPO}`}
+                className={`mt-2.5 border-uai-borda ${CAMPO}`}
               >
                 <option value="" disabled>
                   Fica na base
@@ -166,7 +166,7 @@ export function Decisao({
                 <label className="mt-2.5 block">
                   <span
                     className={`text-xs font-semibold uppercase tracking-wider ${
-                      justificativas[r.equipe] ? 'text-gpt-suave-60' : 'text-gpt-alerta'
+                      justificativas[r.equipe] ? 'text-uai-suave-60' : 'text-uai-alerta'
                     }`}
                   >
                     Por que aqui?
@@ -177,7 +177,7 @@ export function Decisao({
                     disabled={ocupado}
                     onChange={(e) => onJustificar(r.equipe, e.target.value)}
                     className={`mt-1 ${CAMPO} ${
-                      justificativas[r.equipe] ? 'border-gpt-borda' : 'border-gpt-alerta'
+                      justificativas[r.equipe] ? 'border-uai-borda' : 'border-uai-alerta'
                     }`}
                   >
                     <option value="" disabled>
@@ -195,21 +195,21 @@ export function Decisao({
           ))}
         </div>
 
-        <div className="mt-4 border-t border-gpt-borda pt-4">
+        <div className="mt-4 border-t border-uai-borda pt-4">
           <div className="flex items-baseline justify-between">
-            <p className="text-xs font-semibold uppercase tracking-wider text-gpt-suave-60">
+            <p className="text-xs font-semibold uppercase tracking-wider text-uai-suave-60">
               Pela sua leitura
             </p>
             {p.confianca !== null && (
-              <p className="text-xs font-semibold uppercase tracking-wider text-gpt-suave-60">
+              <p className="text-xs font-semibold uppercase tracking-wider text-uai-suave-60">
                 Confiança {p.confianca}
               </p>
             )}
           </div>
-          <p className="mt-1.5 text-3xl font-bold tracking-tight text-gpt-tinta">
+          <p className="mt-1.5 text-3xl font-bold tracking-tight text-uai-tinta">
             {p.atendidas === null ? '—' : milhar(p.atendidas)}
           </p>
-          <p className="mt-1 text-sm text-gpt-suave-60">
+          <p className="mt-1 text-sm text-uai-suave-60">
             {p.atendidas === null
               ? 'você não carregou nada que enxergue esses bairros'
               : 'pessoas que as equipes alcançariam, se a leitura estiver certa'}
@@ -219,7 +219,7 @@ export function Decisao({
               ajuda a decidir nada, e os minutos de cada equipe já estão acima.
               Equipe na base só aparece quando existe uma. */}
           {p.equipesOciosas > 0 && (
-            <p className="mt-3 rounded-gpt-xl bg-gpt-superficie p-3 text-sm text-gpt-tinta">
+            <p className="mt-3 rounded-uai-xl bg-uai-superficie p-3 text-sm text-uai-tinta">
               {p.equipesOciosas === 2
                 ? 'As duas equipes estão sem destino.'
                 : 'Uma equipe está sem destino e fica na base.'}
@@ -228,7 +228,7 @@ export function Decisao({
         </div>
 
         {empateEscolhido && (
-          <p className="mt-4 rounded-gpt-xl border-l-4 border-gpt-alerta bg-gpt-superficie p-3.5 text-sm leading-snug text-gpt-tinta">
+          <p className="mt-4 rounded-uai-xl border-l-4 border-uai-alerta bg-uai-superficie p-3.5 text-sm leading-snug text-uai-tinta">
             <strong>
               As duas equipes vão para bairros empatados:{' '}
               {empateEscolhido
@@ -245,7 +245,7 @@ export function Decisao({
         {/* Os avisos de rota já aparecem na linha da equipe. Repeti-los aqui
             embaixo enchia o painel com a mesma frase duas vezes. */}
         {outrosAvisos.length > 0 && (
-          <ul className="mt-3 grid gap-1.5 rounded-gpt-xl bg-gpt-superficie p-3.5 text-sm leading-snug text-gpt-tinta">
+          <ul className="mt-3 grid gap-1.5 rounded-uai-xl bg-uai-superficie p-3.5 text-sm leading-snug text-uai-tinta">
             {outrosAvisos.map((a) => (
               <li key={a}>! {a}</li>
             ))}
@@ -253,7 +253,7 @@ export function Decisao({
         )}
 
         {faltam && (
-          <p className="mt-4 rounded-gpt-xl border-l-4 border-gpt-alerta bg-gpt-superficie p-3.5 text-sm leading-snug text-gpt-tinta">
+          <p className="mt-4 rounded-uai-xl border-l-4 border-uai-alerta bg-uai-superficie p-3.5 text-sm leading-snug text-uai-tinta">
             <strong>{AVISO_FALTA_JUSTIFICAR}</strong> Não há resposta certa aqui — o que vale é o
             que te fez decidir de verdade.
           </p>
@@ -271,11 +271,11 @@ export function Decisao({
       {/* Rodapé FIXO ao pé do painel: o conteúdo acima rola, o botão não sai
           de vista. Num laptop de 800 px de altura ele ficava abaixo da dobra
           do modal, e o estudante tinha que descobrir que o popup rolava. */}
-      <Modal.Footer className="sticky bottom-0 !flex-col !items-stretch gap-2 border-t border-gpt-borda bg-gpt-fundo">
+      <Modal.Footer className="sticky bottom-0 !flex-col !items-stretch gap-2 border-t border-uai-borda bg-uai-fundo">
         {onEnviar && (
           <>
             {!faltam && (
-              <p className="text-center text-xs font-semibold text-gpt-alerta">
+              <p className="text-center text-xs font-semibold text-uai-alerta">
                 Depois de enviar não dá para mudar
               </p>
             )}

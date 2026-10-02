@@ -1,9 +1,9 @@
-import { Button } from '@edu/ui/ds-chatgpt';
+import { Button } from '@edu/ui/ds-unooriaai';
 import { useEffect, useState } from 'react';
 import type { Desfecho } from '../../lib/tipos';
 import type { Tentativa } from './resultado';
 
-const COR = { alfa: 'bg-gpt-azul', bravo: 'bg-gpt-roxo' } as const;
+const COR = { alfa: 'bg-uai-equipe-alfa', bravo: 'bg-uai-equipe-bravo' } as const;
 
 function milhar(n: number) {
   return n.toLocaleString('pt-BR');
@@ -59,7 +59,7 @@ export function Operacao({
 
   return (
     <section className="flex h-full min-h-0 w-full flex-col gap-4 overflow-y-auto p-6">
-      <p className="text-xs font-bold uppercase tracking-wider text-gpt-suave-40">
+      <p className="text-xs font-bold uppercase tracking-wider text-uai-suave-40">
         {etapa < 3 ? 'Operação em curso' : 'A tempestade passou'}
       </p>
 
@@ -74,25 +74,25 @@ export function Operacao({
           return (
             <li
               key={e.equipe}
-              className={`flex items-center gap-2.5 rounded-gpt-xl border border-gpt-borda px-3 py-2.5 transition-opacity duration-500 ${
+              className={`flex items-center gap-2.5 rounded-uai-xl border border-uai-borda px-3 py-2.5 transition-opacity duration-500 ${
                 visivel ? 'opacity-100' : 'opacity-40'
               }`}
             >
               <span
-                className={`grid h-6 w-6 shrink-0 place-items-center rounded-gpt-md text-xs font-bold text-gpt-tinta-inv ${COR[e.equipe]}`}
+                className={`grid h-6 w-6 shrink-0 place-items-center rounded-uai-md text-xs font-bold text-uai-tinta-inv ${COR[e.equipe]}`}
               >
                 {e.equipe.charAt(0).toUpperCase()}
               </span>
               <span className="min-w-0 flex-1 text-sm leading-tight">
-                <strong className="block truncate text-gpt-tinta">{e.nome}</strong>
+                <strong className="block truncate text-uai-tinta">{e.nome}</strong>
                 {/* O motivo quebra linha em vez de truncar: "a via principal já
                     terá fechado" é a lição da rodada, não cabe atrás de "…". */}
-                <span className="block text-xs leading-snug text-gpt-suave-60">
+                <span className="block text-xs leading-snug text-uai-suave-60">
                   {!visivel ? 'a caminho…' : (bairro?.motivo ?? 'chegou com margem')}
                 </span>
               </span>
               {visivel && bairro && (
-                <strong className="shrink-0 text-sm text-gpt-ok">+{milhar(bairro.salvas)}</strong>
+                <strong className="shrink-0 text-sm text-uai-ok">+{milhar(bairro.salvas)}</strong>
               )}
             </li>
           );
@@ -102,19 +102,19 @@ export function Operacao({
       {etapa >= 3 ? (
         <div className="animate-entrar-cartao grid gap-4">
           <div className="grid grid-cols-2 gap-2">
-            <div className="rounded-gpt-xl bg-gpt-superficie px-4 py-3">
-              <p className="text-3xl font-bold tracking-tight text-gpt-ok">
+            <div className="rounded-uai-xl bg-uai-superficie px-4 py-3">
+              <p className="text-3xl font-bold tracking-tight text-uai-ok">
                 {pct(desfecho.totais.salvas)}%
               </p>
-              <p className="text-sm font-semibold text-gpt-tinta">resgatadas</p>
-              <p className="text-xs text-gpt-suave-60">{milhar(desfecho.totais.salvas)} pessoas</p>
+              <p className="text-sm font-semibold text-uai-tinta">resgatadas</p>
+              <p className="text-xs text-uai-suave-60">{milhar(desfecho.totais.salvas)} pessoas</p>
             </div>
-            <div className="rounded-gpt-xl bg-gpt-superficie px-4 py-3">
-              <p className="text-3xl font-bold tracking-tight text-gpt-erro">
+            <div className="rounded-uai-xl bg-uai-superficie px-4 py-3">
+              <p className="text-3xl font-bold tracking-tight text-uai-erro">
                 {pct(desfecho.totais.vitimas)}%
               </p>
-              <p className="text-sm font-semibold text-gpt-tinta">atingidas</p>
-              <p className="text-xs text-gpt-suave-60">{milhar(desfecho.totais.vitimas)} pessoas</p>
+              <p className="text-sm font-semibold text-uai-tinta">atingidas</p>
+              <p className="text-xs text-uai-suave-60">{milhar(desfecho.totais.vitimas)} pessoas</p>
             </div>
           </div>
 
@@ -122,17 +122,17 @@ export function Operacao({
               onde ele mandou as equipes — a parte do resultado que é dele. */}
           <div>
             <div className="flex items-baseline justify-between text-sm">
-              <span className="font-semibold text-gpt-tinta">Risco que você cobriu</span>
-              <strong className="text-gpt-tinta">{cobertura}%</strong>
+              <span className="font-semibold text-uai-tinta">Risco que você cobriu</span>
+              <strong className="text-uai-tinta">{cobertura}%</strong>
             </div>
-            <div className="mt-1.5 h-2 overflow-hidden rounded-gpt-full bg-gpt-borda">
+            <div className="mt-1.5 h-2 overflow-hidden rounded-uai-full bg-uai-borda">
               <div
-                className="h-full rounded-gpt-full bg-gpt-azul"
+                className="h-full rounded-uai-full bg-uai-info"
                 style={{ width: `${cobertura}%` }}
               />
             </div>
             {maiorDeFora && (
-              <p className="mt-1.5 text-xs text-gpt-suave-60">
+              <p className="mt-1.5 text-xs text-uai-suave-60">
                 Maior foco sem equipe: {maiorDeFora.nome} · {milhar(maiorDeFora.emRisco)} em risco
               </p>
             )}
@@ -140,17 +140,17 @@ export function Operacao({
 
           <ul className="grid gap-1.5 text-sm leading-snug">
             <li className="flex justify-between gap-3">
-              <span className="text-gpt-suave-60">Costuma dar, com essa decisão</span>
-              <span className="text-gpt-tinta">
+              <span className="text-uai-suave-60">Costuma dar, com essa decisão</span>
+              <span className="text-uai-tinta">
                 {milhar(esperado.faixa[0])}–{milhar(esperado.faixa[1])}
               </span>
             </li>
             {anterior && (
               <li className="flex justify-between gap-3">
-                <span className="text-gpt-suave-60">Sua rodada anterior</span>
+                <span className="text-uai-suave-60">Sua rodada anterior</span>
                 <span
                   className={
-                    desfecho.totais.salvas > anterior.salvas ? 'text-gpt-ok' : 'text-gpt-erro'
+                    desfecho.totais.salvas > anterior.salvas ? 'text-uai-ok' : 'text-uai-erro'
                   }
                 >
                   {desfecho.totais.salvas > anterior.salvas ? '▲' : '▼'} {milhar(anterior.salvas)}
@@ -159,8 +159,8 @@ export function Operacao({
             )}
             {naoConsultados.length > 0 && (
               <li className="flex justify-between gap-3">
-                <span className="text-gpt-suave-60">Não consultado</span>
-                <span className="text-right text-gpt-tinta">{naoConsultados[0]?.rotuloCurto ?? '—'}</span>
+                <span className="text-uai-suave-60">Não consultado</span>
+                <span className="text-right text-uai-tinta">{naoConsultados[0]?.rotuloCurto ?? '—'}</span>
               </li>
             )}
           </ul>
@@ -170,7 +170,7 @@ export function Operacao({
           </Button>
         </div>
       ) : (
-        <p className="text-sm text-gpt-suave-60">Fechando a conta da cidade…</p>
+        <p className="text-sm text-uai-suave-60">Fechando a conta da cidade…</p>
       )}
     </section>
   );

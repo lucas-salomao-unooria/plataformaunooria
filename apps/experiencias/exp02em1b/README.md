@@ -19,8 +19,10 @@ professor** — não uma tela.
 
 Consequência prática: **não há revelação no software**. A exp04ef1b troca da seção
 do clone para a da plataforma na virada da missão; aqui não existe virada, e por
-isso esta experiência é 100% da seção `chatgpt` e não importa `unooria.css`
-nenhum. A marca institucional entra só como chrome do hub, acima do iframe.
+isso esta experiência é 100% da seção `unooriaai` (desde a 1.3.0, ADR-138; até
+a 1.2.7 era a `chatgpt`) e não importa `unooria.css` nenhum. A marca
+institucional entra só como chrome do hub, acima do iframe. O app disfarçado se
+chama **UnooriaAI**; o código continua `unoogpt`.
 
 O que isso proíbe no bundle, verificado por `grep` no `dist/`: `instrucao`
 (o viés), `pSevero`/`expostosSevero`/`fracaoVulneravel` (os parâmetros ocultos),
@@ -117,29 +119,35 @@ desta missão:
 ## Decisões
 
 - **Tailwind 3 veio junto**, com o config de apelidos do origem (zero cor
-  literal — só `var(--gpt-*)`). As ~15 telas foram medidas em playtest com estas
+  literal — só `var(--uai-*)`). As ~15 telas foram medidas em playtest com estas
   classes; reescrevê-las em CSS à mão arriscaria a medida sem ganho. Precedente:
   `exp08ef1b`. Componente de interface continua vindo do pacote.
 - **Sem `viewport` no manifesto**: a missão é de laboratório, desktop, com a
   conversa em 2/3 e o mapa em 1/3. Preenche o iframe, sem casca de aparelho.
 - **Tema fixo em claro.** A exp04ef1b deixa o estudante escolher; aqui o desenho foi
   calibrado no claro e não há escolha a fazer.
-- **As duas folhas do DS são obrigatórias** na 0.1.17: `chatgpt.css` (tokens e
-  componentes) e `fonts/chatgpt.css` (o `@font-face` da Inter com os `.woff2` do
-  pacote). Sem a segunda o texto cai na fonte do sistema. Isto **dispensa** o
-  `next/font` que o projeto de origem precisava usar.
+- **As duas folhas do DS são obrigatórias**: `unooriaai.css` (tokens e
+  componentes) e `fonts/unooriaai.css` (o `@font-face` da Open Sans e do Material
+  Symbols com os `.woff2` do pacote). Sem a segunda o texto cai na fonte do
+  sistema e o `Icon`, que é ligadura, escreve o NOME do ícone no lugar dele.
+- **As Equipes saem de token semântico** (Alfa = `--uai-status-info`, Bravo =
+  `--uai-bg-brand`): a seção não publica cor primitiva.
 - **O mapa SVG e os 8 ícones de fonte são arte de produto**, em `src/app/arte/` —
   exceção declarada ao "não inventar componente", como o canvas 3D da app-70.
 
 ## Lacunas do pacote (pedidos ao `storybook-unooria`)
 
-Marcadas como `(b) COMPENSAÇÃO` em `src/estilos/globals.css`:
+Nenhuma compensação viva em `src/estilos/globals.css`. As duas da seção
+`chatgpt` eram CSS morto quando a missão foi para a `unooriaai` e saíram com ela
+(ADR-138): o indicador de carregamento já era o `Consultando` de
+`painel-cientista.tsx` (três pontos com `animate-pulse` dentro do `ChatBubble`),
+e o anexo em bloco abaixo da fala não tinha consumidor. Duas lacunas continuam
+abertas e são contornadas sem CSS próprio:
 
-1. a seção `chatgpt` não publica **indicador de carregamento**, e um turno leva
-   de 10 a 30s. Sem sinal de vida o estudante reenvia a pergunta — que é o que o
-   orçamento de 3 perguntas não perdoa;
-2. `ChatBubble` não aceita conteúdo em **bloco** abaixo da fala, e é ali que o
-   cartão de leitura precisa aparecer (solto na coluna ele perde o dono).
+1. a seção não publica **indicador de carregamento**, e um turno leva de 10 a
+   30s — sem sinal de vida o estudante reenvia a pergunta;
+2. a seção não publica **campo de seleção**: a Decisão usa o `<select>` nativo
+   pintado com `--uai-*` (`decisao.tsx`).
 
 ## `allow-forms` no sandbox
 

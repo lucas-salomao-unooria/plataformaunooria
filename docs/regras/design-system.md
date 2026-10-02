@@ -25,28 +25,47 @@ plataforma no feed do estudante quebra a ilusão que a experiência está medind
 | Seção | Ponte | Onde vale |
 |---|---|---|
 | `unooria` | `@edu/ui/ds` | hub (login, `/professor`, `/admin`, `/analise`), header de todos os papéis, telas pós-revelação do estudante |
-| `instanooria` | `@edu/ui/ds-insta` | superfície disfarçada da exp08ef1b e a exp07ef1b inteira no clone (as telas da escola vão pela `@edu/ui/ds`); as telas de clone (E2–E4) da exp01ef1b; a peça `PostCard` da exp04ef1b (ADR-117); as sete extensões da 0.2.5 (DM, enquete, diálogo, folha, pílula, compositor de Stories) e as três da 0.2.7 (faixa de dica, gesto e aviso passageiro) entraram para ela |
+| `unoovista` | `@edu/ui/ds-unoovista` | superfície disfarçada da exp08ef1b desde a 1.2.0 (ADR-133) e da exp07ef1b desde a 1.1.0 (ADR-135; as telas da escola vão pela `@edu/ui/ds`), e o `PostCard` da gaveta da exp04ef1b desde a 2.1.0 (ADR-136): a cópia estrutural do `instanooria` com a identidade da Unooria. É **outra seção** — tokens `--unv-*`, nunca `--unooria-*` —, e o roxo dela não autoriza peça da plataforma no feed. O ícone é ligadura do Material Symbols: sem `fonts/unoovista.css`, o nome do glifo aparece como texto |
+| `instanooria` | `@edu/ui/ds-insta` | as telas de clone (E2–E4) da exp01ef1b (o `PostCard` da exp04ef1b saiu dela na ADR-136); as sete extensões da 0.2.5 (DM, enquete, diálogo, folha, pílula, compositor de Stories) e as três da 0.2.7 (faixa de dica, gesto e aviso passageiro) entraram para ela |
 | `unootube` | `@edu/ui/ds-unootube` | superfície disfarçada do UnooTube, hoje ARQUIVADO (`backup-exp04ef1b`, ADR-116): nenhuma missão viva a usa |
-| `chatgpt` | `@edu/ui/ds-chatgpt` | a exp02em1b INTEIRA (não tem revelação no software) e a conversa da exp08ef4b (o briefing, o Meu Percurso e o fechamento dela são `unooria`) |
-| `whatsappmobile` | `@edu/ui/ds-whatsapp` | a exp06ef2b e a exp05ef1b, menos as telas da escola — **só tema escuro**. Onde a fronteira cai é a REVELAÇÃO, não o arquivo: na exp06ef2b o mapa da rede fala pela escola porque o app real não tem visualizador de topologia (ADR-72) |
+| `chatgpt` | `@edu/ui/ds-chatgpt` | a conversa da exp08ef4b (o briefing, o Meu Percurso e o fechamento dela são `unooria`). A exp02em1b saiu dela na 1.3.0 (ADR-138) |
+| `unooriaai` | `@edu/ui/ds-unooriaai` | a exp02em1b INTEIRA desde a 1.3.0 (ADR-138; não tem revelação no software): a cópia estrutural do `chatgpt` com a identidade da Unooria. É **outra seção** — tokens `--uai-*`, nunca `--unooria-*` — e é clone, não a plataforma: o agente de IA do professor continua `unooria`. Não publica cor primitiva, e o ícone é ligadura: sem `fonts/unooriaai.css`, o nome do glifo aparece como texto |
+| `whatsappmobile` | `@edu/ui/ds-whatsapp` | a exp06ef2b — **só tema escuro**. Onde a fronteira cai é a REVELAÇÃO, não o arquivo: na exp06ef2b o mapa da rede fala pela escola porque o app real não tem visualizador de topologia (ADR-72) |
+| `unoochat` | `@edu/ui/ds-unoochat` | a exp05ef1b, menos as telas da escola, em tema CLARO (ADR-134), e o `MessageBubble` da gaveta e do desafio final da exp04ef1b desde a 2.1.0, também claro (ADR-136). Mesma estrutura do `whatsappmobile`, identidade da Unooria — e por isso o token dele numa tela da escola não destoa: a fronteira só se vê pelo prefixo |
 | `tiktooria` | — | ainda sem consumidor |
 
 **A exceção, e só ela (ADR-117): conteúdo de uma plataforma DENTRO de uma tela
 da Unooria usa a seção da plataforma que ele imita.** O Jornal da Escola
 (exp04ef1b) não é clone de nada: a redação inteira (mesa, página, Bento,
 leitores, Chave) é `unooria`. Mas uma notícia que veio de rede social aparece na
-gaveta como `PostCard` do `instanooria`, e uma mensagem encaminhada como
-`MessageBubble` do `whatsappmobile` — a peça imitada fala na voz de onde veio,
+gaveta como `PostCard` do `unoovista`, e uma mensagem encaminhada como
+`MessageBubble` do `unoochat` (até a 2.0.0, `instanooria` e `whatsappmobile`;
+ADR-136) — a peça imitada fala na voz de onde veio,
 porque um post que não parece post não ensina a reconhecer post. A regra é
 por PEÇA, nunca por tela: o cromo em volta continua sendo da Unooria, e a peça
 do clone não traz a barra, as abas nem o fundo do app. É o inverso do que
 continua proibido — a plataforma dentro do clone — e vale só para conteúdo que
 a criança deve reconhecer como vindo daquela plataforma.
 
-`^0.2.8` **não** pega `0.3.0` — caret em `0.x` só sobe patch. Atualizar é ativo:
-`pnpm up -r @unooria/design-system --latest`, commitando lockfile e
-`package.json` juntos. Mecânica completa (CSS, fontes, frames, compensações,
-armadilhas de migração) em `packages/ui/AGENTS.md`.
+**Uma versão só, e todo mundo sobe junto** (decisão de 2026-10-02). O hub, a
+ponte `packages/ui` e TODAS as experiências declaram o MESMO intervalo de
+`@unooria/design-system`, e o lockfile resolve UMA versão:
+`apps/api/tests/design-system-versao-unica.spec.ts` reprova o contrário. O custo
+que pagamos: no mesmo dia conviviam 0.2.8, 0.2.11 e 0.2.12, e a divergência é
+muda — a ponte `@edu/ui/ds-*` resolve o DS pela versão DELA, e a folha de CSS
+pela da experiência; o JS e o CSS do mesmo componente saíam de versões
+diferentes, sem erro nenhum.
+
+Subir é UM passo para todos: `pnpm up -r @unooria/design-system@^X.Y.Z` (nunca
+`--filter`: deixa importador para trás), lockfile e `package.json` no mesmo
+commit. Depois, compile cada experiência ANTES e DEPOIS e compare o hash do
+`dist/`: **a que mudou sobe a versão nos três lugares** (o caminho no bucket é
+imutável); a que saiu idêntica byte a byte não sobe; e a que mudou mas JÁ está
+numa versão à frente da do `dev` (subiu desde a última promoção, nunca foi
+publicada) também não sobe de novo — compare com `git show origin/dev:<pasta>/public/experiencia.json`. `^0.2.8` não pega `0.3.0`
+— caret em `0.x` só sobe patch, e minor é decisão ativa. Mecânica completa
+(CSS, fontes, frames, compensações, armadilhas de migração) em
+`packages/ui/AGENTS.md`.
 
 **Precedência sobre a skill `frontend-design`.** Ela serve para arte e peças fora
 do DS (a exceção declarada em `packages/ui/AGENTS.md`, o site público, o

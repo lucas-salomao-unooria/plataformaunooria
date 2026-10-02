@@ -1,5 +1,7 @@
 import { useState } from 'react';
 
+import { IconUnv, ListItem } from '@edu/ui/ds-unoovista';
+
 import { experiencia } from '../../lib/api';
 
 import { Sheet } from './sheet';
@@ -28,25 +30,19 @@ export function MenuPerfil({ aberto, aoFechar }: { aberto: boolean; aoFechar: ()
 
   return (
     <Sheet aberto={aberto} aoFechar={aoFechar} altura="auto" titulo="Sua conta">
-      <ul className="flex flex-col px-1 pb-6">
+      {/* A lista encosta nas bordas da folha, como no menu do perfil do Storybook.
+          Saindo, a linha deixa de ser botão (sem `onClick`, a `ListItem` é texto). */}
+      <ul className="m-0 list-none p-0 [margin-inline:calc(var(--unv-gutter)*-1)]">
         <li>
-          <button
-            type="button"
-            className="w-full px-4 py-4 text-left text-[15px] text-ink active:opacity-60"
-            onClick={sair}
-            disabled={saindo}
-          >
-            {saindo ? 'Saindo…' : 'Sair da conta'}
-          </button>
+          <ListItem
+            size="sm"
+            leading={<IconUnv name="external" />}
+            title={saindo ? 'Saindo…' : 'Sair da conta'}
+            onClick={saindo ? undefined : sair}
+          />
         </li>
         <li>
-          <button
-            type="button"
-            className="w-full px-4 py-4 text-left text-[15px] text-muted active:opacity-60"
-            onClick={aoFechar}
-          >
-            Cancelar
-          </button>
+          <ListItem size="sm" leading={<IconUnv name="close" tone="secondary" />} title="Cancelar" onClick={aoFechar} />
         </li>
       </ul>
     </Sheet>

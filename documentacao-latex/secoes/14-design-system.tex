@@ -31,22 +31,36 @@ token e prefixo de classe próprios. Elas nunca se cruzam.
   \cd{--unooria-*}, classe \cd{.unooria-theme-light|dark} &
   Hub: \emph{landing} (\rota{/}), \emph{login}, \rota{/professor},
   \rota{/admin}, \rota{/analise}; \emph{header} de todos os papéis; telas
-  \textbf{pós-revelação} do estudante; e a redação INTEIRA do Jornal da Escola
-  (exp04ef1b), que não é clone de nada\\
+  \textbf{pós-revelação} do estudante; a redação INTEIRA do Jornal da Escola
+  (exp04ef1b), que não é clone de nada; e a tela da escola do Júri Estadual
+  de Projetos (exp06ef1b: os pacotes e a cadeia)\\
 \zebra \cd{instanooria} (21 + 7 extensões) & \cd{/instanooria} & \cd{--insta-*}, \cd{insta-} &
-  exp08ef1b, exp07ef1b; e só o \cd{PostCard} na gaveta do Jornal da Escola
+  exp07ef1b; e só o \cd{PostCard} na gaveta do Jornal da Escola
   (Seção~\ref{sec:ds-peca-imitada})\\
+\cd{unoovista} (21 + 10 extensões, 0.2.11) & \cd{/unoovista} & \cd{--unv-*},
+  \cd{data-unv-theme} & a superfície disfarçada da \textbf{exp08ef1b}
+  (\adrr{ADR-133}): a cópia estrutural do \cd{instanooria} com a identidade da
+  Unooria. Ícone por ligadura do Material Symbols --- a folha de fonte é
+  obrigatória. Também a exp07ef1b (\adrr{ADR-135}) e a exp06ef1b
+  (\adrr{ADR-137}), que nasceu nele\\
 \cd{unitube} (30) & \cd{/unitube} & \cd{--uni-*}, \cd{uni-} ---
   \textbf{só escuro} & backup-exp04ef1b (o UnooTube arquivado)\\
 \zebra \cd{whatsappmobile} (39) & \cd{/whatsappmobile} & \cd{--wa-*} --- só escuro
-  & \textbf{exp05ef1b e exp06ef2b} --- as duas missões de mensageiro. Na
-  exp05ef1b, do convite da Nina à síntese, e de novo nas perguntas finais (a
-  regra Se/Então e o fechamento são da plataforma). E só o \cd{MessageBubble}
-  na gaveta e no Desafio Final do Jornal da Escola\\
+  & \textbf{exp06ef2b}. E só o \cd{MessageBubble} na gaveta e no Desafio
+  Final do Jornal da Escola\\
+\cd{unoochat} (39) & \cd{/unoochat} & \cd{--unc-*},
+  \cd{data-unc-theme} --- claro e escuro & \textbf{exp05ef1b}, em tema claro
+  (\adrr{ADR-134}): do convite da Nina à síntese, e de novo nas perguntas
+  finais (a regra Se/Então e o fechamento são da plataforma)\\
 \cd{chatgpt} (25) & \cd{/chatgpt} & \cd{--gpt-*},
-  \cd{data-gpt-theme} & \textbf{exp02em1b inteira} --- ela não tem revelação no
-  software, então nunca troca para a seção da plataforma\\
-\zebra \cd{tiktooria} (35) & \cd{/tiktooria} & \cd{--tik-*} &
+  \cd{data-gpt-theme} & a conversa da \textbf{exp08ef4b}. A exp02em1b saiu
+  dela na 1.3.0 (\adrr{ADR-138})\\
+\zebra \cd{unooriaai} (25, 0.2.11) & \cd{/unooriaai} & \cd{--uai-*},
+  \cd{data-uai-theme} --- claro e escuro & \textbf{exp02em1b inteira}
+  (\adrr{ADR-138}) --- ela não tem revelação no software, então nunca troca para
+  a seção da plataforma. Cópia estrutural da \cd{chatgpt} com a identidade da
+  Unooria; sem cor primitiva, e ícone por ligadura\\
+\cd{tiktooria} (35) & \cd{/tiktooria} & \cd{--tik-*} &
   --- (dois \emph{contextos} de superfície: cromo claro de lista e perfil,
   imersivo preto de \emph{feed} e câmera --- não dois temas)\\
 \bottomrule
@@ -144,16 +158,17 @@ no toque em \enquote{Começar missão}. Ver \adrr{ADR-22}.
 de uma tela da Unooria usa a seção da plataforma que ele imita.} O Jornal da
 Escola (exp04ef1b) não é clone de nada: mesa, gaveta, página, Bento, leitores,
 Chave e Desafio Final são \cd{unooria}. Mas a notícia que veio de rede social
-aparece na gaveta como \cd{PostCard} do \cd{instanooria}, e a mensagem
-encaminhada como \cd{MessageBubble} do \cd{whatsappmobile}: a peça imitada fala
+aparece na gaveta como \cd{PostCard} do \cd{unoovista}, e a mensagem
+encaminhada como \cd{MessageBubble} do \cd{unoochat} (até a 2.0.0,
+\cd{instanooria} e \cd{whatsappmobile}; \adrr{ADR-136}): a peça imitada fala
 na voz de onde veio, porque um post que não parece post não ensina a reconhecer
 post.
 \end{regra}
 
 A regra é por \textbf{PEÇA}, nunca por tela. O cromo em volta continua sendo da
 Unooria, e a peça do clone não traz a barra, as abas nem o fundo do aplicativo
---- o balão do WhatsApp vai num contêiner pintado com
-\cd{--wa-color-surface-base}, e não no \cd{ChatWallpaper}, que é o FUNDO do app.
+--- o balão do Unoochat vai num contêiner pintado com
+\cd{--unc-color-surface-base}, e não no \cd{ChatWallpaper}, que é o FUNDO do app.
 O post vem sem \cd{Actions}, \cd{Likes} e \cd{Timestamp}, e o balão sem hora nem
 confirmação de entrega: a data é uma pista que a criança revela à parte, e o
 número de curtidas viraria pista falsa de confiabilidade. É o INVERSO do que
@@ -163,14 +178,15 @@ arquivo (\arq{src/app/pecas/}), que só importa a sua ponte.
 
 \begin{nota}
 \textbf{Três seções na mesma tela, e nenhuma vaza.} A gaveta é a primeira tela
-do repositório com três seções ao mesmo tempo, e a verificação foi feita na
-0.2.8, nas folhas agregadas e nas de cada componente: todo seletor tem o prefixo
-da seção (\cd{.unooria-*}, \cd{.insta-*}, \cd{.wa-*}), nenhuma folha reseta
-\cd{body}, \cd{html}, \cd{*} ou elemento solto, os blocos \cd{:root} só definem
-variáveis do próprio \emph{namespace} e as famílias das folhas de fonte não
-colidem. O tema também não vaza: o \cd{PostCard} com \cd{theme="light"} põe
-\cd{data-insta-theme="light"} no próprio cartão, e o \cd{instanooria} não
-escurece com o sistema em modo escuro. Nada exigiu mexer no DS nem nas pontes.
+do repositório com três seções ao mesmo tempo, e a verificação foi refeita na
+0.2.11, com as seções novas, nas folhas agregadas e nas de cada componente: todo
+seletor tem o prefixo da seção (\cd{.unooria-*}, \cd{.unv-*}, \cd{.unc-*}),
+nenhuma folha reseta \cd{body}, \cd{html}, \cd{*} ou elemento solto, os blocos
+\cd{:root} só definem variáveis do próprio \emph{namespace} e as três folhas de
+fonte declaram as mesmas faces, com as mesmas URLs. O tema também não vaza: as
+duas seções têm o \cd{:root} claro e não seguem o modo escuro do sistema, e cada
+peça fixa o claro no próprio contêiner (\cd{PostCard theme="light"},
+\cd{data-unc-theme="light"}). Nada exigiu mexer no DS.
 \end{nota}
 
 \section{Consumo: sempre pela ponte}
@@ -180,11 +196,14 @@ escurece com o sistema em modo escuro. Nada exigiu mexer no DS nem nas pontes.
 pacote direto num componente:
 
 \begin{tabularx}{\linewidth}{@{}L{28mm}L{22mm}X@{}}
-\cd{@edu/ui/ds} & \cd{unooria} & plataforma, e a redação do Jornal da Escola (com as oito peças da 0.2.8: \cd{NewsCard}, \cd{NewsArticle}, \cd{RevealClue}, \cd{BottomSheet}, \cd{NewspaperPage}, \cd{SpeechBubble}, \cd{PuzzleBlock} e \cd{PuzzleTrack}, mais \cd{NEWS\_MEDIUMS} e \cd{NEWSPAPER\_LAYOUTS})\\
-\cd{@edu/ui/ds-insta} & \cd{instanooria} & exp08ef1b, exp07ef1b (com as extensões da 0.2.5: \cd{DirectThread}, \cd{MessageBubble}, \cd{DmPoll}, \cd{ConfirmDialog}, \cd{BottomSheet}, \cd{FloatingButton}, \cd{StoryComposer}; e as da 0.2.7: \cd{InlineHint}, \cd{GestureHint} e o \cd{Snackbar} do clone, como \cd{SnackbarInsta}); e o \cd{PostCard} da gaveta do Jornal\\
+\cd{@edu/ui/ds} & \cd{unooria} & plataforma, a tela da escola do Júri Estadual (\cd{PuzzleBlock}, \cd{PuzzleTrack}, \cd{AlertBox}), e a redação do Jornal da Escola (com as oito peças da 0.2.8: \cd{NewsCard}, \cd{NewsArticle}, \cd{RevealClue}, \cd{BottomSheet}, \cd{NewspaperPage}, \cd{SpeechBubble}, \cd{PuzzleBlock} e \cd{PuzzleTrack}, mais \cd{NEWS\_MEDIUMS} e \cd{NEWSPAPER\_LAYOUTS})\\
+\cd{@edu/ui/ds-insta} & \cd{instanooria} & o clone da exp01ef1b (com as extensões da 0.2.5, nascidas para a exp07ef1b antes de ela migrar: \cd{DirectThread}, \cd{MessageBubble}, \cd{DmPoll}, \cd{ConfirmDialog}, \cd{BottomSheet}, \cd{FloatingButton}, \cd{StoryComposer}; e as da 0.2.7: \cd{InlineHint}, \cd{GestureHint} e o \cd{Snackbar} do clone, como \cd{SnackbarInsta})\\
+\cd{@edu/ui/ds-unoovista} & \cd{unoovista} & exp08ef1b (\adrr{ADR-133}), exp07ef1b (\adrr{ADR-135}), exp06ef1b (\adrr{ADR-137}) e o \cd{PostCard} da gaveta do Jornal (\adrr{ADR-136}); os nomes que colidem com a plataforma saem com o sufixo \cd{Unv} (\cd{ButtonUnv}, \cd{AvatarUnv}, \cd{IconUnv}\ldots)\\
 \cd{@edu/ui/ds-unootube} & \cd{unitube} & backup-exp04ef1b (o UnooTube arquivado, \adrr{ADR-116}: não roda mais)\\
-\cd{@edu/ui/ds-chatgpt} & \cd{chatgpt} & exp02em1b\\
-\cd{@edu/ui/ds-whatsapp} & \cd{whatsappmobile} & exp05ef1b, exp06ef2b; e o \cd{MessageBubble} da gaveta do Jornal\\
+\cd{@edu/ui/ds-chatgpt} & \cd{chatgpt} & exp08ef4b (a exp02em1b saiu na \adrr{ADR-138})\\
+\cd{@edu/ui/ds-unooriaai} & \cd{unooriaai} & exp02em1b (\adrr{ADR-138}); o \cd{GPTCard} virou \cd{AssistantCard}, e não há \cd{gptGlyphs}\\
+\cd{@edu/ui/ds-whatsapp} & \cd{whatsappmobile} & exp06ef2b\\
+\cd{@edu/ui/ds-unoochat} & \cd{unoochat} & exp05ef1b (\adrr{ADR-134}) e o \cd{MessageBubble} da gaveta e do Desafio Final do Jornal (\adrr{ADR-136})\\
 \end{tabularx}
 \end{regra}
 
@@ -726,6 +745,108 @@ Alvo de toque infantil no \cd{Button}, no \cd{Tab} e no \cd{RadioButton} & O
 \bottomrule
 \end{tabularx}
 
+\subsection{Uma versão só do DS (\adrr{ADR-139})}
+\label{sec:ds-versao-unica}
+
+Desde a 0.2.13, o hub, a ponte \arq{packages/ui} e todas as experiências
+declaram o MESMO intervalo de \cd{@unooria/design-system}, e o
+\emph{lockfile} resolve uma versão só ---
+\arq{apps/api/tests/design-system-versao-unica.spec.ts} reprova o contrário.
+Subir é um passo para todos (\cd{pnpm up -r}); depois, cada experiência é
+compilada antes e depois, e só a que mudou de \emph{bundle} sobe a versão nos
+três lugares --- salvo a que já está numa versão à frente da do \cd{dev},
+nunca publicada. Na 0.2.13 subiram dez; a exp02em1b, a exp05ef1b e a app-70
+saíram idênticas e ficaram. Na 0.2.14 (o \cd{MetricCard} passou a desenhar a
+\cd{description}, que antes aceitava e ignorava), doze mudaram e nenhuma subiu:
+todas já estavam à frente do \cd{dev}.
+
+\subsection{O Júri Estadual e o \cd{StoryPoll} da 0.2.12 (exp06ef1b 0.1.0)}
+\label{sec:ds-juri-0211}
+
+O Júri Estadual de Projetos (\adrr{ADR-137}) é a primeira missão que
+\textbf{nasce} no \cd{unoovista}, pela ponte \cd{@edu/ui/ds-unoovista}, com o DS
+\cd{\textasciicircum{}0.2.12}. A fronteira do disfarce é QUEM FALA: do crachá à
+galeria quem conduz é a comissão da mostra, dentro do clone --- inclusive a
+revelação, que é um comunicado da comissão ---; os pacotes e a cadeia saem do
+clone para a tela da escola (\cd{unooria}, com \cd{PuzzleBlock} e
+\cd{PuzzleTrack} por toque sequencial: o DS não tem arrastar), porque é a
+Unooria mostrando a engrenagem; e o caso Mariana, a consulta e o fim voltam ao
+clone, porque quem pergunta e quem homologa é a comissão. São telas diferentes:
+nenhuma mistura as duas seções.
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
+\toprule
+\headrow \thd{Tela} & \thd{Componentes do DS}\\
+\midrule
+O feed e a cédula & \cd{TopBar}, \cd{PostCard} (o carrossel de duas lâminas com
+  \cd{currentIndex}/\cd{totalCount}), \cd{InlineHint}, \cd{GestureHint},
+  \cd{FloatingButton} (a barra da cédula), \cd{TabBar} com duas abas,
+  \cd{BottomSheetUnv} com \cd{ListItem} e \cd{Chip}, \cd{SnackbarUnv}.\\
+\zebra A Galeria Oculta & \cd{InlineHint} \cd{friction} (a taxa real),
+  \cd{SearchField}, \cd{Chip} (as quatro \emph{hashtags}), \cd{MediaGrid},
+  \cd{BottomSheetUnv} (a ficha e a cédula da revisão), \cd{BadgeUnv} com
+  \cd{wrap}.\\
+Os pacotes e a cadeia (escola) & \cd{ScrollBar}, \cd{Logo},
+  \cd{SectionHeader}, \cd{PuzzleBlock}, \cd{PuzzleTrack}, \cd{AlertBox},
+  \cd{Button}.\\
+\zebra A consulta nos Stories & \cd{StoryViewer} em tema escuro, três
+  segmentos, sem avanço automático, e o \cd{StoryPoll} sobre a mídia
+  (abaixo).\\
+\bottomrule
+\end{tabularx}
+
+\begin{regra}
+\textbf{O \cd{StoryPoll} é a enquete de HISTÓRIA}, pedida por esta missão: a
+figurinha de enquete que vai na camada \cd{children} do \cd{StoryViewer} e se
+centraliza sozinha no palco, com o contrato da \cd{DmPoll} --- voto único,
+\cd{value} controlado para reabrir travada num F5, sem contagem, sem porcentagem
+e sem gabarito (devolve só o \cd{id}). Saiu na \textbf{0.2.12}
+(\arq{storybook-unooria}, PR \#13, publicada em 2026-10-02), e a ponte
+\arq{packages/ui/src/ds-unoovista.ts} o exporta. A \cd{DmPoll} que ocupou o
+lugar dele enquanto o PR estava aberto (a casca
+\arq{figurinha-de-enquete.tsx}) saiu no mesmo dia. A ponte subiu para a 0.2.12
+e só a exp06ef1b subiu junto: os \emph{bundles} das quatro experiências que
+usam a ponte do Unoovista saíram idênticos byte a byte, antes e depois (a
+versão nova só acrescenta o componente), e por isso nenhuma delas subiu de
+versão.
+\end{regra}
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
+\toprule
+\headrow \thd{Lacuna aberta na 0.2.12} & \thd{Compensação na exp06ef1b 0.1.0}\\
+\midrule
+O \cd{ListItem} corta título e subtítulo numa linha & Certo para
+  conversa, errado para um cartão de 20 palavras: \cd{.escolha} e
+  \cd{.infografico\_\_passos} mudam só \cd{white-space} e alinhamento. Pedido:
+  a \emph{prop} \cd{wrap} no \cd{ListItem}.\\
+O \cd{GestureHint} se posiciona contra o pai, e a mídia com \cd{src} não
+  aceita filho & \cd{.gesto-do-carrossel}, uma camada ANTES da mídia (depois
+  dela quebraria o \cd{media + actions} que põe a pílula sobre a imagem).
+  Posição pura. Pedido: \cd{hint} (ou \cd{children} com \cd{src}) no
+  \cd{PostCard.Media}.\\
+\zebra O botão de confirmar rola com o corpo da folha & \cd{.cedula\_\_confirmar},
+  \cd{position: sticky} dentro do corpo que rola do \cd{BottomSheetUnv}. Posição
+  pura.\\
+\bottomrule
+\end{tabularx}
+
+\begin{atencao}
+\textbf{O que a 0.2.11 não deixa esconder, e as \emph{props} que enganam.} Os
+botões de comentar, compartilhar e salvar do \cd{PostCard.Actions} ficam na
+pílula sem ação --- o DS não tem \emph{prop} para escondê-los, e escondê-los por
+CSS seria mexer na aparência do controle (pedido: ações configuráveis). O
+\cd{ListItem} não aceita \cd{type} nem \cd{disabled}: o desabilitado é
+\cd{aria-disabled} com guarda no toque. O \cd{TopBar} reserva os 44\,px da
+barra de estado por padrão, e vai com \cd{withStatusBarInset=\{false\}}. O
+\cd{StoryViewer} e o \cd{MediaGrid} exigem \cd{src}: a arte procedural vai em
+\emph{data URI}, com as cores lidas dos \emph{tokens} \cd{--unv-*}, e o texto
+fica fora do SVG, porque um \cd{<img>} não carrega a fonte do app. O
+\cd{BottomSheetUnv}, o \cd{FloatingButton} e o \cd{SnackbarUnv} se posicionam
+contra o contêiner posicionado mais próximo. E o \cd{PuzzleBlock} desenha o
+glifo por ligadura: sem a folha \arq{fonts/unooria.css}, o nome do ícone
+aparece escrito.
+\end{atencao}
+
 \subsection{Lacunas abertas em \cd{chatgpt} na 0.1.19 (exp08ef4b 0.1.0)}
 
 A seção tem 26 componentes e cobre o cromo do cliente \emph{web} --- barra
@@ -788,6 +909,38 @@ o clique e deixaria o \emph{Tab} alcançar os botões atrás do véu --- a mesma
 classe de defeito que o \cd{Collapse} da app-92 produziu, com 30 alvos focáveis
 dentro de um \cd{aria-hidden}.
 \end{nota}
+
+\subsection{A troca da exp02em1b para \cd{unooriaai} na 0.2.11 (exp02em1b 1.3.0)}
+
+A seção \cd{unooriaai} é cópia estrutural da \cd{chatgpt}, e a troca foi de
+ponte, de \emph{token} e de tema (\adrr{ADR-138}). Nenhum componente faltou. O
+que mordeu está fora da API, e o \emph{typecheck} não vê nenhum dos três:
+
+\begin{tabularx}{\linewidth}{@{}L{38mm}X@{}}
+\toprule
+\headrow \thd{Diferença} & \thd{Como está resolvido}\\
+\midrule
+Não há cor primitiva & \cd{--uai-color-*} não existe, e classe de cor que não
+  existe no Tailwind não dá erro: o fundo some. As Equipes saem de \emph{token}
+  semântico (Alfa = \cd{--uai-status-info}, Bravo = \cd{--uai-bg-brand}); as
+  fichas sobre o painel escuro do briefing levam \cd{data-uai-theme="light"},
+  porque o semântico troca de degrau com o tema.\\
+\zebra Escada translúcida mais forte & \cd{fill-2/4/8/10} são
+  5/10/20/30\,\% contra 2/4/8/10\,\% na \cd{chatgpt}. A chuva do briefing
+  desceu para \cd{fill-2}; o resto ficou no mesmo nome de degrau.\\
+\cd{Icon} por ligadura, sem \cd{gptGlyphs} & As setas viram
+  \cd{<Icon name="arrowForward">} (a de recolher a trilha, com \cd{rotate}).
+  Sem \cd{fonts/unooriaai.css}, a tela escreve o nome do ícone.\\
+\bottomrule
+\end{tabularx}
+
+Continuam abertas, e são as mesmas da \cd{chatgpt}: não há indicador de
+carregamento (a experiência anima três pontos dentro do \cd{ChatBubble}) nem
+campo de seleção (a Decisão usa o \cd{<select>} nativo com os \emph{tokens}
+\cd{--uai-*}); e o \cd{Modal} mantém \cd{onClose} nas dependências do efeito
+de foco, então os \emph{handlers} de fechar continuam estáveis
+(\cd{useCallback}). As duas compensações de CSS da seção antiga eram código
+morto e saíram.
 
 \subsection{Avisos que ficaram obsoletos}
 

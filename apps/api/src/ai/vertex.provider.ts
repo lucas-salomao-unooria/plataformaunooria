@@ -2,6 +2,8 @@ import { GoogleAuth } from "google-auth-library";
 import { Agent, fetch as fetchDoUndici } from "undici";
 import type {
   AiConversaRequest,
+  AiFluxoEvento,
+  AiFluxoRequest,
   AiImagemOpcoes,
   AiJsonRequest,
   AiJsonSchema,
@@ -122,6 +124,46 @@ export function endpointVertex(alvo: { project?: string; location: string; model
   return `https://${host}/v1/projects/${alvo.project}/locations/${alvo.location}/publishers/google/models/${alvo.model}:generateContent`;
 }
 
+/** O mesmo endereço, no método que devolve aos pedaços (`alt=sse`: uma linha
+ *  `data:` por pedaço, cada uma um `GenerateContentResponse` inteiro). */
+export function endpointVertexEmFluxo(alvo: { project?: string; location: string; model: string }): string {
+  return endpointVertex(alvo).replace(/:generateContent$/, ":streamGenerateContent?alt=sse");
+}
+
+/**
+ * Lê um corpo SSE do Vertex e devolve cada `data:` já como objeto. Puro sobre
+ * o iterável de bytes — exportado para o teste não precisar de rede.
+ *
+ * Decide por LINHA (como o cliente do Agent Engine): um pedaço de rede pode
+ * cortar uma linha no meio, então o resto fica no buffer até a próxima quebra.
+ * Linha que não é JSON é descartada — um pedaço ilegível não derruba a fala.
+ */
+export async function* lerSseDoVertex(corpo: AsyncIterable<Uint8Array>): AsyncGenerator<RespostaGenerate> {
+  const decodificador = new TextDecoder();
+  let resto = "";
+  const deLinha = (linha: string): RespostaGenerate | null => {
+    const limpa = linha.trim();
+    if (!limpa.startsWith("data:")) return null;
+    try {
+      return JSON.parse(limpa.slice(5).trim()) as RespostaGenerate;
+    } catch {
+      return null;
+    }
+  };
+  for await (const pedaco of corpo) {
+    resto += decodificador.decode(pedaco, { stream: true });
+    const linhas = resto.split("\n");
+    resto = linhas.pop() ?? "";
+    for (const linha of linhas) {
+      const dado = deLinha(linha);
+      if (dado) yield dado;
+    }
+  }
+  resto += decodificador.decode();
+  const ultima = deLinha(resto);
+  if (ultima) yield ultima;
+}
+
 /**
  * Os modelos 2.5 e 3.x "pensam" por padrão E os tokens de raciocínio saem do
  * `maxOutputTokens` — medido também no 3.6-flash, que gastou 521 tokens de
@@ -153,7 +195,7 @@ type ParteVertex = {
 
 type ConteudoVertex = { role?: string; parts?: ParteVertex[] };
 
-type RespostaGenerate = {
+export type RespostaGenerate = {
   candidates?: Array<{
     content?: ConteudoVertex;
     finishReason?: string;
@@ -473,6 +515,69 @@ export class VertexProvider implements AiProvider {
     }
 
     throw new ErroDeGeracao("O modelo não respondeu de forma aceitável.", ultimoErro);
+  }
+
+  /**
+   * Conversa sem ferramentas, aos pedaços (`AiProvider.conversarEmFluxo`).
+   *
+   * `streamGenerateContent?alt=sse` e não `generateContent`: quem lê é o avatar
+   * da Ajuda, que começa a falar no primeiro pedaço e desiste se o primeiro
+   * byte passar de 10 s (MEDIDO no spike da ADR-132). Esperar a resposta
+   * inteira somaria o tempo de geração ao silêncio da pessoa.
+   *
+   * As partes de raciocínio (`thought: true`) ficam FORA da fala, como em
+   * `conversar`. O uso de tokens chega no último pedaço (`usageMetadata`
+   * acumulado) — por isso o total vem do maior valor visto, não da soma.
+   */
+  async *conversarEmFluxo(req: AiFluxoRequest): AsyncGenerator<AiFluxoEvento> {
+    const project = process.env.VERTEX_PROJECT_ID;
+    const location = process.env.VERTEX_LOCATION ?? LOCALIZACAO_PADRAO;
+    const model = process.env.VERTEX_MODEL ?? MODELO_PADRAO;
+    const res = await fetchDoUndici(endpointVertexEmFluxo({ project, location, model }), {
+      method: "POST",
+      headers: { authorization: `Bearer ${await this.accessToken()}`, "content-type": "application/json" },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: req.system }] },
+        contents: req.historico.map((m) => ({
+          role: m.papel === "pessoa" ? "user" : "model",
+          parts: [{ text: m.texto }],
+        })),
+        generationConfig: {
+          maxOutputTokens: req.maxTokens ?? 1024,
+          ...(req.temperatura !== undefined ? { temperature: req.temperatura } : {}),
+          ...thinkingConfig(),
+        },
+      }),
+      dispatcher,
+      ...(req.sinal ? { signal: req.sinal } : {}),
+    });
+    if (!res.ok || !res.body) {
+      const corpo = (await res.text()).slice(0, 300);
+      throw new ErroDeGeracao(`Vertex respondeu ${res.status}`, corpo);
+    }
+
+    let tokens = 0;
+    let tokensEntrada: number | undefined;
+    let tokensSaida: number | undefined;
+    let finishReason: string | undefined;
+    let texto = "";
+    for await (const dado of lerSseDoVertex(res.body)) {
+      const candidato = dado.candidates?.[0];
+      const pedaco = (candidato?.content?.parts ?? [])
+        .filter((p) => p.thought !== true && typeof p.text === "string")
+        .map((p) => p.text)
+        .join("");
+      if (pedaco) {
+        texto += pedaco;
+        yield { tipo: "texto", texto: pedaco };
+      }
+      if (candidato?.finishReason) finishReason = candidato.finishReason;
+      const uso = dado.usageMetadata;
+      if (uso?.totalTokenCount !== undefined) tokens = Math.max(tokens, uso.totalTokenCount);
+      if (uso?.promptTokenCount !== undefined) tokensEntrada = uso.promptTokenCount;
+      if (uso?.candidatesTokenCount !== undefined) tokensSaida = uso.candidatesTokenCount;
+    }
+    yield { tipo: "fim", resultado: { texto, tokensUsados: tokens, tokensEntrada, tokensSaida, finishReason } };
   }
 
   /** Imagem via modelo próprio (VERTEX_IMAGE_MODEL) com responseModalities —
