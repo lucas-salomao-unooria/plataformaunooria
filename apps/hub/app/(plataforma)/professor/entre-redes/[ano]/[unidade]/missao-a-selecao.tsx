@@ -53,10 +53,8 @@ export function MissaoASelecao({
           <Tag variant="neutral" size="sm" pill>
             {ficha.duracao}
           </Tag>
-          <Tag variant="neutral" size="sm" pill>
-            {ficha.formato}
-          </Tag>
         </div>
+        <p className="max-w-3xl text-[13px] leading-relaxed text-unooria-neutral-500">Formato: {ficha.formato}</p>
         <p className="max-w-3xl text-[13px] leading-relaxed text-unooria-neutral-500">
           {ficha.competencia}
         </p>
