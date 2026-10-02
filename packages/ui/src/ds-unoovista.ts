@@ -20,9 +20,10 @@
  * A importação é pelo SUBCAMINHO (`@unooria/design-system/unoovista`), nunca
  * pelo namespace `UnoovistaUI`: o subcaminho preserva o tree-shaking.
  *
- * ONDE USAR: a superfície disfarçada da exp08ef1b. A `instanooria` continua viva
- * e intacta para quem ainda a usa (a exp07ef1b, o clone da exp01ef1b e o
- * `PostCard` da exp04ef1b) — as duas seções coexistem e não se misturam.
+ * ONDE USAR: as superfícies disfarçadas da exp08ef1b e da exp07ef1b (A
+ * Seleção). A `instanooria` continua viva e intacta para quem ainda a usa (o
+ * clone da exp01ef1b e o `PostCard` da exp04ef1b) — as duas seções coexistem e
+ * não se misturam.
  *
  * Os nomes que COLIDEM com a plataforma (`ds.ts`) ganham o sufixo `Unv`, o
  * prefixo dos tipos da própria seção (`UnvIconName`), pela mesma regra do
@@ -56,10 +57,30 @@ export {
   TopBar,
 } from '@unooria/design-system/unoovista';
 
+/**
+ * As peças que a exp07ef1b (A Seleção) trouxe do Instanooria: a DM da Amara
+ * (`DirectThread` + `MessageBubble` + `DmPoll`), o alerta irreversível da
+ * publicação (`ConfirmDialog`), a pílula "Ir para aba Salvos"
+ * (`FloatingButton`), as dicas (`InlineHint`, `GestureHint`) e as abas do
+ * Mural (`SegmentedTabs`). Nenhuma colide com a plataforma.
+ */
+export {
+  ConfirmDialog,
+  DirectThread,
+  DmPoll,
+  FloatingButton,
+  GestureHint,
+  InlineHint,
+  MessageBubble,
+  SegmentedTabs,
+} from '@unooria/design-system/unoovista';
+
 export type {
+  UnvDmPollOption,
   UnvIconName,
   UnvMediaItem,
   UnvProfileStat,
+  UnvSegmentItem,
   UnvStoryBubbleState,
   UnvTabItem,
 } from '@unooria/design-system/unoovista';
