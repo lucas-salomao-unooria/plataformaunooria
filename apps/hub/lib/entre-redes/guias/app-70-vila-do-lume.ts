@@ -335,7 +335,7 @@ export const GUIA_APP_70: GuiaDaAula = {
       "Convivência / Projeto de vida: escrever com a turma o combinado da sala sobre pedidos por mensagem — inclusive entre eles, que é onde o pedido pequeno acontece de verdade.",
       "Língua Portuguesa: comparar as três mensagens como três textos com o mesmo objetivo e registros diferentes. Qual é mais educado? Qual é mais eficaz? As duas respostas não coincidem, e é esse o assunto.",
       "Matemática (anos finais): a pressa como variável. Quanto tempo cada mensagem dava para pensar? O que muda numa decisão com 5 segundos e com 5 minutos?",
-      "Para o professor do 8º ano: o perfil que este jogo lê é o que decide de que lado nasce o feed do Instanooria. Rodar a Vila antes é o Ato 1 daquela missão — e a turma não pode saber disso.",
+      "Para o professor do 8º ano: o perfil que este jogo lê é o que decide de que lado nasce o feed do Unoovista. Rodar a Vila antes é o Ato 1 daquela missão — e a turma não pode saber disso.",
     ],
   },
 
@@ -345,7 +345,7 @@ export const GUIA_APP_70: GuiaDaAula = {
     "Na revelação, diga com todas as letras que o “Estudante 14” não foi um colega de verdade.",
     "Confira nos resultados se as três bolhas estão na sua turma: sem as três, a revelação não tem o que comparar. Nos anos iniciais são duas, e projetar a terceira é discutir uma mensagem que ninguém recebeu.",
     "O perfil de valores que o jogo lê não é rótulo de criança. Não vira apelido, categoria, nota nem adjetivo — é o que o jogo captou naquele dia.",
-    "Se a turma souber que este jogo alimenta outra missão, o Ato 1 do Instanooria deixa de funcionar. Essa informação é sua.",
+    "Se a turma souber que este jogo alimenta outra missão, o Ato 1 do Unoovista deixa de funcionar. Essa informação é sua.",
     "Se alguma criança contar que já caiu em um golpe de verdade, acolha na hora e sem plateia. A aula pode esperar; e essa criança acabou de fazer exatamente o que a missão pede que as pessoas façam.",
   ],
 

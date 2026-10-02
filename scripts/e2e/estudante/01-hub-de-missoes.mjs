@@ -40,7 +40,7 @@ await suite(
   },
   async (r) => {
     /* A grade do 8º ano: a transversal (Vila, `series: []`) e as missões do ano
-       (Instanooria na unidade 1, Manifesto da IA na 4 — as duas com
+       (Unoovista na unidade 1, Manifesto da IA na 4 — as duas com
        `series: ["8EF"]`). O seed libera TODAS na 8A e NENHUMA na 8B — as turmas
        "B" ficam fechadas de propósito, para o professor exercitar liberar sem
        interferir em suíte de estudante.
@@ -53,7 +53,7 @@ await suite(
        `apps/api/tests/salas-postgres.spec.ts`. */
     const missoes = [
       { texto: "Vila do Lume", expId: "app-70-vila-do-lume", declara: ["allow-pointer-lock"] },
-      { texto: "Instanooria", expId: "exp08ef1b", declara: [] },
+      { texto: "Unoovista", expId: "exp08ef1b", declara: [] },
       { texto: "Manifesto da IA", expId: "exp08ef4b", declara: ["allow-forms"] },
     ];
     const OPCIONAIS = ["allow-pointer-lock", "allow-forms"];
@@ -105,7 +105,7 @@ await suite(
       mostra: `A turma ${daOitoA.turma} no topo e um cartão por missão da grade do ano — ${titulos.join(", ")}.`,
       prova:
         "A lista não é mais o catálogo inteiro: é a grade da TURMA. A copy é a do estudante, nunca " +
-        "a do professor — a ficha docente do Instanooria entrega a virada da missão, e lê-la antes " +
+        "a do professor — a ficha docente do Unoovista entrega a virada da missão, e lê-la antes " +
         "destruiria a experiência que ela mede.",
       detalhe: `${titulos.length} missões, ${abertos} abertas`,
     });
