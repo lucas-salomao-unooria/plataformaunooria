@@ -121,8 +121,8 @@ como imutável. O porquê inteiro, e a separação entre *subir* e *ativar*, em
    bug de enturmamento.
    - Tabela `disponibilidades`: uma linha por (recurso `produto:<slug>` ou
      `experiencia:<expId>`, escopo escola, regional ou contrato). **Ausência de
-     linha = LIGADO** — o contrário de `liberacoes`, porque este interruptor é
-     mecanismo de EXCEÇÃO. **O escopo mais específico ganha** e **o produto é um
+     linha = LIGADO** (salvo produto em teste interno, que nasce desligado) — o
+     contrário de `liberacoes`, porque este interruptor é mecanismo de EXCEÇÃO. **O escopo mais específico ganha** e **o produto é um
      TETO**: desligado no escopo que vale, nada dentro dele liga. Detalhe em
      `apps/api/src/recursos/AGENTS.md`.
    - **Experiência nova entra no painel declarando `produto` no

@@ -71,6 +71,10 @@ const ExperienciaNoPainelSchema = z.object({
 
 const ProdutoNoPainelSchema = z.object({
   slug: z.enum(PRODUTOS),
+  /** O que vale sem linha em escopo nenhum — `false` para o produto em teste
+   *  interno (`PRODUTOS_DESLIGADOS_POR_PADRAO`). É o que a tela escreve em
+   *  "Padrão (…)": sem isto ela diria "ligado" de um produto que nasce desligado. */
+  ligadoPorPadrao: z.boolean(),
   estadoAqui: z.enum(ESTADOS_DO_INTERRUPTOR),
   efetivo: EfetivoNoPainelSchema,
   experiencias: z.array(ExperienciaNoPainelSchema),

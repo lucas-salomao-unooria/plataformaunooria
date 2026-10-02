@@ -162,6 +162,17 @@ bloqueio; aqui é o mundo normal, porque este interruptor é mecanismo de EXCEÇ
 Nascer desligado exigiria uma linha por recurso a cada contrato provisionado, e
 toda experiência nova ficaria invisível até alguém lembrar de ligá-la.
 
+**A exceção: produto em TESTE INTERNO nasce desligado** —
+`PRODUTOS_DESLIGADOS_POR_PADRAO` em `catalogo.ts`, hoje só a `ajuda` (ADR-132,
+decisão do dono do produto em 2026-10-02). Sem linha em escopo nenhum ela fica
+fora do ar para todos, e o `admin` a liga no painel para a escola ou a rede onde
+quer testar. O padrão mora no RESOLVEDOR (`resolverProduto`), e não numa linha
+semeada por migration: `definido_por` é NOT NULL com FK para `users`, e numa
+stack nova não há usuário para assinar. O painel recebe `ligadoPorPadrao` e
+escreve "Padrão (desligado)" — sem isso a tela diria "ligado" de um produto que
+nasce desligado. Lançar = tirar o slug da lista, e isso muda o padrão de TODAS
+as redes de uma vez.
+
 **A linha inteira é a decisão**: `ligado` e `versao_fixa` não se resolvem em
 cadeias separadas — campo a campo produziria estados que ninguém explica
 olhando a tela.
