@@ -1,4 +1,4 @@
-import { BadgeInsta, BottomSheet } from "@edu/ui/ds-insta";
+import { BadgeUnv, BottomSheetUnv } from "@edu/ui/ds-unoovista";
 import { telemetria } from "../../lib/telemetria";
 import { FICHA } from "../../lib/textos-da-ficha";
 import type { Equilibrio, FichaDoPost, Lente } from "../../lib/tipos";
@@ -34,7 +34,7 @@ export default function FichaTecnica({
   aoMudar: (aberta: boolean) => void;
 }) {
   return (
-    <BottomSheet
+    <BottomSheetUnv
       modal={false}
       theme="dark"
       open={aberta}
@@ -49,12 +49,12 @@ export default function FichaTecnica({
       <div className="ficha">
         {ficha && (
           <div className="ficha__tags">
-            <BadgeInsta variant="neutral" theme="dark" wrap>
+            <BadgeUnv variant="neutral" theme="dark" wrap>
               {FICHA.fonte(ficha.fonte)}
-            </BadgeInsta>
-            <BadgeInsta variant="neutral" theme="dark" wrap>
+            </BadgeUnv>
+            <BadgeUnv variant="neutral" theme="dark" wrap>
               {FICHA.angulo(ficha.angulo)}
-            </BadgeInsta>
+            </BadgeUnv>
           </div>
         )}
         <h2 className="ficha__titulo">{FICHA.equilibrio}</h2>
@@ -62,7 +62,7 @@ export default function FichaTecnica({
         <BarrasDoEquilibrio rotulo={rotuloDoPar} equilibrio={par} />
         <p className="ficha__espera">{FICHA.esperaEtapa5}</p>
       </div>
-    </BottomSheet>
+    </BottomSheetUnv>
   );
 }
 

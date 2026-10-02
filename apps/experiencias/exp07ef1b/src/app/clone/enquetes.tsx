@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { DmPoll } from "@edu/ui/ds-insta";
+import { DmPoll } from "@edu/ui/ds-unoovista";
 import { api, reportarErro, statusDoErro, tipoDaFalha } from "../../lib/api";
 import { separarEnunciado } from "../../lib/regras";
 import { telemetria } from "../../lib/telemetria";

@@ -3,7 +3,7 @@
  * aparelho, o texto que não é controle, e as compensações MARCADAS.
  *
  * **Cor nunca se escreve à mão aqui.** Ela sai dos tokens da seção que está
- * FALANDO: `--insta-*` dentro do clone, `--unooria-*` nas telas da escola. Um
+ * FALANDO: `--unv-*` dentro do clone, `--unooria-*` nas telas da escola. Um
  * hexadecimal literal é uma cor que não acompanha o pacote quando ele muda —
  * e, num clone, é a cor que denuncia o disfarce na primeira atualização do DS.
  * Os `var(--x, reserva)` servem só para a tela não ficar transparente antes de
@@ -15,7 +15,7 @@
  * rolar, a tarja de conexão e a etiqueta que quebra) morreram na 1.0.1, quando
  * o DS 0.2.7 publicou `InlineHint`, `GestureHint`, `Snackbar` e `Badge wrap`.
  *
- * Sobrescrever classe do DS exige DOIS seletores (`.x > .insta-y`): o CSS do
+ * Sobrescrever classe do DS exige DOIS seletores (`.x > .unv-y`): o CSS do
  * pacote é injetado pelo módulo do componente, DEPOIS deste arquivo no grafo
  * de importação — com peso igual, ganha sempre o DS.
  *
@@ -39,9 +39,9 @@ body {
   /* O aparelho é desenhado pelo HUB (`DispositivoFrame`, a partir do
      `viewport` 375×812 do manifesto). Aqui dentro só se preenche o recorte —
      o `PhoneFrame` da seção NÃO entra: seria um celular dentro de outro. */
-  background: var(--insta-color-background-primary, #fff);
-  color: var(--insta-color-text-primary, #262626);
-  font-family: var(--insta-font-sans, system-ui, sans-serif);
+  background: var(--unv-color-background-primary, #fff);
+  color: var(--unv-color-text-primary, #22272a);
+  font-family: var(--unv-font-sans, "Open Sans", system-ui, sans-serif);
   -webkit-font-smoothing: antialiased;
 }
 
@@ -58,8 +58,8 @@ body {
 .app--centrado {
   align-items: center;
   justify-content: center;
-  gap: var(--insta-spacing-l, 16px);
-  padding: var(--insta-spacing-xxl, 24px);
+  gap: var(--unv-spacing-l, 16px);
+  padding: var(--unv-spacing-xxl, 24px);
   text-align: center;
 }
 
@@ -78,23 +78,23 @@ body {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
-   O CLONE — tokens `--insta-*`, e só eles.
+   O CLONE — tokens `--unv-*`, e só eles.
    Do "Abrir Feed da Cobertura" até o fechamento da Amara, e de novo nas
    enquetes da DM.
    ═══════════════════════════════════════════════════════════════════════ */
 
 .esqueleto__topo {
-  height: var(--insta-topbar-content-height, 44px);
-  background: var(--insta-color-background-secondary, #fafafa);
-  box-shadow: var(--insta-elevation-bar-bottom);
+  height: var(--unv-topbar-content-height, 44px);
+  background: var(--unv-color-background-secondary, #f7f6fa);
+  box-shadow: var(--unv-elevation-bar-bottom);
 }
 
 .aviso-de-abertura {
   margin: 0;
   max-width: 300px;
-  font-size: var(--insta-font-body-md-size, 15px);
+  font-size: var(--unv-font-body-md-size, 14px);
   line-height: 1.45;
-  color: var(--insta-color-text-primary, #262626);
+  color: var(--unv-color-text-primary, #22272a);
 }
 
 /* Uma tela do clone. `position: relative` porque a pílula flutuante, o alerta
@@ -107,14 +107,14 @@ body {
   min-height: 0;
   height: 100%;
   overflow: hidden;
-  background: var(--insta-color-background-primary, #fff);
-  color: var(--insta-color-text-primary, #262626);
+  background: var(--unv-color-background-primary, #fff);
+  color: var(--unv-color-text-primary, #22272a);
 }
 
-/* O Story, o Mural e a espera: o app fica escuro (o `data-insta-theme="dark"`
+/* O Story, o Mural e a espera: o app fica escuro (o `data-unv-theme="dark"`
    do elemento troca os tokens para baixo dele). */
 .tela--story {
-  background: var(--insta-color-background-primary, #000);
+  background: var(--unv-color-background-primary, #0e1039);
 }
 
 /* A área que rola. As experiências NÃO usam o `ScrollBar` do DS — ele é da
@@ -139,12 +139,12 @@ body {
 /* ─────────────────────────────────────────────── E2: o feed */
 
 .post {
-  border-bottom: 0.33px solid var(--insta-color-border-subtle, rgba(60, 60, 67, 0.29));
-  padding-bottom: var(--insta-spacing-m, 12px);
+  border-bottom: 0.33px solid var(--unv-color-border-subtle, #dfddeb);
+  padding-bottom: var(--unv-spacing-m, 12px);
 }
 
 .post > .post__comentario {
-  margin-top: var(--insta-spacing-4xs, 2px);
+  margin-top: var(--unv-spacing-4xs, 2px);
 }
 
 /*
@@ -159,7 +159,11 @@ body {
   display: flex;
   flex: 1 1 auto;
   padding: 16px;
-  background: var(--insta-color-background-tertiary, #f8f8f8);
+  /* As ações do Unoovista são uma pílula SOBRE a mídia (não uma barra abaixo
+     dela, como no Instanooria): a moldura para acima dela, ou a pílula cobre
+     o fim da descrição. As medidas são as do próprio `PostCard`. */
+  padding-bottom: calc(2 * var(--unv-post-card-pill-inset, 12px) + var(--unv-post-card-pill-height, 52px));
+  background: var(--unv-color-background-tertiary, #efeef5);
 }
 
 .card-procedural__texto {
@@ -169,12 +173,12 @@ body {
   width: 100%;
   margin: 0;
   padding: 20px;
-  border: 1.5px solid var(--insta-color-border-default, #c7c7cc);
+  border: 1.5px solid var(--unv-color-border-default, #ccc9de);
   border-radius: 12px;
   text-align: center;
   font-size: 17px;
   line-height: 24px;
-  color: var(--insta-color-text-primary, #262626);
+  color: var(--unv-color-text-primary, #22272a);
   overflow: hidden;
 }
 
@@ -182,39 +186,39 @@ body {
 
 .salvos__vazio {
   margin: 0;
-  padding: var(--insta-spacing-4xl, 48px) var(--insta-gutter, 15px);
+  padding: var(--unv-spacing-4xl, 48px) var(--unv-gutter, 16px);
   text-align: center;
-  color: var(--insta-color-text-primary, #262626);
-  font-size: var(--insta-font-body-md-size, 15px);
+  color: var(--unv-color-text-primary, #22272a);
+  font-size: var(--unv-font-body-md-size, 14px);
 }
 
 /* O compositor fica preso acima da barra de abas; quem rola é a grade. */
 .salvos__compositor {
   flex-shrink: 0;
-  box-shadow: var(--insta-elevation-hairline-top);
+  box-shadow: var(--unv-elevation-hairline-top);
 }
 
 /* ───────────────────────────── E3-SIS-01, E4: o Story e o Mural */
 
 .espera__status {
   flex-shrink: 0;
-  padding: var(--insta-spacing-m, 12px) var(--insta-gutter, 15px);
+  padding: var(--unv-spacing-m, 12px) var(--unv-gutter, 16px);
   text-align: center;
 }
 
 .espera__titulo {
   margin: 0;
-  font-size: var(--insta-font-title-sm-size, 14px);
+  font-size: var(--unv-font-title-sm-size, 14px);
   font-weight: 600;
   line-height: 1.35;
-  color: var(--insta-color-text-primary, #f9f9f9);
+  color: var(--unv-color-text-primary, #f5f5f5);
 }
 
 .espera__descricao {
-  margin: var(--insta-spacing-3xs, 4px) 0 0;
-  font-size: var(--insta-font-caption-md-size, 12px);
+  margin: var(--unv-spacing-3xs, 4px) 0 0;
+  font-size: var(--unv-font-caption-md-size, 12px);
   line-height: 1.4;
-  color: var(--insta-color-text-secondary, #979797);
+  color: var(--unv-color-text-secondary, #cbd4d6);
 }
 
 /* O contêiner do `StoryViewer`: a altura que sobra, DEFINIDA (flex com base
@@ -232,8 +236,8 @@ body {
   margin: 0;
   max-height: 86px;
   overflow: hidden;
-  color: var(--insta-color-text-primary, #f9f9f9);
-  font-size: var(--insta-font-body-md-size, 15px);
+  color: var(--unv-color-text-primary, #f5f5f5);
+  font-size: var(--unv-font-body-md-size, 14px);
   line-height: 1.35;
   overflow-wrap: anywhere;
 }
@@ -241,25 +245,25 @@ body {
 .ficha {
   display: flex;
   flex-direction: column;
-  gap: var(--insta-spacing-m, 12px);
+  gap: var(--unv-spacing-m, 12px);
 }
 
 .ficha__tags {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--insta-spacing-xxs, 6px);
+  gap: var(--unv-spacing-xxs, 6px);
 }
 
 .ficha__titulo {
   margin: 0;
-  font-size: var(--insta-font-title-sm-size, 14px);
+  font-size: var(--unv-font-title-sm-size, 14px);
   font-weight: 600;
 }
 
 .ficha__espera {
   margin: 0;
-  font-size: var(--insta-font-caption-md-size, 12px);
-  color: var(--insta-color-text-secondary, #979797);
+  font-size: var(--unv-font-caption-md-size, 12px);
+  color: var(--unv-color-text-secondary, #cbd4d6);
 }
 
 /* O "Equilíbrio editorial da seleção" em barras (ver `mural.tsx`: não é
@@ -267,15 +271,15 @@ body {
    da plataforma não entra no clone). A leitura é pelo número; a barra é
    redundância visual. */
 .equilibrio__rotulo {
-  margin: 0 0 var(--insta-spacing-3xs, 4px);
-  font-size: var(--insta-font-caption-md-size, 12px);
+  margin: 0 0 var(--unv-spacing-3xs, 4px);
+  font-size: var(--unv-font-caption-md-size, 12px);
   font-weight: 600;
 }
 
 .equilibrio__lista {
   display: flex;
   flex-direction: column;
-  gap: var(--insta-spacing-3xs, 4px);
+  gap: var(--unv-spacing-3xs, 4px);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -285,15 +289,17 @@ body {
   display: grid;
   grid-template-columns: 96px 1fr 40px;
   align-items: center;
-  gap: var(--insta-spacing-xs, 8px);
-  font-size: var(--insta-font-caption-md-size, 12px);
+  gap: var(--unv-spacing-xs, 8px);
+  font-size: var(--unv-font-caption-md-size, 12px);
 }
 
 .equilibrio__trilha {
   display: block;
   height: 8px;
-  border-radius: var(--insta-radius-full, 1000px);
-  background: var(--insta-color-fill-field, rgba(118, 118, 128, 0.24));
+  border-radius: var(--unv-radius-full, 1000px);
+  /* `border-default`, e não `fill-field`: no tema escuro da ficha o campo tem a
+     MESMA cor da folha, e a trilha sumia — sobrava a barra sem a escala. */
+  background: var(--unv-color-border-default, #ccc9de);
   overflow: hidden;
 }
 
@@ -301,7 +307,7 @@ body {
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: var(--insta-color-action-primary, #3797ef);
+  background: var(--unv-color-action-primary, #716c98);
 }
 
 .equilibrio__valor {
@@ -317,9 +323,14 @@ body {
   flex: 1 1 auto;
   flex-direction: column;
   justify-content: center;
-  gap: var(--insta-spacing-m, 12px);
-  padding: var(--insta-spacing-xxl, 24px);
-  background: var(--insta-color-background-tertiary, #f8f8f8);
+  gap: var(--unv-spacing-m, 12px);
+  padding: var(--unv-spacing-xxl, 24px);
+  /* Acima da pílula de ações E dos pontos do carrossel, que no Unoovista
+     ficam por cima da mídia (ver `.card-procedural`). */
+  padding-bottom: calc(
+    var(--unv-post-card-pill-inset, 12px) + var(--unv-post-card-pill-height, 52px) + var(--unv-spacing-4xl, 48px)
+  );
+  background: var(--unv-color-background-tertiary, #efeef5);
 }
 
 .card-conceitual__titulo {
@@ -327,28 +338,28 @@ body {
   font-size: 20px;
   font-weight: 700;
   line-height: 1.25;
-  color: var(--insta-color-text-primary, #262626);
+  color: var(--unv-color-text-primary, #22272a);
 }
 
 .card-conceitual__corpo {
   margin: 0;
-  font-size: var(--insta-font-body-md-size, 15px);
+  font-size: var(--unv-font-body-md-size, 14px);
   line-height: 1.5;
-  color: var(--insta-color-text-primary, #262626);
+  color: var(--unv-color-text-primary, #22272a);
 }
 
 .explicar__avanco {
   display: flex;
   flex-direction: column;
-  gap: var(--insta-spacing-xs, 8px);
-  padding: var(--insta-spacing-m, 12px) var(--insta-gutter, 15px) var(--insta-spacing-xl, 20px);
+  gap: var(--unv-spacing-xs, 8px);
+  padding: var(--unv-spacing-m, 12px) var(--unv-gutter, 16px) var(--unv-spacing-xl, 20px);
 }
 
 .explicar__trava {
   margin: 0;
   text-align: center;
-  font-size: var(--insta-font-label-md-size, 13px);
-  color: var(--insta-color-text-primary, #262626);
+  font-size: var(--unv-font-label-md-size, 14px);
+  color: var(--unv-color-text-primary, #22272a);
 }
 
 /* ────────────────────────────────────────── as enquetes */

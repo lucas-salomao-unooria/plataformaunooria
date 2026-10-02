@@ -187,7 +187,7 @@ const SECOES: SecaoLegal[] = [
           </div>
         </div>
         <p>
-          O Unoovista e o Instanooria imitam aplicativos de fotos (é no Instanooria que acontece A Seleção); o UnooTube, um
+          O Unoovista e o Instanooria imitam aplicativos de fotos (é no Unoovista que acontece A Seleção); o UnooTube, um
           site de vídeos; o UnooGPT, um assistente de conversa. A semelhança é proposital: a missão só funciona se o ambiente parecer o de verdade. Mas o ambiente é
           fechado, e a diferença importa.
         </p>

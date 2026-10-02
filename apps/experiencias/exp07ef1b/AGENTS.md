@@ -4,7 +4,7 @@ Complementa o `AGENTS.md` da raiz e o de `apps/experiencias`.
 
 | Manifesto | Dev | DS | api | e2e |
 |---|---|---|---|---|
-| `exp07ef1b` · 7EF · unidade 1 · `entre-redes` · `viewport` 375×812 · `permissoes: ["forms"]` · versão **1.0.2** (maior que a do dono anterior do caminho no bucket, o Eco — ADR-113) | `:5179`, hub `/exp/exp07ef1b` | `@edu/ui/ds-insta` (clone) + `@edu/ui/ds` (escola) | `apps/api/src/a-selecao` ↔ `/a-selecao/*`; enquetes em `/evidencias/exp07ef1b/perguntas/*` (E14) | `scripts/e2e/estudante/11-a-selecao.mjs` (dois estudantes + a professora) |
+| `exp07ef1b` · 7EF · unidade 1 · `entre-redes` · `viewport` 375×812 · `permissoes: ["forms"]` · versão **1.1.0** (a 1.0.x, no Instanooria, já era maior que a do dono anterior do caminho no bucket, o Eco — ADR-113) | `:5179`, hub `/exp/exp07ef1b` | `@edu/ui/ds-unoovista` (clone, desde a 1.1.0 — ADR-135) + `@edu/ui/ds` (escola) | `apps/api/src/a-selecao` ↔ `/a-selecao/*`; enquetes em `/evidencias/exp07ef1b/perguntas/*` (E14) | `scripts/e2e/estudante/11-a-selecao.mjs` (dois estudantes + a professora) |
 
 ## O passo manda na tela
 
@@ -16,13 +16,13 @@ LÊ o `passos.ts` da api e reprova divergência nas listas.
 
 | Passo | Tela | Quem fala | Componentes do DS |
 |---|---|---|---|
-| `desafio` | E1 — a DM da Amara | Amara (clone) | `DirectThread`, `MessageBubble`, `ButtonInsta` |
-| `feed` | E2 — o feed da cobertura | app | `TopBar`, `BadgeInsta`, `InlineHint` (a dica), `GestureHint` (rolar), `PostCard` (`.Header/.Media/.Actions/.Likes/.Caption/.Timestamp`), `FloatingButton`, `TabBar` |
-| `salvos` | E3 — a poda + E3-ALU-02 | app | `TopBar`, `ButtonInsta`+`IconInsta`, `BadgeInsta`, `InlineHint` (o aviso da poda), `MediaGrid` (`selectable`), `StoryComposer`, `ConfirmDialog` (`destructive`), `TabBar` |
+| `desafio` | E1 — a DM da Amara | Amara (clone) | `DirectThread`, `MessageBubble`, `ButtonUnv` |
+| `feed` | E2 — o feed da cobertura | app | `TopBar`, `BadgeUnv`, `InlineHint` (a dica), `GestureHint` (rolar), `PostCard` (`.Header/.Media/.Actions/.Likes/.Caption/.Timestamp`), `FloatingButton`, `TabBar` |
+| `salvos` | E3 — a poda + E3-ALU-02 | app | `TopBar`, `ButtonUnv`+`IconUnv`, `BadgeUnv`, `InlineHint` (o aviso da poda), `MediaGrid` (`selectable`), `StoryComposer`, `ConfirmDialog` (`destructive`), `TabBar` |
 | `publicado` | E3-SIS-01 — a espera | app | `StoryViewer` (a própria tríade, `footer` = a legenda) |
 | `mural` | E4-ALU-01 — o PICO | app | `SegmentedTabs`, `StoryViewer` (3 segmentos, `onNext`/`onPrev`, `footer`) |
-| `fichas` | E4-ALU-02 — a revelação | app | o mesmo + `BottomSheet` não modal (`maxHeight 45%`) com `BadgeInsta` — por `React.lazy` |
-| `explicacao` | E5 — carrossel + DM de fechamento | app, depois Amara | `TopBar`, `PostCard` (`.Media` sem `src`, `currentIndex/totalCount`), `ButtonInsta`, `DirectThread` — por `React.lazy` |
+| `fichas` | E4-ALU-02 — a revelação | app | o mesmo + `BottomSheetUnv` não modal (`maxHeight 45%`) com `BadgeUnv` — por `React.lazy` |
+| `explicacao` | E5 — carrossel + DM de fechamento | app, depois Amara | `TopBar`, `PostCard` (`.Media` sem `src`, `currentIndex/totalCount`), `ButtonUnv`, `DirectThread` — por `React.lazy` |
 | `reflexao` | E6 | **escola** | `SectionHeader`, `Card`, `TextArea`, `Button` |
 | `enquetes` | a confirmação, depois as enquetes | escola, depois Amara | `AlertBox`; `DirectThread`, `MessageBubble` (`bare`), `DmPoll` |
 | `fim` | "Missão concluída!" | **escola** | `AlertBox` |
@@ -36,9 +36,9 @@ otimista. É o que torna o latch da publicação à prova de rede ruim.
 Do "Abrir Feed da Cobertura" até o fechamento da Amara, quem conduz é o clone —
 inclusive a revelação, que é a ficha técnica sobre o Story. A reflexão sai do
 clone porque a pergunta é sobre um jornal cobrindo OUTRA escola, e fazê-la dentro
-do Instagram a devolveria à ficção. As enquetes voltam ao clone (é a Amara quem
+do clone a devolveria à ficção. As enquetes voltam ao clone (é a Amara quem
 pergunta, ordem do PO) e o fim volta à escola. Os avisos globais seguem a mesma
-regra (`app/avisos.tsx`): no clone, a tarja de rede é o `SnackbarInsta` e a
+regra (`app/avisos.tsx`): no clone, a tarja de rede é o `SnackbarUnv` e a
 sessão é a `BottomSheet` modal; na tela da escola os dois saem pelo `AlertBox`,
 com copy própria — a do sheet fala de "marcações de posts" e da "conta do
 grêmio".
@@ -166,12 +166,19 @@ pediu, e não foi desenhada).
 
 Tudo que a missão precisava do DS ele publica: a faixa da dica do feed e do aviso
 da poda é o `InlineHint` (tons `neutral` e `friction`, com `announce`), o gesto de
-rolar é o `GestureHint`, a tarja "Sem conexão com a rede…" é o `SnackbarInsta`
+rolar é o `GestureHint`, a tarja "Sem conexão com a rede…" é o `SnackbarUnv`
 (sempre montado, para o leitor de tela anunciar) e a etiqueta da ficha que quebra
-é `BadgeInsta wrap`.
+é `BadgeUnv wrap`.
 
 **Não é pedido**: as barras do "Equilíbrio editorial" — o Instagram não desenha
 gráfico, e a ficha é a extensão da ficção que a missão acrescenta.
+
+## O Unoovista (1.1.0, ADR-135)
+
+Cópia ESTRUTURAL do `instanooria`: a troca foi de ponte, tema (`data-unv-theme`)
+e token (`--unv-*`). A composição é outra (doca flutuante, ações SOBRE a mídia),
+e três medidas do `globals.css`/`feed.tsx` leem o pacote por isso — comentadas
+lá. O `BadgeUnv` `neutral` escuro some na folha da ficha: é do pacote.
 
 ## A copy ESCRITA AQUI
 
