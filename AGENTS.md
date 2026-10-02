@@ -15,7 +15,7 @@ dois lugares, e nenhum repete o outro.
 | `apps/experiencias/AGENTS.md` | contrato `postMessage`, manifesto, experiência nova, clones do DS |
 | `apps/experiencias/*/AGENTS.md` | por experiência: porta, rota, seção do DS, módulo da api |
 | `apps/agente-professor/AGENTS.md` | o agente de IA do professor (Python/ADK no Agent Engine) e a ingestão dos data stores |
-| `packages/AGENTS.md`, `packages/*/AGENTS.md` | o contrato que o `sdk` promete, as 6 pontes do `ui`, o conteúdo da exp08ef1b |
+| `packages/AGENTS.md`, `packages/*/AGENTS.md` | o contrato que o `sdk` promete, as 8 pontes do `ui`, o conteúdo da exp08ef1b |
 | `scripts/AGENTS.md`, `scripts/e2e/AGENTS.md` | utilitários, o que é gerado, o que uma suíte precisa provar |
 | `docs/AGENTS.md`, `documentacao-latex/AGENTS.md` | o que ali é contrato vivo, e as regras de edição do LaTeX |
 
