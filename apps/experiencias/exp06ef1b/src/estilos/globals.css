@@ -547,23 +547,6 @@ body {
   color: var(--unv-color-text-primary, #f5f5f5);
 }
 
-/*
- * (b) COMPENSAÇÃO TEMPORÁRIA — a `DmPoll` (enquete de CONVERSA) no lugar do
- * `StoryPoll` (enquete de HISTÓRIA), que o DS publica na 0.2.12 (PR aberto no
- * `storybook-unooria`, pedido por esta missão). Aqui só POSIÇÃO e MEDIDA: o
- * centro do palco da história e o teto de largura que o `StoryPoll` terá
- * (320 px). O `StoryPoll` se centraliza sozinho (`.unv-story-viewer__overlay >
- * .unv-story-poll`): quando ele chegar, esta regra e `figurinha-de-enquete.tsx`
- * morrem juntas.
- */
-.figurinha-de-enquete {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: min(320px, calc(100% - 2 * var(--unv-gutter, 16px)));
-  transform: translate(-50%, -50%);
-}
-
 .consulta__encerrada {
   position: absolute;
   top: 50%;

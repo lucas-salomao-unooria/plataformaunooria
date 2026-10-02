@@ -75,7 +75,16 @@ export {
   SegmentedTabs,
 } from '@unooria/design-system/unoovista';
 
+/**
+ * A figurinha de enquete da HISTÓRIA (`StoryPoll`, DS 0.2.12), pedida pelo
+ * Júri Estadual (exp06ef1b) para as perguntas finais em Stories. Vai na camada
+ * `children` do `StoryViewer` e se centraliza sozinha no palco; o contrato é o
+ * da `DmPoll` (voto único, `value` controlado, sem contagem nem gabarito).
+ */
+export { StoryPoll } from '@unooria/design-system/unoovista';
+
 export type {
+  UnvStoryPollOption,
   UnvDmPollOption,
   UnvIconName,
   UnvMediaItem,

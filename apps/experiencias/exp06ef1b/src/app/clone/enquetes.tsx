@@ -1,12 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ButtonUnv, StoryViewer } from "@edu/ui/ds-unoovista";
+import { ButtonUnv, StoryPoll, StoryViewer } from "@edu/ui/ds-unoovista";
 import { dataUriDeSvg, svgDaConsulta } from "../../lib/arte";
 import { api, reportarErro, statusDoErro, tipoDaFalha } from "../../lib/api";
 import { telemetria } from "../../lib/telemetria";
 import { CONTAS, ENQUETE } from "../../lib/textos";
 import { ENQUETES, EXP_ID, type IdDaEnquete, type PerguntaDaEnquete } from "../../lib/tipos";
 import { usePaleta } from "../componentes/midia";
-import { FigurinhaDeEnquete } from "./figurinha-de-enquete";
 
 interface EnqueteNaTela {
   pergunta: string;
@@ -148,14 +147,14 @@ export function Enquetes({
               {ENQUETE.encerrada}
             </p>
           ) : atual ? (
-            <FigurinhaDeEnquete
+            <StoryPoll
               key={id}
-              pergunta={atual.pergunta}
-              opcoes={atual.opcoes}
-              valor={voto && atual.opcoes.some((o) => o.id === voto) ? voto : null}
-              desabilitada={enviando || Boolean(voto) || encerrada}
-              confirmacao={ENQUETE.confirmada[id]}
-              aoVotar={(alternativa) => void votar(alternativa)}
+              question={atual.pergunta}
+              options={atual.opcoes}
+              value={voto && atual.opcoes.some((o) => o.id === voto) ? voto : null}
+              disabled={enviando || Boolean(voto) || encerrada}
+              sentLabel={ENQUETE.confirmada[id]}
+              onVote={(alternativa) => void votar(alternativa)}
             />
           ) : null}
         </StoryViewer>
