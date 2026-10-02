@@ -9,7 +9,7 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{137 decisões}, numeradas até ADR-138, com uma lacuna
+São \textbf{138 decisões}, numeradas até ADR-139, com uma lacuna
 temporária: a 132 (a Ajuda com avatar) já está no código e ainda não tem
 seção aqui. A 133 e a 134 nasceram no mesmo dia, em frentes paralelas
 (Unoovista e Unoochat), e entraram juntas no merge; a 135 e a 136 levaram as
@@ -188,6 +188,7 @@ que a cercam.
 \zebra \adrr{ADR-136} & As peças da gaveta do Jornal da Escola passam para o Unoovista e o Unoochat & 2026-10-02 & Aceita\\
 \adrr{ADR-137} & O Júri Estadual de Projetos nasce no Unoovista e mede o que o briefing pediu & 2026-10-02 & Aceita\\
 \zebra \adrr{ADR-138} & A missão da 2ª série do EM troca o clone do ChatGPT pelo UnooriaAI & 2026-10-02 & Aceita\\
+\adrr{ADR-139} & O design system tem uma versão só, e todas as experiências sobem juntas & 2026-10-02 & Aceita\\
 \bottomrule
 \end{tabularx}
 
@@ -11993,3 +11994,70 @@ só semântica.
 \cd{unooriaai} (a Bravo volta a ter cor própria), mudar a API de um dos 25
 componentes, ou a exp08ef4b migrar --- aí a ponte \cd{@edu/ui/ds-chatgpt} fica
 sem consumidor e sai.
+
+% ---------------------------------------------------------------------------
+\section{ADR-139 --- O design system tem uma versão só, e todas as experiências sobem juntas}
+\label{adr:ds-versao-unica}
+
+\textbf{Data.} 2026-10-02. \textbf{Status.} Aceita. Complementa a regra
+``não deixar o DS parado'' (\cd{docs/regras/design-system.md}).
+
+\begin{especificacao}{Contexto}
+Cada experiência declarava o próprio intervalo de \cd{@unooria/design-system}
+e subia quando alguém lembrava: no mesmo dia conviviam a 0.2.8 (os planos, o
+bem-estar, a exp01ef1b, a exp06ef2b e a exp08ef4b), a 0.2.11 (o hub e as
+missões do Unoovista e do Unoochat) e a 0.2.12 (a ponte e o Júri Estadual). A
+divergência é muda: a ponte \cd{@edu/ui/ds-*} resolve o DS pela versão DELA, e
+a folha de CSS que a experiência importa pela versão da experiência --- o JS e
+o CSS do mesmo componente saíam de versões diferentes, e o \emph{typecheck}
+não via nada.
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{itemize}
+  \item \textbf{Uma versão só}: o hub, a ponte \cd{packages/ui} e TODAS as
+    experiências declaram o MESMO intervalo, e o \emph{lockfile} resolve UMA
+    versão. O teste \cd{apps/api/tests/design-system-versao-unica.spec.ts}
+    reprova um \cd{package.json} divergente e um \emph{lockfile} com duas
+    versões.
+  \item \textbf{Subir é um passo para todos}
+    (\cd{pnpm up -r @unooria/design-system@\textasciicircum{}X.Y.Z}, nunca
+    \cd{--filter}), e a versão de cada experiência sobe \textbf{só se o
+    \emph{bundle} mudou}: compila-se cada uma antes e depois e compara-se o
+    \emph{hash} do \cd{dist/}. O caminho no \emph{bucket} é imutável, e subir
+    versão de bundle idêntico seria publicar a mesma coisa duas vezes.
+  \item \textbf{A primeira subida assim foi a 0.2.13} (o canto do
+    \cd{StoryPoll}): dez experiências mudaram e subiram um \emph{patch} ---
+    app-90 1.2.6, app-91 1.1.9, app-92 1.1.6, backup-exp04ef1b 1.2.9,
+    exp01ef1b 1.0.5, exp04ef1b 2.1.1, exp06ef2b 0.1.5, exp07ef1b 1.1.1,
+    exp08ef1b 1.2.1 e exp08ef4b 0.1.5 ---; a exp02em1b, a exp05ef1b e a app-70
+    saíram idênticas byte a byte e ficaram; a exp06ef1b ficou na 0.1.0 porque
+    nunca foi publicada.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Cada experiência na sua versão, subindo quando mexer nela.} É
+    o que existia, e produziu as três versões convivendo e a ponte divergindo
+    da folha de CSS.
+  \item \textbf{Subir a versão de todas as experiências a cada DS novo}, sem
+    comparar. Publicaria \emph{bundles} idênticos com versão nova, e o
+    professor veria ``versão nova'' onde nada mudou.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{Um DS novo toca todas as experiências de uma vez}: o salto da
+    0.2.8 para a 0.2.13 nas mais antigas passou no \emph{typecheck}, no
+    \emph{lint} e nos testes, mas não teve conferência visual antes das suítes
+    de ponta a ponta.
+  \item \textbf{Comparar os \emph{hashes} é passo manual}, descrito na regra;
+    não há script que o faça sozinho.
+\end{itemize}
+
+\textbf{Gatilho.} Uma experiência precisar de uma versão do DS que quebra outra
+(aí a regra cede para aquela experiência, com exceção registrada), ou o DS
+sair do \cd{0.x}.

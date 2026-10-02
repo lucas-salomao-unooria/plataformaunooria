@@ -745,6 +745,18 @@ Alvo de toque infantil no \cd{Button}, no \cd{Tab} e no \cd{RadioButton} & O
 \bottomrule
 \end{tabularx}
 
+\subsection{Uma versão só do DS (\adrr{ADR-139})}
+\label{sec:ds-versao-unica}
+
+Desde a 0.2.13, o hub, a ponte \arq{packages/ui} e todas as experiências
+declaram o MESMO intervalo de \cd{@unooria/design-system}, e o
+\emph{lockfile} resolve uma versão só ---
+\arq{apps/api/tests/design-system-versao-unica.spec.ts} reprova o contrário.
+Subir é um passo para todos (\cd{pnpm up -r}); depois, cada experiência é
+compilada antes e depois, e só a que mudou de \emph{bundle} sobe a versão nos
+três lugares. Na 0.2.13 foram dez; a exp02em1b, a exp05ef1b e a app-70 saíram
+idênticas e ficaram.
+
 \subsection{O Júri Estadual e o \cd{StoryPoll} da 0.2.12 (exp06ef1b 0.1.0)}
 \label{sec:ds-juri-0211}
 
