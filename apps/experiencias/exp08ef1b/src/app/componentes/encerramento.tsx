@@ -1,5 +1,7 @@
 import { useState } from 'react';
 
+import { ButtonUnv } from '@edu/ui/ds-unoovista';
+
 /**
  * FASE 3 do doc 02 (~15s): tela sobre o feed, que congela desfocado ao fundo.
  *
@@ -19,9 +21,9 @@ export function Encerramento({
 
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center px-6 backdrop-blur-md">
-      <div className="absolute inset-0 bg-white/60" />
+      <div className="absolute inset-0 bg-surface/60" />
 
-      <div className="relative flex w-full max-w-[340px] flex-col items-center gap-4 rounded-2xl bg-surface p-6 text-center shadow-2xl">
+      <div className="relative flex w-full max-w-[340px] flex-col items-center gap-4 rounded-cartao bg-elevated p-6 text-center shadow-[var(--unv-elevation-overlay)]">
         <h1 className="text-[20px] font-semibold text-ink">Fim da missão ⏰</h1>
         <p className="text-[15px] leading-relaxed text-ink/80">
           {postosVistos > 0 ? (
@@ -33,9 +35,10 @@ export function Encerramento({
           Agora é a sua vez.
         </p>
 
-        <button
-          type="button"
-          className="mt-1 h-11 w-full rounded-lg bg-action text-[15px] font-semibold text-white active:opacity-80"
+        <ButtonUnv
+          block
+          size="lg"
+          className="mt-1"
           disabled={carregando}
           onClick={async () => {
             setCarregando(true);
@@ -43,7 +46,7 @@ export function Encerramento({
           }}
         >
           {carregando ? '…' : 'Continuar'}
-        </button>
+        </ButtonUnv>
       </div>
     </div>
   );

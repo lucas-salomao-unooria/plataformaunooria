@@ -158,7 +158,7 @@ await suite(
     r.exigir(/os 7 momentos/.test(guia), "o guia fala nos sete momentos da aula");
     r.exigir(/Encerrar atividade/.test(guia), "o sétimo momento está na tabela do guia");
     r.exigir(
-      /O Instanooria não é uma rede social de verdade/.test(guia),
+      /O Unoovista não é uma rede social de verdade/.test(guia),
       "o professor lê a revelação palavra por palavra, ANTES da aula",
     );
     await r.registrar(p, "guia-da-aula", {

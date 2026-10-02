@@ -1,15 +1,15 @@
 import { useState } from "react";
 import {
-  BadgeInsta,
-  ButtonInsta,
+  BadgeUnv,
+  ButtonUnv,
   ConfirmDialog,
-  IconInsta,
+  IconUnv,
   InlineHint,
   MediaGrid,
   StoryComposer,
   TopBar,
-  type InstaMediaItem,
-} from "@edu/ui/ds-insta";
+  type UnvMediaItem,
+} from "@edu/ui/ds-unoovista";
 import { legendaCurta, legendaValida, situacaoDaSelecao, temaNaFrase } from "../../lib/regras";
 import { telemetria } from "../../lib/telemetria";
 import { E3 } from "../../lib/textos";
@@ -69,7 +69,7 @@ export function Salvos({
   const [recusada, setRecusada] = useState(false);
 
   const porId = new Map(posts.map((p) => [p.id, p]));
-  const itens: InstaMediaItem[] = salvos
+  const itens: UnvMediaItem[] = salvos
     .map((id) => porId.get(id))
     .filter((p): p is PostPublico => Boolean(p))
     .map((p) => ({ id: p.id, src: srcDoPost(p, paleta, "quadrado"), alt: altDoPost(p) }));
@@ -103,15 +103,15 @@ export function Salvos({
       <TopBar
         withStatusBarInset={false}
         leading={
-          <ButtonInsta
+          <ButtonUnv
             variant="link"
             aria-label={E3.voltarAoFeed}
-            leadingIcon={<IconInsta name="back" size={18} />}
+            leadingIcon={<IconUnv name="back" size={18} />}
             onClick={aoVoltarAoFeed}
           />
         }
         title={E3.titulo}
-        trailing={<BadgeInsta variant="neutral">{E3.statusSelecao(selecao.length)}</BadgeInsta>}
+        trailing={<BadgeUnv variant="neutral">{E3.statusSelecao(selecao.length)}</BadgeUnv>}
       />
       {aviso && (
         <InlineHint tone={situacao.tipo === "excesso" || recusada ? "friction" : "neutral"} announce>

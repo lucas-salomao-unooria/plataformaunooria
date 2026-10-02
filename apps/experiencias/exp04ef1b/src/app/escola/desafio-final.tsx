@@ -20,8 +20,8 @@ interface PerguntaNaTela {
  * E6 — o desafio individual, FORA da redação e sem o Bento (PRD §5, Etapa 6):
  * a Unooria fala, numa tela limpa da seção `unooria`. A única peça de outra
  * seção é o boato, e ele é o que a missão quer que a criança reconheça fora da
- * escola: uma mensagem ENCAMINHADA — o `MessageBubble` do `whatsappmobile`
- * (ADR-117), no mesmo contêiner escuro da gaveta.
+ * escola: uma mensagem ENCAMINHADA — o `MessageBubble` do `unoochat`
+ * (ADR-117, ADR-136), no mesmo contêiner lavanda da gaveta.
  *
  * **As perguntas são as da ficha da E14**, pelas rotas genéricas de
  * `/evidencias/exp04ef1b/perguntas/p1|p2` (molde: as enquetes da exp07ef1b). O

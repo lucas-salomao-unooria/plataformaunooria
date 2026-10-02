@@ -120,7 +120,7 @@ function unidadesEmBreve(anoSlug: string, exceto: number[] = []): Missao[] {
 }
 
 /**
- * A missão que existe hoje: o Instanooria, a bolha de filtro do 8º ano.
+ * A missão que existe hoje: o Unoovista, a bolha de filtro do 8º ano.
  * É a única com ficha, guia e atividades configuráveis.
  */
 export const MISSAO_ATUAL: Missao = {
@@ -134,7 +134,7 @@ export const MISSAO_ATUAL: Missao = {
   status: "disponivel",
   // Sem spoiler: a missão só funciona se a revelação chegar de surpresa.
   estudante: {
-    titulo: "Instanooria",
+    titulo: "Unoovista",
     chamada:
       "Entre na rede social da turma, investigue a pergunta da missão pelo feed e escreva a sua conclusão.",
   },

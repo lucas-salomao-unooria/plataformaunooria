@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { PostCard } from "@edu/ui/ds-insta";
+import { PostCard } from "@edu/ui/ds-unoovista";
 import {
   dataUriDeSvg,
   descricaoDoGrafico,
@@ -28,7 +28,7 @@ import type { PostPublico } from "../../lib/tipos";
  */
 
 /**
- * A paleta do SVG, lida dos tokens `--insta-*` da raiz. Dentro de um `<img>` o
+ * A paleta do SVG, lida dos tokens `--unv-*` da raiz. Dentro de um `<img>` o
  * SVG não enxerga as variáveis CSS da página, então a cor viaja por parâmetro
  * — e continua vindo do pacote: quando o DS mudar a cor, o desenho muda junto.
  * Os valores de reserva existem só para o caso de a folha do DS ainda não ter
@@ -38,14 +38,14 @@ export function lerPaleta(): Paleta {
   const css = getComputedStyle(document.documentElement);
   const v = (nome: string, reserva: string) => css.getPropertyValue(nome).trim() || reserva;
   return {
-    fundo: v("--insta-color-background-tertiary", "#F8F8F8"),
-    superficie: v("--insta-color-background-primary", "#FFFFFF"),
-    texto: v("--insta-color-text-primary", "#262626"),
-    secundario: v("--insta-color-text-secondary", "#8E8E93"),
-    destaque: v("--insta-color-action-primary", "#3897F0"),
-    calor: v("--insta-color-brand-like", "#ED4956"),
-    borda: v("--insta-color-border-default", "#C7C7CC"),
-    fonte: v("--insta-font-sans", "system-ui, sans-serif"),
+    fundo: v("--unv-color-background-tertiary", "#EFEEF5"),
+    superficie: v("--unv-color-background-primary", "#FFFFFF"),
+    texto: v("--unv-color-text-primary", "#22272A"),
+    secundario: v("--unv-color-text-secondary", "#475157"),
+    destaque: v("--unv-color-action-primary", "#716C98"),
+    calor: v("--unv-color-brand-like", "#E31A1A"),
+    borda: v("--unv-color-border-default", "#CCC9DE"),
+    fonte: v("--unv-font-sans", "system-ui, sans-serif"),
   };
 }
 

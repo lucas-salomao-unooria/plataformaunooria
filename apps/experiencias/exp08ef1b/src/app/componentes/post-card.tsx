@@ -1,12 +1,15 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
+
+import { ButtonUnv, IconUnv, PostCard as PostCardUnv, TopBar } from '@edu/ui/ds-unoovista';
 
 import { formatarContagem } from '../../lib/avatar';
 import type { FeedPostCliente } from '../../lib/tipos';
 
-import { AvatarPerfil } from './avatar-perfil';
-import { Glifo } from '@edu/ui/ds-insta';
+import { retratoDe } from './avatar-perfil';
 
 const LIMITE_CAPTION = 125;
+
+const semArroba = (handle: string) => handle.replace(/^@/, '');
 
 export interface AcoesDoPost {
   aoCurtir: (post: FeedPostCliente, curtido: boolean) => void;
@@ -20,16 +23,28 @@ export interface AcoesDoPost {
   /**
    * Telemetria de imersão (doc 11 §2.2). Não pontuam no motor — só medem. O
    * duplo-toque é o sinal mais forte do conjunto: é memória muscular de
-   * Instagram, ninguém ensina esse gesto, e fazê-lo aqui significa que o estudante
-   * acredita que está num app de verdade.
+   * rede social, ninguém ensina esse gesto, e fazê-lo aqui significa que o
+   * estudante acredita que está num app de verdade.
    */
   aoGesto: (tipo: 'duplo_toque' | 'expandiu_legenda', post: FeedPostCliente) => void;
 }
 
 /**
- * Card de post — anatomia exata do doc 03 §3: header 56px, mídia 4:5,
- * barra de ações 48px, linha de curtidas, legenda com "... mais",
- * "ver todos os N comentários", prévia de comentários e timestamp.
+ * Card de post pelo `PostCard` composto do Unoovista: cabeçalho, mídia 4:5, a
+ * pílula de ações sobre a base da mídia, curtidas, legenda com "mais",
+ * hashtags, "ver todos os N comentários", prévia de comentários e data.
+ *
+ * Três peças são da EXPERIÊNCIA, ao redor do cartão do DS, e cada uma diz por quê:
+ * - **"Seguir" ao lado do cabeçalho.** O `PostCard.Header` não tem espaço para
+ *   ação além do "mais" — e seguir é sinal do motor, não pode sumir. O
+ *   cabeçalho, o botão e o "mais" (o `TopBar.Action`, o mesmo círculo de 44px
+ *   do cabeçalho do DS) ficam numa linha.
+ * - **O coração do duplo-toque.** A mídia do DS não aceita camada por cima da
+ *   foto, e embrulhá-la quebraria a pílula de ações (que só existe quando
+ *   `Actions` vem LOGO DEPOIS de `Media`). O coração é irmão, posicionado sobre
+ *   a caixa da mídia medida no próprio toque.
+ * - **Hashtags e prévia de comentários**, que o DS não tem como peça: texto
+ *   corrido nos tokens do Unoovista.
  */
 export function PostCard({
   post,
@@ -47,8 +62,8 @@ export function PostCard({
   comentariosDoEstudante?: number;
 }) {
   const [expandido, setExpandido] = useState(false);
-  const [mostrarCoracao, setMostrarCoracao] = useState(false);
-  const [pulsar, setPulsar] = useState(false);
+  /** A caixa da mídia (relativa ao cartão) enquanto o coração do duplo-toque está na tela. */
+  const [coracao, setCoracao] = useState<CSSProperties | null>(null);
   const ultimoToque = useRef(0);
   const elemento = useRef<HTMLElement | null>(null);
 
@@ -61,106 +76,78 @@ export function PostCard({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [post.id]);
 
-  const curtir = (viaDuploToque: boolean) => {
-    if (viaDuploToque) acoes.aoGesto('duplo_toque', post);
-    if (viaDuploToque && curtido) {
-      setMostrarCoracao(true);
-      window.setTimeout(() => setMostrarCoracao(false), 700);
-      return;
-    }
-    if (!curtido) {
-      setPulsar(true);
-      window.setTimeout(() => setPulsar(false), 340);
-      if (viaDuploToque) {
-        setMostrarCoracao(true);
-        window.setTimeout(() => setMostrarCoracao(false), 700);
-      }
+  const mostrarCoracao = (midia: HTMLElement) => {
+    setCoracao({ top: midia.offsetTop, left: midia.offsetLeft, width: midia.offsetWidth, height: midia.offsetHeight });
+    window.setTimeout(() => setCoracao(null), 700);
+  };
+
+  const curtir = (midiaDoDuploToque: HTMLElement | null) => {
+    if (midiaDoDuploToque) {
+      acoes.aoGesto('duplo_toque', post);
+      mostrarCoracao(midiaDoDuploToque);
+      // O duplo-toque só CURTE: num post já curtido ele não descurte.
+      if (curtido) return;
     }
     acoes.aoCurtir(post, !curtido);
   };
 
-  const aoTocarMidia = () => {
+  const aoTocarMidia = (evento: React.PointerEvent<HTMLDivElement>) => {
     const agora = Date.now();
     if (agora - ultimoToque.current < 300) {
       ultimoToque.current = 0;
-      curtir(true);
+      curtir(evento.currentTarget);
       return;
     }
     ultimoToque.current = agora;
   };
 
+  const handle = semArroba(post.author.handle);
+  const retrato = retratoDe(post.author.avatarSeed);
   const caption = post.caption;
   const precisaTruncar = caption.length > LIMITE_CAPTION && !expandido;
   const textoCaption = precisaTruncar ? `${caption.slice(0, LIMITE_CAPTION)}…` : caption;
   const totalCurtidas = post.likesCount + (curtido ? 1 : 0);
-  const meusComentarios = comentariosDoEstudante ?? 0;
-  const totalComentarios = post.commentsTotal + meusComentarios;
+  const totalComentarios = post.commentsTotal + (comentariosDoEstudante ?? 0);
+  const quemCurtiu = post.commentsPreview[0]?.handle ?? 'ana.paes';
 
   return (
-    <article
-      ref={elemento}
-      className="card-otimizado border-b border-hairline bg-surface"
-      data-post-id={post.id}
-    >
-      {/* 1. Header 56px */}
-      <header className="flex h-postheader items-center gap-2.5 px-3">
-        <button type="button" onClick={() => acoes.aoAbrirPerfil(post)} className="active:opacity-60">
-          <AvatarPerfil seed={post.author.avatarSeed} tamanho={32} />
-        </button>
+    <PostCardUnv ref={elemento} className="card-otimizado relative" data-post-id={post.id}>
+      <div className="flex items-center gap-2">
+        <PostCardUnv.Header
+          className="min-w-0 flex-1 cursor-pointer"
+          role="button"
+          tabIndex={0}
+          aria-label={`Abrir o perfil de ${handle}`}
+          username={handle}
+          avatarSrc={retrato.src}
+          initials={retrato.initials}
+          verified={post.author.verificado}
+          location={post.sugerido ? 'Sugerido para você' : undefined}
+          onClick={() => acoes.aoAbrirPerfil(post)}
+          onKeyDown={(evento) => {
+            if (evento.key !== 'Enter' && evento.key !== ' ') return;
+            evento.preventDefault();
+            acoes.aoAbrirPerfil(post);
+          }}
+        />
+        <ButtonUnv variant={seguindo ? 'secondary' : 'primary'} size="sm" onClick={() => acoes.aoSeguir(post, !seguindo)}>
+          {seguindo ? 'Seguindo' : 'Seguir'}
+        </ButtonUnv>
+        <TopBar.Action icon="more" label="Mais opções" onClick={() => acoes.aoAbrirOpcoes(post)} />
+      </div>
 
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              onClick={() => acoes.aoAbrirPerfil(post)}
-              className="truncate text-[14px] font-semibold text-ink active:opacity-60"
-            >
-              {post.author.handle.replace(/^@/, '')}
-            </button>
-            {post.author.verificado ? <Glifo name="verified" size={12} /> : null}
-            <button
-              type="button"
-              onClick={() => acoes.aoSeguir(post, !seguindo)}
-              className={`ml-1 text-[13px] font-semibold active:opacity-60 ${seguindo ? 'text-muted' : 'text-action'}`}
-            >
-              · {seguindo ? 'Seguindo' : 'Seguir'}
-            </button>
-          </div>
-          {post.sugerido ? <p className="truncate text-[12px] text-muted">Sugerido para você</p> : null}
-        </div>
-
-        <button
-          type="button"
-          aria-label="Mais opções"
-          onClick={() => acoes.aoAbrirOpcoes(post)}
-          className="active:opacity-60"
-        >
-          <Glifo name="more" size={18} />
-        </button>
-      </header>
-
-      {/* 2. Mídia 4:5 com duplo-toque */}
-      <div
-        className="relative aspect-post w-full select-none overflow-hidden bg-canvas"
+      <PostCardUnv.Media
+        src={post.imageUrl ?? undefined}
+        alt=""
+        aspectRatio={4 / 5}
+        className="select-none"
         onPointerUp={aoTocarMidia}
-        onDoubleClick={() => curtir(true)}
+        onDoubleClick={(evento) => curtir(evento.currentTarget)}
       >
-        {post.imageUrl ? (
-           
-          <img
-            src={post.imageUrl}
-            alt=""
-            className="h-full w-full object-cover"
-            width={1080}
-            height={1350}
-            loading="lazy"
-            decoding="async"
-            draggable={false}
-          />
-        ) : (
+        {post.imageUrl ? undefined : (
           <div
             className="flex h-full w-full flex-col items-center justify-center gap-3"
-            style={{ background: post.fallbackArt?.corFundo ?? '#EFEFEF' }}
+            style={{ background: post.fallbackArt?.corFundo ?? 'var(--unv-color-background-tertiary)' }}
           >
             <span className="text-[64px] leading-none">{post.fallbackArt?.emojis ?? '✨'}</span>
             <span className="max-w-[70%] text-center text-[15px] font-semibold text-black/60">
@@ -168,89 +155,64 @@ export function PostCard({
             </span>
           </div>
         )}
+      </PostCardUnv.Media>
 
-        {mostrarCoracao ? (
-          <span className="pointer-events-none absolute inset-0 flex items-center justify-center">
-            <span className="animar-coracao drop-shadow-lg">
-              <Glifo name="heartFilled" size={96} tone="inverse" />
-            </span>
+      <PostCardUnv.Actions
+        liked={curtido}
+        saved={salvo}
+        onLike={() => curtir(null)}
+        onComment={() => acoes.aoAbrirComentarios(post)}
+        onShare={() => acoes.aoCompartilhar(post)}
+        onSave={() => acoes.aoSalvar(post, !salvo)}
+      />
+
+      <PostCardUnv.Likes>
+        Curtido por <strong>{semArroba(quemCurtiu)}</strong> e{' '}
+        <strong>outras {formatarContagem(totalCurtidas)} pessoas</strong>
+      </PostCardUnv.Likes>
+
+      <PostCardUnv.Caption username={handle}>
+        {textoCaption}
+        {precisaTruncar ? (
+          <ButtonUnv
+            variant="link"
+            size="sm"
+            className="ml-1"
+            onClick={() => {
+              setExpandido(true);
+              acoes.aoGesto('expandiu_legenda', post);
+            }}
+          >
+            mais
+          </ButtonUnv>
+        ) : null}
+      </PostCardUnv.Caption>
+
+      {post.hashtags.length > 0 ? (
+        <p className="m-0 text-[14px] leading-snug text-link">{post.hashtags.join(' ')}</p>
+      ) : null}
+
+      {totalComentarios > 0 ? (
+        <ButtonUnv variant="link" size="sm" className="self-start" onClick={() => acoes.aoAbrirComentarios(post)}>
+          Ver todos os {formatarContagem(totalComentarios)} comentários
+        </ButtonUnv>
+      ) : null}
+
+      {post.commentsPreview.map((comentario) => (
+        <PostCardUnv.Caption key={`${post.id}-${comentario.handle}`} username={semArroba(comentario.handle)}>
+          {comentario.texto}
+        </PostCardUnv.Caption>
+      ))}
+
+      <PostCardUnv.Timestamp>{post.timestampLabel}</PostCardUnv.Timestamp>
+
+      {coracao ? (
+        <span className="pointer-events-none absolute flex items-center justify-center" style={coracao}>
+          <span className="animar-coracao drop-shadow-lg">
+            <IconUnv name="heartFilled" size={96} tone="inverse" filled />
           </span>
-        ) : null}
-      </div>
-
-      {/* 3. Barra de ações 48px */}
-      <div className="flex h-actionbar items-center justify-between px-3">
-        <div className="flex items-center gap-4">
-          <button
-            type="button"
-            aria-label={curtido ? 'Remover curtida' : 'Curtir'}
-            onClick={() => curtir(false)}
-            className={pulsar ? 'animar-curtida' : undefined}
-          >
-            <Glifo name={curtido ? 'heartFilled' : 'heart'} size={24} tone={curtido ? 'like' : 'primary'} />
-          </button>
-          <button type="button" aria-label="Comentar" onClick={() => acoes.aoAbrirComentarios(post)}>
-            <Glifo name="comment" size={24} />
-          </button>
-          <button type="button" aria-label="Enviar" onClick={() => acoes.aoCompartilhar(post)}>
-            <Glifo name="share" size={22} />
-          </button>
-        </div>
-
-        <button
-          type="button"
-          aria-label={salvo ? 'Remover dos salvos' : 'Salvar'}
-          onClick={() => acoes.aoSalvar(post, !salvo)}
-        >
-          <Glifo name={salvo ? 'bookmarkFilled' : 'bookmark'} size={24} />
-        </button>
-      </div>
-
-      <div className="flex flex-col gap-1.5 px-3 pb-3">
-        {/* 4. Curtidas */}
-        <p className="text-[14px] font-semibold text-ink">
-          Curtido por <span className="font-semibold">{post.commentsPreview[0]?.handle.replace(/^@/, '') ?? 'ana.paes'}</span> e{' '}
-          <span className="font-semibold">outras {formatarContagem(totalCurtidas)} pessoas</span>
-        </p>
-
-        {/* 5. Legenda */}
-        <p className="text-[14px] leading-snug text-ink">
-          <span className="font-semibold">{post.author.handle.replace(/^@/, '')}</span> {textoCaption}
-          {precisaTruncar ? (
-            <button type="button" className="ml-1 text-muted" onClick={() => {
-                setExpandido(true);
-                acoes.aoGesto('expandiu_legenda', post);
-              }}>
-              mais
-            </button>
-          ) : null}
-        </p>
-
-        {post.hashtags.length > 0 ? (
-          <p className="text-[14px] leading-snug text-link">{post.hashtags.join(' ')}</p>
-        ) : null}
-
-        {/* 6. Ver todos os comentários */}
-        {totalComentarios > 0 ? (
-          <button
-            type="button"
-            className="self-start text-[14px] text-muted active:opacity-60"
-            onClick={() => acoes.aoAbrirComentarios(post)}
-          >
-            Ver todos os {formatarContagem(totalComentarios)} comentários
-          </button>
-        ) : null}
-
-        {/* 7. Prévia de comentários */}
-        {post.commentsPreview.map((comentario) => (
-          <p key={`${post.id}-${comentario.handle}`} className="text-[14px] leading-snug text-ink">
-            <span className="font-semibold">{comentario.handle.replace(/^@/, '')}</span> {comentario.texto}
-          </p>
-        ))}
-
-        {/* 8. Timestamp */}
-        <p className="text-[11px] text-muted">{post.timestampLabel}</p>
-      </div>
-    </article>
+        </span>
+      ) : null}
+    </PostCardUnv>
   );
 }

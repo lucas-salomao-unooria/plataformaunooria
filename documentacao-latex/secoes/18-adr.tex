@@ -9,7 +9,11 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{131 decisões}, numeradas até ADR-131, \textbf{sem lacunas}. A 117
+São \textbf{135 decisões}, numeradas até ADR-136, com uma lacuna
+temporária: a 132 (a Ajuda com avatar) já está no código e ainda não tem
+seção aqui. A 133 e a 134 nasceram no mesmo dia, em frentes paralelas
+(Unoovista e Unoochat), e entraram juntas no merge; a 135 e a 136 levaram as
+duas redes para A Seleção e para o Jornal da Escola no mesmo dia. A 117
 (o Jornal da Escola) entrou depois da 121: o número tinha sido
 reservado entre as sessões antes de qualquer uma escrever. Quando
 eram cem, as cinco últimas nasceram no MESMO dia, em três frentes paralelas, e não
@@ -178,6 +182,10 @@ que a cercam.
 \adrr{ADR-129} & O \emph{markdown} do agente vira HTML no navegador & 2026-09-30 & Aceita\\
 \adrr{ADR-130} & A atividade é do professor, e a equipe é da atividade & 2026-10-01 & Aceita\\
 \zebra \adrr{ADR-131} & As perguntas de evidência de Quem mandou isso? são as do PO, literais & 2026-10-01 & Aceita\\
+\adrr{ADR-133} & A missão do 8º ano troca o Instanooria pelo Unoovista & 2026-10-02 & Aceita\\
+\zebra \adrr{ADR-134} & Quem mandou isso? troca o clone do WhatsApp pelo Unoochat & 2026-10-02 & Aceita\\
+\adrr{ADR-135} & A Seleção troca o Instanooria pelo Unoovista & 2026-10-02 & Aceita\\
+\zebra \adrr{ADR-136} & As peças da gaveta do Jornal da Escola passam para o Unoovista e o Unoochat & 2026-10-02 & Aceita\\
 \bottomrule
 \end{tabularx}
 
@@ -11475,3 +11483,319 @@ as do PO.
 \textbf{Gatilho.} O PO trocar o texto das perguntas (a ficha sobe de versão), ou
 os professores relatarem que a turma acerta pelo tamanho da alternativa.
 
+% ---------------------------------------------------------------------------
+\section{ADR-133 --- A missão do 8º ano troca o Instanooria pelo Unoovista}
+\label{adr:exp08ef1b-unoovista}
+
+\textbf{Data.} 2026-10-02. \textbf{Status.} Aceita. O número 132 já está em uso
+no código (a Ajuda com avatar) e ainda não tem seção aqui; este pula para o 133
+para não colidir.
+
+\begin{especificacao}{Contexto}
+A exp08ef1b (O Conteúdo que não chegou) imitava a rede social com a seção
+\cd{instanooria} do Design System, derivada de um arquivo de telas do Instagram
+--- e, na prática, só o \cd{Icon} vinha do pacote: barra, \emph{feed}, cartão,
+histórias, folhas e navegação eram componentes locais em Tailwind, com a
+paleta do aplicativo real copiada no \arq{tailwind.config.ts} e o nome do app
+composto em Grand Hotel. A versão 0.2.11 do pacote publicou a seção
+\cd{unoovista}: os mesmos 31 componentes e as mesmas props do
+\cd{instanooria}, com a identidade da Unooria (roxo, Open Sans, Material
+Symbols) e composição própria (barra de navegação flutuante, ações em pílula
+sobre a mídia, avatar em \emph{squircle} para quem tem história).
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{itemize}
+  \item \textbf{A superfície disfarçada inteira usa a seção \cd{unoovista}}, por
+    uma ponte nova, \arq{packages/ui/src/ds-unoovista.ts}
+    (\cd{@edu/ui/ds-unoovista}). Os componentes locais que tinham par no pacote
+    morreram: \cd{TopBar}, \cd{TabBar}, \cd{StoriesTray}, \cd{StoryBubble},
+    \cd{StoryViewer}, \cd{PostCard}, \cd{BottomSheet}, \cd{SearchField},
+    \cd{NotificationItem}, \cd{ProfileHeader}, \cd{ListItem}, \cd{Snackbar},
+    \cd{StoryComposer}, \cd{Chip}, \cd{Button}, \cd{TextField}, \cd{Avatar},
+    \cd{Badge} e \cd{Logo}. Os nomes de cor do Tailwind ficaram e passaram a
+    apontar para os \emph{tokens} \cd{--unv-*}; nenhum hexadecimal do clone
+    antigo sobrou.
+  \item \textbf{O app passa a se chamar Unoovista}, e a missão também
+    (\enquote{Unoovista --- O Conteúdo que não chegou}), por decisão do dono do
+    produto: o \emph{onboarding}, a revelação (as duas cópias gêmeas da
+    \emph{copy}), o card do estudante, o guia, os Termos e as suítes de ponta a
+    ponta mudaram junto. Identificadores (\arq{instanooria-app.tsx},
+    \arq{02-instanooria.mjs}, \arq{lib/insta/}) ficam, pela regra da
+    \adrr{ADR-91}.
+  \item \textbf{O Instanooria continua vivo para quem o usa}: A Seleção
+    (exp07ef1b), o clone da exp01ef1b e o \cd{PostCard} da gaveta do Jornal da
+    Escola. As duas seções coexistem e não se misturam.
+  \item \textbf{O que mede não mudou}: o cliente continua mandando os mesmos
+    eventos ao motor, o \emph{dwell} continua observando o cartão inteiro
+    (agora a raiz do \cd{PostCard} do DS) e cada miniatura da busca.
+  \item A experiência sobe para a versão \textbf{1.2.0}.
+\end{itemize}
+
+\textbf{O que ficou local, e por quê} (compensações marcadas no
+\arq{AGENTS.md} da experiência):
+
+\begin{itemize}
+  \item \textbf{A grade de miniaturas} da busca e dos perfis: o
+    \cd{MediaGrid} só desenha bloco com \cd{src} (metade dos posts é cartão de
+    emoji) e não entrega o elemento de cada bloco, que a busca registra no
+    medidor de \emph{dwell}.
+  \item \textbf{O botão de curtir comentário}, só de glifo: o pacote não tem
+    botão de ícone sem contêiner.
+  \item \textbf{O \enquote{Seguir} ao lado do cabeçalho do post} e \textbf{o
+    coração do duplo-toque}: o \cd{PostCard.Header} não tem espaço para ação
+    além do \enquote{mais}, e embrulhar a \cd{PostCard.Media} quebraria a pílula
+    de ações, que só existe quando ela vem logo depois da mídia.
+  \item \textbf{O seletor de figurinha} do \emph{onboarding}: o pacote não
+    tem seletor de avatar.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Trocar só o ícone e os \emph{tokens}}, mantendo os componentes
+    locais. Era a portabilidade mais barata, e a tela continuaria com a
+    composição do Instagram, só pintada de roxo --- a composição própria do
+    Unoovista mora nos componentes.
+  \item \textbf{Manter o nome Instanooria com a interface nova.} Um nome que
+    remete ao aplicativo real sobre uma interface que deixou de imitá-lo.
+  \item \textbf{Migrar também A Seleção.} Fica para outra frente; ela é outra
+    missão, com outro instrumento.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{O Material Symbols desce para o estudante}: o \cd{Icon} do
+    Unoovista é ligadura, e a fonte tem \SI{5.36}{\mega\byte} num arquivo só.
+    No Instanooria os glifos eram SVG. O \emph{feed} usa ícone desde a primeira
+    tela, então o arquivo é baixado por cada aparelho na rede da escola.
+  \item \textbf{As cores dos avatares das personas sumiram}: as iniciais ficam
+    sobre o fundo único do \cd{Avatar} do DS, e o par de cores por
+    \emph{handle} saiu junto com a paleta antiga.
+  \item \textbf{A folha do DS não fecha no arraste}, só no véu, no ESC e na
+    ação dela; e o modificador de opacidade das cores (\cd{text-ink/70}) agora
+    depende de \cd{color-mix}, o mesmo piso de navegador do \cd{:has()} que os
+    componentes já exigem.
+\end{itemize}
+
+\textbf{Gatilho.} O pacote publicar o que falta (grade com bloco sem foto e
+referência por bloco, botão só de glifo, seletor de avatar) --- cada
+compensação morre com a peça dela --- ou o peso da fonte de ícones aparecer na
+medição de carga da escola.
+
+% ---------------------------------------------------------------------------
+\section{ADR-134 --- Quem mandou isso? troca o clone do WhatsApp pelo Unoochat}
+\label{adr:exp05ef1b-unoochat}
+
+\textbf{Data.} 2026-10-02. \textbf{Status.} Aceita. O número 133 está
+reservado pela frente paralela do Unoovista (a missão do 8º ano), e este pula
+para o 134 para não colidir.
+
+\begin{especificacao}{Contexto}
+A exp05ef1b (Quem mandou isso?) imitava o mensageiro com a seção
+\cd{whatsappmobile} do Design System, derivada de um arquivo de telas do
+WhatsApp, e por isso presa ao tema escuro e à paleta verde do aplicativo real.
+Desde a 0.2.9 o pacote publica a seção \cd{unoochat}: uma cópia
+\textbf{estrutural} do \cd{whatsappmobile} --- os mesmos 39 componentes, as
+mesmas props e as mesmas medidas --- com a identidade da Unooria (roxo, Open
+Sans, Material Symbols) e tema claro e escuro, cada valor um degrau nomeado da
+paleta da plataforma. Ela existe para que a interface de mensageria não
+reproduza a identidade visual de um aplicativo de terceiros.
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{itemize}
+  \item \textbf{O mensageiro inteiro da missão usa a seção \cd{unoochat}}, por
+    uma ponte nova, \arq{packages/ui/src/ds-unoochat.ts}
+    (\cd{@edu/ui/ds-unoochat}). A troca é de importação, não de composição:
+    os 19 componentes usados (lista, cabeçalho, balões com
+    \cd{.Media}/\cd{.LinkPreview}/\cd{.Invite}, seta de encaminhar com
+    \cd{exhausted}, folha, faixa, enquete, etiquetas, aviso rápido, janela)
+    existem com o mesmo nome e as mesmas props.
+  \item \textbf{Tema claro}, escrito em \cd{data-unc-theme="light"} na raiz
+    do \arq{index.html}. O escuro existe e é legítimo, mas a casca da escola é
+    clara e a missão não tem seletor de tema.
+  \item \textbf{Os \emph{tokens} do CSS local passam de \cd{--wa-*} a
+    \cd{--unc-*}}: dezoito têm par de mesmo nome; o \cd{accent-badge} vira o
+    \cd{accent} (o Unoochat consolidou os onze acentos num só) e o
+    \cd{text-meta}, o \cd{text-secondary}. O papel do comunicado desenhado, que
+    invertia texto claro e fundo escuro, passa a ser a tela do app com o filete
+    divisor --- a inversão daria branco sobre lavanda no tema claro.
+  \item \textbf{O que mede não mudou}: a api, o gabarito, a régua e os eventos
+    são os mesmos; a suíte de ponta a ponta troca só as classes (\cd{.wa-*}
+    para \cd{.unc-*}). A experiência sobe para a versão \textbf{0.3.0}.
+  \item \textbf{O \cd{whatsappmobile} continua vivo} para quem o usa: a
+    exp06ef2b (O Rastro do Boato) e o \cd{MessageBubble} da gaveta do Jornal
+    da Escola. As duas seções coexistem e não se misturam.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Manter o \cd{whatsappmobile}.} Continuaria reproduzindo a
+    identidade de um aplicativo de terceiros, que é exatamente o motivo de o
+    Unoochat existir.
+  \item \textbf{O tema escuro do Unoochat}, o mais próximo do que a missão
+    mostrava. Faria a missão alternar entre um mensageiro escuro e a casca
+    clara da escola sem razão de produto.
+  \item \textbf{Migrar também a exp06ef2b no mesmo PR.} Fica para outra
+    frente: ela é outra missão e não foi pedida.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{A fronteira do disfarce fica menos visível no CSS}: o
+    Unoochat copia os literais da paleta da Unooria, então um \emph{token}
+    \cd{--unc-*} numa tela da escola não destoa --- passa. Antes ele sumia
+    sobre o branco, o que pelo menos aparecia num print.
+  \item \textbf{A folha de fonte do clone passa a carregar o Material
+    Symbols}: sem ela o ícone vira o nome escrito, como na seção da
+    plataforma. O \emph{woff2} é o mesmo que a casca já pedia.
+  \item \textbf{O avatar de iniciais do cabeçalho não tem círculo visível}:
+    o fundo dele é o da barra. Já era assim no \cd{whatsappmobile}; é do
+    pacote, e não foi compensado aqui.
+\end{itemize}
+
+\textbf{Gatilho.} O pacote publicar uma diferença de API entre as duas seções
+que a missão use, o dono do produto pedir o tema escuro, ou a exp06ef2b migrar
+--- aí a ponte \cd{@edu/ui/ds-whatsapp} perde o último consumidor de missão.
+
+% ---------------------------------------------------------------------------
+\section{ADR-135 --- A Seleção troca o Instanooria pelo Unoovista}
+\label{adr:exp07ef1b-unoovista}
+
+\textbf{Data.} 2026-10-02. \textbf{Status.} Aceita. Revoga, para a exp07ef1b,
+o item \enquote{o Instanooria continua vivo para quem o usa} da
+\adrr{ADR-133}.
+
+\begin{especificacao}{Contexto}
+A exp07ef1b (A Seleção, 7º ano, Unidade 1) ficou no \cd{instanooria} quando a
+missão do 8º ano migrou para o \cd{unoovista} (\adrr{ADR-133}). Ao contrário da
+exp08ef1b, ela já montava o clone inteiro com componentes do pacote --- os
+dezenove que usa existem no \cd{unoovista} com o mesmo nome e as mesmas props.
+As únicas diferenças de API entre as seções que a missão toca são aditivas
+(\cd{TopBar.Action}, \cd{shortLabel} da \cd{TabBar}, \cd{frictionLabel} do
+\cd{InlineHint}), e o \cd{Icon} passa de SVG a ligadura.
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{itemize}
+  \item \textbf{O clone inteiro usa a seção \cd{unoovista}}, pela ponte
+    \cd{@edu/ui/ds-unoovista}, que ganha os oito componentes que a missão
+    trouxe do Instanooria: \cd{DirectThread}, \cd{MessageBubble},
+    \cd{DmPoll}, \cd{ConfirmDialog}, \cd{FloatingButton}, \cd{InlineHint},
+    \cd{GestureHint} e \cd{SegmentedTabs}. A troca é de importação, de tema
+    (\cd{data-unv-theme}) e de \emph{token} (\cd{--unv-*}, todos com par de
+    mesmo nome). As telas da escola não mudam.
+  \item \textbf{O aplicativo passa a se chamar Unoovista}, como o do 8º ano:
+    o título da página e os Termos. A copy da missão não nomeava o app.
+  \item \textbf{Três medidas locais leem o pacote}, porque a composição do
+    Unoovista é outra: a pílula \enquote{Ir para aba Salvos} sobe pela altura
+    da barra de navegação flutuante; os cards sem foto e os do carrossel
+    ganham respiro acima das ações em pílula, que ficam sobre a mídia; e a
+    trilha das barras do equilíbrio editorial usa a cor de borda, porque a do
+    campo tem, no tema escuro, a mesma cor da folha da ficha.
+  \item \textbf{O que mede não mudou}: a api, o gabarito, a régua, as enquetes
+    e os eventos são os mesmos. A experiência sobe para a versão
+    \textbf{1.1.0}.
+  \item \textbf{O Instanooria continua vivo} para o clone da exp01ef1b (O Que
+    a Foto Conta) e o \cd{PostCard} da gaveta do Jornal da Escola.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Manter A Seleção no Instanooria.} Duas missões da mesma
+    trilha imitariam a mesma rede de fotos com duas caras, e a do 7º ano
+    continuaria reproduzindo a de um aplicativo real.
+  \item \textbf{Manter o nome Instanooria com a interface nova.} O mesmo
+    motivo da \adrr{ADR-133}.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{O Material Symbols desce para o estudante} também nesta
+    missão, pelo mesmo motivo da \adrr{ADR-133}.
+  \item \textbf{As etiquetas da ficha técnica perdem a cápsula}: no tema
+    escuro, o \cd{Badge} \cd{neutral} do Unoovista tem o fundo da folha. É do
+    pacote, e não foi compensado aqui.
+  \item \textbf{O desenho em SVG do card sem foto} (na grade e no Story) usa
+    a pilha de fontes do Unoovista, mas, dentro de um \cd{<img>}, a Open Sans
+    não carrega: ele cai na fonte do sistema, como já caía no Instanooria.
+\end{itemize}
+
+\textbf{Gatilho.} O pacote mudar a API de uma das duas seções, ou a exp01ef1b
+migrar --- aí a ponte \cd{@edu/ui/ds-insta} fica só com a gaveta do Jornal.
+
+\section{ADR-136 --- As peças da gaveta do Jornal da Escola passam para o Unoovista e o Unoochat}
+\label{adr:exp04ef1b-unoovista-unoochat}
+
+\textbf{Data.} 2026-10-02. \textbf{Status.} Aceita. Mantém a regra da
+\adrr{ADR-117} (a peça imitada fala na seção de onde veio) e troca as seções
+que ela aponta.
+
+\begin{especificacao}{Contexto}
+O Jornal da Escola (exp04ef1b, 4º ano, Unidade 1) é a redação da Unooria, mas
+duas notícias chegam de fora: a de rede social, desenhada na gaveta como o
+\cd{PostCard} do \cd{instanooria}, e a mensagem encaminhada, como o
+\cd{MessageBubble} do \cd{whatsappmobile} --- que é também o boato do Desafio
+Final. No mesmo dia, a missão do 8º ano e A Seleção trocaram o Instanooria pelo
+Unoovista (\adrr{ADR-133}, \adrr{ADR-135}) e Quem mandou isso? trocou o clone do
+WhatsApp pelo Unoochat (\adrr{ADR-134}). O Jornal era a última missão a mostrar
+as duas peças com a cara dos aplicativos reais. As duas seções novas são cópias
+estruturais das antigas: o \cd{PostCard} e o \cd{MessageBubble} têm os mesmos
+subcomponentes e as mesmas props.
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{itemize}
+  \item \textbf{O post vem do \cd{unoovista}} (\cd{@edu/ui/ds-unoovista}) e
+    \textbf{a mensagem do \cd{unoochat}} (\cd{@edu/ui/ds-unoochat}), na gaveta
+    e no Desafio Final. A troca é de ponte, de \emph{token} (\cd{--unv-*},
+    \cd{--unc-*}) e de tema; a composição de cada peça (sem curtidas, sem
+    carimbo de data, sem hora, com o selo de encaminhada) não muda.
+  \item \textbf{As duas peças ficam no tema claro}, fixado no próprio
+    contêiner (\cd{PostCard theme="light"} e \cd{data-unc-theme="light"}),
+    como a redação em volta. A moldura da mensagem passa do retângulo escuro do
+    WhatsApp para a lavanda do \cd{--unc-color-surface-base}: o balão recebido
+    do Unoochat é branco e sumiria no branco da redação.
+  \item \textbf{O que a missão mede não mudou}: a api, as notícias, as
+    pistas, a régua e as perguntas são as mesmas. A experiência sobe para a
+    versão \textbf{2.1.0}.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Manter as duas peças nos clones.} O 4º ano veria o post e a
+    mensagem com a cara de aplicativos reais, enquanto o 5º, o 7º e o 8º ano
+    veem as redes da Unooria --- a criança que chegasse ao 5º ano encontraria
+    outro aplicativo de conversa para a mesma coisa.
+  \item \textbf{Desenhar as duas peças na seção \cd{unooria}}, como o resto da
+    redação. Um post que não parece post não ensina a reconhecer post: é o
+    argumento da \adrr{ADR-117}, que continua valendo.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{O Unoovista e o Unoochat se parecem mais com a redação} do que
+    os clones: são roxos e usam a Open Sans, como a Unooria. A fronteira entre
+    a peça e a redação fica menos visível --- o fio e a moldura de cada peça
+    passam a carregar essa separação.
+  \item \textbf{A experiência carrega duas folhas de fonte a mais}, que repetem
+    as faces da \cd{fonts/unooria.css} com as mesmas URLs: não há download a
+    mais, mas o \emph{bundle} de CSS cresce algumas centenas de bytes.
+\end{itemize}
+
+\textbf{Gatilho.} O pacote mudar a API do \cd{PostCard} ou do
+\cd{MessageBubble} de uma das seções, ou o \cd{unoovista}/\cd{unoochat} passar
+a seguir o modo escuro do sistema. Com esta, a ponte \cd{@edu/ui/ds-insta} fica
+só com o clone da exp01ef1b, e a \cd{@edu/ui/ds-whatsapp} só com a exp06ef2b.

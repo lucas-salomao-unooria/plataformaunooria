@@ -5,10 +5,11 @@
  * 0.2.6 publicou `exhausted` e o `.Media` acionável; uma nova vai marcada
  * `(b) COMPENSAÇÃO`, com a lacuna e o pedido.
  *
- * Cor NUNCA se escreve à mão aqui — sai dos tokens `--wa-*` (clone) e
- * `--unooria-*` (casca). E a fronteira entre os dois está MARCADA abaixo: token
- * do clone numa tela da escola não quebra nada, só some (fundo claro com texto
- * calibrado para fundo escuro) — e é o defeito mais difícil de ver.
+ * Cor NUNCA se escreve à mão aqui — sai dos tokens `--unc-*` (clone, seção
+ * `unoochat`, tema claro) e `--unooria-*` (casca). E a fronteira entre os dois
+ * está MARCADA abaixo: os dois são roxos e claros, então token do clone numa
+ * tela da escola nem destoa — passa, e é por isso que é o defeito mais difícil
+ * de ver (ADR-134).
  */
 
 * {
@@ -27,9 +28,9 @@ body {
   /* O aparelho é desenhado pelo HUB (`DispositivoFrame`, a partir do
      `viewport` do manifesto). Aqui dentro só se preenche os 375×812 que ele
      reserva — o `PhoneFrame` do pacote daria um celular dentro de outro. */
-  background: var(--wa-color-surface-base);
-  color: var(--wa-color-text-primary);
-  font-family: var(--wa-font-sans);
+  background: var(--unc-color-surface-base);
+  color: var(--unc-color-text-primary);
+  font-family: var(--unc-font-sans);
   -webkit-font-smoothing: antialiased;
 }
 
@@ -44,7 +45,7 @@ body {
 /* Posição, não aparência: o `Toast` do pacote fica a 40px da base, e aqui a
    base é o rodapé do chat (a tarja só-admin e, em 3/3, "Ir para o Mural da
    Turma") — o aviso cobriria justamente o botão da etapa. Sobe acima dele. */
-.raiz > .wa-toast-region {
+.raiz > .unc-toast-region {
   bottom: 148px;
 }
 
@@ -56,7 +57,7 @@ body {
   flex-direction: column;
   height: 100%;
   overflow: hidden;
-  background: var(--wa-color-surface-canvas);
+  background: var(--unc-color-surface-canvas);
 }
 
 .app--centrado {
@@ -81,7 +82,7 @@ body {
   margin: 0;
   font-size: 14px;
   line-height: 1.4;
-  color: var(--wa-color-text-meta);
+  color: var(--unc-color-text-secondary);
 }
 
 /* O contador por extenso ("Mensagens selecionadas para o Mural: N/3") vai só
@@ -106,7 +107,7 @@ body {
   font-size: 14px;
   line-height: 1.45;
   text-align: center;
-  color: var(--wa-color-text-meta);
+  color: var(--unc-color-text-secondary);
 }
 
 /* ------------------------------------------------------- as conversas */
@@ -143,7 +144,7 @@ body {
   gap: 8px;
 }
 
-.linha-do-grupo .wa-forwardbutton {
+.linha-do-grupo .unc-forwardbutton {
   align-self: center;
 }
 
@@ -169,7 +170,7 @@ body {
 }
 
 .faixa-tocavel:focus-visible {
-  outline: 2px solid var(--wa-color-accent);
+  outline: 2px solid var(--unc-color-accent);
   outline-offset: -2px;
 }
 
@@ -180,7 +181,7 @@ body {
 
 .rodape__acao {
   padding: 10px 12px;
-  background: var(--wa-color-surface-appbar);
+  background: var(--unc-color-surface-appbar);
 }
 
 .rodape__acao--dupla {
@@ -197,7 +198,7 @@ body {
 
 /* A folha "Encaminhar para...": um destino só, com a linha de apoio. */
 .folha__destino {
-  padding: 4px var(--wa-gutter);
+  padding: 4px var(--unc-gutter);
 }
 
 .folha__rotulo {
@@ -207,23 +208,23 @@ body {
 }
 
 .folha__subrotulo {
-  font-size: var(--wa-font-caption-size);
-  color: var(--wa-color-text-secondary);
+  font-size: var(--unc-font-caption-size);
+  color: var(--unc-color-text-secondary);
 }
 
 .janela__texto {
   margin: 0;
-  font-size: var(--wa-font-body-md-size);
+  font-size: var(--unc-font-body-md-size);
   line-height: 1.4;
-  color: var(--wa-color-text-primary);
+  color: var(--unc-color-text-primary);
 }
 
 /* ------------------------------------------------ a mídia desenhada
  *
  * CONTEÚDO, não controle: o que vai dentro da moldura do `MessageBubble.Media`
- * sem `src`. Tokens `--wa-*` só — o papel do comunicado inverte os papéis de
- * dois deles (texto claro vira o papel, fundo escuro vira a tinta) para parecer
- * papel sem inventar cor.
+ * sem `src`. Tokens `--unc-*` só — o papel do comunicado é a tela do app
+ * (`surface-canvas`) com o filete divisor, para parecer folha solta sobre o
+ * balão sem inventar cor.
  */
 
 .desenho-comunicado {
@@ -231,8 +232,9 @@ body {
   flex-direction: column;
   gap: 6px;
   padding: 12px;
-  background: var(--wa-color-text-inverse);
-  color: var(--wa-color-surface-base);
+  border: 1px solid var(--unc-color-border-divider);
+  background: var(--unc-color-surface-canvas);
+  color: var(--unc-color-text-primary);
   font-size: 12px;
   line-height: 1.35;
   text-align: left;
@@ -242,12 +244,12 @@ body {
   width: 40%;
   height: 6px;
   border-radius: 3px;
-  background: var(--wa-color-accent);
+  background: var(--unc-color-accent);
 }
 
 .desenho-comunicado__titulo {
   margin: 0;
-  font-weight: var(--wa-font-weight-bold);
+  font-weight: var(--unc-font-weight-bold);
   font-size: 13px;
 }
 
@@ -272,7 +274,7 @@ body {
 .desenho-comunicado__carimbo {
   width: 30px;
   height: 30px;
-  border: 2px solid var(--wa-color-accent-badge);
+  border: 2px solid var(--unc-color-accent);
   border-radius: 50%;
 }
 
@@ -282,8 +284,8 @@ body {
   flex-direction: column;
   gap: 8px;
   padding: 12px;
-  background: var(--wa-color-surface-notice);
-  color: var(--wa-color-text-primary);
+  background: var(--unc-color-surface-notice);
+  color: var(--unc-color-text-primary);
   text-align: left;
 }
 
@@ -295,7 +297,7 @@ body {
 .desenho-termometro__titulo {
   margin: 0;
   font-size: 14px;
-  font-weight: var(--wa-font-weight-bold);
+  font-weight: var(--unc-font-weight-bold);
   line-height: 1.25;
 }
 
@@ -312,8 +314,8 @@ body {
 
 .desenho-lamina__embalagem {
   padding: 4px 8px;
-  border: 1px solid var(--wa-color-border-control);
-  border-radius: var(--wa-radius-pill);
+  border: 1px solid var(--unc-color-border-control);
+  border-radius: var(--unc-radius-pill);
   font-size: 12px;
   line-height: 1.25;
   text-align: center;
@@ -322,16 +324,16 @@ body {
 .desenho-lamina__seta {
   font-size: 18px;
   line-height: 1;
-  color: var(--wa-color-text-meta);
+  color: var(--unc-color-text-secondary);
 }
 
 /* O filtro "desarmado": borda tracejada, a forma (não a cor) é que diz. */
 .desenho-lamina__filtro {
   padding: 6px 12px;
-  border: 2px dashed var(--wa-color-text-notice);
-  border-radius: var(--wa-radius-m);
+  border: 2px dashed var(--unc-color-text-notice);
+  border-radius: var(--unc-radius-m);
   font-size: 12px;
-  font-weight: var(--wa-font-weight-bold);
+  font-weight: var(--unc-font-weight-bold);
 }
 
 .desenho-termometro__linha {
@@ -349,28 +351,29 @@ body {
 .desenho-termometro__trilho {
   height: 10px;
   overflow: hidden;
-  border-radius: var(--wa-radius-pill);
-  background: var(--wa-color-surface-elevated);
+  border-radius: var(--unc-radius-pill);
+  background: var(--unc-color-surface-elevated);
 }
 
 .desenho-termometro__barra {
   display: block;
   height: 100%;
-  background: var(--wa-color-accent);
+  background: var(--unc-color-accent);
 }
 
 .desenho-termometro__valor {
   margin: 0;
   font-size: 12px;
-  font-weight: var(--wa-font-weight-bold);
-  color: var(--wa-color-accent);
+  font-weight: var(--unc-font-weight-bold);
+  color: var(--unc-color-accent);
 }
 
 /* ============================================================================
  * FRONTEIRA DO DISFARCE — daqui para baixo quem fala é a ESCOLA.
  *
- * Os tokens são `--unooria-*`, nunca `--wa-*`: o clone é calibrado para fundo
- * escuro e, sobre o branco da casca, some sem erro nenhum.
+ * Os tokens são `--unooria-*`, nunca `--unc-*`: o Unoochat COPIA os literais da
+ * paleta da Unooria, e um token dele aqui passaria sem destoar — até alguém
+ * ligar o tema escuro do clone e a casca escurecer junto.
  * ========================================================================== */
 
 /* O `ScrollBar` do DS é o contêiner que rola (aqui a seção É a `unooria`);

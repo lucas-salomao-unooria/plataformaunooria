@@ -13,31 +13,34 @@ import { createRoot } from "react-dom/client";
  *   família a tela escreveria "account_balance" no lugar do ícone. O custo
  *   medido do Material Symbols (5,36 MB, `packages/ui/AGENTS.md`) aqui é
  *   download de verdade: a mesa usa ícone desde a primeira tela.
- * - **`instanooria`** — só o `PostCard` do post de rede social, na gaveta. A
- *   seção não tem folha de fonte (a tipografia é a do sistema).
- * - **`whatsappmobile`** — só o `MessageBubble` da mensagem encaminhada, na
- *   gaveta e no boato do desafio final. Com a folha de fonte (PT Sans), para o
- *   balão não cair no fallback.
+ * - **`unoovista`** — só o `PostCard` do post de rede social, na gaveta
+ *   (ADR-136; até a 2.0.0 era o `instanooria`).
+ * - **`unoochat`** — só o `MessageBubble` da mensagem encaminhada, na gaveta e
+ *   no boato do desafio final (ADR-136; até a 2.0.0 era o `whatsappmobile`).
  *
- * **Verificado ao escrever (2026-09-27, DS 0.2.8): nenhuma das três vaza.** As
+ * As duas folhas de FONTE novas são obrigatórias pela regra das pontes (o
+ * `Icon` das duas seções é ligadura do Material Symbols). No DS 0.2.11 elas
+ * declaram as MESMAS faces da `fonts/unooria.css`, com as mesmas URLs: a
+ * repetição do `@font-face` não baixa nada a mais, e a linha fica para o dia em
+ * que uma seção trocar de família.
+ *
+ * **Verificado ao escrever (2026-10-02, DS 0.2.11): nenhuma das três vaza.** As
  * folhas agregadas e as de cada componente só declaram seletores com o prefixo
- * da própria seção (`.unooria-*`, `.insta-*`, `.wa-*`); os blocos `:root` só
- * definem variáveis do próprio namespace (`--unooria-*`, `--insta-*`, `--wa-*`);
- * não há reset de `body`, `html`, `*` nem de elemento solto; e as famílias das
- * folhas de fonte não colidem (Open Sans/Material Symbols × PT Sans/Poppins).
- * O único ponto de tema é o do Instanooria — `@media (prefers-color-scheme:
- * dark) { :root:not([data-insta-theme=light]) }` escurece os `--insta-*` com o
- * sistema em modo escuro —, e o `PostCard theme="light"` o neutraliza no próprio
- * cartão. O WhatsApp só publica tema escuro: o balão vai num contêiner escuro
- * próprio (`pecas/mensagem-encaminhada.tsx`).
+ * da própria seção (`.unooria-*`, `.unv-*`, `.unc-*`); os blocos `:root` só
+ * definem variáveis do próprio namespace (`--unooria-*`, `--unv-*`, `--unc-*`);
+ * não há reset de `body`, `html`, `*` nem de elemento solto. As duas seções
+ * novas têm dois temas e o `:root` é o CLARO — nenhuma segue o modo escuro do
+ * sistema —, e cada peça fixa o claro no próprio contêiner (`PostCard
+ * theme="light"`, `data-unc-theme="light"`), porque a redação em volta é clara.
  *
  * NUNCA o `styles.css` consolidado: ele arrasta as seis seções.
  */
 import "@unooria/design-system/unooria.css";
 import "@unooria/design-system/fonts/unooria.css";
-import "@unooria/design-system/instanooria.css";
-import "@unooria/design-system/whatsappmobile.css";
-import "@unooria/design-system/fonts/whatsappmobile.css";
+import "@unooria/design-system/unoovista.css";
+import "@unooria/design-system/fonts/unoovista.css";
+import "@unooria/design-system/unoochat.css";
+import "@unooria/design-system/fonts/unoochat.css";
 import "./estilos/globals.css";
 
 import { Bootstrap } from "./bootstrap";

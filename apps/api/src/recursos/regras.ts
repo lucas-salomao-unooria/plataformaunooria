@@ -1,4 +1,5 @@
 import {
+  ligadoPorPadrao,
   partesDoRecurso,
   recursoDaExperiencia,
   recursoDoProduto,
@@ -100,7 +101,9 @@ export function resolverProduto(
   cadeia: CadeiaDeEscopos = [],
 ): Efetivo {
   const linha = maisEspecifica(linhas, recursoDoProduto(produto), cadeia);
-  if (!linha) return { ligado: true, versaoFixa: null };
+  /* Ninguém decidiu: vale o padrão do produto — ligado, salvo os que estão em
+     teste interno (`PRODUTOS_DESLIGADOS_POR_PADRAO`). */
+  if (!linha) return { ligado: ligadoPorPadrao(produto), versaoFixa: null };
   return {
     ligado: linha.ligado,
     versaoFixa: null,

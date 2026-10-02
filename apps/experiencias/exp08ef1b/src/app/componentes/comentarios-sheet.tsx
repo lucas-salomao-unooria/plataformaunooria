@@ -1,17 +1,25 @@
 import { useEffect, useState } from 'react';
 
+import { ButtonUnv, IconUnv, TextFieldUnv } from '@edu/ui/ds-unoovista';
+
 import { api } from '../../lib/api';
 import type { ComentarioCliente, FeedPostCliente } from '../../lib/tipos';
 import { formatarContagem } from '../../lib/avatar';
 
 import { AvatarPerfil } from './avatar-perfil';
-import { Glifo } from '@edu/ui/ds-insta';
 import { Sheet } from './sheet';
 
 /**
  * Sheet de comentários (doc 03 §3.6): 75% da tela, lista completa (lazy),
  * curtida por comentário e campo fixo embaixo. O comentário do estudante entra no
  * topo e ganha 2–5 curtidas fake nos 30s seguintes.
+ *
+ * O campo é o `TextField` do Unoovista com "Publicar" à direita. A linha do
+ * comentário é texto corrido nos tokens do DS: a `ListItem` corta o título numa
+ * linha só, e comentário quebra linha. O coração de cada comentário é um botão
+ * só de glifo — o DS não publica botão de ícone sem contêiner (o `TopBar.Action`
+ * é um círculo de 44px), e esta é a COMPENSAÇÃO marcada no `AGENTS.md` da
+ * experiência.
  */
 export function ComentariosSheet({
   post,
@@ -89,25 +97,25 @@ export function ComentariosSheet({
   return (
     <Sheet aberto aoFechar={aoFechar} titulo="Comentários">
       <div className="flex h-full flex-col">
-        <ul className="flex-1 overflow-y-auto px-3 py-3">
+        <ul className="m-0 flex-1 list-none overflow-y-auto p-0">
           {carregando ? <li className="py-6 text-center text-[13px] text-muted">carregando…</li> : null}
 
           {comentarios.map((comentario) => {
             const curtido = curtidos.has(comentario.id);
             const ehDoEstudante = comentario.doEstudante;
+            const curtidas = comentario.likesCount + (curtido ? 1 : 0);
             return (
-              <li key={comentario.id} className="flex items-start gap-2.5 py-2.5">
-                <AvatarPerfil seed={ehDoEstudante ? avatar : comentario.handle} tamanho={24} />
+              <li key={comentario.id} className="flex items-start gap-3 py-2.5">
+                <AvatarPerfil seed={ehDoEstudante ? avatar : comentario.handle} tamanho={32} />
                 <div className="min-w-0 flex-1">
-                  <p className="text-[13px] leading-snug text-ink">
+                  <p className="m-0 text-[14px] leading-snug text-ink">
                     <span className="font-semibold">{comentario.handle.replace(/^@/, '')}</span>{' '}
                     {comentario.texto}
                   </p>
-                  <p className="mt-0.5 flex gap-3 text-[11px] text-muted">
+                  <p className="m-0 mt-0.5 flex gap-3 text-[12px] text-muted">
                     <span>{comentario.timestampLabel}</span>
                     <span>
-                      {formatarContagem(comentario.likesCount + (curtido ? 1 : 0))}{' '}
-                      {comentario.likesCount + (curtido ? 1 : 0) === 1 ? 'curtida' : 'curtidas'}
+                      {formatarContagem(curtidas)} {curtidas === 1 ? 'curtida' : 'curtidas'}
                     </span>
                     <span className="font-semibold">Responder</span>
                   </p>
@@ -115,6 +123,7 @@ export function ComentariosSheet({
                 <button
                   type="button"
                   aria-label="Curtir comentário"
+                  aria-pressed={curtido}
                   onClick={() => {
                     setCurtidos((atual) => {
                       const proximo = new Set(atual);
@@ -126,19 +135,22 @@ export function ComentariosSheet({
                       return proximo;
                     });
                   }}
-                  className="pt-1"
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full"
                 >
-                  <Glifo name={curtido ? 'heartFilled' : 'heart'} size={13} tone={curtido ? 'like' : 'secondary'} />
+                  <IconUnv name={curtido ? 'heartFilled' : 'heart'} size="sm" tone={curtido ? 'like' : 'secondary'} />
                 </button>
               </li>
             );
           })}
         </ul>
 
-        <div className="flex items-center gap-2 border-t border-hairline px-3 py-2.5 pb-[calc(10px+env(safe-area-inset-bottom))]">
-          <AvatarPerfil seed={avatar} tamanho={28} />
-          <input
-            className="flex-1 bg-transparent text-[14px] text-ink outline-none placeholder:text-muted"
+        <div className="flex items-center gap-2 pt-2">
+          <AvatarPerfil seed={avatar} tamanho={32} />
+          <TextFieldUnv
+            block
+            className="min-w-0 flex-1"
+            label="Comentário"
+            hideLabel
             placeholder="Adicione um comentário…"
             value={texto}
             onChange={(evento) => setTexto(evento.target.value)}
@@ -148,14 +160,12 @@ export function ComentariosSheet({
                 publicar();
               }
             }}
+            trailing={
+              <ButtonUnv variant="link" size="sm" disabled={!texto.trim()} onClick={publicar}>
+                Publicar
+              </ButtonUnv>
+            }
           />
-          <button
-            type="button"
-            className={`text-[14px] font-semibold ${texto.trim() ? 'text-action' : 'text-action/40'}`}
-            onClick={publicar}
-          >
-            Publicar
-          </button>
         </div>
       </div>
     </Sheet>

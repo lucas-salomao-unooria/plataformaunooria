@@ -25,18 +25,21 @@ plataforma no feed do estudante quebra a ilusão que a experiência está medind
 | Seção | Ponte | Onde vale |
 |---|---|---|
 | `unooria` | `@edu/ui/ds` | hub (login, `/professor`, `/admin`, `/analise`), header de todos os papéis, telas pós-revelação do estudante |
-| `instanooria` | `@edu/ui/ds-insta` | superfície disfarçada da exp08ef1b e a exp07ef1b inteira no clone (as telas da escola vão pela `@edu/ui/ds`); as telas de clone (E2–E4) da exp01ef1b; a peça `PostCard` da exp04ef1b (ADR-117); as sete extensões da 0.2.5 (DM, enquete, diálogo, folha, pílula, compositor de Stories) e as três da 0.2.7 (faixa de dica, gesto e aviso passageiro) entraram para ela |
+| `unoovista` | `@edu/ui/ds-unoovista` | superfície disfarçada da exp08ef1b desde a 1.2.0 (ADR-133) e da exp07ef1b desde a 1.1.0 (ADR-135; as telas da escola vão pela `@edu/ui/ds`), e o `PostCard` da gaveta da exp04ef1b desde a 2.1.0 (ADR-136): a cópia estrutural do `instanooria` com a identidade da Unooria. É **outra seção** — tokens `--unv-*`, nunca `--unooria-*` —, e o roxo dela não autoriza peça da plataforma no feed. O ícone é ligadura do Material Symbols: sem `fonts/unoovista.css`, o nome do glifo aparece como texto |
+| `instanooria` | `@edu/ui/ds-insta` | as telas de clone (E2–E4) da exp01ef1b (o `PostCard` da exp04ef1b saiu dela na ADR-136); as sete extensões da 0.2.5 (DM, enquete, diálogo, folha, pílula, compositor de Stories) e as três da 0.2.7 (faixa de dica, gesto e aviso passageiro) entraram para ela |
 | `unootube` | `@edu/ui/ds-unootube` | superfície disfarçada do UnooTube, hoje ARQUIVADO (`backup-exp04ef1b`, ADR-116): nenhuma missão viva a usa |
 | `chatgpt` | `@edu/ui/ds-chatgpt` | a exp02em1b INTEIRA (não tem revelação no software) e a conversa da exp08ef4b (o briefing, o Meu Percurso e o fechamento dela são `unooria`) |
-| `whatsappmobile` | `@edu/ui/ds-whatsapp` | a exp06ef2b e a exp05ef1b, menos as telas da escola — **só tema escuro**. Onde a fronteira cai é a REVELAÇÃO, não o arquivo: na exp06ef2b o mapa da rede fala pela escola porque o app real não tem visualizador de topologia (ADR-72) |
+| `whatsappmobile` | `@edu/ui/ds-whatsapp` | a exp06ef2b — **só tema escuro**. Onde a fronteira cai é a REVELAÇÃO, não o arquivo: na exp06ef2b o mapa da rede fala pela escola porque o app real não tem visualizador de topologia (ADR-72) |
+| `unoochat` | `@edu/ui/ds-unoochat` | a exp05ef1b, menos as telas da escola, em tema CLARO (ADR-134), e o `MessageBubble` da gaveta e do desafio final da exp04ef1b desde a 2.1.0, também claro (ADR-136). Mesma estrutura do `whatsappmobile`, identidade da Unooria — e por isso o token dele numa tela da escola não destoa: a fronteira só se vê pelo prefixo |
 | `tiktooria` | — | ainda sem consumidor |
 
 **A exceção, e só ela (ADR-117): conteúdo de uma plataforma DENTRO de uma tela
 da Unooria usa a seção da plataforma que ele imita.** O Jornal da Escola
 (exp04ef1b) não é clone de nada: a redação inteira (mesa, página, Bento,
 leitores, Chave) é `unooria`. Mas uma notícia que veio de rede social aparece na
-gaveta como `PostCard` do `instanooria`, e uma mensagem encaminhada como
-`MessageBubble` do `whatsappmobile` — a peça imitada fala na voz de onde veio,
+gaveta como `PostCard` do `unoovista`, e uma mensagem encaminhada como
+`MessageBubble` do `unoochat` (até a 2.0.0, `instanooria` e `whatsappmobile`;
+ADR-136) — a peça imitada fala na voz de onde veio,
 porque um post que não parece post não ensina a reconhecer post. A regra é
 por PEÇA, nunca por tela: o cromo em volta continua sendo da Unooria, e a peça
 do clone não traz a barra, as abas nem o fundo do app. É o inverso do que

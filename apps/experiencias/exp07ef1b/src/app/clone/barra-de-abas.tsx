@@ -1,4 +1,4 @@
-import { TabBar, type InstaTabItem } from "@edu/ui/ds-insta";
+import { TabBar, type UnvTabItem } from "@edu/ui/ds-unoovista";
 import { E2 } from "../../lib/textos";
 
 export type Aba = "feed" | "salvos";
@@ -15,7 +15,7 @@ export type Aba = "feed" | "salvos";
  * desconfiar da tela, que é o contrário do que o disfarce precisa. Ficam o
  * Feed e os Salvos, que é a navegação que a missão tem.
  */
-const ABAS: InstaTabItem[] = [
+const ABAS: UnvTabItem[] = [
   { id: "feed", label: E2.abaFeed, icon: "home", activeIcon: "home" },
   { id: "salvos", label: E2.abaSalvos, icon: "bookmark", activeIcon: "bookmarkFilled" },
 ];

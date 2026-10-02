@@ -9,8 +9,8 @@ import { ALERTA_DE_ERRO, esperarOuFalharCedo } from "../lib/smoke.mjs";
  * O que esta suíte cobra, e por que cada item é uma regra do software:
  *
  * 1. **A redação é da Unooria, e a peça imitada fala na voz de onde veio**
- *    (ADR-117): o post abre como o post do Instanooria, a mensagem como o balão
- *    do WhatsApp — dentro da mesma gaveta da Unooria.
+ *    (ADR-117, ADR-136): o post abre como o post do Unoovista, a mensagem como o
+ *    balão do Unoochat — dentro da mesma gaveta da Unooria.
  * 2. **A pista desce do servidor** quando a criança a abre: o texto não está na
  *    sessão (é o registro que mede a EF15CO04).
  * 3. **Publicar é um latch, e o motivo vem DEPOIS dele**: o modal de publicar
@@ -108,7 +108,7 @@ await suite(
       "e a segunda edição mostra o antes e o depois.",
     prova: [
       "A atividade nasce da professora, pelo assistente — o banco pronto carrega sem gravar, e criar com “no ar agora” abre a turma",
-      "O post abre no formato do Instanooria e a mensagem no do WhatsApp, dentro da redação da Unooria",
+      "O post abre no formato do Unoovista e a mensagem no do Unoochat, dentro da redação da Unooria",
       "A pista de fonte, data e autoria só existe depois que a criança a abre",
       "Publicar não pergunta nada; a pergunta de motivo vem depois do latch",
       "O resultado e a revisão chegam pelo botão único da professora, e a F5 volta à mesma tela",
@@ -385,10 +385,10 @@ await suite(
 
     // A peça imitada, na seção de onde veio.
     await abrir(N.tirolesa);
-    r.exigir((await gaveta().locator(".insta-post-card").count()) === 1, "o post abre como o post do Instanooria");
+    r.exigir((await gaveta().locator(".unv-post-card").count()) === 1, "o post abre como o post do Unoovista");
     await r.registrar(p, "gaveta-post", {
       titulo: "O post, como post",
-      mostra: "A gaveta da redação com a publicação de rede social desenhada como o Instanooria desenha.",
+      mostra: "A gaveta da redação com a publicação de rede social desenhada como o Unoovista desenha.",
       prova:
         "A redação é da Unooria, mas a peça imitada fala na voz de onde veio (ADR-117): um post que " +
         "não parece post não ensina a reconhecer post.",
@@ -397,13 +397,13 @@ await suite(
 
     await abrir(N.agua);
     r.exigir(
-      (await gaveta().locator(".wa-messagebubble .wa-messagebubble__forwarded").count()) === 1,
-      "a mensagem abre como o balão encaminhado do WhatsApp",
+      (await gaveta().locator(".unc-messagebubble .unc-messagebubble__forwarded").count()) === 1,
+      "a mensagem abre como o balão encaminhado do Unoochat",
     );
     await r.registrar(p, "gaveta-mensagem", {
       titulo: "A mensagem encaminhada",
-      mostra: "O mesmo aviso no balão do WhatsApp, com o selo de encaminhada, dentro da gaveta.",
-      prova: "O WhatsApp publica só o tema escuro, e o balão vem num contêiner escuro próprio.",
+      mostra: "O mesmo aviso no balão do Unoochat, com o selo de encaminhada, dentro da gaveta.",
+      prova: "O balão recebido do Unoochat é branco, e vem num contêiner lavanda próprio para não sumir no branco da redação.",
     });
     await voltarParaAMesa();
 

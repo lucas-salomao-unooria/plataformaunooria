@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { createExperiencia, type ExperienciaHandle } from "@edu/sdk";
-import { ButtonInsta } from "@edu/ui/ds-insta";
+import { ButtonUnv } from "@edu/ui/ds-unoovista";
 import { Avisos } from "./app/avisos";
 import { useConexao } from "./app/conexao";
 import { Indisponivel } from "./app/escola/telas-da-escola";
@@ -83,12 +83,12 @@ export function Bootstrap() {
 
   if (falha) {
     return (
-      <div className="app app--centrado" data-insta-theme="light">
+      <div className="app app--centrado" data-unv-theme="light">
         <p className="aviso-de-abertura">{falha === "sem-turma" ? GLOBAL.semTurma : GLOBAL.naoAbriu}</p>
         {pronto && falha === "outra" && (
-          <ButtonInsta variant="secondary" size="md" onClick={() => void carregar()}>
+          <ButtonUnv variant="secondary" size="md" onClick={() => void carregar()}>
             {GLOBAL.tentarNovamente}
-          </ButtonInsta>
+          </ButtonUnv>
         )}
       </div>
     );

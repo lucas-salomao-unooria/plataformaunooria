@@ -42,6 +42,12 @@ api abriu e não fechou — `ajuda_sessoes.fim` nulo). Token na fala da pessoa n
 vale: só o `system` é lido. **O prompt de verdade e a base nunca vão ao vendor**:
 o `system` dele é descartado depois de lido.
 
+## Nasce DESLIGADA (teste interno)
+
+O produto `ajuda` está em `PRODUTOS_DESLIGADOS_POR_PADRAO` (`recursos/catalogo.ts`):
+sem linha em `disponibilidades`, ele fica fora do ar e o item some do menu. O
+`admin` liga no painel da Unooria (escola ou rede). Lançar é tirar da lista.
+
 ## Custo: minutos, não tokens (exceção à regra 5)
 
 Decisão do dono do produto: a Ajuda não passa pelo `QuotaService`. O que a

@@ -9,9 +9,11 @@
   "exports": {
     "./ds": "./src/ds.ts",
     "./ds-insta": "./src/ds-insta.ts",
+    "./ds-unoovista": "./src/ds-unoovista.ts",
     "./ds-unootube": "./src/ds-unootube.ts",
     "./ds-chatgpt": "./src/ds-chatgpt.ts",
     "./ds-whatsapp": "./src/ds-whatsapp.ts",
+    "./ds-unoochat": "./src/ds-unoochat.ts",
     "./styles/plataforma.css": "./styles/plataforma.css"
   },
   "scripts": {

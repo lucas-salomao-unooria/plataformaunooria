@@ -13,9 +13,10 @@
  * `Dialog`, `Menu`, `ListItem`, `Checkbox`, `Radio` e `TopBar` colidem com os
  * da plataforma, e quem importa daqui sabe que está no clone.
  *
- * ONDE USAR: o mensageiro da exp06ef2b e o grupo da turma da exp05ef1b (do
- * convite da Nina à síntese, e de volta ao chat da Nina nas perguntas finais),
- * inclusive os estados de erro, que falam na voz do app ("Conectando...").
+ * ONDE USAR: o mensageiro da exp06ef2b, inclusive os estados de erro, que
+ * falam na voz do app ("Conectando..."). A exp05ef1b saiu daqui para o
+ * `@edu/ui/ds-unoochat` (ADR-134), e o `MessageBubble` da gaveta do Jornal da
+ * Escola também (ADR-136).
  *
  * ONDE NÃO USAR: as telas da plataforma dentro da mesma missão — o breakpoint
  * entre as aulas, o podcast, os três cards de sistematização e o "Meu percurso".

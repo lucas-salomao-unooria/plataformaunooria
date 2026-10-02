@@ -12,7 +12,7 @@ export type EstadoAqui = "ligado" | "desligado" | "herda";
 
 export interface EfetivoNoPainel {
   ligado: boolean;
-  /** `padrao` = ninguém decidiu em escopo nenhum; o mundo nasce ligado. */
+  /** `padrao` = ninguém decidiu em escopo nenhum; vale o padrão do produto (`ligadoPorPadrao`). */
   origem: "padrao" | "contrato" | "herdado" | "aqui";
   decididoEm: string | null;
   motivo: string | null;
@@ -31,6 +31,8 @@ export interface ExperienciaNoPainel {
 
 export interface ProdutoNoPainel {
   slug: string;
+  /** O que vale sem linha em escopo nenhum — `false` para o produto em teste interno. */
+  ligadoPorPadrao: boolean;
   estadoAqui: EstadoAqui;
   efetivo: EfetivoNoPainel;
   experiencias: ExperienciaNoPainel[];

@@ -34,15 +34,22 @@ token e prefixo de classe próprios. Elas nunca se cruzam.
   \textbf{pós-revelação} do estudante; e a redação INTEIRA do Jornal da Escola
   (exp04ef1b), que não é clone de nada\\
 \zebra \cd{instanooria} (21 + 7 extensões) & \cd{/instanooria} & \cd{--insta-*}, \cd{insta-} &
-  exp08ef1b, exp07ef1b; e só o \cd{PostCard} na gaveta do Jornal da Escola
+  exp07ef1b; e só o \cd{PostCard} na gaveta do Jornal da Escola
   (Seção~\ref{sec:ds-peca-imitada})\\
+\cd{unoovista} (21 + 10 extensões, 0.2.11) & \cd{/unoovista} & \cd{--unv-*},
+  \cd{data-unv-theme} & a superfície disfarçada da \textbf{exp08ef1b}
+  (\adrr{ADR-133}): a cópia estrutural do \cd{instanooria} com a identidade da
+  Unooria. Ícone por ligadura do Material Symbols --- a folha de fonte é
+  obrigatória\\
 \cd{unitube} (30) & \cd{/unitube} & \cd{--uni-*}, \cd{uni-} ---
   \textbf{só escuro} & backup-exp04ef1b (o UnooTube arquivado)\\
 \zebra \cd{whatsappmobile} (39) & \cd{/whatsappmobile} & \cd{--wa-*} --- só escuro
-  & \textbf{exp05ef1b e exp06ef2b} --- as duas missões de mensageiro. Na
-  exp05ef1b, do convite da Nina à síntese, e de novo nas perguntas finais (a
-  regra Se/Então e o fechamento são da plataforma). E só o \cd{MessageBubble}
-  na gaveta e no Desafio Final do Jornal da Escola\\
+  & \textbf{exp06ef2b}. E só o \cd{MessageBubble} na gaveta e no Desafio
+  Final do Jornal da Escola\\
+\cd{unoochat} (39) & \cd{/unoochat} & \cd{--unc-*},
+  \cd{data-unc-theme} --- claro e escuro & \textbf{exp05ef1b}, em tema claro
+  (\adrr{ADR-134}): do convite da Nina à síntese, e de novo nas perguntas
+  finais (a regra Se/Então e o fechamento são da plataforma)\\
 \cd{chatgpt} (25) & \cd{/chatgpt} & \cd{--gpt-*},
   \cd{data-gpt-theme} & \textbf{exp02em1b inteira} --- ela não tem revelação no
   software, então nunca troca para a seção da plataforma\\
@@ -144,16 +151,17 @@ no toque em \enquote{Começar missão}. Ver \adrr{ADR-22}.
 de uma tela da Unooria usa a seção da plataforma que ele imita.} O Jornal da
 Escola (exp04ef1b) não é clone de nada: mesa, gaveta, página, Bento, leitores,
 Chave e Desafio Final são \cd{unooria}. Mas a notícia que veio de rede social
-aparece na gaveta como \cd{PostCard} do \cd{instanooria}, e a mensagem
-encaminhada como \cd{MessageBubble} do \cd{whatsappmobile}: a peça imitada fala
+aparece na gaveta como \cd{PostCard} do \cd{unoovista}, e a mensagem
+encaminhada como \cd{MessageBubble} do \cd{unoochat} (até a 2.0.0,
+\cd{instanooria} e \cd{whatsappmobile}; \adrr{ADR-136}): a peça imitada fala
 na voz de onde veio, porque um post que não parece post não ensina a reconhecer
 post.
 \end{regra}
 
 A regra é por \textbf{PEÇA}, nunca por tela. O cromo em volta continua sendo da
 Unooria, e a peça do clone não traz a barra, as abas nem o fundo do aplicativo
---- o balão do WhatsApp vai num contêiner pintado com
-\cd{--wa-color-surface-base}, e não no \cd{ChatWallpaper}, que é o FUNDO do app.
+--- o balão do Unoochat vai num contêiner pintado com
+\cd{--unc-color-surface-base}, e não no \cd{ChatWallpaper}, que é o FUNDO do app.
 O post vem sem \cd{Actions}, \cd{Likes} e \cd{Timestamp}, e o balão sem hora nem
 confirmação de entrega: a data é uma pista que a criança revela à parte, e o
 número de curtidas viraria pista falsa de confiabilidade. É o INVERSO do que
@@ -163,14 +171,15 @@ arquivo (\arq{src/app/pecas/}), que só importa a sua ponte.
 
 \begin{nota}
 \textbf{Três seções na mesma tela, e nenhuma vaza.} A gaveta é a primeira tela
-do repositório com três seções ao mesmo tempo, e a verificação foi feita na
-0.2.8, nas folhas agregadas e nas de cada componente: todo seletor tem o prefixo
-da seção (\cd{.unooria-*}, \cd{.insta-*}, \cd{.wa-*}), nenhuma folha reseta
-\cd{body}, \cd{html}, \cd{*} ou elemento solto, os blocos \cd{:root} só definem
-variáveis do próprio \emph{namespace} e as famílias das folhas de fonte não
-colidem. O tema também não vaza: o \cd{PostCard} com \cd{theme="light"} põe
-\cd{data-insta-theme="light"} no próprio cartão, e o \cd{instanooria} não
-escurece com o sistema em modo escuro. Nada exigiu mexer no DS nem nas pontes.
+do repositório com três seções ao mesmo tempo, e a verificação foi refeita na
+0.2.11, com as seções novas, nas folhas agregadas e nas de cada componente: todo
+seletor tem o prefixo da seção (\cd{.unooria-*}, \cd{.unv-*}, \cd{.unc-*}),
+nenhuma folha reseta \cd{body}, \cd{html}, \cd{*} ou elemento solto, os blocos
+\cd{:root} só definem variáveis do próprio \emph{namespace} e as três folhas de
+fonte declaram as mesmas faces, com as mesmas URLs. O tema também não vaza: as
+duas seções têm o \cd{:root} claro e não seguem o modo escuro do sistema, e cada
+peça fixa o claro no próprio contêiner (\cd{PostCard theme="light"},
+\cd{data-unc-theme="light"}). Nada exigiu mexer no DS.
 \end{nota}
 
 \section{Consumo: sempre pela ponte}
@@ -181,10 +190,12 @@ pacote direto num componente:
 
 \begin{tabularx}{\linewidth}{@{}L{28mm}L{22mm}X@{}}
 \cd{@edu/ui/ds} & \cd{unooria} & plataforma, e a redação do Jornal da Escola (com as oito peças da 0.2.8: \cd{NewsCard}, \cd{NewsArticle}, \cd{RevealClue}, \cd{BottomSheet}, \cd{NewspaperPage}, \cd{SpeechBubble}, \cd{PuzzleBlock} e \cd{PuzzleTrack}, mais \cd{NEWS\_MEDIUMS} e \cd{NEWSPAPER\_LAYOUTS})\\
-\cd{@edu/ui/ds-insta} & \cd{instanooria} & exp08ef1b, exp07ef1b (com as extensões da 0.2.5: \cd{DirectThread}, \cd{MessageBubble}, \cd{DmPoll}, \cd{ConfirmDialog}, \cd{BottomSheet}, \cd{FloatingButton}, \cd{StoryComposer}; e as da 0.2.7: \cd{InlineHint}, \cd{GestureHint} e o \cd{Snackbar} do clone, como \cd{SnackbarInsta}); e o \cd{PostCard} da gaveta do Jornal\\
+\cd{@edu/ui/ds-insta} & \cd{instanooria} & o clone da exp01ef1b (com as extensões da 0.2.5, nascidas para a exp07ef1b antes de ela migrar: \cd{DirectThread}, \cd{MessageBubble}, \cd{DmPoll}, \cd{ConfirmDialog}, \cd{BottomSheet}, \cd{FloatingButton}, \cd{StoryComposer}; e as da 0.2.7: \cd{InlineHint}, \cd{GestureHint} e o \cd{Snackbar} do clone, como \cd{SnackbarInsta})\\
+\cd{@edu/ui/ds-unoovista} & \cd{unoovista} & exp08ef1b (\adrr{ADR-133}), exp07ef1b (\adrr{ADR-135}) e o \cd{PostCard} da gaveta do Jornal (\adrr{ADR-136}); os nomes que colidem com a plataforma saem com o sufixo \cd{Unv} (\cd{ButtonUnv}, \cd{AvatarUnv}, \cd{IconUnv}\ldots)\\
 \cd{@edu/ui/ds-unootube} & \cd{unitube} & backup-exp04ef1b (o UnooTube arquivado, \adrr{ADR-116}: não roda mais)\\
 \cd{@edu/ui/ds-chatgpt} & \cd{chatgpt} & exp02em1b\\
-\cd{@edu/ui/ds-whatsapp} & \cd{whatsappmobile} & exp05ef1b, exp06ef2b; e o \cd{MessageBubble} da gaveta do Jornal\\
+\cd{@edu/ui/ds-whatsapp} & \cd{whatsappmobile} & exp06ef2b\\
+\cd{@edu/ui/ds-unoochat} & \cd{unoochat} & exp05ef1b (\adrr{ADR-134}) e o \cd{MessageBubble} da gaveta e do Desafio Final do Jornal (\adrr{ADR-136})\\
 \end{tabularx}
 \end{regra}
 

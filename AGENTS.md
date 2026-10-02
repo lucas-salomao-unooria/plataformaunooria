@@ -15,7 +15,7 @@ dois lugares, e nenhum repete o outro.
 | `apps/experiencias/AGENTS.md` | contrato `postMessage`, manifesto, experiência nova, clones do DS |
 | `apps/experiencias/*/AGENTS.md` | por experiência: porta, rota, seção do DS, módulo da api |
 | `apps/agente-professor/AGENTS.md` | o agente de IA do professor (Python/ADK no Agent Engine) e a ingestão dos data stores |
-| `packages/AGENTS.md`, `packages/*/AGENTS.md` | o contrato que o `sdk` promete, as 5 pontes do `ui`, o conteúdo da exp08ef1b |
+| `packages/AGENTS.md`, `packages/*/AGENTS.md` | o contrato que o `sdk` promete, as 6 pontes do `ui`, o conteúdo da exp08ef1b |
 | `scripts/AGENTS.md`, `scripts/e2e/AGENTS.md` | utilitários, o que é gerado, o que uma suíte precisa provar |
 | `docs/AGENTS.md`, `documentacao-latex/AGENTS.md` | o que ali é contrato vivo, e as regras de edição do LaTeX |
 
@@ -121,8 +121,8 @@ como imutável. O porquê inteiro, e a separação entre *subir* e *ativar*, em
    bug de enturmamento.
    - Tabela `disponibilidades`: uma linha por (recurso `produto:<slug>` ou
      `experiencia:<expId>`, escopo escola, regional ou contrato). **Ausência de
-     linha = LIGADO** — o contrário de `liberacoes`, porque este interruptor é
-     mecanismo de EXCEÇÃO. **O escopo mais específico ganha** e **o produto é um
+     linha = LIGADO** (salvo produto em teste interno, que nasce desligado) — o
+     contrário de `liberacoes`, porque este interruptor é mecanismo de EXCEÇÃO. **O escopo mais específico ganha** e **o produto é um
      TETO**: desligado no escopo que vale, nada dentro dele liga. Detalhe em
      `apps/api/src/recursos/AGENTS.md`.
    - **Experiência nova entra no painel declarando `produto` no

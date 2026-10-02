@@ -2,7 +2,7 @@ import { BFF, HUB, suite } from "../lib/roteiro.mjs";
 import { conta } from "../lib/credenciais.mjs";
 
 /**
- * A MISSÃO INTEIRA do Instanooria, ponta a ponta, com as duas pessoas que a
+ * A MISSÃO INTEIRA do Unoovista (exp08ef1b), ponta a ponta, com as duas pessoas que a
  * aula tem: o professor no relógio e o estudante no aparelho.
  *
  * Um contexto só não chega ao fim — e essa é a arquitetura, não uma limitação
@@ -27,7 +27,7 @@ await suite(
   {
     slug: "estudante/02-instanooria",
     papel: "estudante",
-    titulo: "Instanooria — a missão completa",
+    titulo: "Unoovista — a missão completa",
     subtitulo: "do onboarding ao relatório, com o professor conduzindo o relógio",
     contexto:
       "A experiência central do produto: um clone de rede social em que o feed de cada criança nasce " +
@@ -114,7 +114,8 @@ await suite(
     const aparelho = p.locator('iframe[title="experiencia"]');
     await aparelho.waitFor({ state: "attached", timeout: 20_000 });
     const tela = p.frameLocator('iframe[title="experiencia"]');
-    await tela.locator("text=Instanooria").first().waitFor({ timeout: 30_000 });
+    // O nome do app é o `Logo` do DS (um SVG com `role="img"`), não texto.
+    await tela.locator('[aria-label="Unoovista"]').first().waitFor({ timeout: 30_000 });
     await p.waitForTimeout(2000);
 
     const caixaNoFeed = await aparelho.boundingBox();
@@ -132,7 +133,7 @@ await suite(
     );
 
     // ── onboarding: figurinha e apelido ─────────────────────────────────
-    const entrarNoApp = tela.locator("button", { hasText: "Entrar no Instanooria" });
+    const entrarNoApp = tela.locator("button", { hasText: "Entrar no Unoovista" });
     r.exigir(await entrarNoApp.count(), "a missão abre pela tela de entrada (a turma estava zerada)");
     await r.registrar(p, "missao-apresentada", {
       titulo: "A abertura da ficção",
@@ -185,10 +186,10 @@ await suite(
     });
 
     /* CURTIR e SALVAR: os dois gestos que o dossiê lê. */
-    const curtir = tela.locator('button[aria-label="Curtir"]').first();
+    const curtir = tela.locator('button[aria-label="Curtir publicação"]').first();
     await curtir.click();
     await p.waitForTimeout(800);
-    const salvar = tela.locator('button[aria-label="Salvar"]').first();
+    const salvar = tela.locator('button[aria-label="Salvar publicação"]').first();
     await salvar.click();
     await p.waitForTimeout(800);
     const salvos = await tela.locator('button[aria-label="Remover dos salvos"]').count();
@@ -203,7 +204,7 @@ await suite(
     });
 
     /* COMENTAR: caminho completo até a folha aberta. */
-    await tela.locator('button[aria-label="Comentar"]').first().click();
+    await tela.locator('button[aria-label="Comentar publicação"]').first().click();
     const campoComentario = tela.locator('input[placeholder="Adicione um comentário…"]');
     await campoComentario.waitFor({ timeout: 15_000 });
     await campoComentario.pressSequentially("mas isso aí é verdade mesmo?", { delay: 15 });
@@ -296,7 +297,7 @@ await suite(
 
     /* STORIES e BUSCA: as duas superfícies que o feed principal não cobre. */
     const story = tela.locator("button", { hasText: /^@?\w/ }).first();
-    const temStories = await tela.locator('[aria-label="Próximo story"]').count();
+    const temStories = await tela.locator('[aria-label="Próxima história"]').count();
     await tela.locator('button[aria-label="Buscar"]').click();
     const busca = tela.locator('input[placeholder="Pesquisar"]');
     await busca.waitFor({ timeout: 10_000 });
@@ -410,7 +411,7 @@ await suite(
     // ═══ EXPLICAÇÃO: a revelação e o relatório ═══════════════════════════
     await moverEtapa(prof, atividade.id, "explicabilidade");
     await tela
-      .locator("text=O Instanooria não é uma rede social de verdade")
+      .locator("text=O Unoovista não é uma rede social de verdade")
       .waitFor({ timeout: 40_000 });
     await r.registrar(p, "revelacao", {
       titulo: "A revelação",

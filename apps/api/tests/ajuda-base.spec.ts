@@ -38,7 +38,7 @@ describe("a base de conhecimento da Ajuda", () => {
 
   it("traz os guias da aula das missões do registro, e não o arquivado", () => {
     expect(BASE_DA_AJUDA).toContain("# Os guias da aula das missões");
-    expect(BASE_DA_AJUDA).toContain("Guia da aula: Instanooria");
+    expect(BASE_DA_AJUDA).toContain("Guia da aula: Unoovista");
     // O mapa CITA o UnooTube (para dizer que foi arquivado); o que não pode entrar é o guia dele.
     expect(BASE_DA_AJUDA).not.toMatch(/Guia da aula: (UnooTube|backup-)/);
   });

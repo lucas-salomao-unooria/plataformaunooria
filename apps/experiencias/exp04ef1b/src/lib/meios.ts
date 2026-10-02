@@ -8,8 +8,8 @@ import type { IdDeBloco, Meio, TipoDePista } from "./tipos";
  *
  * `rede_social` e `mensagem` têm `NewsMedium` (o CARTÃO compacto da mesa os
  * mostra), mas não `NewsArticleMedium`: a matéria ORIGINAL deles não é da
- * seção `unooria` — é o `PostCard` do Instanooria e o `MessageBubble` do
- * WhatsApp Mobile (ADR-117, `app/redacao/materia-original.tsx`).
+ * seção `unooria` — é o `PostCard` do Unoovista e o `MessageBubble` do
+ * Unoochat (ADR-117 e ADR-136, `app/redacao/materia-original.tsx`).
  */
 export const MEIO_PARA_MEDIUM: Record<Meio, NewsMedium> = {
   jornal: "newspaper",
@@ -23,7 +23,7 @@ export const MEIO_PARA_MEDIUM: Record<Meio, NewsMedium> = {
 };
 
 /** A peça que desenha a matéria original de cada meio, e em que seção do DS ela mora. */
-export type PecaDaMateria = { secao: "unooria"; medium: NewsArticleMedium } | { secao: "instanooria" } | { secao: "whatsappmobile" };
+export type PecaDaMateria = { secao: "unooria"; medium: NewsArticleMedium } | { secao: "unoovista" } | { secao: "unoochat" };
 
 export const PECA_DO_MEIO: Record<Meio, PecaDaMateria> = {
   jornal: { secao: "unooria", medium: "newspaper" },
@@ -31,8 +31,8 @@ export const PECA_DO_MEIO: Record<Meio, PecaDaMateria> = {
   tv: { secao: "unooria", medium: "tv" },
   blog: { secao: "unooria", medium: "blog" },
   portal: { secao: "unooria", medium: "portal" },
-  rede_social: { secao: "instanooria" },
-  mensagem: { secao: "whatsappmobile" },
+  rede_social: { secao: "unoovista" },
+  mensagem: { secao: "unoochat" },
   mural: { secao: "unooria", medium: "bulletin" },
 };
 

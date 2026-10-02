@@ -1,6 +1,6 @@
 # exp07ef1b — A Seleção
 
-Missão do **7º ano do Fundamental**, unidade 1, no clone do Instagram. A Amara,
+Missão do **7º ano do Fundamental**, unidade 1, no Unoovista (a rede social de fotos que a missão imita). A Amara,
 do grêmio, pede uma força: no feed da cobertura de um evento da comunidade há 12
 posts de três veículos locais, e a criança salva, poda até exatamente 3 e publica
 nos Stories do grêmio com uma legenda — e não dá para desfazer. A professora abre

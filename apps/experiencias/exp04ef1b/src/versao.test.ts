@@ -87,8 +87,9 @@ describe("o manifesto do Jornal da Escola", () => {
     expect(manifesto.publico).toBe("estudante");
   });
 
-  test("a série começa na 2.0.0 — o caminho `exp04ef1b/` do bucket pode ter o UnooTube 1.2.8", () => {
-    expect(EXP_VERSION).toBe("2.0.0");
+  test("a série é a 2.x — o caminho `exp04ef1b/` do bucket pode ter o UnooTube 1.2.8", () => {
+    // 2.0.0 foi a estreia do Jornal; 2.1.0, as peças no Unoovista e no Unoochat (ADR-136).
+    expect(Number(EXP_VERSION.split(".")[0])).toBeGreaterThanOrEqual(2);
   });
 
   test("`forms` (o `RadioGroup` do motivo e de P1/P2 é campo de formulário) e as quatro capabilities", () => {

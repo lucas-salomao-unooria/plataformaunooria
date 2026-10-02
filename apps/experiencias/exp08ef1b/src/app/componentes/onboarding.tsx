@@ -1,5 +1,7 @@
 import { useState } from 'react';
 
+import { ButtonUnv, LogoUnv, TextFieldUnv } from '@edu/ui/ds-unoovista';
+
 import { experiencia } from '../../lib/api';
 import { AVATARES } from '../../lib/avatares';
 
@@ -10,7 +12,7 @@ import { AvatarPerfil } from './avatar-perfil';
  *
  * A narrativa de "app beta / acesso antecipado / sessões de teste" SAIU. Ela
  * justificava o encerramento, mas dava ao estudante um papel passivo e obrigava a
- * mentir sobre o que o Instanooria é. Agora ele recebe uma missão explícita: o
+ * mentir sobre o que o Unoovista é. Agora ele recebe uma missão explícita: o
  * que fica escondido é o **mecanismo**, não a existência da atividade.
  *
  * ZERO instrução de comportamento — nada de "curta", "comente", "interaja",
@@ -38,7 +40,7 @@ export function Onboarding({
   if (etapa === 'entrando') {
     return (
       <main className="flex min-h-dvh flex-col items-center justify-center gap-4">
-        <p className="instanooria-wordmark text-[44px] leading-none">Instanooria</p>
+        <LogoUnv height={40} title="Unoovista" />
         <p className="text-[13px] text-muted">entrando…</p>
       </main>
     );
@@ -48,7 +50,7 @@ export function Onboarding({
     return (
       <main className="flex min-h-dvh flex-col px-6 py-10">
         <div className="flex flex-1 flex-col items-center justify-center gap-6">
-          <p className="instanooria-wordmark text-[34px] leading-none">Instanooria</p>
+          <LogoUnv height={30} title="Unoovista" />
           <p className="text-[15px] text-ink">Monta seu perfil</p>
 
           {/*
@@ -69,7 +71,7 @@ export function Onboarding({
                   aria-checked={avatar === item.id}
                   onClick={() => setAvatar(item.id)}
                   aria-label={item.rotulo}
-                  className={`rounded-full p-0.5 ${avatar === item.id ? 'ring-2 ring-ink' : ''}`}
+                  className={`rounded-full p-0.5 ${avatar === item.id ? 'ring-[3px] ring-action' : ''}`}
                 >
                   <AvatarPerfil seed={item.id} tamanho={56} />
                 </button>
@@ -77,26 +79,25 @@ export function Onboarding({
             ))}
           </ul>
 
-          <label className="flex w-full max-w-[300px] flex-col gap-1.5">
-            <span className="text-[13px] text-ink/70">Como você quer aparecer</span>
-            <input
-              type="text"
-              value={nome}
-              maxLength={40}
-              autoComplete="off"
-              enterKeyHint="done"
-              placeholder="seu nome"
-              onChange={(evento) => setNome(evento.target.value)}
-              className="h-11 rounded-lg border border-hairline bg-surface px-3 text-[15px] text-ink outline-none focus:border-action"
-            />
-          </label>
+          <TextFieldUnv
+            block
+            className="w-full max-w-[300px]"
+            label="Como você quer aparecer"
+            value={nome}
+            maxLength={40}
+            autoComplete="off"
+            enterKeyHint="done"
+            placeholder="seu nome"
+            onChange={(evento) => setNome(evento.target.value)}
+          />
 
           {erro ? <p className="text-[13px] text-like-texto">{erro}</p> : null}
 
-          <button
-            type="button"
+          <ButtonUnv
+            block
+            size="lg"
+            className="max-w-[300px]"
             disabled={nome.trim().length === 0}
-            className="h-11 w-full max-w-[300px] rounded-lg bg-action text-[15px] font-semibold text-white active:opacity-80 disabled:opacity-40"
             onClick={async () => {
               setErro(null);
               setEtapa('entrando');
@@ -109,7 +110,7 @@ export function Onboarding({
             }}
           >
             Salvar e entrar
-          </button>
+          </ButtonUnv>
         </div>
       </main>
     );
@@ -127,18 +128,14 @@ export function Onboarding({
   if (perguntaChave.trim().length === 0) {
     return (
       <main className="flex min-h-dvh flex-col items-center justify-center gap-5 px-8 text-center">
-        <p className="instanooria-wordmark text-[40px] leading-none">Instanooria</p>
+        <LogoUnv height={36} title="Unoovista" />
         <p className="text-[17px] font-semibold text-ink">Nada rolando por aqui agora</p>
         <p className="text-[15px] leading-relaxed text-ink/70">
           Volta em alguns minutos — a gente avisa quando tiver algo novo.
         </p>
-        <button
-          type="button"
-          className="mt-2 h-11 rounded-lg border border-hairline px-5 text-[14px] font-semibold text-ink active:opacity-70"
-          onClick={() => window.location.reload()}
-        >
+        <ButtonUnv variant="secondary" size="lg" className="mt-2" onClick={() => window.location.reload()}>
           Atualizar
-        </button>
+        </ButtonUnv>
       </main>
     );
   }
@@ -146,16 +143,16 @@ export function Onboarding({
   return (
     <main className="flex min-h-dvh flex-col items-center justify-between px-6 py-12">
       <div className="flex w-full flex-1 flex-col items-center justify-center gap-6 text-center">
-        <p className="instanooria-wordmark text-[40px] leading-none">Instanooria</p>
+        <LogoUnv height={36} title="Unoovista" />
 
         <div className="flex flex-col gap-4">
           <h1 className="text-[22px] font-semibold text-ink">Sua missão 🔍</h1>
           <p className="text-[15px] leading-relaxed text-ink/80">
-            Tem uma discussão rolando no Instanooria:
+            Tem uma discussão rolando no Unoovista:
           </p>
           {/* A pergunta é o enunciado da missão — em destaque, porque é o que o
               estudante vai investigar e o que ele vai responder no fim. */}
-          <p className="rounded-xl bg-canvas px-4 py-3 text-[17px] font-semibold leading-snug text-ink">
+          <p className="rounded-cartao bg-surface px-4 py-3 text-[17px] font-semibold leading-snug text-ink">
             “{perguntaChave}”
           </p>
           <p className="text-[15px] leading-relaxed text-ink/80">
@@ -166,18 +163,14 @@ export function Onboarding({
             são o que o estudante vai defender na conversa e o que sustenta a resposta
             dele no fim. Precisa estar dito com essas palavras, e antes do feed.
           */}
-          <p className="rounded-xl bg-action/10 px-4 py-3 text-[15px] font-semibold leading-snug text-ink">
+          <p className="rounded-cartao bg-canvasAlt px-4 py-3 text-[15px] font-semibold leading-snug text-ink">
             Salva os posts que te ajudarem a responder — no fim você vai usar eles.
           </p>
         </div>
 
-        <button
-          type="button"
-          className="mt-2 h-11 w-full max-w-[300px] rounded-lg bg-action text-[15px] font-semibold text-white active:opacity-80"
-          onClick={() => setEtapa('avatar')}
-        >
-          Entrar no Instanooria
-        </button>
+        <ButtonUnv block size="lg" className="mt-2 max-w-[300px]" onClick={() => setEtapa('avatar')}>
+          Entrar no Unoovista
+        </ButtonUnv>
 
         {/*
               Aqui dizia "a missão tem tempo limitado", e não existe cronômetro
@@ -197,15 +190,15 @@ export function Onboarding({
             PEDE a saída via `exp:estado { acao: "sair" }` e o hub executa o
             signOut + redirect. No origem isto era um fetch de logout + navegação
             do window.top. */}
-        <button
-          type="button"
-          className="text-[12px] font-semibold text-action active:opacity-60"
+        <ButtonUnv
+          variant="link"
+          size="sm"
           onClick={() => {
             experiencia().enviarEstado({ acao: 'sair' });
           }}
         >
           Trocar de conta
-        </button>
+        </ButtonUnv>
       </footer>
     </main>
   );
