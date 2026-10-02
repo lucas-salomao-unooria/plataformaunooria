@@ -6,8 +6,8 @@ import { ATIVIDADE_DA_TURMA, temAtividades, type EXPERIENCIAS_COM_ATIVIDADE } fr
  * QUAL ATIVIDADE ESTÁ EM ANDAMENTO NA TURMA, e se uma atividade é desta turma —
  * as duas perguntas que a montagem por atividade (ADR-130) faz à missão.
  *
- * A atividade é da MISSÃO (a cobertura da exp07ef1b, o pacote da exp04ef1b e
- * da exp05ef1b, a `activity` da exp08ef1b), e este é o único lugar do módulo de
+ * A atividade é da MISSÃO (a cobertura da exp07ef1b, o pacote da exp04ef1b, da
+ * exp05ef1b e da exp06ef1b, a `activity` da exp08ef1b), e este é o único lugar do módulo de
  * equipes que lê as tabelas delas. Leitura direta, e não um registro que cada
  * módulo de missão preenche na subida: o registro esquecido falharia MUDO (a
  * faixa da equipe sumindo da tela do aluno sem erro nenhum), e este `Record` é
@@ -55,6 +55,19 @@ const FONTES: Record<ExperienciaComAtividade, FonteDeAtividades> = {
     async daTurma(tx, escolaId, turmaId, atividadeId) {
       if (!UUID_RE.test(atividadeId)) return false;
       return (await tx.exp04ef1bPacote.count({ where: { id: atividadeId, escolaId, turmaId } })) > 0;
+    },
+  },
+  exp06ef1b: {
+    async emAndamento(tx, escolaId, turmaId) {
+      const ativo = await tx.exp06ef1bPacote.findFirst({
+        where: { escolaId, turmaId, ativo: true },
+        select: { id: true },
+      });
+      return ativo?.id ?? null;
+    },
+    async daTurma(tx, escolaId, turmaId, atividadeId) {
+      if (!UUID_RE.test(atividadeId)) return false;
+      return (await tx.exp06ef1bPacote.count({ where: { id: atividadeId, escolaId, turmaId } })) > 0;
     },
   },
   exp05ef1b: {

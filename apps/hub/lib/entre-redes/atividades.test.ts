@@ -2,6 +2,7 @@ import { describe, expect, test } from "vitest";
 import {
   atividadesDaSelecao,
   atividadesDoInstanooria,
+  atividadesDoJuri,
   caminhoDoEmAndamento,
   estadoDoInstanooria,
   ordenarAtividades,
@@ -18,8 +19,8 @@ import { concluirCriacao, destinoDepoisDeCriar } from "./criar-atividade";
  * leva, e o fim da criação — pôr no ar e montar as equipes, na ordem certa.
  */
 describe("a lista de atividades", () => {
-  test("as quatro missões com atividade — o mesmo par da api", () => {
-    expect(["exp08ef1b", "exp07ef1b", "exp04ef1b", "exp05ef1b"].every(temAtividades)).toBe(true);
+  test("as cinco missões com atividade — o mesmo par da api", () => {
+    expect(["exp08ef1b", "exp07ef1b", "exp04ef1b", "exp05ef1b", "exp06ef1b"].every(temAtividades)).toBe(true);
     expect(temAtividades("exp02em1b")).toBe(false);
     expect(temAtividades(undefined)).toBe(false);
   });
@@ -27,6 +28,7 @@ describe("a lista de atividades", () => {
   test("a série sai do código da missão", () => {
     expect(serieDaMissao("exp07ef1b")).toBe("7EF");
     expect(serieDaMissao("exp04ef1b")).toBe("4EF");
+    expect(serieDaMissao("exp06ef1b")).toBe("6EF");
     expect(serieDaMissao("exp02em1b")).toBe("2EM");
     expect(serieDaMissao("app-90-plano-de-aula")).toBeNull();
   });
@@ -66,6 +68,19 @@ describe("a lista de atividades", () => {
     expect(lista.find((a) => a.id === "no-ar")?.detalhe).toBe("Bairro · gerada com IA");
   });
 
+  test("o Júri: o pacote é a atividade, com o rótulo da disciplina", () => {
+    const [a] = atividadesDoJuri(
+      {
+        ativo: null,
+        historico: [
+          { id: "p1", disciplina: "ciencias", tema: "Feira da água", origem: "ia", ativo: true, criadoEm: "2026-10-02T10:00:00Z", rodadas: 1 },
+        ],
+      },
+      (slug) => (slug === "ciencias" ? "Ciências" : slug),
+    );
+    expect(a).toMatchObject({ id: "p1", titulo: "Feira da água", detalhe: "Ciências · gerada com IA", estado: "em-andamento", rodadas: 1 });
+  });
+
   test("as rodadas em palavras", () => {
     expect(textoDasRodadas(0)).toBe("nunca rodou");
     expect(textoDasRodadas(1)).toBe("1 rodada");
@@ -81,6 +96,7 @@ describe("para onde a atividade leva", () => {
     expect(rotaDaAtividade(rota, "exp07ef1b", "t1", "c1")).toBe(`${rota}/resultados?turmaId=t1&cobertura=c1`);
     expect(rotaDaAtividade(rota, "exp04ef1b", "t1", "p1")).toBe(`${rota}/resultados?turmaId=t1&pacote=p1`);
     expect(rotaDaAtividade(rota, "exp05ef1b", "t1", "p1")).toBe(`${rota}/resultados?turmaId=t1&pacote=p1`);
+    expect(rotaDaAtividade(rota, "exp06ef1b", "t1", "p1")).toBe(`${rota}/resultados?turmaId=t1&pacote=p1`);
   });
 
   test("a criação: a do Instanooria é a dele", () => {
@@ -93,6 +109,7 @@ describe("para onde a atividade leva", () => {
     expect(caminhoDoEmAndamento("exp07ef1b", "t", "c")).toBe("/a-selecao/turmas/t/coberturas/c/em-andamento");
     expect(caminhoDoEmAndamento("exp04ef1b", "t", "p")).toBe("/jornal-escola/turmas/t/pacotes/p/em-andamento");
     expect(caminhoDoEmAndamento("exp05ef1b", "t", "p")).toBe("/quem-mandou-isso/turmas/t/pacotes/p/em-andamento");
+    expect(caminhoDoEmAndamento("exp06ef1b", "t", "p")).toBe("/juri-estadual/turmas/t/pacotes/p/em-andamento");
   });
 
   test("'Eu separo' leva o número de computadores para a página", () => {

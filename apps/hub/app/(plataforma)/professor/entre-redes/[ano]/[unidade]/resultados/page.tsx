@@ -5,6 +5,7 @@ import {
   MISSAO_MANIFESTO_IA,
   MISSAO_FOTO_CONTA,
   MISSAO_JORNAL_DA_ESCOLA,
+  MISSAO_JURI_ESTADUAL,
   MISSAO_QUEM_MANDOU_ISSO,
   MISSAO_RASTRO_BOATO,
   MISSAO_UNOOGPT,
@@ -15,6 +16,7 @@ import { ResultadosASelecao } from "./resultados-a-selecao";
 import { ResultadosManifestoIa } from "./resultados-manifesto-ia";
 import { ResultadosFotoConta } from "./resultados-foto-conta";
 import { ResultadosJornalEscola } from "./resultados-jornal-escola";
+import { ResultadosJuriEstadual } from "./resultados-juri-estadual";
 import { ResultadosQuemMandouIsso } from "./resultados-quem-mandou-isso";
 import { ResultadosRastroBoato } from "./resultados-rastro-boato";
 import { ResultadosUnooGPT } from "./resultados-unoogpt";
@@ -30,7 +32,7 @@ import { ResultadosUnooGPT } from "./resultados-unoogpt";
  * A turma vem da URL (`?turmaId=`), como a escola em `/analise`: link
  * compartilhável, e nunca "sem turma = todas". Nas missões com atividade
  * (ADR-130) esta é a PÁGINA DA ATIVIDADE: a exp07ef1b lê `?cobertura=`, e a
- * exp04ef1b e a exp05ef1b, `?pacote=` — o card da lista de atividades da ficha
+ * exp04ef1b, a exp05ef1b e a exp06ef1b, `?pacote=` — o card da lista de atividades da ficha
  * leva até aqui com a atividade na URL; sem o parâmetro, é a em andamento.
  */
 export default async function ResultadosPage({
@@ -72,6 +74,9 @@ export default async function ResultadosPage({
   }
   if (missao.expId === MISSAO_JORNAL_DA_ESCOLA.expId) {
     return <ResultadosJornalEscola missao={missao} turma={turma} pacote={pacote?.trim() ?? ""} separar={separar} />;
+  }
+  if (missao.expId === MISSAO_JURI_ESTADUAL.expId) {
+    return <ResultadosJuriEstadual missao={missao} turma={turma} pacote={pacote?.trim() ?? ""} separar={separar} />;
   }
   // Missão sem tela de resultados própria: a trilha não linka para cá.
   notFound();

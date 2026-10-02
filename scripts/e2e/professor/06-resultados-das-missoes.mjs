@@ -1,4 +1,4 @@
-import { HUB, suite } from "../lib/roteiro.mjs";
+import { BFF, HUB, suite } from "../lib/roteiro.mjs";
 import { conta } from "../lib/credenciais.mjs";
 
 /**
@@ -28,6 +28,7 @@ await suite(
       "O relógio da aula do unooGPT é operável da mesma tela dos resultados",
       "O relatório de um estudante do unooGPT diz QUANDO: até a primeira fala, com quanto relógio, se estourou",
       "A aula da A Seleção (o botão único e a etapa) mora na mesma tela dos resultados, sem coluna de pontos",
+      "A aula do Júri Estadual mora na página da atividade: a lousa anônima dos votos por área, e a folha sem coluna de voto, taxa nem nível",
     ],
     comando: "node scripts/e2e/professor/06-resultados-das-missoes.mjs",
   },
@@ -161,6 +162,58 @@ await suite(
       prova:
         "Conduzir e ler ficam juntos porque a condução acontece DURANTE a aula. A folha mostra " +
         "o par e as lentes de cada computador, nunca uma nota.",
+      inteira: true,
+    });
+
+    // ── O Júri Estadual de Projetos (6º ano, unidade 1) ─────────────────
+    /* A suíte do estudante (estudante/13-juri-estadual.mjs) corre ANTES: cria a
+       atividade na 6A, põe no ar, dois estudantes votam e a galeria abre. É a
+       página DESSA atividade que este passo lê. A tela usa o `Selection` do DS
+       (não o `select#turma`): a turma vai na URL, pela api, como a sala a abre. */
+    const professorSexto = conta("professor", { serie: "6EF" });
+    await r.entrar(p, professorSexto.login);
+    const turmasDoJuri = await p.request.get(`${BFF}/juri-estadual/turmas`);
+    const listaDoJuri = (await turmasDoJuri.json().catch(() => null))?.turmas ?? [];
+    const turmaDoJuri = listaDoJuri.find((t) => t.nome === "6A") ?? listaDoJuri[0];
+    if (!r.exigir(Boolean(turmaDoJuri), `${professorSexto.login} tem turma no seletor do Júri Estadual`)) return;
+    await p.goto(`${HUB}/professor/entre-redes/6-ano/unidade-1/resultados?turmaId=${turmaDoJuri.id}`, {
+      waitUntil: "domcontentloaded",
+    });
+    /* Os dois estados LEGÍTIMOS da página: a atividade em andamento (a da
+       estudante/13) ou nenhuma — quando esta suíte roda sozinha, sem a do
+       estudante antes. Espera a união e prova o ramo que a tela mostrou. */
+    await p
+      .locator("[data-etapa], [data-sem-atividade]")
+      .first()
+      .waitFor({ timeout: 30_000 });
+    if ((await p.locator("[data-sem-atividade]").count()) > 0) {
+      r.ressalva(
+        "a 6A não tem atividade do Júri Estadual em andamento: rode antes a estudante/13-juri-estadual, que a cria",
+      );
+      r.exigir(
+        /Nenhuma atividade em andamento nesta turma/.test(await p.locator("main").innerText()),
+        "sem atividade, a página do Júri diz que a turma vê a missão fechada",
+      );
+    } else {
+      r.exigir(
+        (await p.locator("[data-painel-para-projetar]").count()) === 1,
+        "a lousa do Júri (votos por área, sem nome) fica na MESMA tela da atividade em andamento",
+      );
+      const colunasDoJuri = await p.locator("main").getByRole("columnheader").allInnerTexts();
+      r.exigir(
+        colunasDoJuri.length > 0 &&
+          !colunasDoJuri.some((c) => /^\s*voto\b|\b(taxa|n[íi]vel|invisibilidade|pontos|nota|ranking)\b/i.test(c)),
+        `a folha do Júri não tem coluna de voto, taxa nem nível (colunas: ${colunasDoJuri.join(", ")})`,
+      );
+    }
+    await r.registrar(p, "resultados-juri-estadual", {
+      titulo: "A atividade do Júri Estadual: a aula e os resultados",
+      mostra:
+        "A atividade em andamento: as equipes, as imagens, os 16 estandes, o botão da aula, a lousa com os votos " +
+        "por área antes e depois da galeria, a folha por computador e o painel de habilidades da BNCC.",
+      prova:
+        "A lousa vai para o projetor e não tem nome; a folha tem nome e por isso não liga ninguém a um voto ou a " +
+        "uma taxa. O nível de cada habilidade fica no painel de habilidades, com a confirmação da professora.",
       inteira: true,
     });
   },

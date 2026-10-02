@@ -10,6 +10,7 @@ import {
   MISSAO_ATUAL,
   MISSAO_A_SELECAO,
   MISSAO_JORNAL_DA_ESCOLA,
+  MISSAO_JURI_ESTADUAL,
   MISSAO_QUEM_MANDOU_ISSO,
   MISSAO_RASTRO_BOATO,
   MISSAO_UNOOGPT,
@@ -18,11 +19,13 @@ import { buscarGuia } from "@/lib/entre-redes/guias";
 import type { BlocosVivos } from "@/lib/entre-redes/guias/tipos";
 import type { MaterialDaSelecao } from "@/lib/a-selecao-tipos";
 import type { MaterialDoJornal } from "@/lib/jornal-escola-tipos";
+import { CAMINHO_DO_MATERIAL, type MaterialDoJuri } from "@/lib/juri-estadual-tipos";
 import type { MaterialDoProfessor } from "@/lib/quem-mandou-tipos";
 
 import { IntervencoesDoRastro, type MaterialDoRastro } from "./intervencoes-do-rastro";
 import { GatilhosDaSelecao, RoteiroDaSelecao } from "./material-da-selecao";
 import { BotoesDoJornal, MesaDoJornal, PerguntasDoJornal } from "./material-do-jornal";
+import { GabaritoDoJuri, PlenariaDoJuri } from "./material-do-juri";
 import { MomentosDoPainel } from "./momentos-do-painel";
 import { QuemMandouOPacote } from "./quem-mandou-o-pacote";
 import { TelasDaRevelacao } from "./telas-da-revelacao";
@@ -38,13 +41,14 @@ import { TelasDaRevelacao } from "./telas-da-revelacao";
  * BLOCOS VIVOS cada missão injeta.
  *
  * Bloco vivo é o que tem fonte de verdade em outro lugar e não pode virar texto.
- * Seis missões têm um: os momentos e as telas da revelação do Instanooria, a
+ * Sete missões têm um: os momentos e as telas da revelação do Instanooria, a
  * tabela dos vieses do unooGPT, as intervenções do Rastro do Boato, o pacote
  * curado de Quem Mandou Isso? (com o roteiro da roda e as perguntas de
  * evidência), da A Seleção os gatilhos dos três botões e o roteiro da Etapa 4
  * com os 12 posts, e do Jornal da Escola os dois portões com os gatilhos orais,
- * as três perguntas do resultado e a mesa do banco padrão com o gabarito — as
- * cinco últimas vindas da api. Os 21 vídeos do UnooTube eram mais um, até o
+ * as três perguntas do resultado e a mesa do banco padrão com o gabarito, e
+ * do Júri Estadual a regra do feed com o gabarito e as quatro perguntas da
+ * plenária — as seis últimas vindas da api. Os 21 vídeos do UnooTube eram mais um, até o
  * arquivamento (ADR-116). Ver a nota em `guias/tipos.ts`.
  *
  * **Missão com conteúdo que a turma LÊ na tela não descreve esse conteúdo no
@@ -157,6 +161,15 @@ async function blocosDaMissao(expId: string | undefined): Promise<BlocosVivos | 
         antes: <MesaDoJornal dados={material} />,
         roteiro: <BotoesDoJornal dados={material} />,
         debate: <PerguntasDoJornal dados={material} />,
+      };
+    }
+    case MISSAO_JURI_ESTADUAL.expId: {
+      /* UMA chamada para os dois blocos: a regra e o gabarito, para ler antes;
+         as perguntas da plenária, para o pico entre o voto e a galeria. */
+      const material = await apiDoServidor<MaterialDoJuri>(CAMINHO_DO_MATERIAL);
+      return {
+        antes: <GabaritoDoJuri dados={material} />,
+        debate: <PlenariaDoJuri dados={material} />,
       };
     }
     case MISSAO_QUEM_MANDOU_ISSO.expId:

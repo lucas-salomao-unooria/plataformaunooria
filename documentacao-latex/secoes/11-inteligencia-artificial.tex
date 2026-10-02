@@ -47,7 +47,13 @@ Preparo do pacote & exp04ef1b, \arq{src/jornal-escola/} &
   \emph{enum} de três layouts, e nenhum texto. Não escolhe notícia, não
   reordena as vagas, não vê o gabarito. Qualquer falha cai no modelo
   automático (\adrr{ADR-117}).\\
-Agente de IA do professor & produto \cd{agente-professor}, \arq{apps/agente-professor}
+Preparo da mostra & exp06ef1b, \arq{src/juri-estadual/} &
+  As quatro áreas e os dezesseis estandes da mostra científica sobre o tema e
+  os assuntos do professor, e as imagens a partir da descrição de cada um.
+  \textbf{Sem acervo padrão}: sem saldo (429) ou sem provedor (503), não há
+  atividade. Nada chega à turma sem a homologação, e em sala a IA não roda
+  (\adrr{ADR-137}).\\
+\zebra Agente de IA do professor & produto \cd{agente-professor}, \arq{apps/agente-professor}
   + \arq{src/agente-professor/} &
   Respostas sobre a BNCC e o acervo de livros da Unooria, com as fontes (título
   e página). \textbf{Fora} da api: o agente roda no Vertex AI Agent Engine
@@ -114,6 +120,36 @@ escreve o conteúdo, e o \cd{validar} recusa a saída que mexeu no molde ou fere
 de quem prepara, com o que o \emph{vendor} cobrou debitado por tentativa,
 inclusive as recusadas.
 \end{nota}
+
+\subsection{O preparo do Júri Estadual: a única missão sem material pronto}
+
+Em toda missão com preparo por IA, a falta dela tinha um caminho: o banco curado
+da A Seleção, o banco padrão do Jornal da Escola, o pacote pronto de Quem mandou
+isso?. O Júri Estadual de Projetos (\adrr{ADR-137}) é a exceção, e declarada:
+os dezesseis estandes são da ATIVIDADE, gerados no preparo e homologados pelo
+professor, e \textbf{sem IA não há aula}. \arq{preparo.service.ts} roda
+\cd{temSaldo} com o perfil de quem prepara, chama o \cd{generateJson} com
+\textbf{duas} tentativas e um \cd{validar} que normaliza o cosmético
+(\cd{semExclamacao}, \emph{hashtag} e perfil em minúsculas, a \emph{hashtag} da
+área primeiro) e recusa o resto pelo MESMO \cd{ConteudoDoPacoteSchema} da
+homologação --- uma régua escrita duas vezes é a que diverge. O débito vem do
+\cd{aoUsarTokens}, por tentativa, inclusive as recusadas (\adrr{ADR-74}); as
+rotas que gastam IA têm também um teto de requisição por minuto.
+\enquote{Regenerar} um estande sem saldo é 429; com a IA fora, 200 com
+\cd{usouIa: false} e o estande como estava. As imagens são incrementais, duas
+por chamada, com custo estimado na quota do professor, e sem elas a tela desenha
+a arte procedural. O \emph{prompt} pede personas de 11 e 12 anos, nomes
+brasileiros com gênero equilibrado e escolas fictícias, e o tema, os assuntos e
+o contexto do professor entram como DADO delimitado, com tetos de tamanho que
+são a primeira barreira contra injeção de instrução.
+
+\begin{atencao}
+Com \env{AI\_PROVIDER}\cd{=mock}, o \cd{generateJson} sempre falha: o preparo
+responde 503 e a turma fica sem atividade. Em \emph{dev}, o Júri só tem aula com
+o Vertex. A suíte de ponta a ponta (\arq{13-juri-estadual.mjs}, escrita e ainda
+não rodada) tenta a IA de verdade e, se a geração falhar, responde o gerador com
+a mostra de \emph{fixture} das suítes da api.
+\end{atencao}
 
 \section{A camada única}
 

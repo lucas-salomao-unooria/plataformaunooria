@@ -63,6 +63,14 @@ export const EXPERIENCIAS_DEV: Readonly<Record<string, string>> = {
    * Experiência nova pede a próxima livre depois dela.
    */
   "exp05ef1b": "http://localhost:5184",
+  /**
+   * O Júri Estadual de Projetos — 6º ano EF, unidade 1.
+   *
+   * 5185, a próxima livre depois da exp05ef1b. A porta entra também no
+   * CORS_ORIGINS da api (`docker-compose.dev.yml`, `.env.example`) — sem ela o
+   * boot da missão morre com "Failed to fetch" e o erro não diz por quê.
+   */
+  "exp06ef1b": "http://localhost:5185",
 };
 
 export function baseDevDaExperiencia(expId: string, fallback: string): string {
