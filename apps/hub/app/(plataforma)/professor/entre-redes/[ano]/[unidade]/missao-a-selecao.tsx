@@ -10,7 +10,8 @@ import { AtividadesDaMissao } from "./atividades-da-missao";
  * Corpo de A SELEÇÃO (7º ano · Unidade 1).
  *
  * **Existe porque a ausência dele é MUDA.** Sem ramo no despachante de
- * `page.tsx`, a missão cairia no corpo do INSTANOORIA — o mesmo clone, o que
+ * `page.tsx`, a missão cairia no corpo da do 8º ano (`missao-instanooria.tsx`)
+ * — o mesmo clone, o Unoovista, o que
  * torna o engano ainda mais fácil de não ver —, com "Nova atividade" gravando
  * em `exp08ef1b_activities`, que esta missão nunca lê, e sem o caminho para o
  * painel em que se prepara a cobertura e se abre o Mural.
