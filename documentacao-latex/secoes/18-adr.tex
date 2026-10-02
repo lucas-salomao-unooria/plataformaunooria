@@ -178,6 +178,7 @@ que a cercam.
 \adrr{ADR-129} & O \emph{markdown} do agente vira HTML no navegador & 2026-09-30 & Aceita\\
 \adrr{ADR-130} & A atividade é do professor, e a equipe é da atividade & 2026-10-01 & Aceita\\
 \zebra \adrr{ADR-131} & As perguntas de evidência de Quem mandou isso? são as do PO, literais & 2026-10-01 & Aceita\\
+\adrr{ADR-133} & A missão do 8º ano troca o Instanooria pelo Unoovista & 2026-10-02 & Aceita\\
 \bottomrule
 \end{tabularx}
 
@@ -11475,3 +11476,104 @@ as do PO.
 \textbf{Gatilho.} O PO trocar o texto das perguntas (a ficha sobe de versão), ou
 os professores relatarem que a turma acerta pelo tamanho da alternativa.
 
+% ---------------------------------------------------------------------------
+\section{ADR-133 --- A missão do 8º ano troca o Instanooria pelo Unoovista}
+\label{adr:exp08ef1b-unoovista}
+
+\textbf{Data.} 2026-10-02. \textbf{Status.} Aceita. O número 132 já está em uso
+no código (a Ajuda com avatar) e ainda não tem seção aqui; este pula para o 133
+para não colidir.
+
+\begin{especificacao}{Contexto}
+A exp08ef1b (O Conteúdo que não chegou) imitava a rede social com a seção
+\cd{instanooria} do Design System, derivada de um arquivo de telas do Instagram
+--- e, na prática, só o \cd{Icon} vinha do pacote: barra, \emph{feed}, cartão,
+histórias, folhas e navegação eram componentes locais em Tailwind, com a
+paleta do aplicativo real copiada no \arq{tailwind.config.ts} e o nome do app
+composto em Grand Hotel. A versão 0.2.11 do pacote publicou a seção
+\cd{unoovista}: os mesmos 31 componentes e as mesmas props do
+\cd{instanooria}, com a identidade da Unooria (roxo, Open Sans, Material
+Symbols) e composição própria (barra de navegação flutuante, ações em pílula
+sobre a mídia, avatar em \emph{squircle} para quem tem história).
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{itemize}
+  \item \textbf{A superfície disfarçada inteira usa a seção \cd{unoovista}}, por
+    uma ponte nova, \arq{packages/ui/src/ds-unoovista.ts}
+    (\cd{@edu/ui/ds-unoovista}). Os componentes locais que tinham par no pacote
+    morreram: \cd{TopBar}, \cd{TabBar}, \cd{StoriesTray}, \cd{StoryBubble},
+    \cd{StoryViewer}, \cd{PostCard}, \cd{BottomSheet}, \cd{SearchField},
+    \cd{NotificationItem}, \cd{ProfileHeader}, \cd{ListItem}, \cd{Snackbar},
+    \cd{StoryComposer}, \cd{Chip}, \cd{Button}, \cd{TextField}, \cd{Avatar},
+    \cd{Badge} e \cd{Logo}. Os nomes de cor do Tailwind ficaram e passaram a
+    apontar para os \emph{tokens} \cd{--unv-*}; nenhum hexadecimal do clone
+    antigo sobrou.
+  \item \textbf{O app passa a se chamar Unoovista}, e a missão também
+    (\enquote{Unoovista --- O Conteúdo que não chegou}), por decisão do dono do
+    produto: o \emph{onboarding}, a revelação (as duas cópias gêmeas da
+    \emph{copy}), o card do estudante, o guia, os Termos e as suítes de ponta a
+    ponta mudaram junto. Identificadores (\arq{instanooria-app.tsx},
+    \arq{02-instanooria.mjs}, \arq{lib/insta/}) ficam, pela regra da
+    \adrr{ADR-91}.
+  \item \textbf{O Instanooria continua vivo para quem o usa}: A Seleção
+    (exp07ef1b), o clone da exp01ef1b e o \cd{PostCard} da gaveta do Jornal da
+    Escola. As duas seções coexistem e não se misturam.
+  \item \textbf{O que mede não mudou}: o cliente continua mandando os mesmos
+    eventos ao motor, o \emph{dwell} continua observando o cartão inteiro
+    (agora a raiz do \cd{PostCard} do DS) e cada miniatura da busca.
+  \item A experiência sobe para a versão \textbf{1.2.0}.
+\end{itemize}
+
+\textbf{O que ficou local, e por quê} (compensações marcadas no
+\arq{AGENTS.md} da experiência):
+
+\begin{itemize}
+  \item \textbf{A grade de miniaturas} da busca e dos perfis: o
+    \cd{MediaGrid} só desenha bloco com \cd{src} (metade dos posts é cartão de
+    emoji) e não entrega o elemento de cada bloco, que a busca registra no
+    medidor de \emph{dwell}.
+  \item \textbf{O botão de curtir comentário}, só de glifo: o pacote não tem
+    botão de ícone sem contêiner.
+  \item \textbf{O \enquote{Seguir} ao lado do cabeçalho do post} e \textbf{o
+    coração do duplo-toque}: o \cd{PostCard.Header} não tem espaço para ação
+    além do \enquote{mais}, e embrulhar a \cd{PostCard.Media} quebraria a pílula
+    de ações, que só existe quando ela vem logo depois da mídia.
+  \item \textbf{O seletor de figurinha} do \emph{onboarding}: o pacote não
+    tem seletor de avatar.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Trocar só o ícone e os \emph{tokens}}, mantendo os componentes
+    locais. Era a portabilidade mais barata, e a tela continuaria com a
+    composição do Instagram, só pintada de roxo --- a composição própria do
+    Unoovista mora nos componentes.
+  \item \textbf{Manter o nome Instanooria com a interface nova.} Um nome que
+    remete ao aplicativo real sobre uma interface que deixou de imitá-lo.
+  \item \textbf{Migrar também A Seleção.} Fica para outra frente; ela é outra
+    missão, com outro instrumento.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{O Material Symbols desce para o estudante}: o \cd{Icon} do
+    Unoovista é ligadura, e a fonte tem \SI{5.36}{\mega\byte} num arquivo só.
+    No Instanooria os glifos eram SVG. O \emph{feed} usa ícone desde a primeira
+    tela, então o arquivo é baixado por cada aparelho na rede da escola.
+  \item \textbf{As cores dos avatares das personas sumiram}: as iniciais ficam
+    sobre o fundo único do \cd{Avatar} do DS, e o par de cores por
+    \emph{handle} saiu junto com a paleta antiga.
+  \item \textbf{A folha do DS não fecha no arraste}, só no véu, no ESC e na
+    ação dela; e o modificador de opacidade das cores (\cd{text-ink/70}) agora
+    depende de \cd{color-mix}, o mesmo piso de navegador do \cd{:has()} que os
+    componentes já exigem.
+\end{itemize}
+
+\textbf{Gatilho.} O pacote publicar o que falta (grade com bloco sem foto e
+referência por bloco, botão só de glifo, seletor de avatar) --- cada
+compensação morre com a peça dela --- ou o peso da fonte de ícones aparecer na
+medição de carga da escola.
