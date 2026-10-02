@@ -9,10 +9,11 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{133 decisões}, numeradas até ADR-134, com uma lacuna
+São \textbf{135 decisões}, numeradas até ADR-136, com uma lacuna
 temporária: a 132 (a Ajuda com avatar) já está no código e ainda não tem
 seção aqui. A 133 e a 134 nasceram no mesmo dia, em frentes paralelas
-(Unoovista e Unoochat), e entraram juntas no merge. A 117
+(Unoovista e Unoochat), e entraram juntas no merge; a 135 e a 136 levaram as
+duas redes para A Seleção e para o Jornal da Escola no mesmo dia. A 117
 (o Jornal da Escola) entrou depois da 121: o número tinha sido
 reservado entre as sessões antes de qualquer uma escrever. Quando
 eram cem, as cinco últimas nasceram no MESMO dia, em três frentes paralelas, e não
@@ -183,6 +184,8 @@ que a cercam.
 \zebra \adrr{ADR-131} & As perguntas de evidência de Quem mandou isso? são as do PO, literais & 2026-10-01 & Aceita\\
 \adrr{ADR-133} & A missão do 8º ano troca o Instanooria pelo Unoovista & 2026-10-02 & Aceita\\
 \zebra \adrr{ADR-134} & Quem mandou isso? troca o clone do WhatsApp pelo Unoochat & 2026-10-02 & Aceita\\
+\adrr{ADR-135} & A Seleção troca o Instanooria pelo Unoovista & 2026-10-02 & Aceita\\
+\zebra \adrr{ADR-136} & As peças da gaveta do Jornal da Escola passam para o Unoovista e o Unoochat & 2026-10-02 & Aceita\\
 \bottomrule
 \end{tabularx}
 
@@ -11729,3 +11732,70 @@ As únicas diferenças de API entre as seções que a missão toca são aditivas
 
 \textbf{Gatilho.} O pacote mudar a API de uma das duas seções, ou a exp01ef1b
 migrar --- aí a ponte \cd{@edu/ui/ds-insta} fica só com a gaveta do Jornal.
+
+\section{ADR-136 --- As peças da gaveta do Jornal da Escola passam para o Unoovista e o Unoochat}
+\label{adr:exp04ef1b-unoovista-unoochat}
+
+\textbf{Data.} 2026-10-02. \textbf{Status.} Aceita. Mantém a regra da
+\adrr{ADR-117} (a peça imitada fala na seção de onde veio) e troca as seções
+que ela aponta.
+
+\begin{especificacao}{Contexto}
+O Jornal da Escola (exp04ef1b, 4º ano, Unidade 1) é a redação da Unooria, mas
+duas notícias chegam de fora: a de rede social, desenhada na gaveta como o
+\cd{PostCard} do \cd{instanooria}, e a mensagem encaminhada, como o
+\cd{MessageBubble} do \cd{whatsappmobile} --- que é também o boato do Desafio
+Final. No mesmo dia, a missão do 8º ano e A Seleção trocaram o Instanooria pelo
+Unoovista (\adrr{ADR-133}, \adrr{ADR-135}) e Quem mandou isso? trocou o clone do
+WhatsApp pelo Unoochat (\adrr{ADR-134}). O Jornal era a última missão a mostrar
+as duas peças com a cara dos aplicativos reais. As duas seções novas são cópias
+estruturais das antigas: o \cd{PostCard} e o \cd{MessageBubble} têm os mesmos
+subcomponentes e as mesmas props.
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{itemize}
+  \item \textbf{O post vem do \cd{unoovista}} (\cd{@edu/ui/ds-unoovista}) e
+    \textbf{a mensagem do \cd{unoochat}} (\cd{@edu/ui/ds-unoochat}), na gaveta
+    e no Desafio Final. A troca é de ponte, de \emph{token} (\cd{--unv-*},
+    \cd{--unc-*}) e de tema; a composição de cada peça (sem curtidas, sem
+    carimbo de data, sem hora, com o selo de encaminhada) não muda.
+  \item \textbf{As duas peças ficam no tema claro}, fixado no próprio
+    contêiner (\cd{PostCard theme="light"} e \cd{data-unc-theme="light"}),
+    como a redação em volta. A moldura da mensagem passa do retângulo escuro do
+    WhatsApp para a lavanda do \cd{--unc-color-surface-base}: o balão recebido
+    do Unoochat é branco e sumiria no branco da redação.
+  \item \textbf{O que a missão mede não mudou}: a api, as notícias, as
+    pistas, a régua e as perguntas são as mesmas. A experiência sobe para a
+    versão \textbf{2.1.0}.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Manter as duas peças nos clones.} O 4º ano veria o post e a
+    mensagem com a cara de aplicativos reais, enquanto o 5º, o 7º e o 8º ano
+    veem as redes da Unooria --- a criança que chegasse ao 5º ano encontraria
+    outro aplicativo de conversa para a mesma coisa.
+  \item \textbf{Desenhar as duas peças na seção \cd{unooria}}, como o resto da
+    redação. Um post que não parece post não ensina a reconhecer post: é o
+    argumento da \adrr{ADR-117}, que continua valendo.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{O Unoovista e o Unoochat se parecem mais com a redação} do que
+    os clones: são roxos e usam a Open Sans, como a Unooria. A fronteira entre
+    a peça e a redação fica menos visível --- o fio e a moldura de cada peça
+    passam a carregar essa separação.
+  \item \textbf{A experiência carrega duas folhas de fonte a mais}, que repetem
+    as faces da \cd{fonts/unooria.css} com as mesmas URLs: não há download a
+    mais, mas o \emph{bundle} de CSS cresce algumas centenas de bytes.
+\end{itemize}
+
+\textbf{Gatilho.} O pacote mudar a API do \cd{PostCard} ou do
+\cd{MessageBubble} de uma das seções, ou o \cd{unoovista}/\cd{unoochat} passar
+a seguir o modo escuro do sistema. Com esta, a ponte \cd{@edu/ui/ds-insta} fica
+só com o clone da exp01ef1b, e a \cd{@edu/ui/ds-whatsapp} só com a exp06ef2b.
