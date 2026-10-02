@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { createExperiencia, type ExperienciaHandle } from "@edu/sdk";
-import { Composer } from "@edu/ui/ds-chatgpt";
+import { Composer } from "@edu/ui/ds-unooriaai";
 import { api, codigoDoErro, definirExperiencia } from "./lib/api";
 import { ligarTelemetria } from "./lib/telemetria";
 import { EXP_ID, EXP_VERSION, type RespostaSessao } from "./lib/tipos";
@@ -54,8 +54,8 @@ export function Bootstrap() {
 
   if (falhou) {
     return (
-      <div className="flex h-full items-center justify-center bg-gpt-tela p-8">
-        <p className="max-w-sm text-center text-sm text-gpt-tinta-2">{falhou}</p>
+      <div className="flex h-full items-center justify-center bg-uai-tela p-8">
+        <p className="max-w-sm text-center text-sm text-uai-tinta-2">{falhou}</p>
       </div>
     );
   }
@@ -65,7 +65,7 @@ export function Bootstrap() {
     // que ele espera, com o campo desabilitado, e não uma tela de carregamento
     // que denuncia que algo está sendo montado para ele.
     return (
-      <div className="flex h-full flex-col bg-gpt-tela">
+      <div className="flex h-full flex-col bg-uai-tela">
         <div className="flex flex-1 items-end justify-center p-6">
           <div className="w-full max-w-2xl opacity-40">
             <Composer hideLeadingActions placeholder="" disabled />

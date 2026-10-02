@@ -1,4 +1,4 @@
-import { FeatureCard } from '@edu/ui/ds-chatgpt';
+import { FeatureCard } from '@edu/ui/ds-unooriaai';
 import { CONJUNTO_POR_SLUG, nomeDoBairro } from '../../lib/textos';
 import type { Desfecho } from '../../lib/tipos';
 import type { RodadaDoModelo } from '../../lib/tipos';
@@ -55,9 +55,9 @@ export function CartaoTendencia({
   const procedenciaComum = [...contagem.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? '';
 
   return (
-    <div className="animate-entrar-cartao mt-3 rounded-gpt-xl border border-gpt-borda bg-gpt-fundo p-4">
+    <div className="animate-entrar-cartao mt-3 rounded-uai-xl border border-uai-borda bg-uai-fundo p-4">
       <div className="flex items-baseline justify-between gap-2">
-        <p className="text-xs font-bold uppercase tracking-wider text-gpt-suave-40">
+        <p className="text-xs font-bold uppercase tracking-wider text-uai-suave-40">
           O que os dados mostram
           {/* A hora deixa claro que cada leitura é de um momento — e que o
               momento seguinte custou tempo. */}
@@ -65,7 +65,7 @@ export function CartaoTendencia({
         </p>
         {/* "78% da cidade sob algum dado" é jargão de quem fez o modelo. O que
             o estudante precisa saber é quanto ele está enxergando. */}
-        <p className="text-xs text-gpt-suave-60">
+        <p className="text-xs text-uai-suave-60">
           você enxerga {Math.round(rodada.coberturaDaCidade * 100)}% da cidade
           {procedenciaComum && <span className="block text-right">com {procedenciaComum}</span>}
         </p>
@@ -73,7 +73,7 @@ export function CartaoTendencia({
 
       <table className="mt-3 w-full text-left text-xs">
         <thead>
-          <tr className="text-[10px] uppercase tracking-wider text-gpt-suave-60">
+          <tr className="text-[10px] uppercase tracking-wider text-uai-suave-60">
             <th className="pb-1 font-bold">Bairro</th>
             <th className="pb-1 font-bold">Pessoas em risco</th>
             <th className="pb-1 font-bold">Confiança</th>
@@ -81,14 +81,14 @@ export function CartaoTendencia({
         </thead>
         <tbody>
           {rodada.estimativas.map((e) => (
-            <tr key={e.bairro} className="border-t border-gpt-borda align-top">
-              <td className="py-2 pr-3 font-semibold text-gpt-tinta">
+            <tr key={e.bairro} className="border-t border-uai-borda align-top">
+              <td className="py-2 pr-3 font-semibold text-uai-tinta">
                 {nomeDoBairro(e.bairro)}
                 {/* Procedência só quando ESTA linha vê diferente das outras.
                     Repetir "cadastro + satélite" em seis linhas é ruído: o que
                     informa é a exceção — o bairro que só uma fonte enxerga. */}
                 {rotulos(e.sustentadaPor) !== procedenciaComum && (
-                  <span className="block text-[10px] font-normal leading-tight text-gpt-suave-60">
+                  <span className="block text-[10px] font-normal leading-tight text-uai-suave-60">
                     só {rotulos(e.sustentadaPor)}
                   </span>
                 )}
@@ -96,16 +96,16 @@ export function CartaoTendencia({
               {/* O intervalo dito por extenso já É a margem: "pode ser 2.166 ou
                   3.688". O "±761" ao lado era a MESMA ideia em jargão, e o
                   estudante lia a linha duas vezes para descobrir isso. */}
-              <td className="py-2 pr-3 text-gpt-tinta">
+              <td className="py-2 pr-3 text-uai-tinta">
                 {milhar(e.pessoasEmRisco.esperado)}
-                <span className="block text-[10px] leading-tight text-gpt-suave-60">
+                <span className="block text-[10px] leading-tight text-uai-suave-60">
                   pode ser {milhar(e.pessoasEmRisco.min)} ou {milhar(e.pessoasEmRisco.max)}
                 </span>
               </td>
               {/* "mais ou menos" com "confiança média" embaixo é a tradução ao
                   lado do original — e o original é justamente a palavra que o
                   ADR-0009 tirou por não ter sido entendida nem perguntada. */}
-              <td className="py-2 text-gpt-suave-60">{EM_MIUDOS[e.confianca] ?? e.confianca}</td>
+              <td className="py-2 text-uai-suave-60">{EM_MIUDOS[e.confianca] ?? e.confianca}</td>
             </tr>
           ))}
         </tbody>
@@ -119,21 +119,21 @@ export function CartaoTendencia({
           um bloco de texto: o estudante leu, mandou as duas equipes para os dois
           bairros empatados e seguiu. Agora tem caixa, cor e peso próprios. */}
       {rodada.empates.length > 0 && !mudou.empates && (
-        <p className="mt-3 text-xs leading-relaxed text-gpt-alerta">
+        <p className="mt-3 text-xs leading-relaxed text-uai-alerta">
           O empate entre{' '}
           {rodada.empates.map((g) => g.map(nomeDoBairro).join(' e ')).join(' e entre ')} continua.
         </p>
       )}
       {rodada.empates.length > 0 && mudou.empates && (
-        <div className="mt-3 rounded-gpt-md border-l-4 border-gpt-alerta bg-gpt-superficie p-3">
+        <div className="mt-3 rounded-uai-md border-l-4 border-uai-alerta bg-uai-superficie p-3">
           {rodada.empates[0]!.length === rodada.estimativas.length ? (
-            <p className="text-xs leading-relaxed text-gpt-tinta">
+            <p className="text-xs leading-relaxed text-uai-tinta">
               <strong>Nenhum bairro se destaca.</strong> Os números de todos eles se misturam. A
               ordem da tabela não é um ranking — escolher o de cima não é escolher o maior.
             </p>
           ) : (
             rodada.empates.map((grupo) => (
-              <p key={grupo.join()} className="text-xs leading-relaxed text-gpt-tinta">
+              <p key={grupo.join()} className="text-xs leading-relaxed text-uai-tinta">
                 <strong>{grupo.map(nomeDoBairro).join(' e ')} estão empatados.</strong> Qualquer um
                 deles pode ser o maior: o que está por cima na tabela não é o maior de verdade, é só
                 o que a leitura de hoje colocou por cima.
@@ -146,24 +146,24 @@ export function CartaoTendencia({
       {/* O conflito é a aula: duas fontes honestas, o mesmo bairro, números que
           não batem. Fica DEPOIS da tabela porque explica o que ela mostra. */}
       {rodada.conflitos.length > 0 && !mudou.conflitos && (
-        <p className="mt-3 text-xs leading-relaxed text-gpt-alerta">
+        <p className="mt-3 text-xs leading-relaxed text-uai-alerta">
           {rodada.conflitos.map((c) => nomeDoBairro(c.bairro)).join(' e ')}: as fontes continuam sem
           concordar.
         </p>
       )}
       {rodada.conflitos.length > 0 && mudou.conflitos && (
-        <div className="mt-3 rounded-gpt-md bg-gpt-superficie p-3">
-          <p className="text-xs font-bold uppercase tracking-wider text-gpt-alerta">
+        <div className="mt-3 rounded-uai-md bg-uai-superficie p-3">
+          <p className="text-xs font-bold uppercase tracking-wider text-uai-alerta">
             As fontes não concordam
           </p>
           {rodada.conflitos.map((c) => (
-            <p key={c.bairro} className="mt-1.5 text-xs leading-relaxed text-gpt-tinta">
+            <p key={c.bairro} className="mt-1.5 text-xs leading-relaxed text-uai-tinta">
               <strong>{nomeDoBairro(c.bairro)}</strong>: {c.encolhe.comoFalar} vê{' '}
               <strong>{milhar(c.encolhe.pessoas)}</strong> pessoas, {c.infla.comoFalar} vê{' '}
               <strong>{milhar(c.infla.pessoas)}</strong>.
             </p>
           ))}
-          <p className="mt-1.5 text-xs text-gpt-suave-60">
+          <p className="mt-1.5 text-xs text-uai-suave-60">
             Nenhuma das duas está mentindo — elas medem coisas diferentes. Por isso a barra desses
             bairros fica mais larga.
           </p>
@@ -171,7 +171,7 @@ export function CartaoTendencia({
       )}
 
       {rodada.pontosCegos.length > 0 && (
-        <p className="mt-3 text-xs text-gpt-alerta">
+        <p className="mt-3 text-xs text-uai-alerta">
           Sem dado nenhum sobre: {rodada.pontosCegos.map(nomeDoBairro).join(', ')}
         </p>
       )}
@@ -179,7 +179,7 @@ export function CartaoTendencia({
           cartão aberto: no fechado ele é a terceira linha de uma coisa que o
           estudante já leu. */}
       {expandido && rodada.efeito && rodada.efeito.mudou.length > 0 && (
-        <p className="mt-3 text-xs leading-relaxed text-gpt-tinta">
+        <p className="mt-3 text-xs leading-relaxed text-uai-tinta">
           <strong>
             Depois de somar {CONJUNTO_POR_SLUG.get(rodada.efeito.fonte)?.rotuloCurto}:
           </strong>{' '}
@@ -194,7 +194,7 @@ export function CartaoTendencia({
         </p>
       )}
 
-      {expandido && <p className="mt-2 text-xs italic text-gpt-suave-60">{rodada.aviso}</p>}
+      {expandido && <p className="mt-2 text-xs italic text-uai-suave-60">{rodada.aviso}</p>}
     </div>
   );
 }
@@ -251,18 +251,18 @@ export function CartaoOpcoes({
             disabled={!onEscolher || ocupado}
             className="text-left disabled:opacity-50"
             title={
-              <span className="text-xs font-bold uppercase tracking-wider text-gpt-suave-40">
+              <span className="text-xs font-bold uppercase tracking-wider text-uai-suave-40">
                 Opção {i + 1}
               </span>
             }
             description={
               <>
-                <span className="block text-sm text-gpt-tinta">
-                  <strong className="text-gpt-azul">Alfa</strong> · {nomeDoBairro(o.alfa)} ·{' '}
-                  <strong className="text-gpt-roxo">Bravo</strong> · {nomeDoBairro(o.bravo)}
+                <span className="block text-sm text-uai-tinta">
+                  <strong className="text-uai-equipe-alfa">Alfa</strong> · {nomeDoBairro(o.alfa)} ·{' '}
+                  <strong className="text-uai-equipe-bravo">Bravo</strong> · {nomeDoBairro(o.bravo)}
                 </span>
                 {total !== null && (
-                  <span className="mt-0.5 block text-xs text-gpt-suave-60">
+                  <span className="mt-0.5 block text-xs text-uai-suave-60">
                     {milhar(total)} pessoas em risco nos dois, pela leitura de agora
                   </span>
                 )}
@@ -277,17 +277,17 @@ export function CartaoOpcoes({
 
 export function CartaoAlocacao({ alfa, bravo }: { alfa: string | null; bravo: string | null }) {
   return (
-    <div className="animate-entrar-cartao mt-3 rounded-gpt-xl border-2 border-gpt-borda-forte bg-gpt-fundo p-3">
-      <p className="text-xs font-bold uppercase tracking-wider text-gpt-suave-40">
+    <div className="animate-entrar-cartao mt-3 rounded-uai-xl border-2 border-uai-borda-forte bg-uai-fundo p-3">
+      <p className="text-xs font-bold uppercase tracking-wider text-uai-suave-40">
         Decisão registrada
       </p>
-      <p className="mt-1 text-sm text-gpt-tinta">
-        <strong className="text-gpt-azul">Equipe Alfa</strong> ·{' '}
-        {alfa ? nomeDoBairro(alfa) : <span className="text-gpt-suave-60">sem destino</span>}
+      <p className="mt-1 text-sm text-uai-tinta">
+        <strong className="text-uai-equipe-alfa">Equipe Alfa</strong> ·{' '}
+        {alfa ? nomeDoBairro(alfa) : <span className="text-uai-suave-60">sem destino</span>}
       </p>
-      <p className="text-sm text-gpt-tinta">
-        <strong className="text-gpt-roxo">Equipe Bravo</strong> ·{' '}
-        {bravo ? nomeDoBairro(bravo) : <span className="text-gpt-suave-60">sem destino</span>}
+      <p className="text-sm text-uai-tinta">
+        <strong className="text-uai-equipe-bravo">Equipe Bravo</strong> ·{' '}
+        {bravo ? nomeDoBairro(bravo) : <span className="text-uai-suave-60">sem destino</span>}
       </p>
     </div>
   );
@@ -302,15 +302,15 @@ export function CartaoDesfecho({
 }) {
   const { totais } = desfecho;
   return (
-    <div className="animate-entrar-cartao mt-3 rounded-gpt-xl border border-gpt-borda bg-gpt-fundo p-4">
-      <p className="text-xs font-bold uppercase tracking-wider text-gpt-suave-40">
+    <div className="animate-entrar-cartao mt-3 rounded-uai-xl border border-uai-borda bg-uai-fundo p-4">
+      <p className="text-xs font-bold uppercase tracking-wider text-uai-suave-40">
         A tempestade passou
       </p>
-      <p className="mt-2 text-gpt-tinta">
-        <strong className="text-gpt-ok">{milhar(totais.salvas)}</strong> pessoas tiradas de risco ·{' '}
-        <strong className="text-gpt-erro">{milhar(totais.vitimas)}</strong> atingidas pela enchente.
+      <p className="mt-2 text-uai-tinta">
+        <strong className="text-uai-ok">{milhar(totais.salvas)}</strong> pessoas tiradas de risco ·{' '}
+        <strong className="text-uai-erro">{milhar(totais.vitimas)}</strong> atingidas pela enchente.
       </p>
-      <p className="mt-2 text-xs text-gpt-suave-60">O resultado completo está na tela ao lado.</p>
+      <p className="mt-2 text-xs text-uai-suave-60">O resultado completo está na tela ao lado.</p>
     </div>
   );
 }

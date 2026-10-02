@@ -1,4 +1,4 @@
-import { Button, Tag } from '@edu/ui/ds-chatgpt';
+import { Button, Tag } from '@edu/ui/ds-unooriaai';
 import { useEffect, useRef, useState } from 'react';
 import type { BairroPublico } from '../../lib/tipos';
 import { VISOES, dadoDaVisao, type NivelDeRisco, type Visao } from '../../lib/visao';
@@ -27,30 +27,30 @@ export interface EquipeNoMapa {
 
 const COR_EQUIPE = {
   alfa: {
-    borda: 'border-gpt-azul',
-    chip: 'bg-gpt-azul',
-    traco: 'var(--gpt-color-blue-500)',
-    texto: 'text-gpt-azul',
+    borda: 'border-uai-equipe-alfa',
+    chip: 'bg-uai-equipe-alfa',
+    traco: 'var(--uai-status-info)',
+    texto: 'text-uai-equipe-alfa',
   },
   bravo: {
-    borda: 'border-gpt-roxo',
-    chip: 'bg-gpt-roxo',
-    traco: 'var(--gpt-color-purple-600)',
-    texto: 'text-gpt-roxo',
+    borda: 'border-uai-equipe-bravo',
+    chip: 'bg-uai-equipe-bravo',
+    traco: 'var(--uai-bg-brand)',
+    texto: 'text-uai-equipe-bravo',
   },
 } as const;
 
 /** Par fundo/texto de cada nível, medido para AA em texto pequeno. */
 const COR_NIVEL: Record<NivelDeRisco, string> = {
-  baixo: 'bg-gpt-superficie text-gpt-ok',
-  medio: 'bg-gpt-superficie text-gpt-alerta',
-  alto: 'bg-gpt-superficie text-gpt-erro',
+  baixo: 'bg-uai-superficie text-uai-ok',
+  medio: 'bg-uai-superficie text-uai-alerta',
+  alto: 'bg-uai-superficie text-uai-erro',
 };
 
 const PONTO_NIVEL: Record<NivelDeRisco, string> = {
-  baixo: 'bg-gpt-ok',
-  medio: 'bg-gpt-alerta',
-  alto: 'bg-gpt-erro',
+  baixo: 'bg-uai-ok',
+  medio: 'bg-uai-alerta',
+  alto: 'bg-uai-erro',
 };
 
 const numero = (v: string) => Number.parseFloat(v);
@@ -140,20 +140,20 @@ export function Mapa({
     <section
       className={
         expandido
-          ? 'fixed inset-0 z-50 flex flex-col bg-gpt-superficie p-4'
-          : 'flex h-full min-h-0 w-full flex-col border-l border-gpt-borda bg-gpt-superficie p-3'
+          ? 'fixed inset-0 z-50 flex flex-col bg-uai-superficie p-4'
+          : 'flex h-full min-h-0 w-full flex-col border-l border-uai-borda bg-uai-superficie p-3'
       }
     >
       {/* Título e visões na MESMA linha: a barra de abas ocupando a largura
           toda parecia navegação principal e competia com a trilha da Missão. */}
       <header className="mb-2 flex flex-wrap items-center justify-between gap-2">
-        <p className="text-sm font-semibold leading-tight text-gpt-tinta">
-          <span className="block text-[10px] font-bold uppercase tracking-wider text-gpt-suave-40">
+        <p className="text-sm font-semibold leading-tight text-uai-tinta">
+          <span className="block text-[10px] font-bold uppercase tracking-wider text-uai-suave-40">
             Mapa operacional
           </span>
           Serra do Sauá
         </p>
-        <div className="flex gap-1 rounded-gpt-md bg-gpt-fundo p-1">
+        <div className="flex gap-1 rounded-uai-md bg-uai-fundo p-1">
           {VISOES.map((v) => (
             // Aba nunca bloqueia: desabilitada, parece defeito. Sem dados ela
             // abre e mostra o vazio, que é a informação verdadeira.
@@ -178,7 +178,7 @@ export function Mapa({
                 <div
                   key={`calor-${b.slug}`}
                   aria-hidden
-                  className="pointer-events-none absolute rounded-gpt-full"
+                  className="pointer-events-none absolute rounded-uai-full"
                   style={{
                     left: `${c.x / 6}%`,
                     top: `${c.y / 8}%`,
@@ -186,7 +186,7 @@ export function Mapa({
                     height: '34%',
                     transform: 'translate(-50%, -50%)',
                     background:
-                      'radial-gradient(circle, color-mix(in srgb, var(--gpt-status-error) 22%, transparent) 0%, transparent 70%)',
+                      'radial-gradient(circle, color-mix(in srgb, var(--uai-status-error) 22%, transparent) 0%, transparent 70%)',
                   }}
                 />
               );
@@ -225,7 +225,7 @@ export function Mapa({
                       <circle
                         r="7"
                         fill={COR_EQUIPE[e.cor].traco}
-                        stroke="var(--gpt-bg-primary)"
+                        stroke="var(--uai-bg-primary)"
                         strokeWidth="2"
                       >
                         <animateMotion dur="4.5s" fill="freeze" path={rota} />
@@ -264,28 +264,28 @@ export function Mapa({
                   onSelecionar?.(ativo ? null : b.slug);
                   if (!ativo) focar(numero(b.left) + numero(b.w) / 2, numero(b.top) + 6);
                 }}
-                className={`absolute cursor-pointer rounded-gpt-xl border-2 bg-gpt-fundo px-3.5 py-3 shadow-md transition ${
+                className={`absolute cursor-pointer rounded-uai-xl border-2 bg-uai-fundo px-3.5 py-3 shadow-md transition ${
                   acendendo.includes(b.slug) ? 'animate-acender ' : ''
                 }${
                   ativo
-                    ? 'border-gpt-borda-forte'
+                    ? 'border-uai-borda-forte'
                     : equipe
                       ? COR_EQUIPE[equipe.cor].borda
                       : 'border-transparent'
                 }`}
               >
                 <div className="flex items-center justify-between gap-3">
-                  <p className="text-base font-semibold leading-tight text-gpt-tinta">{b.nome}</p>
+                  <p className="text-base font-semibold leading-tight text-uai-tinta">{b.nome}</p>
                   {dado?.selo && (
                     <span
-                      className={`shrink-0 rounded-gpt-md px-2 py-1 text-xs font-bold ${COR_NIVEL[dado.selo.nivel]}`}
+                      className={`shrink-0 rounded-uai-md px-2 py-1 text-xs font-bold ${COR_NIVEL[dado.selo.nivel]}`}
                     >
                       {dado.selo.texto}
                     </span>
                   )}
                 </div>
                 {visao === 'alcance' && !b.tempos && (
-                  <p className="mt-1.5 text-sm leading-snug text-gpt-suave-40">
+                  <p className="mt-1.5 text-sm leading-snug text-uai-suave-40">
                     Sem o mapa de estradas, não dá para saber se a equipe chega
                   </p>
                 )}
@@ -295,10 +295,10 @@ export function Mapa({
                     <p
                       className={
                         !alcance.alfa.passa
-                          ? 'text-gpt-erro'
+                          ? 'text-uai-erro'
                           : alcance.alfa.aperto
-                            ? 'text-gpt-alerta'
-                            : 'text-gpt-ok'
+                            ? 'text-uai-alerta'
+                            : 'text-uai-ok'
                       }
                     >
                       Alfa:{' '}
@@ -309,10 +309,10 @@ export function Mapa({
                     <p
                       className={
                         !alcance.bravo.passa
-                          ? 'text-gpt-erro'
+                          ? 'text-uai-erro'
                           : alcance.bravo.aperto
-                            ? 'text-gpt-alerta'
-                            : 'text-gpt-ok'
+                            ? 'text-uai-alerta'
+                            : 'text-uai-ok'
                       }
                     >
                       Bravo:{' '}
@@ -321,7 +321,7 @@ export function Mapa({
                         : '—'}
                     </p>
                     {!alcance.alfa.passa && !alcance.bravo.passa && (
-                      <p className="text-xs leading-snug text-gpt-suave-60">
+                      <p className="text-xs leading-snug text-uai-suave-60">
                         {alcance.bravo.motivo ?? alcance.alfa.motivo}
                       </p>
                     )}
@@ -330,16 +330,16 @@ export function Mapa({
 
                 {dado ? (
                   <>
-                    <p className="mt-1.5 text-sm leading-snug text-gpt-tinta">{dado.linha}</p>
+                    <p className="mt-1.5 text-sm leading-snug text-uai-tinta">{dado.linha}</p>
                     {dado.faixa && (
-                      <p className="text-xs leading-snug text-gpt-suave-60">{dado.faixa}</p>
+                      <p className="text-xs leading-snug text-uai-suave-60">{dado.faixa}</p>
                     )}
-                    <p className="mt-1 text-[11px] font-semibold uppercase tracking-wide text-gpt-suave-40">
+                    <p className="mt-1 text-[11px] font-semibold uppercase tracking-wide text-uai-suave-40">
                       confiança {dado.confianca}
                     </p>
                   </>
                 ) : (
-                  <p className="mt-1.5 text-sm leading-snug text-gpt-suave-40">
+                  <p className="mt-1.5 text-sm leading-snug text-uai-suave-40">
                     O Cientista ainda não tem dados daqui
                   </p>
                 )}
@@ -351,7 +351,7 @@ export function Mapa({
                 {/* Decidir sem passar pelo chat. O estudante que não sabe escrever a
                     frase — ou que ficou sem tempo — ainda tem para onde clicar. */}
                 {ativo && onMandarEquipe && (
-                  <div className="mt-2.5 flex gap-2 border-t border-gpt-borda pt-2.5">
+                  <div className="mt-2.5 flex gap-2 border-t border-uai-borda pt-2.5">
                     {(['alfa', 'bravo'] as const).map((eq) => {
                       const jaEsta = equipes.find((x) => x.id === eq)?.destinoSlug === b.slug;
                       return (
@@ -367,7 +367,7 @@ export function Mapa({
                             if (!jaEsta) onMandarEquipe(eq, b.slug);
                           }}
                           disabled={jaEsta}
-                          className={`flex-1 !text-gpt-tinta-inv ${COR_EQUIPE[eq].chip}`}
+                          className={`flex-1 !text-uai-tinta-inv ${COR_EQUIPE[eq].chip}`}
                         >
                           {jaEsta
                             ? `${eq === 'alfa' ? 'Alfa' : 'Bravo'} já vai`
@@ -386,18 +386,18 @@ export function Mapa({
               key={e.id}
               data-nao-arrasta
               style={{ left: e.left, top: e.top, transform: 'translate(-50%, -50%)' }}
-              className={`absolute flex items-center gap-3 rounded-gpt-xl border-2 bg-gpt-fundo px-3.5 py-3 shadow-md ${COR_EQUIPE[e.cor].borda}`}
+              className={`absolute flex items-center gap-3 rounded-uai-xl border-2 bg-uai-fundo px-3.5 py-3 shadow-md ${COR_EQUIPE[e.cor].borda}`}
             >
               <div>
-                <p className="text-base font-semibold leading-tight text-gpt-tinta">{e.nome}</p>
+                <p className="text-base font-semibold leading-tight text-uai-tinta">{e.nome}</p>
                 {e.minutos !== null && (
-                  <p className="mt-1 text-sm leading-snug text-gpt-suave-60">
+                  <p className="mt-1 text-sm leading-snug text-uai-suave-60">
                     {e.minutos} min até o destino
                   </p>
                 )}
               </div>
               <span
-                className={`grid h-7 w-7 shrink-0 place-items-center rounded-gpt-md text-xs font-bold text-gpt-tinta-inv ${COR_EQUIPE[e.cor].chip}`}
+                className={`grid h-7 w-7 shrink-0 place-items-center rounded-uai-md text-xs font-bold text-uai-tinta-inv ${COR_EQUIPE[e.cor].chip}`}
               >
                 {e.sigla}
               </span>
@@ -413,7 +413,7 @@ export function Mapa({
               onClick={c.acao}
               title={c.titulo}
               aria-label={c.titulo}
-              className="grid h-8 w-8 place-items-center rounded-gpt-md border border-gpt-borda bg-gpt-fundo text-sm font-semibold text-gpt-tinta shadow-sm hover:bg-gpt-superficie"
+              className="grid h-8 w-8 place-items-center rounded-uai-md border border-uai-borda bg-uai-fundo text-sm font-semibold text-uai-tinta shadow-sm hover:bg-uai-superficie"
             >
               {c.rotulo}
             </button>
@@ -421,25 +421,25 @@ export function Mapa({
         </div>
 
         {ferramentas && (
-          <div className="absolute left-3 right-14 top-3 flex flex-wrap items-center gap-2 rounded-gpt-xl border border-gpt-borda bg-gpt-fundo/95 p-2 text-xs shadow-sm">
+          <div className="absolute left-3 right-14 top-3 flex flex-wrap items-center gap-2 rounded-uai-xl border border-uai-borda bg-uai-fundo/95 p-2 text-xs shadow-sm">
             {ferramentas}
           </div>
         )}
 
         {alerta && (
-          <p className="absolute bottom-3 left-3 right-3 rounded-gpt-md border border-gpt-alerta bg-gpt-superficie/95 px-3 py-2 text-[11px] font-medium text-gpt-alerta shadow-sm">
+          <p className="absolute bottom-3 left-3 right-3 rounded-uai-md border border-uai-alerta bg-uai-superficie/95 px-3 py-2 text-[11px] font-medium text-uai-alerta shadow-sm">
             ⚠ {alerta}
           </p>
         )}
       </div>
 
-      <footer className="mt-2 flex items-center justify-between gap-2 text-[10px] text-gpt-suave-60">
+      <footer className="mt-2 flex items-center justify-between gap-2 text-[10px] text-uai-suave-60">
         {visao === 'risco' ? (
           <span className="flex items-center gap-2">
             <span className="font-semibold uppercase tracking-wider">Risco de alagamento</span>
             {(['baixo', 'medio', 'alto'] as const).map((n) => (
               <span key={n} className="flex items-center gap-1">
-                <span className={`h-2 w-2 rounded-gpt-full ${PONTO_NIVEL[n]}`} aria-hidden />
+                <span className={`h-2 w-2 rounded-uai-full ${PONTO_NIVEL[n]}`} aria-hidden />
                 {n === 'medio' ? 'Médio' : n === 'alto' ? 'Alto' : 'Baixo'}
               </span>
             ))}
@@ -456,8 +456,8 @@ export function Mapa({
       </footer>
 
       {nada && !expandido && (
-        <p className="mt-2 rounded-gpt-xl border border-gpt-borda bg-gpt-fundo p-3 text-[11px] leading-snug text-gpt-suave-60">
-          <strong className="block text-xs text-gpt-tinta">O mapa está no escuro.</strong>
+        <p className="mt-2 rounded-uai-xl border border-uai-borda bg-uai-fundo p-3 text-[11px] leading-snug text-uai-suave-60">
+          <strong className="block text-xs text-uai-tinta">O mapa está no escuro.</strong>
           Ele mostra os bairros e nada mais. Peça ao Cientista para consultar alguma coisa — e o
           mapa passa a mostrar o que aquilo enxerga, só isso.
         </p>

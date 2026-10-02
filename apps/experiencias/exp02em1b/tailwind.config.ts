@@ -5,120 +5,115 @@ import type { Config } from 'tailwindcss';
  *
  * `@unooria/design-system` é a única fonte de decisão visual. Este arquivo não
  * define paleta: ele APELIDA, para o Tailwind, as variáveis CSS que a seção
- * `chatgpt` publica — o Tailwind não enxerga `dist/styles-chatgpt.css` sozinho,
- * e sem esta ponte cada tela voltaria a escrever hexadecimal na mão.
+ * `unooriaai` publica — o Tailwind não enxerga `dist/styles-unooriaai.css`
+ * sozinho, e sem esta ponte cada tela voltaria a escrever hexadecimal na mão.
  *
  * POR QUE TAILWIND NUMA EXPERIÊNCIA: as ~15 telas desta missão foram medidas em
  * playtest com estas classes, e reescrevê-las em CSS à mão arriscaria a medida
  * sem nenhum ganho. Precedente no repo: `exp08ef1b` também usa. O
  * Tailwind aqui é ferramenta de LAYOUT; componente de interface continua vindo
- * do pacote, pela ponte `@edu/ui/ds-chatgpt`.
+ * do pacote, pela ponte `@edu/ui/ds-unooriaai`.
  *
  * O bloco `un-*` do projeto de origem NÃO veio: lá o mesmo config servia à área
  * do estudante e ao painel do professor. Aqui o painel é do hub, e dentro do iframe
  * só existe o clone — a marca institucional é chrome do HUB, desenhada acima do
  * aparelho.
  *
- * ATENÇÃO a modificador de opacidade: `bg-gpt-superficie/40` NÃO funciona — o
+ * ATENÇÃO a modificador de opacidade: `bg-uai-superficie/40` NÃO funciona — o
  * valor é um `var()` com hexadecimal, e o Tailwind não sabe fatiá-lo. Onde for
  * preciso translucidez, use as escadas que o próprio pacote publica
- * (`gpt-veu-*`, `gpt-fill-*`).
+ * (`uai-fill-*`, `uai-veu-escuro`).
  */
 const config: Config = {
   content: ['./index.html', './src/**/*.{ts,tsx}'],
   theme: {
     extend: {
       colors: {
-        // ── Módulo chatgpt · área do estudante ───────────────────────────
-        // Semantic/Colors do arquivo "ChatGPT UI Kit (AI Chat)". Trocam
-        // sozinhas com `data-gpt-theme`.
-        gpt: {
-          fundo: 'var(--gpt-bg-primary)',
-          superficie: 'var(--gpt-bg-secondary)',
-          afundado: 'var(--gpt-bg-tertiary)',
-          inverso: 'var(--gpt-bg-inverse)',
-          marca: 'var(--gpt-bg-brand)',
+        // ── Seção unooriaai · área do estudante ──────────────────────────
+        // As cores semânticas da seção (ADR-138). Trocam sozinhas com
+        // `data-uai-theme`, e cada valor de cada tema é um degrau nomeado da
+        // paleta da Unooria — nenhum é derivado por cálculo.
+        uai: {
+          fundo: 'var(--uai-bg-primary)',
+          superficie: 'var(--uai-bg-secondary)',
+          afundado: 'var(--uai-bg-tertiary)',
+          inverso: 'var(--uai-bg-inverse)',
+          marca: 'var(--uai-bg-brand)',
 
-          tinta: 'var(--gpt-text-primary)',
-          'tinta-2': 'var(--gpt-text-secondary)',
-          'tinta-3': 'var(--gpt-text-tertiary)',
-          'tinta-inv': 'var(--gpt-text-inverse)',
-          'tinta-marca': 'var(--gpt-text-brand)',
-          elo: 'var(--gpt-text-link)',
+          tinta: 'var(--uai-text-primary)',
+          'tinta-2': 'var(--uai-text-secondary)',
+          'tinta-3': 'var(--uai-text-tertiary)',
+          'tinta-inv': 'var(--uai-text-inverse)',
+          'tinta-marca': 'var(--uai-text-brand)',
+          elo: 'var(--uai-text-link)',
 
-          borda: 'var(--gpt-border-default)',
-          'borda-forte': 'var(--gpt-border-strong)',
-          'borda-marca': 'var(--gpt-border-brand)',
+          borda: 'var(--uai-border-default)',
+          'borda-forte': 'var(--uai-border-strong)',
+          'borda-marca': 'var(--uai-border-brand)',
 
-          acao: 'var(--gpt-interactive-primary)',
-          'acao-hover': 'var(--gpt-interactive-hover)',
+          acao: 'var(--uai-interactive-primary)',
+          'acao-hover': 'var(--uai-interactive-hover)',
 
-          ok: 'var(--gpt-status-success)',
-          erro: 'var(--gpt-status-error)',
-          alerta: 'var(--gpt-status-warning)',
-          info: 'var(--gpt-status-info)',
+          ok: 'var(--uai-status-success)',
+          erro: 'var(--uai-status-error)',
+          alerta: 'var(--uai-status-warning)',
+          info: 'var(--uai-status-info)',
 
           // Escada translúcida dos componentes do kit: espelha em branco no
           // tema escuro, e é por isso que ela substitui `bg-preto/4`.
-          'fill-2': 'var(--gpt-fill-2)',
-          'fill-4': 'var(--gpt-fill-4)',
-          'fill-8': 'var(--gpt-fill-8)',
-          'fill-10': 'var(--gpt-fill-10)',
-          'suave-40': 'var(--gpt-text-soft-40)',
-          'suave-60': 'var(--gpt-text-soft-60)',
-          'suave-80': 'var(--gpt-text-soft-80)',
-          'veu-40': 'var(--gpt-overlay-black-40)',
-          'veu-80': 'var(--gpt-overlay-black-80)',
+          'fill-2': 'var(--uai-fill-2)',
+          'fill-4': 'var(--uai-fill-4)',
+          'fill-8': 'var(--uai-fill-8)',
+          'fill-10': 'var(--uai-fill-10)',
+          'suave-40': 'var(--uai-text-soft-40)',
+          'suave-60': 'var(--uai-text-soft-60)',
+          'suave-80': 'var(--uai-text-soft-80)',
+          // O véu escuro. A seção `chatgpt` tinha uma escada de preto (40% e
+          // 80%); a `unooriaai` publica um degrau só, em roxo a 50%.
+          'veu-escuro': 'var(--uai-overlay-scrim)',
 
-          // Cliente web (`--gpt-web-*`, 0.1.14). São a segunda régua do
-          // arquivo: a página `🟪 ChatGPT UI Kit` mede a tela `New chat` nos
-          // dois temas, e três desses pares NÃO são espelho um do outro (o fio
-          // da barra, o véu da doca e o botão de nova conversa). Por isso eles
-          // existem à parte da escada semântica, e não se derivam dela.
-          tela: 'var(--gpt-web-canvas)',
-          fio: 'var(--gpt-web-hairline)',
-          destaque: 'var(--gpt-web-accent)',
-          sugestao: 'var(--gpt-web-suggestion)',
-          veu: 'var(--gpt-web-veil)',
+          // Cliente web (`--uai-web-*`). São a segunda régua da seção: a tela
+          // de nova conversa nos dois temas, e três desses pares NÃO são
+          // espelho um do outro (o fio da barra, o véu da doca e o acento).
+          // Por isso eles existem à parte da escada semântica, e não se
+          // derivam dela.
+          tela: 'var(--uai-web-canvas)',
+          fio: 'var(--uai-web-hairline)',
+          destaque: 'var(--uai-web-accent)',
+          sugestao: 'var(--uai-web-suggestion)',
+          veu: 'var(--uai-web-veil)',
 
-          // Primitivas. Só onde a semântica não alcança: as duas Equipes
-          // precisam de duas cores que o estudante reencontre no mapa, e o kit
-          // não tem token para "Equipe Alfa".
-          azul: 'var(--gpt-color-blue-500)',
-          roxo: 'var(--gpt-color-purple-600)',
-          verde: 'var(--gpt-color-green-500)',
-          vermelho: 'var(--gpt-color-red-500)',
-          laranja: 'var(--gpt-color-orange-500)',
-          amarelo: 'var(--gpt-color-yellow-500)',
-          rosa: 'var(--gpt-color-pink-400)',
-          cinza200: 'var(--gpt-color-gray-200)',
-          cinza600: 'var(--gpt-color-gray-600)',
-          cinza700: 'var(--gpt-color-gray-700)',
-          cinza800: 'var(--gpt-color-gray-800)',
+          // As duas Equipes. A seção NÃO publica cor primitiva (nenhuma: só
+          // semântica), e o estudante precisa reencontrar no mapa as duas
+          // cores que viu no briefing. Saem do token semântico mais próximo do
+          // par que existia — azul e roxo —, nunca de hexadecimal nem do
+          // `--gpt-color-*` da outra seção. O roxo da Bravo é o da marca: é o
+          // preço de não inventar cor.
+          'equipe-alfa': 'var(--uai-status-info)',
+          'equipe-bravo': 'var(--uai-bg-brand)',
         },
 
       },
       fontFamily: {
-        // As duas fontes vêm com o CSS do pacote (Inter e Open Sans, cada uma
-        // no `@import` da sua folha). Nenhuma família é declarada aqui.
-        gpt: ['var(--gpt-font-sans)', 'Inter', 'system-ui', 'sans-serif'],
+        // A Open Sans vem com a folha de fonte do pacote
+        // (`fonts/unooriaai.css`). Nenhuma família é declarada aqui.
+        uai: ['var(--uai-font-sans)', 'Open Sans', 'system-ui', 'sans-serif'],
       },
       borderRadius: {
-        // Raio é decisão do pacote: `Primitives/Radius` do arquivo de design.
-        'gpt-sm': 'var(--gpt-radius-sm)',
-        'gpt-md': 'var(--gpt-radius-md)',
-        'gpt-lg': 'var(--gpt-radius-lg)',
-        'gpt-xl': 'var(--gpt-radius-xl)',
-        'gpt-2xl': 'var(--gpt-radius-2xl)',
-        'gpt-3xl': 'var(--gpt-radius-3xl)',
-        'gpt-full': 'var(--gpt-radius-full)',
+        // Raio é decisão do pacote: a escada `--uai-radius-*` da seção.
+        'uai-sm': 'var(--uai-radius-sm)',
+        'uai-md': 'var(--uai-radius-md)',
+        'uai-lg': 'var(--uai-radius-lg)',
+        'uai-xl': 'var(--uai-radius-xl)',
+        'uai-2xl': 'var(--uai-radius-2xl)',
+        'uai-3xl': 'var(--uai-radius-3xl)',
+        'uai-full': 'var(--uai-radius-full)',
       },
       boxShadow: {
-        'gpt-sm': 'var(--gpt-elevation-sm)',
-        'gpt-md': 'var(--gpt-elevation-md)',
-        'gpt-lg': 'var(--gpt-elevation-lg)',
-        'gpt-xl': 'var(--gpt-elevation-xl)',
-        'gpt-modal': 'var(--gpt-elevation-modal)',
+        // A seção publica dois degraus de sombra (a escada sm/md/lg/xl da
+        // `chatgpt` não veio): o de sobreposição e o do diálogo.
+        'uai-overlay': 'var(--uai-elevation-overlay)',
+        'uai-modal': 'var(--uai-elevation-modal)',
       },
       keyframes: {
         // O relógio avançou: um pulso curto, o suficiente para o olho ir lá.
@@ -132,7 +127,7 @@ const config: Config = {
         acender: {
           '0%': { boxShadow: '0 0 0 0 transparent', transform: 'scale(1)' },
           '30%': {
-            boxShadow: '0 0 0 8px var(--gpt-fill-10)',
+            boxShadow: '0 0 0 8px var(--uai-fill-10)',
             transform: 'scale(1.04)',
           },
           '100%': { boxShadow: '0 0 0 0 transparent', transform: 'scale(1)' },
@@ -164,7 +159,7 @@ const config: Config = {
       },
       spacing: {
         // Nome de componente, não número solto: auditável contra a fonte da
-        // verdade. A largura da barra é a do `Sidebar` do módulo chatgpt.
+        // verdade. A largura da barra é a do `Sidebar` da seção unooriaai.
         topbar: '56px',
         trilha: '260px',
       },

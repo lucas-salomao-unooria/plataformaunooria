@@ -5,10 +5,12 @@
  * blocos de texto iguais, e o estudante lê os dois primeiros e desiste. Ícone dá
  * ponto de entrada por item.
  *
- * POR QUE NÃO SÃO O `Icon` DO PACOTE, desde a 0.1.14 que o publica:
+ * POR QUE NÃO SÃO O `Icon` DO PACOTE:
  *
- * O registro do módulo `chatgpt` tem treze vetores, e eles são o vocabulário de
- * um cliente de conversa — `chatText`, `trash`, `sun`, `user`, `signOut`. Estas
+ * O registro da seção `unooriaai` tem dezenove ligaduras do Material Symbols, e
+ * elas são o vocabulário de um cliente de conversa — `chatText`, `trash`, `sun`,
+ * `user`, `signOut`. O `Icon` só aceita nome do registro (`UaiIconName`), então
+ * a fonte inteira não está ao alcance. Estas
  * oito são fontes de DADO de defesa civil: sirene, nível de rio, cadastro de
  * moradores, satélite, telefonia, malha viária, estudo de campo. Dois ou três
  * dariam para forçar (`user` para o censo, `sun` para a previsão), e os outros
@@ -98,5 +100,5 @@ const ICONES: Record<string, React.ReactNode> = {
 };
 
 export function IconeDaFonte({ slug }: { slug: string }) {
-  return <span className="text-gpt-azul">{ICONES[slug] ?? ICONES.censo}</span>;
+  return <span className="text-uai-info">{ICONES[slug] ?? ICONES.censo}</span>;
 }

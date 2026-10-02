@@ -6,13 +6,34 @@ Complementa o `AGENTS.md` da raiz e o de `apps/experiencias`.
 |---|---|
 | Manifesto | `exp02em1b` · 2EM (unidade 1) · `telemetria, ia` · `permissoes: ["forms"]` |
 | Dev | `pnpm --filter @edu/exp02em1b dev` → :5178 · hub `/exp/exp02em1b` |
-| DS | `@edu/ui/ds-chatgpt` **na experiência inteira** |
+| DS | `@edu/ui/ds-unooriaai` **na experiência inteira** (desde a 1.3.0, ADR-138; até a 1.2.7 era `ds-chatgpt`) |
 | api | módulo `unoogpt` — trilha pedagógica em `exp02em1b_marcos` |
 | e2e | `scripts/e2e/estudante/04-unoogpt.mjs` |
 
 **Ela não tem revelação no software.** Por isso nunca troca para a seção da
 plataforma: não existe momento em que a escola passa a falar dentro da tela. Um
 componente de `@edu/ui/ds` aqui é sempre erro.
+
+## A seção é `unooriaai`, e ela não tem cor primitiva
+
+O app disfarçado é o **UnooriaAI** (no `<title>` e no `nome` do manifesto); o
+código continua `unoogpt` — módulo da api, rotas, tabela, suíte e2e e
+componentes do hub —, porque renomear identificador não muda nada que o
+estudante vê. A seção é cópia estrutural da `chatgpt` com a identidade da
+Unooria (ADR-138), e três diferenças morderam a troca:
+
+- **Não há primitiva** (`--uai-color-*` não existe). As duas Equipes saem de
+  token SEMÂNTICO: Alfa = `--uai-status-info`, Bravo = `--uai-bg-brand`
+  (`uai-equipe-alfa`/`uai-equipe-bravo` no Tailwind). Token semântico troca de
+  degrau com o tema, então onde a ficha da equipe aparece sobre o painel ESCURO
+  do briefing ela leva `data-uai-theme="light"` — senão o par do briefing não é
+  o par do mapa.
+- **A escada translúcida é mais forte**: `fill-2/4/8/10` são 5/10/20/30%, contra
+  2/4/8/10% na `chatgpt`. A chuva do briefing desceu para `fill-2`; o resto
+  ficou no mesmo nome de degrau.
+- **O `Icon` é ligadura** e não há `gptGlyphs`: a seta de avançar e a de
+  recolher a trilha são `<Icon name="arrowForward">` (a de recolher, com
+  `rotate`). Sem `fonts/unooriaai.css` a tela escreve o nome do ícone.
 
 ## O timeout padrão do SDK está errado nesta experiência
 
@@ -45,7 +66,7 @@ expor detalhe interno.
 
 ## Handler passado a um `Modal` do DS TEM que ser estável
 
-O `Modal` da seção `chatgpt` mantém `onClose` nas dependências do **mesmo**
+O `Modal` da seção `unooriaai` (herdado da `chatgpt`, conferido na 0.2.11) mantém `onClose` nas dependências do **mesmo**
 `useEffect` que faz o foco inicial e restaura o foco anterior. Toda vez que a
 identidade de `onClose` muda, o React roda cleanup + efeito: o foco sai do
 modal (para quem o abriu) e volta para o **primeiro focável**, que é o botão de

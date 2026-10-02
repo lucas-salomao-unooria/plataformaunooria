@@ -27,12 +27,12 @@ body,
 }
 
 body {
-  /* A família vem do token do pacote — `fonts/chatgpt.css` declara o
-     @font-face da Inter com os .woff2 do próprio pacote (0.1.17). A pilha do
+  /* A família vem do token do pacote — `fonts/unooriaai.css` declara o
+     @font-face da Open Sans com os .woff2 do próprio pacote. A pilha do
      sistema é fallback para o primeiro quadro. */
-  font-family: var(--gpt-font-sans), Inter, system-ui, sans-serif;
-  background: var(--gpt-web-canvas);
-  color: var(--gpt-text-primary);
+  font-family: var(--uai-font-sans), 'Open Sans', system-ui, sans-serif;
+  background: var(--uai-web-canvas);
+  color: var(--uai-text-primary);
   /* O iframe tem o tamanho que o hub der: nada de rolagem horizontal por
      conta de uma tela que assume largura de desktop. */
   overflow-x: hidden;
@@ -54,57 +54,14 @@ body {
    (b) COMPENSAÇÃO — falta no pacote; cada uma é um pedido ao storybook-unooria
    ───────────────────────────────────────────────────────────────────────── */
 
-/**
- * (b1) A seção `chatgpt` não publica INDICADOR DE CARREGAMENTO, e um turno do
- * Cientista leva de 10 a 30 segundos. Sem sinal de vida o estudante reenvia a
- * pergunta — que é justamente o que o orçamento de 3 perguntas não perdoa.
- * Três pontos que pulsam, com o token de texto secundário.
+/*
+ * Nenhuma hoje. As duas que existiam na seção `chatgpt` eram CSS morto quando
+ * a missão foi para a `unooriaai` (ADR-138), e saíram com ela: o indicador de
+ * carregamento (`.gpt-pensando`) já tinha virado os três pontos do
+ * `Consultando`, em `painel-cientista.tsx`, e o anexo abaixo da fala
+ * (`.gpt-fala > .gpt-anexo`) não tinha consumidor no JSX. Compensação nova
+ * entra aqui, marcada, com o pedido ao storybook-unooria.
  */
-.gpt-pensando {
-  display: inline-flex;
-  gap: 4px;
-  align-items: center;
-}
-
-.gpt-pensando span {
-  width: 5px;
-  height: 5px;
-  border-radius: var(--gpt-radius-full);
-  background: var(--gpt-text-tertiary);
-  animation: gpt-pulso 1.2s ease-in-out infinite;
-}
-
-.gpt-pensando span:nth-child(2) {
-  animation-delay: 0.15s;
-}
-
-.gpt-pensando span:nth-child(3) {
-  animation-delay: 0.3s;
-}
-
-@keyframes gpt-pulso {
-  0%,
-  100% {
-    opacity: 0.25;
-    transform: translateY(0);
-  }
-  50% {
-    opacity: 1;
-    transform: translateY(-2px);
-  }
-}
-
-/**
- * (b2) `ChatBubble` não aceita conteúdo em BLOCO abaixo da fala — e é embaixo
- * dela que o cartão de leitura precisa aparecer (o cartão pertence à fala; solto
- * na coluna ele perde o dono). A regra usa DOIS seletores porque o CSS do
- * pacote é injetado pelo módulo do componente, ou seja DEPOIS do CSS da
- * experiência no grafo de importação: com peso igual, quem ganha é sempre o DS.
- */
-.gpt-fala > .gpt-anexo {
-  margin-top: 8px;
-  width: 100%;
-}
 
 /* ─────────────────────────────────────────────────────────────────────────
    (c) LIGAÇÃO — o clone dentro do iframe

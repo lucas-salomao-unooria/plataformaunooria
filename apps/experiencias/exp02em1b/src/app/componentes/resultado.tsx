@@ -1,4 +1,4 @@
-import { Button, Tag } from '@edu/ui/ds-chatgpt';
+import { Button, Tag } from '@edu/ui/ds-unooriaai';
 import { useState } from 'react';
 import { api } from '../../lib/api';
 /**
@@ -126,31 +126,31 @@ function Nuvem({ amostras, atual }: { amostras: number[]; atual: number }) {
   return (
     <div className="mt-4 max-w-2xl">
       <div className="relative h-16">
-        <div className="absolute inset-x-0 top-9 h-px bg-gpt-borda" />
+        <div className="absolute inset-x-0 top-9 h-px bg-uai-borda" />
         {amostras.map((n, i) => (
           <span
             key={i}
             title={`${milhar(n)} nesta corrida`}
-            className="absolute top-7 h-2 w-2 -translate-x-1/2 rounded-gpt-full bg-gpt-cinza200"
+            className="absolute top-7 h-2 w-2 -translate-x-1/2 rounded-uai-full bg-uai-borda"
             style={{ left: `${posicao(n)}%` }}
           />
         ))}
         <span
-          className="absolute top-3 h-10 w-1 -translate-x-1/2 rounded-gpt-full bg-gpt-inverso"
+          className="absolute top-3 h-10 w-1 -translate-x-1/2 rounded-uai-full bg-uai-inverso"
           style={{ left: `${posicao(atual)}%` }}
         />
         <span
-          className="absolute top-0 -translate-x-1/2 whitespace-nowrap text-xs font-bold text-gpt-tinta"
+          className="absolute top-0 -translate-x-1/2 whitespace-nowrap text-xs font-bold text-uai-tinta"
           style={{ left: `${posicao(atual)}%` }}
         >
           esta rodada
         </span>
       </div>
-      <div className="flex justify-between text-xs tabular-nums text-gpt-suave-60">
+      <div className="flex justify-between text-xs tabular-nums text-uai-suave-60">
         <span>{milhar(min)}</span>
         <span>{milhar(max)}</span>
       </div>
-      <p className="mt-2 text-sm leading-relaxed text-gpt-suave-60">
+      <p className="mt-2 text-sm leading-relaxed text-uai-suave-60">
         Cada bolinha é a mesma decisão simulada de novo, contra a mesma tempestade. Não existe
         resultado certo: o seu é um deles.
       </p>
@@ -193,8 +193,8 @@ function Empates({
   const real = (nome: string) => porBairro.find((b) => b.nome === nome)?.emRisco ?? null;
 
   return (
-    <div className="mt-6 max-w-3xl rounded-gpt-xl border border-gpt-borda p-5">
-      <p className="text-xs font-bold uppercase tracking-wider text-gpt-suave-60">
+    <div className="mt-6 max-w-3xl rounded-uai-xl border border-uai-borda p-5">
+      <p className="text-xs font-bold uppercase tracking-wider text-uai-suave-60">
         O que os dados não separavam
       </p>
       {(() => {
@@ -204,7 +204,7 @@ function Empates({
         const maior = [...comReal].sort((a, b) => b.real! - a.real!)[0];
         return (
           <div className="mt-3 text-sm leading-snug">
-            <p className="text-gpt-tinta">
+            <p className="text-uai-tinta">
               {grupo.map((g, i) => (
                 <span key={g.chave}>
                   {i > 0 && (i === grupo.length - 1 ? ' e ' : ', ')}
@@ -214,7 +214,7 @@ function Empates({
               podiam ser o maior — os dados não separavam.
             </p>
             {maior && (
-              <p className="mt-1 text-gpt-suave-60">
+              <p className="mt-1 text-uai-suave-60">
                 Na tempestade:{' '}
                 {comReal.map((g, i) => (
                   <span key={g.chave}>
@@ -279,16 +279,16 @@ function Contrafactual({
   const nome = (slug: string | null) => bairros.find((b) => b.slug === slug)?.nome ?? 'base';
 
   return (
-    <div className="mt-6 max-w-3xl rounded-gpt-xl border border-gpt-borda p-5">
-      <p className="font-semibold text-gpt-tinta">E se você tivesse mandado para outro lugar?</p>
-      <p className="mt-1 text-sm text-gpt-suave-60">
+    <div className="mt-6 max-w-3xl rounded-uai-xl border border-uai-borda p-5">
+      <p className="font-semibold text-uai-tinta">E se você tivesse mandado para outro lugar?</p>
+      <p className="mt-1 text-sm text-uai-suave-60">
         Mesma tempestade, mesma hora de saída. Só o destino muda.
       </p>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         {(['alfa', 'bravo'] as const).map((equipe) => (
           <label key={equipe} className="text-sm">
-            <span className="text-xs uppercase tracking-wider text-gpt-suave-60">
+            <span className="text-xs uppercase tracking-wider text-uai-suave-60">
               Equipe {equipe}
             </span>
             <select
@@ -297,7 +297,7 @@ function Contrafactual({
                 setEscolha((x) => ({ ...x, [equipe]: e.target.value || null }));
                 setConta(null);
               }}
-              className="mt-1 w-full rounded-gpt-md border border-gpt-borda bg-gpt-fundo p-2 text-sm text-gpt-tinta"
+              className="mt-1 w-full rounded-uai-md border border-uai-borda bg-uai-fundo p-2 text-sm text-uai-tinta"
             >
               <option value="">Fica na base</option>
               {bairros.map((b) => (
@@ -314,10 +314,10 @@ function Contrafactual({
         {mudou ? 'Ver o que teria acontecido' : 'Escolha outro destino'}
       </Button>
 
-      {erro && <p className="mt-3 text-sm text-gpt-erro">{erro}</p>}
+      {erro && <p className="mt-3 text-sm text-uai-erro">{erro}</p>}
 
       {conta && (
-        <div className="mt-4 rounded-gpt-xl bg-gpt-superficie p-4 text-sm leading-relaxed text-gpt-tinta">
+        <div className="mt-4 rounded-uai-xl bg-uai-superficie p-4 text-sm leading-relaxed text-uai-tinta">
           Com Alfa em <strong>{nome(escolha.alfa)}</strong> e Bravo em{' '}
           <strong>{nome(escolha.bravo)}</strong>, esta mesma tempestade teria dado{' '}
           <strong>{milhar(conta.salvas)}</strong> resgatadas — contra {milhar(salvasReais)} do que
@@ -388,7 +388,7 @@ export function Resultado({
   return (
     <section className="flex h-full min-h-0 w-full flex-col overflow-y-auto p-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-xs font-bold uppercase tracking-wider text-gpt-suave-40">
+        <p className="text-xs font-bold uppercase tracking-wider text-uai-suave-40">
           A tempestade passou por Serra do Sauá
         </p>
 
@@ -396,7 +396,7 @@ export function Resultado({
             barra ficava vazia e virava uma faixa branca no alto da tela. */}
         <div className="flex items-center gap-2">
           {rodadas.length > 1 && (
-            <div className="flex items-center gap-1 rounded-gpt-md bg-gpt-superficie p-1">
+            <div className="flex items-center gap-1 rounded-uai-md bg-uai-superficie p-1">
               {rodadas.map((t) => {
                 const atual = t.ordem === (vendo ?? rodadas[rodadas.length - 1]!.ordem);
                 return (
@@ -430,12 +430,12 @@ export function Resultado({
           um número de pessoas e a fonte que ele não abriu. O sentido disso é do
           professor, no debate (regra de ouro 2). */}
       {sobrou && vendo === null && (
-        <p className="mt-4 max-w-2xl rounded-gpt-xl border-l-4 border-gpt-alerta bg-gpt-superficie p-4 leading-relaxed text-gpt-tinta">
+        <p className="mt-4 max-w-2xl rounded-uai-xl border-l-4 border-uai-alerta bg-uai-superficie p-4 leading-relaxed text-uai-tinta">
           <strong>
             {milhar(sobrou.pessoas)} pessoas ficaram sem equipe em {sobrou.nome}.
           </strong>
           {sobrou.fonte && (
-            <span className="block text-sm text-gpt-suave-60">
+            <span className="block text-sm text-uai-suave-60">
               Você nunca consultou {sobrou.fonte} — é a fonte que mais enxerga esse bairro.
             </span>
           )}
@@ -447,25 +447,25 @@ export function Resultado({
           ensinava o oposto do texto: que 1.345 era uma nota. É placar contra
           distribuição, e ganha quem tiver a fonte maior. */}
       <div className="mt-5 max-w-2xl">
-        <p className="text-sm text-gpt-suave-60">
+        <p className="text-sm text-uai-suave-60">
           Mandando as equipes para os mesmos bairros, o resultado quase sempre fica entre
         </p>
-        <p className="mt-1 flex flex-wrap items-baseline gap-3 text-5xl font-bold tracking-tight text-gpt-tinta">
+        <p className="mt-1 flex flex-wrap items-baseline gap-3 text-5xl font-bold tracking-tight text-uai-tinta">
           {milhar(esperadoNaTela.faixa[0])}
-          <span className="text-2xl text-gpt-suave-60">e</span>
+          <span className="text-2xl text-uai-suave-60">e</span>
           {milhar(esperadoNaTela.faixa[1])}
-          <span className="text-base font-semibold text-gpt-suave-60">pessoas resgatadas</span>
+          <span className="text-base font-semibold text-uai-suave-60">pessoas resgatadas</span>
         </p>
 
         {esperadoNaTela.amostras?.length > 0 && (
           <Nuvem amostras={esperadoNaTela.amostras} atual={totais.salvas} />
         )}
 
-        <p className="mt-3 text-lg text-gpt-tinta">
-          Desta vez foram <strong className="text-gpt-ok">{milhar(totais.salvas)}</strong> —{' '}
+        <p className="mt-3 text-lg text-uai-tinta">
+          Desta vez foram <strong className="text-uai-ok">{milhar(totais.salvas)}</strong> —{' '}
           {acimaDaMedia ? 'acima' : 'abaixo'} do meio da faixa.
           {anterior && (
-            <span className="text-gpt-suave-60">
+            <span className="text-uai-suave-60">
               {' '}
               {delta(totais.salvas - anterior.salvas)} vs rodada {anterior.ordem}.
             </span>
@@ -475,14 +475,14 @@ export function Resultado({
 
       <div className="mt-6 grid max-w-3xl grid-cols-2 gap-6">
         <div>
-          <p className="text-3xl font-bold tracking-tight text-gpt-erro">
+          <p className="text-3xl font-bold tracking-tight text-uai-erro">
             {milhar(totais.vitimas)}
           </p>
-          <p className="mt-1 text-sm text-gpt-suave-60">atingidas pela enchente</p>
+          <p className="mt-1 text-sm text-uai-suave-60">atingidas pela enchente</p>
           {anterior && (
             <p
               className={`mt-0.5 text-sm font-semibold ${
-                totais.vitimas <= anterior.vitimas ? 'text-gpt-ok' : 'text-gpt-erro'
+                totais.vitimas <= anterior.vitimas ? 'text-uai-ok' : 'text-uai-erro'
               }`}
             >
               {delta(totais.vitimas - anterior.vitimas)} vs rodada {anterior.ordem}
@@ -490,10 +490,10 @@ export function Resultado({
           )}
         </div>
         <div>
-          <p className="text-3xl font-bold tracking-tight text-gpt-suave-60">{milhar(sozinhas)}</p>
-          <p className="mt-1 text-sm text-gpt-suave-60">sobreviveram sem ajuda</p>
+          <p className="text-3xl font-bold tracking-tight text-uai-suave-60">{milhar(sozinhas)}</p>
+          <p className="mt-1 text-sm text-uai-suave-60">sobreviveram sem ajuda</p>
           {anterior && (
-            <p className="mt-0.5 text-sm text-gpt-suave-60">
+            <p className="mt-0.5 text-sm text-uai-suave-60">
               {delta(sozinhas - (anterior.emRisco - anterior.salvas - anterior.vitimas))} vs rodada{' '}
               {anterior.ordem}
             </p>
@@ -503,7 +503,7 @@ export function Resultado({
 
       {/* A conta precisa fechar na tela: tabela que não fecha parece defeito, e
           o estudante para de confiar no resto dos números. */}
-      <p className="mt-4 max-w-2xl text-sm leading-relaxed text-gpt-suave-60">
+      <p className="mt-4 max-w-2xl text-sm leading-relaxed text-uai-suave-60">
         {milhar(totais.emRisco)} pessoas estavam em risco. Estar em risco não é ser atingido: a
         maioria conseguiu se proteger sem que uma equipe chegasse até ela. A simulação conta
         quantas pessoas a enchente atingiu, sem dizer que tipo de perda cada uma teve.
@@ -513,17 +513,17 @@ export function Resultado({
           isto, ninguém no debate consegue perguntar por que ele escolheu estes
           dois bairros, e decidir fica indistinguível de chutar. */}
       {trilhaDaRodada.length > 0 && (
-        <div className="mt-6 max-w-3xl rounded-gpt-xl border border-gpt-borda p-5">
-          <p className="text-xs font-bold uppercase tracking-wider text-gpt-suave-60">
+        <div className="mt-6 max-w-3xl rounded-uai-xl border border-uai-borda p-5">
+          <p className="text-xs font-bold uppercase tracking-wider text-uai-suave-60">
             Como você decidiu <span className="font-normal normal-case">· tempo que faltava</span>
           </p>
           <ol className="mt-3 grid gap-2.5">
             {trilhaDaRodada.map((m) => (
               <li key={`${m.tentativa}-${m.ordem}`} className="flex gap-3 text-sm leading-snug">
-                <span className="w-12 shrink-0 tabular-nums text-gpt-suave-60">
+                <span className="w-12 shrink-0 tabular-nums text-uai-suave-60">
                   {cronometroEm(m.minuto)}
                 </span>
-                <span className="text-gpt-tinta">{descreverMarco(m)}</span>
+                <span className="text-uai-tinta">{descreverMarco(m)}</span>
               </li>
             ))}
           </ol>
@@ -536,7 +536,7 @@ export function Resultado({
 
       <table className="mt-8 w-full max-w-3xl border-collapse text-left text-sm">
         <thead>
-          <tr className="border-b border-gpt-borda text-xs uppercase tracking-wider text-gpt-suave-60">
+          <tr className="border-b border-uai-borda text-xs uppercase tracking-wider text-uai-suave-60">
             <th className="pb-3">Bairro</th>
             <th className="px-3 pb-3 text-right">Em risco</th>
             <th className="px-3 pb-3 text-right">Tiradas</th>
@@ -547,30 +547,30 @@ export function Resultado({
         </thead>
         <tbody>
           {porBairro.map((b) => (
-            <tr key={b.bairro} className="border-b border-gpt-borda">
+            <tr key={b.bairro} className="border-b border-uai-borda">
               <td className="py-3">
-                <span className="font-semibold text-gpt-tinta">{b.nome}</span>
-                {b.severo && <span className="ml-2 text-xs text-gpt-erro">atingido com força</span>}
+                <span className="font-semibold text-uai-tinta">{b.nome}</span>
+                {b.severo && <span className="ml-2 text-xs text-uai-erro">atingido com força</span>}
               </td>
-              <td className="px-3 py-3 text-right text-gpt-tinta">{milhar(b.emRisco)}</td>
-              <td className="px-3 py-3 text-right font-semibold text-gpt-ok">{milhar(b.salvas)}</td>
-              <td className="px-3 py-3 text-right text-gpt-suave-60">
+              <td className="px-3 py-3 text-right text-uai-tinta">{milhar(b.emRisco)}</td>
+              <td className="px-3 py-3 text-right font-semibold text-uai-ok">{milhar(b.salvas)}</td>
+              <td className="px-3 py-3 text-right text-uai-suave-60">
                 {milhar(b.emRisco - b.salvas - b.vitimas)}
               </td>
-              <td className="px-3 py-3 text-right font-semibold text-gpt-erro">
+              <td className="px-3 py-3 text-right font-semibold text-uai-erro">
                 {milhar(b.vitimas)}
               </td>
               {/* Quebra, não trunca: em 1512px a frase da via cortava seco no
                   meio da palavra, sem reticências e sem jeito de ler o resto. */}
-              <td className="min-w-[13rem] py-3 pl-8 text-xs leading-snug text-gpt-suave-60">
+              <td className="min-w-[13rem] py-3 pl-8 text-xs leading-snug text-uai-suave-60">
                 {!b.equipe && '—'}
                 {b.equipe && b.chegou && !b.motivo && (
-                  <span className="text-gpt-ok">chegou a tempo</span>
+                  <span className="text-uai-ok">chegou a tempo</span>
                 )}
                 {b.equipe && b.chegou && b.motivo && (
-                  <span className="text-gpt-alerta">{b.motivo}</span>
+                  <span className="text-uai-alerta">{b.motivo}</span>
                 )}
-                {b.equipe && !b.chegou && <span className="text-gpt-erro">{b.motivo}</span>}
+                {b.equipe && !b.chegou && <span className="text-uai-erro">{b.motivo}</span>}
               </td>
             </tr>
           ))}
@@ -578,9 +578,9 @@ export function Resultado({
       </table>
 
       {naoConsultados.length > 0 && (
-        <div className="mt-10 max-w-3xl rounded-gpt-xl border border-gpt-borda p-6">
-          <p className="font-semibold text-gpt-tinta">O que você não consultou</p>
-          <p className="mt-1 text-sm text-gpt-suave-60">
+        <div className="mt-10 max-w-3xl rounded-uai-xl border border-uai-borda p-6">
+          <p className="font-semibold text-uai-tinta">O que você não consultou</p>
+          <p className="mt-1 text-sm text-uai-suave-60">
             Estava disponível a missão inteira. Cada uma mostraria um pedaço diferente da cidade.
           </p>
           <ul className="mt-5 grid gap-x-8 gap-y-4 sm:grid-cols-2">
@@ -588,17 +588,17 @@ export function Resultado({
               <li key={c.slug} className="flex gap-3">
                 <IconeDaFonte slug={c.slug} />
                 <span className="text-sm leading-snug">
-                  <strong className="text-gpt-tinta">
+                  <strong className="text-uai-tinta">
                     {capitalizar(c.rotuloCurto ?? c.comoFalar)}
                   </strong>
-                  <span className="block text-xs text-gpt-suave-60">{c.serve}</span>
+                  <span className="block text-xs text-uai-suave-60">{c.serve}</span>
                 </span>
               </li>
             ))}
           </ul>
           {/* O catálogo não é o mundo: fora dele ainda existiriam outras fontes,
               e é assim em qualquer decisão real. */}
-          <p className="mt-5 text-sm leading-relaxed text-gpt-suave-60">
+          <p className="mt-5 text-sm leading-relaxed text-uai-suave-60">
             E muitas outras fontes, dado nenhum cobre tudo.
           </p>
         </div>
@@ -621,7 +621,7 @@ export function Resultado({
       {/* Uma rodada só ensina que aconteceu; duas ensinam que podia ter sido
           diferente. Recomeçar é livre e precisa ser dito aqui, no momento em
           que o estudante tem um número na mão para comparar. */}
-      <p className="mt-8 max-w-2xl text-sm text-gpt-suave-60">
+      <p className="mt-8 max-w-2xl text-sm text-uai-suave-60">
         Guarde o que você decidiu e por quê — a conversa sobre o que isso significa acontece na
         aula.
       </p>
