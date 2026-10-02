@@ -25,7 +25,7 @@ vazia, esperando.
 |---|---|
 | Handshake, primeira leitura, falha de abertura | `src/bootstrap.tsx` |
 | A máquina de telas, o polling, as ações e as falhas | `src/app/quem-mandou-app.tsx` |
-| As telas do mensageiro (`@edu/ui/ds-whatsapp`) | `src/app/telas-do-clone.tsx` |
+| As telas do mensageiro (`@edu/ui/ds-unoochat`, tema claro) | `src/app/telas-do-clone.tsx` |
 | As telas da casca (`@edu/ui/ds`) | `src/app/telas-da-escola.tsx` |
 | O balão por formato e a mídia desenhada | `src/app/componentes/` |
 | A tela da vez, o polling e a seleção (puro, testado) | `src/lib/regras.ts` |

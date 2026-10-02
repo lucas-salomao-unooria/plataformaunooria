@@ -15,8 +15,8 @@ import { createRoot } from "react-dom/client";
  * NUNCA o `styles.css` consolidado: ele arrasta as seis seções e os tokens da
  * plataforma para dentro do disfarce.
  */
-import "@unooria/design-system/whatsappmobile.css";
-import "@unooria/design-system/fonts/whatsappmobile.css";
+import "@unooria/design-system/unoochat.css";
+import "@unooria/design-system/fonts/unoochat.css";
 import "@unooria/design-system/unooria.css";
 import "@unooria/design-system/fonts/unooria.css";
 import "./estilos/globals.css";
