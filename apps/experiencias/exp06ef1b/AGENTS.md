@@ -27,7 +27,7 @@ nos CAMPOS dos schemas que a tela lê.
 | `pacotes` | E5 — a curtida em pacotes (EF06CO07) | **escola** | `ScrollBar`, `Logo`, `SectionHeader` (o Léo), `PuzzleBlock`, `PuzzleTrack`, `AlertBox` (a errada), `Button` |
 | `cadeia` | E5 — a cadeia (EF06CO03) | **escola** | os mesmos |
 | `mariana` | E6-ALU-01 — o caso Mariana | comissão (clone) | `TopBar`, `PostCard` (só `.Header` + `.Caption`), `ListItem` (`Escolha`), `ButtonUnv` |
-| `enquetes` | E6-ALU-02 — a consulta nos Stories | comissão, tema ESCURO | `StoryViewer` (3 segmentos, `onNext`/`onPrev`, `footer`), `DmPoll` **no lugar do `StoryPoll`** (compensação, ver abaixo), `ButtonUnv` |
+| `enquetes` | E6-ALU-02 — a consulta nos Stories | comissão, tema ESCURO | `StoryViewer` (3 segmentos, `onNext`/`onPrev`, `footer`), `StoryPoll` (DS 0.2.12, sobre a mídia; se centraliza sozinho), `ButtonUnv` |
 | `fim` | E6-ALU-03 — o crachá homologado | comissão | `TopBar`, `PostCard` (o crachá), `IconUnv`, `ListItem` (o infográfico em texto e ícone) |
 | 403 | missão não aberta aqui | **escola** | `AlertBox` |
 
@@ -118,13 +118,9 @@ find dist -name '*.js' | xargs grep -l -F -e "certo:" -e "LIMIAR_DA_BOLHA" -e "P
 
 ## As compensações
 
-1. **`DmPoll` no lugar do `StoryPoll` — TEMPORÁRIA** (`app/clone/figurinha-de-enquete.tsx`,
-   `.figurinha-de-enquete` no CSS). O `StoryPoll` (a enquete de HISTÓRIA, que se
-   centraliza sozinha no `StoryViewer`) foi pedido por esta missão e está em PR no
-   `storybook-unooria`; chega na **0.2.12**. A casca só centraliza e limita a
-   largura (320 px). Quando sair: DS `^0.2.12` (e a versão nos três lugares),
-   `StoryPoll` na ponte `packages/ui/src/ds-unoovista.ts`, troca no componente, e
-   o arquivo e a regra CSS morrem.
+1. **Resolvida em 2026-10-02:** a `DmPoll` no lugar do `StoryPoll`. O DS 0.2.12
+   publicou o `StoryPoll` (pedido por esta missão), a ponte `ds-unoovista` o
+   exporta, e a casca `figurinha-de-enquete.tsx` e a regra CSS saíram.
 2. **`ListItem` que quebra linha** (`.escolha`, `.infografico__passos`): o
    `ListItem` corta título e subtítulo numa linha, certo para conversas e errado
    para um cartão de 20 palavras. Só `white-space` e alinhamento. Pedido: prop

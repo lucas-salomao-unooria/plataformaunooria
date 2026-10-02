@@ -52,7 +52,7 @@ pnpm --filter @edu/exp06ef1b build
 | A máquina de telas, o polling do gate, as ações, a fila do feed | `src/app/juri-app.tsx` |
 | Rede, sessão e a repetição das chamadas | `src/app/conexao.ts`, `src/lib/api.ts` |
 | Os avisos globais (sem conexão, credencial) | `src/app/avisos.tsx` |
-| As telas do clone | `src/app/clone/` (`credencial`, `feed`, `post-do-feed`, `cedula`, `espera`, `galeria`, `escolha`, `mariana`, `enquetes`, `figurinha-de-enquete`, `fim`) |
+| As telas do clone | `src/app/clone/` (`credencial`, `feed`, `post-do-feed`, `cedula`, `espera`, `galeria`, `escolha`, `mariana`, `enquetes`, `fim`) |
 | As telas da escola | `src/app/escola/telas-da-escola.tsx` (pacotes, cadeia, missão fechada) |
 | A imagem dos estandes (foto ou arte) | `src/app/componentes/midia.tsx`, `src/lib/arte.ts` |
 | A permanência de 5 s num post | `src/lib/permanencia.ts` |
