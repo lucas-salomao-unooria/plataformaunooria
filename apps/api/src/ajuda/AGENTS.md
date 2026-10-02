@@ -23,6 +23,11 @@ conhece o vendor.
   Por isso, aceita a chamada, toda recusa de negócio (produto desligado, rate
   limit) e toda falha do modelo viram FALA, em 200. Só autenticação responde 401.
 - Na abertura vem `GET {base_url}/models` (5 s); respondemos uma lista mínima.
+- **O `gemini-3.7-flash` às vezes PENSA mesmo com `thinkingBudget: 0`** (~300–400
+  tokens, medido em 2026-10-02), e o raciocínio sai do teto de saída: com 400 a
+  resposta cortava em meia frase. Por isso o teto é 2.048 (a brevidade é do
+  prompt). E a primeira chamada fria levou 10,9 s até o primeiro byte: sem
+  pedaço em 7 s, sai `FALA_DE_ESPERA` e a resposta continua no mesmo turno.
 - O segredo do LLM é `secret_type: OPENAI_API_KEY` no vendor (a skill da HeyGen
   diz `LLM_API_KEY`, que a api deles recusa).
 

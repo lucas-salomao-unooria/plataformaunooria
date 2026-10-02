@@ -42,14 +42,32 @@ export interface RespostaDoStream {
   on(evento: "close", cb: () => void): unknown;
 }
 
-/** Teto de SAÍDA de um turno: quatro frases faladas cabem com folga. */
-const MAXIMO_DE_TOKENS_DA_RESPOSTA = 400;
+/**
+ * Teto de SAÍDA de um turno. Não é o tamanho da resposta (quem pede quatro
+ * frases é o prompt): é folga para o RACIOCÍNIO, que sai do mesmo teto. MEDIDO
+ * em 2026-10-02 no `gemini-3.7-flash`: mesmo com `thinkingBudget: 0` ele às
+ * vezes pensa ~300–400 tokens, e com o teto de 400 a resposta saía cortada em
+ * meia frase ("Primeiro, no seu Início, entre em Minhas turmas e").
+ */
+const MAXIMO_DE_TOKENS_DA_RESPOSTA = 2048;
+
+/**
+ * Sem nenhum pedaço até aqui, o atendente diz uma frase de espera. O vendor
+ * desiste do nosso LLM se o primeiro byte passar de 10 s (medido), e a
+ * primeira chamada FRIA — base de ~70 mil tokens fora do cache, mais o
+ * raciocínio ocasional — levou 10,9 s. A frase mantém a fala viva; a resposta
+ * de verdade vem logo depois, no mesmo turno.
+ */
+export const ESPERA_ATE_A_FALA_DE_ESPERA_MS = 7_000;
+export const FALA_DE_ESPERA = "Um momento, estou vendo isso para você. ";
 /** Mais baixo que o 0,5 do vendor: o atendente responde do que está na base, não cria. */
 const TEMPERATURA = 0.3;
 
 @Injectable()
 export class AjudaService {
   private avisouSemLinha = false;
+  /** Sobrescrito no teste, para não esperar 7 s de verdade. */
+  esperaAteAFalaDeEsperaMs = ESPERA_ATE_A_FALA_DE_ESPERA_MS;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -256,6 +274,12 @@ export class AjudaService {
         resultado = "pronta";
         escrever("Oi! Em que posso ajudar você na plataforma?");
       } else {
+        // Só no stream: sem stream o vendor espera o corpo inteiro de qualquer jeito.
+        const espera = entrada.emFluxo
+          ? setTimeout(() => {
+              if (!texto && !res.writableEnded) res.write(pedacoSse(base, { content: FALA_DE_ESPERA }, null));
+            }, this.esperaAteAFalaDeEsperaMs)
+          : null;
         try {
           for await (const evento of this.ia.conversarEmFluxo({
             system: promptDoAtendente(entrada.claims.perfil),
@@ -280,6 +304,8 @@ export class AjudaService {
             // Com parte da resposta já falada, o melhor é parar ali; sem nada, a desculpa.
             if (!texto.trim()) escrever(FALA_DE_FALHA);
           }
+        } finally {
+          if (espera) clearTimeout(espera);
         }
       }
     }
