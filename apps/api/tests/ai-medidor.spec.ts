@@ -22,6 +22,11 @@ function providerFalso(resultado: Partial<AiResult> | Error): AiProvider {
   return {
     generate: devolver,
     conversar: devolver,
+    conversarEmFluxo: async function* () {
+      if (resultado instanceof Error) throw resultado;
+      yield { tipo: "texto" as const, texto: "ok" };
+      yield { tipo: "fim" as const, resultado: { texto: "ok", tokensUsados: 100, ...resultado } as AiResult };
+    },
     generateJson: async <T>() => {
       if (resultado instanceof Error) throw resultado;
       return { a: 1 } as unknown as T;

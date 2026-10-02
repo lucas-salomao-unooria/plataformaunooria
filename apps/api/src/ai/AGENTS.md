@@ -111,6 +111,22 @@ timbre → voz é a única tradução, e vive no `vertex.provider.ts`.
 apertaria o play e concluiria que o áudio quebrou). Quem chama cai na
 transcrição, que já está na tela por acessibilidade.
 
+## O fluxo (`conversarEmFluxo`) e o terceiro vendor: o avatar da Ajuda (ADR-132)
+
+- **`conversarEmFluxo` é a única geração em stream do `AiProvider`**:
+  `streamGenerateContent?alt=sse`, sem ferramentas e sem `validar` (num stream o
+  texto já saiu quando a validação poderia recusá-lo). Existe porque o avatar da
+  Ajuda pede `stream: true` e desiste se o primeiro byte passar de 10 s. Os
+  tokens saem do ÚLTIMO pedaço (`usageMetadata` acumulado — o maior, não a soma).
+  Consumidor novo que queira stream pede ADR: é a segunda rota com stream (ADR-128).
+- **`avatar-ao-vivo.port.ts` + `liveavatar.client.ts`**: a porta do LiveAvatar
+  (HeyGen). Só abre e fecha a sala de vídeo — não gera texto; o LLM do avatar é o
+  nosso endpoint `/ajuda/llm`. Porta própria e não método do `AiProvider` porque
+  é reserva de recurso cobrado por minuto, com ciclo de vida. **Sem o conjunto
+  completo de envs a porta nasce `AvatarDesligado`** e a Ajuda responde 503 —
+  nunca derruba a subida. O sandbox (`LIVEAVATAR_SANDBOX=1`) troca o avatar pelo
+  de testes do vendor (~1 min, sem crédito) e é recusado em produção.
+
 ## O segundo vendor: o Agent Engine (agente de IA do professor)
 
 `agent-engine.client.ts` é a ÚNICA peça da api que conhece o Vertex AI Agent

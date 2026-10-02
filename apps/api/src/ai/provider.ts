@@ -126,6 +126,33 @@ export interface AiConversaRequest {
 }
 
 /**
+ * Uma conversa SEM ferramentas cuja resposta sai aos pedaços, à medida que o
+ * modelo escreve. Existe por causa da Ajuda (ADR-132): quem lê a resposta é
+ * o avatar do LiveAvatar, que pede `stream: true` e desiste se o primeiro byte
+ * demorar mais de 10 s — e a fala começa pelo primeiro pedaço, não pelo último.
+ *
+ * Sem `ferramentas` e sem `validar` de propósito: num stream o texto já saiu
+ * quando a validação poderia recusá-lo. Quem precisa recusar a fala usa
+ * `conversar`.
+ */
+export interface AiFluxoRequest {
+  system: string;
+  /** A conversa até aqui, em ordem. `pessoa` é quem fala com o modelo. */
+  historico: Array<{ papel: "pessoa" | "agente"; texto: string }>;
+  maxTokens?: number;
+  temperatura?: number;
+  /** Abortar corta a chamada ao vendor — quem lê foi embora. */
+  sinal?: AbortSignal;
+}
+
+/**
+ * O que o fluxo emite: pedaços de texto e, por último, UM `fim` com o total.
+ * `fim` sai também quando o vendor parou por teto (`finishReason`); erro de
+ * transporte é exceção, não evento.
+ */
+export type AiFluxoEvento = { tipo: "texto"; texto: string } | { tipo: "fim"; resultado: AiResult };
+
+/**
  * Proporção da imagem, neutra de vendor. Opcional porque a exp08ef1b — a única
  * consumidora até aqui — depende do 4:5 que o `AssetsService` normaliza; quem
  * precisa de outro formato pede, e não recorta depois (o recorte joga fora a
@@ -204,4 +231,6 @@ export interface AiProvider {
    * que foi pago, e é ele que um teto de custo por sessão precisa contar.
    */
   conversar(req: AiConversaRequest): Promise<AiResult>;
+  /** Conversa sem ferramentas, devolvida aos pedaços (ver `AiFluxoRequest`). */
+  conversarEmFluxo(req: AiFluxoRequest): AsyncIterable<AiFluxoEvento>;
 }

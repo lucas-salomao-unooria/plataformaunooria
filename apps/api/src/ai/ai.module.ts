@@ -9,6 +9,8 @@ import { Metricas } from "../observabilidade/metricas";
 import { MedidorDeProvider } from "./medidor.provider";
 import { AGENTE_PROFESSOR, type ModoDoAgente } from "./agente-professor.port";
 import { criarAgenteProfessor } from "./agent-engine.client";
+import { AVATAR_AO_VIVO } from "./avatar-ao-vivo.port";
+import { criarAvatarAoVivo } from "./liveavatar.client";
 
 /** Global: o MotorModule (reações ao vivo) e o GeracaoModule injetam o
  *  provider pelo token AI_PROVIDER — nenhum deles conhece o vendor. */
@@ -48,7 +50,23 @@ import { criarAgenteProfessor } from "./agent-engine.client";
           urlLocal: config.get<string>("AGENTE_PROFESSOR_URL_LOCAL"),
         }),
     },
+    {
+      /* O avatar da Ajuda (ADR-132). Sem o conjunto completo de envs a porta
+         nasce DESLIGADA e a Ajuda responde 503 — nunca derruba a subida. */
+      provide: AVATAR_AO_VIVO,
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) =>
+        criarAvatarAoVivo({
+          apiKey: config.get<string>("LIVEAVATAR_API_KEY"),
+          apiUrl: config.get<string>("LIVEAVATAR_API_URL") ?? "https://api.liveavatar.com",
+          avatarId: config.get<string>("LIVEAVATAR_AVATAR_ID") ?? "dc2935cf-5863-4f08-943b-c7478aea59fb",
+          voiceId: config.get<string>("LIVEAVATAR_VOICE_ID"),
+          contextId: config.get<string>("LIVEAVATAR_CONTEXT_ID"),
+          llmConfigId: config.get<string>("LIVEAVATAR_LLM_CONFIG_ID"),
+          sandbox: config.get<string>("LIVEAVATAR_SANDBOX") === "1",
+        }),
+    },
   ],
-  exports: [AI_PROVIDER, QuotaService, AGENTE_PROFESSOR],
+  exports: [AI_PROVIDER, QuotaService, AGENTE_PROFESSOR, AVATAR_AO_VIVO],
 })
 export class AiModule {}

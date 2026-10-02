@@ -2,6 +2,8 @@ import { Metricas, rotuloDeFinishReason } from "../observabilidade/metricas";
 import {
   ErroDeGeracao,
   type AiConversaRequest,
+  type AiFluxoEvento,
+  type AiFluxoRequest,
   type AiImagemOpcoes,
   type AiJsonRequest,
   type AiProvider,
@@ -33,7 +35,8 @@ export type OperacaoDeIa =
   | "generateJson"
   | "generateImage"
   | "generateSpeech"
-  | "conversar";
+  | "conversar"
+  | "conversarEmFluxo";
 export type ResultadoDeIa = "ok" | "erro-provider" | "timeout" | "erro";
 
 export function classificarFalha(erro: unknown): ResultadoDeIa {
@@ -85,6 +88,33 @@ export class MedidorDeProvider implements AiProvider {
 
   conversar(req: AiConversaRequest): Promise<AiResult> {
     return this.medir("conversar", this.modelos.padrao, () => this.real.conversar(req), true);
+  }
+
+  /**
+   * O fluxo é medido do primeiro pedido ao `fim`: a latência é a da resposta
+   * INTEIRA (a do primeiro pedaço é o que a pessoa sente, mas é o total que o
+   * vendor cobra e que o painel compara com as outras operações). Os tokens
+   * saem do `fim`, que traz o acumulado.
+   */
+  async *conversarEmFluxo(req: AiFluxoRequest): AsyncGenerator<AiFluxoEvento> {
+    const modelo = this.modelos.padrao;
+    const inicio = performance.now();
+    try {
+      for await (const evento of this.real.conversarEmFluxo(req)) {
+        if (evento.tipo === "fim") {
+          this.metricas.iaLatencia.record(performance.now() - inicio, { modelo, operacao: "conversarEmFluxo", resultado: "ok" });
+          this.registrar(evento.resultado, modelo, "conversarEmFluxo");
+        }
+        yield evento;
+      }
+    } catch (erro) {
+      this.metricas.iaLatencia.record(performance.now() - inicio, {
+        modelo,
+        operacao: "conversarEmFluxo",
+        resultado: classificarFalha(erro),
+      });
+      throw erro;
+    }
   }
 
   private async medir<T>(operacao: OperacaoDeIa, modelo: string, fn: () => Promise<T>, devolveResultado: boolean): Promise<T> {
