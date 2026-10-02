@@ -1,5 +1,5 @@
 /**
- * A COPY DA REVELAÇÃO — as sete telas que derrubam o disfarce do Instanooria.
+ * A COPY DA REVELAÇÃO — as sete telas que derrubam o disfarce do Unoovista.
  *
  * ╔══════════════════════════════════════════════════════════════════════════╗
  * ║  ESTE ARQUIVO EXISTE DUAS VEZES, E AS DUAS CÓPIAS TÊM DE SER IDÊNTICAS.  ║
@@ -41,7 +41,7 @@ export type OrigemDoLado = 'perfil' | 'redistribuido' | 'sorteio';
  */
 export const REVELACAO_FIXA: TelaDaRevelacao[] = [
   {
-    texto: 'O Instanooria não é uma rede social de verdade. É uma simulação.',
+    texto: 'O Unoovista não é uma rede social de verdade. É uma simulação.',
     complemento: 'Nenhum dado seu saiu daqui.',
   },
   { texto: 'Mas uma coisa aqui era 100% real:', destaque: 'o algoritmo.' },
@@ -64,7 +64,7 @@ export function telaDoLadoSemeado(origem: string): TelaDaRevelacao {
       texto: 'Tem mais: seu feed',
       destaque: 'já começou puxado para um dos dois lados.',
       complemento:
-        'E não foi sorteio — foi escolhido a partir de como você jogou, antes de você abrir o Instanooria.',
+        'E não foi sorteio — foi escolhido a partir de como você jogou, antes de você abrir o Unoovista.',
     };
   }
 

@@ -1,5 +1,7 @@
 import { useState } from 'react';
 
+import { Chip } from '@edu/ui/ds-unoovista';
+
 export type Inclinacao = 'A' | 'B' | 'duvida';
 
 /**
@@ -57,11 +59,11 @@ export function Conclusao({
      * Cobre a tela inteira, sem o feed atrás: a investigação acabou, e deixar o
      * feed acessível aqui faria o estudante voltar a rolar em vez de decidir.
      */
-    <div className="fixed inset-0 z-[85] flex flex-col overflow-y-auto overscroll-contain bg-surface px-5 py-8">
+    <div className="fixed inset-0 z-[85] flex flex-col overflow-y-auto overscroll-contain bg-canvas px-5 py-8">
       <div className="mx-auto flex w-full max-w-[340px] flex-col gap-5">
         <header className="flex flex-col gap-3">
           <h1 className="text-[20px] font-semibold text-ink">E aí, o que você acha?</h1>
-          <p className="rounded-xl bg-canvas px-4 py-3 text-[16px] font-semibold leading-snug text-ink">
+          <p className="rounded-cartao bg-surface px-4 py-3 text-[16px] font-semibold leading-snug text-ink">
             “{perguntaChave}”
           </p>
         </header>
@@ -71,24 +73,23 @@ export function Conclusao({
           {opcoes.map((opcao) => {
             const marcada = (registrada ?? inclinacao) === opcao.valor;
             return (
-              <button
+              /* O `Chip` do Unoovista com papel de rádio: a cápsula selecionada é a
+                 resposta registrada. A largura total é só disposição (o rótulo
+                 fica centralizado: o `justify-content` é do DS e vence). */
+              <Chip
                 key={opcao.valor}
-                type="button"
                 role="radio"
                 aria-checked={marcada}
+                selected={marcada}
                 disabled={enviando}
                 onClick={() => {
                   setInclinacao(opcao.valor);
                   void enviar(opcao.valor);
                 }}
-                className={`flex h-12 items-center rounded-full border px-4 text-left text-[15px] transition-colors disabled:opacity-60 ${
-                  marcada
-                    ? 'border-action bg-action/10 font-semibold text-ink'
-                    : 'border-hairline text-ink/80 active:opacity-70'
-                }`}
+                className="w-full"
               >
                 {opcao.rotulo}
-              </button>
+              </Chip>
             );
           })}
         </fieldset>
@@ -96,7 +97,7 @@ export function Conclusao({
         {erro ? <p className="text-[13px] text-like-texto">{erro}</p> : null}
 
         {registrada ? (
-          <div className="flex flex-col gap-2 rounded-xl bg-action/10 px-4 py-3">
+          <div className="flex flex-col gap-2 rounded-cartao bg-surface px-4 py-3">
             <p className="text-[14px] font-semibold text-ink">Resposta registrada.</p>
             <p className="text-[13px] leading-snug text-ink/70">
               Pode trocar de ideia enquanto espera — vale a última.

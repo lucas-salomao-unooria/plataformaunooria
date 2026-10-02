@@ -39,11 +39,12 @@ const Reflexao = lazy(() =>
   import("./componentes/reflexao").then((modulo) => ({ default: modulo.Reflexao })),
 );
 
-import { AvatarPerfil } from "./componentes/avatar-perfil";
-import { Glifo } from "@edu/ui/ds-insta";
+import { LogoUnv, PostCard as PostCardUnv } from "@edu/ui/ds-unoovista";
+
+import { retratoDe } from "./componentes/avatar-perfil";
 import { BottomNav, type Aba } from "./componentes/bottom-nav";
 import { ComentariosSheet } from "./componentes/comentarios-sheet";
-import { Compositor } from "./componentes/compositor";
+import { Compositor, TEMPLATES } from "./componentes/compositor";
 import { Conclusao } from "./componentes/conclusao";
 import { Debate } from "./componentes/debate";
 import { Onboarding } from "./componentes/onboarding";
@@ -85,7 +86,7 @@ export interface EstudanteCliente {
 
 
 /**
- * Shell do Instanooria (SPA): onboarding → feed → encerramento. O cliente só
+ * Shell do Unoovista (SPA): onboarding → feed → encerramento. O cliente só
  * mede e envia eventos; toda a curadoria vem do servidor.
  *
  * Diferenças do porte (origem = app/app/componentes/instanooria-app.tsx):
@@ -564,7 +565,7 @@ export function InstanooriaApp({
   if (fase === "fim") {
     return (
       <main className="flex min-h-dvh flex-col items-center justify-center gap-4 px-8 text-center">
-        <p className="instanooria-wordmark text-[34px] leading-none">Instanooria</p>
+        <LogoUnv height={30} title="Unoovista" />
         <p className="text-[15px] leading-relaxed text-ink/70">Já vem — deixa essa tela aberta.</p>
       </main>
     );
@@ -582,7 +583,7 @@ export function InstanooriaApp({
   return (
     <>
       <div
-        className={`flex min-h-dvh flex-col bg-surface ${
+        className={`flex min-h-dvh flex-col bg-canvas ${
           encerrando ? "pointer-events-none select-none" : ""
         } ${desfocar ? "blur-sm" : ""}`}
         aria-hidden={encerrando}
@@ -614,13 +615,17 @@ export function InstanooriaApp({
       >
         <TopBar
           aoAbrirCompositor={() => setCompositorAberto(true)}
-          aoTocarIgtv={() => avisar("disponível em breve")}
+          aoTocarEmBreve={() => avisar("disponível em breve")}
           naoLidas={naoLidas}
         />
 
-        <div className="flex-1">
+        {/* A coluna do conteúdo na composição em camadas do Unoovista (a do
+            Storybook): a tela é `canvas`, cada cartão é `surface`, com a calha e o
+            espaço do DS entre eles — e a altura da doca flutuante reservada embaixo,
+            senão o último post ficaria atrás dela. */}
+        <div className="flex flex-1 flex-col gap-[var(--unv-spacing-m)] px-gutter pb-doca pt-[var(--unv-spacing-3xs)]">
           {atualizando ? (
-            <p className="py-3 text-center text-[12px] text-muted">atualizando…</p>
+            <p className="m-0 text-center text-[12px] text-muted">atualizando…</p>
           ) : null}
 
           {aba === "feed" ? (
@@ -635,9 +640,7 @@ export function InstanooriaApp({
               />
 
               {meusPosts.map((post) => (
-                <article key={post.criadoEm} className="border-b border-hairline">
-                  <MeuPost post={post} avatar={dadosEstudante.avatar} handle={dadosEstudante.handle} />
-                </article>
+                <MeuPost key={post.criadoEm} post={post} avatar={dadosEstudante.avatar} handle={dadosEstudante.handle} />
               ))}
 
               {itens.map((item, indice) => {
@@ -886,54 +889,35 @@ function MeuPost({
     return () => timers.forEach((timer) => window.clearTimeout(timer));
   }, [post.apoio]);
 
-  const fundo =
-    {
-      coral: "linear-gradient(135deg,#FF5C6E,#FF9A6E)",
-      violeta: "linear-gradient(135deg,#7B4DFF,#C86DD7)",
-      oceano: "linear-gradient(135deg,#2E9BF5,#26D0CE)",
-      limao: "linear-gradient(135deg,#A8E063,#56AB2F)",
-      noite: "linear-gradient(135deg,#232526,#414345)",
-      doce: "linear-gradient(135deg,#FBD3E9,#BB377D)",
-      areia: "linear-gradient(135deg,#F6D365,#FDA085)",
-      menta: "linear-gradient(135deg,#B2FEFA,#0ED2F7)",
-    }[post.template] ?? "linear-gradient(135deg,#FF5C6E,#7B4DFF)";
+  const fundo = (TEMPLATES.find((item) => item.id === post.template) ?? TEMPLATES[0]!).fundo;
+  const retrato = retratoDe(avatar);
+  const meuHandle = handle.replace(/^@/, "");
 
+  /*
+   * O mesmo `PostCard` dos outros cards: sem ele, o post do estudante era o único
+   * card diferente do feed e saltava aos olhos. As ações ficam `inert` — eram
+   * desenho no clone antigo e continuam sendo: o post é dele, e curtir o próprio
+   * post não é sinal que o motor leia.
+   */
   return (
-    <>
-      <header className="flex h-postheader items-center gap-2.5 px-3">
-        <AvatarPerfil seed={avatar} tamanho={32} />
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-[14px] font-semibold text-ink">{handle.replace(/^@/, "")}</p>
+    <PostCardUnv>
+      <PostCardUnv.Header username={meuHandle} avatarSrc={retrato.src} initials={retrato.initials} />
+      <PostCardUnv.Media alt={post.texto} aspectRatio={4 / 5}>
+        <div
+          className="flex h-full w-full items-center justify-center px-8 text-center text-[24px] font-semibold leading-tight text-white"
+          style={{ background: fundo }}
+        >
+          {post.texto}
         </div>
-        <Glifo name="more" size={18} />
-      </header>
-      <div
-        className="flex aspect-post w-full items-center justify-center px-8 text-center text-[24px] font-semibold leading-tight text-white"
-        style={{ background: fundo }}
-      >
-        {post.texto}
-      </div>
-      {/* Mesma barra de ações dos outros cards: sem ela, o post do estudante era o
-          único card diferente do feed e saltava aos olhos. */}
-      <div className="flex h-actionbar items-center justify-between px-3">
-        <div className="flex items-center gap-4">
-          <Glifo name="heartFilled" size={24} tone="like" />
-          <Glifo name="comment" size={24} />
-          <Glifo name="share" size={22} />
-        </div>
-        <Glifo name="bookmark" size={24} />
-      </div>
-
-      <div className="flex flex-col gap-1.5 px-3 pb-3">
-        <p className="text-[14px] font-semibold text-ink">{curtidas} curtidas</p>
-        {post.apoio.slice(0, apoioVisivel).map((comentario) => (
-          <p key={comentario.handle + comentario.texto} className="text-[14px] leading-snug text-ink">
-            <span className="font-semibold">{comentario.handle.replace(/^@/, "")}</span>{" "}
-            {comentario.texto}
-          </p>
-        ))}
-        <p className="text-[11px] text-muted">agora mesmo</p>
-      </div>
-    </>
+      </PostCardUnv.Media>
+      <PostCardUnv.Actions liked inert />
+      <PostCardUnv.Likes>{curtidas} curtidas</PostCardUnv.Likes>
+      {post.apoio.slice(0, apoioVisivel).map((comentario) => (
+        <PostCardUnv.Caption key={comentario.handle + comentario.texto} username={comentario.handle.replace(/^@/, "")}>
+          {comentario.texto}
+        </PostCardUnv.Caption>
+      ))}
+      <PostCardUnv.Timestamp>agora mesmo</PostCardUnv.Timestamp>
+    </PostCardUnv>
   );
 }

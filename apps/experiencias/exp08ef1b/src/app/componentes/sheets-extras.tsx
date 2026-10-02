@@ -1,5 +1,7 @@
 import { useState } from 'react';
 
+import { ButtonUnv, ListItem, SnackbarUnv } from '@edu/ui/ds-unoovista';
+
 import type { FeedPostCliente } from '../../lib/tipos';
 
 import { AvatarPerfil } from './avatar-perfil';
@@ -9,6 +11,12 @@ const CONTATOS = [
   '@bia.sq', '@dudu.alves', '@vitoria__m', '@leo.pires', '@sofi.rodrigues',
   '@caio.mtz', '@helo.dias', '@nina.rocha', '@theo.lm', '@ju.barros',
 ];
+
+/**
+ * A lista da folha encosta nas bordas, como no Storybook do DS: o corpo da
+ * folha tem a calha (`--unv-gutter`) e a `ListItem` já traz o próprio recuo.
+ */
+const LISTA_SEM_CALHA = 'm-0 list-none p-0 [margin-inline:calc(var(--unv-gutter)*-1)]';
 
 /** Sheet "Compartilhar" (doc 03 §3.3): enviar só faz toast — e conta sinal. */
 export function CompartilharSheet({
@@ -25,26 +33,33 @@ export function CompartilharSheet({
 
   return (
     <Sheet aberto aoFechar={aoFechar} altura="60%" titulo="Compartilhar">
-      <ul className="px-3 py-2">
-        {CONTATOS.map((contato) => (
-          <li key={contato} className="flex items-center gap-3 py-2.5">
-            <AvatarPerfil seed={contato} tamanho={40} />
-            <span className="flex-1 text-[14px] text-ink">{contato.replace(/^@/, '')}</span>
-            <button
-              type="button"
-              className={`rounded-lg px-4 py-1.5 text-[13px] font-semibold ${
-                enviados.has(contato) ? 'bg-canvas text-muted' : 'bg-action text-white'
-              }`}
-              onClick={() => {
-                if (enviados.has(contato)) return;
-                setEnviados((atual) => new Set(atual).add(contato));
-                aoEnviar(post);
-              }}
-            >
-              {enviados.has(contato) ? 'Enviado' : 'Enviar'}
-            </button>
-          </li>
-        ))}
+      <ul className={LISTA_SEM_CALHA}>
+        {CONTATOS.map((contato) => {
+          const enviado = enviados.has(contato);
+          return (
+            <li key={contato}>
+              <ListItem
+                size="md"
+                leading={<AvatarPerfil seed={contato} tamanho={40} />}
+                title={contato.replace(/^@/, '')}
+                trailing={
+                  <ButtonUnv
+                    variant={enviado ? 'secondary' : 'primary'}
+                    size="sm"
+                    disabled={enviado}
+                    onClick={() => {
+                      if (enviado) return;
+                      setEnviados((atual) => new Set(atual).add(contato));
+                      aoEnviar(post);
+                    }}
+                  >
+                    {enviado ? 'Enviado' : 'Enviar'}
+                  </ButtonUnv>
+                }
+              />
+            </li>
+          );
+        })}
       </ul>
     </Sheet>
   );
@@ -65,8 +80,8 @@ export function OpcoesSheet({
   if (!post) return null;
 
   return (
-    <Sheet aberto aoFechar={aoFechar} altura="auto">
-      <ul className="flex flex-col px-1 pb-4">
+    <Sheet aberto aoFechar={aoFechar} altura="auto" rotulo="Opções da publicação">
+      <ul className={LISTA_SEM_CALHA}>
         {[
           { rotulo: 'Não tenho interesse', acao: () => aoNaoInteressa(post), perigo: false },
           { rotulo: 'Denunciar', acao: () => aoDenunciar(post), perigo: true },
@@ -74,16 +89,14 @@ export function OpcoesSheet({
           { rotulo: 'Cancelar', acao: aoFechar, perigo: false },
         ].map((item) => (
           <li key={item.rotulo}>
-            <button
-              type="button"
-              className={`w-full px-4 py-3.5 text-left text-[15px] ${item.perigo ? 'text-like-texto' : 'text-ink'}`}
+            <ListItem
+              size="sm"
+              title={item.perigo ? <span className="text-like">{item.rotulo}</span> : item.rotulo}
               onClick={() => {
                 item.acao();
                 aoFechar();
               }}
-            >
-              {item.rotulo}
-            </button>
+            />
           </li>
         ))}
       </ul>
@@ -91,13 +104,16 @@ export function OpcoesSheet({
   );
 }
 
-/** Toast curto, na gramática do app (nada de vocabulário de exercício). */
+/**
+ * Aviso curto, na gramática do app (nada de vocabulário de exercício): o
+ * `Snackbar` do Unoovista. Ele flutua sobre o contêiner posicionado mais
+ * próximo — aqui, uma camada `fixed` da coluna do aparelho, que não intercepta
+ * toque — e já fica acima da doca de navegação por padrão.
+ */
 export function Toast({ mensagem }: { mensagem: string | null }) {
-  if (!mensagem) return null;
-
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-24 z-[70] flex justify-center px-8">
-      <span className="rounded-lg bg-black/85 px-4 py-2.5 text-[13px] text-white">{mensagem}</span>
+    <div className="pointer-events-none fixed inset-0 z-[70] mx-auto w-full max-w-phone">
+      <SnackbarUnv open={mensagem !== null} message={mensagem ?? ''} />
     </div>
   );
 }

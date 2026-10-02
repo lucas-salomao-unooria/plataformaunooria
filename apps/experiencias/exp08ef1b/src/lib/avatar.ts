@@ -1,44 +1,14 @@
 /**
- * Avatares procedurais consistentes por handle (doc 03 §8): iniciais sobre
- * gradiente, sempre o mesmo par cor/handle. Sem 'server-only' — o cliente
- * também desenha.
+ * As iniciais de uma persona do feed (doc 03 §8), estáveis por handle: as duas
+ * primeiras partes do handle (`fatos.da.coroa` → `FD`) ou as duas primeiras
+ * letras. O fundo atrás delas é o do `Avatar` do Unoovista — o par de cores por
+ * handle do clone antigo saiu junto com a paleta dele. Sem 'server-only' — o
+ * cliente também desenha.
  */
-
-const PARES = [
-  ['#FF8A80', '#FF5C6E'],
-  ['#82B1FF', '#5C6BC0'],
-  ['#B9F6CA', '#26A69A'],
-  ['#FFE082', '#FFA726'],
-  ['#CE93D8', '#7B4DFF'],
-  ['#80DEEA', '#0097A7'],
-  ['#F48FB1', '#EC407A'],
-  ['#C5E1A5', '#7CB342'],
-];
-
-function hash(texto: string): number {
-  let valor = 0;
-  for (let i = 0; i < texto.length; i += 1) {
-    valor = (valor * 33 + texto.charCodeAt(i)) % 2147483647;
-  }
-  return valor;
-}
-
-export interface AvatarProcedural {
-  gradiente: string;
-  iniciais: string;
-}
-
-export function avatarProcedural(handle: string): AvatarProcedural {
+export function iniciaisDe(handle: string): string {
   const limpo = handle.replace(/^@/, '');
-  // `!`: o índice é módulo do tamanho do array — sempre em faixa (strict do repo).
-  const [de, para] = PARES[hash(limpo) % PARES.length]!;
-
   const partes = limpo.split(/[._-]/).filter(Boolean);
-  const iniciais = (
-    partes.length > 1 ? (partes[0]?.[0] ?? '') + (partes[1]?.[0] ?? '') : limpo.slice(0, 2)
-  ).toUpperCase();
-
-  return { gradiente: `linear-gradient(135deg, ${de} 0%, ${para} 100%)`, iniciais };
+  return (partes.length > 1 ? (partes[0]?.[0] ?? '') + (partes[1]?.[0] ?? '') : limpo.slice(0, 2)).toUpperCase();
 }
 
 /** Números no formato pt-BR do feed: 1.234 · 12,4 mil (doc 03 §8). */
