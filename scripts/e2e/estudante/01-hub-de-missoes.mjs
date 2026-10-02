@@ -32,7 +32,7 @@ await suite(
       "O estudante entra na TURMA dele — a grade é a do ano dela, não o catálogo inteiro",
       "Missão não liberada aparece com CADEADO, e não some da tela",
       "Duas turmas do MESMO ano têm estados diferentes: 8A aberta, 8B fechada",
-      "Missão de outra série não entra na grade (o unooGPT é da 2ª série do EM)",
+      "Missão de outra série não entra na grade (o UnooriaAI é da 2ª série do EM)",
       "URL direta de missão não liberada responde 404 — o cadeado não é só enfeite",
       "Cada cartão aberto leva ao aparelho certo, em outra origem, com o sandbox que o manifesto pediu",
     ],
@@ -59,7 +59,7 @@ await suite(
     const OPCIONAIS = ["allow-pointer-lock", "allow-forms"];
     /* Da 2ª série do EM: não pertence à grade do 8º. Não é "bloqueada" — é de outra
        série, e nem aparece. São coisas diferentes, e a tela precisa distingui-las. */
-    const DE_OUTRA_SERIE = { texto: "unooGPT", expId: "exp02em1b" };
+    const DE_OUTRA_SERIE = { texto: "UnooriaAI", expId: "exp02em1b" };
 
     /* O 404 é PROVOCADO: esta suíte digita de propósito a URL de uma missão que
        não é desta turma, e é o servidor recusando que ela existe para provar. */

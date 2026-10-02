@@ -7,7 +7,7 @@ import {
   Divider,
   PromptSuggestion,
   TopicColumn,
-} from '@edu/ui/ds-chatgpt';
+} from '@edu/ui/ds-unooriaai';
 import { CONJUNTO_POR_SLUG } from '../../lib/textos';
 import type { Anexo } from '../../lib/tipos';
 import { CartaoAlocacao, CartaoDesfecho, CartaoOpcoes, CartaoTendencia } from './cartoes';
@@ -73,7 +73,7 @@ function Cartao({
       cartao
     ) : (
       <details className="mt-3">
-        <summary className="cursor-pointer rounded-gpt-md border border-gpt-borda bg-gpt-fundo px-3 py-2 text-xs font-semibold text-gpt-suave-60 hover:text-gpt-tinta">
+        <summary className="cursor-pointer rounded-uai-md border border-uai-borda bg-uai-fundo px-3 py-2 text-xs font-semibold text-uai-suave-60 hover:text-uai-tinta">
           {rotuloColapsado(anexo.hora)}
         </summary>
         {cartao}
@@ -125,17 +125,17 @@ function Consultando({ fontes }: { fontes: number }) {
     <ChatBubble role="assistant" avatarInitials="CD" className="w-full">
       <span className="flex items-center gap-2">
         <span className="flex gap-1" aria-hidden>
-          <span className="h-1.5 w-1.5 animate-pulse rounded-gpt-full bg-gpt-acao" />
-          <span className="h-1.5 w-1.5 animate-pulse rounded-gpt-full bg-gpt-acao [animation-delay:150ms]" />
-          <span className="h-1.5 w-1.5 animate-pulse rounded-gpt-full bg-gpt-acao [animation-delay:300ms]" />
+          <span className="h-1.5 w-1.5 animate-pulse rounded-uai-full bg-uai-acao" />
+          <span className="h-1.5 w-1.5 animate-pulse rounded-uai-full bg-uai-acao [animation-delay:150ms]" />
+          <span className="h-1.5 w-1.5 animate-pulse rounded-uai-full bg-uai-acao [animation-delay:300ms]" />
         </span>
         {linha}
-        <span className="tabular-nums text-gpt-suave-60">{segundos}s</span>
+        <span className="tabular-nums text-uai-suave-60">{segundos}s</span>
       </span>
       {/* Enquanto ele responde, o campo continua vivo: escrever a próxima
           pergunta é a única coisa que o estudante pode fazer com o tempo que o
           modelo está gastando. */}
-      <span className="mt-1 block text-xs text-gpt-suave-60">
+      <span className="mt-1 block text-xs text-uai-suave-60">
         Pode ir escrevendo a próxima pergunta.
       </span>
     </ChatBubble>
@@ -148,9 +148,9 @@ function Consultando({ fontes }: { fontes: number }) {
  * A conversa é o `ChatBubble`, e o campo é o `Composer` dentro da sua doca —
  * a régua do CLIENTE WEB, não a da página de design system. O pacote publica
  * as duas e a regra é que uma nunca substitui a outra: `Composer` tem 760×56,
- * quatro alvos e contorno de meio pixel; `ChatInput` tem 600×48 e um alvo
- * redondo. A doca é a faixa com véu de 10% e desfoque de 40px que o arquivo
- * desenha atrás dele.
+ * quatro alvos e contorno de 1px; `ChatInput` tem 600×48 e um alvo
+ * redondo. A doca é a faixa com véu translúcido e desfoque de 40px que o
+ * pacote desenha atrás dele.
  *
  * Os dois alvos que antecedem o campo — microfone e imagem — ficam OCULTOS
  * (`hideLeadingActions`). Eles existem no arquivo, mas aqui não teriam o que
@@ -320,11 +320,11 @@ export function PainelCientista({
           nove anos" aqui entrega pela interface o que ele deveria descobrir
           conversando. */}
       <Divider />
-      <div className="flex shrink-0 flex-wrap items-center justify-between gap-x-4 gap-y-1 bg-gpt-superficie px-4 py-2 text-xs text-gpt-suave-60">
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-x-4 gap-y-1 bg-uai-superficie px-4 py-2 text-xs text-uai-suave-60">
         <p>
           {emUso.length > 0 ? (
             <>
-              <span className="font-semibold text-gpt-tinta">O Cientista está usando: </span>
+              <span className="font-semibold text-uai-tinta">O Cientista está usando: </span>
               {emUso
                 .map((s) => CONJUNTO_POR_SLUG.get(s)?.rotuloCurto ?? s)
                 .map((r) => r.charAt(0).toUpperCase() + r.slice(1))
@@ -353,8 +353,8 @@ export function PainelCientista({
             querer saber. As `Tag` são as mesmas do arquivo de design, onde elas
             são sugestão de prompt — que é exatamente o papel aqui. */}
         {travado && !ocupado && (
-          // `TopicColumn` + `PromptSuggestion`: é a coluna `Examples` da tela
-          // `New chat` do arquivo, no papel para o qual ela existe — sugestão
+          // `TopicColumn` + `PromptSuggestion`: é a coluna de exemplos da tela
+          // de nova conversa, no papel para o qual ela existe — sugestão
           // de prompt acionável. Antes eram `Tag`, que é cápsula de filtro da
           // outra página e encolhia três perguntas inteiras em três chips.
           <TopicColumn icon="chats" title={CHAMADA_DESTRAVAR} className="mb-3 !w-full">
@@ -376,13 +376,13 @@ export function PainelCientista({
           </TopicColumn>
         )}
         {semPerguntas && !bloqueio && !aviso && (
-          <p className="mb-2 rounded-gpt-md border-l-4 border-gpt-alerta bg-gpt-superficie px-3 py-2 text-sm leading-snug text-gpt-tinta">
+          <p className="mb-2 rounded-uai-md border-l-4 border-uai-alerta bg-uai-superficie px-3 py-2 text-sm leading-snug text-uai-tinta">
             {AVISO_SEM_PERGUNTAS}
           </p>
         )}
         <div className="min-h-[1.75rem]">
           {aviso && (
-            <p role="alert" className="mb-2 text-sm font-semibold text-gpt-erro">
+            <p role="alert" className="mb-2 text-sm font-semibold text-uai-erro">
               {aviso}
             </p>
           )}
@@ -392,25 +392,25 @@ export function PainelCientista({
             lê o que está prestes a mandar sem sair do lugar. */}
         {onDecidir && (
           <div
-            className={`mb-3 flex flex-wrap items-center justify-between gap-3 rounded-gpt-xl px-4 py-3 ${
-              tempoAcabou ? 'bg-gpt-fill-8' : 'bg-gpt-superficie'
+            className={`mb-3 flex flex-wrap items-center justify-between gap-3 rounded-uai-xl px-4 py-3 ${
+              tempoAcabou ? 'bg-uai-fill-8' : 'bg-uai-superficie'
             }`}
           >
             <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
               {destinos.map((d) => (
                 <span key={d.equipe} className="flex items-center gap-2">
                   <span
-                    className={`grid h-6 w-6 shrink-0 place-items-center rounded-gpt-md text-xs font-bold text-gpt-tinta-inv ${
-                      d.equipe === 'alfa' ? 'bg-gpt-azul' : 'bg-gpt-roxo'
+                    className={`grid h-6 w-6 shrink-0 place-items-center rounded-uai-md text-xs font-bold text-uai-tinta-inv ${
+                      d.equipe === 'alfa' ? 'bg-uai-equipe-alfa' : 'bg-uai-equipe-bravo'
                     }`}
                   >
                     {d.equipe.charAt(0).toUpperCase()}
                   </span>
                   <span className="text-sm leading-tight">
-                    <span className="block text-xs uppercase tracking-wider text-gpt-suave-60">
+                    <span className="block text-xs uppercase tracking-wider text-uai-suave-60">
                       Equipe {d.equipe}
                     </span>
-                    <strong className={d.nome ? 'text-gpt-tinta' : 'text-gpt-suave-60'}>
+                    <strong className={d.nome ? 'text-uai-tinta' : 'text-uai-suave-60'}>
                       {d.nome ?? 'sem destino'}
                     </strong>
                   </span>
@@ -421,7 +421,7 @@ export function PainelCientista({
                 mandar. Uma só obrigava a passar pelo painel para enviar, ou
                 escondia o painel de quem já tinha decidido. */}
             {alertas.length > 0 && (
-              <ul className="w-full rounded-gpt-md border-l-4 border-gpt-alerta bg-gpt-fundo p-3 text-sm leading-snug text-gpt-tinta">
+              <ul className="w-full rounded-uai-md border-l-4 border-uai-alerta bg-uai-fundo p-3 text-sm leading-snug text-uai-tinta">
                 {alertas.map((a) => (
                   <li key={a}>{a}</li>
                 ))}
@@ -441,7 +441,7 @@ export function PainelCientista({
                 <span className="flex flex-col items-end gap-1">
                   {/* O irreversível fica ACIMA do botão, não dentro do
                       parágrafo que ninguém lê até o fim. */}
-                  <span className="text-xs font-semibold text-gpt-alerta">
+                  <span className="text-xs font-semibold text-uai-alerta">
                     Depois de enviar não dá para mudar
                   </span>
                   <Button variant="secondary" onClick={onEnviar} disabled={ocupado}>

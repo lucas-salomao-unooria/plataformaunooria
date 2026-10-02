@@ -1,4 +1,4 @@
-import { Avatar, Button, Modal } from "@edu/ui/ds-chatgpt";
+import { Avatar, Button, Modal } from "@edu/ui/ds-unooriaai";
 import { useCallback, useEffect, useState } from "react";
 import { api, codigoDoErro, concluir, enviarEstado } from "../lib/api";
 import * as telemetria from "../lib/telemetria";
@@ -325,11 +325,11 @@ export function MissaoApp({ inicial }: { inicial: RespostaSessao }) {
   // Altura TRAVADA na tela: sem isto a página inteira rola e o campo de
   // pergunta desce junto, saindo de vista no meio da conversa.
   return (
-    // `bg-gpt-tela` e nao `bg-gpt-fundo`: a tela do cliente web tem superficie
-    // propria (`--gpt-web-canvas`). No tema escuro ela aponta para a primitiva
-    // `gray-700`, que o pacote registrou justamente porque a superficie medida
-    // no arquivo nao corresponde a nenhum degrau da escada semantica.
-    <div className="flex h-screen overflow-hidden bg-gpt-tela">
+    // `bg-uai-tela` e nao `bg-uai-fundo`: a tela do cliente web tem superficie
+    // propria (`--uai-web-canvas`), que o pacote publica a parte da escada
+    // semantica. Hoje ela coincide com o fundo nos dois temas, mas a decisao e
+    // do pacote, e trocar o apelido aqui esconderia a mudanca dele.
+    <div className="flex h-screen overflow-hidden bg-uai-tela">
       <Trilha
         passo={sessao.passo}
         aberta={trilhaAberta}
@@ -367,14 +367,14 @@ export function MissaoApp({ inicial }: { inicial: RespostaSessao }) {
                 escrita no mapa ao lado, e as fontes em uso aparecem acima do
                 campo de pergunta, onde elas importam. */}
             {sessao.passo === 'investigacao' && (
-              <header className="flex items-center justify-between gap-4 border-b border-gpt-borda px-6 py-3">
+              <header className="flex items-center justify-between gap-4 border-b border-uai-borda px-6 py-3">
                 <div className="flex items-center gap-3">
                   <Avatar size="lg" tone="inverse" initials="CD" />
                   <div>
-                    <p className="text-sm font-semibold leading-tight text-gpt-tinta">
+                    <p className="text-sm font-semibold leading-tight text-uai-tinta">
                       Cientista de Dados
                     </p>
-                    <p className="text-xs leading-tight text-gpt-suave-60">
+                    <p className="text-xs leading-tight text-uai-suave-60">
                       Responde fatos e previsões. Não decide.
                     </p>
                   </div>

@@ -6,7 +6,7 @@ cruzam). Aqui está a mecânica.
 
 `@edu/ui` **não é onde componente novo nasce** — ele nasce no repo
 `storybook-unooria` e chega por versão publicada. O que existe aqui são as
-sete pontes de re-export, uma por seção, e nada mais.
+oito pontes de re-export, uma por seção, e nada mais.
 
 ## Design System: consumo pela ponte
 
@@ -20,12 +20,13 @@ arrasta as seis seções e a tipografia da plataforma para dentro de um clone.
 | `@edu/ui/ds-unoovista` | `unoovista` | `/unoovista.css` + `/fonts/unoovista.css` (**obrigatória**: o `Icon` é ligadura) | `--unv-*`, `data-unv-theme` | superfícies disfarçadas da exp08ef1b (ADR-133) e da exp07ef1b (ADR-135), e o `PostCard` da gaveta do Jornal (exp04ef1b, ADR-136). Os nomes que colidem com a plataforma saem com o sufixo `Unv` (`ButtonUnv`, `AvatarUnv`, `IconUnv`, `BottomSheetUnv`, `SnackbarUnv`, `TextFieldUnv`, `LogoUnv`, `BadgeUnv`). A seção traz os mesmos 31 componentes do `instanooria`; a A Seleção trouxe para a ponte `DirectThread`, `MessageBubble`, `DmPoll`, `ConfirmDialog`, `FloatingButton`, `InlineHint`, `GestureHint` e `SegmentedTabs`; os que ainda faltam entram quando tiverem consumidor |
 | `@edu/ui/ds-insta` | `instanooria` | `/instanooria.css` (sem fonte: SF Pro é do sistema) | `--insta-*` | o clone da exp01ef1b (a exp08ef1b saiu dela na ADR-133, a exp07ef1b na ADR-135, o post do Jornal na ADR-136); reexporta também as sete extensões da 0.2.5 (`DirectThread`, `MessageBubble`, `DmPoll`, `ConfirmDialog`, `BottomSheet`, `FloatingButton`, `StoryComposer`) e as três da 0.2.7 (`InlineHint`, `GestureHint` e o `Snackbar` do clone, como `SnackbarInsta` porque colide com o da plataforma) |
 | `@edu/ui/ds-unootube` | `unootube` | `/unootube.css` + `/fonts/unootube.css` | `--uni-*`, `[data-uni-theme]` | superfície disfarçada do UnooTube, ARQUIVADO (ADR-116): nenhuma missão viva a usa |
-| `@edu/ui/ds-chatgpt` | `chatgpt` | `/chatgpt.css` + `/fonts/chatgpt.css` | `--gpt-*`, `data-gpt-theme` | a exp02em1b INTEIRA: ela NÃO tem revelação no software, então nunca troca para a seção da plataforma |
+| `@edu/ui/ds-chatgpt` | `chatgpt` | `/chatgpt.css` + `/fonts/chatgpt.css` | `--gpt-*`, `data-gpt-theme` | a conversa da exp08ef4b. A exp02em1b saiu dela na 1.3.0 (ADR-138) |
+| `@edu/ui/ds-unooriaai` | `unooriaai` | `/unooriaai.css` + `/fonts/unooriaai.css` (**obrigatória**: o `Icon` é ligadura) | `--uai-*`, `data-uai-theme` (`light` \| `dark`, `:root` = claro) | a exp02em1b INTEIRA (ADR-138): ela NÃO tem revelação no software, então nunca troca para a seção da plataforma. Cópia estrutural da `chatgpt` com a identidade da Unooria; o `GPTCard` virou `AssistantCard`, não há `gptGlyphs` e **não há cor primitiva** (só semântica) |
 | `@edu/ui/ds-whatsapp` | `whatsappmobile` | `/whatsappmobile.css` + `/fonts/whatsappmobile.css` | `--wa-*`, `data-wa-theme` (**só `dark`**) | o mensageiro da exp06ef2b, inclusive os erros diegéticos (o `MessageBubble` do Jornal saiu dela na ADR-136) |
 | `@edu/ui/ds-unoochat` | `unoochat` | `/unoochat.css` + `/fonts/unoochat.css` (**obrigatória**: `Icon` é ligadura) | `--unc-*`, `data-unc-theme` (`light` \| `dark`, `:root` = claro) | o grupo da turma da exp05ef1b, em tema claro (ADR-134), e o `MessageBubble` da gaveta do Jornal, também claro (exp04ef1b, ADR-136) — cópia estrutural do `whatsappmobile` com a identidade da Unooria |
 
 **As peças do agente de IA do professor (0.2.10) são da seção `unooria`, e não
-do `chatgpt` nem do `unooriaai`**: aqueles são CLONES, e o agente é a Unooria
+do `chatgpt` nem do `unooriaai`**: aqueles são CLONES (o `unooriaai` também, apesar do nome: é o assistente disfarçado da exp02em1b), e o agente é a Unooria
 falando com o professor — misturar seria a plataforma dentro do clone ao
 contrário. Elas deixam três coisas para o produto, de propósito, e nenhuma dá
 erro se for esquecida: o FOCO (o `ChatPanel` não é modal e não move o foco), a

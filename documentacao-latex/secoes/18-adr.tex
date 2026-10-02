@@ -9,7 +9,7 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{136 decisões}, numeradas até ADR-137, com uma lacuna
+São \textbf{137 decisões}, numeradas até ADR-138, com uma lacuna
 temporária: a 132 (a Ajuda com avatar) já está no código e ainda não tem
 seção aqui. A 133 e a 134 nasceram no mesmo dia, em frentes paralelas
 (Unoovista e Unoochat), e entraram juntas no merge; a 135 e a 136 levaram as
@@ -187,6 +187,7 @@ que a cercam.
 \adrr{ADR-135} & A Seleção troca o Instanooria pelo Unoovista & 2026-10-02 & Aceita\\
 \zebra \adrr{ADR-136} & As peças da gaveta do Jornal da Escola passam para o Unoovista e o Unoochat & 2026-10-02 & Aceita\\
 \adrr{ADR-137} & O Júri Estadual de Projetos nasce no Unoovista e mede o que o briefing pediu & 2026-10-02 & Aceita\\
+\zebra \adrr{ADR-138} & A missão da 2ª série do EM troca o clone do ChatGPT pelo UnooriaAI & 2026-10-02 & Aceita\\
 \bottomrule
 \end{tabularx}
 
@@ -11898,3 +11899,99 @@ que nenhuma banca pegou.
 Unidade 1; o piloto mostrar que menos de 80\,\% dos que curtem duas vezes a
 mesma área fecham a bolha (então o peso da curtida sobe para 4); ou a rede
 pedir a aula sem IA.
+
+% ---------------------------------------------------------------------------
+\section{ADR-138 --- A missão da 2ª série do EM troca o clone do ChatGPT pelo UnooriaAI}
+\label{adr:exp02em1b-unooriaai}
+
+\textbf{Data.} 2026-10-02. \textbf{Status.} Aceita. Segue a direção da
+\adrr{ADR-133} a \adrr{ADR-136}: as missões deixam de reproduzir a identidade
+visual de aplicativos de terceiros.
+
+\begin{especificacao}{Contexto}
+A Missão Tempestade (exp02em1b, 2ª série do EM, Unidade 1) é um assistente de
+IA disfarçado: o estudante conversa com o Cientista de Dados, carrega fontes e
+manda duas equipes de resgate. Ela não tem revelação no software, então a
+experiência inteira estava na seção \cd{chatgpt} --- o clone do ChatGPT. O DS
+0.2.11 publicou a seção \cd{unooriaai}, uma cópia estrutural da \cd{chatgpt}
+com a identidade da Unooria: os mesmos 25 componentes, as mesmas props e
+medidas, paleta roxa, Open Sans e Material Symbols. As diferenças de API são
+três: o \cd{GPTCard} virou \cd{AssistantCard}, o \cd{Icon} é ligadura (mesmos
+13 nomes e mais seis) e não há mapa de glifos tipográficos. E uma diferença de
+\emph{token} que não aparece na API: a seção \textbf{não publica cor primitiva},
+só semântica.
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{itemize}
+  \item \textbf{A exp02em1b inteira passa para a \cd{unooriaai}}, pela ponte
+    nova \cd{@edu/ui/ds-unooriaai}. A troca é de ponte, de \emph{token}
+    (\cd{--gpt-*} vira \cd{--uai-*}), de atributo de tema
+    (\cd{data-uai-theme}, ainda fixo no claro) e dos apelidos do Tailwind. A
+    composição das telas não muda.
+  \item \textbf{O app disfarçado passa a se chamar UnooriaAI} no
+    \cd{<title>}, no \cd{nome} do manifesto, no catálogo da trilha (o cartão do
+    estudante e a ficha do professor), nos Termos e no mapa de produto. O código
+    continua
+    \cd{unoogpt} (módulo da api, rotas, tabelas, suíte e2e, componentes do
+    hub): renomear identificador não muda nada que o estudante vê.
+  \item \textbf{As duas Equipes saem de \emph{token} semântico}: Alfa =
+    \cd{--uai-status-info} (azul), Bravo = \cd{--uai-bg-brand} (roxo), o par
+    mais próximo do azul e roxo primitivos que existiam. As fichas que aparecem
+    sobre o painel escuro do briefing levam \cd{data-uai-theme="light"}, porque
+    o \emph{token} semântico troca de degrau com o tema e o par do briefing
+    deixaria de ser o do mapa.
+  \item \textbf{As setas viram \cd{<Icon name="arrowForward">}} (a de recolher
+    a trilha, girada pela prop \cd{rotate}), no lugar do caractere \cd{gptGlyphs}.
+  \item \textbf{As duas compensações de CSS da seção antiga saem}: eram CSS
+    morto (o indicador de carregamento já era outro, e o anexo abaixo da fala
+    não tinha consumidor).
+  \item \textbf{O que a missão mede não mudou}: a api, as fontes, o relógio da
+    turma e a trilha pedagógica são os mesmos. A experiência sobe para a versão
+    \textbf{1.3.0}. A exp08ef4b continua na \cd{chatgpt}.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Manter a missão na \cd{chatgpt}.} Seria a única missão do
+    estudante ainda com a cara de um aplicativo real, depois das
+    \adrr{ADR-133} a \adrr{ADR-136}.
+  \item \textbf{Manter o nome unooGPT com a pele nova.} O nome lembra o
+    produto de terceiros que a troca de seção deixa de reproduzir.
+  \item \textbf{Cor de equipe local, marcada como compensação}, fiel ao par
+    antigo. Seria hexadecimal dentro do clone até o pacote publicar um
+    \emph{token} de série --- e cor sem significado não é lacuna de componente.
+  \item \textbf{Ler o \cd{--gpt-color-*} da outra seção.} Misturaria duas
+    seções de clone na mesma tela, que é o que a regra de ouro do DS proíbe.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{O roxo da Equipe Bravo é o roxo da marca}, o mesmo do botão
+    primário. Onde um botão de ação e uma ficha da Bravo ficam lado a lado, a
+    cor sozinha não os separa --- a letra e o rótulo da equipe separam.
+  \item \textbf{A escada translúcida é mais forte}: \cd{fill-2/4/8/10} são
+    5/10/20/30\,\% na \cd{unooriaai} contra 2/4/8/10\,\% na \cd{chatgpt}. A
+    chuva do briefing desceu um degrau; o resto ficou no mesmo nome de degrau e
+    ficou mais marcado.
+  \item \textbf{O estudante passa a baixar o Material Symbols}: um
+    \emph{woff2} de 5,36\,MB, contra os SVG embutidos da \cd{chatgpt}. A fonte
+    é preguiçosa, mas aqui o \cd{Icon} aparece logo no briefing, então ela
+    desce sempre --- uma vez por estudante e por versão, porque o caminho no
+    \emph{bucket} carrega a versão. É o custo que o Unoovista e o Unoochat já
+    pagam, e some quando o \cd{Icon} das seções de marca virar registro SVG.
+  \item \textbf{O \cd{Modal} herdou o defeito de foco} da \cd{chatgpt}
+    (\cd{onClose} nas dependências do efeito de foco): os \emph{handlers}
+    estáveis da experiência continuam obrigatórios.
+  \item \textbf{O site público ainda diz unooGPT}, com o \emph{print} da tela
+    antiga: renomear a legenda sem trocar a imagem mostraria o nome novo sobre
+    a cara do ChatGPT. Fica para quando houver \emph{print} novo.
+\end{itemize}
+
+\textbf{Gatilho.} O pacote publicar \emph{token} de equipe ou de série na
+\cd{unooriaai} (a Bravo volta a ter cor própria), mudar a API de um dos 25
+componentes, ou a exp08ef4b migrar --- aí a ponte \cd{@edu/ui/ds-chatgpt} fica
+sem consumidor e sai.
