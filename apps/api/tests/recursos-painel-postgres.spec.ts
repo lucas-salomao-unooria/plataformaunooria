@@ -110,8 +110,14 @@ describe("GET /recursos/painel", () => {
     expect(r.escopo).toEqual({ escolaId: null, nome: "Rede (contrato inteiro)", tipo: null });
     for (const produto of r.produtos) {
       expect(produto.estadoAqui).toBe("herda");
-      expect(produto.efetivo).toMatchObject({ ligado: true, origem: "padrao" });
+      /* "Nada decidido" vale o PADRÃO do produto: ligado, salvo o que está em
+         teste interno — e a tela recebe esse padrão para escrever "Padrão (…)". */
+      expect(produto.efetivo).toMatchObject({ ligado: produto.ligadoPorPadrao, origem: "padrao" });
     }
+    expect(r.produtos.find((p) => p.slug === "ajuda")).toMatchObject({
+      ligadoPorPadrao: false,
+      efetivo: { ligado: false, origem: "padrao" },
+    });
   });
 
   test("as experiências vêm DENTRO do produto que o manifesto declara", async () => {

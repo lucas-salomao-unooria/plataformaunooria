@@ -19,7 +19,7 @@ import { cadeiaDaEscola } from "../comum/disponibilidade";
 import { logger } from "../observabilidade/logger";
 import { Contrato } from "../openapi/contrato";
 import { PrismaService } from "../prisma/prisma.service";
-import { PRODUTOS, ProdutoSchema, RecursoIdSchema, partesDoRecurso } from "./catalogo";
+import { PRODUTOS, ProdutoSchema, RecursoIdSchema, ligadoPorPadrao, partesDoRecurso } from "./catalogo";
 import {
   AtivarVersaoSchema,
   DefinirDisponibilidadeSchema,
@@ -202,6 +202,7 @@ export class RecursosAdminController {
 
       return {
         slug,
+        ligadoPorPadrao: ligadoPorPadrao(slug),
         estadoAqui: this.estadoAqui(linhas, recursoDoProdutoId, escolaId),
         efetivo: this.paraATela(efetivoDoProduto, escolaId),
         experiencias: dentro,
