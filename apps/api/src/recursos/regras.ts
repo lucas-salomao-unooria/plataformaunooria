@@ -162,3 +162,25 @@ export function linhasLegiveis(
 ): LinhaDeDisponibilidade[] {
   return linhas.filter((l) => partesDoRecurso(l.recursoId) !== null);
 }
+
+/**
+ * A VERSÃO FIXADA ESQUECIDA (H10.3.3).
+ *
+ * Fixar a versão de uma experiência numa escola é remédio de incidente ("a
+ * 1.3.0 quebrou ali, segura a 1.2.0"), e remédio que ninguém retira vira a
+ * escola presa numa versão antiga sem que ninguém lembre por quê. Passado o
+ * prazo, o painel avisa. É LEMBRETE, não regra: nada solta a fixação sozinho.
+ *
+ * Exatamente 30 dias ainda não avisa: o aviso é para o que PASSOU do prazo.
+ */
+export const DIAS_PARA_LEMBRAR_FIXACAO = 30;
+
+const UM_DIA_MS = 86_400_000;
+
+export function diasDesde(quando: Date, agora: Date): number {
+  return Math.max(0, Math.floor((agora.getTime() - quando.getTime()) / UM_DIA_MS));
+}
+
+export function fixacaoEsquecida(fixadaEm: Date | null, agora: Date): boolean {
+  return fixadaEm !== null && diasDesde(fixadaEm, agora) > DIAS_PARA_LEMBRAR_FIXACAO;
+}

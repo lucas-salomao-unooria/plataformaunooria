@@ -67,6 +67,23 @@ const ExperienciaNoPainelSchema = z.object({
   versaoAtiva: z.string(),
   /** Versão fixada NESTE escopo; `null` = segue a ativa. */
   versaoFixa: z.string().nullable(),
+  /** Desde quando a `versaoFixa` vale (ISO 8601); `null` sem fixação. */
+  fixadaEm: z.string().nullable(),
+  /** Fixada há mais de `DIAS_PARA_LEMBRAR_FIXACAO` dias (H10.3.3). */
+  fixacaoEsquecida: z.boolean(),
+});
+
+/** Uma fixação da REDE INTEIRA que passou do prazo — em qualquer escopo, não só
+ *  no que está aberto: a escola esquecida é justamente a que ninguém abre. */
+const FixacaoEsquecidaSchema = z.object({
+  expId: z.string(),
+  nome: z.string(),
+  /** O escopo da fixação; `null` = o contrato inteiro. */
+  escolaId: z.string().nullable(),
+  escopo: z.string(),
+  versao: z.string(),
+  fixadaEm: z.string().describe("ISO 8601, em UTC — quem formata é a tela (ADR-98/99)."),
+  dias: z.number().int().nonnegative(),
 });
 
 const ProdutoNoPainelSchema = z.object({
@@ -89,6 +106,9 @@ export const PainelSchema = z.object({
     tipo: z.string().nullable(),
   }),
   produtos: z.array(ProdutoNoPainelSchema),
+  /** As versões fixadas há mais de 30 dias, na rede inteira, da mais antiga
+   *  para a mais nova (H10.3.3). */
+  fixacoesEsquecidas: z.array(FixacaoEsquecidaSchema),
 });
 
 /**

@@ -1399,6 +1399,15 @@ registro é a única resposta a \enquote{quem desligou isto, e quando?}.
     \textbf{preserva} o \cd{ligado} da linha, que é decisão à parte.
 \end{itemize}
 
+\textbf{A fixação esquecida} (H10.3.3): o \rota{GET /recursos/painel} devolve
+\cd{fixacoesEsquecidas}, as versões fixadas há mais de 30 dias na REDE INTEIRA
+--- não só no escopo aberto, porque a escola esquecida é justamente a que
+ninguém abre ---, e marca \cd{fixacaoEsquecida} na linha da experiência. A data
+sai do histórico (\cd{recursos\_auditoria}, ação \cd{versao-fixada} com a mesma
+versão), e não de \cd{definido\_em}, que muda a cada mexida na linha; sem
+histórico, cai em \cd{definido\_em}, que erra para menos dias, nunca para mais.
+É lembrete, não regra: nada solta a fixação sozinho.
+
 \textbf{Ativar só no escopo-contrato; fixar só fora dele}, e a tela oferece uma
 alavanca por escopo. Fixar no contrato seria um segundo jeito, mais fraco, de
 fazer o que ativar faz --- trocaria a versão do \emph{bundle} sem restaurar o

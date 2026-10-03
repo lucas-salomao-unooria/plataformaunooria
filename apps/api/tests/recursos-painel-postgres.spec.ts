@@ -152,6 +152,52 @@ describe("GET /recursos/painel", () => {
   });
 });
 
+describe("a versão fixada esquecida (H10.3.3)", () => {
+  const haDias = (n: number) => new Date(Date.now() - n * 86_400_000);
+  const fixar = async (escolaId: string, versao: string, diasAtras: number | null) => {
+    await prisma.disponibilidade.create({
+      data: { recursoId: `experiencia:${VILA}`, escolaId, ligado: true, versaoFixa: versao, definidoPor: admin },
+    });
+    if (diasAtras !== null) {
+      await prisma.recursoAuditoria.create({
+        data: {
+          recursoId: `experiencia:${VILA}`,
+          escolaId,
+          acao: "versao-fixada",
+          versao,
+          autorId: admin,
+          autorNome: "Admin do painel",
+          quando: haDias(diasAtras),
+        },
+      });
+    }
+  };
+
+  test("a fixação que passou de 30 dias aparece, em qualquer escopo; a recente, não", async () => {
+    await fixar(ESCOLA, "1.0.0", 45);
+    await fixar(REGIONAL, "1.1.0", 10);
+
+    // Aberto no CONTRATO: a escola esquecida aparece mesmo sem abrir o escopo dela.
+    const { fixacoesEsquecidas } = await painel.painel();
+    const daSuite = fixacoesEsquecidas.filter((f) => f.escolaId === ESCOLA || f.escolaId === REGIONAL);
+    expect(daSuite).toHaveLength(1);
+    expect(daSuite[0]).toMatchObject({ expId: VILA, escolaId: ESCOLA, escopo: "Escola do painel", versao: "1.0.0", dias: 45 });
+  });
+
+  test("a data vem do HISTÓRICO, não de quando a linha foi mexida por último", async () => {
+    // A linha foi tocada hoje (`definido_em` de agora), mas a fixação é de 60 dias atrás.
+    await fixar(ESCOLA, "1.0.0", 60);
+    const { fixacoesEsquecidas } = await painel.painel();
+    expect(fixacoesEsquecidas.find((f) => f.escolaId === ESCOLA)?.dias).toBe(60);
+  });
+
+  test("sem histórico, cai em `definido_em` — erra para menos dias, nunca para mais", async () => {
+    await fixar(ESCOLA, "1.0.0", null);
+    const { fixacoesEsquecidas } = await painel.painel();
+    expect(fixacoesEsquecidas.some((f) => f.escolaId === ESCOLA)).toBe(false);
+  });
+});
+
 describe("os TRÊS estados do interruptor", () => {
   test("`herda` é a ausência de linha, e não se confunde com `ligado`", async () => {
     await painel.definir("produto:entre-redes", { escolaId: ESCOLA, ligado: true }, comoAdmin());

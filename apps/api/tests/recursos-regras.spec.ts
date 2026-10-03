@@ -1,4 +1,7 @@
 import {
+  DIAS_PARA_LEMBRAR_FIXACAO,
+  diasDesde,
+  fixacaoEsquecida,
   linhasLegiveis,
   resolverExperiencia,
   resolverProduto,
@@ -151,4 +154,24 @@ test("linha com `recurso_id` fora do vocabulário é descartada, não interpreta
   expect(limpas.map((l) => l.recursoId)).toEqual(["produto:bem-estar"]);
   // E o descarte não muda resposta nenhuma: o que sobrou continua valendo.
   expect(resolverProduto(limpas, "bem-estar", CADEIA).ligado).toBe(false);
+});
+
+describe("a versão fixada esquecida (H10.3.3)", () => {
+  const agora = new Date("2026-10-03T12:00:00Z");
+  const haDias = (n: number) => new Date(agora.getTime() - n * 86_400_000);
+
+  test("exatamente no prazo ainda não avisa; um dia depois, avisa", () => {
+    expect(DIAS_PARA_LEMBRAR_FIXACAO).toBe(30);
+    expect(fixacaoEsquecida(haDias(30), agora)).toBe(false);
+    expect(fixacaoEsquecida(haDias(31), agora)).toBe(true);
+  });
+
+  test("sem data, não acusa — lembrete sem base seria alarme falso", () => {
+    expect(fixacaoEsquecida(null, agora)).toBe(false);
+  });
+
+  test("conta dias inteiros, e nunca negativos", () => {
+    expect(diasDesde(haDias(45), agora)).toBe(45);
+    expect(diasDesde(new Date(agora.getTime() + 60_000), agora)).toBe(0);
+  });
 });

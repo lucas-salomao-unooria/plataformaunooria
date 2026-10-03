@@ -35,6 +35,9 @@ import {
 import { ManifestoGuardadoSchema } from "./manifesto-guardado";
 import { registrarAuditoria, type AcaoDeAuditoria } from "./auditoria";
 import {
+  DIAS_PARA_LEMBRAR_FIXACAO,
+  diasDesde,
+  fixacaoEsquecida,
   linhasLegiveis,
   resolverExperiencia,
   resolverProduto,
@@ -135,6 +138,51 @@ export class RecursosAdminController {
     return aqui.ligado ? "ligado" : "desligado";
   }
 
+  /**
+   * Desde quando vale cada versão fixada da REDE INTEIRA (H10.3.3).
+   *
+   * A data sai do HISTÓRICO (`recursos_auditoria`, ação `versao-fixada` com a
+   * mesma versão), e não de `disponibilidades.definido_em`: esse muda a cada
+   * mexida na linha (ligar, desligar, mudar o motivo), e uma escola presa há
+   * meses pareceria fixada ontem. Só quando o histórico falta (ele é gravado
+   * depois da mudança, e pode falhar sem desfazê-la) cai no `definido_em` —
+   * que nunca é anterior à fixação, então erra para MENOS dias, nunca para mais.
+   */
+  private async fixacoesDaRede(agora: Date) {
+    const fixadas = await this.prisma.disponibilidade.findMany({
+      where: { versaoFixa: { not: null } },
+      select: { recursoId: true, escolaId: true, versaoFixa: true, definidoEm: true },
+    });
+    if (fixadas.length === 0) return [];
+    const [historico, escolas] = await Promise.all([
+      this.prisma.recursoAuditoria.findMany({
+        where: { acao: "versao-fixada", recursoId: { in: [...new Set(fixadas.map((f) => f.recursoId))] } },
+        select: { recursoId: true, escolaId: true, versao: true, quando: true },
+        orderBy: { quando: "desc" },
+      }),
+      this.prisma.escola.findMany({
+        where: { id: { in: fixadas.flatMap((f) => (f.escolaId ? [f.escolaId] : [])) } },
+        select: { id: true, nome: true },
+      }),
+    ]);
+    const nomeDaEscola = new Map(escolas.map((e) => [e.id, e.nome]));
+    return fixadas.map((f) => {
+      const registro = historico.find(
+        (h) => h.recursoId === f.recursoId && h.escolaId === f.escolaId && h.versao === f.versaoFixa,
+      );
+      const fixadaEm = registro?.quando ?? f.definidoEm;
+      return {
+        recursoId: f.recursoId,
+        escolaId: f.escolaId,
+        escopo: f.escolaId ? (nomeDaEscola.get(f.escolaId) ?? f.escolaId) : "Rede (contrato inteiro)",
+        versao: f.versaoFixa as string,
+        fixadaEm,
+        dias: diasDesde(fixadaEm, agora),
+        esquecida: fixacaoEsquecida(fixadaEm, agora),
+      };
+    });
+  }
+
   @Get("painel")
   @Contrato({
     resumo: "O painel: produtos, experiências e o que vale em cada escopo.",
@@ -146,6 +194,7 @@ export class RecursosAdminController {
       "`estadoAqui: herda` é a AUSÊNCIA de linha neste escopo — é o terceiro estado, e sem ele desfazer uma exceção seria impossível.",
       "`tetoDoProduto` marca a experiência que está desligada pelo PRODUTO, não por linha própria: a tela desabilita o interruptor dela e escreve o motivo ao lado, em vez de mostrá-lo ligado.",
       "`versaoAtiva` é a que o hub monta hoje; `versaoFixa` é a fixada NESTE escopo (`null` = segue a ativa).",
+      `\`fixacoesEsquecidas\` olha a REDE INTEIRA, não só o escopo aberto: são as versões fixadas há mais de ${DIAS_PARA_LEMBRAR_FIXACAO} dias. A data vem do histórico (\`versao-fixada\`), não de \`definido_em\`, que muda a cada mexida na linha.`,
     ],
   })
   async painel(@Query("escolaId") escolaIdPedida?: string) {
@@ -166,12 +215,14 @@ export class RecursosAdminController {
     }
 
     const cadeia = escolaId ? await cadeiaDaEscola(this.prisma, escolaId) : [];
-    const [linhas, experiencias] = await Promise.all([
+    const agora = new Date();
+    const [linhas, experiencias, fixacoes] = await Promise.all([
       this.linhas(cadeia),
       this.prisma.experiencia.findMany({
         select: { expId: true, nome: true, produto: true, versaoAtiva: true },
         orderBy: { expId: "asc" },
       }),
+      this.fixacoesDaRede(agora),
     ]);
 
     const produtos = PRODUTOS.map((slug) => {
@@ -189,6 +240,7 @@ export class RecursosAdminController {
           const linhaPropria = linhas.find(
             (l) => l.recursoId === recursoDaExpId && l.escolaId === escolaId,
           );
+          const fixacao = fixacoes.find((f) => f.recursoId === recursoDaExpId && f.escolaId === escolaId);
           return {
             expId: e.expId,
             nome: e.nome,
@@ -197,6 +249,8 @@ export class RecursosAdminController {
             tetoDoProduto: efetivo.tetoDoProduto === true,
             versaoAtiva: e.versaoAtiva,
             versaoFixa: linhaPropria?.versaoFixa ?? null,
+            fixadaEm: linhaPropria?.versaoFixa && fixacao ? fixacao.fixadaEm.toISOString() : null,
+            fixacaoEsquecida: Boolean(linhaPropria?.versaoFixa && fixacao?.esquecida),
           };
         });
 
@@ -209,7 +263,24 @@ export class RecursosAdminController {
       };
     });
 
-    return { escopo: { escolaId, nome, tipo }, produtos };
+    const nomeDaExperiencia = new Map(experiencias.map((e) => [e.expId, e.nome]));
+    const fixacoesEsquecidas = fixacoes
+      .filter((f) => f.esquecida)
+      .sort((a, b) => b.dias - a.dias)
+      .map((f) => {
+        const expId = f.recursoId.slice("experiencia:".length);
+        return {
+          expId,
+          nome: nomeDaExperiencia.get(expId) ?? expId,
+          escolaId: f.escolaId,
+          escopo: f.escopo,
+          versao: f.versao,
+          fixadaEm: f.fixadaEm.toISOString(),
+          dias: f.dias,
+        };
+      });
+
+    return { escopo: { escolaId, nome, tipo }, produtos, fixacoesEsquecidas };
   }
 
   @Get("arquivadas")
