@@ -64,8 +64,9 @@ com `escola_id` + RLS forçada:
 - **O sorteio evita juntar os dois lados do Instanooria na mesma tela**, com os
   NEUTROS como enchimento, e CONTA as mistas quando a aritmética não fecha
   (`equipesMistas`). Quem sabe o lado é o módulo da missão, via
-  `EquipesService.registrarFonteDeGrupo(expId, fonte)` — hoje NINGUÉM registra;
-  sem fonte, `agrupamento` volta `null`.
+  `EquipesService.registrarFonteDeGrupo(expId, fonte)`, e a fonte recebe a
+  ATIVIDADE (o lado do Unoovista é por atividade). Hoje só o Unoovista registra
+  (`perfis/fonte-de-lado.ts`, H13.4.1); sem fonte, `agrupamento` volta `null`.
 - **Quem MONTA é só quem leciona** (`professorLeciona`, 404 e nunca 403 — mesma
   razão da sala). Gestor e admin só LEEM (`GET`).
 - **A `sugestao` e a `ultima` NUNCA gravam.** Só o `PUT` escreve, e a troca é

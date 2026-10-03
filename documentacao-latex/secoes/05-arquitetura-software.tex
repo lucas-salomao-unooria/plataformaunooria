@@ -596,7 +596,10 @@ contando por computador --- é assunto do módulo dela: \arq{unootube/} e
 \arq{equipes/regras.ts}, sem injetar provedor nenhum. O sentido inverso --- a
 missão dizendo ao sorteio o lado de cada criança --- é um REGISTRO: o módulo da
 missão chama \cd{EquipesService.registrarFonteDeGrupo} na subida, e
-\arq{equipes/} nunca importa nada dele. No hub, a seção mora na ficha da missão
+\arq{equipes/} nunca importa nada dele. Quem registra hoje é o Unoovista
+(\arq{perfis/fonte-de-lado.ts}, H13.4.1), e a fonte recebe a ATIVIDADE, porque o
+lado do feed é por atividade: o perfil importado, a afinidade da pergunta e a
+redistribuição do professor. No hub, a seção mora na ficha da missão
 (\arq{components/equipes/}), e as chamadas passam pelo BFF
 (\rota{/api/plataforma/equipes/*}), do lado do cliente porque o professor monta
 as equipes na frente da sala.
