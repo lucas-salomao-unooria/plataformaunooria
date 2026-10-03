@@ -8,7 +8,8 @@ const CorpoSchema = z.object({
 });
 
 /**
- * Troca de senha do primeiro acesso.
+ * Troca de senha: a do primeiro acesso e a voluntária, pelo menu do avatar
+ * (H01.4.1). A api é a mesma para as duas.
  *
  * Route handler próprio, e não o BFF, por dois motivos: o BFF recusa tudo
  * enquanto `precisaTrocarSenha` (é justamente a trava), e o login usado aqui sai

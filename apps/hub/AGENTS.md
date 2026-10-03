@@ -71,10 +71,11 @@ Duas coisas para saber antes de mexer nele:
   espaço vazio ali. No nosso header ali fica a identidade: devolver o bloco para
   o `header-plataforma.tsx` faz o item "Sair" abrir DESENHADO EM CIMA do nome.
   Passa no typecheck, passa no build, e só aparece abrindo o menu.
-- **Item de menu novo precisa de tela que exista.** "Trocar senha" parece o
-  próximo item óbvio e é um link morto: `middleware.ts` devolve quem já trocou
-  para a home do papel. Menu curto é melhor que menu com item que não leva a
-  lugar nenhum.
+- **Item de menu novo precisa de tela que exista.** Menu curto é melhor que
+  menu com item que não leva a lugar nenhum. "Trocar senha" (H01.4.1) só entrou
+  quando `/trocar-senha` passou a aceitar a troca VOLUNTÁRIA: antes o
+  `middleware.ts` devolvia quem já tinha trocado para a home do papel. A tela é
+  a mesma do primeiro acesso, com texto e saída próprios (Cancelar, e não Sair).
 - **"Ajuda" é o segundo item, e abre JANELA, não rota** (ADR-132): o atendente
   em vídeo (`components/ajuda/`), para todo papel MENOS o estudante — o header
   é o mesmo dentro de `/exp`, então quem esconde é o `papel !== "estudante"` do

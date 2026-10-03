@@ -1049,7 +1049,10 @@ RECUSA; emissor inalcançável é um rótulo visível na tela (\adrr{ADR-35}).
 \rota{/trocar-senha}, o BFF recusa dados e \rota{/api/exp-token} não emite
 \emph{token} de experiência. Só com o \emph{middleware}, bastaria digitar
 \rota{/exp/...} para pular a troca --- a experiência abriria por baixo, com o
-\emph{token} que o hub continuaria assinando (\adrr{ADR-29}).
+\emph{token} que o hub continuaria assinando (\adrr{ADR-29}). A mesma tela
+serve, desde a H01.4.1, à troca \textbf{voluntária}, pelo menu do avatar: o
+\emph{middleware} deixa de devolver para a \emph{home} quem já trocou, e a
+rota da api é a mesma --- exige a senha atual, como o login.
 \end{decisao}
 
 \section{Segurança do \emph{embed}}

@@ -95,16 +95,17 @@ export class AuthController {
   }
 
   /**
-   * Primeiro acesso: a senha do lote (ou a temporária do reset) vale uma vez.
+   * Troca de senha. Serve ao primeiro acesso (a senha do lote, ou a temporária
+   * do reset, vale uma vez) e à troca voluntária, pelo menu do avatar (H01.4.1).
    * Exige a senha atual — é o mesmo nível de prova do login, e por isso a rota
    * não precisa de token.
    */
   @Post("trocar-senha")
   @HttpCode(200)
   @Contrato({
-    resumo: "Primeiro acesso: troca a senha provisória.",
+    resumo: "Troca a senha: a provisória do primeiro acesso, ou a de quem quer trocar.",
     descricao:
-      "A senha do lote (ou a temporária de um reset) vale uma vez. Exige a senha ATUAL — é o mesmo nível de prova do login, e por isso a rota não pede token.\n\nLimpa `senha_provisoria` (ADR-29). O hub refaz a sessão com a senha nova depois disto: o cookie antigo ainda diz \"precisa trocar\".",
+      "Serve às duas trocas: a do primeiro acesso e a voluntária, pelo menu do avatar (H01.4.1). A senha do lote (ou a temporária de um reset) vale uma vez. Exige a senha ATUAL — é o mesmo nível de prova do login, e por isso a rota não pede token.\n\nLimpa `senha_provisoria` (ADR-29). O hub refaz a sessão com a senha nova depois disto: o cookie antigo ainda diz \"precisa trocar\".",
     corpo: TrocaSchema,
     resposta: TrocaRespostaSchema,
     acesso: "publica",
