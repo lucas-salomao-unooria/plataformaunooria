@@ -14,6 +14,11 @@ import { Icon } from "@edu/ui/ds";
  * passa pelo servidor (`/api/escola-ativa`) em vez de ser estado de tela: quem
  * valida se a escola é dela é a api, contra as lotações. Depois da troca vem um
  * `router.refresh()` — as telas são Server Components e leem a escola da sessão.
+ *
+ * **Também no celular** (H01.3.1). Ele ficava escondido abaixo de `md`, e no
+ * telefone não havia como trocar de escola. Lá ele só encolhe: o nome corta na
+ * caixa, mas o `<select>` nativo abre o seletor do sistema, com os nomes
+ * inteiros — o melhor seletor de lista que o telefone tem.
  */
 export function SeletorDeEscola({
   escolas,
@@ -48,11 +53,13 @@ export function SeletorDeEscola({
   }
 
   return (
-    <label className="hidden items-center gap-2 md:flex">
-      <Icon name="apartment" size={18} aria-hidden />
+    <label className="flex min-w-0 items-center gap-2">
+      <span className="hidden sm:inline-flex">
+        <Icon name="apartment" size={18} aria-hidden />
+      </span>
       <span className="sr-only">Escola ativa</span>
       <select
-        className="unooria-select max-w-[240px] text-[13px]"
+        className="unooria-select max-w-[132px] text-[13px] sm:max-w-[240px]"
         value={ativa}
         disabled={trocando}
         onChange={(e) => void trocar(e.target.value)}
