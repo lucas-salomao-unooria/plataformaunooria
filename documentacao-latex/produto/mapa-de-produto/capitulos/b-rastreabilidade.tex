@@ -13,9 +13,12 @@ registradas (ADR) que explicam por que a feature é como é.
 \headrow \thd{Épico} & \thd{Capítulos da PU-DOC-001} & \thd{Decisões (ADR)}\\
 \midrule
 \endhead
-\id{E01} & Multi-tenancy e segurança; Contratos de integração & \adrr{ADR-03}
+\id{E01} & Multi-tenancy e segurança; Contratos de integração; Camada de
+  inteligência artificial & \adrr{ADR-03}
   (OIDC genérico), \adrr{ADR-15} (o hub assina a sessão da missão),
-  \adrr{ADR-29} (senha provisória), \adrr{ADR-85} (trocar de escola)\\
+  \adrr{ADR-29} (senha provisória), \adrr{ADR-85} (trocar de escola),
+  \adrr{ADR-132} (a Ajuda: o vídeo é do serviço contratado, a resposta é da
+  plataforma, e o limite é em minutos)\\
 \zebra \id{E02} & Multi-tenancy e segurança; Modelo de dados & \adrr{ADR-80}
   (seis papéis e a cadeia), \adrr{ADR-81} (panorama da diretoria)\\
 \id{E03} & Multi-tenancy e segurança; Modelo de dados; Especificação da API &
@@ -52,12 +55,13 @@ registradas (ADR) que explicam por que a feature é como é.
   editável), \adrr{ADR-115} (a IA gradua a legenda da A Seleção, exceção
   declarada), \adrr{ADR-119} (a voz gerada do podcast), \adrr{ADR-117} (a IA em sala que
   só monta a página do Jornal), \adrr{ADR-137} (a missão sem material pronto:
-  sem IA, não há mostra)\\
+  sem IA, não há mostra), \adrr{ADR-132} (a Ajuda fora do limite diário de IA)\\
 \zebra \id{E10} & Multi-tenancy e segurança; Engenharia de entrega &
   \adrr{ADR-87} (disponibilidade), \adrr{ADR-88} (painel só da Unooria),
   \adrr{ADR-89} (histórico que a rede lê), \adrr{ADR-01} (voltar versão),
   \adrr{ADR-105}, \adrr{ADR-116} (experiências arquivadas), \adrr{ADR-126}
-  (o primeiro produto sem missão)\\
+  (o primeiro produto sem missão), \adrr{ADR-132} (o produto que nasce
+  desligado, e o limite em minutos)\\
 \id{E11} & Multi-tenancy e segurança & \adrr{ADR-70} (páginas legais),
   \adrr{ADR-107} (site e cadastro de interesse)\\
 \zebra \id{E12} & Multi-tenancy e segurança; Telemetria; Observabilidade;

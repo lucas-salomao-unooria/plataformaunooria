@@ -48,12 +48,13 @@ missão com problema}
 \begin{itemize}
   \item Em \enquote{Recursos}, escolho o Escopo: \enquote{Rede (contrato
     inteiro)}, uma regional ou uma escola.
-  \item Vejo os cinco produtos e, dentro de cada um, as missões (o agente de IA
-    do professor não tem missões dentro). Cada
+  \item Vejo os seis produtos e, dentro de cada um, as missões (o agente de IA
+    do professor e a Ajuda não têm missões dentro). Cada
     interruptor tem três estados: \enquote{Ligado}, \enquote{Desligado} e
     \enquote{Herda de cima} (na rede, \enquote{Padrão (ligado)}).
-  \item Por padrão tudo está ligado; o escopo mais específico vence (escola,
-    depois regional, depois rede).
+  \item Por padrão tudo está ligado --- menos a Ajuda, em teste interno, que
+    mostra \enquote{Padrão (desligado)} (\id{H10.1.5}); o escopo mais
+    específico vence (escola, depois regional, depois rede).
   \item O produto é um teto: desligado, as missões dentro dele ficam
     desligadas, com o motivo ao lado.
   \item Desligar exige motivo; na rede, o aviso diz \enquote{Isto vale para a
@@ -105,6 +106,24 @@ problema}
 \end{itemize}
 \pendencia{o interruptor já funciona; o agente em si ainda não está no ar nos
 ambientes da rede (\id{F08.4}).}
+\end{historia}
+
+\begin{historia}{H10.1.5}{Ligar a Ajuda com atendente numa rede}{\parcial}
+\hu{Administrador Unooria}{decidir em que rede, regional ou escola a Ajuda com
+atendente aparece}{testar o atendente com quem combinamos antes de abrir para
+todos}
+\aceite
+\begin{itemize}
+  \item A Ajuda aparece em \enquote{Recursos} como um produto, com o mesmo
+    interruptor e o mesmo escopo dos outros.
+  \item Ao contrário dos outros produtos, ela começa \textbf{desligada} em
+    toda rede: sem ninguém mexer, o item \enquote{Ajuda} não aparece no menu de
+    ninguém. Ligar numa escola ou numa rede faz o item aparecer lá.
+  \item Desligar no meio de uma conversa não deixa a conversa presa: fechar a
+    janela continua encerrando o vídeo.
+\end{itemize}
+\pendencia{abrir a Ajuda para todas as redes (deixar de nascer desligada) é
+uma decisão do dono do produto, junto com a do atendente (\id{D16}).}
 \end{historia}
 
 % ---------------------------------------------------------------------------
@@ -180,6 +199,27 @@ professores}{manter o custo previsível sem travar a aula}
   \item Zero é recusado: \enquote{para fechar a IA de um produto, desligue o
     produto em Recursos}.
   \item Toda mudança vai para o histórico. A rede não vê nem altera.
+\end{itemize}
+\end{historia}
+
+\begin{historia}{H10.4.2}{Definir quantos minutos de Ajuda cada pessoa tem}{\pronto}
+\hu{Administrador Unooria}{definir quanto tempo de conversa com o atendente da
+Ajuda cada pessoa tem}{manter previsível o custo do atendente em vídeo, que é
+cobrado por minuto}
+\aceite
+\begin{itemize}
+  \item Na mesma tela do uso de IA, o quadro \enquote{Ajuda com atendente}
+    tem dois limites: \enquote{Minutos por dia} (somando todas as conversas da
+    pessoa) e \enquote{Minutos por conversa} (ao chegar nele, o atendente se
+    despede e a janela fecha).
+  \item Valores iniciais: 30 minutos por dia e 10 por conversa. O máximo é 600
+    por dia e 60 por conversa.
+  \item Zero é recusado: \enquote{para fechar a Ajuda, desligue o produto em
+    Recursos}. Mudar exige motivo e avisa \enquote{Vale para a rede inteira},
+    a partir da próxima conversa; a que está no ar mantém o limite com que
+    começou.
+  \item O \enquote{Histórico da Ajuda} mostra quem mudou, de quanto para
+    quanto, quando e por quê.
 \end{itemize}
 \end{historia}
 
