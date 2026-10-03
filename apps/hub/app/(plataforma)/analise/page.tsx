@@ -3,6 +3,7 @@ import { LinkButton } from '@/components/link-button';
 import type { ResumoDeAtividade } from '@/lib/analise-tipos';
 import { apiDoServidor } from '@/lib/api-servidor';
 import { auth } from '@/lib/auth';
+import { ehDoContrato } from '@/lib/papeis';
 
 import { SeletorDeEscola } from './seletor-de-escola';
 
@@ -63,7 +64,9 @@ export default async function AnalisePage({
         </p>
       </header>
 
-      <SeletorDeEscola escolaId={escola} />
+      {/* Só quem é do contrato escolhe escola: a lista de escolas da rede é
+          dele, e para os outros papéis a api a recusa com 403 (H03.4.2). */}
+      {ehDoContrato(usuario.papel) ? <SeletorDeEscola escolaId={escola} /> : null}
 
       {escola === '' ? (
         <Card variant="elevated">

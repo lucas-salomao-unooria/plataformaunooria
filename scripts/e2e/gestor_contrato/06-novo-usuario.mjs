@@ -78,7 +78,7 @@ await suite(
 
     await r.registrar(p, "admin-escolhe-a-escola", {
       titulo: "Antes de cadastrar, dizer onde",
-      mostra: `A tela de usuários com o campo 'Escola (id)' preenchido: ${escola.nome}.`,
+      mostra: `A tela de usuários com a escola escolhida: ${escola.nome}.`,
       prova:
         "O gestor tem uma escola e ela vem do token. O admin do contrato tem todas, e por isso " +
         "precisa DIZER de qual está falando — sem `?escolaId=` a api recusa com 400, em vez de " +
@@ -271,7 +271,10 @@ await suite(
     await novo.waitForURL((url) => url.pathname === casaDoAdmin, { timeout: 20_000 });
     r.exigir(true, `a confirmação leva de volta à área dele (${casaDoAdmin})`);
 
-    /* A prova de que trocou de verdade: entrar de novo com a senha nova. */
+    /* A prova de que trocou de verdade: entrar de novo com a senha nova. Sair
+       da tela ANTES: o `entrar` limpa os cookies, e a lista de Usuários que
+       ainda carregava respondia 401 — vermelho do roteiro, não do produto. */
+    await novo.goto("about:blank");
     await r.entrar(novo, LOGIN_DO_ADMIN, SENHA_TROCADA);
     r.exigir(
       !/\/trocar-senha|\/login/.test(new URL(novo.url()).pathname),

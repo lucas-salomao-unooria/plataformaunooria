@@ -63,15 +63,40 @@ await suite(
         "realidades. A restrição é pedagógica antes de ser técnica.",
     });
 
-    /* A escola é DIGITADA, não escolhida numa lista — e isso é uma decisão, não
-       um atalho. O `gestor_contrato` é a única exceção cross-escola da regra de
-       tenancy, e viaja com `escolaId` VAZIO no token: não existe "a escola
-       dele". O id vai para a URL, o que de quebra torna a comparação entre
-       turmas um link compartilhável. */
+    /* A escola é ESCOLHIDA numa lista com busca (H03.4.2) — antes era o código
+       interno digitado. O `gestor_contrato` é a única exceção cross-escola da
+       regra de tenancy, e viaja com `escolaId` VAZIO no token: não existe "a
+       escola dele". O id vai para a URL, o que de quebra torna a comparação
+       entre turmas um link compartilhável. O NOME vem da api: o seed pode
+       renomear a unidade, e um nome fixo aqui falharia como "opção sumiu". */
+    const nomeDaEscola = await p.evaluate(async (id) => {
+      const lista = await (await fetch("/api/plataforma/escolas?tipo=escola")).json();
+      return (Array.isArray(lista) ? lista : []).find((e) => e.id === id)?.nome ?? null;
+    }, ESCOLA);
+    r.exigir(Boolean(nomeDaEscola), `a escola ${ESCOLA} está na lista do contrato`);
     await p.waitForTimeout(1500); // portão de hidratação
-    await p.locator("#escola").pressSequentially(ESCOLA, { delay: 20 });
-    await p.getByRole("button", { name: "Abrir" }).click();
+    await p.locator("#escola-busca").pressSequentially(nomeDaEscola.slice(0, 12), { delay: 20 });
+    const combo = p.locator("div.unooria-selection").filter({ has: p.locator('text="Escola"') }).locator("button[role=combobox]").first();
+    await combo.click();
+    const opcoes = await p.locator("[role=option]").allInnerTexts();
+    r.exigir(
+      opcoes.length > 0 && opcoes.every((o) => o.toLowerCase().includes(nomeDaEscola.slice(0, 12).toLowerCase())),
+      `a busca filtra a lista pelo nome (${opcoes.length} opção/opções)`,
+    );
+    await r.registrar(p, "busca-da-escola", {
+      titulo: "A escola pelo nome, não pelo código",
+      mostra: "A busca por nome, código INEP ou município filtra a lista de escolas da rede.",
+      prova:
+        "Antes o campo era o código interno, digitado de cor: com cem escolas na rede, só funcionava " +
+        "para quem já sabia a resposta. A lista vem da api uma vez e o filtro é local.",
+      detalhe: opcoes.slice(0, 3).join(" | "),
+    });
+    await p.locator("[role=option]", { hasText: nomeDaEscola }).first().click();
     await p.waitForURL("**escolaId=**", { timeout: 20_000 });
+    r.exigir(
+      new URL(p.url()).searchParams.get("escolaId") === ESCOLA,
+      `escolher a escola leva o código dela para a URL (${new URL(p.url()).searchParams.get("escolaId")})`,
+    );
     await p.waitForTimeout(3000);
 
     const corpo = await p.locator("main").innerText();
