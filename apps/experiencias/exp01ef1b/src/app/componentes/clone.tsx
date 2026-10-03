@@ -11,6 +11,7 @@
 import { useEffect, useState, type JSX } from "react";
 import { ButtonInsta } from "@edu/ui/ds-insta";
 import { tocar } from "../../lib/audio";
+import { AUDIO_REPLAY_PX } from "./medidas";
 import { TEXTO } from "../../lib/textos";
 import type { LegendaDoPar } from "../../lib/tipos";
 import { PicBloco, PicVassoura } from "./pictogramas";
@@ -23,21 +24,21 @@ export function urlDaFoto(fotoId: string): string {
 
 function GlifoAltoFalanteInsta(): JSX.Element {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden>
+    <svg width="28" height="28" viewBox="0 0 24 24" aria-hidden>
       <path d="M4 9 h4 l5 -4 v14 l-5 -4 H4 z" fill="currentColor" />
       <path d="M16 9 q3 3 0 6 M18 6.5 q5 5.5 0 11" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" />
     </svg>
   );
 }
 
-/** Botão de repetição de áudio DENTRO do clone (48×48, tokens do clone). */
+/** Botão de repetição de áudio DENTRO do clone (64×64, tokens do clone). */
 export function AudioReplayButtonClone({ audioId, rotulo }: { audioId: string; rotulo?: string }): JSX.Element {
   return (
     <ButtonInsta
       variant="secondary"
       aria-label={rotulo ?? "OUVIR DE NOVO"}
       onClick={() => tocar(audioId)}
-      style={{ width: 48, height: 48, padding: 0, borderRadius: 24 }}
+      style={{ width: AUDIO_REPLAY_PX, height: AUDIO_REPLAY_PX, padding: 0, borderRadius: AUDIO_REPLAY_PX / 2, flexShrink: 0 }}
     >
       <GlifoAltoFalanteInsta />
     </ButtonInsta>
