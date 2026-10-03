@@ -59,7 +59,10 @@ diferentes, sem erro nenhum.
 Subir é UM passo para todos: `pnpm up -r @unooria/design-system@^X.Y.Z` (nunca
 `--filter`: deixa importador para trás), lockfile e `package.json` no mesmo
 commit. Depois, compile cada experiência ANTES e DEPOIS e compare o hash do
-`dist/`: **a que mudou sobe a versão nos três lugares** (o caminho no bucket é
+`dist/` **sem os `.map`**: o sourcemap carrega o caminho do pacote no store do
+pnpm, que tem a versão no nome, e muda em TODA subida — com ele, todas as
+experiências pareceriam mudadas (foi o que a 0.2.15 mostrou: 14 "mudaram", 12
+mudaram de verdade). **A que mudou sobe a versão nos três lugares** (o caminho no bucket é
 imutável); a que saiu idêntica byte a byte não sobe; e a que mudou mas JÁ está
 numa versão à frente da do `dev` (subiu desde a última promoção, nunca foi
 publicada) também não sobe de novo — compare com `git show origin/dev:<pasta>/public/experiencia.json`. `^0.2.8` não pega `0.3.0`

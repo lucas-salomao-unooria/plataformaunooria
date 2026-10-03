@@ -172,6 +172,14 @@ saída: a mesma marca faz o BFF recusar dados e o \rota{/api/exp-token} recusar
 \rota{/exp/...} para pular. Trocada a senha, a sessão é \textbf{refeita} com a
 nova, porque o \emph{cookie} antigo ainda diz que falta trocar (\adrr{ADR-29}).
 
+\textbf{Fluxo da troca VOLUNTÁRIA} (H01.4.1). Quem já passou do primeiro acesso
+abre \enquote{Trocar senha} no menu do avatar e chega à MESMA tela, com texto e
+saída próprios: \enquote{Cancelar} volta à \emph{home} do papel, e não há
+\enquote{Sair}, porque ninguém está preso ali. As regras são as mesmas (a senha
+atual, pelo menos 8 caracteres, diferente da atual) e a rota da api é uma só.
+Sem sessão a refazer --- o \emph{cookie} já diz que não falta trocar ---, a tela
+confirma \enquote{Senha trocada} e leva de volta à área da pessoa.
+
 \textbf{Fluxos alternativos}
 \begin{itemize}
   \item \textbf{A1 --- credencial inválida:} o formulário permanece com

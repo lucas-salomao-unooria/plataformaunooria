@@ -370,6 +370,20 @@ contrário disso. Desde a 0.2.15 o \cd{SideBar} aceita \cd{showApps} (padrão
 para o rótulo e a dica; com \cd{false}, o botão some e o painel não abre. As
 duas barras do hub passam \cd{showApps=\{false\}} (H01.2.2).
 
+\section{Lacuna aberta: o \cd{Selection} não tem busca}
+
+Quem atende a rede inteira escolhe a escola em Usuários, Turmas, Importar e
+Análise de produto (H03.4.2), e uma rede tem cem escolas. O \cd{Selection} do
+pacote não filtra as opções, e uma lista de cem sem busca é rolagem sem fim.
+\textbf{Não é componente novo no hub}: \arq{components/escolha-de-escola.tsx}
+compõe duas peças do DS --- um \cd{TextField} \enquote{Buscar escola} que filtra,
+sem diferenciar acento nem maiúscula, as opções do \cd{Selection} ao lado (por
+nome, INEP, município ou código interno). A lista vem de
+\rota{GET /escolas?tipo=escola} \textbf{uma vez}, e o filtro é local: digitar não
+dispara uma chamada por tecla. A escolhida continua na lista mesmo fora do
+filtro, senão o campo diria \enquote{Escolha a escola} para uma escola escolhida.
+Quando o pacote publicar seleção com busca, a composição vira um componente só.
+
 \section{Compensações locais}
 
 \begin{regra}
@@ -758,7 +772,12 @@ três lugares --- salvo a que já está numa versão à frente da do \cd{dev},
 nunca publicada. Na 0.2.13 subiram dez; a exp02em1b, a exp05ef1b e a app-70
 saíram idênticas e ficaram. Na 0.2.14 (o \cd{MetricCard} passou a desenhar a
 \cd{description}, que antes aceitava e ignorava), doze mudaram e nenhuma subiu:
-todas já estavam à frente do \cd{dev}.
+todas já estavam à frente do \cd{dev}. Na 0.2.15 (o \cd{showApps} do
+\cd{SideBar}, H01.2.2) a comparação passou a ignorar os \cd{.map}: o
+\emph{sourcemap} carrega o caminho do pacote no \emph{store} do pnpm, com a
+versão no nome, e com ele toda experiência parecia mudada. Sem os \cd{.map},
+dez mudaram e subiram um \emph{patch}; a exp02em1b e a app-70 saíram idênticas,
+e a exp01ef1b já estava à frente do \cd{dev} (\adrr{ADR-142}).
 
 \subsection{O Júri Estadual e o \cd{StoryPoll} da 0.2.12 (exp06ef1b 0.1.0)}
 \label{sec:ds-juri-0211}

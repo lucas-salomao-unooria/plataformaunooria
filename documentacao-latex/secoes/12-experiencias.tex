@@ -859,7 +859,11 @@ O que define a missão, tecnicamente:
   \item \textbf{Acessibilidade de 1º EF é requisito}: CAIXA ALTA, máx.\ 8
     palavras por texto, pictograma e locução em toda instrução (redundância
     tripla). O áudio TOLERA ausência: as locuções profissionais são pendência
-    de produção e a tela degrada para texto+ícone.
+    de produção e a tela degrada para texto+ícone. O botão de repetir o áudio
+    tem 64$\times$64 desde a 1.0.6 (H06.1.1) --- com 48, como pedia a
+    especificação, a criança de 6 anos errava o toque ---, e a medida mora num
+    arquivo neutro (\arq{componentes/medidas.ts}), que as duas famílias
+    importam sem que o clone puxe o módulo da casca.
   \item \textbf{As duas famílias do DS convivem no mesmo bundle}: E1/E5/E6 são
     casca Unooria (\cd{@edu/ui/ds}); E2--E4 são o clone
     (\cd{@edu/ui/ds-insta}, importando do subcaminho do pacote).
@@ -1057,7 +1061,7 @@ texto.
 \label{sec:exp05ef1b}
 
 \textbf{5º ano · Unidade 1 · clone de mensageiro móvel · \cd{unoochat}
-(tema claro, \adrr{ADR-134}) · 0.3.0}
+(tema claro, \adrr{ADR-134}) · 0.3.1}
 
 A Nina pede ajuda: \enquote{rolou uma confusão sobre} o tema que a professora
 escreveu no preparo. No grupo \enquote{Turma 5ºB} chegam oito mensagens de
@@ -1512,8 +1516,9 @@ persiste: só \enquote{Criar atividade} grava.
 O manifesto declara \cd{viewport} 375 por 812, \cd{permissoes: ["forms"]} e as
 capacidades \cd{telemetria}, \cd{progresso}, \cd{ia} e \cd{avaliacao}, e o
 \cd{produto} \cd{entre-redes}. A porta em \emph{dev} é a 5185, com
-\cd{strictPort}. A versão é a 0.1.0 nos três lugares (\arq{experiencia.json},
-\arq{package.json} e \cd{EXP\_VERSION}). Um \emph{grep} no \cd{dist/} prova que o
+\cd{strictPort}. A versão nasceu 0.1.0 e está na 0.1.1 desde a subida do DS
+para a 0.2.15, nos três lugares (\arq{experiencia.json}, \arq{package.json} e
+\cd{EXP\_VERSION}). Um \emph{grep} no \cd{dist/} prova que o
 \emph{bundle} não tem \cd{certo:}, \cd{LIMIAR\_DA\_BOLHA},
 \cd{PESO\_DA\_CURTIDA} nem o rótulo do último bloco da cadeia. \textbf{Com o
 \emph{mock} de IA, a missão não tem aula}: o \cd{generateJson} do \emph{mock}

@@ -12311,3 +12311,193 @@ não via nada.
 \textbf{Gatilho.} Uma experiência precisar de uma versão do DS que quebra outra
 (aí a regra cede para aquela experiência, com exceção registrada), ou o DS
 sair do \cd{0.x}.
+
+\section{ADR-140 --- A eliminação a pedido do titular apaga o cadastro de verdade, e o comprovante não guarda a pessoa}
+\label{adr:prospeccao-eliminacao}
+
+\textbf{Data.} 2026-10-03. \textbf{Status.} Aceita. Complementa a
+\adrr{ADR-107}.
+
+\begin{especificacao}{Contexto}
+O cadastro de interesse do site (\cd{prospeccao\_leads}) é dado pessoal com
+base legal no consentimento, e a LGPD dá ao titular o direito de pedir a
+eliminação (art.~18, VI). A migração da \adrr{ADR-107} já deixara o \cd{GRANT}
+com \cd{DELETE} e sem \cd{UPDATE} pensando nisso, mas não havia rota: o pedido
+era atendido por alguém do time técnico, direto no banco, e a tela dizia isso
+(H10.5.2).
+\end{especificacao}
+
+\textbf{Decisão.} \rota{DELETE /prospeccao/cadastros/\{id\}}, só \cd{admin},
+apaga a linha --- não há exclusão lógica. A tela pede confirmação dizendo o
+nome e a organização de quem sai. O comprovante de que o pedido foi atendido é a
+linha de log \cd{prospeccao-cadastro-eliminado}, com \textbf{quem eliminou e
+quando}, e nenhum dado da pessoa eliminada (nem nome, nem e-mail, nem o
+\cd{id}, que já não aponta para nada). A listagem passou a devolver o \cd{id}
+só por causa desta rota.
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Exclusão lógica} (uma coluna \enquote{eliminado em}). Guardar o
+    contato marcado como apagado é continuar tratando o dado que a pessoa pediu
+    para eliminar, e exigiria \cd{UPDATE} numa tabela que nasceu sem ele.
+  \item \textbf{Tabela de comprovantes com o e-mail (ou o \emph{hash} dele)}
+    para provar o atendimento. O \emph{hash} de um e-mail é reversível por
+    dicionário, e a tabela seria uma segunda cópia do que se apagou.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{Não há desfazer}: um clique errado perde o contato, e a
+    confirmação é a única rede.
+  \item \textbf{O comprovante vive no log}, com a retenção do log; se o
+    jurídico pedir prova de atendimento por mais tempo, ela não existe no banco.
+\end{itemize}
+
+\textbf{Gatilho.} O jurídico exigir prova de atendimento com retenção própria,
+ou a prospecção ganhar relação com outra tabela (aí apagar em cascata vira
+decisão).
+
+\section{ADR-141 --- A idade de uma versão fixada sai do histórico, não de uma coluna nova}
+\label{adr:fixacao-antiga}
+
+\textbf{Data.} 2026-10-03. \textbf{Status.} Aceita. Complementa a
+\adrr{ADR-89}.
+
+\begin{especificacao}{Contexto}
+Fixar a versão de uma experiência numa escola é remédio de incidente, e remédio
+que ninguém retira prende a escola numa versão antiga. O painel passou a avisar
+as fixações com mais de 30 dias (H10.3.3) --- e para isso precisa saber
+\emph{desde quando} a versão está fixada. \cd{disponibilidades.definido\_em}
+não responde: ele muda a cada mexida na linha (ligar, desligar, trocar o
+motivo), e uma escola presa há meses pareceria fixada ontem.
+\end{especificacao}
+
+\textbf{Decisão.} A data sai do histórico (\cd{recursos\_auditoria}): a linha
+\cd{versao-fixada} mais recente com a MESMA versão que está fixada. Só quando o
+histórico falta --- ele é gravado depois da mudança e pode falhar sem
+desfazê-la --- cai no \cd{definido\_em}, que nunca é anterior à fixação: erra
+para menos dias, nunca para mais. O aviso olha a REDE inteira, não o escopo
+aberto, porque a escola esquecida é justamente a que ninguém abre. É lembrete:
+nada solta a fixação sozinho.
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Uma coluna \cd{fixada\_em} em \cd{disponibilidades}.} Migração,
+    mais um campo para manter em dia em toda escrita, e uma segunda fonte da
+    mesma data que o histórico já guarda.
+  \item \textbf{Usar \cd{definido\_em}.} Responde \enquote{quando a linha mudou},
+    não \enquote{quando a versão foi fixada}.
+  \item \textbf{Soltar a fixação sozinho depois do prazo.} Fixação é decisão de
+    quem conhece o incidente; soltar sem ninguém olhar pode reabrir o defeito.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{O painel lê o histórico a cada abertura} (uma consulta a mais,
+    pequena: só as fixações existentes).
+  \item \textbf{Histórico perdido subestima a idade}, e uma fixação antiga pode
+    passar sem aviso.
+\end{itemize}
+
+\textbf{Gatilho.} O histórico passar a ser podado, ou o painel precisar
+ordenar/filtrar por idade de fixação em escala.
+
+\section{ADR-142 --- Na subida do DS, o \texorpdfstring{\cd{dist/}}{dist/} se compara sem os sourcemaps}
+\label{adr:ds-dist-sem-map}
+
+\textbf{Data.} 2026-10-03. \textbf{Status.} Aceita. Refina a \adrr{ADR-139}.
+
+\begin{especificacao}{Contexto}
+A \adrr{ADR-139} sobe a versão só da experiência cujo \emph{bundle} mudou,
+comparando o \emph{hash} do \cd{dist/} antes e depois. Na 0.2.15 (H01.2.2), o
+\emph{hash} inteiro mudou em 14 das 15 experiências --- e o build é
+determinístico. A diferença estava nos \cd{.map}: o \emph{sourcemap} carrega o
+caminho do pacote no \emph{store} do pnpm, que tem a versão no nome
+(\cd{@unooria+design-system@0.2.15}). Com eles, toda subida do DS faria todas as
+experiências \enquote{mudarem}.
+\end{especificacao}
+
+\textbf{Decisão.} A comparação ignora os \cd{.map}. Na 0.2.15, sem eles, dez
+mudaram de verdade e subiram um \emph{patch} (app-90 1.2.7, app-91 1.1.10,
+app-92 1.1.7, exp04ef1b 2.1.2, exp05ef1b 0.3.1, exp06ef1b 0.1.1, exp06ef2b
+0.1.6, exp07ef1b 1.1.2, exp08ef1b 1.2.2 e exp08ef4b 0.1.6); a exp02em1b e a
+app-70 saíram idênticas; a exp01ef1b já estava na 1.0.6, à frente do \cd{dev};
+o \cd{\_template} e o \cd{backup-exp04ef1b} não sobem porque o \emph{deploy}
+não os publica (\adrr{ADR-116}).
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Comparar o \cd{dist/} inteiro.} Toda experiência subiria a cada
+    DS, que é a alternativa que a \adrr{ADR-139} já descartou, por outro
+    caminho.
+  \item \textbf{Desligar os \emph{sourcemaps} do build.} Eles são o que permite
+    ler o erro de cliente que chega ao Cloud Error Reporting
+    (Capítulo~\ref{cap:observabilidade}).
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.} Um \cd{.map} que mude sozinho de
+verdade não sobe a versão --- aceitável, porque o \cd{.map} não muda o que a
+criança vê. A comparação continua manual.
+
+\textbf{Gatilho.} O build passar a embutir o caminho do pacote no JS, ou a
+comparação virar script.
+
+\section{ADR-143 --- O lado do feed entra no sorteio de equipes por registro da missão, e redistribuir não convive com equipe}
+\label{adr:equipes-lado-do-feed}
+
+\textbf{Data.} 2026-10-03. \textbf{Status.} Aceita. Complementa a
+\adrr{ADR-111} e a \adrr{ADR-130}.
+
+\begin{especificacao}{Contexto}
+No Unoovista cada estudante nasce num lado do feed, e uma equipe com gente dos
+dois lados diante da mesma tela desmancha a missão. O módulo de equipes já
+sabia agrupar por lado e contar as equipes mistas, mas ninguém lhe dizia o lado
+de cada um --- o gancho \cd{registrarFonteDeGrupo} existia sem uso. E o lado é
+da ATIVIDADE (o perfil importado, a afinidade da pergunta e a redistribuição do
+professor são todos por atividade), enquanto o gancho recebia só a turma.
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{itemize}
+  \item \textbf{O módulo de perfis registra a fonte} na subida
+    (\arq{perfis/fonte-de-lado.ts}), e o gancho passa a receber o alvo inteiro
+    da montagem, com a atividade (H13.4.1). A precedência do lado é a mesma da
+    largada: a corrida de quem já começou, depois o lado forçado, depois a
+    afinidade do perfil; sem perfil, o estudante é neutro e completa as equipes.
+  \item \textbf{Com equipe montada, \enquote{Redistribuir a turma} fica
+    desligado}, e \rota{POST /atividades/\{id\}/redistribuir} responde 409
+    \cd{turma-com-equipes} (H13.4.3): mover criança a criança separaria quem
+    divide a mesma tela.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{\arq{equipes/} importar \arq{perfis/}.} Inverteria a direção da
+    dependência: o módulo de plataforma passaria a conhecer uma missão.
+  \item \textbf{Redistribuir a equipe inteira de lado.} Mudaria a aritmética da
+    redistribuição (que move os de afinidade mais fraca primeiro) e o professor
+    não saberia por que um estudante de perfil forte trocou de lado.
+  \item \textbf{Só desligar o botão.} O bundle é público; sem a recusa na api, o
+    estado da turma ficaria a um \emph{request} de distância.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{Quem entra na missão ainda recebe o PRÓPRIO lado}, não o da
+    equipe: o sorteio junta quem já é do mesmo lado, mas a largada não consulta
+    a equipe (H13.4.2, pendente). Um neutro numa equipe de lado A pode nascer
+    no lado B.
+  \item \textbf{Para redistribuir com equipe, o professor desfaz as equipes
+    antes}, e refaz depois.
+\end{itemize}
+
+\textbf{Gatilho.} A H13.4.2 (o lado da equipe na largada), ou uma segunda missão
+com lados.

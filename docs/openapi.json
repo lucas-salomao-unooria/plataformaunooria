@@ -1066,8 +1066,8 @@
         "tags": [
           "auth"
         ],
-        "summary": "Primeiro acesso: troca a senha provisória.",
-        "description": "A senha do lote (ou a temporária de um reset) vale uma vez. Exige a senha ATUAL — é o mesmo nível de prova do login, e por isso a rota não pede token.\n\nLimpa `senha_provisoria` (ADR-29). O hub refaz a sessão com a senha nova depois disto: o cookie antigo ainda diz \"precisa trocar\".\n\n**Acesso:** rota pública, sem _guard_ — deliberadamente.\n\n**Restrições:**\n- A senha nova precisa ser diferente da atual (400).\n- 8 tentativas por minuto por usuário (429).",
+        "summary": "Troca a senha: a provisória do primeiro acesso, ou a de quem quer trocar.",
+        "description": "Serve às duas trocas: a do primeiro acesso e a voluntária, pelo menu do avatar (H01.4.1). A senha do lote (ou a temporária de um reset) vale uma vez. Exige a senha ATUAL — é o mesmo nível de prova do login, e por isso a rota não pede token.\n\nLimpa `senha_provisoria` (ADR-29). O hub refaz a sessão com a senha nova depois disto: o cookie antigo ainda diz \"precisa trocar\".\n\n**Acesso:** rota pública, sem _guard_ — deliberadamente.\n\n**Restrições:**\n- A senha nova precisa ser diferente da atual (400).\n- 8 tentativas por minuto por usuário (429).",
         "security": [],
         "x-papeis": [],
         "x-acesso": "publica",
@@ -1466,6 +1466,9 @@
                           "expId": {
                             "type": "string"
                           },
+                          "nome": {
+                            "type": "string"
+                          },
                           "turmasLiberadas": {
                             "type": "integer",
                             "minimum": 0
@@ -1481,6 +1484,7 @@
                         },
                         "required": [
                           "expId",
+                          "nome",
                           "turmasLiberadas",
                           "turmasEncerradas",
                           "estudantes"
@@ -8356,6 +8360,13 @@
                                 "versaoFixa": {
                                   "type": "string",
                                   "nullable": true
+                                },
+                                "fixadaEm": {
+                                  "type": "string",
+                                  "nullable": true
+                                },
+                                "fixacaoEsquecida": {
+                                  "type": "boolean"
                                 }
                               },
                               "required": [
@@ -8365,7 +8376,9 @@
                                 "efetivo",
                                 "tetoDoProduto",
                                 "versaoAtiva",
-                                "versaoFixa"
+                                "versaoFixa",
+                                "fixadaEm",
+                                "fixacaoEsquecida"
                               ],
                               "additionalProperties": false
                             }
@@ -8380,11 +8393,54 @@
                         ],
                         "additionalProperties": false
                       }
+                    },
+                    "fixacoesEsquecidas": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "expId": {
+                            "type": "string"
+                          },
+                          "nome": {
+                            "type": "string"
+                          },
+                          "escolaId": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "escopo": {
+                            "type": "string"
+                          },
+                          "versao": {
+                            "type": "string"
+                          },
+                          "fixadaEm": {
+                            "type": "string",
+                            "description": "ISO 8601, em UTC — quem formata é a tela (ADR-98/99)."
+                          },
+                          "dias": {
+                            "type": "integer",
+                            "minimum": 0
+                          }
+                        },
+                        "required": [
+                          "expId",
+                          "nome",
+                          "escolaId",
+                          "escopo",
+                          "versao",
+                          "fixadaEm",
+                          "dias"
+                        ],
+                        "additionalProperties": false
+                      }
                     }
                   },
                   "required": [
                     "escopo",
-                    "produtos"
+                    "produtos",
+                    "fixacoesEsquecidas"
                   ],
                   "additionalProperties": false
                 }
@@ -8396,7 +8452,7 @@
           "recursos"
         ],
         "summary": "O painel: produtos, experiências e o que vale em cada escopo.",
-        "description": "Resolve a cadeia escola → regional → contrato e devolve, por recurso, **o que o interruptor daquele escopo mostra** (`estadoAqui`, três estados) e **o que efetivamente vale** (`efetivo`, com a origem). Sem `?escolaId=`, o escopo é o CONTRATO inteiro.\n\n**Papéis:** admin.\n\n**Restrições:**\n- `estadoAqui: herda` é a AUSÊNCIA de linha neste escopo — é o terceiro estado, e sem ele desfazer uma exceção seria impossível.\n- `tetoDoProduto` marca a experiência que está desligada pelo PRODUTO, não por linha própria: a tela desabilita o interruptor dela e escreve o motivo ao lado, em vez de mostrá-lo ligado.\n- `versaoAtiva` é a que o hub monta hoje; `versaoFixa` é a fixada NESTE escopo (`null` = segue a ativa).",
+        "description": "Resolve a cadeia escola → regional → contrato e devolve, por recurso, **o que o interruptor daquele escopo mostra** (`estadoAqui`, três estados) e **o que efetivamente vale** (`efetivo`, com a origem). Sem `?escolaId=`, o escopo é o CONTRATO inteiro.\n\n**Papéis:** admin.\n\n**Restrições:**\n- `estadoAqui: herda` é a AUSÊNCIA de linha neste escopo — é o terceiro estado, e sem ele desfazer uma exceção seria impossível.\n- `tetoDoProduto` marca a experiência que está desligada pelo PRODUTO, não por linha própria: a tela desabilita o interruptor dela e escreve o motivo ao lado, em vez de mostrá-lo ligado.\n- `versaoAtiva` é a que o hub monta hoje; `versaoFixa` é a fixada NESTE escopo (`null` = segue a ativa).\n- `fixacoesEsquecidas` olha a REDE INTEIRA, não só o escopo aberto: são as versões fixadas há mais de 30 dias. A data vem do histórico (`versao-fixada`), não de `definido_em`, que muda a cada mexida na linha.",
         "security": [
           {
             "token-da-plataforma": []
@@ -9214,6 +9270,10 @@
                       "items": {
                         "type": "object",
                         "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
                           "nome": {
                             "type": "string"
                           },
@@ -9235,6 +9295,7 @@
                           }
                         },
                         "required": [
+                          "id",
                           "nome",
                           "email",
                           "telefone",
@@ -9263,7 +9324,7 @@
           "prospeccao"
         ],
         "summary": "Os cadastros de interesse recebidos pelo site público.",
-        "description": "Do mais novo para o mais antigo. Alimenta `/unooria/prospeccao` (ADR-107). A data sai em **ISO 8601**, e quem a formata é a tela, no fuso da plataforma (ADR-98/99).\n\n**Papéis:** admin.\n\n**Restrições:**\n- Só `admin` (ADR-88): é o funil comercial da Unooria, não da rede.\n- A lista vem limitada a 5000 linhas; `total` diz quantas existem de verdade — se os dois divergirem, a tela avisa em vez de mentir que aquilo é tudo.\n- O `id` da linha não sai: nenhuma rota o consome, e um identificador na resposta convida a uma rota de edição que não deve existir.",
+        "description": "Do mais novo para o mais antigo. Alimenta `/unooria/prospeccao` (ADR-107). A data sai em **ISO 8601**, e quem a formata é a tela, no fuso da plataforma (ADR-98/99).\n\n**Papéis:** admin.\n\n**Restrições:**\n- Só `admin` (ADR-88): é o funil comercial da Unooria, não da rede.\n- A lista vem limitada a 5000 linhas; `total` diz quantas existem de verdade — se os dois divergirem, a tela avisa em vez de mentir que aquilo é tudo.\n- O `id` da linha sai só para `DELETE /prospeccao/cadastros/:id` (eliminação a pedido do titular). Não há rota de edição, e não deve haver: cadastro não se edita.",
         "security": [
           {
             "token-da-plataforma": []
@@ -9296,6 +9357,41 @@
         ],
         "summary": "Os mesmos cadastros, em CSV.",
         "description": "O arquivo que o `admin` baixa do painel. Separador `;` e BOM UTF-8: é o par que faz o Excel em português abrir o arquivo com as colunas separadas e os acentos certos — com vírgula, a planilha chega numa coluna só.\n\n**Papéis:** admin.\n\n**Restrições:**\n- Só `admin` (ADR-88).\n- O caminho **não** termina em `.csv`, como em `/analise/exportar/:nivel`: segmento de rota com ponto quebra a validação de tipos do App Router no hub. O nome do arquivo sai no `content-disposition`.\n- A data sai formatada no fuso da plataforma (`FUSO_DA_PLATAFORMA`), e não em ISO: este arquivo é lido por gente, numa planilha.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "admin"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/prospeccao/cadastros/{id}": {
+      "delete": {
+        "operationId": "ProspeccaoController_eliminar",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Sucesso, sem corpo."
+          }
+        },
+        "tags": [
+          "prospeccao"
+        ],
+        "summary": "Elimina um cadastro a pedido do titular (LGPD art. 18, VI).",
+        "description": "Apaga a linha de verdade — não há exclusão lógica: guardar o contato \"marcado como apagado\" seria continuar tratando o dado que a pessoa pediu para eliminar. É a razão de o `GRANT` desta tabela ter `DELETE` e não ter `UPDATE` (ver a migration).\n\n**Papéis:** admin.\n\n**Restrições:**\n- Só `admin` (ADR-88).\n- Id que não existe, ou fora do formato: **404** `cadastro-inexistente`. Apagar duas vezes não é erro do titular, mas a tela recebe o 404 e relê a lista.\n- O registro do atendimento é a linha de log `prospeccao-cadastro-eliminado`, com QUEM eliminou e QUANDO — e nenhum dado da pessoa eliminada.",
         "security": [
           {
             "token-da-plataforma": []
@@ -17858,6 +17954,9 @@
                     },
                     "precisaRedistribuir": {
                       "type": "boolean"
+                    },
+                    "comEquipes": {
+                      "type": "boolean"
                     }
                   },
                   "required": [
@@ -17868,7 +17967,8 @@
                     "semLado",
                     "desequilibrio",
                     "tolerancia",
-                    "precisaRedistribuir"
+                    "precisaRedistribuir",
+                    "comEquipes"
                   ],
                   "additionalProperties": false
                 }
@@ -18030,7 +18130,7 @@
           "atividades"
         ],
         "summary": "Rebalanceia a turma quando ela cai quase toda num lado.",
-        "description": "Duas regras definem o comportamento:\n\n1. **Move os de afinidade mais fraca primeiro** — `misto` antes de todos, depois por margem crescente. Preserva a pedagogia onde o sinal do perfil é forte.\n2. **Só age em quem ainda não começou.** Trocar o lado de quem já está rolando o feed invalidaria a sessão: os scores acumulados passariam a contar para o lado errado.\n\n**Papéis:** professor.\n\n**Restrições:**\n- `bloqueados` conta quem já começou e por isso ficou — o rebalanceamento pode não ter chegado ao alvo, e o professor precisa saber.\n- Pergunta e lados não aprovados ⇒ **409**.",
+        "description": "Duas regras definem o comportamento:\n\n1. **Move os de afinidade mais fraca primeiro** — `misto` antes de todos, depois por margem crescente. Preserva a pedagogia onde o sinal do perfil é forte.\n2. **Só age em quem ainda não começou.** Trocar o lado de quem já está rolando o feed invalidaria a sessão: os scores acumulados passariam a contar para o lado errado.\n\n**Papéis:** professor.\n\n**Restrições:**\n- `bloqueados` conta quem já começou e por isso ficou — o rebalanceamento pode não ter chegado ao alvo, e o professor precisa saber.\n- Pergunta e lados não aprovados ⇒ **409**.\n- Atividade com equipes montadas ⇒ **409** `turma-com-equipes` (H13.4.3): com equipe, o lado é de quem divide a tela, e mover criança a criança separaria a equipe.",
         "security": [
           {
             "token-da-plataforma": []
