@@ -67,6 +67,8 @@ com `escola_id` + RLS forçada:
   `EquipesService.registrarFonteDeGrupo(expId, fonte)`, e a fonte recebe a
   ATIVIDADE (o lado do Unoovista é por atividade). Hoje só o Unoovista registra
   (`perfis/fonte-de-lado.ts`, H13.4.1); sem fonte, `agrupamento` volta `null`.
+  E, com equipe montada, `POST /atividades/:id/redistribuir` do Unoovista é 409
+  `turma-com-equipes` (H13.4.3): mover criança a criança separaria a equipe.
 - **Quem MONTA é só quem leciona** (`professorLeciona`, 404 e nunca 403 — mesma
   razão da sala). Gestor e admin só LEEM (`GET`).
 - **A `sugestao` e a `ultima` NUNCA gravam.** Só o `PUT` escreve, e a troca é

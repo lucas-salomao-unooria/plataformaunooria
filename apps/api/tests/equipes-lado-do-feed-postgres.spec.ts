@@ -4,6 +4,7 @@ import { EquipesService } from "../src/equipes/equipes.service";
 import { SugestaoSchema } from "../src/equipes/contrato-de-rotas";
 import { ladosDaTurma } from "../src/perfis/distribuicao";
 import { FonteDeLadoDoUnoovista } from "../src/perfis/fonte-de-lado";
+import { PerfisController } from "../src/perfis/perfis.controller";
 import { PrismaService } from "../src/prisma/prisma.service";
 import { criarTurmaDeTeste } from "./turma-de-teste";
 
@@ -129,5 +130,45 @@ describe("o sorteio com a fonte do Unoovista registrada (H13.4.1)", () => {
     // Um computador só: os quatro com lado caem juntos, e a equipe é mista.
     const r = await equipes.sugerir(alvo(), { modo: "sorteio", computadores: 1, ausentes: [] }, professorId);
     expect(r.agrupamento?.equipesMistas).toBe(1);
+  });
+});
+
+describe("redistribuir com equipes montadas (H13.4.3)", () => {
+  const equipes = new EquipesService(prisma);
+  const perfis = new PerfisController(prisma, {} as never);
+  const comoProfessor = () => ({ auth: { usuarioId: professorId, escolaId: ESCOLA, perfil: "professor" as const } }) as never;
+  const alvo = () => ({ escolaId: ESCOLA, turmaId, expId: UNOOVISTA, atividadeId: activityId });
+
+  afterEach(async () => {
+    await prisma.equipesMontagem.deleteMany({ where: { escolaId: ESCOLA } });
+  });
+
+  test("sem equipes, a distribuição não acusa nada", async () => {
+    const d = await perfis.distribuicao(activityId, comoProfessor());
+    expect(d.comEquipes).toBe(false);
+  });
+
+  test("com equipes, a distribuição avisa e a redistribuição é 409", async () => {
+    await equipes.salvar(
+      alvo(),
+      {
+        versao: 0,
+        modo: "manual",
+        computadores: 2,
+        ausentes: [],
+        equipes: [
+          { nome: "Equipe 1", membros: [estudantes.ana!, estudantes.bia!] },
+          { nome: "Equipe 2", membros: [estudantes.caio!, estudantes.duda!, estudantes.eli!] },
+        ],
+      },
+      professorId,
+    );
+    const d = await perfis.distribuicao(activityId, comoProfessor());
+    expect(d.comEquipes).toBe(true);
+
+    await expect(perfis.redistribuir(activityId, comoProfessor())).rejects.toMatchObject({
+      response: { codigo: "turma-com-equipes" },
+      status: 409,
+    });
   });
 });
