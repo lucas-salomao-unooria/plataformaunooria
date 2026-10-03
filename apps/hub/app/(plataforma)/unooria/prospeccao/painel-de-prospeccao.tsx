@@ -2,7 +2,21 @@
 
 import { dataHora } from "@edu/sdk";
 import { useState } from "react";
-import { Button, EmptyState, FeedbackAlert, ScrollBar, SectionHeader, Table, type TableColumn } from "@edu/ui/ds";
+import {
+  Button,
+  EmptyState,
+  FeedbackAlert,
+  Modal,
+  ModalBody,
+  ModalDescription,
+  ModalFooter,
+  ModalHeader,
+  ModalTitle,
+  ScrollBar,
+  SectionHeader,
+  Table,
+  type TableColumn,
+} from "@edu/ui/ds";
 import type { Cadastro, Cadastros } from "./tipos";
 
 /**
@@ -16,6 +30,10 @@ import type { Cadastro, Cadastros } from "./tipos";
  * lista em tela parece mais simples e é a armadilha: o que a tela tem é a lista
  * TRUNCADA, então o arquivo sairia calado com menos linhas do que a base tem —
  * e quem baixasse acharia que aquilo era tudo.
+ *
+ * "Eliminar a pedido do titular" (H10.5.2, LGPD art. 18, VI) apaga a linha de
+ * verdade, depois de uma confirmação que diz QUEM sai. Não há editar: cadastro
+ * não se edita, só se elimina.
  */
 
 /** O `Table` do DS exige `Record<string, unknown>` na linha. */
@@ -25,6 +43,41 @@ export function PainelDeProspeccao({ inicial }: { inicial: Cadastros }) {
   const [dados, setDados] = useState(inicial);
   const [relendo, setRelendo] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const [aEliminar, setAEliminar] = useState<Linha | null>(null);
+  const [eliminando, setEliminando] = useState(false);
+  const [eliminado, setEliminado] = useState<string | null>(null);
+  const [erroAoEliminar, setErroAoEliminar] = useState<string | null>(null);
+
+  async function eliminar(alvo: Linha) {
+    setEliminando(true);
+    setErroAoEliminar(null);
+    try {
+      const r = await fetch(`/api/plataforma/prospeccao/cadastros/${encodeURIComponent(alvo.id)}`, {
+        method: "DELETE",
+      });
+      /* 404 é "já não está lá" (outra aba, outra pessoa): o efeito pedido
+         aconteceu. A lista é relida para mostrar a base como ela é. */
+      if (r.status === 404) {
+        setAEliminar(null);
+        setEliminado(alvo.nome);
+        await reler();
+        return;
+      }
+      if (!r.ok) throw new Error();
+      setDados((atual) => ({
+        cadastros: atual.cadastros.filter((c) => c.id !== alvo.id),
+        total: Math.max(0, atual.total - 1),
+      }));
+      setAEliminar(null);
+      setEliminado(alvo.nome);
+    } catch {
+      /* A janela FICA aberta: o cadastro continua na base, e dizer o contrário
+         seria afirmar ao titular um pedido atendido que não foi. */
+      setErroAoEliminar("Não deu para eliminar agora. O cadastro continua na base; tente de novo.");
+    } finally {
+      setEliminando(false);
+    }
+  }
 
   async function reler() {
     setRelendo(true);
@@ -63,6 +116,22 @@ export function PainelDeProspeccao({ inicial }: { inicial: Cadastros }) {
     { key: "telefone", title: "Telefone" },
     { key: "organizacao", title: "Rede, secretaria ou escola" },
     { key: "cargo", title: "Cargo" },
+    {
+      key: "id",
+      title: "",
+      render: (_v, linha) => (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => {
+            setErroAoEliminar(null);
+            setAEliminar(linha);
+          }}
+        >
+          Eliminar a pedido do titular
+        </Button>
+      ),
+    },
   ];
 
   const truncado = dados.total > dados.cadastros.length;
@@ -99,6 +168,14 @@ export function PainelDeProspeccao({ inicial }: { inicial: Cadastros }) {
 
       {erro ? <FeedbackAlert type="warning" title="Não atualizou" description={erro} /> : null}
 
+      {eliminado ? (
+        <FeedbackAlert
+          type="success"
+          title="Cadastro eliminado"
+          description={`O contato de ${eliminado} saiu da base. Fica registrado só que um cadastro foi eliminado, por quem e quando.`}
+        />
+      ) : null}
+
       {truncado ? (
         <FeedbackAlert
           type="info"
@@ -118,13 +195,43 @@ export function PainelDeProspeccao({ inicial }: { inicial: Cadastros }) {
         </ScrollBar>
       )}
 
-      {/* Dito na tela porque a alternativa é alguém procurar o botão que não
-          existe. O direito de eliminação (LGPD art. 18, VI) é real e o caminho
-          hoje é humano — prometer um botão seria pior que não ter. */}
       <p className="text-[13px] text-unooria-neutral-500">
-        Pedido de exclusão de um contato é atendido pelo time de plataforma, direto no banco: esta tela não apaga
-        cadastro. O aceite de contato fica registrado com a frase que a pessoa marcou no site.
+        Quem pedir para sair da lista é atendido aqui, em &quot;Eliminar a pedido do titular&quot;: o contato sai da
+        base de vez. O aceite de contato fica registrado com a frase que a pessoa marcou no site.
       </p>
+
+      <Modal isOpen={aEliminar !== null} onClose={() => setAEliminar(null)} size="sm" theme="light">
+        <ModalHeader>
+          <ModalTitle>Eliminar este cadastro?</ModalTitle>
+        </ModalHeader>
+        <ModalBody>
+          <div className="flex flex-col gap-3">
+            <ModalDescription>
+              {aEliminar
+                ? `O contato de ${aEliminar.nome} (${aEliminar.organizacao}) sai da base de vez e não volta. Use só a pedido do próprio titular.`
+                : null}
+            </ModalDescription>
+            {erroAoEliminar ? (
+              <FeedbackAlert type="error" title="Não eliminou" description={erroAoEliminar} />
+            ) : null}
+          </div>
+        </ModalBody>
+        <ModalFooter>
+          <Button variant="ghost" size="md" onClick={() => setAEliminar(null)} disabled={eliminando}>
+            Cancelar
+          </Button>
+          <Button
+            variant="danger"
+            size="md"
+            isLoading={eliminando}
+            onClick={() => {
+              if (aEliminar) void eliminar(aEliminar);
+            }}
+          >
+            Eliminar
+          </Button>
+        </ModalFooter>
+      </Modal>
     </section>
   );
 }

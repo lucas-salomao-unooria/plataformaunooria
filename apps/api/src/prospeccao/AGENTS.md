@@ -11,6 +11,7 @@ isolar, não há pessoa para identificar e não há sessão para exigir.
 | | `prospeccao/publico/cadastros` | `prospeccao/cadastros/*` |
 |---|---|---|
 | guard | **nenhum**, por desenho | `OidcGuard` + `@Roles("admin")` |
+| rotas | `POST` | `GET`, `GET exportacao`, `DELETE :id` (eliminação a pedido do titular) |
 | quem chama | o formulário de `/` (via `/api/cadastro-de-interesse` do hub) | `/unooria/prospeccao` (via BFF) |
 | defesa | Zod + cota por IP + campo-armadilha + dedupe | o papel (ADR-88) |
 
@@ -30,7 +31,10 @@ O porquê inteiro está na migration `20260916120000_prospeccao_de_interesse`,
 com as três decisões que ela carrega: a base legal (consentimento, LGPD art. 7º,
 I — ao contrário do dado de estudante), o `GRANT` com `DELETE` (para atender o
 pedido de eliminação do titular, art. 18, VI) e a ausência de `UPDATE` (cadastro
-não se edita).
+não se edita). A rota que usa esse `DELETE` é `DELETE /prospeccao/cadastros/:id`
+(H10.5.2): apaga a linha de verdade, e o comprovante é a linha de log
+`prospeccao-cadastro-eliminado` (quem eliminou e quando, sem dado da pessoa).
+É só para ela que a listagem devolve o `id` — rota de edição não existe.
 
 ## O que a rota pública NUNCA conta a quem chama
 

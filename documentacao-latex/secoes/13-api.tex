@@ -1478,7 +1478,7 @@ linha, a cada abertura de sessão.
 \section{Prospecção: a única escrita sem token (\adrr{ADR-107})}
 
 O formulário do site público (\cd{/}) grava pela api, e não num banco próprio.
-São três rotas, e o prefixo separa o que tem \emph{guard} do que não tem:
+São quatro rotas, e o prefixo separa o que tem \emph{guard} do que não tem:
 
 \begin{itemize}
   \item \rota{POST /prospeccao/publico/cadastros} --- \textbf{sem \emph{guard}},
@@ -1503,6 +1503,14 @@ São três rotas, e o prefixo separa o que tem \emph{guard} do que não tem:
     \rota{/analise/exportar/\{nivel\}}: segmento de rota com ponto quebra a
     validação de tipos do App Router no hub. O nome do arquivo sai no
     \cd{content-disposition}.
+  \item \rota{DELETE /prospeccao/cadastros/\{id\}} --- \cd{admin}. A
+    eliminação a pedido do titular (LGPD art.~18, VI): apaga a linha de
+    verdade, sem exclusão lógica --- guardar o contato \enquote{marcado como
+    apagado} seria continuar tratando o dado que a pessoa pediu para eliminar.
+    Id inexistente ou fora do formato: \num{404}. O comprovante do atendimento
+    é a linha de log \cd{prospeccao-cadastro-eliminado}, com quem eliminou e
+    quando, e nenhum dado da pessoa. É por esta rota que a listagem passou a
+    devolver o \cd{id}; rota de edição não existe, e não deve existir.
 \end{itemize}
 
 \textbf{A escrita não passa pelo BFF.} O \arq{/api/plataforma/*} do hub exige

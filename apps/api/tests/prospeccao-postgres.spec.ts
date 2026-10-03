@@ -143,6 +143,25 @@ describe("a leitura, que é só do admin", () => {
     expect(csv).toContain('"Rede ""Modelo""; Diretoria"');
   });
 
+  it("elimina um cadastro a pedido do titular, e só ele (H10.5.2)", async () => {
+    await publico.cadastrar(cadastro(`fica${DOMINIO}`, { nome: "Fica" }), deOutroIp());
+    await publico.cadastrar(cadastro(`sai${DOMINIO}`, { nome: "Sai" }), deOutroIp());
+    const antes = (await painel.cadastros()).cadastros.filter((c) => c.email.endsWith(DOMINIO));
+    const alvo = antes.find((c) => c.nome === "Sai")!;
+    expect(alvo.id).toMatch(/^[0-9a-f-]{36}$/);
+
+    const admin = { auth: { usuarioId: "admin-da-suite" } } as never;
+    await painel.eliminar(alvo.id, admin);
+
+    /* Apagado de verdade, não marcado: o contato some da base. */
+    expect(await prisma.prospeccaoLead.count({ where: { email: `sai${DOMINIO}` } })).toBe(0);
+    expect(await prisma.prospeccaoLead.count({ where: { email: `fica${DOMINIO}` } })).toBe(1);
+
+    /* De novo, ou um id que não é uuid: 404, nunca 500. */
+    await expect(painel.eliminar(alvo.id, admin)).rejects.toMatchObject({ status: 404 });
+    await expect(painel.eliminar("nao-e-uuid", admin)).rejects.toMatchObject({ status: 404 });
+  });
+
   it("a leitura é `admin`, e a escrita não tem papel nenhum", () => {
     expect(Reflect.getMetadata(ROLES_KEY, ProspeccaoController)).toEqual(["admin"]);
     /* A rota do site é pública POR DESENHO — o dia em que alguém puser um papel
