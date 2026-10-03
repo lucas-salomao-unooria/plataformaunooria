@@ -60,6 +60,12 @@ Preparo da mostra & exp06ef1b, \arq{src/juri-estadual/} &
   (\adrr{ADR-126}). Recusa o que está fora do escopo; não planeja aula nem
   avalia estudante, e o código de habilidade que cita é conferido pela api
   (\adrr{ADR-127}).\\
+Ajuda com avatar & produto \cd{ajuda}, \arq{src/ajuda/} &
+  A resposta do atendente em vídeo a quem tem dúvida sobre o uso da plataforma
+  (todo papel menos o estudante), a partir de uma base \textbf{gerada} do mapa de
+  produto e dos guias da aula. O \emph{vendor} do avatar só escuta, fala e mostra o
+  rosto; o texto é do nosso Gemini. \textbf{Fora da quota de \emph{tokens}}: o
+  limite é em minutos de vídeo (\adrr{ADR-132}, Seção~\ref{sec:ia-ajuda}).\\
 \bottomrule
 \end{tabularx}
 
@@ -290,6 +296,21 @@ A verificação acontece \textbf{antes} de chamar o \emph{provider}. Gastar
 diferente: a quota limita custo diário, o \emph{rate limit} limita rajada.
 \end{nota}
 
+\begin{decisao}
+\textbf{Uma exceção à regra, e só ela: a Ajuda com avatar} (\adrr{ADR-132}). O
+turno do atendente chama \cd{conversarEmFluxo} sem \cd{temSaldo} e sem
+\cd{consumir}. O que custa na Ajuda é o \textbf{minuto de vídeo} que o
+\emph{vendor} cobra (\emph{FULL Mode}: 2 créditos por minuto), e não o
+\emph{token}: a torneira dela é \cd{ajuda\_limites} (\cd{minutos-por-dia} e
+\cd{minutos-por-sessao}, semente 30 e 10), editada só pelo \cd{admin} na mesma
+tela \rota{/unooria/uso-de-ia}, com o mesmo histórico. Os \emph{tokens}
+continuam medidos pelo \cd{MedidorDeProvider} (operação
+\cd{conversarEmFluxo}); só não debitam de ninguém. A exceção \textbf{não se
+estende}: produto novo que queira ficar fora da quota pede ADR própria
+(\arq{docs/regras/o-que-nao-fazer.md}). O desenho do limite está na
+Seção~\ref{sec:ia-ajuda}.
+\end{decisao}
+
 \section{Credencial: ADC, nunca chave de API}
 
 \begin{regra}
@@ -393,6 +414,7 @@ definida. Em produção, com \emph{service account}, o cabeçalho é inócuo.
 \end{atencao}
 
 \section{Raciocínio conta como saída}
+\label{sec:ia-raciocinio}
 
 \begin{atencao}
 Nos modelos das famílias 2.5 e 3.x, os \emph{tokens de pensamento} saem do
@@ -578,6 +600,225 @@ inteira de um ano, tema, acervo com citação, nome de estudante), rodados por
 \cd{adk eval} contra o \cd{dev}; e o relatório de recall das habilidades
 (\arq{ingestao/\B avaliar\_\B habilidades}) é o gatilho da \adrr{ADR-127}.
 
+\section{O terceiro \emph{vendor}: o avatar da Ajuda}
+\label{sec:ia-ajuda}
+
+A Ajuda com avatar (\adrr{ADR-132}) é um atendente em vídeo, aberto pelo item
+\enquote{Ajuda} do menu da conta, para todo papel menos o estudante. O
+\emph{vendor} é o LiveAvatar, da HeyGen, em \emph{FULL Mode} com \emph{Custom
+LLM}: ele faz a escuta (ASR), a voz (TTS) e o vídeo, e \textbf{o LLM é o nosso}.
+A cada fala da pessoa --- falada ou escrita no chat do modal, que chega pelo
+mesmo caminho ---, o servidor do \emph{vendor} chama
+\rota{POST /ajuda/llm/chat/completions} da api
+(Seção~\ref{sec:contrato-ajuda}), que responde pelo \cd{AiProvider} com a base de
+conhecimento no \emph{prompt}. A regra da camada única fica de pé inteira: o
+modelo é o Gemini de sempre, chamado de dentro de \arq{src/ai}, e o \emph{prompt}
+nunca sai da api. Foi isso que descartou o \emph{LITE Mode} com o Gemini Live do
+próprio \emph{vendor}: a chave e o \emph{prompt} iriam para a HeyGen.
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
+\toprule
+\headrow \thd{Peça} & \thd{O que faz}\\
+\midrule
+\cd{AiProvider.\B conversarEmFluxo} & O turno do atendente, devolvido aos pedaços.
+  A única geração em \emph{stream} do \emph{provider}.\\
+\zebra Porta \cd{AVATAR\_AO\_VIVO} & Abre e encerra a sala de vídeo no
+  \emph{vendor}. Não gera texto.\\
+\arq{ajuda/prompt.ts} & O \emph{prompt}: instruções e base num prefixo fixo, o
+  papel de quem pergunta no fim.\\
+\zebra \arq{ajuda/base/\B base-da-ajuda.\B gerada.ts} & A base de conhecimento,
+  \textbf{gerada} do mapa de produto, dos guias da aula e dos manifestos.\\
+\cd{ajuda\_limites}, \cd{ajuda\_sessoes} & O limite em minutos e o medidor que o
+  confere a cada abertura.\\
+\bottomrule
+\end{tabularx}
+
+\subsection{\cd{conversarEmFluxo}: a única geração em \emph{stream}}
+
+O \emph{vendor} pede \cd{stream: true} e \textbf{desiste se o primeiro byte
+passar de 10\,s} (medido no \emph{spike} de 2026-10-02). E o avatar começa a
+falar no primeiro pedaço: esperar a resposta inteira somaria o tempo de geração
+ao silêncio da pessoa. Daí o sexto método do \cd{AiProvider}, que no Vertex é
+\cd{streamGenerateContent?alt=sse} e emite pedaços \cd{\{tipo: "texto"\}} e, por
+último, UM \cd{\{tipo: "fim", resultado\}} com o total --- inclusive quando o
+modelo parou pelo teto (\cd{finishReason}). Erro de transporte é exceção, não
+evento.
+
+\begin{regra}
+\textbf{Sem ferramentas e sem \cd{validar}, de propósito}: num \emph{stream} o
+texto já saiu quando a validação poderia recusá-lo. Quem precisa recusar a fala
+usa \cd{conversar}. As partes de raciocínio (\cd{thought: true}) ficam fora da
+fala, como em \cd{conversar}. \textbf{Os \emph{tokens} saem do ÚLTIMO pedaço}: o
+\cd{usageMetadata} do Vertex vem acumulado, então o total é o maior valor visto,
+não a soma --- somar contaria o mesmo uso uma vez por pedaço. Consumidor novo
+que queira \emph{stream} pede ADR: esta é a segunda rota com \emph{stream} da
+api, depois do agente (\adrr{ADR-128}).
+\end{regra}
+
+\subsection{A porta \cd{AVATAR\_AO\_VIVO}: reserva de sala, não chamada de modelo}
+
+\arq{src/ai/avatar-ao-vivo.port.ts} define a porta, e
+\arq{src/ai/liveavatar.client.ts} é a única peça da api que conhece o LiveAvatar.
+Mora em \arq{src/ai} pela regra do \cd{AiProvider} --- nenhum \emph{vendor} de IA
+fora dali ---, mas é \textbf{porta própria, e não método do \cd{AiProvider}},
+porque não é uma chamada de modelo: é a reserva de um recurso cobrado por
+\textbf{minuto}, com ciclo de vida. São só dois verbos:
+
+\begin{itemize}
+  \item \cd{criarSessao} --- \rota{POST /v1/sessions/token} do \emph{vendor},
+    com o teto da sala (\cd{max\_session\_duration}), o contexto
+    (\cd{context\_id}: sem ele o avatar fica MUDO, sem erro nenhum), a
+    configuração de LLM (\cd{llm\_configuration\_id}: sem ela o \emph{vendor}
+    responderia com o LLM dele) e as \cd{dynamic\_variables}. Devolve o id da
+    sala e o \emph{token} que o \textbf{navegador} usa para entrar nela; a chave
+    da conta (\env{LIVEAVATAR\_API\_KEY}) nunca sai da api.
+  \item \cd{encerrarSessao} --- \rota{POST /v1/sessions/stop}. Sala que o
+    \emph{vendor} já fechou (pelo teto, por ociosidade) responde 4xx, e isso é o
+    estado desejado, não falha.
+\end{itemize}
+
+\begin{decisao}
+\textbf{Faltar peça desliga a Ajuda, nunca derruba a subida} --- ao contrário do
+\env{VERTEX\_PROJECT\_ID}, e pelo argumento do \env{AGENTE\_PROFESSOR\_MODO}.
+Sem \env{LIVEAVATAR\_API\_KEY}, \env{LIVEAVATAR\_CONTEXT\_ID} e
+\env{LIVEAVATAR\_LLM\_CONFIG\_ID} a porta nasce \cd{AvatarDesligado}; sem
+\env{AJUDA\_LLM\_SEGREDO} ou \env{AJUDA\_SESSAO\_CHAVE}, também. Nos dois casos
+\rota{POST /ajuda/sessoes} responde 503 \cd{AJUDA\_INDISPONIVEL} e os outros
+produtos seguem no ar. As peças nascem em momentos diferentes: o contexto e a
+configuração de LLM do \emph{vendor} só podem ser criados
+(\arq{scripts/liveavatar-configurar.mjs}) \textbf{depois} de a api ter URL
+pública. \env{LIVEAVATAR\_SANDBOX=1} troca o avatar pelo de testes do
+\emph{vendor} (cerca de 1 minuto, sem crédito) e o Zod o recusa em produção: lá
+seria uma Ajuda que cai sozinha no meio da explicação.
+\end{decisao}
+
+\subsection{O \emph{prompt}: prefixo fixo, base gerada, papel no fim}
+
+O \emph{prompt} mora em \arq{src/ajuda/prompt.ts} e só lá. O contexto
+cadastrado no \emph{vendor} é uma linha e um marcador
+(\cd{Atendente da Ajuda da Unooria. [sessao:\$\{sessao\}]}); a mensagem
+\cd{system} que o \emph{vendor} manda é lida só para extrair o \emph{token} da
+sessão e depois \textbf{descartada}. O \emph{prompt} de verdade e a base nunca
+vão ao \emph{vendor} --- regra inviolável 2.
+
+\begin{decisao}
+\textbf{A ordem do \emph{prompt} é decisão de custo, não de estilo.} As
+instruções e a base (cerca de 65 mil \emph{tokens}) formam um PREFIXO idêntico
+em toda chamada, e só a última linha muda com quem pergunta (\enquote{um
+professor ou uma professora}, \enquote{alguém da coordenação ou da direção de
+uma escola}\ldots, em linguagem de escola, nunca o nome do papel). É esse
+prefixo igual que deixa o \emph{cache} implícito do Gemini reaproveitar a base
+de uma chamada para a outra; com o papel no começo, cada perfil pagaria a base
+inteira de novo. O teste confere que \cd{PREFIXO\_DO\_PROMPT} não depende do
+perfil.
+\end{decisao}
+
+As instruções descrevem uma resposta \textbf{falada}: português simples, no
+máximo quatro frases curtas (cerca de 70 palavras), sem lista, título, negrito,
+\emph{emoji} nem \emph{link}; nenhum vocabulário técnico (código, servidor, API,
+\emph{token}, rota, os códigos internos das missões) --- só os nomes que
+aparecem na tela; só o que está na base, e \enquote{não sei} ou \enquote{a
+plataforma ainda não faz isso} no lugar de inventar; o que AQUELA pessoa
+consegue fazer, e quem faz o resto; recusa gentil a assunto que não é a
+plataforma; e nunca pedir nem repetir nome, CPF, e-mail ou dado de estudante. A
+temperatura é 0,3 (o \emph{vendor} manda 0,5 e é ignorado): o atendente responde
+do que está na base, não cria.
+
+O histórico chega no formato OpenAI e \cd{paraHistorico} o traduz: descarta o
+\cd{system}, junta falas seguidas do mesmo papel (o Gemini quer a conversa
+alternada, e duas falas seguidas da pessoa acontecem quando a resposta anterior
+falhou e o avatar ficou mudo), corta em 30 mensagens de até \num{2000}
+caracteres e faz a conversa começar na pessoa --- o cumprimento do avatar
+(\cd{opening\_text}) é falado pelo \emph{vendor} sem passar pelo nosso LLM e não
+ajuda a responder.
+
+\subsection{A base de conhecimento é gerada, não escrita}
+
+\arq{scripts/gerar-base-da-ajuda.mjs} escreve
+\arq{src/ajuda/base/\B base-da-ajuda.\B gerada.ts}, versionado e nunca editado à
+mão. Entra o mapa de produto (PU-PRD-001) \textbf{só com o que está PRONTO ou
+PARCIAL} --- feature A FAZER ou ARQUIVADA fica fora, senão o atendente promete o
+que não existe; fora também o \emph{backlog}, as decisões, os apêndices e toda
+\cd{\textbackslash pendencia\{\}} ---, os guias da aula das missões, na ordem do
+registro, e o catálogo das missões tirado dos manifestos. \textbf{Não entra
+documentação técnica} (este documento, \arq{docs/}, os \arq{AGENTS.md}): a lista
+\cd{TERMOS\_SENSIVEIS} do gerador (\cd{escola\_id}, RLS, JWT, \cd{Bearer},
+Prisma, Terraform, Cloud Run\ldots) faz a geração falhar se a base vazar esse
+vocabulário, e a correção é no mapa de produto, não na lista.
+
+\begin{regra}
+\textbf{Mudou o mapa de produto ou um guia? Regere a base.}
+\arq{apps/api/tests/ajuda-base.spec.ts} roda o gerador com \cd{--verificar} e fica
+vermelho com a base velha --- é o que impede o atendente de descrever a tela de
+ontem. \textbf{Sem RAG}: os cerca de 65 mil \emph{tokens} cabem inteiros no
+\emph{prompt}, e o \emph{cache} implícito paga a repetição. Os guias guardam o que
+não se diz à turma antes da hora; a Ajuda não abre para estudante, e
+coordenação e gestão lerem isso foi aceito pelo dono do produto.
+\end{regra}
+
+\subsection{Teto de saída, a fala de espera e a fala de falha}
+
+\begin{atencao}
+\textbf{O teto de saída do turno é \num{2048} \emph{tokens}, e não é o tamanho da
+resposta} --- quem pede quatro frases é o \emph{prompt}. É folga para o
+\textbf{raciocínio}, que sai do mesmo teto (Seção~\ref{sec:ia-raciocinio}).
+Medido em 2026-10-02: o \cd{gemini-3.7-flash} às vezes pensa 300 a 400
+\emph{tokens} \textbf{mesmo com \cd{thinkingBudget: 0}}, e com o teto de 400 a
+resposta saía cortada em meia frase (\enquote{Primeiro, no seu Início, entre em
+Minhas turmas e}). No avatar o corte é pior que na tela: a voz para no meio, e
+ninguém vê \cd{MAX\_TOKENS}.
+\end{atencao}
+
+Dois textos fixos mantêm o avatar falando quando o modelo não ajuda, porque o
+\emph{vendor} \textbf{fica mudo diante de qualquer erro do nosso endpoint} ---
+sem nova tentativa e sem evento para o navegador:
+
+\begin{itemize}
+  \item \cd{FALA\_DE\_ESPERA} (\enquote{Um momento, estou vendo isso para
+    você.}), escrita no \emph{stream} se nenhum pedaço chegou em
+    \textbf{7\,s}. A primeira chamada fria --- a base fora do \emph{cache}, mais o
+    raciocínio ocasional --- levou 10,9\,s até o primeiro byte, além dos 10\,s
+    do \emph{vendor}. A frase segura a fala viva e a resposta de verdade vem
+    logo depois, no mesmo turno.
+  \item \cd{FALA\_DE\_FALHA} (\enquote{Desculpe, tive um problema para
+    responder agora. Pode repetir a sua pergunta, por favor?}), quando o modelo
+    falha ou devolve texto vazio. Com parte da resposta já falada, o turno para
+    ali, sem desculpa no fim.
+\end{itemize}
+
+A mesma lógica vale para as recusas de negócio que acontecem DEPOIS de a
+chamada ser aceita --- produto desligado para a escola, mais de 20 turnos por
+minuto: viram uma fala pronta, em 200, sem chamar o modelo. Só a autenticação
+responde 401.
+
+\subsection{Minutos, não \emph{tokens}}
+
+O limite da Ajuda é de \textbf{tempo de vídeo}, conferido a cada abertura de
+sessão e nunca a cada turno:
+
+\begin{itemize}
+  \item \cd{ajuda\_limites} --- \cd{minutos-por-dia} (30) e
+    \cd{minutos-por-sessao} (10), escopo do contrato inteiro, lidas sem
+    \emph{cache}. Tetos de sanidade de 600 e 60; \textbf{zero é recusado}:
+    fechar a Ajuda é desligar o produto \cd{ajuda} (\adrr{ADR-87}), não zerar o
+    limite. Sem a linha, vale a constante do código e o registro acusa
+    \cd{ajuda-limite-sem-linha}.
+  \item \cd{ajuda\_sessoes} --- o medidor. O teto da próxima sessão é o menor
+    entre o limite por sessão e o que sobra do dia da pessoa; com menos de um
+    minuto, 429 \cd{SEM\_MINUTOS}. \textbf{Sessão sem \cd{fim} conta o teto
+    inteiro} (o \emph{vendor} cobra até a sala fechar, e a api só sabe que
+    fechou quando o hub avisa), abrir fecha a anterior que tenha ficado aberta,
+    e \emph{vendor} fora do ar fecha a linha com duração zero. O dia é o do fuso
+    da plataforma (\adrr{ADR-99}).
+\end{itemize}
+
+\textbf{Os \emph{tokens} continuam medidos} --- só não debitam: o
+\cd{MedidorDeProvider} envolve \cd{conversarEmFluxo} como as outras operações e
+registra latência e \emph{tokens} com \cd{operacao=conversarEmFluxo}
+(Capítulo~\ref{cap:observabilidade}). É por ali que se vê quanto a base de 65 mil
+\emph{tokens} custa por turno, e se o \emph{cache} implícito está pagando a
+repetição.
+
 \section{Variáveis de configuração da IA}
 
 \begin{tabularx}{\linewidth}{@{}L{46mm}L{22mm}X@{}}
@@ -606,6 +847,12 @@ inteira de um ano, tema, acervo com citação, nome de estudante), rodados por
   $|$ \cd{mock} $|$ \cd{desligado}. Ausente = \cd{desligado} em qualquer
   \cd{NODE\_ENV} --- ao contrário do \env{AI\_PROVIDER}; \cd{mock} e \cd{local}
   são recusados em produção. Ver Apêndice~\ref{ap:envs}.\\
+\env{LIVEAVATAR\_*}, \env{AJUDA\_LLM\_SEGREDO}, \env{AJUDA\_SESSAO\_CHAVE} & --- &
+  A Ajuda com avatar (Seção~\ref{sec:ia-ajuda}); só \env{LIVEAVATAR\_API\_URL},
+  \env{LIVEAVATAR\_AVATAR\_ID} e \env{LIVEAVATAR\_SANDBOX} têm valor padrão.
+  Conjunto incompleto = Ajuda
+  desligada (503), sem derrubar a subida; \env{LIVEAVATAR\_SANDBOX=1} é recusado
+  em produção. Ver Apêndice~\ref{ap:envs}.\\
 \bottomrule
 \end{tabularx}
 

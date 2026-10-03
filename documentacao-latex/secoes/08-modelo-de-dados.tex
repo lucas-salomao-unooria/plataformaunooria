@@ -264,6 +264,13 @@ Duas armadilhas registradas naquela migração, ambas produzindo o mesmo sintoma
   agente de IA do professor (\adrr{ADR-126}): de quem é cada sessão do Agent
   Engine. O conteúdo não mora aqui. Ver
   Seção~\ref{sec:agente-professor-dados}.\\
+\zebra \cd{ajuda\_sessoes} & \textbf{Sem RLS} & O MEDIDOR de minutos da Ajuda
+  com avatar (\adrr{ADR-132}): uma linha por sessão de vídeo, com início, teto e
+  fim --- nenhuma palavra da conversa. \cd{escola\_id} nulo para os papéis de
+  contrato. Ver Seção~\ref{sec:ajuda-dados}.\\
+\cd{ajuda\_limites} & Catálogo & Os minutos da Ajuda por pessoa e dia e por
+  sessão, escopo do contrato. O par de \cd{ia\_quotas}, com o mesmo desenho:
+  semeada, sobrescrita pelo \cd{admin}, histórico em \cd{recursos\_auditoria}.\\
 \bottomrule
 \end{tabularx}
 
@@ -315,6 +322,54 @@ A mesma migração acrescenta \cd{agente-professor} ao \emph{CHECK}
 \cd{ck\_experiencias\_produto}. Nenhuma experiência aponta para ele --- é o
 primeiro produto SEM experiência ---, mas o \emph{CHECK} espelha a tupla
 \cd{PRODUTOS} inteira, e um teste compara os dois textos.
+
+\section{Os minutos da Ajuda com avatar: \cd{ajuda\_sessoes} e \cd{ajuda\_limites}}
+\label{sec:ajuda-dados}
+
+\adrr{ADR-132}. O vendor do avatar cobra por MINUTO de vídeo, e a decisão do dono
+do produto foi que a Ajuda \textbf{não passa pela quota de \emph{tokens}}
+(exceção à regra 5): o que limita o custo é o tempo. As duas tabelas guardam o
+tempo --- a conversa em si não é guardada em lugar nenhum. São tabelas de
+PLATAFORMA, sem prefixo: a Ajuda é o produto \cd{ajuda}, não uma experiência
+(\adrr{ADR-110}).
+
+\begin{itemize}
+  \item \textbf{\cd{ajuda\_limites} é o par de \cd{ia\_quotas}}, com o mesmo
+    desenho: uma linha por chave de um vocabulário FECHADO
+    (\cd{minutos-por-dia}, \cd{minutos-por-sessao}), escopo do contrato, semeada
+    pela migração (30 e 10 --- três conversas de dez minutos por pessoa por dia)
+    e sobrescrita só pelo \cd{admin} em \rota{/unooria/uso-de-ia}, com o
+    histórico em \cd{recursos\_auditoria} (\cd{quota-alterada}, \cd{recurso\_id}
+    \cd{ajuda:<chave>}). \textbf{Zero é recusado} pelo \emph{CHECK}: fechar a
+    Ajuda é desligar o produto (\adrr{ADR-87}), não zerar o limite. Os tetos de
+    sanidade são 600 minutos por dia e 60 por sessão. Sem a linha, vale a
+    constante do código, e o \emph{log} \cd{ajuda-limite-sem-linha} acusa.
+  \item \textbf{\cd{ajuda\_sessoes} é o medidor}: quem abriu (\cd{usuario\_id},
+    \cd{perfil}, \cd{escola\_id}), o id da sessão no vendor, \cd{inicio},
+    \cd{duracao\_max\_s} (o teto pedido ao vendor) e \cd{fim}. \textbf{Sessão sem
+    \cd{fim} conta o teto INTEIRO} --- falha para o lado do custo, porque o
+    vendor cobra até a sala fechar. Abrir fecha a sessão anterior da pessoa que
+    ficou aberta; vendor fora do ar fecha a linha com duração zero. O dia é o do
+    fuso da plataforma (\adrr{ADR-99}), não o UTC.
+  \item \textbf{\cd{ajuda\_sessoes} fica SEM RLS, e \cd{escola\_id} é nulável}:
+    \cd{gestor\_contrato} e \cd{admin} abrem a Ajuda e não têm escola no
+    \emph{token}; não é dado de estudante (o \emph{CHECK} do perfil recusa
+    \cd{estudante}); e não guarda conteúdo. Toda \emph{query} é por
+    \cd{usuario\_id} do \emph{token}. O porquê inteiro está no
+    Capítulo~\ref{cap:tenancy} (Seção~\ref{sec:ajuda-seguranca}).
+  \item \textbf{Sem FK} em \cd{usuario\_id} nem em \cd{escola\_id}, como
+    \cd{ia\_uso\_diario}: é um medidor, e uma FK com \cd{RESTRICT} travaria a
+    exclusão de quem já usou a Ajuda. O índice
+    \cd{(usuario\_id, inicio DESC)} é a soma do dia de uma pessoa.
+  \item \cd{GRANT} \cd{SELECT, INSERT, UPDATE} nas duas, \textbf{sem
+    \cd{DELETE}}, guardado pela existência da \emph{role}.
+\end{itemize}
+
+A mesma migração acrescenta \cd{ajuda} ao \emph{CHECK}
+\cd{ck\_experiencias\_produto}. Como o \cd{agente-professor}, é produto SEM
+experiência --- nenhuma linha de \cd{experiencias} aponta para ele ---, mas o
+\emph{CHECK} espelha a tupla \cd{PRODUTOS} inteira, e
+\arq{tests/disponibilidades-postgres.spec.ts} compara os dois textos.
 
 \section{A rede: escola, lotação e o CPF}
 \label{sec:rede}
@@ -1717,7 +1772,15 @@ decisão \emph{futura}, com DPA e \emph{k}-anonimato --- e não sai de um
   \cd{escola\_id NOT NULL}, RLS \cd{FORCE}, \cd{sessao\_id} único, os \emph{CHECKs}
   de título (1 a 120) e de \cd{sessao\_id}, o índice da lista e o \cd{GRANT},
   guardado. E \cd{agente-professor} no \emph{CHECK} \cd{ck\_experiencias\_produto}.\\
-\zebra \arq{20261002180000\_\B{}exp06ef1b\_\B{}juri\_\B{}estadual} & As três
+\zebra \arq{20261002120000\_\B{}ajuda\_\B{}com\_\B{}avatar} & Os minutos da Ajuda
+  com avatar (\adrr{ADR-132}): \cd{ajuda\_sessoes}, o medidor, \textbf{sem RLS e
+  com \cd{escola\_id} nulável} --- a exceção escrita à regra nº 1, com as três
+  razões no comentário ---, e \cd{ajuda\_limites}, catálogo, semeada com 30
+  minutos por dia e 10 por sessão. Os \emph{CHECKs} de perfil (sem
+  \cd{estudante}), de teto (30\,s a 1\,h), de fim, de chave e de valor; o índice
+  por pessoa; o \cd{GRANT} sem \cd{DELETE}, guardado. E \cd{ajuda} no
+  \emph{CHECK} \cd{ck\_experiencias\_produto}.\\
+\arq{20261002180000\_\B{}exp06ef1b\_\B{}juri\_\B{}estadual} & As três
   tabelas do Júri Estadual de Projetos (\adrr{ADR-137}):
   \cd{exp06ef1b\_pacotes}, \cd{\_gates\_turma} e \cd{\_sessoes}, com
   \cd{escola\_id NOT NULL}, RLS \cd{FORCE} e política por escola; o índice

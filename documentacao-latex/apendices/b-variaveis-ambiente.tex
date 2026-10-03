@@ -109,9 +109,11 @@ inválido} --- e a mensagem não diz qual dos dois lados está errado.
 \end{tabularx}
 
 \begin{nota}
-\textbf{Não existe variável para chave de API de IA} em lugar nenhum do projeto ---
-nem aqui, nem em \arq{.env.example}. A credencial é sempre ADC
-(\adrr{ADR-16}).
+\textbf{Não existe variável para chave de API do modelo de IA} em lugar nenhum
+do projeto --- nem aqui, nem em \arq{.env.example}. A credencial do Vertex é
+sempre ADC (\adrr{ADR-16}). A única chave de vendor é a da conta do avatar da
+Ajuda (\env{LIVEAVATAR\_API\_KEY}, abaixo), que não é do Google e não tem ADC
+--- e o LLM do avatar continua sendo o nosso, pelo mesmo ADC.
 \end{nota}
 
 \subsection{Agente de IA do professor (\adrr{ADR-126})}
@@ -138,6 +140,77 @@ nem aqui, nem em \arq{.env.example}. A credencial é sempre ADC
   \cd{http://host.docker.internal:8090}).\\
 \bottomrule
 \end{tabularx}
+
+\subsection{Ajuda com avatar (\adrr{ADR-132})}
+
+O atendente em vídeo do LiveAvatar (HeyGen), com o LLM NOSSO: o vendor chama
+\rota{POST /ajuda/llm/chat/completions} da api. \textbf{Desligada é o padrão, e
+faltar peça NÃO derruba a subida} --- ao contrário do \rota{/docs}. A chave da
+conta e os ids nascem em momentos diferentes (os ids saem de
+\arq{scripts/liveavatar-configurar.mjs} \emph{depois} de a api estar no ar com URL
+pública), e derrubar a api por um produto em montagem tiraria todos os outros do
+ar. A Ajuda só abre com \env{LIVEAVATAR\_API\_KEY},
+\env{LIVEAVATAR\_CONTEXT\_ID}, \env{LIVEAVATAR\_LLM\_CONFIG\_ID},
+\env{AJUDA\_LLM\_SEGREDO} e \env{AJUDA\_SESSAO\_CHAVE} juntas; faltou qualquer
+uma, a Ajuda fica desligada (sem as três primeiras, a porta já nasce
+\cd{AvatarDesligado}) e \rota{POST /ajuda/sessoes} responde
+\cd{AJUDA\_INDISPONIVEL} (503). Valor vazio conta como ausente.
+
+\begin{tabularx}{\linewidth}{@{}L{44mm}L{26mm}X@{}}
+\toprule
+\headrow \thd{Variável} & \thd{Default} & \thd{Papel}\\
+\midrule
+\env{LIVEAVATAR\_API\_KEY} & --- & \textbf{Segredo} (Secret Manager:
+  \cd{\{contrato\}-\B liveavatar-\B api-key}). A chave da CONTA no vendor, mandada
+  em \cd{x-api-key} ao abrir e encerrar a sala. \textbf{Nunca vai ao hub}: o
+  navegador recebe só o \emph{token} da sala daquela sessão. \textbf{Fecha.}\\
+\zebra \env{LIVEAVATAR\_API\_URL} & \cd{https://\B api.\B liveavatar.com} & Base da api
+  do vendor. Zod: URL.\\
+\env{LIVEAVATAR\_AVATAR\_ID} & \cd{dc2935cf-\B 5863-\B 4f08-\B 943b-\B c7478aea59fb} &
+  O avatar (\enquote{Silas Customer Support}, do catálogo público). Zod: UUID.
+  No \emph{sandbox} é trocado pelo avatar de testes do vendor, o único que ele
+  aceita.\\
+\zebra \env{LIVEAVATAR\_VOICE\_ID} & --- & Opcional (UUID). Ausente, vale a voz do
+  avatar. Não é mandada no \emph{sandbox}.\\
+\env{LIVEAVATAR\_CONTEXT\_ID} & --- & O CONTEXTO no vendor (UUID), cujo
+  \emph{prompt} é uma frase e o marcador \cd{[sessao:\$\{sessao\}]} --- nada da
+  base nem das instruções, que moram na api. Impresso por
+  \arq{scripts/\B liveavatar-\B configurar.mjs} --- um por contrato e ambiente, fora
+  do Terraform. Sem ele, o avatar fica mudo. \textbf{Fecha.}\\
+\zebra \env{LIVEAVATAR\_LLM\_CONFIG\_ID} & --- & A configuração de LLM no vendor
+  (UUID), que aponta para o NOSSO \rota{/ajuda/llm}. Impressa pelo mesmo
+  \emph{script}. Sem ela, o avatar responderia com o LLM da HeyGen ---
+  por isso a Ajuda não abre. \textbf{Fecha.}\\
+\env{LIVEAVATAR\_SANDBOX} & \cd{0} & \cd{1} = o avatar de testes do vendor
+  (sessões de \textasciitilde 1 minuto, sem crédito). \textbf{Recusado em
+  produção} pelo Zod: ali seria uma Ajuda que cai sozinha no meio da
+  explicação. O \arq{.env.example} traz \cd{1}.\\
+\zebra \env{AJUDA\_LLM\_SEGREDO} & --- & \textbf{Segredo} (Secret Manager:
+  \cd{\{contrato\}-\B ajuda-\B llm-\B segredo}), 32+ caracteres. O
+  \cd{Authorization: Bearer} que o vendor manda ao nosso \rota{/ajuda/llm}; o
+  MESMO valor fica guardado na conta do vendor, como \cd{OPENAI\_API\_KEY}.
+  Ausente, a rota de LLM responde 503 --- desligada, nunca aberta.
+  \textbf{Fecha.}\\
+\env{AJUDA\_SESSAO\_CHAVE} & --- & \textbf{Segredo} (Secret Manager:
+  \cd{\{contrato\}-\B ajuda-\B sessao-\B chave}), 32+ caracteres. Assina (HS256) o
+  \emph{token} curto que identifica a pessoa DENTRO do \emph{prompt} do contexto
+  (\cd{dynamic\_variables.sessao}). Só a api a conhece: quem assina é quem
+  confere. \textbf{Fecha.}\\
+\bottomrule
+\end{tabularx}
+
+\begin{atencao}
+\textbf{A api precisa de URL PÚBLICA} alcançável pelo vendor, sem IAP nem
+\emph{allowlist} por IP no LB: é o servidor dele que chama \rota{/ajuda/llm}. Em
+dev local, só com túnel (\cd{cloudflared}), e a URL do túnel é a que se passa ao
+\arq{scripts/liveavatar-configurar.mjs <ambiente> <url-publica>}. A configuração
+de LLM que ele cria aponta para AQUELA URL, e o vendor não tem edição
+documentada: trocar a URL (ou o segredo) é apagar a configuração no painel do
+vendor e rodar o \emph{script} de novo --- o segredo depois da configuração, nunca
+antes, ou a configuração quebra sem aviso. O \emph{script} escreve na conta real
+do vendor e não cria nada no GCP: os três segredos chegam ao Secret Manager pelo
+Terraform (\arq{docs/INFRA.md}), e os dois ids entram como \emph{env} comum.
+\end{atencao}
 
 \subsection{Armazenamento}
 
@@ -482,6 +555,7 @@ ASSETS_DRIVER=local       # a API serve /assets
 PLANOS_DRIVER=local       # grava em storage-privado/
 TELEMETRIA_TOPIC=         # vazio: eventos so no console
 # TELEMETRIA_PUSH_* vazias  => /telemetry/ingest responde 401 (correto em dev)
+# LIVEAVATAR_* / AJUDA_* vazias => POST /ajuda/sessoes responde 503 (a api sobe)
 
 # HUB
 NEXT_PUBLIC_API_URL=http://localhost:3001

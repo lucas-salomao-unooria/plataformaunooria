@@ -8,9 +8,7 @@ Catálogo das 83 tabelas de \cd{public}, mais o \emph{schema} \cd{particoes}.
 O número é o de \cd{model} em \arq{apps/api/prisma/schema.prisma} em
 2026-10-02 (todos com \cd{@@map}; a \cd{\_prisma\_migrations} é do Prisma e
 fica fora), e o índice abaixo tem uma linha por \cd{model}: tabela nova sem
-linha aqui é o sinal de que este apêndice ficou para trás. Hoje faltam as
-duas da Ajuda com avatar (\cd{ajuda\_sessoes} e \cd{ajuda\_limites}), que
-esperam a seção da \adrr{ADR-132}.
+linha aqui é o sinal de que este apêndice ficou para trás.
 Os diagramas entidade-relacionamento estão no Capítulo~\ref{cap:dados}.
 
 \begin{tabularx}{\linewidth}{@{}L{22mm}X@{}}
@@ -24,6 +22,10 @@ Os diagramas entidade-relacionamento estão no Capítulo~\ref{cap:dados}.
   se leem.\\
 \textbf{Catálogo} & Sem \cd{escola\_id}, \textbf{fora} da RLS. Pertence ao
   contrato, não à escola.\\
+\zebra \textbf{Medidor sem RLS} & Dado de PESSOA fora da RLS, com a exceção
+  escrita no Capítulo~\ref{cap:tenancy}: \cd{escola\_id} existe mas é nulável,
+  porque a pessoa pode ser de um papel sem escola. Toda \emph{query} filtra pelo
+  \cd{usuario\_id} do \emph{token}. Hoje, só \cd{ajuda\_sessoes}.\\
 \bottomrule
 \end{tabularx}
 
@@ -58,6 +60,8 @@ Os diagramas entidade-relacionamento estão no Capítulo~\ref{cap:dados}.
 \zebra \cd{ia\_uso\_diario} & Tenant & Contador de quota de IA\\
 \cd{ia\_quotas} & \textbf{Catálogo} & \textbf{O teto diário de IA por perfil} (\adrr{ADR-105})\\
 \zebra \cd{agente\_professor\_conversas} & Tenant & \textbf{A posse} das conversas do agente de IA do professor; o conteúdo mora no Agent Engine (\adrr{ADR-126})\\
+\cd{ajuda\_limites} & \textbf{Catálogo} & \textbf{Os minutos da Ajuda com avatar}, por pessoa e dia e por sessão --- o par de \cd{ia\_quotas} (\adrr{ADR-132})\\
+\zebra \cd{ajuda\_sessoes} & \textbf{Medidor sem RLS} & Uma linha por sessão de vídeo da Ajuda: início, teto e fim, nenhuma palavra da conversa. \cd{escola\_id} nulo nos papéis de contrato (\adrr{ADR-132})\\
 \cd{telemetria\_eventos} & Tenant, particionada & Canal analítico\\
 \zebra \cd{exp08ef1b\_activities} & Tenant & Atividade preparada pelo professor\\
 \cd{exp08ef1b\_authors} & Tenant & Personas fictícias\\
@@ -630,9 +634,10 @@ principal. O \emph{login} e o \emph{claim} \cd{turma\_id} do \emph{token}
   ordena continua sendo a unidade: a transversal e a ferramenta não têm uma, e a
   ordem da grade não pode depender da forma de um identificador.\\
 \zebra \cd{produto} & \cd{TEXT?} & \cd{entre-redes} $|$ \cd{plano-de-aula} $|$
-  \cd{plano-de-ensino} $|$ \cd{bem-estar} $|$ \cd{agente-professor}, com
-  \emph{CHECK} espelhando \cd{PRODUTOS} do código --- o último não tem
-  experiência nenhuma apontando para ele (\adrr{ADR-126}), mas o \emph{CHECK}
+  \cd{plano-de-ensino} $|$ \cd{bem-estar} $|$ \cd{agente-professor} $|$
+  \cd{ajuda}, com \emph{CHECK} (\cd{ck\_experiencias\_produto}) espelhando
+  \cd{PRODUTOS} do código --- os dois últimos não têm experiência nenhuma
+  apontando para eles (\adrr{ADR-126}, \adrr{ADR-132}), mas o \emph{CHECK}
   espelha a tupla inteira. Declarado no \cd{public/\allowbreak{}experiencia.json}.
   É o que põe a experiência no painel da Unooria e o que lhe dá o TETO do
   produto (\adrr{ADR-87}); \cd{NULL} \implica{} ela responde só pelo próprio
@@ -932,6 +937,106 @@ pergunta pode trazer o nome de um estudante. Índice
 \cd{(escola\_id, usuario\_id, atualizada\_em DESC)}. \emph{Grant} da role de
 runtime: \cd{SELECT, INSERT, UPDATE, DELETE} --- apagar a conversa apaga a linha,
 depois da sessão. Migração \arq{20260930120000\_\B agente\_\B professor}.
+
+\subsection{\cd{ajuda\_limites} (catálogo)}
+
+\textbf{Os minutos da Ajuda com avatar} (\adrr{ADR-132}) --- o par de
+\cd{ia\_quotas}, para um produto cujo custo é o minuto de vídeo e não o
+\emph{token} (exceção à regra 5). A Ajuda lê as linhas a cada abertura de sessão,
+sem \emph{cache}: o teto da sessão é o menor entre \cd{minutos-por-sessao} e o
+que sobra de \cd{minutos-por-dia} da pessoa. Escopo do CONTRATO inteiro, semeada
+pela migração e sobrescrita só pelo \cd{admin} em \rota{/unooria/uso-de-ia}
+(\rota{PUT /recursos/\B limites-da-ajuda/:chave}); o histórico vive em
+\cd{recursos\_auditoria} (ação \cd{quota-alterada}, \cd{recurso\_id}
+\cd{ajuda:<chave>}, com \cd{\{de, para\}}). Vale na PRÓXIMA sessão; a que está no
+ar mantém o teto com que nasceu.
+
+\begin{tabularx}{\linewidth}{@{}L{28mm}L{26mm}X@{}}
+\toprule
+\headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
+\midrule
+\pk{chave} & \cd{TEXT} PK & Vocabulário FECHADO por \emph{CHECK}
+  (\cd{ck\_ajuda\_limites\_chave}): \cd{minutos-por-dia}, \cd{minutos-por-sessao},
+  espelhando \cd{CHAVES\_DE\_LIMITE} de \arq{src/ajuda/regras.ts}.\\
+\zebra \cd{valor} & \cd{INTEGER} & Em MINUTOS. \emph{CHECK}
+  (\cd{ck\_ajuda\_limites\_valor}) $> 0$ e $\leq 600$, e $\leq 60$ na
+  \cd{minutos-por-sessao}. Zero não é limite: é o interruptor (\adrr{ADR-87})
+  entrando pela porta errada --- fechar a Ajuda é desligar o produto. O 600 é
+  sanidade: um zero a mais no campo não vira custo sem fim.\\
+\cd{motivo} & \cd{TEXT?} & Obrigatório na rota (Zod), sempre. A semente traz
+  o motivo do padrão da plataforma.\\
+\zebra \cd{definido\_por} & \cd{UUID?} & \textbf{Sem FK}, pela razão de
+  \cd{ia\_quotas}: a linha é SOBRESCRITA e o nome congelado de quem mexeu vive
+  no histórico. \cd{NULL} = veio da migração.\\
+\cd{definido\_em}, \cd{atualizado\_em} & \cd{TIMESTAMPTZ(6)} & \\
+\bottomrule
+\end{tabularx}
+
+\textbf{Semente}: \cd{minutos-por-dia} = 30 e \cd{minutos-por-sessao} = 10 ---
+três conversas de dez minutos por pessoa por dia; a Ajuda é para tirar dúvida,
+não para treinamento. \textbf{Sem RLS}, pelo par de razões de \cd{ia\_quotas}:
+não é dado de estudante, e não há \cd{escola\_id} --- a linha vale para o
+contrato inteiro. \emph{Grant} da role de runtime: \cd{SELECT, INSERT, UPDATE},
+sem \cd{DELETE} --- sem a linha, vale a constante do código
+(\cd{LIMITES\_PADRAO}) e o registro acusa \cd{ajuda-limite-sem-linha}.
+Migração \arq{20261002120000\_\B ajuda\_\B com\_\B avatar}.
+
+\subsection{\cd{ajuda\_sessoes} (medidor, sem RLS)}
+
+\textbf{O medidor de minutos da Ajuda com avatar} (\adrr{ADR-132}): uma linha
+por sessão de vídeo aberta, e nada da conversa --- nem pergunta, nem resposta,
+nem transcrição. A soma do dia de uma pessoa (no fuso da plataforma,
+\adrr{ADR-99}) é o que se compara com \cd{ajuda\_limites}.
+
+\textbf{Sem RLS e com \cd{escola\_id} nulável}, a exceção à regra nº 1 escrita na
+própria migração e no Capítulo~\ref{cap:tenancy}
+(Seção~\ref{sec:ajuda-seguranca}). As três razões: a Ajuda vale para
+\cd{gestor\_contrato} e \cd{admin}, que não têm escola no \emph{token}, e a
+política por escola esconderia a linha deles de todo mundo; não é dado de
+estudante (o \emph{CHECK} do perfil o recusa); e não guarda conteúdo. Quem
+protege a leitura é a aplicação: \textbf{toda \emph{query} filtra pelo
+\cd{usuario\_id} do \emph{token}}, e nenhuma rota lista o uso de outra pessoa ---
+nem a do \cd{admin}.
+
+\begin{tabularx}{\linewidth}{@{}L{28mm}L{26mm}X@{}}
+\toprule
+\headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
+\midrule
+\pk{id} & \cd{UUID} PK & \cd{gen\_random\_uuid()}. A linha nasce ANTES de o
+  vendor responder, porque este id vai dentro do \emph{token} da sessão
+  (\cd{sid}). É o id que o hub conhece para encerrar.\\
+\zebra \cd{usuario\_id} & \cd{UUID} & \cd{NOT NULL}, o \cd{sub} do \emph{token}.
+  \textbf{Sem FK}, como \cd{ia\_uso\_diario}: é um medidor, e uma FK com
+  \cd{RESTRICT} travaria a exclusão de quem já usou a Ajuda.\\
+\cd{escola\_id} & \cd{TEXT?} & A escola ativa de quem abriu; \cd{NULL} para os
+  papéis de contrato. Sem FK: é rótulo, não posse.\\
+\zebra \cd{perfil} & \cd{TEXT} & \emph{CHECK} (\cd{ck\_ajuda\_sessoes\_perfil}):
+  \cd{professor}, \cd{gestor\_escola}, \cd{gestor\_regional},
+  \cd{gestor\_contrato}, \cd{admin} --- \textbf{nunca \cd{estudante}},
+  espelhando \cd{PERFIS\_DA\_AJUDA}. O \cd{@Roles} já barra; o \emph{CHECK} é a
+  segunda tranca, para que uma rota nova esquecida não grave a linha de uma
+  criança.\\
+\cd{avatar\_sessao\_id} & \cd{TEXT?} & O id da sessão no vendor --- é com ele
+  que a api encerra a sala. Nulo só no instante entre reservar a linha e o vendor
+  responder.\\
+\zebra \cd{inicio} & \cd{TIMESTAMPTZ(6)} & \cd{DEFAULT CURRENT\_TIMESTAMP}.\\
+\cd{duracao\_max\_s} & \cd{INTEGER} & O teto pedido ao vendor, que derruba a
+  sala ao atingi-lo. \emph{CHECK} (\cd{ck\_ajuda\_sessoes\_duracao}) entre 30 e
+  \num{3600}: fora disso é erro de programação, e o \emph{CHECK} impede que vire
+  custo.\\
+\zebra \cd{fim} & \cd{TIMESTAMPTZ(6)?} & \emph{CHECK} (\cd{ck\_ajuda\_sessoes\_fim}):
+  nulo ou $\geq$ \cd{inicio}. \textbf{Nulo conta o teto INTEIRO no dia} ---
+  falha para o lado do custo, porque o vendor cobra até a sala fechar. Abrir
+  outra sessão fecha a que ficou aberta; vendor fora do ar fecha a linha com
+  duração zero.\\
+\bottomrule
+\end{tabularx}
+
+Índice \cd{ajuda\_\B sessoes\_\B por\_\B pessoa\_\B idx} em
+\cd{(usuario\_id, inicio DESC)}: a soma do dia lê as sessões das últimas 36 horas
+de uma pessoa. \emph{Grant} da role de runtime: \cd{SELECT, INSERT, UPDATE}, sem
+\cd{DELETE} --- a linha é medição, e só se fecha. Migração
+\arq{20261002120000\_\B ajuda\_\B com\_\B avatar}.
 
 \subsection{\cd{progresso}}
 

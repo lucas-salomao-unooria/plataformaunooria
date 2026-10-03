@@ -486,6 +486,86 @@ NDJSON puro, no mesmo serviço; o cliente decide por linha, não pelo
 \emph{camelCase}: o cliente normaliza os dois em \cd{EventoAgente}.
 \end{nota}
 
+\section{Ajuda com avatar --- a sessão e o LLM do \emph{vendor}}
+\label{sec:payload-ajuda}
+
+O contrato está na Seção~\ref{sec:contrato-ajuda}; os \emph{schemas}, em
+\arq{src/ajuda/contrato-de-rotas.ts}. Os exemplos são sintéticos: os
+\emph{tokens} e segredos abaixo não são reais.
+
+\begin{lstlisting}[language=jsonunoo, caption={\rota{POST /ajuda/sessoes} --- 201 (sem corpo no pedido)}]
+{ "id": "3f6c2a10-8d4e-4b7a-9c21-5e0f7a9b1c34",  // a NOSSA sessao (ajuda_sessoes)
+  "tokenDaSessao": "eyJhbGciOi...<token do vendor>", // so entra na sala de video
+  "duracaoMaximaS": 600,                           // o teto: o vendor fecha a sala
+  "segundosRestantesHoje": 1200 }                  // o que sobra DEPOIS desta sessao
+\end{lstlisting}
+
+\begin{lstlisting}[language=jsonunoo, caption={As recusas de \rota{POST /ajuda/sessoes}, que o hub mostra como vieram}]
+// 503
+{ "codigo": "AJUDA_INDISPONIVEL", "mensagem": "A Ajuda com atendente nao esta disponivel agora." }
+// 429
+{ "codigo": "SEM_MINUTOS", "mensagem": "Voce ja usou todos os minutos de Ajuda de hoje. ...", "minutosPorDia": 30 }
+{ "codigo": "RATE_LIMIT",  "mensagem": "Muitas tentativas seguidas. ...", "retryAfterSeconds": 41 }
+// 502
+{ "codigo": "AVATAR_FALHOU", "mensagem": "Nao conseguimos chamar o atendente agora. ..." }
+// 403 { "codigo": "recurso-indisponivel" } com o produto ajuda desligado na escola
+\end{lstlisting}
+
+\begin{lstlisting}[language=jsonunoo, caption={A api \seta{} o \emph{vendor}: \rota{POST /v1/sessions/token} (cabeçalho \cd{x-api-key})}]
+{ "mode": "FULL",
+  "avatar_id": "<LIVEAVATAR_AVATAR_ID>",
+  "is_sandbox": false,
+  "interactivity_type": "CONVERSATIONAL",
+  "max_session_duration": 600,
+  "llm_configuration_id": "<LIVEAVATAR_LLM_CONFIG_ID>",   // o LLM e o NOSSO
+  "avatar_persona": { "context_id": "<LIVEAVATAR_CONTEXT_ID>",  // sem ele: mudo
+                      "language": "pt" },
+  "dynamic_variables": { "sessao": "eyJhbGciOiJIUzI1NiJ9...<HS256 da api>" } }
+// resposta: { "data": { "session_id": "...", "session_token": "..." } }
+\end{lstlisting}
+
+\begin{lstlisting}[language=jsonunoo, caption={O \emph{vendor} \seta{} a api: \rota{POST /ajuda/llm/chat/completions} (medido no \emph{spike})}]
+// Authorization: Bearer <AJUDA_LLM_SEGREDO>
+{ "model": "unooria-ajuda",
+  "stream": true,
+  "stream_options": { "include_usage": true },
+  "temperature": 0.5,                                 // ignorada: a api usa 0.3
+  "messages": [
+    { "role": "system",                               // LIDO so para achar o token,
+      "content": "Atendente da Ajuda da Unooria. [sessao:eyJhbGciOiJIUzI1NiJ9...]" },
+    { "role": "assistant",                            // o opening_text do contexto
+      "content": "Ola! Eu sou o atendente da Unooria. Em que posso ajudar ...?" },
+    { "role": "user", "content": "Como eu libero uma missao para a minha turma?" } ] }
+\end{lstlisting}
+
+\begin{lstlisting}[language=bashunoo, caption={A resposta: \cd{text/event-stream}, um \cd{chat.completion.chunk} por linha \cd{data:}}]
+data: {"id":"chatcmpl-9b1e...","object":"chat.completion.chunk","created":1790985600,"model":"unooria-ajuda","choices":[{"index":0,"delta":{"role":"assistant","content":""},"finish_reason":null}]}
+
+data: {"id":"chatcmpl-9b1e...","object":"chat.completion.chunk","created":1790985600,"model":"unooria-ajuda","choices":[{"index":0,"delta":{"content":"Primeiro, entre em Minhas turmas "},"finish_reason":null}]}
+
+data: {"id":"chatcmpl-9b1e...","object":"chat.completion.chunk","created":1790985600,"model":"unooria-ajuda","choices":[{"index":0,"delta":{},"finish_reason":"stop"}]}
+
+data: {"id":"chatcmpl-9b1e...","object":"chat.completion.chunk","created":1790985600,"model":"unooria-ajuda","choices":[],"usage":{"prompt_tokens":66120,"completion_tokens":84,"total_tokens":66204}}
+
+data: [DONE]
+\end{lstlisting}
+
+\begin{nota}
+O primeiro pedaço (\cd{role: "assistant"}, conteúdo vazio) sai antes de o modelo
+ser chamado: é o que segura os 10\,s do \emph{vendor} até o primeiro byte. Se em
+7\,s nenhum texto chegou, sai um pedaço com a \cd{FALA\_DE\_ESPERA}. O pedaço de
+\cd{usage} só sai com \cd{include\_usage: true}. Com \cd{stream: false}, a mesma
+resposta vem num \cd{chat.completion} inteiro, com
+\cd{choices[0].message.content} e o \cd{usage}. Recusa de negócio e falha do
+modelo seguem este mesmo formato, com a frase pronta no \cd{content}; só a
+autenticação responde \cd{401 \{ "error": \{ "message": "..." \} \}}.
+\end{nota}
+
+\begin{lstlisting}[language=jsonunoo, caption={\rota{GET /ajuda/llm/models} --- o que o \emph{vendor} recebe na abertura}]
+{ "object": "list",
+  "data": [ { "id": "unooria-ajuda", "object": "model", "owned_by": "unooria" } ] }
+\end{lstlisting}
+
 \section{Manifesto de experiência}
 
 \begin{lstlisting}[language=jsonunoo, caption={\arq{public/experiencia.json} --- exp08ef1b, com \cd{viewport}}]
