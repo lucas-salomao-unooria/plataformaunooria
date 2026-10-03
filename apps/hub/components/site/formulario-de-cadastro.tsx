@@ -190,6 +190,17 @@ export function CadastroDeInteresse() {
           <label className="form-consent form-wide">
             <input type="checkbox" name="consentimento" required /> Autorizo o contato da Unooria sobre o ENTRE REDES.
           </label>
+          {/* ACRÉSCIMO ao porte (H11.2.1): fora do `<label>`, para o clique no
+              link não marcar a caixa; e em outra aba, para não perder o que a
+              pessoa já digitou. A frase do aceite NÃO muda — ela é gravada com o
+              cadastro (`TEXTO_DO_CONSENTIMENTO`, na api). */}
+          <p className="form-privacidade form-wide">
+            Como a Unooria trata estes dados:{" "}
+            <a href="/privacidade" target="_blank" rel="noopener">
+              Política de Privacidade
+            </a>
+            .
+          </p>
           <div className="form-acoes form-wide">
             {/* `outline` é a variante que o próprio material já traz: a ação de
                 sair não pode ter o mesmo peso visual da de enviar. */}

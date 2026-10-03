@@ -247,9 +247,9 @@ button.floating-cta{border:0}
 }
 
 /* ==========================================================================
-   ENTRAR E DOCUMENTOS LEGAIS (H11.1.2, 2026-10-03) — quarto acréscimo, e o
-   único que não veio de um pacote do material: o "Entrar" do cabeçalho e os
-   dois links legais do rodapé. Desenhados com as peças do próprio site — o
+   ENTRAR E DOCUMENTOS LEGAIS (H11.1.2 e H11.2.1, 2026-10-03) — quarto
+   acréscimo, e o único que não veio de um pacote do material: o "Entrar" do
+   cabeçalho, os dois links legais do rodapé e o da janela do cadastro. Desenhados com as peças do próprio site — o
    contorno do botão "Explorar" e o tom dos textos do rodapé — para não
    parecerem enxertados.
    ========================================================================== */
@@ -259,6 +259,9 @@ button.floating-cta{border:0}
 .footer-legal{display:flex;flex-wrap:wrap;gap:4px 20px;font-size:.875rem}
 .footer-legal a{color:#bbc5dc;min-height:44px;display:flex;align-items:center;text-decoration:underline;text-underline-offset:3px;text-decoration-color:#414c68}
 .footer-legal a:hover{text-decoration-color:currentColor}
+/* H11.2.1: o mesmo tom do aceite, logo abaixo dele, na janela do cadastro. */
+.form-privacidade{color:var(--muted);font-size:.8125rem;line-height:1.6;margin-top:-10px}
+.form-privacidade a{color:#dae7fa;text-decoration:underline;text-underline-offset:3px}
 @media print{.header-entrar{display:none!important}}
 /* Abaixo de 360px (o iPhone SE da primeira geração tem 320) os quatro itens do
    cabeçalho não cabem com o respiro original, e o "Explorar" sai da tela.

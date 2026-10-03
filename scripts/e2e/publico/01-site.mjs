@@ -223,6 +223,8 @@ await suite(
         ),
         travou: document.body.classList.contains("locked"),
         cabe: caixa.width <= innerWidth && caixa.height <= innerHeight,
+        privacidade: dialogo.querySelector(".form-privacidade a")?.getAttribute("href") ?? null,
+        linkNoRotulo: Boolean(dialogo.querySelector("label a")),
       };
     });
     for (const campo of ["nome", "email", "telefone", "organizacao", "cargo", "consentimento"]) {
@@ -235,9 +237,13 @@ await suite(
     r.exigir(janela.fechadores.length === 2, `a janela oferece DUAS saídas além do Esc (${janela.fechadores.join(" · ")})`);
     r.exigir(janela.travou, "a página atrás da janela para de rolar enquanto ela está aberta");
     r.exigir(janela.cabe, "a janela cabe na tela — nenhuma ação fica fora do alcance");
+    /* H11.2.1: quem autoriza o contato alcança a política antes de enviar — e
+       o link fica FORA do rótulo, senão clicá-lo marcaria a caixa do aceite. */
+    r.exigir(janela.privacidade === "/privacidade", `a janela leva à Política de Privacidade (${janela.privacidade})`);
+    r.exigir(!janela.linkNoRotulo, "o link não está dentro do rótulo do aceite");
     await r.registrar(p, "cadastro", {
       titulo: "O cadastro de interesse, numa janela",
-      mostra: "Nome, e-mail profissional, telefone, organização, cargo e o aceite, sobre a página escurecida.",
+      mostra: "Nome, e-mail profissional, telefone, organização, cargo, o aceite e o link da Política de Privacidade, sobre a página escurecida.",
       prova:
         "É a única parte do site que não é porte: o destino mudou de um SQLite fora da plataforma para a api (ADR-107). O envio de verdade é provado em admin/03-prospeccao.",
       detalhe: `${janela.campos.length} campos · saídas: ${janela.fechadores.join(", ")}`,
