@@ -409,6 +409,18 @@ describe("relatório da diretoria", () => {
     );
     const vila = relatorio?.experiencias.find((e) => e.expId === "app-70-vila-do-lume");
     expect(vila).toMatchObject({ turmasEncerradas: 1, turmasLiberadas: 0, estudantes: 1 });
+    // O nome do catálogo, que a diretoria reconhece; o código só fora dele (H07.2.1).
+    const doCatalogo = await prisma.experiencia.findUnique({ where: { expId: "app-70-vila-do-lume" } });
+    expect(vila?.nome).toBe(doCatalogo?.nome ?? "app-70-vila-do-lume");
+    if (!doCatalogo) {
+      // Banco de teste sem o catálogo publicado: prova o caminho do nome também.
+      await prisma.experiencia.create({
+        data: { expId: "app-70-vila-do-lume", nome: "Vila do Lume", versaoAtiva: "0.0.0" },
+      });
+      const comNome = await escolas.relatorioDaRegional(DESTINO);
+      expect(comNome?.experiencias.find((e) => e.expId === "app-70-vila-do-lume")?.nome).toBe("Vila do Lume");
+      await prisma.experiencia.delete({ where: { expId: "app-70-vila-do-lume" } });
+    }
     // E cada medida aparece na ESCOLA onde aconteceu, não somada na primeira.
     const daTurma = relatorio?.escolas.find((e) => e.id === ESCOLAS[0]);
     const daCrianca = relatorio?.escolas.find((e) => e.id === ESCOLAS[1]);

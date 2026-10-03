@@ -22,7 +22,7 @@
 \headrow \thd{ID} & \thd{Feature} & \thd{Estado}\\
 \midrule
 \id{F07.1} & Resultados da turma & \pronto\\
-\zebra \id{F07.2} & Relatório da diretoria & \parcial\\
+\zebra \id{F07.2} & Relatório da diretoria & \pronto\\
 \id{F07.3} & Análise de produto na rede & \parcial\\
 \bottomrule
 \end{tabularx}
@@ -98,9 +98,9 @@ sinceridade}
 \end{historia}
 
 % ---------------------------------------------------------------------------
-\feature{F07.2}{Relatório da diretoria}{\parcial}
+\feature{F07.2}{Relatório da diretoria}{\pronto}
 
-\begin{historia}{H07.2.1}{Acompanhar a adoção na minha regional}{\parcial}
+\begin{historia}{H07.2.1}{Acompanhar a adoção na minha regional}{\pronto}
 \hu{Coordenação regional}{ver quais escolas estão usando as missões}{apoiar
 as escolas que estão atrás}
 \aceite
@@ -108,12 +108,12 @@ as escolas que estão atrás}
   \item \enquote{Relatório} mostra o consolidado por missão e por escola, com
     \enquote{Turmas abertas}, \enquote{Turmas encerradas} e
     \enquote{Estudantes com registro}.
+  \item A coluna \enquote{Missão} mostra o nome da missão, em ordem
+    alfabética --- nunca o código interno.
   \item Só a própria regional, sem seletor.
   \item Sem nome de criança, sem bem-estar, sem ranking.
   \item \enquote{Baixar CSV}.
 \end{itemize}
-\pendencia{a coluna \enquote{Missão} mostra o código interno (por exemplo
-\enquote{exp08ef1b}) em vez do nome da missão.}
 \end{historia}
 
 \begin{historia}{H07.2.2}{Comparar as regionais}{\pronto}
