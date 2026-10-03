@@ -355,20 +355,20 @@ experiência sob um produto desligado mostra o interruptor inerte e a frase
 \enquote{o produto está desligado neste escopo}; ativo, ele prometeria uma
 mudança que o resolvedor ignora, e escondido pareceria defeito.
 
-\section{Lacuna aberta: o \cd{SideBar} traz um item que não é seu}
+\section{Lacuna fechada: o botão de aplicativos do \cd{SideBar}}
 
-O \cd{SideBar} da seção \cd{unooria} renderiza SEMPRE, como primeiro item, um
-botão \enquote{Iniciativas} fixo no componente, que alterna um painel de
-\cd{appsItems}. \textbf{Nenhuma área deste hub passa \cd{appsItems}}, então o
-clique não faz nada --- e isso vale para \rota{/admin} desde que a barra existe,
-e agora para \rota{/unooria}.
+O \cd{SideBar} da seção \cd{unooria} desenhava SEMPRE, como primeiro item, um
+botão \enquote{Iniciativas} que alterna um painel de \cd{appsItems} --- e
+\textbf{nenhuma área deste hub tem painel de aplicativos}: em \rota{/admin} e
+\rota{/unooria} o clique não fazia nada, na primeira posição da barra, que é
+onde a mão vai.
 
-Item de menu que não leva a nada é pior que item nenhum: ele consome a primeira
-posição da barra, que é onde a mão vai. É \textbf{lacuna do pacote}, com pedido
-no \arq{storybook-unooria} --- o que falta é o item ser condicional a haver
-\cd{appsItems}. Não há compensação local aqui de propósito: esconder o botão
-por CSS seria reimplementar decisão de componente do lado de fora, e a regra de
-ouro é o contrário disso.
+A correção foi feita no pacote, e não aqui: esconder o botão por CSS seria
+reimplementar decisão de componente do lado de fora, e a regra de ouro é o
+contrário disso. Desde a 0.2.15 o \cd{SideBar} aceita \cd{showApps} (padrão
+\cd{true}, sem mudar quem já usa), além de \cd{appsLabel} e \cd{appsTooltip}
+para o rótulo e a dica; com \cd{false}, o botão some e o painel não abre. As
+duas barras do hub passam \cd{showApps=\{false\}} (H01.2.2).
 
 \section{Compensações locais}
 
