@@ -247,6 +247,29 @@ button.floating-cta{border:0}
 }
 
 /* ==========================================================================
+   ENTRAR E DOCUMENTOS LEGAIS (H11.1.2, 2026-10-03) — quarto acréscimo, e o
+   único que não veio de um pacote do material: o "Entrar" do cabeçalho e os
+   dois links legais do rodapé. Desenhados com as peças do próprio site — o
+   contorno do botão "Explorar" e o tom dos textos do rodapé — para não
+   parecerem enxertados.
+   ========================================================================== */
+.header-entrar{display:flex;align-items:center;justify-content:center;min-height:44px;padding:10px 14px;border:1px solid #414c68;border-radius:9px;color:#dae7fa;font-size:.875rem;line-height:1.35;flex-shrink:0;transition:border-color .2s,background-color .2s}
+.header-entrar:hover{border-color:#8fa3cc;background:#11172fcc}
+.header-entrar:focus-visible{outline:2px solid #dae7fa;outline-offset:2px}
+.footer-legal{display:flex;flex-wrap:wrap;gap:4px 20px;font-size:.875rem}
+.footer-legal a{color:#bbc5dc;min-height:44px;display:flex;align-items:center;text-decoration:underline;text-underline-offset:3px;text-decoration-color:#414c68}
+.footer-legal a:hover{text-decoration-color:currentColor}
+@media print{.header-entrar{display:none!important}}
+/* Abaixo de 360px (o iPhone SE da primeira geração tem 320) os quatro itens do
+   cabeçalho não cabem com o respiro original, e o "Explorar" sai da tela.
+   Aperta o respiro em vez de esconder o "Entrar". */
+@media(max-width:359px){
+  .site-entre-redes .head-inner{gap:6px}
+  .site-entre-redes .header-entrar{padding-inline:8px}
+  .site-entre-redes .floating-cta{padding-inline:8px}
+}
+
+/* ==========================================================================
    REVISÃO 19 (2026-09-18) — o hero centralizado e o campo de estrelas único.
 
    Terceiro e último acréscimo à folha, e o maior: veio do pacote

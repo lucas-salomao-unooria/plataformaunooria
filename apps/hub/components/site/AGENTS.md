@@ -11,9 +11,11 @@ por um Worker). O que ele pede daqui não é melhoria — é **continuar sendo o
 
 Por isso, nesta pasta e só nela:
 
-- **`site.css` é cópia integral, mais três acréscimos, cada um marcado no
+- **`site.css` é cópia integral, mais quatro acréscimos, cada um marcado no
   arquivo**: a linha da tipografia (`.site-entre-redes{font-family:…}`), o bloco
-  da janela do cadastro e o bloco da Revisão 19. O da tipografia existe porque o
+  da janela do cadastro, o do "Entrar" e dos links legais (H11.1.2) e o bloco da
+  Revisão 19. Na marcação, os acréscimos também levam comentário
+  `ACRÉSCIMO ao porte` — é o que dizer a quem comparar com o próximo pacote. O da tipografia existe porque o
   `<body>` do hub traz `font-family` INLINE (layout raiz), e estilo inline vence
   folha — sem ela o site sai inteiro em system-ui, com o desenho intacto. O
   sintoma é "a tipografia está diferente", sem nada quebrado para procurar.
