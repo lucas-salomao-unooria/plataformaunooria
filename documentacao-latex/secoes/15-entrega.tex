@@ -279,6 +279,71 @@ instrução de instalação, para que um pacote que some da verificação não v
 verde falso (\env{AGENTE\_PROFESSOR\_PULAR\_SEM\_UV=1} pula com aviso).
 \end{atencao}
 
+\subsection{A Ajuda com avatar: o que cada ambiente precisa, fora do \emph{pipeline}}
+
+A Ajuda com avatar (\adrr{ADR-132}) não acrescenta \emph{job} nenhum: o código vai
+na imagem da api, e o \emph{vendor} (LiveAvatar) não recebe artefato. O que ela
+exige é configuração por contrato e ambiente, e a ordem importa, porque a
+configuração do \emph{vendor} aponta para a URL pública da api:
+
+\begin{enumerate}
+  \item \textbf{Os três segredos no Secret Manager}, pelo Terraform:
+    \cd{\{contrato\}-liveavatar-api-key}, \cd{\{contrato\}-ajuda-llm-segredo} e
+    \cd{\{contrato\}-ajuda-sessao-chave}, com 32 ou mais caracteres, viram
+    \env{LIVEAVATAR\_API\_KEY}, \env{AJUDA\_LLM\_SEGREDO} e
+    \env{AJUDA\_SESSAO\_CHAVE} da api. Sem eles a api sobe normal e a Ajuda
+    responde 503 --- dá para aplicar o Terraform antes do passo seguinte.
+  \item \textbf{A api no ar com URL pública} (o domínio da api no LB), sem IAP
+    nem \emph{allowlist} por IP em \rota{/ajuda/llm/}: o \emph{vendor} chama de fora.
+  \item \textbf{\arq{scripts/liveavatar-configurar.mjs} \cd{<ambiente>}
+    \cd{<url-publica-da-api>}}, com \env{LIVEAVATAR\_API\_KEY} e o MESMO
+    \env{AJUDA\_LLM\_SEGREDO} exportados. Ele escreve na conta real do
+    \emph{vendor} --- o segredo (tipo \cd{OPENAI\_API\_KEY}), a configuração de LLM
+    apontando para \cd{<url>/ajuda/llm} e o contexto com o marcador da sessão
+    ---, é idempotente pelo nome \cd{unooria-ajuda-<ambiente>} e imprime
+    \env{LIVEAVATAR\_CONTEXT\_ID} e \env{LIVEAVATAR\_LLM\_CONFIG\_ID}, que entram
+    como \emph{env} comum da api. Um conjunto por contrato e ambiente; não cria
+    nada no GCP.
+  \item \textbf{\env{LIVEAVATAR\_SANDBOX=0}} fora de desenvolvimento. O
+    \emph{sandbox} (o avatar de testes do \emph{vendor}, sessões de cerca de 1
+    minuto, sem crédito) é \textbf{recusado pelo Zod em produção}: a api não sobe
+    com ele, porque seria uma Ajuda que cai sozinha no meio da explicação.
+  \item \textbf{Ligar o produto.} A \cd{ajuda} nasce desligada
+    (\cd{PRODUTOS\_\B DESLIGADOS\_\B POR\_\B PADRAO}); o \cd{admin} a liga no
+    painel da Unooria para a escola ou a rede onde quer testar, e ajusta os
+    minutos em \rota{/unooria/uso-de-ia} (semente: 30 por dia e 10 por sessão).
+\end{enumerate}
+
+Em desenvolvimento local, os \emph{compose} levam as mesmas variáveis vazias (a
+Ajuda responde 503 e nada mais muda) e \env{LIVEAVATAR\_SANDBOX=1} por padrão; o
+\emph{vendor} só alcança a api por túnel (\cd{cloudflared}), e é a URL do túnel que
+se passa ao \emph{script}. Trocar a URL ou o segredo depois é apagar a
+configuração (e então o segredo) no painel do \emph{vendor} e rodar o \emph{script}
+de novo --- apagar o segredo primeiro quebra a configuração sem aviso.
+
+\textbf{A base de conhecimento é gerada, e viaja na imagem.}
+\arq{apps/api/src/ajuda/base/base-da-ajuda.gerada.ts} sai de
+\cd{node scripts/gerar-base-da-ajuda.mjs}, a partir do mapa de produto (só o que
+está pronto ou parcial), dos guias da aula e dos manifestos das experiências, e
+é versionado. Quem muda um desses e não regera deixa o atendente explicando a
+tela de ontem; \arq{apps/api/tests/ajuda-base.spec.ts} roda o gerador com
+\cd{--verificar} e fica vermelho. O gerador também falha se a base vazar
+vocabulário técnico (\cd{TERMOS\_SENSIVEIS}), e a correção é no mapa, não na
+lista.
+
+\begin{limitacao}
+\textbf{O teste da base é da api, e as fontes dela não são.} O mapa de produto
+mora em \arq{documentacao-latex/produto/}, os guias em \arq{apps/hub/} e os
+manifestos em \arq{apps/experiencias/}. O CI roda \cd{pnpm turbo \ldots{}
+--filter='...[HEAD\^{}]'}, que só testa os pacotes tocados e os que dependem
+deles, e o \emph{hash} da tarefa \cd{test} do turbo só olha os arquivos do próprio
+pacote: um \emph{commit} que muda só um guia ou só o mapa não roda
+\cd{ajuda-base.spec.ts}, e um cache local pode repetir o verde antigo. Até que a
+tarefa declare essas entradas, regerar é parte do \emph{commit} que muda o mapa,
+um guia ou um manifesto; só uma execução completa do portão (\cd{completo}, o
+\cd{forcar} do \emph{deploy}) roda o teste de qualquer jeito.
+\end{limitacao}
+
 \subsection{Sonda, \emph{smoke} e aviso (2026-09-02)}
 
 Três passos que o \emph{pipeline} não tinha, todos da fase 0 do

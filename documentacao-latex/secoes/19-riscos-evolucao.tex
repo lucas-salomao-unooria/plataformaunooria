@@ -230,6 +230,47 @@ severidade, e a severidade considera o prazo de novembro de 2026.
   real}. A conferência de códigos da api pega código INVENTADO, não habilidade
   OMITIDA --- e a omissão é o plano que descumpre o currículo. Recall abaixo de
   100\% devolve o produto à ferramenta exata sobre \arq{src/curriculo}.\\
+\cd{R-33} & \textbf{A Ajuda depende de um vendor externo.} O vídeo, a voz e a
+  escuta são do LiveAvatar (HeyGen), com conta própria e créditos, uma chave por
+  contrato (\adrr{ADR-132}). & Média & Médio &
+  Sem crédito ou com o vendor fora, a abertura responde 502
+  \cd{AVATAR\_FALHOU} em todas as escolas do contrato; a linha reservada fecha
+  com duração zero e não conta minuto, e o resto da plataforma não sente. Sem as
+  envs, a Ajuda responde 503 e a api sobe normal. \textbf{Pendente}: o plano
+  pago (a conta de testes tem 10 créditos, 5 minutos de FULL) e o vendor no DPA
+  e na página de privacidade.\\
+\zebra \cd{R-34} & \textbf{Um \emph{endpoint} público chamado por terceiro.} O
+  \rota{/ajuda/llm} não recebe \emph{token} de usuário e não pode ficar atrás de
+  IAP nem de lista de IP. & Baixa & Médio &
+  \textbf{Mitigado} pelas duas trancas: o \emph{Bearer}
+  \env{AJUDA\_LLM\_SEGREDO} (é o vendor) e o \emph{token} HS256 curto da
+  sessão dentro da mensagem \cd{system} (quem fala, numa sessão aberta pela api
+  e ainda não fechada). Sem as chaves, a rota responde 503, nunca aberta. O
+  prompt e a base não vão ao vendor, e o \cd{system} dele é descartado.\\
+\cd{R-35} & \textbf{Custo por minuto de vídeo.} O FULL cobra 2 créditos por
+  minuto de sala aberta, falando ou não, e a Ajuda está fora da quota de
+  \emph{tokens}. & Média & Médio &
+  \textbf{Mitigado} por \cd{ajuda\_limites} (30 minutos por dia e 10 por
+  sessão, editáveis só pelo \cd{admin}, com teto de sanidade de 600 e 60), pelo
+  medidor que conta o teto inteiro de sessão sem fim, e pelo produto
+  \textbf{desligado por padrão}: nenhuma rede gasta minuto até o \cd{admin}
+  ligar.\\
+\zebra \cd{R-36} & \textbf{O avatar fica mudo diante de erro.} O vendor não
+  tenta de novo nem avisa o navegador, e desiste se o primeiro byte passar de
+  10\,s. & Média & Médio &
+  Recusa de negócio e falha do modelo viram fala, em 200; a fala de espera sai
+  aos 7\,s (a chamada fria mediu 10,9\,s). O que escapa (vendor que não alcança
+  a api, \emph{buffering} no \emph{load balancer}) só aparece no hub, que avisa
+  depois de 20\,s. \textbf{Sem suíte de ponta a ponta}: o modal com o vendor de
+  verdade só foi visto à mão.\\
+\cd{R-37} & \textbf{A base da Ajuda vai inteira no prompt, e cresce com o
+  mapa.} São \textasciitilde65 mil \emph{tokens} a cada turno, sem RAG. & Alta &
+  Médio &
+  O cache implícito do Gemini reaproveita o prefixo fixo, mas a chamada fria
+  paga a base inteira e é a que encosta nos 10\,s do vendor. Cada feature que
+  vira PRONTO no mapa de produto engorda a base; a métrica é a linha
+  \cd{ajuda.turno} (\cd{duracaoMs}, \cd{tokens}). O gatilho de rever é a
+  chamada fria passar do teto mesmo com a fala de espera.\\
 \bottomrule
 \end{tabularx}
 
@@ -321,6 +362,9 @@ M6 & Hub do estudante, \emph{header} único, casca compartilhada &
 --- & Agente de IA do professor & \yes{} Código; \no{} engine &
   \adrr{ADR-126}: api, agente e ingestão prontos; o engine nasce no segundo
   \emph{apply}; \cd{R-27}, \cd{R-32}\\
+\zebra --- & Ajuda com avatar & \yes{} Código; \no{} lançada &
+  \adrr{ADR-132}: api e hub prontos, desligada por padrão; falta a suíte de
+  ponta a ponta e o plano pago; \cd{R-33} a \cd{R-37}\\
 --- & 41 experiências restantes & \no{} Em aberto & Gabarito estabelecido\\
 \bottomrule
 \end{tabularx}
@@ -382,6 +426,12 @@ Visão agregada de bem-estar & Só com DPA e \emph{k}-anonimato explícitos
   consumo (\adrr{ADR-21}).\\
 BigQuery & Só se um relatório efetivamente precisar de análise em escala sobre
   \cd{telemetria\_eventos} (\adrr{ADR-14}).\\
+\zebra Lançar a Ajuda com avatar & Hoje ela nasce desligada e só a equipe a usa
+  (\adrr{ADR-132}). Lançar é tirar \cd{ajuda} de
+  \cd{PRODUTOS\_DESLIGADOS\_POR\_PADRAO}, o que liga para todas as redes de
+  uma vez. Exige antes o plano pago do vendor (\cd{R-33}), o vendor no DPA e na
+  página de privacidade, a suíte de ponta a ponta (\cd{R-36}), a URL pública
+  da api do contrato e o \emph{firewall} das escolas liberando o WebRTC.\\
 \bottomrule
 \end{tabularx}
 

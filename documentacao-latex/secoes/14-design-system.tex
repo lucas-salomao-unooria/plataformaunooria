@@ -1042,6 +1042,70 @@ pode escrever o nome de um estudante, e o Clarity grava a tela. A máscara é do
 hub, não do DS --- o componente não sabe que existe Clarity.
 \end{nota}
 
+\section{A Ajuda com avatar: o kit do agente, e um \cd{<video>} cru}
+\label{sec:ds-ajuda}
+
+A Ajuda com avatar (\adrr{ADR-132}) é o segundo item do menu da conta e abre uma
+\textbf{janela, não uma rota}: o \cd{Modal} do DS, com o atendente em vídeo em
+cima e a conversa escrita embaixo (\arq{apps/hub/components/ajuda/\B
+modal-da-ajuda.tsx}). A busca no pacote não pediu peça nova: a conversa reusa o
+kit que a 0.2.10 publicou para o agente de IA do professor
+(Seção~\ref{sec:ds-chat-agente}), e o resto é da seção \cd{unooria}, pela ponte
+\cd{@edu/ui/ds}, como todo o hub.
+
+\begin{tabularx}{\linewidth}{@{}L{34mm}X@{}}
+\toprule
+\headrow \thd{Peça} & \thd{Uso na Ajuda}\\
+\midrule
+\cd{Modal}, \cd{ModalHeader}, \cd{ModalTitle}, \cd{ModalDescription},
+  \cd{ModalBody} & A janela. \cd{ModalTitle} é o nome acessível do diálogo;
+  \cd{closeOnOverlayClick=\{false\}}, porque um clique fora encerraria a sala sem
+  querer.\\
+\zebra \cd{ChatMessage} & Cada fala: a da pessoa (\cd{autor="professor"} com
+  \cd{authorLabel="Você"} --- o vocabulário da peça é o do agente, e o rótulo
+  cobre os outros papéis) e a do atendente, com os estados
+  \cd{transmitindo}, \cd{pronta} e \cd{erro}.\\
+\cd{ChatComposer} & O campo de escrever a pergunta (até 500 caracteres),
+  desabilitado fora da conversa.\\
+\zebra \cd{TypingIndicator} & Sobre o vídeo, em tema escuro, enquanto a sala
+  abre e conecta (\enquote{Chamando o atendente\ldots},
+  \enquote{Conectando o vídeo\ldots}).\\
+\cd{ScrollBar} & A lista de falas (\cd{maxHeight=\{220\}}, \cd{autoHide}).\\
+\zebra \cd{AlertBox} & Os estados que interrompem a conversa: a Ajuda não abriu
+  (com \enquote{Tentar de novo} quando faz sentido) e a conversa terminou.\\
+\cd{Button}, \cd{Icon} & O microfone (começa desligado; \cd{aria-pressed}) e o
+  relógio do tempo que sobra na sessão.\\
+\bottomrule
+\end{tabularx}
+
+\subsection{Lacuna aberta: o DS não publica \emph{player} de vídeo ao vivo}
+
+\begin{tabularx}{\linewidth}{@{}L{48mm}X@{}}
+\toprule
+\headrow \thd{Lacuna} & \thd{Como está resolvido}\\
+\midrule
+Não há peça para mostrar um \emph{stream} de vídeo ao vivo (WebRTC) & Um
+  \cd{<video autoPlay playsInline>} cru dentro de uma moldura de
+  \cd{div}, e é o \textbf{único} elemento cru do modal. O SDK do \emph{vendor} pede
+  um \cd{HTMLMediaElement} para \cd{attach()} --- vídeo e áudio do atendente
+  chegam pela mesma trilha ---, e \cd{playsInline} impede o iPhone de abrir o
+  vídeo em tela cheia. O \cd{overflow-hidden} da moldura só arredonda os
+  cantos; não rola nada, e por isso não é o \cd{overflow} que o \cd{ScrollBar}
+  substitui.\\
+\bottomrule
+\end{tabularx}
+
+\begin{nota}
+O corpo inteiro do modal leva \cd{data-clarity-mask}, como o painel do agente: a
+pessoa pode dizer ou escrever o nome de um estudante (o aviso logo acima do campo
+pede que não), e o Clarity grava a tela. A conversa só existe enquanto o modal
+está aberto --- o conteúdo monta ao abrir e desmonta ao fechar, e é a
+desmontagem que encerra a sala do \emph{vendor} ---, então o \cd{Modal} aqui
+\textbf{não} pode manter o conteúdo montado escondido, ao contrário do
+\cd{ChatPanel} do agente: renderizar a conversa com a janela fechada abriria
+sessões e cobraria minutos sem ninguém ver.
+\end{nota}
+
 \section{O menu da conta: o componente que faltava, e a lacuna que ele trouxe}
 
 O \cd{HeaderMenu} chegou na \textbf{0.1.19} para tirar o \enquote{Sair} da barra
@@ -1333,6 +1397,16 @@ faltou, nunca a causa. E rótulo visível com espelho na api muda nos DOIS lados
 divergência.
 
 \section{Exceção registrada}
+
+\begin{decisao}
+\textbf{O \cd{<video>} da Ajuda com avatar é elemento cru}, contra a regra de
+que a interface sai do \emph{design system} (Seção~\ref{sec:ds-ajuda}). É
+\textbf{mídia, não controle}: não tem estado nem aparência de controle, é a
+janela onde o atendente aparece, e o SDK do \emph{vendor} exige o elemento nativo
+para anexar a trilha. Vira lacuna fechada no dia em que o pacote publicar um
+\emph{player} de vídeo ao vivo; até lá, a exceção é dele só --- os controles em
+volta (microfone, campo, avisos) são todos do DS.
+\end{decisao}
 
 \begin{decisao}
 \textbf{O \cd{AgentAvatar} carrega um \emph{bitmap} dentro do pacote}, contra a
