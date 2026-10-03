@@ -51,6 +51,9 @@ export function NavUnooria() {
   return (
     <SideBar
       theme="light"
+      /* Sem painel de aplicativos nesta área: o botão "Iniciativas" abriria
+         um painel vazio (H01.2.2, DS 0.2.15). */
+      showApps={false}
       items={ITENS}
       activeId={ativo}
       onItemClick={(id) => {

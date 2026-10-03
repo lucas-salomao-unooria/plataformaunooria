@@ -172,12 +172,18 @@ uma novidade num piloto antes de levar para a rede}
 \end{itemize}
 \end{historia}
 
-\begin{historia}{H10.3.3}{Ser lembrado de uma versão fixada há muito tempo}{\afazer}
+\begin{historia}{H10.3.3}{Ser lembrado de uma versão fixada há muito tempo}{\pronto}
 \hu{Administrador Unooria}{ser avisado quando uma versão fixada ficar muito
 tempo sem ser solta}{não deixar uma escola esquecida numa versão antiga}
-\aceiteproposta
+\aceite
 \begin{itemize}
-  \item O painel destaca fixações com mais de 30 dias.
+  \item Em \enquote{Recursos}, um aviso lista as versões fixadas há mais de 30
+    dias em \emph{qualquer} escola ou regional da rede --- não só no escopo
+    aberto ---, com a missão, onde, a versão e há quantos dias.
+  \item \enquote{Abrir o escopo} leva à escola da fixação, onde a etiqueta da
+    versão aparece em destaque, \enquote{fixada há mais de 30 dias}, e abre a
+    janela para soltar.
+  \item É só um lembrete: nada solta a fixação sozinho.
 \end{itemize}
 \end{historia}
 
@@ -239,15 +245,20 @@ com as redes interessadas}
 \end{itemize}
 \end{historia}
 
-\begin{historia}{H10.5.2}{Eliminar um cadastro a pedido}{\afazer}
+\begin{historia}{H10.5.2}{Eliminar um cadastro a pedido}{\pronto}
 \hu{Administrador Unooria}{apagar o cadastro de quem pedir}{atender o direito
 de eliminação da LGPD sem depender do time técnico}
-\aceiteproposta
+\aceite
 \begin{itemize}
-  \item Cada linha tem \enquote{Eliminar a pedido do titular}, com
-    confirmação; o cadastro nunca é editado, só eliminado.
+  \item Cada linha tem \enquote{Eliminar a pedido do titular}; a confirmação
+    diz o nome e a organização de quem sai e avisa que não volta.
+  \item O contato sai da base de vez --- não fica guardado como
+    \enquote{apagado}. Fica registrado só que um cadastro foi eliminado, por
+    quem e quando, sem nenhum dado da pessoa.
+  \item O cadastro nunca é editado, só eliminado.
+  \item Se a eliminação falhar, a janela continua aberta com o aviso, e o
+    cadastro continua na lista.
 \end{itemize}
-\pendencia{hoje o pedido é atendido por um caminho manual.}
 \end{historia}
 
 % ---------------------------------------------------------------------------

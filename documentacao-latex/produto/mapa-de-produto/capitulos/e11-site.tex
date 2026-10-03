@@ -20,14 +20,14 @@
 \toprule
 \headrow \thd{ID} & \thd{Feature} & \thd{Estado}\\
 \midrule
-\id{F11.1} & Site ENTRE REDES & \parcial\\
+\id{F11.1} & Site ENTRE REDES & \pronto\\
 \zebra \id{F11.2} & Cadastro de interesse & \pronto\\
 \id{F11.3} & Política de Privacidade e Termos de Uso & \parcial\\
 \bottomrule
 \end{tabularx}
 
 % ---------------------------------------------------------------------------
-\feature{F11.1}{Site ENTRE REDES}{\parcial}
+\feature{F11.1}{Site ENTRE REDES}{\pronto}
 
 \begin{historia}{H11.1.1}{Conhecer a proposta}{\pronto}
 \hu{Visitante de uma secretaria de educação}{entender o que é o Entre Redes e
@@ -44,12 +44,13 @@ como ele funciona}{decidir se vale conversar com a Unooria}
 \end{itemize}
 \end{historia}
 
-\begin{historia}{H11.1.2}{Achar a entrada e os documentos a partir do site}{\afazer}
+\begin{historia}{H11.1.2}{Achar a entrada e os documentos a partir do site}{\pronto}
 \hu{professor da rede que chegou pelo site}{encontrar o botão de entrar e os
 documentos legais}{não depender de saber o endereço da tela de entrada}
-\aceiteproposta
+\aceite
 \begin{itemize}
-  \item O cabeçalho do site tem \enquote{Entrar}.
+  \item O cabeçalho do site tem \enquote{Entrar}, ao lado de \enquote{Quero
+    conhecer a solução}, e leva à tela de entrada --- também no celular.
   \item O rodapé leva à Política de Privacidade e aos Termos de Uso.
 \end{itemize}
 \end{historia}
@@ -57,7 +58,7 @@ documentos legais}{não depender de saber o endereço da tela de entrada}
 % ---------------------------------------------------------------------------
 \feature{F11.2}{Cadastro de interesse}{\pronto}
 
-\begin{historia}{H11.2.1}{Deixar o meu contato}{\parcial}
+\begin{historia}{H11.2.1}{Deixar o meu contato}{\pronto}
 \hu{Visitante}{deixar os meus dados para a Unooria me procurar}{conhecer a
 solução com calma}
 \aceite
@@ -72,8 +73,9 @@ solução com calma}
     barrado ---, para não revelar quem já se cadastrou.
   \item O texto exato da autorização é guardado junto com o cadastro.
   \item Há proteção contra robôs e limite de envios por hora.
+  \item Logo abaixo da autorização, a janela leva à Política de Privacidade,
+    que abre em outra aba, sem perder o que já foi digitado.
 \end{itemize}
-\pendencia{a janela de cadastro não leva à Política de Privacidade.}
 \end{historia}
 
 % ---------------------------------------------------------------------------

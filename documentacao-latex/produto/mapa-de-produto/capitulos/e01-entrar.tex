@@ -24,8 +24,8 @@
 \midrule
 \id{F01.1} & Entrar com usuário e senha & \pronto\\
 \zebra \id{F01.2} & Cada pessoa na sua área & \pronto\\
-\id{F01.3} & Trabalhar em mais de uma escola & \parcial\\
-\zebra \id{F01.4} & Cuidar da própria senha & \afazer\\
+\id{F01.3} & Trabalhar em mais de uma escola & \pronto\\
+\zebra \id{F01.4} & Cuidar da própria senha & \parcial\\
 \id{F01.5} & Entrar pelo login único da rede & \afazer\\
 \zebra \id{F01.6} & Tirar dúvidas com o atendente da Ajuda & \parcial\\
 \bottomrule
@@ -126,16 +126,15 @@ perder numa plataforma com muitas telas}
   \item O cabeçalho mostra nome, uma linha de apoio (a série do estudante ou o
     papel) e um avatar com as iniciais.
   \item As telas de gestão têm menu lateral filtrado pelo papel.
+  \item Os menus laterais da gestão e da Unooria mostram só o que leva a algum
+    lugar: o item \enquote{Iniciativas}, que não fazia nada, saiu.
 \end{itemize}
-\pendencia{os menus laterais de gestão e da Unooria mostram um item
-\enquote{Iniciativas} que não faz nada (vem pronto do componente visual e
-precisa ser removido lá).}
 \end{historia}
 
 % ---------------------------------------------------------------------------
-\feature{F01.3}{Trabalhar em mais de uma escola}{\parcial}
+\feature{F01.3}{Trabalhar em mais de uma escola}{\pronto}
 
-\begin{historia}{H01.3.1}{Trocar a escola ativa}{\parcial}
+\begin{historia}{H01.3.1}{Trocar a escola ativa}{\pronto}
 \hu{Professor ou Coordenação com vínculo em mais de uma escola}{trocar a
 escola em que estou trabalhando pelo cabeçalho}{ver e registrar só o que é
 daquela escola}
@@ -146,25 +145,32 @@ daquela escola}
   \item Trocar de escola muda tudo o que a pessoa vê, sem recarregar a página.
   \item As ferramentas abertas (plano de aula, planejamento) recomeçam na
     escola nova, para nada ser gravado na escola errada.
+  \item No celular o seletor continua no cabeçalho, mais estreito; tocá-lo
+    abre a lista do próprio telefone, com o nome inteiro de cada escola.
 \end{itemize}
-\pendencia{em telas estreitas (celular) o seletor fica escondido, e não há
-como trocar de escola.}
 \end{historia}
 
 % ---------------------------------------------------------------------------
-\feature{F01.4}{Cuidar da própria senha}{\afazer}
+\feature{F01.4}{Cuidar da própria senha}{\parcial}
 
 Hoje a senha só muda quando uma coordenação usa \enquote{Resetar senha}
 (\id{H03.3.4}). O item \enquote{Trocar senha} ficou fora do menu de propósito,
 para não ser um link que não leva a nada.
 
-\begin{historia}{H01.4.1}{Trocar minha senha quando eu quiser}{\afazer}
+\begin{historia}{H01.4.1}{Trocar minha senha quando eu quiser}{\pronto}
 \hu{qualquer pessoa}{trocar a minha senha a qualquer momento}{me proteger se
 alguém descobriu a senha}
-\aceiteproposta
+\aceite
 \begin{itemize}
-  \item O menu do avatar ganha \enquote{Trocar senha}, com as mesmas regras do
-    primeiro acesso (mínimo de 8 caracteres, diferente da atual).
+  \item O menu do avatar tem \enquote{Trocar senha}, com as mesmas regras do
+    primeiro acesso: a senha atual, pelo menos 8 caracteres e diferente da
+    atual.
+  \item A tela se chama \enquote{Trocar senha} e tem \enquote{Cancelar}, que
+    volta para a área da pessoa --- ela não fica presa ali, como no primeiro
+    acesso.
+  \item Depois de salvar, a tela confirma \enquote{Senha trocada} e
+    \enquote{Voltar} leva de volta à área da pessoa. Na próxima entrada vale a
+    senha nova.
 \end{itemize}
 \end{historia}
 

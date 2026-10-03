@@ -18,6 +18,7 @@ import {
   type TableColumn,
   type UploadFileItem,
 } from "@edu/ui/ds";
+import { EscolhaDeEscola } from "@/components/escolha-de-escola";
 import { ehDoContrato } from "@/lib/papeis";
 import type { Papel } from "@/lib/papeis";
 
@@ -268,14 +269,7 @@ export function ImportarPessoas({
       />
 
       {ehDoContrato(papel) ? (
-        <div className="max-w-[320px]">
-          <TextField
-            id="escola"
-            label="Escola (id)"
-            value={escolaId}
-            onChange={(e) => setEscolaId(e.target.value)}
-          />
-        </div>
+        <EscolhaDeEscola id="escola" valor={escolaId} aoEscolher={setEscolaId} />
       ) : null}
 
       {erro ? <AlertBox theme="light" variant="error" device="auto" description={erro} /> : null}

@@ -32,12 +32,9 @@ export default auth((request) => {
     url.search = "";
     return NextResponse.redirect(url);
   }
-  if (!usuario.precisaTrocarSenha && pathname === TROCAR_SENHA) {
-    const url = request.nextUrl.clone();
-    url.pathname = homeDoPapel(usuario.papel);
-    url.search = "";
-    return NextResponse.redirect(url);
-  }
+  /* Quem JÁ trocou também entra: é a troca voluntária, pelo menu do avatar
+     (H01.4.1). Ela devolvia para a home do papel, e o item de menu era um link
+     morto. A tela muda de texto e de saída conforme `precisaTrocarSenha`. */
   if (pathname === TROCAR_SENHA) return NextResponse.next();
 
   /* MEMBRESIA, não igualdade: o `admin` entra em DUAS áreas (o painel da

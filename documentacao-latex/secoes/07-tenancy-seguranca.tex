@@ -1049,7 +1049,10 @@ RECUSA; emissor inalcançável é um rótulo visível na tela (\adrr{ADR-35}).
 \rota{/trocar-senha}, o BFF recusa dados e \rota{/api/exp-token} não emite
 \emph{token} de experiência. Só com o \emph{middleware}, bastaria digitar
 \rota{/exp/...} para pular a troca --- a experiência abriria por baixo, com o
-\emph{token} que o hub continuaria assinando (\adrr{ADR-29}).
+\emph{token} que o hub continuaria assinando (\adrr{ADR-29}). A mesma tela
+serve, desde a H01.4.1, à troca \textbf{voluntária}, pelo menu do avatar: o
+\emph{middleware} deixa de devolver para a \emph{home} quem já trocou, e a
+rota da api é a mesma --- exige a senha atual, como o login.
 \end{decisao}
 
 \section{Segurança do \emph{embed}}
@@ -1229,8 +1232,12 @@ Texto de menor com contenção & \cd{exp06ef2b\_reflexoes} guarda o
   \cd{exp08ef4b\_respostas\_percurso} guarda a justificativa da cláusula: 800
   caracteres, mesma finalidade e mesma fronteira --- e com uma trava que o
   outro não tem, o \textbf{filtro de dado pessoal que recusa antes de
-  gravar}. Os dois ficam sob RLS, fora de log e fora da telemetria. Ver as
-  decisões logo abaixo. Na A Seleção (\adrr{ADR-115}) a \textbf{legenda} dos
+  gravar}. Os dois ficam sob RLS, fora de log e fora da telemetria, e o painel
+  que os devolve aceita gestores (a folha de progresso é deles também), mas
+  \textbf{só devolve o texto a quem tem matrícula de professor na turma}: sem
+  ela, o campo volta nulo e a gestão vê só \enquote{entregou} --- a mesma
+  fronteira do Quem mandou isso? e da A Seleção (H07.1.4). Ver as decisões
+  logo abaixo. Na A Seleção (\adrr{ADR-115}) a \textbf{legenda} dos
   Stories vai, com o primeiro nome, ao colega pareado no Mural --- por isso passa
   por um sanitizador (link, telefone, e-mail, menção, palavrão) antes de
   gravar ---, e a \cd{exp07ef1b\_reflexoes} só ao professor da turma. O Jornal

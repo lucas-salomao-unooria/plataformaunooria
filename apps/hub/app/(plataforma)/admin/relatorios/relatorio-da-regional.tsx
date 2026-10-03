@@ -16,6 +16,7 @@ import { ehDoContrato, type Papel } from "@/lib/papeis";
 
 interface MissaoNoRelatorio extends Record<string, unknown> {
   expId: string;
+  nome: string;
   turmasLiberadas: number;
   turmasEncerradas: number;
   estudantes: number;
@@ -109,7 +110,7 @@ export function RelatorioDaRegional({
 
   const colunasDeMissao = useMemo<TableColumn<MissaoNoRelatorio>[]>(
     () => [
-      { key: "expId", title: "Missão", render: (_, l) => <code>{String(l.expId)}</code> },
+      { key: "nome", title: "Missão", render: (_, l) => l.nome },
       {
         key: "turmasLiberadas",
         title: "Turmas abertas",

@@ -21,6 +21,7 @@ import {
   TextField,
   type TableColumn,
 } from "@edu/ui/ds";
+import { EscolhaDeEscola } from "@/components/escolha-de-escola";
 import { ehDoContrato } from "@/lib/papeis";
 import type { Papel } from "@/lib/papeis";
 import { NovoUsuario, type PessoaCriada } from "./novo-usuario";
@@ -306,17 +307,14 @@ export function GestaoUsuarios({
       />
 
       {ehDoContrato(papel) ? (
-        <div className="max-w-[320px]">
-          <TextField
-            id="escola"
-            label="Escola (id)"
-            value={escolaId}
-            onChange={(e) => {
-              setPagina(1);
-              setEscolaId(e.target.value);
-            }}
-          />
-        </div>
+        <EscolhaDeEscola
+          id="escola"
+          valor={escolaId}
+          aoEscolher={(escolhida) => {
+            setPagina(1);
+            setEscolaId(escolhida);
+          }}
+        />
       ) : null}
 
       {erro ? <AlertBox theme="light" variant="error" device="auto" description={erro} /> : null}

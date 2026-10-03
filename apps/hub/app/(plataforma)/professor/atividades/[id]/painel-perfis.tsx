@@ -34,6 +34,8 @@ interface Distribuicao {
   desequilibrio: number;
   tolerancia: number;
   precisaRedistribuir: boolean;
+  /** Equipes montadas: o lado é de quem divide a tela (H13.4.3). */
+  comEquipes: boolean;
 }
 
 /** O que `POST atividades/:id/perfis/da-vila` devolve. `descartados` vem NOMEADO
@@ -377,13 +379,24 @@ export function PainelPerfis({
               size="sm"
               isLoading={redistribuindo}
               onClick={() => void redistribuir()}
-              isDisabled={!dados.temAfinidade || somenteLeitura}
+              isDisabled={!dados.temAfinidade || somenteLeitura || dados.comEquipes}
             >
               Redistribuir a turma
             </Button>
           </div>
 
-          {dados.precisaRedistribuir ? (
+          {/* H13.4.3: com equipe, cada computador fica de um lado só, e mover
+              criança a criança separaria quem divide a mesma tela. A api
+              recusa também (409 `turma-com-equipes`); o botão desligado é UX. */}
+          {dados.comEquipes ? (
+            <AlertBox
+              theme="light"
+              variant="info"
+              device="auto"
+              title="Redistribuir está desligado: esta atividade tem equipes"
+              description="Com equipes montadas, cada computador fica de um lado só do feed. Redistribuir moveria estudantes um a um e separaria quem divide a mesma tela. Para redistribuir, desfaça as equipes antes."
+            />
+          ) : dados.precisaRedistribuir ? (
             <AlertBox
               theme="light"
               variant="warning"

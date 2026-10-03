@@ -24,7 +24,7 @@
 \id{F03.1} & Importar pessoas por planilha & \pronto\\
 \zebra \id{F03.2} & Receber os dados do sistema de gestão da rede & \pronto\\
 \id{F03.3} & Balcão de usuários & \pronto\\
-\zebra \id{F03.4} & Quem pode cadastrar quem & \parcial\\
+\zebra \id{F03.4} & Quem pode cadastrar quem & \pronto\\
 \id{F03.5} & Turmas e enturmamento & \pronto\\
 \zebra \id{F03.6} & Transferir estudante dentro da rede & \pronto\\
 \id{F03.7} & Limpar contas sem matrícula & \pronto\\
@@ -170,7 +170,7 @@ voltar a usar a plataforma no mesmo dia}
 \end{historia}
 
 % ---------------------------------------------------------------------------
-\feature{F03.4}{Quem pode cadastrar quem}{\parcial}
+\feature{F03.4}{Quem pode cadastrar quem}{\pronto}
 
 \begin{historia}{H03.4.1}{Só ver os papéis que posso atribuir}{\pronto}
 \hu{Coordenação}{que a tela me ofereça só os papéis que eu posso dar}{não
@@ -191,14 +191,22 @@ tentar algo que não tenho autoridade para fazer}
 \end{itemize}
 \end{historia}
 
-\begin{historia}{H03.4.2}{Escolher a escola numa lista}{\afazer}
+\begin{historia}{H03.4.2}{Escolher a escola numa lista}{\pronto}
 \hu{Administrador do contrato}{escolher a escola numa lista quando trabalho em
 Usuários, Turmas, Importar e Análise de produto}{não ter de saber de cor o
 código interno de cada escola}
-\aceiteproposta
+\aceite
 \begin{itemize}
-  \item O campo \enquote{Escola (id)}, hoje digitado, vira uma busca por nome,
-    código INEP ou município.
+  \item Nas quatro telas, \enquote{Buscar escola} filtra por nome, código INEP
+    ou município --- sem diferenciar acento nem maiúscula --- a lista
+    \enquote{Escola}, em que cada escola aparece com o município e o código
+    INEP.
+  \item Abaixo da lista, a tela diz quantas escolas a busca encontrou, ou que
+    nenhuma combina.
+  \item O campo \enquote{Escola (id)}, que pedia o código interno digitado,
+    deixou de existir.
+  \item A escolha aparece só para quem atende a rede inteira (Administrador do
+    contrato e Administrador Unooria).
 \end{itemize}
 \end{historia}
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { HeaderMenu, type HeaderMenuItem } from "@edu/ui/ds";
 import { ModalDaAjuda } from "@/components/ajuda/modal-da-ajuda";
@@ -32,12 +33,14 @@ import { ModalDaAjuda } from "@/components/ajuda/modal-da-ajuda";
  * da raiz define. Morre no dia em que o `HeaderMenu` souber empurrar o
  * conteúdo à esquerda em vez de cobri-lo (pedido no `storybook-unooria`).
  *
- * **Dois itens, e só os que levam a algum lugar.** O componente aceita vários,
- * e a tentação é preencher com "Meu perfil" e "Configurações" — telas que não
- * existem. Item de menu que não leva a lugar nenhum é pior que menu curto. O
- * candidato real, "Trocar senha", também está fora: `middleware.ts` redireciona
- * quem já trocou para fora de `/trocar-senha`, então o item seria um link morto
- * até o produto ganhar troca voluntária de senha.
+ * **Só os itens que levam a algum lugar.** O componente aceita vários, e a
+ * tentação é preencher com "Meu perfil" e "Configurações" — telas que não
+ * existem. Item de menu que não leva a lugar nenhum é pior que menu curto.
+ *
+ * **"Trocar senha"** (H01.4.1) leva a `/trocar-senha`, que desde então aceita a
+ * troca voluntária de quem já passou do primeiro acesso. Quando a conta vier do
+ * login da rede (WSO2, H01.5.1), a senha deixa de ser nossa e este item precisa
+ * sumir para essas contas.
  *
  * **"Ajuda" (ADR-132)** abre o atendente em vídeo, num `Modal` — não é rota,
  * é a mesma janela em qualquer tela. Fica ANTES do "Sair" (a ação destrutiva
@@ -47,6 +50,7 @@ import { ModalDaAjuda } from "@/components/ajuda/modal-da-ajuda";
 export function MenuDaConta({ nome, apoio, comAjuda = false }: { nome: string; apoio: string; comAjuda?: boolean }) {
   const [aberto, setAberto] = useState(false);
   const [ajudaAberta, setAjudaAberta] = useState(false);
+  const router = useRouter();
 
   const itens: HeaderMenuItem[] = [
     ...(comAjuda
@@ -63,6 +67,16 @@ export function MenuDaConta({ nome, apoio, comAjuda = false }: { nome: string; a
           } satisfies HeaderMenuItem,
         ]
       : []),
+    {
+      key: "trocar-senha",
+      label: "Trocar senha",
+      // `lock_reset` é o cadeado com a seta de refazer, do Material Symbols.
+      icon: "lock_reset",
+      onClick: () => {
+        setAberto(false);
+        router.push("/trocar-senha");
+      },
+    },
     {
       key: "sair",
       label: "Sair",

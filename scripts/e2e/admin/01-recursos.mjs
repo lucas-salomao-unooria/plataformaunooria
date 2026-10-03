@@ -95,6 +95,12 @@ await suite(
     await p.waitForURL("**/unooria/recursos", { timeout: 30_000 });
     await cartao(p, PRODUTO).waitFor({ timeout: 30_000 });
     await p.waitForTimeout(1200);
+    /* H01.2.2: a barra lateral só tem o que leva a algum lugar. O "Iniciativas"
+       do DS abriria um painel de aplicativos que este hub não tem. */
+    r.exigir(
+      (await p.locator(".unooria-sidebar").getByText("Iniciativas").count()) === 0,
+      "a barra lateral da Unooria não mostra o \"Iniciativas\", que não levava a lugar nenhum",
+    );
 
     await r.registrar(p, "painel-no-escopo-da-rede", {
       titulo: "O que esta rede tem no ar",
@@ -302,6 +308,11 @@ await suite(
     const tabelaDaRede = pr.locator("table").last();
     await tabelaDaRede.waitFor({ timeout: 30_000 });
     await pr.waitForTimeout(800);
+    r.exigir(
+      (await pr.locator(".unooria-sidebar").getByText("Iniciativas").count()) === 0 &&
+        (await pr.locator(".unooria-sidebar").count()) === 1,
+      "a barra lateral da gestão também não mostra o \"Iniciativas\"",
+    );
 
     const escritaNegada = await pr.request.put(`${HUB}/api/plataforma/recursos/produto:bem-estar`, {
       data: { ligado: false, motivo: "sonda da suite: isto tem de ser recusado" },

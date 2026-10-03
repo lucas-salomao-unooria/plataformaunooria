@@ -62,10 +62,10 @@ entregar o funil comercial da Unooria ao cliente.
 - **Erro ao atualizar NÃO esvazia a tabela.** "Nenhum cadastro" e "a api não
   respondeu" são a mesma tela para quem olha, e a primeira leitura manda
   procurar defeito no formulário do site. A lista anterior fica, com o aviso.
-- **A tela diz que não apaga cadastro.** O direito de eliminação (LGPD art. 18,
-  VI) é real e hoje o caminho é humano — o `GRANT` da tabela tem `DELETE` e não
-  há rota. Escrever isso na tela é melhor que um botão que não existe, e melhor
-  que o silêncio que faz procurá-lo.
+- **"Eliminar a pedido do titular" apaga de verdade** (H10.5.2, LGPD art. 18,
+  VI), depois de uma confirmação que diz QUEM sai. Falha ao eliminar deixa a
+  janela aberta com o erro: fechar diria ao titular que o pedido foi atendido.
+  Não há editar — cadastro não se edita, só se elimina.
 - **Sem escopo de escola**, ao contrário de Recursos: cadastro de interesse é
   anterior a qualquer contrato. Não há seletor para trocar nem estado a
   remontar — o que a seção abaixo descreve não se aplica a esta tela.
@@ -145,13 +145,14 @@ quebrada.
   inclui as decisões de escopo-contrato junto (senão o histórico de uma escola
   ficaria vazio no dia em que a rede inteira mudou).
 
-### O `SideBar` do DS traz um item que não é seu
+### O `SideBar` vem com `showApps={false}`
 
-Ele renderiza sempre um primeiro item **"Iniciativas"**, fixo no componente, que
-abre um painel de `appsItems`. Sem `appsItems` o clique não faz nada — e nenhuma
-área deste hub passa `appsItems`. Vale para `/admin` desde sempre e agora para
-`/unooria`. É lacuna do pacote (pedido no `storybook-unooria`), não coisa a
-contornar aqui: item de menu que não leva a nada é pior que item nenhum.
+O componente desenha, por padrão, um primeiro item **"Iniciativas"** que abre um
+painel de `appsItems` — e nenhuma área deste hub tem painel de aplicativos: o
+clique não fazia nada. Desde a 0.2.15 do DS (H01.2.2) o `SideBar` aceita
+`showApps={false}`, e `nav-admin.tsx` e `nav-unooria.tsx` o passam. Barra lateral
+nova sem painel de aplicativos passa o mesmo: item de menu que não leva a nada é
+pior que item nenhum.
 
 ## O interruptor da rede na porta do produto (ADR-87, 2026-09-10)
 

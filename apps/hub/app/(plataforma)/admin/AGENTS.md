@@ -109,3 +109,14 @@ descrição, placeholder, mensagem) — não para nome de campo da api:
 O `unidades` da resposta de `GET /escolas` **não** foi renomeado: é campo de
 contrato publicado (OpenAPI + apêndice C), e trocá-lo por pureza de vocabulário
 é churn sem ganho para quem usa a tela. Fica registrado que ele diverge.
+
+## Quem atende a rede ESCOLHE a escola, não digita o código (H03.4.2)
+
+Usuários, Turmas, Importar e `/analise` pedem a escola a quem viaja sem
+`escola_id` no token (o administrador do contrato e o `admin`). Era um
+"Escola (id)" digitado — só funcionava para quem sabia de cor o código interno.
+Hoje é `components/escolha-de-escola.tsx`: um `TextField` de busca que filtra o
+`Selection` ao lado (o DS não publica seleção com busca). A lista vem de
+`GET /escolas?tipo=escola` UMA vez e o filtro é local. **Só monte para
+`ehDoContrato`**: para a Coordenação a rota responde 403, e a tela de análise
+mostrava o erro na casca de quem nem precisa escolher.

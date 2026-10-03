@@ -581,9 +581,10 @@ export class ManifestoIaService {
           clausulaId: sessao?.clausulaId ?? null,
           tags: percurso?.tags ?? [],
           registrouPercurso: Boolean(percurso),
-          // Caixa livre de menor. Está AQUI e só aqui: a rota é a do professor
-          // DESTA turma (LGPD art. 14).
-          justificativaTexto: percurso?.justificativaTexto ?? null,
+          // Caixa livre de menor. Está AQUI e só aqui, e só para o professor
+          // DESTA turma (LGPD art. 14): a gestão abre o mesmo painel sem
+          // `professorId` e vê só "registrou" (H07.1.4, D03).
+          justificativaTexto: professorId ? (percurso?.justificativaTexto ?? null) : null,
           ociosoMin:
             sessao && !sessao.concluidoEm ? minutosDesde(sessao.atualizadoEm, agora) : null,
         };

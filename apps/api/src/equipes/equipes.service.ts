@@ -35,11 +35,14 @@ import {
  * Sem fonte registrada, o sorteio ignora lados (e `agrupamento` volta `null`).
  *
  * `descricao` e `aviso` são frases para o PROFESSOR, ditas na tela do sorteio.
+ *
+ * Recebe a ATIVIDADE (o alvo inteiro), e não só a turma: no Unoovista o lado é
+ * da atividade — o perfil importado, a afinidade da pergunta e a redistribuição
+ * do professor são todos por atividade (H13.4.1).
  */
 export type FonteDeGrupo = (
   tx: Prisma.TransactionClient,
-  escolaId: string,
-  turmaId: string,
+  alvo: AlvoDaMontagem,
 ) => Promise<{ grupos: Map<string, Lado | null>; descricao: string; aviso: string | null }>;
 
 /**
@@ -284,7 +287,7 @@ export class EquipesService {
       }
 
       const fonte = this.fontesDeGrupo.get(expId);
-      const grupos = fonte ? await fonte(tx, escolaId, turmaId) : null;
+      const grupos = fonte ? await fonte(tx, alvo) : null;
       const comLado = presentes.map((p) => ({ id: p.id, grupo: grupos?.grupos.get(p.id) ?? null }));
       const sorteio = sortear(comLado, pedido.computadores);
       const comGrupo = comLado.filter((p) => p.grupo !== null).length;
