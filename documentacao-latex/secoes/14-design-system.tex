@@ -384,14 +384,17 @@ dispara uma chamada por tecla. A escolhida continua na lista mesmo fora do
 filtro, senão o campo diria \enquote{Escolha a escola} para uma escola escolhida.
 Quando o pacote publicar seleção com busca, a composição vira um componente só.
 
-\section{Lacuna aberta: o \cd{StackedProgressBar} não tem segmento tracejado}
+\section{Lacuna fechada: o segmento tracejado do \cd{StackedProgressBar}}
 
 O painel de habilidades (\adrr{ADR-144}) desenha cada habilidade com o
 \cd{StackedProgressBar} do pacote: quatro segmentos, e a legenda com contagem e
 porcentagem. O PO pediu o \enquote{não avaliado} TRACEJADO, para não se ler
-como mais um nível; o componente só aceita cor sólida por segmento. O hub usa
-o quase branco da paleta de dataviz (\cd{\#E8EFFA}), que parece ausência, e
-o rótulo da legenda diz o resto. Duas armadilhas da peça, já contornadas: o
+como mais um nível, e o componente só aceitava cor sólida por segmento: na
+primeira versão do painel ele saiu num quase branco. Desde a 0.2.16 o segmento
+aceita \cd{pattern: 'dashed'}: sem preenchimento, contorno tracejado na cor
+dele, na barra e no marcador da legenda, e nenhum traço solto quando o valor é
+zero. O hub passa \cd{dashed} só no \enquote{não avaliado}, com o cinza de
+texto secundário do DS no traço. Duas armadilhas da peça, já contornadas: o
 \cd{subtitle} vazio mostra o texto de exemplo do DS, e a linha do título não
 quebra --- por isso o total vai só com o número. Num \cd{Card}, a grade de
 barras usa a compensação \cd{plataforma-largura-cheia} (o \cd{Card} tem teto
@@ -790,7 +793,11 @@ todas já estavam à frente do \cd{dev}. Na 0.2.15 (o \cd{showApps} do
 \emph{sourcemap} carrega o caminho do pacote no \emph{store} do pnpm, com a
 versão no nome, e com ele toda experiência parecia mudada. Sem os \cd{.map},
 dez mudaram e subiram um \emph{patch}; a exp02em1b e a app-70 saíram idênticas,
-e a exp01ef1b já estava à frente do \cd{dev} (\adrr{ADR-142}).
+e a exp01ef1b já estava à frente do \cd{dev} (\adrr{ADR-142}). Na 0.2.16 (o
+segmento tracejado do \cd{StackedProgressBar}, para o painel de habilidades)
+doze mudaram --- o CSS do DataViz entra na folha global do DS --- e nenhuma
+subiu: todas já estavam à frente do \cd{dev}; a exp02em1b e a app-70 saíram
+idênticas.
 
 \subsection{O Júri Estadual e o \cd{StoryPoll} da 0.2.12 (exp06ef1b 0.1.0)}
 \label{sec:ds-juri-0211}
