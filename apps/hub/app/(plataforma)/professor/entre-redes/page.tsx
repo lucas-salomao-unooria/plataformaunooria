@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Card, FeedbackAlert, Tag } from "@edu/ui/ds";
 import { CartaoMissao } from "@/components/cartao-missao";
 import { CartaoTransversal } from "@/components/cartao-transversal";
@@ -61,6 +62,24 @@ export default async function EntreRedesPage() {
         title="Aqui você conhece as missões; quem abre para a turma é você, na sala"
         description="Cada missão só aparece para os estudantes depois de ser liberada na turma. Entre em Minhas turmas, escolha a sala e libere a missão que vai rodar."
       />
+
+      {/* O PAINEL DE HABILIDADES (H14.7.1) mora no topo da lista, fixo e
+          separado dos cartões de missão: é o resultado de TODAS elas, por
+          unidade, e não uma missão a mais. */}
+      <Card variant="outlined" title="Painel de habilidades da BNCC">
+        <div className="flex flex-col gap-2">
+          <p className="max-w-3xl text-[14px] leading-relaxed text-unooria-neutral-700">
+            O que a sua turma demonstrou em cada habilidade da BNCC de Computação, missão por missão, nas
+            quatro unidades do ano — e de cada estudante.
+          </p>
+          <Link
+            href="/professor/habilidades"
+            className="self-start text-[14px] font-semibold text-unooria-navy-900 hover:text-unooria-navy-800"
+          >
+            Abrir o painel de habilidades
+          </Link>
+        </div>
+      </Card>
 
       {/*
         As TRANSVERSAIS vêm antes da grade, e fora dela.

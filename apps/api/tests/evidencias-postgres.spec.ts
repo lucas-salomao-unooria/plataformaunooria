@@ -999,13 +999,23 @@ describe("o perfil do estudante", () => {
 
   test("a melhor rodada por habilidade, por atividade — só o que vale, e sem origem", async () => {
     const perfil = PerfilDoEstudanteSchema.parse(await evidencias.perfil(ESCOLA, ids.ana, ids.prof8A));
-    const catalogo = await prisma.experiencia.findUnique({ where: { expId: INSTA }, select: { nome: true } });
+    const catalogo = await prisma.experiencia.findUnique({
+      where: { expId: INSTA },
+      select: { nome: true, unidade: true },
+    });
     expect(perfil).toEqual({
       estudante: { id: ids.ana, nome: "Ana Clara Souza" },
       missoes: [
         {
           expId: INSTA,
           nome: catalogo?.nome,
+          unidade: catalogo?.unidade ?? null,
+          ultimaEm: expect.any(String),
+          /* A MISSÃO: o melhor entre as atividades, na ordem da ficha (F14.7). */
+          habilidades: [
+            { codigo: H1, descricao: expect.any(String), status: "atingiu" },
+            { codigo: H2, descricao: expect.any(String), status: "nao_atingiu" },
+          ],
           /* Na ordem do id da atividade — o `ATV` é um UUID real (ADR-130). */
           atividades: [
             { atividadeId: ATV, habilidades: [{ codigo: H1, descricao: expect.any(String), status: "atingiu" }] },

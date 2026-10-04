@@ -61,6 +61,14 @@ const ITENS: Array<SideBarItemData & { href: string }> = [
     icon: <Icon name="insights" />,
     href: "/admin/relatorios",
   },
+  /* O painel de habilidades da BNCC (F14.7): os quatro papéis de gestão. A
+     página escolhe a altura pelo papel — a escola, ou a rede. */
+  {
+    id: "habilidades",
+    label: "Habilidades",
+    icon: <Icon name="fact_check" />,
+    href: "/admin/habilidades",
+  },
   /* O HISTÓRICO do painel da Unooria (ADR-89), em leitura. A rede não liga nem
      desliga nada — o que ela vê aqui é por que o produto dela mudou de estado. */
   {

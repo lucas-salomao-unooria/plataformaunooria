@@ -11,8 +11,9 @@ import { ALERTA_DE_ERRO, esperarOuFalharCedo } from "../lib/smoke.mjs";
  *  - na aba Estudantes, o NOME leva ao perfil, já dentro da turma; o relatório
  *    da Vila do Lume continua na linha, ao lado (a `professor/01` conta esse);
  *  - o perfil abre com o nome da criança e, sem evidência, o estado vazio com
- *    a frase exata — "Não avaliado" nunca vira "Não atingiu", e aqui nem
- *    aparece: o perfil só tem o que vale;
+ *    a frase exata; com evidência, cada missão traz o MELHOR nível entre as
+ *    atividades, e a habilidade sem nível é "Não avaliado" — nunca "Não
+ *    atingiu" (F14.7, H14.7.4);
  *  - a trilha do layout volta para a ABA de estudantes da turma, com o nome da
  *    turma e o da criança publicados pela página;
  *  - quem não é da turma do professor não existe: a api responde 404, nunca 403.
@@ -30,7 +31,8 @@ import { ALERTA_DE_ERRO, esperarOuFalharCedo } from "../lib/smoke.mjs";
  */
 const TURMA = process.env.TURMA_PERFIL ?? "4B";
 const VAZIO = "Nenhuma habilidade registrada ainda.";
-const NIVEIS = ["Atingiu", "Em processo", "Não atingiu"];
+/** O que pode aparecer numa `Tag` do perfil: os níveis, o N/A da missão e o selo da mais recente. */
+const NIVEIS = ["Atingiu", "Em processo", "Não atingiu", "Não avaliado", "Mais recente"];
 
 /** O docente precisa LECIONAR na turma: `conta` casa o começo da coluna, e ela pode ser "4A + 4B". */
 const professorDa = (turma) =>
@@ -70,7 +72,7 @@ await suite(
       "Na aba Estudantes da sala, o nome leva ao perfil, dentro da turma",
       "O perfil abre com o nome do estudante",
       `Sem evidência, o perfil diz "${VAZIO}"`,
-      "Com evidência, cada missão é um cartão com o nível de cada habilidade, e nada além de Atingiu, Em processo ou Não atingiu",
+      "Com evidência, cada missão é um cartão com o melhor nível de cada habilidade entre as atividades; a que não tem nível é \"Não avaliado\", nunca \"Não atingiu\"",
       "A trilha volta para a aba de estudantes da turma, com o nome da turma e o do estudante",
       "Estudante que o professor não ensina não existe: 404, nunca 403",
     ],
@@ -165,13 +167,13 @@ await suite(
         niveis.length > 0 && niveis.every((n) => NIVEIS.includes(n)),
         `os níveis na tela são só ${NIVEIS.join(", ")} (vistos: ${niveis.join(", ")})`,
       );
-      r.exigir(!/Não avaliado|Não participou/.test(texto), "o perfil não mostra N/A nem 'Não participou'");
+      r.exigir(!/Não participou/.test(texto), "o perfil não mostra 'Não participou' como nível");
       await r.registrar(p, "perfil-com-evidencia", {
         titulo: "O perfil, missão a missão",
-        mostra: `${nome}: um cartão por missão, e em cada atividade o nível de cada habilidade da BNCC.`,
+        mostra: `${nome}: um cartão por missão, da mais recente para a mais antiga, com o nível de cada habilidade da BNCC.`,
         prova:
-          "É a melhor rodada de cada habilidade, só com o que vale, na ordem da ficha. Sem origem, sem " +
-          "comparação com a turma e sem ranking: é o que ESTA criança demonstrou.",
+          "Em cada missão vale o MELHOR nível entre as atividades, na ordem da ficha; a habilidade sem nível " +
+          "é 'Não avaliado'. Sem origem, sem comparação com a turma e sem ranking: é o que ESTA criança demonstrou.",
         detalhe: `${missoes.length} missão(ões)`,
         inteira: true,
       });

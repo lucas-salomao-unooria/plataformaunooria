@@ -78,12 +78,24 @@ export interface AjusteDeEvidencia {
   status: StatusDaEvidencia;
 }
 
-/** `GET /evidencias/estudante/:estudanteId` — só o que vale, sem origem. */
+/**
+ * `GET /evidencias/estudante/:estudanteId` — só o que vale, sem origem. Missões
+ * da mais recente para a mais antiga.
+ */
 export interface PerfilDoEstudante {
   estudante: { id: string; nome: string };
   missoes: {
     expId: string;
     nome: string;
+    /** A unidade do ano (1 a 4); `null` na transversal. */
+    unidade: number | null;
+    /** ISO 8601: quando a evidência desta missão mudou pela última vez. */
+    ultimaEm: string;
+    /**
+     * A MISSÃO: cada habilidade da ficha com o MELHOR nível entre as
+     * atividades. `null` = "Não avaliado" — nunca "Não atingiu".
+     */
+    habilidades: { codigo: string; descricao: string; status: Nivel | null }[];
     atividades: {
       atividadeId: string;
       habilidades: { codigo: string; descricao: string; status: Nivel }[];

@@ -27,6 +27,7 @@ import {
   PerfilDoEstudanteSchema,
   QueryDaEscolaSchema,
 } from "./contrato-de-rotas";
+import { EvidenciasConsolidadoService } from "./evidencias-consolidado.service";
 import { EvidenciasService } from "./evidencias.service";
 
 type Autenticado = { auth: AuthClaims };
@@ -63,7 +64,10 @@ const NOTA_DO_404 =
 @Controller("evidencias")
 @UseGuards(OidcGuard, RolesGuard)
 export class EvidenciasProfessorController {
-  constructor(private readonly evidencias: EvidenciasService) {}
+  constructor(
+    private readonly evidencias: EvidenciasService,
+    private readonly consolidado: EvidenciasConsolidadoService,
+  ) {}
 
   @Get("turma/:turmaId/missao/:expId/atividade/:atividadeId")
   @Roles("professor", ...GESTORES)
@@ -176,23 +180,23 @@ export class EvidenciasProfessorController {
   @Contrato({
     resumo: "O perfil de evidência de um estudante: cada missão, cada atividade, o nível de cada habilidade.",
     descricao:
-      "Em cada atividade, a MELHOR rodada por habilidade — só com o que vale: sem a projeção que o professor ainda não confirmou, sem N/A e sem `nao_participou`. Sem origem: quem lê o perfil quer saber o que a criança demonstrou, não de que computador veio.\n\nO estudante NÃO tem rota para ver o próprio resultado.",
+      "Em cada MISSÃO, cada habilidade da ficha com o MELHOR nível entre todas as atividades (`null` = \"Não avaliado\"), e embaixo cada atividade com a melhor rodada por habilidade — só com o que vale: sem a projeção que o professor ainda não confirmou e sem `nao_participou`. Missões da mais recente para a mais antiga, com a unidade do ano. Sem origem: quem lê o perfil quer saber o que a criança demonstrou, não de que computador veio.\n\nO estudante NÃO tem rota para ver o próprio resultado.",
     params: ParamsDoEstudanteSchema,
     query: QueryDaEscolaSchema,
     resposta: PerfilDoEstudanteSchema,
     notas: [
       "Estudante que o professor não ensina (nenhuma turma dele) responde **404**, não 403.",
-      "Gestor e admin leem qualquer estudante da escola.",
+      "Gestor e admin leem qualquer estudante da escola; a REGIONAL pode pedir `?escolaId=` de qualquer escola da regional dela (o drill-down do painel de habilidades).",
     ],
   })
-  perfil(
+  async perfil(
     @Param("estudanteId") estudanteId: string,
     @Query("escolaId") escolaIdPedida: string | undefined,
     @Req() req: Autenticado,
   ) {
     const alvo = doCaminho(ParamsDoEstudanteSchema, { estudanteId });
     return this.evidencias.perfil(
-      escolaAlvo(req.auth, escolaIdPedida),
+      await this.consolidado.escolaDaConsulta(req.auth, escolaIdPedida),
       alvo.estudanteId,
       professorDoToken(req.auth),
     );

@@ -162,6 +162,11 @@ export class EvidenciasService implements OnModuleInit {
     return this.fichas.get(expId) ?? null;
   }
 
+  /** Todas as fichas em vigor — as do registro estático e as que o teste registrou. */
+  fichasRegistradas(): FichaPedagogica[] {
+    return [...this.fichas.values()];
+  }
+
   /**
    * Registra uma ficha FORA do registro estático. **Só para teste**: a ficha de
    * uma missão real entra em `fichas/index.ts`, onde `evidencias-fichas.spec.ts`
@@ -948,12 +953,15 @@ export class EvidenciasService implements OnModuleInit {
   }
 
   /**
-   * O PERFIL DO ESTUDANTE: em cada missão, em cada atividade, o nível de cada
-   * habilidade — a melhor rodada por habilidade, SÓ com o que vale.
+   * O PERFIL DO ESTUDANTE: em cada missão, o nível de cada habilidade da ficha
+   * (o MELHOR entre as atividades, ou `null` = "Não avaliado") e, embaixo, cada
+   * atividade com a melhor rodada por habilidade — SÓ com o que vale. Missões
+   * da mais recente para a mais antiga (H14.7.4).
    *
    * Sem origem (quem lê o perfil quer saber o que a criança demonstrou, não de
-   * que computador veio), sem N/A e sem `nao_participou`, sem a projeção que o
-   * professor ainda não confirmou.
+   * que computador veio), sem `nao_participou` como nível, sem a projeção que
+   * o professor ainda não confirmou. Só entra missão em que a criança tem
+   * alguma evidência que conte.
    *
    * O professor só abre o perfil de quem ele ensina (`professorEnsinaOEstudante`,
    * 404 e nunca 403); gestor e admin leem a escola.
@@ -970,15 +978,15 @@ export class EvidenciasService implements OnModuleInit {
 
       const linhas = await tx.evidencia.findMany({
         where: { escolaId, estudanteId, situacao: "valida", status: { not: "nao_participou" } },
-        select: { expId: true, atividadeId: true, habilidade: true, status: true, situacao: true },
+        select: { expId: true, atividadeId: true, habilidade: true, status: true, situacao: true, atualizadoEm: true },
         orderBy: [{ expId: "asc" }, { atividadeId: "asc" }],
       });
       const expIds = [...new Set(linhas.map((l) => l.expId))];
       const catalogo = await tx.experiencia.findMany({
         where: { expId: { in: expIds } },
-        select: { expId: true, nome: true },
+        select: { expId: true, nome: true, unidade: true },
       });
-      const nomeDe = new Map(catalogo.map((c) => [c.expId, c.nome]));
+      const doCatalogo = new Map(catalogo.map((c) => [c.expId, c]));
 
       const missoes = expIds.map((expId) => {
         const daMissao = linhas.filter((l) => l.expId === expId);
@@ -989,6 +997,16 @@ export class EvidenciasService implements OnModuleInit {
           const i = ordem.indexOf(codigo);
           return i === -1 ? ordem.length : i;
         };
+        /* A MISSÃO é a composição das atividades (decisão de 2026-10-03): cada
+           habilidade fica com o melhor nível entre todas elas. A habilidade da
+           ficha sem nível é "Não avaliado" (`null`) — aparece, porque o
+           ausente também é informação, e nunca vira "não atingiu". */
+        const daMissaoInteira = melhorRodadaPorHabilidade(
+          daMissao.map((l) => ({ habilidade: l.habilidade, status: l.status as Status, situacao: l.situacao as Situacao })),
+        );
+        const codigos = [...ordem];
+        for (const codigo of daMissaoInteira.keys()) if (!codigos.includes(codigo)) codigos.push(codigo);
+        const ultimaEm = daMissao.reduce((maior, l) => (l.atualizadoEm > maior ? l.atualizadoEm : maior), daMissao[0]!.atualizadoEm);
         const atividades = [...new Set(daMissao.map((l) => l.atividadeId))].map((atividadeId) => {
           const resultado = melhorRodadaPorHabilidade(
             daMissao
@@ -1006,8 +1024,22 @@ export class EvidenciasService implements OnModuleInit {
               })),
           };
         });
-        return { expId, nome: nomeDe.get(expId) ?? expId, atividades };
+        return {
+          expId,
+          nome: doCatalogo.get(expId)?.nome ?? expId,
+          unidade: doCatalogo.get(expId)?.unidade ?? null,
+          ultimaEm: ultimaEm.toISOString(),
+          habilidades: codigos.map((codigo) => ({
+            codigo,
+            descricao: habilidadePorCodigo(codigo)?.descricao ?? "",
+            status: daMissaoInteira.get(codigo) ?? null,
+          })),
+          atividades,
+        };
       });
+      /* Da mais recente para a mais antiga: quem abre o perfil quer ver
+         primeiro o que acabou de acontecer na aula. */
+      missoes.sort((a, b) => b.ultimaEm.localeCompare(a.ultimaEm) || a.expId.localeCompare(b.expId));
 
       return { estudante: { id: estudante.id, nome: estudante.displayName }, missoes };
     }, escolaId);
