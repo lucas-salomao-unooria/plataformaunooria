@@ -12569,8 +12569,9 @@ trabalha uma escola por vez (\adrr{ADR-80}) --- desce da rede até a turma.
 \begin{itemize}
   \item \textbf{A exportação em planilha (CSV) com aviso de LGPD e registro de
     auditoria ficou para depois}: o painel da escola e o da rede são só tela.
-  \item \textbf{\enquote{Não avaliado} é cor sólida clara, não tracejado}: o
-    \cd{StackedProgressBar} do DS só aceita cor (lacuna no Capítulo~14).
+  \item \textbf{\enquote{Não avaliado} saiu em cor sólida clara, não
+    tracejado}: o \cd{StackedProgressBar} do DS só aceitava cor. \emph{Resolvido
+    na 0.2.16} (\cd{pattern: 'dashed'}; Capítulo~14).
   \item \textbf{A turma que não aplicou a missão entra na soma da série como
     \enquote{não avaliado}} no painel da rede: são crianças que a missão ainda
     não alcançou, e a soma diz isso; quem quer ver só as que aplicaram lê

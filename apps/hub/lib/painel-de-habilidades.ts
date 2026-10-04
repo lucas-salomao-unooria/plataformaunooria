@@ -109,15 +109,16 @@ export const ROTULO_DO_NIVEL_DA_BARRA: Record<NivelDaBarra, string> = {
  * copiada aqui em hex porque este arquivo é puro e não importa o pacote):
  * verde no atingiu, azul no em processo, LARANJA — e não vermelho — no não
  * atingiu (é leitura pedagógica, não erro, o mesmo critério das `Tag` do
- * painel da atividade), e quase branco no não avaliado, que precisa parecer
- * ausência. O PO pediu o não avaliado TRACEJADO; o `StackedProgressBar` do DS
- * só aceita cor sólida — lacuna registrada no cap. 14.
+ * painel da atividade). O não avaliado é TRACEJADO (`pattern: "dashed"`, DS
+ * 0.2.16): contorno sem preenchimento, porque é AUSÊNCIA e não mais um nível —
+ * sólido, ele se lia como uma quarta faixa de resultado. A cor dele é só a do
+ * traço: o cinza de texto secundário do DS (`--chart-subtitle`).
  */
 export const COR_DO_NIVEL_DA_BARRA: Record<NivelDaBarra, string> = {
   atingiu: "#01B574",
   emProcesso: "#7FA5E2",
   naoAtingiu: "#DD5202",
-  naoAvaliado: "#E8EFFA",
+  naoAvaliado: "#617379",
 };
 
 /** Um segmento do `StackedProgressBar` do DS. */
@@ -126,6 +127,8 @@ export interface SegmentoDaBarra {
   value: number;
   amountText: string;
   color: string;
+  /** `"dashed"` só no não avaliado: a ausência não pode parecer um nível. */
+  pattern?: "solid" | "dashed";
 }
 
 /**
@@ -140,6 +143,7 @@ export function segmentosDaBarra(d: Distribuicao): SegmentoDaBarra[] {
     value: d[nivel],
     amountText: String(d[nivel]),
     color: COR_DO_NIVEL_DA_BARRA[nivel],
+    ...(nivel === "naoAvaliado" ? { pattern: "dashed" as const } : {}),
   }));
 }
 

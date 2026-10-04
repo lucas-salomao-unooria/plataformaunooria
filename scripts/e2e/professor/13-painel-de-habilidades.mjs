@@ -153,12 +153,22 @@ await suite(
       legenda.includes("Não avaliado:") && legenda.includes(`${primeira.distribuicao.naoAvaliado} (`),
       `e os ${primeira.distribuicao.naoAvaliado} não avaliados — separados de "Não atingiu"`,
     );
+    /* O não avaliado é contorno tracejado, na barra e na legenda (DS 0.2.16):
+       ausência, e não uma quarta faixa de resultado. */
+    const cartao = p.locator(".unooria-stacked-progress-card").first();
+    const tracejadoNaLegenda = await cartao.locator(".unooria-dataviz__indicator-dot--dashed").count();
+    const tracejadoNaBarra = await cartao.locator(".unooria-stacked-progress__segment--dashed").count();
+    r.exigir(tracejadoNaLegenda === 1, 'o marcador de "Não avaliado" na legenda é tracejado');
+    r.exigir(
+      tracejadoNaBarra === (primeira.distribuicao.naoAvaliado > 0 ? 1 : 0),
+      `e a faixa dele na barra também (${tracejadoNaBarra}), sem traço solto quando é zero`,
+    );
     await r.registrar(p, "painel-da-turma", {
       titulo: "A turma, por unidade",
       mostra: `A ${TURMA}: as quatro unidades do ano e, em cada missão aplicada, a barra de cada habilidade da BNCC.`,
       prova:
         "Contagem, porque o professor quer saber QUANTOS. Em cada missão vale o melhor resultado da criança " +
-        "entre as atividades; quem não tem registro é 'não avaliado', em cinza, e nunca entra em 'não atingiu'.",
+        "entre as atividades; quem não tem registro é 'não avaliado', TRACEJADO, e nunca entra em 'não atingiu'.",
       detalhe: `${aplicadas.length} missão(ões) aplicada(s), ${habilidades.length} habilidade(s)`,
       inteira: true,
     });

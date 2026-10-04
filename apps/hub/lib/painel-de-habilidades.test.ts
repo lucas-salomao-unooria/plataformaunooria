@@ -40,6 +40,15 @@ describe("a barra", () => {
     expect(segmentos.map((s) => s.value)).toEqual([3, 2, 1, 4]);
   });
 
+  test("só o não avaliado é tracejado: é ausência, não mais um nível", () => {
+    expect(segmentosDaBarra(d(3, 2, 1, 4)).map((s) => s.pattern ?? "solid")).toEqual([
+      "solid",
+      "solid",
+      "solid",
+      "dashed",
+    ]);
+  });
+
   test("turma vazia não divide por zero", () => {
     expect(proporcaoAtingiu(d(0, 0, 0, 0))).toBe(0);
     expect(porcentagem(0, 0)).toBe("0%");
