@@ -42,5 +42,6 @@ que pertence à exp08ef1b), produto `entre-redes`, 1º ano EF, unidade 1.
 
 ## Pedidos abertos no storybook-unooria
 
-- Botão de repetição de áudio 48×48 (as duas famílias) — hoje é composição
-  local marcada em `componentes/casca.tsx` e `componentes/clone.tsx`.
+- Botão de repetição de áudio 64×64 (as duas famílias; era 48 até a 1.0.6,
+  H06.1.1) — hoje é composição local marcada em `componentes/casca.tsx` e
+  `componentes/clone.tsx`, com a medida em `componentes/medidas.ts`.

@@ -109,3 +109,31 @@ descrição, placeholder, mensagem) — não para nome de campo da api:
 O `unidades` da resposta de `GET /escolas` **não** foi renomeado: é campo de
 contrato publicado (OpenAPI + apêndice C), e trocá-lo por pureza de vocabulário
 é churn sem ganho para quem usa a tela. Fica registrado que ele diverge.
+
+## Quem atende a rede ESCOLHE a escola, não digita o código (H03.4.2)
+
+Usuários, Turmas, Importar e `/analise` pedem a escola a quem viaja sem
+`escola_id` no token (o administrador do contrato e o `admin`). Era um
+"Escola (id)" digitado — só funcionava para quem sabia de cor o código interno.
+Hoje é `components/escolha-de-escola.tsx`: um `TextField` de busca que filtra o
+`Selection` ao lado (o DS não publica seleção com busca). A lista vem de
+`GET /escolas?tipo=escola` UMA vez e o filtro é local. **Só monte para
+`ehDoContrato`**: para a Coordenação a rota responde 403, e a tela de análise
+mostrava o erro na casca de quem nem precisa escolher.
+
+## `/admin/habilidades` — o painel de habilidades (F14.7, ADR-144)
+
+Os QUATRO papéis de gestão, uma entrada só no menu, duas alturas pelo papel: a
+`gestor_escola` lê a própria escola (`PainelDaEscola`); a regional e os perfis de
+contrato leem a rede (`PainelDaRede`), e só o contrato tem o seletor de regional
+(`?regionalId=`) — para a regional ele ofereceria a diretoria do vizinho.
+
+- **O drill-down carrega a escola na URL**: `escolas/[escolaId]` →
+  `turmas/[turmaId]?escolaId=` → `estudantes/[estudanteId]?escolaId=`. É o que deixa
+  a regional, que não tem lotação, abrir a turma de outra escola da regional; a
+  api confere (403 fora dela) e as páginas tratam `null` como "não encontrada".
+- **A turma e o estudante são as MESMAS telas do professor** (`PainelDaTurma`,
+  `HabilidadesDoPerfil`), só de leitura; o que muda é para onde o nome leva.
+- **Os painéis carregam `plataforma-largura-cheia`**: o `Card` do DS tem teto de
+  398px, e a grade de barras não cabe nele.
+- Suíte: `gestor_escola/05-painel-de-habilidades` (coordenação e regional).

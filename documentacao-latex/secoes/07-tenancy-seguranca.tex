@@ -278,7 +278,10 @@ silenciosamente a permissão do vizinho.
 \textbf{\cd{prospeccao\_leads} não tem \cd{escola\_id} e não tem RLS}, e é a
 ÚNICA tabela de dados pessoais do banco nessa situação. A exceção está escrita
 aqui porque a regra inviolável nº 1 não admite esquecimento: toda outra tabela
-de dados de pessoa carrega \cd{escola\_id NOT NULL} mais política de RLS.
+de dados de pessoa carrega \cd{escola\_id NOT NULL} mais política de RLS ---
+com uma segunda exceção, de outra natureza, o medidor da Ajuda com avatar
+(\cd{ajuda\_sessoes}, Seção~\ref{sec:ajuda-seguranca}), que tem a coluna mas a
+deixa nula para os papéis de contrato.
 \end{regra}
 
 Quem escreve nessa tabela é um \textbf{visitante do site público}, meses antes
@@ -388,6 +391,115 @@ na api e no agente: só ids, contagens, códigos, duração e \emph{tokens}.
     da api (Apêndice~\ref{ap:operacao}).
 \end{itemize}
 
+\section{A Ajuda com avatar: o medidor sem RLS e as duas trancas do vendor}
+\label{sec:ajuda-seguranca}
+
+A Ajuda com avatar (\adrr{ADR-132}) é o atendente em vídeo do item
+\enquote{Ajuda} do menu da conta, para todo papel MENOS o estudante. O vendor
+(LiveAvatar, da HeyGen, em FULL Mode) faz a escuta, a voz e o vídeo; o LLM é o
+NOSSO: o servidor do vendor chama \rota{POST /ajuda/llm/chat/completions} da api
+a cada fala da pessoa, e a api responde pelo \cd{AiProvider}. Daí as duas
+novidades de segurança desta seção: uma tabela de dado de pessoa sem RLS, e uma
+rota de IA chamada por um terceiro, sem \emph{token} de usuário.
+
+\begin{regra}
+\textbf{\cd{ajuda\_sessoes} não tem RLS, e \cd{escola\_id} é NULÁVEL} --- a
+segunda exceção escrita à regra inviolável nº 1, depois de
+\cd{prospeccao\_leads}. Ela é o medidor de minutos da Ajuda (quem abriu, com que
+papel, quando começou, qual o teto, quando acabou), e as três razões estão na
+própria migração (\arq{20261002120000\_\B ajuda\_\B com\_\B avatar}):
+\begin{enumerate}
+  \item \textbf{A Ajuda vale para \cd{gestor\_contrato} e \cd{admin}}, que não têm
+    escola no \emph{token}. A política por \cd{escola\_id} esconderia a linha
+    deles de todo mundo --- deles mesmos, inclusive ---, e o medidor contaria
+    zero minuto para quem mais pode abrir.
+  \item \textbf{Não é dado de estudante.} O \cd{@Roles} da rota já barra o
+    estudante; o \emph{CHECK} \cd{ck\_ajuda\_sessoes\_perfil} é a segunda tranca,
+    para que uma rota nova esquecida não grave a linha de uma criança.
+  \item \textbf{Não guarda conteúdo}: só início, teto e fim de uma sessão de
+    vídeo. A conversa não é gravada em lugar nenhum.
+\end{enumerate}
+\textbf{Toda \emph{query} é escopada pelo \cd{usuario\_id} do TOKEN}: abrir,
+fechar a sessão que ficou aberta e encerrar. Encerrar a sessão de outra pessoa
+(ou um id que não existe) é ignorado em silêncio --- não há nada a confirmar.
+A exceção \textbf{não se estende}: tabela nova de dado de pessoa não a herda
+(\arq{docs/regras/o-que-nao-fazer.md}).
+\end{regra}
+
+\subsection{\rota{/ajuda/llm}: duas trancas, e as duas são necessárias}
+
+A rota de LLM fica FORA do \cd{OidcGuard} e do \cd{RolesGuard}, de propósito:
+quem chama é o servidor do vendor, não uma pessoa logada. No lugar do papel, ela
+exige DUAS provas.
+
+\begin{tabularx}{\linewidth}{@{}L{34mm}L{36mm}X@{}}
+\toprule
+\headrow \thd{Tranca} & \thd{O que prova} & \thd{Como}\\
+\midrule
+\cd{Authorization: Bearer} \env{AJUDA\_\B LLM\_\B SEGREDO} & Que é o VENDOR &
+  O mesmo valor fica guardado na conta do vendor (como \cd{OPENAI\_API\_KEY} da
+  nossa configuração de LLM). Comparado em tempo constante (\emph{hash} +
+  \cd{timingSafeEqual}): \cd{!==} vazaria o segredo pelo tempo de resposta.\\
+\zebra O \textbf{\emph{token} da sessão} dentro da mensagem \cd{system} & QUEM
+  fala, numa sessão que esta api abriu e não fechou &
+  HS256 assinado com \env{AJUDA\_\B SESSAO\_\B CHAVE} ao abrir a sessão, com
+  \cd{\{sub, escola, perfil, sid\}} --- nunca nome nem e-mail, porque o vendor vê
+  o \emph{prompt} (regra 6) ---, emissor \cd{plataforma-api}, audiência
+  \cd{ajuda-llm}, validade do teto da sessão mais 1 minuto. Viaja em
+  \cd{dynamic\_variables.sessao}; o contexto do vendor tem uma frase e o
+  marcador \cd{[sessao:\$\{sessao\}]}, e o \emph{token} volta no \cd{system} de toda
+  chamada. A api ainda confere que \cd{ajuda\_sessoes.fim} é nulo.\\
+\bottomrule
+\end{tabularx}
+
+Só o segredo deixaria quem o tivesse conversar em nome de ninguém; só o
+\emph{token} deixaria quem tivesse um \emph{token} vazado usar o modelo direto.
+\textbf{Token na fala da pessoa não vale}: só o \cd{system} é lido, e depois
+\textbf{descartado} --- o \emph{prompt} de verdade e a base de conhecimento
+moram na api e nunca vão ao vendor (regra 2). HS256, e não o RS256 do hub,
+porque quem assina e quem confere é a MESMA api, e o \emph{token} nunca precisa
+ser conferido por um terceiro sem a chave.
+
+\begin{atencao}
+\textbf{Só a autenticação responde erro.} Medido no \emph{spike}: diante de
+qualquer status de erro o vendor fica MUDO --- sem nova tentativa, sem evento
+para o navegador. Por isso, passadas as duas trancas, \textbf{toda recusa de
+negócio vira FALA, em 200}: produto \cd{ajuda} desligado na escola, mais de 20
+turnos por minuto da mesma pessoa, falha do modelo (\cd{FALA\_DE\_FALHA}). O 401
+fica para segredo errado ou \emph{token} inválido (vencido, adulterado, de sessão
+encerrada); sem as duas envs, a rota responde 503 --- desligada, nunca aberta.
+\end{atencao}
+
+\subsection{O que fica na api, o que vai ao navegador, o que não se grava}
+
+\begin{itemize}
+  \item \textbf{A chave da conta do vendor (\env{LIVEAVATAR\_API\_KEY}) nunca
+    sai da api.} O navegador recebe, por sessão, só o \emph{token} da SALA de
+    vídeo que o vendor devolve ao abrir --- vale para aquela sessão e mais
+    nada. No hub ele vive \textbf{só em memória}, na \emph{closure} do
+    \emph{hook} da sessão (regra 4: nunca em \cd{localStorage}). Fechar o modal
+    desmonta o conteúdo, e a desmontagem encerra a sala --- o minuto para de
+    contar.
+  \item \textbf{O modal INTEIRO leva \cd{data-clarity-mask="true"}}, como o
+    painel do agente: o Clarity grava a tela do hub (\adrr{ADR-60}), e a pessoa
+    pode dizer ou escrever o nome de um estudante. O aviso pede que não; a
+    máscara não depende de o aviso ser lido.
+  \item \textbf{Pergunta e resposta nunca vão a \emph{log}} --- a pessoa pode
+    dizer o nome de uma criança em voz alta. A linha por turno é
+    \cd{ajuda.turno}, só com \cd{sid}, \cd{perfil}, \cd{resultado},
+    \cd{duracaoMs}, \cd{tokens} e \cd{caracteres}. Nada da conversa é guardado:
+    nem no hub, nem na api.
+  \item \textbf{O microfone começa desligado}: a permissão só é pedida quando a
+    pessoa aperta \enquote{Falar}. Na sala de professores, um microfone aberto
+    ouviria a conversa do lado.
+  \item \textbf{Produto que nasce DESLIGADO.} O \cd{ajuda} entra no painel da
+    Unooria (\adrr{ADR-87}) pela lista \cd{PRODUTOS\_\B DESLIGADOS\_\B POR\_\B PADRAO}:
+    sem linha em \cd{disponibilidades}, fica fora do ar e o item some do menu.
+    A classe de \rota{/ajuda} declara \cd{@Produto("ajuda")}; só
+    \rota{POST /ajuda/sessoes/:id/encerrar} tem \cd{@Sem\B Disponibilidade},
+    porque desligar o produto não pode deixar uma sala aberta cobrando.
+\end{itemize}
+
 \section{O interruptor da rede: um nível que não é de tenancy}
 
 A \adrr{ADR-87} acrescentou um eixo que decide se algo abre e que \textbf{não é
@@ -438,7 +550,12 @@ migração não a \enquote{conserte}: ligar RLS ali faz TODO produto parecer lig
     declara \cd{@Produto(\B"agente-\B professor")} no lugar de \cd{@Recurso}: não há
     linha em \cd{experiencias} a resolver, e a pergunta é a do TETO, pelo mesmo
     resolvedor (\cd{exigir\B Produto\B Disponivel}). O escape é o mesmo: só o
-    \rota{DELETE} da conversa tem \cd{@Sem\B Disponibilidade}.
+    \rota{DELETE} da conversa tem \cd{@Sem\B Disponibilidade}. A Ajuda com avatar
+    (\adrr{ADR-132}) segue o mesmo desenho com \cd{@Produto("ajuda")}, e o escape
+    dela é ENCERRAR a sessão, não apagar dado: desligar o produto não pode deixar
+    uma sala de vídeo aberta cobrando minuto. É também o primeiro produto que
+    \textbf{nasce desligado} (\cd{PRODUTOS\_\B DESLIGADOS\_\B POR\_\B PADRAO}): sem
+    linha, fora do ar, até o \cd{admin} ligar por escola ou rede.
   \item \emph{Guard montado sem \cd{@Recurso} nem \cd{@Produto} LANÇA}, em vez de
     liberar --- liberar em silêncio é exatamente a falha que ele existe para
     impedir. Os dois juntos também lançam: o teto do produto já está dentro da
@@ -474,6 +591,10 @@ estado não é. \rota{GET /recursos/painel} e as escritas seguem em 403 para o
 IA uma rede pode gastar por dia é o custo variável da fornecedora. Aqui nem a
 leitura volta atrás da linha --- o \cd{gestor\_contrato} recebe 403 no GET e no
 PUT, e a tela \rota{/unooria/uso-de-ia} o manda embora pelo \emph{middleware}.
+Na mesma tela, e pelo mesmo motivo, ficam \textbf{os minutos da Ajuda com
+avatar} (\rota{/recursos/limites-da-ajuda/*}, \adrr{ADR-132}): o vendor cobra
+por minuto de vídeo, e quanto uma rede pode gastar por dia é decisão comercial
+da fornecedora. Também só \cd{admin}, na leitura e na escrita.
 
 \textbf{E a lista das experiências arquivadas} (\rota{GET /recursos/arquivadas},
 \adrr{ADR-116}) também é só dele: a rota não conta nada em tempo de uso --- os
@@ -497,7 +618,7 @@ fornecedora.
   Matricular estudantes, enturmar, gerir professores da unidade e consultar relatórios locais.
   \textbf{Não} vê a linha de uma criança nos instrumentos de valores, nem bem-estar docente.\\
 \zebra \cd{gestor\_regional} & As escolas da regional vinculada &
-  Alternar entre escolas da regional, visualizar panorama unificado (\adrr{ADR-81}) e relatório pedagógico por laço de oito escolas (\adrr{ADR-82}).\\
+  Alternar entre escolas da regional, visualizar panorama unificado (\adrr{ADR-81}), relatório pedagógico por laço de oito escolas (\adrr{ADR-82}) e o painel de habilidades da regional, descendo até a escola, a turma e o estudante sem lotação --- uma escola por vez, com a RLS intacta (\adrr{ADR-144}).\\
 \cd{gestor\_contrato} & Toda a rede (cross-escola) &
   Criar escolas, importar CSVs de enturmamento, provisionar supervisores regionais e emitir consolidados.\\
 \zebra \cd{admin} & Toda a rede (conta Unooria) &
@@ -731,8 +852,13 @@ A resposta --- que devolve só \enquote{enviada}, nunca o resultado &
   \no & \no & \no & \yes\\
 Chamar a IA (com quota diária POR PERFIL) & \rota{POST /ai/gerar} &
   \yes & \yes & \yes & \yes\\
-\zebra \textbf{Alterar o teto diário de IA de um perfil} (só \cd{admin}, \adrr{ADR-105}) &
+\zebra \textbf{Abrir e encerrar a Ajuda com avatar} --- só a PRÓPRIA sessão,
+  limitada por MINUTOS, não pela quota (\adrr{ADR-132}) &
+  \rota{POST /ajuda/\B sessoes}, \rota{.../\B :id/\B encerrar} & \no & \yes & \yes & \yes\\
+\textbf{Alterar o teto diário de IA de um perfil} (só \cd{admin}, \adrr{ADR-105}) &
   \rota{/recursos/quotas-de-ia/*} & \no & \no & \no & \no\\
+\zebra \textbf{Ler e alterar os minutos da Ajuda} (só \cd{admin}, \adrr{ADR-132}) &
+  \rota{/recursos/\B limites-da-ajuda/*} & \no & \no & \no & \no\\
 \textbf{Listar as experiências arquivadas} (só \cd{admin}, \adrr{ADR-116}) &
   \rota{GET /recursos/arquivadas} & \no & \no & \no & \no\\
 \zebra Enviar telemetria & \rota{POST /telemetry/batch} & \yes & \yes & \yes & \yes\\
@@ -788,7 +914,7 @@ uma unidade isolada.
 
 \subsection{As portas que não são papel}
 
-Cinco grupos de rotas não passam pelo \cd{RolesGuard} porque não há papel
+Sete grupos de rotas não passam pelo \cd{RolesGuard} porque não há papel
 para checar ---
 e cada uma prova outra coisa no lugar. Elas são a superfície que um leitor da
 matriz acima poderia concluir, erradamente, que não existe.
@@ -820,6 +946,13 @@ matriz acima poderia concluir, erradamente, que não existe.
   Chave de serviço (\cd{x-perfil-token}, \cd{x-import-token}) &
   Máquina falando com máquina no \emph{provisionamento}. Nenhuma delas é
   alcançável a partir do navegador de um usuário.\\
+\zebra \rota{POST /ajuda/llm/\B chat/completions},\newline
+  \rota{GET /ajuda/llm/models} & Segredo do vendor \textbf{e} \emph{token} da
+  sessão no \emph{prompt} & O LLM da Ajuda com avatar (\adrr{ADR-132}), chamado
+  pelo SERVIDOR do vendor, que não tem \emph{token} de usuário. A única rota de
+  IA fora do \cd{QuotaService} e sem \emph{token} da plataforma --- e as duas
+  exceções não se estendem (Seção~\ref{sec:ajuda-seguranca}). O
+  \rota{/models} exige só o segredo.\\
 \bottomrule
 \end{tabularx}
 
@@ -916,7 +1049,10 @@ RECUSA; emissor inalcançável é um rótulo visível na tela (\adrr{ADR-35}).
 \rota{/trocar-senha}, o BFF recusa dados e \rota{/api/exp-token} não emite
 \emph{token} de experiência. Só com o \emph{middleware}, bastaria digitar
 \rota{/exp/...} para pular a troca --- a experiência abriria por baixo, com o
-\emph{token} que o hub continuaria assinando (\adrr{ADR-29}).
+\emph{token} que o hub continuaria assinando (\adrr{ADR-29}). A mesma tela
+serve, desde a H01.4.1, à troca \textbf{voluntária}, pelo menu do avatar: o
+\emph{middleware} deixa de devolver para a \emph{home} quem já trocou, e a
+rota da api é a mesma --- exige a senha atual, como o login.
 \end{decisao}
 
 \section{Segurança do \emph{embed}}
@@ -1014,6 +1150,12 @@ acredita ter declarado algo.
   \item Chamada de IA só existe como \rota{POST /ai/gerar} na API. O
     \emph{prompt} de sistema mora em \arq{apps/api/src/ai/prompts.ts} e nunca é
     devolvido.
+  \item Na Ajuda com avatar (\adrr{ADR-132}), nem o vendor recebe o
+    \emph{prompt}: o contexto do LiveAvatar tem uma frase e o marcador
+    \cd{[sessao:\$\{sessao\}]}, e o \cd{system} que ele devolve é descartado. A
+    chave da conta (\env{LIVEAVATAR\_API\_KEY}) e as duas chaves da rota de LLM
+    ficam na api; o navegador recebe só o \emph{token} da sala de vídeo daquela
+    sessão (Seção~\ref{sec:ajuda-seguranca}).
   \item O gabarito do UnooTube arquivado (\cd{factual}, hoje em
     \arq{backup-unootube}) não era persistido no estado do estudante nem
     devolvido em nenhuma rota de estudante.
@@ -1090,8 +1232,12 @@ Texto de menor com contenção & \cd{exp06ef2b\_reflexoes} guarda o
   \cd{exp08ef4b\_respostas\_percurso} guarda a justificativa da cláusula: 800
   caracteres, mesma finalidade e mesma fronteira --- e com uma trava que o
   outro não tem, o \textbf{filtro de dado pessoal que recusa antes de
-  gravar}. Os dois ficam sob RLS, fora de log e fora da telemetria. Ver as
-  decisões logo abaixo. Na A Seleção (\adrr{ADR-115}) a \textbf{legenda} dos
+  gravar}. Os dois ficam sob RLS, fora de log e fora da telemetria, e o painel
+  que os devolve aceita gestores (a folha de progresso é deles também), mas
+  \textbf{só devolve o texto a quem tem matrícula de professor na turma}: sem
+  ela, o campo volta nulo e a gestão vê só \enquote{entregou} --- a mesma
+  fronteira do Quem mandou isso? e da A Seleção (H07.1.4). Ver as decisões
+  logo abaixo. Na A Seleção (\adrr{ADR-115}) a \textbf{legenda} dos
   Stories vai, com o primeiro nome, ao colega pareado no Mural --- por isso passa
   por um sanitizador (link, telefone, e-mail, menção, palavrão) antes de
   gravar ---, e a \cd{exp07ef1b\_reflexoes} só ao professor da turma. O Jornal
@@ -1228,6 +1374,12 @@ O agente de IA do professor segue a mesma regra por outro caminho: o modelo dele
 está em \cd{global} (com reserva em \cd{us}), os dois \emph{data stores} em
 \cd{global} e a sessão --- o histórico das conversas --- no Agent Engine em
 \cd{us-east1}. Nenhum dos três fica no Brasil.
+
+A Ajuda com avatar (\adrr{ADR-132}) acrescenta um terceiro destino, e o
+primeiro fora do Google: a \textbf{voz e o texto de PROFISSIONAIS} (nunca de
+estudante, que não abre a Ajuda) passam pelo vendor do avatar, nos EUA --- é ele
+quem transcreve a fala e sintetiza a resposta. Precisa constar do contrato e do
+DPA da rede e da página de privacidade, como o resto desta seção.
 \end{atencao}
 
 \section{Verificação}
@@ -1256,6 +1408,12 @@ Segurança não documentada por teste é intenção. O que é efetivamente verif
   se confundem.\\
 \arq{scripts/probe-pointerlock.mjs} & Sem o token de \emph{sandbox},
   \cd{requestPointerLock()} falha; com ele, funciona.\\
+\zebra \arq{tests/ajuda-rotas.spec.ts},\newline \arq{tests/ajuda-postgres.spec.ts} &
+  O LLM da Ajuda responde 401 sem o segredo, sem \emph{token} de sessão, com o
+  \emph{token} fora do \cd{system} ou de sessão encerrada, e 503 sem as chaves;
+  o \emph{prompt} que vai ao modelo é o NOSSO, nunca o do vendor; encerrar
+  ignora a sessão de outra pessoa; o banco recusa linha de \cd{estudante} e
+  aceita papel de contrato sem escola (\adrr{ADR-132}).\\
 \bottomrule
 \end{tabularx}
 
@@ -1288,6 +1446,17 @@ Roubo de \emph{token} do \cd{iframe} & Exposição de credencial &
   Consumo de recurso & Quota diária persistida por (escola, usuário, dia), com
   incremento atômico, verificada \emph{antes} da chamada; \emph{rate limit} por
   usuário.\\
+Esgotamento dos minutos do avatar (a Ajuda) & Consumo de recurso &
+  \textbf{Exceção à regra 5} (\adrr{ADR-132}): a Ajuda não passa pela quota de
+  \emph{tokens}, porque o custo dela é o minuto de vídeo. Limite em MINUTOS por
+  pessoa e dia e por sessão (\cd{ajuda\_limites}, só o \cd{admin} edita), com
+  \cd{ajuda\_sessoes} de medidor: sessão sem fim conta o teto inteiro, abrir
+  fecha a anterior que ficou aberta. 6 aberturas e 20 turnos por minuto por
+  pessoa. Os \emph{tokens} continuam medidos pelo \cd{MedidorDeProvider}.\\
+\zebra Uso do LLM da Ajuda por fora do avatar & Autenticação de
+  \emph{endpoint} de serviço & Duas trancas: segredo do vendor, comparado em
+  tempo constante, e \emph{token} HS256 da sessão, curto e preso a uma sessão
+  aberta; \emph{fail closed} (503) sem as chaves.\\
 Vazamento de PII por log & Privacidade &
   Proibição explícita; telemetria com id opaco; vocabulário fechado no
   \emph{payload}; texto sensível nunca logado.\\

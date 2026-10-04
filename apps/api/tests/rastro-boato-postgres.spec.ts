@@ -28,6 +28,7 @@ let turmaId = "";
 let estudanteA = "";
 let estudanteB = "";
 let estudanteSemTurma = "";
+let professora = "";
 
 const TRES_FONTES = ["msg-boato-01", "msg-audio-anonimo", "msg-laudo-pdf"] as const;
 
@@ -52,6 +53,18 @@ async function codigoDe(promessa: Promise<unknown>): Promise<string | null> {
     }
     throw e;
   }
+}
+
+/** A professora DA turma: só ela lê o texto livre da criança (H07.1.4). */
+async function professoraDaTurma(escolaId: string, turma: string, username: string) {
+  const prof = await prisma.user.create({
+    data: { role: "professor", escolaId, username, displayName: "Professora Teste", passwordHash: "x" },
+    select: { id: true },
+  });
+  await prisma.matricula.create({
+    data: { escolaId, turmaId: turma, usuarioId: prof.id, papel: "professor", principal: false, inicio: new Date(Date.UTC(2026, 0, 1)) },
+  });
+  return prof.id;
 }
 
 /** Audita as três fontes que sustentam a descoberta. */
@@ -83,6 +96,7 @@ beforeAll(async () => {
   estudanteA = (await criar("rastro.ana", "Ana Teste", true)).id;
   estudanteB = (await criar("rastro.bia", "Bia Teste", true)).id;
   estudanteSemTurma = (await criar("rastro.sem", "Sem Turma", false)).id;
+  professora = await professoraDaTurma(ESCOLA, turmaId, "rastro.prof");
 
   /* A PORTA DA SALA (ADR-69): sem esta linha `estudanteDaEscola` — o funil de
      todas as rotas de estudante — recusa com 403 `missao-nao-liberada`. */
@@ -299,13 +313,22 @@ describe("o painel do professor", () => {
   });
 
   test("mostra progresso, a distribuição A/B/C e o texto do percurso", async () => {
-    const painel = await service.painel(ESCOLA, turmaId);
+    const painel = await service.painel(ESCOLA, turmaId, professora);
     expect(painel.resumo.total).toBeGreaterThanOrEqual(2);
     expect(painel.resumo.distribuicao.A).toBeGreaterThanOrEqual(1);
     const bia = painel.estudantes.find((e) => e.estudanteId === estudanteB);
     expect(bia?.entregouPercurso).toBe(true);
     expect(bia?.reflexaoTexto).toContain("medo");
     expect(bia?.auditouTudo).toBe(true);
+  });
+
+  test("a gestão vê que entregou, mas não lê o texto da criança (H07.1.4)", async () => {
+    // Gestor e admin chegam ao mesmo painel sem `professorId`.
+    const painel = await service.painel(ESCOLA, turmaId);
+    const bia = painel.estudantes.find((e) => e.estudanteId === estudanteB);
+    expect(bia?.entregouPercurso).toBe(true);
+    expect(bia?.reflexaoTexto).toBeNull();
+    expect(JSON.stringify(painel)).not.toContain("medo");
   });
 
   test("zerar a turma apaga o estado e o percurso, e a missão pode ser refeita", async () => {

@@ -413,8 +413,10 @@ export class RastroBoatoService {
    * leitura é de PROGRESSO. A distribuição A/B/C existe porque é o material do
    * debate, e aparece como contagem da turma — nunca como "quem errou".
    *
-   * O texto da reflexão vai NESTA rota e só nela: é a leitura formativa do
-   * professor da turma. Nenhuma rota de gestor o alcança.
+   * O texto da reflexão vai NESTA rota e só nela, e só para o PROFESSOR da
+   * turma: é a leitura formativa dele. A rota aceita gestores (a folha de
+   * progresso é deles também), mas sem `professorId` o texto volta `null` e a
+   * gestão vê só "entregou" (H07.1.4, D03).
    */
   async painel(escolaId: string, turmaId: string, professorId?: string) {
     return this.prisma.comTenancy(async (tx) => {
@@ -457,7 +459,9 @@ export class RastroBoatoService {
           latenciaSeg: estado.latenciaSeg,
           modeloCoerente: estado.coerente,
           entregouPercurso: Boolean(reflexao),
-          reflexaoTexto: reflexao?.texto ?? null,
+          // Caixa livre de menor: só o professor da turma lê (H07.1.4, D03). A
+          // gestão abre o mesmo painel sem `professorId` e vê só "entregou".
+          reflexaoTexto: professorId ? (reflexao?.texto ?? null) : null,
           ociosoMin:
             sessao && !estado.concluidoEm ? minutosDesde(sessao.atualizadoEm, agora) : null,
         };

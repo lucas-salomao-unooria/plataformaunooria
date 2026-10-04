@@ -166,6 +166,10 @@ const NOS: Record<string, NoDaTrilha> = {
   '/professor/turmas/[id]/estudantes': { rotulo: 'Estudantes', href: abaDosEstudantes },
   '/professor/turmas/[id]/estudantes/[estudanteId]': { rotulo: 'Estudante' },
 
+  // O painel de habilidades (F14.7). O nome do estudante leva ao perfil DENTRO
+  // da sala (acima), de onde a trilha volta para a turma.
+  '/professor/habilidades': { rotulo: 'Painel de habilidades' },
+
   // Os três produtos que são experiência embedada. O rótulo é o NOME DO PRODUTO
   // (`lib/produtos.ts`), que é o que o professor clicou no cartão.
   '/professor/plano-de-aula': { rotulo: 'Gerador de Plano de Aula' },
@@ -183,6 +187,16 @@ const NOS: Record<string, NoDaTrilha> = {
   '/admin/escolas': { rotulo: 'Escolas' },
   '/admin/minhas-escolas': { rotulo: 'Minhas escolas' },
   '/admin/relatorios': { rotulo: 'Relatório' },
+  // O painel de habilidades (F14.7): a escola, ou a rede, e o drill-down. Os
+  // segmentos intermediários não têm tela — `oculto`; a página publica o nome
+  // da escola, da turma ou do estudante pelo `RotuloDaTrilha`.
+  '/admin/habilidades': { rotulo: 'Habilidades' },
+  '/admin/habilidades/escolas': { rotulo: 'Escolas', oculto: true },
+  '/admin/habilidades/escolas/[escolaId]': { rotulo: 'Escola' },
+  '/admin/habilidades/turmas': { rotulo: 'Turmas', oculto: true },
+  '/admin/habilidades/turmas/[turmaId]': { rotulo: 'Turma' },
+  '/admin/habilidades/estudantes': { rotulo: 'Estudantes', oculto: true },
+  '/admin/habilidades/estudantes/[estudanteId]': { rotulo: 'Estudante' },
   '/admin/periodos-letivos': { rotulo: 'Ano letivo' },
   '/admin/recursos': { rotulo: 'Recursos' },
 

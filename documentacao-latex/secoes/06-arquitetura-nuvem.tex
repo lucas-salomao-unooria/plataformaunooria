@@ -75,6 +75,8 @@ que existe --- e que ninguém destrói quando o contrato termina.
     {\textbf{WSO2 Identity Server}\desc{projeto próprio, vários contratos}};
   \node[externo, text width=28mm] (vertex) at (2.0,-6.4)
     {\textbf{Vertex AI}\desc{endpoint \texttt{global}}};
+  \node[externo, text width=28mm] (lav) at (2.0,-9.2)
+    {\textbf{LiveAvatar (HeyGen)}\desc{vídeo da Ajuda; fora do Google}};
 
   \draw[netpub] (net.east) -- (lb.west) node[portlbl, pos=0.62, above]{443};
   \draw[netpub] (lb.east) -- (gcs.west) node[portlbl, midway, above]{\emph{bundles}};
@@ -88,13 +90,21 @@ que existe --- e que ninguém destrói quando o contrato termina.
     node[portlbl, pos=0.80, above]{OIDC};
   \draw[netpub] (api.west) -- (5.7,-5.9) -- (4.2,-5.9) -- (vertex.east)
     node[portlbl, pos=0.45, above]{HTTPS};
+  \draw[netbi] (api.south) -- (7.8,-9.2) -- (lav.east)
+    node[portlbl, pos=0.45, above]{sessões, /ajuda/llm};
+  \draw[netpub] (net.west) -- (0.2,-0.4) -- (0.2,-9.2)
+    node[portlbl, pos=0.5, sloped, above]{WebRTC} -- (lav.west);
 
 \end{tikzpicture}}
 \caption[Implantação de um contrato]{Implantação de um contrato. Um único
   \emph{Load Balancer} global recebe todo o tráfego HTTPS e distribui por
   \emph{host rules}: hub, API, \emph{bundles} e \emph{assets} respondem em
   domínios diferentes com o \emph{mesmo} IP. O Cloud SQL só tem IP privado ---
-  daí a existência do Cloud Run Job de migração dentro da VPC.}
+  daí a existência do Cloud Run Job de migração dentro da VPC. O LiveAvatar, da
+  Ajuda com avatar (\adrr{ADR-132}), é o único externo com tráfego nos dois
+  sentidos: a API abre e fecha a sala em \texttt{api.liveavatar.com}, e o
+  \emph{vendor} entra pelo mesmo LB para chamar \texttt{/ajuda/llm}; o vídeo vai
+  dele direto ao navegador da escola.}
 \label{fig:deploy-contrato}
 \end{figure}
 
@@ -184,7 +194,7 @@ registro de imagens e os dois caminhos de identidade de máquina.
   \draw[regiao] (4.3,-8.8) rectangle (22.0,-11.2);
   \node[c4boundarylbl, fill=unooSurface] at (4.5,-8.7) {Identidade, segredos e artefatos};
   \node[servicoger, text width=27mm] (sm) at (6.2,-10.0)
-    {\textbf{Secret Manager}\desc{6 segredos do contrato}};
+    {\textbf{Secret Manager}\desc{10 segredos do contrato}};
   \node[servicoger, text width=27mm] (sa) at (9.8,-10.0)
     {\textbf{Service Accounts}\desc{\texttt{-api}, \texttt{-run}, \texttt{-push}}};
   \node[servicoger, text width=27mm] (wif) at (13.4,-10.0)
@@ -267,7 +277,10 @@ Cloud SQL & \cd{\{contrato\}-pg} --- HA, PITR, \emph{pooler} ativo &
 Secret Manager & \cd{\{contrato\}-database-url},
   \cd{\{contrato\}-db-password}, \cd{\{contrato\}-token-signing-key},
   \cd{\{contrato\}-auth-secret}, \cd{\{contrato\}-perfil-import-token},
-  \cd{\{contrato\}-planos-import-token} & \emph{env} do Cloud Run\\
+  \cd{\{contrato\}-planos-import-token}, \cd{\{contrato\}-swagger-senha} e os
+  três da Ajuda com avatar: \cd{\{contrato\}-liveavatar-api-key},
+  \cd{\{contrato\}-ajuda-llm-segredo}, \cd{\{contrato\}-ajuda-sessao-chave} &
+  \emph{env} do Cloud Run\\
 \zebra Service Accounts & \cd{\{contrato\}-api} (Vertex, \emph{publisher} do
   Pub/Sub, \cd{objectAdmin} nos \emph{buckets} de \emph{assets} e de planos),
   \cd{\{contrato\}-run} (hub), \cd{\{contrato\}-push} (assina o \emph{push} da
@@ -319,6 +332,29 @@ de todos os professores; o \cd{deletion\_policy} padrão recusa engine com
 sessões, e não se troca para \cd{FORCE}.
 \end{nota}
 
+\begin{nota}
+\textbf{A Ajuda com avatar não tem recurso de nuvem próprio} (\adrr{ADR-132}).
+O \emph{vendor}, o LiveAvatar da HeyGen, fica fora do Google, e o que a
+\emph{stack} ganha são três segredos no Secret Manager, todos com 32 ou mais
+caracteres e lidos só pela API: \cd{\{contrato\}-liveavatar-api-key}
+(\env{LIVEAVATAR\_API\_KEY}, a chave da conta, que nunca vai ao hub),
+\cd{\{contrato\}-ajuda-llm-segredo} (\env{AJUDA\_LLM\_SEGREDO}, o \emph{Bearer}
+que o \emph{vendor} manda ao nosso LLM; o MESMO valor fica guardado na conta do
+\emph{vendor}) e \cd{\{contrato\}-ajuda-sessao-chave} (\env{AJUDA\_SESSAO\_CHAVE},
+que assina o \emph{token} curto da sessão; só a API a conhece). O que fica
+\textbf{fora do Terraform} são os ids do lado do \emph{vendor}: o contexto e a
+configuração de LLM, que \arq{scripts/\B liveavatar-\B configurar.mjs} cria na
+conta dele (idempotente pelo nome \cd{unooria-ajuda-<ambiente>}) e imprime como
+\env{LIVEAVATAR\_CONTEXT\_ID} e \env{LIVEAVATAR\_LLM\_CONFIG\_ID} --- um
+conjunto por contrato e ambiente, criado \emph{depois} de a API ter URL pública,
+porque a configuração aponta para ela. Por isso a API sobe sem eles: faltou
+qualquer peça, \rota{POST /ajuda/sessoes} responde 503 e o resto da plataforma
+não percebe, e dá para aplicar o Terraform antes do \emph{script}. Trocar a URL ou
+o segredo é apagar a configuração (e depois o segredo) no painel do
+\emph{vendor} e rodar o \emph{script} de novo: o \emph{vendor} não tem edição
+documentada, e apagar o segredo antes da configuração a quebra sem aviso.
+\end{nota}
+
 \begin{decisao}
 \textbf{Uma \emph{role} de banco, não duas.} O desenho original previa duas
 \emph{roles}: uma dona do \emph{schema} para as migrações e uma \cd{app\_runtime}
@@ -358,7 +394,25 @@ API \seta{} Vertex AI & Pública, TLS + ADC & Endpoint \cd{global}.\\
 Agent Engine \seta{} Gemini e \emph{data stores} & Pública, TLS + SA do
   agente & Modelo em \cd{global} com reserva em \cd{us}; \emph{data stores} em
   \cd{global}. O navegador nunca chega aqui.\\
-\zebra API \seta{} Pub/Sub \emph{topic} & Pública, TLS + SA &
+\zebra API \seta{} LiveAvatar (\cd{api.liveavatar.com}) & Pública, TLS +
+  \cd{x-api-key} & Abrir e fechar a sala da Ajuda (\rota{/v1/sessions}), com
+  \emph{timeout} de 10\,s (\adrr{ADR-132}). A chave nunca sai da API.\\
+LiveAvatar \seta{} LB \seta{} API (\rota{/ajuda/llm}) & Pública, TLS +
+  \emph{Bearer} + \emph{token} da sessão & O \emph{vendor} (na AWS;
+  \cd{us-east-2} no \emph{spike}) chama \rota{POST /ajuda/llm/chat/completions} e
+  \rota{GET /ajuda/llm/models} pela URL pública da API, o mesmo LB e o mesmo Cloud
+  Run --- sem rota nova de rede. Não pode ficar atrás de IAP nem de \emph{allowlist}
+  por IP; o Cloud Armor não pode recusar o corpo (JSON OpenAI com o \emph{prompt}
+  do contexto); e a resposta é SSE com o primeiro \emph{byte} em menos de 10\,s,
+  então nada de \emph{buffering} no caminho. Em desenvolvimento local, só com túnel
+  (\cd{cloudflared}).\\
+\zebra Navegador \seta{} LiveAvatar (LiveKit) & Pública, WebRTC & O vídeo da Ajuda
+  não passa pela \emph{stack}. O \emph{firewall} da escola precisa liberar
+  \cd{*.livekit.cloud} TCP 443 (WSS), \cd{*.turn.livekit.cloud} 443 (TURN/TLS),
+  \cd{*.host.livekit.cloud} UDP 3478 e \cd{api.liveavatar.com} 443; recomendado
+  UDP 50000--60000. Rede que bloqueia WebRTC mostra \enquote{não conseguimos
+  conectar o vídeo} no modal.\\
+API \seta{} Pub/Sub \emph{topic} & Pública, TLS + SA &
   Publicação do lote analítico.\\
 Pub/Sub \seta{} API (\rota{/telemetry/ingest}) & Pública, TLS +
   \emph{ID token} & Verificado por \cd{PubSubPushGuard}: emissor Google,
@@ -462,6 +516,17 @@ sem nenhuma linha no log da API.
   \emph{env} em texto plano & \cd{desligado} enquanto o engine não existe;
   \cd{agent-engine} e o \emph{resource name} completo depois do segundo
   \emph{apply}. Não são segredo: quem autoriza é o IAM do engine.\\
+\zebra \cd{\{contrato\}-liveavatar-api-key}, \cd{\{contrato\}-ajuda-llm-segredo},
+  \cd{\{contrato\}-ajuda-sessao-chave} & Secret Manager & A Ajuda com avatar
+  (\adrr{ADR-132}): a chave da conta do \emph{vendor}, o \emph{Bearer} que ele
+  manda ao nosso LLM e a chave que assina o \emph{token} da sessão. Ausentes =
+  Ajuda desligada (503), nunca aberta; a API sobe normal.\\
+\env{LIVEAVATAR\_\B CONTEXT\_\B ID}, \env{LIVEAVATAR\_\B LLM\_\B CONFIG\_\B ID},
+  \env{LIVEAVATAR\_\B SANDBOX} & \emph{env} em texto plano & Os ids que
+  \arq{scripts/\B liveavatar-\B configurar.mjs} imprime, fora do Terraform. Não
+  são segredo: sem a chave da conta não abrem nada. \env{LIVEAVATAR\_SANDBOX=1}
+  (o avatar de testes, \textasciitilde{}1 minuto, sem crédito) é recusado pelo Zod
+  em produção.\\
 \bottomrule
 \end{tabularx}
 

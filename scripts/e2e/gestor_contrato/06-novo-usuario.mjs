@@ -22,6 +22,11 @@ const MATRICULA = `E2E-AC-${SELO}`;
 const NOME_DO_ADMIN = `Admin Rede ${SELO}`;
 const LOGIN_DO_ADMIN = `e2e.admin.${SELO}`;
 const SENHA_DO_ADMIN = "AdminDaRede2026";
+/* As duas senhas que ELE escolhe depois: a do primeiro acesso e a da troca
+   voluntária (H01.4.1). Conta criada por esta corrida — nenhuma conta de
+   demonstração tem a senha trocada. */
+const SENHA_PROPRIA = "MinhaSenhaDaRede1";
+const SENHA_TROCADA = "TroqueiPeloMenu2";
 
 function combo(modal, rotulo) {
   return modal
@@ -46,6 +51,7 @@ await suite(
       "Ele cadastra professor na unidade escolhida, como o gestor faria",
       "A lista de papéis dele é a cadeia: atribui o regional, nunca o próprio nível",
       "O admin recém-criado nasce com senha provisória e é preso na troca",
+      "Depois, troca a senha de novo quando quiser, pelo menu do avatar, e entra com a nova",
     ],
     comando: "node scripts/e2e/gestor_contrato/06-novo-usuario.mjs",
   },
@@ -72,7 +78,7 @@ await suite(
 
     await r.registrar(p, "admin-escolhe-a-escola", {
       titulo: "Antes de cadastrar, dizer onde",
-      mostra: `A tela de usuários com o campo 'Escola (id)' preenchido: ${escola.nome}.`,
+      mostra: `A tela de usuários com a escola escolhida: ${escola.nome}.`,
       prova:
         "O gestor tem uma escola e ela vem do token. O admin do contrato tem todas, e por isso " +
         "precisa DIZER de qual está falando — sem `?escolaId=` a api recusa com 400, em vez de " +
@@ -225,6 +231,60 @@ await suite(
         "trava é tripla — middleware, BFF e emissão de token de experiência —, e o papel mais " +
         "poderoso do sistema passa por ela igual a um estudante do 1º ano.",
       inteira: true,
+    });
+
+    // ── e troca de novo, quando quiser, pelo menu do avatar (H01.4.1) ────
+    await novo.locator("#senha-atual").fill(SENHA_DO_ADMIN);
+    await novo.locator("#senha-nova").fill(SENHA_PROPRIA);
+    await novo.locator("#senha-confirmacao").fill(SENHA_PROPRIA);
+    await novo.getByRole("button", { name: "Salvar e continuar" }).click();
+    await novo.waitForURL((url) => !url.pathname.startsWith("/trocar-senha") && url.pathname !== "/", {
+      timeout: 30_000,
+    });
+    const casaDoAdmin = new URL(novo.url()).pathname;
+
+    await novo.getByRole("button", { name: /Conta de / }).click();
+    await novo.getByRole("menuitem", { name: "Trocar senha" }).click();
+    await novo.waitForURL(/\/trocar-senha/, { timeout: 20_000 });
+    await novo.getByRole("heading", { name: "Trocar senha" }).waitFor({ timeout: 15_000 });
+    r.exigir(
+      (await novo.getByRole("button", { name: "Cancelar" }).count()) === 1 &&
+        (await novo.getByText(/Não é você/).count()) === 0,
+      "na troca voluntária a saída é Cancelar — quem chegou pelo menu não está preso",
+    );
+    await novo.locator("#senha-atual").fill(SENHA_PROPRIA);
+    await novo.locator("#senha-nova").fill(SENHA_TROCADA);
+    await novo.locator("#senha-confirmacao").fill(SENHA_TROCADA);
+    await r.registrar(novo, "trocar-senha-pelo-menu", {
+      titulo: "Trocar a senha quando quiser",
+      mostra: "O \"Trocar senha\" do menu do avatar abre a mesma tela do primeiro acesso, com texto e saída próprios.",
+      prova:
+        "As regras são as mesmas — a senha atual, 8 caracteres, diferente da atual — porque a rota da " +
+        "api é uma só. O que muda é a saída: Cancelar volta para a área da pessoa.",
+    });
+    await novo.getByRole("button", { name: "Salvar nova senha" }).click();
+    await esperarOuFalharCedo(novo.getByText("Senha trocada"), novo.locator(ALERTA_DE_ERRO), {
+      timeout: 20_000,
+      oQue: "a confirmação da troca voluntária",
+    });
+    await novo.getByRole("button", { name: "Voltar" }).click();
+    await novo.waitForURL((url) => url.pathname === casaDoAdmin, { timeout: 20_000 });
+    r.exigir(true, `a confirmação leva de volta à área dele (${casaDoAdmin})`);
+
+    /* A prova de que trocou de verdade: entrar de novo com a senha nova. Sair
+       da tela ANTES: o `entrar` limpa os cookies, e a lista de Usuários que
+       ainda carregava respondia 401 — vermelho do roteiro, não do produto. */
+    await novo.goto("about:blank");
+    await r.entrar(novo, LOGIN_DO_ADMIN, SENHA_TROCADA);
+    r.exigir(
+      !/\/trocar-senha|\/login/.test(new URL(novo.url()).pathname),
+      "e entra de novo com a senha nova, direto na área dele",
+    );
+    await r.registrar(novo, "entrou-com-a-senha-nova", {
+      titulo: "A senha nova vale",
+      mostra: `${NOME_DO_ADMIN} entrou com a senha que escolheu pelo menu.`,
+      prova: "A troca grava na api; não é estado de tela. A senha anterior deixou de valer.",
+      detalhe: new URL(novo.url()).pathname,
     });
   },
 );

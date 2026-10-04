@@ -6,7 +6,9 @@
  * (grade, overlay, pareamento pictograma+áudio); botão é `Button` do DS.
  *
  * Lacuna declarada para o storybook-unooria: um "botão de repetição de áudio"
- * de 48×48 com glifo de alto-falante (usado em toda missão de anos iniciais).
+ * com glifo de alto-falante (usado em toda missão de anos iniciais). Ele tem
+ * 64×64 desde a 1.0.6 (H06.1.1): com 48 a criança de 6 anos errava o toque, e
+ * repetir o áudio é a ação que ela mais repete quando ainda não lê.
  * Enquanto não existe, `AudioReplayButton` compõe `Button` + SVG local — e
  * este comentário existe para o componente morrer quando o pacote publicar.
  */
@@ -15,25 +17,26 @@ import { Button } from "@edu/ui/ds";
 import { tocar } from "../../lib/audio";
 import type { MarcaId } from "../../lib/tipos";
 import { TEXTO } from "../../lib/textos";
+import { AUDIO_REPLAY_PX } from "./medidas";
 import { PictogramaDaMarca } from "./pictogramas";
 
 function GlifoAltoFalante(): JSX.Element {
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden>
+    <svg width="30" height="30" viewBox="0 0 24 24" aria-hidden>
       <path d="M4 9 h4 l5 -4 v14 l-5 -4 H4 z" fill="currentColor" />
       <path d="M16 9 q3 3 0 6 M18 6.5 q5 5.5 0 11" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" />
     </svg>
   );
 }
 
-/** Botão dedicado de repetição de áudio (48×48, spec E1). */
+/** Botão dedicado de repetição de áudio (64×64; a spec E1 pedia 48). */
 export function AudioReplayButton({ audioId, rotulo }: { audioId: string; rotulo?: string }): JSX.Element {
   return (
     <Button
       variant="secondary"
       aria-label={rotulo ?? "OUVIR DE NOVO"}
       onClick={() => tocar(audioId)}
-      style={{ width: 48, height: 48, padding: 0, borderRadius: 24 }}
+      style={{ width: AUDIO_REPLAY_PX, height: AUDIO_REPLAY_PX, padding: 0, borderRadius: AUDIO_REPLAY_PX / 2, flexShrink: 0 }}
     >
       <GlifoAltoFalante />
     </Button>

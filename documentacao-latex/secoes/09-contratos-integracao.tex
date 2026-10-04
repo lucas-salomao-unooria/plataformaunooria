@@ -10,7 +10,9 @@ código que já está publicado e não pode ser atualizado em conjunto: o protoc
 manifesto de experiências e a interface do \emph{provider} de IA. Este capítulo
 especifica os quatro e a política de versionamento de cada um --- e, desde
 2026-09-30, um quinto, que tem quatro pontas em vez de duas: o do agente de IA do
-professor (Seção~\ref{sec:contrato-agente}).
+professor (Seção~\ref{sec:contrato-agente}). Desde 2026-10-02 há um sexto, o
+único em que quem chama a api é o servidor de um \emph{vendor}: o do avatar da
+Ajuda (Seção~\ref{sec:contrato-ajuda}).
 
 \begin{regra}
 \textbf{Mudança em contrato exige cuidado extremo e atualização deste
@@ -545,7 +547,24 @@ export interface AiProvider {
   /** Conversa multi-turno com ferramentas (ADR-23). `tokensUsados` soma TODAS
    *  as voltas e TODAS as tentativas, inclusive as rejeitadas: e o que foi pago. */
   conversar(req: AiConversaRequest): Promise<AiResult>;
+  /** Conversa SEM ferramentas, devolvida aos pedacos (ADR-132). */
+  conversarEmFluxo(req: AiFluxoRequest): AsyncIterable<AiFluxoEvento>;
 }
+
+export interface AiFluxoRequest {
+  system: string;
+  historico: Array<{ papel: "pessoa" | "agente"; texto: string }>;
+  maxTokens?: number;
+  temperatura?: number;
+  sinal?: AbortSignal;           // abortar corta a chamada ao vendor
+  // sem `ferramentas` e sem `validar`: num stream o texto ja saiu
+}
+
+/** Pedacos de texto e, por ultimo, UM `fim` com o total -- tambem quando o
+ *  modelo parou pelo teto. Erro de transporte e excecao, nao evento. */
+export type AiFluxoEvento =
+  | { tipo: "texto"; texto: string }
+  | { tipo: "fim"; resultado: AiResult };
 
 export const AI_PROVIDER = "AI_PROVIDER";   // token de injecao do Nest
 \end{lstlisting}
@@ -738,6 +757,141 @@ O ADK está fixado no \arq{uv.lock} (\cd{\textasciitilde=2.10.0}); subir de vers
 é refazer as medições de \arq{tests/test\_e2e.py} do agente, porque é delas que
 saem as três armadilhas acima. Chave de estado, nome de ferramenta e chave de
 trecho mudam nas quatro pontas no mesmo PR.
+
+\section{Contrato com o \emph{vendor} do avatar da Ajuda}
+\label{sec:contrato-ajuda}
+
+A Ajuda com avatar (\adrr{ADR-132}, Seção~\ref{sec:ia-ajuda}) é o único contrato
+em que a api \textbf{é chamada pelo servidor de um \emph{vendor}} --- e não por
+uma pessoa logada nem por um serviço do Google. São três trechos: a api pede a
+sala ao LiveAvatar; o navegador entra na sala com o SDK do \emph{vendor}
+(WebRTC); e, a cada fala da pessoa, o \emph{vendor} chama o LLM da api, num
+formato OpenAI-compatível que \textbf{a documentação dele não descreve} --- tudo
+o que segue sobre esse trecho foi MEDIDO no \emph{spike} de 2026-10-02, no
+\emph{sandbox}. A doutrina inteira está em \arq{apps/api/src/ajuda/AGENTS.md}; os
+\emph{payloads}, na Seção~\ref{sec:payload-ajuda}.
+
+\begin{lstlisting}[language=tsunoo, caption={\arq{apps/api/src/ai/avatar-ao-vivo.port.ts} --- a terceira porta de \arq{src/ai} (abreviado)}, label={lst:avatarport}]
+export const AVATAR_AO_VIVO = "AVATAR_AO_VIVO";
+
+export interface PedidoDeSessao {
+  duracaoMaximaS: number;              // o vendor derruba a sala ao atingi-lo
+  variaveis: Record<string, string>;   // dynamic_variables: por aqui vai o token
+}
+
+export interface SessaoDeAvatar {
+  sessaoId: string;                    // o id da sala no vendor (para encerrar)
+  tokenDaSessao: string;               // o que o NAVEGADOR usa para entrar
+}
+
+export interface AvatarAoVivoPort {
+  readonly ligado: boolean;            // false = AvatarDesligado: a Ajuda da 503
+  criarSessao(pedido: PedidoDeSessao): Promise<SessaoDeAvatar>;
+  encerrarSessao(sessaoId: string): Promise<void>;   // sala ja fechada nao e erro
+}
+\end{lstlisting}
+
+\begin{regra}
+\textbf{Só \arq{liveavatar.client.ts} conhece o LiveAvatar}, pela regra do
+\cd{AiProvider}; \arq{src/ajuda} fala com a porta. É porta própria, e não método
+do \cd{AiProvider}, porque não gera texto: reserva uma sala cobrada por minuto,
+com ciclo de vida. O texto da Ajuda passa pelo \cd{AiProvider} como qualquer
+outro, pelo \cd{conversarEmFluxo} (Listagem~\ref{lst:aiprovider}).
+\end{regra}
+
+\subsection{O que a api pede ao \emph{vendor}}
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
+\toprule
+\headrow \thd{Chamada} & \thd{Uso}\\
+\midrule
+\rota{POST /v1/sessions/token} & Abre a sala: \cd{mode: "FULL"},
+  \cd{interactivity\_type: "CONVERSATIONAL"}, o avatar, o teto
+  (\cd{max\_session\_duration}), \cd{llm\_configuration\_id} (o NOSSO LLM),
+  \cd{avatar\_persona} com \cd{context\_id} e \cd{language: "pt"}, e as
+  \cd{dynamic\_variables} com o \emph{token} da sessão. Devolve
+  \cd{session\_id} e \cd{session\_token}; só o segundo vai ao hub.\\
+\zebra \rota{POST /v1/sessions/stop} & Fecha a sala (\cd{reason: "USER\_CLOSED"}).
+  4xx é sala que já fechou, e é ignorado.\\
+\bottomrule
+\end{tabularx}
+
+Cabeçalho \cd{x-api-key} com \env{LIVEAVATAR\_API\_KEY}, 10\,s de \emph{timeout}
+--- abrir é o passo em que a pessoa espera olhando um vídeo preto. O contexto e a
+configuração de LLM que a sessão cita são criados uma vez por contrato e
+ambiente por \arq{scripts/liveavatar-configurar.mjs} (idempotente pelo nome
+\cd{unooria-ajuda-<ambiente>}), \textbf{fora do Terraform}.
+
+\subsection{O que o \emph{vendor} pede à api}
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
+\toprule
+\headrow \thd{Chamada} & \thd{O que chega, e o que a api responde}\\
+\midrule
+\rota{GET /ajuda/llm/models} & Na abertura da sala, com 5\,s de paciência.
+  Resposta mínima: um modelo, \cd{unooria-ajuda}. O modelo de verdade
+  (\env{VERTEX\_MODEL}) não é anunciado.\\
+\zebra \rota{POST /ajuda/llm/chat/\B completions} & A cada fala. É o \emph{request}
+  do cliente OpenAI em Python (\emph{LiveKit Agents}):
+  \cd{Authorization: Bearer <segredo>} e
+  \cd{\{messages, model, stream: true, stream\_options: \{include\_usage: true\},
+  temperature: 0.5\}}. \cd{messages[0]} é \cd{system} = o \emph{prompt} do
+  contexto com as \cd{dynamic\_variables} JÁ substituídas; depois vem o
+  histórico inteiro, a começar pelo \cd{opening\_text}. Resposta:
+  \cd{chat.completion.chunk} em SSE, ou um \cd{chat.completion} inteiro quando
+  \cd{stream} é falso.\\
+\bottomrule
+\end{tabularx}
+
+\begin{regra}
+\textbf{Duas trancas, e as duas são necessárias.} A rota fica fora do
+\cd{OidcGuard} --- quem chama é o \emph{vendor} ---, e no lugar dele exige:
+\begin{enumerate}
+  \item \cd{Authorization: Bearer} \env{AJUDA\_LLM\_SEGREDO}, comparado em tempo
+    constante: prova que é o \emph{vendor}. No \emph{vendor}, o mesmo valor mora
+    como segredo do tipo \cd{OPENAI\_API\_KEY} da nossa configuração de LLM;
+  \item o \emph{token} da sessão \textbf{dentro da mensagem \cd{system}}, no
+    marcador \cd{[sessao:<token>]}: prova QUEM fala, e numa sessão que esta api
+    abriu e não fechou (\cd{ajuda\_sessoes.fim} nulo). É um HS256 curto
+    (\env{AJUDA\_SESSAO\_CHAVE}; \cd{\{sub, escola, perfil, sid\}}; audiência
+    \cd{ajuda-llm}; vale o teto da sessão mais 1 minuto) que a api assina ao
+    abrir e entrega em \cd{dynamic\_variables.sessao}. HS256, e não o RS256 do
+    hub, porque quem assina e quem confere é a mesma api.
+\end{enumerate}
+Só o segredo deixaria qualquer um que o tivesse conversar em nome de ninguém; só
+o \emph{token}, qualquer um com um \emph{token} vazado usar o modelo direto.
+\emph{Token} escrito na fala da pessoa não vale: só o \cd{system} é lido. O
+\emph{token} não leva nome nem e-mail, porque o \emph{vendor} vê o \emph{prompt}
+do contexto (regra 6).
+\end{regra}
+
+\begin{atencao}
+\textbf{Quatro comportamentos medidos que a documentação do \emph{vendor} não
+diz.}
+\begin{enumerate}
+  \item \textbf{Erro do endpoint = avatar MUDO}: sem nova tentativa e sem evento
+    para o navegador. Por isso, aceita a chamada, \textbf{toda recusa de negócio
+    e toda falha do modelo viram FALA, em 200}; só a autenticação responde 401
+    (e a rota responde 503 sem as duas \emph{envs}).
+  \item \textbf{\emph{Stream} é obrigatório na prática, e o primeiro byte tem
+    10\,s} (\cd{x-stainless-read-timeout}). Daí o \cd{conversarEmFluxo}, o
+    pedaço vazio com \cd{role: "assistant"} logo ao abrir o \emph{stream} e a
+    fala de espera aos 7\,s.
+  \item \textbf{Sem \cd{context\_id} na sessão, o avatar fica mudo}, sem erro.
+  \item \textbf{O segredo do LLM é \cd{secret\_type: OPENAI\_API\_KEY}}: a
+    \emph{skill} da HeyGen ensina \cd{LLM\_API\_KEY}, que a api deles recusa.
+\end{enumerate}
+\end{atencao}
+
+\textbf{Política de evolução.} O corpo é lido com \cd{.passthrough()}: só
+\cd{messages} decide, e campo novo do \emph{vendor} é tolerado --- recusar com 400
+deixaria o avatar mudo sem erro na tela. O \cd{ContratoInterceptor} não confere a
+resposta (é \cd{text/event-stream}, escrita crua). Mudou o formato do
+\emph{request}, a substituição das \cd{dynamic\_variables} ou o \emph{timeout} do
+lado do \emph{vendor}? O desenho inteiro sai dessas medições: refaça o
+\emph{spike} no \emph{sandbox} antes de mexer na api. Trocar a URL pública da api
+ou o segredo pede recriar a configuração de LLM no \emph{vendor} (ele não tem
+edição documentada; apagar o segredo ANTES da configuração a quebra sem aviso).
 
 \section{Contrato entre duas experiências}
 

@@ -9,9 +9,9 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{138 decisões}, numeradas até ADR-139, com uma lacuna
-temporária: a 132 (a Ajuda com avatar) já está no código e ainda não tem
-seção aqui. A 133 e a 134 nasceram no mesmo dia, em frentes paralelas
+São \textbf{139 decisões}, numeradas até ADR-139. A 132 (a Ajuda com
+avatar) entrou no código antes de ter seção aqui, e por um dia o número foi
+citado sem existir; a 133 pulou para não colidir com ela. A 133 e a 134 nasceram no mesmo dia, em frentes paralelas
 (Unoovista e Unoochat), e entraram juntas no merge; a 135 e a 136 levaram as
 duas redes para A Seleção e para o Jornal da Escola no mesmo dia. A 117
 (o Jornal da Escola) entrou depois da 121: o número tinha sido
@@ -178,17 +178,18 @@ que a cercam.
 \adrr{ADR-125} & O grafo do código nasce copiado em cada \emph{worktree} e se atualiza sozinho no \emph{pull}, e fica fora do \emph{git} & 2026-09-30 & Aceita; completa a \adrr{ADR-124}\\
 \zebra \adrr{ADR-126} & O agente de IA do professor roda no Vertex AI Agent Engine, atrás da api & 2026-09-30 & Aceita; revisa a \adrr{ADR-07}\\
 \adrr{ADR-127} & Só \emph{data store}, inclusive para as habilidades da BNCC & 2026-09-30 & Aceita, em avaliação; recorta a \adrr{ADR-73}\\
-\zebra \adrr{ADR-128} & SSE só no chat do agente & 2026-09-30 & Aceita\\
+\zebra \adrr{ADR-128} & SSE só no chat do agente & 2026-09-30 & Aceita; a segunda rota com \emph{stream} é a da \adrr{ADR-132}\\
 \adrr{ADR-129} & O \emph{markdown} do agente vira HTML no navegador & 2026-09-30 & Aceita\\
 \adrr{ADR-130} & A atividade é do professor, e a equipe é da atividade & 2026-10-01 & Aceita\\
 \zebra \adrr{ADR-131} & As perguntas de evidência de Quem mandou isso? são as do PO, literais & 2026-10-01 & Aceita\\
-\adrr{ADR-133} & A missão do 8º ano troca o Instanooria pelo Unoovista & 2026-10-02 & Aceita\\
-\zebra \adrr{ADR-134} & Quem mandou isso? troca o clone do WhatsApp pelo Unoochat & 2026-10-02 & Aceita\\
-\adrr{ADR-135} & A Seleção troca o Instanooria pelo Unoovista & 2026-10-02 & Aceita\\
-\zebra \adrr{ADR-136} & As peças da gaveta do Jornal da Escola passam para o Unoovista e o Unoochat & 2026-10-02 & Aceita\\
-\adrr{ADR-137} & O Júri Estadual de Projetos nasce no Unoovista e mede o que o briefing pediu & 2026-10-02 & Aceita\\
-\zebra \adrr{ADR-138} & A missão da 2ª série do EM troca o clone do ChatGPT pelo UnooriaAI & 2026-10-02 & Aceita\\
-\adrr{ADR-139} & O design system tem uma versão só, e todas as experiências sobem juntas & 2026-10-02 & Aceita\\
+\adrr{ADR-132} & A Ajuda com avatar: o vídeo é do vendor, o LLM é nosso, e o limite é em minutos & 2026-10-02 & Aceita; exceção à regra 5 e à \adrr{ADR-105}\\
+\zebra \adrr{ADR-133} & A missão do 8º ano troca o Instanooria pelo Unoovista & 2026-10-02 & Aceita\\
+\adrr{ADR-134} & Quem mandou isso? troca o clone do WhatsApp pelo Unoochat & 2026-10-02 & Aceita\\
+\zebra \adrr{ADR-135} & A Seleção troca o Instanooria pelo Unoovista & 2026-10-02 & Aceita\\
+\adrr{ADR-136} & As peças da gaveta do Jornal da Escola passam para o Unoovista e o Unoochat & 2026-10-02 & Aceita\\
+\zebra \adrr{ADR-137} & O Júri Estadual de Projetos nasce no Unoovista e mede o que o briefing pediu & 2026-10-02 & Aceita\\
+\adrr{ADR-138} & A missão da 2ª série do EM troca o clone do ChatGPT pelo UnooriaAI & 2026-10-02 & Aceita\\
+\zebra \adrr{ADR-139} & O design system tem uma versão só, e todas as experiências sobem juntas & 2026-10-02 & Aceita\\
 \bottomrule
 \end{tabularx}
 
@@ -11417,7 +11418,14 @@ construção da atividade.
   \item \textbf{Criar e montar equipes não são uma transação}: são dois
     módulos. Se a equipe falhar depois de a atividade nascer, a atividade fica,
     e a página dela mostra o que faltou --- nunca se apaga o conteúdo por causa
-    da equipe.
+    da equipe. A costura entre os dois já cobrou um defeito, corrigido em
+    2026-10-02 (PR \#119): o \enquote{Criar atividade} é idempotente e devolve
+    o mesmo pacote, e, se ele já tinha equipes, o fim da criação gravava a
+    montagem com \cd{versao} 0 e levava 409 --- o professor lia que as equipes
+    não tinham sido salvas. Agora o hub lê a versão atual da montagem antes do
+    \rota{PUT} (\cd{concluirCriacao}, em
+    \arq{apps/\B hub/\B lib/\B entre-redes/\B criar-atividade.ts}, coberto por
+    \arq{criar-atividade.test.ts}).
   \item \textbf{Quem faltou só se sabe no dia}: o sorteio da criação é sobre a
     turma inteira, e a página da atividade é onde se marca a falta e se refaz.
   \item \textbf{As montagens que já existiam} foram para a atividade em
@@ -11487,12 +11495,250 @@ as do PO.
 os professores relatarem que a turma acerta pelo tamanho da alternativa.
 
 % ---------------------------------------------------------------------------
+\section{ADR-132 --- A Ajuda com avatar: o vídeo é do vendor, o LLM é nosso, e o limite é em minutos}
+\label{adr:ajuda-com-avatar}
+
+\textbf{Data.} 2026-10-02. \textbf{Status.} Aceita. \textbf{Abre a única
+exceção} à regra inviolável nº~5 e à \adrr{ADR-105}: a Ajuda não passa pelo
+\cd{QuotaService}, e o que a limita são minutos, não \emph{tokens}. Usa a
+\adrr{ADR-87} (o produto \cd{ajuda} no painel de recursos) e a \adrr{ADR-99} (o
+dia dos minutos é o do fuso da plataforma). É a \textbf{segunda rota com
+\emph{stream}}, a ADR nova que a \adrr{ADR-128} exige, e põe um terceiro vendor
+atrás da api, depois do Vertex e do Agent Engine da \adrr{ADR-126}. Escrita
+depois do código: os PRs \#108 (a frente), \#109 (o teto e a fala de espera) e
+\#110 (nasce desligada) entraram no mesmo dia sem a seção. Recurso de IA novo
+\textbf{não} herda nenhuma das duas exceções.
+
+\begin{especificacao}{Contexto}
+\begin{itemize}
+  \item \textbf{O problema.} Quem usa a plataforma e tem uma dúvida de
+    \enquote{como faço isto} não tinha a quem perguntar dentro do produto.
+  \item \textbf{O produto.} Um atendente em vídeo (LiveAvatar, da HeyGen; o
+    avatar \enquote{Silas Customer Support} do catálogo público) aberto pelo item
+    \enquote{Ajuda} do menu da conta, que conversa por voz e por texto em
+    linguagem de escola, a partir da documentação de produto. Vale para
+    \cd{professor}, \cd{gestor\_escola}, \cd{gestor\_regional},
+    \cd{gestor\_contrato} e \cd{admin} --- \textbf{nunca para o estudante}
+    (decisão do dono do produto).
+  \item \textbf{O vendor tem três modos}: o FULL faz a escuta (ASR), a voz (TTS)
+    e o vídeo, e chama um LLM; o LITE só anima o avatar e deixa o resto a quem
+    integra. No FULL, o LLM pode ser o da HeyGen ou um \emph{Custom LLM}
+    compatível com a API do OpenAI.
+  \item \textbf{A documentação do vendor não diz o formato do pedido ao
+    \emph{Custom LLM}.} Um \emph{spike} no \emph{sandbox} (2026-10-02, sem
+    crédito gasto) mediu: o pedido é o do cliente OpenAI em Python (LiveKit
+    Agents), com \cd{Authorization: Bearer} e \cd{stream: true}; a mensagem
+    \cd{system} é o prompt do contexto com as \cd{dynamic\_variables} já
+    substituídas, seguida do histórico inteiro; o primeiro byte tem
+    10\,s (\cd{x-stainless-read-timeout}); na abertura vem um
+    \rota{GET \{base\_url\}/models}; e \textbf{erro do endpoint deixa o avatar
+    mudo}, sem nova tentativa e sem evento para o navegador.
+  \item \textbf{O custo é do vídeo.} O FULL cobra 2 créditos por minuto de
+    sessão, enquanto a sala estiver aberta, falando ou não.
+\end{itemize}
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{itemize}
+  \item \textbf{FULL Mode com \emph{Custom LLM} apontando para a nossa api.} O
+    vendor faz escuta, voz e vídeo; o LLM é
+    \rota{POST /ajuda/llm/chat/completions}, compatível com o OpenAI e em SSE,
+    que responde pelo \cd{AiProvider} (Gemini) com a base de conhecimento no
+    prompt. Voz e texto seguem o mesmo caminho: o chat escrito usa o
+    \cd{message()} do SDK, que leva o texto ao mesmo endpoint, e o histórico da
+    tela é montado com os eventos de transcrição.
+  \item \textbf{\cd{conversarEmFluxo}, a única geração em \emph{stream} do
+    \cd{AiProvider}} (\cd{streamGenerateContent?alt=sse}), sem ferramentas e sem
+    \cd{validar} --- num \emph{stream}, o texto já saiu quando a validação
+    poderia recusá-lo. Os \emph{tokens} saem do último pedaço. Existe porque o
+    vendor pede \emph{stream} e desiste depois de 10\,s.
+  \item \textbf{O teto de saída é 2.048 \emph{tokens}, e a fala de espera sai
+    aos 7\,s} (PR \#109). O \cd{gemini-3.7-flash} às vezes pensa
+    \textasciitilde300 a 400 \emph{tokens} mesmo com \cd{thinkingBudget: 0}, e o
+    raciocínio sai do mesmo teto: com 400, a resposta cortava em meia frase.
+    A brevidade (quatro frases curtas) é do prompt, não do teto. E a primeira
+    chamada fria levou 10,9\,s até o primeiro byte: sem nenhum pedaço
+    em 7\,s, o atendente diz \cd{FALA\_DE\_ESPERA} (\enquote{Um
+    momento, estou vendo isso para você.}) e a resposta de verdade continua no
+    mesmo turno.
+  \item \textbf{Toda recusa de negócio e toda falha do modelo viram FALA, em
+    200.} Produto desligado, mais de 20 turnos por minuto e falha do modelo
+    (\cd{FALA\_DE\_FALHA}) são frases do atendente, porque erro é silêncio. Só a
+    autenticação responde 401 (e o corpo fora do formato, 400).
+  \item \textbf{Duas trancas no \rota{/ajuda/llm}}, que não recebe
+    \emph{token} de usuário. A primeira é o \emph{Bearer}
+    \env{AJUDA\_LLM\_SEGREDO}, comparado em tempo constante: prova que é o
+    vendor. A segunda é um \emph{token} HS256 curto
+    (\cd{\{sub, escola, perfil, sid\}}, assinado com \env{AJUDA\_SESSAO\_CHAVE},
+    válido pelo teto da sessão mais 1 minuto) que a api entrega em
+    \cd{dynamic\_variables.sessao} ao abrir; o contexto do vendor tem só o
+    marcador \cd{[sessao:\$\{sessao\}]}, e o \emph{token} volta dentro da
+    mensagem \cd{system}. Ela prova quem fala, e numa sessão que esta api abriu
+    e não fechou (\cd{ajuda\_sessoes.fim} nulo). \emph{Token} na fala da pessoa
+    não vale: só o \cd{system} é lido.
+  \item \textbf{O prompt e a base nunca vão ao vendor} (regra 2). O \cd{system}
+    que ele manda é descartado depois de achado o \emph{token}; o prompt de
+    verdade mora em \arq{src/ajuda/prompt.ts}.
+  \item \textbf{Porta própria, \cd{AVATAR\_AO\_VIVO}}
+    (\arq{src/ai/avatar-ao-vivo.port.ts}, cliente em
+    \arq{src/ai/liveavatar.client.ts}), separada do \cd{AiProvider}: ela não gera
+    texto, só abre e fecha uma sala cobrada por minuto, com ciclo de vida. Sem
+    o conjunto completo de envs a porta nasce \cd{AvatarDesligado} e
+    \rota{POST /ajuda/sessoes} responde 503 --- nunca derruba a subida da api. O
+    \emph{sandbox} (\env{LIVEAVATAR\_SANDBOX=1}) é recusado em produção pelo Zod.
+  \item \textbf{O limite é em minutos.} \cd{ajuda\_limites} tem duas chaves,
+    \cd{minutos-por-dia} e \cd{minutos-por-sessao} (semente 30 e 10; tetos 600
+    e 60; zero é recusado --- quem quer fechar a Ajuda desliga o produto), e só
+    o \cd{admin} as edita em \rota{/unooria/uso-de-ia}, com motivo, auditado
+    em \cd{recursos\_auditoria} (\cd{quota-alterada}, \cd{ajuda:<chave>}).
+    \cd{ajuda\_sessoes} é o medidor: a sessão nasce com o teto
+    \cd{min(minutos por sessão, o que sobra do dia)}; \textbf{sessão sem
+    \cd{fim} conta o teto inteiro} (falha para o lado do custo); abrir fecha a
+    anterior que ficou aberta; vendor que não abre a sala fecha a linha com
+    duração zero. O dia é o do fuso da plataforma (\adrr{ADR-99}). Os
+    \emph{tokens} continuam medidos pelo \cd{MedidorDeProvider}.
+  \item \textbf{\cd{ajuda\_sessoes} sem RLS e com \cd{escola\_id} nulo
+    permitido}, a exceção de \emph{tenancy} desta ADR: \cd{gestor\_contrato} e
+    \cd{admin} não têm escola no \emph{token}, e a política por escola
+    esconderia a linha deles até deles mesmos; não é dado de estudante (um
+    CHECK recusa o perfil); e não guarda conteúdo, só início, teto e fim. Toda
+    \emph{query} é pelo \cd{usuario\_id} do \emph{token}. Sem FK, como
+    \cd{ia\_uso\_diario}: é medidor.
+  \item \textbf{Nasce desligada} (PR \#110). O produto \cd{ajuda} está no
+    painel de recursos (\adrr{ADR-87}), mas em
+    \cd{PRODUTOS\_DESLIGADOS\_POR\_PADRAO}: sem linha em
+    \cd{disponibilidades}, vale desligado --- a exceção a \enquote{ausência de
+    linha = ligado}, para produto em teste interno. O padrão mora no resolvedor
+    (\cd{ligadoPorPadrao}), e não numa linha semeada, porque
+    \cd{disponibilidades.definido\_por} é NOT NULL com FK para \cd{users} e numa
+    \emph{stack} nova não há quem assine. O \cd{admin} liga por escola ou rede; o
+    encerrar escapa do interruptor (\cd{@SemDisponibilidade}), para que
+    desligar não deixe a sala cobrando. Lançar é tirar da lista, e muda o padrão
+    de todas as redes de uma vez.
+  \item \textbf{\emph{Rate limit}}: 6 aberturas por minuto por pessoa (429
+    \cd{RATE\_LIMIT}); 20 turnos por minuto, que viram fala. As demais
+    recusas da abertura: 429 \cd{SEM\_MINUTOS} (menos de 1 minuto no dia), 502
+    \cd{AVATAR\_FALHOU} e 403 \cd{recurso-indisponivel}.
+  \item \textbf{A base de conhecimento é GERADA e vai inteira no prompt},
+    sem RAG: \arq{scripts/gerar-base-da-ajuda.mjs} escreve
+    \arq{base-da-ajuda.gerada.ts} a partir do mapa de produto (só o que está
+    PRONTO ou PARCIAL), dos guias da aula e dos manifestos das missões ---
+    \textasciitilde65 mil \emph{tokens}. O gerador falha se a base vazar
+    vocabulário técnico (\cd{TERMOS\_SENSIVEIS}), e
+    \arq{tests/ajuda-base.spec.ts} fica vermelho se ela estiver velha. O
+    prefixo fixo (instruções e base) vem antes do papel de quem pergunta, para o
+    cache implícito do Gemini reaproveitá-lo.
+  \item \textbf{Nada da conversa é guardado nem logado.} A linha por turno é
+    \cd{ajuda.turno} (\cd{sid}, \cd{perfil}, \cd{resultado}, \cd{duracaoMs},
+    \cd{tokens}, \cd{caracteres}); a pessoa pode dizer o nome de um estudante em
+    voz alta.
+  \item \textbf{No hub, o item \enquote{Ajuda} abre uma janela, não uma rota}:
+    o segundo item do menu da conta, escondido do estudante e com o produto
+    desligado. O \cd{Modal} do DS traz o vídeo em cima e a conversa escrita
+    embaixo (\cd{ChatMessage}, \cd{ChatComposer}, \cd{TypingIndicator},
+    \cd{ScrollBar}, \cd{AlertBox}); o \cd{<video>} é o único elemento cru,
+    porque o DS não tem \emph{player} ao vivo. A sala abre na montagem do
+    conteúdo e fecha na desmontagem; o microfone começa desligado; o SDK do
+    vendor só carrega por \cd{import()}; o corpo leva \cd{data-clarity-mask} e o
+    aviso \enquote{Não diga nem escreva nomes de estudantes.}
+  \item \textbf{A api precisa de URL pública} para o vendor alcançar o
+    \rota{/ajuda/llm}; em dev local, só com túnel (\cd{cloudflared}). Os ids do
+    vendor (contexto e configuração de LLM) saem de
+    \arq{scripts/liveavatar-configurar.mjs}, um conjunto por contrato e
+    ambiente, fora do Terraform; os três segredos vão ao Secret Manager
+    (\arq{docs/INFRA.md}).
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{LITE com o Gemini Live do vendor}
+    (\cd{gemini\_realtime\_config}). A chave e o prompt iriam para a HeyGen, e a
+    chamada de IA sairia de \arq{src/ai} --- a regra 2 e a proibição de chamar
+    provedor de IA fora dali. E o desenho \enquote{o navegador recebe a
+    transcrição, chama a api e manda o avatar falar} não funciona no FULL sem
+    desligar o LLM dele, o que a documentação não oferece.
+  \item \textbf{O LLM padrão da HeyGen.} O prompt e a base morariam na conta
+    do vendor, o modelo seria outro que o da plataforma, e o custo de
+    \emph{tokens} ficaria fora do \cd{MedidorDeProvider}.
+  \item \textbf{RAG ou \emph{data store} para a base}, como o agente do
+    professor (\adrr{ADR-127}). A base cabe inteira no prompt e o cache
+    implícito reaproveita o prefixo; um índice seria mais uma peça para
+    provisionar por contrato, e uma recuperação que erra o trecho é o atendente
+    inventando com confiança.
+  \item \textbf{Passar pela quota de \emph{tokens}} (\adrr{ADR-105}). O custo
+    que pesa é o minuto de vídeo, e não o \emph{token}: uma sala aberta em
+    silêncio cobra sem gerar texto. E a quota esgotada no meio de uma sessão
+    deixaria a sala aberta, cobrando minuto, com um atendente que só sabe dizer
+    que não pode responder.
+  \item \textbf{Guardar a conversa} (histórico por pessoa). Seria um segundo
+    lugar com voz e texto de profissionais, que podem falar de estudantes, para
+    uma dúvida que se resolve na hora.
+  \item \textbf{Identificar a pessoa por uma configuração de LLM por sessão},
+    com o \emph{token} na \cd{base\_url} e apagada no encerramento. Era o plano
+    B do \emph{spike}; ficou desnecessário quando ele mostrou a variável
+    substituída na mensagem \cd{system}, e criaria e apagaria recurso no vendor a
+    cada abertura.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{Um vendor externo com conta própria e créditos.} A conta de
+    testes tem 10 créditos (5 minutos de FULL); o plano pago é pendência fora do
+    código. A chave é uma por contrato: sem crédito, o vendor não abre a sala, e
+    a abertura responde 502 \cd{AVATAR\_FALHOU} em todas as escolas do contrato
+    ao mesmo tempo.
+  \item \textbf{Um \emph{endpoint} público chamado por terceiro.} O
+    \rota{/ajuda/llm} não pode ficar atrás de IAP nem de lista de IP, e não pode
+    ter \emph{buffering} no \emph{load balancer}; em dev local só funciona com
+    túnel. As duas trancas são o que o protege.
+  \item \textbf{O avatar fica mudo diante de erro}, e o vendor não avisa. A
+    api transforma o que pode em fala; o que escapa (o vendor que não alcança a
+    api, o primeiro byte depois de 10\,s mesmo com a fala de espera)
+    só aparece no hub, que diz \enquote{O atendente não respondeu} depois de
+    20\,s sem resposta.
+  \item \textbf{Uma tabela com dado de pessoa fora da RLS}, ao lado da
+    \cd{prospeccao\_leads} (\adrr{ADR-107}). A tranca é o \cd{usuario\_id} do \emph{token} em
+    toda \emph{query}, e o CHECK do perfil; uma rota nova que esqueça o filtro
+    não é barrada pelo banco.
+  \item \textbf{A voz fala português com sotaque}: a do avatar escolhido não é
+    nativa, e o dono do produto aceitou o sotaque que ela tiver.
+  \item \textbf{\textasciitilde65 mil \emph{tokens} de entrada a cada turno},
+    pagos inteiros na chamada fria; o cache implícito reduz o custo, não o
+    tamanho. A base cresce com o mapa de produto, e a chamada fria é a que mais
+    se aproxima dos 10\,s.
+  \item \textbf{Voz e texto de profissionais passam pelo vendor nos EUA}: precisa
+    constar do contrato e do DPA da rede e da página de privacidade, que
+    \textbf{ainda não} cita o vendor (texto a validar com o jurídico).
+  \item \textbf{Firewall das escolas}: o navegador fala direto com o LiveKit do
+    vendor (WebRTC); rede que bloqueia WebRTC não abre o vídeo.
+  \item \textbf{Nasce desligada}: nenhuma rede vê a Ajuda até o \cd{admin} ligar,
+    e o lançamento é uma mudança de código (sair de
+    \cd{PRODUTOS\_DESLIGADOS\_POR\_PADRAO}) que liga para todas as redes de uma
+    vez.
+  \item \textbf{A suíte de ponta a ponta da Ajuda não foi escrita}: o que está
+    provado é a api (testes de regras, rotas, Postgres e base) e a lógica da
+    conversa no hub; o modal com o vendor de verdade só foi visto à mão.
+  \item \textbf{A documentação veio depois do código}: os três PRs entraram sem
+    a seção, e por um dia o número 132 foi citado sem existir aqui.
+\end{itemize}
+
+\textbf{Gatilho de reavaliação.} O vendor mudar o contrato do \emph{Custom LLM}
+(formato, \emph{timeout} do primeiro byte, comportamento diante de erro) ou o
+preço por minuto; a base passar do ponto em que a chamada fria cabe nos
+10\,s; a conversa precisar ser guardada; o estudante virar público da
+Ajuda (aí a tabela entra na RLS e a exceção cai); ou o segundo recurso de IA
+pedir a mesma exceção à quota.
+
+% ---------------------------------------------------------------------------
 \section{ADR-133 --- A missão do 8º ano troca o Instanooria pelo Unoovista}
 \label{adr:exp08ef1b-unoovista}
 
-\textbf{Data.} 2026-10-02. \textbf{Status.} Aceita. O número 132 já está em uso
-no código (a Ajuda com avatar) e ainda não tem seção aqui; este pula para o 133
-para não colidir.
+\textbf{Data.} 2026-10-02. \textbf{Status.} Aceita. O número 132 já estava em
+uso no código (a Ajuda com avatar, \adrr{ADR-132}) quando esta foi escrita, sem
+seção aqui; esta pulou para o 133 para não colidir.
 
 \begin{especificacao}{Contexto}
 A exp08ef1b (O Conteúdo que não chegou) imitava a rede social com a seção
@@ -12065,3 +12311,277 @@ não via nada.
 \textbf{Gatilho.} Uma experiência precisar de uma versão do DS que quebra outra
 (aí a regra cede para aquela experiência, com exceção registrada), ou o DS
 sair do \cd{0.x}.
+
+\section{ADR-140 --- A eliminação a pedido do titular apaga o cadastro de verdade, e o comprovante não guarda a pessoa}
+\label{adr:prospeccao-eliminacao}
+
+\textbf{Data.} 2026-10-03. \textbf{Status.} Aceita. Complementa a
+\adrr{ADR-107}.
+
+\begin{especificacao}{Contexto}
+O cadastro de interesse do site (\cd{prospeccao\_leads}) é dado pessoal com
+base legal no consentimento, e a LGPD dá ao titular o direito de pedir a
+eliminação (art.~18, VI). A migração da \adrr{ADR-107} já deixara o \cd{GRANT}
+com \cd{DELETE} e sem \cd{UPDATE} pensando nisso, mas não havia rota: o pedido
+era atendido por alguém do time técnico, direto no banco, e a tela dizia isso
+(H10.5.2).
+\end{especificacao}
+
+\textbf{Decisão.} \rota{DELETE /prospeccao/cadastros/\{id\}}, só \cd{admin},
+apaga a linha --- não há exclusão lógica. A tela pede confirmação dizendo o
+nome e a organização de quem sai. O comprovante de que o pedido foi atendido é a
+linha de log \cd{prospeccao-cadastro-eliminado}, com \textbf{quem eliminou e
+quando}, e nenhum dado da pessoa eliminada (nem nome, nem e-mail, nem o
+\cd{id}, que já não aponta para nada). A listagem passou a devolver o \cd{id}
+só por causa desta rota.
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Exclusão lógica} (uma coluna \enquote{eliminado em}). Guardar o
+    contato marcado como apagado é continuar tratando o dado que a pessoa pediu
+    para eliminar, e exigiria \cd{UPDATE} numa tabela que nasceu sem ele.
+  \item \textbf{Tabela de comprovantes com o e-mail (ou o \emph{hash} dele)}
+    para provar o atendimento. O \emph{hash} de um e-mail é reversível por
+    dicionário, e a tabela seria uma segunda cópia do que se apagou.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{Não há desfazer}: um clique errado perde o contato, e a
+    confirmação é a única rede.
+  \item \textbf{O comprovante vive no log}, com a retenção do log; se o
+    jurídico pedir prova de atendimento por mais tempo, ela não existe no banco.
+\end{itemize}
+
+\textbf{Gatilho.} O jurídico exigir prova de atendimento com retenção própria,
+ou a prospecção ganhar relação com outra tabela (aí apagar em cascata vira
+decisão).
+
+\section{ADR-141 --- A idade de uma versão fixada sai do histórico, não de uma coluna nova}
+\label{adr:fixacao-antiga}
+
+\textbf{Data.} 2026-10-03. \textbf{Status.} Aceita. Complementa a
+\adrr{ADR-89}.
+
+\begin{especificacao}{Contexto}
+Fixar a versão de uma experiência numa escola é remédio de incidente, e remédio
+que ninguém retira prende a escola numa versão antiga. O painel passou a avisar
+as fixações com mais de 30 dias (H10.3.3) --- e para isso precisa saber
+\emph{desde quando} a versão está fixada. \cd{disponibilidades.definido\_em}
+não responde: ele muda a cada mexida na linha (ligar, desligar, trocar o
+motivo), e uma escola presa há meses pareceria fixada ontem.
+\end{especificacao}
+
+\textbf{Decisão.} A data sai do histórico (\cd{recursos\_auditoria}): a linha
+\cd{versao-fixada} mais recente com a MESMA versão que está fixada. Só quando o
+histórico falta --- ele é gravado depois da mudança e pode falhar sem
+desfazê-la --- cai no \cd{definido\_em}, que nunca é anterior à fixação: erra
+para menos dias, nunca para mais. O aviso olha a REDE inteira, não o escopo
+aberto, porque a escola esquecida é justamente a que ninguém abre. É lembrete:
+nada solta a fixação sozinho.
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Uma coluna \cd{fixada\_em} em \cd{disponibilidades}.} Migração,
+    mais um campo para manter em dia em toda escrita, e uma segunda fonte da
+    mesma data que o histórico já guarda.
+  \item \textbf{Usar \cd{definido\_em}.} Responde \enquote{quando a linha mudou},
+    não \enquote{quando a versão foi fixada}.
+  \item \textbf{Soltar a fixação sozinho depois do prazo.} Fixação é decisão de
+    quem conhece o incidente; soltar sem ninguém olhar pode reabrir o defeito.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{O painel lê o histórico a cada abertura} (uma consulta a mais,
+    pequena: só as fixações existentes).
+  \item \textbf{Histórico perdido subestima a idade}, e uma fixação antiga pode
+    passar sem aviso.
+\end{itemize}
+
+\textbf{Gatilho.} O histórico passar a ser podado, ou o painel precisar
+ordenar/filtrar por idade de fixação em escala.
+
+\section{ADR-142 --- Na subida do DS, o \texorpdfstring{\cd{dist/}}{dist/} se compara sem os sourcemaps}
+\label{adr:ds-dist-sem-map}
+
+\textbf{Data.} 2026-10-03. \textbf{Status.} Aceita. Refina a \adrr{ADR-139}.
+
+\begin{especificacao}{Contexto}
+A \adrr{ADR-139} sobe a versão só da experiência cujo \emph{bundle} mudou,
+comparando o \emph{hash} do \cd{dist/} antes e depois. Na 0.2.15 (H01.2.2), o
+\emph{hash} inteiro mudou em 14 das 15 experiências --- e o build é
+determinístico. A diferença estava nos \cd{.map}: o \emph{sourcemap} carrega o
+caminho do pacote no \emph{store} do pnpm, que tem a versão no nome
+(\cd{@unooria+design-system@0.2.15}). Com eles, toda subida do DS faria todas as
+experiências \enquote{mudarem}.
+\end{especificacao}
+
+\textbf{Decisão.} A comparação ignora os \cd{.map}. Na 0.2.15, sem eles, dez
+mudaram de verdade e subiram um \emph{patch} (app-90 1.2.7, app-91 1.1.10,
+app-92 1.1.7, exp04ef1b 2.1.2, exp05ef1b 0.3.1, exp06ef1b 0.1.1, exp06ef2b
+0.1.6, exp07ef1b 1.1.2, exp08ef1b 1.2.2 e exp08ef4b 0.1.6); a exp02em1b e a
+app-70 saíram idênticas; a exp01ef1b já estava na 1.0.6, à frente do \cd{dev};
+o \cd{\_template} e o \cd{backup-exp04ef1b} não sobem porque o \emph{deploy}
+não os publica (\adrr{ADR-116}).
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Comparar o \cd{dist/} inteiro.} Toda experiência subiria a cada
+    DS, que é a alternativa que a \adrr{ADR-139} já descartou, por outro
+    caminho.
+  \item \textbf{Desligar os \emph{sourcemaps} do build.} Eles são o que permite
+    ler o erro de cliente que chega ao Cloud Error Reporting
+    (Capítulo~\ref{cap:observabilidade}).
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.} Um \cd{.map} que mude sozinho de
+verdade não sobe a versão --- aceitável, porque o \cd{.map} não muda o que a
+criança vê. A comparação continua manual.
+
+\textbf{Gatilho.} O build passar a embutir o caminho do pacote no JS, ou a
+comparação virar script.
+
+\section{ADR-143 --- O lado do feed entra no sorteio de equipes por registro da missão, e redistribuir não convive com equipe}
+\label{adr:equipes-lado-do-feed}
+
+\textbf{Data.} 2026-10-03. \textbf{Status.} Aceita. Complementa a
+\adrr{ADR-111} e a \adrr{ADR-130}.
+
+\begin{especificacao}{Contexto}
+No Unoovista cada estudante nasce num lado do feed, e uma equipe com gente dos
+dois lados diante da mesma tela desmancha a missão. O módulo de equipes já
+sabia agrupar por lado e contar as equipes mistas, mas ninguém lhe dizia o lado
+de cada um --- o gancho \cd{registrarFonteDeGrupo} existia sem uso. E o lado é
+da ATIVIDADE (o perfil importado, a afinidade da pergunta e a redistribuição do
+professor são todos por atividade), enquanto o gancho recebia só a turma.
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{itemize}
+  \item \textbf{O módulo de perfis registra a fonte} na subida
+    (\arq{perfis/fonte-de-lado.ts}), e o gancho passa a receber o alvo inteiro
+    da montagem, com a atividade (H13.4.1). A precedência do lado é a mesma da
+    largada: a corrida de quem já começou, depois o lado forçado, depois a
+    afinidade do perfil; sem perfil, o estudante é neutro e completa as equipes.
+  \item \textbf{Com equipe montada, \enquote{Redistribuir a turma} fica
+    desligado}, e \rota{POST /atividades/\{id\}/redistribuir} responde 409
+    \cd{turma-com-equipes} (H13.4.3): mover criança a criança separaria quem
+    divide a mesma tela.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{\arq{equipes/} importar \arq{perfis/}.} Inverteria a direção da
+    dependência: o módulo de plataforma passaria a conhecer uma missão.
+  \item \textbf{Redistribuir a equipe inteira de lado.} Mudaria a aritmética da
+    redistribuição (que move os de afinidade mais fraca primeiro) e o professor
+    não saberia por que um estudante de perfil forte trocou de lado.
+  \item \textbf{Só desligar o botão.} O bundle é público; sem a recusa na api, o
+    estado da turma ficaria a um \emph{request} de distância.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{Quem entra na missão ainda recebe o PRÓPRIO lado}, não o da
+    equipe: o sorteio junta quem já é do mesmo lado, mas a largada não consulta
+    a equipe (H13.4.2, pendente). Um neutro numa equipe de lado A pode nascer
+    no lado B.
+  \item \textbf{Para redistribuir com equipe, o professor desfaz as equipes
+    antes}, e refaz depois.
+\end{itemize}
+
+\textbf{Gatilho.} A H13.4.2 (o lado da equipe na largada), ou uma segunda missão
+com lados.
+
+\section{ADR-144 --- O painel de habilidades lê por unidade, a missão vale o melhor entre as atividades, e a regional desce até a escola sem lotação}
+\label{adr:painel-de-habilidades}
+
+\textbf{Data.} 2026-10-03. \textbf{Status.} Aceita. Complementa a
+\adrr{ADR-112}, a \adrr{ADR-130} e a \adrr{ADR-82}.
+
+\begin{especificacao}{Contexto}
+A evidência pedagógica (\adrr{ADR-112}) era lida atividade por atividade, e só
+pelo professor da turma. O PO pediu o painel consolidado (F14.7): o professor
+vê a turma, a coordenação da escola vê todas as turmas, a coordenação regional
+vê as escolas. Três perguntas ficaram em aberto no card: o que é a coluna
+(bimestre do calendário ou unidade da missão), o que vale quando a missão tem
+mais de uma atividade, e como a coordenação regional --- que não tem lotação e
+trabalha uma escola por vez (\adrr{ADR-80}) --- desce da rede até a turma.
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{itemize}
+  \item \textbf{A coluna é a UNIDADE da missão} (1 a 4, do manifesto), e não o
+    bimestre do calendário. As quatro unidades aparecem sempre, mesmo vazias.
+  \item \textbf{A missão é a composição das atividades}: o nível de uma criança
+    numa habilidade da missão é o MELHOR entre todas as atividades e rodadas
+    --- a extensão da \enquote{melhor rodada} que já valia dentro da atividade
+    (\arq{evidencias/regras-do-consolidado.ts}). Cada missão aparece separada:
+    a mesma habilidade em duas missões são duas linhas.
+  \item \textbf{Quem não tem evidência que conte é \enquote{não avaliado}}, a
+    quarta caixa da barra, e nunca entra em \enquote{não atingiu}: não fez,
+    saiu antes, aula projetada ainda não confirmada, \enquote{Não participou}.
+  \item \textbf{Três rotas novas, só de leitura}:
+    \rota{GET /evidencias/turma/\{turmaId\}/consolidado} (professor e gestão),
+    \rota{GET /evidencias/escola/consolidado} (gestão) e
+    \rota{GET /evidencias/rede/consolidado} (regional e perfis de contrato). A
+    da rede atravessa escolas como o relatório da diretoria (\adrr{ADR-82}): uma
+    transação por escola, em lotes de 8, somando na aplicação; a RLS não muda.
+  \item \textbf{A regional desce por \cd{escolaDaConsulta}}: nas rotas de turma,
+    escola e perfil ela pode pedir \cd{?escolaId=} de qualquer escola da regional
+    dela, e quem confere é \cd{EscolasService.temLotacao} --- o mesmo lugar do
+    seletor do cabeçalho. A leitura continua sob o \cd{escola\_id} daquela
+    escola só.
+  \item \textbf{O perfil do estudante ganha o nível POR MISSÃO}, da mais recente
+    para a mais antiga, com a habilidade sem nível como \enquote{não avaliado}
+    (H14.7.4); as atividades continuam embaixo.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Coluna por bimestre do calendário.} Exigiria decidir em que
+    bimestre cai a evidência de uma missão da unidade 1 aplicada em maio; a
+    unidade é o que o professor planeja e o que a trilha mostra.
+  \item \textbf{Uma linha por atividade.} A tela da escola cresceria com cada
+    atividade criada, e a pergunta \enquote{a turma atingiu a habilidade nesta
+    missão?} ficaria sem resposta.
+  \item \textbf{Afrouxar a política de RLS para a regional.} É uma linha, mas é
+    a linha que garante que a escola A nunca vê a criança da escola B
+    (\adrr{ADR-82}).
+  \item \textbf{Dar à regional uma lista de turmas de todas as escolas numa
+    resposta só.} Cem escolas com vinte turmas cada viram uma resposta enorme
+    que ninguém lê; o drill-down pede uma escola por vez.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{A exportação em planilha (CSV) com aviso de LGPD e registro de
+    auditoria ficou para depois}: o painel da escola e o da rede são só tela.
+  \item \textbf{\enquote{Não avaliado} saiu em cor sólida clara, não
+    tracejado}: o \cd{StackedProgressBar} do DS só aceitava cor. \emph{Resolvido
+    na 0.2.16} (\cd{pattern: 'dashed'}; Capítulo~14).
+  \item \textbf{A turma que não aplicou a missão entra na soma da série como
+    \enquote{não avaliado}} no painel da rede: são crianças que a missão ainda
+    não alcançou, e a soma diz isso; quem quer ver só as que aplicaram lê
+    \cd{turmasAplicadas}.
+  \item \textbf{O indicador \enquote{novos dados} no cartão do professor não
+    existe}: o cartão é fixo, sem contagem.
+  \item \textbf{A rede inteira é uma transação por escola}: rede muito grande
+    ficar lenta é gatilho para agregado materializado.
+\end{itemize}
+
+\textbf{Gatilho.} O PO pedir a planilha da coordenação, uma rede com mais de
+duzentas escolas no painel do contrato, ou a primeira missão transversal com
+ficha.

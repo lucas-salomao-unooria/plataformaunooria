@@ -27,6 +27,22 @@ export interface ExperienciaNoPainel {
   tetoDoProduto: boolean;
   versaoAtiva: string;
   versaoFixa: string | null;
+  /** Desde quando a `versaoFixa` vale (ISO 8601); `null` sem fixação. */
+  fixadaEm: string | null;
+  /** Fixada há mais de 30 dias (H10.3.3). */
+  fixacaoEsquecida: boolean;
+}
+
+/** Uma versão fixada há mais de 30 dias, em QUALQUER escopo da rede. */
+export interface FixacaoEsquecida {
+  expId: string;
+  nome: string;
+  /** `null` = o contrato inteiro. */
+  escolaId: string | null;
+  escopo: string;
+  versao: string;
+  fixadaEm: string;
+  dias: number;
 }
 
 export interface ProdutoNoPainel {
@@ -41,6 +57,7 @@ export interface ProdutoNoPainel {
 export interface Painel {
   escopo: { escolaId: string | null; nome: string; tipo: string | null };
   produtos: ProdutoNoPainel[];
+  fixacoesEsquecidas: FixacaoEsquecida[];
 }
 
 /** O que o seletor de escopo precisa de `GET /escolas`. */

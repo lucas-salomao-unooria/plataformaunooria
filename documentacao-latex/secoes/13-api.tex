@@ -69,6 +69,11 @@ por JWT: \rota{POST /perfis/importar} (\cd{x-perfil-token}) e
 \rota{POST /planos/referencias} (\cd{x-import-token}). Ambas são chamadas por
 \emph{script} local ou por integração externa, e ambas respondem \textbf{503}
 quando a variável correspondente está ausente --- desligadas, não abertas.
+Desde a \adrr{ADR-132}, mais duas: \rota{GET /ajuda/llm/models} e
+\rota{POST /ajuda/llm/chat/completions}, chamadas pelo servidor do \emph{vendor}
+do avatar. Trancam por segredo em \cd{Authorization: Bearer} \textbf{e} por um
+\emph{token} de sessão que viaja dentro da mensagem \cd{system}, e respondem 503
+sem as duas \emph{envs} (Seção~\ref{sec:api-ajuda}).
 \end{atencao}
 
 \section{Mapa de rotas por área}
@@ -479,10 +484,11 @@ mudaram de forma para contar por COMPUTADOR:
 \subsection{A evidência pedagógica: por atividade e rodada}
 \label{sec:api-evidencias}
 
-Seis rotas no módulo \arq{evidencias/} (\adrr{ADR-112}), em dois
+Nove rotas no módulo \arq{evidencias/} (\adrr{ADR-112}), em três
 \emph{controllers}: quatro do lado de quem dá aula --- o painel, a confirmação e
-o ajuste de uma atividade, e o perfil de um estudante --- e duas do estudante, a
-pergunta e a resposta. Nenhum caminho de um casa com o
+o ajuste de uma atividade, e o perfil de um estudante ---, duas do estudante, a
+pergunta e a resposta, e três do painel de habilidades (\adrr{ADR-144}), só de
+leitura, descritas no fim desta seção. Nenhum caminho de um casa com o
 do outro --- o número de segmentos e as literais diferem ---, então a ordem de
 registro não decide quem responde; e o do estudante é outro arquivo, sem
 \cd{@Roles} misto. As duas escritas do professor devolvem o PAINEL já
@@ -516,11 +522,14 @@ atualizado, para a tela não precisar reler.
     fora da missão). Ajuste que repete o que já estava é ignorado, sem evento.
   \item \rota{GET /evidencias/\B estudante/:estudanteId} (professor, gestores,
     \cd{admin}) --- o perfil: em cada missão (com o nome do catálogo, ou o
-    \cd{expId} quando ela não está nele), em cada atividade, o nível de cada
-    habilidade --- a melhor rodada, só com o que vale: sem a projeção a
-    revisar, sem N/A e sem \cd{nao\_participou}. Sem origem, e sem juntar
-    missões. O professor só abre quem ele ensina
-    (\cd{professorEnsinaOEstudante}).
+    \cd{expId} quando ela não está nele, a \cd{unidade} e \cd{ultimaEm}), da
+    mais recente para a mais antiga, \cd{habilidades} com o MELHOR nível entre
+    as atividades --- \cd{null} é \enquote{não avaliado} (\adrr{ADR-144}) ---
+    e, em cada atividade, o nível de cada habilidade: a melhor rodada, só com o
+    que vale, sem a projeção a revisar e sem \cd{nao\_participou}. Sem origem,
+    e sem juntar missões. O professor só abre quem ele ensina
+    (\cd{professorEnsinaOEstudante}); a coordenação regional pode pedir
+    \cd{?escolaId=} de uma escola da regional dela.
   \item \rota{GET /evidencias/\B :expId/\B perguntas/:perguntaId} (estudante) --- o
     enunciado e as alternativas, só \cd{id} e \cd{texto}: o nível de cada uma é
     o gabarito, e fica no servidor. As alternativas saem \textbf{embaralhadas a
@@ -536,6 +545,32 @@ atualizado, para a tela não precisar reler.
     \cd{sem-atividade-em-andamento}; alternativa que não é da pergunta:
     \textbf{400} \cd{alternativa-desconhecida}.
 \end{itemize}
+
+\paragraph{O painel de habilidades (\adrr{ADR-144}).} Três leituras da
+evidência somada, todas em contagem --- a tela faz a porcentagem ---, com a
+UNIDADE da missão como coluna e o nível de cada criança na missão como o
+MELHOR entre as atividades. Quem não tem evidência que conte é
+\cd{naoAvaliado}, nunca \cd{naoAtingiu}.
+
+\begin{itemize}
+  \item \rota{GET /evidencias/turma/\B :turmaId/consolidado} (professor que
+    leciona --- 404 nas outras ---, gestores, \cd{admin}) --- as missões com
+    ficha da série da turma (e as que ela fez de outra série), com
+    \cd{aplicada}, e por habilidade a distribuição das crianças da turma; e a
+    lista de estudantes, alfabética, para o drill-down.
+  \item \rota{GET /evidencias/escola/consolidado} (gestores) --- as turmas do
+    ano letivo vigente que têm missão com ficha, por série e nome, com a
+    distribuição de cada habilidade.
+  \item \rota{GET /evidencias/rede/consolidado} (\cd{gestor\_regional} e
+    perfis de contrato) --- cada escola, cada série, a soma das turmas. A
+    regional lê a PRÓPRIA (o \cd{?regionalId=} dela é ignorado); o contrato
+    escolhe a regional ou lê a rede inteira. Uma transação por escola, em
+    lotes de 8, como o relatório da diretoria (\adrr{ADR-82}).
+\end{itemize}
+
+Nas rotas de turma, escola e perfil, a coordenação REGIONAL pode pedir
+\cd{?escolaId=} de qualquer escola da regional dela (\cd{escolaDaConsulta},
+que pergunta a \cd{EscolasService.temLotacao}); fora dela, \textbf{403}.
 
 As duas do estudante passam por \cd{exigirMissaoLiberada}: missão não liberada
 na turma dele é \textbf{403} \cd{missao-nao-liberada}, e recurso desligado na
@@ -683,6 +718,77 @@ resposta crua (\cd{@Res()}, \cd{tipoDaResposta: text/event-stream}). Quem confer
 cada \cd{data:} é o teste, contra \cd{DADOS\_POR\_EVENTO} de
 \arq{contrato-de-rotas.ts}; no OpenAPI a resposta aparece como \cd{string}. E é a
 rota que infla o p95 da api (\adrr{ADR-128}).
+\end{atencao}
+
+\subsection{A Ajuda com avatar}
+\label{sec:api-ajuda}
+
+\adrr{ADR-132}. O módulo \arq{src/ajuda} tem DUAS classes sob o mesmo prefixo, com
+guardas opostas, e é isso que ele tem de estranho:
+
+\begin{itemize}
+  \item \cd{AjudaController} --- o lado do \textbf{hub}: \cd{OidcGuard},
+    \cd{RolesGuard} com todos os papéis \textbf{menos o estudante},
+    \cd{DisponibilidadeGuard} e \cd{@Produto("ajuda")} na classe. Abre e
+    encerra a sala de vídeo; a conversa não passa por aqui.
+  \item \cd{AjudaLlmController} --- o lado do \textbf{\emph{vendor}}: sem
+    \emph{token} de usuário, porque quem chama é o servidor do LiveAvatar. As
+    trancas são o segredo no cabeçalho e o \emph{token} da sessão dentro da
+    mensagem \cd{system} (Seção~\ref{sec:contrato-ajuda}). É registrada
+    primeiro no módulo: a classe de rota literal antes da de parâmetro é o
+    hábito que evita a armadilha de \rota{/planos/:id}.
+\end{itemize}
+
+\begin{tabularx}{\linewidth}{@{}L{44mm}L{16mm}X@{}}
+\toprule
+\headrow \thd{Rota} & \thd{Código} & \thd{Semântica}\\
+\midrule
+\rota{POST /ajuda/sessoes} & \textbf{201} & Fecha a sessão anterior da pessoa que
+  tenha ficado aberta, confere os minutos do dia (\cd{ajuda\_limites} contra
+  \cd{ajuda\_sessoes}), reserva a linha ANTES do \emph{vendor} (o id dela vai no
+  \emph{token}) e pede a sala. Devolve \cd{\{id, tokenDaSessao, duracaoMaximaS,
+  segundosRestantesHoje\}}. 503 \cd{AJUDA\_INDISPONIVEL} (\emph{envs}
+  incompletas), 429 \cd{SEM\_MINUTOS} (menos de 1 minuto no dia), 429
+  \cd{RATE\_LIMIT} (6 aberturas por minuto), 502 \cd{AVATAR\_FALHOU} (a linha
+  fecha com duração zero) e 403 \cd{recurso-indisponivel}.\\
+\zebra \rota{POST /ajuda/sessoes/\B :id/encerrar} & \textbf{204} & Grava o \cd{fim} e
+  pede ao \emph{vendor} que feche a sala. Idempotente: encerrada, inexistente, de
+  outra pessoa ou id que não é UUID respondem 204 igual --- não há o que
+  confirmar. \cd{@SemDisponibilidade}.\\
+\rota{GET /ajuda/llm/models} & 200 & Para o \emph{vendor}, na abertura da sala:
+  um modelo só, \cd{unooria-ajuda}.\\
+\zebra \rota{POST /ajuda/llm/\B chat/completions} & 200 SSE & Um turno do atendente,
+  em \cd{chat.completion.chunk}. 401 sem segredo ou sem \emph{token} de sessão
+  válido; 503 sem \env{AJUDA\_LLM\_SEGREDO}/\env{AJUDA\_SESSAO\_CHAVE}; o resto
+  é 200.\\
+\bottomrule
+\end{tabularx}
+
+\begin{regra}
+\textbf{Na rota do \emph{vendor}, a recusa é uma FALA em 200.} O \emph{vendor} fica
+mudo diante de qualquer status de erro, sem avisar o navegador; então, depois de
+a autenticação passar, produto \cd{ajuda} desligado para a escola do
+\emph{token}, mais de 20 turnos por minuto e falha do modelo viram uma frase do
+atendente, no mesmo formato da resposta normal --- e as recusas nem chamam o
+modelo. Um 403 ou um 429 ali seria um avatar parado olhando para a pessoa.
+\end{regra}
+
+\begin{decisao}
+\textbf{O encerrar escapa do interruptor} (\cd{@SemDisponibilidade}), como o
+\rota{DELETE} do agente: desligar o produto no meio de uma conversa não pode
+deixar a sala do \emph{vendor} aberta e cobrando. E ele não tem \emph{status} de
+erro de posse: a linha é procurada por \cd{id} E \cd{usuario\_id} do
+\emph{token}, e o que não casa é ignorado em silêncio.
+\end{decisao}
+
+\begin{atencao}
+\textbf{\cd{ajuda\_sessoes} não tem RLS nem \cd{escola\_id} NOT NULL}: o
+\cd{gestor\_contrato} e o \cd{admin} abrem a Ajuda e não têm escola no
+\emph{token}. Toda query é por \cd{usuario\_id} do TOKEN, nunca de parâmetro; a
+tabela não guarda conversa nenhuma e não é dado de estudante (o CHECK do perfil
+o barra). O \cd{ContratoInterceptor} não confere o \rota{chat/completions}, que
+escreve na resposta crua (\cd{@Res()}); no OpenAPI a resposta aparece como
+\cd{string}, com \cd{acesso: servico}.
 \end{atencao}
 
 \subsection{Planejamento de ensino (app-92)}
@@ -1247,13 +1353,19 @@ produto:
   \item \rota{GET /recursos/efetivos} (\textbf{qualquer autenticado}) --- resolve
     a cadeia escola \seta{} regional \seta{} contrato, aplica o TETO do produto e
     devolve \cd{\{produtos, experiencias\}}. \cd{produtos} traz SEMPRE todos os
-    do vocabulário (hoje cinco), ligados ou não: um mapa que só lista o ligado
+    do vocabulário (hoje seis), ligados ou não: um mapa que só lista o ligado
     obriga quem lê a saber a lista completa de cor --- e o hub passaria a ter a
     segunda fonte do vocabulário. O quinto, \cd{agente-professor}, é o primeiro
     produto SEM experiência: no painel da Unooria ele aparece com
     \cd{experiencias: []} (a composição é derivada de \cd{experiencias.\B produto}, e
     nenhuma aponta para ele), e é por \cd{produtos[\B"agente-\B professor"]\B.ligado} que
-    o hub decide montar o botão flutuante do professor (\adrr{ADR-126}).
+    o hub decide montar o botão flutuante do professor (\adrr{ADR-126}). O
+    sexto, \cd{ajuda}, também é sem experiência e é o primeiro que
+    \textbf{nasce DESLIGADO}: está em \cd{PRODUTOS\_\B DESLIGADOS\_\B POR\_\B PADRAO}
+    (teste interno), e sem linha em \cd{disponibilidades} vale
+    \cd{ligadoPorPadrao = false} --- o item \enquote{Ajuda} some do menu da conta
+    até o \cd{admin} ligá-la por escola ou rede. Lançar é tirar da lista
+    (\adrr{ADR-132}).
 \end{itemize}
 
 Três decisões dentro dessa rota. O escopo sai do \textbf{token} (o claim
@@ -1317,6 +1429,15 @@ registro é a única resposta a \enquote{quem desligou isto, e quando?}.
     \textbf{preserva} o \cd{ligado} da linha, que é decisão à parte.
 \end{itemize}
 
+\textbf{A fixação esquecida} (H10.3.3): o \rota{GET /recursos/painel} devolve
+\cd{fixacoesEsquecidas}, as versões fixadas há mais de 30 dias na REDE INTEIRA
+--- não só no escopo aberto, porque a escola esquecida é justamente a que
+ninguém abre ---, e marca \cd{fixacaoEsquecida} na linha da experiência. A data
+sai do histórico (\cd{recursos\_auditoria}, ação \cd{versao-fixada} com a mesma
+versão), e não de \cd{definido\_em}, que muda a cada mexida na linha; sem
+histórico, cai em \cd{definido\_em}, que erra para menos dias, nunca para mais.
+É lembrete, não regra: nada solta a fixação sozinho.
+
 \textbf{Ativar só no escopo-contrato; fixar só fora dele}, e a tela oferece uma
 alavanca por escopo. Fixar no contrato seria um segundo jeito, mais fraco, de
 fazer o que ativar faz --- trocaria a versão do \emph{bundle} sem restaurar o
@@ -1371,10 +1492,32 @@ na leitura:
 O \rota{GET /recursos/auditoria} ganhou \cd{?prefixo=} (\cd{quota:} recorta as
 mudanças de quota) e a coluna \cd{detalhe}, só preenchida nessas linhas.
 
+\textbf{Os MINUTOS DA AJUDA moram ao lado da quota}, no
+\cd{LimitesDaAjudaController} (\adrr{ADR-132}): \cd{@Roles("admin")} e nada
+mais, pela razão da quota --- quanto de avatar uma rede gasta por dia é decisão
+comercial da fornecedora, porque o \emph{vendor} cobra por minuto. Está em
+\arq{src/recursos}, e não em \arq{src/ajuda}, porque quem a opera é o painel da
+Unooria: mesma guarda, mesmo histórico, mesmo prefixo do BFF. A Ajuda só LÊ a
+linha, a cada abertura de sessão.
+
+\begin{itemize}
+  \item \rota{GET /recursos/limites-da-ajuda} --- uma linha por chave de
+    \cd{ajuda\_limites} (\cd{minutos-por-dia}, \cd{minutos-por-sessao}), sempre
+    as duas, com o valor da constante quando a linha falta. O uso de cada pessoa
+    (\cd{ajuda\_sessoes}) NÃO sai aqui.
+  \item \rota{PUT /recursos/limites-da-ajuda/\{chave\}} --- sobrescreve o
+    limite, com motivo obrigatório. \textbf{Zero é recusado}: fechar a Ajuda é
+    desligar o produto, não zerar o limite. Tetos de 600 minutos por dia e 60 por
+    sessão (Zod e CHECK). Valor igual devolve \cd{alterado: false}. Registra
+    \cd{codigo: ajuda-limite-alterado} e a linha de \cd{recursos\_auditoria}
+    (ação \cd{quota-alterada}, \cd{recurso\_id} \cd{ajuda:<chave>}). Vale na
+    PRÓXIMA sessão; a que está no ar mantém o teto com que nasceu.
+\end{itemize}
+
 \section{Prospecção: a única escrita sem token (\adrr{ADR-107})}
 
 O formulário do site público (\cd{/}) grava pela api, e não num banco próprio.
-São três rotas, e o prefixo separa o que tem \emph{guard} do que não tem:
+São quatro rotas, e o prefixo separa o que tem \emph{guard} do que não tem:
 
 \begin{itemize}
   \item \rota{POST /prospeccao/publico/cadastros} --- \textbf{sem \emph{guard}},
@@ -1399,6 +1542,14 @@ São três rotas, e o prefixo separa o que tem \emph{guard} do que não tem:
     \rota{/analise/exportar/\{nivel\}}: segmento de rota com ponto quebra a
     validação de tipos do App Router no hub. O nome do arquivo sai no
     \cd{content-disposition}.
+  \item \rota{DELETE /prospeccao/cadastros/\{id\}} --- \cd{admin}. A
+    eliminação a pedido do titular (LGPD art.~18, VI): apaga a linha de
+    verdade, sem exclusão lógica --- guardar o contato \enquote{marcado como
+    apagado} seria continuar tratando o dado que a pessoa pediu para eliminar.
+    Id inexistente ou fora do formato: \num{404}. O comprovante do atendimento
+    é a linha de log \cd{prospeccao-cadastro-eliminado}, com quem eliminou e
+    quando, e nenhum dado da pessoa. É por esta rota que a listagem passou a
+    devolver o \cd{id}; rota de edição não existe, e não deve existir.
 \end{itemize}
 
 \textbf{A escrita não passa pelo BFF.} O \arq{/api/plataforma/*} do hub exige

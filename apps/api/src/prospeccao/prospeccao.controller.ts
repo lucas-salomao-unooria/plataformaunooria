@@ -1,13 +1,21 @@
-import { Controller, Get, Res, UseGuards } from "@nestjs/common";
+import { Controller, Delete, Get, HttpCode, NotFoundException, Param, Req, Res, UseGuards } from "@nestjs/common";
 import { z } from "zod";
-import { OidcGuard } from "../auth/oidc.guard";
+import { OidcGuard, type AuthClaims } from "../auth/oidc.guard";
 import { Roles, RolesGuard } from "../auth/roles";
 import { fusoDaPlataforma } from "../comum/fuso";
+import { logger } from "../observabilidade/logger";
 import { Contrato } from "../openapi/contrato";
 import { PrismaService } from "../prisma/prisma.service";
-import { CadastrosSchema, TETO_DA_LISTAGEM, type Cadastro } from "./contrato-de-rotas";
+import {
+  CadastroIdSchema,
+  CadastrosSchema,
+  EliminarCadastroParamsSchema,
+  TETO_DA_LISTAGEM,
+  type Cadastro,
+} from "./contrato-de-rotas";
 
 type RespostaHttp = { setHeader(nome: string, valor: string): void };
+type Autenticado = { auth: AuthClaims };
 
 /**
  * A LEITURA dos cadastros de interesse — o painel da Unooria (ADR-88/107).
@@ -32,7 +40,7 @@ export class ProspeccaoController {
       this.prisma.prospeccaoLead.findMany({
         orderBy: { criadoEm: "desc" },
         take: TETO_DA_LISTAGEM,
-        select: { nome: true, email: true, telefone: true, organizacao: true, cargo: true, criadoEm: true },
+        select: { id: true, nome: true, email: true, telefone: true, organizacao: true, cargo: true, criadoEm: true },
       }),
       this.prisma.prospeccaoLead.count(),
     ]);
@@ -51,7 +59,7 @@ export class ProspeccaoController {
     notas: [
       "Só `admin` (ADR-88): é o funil comercial da Unooria, não da rede.",
       `A lista vem limitada a ${TETO_DA_LISTAGEM} linhas; \`total\` diz quantas existem de verdade — se os dois divergirem, a tela avisa em vez de mentir que aquilo é tudo.`,
-      "O `id` da linha não sai: nenhuma rota o consome, e um identificador na resposta convida a uma rota de edição que não deve existir.",
+      "O `id` da linha sai só para `DELETE /prospeccao/cadastros/:id` (eliminação a pedido do titular). Não há rota de edição, e não deve haver: cadastro não se edita.",
     ],
   })
   async cadastros() {
@@ -92,5 +100,36 @@ export class ProspeccaoController {
     res.setHeader("content-type", "text/csv; charset=utf-8");
     res.setHeader("content-disposition", `attachment; filename="cadastros-de-interesse.csv"`);
     return corpo;
+  }
+
+  @Delete(":id")
+  @HttpCode(204)
+  @Contrato({
+    resumo: "Elimina um cadastro a pedido do titular (LGPD art. 18, VI).",
+    descricao:
+      "Apaga a linha de verdade — não há exclusão lógica: guardar o contato \"marcado como apagado\" seria continuar tratando o dado que a pessoa pediu para eliminar. É a razão de o `GRANT` desta tabela ter `DELETE` e não ter `UPDATE` (ver a migration).",
+    params: EliminarCadastroParamsSchema,
+    resposta: z.void(),
+    notas: [
+      "Só `admin` (ADR-88).",
+      "Id que não existe, ou fora do formato: **404** `cadastro-inexistente`. Apagar duas vezes não é erro do titular, mas a tela recebe o 404 e relê a lista.",
+      "O registro do atendimento é a linha de log `prospeccao-cadastro-eliminado`, com QUEM eliminou e QUANDO — e nenhum dado da pessoa eliminada.",
+    ],
+  })
+  async eliminar(@Param("id") bruto: string, @Req() req: Autenticado): Promise<void> {
+    const lido = CadastroIdSchema.safeParse(bruto);
+    const naoAchou = () =>
+      new NotFoundException({ codigo: "cadastro-inexistente", mensagem: "Cadastro não encontrado." });
+    if (!lido.success) throw naoAchou();
+    /* `deleteMany` e não `delete`: o `delete` do Prisma LANÇA quando não acha a
+       linha, e a contagem diz a mesma coisa sem exceção para traduzir. */
+    const { count } = await this.prisma.prospeccaoLead.deleteMany({ where: { id: lido.data } });
+    if (count === 0) throw naoAchou();
+    /* O comprovante de que o pedido foi atendido, sem o dado de quem pediu: nem
+       nome, nem e-mail, nem o id (que já não aponta para nada). */
+    logger.info(
+      { codigo: "prospeccao-cadastro-eliminado", eliminadoPor: req.auth.usuarioId },
+      "cadastro de interesse eliminado a pedido do titular",
+    );
   }
 }

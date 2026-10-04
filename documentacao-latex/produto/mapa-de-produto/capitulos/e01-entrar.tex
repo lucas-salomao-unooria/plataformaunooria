@@ -13,7 +13,8 @@
   \item[Valor] Às 8h da manhã, milhares de crianças entram ao mesmo tempo. Cada
     segundo de atrito na entrada é tempo de aula perdido.
   \item[Estado] \parcial{} --- entrar, primeiro acesso e navegação estão
-    prontos; faltam a recuperação de senha e o login único da rede.
+    prontos; faltam a recuperação de senha e o login único da rede, e a
+    Ajuda com atendente está construída, em teste interno.
 \end{campos}
 \end{fichaepico}
 
@@ -23,9 +24,10 @@
 \midrule
 \id{F01.1} & Entrar com usuário e senha & \pronto\\
 \zebra \id{F01.2} & Cada pessoa na sua área & \pronto\\
-\id{F01.3} & Trabalhar em mais de uma escola & \parcial\\
-\zebra \id{F01.4} & Cuidar da própria senha & \afazer\\
+\id{F01.3} & Trabalhar em mais de uma escola & \pronto\\
+\zebra \id{F01.4} & Cuidar da própria senha & \parcial\\
 \id{F01.5} & Entrar pelo login único da rede & \afazer\\
+\zebra \id{F01.6} & Tirar dúvidas com o atendente da Ajuda & \parcial\\
 \bottomrule
 \end{tabularx}
 
@@ -124,16 +126,15 @@ perder numa plataforma com muitas telas}
   \item O cabeçalho mostra nome, uma linha de apoio (a série do estudante ou o
     papel) e um avatar com as iniciais.
   \item As telas de gestão têm menu lateral filtrado pelo papel.
+  \item Os menus laterais da gestão e da Unooria mostram só o que leva a algum
+    lugar: o item \enquote{Iniciativas}, que não fazia nada, saiu.
 \end{itemize}
-\pendencia{os menus laterais de gestão e da Unooria mostram um item
-\enquote{Iniciativas} que não faz nada (vem pronto do componente visual e
-precisa ser removido lá).}
 \end{historia}
 
 % ---------------------------------------------------------------------------
-\feature{F01.3}{Trabalhar em mais de uma escola}{\parcial}
+\feature{F01.3}{Trabalhar em mais de uma escola}{\pronto}
 
-\begin{historia}{H01.3.1}{Trocar a escola ativa}{\parcial}
+\begin{historia}{H01.3.1}{Trocar a escola ativa}{\pronto}
 \hu{Professor ou Coordenação com vínculo em mais de uma escola}{trocar a
 escola em que estou trabalhando pelo cabeçalho}{ver e registrar só o que é
 daquela escola}
@@ -144,25 +145,32 @@ daquela escola}
   \item Trocar de escola muda tudo o que a pessoa vê, sem recarregar a página.
   \item As ferramentas abertas (plano de aula, planejamento) recomeçam na
     escola nova, para nada ser gravado na escola errada.
+  \item No celular o seletor continua no cabeçalho, mais estreito; tocá-lo
+    abre a lista do próprio telefone, com o nome inteiro de cada escola.
 \end{itemize}
-\pendencia{em telas estreitas (celular) o seletor fica escondido, e não há
-como trocar de escola.}
 \end{historia}
 
 % ---------------------------------------------------------------------------
-\feature{F01.4}{Cuidar da própria senha}{\afazer}
+\feature{F01.4}{Cuidar da própria senha}{\parcial}
 
 Hoje a senha só muda quando uma coordenação usa \enquote{Resetar senha}
 (\id{H03.3.4}). O item \enquote{Trocar senha} ficou fora do menu de propósito,
 para não ser um link que não leva a nada.
 
-\begin{historia}{H01.4.1}{Trocar minha senha quando eu quiser}{\afazer}
+\begin{historia}{H01.4.1}{Trocar minha senha quando eu quiser}{\pronto}
 \hu{qualquer pessoa}{trocar a minha senha a qualquer momento}{me proteger se
 alguém descobriu a senha}
-\aceiteproposta
+\aceite
 \begin{itemize}
-  \item O menu do avatar ganha \enquote{Trocar senha}, com as mesmas regras do
-    primeiro acesso (mínimo de 8 caracteres, diferente da atual).
+  \item O menu do avatar tem \enquote{Trocar senha}, com as mesmas regras do
+    primeiro acesso: a senha atual, pelo menos 8 caracteres e diferente da
+    atual.
+  \item A tela se chama \enquote{Trocar senha} e tem \enquote{Cancelar}, que
+    volta para a área da pessoa --- ela não fica presa ali, como no primeiro
+    acesso.
+  \item Depois de salvar, a tela confirma \enquote{Senha trocada} e
+    \enquote{Voltar} leva de volta à área da pessoa. Na próxima entrada vale a
+    senha nova.
 \end{itemize}
 \end{historia}
 
@@ -197,4 +205,79 @@ sistemas da secretaria}{não ter mais uma senha para decorar}
   \item O primeiro acesso com senha provisória deixa de existir para quem
     entra pelo login da rede.
 \end{itemize}
+\end{historia}
+
+% ---------------------------------------------------------------------------
+\feature{F01.6}{Tirar dúvidas com o atendente da Ajuda}{\parcial}
+
+Um atendente em vídeo que conhece a plataforma. A pessoa abre
+\enquote{Ajuda} no menu do próprio nome, no alto da tela, e pergunta falando
+ou escrevendo; o atendente responde em voz e o texto aparece embaixo do vídeo.
+Ele sabe o que este mapa diz que está pronto, os guias da aula e as missões
+--- e mais nada: não vê turma, estudante nem resultado.
+
+\begin{nota}
+\textbf{O tempo de conversa é limitado.} Cada conversa e cada dia têm um teto
+de minutos, que o Administrador Unooria define (\id{H10.4.2}). Começa em 10
+minutos por conversa e 30 por dia, por pessoa. A Ajuda não gasta o limite
+diário de IA de ninguém (\id{F09.4}).
+\end{nota}
+
+\begin{historia}{H01.6.1}{Perguntar ao atendente sem sair da tela}{\parcial}
+\hu{Professor, Coordenação ou Administrador}{abrir a Ajuda de qualquer tela e
+perguntar ao atendente como fazer alguma coisa na plataforma}{resolver a
+dúvida na hora, sem esperar alguém do suporte}
+\aceite
+\begin{itemize}
+  \item \enquote{Ajuda} é o segundo item do menu do nome, para todos os papéis
+    menos o Estudante. Abre uma janela por cima da tela: o vídeo do atendente
+    em cima, a conversa escrita embaixo.
+  \item Enquanto conecta, a janela diz \enquote{Chamando o atendente\ldots} e
+    depois \enquote{Conectando o vídeo\ldots}; o atendente se apresenta e
+    espera a pergunta.
+  \item O atendente responde sobre o que a plataforma faz hoje, no papel de
+    quem pergunta. O que não existe ainda, ele diz que não existe.
+  \item Junto do campo, fixo: \enquote{Não diga nem escreva nomes de
+    estudantes.} Nada da conversa é guardado: fechar a janela encerra a
+    conversa e o vídeo.
+  \item Se o vídeo não conectar, a janela diz que a rede da escola pode estar
+    bloqueando a conexão e oferece \enquote{Tentar de novo}.
+\end{itemize}
+\pendencia{a Ajuda nasce desligada em toda rede, enquanto está em teste
+interno: só aparece onde o Administrador Unooria a ligou (\id{H10.1.5}).
+Falta o teste de ponta a ponta, e a voz do atendente fala português com
+sotaque --- aceito pelo dono do produto.}
+\end{historia}
+
+\begin{historia}{H01.6.2}{Escrever quando não posso falar}{\parcial}
+\hu{Professor ou Coordenação}{escrever a minha pergunta em vez de falar}{usar
+a Ajuda numa sala com gente, ou num computador sem microfone}
+\aceite
+\begin{itemize}
+  \item O microfone pode ser silenciado e religado a qualquer momento; o
+    estado aparece no botão (\enquote{Silenciar microfone},
+    \enquote{Ligar microfone}, \enquote{Microfone bloqueado}).
+  \item Sem microfone, a janela diz \enquote{Sem microfone: escreva a sua
+    pergunta abaixo.}, e a conversa segue só por escrito; o atendente responde
+    em voz e por escrito do mesmo jeito.
+  \item A pergunta escrita e a falada entram na mesma conversa, na ordem em
+    que aconteceram.
+\end{itemize}
+\pendencia{a mesma de \id{H01.6.1}.}
+\end{historia}
+
+\begin{historia}{H01.6.3}{Saber quando o meu tempo de Ajuda acabou}{\parcial}
+\hu{qualquer pessoa que usa a Ajuda}{saber quando a conversa acabou por
+tempo, e quando o tempo do dia acabou}{não achar que o atendente travou}
+\aceite
+\begin{itemize}
+  \item Ao chegar no limite da conversa, o atendente se despede, e a janela
+    mostra \enquote{A conversa terminou}, com \enquote{Começar de novo}.
+  \item Com os minutos do dia gastos, a Ajuda não abre e diz \enquote{Você já
+    usou todos os minutos de Ajuda de hoje.} No dia seguinte, o tempo volta.
+  \item Quando a resposta demora, o atendente avisa (\enquote{Um momento,
+    estou vendo isso para você.}) em vez de ficar em silêncio; se não
+    conseguir responder, pede que a pessoa repita a pergunta.
+\end{itemize}
+\pendencia{a mesma de \id{H01.6.1}.}
 \end{historia}

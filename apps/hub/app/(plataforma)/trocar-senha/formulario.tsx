@@ -14,14 +14,30 @@ import { LogoutButton } from "@/components/logout-button";
  * volta para esta mesma tela — agora com a senha anterior já inválida, que é o
  * beco sem saída mais fácil de criar neste fluxo. Refazer o login também é mais
  * honesto que remendar o cookie: quem responde se ainda falta trocar é a api.
+ *
+ * **Na troca voluntária** (H01.4.1, `primeiroAcesso` falso) o cookie já diz que
+ * não falta trocar, então não há sessão a refazer: a tela confirma a troca e
+ * leva de volta à área da pessoa. A saída é "Cancelar", não "Sair" — quem chegou
+ * pelo menu do avatar não está preso aqui.
  */
-export function FormularioDeTrocaDeSenha({ nome, usuario }: { nome: string; usuario: string }) {
+export function FormularioDeTrocaDeSenha({
+  nome,
+  usuario,
+  primeiroAcesso,
+  home,
+}: {
+  nome: string;
+  usuario: string;
+  primeiroAcesso: boolean;
+  home: string;
+}) {
   const router = useRouter();
   const [senhaAtual, setSenhaAtual] = useState("");
   const [senhaNova, setSenhaNova] = useState("");
   const [confirmacao, setConfirmacao] = useState("");
   const [erro, setErro] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
+  const [trocada, setTrocada] = useState(false);
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -44,6 +60,11 @@ export function FormularioDeTrocaDeSenha({ nome, usuario }: { nome: string; usua
         setEnviando(false);
         return;
       }
+      if (!primeiroAcesso) {
+        setTrocada(true);
+        setEnviando(false);
+        return;
+      }
       const reentrada = await signIn("credentials", {
         username: usuario,
         password: senhaNova,
@@ -63,16 +84,39 @@ export function FormularioDeTrocaDeSenha({ nome, usuario }: { nome: string; usua
     }
   }
 
+  if (trocada) {
+    return (
+      <Card variant="elevated" className="w-full max-w-[420px]">
+        <div className="flex flex-col gap-6 p-1">
+          <Logo size="md" color="navy" aria-label="Plataforma Unooria" />
+          <AlertBox
+            theme="light"
+            variant="success"
+            device="auto"
+            title="Senha trocada"
+            description="Da próxima vez que entrar, use a senha nova."
+          />
+          <Button variant="primary" size="lg" onClick={() => router.replace(home)}>
+            Voltar
+          </Button>
+        </div>
+      </Card>
+    );
+  }
+
   return (
     <Card variant="elevated" className="w-full max-w-[420px]">
       <form className="flex flex-col gap-6 p-1" onSubmit={onSubmit}>
         <header className="flex flex-col gap-3">
           <Logo size="md" color="navy" aria-label="Plataforma Unooria" />
           <div className="flex flex-col gap-1">
-            <h1 className="text-[22px] font-bold text-unooria-neutral-950">Crie sua senha</h1>
+            <h1 className="text-[22px] font-bold text-unooria-neutral-950">
+              {primeiroAcesso ? "Crie sua senha" : "Trocar senha"}
+            </h1>
             <p className="text-[14px] text-unooria-neutral-500">
-              {nome} ({usuario}) — a senha que a escola entregou vale só para este primeiro
-              acesso.
+              {primeiroAcesso
+                ? `${nome} (${usuario}) — a senha que a escola entregou vale só para este primeiro acesso.`
+                : `${nome} (${usuario}) — para trocar, confirme a senha que você usa hoje.`}
             </p>
           </div>
         </header>
@@ -106,9 +150,17 @@ export function FormularioDeTrocaDeSenha({ nome, usuario }: { nome: string; usua
         />
 
         <Button type="submit" variant="primary" size="lg" isLoading={enviando}>
-          Salvar e continuar
+          {primeiroAcesso ? "Salvar e continuar" : "Salvar nova senha"}
         </Button>
       </form>
+
+      {primeiroAcesso ? null : (
+        <div className="flex justify-center border-t border-unooria-neutral-200 px-1 pb-1 pt-5">
+          <Button variant="ghost" size="md" onClick={() => router.replace(home)} disabled={enviando}>
+            Cancelar
+          </Button>
+        </div>
+      )}
 
       {/*
        * A ÚNICA porta de saída desta tela. Ela é a única rota com sessão e sem
@@ -119,12 +171,14 @@ export function FormularioDeTrocaDeSenha({ nome, usuario }: { nome: string; usua
        * colega) fica presa: o middleware não deixa navegar para fora enquanto a
        * senha do lote não for trocada, e trocá-la exige saber a senha atual.
        */}
-      <div className="flex flex-col items-center gap-1 border-t border-unooria-neutral-200 px-1 pb-1 pt-5">
-        <p className="text-[13px] text-unooria-neutral-500">
-          Não é você, {nome.split(" ")[0]}?
-        </p>
-        <LogoutButton />
-      </div>
+      {primeiroAcesso ? (
+        <div className="flex flex-col items-center gap-1 border-t border-unooria-neutral-200 px-1 pb-1 pt-5">
+          <p className="text-[13px] text-unooria-neutral-500">
+            Não é você, {nome.split(" ")[0]}?
+          </p>
+          <LogoutButton />
+        </div>
+      ) : null}
     </Card>
   );
 }

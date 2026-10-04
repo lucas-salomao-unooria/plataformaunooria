@@ -24,8 +24,9 @@
     professor; o do Júri Estadual está escrito e ainda não rodou. O de Quem mandou isso? já passa pela rodada nova que o
     \enquote{Zerar} abre e pelo ajuste do professor num estudante; falta um
     teste que passe pelas equipes, pela aula projetada, pelo ajuste de vários
-    estudantes e pelo \enquote{Não participou}, e falta a tela em que a
-    coordenação consulta a evidência.
+    estudantes e pelo \enquote{Não participou}. O painel de habilidades
+    (\id{F14.7}) já junta tudo por turma, escola e regional; falta a planilha
+    para a coordenação.
 \end{campos}
 \end{fichaepico}
 
@@ -39,6 +40,7 @@
 \zebra \id{F14.4} & O painel e o ajuste do professor & \parcial\\
 \id{F14.5} & A pergunta de múltipla escolha & \pronto\\
 \zebra \id{F14.6} & O perfil do aluno & \parcial\\
+\id{F14.7} & O painel de habilidades & \parcial\\
 \bottomrule
 \end{tabularx}
 
@@ -373,7 +375,7 @@ de ponta a ponta
 delas ainda não passa por aqui.}
 \end{historia}
 
-\begin{historia}{H14.4.4}{A coordenação consulta, sem ajustar}{\parcial}
+\begin{historia}{H14.4.4}{A coordenação consulta, sem ajustar}{\pronto}
 \hu{Coordenação da escola}{consultar a evidência de uma turma e o perfil de um
 estudante}{acompanhar a aprendizagem sem interferir na avaliação do professor}
 \aceite
@@ -389,9 +391,8 @@ estudante}{acompanhar a aprendizagem sem interferir na avaliação do professor}
     criança (\id{H07.1.3}): aqui ela lê o nível por habilidade, e nunca o
     relatório da missão.
 \end{itemize}
-\pendencia{a plataforma já permite a leitura e já recusa o ajuste da
-coordenação, mas as telas desta frente são as do professor: a tela da
-coordenação ainda não existe.}
+A tela é o painel de habilidades da escola e da regional (\id{H14.7.2},
+\id{H14.7.3}): dele, a coordenação abre a turma e o estudante, só para ler.
 \end{historia}
 
 % ---------------------------------------------------------------------------
@@ -428,10 +429,12 @@ missão, as habilidades que ele já demonstrou}
 \aceite
 \begin{itemize}
   \item O perfil abre pela aba Estudantes da turma.
-  \item Em cada missão e em cada atividade, cada habilidade aparece com o nível
-    da melhor rodada.
-  \item Entra só o que vale: nada \enquote{a revisar}, nada de \enquote{não
-    participou}, nada de \enquote{Não avaliado}.
+  \item Em cada missão, cada habilidade aparece com o melhor nível entre as
+    atividades; a que não tem nível aparece como \enquote{Não avaliado}, nunca
+    como \enquote{Não atingiu}. Embaixo, cada atividade com a melhor rodada.
+  \item As missões aparecem da mais recente para a mais antiga.
+  \item Entra só o que vale: nada \enquote{a revisar} e nada de \enquote{não
+    participou} como nível.
   \item O perfil diz o que o estudante demonstrou, e não de onde veio (dele, da
     equipe ou do professor).
   \item A mesma habilidade medida em duas missões aparece nas duas, separada.
@@ -444,15 +447,101 @@ turma sem evidência: ele prova o perfil vazio. Falta ele percorrer um perfil
 com conteúdo.}
 \end{historia}
 
-\begin{historia}{H14.6.2}{Juntar as habilidades de todas as missões}{\afazer}
+\begin{historia}{H14.6.2}{Juntar as habilidades de todas as missões}{\pronto}
 \hu{Professor}{ver num painel só cada habilidade da BNCC de um estudante,
 somando todas as missões}{acompanhar a Base ao longo do ano, e não missão por
 missão}
-\aceiteproposta
+\aceite
 \begin{itemize}
-  \item A regra de junção --- vale a melhor? a mais recente? pesa o tamanho da
-    missão? --- é definida pela equipe pedagógica antes de qualquer tela.
+  \item A regra está decidida: dentro de uma missão vale o melhor nível entre
+    as atividades; entre missões NÃO se junta --- a mesma habilidade em duas
+    missões aparece duas vezes, cada uma com o nome da missão.
   \item O painel mostra de quais missões veio cada nível.
   \item Continua sem ranking e sem nota somada.
+\end{itemize}
+É o painel de habilidades (\id{F14.7}), na turma, e o perfil do estudante.
+\end{historia}
+
+% ---------------------------------------------------------------------------
+\feature{F14.7}{O painel de habilidades}{\parcial}
+
+Um painel só, em três alturas: a turma, a escola e a regional. A coluna é a
+UNIDADE do ano em que a missão mora (não o bimestre do calendário), e em cada
+habilidade aparece quantos estudantes atingiram, estão em processo, não
+atingiram e não foram avaliados. Em cada missão vale o melhor resultado do
+estudante entre as atividades; quem não tem registro é \enquote{não
+avaliado}, e isso nunca conta como \enquote{não atingiu}. Sem ranking em
+nenhuma das três.
+
+\begin{historia}{H14.7.1}{Ver as habilidades da BNCC da minha turma}{\pronto}
+\hu{Professor}{ver num painel as habilidades da BNCC de Computação da minha
+turma, missão por missão}{saber onde a turma está forte e onde reforçar, sem
+abrir missão por missão}
+\aceite
+\begin{itemize}
+  \item Um cartão fixo no topo da lista de missões leva ao painel.
+  \item Quatro colunas, uma por unidade do ano; a unidade sem missão aparece
+    vazia.
+  \item Cada habilidade de cada missão aplicada mostra quantos atingiram, estão
+    em processo, não atingiram e não foram avaliados, em contagem.
+  \item A missão que a turma ainda não aplicou aparece como tal, sem números.
+  \item Posso ordenar as habilidades da mais atingida para a menos atingida
+    (é a ordem das habilidades, nunca dos estudantes).
+  \item A lista de estudantes é alfabética, e o nome leva ao desempenho dele
+    (\id{H14.7.4}).
+  \item Sem missão aplicada, o painel diz isso e leva à lista de missões.
+\end{itemize}
+\pendencia{o indicador de \enquote{dados novos} no cartão não existe; o cartão
+é fixo.}
+\end{historia}
+
+\begin{historia}{H14.7.2}{Ver as habilidades de todas as turmas da escola}{\parcial}
+\hu{Coordenação da escola}{ver as habilidades de todas as turmas da minha
+escola}{saber quais turmas avançam e quais precisam de atenção, sem pedir a
+cada professor}
+\aceite
+\begin{itemize}
+  \item O painel abre pelo item Habilidades do menu.
+  \item As turmas do ano letivo aparecem agrupadas por ano/série, por nome,
+    cada missão num cartão; o filtro de ano/série recorta a tela.
+  \item Cada habilidade mostra a contagem e a porcentagem de cada nível, para
+    comparar turmas de tamanhos diferentes.
+  \item A turma abre a mesma visão do professor, só para ler; dela, o
+    estudante.
+  \item Sem ranking entre turmas nem entre professores.
+\end{itemize}
+\pendencia{a exportação em planilha, com aviso de proteção de dados e
+registro de quem baixou, ainda não existe.}
+\end{historia}
+
+\begin{historia}{H14.7.3}{Ver as habilidades das escolas da regional}{\parcial}
+\hu{Coordenação regional}{ver as habilidades das escolas da minha
+regional}{saber onde a regional avança e onde apoiar}
+\aceite
+\begin{itemize}
+  \item O painel abre pelo item Habilidades do menu, com as escolas da minha
+    regional em ordem alfabética; não escolho outra regional.
+  \item Por ano/série, cada escola mostra a soma das turmas em cada
+    habilidade, e quantas turmas já aplicaram a missão.
+  \item A escola abre o painel daquela escola; dele, a turma --- mesmo eu não
+    estando lotada em escola nenhuma.
+  \item O Administrador do contrato e o Administrador Unooria escolhem a
+    regional, ou veem a rede inteira.
+  \item Nome de estudante não aparece no painel da regional.
+\end{itemize}
+\pendencia{a exportação em planilha, com aviso de proteção de dados e
+registro de quem baixou, ainda não existe.}
+\end{historia}
+
+\begin{historia}{H14.7.4}{Ver o desempenho de um estudante por missão}{\pronto}
+\hu{Professor, Coordenação da escola ou Coordenação regional}{ver um estudante
+missão a missão}{entender onde ele está forte e onde precisa de reforço}
+\aceite
+\begin{itemize}
+  \item Abre a partir do painel da turma, com o nome do estudante no topo.
+  \item As missões aparecem da mais recente para a mais antiga, com a unidade.
+  \item Cada habilidade da missão mostra o melhor nível entre as atividades,
+    ou \enquote{Não avaliado}, que nunca conta como \enquote{Não atingiu}.
+  \item Nenhum dado de outro estudante aparece nesta tela.
 \end{itemize}
 \end{historia}

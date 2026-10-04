@@ -52,6 +52,7 @@ let estudanteB = "";
 let estudanteC = "";
 let estudanteSemTurma = "";
 let estudanteOutraEscola = "";
+let professora = "";
 
 const TABELAS = [
   "exp08ef4b_conteudo_turma",
@@ -96,6 +97,18 @@ async function auditarOMinimo(estudanteId: string) {
   }
 }
 
+/** A professora DA turma: só ela lê o texto livre da criança (H07.1.4). */
+async function professoraDaTurma(escolaId: string, turma: string, username: string) {
+  const prof = await prisma.user.create({
+    data: { role: "professor", escolaId, username, displayName: "Professora Teste", passwordHash: "x" },
+    select: { id: true },
+  });
+  await prisma.matricula.create({
+    data: { escolaId, turmaId: turma, usuarioId: prof.id, papel: "professor", principal: false, inicio: new Date(Date.UTC(2026, 0, 1)) },
+  });
+  return prof.id;
+}
+
 beforeAll(async () => {
   await criarRoleDeRuntime(prisma);
   await limpar();
@@ -127,6 +140,8 @@ beforeAll(async () => {
   estudanteOutraEscola = (
     await criar(OUTRA_ESCOLA, turmaOutraEscola, "manifesto.vizinho", "Vizinho Teste")
   ).id;
+
+  professora = await professoraDaTurma(ESCOLA, turmaId, "manifesto.prof");
 
   /* A PORTA DA SALA (ADR-69): sem esta linha `estudanteDaEscola` — o funil de
      todas as rotas de estudante — recusa com 403 `missao-nao-liberada`. */
@@ -574,7 +589,7 @@ describe("o painel do professor", () => {
   });
 
   test("mostra progresso, a distribuição das cláusulas e o texto do percurso", async () => {
-    const painel = await service.painel(ESCOLA, turmaId);
+    const painel = await service.painel(ESCOLA, turmaId, professora);
     expect(painel.resumo.total).toBeGreaterThanOrEqual(2);
     expect(painel.resumo.distribuicao.clausula_veto_humano).toBeGreaterThanOrEqual(1);
     expect(painel.resumo.tags.autonomia).toBeGreaterThanOrEqual(1);
@@ -582,6 +597,15 @@ describe("o painel do professor", () => {
     expect(bia?.registrouPercurso).toBe(true);
     expect(bia?.justificativaTexto).toContain("2019");
     expect(bia?.auditouOMinimo).toBe(true);
+  });
+
+  test("a gestão vê que registrou, mas não lê o texto da criança (H07.1.4)", async () => {
+    // Gestor e admin chegam ao mesmo painel sem `professorId`.
+    const painel = await service.painel(ESCOLA, turmaId);
+    const bia = painel.estudantes.find((e) => e.estudanteId === estudanteB);
+    expect(bia?.registrouPercurso).toBe(true);
+    expect(bia?.justificativaTexto).toBeNull();
+    expect(JSON.stringify(painel)).not.toContain("2019");
   });
 
   test("a homologação é o ÚNICO caminho que liga `aprovado_por_professor`", async () => {

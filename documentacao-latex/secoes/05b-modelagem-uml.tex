@@ -96,7 +96,7 @@ deste documento em cada folha.
   \draw[hered] (10.8,-7.2) -- (10.8,-2.39);
 
   \foreach \nome/\figs/\y in {
-      Sequência/{\ref{fig:uml-seq-entrada}, \ref{fig:uml-seq-ia}, \ref{fig:uml-seq-agente}; antes: \ref{fig:seq-feed}, \ref{fig:seq-handshake}, \ref{fig:seq-erro-cliente}}/-8.5,
+      Sequência/{\ref{fig:uml-seq-entrada}, \ref{fig:uml-seq-ia}, \ref{fig:uml-seq-agente}, \ref{fig:uml-seq-ajuda}; antes: \ref{fig:seq-feed}, \ref{fig:seq-handshake}, \ref{fig:seq-erro-cliente}}/-8.5,
       Comunicação/{\ref{fig:uml-comunicacao}}/-9.8,
       Tempo/{\ref{fig:uml-tempo}}/-11.1,
       Visão geral de interação/{\ref{fig:uml-visao-geral}}/-12.4} {
@@ -163,7 +163,9 @@ Atividades & Processos & Qual é o algoritmo que decide se um recurso está liga
   \ref{fig:estados-geracao}\\
 Sequência & Processos & Em que ordem as duas travas da entrada na missão
   disparam? E a quota da IA: o que roda antes e o que roda depois do
-  \emph{provider}? & \ref{fig:uml-seq-entrada}, \ref{fig:uml-seq-ia}, \ref{fig:uml-seq-agente}\\
+  \emph{provider}? E quando quem chama o modelo é o \emph{vendor} do avatar? &
+  \ref{fig:uml-seq-entrada}, \ref{fig:uml-seq-ia}, \ref{fig:uml-seq-agente},
+  \ref{fig:uml-seq-ajuda}\\
 \zebra Comunicação & Processos & Que objetos um lote de telemetria atravessa, em que
   ordem numerada, até virar linha no banco? & \ref{fig:uml-comunicacao}\\
 Tempo & Processos & Quando o \emph{token}, a sessão e o relógio da SDK vencem, um em
@@ -266,7 +268,8 @@ e depois da IA (\adrr{ADR-105}) e o caminho imutável do \emph{bundle}.
      \texttt{plano-de-aula}\\
      \texttt{plano-de-ensino}\\
      \texttt{bem-estar}\\
-     \texttt{agente-professor}};
+     \texttt{agente-professor}\\
+     \texttt{ajuda}};
   \node[enumeracao, text width=20mm, anchor=north west] (ePub) at ([xshift=4mm]eProd.north east)
     {\ctitulo{enumeração}{Publico}
      \nodepart{two}
@@ -299,7 +302,10 @@ e depois da IA (\adrr{ADR-105}) e o caminho imutável do \emph{bundle}.
 \end{tikzpicture}}
 \caption[Perfil UML da plataforma]{O perfil UML da plataforma: cinco estereótipos
   sobre quatro metaclasses. As restrições entre chaves são as regras
-  invioláveis do \arq{AGENTS.md} ditas no lugar a que se aplicam. Fontes:
+  invioláveis do \arq{AGENTS.md} ditas no lugar a que se aplicam. A Ajuda com
+  avatar não é \estereo{ChamadaDeIA}: é a exceção única e deliberada à quota de
+  \emph{tokens}, limitada por minutos de vídeo (\adrr{ADR-132}), e não um
+  precedente para a próxima rota de IA. Fontes:
   \arq{recursos/catalogo.ts} (produtos), \arq{comum/liberacao.ts},
   \arq{ai/quota.service.ts}, \arq{prisma/prisma.service.ts} e
   \arq{public/experiencia.json} de cada experiência.}
@@ -453,7 +459,11 @@ matrícula principal, e quem escreve os dois é \cd{matricularEm}, nunca a tela.
 são recursos, e o \emph{produto} é o teto das experiências que declara. E as
 \textbf{restrições entre chaves} dizem, no próprio elemento, o que é invariável.
 Duas delas são o contraste da regra 8 do \arq{AGENTS.md}: ausência de linha é
-\emph{bloqueada} em \cd{Liberacao} e \emph{ligada} em \cd{Disponibilidade}.
+\emph{bloqueada} em \cd{Liberacao} e \emph{ligada} em \cd{Disponibilidade} ---
+salvo o produto em teste interno, que nasce desligado
+(\cd{PRODUTOS\_\B DESLIGADOS\_\B POR\_\B PADRAO}, hoje só a \cd{ajuda},
+\adrr{ADR-132}). O padrão mora no resolvedor, não numa linha semeada: numa
+\emph{stack} nova não há usuário para assinar \cd{definido\_por}.
 
 \begin{figure}[H]
 \centering
@@ -551,7 +561,8 @@ Duas delas são o contraste da regra 8 do \arq{AGENTS.md}: ausência de linha é
      \texttt{motivo: String [0..1]}\\
      \texttt{definidoEm: DateTime}
      \nodepart{three}
-     \{sem linha = ligado\}\\
+     \{sem linha = ligado, salvo\\
+     \ \ produto em teste interno\}\\
      \{única por recurso e escopo\}\\
      \{escopo nulo = o contrato\}};
 
@@ -644,7 +655,8 @@ Duas delas são o contraste da regra 8 do \arq{AGENTS.md}: ausência de linha é
   aplicação é a única tranca (Capítulo~\ref{cap:tenancy}). Fontes:
   \arq{apps/api/prisma/schema.prisma}, os CHECKs das migrações
   \arq{modelo\_de\_papeis}, \arq{nivel\_regional} e \arq{liberacoes\_por\_turma},
-  \arq{rostering/matricula.ts} e \arq{recursos/regras.ts}.}
+  \arq{rostering/matricula.ts}, \arq{recursos/regras.ts} e
+  \arq{recursos/catalogo.ts}.}
 \label{fig:uml-classes-dominio}
 \end{figure}
 
@@ -663,6 +675,16 @@ fábrica do \cd{AiModule}, e nenhum consumidor sabe qual veio: todos injetam o
 consumidor chama o \emph{provider} e o \cd{QuotaService} por conta própria, e é por
 isso que a quota é regra de revisão e não de tipo: nada impede um \emph{service}
 novo de injetar o \emph{provider} e esquecer o \cd{temSaldo}.
+
+Desde 2026-10-02 a interface tem uma sexta operação, \cd{conversarEmFluxo}: a
+única geração em \emph{stream} do \emph{provider} (\cd{streamGenerateContent?alt=sse}
+no Vertex), sem ferramentas e sem \cd{validar}, porque num \emph{stream} o texto
+já saiu quando a validação poderia recusá-lo. Ela existe para a Ajuda com avatar
+(\adrr{ADR-132}), e a Ajuda é também o único consumidor que \textbf{não} chama o
+\cd{QuotaService}, por decisão: o custo dela é limitado em minutos de vídeo
+(\cd{ajuda\_\B limites}), e os \emph{tokens} continuam medidos pelo
+\cd{MedidorDeProvider}. O vídeo em si fica fora desta figura, numa terceira
+porta de \arq{src/ai}, a \cd{AvatarAoVivoPort} (Figura~\ref{fig:uml-seq-ajuda}).
 
 \begin{figure}[H]
 \centering
@@ -722,7 +744,8 @@ novo de injetar o \emph{provider} e esquecer o \cd{temSaldo}.
      \texttt{+ generateImage(prompt, opcoes?)}\\
      \texttt{\ \ \ \ : Promise<Buffer>}\\
      \texttt{+ generateSpeech(req): Promise<Buffer>}\\
-     \texttt{+ conversar(req): Promise<AiResult>}};
+     \texttt{+ conversar(req): Promise<AiResult>}\\
+     \texttt{+ conversarEmFluxo(req): AsyncIterable}};
 
   \node[classe, text width=40mm, anchor=north] (mod) at (15.6,-4.3)
     {\ctitulo{módulo @Global}{AiModule}
@@ -740,15 +763,17 @@ novo de injetar o \emph{provider} e esquecer o \cd{temSaldo}.
      \texttt{- auth: GoogleAuth}\\
      {\color{unooMuted}ADC, sem chave em \emph{env}}
      \nodepart{three}
-     {\color{unooMuted}as cinco operações;}\\
-     {\color{unooMuted}\texttt{:generateContent}}};
+     {\color{unooMuted}as seis operações;}\\
+     {\color{unooMuted}\texttt{:generateContent}; o fluxo,}\\
+     {\color{unooMuted}\texttt{:streamGenerateContent}}};
 
   \node[classe, text width=36mm, anchor=north] (mock) at (10.3,-10.6)
     {\etitulo{MockProvider}
      \nodepart{two}
      {\color{unooMuted}determinístico}
      \nodepart{three}
-     \texttt{generate}, \texttt{conversar}: respondem\\
+     \texttt{generate}, \texttt{conversar},\\
+     \texttt{conversarEmFluxo}: respondem\\
      os outros três: \textbf{lançam}};
 
   \node[classe, text width=40mm, anchor=north] (med) at (15.6,-10.6)
@@ -758,7 +783,7 @@ novo de injetar o \emph{provider} e esquecer o \cd{temSaldo}.
      \texttt{- metricas: Metricas}\\
      \texttt{- modelos: ModelosDoMedidor}
      \nodepart{three}
-     {\color{unooMuted}as cinco operações, cada uma}\\
+     {\color{unooMuted}as seis operações, cada uma}\\
      {\color{unooMuted}por \texttt{medir(op, modelo, fn)}}};
 
   \node[entidade, text width=30mm, anchor=north] (erro) at (10.3,-14.4)
@@ -814,7 +839,8 @@ novo de injetar o \emph{provider} e esquecer o \cd{temSaldo}.
   projeto: estratégia (\cd{AiProvider} com duas implementações) e decorador
   (\cd{MedidorDeProvider}), montados pela fábrica do \cd{AiModule} e
   injetados pelo \emph{token} \cd{AI\_PROVIDER}. A quota é um serviço à parte,
-  que cada consumidor chama. Fontes: \arq{ai/provider.ts}, \arq{ai/ai.module.ts},
+  que cada consumidor chama --- menos a Ajuda com avatar, limitada por minutos
+  (\adrr{ADR-132}). Fontes: \arq{ai/provider.ts}, \arq{ai/ai.module.ts},
   \arq{ai/medidor.provider.ts}, \arq{ai/quota.service.ts},
   \arq{ai/ai.controller.ts}.}
 \label{fig:uml-classes-ia}
@@ -823,7 +849,7 @@ novo de injetar o \emph{provider} e esquecer o \cd{temSaldo}.
 \subsubsection{Um instantâneo da disponibilidade}
 
 As três regras da disponibilidade --- o escopo mais específico ganha, o produto é
-teto, ausência de linha é ligado --- são fáceis de enunciar e fáceis de errar
+teto, ausência de linha é ligado (salvo produto em teste interno) --- são fáceis de enunciar e fáceis de errar
 quando se combinam. O diagrama de objetos da Figura~\ref{fig:uml-objetos} congela
 uma rede com uma regional, duas escolas e quatro linhas em \cd{disponibilidades},
 e a Tabela~\ref{tab:uml-objetos} diz o que \cd{exigirRecursoDisponivel} decide
@@ -962,6 +988,12 @@ experiência e os \emph{slugs} de produto são os reais.
   escopo, nem do produto nem da experiência.\\
 \zebra \cd{exp05ef1b} em qualquer escola & ligada & Ausência de linha é
   \emph{ligado}: o interruptor é mecanismo de exceção.\\
+\cd{produto:ajuda} em qualquer escola & desligada & A exceção da exceção: sem
+  linha vale o padrão do produto, e a \cd{ajuda} está em
+  \cd{PRODUTOS\_\B DESLIGADOS\_\B POR\_\B PADRAO} (teste interno,
+  \adrr{ADR-132}). Uma linha \cd{ligado = true} na escola, na regional ou no
+  contrato a liga ali; tirar o \emph{slug} da lista muda o padrão de todas as
+  redes de uma vez.\\
 \bottomrule
 \end{tabularx}
 
@@ -1112,6 +1144,9 @@ não há \emph{worker}; é a assinatura \emph{push} que chama
     {\estereo{externo}\\\textbf{Vertex AI}};
   \node[componenteext, text width=26mm, minimum height=13mm] (gcs) at (14.5,-10.6)
     {\estereo{externo}\\\textbf{Cloud Storage}};
+  % ---- o vendor da Ajuda com avatar (ADR-132): fora do Google, a direita da API
+  \node[componenteext, text width=24mm, minimum height=20mm] (lav) at (18.4,-5.6)
+    {\estereo{externo}\\\textbf{LiveAvatar}\\{\scriptsize\itshape [HeyGen]}};
 
   % ---- hub <-> experiencia: a ponte (o hub fornece, a experiencia requer)
   \draw[associa] (hub.east |- 0,0.35) -- (8.3,0.35);
@@ -1147,15 +1182,30 @@ não há \emph{worker}; é a assinatura \emph{push} que chama
   \montBaixo{14.5}{-6.6}{-9.95}{-8.3}
   \node[ifacelbl, anchor=west, align=left] at (14.7,-8.3) {Objetos\\{\color{unooMuted}\emph{assets}, planos}};
 
+  % ---- api <-> LiveAvatar: dois sentidos (a API fornece o LLM; o vendor, as sessoes)
+  \draw[associa] (api.east |- 0,-5.0) -- (15.87,-5.0);
+  \draw[associa] (lav.west |- 0,-5.0) -- (16.22,-5.0);
+  \bola{(16.0,-5.0)} \soquete{(16.0,-5.0)}{180}
+  \node[ifacelbl, above=7pt] at (16.0,-5.0) {LLM\\{\color{unooMuted}\texttt{/ajuda/llm}}};
+  \draw[associa] (lav.west |- 0,-6.2) -- (16.13,-6.2);
+  \draw[associa] (api.east |- 0,-6.2) -- (15.78,-6.2);
+  \bola{(16.0,-6.2)} \soquete{(16.0,-6.2)}{0}
+  \node[ifacelbl, below=7pt] at (16.0,-6.2) {Sessões\\{\color{unooMuted}\texttt{/v1/sessions}}};
+
 \end{tikzpicture}}
 \caption[Componentes e interfaces]{Diagrama de componentes: bola é interface
   fornecida, soquete é interface requerida, e o encaixe é o conector de montagem.
   A experiência requer a ponte do hub e, pela SDK, o REST e a telemetria da API;
   a API requer o JWKS do hub. O Cloud Storage também serve o \emph{bundle} ao
   navegador pela CDN, o que é artefato e não interface --- está na
-  Figura~\ref{fig:uml-implantacao}. Fontes: \arq{hub/components/ExpFrame.tsx},
+  Figura~\ref{fig:uml-implantacao}. À direita, o LiveAvatar da Ajuda com avatar
+  (\adrr{ADR-132}), nos dois sentidos: a API requer as sessões dele (abrir e
+  fechar a sala), e ele requer o LLM da API, OpenAI-compatível. O vídeo vai do
+  \emph{vendor} direto ao navegador, sem interface com a API. Fontes: \arq{hub/components/ExpFrame.tsx},
   \arq{hub/app/.well-known/jwks.json/route.ts}, \arq{api/src/auth/token.service.ts},
-  \arq{api/src/telemetry/telemetry.controller.ts} e
+  \arq{api/src/telemetry/telemetry.controller.ts},
+  \arq{api/src/ai/liveavatar.client.ts},
+  \arq{api/src/ajuda/ajuda-llm.controller.ts} e
   \arq{packages/sdk/src/types.ts}.}
 \label{fig:uml-componentes}
 \end{figure}
@@ -1323,8 +1373,8 @@ Tabela~\ref{tab:uml-objetos} moram inteiras na partição da direita.
 
   % ---- particao da direita: decidir
   \node[dc] (d1) at (12.4,-6.8) {produto?};
-  \node[ac] (a5) at (12.4,-8.4) {\texttt{maisEspecifica(}\\\texttt{"produto:<slug>")}};
-  \node[dc] (d2) at (12.4,-10.0) {linha do produto?};
+  \node[ac] (a5) at (12.4,-8.4) {\texttt{maisEspecifica(}\\\texttt{"produto:<slug>")}\\{\color{unooMuted}sem linha: \texttt{ligadoPorPadrao}}};
+  \node[dc] (d2) at (12.4,-10.0) {produto ligado?};
   \node[actionerr, text width=30mm] (r1) at (16.2,-10.0) {desligado,\\\texttt{tetoDoProduto}};
   \node[escolha] (m1) at (12.4,-11.5) {};
   \node[ac] (a6) at (12.4,-12.6) {\texttt{maisEspecifica(}\\\texttt{"experiencia:<expId>")}};
@@ -1347,8 +1397,8 @@ Tabela~\ref{tab:uml-objetos} moram inteiras na partição da direita.
   \draw[flow] (a4) -- (d1) node[flowlbl, midway, above]{\texttt{resolverExperiencia}};
   \draw[flow] (d1) -- (a5) node[flowlbl, midway, right=2pt]{[sim]};
   \draw[flow] (a5) -- (d2);
-  \draw[flow] (d2) -- (r1) node[flowlbl, midway, above]{[desligada]};
-  \draw[flow] (d2) -- (m1) node[flowlbl, midway, right=2pt]{[nenhuma ou ligada]};
+  \draw[flow] (d2) -- (r1) node[flowlbl, midway, above]{[não]};
+  \draw[flow] (d2) -- (m1) node[flowlbl, midway, right=2pt]{[sim]};
   \draw[flow] (d1.west) -- (9.2,-6.8) -- (9.2,-11.5) -- (m1.west) node[flowlbl, pos=0.12, above]{[não]};
   \draw[flow] (m1) -- (a6);
   \draw[flow] (a6) -- (d3);
@@ -1386,19 +1436,27 @@ Tabela~\ref{tab:uml-objetos} moram inteiras na partição da direita.
   \cd{exigirRecursoDisponivel}, com uma partição por arquivo. A da direita é
   \cd{resolverExperiencia}, pura; os losangos vazios são nós de junção. A
   terminação em \emph{X} é o fim de fluxo pela exceção: a transação de quem
-  chamou desfaz o que tiver feito. Fontes: \arq{comum/disponibilidade.ts} e
-  \arq{recursos/regras.ts}.}
+  chamou desfaz o que tiver feito. O produto sem linha vale o padrão dele
+  (\cd{ligadoPorPadrao}): ligado, salvo os de
+  \cd{PRODUTOS\_\B DESLIGADOS\_\B POR\_\B PADRAO} (hoje só a \cd{ajuda},
+  \adrr{ADR-132}); a experiência sem linha continua ligada. Fontes:
+  \arq{comum/disponibilidade.ts}, \arq{recursos/regras.ts} e
+  \arq{recursos/catalogo.ts}.}
 \label{fig:uml-atividade-disp}
 \end{figure}
 
 \begin{nota}
 \textbf{O produto sem experiência entra por um atalho do mesmo algoritmo.} O
-agente de IA do professor não tem linha em \cd{experiencias}, então a classe
-declara \cd{@Produto("agente-professor")} em vez de \cd{@Recurso(expId)}, e o
+agente de IA do professor e a Ajuda com avatar não têm linha em
+\cd{experiencias}, então a classe declara \cd{@Produto("agente-professor")} ou
+\cd{@Produto("ajuda")} em vez de \cd{@Recurso(expId)}, e o
 \cd{DisponibilidadeGuard} chama \cd{exigirProdutoDisponivel}: só o ramo do
 TETO do diagrama acima (\cd{disponibilidadeDoProduto} \seta{} \cd{resolverProduto},
-escola \seta{} regional \seta{} contrato \seta{} padrão, ausência de linha =
-ligado), sem a etapa da experiência. É o MESMO resolvedor de propósito: uma
+escola \seta{} regional \seta{} contrato \seta{} padrão do produto), sem a etapa
+da experiência. Para a Ajuda o padrão é \emph{desligado} (\adrr{ADR-132}), e o
+\emph{endpoint} que o \emph{vendor} chama refaz a mesma pergunta a cada turno, pela
+escola do \emph{token} da sessão: desligar no meio da conversa vira uma fala do
+atendente, não um erro. É o MESMO resolvedor de propósito: uma
 segunda leitura da tabela com regra própria seria o painel dizendo
 \enquote{desligado} e a porta abrindo. Declarar os dois decoradores na mesma
 classe lança, como declarar nenhum.
@@ -1559,7 +1617,10 @@ e montado dentro do \emph{controller}, com a série resolvida da turma do
 \caption[Sequência: uma chamada de IA com quota]{Sequência de \rota{POST /ai/gerar}.
   \texttt{break} é a saída antecipada: 401 sem \emph{token} válido, 429 sem saldo.
   O consumo é gravado \emph{depois} da resposta do modelo, com os \emph{tokens} que
-  ele declarou; entre o \texttt{temSaldo} e o \texttt{consumir} não há trava. Fontes:
+  ele declarou; entre o \texttt{temSaldo} e o \texttt{consumir} não há trava. A
+  Ajuda com avatar é a única IA que não passa por este desenho: é limitada por
+  minutos, não por \emph{tokens} (\adrr{ADR-132},
+  Figura~\ref{fig:uml-seq-ajuda}). Fontes:
   \arq{ai/ai.controller.ts}, \arq{ai/prompts.ts}, \arq{ai/quota.service.ts},
   \arq{ai/medidor.provider.ts}, \arq{auth/oidc.guard.ts}.}
 \label{fig:uml-seq-ia}
@@ -1655,6 +1716,92 @@ e \cd{buscar\_acervo} mais de uma vez.
   \arq{agente-professor/regras.ts}, \arq{ai/agent-engine.client.ts},
   \arq{apps/agente-professor/agente\_professor/plugins.py}.}
 \label{fig:uml-seq-agente}
+\end{figure}
+
+\subsubsection{Uma sessão da Ajuda com avatar: minutos em vez de \emph{tokens}, e um LLM que o \emph{vendor} chama}
+
+A Figura~\ref{fig:uml-seq-ajuda} é a Ajuda com avatar (\adrr{ADR-132}) do clique
+em \enquote{Ajuda} ao fechar do modal, na ordem do código. Ela inverte duas coisas
+das duas figuras anteriores. \textbf{Quem chama o modelo não é a pessoa, é o
+\emph{vendor}}: o LiveAvatar faz a escuta, a voz e o vídeo (FULL Mode), e a cada fala
+chama de volta \rota{POST /ajuda/llm/chat/completions} desta API, que responde pelo
+\cd{AiProvider} em \emph{stream}. Esse \emph{endpoint} não tem pessoa logada, então
+leva duas trancas: o \emph{Bearer} \env{AJUDA\_LLM\_SEGREDO} (é o \emph{vendor}) e o
+\emph{token} curto da sessão, que a API assinou na abertura e o \emph{vendor} devolve
+dentro da mensagem \cd{system} --- o resto daquele \cd{system} é descartado, e o
+\emph{prompt} e a base nunca saem da API. E \textbf{o custo não é contado em
+\emph{tokens}}: não há \cd{QuotaService}, e sim a reserva de minutos em
+\cd{ajuda\_sessoes} contra os tetos de \cd{ajuda\_limites}, feita antes de pedir a
+sala. Toda recusa que cabe antes da sala sai em JSON; depois dela, recusa de
+negócio vira fala, porque o \emph{vendor} fica mudo diante de qualquer \emph{status}
+de erro (medido no \emph{spike}, sem nova tentativa e sem evento ao navegador).
+
+\begin{figure}[H]
+\centering
+\fitpage{%
+\begin{tikzpicture}[x=1cm, y=1cm]
+
+  \raia{1.3}{-21.8}{Navegador}{modal da Ajuda}
+  \raia{4.2}{-21.8}{Hub}{BFF}
+  \raia{7.1}{-21.8}{\texttt{ajuda/}}{\emph{controllers} + \emph{service}}
+  \raiaext{10.0}{-21.8}{PostgreSQL}{Cloud SQL}
+  \raiaext{12.9}{-21.8}{LiveAvatar}{HeyGen, FULL Mode}
+  \raiaext{15.8}{-21.8}{Gemini}{pelo \texttt{AiProvider}}
+
+  \msgs{1.3}{4.2}{-1.1}{\texttt{POST} (montagem do modal)}
+  \msgs{4.2}{7.1}{-1.85}{\texttt{POST /ajuda/sessoes}}
+  \msgself{7.1}{-2.5}{\texttt{OidcGuard}, \texttt{RolesGuard} (não estudante), \texttt{@Produto("ajuda")}}
+  \msgs{7.1}{10.0}{-3.55}{fecha as abertas; \texttt{ajuda\_limites}, \texttt{ajuda\_sessoes}}
+  \msgr{10.0}{7.1}{-4.3}{segundos usados no dia (fuso da plataforma)}
+
+  \draw[seqframe] (0.4,-4.7) rectangle (10.9,-5.95);
+  \node[frameop] at (0.4,-4.7) {break};
+  \node[guarda] at (1.55,-5.0) {[desligado, sem \emph{envs}, mais de 6/min, menos de 1 min no dia]};
+  \msgr{7.1}{1.3}{-5.65}{403 $|$ 503 $|$ 429 em JSON, antes da sala}
+
+  \msgs{7.1}{10.0}{-6.5}{reserva: \texttt{inicio}, \texttt{duracao\_max\_s}}
+  \msgself{7.1}{-7.15}{assina o \emph{token} da sessão (HS256, \texttt{\{sub, escola, perfil, sid\}})}
+  \msgs{7.1}{12.9}{-8.2}{\texttt{POST /v1/sessions/token} (\texttt{FULL}, \texttt{dynamic\_variables.sessao})}
+  \msgr{12.9}{7.1}{-8.95}{\texttt{session\_id}, \texttt{session\_token}}
+  \msgr{7.1}{1.3}{-9.7}{201 \texttt{\{id, tokenDaSessao, duracaoMaximaS\}}, pelo BFF}
+  \msgs{1.3}{12.9}{-10.45}{\texttt{start()}: entra na sala (WebRTC)}
+  \msgs{12.9}{7.1}{-11.2}{\texttt{GET /ajuda/llm/models} (\emph{Bearer})}
+
+  \draw[seqframe] (0.4,-11.6) rectangle (16.7,-17.5);
+  \node[frameop] at (0.4,-11.6) {loop};
+  \node[guarda] at (1.55,-11.9) {[cada fala, por voz ou por escrito]};
+  \msgs{1.3}{12.9}{-12.4}{fala (microfone) ou \texttt{message(texto)}}
+  \msgs{12.9}{7.1}{-13.15}{\texttt{POST /ajuda/llm/chat/completions} (\emph{Bearer}; \texttt{[sessao:\ldots]} no \texttt{system})}
+  \msgself{7.1}{-13.8}{duas trancas (senão 401); produto ligado? até 20/min? (senão vira fala)}
+  \msgs{7.1}{15.8}{-14.85}{\texttt{conversarEmFluxo} (prefixo fixo + papel, histórico)}
+  \msgr{15.8}{7.1}{-15.6}{pedaços (\texttt{streamGenerateContent?alt=sse})}
+  \msgr{7.1}{12.9}{-16.35}{\texttt{chat.completion.chunk} em SSE, \texttt{[DONE]}}
+  \msgr{12.9}{1.3}{-17.1}{voz, vídeo e transcrições, pela sala}
+
+  \msgs{1.3}{12.9}{-18.2}{\texttt{stop()} (fechar o modal desmonta a sala)}
+  \msgs{1.3}{4.2}{-18.95}{\texttt{POST} \ldots\texttt{/encerrar} (\texttt{keepalive})}
+  \msgs{4.2}{7.1}{-19.7}{\texttt{POST /ajuda/sessoes/:id/encerrar}}
+  \msgs{7.1}{10.0}{-20.45}{\texttt{fim = agora}}
+  \msgs{7.1}{12.9}{-21.2}{\texttt{POST /v1/sessions/stop}}
+
+\end{tikzpicture}}
+\caption[Sequência: uma sessão da Ajuda com avatar]{Sequência de uma sessão da
+  Ajuda com avatar (\adrr{ADR-132}). \texttt{break} é a saída antes da sala, em
+  JSON. Se o \emph{vendor} não abre a sala, a linha reservada fecha com duração zero
+  e a resposta é 502 \texttt{AVATAR\_FALHOU}. Dentro do \texttt{loop}, só a
+  autenticação responde erro (401); produto desligado ou mais de 20 turnos por
+  minuto viram uma fala do atendente, em 200, sem chamar o modelo, e a falha do
+  modelo vira a fala de desculpa. O \emph{vendor} desiste se o primeiro byte passar
+  de 10\,s: sem pedaço em 7\,s, sai a fala de espera e a resposta continua no
+  mesmo turno. Pergunta e resposta não vão ao log (só a linha \texttt{ajuda.turno},
+  com números). O encerrar escapa do interruptor (\texttt{@SemDisponibilidade});
+  sessão que fica sem \texttt{fim} conta o teto inteiro, e abrir outra fecha a
+  anterior. Fontes: \arq{ajuda/ajuda.controller.ts},
+  \arq{ajuda/ajuda-llm.controller.ts}, \arq{ajuda/ajuda.service.ts},
+  \arq{ajuda/regras.ts}, \arq{ajuda/token-da-sessao.ts},
+  \arq{ai/liveavatar.client.ts}, \arq{ai/vertex.provider.ts} e
+  \arq{hub/components/ajuda/use-sessao-da-ajuda.ts}.}
+\label{fig:uml-seq-ajuda}
 \end{figure}
 
 \subsubsection{O caminho de um lote de telemetria}
@@ -2092,7 +2239,11 @@ no \emph{bucket}, roda no navegador, e a versão que vale não está no \emph{bu
 está na linha de \cd{experiencias} na API. E nenhum artefato é implantado à mão:
 cada seta \estereo{implanta} é um passo do \arq{deploy.yml} --- inclusive a do
 agente de IA do professor, cuja imagem não roda num Cloud Run, e sim no Vertex AI
-Agent Engine, chamado só pela API.
+Agent Engine, chamado só pela API. O único nó externo que recebe tráfego
+\emph{e} chama a API é o do LiveAvatar, da Ajuda com avatar (\adrr{ADR-132}): nada
+dele é implantado pelo CI --- o contexto e a configuração de LLM do \emph{vendor}
+saem de \arq{scripts/liveavatar-configurar.mjs}, um conjunto por contrato e
+ambiente.
 
 \begin{figure}[H]
 \centering
@@ -2130,7 +2281,7 @@ Agent Engine, chamado só pela API.
   \node[art=32mm] (ajob) at (17.1,-6.35) {\estereo{imagem} \texttt{api:\{sha\}}\\\texttt{prisma migrate deploy}};
 
   \nodo{sm}{(15.2,-0.2)}{(19.0,-3.4)}{\estereo{nó} \textbf{Secret Manager}}
-  \node[nl=36mm] at (15.25,-1.2) {sete segredos: \texttt{database-url}, \texttt{token-signing-key}, \texttt{auth-secret} e mais quatro};
+  \node[nl=36mm] at (15.25,-1.2) {dez segredos: \texttt{database-url}, \texttt{token-signing-key}, \texttt{auth-secret}, os três da Ajuda e mais quatro};
 
   \nodo{gcs}{(5.4,-3.6)}{(9.2,-10.0)}{\estereo{nó} \textbf{Cloud Storage}}
   \node[nl=36mm] at (5.45,-4.5) {\texttt{-exp}: público, CDN\\\texttt{-assets}: público, CDN\\\texttt{-planos}: \textbf{privado}\\\texttt{bucket\_exp\_mapas}: \emph{sourcemaps},\\\ \ privado};
@@ -2157,6 +2308,9 @@ Agent Engine, chamado só pela API.
   \node[nl=38mm] at (0.05,-9.35) {projeto próprio; futuro emissor --- hoje é o hub};
   \nodo[fill=unooPaper, draw=unooInkSoft]{gha}{(0,-11.4)}{(4.2,-13.6)}{\estereo{nó} \textbf{GitHub Actions}}
   \node[nl=38mm] at (0.05,-12.4) {\texttt{deploy.yml}; WIF, sem chave JSON};
+  % ---- o vendor da Ajuda com avatar (ADR-132): fora do Google
+  \nodo[fill=unooPaper, draw=unooInkSoft]{lav}{(0,-14.6)}{(4.2,-16.8)}{\estereo{externo} \textbf{LiveAvatar}}
+  \node[nl=38mm] at (0.05,-15.55) {HeyGen, na AWS; escuta, voz e vídeo; o LLM é o da API};
 
   % ---- caminhos de comunicacao
   \draw[caminhocom] (nav.east |- 0,-1.45) -- (lb.west |- 0,-1.45) node[cxlabel, midway, above]{HTTPS};
@@ -2171,6 +2325,11 @@ Agent Engine, chamado só pela API.
   \draw[caminhocom] (runapi.east |- 0,-6.6) -- (14.65,-6.6) -- (14.65,-12.6) -- (vx.east |- 0,-12.6);
   \draw[caminhocom, dashed] (sm.west |- 0,-2.6) -- (runhub.east |- 0,-2.6) node[cxlabel, midway, below]{\emph{env}};
   \draw[caminhocom] (runapi.east |- 0,-6.85) -- (14.95,-6.85) -- (14.95,-11.9) -- (eng.west |- 0,-11.9) node[cxlabel, pos=0.55, right]{SSE};
+  \draw[caminhocom] (lav.east |- 0,-15.7) -- (9.95,-15.7)
+    node[cxlabel, midway, above]{HTTPS: \texttt{/ajuda/llm} pelo LB; \texttt{/v1/sessions}}
+    -- (9.95,-7.2) -- (runapi.west |- 0,-7.2);
+  \draw[caminhocom] (nav.west |- 0,-6.4) -- (-0.4,-6.4) -- (-0.4,-16.2)
+    node[cxlabel, midway, sloped, above]{WebRTC: o vídeo da Ajuda} -- (lav.west |- 0,-16.2);
 
   % ---- o CI implanta cada artefato
   \draw[implanta] (gha.east |- 0,-12.3) -- (ar.west |- 0,-12.3) node[cxlabel, midway, above]{\estereo{implanta}};
@@ -2188,9 +2347,13 @@ Agent Engine, chamado só pela API.
   cruzar a figura. O nó do Agent Engine só existe depois do segundo
   \emph{apply} do Terraform; daí em diante o CI troca a imagem dele por
   \texttt{PATCH} da \texttt{imageUri} (\adrr{ADR-126}), e os dois \emph{data stores}
-  e o Gemini que ele chama ficam em \texttt{global}. Escala, rede e certificados são do Terraform, em outro
+  e o Gemini que ele chama ficam em \texttt{global}. O LiveAvatar fica fora do
+  Google e conversa com a \emph{stack} pelos dois lados: a API pede e fecha a sala
+  em \texttt{api.liveavatar.com}, e o \emph{vendor} chama \texttt{/ajuda/llm} pela URL
+  pública da API, o mesmo LB; o vídeo vai direto ao navegador (\adrr{ADR-132}).
+  Escala, rede e certificados são do Terraform, em outro
   repositório (Capítulo~\ref{cap:arqnuvem}). Fontes: \arq{apps/api/Dockerfile},
-  \arq{apps/hub/Dockerfile}, \arq{.github/workflows/deploy.yml} e
-  \arq{docs/INFRA.md}.}
+  \arq{apps/hub/Dockerfile}, \arq{.github/workflows/deploy.yml},
+  \arq{scripts/liveavatar-configurar.mjs} e \arq{docs/INFRA.md}.}
 \label{fig:uml-implantacao}
 \end{figure}

@@ -1202,6 +1202,68 @@ o que já SUBIU} &
   De propósito: com o engine fora do ar, o \rota{DELETE} responde 503 e a linha
   FICA, porque apagar só a linha deixaria a conversa guardada no engine sem
   ninguém capaz de alcançá-la. Volte quando o engine responder.\\
+\textbf{O atendente da Ajuda fica mudo: a pessoa fala ou escreve, nada acontece,
+  e depois de 20\,s o modal diz \enquote{O atendente não respondeu}} &
+  O nosso endpoint de LLM deu erro ou passou de 10\,s até o primeiro byte, e o
+  \emph{vendor} \textbf{não avisa nada}: sem nova tentativa, sem evento
+  (\adrr{ADR-132}). Procure \cd{ajuda.turno} no horário. \textbf{Sem linha}, a
+  chamada nem passou da porta: \cd{ajuda.llm-sem-sessao} é 401 de \emph{token} de
+  sessão; sem nem isso, é o segredo (\env{AJUDA\_LLM\_SEGREDO} diferente do que
+  está no \emph{vendor}), a URL pública da configuração de LLM errada, ou o
+  caminho \rota{/ajuda/llm/} barrado no LB (IAP, \emph{allowlist} de IP, Cloud
+  Armor) ou com \emph{buffering}. \textbf{Com linha} e \cd{duracaoMs} acima de
+  10\,s, foi a demora. Sem nem o cumprimento da abertura, o problema é anterior
+  ao nosso LLM: confira \env{LIVEAVATAR\_CONTEXT\_ID} --- sem contexto válido o
+  avatar fica mudo, sem erro.\\
+\zebra \textbf{A resposta da Ajuda é cortada no meio da frase} &
+  O teto de saída foi comido pelo raciocínio: o \cd{gemini-3.7-flash} pensa 300
+  a 400 \emph{tokens} às vezes, mesmo com \cd{thinkingBudget: 0}, e o
+  pensamento sai do mesmo teto. O teto é \cd{MAXIMO\_DE\_TOKENS\_DA\_RESPOSTA =
+  2048} em \arq{ajuda.service.ts} --- com 400 cortava. Se alguém o baixou
+  \enquote{para a resposta ficar curta}, volte: a brevidade é do \emph{prompt}.
+  Trocou \env{VERTEX\_MODEL} ou \env{VERTEX\_THINKING\_BUDGET}? Meça de novo.\\
+\textbf{A primeira pergunta da Ajuda demora, e o atendente diz \enquote{Um
+  momento, estou vendo isso para você} antes de responder} &
+  Esperado na chamada FRIA: a base de cerca de 65 mil \emph{tokens} fora do
+  \emph{cache} levou 10,9\,s até o primeiro byte no \emph{spike}, além dos 10\,s
+  do \emph{vendor}. A fala de espera sai aos 7\,s justamente para segurar a
+  sala, e a resposta vem no mesmo turno. Se acontece em TODA pergunta, o
+  \emph{cache} implícito não está casando: alguém pôs algo variável antes da
+  base no \emph{prompt} (o papel tem de ficar no FIM; o teste de
+  \cd{PREFIXO\_DO\_PROMPT} cobre).\\
+\zebra \textbf{Abrir a Ajuda dá 503 \cd{AJUDA\_INDISPONIVEL} (\enquote{A Ajuda com
+  atendente não está disponível agora})} &
+  As \emph{envs} da Ajuda estão incompletas nesta \emph{stack}. Precisam estar
+  TODAS: \env{LIVEAVATAR\_API\_KEY}, \env{LIVEAVATAR\_CONTEXT\_ID},
+  \env{LIVEAVATAR\_LLM\_CONFIG\_ID}, \env{AJUDA\_LLM\_SEGREDO} e
+  \env{AJUDA\_SESSAO\_CHAVE} (os dois últimos com 32 ou mais caracteres; vazio
+  vale ausente). A api sobe normal sem elas, de propósito. \textbf{Não procure o
+  log \cd{ajuda-desligada}}: o comentário de \arq{env.ts} o promete, mas nenhum
+  código o emite (Capítulo~\ref{cap:observabilidade}). Os dois ids saem de
+  \arq{scripts/liveavatar-configurar.mjs}.\\
+\textbf{O item \enquote{Ajuda} não aparece no menu da conta} &
+  Em quem não é estudante, quase sempre é o produto \cd{ajuda} desligado ---
+  e ele \textbf{nasce desligado} (\cd{PRODUTOS\_\B DESLIGADOS\_\B POR\_\B PADRAO}, teste
+  interno): sem linha em \cd{disponibilidades}, vale desligado, ao contrário dos
+  outros produtos. O \cd{admin} liga em \rota{/unooria/recursos}, por escola ou
+  pela rede. Para o estudante, o item não existe por desenho.\\
+\zebra \textbf{Em \emph{dev}, a Ajuda funcionava e parou depois de reiniciar o
+  túnel} &
+  O \emph{vendor} precisa de URL PÚBLICA para chamar \rota{/ajuda/llm/}, e em
+  \emph{dev} local ela é um túnel (\cd{cloudflared}); túnel rápido muda de URL a
+  cada vez, e a configuração de LLM no \emph{vendor} continua apontando para a
+  antiga --- o avatar abre e fica mudo. O \emph{vendor} não tem edição
+  documentada: apague a configuração \cd{unooria-ajuda-<ambiente>} no painel
+  dele (\textbf{não} o segredo antes dela, que a quebra sem aviso), rode
+  \arq{scripts/liveavatar-configurar.mjs <ambiente> <url-nova>}, troque
+  \env{LIVEAVATAR\_LLM\_CONFIG\_ID} pelo id impresso e reinicie a api. Rodado com
+  a configuração ainda lá, o \emph{script} avisa que ela aponta para outra URL.\\
+\textbf{O modal da Ajuda diz que acabaram os minutos de hoje bem antes dos 30} &
+  Sessão sem \cd{fim} conta o TETO inteiro: modal fechado sem o aviso chegar à
+  api (aba morta, rede caída) deixa a linha aberta. A abertura seguinte fecha as
+  abertas --- com o tempo real se a sala ainda estava no prazo, com o teto se já
+  tinha passado ---, então o saldo se acerta sozinho na próxima tentativa, menos
+  o que foi contado pelo teto. É a falha para o lado do custo, de propósito.\\
 \bottomrule
 \end{tabularx}
 

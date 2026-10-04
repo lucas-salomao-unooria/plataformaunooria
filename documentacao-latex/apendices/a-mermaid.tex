@@ -126,6 +126,7 @@ C4Context
   System_Ext(vertex, "Vertex AI - Gemini", "Texto e imagem generativos")
   System_Ext(ci, "GitHub Actions", "Publica bundles e manifestos")
   System_Ext(tf, "Terraform (repo separado)", "Provisiona a stack do contrato")
+  System_Ext(avatar, "LiveAvatar (HeyGen)", "Escuta, voz e video do atendente da Ajuda (ADR-132)")
 
   Rel(estudante, sis, "realiza missoes")
   Rel(prof, sis, "prepara, conduz, le")
@@ -135,6 +136,9 @@ C4Context
   BiRel(sis, vertex, "HTTPS + ADC")
   Rel(ci, sis, "publica")
   Rel(tf, sis, "provisiona")
+  BiRel(sis, avatar, "sala; /ajuda/llm")
+  %% Mao dupla: a API pede a sala ao vendor e o vendor chama de volta o LLM da
+  %% API. O navegador tambem fala direto com o vendor (video por WebRTC).
 \end{lstlisting}
 
 % ---------------------------------------------------------------------------
@@ -162,6 +166,7 @@ C4Container
 
   System_Ext(vertex, "Vertex AI")
   Container_Ext(idp, "WSO2 IS", "", "Externo a stack")
+  System_Ext(avatar, "LiveAvatar", "HeyGen; video da Ajuda (ADR-132)")
 
   Rel(estudante, hub, "HTTPS")
   Rel(prof, hub, "HTTPS")
@@ -180,6 +185,9 @@ C4Container
   Rel(engine, ds, "busca")
   Rel(hub, idp, "OIDC")
   Rel(buckets, exp, "CDN serve o bundle")
+  BiRel(api, avatar, "sala; /ajuda/llm")
+  %% O video vai do vendor direto ao navegador (WebRTC), sem passar pela stack;
+  %% a chave da conta, o prompt e a base nunca saem da API.
 \end{lstlisting}
 
 % ---------------------------------------------------------------------------
@@ -232,6 +240,10 @@ C4Component
     %% --- plataforma, fora da figura TikZ (2026-09-30, ADR-126)
     Component(agente, "agente-professor/", "", "Agente de IA do professor: posse da conversa, SSE, conferencia de codigos; @Produto('agente-professor')")
     Component(porta, "AgenteProfessorPort", "ai/agent-engine.client.ts", "A segunda porta de ai/: so ela conhece o Vertex AI Agent Engine")
+
+    %% --- plataforma, fora da figura TikZ (2026-10-02, ADR-132)
+    Component(ajuda, "ajuda/", "", "Ajuda com avatar: ajuda.controller (hub, @Produto('ajuda')) e ajuda-llm.controller (vendor, fora dos guards de pessoa)")
+    Component(avporta, "AvatarAoVivoPort", "ai/liveavatar.client.ts", "A terceira porta de ai/: so ela conhece o LiveAvatar; abre e fecha a sala")
   }
 
   Rel(guard, roles, "antes de")
@@ -258,6 +270,11 @@ C4Component
   Rel(agente, prisma, "comTenancy: agente_professor_conversas")
   Rel(agente, ai, "QuotaService: temSaldo antes, consumir no finally")
   Rel(agente, porta, "criar/ler/apagar sessao, enviar, renovar")
+  Rel(ajuda, ai, "AiProvider.conversarEmFluxo; FORA do QuotaService (minutos)")
+  Rel(ajuda, avporta, "criarSessao, encerrarSessao")
+  Rel(ajuda, prisma, "ajuda_sessoes, ajuda_limites: fora de comTenancy, por usuario_id")
+  Rel(ajuda, comum, "exigirProdutoDisponivel (a cada turno do LLM)")
+  Rel(recs, prisma, "limites-da-ajuda: escrita so admin")
 
   %% A figura TikZ desenha a infraestrutura ENTRE a plataforma e o dominio, com
   %% a coluna 2 vazia: e por ela que unootube/ e unoogpt/ sobem ate equipes/.
@@ -289,6 +306,10 @@ C4Component
     Component(frame,  "ExpFrame", "", "Sandbox + protocolo v1")
 
     Component(landing, "components/landing", "", "Rota / sem sessao: landing publica (ADR-40)")
+
+    %% --- fora da figura TikZ (2026-10-02, ADR-132)
+    Component(ajuda, "components/ajuda/", "", "Modal da Ajuda: video em cima, conversa embaixo; a sala abre na montagem e fecha na desmontagem")
+    Component(ajudalib, "lib/ajuda/", "", "transporte.ts (abrir/encerrar pelo BFF) e conversa.ts (redutor das transcricoes)")
   }
 
   Rel(mw, papeis, "usa")
@@ -296,6 +317,8 @@ C4Component
   Rel(embed, chave, "assina")
   Rel(embed, devsrv, "porta em dev")
   Rel(disp, frame, "envolve")
+  Rel(header, ajuda, "item Ajuda do menu da conta: nao estudante e produto ligado")
+  Rel(ajuda, ajudalib, "usa")
 \end{lstlisting}
 
 % ---------------------------------------------------------------------------
@@ -483,7 +506,7 @@ classDiagram
   Comportamento <|-- Interacao
 
   class Sequencia["Sequencia"] {
-    fig:uml-seq-entrada, fig:uml-seq-ia
+    fig:uml-seq-entrada, fig:uml-seq-ia, fig:uml-seq-agente, fig:uml-seq-ajuda
     antes: fig:seq-feed, fig:seq-handshake, fig:seq-erro-cliente
   }
   class Comunicacao["Comunicacao"] {
@@ -544,6 +567,7 @@ classDiagram
       plano-de-ensino
       bem-estar
       agente-professor
+      ajuda
     }
     class Publico {
       <<enumeracao>>
@@ -581,6 +605,8 @@ classDiagram
   note for ChamadaDeIA "{QuotaService.temSaldo antes}<br/>{QuotaService.consumir depois}<br/>{provider so por AI_PROVIDER}"
   note "Como ler: um elemento marcado TabelaDeTenant em outro diagrama<br/>carrega as tres restricoes sem repeti-las. A seta cheia e extensao<br/>de metaclasse; nao confundir com a heranca, de seta aberta."
   note "Onde o perfil ainda nao e lei: geracao/ e as reacoes de motor/<br/>chamam o provider sem temSaldo - as excecoes registradas na ADR-74<br/>e em ai/AGENTS.md. Uma ChamadaDeIA nova nao herda a excecao."
+  %% A Ajuda com avatar (ADR-132) nao e ChamadaDeIA: e a excecao unica e
+  %% deliberada a quota de tokens, limitada por minutos de video.
 \end{lstlisting}
 
 % ---------------------------------------------------------------------------
@@ -749,7 +775,9 @@ classDiagram
   note for Matricula "{no maximo uma principal ativa por estudante}"
   note for Liberacao "{sem linha = bloqueada}<br/>{unica por turma e expId}"
   note for Usuario "{escola obrigatoria, salvo papeis sem escola}<br/>{role = gestor_regional se e so se regional nao nula}"
-  note for Disponibilidade "{sem linha = ligado}<br/>{unica por recurso e escopo}<br/>{escopo nulo = o contrato}"
+  note for Disponibilidade "{sem linha = ligado, salvo produto em teste interno}<br/>{unica por recurso e escopo}<br/>{escopo nulo = o contrato}"
+  %% Teste interno = PRODUTOS_DESLIGADOS_POR_PADRAO (recursos/catalogo.ts), hoje
+  %% so a ajuda (ADR-132). O padrao mora no resolvedor, nao numa linha semeada.
 \end{lstlisting}
 
 % ---------------------------------------------------------------------------
@@ -796,6 +824,7 @@ classDiagram
     +generateImage(prompt, opcoes?) Promise~Buffer~
     +generateSpeech(req) Promise~Buffer~
     +conversar(req) Promise~AiResult~
+    +conversarEmFluxo(req) AsyncIterable~AiFluxoEvento~
   }
   class AiModule {
     <<modulo @Global>>
@@ -805,11 +834,11 @@ classDiagram
   class VertexProvider {
     -auth: GoogleAuth
     ADC, sem chave em env
-    as cinco operacoes, por :generateContent
+    as seis operacoes, por :generateContent; o fluxo, por :streamGenerateContent
   }
   class MockProvider {
     deterministico
-    generate, conversar: respondem
+    generate, conversar, conversarEmFluxo: respondem
     os outros tres: lancam
   }
   class MedidorDeProvider {
@@ -817,7 +846,7 @@ classDiagram
     -real: AiProvider
     -metricas: Metricas
     -modelos: ModelosDoMedidor
-    as cinco operacoes, cada uma por medir(op, modelo, fn)
+    as seis operacoes, cada uma por medir(op, modelo, fn)
   }
   class ErroDeGeracao {
     extends Error
@@ -968,6 +997,7 @@ flowchart TB
   ps["externo<br/>Pub/Sub"]
   vx["externo<br/>Vertex AI"]
   gcs["externo<br/>Cloud Storage"]
+  lav["externo<br/>LiveAvatar<br/>[HeyGen]"]
 
   %% hub e experiencia: a ponte (o hub fornece, a experiencia requer)
   iPonte(("Ponte postMessage v2<br/>hub:init, hub:token,<br/>hub:pause/resume"))
@@ -1009,6 +1039,15 @@ flowchart TB
   api -.-> iGen
   gcs --- iObj
   api -.-> iObj
+
+  %% api e LiveAvatar (ADR-132): dois sentidos
+  iLlm(("LLM<br/>/ajuda/llm"))
+  iSess(("Sessoes<br/>/v1/sessions"))
+  api --- iLlm
+  lav -.-> iLlm
+  lav --- iSess
+  api -.-> iSess
+  %% O video vai do vendor direto ao navegador, sem interface com a API.
 
   %% O Cloud Storage tambem serve o bundle ao navegador pela CDN: e artefato,
   %% nao interface, e esta no diagrama de implantacao (fig:uml-implantacao).
@@ -1089,8 +1128,8 @@ flowchart TB
 
   subgraph DIR["recursos/regras.ts - funcao pura"]
     d1{"produto?"}
-    a5["maisEspecifica(<br/>'produto:{slug}')"]
-    d2{"linha do produto?"}
+    a5["maisEspecifica(<br/>'produto:{slug}')<br/>sem linha: ligadoPorPadrao"]
+    d2{"produto ligado?"}
     r1["desligado,<br/>tetoDoProduto"]
     m1{" "}
     a6["maisEspecifica(<br/>'experiencia:{expId}')"]
@@ -1104,8 +1143,8 @@ flowchart TB
   a4 -->|resolverExperiencia| d1
   d1 -->|sim| a5
   a5 --> d2
-  d2 -->|desligada| r1
-  d2 -->|nenhuma ou ligada| m1
+  d2 -->|nao| r1
+  d2 -->|sim| m1
   d1 -->|nao| m1
   m1 --> a6 --> d3
   d3 -->|nenhuma| r2
@@ -1129,6 +1168,9 @@ flowchart TB
   %% sem produto, vale so o interruptor da propria experiencia.
   %% A mensagem depende do publico: 'Este recurso nao esta disponivel para a sua
   %% rede.' para professor; 'Esta missao nao esta aberta agora.' para estudante.
+  %% Produto sem linha vale o padrao dele (ligadoPorPadrao): ligado, salvo os de
+  %% PRODUTOS_DESLIGADOS_POR_PADRAO (hoje so a ajuda, ADR-132). A experiencia
+  %% sem linha continua ligada.
 \end{lstlisting}
 
 % ---------------------------------------------------------------------------
@@ -1274,6 +1316,58 @@ sequenceDiagram
   %% aba) aborta cada salto ate o Vertex; fechar o PAINEL nao aborta; o teto de 240 s vira event: erro TEMPO_ESGOTADO. O
   %% consumo roda no finally tambem no abandono e no erro; a renovacao so depois
   %% de fim, e a falha dela e so log.
+\end{lstlisting}
+
+% ---------------------------------------------------------------------------
+\section{Figura~\ref{fig:uml-seq-ajuda} --- Sequência: uma sessão da Ajuda com avatar}
+
+\begin{lstlisting}[language=mermaid]
+sequenceDiagram
+  participant N as Navegador (modal da Ajuda)
+  participant H as Hub (BFF)
+  participant A as ajuda/ (controllers + service)
+  participant P as PostgreSQL (Cloud SQL)
+  participant V as LiveAvatar (HeyGen, FULL Mode)
+  participant G as Gemini (pelo AiProvider)
+
+  N->>H: POST (montagem do modal)
+  H->>A: POST /ajuda/sessoes
+  A->>A: OidcGuard, RolesGuard (nao estudante), @Produto("ajuda")
+  A->>P: fecha as abertas, le ajuda_limites e ajuda_sessoes
+  P-->>A: segundos usados no dia (fuso da plataforma)
+  break desligado, sem envs, mais de 6/min, menos de 1 min no dia
+    A-->>N: 403 | 503 | 429 em JSON, antes da sala
+  end
+  A->>P: reserva: inicio, duracao_max_s
+  A->>A: assina o token da sessao (HS256, {sub, escola, perfil, sid})
+  A->>V: POST /v1/sessions/token (FULL, dynamic_variables.sessao)
+  V-->>A: session_id, session_token
+  A-->>N: 201 {id, tokenDaSessao, duracaoMaximaS}, pelo BFF
+  N->>V: start(): entra na sala (WebRTC)
+  V->>A: GET /ajuda/llm/models (Bearer)
+  loop cada fala, por voz ou por escrito
+    N->>V: fala (microfone) ou message(texto)
+    V->>A: POST /ajuda/llm/chat/completions (Bearer + [sessao:...] no system)
+    A->>A: duas trancas (senao 401), produto ligado? ate 20/min? (senao vira fala)
+    A->>G: conversarEmFluxo (prefixo fixo + papel, historico)
+    G-->>A: pedacos (streamGenerateContent?alt=sse)
+    A-->>V: chat.completion.chunk em SSE, [DONE]
+    V-->>N: voz, video e transcricoes, pela sala
+  end
+  N->>V: stop() (fechar o modal desmonta a sala)
+  N->>H: POST .../encerrar (keepalive)
+  H->>A: POST /ajuda/sessoes/:id/encerrar
+  A->>P: fim = agora
+  A->>V: POST /v1/sessions/stop
+
+  %% Se o vendor nao abre a sala, a linha reservada fecha com duracao zero e a
+  %% resposta e 502 AVATAR_FALHOU. No loop, so a autenticacao responde erro: o
+  %% vendor fica MUDO diante de status de erro, entao produto desligado e excesso
+  %% viram fala em 200, e a falha do modelo vira a fala de desculpa. Sem pedaco
+  %% em 7 s sai a fala de espera (o vendor desiste aos 10 s sem o primeiro byte).
+  %% O system que o vendor manda e descartado depois de lido o token. O encerrar
+  %% escapa do interruptor (@SemDisponibilidade); sessao sem fim conta o teto
+  %% inteiro, e abrir outra fecha a anterior. Sem QuotaService: minutos (ADR-132).
 \end{lstlisting}
 
 % ---------------------------------------------------------------------------
@@ -1466,6 +1560,9 @@ flowchart LR
   subgraph GHA["no - GitHub Actions"]
     igha["deploy.yml; WIF, sem chave JSON"]
   end
+  subgraph LAV["externo - LiveAvatar"]
+    ilav["HeyGen, na AWS; escuta, voz e video; o LLM e o da API"]
+  end
 
   subgraph GCP["projeto GCP - uma stack por contrato"]
     subgraph LB["no - Load Balancer global + Cloud CDN"]
@@ -1481,7 +1578,7 @@ flowchart LR
       ajob["imagem api:{sha}<br/>prisma migrate deploy"]
     end
     subgraph SM["no - Secret Manager"]
-      ism["sete segredos: database-url, token-signing-key,<br/>auth-secret e mais quatro"]
+      ism["dez segredos: database-url, token-signing-key,<br/>auth-secret, os tres da Ajuda e mais quatro"]
     end
     subgraph GCS["no - Cloud Storage"]
       igcs["-exp: publico, CDN<br/>-assets: publico, CDN<br/>-planos: PRIVADO<br/>-mapas: sourcemaps, privado"]
@@ -1517,6 +1614,8 @@ flowchart LR
   RUNAPI --- VX
   RUNAPI ---|SSE| ENG
   SM -.-|env| RUNHUB
+  LAV ---|"HTTPS: /ajuda/llm pelo LB; /v1/sessions"| RUNAPI
+  NAV ---|"WebRTC: o video da Ajuda"| LAV
 
   %% o CI implanta cada artefato
   GHA ==>|implanta| AR
@@ -1528,6 +1627,8 @@ flowchart LR
   %% armazenado num e executado em outro. O CI ainda executa o job de migracao e
   %% publica o manifesto (PUT /experiencias/:expId), o que o diagrama deixa no
   %% texto. Escala, rede e certificados sao do Terraform, em outro repositorio.
+  %% Nada do LiveAvatar e implantado pelo CI: o contexto e a configuracao de LLM
+  %% do vendor saem de scripts/liveavatar-configurar.mjs (ADR-132).
 \end{lstlisting}
 
 % ---------------------------------------------------------------------------
@@ -1563,6 +1664,7 @@ C4Deployment
 
   System_Ext(idp, "WSO2 IS", "projeto proprio")
   System_Ext(vertex, "Vertex AI", "endpoint global")
+  System_Ext(lav, "LiveAvatar (HeyGen)", "video da Ajuda; fora do Google (ADR-132)")
 
   Rel(browser, lb, "443")
   Rel(lb, cdn, "bundles e assets")
@@ -1574,6 +1676,8 @@ C4Deployment
   BiRel(api, ps, "publica / recebe push")
   Rel(hub, idp, "OIDC")
   Rel(api, vertex, "HTTPS + ADC")
+  BiRel(api, lav, "sessoes; /ajuda/llm pelo LB")
+  Rel(browser, lav, "WebRTC")
 \end{lstlisting}
 
 % ---------------------------------------------------------------------------
@@ -1605,7 +1709,7 @@ flowchart TB
       topic["topic -telemetria"]; sub["push sub -telemetria-ingest (oidc_token)"]
     end
     subgraph GOV["Identidade, segredos e artefatos"]
-      sm["Secret Manager (6 segredos)"]; sa["Service Accounts (-api, -run, -push)"]
+      sm["Secret Manager (10 segredos)"]; sa["Service Accounts (-api, -run, -push)"]
       wif["WIF pool github (sem chave JSON)"]; ar["Artifact Registry"]
       log["Cloud Logging / Monitoring"]
     end

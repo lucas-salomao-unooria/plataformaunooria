@@ -247,6 +247,50 @@ export function PainelDeRecursos({
 
       {erro ? <FeedbackAlert type="error" title="Não deu" description={erro} /> : null}
 
+      {/* H10.3.3: a fixação de versão é remédio de incidente, e remédio que
+          ninguém retira prende a escola numa versão antiga sem ninguém lembrar
+          por quê. O aviso olha a REDE INTEIRA, não o escopo aberto — a escola
+          esquecida é justamente a que ninguém abre —, e cada linha leva ao
+          escopo dela, onde a etiqueta da versão abre a janela para soltar. */}
+      {painel.fixacoesEsquecidas.length > 0 ? (
+        <div className="flex flex-col gap-2">
+          <FeedbackAlert
+            type="warning"
+            title={
+              painel.fixacoesEsquecidas.length === 1
+                ? "Uma versão está fixada há mais de 30 dias"
+                : `${painel.fixacoesEsquecidas.length} versões estão fixadas há mais de 30 dias`
+            }
+            description="Fixar segura uma escola numa versão enquanto um problema é resolvido. Confira se ainda é preciso, ou solte para ela voltar a seguir a versão da rede."
+          />
+          <ul className="flex flex-col divide-y divide-unooria-neutral-200 rounded-[8px] border border-unooria-neutral-200 bg-white px-4">
+            {painel.fixacoesEsquecidas.map((f) => (
+              <li
+                key={`${f.expId}-${f.escolaId ?? ESCOPO_CONTRATO}`}
+                className="flex flex-wrap items-center justify-between gap-3 py-2"
+              >
+                <span className="text-[13px] text-unooria-neutral-800">
+                  <strong className="font-semibold">{f.nome}</strong> em {f.escopo}: v{f.versao}, fixada há{" "}
+                  {f.dias} dias
+                </span>
+                {f.escolaId === escolaId ? (
+                  <span className="text-[12px] text-unooria-neutral-500">neste escopo</span>
+                ) : (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled={ocupado}
+                    onClick={() => trocarEscopo(f.escolaId ?? ESCOPO_CONTRATO)}
+                  >
+                    Abrir o escopo
+                  </Button>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
       {painel.produtos.map((produto) => {
         const copy = copyDoProduto(produto.slug);
         const recursoId = `produto:${produto.slug}`;
@@ -306,9 +350,14 @@ export function PainelDeRecursos({
                             onClick={() => setVersaoDe(exp)}
                             aria-label={`Versão de ${exp.nome}`}
                           >
-                            <Tag variant={exp.versaoFixa ? "info" : "neutral"} size="sm" clickable>
+                            <Tag
+                              variant={exp.fixacaoEsquecida ? "warning" : exp.versaoFixa ? "info" : "neutral"}
+                              size="sm"
+                              clickable
+                            >
                               v{exp.versaoFixa ?? exp.versaoAtiva}
                               {exp.versaoFixa ? " · fixada" : ""}
+                              {exp.fixacaoEsquecida ? " há mais de 30 dias" : ""}
                             </Tag>
                           </button>
                         </div>

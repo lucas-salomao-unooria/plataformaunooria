@@ -111,6 +111,9 @@ Os princípios que atravessam todo o código:
     {\textbf{GitHub Actions}\desc{Publica \emph{bundles} e manifestos}};
   \node[c4systemext, text width=32mm, minimum height=14mm] (tf) at (12.6,-8.6)
     {\textbf{Terraform (repo separado)}\desc{Provisiona a \emph{stack} do contrato}};
+  % --- o vendor da Ajuda com avatar (ADR-132): fora do Google, cobra por minuto
+  \node[c4systemext, text width=30mm, minimum height=14mm] (avatar) at (8.0,-8.6)
+    {\textbf{LiveAvatar (HeyGen)}\desc{Escuta, voz e vídeo do atendente da Ajuda}};
 
   % --- relações
   \draw[c4rel] (estudante.south) -- (4.4,-3.1)
@@ -129,11 +132,17 @@ Os princípios que atravessam todo o código:
     node[cxlabel, pos=0.5, left=1pt]{publica};
   \draw[c4reldash] (tf.north) -- (10.6,-5.9)
     node[cxlabel, pos=0.5, right=1pt]{provisiona};
+  \draw[c4relbi] (sis.south) -- (avatar.north)
+    node[cxlabel, midway, right=1pt]{sala; \texttt{/ajuda/llm}};
 
 \end{tikzpicture}}
 \caption[C4 nível 1 --- contexto]{C4 nível 1: contexto. Quatro papéis humanos
   mutuamente exclusivos, um provedor de identidade compartilhado entre contratos,
-  um único serviço externo na dependência de IA, e dois atores de automação. O
+  dois serviços externos de IA, e dois atores de automação. O segundo serviço de
+  IA, desde 2026-10-02, é o LiveAvatar da Ajuda com avatar (\adrr{ADR-132}): a
+  relação é de mão dupla porque a API pede a sala de vídeo ao vendor e o vendor
+  chama de volta o LLM da API (\rota{/ajuda/llm}); e é o único externo que o
+  navegador também alcança direto, pela sala de vídeo (WebRTC). O
   Terraform aparece porque a fronteira entre os dois repositórios é um contrato
   explícito, não um detalhe de operação.}
 \label{fig:c4l1}
@@ -146,6 +155,9 @@ não usam IA (exp04ef1b, app-70) seguem íntegras, o \emph{feed} da exp08ef1b co
 sendo curado a partir de conteúdo já gerado, e as ferramentas de professor
 degradam para texto fixo (app-91) ou recusam a geração com mensagem clara
 (app-90). Essa contenção de acoplamento é deliberada (\rf{RNF-12}).
+O LiveAvatar é ainda mais contido: fora do ar, só a Ajuda falha
+(\rota{POST /ajuda/sessoes} responde 502 \cd{AVATAR\_FALHOU}), e sem as variáveis
+dele a API sobe normal e a Ajuda responde 503 (\adrr{ADR-132}).
 \end{nota}
 
 \section{C4 nível 2 --- Contêineres}
@@ -222,6 +234,10 @@ professor no Vertex AI Agent Engine (\adrr{ADR-126}): o único contêiner que
     {\textbf{Vertex AI Search}\tech{dois \emph{data stores}, \texttt{global}}\desc{habilidades
      (estruturado) e acervo (PDFs)}};
 
+  % --- o vendor da Ajuda com avatar (ADR-132): fora da stack e fora do Google
+  \node[c4systemext, text width=26mm, minimum height=12mm] (avatar) at (2.6,-16.4)
+    {\textbf{LiveAvatar}\desc{HeyGen; vídeo da Ajuda}};
+
   % --- relações
   \draw[c4rel] (estudante.south) -- (3.6,-3.1) node[cxlabel, pos=0.45, left=1pt]{HTTPS};
   \draw[c4rel] (prof.south) -- (5.0,-3.1) node[cxlabel, pos=0.45, right=1pt]{HTTPS};
@@ -246,6 +262,8 @@ professor no Vertex AI Agent Engine (\adrr{ADR-126}): o único contêiner que
   \draw[c4rel] (engine.north) -- (vertex.south)
     node[cxlabel, midway, right=1pt]{Gemini};
   \draw[c4rel] (engine.east) -- (engine.east -| ds.west) node[cxlabel, midway, above]{busca};
+  \draw[c4relbi] (4.8,0 |- api.south) -- (4.8,-14.0) -- (2.6,-14.0)
+    node[cxlabel, pos=0.6, above]{sala; \texttt{/ajuda/llm}} -- (avatar.north);
   \draw[c4reldash] (hub.west) -- (0.9,-4.0) -- (0.9,-12.2) -- (idp.west)
     node[cxlabel, pos=0.86, above]{OIDC};
   \draw[c4reldash] (buckets.north) -- (2.6,-6.6) -- (9.2,-6.6)
@@ -255,7 +273,11 @@ professor no Vertex AI Agent Engine (\adrr{ADR-126}): o único contêiner que
 \caption[C4 nível 2 --- contêineres]{C4 nível 2: contêineres. Só o hub, a API, o
   banco, o Pub/Sub e o agente de IA do professor são peças em execução; o agente
   roda no Vertex AI Agent Engine e só a API o chama --- o navegador nunca fala
-  com ele nem com os \emph{data stores} (\adrr{ADR-126}). A experiência é um \emph{artefato}
+  com ele nem com os \emph{data stores} (\adrr{ADR-126}). O LiveAvatar, da Ajuda
+  com avatar, é externo à \emph{stack}: a API abre e fecha a sala e o vendor chama
+  de volta \rota{/ajuda/llm} pela URL pública da API; o vídeo vai direto do
+  vendor ao navegador (WebRTC), sem passar pela \emph{stack}; a chave da conta,
+  o \emph{prompt} e a base nunca saem da API (\adrr{ADR-132}). A experiência é um \emph{artefato}
   servido pela CDN e executado no navegador; a SDK é biblioteca dentro dele. A
   linha tracejada laranja é a fronteira do \emph{sandbox} do \cd{iframe} --- a
   fronteira de segurança mais importante do desenho de \emph{frontend}.}
@@ -357,6 +379,32 @@ que só \arq{ai/\B agent-engine.\B client.ts} implementa. De \arq{curriculo/} el
 \cd{habilidade\B Por\B Codigo}, como \arq{evidencias/}, para conferir os códigos que o
 agente cita (\adrr{ADR-127}). O par Mermaid do
 Apêndice~\ref{ap:mermaid} traz as relações dele.
+
+O terceiro, de 2026-10-02, é \arq{ajuda/}, a Ajuda com avatar
+(\adrr{ADR-132}): o atendente em vídeo do menu da conta, para todo papel menos o
+estudante. Também é de \textbf{plataforma} e produto sem experiência
+(\cd{@Produto(\B"ajuda")}), e tem \textbf{dois} \emph{controllers} com portas de
+entrada diferentes. \arq{ajuda.\B controller.ts} é o lado do hub (abrir e encerrar
+a sessão), atrás de \cd{OidcGuard}, \cd{RolesGuard} e \cd{DisponibilidadeGuard}
+--- o encerrar escapa do interruptor (\cd{@SemDisponibilidade}), porque desligar
+o produto no meio da conversa não pode deixar a sala cobrando.
+\arq{ajuda-llm.\B controller.ts} é o lado do \emph{vendor}: o \emph{endpoint}
+OpenAI-compatível que o LiveAvatar chama a cada fala, \textbf{fora} dos
+\emph{guards} de pessoa, trancado por duas chaves (o \emph{Bearer} do
+\emph{vendor} e o \emph{token} curto da sessão, que viaja dentro da mensagem
+\cd{system}). Ele usa duas portas de \arq{ai/}: o \cd{AiProvider}, pela
+\cd{conversarEmFluxo} --- a única geração em \emph{stream} do \emph{provider}
+---, e a \cd{AvatarAoVivoPort} (\emph{token} \cd{AVATAR\_AO\_VIVO}), a terceira
+porta de \arq{ai/}, que só \arq{ai/\B liveavatar.\B client.ts} implementa e que só
+abre e fecha a sala de vídeo; é porta própria, e não método do \cd{AiProvider},
+porque é reserva de um recurso cobrado por minuto, com ciclo de vida. Não passa
+pelo \cd{QuotaService}: o custo é limitado em minutos (\cd{ajuda\_\B limites},
+editada pelo \cd{admin} em \arq{recursos/\B limites-da-ajuda.\B controller.ts}) e
+medido em \cd{ajuda\_\B sessoes}, as duas fora de \cd{comTenancy} e consultadas
+pelo \cd{usuario\_id} do \emph{token} --- o \cd{gestor\_contrato} e o \cd{admin}
+não têm escola. A base de conhecimento é gerada
+(\arq{ajuda/\B base/\B base-da-ajuda.\B gerada.ts}) e nunca editada à mão. As
+relações dele também estão só no par Mermaid.
 
 \begin{figure}[H]
 \centering
@@ -548,7 +596,10 @@ contando por computador --- é assunto do módulo dela: \arq{unootube/} e
 \arq{equipes/regras.ts}, sem injetar provedor nenhum. O sentido inverso --- a
 missão dizendo ao sorteio o lado de cada criança --- é um REGISTRO: o módulo da
 missão chama \cd{EquipesService.registrarFonteDeGrupo} na subida, e
-\arq{equipes/} nunca importa nada dele. No hub, a seção mora na ficha da missão
+\arq{equipes/} nunca importa nada dele. Quem registra hoje é o Unoovista
+(\arq{perfis/fonte-de-lado.ts}, H13.4.1), e a fonte recebe a ATIVIDADE, porque o
+lado do feed é por atividade: o perfil importado, a afinidade da pergunta e a
+redistribuição do professor. No hub, a seção mora na ficha da missão
 (\arq{components/equipes/}), e as chamadas passam pelo BFF
 (\rota{/api/plataforma/equipes/*}), do lado do cliente porque o professor monta
 as equipes na frente da sala.
@@ -690,6 +741,29 @@ de \emph{stream} (\adrr{ADR-128}); a sessão e o \emph{token} curto são os mesm
 (\arq{lib/bff.ts}). Listar, criar, ler e apagar seguem pelo BFF. E o \textbf{\emph{markdown} vira HTML no navegador}, com
 \cd{react-markdown} sem HTML cru, porque o texto chega em pedaços
 (\adrr{ADR-129}). O painel leva \cd{data-clarity-mask}.
+\end{decisao}
+
+\begin{decisao}
+\textbf{A Ajuda com avatar é uma janela do menu da conta, não uma rota}
+(\adrr{ADR-132}). O item \enquote{Ajuda} é o segundo do menu do
+\cd{HeaderPlataforma}, e o \emph{header} só o desenha para quem não é estudante e
+com o produto \cd{ajuda} ligado --- o mesmo \emph{header} serve \rota{/exp/*},
+então esconder o item é dele; quem tranca é a API. O clique abre um \cd{Modal}
+do DS (\arq{components/\B ajuda/\B modal-da-ajuda.tsx}): o atendente em vídeo em
+cima e a conversa escrita embaixo, com \cd{ChatMessage}, \cd{ChatComposer},
+\cd{TypingIndicator}, \cd{ScrollBar} e \cd{AlertBox}. O \cd{<video>} é o único
+elemento cru, e é mídia, não controle: o DS não publica \emph{player} ao vivo e o
+SDK do \emph{vendor} pede um \cd{HTMLMediaElement}. O ciclo da sala mora no
+\emph{hook} \arq{components/\B ajuda/\B use-sessao-da-ajuda.ts}, que carrega o SDK
+do \emph{vendor} só por \cd{import()} (cerca de 1\,MB de LiveKit que nenhuma outra
+tela usa), começa com o microfone desligado e guarda o \emph{token} da sala só na
+\emph{closure} (regra 4). A sala abre na \textbf{montagem} do conteúdo do modal e
+fecha na \textbf{desmontagem}: renderizar o conteúdo com o modal fechado abriria
+sessões, e cobraria minutos, sem ninguém ver. \arq{lib/\B ajuda/} tem as duas
+peças puras, com teste: \arq{transporte.ts} (abrir e encerrar pelo BFF genérico,
+\rota{/api/plataforma/ajuda/\ldots}) e \arq{conversa.ts}, o redutor que monta a
+conversa das \emph{transcrições} que o \emph{vendor} devolve pela sala --- o texto
+não passa pelo hub. Nada é guardado, e o modal leva \cd{data-clarity-mask}.
 \end{decisao}
 
 \begin{nota}

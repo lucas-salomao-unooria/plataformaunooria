@@ -29,7 +29,7 @@
 \id{F13.1} & Montar as equipes & \pronto\\
 \zebra \id{F13.2} & O aluno sabe a sua equipe & \pronto\\
 \id{F13.3} & Acompanhar por computador & \pronto\\
-\zebra \id{F13.4} & Unoovista: equipe de lado igual & \afazer\\
+\zebra \id{F13.4} & Unoovista: equipe de lado igual & \parcial\\
 \bottomrule
 \end{tabularx}
 
@@ -305,23 +305,27 @@ computador dividido}{não descobrir as regras no meio da aula}
 \end{historia}
 
 % ---------------------------------------------------------------------------
-\feature{F13.4}{Unoovista: equipe de lado igual}{\afazer}
+\feature{F13.4}{Unoovista: equipe de lado igual}{\parcial}
 
 No Unoovista, cada estudante começa num lado do feed (\id{H06.6.3}). Hoje o
 professor já consegue montar equipes para essa missão, mas o sorteio ainda não
 olha o lado: uma equipe pode juntar estudantes dos dois lados, e quem entra
 recebe o próprio lado. Esta é a próxima frente do épico.
 
-\begin{historia}{H13.4.1}{Sortear equipes do mesmo lado do feed}{\afazer}
+\begin{historia}{H13.4.1}{Sortear equipes do mesmo lado do feed}{\pronto}
 \hu{Professor}{que o sorteio junte na mesma equipe estudantes do mesmo lado do
 feed}{que cada computador viva uma bolha só}
-\aceiteproposta
+\aceite
 \begin{itemize}
-  \item Quem tem perfil da Vila do Lume vai para uma equipe do seu lado.
+  \item Quem tem perfil da Vila do Lume vai para uma equipe do seu lado. Vale o
+    lado que o estudante vai ter de fato: o de quem já começou, o que o
+    professor redistribuiu, e só então o que o perfil indica.
   \item Quem não tem perfil é \enquote{neutro} e é sorteado para completar as
     equipes.
   \item Quando a conta não fecha, a tela diz quantas equipes ficaram mistas.
   \item Os tamanhos continuam diferindo em no máximo um (\id{H13.1.2}).
+  \item Sem a pergunta e os dois lados aprovados, a tela avisa que só quem já
+    tem lado definido entra agrupado.
 \end{itemize}
 \end{historia}
 
@@ -335,13 +339,16 @@ lado do feed}{que a bolha da equipe não dependa de quem pegou o teclado}
 \end{itemize}
 \end{historia}
 
-\begin{historia}{H13.4.3}{Sem redistribuir o lado quando há equipe}{\afazer}
+\begin{historia}{H13.4.3}{Sem redistribuir o lado quando há equipe}{\pronto}
 \hu{Professor}{que a turma com equipes não tenha o lado redistribuído}{que a
 redistribuição não separe o lado de quem divide a mesma tela}
-\aceiteproposta
+\aceite
 \begin{itemize}
   \item Com equipes montadas, \enquote{Redistribuir a turma} fica desligado, e
-    a tela diz por quê: o lado passa a ser da equipe.
+    a tela diz por quê: cada computador fica de um lado só, e redistribuir
+    separaria quem divide a mesma tela. Para redistribuir, o professor desfaz as
+    equipes antes.
+  \item A plataforma também recusa a redistribuição pedida por outro caminho.
   \item Sem equipes, a redistribuição funciona como hoje (\id{H06.6.3}).
 \end{itemize}
 \end{historia}

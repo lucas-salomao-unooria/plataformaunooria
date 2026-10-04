@@ -14,11 +14,11 @@ import { ALERTA_DE_ERRO, esperarOuFalharCedo } from "../lib/smoke.mjs";
  * runner e não depende da api de propósito (ver `rodar.mjs`). Esta depende, e
  * ainda precisa de uma sessão de `admin` para fechar o ciclo.
  *
- * O QUE ELA DEIXA NO BANCO: uma linha em `prospeccao_leads`, com e-mail em
- * `@suite-e2e.invalid` (domínio reservado pela RFC 2606, então nunca colide com
- * cadastro real) e carimbo de hora no nome. A linha FICA, de propósito: não há
- * rota de exclusão (é decisão da ADR-107, e a tela diz isso), e apagá-la por
- * fora do produto seria a suíte usando um caminho que o produto não tem.
+ * O QUE ELA DEIXA NO BANCO: nada, quando chega ao fim. A linha que ela cria em
+ * `prospeccao_leads` (e-mail em `@suite-e2e.invalid`, domínio reservado pela
+ * RFC 2606, e carimbo de hora no nome) sai pelo próprio produto, no
+ * "Eliminar a pedido do titular" (H10.5.2) — o mesmo caminho do titular real.
+ * Corrida que cai no meio deixa a linha, e a próxima não depende dela.
  */
 
 const AGORA = new Date().toISOString().replace(/[:.]/g, "-");
@@ -41,6 +41,7 @@ await suite(
       "Um visitante SEM SESSÃO abre a janela, envia o cadastro, e a janela fecha deixando a confirmação",
       "O mesmo cadastro aparece no painel da Unooria, com data, organização e cargo",
       "O CSV baixa de verdade, com o separador e o BOM que o Excel em português precisa",
+      "O admin elimina o cadastro a pedido do titular, depois de uma confirmação que diz quem sai",
       "A rede (gestor_contrato) não alcança a lista: é o funil comercial da fornecedora",
     ],
     comando: "node scripts/e2e/admin/03-prospeccao.mjs",
@@ -190,7 +191,41 @@ await suite(
       detalhe: `${csv.split("\n").length - 1} linhas · BOM presente`,
     });
 
-    // ── 4. a rede não alcança ────────────────────────────────────────────
+    // ── 4. eliminar a pedido do titular (H10.5.2) ────────────────────────
+    await linha.getByRole("button", { name: "Eliminar a pedido do titular" }).click();
+    const confirmacao = p.getByRole("dialog");
+    await confirmacao.waitFor({ timeout: 10_000 });
+    const textoDaConfirmacao = await confirmacao.innerText();
+    r.exigir(
+      textoDaConfirmacao.includes(NOME) && /não volta/.test(textoDaConfirmacao),
+      "a confirmação diz QUEM sai, e que não volta",
+    );
+    await r.registrar(p, "eliminar-confirmacao", {
+      titulo: "Eliminar a pedido do titular",
+      mostra: "A janela de confirmação, com o nome e a organização de quem vai sair da base.",
+      prova:
+        "É o direito de eliminação da LGPD (art. 18, VI) atendido pela tela, sem o time técnico. Não há editar: cadastro não se edita, só se elimina.",
+      detalhe: NOME,
+    });
+    await confirmacao.getByRole("button", { name: "Eliminar", exact: true }).click();
+    await esperarOuFalharCedo(p.getByText("Cadastro eliminado"), p.locator(ALERTA_DE_ERRO), {
+      timeout: 15_000,
+      oQue: "a confirmação de que o cadastro saiu da base",
+    });
+    r.exigir((await p.locator("tr", { hasText: NOME }).count()) === 0, "a linha some da lista");
+    /* Relida do zero: a linha não pode voltar — apagar é na base, não na tela. */
+    await p.reload({ waitUntil: "domcontentloaded" });
+    await p.getByRole("button", { name: "Atualizar" }).waitFor({ timeout: 30_000 });
+    r.exigir((await p.locator("tr", { hasText: NOME }).count()) === 0, "e não volta ao recarregar a página");
+    await r.registrar(p, "eliminado", {
+      titulo: "O contato saiu da base",
+      mostra: "“Cadastro eliminado”, e a lista sem a linha — também depois de recarregar.",
+      prova:
+        "A linha é apagada de verdade, não marcada. Fica só o registro de que um cadastro foi eliminado, por quem e quando, sem nenhum dado da pessoa.",
+      detalhe: NOME,
+    });
+
+    // ── 5. a rede não alcança ────────────────────────────────────────────
     /* O 403 abaixo é PROVOCADO: ele é a prova, não um defeito. Sem declará-lo,
        o smoke reprovaria a suíte pelo erro de console que ela mesma causou. */
     r.provocado(

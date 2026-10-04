@@ -355,20 +355,50 @@ experiência sob um produto desligado mostra o interruptor inerte e a frase
 \enquote{o produto está desligado neste escopo}; ativo, ele prometeria uma
 mudança que o resolvedor ignora, e escondido pareceria defeito.
 
-\section{Lacuna aberta: o \cd{SideBar} traz um item que não é seu}
+\section{Lacuna fechada: o botão de aplicativos do \cd{SideBar}}
 
-O \cd{SideBar} da seção \cd{unooria} renderiza SEMPRE, como primeiro item, um
-botão \enquote{Iniciativas} fixo no componente, que alterna um painel de
-\cd{appsItems}. \textbf{Nenhuma área deste hub passa \cd{appsItems}}, então o
-clique não faz nada --- e isso vale para \rota{/admin} desde que a barra existe,
-e agora para \rota{/unooria}.
+O \cd{SideBar} da seção \cd{unooria} desenhava SEMPRE, como primeiro item, um
+botão \enquote{Iniciativas} que alterna um painel de \cd{appsItems} --- e
+\textbf{nenhuma área deste hub tem painel de aplicativos}: em \rota{/admin} e
+\rota{/unooria} o clique não fazia nada, na primeira posição da barra, que é
+onde a mão vai.
 
-Item de menu que não leva a nada é pior que item nenhum: ele consome a primeira
-posição da barra, que é onde a mão vai. É \textbf{lacuna do pacote}, com pedido
-no \arq{storybook-unooria} --- o que falta é o item ser condicional a haver
-\cd{appsItems}. Não há compensação local aqui de propósito: esconder o botão
-por CSS seria reimplementar decisão de componente do lado de fora, e a regra de
-ouro é o contrário disso.
+A correção foi feita no pacote, e não aqui: esconder o botão por CSS seria
+reimplementar decisão de componente do lado de fora, e a regra de ouro é o
+contrário disso. Desde a 0.2.15 o \cd{SideBar} aceita \cd{showApps} (padrão
+\cd{true}, sem mudar quem já usa), além de \cd{appsLabel} e \cd{appsTooltip}
+para o rótulo e a dica; com \cd{false}, o botão some e o painel não abre. As
+duas barras do hub passam \cd{showApps=\{false\}} (H01.2.2).
+
+\section{Lacuna aberta: o \cd{Selection} não tem busca}
+
+Quem atende a rede inteira escolhe a escola em Usuários, Turmas, Importar e
+Análise de produto (H03.4.2), e uma rede tem cem escolas. O \cd{Selection} do
+pacote não filtra as opções, e uma lista de cem sem busca é rolagem sem fim.
+\textbf{Não é componente novo no hub}: \arq{components/escolha-de-escola.tsx}
+compõe duas peças do DS --- um \cd{TextField} \enquote{Buscar escola} que filtra,
+sem diferenciar acento nem maiúscula, as opções do \cd{Selection} ao lado (por
+nome, INEP, município ou código interno). A lista vem de
+\rota{GET /escolas?tipo=escola} \textbf{uma vez}, e o filtro é local: digitar não
+dispara uma chamada por tecla. A escolhida continua na lista mesmo fora do
+filtro, senão o campo diria \enquote{Escolha a escola} para uma escola escolhida.
+Quando o pacote publicar seleção com busca, a composição vira um componente só.
+
+\section{Lacuna fechada: o segmento tracejado do \cd{StackedProgressBar}}
+
+O painel de habilidades (\adrr{ADR-144}) desenha cada habilidade com o
+\cd{StackedProgressBar} do pacote: quatro segmentos, e a legenda com contagem e
+porcentagem. O PO pediu o \enquote{não avaliado} TRACEJADO, para não se ler
+como mais um nível, e o componente só aceitava cor sólida por segmento: na
+primeira versão do painel ele saiu num quase branco. Desde a 0.2.16 o segmento
+aceita \cd{pattern: 'dashed'}: sem preenchimento, contorno tracejado na cor
+dele, na barra e no marcador da legenda, e nenhum traço solto quando o valor é
+zero. O hub passa \cd{dashed} só no \enquote{não avaliado}, com o cinza de
+texto secundário do DS no traço. Duas armadilhas da peça, já contornadas: o
+\cd{subtitle} vazio mostra o texto de exemplo do DS, e a linha do título não
+quebra --- por isso o total vai só com o número. Num \cd{Card}, a grade de
+barras usa a compensação \cd{plataforma-largura-cheia} (o \cd{Card} tem teto
+de 398px).
 
 \section{Compensações locais}
 
@@ -758,7 +788,16 @@ três lugares --- salvo a que já está numa versão à frente da do \cd{dev},
 nunca publicada. Na 0.2.13 subiram dez; a exp02em1b, a exp05ef1b e a app-70
 saíram idênticas e ficaram. Na 0.2.14 (o \cd{MetricCard} passou a desenhar a
 \cd{description}, que antes aceitava e ignorava), doze mudaram e nenhuma subiu:
-todas já estavam à frente do \cd{dev}.
+todas já estavam à frente do \cd{dev}. Na 0.2.15 (o \cd{showApps} do
+\cd{SideBar}, H01.2.2) a comparação passou a ignorar os \cd{.map}: o
+\emph{sourcemap} carrega o caminho do pacote no \emph{store} do pnpm, com a
+versão no nome, e com ele toda experiência parecia mudada. Sem os \cd{.map},
+dez mudaram e subiram um \emph{patch}; a exp02em1b e a app-70 saíram idênticas,
+e a exp01ef1b já estava à frente do \cd{dev} (\adrr{ADR-142}). Na 0.2.16 (o
+segmento tracejado do \cd{StackedProgressBar}, para o painel de habilidades)
+doze mudaram --- o CSS do DataViz entra na folha global do DS --- e nenhuma
+subiu: todas já estavam à frente do \cd{dev}; a exp02em1b e a app-70 saíram
+idênticas.
 
 \subsection{O Júri Estadual e o \cd{StoryPoll} da 0.2.12 (exp06ef1b 0.1.0)}
 \label{sec:ds-juri-0211}
@@ -1040,6 +1079,70 @@ ainda era a 0.2.9.
 O painel leva \cd{data-clarity-mask} (Capítulo~\ref{cap:tenancy}): o professor
 pode escrever o nome de um estudante, e o Clarity grava a tela. A máscara é do
 hub, não do DS --- o componente não sabe que existe Clarity.
+\end{nota}
+
+\section{A Ajuda com avatar: o kit do agente, e um \cd{<video>} cru}
+\label{sec:ds-ajuda}
+
+A Ajuda com avatar (\adrr{ADR-132}) é o segundo item do menu da conta e abre uma
+\textbf{janela, não uma rota}: o \cd{Modal} do DS, com o atendente em vídeo em
+cima e a conversa escrita embaixo (\arq{apps/hub/components/ajuda/\B
+modal-da-ajuda.tsx}). A busca no pacote não pediu peça nova: a conversa reusa o
+kit que a 0.2.10 publicou para o agente de IA do professor
+(Seção~\ref{sec:ds-chat-agente}), e o resto é da seção \cd{unooria}, pela ponte
+\cd{@edu/ui/ds}, como todo o hub.
+
+\begin{tabularx}{\linewidth}{@{}L{34mm}X@{}}
+\toprule
+\headrow \thd{Peça} & \thd{Uso na Ajuda}\\
+\midrule
+\cd{Modal}, \cd{ModalHeader}, \cd{ModalTitle}, \cd{ModalDescription},
+  \cd{ModalBody} & A janela. \cd{ModalTitle} é o nome acessível do diálogo;
+  \cd{closeOnOverlayClick=\{false\}}, porque um clique fora encerraria a sala sem
+  querer.\\
+\zebra \cd{ChatMessage} & Cada fala: a da pessoa (\cd{autor="professor"} com
+  \cd{authorLabel="Você"} --- o vocabulário da peça é o do agente, e o rótulo
+  cobre os outros papéis) e a do atendente, com os estados
+  \cd{transmitindo}, \cd{pronta} e \cd{erro}.\\
+\cd{ChatComposer} & O campo de escrever a pergunta (até 500 caracteres),
+  desabilitado fora da conversa.\\
+\zebra \cd{TypingIndicator} & Sobre o vídeo, em tema escuro, enquanto a sala
+  abre e conecta (\enquote{Chamando o atendente\ldots},
+  \enquote{Conectando o vídeo\ldots}).\\
+\cd{ScrollBar} & A lista de falas (\cd{maxHeight=\{220\}}, \cd{autoHide}).\\
+\zebra \cd{AlertBox} & Os estados que interrompem a conversa: a Ajuda não abriu
+  (com \enquote{Tentar de novo} quando faz sentido) e a conversa terminou.\\
+\cd{Button}, \cd{Icon} & O microfone (começa desligado; \cd{aria-pressed}) e o
+  relógio do tempo que sobra na sessão.\\
+\bottomrule
+\end{tabularx}
+
+\subsection{Lacuna aberta: o DS não publica \emph{player} de vídeo ao vivo}
+
+\begin{tabularx}{\linewidth}{@{}L{48mm}X@{}}
+\toprule
+\headrow \thd{Lacuna} & \thd{Como está resolvido}\\
+\midrule
+Não há peça para mostrar um \emph{stream} de vídeo ao vivo (WebRTC) & Um
+  \cd{<video autoPlay playsInline>} cru dentro de uma moldura de
+  \cd{div}, e é o \textbf{único} elemento cru do modal. O SDK do \emph{vendor} pede
+  um \cd{HTMLMediaElement} para \cd{attach()} --- vídeo e áudio do atendente
+  chegam pela mesma trilha ---, e \cd{playsInline} impede o iPhone de abrir o
+  vídeo em tela cheia. O \cd{overflow-hidden} da moldura só arredonda os
+  cantos; não rola nada, e por isso não é o \cd{overflow} que o \cd{ScrollBar}
+  substitui.\\
+\bottomrule
+\end{tabularx}
+
+\begin{nota}
+O corpo inteiro do modal leva \cd{data-clarity-mask}, como o painel do agente: a
+pessoa pode dizer ou escrever o nome de um estudante (o aviso logo acima do campo
+pede que não), e o Clarity grava a tela. A conversa só existe enquanto o modal
+está aberto --- o conteúdo monta ao abrir e desmonta ao fechar, e é a
+desmontagem que encerra a sala do \emph{vendor} ---, então o \cd{Modal} aqui
+\textbf{não} pode manter o conteúdo montado escondido, ao contrário do
+\cd{ChatPanel} do agente: renderizar a conversa com a janela fechada abriria
+sessões e cobraria minutos sem ninguém ver.
 \end{nota}
 
 \section{O menu da conta: o componente que faltava, e a lacuna que ele trouxe}
@@ -1335,6 +1438,16 @@ divergência.
 \section{Exceção registrada}
 
 \begin{decisao}
+\textbf{O \cd{<video>} da Ajuda com avatar é elemento cru}, contra a regra de
+que a interface sai do \emph{design system} (Seção~\ref{sec:ds-ajuda}). É
+\textbf{mídia, não controle}: não tem estado nem aparência de controle, é a
+janela onde o atendente aparece, e o SDK do \emph{vendor} exige o elemento nativo
+para anexar a trilha. Vira lacuna fechada no dia em que o pacote publicar um
+\emph{player} de vídeo ao vivo; até lá, a exceção é dele só --- os controles em
+volta (microfone, campo, avisos) são todos do DS.
+\end{decisao}
+
+\begin{decisao}
 \textbf{O \cd{AgentAvatar} carrega um \emph{bitmap} dentro do pacote}, contra a
 regra de que imagem não entra no \emph{design system} (vai para o \emph{bucket} de
 \emph{assets}). O mascote do agente é desenho, não ícone vetorial, e é identidade
@@ -1352,7 +1465,10 @@ deste repositório, com folha (\arq{components/site/site.css}), tipografia
 dali para dentro, a regra de ouro continua valendo sem exceção. A landing
 anterior (\adrr{ADR-40}), essa sim feita de DS, continua viva em
 \cd{/landing-anterior} com \cd{noindex}, porque \cd{/privacidade} e \cd{/termos}
-ainda montam o fundo e a folha dela.
+ainda montam o fundo e a folha dela. Os poucos acréscimos ao porte --- o
+\enquote{Entrar} do cabeçalho e os links legais do rodapé (H11.1.2), a janela do
+cadastro --- são desenhados com as peças do próprio site e vêm marcados na folha
+e na marcação, para a comparação com o próximo pacote do material.
 \end{decisao}
 
 \begin{decisao}
