@@ -120,6 +120,38 @@ trocou o tema, e uma resposta atrasada cairia numa rodada que acabou.
 - Turma que o professor não leciona, e estudante que ele não ensina: **404,
   nunca 403** (o desenho de `salas`).
 
+## O painel de habilidades (F14.7, ADR-144)
+
+A evidência SOMADA, só leitura, em `evidencias-consolidado.{service,controller}.ts`
+e com as regras puras em `regras-do-consolidado.ts`:
+`GET /evidencias/turma/:turmaId/consolidado` (professor e gestão),
+`GET /evidencias/escola/consolidado` (gestão) e
+`GET /evidencias/rede/consolidado` (regional e contrato).
+
+- **A coluna é a UNIDADE da missão** (do manifesto, na tabela `experiencias`),
+  nunca o bimestre do calendário.
+- **O nível da criança na MISSÃO é o melhor entre TODAS as atividades e
+  rodadas** — é `melhorRodadaPorHabilidade` sobre as linhas da missão inteira.
+  Cada missão fica separada; a mesma habilidade em duas missões são duas linhas.
+- **Quem conta é a lista de estudantes da turma** (`users.turma_id`), não as
+  linhas: a criança sem linha que valha é `naoAvaliado`, e a linha de quem saiu
+  da turma não entra. `aplicada` = a turma tem QUALQUER linha da missão (até a
+  projeção a confirmar).
+- **Escola e rede leem só o ano letivo vigente** (`periodoVigente`): sem isso, a
+  soma da série misturaria dois anos de crianças. O `agora` é parâmetro para o
+  teste não depender do dia.
+- **A rede é o laço do relatório da diretoria** (ADR-82): uma transação por
+  escola, em lotes de 8. Nunca afrouxe a RLS para acelerar; o gatilho é
+  agregado materializado.
+- **A REGIONAL desce por `escolaDaConsulta`**: nas rotas de turma, escola e
+  perfil ela pede `?escolaId=` de uma escola da regional, e quem decide é
+  `EscolasService.temLotacao` (por isso o módulo importa o `RosteringModule`).
+  Para os outros papéis vale `escolaAlvo`, igual a antes.
+- **O perfil ganhou o nível POR MISSÃO** (`habilidades`, com `null` =
+  "não avaliado"), `unidade` e `ultimaEm`, e as missões saem da mais recente
+  para a mais antiga. As `atividades` continuam ali.
+- Fora, por decisão: a planilha (CSV) com aviso de LGPD e registro de auditoria.
+
 ## Armadilhas
 
 - **Fora de `comTenancy`, tudo volta VAZIO e a escrita é recusada** — as três

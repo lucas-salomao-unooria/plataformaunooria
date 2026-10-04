@@ -384,6 +384,19 @@ dispara uma chamada por tecla. A escolhida continua na lista mesmo fora do
 filtro, senão o campo diria \enquote{Escolha a escola} para uma escola escolhida.
 Quando o pacote publicar seleção com busca, a composição vira um componente só.
 
+\section{Lacuna aberta: o \cd{StackedProgressBar} não tem segmento tracejado}
+
+O painel de habilidades (\adrr{ADR-144}) desenha cada habilidade com o
+\cd{StackedProgressBar} do pacote: quatro segmentos, e a legenda com contagem e
+porcentagem. O PO pediu o \enquote{não avaliado} TRACEJADO, para não se ler
+como mais um nível; o componente só aceita cor sólida por segmento. O hub usa
+o quase branco da paleta de dataviz (\cd{\#E8EFFA}), que parece ausência, e
+o rótulo da legenda diz o resto. Duas armadilhas da peça, já contornadas: o
+\cd{subtitle} vazio mostra o texto de exemplo do DS, e a linha do título não
+quebra --- por isso o total vai só com o número. Num \cd{Card}, a grade de
+barras usa a compensação \cd{plataforma-largura-cheia} (o \cd{Card} tem teto
+de 398px).
+
 \section{Compensações locais}
 
 \begin{regra}

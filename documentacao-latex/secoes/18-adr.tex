@@ -12501,3 +12501,86 @@ professor são todos por atividade), enquanto o gancho recebia só a turma.
 
 \textbf{Gatilho.} A H13.4.2 (o lado da equipe na largada), ou uma segunda missão
 com lados.
+
+\section{ADR-144 --- O painel de habilidades lê por unidade, a missão vale o melhor entre as atividades, e a regional desce até a escola sem lotação}
+\label{adr:painel-de-habilidades}
+
+\textbf{Data.} 2026-10-03. \textbf{Status.} Aceita. Complementa a
+\adrr{ADR-112}, a \adrr{ADR-130} e a \adrr{ADR-82}.
+
+\begin{especificacao}{Contexto}
+A evidência pedagógica (\adrr{ADR-112}) era lida atividade por atividade, e só
+pelo professor da turma. O PO pediu o painel consolidado (F14.7): o professor
+vê a turma, a coordenação da escola vê todas as turmas, a coordenação regional
+vê as escolas. Três perguntas ficaram em aberto no card: o que é a coluna
+(bimestre do calendário ou unidade da missão), o que vale quando a missão tem
+mais de uma atividade, e como a coordenação regional --- que não tem lotação e
+trabalha uma escola por vez (\adrr{ADR-80}) --- desce da rede até a turma.
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{itemize}
+  \item \textbf{A coluna é a UNIDADE da missão} (1 a 4, do manifesto), e não o
+    bimestre do calendário. As quatro unidades aparecem sempre, mesmo vazias.
+  \item \textbf{A missão é a composição das atividades}: o nível de uma criança
+    numa habilidade da missão é o MELHOR entre todas as atividades e rodadas
+    --- a extensão da \enquote{melhor rodada} que já valia dentro da atividade
+    (\arq{evidencias/regras-do-consolidado.ts}). Cada missão aparece separada:
+    a mesma habilidade em duas missões são duas linhas.
+  \item \textbf{Quem não tem evidência que conte é \enquote{não avaliado}}, a
+    quarta caixa da barra, e nunca entra em \enquote{não atingiu}: não fez,
+    saiu antes, aula projetada ainda não confirmada, \enquote{Não participou}.
+  \item \textbf{Três rotas novas, só de leitura}:
+    \rota{GET /evidencias/turma/\{turmaId\}/consolidado} (professor e gestão),
+    \rota{GET /evidencias/escola/consolidado} (gestão) e
+    \rota{GET /evidencias/rede/consolidado} (regional e perfis de contrato). A
+    da rede atravessa escolas como o relatório da diretoria (\adrr{ADR-82}): uma
+    transação por escola, em lotes de 8, somando na aplicação; a RLS não muda.
+  \item \textbf{A regional desce por \cd{escolaDaConsulta}}: nas rotas de turma,
+    escola e perfil ela pode pedir \cd{?escolaId=} de qualquer escola da regional
+    dela, e quem confere é \cd{EscolasService.temLotacao} --- o mesmo lugar do
+    seletor do cabeçalho. A leitura continua sob o \cd{escola\_id} daquela
+    escola só.
+  \item \textbf{O perfil do estudante ganha o nível POR MISSÃO}, da mais recente
+    para a mais antiga, com a habilidade sem nível como \enquote{não avaliado}
+    (H14.7.4); as atividades continuam embaixo.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Coluna por bimestre do calendário.} Exigiria decidir em que
+    bimestre cai a evidência de uma missão da unidade 1 aplicada em maio; a
+    unidade é o que o professor planeja e o que a trilha mostra.
+  \item \textbf{Uma linha por atividade.} A tela da escola cresceria com cada
+    atividade criada, e a pergunta \enquote{a turma atingiu a habilidade nesta
+    missão?} ficaria sem resposta.
+  \item \textbf{Afrouxar a política de RLS para a regional.} É uma linha, mas é
+    a linha que garante que a escola A nunca vê a criança da escola B
+    (\adrr{ADR-82}).
+  \item \textbf{Dar à regional uma lista de turmas de todas as escolas numa
+    resposta só.} Cem escolas com vinte turmas cada viram uma resposta enorme
+    que ninguém lê; o drill-down pede uma escola por vez.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{A exportação em planilha (CSV) com aviso de LGPD e registro de
+    auditoria ficou para depois}: o painel da escola e o da rede são só tela.
+  \item \textbf{\enquote{Não avaliado} é cor sólida clara, não tracejado}: o
+    \cd{StackedProgressBar} do DS só aceita cor (lacuna no Capítulo~14).
+  \item \textbf{A turma que não aplicou a missão entra na soma da série como
+    \enquote{não avaliado}} no painel da rede: são crianças que a missão ainda
+    não alcançou, e a soma diz isso; quem quer ver só as que aplicaram lê
+    \cd{turmasAplicadas}.
+  \item \textbf{O indicador \enquote{novos dados} no cartão do professor não
+    existe}: o cartão é fixo, sem contagem.
+  \item \textbf{A rede inteira é uma transação por escola}: rede muito grande
+    ficar lenta é gatilho para agregado materializado.
+\end{itemize}
+
+\textbf{Gatilho.} O PO pedir a planilha da coordenação, uma rede com mais de
+duzentas escolas no painel do contrato, ou a primeira missão transversal com
+ficha.

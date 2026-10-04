@@ -92,7 +92,11 @@ export const AjustesSchema = z.object({
 });
 export type Ajustes = z.infer<typeof AjustesSchema>;
 
-/** O PERFIL de um estudante: o resultado de cada atividade de cada missão. */
+/**
+ * O PERFIL de um estudante: em cada missão, o nível de cada habilidade (o
+ * melhor entre as atividades) e, embaixo, o resultado de cada atividade.
+ * Missões da mais recente para a mais antiga.
+ */
 export const PerfilDoEstudanteSchema = z.object({
   estudante: z.object({ id: Uuid, nome: z.string() }),
   missoes: z.array(
@@ -100,10 +104,122 @@ export const PerfilDoEstudanteSchema = z.object({
       expId: z.string(),
       /** O nome do catálogo; o próprio `expId` quando a missão não está nele. */
       nome: z.string(),
+      /** A unidade do ano (1 a 4), do manifesto; `null` na transversal ou fora do catálogo. */
+      unidade: z.number().int().nullable(),
+      /** Quando a evidência desta missão mudou pela última vez (ISO 8601) — é o que ordena. */
+      ultimaEm: z.string(),
+      /**
+       * A MISSÃO: cada habilidade da ficha com o MELHOR nível entre todas as
+       * atividades. `null` = "Não avaliado" — a criança não tem evidência que
+       * conte nesta habilidade, e isso nunca vira "não atingiu".
+       */
+      habilidades: z.array(z.object({ codigo: z.string(), descricao: z.string(), status: NivelSchema.nullable() })),
       atividades: z.array(
         z.object({
           atividadeId: z.string(),
           habilidades: z.array(z.object({ codigo: z.string(), descricao: z.string(), status: NivelSchema })),
+        }),
+      ),
+    }),
+  ),
+});
+
+// ── o painel de habilidades (F14.7): turma, escola e rede ─────────────────
+
+/**
+ * Quantas crianças em cada nível. `naoAvaliado` é a criança da turma sem
+ * evidência que conte — nunca "não atingiu". `total` é a soma das quatro.
+ */
+export const DistribuicaoSchema = z.object({
+  atingiu: z.number().int().nonnegative(),
+  emProcesso: z.number().int().nonnegative(),
+  naoAtingiu: z.number().int().nonnegative(),
+  naoAvaliado: z.number().int().nonnegative(),
+  total: z.number().int().nonnegative(),
+});
+
+const HabilidadeSchema = z.object({ codigo: z.string(), descricao: z.string() });
+
+/** Uma missão com ficha, como o catálogo a descreve: o nome, a UNIDADE e as habilidades. */
+export const MissaoDoPainelSchema = z.object({
+  expId: z.string(),
+  nome: z.string(),
+  /** A coluna do painel: a unidade do ano (1 a 4). `null` = transversal. */
+  unidade: z.number().int().nullable(),
+  series: z.array(z.string()),
+  habilidades: z.array(HabilidadeSchema),
+});
+
+export const ParamsDaTurmaSchema = z.object({ turmaId: Uuid });
+
+/**
+ * O PAINEL DA TURMA: cada missão com ficha da série da turma (ou que a turma
+ * já fez), cada habilidade, e quantas crianças em cada nível. Contagem, não
+ * porcentagem: o professor quer saber QUANTOS.
+ */
+export const TurmaConsolidadaSchema = z.object({
+  turma: z.object({ id: Uuid, nome: z.string(), serie: z.string() }),
+  /** Em ordem ALFABÉTICA — é a lista do drill-down, e nunca um ranking. */
+  estudantes: z.array(z.object({ id: Uuid, nome: z.string() })),
+  missoes: z.array(
+    MissaoDoPainelSchema.omit({ series: true, habilidades: true }).extend({
+      /** A turma tem alguma evidência desta missão (mesmo a projeção a confirmar)? */
+      aplicada: z.boolean(),
+      habilidades: z.array(HabilidadeSchema.extend({ distribuicao: DistribuicaoSchema })),
+    }),
+  ),
+});
+
+const MissaoDaLinhaSchema = z.object({
+  expId: z.string(),
+  habilidades: z.array(z.object({ codigo: z.string(), distribuicao: DistribuicaoSchema })),
+});
+
+/**
+ * O PAINEL DA ESCOLA: as turmas do ano letivo vigente, e em cada uma a
+ * distribuição por habilidade de cada missão. As missões (nome, unidade,
+ * texto da BNCC) vêm uma vez só, em `missoes`; as turmas trazem só os números.
+ */
+export const EscolaConsolidadaSchema = z.object({
+  escola: z.object({ id: z.string(), nome: z.string() }),
+  /** O ano letivo de onde as turmas saíram; `null` sem nenhum cadastrado. */
+  periodo: z.object({ id: Uuid, titulo: z.string() }).nullable(),
+  missoes: z.array(MissaoDoPainelSchema),
+  /** Por série (na ordem da trilha) e, dentro dela, por nome. */
+  turmas: z.array(
+    z.object({
+      id: Uuid,
+      nome: z.string(),
+      serie: z.string(),
+      estudantes: z.number().int().nonnegative(),
+      missoes: z.array(MissaoDaLinhaSchema.extend({ aplicada: z.boolean() })),
+    }),
+  ),
+});
+
+export const RedeConsolidadaQuerySchema = z.object({ regionalId: z.string().min(1).optional() });
+
+/**
+ * O PAINEL DA REDE: cada escola, cada série, a soma das turmas. Escolas em
+ * ordem alfabética, sem ranking. Contagem — a tela faz a porcentagem, porque
+ * escolas de tamanhos diferentes só se leem lado a lado assim.
+ */
+export const RedeConsolidadaSchema = z.object({
+  /** A regional lida; `null` quando o perfil de contrato pediu a rede inteira. */
+  regional: z.object({ id: z.string(), nome: z.string() }).nullable(),
+  periodo: z.object({ id: Uuid, titulo: z.string() }).nullable(),
+  missoes: z.array(MissaoDoPainelSchema),
+  escolas: z.array(
+    z.object({
+      id: z.string(),
+      nome: z.string(),
+      /** Só as séries que têm turma no ano letivo vigente. */
+      series: z.array(
+        z.object({
+          serie: z.string(),
+          turmas: z.number().int().nonnegative(),
+          estudantes: z.number().int().nonnegative(),
+          missoes: z.array(MissaoDaLinhaSchema.extend({ turmasAplicadas: z.number().int().nonnegative() })),
         }),
       ),
     }),

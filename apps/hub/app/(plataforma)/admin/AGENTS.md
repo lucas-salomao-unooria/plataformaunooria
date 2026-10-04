@@ -120,3 +120,20 @@ Hoje é `components/escolha-de-escola.tsx`: um `TextField` de busca que filtra o
 `GET /escolas?tipo=escola` UMA vez e o filtro é local. **Só monte para
 `ehDoContrato`**: para a Coordenação a rota responde 403, e a tela de análise
 mostrava o erro na casca de quem nem precisa escolher.
+
+## `/admin/habilidades` — o painel de habilidades (F14.7, ADR-144)
+
+Os QUATRO papéis de gestão, uma entrada só no menu, duas alturas pelo papel: a
+`gestor_escola` lê a própria escola (`PainelDaEscola`); a regional e os perfis de
+contrato leem a rede (`PainelDaRede`), e só o contrato tem o seletor de regional
+(`?regionalId=`) — para a regional ele ofereceria a diretoria do vizinho.
+
+- **O drill-down carrega a escola na URL**: `escolas/[escolaId]` →
+  `turmas/[turmaId]?escolaId=` → `estudantes/[estudanteId]?escolaId=`. É o que deixa
+  a regional, que não tem lotação, abrir a turma de outra escola da regional; a
+  api confere (403 fora dela) e as páginas tratam `null` como "não encontrada".
+- **A turma e o estudante são as MESMAS telas do professor** (`PainelDaTurma`,
+  `HabilidadesDoPerfil`), só de leitura; o que muda é para onde o nome leva.
+- **Os painéis carregam `plataforma-largura-cheia`**: o `Card` do DS tem teto de
+  398px, e a grade de barras não cabe nele.
+- Suíte: `gestor_escola/05-painel-de-habilidades` (coordenação e regional).

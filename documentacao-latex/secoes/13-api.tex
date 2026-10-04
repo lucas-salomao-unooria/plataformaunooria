@@ -484,10 +484,11 @@ mudaram de forma para contar por COMPUTADOR:
 \subsection{A evidência pedagógica: por atividade e rodada}
 \label{sec:api-evidencias}
 
-Seis rotas no módulo \arq{evidencias/} (\adrr{ADR-112}), em dois
+Nove rotas no módulo \arq{evidencias/} (\adrr{ADR-112}), em três
 \emph{controllers}: quatro do lado de quem dá aula --- o painel, a confirmação e
-o ajuste de uma atividade, e o perfil de um estudante --- e duas do estudante, a
-pergunta e a resposta. Nenhum caminho de um casa com o
+o ajuste de uma atividade, e o perfil de um estudante ---, duas do estudante, a
+pergunta e a resposta, e três do painel de habilidades (\adrr{ADR-144}), só de
+leitura, descritas no fim desta seção. Nenhum caminho de um casa com o
 do outro --- o número de segmentos e as literais diferem ---, então a ordem de
 registro não decide quem responde; e o do estudante é outro arquivo, sem
 \cd{@Roles} misto. As duas escritas do professor devolvem o PAINEL já
@@ -521,11 +522,14 @@ atualizado, para a tela não precisar reler.
     fora da missão). Ajuste que repete o que já estava é ignorado, sem evento.
   \item \rota{GET /evidencias/\B estudante/:estudanteId} (professor, gestores,
     \cd{admin}) --- o perfil: em cada missão (com o nome do catálogo, ou o
-    \cd{expId} quando ela não está nele), em cada atividade, o nível de cada
-    habilidade --- a melhor rodada, só com o que vale: sem a projeção a
-    revisar, sem N/A e sem \cd{nao\_participou}. Sem origem, e sem juntar
-    missões. O professor só abre quem ele ensina
-    (\cd{professorEnsinaOEstudante}).
+    \cd{expId} quando ela não está nele, a \cd{unidade} e \cd{ultimaEm}), da
+    mais recente para a mais antiga, \cd{habilidades} com o MELHOR nível entre
+    as atividades --- \cd{null} é \enquote{não avaliado} (\adrr{ADR-144}) ---
+    e, em cada atividade, o nível de cada habilidade: a melhor rodada, só com o
+    que vale, sem a projeção a revisar e sem \cd{nao\_participou}. Sem origem,
+    e sem juntar missões. O professor só abre quem ele ensina
+    (\cd{professorEnsinaOEstudante}); a coordenação regional pode pedir
+    \cd{?escolaId=} de uma escola da regional dela.
   \item \rota{GET /evidencias/\B :expId/\B perguntas/:perguntaId} (estudante) --- o
     enunciado e as alternativas, só \cd{id} e \cd{texto}: o nível de cada uma é
     o gabarito, e fica no servidor. As alternativas saem \textbf{embaralhadas a
@@ -541,6 +545,32 @@ atualizado, para a tela não precisar reler.
     \cd{sem-atividade-em-andamento}; alternativa que não é da pergunta:
     \textbf{400} \cd{alternativa-desconhecida}.
 \end{itemize}
+
+\paragraph{O painel de habilidades (\adrr{ADR-144}).} Três leituras da
+evidência somada, todas em contagem --- a tela faz a porcentagem ---, com a
+UNIDADE da missão como coluna e o nível de cada criança na missão como o
+MELHOR entre as atividades. Quem não tem evidência que conte é
+\cd{naoAvaliado}, nunca \cd{naoAtingiu}.
+
+\begin{itemize}
+  \item \rota{GET /evidencias/turma/\B :turmaId/consolidado} (professor que
+    leciona --- 404 nas outras ---, gestores, \cd{admin}) --- as missões com
+    ficha da série da turma (e as que ela fez de outra série), com
+    \cd{aplicada}, e por habilidade a distribuição das crianças da turma; e a
+    lista de estudantes, alfabética, para o drill-down.
+  \item \rota{GET /evidencias/escola/consolidado} (gestores) --- as turmas do
+    ano letivo vigente que têm missão com ficha, por série e nome, com a
+    distribuição de cada habilidade.
+  \item \rota{GET /evidencias/rede/consolidado} (\cd{gestor\_regional} e
+    perfis de contrato) --- cada escola, cada série, a soma das turmas. A
+    regional lê a PRÓPRIA (o \cd{?regionalId=} dela é ignorado); o contrato
+    escolhe a regional ou lê a rede inteira. Uma transação por escola, em
+    lotes de 8, como o relatório da diretoria (\adrr{ADR-82}).
+\end{itemize}
+
+Nas rotas de turma, escola e perfil, a coordenação REGIONAL pode pedir
+\cd{?escolaId=} de qualquer escola da regional dela (\cd{escolaDaConsulta},
+que pergunta a \cd{EscolasService.temLotacao}); fora dela, \textbf{403}.
 
 As duas do estudante passam por \cd{exigirMissaoLiberada}: missão não liberada
 na turma dele é \textbf{403} \cd{missao-nao-liberada}, e recurso desligado na
