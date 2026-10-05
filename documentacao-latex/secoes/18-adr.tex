@@ -9,7 +9,7 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{147 decisões}, numeradas até ADR-147. A 132 (a Ajuda com
+São \textbf{148 decisões}, numeradas até ADR-148. A 132 (a Ajuda com
 avatar) entrou no código antes de ter seção aqui, e por um dia o número foi
 citado sem existir; a 133 pulou para não colidir com ela. A 133 e a 134 nasceram no mesmo dia, em frentes paralelas
 (Unoovista e Unoochat), e entraram juntas no merge; a 135 e a 136 levaram as
@@ -165,9 +165,9 @@ que a cercam.
 \zebra \adrr{ADR-112} & A evidência é por atividade e rodada, e a melhor rodada vale por habilidade & 2026-09-25 & Aceita\\
 \adrr{ADR-113} & A Seleção substitui o Eco no Grupo, e a limpeza vem antes & 2026-09-25 & Aceita\\
 \zebra \adrr{ADR-114} & Quem mandou isso? v1 é retirada; a v2.2 entra com o mesmo código & 2026-09-25 & Aceita\\
-\adrr{ADR-115} & A Seleção: o par do Mural é do computador, e a IA gradua a legenda & 2026-09-25 & Aceita\\
+\adrr{ADR-115} & A Seleção: o par do Mural é do computador, e a IA gradua a legenda & 2026-09-25 & Aceita; a leitura da legenda ficou sem teto de saída (\adrr{ADR-148})\\
 \zebra \adrr{ADR-116} & A experiência que perde o código é arquivada, não apagada & 2026-09-25 & Aceita\\
-\adrr{ADR-117} & Jornal da Escola: a redação é da Unooria, o professor abre o resultado e a revisão, e a IA só escolhe o layout & 2026-09-27 & Aceita; as imagens passam pelo OK do professor, uma a uma (\adrr{ADR-147})\\
+\adrr{ADR-117} & Jornal da Escola: a redação é da Unooria, o professor abre o resultado e a revisão, e a IA só escolhe o layout & 2026-09-27 & Aceita; as imagens passam pelo OK do professor, uma a uma (\adrr{ADR-147}); a diagramação ficou sem teto de saída (\adrr{ADR-148})\\
 \zebra \adrr{ADR-118} & Quem mandou isso? v2.2: atividade é o pacote, rodada é a reaplicação, e a régua mede pela seleção e pelas perguntas do PO & 2026-09-25 & Aceita; a régua foi substituída pela \adrr{ADR-120}\\
 \adrr{ADR-119} & O podcast da A Seleção é do professor, e a IA reescreve só as três falas que dependem do tema & 2026-09-26 & Aceita\\
 \zebra \adrr{ADR-120} & A régua v2 de Quem mandou isso?: cada habilidade pelo verbo dela, e refazer o mesmo pacote não mede memória & 2026-09-26 & Aceita; as perguntas voltaram às do PO (\adrr{ADR-131}); a medição única e a rubrica do Se/Então saíram (\adrr{ADR-145})\\
@@ -198,6 +198,7 @@ que a cercam.
 \zebra \adrr{ADR-145} & Toda rodada mede todas as habilidades, o critério de cada nível aparece no painel, e Quem mandou isso? perde a regra dissertativa & 2026-10-05 & Aceita; revê a \adrr{ADR-120}\\
 \adrr{ADR-146} & Pôr a atividade no ar libera a missão na sala, e A Seleção aprova textos e imagens em duas fases & 2026-10-05 & Aceita; complementa a \adrr{ADR-130}\\
 \zebra \adrr{ADR-147} & O Jornal da Escola: o professor aprova cada imagem antes da turma, e a mesa leva a criança à página & 2026-10-05 & Aceita; complementa a \adrr{ADR-117}\\
+\adrr{ADR-148} & As duas chamadas curtas de IA em sala não têm teto de saída, e as missões revisadas se testam com a IA real & 2026-10-05 & Aceita; revê o teto da \adrr{ADR-115} e da \adrr{ADR-117}\\
 \bottomrule
 \end{tabularx}
 
@@ -12944,3 +12945,108 @@ o computador é o professor quem decide.
 imagem volta a ser opcional, com o cartão pelo meio); o PO pedir a mesma
 aprovação por imagem na A Seleção; ou o custo das imagens regeradas pesar na
 quota do professor.
+
+\section{ADR-148 --- As duas chamadas curtas de IA em sala não têm teto de saída, e as missões revisadas se testam com a IA real}
+\label{adr:sem-teto-de-saida-em-sala}
+
+\textbf{Data.} 2026-10-05. \textbf{Status.} Aceita. Revê o teto de saída da
+diagramação do Jornal da Escola (\adrr{ADR-117}) e o da leitura da legenda da A
+Seleção, o Canal A (\adrr{ADR-115}); estende às suítes de Quem mandou isso? e da
+A Seleção a regra de testar com a IA de verdade que a \adrr{ADR-147} pôs no
+Jornal.
+
+\begin{especificacao}{Contexto}
+Duas chamadas de IA rodam com a turma diante da tela, e as duas tinham reserva
+determinística: a diagramação do Jornal da Escola (\cd{exp04ef1b},
+\arq{jornal-escola/\B{}diagramacao.service.ts}), que cai no modelo automático, e
+a leitura da legenda da A Seleção (\cd{exp07ef1b},
+\arq{a-selecao/\B{}classificacao.service.ts}), que fica \enquote{Não avaliado}.
+Como a resposta delas é um \emph{enum} (o layout) ou um nível e um código de
+motivo, cada uma nasceu com um teto de saída baixo, para limitar o custo por
+criança: \cd{MAX\_TOKENS\_DA\_DIAGRAMACAO = 32} e \cd{MAX\_TOKENS\_DO\_CANAL\_A =
+64}. Revisando as três missões com a IA real, o Jornal diagramava
+\textbf{sempre} pelo modelo (o \emph{log} \cd{exp04ef1b-diagramacao-modelo},
+motivo \cd{provedor-falhou}) e o Canal A ficava sempre sem marca
+(\cd{exp07ef1b-canal-a-nao-avaliado}). Medido: o \cd{gemini-3.7-flash}
+\textbf{raciocina mesmo com \cd{thinkingBudget: 0}} --- cerca de 28 a 29
+\emph{tokens} de pensamento numa resposta desse tamanho ---, e o raciocínio sai
+do MESMO orçamento de saída (Seção~\ref{sec:ia-raciocinio}). Com 32 ou 64
+\emph{tokens}, a resposta voltava com \cd{finishReason: MAX\_TOKENS} e sem
+texto. A falha era MUDA, justamente porque as duas têm reserva: a criança via
+uma página diagramada e o professor um \enquote{Não avaliado}, que são saídas
+legítimas. \cd{thinkingLevel: "MINIMAL"} é recusado pelo modelo (400), e
+\cd{"LOW"} ainda pensa 28 \emph{tokens}. Ao mesmo tempo, as suítes de ponta a
+ponta dessas missões diziam que \enquote{em \emph{dev} a IA é o \emph{mock}} e
+aceitavam a reserva como verde --- por isso o defeito passou despercebido.
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{itemize}
+  \item \textbf{Sem teto de saída nas duas chamadas} (decisão do Lucas:
+    \enquote{não precisamos desse limite, o modelo vai pensar e tudo bem}). As
+    constantes saíram de \arq{prompts.ts} dos dois módulos, e o
+    \cd{generateJson} já não recebe \cd{maxTokens}. O que limita o custo e a
+    espera continua: o teto de TEMPO de cerca de 6\,s por \cd{Promise.race}, UMA
+    tentativa, temperatura 0, o \emph{schema} fechado com o \emph{enum}, o
+    \cd{validar} Zod, o \emph{rate limit} por estudante, o \emph{cache} da
+    diagramação e a quota do perfil \cd{estudante} (\cd{temSaldo} antes, o
+    débito no \cd{aoUsarTokens}, que agora cobra também o raciocínio).
+  \item \textbf{As suítes das três missões revisadas usam a IA real de ponta a
+    ponta} (Vertex, com o ADC válido), nunca contornando o \emph{mock} (decisão
+    do Lucas). \arq{estudante/\B{}10-quem-mandou-isso.mjs} cria a atividade por
+    \enquote{Gerar Atividade com IA} e exige \cd{usouIa} e a origem \cd{ia};
+    \arq{estudante/\B{}11-a-selecao.mjs} gera a cobertura com IA (\cd{usouIa}),
+    exige todas as imagens geradas, prova o Canal A no painel de evidências
+    ANTES da enquete \cd{p1} (que também marca a EF07CO11) e exige o
+    \emph{podcast} pronto, com a voz do TTS; \arq{estudante/\B{}12-jornal-da-escola.mjs}
+    gera o pacote com IA, monta as escolhas da criança pelo gabarito que a
+    professora lê pela api --- o molde sorteado no servidor garante os oito
+    meios, três ou mais publicáveis, duas ou mais antigas e ao menos uma sem
+    fonte --- e exige \cd{origem: "ia"} em toda resposta do \rota{POST
+    /jornal-escola/diagramar}. A reserva deixou de ser verde: ela é o sintoma.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Subir o teto para cerca de 512 \emph{tokens}}, com folga para o
+    raciocínio medido (a proposta do agente). Descartada pelo Lucas: é um
+    número escolhido contra uma medição de hoje, e o mesmo modelo já pensou 300
+    a 400 \emph{tokens} na Ajuda (\adrr{ADR-132}); um teto que volta a cortar
+    em silêncio é o defeito de novo, e o teto de tempo já limita a espera.
+  \item \textbf{Desligar o raciocínio.} Impossível neste modelo:
+    \cd{thinkingBudget: 0} não o desliga, \cd{thinkingLevel: "MINIMAL"} é
+    recusado com 400 e \cd{"LOW"} ainda pensa 28 \emph{tokens}.
+  \item \textbf{Manter o teto e aceitar a reserva.} A diagramação por IA e o
+    Canal A deixariam de existir na prática, pagando a quota da chamada (o
+    \emph{vendor} cobra o que foi gerado) sem nunca entregar o resultado.
+  \item \textbf{Continuar a e2e com o \emph{mock}} ou com o banco e a cobertura
+    prontos. Foi o que escondeu este defeito: com a reserva aceita como verde,
+    a suíte provava um caminho que a sala nunca percorre.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{O custo por criança deixa de ter teto de saída}: o raciocínio é
+    cobrado, e nada além da quota do perfil e do teto de tempo segura uma
+    resposta longa.
+  \item \textbf{A latência sobe um pouco}, ainda dentro dos cerca de 6\,s; se
+    o raciocínio crescer, quem corta é o \cd{Promise.race}, e a reserva volta
+    com o motivo \cd{tempo-esgotado}.
+  \item \textbf{As três suítes dependem do ADC válido, da quota do estudante e
+    do professor demo e do Vertex no ar}: com a credencial expirada, o saldo
+    do dia gasto ou o provedor fora, elas ficam vermelhas, e o vermelho não é
+    do produto. Rodam mais devagar, e o conteúdo muda a cada execução (o
+    roteiro do Jornal lê o gabarito em vez de cravar manchetes).
+  \item \textbf{Nenhum teste automatizado de unidade pega a volta do teto}: o
+    \emph{mock} não raciocina. Quem prova é a e2e com a IA real.
+\end{itemize}
+
+\textbf{Gatilho.} O custo de IA por estudante medido nessas chamadas pesar na
+quota ou na fatura; o \cd{Promise.race} passar a cortar com frequência
+(\cd{tempo-esgotado} nos dois \emph{logs}); a troca de modelo
+(\env{VERTEX\_MODEL}) por um que desligue o raciocínio de fato; ou as suítes
+ficarem vermelhas pela IA com frequência a ponto de esconder regressão do
+produto.
