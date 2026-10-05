@@ -1281,7 +1281,9 @@ do Vertex responder.
 \section{exp07ef1b --- A Seleção}
 \label{sec:exp07ef1b}
 
-\textbf{7º ano · Unidade 1 · clone de rede social de fotos · \cd{instanooria}}
+\textbf{7º ano \textperiodcentered{} Unidade 1 \textperiodcentered{} clone de
+rede social de fotos \textperiodcentered{} \cd{unoovista} (desde a 1.1.0,
+\adrr{ADR-135}) \textperiodcentered{} 1.2.0}
 
 A Amara pede ajuda para cobrir um evento do bairro nos Stories do grêmio. O feed
 tem 12 posts de três perfis --- o oficial, o comunitário e o de números, 4 de
@@ -1301,37 +1303,58 @@ as duas enquetes da Amara, na DM, fecham a missão (\adrr{ADR-115}).
 Atividade e rodada & A ATIVIDADE é a \textbf{cobertura}: o tema que a
   professora cria (partindo do banco curado da Praça Central ou de um lote
   gerado por IA). A plataforma não cria nada (\adrr{ADR-130}): sem cobertura em
-  andamento, 403 \cd{atividade-nao-preparada}. Criar não põe no ar --- a
-  professora escolhe a em andamento na lista, e pô-la no ar abre a rodada
-  seguinte à última. Zerar a turma abre a rodada seguinte e guarda a anterior.
-  É o que a evidência pedagógica exige (\adrr{ADR-112}).\\
-\zebra Um botão só & A professora avança \cd{exploracao} \seta{} \cd{mural}
+  andamento, 403 \cd{atividade-nao-preparada}. Criar não põe no ar sozinho
+  --- o toggle do assistente ou o \enquote{Usar esta atividade agora} da lista
+  põem, e pôr no ar abre a rodada seguinte à última e \textbf{libera a missão
+  na Sala de Aula}, inclusive encerrada (\adrr{ADR-146}). Zerar a turma abre a
+  rodada seguinte e guarda a anterior. É o que a evidência pedagógica exige
+  (\adrr{ADR-112}).\\
+\zebra Aprovação em duas fases & No passo de conteúdo da criação, numa tela
+  só (\adrr{ADR-146}): primeiro os textos (os 12 cards com a legenda editável;
+  aprovar grava a cobertura), depois as imagens, geradas no card de cada post,
+  com \enquote{Gerar outra imagem}. \enquote{Aprovar Cobertura e Abrir Turma}
+  só acende depois das duas e grava \cd{imagens\_aprovadas\_em}; sem ele a
+  atividade fica \enquote{Em preparo} e não vai ao ar (409
+  \cd{imagens-nao-aprovadas}).\\
+Um botão só & A professora avança \cd{exploracao} \seta{} \cd{mural}
   \seta{} \cd{fichas} \seta{} \cd{explicacao}, uma etapa por vez e com o
   destino explícito --- clique duplo não pula etapa. O estudante lê
   \rota{GET /a-selecao/gate} por \emph{polling} de 5 s (\adrr{ADR-93}).\\
-O par do Mural & É do COMPUTADOR (\adrr{ADR-111}): \cd{colapsarEmUnidades} sobre
+\zebra O par do Mural & É do COMPUTADOR (\adrr{ADR-111}): \cd{colapsarEmUnidades} sobre
   as equipes, distância máxima entre as matrizes, nunca dentro da mesma
   unidade. O par é carimbado por sessão, com o rótulo congelado (o primeiro nome
   ou o nome da equipe) --- nunca pelo id da equipe, que o \cd{PUT} recria. Sobra
   de sala ímpar, quem publica depois e a aula de um computador só recebem um
   colega virtual (Tomás ou Malu).\\
-\zebra O que o bundle não sabe & A lente de cada post, as tags e a matriz vêm da
+O que o bundle não sabe & A lente de cada post, as tags e a matriz vêm da
   api, e as fichas só depois da etapa \cd{fichas}. A cópia que nomeia as lentes
   carrega sob demanda, na explicação. Um \emph{grep} no \cd{dist/} prova que não
   há gabarito, tag nem trecho de prompt no \emph{bundle}.\\
-Legenda e reflexão & Contam \emph{code points} dos dois lados (o Zod e o
+\zebra Legenda e reflexão & Contam \emph{code points} dos dois lados (o Zod e o
   \emph{CHECK} do banco). A legenda passa por um sanitizador (link, telefone,
   e-mail, menção, palavrão) porque outro estudante a lê no Mural; a reflexão é
   só do professor da turma (\adrr{ADR-108}).\\
-\zebra Evidência & A ficha \arq{evidencias/fichas/exp07ef1b.ts}: EF07CO11 com a
+Evidência & A ficha \arq{evidencias/fichas/exp07ef1b.ts}: EF07CO11 com a
   leitura da legenda por IA (o Canal A) e a enquete \cd{p1}; EF07CO08 com a
   enquete \cd{p2}. As alternativas são embaralhadas a cada exibição. Sem IA, o
-  Canal A não marca nada, e fica \enquote{Não avaliado}.\\
-Mídia & A professora gera as imagens no preparo (2 por chamada, porque o BFF
-  corta em 30 s), com cache no \emph{bucket} por contrato em
-  \cd{experiencias/exp07ef1b/selecao/}. Post sem foto vira um card de texto com
-  a MESMA forma para os três perfis, e o bloco de números vira gráfico desenhado
-  a partir dos dados.\\
+  Canal A não marca nada, e fica \enquote{Não avaliado}. Durante a aula, o
+  painel de habilidades se refaz quando a evidência muda, e mais uma vez na
+  volta seguinte, porque o Canal A chega depois (\adrr{ADR-146}).\\
+\zebra Mídia & As imagens se geram na segunda fase da aprovação (2 por chamada,
+  porque o BFF corta em 30 s), com cache no \emph{bucket} por contrato em
+  \cd{experiencias/exp07ef1b/selecao/}, pelo \emph{hash} da descrição.
+  \enquote{Gerar outra imagem} grava num arquivo NOVO, sempre pago, e só antes
+  da aprovação. Post sem foto vira um card de texto com a MESMA forma para os
+  três perfis, e o bloco de números vira gráfico desenhado a partir dos
+  dados.\\
+O feed da 1.2.0 & Só o salvar nas ações do post: curtir, comentar e
+  compartilhar saíram, com a dica das cinco curtidas e o \enquote{Ver todos os
+  N comentários}. A contagem de curtidas fica, e cada comentário mostra o
+  autor --- um apelido fictício que a IA escreve, com reserva determinística.
+  \enquote{Confirmar publicação} no tom padrão; o Mural abre no Story do par,
+  com a legenda do post sobre a imagem; a Amara tem foto; e a tela
+  \enquote{ainda não está aberta} pergunta de novo a cada 5\,s
+  (\adrr{ADR-146}).\\
 \zebra O que o DS cobre & Desde a 1.0.1 (DS 0.2.7), \textbf{nenhuma compensação
   local}: a faixa de dica e o aviso da poda são o \cd{InlineHint}, o gesto de
   rolar é o \cd{GestureHint}, a tarja de conexão é o \cd{Snackbar} do clone, a
@@ -1372,7 +1395,9 @@ A voz & O TTS do Gemini pelo \emph{provider} da api (\cd{generateSpeech}):
 \end{tabularx}
 
 A suíte \arq{scripts/e2e/estudante/11-a-selecao.mjs} percorre a missão com a
-professora e dois estudantes de escolhas divergentes, e termina no podcast: as
+professora e dois estudantes de escolhas divergentes --- com as duas fases da
+aprovação, a missão encerrada na sala antes de abrir a turma (pôr no ar a
+reabre) e o Mural aberto no par ---, e termina no podcast: as
 três falas no preparo, a transcrição e o ramo do áudio que o ambiente permitir
 (pronto com a IA de verdade; a transcrição sozinha com o \emph{mock}).
 

@@ -984,7 +984,10 @@ distinção que o OneRoster faz entre \cd{roles}, no nível da organização, e
 A camada de cima é a \textbf{sala de aula} (\adrr{ADR-69}): quem tem matrícula
 de professor na turma libera a missão nela, e é essa liberação que abre a porta
 para o estudante. Gestor lê a sala e não decide a aula --- a mesma linha que
-separa administrar a escola de dar a aula.
+separa administrar a escola de dar a aula. O professor libera em dois lugares, pela
+MESMA rota idempotente: o botão da sala e o \enquote{pôr no ar} de uma
+atividade, que libera também a missão encerrada (\adrr{ADR-146}); quando quem
+pôs no ar é um gestor, a liberação é recusada e a tela avisa.
 
 \textbf{Seis rotas ficaram de fora dessa porta}, e foram fechadas depois: o
 \enquote{zerar turma} da Vila e do unooGPT, os cartões da Vila, os dois

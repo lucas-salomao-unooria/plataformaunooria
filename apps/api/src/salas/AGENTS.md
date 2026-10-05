@@ -31,6 +31,12 @@ Complementa o `AGENTS.md` de `apps/api`, que vence em conflito.
   exp02em1b (que servia o relógio "aguardando" a quem estava solto). Sem sala não há
   missão; quem explica é a tela do hub, porque um erro dentro do aparelho não
   diria "peça para a coordenação te matricular" sem sair do disfarce.
+- **O `PUT turma/:t/missoes/:exp` tem DOIS chamadores no hub** (ADR-146): o
+  botão da sala e o "pôr no ar" da atividade (`liberarNaSala`, em
+  `hub/lib/entre-redes/criar-atividade.ts`), que libera sempre, inclusive
+  `encerrada`. Ele depende de a rota ser idempotente e de `encerrada →
+  liberada` valer; mudar qualquer um faz a atividade ir ao ar com a turma no
+  cadeado.
 - **Fixture de teste que abre experiência precisa de `tests/liberar-de-teste.ts`.**
   Quatro suítes quebraram quando a guarda entrou — quem quebrar com
   `missao-nao-liberada` não tem bug, tem fixture faltando.

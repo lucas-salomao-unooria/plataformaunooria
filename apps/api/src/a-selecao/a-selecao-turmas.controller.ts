@@ -249,6 +249,8 @@ export class ASelecaoTurmasController {
       "**Idempotente**: pôr no ar a que já está no ar devolve `mudou: false` e não muda nada.",
       "Trocar com a aula correndo leva quem está jogando para a atividade nova: a experiência nota o `coberturaId` novo no polling do gate e recarrega. A tela pede confirmação antes.",
       "Cobertura de outra turma responde **404** `atividade-nao-encontrada`.",
+      "Sem a segunda fase da aprovação (as imagens, `POST …/aprovar-imagens`), **409** `imagens-nao-aprovadas` (ADR-146).",
+      "Pôr no ar NÃO libera a missão na sala por aqui: quem faz o `PUT /salas/turma/:turmaId/missoes/exp07ef1b` é o hub, logo depois (ADR-146).",
     ],
   })
   emAndamento(

@@ -618,7 +618,7 @@ Unooria; até ali era o Instanooria. O que o estudante faz não mudou. É a segu
 que cada estudante demonstrou das habilidades da BNCC (\id{E14}), e a única em
 que a IA dá um nível, como exceção declarada (\id{H09.3.1}).
 
-\begin{historia}{H06.12.1}{Preparar a cobertura da turma}{\parcial}
+\begin{historia}{H06.12.1}{Preparar a cobertura da turma}{\pronto}
 \hu{Professor}{escolher o acontecimento que os três veículos cobrem e revisar
 os 12 posts antes da aula}{que a turma leia uma cobertura que pareça a da
 cidade dela}
@@ -634,32 +634,36 @@ cidade dela}
     escreve os 12 posts, quatro de cada veículo, e as três falas do podcast que
     dependem do tema (\id{H06.12.6}); sem saldo ou com a IA fora do ar, a tela
     avisa e carrega a cobertura pronta.
-  \item Leio e edito os 12 posts, com as fichas que só eu vejo (a fonte ouvida
-    e o ângulo de cada um). Cada legenda tem de 20 a 45 palavras, e a tela
-    aponta a que sair do limite.
-  \item Nada chega à turma sem \enquote{Criar atividade} --- e nem ele põe no
-    ar: a cobertura nova fica pronta na lista até eu escolher \enquote{Usar esta
-    atividade agora} (\id{H06.13.3}). A cobertura que estava no ar fica guardada.
-  \item Na página da atividade, \enquote{Gerar imagens} cria as imagens dos
-    posts, duas por vez --- também numa atividade pronta, antes da aula. Post sem imagem mostra a descrição da cena, e a missão roda
-    igual; os posts de números da cobertura pronta já vêm com gráfico.
+  \item Leio e edito os 12 posts, cada um num card com as fichas que só eu
+    vejo (a fonte ouvida e o ângulo). Cada legenda tem de 20 a 45 palavras, e a
+    tela aponta a que sair do limite. Os dois comentários de leitor de cada post
+    vêm com quem os escreveu, um apelido inventado de rede social.
+  \item No lugar de cada imagem, o card avisa \enquote{A imagem será gerada
+    após a aprovação dos textos}: aprovar os textos é a primeira fase, e só
+    depois dela as imagens são criadas (\id{H06.12.7}) --- imagem de um
+    rascunho gastaria o meu limite à toa.
+  \item \enquote{Aprovar textos e gerar as imagens} guarda a cobertura. Ela só
+    chega à turma depois de eu aprovar também as imagens; até lá, aparece na
+    lista como \enquote{Em preparo}. A cobertura que estava no ar fica
+    guardada.
 \end{itemize}
-\pendencia{as imagens geradas precisam da revisão do conteúdo antes da
-primeira rede.}
 \end{historia}
 
-\begin{historia}{H06.12.2}{Escolher três posts e publicar nos Stories}{\pronto}
+\begin{historia}{H06.12.2}{Escolher três posts e publicar nos Stories}{\parcial}
 \hu{Estudante do 7º ano}{rolar a cobertura, salvar os posts que explicam o que
 aconteceu e publicar três nos Stories do grêmio com uma legenda}{fazer o que eu
 faria no meu celular, achando que estou contando a história toda}
 \aceite
 \begin{itemize}
-  \item A missão abre na conversa com a Amara, do grêmio, que pede ajuda para
-    fechar a cobertura; \enquote{Abrir Feed da Cobertura} leva ao feed.
+  \item A missão abre na conversa com a Amara, do grêmio, que tem foto de
+    perfil e pede ajuda para fechar a cobertura; \enquote{Abrir Feed da
+    Cobertura} leva ao feed.
   \item O feed intercala os 12 posts dos três veículos, nunca três seguidos do
-    mesmo. Curtir não conta: só o marcador salva, e o contador mostra
-    \enquote{Posts salvos: N}. Com três salvos, aparece o atalho para a aba
-    Salvos.
+    mesmo. O único botão de cada post é o de salvar: não há curtir, comentar
+    nem compartilhar, porque nada disso mudaria a missão. Cada post mostra
+    quantas curtidas teve e dois comentários, com o nome de quem comentou. O
+    contador mostra \enquote{Posts salvos: N}, e com três salvos aparece o
+    atalho para a aba Salvos.
   \item Em \enquote{Itens Salvos} fico com exatamente três (\enquote{3 de 3
     selecionados}); com mais, a tela pede para tirar o excesso.
   \item Escrevo a legenda dos Stories, de 10 a 140 caracteres. Legenda com
@@ -669,7 +673,13 @@ faria no meu celular, achando que estou contando a história toda}
     poderá ser desfeita.}). Publicado, não volto ao feed nem edito a legenda, e
     a tela espera o professor liberar o Mural.
   \item Se eu recarregar a página, volto à espera, com a publicação guardada.
+  \item Se eu entrar antes de o professor abrir a turma, a tela de espera
+    confere de novo a cada poucos segundos e me leva à missão assim que ele
+    abrir, sem eu recarregar.
 \end{itemize}
+\pendencia{a foto da Amara é uma ilustração da equipe, à espera da aprovação
+do PO; e o feed só com o botão de salvar depende da próxima versão da
+biblioteca de componentes visuais, ainda não publicada.}
 \end{historia}
 
 \begin{historia}{H06.12.3}{Ver a minha seleção ao lado da de um colega}{\pronto}
@@ -678,9 +688,11 @@ do mesmo feed}{perceber que cada seleção deixa de fora parte da história, sem
 que ninguém tenha mentido}
 \aceite
 \begin{itemize}
-  \item Quando o professor libera o Mural, vejo \enquote{Sua publicação} ao
-    lado da publicação do colega que mais se afastou da minha escolha, pelo
-    primeiro nome dele ou pelo nome da equipe. Do mesmo jeito, o colega com
+  \item Quando o professor libera o Mural, ele abre na publicação do colega
+    que mais se afastou da minha escolha, pelo primeiro nome dele ou pelo nome
+    da equipe, e \enquote{Sua publicação} fica ao lado, a um toque. Cada post
+    mostra a legenda do veículo sobre a imagem: comparar as seleções é comparar
+    o que cada veículo contou. Do mesmo jeito, o colega com
     quem a minha publicação foi pareada vê os três posts que escolhi, a minha
     legenda e o meu primeiro nome (ou o da minha equipe) --- e só isso.
   \item Quando a turma divide computador, o par é de computador: dois
@@ -737,7 +749,9 @@ computador publicou}{abrir o debate com o retrato da sala, sem expor ninguém}
     acerto.
   \item O bloco \enquote{Habilidades da BNCC} mostra a EF07CO11 pela legenda e
     pela primeira enquete da Amara (vale a melhor das duas) e a EF07CO08 pela
-    segunda, e é ali que confirmo e ajusto (\id{E14}).
+    segunda, e é ali que confirmo e ajusto (\id{E14}). Durante a aula ele se
+    atualiza sozinho, também quando a leitura da legenda chega um pouco depois
+    da publicação.
   \item A legenda é lida pela IA, que dá o nível dela na EF07CO11 --- a exceção
     declarada à regra de que a IA não avalia (\id{H09.3.1}). Se a IA falhar,
     nada é marcado e vale a enquete; o estudante nunca vê o nível, e eu o
@@ -780,6 +794,31 @@ retomá-la na aula seguinte, com a turma ouvindo a mesma coisa}
 se não passar, o episódio é gravado em estúdio, com o mesmo roteiro.}
 \end{historia}
 
+\begin{historia}{H06.12.7}{Aprovar as imagens antes de abrir a turma}{\parcial}
+\hu{Professor}{ver cada imagem junto do seu post e trocar a que não serve antes
+de a turma entrar}{que nenhum estudante veja uma imagem que eu não vi}
+\aceite
+\begin{itemize}
+  \item Aprovados os textos (\id{H06.12.1}), as imagens são criadas sozinhas,
+    na mesma tela, cada uma no card do seu post, ao lado da legenda --- vejo a
+    composição que o estudante vai ver. Os posts de números já vêm com gráfico.
+  \item \enquote{Gerar outra imagem} troca a imagem de um post só. Cada troca
+    conta no meu limite diário, e só vale antes da aprovação.
+  \item O último passo da criação, \enquote{Aprovar Cobertura e Abrir Turma}
+    (ou \enquote{Aprovar cobertura}, se eu não for pôr no ar agora), só acende
+    depois das duas fases. Ele aprova as imagens e, com \enquote{Pôr esta
+    atividade no ar agora} marcado, abre a turma (\id{H06.13.3}).
+  \item Se a imagem de um post não sair, ele segue com a descrição da cena, que
+    eu vejo no mesmo card antes de aprovar; a missão roda igual.
+  \item Se eu sair antes de aprovar, a atividade fica \enquote{Em preparo}, sem
+    \enquote{Usar esta atividade agora}; a página dela mostra os mesmos cards,
+    com \enquote{Aprovar imagens}. Aprovadas, as imagens não mudam mais: a
+    turma pode estar olhando para elas.
+\end{itemize}
+\pendencia{as imagens geradas precisam da revisão do conteúdo antes da
+primeira rede.}
+\end{historia}
+
 % ---------------------------------------------------------------------------
 % ---------------------------------------------------------------------------
 \feature{F06.13}{As atividades da missão}{\pronto}
@@ -797,8 +836,8 @@ o que a turma está fazendo e o que está pronto para a próxima aula}
 \begin{itemize}
   \item \enquote{Suas atividades com a turma\ldots} lista cada atividade com o
     tema, de onde veio o conteúdo, quantas rodadas já rodou e quando foi criada,
-    e o estado: \enquote{Em andamento}, \enquote{Pronta} ou, no Unoovista,
-    \enquote{Em preparo}. A em andamento vem primeiro.
+    e o estado: \enquote{Em andamento}, \enquote{Pronta} ou, no Unoovista e na
+    A Seleção, \enquote{Em preparo}. A em andamento vem primeiro.
   \item Aberta sem turma, a ficha pede para escolher uma: a atividade é sempre
     de uma turma.
   \item Sem nenhuma em andamento, a ficha avisa que a turma vê a missão fechada.
@@ -838,6 +877,11 @@ próxima aula sem tirar do ar a de hoje}
   \item \enquote{Usar esta atividade agora} põe a escolhida em andamento. Se a
     turma estiver fazendo outra, a tela pergunta antes: quem está jogando passa
     para a nova, e a outra volta a ficar pronta, com tudo guardado.
+  \item Pôr no ar --- pelo último passo da criação ou pelo botão --- também
+    abre a missão para a turma na sala de aula (\id{H04.2.1}), mesmo que eu a
+    tenha encerrado lá. Antes, a atividade ficava no ar e a turma via a missão
+    fechada. Se só a abertura na sala falhar, a tela avisa e diz onde
+    terminar.
   \item Uma atividade em andamento por turma. No Unoovista, duas turmas do
     mesmo professor podem rodar ao mesmo tempo.
   \item Voltar a uma atividade que já rodou começa uma rodada nova; as
@@ -854,7 +898,9 @@ conduzir a aula sem procurar em outra tela}
     (quando a missão tem) e o painel de habilidades.
   \item O painel da aula, com os botões que avançam a turma e o
     \enquote{Zerar}, só aparece na atividade em andamento; na pronta, a página
-    oferece \enquote{Usar esta atividade agora}.
+    oferece \enquote{Usar esta atividade agora}. Na A Seleção, a atividade em
+    preparo mostra, no lugar dele, os cards dos posts com \enquote{Aprovar
+    imagens} (\id{H06.12.7}).
 \end{itemize}
 \end{historia}
 
