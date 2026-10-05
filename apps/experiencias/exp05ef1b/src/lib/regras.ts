@@ -47,8 +47,6 @@ export type Tela =
   | "revelacao"
   | "sintese"
   | "revelacao-atrasada"
-  | "reflexao"
-  | "confirmacao"
   | "perguntas"
   | "concluida";
 
@@ -60,8 +58,6 @@ export interface Vista {
   muralAberto: boolean;
   /** Esta aba já MOSTROU os crachás. O servidor não guarda "já viu" — um F5 mostra de novo, sem dano. */
   viuRevelacao: boolean;
-  /** A regra acabou de ser enviada: a casca confirma antes de voltar ao chat da Nina. */
-  confirmacaoPendente: boolean;
   /** A despedida da Nina ainda está na tela, com a missão já concluída no servidor. */
   segurandoDespedida: boolean;
 }
@@ -70,7 +66,6 @@ export const VISTA_INICIAL: Vista = {
   ninaAberta: false,
   muralAberto: false,
   viuRevelacao: false,
-  confirmacaoPendente: false,
   segurandoDespedida: false,
 };
 
@@ -83,11 +78,11 @@ export const VISTA_INICIAL: Vista = {
  *
  * O caso que não é óbvio é o de **quem votou atrasado**. A revelação não
  * empurra a triagem: quem confirmou o Mural depois de o professor abrir a
- * revelação vota e cai direto no passo da TURMA — que pode já ser `reflexao`.
+ * revelação vota e cai direto no passo da TURMA — que pode já ser `perguntas`.
  * Em `sintese` os crachás estão no histórico do Mural, acima da lâmina; em
- * `reflexao` a casca tomaria a tela sem ele ter visto nada, então o Mural
- * aparece antes, com "Continuar". Um F5 mostra de novo — a regra ainda não foi
- * escrita, e rever os crachás não custa nada.
+ * `perguntas` o chat da Nina tomaria a tela sem ele ter visto nada, então o
+ * Mural aparece antes, com "Continuar". Um F5 mostra de novo — rever os
+ * crachás não custa nada.
  */
 export function telaDe(estado: Pick<Estado, "passo" | "preparada" | "revelacao">, vista: Vista): Tela {
   if (!estado.preparada) return "preparo";
@@ -104,10 +99,8 @@ export function telaDe(estado: Pick<Estado, "passo" | "preparada" | "revelacao">
       return "revelacao";
     case "sintese":
       return "sintese";
-    case "reflexao":
-      return estado.revelacao && !vista.viuRevelacao ? "revelacao-atrasada" : "reflexao";
     case "perguntas":
-      return vista.confirmacaoPendente ? "confirmacao" : "perguntas";
+      return estado.revelacao && !vista.viuRevelacao ? "revelacao-atrasada" : "perguntas";
     case "concluida":
       return vista.segurandoDespedida ? "perguntas" : "concluida";
   }
@@ -128,7 +121,8 @@ export function marcaComoVista(tela: Tela): boolean {
 export function gateDoPasso(passo: Passo): GateVisto | null {
   if (passo === "revelacao") return "revelacao";
   if (passo === "sintese") return "sintese";
-  if (passo === "reflexao") return "reflexao";
+  /* As perguntas SÃO a reflexão (ADR-145): o gate que o professor abriu é o mesmo. */
+  if (passo === "perguntas") return "reflexao";
   return null;
 }
 
@@ -204,29 +198,6 @@ export function mensagensDoMural(mensagens: readonly MensagemPublica[], selecao:
 /** "você e mais N participantes": N exclui a própria criança. */
 export function outrosParticipantes(participantes: number): number {
   return Math.max(0, participantes - 1);
-}
-
-// ─────────────────────────────────────────────────── o Então
-
-/** O `Então` como o servidor o grava: sem espaço repetido e com `trim` (`regras/reflexao.ts#validarEntao`). */
-export function normalizarEntao(bruto: string): string {
-  return bruto.replace(/\s+/g, " ").trim();
-}
-
-/** Quantos caracteres faltam para o piso — contados DEPOIS do `trim`, como o servidor conta. */
-export function faltamParaOPiso(bruto: string, piso: number): number {
-  return Math.max(0, piso - normalizarEntao(bruto).length);
-}
-
-/**
- * O botão "Salvar e Enviar Reflexão" acende? Condição escolhida E o texto entre
- * o piso e o teto. O filtro de texto sem sentido NÃO está aqui: ele é do
- * servidor, e a recusa volta como 400 — que a tela lê como `entao-sem-sentido`
- * justamente porque o tamanho já foi conferido antes de enviar.
- */
-export function regraPronta(se: string | null, bruto: string, piso: number, teto: number): boolean {
-  const tamanho = normalizarEntao(bruto).length;
-  return se !== null && tamanho >= piso && tamanho <= teto;
 }
 
 // ───────────────────────────────────────────────── a revelação

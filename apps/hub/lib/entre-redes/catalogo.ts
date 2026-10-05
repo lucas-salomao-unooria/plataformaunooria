@@ -709,8 +709,8 @@ export const MISSAO_QUEM_MANDOU_ISSO: Missao = {
       "(EF05CO08, EF05CO03, EF05CO04).",
     duracao: "1 aula de 50 min (ou 2 sessões de 25 min)",
     formato:
-      "Clone do WhatsApp em tema escuro: a conversa com a Nina, o grupo da turma com 8 mensagens, o " +
-      "Mural da Turma e a enquete. A regra final é montada fora do aplicativo, na tela da Unooria.",
+      "Unoochat, o aplicativo de mensagens da Unooria, em tema claro: a conversa com a Nina, o grupo da " +
+      "turma com 8 mensagens, o Mural da Turma, a enquete e as duas perguntas finais.",
     atos: [
       {
         rotulo: "1 — Desafiar: o pedido da Nina",
@@ -750,25 +750,24 @@ export const MISSAO_QUEM_MANDOU_ISSO: Missao = {
           "minutos. A síntese pode ser pulada.",
       },
       {
-        rotulo: "6 — Refletir: a regra Se/Então e as perguntas da Nina",
+        rotulo: "6 — Refletir: as perguntas da Nina",
         texto:
-          "Liberar Reflexão fecha o aplicativo: na tela da Unooria, a Nina conta do áudio do tio no " +
-          "grupo da família e a criança monta a própria regra, “Se a mensagem for…, então eu…”. De " +
-          "volta ao chat da Nina, ela responde a duas perguntas rápidas. A regra vai para você e para " +
-          "mais ninguém.",
+          "Liberar Reflexão leva cada aparelho de volta ao chat da Nina, que faz duas perguntas de " +
+          "múltipla escolha: se o tom diz se a mensagem é verdadeira, e qual regra funciona antes de " +
+          "repassar. As respostas registram a EF05CO03 e a EF05CO04 no painel de habilidades.",
       },
     ],
     preparo: [
       "Libere a missão para a turma na sala de aula — sem a liberação, o cartão fica com cadeado para as crianças.",
-      "Aprove o pacote de mensagens da turma em A aula e os resultados: escolha o componente " +
-        "curricular, escreva o tema (ele completa a fala da Nina, “Rolou uma confusão sobre…”), liste " +
-        "de 3 a 6 fatos da aula e gere com IA — ou use o pacote curado padrão, “O Mistério do Passeio " +
-        "ao Museu”. Sem pacote aprovado, a criança entra e vê uma tela de espera.",
+      "Crie a atividade em Nova atividade, aqui na ficha: escolha o componente curricular, escreva o " +
+        "tema (ele completa a fala da Nina, “Rolou uma confusão sobre…”), liste de 3 a 6 fatos da " +
+        "aula, um por linha, e gere com IA — ou use o pacote curado padrão, “O Mistério do Passeio ao " +
+        "Museu”. Sem atividade em andamento, a criança entra e vê uma tela de espera.",
       "Leia as 8 mensagens antes de aprovar: os selos de verdadeira ou falsa e de emocional ou " +
         "neutra são só seus, e dá para editar qualquer texto. Nada gerado por inteligência artificial " +
         "chega à turma sem o seu clique em Aprovar Pacote.",
-      "Se a turma divide computadores, monte as equipes nesta ficha: quem entra na missão representa " +
-        "a equipe, e o painel conta por computador.",
+      "Se a turma divide computadores, monte as equipes ao criar a atividade: quem entra na missão " +
+        "representa a equipe, e o painel conta por computador.",
       "Deixe o painel aberto no seu computador: são três botões durante a aula — Liberar Revelação, " +
         "Apresentar Síntese e Liberar Reflexão —, na ordem, e nenhum deles volta atrás.",
       "Não diga que a aula é sobre notícia falsa: a missão mede o que a criança encaminha quando " +

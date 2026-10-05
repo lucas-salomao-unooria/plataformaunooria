@@ -12,7 +12,6 @@ import { auth } from "@/lib/auth";
 import { ROTULO_DO_ESTADO, textoDasRodadas } from "@/lib/entre-redes/atividades";
 import { rotaDaMissao, type Missao } from "@/lib/entre-redes/catalogo";
 import { painelDeHabilidades } from "@/lib/evidencias-servidor";
-import { rubricaDaRodada } from "@/lib/quem-mandou-regras";
 import {
   ROTULO_DA_ORIGEM,
   type MaterialDoProfessor,
@@ -129,14 +128,8 @@ export async function ResultadosQuemMandouIsso({
   const atividadeDoPainel = painel?.atividade && painel.atividade.pacoteId === detalhe?.id ? painel.atividade : null;
   const mensagens = atividadeDoPainel && detalhe ? detalhe.mensagens : [];
   const opcoes = material?.opcoes ?? { motivos: [], condicoes: [] };
-  /* A rubrica do Se/Então (ADR-120): o que o professor já classificou NESTA rodada. */
-  const rubrica =
-    podeConduzir && atividadeDoPainel && habilidades?.temFicha
-      ? rubricaDaRodada(habilidades.estudantes, atividadeDoPainel)
-      : null;
-
   /* A SALA (ADR-69) é a outra porta, e é da TURMA, não da atividade: sem a
-     missão liberada na sala, o card fica com cadeado para as crianças, esteja
+     missão liberada na sala, o cartão fica com cadeado para as crianças, esteja
      a atividade em andamento ou não. A liberação acontece na sala — daqui, o
      atalho para lá. */
   const naSala = sala?.missoes.find((m) => m.expId === EXP_ID) ?? null;
@@ -324,7 +317,6 @@ export async function ResultadosQuemMandouIsso({
                 mensagens={mensagens}
                 opcoes={opcoes}
                 podeConduzir={podeConduzir}
-                rubrica={rubrica}
               />
               {podeConduzir && atividadeDoPainel ? (
                 <ZerarTurmaQuemMandou

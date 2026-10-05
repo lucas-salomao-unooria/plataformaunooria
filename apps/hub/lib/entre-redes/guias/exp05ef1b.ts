@@ -8,7 +8,7 @@ import type { GuiaDaAula } from "./tipos";
  * O que ele NÃO guarda, e vem por BLOCO VIVO (`guia/quem-mandou-o-pacote.tsx`,
  * lido de `GET /quem-mandou-isso/professor/material`): as 8 mensagens do banco
  * curado com o gabarito, o roteiro das 3 perguntas da roda de conversa, as
- * falas da Nina e do tio e as duas perguntas de evidência com o nível de cada
+ * falas da Nina e as duas perguntas de evidência com o nível de cada
  * alternativa. Tudo isso tem fonte na api (`quem-mandou-isso/catalogo.ts` e a
  * ficha E14), e uma cópia aqui seria a que diverge na primeira revisão de copy
  * — o professor conduziria a conversa com palavras que ninguém leu na tela.
@@ -56,7 +56,7 @@ export const GUIA_EXP05EF1B: GuiaDaAula = {
     "Reconhecer que a aparência de uma mensagem — séria ou alarmada — não diz se ela é verdadeira.",
     "Separar os dois eixos de uma mensagem: se ela é verdadeira ou falsa, e se o tom é emocional ou neutro.",
     "Identificar o que pesou na própria decisão de encaminhar: a pressa, a confiança em quem mandou, a emoção ou a aparência de real.",
-    "Formular uma regra do tipo “Se a mensagem for…, então eu…” para usar antes de repassar uma mensagem.",
+    "Reconhecer uma regra do tipo “Se a mensagem for…, então eu…” que funciona antes de repassar uma mensagem.",
   ],
 
   bncc: [
@@ -70,7 +70,7 @@ export const GUIA_EXP05EF1B: GuiaDaAula = {
       eixo: "Cultura Digital",
       principal: true,
       ondeAcontece:
-        "Etapas 2 e 3: as oito mensagens chegam sem etiqueta, e a criança escolhe as 3 que vão para o Mural. O painel registra o nível pela seleção — três verdadeiras é “atingiu”; duas verdadeiras e uma falsa, seja emocional ou neutra, “em processo”; duas falsas ou mais, “não atingiu”. O tipo da falsa que cada um repassou está na folha da turma, para você conversar. Ao zerar a turma com o mesmo pacote, quem já jogou não é medido de novo: ele já viu a resposta.",
+        "Etapas 2 e 3: as oito mensagens chegam sem etiqueta, e a criança escolhe as 3 que vão para o Mural. O painel registra o nível pela seleção — três verdadeiras é “atingiu”; duas verdadeiras e uma falsa, seja emocional ou neutra, “em processo”; duas falsas ou mais, “não atingiu”. O tipo da falsa que cada um repassou está na folha da turma, para você conversar. Ao zerar a turma, a rodada nova mede de novo, e o resultado fica com a melhor rodada.",
     },
     {
       codigo: "EF05CO03",
@@ -86,7 +86,7 @@ export const GUIA_EXP05EF1B: GuiaDaAula = {
         "Criar e simular algoritmos representados em linguagem oral, escrita ou pictográfica, que incluam sequências, repetições e seleções condicionais para resolver problemas de forma independente e em colaboração.",
       eixo: "Pensamento Computacional",
       ondeAcontece:
-        "Etapa 6: a criança monta a própria regra “Se a mensagem for…, então eu…” para o áudio do tio. Na segunda pergunta da Nina a criança reconhece, entre três regras de colegas, a que funciona de verdade — condição que dá para conferir, ação concreta e a ordem certa. O CRIAR é a regra que ela escreveu, e quem a classifica é você, com um clique, na folha da turma — o seu clique vale sobre a pergunta.",
+        "Etapa 6, a reflexão: na segunda pergunta da Nina a criança reconhece, entre três regras de colegas, a que funciona de verdade — condição que dá para conferir, ação concreta e a ordem certa. É essa resposta que o painel registra. Criar a própria regra fica para a roda de conversa e o cartaz da turma, depois da missão.",
     },
   ],
 
@@ -174,9 +174,9 @@ export const GUIA_EXP05EF1B: GuiaDaAula = {
       },
       {
         tempo: "35–45",
-        momento: "Refletir: a regra Se/Então e as perguntas da Nina",
+        momento: "Refletir: as perguntas da Nina",
         professor:
-          "Diga que a regra vai só para você e libere. Deixe escrever em silêncio; quem terminar responde às duas perguntas da Nina e vê a missão concluída.",
+          "Libere e deixe responder em silêncio: cada um volta ao chat da Nina, responde às duas perguntas e vê a missão concluída.",
         botao: "Liberar Reflexão",
       },
       {
@@ -217,7 +217,7 @@ export const GUIA_EXP05EF1B: GuiaDaAula = {
         nivel: "transferencia",
         pergunta: "Se chegar um áudio assustado no grupo da família pedindo para repassar correndo, o que você faz antes?",
         porQue:
-          "Tira a lição da ficção e a transforma em gesto — e é a ponte para a regra Se/Então que vem logo depois. Cace o verbo: parar, comparar com outra fonte, perguntar a um adulto.",
+          "Tira a lição da ficção e a transforma em gesto — e é a ponte para as perguntas da Nina, que vêm logo depois. Cace o verbo: parar, comparar com outra fonte, perguntar a um adulto.",
       },
     ],
   },
@@ -244,7 +244,7 @@ export const GUIA_EXP05EF1B: GuiaDaAula = {
       },
     ],
     nota:
-      "O painel de habilidades registra o que a criança escolheu e respondeu; esta folha registra o que ela DISSE. É com as duas, e com a regra Se/Então que ela escreveu, que você ajusta um nível no painel.",
+      "O painel de habilidades registra o que a criança escolheu e respondeu; esta folha registra o que ela DISSE. É com as duas que você ajusta um nível no painel.",
   },
 
   mediacao: [
@@ -269,12 +269,12 @@ export const GUIA_EXP05EF1B: GuiaDaAula = {
     {
       quando: "Alguém diz que nunca cairia nessa",
       faca:
-        "Pergunte o que ela faria com o áudio do tio, no grupo da família, dizendo que as aulas vão ser canceladas. A distância cai quando a mensagem vem de alguém em quem ela confia.",
+        "Pergunte o que ela faria com um áudio assustado do tio, no grupo da família, dizendo que as aulas vão ser canceladas. A distância cai quando a mensagem vem de alguém em quem ela confia.",
     },
     {
       quando: "A turma conclui que “não dá para acreditar em nada”",
       faca:
-        "Volte ao grupo: metade das mensagens era verdadeira. A lição não é desconfiar de tudo — é ter um jeito de conferir antes de repassar, que é a regra que eles vão montar a seguir.",
+        "Volte ao grupo: metade das mensagens era verdadeira. A lição não é desconfiar de tudo — é ter um jeito de conferir antes de repassar, que é o que as perguntas da Nina vão pedir a seguir.",
       naoFaca: "Encerrar aí. É a conclusão errada mais comum, e ela produz cinismo em vez de critério.",
     },
   ],
@@ -286,18 +286,18 @@ export const GUIA_EXP05EF1B: GuiaDaAula = {
       "Antes de encaminhar: compare com uma fonte confiável e não deixe a emoção apertar o botão por você.",
     ],
     registro:
-      "A regra “Se a mensagem for…, então eu…” que cada um montou no fim da missão. Ela vai para você e mais ninguém, e você a lê na folha da turma — é por ela que você confere, e ajusta se precisar, a EF05CO04 no painel de habilidades.",
+      "As respostas às duas perguntas da Nina, no painel de habilidades: a EF05CO03 e a EF05CO04 de cada criança, com o critério de cada nível no fim da página. Você confere e ajusta lá.",
     produto: {
       titulo: "O cartaz das regras do 5º ano",
       itens: [
-        "As regras Se/Então que a turma quiser compartilhar, escritas de novo pelas crianças que as fizeram — sem nome, se preferirem.",
+        "Regras “Se a mensagem for…, então eu…” que a turma criar na conversa, escritas pelas crianças — sem nome, se preferirem.",
         "As duas barras do Termômetro desenhadas no cartaz, com os números da turma.",
         "Uma frase final da turma para ficar no mural real da escola.",
       ],
     },
     rubrica: {
       nota:
-        "Formativa, e sobre o RACIOCÍNIO — nunca sobre ter caído no truque. Os níveis da plataforma saem da seleção e das duas perguntas da Nina, e a EF05CO04 você também classifica pela regra escrita, na folha da turma; esta rubrica é para você ler a regra escrita e o que a criança disse.",
+        "Formativa, e sobre o RACIOCÍNIO — nunca sobre ter caído no truque. Os níveis da plataforma saem da seleção e das duas perguntas da Nina; esta rubrica é para você ler o que a criança disse na roda e escreveu no cartaz.",
       criterios: [
         {
           criterio: "Separar tom e verdade (EF05CO03)",
@@ -329,7 +329,6 @@ export const GUIA_EXP05EF1B: GuiaDaAula = {
   cuidados: [
     "A criança que caiu na falsa neutra não é exemplo de nada. O telão é anônimo, e nenhuma pergunta sua pode pedir que alguém se identifique.",
     "Se o tema que você escolher for real e estiver quente na escola, diga antes que as mensagens da missão são inventadas para a aula — senão a família recebe em casa o boato que nasceu aqui.",
-    "A regra escrita é lida por você e mais ninguém: a coordenação não a vê. Diga isso em voz alta antes de liberar — é o que faz a criança escrever o que pensa em vez do que soa bem.",
     "Ao editar as mensagens, não use pessoa real da escola nem palavras que denunciem a aula (a plataforma recusa “atividade”, “gabarito”, “nota” e “exercício” no que a criança lê). O selo diz o que a MENSAGEM é, nunca o que quem a encaminhou é.",
   ],
 
@@ -347,7 +346,7 @@ export const GUIA_EXP05EF1B: GuiaDaAula = {
     {
       contexto: "Duas aulas de 25 minutos",
       comoAdaptar:
-        "Na primeira, as etapas 1 a 3, até o voto na enquete. Na segunda, a revelação, a roda de conversa e a regra. Nada se perde entre as duas.",
+        "Na primeira, as etapas 1 a 3, até o voto na enquete. Na segunda, a revelação, a roda de conversa e as perguntas da Nina. Nada se perde entre as duas.",
     },
     {
       contexto: "Turma com leitura ainda em construção",
@@ -385,17 +384,12 @@ export const GUIA_EXP05EF1B: GuiaDaAula = {
     {
       pergunta: "Dá para aplicar de novo na mesma turma?",
       resposta:
-        "Dá. Zerar Turma para Nova Aplicação abre uma rodada nova com o mesmo pacote e guarda a anterior: o painel de habilidades mostra as rodadas e fica com a melhor de cada habilidade. Aprovar um pacote diferente abre uma atividade nova.",
-    },
-    {
-      pergunta: "Posso ver a regra que cada um escreveu?",
-      resposta:
-        "Sim, na folha da turma — e só quem leciona na turma lê o texto: é escrito por menor de idade, e a plataforma não o entrega a mais ninguém.",
+        "Dá. Zerar Turma para Nova Aplicação abre uma rodada nova com o mesmo pacote e guarda a anterior: a rodada nova mede todas as habilidades de novo, e o painel de habilidades fica com a melhor de cada uma. Aprovar um pacote diferente abre uma atividade nova.",
     },
     {
       pergunta: "Como a missão registra as habilidades da BNCC?",
       resposta:
-        "A EF05CO08 pela seleção do Mural, só três verdadeiras atingem; a EF05CO03 e a EF05CO04 pelas duas perguntas da Nina, no fim; e a EF05CO04 também pela regra que a criança escreveu, que você classifica na folha da turma. Quem sai antes das perguntas fica “Não avaliado” nelas, nunca “Não atingiu”. Refazer com o mesmo pacote não mede de novo quem já jogou. Você confere e ajusta tudo no painel de habilidades.",
+        "A EF05CO08 pela seleção do Mural, só três verdadeiras atingem; a EF05CO03 e a EF05CO04 pelas duas perguntas da Nina, no fim. Quem sai antes das perguntas fica “Não avaliado” nelas, nunca “Não atingiu”. Cada rodada mede tudo de novo, e vale a melhor. O critério de cada nível está no fim do painel de habilidades, onde você confere e ajusta tudo.",
     },
   ],
 };

@@ -534,9 +534,9 @@ function CrachasDaMensagem({ veracidade, tom }: { veracidade: "verdadeira" | "fa
 // ─────────────────────────── as perguntas finais: de volta ao chat da Nina
 
 /**
- * O chat da Nina, de novo — a SEGUNDA travessia da fronteira: a regra foi
- * escrita na casca da escola, e as perguntas de evidência (Canal B) voltam ao
- * mensageiro, na voz da Nina, com a MESMA enquete da Etapa 3.
+ * O chat da Nina, de novo: as perguntas de evidência (Canal B) são a
+ * reflexão da Etapa 6 (ADR-145), no mensageiro, na voz da Nina, com a MESMA
+ * enquete da Etapa 3.
  *
  * O enunciado e as alternativas vêm de `GET /evidencias/exp05ef1b/perguntas/:id`
  * — embaralhadas a cada leitura, sem o nível. A tela mostra na ordem que
@@ -544,7 +544,6 @@ function CrachasDaMensagem({ veracidade, tom }: { veracidade: "verdadeira" | "fa
  * nada aqui sabe (nem mostra) se a criança acertou.
  */
 export function ChatDasPerguntas({
-  convite,
   falas,
   perguntas,
   respondidas,
@@ -554,7 +553,6 @@ export function ChatDasPerguntas({
   ocupado,
   aoResponder,
 }: {
-  convite: string | null;
   /** As falas da Nina antes de cada pergunta, na ordem (`textos.perguntas`). */
   falas: { perguntaId: string; fala: string }[];
   perguntas: Readonly<Record<string, Pergunta>>;
@@ -615,11 +613,8 @@ export function ChatDasPerguntas({
       />
       <ChatWallpaper className="app__corpo">
         <div className="conversa">
-          {convite && (
-            <MessageBubble direction="in" time={HORA_DA_NINA}>
-              {convite}
-            </MessageBubble>
-          )}
+          {/* Sem o convite da abertura: repetido aqui, ele mandava a criança de
+              novo ao grupo e ao Mural, que já ficaram para trás (o PO, 2026-10-05). */}
           {visiveis}
           <div ref={fim} />
         </div>

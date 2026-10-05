@@ -26,9 +26,6 @@ import {
   rotuloDaOpcao,
   textoDosAssuntos,
   trocarCampo,
-  CRITERIO_DA_RUBRICA,
-  NIVEIS_DA_RUBRICA,
-  rubricaDaRodada,
 } from "./quem-mandou-regras";
 import type { MensagemDoPacote, PainelDaTurma } from "./quem-mandou-tipos";
 
@@ -77,7 +74,7 @@ const PACOTE: MensagemDoPacote[] = [
 function painel(parcial: Partial<Pick<PainelDaTurma, "atividade" | "progresso">>): Pick<PainelDaTurma, "atividade" | "progresso"> {
   return {
     atividade: { pacoteId: "p1", rodada: 1, tema: "o passeio ao museu" },
-    progresso: { unidades: 4, entraram: 4, confirmaram: 2, votaram: 2, refletiram: 0, concluiram: 0 },
+    progresso: { unidades: 4, entraram: 4, confirmaram: 2, votaram: 2, concluiram: 0 },
     ...parcial,
   };
 }
@@ -303,8 +300,8 @@ describe("o painel que se atualiza sozinho", () => {
   test("consulta enquanto há aula e alguém não concluiu", () => {
     expect(deveConsultar(painel({ atividade: null }))).toBe(false);
     expect(deveConsultar(painel({}))).toBe(true);
-    expect(deveConsultar(painel({ progresso: { unidades: 0, entraram: 0, confirmaram: 0, votaram: 0, refletiram: 0, concluiram: 0 } }))).toBe(true);
-    expect(deveConsultar(painel({ progresso: { unidades: 3, entraram: 3, confirmaram: 3, votaram: 3, refletiram: 3, concluiram: 3 } }))).toBe(false);
+    expect(deveConsultar(painel({ progresso: { unidades: 0, entraram: 0, confirmaram: 0, votaram: 0, concluiram: 0 } }))).toBe(true);
+    expect(deveConsultar(painel({ progresso: { unidades: 3, entraram: 3, confirmaram: 3, votaram: 3, concluiram: 3 } }))).toBe(false);
   });
 
   test("relê a página só quando muda o que a evidência registra", () => {
@@ -336,34 +333,5 @@ describe("o termômetro e a folha", () => {
     expect(rotuloDaOpcao(opcoes, "urgencia")).toBe("Urgência (precisava avisar logo)");
     expect(rotuloDaOpcao(opcoes, "outro")).toBe("outro");
     expect(rotuloDaOpcao(opcoes, null)).toBeNull();
-  });
-});
-
-describe("a rubrica do Se/Então (EF05CO04, ADR-120)", () => {
-  const celula = (status: string, origem: string) => ({ status, origem });
-  type Linha = { id: string; porRodada: Record<string, Record<string, { status: string; origem: string }>> };
-  const estudantes: Linha[] = [
-    { id: "ana", porRodada: { "2": { EF05CO04: celula("atingiu", "professor") } } },
-    { id: "bia", porRodada: { "2": { EF05CO04: celula("em_processo", "propria") } } },
-    { id: "caio", porRodada: { "1": { EF05CO04: celula("nao_atingiu", "professor") } } },
-    { id: "duda", porRodada: { "2": { EF05CO04: celula("nao_participou", "professor") } } },
-    { id: "enzo", porRodada: { "2": { EF05CO03: celula("atingiu", "professor") } } },
-  ];
-
-  test("acende só o que o PROFESSOR classificou, nesta rodada e nesta habilidade", () => {
-    expect(rubricaDaRodada(estudantes, { pacoteId: "p", rodada: 2 })).toEqual({
-      pacoteId: "p",
-      rodada: 2,
-      classificados: { ana: "atingiu" },
-    });
-  });
-
-  test("a rodada anterior não vaza para a de agora", () => {
-    expect(rubricaDaRodada(estudantes, { pacoteId: "p", rodada: 1 }).classificados).toEqual({ caio: "nao_atingiu" });
-  });
-
-  test("cada nível tem o seu critério, e são os três da régua", () => {
-    expect(NIVEIS_DA_RUBRICA).toEqual(["atingiu", "em_processo", "nao_atingiu"]);
-    for (const n of NIVEIS_DA_RUBRICA) expect(CRITERIO_DA_RUBRICA[n].length).toBeGreaterThan(10);
   });
 });

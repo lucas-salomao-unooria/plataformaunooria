@@ -114,6 +114,21 @@ let pacote5A = "";
 
 const REGRA_DA_ANA = "Eu procuro a mesma notícia em outro lugar antes de encaminhar pra família.";
 
+/** Uma regra Se/Então de ANTES da ADR-145, na rodada 1 — pelo cliente sem RLS, como a migração a deixou. */
+function reflexaoHistorica(escolaId: string, estudanteId: string, pacoteId: string) {
+  return prisma.exp05ef1bReflexao.create({
+    data: {
+      escolaId,
+      estudanteId,
+      pacoteId,
+      rodada: 1,
+      condicionalSe: "parente_proximo",
+      acaoEntao: REGRA_DA_ANA,
+      charsCount: REGRA_DA_ANA.length,
+    },
+  });
+}
+
 async function limpar() {
   await prisma.evidenciaEvento.deleteMany({ where: { escolaId: { in: ESCOLAS } } });
   await prisma.evidencia.deleteMany({ where: { escolaId: { in: ESCOLAS } } });
@@ -246,7 +261,6 @@ describe("a porta da sala (ADR-69)", () => {
       () => service.guardarSelecao(ESCOLA, ids.fabi, ["msg_1"]),
       () => service.enviarAoMural(ESCOLA, ids.fabi, ["msg_1", "msg_2", "msg_3"]),
       () => service.votar(ESCOLA, ids.fabi, "urgencia"),
-      () => service.refletir(ESCOLA, ids.fabi, "urgente_alarmante", REGRA_DA_ANA),
       () => service.concluir(ESCOLA, ids.fabi),
       /* As perguntas de evidência (E14) passam pela mesma porta. */
       () => evidencias.pergunta(ESCOLA, ids.fabi, EXP_ID, "p1"),
@@ -506,7 +520,8 @@ describe("a aula na 5A — os três latches, a evidência e a revelação", () =
     expect((await service.votar(ESCOLA, ids.ana, "urgencia")).passo).toBe("espera");
     expect((await service.votar(ESCOLA, ids.ana, "urgencia")).motivo).toBe("urgencia");
     expect(await codigo(service.votar(ESCOLA, ids.ana, "medo_indignacao"))).toBe("enquete-ja-votada");
-    expect(await codigo(service.refletir(ESCOLA, ids.ana, "urgente_alarmante", REGRA_DA_ANA))).toBe("reflexao-nao-liberada");
+    /* As perguntas (a reflexão) só abrem com a fase da turma: concluir antes é 409. */
+    expect(await codigo(service.concluir(ESCOLA, ids.ana))).toBe("reflexao-nao-liberada");
     /* A pergunta de evidência só abre no passo das perguntas. */
     expect(await codigo(evidencias.responder(ESCOLA, ids.ana, EXP_ID, "p1", "A1"))).toBe("sem-atividade-em-andamento");
   });
@@ -548,7 +563,7 @@ describe("a aula na 5A — os três latches, a evidência e a revelação", () =
     expect(painel).toMatchObject({ fase: "triagem", porComputador: true, termometro: null });
     expect(painel.atividade).toEqual({ pacoteId: pacote5A, rodada: 1, tema: PACOTE_PADRAO.tema });
     /* Ana, a Equipe 1 (Bia + Caio) e a Duda: três computadores, não quatro crianças. */
-    expect(painel.progresso).toEqual({ unidades: 3, entraram: 3, confirmaram: 3, votaram: 3, refletiram: 0, concluiram: 0 });
+    expect(painel.progresso).toEqual({ unidades: 3, entraram: 3, confirmaram: 3, votaram: 3, concluiram: 0 });
     const linhas = painel.linhas.map((l) => [l.nome, l.equipe?.membros.map((m) => m.nome) ?? null, l.passo]);
     expect(linhas).toEqual([
       ["Ana Teste", null, "espera"],
@@ -610,17 +625,12 @@ describe("a aula na 5A — os três latches, a evidência e a revelação", () =
     expect((await service.gate(ESCOLA, ids.ana)).passo).toBe("sintese");
   });
 
-  test("o LATCH 3: a regra Se/Então, com o filtro de texto sem sentido — e o passo das perguntas", async () => {
+  test("liberar a reflexão leva direto às perguntas: elas SÃO a reflexão (ADR-145)", async () => {
     await service.mudarGate(ESCOLA, ids.turma5A, ids.professora, "liberar_reflexao");
-    expect(await codigo(service.refletir(ESCOLA, ids.ana, "urgente_alarmante", "aaaaaaaaaaaaaaaaaaaa"))).toBe("entao-sem-sentido");
-    expect(await codigo(service.refletir(ESCOLA, ids.ana, "urgente_alarmante", "   curto demais   "))).toBe("entao-curto");
-    const estado = await service.refletir(ESCOLA, ids.ana, "parente_proximo", `  ${REGRA_DA_ANA}  `);
-    expect(estado).toMatchObject({ passo: "perguntas", reflexao: { se: "parente_proximo", entao: REGRA_DA_ANA } });
-    /* A mesma regra de novo é idempotente; outra é 409. */
-    expect((await service.refletir(ESCOLA, ids.ana, "parente_proximo", REGRA_DA_ANA)).passo).toBe("perguntas");
-    expect(await codigo(service.refletir(ESCOLA, ids.ana, "promessa_incrivel", REGRA_DA_ANA))).toBe("reflexao-ja-enviada");
-    const linha = await prisma.exp05ef1bReflexao.findFirstOrThrow({ where: { escolaId: ESCOLA, estudanteId: ids.ana } });
-    expect(linha).toMatchObject({ condicionalSe: "parente_proximo", acaoEntao: REGRA_DA_ANA, charsCount: REGRA_DA_ANA.length });
+    expect((await service.gate(ESCOLA, ids.ana)).passo).toBe("perguntas");
+    expect(SessaoSchema.parse(await service.sessao(ESCOLA, ids.ana)).passo).toBe("perguntas");
+    /* A regra Se/Então saiu: nenhuma rota escreve mais na tabela, que só guarda o que já foi escrito. */
+    expect(await prisma.exp05ef1bReflexao.count({ where: { escolaId: ESCOLA } })).toBe(0);
   });
 
   test("as perguntas de evidência: embaralhadas, sem nível, e a resposta cai na atividade e na rodada da missão", async () => {
@@ -642,20 +652,20 @@ describe("a aula na 5A — os três latches, a evidência e a revelação", () =
   });
 
   test("concluir fecha as perguntas: depois dele a resposta é 409, e quem pulou fica Não avaliado", async () => {
-    expect(await codigo(service.concluir(ESCOLA, ids.duda))).toBe("reflexao-nao-enviada");
+    /* O Caio recebeu a cópia da equipe e nunca abriu o grupo: não há o que concluir. */
+    expect(await codigo(service.concluir(ESCOLA, ids.caio))).toBe("grupo-nao-aberto");
     expect((await service.concluir(ESCOLA, ids.ana)).passo).toBe("concluida");
     expect((await service.concluir(ESCOLA, ids.ana)).concluido).toBe(true);
     expect(await codigo(evidencias.responder(ESCOLA, ids.ana, EXP_ID, "p2", "B1"))).toBe("sem-atividade-em-andamento");
   });
 
-  test("o texto do menor é SÓ de quem leciona: o gestor recebe `entao: null` (e o resto da linha)", async () => {
+  test("a folha não tem mais texto livre de menor: a linha é a mesma para professor e gestor", async () => {
     const daProfessora = PainelSchema.parse(await service.painel(ESCOLA, ids.turma5A, ids.professora));
     const doGestor = PainelSchema.parse(await service.painel(ESCOLA, ids.turma5A));
     const linhaDaAna = (p: typeof daProfessora) => p.linhas.find((l) => l.estudanteId === ids.ana);
-    expect(linhaDaAna(daProfessora)?.reflexao).toEqual({ se: "parente_proximo", entao: REGRA_DA_ANA });
-    expect(linhaDaAna(doGestor)?.reflexao).toEqual({ se: "parente_proximo", entao: null });
+    expect(linhaDaAna(doGestor)).toEqual(linhaDaAna(daProfessora));
     expect(linhaDaAna(doGestor)).toMatchObject({ passo: "concluida", motivo: "urgencia", selecao: ["msg_1", "msg_5", "msg_3"] });
-    expect(JSON.stringify(doGestor)).not.toContain(REGRA_DA_ANA);
+    expect(Object.keys(linhaDaAna(doGestor) ?? {})).not.toContain("reflexao");
   });
 });
 
@@ -674,11 +684,10 @@ describe("a rodada nova e o pacote novo — o histórico fica", () => {
 
   test("a Ana recomeça do zero na rodada 2, e a rodada 1 continua no banco — sessão, regra e evidência", async () => {
     const sessao = await service.sessao(ESCOLA, ids.ana);
-    expect(sessao).toMatchObject({ passo: "abertura", atividade: { pacoteId: pacote5A, rodada: 2 }, selecao: [], reflexao: null });
+    expect(sessao).toMatchObject({ passo: "abertura", atividade: { pacoteId: pacote5A, rodada: 2 }, selecao: [] });
     await service.entrar(ESCOLA, ids.ana);
     await service.enviarAoMural(ESCOLA, ids.ana, ["msg_2", "msg_6", "msg_4"]);
     expect(await prisma.exp05ef1bSessao.count({ where: { escolaId: ESCOLA, estudanteId: ids.ana } })).toBe(2);
-    expect(await prisma.exp05ef1bReflexao.count({ where: { escolaId: ESCOLA, estudanteId: ids.ana, rodada: 1 } })).toBe(1);
     /* Toda rodada mede de novo, também no MESMO pacote (ADR-145): as três
        falsas da Ana marcam "não atingiu" na rodada 2, e o resultado continua
        "atingiu", porque é a melhor rodada da habilidade. */
@@ -788,7 +797,11 @@ describe("tenancy no banco (regra 1)", () => {
     await service.enviarAoMural(OUTRA_ESCOLA, ids.vizinho, ["msg_1", "msg_3", "msg_8"]);
     await service.votar(OUTRA_ESCOLA, ids.vizinho, "urgencia");
     await service.mudarGate(OUTRA_ESCOLA, ids.turmaVizinha, ids.profVizinho, "liberar_reflexao");
-    await service.refletir(OUTRA_ESCOLA, ids.vizinho, "link_nao_checado", "Eu pergunto pra professora se o link é de verdade.");
+    /* A tabela da regra Se/Então guarda o que foi escrito antes da ADR-145, e
+       nenhuma rota escreve mais nela: as duas escolas ganham uma linha DIRETO,
+       para a RLS continuar provada sobre ela. */
+    await reflexaoHistorica(OUTRA_ESCOLA, ids.vizinho, aprovado.id);
+    await reflexaoHistorica(ESCOLA, ids.ana, pacote5A);
   });
 
   test("as quatro tabelas têm RLS habilitada E forçada, com UMA política por escola", async () => {
@@ -847,8 +860,8 @@ describe("os CHECKs recusam o que dizem recusar", () => {
     ["motivo fora do vocabulário", `UPDATE exp05ef1b_sessoes SET motivo = 'preguica' WHERE {S}`],
     ["voto sem carimbo", `UPDATE exp05ef1b_sessoes SET votou_em = NULL WHERE {S}`],
     ["voto sem o Mural", `UPDATE exp05ef1b_sessoes SET confirmado_em = NULL, tempo_feed_segundos = NULL WHERE {S}`],
-    ["regra sem o voto", `UPDATE exp05ef1b_sessoes SET motivo = NULL, votou_em = NULL WHERE {S}`],
-    ["concluída sem a regra", `UPDATE exp05ef1b_sessoes SET reflexao_em = NULL WHERE {S}`],
+    ["regra sem o voto", `UPDATE exp05ef1b_sessoes SET reflexao_em = now(), motivo = NULL, votou_em = NULL, concluido_em = NULL WHERE {S}`],
+    ["concluída sem o voto", `UPDATE exp05ef1b_sessoes SET motivo = NULL, votou_em = NULL WHERE {S}`],
     ["tempo de feed negativo", `UPDATE exp05ef1b_sessoes SET tempo_feed_segundos = -1 WHERE {S}`],
     ["Então de espaços", `UPDATE exp05ef1b_reflexoes SET acao_entao = '                    ' WHERE {S}`],
     ["Então curto", `UPDATE exp05ef1b_reflexoes SET acao_entao = 'curto demais' WHERE {S}`],

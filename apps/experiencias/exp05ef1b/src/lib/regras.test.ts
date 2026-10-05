@@ -3,7 +3,6 @@ import {
   VISTA_INICIAL,
   alternarSelecao,
   dividirLegenda,
-  faltamParaOPiso,
   gateDoPasso,
   gateMudou,
   horarioDaMensagem,
@@ -11,11 +10,9 @@ import {
   marcaComoVista,
   mensagensDoMural,
   mesclarSessao,
-  normalizarEntao,
   outrosParticipantes,
   percentualDaBarra,
   perguntaDaVez,
-  regraPronta,
   telaDe,
   type Vista,
 } from "./regras";
@@ -37,7 +34,6 @@ function estado(passo: Passo, extra: Partial<Estado> = {}): Estado {
     selecao: [],
     confirmado: false,
     motivo: null,
-    reflexao: null,
     concluido: false,
     revelacao: null,
     ...extra,
@@ -53,19 +49,18 @@ function sessao(passo: Passo, extra: Partial<Sessao> = {}): Sessao {
     ...estado(passo),
     pacote: null,
     textos: {
-      nina: { convite: null, tio: "", encerramento: "" },
+      nina: { convite: null, encerramento: "" },
       perguntas: [],
-      confirmacaoDaRegra: "",
     },
-    opcoes: { motivos: [], condicoes: [] },
-    limites: { encaminhamentos: 3, entaoMin: 15, entaoMax: 240 },
+    opcoes: { motivos: [] },
+    limites: { encaminhamentos: 3 },
     ...extra,
   };
 }
 
 describe("telaDe — a tela que o passo pede", () => {
   test("sem pacote aprovado, é a espera do preparo em QUALQUER passo", () => {
-    for (const passo of ["abertura", "grupo", "espera", "reflexao", "concluida"] as Passo[]) {
+    for (const passo of ["abertura", "grupo", "espera", "perguntas", "concluida"] as Passo[]) {
       expect(telaDe(estado(passo, { preparada: false }), vista())).toBe("preparo");
     }
   });
@@ -87,18 +82,13 @@ describe("telaDe — a tela que o passo pede", () => {
     expect(telaDe(estado("sintese", { revelacao: REVELACAO }), vista())).toBe("sintese");
   });
 
-  test("quem votou ATRASADO, com a turma já na reflexão, vê os crachás antes da casca", () => {
-    const atrasado = estado("reflexao", { revelacao: REVELACAO });
+  test("quem votou ATRASADO, com a turma já nas perguntas, vê os crachás antes do chat da Nina", () => {
+    const atrasado = estado("perguntas", { revelacao: REVELACAO });
     expect(telaDe(atrasado, vista())).toBe("revelacao-atrasada");
-    expect(telaDe(atrasado, vista({ viuRevelacao: true }))).toBe("reflexao");
+    expect(telaDe(atrasado, vista({ viuRevelacao: true }))).toBe("perguntas");
   });
 
-  test("a reflexão sem revelação no estado vai direto à casca (nada a mostrar antes)", () => {
-    expect(telaDe(estado("reflexao"), vista())).toBe("reflexao");
-  });
-
-  test("a regra enviada passa pela confirmação antes do chat da Nina — e um F5 pula a confirmação", () => {
-    expect(telaDe(estado("perguntas"), vista({ confirmacaoPendente: true }))).toBe("confirmacao");
+  test("as perguntas sem revelação no estado vão direto ao chat da Nina (nada a mostrar antes)", () => {
     expect(telaDe(estado("perguntas"), vista())).toBe("perguntas");
   });
 
@@ -111,13 +101,14 @@ describe("telaDe — a tela que o passo pede", () => {
     expect(marcaComoVista("revelacao")).toBe(true);
     expect(marcaComoVista("sintese")).toBe(true);
     expect(marcaComoVista("revelacao-atrasada")).toBe(false);
-    expect(marcaComoVista("reflexao")).toBe(false);
+    expect(marcaComoVista("perguntas")).toBe(false);
   });
 
   test("o gate de telemetria de cada passo que o professor abre", () => {
     expect(gateDoPasso("revelacao")).toBe("revelacao");
     expect(gateDoPasso("sintese")).toBe("sintese");
-    expect(gateDoPasso("reflexao")).toBe("reflexao");
+    /* As perguntas SÃO a reflexão (ADR-145): o gate que o professor abriu. */
+    expect(gateDoPasso("perguntas")).toBe("reflexao");
     expect(gateDoPasso("grupo")).toBeNull();
   });
 });
@@ -191,23 +182,6 @@ describe("a seleção do Mural", () => {
   test("'você e mais N participantes' não conta a própria criança", () => {
     expect(outrosParticipantes(25)).toBe(24);
     expect(outrosParticipantes(0)).toBe(0);
-  });
-});
-
-describe("o Então", () => {
-  test("piso e teto contam DEPOIS do trim e sem espaço repetido, como o servidor", () => {
-    expect(normalizarEntao("   vou   checar  ")).toBe("vou checar");
-    expect(faltamParaOPiso("               ", 15)).toBe(15);
-    expect(faltamParaOPiso("vou checar", 15)).toBe(5);
-    expect(faltamParaOPiso("vou comparar com o site", 15)).toBe(0);
-  });
-
-  test("o botão só acende com a condição escolhida e o texto entre 15 e 240", () => {
-    const valido = "vou comparar com outra fonte";
-    expect(regraPronta(null, valido, 15, 240)).toBe(false);
-    expect(regraPronta("urgente_alarmante", "curto", 15, 240)).toBe(false);
-    expect(regraPronta("urgente_alarmante", valido, 15, 240)).toBe(true);
-    expect(regraPronta("urgente_alarmante", "a".repeat(241), 15, 240)).toBe(false);
   });
 });
 

@@ -9,10 +9,15 @@ ADR-114; esta é a v2.2, com o MESMO código de experiência.
 
 O percurso: lista de conversas → chat da Nina (convite) → grupo "Turma 5ºB"
 (encaminhar exatamente 3 ao Mural) → Mural (confirmar) → enquete do motivo →
-espera → revelação → síntese → **casca**: a regra Se/Então → **clone**: as
-perguntas P1 e P2 no chat da Nina → **casca**: "Missão Concluída".
+espera → revelação → síntese → **clone**: a reflexão, as perguntas P1 e P2 no
+chat da Nina → **casca**: "Missão Concluída".
 
-## A fronteira do disfarce cruza DUAS vezes, e cada travessia tem razão
+**A regra Se/Então saiu (ADR-145, 0.4.0).** O PO a achou confusa: a missão mede
+as habilidades por critérios fixos, e só ela era texto livre. As perguntas de
+múltipla escolha SÃO a reflexão (Etapa 6), e o chat delas não repete o convite
+da abertura (que mandava a criança de volta ao grupo).
+
+## A fronteira do disfarce cruza UMA vez, no fim
 
 O critério é o do repo — *quem está falando?*, nunca *é depois no tempo?* —, e
 aqui ele produz um vaivém que parece inconsistência e não é:
@@ -24,15 +29,11 @@ aqui ele produz um vaivém que parece inconsistência e não é:
    (`MessageBubble.Media` desenhada) — mensageiro não tem gráfico, mas recebe
    foto de gráfico. É a diferença para a exp06ef2b, onde o visualizador de
    topologia não existe em app nenhum e por isso fala pela escola (ADR-72).
-2. **A regra Se/Então sai para a casca** porque não é sobre o grupo da turma:
-   é sobre o grupo da FAMÍLIA do tio. A transferência para fora da tela é o que
-   a missão existe para produzir, e escrevê-la dentro do clone a devolveria
-   para dentro da ficção que a revelação acabou de desmontar.
-3. **As perguntas P1/P2 VOLTAM ao clone** (decisão do Lucas): são a Nina
+2. **As perguntas P1/P2 ficam no clone** (decisão do Lucas): são a Nina
    perguntando no chat dela, com a MESMA enquete (`Poll`) da Etapa 3. O
    enunciado e as alternativas são da ficha (E14); a fala que as antecede é da
    missão (`textos.perguntas`).
-4. **"Missão Concluída" é a casca de novo**: a escola guardando a regra.
+3. **"Missão Concluída" é a casca**: a escola fechando a missão.
 
 Arquivo por família: `telas-do-clone.tsx` importa só `@edu/ui/ds-unoochat`;
 `telas-da-escola.tsx` só `@edu/ui/ds`. No CSS a fronteira está MARCADA — e
@@ -53,9 +54,9 @@ O bundle é público, e o segredo aqui não é escondido: **ele não desce**.
 - As alternativas de P1/P2 chegam embaralhadas e SEM o nível; o recibo é sempre
   `{ enviada: true }`. A tela responde pelo `id`, nunca pela posição, e carrega
   cada pergunta UMA vez por aba (cada GET embaralha de novo).
-- O pacote (as 8 mensagens), o convite da Nina com o `{tema}`, o tio, a
-  despedida, as falas antes das perguntas, os rótulos de motivo/condição e o
-  callback do motivo vêm da api. `lib/textos.ts` tem só a copy da TELA.
+- O pacote (as 8 mensagens), o convite da Nina com o `{tema}`, a despedida,
+  as falas antes das perguntas, os rótulos de motivo e o callback do motivo
+  vêm da api. `lib/textos.ts` tem só a copy da TELA.
 
 **O grep do bundle é por CONTEÚDO, não por nome de prop.** `veracidade` e
 `Verdadeira` aparecem no `dist/` e está certo: são as chaves e os rótulos dos
@@ -75,18 +76,18 @@ build), para quem copiar texto da api para cá descobrir no `vitest`.
 
 `passo` vem pronto (`passoEfetivo(latches, fase)` na api) e `telaDe(passo, vista)`
 (`lib/regras.ts`) escolhe a tela. A `Vista` é o que só a aba sabe — lista ou
-chat da Nina, grupo ou Mural, a confirmação da regra, a despedida — e nenhum
+chat da Nina, grupo ou Mural, a despedida — e nenhum
 campo dela vale como estado: um F5 cai sempre numa tela certa do passo.
 
 Dois casos que não são óbvios:
 
 - **Quem votou atrasado** (confirmou o Mural depois da revelação) cai direto no
   passo da TURMA. Em `sintese` os crachás estão no histórico do Mural; em
-  `reflexao` a casca tomaria a tela sem ele ter visto nada — então aparece o
-  Mural revelado com "Continuar" (`revelacao-atrasada`). O servidor não guarda
-  "já viu": um F5 mostra de novo, sem dano. A `revelacao-atrasada` NÃO marca
-  `viuRevelacao` ao aparecer — se marcasse, `telaDe` pularia para a casca no
-  mesmo render.
+  `perguntas` o chat da Nina tomaria a tela sem ele ter visto nada — então
+  aparece o Mural revelado com "Continuar" (`revelacao-atrasada`). O servidor
+  não guarda "já viu": um F5 mostra de novo, sem dano. A `revelacao-atrasada`
+  NÃO marca `viuRevelacao` ao aparecer — se marcasse, `telaDe` pularia para as
+  perguntas no mesmo render.
 - **A despedida da Nina segura a casca por 6 s** (`MS_DA_DESPEDIDA`), com o
   `POST /concluir` JÁ feito: fechar a aba no meio não perde nada.
 
@@ -115,13 +116,13 @@ ação que o recebeu:
 
 | Status | No clone | Na casca |
 |---|---|---|
-| sem rede, 5xx, 429 | presença do cabeçalho vira "Conectando..." (e aviso rápido se foi toque) | `AlertBox` "Não foi possível enviar sua regra agora…" |
+| sem rede, 5xx, 429 | presença do cabeçalho vira "Conectando..." (e aviso rápido se foi toque) | — (a casca só mostra "Missão Concluída") |
 | 401 | janela "Sua conexão expirou. Toque para reconectar." — reconectar é RELER; o hub renova o token sozinho | a mesma janela |
 | 403 | "Este grupo ainda não abriu para a sua turma…" | idem |
 | 409 | relê a sessão (o relógio da turma andou) — sem mensagem | idem |
-| 400 no `POST /reflexao` | — | `entao-sem-sentido` (o tamanho já foi conferido antes), na copy `e6.erro.entropia_baixa` |
 
-O `Então` nunca vai a `reportarErro`, log ou telemetria: é texto livre de menor.
+A missão não tem mais texto livre de menor: a regra Se/Então e o
+`POST /reflexao` saíram (ADR-145).
 
 ## O mensageiro é o Unoochat, não o clone do WhatsApp (ADR-134, 0.3.0)
 
@@ -188,5 +189,6 @@ gravação — não há botão de "ouvir" nesta versão, e não há benchmarking
 
 ## `permissoes: ["forms"]`
 
-O `TextArea` e o `Selection` da casca são campos de formulário; sem o token no
-`sandbox` do iframe o envio morre em silêncio (a lição da exp02em1b).
+Era para o `TextArea` e o `Selection` da regra Se/Então, que saíram (ADR-145).
+Fica: os rádios do `Poll` são campos de formulário, e sem o token no `sandbox`
+do iframe um formulário morre em silêncio (a lição da exp02em1b).

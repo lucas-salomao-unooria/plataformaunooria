@@ -395,25 +395,6 @@ body {
   align-self: flex-start;
 }
 
-.escola__fala,
-.escola__regra-texto {
-  margin: 0;
-  font-size: 15px;
-  line-height: 1.5;
-}
-
-.escola__regra-texto {
-  margin-bottom: 8px;
-  font-weight: 600;
-}
-
-.escola__comando {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 600;
-  line-height: 1.4;
-}
-
 .escola__titulo {
   margin: 0;
   font-size: 22px;

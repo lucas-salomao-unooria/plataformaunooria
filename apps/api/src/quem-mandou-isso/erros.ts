@@ -1,5 +1,4 @@
 import { HttpException } from "@nestjs/common";
-import { ENTAO_MAX_CARACTERES, ENTAO_MIN_CARACTERES } from "./catalogo";
 
 /**
  * Os erros de DOMÍNIO da exp05ef1b — com `codigo` estável, que é por onde a
@@ -9,7 +8,7 @@ import { ENTAO_MAX_CARACTERES, ENTAO_MIN_CARACTERES } from "./catalogo";
  * mensagens): sem "atividade", sem "gabarito", sem "acesso negado". Boa parte
  * dos 409 é o relógio da turma — o professor ainda não liberou —, e a frase
  * diz que está tudo bem e é para esperar. Duas vêm literais da copy
- * (`e2.erro.toast_menor_3`, `e2.erro.toast_limite_3`, `e6.erro.entropia_baixa`).
+ * (`e2.erro.toast_menor_3`, `e2.erro.toast_limite_3`).
  */
 export type CodigoErro =
   | "grupo-em-preparo"
@@ -23,11 +22,6 @@ export type CodigoErro =
   | "enquete-ja-votada"
   | "enquete-nao-votada"
   | "reflexao-nao-liberada"
-  | "reflexao-ja-enviada"
-  | "reflexao-nao-enviada"
-  | "entao-curto"
-  | "entao-longo"
-  | "entao-sem-sentido"
   | "pacote-nao-aprovado"
   | "pacote-invalido"
   | "preparo-invalido"
@@ -48,11 +42,6 @@ export const STATUS: Readonly<Record<CodigoErro, number>> = {
   "enquete-ja-votada": 409,
   "enquete-nao-votada": 409,
   "reflexao-nao-liberada": 409,
-  "reflexao-ja-enviada": 409,
-  "reflexao-nao-enviada": 409,
-  "entao-curto": 400,
-  "entao-longo": 400,
-  "entao-sem-sentido": 400,
   "pacote-nao-aprovado": 409,
   "pacote-invalido": 400,
   "preparo-invalido": 400,
@@ -76,11 +65,6 @@ export const MENSAGENS: Readonly<Record<CodigoErro, string>> = {
   "enquete-nao-votada": "Vote na enquete do Mural primeiro.",
   // O relógio da turma. A criança não fez nada errado.
   "reflexao-nao-liberada": "Aguarde o professor liberar a próxima etapa.",
-  "reflexao-ja-enviada": "Sua regra já foi enviada.",
-  "reflexao-nao-enviada": "Monte a sua regra antes de terminar.",
-  "entao-curto": `Escreva pelo menos ${ENTAO_MIN_CARACTERES} caracteres.`,
-  "entao-longo": `Use no máximo ${ENTAO_MAX_CARACTERES} caracteres.`,
-  "entao-sem-sentido": "Explique sua regra de checagem com mais detalhes para que Nina consiga entender o que fazer.",
   // As de PROFESSOR, lidas no hub.
   "pacote-nao-aprovado": "Aprove um pacote de mensagens para esta turma antes.",
   "pacote-invalido": "O pacote não pôde ser aprovado.",

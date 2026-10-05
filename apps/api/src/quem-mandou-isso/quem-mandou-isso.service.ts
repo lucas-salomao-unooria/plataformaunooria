@@ -13,15 +13,10 @@ import { ehUuid } from "../motor/guardas";
 import { PrismaService } from "../prisma/prisma.service";
 import {
   CALLBACK_DO_MOTIVO,
-  CONDICOES,
-  CONFIRMACAO_DA_REGRA,
   DISCIPLINAS,
   ENCAMINHAMENTOS,
   ENCERRAMENTO_DA_NINA,
-  ENTAO_MAX_CARACTERES,
-  ENTAO_MIN_CARACTERES,
   EXP_ID,
-  FALA_DO_TIO,
   FALAS_ANTES_DAS_PERGUNTAS,
   GRUPO,
   INSTRUCOES_DO_CONSOLE,
@@ -29,14 +24,12 @@ import {
   MURAL,
   PACOTE_PADRAO,
   ROTEIRO_DA_RODA,
-  ROTULO_DA_CONDICAO,
   ROTULO_DA_DISCIPLINA,
   ROTULO_DO_MOTIVO,
   VERSAO_DO_INSTRUMENTO,
   falaDaNina,
   mensagensDoPadrao,
   mensagensPublicas,
-  type Condicao,
   type Disciplina,
   type MensagemDoPacote,
   type Motivo,
@@ -58,7 +51,6 @@ import {
   type Fase,
   type MarcosDaSessao,
 } from "./regras/passos";
-import { validarEntao } from "./regras/reflexao";
 import { conferirSelecao, mesmaSelecao } from "./regras/selecao";
 import { progresso, termometro, type GabaritoDaConta, type UnidadeDaConta } from "./regras/termometro";
 
@@ -94,7 +86,7 @@ interface ContextoDaTurma {
 
 type LinhaDaSessao = Pick<
   Exp05ef1bSessao,
-  "entrouEm" | "selecao" | "confirmadoEm" | "motivo" | "votouEm" | "reflexaoEm" | "concluidoEm" | "tempoFeedSegundos" | "atualizadoEm"
+  "entrouEm" | "selecao" | "confirmadoEm" | "motivo" | "votouEm" | "concluidoEm" | "tempoFeedSegundos" | "atualizadoEm"
 >;
 
 const CAMPOS_DA_SESSAO = {
@@ -103,7 +95,6 @@ const CAMPOS_DA_SESSAO = {
   confirmadoEm: true,
   motivo: true,
   votouEm: true,
-  reflexaoEm: true,
   concluidoEm: true,
   tempoFeedSegundos: true,
   atualizadoEm: true,
@@ -115,17 +106,12 @@ function marcosDe(s: LinhaDaSessao | null | undefined): MarcosDaSessao | null {
     entrou: true,
     confirmou: s.confirmadoEm !== null,
     votou: s.votouEm !== null,
-    refletiu: s.reflexaoEm !== null,
     concluiu: s.concluidoEm !== null,
   };
 }
 
 function ehMotivo(v: string | null): v is Motivo {
   return v !== null && (MOTIVOS as readonly string[]).includes(v);
-}
-
-function ehCondicao(v: string): v is Condicao {
-  return (CONDICOES as readonly string[]).includes(v);
 }
 
 /**
@@ -197,7 +183,6 @@ function recorteLimpo(r: Recorte) {
 function opcoes() {
   return {
     motivos: MOTIVOS.map((id) => ({ id, rotulo: ROTULO_DO_MOTIVO[id] })),
-    condicoes: CONDICOES.map((id) => ({ id, rotulo: ROTULO_DA_CONDICAO[id] })),
   };
 }
 
@@ -225,7 +210,6 @@ function paraAConta(l: LinhaDaTurma): UnidadeDaConta {
     entrou: Boolean(s),
     selecao: s?.confirmadoEm ? s.selecao : null,
     motivo: s && ehMotivo(s.motivo) ? s.motivo : null,
-    refletiu: Boolean(s?.reflexaoEm),
     concluiu: Boolean(s?.concluidoEm),
   };
 }
@@ -284,18 +268,12 @@ export class QuemMandouIssoService implements OnModuleInit {
         textos: {
           nina: {
             convite: ctx.pacote ? falaDaNina(ctx.pacote.tema) : null,
-            tio: FALA_DO_TIO,
             encerramento: ENCERRAMENTO_DA_NINA,
           },
           perguntas: FALAS_ANTES_DAS_PERGUNTAS.map((p) => ({ ...p })),
-          confirmacaoDaRegra: CONFIRMACAO_DA_REGRA,
         },
         opcoes: opcoes(),
-        limites: {
-          encaminhamentos: ENCAMINHAMENTOS,
-          entaoMin: ENTAO_MIN_CARACTERES,
-          entaoMax: ENTAO_MAX_CARACTERES,
-        },
+        limites: { encaminhamentos: ENCAMINHAMENTOS },
       };
     }, escolaId);
   }
@@ -430,49 +408,20 @@ export class QuemMandouIssoService implements OnModuleInit {
   }
 
   /**
-   * O construtor Se/Então — O LATCH 3. Só com a reflexão liberada pela turma.
-   *
-   * O `entao` é TEXTO LIVRE DE MENOR: vai para a tabela confinada
-   * `exp05ef1b_reflexoes`, não vai a log nem a telemetria, e no painel só o
-   * professor que leciona na turma o lê. NÃO é corrigido (a EF05CO04 sai da P2).
-   */
-  refletir(escolaId: string, estudanteId: string, se: Condicao, entaoBruto: string) {
-    return this.comSessao(escolaId, estudanteId, async (tx, pacote, sessao, fase) => {
-      if (!sessao) throw erroDeJogo("grupo-nao-aberto");
-      if (!sessao.votouEm) throw erroDeJogo("enquete-nao-votada");
-      const validado = validarEntao(entaoBruto);
-      const chave = this.chave(escolaId, estudanteId, pacote);
-      if (sessao.reflexaoEm) {
-        const existente = await tx.exp05ef1bReflexao.findUnique({
-          where: { escolaId_estudanteId_pacoteId_rodada: chave },
-          select: { condicionalSe: true, acaoEntao: true },
-        });
-        if (validado.ok && existente?.condicionalSe === se && existente.acaoEntao === validado.texto) return;
-        throw erroDeJogo("reflexao-ja-enviada");
-      }
-      if (fase !== "reflexao") throw erroDeJogo("reflexao-nao-liberada");
-      if (!validado.ok) throw erroDeJogo(validado.codigo);
-
-      await tx.exp05ef1bReflexao.create({
-        data: { ...chave, condicionalSe: se, acaoEntao: validado.texto, charsCount: validado.texto.length },
-      });
-      await tx.exp05ef1bSessao.update({
-        where: { escolaId_estudanteId_pacoteId_rodada: chave },
-        data: { reflexaoEm: new Date() },
-      });
-    });
-  }
-
-  /**
    * O fim da missão, depois das perguntas de evidência. NÃO exige as
    * respostas: quem sai antes delas fica "Não avaliado" em CO03/CO04 (a
    * ausência de marca), nunca "não atingiu". Idempotente.
+   *
+   * As perguntas SÃO a reflexão (Etapa 6, ADR-145): abrem quando o professor
+   * libera a reflexão, para quem já votou. Não há mais a regra Se/Então antes
+   * delas.
    */
   concluir(escolaId: string, estudanteId: string) {
-    return this.comSessao(escolaId, estudanteId, async (tx, pacote, sessao) => {
+    return this.comSessao(escolaId, estudanteId, async (tx, pacote, sessao, fase) => {
       if (!sessao) throw erroDeJogo("grupo-nao-aberto");
-      if (!sessao.reflexaoEm) throw erroDeJogo("reflexao-nao-enviada");
       if (sessao.concluidoEm) return;
+      if (!sessao.votouEm) throw erroDeJogo("enquete-nao-votada");
+      if (fase !== "reflexao") throw erroDeJogo("reflexao-nao-liberada");
       await tx.exp05ef1bSessao.update({
         where: { escolaId_estudanteId_pacoteId_rodada: this.chave(escolaId, estudanteId, pacote) },
         data: { concluidoEm: new Date() },
@@ -763,19 +712,6 @@ export class QuemMandouIssoService implements OnModuleInit {
       const leitura = await this.lerATurma(tx, escolaId, turmaId, ctx.pacote);
       const contas = leitura.unidades.map((u) => paraAConta(u.linha));
 
-      const reflexoes = ctx.pacote
-        ? await tx.exp05ef1bReflexao.findMany({
-            where: {
-              escolaId,
-              pacoteId: ctx.pacote.id,
-              rodada: ctx.pacote.rodada,
-              estudanteId: { in: leitura.unidades.map((u) => u.linha.estudanteId) },
-            },
-            select: { estudanteId: true, condicionalSe: true, acaoEntao: true },
-          })
-        : [];
-      const reflexaoDe = new Map(reflexoes.map((r) => [r.estudanteId, r]));
-
       return {
         turma,
         atividade: ctx.pacote ? { pacoteId: ctx.pacote.id, rodada: ctx.pacote.rodada, tema: ctx.pacote.tema } : null,
@@ -786,7 +722,6 @@ export class QuemMandouIssoService implements OnModuleInit {
           ctx.pacote && faseAtingiu(ctx.fase, "revelacao") ? termometro(contas, gabaritoDe(ctx.pacote)) : null,
         linhas: leitura.unidades.map(({ linha, equipe }) => {
           const s = linha.sessao;
-          const r = reflexaoDe.get(linha.estudanteId);
           return {
             estudanteId: linha.estudanteId,
             nome: linha.nome,
@@ -794,10 +729,6 @@ export class QuemMandouIssoService implements OnModuleInit {
             passo: passoEfetivo(marcosDe(s), ctx.fase),
             selecao: s?.confirmadoEm ? s.selecao : null,
             motivo: s && ehMotivo(s.motivo) ? s.motivo : null,
-            reflexao:
-              r && ehCondicao(r.condicionalSe)
-                ? { se: r.condicionalSe, entao: professorId ? r.acaoEntao : null }
-                : null,
             tempoFeedSegundos: s?.tempoFeedSegundos ?? null,
           };
         }),
@@ -820,7 +751,7 @@ export class QuemMandouIssoService implements OnModuleInit {
     return {
       padrao: { ...padrao(), convite: falaDaNina(PACOTE_PADRAO.tema) },
       roteiro: ROTEIRO,
-      textos: { tio: FALA_DO_TIO, encerramento: ENCERRAMENTO_DA_NINA, confirmacaoDaRegra: CONFIRMACAO_DA_REGRA },
+      textos: { encerramento: ENCERRAMENTO_DA_NINA },
       perguntasDeEvidencia: FICHA_EXP05EF1B.perguntas.map((p) => ({
         perguntaId: p.id,
         habilidade: habilidadeDe.get(p.id) ?? "",
@@ -836,10 +767,10 @@ export class QuemMandouIssoService implements OnModuleInit {
 
   /**
    * O resolvedor da E14: a turma, a atividade (o pacote ativo) e a rodada —
-   * mas SÓ no passo das perguntas (a regra enviada, a missão não concluída).
-   * Antes disso, ou depois de concluir, `null`: a resposta vira 409
-   * `sem-atividade-em-andamento`, e uma P1 respondida por um POST direto antes
-   * do Mural não mede nada.
+   * mas SÓ no passo das perguntas (voto dado, reflexão liberada pela turma, a
+   * missão não concluída). Antes disso, ou depois de concluir, `null`: a
+   * resposta vira 409 `sem-atividade-em-andamento`, e uma P1 respondida por um
+   * POST direto antes do Mural não mede nada.
    */
   private async contextoDaEvidencia(
     tx: Prisma.TransactionClient,
@@ -848,19 +779,14 @@ export class QuemMandouIssoService implements OnModuleInit {
   ): Promise<ContextoDaAtividade | null> {
     const estudante = await tx.user.findFirst({ where: { id: estudanteId, escolaId }, select: { turmaId: true } });
     if (!estudante?.turmaId) return null;
-    const pacote = await tx.exp05ef1bPacote.findFirst({
-      where: { escolaId, turmaId: estudante.turmaId, ativo: true },
-      select: { id: true, rodadaAtual: true },
-    });
-    if (!pacote) return null;
+    const ctx = await this.contextoDaTurma(tx, escolaId, estudante.turmaId);
+    if (!ctx.pacote || ctx.fase !== "reflexao") return null;
     const sessao = await tx.exp05ef1bSessao.findUnique({
-      where: {
-        escolaId_estudanteId_pacoteId_rodada: { escolaId, estudanteId, pacoteId: pacote.id, rodada: pacote.rodadaAtual },
-      },
-      select: { reflexaoEm: true, concluidoEm: true },
+      where: { escolaId_estudanteId_pacoteId_rodada: this.chave(escolaId, estudanteId, ctx.pacote) },
+      select: { votouEm: true, concluidoEm: true },
     });
-    if (!sessao?.reflexaoEm || sessao.concluidoEm) return null;
-    return { turmaId: estudante.turmaId, atividadeId: pacote.id, rodada: pacote.rodadaAtual };
+    if (!sessao?.votouEm || sessao.concluidoEm) return null;
+    return { turmaId: estudante.turmaId, atividadeId: ctx.pacote.id, rodada: ctx.pacote.rodada };
   }
 
   /** O estado do estudante, depois de uma leitura ou de uma mutação. */
@@ -873,13 +799,6 @@ export class QuemMandouIssoService implements OnModuleInit {
   ) {
     const marcos = marcosDe(sessao);
     const pacote = ctx.pacote;
-    const reflexao =
-      pacote && sessao?.reflexaoEm
-        ? await tx.exp05ef1bReflexao.findUnique({
-            where: { escolaId_estudanteId_pacoteId_rodada: this.chave(escolaId, estudanteId, pacote) },
-            select: { condicionalSe: true, acaoEntao: true },
-          })
-        : null;
 
     let revelacao: z.infer<typeof RevelacaoSchema> | null = null;
     if (pacote && sessao && ehMotivo(sessao.motivo) && revelacaoAberta(marcos, ctx.fase)) {
@@ -912,8 +831,6 @@ export class QuemMandouIssoService implements OnModuleInit {
       selecao: sessao?.selecao ?? [],
       confirmado: Boolean(sessao?.confirmadoEm),
       motivo: sessao && ehMotivo(sessao.motivo) ? sessao.motivo : null,
-      reflexao:
-        reflexao && ehCondicao(reflexao.condicionalSe) ? { se: reflexao.condicionalSe, entao: reflexao.acaoEntao } : null,
       concluido: Boolean(sessao?.concluidoEm),
       revelacao,
     };

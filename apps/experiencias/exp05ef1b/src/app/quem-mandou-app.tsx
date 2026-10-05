@@ -28,7 +28,7 @@ import {
   MuralDaTurma,
   type EtapaDoMural,
 } from "./telas-do-clone";
-import { TelaConcluida, TelaDaRegra, TelaDeConfirmacao } from "./telas-da-escola";
+import { TelaConcluida } from "./telas-da-escola";
 
 /**
  * A casca da missão: uma máquina de telas sobre o que o SERVIDOR diz.
@@ -54,7 +54,6 @@ export function QuemMandouApp({ inicial }: { inicial: Sessao }) {
   const [bloqueada, setBloqueada] = useState(false);
   const [aviso, setAviso] = useState<string | null>(null);
   const [ocupado, setOcupado] = useState(false);
-  const [falhaDaRegra, setFalhaDaRegra] = useState<"sem-sentido" | "rede" | null>(null);
   const [perguntas, setPerguntas] = useState<Record<string, Pergunta>>({});
   const [respondidas, setRespondidas] = useState<Record<string, string>>({});
 
@@ -303,36 +302,6 @@ export function QuemMandouApp({ inicial }: { inicial: Sessao }) {
 
   const continuarDaRevelacao = useCallback(() => setVista((v) => ({ ...v, viuRevelacao: true })), []);
 
-  /**
-   * "Salvar e Enviar Reflexão" — o LATCH 3. O tamanho já foi conferido antes
-   * (o botão só acende entre 15 e 240), então um 400 aqui só pode ser a recusa
-   * `entao-sem-sentido` — e ela fala na voz da copy (`e6.erro.entropia_baixa`).
-   * O texto NÃO vai a log, telemetria nem `reportarErro`: é texto livre de menor.
-   */
-  const refletir = useCallback(
-    async (se: string, entao: string) => {
-      setOcupado(true);
-      setFalhaDaRegra(null);
-      try {
-        const estado = await api.post<Estado>("/quem-mandou-isso/reflexao", { se, entao });
-        aplicar(estado);
-        setVista((v) => ({ ...v, confirmacaoPendente: true }));
-      } catch (erro) {
-        const classe = classificar(erro);
-        if (classe === "recusada") setFalhaDaRegra("sem-sentido");
-        else if (classe === "rede") {
-          setConectado(false);
-          setFalhaDaRegra("rede");
-        } else tratarFalhaDeAcao(erro, false);
-      } finally {
-        setOcupado(false);
-      }
-    },
-    [aplicar, tratarFalhaDeAcao],
-  );
-
-  const voltarParaANina = useCallback(() => setVista((v) => ({ ...v, confirmacaoPendente: false })), []);
-
   /* As perguntas da evidência: carregadas UMA vez por aba (cada GET embaralha
      de novo, e a ordem não pode trocar na frente da criança). Falhou? Tenta de
      novo no próximo ciclo. */
@@ -401,9 +370,8 @@ export function QuemMandouApp({ inicial }: { inicial: Sessao }) {
         const estado = await api.post<Estado>("/quem-mandou-isso/concluir");
         setVista((v) => ({ ...v, segurandoDespedida: true }));
         aplicar(estado);
-        const chars = estado.reflexao?.entao.length ?? 0;
-        telemetria.concluiu(chars);
-        concluir({ chars });
+        telemetria.concluiu();
+        concluir({});
         window.setTimeout(() => setVista((v) => ({ ...v, segurandoDespedida: false })), MS_DA_DESPEDIDA);
       } catch (erro) {
         tratarFalhaDeAcao(erro, false);
@@ -491,26 +459,9 @@ export function QuemMandouApp({ inicial }: { inicial: Sessao }) {
         );
       }
 
-      case "reflexao":
-        return (
-          <TelaDaRegra
-            tio={textos.nina.tio}
-            condicoes={opcoes.condicoes}
-            piso={limites.entaoMin}
-            teto={limites.entaoMax}
-            falha={falhaDaRegra}
-            ocupado={ocupado}
-            aoEnviar={(se, entao) => void refletir(se, entao)}
-          />
-        );
-
-      case "confirmacao":
-        return <TelaDeConfirmacao texto={textos.confirmacaoDaRegra} aoContinuar={voltarParaANina} />;
-
       case "perguntas":
         return (
           <ChatDasPerguntas
-            convite={textos.nina.convite}
             falas={textos.perguntas}
             perguntas={perguntas}
             respondidas={respondidas}
@@ -522,11 +473,8 @@ export function QuemMandouApp({ inicial }: { inicial: Sessao }) {
           />
         );
 
-      case "concluida": {
-        const r = sessao.reflexao;
-        const rotulo = r ? opcoes.condicoes.find((c) => c.id === r.se)?.rotulo : undefined;
-        return <TelaConcluida regra={r && rotulo ? TEXTOS.conclusao.regra(rotulo, r.entao) : null} />;
-      }
+      case "concluida":
+        return <TelaConcluida />;
     }
   };
 

@@ -12,8 +12,7 @@ import type { EquipeNoPainel } from "./equipe-no-painel";
  *   daqui o hub só prepara e conduz.
  * - **Nenhuma coluna de acerto por criança.** O nível de cada habilidade é da
  *   evidência (E14, `PainelDeHabilidades`), onde o professor também o ajusta.
- * - **Nenhuma lista de motivos ou de condições.** Os rótulos da enquete e do
- *   `Se` chegam da api (`GET /quem-mandou-isso/professor/material`, `opcoes`):
+ * - **Nenhuma lista de motivos.** Os rótulos da enquete chegam da api (`GET /quem-mandou-isso/professor/material`, `opcoes`):
  *   uma segunda lista aqui seria a que ninguém atualiza junto ("rótulo visível
  *   em dois lugares muda nos DOIS", ADR-91).
  *
@@ -21,9 +20,8 @@ import type { EquipeNoPainel } from "./equipe-no-painel";
  * rota de professor devolve: é com ele que a professora cura e conduz. Quem o
  * esconde do estudante é a api, por construção do tipo público.
  *
- * `reflexao.entao` é TEXTO LIVRE DE MENOR: a api o preenche só para quem
- * leciona na turma e devolve `null` para gestor e admin (LGPD art. 14). A tela
- * não precisa de ramo por papel — cai no aviso quando vem `null`.
+ * A regra Se/Então saiu da missão (ADR-145): a folha não tem mais texto livre
+ * de menor, e as perguntas de múltipla escolha são a reflexão.
  */
 
 /** O eixo da verdade. Independente do tom: é a descoberta da missão (EF05CO03). */
@@ -58,7 +56,6 @@ export type Passo =
   | "espera"
   | "revelacao"
   | "sintese"
-  | "reflexao"
   | "perguntas"
   | "concluida";
 
@@ -199,7 +196,6 @@ export interface ProgressoDaTurma {
   entraram: number;
   confirmaram: number;
   votaram: number;
-  refletiram: number;
   concluiram: number;
 }
 
@@ -225,8 +221,6 @@ export interface LinhaDoPainel {
   /** As três do Mural — só depois de confirmado. */
   selecao: string[] | null;
   motivo: string | null;
-  /** `entao` é texto livre de menor: `null` para quem não leciona na turma. */
-  reflexao: { se: string; entao: string | null } | null;
   tempoFeedSegundos: number | null;
 }
 
@@ -258,7 +252,6 @@ export interface OpcaoDaMissao {
 
 export interface OpcoesDaMissao {
   motivos: OpcaoDaMissao[];
-  condicoes: OpcaoDaMissao[];
 }
 
 /**
@@ -269,7 +262,7 @@ export interface OpcoesDaMissao {
 export interface MaterialDoProfessor {
   padrao: PadraoDoPacote & { convite: string };
   roteiro: RoteiroDaAula;
-  textos: { tio: string; encerramento: string; confirmacaoDaRegra: string };
+  textos: { encerramento: string };
   perguntasDeEvidencia: Array<{
     perguntaId: string;
     habilidade: string;
@@ -331,7 +324,6 @@ export const ROTULO_DO_PASSO: Readonly<Record<Passo, string>> = {
   espera: "Votou e aguarda a revelação",
   revelacao: "Vendo a revelação",
   sintese: "Vendo a síntese",
-  reflexao: "Montando a regra Se/Então",
   perguntas: "Respondendo às perguntas da Nina",
   concluida: "Concluiu",
 };

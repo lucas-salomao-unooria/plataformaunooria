@@ -2,10 +2,8 @@ import { z } from "zod";
 import { STATUS_DE_MARCA } from "../evidencias/regras";
 import {
   ASSUNTOS_MAX,
-  CONDICOES,
   CONTEXTO_MAX_CARACTERES,
   DISCIPLINAS,
-  ENTAO_MAX_CARACTERES,
   IDS_DE_MENSAGEM,
   LEGENDA_MAX_CARACTERES,
   MOTIVOS,
@@ -35,7 +33,6 @@ const DisciplinaSchema = z.enum(DISCIPLINAS);
 const FaseSchema = z.enum(FASES);
 const PassoSchema = z.enum(PASSOS);
 const MotivoSchema = z.enum(MOTIVOS);
-const CondicaoSchema = z.enum(CONDICOES);
 
 // ─────────────────────────────────────────────────────────── entrada
 
@@ -52,16 +49,6 @@ export const SelecaoSchema = z.object({
 export const MuralSchema = SelecaoSchema;
 
 export const EnqueteSchema = z.object({ motivo: MotivoSchema });
-
-/**
- * O construtor Se/Então. O `entao` chega cru (o teto aqui é só defesa); o piso
- * de 15, o teto de 240 depois do `trim` e o filtro de texto sem sentido são de
- * `regras/reflexao.ts`, com código próprio para cada recusa.
- */
-export const ReflexaoSchema = z.object({
-  se: CondicaoSchema,
-  entao: z.string().max(ENTAO_MAX_CARACTERES * 4),
-});
 
 /**
  * O recorte da aula (E0-PROF-02). Os tetos chegam por `superRefine` das MESMAS
@@ -165,8 +152,6 @@ export const EstadoSchema = z.object({
   selecao: z.array(MensagemIdSchema),
   confirmado: z.boolean(),
   motivo: MotivoSchema.nullable(),
-  /** A regra do PRÓPRIO estudante. Nenhuma rota de estudante devolve a de outro. */
-  reflexao: z.object({ se: CondicaoSchema, entao: z.string() }).nullable(),
   concluido: z.boolean(),
   revelacao: RevelacaoSchema.nullable(),
 });
@@ -190,16 +175,11 @@ export const SessaoSchema = EstadoSchema.extend({
    * `GET /evidencias/exp05ef1b/perguntas/:id` — embaralhadas, e sem o nível.
    */
   textos: z.object({
-    nina: z.object({ convite: z.string().nullable(), tio: z.string(), encerramento: z.string() }),
+    nina: z.object({ convite: z.string().nullable(), encerramento: z.string() }),
     perguntas: z.array(z.object({ perguntaId: z.string(), fala: z.string() })),
-    confirmacaoDaRegra: z.string(),
   }),
-  opcoes: z.object({ motivos: z.array(OpcaoSchema), condicoes: z.array(OpcaoSchema) }),
-  limites: z.object({
-    encaminhamentos: z.number().int().positive(),
-    entaoMin: z.number().int().positive(),
-    entaoMax: z.number().int().positive(),
-  }),
+  opcoes: z.object({ motivos: z.array(OpcaoSchema) }),
+  limites: z.object({ encaminhamentos: z.number().int().positive() }),
 });
 
 export const GateDoEstudanteSchema = z.object({
@@ -310,7 +290,6 @@ const ProgressoSchema = z.object({
   entraram: z.number().int().nonnegative(),
   confirmaram: z.number().int().nonnegative(),
   votaram: z.number().int().nonnegative(),
-  refletiram: z.number().int().nonnegative(),
   concluiram: z.number().int().nonnegative(),
 });
 
@@ -343,11 +322,6 @@ const LinhaDoPainelSchema = z.object({
   /** As três do Mural — SÓ depois do latch 1. */
   selecao: z.array(MensagemIdSchema).nullable(),
   motivo: MotivoSchema.nullable(),
-  /**
-   * A regra Se/Então. `entao` é TEXTO LIVRE DE MENOR: preenchido só para o
-   * professor que leciona na turma; gestor e admin recebem `null` (LGPD art. 14).
-   */
-  reflexao: z.object({ se: CondicaoSchema, entao: z.string().nullable() }).nullable(),
   tempoFeedSegundos: z.number().int().nonnegative().nullable(),
 });
 
@@ -369,7 +343,7 @@ export const PainelSchema = z.object({
 export const MaterialSchema = z.object({
   padrao: PadraoSchema.extend({ convite: z.string() }),
   roteiro: z.object({ perguntas: z.array(z.string()), instrucoes: z.object({ revelacao: z.string(), reflexao: z.string() }) }),
-  textos: z.object({ tio: z.string(), encerramento: z.string(), confirmacaoDaRegra: z.string() }),
+  textos: z.object({ encerramento: z.string() }),
   perguntasDeEvidencia: z.array(
     z.object({
       perguntaId: z.string(),
@@ -379,5 +353,5 @@ export const MaterialSchema = z.object({
       alternativas: z.array(z.object({ id: z.string(), texto: z.string(), status: z.enum(STATUS_DE_MARCA) })),
     }),
   ),
-  opcoes: z.object({ motivos: z.array(OpcaoSchema), condicoes: z.array(OpcaoSchema) }),
+  opcoes: z.object({ motivos: z.array(OpcaoSchema) }),
 });

@@ -103,6 +103,12 @@ decide nível, cópia e o que conta é a api (`apps/api/src/evidencias/`).
   Instanooria o bloco não aparece, e não é defeito: confira `temFicha` antes.
 - **Ausência é "Não avaliado", nunca "Não atingiu".** A cópia da aula projetada
   chega "a revisar" e só conta depois de "Confirmar para a turma".
+- **A rodada em andamento tem aba mesmo vazia** (`rodadaEmAndamento`, ADR-145):
+  a api conta as rodadas pelas evidências, e sem a prop a rodada aberta pelo
+  "Zerar" só aparecia depois do primeiro jogo e de um F5. A aba vazia é só de
+  leitura (`rodadaSemRegistro`): a api recusa ajuste em rodada sem registro.
+- **O critério de cada nível vem da ficha** (`habilidades[].criterios`) e é
+  listado no fim do painel, em toda missão com ficha.
 - **O perfil** é `professor/turmas/[id]/estudantes/[estudanteId]`, pelo NOME na aba
   Estudantes; o relatório da Vila, antes destino da linha inteira, virou link ao
   lado (link dentro de link não existe). A trilha volta para `?aba=estudantes`.

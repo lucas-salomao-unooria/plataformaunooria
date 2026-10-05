@@ -3,16 +3,13 @@ import { FICHA_EXP05EF1B } from "../src/evidencias/fichas/exp05ef1b";
 import { CHAVES_REDIGIDAS } from "../src/observabilidade/redaction";
 import {
   CALLBACK_DO_MOTIVO,
-  CONFIRMACAO_DA_REGRA,
   ENCERRAMENTO_DA_NINA,
-  FALA_DO_TIO,
   FALAS_ANTES_DAS_PERGUNTAS,
   GRUPO,
   MURAL,
   NINA_ANTES_DO_TEMA,
   NINA_DEPOIS_DO_TEMA,
   PACOTE_PADRAO,
-  ROTULO_DA_CONDICAO,
   ROTULO_DO_MOTIVO,
   falaDaNina,
   mensagensDoPadrao,
@@ -35,13 +32,13 @@ import {
 } from "../src/quem-mandou-isso/regras/pacote";
 import {
   FASES,
+  PASSOS,
   avancarFase,
   faseAtingiu,
   passoEfetivo,
   revelacaoAberta,
   type MarcosDaSessao,
 } from "../src/quem-mandou-isso/regras/passos";
-import { textoSemSentido, validarEntao } from "../src/quem-mandou-isso/regras/reflexao";
 import { conferirSelecao, mesmaSelecao } from "../src/quem-mandou-isso/regras/selecao";
 import { percentual, progresso, termometro, type UnidadeDaConta } from "../src/quem-mandou-isso/regras/termometro";
 
@@ -248,13 +245,6 @@ describe("o tema e a fala da Nina", () => {
 });
 
 describe("as falas fixas da experiência (dentro do clone e na casca)", () => {
-  test("o tio é a versão curta da copy, 41 palavras, e não usa o tema", () => {
-    expect(FALA_DO_TIO).toBe(
-      "Valeu pela ajuda no grupo! Mas olha o que rolou agora: meu tio mandou um áudio na família com voz assustada dizendo que as aulas vão ser canceladas por causa do temporal e pediu pra repassar correndo. O que você faz?",
-    );
-    expect(contarPalavras(FALA_DO_TIO)).toBe(41);
-  });
-
   test("as perguntas são as do PO, LITERAIS: o contexto na fala da Nina e a última frase no título da enquete", () => {
     expect(FALAS_ANTES_DAS_PERGUNTAS.map((f) => f.perguntaId)).toEqual(FICHA_EXP05EF1B.perguntas.map((p) => p.id));
     const [p1, p2] = FICHA_EXP05EF1B.perguntas;
@@ -279,15 +269,12 @@ describe("as falas fixas da experiência (dentro do clone e na casca)", () => {
   test("tudo que a criança lê: até 45 palavras e nenhum termo proibido", () => {
     const textos = [
       falaDaNina(PACOTE_PADRAO.tema),
-      FALA_DO_TIO,
       ENCERRAMENTO_DA_NINA,
-      CONFIRMACAO_DA_REGRA,
       GRUPO.nome,
       MURAL.nome,
       ...FALAS_ANTES_DAS_PERGUNTAS.map((f) => f.fala),
       ...FICHA_EXP05EF1B.perguntas.flatMap((p) => [p.enunciado, ...p.alternativas.map((a) => a.texto)]),
       ...Object.values(ROTULO_DO_MOTIVO),
-      ...Object.values(ROTULO_DA_CONDICAO),
       ...Object.values(CALLBACK_DO_MOTIVO),
     ];
     for (const texto of textos) {
@@ -317,11 +304,10 @@ describe("o gabarito não desce antes da hora", () => {
 });
 
 describe("o passo efetivo = f(sessão, fase)", () => {
-  const nada: MarcosDaSessao = { entrou: true, confirmou: false, votou: false, refletiu: false, concluiu: false };
+  const nada: MarcosDaSessao = { entrou: true, confirmou: false, votou: false, concluiu: false };
   const confirmou = { ...nada, confirmou: true };
   const votou = { ...confirmou, votou: true };
-  const refletiu = { ...votou, refletiu: true };
-  const concluiu = { ...refletiu, concluiu: true };
+  const concluiu = { ...votou, concluiu: true };
 
   test("sem sessão (ou sem entrar) é abertura, em qualquer fase", () => {
     for (const fase of [null, ...FASES]) {
@@ -342,14 +328,16 @@ describe("o passo efetivo = f(sessão, fase)", () => {
     expect(passoEfetivo(votou, "triagem")).toBe("espera");
     expect(passoEfetivo(votou, "revelacao")).toBe("revelacao");
     expect(passoEfetivo(votou, "explicar")).toBe("sintese");
-    expect(passoEfetivo(votou, "reflexao")).toBe("reflexao");
+    /* As perguntas SÃO a reflexão (ADR-145): não há mais a tela da regra. */
+    expect(passoEfetivo(votou, "reflexao")).toBe("perguntas");
   });
 
-  test("os latches do estudante vencem a fase: regra enviada = perguntas; concluída = concluída", () => {
-    for (const fase of [null, ...FASES]) {
-      expect(passoEfetivo(refletiu, fase)).toBe("perguntas");
-      expect(passoEfetivo(concluiu, fase)).toBe("concluida");
-    }
+  test("o latch do estudante vence a fase: concluída = concluída", () => {
+    for (const fase of [null, ...FASES]) expect(passoEfetivo(concluiu, fase)).toBe("concluida");
+  });
+
+  test("o passo da regra Se/Então não existe mais", () => {
+    expect((PASSOS as readonly string[]).includes("reflexao")).toBe(false);
   });
 
   test("a revelação dele só abre com o VOTO e a fase na revelação ou além", () => {
@@ -454,52 +442,12 @@ describe("a seleção do Mural", () => {
   });
 });
 
-describe("o \"Então\" do construtor", () => {
-  test("15 a 240 caracteres DEPOIS do trim, com o espaço repetido colapsado", () => {
-    expect(validarEntao(`${" ".repeat(20)}curto demais${" ".repeat(20)}`)).toEqual({ ok: false, codigo: "entao-curto" });
-    expect(validarEntao("  eu pergunto   pra minha mãe  ")).toEqual({ ok: true, texto: "eu pergunto pra minha mãe" });
-    const longo = "Eu procuro a mesma notícia em outro site confiável antes de repassar. ";
-    expect(validarEntao(longo.repeat(4).slice(0, 240))).toMatchObject({ ok: true });
-    expect(validarEntao(`${longo.repeat(4)}mais um pouco`)).toEqual({ ok: false, codigo: "entao-longo" });
-  });
-
-  test.each([
-    "aaaaaaaaaaaaaaaaaaaa",
-    "kkkkkkkkkkkkkkkkkkkkkk",
-    "aaaaaaaaaaaaaaaab",
-    "123456789012345",
-    "vou 1234567890123456",
-    "asasasasasasasasas",
-    "abcabcabcabcabcabc",
-    "asdfghjklasdfghjkl",
-    "!!!!!!!!!!!!!!!!!!",
-    "....  ....  ....  ....",
-  ])("texto sem sentido reprova: %p", (texto) => {
-    expect(textoSemSentido(texto)).toBe(true);
-    expect(validarEntao(texto)).toEqual({ ok: false, codigo: "entao-sem-sentido" });
-  });
-
-  test.each([
-    "Eu pergunto para minha mãe se é verdade antes de mandar.",
-    "Procuro a notícia no site da escola",
-    "vou ligar pro 190 e confirmar",
-    "Kkk eu vou checar primeiro com a professora",
-    "Não repasso, pesquiso em outro lugar",
-    "ver no jornal da TV antes de encaminhar",
-    "PERGUNTO PRO MEU TIO DE ONDE VEIO O ÁUDIO",
-  ])("resposta de verdade passa, mesmo curta, com gíria ou em caixa alta: %p", (texto) => {
-    expect(textoSemSentido(texto)).toBe(false);
-    expect(validarEntao(texto)).toMatchObject({ ok: true });
-  });
-});
-
 describe("as contas do Termômetro", () => {
   const gabarito = new Map(mensagensDoPadrao().map((m) => [m.id, { veracidade: m.veracidade, tom: m.tom }]));
   const unidade = (selecao: string[] | null, motivo: UnidadeDaConta["motivo"] = null): UnidadeDaConta => ({
     entrou: true,
     selecao,
     motivo,
-    refletiu: false,
     concluiu: false,
   });
   /* Pelo preset: VE = msg_1, msg_5; VN = msg_3, msg_8; FE = msg_4, msg_7; FN = msg_2, msg_6. */
@@ -580,7 +528,6 @@ describe("as contas do Termômetro", () => {
       entraram: 2,
       confirmaram: 2,
       votaram: 0,
-      refletiram: 0,
       concluiram: 0,
     });
     expect(termometro(unidades, gabarito).falsaNeutra).toEqual({ unidades: 1, percentual: 50 });

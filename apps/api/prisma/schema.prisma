@@ -2693,7 +2693,8 @@ model Exp05ef1bSessao {
   motivo            String?
   /// O LATCH 2.
   votouEm           DateTime? @map("votou_em") @db.Timestamptz(6)
-  /// O LATCH 3: a regra Se/Então foi enviada (o texto está em `exp05ef1b_reflexoes`).
+  /// HISTÓRICO: o latch da regra Se/Então, que saiu da missão (ADR-145). Nenhuma
+  /// rota o escreve mais; concluir exige o voto (`concluido_check`).
   reflexaoEm        DateTime? @map("reflexao_em") @db.Timestamptz(6)
   concluidoEm       DateTime? @map("concluido_em") @db.Timestamptz(6)
   /// A versão do instrumento, na linha, para reprocessar o histórico se ele mudar.

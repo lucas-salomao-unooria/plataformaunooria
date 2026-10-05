@@ -121,8 +121,8 @@ export function MissaoQuemMandouIsso({
           </p>
           <p className="max-w-3xl text-[13px] text-unooria-neutral-500">
             O Termômetro da Turma é <strong className="text-unooria-neutral-700">anônimo por
-            construção</strong>: a conta é da sala, e nome de estudante não chega a ela. A regra
-            Se/Então que cada um escreve é lida por você e mais ninguém.
+            construção</strong>: a conta é da sala, e nome de estudante não chega a ela. Ninguém
+            escreve texto livre na missão: a reflexão é feita com duas perguntas de múltipla escolha.
           </p>
         </div>
       </Card>
