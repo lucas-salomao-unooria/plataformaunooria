@@ -2970,6 +2970,10 @@ model Exp04ef1bPacote {
 
   /// As URLs das imagens geradas, por id de notícia (`{ "n1": url }`).
   midia Json @default("{}")
+  /// As URLs que o professor APROVOU, por id de notícia (ADR-147). A imagem só
+  /// chega ao estudante quando a URL daqui é a mesma de `midia`: gerar outra
+  /// troca `midia`, e aquela notícia espera o novo OK.
+  midiaAprovada Json @default("{}") @map("midia_aprovada")
 
   /// Quem homologou. Carimbo sem FK, como `exp07ef1b_coberturas.aprovada_por`:
   /// a saída de um professor da rede não pode travar a atividade da turma.
