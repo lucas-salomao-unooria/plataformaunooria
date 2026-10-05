@@ -82,8 +82,17 @@ export const TEXTOS = {
     fechar: "Fechar",
     /** `e2.acessibilidade.modal_alt_comunicado` */
     altDoComunicado: "Imagem de comunicado escolar em papel timbrado com carimbo e assinatura",
+    /** [novo] O `alt` de cada desenho de imagem (`regras.ts#estiloDaImagem`). */
+    alt: {
+      comunicado: "Imagem de comunicado escolar em papel timbrado com carimbo e assinatura",
+      cartaz: "Imagem de cartaz colorido com um aviso em letras grandes",
+      print: "Imagem de print de tela de uma publicação na internet",
+      bilhete: "Imagem de bilhete escrito à mão em papel pautado",
+    },
     /** `e2.feedback.midia_reserva_texto` — a transcrição do comunicado. */
     transcricao: (texto: string) => `Texto do comunicado: ${texto}`,
+    /** [novo] A transcrição dos outros desenhos, que não são comunicado. */
+    transcricaoDaImagem: (texto: string) => `Texto da imagem: ${texto}`,
   },
 
   folha: {

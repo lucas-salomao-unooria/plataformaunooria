@@ -187,6 +187,24 @@ montada da `legenda` ("Nome do site: manchete"). A IA desta missão vive no
 PREPARO do professor, na api. O áudio assistivo (D0-4) só entra quando houver
 gravação — não há botão de "ouvir" nesta versão, e não há benchmarking.
 
+## O grupo chega, a Nina tem rosto, e cada imagem tem cara (0.4.0)
+
+Os pedidos visuais do PO de 2026-10-05:
+
+- **As mensagens chegam uma a uma** (`useChegadaEmSequencia`, ~0,9 s cada:
+  `MS_ENTRE_MENSAGENS` + `MS_DIGITANDO`). Só na PRIMEIRA abertura do grupo e
+  com a seleção vazia (`grupoChegaEmSequencia`; `Vista.grupoChegou`): quem
+  volta do Mural, ou dá F5 no meio da escolha, vê tudo de uma vez. Com
+  `prefers-reduced-motion`, também. A e2e espera a OITAVA linha, nunca conta
+  logo depois da primeira.
+- **A foto da Nina é ilustração em SVG** (`src/assets/nina.svg`, importada
+  pelo Vite e inlinada no bundle), em `avatarSrc` do `ChatListItem` e do
+  `ChatHeader`. SVG é texto: a regra de "zero mídia binária" continua.
+- **Cada imagem do grupo tem um desenho** (`estiloDaImagem`): comunicado,
+  cartaz, print de tela ou bilhete, cada um com `alt` e proporção próprios.
+  As duas imagens de um pacote saem sempre diferentes, e o par muda com o
+  texto delas — o desenho não vira pista de veracidade entre turmas.
+
 ## `permissoes: ["forms"]`
 
 Era para o `TextArea` e o `Selection` da regra Se/Então, que saíram (ADR-145).

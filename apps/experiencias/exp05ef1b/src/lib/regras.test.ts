@@ -3,6 +3,7 @@ import {
   VISTA_INICIAL,
   alternarSelecao,
   dividirLegenda,
+  estiloDaImagem,
   gateDoPasso,
   gateMudou,
   horarioDaMensagem,
@@ -215,5 +216,35 @@ describe("o desenho das mídias", () => {
     expect(iniciais("Mural da Turma")).toBe("MT");
     expect(horarioDaMensagem(0)).toBe("09:12");
     expect(horarioDaMensagem(99)).toBe("09:30");
+  });
+});
+
+describe("o desenho de cada imagem do grupo", () => {
+  const mensagem = (id: string, tipo: MensagemPublica["tipo"], texto: string) =>
+    ({ id, tipo, texto, remetente: "Ana" }) as MensagemPublica;
+  const pacote = (a: string, b: string) => [
+    mensagem("msg_1", "texto", "oi"),
+    mensagem("msg_2", "imagem", a),
+    mensagem("msg_3", "link", "x"),
+    mensagem("msg_4", "imagem", b),
+  ];
+
+  test("as duas imagens de um pacote nunca saem com o mesmo desenho", () => {
+    for (const [a, b] of [["Aviso", "Bilhete"], ["Comunicado da direção", "Cartaz da feira"], ["", "z"], ["museu", "ônibus"]]) {
+      const p = pacote(a!, b!);
+      expect(estiloDaImagem(p, "msg_2")).not.toBe(estiloDaImagem(p, "msg_4"));
+    }
+  });
+
+  test("é estável: o grupo, o Mural e a imagem aberta concordam", () => {
+    const p = pacote("Aviso", "Bilhete");
+    expect(estiloDaImagem(p, "msg_4")).toBe(estiloDaImagem([...p], "msg_4"));
+  });
+
+  test("o par muda de pacote para pacote (o desenho não vira pista)", () => {
+    const pares = new Set(
+      ["a", "b", "c", "d", "e", "f", "g", "h"].map((t) => estiloDaImagem(pacote(t, "fixo"), "msg_2")),
+    );
+    expect(pares.size).toBeGreaterThan(1);
   });
 });

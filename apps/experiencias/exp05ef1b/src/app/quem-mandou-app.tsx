@@ -9,6 +9,7 @@ import {
   alternarSelecao,
   gateDoPasso,
   gateMudou,
+  grupoChegaEmSequencia,
   marcaComoVista,
   mensagensDoMural,
   mesclarSessao,
@@ -268,6 +269,7 @@ export function QuemMandouApp({ inicial }: { inicial: Sessao }) {
 
   const irParaOMural = useCallback(() => setVista((v) => ({ ...v, muralAberto: true })), []);
   const revisar = useCallback(() => setVista((v) => ({ ...v, muralAberto: false })), []);
+  const marcarGrupoChegou = useCallback(() => setVista((v) => (v.grupoChegou ? v : { ...v, grupoChegou: true })), []);
 
   /** "Confirmar envio" — o LATCH 1. O corpo é a seleção que a criança está VENDO. */
   const confirmarMural = useCallback(async () => {
@@ -426,6 +428,8 @@ export function QuemMandouApp({ inicial }: { inicial: Sessao }) {
             selecao={sessao.selecao}
             limite={limites.encaminhamentos}
             conectado={conectado}
+            emSequencia={grupoChegaEmSequencia(vista, sessao.selecao)}
+            aoChegarTudo={marcarGrupoChegou}
             aoAlternar={alternar}
             aoIrParaOMural={irParaOMural}
             aoAvisar={avisar}

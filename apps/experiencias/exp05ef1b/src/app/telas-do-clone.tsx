@@ -22,7 +22,10 @@ import {
   HORA_DA_NINA,
   HORA_DO_APARELHO,
   SEGUNDOS_ATE_O_APOIO,
+  MS_DIGITANDO,
+  MS_ENTRE_MENSAGENS,
   crachasDe,
+  estiloDaImagem,
   horarioDaMensagem,
   iniciais,
   outrosParticipantes,
@@ -30,6 +33,9 @@ import {
 import { TEXTOS } from "../lib/textos";
 import type { MensagemPublica, Opcao, PacotePublico, Pergunta, Revelacao } from "../lib/tipos";
 import { BalaoDaMensagem, MidiaAberta } from "./componentes/balao";
+/* A foto da Nina é ilustração em SVG, importada pelo Vite: entra no bundle
+   versionado, e a missão continua sem mídia binária (ADR-145). */
+import FOTO_DA_NINA from "../assets/nina.svg";
 import { LaminaDaSintese, TermometroDaTurma, altDoTermometro } from "./componentes/midia-desenhada";
 
 /**
@@ -59,9 +65,43 @@ function useRolarAoFim(chave: unknown) {
 }
 
 /**
+ * As mensagens do grupo CHEGANDO uma a uma, como num app de verdade: um
+ * intervalo, o "digitando…" e a mensagem. `emSequencia: false` (a criança
+ * voltou do Mural, ou já tinha escolhido alguma) mostra tudo de uma vez, e
+ * `prefers-reduced-motion` também.
+ */
+function useChegadaEmSequencia(total: number, emSequencia: boolean, aoTerminar: () => void) {
+  const [chegaram, setChegaram] = useState(() => {
+    const semMovimento = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+    return emSequencia && !semMovimento ? 0 : total;
+  });
+  const [digitando, setDigitando] = useState(false);
+  const terminar = useRef(aoTerminar);
+  useEffect(() => {
+    terminar.current = aoTerminar;
+  }, [aoTerminar]);
+  useEffect(() => {
+    if (chegaram >= total) {
+      terminar.current();
+      return;
+    }
+    const antes = window.setTimeout(() => setDigitando(true), MS_ENTRE_MENSAGENS);
+    const chega = window.setTimeout(() => {
+      setDigitando(false);
+      setChegaram((n) => n + 1);
+    }, MS_ENTRE_MENSAGENS + MS_DIGITANDO);
+    return () => {
+      window.clearTimeout(antes);
+      window.clearTimeout(chega);
+    };
+  }, [chegaram, total]);
+  return { chegaram: Math.min(chegaram, total), digitando: digitando && chegaram < total };
+}
+
+/**
  * O campo de escrever do chat privado, INERTE: não recebe `onChange` nem
- * `onAction` (o pacote não tem `disabled`). Não há digitação livre dentro do
- * mensageiro nesta missão — o único texto livre é o `Então`, na casca.
+ * `onAction` (o pacote não tem `disabled`). Não há digitação livre nesta
+ * missão (a regra Se/Então saiu, ADR-145).
  */
 function CampoInerte() {
   return (
@@ -102,6 +142,7 @@ export function ListaDeConversas({
           <ChatListItem
             name={TEXTOS.lista.nina}
             initials="N"
+            avatarSrc={FOTO_DA_NINA}
             preview={TEXTOS.lista.previaDaNina}
             time={HORA_DA_NINA}
             unread={1}
@@ -142,6 +183,7 @@ export function ChatDoConvite({
       <ChatHeader
         name={TEXTOS.lista.nina}
         initials="N"
+        avatarSrc={FOTO_DA_NINA}
         presence={conectado ? TEXTOS.nina.presenca : TEXTOS.erros.conectando}
         onBack={aoVoltar}
       />
@@ -174,6 +216,8 @@ export function GrupoDaTurma({
   selecao,
   limite,
   conectado,
+  emSequencia,
+  aoChegarTudo,
   aoAlternar,
   aoIrParaOMural,
   aoAvisar,
@@ -182,6 +226,10 @@ export function GrupoDaTurma({
   selecao: readonly string[];
   limite: number;
   conectado: boolean;
+  /** As mensagens chegam uma a uma (`regras.ts#grupoChegaEmSequencia`). */
+  emSequencia: boolean;
+  /** As 8 chegaram: a aba não anima de novo. */
+  aoChegarTudo: () => void;
   /** Tira (se já estava) ou põe (depois do "Enviar" da folha) uma mensagem na seleção. */
   aoAlternar: (id: string) => void;
   aoIrParaOMural: () => void;
@@ -191,6 +239,8 @@ export function GrupoDaTurma({
   const [midia, setMidia] = useState<{ mensagem: MensagemPublica; hora: string } | null>(null);
   const [apoio, setApoio] = useState(false);
   const completa = selecao.length >= limite;
+  const { chegaram, digitando } = useChegadaEmSequencia(pacote.mensagens.length, emSequencia, aoChegarTudo);
+  const fimDoGrupo = useRolarAoFim(chegaram + (digitando ? 0.5 : 0));
 
   /* O apoio da Nina: 90 s sem encaminhar nada. O relógio recomeça a cada
      mudança na seleção, e o apoio some no primeiro encaminhamento — ele ensina
@@ -261,7 +311,7 @@ export function GrupoDaTurma({
       <ChatWallpaper className="app__corpo">
         <div className="conversa">
           <SystemMessage>{TEXTOS.grupo.entrou}</SystemMessage>
-          {pacote.mensagens.map((m, i) => {
+          {pacote.mensagens.slice(0, chegaram).map((m, i) => {
             const escolhida = selecao.includes(m.id);
             const esgotada = completa && !escolhida;
             const hora = horarioDaMensagem(i);
@@ -272,6 +322,7 @@ export function GrupoDaTurma({
                   direcao="in"
                   hora={hora}
                   comRemetente
+                  estilo={estiloDaImagem(pacote.mensagens, m.id)}
                   aoAbrirMidia={(mensagem) => setMidia({ mensagem, hora })}
                 />
                 {/*
@@ -290,6 +341,7 @@ export function GrupoDaTurma({
               </div>
             );
           })}
+          <div ref={fimDoGrupo} />
         </div>
       </ChatWallpaper>
 
@@ -335,7 +387,14 @@ export function GrupoDaTurma({
         </div>
       </BottomSheet>
 
-      {midia && <MidiaAberta mensagem={midia.mensagem} hora={midia.hora} aoFechar={() => setMidia(null)} />}
+      {midia && (
+        <MidiaAberta
+          mensagem={midia.mensagem}
+          hora={midia.hora}
+          estilo={estiloDaImagem(pacote.mensagens, midia.mensagem.id)}
+          aoFechar={() => setMidia(null)}
+        />
+      )}
     </div>
   );
 }
@@ -426,6 +485,7 @@ export function MuralDaTurma({
                     hora={horaDe(m)}
                     encaminhada
                     entrega={confirmado ? "read" : "none"}
+                    estilo={estiloDaImagem(todas, m.id)}
                     aoAbrirMidia={(mensagem) => setMidia({ mensagem, hora: horaDe(mensagem) })}
                   />
                   {crachas && <CrachasDaMensagem veracidade={crachas.veracidade} tom={crachas.tom} />}
@@ -514,7 +574,14 @@ export function MuralDaTurma({
         <AdminOnlyNotice>{TEXTOS.grupo.soAdmins}</AdminOnlyNotice>
       </div>
 
-      {midia && <MidiaAberta mensagem={midia.mensagem} hora={midia.hora} aoFechar={() => setMidia(null)} />}
+      {midia && (
+        <MidiaAberta
+          mensagem={midia.mensagem}
+          hora={midia.hora}
+          estilo={estiloDaImagem(todas, midia.mensagem.id)}
+          aoFechar={() => setMidia(null)}
+        />
+      )}
     </div>
   );
 }
@@ -609,6 +676,7 @@ export function ChatDasPerguntas({
       <ChatHeader
         name={TEXTOS.lista.nina}
         initials="N"
+        avatarSrc={FOTO_DA_NINA}
         presence={conectado ? TEXTOS.nina.presenca : TEXTOS.erros.conectando}
       />
       <ChatWallpaper className="app__corpo">

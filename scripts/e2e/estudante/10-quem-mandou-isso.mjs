@@ -576,7 +576,17 @@ await suite(
       oQue: "entrar no grupo da turma",
     });
     const linhas = q.locator(".linha-do-grupo");
-    r.exigir((await linhas.count()) === 8, `o grupo abre com as 8 mensagens do pacote (${await linhas.count()})`);
+    /* As mensagens CHEGAM uma a uma (~0,9 s cada, o pedido do PO): a suíte
+       espera a oitava, contra o erro da api, e só então conta. */
+    r.exigir(
+      (await linhas.count()) < 8,
+      "as mensagens chegam uma a uma — logo depois de entrar, o grupo ainda não tem as oito",
+    );
+    await esperarOuFalharPorHttp(p, linhas.nth(7), /quem-mandou-isso\/(entrar|sessao)/, {
+      timeout: 30_000,
+      oQue: "as oito mensagens chegarem ao grupo",
+    });
+    r.exigir((await linhas.count()) === 8, `o grupo termina com as 8 mensagens do pacote (${await linhas.count()})`);
     r.exigir(
       (await q.getByText("Apenas administradores podem enviar mensagens").count()) >= 1,
       "no lugar do teclado, a tarja de só-administradores: não há digitação livre dentro do mensageiro",
@@ -584,7 +594,8 @@ await suite(
     await r.registrar(p, "grupo-da-turma", {
       titulo: "Turma 5ºB, oito mensagens",
       mostra:
-        "Textos, o comunicado desenhado e as prévias de link, cada um com a seta de encaminhar; no " +
+        "Textos, as duas imagens desenhadas (cada uma com desenho próprio) e as prévias de link, cada um " +
+        "com a seta de encaminhar; no " +
         "topo, a faixa “Encaminhe 3 mensagens para o Mural da Turma” com 0/3.",
       prova:
         "Nenhuma mensagem chega marcada, e o formato não é pista: imagem e link têm uma verdadeira e " +
