@@ -95,7 +95,7 @@ export function MissaoUnooGPT({
         </Card>
       </section>
 
-      <Card variant="outlined" title="O que o software NÃO conta ao estudante">
+      <Card variant="outlined" title="O que a missão NÃO conta ao estudante">
         <div className="flex flex-col gap-3 text-[14px] leading-relaxed text-unooria-neutral-800">
           <p className="max-w-3xl">
             Cada uma das 8 fontes distorce a cidade de um jeito: o satélite vê telhado e não vê

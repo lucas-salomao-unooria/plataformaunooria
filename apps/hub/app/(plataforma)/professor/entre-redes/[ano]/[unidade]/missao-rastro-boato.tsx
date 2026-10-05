@@ -83,7 +83,7 @@ export function MissaoRastroBoato({
         </Card>
       </section>
 
-      <Card variant="outlined" title="O que o software NÃO conta ao estudante">
+      <Card variant="outlined" title="O que a missão NÃO conta ao estudante">
         <div className="flex flex-col gap-3 text-[14px] leading-relaxed text-unooria-neutral-800">
           <p className="max-w-3xl">
             Nenhuma mensagem é marcada como falsa.{" "}

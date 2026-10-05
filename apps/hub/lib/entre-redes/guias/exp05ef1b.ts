@@ -95,7 +95,7 @@ export const GUIA_EXP05EF1B: GuiaDaAula = {
       {
         titulo: "Libere a missão na sala de aula",
         texto:
-          "Sem a liberação, o card fica com cadeado para as crianças. É na sala, em Missões, e vale só para a turma em que você liberar.",
+          "Sem a liberação, o cartão fica com cadeado para as crianças. É na sala, em Missões, e vale só para a turma em que você liberar.",
       },
       {
         titulo: "Aprove o pacote da turma — sem ele a aula não existe",
@@ -370,7 +370,7 @@ export const GUIA_EXP05EF1B: GuiaDaAula = {
     {
       pergunta: "Por que a missão não abre para a minha turma?",
       resposta:
-        "Há duas portas: a missão precisa estar liberada na sala de aula e ter um pacote aprovado para a turma. Sem a liberação, o card fica com cadeado; sem o pacote, a criança entra e vê uma tela de espera.",
+        "Há duas portas: a missão precisa estar liberada na sala de aula e ter um pacote aprovado para a turma. Sem a liberação, o cartão fica com cadeado; sem o pacote, a criança entra e vê uma tela de espera.",
     },
     {
       pergunta: "A inteligência artificial escreve o que quiser?",

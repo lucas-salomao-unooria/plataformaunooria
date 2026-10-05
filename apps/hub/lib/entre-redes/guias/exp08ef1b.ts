@@ -284,7 +284,7 @@ export const GUIA_EXP08EF1B: GuiaDaAula = {
 
   observacao: {
     intro:
-      "Durante o debate, marque UMA letra ao lado do nome de cada estudante. É a avaliação que o software não produz — ele mede o que a criança fez no feed, não o que ela sustentou na sala.",
+      "Durante o debate, marque UMA letra ao lado do nome de cada estudante. É a avaliação que a plataforma não produz — ela mede o que a criança fez no feed, não o que ela sustentou na sala.",
     marcas: [
       { letra: "F", texto: "defendeu a resposta citando um post que ele mesmo salvou" },
       { letra: "R", texto: "repetiu o argumento do colega sem acrescentar nada" },

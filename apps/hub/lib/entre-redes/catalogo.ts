@@ -323,7 +323,7 @@ export const MISSAO_JORNAL_DA_ESCOLA: Missao = {
       },
     ],
     preparo: [
-      "Libere a missão para a turma na sala de aula — sem a liberação, o card fica com cadeado para as crianças.",
+      "Libere a missão para a turma na sala de aula — sem a liberação, o cartão fica com cadeado para as crianças.",
       "Nada é obrigatório antes da aula: sem preparo, a turma roda o banco padrão da Unooria, " +
         "“Feira de Ciências e Notícias da Cidade”. Em A aula e os resultados, Usar Banco Padrão o " +
         "confirma em um toque.",
@@ -388,7 +388,7 @@ export const MISSAO_UNOOGPT: Missao = {
       {
         rotulo: "3 — Decidir e dizer por quê",
         texto:
-          "Ele manda cada equipe e responde 'por que aqui?', escolhendo entre as fontes que ABRIU — ou 'foi intuição, não olhei dado', que está sempre disponível. O software não julga a resposta: quem lê é você. A lista nunca oferece a fonte que ele não consultou.",
+          "Ele manda cada equipe e responde 'por que aqui?', escolhendo entre as fontes que ABRIU — ou 'foi intuição, não olhei dado', que está sempre disponível. A plataforma não julga a resposta: quem lê é você. A lista nunca oferece a fonte que ele não consultou.",
       },
       {
         rotulo: "4 — Resultado: a faixa, não a nota",
@@ -400,7 +400,7 @@ export const MISSAO_UNOOGPT: Missao = {
       "Abra /professor/entre-redes/2-serie/unidade-1/resultados ANTES da aula: é de lá que sai a largada, e nenhum estudante fala com o assistente antes dela.",
       "Combine a largada em voz alta. O relógio é da turma: quem chega antes espera, e a espera é a aula — não a tela travada.",
       "Você pode somar +2 minutos ou encerrar a qualquer momento. Somar não faz a chuva andar para trás.",
-      "Guarde metade da aula para o debate: o software NÃO conta a ninguém qual fonte engana em quê. Esse é o seu material, e está no guia.",
+      "Guarde metade da aula para o debate: a missão NÃO conta a ninguém qual fonte engana em quê. Esse é o seu material, e está no guia.",
       "Turma sem partida nenhuma? Confira se a largada foi dada — é o motivo nº 1 de 'não abre'.",
     ],
   },
@@ -651,7 +651,7 @@ export const MISSAO_FOTO_CONTA: Missao = {
       },
     ],
     preparo: [
-      "Libere a missão para a turma na sala de aula — sem a liberação, o card fica com cadeado para as crianças.",
+      "Libere a missão para a turma na sala de aula — sem a liberação, o cartão fica com cadeado para as crianças.",
       "Opcional: no painel da missão, gere com IA o pacote de legendas para o tema da semana (Pátio do Recreio, Horta, Sala de Aula ou Parquinho), confira o preview e aprove. Sem aprovação, o banco curado padrão assume sozinho até 10 minutos antes da aula.",
       "Fones de ouvido fazem diferença: toda instrução tem locução, e trinta tablets em autoplay ao mesmo tempo viram cacofonia sem eles.",
       "Rode a missão você mesmo uma vez, com calma — são ~12 minutos de tela. O que a criança NÃO pode saber de antemão: que os comentários de Leo e Sofia mudam conforme a foto escolhida.",
@@ -759,7 +759,7 @@ export const MISSAO_QUEM_MANDOU_ISSO: Missao = {
       },
     ],
     preparo: [
-      "Libere a missão para a turma na sala de aula — sem a liberação, o card fica com cadeado para as crianças.",
+      "Libere a missão para a turma na sala de aula — sem a liberação, o cartão fica com cadeado para as crianças.",
       "Aprove o pacote de mensagens da turma em A aula e os resultados: escolha o componente " +
         "curricular, escreva o tema (ele completa a fala da Nina, “Rolou uma confusão sobre…”), liste " +
         "de 3 a 6 fatos da aula e gere com IA — ou use o pacote curado padrão, “O Mistério do Passeio " +
@@ -1000,7 +1000,7 @@ export const MISSAO_JURI_ESTADUAL: Missao = {
       },
     ],
     preparo: [
-      "Libere a missão para a turma na sala de aula — sem a liberação, o card fica com cadeado para as crianças.",
+      "Libere a missão para a turma na sala de aula — sem a liberação, o cartão fica com cadeado para as crianças.",
       "Crie a atividade aqui na ficha, em Nova atividade: escolha o componente curricular, escreva o tema " +
         "da feira e os assuntos da semana, e a inteligência artificial escreve os dezesseis estandes. Não há " +
         "banco pronto: sem saldo de geração com IA, a atividade não sai — prepare com antecedência.",

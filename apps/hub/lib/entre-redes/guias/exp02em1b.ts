@@ -17,7 +17,7 @@ import type { GuiaDaAula } from "./tipos";
 export const GUIA_EXP02EM1B: GuiaDaAula = {
   expId: "exp02em1b",
   chamada:
-    "Uma aula de 50 minutos. A missão leva ~12 min; os outros 35 são o debate, e é lá que a lição acontece — o software não conta a ninguém qual fonte engana em quê.",
+    "Uma aula de 50 minutos. A missão leva ~12 min; os outros 35 são o debate, e é lá que a lição acontece — a missão não conta a ninguém qual fonte engana em quê.",
 
   avisos: [
     {
@@ -200,7 +200,7 @@ export const GUIA_EXP02EM1B: GuiaDaAula = {
   debate: {
     aberturaNaLousa: "Vocês decidiram sobre a mesma cidade. Por que viram cidades diferentes?",
     tempo:
-      "18 minutos, com a turma inteira. É o maior debate da trilha e é proposital: esta é a única missão em que o software se recusa a explicar, e tudo o que ela mede só vira aprendizado aqui.",
+      "18 minutos, com a turma inteira. É o maior debate da trilha e é proposital: esta é a única missão em que a tela se recusa a explicar, e tudo o que ela mede só vira aprendizado aqui.",
     perguntas: [
       {
         nivel: "retomada",
