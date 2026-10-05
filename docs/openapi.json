@@ -41800,7 +41800,20 @@
                               "comentariosDestaque": {
                                 "type": "array",
                                 "items": {
-                                  "type": "string"
+                                  "type": "object",
+                                  "properties": {
+                                    "autor": {
+                                      "type": "string"
+                                    },
+                                    "mensagem": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "autor",
+                                    "mensagem"
+                                  ],
+                                  "additionalProperties": false
                                 },
                                 "minItems": 2,
                                 "maxItems": 2
@@ -42484,7 +42497,20 @@
                               "comentariosDestaque": {
                                 "type": "array",
                                 "items": {
-                                  "type": "string"
+                                  "type": "object",
+                                  "properties": {
+                                    "autor": {
+                                      "type": "string"
+                                    },
+                                    "mensagem": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "autor",
+                                    "mensagem"
+                                  ],
+                                  "additionalProperties": false
                                 },
                                 "minItems": 2,
                                 "maxItems": 2
@@ -42713,7 +42739,20 @@
                               "comentariosDestaque": {
                                 "type": "array",
                                 "items": {
-                                  "type": "string"
+                                  "type": "object",
+                                  "properties": {
+                                    "autor": {
+                                      "type": "string"
+                                    },
+                                    "mensagem": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "autor",
+                                    "mensagem"
+                                  ],
+                                  "additionalProperties": false
                                 },
                                 "minItems": 2,
                                 "maxItems": 2
@@ -44093,14 +44132,42 @@
                                 "maxItems": 2,
                                 "items": [
                                   {
-                                    "type": "string",
-                                    "minLength": 1,
-                                    "maxLength": 140
+                                    "type": "object",
+                                    "properties": {
+                                      "autor": {
+                                        "type": "string",
+                                        "pattern": "^[a-z0-9._]{3,24}$"
+                                      },
+                                      "mensagem": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 140
+                                      }
+                                    },
+                                    "required": [
+                                      "autor",
+                                      "mensagem"
+                                    ],
+                                    "additionalProperties": false
                                   },
                                   {
-                                    "type": "string",
-                                    "minLength": 1,
-                                    "maxLength": 140
+                                    "type": "object",
+                                    "properties": {
+                                      "autor": {
+                                        "type": "string",
+                                        "pattern": "^[a-z0-9._]{3,24}$"
+                                      },
+                                      "mensagem": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 140
+                                      }
+                                    },
+                                    "required": [
+                                      "autor",
+                                      "mensagem"
+                                    ],
+                                    "additionalProperties": false
                                   }
                                 ]
                               },
@@ -44263,6 +44330,9 @@
                           "rodadas": {
                             "type": "integer",
                             "minimum": 0
+                          },
+                          "imagensAprovadas": {
+                            "type": "boolean"
                           }
                         },
                         "required": [
@@ -44272,7 +44342,8 @@
                           "origem",
                           "ativa",
                           "criadaEm",
-                          "rodadas"
+                          "rodadas",
+                          "imagensAprovadas"
                         ],
                         "additionalProperties": false
                       }
@@ -44469,14 +44540,42 @@
                             "maxItems": 2,
                             "items": [
                               {
-                                "type": "string",
-                                "minLength": 1,
-                                "maxLength": 140
+                                "type": "object",
+                                "properties": {
+                                  "autor": {
+                                    "type": "string",
+                                    "pattern": "^[a-z0-9._]{3,24}$"
+                                  },
+                                  "mensagem": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 140
+                                  }
+                                },
+                                "required": [
+                                  "autor",
+                                  "mensagem"
+                                ],
+                                "additionalProperties": false
                               },
                               {
-                                "type": "string",
-                                "minLength": 1,
-                                "maxLength": 140
+                                "type": "object",
+                                "properties": {
+                                  "autor": {
+                                    "type": "string",
+                                    "pattern": "^[a-z0-9._]{3,24}$"
+                                  },
+                                  "mensagem": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 140
+                                  }
+                                },
+                                "required": [
+                                  "autor",
+                                  "mensagem"
+                                ],
+                                "additionalProperties": false
                               }
                             ]
                           },
@@ -44572,6 +44671,16 @@
                       ],
                       "additionalProperties": false
                     },
+                    "imagens": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "string"
+                      }
+                    },
+                    "imagensAprovadasEm": {
+                      "type": "string",
+                      "nullable": true
+                    },
                     "podcast": {
                       "type": "object",
                       "properties": {
@@ -44605,6 +44714,8 @@
                     "rodadas",
                     "posts",
                     "midia",
+                    "imagens",
+                    "imagensAprovadasEm",
                     "podcast"
                   ],
                   "additionalProperties": false
@@ -44710,7 +44821,187 @@
           "a-selecao"
         ],
         "summary": "\"Usar esta atividade agora\" — a professora escolhe o que a turma faz (ADR-130).",
-        "description": "A escolhida passa a ser a ATIVIDADE EM ANDAMENTO da turma; a que estava volta a ser pronta — fica, com as sessões e as rodadas. A etapa volta à exploração.\n\nA RODADA: a atividade que nunca rodou começa na 1; a que já rodou abre a SEGUINTE à última — retomar a mesma rodada depois do Mural seria o \"voltar\" que o botão único proíbe. As rodadas anteriores continuam no painel de habilidades.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- **Idempotente**: pôr no ar a que já está no ar devolve `mudou: false` e não muda nada.\n- Trocar com a aula correndo leva quem está jogando para a atividade nova: a experiência nota o `coberturaId` novo no polling do gate e recarrega. A tela pede confirmação antes.\n- Cobertura de outra turma responde **404** `atividade-nao-encontrada`.",
+        "description": "A escolhida passa a ser a ATIVIDADE EM ANDAMENTO da turma; a que estava volta a ser pronta — fica, com as sessões e as rodadas. A etapa volta à exploração.\n\nA RODADA: a atividade que nunca rodou começa na 1; a que já rodou abre a SEGUINTE à última — retomar a mesma rodada depois do Mural seria o \"voltar\" que o botão único proíbe. As rodadas anteriores continuam no painel de habilidades.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- **Idempotente**: pôr no ar a que já está no ar devolve `mudou: false` e não muda nada.\n- Trocar com a aula correndo leva quem está jogando para a atividade nova: a experiência nota o `coberturaId` novo no polling do gate e recarrega. A tela pede confirmação antes.\n- Cobertura de outra turma responde **404** `atividade-nao-encontrada`.\n- Sem a segunda fase da aprovação (as imagens, `POST …/aprovar-imagens`), **409** `imagens-nao-aprovadas` (ADR-146).\n- Pôr no ar NÃO libera a missão na sala por aqui: quem faz o `PUT /salas/turma/:turmaId/missoes/exp07ef1b` é o hub, logo depois (ADR-146).",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/a-selecao/turmas/{turmaId}/coberturas/{coberturaId}/aprovar-imagens": {
+      "post": {
+        "operationId": "ASelecaoTurmasController_aprovarImagens",
+        "parameters": [
+          {
+            "name": "turmaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "coberturaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "coberturaId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "imagensAprovadasEm": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "coberturaId",
+                    "imagensAprovadasEm"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "a-selecao"
+        ],
+        "summary": "A segunda fase da aprovação: o professor viu as imagens dos posts e as aprova (ADR-146).",
+        "description": "A primeira fase é o `POST homologar` (os textos). As imagens se geram em seguida, no card de cada post (`POST gerar-midia?coberturaId=`), e o professor regera a que não serve (`POST …/imagens/:postId/regerar`). Só depois desta rota a atividade vai ao ar: `POST em-andamento` responde **409** `imagens-nao-aprovadas` sem ela.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- **Idempotente**: a segunda aprovação devolve o carimbo da primeira.\n- Não exige imagem pronta em todo post: a geração pode falhar ou a quota acabar, e o post segue com o card da descrição, que o professor viu no mesmo card. Quem segura o botão até a geração terminar é a tela.\n- As coberturas criadas antes desta regra entraram aprovadas (migração `20261005150000`).",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/a-selecao/turmas/{turmaId}/coberturas/{coberturaId}/imagens/{postId}/regerar": {
+      "post": {
+        "operationId": "ASelecaoTurmasController_regerarImagem",
+        "parameters": [
+          {
+            "name": "turmaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "coberturaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "postId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "coberturaId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "postId": {
+                      "type": "string",
+                      "enum": [
+                        "post_a_1",
+                        "post_a_2",
+                        "post_a_3",
+                        "post_a_4",
+                        "post_b_1",
+                        "post_b_2",
+                        "post_b_3",
+                        "post_b_4",
+                        "post_c_1",
+                        "post_c_2",
+                        "post_c_3",
+                        "post_c_4"
+                      ]
+                    },
+                    "url": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "coberturaId",
+                    "postId",
+                    "url"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "a-selecao"
+        ],
+        "summary": "\"Gerar outra imagem\": uma imagem nova para UM post, enquanto as imagens estão em validação (ADR-146).",
+        "description": "O professor viu a imagem no card do post e ela não serve. Gera outra, SEMPRE paga, num arquivo novo — sobrescrever o da descrição trocaria a imagem de toda cobertura que a herdou, inclusive a de uma turma em aula.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Depois de `aprovar-imagens`, **409** `imagens-ja-aprovadas`: a turma pode estar olhando para elas.\n- Post de gráfico (o banco curado tem quatro) responde **400** `post-sem-imagem`: o gráfico é desenhado a partir dos números.\n- Quota do professor, com o custo estimado de uma imagem. Sem saldo, **429** `sem-saldo-de-ia`.",
         "security": [
           {
             "token-da-plataforma": []
@@ -44851,14 +45142,42 @@
                             "maxItems": 2,
                             "items": [
                               {
-                                "type": "string",
-                                "minLength": 1,
-                                "maxLength": 140
+                                "type": "object",
+                                "properties": {
+                                  "autor": {
+                                    "type": "string",
+                                    "pattern": "^[a-z0-9._]{3,24}$"
+                                  },
+                                  "mensagem": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 140
+                                  }
+                                },
+                                "required": [
+                                  "autor",
+                                  "mensagem"
+                                ],
+                                "additionalProperties": false
                               },
                               {
-                                "type": "string",
-                                "minLength": 1,
-                                "maxLength": 140
+                                "type": "object",
+                                "properties": {
+                                  "autor": {
+                                    "type": "string",
+                                    "pattern": "^[a-z0-9._]{3,24}$"
+                                  },
+                                  "mensagem": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 140
+                                  }
+                                },
+                                "required": [
+                                  "autor",
+                                  "mensagem"
+                                ],
+                                "additionalProperties": false
                               }
                             ]
                           },
@@ -45150,14 +45469,42 @@
                             "maxItems": 2,
                             "items": [
                               {
-                                "type": "string",
-                                "minLength": 1,
-                                "maxLength": 140
+                                "type": "object",
+                                "properties": {
+                                  "autor": {
+                                    "type": "string",
+                                    "pattern": "^[a-z0-9._]{3,24}$"
+                                  },
+                                  "mensagem": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 140
+                                  }
+                                },
+                                "required": [
+                                  "autor",
+                                  "mensagem"
+                                ],
+                                "additionalProperties": false
                               },
                               {
-                                "type": "string",
-                                "minLength": 1,
-                                "maxLength": 140
+                                "type": "object",
+                                "properties": {
+                                  "autor": {
+                                    "type": "string",
+                                    "pattern": "^[a-z0-9._]{3,24}$"
+                                  },
+                                  "mensagem": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 140
+                                  }
+                                },
+                                "required": [
+                                  "autor",
+                                  "mensagem"
+                                ],
+                                "additionalProperties": false
                               }
                             ]
                           },
@@ -45392,14 +45739,42 @@
                           "maxItems": 2,
                           "items": [
                             {
-                              "type": "string",
-                              "minLength": 1,
-                              "maxLength": 140
+                              "type": "object",
+                              "properties": {
+                                "autor": {
+                                  "type": "string",
+                                  "pattern": "^[a-z0-9._]{3,24}$"
+                                },
+                                "mensagem": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 140
+                                }
+                              },
+                              "required": [
+                                "autor",
+                                "mensagem"
+                              ],
+                              "additionalProperties": false
                             },
                             {
-                              "type": "string",
-                              "minLength": 1,
-                              "maxLength": 140
+                              "type": "object",
+                              "properties": {
+                                "autor": {
+                                  "type": "string",
+                                  "pattern": "^[a-z0-9._]{3,24}$"
+                                },
+                                "mensagem": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 140
+                                }
+                              },
+                              "required": [
+                                "autor",
+                                "mensagem"
+                              ],
+                              "additionalProperties": false
                             }
                           ]
                         },
@@ -46087,14 +46462,42 @@
                             "maxItems": 2,
                             "items": [
                               {
-                                "type": "string",
-                                "minLength": 1,
-                                "maxLength": 140
+                                "type": "object",
+                                "properties": {
+                                  "autor": {
+                                    "type": "string",
+                                    "pattern": "^[a-z0-9._]{3,24}$"
+                                  },
+                                  "mensagem": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 140
+                                  }
+                                },
+                                "required": [
+                                  "autor",
+                                  "mensagem"
+                                ],
+                                "additionalProperties": false
                               },
                               {
-                                "type": "string",
-                                "minLength": 1,
-                                "maxLength": 140
+                                "type": "object",
+                                "properties": {
+                                  "autor": {
+                                    "type": "string",
+                                    "pattern": "^[a-z0-9._]{3,24}$"
+                                  },
+                                  "mensagem": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 140
+                                  }
+                                },
+                                "required": [
+                                  "autor",
+                                  "mensagem"
+                                ],
+                                "additionalProperties": false
                               }
                             ]
                           },

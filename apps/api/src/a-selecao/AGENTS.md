@@ -30,6 +30,13 @@ e a primeira em que o dado do MURAL é do computador (E13, o gatilho da ADR-111)
   a tela de "ainda não foi aberta" que a experiência já mostra, sem mudar o
   bundle. O banco curado da Praça Central virou o ponto de partida da CRIAÇÃO
   (`GET professor/material` traz também as falas do podcast).
+- **A aprovação tem DUAS fases (ADR-146).** `homologar` é a dos textos e grava a
+  cobertura com `imagens_aprovadas_em` NULO; `POST …/coberturas/:c/aprovar-imagens`
+  (idempotente) é a das imagens. Sem ela, `colocarEmAndamento` responde 409
+  `imagens-nao-aprovadas`: a turma abriria com imagem que ninguém viu. NÃO exige
+  todas as imagens prontas — a geração falha e a quota acaba, e o post segue com
+  o card da descrição, que o professor viu no mesmo card. As coberturas de antes
+  entraram aprovadas na migração (nenhuma turma trava por regra posterior).
 - **Imagens e podcast aceitam `?coberturaId=`**: a professora prepara a
   atividade PRONTA antes de pô-la no ar. Sem o parâmetro, a em andamento.
 - **O gabarito do post (enquadramento, fonte, ângulo) e a matriz só descem no
@@ -86,6 +93,18 @@ e a primeira em que o dado do MURAL é do computador (E13, o gatilho da ADR-111)
   inteira, e a mídia do Eco (fora de `selecao/`) não colide. As URLs moram em
   `coberturas.midia`, gravadas com `midia || jsonb_build_object(...)`. Os posts de
   métricas do banco curado não pedem imagem: a experiência desenha o gráfico.
+- **"Gerar outra imagem" é a exceção ao hash** (`midia.regerar`, ADR-146): o
+  nome leva uma variação (`nomeDaImagem(descricao, randomUUID())`), então é
+  arquivo NOVO e sempre pago. Sobrescrever o da descrição trocaria a imagem de
+  toda cobertura que a herdou, inclusive a de uma turma em aula. Só antes de
+  `aprovar-imagens` (409 `imagens-ja-aprovadas`); post de gráfico, 400
+  `post-sem-imagem`.
+- **Comentário de leitor é `{autor, mensagem}`** (ADR-146), nunca `texto`: esse
+  nome está em `CAMPOS_SENSIVEIS` (é a reflexão da criança) e o teste do
+  `postPublico` o recusa. A IA escreve o autor; `autorConferido` exige
+  `/^[a-z0-9._]{3,24}$/`, tira o `@` e recusa perfil de veículo, e o fora disso
+  (e a cobertura antiga, de strings) recebe o `autorDeReserva` do post e da
+  posição — o lote não é regerado por causa de um apelido.
 
 ## A evidência (E14)
 

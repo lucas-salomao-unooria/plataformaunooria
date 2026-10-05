@@ -134,6 +134,7 @@ async function prepararAtividade(turmaId = ids.turma, escolaId = ESCOLA): Promis
     posts: POSTS_PADRAO.map((p) => ({ ...p })),
     podcast: { ...FALAS_DO_TEMA_PADRAO },
   });
+  await service.aprovarImagens(escolaId, turmaId, undefined, criada.id);
   await service.colocarEmAndamento(escolaId, turmaId, undefined, criada.id);
   return criada.id;
 }
@@ -721,7 +722,24 @@ describe("atividade × rodada: zerar guarda, a atividade nova nasce pronta", () 
       etapa: null,
       rodadas: 0,
       tema: "A reforma da biblioteca do bairro",
+      imagensAprovadasEm: null,
     });
+
+    /* As duas fases (ADR-146): os textos foram aprovados, as imagens não — não
+       vai ao ar, e a lista diz por quê. */
+    expect(await codigoDe(service.colocarEmAndamento(ESCOLA, ids.turma, ids.professora, nova.id))).toBe(
+      "imagens-nao-aprovadas",
+    );
+    expect(
+      (await service.coberturas(ESCOLA, ids.turma, ids.professora)).historico.find((c) => c.id === nova.id),
+    ).toMatchObject({ imagensAprovadas: false });
+    const aprovada = await service.aprovarImagens(ESCOLA, ids.turma, ids.professora, nova.id);
+    // Idempotente: a segunda aprovação devolve o carimbo da primeira.
+    expect(await service.aprovarImagens(ESCOLA, ids.turma, ids.professora, nova.id)).toEqual(aprovada);
+    // Aprovadas, as imagens não mudam mais.
+    expect(await codigoDe(service.coberturaEmValidacao(ESCOLA, ids.turma, ids.professora, nova.id))).toBe(
+      "imagens-ja-aprovadas",
+    );
 
     const trocou = await service.colocarEmAndamento(ESCOLA, ids.turma, ids.professora, nova.id);
     expect(trocou).toMatchObject({ coberturaId: nova.id, rodada: 1, etapa: "exploracao", mudou: true });

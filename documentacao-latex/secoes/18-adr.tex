@@ -9,7 +9,7 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{145 decisões}, numeradas até ADR-145. A 132 (a Ajuda com
+São \textbf{146 decisões}, numeradas até ADR-146. A 132 (a Ajuda com
 avatar) entrou no código antes de ter seção aqui, e por um dia o número foi
 citado sem existir; a 133 pulou para não colidir com ela. A 133 e a 134 nasceram no mesmo dia, em frentes paralelas
 (Unoovista e Unoochat), e entraram juntas no merge; a 135 e a 136 levaram as
@@ -196,6 +196,7 @@ que a cercam.
 \zebra \adrr{ADR-143} & O lado do feed entra no sorteio de equipes por registro da missão, e redistribuir não convive com equipe & 2026-10-03 & Aceita\\
 \adrr{ADR-144} & O painel de habilidades lê por unidade, a missão vale o melhor entre as atividades, e a regional desce até a escola sem lotação & 2026-10-03 & Aceita\\
 \zebra \adrr{ADR-145} & Toda rodada mede todas as habilidades, o critério de cada nível aparece no painel, e Quem mandou isso? perde a regra dissertativa & 2026-10-05 & Aceita; revê a \adrr{ADR-120}\\
+\adrr{ADR-146} & Pôr a atividade no ar libera a missão na sala, e A Seleção aprova textos e imagens em duas fases & 2026-10-05 & Aceita; complementa a \adrr{ADR-130}\\
 \bottomrule
 \end{tabularx}
 
@@ -12685,3 +12686,136 @@ imagens iguais e a Nina sem rosto).
 \textbf{Gatilho.} A frente que tira a reflexão dissertativa da A Seleção e do
 8º ano; ou o PO pedir que a rodada do mesmo pacote volte a não medir.
 
+\section{ADR-146 --- Pôr a atividade no ar libera a missão na sala, e A Seleção aprova textos e imagens em duas fases}
+\label{adr:no-ar-libera-e-duas-fases}
+
+\textbf{Data.} 2026-10-05. \textbf{Status.} Aceita. Complementa a
+\adrr{ADR-130} (a atividade e o \enquote{Usar esta atividade agora}) e a
+\adrr{ADR-69} (a liberação por turma); estende à A Seleção o painel de
+habilidades ao vivo da \adrr{ADR-145}.
+
+\begin{especificacao}{Contexto}
+O PO testou A Seleção (\cd{exp07ef1b}) de ponta a ponta e devolveu pedidos dos
+dois lados. O mais grave valia para as cinco missões com atividade: o toggle
+\enquote{Pôr esta atividade no ar agora} do assistente e o botão \enquote{Usar
+esta atividade agora} abriam a ATIVIDADE (\adrr{ADR-130}), mas a missão
+continuava sem linha em \cd{liberacoes} (\adrr{ADR-69}), e o estudante via o
+cadeado com a atividade no ar. A e2e não via, porque o \emph{seed} libera a 7A
+e a 5A antes. O painel de habilidades só mostrava o nível novo depois de um F5,
+fora de Quem mandou isso?. Do lado do professor da A Seleção, a cobertura ia ao
+ar com imagens que ninguém tinha visto: o preparo aprovava os textos, e as
+imagens eram geradas depois, num laço à parte da página da atividade. Do lado
+do estudante: os comentários dos posts eram frases sem autor; curtir,
+comentar e compartilhar eram botões que não mudavam nada na missão (e o curtir
+tinha uma dica própria); \enquote{Confirmar publicação} vinha no vermelho de
+ação perigosa; o Mural abria na publicação da própria criança, deixando a do
+colega numa aba que nem todos abriam, e o Story mostrava a imagem sem a
+legenda; a Amara não tinha rosto; e quem entrava antes de a professora abrir a
+turma ficava em \enquote{ainda não está aberta} até recarregar a página.
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{itemize}
+  \item \textbf{Pôr no ar libera a missão na sala}, nas cinco missões com
+    atividade: depois que a atividade entra em andamento, o hub chama o
+    \rota{PUT /salas/turma/:turmaId/missoes/:expId} com \cd{liberada}
+    (\cd{liberarNaSala}, em \arq{hub/lib/entre-redes/criar-atividade.ts}), do
+    assistente e do botão da lista. Libera SEMPRE, inclusive a missão
+    \textbf{encerrada} na sala: pôr no ar é o ato explícito do professor que a
+    \adrr{ADR-69} pede (decisão do Lucas). A rota é idempotente. Se só a
+    liberação falha --- o gestor não libera, a rota é de quem leciona ---, sai
+    um aviso, não um erro: a atividade já está no ar.
+  \item \textbf{O painel de habilidades acompanha a aula.} O \emph{polling} do
+    painel da aula continua lendo só o painel, e chama \cd{router.refresh()}
+    quando \cd{mudouAEvidencia} acusa mudança no que a ficha registra, também
+    na A Seleção, no Jornal da Escola e no Júri Estadual. Na A Seleção relê
+    mais uma vez na volta seguinte, porque o Canal A gradua a legenda com IA
+    DEPOIS de a publicação aparecer; no Jornal e no Júri uma leitura basta, a
+    marca vai na mesma transação da jogada.
+  \item \textbf{A Seleção aprova em duas fases, numa tela só}, no passo de
+    conteúdo do assistente: primeiro os textos (os 12 cards com a legenda
+    editável e o aviso \enquote{A imagem será gerada após a aprovação dos
+    textos}; aprovar grava a cobertura), depois as imagens, geradas sozinhas no
+    card de cada post, com \enquote{Gerar outra imagem} por post. O botão final,
+    \enquote{Aprovar Cobertura e Abrir Turma} (ou \enquote{Aprovar cobertura}
+    com o toggle desligado), só acende depois das duas e grava a segunda fase
+    (\rota{POST .../coberturas/:c/aprovar-imagens}, idempotente) antes de pôr
+    no ar. A coluna nova \cd{exp07ef1b\_coberturas.imagens\_aprovadas\_em}
+    (migração \arq{20261005150000\_exp07ef1b\_imagens\_aprovadas}) é nula até
+    lá, e a cobertura nula não vai ao ar: \rota{POST .../em-andamento} responde
+    409 \cd{imagens-nao-aprovadas}, a lista a mostra \enquote{Em preparo}, sem
+    o botão de usar, e a página dela mostra a mesma grade com
+    \enquote{Aprovar imagens}. As coberturas que já existiam entraram
+    aprovadas.
+  \item \textbf{\enquote{Gerar outra imagem} grava num arquivo novo}
+    (\rota{POST .../coberturas/:c/imagens/:postId/regerar}): o nome leva uma
+    variação além do \emph{hash} da descrição, então a imagem é sempre paga.
+    Só antes da aprovação (409 \cd{imagens-ja-aprovadas}); post de gráfico,
+    400 \cd{post-sem-imagem}.
+  \item \textbf{O comentário de leitor é \cd{\{autor, mensagem\}}.} A IA
+    escreve o autor, um apelido fictício no formato de usuário de rede
+    (\cd{/\^{}[a-z0-9.\_]\{3,24\}\$/}, sem \enquote{@}, nunca o perfil de um
+    veículo); o que vier fora disso, e as coberturas antigas (só texto),
+    recebem um autor de reserva determinístico, pelo post e pela posição. O
+    banco curado ganhou os 24 autores. O nome \cd{texto} ficou de fora porque
+    está em \cd{CAMPOS\_SENSIVEIS} (é a reflexão da criança).
+  \item \textbf{A tela do estudante (1.2.0).} No feed saem curtir, comentar e
+    compartilhar (\cd{PostCard.Actions} com \cd{actions=\{[]\}}, prop do DS
+    0.2.18), a dica das cinco curtidas e o \enquote{Ver todos os N
+    comentários}; a contagem de curtidas fica, e cada comentário mostra o
+    autor. \enquote{Confirmar publicação} vai no tom padrão. O Mural abre no
+    Story do PAR, com a legenda de cada post sobre a imagem. A Amara ganha
+    foto (ilustração em SVG, à espera do PO). E a tela \enquote{ainda não está
+    aberta} pergunta de novo à api a cada 5\,s e entra sozinha.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Liberar no servidor, dentro de cada \cd{colocarEmAndamento}.}
+    Fecharia a brecha na api, mas são cinco \emph{services}, cada um dono da
+    própria atividade, e o \cd{professorId} que a liberação grava pode faltar
+    (o gestor alcança essas rotas). Ficou no hub, no fim da criação, onde as
+    equipes já são montadas pelo mesmo motivo (\adrr{ADR-130}).
+  \item \textbf{Não reabrir a missão encerrada.} Respeitaria o
+    \enquote{encerrar} da sala, mas o professor que pôs a atividade no ar
+    ficaria com a turma no cadeado sem entender por quê. Descartada pelo
+    Lucas.
+  \item \textbf{Bloquear a segunda fase até todas as imagens ficarem prontas.}
+    A geração falha e a quota acaba; o post sem imagem segue com o card da
+    descrição, que o professor vê no mesmo card antes de aprovar. Quem segura o
+    botão enquanto a geração corre é a tela, não a api.
+  \item \textbf{Regerar sobrescrevendo o arquivo da descrição.} O nome é o
+    \emph{hash} da descrição justamente para a mesma cena servir a rede
+    inteira: sobrescrever trocaria a imagem de toda cobertura que a herdou,
+    inclusive a de uma turma em aula.
+  \item \textbf{Autor dos comentários fixo no cliente}, sorteado de uma lista.
+    Mais barato, mas o autor não teria relação com o que diz. O Lucas preferiu
+    que a IA o escreva junto do comentário, com a reserva só para o que vier
+    fora do formato.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{A liberação é um segundo pedido, do cliente.} Se a rede cai
+    entre os dois, a atividade fica no ar e a missão bloqueada; o aviso diz
+    onde terminar, mas nada no servidor amarra os dois.
+  \item \textbf{Pôr no ar desfaz o \enquote{encerrar} da sala} sem perguntar.
+  \item \textbf{Cada \enquote{Gerar outra imagem} é pago}, e os arquivos
+    recusados ficam no \emph{bucket}.
+  \item \textbf{A aprovação das imagens não exige todas prontas}: a turma pode
+    abrir com um post em card de descrição, se a geração falhou e o professor
+    aprovou mesmo assim.
+  \item \textbf{O painel de habilidades refaz a página inteira} a cada
+    mudança de evidência --- seis leituras na A Seleção, cinco no Jornal e no
+    Júri ---, e na A Seleção mais uma, de reforço.
+  \item \textbf{A foto da Amara e o tom roxo esperam o PO.} O feed sem os
+    botões veio com o DS 0.2.18, publicado no mesmo dia.
+\end{itemize}
+
+\textbf{Gatilho.} A liberação falhar com frequência depois de a atividade
+entrar no ar (aí ela desce para a api, numa transação com o
+\cd{colocarEmAndamento}); ou o custo das imagens regeradas pesar na quota do
+professor.

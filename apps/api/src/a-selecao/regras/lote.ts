@@ -2,6 +2,7 @@ import { z } from "zod";
 import {
   BLOCOS,
   ENQUADRAMENTOS,
+  autorConferido,
   IDS_DE_POST,
   ID_DE_POST_RE,
   PERFIS,
@@ -75,7 +76,11 @@ export function problemasDoLote(posts: readonly PostDaCobertura[]): string[] {
 
     /* Só o que a criança lê ANTES do Mural. As tags são a própria revelação:
        quando elas aparecem, a descoberta já aconteceu. */
-    const lidos = [post.legenda, post.descricaoImagem, ...post.comentariosDestaque];
+    const lidos = [
+      post.legenda,
+      post.descricaoImagem,
+      ...post.comentariosDestaque.flatMap((c) => [c.autor, c.mensagem]),
+    ];
     const proibidos = [...new Set(lidos.flatMap(termosProibidosEm))];
     if (proibidos.length > 0) {
       erros.push(`O post ${post.id} usa termo que antecipa a revelação: ${proibidos.join(", ")}.`);
@@ -122,7 +127,7 @@ export const PostDaIaSchema = z.object({
   tag_fonte: z.string().max(35),
   curtidas_simuladas: z.number().int().min(10).max(999),
   comentarios_simulados_count: z.number().int().min(2).max(150),
-  comentarios_destaque: z.array(z.string().max(140)).length(2),
+  comentarios_destaque: z.array(z.object({ autor: z.string().max(40), mensagem: z.string().max(140) })).length(2),
 });
 
 export const LoteDaIaSchema = z.object({
@@ -167,10 +172,12 @@ export function postsDaIa(bruto: unknown): { tema: string; posts: PostDaCobertur
     tagAngulo: p.tag_enquadramento.trim(),
     curtidas: p.curtidas_simuladas,
     comentarios: p.comentarios_simulados_count,
-    comentariosDestaque: [
-      (p.comentarios_destaque[0] ?? "").trim(),
-      (p.comentarios_destaque[1] ?? "").trim(),
-    ] as const,
+    /* O autor que a IA mandou é conferido, e o fora do formato cai no de
+       reserva (`autorConferido`): um apelido torto não vale regerar o lote. */
+    comentariosDestaque: [0, 1].map((i) => ({
+      autor: autorConferido(p.comentarios_destaque[i]?.autor ?? "", p.id, i),
+      mensagem: (p.comentarios_destaque[i]?.mensagem ?? "").trim(),
+    })) as unknown as PostDaCobertura["comentariosDestaque"],
   }));
   const problemas = problemasDoLote(posts);
   for (const post of posts) {

@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { Inject, Injectable } from "@nestjs/common";
 import { AI_PROVIDER, type AiProvider } from "../ai/provider";
 import { QuotaService } from "../ai/quota.service";
@@ -56,6 +56,9 @@ export const LADO_DA_IMAGEM = 600;
  */
 const emPreparo = new Map<string, Promise<ProgressoDaMidia>>();
 
+/** As regerações em andamento, por cobertura e post (o mesmo lock, um post por vez). */
+const regerando = new Map<string, Promise<{ coberturaId: string; postId: IdDePost; url: string }>>();
+
 export interface ProgressoDaMidia {
   coberturaId: string;
   total: number;
@@ -67,9 +70,17 @@ export interface ProgressoDaMidia {
   midia: Record<string, string>;
 }
 
-/** O nome do arquivo no bucket, abaixo de `experiencias/exp07ef1b/`. */
-export function nomeDaImagem(descricao: string): string {
-  const hash = createHash("sha256").update(`${VERSAO_DO_PEDIDO_DE_IMAGEM}|${descricao.trim()}`).digest("hex");
+/**
+ * O nome do arquivo no bucket, abaixo de `experiencias/exp07ef1b/`.
+ *
+ * `variacao` é a imagem REGERADA (ADR-146): o professor recusou a da
+ * descrição, e a nova não pode cair no mesmo arquivo — sobrescrevê-lo trocaria
+ * a imagem de toda cobertura que herdou aquela descrição, inclusive a que uma
+ * turma está jogando. Sem variação, o nome continua sendo só o da descrição.
+ */
+export function nomeDaImagem(descricao: string, variacao?: string): string {
+  const chave = [VERSAO_DO_PEDIDO_DE_IMAGEM, descricao.trim(), ...(variacao ? [variacao] : [])].join("|");
+  const hash = createHash("sha256").update(chave).digest("hex");
   return `selecao/${hash.slice(0, 32)}.webp`;
 }
 
@@ -105,6 +116,49 @@ export class MidiaDaExp07ef1bService {
       emPreparo.delete(cobertura.id);
     });
     emPreparo.set(cobertura.id, trabalho);
+    return trabalho;
+  }
+
+  /**
+   * "GERAR OUTRA IMAGEM" (ADR-146): o professor viu a imagem no card do post e
+   * ela não serve. Uma imagem nova, SEMPRE paga (o arquivo é novo: a variação
+   * entra no nome), e só enquanto as imagens estão em validação.
+   *
+   * Uma por chamada, e no mesmo lock de processo da geração em lote, pela
+   * mesma razão: dois cliques não pagam duas imagens.
+   */
+  async regerar(
+    escolaId: string,
+    turmaId: string,
+    professorId: string | undefined,
+    usuarioId: string,
+    perfil: Perfil,
+    coberturaId: string,
+    postId: IdDePost,
+  ): Promise<{ coberturaId: string; postId: IdDePost; url: string }> {
+    const cobertura = await this.selecao.coberturaEmValidacao(escolaId, turmaId, professorId, coberturaId);
+    const post = postsQuePedemImagem(cobertura.posts).find((p) => p.id === postId);
+    if (!post) throw erroDeJogo("post-sem-imagem");
+
+    const chave = `${cobertura.id}:${postId}`;
+    const emCurso = regerando.get(chave);
+    if (emCurso) return emCurso;
+    const trabalho = (async () => {
+      if (!(await this.quota.temSaldo(escolaId, usuarioId, perfil))) throw erroDeJogo("sem-saldo-de-ia");
+      const nome = nomeDaImagem(post.descricaoImagem, randomUUID());
+      const bytes = await this.ia.generateImage(promptDaImagem(post.descricaoImagem), { proporcao: "1:1" });
+      const url = await this.assets.salvarMidiaDeExperiencia({
+        expId: EXP_ID,
+        nome,
+        bytes,
+        contentType: "image/webp",
+        imagem: { largura: LADO_DA_IMAGEM, altura: LADO_DA_IMAGEM },
+      });
+      await this.quota.consumir(escolaId, usuarioId, CUSTO_ESTIMADO_POR_IMAGEM);
+      await this.selecao.registrarMidia(escolaId, cobertura.id, postId, url);
+      return { coberturaId: cobertura.id, postId, url };
+    })().finally(() => regerando.delete(chave));
+    regerando.set(chave, trabalho);
     return trabalho;
   }
 

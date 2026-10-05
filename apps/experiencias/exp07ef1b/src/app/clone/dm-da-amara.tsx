@@ -1,6 +1,9 @@
 import type { ReactNode } from "react";
 import { ButtonUnv, DirectThread, MessageBubble } from "@edu/ui/ds-unoovista";
 import { CONTAS } from "../../lib/textos";
+/* Ilustração em SVG, importada pelo Vite: entra no bundle versionado (abaixo
+   de 4 KB vira data URI), e a missão continua sem mídia binária (ADR-146). */
+import FOTO_DA_AMARA from "../../assets/amara.svg";
 
 /**
  * A conversa com a Amara — a mesma DM nas três vezes em que ela fala: o
@@ -18,6 +21,7 @@ export function DmDaAmara({ children, rodape }: { children: ReactNode; rodape?: 
     <div className="tela">
       <DirectThread
         username={CONTAS.amara}
+        avatarSrc={FOTO_DA_AMARA}
         subtitle={CONTAS.amaraSubtitulo}
         withStatusBarInset={false}
         footer={rodape}
@@ -39,7 +43,13 @@ export function BalaoDaAmara({
   bare?: boolean;
 }) {
   return (
-    <MessageBubble direction="incoming" position={posicao} senderLabel={CONTAS.amaraParaLeitor} bare={bare}>
+    <MessageBubble
+      direction="incoming"
+      position={posicao}
+      senderLabel={CONTAS.amaraParaLeitor}
+      bare={bare}
+      avatarSrc={posicao === "single" || posicao === "last" ? FOTO_DA_AMARA : undefined}
+    >
       {children}
     </MessageBubble>
   );

@@ -6,6 +6,7 @@ import { useConexao } from "./app/conexao";
 import { Indisponivel } from "./app/escola/telas-da-escola";
 import { SelecaoApp } from "./app/selecao-app";
 import { api, definirExperiencia, reportarErro, tipoDaFalha } from "./lib/api";
+import { INTERVALO_DO_GATE_MS } from "./lib/regras";
 import { ligarTelemetria, telemetria } from "./lib/telemetria";
 import { GLOBAL } from "./lib/textos";
 import { EXP_ID, EXP_VERSION, type RespostaSessao } from "./lib/tipos";
@@ -78,6 +79,36 @@ export function Bootstrap() {
   useEffect(() => {
     if (pronto) void carregar();
   }, [pronto, carregar]);
+
+  /* A porta fechada NÃO é terminal (ADR-146). O 403 da abertura é a guarda de
+     liberação ou a turma sem atividade em andamento — e as duas se resolvem
+     com um clique da professora, que a criança não vê. Antes, quem entrou
+     cedo ficava em "ainda não está aberta" até recarregar a página. Agora a
+     tela pergunta de novo no ritmo do gate (ADR-93: HTTP, nunca WebSocket),
+     só com a aba visível, e entra sozinha quando abrir. Silenciosa: falha
+     de rede aqui não acende aviso — a criança já está numa tela de espera. */
+  useEffect(() => {
+    if (falha !== "bloqueada") return;
+    let vivo = true;
+    const relogio = window.setInterval(() => {
+      if (document.visibilityState !== "visible") return;
+      void (async () => {
+        try {
+          const sessao = await api.get<RespostaSessao>("/a-selecao/sessao");
+          if (!vivo) return;
+          setInicial(sessao);
+          setFalha(null);
+          telemetria.entrou(sessao.passo);
+        } catch {
+          /* continua fechada, ou sem rede: a próxima volta pergunta de novo */
+        }
+      })();
+    }, INTERVALO_DO_GATE_MS);
+    return () => {
+      vivo = false;
+      window.clearInterval(relogio);
+    };
+  }, [falha]);
 
   if (falha === "bloqueada") return <Indisponivel />;
 

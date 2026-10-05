@@ -242,6 +242,19 @@ body {
   overflow-wrap: anywhere;
 }
 
+/* A legenda do POST sobre a imagem do Story (ADR-146): a faixa de baixo da
+   mídia, com um degradê para o texto ler sobre qualquer foto. É texto, não
+   controle — `pointer-events: none` deixa os toques chegarem às zonas de
+   avançar e voltar do `StoryViewer`, que a camada `children` cobriria. O
+   seletor leva `.story` para vencer o `> * { pointer-events: auto }` dela. */
+.story .legenda-do-post {
+  position: absolute;
+  inset: auto 0 0 0;
+  padding: var(--unv-spacing-xl, 32px) var(--unv-spacing-m, 12px) var(--unv-spacing-m, 12px);
+  background: linear-gradient(to top, rgb(0 0 0 / 0.78), rgb(0 0 0 / 0.55) 70%, transparent);
+  pointer-events: none;
+}
+
 .ficha {
   display: flex;
   flex-direction: column;

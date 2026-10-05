@@ -74,15 +74,10 @@ export const E2 = {
   irSalvos: "Ir para aba Salvos",
   /** `e2.instrucao.scaffold_inatividade` */
   dicaInatividade: "Dica: toque no ícone de marcador para salvar os posts que você quer analisar antes de publicar.",
-  /** `e2.instrucao.scaffold_curtidas` */
-  dicaCurtidas: "Para levar um post para os Stories do grêmio, use o botão Salvar.",
   /** `e2.falha.midia_erro` */
   midiaErro: "Não foi possível carregar a imagem. Toque para tentar novamente.",
   /** ESCRITA AQUI — a prova social como o app escreve. */
   curtidas: (n: number) => `${n.toLocaleString("pt-BR")} ${plural(n, "curtida", "curtidas")}`,
-  /** ESCRITA AQUI — a linha cinza sobre os comentários, como o app escreve. */
-  verComentarios: (n: number) =>
-    n === 1 ? "Ver 1 comentário" : `Ver todos os ${n.toLocaleString("pt-BR")} comentários`,
   /** ESCRITA AQUI — os nomes acessíveis das duas abas da barra inferior. */
   abaFeed: "Feed",
   abaSalvos: "Salvos",

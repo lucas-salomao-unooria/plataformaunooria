@@ -59,13 +59,16 @@ describe("a lista de atividades", () => {
     const lista = atividadesDaSelecao({
       ativa: null,
       historico: [
-        { id: "velha", tema: "Velha", foco: null, origem: "padrao", ativa: false, criadaEm: "2026-09-01T00:00:00Z", rodadas: 2 },
-        { id: "no-ar", tema: "No ar", foco: "Bairro", origem: "ia", ativa: true, criadaEm: "2026-09-10T00:00:00Z", rodadas: 1 },
-        { id: "nova", tema: "Nova", foco: null, origem: "ia", ativa: false, criadaEm: "2026-09-20T00:00:00Z", rodadas: 0 },
+        { id: "velha", tema: "Velha", foco: null, origem: "padrao", ativa: false, criadaEm: "2026-09-01T00:00:00Z", rodadas: 2, imagensAprovadas: true },
+        { id: "no-ar", tema: "No ar", foco: "Bairro", origem: "ia", ativa: true, criadaEm: "2026-09-10T00:00:00Z", rodadas: 1, imagensAprovadas: true },
+        { id: "nova", tema: "Nova", foco: null, origem: "ia", ativa: false, criadaEm: "2026-09-20T00:00:00Z", rodadas: 0, imagensAprovadas: false },
       ],
     });
     expect(ordenarAtividades(lista).map((a) => a.id)).toEqual(["no-ar", "nova", "velha"]);
     expect(lista.find((a) => a.id === "no-ar")?.detalhe).toBe("Bairro · gerada com IA");
+    // As imagens ainda não foram aprovadas (ADR-146): em preparo, sem "Usar esta atividade agora".
+    expect(lista.find((a) => a.id === "nova")?.estado).toBe("em-preparo");
+    expect(lista.find((a) => a.id === "velha")?.estado).toBe("pronta");
   });
 
   test("o Júri: o pacote é a atividade, com o rótulo da disciplina", () => {
@@ -146,11 +149,13 @@ describe("o fim da criação", () => {
     expect(fim.avisos).toEqual([]);
     expect(chamadas.map((c) => `${c.metodo} ${c.url}`)).toEqual([
       "POST /api/plataforma/a-selecao/turmas/t/coberturas/c/em-andamento",
+      "PUT /api/plataforma/salas/turma/t/missoes/exp07ef1b",
       "GET /api/plataforma/equipes/turma/t/missao/exp07ef1b/atividade/c",
       "POST /api/plataforma/equipes/turma/t/missao/exp07ef1b/atividade/c/sugestao",
       "PUT /api/plataforma/equipes/turma/t/missao/exp07ef1b/atividade/c",
     ]);
-    expect(chamadas[3]?.corpo).toEqual({
+    expect(chamadas[1]?.corpo).toEqual({ estado: "liberada" });
+    expect(chamadas[4]?.corpo).toEqual({
       versao: 0,
       modo: "sorteio",
       computadores: 2,
@@ -186,6 +191,29 @@ describe("o fim da criação", () => {
     const fim = await concluirCriacao({ ...alvo, equipes: { modo: "individual" }, porNoAr: false }, busca);
     expect(fim.avisos).toEqual([]);
     expect(chamadas.find((c) => c.metodo === "PUT")?.corpo).toMatchObject({ versao: 3, modo: "individual" });
+  });
+
+  test("pôr no ar libera a missão na sala (ADR-146); sem pôr no ar, a sala não é tocada", async () => {
+    const noAr = buscaFalsa({});
+    await concluirCriacao({ ...alvo, equipes: { modo: "manual", computadores: 2 }, porNoAr: true }, noAr.busca);
+    expect(noAr.chamadas).toEqual([
+      { url: "/api/plataforma/a-selecao/turmas/t/coberturas/c/em-andamento", metodo: "POST", corpo: {} },
+      { url: "/api/plataforma/salas/turma/t/missoes/exp07ef1b", metodo: "PUT", corpo: { estado: "liberada" } },
+    ]);
+
+    const pronta = buscaFalsa({});
+    await concluirCriacao({ ...alvo, equipes: { modo: "manual", computadores: 2 }, porNoAr: false }, pronta.busca);
+    expect(pronta.chamadas.some((c) => c.url.includes("/salas/"))).toBe(false);
+  });
+
+  test("a liberação na sala falhou (ex.: gestor, que não libera): a atividade fica no ar e o aviso diz onde terminar", async () => {
+    const { busca } = buscaFalsa({
+      "PUT /api/plataforma/salas/turma/t/missoes/exp07ef1b": { status: 404, corpo: { mensagem: "Turma não encontrada." } },
+    });
+    const fim = await concluirCriacao({ ...alvo, equipes: { modo: "manual", computadores: 2 }, porNoAr: true }, busca);
+    expect(fim.avisos).toEqual([
+      "A atividade está em andamento, mas a missão não foi liberada na Sala de Aula: Turma não encontrada.",
+    ]);
   });
 
   test("uma falha no meio NÃO desfaz nada: a atividade existe, e o aviso diz o que faltou", async () => {

@@ -2804,6 +2804,10 @@ model Exp07ef1bCobertura {
   /// Nulo só na `padrao` que nasceu sozinha (CHECK).
   aprovadaPor String? @map("aprovada_por") @db.Uuid
 
+  /// A segunda fase da aprovação (ADR-146): o professor viu as imagens no card
+  /// de cada post e as aprovou. Nulo = não vai ao ar (409 `imagens-nao-aprovadas`).
+  imagensAprovadasEm DateTime? @map("imagens_aprovadas_em") @db.Timestamptz(6)
+
   ativa        Boolean  @default(true)
   criadaEm     DateTime @default(now()) @map("criada_em") @db.Timestamptz(6)
   atualizadaEm DateTime @default(now()) @updatedAt @map("atualizada_em") @db.Timestamptz(6)

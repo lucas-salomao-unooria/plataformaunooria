@@ -154,7 +154,10 @@ export function atividadesDaSelecao(c: CoberturasDaTurma): AtividadeNaLista[] {
     id: h.id,
     titulo: h.tema,
     detalhe: [h.foco, ORIGEM[h.origem]].filter(Boolean).join(" · "),
-    estado: h.ativa ? "em-andamento" : "pronta",
+    /* Sem a segunda fase da aprovação (ADR-146), a atividade não vai ao ar:
+       "Em preparo", e o card não oferece "Usar esta atividade agora" — a api
+       recusaria com 409 `imagens-nao-aprovadas`. */
+    estado: h.ativa ? "em-andamento" : h.imagensAprovadas ? "pronta" : "em-preparo",
     criadaEm: h.criadaEm,
     rodadas: h.rodadas,
   }));

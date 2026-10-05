@@ -89,9 +89,8 @@ e-mail — e, da enquete, a PERGUNTA respondida, nunca a alternativa.
 | `attempted` | `missao:entrada` | depois da primeira leitura | `contexto: { passo }` |
 | `progressed` | `desafio:abrir-feed` | "Abrir Feed da Cobertura" | — |
 | `interacted` | `feed:salvar` / `feed:remover` | marcou / desmarcou no feed | `resultado: { salvos }`, `contexto: { postId }` |
-| `interacted` | `feed:curtir` | curtiu (cosmético) | `contexto: { semSalvar }` |
 | `interacted` | `feed:recarregar-midia` | "Tentar novamente" na imagem | `contexto: { postId }` |
-| `interacted` | `feed:andaime` | a demonstração ou uma das dicas apareceu | `contexto: { motivo: demonstracao \| inatividade \| curtidas }` |
+| `interacted` | `feed:andaime` | a demonstração ou a dica do marcador apareceu | `contexto: { motivo: demonstracao \| inatividade }` |
 | `progressed` | `feed:ir-salvos` | saiu do feed para a aba Salvos | `resultado: { salvos }`, `contexto: { tempoFeedS }` |
 | `interacted` | `salvos:remover` / `salvos:selecionar` | desmarcou / remarcou na grade | `resultado: { selecionados }`, `contexto: { postId }` |
 | `interacted` | `salvos:voltar-feed` | voltou para garimpar | — |
@@ -121,7 +120,7 @@ legenda, pelo painel de habilidades (`/evidencias`).
 ## A copy ESCRITA AQUI (para o PO revisar)
 
 Marcada `ESCRITA AQUI` em `lib/textos.ts`: a conta da Amara (`amara.gremio`,
-"Ativa agora"), "N curtidas", "Ver todos os N comentários", os nomes acessíveis
+"Ativa agora"), "N curtidas", os nomes acessíveis
 (abas, grade, campo, voltar), "Não foi possível carregar o feed agora.", a recusa
 do sanitizador, "Continuar" (da confirmação às enquetes), o encerramento da Amara
 ("Valeu pela força com a cobertura! Até a próxima."), "Fechar conversa", o corpo

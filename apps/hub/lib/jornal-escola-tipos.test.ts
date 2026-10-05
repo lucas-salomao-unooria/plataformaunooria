@@ -31,6 +31,7 @@ import {
   falhasAcumuladas,
   gabaritoDaEscolha,
   histogramaEmPercentual,
+  mudouAEvidencia,
   normalizarNoticia,
   ordenarLinhas,
   percentual,
@@ -208,6 +209,44 @@ describe("quantos publicaram", () => {
     expect(aulaEmAndamento({ etapa: "resultado", resumo: resumo(5, 5) })).toBe(true);
     // Turma sem ninguém: continua esperando — pode ser só cedo.
     expect(aulaEmAndamento({ etapa: "revisao", resumo: resumo(0, 0) })).toBe(true);
+  });
+});
+
+describe("o que faz o painel de habilidades se atualizar sozinho", () => {
+  type Contadores = Partial<{ publicaramAPrimeira: number; formaramAChave: number; publicaramASegunda: number; concluiram: number }>;
+  const painel = (resumo: Contadores = {}, rodada = 1, id = "p1") => ({
+    pacote: { id, disciplina: "portugues", tema: "t", origem: "padrao" as const, midia: { total: 8, prontas: 8 } },
+    rodada,
+    resumo: {
+      total: 5,
+      iniciaram: 5,
+      publicaramAPrimeira: 3,
+      formaramAChave: 2,
+      publicaramASegunda: 1,
+      concluiram: 1,
+      computadores: { publicaram: 3, total: 5 },
+      porComputador: false,
+      histograma: { edicao1: [0, 1, 1, 1], edicao2: [0, 0, 0, 1] },
+      motivos: {} as Parameters<typeof mudouAEvidencia>[0]["resumo"]["motivos"],
+      radar: [],
+      ...resumo,
+    },
+  });
+
+  test("relê nas três jogadas que a api marca, no concluir depois do Desafio Final, e quando a atividade ou a rodada trocam", () => {
+    const antes = painel();
+    expect(mudouAEvidencia(antes, painel())).toBe(false);
+    expect(mudouAEvidencia(antes, painel({ publicaramAPrimeira: 4 }))).toBe(true);
+    expect(mudouAEvidencia(antes, painel({ formaramAChave: 3 }))).toBe(true);
+    expect(mudouAEvidencia(antes, painel({ publicaramASegunda: 2 }))).toBe(true);
+    expect(mudouAEvidencia(antes, painel({ concluiram: 2 }))).toBe(true);
+    expect(mudouAEvidencia(antes, painel({}, 2))).toBe(true);
+    expect(mudouAEvidencia(antes, painel({}, 1, "p2"))).toBe(true);
+  });
+
+  test("o que não marca nada não relê a página: quem só abriu a missão, ou a etapa que o professor abriu", () => {
+    const antes = painel();
+    expect(mudouAEvidencia(antes, { ...antes, resumo: { ...antes.resumo, iniciaram: 6, total: 6 } })).toBe(false);
   });
 });
 

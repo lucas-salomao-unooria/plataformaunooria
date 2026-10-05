@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { AlertBox, Button, Modal, ModalBody, ModalFooter, ModalHeader, ModalTitle } from "@edu/ui/ds";
 import { caminhoDoEmAndamento, type MissaoComAtividade } from "@/lib/entre-redes/atividades";
+import { liberarNaSala } from "@/lib/entre-redes/criar-atividade";
 
 type Confirmacao =
   | { tipo: "trocar" }
@@ -13,7 +14,7 @@ type Confirmacao =
 /**
  * "USAR ESTA ATIVIDADE AGORA" (ADR-130): o professor escolhe o que a turma faz.
  * Criar não põe no ar — é este botão, no card da lista e na página da
- * atividade.
+ * atividade. Pôr no ar libera também a missão na Sala de Aula (ADR-146).
  *
  * Com outra em andamento, a troca pede confirmação: quem está jogando passa
  * para esta, numa rodada nova, e a outra volta a ficar pronta. No Instanooria
@@ -60,6 +61,11 @@ export function UsarEstaAtividade({
         setErro(corpo?.mensagem ?? "Não deu para pôr esta atividade em andamento. Tente de novo.");
         return;
       }
+      /* Pôr no ar também libera a missão na sala (ADR-146): sem isto a turma
+         continuava no cadeado. A atividade já está em andamento; se só a
+         liberação falhar, o aviso diz onde terminar. */
+      const aviso = await liberarNaSala({ expId, turmaId });
+      if (aviso) setErro(aviso);
       setConfirmacao(null);
       router.refresh();
     } catch {

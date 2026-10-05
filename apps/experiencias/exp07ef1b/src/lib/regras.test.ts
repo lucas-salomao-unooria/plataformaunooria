@@ -24,7 +24,6 @@ import {
   telaDoPasso,
   temaNaFrase,
   voltar,
-  CURTIDAS_ATE_A_DICA,
   SEGUNDOS_ATE_A_DICA,
   TEMPO_DE_FEED_MAX_S,
 } from "./regras";
@@ -213,20 +212,16 @@ describe("a poda: exatamente três", () => {
 });
 
 describe("o andaime do feed", () => {
-  test("nenhuma dica enquanto está cedo e ela não curtiu cinco vezes", () => {
-    expect(dicaDoFeed(0, CURTIDAS_ATE_A_DICA - 1, SEGUNDOS_ATE_A_DICA - 1)).toBeNull();
+  test("nenhuma dica enquanto está cedo", () => {
+    expect(dicaDoFeed(0, SEGUNDOS_ATE_A_DICA - 1)).toBeNull();
   });
 
   test("três minutos sem salvar: a dica do marcador", () => {
-    expect(dicaDoFeed(0, 0, SEGUNDOS_ATE_A_DICA)).toBe("inatividade");
+    expect(dicaDoFeed(0, SEGUNDOS_ATE_A_DICA)).toBe("inatividade");
   });
 
-  test("cinco curtidas sem salvar: a dica de que curtir não leva aos Stories", () => {
-    expect(dicaDoFeed(0, CURTIDAS_ATE_A_DICA, 10)).toBe("curtidas");
-  });
-
-  test("as duas somem no primeiro salvamento", () => {
-    expect(dicaDoFeed(1, 99, 999)).toBeNull();
+  test("ela some no primeiro salvamento", () => {
+    expect(dicaDoFeed(1, 999)).toBeNull();
   });
 
   test("o tempo nunca é negativo (o relógio da máquina da escola atrasa) nem passa do teto da api", () => {

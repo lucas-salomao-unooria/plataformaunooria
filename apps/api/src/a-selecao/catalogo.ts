@@ -132,6 +132,55 @@ export interface GraficoDoPost {
 }
 
 /**
+ * Um comentário de leitor sob o post. Antes era só o texto, e o PO notou que a
+ * criança lia frases avulsas, sem ninguém que as dissesse — numa rede de
+ * verdade todo comentário tem um @ (ADR-146). O autor é um apelido FICTÍCIO,
+ * no formato de usuário de rede social e sem `@` (o clone o desenha em
+ * negrito, como o app real).
+ */
+export interface ComentarioDestaque {
+  autor: string;
+  mensagem: string;
+}
+
+/** O formato do autor: minúsculas, dígitos, ponto e sublinhado, de 3 a 24 caracteres (sem `@`). */
+export const AUTOR_DO_COMENTARIO_RE = /^[a-z0-9._]{3,24}$/;
+
+/**
+ * Os autores de RESERVA: o de uma cobertura gravada antes de o comentário ter
+ * autor, e o que substitui o autor que a IA devolveu fora do formato (ou com o
+ * @ de um veículo). Escolhido pelo post e pela posição, para o mesmo
+ * comentário ter sempre o mesmo autor.
+ */
+export const AUTORES_DE_RESERVA: readonly string[] = [
+  "ana.lu.ciclista",
+  "meu_bairro_hoje",
+  "rafinha.desenhos",
+  "vizinha_do_lado",
+  "jp.no.onibus",
+  "lia_e_o_cachorro",
+];
+
+export function autorDeReserva(postId: string, indice: number): string {
+  const posicao = (IDS_DE_POST as readonly string[]).indexOf(postId);
+  const base = posicao < 0 ? 0 : posicao * 2 + indice;
+  return AUTORES_DE_RESERVA[base % AUTORES_DE_RESERVA.length] ?? "leitor_do_bairro";
+}
+
+/**
+ * O autor que a IA mandou, conferido: sem `@`, em minúsculas, no formato de
+ * usuário e que não seja o de um veículo da ficção (um comentário "da
+ * @folhaoficial_" sob o post dela confundiria a fonte com o leitor). Fora
+ * disso, o de reserva — o lote não é regerado por causa de um apelido.
+ */
+export function autorConferido(bruto: string, postId: string, indice: number): string {
+  const limpo = bruto.trim().replace(/^@+/, "").toLowerCase();
+  const veiculos = PERFIS.map((p) => p.replace(/^@/, ""));
+  if (!AUTOR_DO_COMENTARIO_RE.test(limpo) || veiculos.includes(limpo)) return autorDeReserva(postId, indice);
+  return limpo;
+}
+
+/**
  * Um post COMPLETO — com a metade que só o servidor sabe. Sai só por rota de
  * professor (o preparo, o guia) e nunca inteiro para o estudante.
  */
@@ -156,7 +205,8 @@ export interface PostDaCobertura {
   tagAngulo: string;
   curtidas: number;
   comentarios: number;
-  comentariosDestaque: readonly [string, string];
+  /** Os dois comentários de leitor sob o post — com o AUTOR, que a criança lê como numa rede de verdade. */
+  comentariosDestaque: readonly [ComentarioDestaque, ComentarioDestaque];
   /** Só nos posts de métricas do banco curado: o card é desenhado, não gerado. */
   grafico?: GraficoDoPost;
 }
@@ -193,8 +243,8 @@ export const POSTS_PADRAO: readonly PostDaCobertura[] = [
     curtidas: 184,
     comentarios: 23,
     comentariosDestaque: [
-      "Excelente iniciativa para a juventude!",
-      "Esperando ansiosa pela iluminação nova.",
+      { autor: "luiza.pedala", mensagem: "Excelente iniciativa para a juventude!" },
+      { autor: "seu_ze_da_banca", mensagem: "Esperando ansiosa pela iluminação nova." },
     ],
   },
   {
@@ -210,8 +260,8 @@ export const POSTS_PADRAO: readonly PostDaCobertura[] = [
     curtidas: 97,
     comentarios: 12,
     comentariosDestaque: [
-      "Nosso bairro precisava desse cuidado.",
-      "Tomara que terminem antes do fim do ano.",
+      { autor: "bia.desenha", mensagem: "Nosso bairro precisava desse cuidado." },
+      { autor: "rafa_skt", mensagem: "Tomara que terminem antes do fim do ano." },
     ],
   },
   {
@@ -226,7 +276,10 @@ export const POSTS_PADRAO: readonly PostDaCobertura[] = [
     tagAngulo: "Técnico exibindo mapa do plantio de mudas",
     curtidas: 63,
     comentarios: 8,
-    comentariosDestaque: ["Importante cuidar das árvores mesmo!", "Muito bom pensar no verde."],
+    comentariosDestaque: [
+      { autor: "dona_cida_r", mensagem: "Importante cuidar das árvores mesmo!" },
+      { autor: "caio.vizinho", mensagem: "Muito bom pensar no verde." },
+    ],
   },
   {
     id: "post_a_4",
@@ -241,8 +294,8 @@ export const POSTS_PADRAO: readonly PostDaCobertura[] = [
     curtidas: 142,
     comentarios: 31,
     comentariosDestaque: [
-      "A segurança estava precisando reforço.",
-      "Boa medida para o trânsito da região.",
+      { autor: "lena_fotos", mensagem: "A segurança estava precisando reforço." },
+      { autor: "joao.corre", mensagem: "Boa medida para o trânsito da região." },
     ],
   },
   {
@@ -258,8 +311,8 @@ export const POSTS_PADRAO: readonly PostDaCobertura[] = [
     curtidas: 211,
     comentarios: 47,
     comentariosDestaque: [
-      "Sem clientes ninguém consegue pagar as contas.",
-      "Ninguém veio conversar com os vizinhos antes.",
+      { autor: "tati.da.padaria", mensagem: "Sem clientes ninguém consegue pagar as contas." },
+      { autor: "gui_bike", mensagem: "Ninguém veio conversar com os vizinhos antes." },
     ],
   },
   {
@@ -275,8 +328,8 @@ export const POSTS_PADRAO: readonly PostDaCobertura[] = [
     curtidas: 88,
     comentarios: 19,
     comentariosDestaque: [
-      "As crianças com rinite estão sofrendo demais.",
-      "Não dá para abrir a janela nem para respirar.",
+      { autor: "marta.costura", mensagem: "As crianças com rinite estão sofrendo demais." },
+      { autor: "pedrinho_bola", mensagem: "Não dá para abrir a janela nem para respirar." },
     ],
   },
   {
@@ -292,8 +345,8 @@ export const POSTS_PADRAO: readonly PostDaCobertura[] = [
     curtidas: 56,
     comentarios: 14,
     comentariosDestaque: [
-      "Trabalho digno precisa ser respeitado!",
-      "Queremos diálogo com a equipe da obra.",
+      { autor: "carla.horta", mensagem: "Trabalho digno precisa ser respeitado!" },
+      { autor: "beto_mecanico", mensagem: "Queremos diálogo com a equipe da obra." },
     ],
   },
   {
@@ -309,8 +362,8 @@ export const POSTS_PADRAO: readonly PostDaCobertura[] = [
     curtidas: 173,
     comentarios: 38,
     comentariosDestaque: [
-      "Gastam dinheiro e fazem pista sem ouvir quem usa.",
-      "Precisamos de rampas adequadas!",
+      { autor: "nina.le", mensagem: "Gastam dinheiro e fazem pista sem ouvir quem usa." },
+      { autor: "davi_guitarra", mensagem: "Precisamos de rampas adequadas!" },
     ],
   },
   {
@@ -325,7 +378,10 @@ export const POSTS_PADRAO: readonly PostDaCobertura[] = [
     tagAngulo: "Gráfico de barras comparando custos estaduais",
     curtidas: 71,
     comentarios: 9,
-    comentariosDestaque: ["Números interessantes para analisar.", "Economia sempre é bem-vinda."],
+    comentariosDestaque: [
+      { autor: "rosa.janela", mensagem: "Números interessantes para analisar." },
+      { autor: "leo.pipoca", mensagem: "Economia sempre é bem-vinda." },
+    ],
     grafico: {
       tipo: "barras",
       titulo: "Custo por m² da obra",
@@ -349,8 +405,8 @@ export const POSTS_PADRAO: readonly PostDaCobertura[] = [
     curtidas: 129,
     comentarios: 27,
     comentariosDestaque: [
-      "O trânsito no pico está impossível.",
-      "Precisavam ter sincronizado os semáforos.",
+      { autor: "vivi_danca", mensagem: "O trânsito no pico está impossível." },
+      { autor: "tonho.feira", mensagem: "Precisavam ter sincronizado os semáforos." },
     ],
     /* Mapa de calor, e não barras: a ficha técnica deste post diz "Mapa de
        calor", e o critério 2 do brief reprova a ficha que não bate com a
@@ -379,8 +435,8 @@ export const POSTS_PADRAO: readonly PostDaCobertura[] = [
     curtidas: 104,
     comentarios: 16,
     comentariosDestaque: [
-      "A conta não vai fechar no fim de semana.",
-      "O transporte público vai precisar reforçar linhas.",
+      { autor: "duda.patins", mensagem: "A conta não vai fechar no fim de semana." },
+      { autor: "sergio_taxi", mensagem: "O transporte público vai precisar reforçar linhas." },
     ],
     grafico: {
       tipo: "barras",
@@ -405,8 +461,8 @@ export const POSTS_PADRAO: readonly PostDaCobertura[] = [
     curtidas: 45,
     comentarios: 6,
     comentariosDestaque: [
-      "Importante acompanhar o avanço mês a mês.",
-      "Dados claros ajudam na transparência.",
+      { autor: "ju.receitas", mensagem: "Importante acompanhar o avanço mês a mês." },
+      { autor: "miguel.ciclo", mensagem: "Dados claros ajudam na transparência." },
     ],
     grafico: {
       tipo: "linhas",
