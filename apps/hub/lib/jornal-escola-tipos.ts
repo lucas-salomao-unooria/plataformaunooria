@@ -139,10 +139,14 @@ export interface TurmaDoJornal {
   estudantes: number;
 }
 
-/** Quantas notícias pedem imagem e quantas já têm. */
+/**
+ * Quantas notícias pedem imagem, quantas já têm e quantas o professor aprovou
+ * (ADR-147). A atividade só vai ao ar com `aprovadas === total`.
+ */
 export interface ResumoDaMidia {
   total: number;
   prontas: number;
+  aprovadas: number;
 }
 
 export interface PacoteResumo {
@@ -236,6 +240,8 @@ export interface PacoteComGabarito extends PacoteResumo {
   midia: ResumoDaMidia;
   /** As URLs já geradas, por id de notícia. */
   imagens: Record<string, string>;
+  /** As notícias cuja imagem ATUAL o professor aprovou (ADR-147). Só estas chegam à turma. */
+  aprovadas: IdDeNoticia[];
 }
 
 /** `GET /jornal-escola/turmas/:turmaId/pacotes`. */
@@ -252,6 +258,8 @@ export interface PacotesDaTurma {
       criadoEm: string;
       /** A maior rodada com sessão; 0 = nunca rodou. */
       rodadas: number;
+      /** Todas as imagens geradas e aprovadas (ADR-147)? Sem isso, a atividade não vai ao ar. */
+      imagensAprovadas: boolean;
     }
   >;
 }
@@ -312,6 +320,23 @@ export interface ProgressoDaMidia {
   falharam: IdDeNoticia[];
   completo: boolean;
   imagens: Record<string, string>;
+}
+
+/** `POST :turmaId/pacotes/:pacoteId/aprovar-imagens` (ADR-147). */
+export interface ImagensAprovadas {
+  pacoteId: string;
+  aprovadas: IdDeNoticia[];
+  /** As que estavam na tela com URL que já não é a do pacote (outra aba gerou outra): não entraram. */
+  desatualizadas: IdDeNoticia[];
+  midia: ResumoDaMidia;
+  prontaParaAula: boolean;
+}
+
+/** `POST :turmaId/pacotes/:pacoteId/imagens/:noticiaId/regerar` — o "Gerar outra" (ADR-147). */
+export interface ImagemRegerada {
+  pacoteId: string;
+  noticiaId: IdDeNoticia;
+  url: string;
 }
 
 /**
@@ -931,9 +956,22 @@ export function falhasAcumuladas(
   return [...todas].filter((id) => !p.imagens[id]).sort();
 }
 
-/** "3 de 5 imagens prontas" — e o pacote que não pede imagem. */
+/** "3 de 5 imagens prontas, 1 aprovada" — e o pacote que não pede imagem. */
 export function textoDoProgressoDaMidia(m: ResumoDaMidia): string {
   if (m.total === 0) return "Nenhuma notícia deste pacote pede imagem.";
-  if (m.prontas >= m.total) return m.total === 1 ? "A imagem está pronta." : `As ${m.total} imagens estão prontas.`;
-  return `${m.prontas} de ${m.total} ${m.total === 1 ? "imagem pronta" : "imagens prontas"}.`;
+  if (m.aprovadas >= m.total) return m.total === 1 ? "A imagem está aprovada." : `As ${m.total} imagens estão aprovadas.`;
+  const aprovadas = m.aprovadas === 1 ? "1 aprovada" : `${m.aprovadas} aprovadas`;
+  if (m.prontas >= m.total) {
+    return `${m.total === 1 ? "A imagem está pronta" : `As ${m.total} imagens estão prontas`}, ${aprovadas}.`;
+  }
+  return `${m.prontas} de ${m.total} ${m.total === 1 ? "imagem pronta" : "imagens prontas"}, ${aprovadas}.`;
+}
+
+/**
+ * A atividade pode ir ao ar? Toda notícia que pede imagem com imagem gerada E
+ * aprovada (ADR-147) — a mesma regra que a api cobra no `em-andamento` (409
+ * `imagens-nao-aprovadas`); aqui ela só decide o que a tela oferece.
+ */
+export function imagensProntasParaAula(m: ResumoDaMidia): boolean {
+  return m.aprovadas >= m.total;
 }

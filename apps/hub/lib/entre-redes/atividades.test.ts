@@ -2,6 +2,7 @@ import { describe, expect, test } from "vitest";
 import {
   atividadesDaSelecao,
   atividadesDoInstanooria,
+  atividadesDoJornal,
   atividadesDoJuri,
   caminhoDoEmAndamento,
   estadoDoInstanooria,
@@ -69,6 +70,23 @@ describe("a lista de atividades", () => {
     // As imagens ainda não foram aprovadas (ADR-146): em preparo, sem "Usar esta atividade agora".
     expect(lista.find((a) => a.id === "nova")?.estado).toBe("em-preparo");
     expect(lista.find((a) => a.id === "velha")?.estado).toBe("pronta");
+  });
+
+  test("o Jornal: sem as imagens aprovadas, a atividade está em preparo (ADR-147)", () => {
+    const lista = atividadesDoJornal({
+      ativo: null,
+      historico: [
+        { id: "no-ar", disciplina: "Ciências", tema: "No ar", origem: "ia", ativo: true, criadoEm: "2026-10-01T00:00:00Z", rodadas: 1, imagensAprovadas: false },
+        { id: "pronta", disciplina: "Ciências", tema: "Pronta", origem: "padrao", ativo: false, criadoEm: "2026-10-02T00:00:00Z", rodadas: 0, imagensAprovadas: true },
+        { id: "nova", disciplina: "Ciências", tema: "Nova", origem: "ia", ativo: false, criadoEm: "2026-10-03T00:00:00Z", rodadas: 0, imagensAprovadas: false },
+      ],
+    });
+    /* A que já está no ar continua em andamento: a regra só vale para ENTRAR no ar. */
+    expect(lista.map((a) => [a.id, a.estado])).toEqual([
+      ["no-ar", "em-andamento"],
+      ["pronta", "pronta"],
+      ["nova", "em-preparo"],
+    ]);
   });
 
   test("o Júri: o pacote é a atividade, com o rótulo da disciplina", () => {

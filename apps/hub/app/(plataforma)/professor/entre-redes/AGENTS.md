@@ -50,8 +50,11 @@ no molde da lista do Instanooria) e o card `components/cartao-atividade.tsx`.
 - **A página da atividade** é a `.../resultados` com `?cobertura=` (A Seleção) ou
   `?pacote=` (Jornal, Quem Mandou, Júri Estadual), e a `/professor/atividades/[id]` no
   Instanooria. O painel da aula e o zerar só aparecem na EM ANDAMENTO; a pronta
-  mostra o "Usar esta atividade agora". No Jornal e no Júri as imagens se geram
-  ali, com o id da atividade (a pronta também); na A Seleção, na criação.
+  mostra o "Usar esta atividade agora". No Júri as imagens se geram ali, com o
+  id da atividade (a pronta também); na A Seleção e no Jornal, na criação.
+- **O Jornal aprova em duas fases na criação** (ADR-147): textos, depois
+  imagens, na grade `resultados/imagens-do-pacote.tsx` (a mesma da página da
+  atividade). Sem todas aprovadas é "Em preparo" (a api dá 409); por imagem.
 
 ## Equipes na missão (E13)
 
