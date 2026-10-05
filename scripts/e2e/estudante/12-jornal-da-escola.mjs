@@ -526,6 +526,14 @@ await suite(
     const aba = (nome) => q().getByRole("tab", { name: nome }).or(q().getByRole("button", { name: nome })).first();
     /** A aba está selecionada SEM o clique da suíte? É a transição automática que o PO pediu. */
     const selecionada = async (nome) => (await aba(nome).getAttribute("aria-selected")) === "true";
+    /** Espera (até 5 s) a aba ficar selecionada SOZINHA: a troca vem com o fechar da gaveta, e ler na hora corre contra ela. */
+    const ficaSelecionada = async (nome) => {
+      for (let i = 0; i < 20; i += 1) {
+        if (await selecionada(nome)) return true;
+        await p.waitForTimeout(250);
+      }
+      return false;
+    };
 
     /* 3/3: a mesa vai SOZINHA para a Primeira Página, onde está o publicar
        (ajuste do PO: a criança ficava presa nas pautas sem saber o passo). */
@@ -700,10 +708,10 @@ await suite(
     const trocar = (i) => q().getByRole("button", { name: /Trocar Matéria/ }).nth(i);
     await trocar(0).click();
     await adicionar(N.planetario);
-    r.exigir(await selecionada(/Primeira Página/), "a vaga preenchida de novo devolve a mesa à Primeira Página");
+    r.exigir(await ficaSelecionada(/Primeira Página/), "a vaga preenchida de novo devolve a mesa à Primeira Página");
     await trocar(2).click();
     await adicionar(N.horta);
-    r.exigir(await selecionada(/Primeira Página/), "a segunda troca também volta sozinha à página");
+    r.exigir(await ficaSelecionada(/Primeira Página/), "a segunda troca também volta sozinha à página");
     const publicar2 = q().getByRole("button", { name: /Publicar 2ª Edição Revisada/ });
     await acesa(publicar2);
     await publicar2.click();
