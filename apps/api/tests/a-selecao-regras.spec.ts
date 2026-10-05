@@ -4,6 +4,7 @@ import { QuotaService } from "../src/ai/quota.service";
 import { postPublico } from "../src/a-selecao/a-selecao.service";
 import {
   ARROBAS_DA_FICCAO,
+  AUTOR_DO_COMENTARIO_RE,
   BLOCOS,
   COLEGAS_VIRTUAIS,
   COLEGAS_VIRTUAIS_IDS,
@@ -11,6 +12,8 @@ import {
   ORDEM_DO_FEED,
   PERFIS,
   POSTS_PADRAO,
+  autorConferido,
+  autorDeReserva,
   blocoDe,
   type PostDaCobertura,
 } from "../src/a-selecao/catalogo";
@@ -407,9 +410,16 @@ describe("o banco curado contra o brief de assets", () => {
 
   test("nenhum termo que antecipe a revelação no que a criança lê antes do Mural (critério 8)", () => {
     for (const p of POSTS_PADRAO) {
-      const lidos = [p.legenda, p.descricaoImagem, ...p.comentariosDestaque];
+      const lidos = [p.legenda, p.descricaoImagem, ...p.comentariosDestaque.flatMap((c) => [c.autor, c.mensagem])];
       expect({ id: p.id, termos: lidos.flatMap(termosProibidosEm) }).toEqual({ id: p.id, termos: [] });
     }
+  });
+
+  test("todo comentário tem autor no formato de usuário, sem @ e sem repetir na cobertura (ADR-146)", () => {
+    const autores = POSTS_PADRAO.flatMap((p) => p.comentariosDestaque.map((c) => c.autor));
+    expect(autores).toHaveLength(24);
+    for (const autor of autores) expect(autor).toMatch(AUTOR_DO_COMENTARIO_RE);
+    expect(new Set(autores).size).toBe(autores.length);
   });
 
   test("a régua pega o termo com e sem acento, e por palavra inteira", () => {
@@ -508,7 +518,10 @@ describe("o Zod do lote gerado por IA (§2.5 do brief)", () => {
         tag_fonte: "Secretaria de Obras",
         curtidas_simuladas: 120,
         comentarios_simulados_count: 12,
-        comentarios_destaque: ["Tomara que fique pronta logo.", "A rua está sem sombra."],
+        comentarios_destaque: [
+          { autor: "lu.moradora", mensagem: "Tomara que fique pronta logo." },
+          { autor: "zeca_da_esquina", mensagem: "A rua está sem sombra." },
+        ],
       })),
       podcast: {
         institucional:
@@ -534,6 +547,25 @@ describe("o Zod do lote gerado por IA (§2.5 do brief)", () => {
       comentarios: 12,
       descricaoImagem: "Fachada da biblioteca com andaimes e tapumes na calçada.",
     });
+  });
+
+  test("o autor do comentário é conferido: @ e maiúsculas saem; fora do formato ou veículo, entra o de reserva", () => {
+    const lote = loteValido();
+    lote.posts[0]!.comentarios_destaque = [
+      { autor: "@Lu.Moradora", mensagem: "Tomara que fique pronta logo." },
+      { autor: "Maria da Silva", mensagem: "A rua está sem sombra." },
+    ];
+    lote.posts[1]!.comentarios_destaque = [
+      { autor: "@folhaoficial_", mensagem: "Confiram o cronograma." },
+      { autor: "ok", mensagem: "Curto demais." },
+    ];
+    const { posts } = postsDaIa(lote);
+    expect(posts[0]!.comentariosDestaque.map((c) => c.autor)).toEqual(["lu.moradora", autorDeReserva("post_a_1", 1)]);
+    expect(posts[1]!.comentariosDestaque.map((c) => c.autor)).toEqual([
+      autorDeReserva("post_a_2", 0),
+      autorDeReserva("post_a_2", 1),
+    ]);
+    expect(autorConferido("  @Bia_Desenha ", "post_a_1", 0)).toBe("bia_desenha");
   });
 
   test("o schema recusa 11 posts, id fora do formato, perfil desconhecido e tag longa", () => {

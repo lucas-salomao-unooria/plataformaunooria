@@ -24,6 +24,7 @@ import { rotaDoGuiaDaMissao } from "@/lib/rotas-da-missao";
 import { normalizarSerie } from "@/lib/series";
 import type { TurmaResumo } from "@/lib/turmas-tipos";
 
+import { FaseDasImagens } from "../grade-da-cobertura";
 import { ImagensDaCobertura } from "./imagens-da-cobertura";
 import { PainelDaAulaASelecao } from "./painel-da-aula-a-selecao";
 import { PodcastASelecao } from "./podcast-a-selecao";
@@ -180,7 +181,30 @@ export async function ResultadosASelecao({
         </div>
       ) : (
         <>
-          {!emAndamento ? (
+          {!detalhe.imagensAprovadasEm ? (
+            /* A atividade parou na SEGUNDA fase da aprovação (ADR-146): os
+               textos foram aprovados, as imagens não. É a mesma grade da
+               criação, com o "Aprovar imagens" — e só depois dele o "Usar esta
+               atividade agora" aparece. */
+            <Card variant="outlined" title="Aprove as imagens antes de abrir a turma">
+              <div className="flex flex-col gap-3" data-atividade-em-preparo>
+                <FeedbackAlert
+                  type="info"
+                  description="Os textos desta atividade estão aprovados. Confira a imagem de cada post junto da legenda, gere outra para a que não servir e aprove: só então a atividade pode ir ao ar."
+                />
+                {session?.usuario.papel === "professor" ? (
+                  <FaseDasImagens
+                    key={`fase-das-imagens-${detalhe.id}`}
+                    turmaId={turma}
+                    coberturaId={detalhe.id}
+                    posts={detalhe.posts}
+                    imagensIniciais={detalhe.imagens}
+                    comAprovacao
+                  />
+                ) : null}
+              </div>
+            </Card>
+          ) : !emAndamento ? (
             <Card variant="outlined">
               <div className="flex flex-col gap-3" data-atividade-pronta>
                 <FeedbackAlert
@@ -214,7 +238,11 @@ export async function ResultadosASelecao({
             separarAoAbrir={separar}
           />
 
-          <ImagensDaCobertura key={`imagens-${detalhe.id}`} turmaId={turma} coberturaId={detalhe.id} inicial={detalhe.midia} />
+          {/* As aprovadas ANTES da ADR-146 podem ter post sem imagem: o laço
+              antigo continua aqui para elas. As novas chegam completas. */}
+          {detalhe.imagensAprovadasEm && detalhe.midia.prontas < detalhe.midia.total ? (
+            <ImagensDaCobertura key={`imagens-${detalhe.id}`} turmaId={turma} coberturaId={detalhe.id} inicial={detalhe.midia} />
+          ) : null}
 
           {emAndamento && painel ? (
             <>

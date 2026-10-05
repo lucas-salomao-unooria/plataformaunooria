@@ -1,12 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { Button, Card, FeedbackAlert, Icon, MetricCard, ProgressBar } from "@edu/ui/ds";
 import {
   PISO_DO_MURAL,
   ROTULO_DA_ETAPA,
   aulaEmAndamento,
   distribuicaoDaSala,
+  mudouAEvidencia,
   percentualPublicado,
   rotuloDoBotao,
   textoDoEnvio,
@@ -38,6 +40,14 @@ import { ListaDaSelecao } from "./lista-da-selecao";
  * PAINEL é consultado, pelo BFF, e só enquanto a aula corre
  * (`aulaEmAndamento`) e a aba está visível. O preparo, acima, é outro
  * componente e não é tocado pela consulta.
+ *
+ * A exceção é a EVIDÊNCIA (ADR-146): quando muda o que o painel de
+ * habilidades mostra (`mudouAEvidencia` — alguém publicou, respondeu as
+ * enquetes, concluiu; ou a atividade/rodada trocou), a página é refeita, e o
+ * professor vê o nível chegar sem recarregar. Mais uma vez na volta seguinte,
+ * porque o Canal A marca DEPOIS de a publicação aparecer no painel (a IA
+ * gradua a legenda em seguida): sem a segunda leitura, a célula ficava em
+ * "Não avaliado" até a próxima mudança.
  *
  * O dado da página (`inicial`) ainda manda quando ela é refeita de verdade —
  * depois de aprovar uma cobertura ou zerar a turma: o `router.refresh()` desses
@@ -80,17 +90,30 @@ export function PainelDaAulaASelecao({
 
   const caminho = `/api/plataforma/a-selecao/turmas/${encodeURIComponent(turmaId)}/painel`;
 
+  const router = useRouter();
+  const [, transicionar] = useTransition();
+  const ultimo = useRef(painel);
+  useEffect(() => {
+    ultimo.current = painel;
+  }, [painel]);
+  /** A releitura de reforço da volta seguinte (o Canal A chega depois). */
+  const reler = useRef(false);
+
   const atualizar = useCallback(async () => {
     try {
       const r = await fetch(caminho, { cache: "no-store" });
       if (!r.ok) throw new Error(String(r.status));
-      setPainel((await r.json()) as PainelDaSelecao);
+      const novo = (await r.json()) as PainelDaSelecao;
+      const mudou = mudouAEvidencia(ultimo.current, novo);
+      setPainel(novo);
+      if (mudou || reler.current) transicionar(() => router.refresh());
+      reler.current = mudou;
       // "voltou" fica uma volta na tela e some na seguinte.
       setConexao((c) => (c === "caiu" ? "voltou" : "ok"));
     } catch {
       setConexao("caiu");
     }
-  }, [caminho]);
+  }, [caminho, router]);
 
   const emAndamento = aulaEmAndamento(painel);
   useEffect(() => {

@@ -4,6 +4,8 @@ import {
   problemaDaFala,
   textoDoProgressoDoPodcast,
   aulaEmAndamento,
+  estadoDaImagem,
+  mudouAEvidencia,
   continuarGerando,
   descreverMatriz,
   distribuicaoDaSala,
@@ -53,7 +55,10 @@ const post = (id: string, legenda: string): PostDaCobertura => ({
   tagAngulo: "Maquete",
   curtidas: 1,
   comentarios: 1,
-  comentariosDestaque: ["a", "b"],
+  comentariosDestaque: [
+    { autor: "leitora_a", mensagem: "a" },
+    { autor: "leitor_b", mensagem: "b" },
+  ],
 });
 
 describe("o botão único", () => {
@@ -151,6 +156,34 @@ describe("quantos publicaram", () => {
     expect(aulaEmAndamento({ etapa: "fichas", resumo: resumo(5, 5) })).toBe(true);
     // Turma sem ninguém: continua esperando — pode ser só cedo.
     expect(aulaEmAndamento({ etapa: "explicacao", resumo: resumo(0, 0) })).toBe(true);
+  });
+});
+
+describe("o que faz o painel de habilidades se atualizar sozinho", () => {
+  const painel = (resumo: Partial<{ publicaram: number; entregaram: number; concluiram: number }> = {}, rodada = 1, id = "c1") => ({
+    cobertura: { id, tema: "t", foco: null, origem: "padrao" as const, midia: { total: 8, prontas: 8 } },
+    rodada,
+    resumo: {
+      total: 5,
+      iniciaram: 5,
+      publicaram: 2,
+      entregaram: 1,
+      concluiram: 1,
+      computadores: { publicaram: 2, total: 5 },
+      porComputador: false,
+      distribuicaoMedia: { institucional: 0, comunitario: 0, estatistico: 0 },
+      ...resumo,
+    },
+  });
+
+  test("relê quando alguém publica (Canal A), responde as enquetes ou conclui, e quando a atividade ou a rodada trocam", () => {
+    const antes = painel();
+    expect(mudouAEvidencia(antes, painel())).toBe(false);
+    expect(mudouAEvidencia(antes, painel({ publicaram: 3 }))).toBe(true);
+    expect(mudouAEvidencia(antes, painel({ entregaram: 2 }))).toBe(true);
+    expect(mudouAEvidencia(antes, painel({ concluiram: 2 }))).toBe(true);
+    expect(mudouAEvidencia(antes, painel({}, 2))).toBe(true);
+    expect(mudouAEvidencia(antes, painel({}, 1, "c2"))).toBe(true);
   });
 });
 
@@ -262,3 +295,13 @@ describe("o podcast de recapitulação", () => {
   });
 });
 
+
+describe("o card do post na segunda fase da aprovação (ADR-146)", () => {
+  const grafico = { tipo: "barras" as const, titulo: "t", unidade: "u", series: [] };
+  test("gráfico não tem imagem; pronta é a que tem URL; sem URL, depende de a geração estar andando", () => {
+    expect(estadoDaImagem({ id: "post_c_1", grafico }, {}, true)).toBe("grafico");
+    expect(estadoDaImagem({ id: "post_a_1" }, { post_a_1: "https://x/1.webp" }, true)).toBe("pronta");
+    expect(estadoDaImagem({ id: "post_a_2" }, { post_a_1: "https://x/1.webp" }, true)).toBe("gerando");
+    expect(estadoDaImagem({ id: "post_a_2" }, {}, false)).toBe("sem-imagem");
+  });
+});

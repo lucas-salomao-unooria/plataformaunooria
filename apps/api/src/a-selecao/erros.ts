@@ -32,6 +32,9 @@ export type CodigoErro =
   | "reflexao-pendente"
   | "transicao-de-etapa-invalida"
   | "lote-invalido"
+  | "imagens-nao-aprovadas"
+  | "imagens-ja-aprovadas"
+  | "post-sem-imagem"
   | "sem-saldo-de-ia"
   | "legenda-com-link"
   | "legenda-com-telefone"
@@ -59,6 +62,11 @@ export const STATUS: Record<CodigoErro, number> = {
   "reflexao-pendente": 409,
   "transicao-de-etapa-invalida": 409,
   "lote-invalido": 400,
+  /* A segunda fase da aprovação (ADR-146): a cobertura existe, mas ninguém viu
+     as imagens. 409 — é o estado da atividade, não o pedido, que está errado. */
+  "imagens-nao-aprovadas": 409,
+  "imagens-ja-aprovadas": 409,
+  "post-sem-imagem": 400,
   "sem-saldo-de-ia": 429,
   "legenda-com-link": 422,
   "legenda-com-telefone": 422,
@@ -92,6 +100,10 @@ export const MENSAGENS: Record<CodigoErro, string> = {
   "reflexao-pendente": "Envie sua reflexão para concluir a missão.",
   "transicao-de-etapa-invalida": "A turma só avança uma etapa por vez, e nunca volta.",
   "lote-invalido": "O lote precisa de 12 posts, 4 de cada veículo, sem termos que antecipem a revelação.",
+  "imagens-nao-aprovadas":
+    "Aprove as imagens dos posts antes de pôr esta atividade no ar: elas aparecem no card de cada post, na página da atividade.",
+  "imagens-ja-aprovadas": "As imagens desta atividade já foram aprovadas e não mudam mais.",
+  "post-sem-imagem": "Este post não tem imagem para gerar: o gráfico é desenhado a partir dos números.",
   "sem-saldo-de-ia":
     "A assistente de curadoria do grêmio está temporariamente sem saldo. Os posts seguem com a descrição da imagem.",
   "legenda-com-link": "Tire o link da legenda para publicar nos Stories do grêmio.",

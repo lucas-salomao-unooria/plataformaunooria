@@ -71,6 +71,12 @@ export interface GraficoDoPost {
  * Um post COMPLETO, com o gabarito — o que a professora lê, edita e aprova.
  * Só entra e sai por rota de professor.
  */
+/** Um comentário de leitor sob o post — espelho de `apps/api/src/a-selecao/catalogo.ts#ComentarioDestaque`. */
+export interface ComentarioDestaque {
+  autor: string;
+  mensagem: string;
+}
+
 export interface PostDaCobertura {
   id: IdDePost;
   perfil: PerfilDoVeiculo;
@@ -82,7 +88,8 @@ export interface PostDaCobertura {
   tagAngulo: string;
   curtidas: number;
   comentarios: number;
-  comentariosDestaque: [string, string];
+  /** Os dois comentários de leitor, com o autor (ADR-146). */
+  comentariosDestaque: [ComentarioDestaque, ComentarioDestaque];
   /** Só nos posts de números do banco curado: a experiência desenha o gráfico. */
   grafico?: GraficoDoPost;
 }
@@ -203,6 +210,8 @@ export interface CoberturasDaTurma {
     criadaEm: string;
     /** A maior rodada com sessão; 0 = nunca rodou. */
     rodadas: number;
+    /** A segunda fase da aprovação passou (ADR-146)? Sem ela, a atividade não vai ao ar. */
+    imagensAprovadas: boolean;
   }>;
 }
 
@@ -247,7 +256,37 @@ export interface CoberturaDaAtividade {
   rodadas: number;
   posts: PostDaCobertura[];
   midia: ResumoDaMidia;
+  /** As URLs das imagens prontas, por id de post (ADR-146). */
+  imagens: Record<string, string>;
+  /** Quando o professor aprovou as imagens; `null` = em validação, e a atividade não vai ao ar. */
+  imagensAprovadasEm: string | null;
   podcast: FalasDoPodcast;
+}
+
+/** `POST …/coberturas/:coberturaId/imagens/:postId/regerar`. */
+export interface ImagemRegerada {
+  coberturaId: string;
+  postId: IdDePost;
+  url: string;
+}
+
+/**
+ * O que o card de um post mostra na SEGUNDA fase da aprovação (ADR-146):
+ * - `grafico`: post de números do banco curado — a experiência desenha o gráfico, não há imagem;
+ * - `pronta`: a imagem está na cobertura;
+ * - `gerando`: a geração em lote está andando e este post ainda não saiu;
+ * - `sem-imagem`: a geração terminou sem ele (falhou, ou a quota acabou) — a turma vê o card da descrição.
+ */
+export type EstadoDaImagem = "grafico" | "pronta" | "gerando" | "sem-imagem";
+
+export function estadoDaImagem(
+  post: Pick<PostDaCobertura, "id" | "grafico">,
+  imagens: Readonly<Record<string, string>>,
+  gerando: boolean,
+): EstadoDaImagem {
+  if (post.grafico) return "grafico";
+  if (imagens[post.id]) return "pronta";
+  return gerando ? "gerando" : "sem-imagem";
 }
 
 /** `POST /a-selecao/turmas/:turmaId/homologar` — a atividade criada, PRONTA (ADR-130). */
@@ -412,6 +451,27 @@ export const PISO_DO_MURAL = 80;
  */
 export function aulaEmAndamento(p: Pick<PainelDaSelecao, "etapa" | "resumo">): boolean {
   return !(p.etapa === "explicacao" && p.resumo.total > 0 && p.resumo.concluiram >= p.resumo.total);
+}
+
+/**
+ * Mudou algo que a EVIDÊNCIA registra (ADR-146)? A EF07CO11 é marcada pelo
+ * Canal A logo depois da publicação, e as enquetes (Canal B) vêm antes do
+ * "concluir" — e a atividade troca com uma cobertura nova ou uma rodada nova.
+ * Só nesses casos o painel da aula relê a página inteira, para o painel de
+ * habilidades acompanhar sem o professor apertar F5. É o mesmo desenho da
+ * exp05ef1b (`mudouAEvidencia` em `quem-mandou-regras.ts`).
+ */
+export function mudouAEvidencia(
+  antes: Pick<PainelDaSelecao, "cobertura" | "rodada" | "resumo">,
+  depois: Pick<PainelDaSelecao, "cobertura" | "rodada" | "resumo">,
+): boolean {
+  return (
+    antes.resumo.publicaram !== depois.resumo.publicaram ||
+    antes.resumo.entregaram !== depois.resumo.entregaram ||
+    antes.resumo.concluiram !== depois.resumo.concluiram ||
+    antes.cobertura.id !== depois.cobertura.id ||
+    antes.rodada !== depois.rodada
+  );
 }
 
 /**
