@@ -77,8 +77,9 @@ describe("a moldura não carimba a notícia nem rotula a criança", () => {
 describe("as duas decisões que mudaram o sheet", () => {
   test("o modal de publicar não tem a pergunta de motivo", () => {
     const modal = [TEXTOS.E3.modalTitulo, TEXTOS.E3.modalDescricao(1), TEXTOS.E3.distribuir, TEXTOS.E3.revisarMais];
-    for (const t of modal) expect(t).not.toContain("Como a dupla escolheu");
-    expect(TEXTOS.MOTIVO.pergunta).toBe("Como a dupla escolheu essas três matérias para a capa?");
+    for (const t of modal) expect(t).not.toContain("Como as três matérias foram escolhidas?");
+    // Sem "dupla": quantos dividem o computador é o professor quem decide (ajuste do PO, 2026-10-05).
+    expect(TEXTOS.MOTIVO.pergunta).toBe("Como as três matérias foram escolhidas?");
   });
 
   test("a síntese é ÚNICA: só a `sintese_inicial` do sheet está na tela", () => {

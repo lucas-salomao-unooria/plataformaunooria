@@ -109,7 +109,7 @@ export const E3 = {
 
 export const MOTIVO = {
   /** `e3.modal.pergunta` — saiu do modal e virou esta tela (decisão de 2026-09-25). */
-  pergunta: "Como a dupla escolheu essas três matérias para a capa?",
+  pergunta: "Como as três matérias foram escolhidas?",
   opcoes: {
     /** `e3.modal.opcao_visual` */
     visual: "Escolhemos as fotos mais chamativas e os avisos mais urgentes.",

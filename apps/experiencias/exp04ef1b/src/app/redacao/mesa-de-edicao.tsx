@@ -7,7 +7,7 @@ import type { Diagramacao, IdDeNoticia, NoticiaPublica, TipoDePista } from "../.
 import { Gaveta } from "./gaveta";
 import { vagasDaPagina } from "./pagina";
 
-type Aba = "pautas" | "capa";
+export type Aba = "pautas" | "capa";
 
 /**
  * A mesa da redação em duas abas — "Pautas da Semana" (os oito `NewsCard`) e
@@ -29,6 +29,14 @@ type Aba = "pautas" | "capa";
  *
  * O Bento fica calado aqui (PRD §5): nenhum balão, nenhum alerta preventivo, e
  * a tela aceita qualquer escolha.
+ *
+ * **A aba anda sozinha para a capa** (ajuste do PO, 2026-10-05): quando a
+ * terceira notícia entra, a mesa passa para "Primeira Página", onde está o
+ * publicar — a criança de 9 anos parava em "Pautas" com 3/3 sem saber o
+ * próximo passo. Na revisão a mesa já ABRE na capa (`abaInicial`): é ali que
+ * estão os marcadores da Chave e o "Trocar Matéria" que o aviso pede. O foco
+ * vai para a aba da capa, e não para o cartão que abriu a gaveta (que ficou
+ * no painel escondido).
  */
 export function MesaDeEdicao({
   edicao,
@@ -46,6 +54,7 @@ export function MesaDeEdicao({
   abertaDeInicio,
   aoPublicar,
   aoFalharMidia,
+  abaInicial = "pautas",
 }: {
   edicao: 1 | 2;
   cabecalho: ReactNode;
@@ -64,14 +73,17 @@ export function MesaDeEdicao({
   abertaDeInicio: (noticiaId: IdDeNoticia, tipo: TipoDePista) => boolean;
   aoPublicar: () => void;
   aoFalharMidia: () => void;
+  /** Onde a mesa abre: na 1ª edição, nas pautas; na revisão, na capa. */
+  abaInicial?: Aba;
 }) {
-  const [aba, setAba] = useState<Aba>("pautas");
+  const [aba, setAba] = useState<Aba>(abaInicial);
   const [aberta, setAberta] = useState<IdDeNoticia | null>(null);
   const [confirmando, setConfirmando] = useState(false);
 
   /* O cartão que abriu a gaveta recebe o foco de volta ao fechar. */
   const cartoes = useRef(new Map<IdDeNoticia, HTMLButtonElement>());
   const alvoDoFoco = useRef<HTMLElement | null>(null);
+  const abaDaCapa = useRef<HTMLButtonElement | null>(null);
 
   const porId = useMemo(() => new Map(noticias.map((n) => [n.id, n])), [noticias]);
   const noticiaAberta = aberta ? (porId.get(aberta) ?? null) : null;
@@ -91,6 +103,10 @@ export function MesaDeEdicao({
     const { vagas: novas, resultado } = adicionar(vagas, aberta);
     if (resultado !== "adicionada") return;
     aoMudarVagas(novas);
+    if (preenchidas(novas) === novas.length) {
+      alvoDoFoco.current = abaDaCapa.current;
+      setAba("capa");
+    }
     setAberta(null);
   }
 
@@ -182,7 +198,7 @@ export function MesaDeEdicao({
       >
         <Tabs.List fullWidth>
           <Tabs.Tab value="pautas" label={E2.abaPautas} icon="newspaper" />
-          <Tabs.Tab value="capa" label={E2.abaCapa} icon="dashboard" badge={E2.contagem(naPagina, vagas.length)} />
+          <Tabs.Tab ref={abaDaCapa} value="capa" label={E2.abaCapa} icon="dashboard" badge={E2.contagem(naPagina, vagas.length)} />
         </Tabs.List>
         <Tabs.Panel value="pautas" className="mesa__painel">
           <ScrollBar className="rolagem" autoHide>
