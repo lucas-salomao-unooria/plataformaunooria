@@ -151,7 +151,13 @@ describe("o fluxo principal, da mesa ao modo leitura", () => {
     await adicionar("Manchete da notícia n3");
     expect(textoDaTela()).toContain("3/3");
 
+    // A terceira leva a mesa SOZINHA à capa, onde está o publicar (ajuste do PO), com o foco na aba.
+    expect(botao("Primeira Página").getAttribute("aria-selected")).toBe("true");
+    await ate(() => document.activeElement === botao("Primeira Página"), "o foco na aba da capa");
+    expect(temBotao("Publicar 1ª Edição")).toBe(true);
+
     // A quarta: o aviso da capa cheia, e a ação não entra.
+    await tocar(botao("Pautas da Semana"));
     await abrirCartao("Manchete da notícia n4");
     expect(textoDaTela()).toContain("A capa cabe só 3 matérias.");
     await tocar(botao("Voltar para a Mesa"));
@@ -162,14 +168,15 @@ describe("o fluxo principal, da mesa ao modo leitura", () => {
     await ate(() => !botao("Publicar 1ª Edição").disabled, "o botão de publicar");
     await tocar(botao("Publicar 1ª Edição"));
     await ate(() => textoDaTela().includes("Confirmar Publicação da Capa"), "o modal");
-    expect(textoDaTela()).not.toContain("Como a dupla escolheu");
+    expect(textoDaTela()).not.toContain("Como as três matérias foram escolhidas?");
     expect(quantas(api, "GET /jornal-escola/gate")).toBe(0);
     await tocar(botao("Distribuir Jornal Agora"));
     expect(api.edicao1?.slots).toEqual(["n1", "n2", "n3"]);
     expect(api.edicao1?.layout).toBe("columns");
 
     // O motivo, DEPOIS do latch.
-    await ate(() => textoDaTela().includes("Como a dupla escolheu essas três matérias para a capa?"), "a tela de motivo");
+    await ate(() => textoDaTela().includes("Como as três matérias foram escolhidas?"), "a tela de motivo");
+    expect(textoDaTela()).not.toContain("dupla");
     await tocar(radio("Checamos quem postou"));
     await tocar(botao("Enviar resposta"));
     expect(api.motivo).toBe("checagem");
@@ -211,7 +218,9 @@ describe("o fluxo principal, da mesa ao modo leitura", () => {
     // A revisão: os marcadores por vaga.
     await tocar(botao("Abrir a Mesa de Revisão"));
     await ate(() => textoDaTela().includes("Mesa de Revisão Pericial"), "a revisão");
-    await tocar(botao("Primeira Página"));
+    // A revisão ABRE na capa: o aviso da Chave pede a troca, e o "Trocar Matéria" está lá (ajuste do PO).
+    expect(botao("Primeira Página").getAttribute("aria-selected")).toBe("true");
+    expect(textoDaTela()).toContain("Troque os furos por matérias verificadas!");
     await ate(() => textoDaTela().includes("Fato que já passou"), "os marcadores");
     expect(textoDaTela()).toContain("Fonte sem confirmação");
     expect(textoDaTela()).toContain("Matéria verificada");
@@ -231,7 +240,10 @@ describe("o fluxo principal, da mesa ao modo leitura", () => {
     const trocas = Array.from(document.querySelectorAll("button")).filter((b) => (b.textContent ?? "").includes("Trocar Matéria"));
     expect(trocas).toHaveLength(3);
     await tocar(trocas[1] as HTMLButtonElement);
+    expect(botao("Pautas da Semana").getAttribute("aria-selected")).toBe("true");
     await adicionar("Manchete da notícia n4");
+    // A vaga preenchida de novo devolve a mesa à capa.
+    expect(botao("Primeira Página").getAttribute("aria-selected")).toBe("true");
     await publicarNaCapa("Publicar 2ª Edição Revisada");
     expect(api.edicao2?.slots).toEqual(["n1", "n4", "n3"]);
 
@@ -316,9 +328,9 @@ describe("F5 relê da api e reconstrói a tela", () => {
     // Publica; o F5 no motivo volta ao motivo.
     await adicionar("Manchete da notícia n6");
     await publicarNaCapa("Publicar 1ª Edição");
-    await ate(() => textoDaTela().includes("Como a dupla escolheu"), "o motivo");
+    await ate(() => textoDaTela().includes("Como as três matérias foram escolhidas?"), "o motivo");
     await f5();
-    await ate(() => textoDaTela().includes("Como a dupla escolheu"), "o motivo depois do F5");
+    await ate(() => textoDaTela().includes("Como as três matérias foram escolhidas?"), "o motivo depois do F5");
     await tocar(radio("Escolhemos as fotos mais chamativas"));
     await tocar(botao("Enviar resposta"));
 
@@ -341,7 +353,7 @@ describe("F5 relê da api e reconstrói a tela", () => {
     await ate(() => textoDaTela().includes("Chave do Editor ativada!"), "a Chave formada");
     await f5();
     await ate(() => textoDaTela().includes("Mesa de Revisão Pericial"), "a revisão depois do F5");
-    await tocar(botao("Primeira Página"));
+    expect(botao("Primeira Página").getAttribute("aria-selected")).toBe("true");
     await ate(() => textoDaTela().includes("Ninguém assina"), "o marcador da n5");
     expect(textoDaTela()).toContain("3/3");
 
@@ -354,6 +366,7 @@ describe("F5 relê da api e reconstrói a tela", () => {
     const pistasNaRevisao = quantas(api, "POST /jornal-escola/pista");
     await f5();
     await ate(() => textoDaTela().includes("Mesa de Revisão Pericial"), "a revisão depois do segundo F5");
+    await tocar(botao("Pautas da Semana"));
     await abrirCartao("Manchete da notícia n1");
     expect(botao("Data", dialogo()).getAttribute("aria-expanded")).toBe("true");
     expect(quantas(api, "POST /jornal-escola/pista")).toBe(pistasNaRevisao);

@@ -1248,7 +1248,11 @@ nenhuma sequência: as chaves são \cd{uuid} ou compostas, e o \cd{GRANT} à
   geradas, por notícia), a \cd{origem} (\cd{padrao} $|$ \cd{ia}), o carimbo de
   aprovação e os contadores da telemetria do professor (\cd{geracoes},
   \cd{tokens\_usados}, \cd{painel\_vistas}). \cd{ativo} marca o que a turma
-  usa.\\
+  usa. \cd{midia\_aprovada} (\cd{JSONB}, \cd{\{n1: url\}}, \emph{CHECK} de
+  objeto) guarda a URL que o professor APROVOU por notícia (\adrr{ADR-147}): a
+  imagem só chega ao estudante quando é a mesma de \cd{midia}, e o
+  \enquote{Gerar outra} troca \cd{midia} e deixa só aquela notícia à espera do
+  novo OK.\\
 \zebra \cd{exp04ef1b\_gates\_turma} & O \textbf{relógio da turma}:
   \cd{exploracao} $|$ \cd{resultado} $|$ \cd{revisao}, o pacote em andamento, a
   \textbf{rodada} e os carimbos dos dois portões. Chave
@@ -1804,6 +1808,14 @@ decisão \emph{futura}, com DPA e \emph{k}-anonimato --- e não sai de um
   vai ao ar. As coberturas que já existiam entram aprovadas, com o carimbo da
   última alteração --- nenhuma turma trava por uma regra posterior. Sem RLS
   nova.\\
+\zebra \arq{20261005190000\_\B{}exp04ef1b\_\B{}midia\_\B{}aprovada} & A coluna
+  \cd{midia\_aprovada} em \cd{exp04ef1b\_pacotes} (\adrr{ADR-147}),
+  \cd{JSONB NOT NULL DEFAULT '\{\}'} com o \emph{CHECK}
+  \cd{jsonb\_typeof = 'object'}: a URL aprovada por notícia, e não um carimbo
+  do pacote, porque o Jornal gera imagem também na atividade no ar. Os pacotes
+  que já existiam entram com \cd{midia\_aprovada = midia} --- nenhuma turma
+  perde imagem por uma regra posterior. Sem RLS nova: a coluna herda a da
+  tabela.\\
 \bottomrule
 \end{tabularx}
 

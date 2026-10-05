@@ -368,8 +368,15 @@ const PacoteResumoSchema = z.object({
   origem: z.enum(ORIGENS_DO_PACOTE),
 });
 
-/** Quantas notícias pedem imagem e quantas já têm. */
-const MidiaResumoSchema = z.object({ total: z.number().int().min(0), prontas: z.number().int().min(0) });
+/**
+ * Quantas notícias pedem imagem, quantas já têm e quantas o professor aprovou
+ * (ADR-147). A atividade só vai ao ar com `aprovadas === total`.
+ */
+const MidiaResumoSchema = z.object({
+  total: z.number().int().min(0),
+  prontas: z.number().int().min(0),
+  aprovadas: z.number().int().min(0),
+});
 
 /**
  * Uma linha do painel — um COMPUTADOR quando a turma montou equipes, uma
@@ -459,6 +466,8 @@ const PacoteNaTelaSchema = PacoteResumoSchema.extend({
   midia: MidiaResumoSchema,
   /** As URLs já geradas, por id de notícia. */
   imagens: z.record(z.string()),
+  /** As notícias cuja imagem ATUAL o professor aprovou (ADR-147). Só estas chegam à turma. */
+  aprovadas: z.array(IdDeNoticiaSchema),
 });
 
 export const PacotesSchema = z.object({
@@ -477,6 +486,8 @@ export const PacotesSchema = z.object({
       criadoEm: z.string(),
       /** A maior rodada com sessão; 0 = nunca rodou. */
       rodadas: z.number().int().min(0),
+      /** Todas as imagens geradas e aprovadas (ADR-147)? Sem isso, a atividade não vai ao ar. */
+      imagensAprovadas: z.boolean(),
     }),
   ),
 });
@@ -539,6 +550,32 @@ export const ProgressoDaMidiaSchema = z.object({
   /** `true` quando não falta nada: o cliente para de repetir. */
   completo: z.boolean(),
   imagens: z.record(z.string()),
+});
+
+/**
+ * `POST :turmaId/pacotes/:pacoteId/aprovar-imagens` (ADR-147): as URLs que
+ * estavam NA TELA do professor, por notícia. Só essas se aprovam.
+ */
+export const AprovarImagensSchema = z
+  .object({ imagens: z.record(IdDeNoticiaSchema, z.string().url().max(2_000)) })
+  .strict();
+
+export const ImagensAprovadasSchema = z.object({
+  pacoteId: z.string().uuid(),
+  /** As notícias com a imagem atual aprovada, depois desta chamada. */
+  aprovadas: z.array(IdDeNoticiaSchema),
+  /** As que o corpo trazia com URL que JÁ NÃO é a do pacote (outra aba gerou outra): não entraram. */
+  desatualizadas: z.array(IdDeNoticiaSchema),
+  midia: MidiaResumoSchema,
+  /** Todas as notícias que pedem imagem estão com imagem aprovada: pode ir ao ar. */
+  prontaParaAula: z.boolean(),
+});
+
+/** `POST :turmaId/pacotes/:pacoteId/imagens/:noticiaId/regerar` — o "Gerar outra" (ADR-147). */
+export const ImagemRegeradaSchema = z.object({
+  pacoteId: z.string().uuid(),
+  noticiaId: IdDeNoticiaSchema,
+  url: z.string(),
 });
 
 /**

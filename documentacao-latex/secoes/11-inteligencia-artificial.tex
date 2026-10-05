@@ -40,8 +40,11 @@ Preparo do pacote & exp04ef1b, \arq{src/jornal-escola/} &
   O texto das oito notícias sobre o tema do professor, num \textbf{molde
   sorteado no servidor} (que notícia é de que meio e que papel tem no
   gabarito), e as imagens a partir da descrição de cada uma. \textbf{Nada}
-  chega à turma sem a homologação; sem saldo (429) ou sem provedor (503), o hub
-  oferece o banco padrão.\\
+  chega à turma sem a homologação, e nenhuma imagem sem o OK do professor,
+  imagem por imagem (\adrr{ADR-147}); sem saldo (429) ou sem provedor (503)
+  para o texto, o hub oferece o banco padrão. A imagem não é opcional: sem a
+  IA de imagem, a atividade não vai ao ar (a de mesma descrição que já está no
+  \emph{bucket} entra sem custo).\\
 \zebra Diagramação da página & exp04ef1b, \arq{src/jornal-escola/} &
   \textbf{Em sala}, com a quota do \emph{estudante}: UM valor de um
   \emph{enum} de três layouts, e nenhum texto. Não escolhe notícia, não

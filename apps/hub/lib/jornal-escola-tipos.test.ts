@@ -44,6 +44,7 @@ import {
   textoDoDestaque,
   textoDoEnvio,
   textoDoHistograma,
+  imagensProntasParaAula,
   textoDoProgressoDaMidia,
   textoDoTermometro,
   type LinhaDoPainel,
@@ -215,7 +216,7 @@ describe("quantos publicaram", () => {
 describe("o que faz o painel de habilidades se atualizar sozinho", () => {
   type Contadores = Partial<{ publicaramAPrimeira: number; formaramAChave: number; publicaramASegunda: number; concluiram: number }>;
   const painel = (resumo: Contadores = {}, rodada = 1, id = "p1") => ({
-    pacote: { id, disciplina: "portugues", tema: "t", origem: "padrao" as const, midia: { total: 8, prontas: 8 } },
+    pacote: { id, disciplina: "portugues", tema: "t", origem: "padrao" as const, midia: { total: 8, prontas: 8, aprovadas: 8 } },
     rodada,
     resumo: {
       total: 5,
@@ -489,9 +490,15 @@ describe("o laço das imagens", () => {
   });
 
   test("o texto do progresso", () => {
-    expect(textoDoProgressoDaMidia({ total: 5, prontas: 3 })).toBe("3 de 5 imagens prontas.");
-    expect(textoDoProgressoDaMidia({ total: 5, prontas: 5 })).toBe("As 5 imagens estão prontas.");
-    expect(textoDoProgressoDaMidia({ total: 1, prontas: 0 })).toBe("0 de 1 imagem pronta.");
-    expect(textoDoProgressoDaMidia({ total: 0, prontas: 0 })).toBe("Nenhuma notícia deste pacote pede imagem.");
+    expect(textoDoProgressoDaMidia({ total: 5, prontas: 3, aprovadas: 1 })).toBe("3 de 5 imagens prontas, 1 aprovada.");
+    expect(textoDoProgressoDaMidia({ total: 5, prontas: 5, aprovadas: 0 })).toBe("As 5 imagens estão prontas, 0 aprovadas.");
+    expect(textoDoProgressoDaMidia({ total: 5, prontas: 5, aprovadas: 5 })).toBe("As 5 imagens estão aprovadas.");
+    expect(textoDoProgressoDaMidia({ total: 1, prontas: 0, aprovadas: 0 })).toBe("0 de 1 imagem pronta, 0 aprovadas.");
+    expect(textoDoProgressoDaMidia({ total: 0, prontas: 0, aprovadas: 0 })).toBe("Nenhuma notícia deste pacote pede imagem.");
+  });
+
+  test("vai ao ar só com todas as imagens aprovadas (ADR-147) — o espelho do 409 da api", () => {
+    expect(imagensProntasParaAula({ total: 5, prontas: 5, aprovadas: 4 })).toBe(false);
+    expect(imagensProntasParaAula({ total: 5, prontas: 5, aprovadas: 5 })).toBe(true);
   });
 });

@@ -8,6 +8,8 @@ import { DISCIPLINA_PADRAO, NOTICIAS_PADRAO, TEMA_PADRAO, noticiasPadrao } from 
 import {
   ComparativoSchema,
   EstadoSchema,
+  ImagensAprovadasSchema,
+  PacoteDetalheSchema,
   PacotesSchema,
   PainelSchema,
   PistaReveladaSchema,
@@ -18,7 +20,7 @@ import {
 } from "../src/jornal-escola/contrato-de-rotas";
 import { DiagramacaoService } from "../src/jornal-escola/diagramacao.service";
 import { PROIBIDO_NA_LINHA_DO_PAINEL } from "../src/jornal-escola/invariantes";
-import { EXP_ID, JornalEscolaService } from "../src/jornal-escola/jornal-escola.service";
+import { EXP_ID, JornalEscolaService, noticiasQuePedemImagem } from "../src/jornal-escola/jornal-escola.service";
 import { PreparoDaExp04ef1bService } from "../src/jornal-escola/preparo.service";
 import { emFormatoDaIa, gabaritoDoPapel, sortearMolde } from "../src/jornal-escola/regras/molde";
 import { ETAPAS, PASSOS } from "../src/jornal-escola/regras/passos";
@@ -127,10 +129,29 @@ const ids = {
   corrida: [] as string[],
 };
 
+/** A URL falsa da imagem de uma notícia; `versao` é o "Gerar outra". */
+const urlDaImagem = (pacoteId: string, noticiaId: string, versao = 1) =>
+  `https://cdn.teste/exp04ef1b/${pacoteId}/${noticiaId}-v${versao}.webp`;
+
+/**
+ * O que o professor faz na página da atividade antes de pô-la no ar (ADR-147):
+ * as imagens de toda notícia que pede imagem (aqui sem a IA: a URL gravada é o
+ * que `midia.service` grava) e o "Aprovar imagens" com o que está na tela.
+ */
+async function ilustrarEAprovar(pacoteId: string, turmaId = ids.turma, escolaId = ESCOLA) {
+  const detalhe = await service.pacote(escolaId, turmaId, undefined, pacoteId);
+  for (const n of noticiasQuePedemImagem(detalhe.noticias)) {
+    if (!detalhe.imagens[n.id]) await service.registrarMidia(escolaId, pacoteId, n.id, urlDaImagem(pacoteId, n.id));
+  }
+  const tela = await service.pacote(escolaId, turmaId, undefined, pacoteId);
+  return service.aprovarImagens(escolaId, turmaId, undefined, pacoteId, tela.imagens);
+}
+
 /**
  * A atividade que o professor criaria e poria no ar: a plataforma não cria
- * atividade (ADR-130), então a suíte faz o caminho dele — criar (pronta) e
- * "Usar esta atividade agora". É o banco da Unooria, como o preparo oferece.
+ * atividade (ADR-130), então a suíte faz o caminho dele — criar (pronta), gerar
+ * e aprovar as imagens (ADR-147) e "Usar esta atividade agora". É o banco da
+ * Unooria, como o preparo oferece.
  */
 async function prepararAtividade(turmaId = ids.turma, escolaId = ESCOLA): Promise<string> {
   const criado = await service.homologar(escolaId, turmaId, undefined, ids.professora, {
@@ -139,6 +160,7 @@ async function prepararAtividade(turmaId = ids.turma, escolaId = ESCOLA): Promis
     origem: "padrao",
     noticias: noticiasPadrao(),
   });
+  await ilustrarEAprovar(criado.id, turmaId, escolaId);
   await service.colocarEmAndamento(escolaId, turmaId, undefined, criado.id);
   return criado.id;
 }
@@ -527,9 +549,11 @@ describe("a porta da sala, a primeira entrada e a atividade em andamento", () =>
     });
     const pacotes = PacotesSchema.parse(await service.pacotes(ESCOLA, ids.turmaVazia, undefined));
     expect(pacotes.ativo).toBeNull();
-    expect(pacotes.historico.map((p) => [p.id, p.ativo, p.rodadas])).toEqual([[pronta.id, false, 0]]);
+    expect(pacotes.historico.map((p) => [p.id, p.ativo, p.rodadas, p.imagensAprovadas])).toEqual([[pronta.id, false, 0, false]]);
     expect(await codigoDe(service.painel(ESCOLA, ids.turmaVazia, undefined))).toBe("atividade-nao-preparada");
 
+    await ilustrarEAprovar(pronta.id, ids.turmaVazia);
+    expect(PacotesSchema.parse(await service.pacotes(ESCOLA, ids.turmaVazia, undefined)).historico[0]?.imagensAprovadas).toBe(true);
     await service.colocarEmAndamento(ESCOLA, ids.turmaVazia, undefined, pronta.id);
     const depois = PacotesSchema.parse(await service.pacotes(ESCOLA, ids.turmaVazia, undefined));
     expect(depois.ativo).toMatchObject({ id: pronta.id, rodada: 1, etapa: "exploracao" });
@@ -852,6 +876,12 @@ describe("atividade × rodada: o pacote novo nasce pronto, o mesmo é idempotent
       etapa: null,
       rodadas: 0,
     });
+    /* Mesmas descrições: as IMAGENS são herdadas do anterior, a APROVAÇÃO não (ADR-147). */
+    const herdado = await service.pacote(ESCOLA, ids.turma, ids.professora, novo.id);
+    expect(herdado.midia.prontas).toBe(herdado.midia.total);
+    expect(herdado.aprovadas).toEqual([]);
+    expect(await codigoDe(service.colocarEmAndamento(ESCOLA, ids.turma, ids.professora, novo.id))).toBe("imagens-nao-aprovadas");
+    await ilustrarEAprovar(novo.id);
 
     expect(await service.colocarEmAndamento(ESCOLA, ids.turma, ids.professora, novo.id)).toMatchObject({
       pacoteId: novo.id,
@@ -896,6 +926,100 @@ describe("atividade × rodada: o pacote novo nasce pronto, o mesmo é idempotent
     expect(await codigoDe(service.painel(ESCOLA, ids.turma, ids.outroProfessor))).toBe("turma-nao-encontrada");
     expect(await codigoDe(service.zerar(ESCOLA, ids.turma, ids.outroProfessor))).toBe("turma-nao-encontrada");
     expect(await codigoDe(service.pacotes(ESCOLA, ids.turma, ids.outroProfessor))).toBe("turma-nao-encontrada");
+  });
+});
+
+describe("as imagens: o professor vê, gera outra e aprova antes da turma (ADR-147)", () => {
+  beforeAll(limparMissao);
+
+  const criarPronta = (tema: string) =>
+    service.homologar(ESCOLA, ids.turma, ids.professora, ids.professora, {
+      disciplina: DISCIPLINA_PADRAO,
+      tema,
+      origem: "padrao",
+      noticias: noticiasPadrao(),
+    });
+  const pedem = noticiasQuePedemImagem(noticiasPadrao()).map((n) => n.id);
+
+  test("sem imagem nenhuma, ou com imagem que ninguém aprovou, a atividade não vai ao ar", async () => {
+    const pronta = await criarPronta("Imagens: sem nenhuma");
+    expect(pedem.length).toBeGreaterThanOrEqual(4);
+    expect(await codigoDe(service.colocarEmAndamento(ESCOLA, ids.turma, ids.professora, pronta.id))).toBe("imagens-nao-aprovadas");
+
+    for (const id of pedem) await service.registrarMidia(ESCOLA, pronta.id, id, urlDaImagem(pronta.id, id));
+    const tela = PacoteDetalheSchema.parse(await service.pacote(ESCOLA, ids.turma, ids.professora, pronta.id));
+    expect(tela.midia).toEqual({ total: pedem.length, prontas: pedem.length, aprovadas: 0 });
+    expect(await codigoDe(service.colocarEmAndamento(ESCOLA, ids.turma, ids.professora, pronta.id))).toBe("imagens-nao-aprovadas");
+
+    /* Aprovar só as que estavam na tela, menos uma: ainda não vai. */
+    const [faltou, ...vistas] = pedem;
+    const parcial = await service.aprovarImagens(
+      ESCOLA,
+      ids.turma,
+      ids.professora,
+      pronta.id,
+      Object.fromEntries(vistas.map((id) => [id, tela.imagens[id]])),
+    );
+    expect(parcial).toMatchObject({ prontaParaAula: false, desatualizadas: [] });
+    expect(parcial.aprovadas).not.toContain(faltou);
+    expect(await codigoDe(service.colocarEmAndamento(ESCOLA, ids.turma, ids.professora, pronta.id))).toBe("imagens-nao-aprovadas");
+  });
+
+  test("a URL que já não é a do pacote não se aprova: outra aba gerou outra no meio", async () => {
+    const pronta = await criarPronta("Imagens: corrida de abas");
+    for (const id of pedem) await service.registrarMidia(ESCOLA, pronta.id, id, urlDaImagem(pronta.id, id));
+    const tela = await service.pacote(ESCOLA, ids.turma, ids.professora, pronta.id);
+    const trocada = pedem[0]!;
+    await service.registrarMidia(ESCOLA, pronta.id, trocada, urlDaImagem(pronta.id, trocada, 2));
+
+    const r = ImagensAprovadasSchema.parse(await service.aprovarImagens(ESCOLA, ids.turma, ids.professora, pronta.id, tela.imagens));
+    expect(r.desatualizadas).toEqual([trocada]);
+    expect(r.aprovadas).not.toContain(trocada);
+    expect(r.prontaParaAula).toBe(false);
+    /* URL inventada, de notícia que nem tem imagem gerada, também não entra. */
+    const inventada = await service.aprovarImagens(ESCOLA, ids.turma, ids.professora, pronta.id, { n8: "https://fora.teste/x.webp" });
+    expect(inventada.desatualizadas).toEqual(["n8"]);
+  });
+
+  test("a criança só recebe imagem aprovada; \"Gerar outra\" no ar esconde SÓ aquela até o novo OK", async () => {
+    const pronta = await criarPronta("Imagens: a turma vê só a aprovada");
+    const aprovacao = await ilustrarEAprovar(pronta.id);
+    expect(aprovacao).toMatchObject({ prontaParaAula: true, desatualizadas: [] });
+    expect(aprovacao.aprovadas).toEqual([...pedem].sort());
+    await service.colocarEmAndamento(ESCOLA, ids.turma, ids.professora, pronta.id);
+
+    const imagemDe = async (id: IdDeNoticia) =>
+      (await entrar(ids.ana)).pacote.noticias.find((n) => n.id === id)?.imagem?.url ?? null;
+    const trocada = pedem[0]!;
+    const outra = pedem[1]!;
+    /* As de mesma descrição vêm herdadas dos pacotes anteriores: a URL é a que está no pacote. */
+    const antes = (await service.pacote(ESCOLA, ids.turma, ids.professora, pronta.id)).imagens;
+    expect(await imagemDe(trocada)).toBe(antes[trocada]);
+
+    /* O que `midia.service#regerar` grava: a URL nova, sem aprovação. */
+    await service.registrarMidia(ESCOLA, pronta.id, trocada, urlDaImagem(pronta.id, trocada, 2));
+    expect(await imagemDe(trocada)).toBeNull();
+    expect(await imagemDe(outra)).toBe(antes[outra]);
+    const tela = PacoteDetalheSchema.parse(await service.pacote(ESCOLA, ids.turma, ids.professora, pronta.id));
+    expect(tela.aprovadas).not.toContain(trocada);
+    expect(tela.midia.aprovadas).toBe(pedem.length - 1);
+    /* A atividade que já está no ar continua no ar. */
+    expect(await service.colocarEmAndamento(ESCOLA, ids.turma, ids.professora, pronta.id)).toMatchObject({ mudou: false });
+
+    await service.aprovarImagens(ESCOLA, ids.turma, ids.professora, pronta.id, { [trocada]: tela.imagens[trocada]! });
+    expect(await imagemDe(trocada)).toBe(urlDaImagem(pronta.id, trocada, 2));
+  });
+
+  test("aprovar é da turma do professor: pacote de outra turma é 404", async () => {
+    const daVizinha = await service.homologar(OUTRA_ESCOLA, ids.turmaVizinha, undefined, ids.vizinho, {
+      disciplina: DISCIPLINA_PADRAO,
+      tema: "Imagens: da vizinha",
+      origem: "padrao",
+      noticias: noticiasPadrao(),
+    });
+    expect(await codigoDe(service.aprovarImagens(ESCOLA, ids.turma, ids.professora, daVizinha.id, {}))).toBe(
+      "atividade-nao-encontrada",
+    );
   });
 });
 

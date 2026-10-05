@@ -78,8 +78,24 @@ em silêncio.
   que usou IA conta o EVT-P02 no pacote em sala.
 - **As imagens** (`midia.service.ts`) são do professor, INCREMENTAIS (duas por
   chamada), 640×360, nome = hash da descrição em `experiencias/exp04ef1b/jornal/`,
-  gravadas com `midia || jsonb_build_object(...)`. Sem imagem, o cartão se
-  desenha pelo meio.
+  gravadas com `midia || jsonb_build_object(...)`.
+- **A imagem só chega à criança APROVADA, e a aprovação é POR IMAGEM**
+  (ADR-147): `midia_aprovada` guarda a URL que o professor aprovou por notícia,
+  e a allowlist do estudante recebe `midiaAprovada(pacote)` — só a URL atual
+  que é igual à aprovada. "Gerar outra" (`POST …/imagens/:noticiaId/regerar`,
+  arquivo NOVO com sal) troca `midia` e aquela notícia some da mesa até o novo
+  `POST …/pacotes/:p/aprovar-imagens`, que aprova SÓ as URLs que vieram no
+  corpo (as que estavam na tela) e ainda são as do pacote — a condição mora no
+  UPDATE (`midia ->> id = url`). Não é o carimbo único da A Seleção (ADR-146)
+  porque aqui se gera imagem também na atividade no ar: o carimbo apagado
+  esconderia todas de uma vez.
+- **Pôr no ar exige TODAS as que pedem imagem geradas E aprovadas**
+  (`imagensProntasParaAula`; 409 `imagens-nao-aprovadas`), só na ENTRADA no ar
+  — a que já está no ar não sai por um "Gerar outra". A imagem deixou de ser
+  opcional (decisão do Lucas, 2026-10-05): sem a IA de imagem, a atividade não
+  vai ao ar. A homologação herda as IMAGENS de mesma descrição, nunca a
+  APROVAÇÃO. Os pacotes antigos entraram aprovados (migração
+  `20261005190000`).
 
 ## A evidência (E14)
 

@@ -8,7 +8,7 @@ vence o PRD da esteira quando divergem.
 
 | Manifesto | Dev | DS | api | e2e |
 |---|---|---|---|---|
-| `exp04ef1b` · 4EF · unidade 1 · `entre-redes` · `viewport` 375×812 · `permissoes: ["forms"]` · capabilities `telemetria progresso ia avaliacao` · versão **2.1.0** (a série é a 2.x: maior que a do dono anterior do caminho `exp04ef1b/` no bucket, o UnooTube — ADR-116) | `:5174` (`--strictPort`), hub `/exp/exp04ef1b` | `@edu/ui/ds` (a redação inteira) + `@edu/ui/ds-unoovista` (SÓ o post) + `@edu/ui/ds-unoochat` (SÓ a mensagem) — ADR-117, ADR-136 | `apps/api/src/jornal-escola` ↔ `/jornal-escola/*`; P1/P2 em `/evidencias/exp04ef1b/perguntas/*` (E14) | `scripts/e2e/estudante/12-jornal-da-escola.mjs` |
+| `exp04ef1b` · 4EF · unidade 1 · `entre-redes` · `viewport` 375×812 · `permissoes: ["forms"]` · capabilities `telemetria progresso ia avaliacao` · versão **2.2.0** (a série é a 2.x: maior que a do dono anterior do caminho `exp04ef1b/` no bucket, o UnooTube — ADR-116) | `:5174` (`--strictPort`), hub `/exp/exp04ef1b` | `@edu/ui/ds` (a redação inteira) + `@edu/ui/ds-unoovista` (SÓ o post) + `@edu/ui/ds-unoochat` (SÓ a mensagem) — ADR-117, ADR-136 | `apps/api/src/jornal-escola` ↔ `/jornal-escola/*`; P1/P2 em `/evidencias/exp04ef1b/perguntas/*` (E14) | `scripts/e2e/estudante/12-jornal-da-escola.mjs` |
 
 ## A redação é da Unooria; cada PEÇA fala na seção de onde veio (ADR-117)
 
@@ -63,12 +63,12 @@ A api devolve o passo JÁ reconciliado com a etapa da turma
 | Passo | Tela | Quem fala | Componentes do DS |
 |---|---|---|---|
 | `desafio` | E1 — o Bento e a restrição | Bento | `SectionHeader`+`Tag`, `SpeechBubble` (`guide`), `NewspaperPage` vazia, `Button` |
-| `mesa` | E2/E3 — a mesa em abas, a gaveta, a página, o latch | redação (Bento calado) | `Tabs` ("Pautas da Semana" \| "Primeira Página N/3"), `ScrollBar`, 8 `NewsCard`, `BottomSheet` (`NewsArticle` \| `PostCard` \| `MessageBubble`, 3 `RevealClue`, `AlertBox` da capa cheia), `NewspaperPage` (`renderSlotAction` = "Trocar Matéria"), `Modal` |
+| `mesa` | E2/E3 — a mesa em abas, a gaveta, a página, o latch | redação (Bento calado) | `Tabs` ("Pautas da Semana" \| "Primeira Página N/3"), `ScrollBar`, 8 `NewsCard`, `BottomSheet` (`NewsArticle` \| `PostCard` \| `MessageBubble`, 3 `RevealClue`, `AlertBox` da capa cheia), `NewspaperPage` (`renderSlotAction` = "Trocar Matéria"), `Modal`. A 3ª notícia leva à "Primeira Página" (2.2.0) |
 | `motivo` | a pergunta de motivo, DEPOIS do latch | redação | `RadioGroup`, `Button` |
 | `publicada` | E4-ALU-02 — a espera neutra | redação | `NewspaperPage` (miniatura), `Card`, `Button` |
 | `resultado` | E4-ALU-01 — o mural dos leitores + a espera da revisão | leitores | `NewspaperPage` (miniatura), `SpeechBubble` (`reader`, `mood`) |
 | `chave` | E5 — a Chave do Editor | Bento | `SpeechBubble`, `PuzzleTrack`, 6 `PuzzleBlock` (`placed`/`returned`/`locked`) |
-| `revisao` | EREV-ALU-01 — a mesma mesa, com os marcadores | redação | a mesa + `NewspaperSlot.marker` + `AlertBox` do aviso da Chave |
+| `revisao` | EREV-ALU-01 — a mesma mesa, com os marcadores | redação | a mesa + `NewspaperSlot.marker` + `AlertBox` do aviso da Chave. Abre na "Primeira Página" (2.2.0) |
 | `comparativo` | EREV-ALU-02 — o antes e o depois | leitores | duas `NewspaperPage` em miniatura, `SpeechBubble` |
 | `transferencia` | E6 — o desafio individual, fora da redação e sem Bento | Unooria | `SectionHeader`, `MessageBubble` (unoochat, o boato), `RadioGroup`, `Card`, `Button` |
 | `fim` | E6-ALU-04 — o modo leitura | redação | `Tabs` ("Ver 1ª Edição" \| "Ver 2ª Edição"), `NewspaperPage` `readOnly` |

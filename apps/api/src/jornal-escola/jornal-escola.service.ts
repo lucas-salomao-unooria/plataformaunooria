@@ -104,6 +104,8 @@ export interface PacoteLido {
   origem: OrigemDoPacote;
   noticias: NoticiaDoPacote[];
   midia: Partial<Record<IdDeNoticia, string>>;
+  /** A URL que o professor aprovou por notícia (ADR-147); vale só se for a mesma de `midia`. */
+  midiaAprovada: Partial<Record<IdDeNoticia, string>>;
 }
 
 interface GateLido {
@@ -133,6 +135,7 @@ const SELECAO_DO_PACOTE = {
   origem: true,
   noticias: true,
   midia: true,
+  midiaAprovada: true,
 } satisfies Prisma.Exp04ef1bPacoteSelect;
 
 const ListaDeNoticiasSchema = z.array(NoticiaDoPacoteSchema).length(IDS_DE_NOTICIA.length);
@@ -184,13 +187,39 @@ function pacoteDaLinha(linha: Prisma.Exp04ef1bPacoteGetPayload<{ select: typeof 
     origem: linha.origem === "ia" ? "ia" : "padrao",
     noticias: noticiasDaLinha(linha.noticias, { escolaId: linha.escolaId, pacoteId: linha.id }),
     midia: midiaDaLinha(linha.midia),
+    midiaAprovada: midiaDaLinha(linha.midiaAprovada),
   };
+}
+
+/**
+ * As imagens que o professor viu e aprovou (ADR-147): a URL gerada que é a
+ * MESMA que ele aprovou. "Gerar outra" troca a URL em `midia`, e aquela
+ * notícia sai daqui até o novo OK — as outras continuam.
+ */
+export function midiaAprovada(pacote: Pick<PacoteLido, "midia" | "midiaAprovada">): Partial<Record<IdDeNoticia, string>> {
+  const aprovada: Partial<Record<IdDeNoticia, string>> = {};
+  for (const [id, url] of Object.entries(pacote.midia) as [IdDeNoticia, string | undefined][]) {
+    if (url && pacote.midiaAprovada[id] === url) aprovada[id] = url;
+  }
+  return aprovada;
+}
+
+/**
+ * A atividade pode ir ao ar? Toda notícia que pede imagem tem imagem gerada E
+ * aprovada (ADR-147, decisão de 2026-10-05: a imagem deixou de ser opcional).
+ */
+export function imagensProntasParaAula(pacote: Pick<PacoteLido, "noticias" | "midia" | "midiaAprovada">): boolean {
+  const aprovada = midiaAprovada(pacote);
+  return noticiasQuePedemImagem(pacote.noticias).every((n) => aprovada[n.id] !== undefined);
 }
 
 /**
  * A notícia como o ESTUDANTE a recebe — ALLOWLIST. Campo novo no pacote nasce
  * fora daqui até alguém decidir o contrário: é o que faz o gabarito, as pistas
  * e a consequência não caberem na resposta, em vez de "lembrar de apagar".
+ *
+ * `midia` é SÓ a aprovada (`midiaAprovada(pacote)`): imagem que o professor não
+ * viu não chega à criança — o cartão se desenha pelo meio (ADR-147).
  */
 export function noticiaPublica(n: NoticiaDoPacote, midia: Partial<Record<IdDeNoticia, string>>): NoticiaPublica {
   return {
@@ -211,9 +240,14 @@ export function noticiasQuePedemImagem(noticias: readonly NoticiaDoPacote[]): No
   return noticias.filter((n) => n.descricaoImagem !== null);
 }
 
-function resumoDaMidia(pacote: PacoteLido): { total: number; prontas: number } {
+function resumoDaMidia(pacote: PacoteLido): { total: number; prontas: number; aprovadas: number } {
   const pedem = noticiasQuePedemImagem(pacote.noticias);
-  return { total: pedem.length, prontas: pedem.filter((n) => pacote.midia[n.id]).length };
+  const aprovada = midiaAprovada(pacote);
+  return {
+    total: pedem.length,
+    prontas: pedem.filter((n) => pacote.midia[n.id]).length,
+    aprovadas: pedem.filter((n) => aprovada[n.id]).length,
+  };
 }
 
 function slotsDaLinha(slots: readonly string[]): IdDeNoticia[] | null {
@@ -330,7 +364,7 @@ export class JornalEscolaService implements OnModuleInit {
         ...estado,
         pacote: {
           tema: ctx.pacote.tema,
-          noticias: ctx.pacote.noticias.map((n) => noticiaPublica(n, ctx.pacote.midia)),
+          noticias: ctx.pacote.noticias.map((n) => noticiaPublica(n, midiaAprovada(ctx.pacote))),
         },
         blocos: comChave ? ordemDaBandeja(ctx.sessao.id).map((id) => ({ id, ...BLOCOS_DA_CHAVE[id] })) : null,
         limites: { edicao: TAMANHO_DA_EDICAO, chave: TAMANHO_DA_CHAVE },
@@ -898,7 +932,7 @@ export class JornalEscolaService implements OnModuleInit {
       const [todos, rodadas] = await Promise.all([
         tx.exp04ef1bPacote.findMany({
           where: { escolaId, turmaId },
-          select: { id: true, disciplina: true, tema: true, origem: true, ativo: true, criadoEm: true },
+          select: { ...SELECAO_DO_PACOTE, ativo: true, criadoEm: true },
           orderBy: { criadoEm: "desc" },
         }),
         tx.exp04ef1bSessao.groupBy({ by: ["pacoteId"], where: { escolaId, turmaId }, _max: { rodada: true } }),
@@ -920,6 +954,7 @@ export class JornalEscolaService implements OnModuleInit {
           ativo: p.ativo,
           criadoEm: p.criadoEm.toISOString(),
           rodadas: maiorRodada.get(p.id) ?? 0,
+          imagensAprovadas: imagensProntasParaAula(pacoteDaLinha(p)),
         })),
       };
     }, escolaId);
@@ -962,17 +997,24 @@ export class JornalEscolaService implements OnModuleInit {
    * continuam no painel de habilidades (ADR-112).
    *
    * Idempotente: pôr no ar o que já está no ar não muda nada.
+   *
+   * Só vai ao ar com as imagens de todas as notícias geradas E aprovadas
+   * (ADR-147): 409 `imagens-nao-aprovadas`.
    */
   async colocarEmAndamento(escolaId: string, turmaId: string, professorId: string | undefined, pacoteId: string) {
     return this.prisma.comTenancy(async (tx) => {
       await this.turmaVisivel(tx, escolaId, turmaId, professorId);
       await this.travarTurma(tx, escolaId, turmaId, "exclusivo");
-      await this.pacoteDaTurma(tx, escolaId, turmaId, pacoteId);
+      const linha = await this.pacoteDaTurma(tx, escolaId, turmaId, pacoteId);
 
       const atual = await this.lerGate(tx, escolaId, turmaId);
       if (atual?.pacoteId === pacoteId) {
         return { pacoteId, rodada: atual.rodada, etapa: atual.etapa, mudou: false };
       }
+      /* Imagem que o professor não viu não abre a mesa da turma (ADR-147). Só
+         na ENTRADA no ar: a que já está no ar não é derrubada por "Gerar outra"
+         — a notícia trocada espera o OK desenhada pelo meio. */
+      if (!imagensProntasParaAula(pacoteDaLinha(linha))) throw erroDeJogo("imagens-nao-aprovadas");
 
       const ultima = await tx.exp04ef1bSessao.aggregate({ where: { escolaId, turmaId, pacoteId }, _max: { rodada: true } });
       const rodada = (ultima._max.rodada ?? 0) + 1;
@@ -985,6 +1027,46 @@ export class JornalEscolaService implements OnModuleInit {
         update: gate,
       });
       return { pacoteId, rodada, etapa: ETAPA_INICIAL, mudou: true };
+    }, escolaId);
+  }
+
+  /**
+   * "APROVAR IMAGENS" (ADR-147): o professor viu as imagens e dá o OK. O corpo
+   * traz as URLs que ESTAVAM NA TELA dele, e só essas se aprovam — se outra aba
+   * gerou outra imagem no meio, a nova não entra sem ter sido vista (volta em
+   * `desatualizadas`). A condição mora no próprio UPDATE (`midia->>id = url`),
+   * e não num ler-depois-gravar: o "Gerar outra" concorrente não escapa por ela.
+   *
+   * Idempotente: aprovar de novo a mesma URL não muda nada.
+   */
+  async aprovarImagens(
+    escolaId: string,
+    turmaId: string,
+    professorId: string | undefined,
+    pacoteId: string,
+    vistas: Partial<Record<IdDeNoticia, string>>,
+  ) {
+    return this.prisma.comTenancy(async (tx) => {
+      await this.turmaVisivel(tx, escolaId, turmaId, professorId);
+      await this.pacoteDaTurma(tx, escolaId, turmaId, pacoteId);
+      const desatualizadas: IdDeNoticia[] = [];
+      for (const [id, url] of Object.entries(vistas) as [IdDeNoticia, string | undefined][]) {
+        if (!url) continue;
+        const gravou = await tx.$executeRaw`
+          UPDATE exp04ef1b_pacotes
+             SET midia_aprovada = midia_aprovada || jsonb_build_object(${id}::text, ${url}::text),
+                 atualizado_em = now()
+           WHERE id = ${pacoteId}::uuid AND escola_id = ${escolaId} AND midia ->> ${id}::text = ${url}::text`;
+        if (gravou === 0) desatualizadas.push(id);
+      }
+      const pacote = pacoteDaLinha(await this.pacoteDaTurma(tx, escolaId, turmaId, pacoteId));
+      return {
+        pacoteId,
+        aprovadas: Object.keys(midiaAprovada(pacote)).sort() as IdDeNoticia[],
+        desatualizadas: desatualizadas.sort(),
+        midia: resumoDaMidia(pacote),
+        prontaParaAula: imagensProntasParaAula(pacote),
+      };
     }, escolaId);
   }
 
@@ -1001,6 +1083,8 @@ export class JornalEscolaService implements OnModuleInit {
       noticias: pacote.noticias,
       midia: resumoDaMidia(pacote),
       imagens,
+      /** As notícias cuja imagem ATUAL o professor aprovou (ADR-147). */
+      aprovadas: Object.keys(midiaAprovada(pacote)).sort() as IdDeNoticia[],
     };
   }
 
@@ -1026,7 +1110,8 @@ export class JornalEscolaService implements OnModuleInit {
    * próxima aula não pode tirar do ar a de agora.
    *
    * As imagens de notícia com a MESMA descrição de um pacote recente da turma
-   * são herdadas: o arquivo no bucket é o hash da descrição.
+   * são herdadas: o arquivo no bucket é o hash da descrição. A APROVAÇÃO não é
+   * herdada (ADR-147): atividade nova, o professor vê as imagens dela e dá o OK.
    */
   async homologar(
     escolaId: string,

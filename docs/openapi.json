@@ -47141,7 +47141,7 @@
           "jornal-escola"
         ],
         "summary": "O estado da missão e as 8 notícias da mesa, sem o gabarito.",
-        "description": "Boot da experiência e o F5. As notícias saem **na ordem da mesa** e **sem `gabarito`, `pistas` e `consequencia`** — a notícia pública é uma allowlist no servidor. O texto das pistas desce no `POST /jornal-escola/pista` (é o registro que mede a EF15CO04), e o F5 devolve as já abertas em `pistasAbertas`.\n\n**A missão não nasce vazia**: sem homologação, a turma roda o banco padrão (\"Feira de Ciências e Notícias da Cidade\"), e o pacote `padrao` nasce na primeira entrada. `imagem.url` é `null` enquanto o professor não gerou as imagens — a tela desenha o cartão pelo meio.\n\n`blocos` (os seis da Chave do Editor, na ordem da bandeja DESTA sessão, estável num F5) é `null` até a revisão abrir para esta criança. Nenhum bloco diz se é pilar ou isca.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- `passo` já vem reconciliado com a etapa da turma; `passoDoEstudante` é o gravado. A etapa só conduz quem publicou a 1ª edição e respondeu o motivo.\n- `pacoteId` é a ATIVIDADE e `rodada` é a rodada dela: mudam quando o professor homologa outro pacote ou zera a turma, e a sessão é outra.\n- Missão não liberada na turma responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`). Estudante sem turma responde **409** `sem-turma`. Corpo fora do formato responde **400** `payload-invalido`.",
+        "description": "Boot da experiência e o F5. As notícias saem **na ordem da mesa** e **sem `gabarito`, `pistas` e `consequencia`** — a notícia pública é uma allowlist no servidor. O texto das pistas desce no `POST /jornal-escola/pista` (é o registro que mede a EF15CO04), e o F5 devolve as já abertas em `pistasAbertas`.\n\n**A missão não nasce vazia**: sem homologação, a turma roda o banco padrão (\"Feira de Ciências e Notícias da Cidade\"), e o pacote `padrao` nasce na primeira entrada. `imagem.url` é SÓ a imagem que o professor aprovou (ADR-147): `null` para a que foi trocada e espera o novo OK — a tela desenha esse cartão pelo meio.\n\n`blocos` (os seis da Chave do Editor, na ordem da bandeja DESTA sessão, estável num F5) é `null` até a revisão abrir para esta criança. Nenhum bloco diz se é pilar ou isca.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- `passo` já vem reconciliado com a etapa da turma; `passoDoEstudante` é o gravado. A etapa só conduz quem publicou a 1ª edição e respondeu o motivo.\n- `pacoteId` é a ATIVIDADE e `rodada` é a rodada dela: mudam quando o professor homologa outro pacote ou zera a turma, e a sessão é outra.\n- Missão não liberada na turma responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`). Estudante sem turma responde **409** `sem-turma`. Corpo fora do formato responde **400** `payload-invalido`.",
         "security": [
           {
             "token-da-plataforma": []
@@ -49949,11 +49949,16 @@
                             "prontas": {
                               "type": "integer",
                               "minimum": 0
+                            },
+                            "aprovadas": {
+                              "type": "integer",
+                              "minimum": 0
                             }
                           },
                           "required": [
                             "total",
-                            "prontas"
+                            "prontas",
+                            "aprovadas"
                           ],
                           "additionalProperties": false
                         }
@@ -50734,11 +50739,16 @@
                             "prontas": {
                               "type": "integer",
                               "minimum": 0
+                            },
+                            "aprovadas": {
+                              "type": "integer",
+                              "minimum": 0
                             }
                           },
                           "required": [
                             "total",
-                            "prontas"
+                            "prontas",
+                            "aprovadas"
                           ],
                           "additionalProperties": false
                         },
@@ -50746,6 +50756,22 @@
                           "type": "object",
                           "additionalProperties": {
                             "type": "string"
+                          }
+                        },
+                        "aprovadas": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "enum": [
+                              "n1",
+                              "n2",
+                              "n3",
+                              "n4",
+                              "n5",
+                              "n6",
+                              "n7",
+                              "n8"
+                            ]
                           }
                         },
                         "rodada": {
@@ -50771,6 +50797,7 @@
                         "noticias",
                         "midia",
                         "imagens",
+                        "aprovadas",
                         "rodada",
                         "etapa"
                       ],
@@ -50808,6 +50835,9 @@
                           "rodadas": {
                             "type": "integer",
                             "minimum": 0
+                          },
+                          "imagensAprovadas": {
+                            "type": "boolean"
                           }
                         },
                         "required": [
@@ -50817,7 +50847,8 @@
                           "origem",
                           "ativo",
                           "criadoEm",
-                          "rodadas"
+                          "rodadas",
+                          "imagensAprovadas"
                         ],
                         "additionalProperties": false
                       }
@@ -51084,11 +51115,16 @@
                         "prontas": {
                           "type": "integer",
                           "minimum": 0
+                        },
+                        "aprovadas": {
+                          "type": "integer",
+                          "minimum": 0
                         }
                       },
                       "required": [
                         "total",
-                        "prontas"
+                        "prontas",
+                        "aprovadas"
                       ],
                       "additionalProperties": false
                     },
@@ -51096,6 +51132,22 @@
                       "type": "object",
                       "additionalProperties": {
                         "type": "string"
+                      }
+                    },
+                    "aprovadas": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "n1",
+                          "n2",
+                          "n3",
+                          "n4",
+                          "n5",
+                          "n6",
+                          "n7",
+                          "n8"
+                        ]
                       }
                     },
                     "ativo": {
@@ -51133,6 +51185,7 @@
                     "noticias",
                     "midia",
                     "imagens",
+                    "aprovadas",
                     "ativo",
                     "rodada",
                     "etapa",
@@ -51241,7 +51294,323 @@
           "jornal-escola"
         ],
         "summary": "\"Usar esta atividade agora\" — o professor escolhe o que a turma faz (ADR-130).",
-        "description": "O escolhido passa a ser a ATIVIDADE EM ANDAMENTO da turma; o que estava volta a ser pronto — fica, com as sessões e as rodadas. A etapa volta à exploração, com os portões fechados.\n\nA RODADA: o pacote que nunca rodou começa na 1; o que já rodou abre a SEGUINTE à última — retomar a mesma depois do resultado liberado seria o \"voltar\" que o botão único proíbe. As rodadas anteriores continuam no painel de habilidades.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- **Idempotente**: pôr no ar o que já está no ar devolve `mudou: false` e não muda nada.\n- Trocar com a aula correndo leva quem está jogando para a atividade nova: a experiência nota o `pacoteId` novo no polling do gate e recarrega. A tela pede confirmação antes.\n- Pacote de outra turma responde **404** `atividade-nao-encontrada`.",
+        "description": "O escolhido passa a ser a ATIVIDADE EM ANDAMENTO da turma; o que estava volta a ser pronto — fica, com as sessões e as rodadas. A etapa volta à exploração, com os portões fechados.\n\nA RODADA: o pacote que nunca rodou começa na 1; o que já rodou abre a SEGUINTE à última — retomar a mesma depois do resultado liberado seria o \"voltar\" que o botão único proíbe. As rodadas anteriores continuam no painel de habilidades.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- **Idempotente**: pôr no ar o que já está no ar devolve `mudou: false` e não muda nada.\n- Trocar com a aula correndo leva quem está jogando para a atividade nova: a experiência nota o `pacoteId` novo no polling do gate e recarrega. A tela pede confirmação antes.\n- Pacote de outra turma responde **404** `atividade-nao-encontrada`.\n- Sem as imagens de TODAS as notícias que pedem imagem geradas E aprovadas, **409** `imagens-nao-aprovadas` (ADR-147). Só na entrada no ar: a atividade que já está no ar não sai por causa de um \"Gerar outra\".",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/jornal-escola/turmas/{turmaId}/pacotes/{pacoteId}/aprovar-imagens": {
+      "post": {
+        "operationId": "JornalEscolaTurmasController_aprovarImagens",
+        "parameters": [
+          {
+            "name": "turmaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "pacoteId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "pacoteId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "aprovadas": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "n1",
+                          "n2",
+                          "n3",
+                          "n4",
+                          "n5",
+                          "n6",
+                          "n7",
+                          "n8"
+                        ]
+                      }
+                    },
+                    "desatualizadas": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "n1",
+                          "n2",
+                          "n3",
+                          "n4",
+                          "n5",
+                          "n6",
+                          "n7",
+                          "n8"
+                        ]
+                      }
+                    },
+                    "midia": {
+                      "type": "object",
+                      "properties": {
+                        "total": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "prontas": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "aprovadas": {
+                          "type": "integer",
+                          "minimum": 0
+                        }
+                      },
+                      "required": [
+                        "total",
+                        "prontas",
+                        "aprovadas"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "prontaParaAula": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "pacoteId",
+                    "aprovadas",
+                    "desatualizadas",
+                    "midia",
+                    "prontaParaAula"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "jornal-escola"
+        ],
+        "summary": "\"Aprovar imagens\" — o professor viu as imagens das notícias e dá o OK (ADR-147).",
+        "description": "As imagens são geradas por IA (`POST gerar-midia?pacoteId=`) e só chegam à turma depois daqui. A aprovação é POR IMAGEM: o corpo traz as URLs que estavam na tela do professor, e só se aprova a notícia cuja URL ainda é a do pacote. \"Gerar outra\" (`POST …/imagens/:noticiaId/regerar`) troca a URL, e aquela notícia espera o novo OK desenhada pelo meio.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- URL que já não é a do pacote (outra aba gerou outra) não entra: volta em `desatualizadas`, e a tela relê.\n- **Idempotente**: aprovar de novo a mesma URL não muda nada.\n- As atividades criadas antes desta regra entraram com as imagens que tinham aprovadas (migração `20261005190000`).\n- Pacote de outra turma responde **404** `atividade-nao-encontrada`.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "imagens": {
+                    "type": "object",
+                    "required": [
+                      "n1",
+                      "n2",
+                      "n3",
+                      "n4",
+                      "n5",
+                      "n6",
+                      "n7",
+                      "n8"
+                    ],
+                    "properties": {
+                      "n1": {
+                        "type": "string",
+                        "format": "uri",
+                        "maxLength": 2000
+                      },
+                      "n2": {
+                        "type": "string",
+                        "format": "uri",
+                        "maxLength": 2000
+                      },
+                      "n3": {
+                        "type": "string",
+                        "format": "uri",
+                        "maxLength": 2000
+                      },
+                      "n4": {
+                        "type": "string",
+                        "format": "uri",
+                        "maxLength": 2000
+                      },
+                      "n5": {
+                        "type": "string",
+                        "format": "uri",
+                        "maxLength": 2000
+                      },
+                      "n6": {
+                        "type": "string",
+                        "format": "uri",
+                        "maxLength": 2000
+                      },
+                      "n7": {
+                        "type": "string",
+                        "format": "uri",
+                        "maxLength": 2000
+                      },
+                      "n8": {
+                        "type": "string",
+                        "format": "uri",
+                        "maxLength": 2000
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "imagens"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/jornal-escola/turmas/{turmaId}/pacotes/{pacoteId}/imagens/{noticiaId}/regerar": {
+      "post": {
+        "operationId": "JornalEscolaTurmasController_regerarImagem",
+        "parameters": [
+          {
+            "name": "turmaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "pacoteId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "noticiaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "n1",
+                "n2",
+                "n3",
+                "n4",
+                "n5",
+                "n6",
+                "n7",
+                "n8"
+              ]
+            }
+          },
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "pacoteId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "noticiaId": {
+                      "type": "string",
+                      "enum": [
+                        "n1",
+                        "n2",
+                        "n3",
+                        "n4",
+                        "n5",
+                        "n6",
+                        "n7",
+                        "n8"
+                      ]
+                    },
+                    "url": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "pacoteId",
+                    "noticiaId",
+                    "url"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "jornal-escola"
+        ],
+        "summary": "\"Gerar outra\" — uma imagem nova para UMA notícia (ADR-147).",
+        "description": "O professor viu a imagem e ela não serve. Sai um arquivo NOVO, cobrado na quota como qualquer imagem, e a notícia fica sem imagem para a turma até o novo `aprovar-imagens` — as outras continuam.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Notícia sem descrição de imagem (a mensagem, o blog do banco padrão): **400** `noticia-sem-imagem`.\n- Sem saldo, **429** `sem-saldo-de-ia`; o provedor falhou, **503** `ia-indisponivel` — a imagem anterior continua no pacote.\n- Vale também na atividade em andamento: a turma deixa de ver a imagem daquela notícia até o novo OK.",
         "security": [
           {
             "token-da-plataforma": []
@@ -52441,7 +52810,7 @@
           "jornal-escola"
         ],
         "summary": "Gera as próximas imagens das notícias de uma atividade — incremental.",
-        "description": "As imagens não cabem nos 30 s que o BFF dá a uma chamada: cada chamada gera ATÉ DUAS novas, grava as URLs no pacote e devolve o progresso. **Repita enquanto `completo` for `false` e a chamada anterior tiver gerado alguma** — `falharam` diz o que não saiu, e essas notícias seguem com o cartão desenhado pelo meio.\n\nIdempotente: o que já tem URL é pulado, e a imagem de mesma descrição que já está no bucket entra sem custo.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- `?pacoteId=` diz a atividade (a pronta, preparada antes de ir ao ar); sem ele, a em andamento — e sem nenhuma, **403** `atividade-nao-preparada`.\n- Quota do professor, com custo ESTIMADO por imagem (a geração não devolve contagem de tokens). Sem saldo responde **429** `sem-saldo-de-ia` — e a missão roda igual, com os cartões pelo meio.\n- Duas chamadas simultâneas para o mesmo pacote recebem o mesmo trabalho (lock de processo).",
+        "description": "As imagens não cabem nos 30 s que o BFF dá a uma chamada: cada chamada gera ATÉ DUAS novas, grava as URLs no pacote e devolve o progresso. **Repita enquanto `completo` for `false` e a chamada anterior tiver gerado alguma** — `falharam` diz o que não saiu: sem todas geradas e aprovadas, a atividade não vai ao ar (ADR-147).\n\nIdempotente: o que já tem URL é pulado, e a imagem de mesma descrição que já está no bucket entra sem custo.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- `?pacoteId=` diz a atividade (a pronta, preparada antes de ir ao ar); sem ele, a em andamento — e sem nenhuma, **403** `atividade-nao-preparada`.\n- Quota do professor, com custo ESTIMADO por imagem (a geração não devolve contagem de tokens). Sem saldo responde **429** `sem-saldo-de-ia`.\n- Imagem gerada NÃO vai à turma: espera o `aprovar-imagens` (ADR-147). E a atividade só vai ao ar com todas geradas e aprovadas.\n- Duas chamadas simultâneas para o mesmo pacote recebem o mesmo trabalho (lock de processo).",
         "security": [
           {
             "token-da-plataforma": []

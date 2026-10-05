@@ -835,8 +835,8 @@ o que a turma está fazendo e o que está pronto para a próxima aula}
 \begin{itemize}
   \item \enquote{Suas atividades com a turma\ldots} lista cada atividade com o
     tema, de onde veio o conteúdo, quantas rodadas já rodou e quando foi criada,
-    e o estado: \enquote{Em andamento}, \enquote{Pronta} ou, no Unoovista e na
-    A Seleção, \enquote{Em preparo}. A em andamento vem primeiro.
+    e o estado: \enquote{Em andamento}, \enquote{Pronta} ou, no Unoovista, na
+    A Seleção e no Jornal da Escola, \enquote{Em preparo}. A em andamento vem primeiro.
   \item Aberta sem turma, a ficha pede para escolher uma: a atividade é sempre
     de uma turma.
   \item Sem nenhuma em andamento, a ficha avisa que a turma vê a missão fechada.
@@ -856,9 +856,11 @@ vai se sentar}{montar a aula inteira num lugar só}
     Estadual não tem conteúdo pronto: a mostra é sempre gerada com IA
     (\id{H06.14.1}).
   \item As equipes se escolhem ali mesmo (\id{H13.1.8}).
-  \item Nada é gravado antes de \enquote{Criar atividade}. Se as equipes não
-    puderem ser salvas, a atividade é criada mesmo assim, e a tela diz o que
-    faltou.
+  \item Nada é gravado antes de \enquote{Criar atividade} --- exceto na A
+    Seleção e no Jornal da Escola, em que os textos são guardados ao serem
+    aprovados, para as imagens serem criadas a partir deles (\id{H06.12.7},
+    \id{H06.10.6}). Se as equipes não puderem ser salvas, a atividade é criada
+    mesmo assim, e a tela diz o que faltou.
   \item O Unoovista mantém a criação dele, porque os posts levam alguns
     minutos para ficar prontos; as equipes entram na página da atividade, antes
     de \enquote{Ativar}.
@@ -899,7 +901,9 @@ conduzir a aula sem procurar em outra tela}
     \enquote{Zerar}, só aparece na atividade em andamento; na pronta, a página
     oferece \enquote{Usar esta atividade agora}. Na A Seleção, a atividade em
     preparo mostra, no lugar dele, os cards dos posts com \enquote{Aprovar
-    imagens} (\id{H06.12.7}).
+    imagens} (\id{H06.12.7}); no Jornal da Escola, o aviso \enquote{Aprove as
+    imagens antes de abrir a turma} e as imagens das notícias antes das
+    equipes (\id{H06.10.6}).
 \end{itemize}
 \end{historia}
 
@@ -1318,24 +1322,32 @@ a conferir fonte, data e autoria antes de informar outras pessoas}
     missões; até ali eram o Instanooria e o clone do WhatsApp.
   \item Em cada notícia posso abrir três pistas: de onde veio, quando aconteceu
     e quem assina. Ninguém me obriga a abrir.
-  \item Escolho três notícias e publico a primeira edição. Depois de publicar,
-    não dá para trocar; só então a missão pergunta como eu escolhi --- pelas
-    fotos e pela urgência, ou pela checagem.
+  \item Escolho três notícias. Quando a terceira entra, a mesa me leva sozinha
+    para a aba \enquote{Primeira Página}, onde está o botão de publicar --- não
+    fico parado nas pautas sem saber o próximo passo.
+  \item Publico a primeira edição. Depois de publicar, não dá para trocar; só
+    então a missão pergunta \enquote{Como as três matérias foram
+    escolhidas?} --- pelas fotos e pela urgência, ou pela checagem. A pergunta
+    não fala em dupla: quantos dividem o computador é o professor quem decide.
   \item O professor libera o resultado: vejo o que os leitores da escola
     disseram das três notícias publicadas e quantas estavam verificadas. O
     resultado fala da edição, nunca de mim, e ninguém vê a edição dos colegas.
   \item Depois da conversa com a turma, o professor libera a revisão. Monto a
     Chave do Editor com três blocos entre seis; os blocos que não abrem a Chave
     voltam para a bandeja, e eu tento de novo.
-  \item Com a Chave, a mesa volta com um aviso em cada vaga da primeira edição.
-    Publico a segunda edição e vejo o antes e o depois, lado a lado.
+  \item Com a Chave, a mesa volta já aberta na \enquote{Primeira Página}, com
+    um aviso em cada vaga da primeira edição e o recado \enquote{A Chave do
+    Editor marcou notícias duvidosas. Troque os furos por matérias
+    verificadas!}; o \enquote{Trocar Matéria} está ali mesmo. Publico a segunda
+    edição e vejo o antes e o depois, lado a lado.
   \item No fim, respondo sozinho a um desafio sobre uma mensagem nova, fora da
     redação. A missão não me diz se acertei.
   \item O professor escolhe o conteúdo antes da aula: o banco padrão da Unooria
-    (\enquote{Feira de Ciências e Notícias da Cidade}), pronto e já em sala sem
-    preparo nenhum, ou oito notícias geradas por IA sobre o tema dele, que ele
-    revisa, edita notícia a notícia e aprova. Se a IA falhar ou o limite do dia
-    acabar, o banco padrão fica a um toque.
+    (\enquote{Feira de Ciências e Notícias da Cidade}) ou oito notícias geradas
+    por IA sobre o tema dele, que ele revisa, edita notícia a notícia e aprova.
+    Se a IA dos textos falhar ou o limite do dia acabar, o banco padrão fica a
+    um toque. Depois dos textos, ele vê e aprova cada imagem (\id{H06.10.6}):
+    imagem que ele não viu não chega à mesa das crianças.
   \item A missão aceita equipes num computador dividido (\id{E13}) e registra o
     que cada estudante demonstrou de três habilidades da BNCC (\id{E14}).
 \end{itemize}
@@ -1344,6 +1356,41 @@ revisadas; o critério do livro do 4º ano --- fonte, data e autoria --- é
 provisório e será revisado pelo dono do produto; e os Termos de Uso ainda não
 citam a IA do Jornal. O teste que percorre a missão como estudante e professora
 já roda verde (27 de setembro de 2026).}
+\end{historia}
+
+\begin{historia}{H06.10.6}{Jornal da Escola: aprovar cada imagem antes de abrir a turma}{\parcial}
+\hu{Professor do 4º ano}{ver cada imagem das notícias junto da manchete, trocar a
+que não serve e aprovar uma a uma antes de a turma entrar}{que nenhum estudante
+veja uma imagem gerada por IA que eu não vi}
+\aceite
+\begin{itemize}
+  \item A criação tem duas fases, como na A Seleção (\id{H06.12.7}). Na
+    primeira, os textos: \enquote{Aprovar textos e gerar as imagens} guarda as
+    oito notícias. Na segunda, as imagens: elas são criadas sozinhas, na mesma
+    tela, cada uma ao lado da manchete da notícia, com \enquote{Aguardando seu
+    OK} até eu aprovar.
+  \item \enquote{Gerar outra imagem} troca a imagem de uma notícia só, e ela
+    volta a esperar o meu OK. Cada troca conta no meu limite diário.
+  \item \enquote{Aprovar} aprova as imagens que estão na tela. O
+    \enquote{Continuar} da criação só acende com todas aprovadas.
+  \item \textbf{A imagem não é opcional.} Sem todas as imagens geradas e
+    aprovadas, a atividade não vai ao ar: na lista ela aparece \enquote{Em
+    preparo}, sem \enquote{Usar esta atividade agora}, e a página dela mostra
+    \enquote{Aprove as imagens antes de abrir a turma} e as imagens antes das
+    equipes. Se a IA de imagens estiver fora do ar ou o limite do dia acabar, a
+    atividade nova espera.
+  \item Com a atividade já no ar, também posso trocar uma imagem: só aquela
+    notícia fica sem imagem para a turma (com o desenho do meio de onde veio)
+    até eu aprovar a nova; as outras continuam, e a aula não para.
+  \item Uma atividade nova aproveita as imagens já criadas para a mesma
+    descrição, mas nunca a aprovação: vejo e aprovo as imagens de cada
+    atividade.
+  \item As atividades criadas antes desta regra continuam com as imagens que
+    tinham, já aprovadas.
+\end{itemize}
+\pendencia{o teste de ponta a ponta que percorre as duas fases com a IA de
+verdade foi escrito com a mudança e precisa rodar verde na cópia principal
+para a história passar a pronta.}
 \end{historia}
 
 \begin{historia}{H06.10.5}{O podcast de recapitulação da A Seleção}{\parcial}
