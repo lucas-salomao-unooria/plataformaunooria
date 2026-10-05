@@ -190,6 +190,9 @@ describe("os fatos e o contexto", () => {
   test("de 3 a 6 fatos, e a frase diz quantos há", () => {
     expect(conferirAssuntos(["a1", "b2"])).toMatch(/de 3 a 6 fatos.*hoje: 2/);
     expect(conferirAssuntos(["a1", "b2", "c3"])).toBeNull();
+    /* Os três temas numa linha só, separados por vírgula: o erro diz o que fazer. */
+    expect(conferirAssuntos(["horário do ônibus, autorização, vaga no museu"])).toMatch(/mesma linha: aperte Enter/);
+    expect(conferirAssuntos(["a1", "b2"])).toMatch(/aperte Enter entre um fato e outro/i);
     expect(conferirAssuntos(["a1", "b2", "c3", "d4", "e5", "f6", "g7"])).toMatch(/hoje: 7/);
   });
 

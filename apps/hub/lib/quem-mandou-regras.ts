@@ -227,10 +227,23 @@ export function conferirTema(tema: string): ConferenciaDoTema {
   return { caracteres, palavras, erro };
 }
 
-/** Os fatos balizadores: de 3 a 6, cada um de 2 a 120 caracteres, até 600 somados. `null` = em ordem. */
+/**
+ * Os fatos balizadores: de 3 a 6, cada um de 2 a 120 caracteres, até 600
+ * somados. `null` = em ordem.
+ *
+ * O erro da contagem diz COMO separar: o professor que escreve os três temas
+ * numa linha só, separados por vírgula, via "1 fato" e não entendia por que o
+ * Continuar não andava (o pedido do PO em 2026-10-05).
+ */
 export function conferirAssuntos(assuntos: readonly string[]): string | null {
   if (assuntos.length < TETOS.assuntosMin || assuntos.length > TETOS.assuntosMax) {
-    return `Liste de ${TETOS.assuntosMin} a ${TETOS.assuntosMax} fatos da aula (hoje: ${assuntos.length}).`;
+    const mesmaLinha = assuntos.length === 1 && /,/.test(assuntos[0] ?? "");
+    return (
+      `Liste de ${TETOS.assuntosMin} a ${TETOS.assuntosMax} fatos, um por linha (hoje: ${assuntos.length}). ` +
+      (mesmaLinha
+        ? "Parece que eles estão todos na mesma linha: aperte Enter entre um fato e outro."
+        : "Aperte Enter entre um fato e outro.")
+    );
   }
   if (assuntos.some((a) => a.length < TETOS.assuntoMinCaracteres || a.length > TETOS.assuntoMaxCaracteres)) {
     return `Cada fato tem de ${TETOS.assuntoMinCaracteres} a ${TETOS.assuntoMaxCaracteres} caracteres.`;
