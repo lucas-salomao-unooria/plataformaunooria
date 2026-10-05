@@ -28,9 +28,12 @@ morre com "Failed to fetch", e o erro não diz por quê.
 
 Precisa de: a api no ar (`/a-selecao/*` e `/evidencias/*`), a missão **liberada**
 na turma do estudante (ADR-69) e o produto `entre-redes` ligado no painel da
-Unooria (ADR-87). Sem cobertura homologada pela professora, a turma roda o banco
-curado (a Praça Central). Sem imagens geradas, os posts saem como cards com a
-descrição da imagem — de propósito, e iguais em forma.
+Unooria (ADR-87). A plataforma não cria atividade (ADR-130): sem uma cobertura
+da professora EM ANDAMENTO, a api responde 403 `atividade-nao-preparada` e a tela
+"ainda não está aberta" pergunta de novo a cada 5 s (ADR-146). O banco curado (a
+Praça Central) é o ponto de partida da criação, não um padrão que roda sozinho.
+Post sem imagem sai como card com a descrição da cena — de propósito, e igual em
+forma.
 
 ## Verificar
 

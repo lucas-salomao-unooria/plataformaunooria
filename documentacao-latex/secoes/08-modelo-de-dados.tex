@@ -1792,7 +1792,13 @@ decisão \emph{futura}, com DPA e \emph{k}-anonimato --- e não sai de um
   passo \cd{galeria} recusado), e o \cd{GRANT} à \emph{role} de \emph{runtime},
   guardado. Os nomes de índice e de \cd{UNIQUE} são dados à mão, pelo mesmo
   motivo do Jornal.\\
-\zebra \arq{20261005150000\_\B{}exp07ef1b\_\B{}imagens\_\B{}aprovadas} & A coluna
+\zebra \arq{20261005120000\_\B{}exp05ef1b\_\B{}perguntas\_\B{}sao\_\B{}a\_\B{}reflexao} &
+  O \emph{latch} do fim da exp05ef1b (\adrr{ADR-145}): o \emph{CHECK}
+  \cd{exp05ef1b\_sessoes\_concluido\_check} passa a exigir o voto
+  (\cd{votou\_em}) em vez da regra enviada, porque a regra Se/Então saiu e as
+  perguntas da Nina são a reflexão. \cd{reflexao\_em} e
+  \cd{exp05ef1b\_reflexoes} ficam, só pelo histórico. Sem RLS nova.\\
+\arq{20261005150000\_\B{}exp07ef1b\_\B{}imagens\_\B{}aprovadas} & A coluna
   \cd{imagens\_aprovadas\_em} em \cd{exp07ef1b\_coberturas} (\adrr{ADR-146}),
   \cd{TIMESTAMPTZ} nula: a segunda fase da aprovação, sem a qual a atividade não
   vai ao ar. As coberturas que já existiam entram aprovadas, com o carimbo da
