@@ -9,7 +9,7 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{139 decisões}, numeradas até ADR-139. A 132 (a Ajuda com
+São \textbf{145 decisões}, numeradas até ADR-145. A 132 (a Ajuda com
 avatar) entrou no código antes de ter seção aqui, e por um dia o número foi
 citado sem existir; a 133 pulou para não colidir com ela. A 133 e a 134 nasceram no mesmo dia, em frentes paralelas
 (Unoovista e Unoochat), e entraram juntas no merge; a 135 e a 136 levaram as
@@ -170,7 +170,7 @@ que a cercam.
 \adrr{ADR-117} & Jornal da Escola: a redação é da Unooria, o professor abre o resultado e a revisão, e a IA só escolhe o layout & 2026-09-27 & Aceita\\
 \zebra \adrr{ADR-118} & Quem mandou isso? v2.2: atividade é o pacote, rodada é a reaplicação, e a régua mede pela seleção e pelas perguntas do PO & 2026-09-25 & Aceita; a régua foi substituída pela \adrr{ADR-120}\\
 \adrr{ADR-119} & O podcast da A Seleção é do professor, e a IA reescreve só as três falas que dependem do tema & 2026-09-26 & Aceita\\
-\zebra \adrr{ADR-120} & A régua v2 de Quem mandou isso?: cada habilidade pelo verbo dela, e refazer o mesmo pacote não mede memória & 2026-09-26 & Aceita; as perguntas voltaram às do PO (\adrr{ADR-131})\\
+\zebra \adrr{ADR-120} & A régua v2 de Quem mandou isso?: cada habilidade pelo verbo dela, e refazer o mesmo pacote não mede memória & 2026-09-26 & Aceita; as perguntas voltaram às do PO (\adrr{ADR-131}); a medição única e a rubrica do Se/Então saíram (\adrr{ADR-145})\\
 \adrr{ADR-121} & O CI verifica só os PRs para \cd{dev}, \cd{hml} e \cd{main} & 2026-09-26 & Aceita\\
 \zebra \adrr{ADR-122} & A modelagem UML entra no Capítulo 5, com os catorze tipos da UML 2.5.1 e par Mermaid mesmo onde o Mermaid não tem o tipo & 2026-09-27 & Aceita\\
 \adrr{ADR-123} & O plano anual tem uma estrutura só, definida pelo prompt, e o template é exemplo de formato & 2026-09-30 & Aceita\\
@@ -190,6 +190,12 @@ que a cercam.
 \zebra \adrr{ADR-137} & O Júri Estadual de Projetos nasce no Unoovista e mede o que o briefing pediu & 2026-10-02 & Aceita\\
 \adrr{ADR-138} & A missão da 2ª série do EM troca o clone do ChatGPT pelo UnooriaAI & 2026-10-02 & Aceita\\
 \zebra \adrr{ADR-139} & O design system tem uma versão só, e todas as experiências sobem juntas & 2026-10-02 & Aceita\\
+\adrr{ADR-140} & A eliminação a pedido do titular apaga o cadastro de verdade, e o comprovante não guarda a pessoa & 2026-10-03 & Aceita\\
+\zebra \adrr{ADR-141} & A idade de uma versão fixada sai do histórico, não de uma coluna nova & 2026-10-03 & Aceita\\
+\adrr{ADR-142} & Na subida do DS, o \cd{dist/} se compara sem os sourcemaps & 2026-10-03 & Aceita\\
+\zebra \adrr{ADR-143} & O lado do feed entra no sorteio de equipes por registro da missão, e redistribuir não convive com equipe & 2026-10-03 & Aceita\\
+\adrr{ADR-144} & O painel de habilidades lê por unidade, a missão vale o melhor entre as atividades, e a regional desce até a escola sem lotação & 2026-10-03 & Aceita\\
+\zebra \adrr{ADR-145} & Toda rodada mede todas as habilidades, o critério de cada nível aparece no painel, e Quem mandou isso? perde a regra dissertativa & 2026-10-05 & Aceita; revê a \adrr{ADR-120}\\
 \bottomrule
 \end{tabularx}
 
@@ -12585,3 +12591,97 @@ trabalha uma escola por vez (\adrr{ADR-80}) --- desce da rede até a turma.
 \textbf{Gatilho.} O PO pedir a planilha da coordenação, uma rede com mais de
 duzentas escolas no painel do contrato, ou a primeira missão transversal com
 ficha.
+
+% ---------------------------------------------------------------------------
+\section{ADR-145 --- Toda rodada mede todas as habilidades, o critério de cada nível aparece no painel, e Quem mandou isso? perde a regra dissertativa}
+\label{adr:rodada-mede-tudo}
+
+\textbf{Data.} 2026-10-05. \textbf{Status.} Aceita. Revê a \adrr{ADR-120}
+(a medição única por criança e pacote, e a rubrica do Se/Então) e complementa
+a \adrr{ADR-112}.
+
+\begin{especificacao}{Contexto}
+O PO testou Quem mandou isso? (exp05ef1b) de ponta a ponta e devolveu três
+pedidos sobre a evidência. Primeiro: a rodada nova do mesmo pacote não media
+de novo a EF05CO08 de quem já tinha nível, por desenho (\adrr{ADR-120}: refazer
+mediria memória), e o professor via a rodada 2 sem a habilidade principal.
+Segundo: o painel listava as habilidades sem dizer o que faz a criança chegar
+a cada nível, e o professor não tinha onde consultar o critério. Terceiro: a
+regra \enquote{Se a mensagem for\ldots, então eu\ldots} era o único texto livre
+da missão, avaliado por uma rubrica do professor, enquanto todo o resto era
+medido por critério fixo --- e o PO a achou confusa. No mesmo teste: a fala da
+Nina da abertura reaparecia no chat das perguntas, mandando a criança de volta
+ao grupo; a aba da rodada nova só aparecia depois de um F5; e o chat parecia
+\enquote{chapado} (as oito mensagens de uma vez, os nomes numa cor só, as duas
+imagens iguais e a Nina sem rosto).
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{itemize}
+  \item \textbf{Toda rodada mede todas as habilidades}, também no mesmo pacote,
+    em Quem mandou isso?, no Jornal da Escola e no Júri Estadual: sai o
+    \cd{EvidenciasService.jaAvaliadaAntes}. O resultado da atividade continua
+    sendo a melhor rodada de cada habilidade (\adrr{ADR-112}), então medir de
+    novo só pode subir o nível.
+  \item \textbf{A ficha diz o critério de cada nível}: \cd{HabilidadeDaFicha}
+    ganha \cd{criterios} (atingiu, em processo, não atingiu e uma observação
+    quando há mais de um marcador), escritos nas quatro fichas a partir das
+    réguas que já existiam. O \cd{validarFicha} recusa habilidade sem os três,
+    e o painel os lista no fim da página, em toda missão com ficha.
+  \item \textbf{Em Quem mandou isso?, as perguntas são a reflexão}: a fase
+    \cd{reflexao} da turma leva direto ao passo \cd{perguntas}. Saem a tela
+    da regra, o \rota{POST /quem-mandou-isso/reflexao}, a coluna da regra na
+    folha e a rubrica do professor; a EF05CO04 passa a vir só da P2. Concluir
+    exige o voto, e não mais a regra (migração
+    \arq{20261005120000\_exp05ef1b\_perguntas\_sao\_a\_reflexao}). A tabela
+    \cd{exp05ef1b\_reflexoes} e o carimbo \cd{reflexao\_em} ficam só pelo
+    histórico. Instrumento 2.3.0, experiência 0.4.0.
+  \item \textbf{A rodada em andamento tem aba mesmo vazia}: a página de
+    resultados passa a rodada da missão ao painel (\cd{rodadaEmAndamento}), que
+    a mostra logo depois de \enquote{Zerar}, só de leitura até a primeira
+    evidência (a api recusa ajuste em rodada sem registro).
+  \item \textbf{O chat ganha movimento e identidade}: as mensagens chegam uma a
+    uma na primeira abertura do grupo; a Nina tem foto (ilustração em SVG); cada
+    imagem tem um desenho próprio (comunicado, cartaz, print ou bilhete); e os
+    remetentes ganham cor por nome, com o \cd{TypingIndicator} e o
+    \cd{senderTone} que entraram no Unoochat (DS 0.2.17).
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Manter a medição única só na EF05CO08.} Era a defesa contra
+    \enquote{medir memória}, mas a melhor rodada já impede que a repetição
+    derrube o resultado, e o professor lia a rodada 2 vazia como defeito.
+  \item \textbf{Manter a regra Se/Então sem a rubrica}, como texto só lido.
+    Continuaria sendo a única etapa sem critério, e o PO pediu a etapa de
+    múltipla escolha como a reflexão.
+  \item \textbf{Tirar a regra dissertativa de todas as missões agora.} A
+    Seleção e o 8º ano entram numa frente própria, com a mesma regra; esta
+    ficou só com a missão do 5º ano.
+  \item \textbf{Recarregar a página sozinha depois de zerar.} Mostraria a
+    rodada nova só depois da primeira evidência, que é justamente o que
+    confundia.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{A rodada nova do mesmo pacote mede quem já viu a resposta.}
+    O nível dessa criança pode subir por memória; a orientação continua sendo
+    reaplicar com outro tema.
+  \item \textbf{A EF05CO04 perdeu o CRIAR}: a P2 mede o reconhecer da regra,
+    e criar a própria regra ficou para a roda e o cartaz da turma, fora do
+    painel.
+  \item \textbf{A aba vazia da rodada nova é só de leitura}: quem quiser
+    registrar uma atividade feita fora da missão espera o primeiro jogo.
+  \item \textbf{Dentro do mesmo pacote, cada imagem tem sempre o mesmo
+    desenho}; entre pacotes o par muda, para o desenho não virar pista.
+  \item \textbf{Os critérios e o encerramento novo da Nina são texto da
+    equipe}, à espera da revisão do PO.
+\end{itemize}
+
+\textbf{Gatilho.} A frente que tira a reflexão dissertativa da A Seleção e do
+8º ano; ou o PO pedir que a rodada do mesmo pacote volte a não medir.
+

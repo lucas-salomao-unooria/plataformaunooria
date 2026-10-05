@@ -11025,11 +11025,36 @@
                           },
                           "descricao": {
                             "type": "string"
+                          },
+                          "criterios": {
+                            "type": "object",
+                            "properties": {
+                              "atingiu": {
+                                "type": "string"
+                              },
+                              "em_processo": {
+                                "type": "string"
+                              },
+                              "nao_atingiu": {
+                                "type": "string"
+                              },
+                              "observacao": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "atingiu",
+                              "em_processo",
+                              "nao_atingiu"
+                            ],
+                            "additionalProperties": false,
+                            "nullable": true
                           }
                         },
                         "required": [
                           "codigo",
-                          "descricao"
+                          "descricao",
+                          "criterios"
                         ],
                         "additionalProperties": false
                       }
@@ -11247,11 +11272,36 @@
                           },
                           "descricao": {
                             "type": "string"
+                          },
+                          "criterios": {
+                            "type": "object",
+                            "properties": {
+                              "atingiu": {
+                                "type": "string"
+                              },
+                              "em_processo": {
+                                "type": "string"
+                              },
+                              "nao_atingiu": {
+                                "type": "string"
+                              },
+                              "observacao": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "atingiu",
+                              "em_processo",
+                              "nao_atingiu"
+                            ],
+                            "additionalProperties": false,
+                            "nullable": true
                           }
                         },
                         "required": [
                           "codigo",
-                          "descricao"
+                          "descricao",
+                          "criterios"
                         ],
                         "additionalProperties": false
                       }
@@ -11465,11 +11515,36 @@
                           },
                           "descricao": {
                             "type": "string"
+                          },
+                          "criterios": {
+                            "type": "object",
+                            "properties": {
+                              "atingiu": {
+                                "type": "string"
+                              },
+                              "em_processo": {
+                                "type": "string"
+                              },
+                              "nao_atingiu": {
+                                "type": "string"
+                              },
+                              "observacao": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "atingiu",
+                              "em_processo",
+                              "nao_atingiu"
+                            ],
+                            "additionalProperties": false,
+                            "nullable": true
                           }
                         },
                         "required": [
                           "codigo",
-                          "descricao"
+                          "descricao",
+                          "criterios"
                         ],
                         "additionalProperties": false
                       }
@@ -37533,7 +37608,6 @@
                         "espera",
                         "revelacao",
                         "sintese",
-                        "reflexao",
                         "perguntas",
                         "concluida"
                       ]
@@ -37598,29 +37672,6 @@
                         "medo_indignacao",
                         "imagem_link_real"
                       ],
-                      "nullable": true
-                    },
-                    "reflexao": {
-                      "type": "object",
-                      "properties": {
-                        "se": {
-                          "type": "string",
-                          "enum": [
-                            "urgente_alarmante",
-                            "parente_proximo",
-                            "link_nao_checado",
-                            "promessa_incrivel"
-                          ]
-                        },
-                        "entao": {
-                          "type": "string"
-                        }
-                      },
-                      "required": [
-                        "se",
-                        "entao"
-                      ],
-                      "additionalProperties": false,
                       "nullable": true
                     },
                     "concluido": {
@@ -37819,16 +37870,12 @@
                               "type": "string",
                               "nullable": true
                             },
-                            "tio": {
-                              "type": "string"
-                            },
                             "encerramento": {
                               "type": "string"
                             }
                           },
                           "required": [
                             "convite",
-                            "tio",
                             "encerramento"
                           ],
                           "additionalProperties": false
@@ -37851,15 +37898,11 @@
                             ],
                             "additionalProperties": false
                           }
-                        },
-                        "confirmacaoDaRegra": {
-                          "type": "string"
                         }
                       },
                       "required": [
                         "nina",
-                        "perguntas",
-                        "confirmacaoDaRegra"
+                        "perguntas"
                       ],
                       "additionalProperties": false
                     },
@@ -37884,30 +37927,10 @@
                             ],
                             "additionalProperties": false
                           }
-                        },
-                        "condicoes": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "properties": {
-                              "id": {
-                                "type": "string"
-                              },
-                              "rotulo": {
-                                "type": "string"
-                              }
-                            },
-                            "required": [
-                              "id",
-                              "rotulo"
-                            ],
-                            "additionalProperties": false
-                          }
                         }
                       },
                       "required": [
-                        "motivos",
-                        "condicoes"
+                        "motivos"
                       ],
                       "additionalProperties": false
                     },
@@ -37918,22 +37941,10 @@
                           "type": "integer",
                           "exclusiveMinimum": true,
                           "minimum": 0
-                        },
-                        "entaoMin": {
-                          "type": "integer",
-                          "exclusiveMinimum": true,
-                          "minimum": 0
-                        },
-                        "entaoMax": {
-                          "type": "integer",
-                          "exclusiveMinimum": true,
-                          "minimum": 0
                         }
                       },
                       "required": [
-                        "encaminhamentos",
-                        "entaoMin",
-                        "entaoMax"
+                        "encaminhamentos"
                       ],
                       "additionalProperties": false
                     }
@@ -37946,7 +37957,6 @@
                     "selecao",
                     "confirmado",
                     "motivo",
-                    "reflexao",
                     "concluido",
                     "revelacao",
                     "pacote",
@@ -37964,7 +37974,7 @@
           "quem-mandou-isso"
         ],
         "summary": "O estado da missão e as 8 mensagens do grupo, sem o gabarito.",
-        "description": "As mensagens saem **sem `veracidade` e `tom`** — o tipo do servidor é um `Omit`. O gabarito só aparece em `revelacao`, e `revelacao` é `null` até o estudante VOTAR na enquete e a turma abrir a revelação; ela traz só as TRÊS mensagens dele.\n\n`pacote` é `null` enquanto o professor não aprovou um pacote para a turma: **a missão nasce vazia** e a tela é de espera.\n\n`passo` é DERIVADO no servidor (os latches da sessão × a fase da turma): `abertura → grupo → enquete → espera → revelacao → sintese → reflexao → perguntas → concluida`. `grupo` cobre o grupo E o Mural (as duas vistas da mesma seleção); `selecao` restaura um F5.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- A porta da sala (ADR-69) e a disponibilidade (ADR-87) valem aqui: turma sem a missão liberada responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`).\n- Quem ainda não confirmou o Mural quando a turma abre a revelação CONTINUA no grupo; depois de votar, recebe `revelacao` junto com o passo da turma (que pode já ser `sintese` ou `reflexao`) — a tela mostra os crachás antes do passo corrente.\n- `textos.perguntas` são as falas da Nina que antecedem as perguntas de evidência (`p1`, `p2`). O enunciado e as alternativas vêm de `GET /evidencias/exp05ef1b/perguntas/:perguntaId` — embaralhadas, sem o nível —, e a resposta vai a `POST /evidencias/exp05ef1b/perguntas/:perguntaId/resposta`, que só aceita no passo `perguntas`.\n- `reflexao` é sempre a do PRÓPRIO estudante.",
+        "description": "As mensagens saem **sem `veracidade` e `tom`** — o tipo do servidor é um `Omit`. O gabarito só aparece em `revelacao`, e `revelacao` é `null` até o estudante VOTAR na enquete e a turma abrir a revelação; ela traz só as TRÊS mensagens dele.\n\n`pacote` é `null` enquanto o professor não aprovou um pacote para a turma: **a missão nasce vazia** e a tela é de espera.\n\n`passo` é DERIVADO no servidor (os latches da sessão × a fase da turma): `abertura → grupo → enquete → espera → revelacao → sintese → perguntas → concluida`. `grupo` cobre o grupo E o Mural (as duas vistas da mesma seleção); `selecao` restaura um F5.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- A porta da sala (ADR-69) e a disponibilidade (ADR-87) valem aqui: turma sem a missão liberada responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`).\n- Quem ainda não confirmou o Mural quando a turma abre a revelação CONTINUA no grupo; depois de votar, recebe `revelacao` junto com o passo da turma (que pode já ser `sintese` ou `perguntas`) — a tela mostra os crachás antes do passo corrente.\n- `textos.perguntas` são as falas da Nina que antecedem as perguntas de evidência (`p1`, `p2`). O enunciado e as alternativas vêm de `GET /evidencias/exp05ef1b/perguntas/:perguntaId` — embaralhadas, sem o nível —, e a resposta vai a `POST /evidencias/exp05ef1b/perguntas/:perguntaId/resposta`, que só aceita no passo `perguntas`.",
         "security": [
           {
             "token-da-plataforma": []
@@ -38007,7 +38017,6 @@
                         "espera",
                         "revelacao",
                         "sintese",
-                        "reflexao",
                         "perguntas",
                         "concluida"
                       ]
@@ -38089,7 +38098,6 @@
                         "espera",
                         "revelacao",
                         "sintese",
-                        "reflexao",
                         "perguntas",
                         "concluida"
                       ]
@@ -38154,29 +38162,6 @@
                         "medo_indignacao",
                         "imagem_link_real"
                       ],
-                      "nullable": true
-                    },
-                    "reflexao": {
-                      "type": "object",
-                      "properties": {
-                        "se": {
-                          "type": "string",
-                          "enum": [
-                            "urgente_alarmante",
-                            "parente_proximo",
-                            "link_nao_checado",
-                            "promessa_incrivel"
-                          ]
-                        },
-                        "entao": {
-                          "type": "string"
-                        }
-                      },
-                      "required": [
-                        "se",
-                        "entao"
-                      ],
-                      "additionalProperties": false,
                       "nullable": true
                     },
                     "concluido": {
@@ -38282,7 +38267,6 @@
                     "selecao",
                     "confirmado",
                     "motivo",
-                    "reflexao",
                     "concluido",
                     "revelacao"
                   ],
@@ -38329,7 +38313,6 @@
                         "espera",
                         "revelacao",
                         "sintese",
-                        "reflexao",
                         "perguntas",
                         "concluida"
                       ]
@@ -38394,29 +38377,6 @@
                         "medo_indignacao",
                         "imagem_link_real"
                       ],
-                      "nullable": true
-                    },
-                    "reflexao": {
-                      "type": "object",
-                      "properties": {
-                        "se": {
-                          "type": "string",
-                          "enum": [
-                            "urgente_alarmante",
-                            "parente_proximo",
-                            "link_nao_checado",
-                            "promessa_incrivel"
-                          ]
-                        },
-                        "entao": {
-                          "type": "string"
-                        }
-                      },
-                      "required": [
-                        "se",
-                        "entao"
-                      ],
-                      "additionalProperties": false,
                       "nullable": true
                     },
                     "concluido": {
@@ -38522,7 +38482,6 @@
                     "selecao",
                     "confirmado",
                     "motivo",
-                    "reflexao",
                     "concluido",
                     "revelacao"
                   ],
@@ -38602,7 +38561,6 @@
                         "espera",
                         "revelacao",
                         "sintese",
-                        "reflexao",
                         "perguntas",
                         "concluida"
                       ]
@@ -38667,29 +38625,6 @@
                         "medo_indignacao",
                         "imagem_link_real"
                       ],
-                      "nullable": true
-                    },
-                    "reflexao": {
-                      "type": "object",
-                      "properties": {
-                        "se": {
-                          "type": "string",
-                          "enum": [
-                            "urgente_alarmante",
-                            "parente_proximo",
-                            "link_nao_checado",
-                            "promessa_incrivel"
-                          ]
-                        },
-                        "entao": {
-                          "type": "string"
-                        }
-                      },
-                      "required": [
-                        "se",
-                        "entao"
-                      ],
-                      "additionalProperties": false,
                       "nullable": true
                     },
                     "concluido": {
@@ -38795,7 +38730,6 @@
                     "selecao",
                     "confirmado",
                     "motivo",
-                    "reflexao",
                     "concluido",
                     "revelacao"
                   ],
@@ -38875,7 +38809,6 @@
                         "espera",
                         "revelacao",
                         "sintese",
-                        "reflexao",
                         "perguntas",
                         "concluida"
                       ]
@@ -38940,29 +38873,6 @@
                         "medo_indignacao",
                         "imagem_link_real"
                       ],
-                      "nullable": true
-                    },
-                    "reflexao": {
-                      "type": "object",
-                      "properties": {
-                        "se": {
-                          "type": "string",
-                          "enum": [
-                            "urgente_alarmante",
-                            "parente_proximo",
-                            "link_nao_checado",
-                            "promessa_incrivel"
-                          ]
-                        },
-                        "entao": {
-                          "type": "string"
-                        }
-                      },
-                      "required": [
-                        "se",
-                        "entao"
-                      ],
-                      "additionalProperties": false,
                       "nullable": true
                     },
                     "concluido": {
@@ -39068,7 +38978,6 @@
                     "selecao",
                     "confirmado",
                     "motivo",
-                    "reflexao",
                     "concluido",
                     "revelacao"
                   ],
@@ -39119,276 +39028,6 @@
         }
       }
     },
-    "/quem-mandou-isso/reflexao": {
-      "post": {
-        "operationId": "QuemMandouIssoController_reflexao",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "Sucesso.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "passo": {
-                      "type": "string",
-                      "enum": [
-                        "abertura",
-                        "grupo",
-                        "enquete",
-                        "espera",
-                        "revelacao",
-                        "sintese",
-                        "reflexao",
-                        "perguntas",
-                        "concluida"
-                      ]
-                    },
-                    "fase": {
-                      "type": "string",
-                      "enum": [
-                        "triagem",
-                        "revelacao",
-                        "explicar",
-                        "reflexao"
-                      ],
-                      "nullable": true
-                    },
-                    "preparada": {
-                      "type": "boolean"
-                    },
-                    "atividade": {
-                      "type": "object",
-                      "properties": {
-                        "pacoteId": {
-                          "type": "string",
-                          "format": "uuid"
-                        },
-                        "rodada": {
-                          "type": "integer",
-                          "exclusiveMinimum": true,
-                          "minimum": 0
-                        }
-                      },
-                      "required": [
-                        "pacoteId",
-                        "rodada"
-                      ],
-                      "additionalProperties": false,
-                      "nullable": true
-                    },
-                    "selecao": {
-                      "type": "array",
-                      "items": {
-                        "type": "string",
-                        "enum": [
-                          "msg_1",
-                          "msg_2",
-                          "msg_3",
-                          "msg_4",
-                          "msg_5",
-                          "msg_6",
-                          "msg_7",
-                          "msg_8"
-                        ]
-                      }
-                    },
-                    "confirmado": {
-                      "type": "boolean"
-                    },
-                    "motivo": {
-                      "type": "string",
-                      "enum": [
-                        "urgencia",
-                        "confianca_remetente",
-                        "medo_indignacao",
-                        "imagem_link_real"
-                      ],
-                      "nullable": true
-                    },
-                    "reflexao": {
-                      "type": "object",
-                      "properties": {
-                        "se": {
-                          "type": "string",
-                          "enum": [
-                            "urgente_alarmante",
-                            "parente_proximo",
-                            "link_nao_checado",
-                            "promessa_incrivel"
-                          ]
-                        },
-                        "entao": {
-                          "type": "string"
-                        }
-                      },
-                      "required": [
-                        "se",
-                        "entao"
-                      ],
-                      "additionalProperties": false,
-                      "nullable": true
-                    },
-                    "concluido": {
-                      "type": "boolean"
-                    },
-                    "revelacao": {
-                      "type": "object",
-                      "properties": {
-                        "mensagens": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "properties": {
-                              "id": {
-                                "type": "string",
-                                "enum": [
-                                  "msg_1",
-                                  "msg_2",
-                                  "msg_3",
-                                  "msg_4",
-                                  "msg_5",
-                                  "msg_6",
-                                  "msg_7",
-                                  "msg_8"
-                                ]
-                              },
-                              "veracidade": {
-                                "type": "string",
-                                "enum": [
-                                  "verdadeira",
-                                  "falsa"
-                                ]
-                              },
-                              "tom": {
-                                "type": "string",
-                                "enum": [
-                                  "emocional",
-                                  "neutra"
-                                ]
-                              }
-                            },
-                            "required": [
-                              "id",
-                              "veracidade",
-                              "tom"
-                            ],
-                            "additionalProperties": false
-                          }
-                        },
-                        "motivo": {
-                          "type": "string",
-                          "enum": [
-                            "urgencia",
-                            "confianca_remetente",
-                            "medo_indignacao",
-                            "imagem_link_real"
-                          ]
-                        },
-                        "callback": {
-                          "type": "string"
-                        },
-                        "turma": {
-                          "type": "object",
-                          "properties": {
-                            "unidades": {
-                              "type": "integer",
-                              "minimum": 0
-                            },
-                            "falsaNeutra": {
-                              "type": "integer",
-                              "minimum": 0,
-                              "maximum": 100
-                            },
-                            "verdadeiraEmocionalDescartada": {
-                              "type": "integer",
-                              "minimum": 0,
-                              "maximum": 100
-                            }
-                          },
-                          "required": [
-                            "unidades",
-                            "falsaNeutra",
-                            "verdadeiraEmocionalDescartada"
-                          ],
-                          "additionalProperties": false
-                        }
-                      },
-                      "required": [
-                        "mensagens",
-                        "motivo",
-                        "callback",
-                        "turma"
-                      ],
-                      "additionalProperties": false,
-                      "nullable": true
-                    }
-                  },
-                  "required": [
-                    "passo",
-                    "fase",
-                    "preparada",
-                    "atividade",
-                    "selecao",
-                    "confirmado",
-                    "motivo",
-                    "reflexao",
-                    "concluido",
-                    "revelacao"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "quem-mandou-isso"
-        ],
-        "summary": "A regra Se/Então da Etapa 6 — o latch 3.",
-        "description": "`se` é uma das quatro condições; `entao` é o **único texto livre da missão**, escrito por menor de idade: vai para a tabela confinada `exp05ef1b_reflexoes`, não vai a log nem a telemetria, e só o professor que leciona na turma o lê no painel (LGPD art. 14). A regra NÃO é corrigida: a EF05CO04 vem da pergunta P2.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- A porta da sala (ADR-69) e a disponibilidade (ADR-87) valem aqui: turma sem a missão liberada responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`).\n- `entao` de 15 a 240 caracteres DEPOIS do `trim`: **400** `entao-curto`, `entao-longo`, ou `entao-sem-sentido` (um caractere repetido, sequência de dígitos, pouca variedade de letras, teclado amassado).\n- **409** `enquete-nao-votada` antes do latch 2 e `reflexao-nao-liberada` antes de o professor liberar a reflexão. A mesma regra de novo é idempotente; outra é **409** `reflexao-ja-enviada`.",
-        "security": [
-          {
-            "token-da-plataforma": []
-          }
-        ],
-        "x-papeis": [
-          "estudante"
-        ],
-        "x-acesso": "token",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "se": {
-                    "type": "string",
-                    "enum": [
-                      "urgente_alarmante",
-                      "parente_proximo",
-                      "link_nao_checado",
-                      "promessa_incrivel"
-                    ]
-                  },
-                  "entao": {
-                    "type": "string",
-                    "maxLength": 960
-                  }
-                },
-                "required": [
-                  "se",
-                  "entao"
-                ],
-                "additionalProperties": false
-              }
-            }
-          }
-        }
-      }
-    },
     "/quem-mandou-isso/concluir": {
       "post": {
         "operationId": "QuemMandouIssoController_concluir",
@@ -39410,7 +39049,6 @@
                         "espera",
                         "revelacao",
                         "sintese",
-                        "reflexao",
                         "perguntas",
                         "concluida"
                       ]
@@ -39475,29 +39113,6 @@
                         "medo_indignacao",
                         "imagem_link_real"
                       ],
-                      "nullable": true
-                    },
-                    "reflexao": {
-                      "type": "object",
-                      "properties": {
-                        "se": {
-                          "type": "string",
-                          "enum": [
-                            "urgente_alarmante",
-                            "parente_proximo",
-                            "link_nao_checado",
-                            "promessa_incrivel"
-                          ]
-                        },
-                        "entao": {
-                          "type": "string"
-                        }
-                      },
-                      "required": [
-                        "se",
-                        "entao"
-                      ],
-                      "additionalProperties": false,
                       "nullable": true
                     },
                     "concluido": {
@@ -39603,7 +39218,6 @@
                     "selecao",
                     "confirmado",
                     "motivo",
-                    "reflexao",
                     "concluido",
                     "revelacao"
                   ],
@@ -39617,7 +39231,7 @@
           "quem-mandou-isso"
         ],
         "summary": "Encerra a missão, depois das perguntas de evidência.",
-        "description": "Não exige as respostas de P1 e P2: quem sai antes delas fica **Não avaliado** em EF05CO03/EF05CO04 (a ausência de marca), nunca \"não atingiu\". Depois disto as perguntas não aceitam mais resposta.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- A porta da sala (ADR-69) e a disponibilidade (ADR-87) valem aqui: turma sem a missão liberada responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`).\n- **409** `reflexao-nao-enviada` antes do latch 3. Idempotente.",
+        "description": "Não exige as respostas de P1 e P2: quem sai antes delas fica **Não avaliado** em EF05CO03/EF05CO04 (a ausência de marca), nunca \"não atingiu\". Depois disto as perguntas não aceitam mais resposta.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- A porta da sala (ADR-69) e a disponibilidade (ADR-87) valem aqui: turma sem a missão liberada responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`).\n- **409** `enquete-nao-votada` antes do voto e `reflexao-nao-liberada` antes de o professor liberar a reflexão (as perguntas são a Etapa 6, ADR-145). Idempotente.",
         "security": [
           {
             "token-da-plataforma": []
@@ -40934,10 +40548,6 @@
                           "type": "integer",
                           "minimum": 0
                         },
-                        "refletiram": {
-                          "type": "integer",
-                          "minimum": 0
-                        },
                         "concluiram": {
                           "type": "integer",
                           "minimum": 0
@@ -40948,7 +40558,6 @@
                         "entraram",
                         "confirmaram",
                         "votaram",
-                        "refletiram",
                         "concluiram"
                       ],
                       "additionalProperties": false
@@ -41104,7 +40713,6 @@
                               "espera",
                               "revelacao",
                               "sintese",
-                              "reflexao",
                               "perguntas",
                               "concluida"
                             ]
@@ -41136,30 +40744,6 @@
                             ],
                             "nullable": true
                           },
-                          "reflexao": {
-                            "type": "object",
-                            "properties": {
-                              "se": {
-                                "type": "string",
-                                "enum": [
-                                  "urgente_alarmante",
-                                  "parente_proximo",
-                                  "link_nao_checado",
-                                  "promessa_incrivel"
-                                ]
-                              },
-                              "entao": {
-                                "type": "string",
-                                "nullable": true
-                              }
-                            },
-                            "required": [
-                              "se",
-                              "entao"
-                            ],
-                            "additionalProperties": false,
-                            "nullable": true
-                          },
                           "tempoFeedSegundos": {
                             "type": "integer",
                             "minimum": 0,
@@ -41173,7 +40757,6 @@
                           "passo",
                           "selecao",
                           "motivo",
-                          "reflexao",
                           "tempoFeedSegundos"
                         ],
                         "additionalProperties": false
@@ -41934,20 +41517,12 @@
                     "textos": {
                       "type": "object",
                       "properties": {
-                        "tio": {
-                          "type": "string"
-                        },
                         "encerramento": {
-                          "type": "string"
-                        },
-                        "confirmacaoDaRegra": {
                           "type": "string"
                         }
                       },
                       "required": [
-                        "tio",
-                        "encerramento",
-                        "confirmacaoDaRegra"
+                        "encerramento"
                       ],
                       "additionalProperties": false
                     },
@@ -42028,30 +41603,10 @@
                             ],
                             "additionalProperties": false
                           }
-                        },
-                        "condicoes": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "properties": {
-                              "id": {
-                                "type": "string"
-                              },
-                              "rotulo": {
-                                "type": "string"
-                              }
-                            },
-                            "required": [
-                              "id",
-                              "rotulo"
-                            ],
-                            "additionalProperties": false
-                          }
                         }
                       },
                       "required": [
-                        "motivos",
-                        "condicoes"
+                        "motivos"
                       ],
                       "additionalProperties": false
                     }
