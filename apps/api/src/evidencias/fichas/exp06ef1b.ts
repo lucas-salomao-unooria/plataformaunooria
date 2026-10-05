@@ -21,9 +21,8 @@ import type { FichaPedagogica } from "./tipos";
  *   quando a curtida se remonta no destino, com a mesma régua de tentativas. E
  *   a `p1`.
  *
- * As ações não medem duas vezes a mesma criança na mesma atividade: na rodada
- * nova, quem já foi avaliada não é marcada de novo (`jaAvaliadaAntes`,
- * ADR-120), porque já viu a galeria e a regra.
+ * Toda rodada mede as ações de novo, também na mesma atividade (ADR-145): o
+ * resultado é a melhor rodada de cada habilidade.
  *
  * Texto da copy revisada (`e6.instrucao.item2_*`, `item3_*`); a `p1` é nova,
  * escrita para a EF06CO07 (o item 1 da copy media a EF06CO10). A plataforma
@@ -40,6 +39,13 @@ export const FICHA_EXP06EF1B: FichaPedagogica = {
         { id: "auditoria", tipo: "acao" },
         { id: "p2", tipo: "multipla_escolha", perguntaId: "p2" },
       ],
+      criterios: {
+        atingiu:
+          "Antes de revisar o voto, abre estandes ocultos de pelo menos duas áreas que não a do voto (ou busca outra área e abre um oculto); ou, na pergunta, diz que o sistema agrupou as curtidas pela categoria do estande.",
+        em_processo: "Abre ou busca alguma coisa na Galeria Oculta; ou, na pergunta, diz que o sistema só contou os toques.",
+        nao_atingiu: "Revisa o voto sem abrir nem buscar nada na galeria, e erra a pergunta.",
+        observacao: "Vale o melhor entre a Galeria Oculta e a pergunta sobre como o aplicativo organizou as curtidas.",
+      },
     },
     {
       codigo: "EF06CO03",
@@ -47,6 +53,12 @@ export const FICHA_EXP06EF1B: FichaPedagogica = {
         { id: "cadeia", tipo: "acao" },
         { id: "p3", tipo: "multipla_escolha", perguntaId: "p3" },
       ],
+      criterios: {
+        atingiu: "Monta a cadeia dos quatro blocos na 1ª tentativa; ou, na pergunta, escolhe a regra SE…ENTÃO que o programa executou.",
+        em_processo: "Monta a cadeia na 2ª ou na 3ª tentativa; ou escolhe uma regra que não descreve o feed.",
+        nao_atingiu: "Precisa de mais de 3 tentativas para montar a cadeia, e escolhe uma regra sem relação com o feed.",
+        observacao: "Vale o melhor entre a montagem da cadeia e a pergunta sobre a regra do programa.",
+      },
     },
     {
       codigo: "EF06CO07",
@@ -54,6 +66,12 @@ export const FICHA_EXP06EF1B: FichaPedagogica = {
         { id: "pacotes", tipo: "acao" },
         { id: "p1", tipo: "multipla_escolha", perguntaId: "p1" },
       ],
+      criterios: {
+        atingiu: "Remonta a curtida nos pacotes na 1ª tentativa; ou, na pergunta, diz que ela foi dividida em pacotes e remontada no servidor.",
+        em_processo: "Remonta na 2ª ou na 3ª tentativa; ou diz que a curtida viajou inteira, de uma vez.",
+        nao_atingiu: "Precisa de mais de 3 tentativas para remontar, e diz que a curtida nem saiu do celular.",
+        observacao: "Vale o melhor entre a remontagem dos pacotes e a pergunta sobre o caminho da curtida.",
+      },
     },
   ],
   perguntas: [

@@ -274,6 +274,7 @@ export async function ResultadosJornalEscola({
                 atividadeId={detalhe.id}
                 inicial={habilidades}
                 podeEditar={session?.usuario.papel === "professor"}
+                rodadaEmAndamento={emAndamento ? (detalhe.rodada ?? null) : null}
               />
             </div>
           ) : null}

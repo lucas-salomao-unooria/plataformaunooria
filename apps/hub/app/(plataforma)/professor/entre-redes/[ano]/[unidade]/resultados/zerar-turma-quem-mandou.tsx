@@ -96,8 +96,7 @@ export function ZerarTurmaQuemMandou({
       </Button>
       <p className="max-w-3xl text-[12px] leading-snug text-unooria-neutral-600">
         Abre a {rodada + 1}ª rodada com o mesmo pacote e volta a aula ao começo. Nada é apagado: a{" "}
-        {rodada}ª rodada fica no histórico. Com o mesmo pacote, a EF05CO08 não é medida de novo para quem já
-        jogou; para medir de novo, aprove um pacote novo.
+        {rodada}ª rodada fica no histórico, e a rodada nova mede todas as habilidades de novo.
       </p>
 
       <Modal isOpen={aberto} onClose={fechar} size="sm" theme="light" aria-labelledby={idDoTitulo}>
@@ -107,7 +106,7 @@ export function ZerarTurmaQuemMandou({
         <ModalBody>
           <div className="flex flex-col gap-3 text-[14px] leading-relaxed text-unooria-neutral-700">
             <p>
-              A turma recomeça do começo — o grupo, o Mural, a enquete e a regra — na{" "}
+              A turma recomeça do começo — o grupo, o Mural, a enquete e as perguntas — na{" "}
               <strong>{rodada + 1}ª rodada</strong>, com o mesmo pacote de mensagens, e a aula volta à
               triagem.
             </p>
@@ -117,10 +116,8 @@ export function ZerarTurmaQuemMandou({
               habilidade.
             </p>
             <p className="text-[13px] text-unooria-neutral-600">
-              <strong>Com o mesmo pacote, a turma refaz para praticar.</strong> Quem já jogou viu a resposta
-              na revelação, então a EF05CO08 dessa criança não é medida de novo — o Mural fecha normalmente.
-              Quem faltou é medido na primeira vez que jogar. Para medir a turma de novo, aprove um pacote
-              novo no preparo.
+              <strong>A rodada nova mede todas as habilidades de novo</strong>, com o mesmo pacote. Como o
+              resultado é a melhor rodada, refazer só pode melhorar o nível de cada estudante.
             </p>
             <Checkbox
               label="Entendi: a turma recomeça do começo numa rodada nova."
@@ -141,7 +138,7 @@ export function ZerarTurmaQuemMandou({
             isLoading={enviando}
             onClick={() => void zerar()}
           >
-            Zerar Turma para Nova Aplicação
+            Zerar a turma
           </Button>
         </ModalFooter>
       </Modal>

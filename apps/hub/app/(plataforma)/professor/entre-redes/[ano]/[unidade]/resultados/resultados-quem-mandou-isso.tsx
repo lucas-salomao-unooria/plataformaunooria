@@ -290,7 +290,7 @@ export async function ResultadosQuemMandouIsso({
                         ? "A missão está encerrada na sala desta turma"
                         : "A missão ainda não está liberada para esta turma"
                     }
-                    description="Sem a liberação na sala de aula, o card fica com cadeado para as crianças — a atividade em andamento não basta."
+                    description="Sem a liberação na sala de aula, o cartão fica com cadeado para as crianças — a atividade em andamento não basta."
                     action={
                       <LinkButton href={rotaDaSala} size="sm">
                         Liberar Missão para a Turma
@@ -350,6 +350,7 @@ export async function ResultadosQuemMandouIsso({
                 atividadeId={detalhe.id}
                 inicial={habilidades}
                 podeEditar={podeConduzir}
+                rodadaEmAndamento={emAndamento ? detalhe.rodadaAtual : null}
               />
             </div>
           ) : null}

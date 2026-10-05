@@ -23,6 +23,21 @@ export interface HabilidadeDaFicha {
   readonly codigo: string;
   /** Pelo menos um. Dois marcadores da mesma habilidade: vale o MELHOR. */
   readonly marcadores: readonly MarcadorDaFicha[];
+  /**
+   * O critério de cada nível, em texto para o PROFESSOR (ADR-145): o que a
+   * criança faz para chegar a "atingiu", "em processo" ou "não atingiu". O
+   * painel mostra no fim da página, para ele consultar sem abrir o guia. É a
+   * régua dos marcadores contada em palavras — mudou a régua, muda o texto.
+   */
+  readonly criterios: CriteriosDaHabilidade;
+}
+
+export interface CriteriosDaHabilidade {
+  readonly atingiu: string;
+  readonly em_processo: string;
+  readonly nao_atingiu: string;
+  /** Quando há mais de um marcador: de onde vem o nível ("vale o melhor entre…"). */
+  readonly observacao?: string;
 }
 
 export interface MarcadorDaFicha {

@@ -43,11 +43,9 @@ Quatro tabelas (`exp05ef1b_pacotes`, `_gates_turma`, `_sessoes`,
 - **A marca da EF05CO08 é da MESMA transação do latch do Mural.** Se a
   evidência falhar, o Mural não fecha (há teste com o `marcar` quebrado). A
   régua é `regras/evidencia.ts#nivelCO08` (a v2, ADR-120: só três verdadeiras
-  atingem), conferida nas 56 combinações. **E ela só é marcada na primeira vez
-  da criança com o pacote**: antes, o service pergunta
-  `EvidenciasService.jaAvaliadaAntes` — na rodada nova do MESMO pacote, quem já
-  tem nível (próprio, da equipe, da projeção ou do professor) fecha o Mural sem
-  marca; quem faltou é medido. CO03 vem da P1 e CO04 da P2 — as perguntas do PO,
+  atingem), conferida nas 56 combinações. **Toda rodada a marca de novo**,
+  também no mesmo pacote (ADR-145, que tirou o "uma vez por criança e pacote"
+  da ADR-120). CO03 vem da P1 e CO04 da P2 — as perguntas do PO,
   literais (ficha v3, ADR-131) — e CO04 também da RUBRICA do Se/Então, que o professor clica na
   folha (um ajuste da evidência; a máquina não corrige o texto).
 - **O resolvedor da E14 só responde no passo `perguntas`** (regra enviada,

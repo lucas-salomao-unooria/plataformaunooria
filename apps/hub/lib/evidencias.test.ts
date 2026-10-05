@@ -6,6 +6,7 @@ import {
   ajustesEmMassa,
   caminhoDoPainel,
   celula,
+  comRodadaEmAndamento,
   descricaoDaCelula,
   erroDaApi,
   ordenarPorEquipe,
@@ -14,6 +15,7 @@ import {
   resumoPendentes,
   resumoPendentesParaLeitura,
   rodadasComPendentes,
+  rodadaSemRegistro,
   rodadasDoPainel,
   rotuloDoRecorte,
   tituloDaAtividadeNoPerfil,
@@ -117,6 +119,20 @@ describe("as rodadas", () => {
     expect(recorteDoValor(valorDoRecorte(2), painel)).toBe(2);
     expect(recorteDoValor(valorDoRecorte(RESULTADO), painel)).toBe(RESULTADO);
     expect(recorteDoValor("7", painel)).toBe(RESULTADO);
+  });
+
+  test("a rodada em andamento ganha aba antes da primeira evidência (logo depois de Zerar)", () => {
+    expect(comRodadaEmAndamento({ rodadas: [1] }, 2).rodadas).toEqual([1, 2]);
+    expect(comRodadaEmAndamento({ rodadas: [1, 2] }, 2).rodadas).toEqual([1, 2]);
+    expect(comRodadaEmAndamento({ rodadas: [1] }, null).rodadas).toEqual([1]);
+    expect(comRodadaEmAndamento({ rodadas: [] }, 1).rodadas).toEqual([1]);
+  });
+
+  test("a rodada sem registro na api é só de leitura: a api aceita até a maior com registro, e a 1 sempre", () => {
+    expect(rodadaSemRegistro({ rodadas: [1] }, 2)).toBe(true);
+    expect(rodadaSemRegistro({ rodadas: [1, 2] }, 2)).toBe(false);
+    expect(rodadaSemRegistro({ rodadas: [] }, 1)).toBe(false);
+    expect(rodadaSemRegistro({ rodadas: [1] }, null)).toBe(false);
   });
 
   test("abre na rodada mais recente com pendência; sem pendência, no resultado", () => {

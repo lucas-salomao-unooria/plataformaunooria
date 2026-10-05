@@ -385,43 +385,6 @@ export class EvidenciasService implements OnModuleInit {
   }
 
   /** A evidência do estudante nesta habilidade e rodada, sem mudar nada. */
-  /**
-   * A criança JÁ FOI AVALIADA neste marcador numa rodada ANTERIOR da mesma
-   * atividade? Conta qualquer nível que não seja "não participou" — o dela,
-   * o copiado da equipe ou da projeção, o do professor —, porque em todos
-   * esses ela estava na sala quando a resposta apareceu. Quem faltou não viu,
-   * e é medido na primeira vez que joga.
-   *
-   * É a pergunta que a missão faz antes de marcar uma AÇÃO que a revelação
-   * entrega: refazer o MESMO pacote mede memória, não habilidade (ADR-120).
-   * A consulta é da plataforma, e não da missão, porque a tabela é dela.
-   */
-  async jaAvaliadaAntes(
-    tx: Prisma.TransactionClient,
-    m: Pick<MarcaDaMissao, "escolaId" | "expId" | "atividadeId" | "rodada" | "estudanteId" | "marcador">,
-  ): Promise<boolean> {
-    const alvo = marcadorDaFicha(this.exigirFicha(m.expId), m.marcador);
-    if (!alvo) {
-      throw new BadRequestException({
-        codigo: "marcador-desconhecido",
-        mensagem: "Este marcador não está na ficha da missão.",
-      });
-    }
-    const anterior = await tx.evidencia.findFirst({
-      where: {
-        escolaId: m.escolaId,
-        expId: m.expId,
-        atividadeId: m.atividadeId,
-        estudanteId: m.estudanteId,
-        habilidade: alvo.habilidade,
-        rodada: { lt: m.rodada },
-        status: { not: "nao_participou" },
-      },
-      select: { rodada: true },
-    });
-    return anterior !== null;
-  }
-
   private async statusAtual(tx: Prisma.TransactionClient, m: MarcaDaMissao, habilidade: string) {
     const linha = await tx.evidencia.findUnique({
       where: {
@@ -760,7 +723,11 @@ export class EvidenciasService implements OnModuleInit {
 
     return {
       temFicha: true,
-      habilidades: codigos.map((codigo) => ({ codigo, descricao: habilidadePorCodigo(codigo)?.descricao ?? "" })),
+      habilidades: codigos.map((codigo) => ({
+        codigo,
+        descricao: habilidadePorCodigo(codigo)?.descricao ?? "",
+        criterios: ficha.habilidades.find((h) => h.codigo === codigo)?.criterios ?? null,
+      })),
       rodadas,
       estudantes: estudantes.map((e) => {
         const minhas = porEstudante.get(e.id) ?? [];

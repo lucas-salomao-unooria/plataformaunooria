@@ -679,24 +679,31 @@ describe("a rodada nova e o pacote novo — o histórico fica", () => {
     await service.enviarAoMural(ESCOLA, ids.ana, ["msg_2", "msg_6", "msg_4"]);
     expect(await prisma.exp05ef1bSessao.count({ where: { escolaId: ESCOLA, estudanteId: ids.ana } })).toBe(2);
     expect(await prisma.exp05ef1bReflexao.count({ where: { escolaId: ESCOLA, estudanteId: ids.ana, rodada: 1 } })).toBe(1);
-    /* O Mural da rodada 2 FECHOU (o latch é dela), mas sem marca nova: a Ana já
-       viu a resposta deste pacote na rodada 1 (ADR-120). */
+    /* Toda rodada mede de novo, também no MESMO pacote (ADR-145): as três
+       falsas da Ana marcam "não atingiu" na rodada 2, e o resultado continua
+       "atingiu", porque é a melhor rodada da habilidade. */
     expect((await prisma.exp05ef1bSessao.findFirstOrThrow({ where: { escolaId: ESCOLA, estudanteId: ids.ana, rodada: 2 } })).confirmadoEm).not.toBeNull();
-    expect(await prisma.evidenciaMarca.count({ where: { escolaId: ESCOLA, estudanteId: ids.ana, habilidade: "EF05CO08", rodada: 2 } })).toBe(0);
+    expect(
+      await prisma.evidencia.findFirstOrThrow({ where: { escolaId: ESCOLA, estudanteId: ids.ana, habilidade: "EF05CO08", rodada: 2 } }),
+    ).toMatchObject({ origem: "propria", status: "nao_atingiu" });
     const painel = await evidencias.painel(ESCOLA, ids.turma5A, EXP_ID, pacote5A, ids.professora);
     expect(painel.estudantes.find((e) => e.id === ids.ana)?.resultado).toMatchObject({ EF05CO08: "atingiu" });
   });
 
-  test("rodada 2 do MESMO pacote: quem recebeu pela equipe na 1 também já viu — o Caio joga e não é medido de novo", async () => {
+  test("rodada 2 do MESMO pacote: quem recebeu pela equipe na 1 é medido de novo, e o resultado sobe", async () => {
     await service.entrar(ESCOLA, ids.caio);
     await service.enviarAoMural(ESCOLA, ids.caio, ["msg_1", "msg_3", "msg_5"]);
-    expect(await prisma.evidencia.count({ where: { escolaId: ESCOLA, estudanteId: ids.caio, habilidade: "EF05CO08", rodada: 2 } })).toBe(0);
+    expect(
+      await prisma.evidencia.findFirstOrThrow({ where: { escolaId: ESCOLA, estudanteId: ids.caio, habilidade: "EF05CO08", rodada: 2 } }),
+    ).toMatchObject({ origem: "propria", status: "atingiu" });
     expect(
       await prisma.evidencia.findFirstOrThrow({ where: { escolaId: ESCOLA, estudanteId: ids.caio, habilidade: "EF05CO08", rodada: 1 } }),
     ).toMatchObject({ origem: "equipe", status: "nao_atingiu" });
+    const painel = await evidencias.painel(ESCOLA, ids.turma5A, EXP_ID, pacote5A, ids.professora);
+    expect(painel.estudantes.find((e) => e.id === ids.caio)?.resultado).toMatchObject({ EF05CO08: "atingiu" });
   });
 
-  test("rodada 2 do MESMO pacote: quem faltou na 1 nunca viu a resposta, e é medida na primeira vez que joga", async () => {
+  test("rodada 2 do MESMO pacote: quem faltou na 1 é medida quando joga", async () => {
     /* A Gabi entra na turma DEPOIS da rodada 1 — é quem faltou. A limpeza do
        fim da suíte é por escola, e a leva junto. */
     const gabi = (

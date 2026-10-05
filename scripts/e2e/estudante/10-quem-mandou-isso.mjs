@@ -465,7 +465,7 @@ await suite(
       /* A confirmação é DELIBERADA: o botão só acende com a caixa marcada. O
          clique vai no rótulo — o `<input>` do DS é o alvo escondido. */
       await janela.getByText("Entendi: a turma recomeça do começo numa rodada nova.").click();
-      const confirmar = janela.getByRole("button", { name: "Zerar Turma para Nova Aplicação" });
+      const confirmar = janela.getByRole("button", { name: "Zerar a turma" });
       await prof.waitForFunction((el) => !el.disabled, await confirmar.elementHandle(), { timeout: 10_000 });
       await confirmar.click();
       await esperarOuFalharCedo(

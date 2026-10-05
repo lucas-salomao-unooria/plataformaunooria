@@ -85,9 +85,8 @@ em silêncio.
 
 A ficha é `evidencias/fichas/exp04ef1b.ts`: EF15CO04 por `pistas` (no latch da
 1ª, fase 1), EF15CO02 por `chave` (tentativas), EF04CO08 por `edicao-2` (no
-latch da 2ª), `p1` e `p2` — vale o melhor, o que afrouxa o "E" do PRD. As três
-AÇÕES perguntam antes `jaAvaliadaAntes` (ADR-120): na rodada nova do mesmo
-pacote, quem já foi avaliada viu o resultado e a Chave, e não é marcada de novo.
+latch da 2ª), `p1` e `p2` — vale o melhor, o que afrouxa o "E" do PRD. Toda
+rodada mede as três AÇÕES de novo, também no mesmo pacote (ADR-145).
 A cópia para os colegas de computador é da porta `marcar`. O resolvedor
 (`contextoDaAtividade`) devolve `null` antes de `transferencia` e fora do
 (pacote, rodada) do gate. O `gabarito`, a `consequencia` e o `pilarEmFalta` estão

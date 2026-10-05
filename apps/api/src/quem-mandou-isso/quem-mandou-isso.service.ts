@@ -398,11 +398,9 @@ export class QuemMandouIssoService implements OnModuleInit {
         if (!g) throw erroDeJogo("mensagem-desconhecida");
         return g;
       });
-      /* A EF05CO08 mede quem AINDA NÃO VIU a resposta deste pacote (ADR-120).
-         Na rodada nova do MESMO pacote, quem já foi avaliada numa anterior —
-         por ela, pela equipe ou pelo professor — refaz para praticar, e o
-         Mural fecha sem marca nova: a melhor rodada continua sendo a que
-         mediu. Quem faltou na anterior é medida agora. */
+      /* Toda rodada mede a EF05CO08 de novo, inclusive no MESMO pacote
+         (ADR-145): o resultado da atividade é a melhor rodada de cada
+         habilidade, então medir outra vez só pode subir o nível. */
       const marca = {
         escolaId,
         expId: EXP_ID,
@@ -411,7 +409,6 @@ export class QuemMandouIssoService implements OnModuleInit {
         estudanteId,
         marcador: MARCADOR_DA_SELECAO,
       };
-      if (await this.evidencias.jaAvaliadaAntes(tx, marca)) return;
       await this.evidencias.marcar(tx, { ...marca, turmaId: pacote.turmaId, status: nivelCO08(escolhidas) });
     });
   }

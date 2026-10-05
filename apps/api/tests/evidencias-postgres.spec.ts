@@ -82,8 +82,9 @@ const FICHA: FichaPedagogica = {
         { id: "h1-acao", tipo: "acao" },
         { id: "h1-pergunta", tipo: "multipla_escolha", perguntaId: "p1" },
       ],
+      criterios: { atingiu: "a", em_processo: "b", nao_atingiu: "c" },
     },
-    { codigo: H2, marcadores: [{ id: "h2-acao", tipo: "acao" }] },
+    { codigo: H2, marcadores: [{ id: "h2-acao", tipo: "acao" }], criterios: { atingiu: "a", em_processo: "b", nao_atingiu: "c" } },
   ],
   perguntas: [
     {
