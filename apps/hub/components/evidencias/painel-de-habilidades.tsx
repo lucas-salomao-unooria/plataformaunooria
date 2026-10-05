@@ -8,14 +8,17 @@ import {
   MARCA_A_REVISAR,
   MARCA_DA_ORIGEM,
   RESULTADO,
+  ROTULO_DO_STATUS,
   ajustesEmMassa,
   caminhoDoPainel,
   celula,
+  comRodadaEmAndamento,
   erroDaApi,
   recorteDoValor,
   recorteInicial,
   resumoPendentes,
   resumoPendentesParaLeitura,
+  rodadaSemRegistro,
   rodadasComPendentes,
   rodadasDoPainel,
   rotuloDoRecorte,
@@ -39,7 +42,15 @@ type Props = {
   inicial: Painel;
   /** Só o professor confirma e ajusta. A coordenação lê (e a api recusaria o resto). */
   podeEditar: boolean;
+  /**
+   * A rodada que a missão tem EM ANDAMENTO nesta atividade, ou `null`. Ganha
+   * aba mesmo sem evidência: sem isto, a rodada aberta pelo "Zerar" só
+   * aparecia depois de alguém jogar e de a página ser recarregada.
+   */
+  rodadaEmAndamento?: number | null;
 };
+
+const NIVEIS_DO_CRITERIO = ["atingiu", "em_processo", "nao_atingiu"] as const;
 
 const SEM_REDE = "Não deu para falar com a plataforma. Confira a conexão e tente de novo.";
 
@@ -62,7 +73,7 @@ export function PainelDeHabilidades(props: Props) {
   return <PainelComFicha {...props} />;
 }
 
-function PainelComFicha({ turmaId, expId, atividadeId, inicial, podeEditar }: Props) {
+function PainelComFicha({ turmaId, expId, atividadeId, inicial, podeEditar, rodadaEmAndamento = null }: Props) {
   const router = useRouter();
 
   /* O `router.refresh()` entrega um `inicial` novo; a tela passa a mostrá-lo
@@ -76,6 +87,15 @@ function PainelComFicha({ turmaId, expId, atividadeId, inicial, podeEditar }: Pr
   }
 
   const [escolhido, setEscolhido] = useState<RecorteDoPainel>(() => recorteInicial(inicial));
+  /* Rodada NOVA em andamento (o professor acabou de zerar): a tela vai para
+     ela, que é onde os resultados vão chegar. */
+  const [emAndamentoVisto, setEmAndamentoVisto] = useState(rodadaEmAndamento);
+  if (rodadaEmAndamento !== emAndamentoVisto) {
+    setEmAndamentoVisto(rodadaEmAndamento);
+    if (rodadaEmAndamento !== null && (emAndamentoVisto === null || rodadaEmAndamento > emAndamentoVisto)) {
+      setEscolhido(rodadaEmAndamento);
+    }
+  }
   const [selecionados, setSelecionados] = useState<ReadonlySet<string>>(new Set());
   const [emAjuste, setEmAjuste] = useState<CelulaEmAjuste | null>(null);
   const [emMassa, setEmMassa] = useState(false);
@@ -83,11 +103,15 @@ function PainelComFicha({ turmaId, expId, atividadeId, inicial, podeEditar }: Pr
   const [erro, setErro] = useState<Erro | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
 
-  const rodadas = rodadasDoPainel(dados);
+  /* As abas: as rodadas com evidência, mais a em andamento. `dados` continua
+     sendo o que a api disse — é por ele que se sabe se ela aceita ajuste. */
+  const naTela = comRodadaEmAndamento(dados, rodadaEmAndamento);
+  const rodadas = rodadasDoPainel(naTela);
   /* O painel novo pode não ter mais a rodada escolhida: cai no resultado. */
-  const recorte = recorteDoValor(valorDoRecorte(escolhido), dados);
+  const recorte = recorteDoValor(valorDoRecorte(escolhido), naTela);
   const rodada = recorte === RESULTADO ? null : recorte;
-  const editavel = podeEditar && rodada !== null;
+  const semRegistro = rodadaSemRegistro(dados, rodada);
+  const editavel = podeEditar && rodada !== null && !semRegistro;
   const base = caminhoDoPainel(turmaId, expId, atividadeId);
 
   /* Quem saiu da turma sai da seleção. */
@@ -104,7 +128,7 @@ function PainelComFicha({ turmaId, expId, atividadeId, inicial, podeEditar }: Pr
   const pendentesFora = recorte === RESULTADO ? rodadasComPendentes(dados.pendentes) : [];
 
   function trocarRecorte(valor: string | number) {
-    setEscolhido(recorteDoValor(valor, dados));
+    setEscolhido(recorteDoValor(valor, naTela));
     setErro(null);
   }
 
@@ -250,9 +274,18 @@ function PainelComFicha({ turmaId, expId, atividadeId, inicial, podeEditar }: Pr
         />
       ) : null}
 
+      {semRegistro && rodada !== null ? (
+        <FeedbackAlert
+          type="info"
+          title={`A rodada ${rodada} começou`}
+          description="Os resultados aparecem aqui conforme os estudantes jogam, sem precisar recarregar a página. Assim que o primeiro chegar, dá para ajustar cada estudante."
+        />
+      ) : null}
+
       {recorte === RESULTADO ? (
         <p className="text-[13px] text-unooria-neutral-500">
-          A melhor rodada de cada habilidade, só com o que já vale.
+          A melhor rodada de cada habilidade, só com o que já vale. Para avaliar ou alterar, abra a rodada: aqui aparece
+          só o melhor resultado.
           {pendentesFora.length > 0
             ? ` A aula projetada ${pendentesFora.length === 1 ? "da rodada" : "das rodadas"} ${pendentesFora.join(", ")} ainda não conta aqui: ela espera confirmação.`
             : ""}
@@ -293,11 +326,27 @@ function PainelComFicha({ turmaId, expId, atividadeId, inicial, podeEditar }: Pr
         </p>
       ) : null}
 
-      <ul className="flex flex-col gap-1 text-[13px] text-unooria-neutral-700">
+      {/* As habilidades, com o critério de cada nível (ADR-145): o professor
+          consulta aqui o que fez a criança chegar ao nível que a tabela mostra. */}
+      <ul className="flex flex-col gap-3 text-[13px] text-unooria-neutral-700" data-criterios-das-habilidades>
         {dados.habilidades.map((habilidade) => (
-          <li key={habilidade.codigo}>
-            <span className="font-semibold text-unooria-neutral-950">{habilidade.codigo}</span>
-            {habilidade.descricao ? ` — ${habilidade.descricao}` : ""}
+          <li key={habilidade.codigo} className="flex flex-col gap-1">
+            <span>
+              <span className="font-semibold text-unooria-neutral-950">{habilidade.codigo}</span>
+              {habilidade.descricao ? ` — ${habilidade.descricao}` : ""}
+            </span>
+            {habilidade.criterios ? (
+              <ul className="flex flex-col gap-0.5 pl-4">
+                {NIVEIS_DO_CRITERIO.map((nivel) => (
+                  <li key={nivel}>
+                    <span className="font-semibold">{ROTULO_DO_STATUS[nivel]}:</span> {habilidade.criterios?.[nivel]}
+                  </li>
+                ))}
+                {habilidade.criterios.observacao ? (
+                  <li className="text-unooria-neutral-500">{habilidade.criterios.observacao}</li>
+                ) : null}
+              </ul>
+            ) : null}
           </li>
         ))}
       </ul>

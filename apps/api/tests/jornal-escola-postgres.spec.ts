@@ -805,11 +805,11 @@ describe("a Chave, a revisão, a 2ª edição e o Desafio Final", () => {
     expect(await prisma.exp04ef1bSessao.count({ where: { escolaId: ESCOLA, estudanteId: ids.ana } })).toBe(2);
   });
 
-  test("na rodada 2 do MESMO pacote, quem já foi avaliada não é marcada de novo (ADR-120)", async () => {
+  test("na rodada 2 do MESMO pacote, quem já foi avaliada é medida de novo (ADR-145)", async () => {
     await naMesa(ids.ana);
     await abrirTodas(ids.ana, ["n1", "n4"]);
     await service.publicar(ESCOLA, ids.ana, ids.turma, publicacao(["n1", "n4", "n6"]));
-    expect((await marcasDe("pistas")).filter((m) => m.estudanteId === ids.ana).map((m) => m.rodada)).toEqual([1]);
+    expect((await marcasDe("pistas")).filter((m) => m.estudanteId === ids.ana).map((m) => m.rodada).sort()).toEqual([1, 2]);
   });
 });
 

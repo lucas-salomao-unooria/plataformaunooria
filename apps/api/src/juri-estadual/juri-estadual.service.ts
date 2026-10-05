@@ -1185,10 +1185,9 @@ export class JuriEstadualService implements OnModuleInit {
    * ela cair. A cópia para os colegas de computador é da própria porta
    * `marcar` (E14).
    *
-   * **Ação que a revelação entrega não mede duas vezes** (ADR-120): na rodada
-   * nova do MESMO pacote, quem já foi avaliada numa anterior já viu a galeria,
-   * a regra do motor e a ordem dos pacotes — refazer mede memória. Então a
-   * missão pergunta antes `jaAvaliadaAntes` e, se sim, não marca.
+   * **Toda rodada mede de novo** (ADR-145, que substitui a regra "uma vez
+   * por criança e pacote" da ADR-120): o resultado da atividade é a melhor
+   * rodada de cada habilidade, então medir outra vez só pode subir o nível.
    */
   private async marcar(
     tx: Prisma.TransactionClient,
@@ -1205,7 +1204,6 @@ export class JuriEstadualService implements OnModuleInit {
       estudanteId: ctx.sessao.estudanteId,
       marcador,
     };
-    if (await this.evidencias.jaAvaliadaAntes(tx, marca)) return;
     await this.evidencias.marcar(tx, { ...marca, turmaId: ctx.turmaId, status });
   }
 

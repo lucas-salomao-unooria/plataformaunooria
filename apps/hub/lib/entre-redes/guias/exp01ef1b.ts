@@ -64,7 +64,7 @@ export const GUIA_EXP01EF1B: GuiaDaAula = {
       {
         titulo: "Libere a missão para a turma.",
         texto:
-          "Na sala de aula, abra a turma e libere O Que a Foto Conta. Sem a liberação o card fica com cadeado nos tablets.",
+          "Na sala de aula, abra a turma e libere O Que a Foto Conta. Sem a liberação o cartão fica com cadeado nos tablets.",
       },
       {
         titulo: "Opcional: gere e aprove o pacote do tema da semana.",
@@ -153,7 +153,7 @@ export const GUIA_EXP01EF1B: GuiaDaAula = {
   debate: {
     aberturaNaLousa: "A CÂMERA MOSTRA TUDO?",
     tempo:
-      "15 minutos, com as duas fotos projetadas. É a metade que vale: a missão não explica nada por software — quem revela o recorte é a conversa.",
+      "15 minutos, com as duas fotos projetadas. É a metade que vale: a missão não explica nada na tela — quem revela o recorte é a conversa.",
     perguntas: [
       {
         nivel: "retomada",

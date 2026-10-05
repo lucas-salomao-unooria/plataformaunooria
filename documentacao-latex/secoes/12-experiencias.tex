@@ -477,8 +477,8 @@ Evidência & A ficha \arq{evidencias/fichas/exp04ef1b.ts}, a terceira da
   \cd{atingiu}; duas ou três, \cd{em\_processo}); EF04CO08 pela 2ª edição (os
   pares notícia $\times$ tipo abertos nas duas fases e as verificadas) e pelas
   perguntas \cd{p1} e \cd{p2}, valendo o melhor --- o que afrouxa o
-  \enquote{E} do PRD. Na rodada nova do mesmo pacote, quem já foi avaliada não
-  é marcada de novo (\adrr{ADR-120}), e as três ações são copiadas aos colegas
+  \enquote{E} do PRD. Toda rodada mede as três ações de novo, também no mesmo
+  pacote (\adrr{ADR-145}), e elas são copiadas aos colegas
   de computador. A síntese final é UMA só: o recibo das perguntas é
   \cd{\{ enviada: true \}} para qualquer alternativa.\\
 \zebra Mídia & As imagens são do professor, no preparo: 640 por 360, duas por
@@ -1061,7 +1061,7 @@ texto.
 \label{sec:exp05ef1b}
 
 \textbf{5º ano · Unidade 1 · clone de mensageiro móvel · \cd{unoochat}
-(tema claro, \adrr{ADR-134}) · 0.3.1}
+(tema claro, \adrr{ADR-134}) · 0.4.0}
 
 A Nina pede ajuda: \enquote{rolou uma confusão sobre} o tema que a professora
 escreveu no preparo. No grupo \enquote{Turma 5ºB} chegam oito mensagens de
@@ -1070,9 +1070,9 @@ emocional ou neutra ---, e a criança encaminha \textbf{exatamente três} ao
 \enquote{Mural da Turma}, confirma e diz, numa enquete, o que pesou na escolha.
 Quando a professora libera a revelação, cada mensagem do Mural ganha
 \textbf{dois} crachás, e a descoberta é que um eixo não prediz o outro: a
-mensagem séria podia ser falsa, e a alarmada, verdadeira. Depois vêm a síntese,
-a regra \enquote{Se a mensagem for\ldots, então eu\ldots} e duas perguntas
-rápidas da Nina. A primeira versão saiu na \adrr{ADR-114}; esta volta com o
+mensagem séria podia ser falsa, e a alarmada, verdadeira. Depois vêm a síntese
+e a reflexão: duas perguntas rápidas da Nina (a regra \enquote{Se a mensagem
+for\ldots, então eu\ldots} saiu na \adrr{ADR-145}). A primeira versão saiu na \adrr{ADR-114}; esta volta com o
 mesmo código, e as decisões dela estão na \adrr{ADR-118}.
 
 \subsection{O pacote é a porta, e é a atividade}
@@ -1144,12 +1144,10 @@ A seta de encaminhar & \rota{PUT /selecao} & Nada: é o rascunho da triagem, de 
   \cd{mural-ja-enviado}.\\
 O voto & \rota{POST /enquete} & O \textbf{latch 2}: um dos quatro motivos. Quem
   votou espera a turma.\\
-\zebra \enquote{Salvar e Enviar Reflexão} & \rota{POST /reflexao} & O
-  \textbf{latch 3}, só com a reflexão liberada: a condição e o
-  \enquote{Então} de 15 a 240 caracteres DEPOIS do \cd{trim}, recusado também
-  quando é texto sem sentido (\cd{entao-sem-sentido}).\\
-Depois da P2 & \rota{POST /concluir} & O fim, sem exigir as respostas: quem sai
-  antes delas fica \enquote{Não avaliado}.\\
+\zebra Depois da P2 & \rota{POST /concluir} & O fim, sem exigir as respostas:
+  quem sai antes delas fica \enquote{Não avaliado}. Exige o voto e a reflexão
+  liberada pela turma (409 \cd{reflexao-nao-liberada} antes). A regra Se/Então
+  e o \rota{POST /reflexao} saíram (\adrr{ADR-145}).\\
 \bottomrule
 \end{tabularx}
 
@@ -1185,9 +1183,12 @@ mesmo passo.
 
 \textbf{A revelação não empurra a triagem}, e é a diferença para a v1: quem não
 tinha confirmado continua escolhendo, confirma, vota e só então recebe a
-própria revelação --- junto com o passo da turma, que pode já ser a reflexão.
-Nesse caso a experiência mostra o Mural revelado com \enquote{Continuar} antes
-da regra; o servidor não guarda \enquote{já viu}, e um F5 mostra de novo.
+própria revelação --- junto com o passo da turma, que pode já ser o das
+perguntas. Nesse caso a experiência mostra o Mural revelado com
+\enquote{Continuar} antes das perguntas; o servidor não guarda \enquote{já
+viu}, e um F5 mostra de novo. \textbf{A fase \cd{reflexao} leva direto ao
+passo \cd{perguntas}} (\adrr{ADR-145}): as duas perguntas da Nina SÃO a
+reflexão.
 
 \subsection{A régua pedagógica v2: cada habilidade pelo verbo dela}
 
@@ -1195,14 +1196,14 @@ da regra; o servidor não guarda \enquote{já viu}, e um F5 mostra de novo.
 2, \adrr{ADR-120}). A \textbf{EF05CO08} sai das três do Mural: só três
 verdadeiras são \cd{atingiu}; duas e uma falsa, de qualquer tipo,
 \cd{em\_processo}; uma ou nenhuma verdadeira, \cd{nao\_atingiu}
-(\arq{regras/evidencia.ts}, conferida nas 56 combinações). Ela é marcada uma
-vez por criança e pacote: quem já foi avaliada numa rodada anterior da mesma
-atividade fecha o Mural sem marca nova (\cd{EvidenciasService.jaAvaliadaAntes}).
-A \textbf{EF05CO03} vem da P1 e a \textbf{EF05CO04} da P2 --- as perguntas do
-PO, literais (ficha versão 3, \adrr{ADR-131}): o contexto na fala da Nina e a
-última frase no título da enquete ---, e a EF05CO04 também da rubrica com que o
-professor classifica o Se/Então na folha da turma --- um ajuste da evidência,
-que vale sobre a pergunta. As perguntas passam pelas rotas genéricas
+(\arq{regras/evidencia.ts}, conferida nas 56 combinações). Toda rodada a mede
+de novo, também no mesmo pacote (\adrr{ADR-145}, que tirou a medição única da
+\adrr{ADR-120}); vale a melhor rodada. A \textbf{EF05CO03} vem da P1 e a
+\textbf{EF05CO04} só da P2 --- as perguntas do PO, literais (ficha versão 3,
+\adrr{ADR-131}): o contexto na fala da Nina e a última frase no título da
+enquete. A rubrica do Se/Então saiu com a regra (\adrr{ADR-145}). O critério de
+cada nível está escrito na ficha e aparece no fim do painel de habilidades. As
+perguntas passam pelas rotas genéricas
 \rota{/evidencias/exp05ef1b/perguntas/*}. O
 resolvedor que a missão registra (\cd{registrarContexto}) diz a turma, o pacote
 ativo e a rodada, e só responde no passo das perguntas: uma P1 por \cd{POST}
@@ -1210,18 +1211,27 @@ direto antes do Mural é 409 e não mede nada. As alternativas chegam
 embaralhadas a cada leitura, e a tela responde pelo \cd{id} e carrega cada
 pergunta uma vez por aba.
 
-\subsection{Onde a fronteira do disfarce cai --- duas vezes}
+\subsection{Onde a fronteira do disfarce cai --- uma vez, no fim}
 
-O critério é o de sempre, \textbf{quem está falando} (\adrr{ADR-72}), e aqui ele
-produz um vaivém. Do convite até a síntese é o mensageiro, revelação inclusive:
-os crachás são \cd{MessageTag}, e o termômetro e a lâmina da síntese entram como
-IMAGEM enviada no chat --- mensageiro não tem gráfico, mas recebe foto de
-gráfico. A regra Se/Então sai para a \textbf{casca} (\cd{@edu/ui/ds}), porque é
-sobre o grupo da FAMÍLIA do tio, fora da ficção que a revelação desmontou. As
-perguntas P1 e P2 \textbf{voltam ao clone}: são a Nina perguntando, com a mesma
-enquete (\cd{Poll}) da Etapa 3. E \enquote{Missão Concluída} é a casca de novo,
-a escola guardando a regra. Cada família mora num arquivo, e cada arquivo só
-importa a sua ponte.
+O critério é o de sempre, \textbf{quem está falando} (\adrr{ADR-72}). Do convite
+até as perguntas é o mensageiro, revelação inclusive: os crachás são
+\cd{MessageTag}, e o termômetro e a lâmina da síntese entram como IMAGEM enviada
+no chat --- mensageiro não tem gráfico, mas recebe foto de gráfico. As perguntas
+P1 e P2 são a Nina perguntando, com a mesma enquete (\cd{Poll}) da Etapa 3, e o
+chat delas não repete o convite da abertura. \enquote{Missão Concluída} é a
+casca (\cd{@edu/ui/ds}), a escola fechando a missão. Cada família mora num
+arquivo, e cada arquivo só importa a sua ponte.
+
+\subsection{O chat que chega aos poucos (0.4.0)}
+
+As oito mensagens do grupo \textbf{chegam uma a uma} na primeira abertura, com o
+\enquote{digitando\ldots} (\cd{TypingIndicator} do Unoochat) antes de cada
+uma; quem volta do Mural, dá F5 com a seleção começada ou pede movimento
+reduzido vê tudo de uma vez. Cada remetente tem \textbf{cor própria}
+(\cd{senderTone}, estável pelo nome), a Nina tem \textbf{foto} (ilustração em
+SVG, que o Vite inlina no \emph{bundle}) e cada imagem do grupo tem um
+\textbf{desenho} --- comunicado, cartaz, print de tela ou bilhete ---, com as
+duas de um pacote sempre diferentes (\cd{estiloDaImagem}).
 
 \subsection{Equipes e o Termômetro}
 
@@ -1232,30 +1242,29 @@ lugar para nome: a porcentagem das unidades que encaminharam ao menos uma falsa
 neutra, a das verdadeiras emocionais que ficaram de fora ($(2N - \Sigma
 VE)/2N$) e o cruzamento com o motivo votado. Com zero unidades, a tela escreve
 \enquote{sem dados}, nunca 0\%. \enquote{Projetar o Termômetro} abre uma janela
-em tela cheia só com a conta; a folha nominal, com a regra de cada um, é para a
-tela da professora.
+em tela cheia só com a conta; a folha nominal, com o que cada um encaminhou, é
+para a tela da professora.
 
 \begin{regra}
-\textbf{O \enquote{Então} é texto livre de menor.} Mora numa tabela confinada
-(\cd{exp05ef1b\_reflexoes}), está na redação do \emph{log} (\cd{entao},
-\cd{acaoEntao}, \cd{acao\_entao}), não vai à telemetria nem a
-\cd{reportarErro}, e no painel só vem preenchido para quem LECIONA na turma. A
-distinção mora no \emph{service} (\cd{professorId ? texto : null}), e não no
-\cd{@Roles}: \cd{professorLeciona(undefined)} é verdadeiro para o gestor.
+\textbf{A missão não tem mais texto livre de menor} (\adrr{ADR-145}). O que
+foi escrito antes continua na tabela confinada \cd{exp05ef1b\_reflexoes}, com
+RLS e na redação do \emph{log} (\cd{entao}, \cd{acaoEntao},
+\cd{acao\_entao}); nenhuma rota o escreve nem o lê.
 \end{regra}
 
 \subsection{Sem mídia binária}
 
-Nenhum arquivo existe nesta missão. O comunicado é o texto do pacote desenhado
-como papel (\cd{MessageBubble.Media} sem \cd{src}, com o texto no \cd{alt}); o
+Nenhum arquivo binário existe nesta missão (a foto da Nina é SVG, texto). Cada
+imagem é o texto do pacote desenhado (\cd{MessageBubble.Media} sem \cd{src},
+com o texto no \cd{alt}); o
 link é a prévia montada da legenda, no formato \enquote{Nome do site: manchete};
 tocar em qualquer um abre a mídia em tela cheia com a transcrição. Não há áudio
 assistivo nesta versão (entra quando houver gravação) e não há botão de ouvir.
 
 \begin{atencao}
-O \cd{TextArea} e o \cd{Selection} da casca são campos de formulário, e o
-manifesto declara \cd{permissoes: ["forms"]} --- sem o \emph{token} de
-\emph{sandbox}, o envio morre em silêncio (a lição da exp02em1b). O
+Os rádios do \cd{Poll} são campos de formulário, e o manifesto declara
+\cd{permissoes: ["forms"]} --- sem o \emph{token} de \emph{sandbox}, um
+formulário morre em silêncio (a lição da exp02em1b). O
 \cd{viewport} é 375 por 812, e a porta em \emph{dev} é a 5184, com
 \cd{strictPort}.
 \end{atencao}
@@ -1454,8 +1463,8 @@ A galeria não manda texto & Da busca, a api recebe só o tipo (\cd{hashtag}
   \emph{latch} da revisão; EF06CO07 por \cd{pacotes} e EF06CO03 por
   \cd{cadeia}, pelo número de tentativas (1 = \cd{atingiu}; 2 ou 3 =
   \cd{em\_processo}; mais = \cd{nao\_atingiu}); e as enquetes \cd{p1} a
-  \cd{p3}, uma por habilidade, valendo o melhor. Na rodada nova do mesmo
-  pacote, quem já foi avaliada não é marcada de novo (\adrr{ADR-120}). O caso
+  \cd{p3}, uma por habilidade, valendo o melhor. Toda rodada mede as ações de
+  novo, também no mesmo pacote (\adrr{ADR-145}). O caso
   Mariana grava a escolha e não vira evidência.\\
 Equipes & A missão nasce com equipes (\adrr{ADR-111}): o painel conta por
   COMPUTADOR (\cd{colapsarEmUnidades}, e o representante é quem votou). O
@@ -1532,7 +1541,7 @@ caminho (curadoria, criar, imagens, a aula) é o real.
 
 Duas suítes da api cobrem o motor, a taxa, os ids opacos em 400 sementes, as
 réguas, os \emph{latches} concorrentes, o portão, o resolvedor das enquetes,
-zerar e a \adrr{ADR-120}: a de regras, sem banco
+zerar e a medição em toda rodada (\adrr{ADR-145}): a de regras, sem banco
 (\arq{tests/\B{}juri-estadual-\B{}regras.spec.ts}), e a de Postgres, com a RLS
 isolando (\arq{tests/\B{}juri-estadual-\B{}postgres.spec.ts}).
 

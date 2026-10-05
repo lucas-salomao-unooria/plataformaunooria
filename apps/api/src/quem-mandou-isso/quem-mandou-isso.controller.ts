@@ -9,7 +9,6 @@ import {
   EstadoSchema,
   GateDoEstudanteSchema,
   MuralSchema,
-  ReflexaoSchema,
   SelecaoSchema,
   SessaoSchema,
 } from "./contrato-de-rotas";
@@ -56,13 +55,12 @@ export class QuemMandouIssoController {
   @Contrato({
     resumo: "O estado da missão e as 8 mensagens do grupo, sem o gabarito.",
     descricao:
-      "As mensagens saem **sem `veracidade` e `tom`** — o tipo do servidor é um `Omit`. O gabarito só aparece em `revelacao`, e `revelacao` é `null` até o estudante VOTAR na enquete e a turma abrir a revelação; ela traz só as TRÊS mensagens dele.\n\n`pacote` é `null` enquanto o professor não aprovou um pacote para a turma: **a missão nasce vazia** e a tela é de espera.\n\n`passo` é DERIVADO no servidor (os latches da sessão × a fase da turma): `abertura → grupo → enquete → espera → revelacao → sintese → reflexao → perguntas → concluida`. `grupo` cobre o grupo E o Mural (as duas vistas da mesma seleção); `selecao` restaura um F5.",
+      "As mensagens saem **sem `veracidade` e `tom`** — o tipo do servidor é um `Omit`. O gabarito só aparece em `revelacao`, e `revelacao` é `null` até o estudante VOTAR na enquete e a turma abrir a revelação; ela traz só as TRÊS mensagens dele.\n\n`pacote` é `null` enquanto o professor não aprovou um pacote para a turma: **a missão nasce vazia** e a tela é de espera.\n\n`passo` é DERIVADO no servidor (os latches da sessão × a fase da turma): `abertura → grupo → enquete → espera → revelacao → sintese → perguntas → concluida`. `grupo` cobre o grupo E o Mural (as duas vistas da mesma seleção); `selecao` restaura um F5.",
     resposta: SessaoSchema,
     notas: [
       NOTA_DA_PORTA,
-      "Quem ainda não confirmou o Mural quando a turma abre a revelação CONTINUA no grupo; depois de votar, recebe `revelacao` junto com o passo da turma (que pode já ser `sintese` ou `reflexao`) — a tela mostra os crachás antes do passo corrente.",
+      "Quem ainda não confirmou o Mural quando a turma abre a revelação CONTINUA no grupo; depois de votar, recebe `revelacao` junto com o passo da turma (que pode já ser `sintese` ou `perguntas`) — a tela mostra os crachás antes do passo corrente.",
       "`textos.perguntas` são as falas da Nina que antecedem as perguntas de evidência (`p1`, `p2`). O enunciado e as alternativas vêm de `GET /evidencias/exp05ef1b/perguntas/:perguntaId` — embaralhadas, sem o nível —, e a resposta vai a `POST /evidencias/exp05ef1b/perguntas/:perguntaId/resposta`, que só aceita no passo `perguntas`.",
-      "`reflexao` é sempre a do PRÓPRIO estudante.",
     ],
   })
   sessao(@Req() req: Autenticado) {
@@ -156,26 +154,6 @@ export class QuemMandouIssoController {
     return this.missao.votar(req.auth.escolaId, req.auth.usuarioId, motivo);
   }
 
-  @Post("reflexao")
-  @HttpCode(200)
-  @Contrato({
-    resumo: "A regra Se/Então da Etapa 6 — o latch 3.",
-    descricao:
-      "`se` é uma das quatro condições; `entao` é o **único texto livre da missão**, escrito por menor de idade: vai para a tabela confinada `exp05ef1b_reflexoes`, não vai a log nem a telemetria, e só o professor que leciona na turma o lê no painel (LGPD art. 14). A regra NÃO é corrigida: a EF05CO04 vem da pergunta P2.",
-    corpo: ReflexaoSchema,
-    resposta: EstadoSchema,
-    notas: [
-      NOTA_DA_PORTA,
-      "`entao` de 15 a 240 caracteres DEPOIS do `trim`: **400** `entao-curto`, `entao-longo`, ou `entao-sem-sentido` (um caractere repetido, sequência de dígitos, pouca variedade de letras, teclado amassado).",
-      "**409** `enquete-nao-votada` antes do latch 2 e `reflexao-nao-liberada` antes de o professor liberar a reflexão. A mesma regra de novo é idempotente; outra é **409** `reflexao-ja-enviada`.",
-    ],
-  })
-  reflexao(@Body() corpo: unknown, @Req() req: Autenticado) {
-    limitar(req.auth.usuarioId);
-    const { se, entao } = valida(ReflexaoSchema, corpo);
-    return this.missao.refletir(req.auth.escolaId, req.auth.usuarioId, se, entao);
-  }
-
   @Post("concluir")
   @HttpCode(200)
   @Contrato({
@@ -183,7 +161,10 @@ export class QuemMandouIssoController {
     descricao:
       "Não exige as respostas de P1 e P2: quem sai antes delas fica **Não avaliado** em EF05CO03/EF05CO04 (a ausência de marca), nunca \"não atingiu\". Depois disto as perguntas não aceitam mais resposta.",
     resposta: EstadoSchema,
-    notas: [NOTA_DA_PORTA, "**409** `reflexao-nao-enviada` antes do latch 3. Idempotente."],
+    notas: [
+      NOTA_DA_PORTA,
+      "**409** `enquete-nao-votada` antes do voto e `reflexao-nao-liberada` antes de o professor liberar a reflexão (as perguntas são a Etapa 6, ADR-145). Idempotente.",
+    ],
   })
   concluir(@Req() req: Autenticado) {
     limitar(req.auth.usuarioId);

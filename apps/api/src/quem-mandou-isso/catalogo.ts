@@ -15,8 +15,11 @@
 /** O id que a guarda da sala (ADR-69), o manifesto, a ficha e as equipes compartilham. */
 export const EXP_ID = "exp05ef1b";
 
-/** Vai gravado em cada sessão, para reprocessar o histórico se o instrumento mudar. */
-export const VERSAO_DO_INSTRUMENTO = "2.2.0";
+/**
+ * Vai gravado em cada sessão, para reprocessar o histórico se o instrumento
+ * mudar. 2.3.0: sem a regra Se/Então, as perguntas são a reflexão (ADR-145).
+ */
+export const VERSAO_DO_INSTRUMENTO = "2.3.0";
 
 // ───────────────────────────────────────────────────────────── vocabulário
 
@@ -108,18 +111,13 @@ export const CALLBACK_DO_MOTIVO: Readonly<Record<Motivo, string>> = {
 };
 
 /**
- * O `Se` do construtor da Etapa 6. Vocabulário em dois lugares: aqui e no
- * CHECK `exp05ef1b_reflexoes_condicional_check`.
+ * O `Se` do construtor que a Etapa 6 TINHA. A regra Se/Então saiu (ADR-145):
+ * as perguntas de múltipla escolha são a reflexão. O vocabulário fica só
+ * porque a tabela `exp05ef1b_reflexoes` guarda o que já foi escrito, e o CHECK
+ * `exp05ef1b_reflexoes_condicional_check` continua lá — a suíte de Postgres
+ * compara os dois.
  */
 export const CONDICOES = ["urgente_alarmante", "parente_proximo", "link_nao_checado", "promessa_incrivel"] as const;
-export type Condicao = (typeof CONDICOES)[number];
-
-export const ROTULO_DA_CONDICAO: Readonly<Record<Condicao, string>> = {
-  urgente_alarmante: "urgente e alarmante",
-  parente_proximo: "enviada por parente próximo",
-  link_nao_checado: "um link que ninguém checou",
-  promessa_incrivel: "prometendo algo incrível",
-};
 
 /**
  * O componente curricular do recorte (`e0.professor.campo_disciplina_label`).
@@ -177,10 +175,6 @@ export const ASSUNTO_MIN_CARACTERES = 2;
 export const ASSUNTO_MAX_CARACTERES = 120;
 export const ASSUNTOS_MAX_CARACTERES = 600;
 export const CONTEXTO_MAX_CARACTERES = 300;
-
-/** O `Então`: 15 a 240 caracteres DEPOIS do `trim` (travado pelo briefing). */
-export const ENTAO_MIN_CARACTERES = 15;
-export const ENTAO_MAX_CARACTERES = 240;
 
 // ──────────────────────────────────────────────────────────────── mensagem
 
@@ -375,19 +369,13 @@ export function falaDaNina(tema: string): string {
   return `${NINA_ANTES_DO_TEMA} ${temaNaFrase(tema)}. ${NINA_DEPOIS_DO_TEMA}`;
 }
 
-/** O desafio do tio (Etapa 6, casca): a versão curta da copy, 41 palavras, FIXA. */
-export const FALA_DO_TIO =
-  "Valeu pela ajuda no grupo! Mas olha o que rolou agora: meu tio mandou um áudio na família com voz assustada dizendo que as aulas vão ser canceladas por causa do temporal e pediu pra repassar correndo. O que você faz?";
-
-/** A confirmação do Se/Então (texto do one-pager; o PO revisa). */
-export const CONFIRMACAO_DA_REGRA = "Sua regra foi enviada para o professor.";
-
 /**
- * O encerramento da Nina, depois da P2 — texto NOVO (não há um nos
- * artefatos), escrito para esta frente e à espera da revisão do PO.
+ * O encerramento da Nina, depois da P2 — texto da equipe, à espera da revisão
+ * do PO. Até a ADR-145 dizia "eu vou lembrar da sua regra", a Se/Então que
+ * saiu.
  */
 export const ENCERRAMENTO_DA_NINA =
-  "Muito obrigada pela ajuda! Antes de repassar qualquer coisa, eu vou lembrar da sua regra. Até a próxima!";
+  "Muito obrigada pela ajuda! Antes de repassar qualquer coisa, eu vou conferir de onde veio. Até a próxima!";
 
 /**
  * As falas da Nina ANTES de cada pergunta de evidência (Canal B). São texto
@@ -420,5 +408,5 @@ export const INSTRUCOES_DO_CONSOLE = {
   revelacao:
     "Aguarde a conclusão da maioria dos estudantes. Chame a atenção da turma para o telão e clique em Liberar Revelação para projetar o Termômetro da Turma.",
   reflexao:
-    "Conduza a roda de conversa com as 3 perguntas sugeridas. Ao concluir o debate, clique em Liberar Reflexão para enviar o construtor de regras pessoais aos aparelhos.",
+    "Conduza a roda de conversa com as 3 perguntas sugeridas. Ao concluir o debate, clique em Liberar Reflexão para enviar as duas perguntas finais da Nina aos aparelhos.",
 } as const;

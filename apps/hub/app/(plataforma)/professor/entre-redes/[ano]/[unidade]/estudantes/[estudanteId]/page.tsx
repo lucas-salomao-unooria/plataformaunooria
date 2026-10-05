@@ -227,7 +227,7 @@ export default async function EstudantePage({
           <p className="pt-3 text-[12px] leading-snug text-unooria-neutral-500">
             “Intuição, sem dado” está sempre disponível de propósito: sem essa saída a pergunta
             viraria pegadinha e o estudante aprenderia a mentir para o formulário. Não há resposta certa
-            aqui — o software não julga.
+            aqui — a plataforma não julga.
           </p>
         </Card>
       )}

@@ -35,6 +35,20 @@ export interface HabilidadeDaFicha {
   codigo: string;
   /** O texto da BNCC, verbatim. */
   descricao: string;
+  /**
+   * O critério de cada nível, em texto para o professor (ADR-145). `null` na
+   * habilidade que saiu da ficha; opcional porque as outras leituras (perfil
+   * do aluno, consolidado) não o trazem.
+   */
+  criterios?: CriteriosDaHabilidade | null;
+}
+
+export interface CriteriosDaHabilidade {
+  atingiu: string;
+  em_processo: string;
+  nao_atingiu: string;
+  /** De onde vem o nível quando há mais de um marcador ("vale o melhor entre…"). */
+  observacao?: string;
 }
 
 export interface EvidenciaNaCelula {
@@ -192,6 +206,32 @@ export const RESULTADO = "resultado" as const;
 export function rodadasDoPainel(painel: Pick<PainelDeHabilidades, "rodadas">): number[] {
   const rodadas = [...new Set(painel.rodadas)].filter((r) => Number.isInteger(r) && r > 0).sort((a, b) => a - b);
   return rodadas.length > 0 ? rodadas : [1];
+}
+
+/**
+ * O painel com a rodada EM ANDAMENTO, mesmo sem evidência nenhuma nela ainda.
+ * A api conta as rodadas pelas linhas de evidência; logo depois de "Zerar", a
+ * rodada nova não tem linha e a aba dela não existiria até o primeiro estudante
+ * jogar e alguém recarregar a página. Quem sabe a rodada em andamento é a
+ * missão (o detalhe da atividade), e a página a passa para cá.
+ */
+export function comRodadaEmAndamento<P extends Pick<PainelDeHabilidades, "rodadas">>(
+  painel: P,
+  emAndamento: number | null | undefined,
+): P {
+  if (!emAndamento || !Number.isInteger(emAndamento) || emAndamento < 1) return painel;
+  if (painel.rodadas.includes(emAndamento)) return painel;
+  return { ...painel, rodadas: [...painel.rodadas, emAndamento].sort((a, b) => a - b) };
+}
+
+/**
+ * A rodada existe na tela, mas a api ainda não tem registro nela: ninguém jogou
+ * desde que ela abriu. O ajuste do professor seria recusado
+ * (`rodada-inexistente`: a api aceita até a maior rodada com registro, e a 1
+ * sempre), então a aba é só de leitura até a primeira marca.
+ */
+export function rodadaSemRegistro(painelDaApi: Pick<PainelDeHabilidades, "rodadas">, rodada: number | null): boolean {
+  return rodada !== null && rodada > Math.max(1, ...painelDaApi.rodadas);
 }
 
 export function rotuloDoRecorte(recorte: RecorteDoPainel): string {

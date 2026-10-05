@@ -47,8 +47,6 @@ export type Tela =
   | "revelacao"
   | "sintese"
   | "revelacao-atrasada"
-  | "reflexao"
-  | "confirmacao"
   | "perguntas"
   | "concluida";
 
@@ -60,8 +58,12 @@ export interface Vista {
   muralAberto: boolean;
   /** Esta aba já MOSTROU os crachás. O servidor não guarda "já viu" — um F5 mostra de novo, sem dano. */
   viuRevelacao: boolean;
-  /** A regra acabou de ser enviada: a casca confirma antes de voltar ao chat da Nina. */
-  confirmacaoPendente: boolean;
+  /**
+   * As 8 mensagens do grupo já CHEGARAM, uma a uma, nesta aba. Quem volta do
+   * Mural para o grupo vê tudo de uma vez: a chegada é a primeira impressão do
+   * grupo, não um enfeite a repetir.
+   */
+  grupoChegou: boolean;
   /** A despedida da Nina ainda está na tela, com a missão já concluída no servidor. */
   segurandoDespedida: boolean;
 }
@@ -70,7 +72,7 @@ export const VISTA_INICIAL: Vista = {
   ninaAberta: false,
   muralAberto: false,
   viuRevelacao: false,
-  confirmacaoPendente: false,
+  grupoChegou: false,
   segurandoDespedida: false,
 };
 
@@ -83,11 +85,11 @@ export const VISTA_INICIAL: Vista = {
  *
  * O caso que não é óbvio é o de **quem votou atrasado**. A revelação não
  * empurra a triagem: quem confirmou o Mural depois de o professor abrir a
- * revelação vota e cai direto no passo da TURMA — que pode já ser `reflexao`.
+ * revelação vota e cai direto no passo da TURMA — que pode já ser `perguntas`.
  * Em `sintese` os crachás estão no histórico do Mural, acima da lâmina; em
- * `reflexao` a casca tomaria a tela sem ele ter visto nada, então o Mural
- * aparece antes, com "Continuar". Um F5 mostra de novo — a regra ainda não foi
- * escrita, e rever os crachás não custa nada.
+ * `perguntas` o chat da Nina tomaria a tela sem ele ter visto nada, então o
+ * Mural aparece antes, com "Continuar". Um F5 mostra de novo — rever os
+ * crachás não custa nada.
  */
 export function telaDe(estado: Pick<Estado, "passo" | "preparada" | "revelacao">, vista: Vista): Tela {
   if (!estado.preparada) return "preparo";
@@ -104,10 +106,8 @@ export function telaDe(estado: Pick<Estado, "passo" | "preparada" | "revelacao">
       return "revelacao";
     case "sintese":
       return "sintese";
-    case "reflexao":
-      return estado.revelacao && !vista.viuRevelacao ? "revelacao-atrasada" : "reflexao";
     case "perguntas":
-      return vista.confirmacaoPendente ? "confirmacao" : "perguntas";
+      return estado.revelacao && !vista.viuRevelacao ? "revelacao-atrasada" : "perguntas";
     case "concluida":
       return vista.segurandoDespedida ? "perguntas" : "concluida";
   }
@@ -128,7 +128,8 @@ export function marcaComoVista(tela: Tela): boolean {
 export function gateDoPasso(passo: Passo): GateVisto | null {
   if (passo === "revelacao") return "revelacao";
   if (passo === "sintese") return "sintese";
-  if (passo === "reflexao") return "reflexao";
+  /* As perguntas SÃO a reflexão (ADR-145): o gate que o professor abriu é o mesmo. */
+  if (passo === "perguntas") return "reflexao";
   return null;
 }
 
@@ -206,29 +207,6 @@ export function outrosParticipantes(participantes: number): number {
   return Math.max(0, participantes - 1);
 }
 
-// ─────────────────────────────────────────────────── o Então
-
-/** O `Então` como o servidor o grava: sem espaço repetido e com `trim` (`regras/reflexao.ts#validarEntao`). */
-export function normalizarEntao(bruto: string): string {
-  return bruto.replace(/\s+/g, " ").trim();
-}
-
-/** Quantos caracteres faltam para o piso — contados DEPOIS do `trim`, como o servidor conta. */
-export function faltamParaOPiso(bruto: string, piso: number): number {
-  return Math.max(0, piso - normalizarEntao(bruto).length);
-}
-
-/**
- * O botão "Salvar e Enviar Reflexão" acende? Condição escolhida E o texto entre
- * o piso e o teto. O filtro de texto sem sentido NÃO está aqui: ele é do
- * servidor, e a recusa volta como 400 — que a tela lê como `entao-sem-sentido`
- * justamente porque o tamanho já foi conferido antes de enviar.
- */
-export function regraPronta(se: string | null, bruto: string, piso: number, teto: number): boolean {
-  const tamanho = normalizarEntao(bruto).length;
-  return se !== null && tamanho >= piso && tamanho <= teto;
-}
-
 // ───────────────────────────────────────────────── a revelação
 
 export function crachasDe(revelacao: Revelacao | null, mensagemId: string) {
@@ -259,6 +237,57 @@ export function perguntaDaVez(ids: readonly string[], respondidas: Readonly<Reco
  * banco curado segue) → as duas partes. Sem os dois-pontos, ou com um rótulo
  * longo demais para ser nome de site, a legenda inteira é o corpo.
  */
+/**
+ * O DESENHO de cada imagem do grupo. Antes as duas imagens do pacote eram o
+ * mesmo papel timbrado, e a turma via "a mesma imagem" duas vezes (o PO,
+ * 2026-10-05). Agora cada uma tem um desenho próprio: comunicado, cartaz,
+ * print de tela ou bilhete.
+ *
+ * As duas imagens de um pacote saem SEMPRE com desenhos diferentes (posições
+ * vizinhas na lista), e o par muda de pacote para pacote (o deslocamento vem
+ * do texto delas) — assim o desenho não vira pista de veracidade de uma turma
+ * para outra. Puro e estável: o grupo, o Mural e a imagem aberta concordam.
+ */
+/**
+ * A chegada das mensagens do grupo: um intervalo e o "digitando…" antes de
+ * cada uma — ~0,9 s por mensagem, ~7 s para as oito. Antes elas apareciam
+ * todas de uma vez, "chapadas" (o PO, 2026-10-05).
+ */
+export const MS_ENTRE_MENSAGENS = 250;
+export const MS_DIGITANDO = 650;
+
+/**
+ * A COR do nome de cada colega no grupo (`senderTone` do Unoochat, 0.2.17):
+ * um tom de 2 a 8, estável pelo nome — a mesma pessoa tem sempre a mesma cor,
+ * no grupo e no "digitando…". O tom 1 fica de fora porque é o acento, a cor
+ * que o nome tinha antes, e nome em acento não se distingue do resto.
+ */
+export type TomDoRemetente = 2 | 3 | 4 | 5 | 6 | 7 | 8;
+
+export function tomDoRemetente(nome: string): TomDoRemetente {
+  let soma = 0;
+  for (const caractere of nome.trim().toLowerCase()) soma = (soma * 31 + caractere.charCodeAt(0)) % 7919;
+  return (2 + (soma % 7)) as TomDoRemetente;
+}
+
+/** A chegada só anima na primeira abertura do grupo e com a seleção vazia (um F5 no meio da escolha não esconde nada). */
+export function grupoChegaEmSequencia(vista: Pick<Vista, "grupoChegou">, selecao: readonly string[]): boolean {
+  return !vista.grupoChegou && selecao.length === 0;
+}
+
+export const ESTILOS_DE_IMAGEM = ["comunicado", "cartaz", "print", "bilhete"] as const;
+export type EstiloDeImagem = (typeof ESTILOS_DE_IMAGEM)[number];
+
+export function estiloDaImagem(mensagens: readonly Pick<MensagemPublica, "id" | "tipo" | "texto">[], id: string): EstiloDeImagem {
+  const imagens = mensagens.filter((m) => m.tipo === "imagem");
+  const posicao = Math.max(0, imagens.findIndex((m) => m.id === id));
+  let deslocamento = 0;
+  for (const caractere of imagens.map((m) => m.texto).join("")) {
+    deslocamento = (deslocamento * 31 + caractere.charCodeAt(0)) % 9973;
+  }
+  return ESTILOS_DE_IMAGEM[(deslocamento + posicao) % ESTILOS_DE_IMAGEM.length]!;
+}
+
 export function dividirLegenda(legenda: string): { rotulo: string | null; corpo: string } {
   const i = legenda.indexOf(": ");
   if (i <= 0 || i > 60) return { rotulo: null, corpo: legenda.trim() };

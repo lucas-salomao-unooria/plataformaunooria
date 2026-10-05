@@ -9,7 +9,8 @@
  *
  * O Unoochat é o mensageiro com identidade PRÓPRIA — paleta roxa, Open Sans e
  * Material Symbols da plataforma — e é uma cópia ESTRUTURAL do `whatsappmobile`:
- * os mesmos 39 componentes, as mesmas props, as mesmas medidas. Existe para que
+ * os mesmos 39 componentes, as mesmas props, as mesmas medidas (mais o
+ * `TypingIndicator` da 0.2.17, que o `whatsappmobile` não tem). Existe para que
  * a missão não reproduza a identidade visual de um aplicativo de terceiros
  * (ADR-134). As diferenças de API são só quatro, e nenhuma morde a exp05ef1b:
  * `TabBar.tone` só aceita `'accent'`; o `Icon` é `<span>` de LIGADURA (nomes
@@ -88,6 +89,14 @@ export {
   Toast,
 } from '@unooria/design-system/unoochat';
 
+/**
+ * O "digitando…" e a cor por remetente (0.2.17, ADR-145): o `TypingIndicator`
+ * é o balão recebido com três pontos (parados com movimento reduzido), e o
+ * `senderTone` (1 a 8) do `MessageBubble` e dele dá a cada nome a sua cor. Sem
+ * `senderTone`, o nome continua no acento. O tom 1 É o acento.
+ */
+export { TypingIndicator } from '@unooria/design-system/unoochat';
+
 /** Tokens, para o CSS local não escrever cor à mão. */
 export {
   uncColorTokens,
@@ -100,6 +109,8 @@ export {
 
 export type {
   UncTheme,
+  UncSenderTone,
+  UncTypingIndicatorProps,
   UncAvatarProps,
   UncBadgeProps,
   UncChatHeaderProps,

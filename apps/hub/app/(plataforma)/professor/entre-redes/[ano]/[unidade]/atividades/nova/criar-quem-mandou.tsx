@@ -355,8 +355,9 @@ export function CriarQuemMandou({
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) => trocarRecorte("tema", e.target.value)}
                       />
                       <TextArea
-                        label="Fatos balizadores da aula (3 a 6 tópicos)"
-                        helperText={`Liste os termos que a IA utilizará para compor os fatos verdadeiros e as alegações falsas. Um por linha. · ${assuntos.length} ${assuntos.length === 1 ? "fato" : "fatos"} · ${assuntos.join("").length}/${TETOS.assuntosMaxCaracteres} caracteres`}
+                        label="Fatos balizadores da aula (3 a 6 tópicos, um por linha)"
+                        placeholder={"Ex.:\nhorário do ônibus\nautorização dos responsáveis\nvagas no museu"}
+                        helperText={`Os termos que a IA usa para compor os fatos verdadeiros e as alegações falsas. Aperte Enter entre um fato e outro. · ${assuntos.length} ${assuntos.length === 1 ? "fato reconhecido" : "fatos reconhecidos"} · ${assuntos.join("").length}/${TETOS.assuntosMaxCaracteres} caracteres`}
                         rows={4}
                         value={recorte.assuntosTexto}
                         error={
@@ -367,6 +368,21 @@ export function CriarQuemMandou({
                           trocarRecorte("assuntosTexto", e.target.value)
                         }
                       />
+                      {/* O que a plataforma entendeu, um por linha: quem escreveu os
+                          três temas numa linha só vê UM item aqui, e sabe na hora
+                          por que o Continuar não anda. */}
+                      {assuntos.length > 0 ? (
+                        <div className="flex flex-col gap-1 text-[12px] text-unooria-neutral-600" data-fatos-reconhecidos>
+                          <span>
+                            {assuntos.length === 1 ? "O fato que a plataforma reconheceu:" : "Os fatos que a plataforma reconheceu:"}
+                          </span>
+                          <ol className="flex list-decimal flex-col gap-0.5 pl-5">
+                            {assuntos.map((assunto, i) => (
+                              <li key={`${i}-${assunto}`}>{assunto}</li>
+                            ))}
+                          </ol>
+                        </div>
+                      ) : null}
                       <TextField
                         label="Contexto local da escola ou região (opcional)"
                         value={recorte.contexto}

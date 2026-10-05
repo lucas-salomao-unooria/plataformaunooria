@@ -6,7 +6,9 @@
  * - `exp05ef1b_gates_turma.fase` — o relógio da TURMA, que o professor move
  *   com os três botões do painel (revelação, síntese, reflexão);
  * - os CARIMBOS da sessão do estudante (`entrou_em`, `confirmado_em`,
- *   `votou_em`, `reflexao_em`, `concluido_em`) — cada um é um latch.
+ *   `votou_em`, `concluido_em`) — cada um é um latch. A `reflexao_em` ficou
+ *   no banco só para o histórico: a regra Se/Então saiu (ADR-145), e as
+ *   perguntas de múltipla escolha são a reflexão.
  *
  * **O passo NÃO é coluna.** Ele é DERIVADO: `passoEfetivo(carimbos, fase)`.
  * Uma coluna `passo` seria uma terceira fonte que os latches já dizem — e que
@@ -48,7 +50,7 @@ export function faseAtingiu(fase: Fase | null, alvo: Fase): boolean {
 
 /**
  * A fase só ANDA PARA A FRENTE. Apertar "Liberar revelação" depois de ter
- * liberado a reflexão não pode fechar a reflexão de quem está escrevendo — o
+ * liberado a reflexão não pode fechar as perguntas de quem está respondendo — o
  * clique repetido (ou fora de ordem) vira no-op. Pular adiante é permitido: o
  * professor pode não projetar a síntese.
  */
@@ -68,7 +70,6 @@ export const PASSOS = [
   "espera",
   "revelacao",
   "sintese",
-  "reflexao",
   "perguntas",
   "concluida",
 ] as const;
@@ -79,31 +80,30 @@ export interface MarcosDaSessao {
   entrou: boolean;
   confirmou: boolean;
   votou: boolean;
-  refletiu: boolean;
   concluiu: boolean;
 }
 
 /**
  * O PASSO EFETIVO, dado o que o estudante já fez e a fase da turma.
  *
- * 1. Os latches do estudante vêm primeiro: quem concluiu está concluído, quem
- *    mandou a regra está nas perguntas — nenhuma fase o puxa de volta.
+ * 1. Os latches do estudante vêm primeiro: quem concluiu está concluído —
+ *    nenhuma fase o puxa de volta.
  * 2. **A triagem NÃO é empurrada pela revelação.** Quem ainda não confirmou o
  *    Mural quando o professor abre a revelação CONTINUA no grupo, confirma,
  *    vota, e vê a própria revelação depois (default aceito). Empurrá-lo
  *    mediria outra coisa, e mostraria o gabarito a quem ainda escolhe.
  * 3. Depois do voto, a FASE decide: espera na triagem, e então revelação,
- *    síntese e reflexão conforme o professor abre.
+ *    síntese e as perguntas (a fase `reflexao`: elas SÃO a reflexão, ADR-145)
+ *    conforme o professor abre.
  *
  * O aluno que vota DEPOIS de a turma passar da revelação cai direto no passo
- * da turma (`sintese` ou `reflexao`), e a revelação dele vai junto na resposta
+ * da turma (`sintese` ou `perguntas`), e a revelação dele vai junto na resposta
  * (`revelacao` não é nula): a experiência mostra os crachás antes do passo
  * corrente. O servidor não guarda "já viu" — um F5 mostraria de novo, sem dano.
  */
 export function passoEfetivo(sessao: MarcosDaSessao | null, fase: Fase | null): Passo {
   if (!sessao || !sessao.entrou) return "abertura";
   if (sessao.concluiu) return "concluida";
-  if (sessao.refletiu) return "perguntas";
   if (!sessao.confirmou) return "grupo";
   if (!sessao.votou) return "enquete";
   switch (fase ?? FASE_INICIAL) {
@@ -114,7 +114,7 @@ export function passoEfetivo(sessao: MarcosDaSessao | null, fase: Fase | null): 
     case "explicar":
       return "sintese";
     case "reflexao":
-      return "reflexao";
+      return "perguntas";
   }
 }
 

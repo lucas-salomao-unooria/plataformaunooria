@@ -111,7 +111,7 @@ export const GUIA_EXP06EF1B: GuiaDaAula = {
       {
         titulo: "Libere a missão na sala de aula",
         texto:
-          "Em Minhas turmas, na aba Missões da turma. Sem a liberação, o card fica com cadeado para as crianças.",
+          "Em Minhas turmas, na aba Missões da turma. Sem a liberação, o cartão fica com cadeado para as crianças.",
       },
       {
         titulo: "Crie a atividade com antecedência",
@@ -364,7 +364,7 @@ export const GUIA_EXP06EF1B: GuiaDaAula = {
     "Os estandes, as escolas e os perfis da mostra são fictícios, escritos pela inteligência artificial sobre o seu tema. Revise para não sair pessoa real identificável, escola real nem marca de empresa.",
     "Durante a aula o feed não usa inteligência artificial: é uma regra fixa, que roda no servidor e é a mesma que a cadeia ensina. A IA só escreve os estandes no preparo.",
     "A busca da galeria não guarda o que a criança digita: fica só se buscou por hashtag ou por texto, e a área que encontrou.",
-    "Na rodada nova (Zerar a turma) com a mesma atividade, a turma já sabe que o feed se adapta, e a evidência de quem já foi avaliado não é marcada de novo. Para reaplicar, prefira uma atividade com outro tema.",
+    "Na rodada nova (Zerar a turma) com a mesma atividade, todas as habilidades são medidas de novo, mas a turma já sabe que o feed se adapta e o voto deixa de ser espontâneo. Para reaplicar, prefira uma atividade com outro tema.",
   ],
 
   adaptacoes: [

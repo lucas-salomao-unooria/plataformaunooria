@@ -27,7 +27,7 @@ export const EXP_ID = "exp05ef1b";
  * `public/experiencia.json`. O CI lê a do manifesto para montar o caminho
  * IMUTÁVEL no bucket; `src/versao.test.ts` compara os três (ADR-84).
  */
-export const EXP_VERSION = "0.3.1";
+export const EXP_VERSION = "0.4.0";
 
 // ──────────────────────────────────────────────────────────── vocabulário
 
@@ -43,7 +43,6 @@ export type Passo =
   | "espera"
   | "revelacao"
   | "sintese"
-  | "reflexao"
   | "perguntas"
   | "concluida";
 
@@ -112,8 +111,6 @@ export interface Estado {
   selecao: string[];
   confirmado: boolean;
   motivo: string | null;
-  /** A regra do PRÓPRIO estudante. */
-  reflexao: { se: string; entao: string } | null;
   concluido: boolean;
   /** `null` até o voto E a revelação aberta. O único lugar com gabarito. */
   revelacao: Revelacao | null;
@@ -128,13 +125,12 @@ export interface Sessao extends Estado {
   /** `null` enquanto o professor não aprovou: a missão NASCE VAZIA. */
   pacote: PacotePublico | null;
   textos: {
-    nina: { convite: string | null; tio: string; encerramento: string };
+    nina: { convite: string | null; encerramento: string };
     /** A fala da Nina antes de cada pergunta de evidência, pelo id da pergunta. */
     perguntas: { perguntaId: string; fala: string }[];
-    confirmacaoDaRegra: string;
   };
-  opcoes: { motivos: Opcao[]; condicoes: Opcao[] };
-  limites: { encaminhamentos: number; entaoMin: number; entaoMax: number };
+  opcoes: { motivos: Opcao[] };
+  limites: { encaminhamentos: number };
 }
 
 export interface Gate {
@@ -170,9 +166,7 @@ export interface RespostaEnviada {
  *
  * O SDK joga `Error` com "API POST /x → 409" **sem o corpo**, então a
  * classificação é pelo STATUS. Quem sabe o que um 400 ou um 409 quis dizer é a
- * tela, que conhece a ação que fez: um 400 no `POST /reflexao` com o texto já
- * dentro de 15–240 só pode ser `entao-sem-sentido`; um 409 em qualquer ação é o
- * relógio da turma (ou outra aba) na frente — e a resposta é reler a sessão.
+ * tela, que conhece a ação que fez: um 409 em qualquer ação é o relógio da turma (ou outra aba) na frente — e a resposta é reler a sessão.
  */
 export type ClasseDeFalha =
   | "rede"

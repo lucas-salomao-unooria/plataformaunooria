@@ -54,8 +54,25 @@ const CelulaSchema = z.object({ status: StatusSchema, origem: OrigemSchema, situ
 export const PainelDaAtividadeSchema = z.object({
   /** A missão tem ficha? `false` = a tela nem desenha o bloco de evidência. */
   temFicha: z.boolean(),
-  /** As habilidades da ficha, na ordem dela, com o texto da BNCC. */
-  habilidades: z.array(z.object({ codigo: z.string(), descricao: z.string() })),
+  /**
+   * As habilidades da ficha, na ordem dela, com o texto da BNCC e o critério de
+   * cada nível (ADR-145). `criterios` é `null` na habilidade que saiu da ficha
+   * e só continua na tela porque tem evidência.
+   */
+  habilidades: z.array(
+    z.object({
+      codigo: z.string(),
+      descricao: z.string(),
+      criterios: z
+        .object({
+          atingiu: z.string(),
+          em_processo: z.string(),
+          nao_atingiu: z.string(),
+          observacao: z.string().optional(),
+        })
+        .nullable(),
+    }),
+  ),
   /** As rodadas que têm alguma evidência, em ordem crescente. */
   rodadas: z.array(z.number().int().positive()),
   estudantes: z.array(

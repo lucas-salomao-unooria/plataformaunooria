@@ -25,14 +25,15 @@ import { ALERTA_DE_ERRO, esperarOuFalharCedo, esperarOuFalharPorHttp } from "../
  * 4. **Os três botões chegam por polling HTTP** (ADR-93): revelação, síntese
  *    e reflexão trocam a tela do estudante SEM recarregar. E um F5 no meio
  *    devolve a mesma tela, porque o passo é do servidor.
- * 5. **O Se/Então tem piso de 15 contado depois do trim**, e o servidor recusa
- *    o curto e o texto sem sentido — mas NÃO corrige a regra (a EF05CO04 vem
- *    só da P2).
+ * 5. **As perguntas da Nina SÃO a reflexão** (ADR-145): Liberar Reflexão leva
+ *    direto ao chat da Nina, sem a regra Se/Então e sem repetir a fala da
+ *    abertura (o pedido do PO em 2026-10-05).
  * 6. **As perguntas do PO não expõem acerto**: o recibo é `{ enviada: true }`
  *    e a tela diz só "Resposta enviada". Quem sabe o nível é a professora, no
  *    bloco "Habilidades da BNCC" — e a suíte confere que o nível dali é o que
  *    a régua dá para as 3 escolhidas (EF05CO08) e para as alternativas
- *    marcadas (EF05CO03 e EF05CO04).
+ *    marcadas (EF05CO03 e EF05CO04), em TODA rodada, e que o critério de cada
+ *    nível está escrito no fim do bloco.
  * 7. **O Termômetro não tem nome**, nem no painel nem no telão.
  *
  * A suíte NÃO aperta "Gerar Atividade com IA": uma corrida que depende do
@@ -57,11 +58,6 @@ const EXP_ID = "exp05ef1b";
    não aponta para a causa. */
 const TURMA = process.env.TURMA ?? conta("estudante", { serie: SERIE }).turma;
 const FICHA = `${HUB}/professor/entre-redes/5-ano/unidade-1`;
-
-/** O Então de 14 caracteres (depois do trim): um a menos que o piso. */
-const ENTAO_CURTO = "pergunto à mãe   ";
-/** A regra que a criança envia. Sem palavra que o filtro de texto sem sentido recuse. */
-const ENTAO = "confiro no site oficial da escola antes de passar pra frente";
 
 /** Rótulos dos crachás, como a experiência os escreve (`textos.ts`). */
 const ROTULO_DA_VERACIDADE = { verdadeira: "Verdadeira", falsa: "Falsa" };
@@ -149,8 +145,8 @@ await suite(
       "A Nina pede ajuda: rolou uma confusão sobre o passeio ao museu. No grupo da turma chegam " +
       "oito mensagens — verdadeiras e falsas, calmas e alarmadas —, e a criança encaminha " +
       "exatamente três ao Mural da Turma e vota no motivo. Quando a professora libera a " +
-      "revelação, cada mensagem ganha dois selos; depois vêm a síntese, a regra Se/Então fora " +
-      "do aplicativo e duas perguntas rápidas da Nina.",
+      "revelação, cada mensagem ganha dois selos; depois vêm a síntese e a reflexão: duas perguntas " +
+      "rápidas da Nina.",
     prova: [
       "A atividade nasce da professora, pelo assistente — conteúdo, equipes e criar —, e sem uma em andamento a missão não abre",
       "Criada com “Pôr no ar agora”, a Nina chega sozinha à tela do estudante, sem recarregar",
@@ -160,11 +156,11 @@ await suite(
       "Revelação, síntese e reflexão chegam à tela do estudante por polling, sem recarregar",
       "Os crachás são os do gabarito do servidor, só das 3 escolhidas, e um F5 os devolve",
       "O Termômetro da Turma não tem nome, no painel nem no telão",
-      "O Se/Então pede 15 caracteres depois do trim, e o servidor recusa o curto e o sem sentido",
+      "Liberar Reflexão leva direto às perguntas da Nina, sem repetir a fala da abertura",
       "As perguntas da Nina respondem só “Resposta enviada” — nenhum acerto chega à criança",
       "O bloco Habilidades da BNCC mostra EF05CO08, EF05CO03 e EF05CO04 com o nível que a régua v2 dá",
-      "Refazer com o MESMO pacote não mede de novo a EF05CO08 de quem já viu a resposta",
-      "A professora classifica a regra Se/Então na EF05CO04, e o clique vale como ajuste docente",
+      "Toda rodada mede as três habilidades de novo, e o critério de cada nível está no fim do bloco",
+      "Zerar a turma abre a aba da rodada nova na hora, sem recarregar a página",
     ],
     comando: "node scripts/e2e/estudante/10-quem-mandou-isso.mjs",
   },
@@ -465,13 +461,20 @@ await suite(
       /* A confirmação é DELIBERADA: o botão só acende com a caixa marcada. O
          clique vai no rótulo — o `<input>` do DS é o alvo escondido. */
       await janela.getByText("Entendi: a turma recomeça do começo numa rodada nova.").click();
-      const confirmar = janela.getByRole("button", { name: "Zerar Turma para Nova Aplicação" });
+      const confirmar = janela.getByRole("button", { name: "Zerar a turma" });
       await prof.waitForFunction((el) => !el.disabled, await confirmar.elementHandle(), { timeout: 10_000 });
       await confirmar.click();
       await esperarOuFalharCedo(
         prof.getByText(new RegExp(`a ${rodada + 1}ª rodada fica no histórico`)),
         prof.locator(ALERTA_DE_ERRO),
         { timeout: 30_000, oQue: "zerar a turma" },
+      );
+      /* A aba da rodada nova aparece na hora, sem recarregar (o PO, 2026-10-05):
+         antes ela só existia depois da primeira evidência e de um F5. */
+      await esperarOuFalharCedo(
+        prof.locator("[data-habilidades-quem-mandou]").getByText(`A rodada ${rodada + 1} começou`),
+        prof.locator(ALERTA_DE_ERRO),
+        { timeout: 30_000, oQue: "a aba da rodada nova no painel de habilidades" },
       );
       painel = await esperarNaApi(prof, `${daTurma}/painel`, (c) => c?.atividade?.rodada === rodada + 1, {
         oQue: "a rodada nova",
@@ -573,7 +576,17 @@ await suite(
       oQue: "entrar no grupo da turma",
     });
     const linhas = q.locator(".linha-do-grupo");
-    r.exigir((await linhas.count()) === 8, `o grupo abre com as 8 mensagens do pacote (${await linhas.count()})`);
+    /* As mensagens CHEGAM uma a uma (~0,9 s cada, o pedido do PO): a suíte
+       espera a oitava, contra o erro da api, e só então conta. */
+    r.exigir(
+      (await linhas.count()) < 8,
+      "as mensagens chegam uma a uma — logo depois de entrar, o grupo ainda não tem as oito",
+    );
+    await esperarOuFalharPorHttp(p, linhas.nth(7), /quem-mandou-isso\/(entrar|sessao)/, {
+      timeout: 30_000,
+      oQue: "as oito mensagens chegarem ao grupo",
+    });
+    r.exigir((await linhas.count()) === 8, `o grupo termina com as 8 mensagens do pacote (${await linhas.count()})`);
     r.exigir(
       (await q.getByText("Apenas administradores podem enviar mensagens").count()) >= 1,
       "no lugar do teclado, a tarja de só-administradores: não há digitação livre dentro do mensageiro",
@@ -581,7 +594,8 @@ await suite(
     await r.registrar(p, "grupo-da-turma", {
       titulo: "Turma 5ºB, oito mensagens",
       mostra:
-        "Textos, o comunicado desenhado e as prévias de link, cada um com a seta de encaminhar; no " +
+        "Textos, as duas imagens desenhadas (cada uma com desenho próprio) e as prévias de link, cada um " +
+        "com a seta de encaminhar; no " +
         "topo, a faixa “Encaminhe 3 mensagens para o Mural da Turma” com 0/3.",
       prova:
         "Nenhuma mensagem chega marcada, e o formato não é pista: imagem e link têm uma verdadeira e " +
@@ -921,81 +935,27 @@ await suite(
         "depois sem mostrar botão nenhum — quem solta a turma é a professora.",
     });
 
-    // ═══ 3º BOTÃO: a reflexão, fora do aplicativo ═════════════════════════
+    // ═══ 3º BOTÃO: a reflexão — as perguntas da Nina (ADR-145) ═════════════
     await apertarBotaoDaAula("liberar_reflexao", "Liberar Reflexão", "Liberar a reflexão?", "reflexao");
-    await chegaSemRecarregar(q.getByText("Monte sua regra de decisão antes de encaminhar:"), "a reflexão");
+    await chegaSemRecarregar(q.locator(".unc-poll:not(.unc-poll--voted)").first(), "as perguntas da Nina");
+    const convite = s0.textos?.nina?.convite ?? "";
     r.exigir(
-      (await q.locator(".escola .unc-messagebubble").count()) === 0,
-      "a regra é montada na casca da escola: nada do mensageiro dentro dela (a fronteira do disfarce)",
+      convite !== "" && !(await q.locator(".conversa").innerText()).includes(convite),
+      "o chat das perguntas não repete a fala da abertura, que mandava ao grupo e ao Mural",
     );
     r.exigir(
-      (await q.locator(".escola").innerText()).includes("meu tio mandou um áudio na família"),
-      "e o desafio é o áudio do tio no grupo da FAMÍLIA — a transferência para fora da tela",
+      (await q.locator(".escola").count()) === 0,
+      "a reflexão é no mensageiro: não há mais a regra Se/Então na casca da escola",
     );
-
-    const se = q.getByRole("combobox", { name: /Se a mensagem for/ });
-    await se.click();
-    const primeiraCondicao = q.getByRole("listbox").getByRole("option").first();
-    await primeiraCondicao.waitFor({ timeout: 10_000 });
-    const rotuloDoSe = (await primeiraCondicao.locator(".unooria-selection-option__label").innerText()).trim();
-    await primeiraCondicao.click();
-    const idDoSe = (s0.opcoes?.condicoes ?? []).find((c) => c.rotulo === rotuloDoSe)?.id;
-    r.exigir(Boolean(idDoSe), `a condição “${rotuloDoSe}” é uma das 4 da api`);
-
-    /* 14 caracteres e espaços no fim: o piso conta DEPOIS do trim, como o
-       servidor conta — quinze espaços não são uma regra. `pressSequentially`,
-       e não `fill`: o campo é controlado, e o `fill` não move o estado. */
-    const campo = q.locator(".escola textarea");
-    const salvar = q.getByRole("button", { name: "Salvar e Enviar Reflexão" });
-    await campo.pressSequentially(ENTAO_CURTO, { delay: 15 });
-    await q.getByText("Mínimo de 15 caracteres (falta 1 caractere)").waitFor({ timeout: 10_000 }).catch(() => {
-      throw new Error("com 14 caracteres (e espaços no fim) o contador não disse que falta 1: o piso não conta depois do trim");
-    });
-    r.exigir(await salvar.isDisabled(), "com 14 caracteres depois do trim, Salvar e Enviar Reflexão fica apagado");
-    await r.registrar(p, "regra-abaixo-do-piso", {
-      titulo: "Se… então…: o piso de 15",
-      mostra: "A condição escolhida, o Então com 14 caracteres e o contador “Mínimo de 15 caracteres (falta 1 caractere)”.",
+    await r.registrar(p, "reflexao-perguntas", {
+      titulo: "A reflexão: as perguntas da Nina",
+      mostra: "Liberada a reflexão, o chat da Nina abre direto na primeira pergunta, sem a fala do começo.",
       prova:
-        "O piso é contado depois do trim, na tela e no servidor: espaço não completa regra. O botão só " +
-        "acende entre 15 e 240.",
+        "A regra Se/Então dissertativa saiu: a missão avalia por critérios fixos, e a etapa 6 são as duas " +
+        "perguntas de múltipla escolha. A fala da abertura não volta, porque ela pedia o que já foi feito.",
     });
 
-    /* O servidor cobra de novo, e recusa também o texto sem sentido que passa
-       do piso (RF-013) — cada recusa com o seu código. */
-    const curta = await mandarApi(p, "POST", "/quem-mandou-isso/reflexao", { se: idDoSe, entao: ENTAO_CURTO });
-    r.exigir(
-      curta.status === 400 && curta.corpo?.codigo === "entao-curto",
-      `o servidor recusa o Então de 14 (${curta.status} ${curta.corpo?.codigo ?? ""})`,
-    );
-    const semSentido = await mandarApi(p, "POST", "/quem-mandou-isso/reflexao", {
-      se: idDoSe,
-      entao: "kkkkkkkkkkkkkkkkkkkkkkkk",
-    });
-    r.exigir(
-      semSentido.status === 400 && semSentido.corpo?.codigo === "entao-sem-sentido",
-      `e recusa o texto sem sentido que passa do piso (${semSentido.status} ${semSentido.corpo?.codigo ?? ""})`,
-    );
-
-    await campo.click();
-    await campo.press("ControlOrMeta+A");
-    await campo.press("Backspace");
-    await campo.pressSequentially(ENTAO, { delay: 10 });
-    await q.locator('.escola button:not([disabled])', { hasText: "Salvar e Enviar Reflexão" }).waitFor({ timeout: 10_000 });
-    await salvar.click();
-    await esperarOuFalharPorHttp(p, q.getByText(s0.textos.confirmacaoDaRegra), /quem-mandou-isso\/reflexao/, {
-      timeout: 30_000,
-      oQue: "enviar a regra",
-    });
-    await r.registrar(p, "regra-enviada", {
-      titulo: "A regra vai para a professora",
-      mostra: `A confirmação da casca: “${s0.textos.confirmacaoDaRegra}”, com Continuar.`,
-      prova:
-        "A regra NÃO é corrigida: não há certo nem errado na tela, e a EF05CO04 vem só da P2. É texto " +
-        "livre de menor — não vai a log nem a telemetria, e só quem leciona na turma lê.",
-    });
-
-    // ═══ AS PERGUNTAS DA NINA, de volta ao mensageiro ═════════════════════
-    await q.getByRole("button", { name: "Continuar", exact: true }).click();
+    // ═══ AS PERGUNTAS DA NINA ═════════════════════════════════════════════
     const idsDasPerguntas = (s0.textos?.perguntas ?? []).map((x) => x.perguntaId);
     r.exigir(idsDasPerguntas.length === 2, `são duas perguntas da Nina (${idsDasPerguntas.join(", ")})`);
 
@@ -1061,11 +1021,6 @@ await suite(
       timeout: 30_000,
       oQue: "concluir a missão",
     });
-    const regraNaTela = await q.locator(".escola__regra-texto").innerText();
-    r.exigir(
-      regraNaTela.startsWith(`SE a mensagem for ${rotuloDoSe}, ENTÃO eu ${ENTAO}`),
-      `o card guarda a regra dela: “${regraNaTela}”`,
-    );
     r.exigir(!PALAVRAS_DE_ACERTO.test(await q.locator(".escola").innerText()), "e o fechamento não tem nível, acerto nem nota");
     const concluida = await lerApi(p, "/quem-mandou-isso/sessao");
     r.exigir(
@@ -1074,10 +1029,10 @@ await suite(
     );
     await r.registrar(p, "missao-concluida", {
       titulo: "Missão Concluída",
-      mostra: "A casca da escola com “Sua Regra Pessoal de Checagem”: SE a mensagem for…, ENTÃO eu…",
+      mostra: "A casca da escola com “Missão Concluída”.",
       prova:
-        "A fronteira cruzou duas vezes, e cada travessia tem razão: a regra é sobre a família do tio " +
-        "(fora da ficção), as perguntas são a Nina falando (dentro dela), e o fechamento é a escola.",
+        "A fronteira cruza uma vez só, no fim: as perguntas são a Nina falando (dentro da ficção), e o " +
+        "fechamento é a escola.",
     });
     /* Sai do aparelho: o iframe continua falando com a api enquanto a página estiver nele. */
     await p.goto(`${HUB}/estudante`, { waitUntil: "domcontentloaded" });
@@ -1100,18 +1055,11 @@ await suite(
       `a P1 mede a EF05CO03 e a P2 a EF05CO04 (${JSON.stringify(esperado)})`,
     );
 
-    /* A EF05CO08 mede quem AINDA NÃO VIU a resposta do pacote (ADR-120). Se a
-       suíte zerou a turma e esta criança já foi avaliada numa rodada anterior
-       do MESMO pacote, o Mural fechou sem marca nova. Os dois desfechos são
-       legítimos, e cada um é provado: a régua quando ela é nova, a regra da
-       rodada quando não é. */
+    /* Toda rodada mede as três de novo (ADR-145), também com o MESMO pacote:
+       numa corrida que zerou a turma, a rodada nova tem as três marcas. */
     const caminhoDaEvidencia = `/evidencias/turma/${turmaId}/missao/${EXP_ID}/atividade/${atividade.pacoteId}`;
     const doEstudante = (c) => c?.estudantes?.find((e) => e.nome === estudante.nome);
-    const antes = doEstudante((await lerApi(prof, caminhoDaEvidencia)).corpo);
-    const rodadaQueMediu = Object.entries(antes?.porRodada ?? {}).find(
-      ([rodada, celulas]) => Number(rodada) < atividade.rodada && celulas.EF05CO08 && celulas.EF05CO08.status !== "nao_participou",
-    )?.[0];
-    const medidasAgora = Object.keys(esperado).filter((c) => !(rodadaQueMediu && c === "EF05CO08"));
+    const medidasAgora = Object.keys(esperado);
     const habilidades = await esperarNaApi(
       prof,
       caminhoDaEvidencia,
@@ -1120,12 +1068,6 @@ await suite(
     );
     r.exigir(habilidades.temFicha === true, "a exp05ef1b tem ficha pedagógica: o bloco de habilidades acende");
     const marcas = doEstudante(habilidades).porRodada[String(atividade.rodada)];
-    if (rodadaQueMediu) {
-      r.exigir(
-        !marcas.EF05CO08,
-        `a EF05CO08 não é medida de novo: ${estudante.nome} já foi avaliado na ${rodadaQueMediu}ª rodada deste pacote e viu a resposta`,
-      );
-    }
     for (const codigo of medidasAgora) {
       r.exigir(
         marcas[codigo]?.status === esperado[codigo],
@@ -1141,14 +1083,21 @@ await suite(
       ["EF05CO08", "EF05CO03", "EF05CO04"].every((c) => textoDoBloco.includes(c)),
       "o bloco Habilidades da BNCC mostra a EF05CO08, a EF05CO03 e a EF05CO04",
     );
+    const criterios = blocoDeHabilidades.locator("[data-criterios-das-habilidades]");
+    const textoDosCriterios = await criterios.innerText();
+    r.exigir(
+      textoDosCriterios.includes("Encaminha ao Mural da Turma as 3 mensagens verdadeiras.") &&
+        ["Atingiu:", "Em processo:", "Não atingiu:"].every((n) => textoDosCriterios.split(n).length - 1 >= 3),
+      "no fim do bloco, cada uma das três habilidades tem o critério de Atingiu, Em processo e Não atingiu",
+    );
     await blocoDeHabilidades.scrollIntoViewIfNeeded();
     await r.registrar(prof, "habilidades-da-bncc", {
       titulo: "Habilidades da BNCC, por estudante",
       mostra: `A ${atividade.rodada}ª rodada da atividade: a EF05CO08 pela seleção do Mural, a EF05CO03 pela P1 e a EF05CO04 pela P2.`,
       prova:
         "O nível é do servidor e é conferido aqui contra a régua v2: a EF05CO08 vem das 3 escolhidas " +
-        "(só três verdadeiras atingem, e só na primeira vez da criança com o pacote), e a CO03/CO04, da alternativa marcada. " +
-        "O Se/Então não é corrigido — a professora o lê e ajusta aqui.",
+        "(só três verdadeiras atingem, em toda rodada), e a CO03/CO04, da alternativa marcada. " +
+        "O critério de cada nível está escrito no fim do bloco, para a professora consultar e ajustar.",
       detalhe: Object.entries(esperado)
         .map(([c, n]) => `${c}=${n}`)
         .join(" · "),
@@ -1157,56 +1106,20 @@ await suite(
     const folhaDaTurma = prof.locator("[data-folha]");
     const linhaNaFolha = folhaDaTurma.locator("tr", { hasText: estudante.nome });
     await linhaNaFolha.first().waitFor({ timeout: 20_000 });
-    r.exigir(
-      (await linhaNaFolha.first().innerText()).includes(ENTAO),
-      "a folha mostra a regra que a criança escreveu — só para quem leciona na turma",
-    );
     const cabecalhos = await folhaDaTurma.locator("thead th").allInnerTexts();
+    r.exigir(
+      !cabecalhos.some((c) => /Se\/Então|regra/i.test(c)),
+      `a folha não tem mais a coluna da regra Se/Então (${cabecalhos.join(" · ")})`,
+    );
     const colunaProibida = cabecalhos.find((c) => /pontos|nota|acerto|ranking|nível/i.test(c));
     r.exigir(!colunaProibida, `a folha não tem coluna de acerto, nota nem nível (achei "${colunaProibida ?? ""}")`);
     await linhaNaFolha.first().scrollIntoViewIfNeeded();
     await r.registrar(prof, "folha-da-turma", {
       titulo: "O diário de bordo da turma",
-      mostra: "Onde cada um está, as 3 mensagens encaminhadas com o quadrante, o motivo declarado e a regra Se/Então.",
+      mostra: "Onde cada um está, as 3 mensagens encaminhadas com o quadrante e o motivo declarado.",
       prova:
-        "É a tela dela, não a do projetor: tem nome e o texto da criança. Não tem coluna de acerto — " +
-        "o nível por habilidade mora no bloco da BNCC, onde ela também o ajusta.",
-    });
-
-    // ═══ A RUBRICA DO SE/ENTÃO: o CRIAR da EF05CO04 (ADR-120) ═════════════
-    /* A P2 mediu o RECONHECER da regra completa; a regra escrita é o CRIAR, e quem a
-       classifica é a professora, com um clique ao lado dela. O clique é um
-       ajuste da evidência: vale sobre a pergunta e aparece como "Ajuste
-       docente" no painel de habilidades. */
-    const rubrica = linhaNaFolha.first().locator("[data-rubrica-co04]");
-    await rubrica.waitFor({ timeout: 20_000 });
-    r.exigir(
-      (await rubrica.getByRole("button").count()) === 3,
-      "ao lado da regra, a rubrica tem os três níveis: Atingiu, Em processo e Não atingiu",
-    );
-    await rubrica.getByRole("button", { name: "Atingiu", exact: true }).click();
-    await esperarOuFalharCedo(rubrica.locator('button[aria-pressed="true"]', { hasText: "Atingiu" }), rubrica.locator(ALERTA_DE_ERRO), {
-      timeout: 30_000,
-      oQue: "classificar a regra na EF05CO04",
-    });
-    const depois = await esperarNaApi(
-      prof,
-      caminhoDaEvidencia,
-      (c) => doEstudante(c)?.porRodada?.[String(atividade.rodada)]?.EF05CO04?.origem === "professor",
-      { oQue: "o ajuste docente da EF05CO04" },
-    );
-    const co04 = doEstudante(depois).porRodada[String(atividade.rodada)].EF05CO04;
-    r.exigir(
-      co04.status === "atingiu" && co04.origem === "professor",
-      `a EF05CO04 passa a ser a da rubrica: “${co04.status}”, por ajuste docente (origem ${co04.origem})`,
-    );
-    await rubrica.scrollIntoViewIfNeeded();
-    await r.registrar(prof, "rubrica-da-regra", {
-      titulo: "A regra, classificada na EF05CO04",
-      mostra: "Ao lado da regra Se/Então da criança, os três níveis da EF05CO04 — e o clique da professora aceso.",
-      prova:
-        "A pergunta da Nina mede se a criança reconhece a regra completa; a regra que ela escreveu é o CRIAR. " +
-        "Ninguém corrige texto de criança à máquina: a professora lê e classifica, e o clique dela vale sobre a pergunta.",
+        "É a tela dela, não a do projetor: tem nome. Não tem coluna de acerto — o nível por habilidade " +
+        "mora no bloco da BNCC, onde ela também o ajusta.",
     });
   },
 );
