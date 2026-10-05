@@ -35,6 +35,8 @@ export type CodigoErro =
   | "chave-nao-formada"
   | "transicao-de-etapa-invalida"
   | "pacote-invalido"
+  | "imagens-nao-aprovadas"
+  | "noticia-sem-imagem"
   | "sem-saldo-de-ia"
   | "ia-indisponivel";
 
@@ -59,6 +61,8 @@ export const STATUS: Record<CodigoErro, number> = {
   "chave-nao-formada": 409,
   "transicao-de-etapa-invalida": 409,
   "pacote-invalido": 400,
+  "imagens-nao-aprovadas": 409,
+  "noticia-sem-imagem": 400,
   "sem-saldo-de-ia": 429,
   "ia-indisponivel": 503,
 };
@@ -87,6 +91,9 @@ export const MENSAGENS: Record<CodigoErro, string> = {
   "chave-nao-formada": "Monte a Chave do Editor para abrir a mesa de revisão.",
   "transicao-de-etapa-invalida": "A turma avança uma etapa por vez, e nunca volta.",
   "pacote-invalido": "O pacote de notícias não atende às regras da missão.",
+  "imagens-nao-aprovadas":
+    "As imagens das notícias ainda não foram todas geradas e aprovadas. Gere as que faltam, confira cada uma e aprove antes de pôr a atividade no ar.",
+  "noticia-sem-imagem": "Esta notícia não tem imagem: o cartão dela é desenhado pelo meio.",
   "sem-saldo-de-ia":
     "Limite de geração com IA atingido. O banco curado padrão está disponível para iniciar a aula imediatamente.",
   "ia-indisponivel":
