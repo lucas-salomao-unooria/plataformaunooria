@@ -579,7 +579,10 @@ O manifesto declara \cd{viewport} 375 por 812, \cd{permissoes: ["forms"]} (o
 atividade não vai ao ar sem as imagens geradas e aprovadas, e contornar isso
 com imagem de teste no \emph{seed} ou no \emph{mock} foi descartado. Com o
 \emph{mock}, a diagramação cai no modelo automático (\adrr{ADR-117}) e a
-criação para na fase das imagens --- comportamento declarado, não defeito.
+criação para na fase das imagens --- comportamento declarado, não defeito. Desde
+a \adrr{ADR-148}, também o TEXTO do pacote é gerado pela IA na suíte, e a
+diagramação não tem teto de saída: com o teto de 32 \emph{tokens} que havia, o
+raciocínio do modelo cortava a resposta e a página saía sempre do modelo.
 \end{atencao}
 
 A suíte \arq{scripts/e2e/estudante/12-jornal-da-escola.mjs} percorre a missão
@@ -591,7 +594,12 @@ depois, e o painel sem nota por criança. Ela \textbf{roda verde} desde
 \cd{imagens-nao-aprovadas} antes do OK, um \enquote{Gerar outra imagem} e a
 aprovação), as imagens aprovadas na mesa da criança, a ida sozinha à
 \enquote{Primeira Página} no 3/3, a revisão que abre nela e a pergunta de
-motivo sem \enquote{dupla}. Rodá-la a partir de uma worktree exige a api, o hub e o Vite da
+motivo sem \enquote{dupla}. Com a \adrr{ADR-148} ela gera o pacote com a IA
+(exige \cd{usouIa} e a origem \cd{ia}), monta as escolhas da criança pelo
+gabarito que a professora lê pela api --- o molde sorteado no servidor garante
+os oito meios, três ou mais publicáveis, duas ou mais antigas e ao menos uma sem
+fonte --- e exige \cd{origem: "ia"} em TODA resposta do \rota{POST
+/jornal-escola/diagramar}: a página do modelo deixou de ser verde. Rodá-la a partir de uma worktree exige a api, o hub e o Vite da
 missão nas portas alternativas (3011, 3010 e 5174) sobre um banco descartável,
 sem subir o \emph{compose}.
 
@@ -1318,6 +1326,13 @@ síntese são determinísticos --- uma turma de trinta às oito da manhã não d
 do Vertex responder.
 \end{limitacao}
 
+A suíte \arq{scripts/e2e/estudante/\B{}10-quem-mandou-isso.mjs} cria a
+atividade por \enquote{Gerar Atividade com IA}, com a IA de verdade, e exige
+\cd{usouIa} na resposta, a origem \cd{ia} no rascunho e a atividade em
+andamento com a origem \cd{ia} na lista da turma (\adrr{ADR-148}). Antes ela
+carregava o pacote curado padrão, e a geração pela IA ficava sem prova de ponta
+a ponta.
+
 % ---------------------------------------------------------------------------
 \section{exp07ef1b --- A Seleção}
 \label{sec:exp07ef1b}
@@ -1378,7 +1393,9 @@ O que o bundle não sabe & A lente de cada post, as tags e a matriz vêm da
 Evidência & A ficha \arq{evidencias/fichas/exp07ef1b.ts}: EF07CO11 com a
   leitura da legenda por IA (o Canal A) e a enquete \cd{p1}; EF07CO08 com a
   enquete \cd{p2}. As alternativas são embaralhadas a cada exibição. Sem IA, o
-  Canal A não marca nada, e fica \enquote{Não avaliado}. Durante a aula, o
+  Canal A não marca nada, e fica \enquote{Não avaliado}; a leitura não tem teto
+  de saída, porque com 64 \emph{tokens} o raciocínio do modelo a cortava e ela
+  nunca marcava (\adrr{ADR-148}). Durante a aula, o
   painel de habilidades se refaz quando a evidência muda, e mais uma vez na
   volta seguinte, porque o Canal A chega depois (\adrr{ADR-146}).\\
 \zebra Mídia & As imagens se geram na segunda fase da aprovação (2 por chamada,
@@ -1439,8 +1456,14 @@ A suíte \arq{scripts/e2e/estudante/11-a-selecao.mjs} percorre a missão com a
 professora e dois estudantes de escolhas divergentes --- com as duas fases da
 aprovação, a missão encerrada na sala antes de abrir a turma (pôr no ar a
 reabre) e o Mural aberto no par ---, e termina no podcast: as
-três falas no preparo, a transcrição e o ramo do áudio que o ambiente permitir
-(pronto com a IA de verdade; a transcrição sozinha com o \emph{mock}).
+três falas no preparo, a transcrição e o áudio. Desde a \adrr{ADR-148} ela
+roda com a IA de verdade (Vertex, com o ADC válido), nunca com o \emph{mock}:
+gera a cobertura com a IA (exige \cd{usouIa} e a origem \cd{ia}), exige todas
+as imagens geradas, prova a marca do Canal A no painel de evidências ANTES da
+enquete \cd{p1} --- que também marca a EF07CO11, e esconderia a falta dele ---
+e exige o \emph{podcast} pronto, com a voz do TTS. Antes, a suíte aceitava o
+\enquote{Não avaliado} e a transcrição sozinha como verdes, dizendo que em
+\emph{dev} a IA era o \emph{mock}.
 
 % ---------------------------------------------------------------------------
 \section{exp06ef1b --- O Júri Estadual de Projetos}

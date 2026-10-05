@@ -247,13 +247,6 @@ export const SCHEMA_DO_CANAL_A: AiJsonSchema = {
   },
 };
 
-/**
- * Teto de saída do Canal A. A resposta é `{"nivel":"…","motivo":"…"}`, uns 20
- * tokens; o teto baixo é a trava de custo por estudante — 30 crianças às oito
- * da manhã, cada uma uma chamada.
- */
-export const MAX_TOKENS_DO_CANAL_A = 64;
-
 /** Tira os marcadores `<<<` e `>>>` de um texto que vai entrar delimitado. */
 export function semDelimitadores(texto: string): string {
   return texto.replace(/<{3,}|>{3,}/g, " ");

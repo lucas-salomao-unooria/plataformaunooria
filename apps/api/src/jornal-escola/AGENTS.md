@@ -64,10 +64,10 @@ em silêncio.
   conta o EVT-P04.
 - **A IA em sala só DIAGRAMA** (`diagramacao.service.ts`): cache → rate limit →
   `temSaldo(estudante)` → `generateJson` (schema SÓ com o enum de layout,
-  temperatura 0, uma tentativa, 32 tokens) em `Promise.race` de ~6 s, débito no
+  temperatura 0, uma tentativa, SEM teto de saída — com 32 tokens o raciocínio do Gemini 3 cortava o JSON e caía sempre no modelo, ADR-148) em `Promise.race` de ~6 s, débito no
   `aoUsarTokens`; falhou qualquer coisa, o modelo automático
-  (`regras/layout.ts`), sem gravar cache. Fora da transação do funil. Em dev e
-  na e2e é sempre o modelo.
+  (`regras/layout.ts`), sem gravar cache. Fora da transação do funil. A e2e roda
+  com a IA real e exige `origem: "ia"` na resposta do `POST diagramar`.
 - **O preparo não esconde a falha** (`preparo.service.ts`): o molde (meio e
   papel de cada id) é SORTEADO no servidor (`regras/molde.ts`) — fixo, a turma
   que jogou um pacote saberia "a n2 é a antiga" em todos —, a IA escreve o
