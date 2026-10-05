@@ -436,7 +436,7 @@ export class JornalEscolaTurmasController {
   @Contrato({
     resumo: "Gera as próximas imagens das notícias de uma atividade — incremental.",
     descricao:
-      "As imagens não cabem nos 30 s que o BFF dá a uma chamada: cada chamada gera ATÉ DUAS novas, grava as URLs no pacote e devolve o progresso. **Repita enquanto `completo` for `false` e a chamada anterior tiver gerado alguma** — `falharam` diz o que não saiu, e essas notícias seguem com o cartão desenhado pelo meio.\n\nIdempotente: o que já tem URL é pulado, e a imagem de mesma descrição que já está no bucket entra sem custo.",
+      "As imagens não cabem nos 30 s que o BFF dá a uma chamada: cada chamada gera ATÉ DUAS novas, grava as URLs no pacote e devolve o progresso. **Repita enquanto `completo` for `false` e a chamada anterior tiver gerado alguma** — `falharam` diz o que não saiu: sem todas geradas e aprovadas, a atividade não vai ao ar (ADR-147).\n\nIdempotente: o que já tem URL é pulado, e a imagem de mesma descrição que já está no bucket entra sem custo.",
     params: PARAMS,
     query: QueryDoPacoteSchema,
     resposta: ProgressoDaMidiaSchema,

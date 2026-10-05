@@ -1039,10 +1039,11 @@ voto e da revelação aberta pela turma. A turma do estudante é
 % Esta tabela e ESCRITA A MAO; a verdade e o Apendice C (`apendices/c-endpoints.tex`),
 % gerado de `docs/openapi.json`. Confira LINHA A LINHA contra ele antes de mexer.
 
-Vinte e três rotas em três \emph{controllers} (\adrr{ADR-117}): treze do
+Vinte e sete rotas em três \emph{controllers} (\adrr{ADR-117}): treze do
 estudante (\cd{@Roles("estudante")} na classe, e \cd{exigirMissaoLiberada} no
-funil \cd{garantirSessao} de TODAS, com a disponibilidade junto), nove por turma,
-para professor e gestores, e uma de catálogo. A turma do estudante sai do
+funil \cd{garantirSessao} de TODAS, com a disponibilidade junto), treze por turma,
+para professor e gestores (as duas das imagens são da \adrr{ADR-147}), e uma de
+catálogo. A turma do estudante sai do
 \emph{token}, nunca do corpo. As duas perguntas do Desafio Final não são deste
 módulo: passam por \rota{/evidencias/exp04ef1b/perguntas/*}
 (Seção~\ref{sec:api-evidencias}).
@@ -1103,7 +1104,27 @@ módulo: passam por \rota{/evidencias/exp04ef1b/perguntas/*}
   apagar nada.\\
 \zebra \rota{GET .../pacotes} & prof., gestor & O pacote em andamento
   \textbf{com} o gabarito, e o histórico das atividades da turma (o
-  \cd{?pacote=} do painel de habilidades).\\
+  \cd{?pacote=} do painel de habilidades), cada uma com
+  \cd{imagensAprovadas}; o resumo \cd{midia} conta \cd{total}, \cd{prontas} e
+  \cd{aprovadas} (\adrr{ADR-147}).\\
+\rota{GET .../pacotes/:p} & prof., gestor & UMA atividade, inteira e com o
+  gabarito --- a página da atividade ---, com \cd{aprovadas}, as notícias cuja
+  imagem ATUAL o professor aprovou.\\
+\zebra \rota{POST .../pacotes/:p/\B{}em-andamento} & prof., gestor &
+  \enquote{Usar esta atividade agora} (\adrr{ADR-130}). Sem a imagem de TODAS
+  as notícias que pedem imagem gerada E aprovada, 409
+  \cd{imagens-nao-aprovadas} (\adrr{ADR-147}) --- só na ENTRADA no ar.\\
+\rota{POST .../pacotes/:p/\B{}aprovar-imagens} & prof., gestor & O OK do
+  professor, POR IMAGEM (\adrr{ADR-147}): o corpo \cd{\{imagens: \{n1: url\}\}}
+  traz as URLs que estavam na tela, e só se aprova a que ainda é a do pacote
+  (condição no \cd{UPDATE}); as outras voltam em \cd{desatualizadas}.
+  Devolve \cd{aprovadas}, o resumo \cd{midia} e \cd{prontaParaAula}.
+  Idempotente.\\
+\zebra \rota{POST .../pacotes/:p/\B{}imagens/\B{}:noticiaId/\B{}regerar} & prof., gestor &
+  \enquote{Gerar outra} para UMA notícia: arquivo novo (o nome leva um sal),
+  cobrado na quota. Aquela notícia some da turma até o novo OK, também na
+  atividade no ar. 400 \cd{noticia-sem-imagem}, 429 \cd{sem-saldo-de-ia}, 503
+  \cd{ia-indisponivel}.\\
 \rota{POST .../gerar-conteudo} & prof., gestor & O rascunho das 8 notícias por
   IA, \textbf{pré-aula}, no molde sorteado. Não persiste. Sem saldo, 429; sem
   provedor, 503.\\
@@ -1116,7 +1137,8 @@ módulo: passam por \rota{/evidencias/exp04ef1b/perguntas/*}
   o mesmo conteúdo é idempotente.\\
 \zebra \rota{POST .../gerar-midia} & prof., gestor & Até duas imagens novas por
   chamada, com custo estimado na quota do professor; repetir até
-  \cd{completo}.\\
+  \cd{completo}. A imagem gerada não vai à turma: espera o
+  \cd{aprovar-imagens}.\\
 \rota{GET /jornal-escola/\B{}professor/\B{}material} & prof., gestor & O banco
   padrão com gabarito, os blocos da Chave com os pilares marcados e o roteiro da
   mediação. Catálogo, sem \emph{tenancy} (\adrr{ADR-86}).\\
