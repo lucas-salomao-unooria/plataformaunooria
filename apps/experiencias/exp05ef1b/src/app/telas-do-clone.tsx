@@ -17,6 +17,7 @@ import {
   SystemMessage,
   TabBar,
   TopBar,
+  TypingIndicator,
 } from "@edu/ui/ds-unoochat";
 import {
   HORA_DA_NINA,
@@ -27,6 +28,7 @@ import {
   crachasDe,
   estiloDaImagem,
   horarioDaMensagem,
+  tomDoRemetente,
   iniciais,
   outrosParticipantes,
 } from "../lib/regras";
@@ -341,6 +343,13 @@ export function GrupoDaTurma({
               </div>
             );
           })}
+          {digitando && pacote.mensagens[chegaram] ? (
+            <TypingIndicator
+              sender={pacote.mensagens[chegaram].remetente}
+              senderTone={tomDoRemetente(pacote.mensagens[chegaram].remetente)}
+              aria-label={TEXTOS.grupo.digitando(pacote.mensagens[chegaram].remetente)}
+            />
+          ) : null}
           <div ref={fimDoGrupo} />
         </div>
       </ChatWallpaper>

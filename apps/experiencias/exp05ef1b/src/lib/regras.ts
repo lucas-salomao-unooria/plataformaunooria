@@ -256,6 +256,20 @@ export function perguntaDaVez(ids: readonly string[], respondidas: Readonly<Reco
 export const MS_ENTRE_MENSAGENS = 250;
 export const MS_DIGITANDO = 650;
 
+/**
+ * A COR do nome de cada colega no grupo (`senderTone` do Unoochat, 0.2.17):
+ * um tom de 2 a 8, estável pelo nome — a mesma pessoa tem sempre a mesma cor,
+ * no grupo e no "digitando…". O tom 1 fica de fora porque é o acento, a cor
+ * que o nome tinha antes, e nome em acento não se distingue do resto.
+ */
+export type TomDoRemetente = 2 | 3 | 4 | 5 | 6 | 7 | 8;
+
+export function tomDoRemetente(nome: string): TomDoRemetente {
+  let soma = 0;
+  for (const caractere of nome.trim().toLowerCase()) soma = (soma * 31 + caractere.charCodeAt(0)) % 7919;
+  return (2 + (soma % 7)) as TomDoRemetente;
+}
+
 /** A chegada só anima na primeira abertura do grupo e com a seleção vazia (um F5 no meio da escolha não esconde nada). */
 export function grupoChegaEmSequencia(vista: Pick<Vista, "grupoChegou">, selecao: readonly string[]): boolean {
   return !vista.grupoChegou && selecao.length === 0;

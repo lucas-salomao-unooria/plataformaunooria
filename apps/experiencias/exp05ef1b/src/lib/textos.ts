@@ -50,6 +50,8 @@ export const TEXTOS = {
 
   // ─────────────────────────────────────────────── Etapa 2: o grupo (clone)
   grupo: {
+    /** [novo] O nome acessível do "digitando…" de um colega no grupo. */
+    digitando: (nome: string) => `${nome} está digitando`,
     /** `e2.rotulo.grupo_subtitulo` — "você e mais 24 participantes". */
     participantes: (outros: number) =>
       outros === 1 ? "você e mais 1 participante" : `você e mais ${outros} participantes`,

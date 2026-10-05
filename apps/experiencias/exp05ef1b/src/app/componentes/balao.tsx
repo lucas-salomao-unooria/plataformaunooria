@@ -1,5 +1,5 @@
 import { MediaViewer, MessageBubble, type UncMessageDelivery } from "@edu/ui/ds-unoochat";
-import { dividirLegenda, type EstiloDeImagem } from "../../lib/regras";
+import { dividirLegenda, tomDoRemetente, type EstiloDeImagem } from "../../lib/regras";
 import { TEXTOS } from "../../lib/textos";
 import type { MensagemPublica } from "../../lib/tipos";
 import { ImagemDesenhada, PROPORCAO_DO_DESENHO } from "./midia-desenhada";
@@ -44,6 +44,7 @@ export function BalaoDaMensagem({
       time={hora}
       delivery={entrega}
       sender={comRemetente ? mensagem.remetente : undefined}
+      senderTone={comRemetente ? tomDoRemetente(mensagem.remetente) : undefined}
       forwardedLabel={encaminhada ? TEXTOS.mural.encaminhada : undefined}
       maxWidth={268}
     >

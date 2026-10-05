@@ -4,6 +4,7 @@ import {
   alternarSelecao,
   dividirLegenda,
   estiloDaImagem,
+  tomDoRemetente,
   gateDoPasso,
   gateMudou,
   horarioDaMensagem,
@@ -246,5 +247,21 @@ describe("o desenho de cada imagem do grupo", () => {
       ["a", "b", "c", "d", "e", "f", "g", "h"].map((t) => estiloDaImagem(pacote(t, "fixo"), "msg_2")),
     );
     expect(pares.size).toBeGreaterThan(1);
+  });
+});
+
+describe("a cor do nome de cada colega", () => {
+  test("estável pelo nome, de 2 a 8 (o 1 é o acento)", () => {
+    expect(tomDoRemetente("Pedro Henrique")).toBe(tomDoRemetente(" pedro henrique "));
+    for (const nome of ["Ana", "Bia", "Caio", "Duda", "Enzo", "Fabi", "Gabi", "Heitor"]) {
+      const tom = tomDoRemetente(nome);
+      expect(tom).toBeGreaterThanOrEqual(2);
+      expect(tom).toBeLessThanOrEqual(8);
+    }
+  });
+
+  test("nomes diferentes espalham as cores (o grupo não fica de uma cor só)", () => {
+    const tons = new Set(["Ana", "Bia", "Caio", "Duda", "Enzo", "Fabi", "Gabi", "Heitor"].map(tomDoRemetente));
+    expect(tons.size).toBeGreaterThanOrEqual(4);
   });
 });
