@@ -19,10 +19,8 @@ import type { FichaPedagogica } from "./tipos";
  *   pistas E a 2ª edição 3/3 E a P1 certa, num marcador só; aqui cada um é um
  *   marcador, e a política da E14 AFROUXA esse "E" — decisão registrada.
  *
- * As três ações não medem duas vezes a mesma criança no mesmo pacote: na
- * rodada nova, quem já foi avaliada numa anterior não é marcada de novo
- * (`jaAvaliadaAntes`, ADR-120), porque já viu o resultado, a Chave e o
- * comparativo.
+ * Toda rodada mede as três ações de novo, também no mesmo pacote (ADR-145):
+ * o resultado é a melhor rodada de cada habilidade.
  *
  * O texto das perguntas é VERBATIM da copy revisada (`e6.p1.*`, `e6.p2.*`). O
  * enunciado da P1 leva antes o boato (`e6.cenario.boato_chat`) e o detalhe
@@ -37,8 +35,24 @@ export const FICHA_EXP04EF1B: FichaPedagogica = {
   expId: "exp04ef1b",
   versao: 1,
   habilidades: [
-    { codigo: "EF15CO04", marcadores: [{ id: "pistas", tipo: "acao" }] },
-    { codigo: "EF15CO02", marcadores: [{ id: "chave", tipo: "acao" }] },
+    {
+      codigo: "EF15CO04",
+      marcadores: [{ id: "pistas", tipo: "acao" }],
+      criterios: {
+        atingiu: "Antes da 1ª edição, abre os três tipos de pista em pelo menos duas notícias.",
+        em_processo: "Abre alguma pista, mas não os três tipos em duas notícias.",
+        nao_atingiu: "Publica a 1ª edição sem abrir nenhuma pista.",
+      },
+    },
+    {
+      codigo: "EF15CO02",
+      marcadores: [{ id: "chave", tipo: "acao" }],
+      criterios: {
+        atingiu: "Forma a Chave do Editor na 1ª tentativa.",
+        em_processo: "Forma a Chave na 2ª ou na 3ª tentativa.",
+        nao_atingiu: "Precisa de mais de 3 tentativas para formar a Chave.",
+      },
+    },
     {
       codigo: "EF04CO08",
       marcadores: [
@@ -46,6 +60,14 @@ export const FICHA_EXP04EF1B: FichaPedagogica = {
         { id: "p1", tipo: "multipla_escolha", perguntaId: "p1" },
         { id: "p2", tipo: "multipla_escolha", perguntaId: "p2" },
       ],
+      criterios: {
+        atingiu:
+          "Na 2ª edição, abre pelo menos 6 pistas e publica as 3 notícias verificadas; ou escolhe a resposta completa numa das perguntas do Desafio Final.",
+        em_processo: "Fica no meio do caminho na 2ª edição, ou escolhe a resposta intermediária numa das perguntas.",
+        nao_atingiu:
+          "Na 2ª edição, abre menos de 3 pistas e publica no máximo 1 notícia verificada, e erra as duas perguntas.",
+        observacao: "Vale o melhor entre a 2ª edição e as duas perguntas do Desafio Final.",
+      },
     },
   ],
   perguntas: [

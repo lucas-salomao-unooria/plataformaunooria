@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { Inject, Injectable } from "@nestjs/common";
 import { AI_PROVIDER, type AiProvider } from "../ai/provider";
 import { QuotaService } from "../ai/quota.service";
@@ -49,6 +49,15 @@ export const TAMANHO_DA_IMAGEM = { largura: 640, altura: 360 } as const;
  */
 const emPreparo = new Map<string, Promise<ProgressoDaMidia>>();
 
+/** O "Gerar outra" em curso NESTE processo, por pacote e notícia: o duplo clique não paga duas. */
+const regerando = new Map<string, Promise<ImagemRegerada>>();
+
+export interface ImagemRegerada {
+  pacoteId: string;
+  noticiaId: IdDeNoticia;
+  url: string;
+}
+
 export interface ProgressoDaMidia {
   pacoteId: string;
   total: number;
@@ -60,9 +69,16 @@ export interface ProgressoDaMidia {
   imagens: Record<string, string>;
 }
 
-/** O nome do arquivo no bucket, abaixo de `experiencias/exp04ef1b/`. */
-export function nomeDaImagem(descricao: string): string {
-  const hash = createHash("sha256").update(`${VERSAO_DO_PEDIDO_DE_IMAGEM}|${descricao.trim()}`).digest("hex");
+/**
+ * O nome do arquivo no bucket, abaixo de `experiencias/exp04ef1b/`. O `sal` é
+ * do "Gerar outra" (ADR-147): a mesma descrição precisa de OUTRO arquivo, senão
+ * a imagem recusada voltaria do bucket.
+ */
+export function nomeDaImagem(descricao: string, sal?: string): string {
+  const base = `${VERSAO_DO_PEDIDO_DE_IMAGEM}|${descricao.trim()}`;
+  const hash = createHash("sha256")
+    .update(sal ? `${base}|${sal}` : base)
+    .digest("hex");
   return `jornal/${hash.slice(0, 32)}.webp`;
 }
 
@@ -97,6 +113,57 @@ export class MidiaDaExp04ef1bService {
       emPreparo.delete(pacote.id);
     });
     emPreparo.set(pacote.id, trabalho);
+    return trabalho;
+  }
+
+  /**
+   * "GERAR OUTRA" (ADR-147): o professor viu a imagem de UMA notícia e ela não
+   * serve. Arquivo NOVO (o `sal`), cobrado na quota como qualquer imagem. A URL
+   * nova entra em `midia` e a aprovação antiga deixa de casar: aquela notícia
+   * fica sem imagem para a turma até o novo OK — as outras continuam.
+   *
+   * Vale também na atividade em andamento: a imagem que a turma já via some
+   * daquele cartão até o professor aprovar a nova.
+   */
+  async regerar(
+    escolaId: string,
+    turmaId: string,
+    professorId: string | undefined,
+    usuarioId: string,
+    perfil: Perfil,
+    pacoteId: string,
+    noticiaId: IdDeNoticia,
+  ): Promise<ImagemRegerada> {
+    const pacote = await this.jornal.pacoteParaMidia(escolaId, turmaId, professorId, pacoteId);
+    const noticia = noticiasQuePedemImagem(pacote.noticias).find((n) => n.id === noticiaId);
+    if (!noticia?.descricaoImagem) throw erroDeJogo("noticia-sem-imagem");
+
+    const chave = `${pacote.id}:${noticiaId}`;
+    const emCurso = regerando.get(chave);
+    if (emCurso) return emCurso;
+    const descricao = noticia.descricaoImagem;
+    const trabalho = (async () => {
+      if (!(await this.quota.temSaldo(escolaId, usuarioId, perfil))) throw erroDeJogo("sem-saldo-de-ia");
+      let bytes: Buffer;
+      try {
+        bytes = await this.ia.generateImage(promptDaImagem(descricao), { proporcao: "16:9" });
+      } catch {
+        /* Sem `err` no log, pelo mesmo motivo do laço: a descrição é da professora. */
+        logger.warn({ codigo: "exp04ef1b-midia-falhou", escolaId, noticia: noticiaId }, "Gerar outra falhou");
+        throw erroDeJogo("ia-indisponivel");
+      }
+      const url = await this.assets.salvarMidiaDeExperiencia({
+        expId: EXP_ID,
+        nome: nomeDaImagem(descricao, randomUUID()),
+        bytes,
+        contentType: "image/webp",
+        imagem: { ...TAMANHO_DA_IMAGEM },
+      });
+      await this.quota.consumir(escolaId, usuarioId, CUSTO_ESTIMADO_POR_IMAGEM);
+      await this.jornal.registrarMidia(escolaId, pacote.id, noticiaId, url);
+      return { pacoteId: pacote.id, noticiaId, url };
+    })().finally(() => regerando.delete(chave));
+    regerando.set(chave, trabalho);
     return trabalho;
   }
 

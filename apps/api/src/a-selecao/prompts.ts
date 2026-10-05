@@ -42,7 +42,7 @@ Diretrizes obrigatórias:
 - "tag_fonte" (até 35 caracteres) é quem o post ouviu ("Secretaria de Obras", "Moradora do bairro").
 - "tag_enquadramento" (até 35 caracteres) é o ÂNGULO DA IMAGEM: o que a foto enquadra ("Maquete digital do projeto", "Balcão vazio com tapumes"). Nunca o nome da lente.
 - "autoridade_citada" (até 60 caracteres) é a pessoa ou o órgão citado na legenda, com nome fictício.
-- "comentarios_destaque" são 2 comentários curtos de leitores, até 140 caracteres cada, sem ofensa.
+- "comentarios_destaque" são 2 comentários curtos de leitores, cada um com "autor" e "mensagem". O "autor" é um apelido FICTÍCIO de usuário de rede social, coerente com quem comenta (um morador, uma comerciante, um ciclista): só minúsculas, números, ponto e sublinhado, de 3 a 24 caracteres, sem @, sem nome e sobrenome de pessoa real e nunca o perfil de um veículo. A "mensagem" tem até 140 caracteres, sem ofensa.
 - Sem partidarismo, sem nome de político real, sem dado pessoal real.
 
 Além dos posts, escreva o trecho de um PODCAST que recapitula a cobertura depois da aula, falado por dois jovens educadores (Lucas e Clara) para estudantes de 11 a 13 anos. São três falas curtas, cada uma de 15 a 45 palavras, em linguagem falada e natural:
@@ -126,8 +126,15 @@ export const SCHEMA_DO_PREPARO: AiJsonSchema = {
           comentarios_simulados_count: { type: "number", description: "Inteiro de 2 a 150." },
           comentarios_destaque: {
             type: "array",
-            items: { type: "string" },
-            description: "Exatamente 2 comentários curtos de leitores.",
+            items: {
+              type: "object",
+              required: ["autor", "mensagem"],
+              properties: {
+                autor: { type: "string", description: "Apelido fictício de leitor, sem @: minúsculas, números, ponto e sublinhado." },
+                mensagem: { type: "string", description: "O comentário, até 140 caracteres." },
+              },
+            },
+            description: "Exatamente 2 comentários curtos de leitores, com o autor de cada um.",
           },
         },
       },
@@ -239,13 +246,6 @@ export const SCHEMA_DO_CANAL_A: AiJsonSchema = {
     motivo: { type: "string", enum: [...MOTIVOS_DO_CANAL_A] },
   },
 };
-
-/**
- * Teto de saída do Canal A. A resposta é `{"nivel":"…","motivo":"…"}`, uns 20
- * tokens; o teto baixo é a trava de custo por estudante — 30 crianças às oito
- * da manhã, cada uma uma chamada.
- */
-export const MAX_TOKENS_DO_CANAL_A = 64;
 
 /** Tira os marcadores `<<<` e `>>>` de um texto que vai entrar delimitado. */
 export function semDelimitadores(texto: string): string {

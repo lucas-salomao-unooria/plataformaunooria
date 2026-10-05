@@ -6,8 +6,8 @@ import type { FichaPedagogica } from "./tipos";
  *
  *   - **EF05CO08** pela SELEÇÃO do Mural — marcador de AÇÃO gravado no
  *     `POST /mural`, na mesma transação do latch. Só três verdadeiras atingem
- *     (`quem-mandou-isso/regras/evidencia.ts#nivelCO08`), e a marca só entra na
- *     primeira vez que a criança fecha o Mural com aquele pacote (ADR-120).
+ *     (`quem-mandou-isso/regras/evidencia.ts#nivelCO08`), e toda rodada a mede
+ *     de novo, também no mesmo pacote (ADR-145).
  *   - **EF05CO03** pela P1 do PO: tom não é veracidade — separar os dois eixos.
  *   - **EF05CO04** pela P2 do PO: reconhecer a regra completa (condição
  *     verificável, ação concreta e sequência). O CRIAR é o Se/Então da Etapa 6,
@@ -29,14 +29,33 @@ export const FICHA_EXP05EF1B: FichaPedagogica = {
   expId: "exp05ef1b",
   versao: 3,
   habilidades: [
-    { codigo: "EF05CO08", marcadores: [{ id: "selecao-do-mural", tipo: "acao" }] },
+    {
+      codigo: "EF05CO08",
+      marcadores: [{ id: "selecao-do-mural", tipo: "acao" }],
+      criterios: {
+        atingiu: "Encaminha ao Mural da Turma as 3 mensagens verdadeiras.",
+        em_processo: "Encaminha 2 mensagens verdadeiras e 1 falsa.",
+        nao_atingiu: "Encaminha 2 ou 3 mensagens falsas.",
+        observacao: "Medida em toda rodada; o resultado é a melhor rodada.",
+      },
+    },
     {
       codigo: "EF05CO03",
       marcadores: [{ id: "pergunta-tom-e-veracidade", tipo: "multipla_escolha", perguntaId: "p1" }],
+      criterios: {
+        atingiu: "Na 1ª pergunta, responde que o tom não diz se a mensagem é verdadeira: ela pode ser séria e falsa, ou exagerada e verdadeira.",
+        em_processo: "Na 1ª pergunta, desconfia menos da mensagem séria, mas ainda acha bom checar.",
+        nao_atingiu: "Na 1ª pergunta, confia na mensagem porque ela parece séria e organizada.",
+      },
     },
     {
       codigo: "EF05CO04",
       marcadores: [{ id: "pergunta-regra-condicional", tipo: "multipla_escolha", perguntaId: "p2" }],
+      criterios: {
+        atingiu: "Na 2ª pergunta, escolhe a regra completa: uma condição que dá para conferir e uma ação concreta antes de encaminhar.",
+        em_processo: "Na 2ª pergunta, escolhe uma regra vaga, sem ação concreta (\"tomo mais cuidado\").",
+        nao_atingiu: "Na 2ª pergunta, escolhe encaminhar sempre, sem regra nenhuma.",
+      },
     },
   ],
   perguntas: [

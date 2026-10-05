@@ -102,19 +102,11 @@ export function QuemMandouOPacote({ dados }: { dados: MaterialDoProfessor | null
         </ol>
       </Card>
 
-      <Card variant="elevated" title="O fim da missão: a regra e as duas perguntas da Nina">
+      <Card variant="elevated" title="O fim da missão: a reflexão com as duas perguntas da Nina">
         <div className="flex flex-col gap-3 text-[14px] leading-relaxed text-unooria-neutral-800">
           <p>
-            <strong className="text-unooria-neutral-950">O desafio do tio</strong>, na tela da Unooria,
-            antes da regra Se/Então:
-          </p>
-          <blockquote className="border-l-2 border-unooria-neutral-300 pl-3">{dados.textos.tio}</blockquote>
-          <p className="text-[13px]">
-            <span className="text-unooria-neutral-500">O “Se” que a criança escolhe:</span>{" "}
-            {dados.opcoes.condicoes.map((c) => c.rotulo).join(" · ")}
-          </p>
-          <p className="text-[13px]">
-            <span className="text-unooria-neutral-500">Ao enviar a regra:</span> {dados.textos.confirmacaoDaRegra}
+            Quando você aperta Liberar Reflexão, cada criança volta ao chat da Nina e responde a duas
+            perguntas de múltipla escolha. São elas que registram a EF05CO03 e a EF05CO04.
           </p>
 
           {dados.perguntasDeEvidencia.map((pergunta) => (

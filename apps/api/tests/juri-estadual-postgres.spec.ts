@@ -650,12 +650,12 @@ describe("os pacotes, a cadeia, Mariana e as enquetes", () => {
     expect(SessaoSchema.parse(await entrar(ids.ana)).concluida).toBe(true);
   });
 
-  test("depois de zerar: o resolvedor devolve `null`, a rodada 2 abre limpa, e quem já foi avaliada não é marcada de novo", async () => {
+  test("depois de zerar: o resolvedor devolve `null`, a rodada 2 abre limpa, e quem já foi avaliada é medida de novo (ADR-145)", async () => {
     expect(await service.zerar(ESCOLA, ids.turma, ids.professora)).toMatchObject({ rodada: 2, etapa: "exploracao" });
     expect(await prisma.comTenancy((tx) => service.contextoDaAtividade(tx, ESCOLA, ids.ana), ESCOLA)).toBeNull();
     expect(await entrar(ids.ana)).toMatchObject({ rodada: 2, passo: "credencial", voto: null });
     await ateOsPacotes(ids.ana);
-    expect((await marcasDe("auditoria", ids.ana)).map((m) => m.rodada)).toEqual([1]);
+    expect((await marcasDe("auditoria", ids.ana)).map((m) => m.rodada).sort()).toEqual([1, 2]);
     expect(await prisma.exp06ef1bSessao.count({ where: { escolaId: ESCOLA, estudanteId: ids.ana } })).toBe(2);
   });
 

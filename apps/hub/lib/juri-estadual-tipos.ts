@@ -521,6 +521,38 @@ export function aulaEmAndamento(p: Pick<PainelDoJuri, "etapa" | "resumo">): bool
   return !(p.etapa === "galeria" && p.resumo.total > 0 && p.resumo.concluiram >= p.resumo.total);
 }
 
+/** Quantas linhas já passaram de `passo` — o que o resumo não conta, a folha diz. */
+function passaramDe(linhas: readonly Pick<LinhaDoPainel, "passo">[], passo: PassoDoEstudante): number {
+  const marco = PASSOS.indexOf(passo);
+  return linhas.filter((l) => PASSOS.indexOf(l.passo) > marco).length;
+}
+
+/**
+ * Mudou algo que a EVIDÊNCIA registra (ADR-146)? As três ações da ficha são
+ * marcadas na MESMA transação do passo que o painel mostra: a EF06CO01 no
+ * latch da revisão do voto (`revisaram`), a EF06CO07 quando a curtida se
+ * remonta (a linha sai de `pacotes`) e a EF06CO03 quando a cadeia se monta (sai
+ * de `cadeia`) — e as enquetes vêm antes do crachá (`concluiram`). Pacotes e
+ * cadeia não têm contador no resumo, por isso a conta é sobre o passo de cada
+ * linha. A atividade troca com um pacote novo ou uma rodada nova. Só nesses
+ * casos o painel da aula relê a página inteira, para o painel de habilidades
+ * acompanhar sem o professor apertar F5. É o mesmo desenho da exp05ef1b
+ * (`mudouAEvidencia` em `quem-mandou-regras.ts`).
+ */
+export function mudouAEvidencia(
+  antes: Pick<PainelDoJuri, "pacote" | "rodada" | "resumo" | "linhas">,
+  depois: Pick<PainelDoJuri, "pacote" | "rodada" | "resumo" | "linhas">,
+): boolean {
+  return (
+    antes.resumo.revisaram !== depois.resumo.revisaram ||
+    passaramDe(antes.linhas, "pacotes") !== passaramDe(depois.linhas, "pacotes") ||
+    passaramDe(antes.linhas, "cadeia") !== passaramDe(depois.linhas, "cadeia") ||
+    antes.resumo.concluiram !== depois.resumo.concluiram ||
+    antes.pacote.id !== depois.pacote.id ||
+    antes.rodada !== depois.rodada
+  );
+}
+
 /**
  * Alfabética pelo que a primeira célula MOSTRA — o nome da equipe, quando há
  * —, com número como número ("Equipe 2" antes de "Equipe 10"). Nunca por

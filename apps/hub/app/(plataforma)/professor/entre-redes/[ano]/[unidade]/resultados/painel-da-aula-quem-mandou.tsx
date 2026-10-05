@@ -30,9 +30,6 @@ import {
   mudouAEvidencia,
   quadranteDe,
   rotuloDaOpcao,
-  CRITERIO_DA_RUBRICA,
-  HABILIDADE_DA_RUBRICA,
-  type RubricaDaTurma,
 } from "@/lib/quem-mandou-regras";
 import {
   ROTULO_DA_FASE,
@@ -46,7 +43,6 @@ import {
 } from "@/lib/quem-mandou-tipos";
 
 import { EquipeNaLinha } from "./equipe-na-linha";
-import { RubricaDaRegra } from "./rubrica-da-regra";
 import { TermometroQuemMandou } from "./termometro-quem-mandou";
 
 const SEM_REDE = "A conexão falhou. Confira a internet e tente de novo.";
@@ -76,7 +72,7 @@ const CONFIRMACAO: Readonly<Record<AcaoDoGate, { titulo: string; texto: string }
   liberar_reflexao: {
     titulo: "Liberar a reflexão?",
     texto:
-      "O aplicativo de mensagens se fecha e cada um monta a própria regra Se/Então; depois, responde às duas perguntas da Nina. Não dá para desfazer — libere depois da roda de conversa.",
+      "Cada um volta ao chat da Nina e responde às duas perguntas finais, que registram a EF05CO03 e a EF05CO04. Não dá para desfazer — libere depois da roda de conversa.",
   },
 };
 
@@ -107,18 +103,15 @@ export function PainelDaAulaQuemMandou({
   mensagens,
   opcoes,
   podeConduzir,
-  rubrica,
 }: {
   turmaId: string;
   inicial: PainelDaTurma;
   /** As mensagens do pacote ATIVO, para nomear as escolhas da folha (vazio se não houver). */
   mensagens: readonly MensagemDoPacote[];
-  /** Os rótulos da enquete e do `Se`, como a criança os leu (vêm da api). */
+  /** Os rótulos da enquete, como a criança os leu (vêm da api). */
   opcoes: OpcoesDaMissao;
   /** Só o professor aperta os botões (a api recusaria o resto). */
   podeConduzir: boolean;
-  /** A rubrica do Se/Então desta rodada (ADR-120) — `null` para quem não classifica. */
-  rubrica?: RubricaDaTurma | null;
 }) {
   const router = useRouter();
   const [, transicionar] = useTransition();
@@ -220,11 +213,10 @@ export function PainelDaAulaQuemMandou({
             />
           ) : null}
 
-          <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-5">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <MetricCard title="Entraram no grupo" value={deQuantos(progresso.entraram)} />
             <MetricCard title="Confirmaram o Mural" value={deQuantos(progresso.confirmaram)} />
             <MetricCard title="Votaram na enquete" value={deQuantos(progresso.votaram)} />
-            <MetricCard title="Enviaram a regra" value={deQuantos(progresso.refletiram)} />
             <MetricCard title="Concluíram" value={deQuantos(progresso.concluiram)} />
           </div>
           {porComputador ? <p className="text-[12px] text-unooria-neutral-600">{AVISO_POR_COMPUTADOR}</p> : null}
@@ -302,14 +294,7 @@ export function PainelDaAulaQuemMandou({
         </Card>
       ) : null}
 
-      <FolhaDaTurma
-        turmaId={turmaId}
-        linhas={painel.linhas}
-        mensagens={mensagens}
-        opcoes={opcoes}
-        porComputador={porComputador}
-        rubrica={podeConduzir ? (rubrica ?? null) : null}
-      />
+      <FolhaDaTurma linhas={painel.linhas} mensagens={mensagens} opcoes={opcoes} porComputador={porComputador} />
 
       <Modal
         isOpen={confirmando !== null}
@@ -395,19 +380,15 @@ export function PainelDaAulaQuemMandou({
  * papel.
  */
 function FolhaDaTurma({
-  turmaId,
   linhas,
   mensagens,
   opcoes,
   porComputador,
-  rubrica,
 }: {
-  turmaId: string;
   linhas: readonly LinhaDoPainel[];
   mensagens: readonly MensagemDoPacote[];
   opcoes: OpcoesDaMissao;
   porComputador: boolean;
-  rubrica: RubricaDaTurma | null;
 }) {
   const colunas: TableColumn<LinhaDoPainel>[] = [
     {
@@ -459,38 +440,6 @@ function FolhaDaTurma({
       render: (_, linha) => rotuloDaOpcao(opcoes.motivos, linha.motivo) ?? "—",
     },
     {
-      key: "reflexao",
-      title: "Regra Se/Então Construída",
-      minWidth: 280,
-      render: (_, linha) => {
-        if (!linha.reflexao) return "—";
-        const se = rotuloDaOpcao(opcoes.condicoes, linha.reflexao.se);
-        return linha.reflexao.entao !== null ? (
-          <div className="max-w-[320px]">
-            <span className="block text-unooria-neutral-800">
-              Se a mensagem for {se}, então eu {linha.reflexao.entao}
-            </span>
-            {/* O CRIAR da EF05CO04 (ADR-120): só quem lê o texto classifica. */}
-            {rubrica ? (
-              <RubricaDaRegra
-                turmaId={turmaId}
-                pacoteId={rubrica.pacoteId}
-                rodada={rubrica.rodada}
-                estudanteIds={linha.equipe ? linha.equipe.membros.map((m) => m.id) : [linha.estudanteId]}
-                nome={linha.nome}
-                atual={rubrica.classificados[linha.estudanteId]}
-              />
-            ) : null}
-          </div>
-        ) : (
-          <span className="block max-w-[320px] text-unooria-neutral-700">
-            Se a mensagem for {se}, …{" "}
-            <span className="text-[11px] text-unooria-neutral-500">(o texto fica só com quem leciona na turma)</span>
-          </span>
-        );
-      },
-    },
-    {
       key: "tempoFeedSegundos",
       title: "Tempo no grupo",
       align: "right",
@@ -503,11 +452,7 @@ function FolhaDaTurma({
       <div className="flex flex-col gap-3" data-folha>
         <SectionHeader
           title="Diário de Bordo — Relatório Formativo da Turma"
-          description={
-            rubrica
-              ? `Para a sua tela, não para o projetor: aqui estão os nomes e a regra que cada um escreveu. Ao lado da regra, classifique a ${HABILIDADE_DA_RUBRICA} — Atingiu: ${CRITERIO_DA_RUBRICA.atingiu}; Em processo: ${CRITERIO_DA_RUBRICA.em_processo}; Não atingiu: ${CRITERIO_DA_RUBRICA.nao_atingiu}. O seu clique vale sobre a pergunta da Nina.`
-              : "Para a sua tela, não para o projetor: aqui estão os nomes e a regra que cada um escreveu."
-          }
+          description="Para a sua tela, não para o projetor: aqui estão os nomes e o que cada um encaminhou. O nível de cada habilidade fica no painel de habilidades, abaixo."
         />
         <ScrollBar orientation="both" autoHide className="tabela-rolavel">
           <Table<LinhaDoPainel>

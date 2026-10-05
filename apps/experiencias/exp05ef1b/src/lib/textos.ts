@@ -8,9 +8,8 @@
  *   que o professor aprovou, e corrigir uma palavra dele não pode exigir
  *   republicar um caminho imutável no bucket;
  * - as falas da Nina que dependem do servidor (o convite leva o `{tema}`), o
- *   desafio do tio, o encerramento, a confirmação da regra, as falas antes das
- *   perguntas, os rótulos das opções (motivos e condições) e o callback do
- *   motivo — a api é quem sabe o motivo gravado;
+ *   encerramento, as falas antes das perguntas, os rótulos dos motivos e o
+ *   callback do motivo — a api é quem sabe o motivo gravado;
  * - o enunciado e as alternativas das perguntas de evidência — a ficha (E14) é
  *   dona deles, e o nível de cada alternativa nunca desce.
  *
@@ -51,6 +50,8 @@ export const TEXTOS = {
 
   // ─────────────────────────────────────────────── Etapa 2: o grupo (clone)
   grupo: {
+    /** [novo] O nome acessível do "digitando…" de um colega no grupo. */
+    digitando: (nome: string) => `${nome} está digitando`,
     /** `e2.rotulo.grupo_subtitulo` — "você e mais 24 participantes". */
     participantes: (outros: number) =>
       outros === 1 ? "você e mais 1 participante" : `você e mais ${outros} participantes`,
@@ -83,8 +84,17 @@ export const TEXTOS = {
     fechar: "Fechar",
     /** `e2.acessibilidade.modal_alt_comunicado` */
     altDoComunicado: "Imagem de comunicado escolar em papel timbrado com carimbo e assinatura",
+    /** [novo] O `alt` de cada desenho de imagem (`regras.ts#estiloDaImagem`). */
+    alt: {
+      comunicado: "Imagem de comunicado escolar em papel timbrado com carimbo e assinatura",
+      cartaz: "Imagem de cartaz colorido com um aviso em letras grandes",
+      print: "Imagem de print de tela de uma publicação na internet",
+      bilhete: "Imagem de bilhete escrito à mão em papel pautado",
+    },
     /** `e2.feedback.midia_reserva_texto` — a transcrição do comunicado. */
     transcricao: (texto: string) => `Texto do comunicado: ${texto}`,
+    /** [novo] A transcrição dos outros desenhos, que não são comunicado. */
+    transcricaoDaImagem: (texto: string) => `Texto da imagem: ${texto}`,
   },
 
   folha: {
@@ -182,35 +192,6 @@ export const TEXTOS = {
     trava: "Participe da conversa na sala. O professor liberará a atividade final em instantes.",
   },
 
-  // ─────────────────────────────────────── Etapa 6: a regra (casca Unooria)
-  reflexao: {
-    /** `e6.instrucao.desafio_comando` — o desafio do tio vem da api (`textos.nina.tio`). */
-    comando: "Monte sua regra de decisão antes de encaminhar:",
-    /** `e6.rotulo.dropdown_rotulo` — as condições vêm da api (`opcoes.condicoes`). */
-    se: "Se a mensagem for...",
-    /** `e6.rotulo.campo_entao` */
-    entao: "...então eu...",
-    /** `e6.rotulo.placeholder_entao` */
-    placeholder: "digite a ação de checagem que você executa antes de encaminhar...",
-    /**
-     * `e6.feedback.contador_caracteres` — "Mínimo de 15 caracteres (faltam X
-     * caracteres)". O singular é concordância, não copy nova.
-     */
-    contador: (minimo: number, faltam: number) =>
-      faltam === 1
-        ? `Mínimo de ${minimo} caracteres (falta 1 caractere)`
-        : `Mínimo de ${minimo} caracteres (faltam ${faltam} caracteres)`,
-    /** `e6.erro.entropia_baixa` — a recusa `entao-sem-sentido` da api, na voz da copy. */
-    semSentido:
-      "Explique sua regra de checagem com mais detalhes para que Nina consiga entender o que fazer.",
-    /** `e6.rotulo.botao_salvar` */
-    salvar: "Salvar e Enviar Reflexão",
-    /** [novo] Da confirmação da regra de volta ao chat da Nina, para as perguntas. */
-    continuar: "Continuar",
-    /** [novo] A falha de rede no envio da regra, na voz da plataforma. */
-    naoEnviou: "Não foi possível enviar sua regra agora. Verifique a conexão e tente de novo.",
-  },
-
   perguntas: {
     /** [novo] O rótulo do voto já enviado na enquete da Nina (o `Poll` desenha o tique). */
     respostaEnviada: "Resposta enviada",
@@ -219,16 +200,6 @@ export const TEXTOS = {
   conclusao: {
     /** `e6.rotulo.conclusao_titulo` */
     titulo: "Missão Concluída",
-    /** `e6.rotulo.card_regra_titulo` */
-    cardTitulo: "Sua Regra Pessoal de Checagem",
-    /** O card do wireframe E6-ALU-02: "SE a mensagem for …, ENTÃO eu …". */
-    regra: (se: string, entao: string) => {
-      const acao = entao.trim();
-      const fecho = /[.!?…]$/u.test(acao) ? "" : ".";
-      return `SE a mensagem for ${se}, ENTÃO eu ${acao}${fecho}`;
-    },
-    /** `e6.feedback.conclusao_sucesso` */
-    sucesso: "Sua regra foi registrada com sucesso e enviada ao professor.",
     /** `e6.instrucao.conclusao_rodape` */
     rodape: "Você completou todas as etapas desta missão no Unooria Hub.",
   },

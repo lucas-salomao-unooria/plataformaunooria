@@ -1168,7 +1168,8 @@ nenhuma sequência: as chaves são \cd{uuid} ou compostas, e o \cd{GRANT} à
   \cd{confirmado\_em}, \cd{votou\_em}, \cd{reflexao\_em}, \cd{concluido\_em} ---,
   o motivo votado, o \cd{tempo\_feed\_segundos} e a \cd{versao\_instrumento}.
   \textbf{Não tem coluna de passo} nem de pontuação.\\
-\zebra \cd{exp05ef1b\_reflexoes} & A regra Se/Então, 1:1 com a sessão: a
+\zebra \cd{exp05ef1b\_reflexoes} & \textbf{Histórico desde a \adrr{ADR-145}}:
+  nenhuma rota escreve mais nela. A regra Se/Então, 1:1 com a sessão: a
   condição (\cd{condicional\_se}) e o \enquote{Então} (\cd{acao\_entao}, 15 a
   240 caracteres) --- \textbf{texto livre escrito por menor de idade}. Tabela à
   parte de propósito: não vai a \emph{log} (\cd{acao\_entao}, \cd{acaoEntao} e
@@ -1247,7 +1248,11 @@ nenhuma sequência: as chaves são \cd{uuid} ou compostas, e o \cd{GRANT} à
   geradas, por notícia), a \cd{origem} (\cd{padrao} $|$ \cd{ia}), o carimbo de
   aprovação e os contadores da telemetria do professor (\cd{geracoes},
   \cd{tokens\_usados}, \cd{painel\_vistas}). \cd{ativo} marca o que a turma
-  usa.\\
+  usa. \cd{midia\_aprovada} (\cd{JSONB}, \cd{\{n1: url\}}, \emph{CHECK} de
+  objeto) guarda a URL que o professor APROVOU por notícia (\adrr{ADR-147}): a
+  imagem só chega ao estudante quando é a mesma de \cd{midia}, e o
+  \enquote{Gerar outra} troca \cd{midia} e deixa só aquela notícia à espera do
+  novo OK.\\
 \zebra \cd{exp04ef1b\_gates\_turma} & O \textbf{relógio da turma}:
   \cd{exploracao} $|$ \cd{resultado} $|$ \cd{revisao}, o pacote em andamento, a
   \textbf{rodada} e os carimbos dos dois portões. Chave
@@ -1406,7 +1411,9 @@ Retenção & A da vigência contratual, sem rotina de expurgo (\adrr{ADR-13}).\\
   (\cd{padrao} $|$ \cd{ia}). Um índice único parcial deixa só uma cobertura
   \cd{ativa} por turma; \emph{CHECK} cobra os 12 posts e o \cd{aprovada\_por} da
   cobertura de IA. \cd{podcast} guarda as três falas do Bloco 2 do podcast de
-  recapitulação no tema dela (nulo = as do roteiro aprovado, \adrr{ADR-119}).\\
+  recapitulação no tema dela (nulo = as do roteiro aprovado, \adrr{ADR-119}).
+  \cd{imagens\_aprovadas\_em} é a segunda fase da aprovação (\adrr{ADR-146}):
+  nulo, a cobertura existe mas não vai ao ar.\\
 \zebra \cd{exp07ef1b\_gates\_turma} & O relógio da turma: \cd{exploracao} $|$
   \cd{mural} $|$ \cd{fichas} $|$ \cd{explicacao}, mais a cobertura e a
   \textbf{rodada}. Zerar incrementa a rodada, não apaga.\\
@@ -1789,6 +1796,26 @@ decisão \emph{futura}, com DPA e \emph{k}-anonimato --- e não sai de um
   passo \cd{galeria} recusado), e o \cd{GRANT} à \emph{role} de \emph{runtime},
   guardado. Os nomes de índice e de \cd{UNIQUE} são dados à mão, pelo mesmo
   motivo do Jornal.\\
+\zebra \arq{20261005120000\_\B{}exp05ef1b\_\B{}perguntas\_\B{}sao\_\B{}a\_\B{}reflexao} &
+  O \emph{latch} do fim da exp05ef1b (\adrr{ADR-145}): o \emph{CHECK}
+  \cd{exp05ef1b\_sessoes\_concluido\_check} passa a exigir o voto
+  (\cd{votou\_em}) em vez da regra enviada, porque a regra Se/Então saiu e as
+  perguntas da Nina são a reflexão. \cd{reflexao\_em} e
+  \cd{exp05ef1b\_reflexoes} ficam, só pelo histórico. Sem RLS nova.\\
+\arq{20261005150000\_\B{}exp07ef1b\_\B{}imagens\_\B{}aprovadas} & A coluna
+  \cd{imagens\_aprovadas\_em} em \cd{exp07ef1b\_coberturas} (\adrr{ADR-146}),
+  \cd{TIMESTAMPTZ} nula: a segunda fase da aprovação, sem a qual a atividade não
+  vai ao ar. As coberturas que já existiam entram aprovadas, com o carimbo da
+  última alteração --- nenhuma turma trava por uma regra posterior. Sem RLS
+  nova.\\
+\zebra \arq{20261005190000\_\B{}exp04ef1b\_\B{}midia\_\B{}aprovada} & A coluna
+  \cd{midia\_aprovada} em \cd{exp04ef1b\_pacotes} (\adrr{ADR-147}),
+  \cd{JSONB NOT NULL DEFAULT '\{\}'} com o \emph{CHECK}
+  \cd{jsonb\_typeof = 'object'}: a URL aprovada por notícia, e não um carimbo
+  do pacote, porque o Jornal gera imagem também na atividade no ar. Os pacotes
+  que já existiam entram com \cd{midia\_aprovada = midia} --- nenhuma turma
+  perde imagem por uma regra posterior. Sem RLS nova: a coluna herda a da
+  tabela.\\
 \bottomrule
 \end{tabularx}
 

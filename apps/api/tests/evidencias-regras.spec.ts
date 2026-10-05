@@ -292,8 +292,13 @@ const fichaBoa = (): FichaPedagogica => ({
         { id: "acao-1", tipo: "acao" },
         { id: "pergunta-1", tipo: "multipla_escolha", perguntaId: "p1" },
       ],
+      criterios: { atingiu: "a", em_processo: "b", nao_atingiu: "c" },
     },
-    { codigo: "EF08CO02", marcadores: [{ id: "pergunta-1b", tipo: "multipla_escolha", perguntaId: "p1" }] },
+    {
+      codigo: "EF08CO02",
+      marcadores: [{ id: "pergunta-1b", tipo: "multipla_escolha", perguntaId: "p1" }],
+      criterios: { atingiu: "a", em_processo: "b", nao_atingiu: "c" },
+    },
   ],
   perguntas: [
     {
@@ -323,8 +328,8 @@ describe("a ficha", () => {
       expId: "exp-01-instanooria",
       versao: 0,
       habilidades: [
-        { codigo: "EF99XX99", marcadores: [{ id: "m", tipo: "acao" }] },
-        { codigo: "ef08co01", marcadores: [] },
+        { codigo: "EF99XX99", marcadores: [{ id: "m", tipo: "acao" }], criterios: { atingiu: "a", em_processo: "b", nao_atingiu: "c" } },
+        { codigo: "ef08co01", marcadores: [], criterios: { atingiu: "a", em_processo: " ", nao_atingiu: "c" } },
         {
           codigo: "EF08CO02",
           marcadores: [
@@ -332,6 +337,7 @@ describe("a ficha", () => {
             { id: "sem-pergunta", tipo: "multipla_escolha", perguntaId: "p-fantasma" },
             { id: "acao-com-pergunta", tipo: "acao", perguntaId: "p1" },
           ],
+          criterios: { atingiu: "a", em_processo: "b", nao_atingiu: "c" },
         },
       ],
       perguntas: [
@@ -353,6 +359,7 @@ describe("a ficha", () => {
       "EF99XX99 não é um código da BNCC",
       "ef08co01 não é um código da BNCC",
       "ef08co01 não tem marcador",
+      'ef08co01 está sem o critério de "em_processo"',
       'o marcador "m" aparece mais de uma vez',
       'o marcador "sem-pergunta" aponta para uma pergunta que não existe',
       'o marcador de ação "acao-com-pergunta" não pode ter pergunta',
@@ -372,7 +379,7 @@ describe("a ficha", () => {
   test("habilidade repetida e ficha sem habilidade", () => {
     const repetida: FichaPedagogica = {
       ...fichaBoa(),
-      habilidades: [...fichaBoa().habilidades, { codigo: "EF08CO01", marcadores: [{ id: "outro", tipo: "acao" }] }],
+      habilidades: [...fichaBoa().habilidades, { codigo: "EF08CO01", marcadores: [{ id: "outro", tipo: "acao" }], criterios: { atingiu: "a", em_processo: "b", nao_atingiu: "c" } }],
     };
     expect(validarFicha(repetida, BNCC).some((e) => e.includes("EF08CO01 aparece mais de uma vez"))).toBe(true);
     expect(

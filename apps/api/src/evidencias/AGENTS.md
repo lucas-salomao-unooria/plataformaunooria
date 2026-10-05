@@ -22,8 +22,7 @@ legenda numa transação SÓ DELA, depois do latch da publicação: a IA leva at
 "Não avaliado", e o professor decide.
 **A terceira é o Jornal da Escola (`exp04ef1b`)**: `fichas/exp04ef1b.ts`
 (EF15CO04 por `pistas`, EF15CO02 por `chave`, EF04CO08 por `edicao-2`, `p1` e
-`p2`), as três ações marcadas DENTRO das transações dos latches e da Chave, cada
-uma depois de `jaAvaliadaAntes` (ADR-120).
+`p2`), as três ações marcadas DENTRO das transações dos latches e da Chave.
 
 Três tabelas de PLATAFORMA (sem prefixo, como `liberacoes` e `equipes`), todas
 com `escola_id` + RLS forçada:
@@ -93,11 +92,10 @@ Missão com ficha faz TRÊS coisas, no mesmo trabalho:
 3. **A marca**: `EvidenciasService.marcar(tx, {...})` DA TRANSAÇÃO dela, no
    ponto em que a missão já sabe o que a criança fez. Recebe o `tx` e não abre
    `comTenancy`: a marca cai junto se a jogada cair.
-   **Ação que a revelação entrega** (a seleção do Mural da exp05ef1b) pergunta
-   antes `jaAvaliadaAntes(tx, {...})`: se a criança já tem nível daquele
-   marcador numa rodada anterior da mesma atividade (qualquer origem, menos
-   `nao_participou`), a rodada nova mediria memória, e a missão não marca
-   (ADR-120).
+   **Toda rodada mede tudo de novo** (ADR-145): não há "já foi avaliada
+   antes". A ADR-120 pulava a ação que a revelação entrega na rodada nova do
+   mesmo pacote; o PO pediu a medição inteira, e a melhor rodada por
+   habilidade já impede que a repetição derrube o resultado.
 
 `registrarFicha` existe **só para teste** (a suíte registra uma ficha da
 exp08ef1b em tempo de execução). A ficha de uma missão real vai no registro

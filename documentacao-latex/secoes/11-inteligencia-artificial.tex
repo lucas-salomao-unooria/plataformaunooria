@@ -40,8 +40,11 @@ Preparo do pacote & exp04ef1b, \arq{src/jornal-escola/} &
   O texto das oito notícias sobre o tema do professor, num \textbf{molde
   sorteado no servidor} (que notícia é de que meio e que papel tem no
   gabarito), e as imagens a partir da descrição de cada uma. \textbf{Nada}
-  chega à turma sem a homologação; sem saldo (429) ou sem provedor (503), o hub
-  oferece o banco padrão.\\
+  chega à turma sem a homologação, e nenhuma imagem sem o OK do professor,
+  imagem por imagem (\adrr{ADR-147}); sem saldo (429) ou sem provedor (503)
+  para o texto, o hub oferece o banco padrão. A imagem não é opcional: sem a
+  IA de imagem, a atividade não vai ao ar (a de mesma descrição que já está no
+  \emph{bucket} entra sem custo).\\
 \zebra Diagramação da página & exp04ef1b, \arq{src/jornal-escola/} &
   \textbf{Em sala}, com a quota do \emph{estudante}: UM valor de um
   \emph{enum} de três layouts, e nenhum texto. Não escolhe notícia, não
@@ -94,10 +97,12 @@ combinação. \arq{diagramacao.service.ts} roda, nesta ordem:
     diagramações a cada dez minutos, contra o toque nervoso;
   \item a \textbf{quota do perfil \cd{estudante}}, com \cd{temSaldo} antes
     (regra inviolável nº 5);
-  \item o \cd{generateJson}, com temperatura 0, \textbf{uma} tentativa e teto
-    de 32 \emph{tokens} de saída; o \emph{schema} de resposta só tem o
-    \emph{enum} dos três layouts --- não há campo de texto onde a IA escreva
-    ---, e um \cd{validar} Zod confere a saída;
+  \item o \cd{generateJson}, com temperatura 0, \textbf{uma} tentativa e
+    \textbf{sem teto de saída} (\adrr{ADR-148}): o modelo raciocina mesmo com
+    \cd{thinkingBudget: 0}, e o teto de 32 \emph{tokens} que havia cortava a
+    resposta antes do JSON (Seção~\ref{sec:ia-raciocinio}); o \emph{schema} de
+    resposta só tem o \emph{enum} dos três layouts --- não há campo de texto
+    onde a IA escreva ---, e um \cd{validar} Zod confere a saída;
   \item o \textbf{teto de tempo} de cerca de 6\,s por \cd{Promise.race}, porque o
     \emph{provider} não tem \emph{timeout};
   \item o débito em \cd{aoUsarTokens}, que cobra também a chamada que perdeu a
@@ -111,9 +116,11 @@ consequência. \textbf{Falhou qualquer passo, o modelo automático diagrama}
 manchetes curtas dão \cd{columns}, e o resto \cd{classic}. É determinístico e
 decide pela FORMA, nunca pelo gabarito, e o resultado do modelo não vai ao
 \emph{cache}. A tela não fica sabendo de onde o layout veio, e o layout não vale
-nada na correção. Em \emph{dev} e na suíte de ponta a ponta a IA é o
-\emph{mock}, e a página é sempre do modelo: a diagramação por IA só se prova com
-o Vertex.
+nada na correção. A diagramação por IA só se prova com o Vertex: com o
+\emph{mock}, a página é sempre do modelo. Por isso a suíte de ponta a ponta
+roda com a IA real e exige \cd{origem: "ia"} em toda resposta do \rota{POST
+/jornal-escola/diagramar} (\adrr{ADR-148}) --- aceitar o modelo como verde foi o
+que escondeu, até 2026-10-05, que a IA nunca diagramava.
 
 \begin{nota}
 \textbf{O preparo é do professor, e a estrutura é do servidor.} Pedir a um
@@ -425,6 +432,16 @@ orçamento pensando e não sobrava saída.
 \env{VERTEX\_THINKING\_BUDGET} (\emph{default} \cd{0}, desligado) mantém a
 paridade com o aplicativo de origem, que usava um modelo sem essa etapa;
 \cd{-1} volta ao dinâmico.
+
+\textbf{No \cd{gemini-3.7-flash}, \cd{0} não desliga o raciocínio.} Medido em
+2026-10-05: até numa resposta de um \emph{enum} ele pensa cerca de 28 a 29
+\emph{tokens}; \cd{thinkingLevel: "MINIMAL"} é recusado (400) e \cd{"LOW"}
+ainda pensa 28. Com os tetos de 32 e 64 \emph{tokens}, a diagramação do Jornal
+da Escola e a leitura da legenda da A Seleção voltavam \cd{MAX\_TOKENS} sem
+texto e caíam SEMPRE na reserva, em silêncio. As duas ficaram sem teto de saída
+(\adrr{ADR-148}); quem limita a espera é o teto de tempo, e o custo, a quota.
+\textbf{Não ponha teto de saída pequeno numa chamada com reserva}: o corte não
+aparece como erro, aparece como a reserva.
 \end{atencao}
 
 \begin{regra}

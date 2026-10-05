@@ -64,10 +64,10 @@ em silêncio.
   conta o EVT-P04.
 - **A IA em sala só DIAGRAMA** (`diagramacao.service.ts`): cache → rate limit →
   `temSaldo(estudante)` → `generateJson` (schema SÓ com o enum de layout,
-  temperatura 0, uma tentativa, 32 tokens) em `Promise.race` de ~6 s, débito no
+  temperatura 0, uma tentativa, SEM teto de saída — com 32 tokens o raciocínio do Gemini 3 cortava o JSON e caía sempre no modelo, ADR-148) em `Promise.race` de ~6 s, débito no
   `aoUsarTokens`; falhou qualquer coisa, o modelo automático
-  (`regras/layout.ts`), sem gravar cache. Fora da transação do funil. Em dev e
-  na e2e é sempre o modelo.
+  (`regras/layout.ts`), sem gravar cache. Fora da transação do funil. A e2e roda
+  com a IA real e exige `origem: "ia"` na resposta do `POST diagramar`.
 - **O preparo não esconde a falha** (`preparo.service.ts`): o molde (meio e
   papel de cada id) é SORTEADO no servidor (`regras/molde.ts`) — fixo, a turma
   que jogou um pacote saberia "a n2 é a antiga" em todos —, a IA escreve o
@@ -78,16 +78,31 @@ em silêncio.
   que usou IA conta o EVT-P02 no pacote em sala.
 - **As imagens** (`midia.service.ts`) são do professor, INCREMENTAIS (duas por
   chamada), 640×360, nome = hash da descrição em `experiencias/exp04ef1b/jornal/`,
-  gravadas com `midia || jsonb_build_object(...)`. Sem imagem, o cartão se
-  desenha pelo meio.
+  gravadas com `midia || jsonb_build_object(...)`.
+- **A imagem só chega à criança APROVADA, e a aprovação é POR IMAGEM**
+  (ADR-147): `midia_aprovada` guarda a URL que o professor aprovou por notícia,
+  e a allowlist do estudante recebe `midiaAprovada(pacote)` — só a URL atual
+  que é igual à aprovada. "Gerar outra" (`POST …/imagens/:noticiaId/regerar`,
+  arquivo NOVO com sal) troca `midia` e aquela notícia some da mesa até o novo
+  `POST …/pacotes/:p/aprovar-imagens`, que aprova SÓ as URLs que vieram no
+  corpo (as que estavam na tela) e ainda são as do pacote — a condição mora no
+  UPDATE (`midia ->> id = url`). Não é o carimbo único da A Seleção (ADR-146)
+  porque aqui se gera imagem também na atividade no ar: o carimbo apagado
+  esconderia todas de uma vez.
+- **Pôr no ar exige TODAS as que pedem imagem geradas E aprovadas**
+  (`imagensProntasParaAula`; 409 `imagens-nao-aprovadas`), só na ENTRADA no ar
+  — a que já está no ar não sai por um "Gerar outra". A imagem deixou de ser
+  opcional (decisão do Lucas, 2026-10-05): sem a IA de imagem, a atividade não
+  vai ao ar. A homologação herda as IMAGENS de mesma descrição, nunca a
+  APROVAÇÃO. Os pacotes antigos entraram aprovados (migração
+  `20261005190000`).
 
 ## A evidência (E14)
 
 A ficha é `evidencias/fichas/exp04ef1b.ts`: EF15CO04 por `pistas` (no latch da
 1ª, fase 1), EF15CO02 por `chave` (tentativas), EF04CO08 por `edicao-2` (no
-latch da 2ª), `p1` e `p2` — vale o melhor, o que afrouxa o "E" do PRD. As três
-AÇÕES perguntam antes `jaAvaliadaAntes` (ADR-120): na rodada nova do mesmo
-pacote, quem já foi avaliada viu o resultado e a Chave, e não é marcada de novo.
+latch da 2ª), `p1` e `p2` — vale o melhor, o que afrouxa o "E" do PRD. Toda
+rodada mede as três AÇÕES de novo, também no mesmo pacote (ADR-145).
 A cópia para os colegas de computador é da porta `marcar`. O resolvedor
 (`contextoDaAtividade`) devolve `null` antes de `transferencia` e fora do
 (pacote, rodada) do gate. O `gabarito`, a `consequencia` e o `pilarEmFalta` estão

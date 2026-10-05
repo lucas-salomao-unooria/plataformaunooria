@@ -58,5 +58,5 @@ export const telemetria = {
   viuOGate: (fase: GateVisto) => track("progressed", `gate:${fase}`),
 
   /** O fim. Só o TAMANHO da regra — o `Então` é texto livre de menor. */
-  concluiu: (chars: number) => track("completed", "missao:exp05ef1b", { resultado: { chars } }),
+  concluiu: () => track("completed", "missao:exp05ef1b"),
 };

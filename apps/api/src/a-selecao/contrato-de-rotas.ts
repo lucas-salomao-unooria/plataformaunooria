@@ -1,5 +1,6 @@
 import { z } from "zod";
 import {
+  AUTOR_DO_COMENTARIO_RE,
   COLEGAS_VIRTUAIS_IDS,
   ENQUADRAMENTOS,
   ID_DE_POST_RE,
@@ -100,6 +101,12 @@ export const GraficoSchema = z.object({
   destaque: z.string().trim().min(1).max(40).optional(),
 });
 
+/** Um comentário de leitor, com o autor (ADR-146): apelido fictício, sem `@`. */
+export const ComentarioDestaqueSchema = z.object({
+  autor: z.string().trim().regex(AUTOR_DO_COMENTARIO_RE),
+  mensagem: z.string().trim().min(1).max(140),
+});
+
 /**
  * Um post COMPLETO — com o gabarito. Só entra e sai por rota de professor.
  *
@@ -119,7 +126,7 @@ export const PostDaCoberturaSchema = z.object({
   tagAngulo: z.string().trim().min(2).max(60),
   curtidas: z.number().int().min(0).max(9999),
   comentarios: z.number().int().min(0).max(999),
-  comentariosDestaque: z.tuple([z.string().trim().min(1).max(140), z.string().trim().min(1).max(140)]),
+  comentariosDestaque: z.tuple([ComentarioDestaqueSchema, ComentarioDestaqueSchema]),
   grafico: GraficoSchema.optional(),
 });
 
@@ -178,7 +185,7 @@ export const PostPublicoSchema = z.object({
   legenda: z.string(),
   curtidas: z.number().int().min(0),
   comentarios: z.number().int().min(0),
-  comentariosDestaque: z.array(z.string()).length(2),
+  comentariosDestaque: z.array(z.object({ autor: z.string(), mensagem: z.string() })).length(2),
   imagem: z.object({ url: z.string().nullable(), alt: z.string() }),
   /** Só nos posts de métricas do banco curado: a tela desenha o gráfico. */
   grafico: GraficoSchema.nullable(),
@@ -378,6 +385,8 @@ export const CoberturasSchema = z.object({
       criadaEm: z.string(),
       /** A maior rodada com sessão; 0 = nunca rodou. */
       rodadas: z.number().int().min(0),
+      /** A segunda fase da aprovação passou (ADR-146)? Sem ela, a atividade não vai ao ar. */
+      imagensAprovadas: z.boolean(),
     }),
   ),
 });
@@ -411,7 +420,24 @@ export const CoberturaDetalheSchema = CoberturaResumoSchema.extend({
   rodadas: z.number().int().min(0),
   posts: z.array(PostDaCoberturaSchema),
   midia: MidiaResumoSchema,
+  /** As URLs das imagens prontas, por id de post — o professor as vê no card de cada post (ADR-146). */
+  imagens: z.record(z.string()),
+  /** Quando o professor aprovou as imagens; `null` = a segunda fase não passou, e a atividade não vai ao ar. */
+  imagensAprovadasEm: z.string().nullable(),
   podcast: FalasDoTemaSaidaSchema,
+});
+
+/** `POST :turmaId/coberturas/:coberturaId/aprovar-imagens`. */
+export const ImagensAprovadasSchema = z.object({
+  coberturaId: z.string().uuid(),
+  imagensAprovadasEm: z.string(),
+});
+
+/** `POST :turmaId/coberturas/:coberturaId/imagens/:postId/regerar` — a imagem nova de UM post. */
+export const ImagemRegeradaSchema = z.object({
+  coberturaId: z.string().uuid(),
+  postId: z.enum(IDS_DE_POST),
+  url: z.string(),
 });
 
 export const EmAndamentoSchema = z.object({

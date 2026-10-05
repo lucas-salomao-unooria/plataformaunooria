@@ -78,7 +78,7 @@ Os diagramas entidade-relacionamento estão no Capítulo~\ref{cap:dados}.
 \zebra \cd{exp08ef1b\_app\_70\_perfis\_importados} & Tenant &
   \textbf{Contrato entre duas experiências}\\
 \cd{backup\_exp04ef1b\_sessoes} & Tenant & Estado da missão do UnooTube (arquivada, \adrr{ADR-116})\\
-\zebra \cd{exp04ef1b\_pacotes} & Tenant & A ATIVIDADE do Jornal da Escola: as 8 notícias com o gabarito e a consequência, e as URLs das imagens\\
+\zebra \cd{exp04ef1b\_pacotes} & Tenant & A ATIVIDADE do Jornal da Escola: as 8 notícias com o gabarito e a consequência, as URLs das imagens e a URL que o professor aprovou por notícia (\cd{midia\_aprovada}, \adrr{ADR-147})\\
 \cd{exp04ef1b\_gates\_turma} & Tenant & A etapa da aula (os dois portões), o pacote e a rodada, por turma\\
 \zebra \cd{exp04ef1b\_sessoes} & Tenant & Uma sessão por estudante, pacote e rodada: as pistas abertas, as duas edições, o motivo e a Chave --- sem texto livre\\
 \cd{exp04ef1b\_diagramacoes} & Tenant & O \emph{cache} do layout escolhido pela IA, por pacote e combinação de vagas\\
@@ -97,7 +97,7 @@ Os diagramas entidade-relacionamento estão no Capítulo~\ref{cap:dados}.
 \zebra \cd{exp06ef1b\_pacotes} & Tenant & A ATIVIDADE do Júri Estadual de Projetos: as 4 áreas e os 16 projetos que a IA gerou e o professor aprovou, e as URLs das imagens\\
 \cd{exp06ef1b\_gates\_turma} & Tenant & A etapa da aula (a Galeria Oculta), a atividade em andamento e a rodada, por turma\\
 \zebra \cd{exp06ef1b\_sessoes} & Tenant & Uma sessão por estudante, pacote e rodada: o feed servido, as curtidas, os dois votos, a auditoria da galeria, os pacotes, a cadeia e os cartões --- sem texto livre\\
-\cd{exp07ef1b\_coberturas} & Tenant & A ATIVIDADE da A Seleção: o tema homologado, os 12 posts com o gabarito, as URLs da mídia e as três falas do podcast\\
+\cd{exp07ef1b\_coberturas} & Tenant & A ATIVIDADE da A Seleção: o tema homologado, os 12 posts com o gabarito (e os comentários com autor), as URLs da mídia, o carimbo da aprovação das imagens (\adrr{ADR-146}) e as três falas do podcast\\
 \zebra \cd{exp07ef1b\_gates\_turma} & Tenant & A etapa da aula, a cobertura e a rodada, por turma\\
 \cd{exp07ef1b\_sessoes} & Tenant & Uma sessão por estudante, cobertura e rodada: a tríade, a legenda, a matriz e o par\\
 \zebra \cd{exp07ef1b\_reflexoes} & Tenant & A reflexão (texto livre do estudante, só do professor)\\
@@ -108,8 +108,8 @@ Os diagramas entidade-relacionamento estão no Capítulo~\ref{cap:dados}.
 \cd{exp08ef4b\_gates\_turma} & Tenant & O \emph{checkpoint} do debate, por turma\\
 \zebra \cd{exp05ef1b\_pacotes} & Tenant & O pacote da turma --- as 8 mensagens com o gabarito; é a atividade da evidência\\
 \cd{exp05ef1b\_gates\_turma} & Tenant & O relógio da turma: triagem, revelação, síntese, reflexão\\
-\zebra \cd{exp05ef1b\_sessoes} & Tenant & A sessão por rodada, com os três \emph{latches} (Mural, voto, regra)\\
-\cd{exp05ef1b\_reflexoes} & Tenant & A regra Se/Então (texto livre do estudante)\\
+\zebra \cd{exp05ef1b\_sessoes} & Tenant & A sessão por rodada, com os \emph{latches} (Mural, voto, conclusão)\\
+\cd{exp05ef1b\_reflexoes} & Tenant & A regra Se/Então (texto livre do estudante); só histórico desde a \adrr{ADR-145}\\
 \zebra \cd{app\_70\_sessoes} & Tenant & Uma partida da Vila do Lume\\
 \cd{app\_70\_perfis} & Tenant & Retrato Schwartz recalculado\\
 \zebra \cd{app\_70\_bolhas} & Tenant & Bolha por estudante\\
@@ -2094,12 +2094,15 @@ máquina, e são justamente essas crianças que o debate tenta alcançar.
   \emph{CHECK} \cd{IN ('urgencia', 'confianca\_remetente', 'medo\_indignacao',
   'imagem\_link\_real')}; os dois nulos juntos, e o voto exige
   \cd{confirmado\_em}.\\
-\zebra \cd{reflexao\_em} & \cd{TIMESTAMPTZ?} & \textbf{O latch 3}: a regra foi
-  enviada (o texto está em \cd{exp05ef1b\_reflexoes}). Exige \cd{votou\_em}.\\
-\cd{concluido\_em} & \cd{TIMESTAMPTZ?} & Exige \cd{reflexao\_em} --- e não as
-  respostas às perguntas: quem sai antes delas fica \enquote{Não avaliado}.\\
-\zebra \cd{versao\_instrumento} & \cd{TEXT} & \cd{'2.2.0'}. Na linha, para
-  reprocessar o histórico se o instrumento mudar.\\
+\zebra \cd{reflexao\_em} & \cd{TIMESTAMPTZ?} & \textbf{Histórico}: o latch da
+  regra Se/Então, que saiu (\adrr{ADR-145}); nenhuma rota o escreve. Exige
+  \cd{votou\_em}.\\
+\cd{concluido\_em} & \cd{TIMESTAMPTZ?} & Exige \cd{votou\_em} (migração
+  \cd{20261005120000}; antes exigia \cd{reflexao\_em}) --- e não as respostas
+  às perguntas: quem sai antes delas fica \enquote{Não avaliado}.\\
+\zebra \cd{versao\_instrumento} & \cd{TEXT} & \cd{'2.3.0'} desde a
+  \adrr{ADR-145} (\cd{'2.2.0'} antes). Na linha, para reprocessar o histórico
+  se o instrumento mudar.\\
 \bottomrule
 \end{tabularx}
 

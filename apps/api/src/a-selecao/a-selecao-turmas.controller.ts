@@ -21,6 +21,7 @@ import { professorDoToken } from "../comum/turmas-do-professor";
 import { ehUuid } from "../motor/guardas";
 import { Contrato } from "../openapi/contrato";
 import { ASelecaoService } from "./a-selecao.service";
+import { ehIdDePost } from "./catalogo";
 import {
   CoberturaDetalheSchema,
   CoberturaHomologadaSchema,
@@ -29,6 +30,8 @@ import {
   GateDaTurmaSchema,
   GateSchema,
   HomologacaoSchema,
+  ImagemRegeradaSchema,
+  ImagensAprovadasSchema,
   PainelSchema,
   ParametrosDoPreparoSchema,
   PodcastSchema,
@@ -246,6 +249,8 @@ export class ASelecaoTurmasController {
       "**Idempotente**: pôr no ar a que já está no ar devolve `mudou: false` e não muda nada.",
       "Trocar com a aula correndo leva quem está jogando para a atividade nova: a experiência nota o `coberturaId` novo no polling do gate e recarrega. A tela pede confirmação antes.",
       "Cobertura de outra turma responde **404** `atividade-nao-encontrada`.",
+      "Sem a segunda fase da aprovação (as imagens, `POST …/aprovar-imagens`), **409** `imagens-nao-aprovadas` (ADR-146).",
+      "Pôr no ar NÃO libera a missão na sala por aqui: quem faz o `PUT /salas/turma/:turmaId/missoes/exp07ef1b` é o hub, logo depois (ADR-146).",
     ],
   })
   emAndamento(
@@ -259,6 +264,71 @@ export class ASelecaoTurmasController {
       turmaOu400(turmaId),
       professorDoToken(req.auth),
       coberturaOpcional(coberturaId) ?? "",
+    );
+  }
+
+  @Post(":turmaId/coberturas/:coberturaId/aprovar-imagens")
+  @HttpCode(200)
+  @Contrato({
+    resumo: "A segunda fase da aprovação: o professor viu as imagens dos posts e as aprova (ADR-146).",
+    descricao:
+      "A primeira fase é o `POST homologar` (os textos). As imagens se geram em seguida, no card de cada post (`POST gerar-midia?coberturaId=`), e o professor regera a que não serve (`POST …/imagens/:postId/regerar`). Só depois desta rota a atividade vai ao ar: `POST em-andamento` responde **409** `imagens-nao-aprovadas` sem ela.",
+    params: PARAMS_DA_COBERTURA,
+    query: QUERY,
+    resposta: ImagensAprovadasSchema,
+    notas: [
+      "**Idempotente**: a segunda aprovação devolve o carimbo da primeira.",
+      "Não exige imagem pronta em todo post: a geração pode falhar ou a quota acabar, e o post segue com o card da descrição, que o professor viu no mesmo card. Quem segura o botão até a geração terminar é a tela.",
+      "As coberturas criadas antes desta regra entraram aprovadas (migração `20261005150000`).",
+    ],
+  })
+  aprovarImagens(
+    @Param("turmaId") turmaId: string,
+    @Param("coberturaId") coberturaId: string,
+    @Query("escolaId") escolaIdPedida: string | undefined,
+    @Req() req: Autenticado,
+  ) {
+    return this.missao.aprovarImagens(
+      escolaAlvo(req.auth, escolaIdPedida),
+      turmaOu400(turmaId),
+      professorDoToken(req.auth),
+      coberturaOpcional(coberturaId) ?? "",
+    );
+  }
+
+  @Post(":turmaId/coberturas/:coberturaId/imagens/:postId/regerar")
+  @HttpCode(200)
+  @Contrato({
+    resumo: '"Gerar outra imagem": uma imagem nova para UM post, enquanto as imagens estão em validação (ADR-146).',
+    descricao:
+      "O professor viu a imagem no card do post e ela não serve. Gera outra, SEMPRE paga, num arquivo novo — sobrescrever o da descrição trocaria a imagem de toda cobertura que a herdou, inclusive a de uma turma em aula.",
+    params: PARAMS_DA_COBERTURA.extend({ postId: z.string() }),
+    query: QUERY,
+    resposta: ImagemRegeradaSchema,
+    notas: [
+      "Depois de `aprovar-imagens`, **409** `imagens-ja-aprovadas`: a turma pode estar olhando para elas.",
+      "Post de gráfico (o banco curado tem quatro) responde **400** `post-sem-imagem`: o gráfico é desenhado a partir dos números.",
+      "Quota do professor, com o custo estimado de uma imagem. Sem saldo, **429** `sem-saldo-de-ia`.",
+    ],
+  })
+  regerarImagem(
+    @Param("turmaId") turmaId: string,
+    @Param("coberturaId") coberturaId: string,
+    @Param("postId") postId: string,
+    @Query("escolaId") escolaIdPedida: string | undefined,
+    @Req() req: Autenticado,
+  ) {
+    const escolaId = escolaAlvo(req.auth, escolaIdPedida);
+    if (!ehIdDePost(postId)) throw erroDeJogo("post-sem-imagem");
+    limitar(req.auth.usuarioId, "regerar-imagem", 20);
+    return this.midia.regerar(
+      escolaId,
+      turmaOu400(turmaId),
+      professorDoToken(req.auth),
+      req.auth.usuarioId,
+      req.auth.perfil,
+      coberturaOpcional(coberturaId) ?? "",
+      postId,
     );
   }
 

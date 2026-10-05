@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { Button, Card, FeedbackAlert, Icon, ProgressBar, TextArea, TextField } from "@edu/ui/ds";
 import {
   AssistenteDeAtividade,
@@ -23,10 +23,12 @@ import {
   type NoticiaDoPacote,
   type NoticiaRegenerada,
   type OrigemDoPacote,
+  type PacoteDaAtividade,
   type PacoteHomologado,
   type RascunhoDoPacote,
 } from "@/lib/jornal-escola-tipos";
 
+import { ImagensDoPacote } from "../../resultados/imagens-do-pacote";
 import { CartaoDoPreparo, EditorDaNoticia } from "../../resultados/noticia-do-preparo";
 
 /** A copy revisada (§4a), no que ela sobreviveu à criação. A suíte e2e casa por texto exato. */
@@ -65,6 +67,15 @@ interface Rascunho {
 
 const VAZIO: Rascunho = { disciplina: "", tema: "", topicos: "", origem: "padrao", noticias: [] };
 
+/** Os textos aprovados (a fase 1): o pacote GRAVADO, de UMA turma, com as imagens que ele já tem. */
+interface TextosAprovados {
+  id: string;
+  turmaId: string;
+  noticias: NoticiaDoPacote[];
+  imagens: Record<string, string>;
+  aprovadas: IdDeNoticia[];
+}
+
 type Aviso = { tipo: "success" | "warning" | "info"; texto: string };
 
 /** De onde veio a falha da IA — é o que o "Tentar de novo" do banner repete. */
@@ -95,14 +106,18 @@ function falhaDaIa(status: number, codigo: string | null): FalhaDaIa["tipo"] | n
  *   professor/material` para dentro da mesa, com `origem: "padrao"`, e o
  *   professor o lê como leria um pacote gerado. É também a saída que os banners
  *   de 429 e 503 oferecem.
- * - **Não há "Aprovar" aqui dentro**: quem grava é o "Criar atividade" do
- *   assistente, por `criar` → `homologar`. E nem ele põe no ar — a atividade
- *   nasce PRONTA, e o último passo pergunta se ela já entra em andamento. Por
- *   isso a janela de "trocar o pacote de uma turma que já começou" saiu: criar
- *   não troca nada.
- * - **As IMAGENS se geram depois**, na página da atividade
- *   (`resultados/imagens-do-pacote.tsx`): são do pacote GRAVADO, e gerar para
- *   um rascunho gastaria a quota à toa.
+ * - **A aprovação tem DUAS fases, na mesma tela** (ADR-147, pedido do PO, no
+ *   molde da A Seleção — ADR-146): primeiro os TEXTOS ("Aprovar textos e
+ *   gerar as imagens" grava o pacote por `homologar`, PRONTO e fora do ar);
+ *   depois as IMAGENS, que se geram sozinhas na grade
+ *   (`resultados/imagens-do-pacote.tsx`), onde o professor vê cada uma, gera
+ *   outra para a que não serve e aprova. Gerar imagem para um rascunho gastaria
+ *   a quota à toa — por isso os textos são gravados antes. O "Continuar" só
+ *   acende com TODAS aprovadas: a atividade não vai ao ar sem isso (409
+ *   `imagens-nao-aprovadas`), e o "Pôr no ar agora" do último passo depende.
+ * - O "Criar atividade" do assistente não grava mais nada: o pacote já existe,
+ *   e ele faz o resto (`concluirCriacao`: pôr no ar, se marcado, e equipes).
+ *   Criar não troca o que está no ar.
  *
  * `gerar-conteudo` e `regenerar-noticia` NÃO persistem: devolvem rascunho, e o
  * que grava é `homologar`, com as oito notícias INTEIRAS — texto, pistas,
@@ -136,6 +151,10 @@ export function CriarJornalEscola({
   const [aviso, setAviso] = useState<Aviso | null>(null);
   const [falha, setFalha] = useState<FalhaDaIa | null>(null);
   const [erro, setErro] = useState<{ mensagem: string; erros: string[] } | null>(null);
+  const [aprovados, setAprovados] = useState<TextosAprovados | null>(null);
+  const [aprovandoTextos, setAprovandoTextos] = useState(false);
+  const [imagensAprovadas, setImagensAprovadas] = useState(false);
+  const aoMudarAprovacao = useCallback((tudo: boolean) => setImagensAprovadas(tudo), []);
 
   const parametros = { disciplina: rascunho.disciplina, tema: rascunho.tema, topicos: rascunho.topicos };
   const errosDosParametros = problemasDosParametros(parametros);
@@ -312,27 +331,62 @@ export function CriarJornalEscola({
     else void regenerar(turmaId, falha.de);
   }
 
-  async function criar(turmaId: string): Promise<ResultadoDaCriacao> {
-    const r = await fetch(`/api/plataforma/jornal-escola/turmas/${encodeURIComponent(turmaId)}/homologar`, {
+  /** A FASE 1: grava os textos como o professor os deixou, e as imagens começam. */
+  async function aprovarTextos(turmaId: string) {
+    setAprovandoTextos(true);
+    limparRecados();
+    try {
+      const r = await fetch(`/api/plataforma/jornal-escola/turmas/${encodeURIComponent(turmaId)}/homologar`, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
         ...corpoDosParametros(parametros),
         origem: rascunho.origem,
         noticias: rascunho.noticias.map(normalizarNoticia),
-      }),
-    });
-    if (!r.ok) {
-      /* `pacote-invalido` traz a LISTA de problemas em frases para o professor
-         — cada uma começa pela notícia. O assistente as mostra no passo final;
-         guardadas aqui, elas vão também para o cartão da notícia, para quando
-         ele voltar ao conteúdo para ajustar. */
-      const { mensagem, erros } = erroDaResposta(await r.json().catch(() => null), "Não deu para criar a atividade agora.");
-      setErro({ mensagem, erros });
-      return { ok: false, mensagem, erros };
+        }),
+      });
+      if (!r.ok) {
+        /* `pacote-invalido` traz a LISTA de problemas em frases para o
+           professor — cada uma começa pela notícia, e vai também para o
+           cartão dela. */
+        setErro(erroDaResposta(await r.json().catch(() => null), "Não deu para aprovar os textos agora."));
+        return;
+      }
+      const criado = (await r.json()) as PacoteHomologado;
+      /* O pacote nasce com as imagens HERDADAS de outro da turma com a mesma
+         descrição (e o mesmo conteúdo devolve o próprio pacote, que pode já
+         estar aprovado): o detalhe as traz, e a fase 2 não as paga de novo. */
+      const detalhe = await fetch(
+        `/api/plataforma/jornal-escola/turmas/${encodeURIComponent(turmaId)}/pacotes/${encodeURIComponent(criado.id)}`,
+        { cache: "no-store" },
+      );
+      const lido = detalhe.ok ? ((await detalhe.json()) as PacoteDaAtividade) : null;
+      setImagensAprovadas(false);
+      setAprovados({
+        id: criado.id,
+        turmaId,
+        noticias: criado.noticias,
+        imagens: lido?.imagens ?? {},
+        aprovadas: lido?.aprovadas ?? [],
+      });
+    } catch {
+      setErro({ mensagem: SEM_CONEXAO, erros: [] });
+    } finally {
+      setAprovandoTextos(false);
     }
-    const criado = (await r.json()) as PacoteHomologado;
-    return { ok: true, id: criado.id };
+  }
+
+  /** O "Criar atividade" do assistente: o pacote já está gravado, com as imagens aprovadas. */
+  async function criar(turmaId: string): Promise<ResultadoDaCriacao> {
+    if (!aprovados || aprovados.turmaId !== turmaId || !imagensAprovadas) {
+      return { ok: false, mensagem: "Aprove os textos e as imagens desta turma antes de criar a atividade.", erros: [] };
+    }
+    return { ok: true, id: aprovados.id };
+  }
+
+  function recomecar() {
+    setAprovados(null);
+    setImagensAprovadas(false);
   }
 
   return (
@@ -341,224 +395,294 @@ export function CriarJornalEscola({
       rotaDaMissao={rotaDaMissao}
       turmas={turmas}
       turmaInicial={turmaInicial}
-      conteudoPronto={pronto}
+      conteudoPronto={aprovados !== null && imagensAprovadas}
       resumoDoConteudo={
-        temNoticias ? `“${rascunho.tema.trim()}” · ${rascunho.disciplina.trim()} · ${TOTAL_DE_NOTICIAS} notícias` : null
+        aprovados
+          ? `“${rascunho.tema.trim()}” · ${rascunho.disciplina.trim()} · ${TOTAL_DE_NOTICIAS} notícias, com os textos e as imagens aprovados`
+          : null
       }
       criar={criar}
-      conteudo={(turmaId) => (
-        <Card variant="outlined" title={COPY.titulo}>
-          <div className="flex flex-col gap-5" data-preparo-jornal>
-            <p className="max-w-3xl text-[13px] leading-relaxed text-unooria-neutral-700">
-              Escolha as notícias que a turma vai investigar na mesa da redação: parta do banco pronto da Unooria, ou
-              deixe a IA escrever as 8 sobre o tema da sua aula.{" "}
-              <strong>
-                Nenhum texto gerado por inteligência artificial é exibido aos estudantes sem a sua aprovação.
-              </strong>
-            </p>
-
-            {/* ─────────────────────────────── o ponto de partida pronto ───── */}
-            <div className="flex flex-col gap-2 rounded-lg border border-unooria-neutral-200 p-4">
-              <div>
-                <Button
-                  variant="primary"
-                  size="md"
-                  leftIcon={<Icon name="newspaper" size={18} />}
-                  onClick={() => void usarBancoPronto()}
-                  isDisabled={ocupado}
-                  data-acao="usar-banco-pronto"
-                >
-                  {carregandoBanco ? "Carregando…" : COPY.atalho}
-                </Button>
-              </div>
-              <p className="max-w-3xl text-[12px] leading-snug text-unooria-neutral-600">{COPY.ajudaDoAtalho}</p>
-            </div>
-
-            {/* ─────────────────────────────── o caminho personalizado ───── */}
-            <div className="flex flex-col gap-3">
-              <p className="text-[14px] font-semibold text-unooria-neutral-950">
-                Ou prepare um pacote sobre o tema da sua aula
+      conteudo={(turmaId) => {
+        const fase2 = aprovados !== null && aprovados.turmaId === turmaId;
+        const travado = aprovados !== null;
+        return (
+          <Card variant="outlined" title={COPY.titulo}>
+            <div className="flex flex-col gap-5" data-preparo-jornal data-fase={fase2 ? "imagens" : "textos"}>
+              <p className="text-[13px] font-semibold text-unooria-neutral-950" data-fase-da-aprovacao>
+                {fase2 ? "Fase 2 de 2: as imagens" : "Fase 1 de 2: os textos"}
               </p>
-              <div className="grid gap-3 lg:grid-cols-2">
-                <TextField
-                  label={COPY.rotuloDaDisciplina}
-                  helperText={erroDoCampo("disciplina") ? undefined : "Ciências, História, Língua Portuguesa…"}
-                  value={rascunho.disciplina}
-                  maxLength={PARAMETROS.disciplina.max}
-                  error={erroDoCampo("disciplina")}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => trocarParametro("disciplina", e.target.value)}
-                />
-                <TextField
-                  label={COPY.rotuloDoTema}
-                  placeholder={COPY.exemploDoTema}
-                  helperText={
-                    erroDoCampo("tema") ? undefined : `${COPY.ajudaDoTema} Até ${PARAMETROS.tema.max} caracteres.`
-                  }
-                  value={rascunho.tema}
-                  maxLength={PARAMETROS.tema.max}
-                  error={erroDoCampo("tema")}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => trocarParametro("tema", e.target.value)}
-                />
-              </div>
-              <TextArea
-                label={COPY.rotuloDosTopicos}
-                helperText={errosDosParametros.topicos ? undefined : COPY.ajudaDosTopicos}
-                value={rascunho.topicos}
-                rows={3}
-                maxLength={PARAMETROS.topicosMax}
-                error={errosDosParametros.topicos}
-                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => trocarParametro("topicos", e.target.value)}
-              />
-              <div className="flex flex-wrap items-center gap-3">
-                <Button
-                  variant="ai"
-                  size="sm"
-                  leftIcon={<Icon name="auto_awesome" size={18} />}
-                  onClick={() => void gerar(turmaId)}
-                  isDisabled={ocupado || !parametrosValidos}
-                  data-acao="gerar-pacote"
-                >
-                  {gerando ? "Gerando…" : COPY.gerar}
-                </Button>
-              </div>
-              {gerando ? <ProgressBar indeterminate label={COPY.gerando} variant="brand" /> : null}
-              {temNoticias && !temaInvalido && rascunho.tema.trim() !== temaDasNoticias.trim() ? (
-                <p className="text-[12px] leading-snug text-unooria-neutral-700" role="status">
-                  O tema mudou, mas as notícias na tela ainda falam de “{temaDasNoticias}”. Clique em {COPY.gerar}{" "}
-                  para escrevê-las sobre o tema novo — ou siga sabendo que a mesa continua sobre o anterior.
-                </p>
-              ) : null}
-            </div>
-
-            {falha ? (
-              <div data-falha-da-ia={falha.tipo}>
+              {aprovados && !fase2 ? (
                 <FeedbackAlert
-                  type={falha.tipo === "sem-saldo" ? "warning" : "error"}
-                  description={falha.tipo === "sem-saldo" ? COPY.semSaldo : COPY.falhaDaIa}
-                  action={
-                    <span className="flex flex-wrap gap-2">
-                      {falha.tipo === "indisponivel" ? (
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          onClick={() => repetirAposFalha(turmaId)}
-                          isDisabled={ocupado}
-                        >
-                          Tentar de novo
-                        </Button>
-                      ) : null}
-                      <Button
-                        variant="primary"
-                        size="sm"
-                        onClick={() => void usarBancoPronto()}
-                        isDisabled={ocupado}
-                        data-acao="banco-pronto-da-falha"
-                      >
-                        {COPY.atalho}
+                  type="warning"
+                  description={
+                    <span className="flex flex-col items-start gap-2">
+                      <span>
+                        Os textos deste pacote foram aprovados para outra turma. Volte à turma anterior para continuar, ou
+                        comece um pacote novo para esta.
+                      </span>
+                      <Button variant="secondary" size="sm" onClick={recomecar} data-acao="recomecar-pacote">
+                        Começar um pacote novo
                       </Button>
                     </span>
                   }
                 />
-              </div>
-            ) : null}
-            {aviso ? <FeedbackAlert type={aviso.tipo} description={aviso.texto} /> : null}
-            {erro ? (
-              <FeedbackAlert
-                type="error"
-                description={
-                  errosDaApi.geral.length > 0 || Object.keys(errosDaApi.porNoticia).length > 0 ? (
-                    <span className="flex flex-col gap-1">
-                      <span>{erro.mensagem}</span>
-                      {errosDaApi.geral.length > 0 ? (
-                        <ul className="list-disc pl-5">
-                          {errosDaApi.geral.map((e) => (
-                            <li key={e}>{e}</li>
-                          ))}
-                        </ul>
-                      ) : null}
-                      {Object.keys(errosDaApi.porNoticia).length > 0 ? (
-                        <span>As notícias com ajuste estão marcadas abaixo.</span>
-                      ) : null}
-                    </span>
-                  ) : (
-                    erro.mensagem
-                  )
-                }
-              />
-            ) : null}
-
-            {/* ──────────────────────────── a homologação da mesa ───── */}
-            <div className="flex flex-col gap-3 border-t border-unooria-neutral-200 pt-4">
-              <p className="text-[14px] font-semibold text-unooria-neutral-950">{COPY.tituloDaCuradoria}</p>
-              {!temNoticias ? (
-                <p className="text-[12px] leading-snug text-unooria-neutral-600" data-mesa-vazia>
-                  Use o banco pronto da Unooria, ou gere o pacote com IA sobre o seu tema. As 8 notícias aparecem aqui
-                  para você ler e editar — só você vê o gabarito.
-                </p>
-              ) : (
+              ) : null}
+              {fase2 && aprovados ? (
                 <>
-                  <p className="max-w-3xl text-[13px] leading-snug text-unooria-neutral-700">
-                    {COPY.instrucaoDaCuradoria}
+                  <p className="max-w-3xl text-[13px] leading-relaxed text-unooria-neutral-700">
+                    Os textos de “{rascunho.tema.trim()}” estão aprovados e a atividade está gravada, ainda fora do ar.
+                    Agora as imagens: <strong>nenhuma imagem gerada por inteligência artificial é exibida aos estudantes
+                    sem a sua aprovação.</strong> Com todas aprovadas, continue para as equipes.
                   </p>
-                  <p className="text-[12px] text-unooria-neutral-600" data-composicao>
-                    {textoDaComposicao(rascunho.noticias)}
+                  <ImagensDoPacote
+                    key={aprovados.id}
+                    turmaId={turmaId}
+                    pacoteId={aprovados.id}
+                    noticias={aprovados.noticias}
+                    imagensIniciais={aprovados.imagens}
+                    aprovadasIniciais={aprovados.aprovadas}
+                    podeEditar
+                    gerarAoAbrir
+                    aoMudarAprovacao={aoMudarAprovacao}
+                    moldura={false}
+                  />
+                </>
+              ) : null}
+              {!travado ? (
+                <>
+                  <p className="max-w-3xl text-[13px] leading-relaxed text-unooria-neutral-700">
+                    Escolha as notícias que a turma vai investigar na mesa da redação: parta do banco pronto da Unooria, ou
+                    deixe a IA escrever as 8 sobre o tema da sua aula.{" "}
+                    <strong>
+                      Nenhum texto gerado por inteligência artificial é exibido aos estudantes sem a sua aprovação.
+                    </strong>
                   </p>
 
-                  {/* O "Continuar" apagado sem motivo escrito é o silêncio que a
-                      exp05ef1b já pagou: diga o que falta, e onde. */}
-                  {!parametrosValidos || noticiasComProblema.length > 0 || problemasDoConjunto.length > 0 ? (
-                    <div className="flex flex-col gap-1 text-[12px] leading-snug text-unooria-danger" role="status">
-                      {!parametrosValidos ? <p>Falta o componente curricular ou o tema, nos campos acima.</p> : null}
-                      {noticiasComProblema.length > 0 ? (
-                        <p>
-                          {noticiasComProblema.length === 1
-                            ? "Uma notícia precisa"
-                            : `${noticiasComProblema.length} notícias precisam`}{" "}
-                          de ajuste. Elas estão marcadas abaixo.
-                        </p>
-                      ) : null}
-                      {problemasDoConjunto.map((p) => (
-                        <p key={p}>{p}</p>
-                      ))}
+                  {/* ─────────────────────────────── o ponto de partida pronto ───── */}
+                  <div className="flex flex-col gap-2 rounded-lg border border-unooria-neutral-200 p-4">
+                    <div>
+                      <Button
+                        variant="primary"
+                        size="md"
+                        leftIcon={<Icon name="newspaper" size={18} />}
+                        onClick={() => void usarBancoPronto()}
+                        isDisabled={ocupado}
+                        data-acao="usar-banco-pronto"
+                      >
+                        {carregandoBanco ? "Carregando…" : COPY.atalho}
+                      </Button>
+                    </div>
+                    <p className="max-w-3xl text-[12px] leading-snug text-unooria-neutral-600">{COPY.ajudaDoAtalho}</p>
+                  </div>
+
+                  {/* ─────────────────────────────── o caminho personalizado ───── */}
+                  <div className="flex flex-col gap-3">
+                    <p className="text-[14px] font-semibold text-unooria-neutral-950">
+                      Ou prepare um pacote sobre o tema da sua aula
+                    </p>
+                    <div className="grid gap-3 lg:grid-cols-2">
+                      <TextField
+                        label={COPY.rotuloDaDisciplina}
+                        helperText={erroDoCampo("disciplina") ? undefined : "Ciências, História, Língua Portuguesa…"}
+                        value={rascunho.disciplina}
+                        maxLength={PARAMETROS.disciplina.max}
+                        error={erroDoCampo("disciplina")}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => trocarParametro("disciplina", e.target.value)}
+                      />
+                      <TextField
+                        label={COPY.rotuloDoTema}
+                        placeholder={COPY.exemploDoTema}
+                        helperText={
+                          erroDoCampo("tema") ? undefined : `${COPY.ajudaDoTema} Até ${PARAMETROS.tema.max} caracteres.`
+                        }
+                        value={rascunho.tema}
+                        maxLength={PARAMETROS.tema.max}
+                        error={erroDoCampo("tema")}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => trocarParametro("tema", e.target.value)}
+                      />
+                    </div>
+                    <TextArea
+                      label={COPY.rotuloDosTopicos}
+                      helperText={errosDosParametros.topicos ? undefined : COPY.ajudaDosTopicos}
+                      value={rascunho.topicos}
+                      rows={3}
+                      maxLength={PARAMETROS.topicosMax}
+                      error={errosDosParametros.topicos}
+                      onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => trocarParametro("topicos", e.target.value)}
+                    />
+                    <div className="flex flex-wrap items-center gap-3">
+                      <Button
+                        variant="ai"
+                        size="sm"
+                        leftIcon={<Icon name="auto_awesome" size={18} />}
+                        onClick={() => void gerar(turmaId)}
+                        isDisabled={ocupado || !parametrosValidos}
+                        data-acao="gerar-pacote"
+                      >
+                        {gerando ? "Gerando…" : COPY.gerar}
+                      </Button>
+                    </div>
+                    {gerando ? <ProgressBar indeterminate label={COPY.gerando} variant="brand" /> : null}
+                    {temNoticias && !temaInvalido && rascunho.tema.trim() !== temaDasNoticias.trim() ? (
+                      <p className="text-[12px] leading-snug text-unooria-neutral-700" role="status">
+                        O tema mudou, mas as notícias na tela ainda falam de “{temaDasNoticias}”. Clique em {COPY.gerar}{" "}
+                        para escrevê-las sobre o tema novo — ou siga sabendo que a mesa continua sobre o anterior.
+                      </p>
+                    ) : null}
+                  </div>
+
+                  {falha ? (
+                    <div data-falha-da-ia={falha.tipo}>
+                      <FeedbackAlert
+                        type={falha.tipo === "sem-saldo" ? "warning" : "error"}
+                        description={falha.tipo === "sem-saldo" ? COPY.semSaldo : COPY.falhaDaIa}
+                        action={
+                          <span className="flex flex-wrap gap-2">
+                            {falha.tipo === "indisponivel" ? (
+                              <Button
+                                variant="secondary"
+                                size="sm"
+                                onClick={() => repetirAposFalha(turmaId)}
+                                isDisabled={ocupado}
+                              >
+                                Tentar de novo
+                              </Button>
+                            ) : null}
+                            <Button
+                              variant="primary"
+                              size="sm"
+                              onClick={() => void usarBancoPronto()}
+                              isDisabled={ocupado}
+                              data-acao="banco-pronto-da-falha"
+                            >
+                              {COPY.atalho}
+                            </Button>
+                          </span>
+                        }
+                      />
                     </div>
                   ) : null}
+                  {aviso ? <FeedbackAlert type={aviso.tipo} description={aviso.texto} /> : null}
+                  {erro ? (
+                    <FeedbackAlert
+                      type="error"
+                      description={
+                        errosDaApi.geral.length > 0 || Object.keys(errosDaApi.porNoticia).length > 0 ? (
+                          <span className="flex flex-col gap-1">
+                            <span>{erro.mensagem}</span>
+                            {errosDaApi.geral.length > 0 ? (
+                              <ul className="list-disc pl-5">
+                                {errosDaApi.geral.map((e) => (
+                                  <li key={e}>{e}</li>
+                                ))}
+                              </ul>
+                            ) : null}
+                            {Object.keys(errosDaApi.porNoticia).length > 0 ? (
+                              <span>As notícias com ajuste estão marcadas abaixo.</span>
+                            ) : null}
+                          </span>
+                        ) : (
+                          erro.mensagem
+                        )
+                      }
+                    />
+                  ) : null}
 
-                  <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" data-mesa-do-preparo>
-                    {rascunho.noticias.map((n) => (
-                      <CartaoDoPreparo
-                        key={n.id}
-                        noticia={n}
-                        /* A imagem se gera na página da atividade: aqui, o
-                           cartão sai com o desenho do meio. */
-                        imagem={undefined}
-                        problemas={Object.keys(problemasDeCampo.get(n.id) ?? {}).length}
-                        errosDaApi={errosDaApi.porNoticia[n.id] ?? []}
-                        aoEditar={() => setEditando(n.id)}
-                        aoRegenerar={() => void regenerar(turmaId, n.id)}
-                        regenerando={regenerando === n.id}
-                        ocupado={ocupado}
-                      />
-                    ))}
+                  {/* ──────────────────────────── a homologação da mesa ───── */}
+                  <div className="flex flex-col gap-3 border-t border-unooria-neutral-200 pt-4">
+                    <p className="text-[14px] font-semibold text-unooria-neutral-950">{COPY.tituloDaCuradoria}</p>
+                    {!temNoticias ? (
+                      <p className="text-[12px] leading-snug text-unooria-neutral-600" data-mesa-vazia>
+                        Use o banco pronto da Unooria, ou gere o pacote com IA sobre o seu tema. As 8 notícias aparecem aqui
+                        para você ler e editar — só você vê o gabarito.
+                      </p>
+                    ) : (
+                      <>
+                        <p className="max-w-3xl text-[13px] leading-snug text-unooria-neutral-700">
+                          {COPY.instrucaoDaCuradoria}
+                        </p>
+                        <p className="text-[12px] text-unooria-neutral-600" data-composicao>
+                          {textoDaComposicao(rascunho.noticias)}
+                        </p>
+
+                        {/* O "Continuar" apagado sem motivo escrito é o silêncio que a
+                            exp05ef1b já pagou: diga o que falta, e onde. */}
+                        {!parametrosValidos || noticiasComProblema.length > 0 || problemasDoConjunto.length > 0 ? (
+                          <div className="flex flex-col gap-1 text-[12px] leading-snug text-unooria-danger" role="status">
+                            {!parametrosValidos ? <p>Falta o componente curricular ou o tema, nos campos acima.</p> : null}
+                            {noticiasComProblema.length > 0 ? (
+                              <p>
+                                {noticiasComProblema.length === 1
+                                  ? "Uma notícia precisa"
+                                  : `${noticiasComProblema.length} notícias precisam`}{" "}
+                                de ajuste. Elas estão marcadas abaixo.
+                              </p>
+                            ) : null}
+                            {problemasDoConjunto.map((p) => (
+                              <p key={p}>{p}</p>
+                            ))}
+                          </div>
+                        ) : null}
+
+                        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" data-mesa-do-preparo>
+                          {rascunho.noticias.map((n) => (
+                            <CartaoDoPreparo
+                              key={n.id}
+                              noticia={n}
+                              /* A imagem vem na fase 2, depois de aprovar os
+                                 textos: aqui, o cartão sai com o desenho do meio. */
+                              imagem={undefined}
+                              problemas={Object.keys(problemasDeCampo.get(n.id) ?? {}).length}
+                              errosDaApi={errosDaApi.porNoticia[n.id] ?? []}
+                              aoEditar={() => setEditando(n.id)}
+                              aoRegenerar={() => void regenerar(turmaId, n.id)}
+                              regenerando={regenerando === n.id}
+                              ocupado={ocupado}
+                            />
+                          ))}
+                        </div>
+                      </>
+                    )}
                   </div>
-                </>
-              )}
-            </div>
 
-            {noticiaEmEdicao ? (
-              <EditorDaNoticia
-                noticia={noticiaEmEdicao}
-                problemas={problemasDeCampo.get(noticiaEmEdicao.id) ?? {}}
-                errosDaApi={errosDaApi.porNoticia[noticiaEmEdicao.id] ?? []}
-                aoMudar={trocarNoticia}
-                aoFechar={() => setEditando(null)}
-                aoRegenerar={() => void regenerar(turmaId, noticiaEmEdicao.id)}
-                regenerando={regenerando === noticiaEmEdicao.id}
-                ocupado={ocupado}
-              />
-            ) : null}
-          </div>
-        </Card>
-      )}
+                  {noticiaEmEdicao ? (
+                    <EditorDaNoticia
+                      noticia={noticiaEmEdicao}
+                      problemas={problemasDeCampo.get(noticiaEmEdicao.id) ?? {}}
+                      errosDaApi={errosDaApi.porNoticia[noticiaEmEdicao.id] ?? []}
+                      aoMudar={trocarNoticia}
+                      aoFechar={() => setEditando(null)}
+                      aoRegenerar={() => void regenerar(turmaId, noticiaEmEdicao.id)}
+                      regenerando={regenerando === noticiaEmEdicao.id}
+                      ocupado={ocupado}
+                    />
+                  ) : null}
+
+                  {/* A FASE 1 fecha aqui: grava os textos e abre as imagens. */}
+                  {temNoticias ? (
+                    <div className="flex flex-wrap items-center gap-3 border-t border-unooria-neutral-200 pt-4">
+                      <Button
+                        variant="primary"
+                        size="md"
+                        leftIcon={<Icon name="check" size={18} />}
+                        onClick={() => void aprovarTextos(turmaId)}
+                        isDisabled={!pronto || ocupado || aprovandoTextos}
+                        isLoading={aprovandoTextos}
+                        data-acao="aprovar-textos"
+                      >
+                        Aprovar textos e gerar as imagens
+                      </Button>
+                      <span className="text-[12px] text-unooria-neutral-600">
+                        Os textos ficam gravados e as imagens começam a ser geradas. Depois disso, os textos não mudam aqui.
+                      </span>
+                    </div>
+                  ) : null}
+                </>
+              ) : null}
+            </div>
+          </Card>
+        );
+      }}
     />
   );
 }

@@ -4,7 +4,7 @@ Complementa o `AGENTS.md` da raiz e o de `apps/experiencias`.
 
 | Manifesto | Dev | DS | api | e2e |
 |---|---|---|---|---|
-| `exp07ef1b` · 7EF · unidade 1 · `entre-redes` · `viewport` 375×812 · `permissoes: ["forms"]` · versão **1.1.0** (a 1.0.x, no Instanooria, já era maior que a do dono anterior do caminho no bucket, o Eco — ADR-113) | `:5179`, hub `/exp/exp07ef1b` | `@edu/ui/ds-unoovista` (clone, desde a 1.1.0 — ADR-135) + `@edu/ui/ds` (escola) | `apps/api/src/a-selecao` ↔ `/a-selecao/*`; enquetes em `/evidencias/exp07ef1b/perguntas/*` (E14) | `scripts/e2e/estudante/11-a-selecao.mjs` (dois estudantes + a professora) |
+| `exp07ef1b` · 7EF · unidade 1 · `entre-redes` · `viewport` 375×812 · `permissoes: ["forms"]` · versão **1.2.0** (acima da do Eco, dono anterior do caminho no bucket — ADR-113) | `:5179`, hub `/exp/exp07ef1b` | `@edu/ui/ds-unoovista` (clone, desde a 1.1.0 — ADR-135) + `@edu/ui/ds` (escola) | `apps/api/src/a-selecao` ↔ `/a-selecao/*`; enquetes em `/evidencias/exp07ef1b/perguntas/*` (E14) | `scripts/e2e/estudante/11-a-selecao.mjs` (dois estudantes + a professora) |
 
 ## O passo manda na tela
 
@@ -16,17 +16,17 @@ LÊ o `passos.ts` da api e reprova divergência nas listas.
 
 | Passo | Tela | Quem fala | Componentes do DS |
 |---|---|---|---|
-| `desafio` | E1 — a DM da Amara | Amara (clone) | `DirectThread`, `MessageBubble`, `ButtonUnv` |
-| `feed` | E2 — o feed da cobertura | app | `TopBar`, `BadgeUnv`, `InlineHint` (a dica), `GestureHint` (rolar), `PostCard` (`.Header/.Media/.Actions/.Likes/.Caption/.Timestamp`), `FloatingButton`, `TabBar` |
-| `salvos` | E3 — a poda + E3-ALU-02 | app | `TopBar`, `ButtonUnv`+`IconUnv`, `BadgeUnv`, `InlineHint` (o aviso da poda), `MediaGrid` (`selectable`), `StoryComposer`, `ConfirmDialog` (`destructive`), `TabBar` |
+| `desafio` | E1 — a DM da Amara | Amara (clone) | `DirectThread`, `MessageBubble` (`avatarSrc` = a foto dela), `ButtonUnv` |
+| `feed` | E2 — o feed da cobertura | app | `TopBar`, `BadgeUnv`, `InlineHint` (a dica), `GestureHint` (rolar), `PostCard` (`.Header/.Media/.Likes`, `.Actions actions={[]}` = só o salvar, `.Caption username` = o autor do comentário), `FloatingButton`, `TabBar` |
+| `salvos` | E3 — a poda + E3-ALU-02 | app | `TopBar`, `ButtonUnv`+`IconUnv`, `BadgeUnv`, `InlineHint` (o aviso da poda), `MediaGrid` (`selectable`), `StoryComposer`, `ConfirmDialog` (`tone="default"`), `TabBar` |
 | `publicado` | E3-SIS-01 — a espera | app | `StoryViewer` (a própria tríade, `footer` = a legenda) |
-| `mural` | E4-ALU-01 — o PICO | app | `SegmentedTabs`, `StoryViewer` (3 segmentos, `onNext`/`onPrev`, `footer`) |
+| `mural` | E4-ALU-01 — o PICO, aberto no PAR | app | `SegmentedTabs`, `StoryViewer` (3 segmentos, `onNext`/`onPrev`, `footer`), `PostCard.Caption` (legenda sobre a imagem) |
 | `fichas` | E4-ALU-02 — a revelação | app | o mesmo + `BottomSheetUnv` não modal (`maxHeight 45%`) com `BadgeUnv` — por `React.lazy` |
 | `explicacao` | E5 — carrossel + DM de fechamento | app, depois Amara | `TopBar`, `PostCard` (`.Media` sem `src`, `currentIndex/totalCount`), `ButtonUnv`, `DirectThread` — por `React.lazy` |
 | `reflexao` | E6 | **escola** | `SectionHeader`, `Card`, `TextArea`, `Button` |
 | `enquetes` | a confirmação, depois as enquetes | escola, depois Amara | `AlertBox`; `DirectThread`, `MessageBubble` (`bare`), `DmPoll` |
 | `fim` | "Missão concluída!" | **escola** | `AlertBox` |
-| 403 | missão não aberta aqui | **escola** | `AlertBox` |
+| 403 | missão não aberta aqui (relê a cada 5 s) | **escola** | `AlertBox` |
 
 A tela só anda quando a api responde: nenhum toque troca a tela de forma
 otimista. É o que torna o latch da publicação à prova de rede ruim.
@@ -103,6 +103,9 @@ relê a sessão. Antes de publicar a etapa não toca a criança, e da explicaç�
 diante o passo é dela. O Mural é relido quando a etapa da sessão passa À FRENTE
 da do Mural na tela — "diferente" releria em laço se o Mural voltasse adiantado.
 
+**E na porta fechada** (ADR-146): o 403 da abertura relê `GET /a-selecao/sessao`
+a cada 5 s, com a aba visível, e entra sozinho — antes, só com F5.
+
 ## As enquetes pulam para o fim
 
 Uma tentativa por pergunta (o SDK já reenvia o GET uma vez), sem repetição:
@@ -139,9 +142,6 @@ pediu, e não foi desenhada).
 - `PostCard.Media` com `src` que falha tira o `<img>` da árvore; desde a 0.2.7 o
   `errorDescription` (padrão: o `alt`) devolve a descrição sob o aviso — não
   remonte a descrição dentro do `errorLabel`, que ela sairia duas vezes.
-- `TextArea` da plataforma conta `.length` no contador dele e não diz o mínimo
-  (daí o `showCounter={false}`). O `label` passou a nomear o campo na 0.2.7:
-  `aria-label` repetindo o rótulo é redundância, não compensação.
 - `Badge` tem `white-space: nowrap` por padrão: tag longa pede `wrap`.
 - `TopBar` e `DirectThread` reservam os 44 px da status bar por padrão, e o
   aparelho do hub não desenha status bar: aqui vão com `withStatusBarInset={false}`.
@@ -164,21 +164,26 @@ pediu, e não foi desenhada).
 
 ## As compensações — nenhuma aberta
 
-Tudo que a missão precisava do DS ele publica: a faixa da dica do feed e do aviso
-da poda é o `InlineHint` (tons `neutral` e `friction`, com `announce`), o gesto de
-rolar é o `GestureHint`, a tarja "Sem conexão com a rede…" é o `SnackbarUnv`
-(sempre montado, para o leitor de tela anunciar) e a etiqueta da ficha que quebra
-é `BadgeUnv wrap`.
-
-**Não é pedido**: as barras do "Equilíbrio editorial" — o Instagram não desenha
-gráfico, e a ficha é a extensão da ficção que a missão acrescenta.
+A dica do feed e o aviso da poda são o `InlineHint` (com `announce`), o gesto o
+`GestureHint`, a tarja de rede o `SnackbarUnv` (sempre montado, para o leitor de
+tela anunciar), a etiqueta que quebra o `BadgeUnv wrap`. As barras do
+"Equilíbrio editorial" não são pedido: são a ficção que a missão acrescenta.
 
 ## O Unoovista (1.1.0, ADR-135)
 
-Cópia ESTRUTURAL do `instanooria`: a troca foi de ponte, tema (`data-unv-theme`)
-e token (`--unv-*`). A composição é outra (doca flutuante, ações SOBRE a mídia),
-e três medidas do `globals.css`/`feed.tsx` leem o pacote por isso — comentadas
-lá. O `BadgeUnv` `neutral` escuro some na folha da ficha: é do pacote.
+Cópia ESTRUTURAL do `instanooria` (ponte, `data-unv-theme`, `--unv-*`); três
+medidas do `globals.css`/`feed.tsx` leem o pacote — comentadas lá.
+
+## Os ajustes do PO (1.2.0, ADR-146)
+
+- **No feed, só o salvar**: curtir, comentar e compartilhar (e a dica das cinco
+  curtidas) desviavam do único gesto que conta. A contagem fica: é prova social
+  que a criança LÊ. `actions={[]}` veio no DS 0.2.18 (PR #19 do `storybook-unooria`).
+- **Comentário tem autor**; "Ver todos os N comentários" saiu (nada a abrir).
+- **"Confirmar publicação" é roxo**: o vermelho dizia "erro" no gesto pedido.
+- **O Mural abre no par**, com a legenda do post sobre a imagem
+  (`.legenda-do-post`, `pointer-events: none`: os toques vão ao `StoryViewer`).
+- **A foto da Amara é SVG** (`src/assets/amara.svg`, sem binário), à espera do PO.
 
 ## A copy ESCRITA AQUI
 

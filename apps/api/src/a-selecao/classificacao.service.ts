@@ -6,7 +6,6 @@ import { rateLimit } from "../comum/rate-limit";
 import { STATUS_DE_MARCA, type Nivel } from "../evidencias/regras";
 import { logger } from "../observabilidade/logger";
 import {
-  MAX_TOKENS_DO_CANAL_A,
   MOTIVOS_DO_CANAL_A,
   NIVEL_DO_MOTIVO,
   SCHEMA_DO_CANAL_A,
@@ -27,8 +26,10 @@ import {
  *   3. `generateJson` com o modelo padrão, temperatura 0, UMA tentativa (não
  *      há reforço útil: ou a leitura sai, ou fica "Não avaliado"), o
  *      `responseSchema` com o enum dos níveis e o código do motivo, um
- *      `validar` Zod que recusa motivo incoerente com o nível, e um teto de
- *      saída de 64 tokens.
+ *      `validar` Zod que recusa motivo incoerente com o nível. SEM teto de
+ *      saída (ADR-148): o Gemini 3 raciocina mesmo com `thinkingBudget: 0`, e
+ *      com 64 tokens a resposta era cortada antes do JSON — a legenda ficava
+ *      "Não avaliado" em silêncio.
  *   4. TETO DE TEMPO por `Promise.race` (~6 s): o provider só corta em 15 min e
  *      não aceita `signal`, então o teto de N s é `Promise.race`, e a
  *      publicação da criança espera esta resposta.
@@ -126,7 +127,6 @@ export class ClassificacaoService {
       modelo: "padrao",
       temperatura: 0,
       tentativas: 1,
-      maxTokens: MAX_TOKENS_DO_CANAL_A,
       validar: (bruto) => {
         try {
           return validarClassificacao(bruto);

@@ -8,7 +8,6 @@ import { PrismaService } from "../prisma/prisma.service";
 import type { NoticiaDoPacote } from "./contrato-de-rotas";
 import { palavras } from "./invariantes";
 import {
-  MAX_TOKENS_DA_DIAGRAMACAO,
   SCHEMA_DA_DIAGRAMACAO,
   SYSTEM_DA_DIAGRAMACAO,
   promptDaDiagramacao,
@@ -29,7 +28,10 @@ import { LAYOUTS, type Layout, type OrigemDoLayout } from "./vocabulario";
  *   3. QUOTA do perfil `estudante` (`temSaldo` ANTES, regra inviolável nº 5).
  *   4. `generateJson` com o modelo padrão, temperatura 0, UMA tentativa, o
  *      `responseSchema` com SÓ o enum de layout (não há campo de texto onde a
- *      IA escreva), um `validar` Zod e um teto de saída de 32 tokens.
+ *      IA escreva) e um `validar` Zod. SEM teto de saída (ADR-148): o Gemini 3
+ *      raciocina mesmo com `thinkingBudget: 0`, e o raciocínio sai do mesmo
+ *      orçamento — com 32 tokens a resposta era cortada antes do JSON e a
+ *      diagramação caía SEMPRE no modelo automático, em silêncio.
  *   5. TETO DE TEMPO por `Promise.race` (~6 s): o provider só corta em 15 min e
  *      não aceita `signal`, então o teto de N s é `Promise.race`.
  *   6. O débito vai no `aoUsarTokens`, para cobrar também a chamada que perde a
@@ -178,7 +180,6 @@ export class DiagramacaoService {
       modelo: "padrao",
       temperatura: 0,
       tentativas: 1,
-      maxTokens: MAX_TOKENS_DA_DIAGRAMACAO,
       validar: (bruto) => {
         try {
           return validarDiagramacao(bruto);

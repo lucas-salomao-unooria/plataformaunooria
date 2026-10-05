@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { BarChart, Button, Card, FeedbackAlert, Icon, MetricCard, ProgressBar, UNOORIA_DATAVIZ_PALETTE } from "@edu/ui/ds";
 import { AVISO_POR_COMPUTADOR, type MembroNoPainel } from "@/lib/equipe-no-painel";
 import {
@@ -9,6 +10,7 @@ import {
   aulaEmAndamento,
   caminhoDaTurma,
   erroDaResposta,
+  mudouAEvidencia,
   percentual,
   rotuloCurtoDaArea,
   rotuloDoBotao,
@@ -47,7 +49,17 @@ import { ListaDoJuri } from "./lista-do-juri";
  * **Consulta LEVE, e não `router.refresh()`.** A página lê cinco rotas;
  * refazê-la a cada 5 s seria cinco chamadas por professor durante a aula. Aqui
  * só o PAINEL é consultado, pelo BFF, só enquanto a aula corre e com a aba
- * visível. O `inicial` ainda manda quando a página é refeita de verdade.
+ * visível.
+ *
+ * A exceção é a EVIDÊNCIA (ADR-146): quando muda o que o painel de
+ * habilidades mostra (`mudouAEvidencia` — alguém revisou o voto, remontou a
+ * curtida, montou a cadeia ou concluiu depois das enquetes; ou a
+ * atividade/rodada trocou), a página é refeita, e o professor vê o nível
+ * chegar sem recarregar. Uma leitura basta: a api marca na MESMA transação do
+ * passo que o painel mostra, então quando a folha anda a marca já está lá —
+ * não há a segunda volta da A Seleção, cuja IA gradua depois.
+ *
+ * O `inicial` ainda manda quando a página é refeita de verdade.
  */
 
 const INTERVALO_MS = 5_000;
@@ -87,17 +99,27 @@ export function PainelDaAulaJuriEstadual({
 
   const base = `/api/plataforma${caminhoDaTurma(turmaId)}`;
 
+  const router = useRouter();
+  const [, transicionar] = useTransition();
+  const ultimo = useRef(painel);
+  useEffect(() => {
+    ultimo.current = painel;
+  }, [painel]);
+
   const atualizar = useCallback(async () => {
     try {
       const r = await fetch(`${base}/painel`, { cache: "no-store" });
       if (!r.ok) throw new Error(String(r.status));
-      setPainel((await r.json()) as PainelDoJuri);
+      const novo = (await r.json()) as PainelDoJuri;
+      const antes = ultimo.current;
+      setPainel(novo);
+      if (mudouAEvidencia(antes, novo)) transicionar(() => router.refresh());
       // "voltou" fica uma volta na tela e some na seguinte.
       setConexao((c) => (c === "caiu" ? "voltou" : "ok"));
     } catch {
       setConexao("caiu");
     }
-  }, [base]);
+  }, [base, router]);
 
   const emAndamento = aulaEmAndamento(painel);
   useEffect(() => {

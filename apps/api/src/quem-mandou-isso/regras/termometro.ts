@@ -16,7 +16,6 @@ export interface UnidadeDaConta {
   /** As três do Mural, SÓ depois do latch 1. Antes, `null`: escolha que ainda podia mudar não conta. */
   selecao: readonly string[] | null;
   motivo: Motivo | null;
-  refletiu: boolean;
   concluiu: boolean;
 }
 
@@ -32,7 +31,6 @@ export interface Progresso {
   entraram: number;
   confirmaram: number;
   votaram: number;
-  refletiram: number;
   concluiram: number;
 }
 
@@ -43,7 +41,6 @@ export function progresso(unidades: readonly UnidadeDaConta[]): Progresso {
     entraram: unidades.filter((u) => u.entrou).length,
     confirmaram: unidades.filter((u) => u.selecao !== null).length,
     votaram: unidades.filter((u) => u.motivo !== null).length,
-    refletiram: unidades.filter((u) => u.refletiu).length,
     concluiram: unidades.filter((u) => u.concluiu).length,
   };
 }

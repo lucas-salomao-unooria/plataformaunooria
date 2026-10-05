@@ -15,6 +15,7 @@ import {
   COLEGAS_VIRTUAIS_IDS,
   ORDEM_DO_FEED,
   POSTS_PADRAO,
+  autorDeReserva,
   ehIdDePost,
   type ColegaVirtual,
   type IdDePost,
@@ -88,7 +89,7 @@ type PostPublico = {
   legenda: string;
   curtidas: number;
   comentarios: number;
-  comentariosDestaque: string[];
+  comentariosDestaque: Array<{ autor: string; mensagem: string }>;
   imagem: { url: string | null; alt: string };
   grafico: NonNullable<PostDaCobertura["grafico"]> | null;
 };
@@ -139,8 +140,28 @@ const ListaDePostsSchema = z.array(PostDaCoberturaSchema).length(POSTS_PADRAO.le
  * mudo para quem diagnostica. Os ids e os blocos são os mesmos nos dois, então
  * matriz e pareamento continuam coerentes.
  */
+/**
+ * A cobertura gravada ANTES de o comentário ter autor (ADR-146) guarda só o
+ * texto. Ela continua valendo: o comentário ganha o autor de reserva do post
+ * e da posição, o mesmo a cada leitura.
+ */
+function comComentariosComAutor(bruto: Prisma.JsonValue): unknown {
+  if (!Array.isArray(bruto)) return bruto;
+  return bruto.map((post) => {
+    if (post === null || typeof post !== "object" || Array.isArray(post)) return post;
+    const { id, comentariosDestaque } = post as { id?: unknown; comentariosDestaque?: unknown };
+    if (!Array.isArray(comentariosDestaque)) return post;
+    return {
+      ...post,
+      comentariosDestaque: comentariosDestaque.map((c, i) =>
+        typeof c === "string" ? { autor: autorDeReserva(typeof id === "string" ? id : "", i), mensagem: c } : c,
+      ),
+    };
+  });
+}
+
 function postsDaLinha(bruto: Prisma.JsonValue, contexto: { escolaId: string; coberturaId: string }): PostDaCobertura[] {
-  const lido = ListaDePostsSchema.safeParse(bruto);
+  const lido = ListaDePostsSchema.safeParse(comComentariosComAutor(bruto));
   if (lido.success) return emOrdemCanonica(lido.data as PostDaCobertura[]);
   logger.warn(
     { codigo: "exp07ef1b-cobertura-invalida", ...contexto },
@@ -227,7 +248,7 @@ export function postPublico(p: PostDaCobertura, midia: Record<string, string>): 
     legenda: p.legenda,
     curtidas: p.curtidas,
     comentarios: p.comentarios,
-    comentariosDestaque: [...p.comentariosDestaque],
+    comentariosDestaque: p.comentariosDestaque.map((c) => ({ autor: c.autor, mensagem: c.mensagem })),
     imagem: { url: midia[p.id] ?? null, alt: p.descricaoImagem },
     grafico: p.grafico
       ? {
@@ -244,6 +265,16 @@ export function postPublico(p: PostDaCobertura, midia: Record<string, string>): 
 /** Os posts de imagem gerada — os de gráfico a experiência desenha. */
 export function postsQuePedemImagem(posts: readonly PostDaCobertura[]): PostDaCobertura[] {
   return posts.filter((p) => !p.grafico);
+}
+
+/** As URLs das imagens prontas, só dos posts que pedem imagem — o que o card de cada post mostra. */
+function imagensProntas(cobertura: CoberturaLida): Record<string, string> {
+  const prontas: Record<string, string> = {};
+  for (const p of postsQuePedemImagem(cobertura.posts)) {
+    const url = cobertura.midia[p.id];
+    if (url) prontas[p.id] = url;
+  }
+  return prontas;
 }
 
 function resumoDaMidia(cobertura: CoberturaLida): { total: number; prontas: number } {
@@ -839,7 +870,7 @@ export class ASelecaoService implements OnModuleInit {
       const [todas, rodadas] = await Promise.all([
         tx.exp07ef1bCobertura.findMany({
           where: { escolaId, turmaId },
-          select: { id: true, tema: true, foco: true, origem: true, ativa: true, criadaEm: true },
+          select: { id: true, tema: true, foco: true, origem: true, ativa: true, criadaEm: true, imagensAprovadasEm: true },
           orderBy: { criadaEm: "desc" },
         }),
         tx.exp07ef1bSessao.groupBy({
@@ -872,6 +903,7 @@ export class ASelecaoService implements OnModuleInit {
           ativa: c.ativa,
           criadaEm: c.criadaEm.toISOString(),
           rodadas: maiorRodada.get(c.id) ?? 0,
+          imagensAprovadas: c.imagensAprovadasEm !== null,
         })),
       };
     }, escolaId);
@@ -904,8 +936,56 @@ export class ASelecaoService implements OnModuleInit {
         rodadas: rodadas._max.rodada ?? 0,
         posts: cobertura.posts,
         midia: resumoDaMidia(cobertura),
+        imagens: imagensProntas(cobertura),
+        imagensAprovadasEm: linha.imagensAprovadasEm?.toISOString() ?? null,
         podcast: cobertura.podcast,
       };
+    }, escolaId);
+  }
+
+  /**
+   * A SEGUNDA FASE da aprovação (ADR-146): o professor viu as imagens no card
+   * de cada post, regerou a que não servia, e aprova. Só depois disto a
+   * atividade vai ao ar (`colocarEmAndamento` cobra).
+   *
+   * Sem exigir imagem pronta em todo post: a geração pode falhar ou a quota
+   * acabar, e o post segue com o card da descrição — que o professor VIU no
+   * mesmo card antes de aprovar. Quem segura o botão até a geração terminar é
+   * a tela. Idempotente: a segunda aprovação devolve o carimbo da primeira.
+   */
+  async aprovarImagens(escolaId: string, turmaId: string, professorId: string | undefined, coberturaId: string) {
+    return this.prisma.comTenancy(async (tx) => {
+      await this.turmaVisivel(tx, escolaId, turmaId, professorId);
+      const linha = await this.coberturaDaTurma(tx, escolaId, turmaId, coberturaId);
+      const carimbo =
+        linha.imagensAprovadasEm ??
+        (
+          await tx.exp07ef1bCobertura.update({
+            where: { id: linha.id },
+            data: { imagensAprovadasEm: new Date() },
+            select: { imagensAprovadasEm: true },
+          })
+        ).imagensAprovadasEm;
+      return { coberturaId: linha.id, imagensAprovadasEm: (carimbo ?? new Date()).toISOString() };
+    }, escolaId);
+  }
+
+  /**
+   * A cobertura cuja imagem o professor quer REGERAR (ADR-146): só enquanto as
+   * imagens estão em validação. Depois de aprovadas elas não mudam — a turma
+   * pode estar olhando para elas.
+   */
+  async coberturaEmValidacao(
+    escolaId: string,
+    turmaId: string,
+    professorId: string | undefined,
+    coberturaId: string,
+  ): Promise<CoberturaLida> {
+    return this.prisma.comTenancy(async (tx) => {
+      await this.turmaVisivel(tx, escolaId, turmaId, professorId);
+      const linha = await this.coberturaDaTurma(tx, escolaId, turmaId, coberturaId);
+      if (linha.imagensAprovadasEm) throw erroDeJogo("imagens-ja-aprovadas");
+      return coberturaDaLinha(linha);
     }, escolaId);
   }
 
@@ -927,7 +1007,10 @@ export class ASelecaoService implements OnModuleInit {
     return this.prisma.comTenancy(async (tx) => {
       await this.turmaVisivel(tx, escolaId, turmaId, professorId);
       await this.travarTurma(tx, escolaId, turmaId, "exclusivo");
-      await this.coberturaDaTurma(tx, escolaId, turmaId, coberturaId);
+      const escolhida = await this.coberturaDaTurma(tx, escolaId, turmaId, coberturaId);
+      /* As duas fases da aprovação passaram (ADR-146)? Sem a das imagens, a
+         turma abriria com imagem que ninguém viu. */
+      if (!escolhida.imagensAprovadasEm) throw erroDeJogo("imagens-nao-aprovadas");
 
       const atual = await this.lerGate(tx, escolaId, turmaId);
       if (atual?.coberturaId === coberturaId) {
@@ -952,6 +1035,10 @@ export class ASelecaoService implements OnModuleInit {
 
   /**
    * "Criar atividade" — a curadoria humana (ADR-66/67).
+   *
+   * É a PRIMEIRA fase da aprovação (ADR-146): os textos. A cobertura nasce
+   * com `imagensAprovadasEm` nulo — as imagens se geram em seguida, no card de
+   * cada post, e só a segunda fase (`aprovarImagens`) a deixa ir ao ar.
    *
    * Tema novo é ATIVIDADE nova, e ela nasce PRONTA, não no ar (ADR-130): quem
    * escolhe o que a turma faz é a professora, na lista de atividades
@@ -1237,7 +1324,7 @@ export class ASelecaoService implements OnModuleInit {
     const linha = ehUuid(coberturaId)
       ? await tx.exp07ef1bCobertura.findFirst({
           where: { id: coberturaId, escolaId, turmaId },
-          select: { ...CAMPOS_DA_COBERTURA, criadaEm: true },
+          select: { ...CAMPOS_DA_COBERTURA, criadaEm: true, imagensAprovadasEm: true },
         })
       : null;
     if (!linha) throw erroDeJogo("atividade-nao-encontrada");

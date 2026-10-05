@@ -77,23 +77,7 @@ describe("a copy literal do sheet", () => {
       TEXTOS.sintese.trava,
       "Participe da conversa na sala. O professor liberará a atividade final em instantes.",
     ],
-    ["e6.instrucao.desafio_comando", TEXTOS.reflexao.comando, "Monte sua regra de decisão antes de encaminhar:"],
-    ["e6.rotulo.dropdown_rotulo", TEXTOS.reflexao.se, "Se a mensagem for..."],
-    ["e6.rotulo.campo_entao", TEXTOS.reflexao.entao, "...então eu..."],
-    [
-      "e6.rotulo.placeholder_entao",
-      TEXTOS.reflexao.placeholder,
-      "digite a ação de checagem que você executa antes de encaminhar...",
-    ],
-    [
-      "e6.erro.entropia_baixa",
-      TEXTOS.reflexao.semSentido,
-      "Explique sua regra de checagem com mais detalhes para que Nina consiga entender o que fazer.",
-    ],
-    ["e6.rotulo.botao_salvar", TEXTOS.reflexao.salvar, "Salvar e Enviar Reflexão"],
     ["e6.rotulo.conclusao_titulo", TEXTOS.conclusao.titulo, "Missão Concluída"],
-    ["e6.rotulo.card_regra_titulo", TEXTOS.conclusao.cardTitulo, "Sua Regra Pessoal de Checagem"],
-    ["e6.feedback.conclusao_sucesso", TEXTOS.conclusao.sucesso, "Sua regra foi registrada com sucesso e enviada ao professor."],
     ["e6.instrucao.conclusao_rodape", TEXTOS.conclusao.rodape, "Você completou todas as etapas desta missão no Unooria Hub."],
     [
       "e4.professor.telao_titulo",
@@ -107,7 +91,6 @@ describe("a copy literal do sheet", () => {
   test("os textos com número seguem o formato do sheet", () => {
     expect(TEXTOS.grupo.participantes(24)).toBe("você e mais 24 participantes");
     expect(TEXTOS.grupo.contador(2)).toBe("Mensagens selecionadas para o Mural: 2/3");
-    expect(TEXTOS.reflexao.contador(15, 7)).toBe("Mínimo de 15 caracteres (faltam 7 caracteres)");
     expect(TEXTOS.revelacao.motivoDeclarado("Confiança em quem mandou")).toBe(
       "Seu motivo declarado: Confiança em quem mandou",
     );
@@ -118,7 +101,6 @@ describe("a copy literal do sheet", () => {
 
   test("o singular é concordância, não copy nova", () => {
     expect(TEXTOS.grupo.participantes(1)).toBe("você e mais 1 participante");
-    expect(TEXTOS.reflexao.contador(15, 1)).toBe("Mínimo de 15 caracteres (falta 1 caractere)");
   });
 
   test("os crachás duplos: pictograma + rótulo por extenso, e os dois eixos com formas diferentes", () => {
@@ -129,15 +111,6 @@ describe("a copy literal do sheet", () => {
     expect(`${tom.neutra.icone} ${tom.neutra.rotulo}`).toBe("💬 Neutra");
     const pictogramas = new Set([veracidade.verdadeira.icone, veracidade.falsa.icone, tom.emocional.icone, tom.neutra.icone]);
     expect(pictogramas.size).toBe(4);
-  });
-
-  test("o card da regra pessoal: 'SE a mensagem for …, ENTÃO eu …' com um ponto só", () => {
-    expect(TEXTOS.conclusao.regra("urgente e alarmante", " vou no site da prefeitura comparar ")).toBe(
-      "SE a mensagem for urgente e alarmante, ENTÃO eu vou no site da prefeitura comparar.",
-    );
-    expect(TEXTOS.conclusao.regra("prometendo algo incrível", "pergunto pra professora!")).toBe(
-      "SE a mensagem for prometendo algo incrível, ENTÃO eu pergunto pra professora!",
-    );
   });
 
   test("as palavras da lâmina desenhada estão todas na frase da síntese (o desenho não inventa)", () => {

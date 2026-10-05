@@ -1264,6 +1264,20 @@ o que já SUBIU} &
   abertas --- com o tempo real se a sala ainda estava no prazo, com o teto se já
   tinha passado ---, então o saldo se acerta sozinho na próxima tentativa, menos
   o que foi contado pelo teto. É a falha para o lado do custo, de propósito.\\
+\zebra \textbf{O Jornal da Escola diagrama SEMPRE pelo modelo automático, ou a
+  legenda da A Seleção fica SEMPRE \enquote{Não avaliado}, com o Vertex no ar e
+  saldo de sobra} &
+  Procure \cd{exp04ef1b-\B{}diagramacao-\B{}modelo} e
+  \cd{exp07ef1b-\B{}canal-a-\B{}nao-\B{}avaliado} no \emph{log}. Com o motivo
+  \cd{provedor-\B{}falhou} em TODA chamada, o teto de saída foi comido pelo
+  raciocínio: o \cd{gemini-3.7-flash} pensa cerca de 28 \emph{tokens} mesmo com
+  \cd{thinkingBudget: 0}, e com 32 ou 64 a resposta voltava \cd{MAX\_TOKENS}
+  sem texto. Não há sintoma na tela: a reserva é uma saída legítima. As duas
+  chamadas ficaram sem \cd{maxTokens} (\adrr{ADR-148}); se alguém o devolveu
+  \enquote{para economizar}, tire. Com \cd{tempo-esgotado}, quem cortou foi o
+  teto de cerca de 6\,s; com \cd{sem-saldo}, a quota do estudante. A e2e do
+  Jornal (\cd{origem: "ia"} no \rota{POST /jornal-escola/\B{}diagramar}) e a da A
+  Seleção (o Canal A antes da enquete) ficam vermelhas neste caso.\\
 \bottomrule
 \end{tabularx}
 

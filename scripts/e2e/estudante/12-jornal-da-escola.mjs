@@ -30,13 +30,18 @@ import { ALERTA_DE_ERRO, esperarOuFalharCedo } from "../lib/smoke.mjs";
  * suíte precisa dele é uma segunda edição no histograma, não as mesmas capturas
  * duas vezes.
  *
- * Em dev e na e2e a IA é o mock: a diagramação cai sempre no modelo automático
- * (a tela não fica sabendo) e as imagens não são geradas (o cartão se desenha
- * pelo meio). Os dois são comportamento declarado (ADR-117), não defeito.
+ * A IA é a DE VERDADE (Vertex, com o ADC válido): a suíte não roda contra o
+ * mock. As imagens das notícias são geradas na criação e só vão à turma depois
+ * do OK da professora (ADR-147) — sem todas aprovadas, a atividade não vai ao
+ * ar, e a suíte prova o 409 antes de aprovar.
  *
  * A ATIVIDADE é da professora (ADR-130): a suíte a cria pelo assistente
- * ("Nova atividade" na ficha), a partir do banco pronto da Unooria, um aluno
- * por computador, e a põe no ar ao criar. A plataforma não cria nada.
+ * ("Nova atividade" na ficha), com as oito notícias GERADAS PELA IA sobre um
+ * tema da aula, um aluno por computador, e a põe no ar ao criar. A plataforma
+ * não cria nada. Como o conteúdo muda a cada corrida, o que a criança escolhe
+ * sai do GABARITO que a professora lê pela api (`N`, montado depois de criar):
+ * o molde sorteado garante os oito meios, 3+ publicáveis, 2+ antigas e 1+ sem
+ * fonte, então "1 de 3" e depois "3 de 3" sempre se montam.
  *
  * FIXTURE: a 4A (o seed libera a exp04ef1b lá). O estado é do servidor e
  * sobrevive ao roteiro. Criar de novo EXATAMENTE o pacote mais recente devolve
@@ -54,20 +59,24 @@ const TURMA = process.env.TURMA ?? PRIMEIRO.turma;
 const SEGUNDO = contasDe("estudante").find((c) => c.turma === PRIMEIRO.turma && c.login !== PRIMEIRO.login);
 if (!SEGUNDO) throw new Error(`a turma ${TURMA} precisa de dois estudantes (rode o seed)`);
 
-/**
- * As manchetes do banco padrão ("Feira de Ciências e Notícias da Cidade",
- * `apps/api/src/jornal-escola/catalogo.ts`). O gabarito no comentário é o que a
- * suíte usa para montar uma 1ª edição com UMA verificada e uma 2ª com três —
- * ele não vem da tela.
- */
-const N = {
-  feira: /Feira de Ciências da escola abre inscrições/, // n1 portal · publicável
-  robos: /Oficina de robôs solares com medalhas/, // n2 rádio · antiga (data)
-  agua: /Mensagem avisa corte de água na escola/, // n3 mensagem · sem autoria
-  planetario: /Planetário móvel chega à praça central/, // n4 TV · publicável
-  tirolesa: /Tirolesa gigante e grátis no parque/, // n5 rede social · sem fonte
-  horta: /Horta da escola chama famílias para mutirão/, // n6 jornal · publicável
+/** O tema que a IA recebe. Conteúdo novo a cada corrida: atividade nova, rodada 1. */
+const PARAMETROS_DA_GERACAO = {
+  disciplina: "Ciências",
+  tema: "Água limpa e saúde no bairro",
+  topicos: "Coleta de lixo na praça\nVacinação na escola\nHorta comunitária\nConsumo de água em casa",
 };
+
+/** A manchete como nome acessível do cartão, sem os metacaracteres de regex. */
+const manchete = (texto) => new RegExp(texto.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+
+/**
+ * As notícias que a criança escolhe, pelo GABARITO do pacote gerado (lido pela
+ * professora em `GET /jornal-escola/turmas/:t/pacotes`) — nunca da tela:
+ * `antiga` (pilar data) e `semFonte` (pilar fonte) com uma publicável dão a 1ª
+ * edição com UMA verificada; trocar as duas por outras publicáveis dá três.
+ * `post` e `mensagem` são as peças imitadas (cada meio aparece uma vez).
+ */
+const N = {};
 
 /** O que nunca pode aparecer na tela da criança: carimbo, nota, acerto. */
 const CARIMBO_OU_ACERTO = /\b(fake news|falsa|falso|mentira|errou|acertou|correta|incorreta|pontos|sua nota)\b/i;
@@ -107,7 +116,7 @@ await suite(
       "passou, um aviso que ninguém assina. A Chave do Editor ensina a checar fonte, data e autoria, " +
       "e a segunda edição mostra o antes e o depois.",
     prova: [
-      "A atividade nasce da professora, pelo assistente — o banco pronto carrega sem gravar, e criar com “no ar agora” abre a turma",
+      "A atividade nasce da professora, pelo assistente — a IA escreve as notícias, a professora aprova textos e imagens, e criar com “no ar agora” abre a turma",
       "O post abre no formato do Unoovista e a mensagem no do Unoochat, dentro da redação da Unooria",
       "A pista de fonte, data e autoria só existe depois que a criança a abre",
       "Publicar não pergunta nada; a pergunta de motivo vem depois do latch",
@@ -175,9 +184,9 @@ await suite(
         "com uma atividade dela em andamento: a plataforma não cria nada (ADR-130).",
     });
 
-    /* NOVA ATIVIDADE pelo assistente: a turma já vem da ficha, o conteúdo parte
-       do banco pronto da Unooria, um aluno por computador, e a atividade entra
-       no ar ao criar. O `LinkButton` é um `<a>` com `role="button"` (o `Button`
+    /* NOVA ATIVIDADE pelo assistente: a turma já vem da ficha, a IA escreve as
+       oito notícias sobre o tema da aula, um aluno por computador, e a
+       atividade entra no ar ao criar. O `LinkButton` é um `<a>` com `role="button"` (o `Button`
        do DS polimórfico): pelo elemento, e não pelo papel. */
     await prof.locator("a", { hasText: "Nova atividade" }).first().click();
     await prof.waitForURL("**/atividades/nova**", { timeout: 30_000 });
@@ -188,14 +197,33 @@ await suite(
       "a criação nasce VAZIA: nenhuma notícia na mesa antes de a professora escolher o ponto de partida",
     );
 
-    /* O banco pronto CARREGA para dentro da mesa, e não grava nada. */
-    const bancoPronto = prof.locator('[data-acao="usar-banco-pronto"]');
-    await hidratado(prof, bancoPronto);
-    await bancoPronto.click();
+    /* A IA ESCREVE o pacote (gerar-conteudo, ~20 s com o Vertex): rascunho,
+       que não grava nada. A prova é a RESPOSTA — `usouIa` e `origem: "ia"` —,
+       não a tela: sem IA a api responde 429/503, e o banner oferece o banco. */
+    const preparo = prof.locator("[data-preparo-jornal]");
+    await prof.getByLabel("Componente Curricular").fill(PARAMETROS_DA_GERACAO.disciplina);
+    await prof.getByLabel("Tema central da aula").fill(PARAMETROS_DA_GERACAO.tema);
+    await prof.getByLabel("Tópicos prioritários para as 8 notícias").fill(PARAMETROS_DA_GERACAO.topicos);
+    const gerarPacote = prof.locator('[data-acao="gerar-pacote"]');
+    await hidratado(prof, gerarPacote);
+    const respostaDaGeracao = prof.waitForResponse(
+      (res) => /\/jornal-escola\/turmas\/[^/]+\/gerar-conteudo$/.test(new URL(res.url()).pathname) && res.request().method() === "POST",
+      { timeout: 180_000 },
+    );
+    await gerarPacote.click();
+    const geracao = await respostaDaGeracao;
+    const gerado = await geracao.json().catch(() => null);
+    if (
+      !r.exigir(
+        geracao.status() === 200 && gerado?.usouIa === true && gerado?.origem === "ia",
+        `a IA escreveu as oito notícias (gerar-conteudo ${geracao.status()}, usouIa=${gerado?.usouIa}, origem=${gerado?.origem}${gerado?.mensagem ? `: ${gerado.mensagem}` : ""})`,
+      )
+    )
+      return;
     await esperarOuFalharCedo(
-      prof.getByText(/^O banco pronto da Unooria foi carregado\./),
-      prof.locator("[data-preparo-jornal]").locator(ALERTA_DE_ERRO),
-      { timeout: 30_000, oQue: "carregar o banco pronto da Unooria" },
+      prof.getByText(/^Pacote gerado\./),
+      preparo.locator(ALERTA_DE_ERRO),
+      { timeout: 30_000, oQue: "mostrar o pacote gerado pela IA" },
     );
     await prof.locator("[data-mesa-do-preparo]").waitFor({ timeout: 10_000 });
     const noticiasNaMesa = await prof
@@ -203,20 +231,111 @@ await suite(
       .evaluateAll((ns) => ns.map((n) => n.getAttribute("data-noticia")));
     r.exigir(
       noticiasNaMesa.length === 8 && ["n1", "n2", "n3", "n4", "n5", "n6", "n7", "n8"].every((id) => noticiasNaMesa.includes(id)),
-      `a mesa da criação tem as oito notícias do banco pronto (${noticiasNaMesa.join(", ")})`,
+      `a mesa da criação tem as oito notícias geradas (${noticiasNaMesa.join(", ")})`,
     );
-    await r.registrar(prof, "criacao-banco-pronto", {
-      titulo: "O conteúdo da atividade: o banco pronto",
+    await r.registrar(prof, "criacao-gerada-com-ia", {
+      titulo: "O conteúdo da atividade: escrito pela IA",
       mostra:
-        "O passo Conteúdo da criação com as oito notícias da Feira de Ciências e Notícias da Cidade na mesa, " +
+        `O passo Conteúdo da criação com as oito notícias que a IA escreveu sobre “${PARAMETROS_DA_GERACAO.tema}”, ` +
         "para a professora ler e editar.",
       prova:
-        "O banco pronto é ponto de partida, não atividade: carregar não grava nada, e nada vai à turma sem o " +
-        "clique em Criar. Oito notícias de oito meios, com o gabarito, as pistas e a consequência de cada uma.",
+        "A IA escreve o pacote de verdade (Vertex): oito notícias de oito meios, com o gabarito, as pistas e a " +
+        "consequência de cada uma, no molde sorteado no servidor. É rascunho: nada vai à turma sem o clique em Criar.",
+      inteira: true,
+    });
+    const aprovarTextos = prof.locator('[data-acao="aprovar-textos"]');
+    if (await aprovarTextos.isDisabled()) {
+      const pendencias = await preparo.locator('[role="status"]').allInnerTexts();
+      throw new Error(`a curadoria recusou o pacote gerado pela IA: ${pendencias.join(" | ").slice(0, 400)}`);
+    }
+
+    /* AS DUAS FASES DA APROVAÇÃO (ADR-147, o pedido do PO): os textos gravam o
+       pacote e as imagens começam sozinhas; a professora vê cada uma, gera
+       outra para a que não serve e aprova. O "Continuar" só acende depois. */
+    const continuar = prof.locator('[data-acao="continuar-criacao"]');
+    r.exigir(await continuar.isDisabled(), "antes de aprovar textos e imagens, o “Continuar” da criação fica apagado");
+    await aprovarTextos.click();
+    await esperarOuFalharCedo(
+      prof.locator('[data-preparo-jornal][data-fase="imagens"] [data-imagens-do-pacote]'),
+      prof.locator("[data-preparo-jornal]").locator(ALERTA_DE_ERRO),
+      { timeout: 30_000, oQue: "aprovar os textos e abrir a fase das imagens" },
+    );
+    const grade = prof.locator("[data-imagens-do-pacote]");
+    const pacoteDaCriacao = await grade.getAttribute("data-pacote-das-imagens");
+    /** Espera a geração parar: nenhuma imagem gerando nem faltando — e falha CEDO no aviso da grade. */
+    const imagensProntas = async (oQue) => {
+      const fim = Date.now() + 300_000;
+      for (;;) {
+        const pendentes = await grade.locator('[data-estado-da-imagem="gerando"], [data-estado-da-imagem="sem-imagem"]').count();
+        if (pendentes === 0) return;
+        const aviso = grade.locator(".unooria-feedback-alert--warning");
+        if ((await aviso.count()) > 0 && (await grade.locator('[data-estado-da-imagem="gerando"]').count()) === 0) {
+          throw new Error(`${oQue}: ${(await aviso.first().innerText()).trim()}`);
+        }
+        if (Date.now() > fim) throw new Error(`${oQue}: a geração não terminou em 5 minutos`);
+        await prof.waitForTimeout(1_000);
+      }
+    };
+    await imagensProntas("gerar as imagens das notícias (o ADC está válido?)");
+    const cartoesDeImagem = grade.locator("[data-imagem-da-noticia]");
+    const totalDeImagens = await cartoesDeImagem.count();
+    r.exigir(totalDeImagens >= 4, `a fase 2 mostra uma imagem por notícia que pede imagem (${totalDeImagens})`);
+    r.exigir(
+      (await grade.locator("[data-imagem-da-noticia] img").count()) === totalDeImagens,
+      "cada notícia que pede imagem aparece com a imagem gerada, grande, junto da manchete",
+    );
+
+    /* A atividade gravada ainda não vai ao ar: a api recusa sem o OK. */
+    const jaAprovada = (await grade.getAttribute("data-imagens-aprovadas")) === "sim";
+    if (pacoteDaCriacao && !jaAprovada && noArAntes?.id !== pacoteDaCriacao) {
+      const recusa = await mandarApi(prof, `/jornal-escola/turmas/${turmaId}/pacotes/${pacoteDaCriacao}/em-andamento`);
+      r.exigir(
+        recusa.status === 409 && recusa.corpo?.codigo === "imagens-nao-aprovadas",
+        `sem as imagens aprovadas, pôr no ar é recusado com 409 imagens-nao-aprovadas (veio ${recusa.status} ${recusa.corpo?.codigo ?? ""})`,
+      );
+    }
+    await r.registrar(prof, "criacao-imagens", {
+      titulo: "As imagens, antes da turma",
+      mostra:
+        "A fase 2 da criação: cada imagem gerada por IA grande, com o meio, a manchete e o que ela deveria " +
+        "mostrar, o estado “Aguardando seu OK” e os botões “Gerar outra imagem” e “Aprovar”.",
+      prova:
+        "Nenhuma imagem gerada por IA chega à mesa das crianças sem o OK da professora (ADR-147, pedido do PO): " +
+        "os textos já estão gravados, e a atividade não vai ao ar enquanto houver imagem sem aprovação.",
       inteira: true,
     });
 
-    await prof.locator('[data-acao="continuar-criacao"]').click();
+    /* "Gerar outra imagem" troca SÓ aquela, que volta a esperar o OK. */
+    const primeira = cartoesDeImagem.first();
+    const idDaPrimeira = await primeira.getAttribute("data-imagem-da-noticia");
+    const srcAntes = await primeira.locator("img").getAttribute("src");
+    await primeira.locator('[data-acao="gerar-outra-imagem"]').click();
+    const daPrimeira = grade.locator(`[data-imagem-da-noticia="${idDaPrimeira}"]`);
+    await esperarOuFalharCedo(
+      daPrimeira.locator(`img:not([src="${srcAntes}"])`),
+      grade.locator(".unooria-feedback-alert--warning"),
+      { timeout: 90_000, oQue: "gerar outra imagem para uma notícia" },
+    );
+    r.exigir(
+      (await daPrimeira.getAttribute("data-estado-da-imagem")) === "aguardando",
+      "a imagem gerada de novo volta a esperar o OK",
+    );
+
+    const aprovar = grade.locator('[data-acao="aprovar-imagens"]');
+    await aprovar.click();
+    await esperarOuFalharCedo(
+      prof.locator('[data-imagens-do-pacote][data-imagens-aprovadas="sim"]'),
+      grade.locator(".unooria-feedback-alert--warning"),
+      { timeout: 30_000, oQue: "aprovar as imagens" },
+    );
+    r.exigir(!(await continuar.isDisabled()), "com textos e imagens aprovados, o “Continuar” acende");
+    await r.registrar(prof, "criacao-imagens-aprovadas", {
+      titulo: "Imagens aprovadas",
+      mostra: "Todas as imagens com a etiqueta “Aprovada” e a barra cheia.",
+      prova: "É esta aprovação que libera a atividade para ir ao ar — por imagem, e a que for trocada depois espera de novo.",
+    });
+
+    await continuar.click();
     /* Rádio do DS pelo PAPEL: o `<input>` transparente cobre o rótulo inteiro. */
     const umPorComputador = prof.getByRole("radio", { name: "Um aluno por computador", exact: true });
     await umPorComputador.click();
@@ -262,13 +381,39 @@ await suite(
     const atividadeId = new URL(prof.url()).searchParams.get("pacote");
     if (!r.exigir(Boolean(atividadeId), `a página da atividade leva o id dela na URL (${prof.url()})`)) return;
     await prof.locator(`[data-pacote="${atividadeId}"]`).waitFor({ timeout: 20_000 });
-    await prof.locator("[data-imagens-do-pacote]").waitFor({ timeout: 20_000 });
+    await prof.locator('[data-imagens-do-pacote][data-imagens-aprovadas="sim"]').waitFor({ timeout: 20_000 });
     await prof.locator("[data-etapa]").waitFor({ timeout: 20_000 });
     const pacotesDepois = (await lerApi(prof, `/jornal-escola/turmas/${turmaId}/pacotes`)).corpo;
     r.exigir(
       pacotesDepois?.ativo?.id === atividadeId,
       "a atividade criada é a EM ANDAMENTO da turma (GET /jornal-escola/turmas/:turmaId/pacotes)",
     );
+    r.exigir(pacotesDepois?.ativo?.origem === "ia", "a atividade em andamento é a escrita pela IA (origem ia)");
+
+    /* O GABARITO da atividade gerada escolhe o que a criança faz (ver `N`). */
+    const doPacote = pacotesDepois?.ativo?.noticias ?? [];
+    const comPilar = (pilar) => doPacote.filter((n) => !n.gabarito.publicavel && n.gabarito.pilarEmFalta === pilar);
+    const publicaveis = doPacote.filter((n) => n.gabarito.publicavel);
+    const [antiga] = comPilar("data");
+    const [semFonte] = comPilar("fonte");
+    const post = doPacote.find((n) => n.meio === "rede_social");
+    const mensagem = doPacote.find((n) => n.meio === "mensagem");
+    if (
+      !r.exigir(
+        Boolean(antiga && semFonte && publicaveis.length >= 3 && post && mensagem),
+        `o pacote gerado tem o molde que a missão garante (${publicaveis.length} publicáveis, antiga ${Boolean(antiga)}, sem fonte ${Boolean(semFonte)}, post ${Boolean(post)}, mensagem ${Boolean(mensagem)})`,
+      )
+    )
+      return;
+    Object.assign(N, {
+      antiga: manchete(antiga.manchete),
+      semFonte: manchete(semFonte.manchete),
+      publicavel1: manchete(publicaveis[0].manchete),
+      publicavel2: manchete(publicaveis[1].manchete),
+      publicavel3: manchete(publicaveis[2].manchete),
+      post: manchete(post.manchete),
+      mensagem: manchete(mensagem.manchete),
+    });
     const jaExistia = (pacotesAntes.corpo?.historico ?? []).some((h) => h.id === atividadeId);
     if (!jaExistia) {
       r.exigir(
@@ -303,16 +448,27 @@ await suite(
     await r.registrar(prof, "atividade-em-andamento", {
       titulo: "A atividade em andamento e o botão que move a sala",
       mostra:
-        "A página da atividade criada: em andamento, as equipes (um aluno por computador), as imagens do " +
-        "pacote e o painel da aula com o botão único na exploração.",
+        "A página da atividade criada: em andamento, as equipes (um aluno por computador), as imagens " +
+        "aprovadas e o painel da aula com o botão único na exploração.",
       prova:
-        "Criar com “Pôr no ar agora” abriu uma rodada nova desta atividade. As imagens são do pacote GRAVADO " +
-        "e se geram aqui, depois de criar — gerar para um rascunho gastaria a quota à toa.",
+        "Criar com “Pôr no ar agora” abriu uma rodada nova desta atividade — o que só é possível com as " +
+        "imagens aprovadas na criação (ADR-147). Trocar uma imagem aqui a tira da turma até o novo OK.",
       inteira: true,
     });
 
     // ═══ ESTUDANTE 1: o Bento e a mesa ════════════════════════════════════
     const p = await r.pagina("estudante", { viewport: { width: 1280, height: 950 } });
+    /* A DIAGRAMAÇÃO é IA em sala, com o modelo automático de reserva que a tela
+       não mostra: a prova é a resposta do `POST /jornal-escola/diagramar`
+       (direto à api, de dentro do iframe), que diz a `origem`. */
+    const diagramacoes = [];
+    p.on("response", (res) => {
+      if (res.request().method() !== "POST" || !/\/jornal-escola\/diagramar$/.test(new URL(res.url()).pathname)) return;
+      res
+        .json()
+        .then((corpo) => diagramacoes.push(corpo?.origem ?? `HTTP ${res.status()}`))
+        .catch(() => diagramacoes.push(`HTTP ${res.status()}`));
+    });
     await r.entrar(p, PRIMEIRO.login);
     await p.goto(`${HUB}/exp/${EXP_ID}`, { waitUntil: "domcontentloaded" });
     const q = () => p.frameLocator('iframe[title="experiencia"]');
@@ -348,6 +504,10 @@ await suite(
     await explorar.click();
     await q().locator("text=Pautas da Semana").first().waitFor({ timeout: 20_000 });
     r.exigir((await q().locator(".unooria-news-card").count()) === 8, "a mesa tem os oito cartões");
+    r.exigir(
+      (await q().locator(".unooria-news-card img").count()) >= 4,
+      "as imagens aprovadas pela professora chegam aos cartões da mesa",
+    );
     r.exigir((await q().locator("text=/Bento/").count()) === 0, "na mesa, o Bento fica calado");
     await semAnimacao();
     await r.registrar(p, "mesa-de-noticias", {
@@ -388,7 +548,7 @@ await suite(
     };
 
     // A peça imitada, na seção de onde veio.
-    await abrir(N.tirolesa);
+    await abrir(N.post);
     r.exigir((await gaveta().locator(".unv-post-card").count()) === 1, "o post abre como o post do Unoovista");
     await r.registrar(p, "gaveta-post", {
       titulo: "O post, como post",
@@ -399,7 +559,7 @@ await suite(
     });
     await voltarParaAMesa();
 
-    await abrir(N.agua);
+    await abrir(N.mensagem);
     r.exigir(
       (await gaveta().locator(".unc-messagebubble .unc-messagebubble__forwarded").count()) === 1,
       "a mensagem abre como o balão encaminhado do Unoochat",
@@ -412,35 +572,60 @@ await suite(
     await voltarParaAMesa();
 
     // As pistas: o texto só existe depois do toque.
-    await abrir(N.robos);
+    await abrir(N.antiga);
     const antesDaPista = await gaveta().innerText();
     for (const tipo of ["Fonte", "Data", "Autoria"]) await abrirPista(tipo);
     const depoisDaPista = await gaveta().innerText();
     r.exigir(depoisDaPista.length > antesDaPista.length, "abrir as pistas acrescenta o que o servidor revelou");
     await r.registrar(p, "pistas-abertas", {
       titulo: "Fonte, data e autoria",
-      mostra: "O boletim de rádio com as três pistas abertas.",
+      mostra: "A notícia antiga da mesa com as três pistas abertas.",
       prova:
         "O texto de cada pista desce do servidor no toque: abrir é o registro que mede a EF15CO04, e " +
         "uma pista lida sem registro seria evidência que a plataforma não vê.",
     });
     await noJornal();
 
-    await abrir(N.feira);
+    await abrir(N.publicavel1);
     for (const tipo of ["Fonte", "Data", "Autoria"]) await abrirPista(tipo);
     await noJornal();
-    await adicionar(N.tirolesa);
+    await adicionar(N.semFonte);
+
+    // ═══ A primeira página e o latch ═════════════════════════════════════
+    const aba = (nome) => q().getByRole("tab", { name: nome }).or(q().getByRole("button", { name: nome })).first();
+    /** A aba está selecionada SEM o clique da suíte? É a transição automática que o PO pediu. */
+    const selecionada = async (nome) => (await aba(nome).getAttribute("aria-selected")) === "true";
+    /** Espera (até 5 s) a aba ficar selecionada SOZINHA: a troca vem com o fechar da gaveta, e ler na hora corre contra ela. */
+    const ficaSelecionada = async (nome) => {
+      for (let i = 0; i < 20; i += 1) {
+        if (await selecionada(nome)) return true;
+        await p.waitForTimeout(250);
+      }
+      return false;
+    };
+
+    /* 3/3: a mesa vai SOZINHA para a Primeira Página, onde está o publicar
+       (ajuste do PO: a criança ficava presa nas pautas sem saber o passo). */
+    await q().locator('[role="tab"][aria-selected="true"]', { hasText: "Primeira Página" }).waitFor({ timeout: 10_000 });
+    r.exigir(await selecionada(/Primeira Página/), "com a 3ª notícia, a mesa passa sozinha para a Primeira Página");
+    await semAnimacao();
+    await r.registrar(p, "capa-cheia-vai-para-a-pagina", {
+      titulo: "3 de 3: a página aparece sozinha",
+      mostra: "Logo depois da terceira notícia, a aba “Primeira Página 3/3” aberta, com o botão de publicar.",
+      prova:
+        "A criança não precisa descobrir que o próximo passo mora em outra aba: a mesa a leva até lá, " +
+        "e o foco vai para a aba da página.",
+    });
 
     // A quarta: o aviso da capa cheia.
-    await abrir(N.planetario);
+    await aba(/Pautas da Semana/).click();
+    await abrir(N.publicavel2);
     r.exigir(
       (await q().locator("text=/A capa cabe só 3 matérias/").count()) > 0,
       "com a capa cheia, a quarta notícia não entra e a tela diz por quê",
     );
     await voltarParaAMesa();
 
-    // ═══ A primeira página e o latch ═════════════════════════════════════
-    const aba = (nome) => q().getByRole("tab", { name: nome }).or(q().getByRole("button", { name: nome })).first();
     /** Espera o botão acender: ele fica desabilitado enquanto a redação monta a página. */
     const acesa = async (botao) => {
       await botao.waitFor({ timeout: 20_000 });
@@ -450,20 +635,29 @@ await suite(
     await aba(/Primeira Página/).click();
     const publicar1 = q().getByRole("button", { name: /Publicar 1ª Edição/ });
     await acesa(publicar1);
+    /** A diagramação desta página veio da IA — e nenhuma caiu no modelo automático. */
+    const diagramouComIa = async (oQue) => {
+      for (let i = 0; i < 40 && diagramacoes.length === 0; i += 1) await p.waitForTimeout(250);
+      r.exigir(
+        diagramacoes.length > 0 && diagramacoes.every((o) => o === "ia"),
+        `${oQue}: a IA diagramou a página (origens: ${diagramacoes.join(", ") || "nenhuma resposta"})`,
+      );
+      diagramacoes.length = 0;
+    };
+    await diagramouComIa("1ª edição");
     await semAnimacao();
     await r.registrar(p, "primeira-pagina", {
       titulo: "A página tomando forma",
       mostra: "A manchete principal e as duas secundárias, diagramadas.",
       prova:
-        "A IA só escolhe o layout, dentro de três modelos fechados; em dev ela é o mock, e o modelo " +
-        "automático diagrama sem a tela ficar sabendo.",
+        "A IA escolhe o layout, dentro de três modelos fechados — e a suíte confere na resposta que foi ela, " +
+        "não o modelo automático que diagrama em silêncio quando ela falha.",
     });
-    r.ressalva("em dev a diagramação é sempre o modelo automático (a IA é o mock)");
 
     await publicar1.click();
     await q().getByText(/Confirmar Publicação da Capa/).first().waitFor({ timeout: 10_000 });
     r.exigir(
-      (await q().locator("text=/Como a dupla escolheu/").count()) === 0,
+      (await q().locator("text=/Como as três matérias foram escolhidas/").count()) === 0,
       "o modal de publicar não pergunta o motivo: a pergunta antecipa a descoberta",
     );
     await r.registrar(p, "confirmar-publicacao", {
@@ -474,10 +668,14 @@ await suite(
     await q().getByRole("button", { name: /Distribuir Jornal Agora/ }).click();
 
     // ═══ O motivo, depois do latch ═══════════════════════════════════════
-    await q().locator("text=/Como a dupla escolheu essas três matérias/").first().waitFor({ timeout: 20_000 });
+    await q().locator("text=/Como as três matérias foram escolhidas\\?/").first().waitFor({ timeout: 20_000 });
+    r.exigir(
+      (await q().locator("text=/dupla/").count()) === 0,
+      "a pergunta não diz “dupla”: quantos dividem o computador é o professor quem decide",
+    );
     await q().getByRole("radio", { name: /Escolhemos as fotos mais chamativas/ }).click();
     await r.registrar(p, "motivo", {
-      titulo: "Como a dupla escolheu",
+      titulo: "Como as três matérias foram escolhidas",
       mostra: "As duas respostas, a ingênua e a auditada, depois de a edição sair.",
       prova:
         "Perguntar depois do latch e antes do resultado: nem antecipa a descoberta, nem contamina a resposta.",
@@ -567,7 +765,13 @@ await suite(
     // ═══ A revisão e a 2ª edição ═════════════════════════════════════════
     await q().getByRole("button", { name: /Abrir a Mesa de Revisão/ }).click();
     await q().locator("text=Mesa de Revisão Pericial").first().waitFor({ timeout: 20_000 });
-    await aba(/Primeira Página/).click();
+    /* A revisão ABRE na Primeira Página: o aviso da Chave pede a troca, e o
+       "Trocar Matéria" está lá (ajuste do PO). */
+    r.exigir(await selecionada(/Primeira Página/), "a mesa de revisão abre direto na Primeira Página, sem clique");
+    r.exigir(
+      (await q().locator("text=/Troque os furos por matérias verificadas/").count()) > 0,
+      "o aviso da Chave aparece junto da página que ele manda corrigir",
+    );
     await q().locator("text=Fato que já passou").first().waitFor({ timeout: 15_000 });
     r.exigir((await q().locator("text=Fonte sem confirmação").count()) > 0, "a vaga do post sem fonte ganha o marcador");
     r.exigir((await q().locator("text=Matéria verificada").count()) > 0, "a vaga verificada fica marcada como verificada");
@@ -578,17 +782,18 @@ await suite(
       prova: "Os marcadores só existem depois de a Chave se formar — antes disso o pilar em falta não desce.",
     });
 
-    /* A 1ª edição foi [robôs, feira, tirolesa]: troca a 1ª vaga (a antiga) e a
-       3ª (o post sem fonte) por duas publicáveis. */
+    /* A 1ª edição foi [antiga, publicável, sem fonte]: troca a 1ª vaga (a
+       antiga) e a 3ª (a sem fonte) por duas publicáveis. */
     const trocar = (i) => q().getByRole("button", { name: /Trocar Matéria/ }).nth(i);
     await trocar(0).click();
-    await adicionar(N.planetario);
-    await aba(/Primeira Página/).click();
+    await adicionar(N.publicavel2);
+    r.exigir(await ficaSelecionada(/Primeira Página/), "a vaga preenchida de novo devolve a mesa à Primeira Página");
     await trocar(2).click();
-    await adicionar(N.horta);
-    await aba(/Primeira Página/).click();
+    await adicionar(N.publicavel3);
+    r.exigir(await ficaSelecionada(/Primeira Página/), "a segunda troca também volta sozinha à página");
     const publicar2 = q().getByRole("button", { name: /Publicar 2ª Edição Revisada/ });
     await acesa(publicar2);
+    await diagramouComIa("2ª edição");
     await publicar2.click();
     await q().getByRole("button", { name: /Distribuir Jornal Agora/ }).click();
 

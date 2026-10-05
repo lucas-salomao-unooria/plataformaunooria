@@ -28,9 +28,12 @@ morre com "Failed to fetch", e o erro não diz por quê.
 
 Precisa de: a api no ar (`/a-selecao/*` e `/evidencias/*`), a missão **liberada**
 na turma do estudante (ADR-69) e o produto `entre-redes` ligado no painel da
-Unooria (ADR-87). Sem cobertura homologada pela professora, a turma roda o banco
-curado (a Praça Central). Sem imagens geradas, os posts saem como cards com a
-descrição da imagem — de propósito, e iguais em forma.
+Unooria (ADR-87). A plataforma não cria atividade (ADR-130): sem uma cobertura
+da professora EM ANDAMENTO, a api responde 403 `atividade-nao-preparada` e a tela
+"ainda não está aberta" pergunta de novo a cada 5 s (ADR-146). O banco curado (a
+Praça Central) é o ponto de partida da criação, não um padrão que roda sozinho.
+Post sem imagem sai como card com a descrição da cena — de propósito, e igual em
+forma.
 
 ## Verificar
 
@@ -89,9 +92,8 @@ e-mail — e, da enquete, a PERGUNTA respondida, nunca a alternativa.
 | `attempted` | `missao:entrada` | depois da primeira leitura | `contexto: { passo }` |
 | `progressed` | `desafio:abrir-feed` | "Abrir Feed da Cobertura" | — |
 | `interacted` | `feed:salvar` / `feed:remover` | marcou / desmarcou no feed | `resultado: { salvos }`, `contexto: { postId }` |
-| `interacted` | `feed:curtir` | curtiu (cosmético) | `contexto: { semSalvar }` |
 | `interacted` | `feed:recarregar-midia` | "Tentar novamente" na imagem | `contexto: { postId }` |
-| `interacted` | `feed:andaime` | a demonstração ou uma das dicas apareceu | `contexto: { motivo: demonstracao \| inatividade \| curtidas }` |
+| `interacted` | `feed:andaime` | a demonstração ou a dica do marcador apareceu | `contexto: { motivo: demonstracao \| inatividade }` |
 | `progressed` | `feed:ir-salvos` | saiu do feed para a aba Salvos | `resultado: { salvos }`, `contexto: { tempoFeedS }` |
 | `interacted` | `salvos:remover` / `salvos:selecionar` | desmarcou / remarcou na grade | `resultado: { selecionados }`, `contexto: { postId }` |
 | `interacted` | `salvos:voltar-feed` | voltou para garimpar | — |
@@ -121,7 +123,7 @@ legenda, pelo painel de habilidades (`/evidencias`).
 ## A copy ESCRITA AQUI (para o PO revisar)
 
 Marcada `ESCRITA AQUI` em `lib/textos.ts`: a conta da Amara (`amara.gremio`,
-"Ativa agora"), "N curtidas", "Ver todos os N comentários", os nomes acessíveis
+"Ativa agora"), "N curtidas", os nomes acessíveis
 (abas, grade, campo, voltar), "Não foi possível carregar o feed agora.", a recusa
 do sanitizador, "Continuar" (da confirmação às enquetes), o encerramento da Amara
 ("Valeu pela força com a cobertura! Até a próxima."), "Fechar conversa", o corpo

@@ -15,9 +15,11 @@ import { conta, contasDe } from "../lib/credenciais.mjs";
  * (pelo BFF, com a sessão dele): o que a suíte precisa dele é a tríade no
  * banco antes de o Mural abrir, não as mesmas capturas duas vezes.
  *
- * Em dev e na e2e a IA é o mock, que sempre falha: a classificação da legenda
- * (o Canal A de EF07CO11) NÃO marca nada, e isso é o comportamento declarado
- * (ADR-114). A evidência que o painel mostra no fim vem da enquete p1.
+ * A IA é a DE VERDADE (Vertex, com o ADC válido), de ponta a ponta: ela
+ * escreve a cobertura (os 12 posts e as falas do podcast), gera as imagens, lê
+ * a legenda da criança (o Canal A da EF07CO11, provado no painel ANTES da
+ * enquete p1, que também marca a EF07CO11) e sintetiza o podcast. Toda saída
+ * de reserva silenciosa vira reprovação aqui.
  */
 const SERIE = "7EF";
 /* A turma vem do CSV do seed, não fixada aqui (o seed já renomeou turma uma
@@ -34,6 +36,8 @@ if (!SEGUNDO) throw new Error(`a turma ${TURMA} precisa de dois estudantes (rode
 const PRIMEIRO_NOME_DO_SEGUNDO = SEGUNDO.nome.split(" ")[0];
 
 /** A legenda válida: 10 a 140 caracteres, sem link, telefone, e-mail nem @. */
+/** O tema que a IA recebe. Conteúdo novo a cada corrida: cobertura nova, rodada 1. */
+const TEMA_DA_GERACAO = "Inauguração da quadra coberta do bairro";
 const LEGENDA = "Escolhi estes três posts porque mostram o que aconteceu no evento do bairro.";
 /** Mais de 100 caracteres, digitados (o `fill` não move o estado do React). */
 const REFLEXAO =
@@ -53,11 +57,13 @@ await suite(
       "colega, descobre que cada um mostrou um recorte.",
     prova: [
       "A atividade nasce da professora, pelo assistente — turma, conteúdo, equipes e criar — e só a que está em andamento abre para a turma",
+      "A cobertura se aprova em duas fases na mesma tela: os textos, e depois as imagens no card de cada post",
+      "\"Aprovar Cobertura e Abrir Turma\" libera a missão na sala — mesmo encerrada antes",
       "Publicar exige EXATAMENTE 3 posts e uma legenda de 10 caracteres ou mais",
       "Legenda com link é recusada antes de outro estudante poder lê-la",
       "Publicar é irreversível, e a F5 volta ao mesmo passo",
       "Quem move a sala é UM botão da professora: Mural, fichas, explicação",
-      "No Mural, cada estudante vê o colega que escolheu outra coisa — pelo primeiro nome",
+      "No Mural, cada estudante vê o colega que escolheu outra coisa — pelo primeiro nome, aberto no Story dele e com a legenda de cada post sobre a imagem",
       "A ficha técnica só aparece depois que a professora revela",
       "As duas enquetes da Amara não mostram acerto, e a missão termina",
       "A folha da turma não tem coluna de pontos, e o painel mostra as habilidades da BNCC",
@@ -135,33 +141,97 @@ await suite(
         "professora — a plataforma não cria nada (ADR-130).",
     });
 
-    /* NOVA ATIVIDADE pelo assistente: a turma já vem da ficha, o conteúdo
-       parte da cobertura pronta da Unooria (a praça central), um aluno por
-       computador, e a atividade entra no ar ao criar. Criar SEMPRE abre a
+    /* A turma começa com a missão ENCERRADA na sala (ADR-146). O seed a
+       libera, e com ela liberada o "pôr no ar" parecia funcionar: era só a
+       metade da porta. Encerrada, o estudante abaixo só entra se o "Aprovar
+       Cobertura e Abrir Turma" liberar a missão de verdade. */
+    const encerrou = await prof.evaluate(
+      async ({ turmaId }) =>
+        (
+          await fetch(`/api/plataforma/salas/turma/${turmaId}/missoes/exp07ef1b`, {
+            method: "PUT",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ estado: "encerrada" }),
+          })
+        ).status,
+      { turmaId: daTurma.id },
+    );
+    r.exigir(encerrou === 200, `a missão começa encerrada na sala (veio ${encerrou})`);
+
+    /* NOVA ATIVIDADE pelo assistente: a turma já vem da ficha, a IA escreve a
+       cobertura sobre o tema da aula, um aluno por computador, e a atividade
+       entra no ar ao criar. Criar SEMPRE abre a
        rodada 1 de uma atividade nova — é o que dispensa zerar a turma. */
     /* `LinkButton` é o `Button` do DS com `as={Link}`, e o DS põe
        `role="button"` em todo elemento que não é <button>: pelo PAPEL não é
        link. A âncora pelo texto é o mesmo caminho da estudante/10. */
     await prof.locator("a", { hasText: "Nova atividade" }).click();
     await prof.waitForURL("**/atividades/nova**", { timeout: 20_000 });
-    await prof.locator('[data-acao="usar-cobertura-pronta"]').waitFor({ timeout: 20_000 });
+    await prof.locator('[data-acao="gerar-lote"]').waitFor({ timeout: 20_000 });
     await prof.waitForTimeout(600); // hidratação: o clique do SSR não tem `onClick`
-    await prof.click('[data-acao="usar-cobertura-pronta"]');
+    /* A IA ESCREVE a cobertura (gerar-conteudo, 20 a 30 s com o Vertex). A
+       prova é a RESPOSTA — `usouIa` e `origem: "ia"` —: sem IA a api devolve
+       200 com a cobertura pronta, e só o aviso amarelo contaria. */
+    await prof.getByLabel("Evento central coberto pelos veículos").fill(TEMA_DA_GERACAO);
+    const respostaDaGeracao = prof.waitForResponse(
+      (res) => /\/a-selecao\/turmas\/[^/]+\/gerar-conteudo$/.test(new URL(res.url()).pathname) && res.request().method() === "POST",
+      { timeout: 180_000 },
+    );
+    await prof.click('[data-acao="gerar-lote"]');
+    const geracao = await respostaDaGeracao;
+    const gerado = await geracao.json().catch(() => null);
+    if (
+      !r.exigir(
+        geracao.status() === 200 && gerado?.usouIa === true && gerado?.origem === "ia",
+        `a IA escreveu a cobertura (gerar-conteudo ${geracao.status()}, usouIa=${gerado?.usouIa}, origem=${gerado?.origem})`,
+      )
+    )
+      return;
+    await prof.getByText(/^Lote gerado\./).first().waitFor({ timeout: 20_000 });
     await prof.locator("[data-grade-de-posts]").waitFor({ timeout: 20_000 });
     const falas = prof.locator("[data-falas-do-podcast]");
     r.exigir((await falas.locator("textarea").count()) === 3, "a criação mostra as três falas do podcast");
+    const textosDasFalas = await falas.locator("textarea").evaluateAll((ts) => ts.map((t) => t.value.trim()));
     r.exigir(
-      /padaria da esquina/.test(await falas.locator("textarea").nth(1).inputValue()),
-      "na cobertura pronta, as falas são as do roteiro aprovado",
+      textosDasFalas.every((t) => t.length > 0),
+      "as três falas do podcast vêm escritas pela IA sobre o tema",
+    );
+    r.exigir(
+      (await prof.locator("[data-grade-de-posts]").getByText("A imagem será gerada após a aprovação dos textos.").count()) > 0,
+      "na fase 1, o card do post avisa que a imagem vem depois dos textos",
     );
     await r.registrar(prof, "criacao-conteudo", {
-      titulo: "O conteúdo da atividade",
+      titulo: "Fase 1: os textos",
       mostra:
-        "O passo de conteúdo da criação: o tema, os 12 posts com as tags que só a professora vê e as " +
-        "três falas do podcast de recapitulação.",
+        "O passo de conteúdo da criação: o tema, os 12 posts com as tags que só a professora vê, o " +
+        "aviso de que a imagem vem depois e as três falas do podcast de recapitulação.",
       prova:
-        "A cobertura pronta da Unooria é ponto de partida, não atividade: nada vai à turma sem o " +
-        "clique em Criar. Só as três falas do podcast mudam com o tema.",
+        "A IA escreveu os 12 posts e as três falas sobre o tema da aula (Vertex), no molde do servidor. É " +
+        "rascunho: nada vai à turma sem as duas aprovações.",
+      inteira: true,
+    });
+    /* FASE 2: aprovar os textos grava a cobertura e as imagens se geram sozinhas
+       no mesmo card — com descrições NOVAS, são geradas de verdade, duas por
+       chamada. Nenhum post pode ficar com a cena por escrito. */
+    await prof.click('[data-acao="aprovar-textos"]');
+    await prof.waitForSelector('[data-fase-das-imagens][data-pronta="sim"]', { timeout: 300_000 });
+    const avisoDasImagens = prof.locator("[data-fase-das-imagens] .unooria-feedback-alert--warning");
+    r.exigir(
+      (await avisoDasImagens.count()) === 0,
+      `a IA gerou a imagem de todos os posts que pedem imagem${(await avisoDasImagens.count()) > 0 ? `: ${(await avisoDasImagens.first().innerText()).trim()}` : ""}`,
+    );
+    r.exigir(
+      (await prof.locator('[data-acao="aprovar-textos"]').count()) === 0,
+      "aprovados, os textos não voltam a ser editáveis",
+    );
+    await r.registrar(prof, "criacao-imagens", {
+      titulo: "Fase 2: as imagens, no card de cada post",
+      mostra:
+        "Os mesmos 12 cards, agora com a imagem (ou a cena por escrito, quando a imagem não saiu) junto da " +
+        "legenda, e o botão Gerar outra imagem em cada um.",
+      prova:
+        "A professora vê a composição que a turma vai ver antes de abrir a turma — e regera a imagem que " +
+        "não combina com o post (ADR-146).",
       inteira: true,
     });
     await prof.click('[data-acao="continuar-criacao"]');
@@ -181,8 +251,15 @@ await suite(
     const noAr = prof.getByLabel("Pôr esta atividade no ar agora");
     await noAr.waitFor({ state: "attached", timeout: 10_000 });
     if (!(await noAr.isChecked())) await noAr.dispatchEvent("click");
+    r.exigir(
+      /Aprovar Cobertura e Abrir Turma/.test(await prof.locator('[data-acao="criar-atividade"]').innerText()),
+      "o botão final diz que aprova a cobertura e abre a turma",
+    );
     await prof.click('[data-acao="criar-atividade"]');
     await prof.waitForURL("**/resultados?**cobertura=**", { timeout: 30_000 });
+    const sala = await api(prof, `salas/turma/${daTurma.id}`);
+    const naSala = (sala.corpo.missoes ?? []).find((m) => m.expId === "exp07ef1b");
+    r.exigir(naSala?.estado === "liberada", `abrir a turma liberou a missão na sala (veio ${naSala?.estado})`);
     await prof.waitForSelector('[data-estado-da-atividade="em-andamento"]', { timeout: 20_000 });
     await prof.waitForSelector('[data-etapa="exploracao"]', { timeout: 20_000 });
     await r.registrar(prof, "preparo-e-painel", {
@@ -221,8 +298,9 @@ await suite(
       titulo: "O feed e o marcador",
       mostra: "Os posts dos três perfis intercalados, o contador de salvos e a pílula para a aba Salvos.",
       prova:
-        "Curtir não conta: só o marcador leva o post para os Stories. A pílula só aparece com 3 " +
-        "salvos, e o feed nunca põe três posts seguidos do mesmo perfil.",
+        "Só o marcador fica nas ações do post: curtir, comentar e compartilhar saíram (ADR-146). Cada " +
+        "comentário tem autor. A pílula só aparece com 3 salvos, e o feed nunca põe três posts seguidos " +
+        "do mesmo perfil.",
     });
 
     await q().getByRole("button", { name: /Ir para aba Salvos/i }).click();
@@ -272,6 +350,23 @@ await suite(
     await publicar.click();
     await q().getByRole("button", { name: /Confirmar publicação/i }).click();
     await q().locator("text=/Publicado! Aguardando o professor/i").first().waitFor({ timeout: 20_000 });
+
+    /* O CANAL A: a IA lê a legenda DEPOIS do latch, fora da transação dele, e
+       marca a EF07CO11. A resposta da publicação não conta nada (é o estado da
+       sessão); quem mostra é o painel de evidências, e só ANTES da enquete p1 —
+       que também marca a EF07CO11 — a marca é, com certeza, a da IA. */
+    const coberturaId = new URL(prof.url()).searchParams.get("cobertura");
+    let celulaDoCanalA = null;
+    for (let i = 0; i < 30 && !celulaDoCanalA; i += 1) {
+      const painel = await api(prof, `evidencias/turma/${daTurma.id}/missao/exp07ef1b/atividade/${coberturaId}`);
+      const dele = (painel.corpo?.estudantes ?? []).find((e) => e.nome === PRIMEIRO.nome);
+      celulaDoCanalA = Object.values(dele?.porRodada ?? {}).find((celulas) => celulas?.EF07CO11)?.EF07CO11 ?? null;
+      if (!celulaDoCanalA) await prof.waitForTimeout(1_000);
+    }
+    r.exigir(
+      Boolean(celulaDoCanalA),
+      `a IA leu a legenda e marcou a EF07CO11 antes da enquete (o Canal A; veio ${JSON.stringify(celulaDoCanalA)})`,
+    );
     await r.registrar(p, "publicado", {
       titulo: "Publicado, e sem volta",
       mostra: "A prévia dos próprios Stories e a espera pelo Mural da turma.",
@@ -305,14 +400,17 @@ await suite(
     await prof.reload({ waitUntil: "domcontentloaded" });
     await apertar(prof, "mural");
     await q().getByRole("heading", { name: /Mural de Stories da Turma/i }).first().waitFor({ timeout: 30_000 });
-    await q().locator(`text=Publicação de ${PRIMEIRO_NOME_DO_SEGUNDO}`).waitFor({ timeout: 15_000 });
+    /* Abre no Story do PAR (ADR-146): o nome dele está na aba E no Story — daí
+       o `.first()`. A legenda de cada post vem sobre a imagem. */
+    await q().locator(`text=Publicação de ${PRIMEIRO_NOME_DO_SEGUNDO}`).first().waitFor({ timeout: 15_000 });
+    await q().locator(".legenda-do-post").first().waitFor({ timeout: 10_000 });
     r.exigir(
       (await q().locator("text=/Ficha Técnica/i").count()) === 0,
       "na tela pico do Mural não há ficha técnica: o contraste vem antes da explicação",
     );
     await r.registrar(p, "mural-pareado", {
       titulo: "O mesmo feed, outra história",
-      mostra: `A própria tríade e, ao lado, a de ${PRIMEIRO_NOME_DO_SEGUNDO}, que escolheu só vozes da comunidade.`,
+      mostra: `O Mural aberto na tríade de ${PRIMEIRO_NOME_DO_SEGUNDO}, que escolheu só vozes da comunidade, com a legenda de cada post sobre a imagem; a própria fica na outra aba.`,
       prova:
         "O par é o colega que mais se afastou da escolha da criança, e ele aparece pelo primeiro " +
         "nome. Tela nua: nenhuma tag, nenhuma nota — o estranhamento vem antes da teoria.",
@@ -434,8 +532,8 @@ await suite(
         "habilidades da BNCC da cobertura.",
       prova:
         "A legenda e a reflexão aparecem para a professora da turma, e para a gestão só " +
-        "\"entregou\". O nível da EF07CO11 veio da enquete; a leitura da legenda por IA não " +
-        "marcou nada porque em dev a IA é o mock — e \"Não avaliado\" é o que a regra manda.",
+        "\"entregou\". A EF07CO11 tem duas fontes — a leitura da legenda pela IA (o Canal A, provado " +
+        "antes da enquete) e a enquete — e vale a melhor.",
       inteira: true,
     });
 
@@ -464,24 +562,22 @@ await suite(
       inteira: true,
     });
 
-    /* Gerar o áudio. Com o Vertex de verdade o episódio sai trecho a trecho e
-       fica pronto; com o mock, a síntese falha fechada e a tela diz que o
-       trecho não saiu. A espera é pela UNIÃO dos desfechos — nunca pelo
-       relógio —, e o ramo que aconteceu é o que se prova. */
+    /* Gerar o áudio com o TTS de verdade: o episódio sai trecho a trecho e fica
+       pronto. A espera é pela UNIÃO dos desfechos — pronto, ou a frase de
+       falha —, nunca pelo relógio; e a falha reprova (a IA é a real). */
     if ((await cartao.getAttribute("data-podcast-pronto")) !== "sim") {
       await prof.click('[data-acao="gerar-podcast"]');
       await prof
         .locator(
-          '[data-podcast-pronto="sim"], [data-podcast-selecao] [role="status"], [data-podcast-selecao] :text-matches("não pôde ser gerado|sem saldo|limite", "i")',
+          '[data-podcast-pronto="sim"], [data-podcast-selecao] :text-matches("não pôde ser gerado|sem saldo|limite", "i")',
         )
         .first()
         .waitFor({ timeout: 300_000 });
     }
     const pronto = (await cartao.getAttribute("data-podcast-pronto")) === "sim";
+    r.exigir(pronto, "o TTS sintetizou os cinco trechos e o episódio ficou pronto");
     if (pronto) {
       r.exigir((await cartao.locator("audio").count()) === 1, "o episódio emendado toca no player do DS");
-    } else {
-      r.exigir(await transcricao.isVisible(), "sem áudio, a transcrição continua na tela");
     }
     await r.registrar(prof, "podcast-audio", {
       titulo: pronto ? "O episódio pronto" : "Sem áudio, com a transcrição",

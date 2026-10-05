@@ -62,6 +62,7 @@ export function AssistenteDeAtividade({
   conteudoPronto,
   resumoDoConteudo,
   criar,
+  rotuloDoCriar,
 }: {
   expId: MissaoComAtividade;
   rotaDaMissao: string;
@@ -74,6 +75,12 @@ export function AssistenteDeAtividade({
   /** Uma linha do resumo: o tema e o tamanho do que vai ser gravado. */
   resumoDoConteudo: string | null;
   criar: (turmaId: string) => Promise<ResultadoDaCriacao>;
+  /**
+   * O rótulo do botão final, quando a missão diz outra coisa que "Criar
+   * atividade" — A Seleção diz "Aprovar Cobertura e Abrir Turma" (ADR-146),
+   * porque o clique fecha a segunda fase da aprovação.
+   */
+  rotuloDoCriar?: (porNoAr: boolean) => string;
 }) {
   const router = useRouter();
   const inicial = turmas.find((t) => t.id === turmaInicial)?.id ?? (turmas.length === 1 ? (turmas[0]?.id ?? "") : "");
@@ -266,7 +273,7 @@ export function AssistenteDeAtividade({
               <p className="max-w-3xl text-[12px] leading-snug text-unooria-neutral-600">
                 {turma?.emAndamento
                   ? `A turma está fazendo “${turma.emAndamento}”. Ligado, quem estiver jogando passa para esta, e a outra volta a ficar pronta. Desligado, esta fica pronta na lista até você escolher.`
-                  : "Ligado, a turma já encontra esta atividade ao entrar na missão. Desligado, ela fica pronta na lista até você escolher."}
+                  : "Ligado, a missão fica liberada para a turma na Sala de Aula e a turma já encontra esta atividade ao entrar. Desligado, ela fica pronta na lista até você escolher."}
               </p>
             </div>
 
@@ -342,7 +349,7 @@ export function AssistenteDeAtividade({
                 onClick={() => void criarAtividade()}
                 data-acao="criar-atividade"
               >
-                {criando ? "Criando…" : "Criar atividade"}
+                {criando ? "Criando…" : (rotuloDoCriar?.(noAr) ?? "Criar atividade")}
               </Button>
             )}
           </>

@@ -14,6 +14,7 @@ import { equipesDaMissao } from "@/lib/equipes-servidor";
 import { painelDeHabilidades } from "@/lib/evidencias-servidor";
 import {
   ROTULO_DA_ORIGEM,
+  imagensProntasParaAula,
   type MaterialDoJornal,
   type PacoteDaAtividade,
   type PacotesDaTurma,
@@ -127,10 +128,27 @@ export async function ResultadosJornalEscola({
         ])
       : [null, null, null, null, null];
 
+  const imagensDoPacote = detalhe ? (
+    <ImagensDoPacote
+      key={`imagens-${detalhe.id}`}
+      turmaId={turma}
+      pacoteId={detalhe.id}
+      noticias={detalhe.noticias}
+      imagensIniciais={detalhe.imagens}
+      aprovadasIniciais={detalhe.aprovadas}
+      podeEditar={session?.usuario.papel === "professor"}
+    />
+  ) : null;
+
   const membros: Record<string, MembroNoPainel[]> = Object.fromEntries(
     (equipes?.equipes ?? []).map((e) => [e.id, e.membros]),
   );
-  const estado = ROTULO_DO_ESTADO[emAndamento ? "em-andamento" : "pronta"];
+  /* Sem as imagens geradas e aprovadas (ADR-147), a atividade não vai ao ar:
+     "Em preparo", e o "Usar esta atividade agora" dá lugar à aprovação. A que
+     já está no ar continua em andamento. */
+  const prontaParaAula = detalhe ? imagensProntasParaAula(detalhe.midia) : false;
+  const chaveDoEstado = emAndamento ? "em-andamento" : prontaParaAula ? "pronta" : "em-preparo";
+  const estado = ROTULO_DO_ESTADO[chaveDoEstado];
 
   return (
     <div className="flex flex-col gap-6">
@@ -145,7 +163,7 @@ export async function ResultadosJornalEscola({
             {detalhe ? `“${detalhe.tema}”` : "A aula e os resultados"}
           </h1>
           {detalhe ? (
-            <Badge variant={estado.variante} data-estado-da-atividade={emAndamento ? "em-andamento" : "pronta"}>
+            <Badge variant={estado.variante} data-estado-da-atividade={chaveDoEstado}>
               {estado.rotulo}
             </Badge>
           ) : null}
@@ -211,7 +229,19 @@ export async function ResultadosJornalEscola({
         </div>
       ) : (
         <>
-          {!emAndamento ? (
+          {!emAndamento && !prontaParaAula ? (
+            /* A turma não abre com imagem que o professor não viu (ADR-147, o
+               pedido do PO): a api recusaria o "Usar esta atividade agora" com
+               409 `imagens-nao-aprovadas`, então ele nem aparece. */
+            <Card variant="outlined" title="Aprove as imagens antes de abrir a turma">
+              <div className="flex flex-col gap-3" data-atividade-em-preparo>
+                <FeedbackAlert
+                  type="info"
+                  description="As imagens das notícias são geradas por IA. Em “Imagens das notícias”, logo abaixo, gere as que faltam, confira cada uma junto da manchete, gere outra para a que não servir e aprove: só então a atividade pode ir ao ar."
+                />
+              </div>
+            </Card>
+          ) : !emAndamento ? (
             <Card variant="outlined">
               <div className="flex flex-col gap-3" data-atividade-pronta>
                 <FeedbackAlert
@@ -237,6 +267,10 @@ export async function ResultadosJornalEscola({
             </Card>
           ) : null}
 
+          {/* Em preparo, as imagens vêm ANTES das equipes: é o passo que falta.
+              A `key` é a atividade: o laço das imagens vive em `useState`. */}
+          {!emAndamento && !prontaParaAula ? imagensDoPacote : null}
+
           <EquipesDaAtividade
             key={`equipes-${detalhe.id}`}
             turmaId={turma}
@@ -245,8 +279,7 @@ export async function ResultadosJornalEscola({
             separarAoAbrir={separar}
           />
 
-          {/* A `key` é a atividade: o laço das imagens vive em `useState`. */}
-          <ImagensDoPacote key={`imagens-${detalhe.id}`} turmaId={turma} pacoteId={detalhe.id} inicial={detalhe.midia} />
+          {emAndamento || prontaParaAula ? imagensDoPacote : null}
 
           {emAndamento && painel ? (
             <>
@@ -274,6 +307,7 @@ export async function ResultadosJornalEscola({
                 atividadeId={detalhe.id}
                 inicial={habilidades}
                 podeEditar={session?.usuario.papel === "professor"}
+                rodadaEmAndamento={emAndamento ? (detalhe.rodada ?? null) : null}
               />
             </div>
           ) : null}

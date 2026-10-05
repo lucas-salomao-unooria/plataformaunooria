@@ -24,7 +24,7 @@ export const EXP_ID = "exp07ef1b";
  * IMUTÁVEL no bucket, e a divergência já causou bug — o `versao.test.ts`
  * compara os três (ADR-84).
  */
-export const EXP_VERSION = "1.1.2";
+export const EXP_VERSION = "1.2.0";
 
 // ──────────────────────────────────────────────────────────── vocabulário
 
@@ -76,7 +76,8 @@ export interface PostPublico {
   legenda: string;
   curtidas: number;
   comentarios: number;
-  comentariosDestaque: string[];
+  /** Os dois comentários de leitor, com o autor (apelido fictício, sem `@`) — ADR-146. */
+  comentariosDestaque: Array<{ autor: string; mensagem: string }>;
   /** `url: null` enquanto a professora não gerou as imagens: a tela desenha o card. */
   imagem: { url: string | null; alt: string };
   /** Só nos posts de métricas: a tela desenha o SVG. */

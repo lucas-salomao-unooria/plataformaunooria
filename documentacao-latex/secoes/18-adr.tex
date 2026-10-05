@@ -9,7 +9,7 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{139 decisões}, numeradas até ADR-139. A 132 (a Ajuda com
+São \textbf{148 decisões}, numeradas até ADR-148. A 132 (a Ajuda com
 avatar) entrou no código antes de ter seção aqui, e por um dia o número foi
 citado sem existir; a 133 pulou para não colidir com ela. A 133 e a 134 nasceram no mesmo dia, em frentes paralelas
 (Unoovista e Unoochat), e entraram juntas no merge; a 135 e a 136 levaram as
@@ -165,12 +165,12 @@ que a cercam.
 \zebra \adrr{ADR-112} & A evidência é por atividade e rodada, e a melhor rodada vale por habilidade & 2026-09-25 & Aceita\\
 \adrr{ADR-113} & A Seleção substitui o Eco no Grupo, e a limpeza vem antes & 2026-09-25 & Aceita\\
 \zebra \adrr{ADR-114} & Quem mandou isso? v1 é retirada; a v2.2 entra com o mesmo código & 2026-09-25 & Aceita\\
-\adrr{ADR-115} & A Seleção: o par do Mural é do computador, e a IA gradua a legenda & 2026-09-25 & Aceita\\
+\adrr{ADR-115} & A Seleção: o par do Mural é do computador, e a IA gradua a legenda & 2026-09-25 & Aceita; a leitura da legenda ficou sem teto de saída (\adrr{ADR-148})\\
 \zebra \adrr{ADR-116} & A experiência que perde o código é arquivada, não apagada & 2026-09-25 & Aceita\\
-\adrr{ADR-117} & Jornal da Escola: a redação é da Unooria, o professor abre o resultado e a revisão, e a IA só escolhe o layout & 2026-09-27 & Aceita\\
+\adrr{ADR-117} & Jornal da Escola: a redação é da Unooria, o professor abre o resultado e a revisão, e a IA só escolhe o layout & 2026-09-27 & Aceita; as imagens passam pelo OK do professor, uma a uma (\adrr{ADR-147}); a diagramação ficou sem teto de saída (\adrr{ADR-148})\\
 \zebra \adrr{ADR-118} & Quem mandou isso? v2.2: atividade é o pacote, rodada é a reaplicação, e a régua mede pela seleção e pelas perguntas do PO & 2026-09-25 & Aceita; a régua foi substituída pela \adrr{ADR-120}\\
 \adrr{ADR-119} & O podcast da A Seleção é do professor, e a IA reescreve só as três falas que dependem do tema & 2026-09-26 & Aceita\\
-\zebra \adrr{ADR-120} & A régua v2 de Quem mandou isso?: cada habilidade pelo verbo dela, e refazer o mesmo pacote não mede memória & 2026-09-26 & Aceita; as perguntas voltaram às do PO (\adrr{ADR-131})\\
+\zebra \adrr{ADR-120} & A régua v2 de Quem mandou isso?: cada habilidade pelo verbo dela, e refazer o mesmo pacote não mede memória & 2026-09-26 & Aceita; as perguntas voltaram às do PO (\adrr{ADR-131}); a medição única e a rubrica do Se/Então saíram (\adrr{ADR-145})\\
 \adrr{ADR-121} & O CI verifica só os PRs para \cd{dev}, \cd{hml} e \cd{main} & 2026-09-26 & Aceita\\
 \zebra \adrr{ADR-122} & A modelagem UML entra no Capítulo 5, com os catorze tipos da UML 2.5.1 e par Mermaid mesmo onde o Mermaid não tem o tipo & 2026-09-27 & Aceita\\
 \adrr{ADR-123} & O plano anual tem uma estrutura só, definida pelo prompt, e o template é exemplo de formato & 2026-09-30 & Aceita\\
@@ -190,6 +190,15 @@ que a cercam.
 \zebra \adrr{ADR-137} & O Júri Estadual de Projetos nasce no Unoovista e mede o que o briefing pediu & 2026-10-02 & Aceita\\
 \adrr{ADR-138} & A missão da 2ª série do EM troca o clone do ChatGPT pelo UnooriaAI & 2026-10-02 & Aceita\\
 \zebra \adrr{ADR-139} & O design system tem uma versão só, e todas as experiências sobem juntas & 2026-10-02 & Aceita\\
+\adrr{ADR-140} & A eliminação a pedido do titular apaga o cadastro de verdade, e o comprovante não guarda a pessoa & 2026-10-03 & Aceita\\
+\zebra \adrr{ADR-141} & A idade de uma versão fixada sai do histórico, não de uma coluna nova & 2026-10-03 & Aceita\\
+\adrr{ADR-142} & Na subida do DS, o \cd{dist/} se compara sem os sourcemaps & 2026-10-03 & Aceita\\
+\zebra \adrr{ADR-143} & O lado do feed entra no sorteio de equipes por registro da missão, e redistribuir não convive com equipe & 2026-10-03 & Aceita\\
+\adrr{ADR-144} & O painel de habilidades lê por unidade, a missão vale o melhor entre as atividades, e a regional desce até a escola sem lotação & 2026-10-03 & Aceita\\
+\zebra \adrr{ADR-145} & Toda rodada mede todas as habilidades, o critério de cada nível aparece no painel, e Quem mandou isso? perde a regra dissertativa & 2026-10-05 & Aceita; revê a \adrr{ADR-120}\\
+\adrr{ADR-146} & Pôr a atividade no ar libera a missão na sala, e A Seleção aprova textos e imagens em duas fases & 2026-10-05 & Aceita; complementa a \adrr{ADR-130}\\
+\zebra \adrr{ADR-147} & O Jornal da Escola: o professor aprova cada imagem antes da turma, e a mesa leva a criança à página & 2026-10-05 & Aceita; complementa a \adrr{ADR-117}\\
+\adrr{ADR-148} & As duas chamadas curtas de IA em sala não têm teto de saída, e as missões revisadas se testam com a IA real & 2026-10-05 & Aceita; revê o teto da \adrr{ADR-115} e da \adrr{ADR-117}\\
 \bottomrule
 \end{tabularx}
 
@@ -12585,3 +12594,459 @@ trabalha uma escola por vez (\adrr{ADR-80}) --- desce da rede até a turma.
 \textbf{Gatilho.} O PO pedir a planilha da coordenação, uma rede com mais de
 duzentas escolas no painel do contrato, ou a primeira missão transversal com
 ficha.
+
+% ---------------------------------------------------------------------------
+\section{ADR-145 --- Toda rodada mede todas as habilidades, o critério de cada nível aparece no painel, e Quem mandou isso? perde a regra dissertativa}
+\label{adr:rodada-mede-tudo}
+
+\textbf{Data.} 2026-10-05. \textbf{Status.} Aceita. Revê a \adrr{ADR-120}
+(a medição única por criança e pacote, e a rubrica do Se/Então) e complementa
+a \adrr{ADR-112}.
+
+\begin{especificacao}{Contexto}
+O PO testou Quem mandou isso? (exp05ef1b) de ponta a ponta e devolveu três
+pedidos sobre a evidência. Primeiro: a rodada nova do mesmo pacote não media
+de novo a EF05CO08 de quem já tinha nível, por desenho (\adrr{ADR-120}: refazer
+mediria memória), e o professor via a rodada 2 sem a habilidade principal.
+Segundo: o painel listava as habilidades sem dizer o que faz a criança chegar
+a cada nível, e o professor não tinha onde consultar o critério. Terceiro: a
+regra \enquote{Se a mensagem for\ldots, então eu\ldots} era o único texto livre
+da missão, avaliado por uma rubrica do professor, enquanto todo o resto era
+medido por critério fixo --- e o PO a achou confusa. No mesmo teste: a fala da
+Nina da abertura reaparecia no chat das perguntas, mandando a criança de volta
+ao grupo; a aba da rodada nova só aparecia depois de um F5; e o chat parecia
+\enquote{chapado} (as oito mensagens de uma vez, os nomes numa cor só, as duas
+imagens iguais e a Nina sem rosto).
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{itemize}
+  \item \textbf{Toda rodada mede todas as habilidades}, também no mesmo pacote,
+    em Quem mandou isso?, no Jornal da Escola e no Júri Estadual: sai o
+    \cd{EvidenciasService.jaAvaliadaAntes}. O resultado da atividade continua
+    sendo a melhor rodada de cada habilidade (\adrr{ADR-112}), então medir de
+    novo só pode subir o nível.
+  \item \textbf{A ficha diz o critério de cada nível}: \cd{HabilidadeDaFicha}
+    ganha \cd{criterios} (atingiu, em processo, não atingiu e uma observação
+    quando há mais de um marcador), escritos nas quatro fichas a partir das
+    réguas que já existiam. O \cd{validarFicha} recusa habilidade sem os três,
+    e o painel os lista no fim da página, em toda missão com ficha.
+  \item \textbf{Em Quem mandou isso?, as perguntas são a reflexão}: a fase
+    \cd{reflexao} da turma leva direto ao passo \cd{perguntas}. Saem a tela
+    da regra, o \rota{POST /quem-mandou-isso/reflexao}, a coluna da regra na
+    folha e a rubrica do professor; a EF05CO04 passa a vir só da P2. Concluir
+    exige o voto, e não mais a regra (migração
+    \arq{20261005120000\_exp05ef1b\_perguntas\_sao\_a\_reflexao}). A tabela
+    \cd{exp05ef1b\_reflexoes} e o carimbo \cd{reflexao\_em} ficam só pelo
+    histórico. Instrumento 2.3.0, experiência 0.4.0.
+  \item \textbf{A rodada em andamento tem aba mesmo vazia}: a página de
+    resultados passa a rodada da missão ao painel (\cd{rodadaEmAndamento}), que
+    a mostra logo depois de \enquote{Zerar}, só de leitura até a primeira
+    evidência (a api recusa ajuste em rodada sem registro).
+  \item \textbf{O chat ganha movimento e identidade}: as mensagens chegam uma a
+    uma na primeira abertura do grupo; a Nina tem foto (ilustração em SVG); cada
+    imagem tem um desenho próprio (comunicado, cartaz, print ou bilhete); e os
+    remetentes ganham cor por nome, com o \cd{TypingIndicator} e o
+    \cd{senderTone} que entraram no Unoochat (DS 0.2.17).
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Manter a medição única só na EF05CO08.} Era a defesa contra
+    \enquote{medir memória}, mas a melhor rodada já impede que a repetição
+    derrube o resultado, e o professor lia a rodada 2 vazia como defeito.
+  \item \textbf{Manter a regra Se/Então sem a rubrica}, como texto só lido.
+    Continuaria sendo a única etapa sem critério, e o PO pediu a etapa de
+    múltipla escolha como a reflexão.
+  \item \textbf{Tirar a regra dissertativa de todas as missões agora.} A
+    Seleção e o 8º ano entram numa frente própria, com a mesma regra; esta
+    ficou só com a missão do 5º ano.
+  \item \textbf{Recarregar a página sozinha depois de zerar.} Mostraria a
+    rodada nova só depois da primeira evidência, que é justamente o que
+    confundia.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{A rodada nova do mesmo pacote mede quem já viu a resposta.}
+    O nível dessa criança pode subir por memória; a orientação continua sendo
+    reaplicar com outro tema.
+  \item \textbf{A EF05CO04 perdeu o CRIAR}: a P2 mede o reconhecer da regra,
+    e criar a própria regra ficou para a roda e o cartaz da turma, fora do
+    painel.
+  \item \textbf{A aba vazia da rodada nova é só de leitura}: quem quiser
+    registrar uma atividade feita fora da missão espera o primeiro jogo.
+  \item \textbf{Dentro do mesmo pacote, cada imagem tem sempre o mesmo
+    desenho}; entre pacotes o par muda, para o desenho não virar pista.
+  \item \textbf{Os critérios e o encerramento novo da Nina são texto da
+    equipe}, à espera da revisão do PO.
+\end{itemize}
+
+\textbf{Gatilho.} A frente que tira a reflexão dissertativa da A Seleção e do
+8º ano; ou o PO pedir que a rodada do mesmo pacote volte a não medir.
+
+\section{ADR-146 --- Pôr a atividade no ar libera a missão na sala, e A Seleção aprova textos e imagens em duas fases}
+\label{adr:no-ar-libera-e-duas-fases}
+
+\textbf{Data.} 2026-10-05. \textbf{Status.} Aceita. Complementa a
+\adrr{ADR-130} (a atividade e o \enquote{Usar esta atividade agora}) e a
+\adrr{ADR-69} (a liberação por turma); estende à A Seleção o painel de
+habilidades ao vivo da \adrr{ADR-145}.
+
+\begin{especificacao}{Contexto}
+O PO testou A Seleção (\cd{exp07ef1b}) de ponta a ponta e devolveu pedidos dos
+dois lados. O mais grave valia para as cinco missões com atividade: o toggle
+\enquote{Pôr esta atividade no ar agora} do assistente e o botão \enquote{Usar
+esta atividade agora} abriam a ATIVIDADE (\adrr{ADR-130}), mas a missão
+continuava sem linha em \cd{liberacoes} (\adrr{ADR-69}), e o estudante via o
+cadeado com a atividade no ar. A e2e não via, porque o \emph{seed} libera a 7A
+e a 5A antes. O painel de habilidades só mostrava o nível novo depois de um F5,
+fora de Quem mandou isso?. Do lado do professor da A Seleção, a cobertura ia ao
+ar com imagens que ninguém tinha visto: o preparo aprovava os textos, e as
+imagens eram geradas depois, num laço à parte da página da atividade. Do lado
+do estudante: os comentários dos posts eram frases sem autor; curtir,
+comentar e compartilhar eram botões que não mudavam nada na missão (e o curtir
+tinha uma dica própria); \enquote{Confirmar publicação} vinha no vermelho de
+ação perigosa; o Mural abria na publicação da própria criança, deixando a do
+colega numa aba que nem todos abriam, e o Story mostrava a imagem sem a
+legenda; a Amara não tinha rosto; e quem entrava antes de a professora abrir a
+turma ficava em \enquote{ainda não está aberta} até recarregar a página.
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{itemize}
+  \item \textbf{Pôr no ar libera a missão na sala}, nas cinco missões com
+    atividade: depois que a atividade entra em andamento, o hub chama o
+    \rota{PUT /salas/turma/:turmaId/missoes/:expId} com \cd{liberada}
+    (\cd{liberarNaSala}, em \arq{hub/lib/entre-redes/criar-atividade.ts}), do
+    assistente e do botão da lista. Libera SEMPRE, inclusive a missão
+    \textbf{encerrada} na sala: pôr no ar é o ato explícito do professor que a
+    \adrr{ADR-69} pede (decisão do Lucas). A rota é idempotente. Se só a
+    liberação falha --- o gestor não libera, a rota é de quem leciona ---, sai
+    um aviso, não um erro: a atividade já está no ar.
+  \item \textbf{O painel de habilidades acompanha a aula.} O \emph{polling} do
+    painel da aula continua lendo só o painel, e chama \cd{router.refresh()}
+    quando \cd{mudouAEvidencia} acusa mudança no que a ficha registra, também
+    na A Seleção, no Jornal da Escola e no Júri Estadual. Na A Seleção relê
+    mais uma vez na volta seguinte, porque o Canal A gradua a legenda com IA
+    DEPOIS de a publicação aparecer; no Jornal e no Júri uma leitura basta, a
+    marca vai na mesma transação da jogada.
+  \item \textbf{A Seleção aprova em duas fases, numa tela só}, no passo de
+    conteúdo do assistente: primeiro os textos (os 12 cards com a legenda
+    editável e o aviso \enquote{A imagem será gerada após a aprovação dos
+    textos}; aprovar grava a cobertura), depois as imagens, geradas sozinhas no
+    card de cada post, com \enquote{Gerar outra imagem} por post. O botão final,
+    \enquote{Aprovar Cobertura e Abrir Turma} (ou \enquote{Aprovar cobertura}
+    com o toggle desligado), só acende depois das duas e grava a segunda fase
+    (\rota{POST .../coberturas/:c/aprovar-imagens}, idempotente) antes de pôr
+    no ar. A coluna nova \cd{exp07ef1b\_coberturas.imagens\_aprovadas\_em}
+    (migração \arq{20261005150000\_exp07ef1b\_imagens\_aprovadas}) é nula até
+    lá, e a cobertura nula não vai ao ar: \rota{POST .../em-andamento} responde
+    409 \cd{imagens-nao-aprovadas}, a lista a mostra \enquote{Em preparo}, sem
+    o botão de usar, e a página dela mostra a mesma grade com
+    \enquote{Aprovar imagens}. As coberturas que já existiam entraram
+    aprovadas.
+  \item \textbf{\enquote{Gerar outra imagem} grava num arquivo novo}
+    (\rota{POST .../coberturas/:c/imagens/:postId/regerar}): o nome leva uma
+    variação além do \emph{hash} da descrição, então a imagem é sempre paga.
+    Só antes da aprovação (409 \cd{imagens-ja-aprovadas}); post de gráfico,
+    400 \cd{post-sem-imagem}.
+  \item \textbf{O comentário de leitor é \cd{\{autor, mensagem\}}.} A IA
+    escreve o autor, um apelido fictício no formato de usuário de rede
+    (\cd{/\^{}[a-z0-9.\_]\{3,24\}\$/}, sem \enquote{@}, nunca o perfil de um
+    veículo); o que vier fora disso, e as coberturas antigas (só texto),
+    recebem um autor de reserva determinístico, pelo post e pela posição. O
+    banco curado ganhou os 24 autores. O nome \cd{texto} ficou de fora porque
+    está em \cd{CAMPOS\_SENSIVEIS} (é a reflexão da criança).
+  \item \textbf{A tela do estudante (1.2.0).} No feed saem curtir, comentar e
+    compartilhar (\cd{PostCard.Actions} com \cd{actions=\{[]\}}, prop do DS
+    0.2.18), a dica das cinco curtidas e o \enquote{Ver todos os N
+    comentários}; a contagem de curtidas fica, e cada comentário mostra o
+    autor. \enquote{Confirmar publicação} vai no tom padrão. O Mural abre no
+    Story do PAR, com a legenda de cada post sobre a imagem. A Amara ganha
+    foto (ilustração em SVG, à espera do PO). E a tela \enquote{ainda não está
+    aberta} pergunta de novo à api a cada 5\,s e entra sozinha.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Liberar no servidor, dentro de cada \cd{colocarEmAndamento}.}
+    Fecharia a brecha na api, mas são cinco \emph{services}, cada um dono da
+    própria atividade, e o \cd{professorId} que a liberação grava pode faltar
+    (o gestor alcança essas rotas). Ficou no hub, no fim da criação, onde as
+    equipes já são montadas pelo mesmo motivo (\adrr{ADR-130}).
+  \item \textbf{Não reabrir a missão encerrada.} Respeitaria o
+    \enquote{encerrar} da sala, mas o professor que pôs a atividade no ar
+    ficaria com a turma no cadeado sem entender por quê. Descartada pelo
+    Lucas.
+  \item \textbf{Bloquear a segunda fase até todas as imagens ficarem prontas.}
+    A geração falha e a quota acaba; o post sem imagem segue com o card da
+    descrição, que o professor vê no mesmo card antes de aprovar. Quem segura o
+    botão enquanto a geração corre é a tela, não a api.
+  \item \textbf{Regerar sobrescrevendo o arquivo da descrição.} O nome é o
+    \emph{hash} da descrição justamente para a mesma cena servir a rede
+    inteira: sobrescrever trocaria a imagem de toda cobertura que a herdou,
+    inclusive a de uma turma em aula.
+  \item \textbf{Autor dos comentários fixo no cliente}, sorteado de uma lista.
+    Mais barato, mas o autor não teria relação com o que diz. O Lucas preferiu
+    que a IA o escreva junto do comentário, com a reserva só para o que vier
+    fora do formato.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{A liberação é um segundo pedido, do cliente.} Se a rede cai
+    entre os dois, a atividade fica no ar e a missão bloqueada; o aviso diz
+    onde terminar, mas nada no servidor amarra os dois.
+  \item \textbf{Pôr no ar desfaz o \enquote{encerrar} da sala} sem perguntar.
+  \item \textbf{Cada \enquote{Gerar outra imagem} é pago}, e os arquivos
+    recusados ficam no \emph{bucket}.
+  \item \textbf{A aprovação das imagens não exige todas prontas}: a turma pode
+    abrir com um post em card de descrição, se a geração falhou e o professor
+    aprovou mesmo assim.
+  \item \textbf{O painel de habilidades refaz a página inteira} a cada
+    mudança de evidência --- seis leituras na A Seleção, cinco no Jornal e no
+    Júri ---, e na A Seleção mais uma, de reforço.
+  \item \textbf{A foto da Amara e o tom roxo esperam o PO.} O feed sem os
+    botões veio com o DS 0.2.18, publicado no mesmo dia.
+\end{itemize}
+
+\textbf{Gatilho.} A liberação falhar com frequência depois de a atividade
+entrar no ar (aí ela desce para a api, numa transação com o
+\cd{colocarEmAndamento}); ou o custo das imagens regeradas pesar na quota do
+professor.
+
+\section{ADR-147 --- O Jornal da Escola: o professor aprova cada imagem antes da turma, e a mesa leva a criança à página}
+\label{adr:jornal-aprova-cada-imagem}
+
+\textbf{Data.} 2026-10-05. \textbf{Status.} Aceita. Estende ao Jornal da Escola
+as duas fases da A Seleção (\adrr{ADR-146}), com outra forma de aprovar;
+complementa a \adrr{ADR-117} (o preparo do Jornal) e a \adrr{ADR-130} (a
+atividade e o \enquote{Usar esta atividade agora}).
+
+\begin{especificacao}{Contexto}
+O PO testou o Jornal da Escola (\cd{exp04ef1b}, 4º ano, Unidade 1) e devolveu
+pedidos dos dois lados. O mais grave era do professor: as imagens das notícias
+são geradas por IA, e ele não conseguia VÊ-LAS nem validá-las --- o laço de
+geração gravava as URLs no pacote, e elas iam direto para a mesa das crianças.
+A imagem era opcional: sem ela, o cartão se desenhava pelo meio e a missão
+rodava igual, então nada obrigava alguém a olhar. Diferente da A Seleção, no
+Jornal a imagem se gera também na atividade que já está no ar, na página dela.
+Do lado do estudante: com a terceira notícia na capa, a criança ficava na aba
+\enquote{Pautas da Semana} sem saber que o publicar estava na outra; a revisão
+abria nas pautas, embora o aviso da Chave (\enquote{Troque os furos por
+matérias verificadas!}) pedisse a troca que só se faz na \enquote{Primeira
+Página}; e a pergunta do motivo dizia \enquote{a dupla}, quando quantos dividem
+o computador é o professor quem decide.
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{itemize}
+  \item \textbf{A aprovação é POR IMAGEM.} A coluna nova
+    \cd{exp04ef1b\_pacotes.\B{}midia\_aprovada} (\cd{JSONB}, \cd{\{n1: url\}},
+    \emph{default} \cd{'\{\}'}, \emph{CHECK} de objeto; migração
+    \arq{20261005190000\_\B{}exp04ef1b\_\B{}midia\_\B{}aprovada}) guarda a URL que o
+    professor aprovou para cada notícia, e a imagem só chega ao estudante
+    quando a URL atual (\cd{midia}) é igual à aprovada (\cd{midiaAprovada},
+    a \emph{allowlist} da sessão). Os pacotes que já existiam entraram com
+    \cd{midia\_aprovada = midia}: nenhuma turma perde imagem por uma regra
+    posterior.
+  \item \textbf{Duas rotas novas.} \rota{POST
+    .../pacotes/:pacoteId/\B{}aprovar-imagens} recebe as URLs que estavam NA TELA
+    (\cd{\{imagens: \{n1: url\}\}}) e aprova só as que ainda são as do pacote,
+    com a condição no próprio \cd{UPDATE} (\cd{midia ->> id = url}); devolve
+    \cd{aprovadas}, \cd{desatualizadas} (outra aba gerou outra), o resumo
+    \cd{midia} e \cd{prontaParaAula}, e é idempotente. \rota{POST
+    .../pacotes/:pacoteId/\B{}imagens/\B{}:noticiaId/\B{}regerar} é o \enquote{Gerar
+    outra}: um arquivo NOVO (o nome leva um sal além do \emph{hash} da
+    descrição), cobrado na quota; 400 \cd{noticia-sem-imagem}, 429
+    \cd{sem-saldo-de-ia}, 503 \cd{ia-indisponivel}. Vale também na atividade no
+    ar, onde só aquela notícia some da turma até o novo OK.
+  \item \textbf{A imagem deixou de ser opcional} (decisão do Lucas).
+    \rota{POST .../em-andamento} responde 409 \cd{imagens-nao-aprovadas} sem
+    TODAS as notícias que pedem imagem com imagem gerada E aprovada --- só na
+    ENTRADA no ar: a atividade que já está no ar não sai por um \enquote{Gerar
+    outra}. \rota{GET .../pacotes} ganha \cd{historico[].\B{}imagensAprovadas}, o
+    resumo \cd{midia} ganha \cd{aprovadas}, e o detalhe ganha \cd{aprovadas}
+    (as notícias com a imagem atual aprovada). A homologação herda as IMAGENS
+    de mesma descrição, NUNCA a aprovação.
+  \item \textbf{Imagens dentro da criação, em duas fases}, no molde da A
+    Seleção (decisão do Lucas). Fase 1, os textos: \enquote{Aprovar textos e
+    gerar as imagens} grava o pacote pela homologação de sempre. Fase 2, as
+    imagens: a mesma grade da página da atividade (o componente
+    \cd{imagens-do-pacote}) gera sozinha, mostra cada imagem
+    com a manchete, e oferece \enquote{Gerar outra imagem} e
+    \enquote{Aprovar}. O \enquote{Continuar} do assistente só acende com todas
+    aprovadas. Na lista, a atividade sem o OK é \enquote{Em preparo} e não
+    oferece \enquote{Usar esta atividade agora}; a página dela mostra o cartão
+    \enquote{Aprove as imagens antes de abrir a turma} e a grade antes das
+    equipes.
+  \item \textbf{A tela do estudante (2.1.3 \seta{} 2.2.0).} Com 3/3, a mesa
+    passa SOZINHA para a aba \enquote{Primeira Página}, com o foco na aba; a
+    mesa da revisão, depois da Chave, já abre nela (\cd{abaInicial}), com o
+    aviso e o \enquote{Trocar Matéria}. A pergunta \enquote{Como a dupla
+    escolheu essas três matérias para a capa?} virou \enquote{Como as três
+    matérias foram escolhidas?}.
+  \item \textbf{O teste é com a IA de verdade} (Vertex, com o ADC), nunca
+    contornando o \emph{mock}: a suíte \arq{estudante/12-jornal-da-escola.mjs}
+    gera as imagens, prova o 409 antes do OK, gera outra e aprova.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Manter as imagens opcionais}, como antes: o professor
+    aprovaria as que quisesse, e a notícia sem imagem seguiria desenhada pelo
+    meio. Descartada pelo Lucas: com a imagem opcional, a turma pode abrir com
+    imagens que ninguém viu --- o defeito que o PO apontou.
+  \item \textbf{O carimbo único da A Seleção} (\cd{imagens\_aprovadas\_em},
+    \adrr{ADR-146}). No Jornal se gera imagem também na atividade no ar: o
+    \enquote{Gerar outra} apagaria o carimbo e esconderia de uma vez TODAS as
+    imagens que a turma está vendo, e não só a trocada.
+  \item \textbf{Tirar o \enquote{Pôr no ar agora} do assistente do Jornal} e
+    aprovar as imagens só na página da atividade. Mais simples, mas o professor
+    criaria a atividade sem ver as imagens e teria de achar outra tela para
+    abri-la; o Lucas preferiu as duas fases dentro da criação, como na A
+    Seleção.
+  \item \textbf{Aprovar o que está no pacote}, sem as URLs da tela. Um
+    \enquote{Gerar outra} em outra aba entraria aprovado sem ter sido visto;
+    por isso o corpo traz as URLs vistas e o \cd{UPDATE} confere cada uma.
+  \item \textbf{Imagem de teste no \emph{seed} ou no \emph{mock}}, para a e2e
+    passar sem IA. Descartada pelo Lucas: provaria um caminho que a produção
+    não tem.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{Com a IA de imagem fora do ar ou sem quota, a atividade não vai
+    ao ar} --- nem a do banco padrão, cujas imagens também precisam do OK (as de
+    mesma descrição que já estão no \emph{bucket} entram sem custo).
+  \item \textbf{Cada \enquote{Gerar outra imagem} é pago}, e os arquivos
+    recusados ficam no \emph{bucket}.
+  \item \textbf{Na atividade no ar, \enquote{Gerar outra} tira a imagem da
+    turma} até o novo OK: no meio da aula, aquela notícia volta ao cartão
+    desenhado pelo meio.
+  \item \textbf{A e2e do Jornal depende do ADC válido}: com a credencial
+    expirada, ela fica vermelha na criação, e o vermelho não é do produto.
+  \item \textbf{O Jornal e a A Seleção aprovam imagens de jeitos diferentes}
+    (URL por notícia e carimbo do pacote), e quem mantém as duas precisa saber
+    por quê.
+\end{itemize}
+
+\textbf{Gatilho.} A IA de imagem falhar a ponto de travar atividades (aí a
+imagem volta a ser opcional, com o cartão pelo meio); o PO pedir a mesma
+aprovação por imagem na A Seleção; ou o custo das imagens regeradas pesar na
+quota do professor.
+
+\section{ADR-148 --- As duas chamadas curtas de IA em sala não têm teto de saída, e as missões revisadas se testam com a IA real}
+\label{adr:sem-teto-de-saida-em-sala}
+
+\textbf{Data.} 2026-10-05. \textbf{Status.} Aceita. Revê o teto de saída da
+diagramação do Jornal da Escola (\adrr{ADR-117}) e o da leitura da legenda da A
+Seleção, o Canal A (\adrr{ADR-115}); estende às suítes de Quem mandou isso? e da
+A Seleção a regra de testar com a IA de verdade que a \adrr{ADR-147} pôs no
+Jornal.
+
+\begin{especificacao}{Contexto}
+Duas chamadas de IA rodam com a turma diante da tela, e as duas tinham reserva
+determinística: a diagramação do Jornal da Escola (\cd{exp04ef1b},
+\arq{jornal-escola/\B{}diagramacao.service.ts}), que cai no modelo automático, e
+a leitura da legenda da A Seleção (\cd{exp07ef1b},
+\arq{a-selecao/\B{}classificacao.service.ts}), que fica \enquote{Não avaliado}.
+Como a resposta delas é um \emph{enum} (o layout) ou um nível e um código de
+motivo, cada uma nasceu com um teto de saída baixo, para limitar o custo por
+criança: \cd{MAX\_TOKENS\_DA\_DIAGRAMACAO = 32} e \cd{MAX\_TOKENS\_DO\_CANAL\_A =
+64}. Revisando as três missões com a IA real, o Jornal diagramava
+\textbf{sempre} pelo modelo (o \emph{log} \cd{exp04ef1b-diagramacao-modelo},
+motivo \cd{provedor-falhou}) e o Canal A ficava sempre sem marca
+(\cd{exp07ef1b-canal-a-nao-avaliado}). Medido: o \cd{gemini-3.7-flash}
+\textbf{raciocina mesmo com \cd{thinkingBudget: 0}} --- cerca de 28 a 29
+\emph{tokens} de pensamento numa resposta desse tamanho ---, e o raciocínio sai
+do MESMO orçamento de saída (Seção~\ref{sec:ia-raciocinio}). Com 32 ou 64
+\emph{tokens}, a resposta voltava com \cd{finishReason: MAX\_TOKENS} e sem
+texto. A falha era MUDA, justamente porque as duas têm reserva: a criança via
+uma página diagramada e o professor um \enquote{Não avaliado}, que são saídas
+legítimas. \cd{thinkingLevel: "MINIMAL"} é recusado pelo modelo (400), e
+\cd{"LOW"} ainda pensa 28 \emph{tokens}. Ao mesmo tempo, as suítes de ponta a
+ponta dessas missões diziam que \enquote{em \emph{dev} a IA é o \emph{mock}} e
+aceitavam a reserva como verde --- por isso o defeito passou despercebido.
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{itemize}
+  \item \textbf{Sem teto de saída nas duas chamadas} (decisão do Lucas:
+    \enquote{não precisamos desse limite, o modelo vai pensar e tudo bem}). As
+    constantes saíram de \arq{prompts.ts} dos dois módulos, e o
+    \cd{generateJson} já não recebe \cd{maxTokens}. O que limita o custo e a
+    espera continua: o teto de TEMPO de cerca de 6\,s por \cd{Promise.race}, UMA
+    tentativa, temperatura 0, o \emph{schema} fechado com o \emph{enum}, o
+    \cd{validar} Zod, o \emph{rate limit} por estudante, o \emph{cache} da
+    diagramação e a quota do perfil \cd{estudante} (\cd{temSaldo} antes, o
+    débito no \cd{aoUsarTokens}, que agora cobra também o raciocínio).
+  \item \textbf{As suítes das três missões revisadas usam a IA real de ponta a
+    ponta} (Vertex, com o ADC válido), nunca contornando o \emph{mock} (decisão
+    do Lucas). \arq{estudante/\B{}10-quem-mandou-isso.mjs} cria a atividade por
+    \enquote{Gerar Atividade com IA} e exige \cd{usouIa} e a origem \cd{ia};
+    \arq{estudante/\B{}11-a-selecao.mjs} gera a cobertura com IA (\cd{usouIa}),
+    exige todas as imagens geradas, prova o Canal A no painel de evidências
+    ANTES da enquete \cd{p1} (que também marca a EF07CO11) e exige o
+    \emph{podcast} pronto, com a voz do TTS; \arq{estudante/\B{}12-jornal-da-escola.mjs}
+    gera o pacote com IA, monta as escolhas da criança pelo gabarito que a
+    professora lê pela api --- o molde sorteado no servidor garante os oito
+    meios, três ou mais publicáveis, duas ou mais antigas e ao menos uma sem
+    fonte --- e exige \cd{origem: "ia"} em toda resposta do \rota{POST
+    /jornal-escola/diagramar}. A reserva deixou de ser verde: ela é o sintoma.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Subir o teto para cerca de 512 \emph{tokens}}, com folga para o
+    raciocínio medido (a proposta do agente). Descartada pelo Lucas: é um
+    número escolhido contra uma medição de hoje, e o mesmo modelo já pensou 300
+    a 400 \emph{tokens} na Ajuda (\adrr{ADR-132}); um teto que volta a cortar
+    em silêncio é o defeito de novo, e o teto de tempo já limita a espera.
+  \item \textbf{Desligar o raciocínio.} Impossível neste modelo:
+    \cd{thinkingBudget: 0} não o desliga, \cd{thinkingLevel: "MINIMAL"} é
+    recusado com 400 e \cd{"LOW"} ainda pensa 28 \emph{tokens}.
+  \item \textbf{Manter o teto e aceitar a reserva.} A diagramação por IA e o
+    Canal A deixariam de existir na prática, pagando a quota da chamada (o
+    \emph{vendor} cobra o que foi gerado) sem nunca entregar o resultado.
+  \item \textbf{Continuar a e2e com o \emph{mock}} ou com o banco e a cobertura
+    prontos. Foi o que escondeu este defeito: com a reserva aceita como verde,
+    a suíte provava um caminho que a sala nunca percorre.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{O custo por criança deixa de ter teto de saída}: o raciocínio é
+    cobrado, e nada além da quota do perfil e do teto de tempo segura uma
+    resposta longa.
+  \item \textbf{A latência sobe um pouco}, ainda dentro dos cerca de 6\,s; se
+    o raciocínio crescer, quem corta é o \cd{Promise.race}, e a reserva volta
+    com o motivo \cd{tempo-esgotado}.
+  \item \textbf{As três suítes dependem do ADC válido, da quota do estudante e
+    do professor demo e do Vertex no ar}: com a credencial expirada, o saldo
+    do dia gasto ou o provedor fora, elas ficam vermelhas, e o vermelho não é
+    do produto. Rodam mais devagar, e o conteúdo muda a cada execução (o
+    roteiro do Jornal lê o gabarito em vez de cravar manchetes).
+  \item \textbf{Nenhum teste automatizado de unidade pega a volta do teto}: o
+    \emph{mock} não raciocina. Quem prova é a e2e com a IA real.
+\end{itemize}
+
+\textbf{Gatilho.} O custo de IA por estudante medido nessas chamadas pesar na
+quota ou na fatura; o \cd{Promise.race} passar a cortar com frequência
+(\cd{tempo-esgotado} nos dois \emph{logs}); a troca de modelo
+(\env{VERTEX\_MODEL}) por um que desligue o raciocínio de fato; ou as suítes
+ficarem vermelhas pela IA com frequência a ponto de esconder regressão do
+produto.

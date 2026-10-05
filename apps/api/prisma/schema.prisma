@@ -2693,7 +2693,8 @@ model Exp05ef1bSessao {
   motivo            String?
   /// O LATCH 2.
   votouEm           DateTime? @map("votou_em") @db.Timestamptz(6)
-  /// O LATCH 3: a regra Se/Então foi enviada (o texto está em `exp05ef1b_reflexoes`).
+  /// HISTÓRICO: o latch da regra Se/Então, que saiu da missão (ADR-145). Nenhuma
+  /// rota o escreve mais; concluir exige o voto (`concluido_check`).
   reflexaoEm        DateTime? @map("reflexao_em") @db.Timestamptz(6)
   concluidoEm       DateTime? @map("concluido_em") @db.Timestamptz(6)
   /// A versão do instrumento, na linha, para reprocessar o histórico se ele mudar.
@@ -2802,6 +2803,10 @@ model Exp07ef1bCobertura {
   /// a saída de um professor da rede não pode travar a atividade da turma.
   /// Nulo só na `padrao` que nasceu sozinha (CHECK).
   aprovadaPor String? @map("aprovada_por") @db.Uuid
+
+  /// A segunda fase da aprovação (ADR-146): o professor viu as imagens no card
+  /// de cada post e as aprovou. Nulo = não vai ao ar (409 `imagens-nao-aprovadas`).
+  imagensAprovadasEm DateTime? @map("imagens_aprovadas_em") @db.Timestamptz(6)
 
   ativa        Boolean  @default(true)
   criadaEm     DateTime @default(now()) @map("criada_em") @db.Timestamptz(6)
@@ -2965,6 +2970,10 @@ model Exp04ef1bPacote {
 
   /// As URLs das imagens geradas, por id de notícia (`{ "n1": url }`).
   midia Json @default("{}")
+  /// As URLs que o professor APROVOU, por id de notícia (ADR-147). A imagem só
+  /// chega ao estudante quando a URL daqui é a mesma de `midia`: gerar outra
+  /// troca `midia`, e aquela notícia espera o novo OK.
+  midiaAprovada Json @default("{}") @map("midia_aprovada")
 
   /// Quem homologou. Carimbo sem FK, como `exp07ef1b_coberturas.aprovada_por`:
   /// a saída de um professor da rede não pode travar a atividade da turma.

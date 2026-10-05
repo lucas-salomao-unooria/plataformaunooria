@@ -9,10 +9,14 @@ import { professorDoToken } from "../comum/turmas-do-professor";
 import { ehUuid } from "../motor/guardas";
 import { Contrato } from "../openapi/contrato";
 import {
+  AprovarImagensSchema,
   EmAndamentoSchema,
   GateDaTurmaSchema,
   GateSchema,
   HomologacaoSchema,
+  IdDeNoticiaSchema,
+  ImagemRegeradaSchema,
+  ImagensAprovadasSchema,
   NoticiaRegeneradaSchema,
   PacoteDetalheSchema,
   PacoteHomologadoSchema,
@@ -49,6 +53,7 @@ type Autenticado = { auth: AuthClaims };
 
 const PARAMS = z.object({ turmaId: z.string().uuid() });
 const PARAMS_DO_PACOTE = z.object({ turmaId: z.string().uuid(), pacoteId: z.string().uuid() });
+const PARAMS_DA_IMAGEM = PARAMS_DO_PACOTE.extend({ noticiaId: IdDeNoticiaSchema });
 
 /** A nota de toda rota que lê a atividade em andamento (ADR-130). */
 const NOTA_SEM_ATIVIDADE =
@@ -229,6 +234,7 @@ export class JornalEscolaTurmasController {
       "**Idempotente**: pôr no ar o que já está no ar devolve `mudou: false` e não muda nada.",
       "Trocar com a aula correndo leva quem está jogando para a atividade nova: a experiência nota o `pacoteId` novo no polling do gate e recarrega. A tela pede confirmação antes.",
       "Pacote de outra turma responde **404** `atividade-nao-encontrada`.",
+      "Sem as imagens de TODAS as notícias que pedem imagem geradas E aprovadas, **409** `imagens-nao-aprovadas` (ADR-147). Só na entrada no ar: a atividade que já está no ar não sai por causa de um \"Gerar outra\".",
     ],
   })
   emAndamento(
@@ -242,6 +248,77 @@ export class JornalEscolaTurmasController {
       turmaOu404(turmaId),
       professorDoToken(req.auth),
       pacoteOpcional(pacoteId) ?? "",
+    );
+  }
+
+  @Post(":turmaId/pacotes/:pacoteId/aprovar-imagens")
+  @HttpCode(200)
+  @Contrato({
+    resumo: '"Aprovar imagens" — o professor viu as imagens das notícias e dá o OK (ADR-147).',
+    descricao:
+      "As imagens são geradas por IA (`POST gerar-midia?pacoteId=`) e só chegam à turma depois daqui. A aprovação é POR IMAGEM: o corpo traz as URLs que estavam na tela do professor, e só se aprova a notícia cuja URL ainda é a do pacote. \"Gerar outra\" (`POST …/imagens/:noticiaId/regerar`) troca a URL, e aquela notícia espera o novo OK desenhada pelo meio.",
+    params: PARAMS_DO_PACOTE,
+    query: QUERY,
+    corpo: AprovarImagensSchema,
+    resposta: ImagensAprovadasSchema,
+    notas: [
+      "URL que já não é a do pacote (outra aba gerou outra) não entra: volta em `desatualizadas`, e a tela relê.",
+      "**Idempotente**: aprovar de novo a mesma URL não muda nada.",
+      "As atividades criadas antes desta regra entraram com as imagens que tinham aprovadas (migração `20261005190000`).",
+      "Pacote de outra turma responde **404** `atividade-nao-encontrada`.",
+    ],
+  })
+  aprovarImagens(
+    @Param("turmaId") turmaId: string,
+    @Param("pacoteId") pacoteId: string,
+    @Query("escolaId") escolaIdPedida: string | undefined,
+    @Body() corpo: unknown,
+    @Req() req: Autenticado,
+  ) {
+    const { imagens } = valida(AprovarImagensSchema, corpo, "payload-invalido");
+    return this.missao.aprovarImagens(
+      escolaAlvo(req.auth, escolaIdPedida),
+      turmaOu404(turmaId),
+      professorDoToken(req.auth),
+      pacoteOpcional(pacoteId) ?? "",
+      imagens,
+    );
+  }
+
+  @Post(":turmaId/pacotes/:pacoteId/imagens/:noticiaId/regerar")
+  @HttpCode(200)
+  @Contrato({
+    resumo: '"Gerar outra" — uma imagem nova para UMA notícia (ADR-147).',
+    descricao:
+      "O professor viu a imagem e ela não serve. Sai um arquivo NOVO, cobrado na quota como qualquer imagem, e a notícia fica sem imagem para a turma até o novo `aprovar-imagens` — as outras continuam.",
+    params: PARAMS_DA_IMAGEM,
+    query: QUERY,
+    resposta: ImagemRegeradaSchema,
+    notas: [
+      "Notícia sem descrição de imagem (a mensagem, o blog do banco padrão): **400** `noticia-sem-imagem`.",
+      "Sem saldo, **429** `sem-saldo-de-ia`; o provedor falhou, **503** `ia-indisponivel` — a imagem anterior continua no pacote.",
+      "Vale também na atividade em andamento: a turma deixa de ver a imagem daquela notícia até o novo OK.",
+    ],
+  })
+  regerarImagem(
+    @Param("turmaId") turmaId: string,
+    @Param("pacoteId") pacoteId: string,
+    @Param("noticiaId") noticiaId: string,
+    @Query("escolaId") escolaIdPedida: string | undefined,
+    @Req() req: Autenticado,
+  ) {
+    const escolaId = escolaAlvo(req.auth, escolaIdPedida);
+    const noticia = IdDeNoticiaSchema.safeParse(noticiaId);
+    if (!noticia.success) throw erroDeJogo("noticia-sem-imagem");
+    limitar(req.auth.usuarioId, "regerar-imagem", 10);
+    return this.midia.regerar(
+      escolaId,
+      turmaOu404(turmaId),
+      professorDoToken(req.auth),
+      req.auth.usuarioId,
+      req.auth.perfil,
+      pacoteOpcional(pacoteId) ?? "",
+      noticia.data,
     );
   }
 
@@ -359,13 +436,14 @@ export class JornalEscolaTurmasController {
   @Contrato({
     resumo: "Gera as próximas imagens das notícias de uma atividade — incremental.",
     descricao:
-      "As imagens não cabem nos 30 s que o BFF dá a uma chamada: cada chamada gera ATÉ DUAS novas, grava as URLs no pacote e devolve o progresso. **Repita enquanto `completo` for `false` e a chamada anterior tiver gerado alguma** — `falharam` diz o que não saiu, e essas notícias seguem com o cartão desenhado pelo meio.\n\nIdempotente: o que já tem URL é pulado, e a imagem de mesma descrição que já está no bucket entra sem custo.",
+      "As imagens não cabem nos 30 s que o BFF dá a uma chamada: cada chamada gera ATÉ DUAS novas, grava as URLs no pacote e devolve o progresso. **Repita enquanto `completo` for `false` e a chamada anterior tiver gerado alguma** — `falharam` diz o que não saiu: sem todas geradas e aprovadas, a atividade não vai ao ar (ADR-147).\n\nIdempotente: o que já tem URL é pulado, e a imagem de mesma descrição que já está no bucket entra sem custo.",
     params: PARAMS,
     query: QueryDoPacoteSchema,
     resposta: ProgressoDaMidiaSchema,
     notas: [
       "`?pacoteId=` diz a atividade (a pronta, preparada antes de ir ao ar); sem ele, a em andamento — e sem nenhuma, **403** `atividade-nao-preparada`.",
-      "Quota do professor, com custo ESTIMADO por imagem (a geração não devolve contagem de tokens). Sem saldo responde **429** `sem-saldo-de-ia` — e a missão roda igual, com os cartões pelo meio.",
+      "Quota do professor, com custo ESTIMADO por imagem (a geração não devolve contagem de tokens). Sem saldo responde **429** `sem-saldo-de-ia`.",
+      "Imagem gerada NÃO vai à turma: espera o `aprovar-imagens` (ADR-147). E a atividade só vai ao ar com todas geradas e aprovadas.",
       "Duas chamadas simultâneas para o mesmo pacote recebem o mesmo trabalho (lock de processo).",
     ],
   })

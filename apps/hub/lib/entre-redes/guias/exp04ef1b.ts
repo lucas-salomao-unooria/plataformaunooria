@@ -101,7 +101,7 @@ export const GUIA_EXP04EF1B: GuiaDaAula = {
       {
         titulo: "Libere a missão na sala de aula",
         texto:
-          "Em Minhas turmas, na aba Missões da turma. Sem a liberação, o card fica com cadeado para as crianças.",
+          "Em Minhas turmas, na aba Missões da turma. Sem a liberação, o cartão fica com cadeado para as crianças.",
       },
       {
         titulo: "Escolha o pacote de notícias",

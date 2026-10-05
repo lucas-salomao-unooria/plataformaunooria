@@ -154,7 +154,10 @@ export function atividadesDaSelecao(c: CoberturasDaTurma): AtividadeNaLista[] {
     id: h.id,
     titulo: h.tema,
     detalhe: [h.foco, ORIGEM[h.origem]].filter(Boolean).join(" · "),
-    estado: h.ativa ? "em-andamento" : "pronta",
+    /* Sem a segunda fase da aprovação (ADR-146), a atividade não vai ao ar:
+       "Em preparo", e o card não oferece "Usar esta atividade agora" — a api
+       recusaria com 409 `imagens-nao-aprovadas`. */
+    estado: h.ativa ? "em-andamento" : h.imagensAprovadas ? "pronta" : "em-preparo",
     criadaEm: h.criadaEm,
     rodadas: h.rodadas,
   }));
@@ -165,7 +168,10 @@ export function atividadesDoJornal(p: PacotesDaTurma): AtividadeNaLista[] {
     id: h.id,
     titulo: h.tema,
     detalhe: [h.disciplina, ORIGEM[h.origem]].join(" · "),
-    estado: h.ativo ? "em-andamento" : "pronta",
+    /* Sem as imagens geradas e aprovadas (ADR-147), a atividade não vai ao ar:
+       "Em preparo", e o card não oferece "Usar esta atividade agora" — a api
+       recusaria com 409 `imagens-nao-aprovadas`. */
+    estado: h.ativo ? "em-andamento" : h.imagensAprovadas ? "pronta" : "em-preparo",
     criadaEm: h.criadoEm,
     rodadas: h.rodadas,
   }));

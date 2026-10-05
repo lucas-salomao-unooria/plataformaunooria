@@ -36,6 +36,12 @@ no molde da lista do Instanooria) e o card `components/cartao-atividade.tsx`.
   (`components/atividades/usar-esta-atividade.tsx`) escolhe a EM ANDAMENTO, uma
   por turma, e pede confirmação quando troca a que está no ar. No Instanooria o
   caminho é o "Ativar" (que pode devolver 422 com as pendências).
+- **Pôr no ar LIBERA a missão na sala** (ADR-146): o toggle "Pôr esta atividade
+  no ar agora" e o "Usar esta atividade agora" fazem também o `PUT` da Sala de
+  Aula (`liberarNaSala`), inclusive com a missão encerrada. Sem a linha em
+  `liberacoes` (ADR-69) a atividade ficava no ar e a turma via o cadeado — e a
+  e2e não via, porque o seed libera a 7A e a 5A antes. Se só a liberação falha
+  (gestor não libera), sai um aviso, não um erro.
 - **A criação é o assistente de quatro passos** (`components/atividades/assistente-de-atividade.tsx`:
   turma, conteúdo, equipes, revisar e criar) em `[unidade]/atividades/nova`; o
   passo do CONTEÚDO é de cada missão (`atividades/nova/criar-<missão>.tsx`), e o
@@ -44,8 +50,11 @@ no molde da lista do Instanooria) e o card `components/cartao-atividade.tsx`.
 - **A página da atividade** é a `.../resultados` com `?cobertura=` (A Seleção) ou
   `?pacote=` (Jornal, Quem Mandou, Júri Estadual), e a `/professor/atividades/[id]` no
   Instanooria. O painel da aula e o zerar só aparecem na EM ANDAMENTO; a pronta
-  mostra o "Usar esta atividade agora". As imagens se geram ali, com o id da
-  atividade (a pronta também).
+  mostra o "Usar esta atividade agora". No Júri as imagens se geram ali, com o
+  id da atividade (a pronta também); na A Seleção e no Jornal, na criação.
+- **O Jornal aprova em duas fases na criação** (ADR-147): textos, depois
+  imagens, na grade `resultados/imagens-do-pacote.tsx` (a mesma da página da
+  atividade). Sem todas aprovadas é "Em preparo" (a api dá 409); por imagem.
 
 ## Equipes na missão (E13)
 
@@ -103,6 +112,17 @@ decide nível, cópia e o que conta é a api (`apps/api/src/evidencias/`).
   Instanooria o bloco não aparece, e não é defeito: confira `temFicha` antes.
 - **Ausência é "Não avaliado", nunca "Não atingiu".** A cópia da aula projetada
   chega "a revisar" e só conta depois de "Confirmar para a turma".
+- **A rodada em andamento tem aba mesmo vazia** (`rodadaEmAndamento`, ADR-145):
+  a api conta as rodadas pelas evidências, e sem a prop a rodada aberta pelo
+  "Zerar" só aparecia depois do primeiro jogo e de um F5. A aba vazia é só de
+  leitura (`rodadaSemRegistro`): a api recusa ajuste em rodada sem registro.
+- **O critério de cada nível vem da ficha** (`habilidades[].criterios`) e é
+  listado no fim do painel, em toda missão com ficha.
+- **O painel acompanha a aula sem F5** (ADR-146): o polling do painel da aula
+  chama `router.refresh()` quando `mudouAEvidencia` (no `lib/<missão>-tipos.ts`)
+  acusa mudança no que a ficha registra. No Jornal e no Júri uma leitura basta
+  (a marca vai na transação da jogada); na A Seleção relê de novo na volta
+  seguinte, porque o Canal A gradua a legenda DEPOIS de ela aparecer no painel.
 - **O perfil** é `professor/turmas/[id]/estudantes/[estudanteId]`, pelo NOME na aba
   Estudantes; o relatório da Vila, antes destino da linha inteira, virou link ao
   lado (link dentro de link não existe). A trilha volta para `?aba=estudantes`.
@@ -124,13 +144,24 @@ na ordem da aula: pô-la no ar (se pronta), equipes, imagens, painel ao vivo com
 folha por computador, zerar, podcast e habilidades. A criação é
 `atividades/nova/criar-a-selecao.tsx`.
 
-- **Criar = atividade nova, PRONTA**; pô-la no ar abre a rodada seguinte à
-  última; **zerar = rodada nova**, sem apagar nada.
+- **Criar é aprovar em DUAS fases, na mesma grade** (ADR-146,
+  `[unidade]/grade-da-cobertura.tsx`): os textos ("Aprovar textos e gerar as
+  imagens" grava a cobertura) e depois as imagens, geradas sozinhas no card de
+  cada post, com "Gerar outra imagem". Os textos vêm antes porque imagem de
+  rascunho gasta quota à toa. O botão final do assistente ("Aprovar Cobertura e
+  Abrir Turma", `rotuloDoCriar`) só acende depois das duas, e chama
+  `aprovar-imagens` antes do `concluirCriacao`. Sem a segunda fase a atividade
+  é "Em preparo", sem "Usar esta atividade agora" (a api daria 409), e a página
+  dela mostra a mesma grade com "Aprovar imagens".
+- Pôr no ar abre a rodada seguinte à última; **zerar = rodada nova**, sem
+  apagar nada.
 - **UM botão**, com o rótulo de `proximaEtapa` da api; não volta.
-- **O painel consulta só `…/painel`** a cada 5 s, não `router.refresh()`: a
-  página lê seis rotas.
+- **O painel consulta `…/painel`** a cada 5 s e só refaz a página quando muda a
+  evidência (acima): a página lê seis rotas.
 - **As imagens são um laço do cliente** (`continuarGerando`): 2 por chamada,
-  para em `completo` ou quando uma volta não gera nada.
+  para em `completo` ou quando uma volta não gera nada. Na página da atividade
+  o laço antigo só roda para cobertura aprovada antes da ADR-146 com post sem
+  imagem.
 - **O podcast de recapitulação é do professor** (`podcast-a-selecao.tsx`, entre
   o painel da aula e o zerar) — e mora AQUI, não no guia: o Bloco 2 conta o que
   cada veículo mostrou no tema DESTA turma, e o guia é o mesmo para todas. O

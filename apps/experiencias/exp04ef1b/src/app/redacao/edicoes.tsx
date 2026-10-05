@@ -69,6 +69,7 @@ export function SegundaEdicao({
   return (
     <MesaDeEdicao
       edicao={2}
+      abaInicial="capa"
       cabecalho={<Cabecalho titulo={EREV.titulo} selo={EREV.chaveFixada} icone="key" />}
       aviso={
         <div className="tela__faixa">

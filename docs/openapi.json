@@ -11025,11 +11025,36 @@
                           },
                           "descricao": {
                             "type": "string"
+                          },
+                          "criterios": {
+                            "type": "object",
+                            "properties": {
+                              "atingiu": {
+                                "type": "string"
+                              },
+                              "em_processo": {
+                                "type": "string"
+                              },
+                              "nao_atingiu": {
+                                "type": "string"
+                              },
+                              "observacao": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "atingiu",
+                              "em_processo",
+                              "nao_atingiu"
+                            ],
+                            "additionalProperties": false,
+                            "nullable": true
                           }
                         },
                         "required": [
                           "codigo",
-                          "descricao"
+                          "descricao",
+                          "criterios"
                         ],
                         "additionalProperties": false
                       }
@@ -11247,11 +11272,36 @@
                           },
                           "descricao": {
                             "type": "string"
+                          },
+                          "criterios": {
+                            "type": "object",
+                            "properties": {
+                              "atingiu": {
+                                "type": "string"
+                              },
+                              "em_processo": {
+                                "type": "string"
+                              },
+                              "nao_atingiu": {
+                                "type": "string"
+                              },
+                              "observacao": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "atingiu",
+                              "em_processo",
+                              "nao_atingiu"
+                            ],
+                            "additionalProperties": false,
+                            "nullable": true
                           }
                         },
                         "required": [
                           "codigo",
-                          "descricao"
+                          "descricao",
+                          "criterios"
                         ],
                         "additionalProperties": false
                       }
@@ -11465,11 +11515,36 @@
                           },
                           "descricao": {
                             "type": "string"
+                          },
+                          "criterios": {
+                            "type": "object",
+                            "properties": {
+                              "atingiu": {
+                                "type": "string"
+                              },
+                              "em_processo": {
+                                "type": "string"
+                              },
+                              "nao_atingiu": {
+                                "type": "string"
+                              },
+                              "observacao": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "atingiu",
+                              "em_processo",
+                              "nao_atingiu"
+                            ],
+                            "additionalProperties": false,
+                            "nullable": true
                           }
                         },
                         "required": [
                           "codigo",
-                          "descricao"
+                          "descricao",
+                          "criterios"
                         ],
                         "additionalProperties": false
                       }
@@ -37533,7 +37608,6 @@
                         "espera",
                         "revelacao",
                         "sintese",
-                        "reflexao",
                         "perguntas",
                         "concluida"
                       ]
@@ -37598,29 +37672,6 @@
                         "medo_indignacao",
                         "imagem_link_real"
                       ],
-                      "nullable": true
-                    },
-                    "reflexao": {
-                      "type": "object",
-                      "properties": {
-                        "se": {
-                          "type": "string",
-                          "enum": [
-                            "urgente_alarmante",
-                            "parente_proximo",
-                            "link_nao_checado",
-                            "promessa_incrivel"
-                          ]
-                        },
-                        "entao": {
-                          "type": "string"
-                        }
-                      },
-                      "required": [
-                        "se",
-                        "entao"
-                      ],
-                      "additionalProperties": false,
                       "nullable": true
                     },
                     "concluido": {
@@ -37819,16 +37870,12 @@
                               "type": "string",
                               "nullable": true
                             },
-                            "tio": {
-                              "type": "string"
-                            },
                             "encerramento": {
                               "type": "string"
                             }
                           },
                           "required": [
                             "convite",
-                            "tio",
                             "encerramento"
                           ],
                           "additionalProperties": false
@@ -37851,15 +37898,11 @@
                             ],
                             "additionalProperties": false
                           }
-                        },
-                        "confirmacaoDaRegra": {
-                          "type": "string"
                         }
                       },
                       "required": [
                         "nina",
-                        "perguntas",
-                        "confirmacaoDaRegra"
+                        "perguntas"
                       ],
                       "additionalProperties": false
                     },
@@ -37884,30 +37927,10 @@
                             ],
                             "additionalProperties": false
                           }
-                        },
-                        "condicoes": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "properties": {
-                              "id": {
-                                "type": "string"
-                              },
-                              "rotulo": {
-                                "type": "string"
-                              }
-                            },
-                            "required": [
-                              "id",
-                              "rotulo"
-                            ],
-                            "additionalProperties": false
-                          }
                         }
                       },
                       "required": [
-                        "motivos",
-                        "condicoes"
+                        "motivos"
                       ],
                       "additionalProperties": false
                     },
@@ -37918,22 +37941,10 @@
                           "type": "integer",
                           "exclusiveMinimum": true,
                           "minimum": 0
-                        },
-                        "entaoMin": {
-                          "type": "integer",
-                          "exclusiveMinimum": true,
-                          "minimum": 0
-                        },
-                        "entaoMax": {
-                          "type": "integer",
-                          "exclusiveMinimum": true,
-                          "minimum": 0
                         }
                       },
                       "required": [
-                        "encaminhamentos",
-                        "entaoMin",
-                        "entaoMax"
+                        "encaminhamentos"
                       ],
                       "additionalProperties": false
                     }
@@ -37946,7 +37957,6 @@
                     "selecao",
                     "confirmado",
                     "motivo",
-                    "reflexao",
                     "concluido",
                     "revelacao",
                     "pacote",
@@ -37964,7 +37974,7 @@
           "quem-mandou-isso"
         ],
         "summary": "O estado da missão e as 8 mensagens do grupo, sem o gabarito.",
-        "description": "As mensagens saem **sem `veracidade` e `tom`** — o tipo do servidor é um `Omit`. O gabarito só aparece em `revelacao`, e `revelacao` é `null` até o estudante VOTAR na enquete e a turma abrir a revelação; ela traz só as TRÊS mensagens dele.\n\n`pacote` é `null` enquanto o professor não aprovou um pacote para a turma: **a missão nasce vazia** e a tela é de espera.\n\n`passo` é DERIVADO no servidor (os latches da sessão × a fase da turma): `abertura → grupo → enquete → espera → revelacao → sintese → reflexao → perguntas → concluida`. `grupo` cobre o grupo E o Mural (as duas vistas da mesma seleção); `selecao` restaura um F5.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- A porta da sala (ADR-69) e a disponibilidade (ADR-87) valem aqui: turma sem a missão liberada responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`).\n- Quem ainda não confirmou o Mural quando a turma abre a revelação CONTINUA no grupo; depois de votar, recebe `revelacao` junto com o passo da turma (que pode já ser `sintese` ou `reflexao`) — a tela mostra os crachás antes do passo corrente.\n- `textos.perguntas` são as falas da Nina que antecedem as perguntas de evidência (`p1`, `p2`). O enunciado e as alternativas vêm de `GET /evidencias/exp05ef1b/perguntas/:perguntaId` — embaralhadas, sem o nível —, e a resposta vai a `POST /evidencias/exp05ef1b/perguntas/:perguntaId/resposta`, que só aceita no passo `perguntas`.\n- `reflexao` é sempre a do PRÓPRIO estudante.",
+        "description": "As mensagens saem **sem `veracidade` e `tom`** — o tipo do servidor é um `Omit`. O gabarito só aparece em `revelacao`, e `revelacao` é `null` até o estudante VOTAR na enquete e a turma abrir a revelação; ela traz só as TRÊS mensagens dele.\n\n`pacote` é `null` enquanto o professor não aprovou um pacote para a turma: **a missão nasce vazia** e a tela é de espera.\n\n`passo` é DERIVADO no servidor (os latches da sessão × a fase da turma): `abertura → grupo → enquete → espera → revelacao → sintese → perguntas → concluida`. `grupo` cobre o grupo E o Mural (as duas vistas da mesma seleção); `selecao` restaura um F5.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- A porta da sala (ADR-69) e a disponibilidade (ADR-87) valem aqui: turma sem a missão liberada responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`).\n- Quem ainda não confirmou o Mural quando a turma abre a revelação CONTINUA no grupo; depois de votar, recebe `revelacao` junto com o passo da turma (que pode já ser `sintese` ou `perguntas`) — a tela mostra os crachás antes do passo corrente.\n- `textos.perguntas` são as falas da Nina que antecedem as perguntas de evidência (`p1`, `p2`). O enunciado e as alternativas vêm de `GET /evidencias/exp05ef1b/perguntas/:perguntaId` — embaralhadas, sem o nível —, e a resposta vai a `POST /evidencias/exp05ef1b/perguntas/:perguntaId/resposta`, que só aceita no passo `perguntas`.",
         "security": [
           {
             "token-da-plataforma": []
@@ -38007,7 +38017,6 @@
                         "espera",
                         "revelacao",
                         "sintese",
-                        "reflexao",
                         "perguntas",
                         "concluida"
                       ]
@@ -38089,7 +38098,6 @@
                         "espera",
                         "revelacao",
                         "sintese",
-                        "reflexao",
                         "perguntas",
                         "concluida"
                       ]
@@ -38154,29 +38162,6 @@
                         "medo_indignacao",
                         "imagem_link_real"
                       ],
-                      "nullable": true
-                    },
-                    "reflexao": {
-                      "type": "object",
-                      "properties": {
-                        "se": {
-                          "type": "string",
-                          "enum": [
-                            "urgente_alarmante",
-                            "parente_proximo",
-                            "link_nao_checado",
-                            "promessa_incrivel"
-                          ]
-                        },
-                        "entao": {
-                          "type": "string"
-                        }
-                      },
-                      "required": [
-                        "se",
-                        "entao"
-                      ],
-                      "additionalProperties": false,
                       "nullable": true
                     },
                     "concluido": {
@@ -38282,7 +38267,6 @@
                     "selecao",
                     "confirmado",
                     "motivo",
-                    "reflexao",
                     "concluido",
                     "revelacao"
                   ],
@@ -38329,7 +38313,6 @@
                         "espera",
                         "revelacao",
                         "sintese",
-                        "reflexao",
                         "perguntas",
                         "concluida"
                       ]
@@ -38394,29 +38377,6 @@
                         "medo_indignacao",
                         "imagem_link_real"
                       ],
-                      "nullable": true
-                    },
-                    "reflexao": {
-                      "type": "object",
-                      "properties": {
-                        "se": {
-                          "type": "string",
-                          "enum": [
-                            "urgente_alarmante",
-                            "parente_proximo",
-                            "link_nao_checado",
-                            "promessa_incrivel"
-                          ]
-                        },
-                        "entao": {
-                          "type": "string"
-                        }
-                      },
-                      "required": [
-                        "se",
-                        "entao"
-                      ],
-                      "additionalProperties": false,
                       "nullable": true
                     },
                     "concluido": {
@@ -38522,7 +38482,6 @@
                     "selecao",
                     "confirmado",
                     "motivo",
-                    "reflexao",
                     "concluido",
                     "revelacao"
                   ],
@@ -38602,7 +38561,6 @@
                         "espera",
                         "revelacao",
                         "sintese",
-                        "reflexao",
                         "perguntas",
                         "concluida"
                       ]
@@ -38667,29 +38625,6 @@
                         "medo_indignacao",
                         "imagem_link_real"
                       ],
-                      "nullable": true
-                    },
-                    "reflexao": {
-                      "type": "object",
-                      "properties": {
-                        "se": {
-                          "type": "string",
-                          "enum": [
-                            "urgente_alarmante",
-                            "parente_proximo",
-                            "link_nao_checado",
-                            "promessa_incrivel"
-                          ]
-                        },
-                        "entao": {
-                          "type": "string"
-                        }
-                      },
-                      "required": [
-                        "se",
-                        "entao"
-                      ],
-                      "additionalProperties": false,
                       "nullable": true
                     },
                     "concluido": {
@@ -38795,7 +38730,6 @@
                     "selecao",
                     "confirmado",
                     "motivo",
-                    "reflexao",
                     "concluido",
                     "revelacao"
                   ],
@@ -38875,7 +38809,6 @@
                         "espera",
                         "revelacao",
                         "sintese",
-                        "reflexao",
                         "perguntas",
                         "concluida"
                       ]
@@ -38940,29 +38873,6 @@
                         "medo_indignacao",
                         "imagem_link_real"
                       ],
-                      "nullable": true
-                    },
-                    "reflexao": {
-                      "type": "object",
-                      "properties": {
-                        "se": {
-                          "type": "string",
-                          "enum": [
-                            "urgente_alarmante",
-                            "parente_proximo",
-                            "link_nao_checado",
-                            "promessa_incrivel"
-                          ]
-                        },
-                        "entao": {
-                          "type": "string"
-                        }
-                      },
-                      "required": [
-                        "se",
-                        "entao"
-                      ],
-                      "additionalProperties": false,
                       "nullable": true
                     },
                     "concluido": {
@@ -39068,7 +38978,6 @@
                     "selecao",
                     "confirmado",
                     "motivo",
-                    "reflexao",
                     "concluido",
                     "revelacao"
                   ],
@@ -39119,276 +39028,6 @@
         }
       }
     },
-    "/quem-mandou-isso/reflexao": {
-      "post": {
-        "operationId": "QuemMandouIssoController_reflexao",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "Sucesso.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "passo": {
-                      "type": "string",
-                      "enum": [
-                        "abertura",
-                        "grupo",
-                        "enquete",
-                        "espera",
-                        "revelacao",
-                        "sintese",
-                        "reflexao",
-                        "perguntas",
-                        "concluida"
-                      ]
-                    },
-                    "fase": {
-                      "type": "string",
-                      "enum": [
-                        "triagem",
-                        "revelacao",
-                        "explicar",
-                        "reflexao"
-                      ],
-                      "nullable": true
-                    },
-                    "preparada": {
-                      "type": "boolean"
-                    },
-                    "atividade": {
-                      "type": "object",
-                      "properties": {
-                        "pacoteId": {
-                          "type": "string",
-                          "format": "uuid"
-                        },
-                        "rodada": {
-                          "type": "integer",
-                          "exclusiveMinimum": true,
-                          "minimum": 0
-                        }
-                      },
-                      "required": [
-                        "pacoteId",
-                        "rodada"
-                      ],
-                      "additionalProperties": false,
-                      "nullable": true
-                    },
-                    "selecao": {
-                      "type": "array",
-                      "items": {
-                        "type": "string",
-                        "enum": [
-                          "msg_1",
-                          "msg_2",
-                          "msg_3",
-                          "msg_4",
-                          "msg_5",
-                          "msg_6",
-                          "msg_7",
-                          "msg_8"
-                        ]
-                      }
-                    },
-                    "confirmado": {
-                      "type": "boolean"
-                    },
-                    "motivo": {
-                      "type": "string",
-                      "enum": [
-                        "urgencia",
-                        "confianca_remetente",
-                        "medo_indignacao",
-                        "imagem_link_real"
-                      ],
-                      "nullable": true
-                    },
-                    "reflexao": {
-                      "type": "object",
-                      "properties": {
-                        "se": {
-                          "type": "string",
-                          "enum": [
-                            "urgente_alarmante",
-                            "parente_proximo",
-                            "link_nao_checado",
-                            "promessa_incrivel"
-                          ]
-                        },
-                        "entao": {
-                          "type": "string"
-                        }
-                      },
-                      "required": [
-                        "se",
-                        "entao"
-                      ],
-                      "additionalProperties": false,
-                      "nullable": true
-                    },
-                    "concluido": {
-                      "type": "boolean"
-                    },
-                    "revelacao": {
-                      "type": "object",
-                      "properties": {
-                        "mensagens": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "properties": {
-                              "id": {
-                                "type": "string",
-                                "enum": [
-                                  "msg_1",
-                                  "msg_2",
-                                  "msg_3",
-                                  "msg_4",
-                                  "msg_5",
-                                  "msg_6",
-                                  "msg_7",
-                                  "msg_8"
-                                ]
-                              },
-                              "veracidade": {
-                                "type": "string",
-                                "enum": [
-                                  "verdadeira",
-                                  "falsa"
-                                ]
-                              },
-                              "tom": {
-                                "type": "string",
-                                "enum": [
-                                  "emocional",
-                                  "neutra"
-                                ]
-                              }
-                            },
-                            "required": [
-                              "id",
-                              "veracidade",
-                              "tom"
-                            ],
-                            "additionalProperties": false
-                          }
-                        },
-                        "motivo": {
-                          "type": "string",
-                          "enum": [
-                            "urgencia",
-                            "confianca_remetente",
-                            "medo_indignacao",
-                            "imagem_link_real"
-                          ]
-                        },
-                        "callback": {
-                          "type": "string"
-                        },
-                        "turma": {
-                          "type": "object",
-                          "properties": {
-                            "unidades": {
-                              "type": "integer",
-                              "minimum": 0
-                            },
-                            "falsaNeutra": {
-                              "type": "integer",
-                              "minimum": 0,
-                              "maximum": 100
-                            },
-                            "verdadeiraEmocionalDescartada": {
-                              "type": "integer",
-                              "minimum": 0,
-                              "maximum": 100
-                            }
-                          },
-                          "required": [
-                            "unidades",
-                            "falsaNeutra",
-                            "verdadeiraEmocionalDescartada"
-                          ],
-                          "additionalProperties": false
-                        }
-                      },
-                      "required": [
-                        "mensagens",
-                        "motivo",
-                        "callback",
-                        "turma"
-                      ],
-                      "additionalProperties": false,
-                      "nullable": true
-                    }
-                  },
-                  "required": [
-                    "passo",
-                    "fase",
-                    "preparada",
-                    "atividade",
-                    "selecao",
-                    "confirmado",
-                    "motivo",
-                    "reflexao",
-                    "concluido",
-                    "revelacao"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "quem-mandou-isso"
-        ],
-        "summary": "A regra Se/Então da Etapa 6 — o latch 3.",
-        "description": "`se` é uma das quatro condições; `entao` é o **único texto livre da missão**, escrito por menor de idade: vai para a tabela confinada `exp05ef1b_reflexoes`, não vai a log nem a telemetria, e só o professor que leciona na turma o lê no painel (LGPD art. 14). A regra NÃO é corrigida: a EF05CO04 vem da pergunta P2.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- A porta da sala (ADR-69) e a disponibilidade (ADR-87) valem aqui: turma sem a missão liberada responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`).\n- `entao` de 15 a 240 caracteres DEPOIS do `trim`: **400** `entao-curto`, `entao-longo`, ou `entao-sem-sentido` (um caractere repetido, sequência de dígitos, pouca variedade de letras, teclado amassado).\n- **409** `enquete-nao-votada` antes do latch 2 e `reflexao-nao-liberada` antes de o professor liberar a reflexão. A mesma regra de novo é idempotente; outra é **409** `reflexao-ja-enviada`.",
-        "security": [
-          {
-            "token-da-plataforma": []
-          }
-        ],
-        "x-papeis": [
-          "estudante"
-        ],
-        "x-acesso": "token",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "se": {
-                    "type": "string",
-                    "enum": [
-                      "urgente_alarmante",
-                      "parente_proximo",
-                      "link_nao_checado",
-                      "promessa_incrivel"
-                    ]
-                  },
-                  "entao": {
-                    "type": "string",
-                    "maxLength": 960
-                  }
-                },
-                "required": [
-                  "se",
-                  "entao"
-                ],
-                "additionalProperties": false
-              }
-            }
-          }
-        }
-      }
-    },
     "/quem-mandou-isso/concluir": {
       "post": {
         "operationId": "QuemMandouIssoController_concluir",
@@ -39410,7 +39049,6 @@
                         "espera",
                         "revelacao",
                         "sintese",
-                        "reflexao",
                         "perguntas",
                         "concluida"
                       ]
@@ -39475,29 +39113,6 @@
                         "medo_indignacao",
                         "imagem_link_real"
                       ],
-                      "nullable": true
-                    },
-                    "reflexao": {
-                      "type": "object",
-                      "properties": {
-                        "se": {
-                          "type": "string",
-                          "enum": [
-                            "urgente_alarmante",
-                            "parente_proximo",
-                            "link_nao_checado",
-                            "promessa_incrivel"
-                          ]
-                        },
-                        "entao": {
-                          "type": "string"
-                        }
-                      },
-                      "required": [
-                        "se",
-                        "entao"
-                      ],
-                      "additionalProperties": false,
                       "nullable": true
                     },
                     "concluido": {
@@ -39603,7 +39218,6 @@
                     "selecao",
                     "confirmado",
                     "motivo",
-                    "reflexao",
                     "concluido",
                     "revelacao"
                   ],
@@ -39617,7 +39231,7 @@
           "quem-mandou-isso"
         ],
         "summary": "Encerra a missão, depois das perguntas de evidência.",
-        "description": "Não exige as respostas de P1 e P2: quem sai antes delas fica **Não avaliado** em EF05CO03/EF05CO04 (a ausência de marca), nunca \"não atingiu\". Depois disto as perguntas não aceitam mais resposta.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- A porta da sala (ADR-69) e a disponibilidade (ADR-87) valem aqui: turma sem a missão liberada responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`).\n- **409** `reflexao-nao-enviada` antes do latch 3. Idempotente.",
+        "description": "Não exige as respostas de P1 e P2: quem sai antes delas fica **Não avaliado** em EF05CO03/EF05CO04 (a ausência de marca), nunca \"não atingiu\". Depois disto as perguntas não aceitam mais resposta.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- A porta da sala (ADR-69) e a disponibilidade (ADR-87) valem aqui: turma sem a missão liberada responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`).\n- **409** `enquete-nao-votada` antes do voto e `reflexao-nao-liberada` antes de o professor liberar a reflexão (as perguntas são a Etapa 6, ADR-145). Idempotente.",
         "security": [
           {
             "token-da-plataforma": []
@@ -40934,10 +40548,6 @@
                           "type": "integer",
                           "minimum": 0
                         },
-                        "refletiram": {
-                          "type": "integer",
-                          "minimum": 0
-                        },
                         "concluiram": {
                           "type": "integer",
                           "minimum": 0
@@ -40948,7 +40558,6 @@
                         "entraram",
                         "confirmaram",
                         "votaram",
-                        "refletiram",
                         "concluiram"
                       ],
                       "additionalProperties": false
@@ -41104,7 +40713,6 @@
                               "espera",
                               "revelacao",
                               "sintese",
-                              "reflexao",
                               "perguntas",
                               "concluida"
                             ]
@@ -41136,30 +40744,6 @@
                             ],
                             "nullable": true
                           },
-                          "reflexao": {
-                            "type": "object",
-                            "properties": {
-                              "se": {
-                                "type": "string",
-                                "enum": [
-                                  "urgente_alarmante",
-                                  "parente_proximo",
-                                  "link_nao_checado",
-                                  "promessa_incrivel"
-                                ]
-                              },
-                              "entao": {
-                                "type": "string",
-                                "nullable": true
-                              }
-                            },
-                            "required": [
-                              "se",
-                              "entao"
-                            ],
-                            "additionalProperties": false,
-                            "nullable": true
-                          },
                           "tempoFeedSegundos": {
                             "type": "integer",
                             "minimum": 0,
@@ -41173,7 +40757,6 @@
                           "passo",
                           "selecao",
                           "motivo",
-                          "reflexao",
                           "tempoFeedSegundos"
                         ],
                         "additionalProperties": false
@@ -41934,20 +41517,12 @@
                     "textos": {
                       "type": "object",
                       "properties": {
-                        "tio": {
-                          "type": "string"
-                        },
                         "encerramento": {
-                          "type": "string"
-                        },
-                        "confirmacaoDaRegra": {
                           "type": "string"
                         }
                       },
                       "required": [
-                        "tio",
-                        "encerramento",
-                        "confirmacaoDaRegra"
+                        "encerramento"
                       ],
                       "additionalProperties": false
                     },
@@ -42028,30 +41603,10 @@
                             ],
                             "additionalProperties": false
                           }
-                        },
-                        "condicoes": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "properties": {
-                              "id": {
-                                "type": "string"
-                              },
-                              "rotulo": {
-                                "type": "string"
-                              }
-                            },
-                            "required": [
-                              "id",
-                              "rotulo"
-                            ],
-                            "additionalProperties": false
-                          }
                         }
                       },
                       "required": [
-                        "motivos",
-                        "condicoes"
+                        "motivos"
                       ],
                       "additionalProperties": false
                     }
@@ -42245,7 +41800,20 @@
                               "comentariosDestaque": {
                                 "type": "array",
                                 "items": {
-                                  "type": "string"
+                                  "type": "object",
+                                  "properties": {
+                                    "autor": {
+                                      "type": "string"
+                                    },
+                                    "mensagem": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "autor",
+                                    "mensagem"
+                                  ],
+                                  "additionalProperties": false
                                 },
                                 "minItems": 2,
                                 "maxItems": 2
@@ -42929,7 +42497,20 @@
                               "comentariosDestaque": {
                                 "type": "array",
                                 "items": {
-                                  "type": "string"
+                                  "type": "object",
+                                  "properties": {
+                                    "autor": {
+                                      "type": "string"
+                                    },
+                                    "mensagem": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "autor",
+                                    "mensagem"
+                                  ],
+                                  "additionalProperties": false
                                 },
                                 "minItems": 2,
                                 "maxItems": 2
@@ -43158,7 +42739,20 @@
                               "comentariosDestaque": {
                                 "type": "array",
                                 "items": {
-                                  "type": "string"
+                                  "type": "object",
+                                  "properties": {
+                                    "autor": {
+                                      "type": "string"
+                                    },
+                                    "mensagem": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "autor",
+                                    "mensagem"
+                                  ],
+                                  "additionalProperties": false
                                 },
                                 "minItems": 2,
                                 "maxItems": 2
@@ -44538,14 +44132,42 @@
                                 "maxItems": 2,
                                 "items": [
                                   {
-                                    "type": "string",
-                                    "minLength": 1,
-                                    "maxLength": 140
+                                    "type": "object",
+                                    "properties": {
+                                      "autor": {
+                                        "type": "string",
+                                        "pattern": "^[a-z0-9._]{3,24}$"
+                                      },
+                                      "mensagem": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 140
+                                      }
+                                    },
+                                    "required": [
+                                      "autor",
+                                      "mensagem"
+                                    ],
+                                    "additionalProperties": false
                                   },
                                   {
-                                    "type": "string",
-                                    "minLength": 1,
-                                    "maxLength": 140
+                                    "type": "object",
+                                    "properties": {
+                                      "autor": {
+                                        "type": "string",
+                                        "pattern": "^[a-z0-9._]{3,24}$"
+                                      },
+                                      "mensagem": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 140
+                                      }
+                                    },
+                                    "required": [
+                                      "autor",
+                                      "mensagem"
+                                    ],
+                                    "additionalProperties": false
                                   }
                                 ]
                               },
@@ -44708,6 +44330,9 @@
                           "rodadas": {
                             "type": "integer",
                             "minimum": 0
+                          },
+                          "imagensAprovadas": {
+                            "type": "boolean"
                           }
                         },
                         "required": [
@@ -44717,7 +44342,8 @@
                           "origem",
                           "ativa",
                           "criadaEm",
-                          "rodadas"
+                          "rodadas",
+                          "imagensAprovadas"
                         ],
                         "additionalProperties": false
                       }
@@ -44914,14 +44540,42 @@
                             "maxItems": 2,
                             "items": [
                               {
-                                "type": "string",
-                                "minLength": 1,
-                                "maxLength": 140
+                                "type": "object",
+                                "properties": {
+                                  "autor": {
+                                    "type": "string",
+                                    "pattern": "^[a-z0-9._]{3,24}$"
+                                  },
+                                  "mensagem": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 140
+                                  }
+                                },
+                                "required": [
+                                  "autor",
+                                  "mensagem"
+                                ],
+                                "additionalProperties": false
                               },
                               {
-                                "type": "string",
-                                "minLength": 1,
-                                "maxLength": 140
+                                "type": "object",
+                                "properties": {
+                                  "autor": {
+                                    "type": "string",
+                                    "pattern": "^[a-z0-9._]{3,24}$"
+                                  },
+                                  "mensagem": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 140
+                                  }
+                                },
+                                "required": [
+                                  "autor",
+                                  "mensagem"
+                                ],
+                                "additionalProperties": false
                               }
                             ]
                           },
@@ -45017,6 +44671,16 @@
                       ],
                       "additionalProperties": false
                     },
+                    "imagens": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "string"
+                      }
+                    },
+                    "imagensAprovadasEm": {
+                      "type": "string",
+                      "nullable": true
+                    },
                     "podcast": {
                       "type": "object",
                       "properties": {
@@ -45050,6 +44714,8 @@
                     "rodadas",
                     "posts",
                     "midia",
+                    "imagens",
+                    "imagensAprovadasEm",
                     "podcast"
                   ],
                   "additionalProperties": false
@@ -45155,7 +44821,187 @@
           "a-selecao"
         ],
         "summary": "\"Usar esta atividade agora\" — a professora escolhe o que a turma faz (ADR-130).",
-        "description": "A escolhida passa a ser a ATIVIDADE EM ANDAMENTO da turma; a que estava volta a ser pronta — fica, com as sessões e as rodadas. A etapa volta à exploração.\n\nA RODADA: a atividade que nunca rodou começa na 1; a que já rodou abre a SEGUINTE à última — retomar a mesma rodada depois do Mural seria o \"voltar\" que o botão único proíbe. As rodadas anteriores continuam no painel de habilidades.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- **Idempotente**: pôr no ar a que já está no ar devolve `mudou: false` e não muda nada.\n- Trocar com a aula correndo leva quem está jogando para a atividade nova: a experiência nota o `coberturaId` novo no polling do gate e recarrega. A tela pede confirmação antes.\n- Cobertura de outra turma responde **404** `atividade-nao-encontrada`.",
+        "description": "A escolhida passa a ser a ATIVIDADE EM ANDAMENTO da turma; a que estava volta a ser pronta — fica, com as sessões e as rodadas. A etapa volta à exploração.\n\nA RODADA: a atividade que nunca rodou começa na 1; a que já rodou abre a SEGUINTE à última — retomar a mesma rodada depois do Mural seria o \"voltar\" que o botão único proíbe. As rodadas anteriores continuam no painel de habilidades.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- **Idempotente**: pôr no ar a que já está no ar devolve `mudou: false` e não muda nada.\n- Trocar com a aula correndo leva quem está jogando para a atividade nova: a experiência nota o `coberturaId` novo no polling do gate e recarrega. A tela pede confirmação antes.\n- Cobertura de outra turma responde **404** `atividade-nao-encontrada`.\n- Sem a segunda fase da aprovação (as imagens, `POST …/aprovar-imagens`), **409** `imagens-nao-aprovadas` (ADR-146).\n- Pôr no ar NÃO libera a missão na sala por aqui: quem faz o `PUT /salas/turma/:turmaId/missoes/exp07ef1b` é o hub, logo depois (ADR-146).",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/a-selecao/turmas/{turmaId}/coberturas/{coberturaId}/aprovar-imagens": {
+      "post": {
+        "operationId": "ASelecaoTurmasController_aprovarImagens",
+        "parameters": [
+          {
+            "name": "turmaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "coberturaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "coberturaId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "imagensAprovadasEm": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "coberturaId",
+                    "imagensAprovadasEm"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "a-selecao"
+        ],
+        "summary": "A segunda fase da aprovação: o professor viu as imagens dos posts e as aprova (ADR-146).",
+        "description": "A primeira fase é o `POST homologar` (os textos). As imagens se geram em seguida, no card de cada post (`POST gerar-midia?coberturaId=`), e o professor regera a que não serve (`POST …/imagens/:postId/regerar`). Só depois desta rota a atividade vai ao ar: `POST em-andamento` responde **409** `imagens-nao-aprovadas` sem ela.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- **Idempotente**: a segunda aprovação devolve o carimbo da primeira.\n- Não exige imagem pronta em todo post: a geração pode falhar ou a quota acabar, e o post segue com o card da descrição, que o professor viu no mesmo card. Quem segura o botão até a geração terminar é a tela.\n- As coberturas criadas antes desta regra entraram aprovadas (migração `20261005150000`).",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/a-selecao/turmas/{turmaId}/coberturas/{coberturaId}/imagens/{postId}/regerar": {
+      "post": {
+        "operationId": "ASelecaoTurmasController_regerarImagem",
+        "parameters": [
+          {
+            "name": "turmaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "coberturaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "postId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "coberturaId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "postId": {
+                      "type": "string",
+                      "enum": [
+                        "post_a_1",
+                        "post_a_2",
+                        "post_a_3",
+                        "post_a_4",
+                        "post_b_1",
+                        "post_b_2",
+                        "post_b_3",
+                        "post_b_4",
+                        "post_c_1",
+                        "post_c_2",
+                        "post_c_3",
+                        "post_c_4"
+                      ]
+                    },
+                    "url": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "coberturaId",
+                    "postId",
+                    "url"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "a-selecao"
+        ],
+        "summary": "\"Gerar outra imagem\": uma imagem nova para UM post, enquanto as imagens estão em validação (ADR-146).",
+        "description": "O professor viu a imagem no card do post e ela não serve. Gera outra, SEMPRE paga, num arquivo novo — sobrescrever o da descrição trocaria a imagem de toda cobertura que a herdou, inclusive a de uma turma em aula.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Depois de `aprovar-imagens`, **409** `imagens-ja-aprovadas`: a turma pode estar olhando para elas.\n- Post de gráfico (o banco curado tem quatro) responde **400** `post-sem-imagem`: o gráfico é desenhado a partir dos números.\n- Quota do professor, com o custo estimado de uma imagem. Sem saldo, **429** `sem-saldo-de-ia`.",
         "security": [
           {
             "token-da-plataforma": []
@@ -45296,14 +45142,42 @@
                             "maxItems": 2,
                             "items": [
                               {
-                                "type": "string",
-                                "minLength": 1,
-                                "maxLength": 140
+                                "type": "object",
+                                "properties": {
+                                  "autor": {
+                                    "type": "string",
+                                    "pattern": "^[a-z0-9._]{3,24}$"
+                                  },
+                                  "mensagem": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 140
+                                  }
+                                },
+                                "required": [
+                                  "autor",
+                                  "mensagem"
+                                ],
+                                "additionalProperties": false
                               },
                               {
-                                "type": "string",
-                                "minLength": 1,
-                                "maxLength": 140
+                                "type": "object",
+                                "properties": {
+                                  "autor": {
+                                    "type": "string",
+                                    "pattern": "^[a-z0-9._]{3,24}$"
+                                  },
+                                  "mensagem": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 140
+                                  }
+                                },
+                                "required": [
+                                  "autor",
+                                  "mensagem"
+                                ],
+                                "additionalProperties": false
                               }
                             ]
                           },
@@ -45595,14 +45469,42 @@
                             "maxItems": 2,
                             "items": [
                               {
-                                "type": "string",
-                                "minLength": 1,
-                                "maxLength": 140
+                                "type": "object",
+                                "properties": {
+                                  "autor": {
+                                    "type": "string",
+                                    "pattern": "^[a-z0-9._]{3,24}$"
+                                  },
+                                  "mensagem": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 140
+                                  }
+                                },
+                                "required": [
+                                  "autor",
+                                  "mensagem"
+                                ],
+                                "additionalProperties": false
                               },
                               {
-                                "type": "string",
-                                "minLength": 1,
-                                "maxLength": 140
+                                "type": "object",
+                                "properties": {
+                                  "autor": {
+                                    "type": "string",
+                                    "pattern": "^[a-z0-9._]{3,24}$"
+                                  },
+                                  "mensagem": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 140
+                                  }
+                                },
+                                "required": [
+                                  "autor",
+                                  "mensagem"
+                                ],
+                                "additionalProperties": false
                               }
                             ]
                           },
@@ -45837,14 +45739,42 @@
                           "maxItems": 2,
                           "items": [
                             {
-                              "type": "string",
-                              "minLength": 1,
-                              "maxLength": 140
+                              "type": "object",
+                              "properties": {
+                                "autor": {
+                                  "type": "string",
+                                  "pattern": "^[a-z0-9._]{3,24}$"
+                                },
+                                "mensagem": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 140
+                                }
+                              },
+                              "required": [
+                                "autor",
+                                "mensagem"
+                              ],
+                              "additionalProperties": false
                             },
                             {
-                              "type": "string",
-                              "minLength": 1,
-                              "maxLength": 140
+                              "type": "object",
+                              "properties": {
+                                "autor": {
+                                  "type": "string",
+                                  "pattern": "^[a-z0-9._]{3,24}$"
+                                },
+                                "mensagem": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 140
+                                }
+                              },
+                              "required": [
+                                "autor",
+                                "mensagem"
+                              ],
+                              "additionalProperties": false
                             }
                           ]
                         },
@@ -46532,14 +46462,42 @@
                             "maxItems": 2,
                             "items": [
                               {
-                                "type": "string",
-                                "minLength": 1,
-                                "maxLength": 140
+                                "type": "object",
+                                "properties": {
+                                  "autor": {
+                                    "type": "string",
+                                    "pattern": "^[a-z0-9._]{3,24}$"
+                                  },
+                                  "mensagem": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 140
+                                  }
+                                },
+                                "required": [
+                                  "autor",
+                                  "mensagem"
+                                ],
+                                "additionalProperties": false
                               },
                               {
-                                "type": "string",
-                                "minLength": 1,
-                                "maxLength": 140
+                                "type": "object",
+                                "properties": {
+                                  "autor": {
+                                    "type": "string",
+                                    "pattern": "^[a-z0-9._]{3,24}$"
+                                  },
+                                  "mensagem": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 140
+                                  }
+                                },
+                                "required": [
+                                  "autor",
+                                  "mensagem"
+                                ],
+                                "additionalProperties": false
                               }
                             ]
                           },
@@ -47183,7 +47141,7 @@
           "jornal-escola"
         ],
         "summary": "O estado da missão e as 8 notícias da mesa, sem o gabarito.",
-        "description": "Boot da experiência e o F5. As notícias saem **na ordem da mesa** e **sem `gabarito`, `pistas` e `consequencia`** — a notícia pública é uma allowlist no servidor. O texto das pistas desce no `POST /jornal-escola/pista` (é o registro que mede a EF15CO04), e o F5 devolve as já abertas em `pistasAbertas`.\n\n**A missão não nasce vazia**: sem homologação, a turma roda o banco padrão (\"Feira de Ciências e Notícias da Cidade\"), e o pacote `padrao` nasce na primeira entrada. `imagem.url` é `null` enquanto o professor não gerou as imagens — a tela desenha o cartão pelo meio.\n\n`blocos` (os seis da Chave do Editor, na ordem da bandeja DESTA sessão, estável num F5) é `null` até a revisão abrir para esta criança. Nenhum bloco diz se é pilar ou isca.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- `passo` já vem reconciliado com a etapa da turma; `passoDoEstudante` é o gravado. A etapa só conduz quem publicou a 1ª edição e respondeu o motivo.\n- `pacoteId` é a ATIVIDADE e `rodada` é a rodada dela: mudam quando o professor homologa outro pacote ou zera a turma, e a sessão é outra.\n- Missão não liberada na turma responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`). Estudante sem turma responde **409** `sem-turma`. Corpo fora do formato responde **400** `payload-invalido`.",
+        "description": "Boot da experiência e o F5. As notícias saem **na ordem da mesa** e **sem `gabarito`, `pistas` e `consequencia`** — a notícia pública é uma allowlist no servidor. O texto das pistas desce no `POST /jornal-escola/pista` (é o registro que mede a EF15CO04), e o F5 devolve as já abertas em `pistasAbertas`.\n\n**A missão não nasce vazia**: sem homologação, a turma roda o banco padrão (\"Feira de Ciências e Notícias da Cidade\"), e o pacote `padrao` nasce na primeira entrada. `imagem.url` é SÓ a imagem que o professor aprovou (ADR-147): `null` para a que foi trocada e espera o novo OK — a tela desenha esse cartão pelo meio.\n\n`blocos` (os seis da Chave do Editor, na ordem da bandeja DESTA sessão, estável num F5) é `null` até a revisão abrir para esta criança. Nenhum bloco diz se é pilar ou isca.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- `passo` já vem reconciliado com a etapa da turma; `passoDoEstudante` é o gravado. A etapa só conduz quem publicou a 1ª edição e respondeu o motivo.\n- `pacoteId` é a ATIVIDADE e `rodada` é a rodada dela: mudam quando o professor homologa outro pacote ou zera a turma, e a sessão é outra.\n- Missão não liberada na turma responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`). Estudante sem turma responde **409** `sem-turma`. Corpo fora do formato responde **400** `payload-invalido`.",
         "security": [
           {
             "token-da-plataforma": []
@@ -49991,11 +49949,16 @@
                             "prontas": {
                               "type": "integer",
                               "minimum": 0
+                            },
+                            "aprovadas": {
+                              "type": "integer",
+                              "minimum": 0
                             }
                           },
                           "required": [
                             "total",
-                            "prontas"
+                            "prontas",
+                            "aprovadas"
                           ],
                           "additionalProperties": false
                         }
@@ -50776,11 +50739,16 @@
                             "prontas": {
                               "type": "integer",
                               "minimum": 0
+                            },
+                            "aprovadas": {
+                              "type": "integer",
+                              "minimum": 0
                             }
                           },
                           "required": [
                             "total",
-                            "prontas"
+                            "prontas",
+                            "aprovadas"
                           ],
                           "additionalProperties": false
                         },
@@ -50788,6 +50756,22 @@
                           "type": "object",
                           "additionalProperties": {
                             "type": "string"
+                          }
+                        },
+                        "aprovadas": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "enum": [
+                              "n1",
+                              "n2",
+                              "n3",
+                              "n4",
+                              "n5",
+                              "n6",
+                              "n7",
+                              "n8"
+                            ]
                           }
                         },
                         "rodada": {
@@ -50813,6 +50797,7 @@
                         "noticias",
                         "midia",
                         "imagens",
+                        "aprovadas",
                         "rodada",
                         "etapa"
                       ],
@@ -50850,6 +50835,9 @@
                           "rodadas": {
                             "type": "integer",
                             "minimum": 0
+                          },
+                          "imagensAprovadas": {
+                            "type": "boolean"
                           }
                         },
                         "required": [
@@ -50859,7 +50847,8 @@
                           "origem",
                           "ativo",
                           "criadoEm",
-                          "rodadas"
+                          "rodadas",
+                          "imagensAprovadas"
                         ],
                         "additionalProperties": false
                       }
@@ -51126,11 +51115,16 @@
                         "prontas": {
                           "type": "integer",
                           "minimum": 0
+                        },
+                        "aprovadas": {
+                          "type": "integer",
+                          "minimum": 0
                         }
                       },
                       "required": [
                         "total",
-                        "prontas"
+                        "prontas",
+                        "aprovadas"
                       ],
                       "additionalProperties": false
                     },
@@ -51138,6 +51132,22 @@
                       "type": "object",
                       "additionalProperties": {
                         "type": "string"
+                      }
+                    },
+                    "aprovadas": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "n1",
+                          "n2",
+                          "n3",
+                          "n4",
+                          "n5",
+                          "n6",
+                          "n7",
+                          "n8"
+                        ]
                       }
                     },
                     "ativo": {
@@ -51175,6 +51185,7 @@
                     "noticias",
                     "midia",
                     "imagens",
+                    "aprovadas",
                     "ativo",
                     "rodada",
                     "etapa",
@@ -51283,7 +51294,323 @@
           "jornal-escola"
         ],
         "summary": "\"Usar esta atividade agora\" — o professor escolhe o que a turma faz (ADR-130).",
-        "description": "O escolhido passa a ser a ATIVIDADE EM ANDAMENTO da turma; o que estava volta a ser pronto — fica, com as sessões e as rodadas. A etapa volta à exploração, com os portões fechados.\n\nA RODADA: o pacote que nunca rodou começa na 1; o que já rodou abre a SEGUINTE à última — retomar a mesma depois do resultado liberado seria o \"voltar\" que o botão único proíbe. As rodadas anteriores continuam no painel de habilidades.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- **Idempotente**: pôr no ar o que já está no ar devolve `mudou: false` e não muda nada.\n- Trocar com a aula correndo leva quem está jogando para a atividade nova: a experiência nota o `pacoteId` novo no polling do gate e recarrega. A tela pede confirmação antes.\n- Pacote de outra turma responde **404** `atividade-nao-encontrada`.",
+        "description": "O escolhido passa a ser a ATIVIDADE EM ANDAMENTO da turma; o que estava volta a ser pronto — fica, com as sessões e as rodadas. A etapa volta à exploração, com os portões fechados.\n\nA RODADA: o pacote que nunca rodou começa na 1; o que já rodou abre a SEGUINTE à última — retomar a mesma depois do resultado liberado seria o \"voltar\" que o botão único proíbe. As rodadas anteriores continuam no painel de habilidades.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- **Idempotente**: pôr no ar o que já está no ar devolve `mudou: false` e não muda nada.\n- Trocar com a aula correndo leva quem está jogando para a atividade nova: a experiência nota o `pacoteId` novo no polling do gate e recarrega. A tela pede confirmação antes.\n- Pacote de outra turma responde **404** `atividade-nao-encontrada`.\n- Sem as imagens de TODAS as notícias que pedem imagem geradas E aprovadas, **409** `imagens-nao-aprovadas` (ADR-147). Só na entrada no ar: a atividade que já está no ar não sai por causa de um \"Gerar outra\".",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/jornal-escola/turmas/{turmaId}/pacotes/{pacoteId}/aprovar-imagens": {
+      "post": {
+        "operationId": "JornalEscolaTurmasController_aprovarImagens",
+        "parameters": [
+          {
+            "name": "turmaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "pacoteId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "pacoteId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "aprovadas": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "n1",
+                          "n2",
+                          "n3",
+                          "n4",
+                          "n5",
+                          "n6",
+                          "n7",
+                          "n8"
+                        ]
+                      }
+                    },
+                    "desatualizadas": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "n1",
+                          "n2",
+                          "n3",
+                          "n4",
+                          "n5",
+                          "n6",
+                          "n7",
+                          "n8"
+                        ]
+                      }
+                    },
+                    "midia": {
+                      "type": "object",
+                      "properties": {
+                        "total": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "prontas": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "aprovadas": {
+                          "type": "integer",
+                          "minimum": 0
+                        }
+                      },
+                      "required": [
+                        "total",
+                        "prontas",
+                        "aprovadas"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "prontaParaAula": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "pacoteId",
+                    "aprovadas",
+                    "desatualizadas",
+                    "midia",
+                    "prontaParaAula"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "jornal-escola"
+        ],
+        "summary": "\"Aprovar imagens\" — o professor viu as imagens das notícias e dá o OK (ADR-147).",
+        "description": "As imagens são geradas por IA (`POST gerar-midia?pacoteId=`) e só chegam à turma depois daqui. A aprovação é POR IMAGEM: o corpo traz as URLs que estavam na tela do professor, e só se aprova a notícia cuja URL ainda é a do pacote. \"Gerar outra\" (`POST …/imagens/:noticiaId/regerar`) troca a URL, e aquela notícia espera o novo OK desenhada pelo meio.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- URL que já não é a do pacote (outra aba gerou outra) não entra: volta em `desatualizadas`, e a tela relê.\n- **Idempotente**: aprovar de novo a mesma URL não muda nada.\n- As atividades criadas antes desta regra entraram com as imagens que tinham aprovadas (migração `20261005190000`).\n- Pacote de outra turma responde **404** `atividade-nao-encontrada`.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "imagens": {
+                    "type": "object",
+                    "required": [
+                      "n1",
+                      "n2",
+                      "n3",
+                      "n4",
+                      "n5",
+                      "n6",
+                      "n7",
+                      "n8"
+                    ],
+                    "properties": {
+                      "n1": {
+                        "type": "string",
+                        "format": "uri",
+                        "maxLength": 2000
+                      },
+                      "n2": {
+                        "type": "string",
+                        "format": "uri",
+                        "maxLength": 2000
+                      },
+                      "n3": {
+                        "type": "string",
+                        "format": "uri",
+                        "maxLength": 2000
+                      },
+                      "n4": {
+                        "type": "string",
+                        "format": "uri",
+                        "maxLength": 2000
+                      },
+                      "n5": {
+                        "type": "string",
+                        "format": "uri",
+                        "maxLength": 2000
+                      },
+                      "n6": {
+                        "type": "string",
+                        "format": "uri",
+                        "maxLength": 2000
+                      },
+                      "n7": {
+                        "type": "string",
+                        "format": "uri",
+                        "maxLength": 2000
+                      },
+                      "n8": {
+                        "type": "string",
+                        "format": "uri",
+                        "maxLength": 2000
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "imagens"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/jornal-escola/turmas/{turmaId}/pacotes/{pacoteId}/imagens/{noticiaId}/regerar": {
+      "post": {
+        "operationId": "JornalEscolaTurmasController_regerarImagem",
+        "parameters": [
+          {
+            "name": "turmaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "pacoteId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "noticiaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "n1",
+                "n2",
+                "n3",
+                "n4",
+                "n5",
+                "n6",
+                "n7",
+                "n8"
+              ]
+            }
+          },
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "pacoteId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "noticiaId": {
+                      "type": "string",
+                      "enum": [
+                        "n1",
+                        "n2",
+                        "n3",
+                        "n4",
+                        "n5",
+                        "n6",
+                        "n7",
+                        "n8"
+                      ]
+                    },
+                    "url": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "pacoteId",
+                    "noticiaId",
+                    "url"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "jornal-escola"
+        ],
+        "summary": "\"Gerar outra\" — uma imagem nova para UMA notícia (ADR-147).",
+        "description": "O professor viu a imagem e ela não serve. Sai um arquivo NOVO, cobrado na quota como qualquer imagem, e a notícia fica sem imagem para a turma até o novo `aprovar-imagens` — as outras continuam.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Notícia sem descrição de imagem (a mensagem, o blog do banco padrão): **400** `noticia-sem-imagem`.\n- Sem saldo, **429** `sem-saldo-de-ia`; o provedor falhou, **503** `ia-indisponivel` — a imagem anterior continua no pacote.\n- Vale também na atividade em andamento: a turma deixa de ver a imagem daquela notícia até o novo OK.",
         "security": [
           {
             "token-da-plataforma": []
@@ -52483,7 +52810,7 @@
           "jornal-escola"
         ],
         "summary": "Gera as próximas imagens das notícias de uma atividade — incremental.",
-        "description": "As imagens não cabem nos 30 s que o BFF dá a uma chamada: cada chamada gera ATÉ DUAS novas, grava as URLs no pacote e devolve o progresso. **Repita enquanto `completo` for `false` e a chamada anterior tiver gerado alguma** — `falharam` diz o que não saiu, e essas notícias seguem com o cartão desenhado pelo meio.\n\nIdempotente: o que já tem URL é pulado, e a imagem de mesma descrição que já está no bucket entra sem custo.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- `?pacoteId=` diz a atividade (a pronta, preparada antes de ir ao ar); sem ele, a em andamento — e sem nenhuma, **403** `atividade-nao-preparada`.\n- Quota do professor, com custo ESTIMADO por imagem (a geração não devolve contagem de tokens). Sem saldo responde **429** `sem-saldo-de-ia` — e a missão roda igual, com os cartões pelo meio.\n- Duas chamadas simultâneas para o mesmo pacote recebem o mesmo trabalho (lock de processo).",
+        "description": "As imagens não cabem nos 30 s que o BFF dá a uma chamada: cada chamada gera ATÉ DUAS novas, grava as URLs no pacote e devolve o progresso. **Repita enquanto `completo` for `false` e a chamada anterior tiver gerado alguma** — `falharam` diz o que não saiu: sem todas geradas e aprovadas, a atividade não vai ao ar (ADR-147).\n\nIdempotente: o que já tem URL é pulado, e a imagem de mesma descrição que já está no bucket entra sem custo.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- `?pacoteId=` diz a atividade (a pronta, preparada antes de ir ao ar); sem ele, a em andamento — e sem nenhuma, **403** `atividade-nao-preparada`.\n- Quota do professor, com custo ESTIMADO por imagem (a geração não devolve contagem de tokens). Sem saldo responde **429** `sem-saldo-de-ia`.\n- Imagem gerada NÃO vai à turma: espera o `aprovar-imagens` (ADR-147). E a atividade só vai ao ar com todas geradas e aprovadas.\n- Duas chamadas simultâneas para o mesmo pacote recebem o mesmo trabalho (lock de processo).",
         "security": [
           {
             "token-da-plataforma": []

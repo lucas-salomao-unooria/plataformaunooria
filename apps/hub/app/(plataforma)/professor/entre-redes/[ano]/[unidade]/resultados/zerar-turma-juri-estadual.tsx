@@ -15,9 +15,9 @@ import { caminhoDaTurma, erroDaResposta } from "@/lib/juri-estadual-tipos";
  * credencial.
  *
  * **O aviso mora no diálogo, antes do clique.** Com os mesmos estandes, a
- * descoberta se perde: a turma já sabe que o feed se adapta, e a evidência de
- * quem já foi avaliado não é marcada de novo. O caminho para reaplicar é uma
- * atividade nova, com outro tema.
+ * descoberta se perde: a turma já sabe que o feed se adapta (a rodada nova
+ * mede tudo de novo, ADR-145, mas o voto deixa de ser espontâneo). O caminho
+ * para reaplicar é uma atividade nova, com outro tema.
  *
  * O atributo `data-zerar-turma` e os textos "Zerar {turma}?" / "Zerar a
  * turma" são os que as suítes e2e procuram, como nas outras missões.

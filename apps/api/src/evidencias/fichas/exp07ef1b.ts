@@ -33,10 +33,22 @@ export const FICHA_EXP07EF1B: FichaPedagogica = {
         { id: "legenda-publicada", tipo: "acao" },
         { id: "p1", tipo: "multipla_escolha", perguntaId: "p1" },
       ],
+      criterios: {
+        atingiu:
+          "A legenda dos Stories diz o critério da escolha (por que esses posts, de quais fontes); ou, na 1ª pergunta, avisa que os 3 posts mostram um lado, não a história toda.",
+        em_processo: "A legenda só descreve os posts ou é genérica; ou, na 1ª pergunta, admite que pode ter faltado algum detalhe.",
+        nao_atingiu: "A legenda não tem relação com os posts, e na 1ª pergunta garante que a seleção é completa.",
+        observacao: "Vale o melhor entre a legenda (avaliada pela IA) e a 1ª pergunta.",
+      },
     },
     {
       codigo: "EF07CO08",
       marcadores: [{ id: "p2", tipo: "multipla_escolha", perguntaId: "p2" }],
+      criterios: {
+        atingiu: "Na 2ª pergunta, reconhece que o colega priorizou outras fontes e que os dois lados são reais.",
+        em_processo: "Na 2ª pergunta, explica a diferença só como gosto pessoal.",
+        nao_atingiu: "Na 2ª pergunta, diz que o colega não leu direito e que a própria seleção é a mais completa.",
+      },
     },
   ],
   perguntas: [

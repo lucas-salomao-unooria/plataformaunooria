@@ -400,7 +400,9 @@ export function diferencaDasCopias(
  *     mão de uma criança;
  *   - marcador de pergunta sem pergunta (ou pergunta sem marcador) é uma
  *     resposta que não mede nada — ou uma medida que nunca chega;
- *   - id repetido faria duas marcas diferentes caírem na mesma linha.
+ *   - id repetido faria duas marcas diferentes caírem na mesma linha;
+ *   - habilidade sem o critério de um dos três níveis deixa o professor sem
+ *     saber o que o nível que ele vê no painel quer dizer (ADR-145).
  *
  * O `expId` existir nos MANIFESTOS não é daqui (seria ler disco numa função
  * pura): `tests/evidencias-fichas.spec.ts` confere.
@@ -423,6 +425,9 @@ export function validarFicha(ficha: FichaPedagogica, codigosBncc: Pick<ReadonlyS
     if (codigos.has(h.codigo)) erros.push(`${rotulo}: ${h.codigo} aparece mais de uma vez.`);
     codigos.add(h.codigo);
     if (h.marcadores.length === 0) erros.push(`${rotulo}: ${h.codigo} não tem marcador.`);
+    for (const nivel of ["atingiu", "em_processo", "nao_atingiu"] as const) {
+      if (!h.criterios?.[nivel]?.trim()) erros.push(`${rotulo}: ${h.codigo} está sem o critério de "${nivel}".`);
+    }
 
     for (const m of h.marcadores) {
       if (!ID_DA_FICHA_RE.test(m.id)) erros.push(`${rotulo}: o marcador "${m.id}" tem id fora do formato.`);

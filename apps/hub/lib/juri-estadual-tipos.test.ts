@@ -31,6 +31,7 @@ import {
   estandesPorArea,
   falhaDaIa,
   falhasAcumuladas,
+  mudouAEvidencia,
   normalizarProjeto,
   ordenarLinhas,
   percentual,
@@ -304,6 +305,66 @@ describe("o painel da aula", () => {
       "Equipe 2",
       "Equipe 10",
     ]);
+  });
+});
+
+describe("o que faz o painel de habilidades se atualizar sozinho", () => {
+  type Passo = LinhaDoPainel["passo"];
+  const linha = (passo: Passo, i: number): LinhaDoPainel => ({
+    estudanteId: `e${i}`,
+    nome: `E${i}`,
+    usuario: `e${i}`,
+    equipe: null,
+    entrou: true,
+    passo,
+    votou: true,
+    abriuAGaleria: false,
+    buscou: false,
+    revisou: false,
+    concluiu: false,
+  });
+  const painel = (
+    passos: Passo[] = ["galeria", "pacotes", "cadeia", "enquetes"],
+    resumo: Partial<{ revisaram: number; concluiram: number }> = {},
+    rodada = 1,
+    id = "p1",
+  ) => ({
+    pacote: { id, disciplina: "ciencias", tema: "t", origem: "ia" as const, midia: { total: 16, prontas: 16 } },
+    rodada,
+    linhas: passos.map(linha),
+    resumo: {
+      total: passos.length,
+      entraram: passos.length,
+      votaram: passos.length,
+      revisaram: 3,
+      concluiram: 0,
+      computadores: { votaram: passos.length, total: passos.length },
+      porComputador: false,
+      votosPorArea: [],
+      invisibilidadeMedia: null,
+      revisao: { mantiveram: 3, trocaram: 0 },
+      votosRevisadosPorArea: [],
+      ...resumo,
+    },
+  });
+
+  test("relê na revisão do voto, na curtida remontada, na cadeia montada, no concluir depois das enquetes, e quando a atividade ou a rodada trocam", () => {
+    const antes = painel();
+    expect(mudouAEvidencia(antes, painel())).toBe(false);
+    expect(mudouAEvidencia(antes, painel(undefined, { revisaram: 4 }))).toBe(true);
+    // A curtida remontada: a linha sai de `pacotes` (EF06CO07), sem contador no resumo.
+    expect(mudouAEvidencia(antes, painel(["galeria", "cadeia", "cadeia", "enquetes"]))).toBe(true);
+    // A cadeia montada: a linha sai de `cadeia` (EF06CO03).
+    expect(mudouAEvidencia(antes, painel(["galeria", "pacotes", "mariana", "enquetes"]))).toBe(true);
+    expect(mudouAEvidencia(antes, painel(undefined, { concluiram: 1 }))).toBe(true);
+    expect(mudouAEvidencia(antes, painel(undefined, {}, 2))).toBe(true);
+    expect(mudouAEvidencia(antes, painel(undefined, {}, 1, "p2"))).toBe(true);
+  });
+
+  test("passo que não marca nada não relê a página: o voto lacrado, a galeria aberta e o caso Mariana", () => {
+    expect(mudouAEvidencia(painel(["feed"]), painel(["lacrada"]))).toBe(false);
+    expect(mudouAEvidencia(painel(["lacrada"]), painel(["galeria"]))).toBe(false);
+    expect(mudouAEvidencia(painel(["mariana"]), painel(["enquetes"]))).toBe(false);
   });
 });
 

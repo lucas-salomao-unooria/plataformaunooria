@@ -82,8 +82,8 @@ A ficha é `evidencias/fichas/exp06ef1b.ts`: EF06CO01 por `auditoria` (no latch
 da revisão, sobre o que a criança abriu e buscou na galeria —
 `regras/evidencia.ts#nivelDaAuditoria`), EF06CO07 por `pacotes` e EF06CO03 por
 `cadeia` (tentativas: 1 = atingiu, 2–3 = em processo, mais = não atingiu), e
-`p1`–`p3` — vale o melhor. As três AÇÕES perguntam antes `jaAvaliadaAntes`
-(ADR-120). O resolvedor (`contextoDaAtividade`) devolve `null` antes de
+`p1`–`p3` — vale o melhor. Toda rodada mede as três AÇÕES de novo
+(ADR-145). O resolvedor (`contextoDaAtividade`) devolve `null` antes de
 `enquetes` e fora do (pacote, rodada) do gate. O texto da busca da galeria
 nunca é gravado (só o tipo e a área); `certo` está em
 `observabilidade/redaction.ts`.

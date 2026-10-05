@@ -54,7 +54,7 @@ describe("a trava confere de verdade", () => {
   const boa: FichaPedagogica = {
     expId: "exp08ef1b",
     versao: 1,
-    habilidades: [{ codigo: "EF08CO01", marcadores: [{ id: "acao-1", tipo: "acao" }] }],
+    habilidades: [{ codigo: "EF08CO01", marcadores: [{ id: "acao-1", tipo: "acao" }], criterios: { atingiu: "a", em_processo: "b", nao_atingiu: "c" } }],
     perguntas: [],
   };
 
@@ -66,7 +66,7 @@ describe("a trava confere de verdade", () => {
     const erros = problemas({
       ...boa,
       expId: "exp09ef4b",
-      habilidades: [{ codigo: "EF08CO99", marcadores: [{ id: "acao-1", tipo: "acao" }] }],
+      habilidades: [{ codigo: "EF08CO99", marcadores: [{ id: "acao-1", tipo: "acao" }], criterios: { atingiu: "a", em_processo: "b", nao_atingiu: "c" } }],
     });
     expect(erros).toEqual([
       "ficha de exp09ef4b: EF08CO99 não é um código da BNCC.",
