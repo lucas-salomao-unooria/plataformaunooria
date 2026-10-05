@@ -73,7 +73,7 @@ e a primeira em que o dado do MURAL é do computador (E13, o gatilho da ADR-111)
 - **O CANAL A** (`classificacao.service.ts`): a legenda graduada para a EF07CO11
   DEPOIS do latch, fora da transação dele — rate limit, `temSaldo`, `generateJson`
   (padrão, temperatura 0, uma tentativa, schema com enum, `validar` que recusa
-  motivo incoerente, 64 tokens), teto de ~6 s por `Promise.race` (o provider não
+  motivo incoerente, SEM teto de saída — o Gemini 3 raciocina e o raciocínio sai do mesmo orçamento, ADR-148), teto de ~6 s por `Promise.race` (o provider não
   tem timeout) e o débito no `aoUsarTokens`, para cobrar a chamada que perde a
   corrida. A marca vai numa transação SÓ DELA, e só se a (cobertura, rodada) do
   gate ainda é a lida no latch. **Falhou qualquer passo, nada é marcado** ("Não

@@ -259,9 +259,6 @@ export const SCHEMA_DA_DIAGRAMACAO: AiJsonSchema = {
   properties: { layout: { type: "string", enum: [...LAYOUTS] } },
 };
 
-/** A resposta é `{"layout":"…"}`, uns 10 tokens: o teto baixo é a trava de custo por criança. */
-export const MAX_TOKENS_DA_DIAGRAMACAO = 32;
-
 /** Tira os marcadores `<<<` e `>>>` de um texto que vai entrar delimitado. */
 export function semDelimitadores(texto: string): string {
   return texto.replace(/<{3,}|>{3,}/g, " ");
