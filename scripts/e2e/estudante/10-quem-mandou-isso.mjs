@@ -36,11 +36,11 @@ import { ALERTA_DE_ERRO, esperarOuFalharCedo, esperarOuFalharPorHttp } from "../
  *    nível está escrito no fim do bloco.
  * 7. **O Termômetro não tem nome**, nem no painel nem no telão.
  *
- * A suíte NÃO aperta "Gerar Atividade com IA": uma corrida que depende do
- * Vertex reprova por fornecedor e reporta como se o produto tivesse quebrado.
- * Ela cria a atividade pelo assistente ("Nova atividade" na ficha) a partir do
- * pacote curado padrão, que também é curadoria (passa pelos olhos da
- * professora e pelo clique dela em "Criar atividade").
+ * A IA é a DE VERDADE (Vertex, com o ADC válido): a suíte cria a atividade
+ * pelo assistente ("Nova atividade" na ficha) apertando "Gerar Atividade com
+ * IA", e exige `usouIa` na resposta — sem IA a api devolveria 200 com o pacote
+ * curado, em silêncio. As escolhas da criança não dependem do conteúdo: o
+ * gabarito vem da rota do professor.
  *
  * FIXTURE: a turma A do 5º ano (o seed libera a exp05ef1b lá). O estado é do
  * servidor e sobrevive ao roteiro, então a suíte começa pelo que a turma TEM.
@@ -51,6 +51,10 @@ import { ALERTA_DE_ERRO, esperarOuFalharCedo, esperarOuFalharPorHttp } from "../
  * seguinte sem apagar nada. Uma atividade que volta ao ar (estava pronta) ou
  * que nasce agora já começa numa rodada nova, e zerar não é preciso.
  */
+/** O boato que a IA recebe (até 8 palavras) e os fatos da aula, um por linha. */
+const TEMA_DA_GERACAO = "Boato da merenda cancelada na escola";
+const FATOS_DA_GERACAO = "A merenda continua normal\nA nutricionista visitou a cozinha\nO cardápio novo sai na sexta";
+
 const SERIE = "5EF";
 const EXP_ID = "exp05ef1b";
 /* A turma vem do CSV do seed, não fixada aqui: um roteiro que fixa o nome
@@ -311,15 +315,30 @@ await suite(
     const rotuloDaDisciplina = (await primeiraDisciplina.locator(".unooria-selection-option__label").innerText()).trim();
     await primeiraDisciplina.click();
 
-    /* "Usar Pacote Curado Padrão" CARREGA o pacote na curadoria e não grava
-       nada. O desfecho é o recado dele — a curadoria pode já estar na tela com
-       o rascunho de uma geração anterior, e esperar só por ela seria esperar o
-       passado. */
-    await prof.locator('[data-acao="usar-padrao"]').click();
+    /* "Gerar Atividade com IA" ESCREVE o pacote (6 a 13 s com o Vertex) e não
+       grava nada além do rascunho. A prova é a RESPOSTA — `usouIa` e a origem
+       `ia` —, não a tela: a curadoria pode já estar mostrando o rascunho de uma
+       geração anterior. */
+    await prof.getByLabel("Título do boato escolar fictício").fill(TEMA_DA_GERACAO);
+    await prof.getByLabel("Fatos balizadores da aula (3 a 6 tópicos, um por linha)").fill(FATOS_DA_GERACAO);
+    const respostaDaGeracao = prof.waitForResponse(
+      (res) => /\/quem-mandou-isso\/turmas\/[^/]+\/gerar$/.test(new URL(res.url()).pathname) && res.request().method() === "POST",
+      { timeout: 180_000 },
+    );
+    await prof.locator('[data-acao="gerar-pacote"]').click();
+    const geracao = await respostaDaGeracao;
+    const gerado = await geracao.json().catch(() => null);
+    if (
+      !r.exigir(
+        geracao.status() === 200 && gerado?.usouIa === true && gerado?.rascunho?.origem === "ia",
+        `a IA escreveu as oito mensagens (gerar ${geracao.status()}, usouIa=${gerado?.usouIa}, origem=${gerado?.rascunho?.origem}, motivo=${gerado?.motivo ?? "-"})`,
+      )
+    )
+      return;
     await esperarOuFalharCedo(
-      prof.getByText(`Pacote curado “${padrao.nome}” carregado.`),
+      prof.getByText(/^Pacote gerado\./),
       prof.locator("[data-preparo]").locator(ALERTA_DE_ERRO),
-      { timeout: 20_000, oQue: "carregar o pacote curado na curadoria" },
+      { timeout: 20_000, oQue: "mostrar o pacote gerado pela IA na curadoria" },
     );
     const cartoes = await prof.locator("[data-curadoria] [data-mensagem]").count();
     const porQuadrante = await prof
@@ -341,9 +360,10 @@ await suite(
     await prof.locator("[data-curadoria]").scrollIntoViewIfNeeded();
     await r.registrar(prof, "curadoria-do-pacote", {
       titulo: "O conteúdo da atividade, na matriz 2x2",
-      mostra: `O passo Conteúdo da criação: o pacote curado “${padrao.nome}” nos quatro quadrantes — verdadeira ou falsa, emocional ou neutra —, com o texto editável, o componente curricular ${rotuloDaDisciplina} e o selo “8 / 8 validados”.`,
+      mostra: `O passo Conteúdo da criação: as oito mensagens que a IA escreveu sobre “${TEMA_DA_GERACAO}” nos quatro quadrantes — verdadeira ou falsa, emocional ou neutra —, com o texto editável, o componente curricular ${rotuloDaDisciplina} e o selo “8 / 8 validados”.`,
       prova:
-        "O pacote curado é ponto de partida, não atividade: nada é gravado antes de “Criar atividade”. Os " +
+        "A IA escreve o pacote de verdade (Vertex) no molde sorteado no servidor, e ele passa na mesma régua " +
+        "da matriz que o curado. É rascunho: nada é gravado antes de “Criar atividade”. Os " +
         "selos de gabarito são só da professora, e o gabarito e o formato de cada posição não têm campo, " +
         "porque sustentam a matriz equilibrada — a api recusaria a troca.",
     });
@@ -402,6 +422,10 @@ await suite(
     const ativo = pacoteDepois.ativo;
     const gabarito = new Map(ativo.mensagens.map((m) => [m.id, m]));
     const historicoDepois = (await lerApi(prof, `${daTurma}/pacotes`)).corpo?.historico ?? [];
+    r.exigir(
+      historicoDepois.find((h) => h.id === atividadeId)?.origem === "ia",
+      "a atividade em andamento é a escrita pela IA (origem ia na lista da turma)",
+    );
     /* Criar de novo EXATAMENTE o pacote mais recente é idempotente: os dois
        desfechos são legítimos, e cada um é provado. */
     const jaExistia = historicoAntes.some((h) => h.id === atividadeId);
