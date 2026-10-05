@@ -13,6 +13,7 @@ import {
   MOTIVOS,
   ORIGENS,
   PACOTE_PADRAO,
+  VERSAO_DO_INSTRUMENTO,
   falaDaNina,
   mensagensDoPadrao,
   type MensagemDoPacote,
@@ -473,7 +474,9 @@ describe("a aula na 5A — os três latches, a evidência e a revelação", () =
     await service.entrar(ESCOLA, ids.ana);
     const depois = await prisma.exp05ef1bSessao.findFirstOrThrow({ where: { escolaId: ESCOLA, estudanteId: ids.ana } });
     expect(depois.entrouEm).toEqual(antes.entrouEm);
-    expect(depois.versaoInstrumento).toBe("2.2.0");
+    /* A constante, e não o número: a ADR-145 subiu o instrumento para 2.3.0 e
+       este teste ficou para trás, porque a suíte de Postgres não rodou. */
+    expect(depois.versaoInstrumento).toBe(VERSAO_DO_INSTRUMENTO);
   });
 
   test("a triagem: 0 a 3 guardadas no servidor (o F5 restaura), com código para cada recusa", async () => {
