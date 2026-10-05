@@ -178,7 +178,7 @@ medidas do `globals.css`/`feed.tsx` leem o pacote — comentadas lá.
 
 - **No feed, só o salvar**: curtir, comentar e compartilhar (e a dica das cinco
   curtidas) desviavam do único gesto que conta. A contagem fica: é prova social
-  que a criança LÊ. `actions={[]}` é do DS 0.2.18 (PR #19 do `storybook-unooria`).
+  que a criança LÊ. `actions={[]}` veio no DS 0.2.18 (PR #19 do `storybook-unooria`).
 - **Comentário tem autor**; "Ver todos os N comentários" saiu (nada a abrir).
 - **"Confirmar publicação" é roxo**: o vermelho dizia "erro" no gesto pedido.
 - **O Mural abre no par**, com a legenda do post sobre a imagem
