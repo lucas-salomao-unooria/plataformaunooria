@@ -3,8 +3,8 @@ import { caminhoDoEmAndamento, type MissaoComAtividade } from "./atividades";
 
 /**
  * O FIM DA CRIAÇÃO DE UMA ATIVIDADE (ADR-130), depois que a missão gravou o
- * conteúdo e devolveu o id: pôr no ar (se o professor pediu) e montar as
- * equipes do jeito que ele escolheu.
+ * conteúdo e devolveu o id: pôr no ar (se o professor pediu) — o que inclui
+ * liberar a missão na sala — e montar as equipes do jeito que ele escolheu.
  *
  * Por que aqui, e não na api numa transação só: cada missão é dona da própria
  * atividade, e as equipes são de outro módulo. O que custa é a ordem — a
@@ -57,6 +57,36 @@ async function mensagem(resposta: Response, padrao: string): Promise<string> {
   return typeof corpo?.mensagem === "string" && corpo.mensagem ? corpo.mensagem : padrao;
 }
 
+/**
+ * LIBERAR A MISSÃO NA SALA junto com o "pôr no ar" (ADR-146).
+ *
+ * A missão abre para o estudante por DUAS portas em série: a linha em
+ * `liberacoes` (ADR-69, a Sala de Aula) e a atividade em andamento (ADR-130).
+ * O toggle "Pôr esta atividade no ar agora" e o "Usar esta atividade agora"
+ * só abriam a segunda — o professor ligava, e a turma continuava vendo o
+ * cadeado. Os testes não viam porque o seed libera a 7A e a 5A antes.
+ *
+ * Pôr no ar é o ato explícito do professor que a ADR-69 pede, então libera
+ * SEMPRE, inclusive missão encerrada na sala (decisão do Lucas, 05/10/2026).
+ * A rota é idempotente: repetir não muda `liberadaPor`/`liberadaEm`. Gestor
+ * não libera (a rota é só de quem leciona): para ele, a falha vira aviso.
+ */
+export async function liberarNaSala(
+  { expId, turmaId }: { expId: MissaoComAtividade; turmaId: string },
+  busca: Busca = fetch,
+): Promise<string | null> {
+  try {
+    const r = await busca(
+      `${BFF}/salas/turma/${encodeURIComponent(turmaId)}/missoes/${encodeURIComponent(expId)}`,
+      { method: "PUT", headers: json, body: JSON.stringify({ estado: "liberada" }) },
+    );
+    if (r.ok) return null;
+    return `A atividade está em andamento, mas a missão não foi liberada na Sala de Aula: ${await mensagem(r, "libere-a na página da turma.")}`;
+  } catch {
+    return "A atividade está em andamento, mas a missão não foi liberada na Sala de Aula: sem conexão. Libere-a na página da turma.";
+  }
+}
+
 export async function concluirCriacao(
   {
     expId,
@@ -86,6 +116,9 @@ export async function concluirCriacao(
         avisos.push(
           `A atividade foi criada, mas não entrou em andamento: ${await mensagem(r, "tente pelo botão “Usar esta atividade agora”.")}`,
         );
+      } else {
+        const aviso = await liberarNaSala({ expId, turmaId }, busca);
+        if (aviso) avisos.push(aviso);
       }
     } catch {
       avisos.push("A atividade foi criada, mas não entrou em andamento: sem conexão. Use “Usar esta atividade agora”.");

@@ -477,6 +477,30 @@ export function aulaEmAndamento(p: Pick<PainelDoJornal, "etapa" | "resumo">): bo
   return !(p.etapa === "revisao" && p.resumo.total > 0 && p.resumo.concluiram >= p.resumo.total);
 }
 
+/**
+ * Mudou algo que a EVIDÊNCIA registra (ADR-146)? As três ações da ficha são
+ * marcadas na MESMA transação da jogada que o painel conta: a EF15CO04 no latch
+ * da 1ª edição, a EF15CO02 quando a Chave se forma e a EF04CO08 no latch da 2ª
+ * — e as perguntas do Desafio Final vêm antes do "Concluir Missão". A atividade
+ * troca com um pacote novo ou uma rodada nova. Só nesses casos o painel da aula
+ * relê a página inteira, para o painel de habilidades acompanhar sem o
+ * professor apertar F5. É o mesmo desenho da exp05ef1b (`mudouAEvidencia` em
+ * `quem-mandou-regras.ts`).
+ */
+export function mudouAEvidencia(
+  antes: Pick<PainelDoJornal, "pacote" | "rodada" | "resumo">,
+  depois: Pick<PainelDoJornal, "pacote" | "rodada" | "resumo">,
+): boolean {
+  return (
+    antes.resumo.publicaramAPrimeira !== depois.resumo.publicaramAPrimeira ||
+    antes.resumo.formaramAChave !== depois.resumo.formaramAChave ||
+    antes.resumo.publicaramASegunda !== depois.resumo.publicaramASegunda ||
+    antes.resumo.concluiram !== depois.resumo.concluiram ||
+    antes.pacote.id !== depois.pacote.id ||
+    antes.rodada !== depois.rodada
+  );
+}
+
 /** Os rótulos das quatro faixas do histograma. Curtos: o eixo do `BarChart` do DS corta acima de ~8 caracteres. */
 export const FAIXAS_DO_HISTOGRAMA = ["0 de 3", "1 de 3", "2 de 3", "3 de 3"] as const;
 
