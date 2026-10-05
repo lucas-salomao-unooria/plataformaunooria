@@ -4,6 +4,7 @@ import { SEGUNDOS_POR_CARD, TOTAL_DE_CARDS } from "../../lib/regras";
 import { telemetria } from "../../lib/telemetria";
 import { CONTAS } from "../../lib/textos";
 import { E5 } from "../../lib/textos-da-explicacao";
+import FOTO_DA_AMARA from "../../assets/amara.svg";
 import { AcaoDaDm, BalaoDaAmara, DmDaAmara } from "./dm-da-amara";
 
 /**
@@ -91,7 +92,7 @@ export default function Explicar({
       <TopBar title={CONTAS.estudante} withStatusBarInset={false} />
       <div className="rolagem">
         <PostCard className="post">
-          <PostCard.Header username={CONTAS.amara} initials="AM" />
+          <PostCard.Header username={CONTAS.amara} initials="AM" avatarSrc={FOTO_DA_AMARA} />
           {/* Sem `alt`: o título do slide já é o `h2` dentro dele, e rotular o
               grupo com o mesmo texto faria o leitor de tela lê-lo duas vezes. */}
           <PostCard.Media currentIndex={card + 1} totalCount={TOTAL_DE_CARDS}>

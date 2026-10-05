@@ -53,11 +53,13 @@ await suite(
       "colega, descobre que cada um mostrou um recorte.",
     prova: [
       "A atividade nasce da professora, pelo assistente — turma, conteúdo, equipes e criar — e só a que está em andamento abre para a turma",
+      "A cobertura se aprova em duas fases na mesma tela: os textos, e depois as imagens no card de cada post",
+      "\"Aprovar Cobertura e Abrir Turma\" libera a missão na sala — mesmo encerrada antes",
       "Publicar exige EXATAMENTE 3 posts e uma legenda de 10 caracteres ou mais",
       "Legenda com link é recusada antes de outro estudante poder lê-la",
       "Publicar é irreversível, e a F5 volta ao mesmo passo",
       "Quem move a sala é UM botão da professora: Mural, fichas, explicação",
-      "No Mural, cada estudante vê o colega que escolheu outra coisa — pelo primeiro nome",
+      "No Mural, cada estudante vê o colega que escolheu outra coisa — pelo primeiro nome, aberto no Story dele e com a legenda de cada post sobre a imagem",
       "A ficha técnica só aparece depois que a professora revela",
       "As duas enquetes da Amara não mostram acerto, e a missão termina",
       "A folha da turma não tem coluna de pontos, e o painel mostra as habilidades da BNCC",
@@ -135,6 +137,23 @@ await suite(
         "professora — a plataforma não cria nada (ADR-130).",
     });
 
+    /* A turma começa com a missão ENCERRADA na sala (ADR-146). O seed a
+       libera, e com ela liberada o "pôr no ar" parecia funcionar: era só a
+       metade da porta. Encerrada, o estudante abaixo só entra se o "Aprovar
+       Cobertura e Abrir Turma" liberar a missão de verdade. */
+    const encerrou = await prof.evaluate(
+      async ({ turmaId }) =>
+        (
+          await fetch(`/api/plataforma/salas/turma/${turmaId}/missoes/exp07ef1b`, {
+            method: "PUT",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ estado: "encerrada" }),
+          })
+        ).status,
+      { turmaId: daTurma.id },
+    );
+    r.exigir(encerrou === 200, `a missão começa encerrada na sala (veio ${encerrou})`);
+
     /* NOVA ATIVIDADE pelo assistente: a turma já vem da ficha, o conteúdo
        parte da cobertura pronta da Unooria (a praça central), um aluno por
        computador, e a atividade entra no ar ao criar. Criar SEMPRE abre a
@@ -154,14 +173,38 @@ await suite(
       /padaria da esquina/.test(await falas.locator("textarea").nth(1).inputValue()),
       "na cobertura pronta, as falas são as do roteiro aprovado",
     );
+    r.exigir(
+      (await prof.locator("[data-grade-de-posts]").getByText("A imagem será gerada após a aprovação dos textos.").count()) > 0,
+      "na fase 1, o card do post avisa que a imagem vem depois dos textos",
+    );
     await r.registrar(prof, "criacao-conteudo", {
-      titulo: "O conteúdo da atividade",
+      titulo: "Fase 1: os textos",
       mostra:
-        "O passo de conteúdo da criação: o tema, os 12 posts com as tags que só a professora vê e as " +
-        "três falas do podcast de recapitulação.",
+        "O passo de conteúdo da criação: o tema, os 12 posts com as tags que só a professora vê, o " +
+        "aviso de que a imagem vem depois e as três falas do podcast de recapitulação.",
       prova:
-        "A cobertura pronta da Unooria é ponto de partida, não atividade: nada vai à turma sem o " +
-        "clique em Criar. Só as três falas do podcast mudam com o tema.",
+        "A cobertura pronta da Unooria é ponto de partida, não atividade: nada vai à turma sem as " +
+        "duas aprovações. Só as três falas do podcast mudam com o tema.",
+      inteira: true,
+    });
+    /* FASE 2: aprovar os textos grava a cobertura e as imagens se geram sozinhas
+       no mesmo card. Com a IA de dev (o mock), a geração falha rápido e o post
+       fica com a cena por escrito — a fase termina do mesmo jeito, e o
+       "Continuar" só acende quando ela termina. */
+    await prof.click('[data-acao="aprovar-textos"]');
+    await prof.waitForSelector('[data-fase-das-imagens][data-pronta="sim"]', { timeout: 120_000 });
+    r.exigir(
+      (await prof.locator('[data-acao="aprovar-textos"]').count()) === 0,
+      "aprovados, os textos não voltam a ser editáveis",
+    );
+    await r.registrar(prof, "criacao-imagens", {
+      titulo: "Fase 2: as imagens, no card de cada post",
+      mostra:
+        "Os mesmos 12 cards, agora com a imagem (ou a cena por escrito, quando a imagem não saiu) junto da " +
+        "legenda, e o botão Gerar outra imagem em cada um.",
+      prova:
+        "A professora vê a composição que a turma vai ver antes de abrir a turma — e regera a imagem que " +
+        "não combina com o post (ADR-146).",
       inteira: true,
     });
     await prof.click('[data-acao="continuar-criacao"]');
@@ -181,8 +224,15 @@ await suite(
     const noAr = prof.getByLabel("Pôr esta atividade no ar agora");
     await noAr.waitFor({ state: "attached", timeout: 10_000 });
     if (!(await noAr.isChecked())) await noAr.dispatchEvent("click");
+    r.exigir(
+      /Aprovar Cobertura e Abrir Turma/.test(await prof.locator('[data-acao="criar-atividade"]').innerText()),
+      "o botão final diz que aprova a cobertura e abre a turma",
+    );
     await prof.click('[data-acao="criar-atividade"]');
     await prof.waitForURL("**/resultados?**cobertura=**", { timeout: 30_000 });
+    const sala = await api(prof, `salas/turma/${daTurma.id}`);
+    const naSala = (sala.corpo.missoes ?? []).find((m) => m.expId === "exp07ef1b");
+    r.exigir(naSala?.estado === "liberada", `abrir a turma liberou a missão na sala (veio ${naSala?.estado})`);
     await prof.waitForSelector('[data-estado-da-atividade="em-andamento"]', { timeout: 20_000 });
     await prof.waitForSelector('[data-etapa="exploracao"]', { timeout: 20_000 });
     await r.registrar(prof, "preparo-e-painel", {
@@ -221,8 +271,9 @@ await suite(
       titulo: "O feed e o marcador",
       mostra: "Os posts dos três perfis intercalados, o contador de salvos e a pílula para a aba Salvos.",
       prova:
-        "Curtir não conta: só o marcador leva o post para os Stories. A pílula só aparece com 3 " +
-        "salvos, e o feed nunca põe três posts seguidos do mesmo perfil.",
+        "Só o marcador fica nas ações do post: curtir, comentar e compartilhar saíram (ADR-146). Cada " +
+        "comentário tem autor. A pílula só aparece com 3 salvos, e o feed nunca põe três posts seguidos " +
+        "do mesmo perfil.",
     });
 
     await q().getByRole("button", { name: /Ir para aba Salvos/i }).click();
@@ -305,14 +356,17 @@ await suite(
     await prof.reload({ waitUntil: "domcontentloaded" });
     await apertar(prof, "mural");
     await q().getByRole("heading", { name: /Mural de Stories da Turma/i }).first().waitFor({ timeout: 30_000 });
-    await q().locator(`text=Publicação de ${PRIMEIRO_NOME_DO_SEGUNDO}`).waitFor({ timeout: 15_000 });
+    /* Abre no Story do PAR (ADR-146): o nome dele está na aba E no Story — daí
+       o `.first()`. A legenda de cada post vem sobre a imagem. */
+    await q().locator(`text=Publicação de ${PRIMEIRO_NOME_DO_SEGUNDO}`).first().waitFor({ timeout: 15_000 });
+    await q().locator(".legenda-do-post").first().waitFor({ timeout: 10_000 });
     r.exigir(
       (await q().locator("text=/Ficha Técnica/i").count()) === 0,
       "na tela pico do Mural não há ficha técnica: o contraste vem antes da explicação",
     );
     await r.registrar(p, "mural-pareado", {
       titulo: "O mesmo feed, outra história",
-      mostra: `A própria tríade e, ao lado, a de ${PRIMEIRO_NOME_DO_SEGUNDO}, que escolheu só vozes da comunidade.`,
+      mostra: `O Mural aberto na tríade de ${PRIMEIRO_NOME_DO_SEGUNDO}, que escolheu só vozes da comunidade, com a legenda de cada post sobre a imagem; a própria fica na outra aba.`,
       prova:
         "O par é o colega que mais se afastou da escolha da criança, e ele aparece pelo primeiro " +
         "nome. Tela nua: nenhuma tag, nenhuma nota — o estranhamento vem antes da teoria.",

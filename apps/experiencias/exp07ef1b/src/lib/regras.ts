@@ -25,9 +25,6 @@ export const SEGUNDOS_ATE_A_DEMONSTRACAO = 10;
 /** Três minutos no feed sem salvar nada: a dica do marcador (caminho degenerado 1). */
 export const SEGUNDOS_ATE_A_DICA = 180;
 
-/** Cinco curtidas sem salvar: a dica de que curtir não leva aos Stories. */
-export const CURTIDAS_ATE_A_DICA = 5;
-
 /** A trava de leitura de cada card da Etapa 5. */
 export const SEGUNDOS_POR_CARD = 8;
 
@@ -249,17 +246,17 @@ export function salvosValidos(salvos: readonly unknown[], idsDaCobertura: Readon
 
 // ──────────────────────────────────────────────────────── o feed e as dicas
 
-export type DicaDoFeed = "inatividade" | "curtidas" | null;
+export type DicaDoFeed = "inatividade" | null;
 
 /**
- * A dica do feed, e o silêncio antes dela. As duas SOMEM no primeiro
- * salvamento: são sobre o gesto (onde fica o marcador), nunca sobre QUAL post
- * salvar — uma dica de conteúdo entregaria a curadoria que a missão mede.
+ * A dica do feed, e o silêncio antes dela. SOME no primeiro salvamento: é
+ * sobre o gesto (onde fica o marcador), nunca sobre QUAL post salvar — uma
+ * dica de conteúdo entregaria a curadoria que a missão mede. A segunda dica, a
+ * das cinco curtidas sem salvar, saiu com o botão de curtir (ADR-146).
  */
-export function dicaDoFeed(salvos: number, curtidasSemSalvar: number, segundosNoFeed: number): DicaDoFeed {
+export function dicaDoFeed(salvos: number, segundosNoFeed: number): DicaDoFeed {
   if (salvos > 0) return null;
   if (segundosNoFeed >= SEGUNDOS_ATE_A_DICA) return "inatividade";
-  if (curtidasSemSalvar >= CURTIDAS_ATE_A_DICA) return "curtidas";
   return null;
 }
 

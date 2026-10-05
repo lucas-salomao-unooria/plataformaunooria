@@ -56,12 +56,10 @@ export const telemetria = {
   /** Tirou um post dos salvos, ainda no feed. */
   desfezSalvar: (postId: string, salvos: number) =>
     track("interacted", "feed:remover", { resultado: { salvos }, contexto: { postId } }),
-  /** Curtiu (cosmético: não conta para nada). `semSalvar` alimenta a dica. */
-  curtiu: (semSalvar: boolean) => track("interacted", "feed:curtir", { contexto: { semSalvar } }),
   /** A imagem do post falhou e a criança tocou "Tentar novamente". */
   recarregouMidia: (postId: string) => track("interacted", "feed:recarregar-midia", { contexto: { postId } }),
-  /** O andaime do feed apareceu: o gesto de rolar ou uma das duas dicas. */
-  viuAndaime: (motivo: "demonstracao" | "inatividade" | "curtidas") =>
+  /** O andaime do feed apareceu: o gesto de rolar ou a dica do marcador. */
+  viuAndaime: (motivo: "demonstracao" | "inatividade") =>
     track("interacted", "feed:andaime", { contexto: { motivo } }),
   /** Saiu do feed para a aba Salvos. O tempo é indicativo, nunca mérito. */
   foiParaSalvos: (salvos: number, tempoFeedS: number) =>

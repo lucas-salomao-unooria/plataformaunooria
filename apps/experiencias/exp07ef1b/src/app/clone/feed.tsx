@@ -17,9 +17,12 @@ function iniciais(perfil: string): string {
  *
  * - **Os 12 posts na ordem que a api mandou** (`ORDEM_DO_FEED`, intercalada e
  *   fixa: dois colegas lado a lado precisam poder dizer "o terceiro post").
- * - **Curtir é cosmético** e local: não conta para nada, não vai à api, não
- *   sobrevive ao F5. Existe porque o app real tem, e porque "só curtiu, não
- *   salvou" é um caminho degenerado que a missão trata (a dica).
+ * - **Só o salvar, nas ações do post** (ADR-146). Curtir, comentar e
+ *   compartilhar saíram a pedido do PO: nenhum muda nada na missão, e cada
+ *   um era um convite a se distrair do único gesto que conta. A contagem de
+ *   curtidas fica — é prova social que a criança LÊ, não um botão.
+ * - **Os comentários têm autor**, como numa rede de verdade, e a linha "Ver
+ *   todos os N comentários" saiu: não havia o que abrir.
  * - **Salvar é o gesto da missão.** Os ids ficam na memória e no
  *   `sessionStorage` (conveniência de F5, só ids — `lib/memoria.ts`); quem
  *   decide o que vale é a publicação, na aba Salvos.
@@ -30,8 +33,7 @@ function iniciais(perfil: string): string {
  * O andaime (`[D0-2]` e os caminhos degenerados da spec) é sobre o GESTO,
  * nunca sobre o conteúdo: 10 s parado na entrada → a demonstração de rolar
  * (uma vez, e nunca com `prefers-reduced-motion`); 3 min sem salvar → a dica do
- * marcador; 5 curtidas sem salvar → a dica de que curtir não leva aos Stories.
- * As duas dicas somem no primeiro salvamento.
+ * marcador. A dica some no primeiro salvamento.
  */
 export function Feed({
   posts,
@@ -47,8 +49,6 @@ export function Feed({
   aoIrParaSalvos: () => void;
 }) {
   const paleta = usePaleta();
-  const [curtidos, setCurtidos] = useState<ReadonlySet<string>>(new Set());
-  const [curtidasSemSalvar, setCurtidasSemSalvar] = useState(0);
   const [passouDoTeto, setPassouDoTeto] = useState(false);
   const [demonstrando, setDemonstrando] = useState(false);
   const rolou = useRef(false);
@@ -70,7 +70,7 @@ export function Feed({
     return () => window.clearTimeout(relogio);
   }, []);
 
-  const dica = dicaDoFeed(salvos.length, curtidasSemSalvar, passouDoTeto ? SEGUNDOS_ATE_A_DICA : 0);
+  const dica = dicaDoFeed(salvos.length, passouDoTeto ? SEGUNDOS_ATE_A_DICA : 0);
 
   useEffect(() => {
     const motivo = demonstrando ? "demonstracao" : dica;
@@ -84,21 +84,6 @@ export function Feed({
     if (rolou.current) return;
     rolou.current = true;
     setDemonstrando(false);
-  }
-
-  function curtir(postId: string) {
-    const jaCurtido = curtidos.has(postId);
-    setCurtidos((atual) => {
-      const novo = new Set(atual);
-      if (jaCurtido) novo.delete(postId);
-      else novo.add(postId);
-      return novo;
-    });
-    if (!jaCurtido) {
-      const semSalvar = salvos.length === 0;
-      if (semSalvar) setCurtidasSemSalvar((n) => n + 1);
-      telemetria.curtiu(semSalvar);
-    }
   }
 
   const salvosSet = new Set(salvos);
@@ -116,28 +101,21 @@ export function Feed({
         }
       />
       {dica && (
-        <InlineHint announce>{dica === "inatividade" ? E2.dicaInatividade : E2.dicaCurtidas}</InlineHint>
+        <InlineHint announce>{E2.dicaInatividade}</InlineHint>
       )}
       <div className="rolagem rolagem--sem-barra" onScroll={aoRolar} onWheel={aoRolar} onTouchMove={aoRolar}>
         {posts.map((post) => {
           const conta = nomeDaConta(post.perfil);
-          const curtido = curtidos.has(post.id);
           return (
             <PostCard key={post.id} className="post">
               <PostCard.Header username={conta} initials={iniciais(post.perfil)} />
               <MidiaDoPost post={post} paleta={paleta} aoRecarregar={() => telemetria.recarregouMidia(post.id)} />
-              <PostCard.Actions
-                liked={curtido}
-                saved={salvosSet.has(post.id)}
-                onLike={() => curtir(post.id)}
-                onSave={() => aoSalvar(post.id)}
-              />
-              <PostCard.Likes>{E2.curtidas(post.curtidas + (curtido ? 1 : 0))}</PostCard.Likes>
+              <PostCard.Actions actions={[]} saved={salvosSet.has(post.id)} onSave={() => aoSalvar(post.id)} />
+              <PostCard.Likes>{E2.curtidas(post.curtidas)}</PostCard.Likes>
               <PostCard.Caption username={conta}>{post.legenda}</PostCard.Caption>
-              <PostCard.Timestamp>{E2.verComentarios(post.comentarios)}</PostCard.Timestamp>
               {post.comentariosDestaque.map((comentario, i) => (
-                <PostCard.Caption key={i} className="post__comentario">
-                  {comentario}
+                <PostCard.Caption key={i} className="post__comentario" username={comentario.autor}>
+                  {comentario.mensagem}
                 </PostCard.Caption>
               ))}
             </PostCard>

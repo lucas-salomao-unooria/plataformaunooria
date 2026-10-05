@@ -153,9 +153,12 @@ export function Salvos({
         />
       </div>
       <BarraDeAbas ativa="salvos" aoTrocar={(aba) => aba === "feed" && aoVoltarAoFeed()} />
+      {/* Tom padrão (o roxo da ação primária), e não `destructive` (ADR-146):
+          o vermelho dizia "cuidado, isto é um erro" no gesto que a missão
+          PEDE. O aviso de que não dá para voltar atrás é o texto que diz. */}
       <ConfirmDialog
         open={confirmando}
-        tone="destructive"
+        tone="default"
         title={E3.modalTitulo}
         message={E3.modalCorpo}
         confirmLabel={E3.confirmar}
