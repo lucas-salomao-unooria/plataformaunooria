@@ -416,3 +416,14 @@ existe). Sem ela o deploy avisa e segue (o `.map` fica só no runner). Nenhum
 secret novo: falha de workflow avisa por e-mail quem fez o push (padrão do
 GitHub), e o alerta de disponibilidade é dos **uptime checks** do Cloud
 Monitoring (Terraform, `observabilidade.tf`), por e-mail.
+
+**A base do gerador de missões (2026-10-06, ADR-149).** O workflow
+`base-do-gerador.yml` (push em `dev-local` que toca uma fonte) grava em
+`gs://entre-redes-dev-adk-artifacts/base-plataforma/plataforma/` — o bucket que
+o Cloud Run do gerador monta em `/app/output`. Espera: (1) o environment
+**`base-do-gerador`** no GitHub, com as vars `WIF_PROVIDER` e `DEPLOY_SA` (o
+`dev` não serve: a deployment branch policy dele só aceita `dev`); (2) a SA do
+deploy de dev com escrita SÓ no prefixo `base-plataforma/` daquele bucket (IAM
+condicionada, no repo da Fundação); (3) o pool WIF aceitando o workflow vindo de
+`dev-local`. Sem qualquer um dos três o job falha no `auth` ou no `cp`, e o
+gerador continua lendo a base anterior — o `atual.json` só sobe depois da pasta.

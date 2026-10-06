@@ -1,0 +1,81 @@
+name: base-do-gerador
+# Publica a BASE DA PLATAFORMA que o gerador de missões lê (ADR-149): a
+# doutrina, os contratos e as listas fechadas, extraídos deste repo por
+# `scripts/base-do-gerador/extrair.mjs` e gravados em
+# gs://entre-redes-dev-adk-artifacts/base-plataforma/plataforma/<commit>/, com o
+# ponteiro `atual.json` subindo POR ÚLTIMO.
+#
+# Gatilho: push em `dev-local` que toque uma FONTE. A lista de `paths:` é a
+# mesma de `FONTES`, `FONTES_DO_CONTRATO` e dos recortes do extrator — fonte
+# nova lá é linha nova aqui, senão a mudança dela não republica a base.
+on:
+  push:
+    branches: [dev-local]
+    paths:
+      - AGENTS.md
+      - CONTEXT.md
+      - apps/api/AGENTS.md
+      - apps/hub/AGENTS.md
+      - apps/experiencias/AGENTS.md
+      - packages/sdk/AGENTS.md
+      - packages/ui/AGENTS.md
+      - packages/ui/package.json
+      - packages/sdk/src/types.ts
+      - scripts/e2e/AGENTS.md
+      - docs/agents/domain.md
+      - docs/DECISOES.md
+      - docs/ARQUITETURA.md
+      - docs/INFRA.md
+      - docs/regras/**
+      - docs/openapi.json
+      - documentacao-latex/secoes/18-adr.tex
+      - apps/api/src/*/AGENTS.md
+      - apps/api/src/*/contrato-de-rotas.ts
+      - apps/api/src/comum/liberacao.ts
+      - apps/api/src/comum/series.ts
+      - apps/api/src/auth/claims.ts
+      - apps/api/src/recursos/catalogo.ts
+      - apps/api/src/ai/vertex.provider.ts
+      - apps/api/src/equipes/regras.ts
+      - apps/api/src/evidencias/regras.ts
+      - apps/api/src/evidencias/fichas/**
+      - apps/api/src/juri-estadual/invariantes.ts
+      - apps/api/prisma/schema.prisma
+      - apps/api/prisma/migrations/*_exp06ef1b_*/**
+      - apps/experiencias/*/public/experiencia.json
+      - apps/experiencias/exp06ef1b/src/lib/telemetria.ts
+      - apps/hub/lib/experiencias-dev.ts
+      - apps/hub/scripts/publicar-manifesto.mjs
+      - scripts/base-do-gerador/**
+      - .github/workflows/base-do-gerador.yml
+  workflow_dispatch:
+
+# Duas publicações ao mesmo tempo poderiam gravar o `atual.json` fora de ordem
+# (a mais velha por último). Enfileira, não cancela: a do meio pode morrer, a
+# última sempre roda.
+concurrency:
+  group: base-do-gerador
+  cancel-in-progress: false
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    # Environment PRÓPRIO, com WIF_PROVIDER e DEPLOY_SA: o `dev` só aceita
+    # deploy vindo da branch `dev`, e este roda em `dev-local`. A SA só escreve
+    # em `base-plataforma/` do bucket (IAM condicionada, no repo da Fundação).
+    environment: base-do-gerador
+    permissions: { contents: read, id-token: write }   # WIF, sem chave JSON
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version-file: .nvmrc }
+      # Sem `pnpm install`: o extrator e o teste só usam `node:`.
+      # O teste roda o extrator inteiro contra o repo antes de subir qualquer coisa.
+      - run: node --test scripts/base-do-gerador/extrair.test.mjs
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.WIF_PROVIDER }}
+          service_account: ${{ vars.DEPLOY_SA }}
+      - uses: google-github-actions/setup-gcloud@v2
+      - run: node scripts/base-do-gerador/extrair.mjs --enviar gs://entre-redes-dev-adk-artifacts/base-plataforma
