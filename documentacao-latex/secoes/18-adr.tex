@@ -199,6 +199,7 @@ que a cercam.
 \adrr{ADR-146} & Pôr a atividade no ar libera a missão na sala, e A Seleção aprova textos e imagens em duas fases & 2026-10-05 & Aceita; complementa a \adrr{ADR-130}\\
 \zebra \adrr{ADR-147} & O Jornal da Escola: o professor aprova cada imagem antes da turma, e a mesa leva a criança à página & 2026-10-05 & Aceita; complementa a \adrr{ADR-117}\\
 \adrr{ADR-148} & As duas chamadas curtas de IA em sala não têm teto de saída, e as missões revisadas se testam com a IA real & 2026-10-05 & Aceita; revê o teto da \adrr{ADR-115} e da \adrr{ADR-117}\\
+\zebra \adrr{ADR-149} & A plataforma publica a base que o gerador de missões lê & 2026-10-06 & Aceita\\
 \bottomrule
 \end{tabularx}
 
@@ -13050,3 +13051,105 @@ quota ou na fatura; o \cd{Promise.race} passar a cortar com frequência
 (\env{VERTEX\_MODEL}) por um que desligue o raciocínio de fato; ou as suítes
 ficarem vermelhas pela IA com frequência a ponto de esconder regressão do
 produto.
+
+\section{ADR-149 --- A plataforma publica a base que o gerador de missões lê}
+\label{adr:base-do-gerador}
+
+\textbf{Data.} 2026-10-06. \textbf{Status.} Aceita.
+
+\begin{especificacao}{Contexto}
+O gerador de missões (o repositório \cd{gerador-missoes}, um agente ADK no
+Cloud Run) escreve o PRD, o \emph{handoff} e a banca de uma missão nova a
+partir da doutrina e dos contratos desta plataforma: os \arq{AGENTS.md}, as
+regras de \arq{docs/\B{}regras/}, o contrato do manifesto, as portas de
+\emph{dev}, as seções do DS, o número da próxima ADR. Até aqui ele os lia de
+uma CÓPIA versionada no git dele (\arq{prompts/\B{}references/\B{}plataforma/}),
+que o próprio gerador produzia com \arq{scripts/\B{}sincronizar\_plataforma.py}
+lendo um \emph{clone} vizinho deste repo --- quando alguém se lembrava de
+rodar. A cópia envelheceu 320 \emph{commits}, e a missão do 9º ano saiu do
+gerador com referências que já não valiam: a seção \cd{chatgpt} do DS (que a
+\adrr{ADR-138} trocou pela \cd{unooriaai}), a ADR-108 e o DS 0.2.2. Os
+caminhos de exemplo do script ainda eram os de antes da \adrr{ADR-110}
+(\cd{exp-08-manifesto-ia}), e fonte ausente era \enquote{pulada} com um aviso
+que ninguém lia.
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{itemize}
+  \item \textbf{Quem PRODUZ a base é a plataforma}, no próprio CI:
+    \arq{scripts/\B{}base-do-gerador/\B{}extrair.mjs}, rodado pelo
+    \arq{.github/\B{}workflows/\B{}base-do-gerador.yml} a cada \emph{push} em
+    \cd{dev-local} que toca uma fonte (os \cd{paths:} do \emph{workflow} são a
+    lista de fontes do extrator), e por \cd{workflow\_dispatch}.
+  \item \textbf{O destino é o bucket que o gerador já monta}:
+    \cd{gs://\B{}entre-redes-dev-adk-artifacts/\B{}base-plataforma/\B{}plataforma/\B{}<commit>/},
+    com \arq{manifesto.json} (origem, destino e \emph{sha256} de cada cópia),
+    \arq{contrato-plataforma.json}, \arq{openapi-rotas.json} e as cópias em
+    \arq{arquivos/}. O ponteiro \arq{atual.json} sobe POR ÚLTIMO e com
+    \cd{Cache-Control: no-store}: quem lê nunca pega base pela metade. O
+    gerador fixa o \emph{commit} no início da execução e o grava no estado.
+  \item \textbf{As listas fechadas saem por PARSE do código}, nunca escritas à
+    mão: a dependência e as pontes do DS (\arq{packages/\B{}ui/\B{}package.json}),
+    a tabela de seções (\arq{docs/\B{}regras/\B{}design-system.md}), as chaves e
+    os vocabulários do manifesto (\cd{UpsertSchema}, \cd{CAPABILITIES},
+    \cd{PERMISSOES\_DE\_IFRAME}, traduzidos pelo \arq{publicar-manifesto.mjs}),
+    as experiências ativas (os \arq{experiencia.json}, menos \arq{\_template} e
+    \arq{backup-*}), as portas de \emph{dev} e a próxima livre, a última ADR e
+    a próxima (o índice deste capítulo), as missões com equipe e com
+    atividade, as fichas de evidência e o modelo padrão do Vertex.
+  \item \textbf{Fonte ausente, ou campo que o \emph{parser} não extraiu, FALHA}
+    o \emph{job} com o arquivo e a expressão que não casou. Nada é gravado: o
+    gerador continua na base anterior, e o vermelho chega a quem fez o
+    \emph{push}.
+  \item \textbf{O extrator não neutraliza as chaves} (\cd{\{turmaId\}}): é o
+    ADK do gerador que as interpretaria como variável de estado, e é ele que
+    as troca ao carregar. A base é texto fiel ao repositório.
+  \item \textbf{Ambiente próprio no GitHub}, \cd{base-do-gerador}, com
+    \cd{WIF\_PROVIDER} e \cd{DEPLOY\_SA}: o \cd{dev} só aceita \emph{deploy}
+    vindo da \emph{branch} \cd{dev}. A SA escreve só no prefixo
+    \cd{base-plataforma/} (IAM condicionada, no repositório da Fundação).
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{A cópia no git do gerador}, sincronizada por um script de lá.
+    É o que existia, e é o que falhou: depende de alguém lembrar de rodar,
+    num \emph{clone} que pode estar em qualquer \emph{branch}, e envelheceu
+    320 \emph{commits} sem nenhum sinal. A missão do 9º ano é o custo.
+  \item \textbf{O gerador clonar este repositório a cada execução.} Exigiria
+    credencial de leitura do repositório privado no Cloud Run do gerador e
+    poria a lógica de extração (que conhece a forma DESTE código) no repositório
+    errado: quem muda a forma de uma tabela aqui não veria o \emph{parser} lá.
+  \item \textbf{Publicar no \emph{push} de \cd{dev}}, junto do \emph{deploy}.
+    O gerador escreve a missão que ainda vai nascer, e \cd{dev-local} é onde o
+    trabalho chega primeiro (\adrr{ADR-101}); amarrar à promoção o deixaria
+    sempre um ciclo atrás.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{O extrator conhece a FORMA do código}: renomear um
+    \cd{export const}, mudar o cabeçalho da tabela de seções ou mover um
+    \arq{AGENTS.md} derruba o \emph{job}. É de propósito (falhar alto em vez de
+    publicar errado), mas é manutenção a mais em toda mudança de forma, e
+    \cd{FONTES} e os \cd{paths:} do \emph{workflow} têm de andar juntos.
+  \item \textbf{O nome de destino de cada cópia é contrato com os
+    \emph{prompts} do gerador}: renomear aqui quebra lá, e nenhum teste deste
+    repositório vê o outro lado.
+  \item \textbf{A base é a de \cd{dev-local}}, não a de produção: pode descrever
+    o que ainda não foi promovido. Para o gerador é o certo; para quem lê a base
+    como retrato do que está no ar, não.
+  \item \textbf{Consome minutos do Actions} a cada \emph{push} que toca uma
+    fonte, numa conta cuja cota já acabou uma vez (2026-09).
+  \item \textbf{O inventário do DS} (\arq{design-system/\B{}ds-componentes.json})
+    não é produzido aqui: é do repositório do DS, e as duas metades da base
+    podem estar em momentos diferentes.
+\end{itemize}
+
+\textbf{Gatilho.} O gerador passar a rodar fora da GCP (sem o bucket montado);
+uma segunda stack de gerador por contrato; a forma de uma fonte mudar com
+frequência a ponto de o \emph{job} ficar mais vermelho que verde; ou a base de
+\cd{dev-local} induzir o gerador a citar o que não chegou a \cd{dev}.

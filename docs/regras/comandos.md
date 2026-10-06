@@ -99,6 +99,10 @@ node scripts/e2e/ferramentas/gerar-deck.mjs             # só o deck
 node scripts/e2e/ferramentas/gerar-videos.mjs           # só os vídeos (um por papel; o estudante, um por missão)
 node scripts/e2e/ferramentas/gerar-videos.mjs --amostra # um quadro em JPEG, p/ conferir o layout sem codificar
 EXP_MAPAS_BUCKET=<bucket> node scripts/mapear-stack.mjs exp04ef1b 1.2.3 < stack.txt  # stack de erro de cliente -> fonte:linha (mapas no bucket PRIVADO)
+node scripts/base-do-gerador/extrair.mjs --saida /tmp/base   # a base que o gerador de missões lê (ADR-149), local.
+                                          # Quem PUBLICA é o workflow base-do-gerador (push em dev-local
+                                          # que toca uma fonte); fonte ausente ou parse que não casou = exit 1.
+node --test scripts/base-do-gerador/extrair.test.mjs        # o extrator contra o próprio repo
 node scripts/extrair-bncc.mjs             # BNCC dos PDFs oficiais → apps/api/src/curriculo/dados/*.ts
                                           # (GERADOS). Exige poppler (pdftotext/pdfinfo) e os PDFs em
                                           # documentos-fonte/bncc/ — que NÃO são versionados (>2MB).

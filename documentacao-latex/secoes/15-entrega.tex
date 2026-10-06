@@ -507,6 +507,43 @@ O laço de publicação é tolerante por desenho: pasta de experiência sem
 andamento, e trabalho em andamento não deve quebrar o \emph{deploy} do resto.
 \end{nota}
 
+\subsection{A base do gerador de missões (\emph{workflow} \cd{base-do-gerador})}
+\label{sec:base-do-gerador}
+
+Um terceiro \emph{workflow}, \arq{.github/\B{}workflows/\B{}base-do-gerador.yml},
+não publica nada da plataforma: publica a \textbf{base} que o gerador de
+missões (outro repositório, um agente ADK no Cloud Run) lê para escrever uma
+missão nova (\adrr{ADR-149}). Ele roda no \emph{push} em \cd{dev-local} que
+toca uma das fontes --- os \cd{paths:} são a mesma lista do extrator --- e por
+\cd{workflow\_dispatch}, num \emph{environment} próprio
+(\cd{base-do-gerador}, com \cd{WIF\_PROVIDER} e \cd{DEPLOY\_SA}), porque o de
+\cd{dev} só aceita a \emph{branch} \cd{dev}. Não instala dependência: o
+extrator, \arq{scripts/\B{}base-do-gerador/\B{}extrair.mjs}, só usa módulos
+\cd{node:}, e o \emph{job} tem teto de 5 minutos.
+
+\begin{enumerate}
+  \item \cd{node --test} roda o extrator inteiro contra o repositório num
+    diretório temporário e confere o contrato (próxima ADR, porta livre,
+    seções do DS, nenhuma cópia faltando, o ponteiro apontando para a pasta).
+  \item O extrator copia a doutrina e os contratos, gera o índice das ADRs e o
+    do OpenAPI, recorta o \arq{schema.prisma} das missões-molde e extrai por
+    \emph{parse} o \arq{contrato-\B{}plataforma.json}. \textbf{Fonte ausente ou
+    expressão que não casou derruba o \emph{job}} antes de qualquer escrita.
+  \item \cd{gcloud storage cp -r} sobe
+    \cd{base-plataforma/\B{}plataforma/\B{}<commit>/} e, SÓ DEPOIS, o
+    \arq{atual.json} com \cd{Cache-Control: no-store}. A concorrência é um
+    grupo único, sem cancelamento, para que dois \emph{pushes} seguidos não
+    gravem o ponteiro fora de ordem.
+\end{enumerate}
+
+\begin{nota}
+Localmente, \cd{node scripts/\B{}base-do-gerador/\B{}extrair.mjs --saida <dir>}
+grava a mesma base num diretório, sem subir nada. Mudou a forma de uma fonte (o
+cabeçalho da tabela de seções do DS, um \cd{export const} lido por
+\emph{parse}) ou moveu um arquivo da lista? O extrator e os \cd{paths:} do
+\emph{workflow} mudam no mesmo \emph{commit}.
+\end{nota}
+
 \section{Ambientes locais}
 
 \begin{tabularx}{\linewidth}{@{}L{30mm}L{34mm}X@{}}
