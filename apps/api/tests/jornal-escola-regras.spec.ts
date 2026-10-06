@@ -8,6 +8,7 @@ import {
   noticiasPadrao,
 } from "../src/jornal-escola/catalogo";
 import { ChaveSchema, HomologacaoSchema, PainelSchema, type NoticiaDoPacote } from "../src/jornal-escola/contrato-de-rotas";
+import { FALAS_DO_TEMA_PADRAO } from "../src/jornal-escola/podcast";
 import { validarDiagramacao } from "../src/jornal-escola/diagramacao.service";
 import {
   PROIBIDO_NA_LINHA_DO_PAINEL,
@@ -68,6 +69,7 @@ describe("o banco padrão contra as invariantes", () => {
       tema: "Feira de Ciências e Notícias da Cidade",
       origem: "padrao",
       noticias: NOTICIAS_PADRAO,
+      podcast: FALAS_DO_TEMA_PADRAO,
     });
     expect(r.success).toBe(true);
   });

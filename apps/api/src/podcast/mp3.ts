@@ -1,5 +1,5 @@
 /**
- * EMENDAR MP3s — os cinco trechos do podcast viram um arquivo só, sem ffmpeg
+ * EMENDAR MP3s — os trechos do podcast viram um arquivo só, sem ffmpeg
  * (não há ffmpeg neste repositório, `ai/AGENTS.md`). Função pura; o teste monta
  * quadros sintéticos.
  *

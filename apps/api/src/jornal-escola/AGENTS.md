@@ -96,6 +96,13 @@ em silêncio.
   vai ao ar. A homologação herda as IMAGENS de mesma descrição, nunca a
   APROVAÇÃO. Os pacotes antigos entraram aprovados (migração
   `20261005190000`).
+- **O podcast de recapitulação é da plataforma** (ADR-150, `src/podcast/`):
+  aqui ficam o roteiro do one-pager (`podcast.ts`, Lucas e Clara, com a
+  "oficina de robótica" no lugar da "gincana" — os artefatos davam os dois nomes
+  à mesma notícia) e a fonte (`podcast-fonte.ts`). As três vagas (a notícia
+  antiga, a reação a ela, o aviso sem assinatura) o professor revisa na
+  criação, e `homologar` as grava em `podcast_roteiros` na MESMA transação —
+  também no segundo clique, que devolve o pacote existente.
 
 ## A evidência (E14)
 
