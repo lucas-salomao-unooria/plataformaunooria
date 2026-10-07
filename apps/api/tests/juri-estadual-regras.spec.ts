@@ -18,12 +18,27 @@ import {
   invisibilidade,
   pesos,
   projetosOcultos,
+  aplicarSalvamento,
+  areasDoDesvio,
+  desvioComInteracao,
+  desvioCompleto,
+  projetosVistosPorArea,
   servirAte,
+  servirDesvioAte,
   type EstadoDoFeed,
   type ProjetoDoMotor,
 } from "../src/juri-estadual/regras/afunilamento";
 import { nivelDaAuditoria, nivelDaClassificacao, nivelPorTentativas } from "../src/juri-estadual/regras/evidencia";
-import { AUDITORIA_VAZIA, MAX_BUSCAS, auditoriaDaLinha, feedDaLinha, ordemDaGaleria, registrarAcao } from "../src/juri-estadual/regras/galeria";
+import {
+  AUDITORIA_VAZIA,
+  MAX_BUSCAS,
+  auditoriaDaLinha,
+  desvioDaLinha,
+  feedDaLinha,
+  ordemDaGaleria,
+  registrarAcao,
+} from "../src/juri-estadual/regras/galeria";
+import { frasesDaLegenda, trechoValido } from "../src/juri-estadual/regras/justificativa";
 import {
   blocosDaSessao,
   embaralharForaDeOrdem,
@@ -42,7 +57,7 @@ import {
 } from "../src/juri-estadual/regras/passos";
 import { conteudoDaIa, normalizarHashtag, normalizarPerfil, projetoRegeneradoDaIa } from "../src/juri-estadual/regras/preparo";
 import { postPublico, projetoDaGaleria } from "../src/juri-estadual/regras/publico";
-import { AREAS, POSTS_NO_FEED, areaDoProjeto, idDoPost, projetoDoPost } from "../src/juri-estadual/vocabulario";
+import { AREAS, POSTS_NO_DESVIO, POSTS_NO_FEED, areaDoProjeto, idDoPost, projetoDoPost } from "../src/juri-estadual/vocabulario";
 import { CHAVES_REDIGIDAS } from "../src/observabilidade/redaction";
 import { PARAMETROS_DE_TESTE, conteudoDeTeste, saidaDaIaDeTeste } from "./juri-estadual-fixture";
 import { FALAS_DO_TEMA_PADRAO, VAGAS_DO_PODCAST, roteiroDoPodcast } from "../src/juri-estadual/podcast";
@@ -55,7 +70,7 @@ import { problemasDasFalasDoTema, trechosAlemDoTeto } from "../src/podcast/rotei
 
 const CONTEUDO = conteudoDeTeste();
 const PROJETOS: ProjetoDoMotor[] = CONTEUDO.projetos.map((p) => ({ id: p.id, area: areaDoProjeto(p.id) }));
-const VAZIO: EstadoDoFeed = { servidos: [], curtidos: [], permanencias: [] };
+const VAZIO: EstadoDoFeed = { servidos: [], curtidos: [], salvos: [], permanencias: [] };
 
 const areaDoPost = (post: string) => areaDoProjeto(projetoDoPost(post));
 
@@ -170,6 +185,23 @@ describe("o motor do feed", () => {
     expect(areaLider(estado)).toBeNull();
   });
 
+  test("salvar vale 2, desfazer devolve, e três salvos na mesma área fecham a bolha", () => {
+    const servidos = abertura(PROJETOS, "salvar");
+    const post = servidos[0] as string;
+    let estado: EstadoDoFeed = { ...VAZIO, servidos };
+    estado = aplicarSalvamento(estado, post, true);
+    estado = aplicarSalvamento(estado, post, true);
+    expect(estado.salvos).toEqual([post]);
+    expect(pesos(estado)[areaDoPost(post)]).toBe(2);
+    estado = aplicarSalvamento(estado, post, false);
+    expect(pesos(estado)[areaDoPost(post)]).toBe(0);
+    expect(aplicarSalvamento(estado, idDoPost("proj-a4", "bastidor"), true)).toBe(estado);
+    /* Curtir + salvar o mesmo post soma 5; com uma permanência, 6: a bolha. */
+    estado = aplicarSalvamento(aplicarCurtida(estado, post, true), post, true);
+    expect(pesos(estado)[areaDoPost(post)]).toBe(5);
+    expect(areaLider(aplicarPermanencia(estado, post))).toBe(areaDoPost(post));
+  });
+
   test("a invisibilidade é REAL: conta projetos, não posts", () => {
     expect(invisibilidade([])).toEqual({ vistos: 0, ocultos: 16, total: 16, percentual: 100 });
     const mesmo = [idDoPost("proj-a1", "apresentacao"), idDoPost("proj-a1", "bastidor")];
@@ -179,12 +211,17 @@ describe("o motor do feed", () => {
 });
 
 describe("os passos e a etapa da turma", () => {
-  const casos: Array<[Passo, "exploracao" | "galeria", Passo]> = [
+  const casos: Array<[Passo, "exploracao" | "galeria" | "desvio", Passo]> = [
     ["credencial", "galeria", "credencial"],
     ["feed", "galeria", "feed"],
     ["lacrada", "exploracao", "lacrada"],
     ["lacrada", "galeria", "galeria"],
+    /* Quem votou atrasado passa pela galeria mesmo com o desvio já aberto. */
+    ["lacrada", "desvio", "galeria"],
+    ["revisada", "galeria", "revisada"],
+    ["revisada", "desvio", "desvio"],
     ["cadeia", "exploracao", "cadeia"],
+    ["cadeia", "desvio", "cadeia"],
     ["fim", "galeria", "fim"],
   ];
   test.each(casos)("%s com a turma em %s → %s", (passo, etapa, esperado) => {
@@ -195,6 +232,9 @@ describe("os passos e a etapa da turma", () => {
     expect(aguardandoOProfessor("lacrada", "exploracao")).toBe(true);
     expect(aguardandoOProfessor("feed", "exploracao")).toBe(false);
     expect(aguardandoOProfessor("lacrada", "galeria")).toBe(false);
+    /* A segunda espera: revisou, e o desvio ainda não abriu. */
+    expect(aguardandoOProfessor("revisada", "galeria")).toBe(true);
+    expect(aguardandoOProfessor("revisada", "desvio")).toBe(false);
     expect(pedirPasso("credencial", "feed")).toEqual({ ok: true, passo: "feed" });
     expect(pedirPasso("lacrada", "feed")).toEqual({ ok: true, passo: "lacrada" });
   });
@@ -203,6 +243,9 @@ describe("os passos e a etapa da turma", () => {
     expect(transicaoDoGate("exploracao", "galeria")).toEqual({ ok: true, mudou: true });
     expect(transicaoDoGate("galeria", "galeria")).toEqual({ ok: true, mudou: false });
     expect(transicaoDoGate("galeria", "exploracao")).toEqual({ ok: false, codigo: "transicao-de-etapa-invalida" });
+    expect(transicaoDoGate("galeria", "desvio")).toEqual({ ok: true, mudou: true });
+    expect(transicaoDoGate("exploracao", "desvio")).toEqual({ ok: false, codigo: "transicao-de-etapa-invalida" });
+    expect(transicaoDoGate("desvio", "galeria")).toEqual({ ok: false, codigo: "transicao-de-etapa-invalida" });
   });
 });
 
@@ -259,13 +302,13 @@ describe("as réguas da evidência", () => {
     expect(nivelDaAuditoria({ abertos: daBolha, buscas: [] }, ocultos)).toBe("atingiu");
   });
 
-  test("EF06CO10: por cima (um oculto, só vistos, ou busca sem abrir) = em processo; nada = não atingiu", () => {
+  test("EF06CO10: por cima (um oculto, só vistos, ou busca sem abrir) = em processo; nada = SEM marca (ficha v3)", () => {
     expect(nivelDaAuditoria({ abertos: [ocultoDe("area_b")], buscas: [] }, ocultos)).toBe("em_processo");
     /* Abrir os VISTOS não é conferir o que o feed escondeu. */
     const vistos = servidos.map(projetoDoPost);
     expect(nivelDaAuditoria({ abertos: vistos, buscas: [] }, ocultos)).toBe("em_processo");
     expect(nivelDaAuditoria({ abertos: [], buscas: [{ tipo: "hashtag", area: "area_b" }] }, ocultos)).toBe("em_processo");
-    expect(nivelDaAuditoria(AUDITORIA_VAZIA, ocultos)).toBe("nao_atingiu");
+    expect(nivelDaAuditoria(AUDITORIA_VAZIA, ocultos)).toBeNull();
   });
 
   test("EF06CO01: a hashtag de outra área + um oculto DAQUELA área = atingiu", () => {
@@ -277,10 +320,10 @@ describe("as réguas da evidência", () => {
   test("EF06CO01: não é a mesma régua da EF06CO10 — abrir ocultos sem buscar não classifica", () => {
     const auditoria = { abertos: [ocultoDe("area_b"), ocultoDe("area_c")], buscas: [] };
     expect(nivelDaAuditoria(auditoria, ocultos)).toBe("atingiu");
-    expect(nivelDaClassificacao(auditoria, ocultos, votoArea)).toBe("nao_atingiu");
+    expect(nivelDaClassificacao(auditoria, ocultos, votoArea)).toBeNull();
   });
 
-  test("EF06CO01: busca que não fecha o par = em processo; sem busca = não atingiu", () => {
+  test("EF06CO01: busca que não fecha o par = em processo; sem busca = SEM marca (ficha v3)", () => {
     /* A hashtag da própria área (a bolha) não é procurar outra coleção. */
     expect(
       nivelDaClassificacao({ abertos: [ocultoDe("area_a")], buscas: [{ tipo: "hashtag", area: "area_a" }] }, ocultos, votoArea),
@@ -296,7 +339,7 @@ describe("as réguas da evidência", () => {
     expect(nivelDaClassificacao({ abertos: [], buscas: [{ tipo: "hashtag", area: "area_b" }] }, ocultos, votoArea)).toBe(
       "em_processo",
     );
-    expect(nivelDaClassificacao(AUDITORIA_VAZIA, ocultos, votoArea)).toBe("nao_atingiu");
+    expect(nivelDaClassificacao(AUDITORIA_VAZIA, ocultos, votoArea)).toBeNull();
   });
 
   test("EF06CO03: 1 tentativa = atingiu; 2–3 = em processo; mais = não atingiu", () => {
@@ -320,11 +363,90 @@ describe("a galeria e o feed lidos do banco", () => {
       buscas: [{ tipo: "texto", area: null }],
     });
     expect(auditoriaDaLinha(null)).toEqual(AUDITORIA_VAZIA);
-    expect(feedDaLinha({ postsServidos: ["proj-a1:apresentacao", "lixo"], curtidos: "x", permanencias: [] })).toEqual({
+    expect(feedDaLinha({ postsServidos: ["proj-a1:apresentacao", "lixo"], curtidos: "x", salvos: ["proj-a1:apresentacao"], permanencias: [] })).toEqual({
       servidos: ["proj-a1:apresentacao"],
       curtidos: [],
+      salvos: ["proj-a1:apresentacao"],
       permanencias: [],
     });
+    expect(
+      desvioDaLinha({ desvioServidos: ["proj-b1:bastidor", 3], desvioCurtidos: null, desvioSalvos: [], desvioPermanencias: ["lixo"] }),
+    ).toEqual({ servidos: ["proj-b1:bastidor"], curtidos: [], salvos: [], permanencias: [] });
+  });
+});
+
+describe("a rodada de desvio: o mesmo motor, com os pesos dela", () => {
+  /** O feed do júri de quem curtiu duas vezes a área do 2º post. */
+  function feedComBolha(semente: string) {
+    const alvo = areaDoPost(abertura(PROJETOS, semente)[1] as string);
+    let curtidas = 0;
+    const estado = jogar(semente, (post) => {
+      if (curtidas < 2 && areaDoPost(post) === alvo) {
+        curtidas += 1;
+        return true;
+      }
+      return false;
+    });
+    return { alvo, servidos: estado.servidos };
+  }
+
+  test("a abertura do desvio vem das duas áreas MENOS vistas, com estande que o feed escondeu", () => {
+    for (const semente of ["desvio-1", "desvio-2", "desvio-3"]) {
+      const { alvo, servidos } = feedComBolha(semente);
+      const areas = areasDoDesvio(servidos, semente);
+      expect(areas).toHaveLength(2);
+      expect(areas).not.toContain(alvo);
+      const vistos = projetosVistosPorArea(servidos);
+      const minimo = Math.min(...AREAS.map((a) => vistos[a]));
+      expect(areas.every((a) => vistos[a] === minimo)).toBe(true);
+      const abertura2 = servirDesvioAte(PROJETOS, VAZIO, servidos, semente, 2);
+      expect(abertura2.map(areaDoPost)).toEqual(areas);
+      const vistosNoFeed = new Set(servidos.map(projetoDoPost));
+      expect(abertura2.every((p) => !vistosNoFeed.has(projetoDoPost(p)))).toBe(true);
+    }
+  });
+
+  test("curtir a área nova vira o desvio para ela; sem interação, o desvio segue variado", () => {
+    const semente = "virada";
+    const { servidos: feed } = feedComBolha(semente);
+    let d: EstadoDoFeed = { ...VAZIO, servidos: servirDesvioAte(PROJETOS, VAZIO, feed, semente, 2) };
+    const nova = d.servidos[0] as string;
+    d = aplicarCurtida(d, nova, true);
+    d = { ...d, servidos: servirDesvioAte(PROJETOS, d, feed, semente, 3) };
+    expect(areaDoPost(d.servidos[2] as string)).toBe(areaDoPost(nova));
+    d = aplicarCurtida(d, d.servidos[2] as string, true);
+    d = { ...d, servidos: servirDesvioAte(PROJETOS, d, feed, semente, POSTS_NO_DESVIO) };
+    expect(d.servidos).toHaveLength(POSTS_NO_DESVIO);
+    expect(desvioCompleto(d)).toBe(true);
+    expect(d.servidos.slice(3).every((p) => areaDoPost(p) === areaDoPost(nova))).toBe(true);
+    expect(new Set(d.servidos).size).toBe(POSTS_NO_DESVIO);
+    expect(desvioComInteracao(d)).toBe(true);
+    /* Mesma semente, mesmo desvio (o F5). */
+    expect(servirDesvioAte(PROJETOS, { ...VAZIO }, feed, semente, 2)).toEqual(d.servidos.slice(0, 2));
+
+    const passivo = servirDesvioAte(PROJETOS, VAZIO, feed, semente, POSTS_NO_DESVIO);
+    expect(passivo).toHaveLength(POSTS_NO_DESVIO);
+    expect(new Set(passivo.map(areaDoPost)).size).toBeGreaterThanOrEqual(3);
+    expect(desvioComInteracao({ ...VAZIO, servidos: passivo })).toBe(false);
+    expect(desvioComInteracao({ ...VAZIO, servidos: passivo, salvos: [passivo[0] as string] })).toBe(true);
+  });
+});
+
+describe("o trecho grifado da justificativa", () => {
+  test("a legenda vira frases pelo ponto final; o índice tem de existir", () => {
+    expect(frasesDaLegenda("Montamos um filtro. Ele limpa a água!  Funciona? Sim")).toEqual([
+      "Montamos um filtro.",
+      "Ele limpa a água!",
+      "Funciona?",
+      "Sim",
+    ]);
+    expect(frasesDaLegenda("Sem pontuação nenhuma")).toEqual(["Sem pontuação nenhuma"]);
+    expect(frasesDaLegenda("")).toEqual([]);
+    expect(trechoValido("Uma. Duas.", 1)).toBe(true);
+    expect(trechoValido("Uma. Duas.", 2)).toBe(false);
+    expect(trechoValido("Uma. Duas.", -1)).toBe(false);
+    /* Toda legenda da mostra de teste tem ao menos uma frase. */
+    for (const p of CONTEUDO.projetos) expect(frasesDaLegenda(p.legenda).length).toBeGreaterThan(0);
   });
 
   test("a grade: os ocultos primeiro, os dezesseis uma vez só", () => {

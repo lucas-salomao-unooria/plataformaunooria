@@ -11,7 +11,11 @@ import {
   DISCIPLINAS,
   ID_DE_POST_RE,
   ID_DE_PROJETO_RE,
+  MAX_FRASES_DA_LEGENDA,
+  MOTIVOS_DA_REVISAO,
+  MOTIVOS_DO_VOTO,
   ORIGENS_DO_PACOTE,
+  POSTS_NO_DESVIO,
   POSTS_NO_FEED,
   TIPOS_DE_BUSCA,
   TIPOS_DE_POST,
@@ -53,20 +57,30 @@ export const PedirPassoSchema = z.object({ para: z.enum(PASSOS_PEDIDOS) });
 
 /**
  * O que o cliente MEDIU desde a última chamada, e se quer o próximo post.
- * Curtida é estado (curtiu: true/false), permanência é fato (uma por post).
- * O teto de 20 é folga: o feed inteiro tem dez posts.
+ * Curtida e salvo são estado (true/false), permanência é fato (uma por post).
+ * O teto de 20 é folga: o feed inteiro tem dez posts. A rodada de desvio usa o
+ * MESMO corpo (`POST desvio/eventos`).
  */
 export const EventosDoFeedSchema = z.object({
   curtidas: z.array(z.object({ postId: IdDePostSchema, curtiu: z.boolean() })).max(20).default([]),
+  salvamentos: z.array(z.object({ postId: IdDePostSchema, salvou: z.boolean() })).max(20).default([]),
   permanencias: z.array(IdDePostSchema).max(20).default([]),
   /** `true` quando a tela chegou ao último post servido: o servidor serve o próximo. */
   proximo: z.boolean().default(false),
 });
 
-/** A cédula: um projeto do feed e a convicção. É o LATCH 1. */
+/** O trecho GRIFADO: o índice de uma frase da legenda do estande escolhido (`regras/justificativa.ts`). */
+export const TrechoSchema = z.number().int().min(0).max(MAX_FRASES_DA_LEGENDA - 1);
+
+/**
+ * A cédula: um projeto do feed, a convicção e a JUSTIFICATIVA de antes — um
+ * cartão de motivo e o trecho da legenda dele que a convenceu. É o LATCH 1.
+ */
 export const VotoSchema = z.object({
   projetoId: IdDeProjetoSchema,
   conviccao: z.enum(CONVICCOES),
+  motivo: z.enum(MOTIVOS_DO_VOTO),
+  trecho: TrechoSchema,
 });
 
 /**
@@ -79,10 +93,17 @@ export const AcaoDaGaleriaSchema = z.discriminatedUnion("tipo", [
   z.object({ tipo: z.literal("buscar"), busca: z.enum(TIPOS_DE_BUSCA), area: AreaSchema.nullable() }),
 ]);
 
-/** A revisão do voto depois da galeria. É o LATCH 2. */
+/**
+ * A revisão do voto depois da galeria — o LATCH 2. Toda ação leva a
+ * justificativa de DEPOIS (o cartão e o trecho), e manter vale desde que
+ * justificado. `trocar` e `complementar` levam o estande; o trecho é da
+ * legenda do estande da decisão (o do voto, ao manter).
+ */
+const JustificativaDaRevisao = { motivo: z.enum(MOTIVOS_DA_REVISAO), trecho: TrechoSchema };
 export const RevisaoDoVotoSchema = z.discriminatedUnion("acao", [
-  z.object({ acao: z.literal(ACOES_DA_REVISAO[0]) }),
-  z.object({ acao: z.literal(ACOES_DA_REVISAO[1]), projetoId: IdDeProjetoSchema }),
+  z.object({ acao: z.literal(ACOES_DA_REVISAO[0]), ...JustificativaDaRevisao }),
+  z.object({ acao: z.literal(ACOES_DA_REVISAO[1]), projetoId: IdDeProjetoSchema, ...JustificativaDaRevisao }),
+  z.object({ acao: z.literal(ACOES_DA_REVISAO[2]), projetoId: IdDeProjetoSchema, ...JustificativaDaRevisao }),
 ]);
 
 /** A ordem que a criança montou: os ids opacos, da vaga 1 à última. */
@@ -132,8 +153,29 @@ export const PostPublicoSchema = z.object({
 export const FeedSchema = z.object({
   posts: z.array(PostPublicoSchema).max(POSTS_NO_FEED),
   curtidos: z.array(IdDePostSchema),
+  salvos: z.array(IdDePostSchema),
   /** Os dez chegaram: a cédula pode abrir. */
   completo: z.boolean(),
+});
+
+/**
+ * A RODADA DE DESVIO: um feed de seis, servido pelo mesmo motor com os pesos
+ * só dela. `comparacao` (com os seis servidos) é o "antes e agora" que a tela
+ * mostra ao fim: quantos posts de cada área o feed do júri trouxe e quantos o
+ * desvio trouxe. Não diz a regra nem o peso — mostra o efeito.
+ */
+export const DesvioSchema = z.object({
+  posts: z.array(PostPublicoSchema).max(POSTS_NO_DESVIO),
+  curtidos: z.array(IdDePostSchema),
+  salvos: z.array(IdDePostSchema),
+  completo: z.boolean(),
+  /** Curtiu ou salvou algum post da rodada? Sem isso, concluir é recusado. */
+  comInteracao: z.boolean(),
+  concluido: z.boolean(),
+  comparacao: z
+    .array(z.object({ area: z.enum(AREAS), noFeed: z.number().int().min(0), noDesvio: z.number().int().min(0) }))
+    .length(AREAS.length)
+    .nullable(),
 });
 
 /** Um estande na galeria: a apresentação e se ele chegou ao feed DESTE estudante. */
@@ -167,6 +209,9 @@ export const BlocoDaCadeiaSchema = z.object({ id: IdOpacoSchema, rotulo: z.strin
 
 const CartaoSchema = z.object({ id: z.string(), texto: z.string() });
 
+/** A justificativa gravada: o cartão e o trecho (o índice da frase). */
+const JustificativaSchema = z.object({ motivo: z.string(), trecho: z.number().int().min(0) });
+
 /** O estado do estudante. Cada bloco só aparece do passo dele em diante. */
 export const SessaoSchema = z.object({
   pacoteId: z.string().uuid(),
@@ -180,10 +225,21 @@ export const SessaoSchema = z.object({
   tema: z.string(),
   categorias: z.array(CategoriaSchema).length(AREAS.length),
   feed: FeedSchema,
-  voto: z.object({ projetoId: IdDeProjetoSchema, conviccao: z.enum(CONVICCOES) }).nullable(),
-  revisao: z
-    .object({ acao: z.enum(ACOES_DA_REVISAO), projetoId: IdDeProjetoSchema.nullable() })
+  /** Os cartões de motivo — antes (cédula) e depois (revisão). Sem gabarito: nenhum é o "certo". */
+  motivos: z.object({ voto: z.array(CartaoSchema), revisao: z.array(CartaoSchema) }),
+  voto: z
+    .object({ projetoId: IdDeProjetoSchema, conviccao: z.enum(CONVICCOES), justificativa: JustificativaSchema.nullable() })
     .nullable(),
+  revisao: z
+    .object({
+      acao: z.enum(ACOES_DA_REVISAO),
+      /** O estande da troca ou do complemento; `null` ao manter. */
+      projetoId: IdDeProjetoSchema.nullable(),
+      justificativa: JustificativaSchema.nullable(),
+    })
+    .nullable(),
+  /** Do passo `desvio` em diante. */
+  desvio: DesvioSchema.nullable(),
   /** Embaralhados pela sessão. Do passo `cadeia` em diante. */
   cadeia: z
     .object({ blocos: z.array(BlocoDaCadeiaSchema).length(TOTAL_DE_BLOCOS), tentativas: z.number().int().min(0), montada: z.boolean() })
@@ -386,6 +442,8 @@ export const LinhaDoPainelSchema = z.object({
   abriuAGaleria: z.boolean(),
   buscou: z.boolean(),
   revisou: z.boolean(),
+  /** Concluiu a rodada de desvio. */
+  desviou: z.boolean(),
   concluiu: z.boolean(),
 });
 
@@ -402,6 +460,7 @@ export const PainelSchema = z.object({
     entraram: z.number().int().min(0),
     votaram: z.number().int().min(0),
     revisaram: z.number().int().min(0),
+    desviaram: z.number().int().min(0),
     concluiram: z.number().int().min(0),
     /** "X de Y computadores votaram". Y sai da montagem das equipes quando há. */
     computadores: z.object({ votaram: z.number().int().min(0), total: z.number().int().min(0) }),
@@ -410,8 +469,12 @@ export const PainelSchema = z.object({
     votosPorArea: z.array(CategoriaSchema.extend({ votos: z.number().int().min(0) })).length(AREAS.length),
     /** A média da taxa real de quem votou, 0–100, ou `null` sem voto. */
     invisibilidadeMedia: z.number().int().min(0).max(100).nullable(),
-    /** Depois da galeria: quantos mantiveram e quantos trocaram o voto. */
-    revisao: z.object({ mantiveram: z.number().int().min(0), trocaram: z.number().int().min(0) }),
+    /** Depois da galeria: quantos mantiveram, trocaram ou complementaram o voto. */
+    revisao: z.object({
+      mantiveram: z.number().int().min(0),
+      trocaram: z.number().int().min(0),
+      complementaram: z.number().int().min(0),
+    }),
     /** Os votos REVISADOS por área — a lousa depois da galeria. */
     votosRevisadosPorArea: z.array(CategoriaSchema.extend({ votos: z.number().int().min(0) })).length(AREAS.length),
   }),
@@ -446,8 +509,10 @@ export const MaterialSchema = z.object({
   plenaria: z.array(z.string()),
   regra: z.object({
     pesoDaCurtida: z.number().int(),
+    pesoDoSalvar: z.number().int(),
     pesoDaPermanencia: z.number().int(),
     limiar: z.number().int(),
     postsNoFeed: z.number().int(),
+    postsNoDesvio: z.number().int(),
   }),
 });

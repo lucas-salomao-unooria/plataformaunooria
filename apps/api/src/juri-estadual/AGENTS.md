@@ -10,9 +10,32 @@ um feed de dez posts que as curtidas dela AFUNILAM em silêncio, vota numa
 cédula lacrada (o LATCH 1) e espera a turma (o PICO: o professor projeta a
 dispersão de votos). O professor libera a Galeria Oculta: ela vê o que nunca
 chegou ao feed dela, com a taxa REAL de invisibilidade, busca por hashtag e
-mantém ou troca o voto (o LATCH 2). Depois monta a cadeia Interações → Dados
-→ Algoritmo → Bolha (EF06CO03), resolve o caso Mariana e responde as enquetes
-(P1–P3, pelas rotas de `/evidencias`). **Não há mais o passo `pacotes`**
+mantém, troca ou COMPLEMENTA o voto (o LATCH 2). Espera de novo, e o professor
+libera a RODADA DE DESVIO (seis posts em que ela interage com o que o feed
+escondia e vê o feed virar). Depois monta a cadeia Interações → Dados →
+Algoritmo → Bolha (EF06CO03), resolve o caso Mariana e responde as enquetes
+(P1–P3, pelas rotas de `/evidencias`).
+
+**O ciclo do voto (2026-10-07, o que o PO pediu e a spec perdeu)** — quatro
+peças, todas na migração `20261007120000`:
+
+- **Salvar pesa no feed** (curtir 3, salvar 2, ficar > 5 s 1): os três sinais
+  do desenho do PO. Comentar e compartilhar respondem na TELA e não viajam.
+- **A justificativa antes e depois** ("Antes eu pensava… Agora eu percebo…"):
+  na cédula e na revisão, um cartão de motivo (`v1`–`v3`, `r1`–`r3`, texto em
+  `conteudo.ts`) e o trecho GRIFADO — o índice de uma frase da legenda do
+  estande (`regras/justificativa.ts`, espelhado na experiência), conferido no
+  servidor. Índice, nunca texto. Não vira nível: é o registro que a plenária lê.
+- **Complementar** mantém o voto e grava `complemento_projeto` (CHECK: só nele,
+  nunca o próprio voto); o painel conta `complementaram`.
+- **A rodada de desvio** é a TERCEIRA etapa da turma (`exploracao → galeria →
+  desvio`), com o passo gravado `revisada` (a espera) e o efetivo `desvio`
+  (nunca gravado, como a `galeria`). O MESMO motor, com um estado só dela
+  (`desvio_*`, `proximoDoDesvio`): abre por dois posts das duas áreas MENOS
+  vistas e depois segue os pesos da rodada. Concluir pede os seis e uma
+  curtida ou salvo (`desvio-sem-interacao`). **Sem evidência** — a vivência é
+  obrigatória, não medida. As sessões que já tinham passado da revisão entraram
+  com o desvio concluído no carimbo da revisão. **Não há mais o passo `pacotes`**
 (a curtida remontada, EF06CO07): o PO o tirou com a habilidade em 2026-10-06, e
 a migração `20261006120000` moveu para `cadeia` as sessões que estavam nele e
 apagou as colunas `pacotes_*` (a marca antiga continua em `evidencias_marcas`). Três tabelas: `exp06ef1b_pacotes`, `exp06ef1b_gates_turma`,
@@ -62,11 +85,12 @@ silêncio.
   com a certa (re-embaralha com outro rótulo; a rotação é a garantia).
   Os cartões de Mariana descem embaralhados e sem `certo`.
 - **Os CHECKs dos latches são equivalências com o passo gravado**: `votado_em ⇔
-  passo ∉ {credencial, feed}`, `revisado_em ⇔ passo ≥ cadeia`, cadeia ⇔ ≥
-  `mariana`, cartões ⇔ ≥ `enquetes`, `fim ⇔ concluida_em`
-  — e `galeria` nunca é GRAVADO (a etapa o impõe a quem está em `lacrada`). O
-  voto revisado guarda o voto FINAL (manter repete o inicial; CHECK). O service
-  grava carimbo e passo no MESMO update.
+  passo ∉ {credencial, feed}`, `revisado_em ⇔ passo ≥ revisada`,
+  `desvio_concluido_em ⇔ passo ≥ cadeia`, cadeia ⇔ ≥ `mariana`, cartões ⇔ ≥
+  `enquetes`, `fim ⇔ concluida_em` — e `galeria` e `desvio` nunca são GRAVADOS
+  (a etapa os impõe a quem está em `lacrada` e `revisada`). O voto revisado
+  guarda o voto FINAL (manter e complementar repetem o inicial; CHECK). O
+  service grava carimbo e passo no MESMO update.
 - **Os locks**: por estudante (o funil `garantirSessao`) e da TURMA — exclusivo
   para o botão, zerar, homologar e pôr no ar; compartilhado para as duas
   jogadas que MARCAM evidência (revisão, cadeia), que relêem o gate
@@ -114,9 +138,11 @@ A ficha é `evidencias/fichas/exp06ef1b.ts` (versão 2, 2026-10-06): **EF06CO10*
 (o foco primário) por `auditoria` e **EF06CO01** por `classificacao`, as duas no
 latch da revisão sobre o MESMO registro da galeria, com réguas DIFERENTES
 (`regras/evidencia.ts`): a CO10 conta os estandes OCULTOS abertos (≥ 2 =
-atingiu; alguma coisa = em processo; nada = não atingiu), a CO01 pede a
-hashtag de uma área ≠ do voto E um oculto daquela área (buscou outra coisa =
-em processo; não buscou = não atingiu). **EF06CO03** por `cadeia` (tentativas: 1
+atingiu; alguma coisa = em processo), a CO01 pede a hashtag de uma área ≠ do
+voto E um oculto daquela área (buscou outra coisa = em processo). **Quem não
+explorou fica SEM marca de ação** (ficha versão 3, 2026-10-07): não abrir nem
+buscar é ausência de comportamento, não "não atingiu" — a régua devolve `null`,
+o `marcar` não grava, e decide a pergunta da habilidade (vale o melhor). **EF06CO03** por `cadeia` (tentativas: 1
 = atingiu, 2–3 = em processo, mais = não atingiu). E `p1` (CO10, a frase do
 jurado), `p2` (CO01) e `p3` (CO03), verbatim da spec 9.6 — vale o melhor. A
 `p1` tem alternativas `D1`–`D3`: as `A1`–`A3` eram da EF06CO07. Toda rodada mede as três AÇÕES de novo

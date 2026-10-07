@@ -136,9 +136,9 @@ export class JuriEstadualTurmasController {
   @Post(":turmaId/gate")
   @HttpCode(200)
   @Contrato({
-    resumo: '"Liberar a Galeria Oculta" — o botão único da aula.',
+    resumo: '"Liberar a Galeria Oculta", depois "Liberar a rodada de desvio" — o botão único da aula.',
     descricao:
-      "O corpo diz a etapa de DESTINO: `exploracao → galeria`, nunca volta; destino igual ao atual é aceito e não muda nada (o segundo clique). Grava quando o portão abriu.\n\nQuem ainda não votou continua no feed com a galeria liberada: o voto atrasado é caminho previsto, e a galeria abre para ele depois do voto.",
+      "O corpo diz a etapa de DESTINO: `exploracao → galeria → desvio`, uma por vez, nunca volta; destino igual ao atual é aceito e não muda nada (o segundo clique). Grava quando cada portão abriu.\n\nQuem ainda não votou continua no feed com a galeria liberada: o voto atrasado é caminho previsto, e a galeria abre para ele depois do voto. Com o desvio liberado, quem ainda está na galeria termina a revisão e entra direto no desvio.",
     params: PARAMS,
     query: QUERY,
     corpo: GateSchema,
