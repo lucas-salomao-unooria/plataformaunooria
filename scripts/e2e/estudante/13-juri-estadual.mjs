@@ -575,8 +575,13 @@ await suite(
     const editor = prof.locator('[data-editor-do-estande="proj-a1"]');
     await editor.waitFor({ timeout: 10_000 });
     const titulo = editor.getByRole("textbox", { name: /^Título do estande/ });
-    await titulo.fill("");
-    await titulo.pressSequentially(TITULO_CURADO);
+    /* De UMA vez, não `fill("")` + `pressSequentially`: digitar logo depois de
+       esvaziar corria contra o render do campo vazio (que acende o erro) no
+       next dev, e o React devolvia o campo a um valor anterior no meio da
+       digitação — "Prótipo", "Proótipo". Com uma pausa entre os dois, 3 de 3
+       corridas passavam; sem ela, 3 de 3 perdiam letra. */
+    await titulo.fill(TITULO_CURADO);
+    r.exigir((await titulo.inputValue()) === TITULO_CURADO, "o campo do título ficou com o que a professora escreveu");
     await r.registrar(prof, "curadoria-editar-estande", {
       titulo: "Editar o que a criança lê",
       mostra: "A janela Editar Projeto Escolar: o título, a legenda da apresentação e o bastidor, com a régua de palavras à vista.",
