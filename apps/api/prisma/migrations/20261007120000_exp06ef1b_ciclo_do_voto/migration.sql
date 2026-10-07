@@ -50,10 +50,19 @@ ALTER TABLE "exp06ef1b_sessoes"
   ADD COLUMN "desvio_concluido_em" TIMESTAMPTZ(6);
 
 -- ── as sessões que já passaram da revisão ───────────────────────────────────
+-- Sem NO FORCE ROW LEVEL SECURITY o UPDATE casaria zero linhas: a migração
+-- roda sem app.escola_id e o FORCE barra até o owner (ADR-110, como em
+-- 20260923120000 e 20260926120000).
+
+ALTER TABLE "exp06ef1b_sessoes" NO FORCE ROW LEVEL SECURITY;
 
 UPDATE "exp06ef1b_sessoes"
-   SET "desvio_concluido_em" = "revisado_em", "atualizado_em" = now()
+   SET "desvio_concluido_em" = COALESCE("revisado_em", "atualizado_em", now()),
+       "atualizado_em" = now()
  WHERE "passo" IN ('cadeia', 'mariana', 'enquetes', 'fim');
+
+ALTER TABLE "exp06ef1b_sessoes" FORCE ROW LEVEL SECURITY;
+
 
 -- ── a turma: a etapa nova ───────────────────────────────────────────────────
 
