@@ -35,6 +35,7 @@ export function PodcastDaAula({
   turmaId,
   atividadeId,
   inicial,
+  aviso: avisoDaMissao,
 }: {
   /** O código da missão (ADR-110): `exp04ef1b`, `exp07ef1b`. */
   expId: string;
@@ -42,6 +43,12 @@ export function PodcastDaAula({
   /** A atividade do podcast (ADR-130): a da página, em andamento ou pronta. */
   atividadeId: string;
   inicial: PodcastDaAtividade;
+  /**
+   * Um recado da MISSÃO no topo do cartão — quando tocar o episódio, se ela tem
+   * hora certa (o Júri: só depois da Galeria Oculta). O módulo de podcast não
+   * trava por etapa; quem sabe a hora é a página da missão. Sem ele, nada.
+   */
+  aviso?: string;
 }) {
   const [estado, setEstado] = useState<PodcastDaAtividade>(inicial);
   const [gerando, setGerando] = useState(false);
@@ -113,6 +120,11 @@ export function PodcastDaAula({
   return (
     <Card variant="elevated" title="Podcast de recapitulação">
       <div className="flex flex-col gap-4" data-podcast-da-aula data-podcast-pronto={pronto ? "sim" : "nao"}>
+        {avisoDaMissao ? (
+          <div data-aviso-do-podcast>
+            <FeedbackAlert type="info" description={avisoDaMissao} />
+          </div>
+        ) : null}
         <p className="max-w-3xl text-[13px] leading-relaxed text-unooria-neutral-700">
           Um episódio curto que recapitula a missão com a turma. <strong>É seu:</strong> toque depois
           da aula, no projetor ou na caixa de som, se achar que ajuda a fechar a conversa. As falas
@@ -211,11 +223,14 @@ export function CartaoDoPodcast({
   turmaId,
   atividadeId,
   podcast,
+  aviso,
 }: {
   expId: string;
   turmaId: string;
   atividadeId: string;
   podcast: PodcastNaAula;
+  /** O recado da missão sobre a hora de tocar (ver `PodcastDaAula`). Só vai com o episódio. */
+  aviso?: string;
 }) {
   if (!podcast) return null;
   if ("indisponivel" in podcast) {
@@ -234,6 +249,7 @@ export function CartaoDoPodcast({
       turmaId={turmaId}
       atividadeId={atividadeId}
       inicial={podcast.podcast}
+      aviso={aviso}
     />
   );
 }

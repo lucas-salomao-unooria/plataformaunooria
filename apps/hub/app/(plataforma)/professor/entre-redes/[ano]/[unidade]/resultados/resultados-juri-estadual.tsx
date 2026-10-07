@@ -12,11 +12,13 @@ import { rotaDaMissao, type Missao } from "@/lib/entre-redes/catalogo";
 import type { MembroNoPainel } from "@/lib/equipe-no-painel";
 import { equipesDaMissao } from "@/lib/equipes-servidor";
 import { painelDeHabilidades } from "@/lib/evidencias-servidor";
+import { podcastDaAtividade } from "@/lib/podcast-servidor";
 import {
   CAMINHO_DAS_TURMAS,
   CAMINHO_DO_MATERIAL,
   EXP_ID,
   ROTULO_DA_ORIGEM,
+  avisoDoPodcast,
   caminhoDaTurma,
   estandesPorArea,
   rotuloCurtoDaArea,
@@ -34,6 +36,7 @@ import { EscolhaDeTurma } from "./escolha-de-turma";
 import { CartaoDoEstande } from "./estande-do-preparo";
 import { ImagensDoJuri } from "./imagens-do-juri";
 import { PainelDaAulaJuriEstadual } from "./painel-da-aula-juri-estadual";
+import { CartaoDoPodcast } from "./podcast-da-aula";
 import { ZerarTurmaJuriEstadual } from "./zerar-turma-juri-estadual";
 
 /**
@@ -41,7 +44,8 @@ import { ZerarTurmaJuriEstadual } from "./zerar-turma-juri-estadual";
  * de estandes que o professor criou, com tudo o que se faz com ele, nesta
  * ordem: pô-lo no ar (se está pronto), as equipes, as imagens, os estandes, a
  * aula ao vivo com o botão único e a lousa do pico, a folha por computador, o
- * zerar (só o em andamento) e o painel de habilidades. Molde:
+ * zerar (só o em andamento), o podcast de recapitulação e o painel de
+ * habilidades. Molde:
  * `resultados-jornal-escola.tsx` (exp04ef1b).
  *
  * A atividade vem de `?pacote=` — o card da lista de atividades da ficha —, e
@@ -112,7 +116,7 @@ export async function ResultadosJuriEstadual({
     : null;
   const emAndamento = detalhe?.ativo === true;
 
-  const [painel, material, equipes, session, habilidades] =
+  const [painel, material, equipes, session, habilidades, podcast] =
     detalhe && atividadeId
       ? await Promise.all([
           emAndamento ? apiDoServidor<PainelDoJuri>(`${base}/painel`) : Promise.resolve(null),
@@ -126,8 +130,9 @@ export async function ResultadosJuriEstadual({
           /* Pacote que nunca rodou não tem o que mostrar no painel de
              habilidades — e a leitura dele custaria uma chamada à toa. */
           detalhe.rodadas > 0 || emAndamento ? painelDeHabilidades(turma, EXP_ID, atividadeId) : Promise.resolve(null),
+          podcastDaAtividade(EXP_ID, turma, atividadeId),
         ])
-      : [null, null, null, null, null];
+      : [null, null, null, null, null, null];
 
   const membros: Record<string, MembroNoPainel[]> = Object.fromEntries(
     (equipes?.equipes ?? []).map((e) => [e.id, e.membros]),
@@ -294,6 +299,19 @@ export async function ResultadosJuriEstadual({
               <ZerarTurmaJuriEstadual turmaId={turma} nomeDaTurma={painel.turma.nome} tema={detalhe.tema} />
             </>
           ) : null}
+
+          {/* Depois da aula: o podcast da plataforma (ADR-150), com as falas que o
+              professor revisou na criação. O episódio conta a virada da missão,
+              e o módulo de podcast não trava por etapa: o aviso no topo diz a
+              hora — só depois da Galeria Oculta. A etapa é a do painel (a mais
+              fresca), e sem ele a gravada no pacote. */}
+          <CartaoDoPodcast
+            expId={EXP_ID}
+            turmaId={turma}
+            atividadeId={detalhe.id}
+            podcast={podcast}
+            aviso={avisoDoPodcast(emAndamento, painel?.etapa ?? detalhe.etapa)}
+          />
 
           {/* O painel de habilidades (E14) — invisível sem ficha
               (`temFicha: false`), e só o `professor` confirma e ajusta: a

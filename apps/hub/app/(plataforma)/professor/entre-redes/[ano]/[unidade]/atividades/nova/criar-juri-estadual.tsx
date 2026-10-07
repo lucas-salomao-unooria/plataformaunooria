@@ -34,9 +34,11 @@ import {
   type ProjetoRegenerado,
   type RascunhoDoPacote,
 } from "@/lib/juri-estadual-tipos";
+import { falasParaHomologar, type FalasEscritas } from "@/lib/podcast-tipos";
 
 import { CartaoDoEstande, EditorDoEstande } from "../../resultados/estande-do-preparo";
 import { ImagensDoJuri } from "../../resultados/imagens-do-juri";
+import { FalasDoPodcast, falasComProblema, pedirFalasDoTema } from "./falas-do-podcast";
 
 /** A copy revisada (§1, E0-PROF-02 a 04), no que ela sobreviveu à criação. A suíte e2e casa por texto exato. */
 const COPY = {
@@ -96,8 +98,12 @@ type FalhaDaIa = { tipo: "sem-saldo" | "indisponivel"; de: "gerar" | string };
  *    que sem IA devolve o estande como estava;
  * 4. **aprovar em DUAS fases, na mesma tela** (o pedido do PO: "o professor
  *    não consegue validar as imagens dos estandes"; molde do Jornal, ADR-147,
- *    e da A Seleção, ADR-146): primeiro os TEXTOS ("Aprovar textos e gerar as
- *    imagens" grava o pacote por `homologar`, PRONTO e fora do ar); depois as
+ *    e da A Seleção, ADR-146): primeiro os TEXTOS — os estandes E as três
+ *    falas do podcast de recapitulação que citam a mostra (ADR-150), pedidas
+ *    a `POST /podcast/exp06ef1b/turmas/:t/falas-do-tema` quando a mostra chega
+ *    do gerador e revisadas logo abaixo da curadoria ("Aprovar textos e gerar
+ *    as imagens" grava o pacote por `homologar`, com as falas no corpo, PRONTO
+ *    e fora do ar; sem as falas na régua, o botão não acende); depois as
  *    IMAGENS, que se geram sozinhas na grade (`resultados/imagens-do-juri.tsx`),
  *    onde o professor vê cada uma, gera outra para a que não serve e aprova.
  *    Gerar imagem para um rascunho gastaria a quota à toa — por isso os textos
@@ -136,6 +142,14 @@ export function CriarJuriEstadual({
   const [aprovandoTextos, setAprovandoTextos] = useState(false);
   const [imagensAprovadas, setImagensAprovadas] = useState(false);
   const aoMudarAprovacao = useCallback((sim: boolean) => setImagensAprovadas(sim), []);
+  /* As falas do podcast que contam ESTA mostra (ADR-150): o professor as revisa
+     aqui, e elas vão no `homologar`. `falasDaMostra` é a mostra para a qual
+     foram escritas — mudou a mostra (um estande editado, regenerado), a tela
+     avisa, sem bloquear. Não há banco padrão: sem IA, voltam as do roteiro. */
+  const [falas, setFalas] = useState<FalasEscritas | null>(null);
+  const [escrevendoFalas, setEscrevendoFalas] = useState(false);
+  const [falhaDasFalas, setFalhaDasFalas] = useState<string | null>(null);
+  const [falasDaMostra, setFalasDaMostra] = useState("");
 
   const errosDosParametros = problemasDosParametros(parametros);
   const parametrosValidos = Object.keys(errosDosParametros).length === 0;
@@ -146,7 +160,15 @@ export function CriarJuriEstadual({
   );
   const comProblema = (conteudo?.projetos ?? []).filter((p) => Object.keys(problemasDeCampo.get(p.id) ?? {}).length > 0);
   const errosDaApi = distribuirErros(erro?.erros ?? []);
-  const pronto = completo && parametrosValidos && comProblema.length === 0;
+  const problemasDasFalas = falasComProblema(falas);
+  const faltamFalas = !escrevendoFalas && (falas === null || problemasDasFalas > 0);
+  const pronto =
+    completo &&
+    parametrosValidos &&
+    comProblema.length === 0 &&
+    falas !== null &&
+    problemasDasFalas === 0 &&
+    !escrevendoFalas;
   const ocupado = gerando || regenerando !== null;
   const emEdicao = editando ? (conteudo?.projetos.find((p) => p.id === editando) ?? null) : null;
   /* A criação nasce vazia: o erro de um campo só aparece depois que o
@@ -157,6 +179,21 @@ export function CriarJuriEstadual({
     setErro(null);
     setAviso(null);
     setFalha(null);
+  }
+
+  /** Pede as falas do podcast para a mostra, na forma que o `homologar` grava. */
+  async function escreverFalas(turmaId: string, mostra: ConteudoDoPacote) {
+    const normalizada = normalizarConteudo(mostra);
+    setEscrevendoFalas(true);
+    setFalhaDasFalas(null);
+    const r = await pedirFalasDoTema("exp06ef1b", turmaId, normalizada);
+    if (r.ok) {
+      setFalas(r.falas);
+      setFalasDaMostra(JSON.stringify(normalizada));
+    } else {
+      setFalhaDasFalas(r.mensagem);
+    }
+    setEscrevendoFalas(false);
   }
 
   function trocarParametro(campo: keyof ParametrosNaTela, valor: string) {
@@ -190,6 +227,7 @@ export function CriarJuriEstadual({
       setConteudo(rascunho.conteudo);
       setTemaDosEstandes(rascunho.parametros.tema);
       setEditando(null);
+      void escreverFalas(turmaId, rascunho.conteudo);
       setAviso({
         tipo: "success",
         texto:
@@ -253,7 +291,11 @@ export function CriarJuriEstadual({
       const r = await fetch(`/api/plataforma${caminhoDaTurma(turmaId)}/homologar`, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ parametros: corpoDosParametros(parametros), conteudo: normalizarConteudo(conteudo) }),
+        body: JSON.stringify({
+          parametros: corpoDosParametros(parametros),
+          conteudo: normalizarConteudo(conteudo),
+          podcast: falasParaHomologar(falas?.vagas ?? []),
+        }),
       });
       if (!r.ok) {
         /* `pacote-invalido` traz a LISTA de problemas em frases; as que citam
@@ -489,9 +531,20 @@ export function CriarJuriEstadual({
                   <p className="max-w-3xl text-[13px] leading-snug text-unooria-neutral-700">{COPY.instrucaoDaCuradoria}</p>
                   {/* O "Continuar" apagado sem motivo escrito é o silêncio que a
                       exp05ef1b já pagou: diga o que falta, e onde. */}
-                  {!parametrosValidos || comProblema.length > 0 ? (
+                  {!parametrosValidos || comProblema.length > 0 || faltamFalas ? (
                     <div className="flex flex-col gap-1 text-[12px] leading-snug text-unooria-danger" role="status">
                       {!parametrosValidos ? <p>Falta o componente curricular, o tema ou os assuntos, nos campos acima.</p> : null}
+                      {!escrevendoFalas && falas === null ? (
+                        <p>Faltam as falas do podcast de recapitulação, logo abaixo dos estandes.</p>
+                      ) : null}
+                      {problemasDasFalas > 0 ? (
+                        <p>
+                          {problemasDasFalas === 1
+                            ? "Uma fala do podcast precisa"
+                            : `${problemasDasFalas} falas do podcast precisam`}{" "}
+                          de ajuste. O campo está marcado abaixo.
+                        </p>
+                      ) : null}
                       {comProblema.length > 0 ? (
                         <p>
                           {comProblema.length === 1 ? "Um estande precisa" : `${comProblema.length} estandes precisam`} de ajuste.
@@ -532,6 +585,19 @@ export function CriarJuriEstadual({
                 </>
               )}
             </div>
+
+            {/* As falas do podcast, junto da mostra que elas contam (ADR-150). */}
+            {completo && conteudo ? (
+              <FalasDoPodcast
+                falas={falas}
+                escrevendo={escrevendoFalas}
+                falha={falhaDasFalas}
+                desatualizadas={falas !== null && falasDaMostra !== JSON.stringify(normalizarConteudo(conteudo))}
+                travado={aprovandoTextos}
+                aoMudar={(vagas) => setFalas((atual) => (atual ? { ...atual, vagas } : atual))}
+                aoReescrever={() => void escreverFalas(turmaId, conteudo)}
+              />
+            ) : null}
 
             {completo && conteudo ? (
               <div className="flex flex-wrap items-center gap-3 border-t border-unooria-neutral-200 pt-4">

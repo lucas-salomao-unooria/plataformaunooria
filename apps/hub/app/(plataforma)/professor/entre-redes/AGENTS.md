@@ -189,6 +189,9 @@ A página da atividade é `resultados/resultados-juri-estadual.tsx`; a criação
   exigir imagem em todo estande (o sem imagem aparece "arte desenhada" antes
   do clique); aprovada, congela. Hashtag vai em `subtags` do `Card` (`tags` é
   o cabeçalho, sem quebra, e vazava).
+- **Podcast**: falas na FASE 1 (o `homologar` as exige); ele revela a virada e
+  o módulo não trava por etapa, então o cartão leva o `avisoDoPodcast` (só
+  depois da Galeria Oculta).
 - **A invisibilidade média só vai para a lousa depois de liberar a galeria**:
   projetada no pico, ela contaria à turma o que a Galeria Oculta mostra a cada
   um. O número é o da api; nenhum percentual é cravado na copy nem no guia.
