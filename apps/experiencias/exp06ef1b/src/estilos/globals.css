@@ -407,6 +407,74 @@ body {
   overflow: visible;
 }
 
+.cedula__explicacao {
+  margin: 0;
+  font-size: var(--unv-font-caption-lg-size, 13px);
+  line-height: 1.4;
+  color: var(--unv-color-text-secondary, #6b6b80);
+}
+
+/*
+ * A justificativa de ANTES, na cédula extraordinária (0.3.0): o cartão e a
+ * frase que a criança grifou na cédula, ao lado da mostra inteira. Bloco de
+ * leitura, não controle — a mesma família de tokens da ficha do estande.
+ */
+.justificativa-de-antes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--unv-spacing-xxs, 4px);
+  padding: var(--unv-spacing-m, 12px);
+  border-radius: var(--unv-radius-m, 12px);
+  background: var(--unv-color-background-secondary, #f4f3f8);
+}
+
+.justificativa-de-antes__voto,
+.justificativa-de-antes__motivo,
+.justificativa-de-antes__rotulo,
+.justificativa-de-antes__trecho {
+  margin: 0;
+  font-size: var(--unv-font-body-md-size, 14px);
+  line-height: 1.45;
+}
+
+.justificativa-de-antes__voto {
+  font-weight: 600;
+}
+
+.justificativa-de-antes__rotulo {
+  color: var(--unv-color-text-secondary, #6b6b80);
+  font-size: var(--unv-font-caption-lg-size, 13px);
+}
+
+.justificativa-de-antes__trecho {
+  padding-left: var(--unv-spacing-s, 10px);
+  border-left: 3px solid var(--unv-color-text-link, #716c98);
+  font-style: italic;
+}
+
+/* ─────────────────────────────── a rodada de desvio: a comparação no fim */
+
+.comparacao-do-desvio {
+  display: flex;
+  flex-direction: column;
+  margin: var(--unv-spacing-m, 12px) var(--unv-gutter, 16px) 0;
+  padding: var(--unv-spacing-m, 12px) 0;
+  border-top: 1px solid var(--unv-color-border-default, #e6e4ee);
+}
+
+.comparacao-do-desvio__titulo {
+  margin: 0 0 var(--unv-spacing-xs, 8px);
+  font-size: var(--unv-font-body-md-size, 14px);
+  font-weight: 600;
+}
+
+/* A mesma quebra de linha da `.escolha` (o `ListItem` corta numa linha). */
+.comparacao-do-desvio > .unv-list-item .unv-list-item__title,
+.comparacao-do-desvio > .unv-list-item .unv-list-item__subtitle {
+  white-space: normal;
+  overflow: visible;
+}
+
 .lacre {
   display: flex;
   flex: 1 1 auto;

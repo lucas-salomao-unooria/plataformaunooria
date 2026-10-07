@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, type ReactNode } from "react";
 import { FloatingButton, InlineHint, TabBar, TopBar, type UnvTabItem } from "@edu/ui/ds-unoovista";
 import { FRACAO_VISIVEL } from "../../lib/regras";
 import { criarRastreadorDePermanencia, type RastreadorDePermanencia } from "../../lib/permanencia";
-import { E2, GLOBAL } from "../../lib/textos";
+import { DESVIO, E2, GLOBAL } from "../../lib/textos";
 import type { Categoria, PostPublico } from "../../lib/tipos";
 import { usePaleta } from "../componentes/midia";
 import { PostDoFeed } from "./post-do-feed";
@@ -27,21 +27,32 @@ const ABAS: UnvTabItem[] = [
  *   próximo (`proximo: true`), junto com as curtidas e as permanências ainda
  *   não enviadas. Quem escolhe o post seguinte é o motor da api — a tela não
  *   sabe a regra, e não tem como saber.
- * - **Curtir e ficar** são os dois sinais: a curtida (coração ou toque duplo) e
- *   a permanência de mais de 5 s (`lib/permanencia.ts`), uma vez por post.
+ * - **Curtir, salvar e ficar** são os três sinais: a curtida (coração ou toque
+ *   duplo), o salvo e a permanência de mais de 5 s (`lib/permanencia.ts`), uma
+ *   vez por post.
  * - **Quando o décimo chega** (`completo`), acende a barra fixa da cédula e a
  *   linha da comissão no topo. A rolagem continua livre: a criança pode reler
  *   antes de votar.
+ *
+ * **O mesmo feed serve a RODADA DE DESVIO** (`modo: "desvio"`, 2026-10-07): a
+ * mesma medida e o mesmo pedido do próximo, outra rota e outra moldura — a
+ * instrução da comissão no topo, a comparação no fim (`rodape`) e, no lugar da
+ * cédula, a barra que encerra a rodada. Sem a barra de abas: não há cédula.
  */
 export function Feed({
+  modo = "juri",
   posts,
   categorias,
   curtidos,
+  salvos,
   completo,
   carregando,
   comDica,
   permanenciasContadas,
+  rodape,
   aoCurtir,
+  aoSalvar,
+  aoInteracaoFechada,
   aoPermanecer,
   aoChegarNoFim,
   aoDeslizar,
@@ -49,21 +60,29 @@ export function Feed({
   aoAbrirCedula,
   aoTocarCedulaCedo,
 }: {
+  modo?: "juri" | "desvio";
   posts: readonly PostPublico[];
   categorias: readonly Categoria[];
   curtidos: ReadonlySet<string>;
+  salvos: ReadonlySet<string>;
   completo: boolean;
   carregando: boolean;
   comDica: boolean;
   permanenciasContadas: readonly string[];
+  /** Depois do último post: a comparação do desvio. */
+  rodape?: ReactNode;
   aoCurtir: (postId: string, curtiu: boolean, gesto: "coracao" | "toque-duplo") => void;
+  aoSalvar: (postId: string, salvou: boolean) => void;
+  aoInteracaoFechada: (acao: "comentar" | "compartilhar") => void;
   aoPermanecer: (postId: string) => void;
   aoChegarNoFim: () => void;
   aoDeslizar: (postId: string, lamina: number) => void;
   aoExpandir: (postId: string) => void;
+  /** A barra fixa: a cédula no júri; encerrar a rodada no desvio. */
   aoAbrirCedula: () => void;
   aoTocarCedulaCedo: () => void;
 }) {
+  const desvio = modo === "desvio";
   const paleta = usePaleta();
   const porArea = new Map(categorias.map((c) => [c.area, c]));
 
@@ -119,9 +138,11 @@ export function Feed({
 
   return (
     <div className="tela">
-      <h1 className="so-leitor">{E2.tituloDaTela}</h1>
+      <h1 className="so-leitor">{desvio ? DESVIO.tituloDaTela : E2.tituloDaTela}</h1>
       <TopBar title={E2.topo} withStatusBarInset={false} />
-      {completo ? (
+      {desvio ? (
+        <InlineHint announce>{DESVIO.instrucao}</InlineHint>
+      ) : completo ? (
         <InlineHint announce>{E2.cedulaPronta}</InlineHint>
       ) : comDica ? (
         <InlineHint>{E2.dicaDoCarrossel}</InlineHint>
@@ -133,10 +154,13 @@ export function Feed({
             post={post}
             categoria={porArea.get(post.area)}
             curtido={curtidos.has(post.id)}
+            salvo={salvos.has(post.id)}
             paleta={paleta}
             comDica={comDica && i === 0}
             refDoCartao={refDoPost(post.id)}
             aoCurtir={(curtiu, gesto) => aoCurtir(post.id, curtiu, gesto)}
+            aoSalvar={(salvou) => aoSalvar(post.id, salvou)}
+            aoInteracaoFechada={aoInteracaoFechada}
             aoDeslizar={(lamina) => aoDeslizar(post.id, lamina)}
             aoExpandir={() => aoExpandir(post.id)}
           />
@@ -146,28 +170,31 @@ export function Feed({
             {GLOBAL.carregando}
           </p>
         )}
+        {rodape}
         <div className="feed__respiro" aria-hidden="true" />
       </div>
       <FloatingButton
-        icon="lock"
+        icon={desvio ? "check" : "lock"}
         placement="bottom"
-        offset="calc(var(--unv-tabbar-height) + var(--unv-spacing-xs))"
+        offset={desvio ? "var(--unv-spacing-s)" : "calc(var(--unv-tabbar-height) + var(--unv-spacing-xs))"}
         hidden={!completo}
         onClick={aoAbrirCedula}
       >
-        {E2.barraDaCedula}
+        {desvio ? DESVIO.encerrar : E2.barraDaCedula}
       </FloatingButton>
-      <TabBar
-        items={ABAS}
-        activeId="feed"
-        ariaLabel={E2.navegacao}
-        withHomeIndicatorInset={false}
-        onChange={(id) => {
-          if (id !== "cedula") return;
-          if (completo) aoAbrirCedula();
-          else aoTocarCedulaCedo();
-        }}
-      />
+      {!desvio && (
+        <TabBar
+          items={ABAS}
+          activeId="feed"
+          ariaLabel={E2.navegacao}
+          withHomeIndicatorInset={false}
+          onChange={(id) => {
+            if (id !== "cedula") return;
+            if (completo) aoAbrirCedula();
+            else aoTocarCedulaCedo();
+          }}
+        />
+      )}
     </div>
   );
 }

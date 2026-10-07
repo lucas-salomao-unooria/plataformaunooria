@@ -30,6 +30,11 @@ export function recolher(texto: string, limite = LEGENDA_CURTA): string {
  * coração da pílula ou pelo toque duplo na mídia, como no app real. O toque
  * duplo só CURTE — descurtir é pelo coração, também como no app real.
  *
+ * **Salvar** é o segundo sinal (pesa 2, contra os 3 da curtida — o desenho do
+ * PO: "curtir, salvar, tempo"). **Comentar e compartilhar** RESPONDEM — o
+ * aviso da comissão de que estão fechados no julgamento — e não pesam: um
+ * botão morto parece defeito para a criança (decisão de 2026-10-07).
+ *
  * **O carrossel desliza com o dedo E com o mouse** (arrasto horizontal;
  * `touch-action: pan-y` deixa a rolagem vertical do feed com o navegador), pelas
  * SETAS sobre a mídia e pelas setas do teclado na mídia focada. O DS publica o
@@ -55,20 +60,27 @@ export function PostDoFeed({
   post,
   categoria,
   curtido,
+  salvo,
   paleta,
   comDica,
   refDoCartao,
   aoCurtir,
+  aoSalvar,
+  aoInteracaoFechada,
   aoDeslizar,
   aoExpandir,
 }: {
   post: PostPublico;
   categoria: Categoria | undefined;
   curtido: boolean;
+  salvo: boolean;
   paleta: ReturnType<typeof usePaleta>;
   comDica: boolean;
   refDoCartao: Ref<HTMLElement>;
   aoCurtir: (curtiu: boolean, gesto: Gesto) => void;
+  aoSalvar: (salvou: boolean) => void;
+  /** Comentar ou compartilhar: a comissão responde que estão fechados. */
+  aoInteracaoFechada: (acao: "comentar" | "compartilhar") => void;
   aoDeslizar: (lamina: number) => void;
   aoExpandir: () => void;
 }) {
@@ -197,9 +209,13 @@ export function PostDoFeed({
       )}
       <PostCard.Actions
         liked={curtido}
+        saved={salvo}
         currentIndex={lamina}
         totalCount={2}
         onLike={() => aoCurtir(!curtido, "coracao")}
+        onSave={() => aoSalvar(!salvo)}
+        onComment={() => aoInteracaoFechada("comentar")}
+        onShare={() => aoInteracaoFechada("compartilhar")}
       />
       <PostCard.Caption username={conta}>
         {recolhida ? `${recolher(legenda)} ` : legenda}

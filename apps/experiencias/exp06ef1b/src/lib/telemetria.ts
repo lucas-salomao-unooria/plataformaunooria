@@ -48,6 +48,11 @@ export const telemetria = {
   /** Curtiu ou descurtiu (`gesto`: o coração ou o toque duplo). */
   curtiu: (postId: string, curtiu: boolean, gesto: "coracao" | "toque-duplo") =>
     track("interacted", "feed:curtir", { resultado: { curtiu }, contexto: { postId, gesto } }),
+  /** Salvou ou tirou dos salvos — o segundo sinal do feed (`desvio`: na rodada de desvio). */
+  salvou: (postId: string, salvou: boolean, desvio = false) =>
+    track("interacted", desvio ? "desvio:salvar" : "feed:salvar", { resultado: { salvou }, contexto: { postId } }),
+  /** Tocou comentar ou compartilhar: a comissão avisou que estão fechados (não pesa no feed). */
+  tocouFechado: (acao: "comentar" | "compartilhar") => track("interacted", "feed:fechado", { contexto: { acao } }),
   /** Deslizou o carrossel de um post. */
   deslizou: (postId: string, lamina: number) => track("interacted", "feed:carrossel", { contexto: { postId, lamina } }),
   /** Abriu a legenda inteira ("...mais"). */
@@ -62,9 +67,9 @@ export const telemetria = {
   abriuACedula: () => track("interacted", "cedula:abrir"),
   /** O aviso de inatividade da comissão acendeu. */
   ficouParado: () => track("interacted", "cedula:inatividade"),
-  /** O LATCH 1, confirmado pela api. A convicção é vocabulário fechado; o projeto não sai. */
-  votou: (conviccao: string, estandes: number) =>
-    track("attempted", "cedula:votar", { resultado: { estandes }, contexto: { conviccao } }),
+  /** O LATCH 1, confirmado pela api. A convicção e o cartão são vocabulário fechado; o projeto e a frase não saem. */
+  votou: (conviccao: string, motivo: string, estandes: number) =>
+    track("attempted", "cedula:votar", { resultado: { estandes }, contexto: { conviccao, motivo } }),
 
   // E4
   /** Entrou na espera da plenária. */
@@ -78,8 +83,18 @@ export const telemetria = {
   /** Buscou. Só o TIPO e a área — nunca o texto. */
   buscou: (busca: string, area: string | null) =>
     track("interacted", "galeria:buscar", { contexto: { busca, area: area ?? "nenhuma" } }),
-  /** O LATCH 2, confirmado pela api. */
-  revisou: (acao: "manter" | "trocar") => track("progressed", "galeria:revisar", { contexto: { acao } }),
+  /** O LATCH 2, confirmado pela api. A ação e o cartão; o projeto e a frase não saem. */
+  revisou: (acao: "manter" | "trocar" | "complementar", motivo: string) =>
+    track("progressed", "galeria:revisar", { contexto: { acao, motivo } }),
+
+  // A rodada de desvio
+  /** Curtiu ou descurtiu na rodada de desvio. */
+  curtiuNoDesvio: (postId: string, curtiu: boolean) =>
+    track("interacted", "desvio:curtir", { resultado: { curtiu }, contexto: { postId } }),
+  /** A rodada de desvio abriu para esta criança. */
+  entrouNoDesvio: () => track("progressed", "desvio:entrada"),
+  /** Encerrou a rodada de desvio, confirmado pela api. */
+  concluiuODesvio: (interacoes: number) => track("progressed", "desvio:concluido", { resultado: { interacoes } }),
 
   // E5
   /** Conferiu a cadeia. */

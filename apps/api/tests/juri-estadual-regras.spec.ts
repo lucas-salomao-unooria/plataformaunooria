@@ -464,10 +464,12 @@ describe("o gabarito e o acervo não descem antes da hora", () => {
     const post = postPublico("proj-c2:bastidor", CONTEUDO.projetos, { "proj-c2": "https://cdn/x.webp" });
     expect(post).not.toBeNull();
     expect(Object.keys(post ?? {}).sort()).toEqual(
-      ["area", "escola", "hashtags", "id", "imagem", "perfil", "projetoId", "texto", "tipo", "titulo"],
+      ["area", "escola", "hashtags", "id", "imagem", "legenda", "perfil", "projetoId", "texto", "tipo", "titulo"],
     );
     expect(PostPublicoSchema.safeParse(post).success).toBe(true);
     expect(post?.texto).toBe(CONTEUDO.projetos.find((p) => p.id === "proj-c2")?.bastidor);
+    /* A legenda vai também no bastidor: é dela que a cédula oferece o trecho a grifar. */
+    expect(post?.legenda).toBe(CONTEUDO.projetos.find((p) => p.id === "proj-c2")?.legenda);
     expect(post?.imagem).toEqual({ url: "https://cdn/x.webp", alt: expect.any(String) });
     expect(JSON.stringify(post)).not.toContain("descricao");
     expect(postPublico("proj-c3:apresentacao", CONTEUDO.projetos, {})?.imagem.url).toBeNull();

@@ -146,6 +146,12 @@ export const PostPublicoSchema = z.object({
   perfil: z.string(),
   /** A legenda da apresentação, ou o texto do bastidor. */
   texto: z.string(),
+  /**
+   * A legenda do ESTANDE, nos dois tipos de post: é dela que a cédula oferece as
+   * frases para grifar (a justificativa), também quando o post visto foi o
+   * bastidor. Não revela nada: é o mesmo projeto que o feed serviu.
+   */
+  legenda: z.string(),
   hashtags: z.array(z.string()),
   imagem: ImagemPublicaSchema,
 });

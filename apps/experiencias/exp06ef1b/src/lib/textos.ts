@@ -1,4 +1,4 @@
-import { POSTS_NO_FEED, type Conviccao, type IdDaEnquete } from "./tipos";
+import { POSTS_NO_FEED, type AcaoDaRevisao, type Conviccao, type IdDaEnquete } from "./tipos";
 
 /**
  * Só o que a TELA escreve — em português do Brasil, sempre (ADR-91). Dentro do
@@ -127,6 +127,12 @@ export const E2 = {
   barraDaCedula: "Cédula Oficial de Votação — Jurado",
   /** `e3.instrucao.toque_cedula` — o "10" é o tamanho do feed (`POSTS_NO_FEED`), não uma taxa. */
   cedulaPronta: `${POSTS_NO_FEED} estandes avaliados. Toque abaixo para emitir seu voto final.`,
+  /**
+   * ESCRITA AQUI (2026-10-07) — comentar e compartilhar respondem, mas não
+   * contam para o feed: um botão que não faz nada parece defeito para uma
+   * criança de 11 anos, e um que responde parece o app real.
+   */
+  interacaoFechada: "Durante o julgamento, comentários e compartilhamentos ficam fechados.",
 } as const;
 
 // ──────────────────────────────────────────── E3: a cédula (clone)
@@ -151,6 +157,16 @@ export const E3 = {
   /** ESCRITA AQUI — os nomes dos dois grupos para o leitor de tela. */
   grupoDosProjetos: "Projetos do seu feed",
   grupoDaCerteza: "Sua certeza",
+  /**
+   * ESCRITA AQUI (2026-10-07) — a justificativa de ANTES, o "Antes eu
+   * pensava…" que o PO pediu: um cartão de motivo (o texto vem da api) e a
+   * frase grifada da legenda. Nenhuma palavra entrega o mecanismo.
+   */
+  motivo: "Por que este projeto deve vencer?",
+  grupoDoMotivo: "Motivo do seu voto",
+  trecho: "Toque na frase da legenda que mais pesou no seu voto:",
+  grupoDoTrecho: "Frases da legenda do projeto",
+  escolhaOProjeto: "Escolha um projeto para ver as frases da legenda dele.",
 } as const;
 
 // ──────────────────────────────────────── E4: a plenária — o PICO (clone)
@@ -163,6 +179,9 @@ export const ESPERA = {
   mesa: "Aguardando deliberação da mesa...",
   /** ESCRITA AQUI — o nome do brasão para o leitor de tela. */
   brasao: "Brasão da Comissão Estadual",
+  /** ESCRITA AQUI (2026-10-07) — a SEGUNDA espera: a revisão na ata, e a rodada de desvio por abrir. */
+  novaRodada: "Revisão registrada na ata. A comissão vai abrir uma nova rodada do feed: aguarde o sinal do professor.",
+  preparando: "Preparando a nova rodada...",
 } as const;
 
 // ─────────────────────────────────────── E4: a Galeria Oculta (clone)
@@ -204,6 +223,48 @@ export const E4 = {
   revisaoTitulo: "Cédula Extraordinária de Revisão",
   revisaoInstrucao: "Escolha o projeto que deve receber o seu voto agora:",
   grupoDaRevisao: "Estandes da mostra",
+  /**
+   * ESCRITA AQUI (2026-10-07) — a revisão como o PO a desenhou: a justificativa
+   * de antes ao lado da mostra inteira, e as três decisões (manter vale, desde
+   * que justificado). Revisar com o PO.
+   */
+  antes: "Na cédula, você justificou assim:",
+  seuVotoLacrado: (titulo: string) => `Seu voto lacrado: ${titulo}`,
+  voceGrifou: "A frase que você grifou:",
+  decisao: "Depois de ver a mostra inteira, o que você decide?",
+  grupoDaDecisao: "Sua decisão",
+  acoes: { manter: "Manter", trocar: "Trocar", complementar: "Complementar" } satisfies Record<AcaoDaRevisao, string>,
+  explicacao: {
+    manter: "Seu voto continua no mesmo projeto.",
+    trocar: "Seu voto passa para outro projeto da mostra.",
+    complementar: "Seu voto continua, e você indica também outro estande que o júri precisa conhecer.",
+  } satisfies Record<AcaoDaRevisao, string>,
+  complementarInstrucao: "Escolha o estande que o júri também precisa conhecer:",
+  motivoDepois: "Por que você decidiu assim?",
+  grupoDoMotivoDepois: "Motivo da sua decisão",
+  trechoDepois: (titulo: string) => `Toque na frase da legenda de "${titulo}" que sustenta a sua decisão:`,
+  registrar: "Registrar decisão na ata",
+} as const;
+
+// ─────────────────────────────────── a rodada de desvio (clone, 2026-10-07)
+
+/**
+ * ESCRITA AQUI — a rodada que o PO pediu e a spec perdeu: depois da revisão, um
+ * feed curto em que a criança interage com o que quase não aparecia para ela, e
+ * VÊ o feed mudar. A comissão conduz; a comparação no fim mostra o efeito, sem
+ * dizer a regra (quem a nomeia é a cadeia, a seguir).
+ */
+export const DESVIO = {
+  tituloDaTela: "Nova rodada do feed",
+  instrucao:
+    "Nova rodada do feed: curta ou salve publicações das áreas que quase não apareceram para você, e veja o que chega depois.",
+  comparacaoTitulo: "Compare o seu feed do júri com esta rodada:",
+  grupoDaComparacao: "Publicações por área",
+  noFeed: (n: number) => `${n} ${plural(n, "publicação", "publicações")} no feed do júri`,
+  nestaRodada: (n: number) => `${n} nesta rodada`,
+  encerrar: "Encerrar a nova rodada",
+  semInteracao: "Curta ou salve ao menos uma publicação desta rodada antes de encerrar.",
+  ateOFim: "Role até a última publicação da rodada.",
 } as const;
 
 // ──────────────────────────────────────── E5: a cadeia (ESCOLA, unooria)
@@ -277,7 +338,7 @@ export const FIM = {
   infografico: "Como os Robôs Leem Nossas Curtidas: Entendendo os Algoritmos de Recomendação",
   /** ESCRITA AQUI — o infográfico em texto e ícones (sem imagem: nenhum asset binário). */
   passos: [
-    { icone: "heart", titulo: "Você interage", texto: "Cada curtida e cada pausa num post viram um dado sobre o que você prefere." },
+    { icone: "heart", titulo: "Você interage", texto: "Cada curtida, cada salvo e cada pausa num post viram um dado sobre o que você prefere." },
     { icone: "grid", titulo: "O app agrupa", texto: "Os dados são separados por assunto, como as quatro áreas da mostra." },
     { icone: "settings", titulo: "A regra escolhe", texto: "Com pistas suficientes de uma área, o feed passa a mostrar só ela." },
     { icone: "lock", titulo: "A bolha se fecha", texto: "O resto da mostra some da sua tela, sem nenhum aviso." },

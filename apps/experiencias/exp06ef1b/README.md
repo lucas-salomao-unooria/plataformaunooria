@@ -76,18 +76,23 @@ projeto votado ou a alternativa de uma enquete.
 | `progressed` | `missao:entrada` | depois da primeira leitura | `contexto: { passo }` |
 | `progressed` | `credencial:acessar-feed` | "Acessar Feed da Mostra" | — |
 | `interacted` | `feed:curtir` | curtiu/descurtiu | `resultado: { curtiu }`, `contexto: { postId, gesto }` |
+| `interacted` | `feed:salvar` | salvou/tirou dos salvos (0.3.0) | `resultado: { salvou }`, `contexto: { postId }` |
+| `interacted` | `feed:fechado` | tocou comentar ou compartilhar (0.3.0; não pesa) | `contexto: { acao }` |
 | `interacted` | `feed:carrossel` | deslizou a lâmina | `contexto: { postId, lamina }` |
 | `interacted` | `feed:legenda` | "...mais" | `contexto: { postId }` |
 | `interacted` | `feed:post` | um post novo chegou | `contexto: { posicao }` |
 | `progressed` | `feed:completo` | o décimo chegou | — |
 | `interacted` | `cedula:abrir` | abriu a cédula | — |
 | `interacted` | `cedula:inatividade` | 60 s parado com a cédula pronta | — |
-| `attempted` | `cedula:votar` | o LATCH 1, confirmado | `resultado: { estandes }`, `contexto: { conviccao }` |
+| `attempted` | `cedula:votar` | o LATCH 1, confirmado | `resultado: { estandes }`, `contexto: { conviccao, motivo }` |
 | `progressed` | `plenaria:espera` | entrou na plenária | — |
 | `progressed` | `galeria:abrir` | a galeria abriu | `resultado: { ocultos, percentual }` |
 | `interacted` | `galeria:inspecionar` | abriu a ficha de um estande | `contexto: { projetoId, oculto }` |
 | `interacted` | `galeria:buscar` | buscou (o TIPO, nunca o texto) | `contexto: { busca, area }` |
-| `progressed` | `galeria:revisar` | o LATCH 2, confirmado | `contexto: { acao }` |
+| `progressed` | `galeria:revisar` | o LATCH 2, confirmado | `contexto: { acao, motivo }` |
+| `progressed` | `desvio:entrada` | a rodada de desvio abriu (0.3.0) | — |
+| `interacted` | `desvio:curtir` · `desvio:salvar` | curtiu ou salvou na rodada | `resultado: { curtiu }` / `{ salvou }`, `contexto: { postId }` |
+| `progressed` | `desvio:concluido` | encerrou a rodada, confirmado | `resultado: { interacoes }` |
 | `attempted` | `cadeia:validar` | conferiu a cadeia | `resultado: { correta, tentativas }` |
 | `progressed` | `mariana:cartoes` | registrou os cartões (sem dizer quais) | — |
 | `interacted` | `enquete:responder` | respondeu (a PERGUNTA) | `contexto: { perguntaId }` |

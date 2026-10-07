@@ -16,16 +16,21 @@ import { ESPERA } from "../../lib/textos";
  * do gate, quando a professora libera a Galeria Oculta.
  *
  * O pulso é só opacidade, e para com `prefers-reduced-motion`.
+ *
+ * **A segunda espera** (`daRodada`, 2026-10-07) usa a mesma moldura de três
+ * elementos: a revisão foi para a ata, e a comissão vai abrir a rodada de
+ * desvio quando o professor der o sinal. Mesma tela de propósito — a criança já
+ * conhece a espera, e o que muda é só a frase.
  */
-export function Espera() {
+export function Espera({ daRodada = false }: { daRodada?: boolean }) {
   return (
-    <div className="tela plenaria">
+    <div className="tela plenaria" data-espera={daRodada ? "desvio" : "plenaria"}>
       <IconUnv name="verified" size={72} tone="link" title={ESPERA.brasao} className="plenaria__brasao" />
       <p className="plenaria__ordem" role="status">
-        {ESPERA.plenaria}
+        {daRodada ? ESPERA.novaRodada : ESPERA.plenaria}
       </p>
       <p className="plenaria__pulso" aria-hidden="true">
-        {ESPERA.mesa}
+        {daRodada ? ESPERA.preparando : ESPERA.mesa}
       </p>
     </div>
   );
