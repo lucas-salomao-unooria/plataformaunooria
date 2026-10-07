@@ -195,7 +195,20 @@ body {
 .post > .midia-deslizavel {
   touch-action: pan-y;
   user-select: none;
+  -webkit-user-select: none;
   cursor: grab;
+}
+
+/* O arrasto com MOUSE (o pedido do PO): o `<img>` do DS é arrastável por padrão,
+   e o arrasto nativo da imagem cancelava o gesto. O `dragstart` já é cancelado
+   no componente; isto tira também o "fantasma" da imagem no Safari. */
+.post > .midia-deslizavel img {
+  -webkit-user-drag: none;
+  user-select: none;
+}
+
+.post > .midia-deslizavel:active {
+  cursor: grabbing;
 }
 
 .post > .midia-deslizavel:focus-visible {
@@ -224,6 +237,47 @@ body {
   left: 0;
   right: 0;
   aspect-ratio: 1 / 1;
+}
+
+/*
+ * As SETAS do carrossel — compensação de POSIÇÃO, no molde da camada da dica:
+ * o `PostCard.Media` da 0.2.18 não tem prop de navegação (pedido:
+ * `onPrevious`/`onNext` no `PostCard.Media`, registrado no AGENTS.md), e a
+ * mídia com `src` não aceita filho. As setas são `ButtonUnv` + `IconUnv` do DS;
+ * daqui sai só ONDE elas ficam: centradas na altura da mídia, nas bordas. A
+ * camada não pega clique (o arrasto passa por ela); as setas pegam.
+ */
+.post > .setas-do-carrossel {
+  position: relative;
+  z-index: 3;
+  height: 0;
+  margin-bottom: calc(-1 * var(--unv-post-card-gap, 8px));
+  pointer-events: none;
+}
+
+.setas-do-carrossel__palco {
+  position: absolute;
+  top: var(--unv-post-card-gap, 8px);
+  left: 0;
+  right: 0;
+  aspect-ratio: 1 / 1;
+}
+
+/* Dois seletores de classe: a folha do DS entra DEPOIS desta no grafo, e o
+   `.unv-button` (uma classe) venceria o `position` com a mesma especificidade. */
+.setas-do-carrossel .setas-do-carrossel__seta {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: auto;
+}
+
+.setas-do-carrossel .setas-do-carrossel__seta--anterior {
+  left: var(--unv-spacing-s, 8px);
+}
+
+.setas-do-carrossel .setas-do-carrossel__seta--proxima {
+  right: var(--unv-spacing-s, 8px);
 }
 
 /* A 2ª lâmina: a ficha técnica em texto, dentro do slide sem fotografia do DS.
@@ -611,7 +665,7 @@ body {
 
 /* ═══════════════════════════════════════════════════════════════════════
    A ESCOLA — tokens `--unooria-*`, e só eles.
-   Os pacotes, a cadeia e a missão ainda não aberta.
+   A cadeia e a missão ainda não aberta.
    ═══════════════════════════════════════════════════════════════════════ */
 
 /* O `ScrollBar` do DS é o contêiner que rola (aqui a seção É a `unooria`);

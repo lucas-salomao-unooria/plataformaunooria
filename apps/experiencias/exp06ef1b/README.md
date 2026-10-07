@@ -7,9 +7,10 @@ curtidas dela afunilam o feed em silêncio: depois de dez posts, ela vota numa
 cédula lacrada e espera a plenária (o professor projeta a dispersão de votos da
 turma). Liberada a **Galeria Oculta**, ela vê os estandes que nunca chegaram ao
 feed dela, com a taxa REAL da sessão, busca por hashtag e mantém ou revisa o voto.
-Depois remonta a própria curtida a partir de quatro pacotes que chegaram fora de
-ordem (EF06CO07), monta a cadeia Interações → Dados → Algoritmo → Bolha
-(EF06CO03), resolve o caso Mariana e responde a três enquetes nos Stories.
+Depois monta a cadeia Interações → Dados → Algoritmo → Bolha (EF06CO03), numa
+tela que abre com a frase do Léo, resolve o caso Mariana e responde a três
+enquetes nos Stories (a primeira é a da EF06CO10, o foco primário). A tela dos
+pacotes da curtida (EF06CO07) saiu na 0.2.0, a pedido do PO.
 
 A descoberta: *o feed que parecia a mostra inteira era a mostra que as minhas
 curtidas escolheram.*
@@ -53,7 +54,7 @@ pnpm --filter @edu/exp06ef1b build
 | Rede, sessão e a repetição das chamadas | `src/app/conexao.ts`, `src/lib/api.ts` |
 | Os avisos globais (sem conexão, credencial) | `src/app/avisos.tsx` |
 | As telas do clone | `src/app/clone/` (`credencial`, `feed`, `post-do-feed`, `cedula`, `espera`, `galeria`, `escolha`, `mariana`, `enquetes`, `fim`) |
-| As telas da escola | `src/app/escola/telas-da-escola.tsx` (pacotes, cadeia, missão fechada) |
+| As telas da escola | `src/app/escola/telas-da-escola.tsx` (cadeia, missão fechada) |
 | A imagem dos estandes (foto ou arte) | `src/app/componentes/midia.tsx`, `src/lib/arte.ts` |
 | A permanência de 5 s num post | `src/lib/permanencia.ts` |
 | O aviso de inatividade da cédula (60 s) | `src/app/inatividade.ts` |
@@ -87,7 +88,6 @@ projeto votado ou a alternativa de uma enquete.
 | `interacted` | `galeria:inspecionar` | abriu a ficha de um estande | `contexto: { projetoId, oculto }` |
 | `interacted` | `galeria:buscar` | buscou (o TIPO, nunca o texto) | `contexto: { busca, area }` |
 | `progressed` | `galeria:revisar` | o LATCH 2, confirmado | `contexto: { acao }` |
-| `attempted` | `pacotes:remontar` | conferiu os pacotes | `resultado: { correta, tentativas }` |
 | `attempted` | `cadeia:validar` | conferiu a cadeia | `resultado: { correta, tentativas }` |
 | `progressed` | `mariana:cartoes` | registrou os cartões (sem dizer quais) | — |
 | `interacted` | `enquete:responder` | respondeu (a PERGUNTA) | `contexto: { perguntaId }` |
@@ -102,7 +102,7 @@ auditoria, revisão, tentativas, cartões) e a ficha de evidência
 ## A copy escrita aqui
 
 O que o sheet da missão (`design/06-copy-strings-revisada.md`) não tinha e a tela
-precisou está marcado `ESCRITA AQUI` em `src/lib/textos.ts`: a etapa inteira dos
-pacotes (EF06CO07, nova), a taxa da galeria sem número cravado, a cédula de
+precisou está marcado `ESCRITA AQUI` em `src/lib/textos.ts`: as setas do
+carrossel (0.2.0), a taxa da galeria sem número cravado, a cédula de
 revisão, o infográfico do fim, os rótulos de leitor de tela e os avisos da
 escola. Para o PO revisar.

@@ -11,7 +11,7 @@ import type { AvisoDeConexao } from "./conexao";
  * - **No clone** (quase a missão inteira): a tarja "Tentando reconectar aos
  *   servidores da Mostra Estadual..." e, para a sessão, a folha modal do app com
  *   "Revalidar credencial". Nenhum "erro 401", nenhum "falha na API".
- * - **Na escola** (os pacotes e a cadeia): a mesma coisa pelo `AlertBox` da
+ * - **Na escola** (a cadeia): a mesma coisa pelo `AlertBox` da
  *   plataforma, com copy própria — a do clone fala da comissão, que não está
  *   falando ali, e a seção do clone dentro da tela da escola seria a mistura que
  *   a regra de ouro proíbe.

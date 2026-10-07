@@ -17,15 +17,14 @@ import { POSTS_NO_FEED, type Conviccao, type IdDaEnquete } from "./tipos";
  *   `textos.test.ts` conta;
  * - **nenhuma marca real**: o app é o Unoovista, e a mostra é fictícia.
  *
- * O CONTEÚDO da missão (os dezesseis estandes, as categorias, os pacotes, os
- * blocos, o caso Mariana e os cartões, as perguntas das enquetes) NÃO mora
+ * O CONTEÚDO da missão (os dezesseis estandes, as categorias, os blocos, o caso Mariana e os cartões, as perguntas das enquetes) NÃO mora
  * aqui: vem da api, e corrigir uma palavra dele não pode exigir republicar um
  * caminho imutável no bucket.
  *
  * **Três vozes, e cada tela tem uma só**: a comissão da mostra (o clone,
  * burocrática e seca — crachá, feed, cédula, plenária, galeria, Mariana,
  * consulta, fim), o Léo (uma frase, a ponte para o livro didático) e a Unooria
- * (as telas da escola: pacotes e cadeia).
+ * (a tela da escola: a cadeia).
  */
 
 function plural(n: number, um: string, varios: string): string {
@@ -115,6 +114,9 @@ export const E2 = {
   fichaBastidor: "Bastidor: o protótipo em teste",
   /** ESCRITA AQUI — o nome do carrossel para o leitor de tela. */
   lamina: (atual: number, total: number) => `Lâmina ${atual} de ${total}`,
+  /** ESCRITA AQUI — as setas do carrossel (o mouse não arrasta como o dedo). */
+  laminaAnterior: "Lâmina anterior",
+  proximaLamina: "Próxima lâmina",
   /** ESCRITA AQUI — a barra inferior com DUAS abas (ver o `AGENTS.md`). */
   abaFeed: "Feed",
   abaCedula: "Cédula",
@@ -204,28 +206,19 @@ export const E4 = {
   grupoDaRevisao: "Estandes da mostra",
 } as const;
 
-// ───────────────────────────── E5: os pacotes e a cadeia (ESCOLA, unooria)
+// ──────────────────────────────────────── E5: a cadeia (ESCOLA, unooria)
 
 export const E5 = {
-  /** `e5.narrativa.ponte_leo` — a ÚNICA exclamação da missão. */
+  /**
+   * `e5.narrativa.ponte_leo` — a ÚNICA exclamação da missão, no topo da cadeia
+   * desde a 0.2.0 (a tela dos pacotes, onde ela ficava, saiu com a EF06CO07).
+   */
   ponteLeo: "Você viveu em tela o que Léo investigou no livro didático!",
-  /** ESCRITA AQUI — a etapa dos pacotes (EF06CO07) não existia no sheet. */
-  pacotesInstrucao:
-    "Quando você votou, sua curtida saiu do celular em 4 pacotes numerados. Cada pacote fez um caminho diferente e chegou fora de ordem ao servidor da Mostra. Toque nos pacotes na ordem certa para remontar a mensagem.",
-  bandejaDosPacotes: "Pacotes que chegaram",
-  pacote: (numero: number, total: number) => `Pacote ${numero} de ${total}`,
-  caminho: (rota: readonly string[]) => `Caminho: ${rota.join(" → ")}`,
-  calhaDosPacotes: "Mensagem no servidor da Mostra",
-  remontar: "Remontar mensagem",
-  pacotesErrados: "A mensagem ainda não se encaixou. Confira o número de cada pacote e tente de novo.",
-  pacotesCertos: "Mensagem remontada no servidor",
   /**
    * `e5.instrucao.ordenar_cadeia`, com "Arraste" trocado por "Toque": a calha do
    * DS (`PuzzleTrack`) é de toque sequencial, sem arraste (desvio do desenho).
    */
   cadeiaInstrucao: "Toque nos blocos em ordem, de 1 a 4, montando a engrenagem que controlou o seu feed:",
-  /** ESCRITA AQUI — o título da tela da cadeia. */
-  cadeiaTitulo: "A engrenagem que controlou o seu feed",
   bandejaDaCadeia: "Blocos da engrenagem",
   calhaDaCadeia: "Cadeia lógica",
   /** `e5.rotulo.btn_confirmar_cadeia` */

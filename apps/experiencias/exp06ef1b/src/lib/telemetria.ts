@@ -82,9 +82,6 @@ export const telemetria = {
   revisou: (acao: "manter" | "trocar") => track("progressed", "galeria:revisar", { contexto: { acao } }),
 
   // E5
-  /** Conferiu a ordem dos pacotes (a api diz se está certa). */
-  remontou: (correta: boolean, tentativas: number) =>
-    track("attempted", "pacotes:remontar", { resultado: { correta, tentativas } }),
   /** Conferiu a cadeia. */
   montouACadeia: (correta: boolean, tentativas: number) =>
     track("attempted", "cadeia:validar", { resultado: { correta, tentativas } }),

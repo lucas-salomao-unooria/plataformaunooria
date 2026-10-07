@@ -12,7 +12,7 @@ import { createRoot } from "react-dom/client";
  *   Rounded, auto-hospedados no pacote. O `Icon` do Unoovista é ligadura — sem
  *   ela, o NOME do glifo aparece no lugar do desenho ("lock" onde devia haver o
  *   cadeado).
- * - **a escola** (`unooria`): os pacotes, a cadeia e a missão ainda não aberta.
+ * - **a escola** (`unooria`): a cadeia e a missão ainda não aberta.
  *   A folha de FONTE também é obrigatória: o `PuzzleBlock` desenha o glifo por
  *   ligadura do Material Symbols.
  *

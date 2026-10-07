@@ -2,15 +2,14 @@ import { useState, type ReactNode } from "react";
 import { AlertBox, Button, Logo, PuzzleBlock, PuzzleTrack, ScrollBar, SectionHeader } from "@edu/ui/ds";
 import { tocarNoBloco } from "../../lib/regras";
 import { E5, ESCOLA } from "../../lib/textos";
-import type { BlocoDaCadeia, PacoteDaCurtida } from "../../lib/tipos";
+import type { BlocoDaCadeia } from "../../lib/tipos";
 
 /**
  * As telas em que a ESCOLA fala — a seção `unooria`, pela ponte `@edu/ui/ds`.
  *
  * **A fronteira do disfarce é QUEM FALA, não o momento.** Depois da galeria, a
- * missão sai do clone para EXPLICAR: remontar a própria curtida a partir dos
- * pacotes (EF06CO07) e montar a cadeia que controlou o feed (EF06CO03) são a
- * Unooria mostrando a engrenagem — dentro do app, a explicação voltaria para a
+ * missão sai do clone para EXPLICAR: montar a cadeia que controlou o feed
+ * (EF06CO03) é a Unooria mostrando a engrenagem — dentro do app, a explicação voltaria para a
  * ficção que a missão acabou de desmontar. O caso Mariana e a consulta voltam
  * ao clone (é a comissão quem pergunta).
  *
@@ -40,7 +39,7 @@ interface ItemDaCalha {
 }
 
 /**
- * A calha das duas telas. Quem diz se a ordem está certa é o SERVIDOR (os ids
+ * A calha da cadeia. Quem diz se a ordem está certa é o SERVIDOR (os ids
  * são opacos e a ordem certa nunca desce); na errada, os blocos voltam para a
  * bandeja com o aviso escrito do DS ("Voltou para a bandeja") e a frase de
  * apoio — nunca qual vaga errou, nunca um "errado".
@@ -152,49 +151,14 @@ function Calha({
   );
 }
 
-// ───────────────────────────── E5-ALU-01a: os pacotes da curtida (EF06CO07)
+// ──────────────────────────────────── E5-ALU-01: a cadeia (EF06CO03)
 
-export function Pacotes({
-  itens,
-  ordemInicial,
-  enviando,
-  aoMudarOrdem,
-  aoConferir,
-  aoContinuar,
-}: {
-  itens: readonly PacoteDaCurtida[];
-  ordemInicial: readonly string[];
-  enviando: boolean;
-  aoMudarOrdem: (ordem: string[]) => void;
-  aoConferir: (ordem: string[]) => Promise<boolean | null>;
-  aoContinuar: () => void;
-}) {
-  return (
-    <Casca>
-      <SectionHeader variant="mobile" title={E5.ponteLeo} description={E5.pacotesInstrucao} />
-      <Calha
-        bandeja={E5.bandejaDosPacotes}
-        calha={E5.calhaDosPacotes}
-        confirmar={E5.remontar}
-        errada={E5.pacotesErrados}
-        certa={E5.pacotesCertos}
-        itens={itens.map((p) => ({
-          id: p.id,
-          rotulo: E5.pacote(p.numero, itens.length),
-          descricao: `${p.trecho}. ${E5.caminho(p.rota)}`,
-          icone: "mail",
-        }))}
-        ordemInicial={ordemInicial}
-        enviando={enviando}
-        aoMudarOrdem={aoMudarOrdem}
-        aoConferir={aoConferir}
-        aoContinuar={aoContinuar}
-      />
-    </Casca>
-  );
-}
-
-// ─────────────────────────────────── E5-ALU-01b: a cadeia (EF06CO03)
+/**
+ * A tela da cadeia abre com a frase do Léo — a ÚNICA exclamação da missão —,
+ * que até a 0.1.x ficava no topo dos pacotes. O pedido do PO tirou a tela dos
+ * pacotes (a EF06CO07 saiu da missão), e a ponte com o livro didático continua
+ * no primeiro momento em que a Unooria mostra a engrenagem.
+ */
 
 export function Cadeia({
   blocos,
@@ -213,7 +177,7 @@ export function Cadeia({
 }) {
   return (
     <Casca>
-      <SectionHeader variant="mobile" title={E5.cadeiaTitulo} description={E5.cadeiaInstrucao} />
+      <SectionHeader variant="mobile" title={E5.ponteLeo} description={E5.cadeiaInstrucao} />
       <Calha
         bandeja={E5.bandejaDaCadeia}
         calha={E5.calhaDaCadeia}
