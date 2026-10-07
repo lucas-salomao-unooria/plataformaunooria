@@ -7,7 +7,8 @@ name: base-do-gerador
 #
 # Gatilho: push em `dev-local` que toque uma FONTE. A lista de `paths:` é a
 # mesma de `FONTES`, `FONTES_DO_CONTRATO` e dos recortes do extrator — fonte
-# nova lá é linha nova aqui, senão a mudança dela não republica a base.
+# nova lá é linha nova aqui, senão a mudança dela não republica a base (o
+# teste do extrator reprova a fonte que nenhuma linha casa).
 on:
   push:
     branches: [dev-local]
@@ -16,6 +17,11 @@ on:
       - CONTEXT.md
       - apps/api/AGENTS.md
       - apps/hub/AGENTS.md
+      # o `*` é o grupo de rotas `(plataforma)`: os filtros do GitHub não
+      # documentam o parêntese como literal, e gatilho que não casa não avisa
+      - apps/hub/app/*/professor/AGENTS.md
+      - apps/hub/app/*/professor/entre-redes/AGENTS.md
+      - apps/hub/app/exp/AGENTS.md
       - apps/experiencias/AGENTS.md
       - packages/sdk/AGENTS.md
       - packages/ui/AGENTS.md

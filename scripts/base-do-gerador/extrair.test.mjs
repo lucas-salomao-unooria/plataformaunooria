@@ -11,13 +11,28 @@ import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { extname, join } from "node:path";
 import { after, before, describe, it } from "node:test";
 import assert from "node:assert/strict";
 
-import { ErroDeExtracao, RAIZ, extrair, listarFontes } from "./extrair.mjs";
+import { ADR_TEX, ErroDeExtracao, FONTES_DO_CONTRATO, OPENAPI, RAIZ, SCHEMA_PRISMA, extrair, listarFontes } from "./extrair.mjs";
 
 const lerJson = (p) => JSON.parse(readFileSync(p, "utf8"));
+
+/** Os `paths:` do workflow como regex: `**` atravessa pastas; `*` e `?` não. */
+function pathsDoWorkflow() {
+  const arq = ".github/workflows/base-do-gerador.yml";
+  const bloco = readFileSync(join(RAIZ, arq), "utf8").match(/^ {4}paths:\n((?: {6}.*\n)+)/m);
+  assert.ok(bloco, `não achei \`paths:\` em ${arq}`);
+  return bloco[1]
+    .split("\n")
+    .map((l) => l.match(/^ {6}- (\S+)$/)?.[1])
+    .filter(Boolean)
+    .map((p) => {
+      const corpo = p.replace(/[.+^${}()|[\]\\]/g, "\\$&").replace(/\*\*/g, "\0").replace(/\*/g, "[^/]*").replace(/\?/g, "[^/]").replace(/\0/g, ".*");
+      return new RegExp(`^${corpo}$`);
+    });
+}
 
 describe("base do gerador, extraída deste repo", () => {
   let saida;
@@ -54,6 +69,20 @@ describe("base do gerador, extraída deste repo", () => {
       const conteudo = readFileSync(p, "utf8");
       assert.equal(a.sha256, createHash("sha256").update(conteudo, "utf8").digest("hex").slice(0, 16), a.destino);
     }
+  });
+
+  it("toda fonte casa uma linha de `paths:` do workflow — sem ela, mudá-la não republica a base", () => {
+    const paths = pathsDoWorkflow();
+    const fontes = [
+      ...listarFontes(RAIZ).map((f) => f.origem),
+      ADR_TEX,
+      SCHEMA_PRISMA,
+      OPENAPI,
+      ...Object.values(FONTES_DO_CONTRATO).filter((rel) => extname(rel)),
+      ...contrato.experiencias.map((e) => `${e.pasta}/public/experiencia.json`),
+    ];
+    const fora = fontes.filter((rel) => !paths.some((re) => re.test(rel)));
+    assert.deepEqual(fora, [], `fonte sem linha em \`paths:\`: ${fora.join(", ")}`);
   });
 
   it("os destinos antigos do exp-08/exp-04 não voltam", () => {
