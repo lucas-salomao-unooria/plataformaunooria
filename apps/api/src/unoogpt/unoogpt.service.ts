@@ -842,7 +842,17 @@ export class UnoogptService {
        funciona sem passar por `garantirSessao`, então não há porta lateral. */
     await exigirMissaoLiberada(tx, escolaId, estudanteId, EXP_ID);
 
-    return tx.unoogptSessao.create({ data: { escolaId, estudanteId: estudanteId, turmaId: estudante.turmaId } });
+    /* A partida nasce na RODADA DA TURMA vigente (ADR-154): é por ela que a
+       evidência recusa a resposta de uma sessão que sobrou de antes do zerar. */
+    const gate = estudante.turmaId
+      ? await tx.unoogptGateTurma.findUnique({
+          where: { escolaId_turmaId: { escolaId, turmaId: estudante.turmaId } },
+          select: { rodada: true },
+        })
+      : null;
+    return tx.unoogptSessao.create({
+      data: { escolaId, estudanteId: estudanteId, turmaId: estudante.turmaId, rodada: gate?.rodada ?? 1 },
+    });
   }
 
   /**
@@ -1359,6 +1369,14 @@ export class UnoogptService {
         where: { escolaId, estudanteId: { in: ids } },
       });
       await tx.unoogptRelogioTurma.deleteMany({ where: { escolaId, turmaId } });
+      /* Zerar abre a RODADA seguinte da evidência pedagógica (ADR-154). O
+         contador sobrevive ao zerar — é o que separa as respostas de antes e de
+         depois —, e as marcas antigas ficam: a rodada passada continua no painel. */
+      await tx.unoogptGateTurma.upsert({
+        where: { escolaId_turmaId: { escolaId, turmaId } },
+        update: { rodada: { increment: 1 } },
+        create: { escolaId, turmaId, rodada: 2 },
+      });
       return { partidasApagadas: count, relogioRedefinido: true };
     }, escolaId);
   }
