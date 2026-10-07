@@ -13091,8 +13091,9 @@ que ninguém lia.
     \arq{.github/\B{}workflows/\B{}base-do-gerador.yml} a cada \emph{push} em
     \cd{dev-local} que toca uma fonte (os \cd{paths:} do \emph{workflow} são a
     lista de fontes do extrator), e por \cd{workflow\_dispatch}.
-  \item \textbf{O destino é o bucket que o gerador já monta}:
-    \cd{gs://\B{}entre-redes-dev-adk-artifacts/\B{}base-plataforma/\B{}plataforma/\B{}<commit>/},
+  \item \textbf{O destino é um bucket só da base}, que o gerador monta para
+    leitura (revisão de 2026-10-07, abaixo):
+    \cd{gs://\B{}entre-redes-dev-base-plataforma/\B{}plataforma/\B{}<commit>/},
     com \arq{manifesto.json} (origem, destino e \emph{sha256} de cada cópia),
     \arq{contrato-plataforma.json}, \arq{openapi-rotas.json} e as cópias em
     \arq{arquivos/}. O ponteiro \arq{atual.json} sobe POR ÚLTIMO e com
@@ -13116,9 +13117,20 @@ que ninguém lia.
     as troca ao carregar. A base é texto fiel ao repositório.
   \item \textbf{Ambiente próprio no GitHub}, \cd{base-do-gerador}, com
     \cd{WIF\_PROVIDER} e \cd{DEPLOY\_SA}: o \cd{dev} só aceita \emph{deploy}
-    vindo da \emph{branch} \cd{dev}. A SA escreve só no prefixo
-    \cd{base-plataforma/} (IAM condicionada, no repositório da Fundação).
+    vindo da \emph{branch} \cd{dev}. A SA escreve só no bucket da base
+    (\arq{gerador\_missoes.tf}, no repositório da Fundação), sem acesso às
+    sessões do gerador.
 \end{itemize}
+
+\textbf{Revisão de 2026-10-07 --- bucket próprio.} A primeira versão gravava a
+base no prefixo \cd{base-plataforma/} do bucket das sessões do gerador
+(\cd{entre-redes-dev-adk-artifacts}), porque o Cloud Run dele já o montava em
+\cd{/app/output}. O gerador lista toda pasta dali como uma missão: a base
+apareceu na barra lateral com o botão de excluir e foi apagada duas vezes em
+2026-10-06, e a execução seguinte ficaria sem base. Ela passou a morar em
+\cd{gs://\B{}entre-redes-dev-base-plataforma}, que o gerador monta com
+\cd{read\_only} e só com \cd{objectViewer}: a proteção é a permissão, não uma
+lista no código da aplicação. O layout dentro do bucket não mudou.
 
 \textbf{Alternativas descartadas.}
 

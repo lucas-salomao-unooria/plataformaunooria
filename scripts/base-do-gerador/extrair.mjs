@@ -6,7 +6,7 @@
  *
  *   node scripts/base-do-gerador/extrair.mjs --saida <dir>
  *       grava <dir>/plataforma/<commit>/ e <dir>/plataforma/atual.json
- *   node scripts/base-do-gerador/extrair.mjs --enviar gs://<bucket>/base-plataforma
+ *   node scripts/base-do-gerador/extrair.mjs --enviar gs://<bucket-da-base>
  *       gera num diretório temporário, sobe a pasta do commit e SÓ DEPOIS o
  *       `atual.json` (Cache-Control: no-store) — quem lê nunca pega base pela metade
  *
@@ -576,7 +576,7 @@ function resumo(r) {
 
 const USO = `uso:
   node scripts/base-do-gerador/extrair.mjs --saida <dir>
-  node scripts/base-do-gerador/extrair.mjs --enviar gs://<bucket>/base-plataforma`;
+  node scripts/base-do-gerador/extrair.mjs --enviar gs://<bucket-da-base>`;
 
 export function main(argv) {
   const args = [...argv];
