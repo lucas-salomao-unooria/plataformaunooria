@@ -76,6 +76,12 @@ export interface EstudanteDoPainel {
 export interface PainelDeHabilidades {
   /** `false` = a missão ainda não tem ficha pedagógica: a tela não desenha o bloco. */
   temFicha: boolean;
+  /**
+   * A régua desta missão só conta quando o professor ENCERRA a missão na Sala
+   * de Aula (a Missão Tempestade, ADR-154), e ela ainda está aberta nesta turma:
+   * não há nível para mostrar, e a tela diz por quê.
+   */
+  aguardandoEncerramento?: boolean;
   habilidades: HabilidadeDaFicha[];
   /** As rodadas que têm alguma evidência, em ordem crescente. */
   rodadas: number[];
