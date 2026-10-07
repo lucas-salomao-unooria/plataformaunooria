@@ -34,6 +34,7 @@ export function postPublico(postId: string, projetos: readonly ProjetoDoPacote[]
     escola: projeto.escola,
     perfil: projeto.perfil,
     texto: tipo === "bastidor" ? projeto.bastidor : projeto.legenda,
+    legenda: projeto.legenda,
     hashtags: [...projeto.hashtags],
     imagem: { url: midia[projeto.id] ?? null, alt: projeto.imagem.alt },
   };

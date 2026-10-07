@@ -1,3 +1,4 @@
+import { MAX_FRASES_DA_LEGENDA } from "./tipos";
 import type {
   Area,
   Categoria,
@@ -56,10 +57,12 @@ const ORDEM: Record<Passo, number> = {
   feed: 1,
   lacrada: 2,
   galeria: 3,
-  cadeia: 4,
-  mariana: 5,
-  enquetes: 6,
-  fim: 7,
+  revisada: 4,
+  desvio: 5,
+  cadeia: 6,
+  mariana: 7,
+  enquetes: 8,
+  fim: 9,
 };
 
 /**
@@ -68,7 +71,8 @@ const ORDEM: Record<Passo, number> = {
  * que a tela e o servidor chegam à mesma resposta num F5.
  */
 export function passoEfetivo(passo: Passo, etapa: Etapa): Passo {
-  if (passo === "lacrada" || passo === "galeria") return etapa === "galeria" ? "galeria" : "lacrada";
+  if (passo === "lacrada" || passo === "galeria") return etapa === "exploracao" ? "lacrada" : "galeria";
+  if (passo === "revisada" || passo === "desvio") return etapa === "desvio" ? "desvio" : "revisada";
   return passo;
 }
 
@@ -76,14 +80,29 @@ export function passoNoMinimo(passo: Passo, piso: Passo): boolean {
   return ORDEM[passo] >= ORDEM[piso];
 }
 
-/** As telas da missão. `lacrada` é a ESPERA (o PICO): o carimbo e a plenária. */
-export type Tela = "credencial" | "feed" | "espera" | "galeria" | "cadeia" | "mariana" | "enquetes" | "fim";
+/**
+ * As telas da missão. `lacrada` é a ESPERA (o PICO): o carimbo e a plenária.
+ * `revisada` é a SEGUNDA espera — a comissão vai abrir a rodada de desvio.
+ */
+export type Tela =
+  | "credencial"
+  | "feed"
+  | "espera"
+  | "galeria"
+  | "espera-do-desvio"
+  | "desvio"
+  | "cadeia"
+  | "mariana"
+  | "enquetes"
+  | "fim";
 
 export const TELA_DO_PASSO: Record<Passo, Tela> = {
   credencial: "credencial",
   feed: "feed",
   lacrada: "espera",
   galeria: "galeria",
+  revisada: "espera-do-desvio",
+  desvio: "desvio",
   cadeia: "cadeia",
   mariana: "mariana",
   enquetes: "enquetes",
@@ -125,6 +144,8 @@ export interface EstandeDoFeed {
   titulo: string;
   escola: string;
   perfil: string;
+  /** A legenda do estande: as frases que a cédula oferece para grifar. */
+  legenda: string;
   imagem: PostPublico["imagem"];
 }
 
@@ -144,13 +165,18 @@ export function estandesDoFeed(posts: readonly PostPublico[]): EstandeDoFeed[] {
       titulo: p.titulo,
       escola: p.escola,
       perfil: p.perfil,
+      legenda: p.legenda,
       imagem: p.imagem,
     });
   }
   return [...vistos.values()];
 }
 
-/** As curtidas que a tela mostra: as do servidor, com as que ainda não foram. */
+/**
+ * O que a tela mostra marcado (curtidas ou salvos): o que o servidor devolveu,
+ * com o que ainda está na fila. A curtida e o salvo são ESTADO, e o servidor
+ * devolve a lista inteira a cada ida.
+ */
 export function curtidosNaTela(doServidor: readonly string[], pendentes: ReadonlyMap<string, boolean>): Set<string> {
   const saida = new Set(doServidor);
   for (const [postId, curtiu] of pendentes) {
@@ -168,6 +194,21 @@ export function protocoloDoVoto(pacoteId: string, rodada: number, projetoId: str
     h = Math.imul(h, 16777619);
   }
   return `PR-${String((h >>> 0) % 9000 + 1000)}`;
+}
+
+// ───────────────────────────────────────── a justificativa: o trecho grifado
+
+/**
+ * Espelho de `apps/api/src/juri-estadual/regras/justificativa.ts`: a legenda em
+ * frases, pelo ponto final. A tela oferece estas frases para a criança tocar, e
+ * a api confere que o ÍNDICE tocado existe — a frase em si nunca viaja.
+ */
+export function frasesDaLegenda(legenda: string): string[] {
+  return legenda
+    .split(/(?<=[.!?])\s+/u)
+    .map((f) => f.trim())
+    .filter((f) => f.length > 0)
+    .slice(0, MAX_FRASES_DA_LEGENDA);
 }
 
 // ─────────────────────────────────────────────── a busca da galeria

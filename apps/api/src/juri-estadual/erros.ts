@@ -31,6 +31,10 @@ export type CodigoErro =
   | "voto-ja-lacrado"
   | "galeria-nao-liberada"
   | "voto-ja-revisado"
+  | "desvio-nao-liberado"
+  | "desvio-incompleto"
+  | "desvio-sem-interacao"
+  | "desvio-ja-concluido"
   | "transicao-de-etapa-invalida"
   | "pacote-invalido"
   | "imagens-nao-aprovadas"
@@ -56,6 +60,11 @@ export const STATUS: Record<CodigoErro, number> = {
   "voto-ja-lacrado": 409,
   "galeria-nao-liberada": 403,
   "voto-ja-revisado": 409,
+  /* O relógio da turma de novo, como a galeria: 403, e a tela relê a sessão. */
+  "desvio-nao-liberado": 403,
+  "desvio-incompleto": 409,
+  "desvio-sem-interacao": 409,
+  "desvio-ja-concluido": 409,
   "transicao-de-etapa-invalida": 409,
   "pacote-invalido": 400,
   /* A segunda fase da aprovação (como na exp07ef1b, ADR-146): o pacote existe,
@@ -85,6 +94,11 @@ export const MENSAGENS: Record<CodigoErro, string> = {
   "galeria-nao-liberada": "A comissão está reunida em plenária. Aguarde o sinal do professor.",
   // O LATCH 2.
   "voto-ja-revisado": "A revisão do seu voto já foi registrada na ata.",
+  // A segunda espera: a rodada de desvio abre com o sinal do professor.
+  "desvio-nao-liberado": "A comissão vai abrir uma nova rodada do feed. Aguarde o sinal do professor.",
+  "desvio-incompleto": "Veja as seis publicações da nova rodada antes de encerrar.",
+  "desvio-sem-interacao": "Curta ou salve ao menos uma publicação da nova rodada antes de encerrar.",
+  "desvio-ja-concluido": "A nova rodada do seu feed já foi encerrada.",
   "transicao-de-etapa-invalida": "A turma avança uma etapa por vez, e nunca volta.",
   "pacote-invalido": "Os estandes gerados não atendem às regras da missão.",
   "imagens-nao-aprovadas":

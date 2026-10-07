@@ -52849,6 +52849,8 @@
                         "feed",
                         "lacrada",
                         "galeria",
+                        "revisada",
+                        "desvio",
                         "cadeia",
                         "mariana",
                         "enquetes",
@@ -52862,6 +52864,8 @@
                         "feed",
                         "lacrada",
                         "galeria",
+                        "revisada",
+                        "desvio",
                         "cadeia",
                         "mariana",
                         "enquetes",
@@ -52872,7 +52876,8 @@
                       "type": "string",
                       "enum": [
                         "exploracao",
-                        "galeria"
+                        "galeria",
+                        "desvio"
                       ]
                     },
                     "aguardandoOProfessor": {
@@ -53003,6 +53008,13 @@
                             "pattern": "^proj-[a-d][1-4]:(apresentacao|bastidor)$"
                           }
                         },
+                        "salvos": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "pattern": "^proj-[a-d][1-4]:(apresentacao|bastidor)$"
+                          }
+                        },
                         "completo": {
                           "type": "boolean"
                         }
@@ -53010,7 +53022,56 @@
                       "required": [
                         "posts",
                         "curtidos",
+                        "salvos",
                         "completo"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "motivos": {
+                      "type": "object",
+                      "properties": {
+                        "voto": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "texto": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "texto"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "revisao": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "texto": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "texto"
+                            ],
+                            "additionalProperties": false
+                          }
+                        }
+                      },
+                      "required": [
+                        "voto",
+                        "revisao"
                       ],
                       "additionalProperties": false
                     },
@@ -53027,11 +53088,30 @@
                             "examinei_bem",
                             "vi_tudo"
                           ]
+                        },
+                        "justificativa": {
+                          "type": "object",
+                          "properties": {
+                            "motivo": {
+                              "type": "string"
+                            },
+                            "trecho": {
+                              "type": "integer",
+                              "minimum": 0
+                            }
+                          },
+                          "required": [
+                            "motivo",
+                            "trecho"
+                          ],
+                          "additionalProperties": false,
+                          "nullable": true
                         }
                       },
                       "required": [
                         "projetoId",
-                        "conviccao"
+                        "conviccao",
+                        "justificativa"
                       ],
                       "additionalProperties": false,
                       "nullable": true
@@ -53043,18 +53123,192 @@
                           "type": "string",
                           "enum": [
                             "manter",
-                            "trocar"
+                            "trocar",
+                            "complementar"
                           ]
                         },
                         "projetoId": {
                           "type": "string",
                           "pattern": "^proj-[a-d][1-4]$",
                           "nullable": true
+                        },
+                        "justificativa": {
+                          "type": "object",
+                          "properties": {
+                            "motivo": {
+                              "type": "string"
+                            },
+                            "trecho": {
+                              "type": "integer",
+                              "minimum": 0
+                            }
+                          },
+                          "required": [
+                            "motivo",
+                            "trecho"
+                          ],
+                          "additionalProperties": false,
+                          "nullable": true
                         }
                       },
                       "required": [
                         "acao",
-                        "projetoId"
+                        "projetoId",
+                        "justificativa"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true
+                    },
+                    "desvio": {
+                      "type": "object",
+                      "properties": {
+                        "posts": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "pattern": "^proj-[a-d][1-4]:(apresentacao|bastidor)$"
+                              },
+                              "projetoId": {
+                                "type": "string",
+                                "pattern": "^proj-[a-d][1-4]$"
+                              },
+                              "tipo": {
+                                "type": "string",
+                                "enum": [
+                                  "apresentacao",
+                                  "bastidor"
+                                ]
+                              },
+                              "area": {
+                                "type": "string",
+                                "enum": [
+                                  "area_a",
+                                  "area_b",
+                                  "area_c",
+                                  "area_d"
+                                ]
+                              },
+                              "titulo": {
+                                "type": "string"
+                              },
+                              "escola": {
+                                "type": "string"
+                              },
+                              "perfil": {
+                                "type": "string"
+                              },
+                              "texto": {
+                                "type": "string"
+                              },
+                              "hashtags": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                }
+                              },
+                              "imagem": {
+                                "type": "object",
+                                "properties": {
+                                  "url": {
+                                    "type": "string",
+                                    "nullable": true
+                                  },
+                                  "alt": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "url",
+                                  "alt"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "projetoId",
+                              "tipo",
+                              "area",
+                              "titulo",
+                              "escola",
+                              "perfil",
+                              "texto",
+                              "hashtags",
+                              "imagem"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "maxItems": 6
+                        },
+                        "curtidos": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "pattern": "^proj-[a-d][1-4]:(apresentacao|bastidor)$"
+                          }
+                        },
+                        "salvos": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "pattern": "^proj-[a-d][1-4]:(apresentacao|bastidor)$"
+                          }
+                        },
+                        "completo": {
+                          "type": "boolean"
+                        },
+                        "comInteracao": {
+                          "type": "boolean"
+                        },
+                        "concluido": {
+                          "type": "boolean"
+                        },
+                        "comparacao": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "area": {
+                                "type": "string",
+                                "enum": [
+                                  "area_a",
+                                  "area_b",
+                                  "area_c",
+                                  "area_d"
+                                ]
+                              },
+                              "noFeed": {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              "noDesvio": {
+                                "type": "integer",
+                                "minimum": 0
+                              }
+                            },
+                            "required": [
+                              "area",
+                              "noFeed",
+                              "noDesvio"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "minItems": 4,
+                          "maxItems": 4,
+                          "nullable": true
+                        }
+                      },
+                      "required": [
+                        "posts",
+                        "curtidos",
+                        "salvos",
+                        "completo",
+                        "comInteracao",
+                        "concluido",
+                        "comparacao"
                       ],
                       "additionalProperties": false,
                       "nullable": true
@@ -53185,8 +53439,10 @@
                     "tema",
                     "categorias",
                     "feed",
+                    "motivos",
                     "voto",
                     "revisao",
+                    "desvio",
                     "cadeia",
                     "mariana",
                     "concluida"
@@ -53238,7 +53494,8 @@
                       "type": "string",
                       "enum": [
                         "exploracao",
-                        "galeria"
+                        "galeria",
+                        "desvio"
                       ]
                     }
                   },
@@ -53369,6 +53626,13 @@
                         "pattern": "^proj-[a-d][1-4]:(apresentacao|bastidor)$"
                       }
                     },
+                    "salvos": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "pattern": "^proj-[a-d][1-4]:(apresentacao|bastidor)$"
+                      }
+                    },
                     "completo": {
                       "type": "boolean"
                     }
@@ -53376,6 +53640,7 @@
                   "required": [
                     "posts",
                     "curtidos",
+                    "salvos",
                     "completo"
                   ],
                   "additionalProperties": false
@@ -53522,6 +53787,13 @@
                         "pattern": "^proj-[a-d][1-4]:(apresentacao|bastidor)$"
                       }
                     },
+                    "salvos": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "pattern": "^proj-[a-d][1-4]:(apresentacao|bastidor)$"
+                      }
+                    },
                     "completo": {
                       "type": "boolean"
                     }
@@ -53529,6 +53801,7 @@
                   "required": [
                     "posts",
                     "curtidos",
+                    "salvos",
                     "completo"
                   ],
                   "additionalProperties": false
@@ -53541,7 +53814,7 @@
           "juri-estadual"
         ],
         "summary": "O que a tela mediu (curtidas e permanências) e, se pedido, o próximo post.",
-        "description": "A curtida é ESTADO (`curtiu: true/false`; descurtir devolve o peso), a permanência é FATO (mais de 5 s num post, uma vez por post). As curtidas entram antes de o motor escolher o próximo, porque é a curtida que afunila: com duas curtidas na mesma área, o resto do feed é dela. `proximo: true` quando a tela chegou ao último post servido: o servidor serve UM a mais, até dez.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- Post que o feed não serviu responde **400** `post-desconhecido` — o cliente não inventa post.\n- Depois do voto responde **409** `voto-ja-lacrado`; antes do feed, **409** `passo-invalido`.\n- Missão não liberada na turma responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`); sem atividade em andamento, **403** `atividade-nao-preparada`. Estudante sem turma responde **409** `sem-turma`. Corpo fora do formato responde **400** `payload-invalido`.",
+        "description": "A curtida e o salvo são ESTADO (`curtiu`/`salvou: true/false`; desfazer devolve o peso), a permanência é FATO (mais de 5 s num post, uma vez por post). Os três sinais entram antes de o motor escolher o próximo, porque são eles que afunilam: com duas curtidas na mesma área, o resto do feed é dela. Comentar e compartilhar não pesam e não viajam. `proximo: true` quando a tela chegou ao último post servido: o servidor serve UM a mais, até dez.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- Post que o feed não serviu responde **400** `post-desconhecido` — o cliente não inventa post.\n- Depois do voto responde **409** `voto-ja-lacrado`; antes do feed, **409** `passo-invalido`.\n- Missão não liberada na turma responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`); sem atividade em andamento, **403** `atividade-nao-preparada`. Estudante sem turma responde **409** `sem-turma`. Corpo fora do formato responde **400** `payload-invalido`.",
         "security": [
           {
             "token-da-plataforma": []
@@ -53574,6 +53847,28 @@
                       "required": [
                         "postId",
                         "curtiu"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "maxItems": 20,
+                    "default": []
+                  },
+                  "salvamentos": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "postId": {
+                          "type": "string",
+                          "pattern": "^proj-[a-d][1-4]:(apresentacao|bastidor)$"
+                        },
+                        "salvou": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "postId",
+                        "salvou"
                       ],
                       "additionalProperties": false
                     },
@@ -53620,6 +53915,8 @@
                         "feed",
                         "lacrada",
                         "galeria",
+                        "revisada",
+                        "desvio",
                         "cadeia",
                         "mariana",
                         "enquetes",
@@ -53630,7 +53927,8 @@
                       "type": "string",
                       "enum": [
                         "exploracao",
-                        "galeria"
+                        "galeria",
+                        "desvio"
                       ]
                     }
                   },
@@ -53647,8 +53945,8 @@
         "tags": [
           "juri-estadual"
         ],
-        "summary": "A cédula lacrada — o voto e a convicção (latch).",
-        "description": "O gesto que a missão confronta, e ele é IRREVERSÍVEL: grava o projeto, a convicção, o carimbo e o passo `lacrada` juntos. Depois dele, a criança espera a turma (o pico): o professor projeta a dispersão de votos e libera a Galeria Oculta.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- Com menos de dez posts servidos responde **409** `feed-incompleto`; projeto que não apareceu no feed DESTA criança, **409** `projeto-fora-do-feed`.\n- O segundo voto — inclusive dois simultâneos — responde **409** `voto-ja-lacrado`.\n- Missão não liberada na turma responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`); sem atividade em andamento, **403** `atividade-nao-preparada`. Estudante sem turma responde **409** `sem-turma`. Corpo fora do formato responde **400** `payload-invalido`.",
+        "summary": "A cédula lacrada — o voto, a convicção e a justificativa de antes (latch).",
+        "description": "O gesto que a missão confronta, e ele é IRREVERSÍVEL: grava o projeto, a convicção, a JUSTIFICATIVA (um cartão de motivo, `v1`–`v3`, e o trecho grifado: o índice de uma frase da legenda do estande votado), o carimbo e o passo `lacrada` juntos. Depois dele, a criança espera a turma (o pico): o professor projeta a dispersão de votos e libera a Galeria Oculta. A justificativa volta ao lado dos estandes escondidos, na revisão.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- Com menos de dez posts servidos responde **409** `feed-incompleto`; projeto que não apareceu no feed DESTA criança, **409** `projeto-fora-do-feed`; `trecho` que não é uma frase da legenda dele, **400** `payload-invalido`.\n- O segundo voto — inclusive dois simultâneos — responde **409** `voto-ja-lacrado`.\n- Missão não liberada na turma responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`); sem atividade em andamento, **403** `atividade-nao-preparada`. Estudante sem turma responde **409** `sem-turma`. Corpo fora do formato responde **400** `payload-invalido`.",
         "security": [
           {
             "token-da-plataforma": []
@@ -53675,11 +53973,26 @@
                       "examinei_bem",
                       "vi_tudo"
                     ]
+                  },
+                  "motivo": {
+                    "type": "string",
+                    "enum": [
+                      "v1",
+                      "v2",
+                      "v3"
+                    ]
+                  },
+                  "trecho": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 11
                   }
                 },
                 "required": [
                   "projetoId",
-                  "conviccao"
+                  "conviccao",
+                  "motivo",
+                  "trecho"
                 ],
                 "additionalProperties": false
               }
@@ -53940,6 +54253,8 @@
                         "feed",
                         "lacrada",
                         "galeria",
+                        "revisada",
+                        "desvio",
                         "cadeia",
                         "mariana",
                         "enquetes",
@@ -53950,7 +54265,8 @@
                       "type": "string",
                       "enum": [
                         "exploracao",
-                        "galeria"
+                        "galeria",
+                        "desvio"
                       ]
                     }
                   },
@@ -53967,8 +54283,8 @@
         "tags": [
           "juri-estadual"
         ],
-        "summary": "Manter ou trocar o voto, depois da galeria (latch).",
-        "description": "`trocar` aceita qualquer um dos dezesseis estandes (a galeria mostrou todos), menos o do voto lacrado. Grava a ação, o voto final, o carimbo e o passo `cadeia` juntos, e marca a EF06CO10 (`auditoria`: quantos estandes ocultos ela abriu) e a EF06CO01 (`classificacao`: se buscou pela hashtag de outra área e abriu um oculto dela) pelo que a criança fez na galeria antes de decidir.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- `trocar` para o mesmo projeto do voto responde **400** `payload-invalido`.\n- A segunda revisão — inclusive duas simultâneas — responde **409** `voto-ja-revisado`. Antes da galeria, **403** `galeria-nao-liberada`. Com a rodada trocada no meio (o professor zerou), **409** `rodada-mudou`.\n- Missão não liberada na turma responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`); sem atividade em andamento, **403** `atividade-nao-preparada`. Estudante sem turma responde **409** `sem-turma`. Corpo fora do formato responde **400** `payload-invalido`.",
+        "summary": "Manter, trocar ou complementar o voto, depois da galeria, com a justificativa de depois (latch).",
+        "description": "`trocar` aceita qualquer um dos dezesseis estandes (a galeria mostrou todos), menos o do voto lacrado; `complementar` mantém o voto e indica também outro estande. Toda ação leva a justificativa de DEPOIS — um cartão de motivo (`r1`–`r3`) e o trecho grifado, da legenda do estande da decisão (o do voto, ao manter). Grava a ação, o voto final, o complemento, a justificativa, o carimbo e o passo `revisada` (a espera da rodada de desvio) juntos, e marca a EF06CO10 (`auditoria`: quantos estandes ocultos ela abriu) e a EF06CO01 (`classificacao`: se buscou pela hashtag de outra área e abriu um oculto dela) pelo que a criança fez na galeria antes de decidir. Quem não abriu nem buscou nada fica SEM a marca de ação (ausência): decide a pergunta da habilidade.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- `trocar` ou `complementar` com o mesmo projeto do voto, ou `trecho` fora da legenda, responde **400** `payload-invalido`.\n- A segunda revisão — inclusive duas simultâneas — responde **409** `voto-ja-revisado`. Antes da galeria, **403** `galeria-nao-liberada`. Com a rodada trocada no meio (o professor zerou), **409** `rodada-mudou`.\n- Missão não liberada na turma responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`); sem atividade em andamento, **403** `atividade-nao-preparada`. Estudante sem turma responde **409** `sem-turma`. Corpo fora do formato responde **400** `payload-invalido`.",
         "security": [
           {
             "token-da-plataforma": []
@@ -53992,10 +54308,25 @@
                         "enum": [
                           "manter"
                         ]
+                      },
+                      "motivo": {
+                        "type": "string",
+                        "enum": [
+                          "r1",
+                          "r2",
+                          "r3"
+                        ]
+                      },
+                      "trecho": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 11
                       }
                     },
                     "required": [
-                      "acao"
+                      "acao",
+                      "motivo",
+                      "trecho"
                     ],
                     "additionalProperties": false
                   },
@@ -54011,11 +54342,61 @@
                       "projetoId": {
                         "type": "string",
                         "pattern": "^proj-[a-d][1-4]$"
+                      },
+                      "motivo": {
+                        "type": "string",
+                        "enum": [
+                          "r1",
+                          "r2",
+                          "r3"
+                        ]
+                      },
+                      "trecho": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 11
                       }
                     },
                     "required": [
                       "acao",
-                      "projetoId"
+                      "projetoId",
+                      "motivo",
+                      "trecho"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "acao": {
+                        "type": "string",
+                        "enum": [
+                          "complementar"
+                        ]
+                      },
+                      "projetoId": {
+                        "type": "string",
+                        "pattern": "^proj-[a-d][1-4]$"
+                      },
+                      "motivo": {
+                        "type": "string",
+                        "enum": [
+                          "r1",
+                          "r2",
+                          "r3"
+                        ]
+                      },
+                      "trecho": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 11
+                      }
+                    },
+                    "required": [
+                      "acao",
+                      "projetoId",
+                      "motivo",
+                      "trecho"
                     ],
                     "additionalProperties": false
                   }
@@ -54024,6 +54405,320 @@
             }
           }
         }
+      }
+    },
+    "/juri-estadual/desvio/eventos": {
+      "post": {
+        "operationId": "JuriEstadualController_desvio",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "posts": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "pattern": "^proj-[a-d][1-4]:(apresentacao|bastidor)$"
+                          },
+                          "projetoId": {
+                            "type": "string",
+                            "pattern": "^proj-[a-d][1-4]$"
+                          },
+                          "tipo": {
+                            "type": "string",
+                            "enum": [
+                              "apresentacao",
+                              "bastidor"
+                            ]
+                          },
+                          "area": {
+                            "type": "string",
+                            "enum": [
+                              "area_a",
+                              "area_b",
+                              "area_c",
+                              "area_d"
+                            ]
+                          },
+                          "titulo": {
+                            "type": "string"
+                          },
+                          "escola": {
+                            "type": "string"
+                          },
+                          "perfil": {
+                            "type": "string"
+                          },
+                          "texto": {
+                            "type": "string"
+                          },
+                          "hashtags": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "imagem": {
+                            "type": "object",
+                            "properties": {
+                              "url": {
+                                "type": "string",
+                                "nullable": true
+                              },
+                              "alt": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "url",
+                              "alt"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "projetoId",
+                          "tipo",
+                          "area",
+                          "titulo",
+                          "escola",
+                          "perfil",
+                          "texto",
+                          "hashtags",
+                          "imagem"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "maxItems": 6
+                    },
+                    "curtidos": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "pattern": "^proj-[a-d][1-4]:(apresentacao|bastidor)$"
+                      }
+                    },
+                    "salvos": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "pattern": "^proj-[a-d][1-4]:(apresentacao|bastidor)$"
+                      }
+                    },
+                    "completo": {
+                      "type": "boolean"
+                    },
+                    "comInteracao": {
+                      "type": "boolean"
+                    },
+                    "concluido": {
+                      "type": "boolean"
+                    },
+                    "comparacao": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "area": {
+                            "type": "string",
+                            "enum": [
+                              "area_a",
+                              "area_b",
+                              "area_c",
+                              "area_d"
+                            ]
+                          },
+                          "noFeed": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "noDesvio": {
+                            "type": "integer",
+                            "minimum": 0
+                          }
+                        },
+                        "required": [
+                          "area",
+                          "noFeed",
+                          "noDesvio"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "minItems": 4,
+                      "maxItems": 4,
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "posts",
+                    "curtidos",
+                    "salvos",
+                    "completo",
+                    "comInteracao",
+                    "concluido",
+                    "comparacao"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "juri-estadual"
+        ],
+        "summary": "A rodada de desvio: o que a tela mediu e, se pedido, o próximo post.",
+        "description": "Depois da revisão, o professor libera uma rodada curta do feed (seis posts) para a criança interagir com o que o feed dela não mostrava — e ver o feed mudar. O MESMO corpo e o MESMO motor do feed do júri, com os pesos SÓ desta rodada: os dois primeiros posts vêm das duas áreas que menos apareceram para ela, e o resto segue as curtidas e os salvos que ela fizer agora. Na primeira chamada (mesmo vazia) serve a abertura. Com os seis servidos, `comparacao` traz quantos posts de cada área o feed do júri e o desvio trouxeram.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- Antes de o professor liberar (ou antes da revisão do voto) responde **403** `desvio-nao-liberado`; depois de concluído, **409** `desvio-ja-concluido`.\n- Post que esta rodada não serviu responde **400** `post-desconhecido`.\n- Missão não liberada na turma responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`); sem atividade em andamento, **403** `atividade-nao-preparada`. Estudante sem turma responde **409** `sem-turma`. Corpo fora do formato responde **400** `payload-invalido`.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "curtidas": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "postId": {
+                          "type": "string",
+                          "pattern": "^proj-[a-d][1-4]:(apresentacao|bastidor)$"
+                        },
+                        "curtiu": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "postId",
+                        "curtiu"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "maxItems": 20,
+                    "default": []
+                  },
+                  "salvamentos": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "postId": {
+                          "type": "string",
+                          "pattern": "^proj-[a-d][1-4]:(apresentacao|bastidor)$"
+                        },
+                        "salvou": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "postId",
+                        "salvou"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "maxItems": 20,
+                    "default": []
+                  },
+                  "permanencias": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "pattern": "^proj-[a-d][1-4]:(apresentacao|bastidor)$"
+                    },
+                    "maxItems": 20,
+                    "default": []
+                  },
+                  "proximo": {
+                    "type": "boolean",
+                    "default": false
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/juri-estadual/desvio/concluir": {
+      "post": {
+        "operationId": "JuriEstadualController_concluirDesvio",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "passo": {
+                      "type": "string",
+                      "enum": [
+                        "credencial",
+                        "feed",
+                        "lacrada",
+                        "galeria",
+                        "revisada",
+                        "desvio",
+                        "cadeia",
+                        "mariana",
+                        "enquetes",
+                        "fim"
+                      ]
+                    },
+                    "etapa": {
+                      "type": "string",
+                      "enum": [
+                        "exploracao",
+                        "galeria",
+                        "desvio"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "passo",
+                    "etapa"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "juri-estadual"
+        ],
+        "summary": "Encerra a rodada de desvio e abre a cadeia.",
+        "description": "Leva a sessão de `revisada` a `cadeia` e carimba o desvio, no mesmo update. Pede os seis posts servidos e ao menos uma curtida ou um salvo: sem interação, não houve desvio. **Não marca evidência** — a vivência é obrigatória, não medida; o painel mostra quem concluiu. Encerrar de novo devolve o mesmo estado.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- Com menos de seis posts responde **409** `desvio-incompleto`; sem curtida nem salvo, **409** `desvio-sem-interacao`; antes da liberação, **403** `desvio-nao-liberado`.\n- Missão não liberada na turma responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`); sem atividade em andamento, **403** `atividade-nao-preparada`. Estudante sem turma responde **409** `sem-turma`. Corpo fora do formato responde **400** `payload-invalido`.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token"
       }
     },
     "/juri-estadual/cadeia": {
@@ -54052,6 +54747,8 @@
                         "feed",
                         "lacrada",
                         "galeria",
+                        "revisada",
+                        "desvio",
                         "cadeia",
                         "mariana",
                         "enquetes",
@@ -54074,7 +54771,7 @@
           "juri-estadual"
         ],
         "summary": "Uma tentativa de montar a cadeia: Interações → Dados → Algoritmo → Bolha.",
-        "description": "Cada envio é uma TENTATIVA. A resposta diz só se a ordem confere — nunca qual vaga errou. Na certa, o passo vai a `mariana` e a EF06CO03 (`cadeia`) é marcada pelo número de tentativas (1 = atingiu, 2–3 = em processo, mais = não atingiu). Com a cadeia já montada, responde `correta: true` sem contar outra tentativa.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- `ordem`: os quatro ids OPACOS desta sessão (`bl-` e três caracteres), sem repetir. (O `.refine()` some do OpenAPI; daí esta nota.) Id de outra sessão responde **400** `payload-invalido`.\n- Fora do passo `cadeia` responde **409** `passo-invalido`; com a rodada trocada no meio, **409** `rodada-mudou`.\n- Missão não liberada na turma responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`); sem atividade em andamento, **403** `atividade-nao-preparada`. Estudante sem turma responde **409** `sem-turma`. Corpo fora do formato responde **400** `payload-invalido`.",
+        "description": "Do passo `cadeia` (depois da rodada de desvio). Cada envio é uma TENTATIVA. A resposta diz só se a ordem confere — nunca qual vaga errou. Na certa, o passo vai a `mariana` e a EF06CO03 (`cadeia`) é marcada pelo número de tentativas (1 = atingiu, 2–3 = em processo, mais = não atingiu). Com a cadeia já montada, responde `correta: true` sem contar outra tentativa.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- `ordem`: os quatro ids OPACOS desta sessão (`bl-` e três caracteres), sem repetir. (O `.refine()` some do OpenAPI; daí esta nota.) Id de outra sessão responde **400** `payload-invalido`.\n- Fora do passo `cadeia` responde **409** `passo-invalido`; com a rodada trocada no meio, **409** `rodada-mudou`.\n- Missão não liberada na turma responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`); sem atividade em andamento, **403** `atividade-nao-preparada`. Estudante sem turma responde **409** `sem-turma`. Corpo fora do formato responde **400** `payload-invalido`.",
         "security": [
           {
             "token-da-plataforma": []
@@ -54130,6 +54827,8 @@
                         "feed",
                         "lacrada",
                         "galeria",
+                        "revisada",
+                        "desvio",
                         "cadeia",
                         "mariana",
                         "enquetes",
@@ -54140,7 +54839,8 @@
                       "type": "string",
                       "enum": [
                         "exploracao",
-                        "galeria"
+                        "galeria",
+                        "desvio"
                       ]
                     }
                   },
@@ -54221,6 +54921,8 @@
                         "feed",
                         "lacrada",
                         "galeria",
+                        "revisada",
+                        "desvio",
                         "cadeia",
                         "mariana",
                         "enquetes",
@@ -54231,7 +54933,8 @@
                       "type": "string",
                       "enum": [
                         "exploracao",
-                        "galeria"
+                        "galeria",
+                        "desvio"
                       ]
                     }
                   },
@@ -54461,14 +55164,16 @@
                       "type": "string",
                       "enum": [
                         "exploracao",
-                        "galeria"
+                        "galeria",
+                        "desvio"
                       ]
                     },
                     "proximaEtapa": {
                       "type": "string",
                       "enum": [
                         "exploracao",
-                        "galeria"
+                        "galeria",
+                        "desvio"
                       ],
                       "nullable": true
                     },
@@ -54515,6 +55220,8 @@
                               "feed",
                               "lacrada",
                               "galeria",
+                              "revisada",
+                              "desvio",
                               "cadeia",
                               "mariana",
                               "enquetes",
@@ -54533,6 +55240,9 @@
                           "revisou": {
                             "type": "boolean"
                           },
+                          "desviou": {
+                            "type": "boolean"
+                          },
                           "concluiu": {
                             "type": "boolean"
                           }
@@ -54548,6 +55258,7 @@
                           "abriuAGaleria",
                           "buscou",
                           "revisou",
+                          "desviou",
                           "concluiu"
                         ],
                         "additionalProperties": false
@@ -54569,6 +55280,10 @@
                           "minimum": 0
                         },
                         "revisaram": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "desviaram": {
                           "type": "integer",
                           "minimum": 0
                         },
@@ -54649,11 +55364,16 @@
                             "trocaram": {
                               "type": "integer",
                               "minimum": 0
+                            },
+                            "complementaram": {
+                              "type": "integer",
+                              "minimum": 0
                             }
                           },
                           "required": [
                             "mantiveram",
-                            "trocaram"
+                            "trocaram",
+                            "complementaram"
                           ],
                           "additionalProperties": false
                         },
@@ -54699,6 +55419,7 @@
                         "entraram",
                         "votaram",
                         "revisaram",
+                        "desviaram",
                         "concluiram",
                         "computadores",
                         "porComputador",
@@ -54810,14 +55531,16 @@
                       "type": "string",
                       "enum": [
                         "exploracao",
-                        "galeria"
+                        "galeria",
+                        "desvio"
                       ]
                     },
                     "proximaEtapa": {
                       "type": "string",
                       "enum": [
                         "exploracao",
-                        "galeria"
+                        "galeria",
+                        "desvio"
                       ],
                       "nullable": true
                     },
@@ -54842,8 +55565,8 @@
         "tags": [
           "juri-estadual"
         ],
-        "summary": "\"Liberar a Galeria Oculta\" — o botão único da aula.",
-        "description": "O corpo diz a etapa de DESTINO: `exploracao → galeria`, nunca volta; destino igual ao atual é aceito e não muda nada (o segundo clique). Grava quando o portão abriu.\n\nQuem ainda não votou continua no feed com a galeria liberada: o voto atrasado é caminho previsto, e a galeria abre para ele depois do voto.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Destino fora de ordem responde **409** `transicao-de-etapa-invalida`, com `etapaAtual` e `proximaEtapa` no corpo.\n- É a linha que o polling de 3 s do estudante lê (`GET /juri-estadual/gate`): não há WebSocket de aplicação (ADR-93).\n- Sem atividade em andamento na turma, **403** `atividade-nao-preparada`: a plataforma não cria atividade — o professor gera, cria e põe em andamento (`POST :turmaId/pacotes/:pacoteId/em-andamento`).",
+        "summary": "\"Liberar a Galeria Oculta\", depois \"Liberar a rodada de desvio\" — o botão único da aula.",
+        "description": "O corpo diz a etapa de DESTINO: `exploracao → galeria → desvio`, uma por vez, nunca volta; destino igual ao atual é aceito e não muda nada (o segundo clique). Grava quando cada portão abriu.\n\nQuem ainda não votou continua no feed com a galeria liberada: o voto atrasado é caminho previsto, e a galeria abre para ele depois do voto. Com o desvio liberado, quem ainda está na galeria termina a revisão e entra direto no desvio.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Destino fora de ordem responde **409** `transicao-de-etapa-invalida`, com `etapaAtual` e `proximaEtapa` no corpo.\n- É a linha que o polling de 3 s do estudante lê (`GET /juri-estadual/gate`): não há WebSocket de aplicação (ADR-93).\n- Sem atividade em andamento na turma, **403** `atividade-nao-preparada`: a plataforma não cria atividade — o professor gera, cria e põe em andamento (`POST :turmaId/pacotes/:pacoteId/em-andamento`).",
         "security": [
           {
             "token-da-plataforma": []
@@ -54868,7 +55591,8 @@
                     "type": "string",
                     "enum": [
                       "exploracao",
-                      "galeria"
+                      "galeria",
+                      "desvio"
                     ]
                   }
                 },
@@ -54925,7 +55649,8 @@
                       "type": "string",
                       "enum": [
                         "exploracao",
-                        "galeria"
+                        "galeria",
+                        "desvio"
                       ]
                     }
                   },
@@ -55057,7 +55782,8 @@
                           "type": "string",
                           "enum": [
                             "exploracao",
-                            "galeria"
+                            "galeria",
+                            "desvio"
                           ]
                         }
                       },
@@ -55273,7 +55999,8 @@
                       "type": "string",
                       "enum": [
                         "exploracao",
-                        "galeria"
+                        "galeria",
+                        "desvio"
                       ],
                       "nullable": true
                     },
@@ -55383,7 +56110,8 @@
                       "type": "string",
                       "enum": [
                         "exploracao",
-                        "galeria"
+                        "galeria",
+                        "desvio"
                       ]
                     },
                     "mudou": {
@@ -56599,6 +57327,9 @@
                         "pesoDaCurtida": {
                           "type": "integer"
                         },
+                        "pesoDoSalvar": {
+                          "type": "integer"
+                        },
                         "pesoDaPermanencia": {
                           "type": "integer"
                         },
@@ -56607,13 +57338,18 @@
                         },
                         "postsNoFeed": {
                           "type": "integer"
+                        },
+                        "postsNoDesvio": {
+                          "type": "integer"
                         }
                       },
                       "required": [
                         "pesoDaCurtida",
+                        "pesoDoSalvar",
                         "pesoDaPermanencia",
                         "limiar",
-                        "postsNoFeed"
+                        "postsNoFeed",
+                        "postsNoDesvio"
                       ],
                       "additionalProperties": false
                     }

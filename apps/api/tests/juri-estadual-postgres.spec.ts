@@ -5,6 +5,7 @@ import { QuotaService, perfilDaQuota } from "../src/ai/quota.service";
 import { EquipesService } from "../src/equipes/equipes.service";
 import { EvidenciasService } from "../src/evidencias/evidencias.service";
 import {
+  DesvioSchema,
   EstadoSchema,
   FeedSchema,
   GaleriaSchema,
@@ -30,8 +31,9 @@ import { criarTurmaDeTeste } from "./turma-de-teste";
 
 /**
  * Integração da exp06ef1b no Postgres: a RLS das três tabelas e os CHECKs, a
- * porta da sala, o feed afunilado servido pelo motor, os dois latches
- * concorrentes, o portão da galeria, a auditoria (EF06CO10 e EF06CO01), a
+ * porta da sala, o feed afunilado servido pelo motor (curtir e salvar), os
+ * dois latches concorrentes com a justificativa antes e depois, o portão da
+ * galeria, o complementar, a rodada de desvio, a auditoria (EF06CO10 e EF06CO01), a
  * cadeia com ids opacos, as imagens aprovadas antes de ir ao ar, o caso Mariana, atividade × rodada (zerar guarda, outra atividade
  * abre a rodada seguinte, criar é idempotente), o painel POR COMPUTADOR, o
  * resolvedor das enquetes e o preparo com IA falsa.
@@ -173,23 +175,36 @@ const entrar = (estudanteId: string, turmaId = ids.turma, escolaId = ESCOLA) => 
 const sessaoDe = (estudanteId: string) =>
   prisma.exp06ef1bSessao.findFirstOrThrow({ where: { escolaId: ESCOLA, estudanteId }, orderBy: { criadoEm: "desc" } });
 const etapa = (para: (typeof ETAPAS)[number]) => service.mudarEtapa(ESCOLA, ids.turma, ids.professora, para);
-const semEventos = { curtidas: [], permanencias: [], proximo: true };
+const semEventos = { curtidas: [], salvamentos: [], permanencias: [], proximo: true };
+const curtindo = (curtidas: { postId: string; curtiu: boolean }[], proximo: boolean) => ({ curtidas, salvamentos: [], permanencias: [], proximo });
+/** A justificativa mínima: o primeiro cartão e a primeira frase da legenda. */
+const comMotivo = <T extends object>(voto: T) => ({ ...voto, motivo: "v1" as const, trecho: 0 });
+const revisao = <T extends object>(r: T) => ({ ...r, motivo: "r1" as const, trecho: 0 });
 
 /**
  * Rola o feed até os dez. Com `area`, curte os dois primeiros posts dela que
- * chegarem — a bolha fecha. Devolve o feed completo.
+ * chegarem — a bolha fecha. Com `modo: "salvar"`, SALVA os três primeiros (3 × 2
+ * = 6, o mesmo limiar). Devolve o feed completo.
  */
-async function rolarFeed(estudanteId: string, area?: Area, turmaId = ids.turma, escolaId = ESCOLA) {
+async function rolarFeed(estudanteId: string, area?: Area, turmaId = ids.turma, escolaId = ESCOLA, modo: "curtir" | "salvar" = "curtir") {
   let feed = FeedSchema.parse(await service.pedirPasso(escolaId, estudanteId, turmaId, "feed"));
-  let curtidas = 0;
-  const curtir = () => {
-    const alvos = feed.posts.filter((p) => area && p.area === area && !feed.curtidos.includes(p.id)).slice(0, 2 - curtidas);
-    curtidas += alvos.length;
-    return alvos.map((p) => ({ postId: p.id, curtiu: true }));
+  const quantos = modo === "curtir" ? 2 : 3;
+  let feitos = 0;
+  const tocar = () => {
+    const ja = modo === "curtir" ? feed.curtidos : feed.salvos;
+    const alvos = feed.posts.filter((p) => area && p.area === area && !ja.includes(p.id)).slice(0, quantos - feitos);
+    feitos += alvos.length;
+    return alvos.map((p) => p.id);
   };
   while (!feed.completo) {
+    const alvos = tocar();
     feed = FeedSchema.parse(
-      await service.eventosDoFeed(escolaId, estudanteId, turmaId, { curtidas: curtir(), permanencias: [], proximo: true }),
+      await service.eventosDoFeed(escolaId, estudanteId, turmaId, {
+        curtidas: modo === "curtir" ? alvos.map((postId) => ({ postId, curtiu: true })) : [],
+        salvamentos: modo === "salvar" ? alvos.map((postId) => ({ postId, salvou: true })) : [],
+        permanencias: [],
+        proximo: true,
+      }),
     );
   }
   return feed;
@@ -198,11 +213,27 @@ async function rolarFeed(estudanteId: string, area?: Area, turmaId = ids.turma, 
 async function votar(estudanteId: string, area?: Area) {
   const feed = await rolarFeed(estudanteId, area);
   const projetoId = (feed.posts.find((p) => !area || p.area === area) ?? feed.posts[0])!.projetoId;
-  await service.votar(ESCOLA, estudanteId, ids.turma, { projetoId, conviccao: "vi_tudo" });
+  await service.votar(ESCOLA, estudanteId, ids.turma, comMotivo({ projetoId, conviccao: "vi_tudo" as const }));
   return { feed, projetoId };
 }
 
-/** Do zero até o passo `cadeia`: vota, a turma libera a galeria, abre dois ocultos de outras áreas e mantém. */
+/**
+ * A rodada de desvio inteira: libera (se a turma ainda não estiver nela), rola
+ * os seis curtindo o primeiro post e encerra.
+ */
+async function fazerODesvio(estudanteId: string) {
+  const gate = await service.gate(ESCOLA, estudanteId, ids.turma);
+  if (gate.etapa !== "desvio") await etapa("desvio");
+  let d = DesvioSchema.parse(await service.eventosDoDesvio(ESCOLA, estudanteId, ids.turma, curtindo([], false)));
+  d = DesvioSchema.parse(
+    await service.eventosDoDesvio(ESCOLA, estudanteId, ids.turma, curtindo([{ postId: d.posts[0]!.id, curtiu: true }], false)),
+  );
+  while (!d.completo) d = DesvioSchema.parse(await service.eventosDoDesvio(ESCOLA, estudanteId, ids.turma, curtindo([], true)));
+  await service.concluirDesvio(ESCOLA, estudanteId, ids.turma);
+  return d;
+}
+
+/** Do zero até o passo `cadeia`: vota, a turma libera a galeria, abre dois ocultos de outras áreas, mantém e faz o desvio. */
 async function ateACadeia(estudanteId: string) {
   const { projetoId } = await votar(estudanteId, "area_b");
   await etapa("galeria");
@@ -213,7 +244,8 @@ async function ateACadeia(estudanteId: string) {
   for (const a of areas) {
     await service.acaoDaGaleria(ESCOLA, estudanteId, ids.turma, { tipo: "abrir", projetoId: ocultos.find((p) => p.area === a)!.id });
   }
-  await service.revisar(ESCOLA, estudanteId, ids.turma, { acao: "manter" });
+  await service.revisar(ESCOLA, estudanteId, ids.turma, revisao({ acao: "manter" as const }));
+  await fazerODesvio(estudanteId);
   return { projetoId };
 }
 
@@ -395,14 +427,32 @@ describe("os CHECKs recusam o que dizem recusar", () => {
     await prisma.$executeRawUnsafe(`UPDATE exp06ef1b_sessoes SET ${votada}, passo = 'lacrada' WHERE id = '${sessao}'::uuid`);
   });
 
-  test("o LATCH 2: manter repete o voto, trocar escolhe outro, e o carimbo anda com o passo", async () => {
-    const revisada = (acao: string, voto: string, passo = "cadeia") =>
-      `revisao_acao = '${acao}', voto_revisado = '${voto}', revisado_em = now(), passo = '${passo}'`;
+  test("a justificativa é um par, e só existe com o gesto dela", async () => {
+    await naSessao("voto_motivo = 'v1'");
+    await naSessao("voto_motivo = 'v9', voto_trecho = 0");
+    await naSessao("voto_motivo = 'v1', voto_trecho = 12");
+    await naSessao("revisao_motivo = 'r1', revisao_trecho = 0");
+    await prisma.$executeRawUnsafe(`UPDATE exp06ef1b_sessoes SET voto_motivo = 'v2', voto_trecho = 1 WHERE id = '${sessao}'::uuid`);
+  });
+
+  test("o LATCH 2: manter e complementar repetem o voto, trocar escolhe outro, e o carimbo anda com o passo", async () => {
+    const revisada = (acao: string, voto: string, passo = "revisada", extra = "") =>
+      `revisao_acao = '${acao}', voto_revisado = '${voto}', revisado_em = now(), passo = '${passo}'${extra}`;
     await naSessao(revisada("manter", "proj-b2"));
     await naSessao(revisada("trocar", "proj-a1"));
     await naSessao(revisada("manter", "proj-a1", "lacrada"));
-    await naSessao("passo = 'cadeia'");
+    /* O complemento só no complementar, e nunca o próprio voto. */
+    await naSessao(revisada("complementar", "proj-a1"));
+    await naSessao(revisada("complementar", "proj-a1", "revisada", ", complemento_projeto = 'proj-a1'"));
+    await naSessao(revisada("manter", "proj-a1", "revisada", ", complemento_projeto = 'proj-b2'"));
+    await naSessao(revisada("complementar", "proj-b2", "revisada", ", complemento_projeto = 'proj-c1'"));
+    await naSessao("passo = 'revisada'");
+    /* Da espera para a cadeia, só com o desvio concluído; e `desvio` nunca é gravado. */
+    await naSessao(revisada("manter", "proj-a1", "cadeia"));
+    await naSessao(revisada("manter", "proj-a1", "desvio"));
     await prisma.$executeRawUnsafe(`UPDATE exp06ef1b_sessoes SET ${revisada("trocar", "proj-c3")} WHERE id = '${sessao}'::uuid`);
+    await naSessao("desvio_concluido_em = now()");
+    await prisma.$executeRawUnsafe(`UPDATE exp06ef1b_sessoes SET desvio_concluido_em = now(), passo = 'cadeia' WHERE id = '${sessao}'::uuid`);
   });
 
   test("cadeia, cartões e fim andam com o passo — e `pacotes` não existe mais", async () => {
@@ -426,9 +476,12 @@ describe("os CHECKs recusam o que dizem recusar", () => {
     await prisma.$executeRawUnsafe(inserir("ia", conteudo, false));
   });
 
-  test("o gate: carimbo da galeria coerente com a etapa", async () => {
-    await falha(`UPDATE exp06ef1b_gates_turma SET etapa = 'galeria' WHERE turma_id = '${ids.turma}'::uuid`);
-    await falha(`UPDATE exp06ef1b_gates_turma SET galeria_liberada_em = now() WHERE turma_id = '${ids.turma}'::uuid`);
+  test("o gate: os carimbos da galeria e do desvio coerentes com a etapa", async () => {
+    const noGate = (set: string) => `UPDATE exp06ef1b_gates_turma SET ${set} WHERE turma_id = '${ids.turma}'::uuid`;
+    await falha(noGate("etapa = 'galeria'"));
+    await falha(noGate("galeria_liberada_em = now()"));
+    await falha(noGate("etapa = 'desvio', galeria_liberada_em = now()"));
+    await falha(noGate("etapa = 'galeria', galeria_liberada_em = now(), desvio_liberado_em = now()"));
   });
 });
 
@@ -452,9 +505,12 @@ describe("a porta da sala e a atividade em andamento", () => {
   test("com a atividade no ar, a entrada abre a rodada 1, sem acervo e sem blocos do fim", async () => {
     const pacoteId = await prepararAtividade();
     const s = SessaoSchema.parse(await entrar(ids.ana));
-    expect(s).toMatchObject({ pacoteId, rodada: 1, etapa: "exploracao", passo: "credencial", voto: null, cadeia: null, mariana: null });
+    expect(s).toMatchObject({ pacoteId, rodada: 1, etapa: "exploracao", passo: "credencial", voto: null, desvio: null, cadeia: null, mariana: null });
     expect(s).not.toHaveProperty("pacotes");
-    expect(s.feed).toEqual({ posts: [], curtidos: [], completo: false });
+    expect(s.feed).toEqual({ posts: [], curtidos: [], salvos: [], completo: false });
+    /* Os cartões de motivo descem sempre, sem gabarito: nenhum é o "certo". */
+    expect(s.motivos.voto.map((m) => m.id)).toEqual(["v1", "v2", "v3"]);
+    expect(s.motivos.revisao.map((m) => m.id)).toEqual(["r1", "r2", "r3"]);
     expect(s.categorias.map((c) => c.area)).toEqual(["area_a", "area_b", "area_c", "area_d"]);
     expect(GatePublicoSchema.parse(await service.gate(ESCOLA, ids.ana, ids.turma))).toEqual({ pacoteId, rodada: 1, etapa: "exploracao" });
     await entrar(ids.ana);
@@ -484,9 +540,14 @@ describe("o feed afunilado, servido pelo motor", () => {
     const s = SessaoSchema.parse(await entrar(ids.ana));
     const fora = conteudoDeTeste().projetos.find((p) => !s.feed.posts.some((x) => x.projetoId === p.id))!.id;
     expect(
-      await codigoDe(service.eventosDoFeed(ESCOLA, ids.ana, ids.turma, { curtidas: [{ postId: `${fora}:apresentacao`, curtiu: true }], permanencias: [], proximo: false })),
+      await codigoDe(service.eventosDoFeed(ESCOLA, ids.ana, ids.turma, curtindo([{ postId: `${fora}:apresentacao`, curtiu: true }], false))),
     ).toBe("post-desconhecido");
-    expect(await codigoDe(service.votar(ESCOLA, ids.ana, ids.turma, { projetoId: s.feed.posts[0]!.projetoId, conviccao: "vi_tudo" }))).toBe(
+    expect(
+      await codigoDe(
+        service.eventosDoFeed(ESCOLA, ids.ana, ids.turma, { ...semEventos, salvamentos: [{ postId: `${fora}:apresentacao`, salvou: true }], proximo: false }),
+      ),
+    ).toBe("post-desconhecido");
+    expect(await codigoDe(service.votar(ESCOLA, ids.ana, ids.turma, comMotivo({ projetoId: s.feed.posts[0]!.projetoId, conviccao: "vi_tudo" as const })))).toBe(
       "feed-incompleto",
     );
     /* Na credencial, o feed não anda. */
@@ -508,14 +569,34 @@ describe("o feed afunilado, servido pelo motor", () => {
     expect(new Set((linha.postsServidos as string[]).map((p) => p.split(":")[0])).size).toBe(7);
   });
 
+  test("três SALVOS na mesma área também fecham a bolha (2 × 3 = o limiar), e o salvo volta num F5", async () => {
+    const feed = await rolarFeed(ids.bia, "area_a", ids.turma, ESCOLA, "salvar");
+    expect(feed.salvos).toHaveLength(3);
+    expect(feed.curtidos).toEqual([]);
+    const terceiro = feed.posts.findIndex((p) => p.id === feed.salvos[2]);
+    expect(feed.posts.slice(terceiro + 1).every((p) => p.area === "area_a")).toBe(true);
+    expect(SessaoSchema.parse(await entrar(ids.bia)).feed.salvos).toEqual(feed.salvos);
+    /* Tirar dos salvos devolve o peso, como descurtir. */
+    const tirado = FeedSchema.parse(
+      await service.eventosDoFeed(ESCOLA, ids.bia, ids.turma, { ...semEventos, salvamentos: [{ postId: feed.salvos[0]!, salvou: false }], proximo: false }),
+    );
+    expect(tirado.salvos).toHaveLength(2);
+  });
+
   test("projeto fora do feed é recusado; dois votos simultâneos: um lacra, o outro é 409", async () => {
     const s = SessaoSchema.parse(await entrar(ids.ana));
     const vistos = new Set(s.feed.posts.map((p) => p.projetoId));
     const fora = conteudoDeTeste().projetos.find((p) => !vistos.has(p.id))!.id;
-    expect(await codigoDe(service.votar(ESCOLA, ids.ana, ids.turma, { projetoId: fora, conviccao: "vi_tudo" }))).toBe("projeto-fora-do-feed");
+    expect(await codigoDe(service.votar(ESCOLA, ids.ana, ids.turma, comMotivo({ projetoId: fora, conviccao: "vi_tudo" as const })))).toBe(
+      "projeto-fora-do-feed",
+    );
+    /* O trecho grifado tem de ser uma frase da legenda do estande votado. */
+    expect(
+      await codigoDe(service.votar(ESCOLA, ids.ana, ids.turma, { projetoId: s.feed.posts[0]!.projetoId, conviccao: "vi_tudo", motivo: "v2", trecho: 11 })),
+    ).toBe("payload-invalido");
     const [a, b] = await Promise.allSettled([
-      service.votar(ESCOLA, ids.ana, ids.turma, { projetoId: s.feed.posts[0]!.projetoId, conviccao: "vi_tudo" }),
-      service.votar(ESCOLA, ids.ana, ids.turma, { projetoId: s.feed.posts[1]!.projetoId, conviccao: "examinei_bem" }),
+      service.votar(ESCOLA, ids.ana, ids.turma, { projetoId: s.feed.posts[0]!.projetoId, conviccao: "vi_tudo", motivo: "v2", trecho: 1 }),
+      service.votar(ESCOLA, ids.ana, ids.turma, comMotivo({ projetoId: s.feed.posts[1]!.projetoId, conviccao: "examinei_bem" as const })),
     ]);
     expect([a, b].filter((r) => r.status === "fulfilled")).toHaveLength(1);
     const recusa = [a, b].find((r) => r.status === "rejected") as PromiseRejectedResult;
@@ -523,6 +604,8 @@ describe("o feed afunilado, servido pelo motor", () => {
     const depois = SessaoSchema.parse(await entrar(ids.ana));
     expect(depois).toMatchObject({ passo: "lacrada", aguardandoOProfessor: true });
     expect(depois.voto).not.toBeNull();
+    /* A justificativa de ANTES volta num F5: é ela que a galeria põe ao lado dos escondidos. */
+    expect(depois.voto?.justificativa).not.toBeNull();
     expect(await codigoDe(service.eventosDoFeed(ESCOLA, ids.ana, ids.turma, semEventos))).toBe("voto-ja-lacrado");
   });
 });
@@ -539,13 +622,13 @@ describe("a Galeria Oculta e a revisão do voto", () => {
     expect(await codigoDe(service.acaoDaGaleria(ESCOLA, ids.ana, ids.turma, { tipo: "abrir", projetoId: "proj-a1" }))).toBe(
       "galeria-nao-liberada",
     );
-    expect(await codigoDe(service.revisar(ESCOLA, ids.ana, ids.turma, { acao: "manter" }))).toBe("galeria-nao-liberada");
+    expect(await codigoDe(service.revisar(ESCOLA, ids.ana, ids.turma, revisao({ acao: "manter" as const })))).toBe("galeria-nao-liberada");
   });
 
   test("o botão abre a galeria (idempotente, nunca volta); quem não votou continua no feed", async () => {
     await entrar(ids.caio);
     await service.pedirPasso(ESCOLA, ids.caio, ids.turma, "feed");
-    expect(await etapa("galeria")).toMatchObject({ etapa: "galeria", proximaEtapa: null });
+    expect(await etapa("galeria")).toMatchObject({ etapa: "galeria", proximaEtapa: "desvio" });
     expect((await etapa("galeria")).etapa).toBe("galeria");
     expect(await codigoDe(etapa("exploracao"))).toBe("transicao-de-etapa-invalida");
     expect((await entrar(ids.caio)).passo).toBe("feed");
@@ -572,18 +655,26 @@ describe("a Galeria Oculta e a revisão do voto", () => {
     expect((await sessaoDe(ids.ana)).auditoria).toEqual({ abertos: [ocultoFora.id], buscas: [{ tipo: "hashtag", area: "area_d" }] });
   });
 
-  test("trocar para o mesmo voto é 400; duas revisões simultâneas: uma vale, a outra é 409", async () => {
-    expect(await codigoDe(service.revisar(ESCOLA, ids.ana, ids.turma, { acao: "trocar", projetoId: votoDaAna }))).toBe("payload-invalido");
+  test("trocar ou complementar com o mesmo voto é 400; duas revisões simultâneas: uma vale, a outra é 409", async () => {
+    expect(await codigoDe(service.revisar(ESCOLA, ids.ana, ids.turma, revisao({ acao: "trocar" as const, projetoId: votoDaAna })))).toBe(
+      "payload-invalido",
+    );
+    expect(await codigoDe(service.revisar(ESCOLA, ids.ana, ids.turma, revisao({ acao: "complementar" as const, projetoId: votoDaAna })))).toBe(
+      "payload-invalido",
+    );
+    expect(await codigoDe(service.revisar(ESCOLA, ids.ana, ids.turma, { acao: "manter", motivo: "r2", trecho: 11 }))).toBe("payload-invalido");
     const outro = votoDaAna === "proj-d4" ? "proj-d3" : "proj-d4";
     const [a, b] = await Promise.allSettled([
-      service.revisar(ESCOLA, ids.ana, ids.turma, { acao: "trocar", projetoId: outro }),
-      service.revisar(ESCOLA, ids.ana, ids.turma, { acao: "manter" }),
+      service.revisar(ESCOLA, ids.ana, ids.turma, revisao({ acao: "trocar" as const, projetoId: outro })),
+      service.revisar(ESCOLA, ids.ana, ids.turma, revisao({ acao: "manter" as const })),
     ]);
     expect([a, b].filter((r) => r.status === "fulfilled")).toHaveLength(1);
     const recusa = [a, b].find((r) => r.status === "rejected") as PromiseRejectedResult;
     expect((recusa.reason as HttpException).getResponse()).toMatchObject({ codigo: "voto-ja-revisado" });
-    /* Sem o passo dos pacotes: a revisão leva direto à cadeia. */
-    expect((await entrar(ids.ana)).passo).toBe("cadeia");
+    /* A revisão leva à ESPERA da rodada de desvio, com a justificativa de depois. */
+    const s = SessaoSchema.parse(await entrar(ids.ana));
+    expect(s).toMatchObject({ passo: "revisada", aguardandoOProfessor: true, desvio: null });
+    expect(s.revisao?.justificativa).toEqual({ motivo: "r1", trecho: 0 });
     /* A hashtag da área D + um oculto da D: a EF06CO01 é "atingiu"... */
     expect(await evidenciaDe(ids.ana, "EF06CO01")).toMatchObject([{ status: "atingiu", origem: "propria", rodada: 1 }]);
     /* ...e um oculto só é auditoria por cima: a EF06CO10 é "em processo". */
@@ -592,11 +683,96 @@ describe("a Galeria Oculta e a revisão do voto", () => {
     expect(await codigoDe(service.acaoDaGaleria(ESCOLA, ids.ana, ids.turma, { tipo: "abrir", projetoId: "proj-a1" }))).toBe("passo-invalido");
   });
 
-  test("quem revisa sem abrir nem buscar nada é 'não atingiu'", async () => {
+  test("quem revisa sem abrir nem buscar nada fica SEM marca de ação (ficha v3): decide a pergunta", async () => {
     await votar(ids.duda);
-    await service.revisar(ESCOLA, ids.duda, ids.turma, { acao: "manter" });
-    expect(await evidenciaDe(ids.duda, "EF06CO10")).toMatchObject([{ status: "nao_atingiu" }]);
-    expect(await evidenciaDe(ids.duda, "EF06CO01")).toMatchObject([{ status: "nao_atingiu" }]);
+    await service.revisar(ESCOLA, ids.duda, ids.turma, revisao({ acao: "manter" as const }));
+    expect(await evidenciaDe(ids.duda, "EF06CO10")).toEqual([]);
+    expect(await evidenciaDe(ids.duda, "EF06CO01")).toEqual([]);
+    expect(await marcasDe("auditoria", ids.duda)).toEqual([]);
+    expect(await marcasDe("classificacao", ids.duda)).toEqual([]);
+  });
+
+  test("complementar mantém o voto e grava o estande indicado também", async () => {
+    const { projetoId } = await votar(ids.enzo, "area_a");
+    const outro = projetoId === "proj-d1" ? "proj-d2" : "proj-d1";
+    await service.revisar(ESCOLA, ids.enzo, ids.turma, { acao: "complementar", projetoId: outro, motivo: "r3", trecho: 0 });
+    const linha = await sessaoDe(ids.enzo);
+    expect(linha).toMatchObject({ revisaoAcao: "complementar", votoRevisado: projetoId, complementoProjeto: outro, passo: "revisada" });
+    expect(SessaoSchema.parse(await entrar(ids.enzo)).revisao).toEqual({
+      acao: "complementar",
+      projetoId: outro,
+      justificativa: { motivo: "r3", trecho: 0 },
+    });
+  });
+});
+
+describe("a rodada de desvio", () => {
+  beforeAll(async () => {
+    await zerarMissao();
+    await votar(ids.ana, "area_b");
+    await etapa("galeria");
+    await service.revisar(ESCOLA, ids.ana, ids.turma, revisao({ acao: "manter" as const }));
+  });
+
+  test("antes de o professor liberar, a rodada não abre — e a criança espera", async () => {
+    expect((await entrar(ids.ana)).passo).toBe("revisada");
+    expect(await codigoDe(service.eventosDoDesvio(ESCOLA, ids.ana, ids.turma, curtindo([], false)))).toBe("desvio-nao-liberado");
+    expect(await codigoDe(service.concluirDesvio(ESCOLA, ids.ana, ids.turma))).toBe("desvio-nao-liberado");
+  });
+
+  test("o botão abre o desvio (uma etapa por vez, nunca volta), e a galeria continua aberta para quem não revisou", async () => {
+    expect(await etapa("desvio")).toMatchObject({ etapa: "desvio", proximaEtapa: null });
+    expect(await codigoDe(etapa("galeria"))).toBe("transicao-de-etapa-invalida");
+    const gate = await prisma.exp06ef1bGateTurma.findUniqueOrThrow({ where: { turmaId: ids.turma } });
+    expect(gate.galeriaLiberadaEm).not.toBeNull();
+    expect(gate.desvioLiberadoEm).not.toBeNull();
+    expect((await entrar(ids.ana)).passo).toBe("desvio");
+    /* Quem votou mas não revisou ainda passa pela galeria antes do desvio. */
+    await votar(ids.bia, "area_c");
+    expect((await entrar(ids.bia)).passo).toBe("galeria");
+  });
+
+  test("a abertura vem das duas áreas que MENOS apareceram; curtir uma delas vira o feed para ela", async () => {
+    const linha = await sessaoDe(ids.ana);
+    const vistosNoFeed = new Set((linha.postsServidos as string[]).map((p) => p.split(":")[0]));
+    let d = DesvioSchema.parse(await service.eventosDoDesvio(ESCOLA, ids.ana, ids.turma, curtindo([], false)));
+    expect(d.posts).toHaveLength(2);
+    /* A Ana fechou a bolha na área B: a abertura não é dela, e traz estande que o feed escondeu. */
+    expect(d.posts.every((p) => p.area !== "area_b")).toBe(true);
+    expect(d.posts.some((p) => !vistosNoFeed.has(p.projetoId))).toBe(true);
+    const alvo = d.posts[0]!;
+    expect(await codigoDe(service.concluirDesvio(ESCOLA, ids.ana, ids.turma))).toBe("desvio-incompleto");
+    d = DesvioSchema.parse(await service.eventosDoDesvio(ESCOLA, ids.ana, ids.turma, curtindo([{ postId: alvo.id, curtiu: true }], true)));
+    d = DesvioSchema.parse(await service.eventosDoDesvio(ESCOLA, ids.ana, ids.turma, curtindo([{ postId: d.posts[2]!.id, curtiu: true }], true)));
+    while (!d.completo) d = DesvioSchema.parse(await service.eventosDoDesvio(ESCOLA, ids.ana, ids.turma, curtindo([], true)));
+    expect(d.posts).toHaveLength(6);
+    /* Com a área nova curtida (o 3º post já veio dela pelo peso), o resto do desvio é dela. */
+    expect(d.posts[2]!.area).toBe(alvo.area);
+    expect(d.posts.slice(3).every((p) => p.area === alvo.area)).toBe(true);
+    /* O "antes e agora": a comparação por área, sem a regra. */
+    expect(d.comparacao?.find((c) => c.area === alvo.area)?.noDesvio).toBeGreaterThanOrEqual(4);
+    expect(d.comparacao?.reduce((t, c) => t + c.noFeed, 0)).toBe(10);
+    /* A regra não desce: nenhum peso, limiar ou área líder no corpo. */
+    expect(Object.keys(d).sort()).toEqual(["comInteracao", "comparacao", "completo", "concluido", "curtidos", "posts", "salvos"]);
+  });
+
+  test("encerrar pede uma interação; depois, a cadeia — e a rodada não reabre", async () => {
+    await votar(ids.caio, "area_d");
+    await service.revisar(ESCOLA, ids.caio, ids.turma, revisao({ acao: "manter" as const }));
+    let d = DesvioSchema.parse(await service.eventosDoDesvio(ESCOLA, ids.caio, ids.turma, curtindo([], false)));
+    while (!d.completo) d = DesvioSchema.parse(await service.eventosDoDesvio(ESCOLA, ids.caio, ids.turma, curtindo([], true)));
+    expect(d.comInteracao).toBe(false);
+    expect(await codigoDe(service.concluirDesvio(ESCOLA, ids.caio, ids.turma))).toBe("desvio-sem-interacao");
+
+    expect(await service.concluirDesvio(ESCOLA, ids.ana, ids.turma)).toEqual({ passo: "cadeia", etapa: "desvio" });
+    expect(await service.concluirDesvio(ESCOLA, ids.ana, ids.turma)).toEqual({ passo: "cadeia", etapa: "desvio" });
+    expect(await codigoDe(service.eventosDoDesvio(ESCOLA, ids.ana, ids.turma, curtindo([], true)))).toBe("desvio-ja-concluido");
+    const s = SessaoSchema.parse(await entrar(ids.ana));
+    expect(s).toMatchObject({ passo: "cadeia", aguardandoOProfessor: false });
+    expect(s.desvio?.concluido).toBe(true);
+    expect(s.cadeia).not.toBeNull();
+    /* Sem evidência: a vivência é obrigatória, não medida. */
+    expect(await prisma.evidenciaMarca.count({ where: { escolaId: ESCOLA, expId: EXP_ID, estudanteId: ids.ana, marcador: { contains: "desvio" } } })).toBe(0);
   });
 });
 
@@ -606,9 +782,9 @@ describe("a cadeia, Mariana e as enquetes", () => {
     await ateACadeia(ids.ana);
   });
 
-  test("dois ocultos de duas áreas antes de manter: a EF06CO10 é atingiu; sem busca, a EF06CO01 não", async () => {
+  test("dois ocultos de duas áreas antes de manter: a EF06CO10 é atingiu; sem busca, a EF06CO01 fica sem marca", async () => {
     expect(await evidenciaDe(ids.ana, "EF06CO10")).toMatchObject([{ status: "atingiu" }]);
-    expect(await evidenciaDe(ids.ana, "EF06CO01")).toMatchObject([{ status: "nao_atingiu" }]);
+    expect(await evidenciaDe(ids.ana, "EF06CO01")).toEqual([]);
     expect(await evidenciaDe(ids.ana, "EF06CO07")).toEqual([]);
   });
 
@@ -655,8 +831,8 @@ describe("a cadeia, Mariana e as enquetes", () => {
     /* A P1 é da EF06CO10 agora: a resposta certa leva ao atingiu (vale o melhor). */
     expect(await evidenciaDe(ids.ana, "EF06CO10")).toMatchObject([{ status: "atingiu" }]);
 
-    expect(await service.concluir(ESCOLA, ids.ana, ids.turma)).toEqual({ passo: "fim", etapa: "galeria" });
-    expect(await service.concluir(ESCOLA, ids.ana, ids.turma)).toEqual({ passo: "fim", etapa: "galeria" });
+    expect(await service.concluir(ESCOLA, ids.ana, ids.turma)).toEqual({ passo: "fim", etapa: "desvio" });
+    expect(await service.concluir(ESCOLA, ids.ana, ids.turma)).toEqual({ passo: "fim", etapa: "desvio" });
     expect(SessaoSchema.parse(await entrar(ids.ana)).concluida).toBe(true);
   });
 
@@ -809,7 +985,7 @@ describe("o painel POR COMPUTADOR, e a cópia para a equipe", () => {
     await entrar(ids.caio);
     await etapa("galeria");
     await service.acaoDaGaleria(ESCOLA, ids.ana, ids.turma, { tipo: "buscar", busca: "texto", area: null });
-    await service.revisar(ESCOLA, ids.ana, ids.turma, { acao: "trocar", projetoId: "proj-a1" });
+    await service.revisar(ESCOLA, ids.ana, ids.turma, revisao({ acao: "trocar" as const, projetoId: "proj-a1" }));
   });
 
   test("a evidência da Ana é copiada para a Bia, a colega de computador", async () => {
@@ -822,7 +998,7 @@ describe("o painel POR COMPUTADOR, e a cópia para a equipe", () => {
     expect(painel.resumo.porComputador).toBe(true);
     expect(painel.linhas.slice(0, 2).map((l) => l.equipe?.nome)).toEqual(["Equipe 1", "Equipe 2"]);
     const [equipe1, equipe2] = painel.linhas;
-    expect(equipe1).toMatchObject({ estudanteId: ids.ana, entrou: true, votou: true, abriuAGaleria: false, buscou: true, revisou: true });
+    expect(equipe1).toMatchObject({ estudanteId: ids.ana, entrou: true, votou: true, abriuAGaleria: false, buscou: true, revisou: true, desviou: false });
     expect(equipe2).toMatchObject({ estudanteId: ids.caio, entrou: true, votou: false, passo: "credencial" });
     expect(painel.resumo.computadores).toEqual({ votaram: 1, total: 2 });
     expect(painel.resumo.votosPorArea.map((v) => [v.area, v.votos])).toEqual([
@@ -833,7 +1009,8 @@ describe("o painel POR COMPUTADOR, e a cópia para a equipe", () => {
     ]);
     expect(painel.resumo.votosRevisadosPorArea.find((v) => v.area === "area_a")?.votos).toBe(1);
     expect(painel.resumo.invisibilidadeMedia).toBe(56);
-    expect(painel.resumo.revisao).toEqual({ mantiveram: 0, trocaram: 1 });
+    expect(painel.resumo.revisao).toEqual({ mantiveram: 0, trocaram: 1, complementaram: 0 });
+    expect(painel.resumo.desviaram).toBe(0);
   });
 
   test("nenhuma linha carrega voto, taxa nem nível — nem por chave, nem por valor", async () => {

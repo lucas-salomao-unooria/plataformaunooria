@@ -11,6 +11,14 @@ import type { Auditoria } from "./galeria";
  * de linha (E14) —, nunca "não atingiu". O "não atingiu" de cada régua é de
  * quem FEZ a ação sem o que ela mede.
  *
+ * **Quem não explora a galeria também fica SEM marca** (decisão de
+ * 2026-10-07, que resolve a contradição da spec entre "em processo" e "não
+ * atingiu"): revisar o voto sem abrir nem buscar nada é AUSÊNCIA de
+ * comportamento, não prova de que a criança não entendeu. As duas réguas da
+ * galeria devolvem `null` e não marcam; quem decide o nível é a pergunta da
+ * mesma habilidade (`p1`, `p2`), pela regra de sempre da ficha — vale o melhor
+ * dos marcadores, e o que não existe não puxa para baixo.
+ *
  * As duas réguas da galeria (EF06CO10 e EF06CO01) leem o MESMO registro — o que
  * a criança abriu e buscou antes de revisar o voto — e medem coisas DIFERENTES
  * de propósito (pedido do PO, 2026-10-06):
@@ -40,15 +48,18 @@ export const OCULTOS_PARA_ATINGIR = 2;
  *   conferir os concorrentes antes de validar (ou trocar) a escolha;
  * - em processo: entrou na auditoria, mas superficialmente — abriu um oculto
  *   só, abriu só estandes que já tinha visto, ou buscou sem abrir;
- * - não atingiu: revisou o voto sem abrir nem buscar nada (fechou a auditoria
- *   sem inspecionar concorrente nenhum).
+ * - sem marca (`null`): revisou o voto sem abrir nem buscar nada. A ação não
+ *   aconteceu; a `p1` decide.
+ *
+ * Esta régua não devolve "não atingiu": o único caminho para ele, revisar sem
+ * inspecionar nada, virou ausência.
  */
-export function nivelDaAuditoria(auditoria: Auditoria, ocultos: readonly string[]): Nivel {
+export function nivelDaAuditoria(auditoria: Auditoria, ocultos: readonly string[]): Nivel | null {
   const oculto = new Set(ocultos);
   const ocultosAbertos = auditoria.abertos.filter((id) => oculto.has(id));
   if (ocultosAbertos.length >= OCULTOS_PARA_ATINGIR) return "atingiu";
   if (auditoria.abertos.length > 0 || auditoria.buscas.length > 0) return "em_processo";
-  return "nao_atingiu";
+  return null;
 }
 
 /**
@@ -59,12 +70,13 @@ export function nivelDaAuditoria(auditoria: Auditoria, ocultos: readonly string[
  *   estande oculto DAQUELA área — usou a categoria como chave da coleção;
  * - em processo: buscou alguma coisa (por texto, pela própria área, ou pela
  *   hashtag sem abrir o que ela trouxe);
- * - não atingiu: não buscou — a categoria não entrou na auditoria dela.
+ * - sem marca (`null`): não buscou — a classificação não foi exercida, e a
+ *   `p2` decide.
  *
  * `areaDoVoto` é a área do voto INICIAL (o lacrado): é a bolha que a galeria
  * confronta.
  */
-export function nivelDaClassificacao(auditoria: Auditoria, ocultos: readonly string[], areaDoVoto: Area): Nivel {
+export function nivelDaClassificacao(auditoria: Auditoria, ocultos: readonly string[], areaDoVoto: Area): Nivel | null {
   const oculto = new Set(ocultos);
   const areasDosOcultosAbertos = new Set(auditoria.abertos.filter((id) => oculto.has(id)).map(areaDoProjeto));
   const classificou = auditoria.buscas.some(
@@ -72,7 +84,7 @@ export function nivelDaClassificacao(auditoria: Auditoria, ocultos: readonly str
   );
   if (classificou) return "atingiu";
   if (auditoria.buscas.length > 0) return "em_processo";
-  return "nao_atingiu";
+  return null;
 }
 
 /**

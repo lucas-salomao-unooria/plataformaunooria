@@ -189,9 +189,14 @@ A página da atividade é `resultados/resultados-juri-estadual.tsx`; a criação
   exigir imagem em todo estande (o sem imagem aparece "arte desenhada" antes
   do clique); aprovada, congela. Hashtag vai em `subtags` do `Card` (`tags` é
   o cabeçalho, sem quebra, e vazava).
-- **Podcast**: falas na FASE 1 (o `homologar` as exige); ele revela a virada e
-  o módulo não trava por etapa, então o cartão leva o `avisoDoPodcast` (só
-  depois da Galeria Oculta).
+- **Podcast**: falas na FASE 1 (o `homologar` as exige). É do professor e é
+  OPCIONAL (Lucas, 2026-10-07): toca na tela dele, para a sala, se e quando
+  quiser. O módulo não trava por etapa, e o cartão RECOMENDA o momento
+  (`avisoDoPodcast`: o fechamento, depois da Galeria Oculta).
+- **Dois botões** (2026-10-07): Liberar a Galeria Oculta e depois Liberar a
+  rodada de desvio (`ROTULO_DO_BOTAO`). Sem o segundo, a turma espera e não
+  chega à cadeia. A folha ganhou a coluna da rodada; o resumo, `desviaram` e
+  `complementaram`. O guia não prescreve revezamento nem desempate (o PO).
 - **A invisibilidade média só vai para a lousa depois de liberar a galeria**:
   projetada no pico, ela contaria à turma o que a Galeria Oculta mostra a cada
   um. O número é o da api; nenhum percentual é cravado na copy nem no guia.

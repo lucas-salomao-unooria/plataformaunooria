@@ -17,17 +17,42 @@ import { FEED_VAZIO, projetoFoiExibido, type EstadoDoFeed } from "./afunilamento
  * o vocabulário é descartado aqui, e o motor nunca o vê.
  */
 
-/** As três listas do feed, só com ids de post válidos e sem repetição. */
-export function feedDaLinha(linha: { postsServidos: unknown; curtidos: unknown; permanencias: unknown }): EstadoDoFeed {
-  const lista = (bruto: unknown): string[] =>
-    Array.isArray(bruto)
-      ? [...new Set(bruto.filter((x): x is string => typeof x === "string" && ID_DE_POST_RE.test(x)))]
-      : [];
+/** Uma lista de ids de post gravada: só os válidos, sem repetição. */
+function listaDePosts(bruto: unknown): string[] {
+  return Array.isArray(bruto)
+    ? [...new Set(bruto.filter((x): x is string => typeof x === "string" && ID_DE_POST_RE.test(x)))]
+    : [];
+}
+
+/** As quatro listas do feed do júri. */
+export function feedDaLinha(linha: {
+  postsServidos: unknown;
+  curtidos: unknown;
+  salvos: unknown;
+  permanencias: unknown;
+}): EstadoDoFeed {
   return {
     ...FEED_VAZIO,
-    servidos: lista(linha.postsServidos),
-    curtidos: lista(linha.curtidos),
-    permanencias: lista(linha.permanencias),
+    servidos: listaDePosts(linha.postsServidos),
+    curtidos: listaDePosts(linha.curtidos),
+    salvos: listaDePosts(linha.salvos),
+    permanencias: listaDePosts(linha.permanencias),
+  };
+}
+
+/** As quatro listas da RODADA DE DESVIO — um feed à parte, com o mesmo motor. */
+export function desvioDaLinha(linha: {
+  desvioServidos: unknown;
+  desvioCurtidos: unknown;
+  desvioSalvos: unknown;
+  desvioPermanencias: unknown;
+}): EstadoDoFeed {
+  return {
+    ...FEED_VAZIO,
+    servidos: listaDePosts(linha.desvioServidos),
+    curtidos: listaDePosts(linha.desvioCurtidos),
+    salvos: listaDePosts(linha.desvioSalvos),
+    permanencias: listaDePosts(linha.desvioPermanencias),
   };
 }
 

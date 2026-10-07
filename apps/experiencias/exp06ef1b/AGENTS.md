@@ -4,7 +4,7 @@ Complementa o `AGENTS.md` da raiz e o de `apps/experiencias`.
 
 | Manifesto | Dev | DS | api | e2e |
 |---|---|---|---|---|
-| `exp06ef1b` · 6EF · unidade 1 · `entre-redes` · `viewport` 375×812 · `permissoes: ["forms"]` · versão **0.2.0** | `:5185` (`strictPort`), hub `/exp/exp06ef1b` | `@edu/ui/ds-unoovista` (clone, DS `^0.2.11`) + `@edu/ui/ds` (escola) | `apps/api/src/juri-estadual` ↔ `/juri-estadual/*`; enquetes em `/evidencias/exp06ef1b/perguntas/*` (E14) | `scripts/e2e/estudante/13-juri-estadual.mjs` (dois estudantes + a professora) |
+| `exp06ef1b` · 6EF · unidade 1 · `entre-redes` · `viewport` 375×812 · `permissoes: ["forms"]` · versão **0.3.0** | `:5185` (`strictPort`), hub `/exp/exp06ef1b` | `@edu/ui/ds-unoovista` (clone, DS `^0.2.11`) + `@edu/ui/ds` (escola) | `apps/api/src/juri-estadual` ↔ `/juri-estadual/*`; enquetes em `/evidencias/exp06ef1b/perguntas/*` (E14) | `scripts/e2e/estudante/13-juri-estadual.mjs` (dois estudantes + a professora) |
 
 ## O passo manda na tela
 
@@ -20,10 +20,12 @@ nos CAMPOS dos schemas que a tela lê.
 |---|---|---|---|
 | `credencial` | E1 — o crachá | comissão (clone) | `TopBar`, `PostCard` (`.Header` com `verified`, `.Media` sem `src` = o crachá), `IconUnv`, `BadgeUnv` (as áreas), `ButtonUnv` |
 | `feed` | E2/E3-ALU-01 — o feed | app | `TopBar`, `InlineHint` (dica do carrossel; depois "10 estandes avaliados…"), `PostCard` (`.Header/.Media/.Actions/.Caption`, carrossel de 2 lâminas com `currentIndex/totalCount`), `GestureHint` (`swipe-left`, só no 1º post), `ButtonUnv` + `IconUnv` `back` (as setas do carrossel), `ButtonUnv` `link` ("...mais"), `FloatingButton` (a barra da cédula), `TabBar` (2 abas), `SnackbarUnv` (inatividade 60 s; "Avalie os dez…") |
-| `feed` (cédula aberta) | E3-ALU-02 — a cédula | app | `BottomSheetUnv` modal, `ListItem` + `AvatarUnv` + `IconUnv` (`Escolha`, rádio por atributos), `Chip` (convicção), `ButtonUnv` |
+| `feed` (cédula aberta) | E3-ALU-02 — a cédula | app | `BottomSheetUnv` modal, `ListItem` + `AvatarUnv` + `IconUnv` (`Escolha`, rádio por atributos: o estande, o cartão de motivo e a frase grifada da legenda), `Chip` (convicção), `ButtonUnv` |
 | — (depois do voto) | E3-ALU-03 — o lacre | app | `TopBar`, `IconUnv` (o carimbo é moldura local, ver abaixo) |
 | `lacrada` | E4-ALU-01 — a plenária, o PICO | comissão | `IconUnv` (brasão) — e só: **três elementos** |
-| `galeria` | E4-ALU-02/03 — a Galeria Oculta | comissão, depois app | `TopBar`, `InlineHint` `friction` (a taxa real), `SearchField`, `Chip` (4 hashtags), `MediaGrid`, `BottomSheetUnv` (ficha; cédula de revisão), `BadgeUnv` `wrap`, `ButtonUnv` |
+| `galeria` | E4-ALU-02/03 — a Galeria Oculta | comissão, depois app | `TopBar`, `InlineHint` `friction` (a taxa real), `SearchField`, `Chip` (4 hashtags; as três decisões), `MediaGrid`, `BottomSheetUnv` (ficha; cédula de revisão com a justificativa de antes), `Escolha`, `BadgeUnv` `wrap`, `ButtonUnv` |
+| `revisada` | a segunda espera | comissão | a mesma `Espera`, com a frase da nova rodada (`daRodada`) |
+| `desvio` | a rodada de desvio (0.3.0) | app | o MESMO `Feed` (`modo: "desvio"`): `InlineHint` (a instrução), `PostCard`, `FloatingButton` (encerrar), sem `TabBar`; no fim, `ListItem` + `BadgeUnv` (a comparação por área) |
 | `cadeia` | E5 — a cadeia (EF06CO03) | **escola** | `ScrollBar`, `Logo`, `SectionHeader` (o Léo no título), `PuzzleBlock`, `PuzzleTrack`, `AlertBox` (a errada), `Button` |
 | `mariana` | E6-ALU-01 — o caso Mariana | comissão (clone) | `TopBar`, `PostCard` (só `.Header` + `.Caption`), `ListItem` (`Escolha`), `ButtonUnv` |
 | `enquetes` | E6-ALU-02 — a consulta nos Stories | comissão, tema ESCURO | `StoryViewer` (3 segmentos, `onNext`/`onPrev`, `footer`), `StoryPoll` (DS 0.2.12, sobre a mídia; se centraliza sozinho), `ButtonUnv` |
@@ -48,6 +50,23 @@ escola.
 A tela de abertura (o crachá) é do clone, e não é exceção à regra da entrada: a
 escola fala ANTES dela só quando a porta está fechada (o 403).
 
+## O ciclo do voto (0.3.0, o pedido do PO que a spec perdeu)
+
+- **Salvar** é o segundo sinal (curtir 3, salvar 2, ficar 1); **comentar e
+  compartilhar** respondem com o aviso da comissão (`E2.interacaoFechada`) e
+  não viajam — o `PostCard.Actions` da 0.2.18 tem `saved`/`onSave`/`onComment`/
+  `onShare`.
+- **A justificativa antes e depois**: a cédula pede o cartão de motivo e a
+  FRASE da legenda (`regras.ts#frasesDaLegenda`, espelho da api; só o índice
+  viaja); a cédula extraordinária mostra as duas de antes ao lado da mostra, e
+  pede as de depois. O `PostPublico` traz a `legenda` do estande também no
+  bastidor, para a cédula ter o que grifar.
+- **Complementar** é a terceira decisão (manter o voto e indicar outro estande).
+- **A rodada de desvio** usa a MESMA fila do feed (`juri-app.tsx#sincronizar`):
+  o passo decide a rota (`feed/eventos` ou `desvio/eventos`). A primeira ida,
+  vazia, serve a abertura; encerrar cobra os seis e uma curtida ou salvo, e a
+  tela diz o que falta antes de ir.
+
 ## O feed é servido um post por vez
 
 `POST /juri-estadual/passo {para:"feed"}` serve a abertura (4 posts, um de cada
@@ -63,10 +82,10 @@ A permanência (`lib/permanencia.ts`) é a ideia do `dwell.ts` da exp08ef1b com
 outro alvo: um FATO por post (> 5 s seguidos com ≥ 60% visível, aba visível),
 não o tempo somado.
 
-## Polling SÓ na plenária
+## Polling SÓ nas duas esperas
 
-`GET /juri-estadual/gate` a cada 3 s, só com `aguardandoOProfessor` (o passo
-`lacrada`). Compara etapa, rodada e atividade (`regras.ts#gateMudou`); mudou,
+`GET /juri-estadual/gate` a cada 3 s, só com `aguardandoOProfessor` (os passos
+`lacrada` e `revisada`). Compara etapa, rodada e atividade (`regras.ts#gateMudou`); mudou,
 relê a sessão. A galeria é lida (`GET galeria`) ao entrar no passo dela; o 403
 `galeria-nao-liberada` relê a sessão em vez de mostrar a porta fechada.
 
@@ -115,50 +134,20 @@ cd apps/experiencias/exp06ef1b
 find dist -name '*.js' | xargs grep -l -F -e "certo:" -e "LIMIAR_DA_BOLHA" -e "PESO_DA_CURTIDA" -e "Formação de bolha temática"   # vazio
 ```
 
-## As compensações
+## A interface: compensações e props do DS
 
-1. **Resolvida em 2026-10-02:** a `DmPoll` no lugar do `StoryPoll`. O DS 0.2.12
-   publicou o `StoryPoll` (pedido por esta missão), a ponte `ds-unoovista` o
-   exporta, e a casca `figurinha-de-enquete.tsx` e a regra CSS saíram.
-2. **`ListItem` que quebra linha** (`.escolha`, `.infografico__passos`): o
-   `ListItem` corta título e subtítulo numa linha, certo para conversas e errado
-   para um cartão de 20 palavras. Só `white-space` e alinhamento. Pedido: prop
-   `wrap` no `ListItem`.
-3. **A camada da dica do gesto** (`.gesto-do-carrossel`): o `GestureHint` se
-   posiciona contra o pai, e a mídia com `src` não aceita filho; a camada vem
-   ANTES da mídia (depois dela quebraria o `media + actions` que põe a pílula
-   sobre a imagem). Posição pura. Pedido: `hint` (ou `children` com `src`) no
-   `PostCard.Media`.
-4. **O botão preso na base da folha** (`.cedula__confirmar`): `position: sticky`
-   dentro do corpo que rola do `BottomSheetUnv`. Posição pura.
-5. **As setas do carrossel** (`.setas-do-carrossel`, 0.2.0, o pedido do PO: o
-   carrossel não andava com MOUSE). O `PostCard.Media` da 0.2.18 não tem prop
-   de navegação; as setas são `ButtonUnv` `primary` `sm` com o `IconUnv` `back`
-   (espelhado com `flipX` para a próxima), numa camada posicionada como a da
-   dica — daqui sai só ONDE elas ficam. Pedido: `onPrevious`/`onNext` (ou
-   setas próprias) no `PostCard.Media`, e um glifo `forward` no registro.
-
-**Não são compensação**: o carimbo do lacre (moldura tracejada de ficção — o
-desenho do selo é o `IconUnv`), a arte procedural dos estandes (conteúdo, não
-controle) e o deslize do carrossel (o DS publica os pontos, o gesto é do
-produto; `touch-action: pan-y` deixa a rolagem com o navegador).
-
-**O arrasto com MOUSE (0.2.0)**: o `<img>` do `PostCard.Media` é arrastável, e
-o `dragstart` nativo da imagem cancelava o gesto com `pointercancel` — no
-computador da escola a lâmina nunca trocava. Hoje o `dragstart` é cancelado, o
-ponteiro é CAPTURADO no `pointerdown` e a leitura do gesto é pura
-(`regras.ts#lerGesto`, com teste). A e2e arrasta com `page.mouse`, não com
-teclado: o teclado já funcionava e escondia o defeito.
+As compensações locais do DS (cada uma com a lacuna e o pedido ao
+`storybook-unooria`) e as props do DS que enganam moram em
+[`src/app/AGENTS.md`](src/app/AGENTS.md), a pasta onde se escreve a interface.
 
 ## Ausências deliberadas
 
 - **Barra inferior com DUAS abas** (Feed e Cédula). Sem DM, sem comentários,
   sem busca nesta etapa (a busca é a ferramenta da galeria, depois do pico).
   A Cédula antes do décimo post responde com a frase da comissão.
-- **Os botões de comentar, compartilhar e salvar do `PostCard.Actions`** ficam na
-  pílula sem ação: o DS não tem prop para escondê-los, e escondê-los por CSS
-  seria mexer na aparência do controle. Pedido: ações configuráveis no
-  `PostCard.Actions`.
+- **Comentar e compartilhar não pesam no feed** (0.3.0): respondem com o aviso
+  da comissão, porque botão morto parece defeito. Os três sinais são os do
+  desenho do PO: curtir, salvar e o tempo no post.
 - **Sem contagem de curtidas no post** (`PostCard.Likes`): a jornada recua os
   contadores, e a api não tem o número — inventar seria a tela mentindo.
 - **Sem confirmação dupla do voto**: o botão fica travado até as duas escolhas, e
@@ -167,21 +156,6 @@ teclado: o teclado já funcionava e escondia o defeito.
   elementos.
 - **Sem avanço automático do Story** (WCAG 2.2.2).
 - **Sem `PhoneFrame`**: o aparelho é do hub (`viewport`).
-
-## Props do DS que enganam (0.2.11)
-
-- `ListItem` não aceita `type`/`disabled` (são do `<button>`): ele já põe
-  `type="button"`, e o desabilitado aqui é `aria-disabled` + guarda no toque.
-- `TopBar` reserva os 44 px da status bar por padrão: vai com
-  `withStatusBarInset={false}` (o aparelho do hub não desenha status bar).
-- `StoryViewer` e `MediaGrid` exigem `src`: a arte vai em `data:` URI, com a cor
-  lida dos tokens `--unv-*` (`componentes/midia.tsx#lerPaleta`, que lê o tema
-  escuro num elemento de prova). Texto dentro do SVG não pega a fonte do app (um
-  `<img>` não carrega a webfont) — por isso o título da consulta está no `footer`.
-- `BottomSheetUnv`, `FloatingButton` e `SnackbarUnv` se posicionam contra o
-  contêiner posicionado mais próximo: `.tela` é `position: relative`.
-- O `PuzzleBlock` desenha o glifo por ligadura do Material Symbols: a folha
-  `fonts/unooria.css` é obrigatória (sem ela, "mail" aparece escrito).
 
 ## A copy ESCRITA AQUI
 

@@ -9,7 +9,7 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{151 decisões}, numeradas até ADR-151. A 132 (a Ajuda com
+São \textbf{152 decisões}, numeradas até ADR-152. A 132 (a Ajuda com
 avatar) entrou no código antes de ter seção aqui, e por um dia o número foi
 citado sem existir; a 133 pulou para não colidir com ela. A 133 e a 134 nasceram no mesmo dia, em frentes paralelas
 (Unoovista e Unoochat), e entraram juntas no merge; a 135 e a 136 levaram as
@@ -201,7 +201,8 @@ que a cercam.
 \adrr{ADR-148} & As duas chamadas curtas de IA em sala não têm teto de saída, e as missões revisadas se testam com a IA real & 2026-10-05 & Aceita; revê o teto da \adrr{ADR-115} e da \adrr{ADR-117}\\
 \zebra \adrr{ADR-149} & A plataforma publica a base que o gerador de missões lê & 2026-10-06 & Aceita\\
 \adrr{ADR-150} & O podcast de recapitulação vira recurso da plataforma, com rotas únicas, e o professor revisa as falas do tema na customização & 2026-10-06 & Aceita; revê a \adrr{ADR-119}\\
-\zebra \adrr{ADR-151} & O Júri Estadual volta ao foco EF06CO10, aprova as imagens antes da turma e ganha o podcast & 2026-10-06 & Aceita; substitui em parte a \adrr{ADR-137}\\
+\zebra \adrr{ADR-151} & O Júri Estadual volta ao foco EF06CO10, aprova as imagens antes da turma e ganha o podcast & 2026-10-06 & Aceita; substitui em parte a \adrr{ADR-137}; complementada pela \adrr{ADR-152}\\
+\adrr{ADR-152} & O Júri Estadual recupera o ciclo do voto: salvar pesa, a justificativa vem antes e depois, complementar, e a rodada de desvio & 2026-10-07 & Aceita; complementa a \adrr{ADR-151}\\
 \bottomrule
 \end{tabularx}
 
@@ -13320,7 +13321,10 @@ refeita, e as falas dela poderem migrar para \cd{podcast\_roteiros}.
 \section{ADR-151 --- O Júri Estadual volta ao foco EF06CO10, aprova as imagens antes da turma e ganha o podcast}
 \label{adr:exp06ef1b-ajustes-do-po}
 
-\textbf{Data.} 2026-10-06. \textbf{Status.} Aceita. \textbf{Substitui em
+\textbf{Data.} 2026-10-06. \textbf{Status.} Aceita; \textbf{complementada
+pela \adrr{ADR-152}} (2026-10-07): o ciclo do voto que a esteira perdeu
+volta, a régua de quem não explora a galeria muda e o podcast fica opcional.
+\textbf{Substitui em
 parte} a \adrr{ADR-137} (as habilidades medidas e a remontagem dos pacotes;
 o feed no servidor, a taxa real e a mostra sem acervo padrão continuam).
 \textbf{Segue} a \adrr{ADR-146} (as duas fases da aprovação), com um desvio
@@ -13485,3 +13489,166 @@ com a IA real mostrar que as falas da IA não casam com a mostra que a turma
 viu; o piloto mostrar professores tocando o podcast antes da Galeria Oculta
 (então a trava por etapa entra no módulo); ou o painel de habilidades ganhar um
 recorte por missão da descrição oficial.
+
+% ---------------------------------------------------------------------------
+\section{ADR-152 --- O Júri Estadual recupera o ciclo do voto: salvar pesa, a justificativa vem antes e depois, complementar, e a rodada de desvio}
+\label{adr:exp06ef1b-ciclo-do-voto}
+
+\textbf{Data.} 2026-10-07. \textbf{Status.} Aceita. \textbf{Complementa} a
+\adrr{ADR-151} (recupera as diretrizes do PO que ela declarou fora) e a
+\adrr{ADR-137} (o feed no servidor e a taxa real continuam). \textbf{Revê} a
+régua de quem não explora a Galeria Oculta (a ficha sobe para a versão 3) e o
+aviso do podcast da \adrr{ADR-151}.
+
+\begin{especificacao}{Contexto}
+As diretrizes que o PO deu à esteira para o Júri Estadual de Projetos
+(\cd{exp06ef1b}, 6º ano, Unidade 1) tinham um \textbf{ciclo do voto} inteiro
+que a spec v1.5.2 perdeu: o salvar como sinal do feed (\enquote{curtir, salvar,
+tempo de visualização}), a justificativa antes e depois do voto, na estrutura
+do livro didático (\enquote{Antes eu pensava\ldots{} Agora eu percebo\ldots}),
+a decisão de \emph{complementar} o voto e uma \textbf{rodada de desvio}
+obrigatória, em que a criança muda de propósito o que faz e vê o feed mudar.
+A \adrr{ADR-151} registrou essas quatro peças como consequência ruim
+(\enquote{continuam fora}). Em 2026-10-07 o PO pediu as quatro de volta, e mais
+duas coisas: que o guia deixasse de prescrever o revezamento J1--J4 e o
+desempate por \enquote{maioria de braços erguidos} (o sistema não distingue
+quem toca a tela), e que a spec deixasse de se contradizer sobre quem revisa o
+voto sem abrir nem buscar nada na galeria (um trecho dizia \enquote{em
+processo}, a matriz dizia \enquote{não atingiu}). O DS 0.2.18 já tinha
+\cd{saved}, \cd{onSave}, \cd{onComment} e \cd{onShare} no
+\cd{PostCard.Actions}, o que fechou a lacuna \enquote{ações configuráveis} que
+a experiência registrava.
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{itemize}
+  \item \textbf{Salvar pesa no feed}: curtir vale 3, salvar vale 2
+    (\cd{PESO\_DO\_SALVAR}), ficar mais de 5\,s num post vale 1. O salvo é
+    ESTADO, como a curtida (tirar dos salvos devolve o peso), e vive na lista
+    \cd{salvos} da sessão; os pesos continuam derivados, nunca gravados.
+    \textbf{Comentar e compartilhar respondem na tela} com o aviso da comissão
+    (\enquote{Durante o julgamento, comentários e compartilhamentos ficam
+    fechados.}) e não pesam nem viajam à api; só o toque vai à telemetria
+    (\cd{feed:fechado}).
+  \item \textbf{A justificativa antes e depois é por cartão e por trecho
+    grifado, nunca por texto}. Na cédula, um cartão de motivo (\cd{v1}--\cd{v3})
+    e o índice de uma frase da legenda do estande votado
+    (\arq{regras/\B{}justificativa.ts\#frasesDaLegenda}, espelhado na
+    experiência e conferido no servidor). Na revisão, a justificativa de antes
+    volta ao lado da mostra inteira, e a criança escolhe um cartão novo
+    (\cd{r1}--\cd{r3}) e uma frase da legenda do estande da decisão (o do voto,
+    ao manter). Colunas \cd{voto\_motivo}, \cd{voto\_trecho},
+    \cd{revisao\_motivo} e \cd{revisao\_trecho}, com um CHECK de PAR (cartão e
+    trecho juntos, e só com o gesto deles). \textbf{Não vira nível}: é o
+    registro do raciocínio que a plenária lê. O \cd{PostPublico} ganhou a
+    \cd{legenda} do estande, também no post de bastidor, para a cédula ter o
+    que grifar.
+  \item \textbf{Complementar é a terceira decisão da revisão}: manter o voto e
+    indicar também outro estande (\cd{complemento\_projeto}; o CHECK aceita a
+    coluna só no complementar, e nunca igual ao voto). O voto final continua o
+    inicial. O resumo do painel conta \cd{complementaram}.
+  \item \textbf{A rodada de desvio é a terceira etapa da turma}:
+    \cd{exploracao} \seta{} \cd{galeria} \seta{} \cd{desvio}, com o carimbo
+    \cd{desvio\_liberado\_em} (o da galeria fica). O botão do professor ganha
+    o segundo rótulo, \enquote{Liberar a rodada de desvio}. A revisão grava o
+    passo \cd{revisada} (a segunda espera, por \emph{polling}); o passo
+    efetivo \cd{desvio} nunca é gravado, como a \cd{galeria}. Seis posts
+    servidos pelo MESMO motor, com um estado só da rodada
+    (\cd{desvio\_servidos}, \cd{\_curtidos}, \cd{\_salvos},
+    \cd{\_permanencias}; \cd{proximoDoDesvio}): os dois primeiros das duas
+    áreas que MENOS apareceram no feed do júri, depois a regra do feed com os
+    pesos só da rodada. No fim, a tela compara, por área, o feed do júri com a
+    rodada. Concluir pede os seis posts e ao menos uma curtida ou salvo, e o
+    carimbo \cd{desvio\_concluido\_em} leva o passo a \cd{cadeia}. Rotas
+    novas \rota{POST /juri-estadual/desvio/eventos} e
+    \rota{POST /juri-estadual/desvio/concluir}; erros novos
+    \cd{desvio-nao-liberado} (403), \cd{desvio-incompleto},
+    \cd{desvio-sem-interacao} e \cd{desvio-ja-concluido} (409).
+    \textbf{Sem evidência}: a vivência é obrigatória, não medida. A migração
+    \arq{20261007120000\_\B{}exp06ef1b\_\B{}ciclo\_\B{}do\_\B{}voto} preencheu
+    \cd{desvio\_concluido\_em} com \cd{revisado\_em} nas sessões já em
+    \cd{cadeia} ou adiante, para a equivalência nova valer sem mudar o passo de
+    ninguém.
+  \item \textbf{Quem revisa o voto sem explorar a galeria fica SEM marca de
+    ação} na EF06CO10 (\cd{auditoria}) e na EF06CO01 (\cd{classificacao}): é
+    ausência de comportamento, não \enquote{não atingiu}. As duas réguas de
+    \arq{regras/evidencia.ts} devolvem \cd{null}, o \cd{marcar} não grava, e
+    decide a pergunta da habilidade (\cd{p1}, \cd{p2}), pela regra de sempre
+    da ficha: vale o melhor. A ficha sobe para a \textbf{versão 3}; a versão
+    gravada em cada evidência diz qual régua valeu. A versão do instrumento
+    da sessão sobe para 1.1.0.
+  \item \textbf{O guia e o catálogo deixam de prescrever protocolo de
+    operador}: saem o revezamento J1--J4 e o desempate. Como a comissão
+    divide o toque e decide uma divergência fica com o professor e a turma.
+    São dois botões na aula; o painel ganha \enquote{Fizeram a rodada de
+    desvio}, e a folha da turma, a coluna \enquote{Rodada de desvio}. O
+    roteiro foi recalibrado para 26 minutos em tela: a plenária encolheu um
+    minuto.
+  \item \textbf{O podcast é do professor e OPCIONAL} (decisão do Lucas): toca na
+    tela dele, para a sala, e não trava por etapa. O aviso do cartão deixa de
+    proibir e passa a RECOMENDAR o momento (o fechamento, depois da Galeria
+    Oculta), dizendo \enquote{Tocar é escolha sua}.
+  \item \textbf{A experiência sobe para a 0.3.0}, nos três lugares. O
+    \arq{AGENTS.md} dela foi dividido: as compensações do DS e as props que
+    enganam foram para \arq{src/app/AGENTS.md}, a pasta onde se escreve a
+    interface.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Esconder comentar e compartilhar.} O \cd{PostCard.Actions}
+    mantém os ícones, e um botão que some ou não responde parece defeito na
+    tela do computador da escola. Decisão do Lucas: os botões ficam, com a
+    resposta da comissão, e não pesam.
+  \item \textbf{A justificativa por texto livre.} É texto de menor, a etapa
+    não tem digitação, e o PO pediu cartões. O trecho grifado dá a evidência
+    que a criança aponta sem que ela escreva nada: um índice, que o servidor
+    confere.
+  \item \textbf{Medir a rodada de desvio como evidência.} O PO pediu a
+    vivência, não a reflexão sobre ela, e a rodada é curta e conduzida: um
+    nível por ela mediria a obediência ao pedido de curtir outra área.
+  \item \textbf{Travar o podcast por etapa}, como a \adrr{ADR-151} apontou
+    para o caso de o piloto mostrar o episódio tocado cedo. O podcast é
+    opcional e do professor, toca na tela dele, e a decisão de quando é dele;
+    o aviso recomenda o momento.
+  \item \textbf{O teto \enquote{em processo} para quem acerta a pergunta sem
+    explorar a galeria.} Era a proposta original levada ao Lucas
+    (\enquote{acertou a pergunta = em processo}). Mas a regra da plataforma é
+    \enquote{vale o melhor} entre os marcadores da habilidade, e um teto
+    dependente de OUTRO marcador ausente exigiria mudar o motor de evidência
+    de todas as missões. Implementou-se a regra da plataforma: quem acerta a
+    pergunta fica com \enquote{atingiu}.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{Quem não explora a galeria e acerta a pergunta fica com
+    \enquote{atingiu}} na EF06CO10 ou na EF06CO01 --- o contrário do que a
+    proposta original dizia. A pergunta de múltipla escolha passa a pesar
+    sozinha para essa criança.
+  \item \textbf{As sessões antigas não têm justificativa}: quem votou antes da
+    migração fica com os quatro campos nulos, e a cédula extraordinária dela
+    não tem o \enquote{antes} para mostrar.
+  \item \textbf{Sem o segundo botão, a turma não chega à cadeia}: a rodada de
+    desvio é uma espera nova, e um professor que não a libere deixa a turma
+    parada na tela da comissão. O guia e o cartão da aula o dizem, e a folha
+    mostra quem está nela.
+  \item \textbf{A aula ficou mais apertada}: 26 minutos em tela em 50, com a
+    plenária um minuto menor. Em dois blocos, o corte é depois da revisão do
+    voto, e o segundo bloco abre pela rodada de desvio.
+  \item \textbf{O podcast continua sem trava}: um professor que o toque antes
+    da Galeria Oculta revela a virada. É escolha dele, declarada no cartão.
+  \item \textbf{A suíte de ponta a ponta} (\arq{13-juri-estadual.mjs}) ganhou
+    a justificativa, o complementar e a rodada de desvio, mas só corre na
+    cópia principal, depois do \emph{merge}, com a IA real.
+\end{itemize}
+
+\textbf{Gatilho.} O piloto mostrar turmas paradas na espera do desvio (então
+a rodada se abre sozinha depois da revisão); o PO pedir nível pela rodada de
+desvio ou pela justificativa; o painel de habilidades mostrar muita gente com
+\enquote{atingiu} só pela pergunta, sem exploração (então o motor de evidência
+ganha um teto por marcador ausente, para todas as missões); ou o DS tirar os
+ícones de comentar e compartilhar do \cd{PostCard.Actions}.

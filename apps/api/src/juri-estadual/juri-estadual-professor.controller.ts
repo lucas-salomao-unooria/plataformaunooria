@@ -11,7 +11,7 @@ import {
   PERGUNTAS_DA_PLENARIA,
 } from "./conteudo";
 import { MaterialSchema } from "./contrato-de-rotas";
-import { LIMIAR_DA_BOLHA, PESO_DA_CURTIDA, PESO_DA_PERMANENCIA, POSTS_NO_FEED } from "./vocabulario";
+import { LIMIAR_DA_BOLHA, PESO_DA_CURTIDA, PESO_DA_PERMANENCIA, PESO_DO_SALVAR, POSTS_NO_DESVIO, POSTS_NO_FEED } from "./vocabulario";
 
 /**
  * O material do GUIA DA AULA da exp06ef1b — o esqueleto fixo COM gabarito (a
@@ -52,9 +52,11 @@ export class JuriEstadualProfessorController {
       plenaria: [...PERGUNTAS_DA_PLENARIA],
       regra: {
         pesoDaCurtida: PESO_DA_CURTIDA,
+        pesoDoSalvar: PESO_DO_SALVAR,
         pesoDaPermanencia: PESO_DA_PERMANENCIA,
         limiar: LIMIAR_DA_BOLHA,
         postsNoFeed: POSTS_NO_FEED,
+        postsNoDesvio: POSTS_NO_DESVIO,
       },
     };
   }

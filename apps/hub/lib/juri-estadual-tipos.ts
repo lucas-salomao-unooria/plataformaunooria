@@ -97,6 +97,8 @@ export const PASSOS = [
   "feed",
   "lacrada",
   "galeria",
+  "revisada",
+  "desvio",
   "cadeia",
   "mariana",
   "enquetes",
@@ -105,7 +107,7 @@ export const PASSOS = [
 export type PassoDoEstudante = (typeof PASSOS)[number];
 
 /** As etapas da TURMA, na ordem em que o botão único as abre. */
-export const ETAPAS = ["exploracao", "galeria"] as const;
+export const ETAPAS = ["exploracao", "galeria", "desvio"] as const;
 export type EtapaDaTurma = (typeof ETAPAS)[number];
 
 // ─────────────────────────────────────────────────── as invariantes do pacote
@@ -345,6 +347,8 @@ export interface LinhaDoPainel {
   abriuAGaleria: boolean;
   buscou: boolean;
   revisou: boolean;
+  /** Encerrou a rodada de desvio. */
+  desviou: boolean;
   concluiu: boolean;
 }
 
@@ -363,6 +367,7 @@ export interface PainelDoJuri {
     entraram: number;
     votaram: number;
     revisaram: number;
+    desviaram: number;
     concluiram: number;
     computadores: { votaram: number; total: number };
     porComputador: boolean;
@@ -370,7 +375,7 @@ export interface PainelDoJuri {
     votosPorArea: VotosDaArea[];
     /** A média da taxa real de quem votou, 0–100, ou `null` sem voto. */
     invisibilidadeMedia: number | null;
-    revisao: { mantiveram: number; trocaram: number };
+    revisao: { mantiveram: number; trocaram: number; complementaram: number };
     /** O voto final (revisado, se trocou), por área — a lousa depois da galeria. */
     votosRevisadosPorArea: VotosDaArea[];
   };
@@ -404,7 +409,14 @@ export interface MaterialDoJuri {
   blocos: Array<{ posicao: number; rotulo: string }>;
   mariana: { caso: string; mecanismos: CartaoComGabarito[]; atitudes: CartaoComGabarito[] };
   plenaria: string[];
-  regra: { pesoDaCurtida: number; pesoDaPermanencia: number; limiar: number; postsNoFeed: number };
+  regra: {
+    pesoDaCurtida: number;
+    pesoDoSalvar: number;
+    pesoDaPermanencia: number;
+    limiar: number;
+    postsNoFeed: number;
+    postsNoDesvio: number;
+  };
 }
 
 /** O corpo de erro da api: `{codigo, mensagem}`, e `erros[]` no `pacote-invalido`. */
@@ -439,12 +451,14 @@ export function falhaDaIa(status: number, codigo: string | null): "sem-saldo" | 
 
 export const ROTULO_DA_ETAPA: Record<EtapaDaTurma, string> = {
   exploracao: "Exploração — cada computador navega no feed da mostra e lacra o voto",
-  galeria: "Galeria Oculta liberada — cada computador audita o que não viu, revisa o voto e segue no próprio ritmo",
+  galeria: "Galeria Oculta liberada — cada computador audita o que não viu, revisa o voto e espera a nova rodada",
+  desvio: "Rodada de desvio liberada — cada computador interage com o que não via, vê o feed mudar e segue no próprio ritmo",
 };
 
 /** O rótulo do botão único, pela etapa de DESTINO. A suíte e2e casa por texto exato. */
 export const ROTULO_DO_BOTAO: Record<Exclude<EtapaDaTurma, "exploracao">, string> = {
   galeria: "Liberar a Galeria Oculta",
+  desvio: "Liberar a rodada de desvio",
 };
 
 export function rotuloDoBotao(proxima: EtapaDaTurma | null): string | null {
@@ -452,21 +466,26 @@ export function rotuloDoBotao(proxima: EtapaDaTurma | null): string | null {
   return ROTULO_DO_BOTAO[proxima];
 }
 
-/** O aviso do podcast com a Galeria Oculta já liberada na aula em andamento. */
+/** O aviso do podcast com a Galeria Oculta já aberta na aula em andamento. */
 export const AVISO_DO_PODCAST_NA_GALERIA =
-  "A Galeria Oculta já está liberada: o episódio pode tocar no fechamento, depois da revisão do voto.";
+  "A Galeria Oculta já está aberta: o melhor momento para o episódio é o fechamento, depois da rodada de desvio. Tocar é escolha sua.";
 /** O aviso do podcast antes da galeria — ou com a atividade fora do ar. */
 export const AVISO_DO_PODCAST_ANTES_DA_GALERIA =
-  "Este episódio revela a virada da missão: toque para a turma só depois de liberar a Galeria Oculta, nunca antes da aula.";
+  "Este episódio conta a virada da missão: o melhor momento é o fechamento, depois da Galeria Oculta. Tocar é escolha sua; antes da galeria, ele entrega a descoberta.";
 
 /**
- * O aviso no topo do cartão do podcast (ADR-150). O módulo de podcast não tem
- * trava por etapa, e o episódio conta o que o feed escondeu — tocado antes da
- * galeria, estraga a aula. Só com a atividade EM ANDAMENTO e a galeria aberta o
- * aviso libera; fora do ar, a página não sabe em que ponto a turma vai estar.
+ * O aviso no topo do cartão do podcast (ADR-150). O podcast é do PROFESSOR e é
+ * opcional (decisão do Lucas, 2026-10-07): ele dá o play na tela dele, para a
+ * sala, se e quando quiser — a missão não depende dele. Por isso o módulo não
+ * trava por etapa, e o cartão RECOMENDA o momento: o episódio conta o que o
+ * feed escondeu, e tocado antes da galeria entrega a descoberta. Com a
+ * atividade EM ANDAMENTO e a galeria aberta (ou o desvio), o aviso diz que é a
+ * hora; fora do ar, a página não sabe em que ponto a turma vai estar.
  */
 export function avisoDoPodcast(emAndamento: boolean, etapa: EtapaDaTurma | null): string {
-  return emAndamento && etapa === "galeria" ? AVISO_DO_PODCAST_NA_GALERIA : AVISO_DO_PODCAST_ANTES_DA_GALERIA;
+  return emAndamento && (etapa === "galeria" || etapa === "desvio")
+    ? AVISO_DO_PODCAST_NA_GALERIA
+    : AVISO_DO_PODCAST_ANTES_DA_GALERIA;
 }
 
 /** O que o computador está vendo agora, em uma linha. */
@@ -475,6 +494,8 @@ export const ROTULO_DO_PASSO: Record<PassoDoEstudante, string> = {
   feed: "No feed da mostra",
   lacrada: "Votou — esperando a plenária",
   galeria: "Na Galeria Oculta",
+  revisada: "Revisou — esperando a nova rodada",
+  desvio: "Na rodada de desvio",
   cadeia: "Montando a cadeia do feed",
   mariana: "No caso Mariana",
   enquetes: "Nas enquetes",
@@ -519,10 +540,21 @@ export function textoDaInvisibilidade(media: number | null): string {
   return `Em média, ${media}% dos estandes da mostra não chegaram ao feed de quem votou.`;
 }
 
-/** "3 jurados trocaram o voto e 20 mantiveram." */
-export function textoDaRevisao(r: { mantiveram: number; trocaram: number }, porComputador: boolean): string | null {
-  if (r.mantiveram + r.trocaram === 0) return null;
-  return `${r.trocaram} ${sujeito(porComputador, r.trocaram)} ${r.trocaram === 1 ? "trocou" : "trocaram"} o voto e ${r.mantiveram} ${r.mantiveram === 1 ? "manteve" : "mantiveram"}.`;
+/** "3 jurados trocaram o voto, 2 complementaram e 20 mantiveram." */
+export function textoDaRevisao(
+  r: { mantiveram: number; trocaram: number; complementaram: number },
+  porComputador: boolean,
+): string | null {
+  if (r.mantiveram + r.trocaram + r.complementaram === 0) return null;
+  const trocaram = `${r.trocaram} ${sujeito(porComputador, r.trocaram)} ${r.trocaram === 1 ? "trocou" : "trocaram"} o voto`;
+  const complementaram = `${r.complementaram} ${r.complementaram === 1 ? "complementou" : "complementaram"}`;
+  const mantiveram = `${r.mantiveram} ${r.mantiveram === 1 ? "manteve" : "mantiveram"}`;
+  return `${trocaram}, ${complementaram} e ${mantiveram}.`;
+}
+
+/** "5 de 26 jurados terminaram a rodada de desvio." */
+export function textoDoDesvio(desviaram: number, total: number, porComputador: boolean): string {
+  return `${desviaram} de ${total} ${sujeito(porComputador, total)} ${desviaram === 1 && total === 1 ? "terminou" : "terminaram"} a rodada de desvio.`;
 }
 
 export function totalDeVotos(v: readonly VotosDaArea[]): number {
@@ -546,10 +578,10 @@ export function textoDosVotosDaArea(a: VotosDaArea): string {
 
 /**
  * A aula ainda CORRE? É o que decide se o painel continua consultando. Para
- * quando a turma inteira concluiu com a galeria aberta.
+ * quando a turma inteira concluiu com a última etapa aberta (o desvio).
  */
 export function aulaEmAndamento(p: Pick<PainelDoJuri, "etapa" | "resumo">): boolean {
-  return !(p.etapa === "galeria" && p.resumo.total > 0 && p.resumo.concluiram >= p.resumo.total);
+  return !(p.etapa === "desvio" && p.resumo.total > 0 && p.resumo.concluiram >= p.resumo.total);
 }
 
 /** Quantas linhas já passaram de `passo` — o que o resumo não conta, a folha diz. */

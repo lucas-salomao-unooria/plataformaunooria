@@ -11,8 +11,8 @@ import type { FichaPedagogica } from "./tipos";
  *   AÇÃO, marcada no LATCH da revisão do voto sobre o que a criança fez na
  *   Galeria Oculta: abriu ao menos dois estandes que o feed escondeu = atingiu;
  *   entrou superficialmente (um oculto, só vistos, ou buscou sem abrir) = em
- *   processo; revisou sem abrir nem buscar nada = não atingiu
- *   (`juri-estadual/regras/evidencia.ts#nivelDaAuditoria`). É a matriz da spec
+ *   processo; revisou sem abrir nem buscar nada = SEM marca de ação, e a `p1`
+ *   decide (`juri-estadual/regras/evidencia.ts#nivelDaAuditoria`). É a matriz da spec
  *   ("inspeciona ≥ 2 projetos ocultos e valida ou revisa o voto"). E a `p1`.
  *   A ancoragem é o livro didático (Rodrigo Assis, Entre Redes, cap. 1): o
  *   consumo crítico das plataformas, a mediação algorítmica e o afunilamento
@@ -21,13 +21,20 @@ import type { FichaPedagogica } from "./tipos";
  *   `classificacao`, AÇÃO, no MESMO latch, mas medindo OUTRA coisa: buscou
  *   pela hashtag de uma área que não a do voto E abriu um oculto daquela área
  *   = atingiu (usou a categoria como chave da coleção); buscou alguma coisa =
- *   em processo; não buscou = não atingiu (`#nivelDaClassificacao`). Separar
+ *   em processo; não buscou = SEM marca de ação, e a `p2` decide
+ *   (`#nivelDaClassificacao`). Separar
  *   as duas réguas é o ponto: abrir ocultos ao acaso é investigar (CO10) sem
  *   classificar (CO01). E a `p2`.
  * - **EF06CO03** (descrever com precisão a solução, o programa) — `cadeia`,
  *   AÇÃO, marcada quando a cadeia de quatro blocos se monta: uma tentativa =
  *   atingiu; duas ou três = em processo; mais = não atingiu. E a `p3` (a regra
  *   SE…ENTÃO que o motor executou).
+ *
+ * **Versão 3 (2026-10-07):** quem revisa o voto sem explorar a galeria não
+ * ganha mais "não atingiu" nas duas ações dela — é AUSÊNCIA de comportamento
+ * (a spec se contradizia entre "em processo" e "não atingiu"), e o nível sai da
+ * pergunta. A ficha não muda de forma; muda a régua, e a versão gravada em cada
+ * evidência diz qual valeu.
  *
  * Toda rodada mede as ações de novo, também na mesma atividade (ADR-145): o
  * resultado é a melhor rodada de cada habilidade.
@@ -40,7 +47,7 @@ import type { FichaPedagogica } from "./tipos";
  */
 export const FICHA_EXP06EF1B: FichaPedagogica = {
   expId: "exp06ef1b",
-  versao: 2,
+  versao: 3,
   habilidades: [
     {
       codigo: "EF06CO10",
@@ -53,8 +60,9 @@ export const FICHA_EXP06EF1B: FichaPedagogica = {
           "Antes de manter ou trocar o voto, abre na Galeria Oculta pelo menos dois estandes que o feed escondeu; ou, na pergunta, reconhece que as próprias curtidas fizeram o algoritmo filtrar o feed.",
         em_processo:
           "Entra na Galeria Oculta só por cima (abre um estande oculto, abre só os que já tinha visto, ou busca sem abrir); ou, na pergunta, atribui o feed a outra causa técnica.",
-        nao_atingiu: "Revisa o voto sem abrir nem buscar nada na galeria, e diz que os outros projetos foram apagados.",
-        observacao: "Vale o melhor entre a auditoria da Galeria Oculta e a pergunta sobre a frase do jurado.",
+        nao_atingiu: "Na pergunta, diz que os outros projetos foram apagados, sem uma auditoria da galeria que mostre outra coisa.",
+        observacao:
+          "Vale o melhor entre a auditoria da Galeria Oculta e a pergunta sobre a frase do jurado. Quem revisa o voto sem abrir nem buscar nada não tem a auditoria contada: decide a pergunta.",
       },
     },
     {
@@ -68,8 +76,9 @@ export const FICHA_EXP06EF1B: FichaPedagogica = {
           "Na Galeria Oculta, busca pela hashtag de uma área que não a do voto e abre um estande oculto dessa área; ou, na pergunta, diz que cada curtida foi associada à categoria do projeto.",
         em_processo:
           "Busca alguma coisa na galeria (por texto, pela própria área, ou pela hashtag sem abrir o resultado); ou, na pergunta, diz que o sistema só contou os cliques.",
-        nao_atingiu: "Revisa o voto sem usar a busca, e diz que o aplicativo adivinhou pela foto de perfil.",
-        observacao: "Vale o melhor entre a busca por categoria na galeria e a pergunta sobre como o aplicativo organizou as curtidas.",
+        nao_atingiu: "Na pergunta, diz que o aplicativo adivinhou pela foto de perfil, sem uma busca na galeria que mostre outra coisa.",
+        observacao:
+          "Vale o melhor entre a busca por categoria na galeria e a pergunta sobre como o aplicativo organizou as curtidas. Quem revisa o voto sem usar a busca não tem a busca contada: decide a pergunta.",
       },
     },
     {

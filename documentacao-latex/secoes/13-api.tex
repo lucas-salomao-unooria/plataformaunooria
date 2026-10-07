@@ -1223,13 +1223,13 @@ teto de requisição por minuto.
 % Esta tabela e ESCRITA A MAO; a verdade e o Apendice C (`apendices/c-endpoints.tex`),
 % gerado de `docs/openapi.json`. Confira LINHA A LINHA contra ele antes de mexer.
 
-Vinte e cinco rotas em três \emph{controllers} (\adrr{ADR-137},
-\adrr{ADR-151}): onze do
+Vinte e sete rotas em três \emph{controllers} (\adrr{ADR-137},
+\adrr{ADR-151}, \adrr{ADR-152}): treze do
 estudante (\cd{@Roles("estudante")} na classe, e \cd{exigirMissaoLiberada} no
 funil \cd{garantirSessao} de TODAS, com a disponibilidade junto), treze por
 turma, para professor e gestores, e uma de catálogo. A \rota{POST
 /juri-estadual/pacotes} (a remontagem da curtida, EF06CO07) saiu com a
-\adrr{ADR-151}. O podcast não está aqui: é do módulo da plataforma
+\adrr{ADR-151}; as duas da rodada de desvio entraram com a \adrr{ADR-152}. O podcast não está aqui: é do módulo da plataforma
 (\rota{/podcast/exp06ef1b/turmas/:t/*}, \adrr{ADR-150}). A turma do estudante sai do
 \emph{token}, nunca do corpo. Sem atividade em andamento, toda rota de estudante
 responde 403 \cd{atividade-nao-preparada}: a plataforma não cria atividade. As
@@ -1244,27 +1244,43 @@ três enquetes não são deste módulo: passam por
   reconciliado com a etapa, o feed SERVIDO até aqui (nunca o acervo, nem peso
   ou área líder), o voto e os blocos do fim (cadeia embaralhada, Mariana), cada um só do passo dele em diante, com ids
   opacos estáveis num F5.\\
-\zebra \rota{GET /juri-estadual/gate} & estudante & O \emph{polling} de 3\,s da
-  plenária (\adrr{ADR-93}): etapa, rodada e atividade. Sem acervo e sem JOIN.\\
+\zebra \rota{GET /juri-estadual/gate} & estudante & O \emph{polling} de 3\,s das
+  duas esperas, a plenária e a da rodada de desvio (\adrr{ADR-93}): etapa,
+  rodada e atividade. Sem acervo e sem JOIN.\\
 \rota{POST /juri-estadual/passo} & estudante & Da credencial para o feed, com a
   ABERTURA: quatro posts, um de cada área.\\
-\zebra \rota{POST /juri-estadual/\B{}feed/\B{}eventos} & estudante & As curtidas (estado)
-  e as permanências (fato) que a tela mediu e, com \cd{proximo: true}, um post a
+\zebra \rota{POST /juri-estadual/\B{}feed/\B{}eventos} & estudante & As curtidas e os
+  salvos (estado) e as permanências (fato) que a tela mediu e, com \cd{proximo: true}, um post a
   mais, até dez. Post que o feed não serviu, 400 \cd{post-desconhecido}; depois
   do voto, 409 \cd{voto-ja-lacrado}.\\
 \rota{POST /juri-estadual/voto} & estudante & \textbf{O latch 1}: projeto,
-  convicção, carimbo e passo \cd{lacrada} juntos. Com menos de dez servidos, 409
+  convicção, a justificativa de antes (cartão \cd{v1}--\cd{v3} e o índice da
+  frase grifada da legenda, \adrr{ADR-152}), carimbo e passo \cd{lacrada}
+  juntos. Com menos de dez servidos, 409
   \cd{feed-incompleto}; projeto que não apareceu no feed DESTA criança, 409
-  \cd{projeto-fora-do-feed}.\\
+  \cd{projeto-fora-do-feed}; trecho que não é frase da legenda, 400.\\
 \zebra \rota{GET /juri-estadual/galeria} & estudante & Os dezesseis estandes,
   os ocultos primeiro, e a \cd{invisibilidade} REAL da sessão. Antes do voto e da
   etapa, 403 \cd{galeria-nao-liberada}.\\
 \rota{POST /juri-estadual/\B{}galeria/\B{}acoes} & estudante & Abrir um estande ou
   buscar --- da busca, só o tipo e a área, nunca o texto. 204 sem corpo.\\
 \zebra \rota{POST /juri-estadual/revisao} & estudante & \textbf{O latch 2}:
-  manter ou trocar o voto, com as marcas da EF06CO10 (\cd{auditoria}) e da
-  EF06CO01 (\cd{classificacao}) na mesma transação, e o passo \cd{cadeia}. A segunda, 409 \cd{voto-ja-revisado}; o professor zerou no meio,
+  manter, trocar ou complementar o voto, com a justificativa de depois (cartão
+  \cd{r1}--\cd{r3} e frase da legenda do estande da decisão), as marcas da
+  EF06CO10 (\cd{auditoria}) e da EF06CO01 (\cd{classificacao}) na mesma
+  transação --- sem marca para quem não abriu nem buscou nada
+  (\adrr{ADR-152}) ---, e o passo \cd{revisada}. A segunda, 409 \cd{voto-ja-revisado}; o professor zerou no meio,
   409 \cd{rodada-mudou}.\\
+\rota{POST /juri-estadual/\B{}desvio/\B{}eventos} & estudante & A rodada de desvio
+  (\adrr{ADR-152}): o mesmo corpo do feed, e o mesmo motor com os pesos só da
+  rodada; a primeira chamada serve a abertura, e com os seis servidos vem a
+  \cd{comparacao} por área. Antes da liberação, 403
+  \cd{desvio-nao-liberado}; depois de concluída, 409
+  \cd{desvio-ja-concluido}.\\
+\zebra \rota{POST /juri-estadual/\B{}desvio/\B{}concluir} & estudante & Encerra a
+  rodada e leva o passo a \cd{cadeia}. Pede os seis posts (409
+  \cd{desvio-incompleto}) e uma curtida ou salvo (409
+  \cd{desvio-sem-interacao}). Sem evidência.\\
 \rota{POST /juri-estadual/cadeia} & estudante & Uma tentativa da cadeia; na
   certa, a marca da EF06CO03 pelo número de tentativas. A resposta não diz
   qual vaga errou.\\
@@ -1274,13 +1290,15 @@ três enquetes não são deste módulo: passam por
   sem exigir as enquetes. Idempotente.\\
 \zebra \rota{GET /juri-estadual/turmas} & prof., gestor & O seletor, por matrícula
   para o professor.\\
-\rota{GET .../\B{}turmas/\B{}:id/\B{}painel} & prof., gestor & O botão da galeria, o
-  progresso POR COMPUTADOR e a lousa do pico: votos por área (o lacrado e o
-  final), a taxa média e quantos mantiveram ou trocaram, tudo anônimo. Nenhum
+\rota{GET .../\B{}turmas/\B{}:id/\B{}painel} & prof., gestor & O botão das duas
+  etapas, o progresso POR COMPUTADOR (com quem fez a rodada de desvio) e a
+  lousa do pico: votos por área (o lacrado e o final), a taxa média e quantos
+  mantiveram, trocaram ou complementaram, tudo anônimo. Nenhum
   voto, taxa ou nível por linha.\\
-\zebra \rota{POST .../gate} & prof., gestor & \enquote{Liberar a Galeria Oculta}:
-  \cd{exploracao} \seta{} \cd{galeria}. O segundo clique não muda nada; não
-  volta.\\
+\zebra \rota{POST .../gate} & prof., gestor & \enquote{Liberar a Galeria Oculta}
+  e depois \enquote{Liberar a rodada de desvio}: \cd{exploracao} \seta{}
+  \cd{galeria} \seta{} \cd{desvio}, uma por vez. O segundo clique não muda
+  nada; não volta.\\
 \rota{POST .../zerar} & prof., gestor & A próxima rodada da mesma
   atividade, sem apagar nada.\\
 \zebra \rota{GET .../pacotes} & prof., gestor & A atividade em andamento, inteira, e
@@ -1321,7 +1339,8 @@ três enquetes não são deste módulo: passam por
   \cd{imagens-ja-aprovadas}.\\
 \rota{GET /juri-estadual/\B{}professor/\B{}material} & prof., gestor & O
   esqueleto com gabarito: a cadeia na ordem certa, o caso Mariana
-  com os cartões certos, as perguntas da plenária e os números do motor.
+  com os cartões certos, as perguntas da plenária e os números do motor
+  (com o peso do salvar e o tamanho da rodada de desvio).
   Catálogo, sem \emph{tenancy} (\adrr{ADR-86}).\\
 \bottomrule
 \end{tabularx}

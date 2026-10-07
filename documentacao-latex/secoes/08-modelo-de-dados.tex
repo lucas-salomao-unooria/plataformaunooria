@@ -1378,16 +1378,20 @@ tabela, guardado.
   preparo (\cd{ia\_geracoes}, \cd{ia\_tokens}).\\
 \zebra \cd{exp06ef1b\_gates\_turma} & O \textbf{relógio da turma}, com a turma
   como chave: o pacote em andamento, a \textbf{rodada}, a etapa
-  (\cd{exploracao} $|$ \cd{galeria}) e o carimbo do portão
-  (\cd{galeria\_liberada\_em}). É a linha que o \emph{polling} de 3\,s lê
-  (\adrr{ADR-93}). Zerar e pôr outra atividade no ar voltam a etapa e limpam o
-  carimbo no mesmo \cd{UPDATE}.\\
+  (\cd{exploracao} $|$ \cd{galeria} $|$ \cd{desvio}, a terceira desde a
+  \adrr{ADR-152}) e os carimbos dos dois portões (\cd{galeria\_liberada\_em},
+  \cd{desvio\_liberado\_em}). É a linha que o \emph{polling} de 3\,s lê
+  (\adrr{ADR-93}). Zerar e pôr outra atividade no ar voltam a etapa e limpam os
+  carimbos no mesmo \cd{UPDATE}.\\
 \cd{exp06ef1b\_sessoes} & Uma linha por estudante, pacote e rodada
   (\cd{exp06ef1b\_sessao\_unica\_por\_rodada}). O passo gravado, a \cd{semente}
-  e as três listas do feed (servidos, curtidos, permanências); o voto, a
-  convicção e o carimbo do \emph{latch} 1; a \cd{auditoria} da galeria
+  e as quatro listas do feed (servidos, curtidos, salvos, permanências); o
+  voto, a convicção, a justificativa de antes (cartão e índice da frase
+  grifada) e o carimbo do \emph{latch} 1; a \cd{auditoria} da galeria
   (\cd{JSONB} \cd{\{abertos, buscas\}}, sem o texto da busca); a ação da
-  revisão, o voto final e o carimbo do \emph{latch} 2; as tentativas e o
+  revisão, o voto final, o complemento, a justificativa de depois e o carimbo
+  do \emph{latch} 2; as quatro listas e o carimbo da rodada de desvio
+  (\adrr{ADR-152}); as tentativas e o
   carimbo da cadeia (as colunas dos pacotes, \cd{pacotes\_tentativas} e
   \cd{pacotes\_remontados\_em}, saíram com a \adrr{ADR-151}); os cartões de Mariana; a conclusão e a
   versão do instrumento. \textbf{Nenhum campo de texto livre.}\\
@@ -1397,14 +1401,18 @@ tabela, guardado.
 \begin{regra}
 \textbf{Os \emph{latches} são EQUIVALÊNCIAS com o passo gravado}, como no
 Jornal: \cd{votado\_em} existe se e só se o passo saiu de \cd{credencial} e
-\cd{feed}; \cd{revisado\_em}, se e só se está de \cd{cadeia} em diante
-(até a \adrr{ADR-151}, de \cd{pacotes}, o passo que saiu);
-\cd{cadeia\_montada\_em}, de \cd{mariana} em diante; \cd{cartoes\_em}, de
+\cd{feed}; \cd{revisado\_em}, se e só se está de \cd{revisada} em diante
+(até a \adrr{ADR-151}, de \cd{pacotes}, o passo que saiu; até a
+\adrr{ADR-152}, de \cd{cadeia}); \cd{desvio\_concluido\_em}, de
+\cd{cadeia} em diante; \cd{cadeia\_montada\_em}, de \cd{mariana} em diante; \cd{cartoes\_em}, de
 \cd{enquetes} em diante; e \cd{fim} se e só se há \cd{concluida\_em}. O voto,
-a convicção e o carimbo andam juntos, e a revisão também: \cd{manter} repete o
-voto lacrado, \cd{trocar} escolhe outro. O passo \cd{galeria} \textbf{nunca} é
-gravado --- a etapa o impõe a quem está em \cd{lacrada} ---, e um \emph{CHECK}
-o recusa: gravado, faria o F5 de uma rodada zerada abrir a galeria sem o
+a convicção e o carimbo andam juntos, e a revisão também: \cd{manter} e
+\cd{complementar} repetem o voto lacrado, \cd{trocar} escolhe outro, e
+\cd{complemento\_projeto} existe só no \cd{complementar}, nunca igual ao voto.
+A justificativa é um PAR: cartão e trecho juntos, e só com o carimbo do gesto
+deles. Os passos \cd{galeria} e \cd{desvio} \textbf{nunca} são
+gravados --- a etapa os impõe a quem está em \cd{lacrada} e em
+\cd{revisada} ---, e um \emph{CHECK} os recusa: gravado, faria o F5 de uma rodada zerada abrir a galeria sem o
 professor ter liberado. O \emph{CHECK} vale por \emph{statement}, então o
 \emph{service} grava carimbo e passo no MESMO \cd{UPDATE}.
 \end{regra}
@@ -1418,18 +1426,22 @@ Um índice único \textbf{parcial} por turma & \cd{exp06ef1b\_pacotes\_um\_ativo
   passadas, com as sessões delas), e a turma tem uma só em andamento. O Prisma
   não o enxerga.\\
 \zebra Os pesos não são gravados & A sessão guarda as listas de posts servidos,
-  curtidos e com permanência; os pesos por área e a área líder são DERIVADOS
-  delas pelo motor puro. Um valor derivado não diverge do que o gerou. O
-  \emph{CHECK} limita os servidos a dez.\\
+  curtidos, salvos e com permanência (e as mesmas quatro da rodada de
+  desvio); os pesos por área e a área líder são DERIVADOS delas pelo motor
+  puro. Um valor derivado não diverge do que o gerou. O \emph{CHECK} limita
+  os servidos a dez, e os do desvio a seis.\\
 Quatro categorias e dezesseis projetos, e a régua fora do banco & O
   \emph{CHECK} cobra os dois \emph{arrays} com o tamanho certo; ids, áreas,
   \emph{hashtags}, réguas de palavras e termos proibidos são o Zod da
   homologação (\arq{invariantes.ts}).\\
-\zebra Os ids do voto têm forma & \cd{voto\_projeto} e \cd{voto\_revisado}
-  casam \cd{\textasciicircum{}proj-[a-d][1-4]\$}, e convicção, ação da revisão e cartões são
-  vocabulário fechado.\\
-O portão anda com a etapa & \cd{galeria\_liberada\_em} existe se e só se a etapa
-  é \cd{galeria}.\\
+\zebra Os ids do voto têm forma & \cd{voto\_projeto}, \cd{voto\_revisado} e
+  \cd{complemento\_projeto} casam \cd{\textasciicircum{}proj-[a-d][1-4]\$}, e
+  convicção, ação da revisão, cartões de motivo (\cd{v1}--\cd{v3},
+  \cd{r1}--\cd{r3}) e cartões de Mariana são vocabulário fechado. O trecho
+  é um índice de 0 a 11: o texto da frase nunca é gravado.\\
+Os portões andam com a etapa & \cd{galeria\_liberada\_em} existe se e só se a etapa
+  é \cd{galeria} ou \cd{desvio}; \cd{desvio\_liberado\_em}, se e só se é
+  \cd{desvio}.\\
 \zebra Os vocabulários em DOIS lugares & Etapa, passo, origem, disciplina,
   convicção, ação da revisão e cartões são \emph{CHECK} aqui e constante em
   \arq{vocabulario.ts}, \arq{regras/passos.ts} e \arq{conteudo.ts}, e a suíte de
@@ -1873,6 +1885,18 @@ decisão \emph{futura}, com DPA e \emph{k}-anonimato --- e não sai de um
   de \cd{exp\_id} e de \cd{falas} como objeto; e o \cd{GRANT} à \emph{role} de
   \emph{runtime}, guardado. \cd{atividade\_id} sem FK: a atividade mora na
   tabela de cada missão.\\
+\arq{20261007120000\_\B{}exp06ef1b\_\B{}ciclo\_\B{}do\_\B{}voto} & O ciclo do
+  voto do Júri Estadual (\adrr{ADR-152}): \cd{desvio\_liberado\_em} em
+  \cd{exp06ef1b\_gates\_turma}; em \cd{exp06ef1b\_sessoes}, \cd{salvos}, a
+  justificativa (\cd{voto\_motivo}, \cd{voto\_trecho},
+  \cd{revisao\_motivo}, \cd{revisao\_trecho}), \cd{complemento\_projeto},
+  as quatro listas \cd{desvio\_*} e \cd{desvio\_concluido\_em}. As sessões
+  já em \cd{cadeia} ou adiante recebem \cd{desvio\_concluido\_em =
+  revisado\_em}, para a equivalência nova valer sem mudar o passo de ninguém;
+  as que já votaram ficam sem justificativa. Os \emph{CHECKs} de etapa,
+  portão, passo, feed, vocabulário, revisão e \emph{latch} 2 são recriados, e
+  entram o da justificativa (o par) e o do desvio. Sem RLS nova: as colunas
+  herdam a das tabelas.\\
 \bottomrule
 \end{tabularx}
 

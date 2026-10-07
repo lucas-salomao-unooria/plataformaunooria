@@ -17,10 +17,19 @@
  *
  *   credencial → feed ──(voto, LATCH 1)──→ lacrada
  *     → [professor libera a galeria] → galeria
- *     ──(revisão do voto, LATCH 2)──→ cadeia → mariana → enquetes → fim
+ *     ──(revisão do voto, LATCH 2)──→ revisada
+ *     → [professor libera a rodada de desvio] → desvio
+ *     ──(concluir o desvio)──→ cadeia → mariana → enquetes → fim
  *
- * `galeria` nunca é GRAVADO: a etapa da turma o impõe a quem está em `lacrada`.
- * O passo gravado sai de `lacrada` só na revisão do voto (`cadeia`).
+ * `galeria` e `desvio` nunca são GRAVADOS: a etapa da turma os impõe a quem
+ * está em `lacrada` e em `revisada`, as duas esperas. O passo gravado sai de
+ * `lacrada` na revisão do voto (`revisada`) e de `revisada` quando a criança
+ * conclui a rodada de desvio (`cadeia`).
+ *
+ * A RODADA DE DESVIO (2026-10-07, pedido do PO que a spec perdeu) é a segunda
+ * espera de propósito: o professor a libera quando a turma terminou a galeria,
+ * e ela vem ANTES da explicação (a cadeia), porque é a vivência que a explicação
+ * nomeia.
  *
  * Até a 0.1.x havia um passo `pacotes` (a curtida remontada em pacotes, a
  * EF06CO07) entre a revisão e a cadeia. O PO o tirou com a habilidade
@@ -34,6 +43,8 @@ export const PASSOS = [
   "feed",
   "lacrada",
   "galeria",
+  "revisada",
+  "desvio",
   "cadeia",
   "mariana",
   "enquetes",
@@ -42,7 +53,7 @@ export const PASSOS = [
 export type Passo = (typeof PASSOS)[number];
 
 /** Etapas da turma, na ordem em que o professor as abre. */
-export const ETAPAS = ["exploracao", "galeria"] as const;
+export const ETAPAS = ["exploracao", "galeria", "desvio"] as const;
 export type Etapa = (typeof ETAPAS)[number];
 
 export const ETAPA_INICIAL: Etapa = "exploracao";
@@ -53,8 +64,9 @@ export const PASSOS_ANTES_DO_VOTO: readonly Passo[] = ["credencial", "feed"];
 
 /**
  * Os passos que a própria criança pede, por `POST passo`. Os outros nascem das
- * rotas que os carimbam: `lacrada` (o voto), `cadeia` (a revisão), `mariana`
- * (a cadeia), `enquetes` (os cartões), `fim` (concluir).
+ * rotas que os carimbam: `lacrada` (o voto), `revisada` (a revisão), `cadeia`
+ * (concluir o desvio), `mariana` (a cadeia), `enquetes` (os cartões), `fim`
+ * (concluir).
  */
 export const PASSOS_PEDIDOS = ["feed"] as const;
 export type PassoPedido = (typeof PASSOS_PEDIDOS)[number];
@@ -106,19 +118,23 @@ export function votou(passo: Passo): boolean {
  *    navega continua navegando (o voto atrasado é caminho previsto — ninguém
  *    abre a galeria de um feed que não terminou, e a taxa dele precisa do voto).
  * 2. Em `lacrada`, a etapa manda: espera na exploração, galeria quando o
- *    professor libera.
- * 3. Da revisão em diante (`cadeia`...`fim`) o passo é da criança, e nada o
- *    puxa de volta. O gate nunca volta dentro de uma rodada — e quando a
+ *    professor libera (e também com o desvio já liberado: quem votou atrasado
+ *    passa pela galeria antes do desvio — a ordem da criança não pula etapa).
+ * 3. Em `revisada`, de novo a etapa: espera até o professor liberar o desvio.
+ * 4. Do desvio concluído em diante (`cadeia`...`fim`) o passo é da criança, e
+ *    nada o puxa de volta. O gate nunca volta dentro de uma rodada — e quando a
  *    rodada muda (zerar, atividade nova) a sessão é outra.
  */
 export function passoEfetivo(passo: Passo, etapa: Etapa): Passo {
-  if (passo === "lacrada" || passo === "galeria") return etapa === "galeria" ? "galeria" : "lacrada";
+  if (passo === "lacrada" || passo === "galeria") return etapaAntes(etapa, "galeria") ? "lacrada" : "galeria";
+  if (passo === "revisada" || passo === "desvio") return etapa === "desvio" ? "desvio" : "revisada";
   return passo;
 }
 
-/** O estudante espera o professor? É o que a tela de espera (o PICO) lê. */
+/** O estudante espera o professor? São as duas esperas: a plenária (o PICO) e a do desvio. */
 export function aguardandoOProfessor(passo: Passo, etapa: Etapa): boolean {
-  return passoEfetivo(passo, etapa) === "lacrada";
+  const efetivo = passoEfetivo(passo, etapa);
+  return efetivo === "lacrada" || efetivo === "revisada";
 }
 
 /** A etapa seguinte, ou `null` na última — é o rótulo do botão único do painel. */

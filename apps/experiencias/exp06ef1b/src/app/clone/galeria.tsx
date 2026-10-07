@@ -11,9 +11,20 @@ import {
   TopBar,
   type UnvMediaItem,
 } from "@edu/ui/ds-unoovista";
-import { casaComABusca, classificarBusca, comCerquilha } from "../../lib/regras";
-import { E2, E4 } from "../../lib/textos";
-import type { AcaoDaGaleria, Area, Categoria, Galeria as DadosDaGaleria, ProjetoDaGaleria, Voto } from "../../lib/tipos";
+import { casaComABusca, classificarBusca, comCerquilha, frasesDaLegenda } from "../../lib/regras";
+import { E2, E3, E4 } from "../../lib/textos";
+import {
+  ACOES_DA_REVISAO,
+  type AcaoDaGaleria,
+  type AcaoDaRevisao,
+  type Area,
+  type Cartao,
+  type Categoria,
+  type Galeria as DadosDaGaleria,
+  type MotivoDaRevisao,
+  type ProjetoDaGaleria,
+  type Voto,
+} from "../../lib/tipos";
 import { srcDoEstande, usePaleta } from "../componentes/midia";
 import { Escolha } from "./escolha";
 
@@ -36,36 +47,70 @@ const PAUSA_DA_BUSCA_MS = 1_200;
  *   conta duas vezes.
  * - **A ficha de cada estande abre numa folha** (`BottomSheetUnv` modal), e a
  *   abertura é registrada — é o que a EF06CO01 lê na revisão do voto.
- * - **"Manter" e "Revisar"** fecham a galeria (LATCH 2). Quem decide se o voto
- *   pode trocar e para qual é a api; a tela só não oferece o próprio voto como
- *   troca.
+ * - **"Manter" e "Revisar"** abrem a cédula extraordinária (LATCH 2), que
+ *   mostra a justificativa de ANTES (o cartão e a frase grifada na cédula) ao
+ *   lado da mostra inteira: é o contraste "Antes eu pensava… Agora eu percebo…"
+ *   que o PO pediu. A criança decide manter, trocar ou COMPLEMENTAR (manter o
+ *   voto e indicar outro estande), e justifica com um cartão novo e uma frase
+ *   da legenda do estande da decisão. Manter vale, desde que justificado. Quem
+ *   decide se a decisão vale é a api; a tela só não oferece o próprio voto como
+ *   troca nem como complemento.
  */
+
+/** A decisão montada na cédula extraordinária, como a api a recebe. */
+export type CorpoDaRevisao =
+  | { acao: "manter"; motivo: MotivoDaRevisao; trecho: number }
+  | { acao: "trocar" | "complementar"; projetoId: string; motivo: MotivoDaRevisao; trecho: number };
 export function Galeria({
   galeria,
   categorias,
   voto,
+  motivos,
   enviando,
   aoAcao,
-  aoManter,
-  aoTrocar,
+  aoRevisar,
 }: {
   galeria: DadosDaGaleria;
   categorias: readonly Categoria[];
   voto: Voto | null;
+  /** Os cartões de antes (para mostrar o que a criança escolheu) e os de depois. */
+  motivos: { voto: readonly Cartao[]; revisao: readonly Cartao[] };
   enviando: boolean;
   aoAcao: (acao: AcaoDaGaleria) => void;
-  aoManter: () => void;
-  aoTrocar: (projetoId: string) => void;
+  aoRevisar: (corpo: CorpoDaRevisao) => void;
 }) {
   const paleta = usePaleta();
   const [texto, setTexto] = useState("");
   const [chip, setChip] = useState<Area | null>(null);
   const [ficha, setFicha] = useState<ProjetoDaGaleria | null>(null);
   const [revisando, setRevisando] = useState(false);
-  const [troca, setTroca] = useState<string | null>(null);
+  const [acao, setAcao] = useState<AcaoDaRevisao | null>(null);
+  const [outro, setOutro] = useState<string | null>(null);
+  const [motivo, setMotivo] = useState<string | null>(null);
+  const [trecho, setTrecho] = useState<number | null>(null);
   const ultimaBusca = useRef<string | null>(null);
 
   const porId = useMemo(() => new Map(galeria.projetos.map((p) => [p.id, p])), [galeria.projetos]);
+  const doVoto = voto ? porId.get(voto.projetoId) : undefined;
+  /* O estande da DECISÃO: o do voto ao manter, o escolhido ao trocar ou complementar. A frase grifada é da legenda dele. */
+  const daDecisao = acao === "manter" ? doVoto : outro ? porId.get(outro) : undefined;
+  const frasesDaDecisao = frasesDaLegenda(daDecisao?.legenda ?? "");
+  const pode =
+    acao !== null && motivo !== null && trecho !== null && (acao === "manter" || outro !== null) && !enviando;
+
+  function abrirRevisao(inicial: AcaoDaRevisao | null) {
+    setAcao(inicial);
+    setOutro(null);
+    setTrecho(null);
+    setRevisando(true);
+  }
+
+  function registrar() {
+    if (!pode || acao === null || motivo === null || trecho === null) return;
+    const m = motivo as MotivoDaRevisao;
+    if (acao === "manter") aoRevisar({ acao, motivo: m, trecho });
+    else if (outro) aoRevisar({ acao, projetoId: outro, motivo: m, trecho });
+  }
   const buscando = chip !== null || texto.trim() !== "";
   const visiveis = galeria.projetos.filter((p) =>
     chip !== null ? p.area === chip : texto.trim() ? casaComABusca(p, texto, categorias) : !p.exibidoNoSeuFeed,
@@ -161,7 +206,7 @@ export function Galeria({
         )}
       </div>
       <div className="doca">
-        <ButtonUnv variant="secondary" size="md" block disabled={enviando} onClick={aoManter}>
+        <ButtonUnv variant="secondary" size="md" block disabled={enviando} onClick={() => abrirRevisao("manter")}>
           {E4.manter}
         </ButtonUnv>
         <ButtonUnv
@@ -170,7 +215,7 @@ export function Galeria({
           block
           disabled={enviando}
           leadingIcon={<IconUnv name="search" size={18} tone="inherit" />}
-          onClick={() => setRevisando(true)}
+          onClick={() => abrirRevisao(null)}
         >
           {E4.revisar}
         </ButtonUnv>
@@ -216,30 +261,88 @@ export function Galeria({
         onOpenChange={(o) => !o && !enviando && setRevisando(false)}
       >
         <div className="cedula">
-          <p className="cedula__instrucao">{E4.revisaoInstrucao}</p>
-          <Escolha
-            rotulo={E4.grupoDaRevisao}
-            valor={troca}
-            desabilitada={enviando}
-            aoEscolher={setTroca}
-            opcoes={galeria.projetos
-              .filter((p) => p.id !== voto?.projetoId)
-              .map((p) => ({
-                id: p.id,
-                titulo: p.titulo,
-                subtitulo: p.escola,
-                imagem: { src: srcDoEstande({ projetoId: p.id, titulo: p.titulo, imagem: p.imagem }, paleta), alt: "" },
-              }))}
-          />
+          {doVoto && voto?.justificativa && (
+            <div className="justificativa-de-antes" data-justificativa="antes">
+              <p className="cedula__instrucao">{E4.antes}</p>
+              <p className="justificativa-de-antes__voto">{E4.seuVotoLacrado(doVoto.titulo)}</p>
+              <p className="justificativa-de-antes__motivo">
+                {motivos.voto.find((m) => m.id === voto.justificativa?.motivo)?.texto ?? ""}
+              </p>
+              <p className="justificativa-de-antes__rotulo">{E4.voceGrifou}</p>
+              <blockquote className="justificativa-de-antes__trecho">
+                {frasesDaLegenda(doVoto.legenda)[voto.justificativa.trecho] ?? ""}
+              </blockquote>
+            </div>
+          )}
+          <p className="cedula__instrucao">{E4.decisao}</p>
+          <div className="cedula__certeza" role="group" aria-label={E4.grupoDaDecisao}>
+            {ACOES_DA_REVISAO.map((a) => (
+              <Chip
+                key={a}
+                selected={acao === a}
+                disabled={enviando}
+                onClick={() => {
+                  if (a !== acao) {
+                    setOutro(null);
+                    setTrecho(null);
+                  }
+                  setAcao(a);
+                }}
+              >
+                {E4.acoes[a]}
+              </Chip>
+            ))}
+          </div>
+          {acao && <p className="cedula__explicacao">{E4.explicacao[acao]}</p>}
+          {(acao === "trocar" || acao === "complementar") && (
+            <>
+              <p className="cedula__instrucao">{acao === "trocar" ? E4.revisaoInstrucao : E4.complementarInstrucao}</p>
+              <Escolha
+                rotulo={E4.grupoDaRevisao}
+                valor={outro}
+                desabilitada={enviando}
+                aoEscolher={(id) => {
+                  if (id !== outro) setTrecho(null);
+                  setOutro(id);
+                }}
+                opcoes={galeria.projetos
+                  .filter((p) => p.id !== voto?.projetoId)
+                  .map((p) => ({
+                    id: p.id,
+                    titulo: p.titulo,
+                    subtitulo: p.escola,
+                    imagem: { src: srcDoEstande({ projetoId: p.id, titulo: p.titulo, imagem: p.imagem }, paleta), alt: "" },
+                  }))}
+              />
+            </>
+          )}
+          {acao && (
+            <>
+              <p className="cedula__instrucao">{E4.motivoDepois}</p>
+              <Escolha
+                rotulo={E4.grupoDoMotivoDepois}
+                valor={motivo}
+                desabilitada={enviando}
+                aoEscolher={setMotivo}
+                opcoes={motivos.revisao.map((m) => ({ id: m.id, titulo: m.texto }))}
+              />
+            </>
+          )}
+          {daDecisao && (
+            <>
+              <p className="cedula__instrucao">{E4.trechoDepois(daDecisao.titulo)}</p>
+              <Escolha
+                rotulo={E3.grupoDoTrecho}
+                valor={trecho === null ? null : String(trecho)}
+                desabilitada={enviando}
+                aoEscolher={(id) => setTrecho(Number(id))}
+                opcoes={frasesDaDecisao.map((f, i) => ({ id: String(i), titulo: f }))}
+              />
+            </>
+          )}
           <div className="cedula__confirmar">
-            <ButtonUnv
-              variant="primary"
-              size="lg"
-              block
-              disabled={troca === null || enviando}
-              onClick={() => troca && aoTrocar(troca)}
-            >
-              {E4.revisar}
+            <ButtonUnv variant="primary" size="lg" block disabled={!pode} onClick={registrar}>
+              {E4.registrar}
             </ButtonUnv>
           </div>
         </div>

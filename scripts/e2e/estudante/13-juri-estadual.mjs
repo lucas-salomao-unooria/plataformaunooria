@@ -19,15 +19,22 @@ import { esperarFalasDoTema, provarFalasNaCriacao, provarPodcastNaAula } from ".
  *    prova de que a taxa da Galeria Oculta é REAL (calculada pela api para cada
  *    sessão, nunca cravada na copy) é que os dois chegam a ela com números
  *    DIFERENTES, e o de quem curtiu é maior.
- * 3. **O voto é um latch, e o pico tem três elementos.** Depois da cédula, o
+ * 3. **O voto é um latch, e o pico tem três elementos.** A cédula pede o
+ *    motivo e a frase grifada da legenda (a justificativa de ANTES); depois, o
  *    lacre e a plenária: o brasão, a ordem da comissão e o pulso — nada mais.
  *    Um F5 no latch volta à plenária, nunca ao feed; e depois da revisão do voto
- *    (o latch 2), volta à cadeia, nunca à galeria.
+ *    (o latch 2), volta à espera da nova rodada, nunca à galeria.
  * 4. **A lousa do pico é anônima e só a professora move a sala**: "X de Y
  *    votaram" e os votos por área, sem nome; a taxa média só depois da galeria;
- *    UM botão (Liberar a Galeria Oculta), que não volta.
+ *    DOIS botões, na ordem (Liberar a Galeria Oculta, Liberar a rodada de
+ *    desvio), e nenhum volta.
  * 5. **A galeria é auditoria**: os ocultos primeiro, a busca por hashtag, a
- *    ficha que diz se o estande chegou ao feed, e manter ou trocar o voto.
+ *    ficha que diz se o estande chegou ao feed, e a cédula extraordinária com a
+ *    justificativa de antes ao lado — manter, trocar ou complementar, com um
+ *    cartão novo.
+ * 5b. **A rodada de desvio** (o pedido do PO que a spec perdeu): quem curte a
+ *    área nova vê o feed virar para ela, e a tela compara com o feed do júri;
+ *    encerrar sem curtir nem salvar é recusado, e o salvar conta.
  * 6. **A engrenagem é da escola**: a cadeia Interações → Dados → Algoritmo →
  *    Bolha (EF06CO03), aberta pela frase do Léo, com a errada que devolve
  *    à bandeja sem dizer qual vaga errou; depois o caso Mariana e as três
@@ -327,10 +334,12 @@ await suite(
     prova: [
       "A atividade nasce da professora: parametrizar, gerar com IA, curar, aprovar os textos e depois as imagens (vistas, refeitas e aprovadas antes da turma) e criar",
       "As curtidas afunilam o feed no servidor: quem curte duas vezes a mesma área chega à galeria com uma taxa de invisibilidade MAIOR que a de quem não curte",
-      "Votar é um latch: o lacre, e a plenária com exatamente três elementos; o F5 volta à plenária",
+      "Votar é um latch com justificativa (o motivo e a frase grifada): o lacre, e a plenária com exatamente três elementos; o F5 volta à plenária",
+      "Comentar e compartilhar respondem com o aviso da comissão, e salvar é um sinal do feed",
       "A lousa do pico diz quantos votaram e como os votos se dividiram por área, sem nome; a taxa média só aparece depois da galeria",
-      "Só o botão da professora abre a Galeria Oculta, e ele não volta",
-      "Na galeria: os ocultos primeiro, a busca por hashtag e por texto, a ficha de cada estande e o voto mantido ou trocado; o F5 depois da revisão volta à cadeia",
+      "Só os botões da professora abrem a Galeria Oculta e depois a rodada de desvio, e nenhum volta",
+      "Na galeria: os ocultos primeiro, a busca por hashtag e por texto, a ficha de cada estande e a revisão com a justificativa de antes ao lado — mantido ou trocado; o F5 depois da revisão volta à espera da nova rodada",
+      "Na rodada de desvio, curtir a área nova vira o feed para ela, a tela compara com o feed do júri, e encerrar sem curtir nem salvar é recusado",
       "O carrossel do feed anda arrastando com o mouse e pelas setas",
       "A cadeia é tela da escola, aberta pelo Léo: a ordem errada volta para a bandeja sem dizer qual vaga errou",
       "Caso Mariana, as três enquetes sem acerto e o crachá homologado",
@@ -879,17 +888,67 @@ await suite(
       await q().getByText("10 estandes avaliados. Toque abaixo para emitir seu voto final.").first().waitFor({ timeout: 15_000 });
     };
 
-    /** A cédula: o projeto pelo título, a convicção, e o latch. */
+    /**
+     * A cédula: o projeto pelo título, a convicção e a JUSTIFICATIVA — o cartão
+     * de motivo (o primeiro) e a frase da legenda (a primeira) —, e o latch.
+     */
     const votar = async (q, tituloDoProjeto, conviccao) => {
       await q().getByRole("button", { name: "Cédula Oficial de Votação — Jurado" }).click();
       const urna = q().getByRole("dialog", { name: "Urna Oficial de Votação do Júri" });
       await urna.waitFor({ timeout: 10_000 });
+      const projetos = urna.getByRole("radiogroup", { name: "Projetos do seu feed" });
       const opcao = tituloDoProjeto
-        ? urna.getByRole("radio", { name: new RegExp(`^${escaparRegex(tituloDoProjeto)}`) }).first()
-        : urna.getByRole("radio").first();
+        ? projetos.getByRole("radio", { name: new RegExp(`^${escaparRegex(tituloDoProjeto)}`) }).first()
+        : projetos.getByRole("radio").first();
       await opcao.click();
       await urna.getByRole("button", { name: conviccao, exact: true }).click();
+      await urna.getByRole("radiogroup", { name: "Motivo do seu voto" }).getByRole("radio").first().click();
+      await urna.getByRole("radiogroup", { name: "Frases da legenda do projeto" }).getByRole("radio").first().click();
       return urna;
+    };
+
+    /**
+     * A cédula extraordinária: a decisão (o chip), o estande quando é troca ou
+     * complemento, o cartão de motivo NOVO e a frase da legenda do estande da
+     * decisão.
+     */
+    const decidirARevisao = async (revisao, acao) => {
+      if (acao !== "Manter") await revisao.getByRole("button", { name: acao, exact: true }).click();
+      if (acao !== "Manter") await revisao.getByRole("radiogroup", { name: "Estandes da mostra" }).getByRole("radio").first().click();
+      await revisao.getByRole("radiogroup", { name: "Motivo da sua decisão" }).getByRole("radio").first().click();
+      await revisao.getByRole("radiogroup", { name: "Frases da legenda do projeto" }).getByRole("radio").first().click();
+    };
+
+    /** A espera da nova rodada: a mesma moldura do pico, com a frase da rodada de desvio. */
+    const esperaDoDesvio = (qq) => qq().locator('.tela.plenaria[data-espera="desvio"]');
+
+    /**
+     * Rola a rodada de desvio até os seis. `aoChegar(post)` roda a cada post
+     * novo, antes da rolagem seguinte — como no feed do júri.
+     */
+    const rolarODesvio = async (q, aoChegar = async () => {}) => {
+      const artigos = q().locator("article[data-post-id]");
+      await artigos.nth(1).waitFor({ timeout: 20_000 });
+      const vistos = new Set();
+      for (;;) {
+        const total = await artigos.count();
+        for (let i = 0; i < total; i += 1) {
+          const id = await artigos.nth(i).getAttribute("data-post-id");
+          if (id && !vistos.has(id)) {
+            vistos.add(id);
+            await aoChegar(id, i);
+          }
+        }
+        if (total >= 6) break;
+        await artigos.nth(total - 1).scrollIntoViewIfNeeded();
+        await artigos
+          .nth(total)
+          .waitFor({ timeout: 20_000 })
+          .catch(() => {
+            throw new Error(`a rodada de desvio parou em ${total} posts: rolar até o último não trouxe o próximo`);
+          });
+      }
+      await q().locator('[data-comparacao="desvio"]').waitFor({ timeout: 15_000 });
     };
 
     // ── ESTUDANTE 1: o que curte ─────────────────────────────────────────
@@ -958,6 +1017,15 @@ await suite(
     });
     await primeiroPost.locator('[data-seta="anterior"]').click();
 
+    /* COMENTAR E COMPARTILHAR respondem (o botão morto parecia defeito), e não
+       pesam no feed: nada vai à api. */
+    await primeiroPost.getByRole("button", { name: "Comentar publicação", exact: true }).click();
+    await q().getByText("Durante o julgamento, comentários e compartilhamentos ficam fechados.").first().waitFor({ timeout: 10_000 });
+    r.exigir(
+      (await sessaoDe(p)).feed.curtidos.length === 0,
+      "comentar responde com o aviso da comissão e não vira sinal do feed",
+    );
+
     /* CURTIR DUAS VEZES A MESMA ÁREA. A primeira curtida é no 1º post; a área
        dele vira a do jurado. Sem bolha, o motor serve a apresentação nova da
        área de MAIOR peso — a 2ª curtida acontece cedo, como num app de verdade.
@@ -1013,14 +1081,22 @@ await suite(
     const votado1 = feed1.posts.find((x) => x.area === areaCurtida && x.tipo === "apresentacao");
     const urna1 = await votar(q, votado1.titulo, "Com certeza, vi tudo.");
     await r.registrar(p, "cedula", {
-      titulo: "A cédula lacrada",
-      mostra: "A urna oficial com os estandes que apareceram no feed, o escolhido marcado e a convicção “Com certeza, vi tudo.”",
+      titulo: "A cédula lacrada, com a justificativa",
+      mostra:
+        "A urna oficial com os estandes que apareceram no feed, a convicção “Com certeza, vi tudo.”, o cartão de " +
+        "motivo e a frase da legenda que mais pesou.",
       prova:
-        "A cédula só oferece o que o feed serviu (a api recusa o resto), e as duas convicções afirmam certeza: é a " +
-        "aposta que a galeria vai confrontar.",
+        "A cédula só oferece o que o feed serviu (a api recusa o resto), e as duas convicções afirmam certeza. O " +
+        "motivo e a frase grifada são o “antes eu pensava” que a revisão vai pôr ao lado da mostra inteira — " +
+        "cartões prontos, nada digitado.",
+      inteira: true,
     });
     await urna1.getByRole("button", { name: "Confirmar Voto Oficial" }).click();
     await q().getByText("Voto Registrado e Lacrado no Sistema").first().waitFor({ timeout: 15_000 });
+    r.exigir(
+      Boolean((await sessaoDe(p)).voto?.justificativa),
+      "a api gravou a justificativa de antes junto do voto (o cartão e a frase)",
+    );
     await r.registrar(p, "lacre", {
       titulo: "O lacre",
       mostra: "O carimbo “Voto Registrado e Lacrado no Sistema”, o estande votado e o protocolo.",
@@ -1123,8 +1199,8 @@ await suite(
     });
     await apertar(prof, "galeria");
     r.exigir(
-      (await prof.locator("[data-gate]").count()) === 0,
-      "depois de liberar, o botão da aula some: ele não volta",
+      (await prof.locator('[data-gate="galeria"]').count()) === 0 && (await prof.locator('[data-gate="desvio"]').count()) === 1,
+      "depois de liberar a galeria, o botão passa à rodada de desvio: ele não volta",
     );
 
     // ═══ A GALERIA OCULTA: duas taxas, as duas reais ═════════════════════
@@ -1215,8 +1291,33 @@ await suite(
         "digitado é de menor e nunca sai do aparelho.",
     });
 
+    /* MANTER também se justifica: a cédula extraordinária mostra a justificativa
+       de antes ao lado da mostra inteira, e pede um cartão novo. */
     await q().getByRole("button", { name: "Manter meu voto inicial" }).click();
-    await q().getByText("Você viveu em tela o que Léo investigou no livro didático!").first().waitFor({ timeout: 20_000 });
+    const revisao1 = q().getByRole("dialog", { name: "Cédula Extraordinária de Revisão" });
+    await revisao1.waitFor({ timeout: 10_000 });
+    const antes = revisao1.locator('[data-justificativa="antes"]');
+    await antes.waitFor({ timeout: 10_000 });
+    const sessaoNaRevisao = await sessaoDe(p);
+    const motivoDeAntes = sessaoNaRevisao.motivos.voto.find((m) => m.id === sessaoNaRevisao.voto?.justificativa?.motivo);
+    r.exigir(
+      Boolean(motivoDeAntes) && (await antes.innerText()).includes(motivoDeAntes.texto),
+      "a revisão mostra o motivo que a criança deu na cédula, ao lado da mostra inteira",
+    );
+    await decidirARevisao(revisao1, "Manter");
+    await semAnimacao(q);
+    await r.registrar(p, "revisao-com-o-antes", {
+      titulo: "Antes eu pensava… agora eu percebo",
+      mostra:
+        "A cédula extraordinária de quem manteve: o voto lacrado, o motivo e a frase que a criança grifou na cédula, " +
+        "as três decisões (manter, trocar, complementar), o cartão novo e a frase da legenda.",
+      prova:
+        "O contraste entre a justificativa de antes e a de depois é o mecanismo pedagógico que o PO pediu: manter " +
+        "vale, desde que justificado com o que a galeria mostrou.",
+      inteira: true,
+    });
+    await revisao1.getByRole("button", { name: "Registrar decisão na ata" }).click();
+    await esperaDoDesvio(q).waitFor({ timeout: 20_000 });
 
     // ── ESTUDANTE 2: buscar por texto, trocar o voto, e o F5 do latch 2 ──
     const categoriaDoTexto = (await sessaoDe(p2)).categorias[0];
@@ -1233,30 +1334,39 @@ await suite(
     await q2().locator(".doca").getByRole("button", { name: "Revisar Voto Oficial" }).click();
     const revisaoDoVoto = q2().getByRole("dialog", { name: "Cédula Extraordinária de Revisão" });
     await revisaoDoVoto.waitFor({ timeout: 10_000 });
-    await revisaoDoVoto.getByRole("radio").first().click();
+    await decidirARevisao(revisaoDoVoto, "Trocar");
     await semAnimacao(q2);
     await r.registrar(p2, "revisao-do-voto", {
       titulo: "A cédula extraordinária",
-      mostra: "A revisão do voto depois da galeria: os dezesseis estandes, menos o do voto lacrado, e um escolhido.",
+      mostra:
+        "A revisão do voto depois da galeria: a decisão de trocar, os dezesseis estandes menos o do voto lacrado, " +
+        "o cartão de motivo novo e a frase da legenda do estande escolhido.",
       prova:
-        "Manter ou trocar é o LATCH 2. A troca aceita qualquer estande que a galeria mostrou, e a api grava o " +
-        "voto FINAL ao lado do lacrado — o painel mostra quantos mantiveram e quantos trocaram.",
+        "Manter, trocar ou complementar é o LATCH 2. A troca aceita qualquer estande que a galeria mostrou, e a api " +
+        "grava o voto FINAL ao lado do lacrado, com a justificativa de depois — o painel conta cada decisão.",
     });
-    await revisaoDoVoto.getByRole("button", { name: "Revisar Voto Oficial" }).click();
+    await revisaoDoVoto.getByRole("button", { name: "Registrar decisão na ata" }).click();
     const leo = (qq) => qq().getByText("Você viveu em tela o que Léo investigou no livro didático!").first();
-    await leo(q2).waitFor({ timeout: 20_000 });
-    /* F5 NO LATCH 2: volta à cadeia, nunca à galeria. */
+    await esperaDoDesvio(q2).waitFor({ timeout: 20_000 });
+    /* F5 NO LATCH 2: volta à espera da nova rodada, nunca à galeria. */
     await p2.reload({ waitUntil: "domcontentloaded" });
-    await leo(q2).waitFor({ timeout: 40_000 });
+    await esperaDoDesvio(q2).waitFor({ timeout: 40_000 });
     r.exigir(
       (await q2().locator(".galeria__comunicado").count()) === 0,
-      "o F5 depois da revisão do voto volta à cadeia — a galeria não reabre",
+      "o F5 depois da revisão do voto volta à espera da nova rodada — a galeria não reabre",
     );
     const sessao2 = await sessaoDe(p2);
     r.exigir(
       sessao2.revisao?.acao === "trocar" && sessao2.revisao.projetoId !== sessao2.voto?.projetoId,
       "a api guardou a troca, com o voto final diferente do lacrado",
     );
+    r.exigir(Boolean(sessao2.revisao?.justificativa), "a api guardou a justificativa de depois (o cartão e a frase)");
+    await semAnimacao(q2);
+    await r.registrar(p2, "espera-da-nova-rodada", {
+      titulo: "A segunda espera",
+      mostra: "A mesma moldura da plenária, agora com a frase da comissão: a revisão foi para a ata, e a nova rodada vem com o sinal do professor.",
+      prova: "A rodada de desvio é uma etapa da TURMA: só a professora a libera, e o F5 não fura a espera.",
+    });
 
     // ═══ PROFESSORA: a lousa depois da galeria ═══════════════════════════
     const painelDepois = await esperarNaApi(
@@ -1288,9 +1398,80 @@ await suite(
       inteira: true,
     });
 
+    // ═══ PROFESSORA: o segundo botão — a rodada de desvio ════════════════
+    await apertar(prof, "desvio");
+    r.exigir((await prof.locator("[data-gate]").count()) === 0, "depois da rodada de desvio, o botão da aula some: não há volta");
+
+    // ═══ ESTUDANTE 1: a rodada de desvio, curtindo a área nova ═══════════
+    await q().getByText(/^Nova rodada do feed:/).first().waitFor({ timeout: 40_000 });
+    const desvioCurtidas = [];
+    let areaNova = null;
+    await rolarODesvio(q, async (postId, i) => {
+      const post = (await sessaoDe(p)).desvio?.posts.find((x) => x.id === postId);
+      if (!post) return;
+      /* O 1º post é de uma área que quase não apareceu: ela vira a área nova. */
+      if (i === 0) areaNova = post.area;
+      if (post.area !== areaNova || desvioCurtidas.length >= 2) return;
+      const artigo = q().locator(`article[data-post-id="${postId}"]`);
+      await artigo.getByRole("button", { name: "Curtir publicação", exact: true }).click();
+      await esperarNaApi(p, "/juri-estadual/sessao", (s) => s?.desvio?.curtidos?.includes(postId), {
+        oQue: `a curtida em ${postId} na rodada de desvio`,
+      });
+      desvioCurtidas.push(postId);
+    });
+    const desvio1 = (await sessaoDe(p)).desvio;
+    r.exigir(
+      Boolean(areaNova) && areaNova !== areaCurtida,
+      `a rodada de desvio abre por uma área que quase não apareceu (${areaNova}, e a bolha era ${areaCurtida})`,
+    );
+    const daAreaNova = desvio1.posts.filter((x) => x.area === areaNova).length;
+    r.exigir(
+      desvio1.posts.length === 6 && daAreaNova >= 4,
+      `curtir a área nova vira a rodada para ela (${daAreaNova} de ${desvio1.posts.length} posts de ${areaNova})`,
+    );
+    const linhaNova = desvio1.comparacao?.find((c) => c.area === areaNova);
+    r.exigir(
+      Boolean(linhaNova) && linhaNova.noDesvio > linhaNova.noFeed,
+      `a comparação mostra a área nova crescendo (${linhaNova?.noFeed} no feed do júri → ${linhaNova?.noDesvio} na rodada)`,
+    );
+    await q().locator('[data-comparacao="desvio"]').scrollIntoViewIfNeeded();
+    await semAnimacao(q);
+    await r.registrar(p, "rodada-de-desvio", {
+      titulo: "A rodada de desvio",
+      mostra:
+        "A nova rodada do feed: a instrução da comissão, os posts da área que quase não aparecia, curtidos, e no fim " +
+        "a comparação, área por área, entre o feed do júri e a rodada.",
+      prova:
+        "É a vivência que o PO pediu e a spec perdeu: mudar o comportamento muda a recomendação. A tela mostra o " +
+        "efeito, sem a regra — quem a nomeia é a cadeia, a seguir.",
+      detalhe: `${daAreaNova} de 6 posts de ${areaNova}`,
+    });
+    await q().getByRole("button", { name: "Encerrar a nova rodada" }).click();
+
+    // ═══ ESTUDANTE 2: encerrar sem interagir é recusado; o SALVAR conta ════
+    await q2().getByText(/^Nova rodada do feed:/).first().waitFor({ timeout: 40_000 });
+    await rolarODesvio(q2);
+    await q2().getByRole("button", { name: "Encerrar a nova rodada" }).click();
+    await q2().getByText("Curta ou salve ao menos uma publicação desta rodada antes de encerrar.").first().waitFor({ timeout: 10_000 });
+    r.exigir((await esperaDoDesvio(q2).count()) === 0 && (await leo(q2).count()) === 0, "sem curtir nem salvar, a rodada não encerra");
+    const primeiroDoDesvio2 = q2().locator("article[data-post-id]").first();
+    await primeiroDoDesvio2.scrollIntoViewIfNeeded();
+    await primeiroDoDesvio2.getByRole("button", { name: "Salvar publicação", exact: true }).click();
+    await esperarNaApi(p2, "/juri-estadual/sessao", (s) => (s?.desvio?.salvos?.length ?? 0) > 0, { oQue: "o salvo na rodada de desvio" });
+    await semAnimacao(q2);
+    await r.registrar(p2, "desvio-salvar", {
+      titulo: "Salvar também é sinal",
+      mostra: "A rodada de desvio de quem não interagia: o aviso “Curta ou salve ao menos uma publicação…” e o post salvo.",
+      prova:
+        "Encerrar sem interação é recusado na tela e na api (409 `desvio-sem-interacao`): sem mexer no feed, não há " +
+        "desvio. O salvar é o segundo sinal do feed (curtir, salvar e o tempo no post).",
+    });
+    await q2().getByRole("button", { name: "Encerrar a nova rodada" }).click();
+    await leo(q2).waitFor({ timeout: 20_000 });
+
     // ═══ ESTUDANTE 1: a cadeia (EF06CO03), errando uma vez ═══════════════
-    /* Sem a tela dos pacotes (a EF06CO07 saiu, o pedido do PO): a revisão leva
-       direto à cadeia, e a frase do Léo abre a tela dela. */
+    /* Sem a tela dos pacotes (a EF06CO07 saiu, o pedido do PO): a rodada de
+       desvio leva à cadeia, e a frase do Léo abre a tela dela. */
     await q().getByRole("region", { name: "Blocos da engrenagem" }).waitFor({ timeout: 20_000 });
     r.exigir(
       (await leo(q).count()) > 0 && (await q().getByText(/pacotes? numerad|Remontar mensagem/).count()) === 0,

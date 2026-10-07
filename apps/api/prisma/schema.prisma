@@ -3285,11 +3285,13 @@ model Exp06ef1bGateTurma {
   pacoteId String @map("pacote_id") @db.Uuid
   /// ≥ 1 (CHECK). "Zerar turma" soma um; pacote novo abre a seguinte à última.
   rodada   Int    @default(1)
-  /// exploracao | galeria (CHECK; a ordem é `regras/passos.ts`).
+  /// exploracao | galeria | desvio (CHECK; a ordem é `regras/passos.ts`).
   etapa    String @default("exploracao")
 
-  /// Quando a galeria abriu NESTA rodada. Volta a nulo ao zerar (CHECK).
+  /// Quando a galeria abriu NESTA rodada. Fica com o desvio; volta a nulo ao zerar (CHECK).
   galeriaLiberadaEm DateTime? @map("galeria_liberada_em") @db.Timestamptz(6)
+  /// Quando a rodada de desvio abriu NESTA rodada. Volta a nulo ao zerar (CHECK).
+  desvioLiberadoEm  DateTime? @map("desvio_liberado_em") @db.Timestamptz(6)
 
   atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
 
@@ -3313,9 +3315,9 @@ model Exp06ef1bSessao {
   rodada      Int
   estudanteId String @map("estudante_id") @db.Uuid
 
-  /// credencial | feed | lacrada | cadeia | mariana | enquetes | fim
-  /// (CHECK; a ordem é `regras/passos.ts`). `galeria` NUNCA é gravado: a etapa
-  /// da turma o impõe a quem está em `lacrada`.
+  /// credencial | feed | lacrada | revisada | cadeia | mariana | enquetes | fim
+  /// (CHECK; a ordem é `regras/passos.ts`). `galeria` e `desvio` NUNCA são
+  /// gravados: a etapa da turma os impõe a quem está em `lacrada` e `revisada`.
   passo   String @default("credencial")
   /// O texto estável que sorteia esta sessão: a abertura e o feed, os ids
   /// opacos e a ordem de chegada dos blocos. Nasce no servidor,
@@ -3326,6 +3328,8 @@ model Exp06ef1bSessao {
   postsServidos Json @default("[]") @map("posts_servidos")
   /// Os posts curtidos AGORA (descurtir tira daqui).
   curtidos      Json @default("[]")
+  /// Os posts salvos AGORA (tirar dos salvos tira daqui).
+  salvos        Json @default("[]")
   /// Os posts em que o estudante ficou mais de 5 s (uma vez por post).
   permanencias  Json @default("[]")
 
@@ -3333,17 +3337,35 @@ model Exp06ef1bSessao {
   votoProjeto String?   @map("voto_projeto")
   /// examinei_bem | vi_tudo (CHECK).
   conviccao   String?
+  /// A justificativa de ANTES: o cartão de motivo (v1 | v2 | v3) e o índice da
+  /// frase grifada da legenda do estande votado. Nulos nas sessões de antes da
+  /// 1.1.0 do instrumento; nas novas, gravados com o voto.
+  votoMotivo  String?   @map("voto_motivo")
+  votoTrecho  Int?      @map("voto_trecho")
   votadoEm    DateTime? @map("votado_em") @db.Timestamptz(6)
 
   /// O que a criança fez na Galeria Oculta: `{ abertos: [ids], buscas: [{ tipo,
   /// area }] }`. O TEXTO da busca nunca entra (texto livre de menor).
   auditoria Json @default("{\"abertos\": [], \"buscas\": []}")
 
-  /// O LATCH 2: manter | trocar (CHECK), o voto FINAL (o mesmo do inicial
-  /// quando manteve) e o carimbo, juntos.
-  revisaoAcao  String?   @map("revisao_acao")
-  votoRevisado String?   @map("voto_revisado")
-  revisadoEm   DateTime? @map("revisado_em") @db.Timestamptz(6)
+  /// O LATCH 2: manter | trocar | complementar (CHECK), o voto FINAL (o mesmo
+  /// do inicial quando manteve ou complementou) e o carimbo, juntos.
+  revisaoAcao        String?   @map("revisao_acao")
+  votoRevisado       String?   @map("voto_revisado")
+  /// O estande indicado TAMBÉM, só no complementar (CHECK).
+  complementoProjeto String?   @map("complemento_projeto")
+  /// A justificativa de DEPOIS: o cartão (r1 | r2 | r3) e a frase grifada.
+  revisaoMotivo      String?   @map("revisao_motivo")
+  revisaoTrecho      Int?      @map("revisao_trecho")
+  revisadoEm         DateTime? @map("revisado_em") @db.Timestamptz(6)
+
+  /// A RODADA DE DESVIO: um feed de seis, com as listas dele, e o carimbo que
+  /// leva o passo de `revisada` a `cadeia` (CHECK).
+  desvioServidos     Json      @default("[]") @map("desvio_servidos")
+  desvioCurtidos     Json      @default("[]") @map("desvio_curtidos")
+  desvioSalvos       Json      @default("[]") @map("desvio_salvos")
+  desvioPermanencias Json      @default("[]") @map("desvio_permanencias")
+  desvioConcluidoEm  DateTime? @map("desvio_concluido_em") @db.Timestamptz(6)
 
   /// Cada envio da cadeia é uma tentativa (EF06CO03). (Os pacotes da curtida,
   /// EF06CO07, saíram com as colunas deles na `20261006120000`.)
