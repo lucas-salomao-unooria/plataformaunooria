@@ -1,6 +1,7 @@
 import { BFF, HUB, suite } from "../lib/roteiro.mjs";
 import { conta, contasDe } from "../lib/credenciais.mjs";
 import { ALERTA_DE_ERRO, esperarOuFalharCedo } from "../lib/smoke.mjs";
+import { esperarFalasDoTema, provarFalasNaCriacao, provarPodcastNaAula } from "../lib/podcast.mjs";
 
 /**
  * O Júri Estadual de Projetos (exp06ef1b, 6º ano, unidade 1), nas três pontas
@@ -10,8 +11,9 @@ import { ALERTA_DE_ERRO, esperarOuFalharCedo } from "../lib/smoke.mjs";
  * O que esta suíte cobra, e por que cada item é uma regra do software:
  *
  * 1. **A mostra é da professora, e nasce da IA** (decisão de 2026-10-02: não há
- *    acervo padrão). Parametrizar → gerar → curar → criar → imagens, e só o
- *    "Criar atividade" grava (ADR-66/67, ADR-130).
+ *    acervo padrão). Parametrizar → gerar → curar → aprovar os TEXTOS (grava) →
+ *    aprovar as IMAGENS (o pedido do PO: vistas, refeitas e aprovadas antes da
+ *    turma; sem isso, 409 `imagens-nao-aprovadas`) → criar (ADR-66/67, ADR-130).
  * 2. **As curtidas afunilam o feed EM SILÊNCIO, no servidor.** Quem curte duas
  *    vezes a mesma área vê menos da mostra do que quem não curte nada — e a
  *    prova de que a taxa da Galeria Oculta é REAL (calculada pela api para cada
@@ -20,19 +22,28 @@ import { ALERTA_DE_ERRO, esperarOuFalharCedo } from "../lib/smoke.mjs";
  * 3. **O voto é um latch, e o pico tem três elementos.** Depois da cédula, o
  *    lacre e a plenária: o brasão, a ordem da comissão e o pulso — nada mais.
  *    Um F5 no latch volta à plenária, nunca ao feed; e depois da revisão do voto
- *    (o latch 2), volta aos pacotes, nunca à galeria.
+ *    (o latch 2), volta à cadeia, nunca à galeria.
  * 4. **A lousa do pico é anônima e só a professora move a sala**: "X de Y
  *    votaram" e os votos por área, sem nome; a taxa média só depois da galeria;
  *    UM botão (Liberar a Galeria Oculta), que não volta.
  * 5. **A galeria é auditoria**: os ocultos primeiro, a busca por hashtag, a
  *    ficha que diz se o estande chegou ao feed, e manter ou trocar o voto.
- * 6. **A engrenagem é da escola**: a curtida em pacotes (EF06CO07) e a cadeia
- *    Interações → Dados → Algoritmo → Bolha (EF06CO03), com a errada que devolve
+ * 6. **A engrenagem é da escola**: a cadeia Interações → Dados → Algoritmo →
+ *    Bolha (EF06CO03), aberta pela frase do Léo, com a errada que devolve
  *    à bandeja sem dizer qual vaga errou; depois o caso Mariana e as três
  *    enquetes, sem acerto, e o crachá homologado.
  * 7. **O painel da professora não tem voto, taxa nem nível por criança**, e as
- *    três habilidades da ficha (EF06CO01, EF06CO03, EF06CO07) ficam no painel de
- *    habilidades.
+ *    três habilidades da ficha (EF06CO10, EF06CO01, EF06CO03) ficam no painel de
+ *    habilidades, com a régua de cada nível (ADR-145).
+ * 8. **O carrossel anda com o MOUSE** (o pedido do PO): arrasto real com
+ *    `page.mouse`, e as setas sobre a mídia.
+ * 9. **O podcast de recapitulação é da plataforma** (ADR-150): na criação, as
+ *    três falas que citam a mostra chegam de `falas-do-tema` e são revisadas
+ *    antes de aprovar os textos (o `homologar` as exige); na página da
+ *    atividade, Bia e Rafa nos cinco blocos do roteiro, o áudio sintetizado
+ *    trecho a trecho e o AVISO de que o episódio revela a virada — o módulo
+ *    não trava por etapa, então só depois da Galeria Oculta é recado à
+ *    professora (`[data-aviso-do-podcast]`).
  *
  * ─── A IA, e por que a suíte NÃO depende dela ──────────────────────────────
  *
@@ -221,6 +232,11 @@ async function lerApi(p, caminho) {
   return { status: resposta.status(), corpo: await resposta.json().catch(() => null) };
 }
 
+async function mandarApi(p, caminho, dados) {
+  const resposta = await p.request.fetch(`${BFF}${caminho}`, { method: "POST", data: dados ?? {} });
+  return { status: resposta.status(), corpo: await resposta.json().catch(() => null) };
+}
+
 /**
  * Espera a API chegar a um estado, e PERDE A CORRIDA para um erro dela: um 4xx
  * ou 5xx reprova na hora, com o corpo na mensagem. A pausa entre as leituras é
@@ -309,15 +325,16 @@ await suite(
       "projeta como os votos se dividiram. Na Galeria Oculta, cada uma vê o que não chegou à própria " +
       "tela — com a parte real que ficou de fora — e depois remonta a curtida e a engrenagem do feed.",
     prova: [
-      "A atividade nasce da professora: parametrizar, gerar com IA, curar e criar — e as imagens vêm depois, no pacote gravado",
+      "A atividade nasce da professora: parametrizar, gerar com IA, curar, aprovar os textos e depois as imagens (vistas, refeitas e aprovadas antes da turma) e criar",
       "As curtidas afunilam o feed no servidor: quem curte duas vezes a mesma área chega à galeria com uma taxa de invisibilidade MAIOR que a de quem não curte",
       "Votar é um latch: o lacre, e a plenária com exatamente três elementos; o F5 volta à plenária",
       "A lousa do pico diz quantos votaram e como os votos se dividiram por área, sem nome; a taxa média só aparece depois da galeria",
       "Só o botão da professora abre a Galeria Oculta, e ele não volta",
-      "Na galeria: os ocultos primeiro, a busca por hashtag e por texto, a ficha de cada estande e o voto mantido ou trocado; o F5 depois da revisão volta aos pacotes",
-      "Pacotes e cadeia são telas da escola: a ordem errada volta para a bandeja sem dizer qual vaga errou",
+      "Na galeria: os ocultos primeiro, a busca por hashtag e por texto, a ficha de cada estande e o voto mantido ou trocado; o F5 depois da revisão volta à cadeia",
+      "O carrossel do feed anda arrastando com o mouse e pelas setas",
+      "A cadeia é tela da escola, aberta pelo Léo: a ordem errada volta para a bandeja sem dizer qual vaga errou",
       "Caso Mariana, as três enquetes sem acerto e o crachá homologado",
-      "O painel da professora não tem voto, taxa nem nível por criança, e mostra EF06CO01, EF06CO03 e EF06CO07",
+      "O painel da professora não tem voto, taxa nem nível por criança, e mostra EF06CO10, EF06CO01 e EF06CO03 com a régua",
     ],
     comando: "node scripts/e2e/estudante/13-juri-estadual.mjs",
   },
@@ -462,6 +479,13 @@ await suite(
       await esperarOuFalharCedo(curadoria, falhaDaIa, { timeout: 20_000, oQue: "gerar a mostra com a fixture" });
     };
 
+    /* As falas do podcast são pedidas logo depois que a mostra chega (ADR-150):
+       a espera nasce ANTES do clique — e, se a IA falhar, a mesma espera pega
+       o pedido do clique da fixture. O `catch` vazio só impede a rejeição
+       solta: quem decide o que a falta significa é o passo das falas. */
+    const respostaDasFalas = esperarFalasDoTema(prof, "exp06ef1b");
+    respostaDasFalas.catch(() => undefined);
+
     if (MODO_DA_IA === "fixture") {
       await usarFixture(null);
     } else {
@@ -500,6 +524,49 @@ await suite(
       inteira: true,
     });
 
+    // ═══ PROFESSORA: as falas do podcast, na criação ═════════════════════
+    const tituloDasFalas = "As falas do podcast, para revisar";
+    const mostraDasFalas =
+      "Abaixo da curadoria, as três falas do podcast de recapitulação que citam esta mostra: duas da Bia e " +
+      "uma do Rafa, editáveis antes de aprovar os textos.";
+    if (origemDaMostra === "ia") {
+      await provarFalasNaCriacao(r, prof, await respostaDasFalas, {
+        comIa: true,
+        passo: "criacao-falas-do-podcast",
+        titulo: tituloDasFalas,
+        mostra: mostraDasFalas,
+        prova:
+          "A IA escreve as falas a partir dos estandes da mostra (Vertex), e a professora as revisa e edita na " +
+          "criação: elas vão no mesmo “Aprovar textos”, que as exige. O resto do roteiro é o aprovado pela Unooria.",
+      });
+    } else {
+      /* Com a fixture, a IA pode não responder também às falas: a api devolve as
+         do roteiro, sem IA, e isso é desfecho legítimo — não se exige `usouIa`. */
+      const resposta = await respostaDasFalas.catch(() => null);
+      const corpo = resposta ? await resposta.json().catch(() => null) : null;
+      if (corpo?.usouIa !== true) {
+        r.ressalva(
+          `as falas do podcast vieram sem IA (falas-do-tema ${resposta?.status() ?? "sem resposta"}, ` +
+            `motivo=${corpo?.motivo ?? "?"}): a mostra é de fixture`,
+        );
+      }
+      const caixas = prof.locator("[data-falas-do-podcast] textarea");
+      await caixas.first().waitFor({ timeout: 20_000 });
+      const textos = await caixas.evaluateAll((ts) => ts.map((t) => t.value.trim()));
+      r.exigir(
+        textos.length === 3 && textos.every((t) => t.length > 0),
+        `a criação mostra as 3 falas do podcast, preenchidas, para a professora revisar (${textos.length} na tela)`,
+      );
+      await r.registrar(prof, "criacao-falas-do-podcast", {
+        titulo: tituloDasFalas,
+        mostra: `${mostraDasFalas} Com a mostra de fixture, as falas podem ser as do roteiro, sem IA.`,
+        prova:
+          "As falas vão no mesmo “Aprovar textos”, que as exige: sem elas na régua, o botão não acende e a lista " +
+          "de pendências diz o que falta.",
+        inteira: true,
+      });
+    }
+
     // ═══ PROFESSORA: curar um estande ════════════════════════════════════
     const estande = curadoria.locator('[data-estande="proj-a1"]');
     const editar = estande.getByRole("button", { name: "Editar estande" });
@@ -508,8 +575,13 @@ await suite(
     const editor = prof.locator('[data-editor-do-estande="proj-a1"]');
     await editor.waitFor({ timeout: 10_000 });
     const titulo = editor.getByRole("textbox", { name: /^Título do estande/ });
-    await titulo.fill("");
-    await titulo.pressSequentially(TITULO_CURADO);
+    /* De UMA vez, não `fill("")` + `pressSequentially`: digitar logo depois de
+       esvaziar corria contra o render do campo vazio (que acende o erro) no
+       next dev, e o React devolvia o campo a um valor anterior no meio da
+       digitação — "Prótipo", "Proótipo". Com uma pausa entre os dois, 3 de 3
+       corridas passavam; sem ela, 3 de 3 perdiam letra. */
+    await titulo.fill(TITULO_CURADO);
+    r.exigir((await titulo.inputValue()) === TITULO_CURADO, "o campo do título ficou com o que a professora escreveu");
     await r.registrar(prof, "curadoria-editar-estande", {
       titulo: "Editar o que a criança lê",
       mostra: "A janela Editar Projeto Escolar: o título, a legenda da apresentação e o bastidor, com a régua de palavras à vista.",
@@ -524,8 +596,114 @@ await suite(
       "o cartão do estande mostra o título que a professora escreveu",
     );
 
-    // ═══ PROFESSORA: equipes, revisar, criar (homologar) ═════════════════
-    await prof.locator('[data-acao="continuar-criacao"]').click();
+    // ═══ PROFESSORA: as DUAS FASES da aprovação (o pedido do PO) ═════════
+    /* Fase 1, os textos: "Aprovar textos e gerar as imagens" grava o pacote
+       (homologar), PRONTO e fora do ar. Fase 2, as imagens: geram-se sozinhas
+       na grade; a professora vê cada uma, gera outra para a que não serve e
+       aprova. O "Continuar" só acende depois das duas. */
+    const continuar = prof.locator('[data-acao="continuar-criacao"]');
+    r.exigir(await continuar.isDisabled(), "antes de aprovar textos e imagens, o “Continuar” da criação fica apagado");
+    const aprovarTextos = prof.locator('[data-acao="aprovar-textos"]');
+    await prof.locator('[data-acao="aprovar-textos"]:not([disabled])').waitFor({ timeout: 20_000 }).catch(() => undefined);
+    if (await aprovarTextos.isDisabled()) {
+      const pendencias = await prof.locator("[data-preparo-juri] [role='status']").allInnerTexts();
+      throw new Error(`a curadoria recusou a mostra gerada pela IA: ${pendencias.join(" | ").slice(0, 400)}`);
+    }
+    await aprovarTextos.click();
+    await esperarOuFalharCedo(
+      prof.locator('[data-preparo-juri][data-fase="imagens"] [data-imagens-do-juri]'),
+      prof.locator("[data-preparo-juri]").locator(ALERTA_DE_ERRO),
+      { timeout: 60_000, oQue: "aprovar os textos e abrir a fase das imagens" },
+    );
+    const grade = prof.locator("[data-imagens-do-juri]");
+    const pacoteDaCriacao = await grade.getAttribute("data-pacote-das-imagens");
+    const jaAprovada = (await grade.getAttribute("data-imagens-aprovadas")) === "sim";
+    /** Espera a geração parar — e falha CEDO no aviso da grade (sem saldo, provedor fora). */
+    const imagensProntas = async (oQue) => {
+      const fim = Date.now() + 300_000;
+      for (;;) {
+        const gerando = await grade.locator('[data-estado-da-imagem="gerando"]').count();
+        const sem = await grade.locator('[data-estado-da-imagem="sem-imagem"]').count();
+        if (gerando === 0 && (sem === 0 || jaAprovada)) return;
+        const aviso = grade.locator(".unooria-feedback-alert--warning");
+        if ((await aviso.count()) > 0 && gerando === 0) {
+          throw new Error(`${oQue}: ${(await aviso.first().innerText()).trim()}`);
+        }
+        if (Date.now() > fim) throw new Error(`${oQue}: a geração não terminou em 5 minutos`);
+        await prof.waitForTimeout(1_000);
+      }
+    };
+    await imagensProntas("gerar as imagens dos estandes (o ADC está válido?)");
+    const cartoesDeImagem = grade.locator("[data-imagem-do-estande]");
+    r.exigir((await cartoesDeImagem.count()) === 16, "a fase 2 mostra os 16 estandes, cada um com a sua imagem");
+
+    /* A atividade gravada ainda não vai ao ar: a api recusa sem o OK. */
+    if (pacoteDaCriacao && !jaAprovada) {
+      const recusa = await mandarApi(prof, `${caminhoDaTurma}/pacotes/${pacoteDaCriacao}/em-andamento`);
+      r.exigir(
+        recusa.status === 409 && recusa.corpo?.codigo === "imagens-nao-aprovadas",
+        `sem as imagens aprovadas, pôr no ar é recusado com 409 imagens-nao-aprovadas (veio ${recusa.status} ${recusa.corpo?.codigo ?? ""})`,
+      );
+      r.exigir(
+        (await cartoesDeImagem.locator("img").count()) === 16,
+        "cada estande aparece com a imagem gerada, grande, junto do título e do que ela deveria mostrar",
+      );
+    }
+    await r.registrar(prof, "criacao-imagens", {
+      titulo: "As imagens, antes da turma",
+      mostra:
+        "A fase 2 da criação: os 16 estandes por área, cada um com a imagem gerada por IA, o título, o que ela " +
+        "deveria mostrar, o estado “Aguardando seu OK” e os botões “Gerar outra imagem” e “Aprovar as imagens”.",
+      prova:
+        "Nenhuma imagem gerada por IA chega ao feed das crianças sem o OK da professora (o pedido do PO): os textos " +
+        "já estão gravados, e a atividade não vai ao ar sem a segunda fase.",
+      inteira: true,
+    });
+
+    if (!jaAprovada) {
+      /* "Gerar outra imagem" troca SÓ aquela, num arquivo novo. */
+      const primeira = cartoesDeImagem.first();
+      const idDaPrimeira = await primeira.getAttribute("data-imagem-do-estande");
+      const srcAntes = await primeira.locator("img").getAttribute("src");
+      await primeira.locator('[data-acao="gerar-outra-imagem"]').click();
+      const daPrimeira = grade.locator(`[data-imagem-do-estande="${idDaPrimeira}"]`);
+      await esperarOuFalharCedo(
+        daPrimeira.locator(`img:not([src="${srcAntes}"])`),
+        grade.locator(".unooria-feedback-alert--warning"),
+        { timeout: 90_000, oQue: "gerar outra imagem para um estande" },
+      );
+      r.exigir(
+        (await daPrimeira.getAttribute("data-estado-da-imagem")) === "aguardando",
+        "a imagem refeita é outra, e continua esperando o OK",
+      );
+
+      await grade.locator('[data-acao="aprovar-imagens"]').click();
+      await esperarOuFalharCedo(
+        prof.locator('[data-imagens-do-juri][data-imagens-aprovadas="sim"]'),
+        grade.locator(".unooria-feedback-alert--warning"),
+        { timeout: 30_000, oQue: "aprovar as imagens" },
+      );
+      r.exigir(
+        (await grade.locator('[data-acao="gerar-outra-imagem"]').count()) === 0,
+        "aprovadas, as imagens congelam: some o “Gerar outra imagem”",
+      );
+      const depois = await mandarApi(prof, `${caminhoDaTurma}/pacotes/${pacoteDaCriacao}/imagens/proj-a1/refazer`);
+      r.exigir(
+        depois.status === 409 && depois.corpo?.codigo === "imagens-ja-aprovadas",
+        `depois da aprovação, refazer é 409 imagens-ja-aprovadas (veio ${depois.status} ${depois.corpo?.codigo ?? ""})`,
+      );
+    } else {
+      r.ressalva("a mostra criada é a mesma de uma corrida anterior, já com as imagens aprovadas: a fase 2 só confere");
+    }
+    r.exigir(!(await continuar.isDisabled()), "com textos e imagens aprovados, o “Continuar” acende");
+    await r.registrar(prof, "criacao-imagens-aprovadas", {
+      titulo: "Imagens aprovadas",
+      mostra: "Os 16 estandes com a etiqueta “Aprovada” e a barra cheia.",
+      prova: "É esta aprovação que deixa a atividade ir ao ar; depois dela, as imagens não mudam mais.",
+    });
+
+    // ═══ PROFESSORA: equipes, revisar, criar ═════════════════════════════
+    await continuar.click();
     /* Rádio do DS pelo PAPEL: o `<input>` transparente cobre o rótulo inteiro. */
     const umPorComputador = prof.getByRole("radio", { name: "Um aluno por computador", exact: true });
     await umPorComputador.click();
@@ -551,8 +729,8 @@ await suite(
         "O último passo: a turma, o tema com os 16 estandes em 4 áreas, um aluno por computador e o interruptor " +
         "“Pôr esta atividade no ar agora”, ligado.",
       prova:
-        "Criar é a homologação (ADR-66/67): a api revalida a mostra inteira pela mesma régua do gerador e grava a " +
-        "atividade PRONTA; é o interruptor que a põe em andamento.",
+        "Os textos e as imagens já foram aprovados nas duas fases (a mostra está gravada, PRONTA); criar só faz o " +
+        "resto — o interruptor a põe em andamento.",
     });
 
     await prof.locator('[data-acao="criar-atividade"]').click();
@@ -606,46 +784,22 @@ await suite(
     await prof.waitForSelector('[data-etapa="exploracao"]', { timeout: 20_000 });
     await prof.locator("[data-estandes-da-atividade]").waitFor({ timeout: 20_000 });
 
-    // ═══ PROFESSORA: as imagens do pacote gravado ════════════════════════
-    /* As imagens são OPCIONAIS por desenho: a falha do gerador deixa a arte
-       procedural, e a tela diz isso. O laço do cliente segue em segundo plano
-       (duas por ida) até a página ser recarregada — e uma ida que falhe lá
-       (mock, sem saldo, o teto do BFF) não é defeito desta suíte. */
-    r.provocado(
-      /gerar-midia/,
-      "as imagens dos estandes são opcionais: a ida que falha deixa a arte procedural, e a tela avisa",
-    );
-    const imagens = prof.locator("[data-imagens-do-juri]");
-    await imagens.waitFor({ timeout: 20_000 });
-    const gerarImagens = imagens.locator('[data-acao="gerar-imagens"]');
-    await hidratado(prof, gerarImagens);
-    let desfechoDasImagens = "já estavam prontas";
-    if (!(await gerarImagens.isDisabled())) {
-      const primeiraIda = prof.waitForResponse((resp) => /\/gerar-midia/.test(resp.url()), { timeout: 60_000 });
-      await gerarImagens.click();
-      const resposta = await primeiraIda.catch(() => null);
-      if (!resposta) {
-        desfechoDasImagens = "a primeira ida não respondeu em 60 s";
-      } else if (resposta.status() >= 400) {
-        await imagens.locator(".unooria-feedback-alert--warning").waitFor({ timeout: 15_000 });
-        desfechoDasImagens = `a api recusou (HTTP ${resposta.status()}) e a tela avisou`;
-      } else {
-        const corpo = await resposta.json().catch(() => null);
-        desfechoDasImagens = `${corpo?.prontas ?? "?"} de ${corpo?.total ?? 16} prontas depois da 1ª ida (${corpo?.falharam?.length ?? 0} falharam)`;
-      }
-      r.ressalva(`imagens: ${desfechoDasImagens} — estande sem imagem aparece com a arte desenhada`);
-    }
     await r.registrar(prof, "atividade-em-andamento", {
-      titulo: "A atividade em andamento: imagens, estandes e o botão da aula",
+      titulo: "A atividade em andamento: imagens aprovadas, estandes e o botão da aula",
       mostra:
-        "A página da atividade: em andamento, as equipes, as imagens dos estandes (duas por ida), os 16 estandes " +
-        "por área e o painel da aula na exploração, com Liberar a Galeria Oculta.",
+        "A página da atividade: em andamento, as equipes, as imagens dos estandes já aprovadas, os 16 estandes " +
+        "por área (as hashtags quebram linha dentro do cartão) e o painel da aula na exploração, com Liberar a " +
+        "Galeria Oculta.",
       prova:
-        "As imagens são do pacote GRAVADO e se geram aqui, depois de criar — gerar para um rascunho gastaria a " +
-        "quota à toa. A falha não bloqueia nada: a experiência desenha a arte procedural do estande.",
-      detalhe: `imagens: ${desfechoDasImagens}`,
+        "As imagens foram vistas e aprovadas na criação; aqui elas não mudam mais. As hashtags vão no rodapé do " +
+        "cartão, que quebra linha — no cabeçalho, sem quebra, elas vazavam (o pedido do PO).",
       inteira: true,
     });
+    const hashtagsDoEstande = prof.locator('[data-estandes-da-atividade] [data-estande="proj-a1"] .unooria-card__subtags-container');
+    r.exigir(
+      (await hashtagsDoEstande.count()) === 1,
+      "as hashtags do estande moram no contêiner do DS que quebra linha (subtags), não no cabeçalho do cartão",
+    );
 
     // ═══ ESTUDANTES: a grade, a credencial e o feed ══════════════════════
     /** Entra pela GRADE do hub do estudante — o cartão da missão, não a URL. */
@@ -768,20 +922,41 @@ await suite(
       `a abertura do feed traz 4 posts, um de cada área (${abertura.map((x) => x.area).join(", ")})`,
     );
 
-    /* A 2ª lâmina do carrossel (a ficha técnica), pelo teclado na mídia focada:
-       o deslize é do produto, e as setas são o mesmo gesto para quem não arrasta. */
+    /* A 2ª lâmina do carrossel (a ficha técnica), ARRASTANDO COM O MOUSE — o
+       pedido do PO: o carrossel era só de toque, e no computador da escola o
+       arrasto nativo da imagem cancelava o gesto. O teclado já funcionava e
+       escondia o defeito; por isso a prova é o mouse de verdade. */
     const primeiroPost = artigos1.first();
     const midia = primeiroPost.locator('[aria-roledescription="carrossel"]').first();
-    await midia.press("ArrowRight");
+    await midia.scrollIntoViewIfNeeded();
+    const caixa = await midia.boundingBox();
+    if (!caixa) throw new Error("a mídia do primeiro post não tem caixa na tela");
+    const yDoMeio = caixa.y + caixa.height / 2;
+    await p.mouse.move(caixa.x + caixa.width * 0.8, yDoMeio);
+    await p.mouse.down();
+    await p.mouse.move(caixa.x + caixa.width * 0.5, yDoMeio, { steps: 6 });
+    await p.mouse.move(caixa.x + caixa.width * 0.2, yDoMeio, { steps: 6 });
+    await p.mouse.up();
+    await primeiroPost.getByText("Ficha técnica").first().waitFor({ timeout: 10_000 });
+    /* E as SETAS, a navegação por clique: a anterior volta, a próxima avança. */
+    await primeiroPost.locator('[data-seta="anterior"]').click();
+    await primeiroPost.getByRole("button", { name: "Próxima lâmina" }).waitFor({ timeout: 10_000 });
+    r.exigir(
+      (await primeiroPost.getByText("Ficha técnica").count()) === 0,
+      "a seta “Lâmina anterior” volta à fotografia do estande",
+    );
+    await primeiroPost.locator('[data-seta="proxima"]').click();
     await primeiroPost.getByText("Ficha técnica").first().waitFor({ timeout: 10_000 });
     await r.registrar(p, "feed-ficha-tecnica", {
       titulo: "O feed da mostra, e a ficha técnica",
-      mostra: "O primeiro post da abertura com a 2ª lâmina do carrossel: projeto, escola, área e perfil.",
+      mostra:
+        "O primeiro post da abertura com a 2ª lâmina do carrossel — aberta ARRASTANDO COM O MOUSE — e a seta de " +
+        "voltar sobre a mídia: projeto, escola, área e perfil.",
       prova:
-        "A abertura mostra um estande de cada área — a mostra é variada antes de a bolha fechar. A área é pública " +
-        "(a hashtag está no post); o que não desce é o acervo: só os posts que o motor serviu.",
+        "O carrossel anda com o dedo, com o mouse e pelas setas (o pedido do PO). A abertura mostra um estande de " +
+        "cada área — a mostra é variada antes de a bolha fechar; o que não desce é o acervo: só os posts servidos.",
     });
-    await midia.press("ArrowLeft");
+    await primeiroPost.locator('[data-seta="anterior"]').click();
 
     /* CURTIR DUAS VEZES A MESMA ÁREA. A primeira curtida é no 1º post; a área
        dele vira a do jurado. Sem bolha, o motor serve a apresentação nova da
@@ -1011,7 +1186,7 @@ await suite(
     await r.registrar(p, "galeria-ficha", {
       titulo: "A ficha de um estande que não chegou",
       mostra: `A ficha de “${ocultos1[outro].titulo}”: a etiqueta “Não chegou ao seu feed”, a escola, a área, o perfil e a legenda.`,
-      prova: "Abrir um estande oculto é o registro da EF06CO01, lido no latch da revisão do voto.",
+      prova: "Abrir um estande oculto é o registro da EF06CO10 (e, depois da hashtag de outra área, da EF06CO01), lido no latch da revisão do voto.",
     });
     await fecharFicha(q, ocultos1[outro].titulo);
 
@@ -1070,12 +1245,12 @@ await suite(
     await revisaoDoVoto.getByRole("button", { name: "Revisar Voto Oficial" }).click();
     const leo = (qq) => qq().getByText("Você viveu em tela o que Léo investigou no livro didático!").first();
     await leo(q2).waitFor({ timeout: 20_000 });
-    /* F5 NO LATCH 2: volta aos pacotes, nunca à galeria. */
+    /* F5 NO LATCH 2: volta à cadeia, nunca à galeria. */
     await p2.reload({ waitUntil: "domcontentloaded" });
     await leo(q2).waitFor({ timeout: 40_000 });
     r.exigir(
       (await q2().locator(".galeria__comunicado").count()) === 0,
-      "o F5 depois da revisão do voto volta aos pacotes — a galeria não reabre",
+      "o F5 depois da revisão do voto volta à cadeia — a galeria não reabre",
     );
     const sessao2 = await sessaoDe(p2);
     r.exigir(
@@ -1113,26 +1288,22 @@ await suite(
       inteira: true,
     });
 
-    // ═══ ESTUDANTE 1: os pacotes da curtida (EF06CO07) ═══════════════════
-    await semAnimacao(q);
-    await r.registrar(p, "pacotes-da-curtida", {
-      titulo: "A curtida em quatro pacotes",
-      mostra: "A tela da escola: o Léo, a instrução e os quatro pacotes que chegaram fora de ordem, cada um com o caminho que fez.",
-      prova:
-        "A missão sai do clone para EXPLICAR (a fronteira do disfarce é quem fala): a informação quebrada em " +
-        "pacotes por equipamentos diferentes e remontada no destino é a EF06CO07, vivida com o próprio voto.",
-    });
-    const bandejaDosPacotes = q().getByRole("region", { name: "Pacotes que chegaram" });
-    for (const n of [1, 2, 3, 4]) {
-      await bandejaDosPacotes.getByRole("button", { name: new RegExp(`^Pacote ${n} de 4`) }).click();
-    }
-    await q().getByRole("button", { name: "Remontar mensagem" }).click();
-    await q().getByText("Mensagem remontada no servidor").first().waitFor({ timeout: 15_000 });
-    r.exigir(true, "na ordem dos números, a mensagem se remonta na primeira tentativa");
-    await q().getByRole("button", { name: "Continuar", exact: true }).click();
-
     // ═══ ESTUDANTE 1: a cadeia (EF06CO03), errando uma vez ═══════════════
-    await q().getByText("A engrenagem que controlou o seu feed").first().waitFor({ timeout: 20_000 });
+    /* Sem a tela dos pacotes (a EF06CO07 saiu, o pedido do PO): a revisão leva
+       direto à cadeia, e a frase do Léo abre a tela dela. */
+    await q().getByRole("region", { name: "Blocos da engrenagem" }).waitFor({ timeout: 20_000 });
+    r.exigir(
+      (await leo(q).count()) > 0 && (await q().getByText(/pacotes? numerad|Remontar mensagem/).count()) === 0,
+      "a cadeia abre com a frase do Léo, e não há mais tela de pacotes",
+    );
+    await semAnimacao(q);
+    await r.registrar(p, "cadeia-com-o-leo", {
+      titulo: "O Léo, no topo da cadeia",
+      mostra: "A tela da escola: “Você viveu em tela o que Léo investigou no livro didático!”, a instrução e os quatro blocos.",
+      prova:
+        "A missão sai do clone para EXPLICAR (a fronteira do disfarce é quem fala). A única exclamação da missão " +
+        "é a ponte com o livro didático, agora no primeiro momento em que a Unooria mostra a engrenagem.",
+    });
     const bandejaDaCadeia = () => q().getByRole("region", { name: "Blocos da engrenagem" });
     const bloco = (rotulo) => bandejaDaCadeia().getByRole("button", { name: new RegExp(`^${escaparRegex(rotulo)}`) });
     const DADOS = "Registro de dados e padrões";
@@ -1186,9 +1357,10 @@ await suite(
 
     // ═══ ESTUDANTE 1: as três enquetes nos Stories ═══════════════════════
     const ENQUETES = [
-      { alternativa: /^Foi dividida em pacotes numerados/, confirmada: "Resposta registrada na ata do júri." },
-      { alternativa: /^O sistema associou cada curtida à categoria/, confirmada: "Dados computados na ata oficial." },
-      { alternativa: /^SE o jurado curtir duas publicações da mesma área/, confirmada: "Regra lógica conferida e arquivada." },
+      /* A P1 é a da EF06CO10 (o foco primário), verbatim da spec 9.6, item 1. */
+      { alternativa: /^Revela um engano: o jurado não percebeu/, confirmada: "Resposta registrada na ata do júri." },
+      { alternativa: /^O sistema associou cada curtida a um tipo de dado temático/, confirmada: "Dados computados na ata oficial." },
+      { alternativa: /^SE o jurado curtir dois ou mais posts do mesmo tema/, confirmada: "Regra lógica conferida e arquivada." },
     ];
     for (const [i, enquete] of ENQUETES.entries()) {
       /* As alternativas vêm EMBARALHADAS a cada leitura: casa-se pelo texto. */
@@ -1199,9 +1371,15 @@ await suite(
         `a enquete ${i + 1} confirma o registro na ata, sem acerto`,
       );
       if (i === 0) {
+        r.exigir(
+          (await q().getByText(/^Ao final da mostra, um jurado disse:/).count()) > 0,
+          "a primeira enquete é a da EF06CO10: a frase do jurado que só viu robótica",
+        );
         await r.registrar(p, "enquete", {
           titulo: "A consulta aos jurados",
-          mostra: "Os Stories da comissão, em tema escuro: a primeira pergunta, a alternativa tocada e “Resposta registrada na ata do júri.”",
+          mostra:
+            "Os Stories da comissão, em tema escuro: a primeira pergunta — a frase do jurado (EF06CO10) —, a " +
+            "alternativa tocada e “Resposta registrada na ata do júri.”",
           prova:
             "O gabarito mora na ficha da api e a ordem muda a cada leitura (ADR-118). A criança não sabe se " +
             "“acertou” — é evidência para a professora, não prova.",
@@ -1226,11 +1404,29 @@ await suite(
     await prof.reload({ waitUntil: "domcontentloaded" });
     const habilidades = prof.locator("[data-habilidades-do-juri]");
     await habilidades.waitFor({ timeout: 30_000 });
-    await habilidades.getByText("EF06CO01").first().waitFor({ timeout: 30_000 });
+    await habilidades.getByText("EF06CO10").first().waitFor({ timeout: 30_000 });
     const textoDasHabilidades = await habilidades.innerText();
     r.exigir(
-      ["EF06CO01", "EF06CO03", "EF06CO07"].every((codigo) => textoDasHabilidades.includes(codigo)),
-      "o painel de habilidades mostra EF06CO01, EF06CO03 e EF06CO07",
+      ["EF06CO10", "EF06CO01", "EF06CO03"].every((codigo) => textoDasHabilidades.includes(codigo)) &&
+        !textoDasHabilidades.includes("EF06CO07"),
+      "o painel de habilidades mostra EF06CO10, EF06CO01 e EF06CO03 — e não a EF06CO07",
+    );
+    /* A RÉGUA (ADR-145): o critério de cada nível, em texto, no fim do painel —
+       a da EF06CO10 conta os estandes ocultos; a da EF06CO01, a hashtag de outra área. */
+    r.exigir(
+      textoDasHabilidades.includes("pelo menos dois estandes que o feed escondeu") &&
+        textoDasHabilidades.includes("busca pela hashtag de uma área que não a do voto"),
+      "o painel lista a régua da EF06CO10 (ocultos abertos) e a da EF06CO01 (hashtag de outra área)",
+    );
+    /* E toda rodada mede as ações (ADR-145): a revisão do voto marcou as duas. */
+    const painelDeHabilidades = await lerApi(
+      prof,
+      `/evidencias/turma/${turmaId}/missao/exp06ef1b/atividade/${atividadeId}`,
+    );
+    const textoDoPainel = JSON.stringify(painelDeHabilidades.corpo ?? {});
+    r.exigir(
+      painelDeHabilidades.status === 200 && textoDoPainel.includes("EF06CO10") && textoDoPainel.includes("EF06CO01"),
+      `a api do painel de habilidades traz a EF06CO10 e a EF06CO01 desta atividade (HTTP ${painelDeHabilidades.status})`,
     );
     /* Pelos CABEÇALHOS das colunas, não pelo texto da página: a folha explica à
        professora que "não há coluna de voto, de taxa nem de nível", e a frase
@@ -1246,12 +1442,30 @@ await suite(
       titulo: "A folha da turma, e as habilidades",
       mostra:
         "Onde cada computador está — cédula, galeria, busca, revisão, missão — e o painel de habilidades da BNCC " +
-        "desta atividade: EF06CO01, EF06CO03 e EF06CO07.",
+        "desta atividade: EF06CO10, EF06CO01 e EF06CO03, com a régua de cada nível.",
       prova:
         "A folha diz só o progresso: ela tem nomes, então não liga nome a voto nem a taxa. O nível vem da " +
-        "auditoria da galeria, dos pacotes, da cadeia e das três enquetes, e fica no painel de habilidades, com " +
-        "a confirmação da professora.",
+        "auditoria da galeria (os ocultos abertos para a EF06CO10, a hashtag de outra área para a EF06CO01), da " +
+        "cadeia e das três enquetes, e fica no painel de habilidades, com a confirmação da professora.",
       inteira: true,
+    });
+
+    // ═══ PROFESSORA: o podcast de recapitulação ══════════════════════════
+    /* O episódio revela a virada, e o módulo de podcast não trava por etapa:
+       o cartão leva o aviso de quando tocar. Ele existe em toda etapa (o texto
+       muda com a galeria), então a prova é estar à vista. */
+    const avisoDoPodcast = prof.locator("[data-aviso-do-podcast]");
+    await avisoDoPodcast.waitFor({ timeout: 20_000 }).catch(() => undefined);
+    r.exigir(
+      await avisoDoPodcast.isVisible(),
+      "o cartão do podcast avisa que o episódio revela a virada e só toca depois da Galeria Oculta",
+    );
+    await provarPodcastNaAula(r, prof, {
+      blocos: ["Abertura", "Recapitulação da vivência", "A grande revelação", "Provocação e transferência", "Encerramento"],
+      vozes: ["Bia", "Rafa"],
+      trechos: 5,
+      passo: "podcast",
+      descricao: "Bia e Rafa, cerca de 3 min 45 s",
     });
   },
 );

@@ -3,11 +3,11 @@
  * conveniência. Molde: `exp07ef1b/src/lib/memoria.ts`.
  *
  * O que VALE mora na api: as curtidas, as permanências, o voto lacrado, a
- * revisão, a ordem conferida dos pacotes e da cadeia, os cartões, as respostas
+ * revisão, a ordem conferida da cadeia, os cartões, as respostas
  * das enquetes. Aqui fica só o que a api não guarda ANTES de o toque virar
  * latch, e cuja perda num F5 seria injusta com a criança: a dica do carrossel
- * já usada, as permanências já enviadas, a calha dos pacotes e da cadeia montada
- * pela metade, os cartões tocados antes de "Registrar", e qual alternativa ela
+ * já usada, as permanências já enviadas, a calha da cadeia montada pela
+ * metade, os cartões tocados antes de "Registrar", e qual alternativa ela
  * tocou em cada enquete (para a enquete reabrir travada — a api guarda a
  * primeira resposta de qualquer jeito).
  *
@@ -29,7 +29,6 @@ export interface Memoria {
   gestoUsado: boolean;
   /** Os posts cuja permanência já foi enviada (o servidor deduplica; isto poupa a ida). */
   permanencias: string[];
-  ordemDosPacotes: string[];
   ordemDaCadeia: string[];
   mecanismo: string | null;
   atitude: string | null;
@@ -40,7 +39,6 @@ export interface Memoria {
 const VAZIA: Memoria = {
   gestoUsado: false,
   permanencias: [],
-  ordemDosPacotes: [],
   ordemDaCadeia: [],
   mecanismo: null,
   atitude: null,
@@ -87,7 +85,6 @@ export function lerMemoria(c: ChaveDaSessao): Memoria {
     return {
       gestoUsado: dado.gestoUsado === true,
       permanencias: ids(dado.permanencias),
-      ordemDosPacotes: ids(dado.ordemDosPacotes),
       ordemDaCadeia: ids(dado.ordemDaCadeia),
       mecanismo: id(dado.mecanismo),
       atitude: id(dado.atitude),

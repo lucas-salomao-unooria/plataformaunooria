@@ -1,4 +1,4 @@
-import { BLOCOS_DA_CADEIA, CARTOES_DE_MECANISMO, PACOTES_DA_CURTIDA } from "../src/juri-estadual/conteudo";
+import { BLOCOS_DA_CADEIA, CARTOES_DE_MECANISMO } from "../src/juri-estadual/conteudo";
 import {
   ConteudoDoPacoteSchema,
   GaleriaSchema,
@@ -22,7 +22,7 @@ import {
   type EstadoDoFeed,
   type ProjetoDoMotor,
 } from "../src/juri-estadual/regras/afunilamento";
-import { nivelDaAuditoria, nivelPorTentativas } from "../src/juri-estadual/regras/evidencia";
+import { nivelDaAuditoria, nivelDaClassificacao, nivelPorTentativas } from "../src/juri-estadual/regras/evidencia";
 import { AUDITORIA_VAZIA, MAX_BUSCAS, auditoriaDaLinha, feedDaLinha, ordemDaGaleria, registrarAcao } from "../src/juri-estadual/regras/galeria";
 import {
   blocosDaSessao,
@@ -30,9 +30,7 @@ import {
   idsDaSessao,
   idsOpacos,
   ordemCertaDaCadeia,
-  ordemCertaDosPacotes,
   ordemConfere,
-  pacotesDaSessao,
 } from "../src/juri-estadual/regras/ordem";
 import { PROIBIDO_NA_LINHA_DO_PAINEL, mediaDasTaxas, votosPorArea } from "../src/juri-estadual/regras/painel";
 import {
@@ -47,6 +45,8 @@ import { postPublico, projetoDaGaleria } from "../src/juri-estadual/regras/publi
 import { AREAS, POSTS_NO_FEED, areaDoProjeto, idDoPost, projetoDoPost } from "../src/juri-estadual/vocabulario";
 import { CHAVES_REDIGIDAS } from "../src/observabilidade/redaction";
 import { PARAMETROS_DE_TESTE, conteudoDeTeste, saidaDaIaDeTeste } from "./juri-estadual-fixture";
+import { FALAS_DO_TEMA_PADRAO, VAGAS_DO_PODCAST, roteiroDoPodcast } from "../src/juri-estadual/podcast";
+import { problemasDasFalasDoTema, trechosAlemDoTeto } from "../src/podcast/roteiro";
 
 /**
  * As regras PURAS da exp06ef1b — sem banco, sem Nest. O que o Postgres precisa
@@ -74,7 +74,7 @@ function jogar(semente: string, curtir: (post: string, estado: EstadoDoFeed) => 
 describe("a mostra de teste contra as invariantes", () => {
   test("passa em problemasDoPacote e no Zod da homologação", () => {
     expect(problemasDoPacote(CONTEUDO)).toEqual([]);
-    expect(HomologacaoSchema.safeParse({ parametros: PARAMETROS_DE_TESTE, conteudo: CONTEUDO }).success).toBe(true);
+    expect(HomologacaoSchema.safeParse({ parametros: PARAMETROS_DE_TESTE, conteudo: CONTEUDO, podcast: FALAS_DO_TEMA_PADRAO }).success).toBe(true);
   });
 
   test("recusa o que a régua recusa", () => {
@@ -184,7 +184,7 @@ describe("os passos e a etapa da turma", () => {
     ["feed", "galeria", "feed"],
     ["lacrada", "exploracao", "lacrada"],
     ["lacrada", "galeria", "galeria"],
-    ["pacotes", "exploracao", "pacotes"],
+    ["cadeia", "exploracao", "cadeia"],
     ["fim", "galeria", "fim"],
   ];
   test.each(casos)("%s com a turma em %s → %s", (passo, etapa, esperado) => {
@@ -206,53 +206,42 @@ describe("os passos e a etapa da turma", () => {
   });
 });
 
-describe("pacotes e cadeia: ids opacos e a ordem de chegada", () => {
+describe("a cadeia: ids opacos e a ordem de chegada", () => {
   const sementes = Array.from({ length: 400 }, (_, i) => `semente-${i}`);
-  const voto = { tituloDoProjeto: "Filtro de areia e carvão", hashtagDaArea: "#aguaecuidado" };
 
   test("ids opacos no formato, diferentes entre si e estáveis num F5", () => {
     for (const s of sementes.slice(0, 50)) {
-      const pk = idsOpacos(s, "pk", 4);
       const bl = idsOpacos(s, "bl", 4);
-      for (const id of [...pk, ...bl]) expect(IdOpacoSchema.safeParse(id).success).toBe(true);
-      expect(new Set(pk).size).toBe(4);
-      expect(pk.every((id) => id.startsWith("pk-"))).toBe(true);
+      for (const id of bl) expect(IdOpacoSchema.safeParse(id).success).toBe(true);
+      expect(new Set(bl).size).toBe(4);
       expect(bl.every((id) => id.startsWith("bl-"))).toBe(true);
-      expect(idsOpacos(s, "pk", 4)).toEqual(pk);
-      expect(pacotesDaSessao(s, voto)).toEqual(pacotesDaSessao(s, voto));
+      expect(idsOpacos(s, "bl", 4)).toEqual(bl);
       expect(blocosDaSessao(s)).toEqual(blocosDaSessao(s));
     }
     /* Duas sessões, dois conjuntos de ids. */
-    expect(idsOpacos("a", "pk", 4)).not.toEqual(idsOpacos("b", "pk", 4));
+    expect(idsOpacos("a", "bl", 4)).not.toEqual(idsOpacos("b", "bl", 4));
+    /* O prefixo dos pacotes saiu com eles: o contrato não aceita mais `pk-`. */
+    expect(IdOpacoSchema.safeParse("pk-abc").success).toBe(false);
   });
 
   test("a ordem de chegada NUNCA é a ordem certa, em nenhuma das 400 sementes", () => {
     for (const s of sementes) {
-      expect(ordemConfere(pacotesDaSessao(s, voto).map((p) => p.id), ordemCertaDosPacotes(s))).toBe(false);
       expect(ordemConfere(blocosDaSessao(s).map((b) => b.id), ordemCertaDaCadeia(s))).toBe(false);
     }
     expect(embaralharForaDeOrdem([1], "x", "y")).toEqual([1]);
   });
 
-  test("a ordem certa é a dos números e das posições; o trecho é preenchido com o voto", () => {
+  test("a ordem certa é a das posições", () => {
     const s = "preenche";
-    const pacotes = pacotesDaSessao(s, voto);
-    const porNumero = [...pacotes].sort((a, b) => a.numero - b.numero).map((p) => p.id);
-    expect(porNumero).toEqual(ordemCertaDosPacotes(s));
-    expect(pacotes.find((p) => p.numero === 3)?.trecho).toBe("Projeto: Filtro de areia e carvão");
-    expect(pacotes.find((p) => p.numero === 4)?.trecho).toBe("Área: #aguaecuidado");
-    expect(pacotes.map((p) => p.rota)).toEqual(
-      expect.arrayContaining(PACOTES_DA_CURTIDA.map((p) => [...p.rota])),
-    );
     const blocos = blocosDaSessao(s);
     const certos = ordemCertaDaCadeia(s).map((id) => blocos.find((b) => b.id === id)?.rotulo);
     expect(certos).toEqual(BLOCOS_DA_CADEIA.map((b) => b.rotulo));
-    expect(idsDaSessao(ordemCertaDosPacotes(s), ordemCertaDosPacotes(s))).toBe(true);
-    expect(idsDaSessao(ordemCertaDosPacotes("outra"), ordemCertaDosPacotes(s))).toBe(false);
+    expect(idsDaSessao(ordemCertaDaCadeia(s), ordemCertaDaCadeia(s))).toBe(true);
+    expect(idsDaSessao(ordemCertaDaCadeia("outra"), ordemCertaDaCadeia(s))).toBe(false);
   });
 
-  test("nada do que desce diz a posição: nem `numero` na cadeia, nem `posicao`, nem `certo`", () => {
-    const json = JSON.stringify({ pacotes: pacotesDaSessao("x", voto), blocos: blocosDaSessao("x") });
+  test("nada do que desce diz a posição: nem `posicao`, nem `certo`", () => {
+    const json = JSON.stringify({ blocos: blocosDaSessao("x") });
     expect(json).not.toMatch(/"posicao"|"certo"/);
     expect(blocosDaSessao("x").every((b) => Object.keys(b).sort().join(",") === "id,rotulo")).toBe(true);
   });
@@ -264,26 +253,53 @@ describe("as réguas da evidência", () => {
   const votoArea = "area_a" as const;
   const ocultoDe = (area: string) => ocultos.find((id) => areaDoProjeto(id) === area) as string;
 
-  test("EF06CO01: duas áreas ocultas fora do voto = atingiu; busca de outra área + um oculto = atingiu", () => {
-    expect(nivelDaAuditoria({ abertos: [ocultoDe("area_b"), ocultoDe("area_c")], buscas: [] }, ocultos, votoArea)).toBe("atingiu");
-    expect(nivelDaAuditoria({ abertos: [ocultoDe("area_a")], buscas: [{ tipo: "hashtag", area: "area_d" }] }, ocultos, votoArea)).toBe(
-      "atingiu",
-    );
-  });
-
-  test("EF06CO01: abriu ou buscou alguma coisa = em processo; nada = não atingiu", () => {
-    expect(nivelDaAuditoria({ abertos: [ocultoDe("area_b")], buscas: [] }, ocultos, votoArea)).toBe("em_processo");
-    /* Dois ocultos da MESMA área do voto não bastam. */
+  test("EF06CO10: dois estandes OCULTOS abertos = atingiu, de qualquer área", () => {
+    expect(nivelDaAuditoria({ abertos: [ocultoDe("area_b"), ocultoDe("area_c")], buscas: [] }, ocultos)).toBe("atingiu");
     const daBolha = ocultos.filter((id) => areaDoProjeto(id) === votoArea).slice(0, 2);
-    expect(nivelDaAuditoria({ abertos: daBolha, buscas: [] }, ocultos, votoArea)).toBe("em_processo");
-    /* Abrir os VISTOS de duas áreas não é procurar o que o feed escondeu. */
-    const vistos = servidos.map(projetoDoPost).filter((id) => areaDoProjeto(id) !== votoArea);
-    expect(nivelDaAuditoria({ abertos: vistos, buscas: [] }, ocultos, votoArea)).toBe("em_processo");
-    expect(nivelDaAuditoria({ abertos: [], buscas: [{ tipo: "texto", area: null }] }, ocultos, votoArea)).toBe("em_processo");
-    expect(nivelDaAuditoria(AUDITORIA_VAZIA, ocultos, votoArea)).toBe("nao_atingiu");
+    expect(nivelDaAuditoria({ abertos: daBolha, buscas: [] }, ocultos)).toBe("atingiu");
   });
 
-  test("EF06CO07 e EF06CO03: 1 tentativa = atingiu; 2–3 = em processo; mais = não atingiu", () => {
+  test("EF06CO10: por cima (um oculto, só vistos, ou busca sem abrir) = em processo; nada = não atingiu", () => {
+    expect(nivelDaAuditoria({ abertos: [ocultoDe("area_b")], buscas: [] }, ocultos)).toBe("em_processo");
+    /* Abrir os VISTOS não é conferir o que o feed escondeu. */
+    const vistos = servidos.map(projetoDoPost);
+    expect(nivelDaAuditoria({ abertos: vistos, buscas: [] }, ocultos)).toBe("em_processo");
+    expect(nivelDaAuditoria({ abertos: [], buscas: [{ tipo: "hashtag", area: "area_b" }] }, ocultos)).toBe("em_processo");
+    expect(nivelDaAuditoria(AUDITORIA_VAZIA, ocultos)).toBe("nao_atingiu");
+  });
+
+  test("EF06CO01: a hashtag de outra área + um oculto DAQUELA área = atingiu", () => {
+    expect(
+      nivelDaClassificacao({ abertos: [ocultoDe("area_d")], buscas: [{ tipo: "hashtag", area: "area_d" }] }, ocultos, votoArea),
+    ).toBe("atingiu");
+  });
+
+  test("EF06CO01: não é a mesma régua da EF06CO10 — abrir ocultos sem buscar não classifica", () => {
+    const auditoria = { abertos: [ocultoDe("area_b"), ocultoDe("area_c")], buscas: [] };
+    expect(nivelDaAuditoria(auditoria, ocultos)).toBe("atingiu");
+    expect(nivelDaClassificacao(auditoria, ocultos, votoArea)).toBe("nao_atingiu");
+  });
+
+  test("EF06CO01: busca que não fecha o par = em processo; sem busca = não atingiu", () => {
+    /* A hashtag da própria área (a bolha) não é procurar outra coleção. */
+    expect(
+      nivelDaClassificacao({ abertos: [ocultoDe("area_a")], buscas: [{ tipo: "hashtag", area: "area_a" }] }, ocultos, votoArea),
+    ).toBe("em_processo");
+    /* A hashtag de uma área, o oculto de OUTRA. */
+    expect(
+      nivelDaClassificacao({ abertos: [ocultoDe("area_c")], buscas: [{ tipo: "hashtag", area: "area_b" }] }, ocultos, votoArea),
+    ).toBe("em_processo");
+    /* Por texto, mesmo casando a área: a categoria não foi a chave. */
+    expect(
+      nivelDaClassificacao({ abertos: [ocultoDe("area_b")], buscas: [{ tipo: "texto", area: "area_b" }] }, ocultos, votoArea),
+    ).toBe("em_processo");
+    expect(nivelDaClassificacao({ abertos: [], buscas: [{ tipo: "hashtag", area: "area_b" }] }, ocultos, votoArea)).toBe(
+      "em_processo",
+    );
+    expect(nivelDaClassificacao(AUDITORIA_VAZIA, ocultos, votoArea)).toBe("nao_atingiu");
+  });
+
+  test("EF06CO03: 1 tentativa = atingiu; 2–3 = em processo; mais = não atingiu", () => {
     expect([1, 2, 3, 4, 9].map(nivelPorTentativas)).toEqual(["atingiu", "em_processo", "em_processo", "nao_atingiu", "nao_atingiu"]);
   });
 });
@@ -437,5 +453,26 @@ describe("o preparo: a saída da IA", () => {
     expect(SYSTEM_DO_PREPARO).toMatch(/NENHUM nome estrangeiro/);
     const projeto = SCHEMA_DO_PREPARO.properties?.projetos?.items;
     expect(projeto?.properties?.id?.enum).toHaveLength(16);
+  });
+});
+
+describe("o podcast de recapitulação (ADR-151)", () => {
+  test("o roteiro do sheet, corrigido, passa na régua do podcast e cabe no teto da síntese", () => {
+    expect(problemasDasFalasDoTema(VAGAS_DO_PODCAST, FALAS_DO_TEMA_PADRAO)).toEqual([]);
+    const roteiro = roteiroDoPodcast(FALAS_DO_TEMA_PADRAO);
+    expect(trechosAlemDoTeto(roteiro)).toEqual([]);
+    const marcadas = roteiroDoPodcast(Object.fromEntries(VAGAS_DO_PODCAST.map((v) => [v.id, `[[${v.id}]]`])));
+    for (const vaga of VAGAS_DO_PODCAST) {
+      expect(marcadas.flatMap((t) => t.falas).filter((f) => f.texto === `[[${vaga.id}]]`)).toHaveLength(1);
+    }
+  });
+
+  test("nenhum número cravado contra a taxa real (9 de 16 com duas curtidas), e o app é o Unoovista", () => {
+    const texto = roteiroDoPodcast(FALAS_DO_TEMA_PADRAO)
+      .flatMap((t) => t.falas.map((f) => f.texto))
+      .join(" ");
+    expect(texto).not.toMatch(/\b12\b|doze|três quartos/i);
+    expect(texto).not.toMatch(/instanooria/i);
+    expect(texto).toContain("Unoovista");
   });
 });

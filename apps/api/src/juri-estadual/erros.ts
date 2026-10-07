@@ -13,8 +13,8 @@ import { HttpException } from "@nestjs/common";
  * Duas vozes, porque são duas zonas (ADR-91):
  * - os códigos do ESTUDANTE falam na voz da comissão da mostra — boa parte dos
  *   409 vem do relógio da turma, e a frase diz para esperar;
- * - os do PROFESSOR (`transicao-de-etapa-invalida`, `pacote-invalido`, os da
- *   IA) falam na voz da plataforma.
+ * - os do PROFESSOR (`transicao-de-etapa-invalida`, `pacote-invalido`, os das
+ *   imagens, os da IA) falam na voz da plataforma.
  */
 export type CodigoErro =
   | "payload-invalido"
@@ -33,6 +33,8 @@ export type CodigoErro =
   | "voto-ja-revisado"
   | "transicao-de-etapa-invalida"
   | "pacote-invalido"
+  | "imagens-nao-aprovadas"
+  | "imagens-ja-aprovadas"
   | "sem-saldo-de-ia"
   | "ia-indisponivel";
 
@@ -56,6 +58,11 @@ export const STATUS: Record<CodigoErro, number> = {
   "voto-ja-revisado": 409,
   "transicao-de-etapa-invalida": 409,
   "pacote-invalido": 400,
+  /* A segunda fase da aprovação (como na exp07ef1b, ADR-146): o pacote existe,
+     mas ninguém viu as imagens. 409 — é o estado da atividade, não o pedido,
+     que está errado. */
+  "imagens-nao-aprovadas": 409,
+  "imagens-ja-aprovadas": 409,
   "sem-saldo-de-ia": 429,
   "ia-indisponivel": 503,
 };
@@ -80,6 +87,9 @@ export const MENSAGENS: Record<CodigoErro, string> = {
   "voto-ja-revisado": "A revisão do seu voto já foi registrada na ata.",
   "transicao-de-etapa-invalida": "A turma avança uma etapa por vez, e nunca volta.",
   "pacote-invalido": "Os estandes gerados não atendem às regras da missão.",
+  "imagens-nao-aprovadas":
+    "Aprove as imagens dos estandes antes de pôr esta atividade no ar: elas aparecem na página da atividade, estande por estande.",
+  "imagens-ja-aprovadas": "As imagens desta atividade já foram aprovadas e não mudam mais.",
   "sem-saldo-de-ia": "Limite de geração com IA atingido por hoje. Tente novamente amanhã.",
   "ia-indisponivel": "O serviço de geração automática oscilou. Tente novamente em instantes.",
 };

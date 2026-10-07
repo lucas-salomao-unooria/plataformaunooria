@@ -118,29 +118,22 @@ a (cobertura, rodada) do gate — por isso o zerar tranca a resposta atrasada.
 ## O podcast de recapitulação (é do PROFESSOR)
 
 O "Podcast de Recapitulação" do PRD (Lucas e Clara, ~3m45s) — o roteiro é o do
-sheet aprovado (`podcast.ts`). O texto fala com o estudante, mas a decisão do
-dono do produto é que ele é do professor, que toca à turma depois
-da aula se quiser: rotas em `a-selecao-turmas.controller.ts`, nenhuma de
-estudante.
+sheet aprovado (`podcast.ts`). Desde a ADR-150 as rotas e o motor do áudio são
+da plataforma (`src/podcast/`, `/podcast/exp07ef1b/…`); aqui ficam o roteiro e
+a fonte (`podcast-fonte.ts`, registrada no `onModuleInit`).
 
 - **Só três falas mudam com o tema** — as do Bloco 2 que dizem o que cada
   veículo mostrou (`FalasDoTema`). Num tema da IA elas saem do MESMO lote do
-  preparo (`prompts.ts#SCHEMA_DO_PREPARO.podcast`), sob a mesma régua da
-  homologação (`problemasDasFalasDoTema`), e a professora as revisa antes de
-  aprovar. Moram em `exp07ef1b_coberturas.podcast`; NULO = as do sheet.
-- **A voz é o TTS do Gemini pelo provider** (`generateSpeech`: Cloud TTS com os
-  modelos Gemini, `VERTEX_TTS_MODEL`), Lucas e Clara numa chamada de DIÁLOGO por
-  bloco, com a direção do brief (`DIRECAO_DO_PODCAST`). Um trecho por
-  `POST gerar-podcast` — o episódio inteiro não cabe nos 30 s do BFF — e, com os
-  cinco, a mesma chamada emenda o MP3 (`regras/mp3.ts`: tira as ID3 e o quadro
-  Xing/Info de cada trecho, que declararia a duração errada).
-- **O nome do trecho é o hash do texto e do pedido de voz** (`nomeDoTrecho`):
-  os Blocos 1, 3, 4 e 5 saem uma vez por contrato, e só o Bloco 2 de um tema novo
-  custa síntese. Mudou direção, timbre ou texto fixo? Suba
+  preparo (`prompts.ts#SCHEMA_DO_PREPARO.podcast`), sob a régua do módulo
+  `podcast` (`problemasDasFalasDoTema`), e a professora as revisa antes de
+  aprovar. Moram em `exp07ef1b_coberturas.podcast` (NULO = as do sheet) — a
+  A Seleção é a única missão que NÃO usa a tabela `podcast_roteiros` nem a
+  escrita `falas-do-tema`, e a fonte as entrega como `falasProprias`.
+- **Os nomes no bucket não mudaram com o motor comum**: o prefixo
+  `selecao/podcast/` e os insumos do hash são os de antes, e
+  `tests/a-selecao-podcast.spec.ts` congela os nomes dos cinco trechos e do
+  episódio. Mudou direção, timbre ou texto fixo? Suba
   `VERSAO_DO_PEDIDO_DE_VOZ`, senão o contrato mistura gravações de dois pedidos.
-- **Sem áudio, nada quebra**: o roteiro É a transcrição, e a tela a mostra
-  sempre. O mock falha fechado, então em dev e na e2e o caminho que roda é o da
-  transcrição com o player desabilitado.
 
 ## As suítes
 
@@ -151,8 +144,8 @@ estudante.
   memória).
 - `tests/a-selecao-podcast.spec.ts` — SEM banco: o roteiro (os blocos fixos não
   mudam com o tema; todo trecho cabe nos 4.000 bytes da síntese), a régua das
-  três falas, os nomes pelo hash, a emenda com quadros MP3 sintéticos e o serviço
-  com provider, bucket e quota falsos (um trecho por chamada, a emenda no fim, o
+  três falas, os nomes pelo hash (congelados), a emenda com quadros MP3 sintéticos e o motor
+  da plataforma pela fonte da A Seleção, com provider, bucket e quota falsos (um trecho por chamada, a emenda no fim, o
   tema novo que só paga o Bloco 2, sem saldo e falha).
 - `tests/a-selecao-postgres.spec.ts` — o que só o banco responde: a RLS ISOLANDO
   (com a role sem `BYPASSRLS`), os CHECKs, o latch sob dois toques, zerar e tema

@@ -1,5 +1,12 @@
-import { createHash } from "node:crypto";
-import { z } from "zod";
+import type { AiFalante } from "../ai/provider";
+import {
+  falasDoTemaSchema,
+  nomeDoEpisodio as nomeDoEpisodioNaVoz,
+  nomeDoTrecho as nomeDoTrechoNaVoz,
+  problemasDasFalasDoTema as problemasDasVagas,
+  type PedidoDeVoz,
+  type VagaDoTema,
+} from "../podcast/roteiro";
 
 /**
  * O PODCAST DE RECAPITULAÇÃO da exp07ef1b — o roteiro, as réguas e os nomes
@@ -38,14 +45,14 @@ export const TITULOS_DOS_BLOCOS: Record<BlocoDoPodcast, string> = {
 };
 
 /** O que cada veículo mostrou — as três falas do Bloco 2 que mudam com o tema. */
-export interface FalasDoTema {
+export type FalasDoTema = {
   /** Lucas: o que a Folha Oficial (@folhaoficial_) mostrou. */
   institucional: string;
   /** Clara: o que a Voz Coletiva (@voz_coletiva) mostrou. */
   comunitario: string;
   /** Lucas: o que a Métrica Urbana (@metrica_urbana) mostrou. */
   estatistico: string;
-}
+};
 
 // ──────────────────────────────────────────── o texto aprovado, sem mudança
 
@@ -123,33 +130,32 @@ export function roteiroDoPodcast(tema: FalasDoTema): TrechoDoRoteiro[] {
 
 // ────────────────────────────────────────────────── as réguas das três falas
 
-/** Palavras por fala do tema. As do sheet têm de 26 a 38; a folga é para a professora. */
-export const PALAVRAS_DA_FALA_DO_TEMA = { min: 12, max: 60 } as const;
-
 /**
- * Bytes por fala do tema. O teto da síntese é de 4.000 bytes por chamada
- * (em pt-BR um acento conta 2), e o Bloco 2 inteiro — as cinco falas — vai numa
- * chamada só: três falas de 400 bytes mais as duas fixas cabem com folga.
+ * As três vagas do tema, na ordem do Bloco 2 — a régua é a do módulo
+ * `podcast` (`roteiro.ts`), e `sobre` é o que as frases de erro dizem.
  */
-export const BYTES_DA_FALA_DO_TEMA = 400;
-
-const CAMPOS_DO_TEMA: ReadonlyArray<{ campo: keyof FalasDoTema; veiculo: string }> = [
-  { campo: "institucional", veiculo: "a Folha Oficial" },
-  { campo: "comunitario", veiculo: "a Voz Coletiva" },
-  { campo: "estatistico", veiculo: "a Métrica Urbana" },
+export const VAGAS_DO_PODCAST: readonly VagaDoTema[] = [
+  {
+    id: "institucional",
+    falante: "Lucas",
+    sobre: "a Folha Oficial",
+    instrucao: 'O que a Folha Oficial mostrou nos quatro posts dela, e a sensação que isso passava, começando por "A Folha Oficial vinha com".',
+  },
+  {
+    id: "comunitario",
+    falante: "Clara",
+    sobre: "a Voz Coletiva",
+    instrucao: 'O que a Voz Coletiva mostrou, começando por "Aí logo embaixo você rolava mais um pouco e via a Voz Coletiva:".',
+  },
+  {
+    id: "estatistico",
+    falante: "Lucas",
+    sobre: "a Métrica Urbana",
+    instrucao: 'O que a Métrica Urbana mostrou, começando por "E se não bastasse, tinha a Métrica Urbana com".',
+  },
 ];
 
-/** Link, e-mail e menção não se leem em voz alta — e são o que um texto colado traria. */
-const PROIBIDO_NA_FALA = [
-  { re: /https?:\/\/|www\.|\.com\b|\.br\b/i, motivo: "tem um link" },
-  { re: /[\w.+-]+@[\w-]+\.[\w.]+/, motivo: "tem um e-mail" },
-  { re: /(^|\s)@\w/, motivo: "tem uma menção com @ (escreva o nome do veículo por extenso)" },
-  { re: /<<<|>>>/, motivo: "tem um delimitador de instrução" },
-];
-
-function palavrasDe(texto: string): number {
-  return texto.trim().split(/\s+/).filter(Boolean).length;
-}
+export { BYTES_DA_FALA_DO_TEMA, PALAVRAS_DA_FALA_DO_TEMA } from "../podcast/roteiro";
 
 /**
  * TUDO que impede as três falas de irem para o áudio, em frases para a
@@ -157,42 +163,18 @@ function palavrasDe(texto: string): number {
  * que a professora editou.
  */
 export function problemasDasFalasDoTema(tema: FalasDoTema): string[] {
-  const erros: string[] = [];
-  for (const { campo, veiculo } of CAMPOS_DO_TEMA) {
-    const texto = (tema[campo] ?? "").trim();
-    const n = palavrasDe(texto);
-    if (n < PALAVRAS_DA_FALA_DO_TEMA.min || n > PALAVRAS_DA_FALA_DO_TEMA.max) {
-      erros.push(
-        `A fala do podcast sobre ${veiculo} tem ${n} palavra(s); precisa ter de ${PALAVRAS_DA_FALA_DO_TEMA.min} a ${PALAVRAS_DA_FALA_DO_TEMA.max}.`,
-      );
-    }
-    if (Buffer.byteLength(texto, "utf8") > BYTES_DA_FALA_DO_TEMA) {
-      erros.push(`A fala do podcast sobre ${veiculo} está longa demais para o áudio; encurte um pouco.`);
-    }
-    for (const { re, motivo } of PROIBIDO_NA_FALA) {
-      if (re.test(texto)) erros.push(`A fala do podcast sobre ${veiculo} ${motivo}.`);
-    }
-  }
-  return erros;
+  return problemasDasVagas(VAGAS_DO_PODCAST, { ...tema });
 }
 
 /** O Zod das três falas — entrada da homologação e saída do rascunho. */
-export const FalasDoTemaSchema = z
-  .object({
-    institucional: z.string().trim().min(1).max(600),
-    comunitario: z.string().trim().min(1).max(600),
-    estatistico: z.string().trim().min(1).max(600),
-  })
-  .superRefine((tema, ctx) => {
-    for (const problema of problemasDasFalasDoTema(tema)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: problema });
-  });
+export const FalasDoTemaSchema = falasDoTemaSchema(VAGAS_DO_PODCAST).transform((f) => f as unknown as FalasDoTema);
 
 // ──────────────────────────────────────────────────── a voz e os arquivos
 
 /** Quem fala: o nome do roteiro e o timbre neutro de vendor (`ai/provider.ts#AiTimbre`). */
-export const FALANTES_DO_PODCAST = [
-  { nome: "Lucas", timbre: "jovem-masculino" as const },
-  { nome: "Clara", timbre: "jovem-feminino" as const },
+export const FALANTES_DO_PODCAST: AiFalante[] = [
+  { nome: "Lucas", timbre: "jovem-masculino" },
+  { nome: "Clara", timbre: "jovem-feminino" },
 ];
 
 /**
@@ -214,24 +196,23 @@ export const DIRECAO_DO_PODCAST =
  */
 export const VERSAO_DO_PEDIDO_DE_VOZ = 1;
 
-/** Custo estimado por trecho, em tokens (a síntese é cobrada por caractere e não devolve contagem). */
-export const CUSTO_ESTIMADO_POR_TRECHO = 3_000;
-
-function hashDe(partes: readonly string[]): string {
-  return createHash("sha256").update(partes.join("\u0000")).digest("hex").slice(0, 32);
-}
-
 /**
- * O arquivo de UM trecho, abaixo de `experiencias/exp07ef1b/`. O hash é do
- * texto e do pedido: os blocos fixos saem com o mesmo nome em toda turma e são
- * gerados UMA vez por contrato; o Bloco 2 de um tema da IA é outro arquivo.
+ * O pedido de voz da A Seleção. O prefixo `selecao/podcast` é o que os
+ * contratos já têm no bucket desde a ADR-119 — o motor comum (ADR-150) manteve
+ * os insumos do hash, e `tests/a-selecao-podcast.spec.ts` congela os nomes.
  */
+export const VOZ_DO_PODCAST: PedidoDeVoz = {
+  prefixo: "selecao/podcast",
+  versao: VERSAO_DO_PEDIDO_DE_VOZ,
+  direcao: DIRECAO_DO_PODCAST,
+};
+
+/** O arquivo de UM trecho, abaixo de `experiencias/exp07ef1b/`. */
 export function nomeDoTrecho(trecho: TrechoDoRoteiro): string {
-  const texto = trecho.falas.map((f) => `${f.falante}: ${f.texto}`);
-  return `selecao/podcast/trecho-${hashDe([String(VERSAO_DO_PEDIDO_DE_VOZ), DIRECAO_DO_PODCAST, trecho.bloco, ...texto])}.mp3`;
+  return nomeDoTrechoNaVoz(VOZ_DO_PODCAST, trecho);
 }
 
 /** O episódio inteiro — os cinco trechos emendados —, nomeado pelos cinco. */
 export function nomeDoEpisodio(roteiro: readonly TrechoDoRoteiro[]): string {
-  return `selecao/podcast/episodio-${hashDe(roteiro.map(nomeDoTrecho))}.mp3`;
+  return nomeDoEpisodioNaVoz(VOZ_DO_PODCAST, roteiro);
 }

@@ -6,9 +6,9 @@ import type { MaterialDoJuri } from "@/lib/juri-estadual-tipos";
  * (professor only). UMA chamada, dois blocos, porque são dois momentos da aula:
  *
  * - `GabaritoDoJuri`, no preparo: a REGRA que o feed executou (os pesos e o
- *   limiar do motor, os mesmos que a cadeia ensina), o caminho dos quatro
- *   pacotes da curtida, a ordem da cadeia e os cartões do caso Mariana COM o
- *   certo marcado;
+ *   limiar do motor, os mesmos que a cadeia ensina), a ordem da cadeia e os
+ *   cartões do caso Mariana COM o certo marcado (os pacotes da curtida saíram
+ *   com a EF06CO07, a pedido do PO);
  * - `PlenariaDoJuri`, no debate: as quatro perguntas da plenária do pico,
  *   verbatim — as mesmas que o painel da aula mostra ao lado do botão.
  *
@@ -28,11 +28,6 @@ function NaoCarregou({ titulo }: { titulo: string }) {
       </Card>
     </div>
   );
-}
-
-/** O molde do pacote preenchido com o que o professor vai reconhecer na tela da criança. */
-function trechoLegivel(trecho: string): string {
-  return trecho.replace("{projeto}", "[o estande em que o jurado votou]").replace("{hashtag}", "[a hashtag da área dele]");
 }
 
 export function PlenariaDoJuri({ dados }: { dados: MaterialDoJuri | null }) {
@@ -59,15 +54,14 @@ export function PlenariaDoJuri({ dados }: { dados: MaterialDoJuri | null }) {
 export function GabaritoDoJuri({ dados }: { dados: MaterialDoJuri | null }) {
   if (!dados) return <NaoCarregou titulo="A regra do feed e o gabarito não carregaram" />;
   const { regra } = dados;
-  const pacotes = [...dados.pacotes].sort((a, b) => a.numero - b.numero);
   const blocos = [...dados.blocos].sort((a, b) => a.posicao - b.posicao);
 
   return (
     <div className="guia-bloco guia-bloco--longo">
       <Card variant="elevated" title="A regra do feed e o gabarito — só para você">
         <p className="text-[12px] leading-relaxed text-unooria-neutral-600">
-          <strong>Não projete este bloco</strong>: a ordem dos pacotes, a da cadeia e os cartões certos são a
-          resposta das etapas finais.
+          <strong>Não projete este bloco</strong>: a ordem da cadeia e os cartões certos são a resposta das
+          etapas finais.
         </p>
 
         <p className="mt-4 text-[13px] font-semibold text-unooria-neutral-950">A regra que o feed executou</p>
@@ -83,26 +77,11 @@ export function GabaritoDoJuri({ dados }: { dados: MaterialDoJuri | null }) {
           </li>
         </ul>
 
-        <p className="mt-5 text-[13px] font-semibold text-unooria-neutral-950">Os pacotes da curtida, na ordem certa</p>
-        <p className="mt-1 text-[12px] leading-relaxed text-unooria-neutral-600">
-          Chegam fora de ordem, e a ordem de chegada muda de computador para computador. A criança remonta pela
-          numeração; cada envio conta uma tentativa no painel de habilidades.
-        </p>
-        <ol className="mt-2 flex flex-col gap-2" data-pacotes>
-          {pacotes.map((p) => (
-            <li key={p.numero} className="flex flex-col gap-1 rounded-lg border border-unooria-neutral-200 p-3">
-              <span className="flex flex-wrap items-center gap-2">
-                <Tag variant="info" size="sm">
-                  Pacote {p.numero} de {pacotes.length}
-                </Tag>
-                <span className="text-[13px] font-semibold text-unooria-neutral-950">{trechoLegivel(p.trecho)}</span>
-              </span>
-              <span className="text-[12px] text-unooria-neutral-600">Caminho: {p.rota.join(" → ")}</span>
-            </li>
-          ))}
-        </ol>
-
         <p className="mt-5 text-[13px] font-semibold text-unooria-neutral-950">A cadeia do feed, na ordem certa</p>
+        <p className="mt-1 text-[12px] leading-relaxed text-unooria-neutral-600">
+          Os blocos chegam fora de ordem, e a ordem de chegada muda de computador para computador. Cada envio conta
+          uma tentativa no painel de habilidades.
+        </p>
         <ol className="mt-2 flex list-decimal flex-col gap-1 pl-5 text-[13px] leading-relaxed text-unooria-neutral-800" data-cadeia>
           {blocos.map((b) => (
             <li key={b.posicao}>{b.rotulo}</li>

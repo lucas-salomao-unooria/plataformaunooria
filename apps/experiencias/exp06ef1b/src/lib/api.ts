@@ -127,7 +127,7 @@ export interface OpcoesDaRepeticao {
  * (curtiu: true/false) e permanência como fato que o servidor deduplica, e
  * `proximo` só serve o post seguinte ao último que ESTE servidor já serviu;
  * `galeria/acoes` deduplica os abertos; `voto` e `revisao` respondem 409 na
- * segunda vez; `pacotes` e `cadeia` contam uma tentativa a mais no pior caso;
+ * segunda vez; a `cadeia` conta uma tentativa a mais no pior caso;
  * `cartoes` regrava a mesma escolha; `concluir` é idempotente. Quando a
  * primeira tentativa chegou ao servidor mas a resposta se perdeu, a repetição
  * volta com 409 e a tela relê a sessão — **o latch nunca se perde e nunca

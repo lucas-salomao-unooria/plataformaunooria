@@ -20,6 +20,8 @@ import {
   type ResultadoDaCriacao,
   type TurmaDoAssistente,
 } from "@/components/atividades/assistente-de-atividade";
+import { falasParaHomologar, type FalasEscritas } from "@/lib/podcast-tipos";
+import { EscreverAoChegar, FalasDoPodcast, falasComProblema, pedirFalasDoTema } from "./falas-do-podcast";
 import {
   RECORTE_VAZIO,
   TETOS,
@@ -137,6 +139,13 @@ export function CriarQuemMandou({
   const [errosDaApi, setErrosDaApi] = useState<ErrosDaAprovacao>(SEM_ERROS);
   const [erro, setErro] = useState<string | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
+  /* As falas do podcast que contam ESTE pacote (ADR-150): o professor as revisa
+     na curadoria, e elas vão no "Criar". `falasDoPacote` é o pacote para o qual
+     foram escritas — mudou o pacote, a tela avisa, sem bloquear. */
+  const [falas, setFalas] = useState<FalasEscritas | null>(null);
+  const [escrevendoFalas, setEscrevendoFalas] = useState(false);
+  const [falhaDasFalas, setFalhaDasFalas] = useState<string | null>(null);
+  const [falasDoPacote, setFalasDoPacote] = useState("");
 
   if (preparo !== preparoVisto) {
     setPreparoVisto(preparo);
@@ -169,7 +178,14 @@ export function CriarQuemMandou({
   const recorteEmOrdem =
     Boolean(recorte.disciplina) && tema.caracteres > 0 && !tema.erro && !erroDosAssuntos && !erroDoContexto;
   const emOrdem = curadoria ? mensagensEmOrdem(curadoria.mensagens) : 0;
-  const pronto = curadoria !== null && recorteEmOrdem && emOrdem === TOTAL_DE_MENSAGENS;
+  const problemasDasFalas = falasComProblema(falas);
+  const pronto =
+    curadoria !== null &&
+    recorteEmOrdem &&
+    emOrdem === TOTAL_DE_MENSAGENS &&
+    falas !== null &&
+    problemasDasFalas === 0 &&
+    !escrevendoFalas;
 
   /* O que falta para o "Continuar" acender, em frases — o botão apagado sozinho não explica nada. */
   const pendencias = curadoria
@@ -181,8 +197,29 @@ export function CriarQuemMandou({
         emOrdem < TOTAL_DE_MENSAGENS
           ? `${TOTAL_DE_MENSAGENS - emOrdem} ${TOTAL_DE_MENSAGENS - emOrdem === 1 ? "mensagem" : "mensagens"} da matriz`
           : null,
+        !escrevendoFalas && (falas === null || problemasDasFalas > 0) ? "as falas do podcast" : null,
       ].filter((p): p is string => p !== null)
     : [];
+
+  /** O pacote como a api do podcast o lê: o tema e as oito mensagens. */
+  function pacoteDoPodcast(mensagens: Curadoria["mensagens"]) {
+    return { tema: limparTexto(recorte.tema) || "o boato da turma", mensagens };
+  }
+
+  /** Pede as falas do podcast para o pacote — o curado volta com as do sheet, sem IA. */
+  async function escreverFalas(turmaId: string, mensagens: Curadoria["mensagens"]) {
+    const pacote = pacoteDoPodcast(mensagens);
+    setEscrevendoFalas(true);
+    setFalhaDasFalas(null);
+    const r = await pedirFalasDoTema("exp05ef1b", turmaId, pacote);
+    if (r.ok) {
+      setFalas(r.falas);
+      setFalasDoPacote(JSON.stringify(pacote.mensagens));
+    } else {
+      setFalhaDasFalas(r.mensagem);
+    }
+    setEscrevendoFalas(false);
+  }
 
   function trocarRecorte(campo: keyof RecorteEmEdicao, valor: string) {
     setRecorte((atual) => ({ ...atual, [campo]: valor }));
@@ -251,7 +288,10 @@ export function CriarQuemMandou({
     const r = await fetch(`${caminhoDaTurma(turmaId)}/aprovar`, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify(corpoDaAprovacao(recorte, curadoria.origem, curadoria.mensagens)),
+      body: JSON.stringify({
+        ...corpoDaAprovacao(recorte, curadoria.origem, curadoria.mensagens),
+        podcast: falasParaHomologar(falas?.vagas ?? []),
+      }),
     });
     const corpo: unknown = await r.json().catch(() => null);
     if (!r.ok) {
@@ -474,6 +514,22 @@ export function CriarQuemMandou({
                           );
                           setErrosDaApi((atual) => ({ ...atual, porMensagem: { ...atual.porMensagem, [id]: [] } }));
                         }}
+                      />
+
+                      {/* As falas do podcast, junto do pacote que elas contam (ADR-150).
+                          Chegou pacote novo (rascunho, IA ou curado), elas são pedidas. */}
+                      <EscreverAoChegar
+                        chave={`${turmaId}|${curadoria.de}|${curadoria.origem}|${curadoria.em ?? ""}`}
+                        aoChegar={() => void escreverFalas(turmaId, curadoria.mensagens)}
+                      />
+                      <FalasDoPodcast
+                        falas={falas}
+                        escrevendo={escrevendoFalas}
+                        falha={falhaDasFalas}
+                        desatualizadas={falas !== null && falasDoPacote !== JSON.stringify(curadoria.mensagens)}
+                        travado={false}
+                        aoMudar={(vagas) => setFalas((atual) => (atual ? { ...atual, vagas } : atual))}
+                        aoReescrever={() => void escreverFalas(turmaId, curadoria.mensagens)}
                       />
 
                       {errosDaApi.geral.length > 0 ? (

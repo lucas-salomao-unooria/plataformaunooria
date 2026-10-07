@@ -50,8 +50,8 @@ no molde da lista do Instanooria) e o card `components/cartao-atividade.tsx`.
 - **A página da atividade** é a `.../resultados` com `?cobertura=` (A Seleção) ou
   `?pacote=` (Jornal, Quem Mandou, Júri Estadual), e a `/professor/atividades/[id]` no
   Instanooria. O painel da aula e o zerar só aparecem na EM ANDAMENTO; a pronta
-  mostra o "Usar esta atividade agora". No Júri as imagens se geram ali, com o
-  id da atividade (a pronta também); na A Seleção e no Jornal, na criação.
+  mostra o "Usar esta atividade agora" — e a EM PREPARO (imagens sem OK), a
+  grade de aprovação no lugar dele.
 - **O Jornal aprova em duas fases na criação** (ADR-147): textos, depois
   imagens, na grade `resultados/imagens-do-pacote.tsx` (a mesma da página da
   atividade). Sem todas aprovadas é "Em preparo" (a api dá 409); por imagem.
@@ -162,13 +162,18 @@ folha por computador, zerar, podcast e habilidades. A criação é
   para em `completo` ou quando uma volta não gera nada. Na página da atividade
   o laço antigo só roda para cobertura aprovada antes da ADR-146 com post sem
   imagem.
-- **O podcast de recapitulação é do professor** (`podcast-a-selecao.tsx`, entre
-  o painel da aula e o zerar) — e mora AQUI, não no guia: o Bloco 2 conta o que
-  cada veículo mostrou no tema DESTA turma, e o guia é o mesmo para todas. O
-  áudio é outro laço do cliente (`continuarGerandoPodcast`, um trecho por
-  chamada) e a transcrição fica sempre na tela; o player é o `AudioPlayer` do DS.
-  As três falas do Bloco 2 se editam na CRIAÇÃO, junto dos posts, e vão na
-  mesma gravação.
+- **Podcast**: o da plataforma (abaixo); as falas do Bloco 2 vêm com os posts.
+
+## O podcast de recapitulação (ADR-150)
+
+Na página da atividade (`resultados/podcast-da-aula.tsx`); é do professor.
+
+- **As falas do tema se revisam na CRIAÇÃO, sempre** (Lucas, 2026-10-06):
+  `atividades/nova/falas-do-podcast.tsx` as pede quando o conteúdo chega, e o
+  "Aprovar"/"Criar" só acende com elas na régua.
+- **Atividade da IA anterior ao podcast**: 409, e o cartão mostra a frase, sem sumir
+  (`lib/podcast-servidor.ts`).
+- E2e com IA real: `scripts/e2e/lib/podcast.mjs`.
 
 ## O Júri Estadual de Projetos (exp06ef1b)
 
@@ -178,7 +183,15 @@ A página da atividade é `resultados/resultados-juri-estadual.tsx`; a criação
 
 - **Não há banco padrão** (decisão de 2026-10-02): o 429 da geração diz que o
   saldo acabou e NÃO oferece atalho — oferecer um seria prometer o que não
-  existe. As imagens são da página da atividade, como no Jornal.
+  existe.
+- **Duas fases, como no Jornal** (PO, 2026-10-06), na grade
+  `resultados/imagens-do-juri.tsx`: UM carimbo do pacote (A Seleção), sem
+  exigir imagem em todo estande (o sem imagem aparece "arte desenhada" antes
+  do clique); aprovada, congela. Hashtag vai em `subtags` do `Card` (`tags` é
+  o cabeçalho, sem quebra, e vazava).
+- **Podcast**: falas na FASE 1 (o `homologar` as exige); ele revela a virada e
+  o módulo não trava por etapa, então o cartão leva o `avisoDoPodcast` (só
+  depois da Galeria Oculta).
 - **A invisibilidade média só vai para a lousa depois de liberar a galeria**:
   projetada no pico, ela contaria à turma o que a Galeria Oculta mostra a cada
   um. O número é o da api; nenhum percentual é cravado na copy nem no guia.

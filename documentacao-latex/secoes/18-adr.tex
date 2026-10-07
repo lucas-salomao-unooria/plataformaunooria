@@ -9,7 +9,7 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{148 decisões}, numeradas até ADR-148. A 132 (a Ajuda com
+São \textbf{151 decisões}, numeradas até ADR-151. A 132 (a Ajuda com
 avatar) entrou no código antes de ter seção aqui, e por um dia o número foi
 citado sem existir; a 133 pulou para não colidir com ela. A 133 e a 134 nasceram no mesmo dia, em frentes paralelas
 (Unoovista e Unoochat), e entraram juntas no merge; a 135 e a 136 levaram as
@@ -169,7 +169,7 @@ que a cercam.
 \zebra \adrr{ADR-116} & A experiência que perde o código é arquivada, não apagada & 2026-09-25 & Aceita\\
 \adrr{ADR-117} & Jornal da Escola: a redação é da Unooria, o professor abre o resultado e a revisão, e a IA só escolhe o layout & 2026-09-27 & Aceita; as imagens passam pelo OK do professor, uma a uma (\adrr{ADR-147}); a diagramação ficou sem teto de saída (\adrr{ADR-148})\\
 \zebra \adrr{ADR-118} & Quem mandou isso? v2.2: atividade é o pacote, rodada é a reaplicação, e a régua mede pela seleção e pelas perguntas do PO & 2026-09-25 & Aceita; a régua foi substituída pela \adrr{ADR-120}\\
-\adrr{ADR-119} & O podcast da A Seleção é do professor, e a IA reescreve só as três falas que dependem do tema & 2026-09-26 & Aceita\\
+\adrr{ADR-119} & O podcast da A Seleção é do professor, e a IA reescreve só as três falas que dependem do tema & 2026-09-26 & Aceita; revista pela \adrr{ADR-150} (o podcast vira recurso da plataforma, com rotas únicas)\\
 \zebra \adrr{ADR-120} & A régua v2 de Quem mandou isso?: cada habilidade pelo verbo dela, e refazer o mesmo pacote não mede memória & 2026-09-26 & Aceita; as perguntas voltaram às do PO (\adrr{ADR-131}); a medição única e a rubrica do Se/Então saíram (\adrr{ADR-145})\\
 \adrr{ADR-121} & O CI verifica só os PRs para \cd{dev}, \cd{hml} e \cd{main} & 2026-09-26 & Aceita\\
 \zebra \adrr{ADR-122} & A modelagem UML entra no Capítulo 5, com os catorze tipos da UML 2.5.1 e par Mermaid mesmo onde o Mermaid não tem o tipo & 2026-09-27 & Aceita\\
@@ -187,7 +187,7 @@ que a cercam.
 \adrr{ADR-134} & Quem mandou isso? troca o clone do WhatsApp pelo Unoochat & 2026-10-02 & Aceita\\
 \zebra \adrr{ADR-135} & A Seleção troca o Instanooria pelo Unoovista & 2026-10-02 & Aceita\\
 \adrr{ADR-136} & As peças da gaveta do Jornal da Escola passam para o Unoovista e o Unoochat & 2026-10-02 & Aceita\\
-\zebra \adrr{ADR-137} & O Júri Estadual de Projetos nasce no Unoovista e mede o que o briefing pediu & 2026-10-02 & Aceita\\
+\zebra \adrr{ADR-137} & O Júri Estadual de Projetos nasce no Unoovista e mede o que o briefing pediu & 2026-10-02 & Aceita; parcialmente substituída pela \adrr{ADR-151} (a EF06CO10 volta como foco, e os pacotes saem)\\
 \adrr{ADR-138} & A missão da 2ª série do EM troca o clone do ChatGPT pelo UnooriaAI & 2026-10-02 & Aceita\\
 \zebra \adrr{ADR-139} & O design system tem uma versão só, e todas as experiências sobem juntas & 2026-10-02 & Aceita\\
 \adrr{ADR-140} & A eliminação a pedido do titular apaga o cadastro de verdade, e o comprovante não guarda a pessoa & 2026-10-03 & Aceita\\
@@ -199,6 +199,9 @@ que a cercam.
 \adrr{ADR-146} & Pôr a atividade no ar libera a missão na sala, e A Seleção aprova textos e imagens em duas fases & 2026-10-05 & Aceita; complementa a \adrr{ADR-130}\\
 \zebra \adrr{ADR-147} & O Jornal da Escola: o professor aprova cada imagem antes da turma, e a mesa leva a criança à página & 2026-10-05 & Aceita; complementa a \adrr{ADR-117}\\
 \adrr{ADR-148} & As duas chamadas curtas de IA em sala não têm teto de saída, e as missões revisadas se testam com a IA real & 2026-10-05 & Aceita; revê o teto da \adrr{ADR-115} e da \adrr{ADR-117}\\
+\zebra \adrr{ADR-149} & A plataforma publica a base que o gerador de missões lê & 2026-10-06 & Aceita\\
+\adrr{ADR-150} & O podcast de recapitulação vira recurso da plataforma, com rotas únicas, e o professor revisa as falas do tema na customização & 2026-10-06 & Aceita; revê a \adrr{ADR-119}\\
+\zebra \adrr{ADR-151} & O Júri Estadual volta ao foco EF06CO10, aprova as imagens antes da turma e ganha o podcast & 2026-10-06 & Aceita; substitui em parte a \adrr{ADR-137}\\
 \bottomrule
 \end{tabularx}
 
@@ -12062,7 +12065,11 @@ só com o clone da exp01ef1b, e a \cd{@edu/ui/ds-whatsapp} só com a exp06ef2b.
 \section{ADR-137 --- O Júri Estadual de Projetos: a missão do 6º ano, Unidade 1, nasce no Unoovista e mede o que o briefing pediu}
 \label{adr:exp06ef1b-juri-estadual}
 
-\textbf{Data.} 2026-10-02. \textbf{Status.} Aceita. Segue a \adrr{ADR-130}
+\textbf{Data.} 2026-10-02. \textbf{Status.} Aceita; \textbf{parcialmente
+substituída pela \adrr{ADR-151}} (2026-10-06): a EF06CO10 volta como foco
+primário, a EF06CO07 e a remontagem dos pacotes saem, e o podcast entra. O
+resto (o feed no servidor, a taxa real, a mostra sem acervo padrão, as
+enquetes em histórias) continua valendo. Segue a \adrr{ADR-130}
 (a atividade é do professor), a \adrr{ADR-111} (equipes), a \adrr{ADR-112} e a
 \adrr{ADR-120} (evidência) e a \adrr{ADR-133} (o Unoovista no lugar do
 Instanooria).
@@ -12092,6 +12099,9 @@ que nenhuma banca pegou.
     curtida}. O voto do estudante sai do celular em quatro pacotes numerados,
     cada um por um caminho de equipamentos, chega fora de ordem, e a criança o
     remonta no destino.
+    \emph{Atualização de 2026-10-06}: o PO pediu a EF06CO10 de volta como
+    foco, e a EF06CO07 e a remontagem dos pacotes saíram
+    (\adrr{ADR-151}). O resto desta decisão continua valendo.
   \item \textbf{A taxa de invisibilidade é o número real}, calculado no
     servidor sobre os posts que o feed serviu. Os ``75\,\% / 12 projetos
     ocultos'' da spec não fecham com as regras dela mesma (quatro posts de
@@ -13050,3 +13060,428 @@ quota ou na fatura; o \cd{Promise.race} passar a cortar com frequência
 (\env{VERTEX\_MODEL}) por um que desligue o raciocínio de fato; ou as suítes
 ficarem vermelhas pela IA com frequência a ponto de esconder regressão do
 produto.
+
+\section{ADR-149 --- A plataforma publica a base que o gerador de missões lê}
+\label{adr:base-do-gerador}
+
+\textbf{Data.} 2026-10-06. \textbf{Status.} Aceita.
+
+\begin{especificacao}{Contexto}
+O gerador de missões (o repositório \cd{gerador-missoes}, um agente ADK no
+Cloud Run) escreve o PRD, o \emph{handoff} e a banca de uma missão nova a
+partir da doutrina e dos contratos desta plataforma: os \arq{AGENTS.md}, as
+regras de \arq{docs/\B{}regras/}, o contrato do manifesto, as portas de
+\emph{dev}, as seções do DS, o número da próxima ADR. Até aqui ele os lia de
+uma CÓPIA versionada no git dele (\arq{prompts/\B{}references/\B{}plataforma/}),
+que o próprio gerador produzia com \arq{scripts/\B{}sincronizar\_plataforma.py}
+lendo um \emph{clone} vizinho deste repo --- quando alguém se lembrava de
+rodar. A cópia envelheceu 320 \emph{commits}, e a missão do 9º ano saiu do
+gerador com referências que já não valiam: a seção \cd{chatgpt} do DS (que a
+\adrr{ADR-138} trocou pela \cd{unooriaai}), a ADR-108 e o DS 0.2.2. Os
+caminhos de exemplo do script ainda eram os de antes da \adrr{ADR-110}
+(\cd{exp-08-manifesto-ia}), e fonte ausente era \enquote{pulada} com um aviso
+que ninguém lia.
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{itemize}
+  \item \textbf{Quem PRODUZ a base é a plataforma}, no próprio CI:
+    \arq{scripts/\B{}base-do-gerador/\B{}extrair.mjs}, rodado pelo
+    \arq{.github/\B{}workflows/\B{}base-do-gerador.yml} a cada \emph{push} em
+    \cd{dev-local} que toca uma fonte (os \cd{paths:} do \emph{workflow} são a
+    lista de fontes do extrator), e por \cd{workflow\_dispatch}.
+  \item \textbf{O destino é um bucket só da base}, que o gerador monta para
+    leitura (revisão de 2026-10-07, abaixo):
+    \cd{gs://\B{}entre-redes-dev-base-plataforma/\B{}plataforma/\B{}<commit>/},
+    com \arq{manifesto.json} (origem, destino e \emph{sha256} de cada cópia),
+    \arq{contrato-plataforma.json}, \arq{openapi-rotas.json} e as cópias em
+    \arq{arquivos/}. O ponteiro \arq{atual.json} sobe POR ÚLTIMO e com
+    \cd{Cache-Control: no-store}: quem lê nunca pega base pela metade. O
+    gerador fixa o \emph{commit} no início da execução e o grava no estado.
+  \item \textbf{As listas fechadas saem por PARSE do código}, nunca escritas à
+    mão: a dependência e as pontes do DS (\arq{packages/\B{}ui/\B{}package.json}),
+    a tabela de seções (\arq{docs/\B{}regras/\B{}design-system.md}), as chaves e
+    os vocabulários do manifesto (\cd{UpsertSchema}, \cd{CAPABILITIES},
+    \cd{PERMISSOES\_DE\_IFRAME}, traduzidos pelo \arq{publicar-manifesto.mjs}),
+    as experiências ativas (os \arq{experiencia.json}, menos \arq{\_template} e
+    \arq{backup-*}), as portas de \emph{dev} e a próxima livre, a última ADR e
+    a próxima (o índice deste capítulo), as missões com equipe e com
+    atividade, as fichas de evidência e o modelo padrão do Vertex.
+  \item \textbf{Fonte ausente, ou campo que o \emph{parser} não extraiu, FALHA}
+    o \emph{job} com o arquivo e a expressão que não casou. Nada é gravado: o
+    gerador continua na base anterior, e o vermelho chega a quem fez o
+    \emph{push}.
+  \item \textbf{O extrator não neutraliza as chaves} (\cd{\{turmaId\}}): é o
+    ADK do gerador que as interpretaria como variável de estado, e é ele que
+    as troca ao carregar. A base é texto fiel ao repositório.
+  \item \textbf{Ambiente próprio no GitHub}, \cd{base-do-gerador}, com
+    \cd{WIF\_PROVIDER} e \cd{DEPLOY\_SA}: o \cd{dev} só aceita \emph{deploy}
+    vindo da \emph{branch} \cd{dev}. A SA escreve só no bucket da base
+    (\arq{gerador\_missoes.tf}, no repositório da Fundação), sem acesso às
+    sessões do gerador.
+\end{itemize}
+
+\textbf{Revisão de 2026-10-07 --- bucket próprio.} A primeira versão gravava a
+base no prefixo \cd{base-plataforma/} do bucket das sessões do gerador
+(\cd{entre-redes-dev-adk-artifacts}), porque o Cloud Run dele já o montava em
+\cd{/app/output}. O gerador lista toda pasta dali como uma missão: a base
+apareceu na barra lateral com o botão de excluir e foi apagada duas vezes em
+2026-10-06, e a execução seguinte ficaria sem base. Ela passou a morar em
+\cd{gs://\B{}entre-redes-dev-base-plataforma}, que o gerador monta com
+\cd{read\_only} e só com \cd{objectViewer}: a proteção é a permissão, não uma
+lista no código da aplicação. O layout dentro do bucket não mudou.
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{A cópia no git do gerador}, sincronizada por um script de lá.
+    É o que existia, e é o que falhou: depende de alguém lembrar de rodar,
+    num \emph{clone} que pode estar em qualquer \emph{branch}, e envelheceu
+    320 \emph{commits} sem nenhum sinal. A missão do 9º ano é o custo.
+  \item \textbf{O gerador clonar este repositório a cada execução.} Exigiria
+    credencial de leitura do repositório privado no Cloud Run do gerador e
+    poria a lógica de extração (que conhece a forma DESTE código) no repositório
+    errado: quem muda a forma de uma tabela aqui não veria o \emph{parser} lá.
+  \item \textbf{Publicar no \emph{push} de \cd{dev}}, junto do \emph{deploy}.
+    O gerador escreve a missão que ainda vai nascer, e \cd{dev-local} é onde o
+    trabalho chega primeiro (\adrr{ADR-101}); amarrar à promoção o deixaria
+    sempre um ciclo atrás.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{O extrator conhece a FORMA do código}: renomear um
+    \cd{export const}, mudar o cabeçalho da tabela de seções ou mover um
+    \arq{AGENTS.md} derruba o \emph{job}. É de propósito (falhar alto em vez de
+    publicar errado), mas é manutenção a mais em toda mudança de forma, e
+    \cd{FONTES} e os \cd{paths:} do \emph{workflow} têm de andar juntos.
+  \item \textbf{O nome de destino de cada cópia é contrato com os
+    \emph{prompts} do gerador}: renomear aqui quebra lá, e nenhum teste deste
+    repositório vê o outro lado.
+  \item \textbf{A base é a de \cd{dev-local}}, não a de produção: pode descrever
+    o que ainda não foi promovido. Para o gerador é o certo; para quem lê a base
+    como retrato do que está no ar, não.
+  \item \textbf{Consome minutos do Actions} a cada \emph{push} que toca uma
+    fonte, numa conta cuja cota já acabou uma vez (2026-09).
+  \item \textbf{O inventário do DS} (\arq{design-system/\B{}ds-componentes.json})
+    não é produzido aqui: é do repositório do DS, e as duas metades da base
+    podem estar em momentos diferentes.
+\end{itemize}
+
+\textbf{Gatilho.} O gerador passar a rodar fora da GCP (sem o bucket montado);
+uma segunda stack de gerador por contrato; a forma de uma fonte mudar com
+frequência a ponto de o \emph{job} ficar mais vermelho que verde; ou a base de
+\cd{dev-local} induzir o gerador a citar o que não chegou a \cd{dev}.
+
+% ---------------------------------------------------------------------------
+\section{ADR-150 --- O podcast de recapitulação vira recurso da plataforma, com rotas únicas, e o professor revisa as falas do tema na customização}
+\label{adr:podcast-da-plataforma}
+
+\textbf{Data.} 2026-10-06. \textbf{Status.} Aceita. \textbf{Revê} a
+\adrr{ADR-119}: o que ela decidiu sobre o podcast da A Seleção continua
+valendo (é do professor, mora na aula da turma, só as falas do tema mudam, um
+trecho por chamada e a emenda no fim, o nome do trecho é o hash do texto e do
+pedido de voz); o que muda é ONDE ele mora. \textbf{Usa} a porta das missões
+pelo registro na subida, o desenho de \cd{EvidenciasService.registrarContexto},
+e a quota do professor (\adrr{ADR-105}).
+
+\begin{especificacao}{Contexto}
+O 4º ano (Jornal da Escola, \cd{exp04ef1b}) e o 5º ano (Quem Mandou Isso?,
+\cd{exp05ef1b}) ganharam, no one-pager de cada missão, o mesmo podcast de
+recapitulação que a A Seleção já tinha: dois locutores, um roteiro fechado no
+sheet e três falas que contam o que a turma viu. O motor do áudio --- a
+síntese de diálogo pelo \cd{generateSpeech}, um bloco por chamada, a emenda
+do MP3 sem ffmpeg, a trava de processo por episódio, o custo estimado por
+trecho --- morava dentro do módulo da A Seleção, com as rotas
+\rota{a-selecao/turmas/:t/podcast} e \rota{\ldots{}/gerar-podcast}. Três fatos
+decidiram a forma:
+
+\begin{itemize}
+  \item \textbf{Copiar o motor em cada missão} seriam três cópias de um código
+    que já custou caro acertar (as etiquetas e o quadro de duração de cada
+    trecho, a trava, o teto de 4.000 bytes por chamada).
+  \item \textbf{No Jornal e no Quem Mandou Isso? a IA gera a atividade} num
+    passo que não tem lote de preparo como o da A Seleção: o conteúdo chega à
+    tela de criação, o professor edita, e só a homologação grava.
+  \item \textbf{Os artefatos do PO tinham três desvios} que o texto não pode
+    levar: no 4º ano, a mesma notícia se chamava \enquote{oficina de robótica}
+    no título e na imagem e \enquote{gincana} na reação dos leitores; no 5º
+    ano, o grupo era no WhatsApp (a missão é no Unoochat, \adrr{ADR-134}), a
+    última fala citava a regra Se/Então da tela final (que saiu,
+    \adrr{ADR-145}) e uma mensagem tinha \enquote{emojis de fogo} que nenhuma
+    mensagem do banco padrão tem.
+\end{itemize}
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{itemize}
+  \item \textbf{O podcast é um módulo da plataforma}, \arq{apps/\B{}api/\B{}src/\B{}podcast/},
+    com \textbf{rotas únicas}: \rota{GET /podcast/:expId/turmas/:turmaId} (o
+    roteiro e o estado do áudio, sem gerar nada),
+    \rota{POST \ldots{}/gerar} (um trecho por chamada, e a emenda quando todos
+    existem) e \rota{POST \ldots{}/falas-do-tema} (o rascunho das falas, que não
+    grava). Professor e gestores; \textbf{nenhuma rota de estudante}. As rotas
+    antigas da A Seleção saíram, e o motor (\arq{podcast/\B{}mp3.ts},
+    \arq{podcast/\B{}roteiro.ts}) saiu com elas; os nomes dos arquivos da A
+    Seleção no bucket não mudaram, e um teste os congela.
+  \item \textbf{A missão declara uma \cd{FonteDoPodcast}}
+    (\arq{podcast/\B{}fonte.ts}) e a registra no \cd{onModuleInit} com
+    \cd{PodcastService.registrarFonte}: o roteiro em blocos com as vagas do
+    tema, os falantes, o pedido de voz, as falas do banco padrão e o
+    carregador da atividade --- o mesmo que a missão já usa para as imagens,
+    com a guarda de turma dela. O módulo \cd{podcast} não importa missão
+    nenhuma; é \cd{@Global()} e o ÚLTIMO do \cd{app.module}, para que uma
+    missão nova com podcast não reordene o \arq{docs/\B{}openapi.json}.
+  \item \textbf{O roteiro de cada missão é o do one-pager}, puro, em
+    \arq{<modulo>/\B{}podcast.ts}: no 4º ano, Lucas e Clara, cerca de
+    3\,min 30\,s, com \enquote{oficina de robótica} no lugar de
+    \enquote{gincana}; no 5º ano (one-pager v2.2), Lucas e Camila, cerca de
+    3\,min 40\,s, com o Unoochat no lugar do WhatsApp, a última fala apontando
+    o telão em vez da regra Se/Então e sem os \enquote{emojis de fogo}.
+  \item \textbf{O professor SEMPRE revisa as falas do tema na customização}
+    (decisão do Lucas, 2026-10-06). Quando o conteúdo chega à tela de criação,
+    o hub pede \rota{falas-do-tema}; o banco padrão intocado volta com as falas
+    do sheet, sem IA; um tema próprio, com as falas que a IA escreveu sob a
+    régua da \adrr{ADR-119} (12 a 60 palavras, até 400 bytes, sem link,
+    e-mail nem \enquote{@}). Sem saldo ou com a IA fora do ar, a resposta é
+    200 com as falas do sheet e um \cd{motivo}, e a tela avisa que elas contam
+    o banco padrão. O botão de aprovar espera as falas.
+  \item \textbf{As falas aprovadas moram numa tabela da plataforma},
+    \cd{podcast\_roteiros} (uma linha por escola, missão e atividade, com RLS
+    forçada), gravada pela homologação do Jornal
+    (\cd{HomologacaoSchema.podcast}) e pela aprovação do Quem Mandou Isso?
+    (\cd{AprovarSchema.podcast}) \textbf{na mesma transação} --- inclusive no
+    segundo clique, que devolve o pacote existente. \textbf{A A Seleção não usa
+    a tabela}: as falas dela continuam nascendo no lote do preparo e morando
+    na cobertura (\cd{exp07ef1b\_coberturas.podcast}), e a fonte dela as
+    entrega prontas.
+  \item \textbf{Sem linha na tabela}, a atividade que é o banco padrão
+    intocado toca as falas do sheet; a atividade da IA criada antes do podcast
+    responde 409 \cd{roteiro-indisponivel}, e o hub mostra a frase (criar a
+    atividade de novo).
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Copiar o motor em cada missão}, com rotas
+    \rota{jornal-escola/\ldots{}/podcast} e \rota{quem-mandou-isso/\ldots{}/podcast}. Três
+    cópias do mesmo código delicado, e cada correção feita três vezes --- ou
+    duas, e a terceira divergindo.
+  \item \textbf{Uma coluna por missão} (\cd{podcast} na tabela de pacote de
+    cada uma, como a cobertura da A Seleção). Cada missão nova pediria uma
+    migração e um caminho de leitura próprio no motor; a tabela única serve a
+    toda missão com as vagas que ela declarar.
+  \item \textbf{A IA escrevendo as falas no lote do preparo de cada missão},
+    como a A Seleção faz, em vez de uma rota única. Mexeria em dois prompts de
+    geração já revisados com a IA real (\adrr{ADR-148}) para pendurar três
+    falas neles, e o conteúdo que o professor EDITA depois da geração ficaria
+    sem falas que o acompanhem; a rota única escreve a partir do rascunho como
+    ele está na tela.
+  \item \textbf{Um roteiro fixo genérico, sem IA}, que não cite o conteúdo da
+    atividade. Desviaria do texto aprovado e tiraria do podcast o que ele
+    recapitula --- o mesmo argumento que a \adrr{ADR-119} já usou contra o
+    Bloco 2 genérico.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{O professor espera as falas antes de aprovar}: a chamada de IA
+    roda depois que o conteúdo chega, e o botão de aprovar fica preso até ela
+    voltar. Com a IA fora do ar ele não fica sem texto, mas recebe as falas do
+    banco padrão para reescrever à mão.
+  \item \textbf{As atividades da IA criadas antes do podcast ficam sem
+    podcast} (409 \cd{roteiro-indisponivel}): não há falas aprovadas para
+    elas, e inventar um texto que o professor não revisou é o que esta decisão
+    proíbe. O remédio é criar a atividade de novo.
+  \item \textbf{Uma chamada de IA a mais por atividade} com tema próprio,
+    debitada da quota do professor --- inclusive nas tentativas recusadas
+    (\adrr{ADR-74}).
+  \item \textbf{Se o professor muda o conteúdo depois das falas}, a tela avisa
+    que elas podem não contar mais o que a turma vai ver, mas não bloqueia: o
+    texto aprovado pode ficar desencontrado da mesa.
+  \item \textbf{A tabela não tem chave estrangeira} para a atividade: cada
+    missão guarda a sua numa tabela própria, e o \cd{atividade\_id} é de uma
+    delas. Uma linha órfã não é apagada sozinha.
+  \item \textbf{A A Seleção continua num caminho à parte} para as falas (a
+    cobertura), e quem ler o módulo precisa saber das duas origens.
+\end{itemize}
+
+\textbf{Gatilho.} Uma missão pedir podcast com falas que não cabem em vagas
+(o roteiro inteiro por tema); o PO pedir o podcast ao estudante; o tempo de
+espera pelas falas virar queixa na criação da atividade; ou a A Seleção ser
+refeita, e as falas dela poderem migrar para \cd{podcast\_roteiros}.
+
+% ---------------------------------------------------------------------------
+\section{ADR-151 --- O Júri Estadual volta ao foco EF06CO10, aprova as imagens antes da turma e ganha o podcast}
+\label{adr:exp06ef1b-ajustes-do-po}
+
+\textbf{Data.} 2026-10-06. \textbf{Status.} Aceita. \textbf{Substitui em
+parte} a \adrr{ADR-137} (as habilidades medidas e a remontagem dos pacotes;
+o feed no servidor, a taxa real e a mostra sem acervo padrão continuam).
+\textbf{Segue} a \adrr{ADR-146} (as duas fases da aprovação), com um desvio
+declarado, a \adrr{ADR-145} (toda rodada mede de novo) e a \adrr{ADR-150} (o
+podcast como recurso da plataforma).
+
+\begin{especificacao}{Contexto}
+O PO revisou o Júri Estadual de Projetos (\cd{exp06ef1b}, 6º ano, Unidade 1)
+em 2026-10-06. A \adrr{ADR-137} tinha trocado a EF06CO10 pela EF06CO07
+seguindo o \emph{briefing} da esteira, que dava a EF06CO07 como obrigatória.
+Mas as diretrizes que o PO passou à esteira (o \arq{conversa.json}) homologavam
+a EF06CO10 como foco primário, e a troca contrariou o que ele tinha aprovado:
+ele pediu a volta. O mesmo retorno trouxe mais quatro pedidos: as imagens dos
+estandes aprovadas pelo professor antes de a turma vê-las (como já acontecia
+na A Seleção e no Jornal da Escola), as \emph{hashtags} que vazavam do cartão
+do estande na tela de criação, o carrossel do feed que não andava com o
+\emph{mouse} no computador da escola, e o podcast de recapitulação do
+one-pager, \enquote{A Mostra que Ninguém Viu Inteira}.
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{itemize}
+  \item \textbf{A missão mede EF06CO10 (foco primário), EF06CO01 e EF06CO03.}
+    A ficha \arq{evidencias/\B{}fichas/\B{}exp06ef1b.ts} sobe para a versão 2.
+    A EF06CO10 é marcada pela ação \cd{auditoria} e a EF06CO01 pela ação
+    \cd{classificacao}, as duas no \emph{latch} da revisão do voto e sobre o
+    MESMO registro da Galeria Oculta, mas com réguas DIFERENTES
+    (\arq{juri-estadual/\B{}regras/\B{}evidencia.ts}):
+    \begin{itemize}
+      \item \textbf{EF06CO10}: abriu ao menos dois estandes que o feed
+        escondeu = \cd{atingiu}; abriu ou buscou alguma coisa (um oculto só,
+        só estandes já vistos, busca sem abrir) = \cd{em\_processo}; revisou o
+        voto sem abrir nem buscar nada = \cd{nao\_atingiu}. É a matriz da spec
+        (\enquote{inspeciona $\geq$ 2 projetos ocultos});
+      \item \textbf{EF06CO01}: buscou pela \emph{hashtag} de uma área
+        diferente da do voto E abriu um estande oculto DAQUELA área =
+        \cd{atingiu} (usou a categoria como chave da coleção); buscou outra
+        coisa = \cd{em\_processo}; não buscou = \cd{nao\_atingiu}. Abrir
+        ocultos ao acaso é investigar sem classificar;
+      \item \textbf{EF06CO03}: a cadeia, pelas tentativas, como antes.
+    \end{itemize}
+    As três perguntas são as da spec, seção 9.6, palavra por palavra:
+    \cd{p1} (EF06CO10, a frase do jurado que só viu robótica), \cd{p2}
+    (EF06CO01, como o aplicativo organizou as curtidas) e \cd{p3} (EF06CO03,
+    a regra SE\ldots{}ENTÃO). A \cd{p1} ganhou alternativas com ids novos
+    (\cd{D1}--\cd{D3}): as \cd{A1}--\cd{A3} eram da EF06CO07, e uma resposta
+    antiga não pode ser lida como desta pergunta.
+  \item \textbf{Sai a remontagem dos pacotes} (o passo \cd{pacotes}, a
+    EF06CO07): a revisão do voto leva direto à cadeia, e a rota
+    \rota{POST /juri-estadual/pacotes} saiu. A migração
+    \arq{20261006120000\_\B{}exp06ef1b\_\B{}ajustes\_\B{}do\_\B{}po} moveu
+    para \cd{cadeia} as sessões que estavam em \cd{pacotes}, apagou as colunas
+    \cd{pacotes\_tentativas} e \cd{pacotes\_remontados\_em} de
+    \cd{exp06ef1b\_sessoes} e recriou os CHECKs sem o passo. As marcas antigas
+    da EF06CO07 ficam em \cd{evidencias\_marcas}, intocadas: não há dado que
+    só morasse nas colunas apagadas.
+  \item \textbf{As imagens têm aprovação própria, em duas fases}, no molde da
+    A Seleção (\adrr{ADR-146}): \rota{homologar} aprova os textos e grava o
+    pacote com \cd{imagens\_aprovadas\_em} nulo; o professor vê a grade dos
+    dezesseis estandes na página da atividade, gera outra imagem para o que
+    não serve (\rota{POST \ldots{}/pacotes/:pacoteId/imagens/:projetoId/refazer},
+    um arquivo NOVO e sempre pago) e aprova
+    (\rota{POST \ldots{}/pacotes/:pacoteId/aprovar-imagens}, idempotente). Sem a
+    segunda fase, pôr no ar responde 409 \cd{imagens-nao-aprovadas}. Não se
+    exige imagem em todo estande: a geração falha e a quota acaba, e o
+    estande sem imagem segue com a arte desenhada, que a grade mostra antes
+    do clique. Os pacotes que já existiam entraram aprovados na migração.
+  \item \textbf{Depois de aprovadas, as imagens CONGELAM}: \rota{gerar-midia}
+    e \rota{refazer} respondem 409 \cd{imagens-ja-aprovadas}. É um
+    \textbf{desvio da A Seleção}, que continua gerando a imagem que falta
+    depois do OK: aqui, gerar a que falta levaria à turma uma imagem que
+    ninguém viu, que é exatamente o que o PO pediu para acabar.
+  \item \textbf{As \emph{hashtags} do estande vão em \cd{subtags} do
+    \cd{Card}} do DS, que quebra linha, e não em \cd{tags}, que é o cabeçalho
+    e vazava pela borda logo depois da geração.
+  \item \textbf{O carrossel do feed anda com o \emph{mouse}}: setas
+    (\cd{ButtonUnv} com o \cd{IconUnv} \cd{back}, espelhado para a próxima,
+    porque o \cd{PostCard.Media} não tem navegação) e o arrasto, com o
+    \cd{dragstart} nativo da imagem cancelado e o ponteiro capturado --- antes,
+    o \cd{pointercancel} do arrasto da imagem matava o gesto. A experiência
+    sobe para a \textbf{0.2.0}.
+  \item \textbf{O podcast entra pelo recurso da \adrr{ADR-150}}: o roteiro do
+    one-pager (\arq{juri-estadual/\B{}podcast.ts}, Bia e Rafa, cerca de
+    3\,min 45\,s, cinco blocos) e a \cd{FonteDoPodcast}
+    (\arq{podcast-fonte.ts}), registrada no \cd{onModuleInit}. A atividade é
+    \cd{pacoteParaPodcast}, que vale também depois das imagens aprovadas (o
+    \cd{pacoteParaMidia} recusa esse pacote). Como a missão não tem banco
+    padrão, \cd{padrao} é sempre falso, e as três vagas a IA escreve a partir
+    dos dezesseis estandes do rascunho: \cd{dois} (Bia: os dois estandes de
+    áreas diferentes), \cd{rafa} (o que o feed do Rafa mostrou) e \cd{mesa} (o
+    que o feed da mesa ao lado mostrou). O professor as revisa na fase 1 da
+    criação, e \rota{homologar} passou a exigir \cd{podcast:\{dois, rafa,
+    mesa\}} e as grava em \cd{podcast\_roteiros} na mesma transação, também no
+    segundo clique.
+  \item \textbf{O roteiro do one-pager foi corrigido} para não contradizer a
+    missão: \textbf{nenhum número cravado} (\enquote{escondeu os outros 12
+    projetos} virou \enquote{foi escondendo os projetos das outras áreas}, e
+    \enquote{três quartos de uma feira} virou \enquote{mais da metade de uma
+    feira} --- a taxa real com duas curtidas é 9 de 16); o app é o
+    \textbf{Unoovista}, e não o \cd{instanooria}; \enquote{da Unooria} saiu de
+    dentro da ficção (é o \enquote{podcast da Mostra Estadual de Projetos});
+    o texto fixo não cita área, porque a mostra é da IA, sobre o tema do
+    professor; e há menos exclamações. O fecho da lupa e do
+    \enquote{pesquisar fontes variadas} fica como o sheet o escreveu: é o
+    foco da EF06CO10.
+  \item \textbf{O podcast revela a virada e toca depois da Galeria Oculta},
+    mas o módulo do podcast não tem trava por etapa: o aviso
+    (\enquote{transmitir só depois da Etapa 4}) fica no cartão da aula, cujo
+    texto muda com a etapa do \emph{gate}, e no guia (no preparo, no
+    fechamento e nos desdobramentos).
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Manter a EF06CO07}, como a \adrr{ADR-137} decidiu. Seguia o
+    \emph{briefing}, mas contrariava a diretriz que o PO tinha homologado, e a
+    remontagem por número exercitava pouco do conceito (ela mesma registrava
+    isso).
+  \item \textbf{Medir as quatro habilidades juntas.} O Canal B passaria a
+    quatro perguntas, e o fim da aula de 50 minutos já aperta; a tela dos
+    pacotes ficaria só para sustentar uma habilidade que o PO tirou.
+  \item \textbf{O roteiro literal do one-pager}, com \enquote{os outros 12
+    projetos} e \enquote{três quartos de uma feira}. O número é de cada
+    computador, e o podcast diria à turma uma taxa que a Galeria Oculta de
+    quase todos desmente na mesma aula.
+  \item \textbf{Gerar a imagem que falta depois do OK}, como na A Seleção. Ver
+    as imagens é o que a segunda fase garante; uma imagem nascida depois dela
+    chegaria à turma sem que ninguém a visse.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{O painel mostra o texto oficial da EF06CO10} --- o consumo de
+    tecnologia, a obsolescência, a sustentabilidade --- sobre uma ação que
+    exercita o recorte da mediação algorítmica. É o risco que a \adrr{ADR-137}
+    apontou e que o PO aceitou. A leitura que liga uma coisa à outra (o livro
+    do Rodrigo Assis, \emph{Entre Redes}, cap.~1: o consumo crítico das
+    plataformas) fica só no guia da aula, e quem lê só o painel não a tem.
+  \item \textbf{A spec se contradiz} sobre quem \enquote{não busca nem abre}:
+    um trecho o põe em \enquote{em processo}, a matriz em \enquote{não
+    atingiu}. Seguimos a matriz.
+  \item \textbf{As diretrizes do PO que a esteira perdeu continuam fora}: a
+    rodada de desvio ativo, a habilidade \enquote{complementar}, a
+    justificativa antes e depois do voto e o contraste na tela com
+    \emph{fallback}. Esta decisão não as recupera.
+  \item \textbf{O podcast não tem trava por etapa}: só o aviso no cartão e no
+    guia. Um professor que o toque antes da Galeria Oculta revela a virada à
+    turma.
+  \item \textbf{As imagens aprovadas não se corrigem}: um estande que ficou
+    com a arte desenhada continua com ela, e a saída é criar a atividade de
+    novo.
+  \item \textbf{A suíte de ponta a ponta} (\arq{13-juri-estadual.mjs}) ganhou
+    o passo das falas na criação e o do podcast na aula, mas ainda não correu
+    com a IA real.
+\end{itemize}
+
+\textbf{Gatilho.} O PO pedir a EF06CO07 de volta numa unidade própria; a e2e
+com a IA real mostrar que as falas da IA não casam com a mostra que a turma
+viu; o piloto mostrar professores tocando o podcast antes da Galeria Oculta
+(então a trava por etapa entra no módulo); ou o painel de habilidades ganhar um
+recorte por missão da descrição oficial.

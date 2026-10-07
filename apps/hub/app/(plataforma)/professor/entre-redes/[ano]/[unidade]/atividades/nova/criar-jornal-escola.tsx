@@ -30,6 +30,8 @@ import {
 
 import { ImagensDoPacote } from "../../resultados/imagens-do-pacote";
 import { CartaoDoPreparo, EditorDaNoticia } from "../../resultados/noticia-do-preparo";
+import { FalasDoPodcast, falasComProblema, pedirFalasDoTema } from "./falas-do-podcast";
+import { falasParaHomologar, type FalasEscritas } from "@/lib/podcast-tipos";
 
 /** A copy revisada (§4a), no que ela sobreviveu à criação. A suíte e2e casa por texto exato. */
 const COPY = {
@@ -154,6 +156,13 @@ export function CriarJornalEscola({
   const [aprovados, setAprovados] = useState<TextosAprovados | null>(null);
   const [aprovandoTextos, setAprovandoTextos] = useState(false);
   const [imagensAprovadas, setImagensAprovadas] = useState(false);
+  /* As falas do podcast que contam ESTA mesa (ADR-150): o professor as revisa
+     aqui, e elas vão na homologação. `falasDaMesa` é a mesa para a qual foram
+     escritas — mudou a mesa, a tela avisa, sem bloquear. */
+  const [falas, setFalas] = useState<FalasEscritas | null>(null);
+  const [escrevendoFalas, setEscrevendoFalas] = useState(false);
+  const [falhaDasFalas, setFalhaDasFalas] = useState<string | null>(null);
+  const [falasDaMesa, setFalasDaMesa] = useState("");
   const aoMudarAprovacao = useCallback((tudo: boolean) => setImagensAprovadas(tudo), []);
 
   const parametros = { disciplina: rascunho.disciplina, tema: rascunho.tema, topicos: rascunho.topicos };
@@ -164,7 +173,15 @@ export function CriarJornalEscola({
   const noticiasComProblema = rascunho.noticias.filter((n) => Object.keys(problemasDeCampo.get(n.id) ?? {}).length > 0);
   const problemasDoConjunto = temNoticias ? problemasDaComposicao(rascunho.noticias) : [];
   const errosDaApi = distribuirErros(erro?.erros ?? []);
-  const pronto = temNoticias && parametrosValidos && noticiasComProblema.length === 0 && problemasDoConjunto.length === 0;
+  const problemasDasFalas = falasComProblema(falas);
+  const pronto =
+    temNoticias &&
+    parametrosValidos &&
+    noticiasComProblema.length === 0 &&
+    problemasDoConjunto.length === 0 &&
+    falas !== null &&
+    problemasDasFalas === 0 &&
+    !escrevendoFalas;
   const ocupado = gerando || carregandoBanco || regenerando !== null;
   const noticiaEmEdicao = editando ? (rascunho.noticias.find((n) => n.id === editando) ?? null) : null;
   const temaInvalido = Boolean(errosDosParametros.tema);
@@ -172,6 +189,26 @@ export function CriarJornalEscola({
      professor escreveu nele — campo vazio de saída não é engano dele. */
   const erroDoCampo = (campo: "disciplina" | "tema") =>
     rascunho[campo] ? errosDosParametros[campo] : undefined;
+
+  /** A mesa como a api do podcast a lê: o tema e as oito notícias na forma gravada. */
+  function mesaDoPodcast(tema: string, noticias: NoticiaDoPacote[]) {
+    return { tema: tema.trim(), noticias: noticias.map(normalizarNoticia) };
+  }
+
+  /** Pede as falas do podcast para a mesa — o banco pronto volta com as do sheet, sem IA. */
+  async function escreverFalas(turmaId: string, tema: string, noticias: NoticiaDoPacote[]) {
+    const mesa = mesaDoPodcast(tema, noticias);
+    setEscrevendoFalas(true);
+    setFalhaDasFalas(null);
+    const r = await pedirFalasDoTema("exp04ef1b", turmaId, mesa);
+    if (r.ok) {
+      setFalas(r.falas);
+      setFalasDaMesa(JSON.stringify(mesa));
+    } else {
+      setFalhaDasFalas(r.mensagem);
+    }
+    setEscrevendoFalas(false);
+  }
 
   function limparRecados() {
     setErro(null);
@@ -221,6 +258,7 @@ export function CriarJornalEscola({
       });
       setTemaDasNoticias(novo.tema);
       setEditando(null);
+      void escreverFalas(turmaId, novo.tema, novo.noticias);
       setAviso(
         novo.usouIa
           ? {
@@ -291,7 +329,7 @@ export function CriarJornalEscola({
   }
 
   /** O banco pronto da Unooria, PARA DENTRO da mesa — não grava nada (ADR-130). */
-  async function usarBancoPronto() {
+  async function usarBancoPronto(turmaId: string) {
     setCarregandoBanco(true);
     limparRecados();
     try {
@@ -314,6 +352,7 @@ export function CriarJornalEscola({
       });
       setTemaDasNoticias(material.tema);
       setEditando(null);
+      void escreverFalas(turmaId, material.tema, material.noticias);
       setAviso({
         tipo: "success",
         texto: "O banco pronto da Unooria foi carregado. Leia as 8 notícias e edite o que quiser antes de criar a atividade.",
@@ -343,6 +382,7 @@ export function CriarJornalEscola({
         ...corpoDosParametros(parametros),
         origem: rascunho.origem,
         noticias: rascunho.noticias.map(normalizarNoticia),
+        podcast: falasParaHomologar(falas?.vagas ?? []),
         }),
       });
       if (!r.ok) {
@@ -465,7 +505,7 @@ export function CriarJornalEscola({
                         variant="primary"
                         size="md"
                         leftIcon={<Icon name="newspaper" size={18} />}
-                        onClick={() => void usarBancoPronto()}
+                        onClick={() => void usarBancoPronto(turmaId)}
                         isDisabled={ocupado}
                         data-acao="usar-banco-pronto"
                       >
@@ -551,7 +591,7 @@ export function CriarJornalEscola({
                             <Button
                               variant="primary"
                               size="sm"
-                              onClick={() => void usarBancoPronto()}
+                              onClick={() => void usarBancoPronto(turmaId)}
                               isDisabled={ocupado}
                               data-acao="banco-pronto-da-falha"
                             >
@@ -607,9 +647,23 @@ export function CriarJornalEscola({
 
                         {/* O "Continuar" apagado sem motivo escrito é o silêncio que a
                             exp05ef1b já pagou: diga o que falta, e onde. */}
-                        {!parametrosValidos || noticiasComProblema.length > 0 || problemasDoConjunto.length > 0 ? (
+                        {!parametrosValidos ||
+                        noticiasComProblema.length > 0 ||
+                        problemasDoConjunto.length > 0 ||
+                        (!escrevendoFalas && (falas === null || problemasDasFalas > 0)) ? (
                           <div className="flex flex-col gap-1 text-[12px] leading-snug text-unooria-danger" role="status">
                             {!parametrosValidos ? <p>Falta o componente curricular ou o tema, nos campos acima.</p> : null}
+                            {!escrevendoFalas && falas === null ? (
+                              <p>Faltam as falas do podcast de recapitulação, logo abaixo da mesa.</p>
+                            ) : null}
+                            {problemasDasFalas > 0 ? (
+                              <p>
+                                {problemasDasFalas === 1
+                                  ? "Uma fala do podcast precisa"
+                                  : `${problemasDasFalas} falas do podcast precisam`}{" "}
+                                de ajuste. O campo está marcado abaixo.
+                              </p>
+                            ) : null}
                             {noticiasComProblema.length > 0 ? (
                               <p>
                                 {noticiasComProblema.length === 1
@@ -655,6 +709,21 @@ export function CriarJornalEscola({
                       aoRegenerar={() => void regenerar(turmaId, noticiaEmEdicao.id)}
                       regenerando={regenerando === noticiaEmEdicao.id}
                       ocupado={ocupado}
+                    />
+                  ) : null}
+
+                  {/* As falas do podcast, junto da mesa que elas contam (ADR-150). */}
+                  {temNoticias ? (
+                    <FalasDoPodcast
+                      falas={falas}
+                      escrevendo={escrevendoFalas}
+                      falha={falhaDasFalas}
+                      desatualizadas={
+                        falas !== null && falasDaMesa !== JSON.stringify(mesaDoPodcast(rascunho.tema, rascunho.noticias))
+                      }
+                      travado={travado}
+                      aoMudar={(vagas) => setFalas((atual) => (atual ? { ...atual, vagas } : atual))}
+                      aoReescrever={() => void escreverFalas(turmaId, rascunho.tema, rascunho.noticias)}
                     />
                   ) : null}
 

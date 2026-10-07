@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, test } from "vitest";
 import { ANOS, ETAPAS, UNIDADES_POR_ANO, buscarMissao } from "./catalogo";
 
@@ -36,17 +38,25 @@ describe("grade do Entre Redes", () => {
     expect(ANOS.flatMap((ano) => ano.missoes).some((m) => m.expId === "backup-exp04ef1b")).toBe(false);
   });
 
-  /* A ficha do Júri cita as habilidades do briefing (decisão de 2026-10-02): a
-     EF06CO10 que a esteira pôs no lugar da EF06CO07 saiu — o texto oficial dela
-     é consumo de tecnologia e obsolescência, não algoritmo. E a invisibilidade
-     é o número REAL de cada sessão: nenhum percentual cravado na copy. */
-  test("o Júri Estadual cita EF06CO01, EF06CO03 e EF06CO07, e nenhum número de invisibilidade", () => {
+  /* A ficha do Júri cita as habilidades da spec (o pedido do PO, 2026-10-06):
+     a EF06CO10 é o foco, com a EF06CO01 e a EF06CO03 — e a EF06CO07 (os
+     pacotes) saiu. O texto é o OFICIAL, lido da fonte única do currículo. E a
+     invisibilidade é o número REAL de cada sessão: nenhum percentual cravado. */
+  test("o Júri Estadual cita EF06CO10, EF06CO01 e EF06CO03 com o texto oficial, e nenhum número de invisibilidade", () => {
     const juri = buscarMissao("6-ano", "unidade-1")?.missao;
     expect(juri?.titulo).toBe("O Júri Estadual de Projetos");
     const competencia = juri?.ficha?.competencia ?? "";
-    for (const codigo of ["EF06CO01", "EF06CO03", "EF06CO07"]) expect(competencia).toContain(codigo);
+    const curriculo = readFileSync(join(__dirname, "../../../api/src/curriculo/dados/habilidades-computacao.ts"), "utf8");
+    for (const codigo of ["EF06CO10", "EF06CO01", "EF06CO03"]) {
+      expect(competencia).toContain(codigo);
+      const oficial = new RegExp(`"codigo": "${codigo}",\\s*"descricao": "([^"]+)"`).exec(curriculo)?.[1] ?? "";
+      expect(oficial, codigo).not.toBe("");
+      /* O ponto final do documento fica de fora: a frase continua no catálogo. */
+      expect(competencia.toLowerCase()).toContain(oficial.replace(/\.$/, "").toLowerCase());
+    }
+    expect(competencia.indexOf("EF06CO10")).toBeLessThan(competencia.indexOf("EF06CO01"));
     const texto = JSON.stringify(juri);
-    expect(texto).not.toContain("EF06CO10");
+    expect(texto).not.toContain("EF06CO07");
     expect(texto).not.toMatch(/\d+\s?%/);
   });
 });

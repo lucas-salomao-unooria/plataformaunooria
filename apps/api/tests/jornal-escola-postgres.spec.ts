@@ -21,6 +21,7 @@ import {
 import { DiagramacaoService } from "../src/jornal-escola/diagramacao.service";
 import { PROIBIDO_NA_LINHA_DO_PAINEL } from "../src/jornal-escola/invariantes";
 import { EXP_ID, JornalEscolaService, noticiasQuePedemImagem } from "../src/jornal-escola/jornal-escola.service";
+import { FALAS_DO_TEMA_PADRAO } from "../src/jornal-escola/podcast";
 import { PreparoDaExp04ef1bService } from "../src/jornal-escola/preparo.service";
 import { emFormatoDaIa, gabaritoDoPapel, sortearMolde } from "../src/jornal-escola/regras/molde";
 import { ETAPAS, PASSOS } from "../src/jornal-escola/regras/passos";
@@ -158,6 +159,7 @@ async function prepararAtividade(turmaId = ids.turma, escolaId = ESCOLA): Promis
     disciplina: DISCIPLINA_PADRAO,
     tema: TEMA_PADRAO,
     origem: "padrao",
+    podcast: FALAS_DO_TEMA_PADRAO,
     noticias: noticiasPadrao(),
   });
   await ilustrarEAprovar(criado.id, turmaId, escolaId);
@@ -545,6 +547,7 @@ describe("a porta da sala, a primeira entrada e a atividade em andamento", () =>
       disciplina: DISCIPLINA_PADRAO,
       tema: "Uma pronta para a semana que vem",
       origem: "padrao",
+      podcast: FALAS_DO_TEMA_PADRAO,
       noticias: noticiasPadrao(),
     });
     const pacotes = PacotesSchema.parse(await service.pacotes(ESCOLA, ids.turmaVazia, undefined));
@@ -844,6 +847,7 @@ describe("atividade × rodada: o pacote novo nasce pronto, o mesmo é idempotent
     disciplina: "Ciências",
     tema,
     origem,
+    podcast: FALAS_DO_TEMA_PADRAO,
     noticias,
   });
 
@@ -937,6 +941,7 @@ describe("as imagens: o professor vê, gera outra e aprova antes da turma (ADR-1
       disciplina: DISCIPLINA_PADRAO,
       tema,
       origem: "padrao",
+      podcast: FALAS_DO_TEMA_PADRAO,
       noticias: noticiasPadrao(),
     });
   const pedem = noticiasQuePedemImagem(noticiasPadrao()).map((n) => n.id);
@@ -1015,6 +1020,7 @@ describe("as imagens: o professor vê, gera outra e aprova antes da turma (ADR-1
       disciplina: DISCIPLINA_PADRAO,
       tema: "Imagens: da vizinha",
       origem: "padrao",
+      podcast: FALAS_DO_TEMA_PADRAO,
       noticias: noticiasPadrao(),
     });
     expect(await codigoDe(service.aprovarImagens(ESCOLA, ids.turma, ids.professora, daVizinha.id, {}))).toBe(

@@ -1,7 +1,9 @@
 import { z } from "zod";
+import { falasDoTemaSchema } from "../podcast/roteiro";
+import { VAGAS_DO_PODCAST } from "./podcast";
 import { problemasDoPacote } from "./invariantes";
 import { ETAPAS, PASSOS, PASSOS_PEDIDOS } from "./regras/passos";
-import { IDS_DE_ATITUDE, IDS_DE_MECANISMO, TOTAL_DE_BLOCOS, TOTAL_DE_PACOTES } from "./conteudo";
+import { IDS_DE_ATITUDE, IDS_DE_MECANISMO, TOTAL_DE_BLOCOS } from "./conteudo";
 import {
   ACOES_DA_REVISAO,
   AREAS,
@@ -29,7 +31,7 @@ import {
  *   dezesseis e a taxa real) desce no `GET galeria`, com a etapa `galeria`
  *   liberada pelo professor;
  * - a REGRA do motor: nenhum peso, nenhuma área líder;
- * - a ORDEM certa dos pacotes e dos blocos e o cartão certo: os itens descem
+ * - a ORDEM certa dos blocos e o cartão certo: os itens descem
  *   embaralhados, com ids opacos, e quem confere é o servidor (regra 3);
  * - as alternativas certas das enquetes, que são da ficha de evidência e
  *   descem pelas rotas genéricas de `/evidencias`.
@@ -42,8 +44,8 @@ export const PassoSchema = z.enum(PASSOS);
 export const EtapaSchema = z.enum(ETAPAS);
 export const IdDeProjetoSchema = z.string().regex(ID_DE_PROJETO_RE);
 export const IdDePostSchema = z.string().regex(ID_DE_POST_RE);
-/** Ids opacos dos pacotes e dos blocos: sorteados por sessão, não dizem a posição. */
-export const IdOpacoSchema = z.string().regex(/^[a-z]{2}-[a-z0-9]{3}$/);
+/** Ids opacos dos blocos: sorteados por sessão, não dizem a posição. */
+export const IdOpacoSchema = z.string().regex(/^bl-[a-z0-9]{3}$/);
 
 // -------------------------------------------------------- entrada: estudante
 
@@ -91,7 +93,6 @@ const ordemDe = (tamanho: number) =>
       .length(tamanho)
       .refine((o) => new Set(o).size === o.length, "itens diferentes"),
   });
-export const OrdemDosPacotesSchema = ordemDe(TOTAL_DE_PACOTES);
 export const OrdemDaCadeiaSchema = ordemDe(TOTAL_DE_BLOCOS);
 
 export const CartoesSchema = z.object({
@@ -162,14 +163,6 @@ export const GaleriaSchema = z.object({
   projetos: z.array(ProjetoDaGaleriaSchema).length(TOTAL_DE_PROJETOS),
 });
 
-export const PacoteDaCurtidaSchema = z.object({
-  id: IdOpacoSchema,
-  /** O número do pacote ("pacote 3 de 4") — é como o destino remonta a mensagem. */
-  numero: z.number().int().min(1).max(TOTAL_DE_PACOTES),
-  trecho: z.string(),
-  rota: z.array(z.string()).min(2),
-});
-
 export const BlocoDaCadeiaSchema = z.object({ id: IdOpacoSchema, rotulo: z.string() });
 
 const CartaoSchema = z.object({ id: z.string(), texto: z.string() });
@@ -190,10 +183,6 @@ export const SessaoSchema = z.object({
   voto: z.object({ projetoId: IdDeProjetoSchema, conviccao: z.enum(CONVICCOES) }).nullable(),
   revisao: z
     .object({ acao: z.enum(ACOES_DA_REVISAO), projetoId: IdDeProjetoSchema.nullable() })
-    .nullable(),
-  /** Na ORDEM DE CHEGADA (embaralhada pela sessão, estável num F5). Do passo `pacotes` em diante. */
-  pacotes: z
-    .object({ itens: z.array(PacoteDaCurtidaSchema).length(TOTAL_DE_PACOTES), tentativas: z.number().int().min(0), remontados: z.boolean() })
     .nullable(),
   /** Embaralhados pela sessão. Do passo `cadeia` em diante. */
   cadeia: z
@@ -217,7 +206,7 @@ export const GatePublicoSchema = z.object({
   etapa: EtapaSchema,
 });
 
-/** A resposta de pacotes e cadeia: certa ou não, nunca qual vaga errou. */
+/** A resposta da cadeia: certa ou não, nunca qual vaga errou. */
 export const TentativaSchema = z.object({
   correta: z.boolean(),
   tentativas: z.number().int().min(1),
@@ -263,6 +252,12 @@ export const ConteudoDoPacoteSchema = z
 export const HomologacaoSchema = z.object({
   parametros: ParametrosDoPreparoSchema,
   conteudo: ConteudoDoPacoteSchema,
+  /**
+   * As três falas do podcast de recapitulação que o professor revisou na
+   * criação (ADR-150, ADR-151): os dois estandes de áreas diferentes, o que o
+   * feed do Rafa mostrou e o que o da mesa ao lado mostrou.
+   */
+  podcast: falasDoTemaSchema(VAGAS_DO_PODCAST),
 });
 
 export const RegenerarProjetoSchema = ParametrosDoPreparoSchema.extend({
@@ -325,6 +320,8 @@ export const PacotesSchema = z.object({
       criadoEm: z.string(),
       /** A maior rodada com sessão; 0 = nunca rodou. */
       rodadas: z.number().int().min(0),
+      /** A segunda fase da aprovação passou? Sem ela, a atividade não vai ao ar. */
+      imagensAprovadas: z.boolean(),
     }),
   ),
 });
@@ -335,6 +332,21 @@ export const PacoteDetalheSchema = PacoteNaTelaSchema.extend({
   etapa: EtapaSchema.nullable(),
   criadoEm: z.string(),
   rodadas: z.number().int().min(0),
+  /** Quando o professor aprovou as imagens; `null` = a segunda fase não passou, e a atividade não vai ao ar. */
+  imagensAprovadasEm: z.string().nullable(),
+});
+
+/** `POST :turmaId/pacotes/:pacoteId/aprovar-imagens`. */
+export const ImagensAprovadasSchema = z.object({
+  pacoteId: z.string().uuid(),
+  imagensAprovadasEm: z.string(),
+});
+
+/** `POST :turmaId/pacotes/:pacoteId/imagens/:projetoId/refazer` — a imagem nova de UM estande. */
+export const ImagemRefeitaSchema = z.object({
+  pacoteId: z.string().uuid(),
+  projetoId: IdDeProjetoSchema,
+  url: z.string(),
 });
 
 export const EmAndamentoSchema = z.object({
@@ -422,10 +434,9 @@ export const ZerarTurmaSchema = z.object({
 
 /**
  * O material do professor (guia da aula): o esqueleto fixo COM gabarito — a
- * ordem dos pacotes e dos blocos, os cartões certos — e a plenária.
+ * ordem dos blocos, os cartões certos — e a plenária.
  */
 export const MaterialSchema = z.object({
-  pacotes: z.array(z.object({ numero: z.number().int(), trecho: z.string(), rota: z.array(z.string()) })),
   blocos: z.array(z.object({ posicao: z.number().int(), rotulo: z.string() })),
   mariana: z.object({
     caso: z.string(),

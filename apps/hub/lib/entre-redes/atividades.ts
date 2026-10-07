@@ -197,7 +197,10 @@ export function atividadesDoJuri(p: PacotesDoJuri, rotuloDaDisciplina: (slug: st
     id: h.id,
     titulo: h.tema,
     detalhe: [rotuloDaDisciplina(h.disciplina), ORIGEM[h.origem]].join(" · "),
-    estado: h.ativo ? "em-andamento" : "pronta",
+    /* Sem as imagens aprovadas (a segunda fase, o pedido do PO), a atividade não
+       vai ao ar: "Em preparo", sem "Usar esta atividade agora" — a api recusaria
+       com 409 `imagens-nao-aprovadas`. A que já está no ar continua no ar. */
+    estado: h.ativo ? "em-andamento" : h.imagensAprovadas ? "pronta" : "em-preparo",
     criadaEm: h.criadoEm,
     rodadas: h.rodadas,
   }));

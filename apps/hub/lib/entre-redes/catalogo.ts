@@ -909,9 +909,11 @@ export const MISSAO_A_SELECAO: Missao = {
  * api para cada sessão: quem curte duas vezes a mesma área vê menos; quem não
  * curte nada vê mais). Nenhum número cravado na copy, de propósito.
  *
- * As habilidades são as do briefing — EF06CO01, EF06CO03 e EF06CO07 (decisão
- * de 2026-10-02: a habilidade de consumo de tecnologia que a esteira pôs no
- * lugar da EF06CO07 saiu, porque o texto oficial dela não é sobre algoritmo).
+ * As habilidades são as da spec v1.5.2: EF06CO10 (o foco primário), EF06CO01
+ * e EF06CO03, com o TEXTO OFICIAL de `apps/api/src/curriculo/dados/
+ * habilidades-computacao.ts`. A decisão de 2026-10-02 (medir a EF06CO07, os
+ * pacotes) foi revertida pelo PO em 2026-10-06: a tela dos pacotes saiu, e a
+ * EF06CO10 se ancora no livro didático (o consumo crítico das plataformas).
  *
  * Tem ficha pedagógica (E14): a atividade é o PACOTE homologado e a rodada é o
  * "Zerar". E NÃO tem acervo padrão, como a exp08ef1b: os dezesseis estandes
@@ -942,15 +944,18 @@ export const MISSAO_JURI_ESTADUAL: Missao = {
   ficha: {
     competencia:
       "Letramento digital — perceber que um feed que se adapta às curtidas esconde parte do que " +
-      "existe, e que essa engrenagem é uma regra que se pode descrever. BNCC Computação: EF06CO01 " +
-      "(classificar informações em coleções e tipos de dados), EF06CO03 (descrever com precisão a " +
-      "solução de um problema, construindo o programa) e EF06CO07 (a informação quebrada em " +
-      "pacotes e reconstruída no destino).",
+      "existe, e que essa engrenagem é uma regra que se pode descrever. BNCC Computação, com o foco " +
+      "na EF06CO10 (analisar o consumo de tecnologia na sociedade, compreendendo criticamente o " +
+      "caminho da produção dos recursos bem como aspectos ligados à obsolescência e a " +
+      "sustentabilidade); e EF06CO01 (classificar informações, agrupando-as em coleções " +
+      "(conjuntos) e associando cada coleção a um ‘tipo de dados’) e EF06CO03 (descrever com " +
+      "precisão a solução de um problema, construindo o programa que implementa a solução " +
+      "descrita).",
     duracao: "1 aula de 50 min (ou 2 de 25 min)",
     formato:
       "Clone de rede social de fotos (o Unoovista): a credencial de jurado, o feed da mostra, a " +
-      "cédula lacrada, a Galeria Oculta com a busca por hashtag e as enquetes nos Stories. Os " +
-      "pacotes da curtida, a cadeia do feed e o caso Mariana são numa tela da Unooria.",
+      "cédula lacrada, a Galeria Oculta com a busca por hashtag, o caso Mariana e as enquetes nos " +
+      "Stories. A cadeia do feed é numa tela da Unooria.",
     atos: [
       {
         rotulo: "1 — A credencial de jurado",
@@ -984,11 +989,11 @@ export const MISSAO_JURI_ESTADUAL: Missao = {
           "hashtag e mantém ou troca o voto.",
       },
       {
-        rotulo: "5 — O caminho da curtida e a cadeia",
+        rotulo: "5 — A cadeia do feed",
         texto:
-          "Numa tela da Unooria, o estudante remonta a própria curtida a partir de quatro pacotes " +
-          "que chegaram fora de ordem, e depois monta a engrenagem que controlou o feed: " +
-          "interações, dados, algoritmo, bolha.",
+          "Numa tela da Unooria, que abre ligando o que ele viveu ao livro didático, o estudante " +
+          "monta a engrenagem que controlou o feed: interações do jurado, registro de dados e " +
+          "padrões, algoritmo de recomendação, formação de bolha temática.",
       },
       {
         rotulo: "6 — Mariana e as enquetes",
@@ -1005,8 +1010,9 @@ export const MISSAO_JURI_ESTADUAL: Missao = {
         "banco pronto: sem saldo de geração com IA, a atividade não sai — prepare com antecedência.",
       "Revise os estandes antes de criar: título, legenda e bastidor de cada um, e regenere o que não servir. " +
         "Nada gerado por inteligência artificial chega à turma sem a sua revisão.",
-      "Depois de criar, gere as imagens na página da atividade: elas saem duas por vez. Estande sem imagem " +
-        "aparece com uma arte desenhada, e a missão roda igual.",
+      "Aprove em duas fases: primeiro os textos dos estandes; depois as imagens, que a inteligência " +
+        "artificial gera em seguida. Confira cada imagem, gere outra para a que não servir e aprove — sem " +
+        "as imagens aprovadas, a atividade não vai ao ar. Estande sem imagem aparece com uma arte desenhada.",
       "Se a turma divide computadores, escolha as equipes na criação. Com 2 a 4 por computador, combine o " +
         "revezamento antes de começar (está no guia da aula). O painel conta por computador.",
       "Durante a aula é um botão só — Liberar a Galeria Oculta — e ele não volta. Deixe o projetor pronto: " +

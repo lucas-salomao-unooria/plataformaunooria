@@ -520,9 +520,14 @@ await suite(
     await prof.reload({ waitUntil: "domcontentloaded" });
     await prof.waitForSelector("[data-envio]", { timeout: 20_000 });
     const folha = await prof.locator("main").innerText();
+    /* Pelos CABEÇALHOS das colunas, não pelo texto da página: a folha mostra a
+       seleção e a legenda de cada estudante, e o lote da IA escreve o que quiser
+       ("Usuários pedem mais pontos de água potável…" reprovou a corrida de
+       2026-10-07). É o mesmo conserto da `estudante/12`. */
+    const colunas = await prof.locator("main").getByRole("columnheader").allInnerTexts();
     r.exigir(
-      !/\b(pontos|nota|score|ranking)\b/i.test(folha),
-      "a folha da turma não tem coluna de pontos",
+      colunas.length > 0 && !colunas.some((c) => /\b(pontos|nota|score|ranking)\b/i.test(c)),
+      `a folha da turma não tem coluna de pontos (colunas: ${colunas.join(", ")})`,
     );
     r.exigir(/EF07CO11/.test(folha), "o painel de habilidades da BNCC aparece com a EF07CO11");
     await r.registrar(prof, "resultados-e-habilidades", {
@@ -538,7 +543,7 @@ await suite(
     });
 
     // ═══ PROFESSORA: o podcast de recapitulação ══════════════════════════
-    const cartao = prof.locator("[data-podcast-selecao]");
+    const cartao = prof.locator("[data-podcast-da-aula]");
     await cartao.waitFor({ timeout: 20_000 });
     await prof.click('[data-acao="ler-transcricao"]');
     const transcricao = prof.locator("[data-transcricao-podcast]");
@@ -569,7 +574,7 @@ await suite(
       await prof.click('[data-acao="gerar-podcast"]');
       await prof
         .locator(
-          '[data-podcast-pronto="sim"], [data-podcast-selecao] :text-matches("não pôde ser gerado|sem saldo|limite", "i")',
+          '[data-podcast-pronto="sim"], [data-podcast-da-aula] :text-matches("não pôde ser gerado|sem saldo|limite", "i")',
         )
         .first()
         .waitFor({ timeout: 300_000 });

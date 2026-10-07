@@ -106,12 +106,17 @@ export const GUIA_EXP04EF1B: GuiaDaAula = {
       {
         titulo: "Escolha o pacote de notícias",
         texto:
-          "Sem preparo, a turma roda o banco padrão da Unooria, “Feira de Ciências e Notícias da Cidade”, já revisado. Em A aula e os resultados, Usar Banco Padrão o confirma em um toque. Para um tema da sua aula, escolha o componente curricular, escreva o tema e os tópicos, clique em Gerar Pacote de Notícias com IA, revise cada notícia — inclusive se ela pode ir para a capa e a reação do leitor — e clique em Aprovar Pacote. Nada gerado por inteligência artificial chega à turma sem esse clique.",
+          "Sem preparo, a turma roda o banco padrão da Unooria, “Feira de Ciências e Notícias da Cidade”, já revisado. Em A aula e os resultados, Usar Banco Padrão o confirma em um toque. Para um tema da sua aula, escolha o componente curricular, escreva o tema e os tópicos, clique em Gerar Pacote de Notícias com IA, revise cada notícia — inclusive se ela pode ir para a capa e a reação do leitor —, revise também as três falas do podcast que contam a mesa e clique em Aprovar Pacote. Nada gerado por inteligência artificial chega à turma sem esse clique.",
       },
       {
         titulo: "Gere as imagens depois de aprovar",
         texto:
           "O botão Gerar imagens trabalha duas por vez e mostra quantas estão prontas; pode levar alguns minutos, então faça antes da aula. Notícia sem imagem aparece com o desenho do meio, e a missão roda igual.",
+      },
+      {
+        titulo: "Gere o áudio do podcast, se for usá-lo",
+        texto:
+          "O podcast de recapitulação é seu: cerca de 3 minutos e 30 segundos em que Lucas e Clara, locutores da rádio da escola, retomam a missão com a turma. Fica em A aula e os resultados, com o botão Gerar o áudio do podcast, que sai um trecho por vez. As três falas que contam a mesa são as que você revisou ao criar a atividade; o resto do roteiro é o mesmo para todas. A transcrição está sempre ao lado, mesmo sem áudio.",
       },
       {
         titulo: "Monte as equipes se faltar aparelho",
@@ -324,6 +329,7 @@ export const GUIA_EXP04EF1B: GuiaDaAula = {
       ],
     },
     desdobramentos: [
+      "O podcast de recapitulação, em A aula e os resultados: toque para a turma no fim da aula ou no começo da seguinte, se ajudar a retomar a conversa. Ele fala com os estudantes, mas quem decide quando ele toca é você.",
       /* Os dois códigos de fora da Computação são os que o one-pager
          pedagógico conecta, conferidos em
          `apps/api/src/curriculo/dados/habilidades-ef.ts`. O texto segue as

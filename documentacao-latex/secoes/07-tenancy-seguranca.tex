@@ -835,7 +835,7 @@ A resposta --- que devolve só \enquote{enviada}, nunca o resultado &
 \zebra O Júri Estadual de Projetos: a própria missão (\adrr{ADR-137}) &
   \rota{/juri-estadual/*} & \yes & \no & \no & \no\\
 \textbf{O Júri Estadual: preparar a mostra, conduzir e ler a lousa} (atividades,
-  imagens, a Galeria Oculta, zerar), e o material do guia &
+  imagens e o OK delas --- \adrr{ADR-151} ---, a Galeria Oculta, zerar), e o material do guia &
   \rota{/juri-estadual/\B turmas/*}, \rota{/professor/\B material} & \no &
   \yes\footnotesize{\ddag} & \yes & \yes\\
 \zebra unooGPT: a própria partida & \rota{/unoogpt/*} & \yes & \no & \no & \no\\
@@ -1171,8 +1171,8 @@ acredita ter declarado algo.
   \item No Júri Estadual de Projetos (\adrr{ADR-137}), o \emph{bundle} não
     recebe o acervo nem a regra: os pesos e o limiar do motor do feed, a área
     líder e os estandes que o feed não serviu ficam no servidor até a Galeria
-    Oculta abrir; a ordem certa dos pacotes e da cadeia não desce (os ids são
-    opacos por sessão), nem o cartão certo do caso Mariana (\cd{certo} está na
+    Oculta abrir; a ordem certa da cadeia não desce (os ids são
+    opacos por sessão; os pacotes da curtida saíram com a \adrr{ADR-151}), nem o cartão certo do caso Mariana (\cd{certo} está na
     redação do \emph{log}), nem o nível das alternativas das enquetes.
   \item Os textos dos cartões da app-70 chegam ao jogo \textbf{sem gabarito}, e
     apenas os da bolha daquela criança.

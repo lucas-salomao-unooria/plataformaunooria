@@ -10,6 +10,8 @@ import { EvidenciasService, type ContextoDaAtividade } from "../evidencias/evide
 import type { Nivel } from "../evidencias/regras";
 import { ehUuid } from "../motor/guardas";
 import { logger } from "../observabilidade/logger";
+import { gravarFalasDoPodcast } from "../podcast/podcast.service";
+import type { FalasDoTema } from "../podcast/roteiro";
 import { PrismaService } from "../prisma/prisma.service";
 import { CARTOES_DE_ATITUDE, CARTOES_DE_MECANISMO, CASO_MARIANA } from "./conteudo";
 import { AreaSchema, ProjetoDoPacoteSchema } from "./contrato-de-rotas";
@@ -29,19 +31,13 @@ import {
 import {
   MARCADOR_DA_AUDITORIA,
   MARCADOR_DA_CADEIA,
-  MARCADOR_DOS_PACOTES,
+  MARCADOR_DA_CLASSIFICACAO,
   nivelDaAuditoria,
+  nivelDaClassificacao,
   nivelPorTentativas,
 } from "./regras/evidencia";
 import { auditoriaDaLinha, feedDaLinha, ordemDaGaleria, registrarAcao, type AcaoDaGaleria } from "./regras/galeria";
-import {
-  blocosDaSessao,
-  idsDaSessao,
-  ordemCertaDaCadeia,
-  ordemCertaDosPacotes,
-  ordemConfere,
-  pacotesDaSessao,
-} from "./regras/ordem";
+import { blocosDaSessao, idsDaSessao, ordemCertaDaCadeia, ordemConfere } from "./regras/ordem";
 import { mediaDasTaxas, votosPorArea } from "./regras/painel";
 import {
   ETAPA_INICIAL,
@@ -93,7 +89,7 @@ export { EXP_ID } from "./vocabulario";
  * serviu descem (`regras/publico.ts`, uma allowlist), e a Galeria Oculta — os
  * dezesseis, com a taxa REAL desta sessão — só com a etapa `galeria` aberta.
  *
- * **A ordem certa dos pacotes e dos blocos nunca desce**: os itens chegam com
+ * **A ordem certa dos blocos nunca desce**: os itens chegam com
  * ids OPACOS e embaralhados pela semente da sessão, e quem confere é o
  * servidor (`regras/ordem.ts`, regra 3).
  */
@@ -291,8 +287,8 @@ export class JuriEstadualService implements OnModuleInit {
 
   /**
    * Boot da experiência e o F5. Na primeira entrada do estudante na rodada,
-   * nasce a sessão (com a semente). Cada bloco do fim da missão (`pacotes`,
-   * `cadeia`, `mariana`) só vem do passo dele em diante.
+   * nasce a sessão (com a semente). Cada bloco do fim da missão (`cadeia`,
+   * `mariana`) só vem do passo dele em diante.
    */
   async sessao(escolaId: string, estudanteId: string, turmaId: string | null) {
     return this.prisma.comTenancy(async (tx) => {
@@ -447,8 +443,8 @@ export class JuriEstadualService implements OnModuleInit {
   }
 
   /**
-   * Abrir a ficha de um estande ou buscar — o registro da EF06CO01, lido no
-   * latch da revisão. Só na galeria (antes, a porta está fechada; depois da
+   * Abrir a ficha de um estande ou buscar — o registro da EF06CO10 e da
+   * EF06CO01, lido no latch da revisão. Só na galeria (antes, a porta está fechada; depois da
    * revisão, a medida já foi tomada). Da busca, só o tipo e a área que casou.
    */
   async acaoDaGaleria(escolaId: string, estudanteId: string, turmaId: string | null, acao: AcaoDaGaleria): Promise<void> {
@@ -471,9 +467,9 @@ export class JuriEstadualService implements OnModuleInit {
   /**
    * Manter ou trocar o voto — O LATCH 2. Só da galeria. `trocar` aceita
    * qualquer um dos dezesseis (a galeria mostrou todos), menos o voto lacrado.
-   * Ação, voto FINAL, carimbo e o passo `pacotes` no mesmo update, e a marca da
-   * EF06CO01 (`auditoria`) na mesma transação, sobre o que a criança fez na
-   * galeria ANTES de decidir.
+   * Ação, voto FINAL, carimbo e o passo `cadeia` no mesmo update, e as marcas
+   * da EF06CO10 (`auditoria`) e da EF06CO01 (`classificacao`) na mesma
+   * transação, sobre o que a criança fez na galeria ANTES de decidir.
    *
    * O lock COMPARTILHADO da turma e a releitura do gate fecham a corrida com o
    * "Zerar": a marca não cai numa rodada que já acabou (409 `rodada-mudou`).
@@ -498,30 +494,60 @@ export class JuriEstadualService implements OnModuleInit {
 
       const { count } = await tx.exp06ef1bSessao.updateMany({
         where: { id: ctx.sessao.id, escolaId, revisadoEm: null, passo: "lacrada" },
-        data: { revisaoAcao: revisao.acao, votoRevisado: final, revisadoEm: new Date(), passo: "pacotes" },
+        data: { revisaoAcao: revisao.acao, votoRevisado: final, revisadoEm: new Date(), passo: "cadeia" },
       });
       if (count === 0) throw erroDeJogo("voto-ja-revisado");
 
       const { servidos } = feedDaLinha(ctx.sessao);
-      const nivel = nivelDaAuditoria(
-        auditoriaDaLinha(ctx.sessao.auditoria),
-        projetosOcultos(projetosDoMotor(ctx.pacote), servidos),
-        areaDoProjeto(voto),
+      const auditoria = auditoriaDaLinha(ctx.sessao.auditoria);
+      const ocultos = projetosOcultos(projetosDoMotor(ctx.pacote), servidos);
+      await this.marcar(tx, ctx, gate, MARCADOR_DA_AUDITORIA, nivelDaAuditoria(auditoria, ocultos));
+      await this.marcar(
+        tx,
+        ctx,
+        gate,
+        MARCADOR_DA_CLASSIFICACAO,
+        nivelDaClassificacao(auditoria, ocultos, areaDoProjeto(voto)),
       );
-      await this.marcar(tx, ctx, gate, MARCADOR_DA_AUDITORIA, nivel);
       const sessao = await tx.exp06ef1bSessao.findUniqueOrThrow({ where: { id: ctx.sessao.id } });
       return this.estado(sessao, gate);
     }, escolaId);
   }
 
-  /** Uma tentativa de remontar a curtida (EF06CO07): os quatro ids na ordem dos números. */
-  async remontarPacotes(escolaId: string, estudanteId: string, turmaId: string | null, ordem: readonly string[]) {
-    return this.tentarOrdem(escolaId, estudanteId, turmaId, ordem, "pacotes");
-  }
-
-  /** Uma tentativa de montar a cadeia (EF06CO03): Interações → Dados → Algoritmo → Bolha. */
+  /**
+   * Uma tentativa de montar a cadeia (EF06CO03): Interações → Dados →
+   * Algoritmo → Bolha — a doutrina da Chave do Jornal: cada envio conta; a
+   * resposta é certa ou não, nunca qual vaga errou; na certa, o passo anda e a
+   * habilidade é marcada pelas tentativas. Com a cadeia já montada, responde
+   * certa sem contar — o F5 e o toque duplo não viram tentativa.
+   */
   async montarCadeia(escolaId: string, estudanteId: string, turmaId: string | null, ordem: readonly string[]) {
-    return this.tentarOrdem(escolaId, estudanteId, turmaId, ordem, "cadeia");
+    return this.prisma.comTenancy(async (tx) => {
+      const ctx = await this.garantirSessao(tx, escolaId, estudanteId, turmaId);
+      const s = ctx.sessao;
+      if (s.cadeiaMontadaEm) {
+        return { correta: true, tentativas: s.cadeiaTentativas, passo: this.estado(s, ctx.gate).passo };
+      }
+      if (normalizarPasso(s.passo) !== "cadeia") throw erroDeJogo("passo-invalido");
+      const certa = ordemCertaDaCadeia(s.semente);
+      if (!idsDaSessao(ordem, certa)) throw erroDeJogo("payload-invalido");
+      const gate = await this.gateDaSessao(tx, escolaId, ctx);
+
+      const tentativas = s.cadeiaTentativas + 1;
+      if (!ordemConfere(ordem, certa)) {
+        await tx.exp06ef1bSessao.update({ where: { id: s.id }, data: { cadeiaTentativas: tentativas } });
+        return { correta: false, tentativas, passo: "cadeia" as const };
+      }
+
+      const { count } = await tx.exp06ef1bSessao.updateMany({
+        where: { id: s.id, escolaId, cadeiaMontadaEm: null, passo: "cadeia" },
+        data: { cadeiaTentativas: tentativas, cadeiaMontadaEm: new Date(), passo: "mariana" },
+      });
+      /* Sem linha atualizada, já estava montada: não conta nem marca de novo. */
+      if (count > 0) await this.marcar(tx, ctx, gate, MARCADOR_DA_CADEIA, nivelPorTentativas(tentativas));
+      const depois = await tx.exp06ef1bSessao.findUniqueOrThrow({ where: { id: s.id } });
+      return { correta: true, tentativas: depois.cadeiaTentativas, passo: this.estado(depois, gate).passo };
+    }, escolaId);
   }
 
   /**
@@ -776,7 +802,15 @@ export class JuriEstadualService implements OnModuleInit {
       const [todos, rodadas] = await Promise.all([
         tx.exp06ef1bPacote.findMany({
           where: { escolaId, turmaId },
-          select: { id: true, disciplina: true, tema: true, origem: true, ativo: true, criadoEm: true },
+          select: {
+            id: true,
+            disciplina: true,
+            tema: true,
+            origem: true,
+            ativo: true,
+            criadoEm: true,
+            imagensAprovadasEm: true,
+          },
           orderBy: { criadoEm: "desc" },
         }),
         tx.exp06ef1bSessao.groupBy({ by: ["pacoteId"], where: { escolaId, turmaId }, _max: { rodada: true } }),
@@ -798,6 +832,7 @@ export class JuriEstadualService implements OnModuleInit {
           ativo: p.ativo,
           criadoEm: p.criadoEm.toISOString(),
           rodadas: maiorRodada.get(p.id) ?? 0,
+          imagensAprovadas: p.imagensAprovadasEm !== null,
         })),
       };
     }, escolaId);
@@ -824,7 +859,37 @@ export class JuriEstadualService implements OnModuleInit {
         etapa: emAndamento && gate ? gate.etapa : null,
         criadoEm: linha.criadoEm.toISOString(),
         rodadas: rodadas._max.rodada ?? 0,
+        imagensAprovadasEm: linha.imagensAprovadasEm?.toISOString() ?? null,
       };
+    }, escolaId);
+  }
+
+  /**
+   * A SEGUNDA FASE da aprovação (o pedido do PO, no molde da exp07ef1b,
+   * ADR-146): o professor viu a imagem de cada estande, refez a que não servia,
+   * e aprova. Só depois disto a atividade vai ao ar (`colocarEmAndamento`
+   * cobra), e depois disto as imagens não mudam mais.
+   *
+   * Sem exigir imagem em todo estande: a geração pode falhar ou a quota acabar,
+   * e o estande segue com a arte procedural — que o professor VIU marcada como
+   * "sem imagem" na grade antes de aprovar. Quem segura o botão até a geração
+   * terminar é a tela. Idempotente: a segunda aprovação devolve o carimbo da
+   * primeira.
+   */
+  async aprovarImagens(escolaId: string, turmaId: string, professorId: string | undefined, pacoteId: string) {
+    return this.prisma.comTenancy(async (tx) => {
+      await this.turmaVisivel(tx, escolaId, turmaId, professorId);
+      const linha = await this.pacoteDaTurma(tx, escolaId, turmaId, pacoteId);
+      const carimbo =
+        linha.imagensAprovadasEm ??
+        (
+          await tx.exp06ef1bPacote.update({
+            where: { id: linha.id },
+            data: { imagensAprovadasEm: new Date() },
+            select: { imagensAprovadasEm: true },
+          })
+        ).imagensAprovadasEm;
+      return { pacoteId: linha.id, imagensAprovadasEm: (carimbo ?? new Date()).toISOString() };
     }, escolaId);
   }
 
@@ -841,7 +906,10 @@ export class JuriEstadualService implements OnModuleInit {
     return this.prisma.comTenancy(async (tx) => {
       await this.turmaVisivel(tx, escolaId, turmaId, professorId);
       await this.travarTurma(tx, escolaId, turmaId, "exclusivo");
-      await this.pacoteDaTurma(tx, escolaId, turmaId, pacoteId);
+      const escolhido = await this.pacoteDaTurma(tx, escolaId, turmaId, pacoteId);
+      /* As duas fases da aprovação passaram? Sem a das imagens, a turma abriria
+         com imagem que ninguém viu (o pedido do PO, como na exp07ef1b). */
+      if (!escolhido.imagensAprovadasEm) throw erroDeJogo("imagens-nao-aprovadas");
 
       const atual = await this.lerGate(tx, escolaId, turmaId);
       if (atual?.pacoteId === pacoteId) {
@@ -865,6 +933,10 @@ export class JuriEstadualService implements OnModuleInit {
   /**
    * "Criar atividade" — a curadoria humana (ADR-66/67): grava a mostra como o
    * professor a deixou, numa atividade que nasce PRONTA, não no ar (ADR-130).
+   *
+   * É a PRIMEIRA fase da aprovação: os textos. O pacote nasce com
+   * `imagensAprovadasEm` nulo — as imagens se geram em seguida, e só a segunda
+   * fase (`aprovarImagens`) o deixa ir ao ar.
    * O em andamento continua em andamento — criar a próxima aula não pode tirar
    * do ar a de agora.
    *
@@ -881,11 +953,15 @@ export class JuriEstadualService implements OnModuleInit {
     corpo: {
       parametros: { disciplina: Disciplina; tema: string; assuntos: string; contexto?: string };
       conteudo: ConteudoDoPacote;
+      /** As três falas do podcast que o professor revisou na criação (ADR-150, ADR-151). */
+      podcast: FalasDoTema;
     },
   ) {
     return this.prisma.comTenancy(async (tx) => {
       await this.turmaVisivel(tx, escolaId, turmaId, professorId);
       await this.travarTurma(tx, escolaId, turmaId, "exclusivo");
+      const gravarFalas = (atividadeId: string) =>
+        gravarFalasDoPodcast(tx, { escolaId, expId: EXP_ID, atividadeId, falas: corpo.podcast, aprovadoPor: criadoPor });
 
       const recentes = await tx.exp06ef1bPacote.findMany({
         where: { escolaId, turmaId },
@@ -905,6 +981,9 @@ export class JuriEstadualService implements OnModuleInit {
         ultimo.contexto === contexto &&
         canonico(ultimo.conteudo) === canonico(conteudo)
       ) {
+        /* O segundo clique pode trazer as falas do podcast editadas: elas
+           valem, mesmo sem atividade nova (ADR-150). */
+        await gravarFalas(ultimo.id);
         return { id: ultimo.id, disciplina: parametros.disciplina, tema: ultimo.tema, origem: "ia" as const, ativo: ultimo.ativo };
       }
 
@@ -941,6 +1020,7 @@ export class JuriEstadualService implements OnModuleInit {
         },
         select: { id: true, tema: true },
       });
+      await gravarFalas(novo.id);
       return { id: novo.id, disciplina: parametros.disciplina, tema: novo.tema, origem: "ia" as const, ativo: false };
     }, escolaId);
   }
@@ -976,12 +1056,41 @@ export class JuriEstadualService implements OnModuleInit {
    * O pacote das imagens (`midia.service.ts`): o pedido, ou o em andamento sem
    * pedido. O pedido é a atividade PRONTA que o professor prepara antes de pôr
    * no ar (ADR-130).
+   *
+   * Só enquanto as imagens estão EM VALIDAÇÃO: depois de aprovadas, gerar a que
+   * falta ou refazer uma levaria à turma uma imagem que o professor não viu —
+   * o que o PO pediu para acabar. 409 `imagens-ja-aprovadas`, e o estande sem
+   * imagem segue com a arte procedural.
    */
   async pacoteParaMidia(escolaId: string, turmaId: string, professorId?: string, pacoteId?: string): Promise<PacoteLido> {
     return this.prisma.comTenancy(async (tx) => {
       await this.turmaVisivel(tx, escolaId, turmaId, professorId);
-      if (pacoteId) return pacoteDaLinha(await this.pacoteDaTurma(tx, escolaId, turmaId, pacoteId));
-      return (await this.exigirPacote(tx, escolaId, turmaId)).pacote;
+      const linha = pacoteId
+        ? await this.pacoteDaTurma(tx, escolaId, turmaId, pacoteId)
+        : await this.pacoteDaTurma(tx, escolaId, turmaId, (await this.exigirPacote(tx, escolaId, turmaId)).pacote.id);
+      if (linha.imagensAprovadasEm) throw erroDeJogo("imagens-ja-aprovadas");
+      return pacoteDaLinha(linha);
+    }, escolaId);
+  }
+
+  /**
+   * O pacote do podcast de recapitulação (ADR-150, ADR-151): o pedido — desta
+   * turma — ou o em andamento sem pedido. Ao contrário de `pacoteParaMidia`,
+   * vale DEPOIS das imagens aprovadas: o podcast se gera para a atividade
+   * pronta ou no ar. A guarda de turma (404) e o "sem atividade" (403) são os
+   * mesmos.
+   */
+  async pacoteParaPodcast(
+    escolaId: string,
+    turmaId: string,
+    professorId?: string,
+    pacoteId?: string,
+  ): Promise<{ id: string; tema: string }> {
+    return this.prisma.comTenancy(async (tx) => {
+      await this.turmaVisivel(tx, escolaId, turmaId, professorId);
+      const id = pacoteId ?? (await this.exigirPacote(tx, escolaId, turmaId)).pacote.id;
+      const linha = await this.pacoteDaTurma(tx, escolaId, turmaId, id);
+      return { id: linha.id, tema: linha.tema };
     }, escolaId);
   }
 
@@ -1024,13 +1133,6 @@ export class JuriEstadualService implements OnModuleInit {
     };
   }
 
-  /** O que preenche o molde dos pacotes: o título do projeto do voto INICIAL e a hashtag da área dele. */
-  private votoDoMolde(pacote: PacoteLido, votoProjeto: string) {
-    const projeto = pacote.conteudo.projetos.find((p) => p.id === votoProjeto);
-    const categoria = pacote.conteudo.categorias.find((c) => c.area === areaDoProjeto(votoProjeto));
-    return { tituloDoProjeto: projeto?.titulo ?? votoProjeto, hashtagDaArea: categoria?.hashtag ?? "" };
-  }
-
   /** A sessão inteira do estudante (`SessaoSchema`): cada bloco do fim só do passo dele em diante. */
   private sessaoPublica(ctx: ContextoDoEstudante) {
     const { sessao, gate, pacote } = ctx;
@@ -1056,14 +1158,6 @@ export class JuriEstadualService implements OnModuleInit {
             projetoId: sessao.revisaoAcao === "trocar" ? sessao.votoRevisado : null,
           }
         : null,
-      pacotes:
-        passoNoMinimo(efetivo, "pacotes") && sessao.votoProjeto
-          ? {
-              itens: pacotesDaSessao(sessao.semente, this.votoDoMolde(pacote, sessao.votoProjeto)),
-              tentativas: sessao.pacotesTentativas,
-              remontados: sessao.pacotesRemontadosEm !== null,
-            }
-          : null,
       cadeia: passoNoMinimo(efetivo, "cadeia")
         ? {
             blocos: blocosDaSessao(sessao.semente),
@@ -1089,71 +1183,6 @@ export class JuriEstadualService implements OnModuleInit {
     return { passo: passoEfetivo(normalizarPasso(sessao.passo), gate.etapa), etapa: gate.etapa };
   }
 
-  /**
-   * Uma tentativa de ORDEM — pacotes ou cadeia, a mesma doutrina da Chave do
-   * Jornal: cada envio conta; a resposta é certa ou não, nunca qual vaga errou;
-   * na certa, o passo anda e a habilidade é marcada pelas tentativas. Com a
-   * ordem já montada, responde certa sem contar — o F5 e o toque duplo não
-   * viram tentativa.
-   */
-  private async tentarOrdem(
-    escolaId: string,
-    estudanteId: string,
-    turmaId: string | null,
-    ordem: readonly string[],
-    qual: "pacotes" | "cadeia",
-  ) {
-    return this.prisma.comTenancy(async (tx) => {
-      const ctx = await this.garantirSessao(tx, escolaId, estudanteId, turmaId);
-      const s = ctx.sessao;
-      const feito = qual === "pacotes" ? s.pacotesRemontadosEm : s.cadeiaMontadaEm;
-      const tentativasGravadas = qual === "pacotes" ? s.pacotesTentativas : s.cadeiaTentativas;
-      if (feito) {
-        return { correta: true, tentativas: tentativasGravadas, passo: this.estado(s, ctx.gate).passo };
-      }
-      if (normalizarPasso(s.passo) !== qual) throw erroDeJogo("passo-invalido");
-      const certa = qual === "pacotes" ? ordemCertaDosPacotes(s.semente) : ordemCertaDaCadeia(s.semente);
-      if (!idsDaSessao(ordem, certa)) throw erroDeJogo("payload-invalido");
-      const gate = await this.gateDaSessao(tx, escolaId, ctx);
-
-      const tentativas = tentativasGravadas + 1;
-      const contar = qual === "pacotes" ? { pacotesTentativas: tentativas } : { cadeiaTentativas: tentativas };
-      if (!ordemConfere(ordem, certa)) {
-        await tx.exp06ef1bSessao.update({ where: { id: s.id }, data: contar });
-        return { correta: false, tentativas, passo: qual };
-      }
-
-      const proximo: Passo = qual === "pacotes" ? "cadeia" : "mariana";
-      const { count } = await tx.exp06ef1bSessao.updateMany({
-        where:
-          qual === "pacotes"
-            ? { id: s.id, escolaId, pacotesRemontadosEm: null, passo: qual }
-            : { id: s.id, escolaId, cadeiaMontadaEm: null, passo: qual },
-        data: {
-          ...contar,
-          ...(qual === "pacotes" ? { pacotesRemontadosEm: new Date() } : { cadeiaMontadaEm: new Date() }),
-          passo: proximo,
-        },
-      });
-      /* Sem linha atualizada, já estava montada: não conta nem marca de novo. */
-      if (count > 0) {
-        await this.marcar(
-          tx,
-          ctx,
-          gate,
-          qual === "pacotes" ? MARCADOR_DOS_PACOTES : MARCADOR_DA_CADEIA,
-          nivelPorTentativas(tentativas),
-        );
-      }
-      const depois = await tx.exp06ef1bSessao.findUniqueOrThrow({ where: { id: s.id } });
-      return {
-        correta: true,
-        tentativas: qual === "pacotes" ? depois.pacotesTentativas : depois.cadeiaTentativas,
-        passo: this.estado(depois, gate).passo,
-      };
-    }, escolaId);
-  }
-
   /** O pacote como as telas do professor o mostram. */
   private pacoteParaATela(pacote: PacoteLido) {
     return {
@@ -1173,7 +1202,7 @@ export class JuriEstadualService implements OnModuleInit {
     const linha = ehUuid(pacoteId)
       ? await tx.exp06ef1bPacote.findFirst({
           where: { id: pacoteId, escolaId, turmaId },
-          select: { ...SELECAO_DO_PACOTE, criadoEm: true },
+          select: { ...SELECAO_DO_PACOTE, criadoEm: true, imagensAprovadasEm: true },
         })
       : null;
     if (!linha) throw erroDeJogo("atividade-nao-encontrada");

@@ -4,10 +4,10 @@
 \chapter{Modelo de dados}
 \label{cap:dados}
 
-Um banco, um \emph{schema} lógico, 83 tabelas em \cd{public} e um \emph{schema}
+Um banco, um \emph{schema} lógico, 84 tabelas em \cd{public} e um \emph{schema}
 auxiliar (\cd{particoes}) fora do alcance do ORM. O número é uma contagem, e
 envelhece a cada migração: são os \cd{model} do \emph{schema} do Prisma
-(\arq{apps/\B{}api/\B{}prisma/\B{}schema.prisma}) em 2026-10-02, todos com \cd{@@map}, sem a
+(\arq{apps/\B{}api/\B{}prisma/\B{}schema.prisma}) em 2026-10-06, todos com \cd{@@map}, sem a
 \cd{\_prisma\_migrations} do próprio Prisma e sem nenhuma \emph{view}, que o
 banco não tem. Este capítulo explica a
 convenção de nomes, o modelo por área e as decisões de esquema que não são
@@ -370,6 +370,43 @@ A mesma migração acrescenta \cd{ajuda} ao \emph{CHECK}
 experiência --- nenhuma linha de \cd{experiencias} aponta para ele ---, mas o
 \emph{CHECK} espelha a tupla \cd{PRODUTOS} inteira, e
 \arq{tests/disponibilidades-postgres.spec.ts} compara os dois textos.
+
+\section{As falas do podcast de recapitulação: \cd{podcast\_roteiros}}
+\label{sec:podcast-dados}
+
+\adrr{ADR-150}. O podcast de recapitulação é um recurso da plataforma, e o
+roteiro de cada missão é fixo no código (\arq{<modulo>/\B{}podcast.ts}), com
+exceção das \textbf{falas do tema} --- as que contam o que a turma viu NAQUELA
+atividade, revisadas pelo professor na customização. Só elas moram aqui: uma
+linha por escola, missão e atividade. Tabela de PLATAFORMA, sem prefixo de
+experiência: serve a toda missão com podcast.
+
+\begin{itemize}
+  \item \cd{escola\_id NOT NULL}, RLS \cd{ENABLE} + \cd{FORCE} com a política
+    por escola e o \cd{GRANT} à \emph{role} de \emph{runtime}, guardado.
+  \item \cd{exp\_id} com \emph{CHECK} do formato da \adrr{ADR-110}
+    (\cd{exp04ef1b}, \cd{exp05ef1b} e, desde a \adrr{ADR-151}, \cd{exp06ef1b}).
+  \item \cd{atividade\_id} é \cd{uuid} \textbf{sem FK}: cada missão guarda a
+    atividade numa tabela própria (\cd{exp04ef1b\_pacotes},
+    \cd{exp05ef1b\_pacotes}, \cd{exp06ef1b\_pacotes}), e o id é de uma delas.
+  \item \cd{falas} é \cd{JSONB} com \emph{CHECK} de OBJETO
+    (\cd{\{ vaga: fala \}}); a forma de cada vaga é da missão, conferida na
+    escrita e na leitura. Uma linha torta é ignorada com aviso no \emph{log},
+    nunca derruba a tela.
+  \item \cd{aprovado\_por} e \cd{aprovado\_em}: quem aprovou e quando --- a
+    homologação da missão grava a linha na mesma transação do pacote, e o
+    segundo clique a substitui.
+  \item Único por \cd{(escola\_id, exp\_id, atividade\_id)}
+    (\cd{podcast\_roteiros\_um\_por\_atividade}).
+\end{itemize}
+
+\textbf{Sem linha}, a atividade que é o banco padrão intocado toca as falas do
+sheet, e a atividade da IA criada antes do podcast fica sem ele (409
+\cd{roteiro-indisponivel}). O Júri Estadual (\adrr{ADR-151}) não tem banco
+padrão: toda atividade dele precisa da linha, que a homologação grava com as
+três vagas (\cd{dois}, \cd{rafa}, \cd{mesa}) --- a de antes do podcast é 409. \textbf{A A Seleção não grava aqui}: as falas dela
+nascem no lote do preparo e moram em \cd{exp07ef1b\_coberturas.podcast}
+(\adrr{ADR-119}).
 
 \section{A rede: escola, lotação e o CPF}
 \label{sec:rede}
@@ -1334,9 +1371,11 @@ tabela, guardado.
   tema, os assuntos, o contexto opcional e a mostra em \cd{JSONB} (quatro
   categorias e dezesseis projetos, com o título, a escola, o perfil, a legenda,
   o bastidor, as \emph{hashtags} e a descrição da imagem); a \cd{midia} (as URLs
-  geradas, por projeto), a \cd{origem} (só \cd{ia}: não há acervo padrão),
-  \cd{ativo} (a em andamento) e os contadores da IA do preparo
-  (\cd{ia\_geracoes}, \cd{ia\_tokens}).\\
+  geradas, por projeto), \cd{imagens\_aprovadas\_em} (a SEGUNDA fase da
+  aprovação, \adrr{ADR-151}: nulo, a atividade não vai ao ar e as imagens
+  ainda se refazem; preenchido, elas congelam), a \cd{origem} (só \cd{ia}: não
+  há acervo padrão), \cd{ativo} (a em andamento) e os contadores da IA do
+  preparo (\cd{ia\_geracoes}, \cd{ia\_tokens}).\\
 \zebra \cd{exp06ef1b\_gates\_turma} & O \textbf{relógio da turma}, com a turma
   como chave: o pacote em andamento, a \textbf{rodada}, a etapa
   (\cd{exploracao} $|$ \cd{galeria}) e o carimbo do portão
@@ -1348,8 +1387,9 @@ tabela, guardado.
   e as três listas do feed (servidos, curtidos, permanências); o voto, a
   convicção e o carimbo do \emph{latch} 1; a \cd{auditoria} da galeria
   (\cd{JSONB} \cd{\{abertos, buscas\}}, sem o texto da busca); a ação da
-  revisão, o voto final e o carimbo do \emph{latch} 2; as tentativas e os
-  carimbos dos pacotes e da cadeia; os cartões de Mariana; a conclusão e a
+  revisão, o voto final e o carimbo do \emph{latch} 2; as tentativas e o
+  carimbo da cadeia (as colunas dos pacotes, \cd{pacotes\_tentativas} e
+  \cd{pacotes\_remontados\_em}, saíram com a \adrr{ADR-151}); os cartões de Mariana; a conclusão e a
   versão do instrumento. \textbf{Nenhum campo de texto livre.}\\
 \bottomrule
 \end{tabularx}
@@ -1357,8 +1397,8 @@ tabela, guardado.
 \begin{regra}
 \textbf{Os \emph{latches} são EQUIVALÊNCIAS com o passo gravado}, como no
 Jornal: \cd{votado\_em} existe se e só se o passo saiu de \cd{credencial} e
-\cd{feed}; \cd{revisado\_em}, se e só se está de \cd{pacotes} em diante;
-\cd{pacotes\_remontados\_em}, de \cd{cadeia} em diante;
+\cd{feed}; \cd{revisado\_em}, se e só se está de \cd{cadeia} em diante
+(até a \adrr{ADR-151}, de \cd{pacotes}, o passo que saiu);
 \cd{cadeia\_montada\_em}, de \cd{mariana} em diante; \cd{cartoes\_em}, de
 \cd{enquetes} em diante; e \cd{fim} se e só se há \cd{concluida\_em}. O voto,
 a convicção e o carimbo andam juntos, e a revisão também: \cd{manter} repete o
@@ -1411,7 +1451,9 @@ Retenção & A da vigência contratual, sem rotina de expurgo (\adrr{ADR-13}).\\
   (\cd{padrao} $|$ \cd{ia}). Um índice único parcial deixa só uma cobertura
   \cd{ativa} por turma; \emph{CHECK} cobra os 12 posts e o \cd{aprovada\_por} da
   cobertura de IA. \cd{podcast} guarda as três falas do Bloco 2 do podcast de
-  recapitulação no tema dela (nulo = as do roteiro aprovado, \adrr{ADR-119}).
+  recapitulação no tema dela (nulo = as do roteiro aprovado, \adrr{ADR-119});
+  a A Seleção é a única missão com podcast que não usa \cd{podcast\_roteiros}
+  (\adrr{ADR-150}).
   \cd{imagens\_aprovadas\_em} é a segunda fase da aprovação (\adrr{ADR-146}):
   nulo, a cobertura existe mas não vai ao ar.\\
 \zebra \cd{exp07ef1b\_gates\_turma} & O relógio da turma: \cd{exploracao} $|$
@@ -1816,6 +1858,21 @@ decisão \emph{futura}, com DPA e \emph{k}-anonimato --- e não sai de um
   que já existiam entram com \cd{midia\_aprovada = midia} --- nenhuma turma
   perde imagem por uma regra posterior. Sem RLS nova: a coluna herda a da
   tabela.\\
+\arq{20261006120000\_\B{}exp06ef1b\_\B{}ajustes\_\B{}do\_\B{}po} & O Júri
+  Estadual sem os pacotes e com as imagens aprovadas (\adrr{ADR-151}). As
+  sessões em \cd{pacotes} vão para \cd{cadeia}; \cd{pacotes\_tentativas} e
+  \cd{pacotes\_remontados\_em} são APAGADAS (a marca da EF06CO07 continua em
+  \cd{evidencias\_marcas}, e nenhum dado morava só nelas); os \emph{CHECKs} de
+  passo, de \emph{latch} 2 e de tentativas são recriados sem o passo. E
+  \cd{imagens\_aprovadas\_em} em \cd{exp06ef1b\_pacotes}, com os pacotes que já
+  existiam entrando aprovados. Sem RLS nova: as colunas herdam a da tabela.\\
+\zebra \arq{20261006200000\_\B{}podcast\_\B{}roteiros} & As falas do tema do podcast
+  de recapitulação (\adrr{ADR-150}): \cd{podcast\_roteiros}, tabela da
+  plataforma, com \cd{escola\_id NOT NULL}, RLS \cd{FORCE} e política por
+  escola; o único por escola, missão e atividade; os \emph{CHECKs} do formato
+  de \cd{exp\_id} e de \cd{falas} como objeto; e o \cd{GRANT} à \emph{role} de
+  \emph{runtime}, guardado. \cd{atividade\_id} sem FK: a atividade mora na
+  tabela de cada missão.\\
 \bottomrule
 \end{tabularx}
 
