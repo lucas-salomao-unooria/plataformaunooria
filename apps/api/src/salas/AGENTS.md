@@ -40,6 +40,11 @@ Complementa o `AGENTS.md` de `apps/api`, que vence em conflito.
 - **Fixture de teste que abre experiência precisa de `tests/liberar-de-teste.ts`.**
   Quatro suítes quebraram quando a guarda entrou — quem quebrar com
   `missao-nao-liberada` não tem bug, tem fixture faltando.
+- **ENCERRAR roda o gancho `aoEncerrarMissao`** (ADR-154), na transação do
+  `PUT`: quem precisa saber que a missão fechou numa turma se registra no
+  `onModuleInit` (hoje só a evidência, para a régua que só conta ao encerrar).
+  A dependência é `evidencias → salas`, nunca o contrário; e um erro no gancho
+  desfaz o encerramento.
 - **A sala do professor diz quantas equipes cada missão tem** (`missoes[].equipes`,
   E13/ADR-111, de `equipes/consulta.ts#contarEquipesDaTurma`) — só no schema do
   PROFESSOR: `MissaoNaGradeSchema` também responde `/salas/minhas`, e a contagem da

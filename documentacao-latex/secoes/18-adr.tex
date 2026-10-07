@@ -9,7 +9,7 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{152 decisões}, numeradas até ADR-152. A 132 (a Ajuda com
+São \textbf{153 decisões}, numeradas até ADR-154. A 153 (a evidência do Unoovista) e a 154 nasceram no mesmo dia, em frentes paralelas. A 132 (a Ajuda com
 avatar) entrou no código antes de ter seção aqui, e por um dia o número foi
 citado sem existir; a 133 pulou para não colidir com ela. A 133 e a 134 nasceram no mesmo dia, em frentes paralelas
 (Unoovista e Unoochat), e entraram juntas no merge; a 135 e a 136 levaram as
@@ -203,6 +203,7 @@ que a cercam.
 \adrr{ADR-150} & O podcast de recapitulação vira recurso da plataforma, com rotas únicas, e o professor revisa as falas do tema na customização & 2026-10-06 & Aceita; revê a \adrr{ADR-119}\\
 \zebra \adrr{ADR-151} & O Júri Estadual volta ao foco EF06CO10, aprova as imagens antes da turma e ganha o podcast & 2026-10-06 & Aceita; substitui em parte a \adrr{ADR-137}; complementada pela \adrr{ADR-152}\\
 \adrr{ADR-152} & O Júri Estadual recupera o ciclo do voto: salvar pesa, a justificativa vem antes e depois, complementar, e a rodada de desvio & 2026-10-07 & Aceita; complementa a \adrr{ADR-151}\\
+\adrr{ADR-154} & A Missão Tempestade mede a evidência numa atividade sintética, com rodada da turma, a melhor resposta e o nível só ao encerrar a missão & 2026-10-07 & Aceita; aplica a \adrr{ADR-112}\\
 \bottomrule
 \end{tabularx}
 
@@ -13652,3 +13653,101 @@ desvio ou pela justificativa; o painel de habilidades mostrar muita gente com
 \enquote{atingiu} só pela pergunta, sem exploração (então o motor de evidência
 ganha um teto por marcador ausente, para todas as missões); ou o DS tirar os
 ícones de comentar e compartilhar do \cd{PostCard.Actions}.
+
+\section{ADR-154 --- A Missão Tempestade mede a evidência numa atividade sintética, com rodada da turma, a melhor resposta e o nível só ao encerrar a missão}
+\label{adr:exp02em1b-evidencia}
+
+\textbf{Data.} 2026-10-07. \textbf{Status.} Aceita. \textbf{Aplica} a
+\adrr{ADR-112} (a evidência pedagógica por atividade e rodada) à única missão
+do Ensino Médio, que a \adrr{ADR-130} deixou sem atividades.
+
+\begin{especificacao}{Contexto}
+Em 2026-10-07 o PO mandou quatro perguntas de múltipla escolha para a Missão
+Tempestade (\cd{exp02em1b}, 2ª série EM, Unidade 1), na tela de resultado:
+\textbf{EM13CO14}, \textbf{EM13CO08}, \textbf{EM13CO24} e \textbf{EM13CO26}.
+Segundo ele, nenhuma ação isolada da missão (conversar com o Cientista, escolher
+fontes, mandar as equipes) diz se o estudante compreendeu o mecanismo da IA, a
+confiabilidade dos dados, o impacto nas pessoas ou os direitos envolvidos. A
+missão não tinha o que a evidência exige: não tem atividade (ficou fora da
+\adrr{ADR-130}, \enquote{até ser refeita}) nem rodada de turma. O que existe é a
+\cd{tentativa} de cada estudante, com \enquote{Tentar de novo} livre, e o
+\enquote{Zerar a turma} apaga as sessões e volta a tentativa a 1.
+\end{especificacao}
+
+\textbf{Decisão} (do Lucas, em 2026-10-07).
+
+\begin{itemize}
+  \item \textbf{A atividade é a sintética \cd{"turma"}}, o id que as equipes da
+    missão já usam. Com outro, a cópia do nível para os colegas de computador
+    não acharia a equipe, e ficaria muda sem erro.
+  \item \textbf{A rodada é da turma}: a tabela \cd{exp02em1b\_gate\_turma}, que
+    só o \enquote{Zerar a turma} sobe e que sobrevive ao zerar, e a coluna
+    \cd{rodada} da sessão, gravada quando ela nasce. A sessão de uma rodada que
+    acabou não responde.
+  \item \textbf{A pergunta reaparece no resultado de cada tentativa, e vale a
+    MELHOR resposta}: a ficha declara \cd{respostas: "melhor"}, e a marca única
+    da pergunta só muda quando a resposta nova é melhor, sem guardar cada
+    resposta. As outras missões continuam com \enquote{vale a primeira}.
+  \item \textbf{O nível só conta quando o professor ENCERRA a missão na Sala de
+    Aula} (\cd{contaAoEncerrarAMissao}), e não no \enquote{encerrar} do relógio,
+    que volta atrás com \enquote{+2 min}. Até lá a marca está guardada e o
+    painel diz \enquote{O nível aparece quando você encerrar a missão na Sala de
+    Aula}. O encerramento roda um gancho novo, \cd{SalasService.aoEncerrarMissao},
+    na transação de quem encerrou: a evidência própria é gravada pelo mesmo
+    caminho da marca, com cópia para a equipe e histórico. Encerrada, a porta
+    fecha e a pergunta responde 403; reliberada, a resposta melhor espera o
+    próximo encerramento.
+  \item \textbf{O \enquote{Tentar de novo} não espera as respostas}: nada trava o
+    recomeço.
+  \item \textbf{A escolha usa um componente novo da seção \cd{unooriaai}} do
+    DS, porque a seção não tinha escolha única e as perguntas falam de dentro do
+    clone, que a missão nunca abandona.
+  \item \textbf{Os critérios por nível foram redigidos a partir das
+    alternativas}, porque o PO não mandou o \enquote{por que essa calibragem}
+    desta missão.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{A \cd{tentativa} como rodada}, sem migração. Com recomeço livre e
+    o resultado como melhor rodada, o estudante chegaria a \enquote{atingiu} por
+    exclusão em três tentativas, e o zerar faria as respostas novas colidirem
+    com as marcas antigas.
+  \item \textbf{Criar atividades de verdade agora}, como as das outras
+    missões. É o \enquote{refazer} adiantado, e mexeria nas equipes, no hub e na
+    suíte 10.
+  \item \textbf{Esperar a missão ser refeita}: deixaria o Ensino Médio sem
+    evidência.
+  \item \textbf{Vale a primeira resposta}, como nas outras missões. A pergunta
+    reaparece a cada tentativa, e o Lucas quis que a reflexão de quem tentou de
+    novo pudesse contar.
+  \item \textbf{A projeção \enquote{a revisar} até confirmar} como mecanismo de
+    espera: o banco só aceita \cd{a\_revisar} na cópia da projeção (um CHECK de
+    coerência), e o encerramento já é o ato do professor que confirma.
+  \item \textbf{O \cd{RadioGroup} da plataforma} na tela de resultado: misturaria
+    a seção da Unooria dentro do clone.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{\enquote{Atingiu} por exclusão}: com três alternativas, quem muda
+    de resposta a cada tentativa chega à melhor. A tela nunca diz se acertou, o
+    que reduz o risco sem eliminá-lo. Aceito pelo Lucas.
+  \item \textbf{Professor que nunca encerra a missão nunca vê o nível.} O painel
+    diz isso, mas a turma que parou no meio fica \enquote{sem avaliação}.
+  \item \textbf{Os registros ficam com \cd{atividade\_id = "turma"}}: se a missão
+    ganhar atividades de verdade, o histórico antigo continua nesse id.
+  \item \textbf{A régua tem dois comportamentos só dela}, e o motor da evidência
+    ganhou dois ramos que as outras missões não exercitam.
+  \item \textbf{A suíte de ponta a ponta} (\arq{04-unoogpt.mjs}) passou a ir até o
+    resultado e às perguntas, mas só corre na cópia principal, depois do
+    \emph{merge}, com a IA real.
+\end{itemize}
+
+\textbf{Gatilho.} A missão ser refeita com atividades (a atividade sintética
+sai); o piloto mostrar turmas com \enquote{atingiu} concentrado em quem tentou
+muitas vezes (então a régua volta a \enquote{vale a primeira}); ou professores
+que não encerram a missão (então o nível passa a contar no zerar também).
+

@@ -23,6 +23,14 @@ legenda numa transação SÓ DELA, depois do latch da publicação: a IA leva at
 **A terceira é o Jornal da Escola (`exp04ef1b`)**: `fichas/exp04ef1b.ts`
 (EF15CO04 por `pistas`, EF15CO02 por `chave`, EF04CO08 por `edicao-2`, `p1` e
 `p2`), as três ações marcadas DENTRO das transações dos latches e da Chave.
+**A Missão Tempestade (`exp02em1b`, ADR-154)** é a primeira do EM e a única com
+duas regras próprias, declaradas na ficha: `respostas: "melhor"` (a pergunta
+reaparece a cada tentativa, e a marca única só muda para melhor) e
+`contaAoEncerrarAMissao` (a marca é guardada, mas só vira evidência quando o
+professor ENCERRA a missão na Sala de Aula — o gancho
+`SalasService.aoEncerrarMissao` chama `aoEncerrarAMissao` na transação de quem
+encerrou, pelo mesmo `gravarPropria` da marca). A atividade é a sintética
+`"turma"` (a das equipes) e a rodada é a da turma (`exp02em1b_gate_turma`).
 
 Três tabelas de PLATAFORMA (sem prefixo, como `liberacoes` e `equipes`), todas
 com `escola_id` + RLS forçada:
@@ -62,7 +70,8 @@ com `escola_id` + RLS forçada:
   FICA com a confirmação que tinha (`diferencaDasCopias`).
 - **Múltipla escolha: o gabarito é do servidor.** O estudante recebe a pergunta
   sem `status`, responde só a alternativa, e recebe `{ enviada: true }` —
-  sempre, na primeira e na segunda. **Vale a PRIMEIRA resposta.** Atividade e
+  sempre, na primeira e na segunda. **Vale a PRIMEIRA resposta** — salvo a
+  ficha com `respostas: "melhor"` (ADR-154). Atividade e
   rodada NUNCA vêm do cliente: saem do resolvedor da missão.
 - **As alternativas saem EMBARALHADAS, numa ordem nova a cada leitura**
   (`regras.ts#embaralhar`, Fisher–Yates sobre uma cópia). A ficha as guarda na
