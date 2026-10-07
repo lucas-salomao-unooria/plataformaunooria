@@ -873,10 +873,14 @@ O \cd{GestureHint} se posiciona contra o pai, e a mídia com \cd{src} não
 \end{tabularx}
 
 \begin{atencao}
-\textbf{O que a 0.2.11 não deixa esconder, e as \emph{props} que enganam.} Os
-botões de comentar, compartilhar e salvar do \cd{PostCard.Actions} ficam na
-pílula sem ação --- o DS não tem \emph{prop} para escondê-los, e escondê-los por
-CSS seria mexer na aparência do controle (pedido: ações configuráveis). O
+\textbf{O que a 0.2.11 não deixava esconder, e as \emph{props} que enganam.} Os
+botões de comentar, compartilhar e salvar do \cd{PostCard.Actions} ficavam na
+pílula sem ação --- o DS não tinha \emph{prop} para escondê-los, e escondê-los por
+CSS seria mexer na aparência do controle (pedido: ações configuráveis).
+\textbf{Resolvido pela 0.2.18}, que publicou \cd{saved}, \cd{onSave},
+\cd{onComment} e \cd{onShare}: desde a exp06ef1b 0.3.0 (\adrr{ADR-152}) o
+salvar pesa no feed, e comentar e compartilhar respondem com o aviso da
+comissão. O
 \cd{ListItem} não aceita \cd{type} nem \cd{disabled}: o desabilitado é
 \cd{aria-disabled} com guarda no toque. O \cd{TopBar} reserva os 44\,px da
 barra de estado por padrão, e vai com \cd{withStatusBarInset=\{false\}}. O
