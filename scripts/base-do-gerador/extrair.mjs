@@ -72,6 +72,15 @@ export const FONTES = [
   ["apps/api/src/recursos/AGENTS.md", "agents-api-recursos.md"],
   ["apps/api/src/evidencias/AGENTS.md", "agents-api-evidencias.md"],
   ["apps/api/src/equipes/AGENTS.md", "agents-api-equipes.md"],
+  // o que a missão nova pluga fora do módulo dela, e que o PRD do gerador
+  // citava à mão: o podcast de recapitulação (ADR-150: a `FonteDoPodcast`, as
+  // vagas do tema, a régua das falas) e, no hub, a sala e o guia da aula
+  // (ADR-65, ADR-100), a ficha que despacha por `expId`, o embed e a
+  // allowlist do BFF
+  ["apps/api/src/podcast/AGENTS.md", "agents-api-podcast.md"],
+  ["apps/hub/app/(plataforma)/professor/AGENTS.md", "agents-hub-professor.md"],
+  ["apps/hub/app/(plataforma)/professor/entre-redes/AGENTS.md", "agents-hub-entre-redes.md"],
+  ["apps/hub/app/exp/AGENTS.md", "agents-hub-exp.md"],
   ["scripts/e2e/AGENTS.md", "agents-e2e.md"],
   ["docs/agents/domain.md", "glossario-dominio.md"],
   ["docs/DECISOES.md", "decisoes-adr.md"],

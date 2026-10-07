@@ -7,6 +7,7 @@ import { Contrato } from "../openapi/contrato";
 import {
   AcaoDaGaleriaSchema,
   CartoesSchema,
+  DesvioSchema,
   EstadoSchema,
   EventosDoFeedSchema,
   FeedSchema,
@@ -125,7 +126,7 @@ export class JuriEstadualController {
   @Contrato({
     resumo: "O que a tela mediu (curtidas e permanências) e, se pedido, o próximo post.",
     descricao:
-      "A curtida é ESTADO (`curtiu: true/false`; descurtir devolve o peso), a permanência é FATO (mais de 5 s num post, uma vez por post). As curtidas entram antes de o motor escolher o próximo, porque é a curtida que afunila: com duas curtidas na mesma área, o resto do feed é dela. `proximo: true` quando a tela chegou ao último post servido: o servidor serve UM a mais, até dez.",
+      "A curtida e o salvo são ESTADO (`curtiu`/`salvou: true/false`; desfazer devolve o peso), a permanência é FATO (mais de 5 s num post, uma vez por post). Os três sinais entram antes de o motor escolher o próximo, porque são eles que afunilam: com duas curtidas na mesma área, o resto do feed é dela. Comentar e compartilhar não pesam e não viajam. `proximo: true` quando a tela chegou ao último post servido: o servidor serve UM a mais, até dez.",
     corpo: EventosDoFeedSchema,
     resposta: FeedSchema,
     notas: [
@@ -143,13 +144,13 @@ export class JuriEstadualController {
   @Post("voto")
   @HttpCode(200)
   @Contrato({
-    resumo: "A cédula lacrada — o voto e a convicção (latch).",
+    resumo: "A cédula lacrada — o voto, a convicção e a justificativa de antes (latch).",
     descricao:
-      "O gesto que a missão confronta, e ele é IRREVERSÍVEL: grava o projeto, a convicção, o carimbo e o passo `lacrada` juntos. Depois dele, a criança espera a turma (o pico): o professor projeta a dispersão de votos e libera a Galeria Oculta.",
+      "O gesto que a missão confronta, e ele é IRREVERSÍVEL: grava o projeto, a convicção, a JUSTIFICATIVA (um cartão de motivo, `v1`–`v3`, e o trecho grifado: o índice de uma frase da legenda do estande votado), o carimbo e o passo `lacrada` juntos. Depois dele, a criança espera a turma (o pico): o professor projeta a dispersão de votos e libera a Galeria Oculta. A justificativa volta ao lado dos estandes escondidos, na revisão.",
     corpo: VotoSchema,
     resposta: EstadoSchema,
     notas: [
-      "Com menos de dez posts servidos responde **409** `feed-incompleto`; projeto que não apareceu no feed DESTA criança, **409** `projeto-fora-do-feed`.",
+      "Com menos de dez posts servidos responde **409** `feed-incompleto`; projeto que não apareceu no feed DESTA criança, **409** `projeto-fora-do-feed`; `trecho` que não é uma frase da legenda dele, **400** `payload-invalido`.",
       "O segundo voto — inclusive dois simultâneos — responde **409** `voto-ja-lacrado`.",
       PORTA,
     ],
@@ -198,13 +199,13 @@ export class JuriEstadualController {
   @Post("revisao")
   @HttpCode(200)
   @Contrato({
-    resumo: "Manter ou trocar o voto, depois da galeria (latch).",
+    resumo: "Manter, trocar ou complementar o voto, depois da galeria, com a justificativa de depois (latch).",
     descricao:
-      "`trocar` aceita qualquer um dos dezesseis estandes (a galeria mostrou todos), menos o do voto lacrado. Grava a ação, o voto final, o carimbo e o passo `cadeia` juntos, e marca a EF06CO10 (`auditoria`: quantos estandes ocultos ela abriu) e a EF06CO01 (`classificacao`: se buscou pela hashtag de outra área e abriu um oculto dela) pelo que a criança fez na galeria antes de decidir.",
+      "`trocar` aceita qualquer um dos dezesseis estandes (a galeria mostrou todos), menos o do voto lacrado; `complementar` mantém o voto e indica também outro estande. Toda ação leva a justificativa de DEPOIS — um cartão de motivo (`r1`–`r3`) e o trecho grifado, da legenda do estande da decisão (o do voto, ao manter). Grava a ação, o voto final, o complemento, a justificativa, o carimbo e o passo `revisada` (a espera da rodada de desvio) juntos, e marca a EF06CO10 (`auditoria`: quantos estandes ocultos ela abriu) e a EF06CO01 (`classificacao`: se buscou pela hashtag de outra área e abriu um oculto dela) pelo que a criança fez na galeria antes de decidir. Quem não abriu nem buscou nada fica SEM a marca de ação (ausência): decide a pergunta da habilidade.",
     corpo: RevisaoDoVotoSchema,
     resposta: EstadoSchema,
     notas: [
-      "`trocar` para o mesmo projeto do voto responde **400** `payload-invalido`.",
+      "`trocar` ou `complementar` com o mesmo projeto do voto, ou `trecho` fora da legenda, responde **400** `payload-invalido`.",
       "A segunda revisão — inclusive duas simultâneas — responde **409** `voto-ja-revisado`. Antes da galeria, **403** `galeria-nao-liberada`. Com a rodada trocada no meio (o professor zerou), **409** `rodada-mudou`.",
       PORTA,
     ],
@@ -216,8 +217,45 @@ export class JuriEstadualController {
       req.auth.escolaId,
       req.auth.usuarioId,
       turmaDo(req.auth),
-      revisao.acao === "trocar" ? { acao: "trocar", projetoId: revisao.projetoId } : { acao: "manter" },
+      revisao,
     );
+  }
+
+  @Post("desvio/eventos")
+  @HttpCode(200)
+  @Contrato({
+    resumo: "A rodada de desvio: o que a tela mediu e, se pedido, o próximo post.",
+    descricao:
+      "Depois da revisão, o professor libera uma rodada curta do feed (seis posts) para a criança interagir com o que o feed dela não mostrava — e ver o feed mudar. O MESMO corpo e o MESMO motor do feed do júri, com os pesos SÓ desta rodada: os dois primeiros posts vêm das duas áreas que menos apareceram para ela, e o resto segue as curtidas e os salvos que ela fizer agora. Na primeira chamada (mesmo vazia) serve a abertura. Com os seis servidos, `comparacao` traz quantos posts de cada área o feed do júri e o desvio trouxeram.",
+    corpo: EventosDoFeedSchema,
+    resposta: DesvioSchema,
+    notas: [
+      "Antes de o professor liberar (ou antes da revisão do voto) responde **403** `desvio-nao-liberado`; depois de concluído, **409** `desvio-ja-concluido`.",
+      "Post que esta rodada não serviu responde **400** `post-desconhecido`.",
+      PORTA,
+    ],
+  })
+  desvio(@Body() corpo: unknown, @Req() req: Autenticado) {
+    limitar(req.auth.usuarioId, 240);
+    const eventos = valida(EventosDoFeedSchema, corpo);
+    return this.missao.eventosDoDesvio(req.auth.escolaId, req.auth.usuarioId, turmaDo(req.auth), eventos);
+  }
+
+  @Post("desvio/concluir")
+  @HttpCode(200)
+  @Contrato({
+    resumo: "Encerra a rodada de desvio e abre a cadeia.",
+    descricao:
+      "Leva a sessão de `revisada` a `cadeia` e carimba o desvio, no mesmo update. Pede os seis posts servidos e ao menos uma curtida ou um salvo: sem interação, não houve desvio. **Não marca evidência** — a vivência é obrigatória, não medida; o painel mostra quem concluiu. Encerrar de novo devolve o mesmo estado.",
+    resposta: EstadoSchema,
+    notas: [
+      "Com menos de seis posts responde **409** `desvio-incompleto`; sem curtida nem salvo, **409** `desvio-sem-interacao`; antes da liberação, **403** `desvio-nao-liberado`.",
+      PORTA,
+    ],
+  })
+  concluirDesvio(@Req() req: Autenticado) {
+    limitar(req.auth.usuarioId);
+    return this.missao.concluirDesvio(req.auth.escolaId, req.auth.usuarioId, turmaDo(req.auth));
   }
 
   @Post("cadeia")
@@ -225,7 +263,7 @@ export class JuriEstadualController {
   @Contrato({
     resumo: "Uma tentativa de montar a cadeia: Interações → Dados → Algoritmo → Bolha.",
     descricao:
-      "Cada envio é uma TENTATIVA. A resposta diz só se a ordem confere — nunca qual vaga errou. Na certa, o passo vai a `mariana` e a EF06CO03 (`cadeia`) é marcada pelo número de tentativas (1 = atingiu, 2–3 = em processo, mais = não atingiu). Com a cadeia já montada, responde `correta: true` sem contar outra tentativa.",
+      "Do passo `cadeia` (depois da rodada de desvio). Cada envio é uma TENTATIVA. A resposta diz só se a ordem confere — nunca qual vaga errou. Na certa, o passo vai a `mariana` e a EF06CO03 (`cadeia`) é marcada pelo número de tentativas (1 = atingiu, 2–3 = em processo, mais = não atingiu). Com a cadeia já montada, responde `correta: true` sem contar outra tentativa.",
     corpo: OrdemDaCadeiaSchema,
     resposta: TentativaSchema,
     notas: [

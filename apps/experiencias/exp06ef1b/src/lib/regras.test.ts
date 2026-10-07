@@ -26,6 +26,7 @@ const post = (projetoId: string, tipo: "apresentacao" | "bastidor" = "apresentac
   escola: "Escola Estadual Centro",
   perfil: "@estande.centro",
   texto: "Uma legenda.",
+  legenda: "Uma legenda. Com duas frases.",
   hashtags: ["#robotica"],
   imagem: { url: null, alt: "Foto do estande." },
 });

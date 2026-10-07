@@ -15,7 +15,9 @@ import {
   rotuloCurtoDaArea,
   rotuloDoBotao,
   textoDaInvisibilidade,
+  sujeito,
   textoDaRevisao,
+  textoDoDesvio,
   textoDoQueFalta,
   textoDosVotos,
   textoDosVotosDaArea,
@@ -32,8 +34,9 @@ import { ListaDoJuri } from "./lista-do-juri";
  * jurados votaram", a lousa do pico e a folha da turma, AO VIVO.
  *
  * **UM botão, e ele diz a etapa de DESTINO.** O rótulo sai de `proximaEtapa`,
- * que a api calcula: Liberar a Galeria Oculta, e depois nada. Ele nunca volta
- * (409 `transicao-de-etapa-invalida`).
+ * que a api calcula: Liberar a Galeria Oculta, depois Liberar a rodada de
+ * desvio (2026-10-07, o pedido do PO), e depois nada. Ele nunca volta (409
+ * `transicao-de-etapa-invalida`).
  *
  * **Duas superfícies, e só UMA vai para o telão.** O cartão "Painel de
  * Votação da Turma" não tem nome: são os votos por área (o voto INICIAL,
@@ -186,15 +189,15 @@ export function PainelDaAulaJuriEstadual({
           {rotulo ? (
             <div className="flex flex-col gap-2">
               <p className="max-w-3xl text-[12px] leading-snug text-unooria-neutral-600">
-                Quando a maioria tiver votado, projete o painel de votação abaixo e explore a divergência com as
-                perguntas da plenária — só depois libere a galeria. Quem ainda estiver no feed continua, vota quando
-                terminar e entra na galeria em seguida.
+                {proxima === "desvio"
+                  ? `${textoDaRevisaoNaFolha(resumo.revisaram, y, resumo.porComputador)} Quando a maioria tiver revisado o voto, libere a rodada de desvio: cada computador interage com o que não aparecia para ele e vê o feed mudar. Quem ainda estiver na galeria termina a revisão e entra direto nela.`
+                  : "Quando a maioria tiver votado, projete o painel de votação abaixo e explore a divergência com as perguntas da plenária — só depois libere a galeria. Quem ainda estiver no feed continua, vota quando terminar e entra na galeria em seguida."}
               </p>
               <div>
                 <Button
                   variant="primary"
                   size="md"
-                  leftIcon={<Icon name="visibility" size={18} />}
+                  leftIcon={<Icon name={proxima === "desvio" ? "swap_horiz" : "visibility"} size={18} />}
                   onClick={() => void avancar()}
                   isDisabled={enviando}
                   data-gate={proxima}
@@ -208,8 +211,9 @@ export function PainelDaAulaJuriEstadual({
             </div>
           ) : (
             <p className="text-[13px] leading-snug text-unooria-neutral-700">
-              A Galeria Oculta está aberta. Cada computador segue no próprio ritmo pela revisão do voto, pela cadeia,
-              pelo caso Mariana e pelas enquetes. Para aplicar de novo, use Zerar a turma, mais abaixo.
+              A rodada de desvio está aberta. Cada computador segue no próprio ritmo pela nova rodada do feed, pela
+              cadeia, pelo caso Mariana e pelas enquetes. {textoDoDesvio(resumo.desviaram, y, resumo.porComputador)}{" "}
+              Para aplicar de novo, use Zerar a turma, mais abaixo.
             </p>
           )}
 
@@ -219,10 +223,11 @@ export function PainelDaAulaJuriEstadual({
         </div>
       </Card>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         <MetricCard title="Entraram na mostra" value={`${resumo.entraram}/${resumo.total}`} />
         <MetricCard title="Lacraram o voto" value={`${votaram}/${y}`} />
         <MetricCard title="Revisaram o voto" value={`${resumo.revisaram}/${y}`} />
+        <MetricCard title="Fizeram a rodada de desvio" value={`${resumo.desviaram}/${y}`} />
         <MetricCard title="Concluíram a missão" value={`${resumo.concluiram}/${y}`} />
       </div>
       {resumo.porComputador ? (
@@ -250,16 +255,23 @@ export function PainelDaAulaJuriEstadual({
   );
 }
 
+/** "18 de 26 jurados revisaram o voto." — o número que decide a hora da rodada de desvio. */
+function textoDaRevisaoNaFolha(revisaram: number, total: number, porComputador: boolean): string {
+  return `${revisaram} de ${total} ${sujeito(porComputador, total)} ${revisaram === 1 && total === 1 ? "revisou" : "revisaram"} o voto.`;
+}
+
 /**
  * O que vai para o telão (E4-PROF-01): quantos votaram, os votos por área e,
  * depois da galeria, a invisibilidade média e os votos revisados. Nenhum nome.
  */
 function PainelParaProjetar({ painel }: { painel: PainelDoJuri }) {
   const { resumo, etapa } = painel;
-  const naGaleria = etapa === "galeria";
+  /* Da galeria em diante (a rodada de desvio também): a lousa pode mostrar o que a galeria revelou. */
+  const naGaleria = etapa !== "exploracao";
   const totalAntes = totalDeVotos(resumo.votosPorArea);
   const totalDepois = totalDeVotos(resumo.votosRevisadosPorArea);
-  const comRevisao = naGaleria && resumo.revisao.trocaram + resumo.revisao.mantiveram > 0;
+  const comRevisao =
+    naGaleria && resumo.revisao.trocaram + resumo.revisao.mantiveram + resumo.revisao.complementaram > 0;
   const antes = votosEmPercentual(resumo.votosPorArea);
   const depois = votosEmPercentual(resumo.votosRevisadosPorArea);
   const falta = textoDoQueFalta(resumo.computadores, resumo.porComputador);

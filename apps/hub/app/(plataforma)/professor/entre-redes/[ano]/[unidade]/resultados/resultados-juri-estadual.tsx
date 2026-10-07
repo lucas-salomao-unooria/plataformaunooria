@@ -301,10 +301,12 @@ export async function ResultadosJuriEstadual({
           ) : null}
 
           {/* Depois da aula: o podcast da plataforma (ADR-150), com as falas que o
-              professor revisou na criação. O episódio conta a virada da missão,
-              e o módulo de podcast não trava por etapa: o aviso no topo diz a
-              hora — só depois da Galeria Oculta. A etapa é a do painel (a mais
-              fresca), e sem ele a gravada no pacote. */}
+              professor revisou na criação. O podcast é do professor e é
+              OPCIONAL (decisão do Lucas, 2026-10-07): ele toca na tela dele,
+              para a sala, se e quando quiser. O episódio conta a virada da
+              missão, então o aviso no topo RECOMENDA a hora — o fechamento,
+              depois da Galeria Oculta —, sem travar. A etapa é a do painel (a
+              mais fresca), e sem ele a gravada no pacote. */}
           <CartaoDoPodcast
             expId={EXP_ID}
             turmaId={turma}

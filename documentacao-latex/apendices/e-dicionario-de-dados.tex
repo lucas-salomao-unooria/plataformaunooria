@@ -96,8 +96,8 @@ Os diagramas entidade-relacionamento estão no Capítulo~\ref{cap:dados}.
 \cd{exp06ef2b\_reflexoes} & Tenant & O \enquote{Meu percurso} (texto livre do estudante)\\
 \zebra \cd{exp06ef2b\_gates\_turma} & Tenant & A etapa da aula, por turma\\
 \cd{exp06ef1b\_pacotes} & Tenant & A ATIVIDADE do Júri Estadual de Projetos: as 4 áreas e os 16 projetos que a IA gerou e o professor aprovou, as URLs das imagens e \cd{imagens\_aprovadas\_em}, a segunda fase da aprovação (\adrr{ADR-151})\\
-\zebra \cd{exp06ef1b\_gates\_turma} & Tenant & A etapa da aula (a Galeria Oculta), a atividade em andamento e a rodada, por turma\\
-\cd{exp06ef1b\_sessoes} & Tenant & Uma sessão por estudante, pacote e rodada: o feed servido, as curtidas, os dois votos, a auditoria da galeria, a cadeia e os cartões --- sem texto livre\\
+\zebra \cd{exp06ef1b\_gates\_turma} & Tenant & A etapa da aula (a Galeria Oculta e a rodada de desvio, \adrr{ADR-152}), a atividade em andamento e a rodada, por turma\\
+\cd{exp06ef1b\_sessoes} & Tenant & Uma sessão por estudante, pacote e rodada: o feed servido, as curtidas e os salvos, os dois votos com a justificativa por cartão e índice, o complemento, a auditoria da galeria, a rodada de desvio, a cadeia e os cartões --- sem texto livre\\
 \zebra \cd{exp07ef1b\_coberturas} & Tenant & A ATIVIDADE da A Seleção: o tema homologado, os 12 posts com o gabarito (e os comentários com autor), as URLs da mídia, o carimbo da aprovação das imagens (\adrr{ADR-146}) e as três falas do podcast\\
 \cd{exp07ef1b\_gates\_turma} & Tenant & A etapa da aula, a cobertura e a rodada, por turma\\
 \zebra \cd{exp07ef1b\_sessoes} & Tenant & Uma sessão por estudante, cobertura e rodada: a tríade, a legenda, a matriz e o par\\
@@ -1438,35 +1438,59 @@ as colunas da sessão, que é onde o feed e os \emph{latches} moram.
 \pk{id} & \cd{UUID} & \cd{UNIQUE} em (pacote, rodada, estudante):
   \cd{exp06ef1b\_sessao\_unica\_por\_rodada}.\\
 \zebra \cd{passo} & \cd{TEXT} & O passo GRAVADO, no vocabulário de
-  \arq{regras/passos.ts}. Nunca \cd{galeria}: a etapa da turma o impõe.\\
+  \arq{regras/passos.ts}. Nunca \cd{galeria} nem \cd{desvio}: a etapa da
+  turma os impõe.\\
 \cd{semente} & \cd{TEXT} & De 8 a 64 caracteres, aleatória, do servidor. Dela
   saem a abertura, o embaralhamento e os ids opacos --- o F5 rende o mesmo
   feed.\\
-\zebra \cd{posts\_\B{}servidos}, \cd{curtidos}, \cd{permanencias} & \cd{JSONB} &
+\zebra \cd{posts\_\B{}servidos}, \cd{curtidos}, \cd{salvos}, \cd{permanencias} & \cd{JSONB} &
   \emph{Arrays} de ids de post (\cd{proj-b2:bastidor}); os servidos, até dez. Os
-  pesos por área são derivados delas, nunca gravados.\\
+  pesos por área são derivados delas (curtida 3, salvo 2, permanência 1),
+  nunca gravados. \cd{salvos} entrou com a \adrr{ADR-152}.\\
 \cd{voto\_\B{}projeto}, \cd{conviccao}, \cd{votado\_em} & \cd{TEXT?},
   \cd{TIMESTAMPTZ?} & O \emph{latch} 1, juntos. A convicção é
   \cd{examinei\_bem} $|$ \cd{vi\_tudo} --- as duas afirmam certeza.\\
-\zebra \cd{auditoria} & \cd{JSONB} & \cd{\{abertos: string[], buscas: [\{tipo,
+\zebra \cd{voto\_motivo}, \cd{voto\_trecho} & \cd{TEXT?}, \cd{INTEGER?} &
+  A justificativa de antes (\adrr{ADR-152}): o cartão de motivo
+  (\cd{v1}--\cd{v3}) e o índice (0 a 11) da frase grifada da legenda do
+  estande votado. Par: os dois juntos, e só com \cd{votado\_em}. Nulos nas
+  sessões que votaram antes da migração.\\
+\cd{auditoria} & \cd{JSONB} & \cd{\{abertos: string[], buscas: [\{tipo,
   area\}]\}}: o que a criança abriu e buscou na galeria, a base da EF06CO10
   (os ocultos abertos) e da EF06CO01 (a busca pela \emph{hashtag} de outra
   área), com réguas diferentes (\adrr{ADR-151}). O texto digitado nunca chega
-  aqui.\\
-\cd{revisao\_acao}, \cd{voto\_\B{}revisado}, \cd{revisado\_em} & \cd{TEXT?},
+  aqui. Quem revisa sem abrir nem buscar nada fica sem marca de ação
+  (\adrr{ADR-152}).\\
+\zebra \cd{revisao\_acao}, \cd{voto\_\B{}revisado}, \cd{revisado\_em} & \cd{TEXT?},
   \cd{TIMESTAMPTZ?} & O \emph{latch} 2: \cd{manter} (o voto final repete o
-  lacrado) $|$ \cd{trocar} (outro dos dezesseis).\\
-\zebra \cd{cadeia\_\B{}tentativas}, \cd{cadeia\_\B{}montada\_em} & \cd{INTEGER},
+  lacrado) $|$ \cd{trocar} (outro dos dezesseis) $|$ \cd{complementar} (o
+  voto final repete o lacrado, \adrr{ADR-152}). O carimbo leva o passo a
+  \cd{revisada}.\\
+\cd{complemento\_\B{}projeto} & \cd{TEXT?} & O estande indicado no
+  \cd{complementar}: existe só nele, e nunca igual ao voto (\emph{CHECK}).\\
+\zebra \cd{revisao\_motivo}, \cd{revisao\_trecho} & \cd{TEXT?}, \cd{INTEGER?} &
+  A justificativa de depois: o cartão (\cd{r1}--\cd{r3}) e o índice da frase
+  da legenda do estande da decisão (o do voto, ao manter). Par, e só com
+  \cd{revisado\_em}.\\
+\cd{desvio\_\B{}servidos}, \cd{desvio\_\B{}curtidos}, \cd{desvio\_\B{}salvos},
+  \cd{desvio\_\B{}permanencias} & \cd{JSONB} & O feed da rodada de desvio
+  (\adrr{ADR-152}), com os pesos só dele; os servidos, até seis.\\
+\zebra \cd{desvio\_\B{}concluido\_em} & \cd{TIMESTAMPTZ?} & EQUIVALENTE ao passo
+  de \cd{cadeia} em diante; exige \cd{revisado\_em}. A migração o preencheu
+  com \cd{revisado\_em} nas sessões que já tinham passado da revisão. Sem
+  evidência.\\
+\cd{cadeia\_\B{}tentativas}, \cd{cadeia\_\B{}montada\_em} & \cd{INTEGER},
   \cd{TIMESTAMPTZ?} & A base da EF06CO03: uma tentativa = atingiu, duas ou
   três = em processo, mais = não atingiu. Montada exige ao menos uma
   tentativa. (As colunas \cd{pacotes\_tentativas} e
   \cd{pacotes\_remontados\_em}, da EF06CO07, foram apagadas pela
   \arq{20261006120000}, \adrr{ADR-151}.)\\
-\cd{mecanismo}, \cd{atitude}, \cd{cartoes\_em} & \cd{TEXT?},
+\zebra \cd{mecanismo}, \cd{atitude}, \cd{cartoes\_em} & \cd{TEXT?},
   \cd{TIMESTAMPTZ?} & O caso Mariana: \cd{m1}--\cd{m3} e \cd{t1}--\cd{t2}. Não é
   evidência.\\
-\zebra \cd{concluida\_em} & \cd{TIMESTAMPTZ?} & EQUIVALENTE ao passo \cd{fim}.\\
-\cd{versao\_instrumento} & \cd{TEXT} & \cd{1.0.0}.\\
+\cd{concluida\_em} & \cd{TIMESTAMPTZ?} & EQUIVALENTE ao passo \cd{fim}.\\
+\zebra \cd{versao\_instrumento} & \cd{TEXT} & \cd{1.1.0} desde a \adrr{ADR-152}
+  (\cd{1.0.0} nas sessões anteriores).\\
 \bottomrule
 \end{tabularx}
 

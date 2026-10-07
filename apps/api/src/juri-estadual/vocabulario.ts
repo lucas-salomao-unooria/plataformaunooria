@@ -63,13 +63,16 @@ export function projetoDoPost(postId: string): string {
  * - O feed tem DEZ posts; a cédula abre quando o décimo chega à tela.
  * - Os quatro primeiros são um de cada área (o estudante vê que existe
  *   variedade antes de a bolha fechar).
- * - Curtir vale 3; ficar mais de 5 s num post vale 1 (uma vez por post).
- *   Descurtir devolve os 3.
+ * - Curtir vale 3; salvar vale 2; ficar mais de 5 s num post vale 1 (uma vez
+ *   por post). Descurtir e tirar dos salvos devolvem o peso. Os três sinais
+ *   são os do desenho do PO ("curtir, salvar, tempo de visualização"); comentar
+ *   e compartilhar respondem na tela e não pesam (decisão de 2026-10-07).
  * - Com 6 ou mais numa área, o resto do feed é só dela.
  */
 export const POSTS_NO_FEED = 10;
 export const POSTS_DE_ABERTURA = AREAS.length;
 export const PESO_DA_CURTIDA = 3;
+export const PESO_DO_SALVAR = 2;
 export const PESO_DA_PERMANENCIA = 1;
 export const PERMANENCIA_MS = 5_000;
 export const LIMIAR_DA_BOLHA = 6;
@@ -82,9 +85,49 @@ export const LIMIAR_DA_BOLHA = 6;
 export const CONVICCOES = ["examinei_bem", "vi_tudo"] as const;
 export type Conviccao = (typeof CONVICCOES)[number];
 
-/** A revisão do voto, depois da galeria: manter o voto ou trocar de projeto. */
-export const ACOES_DA_REVISAO = ["manter", "trocar"] as const;
+/**
+ * A revisão do voto, depois da galeria: manter o voto, trocar de projeto ou
+ * COMPLEMENTAR — manter o voto e indicar também um estande que só a galeria
+ * mostrou (pedido do PO, recuperado em 2026-10-07). Manter vale, desde que
+ * justificado: as três levam um cartão de motivo.
+ */
+export const ACOES_DA_REVISAO = ["manter", "trocar", "complementar"] as const;
 export type AcaoDaRevisao = (typeof ACOES_DA_REVISAO)[number];
+
+/**
+ * Os cartões de MOTIVO — a justificativa ANTES (na cédula) e DEPOIS (na
+ * revisão), a estrutura "Antes eu pensava… Agora eu percebo…" do livro
+ * didático que o PO pediu. Cartão pré-formulado, nunca texto livre (texto
+ * livre de menor, e a Etapa 4 não tem digitação). O texto de cada um mora em
+ * `conteudo.ts`; o contraste entre os dois é o que a galeria põe lado a lado.
+ */
+export const MOTIVOS_DO_VOTO = ["v1", "v2", "v3"] as const;
+export type MotivoDoVoto = (typeof MOTIVOS_DO_VOTO)[number];
+export const MOTIVOS_DA_REVISAO = ["r1", "r2", "r3"] as const;
+export type MotivoDaRevisao = (typeof MOTIVOS_DA_REVISAO)[number];
+
+/**
+ * O trecho GRIFADO da legenda: o índice da frase (`regras/justificativa.ts`)
+ * da legenda do estande que a criança escolheu. É a evidência que ela aponta —
+ * um índice, não texto: a legenda é do professor, e o servidor confere que a
+ * frase existe.
+ */
+export const MAX_FRASES_DA_LEGENDA = 12;
+
+/**
+ * A RODADA DE DESVIO (pedido do PO, recuperado em 2026-10-07): depois da
+ * revisão, o professor libera uma rodada curta em que a criança interage com o
+ * que o feed dela não mostrava — e vê o feed mudar. É a VIVÊNCIA de que mudar o
+ * comportamento muda a recomendação; o PO a quer obrigatória, e não
+ * substituível por reflexão escrita.
+ *
+ * - Seis posts, servidos um a um pelo mesmo motor, com os pesos SÓ do desvio.
+ * - Os dois primeiros vêm das duas áreas que MENOS apareceram no feed dela.
+ * - Concluir pede o feed completo e ao menos uma interação (curtir ou salvar):
+ *   sem ela, não houve desvio nenhum.
+ */
+export const POSTS_NO_DESVIO = 6;
+export const POSTS_DE_ABERTURA_DO_DESVIO = 2;
 
 /**
  * A busca da galeria. O TEXTO digitado pelo estudante nunca é gravado (é texto
@@ -115,5 +158,9 @@ export const DISCIPLINAS = [
 ] as const;
 export type Disciplina = (typeof DISCIPLINAS)[number];
 
-/** A versão do instrumento gravada em cada sessão (reprocessamento posterior). */
-export const VERSAO_DO_INSTRUMENTO = "1.0.0";
+/**
+ * A versão do instrumento gravada em cada sessão (reprocessamento posterior).
+ * 1.1.0 (2026-10-07): o salvar pesa no feed, os cartões de motivo, o
+ * complementar e a rodada de desvio.
+ */
+export const VERSAO_DO_INSTRUMENTO = "1.1.0";

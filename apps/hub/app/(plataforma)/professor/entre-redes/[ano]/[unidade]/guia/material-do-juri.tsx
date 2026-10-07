@@ -68,12 +68,18 @@ export function GabaritoDoJuri({ dados }: { dados: MaterialDoJuri | null }) {
         <ul className="mt-1 flex list-disc flex-col gap-1 pl-5 text-[13px] leading-relaxed text-unooria-neutral-800" data-regra-do-feed>
           <li>O feed tem {regra.postsNoFeed} publicações; as primeiras são uma de cada área, e a cédula abre quando a última chega.</li>
           <li>
-            Cada curtida soma {regra.pesoDaCurtida} pontos para a área do estande; ficar parado num post por alguns
-            segundos soma {regra.pesoDaPermanencia}. Descurtir devolve os pontos da curtida.
+            Cada curtida soma {regra.pesoDaCurtida} pontos para a área do estande; salvar soma {regra.pesoDoSalvar};
+            ficar parado num post por alguns segundos soma {regra.pesoDaPermanencia}. Descurtir e tirar dos salvos
+            devolvem os pontos. Comentar e compartilhar não contam: o app avisa que estão fechados no julgamento.
           </li>
           <li>
             Quando uma área chega a {regra.limiar} pontos, o resto do feed é só dela — sem aviso nenhum na tela. É a
             regra “se… então…” que a cadeia e a terceira enquete pedem para descrever.
+          </li>
+          <li>
+            Na rodada de desvio ({regra.postsNoDesvio} publicações), a MESMA regra roda só com o que a criança faz
+            nela: as duas primeiras vêm das áreas que menos apareceram para ela, e o resto segue as curtidas e os
+            salvos da rodada. Quem curte uma área nova vê o feed virar para ela.
           </li>
         </ul>
 

@@ -56,7 +56,8 @@ de \arq{evidencias}, e não pelo módulo de cada uma.
 
 A unidade 1 do 6º ano é \textbf{O Júri Estadual de Projetos}
 (\adrr{ADR-137}), no Unoovista, que nasceu na 0.1.0, na porta 5185, e está
-na 0.2.0 desde os ajustes do PO (\adrr{ADR-151}). O 6º ano
+na 0.3.0 desde o ciclo do voto (\adrr{ADR-152}), depois da 0.2.0 dos ajustes
+do PO (\adrr{ADR-151}). O 6º ano
 passa a ter duas missões: ela e O Rastro do Boato (\cd{exp06ef2b}), da
 unidade 2.
 
@@ -237,7 +238,8 @@ da missão injeta o que só ela sabe montar:
     \rota{GET /juri-estadual/\B{}professor/\B{}material} devolve o esqueleto
     da missão COM o gabarito: as quatro perguntas de contraste da plenária (as
     MESMAS que o painel da aula mostra ao lado do botão), a regra do feed que o
-    motor executou (os pesos e o limiar), a cadeia na ordem certa (os pacotes
+    motor executou (os pesos --- curtir, salvar e ficar --- e o limiar, e o
+    tamanho da rodada de desvio, \adrr{ADR-152}), a cadeia na ordem certa (os pacotes
     da curtida saíram com a \adrr{ADR-151}) e o caso Mariana com os cartões certos
     marcados. O componente é \arq{guia/\B{}material-do-juri.tsx}. O guia
     \textbf{não crava taxa de invisibilidade}: a da galeria é a de cada
@@ -1536,19 +1538,25 @@ e exige o \emph{podcast} pronto, com a voz do TTS. Antes, a suíte aceitava o
 
 \textbf{6º ano \textperiodcentered{} Unidade 1 \textperiodcentered{} clone de
 rede social de fotos \textperiodcentered{} \cd{unoovista}, com a tela da escola
-em \cd{unooria} \textperiodcentered{} 0.2.0}
+em \cd{unooria} \textperiodcentered{} 0.3.0}
 
 O estudante é jurado de uma mostra científica estadual, dentro do Unoovista. A
 comissão entrega o crachá, e ele rola um feed de dez posts dos estandes ---
-quatro áreas, quatro projetos por área ---, curtindo o que quiser. As curtidas
-\textbf{afunilam o feed em silêncio}: duas na mesma área bastam para o resto do
-feed ser só dela. Depois do décimo post ele vota numa cédula lacrada, com uma
-convicção que afirma certeza (o \emph{latch} 1), e espera a turma: é o PICO, em
+quatro áreas, quatro projetos por área ---, curtindo e salvando o que quiser.
+As curtidas e os salvos \textbf{afunilam o feed em silêncio}: duas curtidas na
+mesma área bastam para o resto do feed ser só dela. Depois do décimo post ele
+vota numa cédula lacrada, com uma convicção que afirma certeza e uma
+justificativa --- um cartão de motivo e a frase da legenda que mais pesou ---
+(o \emph{latch} 1), e espera a turma: é o PICO, em
 que o professor projeta na lousa a dispersão dos votos por área e conduz a
 plenária. Quando o professor libera a \textbf{Galeria Oculta}, cada um vê os
 dezesseis estandes, os que nunca chegaram ao feed dele primeiro, e a
 \textbf{taxa de invisibilidade} REAL da própria sessão; busca por \emph{hashtag}
-e mantém ou troca o voto (o \emph{latch} 2). Fora do aplicativo, na tela da
+e, com a justificativa de antes ao lado, mantém, troca ou complementa o voto,
+com um cartão novo (o \emph{latch} 2). Espera de novo, e o professor libera a
+\textbf{rodada de desvio}: seis posts que começam pelas áreas que quase não
+apareceram para ele, em que curtir ou salvar o que nunca via faz o feed virar
+--- e a tela compara, por área, o feed do júri com a rodada. Fora do aplicativo, na tela da
 escola, que abre com a frase do Léo, monta a cadeia Interações \seta{} Dados
 \seta{} Algoritmo \seta{} Bolha (EF06CO03). De volta ao clone, resolve o caso
 Mariana (a transferência para uma eleição de grêmio), responde a três enquetes
@@ -1556,7 +1564,10 @@ nos Stories da comissão e recebe o crachá homologado. As decisões estão na
 \adrr{ADR-137} e na \adrr{ADR-151}, que trouxe a EF06CO10 de volta como foco
 primário (o pedido do PO de 2026-10-06), tirou a remontagem dos pacotes da
 curtida (EF06CO07), deu às imagens uma aprovação própria e acrescentou o
-podcast de recapitulação.
+podcast de recapitulação; e na \adrr{ADR-152}, que recuperou o ciclo do voto
+que a spec tinha perdido (o salvar, a justificativa antes e depois, o
+complementar e a rodada de desvio) e tirou do guia o revezamento das
+equipes.
 
 \begin{tabularx}{\linewidth}{@{}L{34mm}X@{}}
 \toprule
@@ -1568,10 +1579,12 @@ O motor do feed é do servidor & \arq{regras/afunilamento.ts}, puro e
   de mais de 5\,s com 60\,\% do post visível é um fato por post --- e manda em
   \rota{POST /juri-estadual/feed/eventos}; o servidor aplica as curtidas ANTES
   de escolher o próximo e serve um a mais, até dez. A abertura são quatro
-  posts, um de cada área. Curtida vale 3, permanência vale 1, e com 6 numa área
+  posts, um de cada área. Curtida vale 3, salvo vale 2 (\adrr{ADR-152}),
+  permanência vale 1, e com 6 numa área
   o resto do feed é dela; abaixo do limiar, o feed já puxa para a área de maior
-  peso. Os pesos são DERIVADOS das três listas da sessão, nunca gravados. É a
-  regra que a cadeia ensina e a enquete \cd{p3} pergunta.\\
+  peso. Os pesos são DERIVADOS das quatro listas da sessão, nunca gravados. É a
+  regra que a cadeia ensina e a enquete \cd{p3} pergunta. Comentar e
+  compartilhar respondem com o aviso da comissão e não pesam nem viajam.\\
 \zebra A taxa é a real & \cd{invisibilidade} é calculada no servidor sobre os
   posts que o feed serviu: os projetos nunca exibidos sobre os dezesseis. Quem
   curte duas vezes a mesma área fica com cerca de 56\,\% (9 de 16); quem não
@@ -1593,13 +1606,15 @@ O acervo não desce antes da galeria & O post é uma \emph{allowlist}
   esta atividade agora} desliga a anterior, liga a escolhida e aponta o
   \emph{gate} para a rodada SEGUINTE à última com sessão. Zerar abre a rodada
   seguinte sem apagar nada (\adrr{ADR-112}).\\
-Um botão só & \cd{exploracao} \seta{} \cd{galeria}, sem volta (409
-  \cd{transicao-de-etapa-invalida}). \cd{passoEfetivo} (\arq{regras/passos.ts})
-  impõe \cd{galeria} a quem está em \cd{lacrada}, e o passo \cd{galeria}
-  \textbf{nunca} é gravado (um \emph{CHECK} recusa). O estudante lê
-  \rota{GET /juri-estadual/gate} por \emph{polling} de 3\,s, só na plenária
-  (\adrr{ADR-93}). Quem ainda não votou continua no feed com a galeria
-  liberada: o voto atrasado é caminho previsto.\\
+Dois botões & \cd{exploracao} \seta{} \cd{galeria} \seta{} \cd{desvio},
+  uma etapa por vez e sem volta (409 \cd{transicao-de-etapa-invalida}).
+  \cd{passoEfetivo} (\arq{regras/passos.ts}) impõe \cd{galeria} a quem está
+  em \cd{lacrada} e \cd{desvio} a quem está em \cd{revisada} (a segunda
+  espera, \adrr{ADR-152}), e os dois passos \textbf{nunca} são gravados (um
+  \emph{CHECK} recusa). O estudante lê \rota{GET /juri-estadual/gate} por
+  \emph{polling} de 3\,s, só nas duas esperas (\adrr{ADR-93}). Quem ainda
+  não votou continua no feed com a galeria liberada: o voto atrasado é
+  caminho previsto.\\
 \zebra Ids opacos e a ordem nunca certa & Os blocos da cadeia descem com ids
   OPACOS por sessão (\cd{bl-} seguido de três caracteres derivados
   da semente, estáveis num F5), na ordem de \cd{embaralhar(\ldots, semente,
@@ -1612,14 +1627,31 @@ A galeria não manda texto & Da busca, a api recebe só o tipo (\cd{hashtag}
   abertos e guarda até 30 buscas no \cd{JSONB} \cd{auditoria}. A revisão do
   voto espera a fila de ações esvaziar: a EF06CO10 e a EF06CO01 são marcadas
   no \emph{latch} sobre o que a api já gravou.\\
+\zebra Justificativa e complementar & A cédula e a revisão pedem um cartão de motivo
+  (\cd{v1}--\cd{v3} antes, \cd{r1}--\cd{r3} depois) e o trecho GRIFADO: o
+  índice de uma frase da legenda do estande
+  (\arq{regras/\B{}justificativa.ts\#frasesDaLegenda}, com espelho na
+  experiência), conferido no servidor. Índice, nunca texto, e não vira nível
+  (\adrr{ADR-152}). Na revisão, a justificativa de antes aparece ao lado da
+  mostra inteira. \cd{complementar} mantém o voto e indica também outro
+  estande. O \cd{PostPublico} traz a \cd{legenda} do estande também no
+  bastidor, para a cédula ter o que grifar.\\
+A rodada de desvio & Seis posts do MESMO motor, com estado próprio
+  (\cd{proximoDoDesvio}, \arq{regras/afunilamento.ts}): os dois primeiros das
+  duas áreas que menos apareceram no feed do júri, depois a regra com os pesos
+  só da rodada; a tela é o mesmo \cd{Feed}, e a fila de eventos vai a
+  \rota{desvio/eventos}. No fim, a comparação por área (feed do júri
+  $\times$ rodada). Concluir pede os seis e uma curtida ou salvo (409
+  \cd{desvio-sem-interacao}) e leva o passo a \cd{cadeia}. \textbf{Sem
+  evidência}: a vivência é obrigatória, não medida (\adrr{ADR-152}).\\
 \zebra Evidência & A ficha \arq{evidencias/fichas/exp06ef1b.ts}, a quarta da
-  plataforma, na versão 2 (\adrr{ADR-151}). \textbf{EF06CO10}, o foco
+  plataforma, na versão 3 (\adrr{ADR-151}, \adrr{ADR-152}). \textbf{EF06CO10}, o foco
   primário, por \cd{auditoria}: abriu ao menos dois estandes que o feed
   escondeu = \cd{atingiu}; abriu ou buscou alguma coisa = \cd{em\_processo};
-  nada = \cd{nao\_atingiu}. \textbf{EF06CO01} por \cd{classificacao}, sobre o
+  nada = SEM marca de ação (ausência, e a \cd{p1} decide). \textbf{EF06CO01} por \cd{classificacao}, sobre o
   MESMO registro e com outra régua: buscou pela \emph{hashtag} de uma área
   diferente da do voto e abriu um oculto dela = \cd{atingiu}; buscou outra
-  coisa = \cd{em\_processo}; não buscou = \cd{nao\_atingiu}. As duas são
+  coisa = \cd{em\_processo}; não buscou = SEM marca (a \cd{p2} decide). As duas são
   marcadas no \emph{latch} da revisão. \textbf{EF06CO03} por \cd{cadeia}, pelo
   número de tentativas (1 = \cd{atingiu}; 2 ou 3 = \cd{em\_processo}; mais =
   \cd{nao\_atingiu}). E as enquetes da spec 9.6, verbatim: \cd{p1} (EF06CO10,
@@ -1633,8 +1665,11 @@ Equipes & A missão nasce com equipes (\adrr{ADR-111}): o painel conta por
   painel é PROJETADO na lousa no pico, então a linha diz só progresso ---
   nenhum campo de \cd{PROIBIDO\_NA\_LINHA\_DO\_PAINEL} (voto, área, taxa,
   nível), com teste por chave e por valor ---, e o que a turma escolheu vive no
-  resumo anônimo: os votos por área (o lacrado e o final), a taxa média e
-  quantos mantiveram ou trocaram.\\
+  resumo anônimo: os votos por área (o lacrado e o final), a taxa média,
+  quantos mantiveram, trocaram ou complementaram e quantos fizeram a rodada de
+  desvio. A folha da turma tem a coluna \enquote{Rodada de desvio}. O guia não
+  prescreve revezamento nem desempate: o sistema não distingue quem toca a
+  tela (\adrr{ADR-152}).\\
 \zebra Mídia & As imagens são do professor, no preparo: dezesseis, 4:3 em 800
   por 600, duas por chamada (o BFF corta em 30\,s), com o nome igual ao
   \emph{hash} da descrição, em \cd{experiencias/exp06ef1b/mostra/}. Sem imagem,
@@ -1716,10 +1751,11 @@ fecho da lupa e do \enquote{pesquisar fontes variadas} fica: é a EF06CO10.
     também depois das imagens aprovadas (o \cd{pacoteParaMidia} recusa esse
     pacote). Atividade criada antes do podcast responde 409
     \cd{roteiro-indisponivel}.
-  \item \textbf{Ele revela a virada e toca depois da Galeria Oculta}, mas o
-    módulo do podcast não tem trava por etapa: o aviso fica no cartão da aula,
-    cujo texto muda com a etapa do \emph{gate}, e no guia (no preparo, no
-    fechamento e nos desdobramentos).
+  \item \textbf{É opcional, e do professor} (\adrr{ADR-152}): toca na tela
+    dele, para a sala, e o módulo não trava por etapa. Como ele revela a
+    virada, o cartão da aula (cujo texto muda com a etapa do \emph{gate}) e o
+    guia RECOMENDAM o momento --- o fechamento, depois da Galeria Oculta ---
+    e dizem que tocar é escolha dele.
 \end{itemize}
 
 \subsection{Ausências deliberadas}
@@ -1728,12 +1764,20 @@ fecho da lupa e do \enquote{pesquisar fontes variadas} fica: é a EF06CO10.
   \item \textbf{Sem acervo padrão}: a mostra é sempre a da turma.
   \item \textbf{Sem a remontagem dos pacotes} (EF06CO07): saiu na 0.2.0, com a
     habilidade (\adrr{ADR-151}).
-  \item \textbf{Sem trava por etapa no podcast}: só o aviso no cartão e no
-    guia.
+  \item \textbf{Sem trava por etapa no podcast}: ele é opcional, e o cartão e o
+    guia só recomendam o momento.
+  \item \textbf{Sem evidência na rodada de desvio} e \textbf{sem nível pela
+    justificativa}: a rodada é vivência, e os cartões são o registro do
+    raciocínio para a conversa (\adrr{ADR-152}).
+  \item \textbf{Sem texto livre na justificativa}: cartões e a frase grifada,
+    por índice.
+  \item \textbf{Sem protocolo de operador}: o guia não prescreve revezamento
+    nem desempate nas equipes.
   \item \textbf{Sem arrastar} na tela da escola: a cadeia é por toque
     sequencial.
-  \item \textbf{Barra inferior com duas abas} (Feed e Cédula), sem DM, sem
-    comentários e sem busca antes do pico; a busca é a ferramenta da galeria.
+  \item \textbf{Barra inferior com duas abas} (Feed e Cédula), sem DM e sem
+    busca antes do pico; a busca é a ferramenta da galeria. Comentar e
+    compartilhar respondem com o aviso da comissão e não pesam.
   \item \textbf{Sem contagem de curtidas} no post e \textbf{sem contador da
     sala} na plenária: a api não tem o número, e o pico tem três elementos.
   \item \textbf{Sem avanço automático} dos Stories (WCAG 2.2.2).
@@ -1746,8 +1790,8 @@ O manifesto declara \cd{viewport} 375 por 812, \cd{permissoes: ["forms"]} e as
 capacidades \cd{telemetria}, \cd{progresso}, \cd{ia} e \cd{avaliacao}, e o
 \cd{produto} \cd{entre-redes}. A porta em \emph{dev} é a 5185, com
 \cd{strictPort}. A versão nasceu 0.1.0, foi a 0.1.1 com a subida do DS
-para a 0.2.15 e está na \textbf{0.2.0} desde os ajustes do PO
-(\adrr{ADR-151}), nos três lugares (\arq{experiencia.json}, \arq{package.json} e
+para a 0.2.15, foi a 0.2.0 com os ajustes do PO (\adrr{ADR-151}) e está na
+\textbf{0.3.0} desde o ciclo do voto (\adrr{ADR-152}), nos três lugares (\arq{experiencia.json}, \arq{package.json} e
 \cd{EXP\_VERSION}). Um \emph{grep} no \cd{dist/} prova que o
 \emph{bundle} não tem \cd{certo:}, \cd{LIMIAR\_DA\_BOLHA},
 \cd{PESO\_DA\_CURTIDA} nem o rótulo do último bloco da cadeia. \textbf{Com o
@@ -1771,12 +1815,14 @@ está \textbf{escrita e ainda não foi rodada}, com a professora e dois
 estudantes da mesma turma --- um que curte e outro que não ---, da criação da
 mostra ao crachá homologado. Ela cobra que os dois chegam à Galeria Oculta com
 taxas DIFERENTES (a de quem curtiu, maior), o pico de três elementos, o F5 nos
-dois \emph{latches}, a lousa anônima com um botão só, a engrenagem que devolve à
+dois \emph{latches}, a lousa anônima, a engrenagem que devolve à
 bandeja sem dizer a vaga errada e o painel sem voto, taxa nem nível por criança.
 Com a \adrr{ADR-151} ganhou as falas do podcast na criação (e o que a tela faz
 quando a IA não as escreve), as duas fases das imagens (a grade, aprovar, a
-atividade no ar), o carrossel arrastado com o \emph{mouse}, a cadeia aberta
-direto depois da revisão e o cartão do podcast na aula.
+atividade no ar), o carrossel arrastado com o \emph{mouse} e o cartão do
+podcast na aula. Com a \adrr{ADR-152}, a justificativa na cédula e na
+revisão, o complementar, o segundo botão e a rodada de desvio até a
+comparação por área, antes da cadeia.
 \textbf{A corrida é PENDENTE}: ela só roda na cópia principal, depois do
 \emph{merge}, que é onde a \emph{stack} sobe. Até lá, nada aqui afirma que ela
 passa.

@@ -7,18 +7,26 @@
  *
  * A regra é a que a Etapa 5 ensina e a enquete da EF06CO03 pergunta:
  *
- *   SE uma área somar 6 pontos (duas curtidas, ou curtida + permanências)
+ *   SE uma área somar 6 pontos (duas curtidas, ou curtida + salvo +
+ *   permanência, ou três salvos)
  *   ENTÃO as próximas posições do feed são só dessa área.
  *
- * Os PESOS não são gravados: saem das curtidas e das permanências da sessão
- * (`pesos`). Um valor derivado não diverge do que o gerou.
+ * Os PESOS não são gravados: saem das curtidas, dos salvos e das permanências
+ * da sessão (`pesos`). Um valor derivado não diverge do que o gerou.
+ *
+ * O MESMO motor serve a RODADA DE DESVIO (`proximoDoDesvio`), com um estado de
+ * feed só dela: é a prova, vivida, de que a regra responde ao comportamento —
+ * curtir outra área faz o feed virar para ela.
  */
 import {
   AREAS,
   LIMIAR_DA_BOLHA,
   PESO_DA_CURTIDA,
   PESO_DA_PERMANENCIA,
+  PESO_DO_SALVAR,
   POSTS_DE_ABERTURA,
+  POSTS_DE_ABERTURA_DO_DESVIO,
+  POSTS_NO_DESVIO,
   POSTS_NO_FEED,
   TOTAL_DE_PROJETOS,
   areaDoProjeto,
@@ -27,17 +35,19 @@ import {
   type Area,
 } from "../vocabulario";
 
-/** O que a sessão guarda do feed — três listas de ids de post. */
+/** O que a sessão guarda do feed — quatro listas de ids de post. A rodada de desvio tem as suas. */
 export type EstadoDoFeed = {
   /** Os posts que o feed serviu, na ordem da tela. */
   servidos: readonly string[];
   /** Os posts curtidos AGORA (descurtir tira daqui). */
   curtidos: readonly string[];
+  /** Os posts salvos AGORA (tirar dos salvos tira daqui). */
+  salvos: readonly string[];
   /** Os posts em que o estudante ficou mais de 5 s (conta uma vez por post). */
   permanencias: readonly string[];
 };
 
-export const FEED_VAZIO: EstadoDoFeed = { servidos: [], curtidos: [], permanencias: [] };
+export const FEED_VAZIO: EstadoDoFeed = { servidos: [], curtidos: [], salvos: [], permanencias: [] };
 
 // ------------------------------------------------------------ sorteio estável
 
@@ -78,10 +88,11 @@ export function embaralhar<T>(lista: readonly T[], semente: string, rotulo: stri
 
 // ------------------------------------------------------------------- pesos
 
-/** Os pontos de cada área agora: 3 por curtida, 1 por permanência. */
+/** Os pontos de cada área agora: 3 por curtida, 2 por salvo, 1 por permanência. */
 export function pesos(estado: EstadoDoFeed): Record<Area, number> {
   const total = Object.fromEntries(AREAS.map((a) => [a, 0])) as Record<Area, number>;
   for (const post of estado.curtidos) total[areaDoProjeto(projetoDoPost(post))] += PESO_DA_CURTIDA;
+  for (const post of estado.salvos) total[areaDoProjeto(projetoDoPost(post))] += PESO_DO_SALVAR;
   for (const post of estado.permanencias) total[areaDoProjeto(projetoDoPost(post))] += PESO_DA_PERMANENCIA;
   return total;
 }
@@ -231,6 +242,17 @@ export function aplicarCurtida(estado: EstadoDoFeed, postId: string, curtiu: boo
   };
 }
 
+/** Salvar ou tirar dos salvos — as mesmas regras da curtida. */
+export function aplicarSalvamento(estado: EstadoDoFeed, postId: string, salvou: boolean): EstadoDoFeed {
+  if (!estado.servidos.includes(postId)) return estado;
+  const tem = estado.salvos.includes(postId);
+  if (salvou === tem) return estado;
+  return {
+    ...estado,
+    salvos: salvou ? [...estado.salvos, postId] : estado.salvos.filter((p) => p !== postId),
+  };
+}
+
 /** A permanência de mais de 5 s: uma vez por post, e só em post servido. */
 export function aplicarPermanencia(estado: EstadoDoFeed, postId: string): EstadoDoFeed {
   if (!estado.servidos.includes(postId) || estado.permanencias.includes(postId)) return estado;
@@ -264,4 +286,118 @@ export function invisibilidade(servidos: readonly string[]): {
 /** O voto só vale para projeto que o feed mostrou: é a cédula "do seu feed". */
 export function projetoFoiExibido(servidos: readonly string[], projetoId: string): boolean {
   return projetosServidos(servidos).has(projetoId);
+}
+
+// ------------------------------------------------------- a rodada de desvio
+
+/** Quantos projetos de cada área chegaram a um feed (por qualquer dos dois posts). */
+export function projetosVistosPorArea(servidos: readonly string[]): Record<Area, number> {
+  const total = Object.fromEntries(AREAS.map((a) => [a, 0])) as Record<Area, number>;
+  for (const projeto of projetosServidos(servidos)) total[areaDoProjeto(projeto)] += 1;
+  return total;
+}
+
+/** Quantos POSTS de cada área um feed serviu — a comparação "antes e agora" do fim do desvio. */
+export function postsPorArea(servidos: readonly string[]): Record<Area, number> {
+  const total = Object.fromEntries(AREAS.map((a) => [a, 0])) as Record<Area, number>;
+  for (const post of servidos) total[areaDoProjeto(projetoDoPost(post))] += 1;
+  return total;
+}
+
+/**
+ * As duas áreas por onde o desvio COMEÇA: as que menos apareceram no feed do
+ * júri (projetos vistos), empate pela ordem sorteada da sessão. São "os temas
+ * que estavam na mostra e não chegaram" — o pedido do PO.
+ */
+export function areasDoDesvio(feed: readonly string[], semente: string): Area[] {
+  const vistos = projetosVistosPorArea(feed);
+  return embaralhar(AREAS, semente, "desvio:areas")
+    .sort((x, y) => vistos[x] - vistos[y])
+    .slice(0, POSTS_DE_ABERTURA_DO_DESVIO);
+}
+
+/**
+ * O próximo post da RODADA DE DESVIO, ou `null` com os seis servidos.
+ *
+ * - Os dois primeiros: a apresentação de um projeto de cada uma das duas
+ *   áreas que menos apareceram no feed (`areasDoDesvio`).
+ * - Depois, a regra do feed, com os pesos SÓ do desvio: com bolha, a área
+ *   líder; sem bolha, a de maior peso; sem peso nenhum, a menos vista nos dois
+ *   feeds somados. É assim que a criança que curte a área nova vê o feed virar
+ *   para ela.
+ *
+ * Dentro da área: primeiro o estande que o feed do júri NÃO mostrou, depois o
+ * que mostrou; a apresentação antes do bastidor; nada repete dentro do desvio.
+ */
+export function proximoDoDesvio(
+  projetos: readonly ProjetoDoMotor[],
+  desvio: EstadoDoFeed,
+  feed: readonly string[],
+  semente: string,
+): string | null {
+  const posicao = desvio.servidos.length;
+  if (posicao >= POSTS_NO_DESVIO) return null;
+  const jaServidos = new Set(desvio.servidos);
+  const vistosNoFeed = projetosServidos(feed);
+  const ordenados = embaralhar(projetos, semente, `desvio:posicao:${posicao}`);
+
+  const daArea = (area: Area): string | null => {
+    const candidatos = ordenados.filter((p) => p.area === area);
+    const ocultosPrimeiro = [
+      ...candidatos.filter((p) => !vistosNoFeed.has(p.id)),
+      ...candidatos.filter((p) => vistosNoFeed.has(p.id)),
+    ];
+    for (const tipo of ["apresentacao", "bastidor"] as const) {
+      const achado = ocultosPrimeiro.find((p) => !jaServidos.has(idDoPost(p.id, tipo)));
+      if (achado) return idDoPost(achado.id, tipo);
+    }
+    return null;
+  };
+
+  if (posicao < POSTS_DE_ABERTURA_DO_DESVIO) {
+    const area = areasDoDesvio(feed, semente)[posicao];
+    const post = area ? daArea(area) : null;
+    if (post) return post;
+  }
+
+  const lider = areaLider(desvio);
+  if (lider) {
+    const post = daArea(lider);
+    if (post) return post;
+  }
+  const p = pesos(desvio);
+  const vistos = postsPorArea([...feed, ...desvio.servidos]);
+  const areas = embaralhar(AREAS, semente, `desvio:variado:${posicao}`).sort((x, y) => p[y] - p[x] || vistos[x] - vistos[y]);
+  for (const area of areas) {
+    const post = daArea(area);
+    if (post) return post;
+  }
+  return null;
+}
+
+/** Serve o desvio até `quantos` (ou até completar). Puro: devolve a lista nova. */
+export function servirDesvioAte(
+  projetos: readonly ProjetoDoMotor[],
+  desvio: EstadoDoFeed,
+  feed: readonly string[],
+  semente: string,
+  quantos: number,
+): string[] {
+  const servidos = [...desvio.servidos];
+  while (servidos.length < Math.min(quantos, POSTS_NO_DESVIO)) {
+    const proximo = proximoDoDesvio(projetos, { ...desvio, servidos }, feed, semente);
+    if (!proximo) break;
+    servidos.push(proximo);
+  }
+  return servidos;
+}
+
+/** O desvio chegou aos seis posts? */
+export function desvioCompleto(desvio: EstadoDoFeed): boolean {
+  return desvio.servidos.length >= POSTS_NO_DESVIO;
+}
+
+/** Houve desvio? A criança curtiu ou salvou ao menos um post da rodada. */
+export function desvioComInteracao(desvio: EstadoDoFeed): boolean {
+  return desvio.curtidos.length > 0 || desvio.salvos.length > 0;
 }

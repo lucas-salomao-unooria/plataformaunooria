@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, test } from "vitest";
-import { CONTAS, E1, E2, E3, E4, E5, E6, ENQUETE, ESCOLA, ESPERA, FIM, GLOBAL } from "./textos";
+import { CONTAS, DESVIO, E1, E2, E3, E4, E5, E6, ENQUETE, ESCOLA, ESPERA, FIM, GLOBAL } from "./textos";
 
 /**
  * Todas as strings de um grupo de copy — as fixas e as montadas (as funções são
@@ -21,7 +21,7 @@ function textosDo(grupo: unknown): string[] {
   return [];
 }
 
-const TODOS = [CONTAS, GLOBAL, ESCOLA, E1, E2, E3, ESPERA, E4, E5, E6, ENQUETE, FIM];
+const TODOS = [CONTAS, GLOBAL, ESCOLA, E1, E2, E3, ESPERA, E4, DESVIO, E5, E6, ENQUETE, FIM];
 const ANTES_DA_GALERIA = [CONTAS, GLOBAL, E1, E2, E3, ESPERA];
 
 function semAcento(texto: string): string {

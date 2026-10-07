@@ -1,19 +1,24 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, test } from "vitest";
-import { PERMANENCIA_MS, TELA_DO_PASSO, passoEfetivo } from "./regras";
+import { PERMANENCIA_MS, TELA_DO_PASSO, frasesDaLegenda, passoEfetivo } from "./regras";
 import {
   ACOES_DA_REVISAO,
   AREAS,
   CONVICCOES,
   ENQUETES,
   ETAPAS,
+  MAX_FRASES_DA_LEGENDA,
+  MOTIVOS_DA_REVISAO,
+  MOTIVOS_DO_VOTO,
   PASSOS,
   PASSOS_PEDIDOS,
+  POSTS_NO_DESVIO,
   POSTS_NO_FEED,
   TIPOS_DE_BUSCA,
   TIPOS_DE_POST,
   TOTAL_DE_BLOCOS,
   TOTAL_DE_PROJETOS,
+  type Desvio,
   type Feed,
   type Galeria,
   type PostPublico,
@@ -35,6 +40,7 @@ const PASSOS_DA_API = `${MODULO}/regras/passos.ts`;
 const CONTEUDO = `${MODULO}/conteudo.ts`;
 const CONTRATO = `${MODULO}/contrato-de-rotas.ts`;
 const FICHA = "../../api/src/evidencias/fichas/exp06ef1b.ts";
+const JUSTIFICATIVA = `${MODULO}/regras/justificativa.ts`;
 
 const ler = (caminho: string) => readFileSync(caminho, "utf8");
 
@@ -79,11 +85,14 @@ function chavesDoSchema(nome: string): string[] {
 const CHAVES = {
   sessao: {
     pacoteId: 1, rodada: 1, passo: 1, passoDoEstudante: 1, etapa: 1, aguardandoOProfessor: 1, tema: 1,
-    categorias: 1, feed: 1, voto: 1, revisao: 1, cadeia: 1, mariana: 1, concluida: 1,
+    categorias: 1, feed: 1, motivos: 1, voto: 1, revisao: 1, desvio: 1, cadeia: 1, mariana: 1, concluida: 1,
   } satisfies Record<keyof Sessao, 1>,
-  feed: { posts: 1, curtidos: 1, completo: 1 } satisfies Record<keyof Feed, 1>,
+  feed: { posts: 1, curtidos: 1, salvos: 1, completo: 1 } satisfies Record<keyof Feed, 1>,
+  desvio: {
+    posts: 1, curtidos: 1, salvos: 1, completo: 1, comInteracao: 1, concluido: 1, comparacao: 1,
+  } satisfies Record<keyof Desvio, 1>,
   post: {
-    id: 1, projetoId: 1, tipo: 1, area: 1, titulo: 1, escola: 1, perfil: 1, texto: 1, hashtags: 1, imagem: 1,
+    id: 1, projetoId: 1, tipo: 1, area: 1, titulo: 1, escola: 1, perfil: 1, texto: 1, legenda: 1, hashtags: 1, imagem: 1,
   } satisfies Record<keyof PostPublico, 1>,
   galeria: { invisibilidade: 1, projetos: 1 } satisfies Record<keyof Galeria, 1>,
   projeto: {
@@ -100,6 +109,8 @@ describe("o vocabulário é o da api, na mesma ordem", () => {
     ["TIPOS_DE_POST", TIPOS_DE_POST, VOCABULARIO],
     ["CONVICCOES", CONVICCOES, VOCABULARIO],
     ["ACOES_DA_REVISAO", ACOES_DA_REVISAO, VOCABULARIO],
+    ["MOTIVOS_DO_VOTO", MOTIVOS_DO_VOTO, VOCABULARIO],
+    ["MOTIVOS_DA_REVISAO", MOTIVOS_DA_REVISAO, VOCABULARIO],
     ["TIPOS_DE_BUSCA", TIPOS_DE_BUSCA, VOCABULARIO],
   ] as const)("%s", (nome, lista, arquivo) => {
     expect([...lista]).toEqual(listaDoArquivo(arquivo, nome));
@@ -108,6 +119,16 @@ describe("o vocabulário é o da api, na mesma ordem", () => {
   test("os números do feed e da mostra", () => {
     expect(POSTS_NO_FEED).toBe(numeroDoArquivo(VOCABULARIO, "POSTS_NO_FEED"));
     expect(PERMANENCIA_MS).toBe(numeroDoArquivo(VOCABULARIO, "PERMANENCIA_MS"));
+    expect(POSTS_NO_DESVIO).toBe(numeroDoArquivo(VOCABULARIO, "POSTS_NO_DESVIO"));
+    expect(MAX_FRASES_DA_LEGENDA).toBe(numeroDoArquivo(VOCABULARIO, "MAX_FRASES_DA_LEGENDA"));
+  });
+
+  test("as frases da legenda (o trecho grifado) se cortam como na api", () => {
+    /* A mesma expressão nas duas pontas: a tela oferece a frase i, e a api confere a frase i. */
+    const daApi = /\.split\((\/[^\n]*?\/u)\)/.exec(ler(JUSTIFICATIVA))?.[1];
+    expect(daApi).toBeDefined();
+    expect(frasesDaLegenda.toString()).toContain(daApi ?? "nada");
+    expect(frasesDaLegenda("Uma frase. Outra! Mais uma? Fim")).toHaveLength(4);
     expect(TOTAL_DE_PROJETOS).toBe(AREAS.length * numeroDoArquivo(VOCABULARIO, "PROJETOS_POR_AREA"));
   });
 
@@ -138,6 +159,7 @@ describe("os campos do espelho são os do contrato", () => {
   test.each([
     ["SessaoSchema", CHAVES.sessao],
     ["FeedSchema", CHAVES.feed],
+    ["DesvioSchema", CHAVES.desvio],
     ["PostPublicoSchema", CHAVES.post],
     ["GaleriaSchema", CHAVES.galeria],
     ["ProjetoDaGaleriaSchema", CHAVES.projeto],
@@ -161,6 +183,12 @@ describe("passoEfetivo — a mesma resposta da api num F5", () => {
   test("lacrada espera na exploração e vira galeria quando o professor libera", () => {
     expect(passoEfetivo("lacrada", "exploracao")).toBe("lacrada");
     expect(passoEfetivo("lacrada", "galeria")).toBe("galeria");
+    expect(passoEfetivo("lacrada", "desvio")).toBe("galeria");
+  });
+
+  test("revisada espera o desvio, e vira desvio quando o professor libera", () => {
+    expect(passoEfetivo("revisada", "galeria")).toBe("revisada");
+    expect(passoEfetivo("revisada", "desvio")).toBe("desvio");
   });
 
   test("da revisão em diante, o passo é da criança", () => {

@@ -21,13 +21,44 @@
  * (Interações → Dados → Algoritmo → Bolha). A ordem certa é gabarito.
  */
 export const BLOCOS_DA_CADEIA = [
-  { posicao: 1, rotulo: "Interações do jurado (curtidas)" },
+  { posicao: 1, rotulo: "Interações do jurado (curtidas e salvos)" },
   { posicao: 2, rotulo: "Registro de dados e padrões" },
   { posicao: 3, rotulo: "Algoritmo de recomendação" },
   { posicao: 4, rotulo: "Formação de bolha temática" },
 ] as const;
 
 export const TOTAL_DE_BLOCOS = BLOCOS_DA_CADEIA.length;
+
+// ------------------------------------------- a justificativa: antes e depois
+
+/**
+ * Os cartões de MOTIVO (`vocabulario.ts#MOTIVOS_DO_VOTO`/`MOTIVOS_DA_REVISAO`):
+ * a estrutura "Antes eu pensava… Agora eu percebo…" do livro didático, que o PO
+ * pediu e a spec perdeu. Cartão pré-formulado mais o trecho GRIFADO da legenda,
+ * nunca texto livre.
+ *
+ * - **Antes**, na cédula: por que este projeto. Os três afirmam algo sobre "a
+ *   mostra" inteira — e a criança só viu o feed dela. É a aposta que a galeria
+ *   confronta, como as duas convicções. Nenhum diz "algoritmo", "bolha",
+ *   "filtro" ou "oculto": antes da galeria a missão não entrega a virada (o
+ *   `textos.test.ts` da experiência cobra o mesmo da copy dela).
+ * - **Depois**, na revisão: o que mudou no raciocínio, ao lado do cartão de
+ *   antes. Nenhum é "certo" — não há gabarito aqui, e nada disto vira nível: é
+ *   o registro que a plenária e o professor leem.
+ *
+ * Texto ESCRITO AQUI (o sheet não tinha os cartões): revisar com o PO.
+ */
+export const MOTIVOS_DO_VOTO_TEXTO = [
+  { id: "v1", texto: "Resolve o problema mais importante da mostra." },
+  { id: "v2", texto: "É o projeto mais bem testado e explicado da mostra." },
+  { id: "v3", texto: "Foi o projeto que mais chamou a minha atenção." },
+] as const;
+
+export const MOTIVOS_DA_REVISAO_TEXTO = [
+  { id: "r1", texto: "Agora comparei com estandes que o meu feed nunca mostrou." },
+  { id: "r2", texto: "Mesmo vendo a mostra inteira, a minha escolha se sustenta." },
+  { id: "r3", texto: "Olhar só o que apareceu para mim não dava a informação completa." },
+] as const;
 
 // --------------------------------------------------- transferência: Mariana
 
