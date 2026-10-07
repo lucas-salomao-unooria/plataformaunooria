@@ -45,6 +45,8 @@ import { postPublico, projetoDaGaleria } from "../src/juri-estadual/regras/publi
 import { AREAS, POSTS_NO_FEED, areaDoProjeto, idDoPost, projetoDoPost } from "../src/juri-estadual/vocabulario";
 import { CHAVES_REDIGIDAS } from "../src/observabilidade/redaction";
 import { PARAMETROS_DE_TESTE, conteudoDeTeste, saidaDaIaDeTeste } from "./juri-estadual-fixture";
+import { FALAS_DO_TEMA_PADRAO, VAGAS_DO_PODCAST, roteiroDoPodcast } from "../src/juri-estadual/podcast";
+import { problemasDasFalasDoTema, trechosAlemDoTeto } from "../src/podcast/roteiro";
 
 /**
  * As regras PURAS da exp06ef1b — sem banco, sem Nest. O que o Postgres precisa
@@ -72,7 +74,7 @@ function jogar(semente: string, curtir: (post: string, estado: EstadoDoFeed) => 
 describe("a mostra de teste contra as invariantes", () => {
   test("passa em problemasDoPacote e no Zod da homologação", () => {
     expect(problemasDoPacote(CONTEUDO)).toEqual([]);
-    expect(HomologacaoSchema.safeParse({ parametros: PARAMETROS_DE_TESTE, conteudo: CONTEUDO }).success).toBe(true);
+    expect(HomologacaoSchema.safeParse({ parametros: PARAMETROS_DE_TESTE, conteudo: CONTEUDO, podcast: FALAS_DO_TEMA_PADRAO }).success).toBe(true);
   });
 
   test("recusa o que a régua recusa", () => {
@@ -451,5 +453,26 @@ describe("o preparo: a saída da IA", () => {
     expect(SYSTEM_DO_PREPARO).toMatch(/NENHUM nome estrangeiro/);
     const projeto = SCHEMA_DO_PREPARO.properties?.projetos?.items;
     expect(projeto?.properties?.id?.enum).toHaveLength(16);
+  });
+});
+
+describe("o podcast de recapitulação (ADR-151)", () => {
+  test("o roteiro do sheet, corrigido, passa na régua do podcast e cabe no teto da síntese", () => {
+    expect(problemasDasFalasDoTema(VAGAS_DO_PODCAST, FALAS_DO_TEMA_PADRAO)).toEqual([]);
+    const roteiro = roteiroDoPodcast(FALAS_DO_TEMA_PADRAO);
+    expect(trechosAlemDoTeto(roteiro)).toEqual([]);
+    const marcadas = roteiroDoPodcast(Object.fromEntries(VAGAS_DO_PODCAST.map((v) => [v.id, `[[${v.id}]]`])));
+    for (const vaga of VAGAS_DO_PODCAST) {
+      expect(marcadas.flatMap((t) => t.falas).filter((f) => f.texto === `[[${vaga.id}]]`)).toHaveLength(1);
+    }
+  });
+
+  test("nenhum número cravado contra a taxa real (9 de 16 com duas curtidas), e o app é o Unoovista", () => {
+    const texto = roteiroDoPodcast(FALAS_DO_TEMA_PADRAO)
+      .flatMap((t) => t.falas.map((f) => f.texto))
+      .join(" ");
+    expect(texto).not.toMatch(/\b12\b|doze|três quartos/i);
+    expect(texto).not.toMatch(/instanooria/i);
+    expect(texto).toContain("Unoovista");
   });
 });

@@ -21,8 +21,11 @@ import {
   ROTULO_DA_DISCIPLINA,
   ROTULO_DO_PASSO,
   TERMOS_PROIBIDOS,
+  AVISO_DO_PODCAST_ANTES_DA_GALERIA,
+  AVISO_DO_PODCAST_NA_GALERIA,
   aulaEmAndamento,
   areaDoProjeto,
+  avisoDoPodcast,
   caminhoDaTurma,
   continuarGerando,
   corpoDosParametros,
@@ -259,6 +262,15 @@ describe("o painel da aula", () => {
   test("um botão só, e ele diz a etapa de destino", () => {
     expect(rotuloDoBotao("galeria")).toBe("Liberar a Galeria Oculta");
     expect(rotuloDoBotao(null)).toBeNull();
+  });
+
+  test("o podcast só se libera com a Galeria Oculta aberta na aula em andamento", () => {
+    expect(avisoDoPodcast(true, "galeria")).toBe(AVISO_DO_PODCAST_NA_GALERIA);
+    expect(avisoDoPodcast(true, "exploracao")).toBe(AVISO_DO_PODCAST_ANTES_DA_GALERIA);
+    expect(avisoDoPodcast(true, null)).toBe(AVISO_DO_PODCAST_ANTES_DA_GALERIA);
+    /* Fora do ar, a etapa gravada é de outra rodada: o aviso é o de antes. */
+    expect(avisoDoPodcast(false, "galeria")).toBe(AVISO_DO_PODCAST_ANTES_DA_GALERIA);
+    expect(AVISO_DO_PODCAST_ANTES_DA_GALERIA).toMatch(/Galeria Oculta/);
   });
 
   test("os votos em percentual do total, na ordem das áreas", () => {

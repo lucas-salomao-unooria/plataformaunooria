@@ -56147,7 +56147,7 @@
           "juri-estadual"
         ],
         "summary": "\"Criar atividade\" — a curadoria humana (ADR-66/67).",
-        "description": "Grava a mostra como o professor a deixou, numa ATIVIDADE NOVA que nasce **pronta, não no ar** (ADR-130): o pacote em andamento continua em andamento, e quem escolhe o que a turma faz é o professor (`POST :turmaId/pacotes/:pacoteId/em-andamento`). O mesmo conteúdo do pacote mais recente não cria outro: é o segundo clique.\n\nÉ a PRIMEIRA fase da aprovação (os textos): o pacote nasce com `imagensAprovadasEm` nulo e só vai ao ar depois da segunda (`POST :turmaId/pacotes/:pacoteId/aprovar-imagens`).\n\nAs imagens de projeto com a MESMA descrição de um pacote recente da turma são herdadas — o arquivo no bucket é o hash da descrição.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- O pacote é recusado com **400** `pacote-invalido` e a LISTA de problemas em `erros`, em frases para o professor: quatro categorias, uma por área, com hashtags diferentes no formato `#minusculas`; os dezesseis projetos `proj-a1` a `proj-d4`, cada um na área que o id diz e começando pela hashtag da área; perfil com @; legenda até 60 palavras e bastidor até 40; e nenhuma marca ou plataforma real no que a criança lê. (`.superRefine()` some do OpenAPI; daí esta nota.)",
+        "description": "Grava a mostra como o professor a deixou, numa ATIVIDADE NOVA que nasce **pronta, não no ar** (ADR-130): o pacote em andamento continua em andamento, e quem escolhe o que a turma faz é o professor (`POST :turmaId/pacotes/:pacoteId/em-andamento`). O mesmo conteúdo do pacote mais recente não cria outro: é o segundo clique.\n\nÉ a PRIMEIRA fase da aprovação (os textos): o pacote nasce com `imagensAprovadasEm` nulo e só vai ao ar depois da segunda (`POST :turmaId/pacotes/:pacoteId/aprovar-imagens`).\n\nAs imagens de projeto com a MESMA descrição de um pacote recente da turma são herdadas — o arquivo no bucket é o hash da descrição.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- O pacote é recusado com **400** `pacote-invalido` e a LISTA de problemas em `erros`, em frases para o professor: quatro categorias, uma por área, com hashtags diferentes no formato `#minusculas`; os dezesseis projetos `proj-a1` a `proj-d4`, cada um na área que o id diz e começando pela hashtag da área; perfil com @; legenda até 60 palavras e bastidor até 40; e nenhuma marca ou plataforma real no que a criança lê. (`.superRefine()` some do OpenAPI; daí esta nota.)\n- `podcast` são as três falas do podcast de recapitulação que o professor revisou na criação (ADR-150, ADR-151): `dois`, `rafa` e `mesa`, cada uma de 12 a 60 palavras, até 400 bytes, sem link, e-mail nem @. Vão para `podcast_roteiros` na MESMA transação, também no segundo clique — que as substitui.",
         "security": [
           {
             "token-da-plataforma": []
@@ -56341,11 +56341,38 @@
                       "projetos"
                     ],
                     "additionalProperties": false
+                  },
+                  "podcast": {
+                    "type": "object",
+                    "properties": {
+                      "dois": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 600
+                      },
+                      "rafa": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 600
+                      },
+                      "mesa": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 600
+                      }
+                    },
+                    "required": [
+                      "dois",
+                      "rafa",
+                      "mesa"
+                    ],
+                    "additionalProperties": false
                   }
                 },
                 "required": [
                   "parametros",
-                  "conteudo"
+                  "conteudo",
+                  "podcast"
                 ],
                 "additionalProperties": false
               }

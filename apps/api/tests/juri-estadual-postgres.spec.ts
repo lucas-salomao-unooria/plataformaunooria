@@ -15,6 +15,8 @@ import {
   TentativaSchema,
 } from "../src/juri-estadual/contrato-de-rotas";
 import { EXP_ID, JuriEstadualService } from "../src/juri-estadual/juri-estadual.service";
+import { FALAS_DO_TEMA_PADRAO } from "../src/juri-estadual/podcast";
+import { fonteDoPodcastDaExp06ef1b } from "../src/juri-estadual/podcast-fonte";
 import { PreparoDaExp06ef1bService } from "../src/juri-estadual/preparo.service";
 import { ordemCertaDaCadeia } from "../src/juri-estadual/regras/ordem";
 import { PROIBIDO_NA_LINHA_DO_PAINEL } from "../src/juri-estadual/regras/painel";
@@ -119,6 +121,7 @@ async function prepararAtividade(turmaId = ids.turma, escolaId = ESCOLA, tema?: 
   const criado = await service.homologar(escolaId, turmaId, undefined, ids.professora, {
     parametros: PARAMETROS_DE_TESTE,
     conteudo: conteudoDeTeste(tema),
+    podcast: FALAS_DO_TEMA_PADRAO,
   });
   /* A segunda fase da aprovação (as imagens): sem ela, não vai ao ar. */
   await service.aprovarImagens(escolaId, turmaId, undefined, criado.id);
@@ -129,6 +132,7 @@ async function prepararAtividade(turmaId = ids.turma, escolaId = ESCOLA, tema?: 
 async function limparMissao() {
   /* O pacote leva o gate e as sessões por cascata. */
   await prisma.exp06ef1bPacote.deleteMany({ where: { escolaId: { in: ESCOLAS } } });
+  await prisma.podcastRoteiro.deleteMany({ where: { escolaId: { in: ESCOLAS } } });
   await prisma.evidenciaEvento.deleteMany({ where: { escolaId: { in: ESCOLAS } } });
   await prisma.evidencia.deleteMany({ where: { escolaId: { in: ESCOLAS } } });
   await prisma.evidenciaMarca.deleteMany({ where: { escolaId: { in: ESCOLAS } } });
@@ -687,11 +691,13 @@ describe("atividade × rodada", () => {
     const deNovo = await service.homologar(ESCOLA, ids.turma, ids.professora, ids.professora, {
       parametros: PARAMETROS_DE_TESTE,
       conteudo: conteudoDeTeste(),
+      podcast: FALAS_DO_TEMA_PADRAO,
     });
     expect(deNovo).toMatchObject({ id: antes.pacoteId, ativo: true });
     const nova = await service.homologar(ESCOLA, ids.turma, ids.professora, ids.professora, {
       parametros: PARAMETROS_DE_TESTE,
       conteudo: conteudoDeTeste("Outra mostra da cidade"),
+      podcast: FALAS_DO_TEMA_PADRAO,
     });
     expect(nova).toMatchObject({ ativo: false, origem: "ia", tema: "Outra mostra da cidade" });
     expect((await entrar(ids.ana)).pacoteId).toBe(antes.pacoteId);
@@ -722,6 +728,40 @@ describe("atividade × rodada", () => {
     expect(await service.colocarEmAndamento(ESCOLA, ids.turma, ids.professora, antes.pacoteId)).toMatchObject({ mudou: false });
   });
 
+  test("o podcast (ADR-151): a homologação grava as falas na transação, o segundo clique as troca, e a atividade vale depois das imagens", async () => {
+    /* A mais recente é a "Outra mostra da cidade", de imagens aprovadas no teste anterior; a em andamento é a primeira. */
+    const ultima = await prisma.exp06ef1bPacote.findFirstOrThrow({ where: { escolaId: ESCOLA, turmaId: ids.turma }, orderBy: { criadoEm: "desc" } });
+    const ativa = await prisma.exp06ef1bPacote.findFirstOrThrow({ where: { escolaId: ESCOLA, turmaId: ids.turma, ativo: true } });
+    const linha = await prisma.podcastRoteiro.findUniqueOrThrow({
+      where: { escolaId_expId_atividadeId: { escolaId: ESCOLA, expId: EXP_ID, atividadeId: ultima.id } },
+    });
+    expect(linha.falas).toEqual(FALAS_DO_TEMA_PADRAO);
+    expect(linha.aprovadoPor).toBe(ids.professora);
+
+    /* O segundo clique, com o MESMO conteúdo e uma fala editada: nenhuma atividade nova, e a fala nova vale. */
+    const editadas = {
+      ...FALAS_DO_TEMA_PADRAO,
+      mesa: "Pois é! E para a mesa ao lado não apareceu nenhum projeto do Rafa, só os de outra área, um atrás do outro.",
+    };
+    const deNovo = await service.homologar(ESCOLA, ids.turma, ids.professora, ids.professora, {
+      parametros: PARAMETROS_DE_TESTE,
+      conteudo: conteudoDeTeste("Outra mostra da cidade"),
+      podcast: editadas,
+    });
+    expect(deNovo.id).toBe(ultima.id);
+    const trocada = await prisma.podcastRoteiro.findMany({ where: { escolaId: ESCOLA, expId: EXP_ID, atividadeId: ultima.id } });
+    expect(trocada).toHaveLength(1);
+    expect(trocada[0]!.falas).toEqual(editadas);
+
+    /* A atividade do podcast vale com as imagens APROVADAS (o pacoteParaMidia a recusaria), com a guarda de turma. */
+    const fonte = fonteDoPodcastDaExp06ef1b(service);
+    expect(await codigoDe(service.pacoteParaMidia(ESCOLA, ids.turma, ids.professora, ultima.id))).toBe("imagens-ja-aprovadas");
+    expect(await fonte.atividade(ESCOLA, ids.turma, ids.professora, ultima.id)).toEqual({ id: ultima.id, tema: ultima.tema, padrao: false });
+    expect(await fonte.atividade(ESCOLA, ids.turma, ids.professora, undefined)).toMatchObject({ id: ativa.id });
+    expect(await codigoDe(fonte.atividade(ESCOLA, ids.turma, ids.outroProfessor, ultima.id))).toBe("turma-nao-encontrada");
+    expect(await codigoDe(fonte.atividade(OUTRA_ESCOLA, ids.turmaVizinha, undefined, ultima.id))).toBe("atividade-nao-encontrada");
+  });
+
   test("as imagens: gravadas por concatenação, e herdadas pela mesma descrição", async () => {
     const ativo = await prisma.exp06ef1bPacote.findFirstOrThrow({ where: { escolaId: ESCOLA, turmaId: ids.turma, ativo: true } });
     await service.registrarMidia(ESCOLA, ativo.id, "proj-a1", "https://cdn/a1.webp");
@@ -733,6 +773,7 @@ describe("atividade × rodada", () => {
     const herdeira = await service.homologar(ESCOLA, ids.turma, ids.professora, ids.professora, {
       parametros: { ...PARAMETROS_DE_TESTE, contexto: "Turma da tarde" },
       conteudo: conteudoDeTeste("Mostra herdeira"),
+      podcast: FALAS_DO_TEMA_PADRAO,
     });
     const linha = await prisma.exp06ef1bPacote.findUniqueOrThrow({ where: { id: herdeira.id } });
     expect(linha.midia).toEqual({ "proj-a1": "https://cdn/a1.webp", "proj-b2": "https://cdn/b2.webp" });

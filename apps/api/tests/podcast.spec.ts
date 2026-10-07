@@ -24,6 +24,10 @@ import { AprovarSchema } from "../src/quem-mandou-isso/contrato-de-rotas";
 import * as Quem from "../src/quem-mandou-isso/podcast";
 import { fonteDoPodcastDaExp05ef1b } from "../src/quem-mandou-isso/podcast-fonte";
 import { mensagensSaoAsDoPadrao } from "../src/quem-mandou-isso/quem-mandou-isso.service";
+import { HomologacaoSchema as HomologacaoDoJuri } from "../src/juri-estadual/contrato-de-rotas";
+import * as Juri from "../src/juri-estadual/podcast";
+import { fonteDoPodcastDaExp06ef1b, materialDoPodcast as materialDoJuri } from "../src/juri-estadual/podcast-fonte";
+import { PARAMETROS_DE_TESTE, conteudoDeTeste } from "./juri-estadual-fixture";
 
 /**
  * O podcast de recapitulação como recurso da plataforma (ADR-150) — SEM
@@ -36,6 +40,7 @@ import { mensagensSaoAsDoPadrao } from "../src/quem-mandou-isso/quem-mandou-isso
 const MISSOES = [
   { nome: "Jornal da Escola (4º ano)", modulo: Jornal },
   { nome: "Quem Mandou Isso? (5º ano)", modulo: Quem },
+  { nome: "Júri Estadual de Projetos (6º ano)", modulo: Juri },
 ] as const;
 
 /** Uma fala no teto da régua: 57 palavras e 398 bytes (o "ç" e o "ã" contam 2). */
@@ -344,5 +349,116 @@ describe("as falas de cada atividade", () => {
   test("missão sem podcast é 404", () => {
     const podcast = motor(fonteDoPodcastDaExp04ef1b(jornalFalso({})), null);
     expect(() => podcast.fonte("exp99ef1b")).toThrow(HttpException);
+  });
+});
+
+// ───────────────────────────────────────────── o Júri Estadual (6º ano, ADR-151)
+
+const juriFalso = () => ({
+  pacoteParaPodcast: async () => ({ id: "33333333-3333-4333-8333-333333333333", tema: "Ciência que cuida da cidade" }),
+  exigirTurmaVisivel: async () => undefined,
+});
+
+describe("o podcast do Júri Estadual (6º ano)", () => {
+  const texto = (falas: FalasDoTema) =>
+    Juri.roteiroDoPodcast(falas)
+      .flatMap((t) => t.falas.map((f) => f.texto))
+      .join(" ");
+
+  test("as correções do sheet: sem número que contradiz a taxa real, Unoovista, e sem a Unooria dentro da ficção", () => {
+    const roteiro = texto(Juri.FALAS_DO_TEMA_PADRAO);
+    expect(roteiro).not.toMatch(/\b12\b|doze|três quartos|3\/4|75 ?%/i);
+    expect(roteiro).not.toMatch(/instanooria/i);
+    expect(roteiro).not.toMatch(/da Unooria/);
+    expect(roteiro).toContain("Unoovista");
+    expect(roteiro).toContain("podcast da Mostra Estadual de Projetos");
+    expect(roteiro).toContain("mais da metade de uma feira");
+    /* O foco é a EF06CO10: o fecho da lupa fica. */
+    expect(roteiro).toContain("pesquisar fontes variadas");
+    expect(Juri.FALANTES_DO_PODCAST.map((f) => f.nome)).toEqual(["Bia", "Rafa"]);
+  });
+
+  test("o texto FIXO não cita área nem projeto: só as vagas falam da mostra, que é da IA", () => {
+    const marcadas = Object.fromEntries(Juri.VAGAS_DO_PODCAST.map((v) => [v.id, `[[${v.id}]]`]));
+    const fixo = texto(marcadas);
+    expect(fixo).not.toMatch(/robô|composteira|horta|meio ambiente|plantas|natureza|drones|tecnologia/i);
+    expect(Juri.VAGAS_DO_PODCAST.map((v) => [v.id, v.falante])).toEqual([
+      ["dois", "Bia"],
+      ["rafa", "Rafa"],
+      ["mesa", "Bia"],
+    ]);
+  });
+
+  test("exclamação com parcimônia: no máximo uma por fala, e longe da maioria delas", () => {
+    const falas = Juri.roteiroDoPodcast(Juri.FALAS_DO_TEMA_PADRAO).flatMap((t) => t.falas);
+    for (const f of falas) expect((f.texto.match(/!/g) ?? []).length).toBeLessThanOrEqual(1);
+    expect(falas.filter((f) => f.texto.includes("!")).length).toBeLessThan(falas.length / 2);
+  });
+
+  test("a homologação exige as três falas", () => {
+    const base = { parametros: PARAMETROS_DE_TESTE, conteudo: conteudoDeTeste() };
+    expect(HomologacaoDoJuri.safeParse({ ...base, podcast: Juri.FALAS_DO_TEMA_PADRAO }).success).toBe(true);
+    expect(HomologacaoDoJuri.safeParse(base).success).toBe(false);
+    const r = HomologacaoDoJuri.safeParse({ ...base, podcast: { ...Juri.FALAS_DO_TEMA_PADRAO, rafa: "Que robô?" } });
+    expect(r.success ? [] : r.error.issues.map((i) => i.message)).toContain(
+      "A fala do podcast sobre o que o feed dele mostrou tem 2 palavra(s); precisa ter de 12 a 60.",
+    );
+  });
+
+  test("o material da IA traz as quatro áreas e os dezesseis estandes", () => {
+    const conteudo = conteudoDeTeste();
+    const material = materialDoJuri(conteudo);
+    for (const c of conteudo.categorias) expect(material).toContain(`Área "${c.nome}"`);
+    for (const p of conteudo.projetos) expect(material).toContain(p.titulo);
+  });
+
+  test("sem banco padrão: a mostra da tela SEMPRE vai à IA, e sem IA volta o sheet com o motivo", async () => {
+    const pedidos: AiJsonRequest<unknown>[] = [];
+    const reescritas: FalasDoTema = {
+      dois: "Com certeza, Rafa. Mas me responde uma coisa: você votou naquele sensor de enchente da escola ribeirinha, ou na feira de trocas de livros?",
+      rafa: "Ué, Bia... que sensor? Na minha tela só tinha projetos de leitura, clube do livro e sarau. Esse sensor nunca apareceu pra mim!",
+      mesa: "Pois é! E para os jurados da mesa ao lado não apareceu nenhum livro. A tela deles só tinha sensores, enchentes e mapas de chuva.",
+    };
+    const ia = {
+      generateJson: jest.fn(async (req: AiJsonRequest<unknown>) => {
+        pedidos.push(req);
+        return req.validar(reescritas);
+      }),
+    } as unknown as AiProvider;
+    const montar = (saldo: boolean) => {
+      const quota = { temSaldo: async () => saldo, consumir: async () => undefined } as unknown as QuotaService;
+      const podcast = new PodcastService(ia, {} as AssetsService, quota, {} as PrismaService);
+      podcast.registrarFonte(fonteDoPodcastDaExp06ef1b(juriFalso()));
+      return new EscritaDasFalasService(ia, quota, podcast);
+    };
+    const comIa = await montar(true).escrever("exp06ef1b", "escola", "turma", "prof", "prof", "professor", conteudoDeTeste());
+    expect(comIa).toMatchObject({ usouIa: true, motivo: null });
+    expect(comIa.vagas.map((v) => v.texto)).toEqual([reescritas.dois, reescritas.rafa, reescritas.mesa]);
+    expect(pedidos[0]!.prompt).toContain("[[dois]]");
+    expect(pedidos[0]!.prompt).toContain(conteudoDeTeste().projetos[0]!.titulo);
+
+    const semSaldo = await montar(false).escrever("exp06ef1b", "escola", "turma", "prof", "prof", "professor", conteudoDeTeste());
+    expect(semSaldo).toMatchObject({ usouIa: false, motivo: "sem-saldo-de-ia" });
+    expect(Object.fromEntries(semSaldo.vagas.map((v) => [v.id, v.texto]))).toEqual(Juri.FALAS_DO_TEMA_PADRAO);
+
+    const fora = await montar(true)
+      .escrever("exp06ef1b", "escola", "turma", "prof", "prof", "professor", { tema: "x" })
+      .catch((e: unknown) => e);
+    expect((fora as HttpException).getStatus()).toBe(400);
+  });
+
+  test("atividade sem falas gravadas é 409: não há banco padrão para cair", async () => {
+    const erro = await motor(fonteDoPodcastDaExp06ef1b(juriFalso()), null)
+      .estado("exp06ef1b", "escola", "turma", undefined, undefined)
+      .catch((e: unknown) => e);
+    expect((erro as HttpException).getStatus()).toBe(409);
+    const r = await motor(fonteDoPodcastDaExp06ef1b(juriFalso()), { falas: Juri.FALAS_DO_TEMA_PADRAO }).estado(
+      "exp06ef1b",
+      "escola",
+      "turma",
+      undefined,
+      undefined,
+    );
+    expect(r).toMatchObject({ titulo: "O Júri Estadual — A Mostra que Ninguém Viu Inteira", trechos: { total: 5, prontos: 0 } });
   });
 });

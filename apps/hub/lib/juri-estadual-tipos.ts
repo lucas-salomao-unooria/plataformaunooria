@@ -452,6 +452,23 @@ export function rotuloDoBotao(proxima: EtapaDaTurma | null): string | null {
   return ROTULO_DO_BOTAO[proxima];
 }
 
+/** O aviso do podcast com a Galeria Oculta já liberada na aula em andamento. */
+export const AVISO_DO_PODCAST_NA_GALERIA =
+  "A Galeria Oculta já está liberada: o episódio pode tocar no fechamento, depois da revisão do voto.";
+/** O aviso do podcast antes da galeria — ou com a atividade fora do ar. */
+export const AVISO_DO_PODCAST_ANTES_DA_GALERIA =
+  "Este episódio revela a virada da missão: toque para a turma só depois de liberar a Galeria Oculta, nunca antes da aula.";
+
+/**
+ * O aviso no topo do cartão do podcast (ADR-150). O módulo de podcast não tem
+ * trava por etapa, e o episódio conta o que o feed escondeu — tocado antes da
+ * galeria, estraga a aula. Só com a atividade EM ANDAMENTO e a galeria aberta o
+ * aviso libera; fora do ar, a página não sabe em que ponto a turma vai estar.
+ */
+export function avisoDoPodcast(emAndamento: boolean, etapa: EtapaDaTurma | null): string {
+  return emAndamento && etapa === "galeria" ? AVISO_DO_PODCAST_NA_GALERIA : AVISO_DO_PODCAST_ANTES_DA_GALERIA;
+}
+
 /** O que o computador está vendo agora, em uma linha. */
 export const ROTULO_DO_PASSO: Record<PassoDoEstudante, string> = {
   credencial: "Na credencial de jurado",

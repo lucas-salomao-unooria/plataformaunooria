@@ -1,6 +1,7 @@
 import { BFF, HUB, suite } from "../lib/roteiro.mjs";
 import { conta, contasDe } from "../lib/credenciais.mjs";
 import { ALERTA_DE_ERRO, esperarOuFalharCedo } from "../lib/smoke.mjs";
+import { esperarFalasDoTema, provarFalasNaCriacao, provarPodcastNaAula } from "../lib/podcast.mjs";
 
 /**
  * O Júri Estadual de Projetos (exp06ef1b, 6º ano, unidade 1), nas três pontas
@@ -36,6 +37,13 @@ import { ALERTA_DE_ERRO, esperarOuFalharCedo } from "../lib/smoke.mjs";
  *    habilidades, com a régua de cada nível (ADR-145).
  * 8. **O carrossel anda com o MOUSE** (o pedido do PO): arrasto real com
  *    `page.mouse`, e as setas sobre a mídia.
+ * 9. **O podcast de recapitulação é da plataforma** (ADR-150): na criação, as
+ *    três falas que citam a mostra chegam de `falas-do-tema` e são revisadas
+ *    antes de aprovar os textos (o `homologar` as exige); na página da
+ *    atividade, Bia e Rafa nos cinco blocos do roteiro, o áudio sintetizado
+ *    trecho a trecho e o AVISO de que o episódio revela a virada — o módulo
+ *    não trava por etapa, então só depois da Galeria Oculta é recado à
+ *    professora (`[data-aviso-do-podcast]`).
  *
  * ─── A IA, e por que a suíte NÃO depende dela ──────────────────────────────
  *
@@ -471,6 +479,13 @@ await suite(
       await esperarOuFalharCedo(curadoria, falhaDaIa, { timeout: 20_000, oQue: "gerar a mostra com a fixture" });
     };
 
+    /* As falas do podcast são pedidas logo depois que a mostra chega (ADR-150):
+       a espera nasce ANTES do clique — e, se a IA falhar, a mesma espera pega
+       o pedido do clique da fixture. O `catch` vazio só impede a rejeição
+       solta: quem decide o que a falta significa é o passo das falas. */
+    const respostaDasFalas = esperarFalasDoTema(prof, "exp06ef1b");
+    respostaDasFalas.catch(() => undefined);
+
     if (MODO_DA_IA === "fixture") {
       await usarFixture(null);
     } else {
@@ -509,6 +524,49 @@ await suite(
       inteira: true,
     });
 
+    // ═══ PROFESSORA: as falas do podcast, na criação ═════════════════════
+    const tituloDasFalas = "As falas do podcast, para revisar";
+    const mostraDasFalas =
+      "Abaixo da curadoria, as três falas do podcast de recapitulação que citam esta mostra: duas da Bia e " +
+      "uma do Rafa, editáveis antes de aprovar os textos.";
+    if (origemDaMostra === "ia") {
+      await provarFalasNaCriacao(r, prof, await respostaDasFalas, {
+        comIa: true,
+        passo: "criacao-falas-do-podcast",
+        titulo: tituloDasFalas,
+        mostra: mostraDasFalas,
+        prova:
+          "A IA escreve as falas a partir dos estandes da mostra (Vertex), e a professora as revisa e edita na " +
+          "criação: elas vão no mesmo “Aprovar textos”, que as exige. O resto do roteiro é o aprovado pela Unooria.",
+      });
+    } else {
+      /* Com a fixture, a IA pode não responder também às falas: a api devolve as
+         do roteiro, sem IA, e isso é desfecho legítimo — não se exige `usouIa`. */
+      const resposta = await respostaDasFalas.catch(() => null);
+      const corpo = resposta ? await resposta.json().catch(() => null) : null;
+      if (corpo?.usouIa !== true) {
+        r.ressalva(
+          `as falas do podcast vieram sem IA (falas-do-tema ${resposta?.status() ?? "sem resposta"}, ` +
+            `motivo=${corpo?.motivo ?? "?"}): a mostra é de fixture`,
+        );
+      }
+      const caixas = prof.locator("[data-falas-do-podcast] textarea");
+      await caixas.first().waitFor({ timeout: 20_000 });
+      const textos = await caixas.evaluateAll((ts) => ts.map((t) => t.value.trim()));
+      r.exigir(
+        textos.length === 3 && textos.every((t) => t.length > 0),
+        `a criação mostra as 3 falas do podcast, preenchidas, para a professora revisar (${textos.length} na tela)`,
+      );
+      await r.registrar(prof, "criacao-falas-do-podcast", {
+        titulo: tituloDasFalas,
+        mostra: `${mostraDasFalas} Com a mostra de fixture, as falas podem ser as do roteiro, sem IA.`,
+        prova:
+          "As falas vão no mesmo “Aprovar textos”, que as exige: sem elas na régua, o botão não acende e a lista " +
+          "de pendências diz o que falta.",
+        inteira: true,
+      });
+    }
+
     // ═══ PROFESSORA: curar um estande ════════════════════════════════════
     const estande = curadoria.locator('[data-estande="proj-a1"]');
     const editar = estande.getByRole("button", { name: "Editar estande" });
@@ -541,6 +599,7 @@ await suite(
     const continuar = prof.locator('[data-acao="continuar-criacao"]');
     r.exigir(await continuar.isDisabled(), "antes de aprovar textos e imagens, o “Continuar” da criação fica apagado");
     const aprovarTextos = prof.locator('[data-acao="aprovar-textos"]');
+    await prof.locator('[data-acao="aprovar-textos"]:not([disabled])').waitFor({ timeout: 20_000 }).catch(() => undefined);
     if (await aprovarTextos.isDisabled()) {
       const pendencias = await prof.locator("[data-preparo-juri] [role='status']").allInnerTexts();
       throw new Error(`a curadoria recusou a mostra gerada pela IA: ${pendencias.join(" | ").slice(0, 400)}`);
@@ -1384,6 +1443,24 @@ await suite(
         "auditoria da galeria (os ocultos abertos para a EF06CO10, a hashtag de outra área para a EF06CO01), da " +
         "cadeia e das três enquetes, e fica no painel de habilidades, com a confirmação da professora.",
       inteira: true,
+    });
+
+    // ═══ PROFESSORA: o podcast de recapitulação ══════════════════════════
+    /* O episódio revela a virada, e o módulo de podcast não trava por etapa:
+       o cartão leva o aviso de quando tocar. Ele existe em toda etapa (o texto
+       muda com a galeria), então a prova é estar à vista. */
+    const avisoDoPodcast = prof.locator("[data-aviso-do-podcast]");
+    await avisoDoPodcast.waitFor({ timeout: 20_000 }).catch(() => undefined);
+    r.exigir(
+      await avisoDoPodcast.isVisible(),
+      "o cartão do podcast avisa que o episódio revela a virada e só toca depois da Galeria Oculta",
+    );
+    await provarPodcastNaAula(r, prof, {
+      blocos: ["Abertura", "Recapitulação da vivência", "A grande revelação", "Provocação e transferência", "Encerramento"],
+      vozes: ["Bia", "Rafa"],
+      trechos: 5,
+      passo: "podcast",
+      descricao: "Bia e Rafa, cerca de 3 min 45 s",
     });
   },
 );

@@ -134,6 +134,11 @@ export const GUIA_EXP06EF1B: GuiaDaAula = {
           "A aprovação tem duas fases. Primeiro os textos dos estandes; depois as imagens, que a inteligência artificial gera em seguida, duas por vez (pode levar alguns minutos). Confira cada imagem junto do estande, use Gerar outra imagem na que não servir e aprove: sem as imagens aprovadas, a atividade não vai ao ar. Estande sem imagem aparece com uma arte desenhada, marcado na grade antes de você aprovar.",
       },
       {
+        titulo: "Revise as falas do podcast e gere o áudio, se for usá-lo",
+        texto:
+          "O podcast de recapitulação é seu: cerca de 3 minutos e 45 segundos em que Bia e Rafa retomam a missão com a turma. Ao criar a atividade, logo abaixo dos estandes, revise as três falas que citam a mostra — elas são aprovadas junto dos textos; o resto do roteiro é o mesmo para todas as turmas. O áudio fica em A aula e os resultados, com o botão Gerar o áudio do podcast, que sai um trecho por vez. A transcrição está sempre ao lado, mesmo sem áudio. O episódio conta a virada da missão: só toque depois da Galeria Oculta.",
+      },
+      {
         titulo: "Monte as equipes se faltar aparelho",
         texto:
           "Na criação da atividade, no passo das equipes. Com 2 a 4 estudantes por computador, combine o revezamento antes de começar (veja “Menos aparelhos que estudantes”, em Adaptações). O painel conta por computador.",
@@ -213,7 +218,7 @@ export const GUIA_EXP06EF1B: GuiaDaAula = {
         tempo: "45–50",
         momento: "Fechamento",
         professor:
-          "Conduza a escada do debate abaixo, ligue o caso Mariana ao que a turma viveu na mostra e feche com a síntese em voz alta.",
+          "Conduza a escada do debate abaixo, ligue o caso Mariana ao que a turma viveu na mostra e feche com a síntese em voz alta. Se for usar o podcast de recapitulação (cerca de 3 min 45 s, com Bia e Rafa), toque aqui, depois da Galeria Oculta e da revisão do voto — nunca antes: ele conta a virada da missão.",
       },
     ],
     nota:
@@ -356,6 +361,7 @@ export const GUIA_EXP06EF1B: GuiaDaAula = {
       ],
     },
     desdobramentos: [
+      "O podcast de recapitulação, em A aula e os resultados: toque para a turma no fim da aula ou no começo da seguinte, se ajudar a retomar a conversa — sempre depois da Galeria Oculta, porque ele revela o que o feed escondeu. Ele fala com os estudantes, mas quem decide quando ele toca é você.",
       "Na disciplina do tema da mostra: os estandes que ficaram de fora do feed da maioria são o material pronto da aula seguinte — a turma estuda o que quase ninguém viu.",
       "Língua Portuguesa: ler as legendas dos estandes como texto de divulgação científica — o que o título promete e o que a legenda entrega.",
       "Matemática: com os votos por área da lousa, calcular a parte de cada área e discutir como seria o gráfico se todo mundo tivesse visto os dezesseis estandes.",
