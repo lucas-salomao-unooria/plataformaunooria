@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common";
 import { EquipesModule } from "../equipes/equipes.module";
 import { RosteringModule } from "../rostering/rostering.module";
+import { SalasModule } from "../salas/salas.module";
 import { EvidenciasConsolidadoController } from "./evidencias-consolidado.controller";
 import { EvidenciasConsolidadoService } from "./evidencias-consolidado.service";
 import { EvidenciasEstudanteController } from "./evidencias-estudante.controller";
@@ -24,7 +25,7 @@ import { EvidenciasService } from "./evidencias.service";
  * (`temLotacao`) e qual é essa regional (`regionalDoRelatorio`).
  */
 @Module({
-  imports: [EquipesModule, RosteringModule],
+  imports: [EquipesModule, RosteringModule, SalasModule],
   controllers: [EvidenciasEstudanteController, EvidenciasProfessorController, EvidenciasConsolidadoController],
   providers: [EvidenciasService, EvidenciasConsolidadoService],
   exports: [EvidenciasService],

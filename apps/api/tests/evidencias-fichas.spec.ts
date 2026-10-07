@@ -87,3 +87,21 @@ test("a ficha da exp05ef1b está no registro, com as três habilidades da régua
     ["p2", [["B1", "atingiu"], ["B2", "em_processo"], ["B3", "nao_atingiu"]]],
   ]);
 });
+
+test("a ficha da exp02em1b está no registro: quatro perguntas, vale a melhor, conta ao encerrar", () => {
+  const ficha = FICHAS.find((f) => f.expId === "exp02em1b");
+  expect(ficha?.respostas).toBe("melhor");
+  expect(ficha?.contaAoEncerrarAMissao).toBe(true);
+  expect(ficha?.habilidades.map((h) => [h.codigo, h.marcadores.map((m) => [m.id, m.tipo, m.perguntaId ?? null])])).toEqual([
+    ["EM13CO14", [["p1", "multipla_escolha", "p1"]]],
+    ["EM13CO08", [["p2", "multipla_escolha", "p2"]]],
+    ["EM13CO24", [["p3", "multipla_escolha", "p3"]]],
+    ["EM13CO26", [["p4", "multipla_escolha", "p4"]]],
+  ]);
+  expect(ficha?.perguntas.map((p) => [p.id, p.alternativas.map((a) => [a.id, a.status])])).toEqual([
+    ["p1", [["A1", "atingiu"], ["A2", "em_processo"], ["A3", "nao_atingiu"]]],
+    ["p2", [["B1", "atingiu"], ["B2", "em_processo"], ["B3", "nao_atingiu"]]],
+    ["p3", [["C1", "atingiu"], ["C2", "em_processo"], ["C3", "nao_atingiu"]]],
+    ["p4", [["D1", "atingiu"], ["D2", "em_processo"], ["D3", "nao_atingiu"]]],
+  ]);
+});

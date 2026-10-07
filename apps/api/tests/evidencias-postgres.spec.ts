@@ -60,8 +60,8 @@ const runtime = new PrismaService({
 }) as PrismaService & PrismaClient;
 
 const INSTA = "exp08ef1b";
-/** Missão real que aceita equipe e NÃO tem ficha (a Missão Tempestade). */
-const SEM_FICHA = "exp02em1b";
+/** Missão real que NÃO tem ficha (o Manifesto da IA; a Missão Tempestade ganhou a dela na ADR-154). */
+const SEM_FICHA = "exp08ef4b";
 const H1 = "EF08CO01";
 const H2 = "EF08CO02";
 /**
