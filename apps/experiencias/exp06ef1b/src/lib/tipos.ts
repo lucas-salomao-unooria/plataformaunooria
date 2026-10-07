@@ -8,8 +8,8 @@
  * os arquivos da api como texto e reprova a divergência. Sem ele, um passo novo
  * no servidor cairia numa tela que não existe, e o typecheck não veria.
  *
- * O que NÃO está aqui, de propósito (regra 3): a ordem certa dos pacotes e dos
- * blocos, o cartão certo do caso Mariana, os pesos do motor do feed, a área
+ * O que NÃO está aqui, de propósito (regra 3): a ordem certa dos blocos da
+ * cadeia, o cartão certo do caso Mariana, os pesos do motor do feed, a área
  * líder, o nível das alternativas das enquetes. A tela recebe os itens
  * embaralhados, com ids opacos, e quem confere é o servidor.
  */
@@ -21,7 +21,7 @@ export const EXP_ID = "exp06ef1b";
  * `public/experiencia.json`. O CI lê a do manifesto, e a divergência já causou
  * bug — o `versao.test.ts` compara os três (ADR-84).
  */
-export const EXP_VERSION = "0.1.2";
+export const EXP_VERSION = "0.2.0";
 
 /** O prefixo das rotas da missão na api. */
 export const ROTA = "/juri-estadual";
@@ -34,7 +34,6 @@ export const PASSOS = [
   "feed",
   "lacrada",
   "galeria",
-  "pacotes",
   "cadeia",
   "mariana",
   "enquetes",
@@ -75,13 +74,13 @@ export const POSTS_NO_FEED = 10;
 /** `vocabulario.ts#TOTAL_DE_PROJETOS` — os dezesseis estandes da mostra. */
 export const TOTAL_DE_PROJETOS = 16;
 
-/** `conteudo.ts#TOTAL_DE_PACOTES` e `TOTAL_DE_BLOCOS`. */
-export const TOTAL_DE_PACOTES = 4;
+/** `conteudo.ts#TOTAL_DE_BLOCOS`. */
 export const TOTAL_DE_BLOCOS = 4;
 
 /**
  * As três perguntas da ficha (`evidencias/fichas/exp06ef1b.ts`), uma por
- * segmento do Story, nesta ordem. Descem pelas rotas GENÉRICAS de
+ * segmento do Story, nesta ordem: EF06CO10 (o foco primário, a frase do
+ * jurado), EF06CO01 e EF06CO03. Descem pelas rotas GENÉRICAS de
  * `/evidencias`, embaralhadas a cada leitura.
  */
 export const ENQUETES = ["p1", "p2", "p3"] as const;
@@ -124,14 +123,6 @@ export interface Feed {
   completo: boolean;
 }
 
-export interface PacoteDaCurtida {
-  /** Opaco por sessão (`pk-xxx`): não diz a posição. */
-  id: string;
-  numero: number;
-  trecho: string;
-  rota: string[];
-}
-
 export interface BlocoDaCadeia {
   /** Opaco por sessão (`bl-xxx`). */
   id: string;
@@ -163,8 +154,6 @@ export interface Sessao {
   feed: Feed;
   voto: Voto | null;
   revisao: { acao: AcaoDaRevisao; projetoId: string | null } | null;
-  /** Do passo `pacotes` em diante. */
-  pacotes: { itens: PacoteDaCurtida[]; tentativas: number; remontados: boolean } | null;
   /** Do passo `cadeia` em diante. */
   cadeia: { blocos: BlocoDaCadeia[]; tentativas: number; montada: boolean } | null;
   /** Do passo `mariana` em diante. */
@@ -190,7 +179,7 @@ export interface Estado {
   etapa: Etapa;
 }
 
-/** `TentativaSchema` — pacotes e cadeia: certa ou não, nunca qual vaga errou. */
+/** `TentativaSchema` — a cadeia: certa ou não, nunca qual vaga errou. */
 export interface Tentativa {
   correta: boolean;
   tentativas: number;

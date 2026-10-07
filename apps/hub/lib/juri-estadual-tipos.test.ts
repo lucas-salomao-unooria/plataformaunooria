@@ -21,13 +21,17 @@ import {
   ROTULO_DA_DISCIPLINA,
   ROTULO_DO_PASSO,
   TERMOS_PROIBIDOS,
+  AVISO_DO_PODCAST_ANTES_DA_GALERIA,
+  AVISO_DO_PODCAST_NA_GALERIA,
   aulaEmAndamento,
   areaDoProjeto,
+  avisoDoPodcast,
   caminhoDaTurma,
   continuarGerando,
   corpoDosParametros,
   distribuirErros,
   erroDaResposta,
+  estadoDaImagem,
   estandesPorArea,
   falhaDaIa,
   falhasAcumuladas,
@@ -260,6 +264,15 @@ describe("o painel da aula", () => {
     expect(rotuloDoBotao(null)).toBeNull();
   });
 
+  test("o podcast só se libera com a Galeria Oculta aberta na aula em andamento", () => {
+    expect(avisoDoPodcast(true, "galeria")).toBe(AVISO_DO_PODCAST_NA_GALERIA);
+    expect(avisoDoPodcast(true, "exploracao")).toBe(AVISO_DO_PODCAST_ANTES_DA_GALERIA);
+    expect(avisoDoPodcast(true, null)).toBe(AVISO_DO_PODCAST_ANTES_DA_GALERIA);
+    /* Fora do ar, a etapa gravada é de outra rodada: o aviso é o de antes. */
+    expect(avisoDoPodcast(false, "galeria")).toBe(AVISO_DO_PODCAST_ANTES_DA_GALERIA);
+    expect(AVISO_DO_PODCAST_ANTES_DA_GALERIA).toMatch(/Galeria Oculta/);
+  });
+
   test("os votos em percentual do total, na ordem das áreas", () => {
     expect(votosEmPercentual(votos(1, 1, 2, 0))).toEqual([25, 25, 50, 0]);
     expect(votosEmPercentual([])).toEqual([0, 0, 0, 0]);
@@ -324,7 +337,7 @@ describe("o que faz o painel de habilidades se atualizar sozinho", () => {
     concluiu: false,
   });
   const painel = (
-    passos: Passo[] = ["galeria", "pacotes", "cadeia", "enquetes"],
+    passos: Passo[] = ["galeria", "cadeia", "cadeia", "enquetes"],
     resumo: Partial<{ revisaram: number; concluiram: number }> = {},
     rodada = 1,
     id = "p1",
@@ -348,14 +361,13 @@ describe("o que faz o painel de habilidades se atualizar sozinho", () => {
     },
   });
 
-  test("relê na revisão do voto, na curtida remontada, na cadeia montada, no concluir depois das enquetes, e quando a atividade ou a rodada trocam", () => {
+  test("relê na revisão do voto, na cadeia montada, no concluir depois das enquetes, e quando a atividade ou a rodada trocam", () => {
     const antes = painel();
     expect(mudouAEvidencia(antes, painel())).toBe(false);
+    // A revisão do voto marca a EF06CO10 e a EF06CO01.
     expect(mudouAEvidencia(antes, painel(undefined, { revisaram: 4 }))).toBe(true);
-    // A curtida remontada: a linha sai de `pacotes` (EF06CO07), sem contador no resumo.
-    expect(mudouAEvidencia(antes, painel(["galeria", "cadeia", "cadeia", "enquetes"]))).toBe(true);
-    // A cadeia montada: a linha sai de `cadeia` (EF06CO03).
-    expect(mudouAEvidencia(antes, painel(["galeria", "pacotes", "mariana", "enquetes"]))).toBe(true);
+    // A cadeia montada: a linha sai de `cadeia` (EF06CO03), sem contador no resumo.
+    expect(mudouAEvidencia(antes, painel(["galeria", "cadeia", "mariana", "enquetes"]))).toBe(true);
     expect(mudouAEvidencia(antes, painel(undefined, { concluiram: 1 }))).toBe(true);
     expect(mudouAEvidencia(antes, painel(undefined, {}, 2))).toBe(true);
     expect(mudouAEvidencia(antes, painel(undefined, {}, 1, "p2"))).toBe(true);
@@ -382,5 +394,16 @@ describe("as imagens", () => {
   test("o progresso em palavras", () => {
     expect(textoDoProgressoDaMidia({ total: 16, prontas: 3 })).toBe("3 de 16 imagens prontas.");
     expect(textoDoProgressoDaMidia({ total: 16, prontas: 16 })).toBe("As 16 imagens estão prontas.");
+  });
+});
+
+describe("a imagem de cada estande na aprovação", () => {
+  test("gerando > sem imagem > aguardando o OK > aprovada", () => {
+    expect(estadoDaImagem({ temImagem: true, gerando: true, aprovadas: false })).toBe("gerando");
+    expect(estadoDaImagem({ temImagem: false, gerando: false, aprovadas: false })).toBe("sem-imagem");
+    expect(estadoDaImagem({ temImagem: true, gerando: false, aprovadas: false })).toBe("aguardando");
+    expect(estadoDaImagem({ temImagem: true, gerando: false, aprovadas: true })).toBe("aprovada");
+    /* Aprovado sem imagem: o estande segue com a arte desenhada, e a grade diz isso. */
+    expect(estadoDaImagem({ temImagem: false, gerando: false, aprovadas: true })).toBe("sem-imagem");
   });
 });

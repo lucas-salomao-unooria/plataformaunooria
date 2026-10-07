@@ -14,11 +14,11 @@ import type {
  * As poucas regras que são do CLIENTE — e por que são tão poucas.
  *
  * Tudo o que decide o que VALE (o motor do feed, a taxa de invisibilidade, a
- * ordem certa dos pacotes e dos blocos, o cartão certo, o nível das enquetes,
+ * ordem certa dos blocos da cadeia, o cartão certo, o nível das enquetes,
  * o relógio da turma) mora no servidor, em `apps/api/src/juri-estadual/`. O que
  * sobra aqui é o que a tela decide sozinha, sem ida à api: qual tela o passo
  * pede, quais estandes entram na cédula, o que a busca da galeria mostra, como
- * a calha dos pacotes se preenche — e o que o servidor não tem como saber (o
+ * a calha da cadeia se preenche — e o que o servidor não tem como saber (o
  * tempo de um post na tela).
  *
  * Quando uma regra daqui ESPELHA uma do servidor (`passoEfetivo`), ela é cópia
@@ -56,11 +56,10 @@ const ORDEM: Record<Passo, number> = {
   feed: 1,
   lacrada: 2,
   galeria: 3,
-  pacotes: 4,
-  cadeia: 5,
-  mariana: 6,
-  enquetes: 7,
-  fim: 8,
+  cadeia: 4,
+  mariana: 5,
+  enquetes: 6,
+  fim: 7,
 };
 
 /**
@@ -78,14 +77,13 @@ export function passoNoMinimo(passo: Passo, piso: Passo): boolean {
 }
 
 /** As telas da missão. `lacrada` é a ESPERA (o PICO): o carimbo e a plenária. */
-export type Tela = "credencial" | "feed" | "espera" | "galeria" | "pacotes" | "cadeia" | "mariana" | "enquetes" | "fim";
+export type Tela = "credencial" | "feed" | "espera" | "galeria" | "cadeia" | "mariana" | "enquetes" | "fim";
 
 export const TELA_DO_PASSO: Record<Passo, Tela> = {
   credencial: "credencial",
   feed: "feed",
   lacrada: "espera",
   galeria: "galeria",
-  pacotes: "pacotes",
   cadeia: "cadeia",
   mariana: "mariana",
   enquetes: "enquetes",
@@ -94,7 +92,7 @@ export const TELA_DO_PASSO: Record<Passo, Tela> = {
 
 /** Quem FALA em cada tela — e, por isso, em que seção do DS o aviso de rede sai. */
 export function vozDaTela(tela: Tela): "clone" | "escola" {
-  return tela === "pacotes" || tela === "cadeia" ? "escola" : "clone";
+  return tela === "cadeia" ? "escola" : "clone";
 }
 
 /**
@@ -223,7 +221,7 @@ export function comCerquilha(hashtag: string): string {
   return `#${hashtag.replace(/^#+/, "")}`;
 }
 
-// ───────────────────────────────────────── a calha (pacotes e cadeia)
+// ───────────────────────────────────────────────────── a calha da cadeia
 
 /**
  * O toque num bloco: na bandeja, ele vai para a próxima vaga livre; na calha,
@@ -242,4 +240,25 @@ export function ordemValida(ordem: readonly string[], ids: readonly string[], va
   const saida: string[] = [];
   for (const id of ordem) if (existentes.has(id) && !saida.includes(id) && saida.length < vagas) saida.push(id);
   return saida;
+}
+
+// ─────────────────────────────────────────────── o gesto na mídia do post
+
+/** Arrasto horizontal mínimo para trocar de lâmina (e máximo de deriva vertical). */
+export const DESLIZE_PX = 40;
+/** Até onde o ponteiro pode andar e ainda ser um TOQUE (o toque duplo curte). */
+export const TOQUE_PX = 10;
+
+export type Gesto = "proxima" | "anterior" | "toque" | "nada";
+
+/**
+ * O que um gesto na mídia quis dizer, pelo deslocamento entre o `pointerdown`
+ * e o `pointerup` — o mesmo para o dedo e para o MOUSE. Arrastar para a
+ * esquerda mostra a próxima lâmina (como no app real); andar pouco é toque;
+ * o resto (rolagem vertical, arrasto torto) não é nada.
+ */
+export function lerGesto(dx: number, dy: number): Gesto {
+  if (Math.abs(dx) >= DESLIZE_PX && Math.abs(dy) < DESLIZE_PX) return dx < 0 ? "proxima" : "anterior";
+  if (Math.abs(dx) <= TOQUE_PX && Math.abs(dy) <= TOQUE_PX) return "toque";
+  return "nada";
 }

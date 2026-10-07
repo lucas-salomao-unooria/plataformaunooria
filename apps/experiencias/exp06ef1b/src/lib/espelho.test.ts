@@ -13,7 +13,6 @@ import {
   TIPOS_DE_BUSCA,
   TIPOS_DE_POST,
   TOTAL_DE_BLOCOS,
-  TOTAL_DE_PACOTES,
   TOTAL_DE_PROJETOS,
   type Feed,
   type Galeria,
@@ -80,7 +79,7 @@ function chavesDoSchema(nome: string): string[] {
 const CHAVES = {
   sessao: {
     pacoteId: 1, rodada: 1, passo: 1, passoDoEstudante: 1, etapa: 1, aguardandoOProfessor: 1, tema: 1,
-    categorias: 1, feed: 1, voto: 1, revisao: 1, pacotes: 1, cadeia: 1, mariana: 1, concluida: 1,
+    categorias: 1, feed: 1, voto: 1, revisao: 1, cadeia: 1, mariana: 1, concluida: 1,
   } satisfies Record<keyof Sessao, 1>,
   feed: { posts: 1, curtidos: 1, completo: 1 } satisfies Record<keyof Feed, 1>,
   post: {
@@ -112,18 +111,26 @@ describe("o vocabulário é o da api, na mesma ordem", () => {
     expect(TOTAL_DE_PROJETOS).toBe(AREAS.length * numeroDoArquivo(VOCABULARIO, "PROJETOS_POR_AREA"));
   });
 
-  test("quatro pacotes e quatro blocos, como o esqueleto da api", () => {
+  test("quatro blocos, como o esqueleto da api — e os pacotes da curtida não existem mais", () => {
     const conteudo = ler(CONTEUDO);
-    const pacotes = /export const PACOTES_DA_CURTIDA = \[([\s\S]*?)\] as const/.exec(conteudo)?.[1] ?? "";
     const blocos = /export const BLOCOS_DA_CADEIA = \[([\s\S]*?)\] as const/.exec(conteudo)?.[1] ?? "";
-    expect([...pacotes.matchAll(/numero: \d/g)]).toHaveLength(TOTAL_DE_PACOTES);
     expect([...blocos.matchAll(/posicao: \d/g)]).toHaveLength(TOTAL_DE_BLOCOS);
+    /* A EF06CO07 saiu da missão (o pedido do PO): nem o esqueleto nem o passo. */
+    expect(conteudo).not.toContain("PACOTES_DA_CURTIDA");
+    expect(PASSOS).not.toContain("pacotes");
   });
 
   test("as três enquetes são as perguntas da ficha, na ordem", () => {
     const perguntas = /perguntas: \[([\s\S]*)\],\s*\};?\s*$/.exec(ler(FICHA))?.[1] ?? "";
     const ids = [...perguntas.matchAll(/^\s{6}id: "(p\d)"/gm)].map((m) => m[1]);
     expect(ids).toEqual([...ENQUETES]);
+  });
+
+  test("as habilidades da ficha: EF06CO10 (com a p1), EF06CO01 e EF06CO03 — sem a EF06CO07", () => {
+    const ficha = ler(FICHA);
+    const codigos = [...ficha.matchAll(/codigo: "(EF\d{2}CO\d{2})"/g)].map((m) => m[1]);
+    expect(codigos).toEqual(["EF06CO10", "EF06CO01", "EF06CO03"]);
+    expect(ficha).not.toContain('codigo: "EF06CO07"');
   });
 });
 
@@ -157,7 +164,7 @@ describe("passoEfetivo — a mesma resposta da api num F5", () => {
   });
 
   test("da revisão em diante, o passo é da criança", () => {
-    for (const passo of ["pacotes", "cadeia", "mariana", "enquetes", "fim"] as const) {
+    for (const passo of ["cadeia", "mariana", "enquetes", "fim"] as const) {
       for (const etapa of ETAPAS) expect(passoEfetivo(passo, etapa)).toBe(passo);
     }
   });

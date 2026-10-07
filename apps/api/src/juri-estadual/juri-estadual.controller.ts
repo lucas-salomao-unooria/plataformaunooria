@@ -13,7 +13,6 @@ import {
   GaleriaSchema,
   GatePublicoSchema,
   OrdemDaCadeiaSchema,
-  OrdemDosPacotesSchema,
   PedirPassoSchema,
   RevisaoDoVotoSchema,
   SessaoSchema,
@@ -27,7 +26,7 @@ import { JuriEstadualService } from "./juri-estadual.service";
  * Rotas do ESTUDANTE da exp06ef1b — O Júri Estadual de Projetos.
  *
  * O motor e o gabarito ficam no servidor: o cliente diz o que MEDIU (curtiu,
- * ficou mais de 5 s) e o que ESCOLHEU (o voto, a ordem dos pacotes), e o
+ * ficou mais de 5 s) e o que ESCOLHEU (o voto, a ordem da cadeia), e o
  * próximo post, a taxa de invisibilidade e se a ordem confere saem daqui
  * (regra inviolável nº 3). Identidade, inclusive a TURMA, sai do token, nunca
  * do corpo.
@@ -73,7 +72,7 @@ export class JuriEstadualController {
   @Contrato({
     resumo: "O estado da missão: o passo, o feed servido até aqui, o voto e os blocos do fim.",
     descricao:
-      "Boot da experiência e o F5. O feed traz **só os posts que o motor serviu** — o acervo da mostra existe só no servidor até a Galeria Oculta. Nenhum peso, nenhuma área líder: a regra do feed é o que a Etapa 5 ensina, e a criança a descobre depois.\n\n`pacotes` (a curtida em quatro pacotes, na ORDEM DE CHEGADA desta sessão), `cadeia` (os quatro blocos embaralhados) e `mariana` (o caso e os cartões) só vêm do passo deles em diante, com ids OPACOS e estáveis num F5. Nenhum diz a posição certa, e nenhum cartão diz se é o certo.",
+      "Boot da experiência e o F5. O feed traz **só os posts que o motor serviu** — o acervo da mostra existe só no servidor até a Galeria Oculta. Nenhum peso, nenhuma área líder: a regra do feed é o que a Etapa 5 ensina, e a criança a descobre depois.\n\n`cadeia` (os quatro blocos embaralhados) e `mariana` (o caso e os cartões) só vêm do passo deles em diante, com ids OPACOS e estáveis num F5. Nenhum diz a posição certa, e nenhum cartão diz se é o certo.",
     resposta: SessaoSchema,
     notas: [
       "`passo` já vem reconciliado com a etapa da turma; `passoDoEstudante` é o gravado. A etapa só conduz quem votou: quem ainda está no feed continua no feed com a galeria liberada.",
@@ -201,7 +200,7 @@ export class JuriEstadualController {
   @Contrato({
     resumo: "Manter ou trocar o voto, depois da galeria (latch).",
     descricao:
-      "`trocar` aceita qualquer um dos dezesseis estandes (a galeria mostrou todos), menos o do voto lacrado. Grava a ação, o voto final, o carimbo e o passo `pacotes` juntos, e marca a EF06CO01 (`auditoria`) pelo que a criança fez na galeria antes de decidir.",
+      "`trocar` aceita qualquer um dos dezesseis estandes (a galeria mostrou todos), menos o do voto lacrado. Grava a ação, o voto final, o carimbo e o passo `cadeia` juntos, e marca a EF06CO10 (`auditoria`: quantos estandes ocultos ela abriu) e a EF06CO01 (`classificacao`: se buscou pela hashtag de outra área e abriu um oculto dela) pelo que a criança fez na galeria antes de decidir.",
     corpo: RevisaoDoVotoSchema,
     resposta: EstadoSchema,
     notas: [
@@ -221,36 +220,16 @@ export class JuriEstadualController {
     );
   }
 
-  @Post("pacotes")
-  @HttpCode(200)
-  @Contrato({
-    resumo: "Uma tentativa de remontar a curtida: os quatro pacotes na ordem dos números.",
-    descricao:
-      "Cada envio é uma TENTATIVA. A resposta diz só se a ordem confere — nunca qual vaga errou. Na certa, o passo vai a `cadeia` e a EF06CO07 (`pacotes`) é marcada pelo número de tentativas (1 = atingiu, 2–3 = em processo, mais = não atingiu). Com a curtida já remontada, responde `correta: true` sem contar outra tentativa.",
-    corpo: OrdemDosPacotesSchema,
-    resposta: TentativaSchema,
-    notas: [
-      "`ordem`: os quatro ids OPACOS desta sessão (`pk-` e três caracteres), sem repetir. (O `.refine()` some do OpenAPI; daí esta nota.) Id de outra sessão responde **400** `payload-invalido`.",
-      "Fora do passo `pacotes` responde **409** `passo-invalido`; com a rodada trocada no meio, **409** `rodada-mudou`.",
-      PORTA,
-    ],
-  })
-  pacotes(@Body() corpo: unknown, @Req() req: Autenticado) {
-    limitar(req.auth.usuarioId);
-    const { ordem } = valida(OrdemDosPacotesSchema, corpo);
-    return this.missao.remontarPacotes(req.auth.escolaId, req.auth.usuarioId, turmaDo(req.auth), ordem);
-  }
-
   @Post("cadeia")
   @HttpCode(200)
   @Contrato({
     resumo: "Uma tentativa de montar a cadeia: Interações → Dados → Algoritmo → Bolha.",
     descricao:
-      "A mesma régua dos pacotes. Na certa, o passo vai a `mariana` e a EF06CO03 (`cadeia`) é marcada pelo número de tentativas. Com a cadeia já montada, responde `correta: true` sem contar.",
+      "Cada envio é uma TENTATIVA. A resposta diz só se a ordem confere — nunca qual vaga errou. Na certa, o passo vai a `mariana` e a EF06CO03 (`cadeia`) é marcada pelo número de tentativas (1 = atingiu, 2–3 = em processo, mais = não atingiu). Com a cadeia já montada, responde `correta: true` sem contar outra tentativa.",
     corpo: OrdemDaCadeiaSchema,
     resposta: TentativaSchema,
     notas: [
-      "`ordem`: os quatro ids OPACOS desta sessão (`bl-` e três caracteres), sem repetir. Id de outra sessão responde **400** `payload-invalido`.",
+      "`ordem`: os quatro ids OPACOS desta sessão (`bl-` e três caracteres), sem repetir. (O `.refine()` some do OpenAPI; daí esta nota.) Id de outra sessão responde **400** `payload-invalido`.",
       "Fora do passo `cadeia` responde **409** `passo-invalido`; com a rodada trocada no meio, **409** `rodada-mudou`.",
       PORTA,
     ],

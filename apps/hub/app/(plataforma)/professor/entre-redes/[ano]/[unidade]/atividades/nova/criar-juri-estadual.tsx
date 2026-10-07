@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { Button, Card, FeedbackAlert, Icon, ProgressBar, Selection, Tag, TextArea, TextField } from "@edu/ui/ds";
 import {
   AssistenteDeAtividade,
@@ -27,14 +27,18 @@ import {
   rotuloCurtoDaArea,
   rotuloDaDisciplina,
   type ConteudoDoPacote,
+  type PacoteDetalhe,
   type PacoteHomologado,
   type ParametrosNaTela,
   type ProjetoDoPacote,
   type ProjetoRegenerado,
   type RascunhoDoPacote,
 } from "@/lib/juri-estadual-tipos";
+import { falasParaHomologar, type FalasEscritas } from "@/lib/podcast-tipos";
 
 import { CartaoDoEstande, EditorDoEstande } from "../../resultados/estande-do-preparo";
+import { ImagensDoJuri } from "../../resultados/imagens-do-juri";
+import { FalasDoPodcast, falasComProblema, pedirFalasDoTema } from "./falas-do-podcast";
 
 /** A copy revisada (§1, E0-PROF-02 a 04), no que ela sobreviveu à criação. A suíte e2e casa por texto exato. */
 const COPY = {
@@ -63,6 +67,15 @@ const SEM_CONEXAO = "A conexão falhou. Tente de novo.";
 
 type Aviso = { tipo: "success" | "warning" | "info"; texto: string };
 
+/** Os textos aprovados (a fase 1): o pacote GRAVADO, de UMA turma, com as imagens que ele já tem. */
+interface TextosAprovados {
+  id: string;
+  turmaId: string;
+  conteudo: ConteudoDoPacote;
+  imagens: Record<string, string>;
+  aprovadasEm: string | null;
+}
+
 /** De onde veio a falha da IA — é o que o "Tentar de novo" repete. */
 type FalhaDaIa = { tipo: "sem-saldo" | "indisponivel"; de: "gerar" | string };
 
@@ -83,13 +96,22 @@ type FalhaDaIa = { tipo: "sem-saldo" | "indisponivel"; de: "gerar" | string };
  * 3. **curar** os dezesseis estandes, em quatro grupos (um por área): editar
  *    título, legenda e bastidor, e regenerar um estande (`regenerar-projeto`),
  *    que sem IA devolve o estande como estava;
- * 4. **homologar** — é o "Criar atividade" do assistente (`criar` →
- *    `homologar`). A atividade nasce PRONTA, e o último passo pergunta se ela
- *    já entra em andamento.
+ * 4. **aprovar em DUAS fases, na mesma tela** (o pedido do PO: "o professor
+ *    não consegue validar as imagens dos estandes"; molde do Jornal, ADR-147,
+ *    e da A Seleção, ADR-146): primeiro os TEXTOS — os estandes E as três
+ *    falas do podcast de recapitulação que citam a mostra (ADR-150), pedidas
+ *    a `POST /podcast/exp06ef1b/turmas/:t/falas-do-tema` quando a mostra chega
+ *    do gerador e revisadas logo abaixo da curadoria ("Aprovar textos e gerar
+ *    as imagens" grava o pacote por `homologar`, com as falas no corpo, PRONTO
+ *    e fora do ar; sem as falas na régua, o botão não acende); depois as
+ *    IMAGENS, que se geram sozinhas na grade (`resultados/imagens-do-juri.tsx`),
+ *    onde o professor vê cada uma, gera outra para a que não serve e aprova.
+ *    Gerar imagem para um rascunho gastaria a quota à toa — por isso os textos
+ *    são gravados antes. O "Continuar" só acende com as imagens aprovadas: a
+ *    atividade não vai ao ar sem isso (409 `imagens-nao-aprovadas`).
  *
- * E as IMAGENS? São do pacote GRAVADO, como no Jornal: geram-se na página da
- * atividade (`resultados/imagens-do-juri.tsx`), para onde o assistente leva
- * logo depois de criar. Gerar para um rascunho gastaria a quota à toa.
+ * O "Criar atividade" do assistente não grava mais nada: o pacote já existe, e
+ * ele faz o resto (pôr no ar, se marcado, e as equipes).
  *
  * `gerar-conteudo` e `regenerar-projeto` NÃO persistem: o rascunho vive aqui, e
  * só `homologar` grava. O `pacote-invalido` traz a lista de problemas em
@@ -116,6 +138,18 @@ export function CriarJuriEstadual({
   const [aviso, setAviso] = useState<Aviso | null>(null);
   const [falha, setFalha] = useState<FalhaDaIa | null>(null);
   const [erro, setErro] = useState<{ mensagem: string; erros: string[] } | null>(null);
+  const [aprovados, setAprovados] = useState<TextosAprovados | null>(null);
+  const [aprovandoTextos, setAprovandoTextos] = useState(false);
+  const [imagensAprovadas, setImagensAprovadas] = useState(false);
+  const aoMudarAprovacao = useCallback((sim: boolean) => setImagensAprovadas(sim), []);
+  /* As falas do podcast que contam ESTA mostra (ADR-150): o professor as revisa
+     aqui, e elas vão no `homologar`. `falasDaMostra` é a mostra para a qual
+     foram escritas — mudou a mostra (um estande editado, regenerado), a tela
+     avisa, sem bloquear. Não há banco padrão: sem IA, voltam as do roteiro. */
+  const [falas, setFalas] = useState<FalasEscritas | null>(null);
+  const [escrevendoFalas, setEscrevendoFalas] = useState(false);
+  const [falhaDasFalas, setFalhaDasFalas] = useState<string | null>(null);
+  const [falasDaMostra, setFalasDaMostra] = useState("");
 
   const errosDosParametros = problemasDosParametros(parametros);
   const parametrosValidos = Object.keys(errosDosParametros).length === 0;
@@ -126,7 +160,15 @@ export function CriarJuriEstadual({
   );
   const comProblema = (conteudo?.projetos ?? []).filter((p) => Object.keys(problemasDeCampo.get(p.id) ?? {}).length > 0);
   const errosDaApi = distribuirErros(erro?.erros ?? []);
-  const pronto = completo && parametrosValidos && comProblema.length === 0;
+  const problemasDasFalas = falasComProblema(falas);
+  const faltamFalas = !escrevendoFalas && (falas === null || problemasDasFalas > 0);
+  const pronto =
+    completo &&
+    parametrosValidos &&
+    comProblema.length === 0 &&
+    falas !== null &&
+    problemasDasFalas === 0 &&
+    !escrevendoFalas;
   const ocupado = gerando || regenerando !== null;
   const emEdicao = editando ? (conteudo?.projetos.find((p) => p.id === editando) ?? null) : null;
   /* A criação nasce vazia: o erro de um campo só aparece depois que o
@@ -137,6 +179,21 @@ export function CriarJuriEstadual({
     setErro(null);
     setAviso(null);
     setFalha(null);
+  }
+
+  /** Pede as falas do podcast para a mostra, na forma que o `homologar` grava. */
+  async function escreverFalas(turmaId: string, mostra: ConteudoDoPacote) {
+    const normalizada = normalizarConteudo(mostra);
+    setEscrevendoFalas(true);
+    setFalhaDasFalas(null);
+    const r = await pedirFalasDoTema("exp06ef1b", turmaId, normalizada);
+    if (r.ok) {
+      setFalas(r.falas);
+      setFalasDaMostra(JSON.stringify(normalizada));
+    } else {
+      setFalhaDasFalas(r.mensagem);
+    }
+    setEscrevendoFalas(false);
   }
 
   function trocarParametro(campo: keyof ParametrosNaTela, valor: string) {
@@ -170,6 +227,7 @@ export function CriarJuriEstadual({
       setConteudo(rascunho.conteudo);
       setTemaDosEstandes(rascunho.parametros.tema);
       setEditando(null);
+      void escreverFalas(turmaId, rascunho.conteudo);
       setAviso({
         tipo: "success",
         texto:
@@ -224,20 +282,62 @@ export function CriarJuriEstadual({
     else void regenerar(turmaId, falha.de);
   }
 
-  async function criar(turmaId: string): Promise<ResultadoDaCriacao> {
-    if (!conteudo) return { ok: false, mensagem: "Gere a mostra antes de criar a atividade.", erros: [] };
-    const r = await fetch(`/api/plataforma${caminhoDaTurma(turmaId)}/homologar`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ parametros: corpoDosParametros(parametros), conteudo: normalizarConteudo(conteudo) }),
-    });
-    if (!r.ok) {
-      const { mensagem, erros } = erroDaResposta(await r.json().catch(() => null), "Não deu para criar a atividade agora.");
-      setErro({ mensagem, erros });
-      return { ok: false, mensagem, erros };
+  /** A FASE 1: grava os textos como o professor os deixou, e as imagens começam. */
+  async function aprovarTextos(turmaId: string) {
+    if (!conteudo) return;
+    setAprovandoTextos(true);
+    limparRecados();
+    try {
+      const r = await fetch(`/api/plataforma${caminhoDaTurma(turmaId)}/homologar`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          parametros: corpoDosParametros(parametros),
+          conteudo: normalizarConteudo(conteudo),
+          podcast: falasParaHomologar(falas?.vagas ?? []),
+        }),
+      });
+      if (!r.ok) {
+        /* `pacote-invalido` traz a LISTA de problemas em frases; as que citam
+           um estande vão para o cartão dele. */
+        setErro(erroDaResposta(await r.json().catch(() => null), "Não deu para aprovar os textos agora."));
+        return;
+      }
+      const criado = (await r.json()) as PacoteHomologado;
+      /* O pacote nasce com as imagens HERDADAS de outro da turma com a mesma
+         descrição (e o mesmo conteúdo devolve o próprio pacote, que pode já
+         estar aprovado): o detalhe as traz, e a fase 2 não as paga de novo. */
+      const detalhe = await fetch(`/api/plataforma${caminhoDaTurma(turmaId)}/pacotes/${encodeURIComponent(criado.id)}`, {
+        cache: "no-store",
+      });
+      const lido = detalhe.ok ? ((await detalhe.json()) as PacoteDetalhe) : null;
+      setImagensAprovadas(false);
+      setEditando(null);
+      setAprovados({
+        id: criado.id,
+        turmaId,
+        conteudo: lido?.conteudo ?? normalizarConteudo(conteudo),
+        imagens: lido?.imagens ?? {},
+        aprovadasEm: lido?.imagensAprovadasEm ?? null,
+      });
+    } catch {
+      setErro({ mensagem: SEM_CONEXAO, erros: [] });
+    } finally {
+      setAprovandoTextos(false);
     }
-    const criado = (await r.json()) as PacoteHomologado;
-    return { ok: true, id: criado.id };
+  }
+
+  /** O "Criar atividade" do assistente: o pacote já está gravado, com as imagens aprovadas. */
+  async function criar(turmaId: string): Promise<ResultadoDaCriacao> {
+    if (!aprovados || aprovados.turmaId !== turmaId || !imagensAprovadas) {
+      return { ok: false, mensagem: "Aprove os textos e as imagens desta turma antes de criar a atividade.", erros: [] };
+    }
+    return { ok: true, id: aprovados.id };
+  }
+
+  function recomecar() {
+    setAprovados(null);
+    setImagensAprovadas(false);
   }
 
   return (
@@ -246,16 +346,67 @@ export function CriarJuriEstadual({
       rotaDaMissao={rotaDaMissao}
       turmas={turmas}
       turmaInicial={turmaInicial}
-      conteudoPronto={pronto}
+      conteudoPronto={aprovados !== null && imagensAprovadas}
       resumoDoConteudo={
-        completo && conteudo
-          ? `“${conteudo.tema.trim()}” · ${rotuloDaDisciplina(parametros.disciplina)} · ${TOTAL_DE_PROJETOS} estandes em 4 áreas`
+        aprovados && conteudo
+          ? `“${conteudo.tema.trim()}” · ${rotuloDaDisciplina(parametros.disciplina)} · ${TOTAL_DE_PROJETOS} estandes em 4 áreas, com os textos e as imagens aprovados`
           : null
       }
       criar={criar}
-      conteudo={(turmaId) => (
+      conteudo={(turmaId) =>
+        aprovados ? (
+          <Card variant="outlined" title={COPY.titulo}>
+            <div className="flex flex-col gap-5" data-preparo-juri data-fase="imagens">
+              <p className="text-[13px] font-semibold text-unooria-neutral-950" data-fase-da-aprovacao>
+                Fase 2 de 2: as imagens
+              </p>
+              {aprovados.turmaId !== turmaId ? (
+                <FeedbackAlert
+                  type="warning"
+                  description={
+                    <span className="flex flex-col items-start gap-2">
+                      <span>
+                        Os textos desta mostra foram aprovados para outra turma. Volte à turma anterior para continuar,
+                        ou comece uma mostra nova para esta.
+                      </span>
+                      <Button variant="secondary" size="sm" onClick={recomecar} data-acao="recomecar-mostra">
+                        Começar uma mostra nova
+                      </Button>
+                    </span>
+                  }
+                />
+              ) : (
+                <>
+                  <p className="max-w-3xl text-[13px] leading-relaxed text-unooria-neutral-700">
+                    Os textos de “{aprovados.conteudo.tema}” estão aprovados e a atividade está gravada, ainda fora do
+                    ar. Agora as imagens:{" "}
+                    <strong>
+                      nenhuma imagem gerada por inteligência artificial é exibida aos estudantes sem a sua aprovação.
+                    </strong>{" "}
+                    Com elas aprovadas, continue para as equipes.
+                  </p>
+                  <ImagensDoJuri
+                    key={aprovados.id}
+                    turmaId={turmaId}
+                    pacoteId={aprovados.id}
+                    conteudo={aprovados.conteudo}
+                    imagensIniciais={aprovados.imagens}
+                    aprovadasEmInicial={aprovados.aprovadasEm}
+                    podeEditar
+                    gerarAoAbrir
+                    aoMudarAprovacao={aoMudarAprovacao}
+                    moldura={false}
+                  />
+                </>
+              )}
+            </div>
+          </Card>
+        ) : (
         <Card variant="outlined" title={COPY.titulo}>
-          <div className="flex flex-col gap-5" data-preparo-juri>
+          <div className="flex flex-col gap-5" data-preparo-juri data-fase="textos">
+            <p className="text-[13px] font-semibold text-unooria-neutral-950" data-fase-da-aprovacao>
+              Fase 1 de 2: os textos
+            </p>
             <p className="max-w-3xl text-[13px] leading-relaxed text-unooria-neutral-700">
               A inteligência artificial escreve os 16 estandes da mostra sobre o tema da sua aula, em quatro áreas.
               Esta missão não tem mostra pronta: sem gerar, não há atividade.{" "}
@@ -380,9 +531,20 @@ export function CriarJuriEstadual({
                   <p className="max-w-3xl text-[13px] leading-snug text-unooria-neutral-700">{COPY.instrucaoDaCuradoria}</p>
                   {/* O "Continuar" apagado sem motivo escrito é o silêncio que a
                       exp05ef1b já pagou: diga o que falta, e onde. */}
-                  {!parametrosValidos || comProblema.length > 0 ? (
+                  {!parametrosValidos || comProblema.length > 0 || faltamFalas ? (
                     <div className="flex flex-col gap-1 text-[12px] leading-snug text-unooria-danger" role="status">
                       {!parametrosValidos ? <p>Falta o componente curricular, o tema ou os assuntos, nos campos acima.</p> : null}
+                      {!escrevendoFalas && falas === null ? (
+                        <p>Faltam as falas do podcast de recapitulação, logo abaixo dos estandes.</p>
+                      ) : null}
+                      {problemasDasFalas > 0 ? (
+                        <p>
+                          {problemasDasFalas === 1
+                            ? "Uma fala do podcast precisa"
+                            : `${problemasDasFalas} falas do podcast precisam`}{" "}
+                          de ajuste. O campo está marcado abaixo.
+                        </p>
+                      ) : null}
                       {comProblema.length > 0 ? (
                         <p>
                           {comProblema.length === 1 ? "Um estande precisa" : `${comProblema.length} estandes precisam`} de ajuste.
@@ -424,6 +586,38 @@ export function CriarJuriEstadual({
               )}
             </div>
 
+            {/* As falas do podcast, junto da mostra que elas contam (ADR-150). */}
+            {completo && conteudo ? (
+              <FalasDoPodcast
+                falas={falas}
+                escrevendo={escrevendoFalas}
+                falha={falhaDasFalas}
+                desatualizadas={falas !== null && falasDaMostra !== JSON.stringify(normalizarConteudo(conteudo))}
+                travado={aprovandoTextos}
+                aoMudar={(vagas) => setFalas((atual) => (atual ? { ...atual, vagas } : atual))}
+                aoReescrever={() => void escreverFalas(turmaId, conteudo)}
+              />
+            ) : null}
+
+            {completo && conteudo ? (
+              <div className="flex flex-wrap items-center gap-3 border-t border-unooria-neutral-200 pt-4">
+                <Button
+                  variant="primary"
+                  size="md"
+                  leftIcon={<Icon name="check" size={18} />}
+                  onClick={() => void aprovarTextos(turmaId)}
+                  isDisabled={!pronto || ocupado || aprovandoTextos}
+                  isLoading={aprovandoTextos}
+                  data-acao="aprovar-textos"
+                >
+                  Aprovar textos e gerar as imagens
+                </Button>
+                <span className="text-[12px] text-unooria-neutral-600">
+                  Os textos ficam gravados e as imagens começam a ser geradas. Depois disso, os textos não mudam aqui.
+                </span>
+              </div>
+            ) : null}
+
             {emEdicao && conteudo ? (
               <EditorDoEstande
                 projeto={emEdicao}
@@ -439,7 +633,8 @@ export function CriarJuriEstadual({
             ) : null}
           </div>
         </Card>
-      )}
+        )
+      }
     />
   );
 }

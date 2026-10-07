@@ -3,52 +3,16 @@
  *
  * Decisão de 2026-10-02: a missão não nasce com acervo (os dezesseis projetos
  * são da atividade, gerados por IA no preparo). O que vive aqui é a missão em
- * si: os pacotes da curtida (EF06CO07), os blocos da cadeia (EF06CO03), o caso
- * Mariana e os cartões, e as perguntas da plenária. Texto da copy revisada
+ * si: os blocos da cadeia (EF06CO03), o caso Mariana e os cartões, e as
+ * perguntas da plenária. Os pacotes da curtida (EF06CO07) saíram com a
+ * habilidade (pedido do PO, 2026-10-06): a missão mede a EF06CO10. Texto da copy revisada
  * (`design/06-copy-strings-revisada.md`, passada 2), com as correções do plano:
- * uma exclamação só na missão (a do Léo, na experiência).
+ * uma exclamação só na missão (a do Léo, no topo da cadeia, na experiência).
  *
- * O que é GABARITO aqui (a ordem dos pacotes e dos blocos, o cartão certo)
+ * O que é GABARITO aqui (a ordem dos blocos, o cartão certo)
  * nunca desce: o estudante recebe os itens embaralhados pela sessão, com ids
  * OPACOS, e quem confere é o servidor.
  */
-
-// ------------------------------------------------- EF06CO07: o rastro da curtida
-
-/**
- * A curtida (o voto do estudante) sai do celular em QUATRO pacotes numerados,
- * cada um por um caminho de equipamentos, e chega fora de ordem. A criança
- * remonta a mensagem no destino pela numeração: é a EF06CO07 ("a informação é
- * quebrada em pedaços, transmitida em pacotes através de múltiplos
- * equipamentos, e reconstruída no destino") vivida com o próprio dado.
- *
- * `trecho` é um molde: `{projeto}` e `{hashtag}` saem do voto da sessão.
- */
-export const PACOTES_DA_CURTIDA = [
-  {
-    numero: 1,
-    trecho: "De: jurado da sua turma",
-    rota: ["Celular", "Wi-Fi da escola", "Provedor de internet", "Servidor da Mostra"],
-  },
-  {
-    numero: 2,
-    trecho: "Ação: voto e curtida",
-    rota: ["Celular", "Wi-Fi da escola", "Torre de celular", "Provedor de internet", "Servidor da Mostra"],
-  },
-  {
-    numero: 3,
-    trecho: "Projeto: {projeto}",
-    rota: ["Celular", "Wi-Fi da escola", "Roteador da cidade", "Servidor da Mostra"],
-  },
-  {
-    numero: 4,
-    trecho: "Área: {hashtag}",
-    rota: ["Celular", "Wi-Fi da escola", "Provedor de internet", "Roteador da cidade", "Servidor da Mostra"],
-  },
-] as const;
-
-/** Quatro pacotes, quatro vagas na remontagem. */
-export const TOTAL_DE_PACOTES = PACOTES_DA_CURTIDA.length;
 
 // ------------------------------------------------------ EF06CO03: a cadeia
 

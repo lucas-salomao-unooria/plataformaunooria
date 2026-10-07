@@ -15,8 +15,10 @@ import {
   TentativaSchema,
 } from "../src/juri-estadual/contrato-de-rotas";
 import { EXP_ID, JuriEstadualService } from "../src/juri-estadual/juri-estadual.service";
+import { FALAS_DO_TEMA_PADRAO } from "../src/juri-estadual/podcast";
+import { fonteDoPodcastDaExp06ef1b } from "../src/juri-estadual/podcast-fonte";
 import { PreparoDaExp06ef1bService } from "../src/juri-estadual/preparo.service";
-import { ordemCertaDaCadeia, ordemCertaDosPacotes } from "../src/juri-estadual/regras/ordem";
+import { ordemCertaDaCadeia } from "../src/juri-estadual/regras/ordem";
 import { PROIBIDO_NA_LINHA_DO_PAINEL } from "../src/juri-estadual/regras/painel";
 import { ETAPAS, PASSOS } from "../src/juri-estadual/regras/passos";
 import { DISCIPLINAS, areaDoProjeto, type Area } from "../src/juri-estadual/vocabulario";
@@ -29,8 +31,8 @@ import { criarTurmaDeTeste } from "./turma-de-teste";
 /**
  * Integração da exp06ef1b no Postgres: a RLS das três tabelas e os CHECKs, a
  * porta da sala, o feed afunilado servido pelo motor, os dois latches
- * concorrentes, o portão da galeria, a auditoria, os pacotes e a cadeia com ids
- * opacos, o caso Mariana, atividade × rodada (zerar guarda, outra atividade
+ * concorrentes, o portão da galeria, a auditoria (EF06CO10 e EF06CO01), a
+ * cadeia com ids opacos, as imagens aprovadas antes de ir ao ar, o caso Mariana, atividade × rodada (zerar guarda, outra atividade
  * abre a rodada seguinte, criar é idempotente), o painel POR COMPUTADOR, o
  * resolvedor das enquetes e o preparo com IA falsa.
  *
@@ -119,7 +121,10 @@ async function prepararAtividade(turmaId = ids.turma, escolaId = ESCOLA, tema?: 
   const criado = await service.homologar(escolaId, turmaId, undefined, ids.professora, {
     parametros: PARAMETROS_DE_TESTE,
     conteudo: conteudoDeTeste(tema),
+    podcast: FALAS_DO_TEMA_PADRAO,
   });
+  /* A segunda fase da aprovação (as imagens): sem ela, não vai ao ar. */
+  await service.aprovarImagens(escolaId, turmaId, undefined, criado.id);
   await service.colocarEmAndamento(escolaId, turmaId, undefined, criado.id);
   return criado.id;
 }
@@ -127,6 +132,7 @@ async function prepararAtividade(turmaId = ids.turma, escolaId = ESCOLA, tema?: 
 async function limparMissao() {
   /* O pacote leva o gate e as sessões por cascata. */
   await prisma.exp06ef1bPacote.deleteMany({ where: { escolaId: { in: ESCOLAS } } });
+  await prisma.podcastRoteiro.deleteMany({ where: { escolaId: { in: ESCOLAS } } });
   await prisma.evidenciaEvento.deleteMany({ where: { escolaId: { in: ESCOLAS } } });
   await prisma.evidencia.deleteMany({ where: { escolaId: { in: ESCOLAS } } });
   await prisma.evidenciaMarca.deleteMany({ where: { escolaId: { in: ESCOLAS } } });
@@ -196,8 +202,8 @@ async function votar(estudanteId: string, area?: Area) {
   return { feed, projetoId };
 }
 
-/** Do zero até o passo `pacotes`: vota, a turma libera a galeria, abre dois ocultos de outras áreas e mantém. */
-async function ateOsPacotes(estudanteId: string) {
+/** Do zero até o passo `cadeia`: vota, a turma libera a galeria, abre dois ocultos de outras áreas e mantém. */
+async function ateACadeia(estudanteId: string) {
   const { projetoId } = await votar(estudanteId, "area_b");
   await etapa("galeria");
   const g = GaleriaSchema.parse(await service.galeria(ESCOLA, estudanteId, ids.turma));
@@ -363,6 +369,12 @@ describe("os CHECKs recusam o que dizem recusar", () => {
   test("o vocabulário dos passos, das etapas e das disciplinas é o MESMO do código", async () => {
     const passos = await def("exp06ef1b_sessoes_passo_check");
     for (const p of PASSOS) expect(passos).toContain(`'${p}'`);
+    expect(passos).not.toContain("'pacotes'");
+    /* As colunas dos pacotes saíram com o passo (20261006120000). */
+    const colunas = await prisma.$queryRawUnsafe<{ c: string }[]>(
+      "SELECT column_name AS c FROM information_schema.columns WHERE table_name = 'exp06ef1b_sessoes' AND column_name LIKE 'pacotes%'",
+    );
+    expect(colunas).toEqual([]);
     expect(passos.match(/'[a-z]+'::text/g)).toHaveLength(PASSOS.length);
     const etapas = await def("exp06ef1b_gates_turma_etapa_check");
     for (const e of ETAPAS) expect(etapas).toContain(`'${e}'`);
@@ -384,19 +396,20 @@ describe("os CHECKs recusam o que dizem recusar", () => {
   });
 
   test("o LATCH 2: manter repete o voto, trocar escolhe outro, e o carimbo anda com o passo", async () => {
-    const revisada = (acao: string, voto: string, passo = "pacotes") =>
+    const revisada = (acao: string, voto: string, passo = "cadeia") =>
       `revisao_acao = '${acao}', voto_revisado = '${voto}', revisado_em = now(), passo = '${passo}'`;
     await naSessao(revisada("manter", "proj-b2"));
     await naSessao(revisada("trocar", "proj-a1"));
     await naSessao(revisada("manter", "proj-a1", "lacrada"));
-    await naSessao("passo = 'pacotes'");
+    await naSessao("passo = 'cadeia'");
     await prisma.$executeRawUnsafe(`UPDATE exp06ef1b_sessoes SET ${revisada("trocar", "proj-c3")} WHERE id = '${sessao}'::uuid`);
   });
 
-  test("pacotes, cadeia, cartões e fim andam com o passo", async () => {
-    await naSessao("passo = 'cadeia'");
-    await naSessao("pacotes_remontados_em = now(), pacotes_tentativas = 0, passo = 'cadeia'");
-    await naSessao("pacotes_remontados_em = now(), pacotes_tentativas = 1, passo = 'mariana'");
+  test("cadeia, cartões e fim andam com o passo — e `pacotes` não existe mais", async () => {
+    /* O passo dos pacotes saiu com a EF06CO07 (2026-10-06): nem gravado. */
+    await naSessao("passo = 'pacotes'");
+    await naSessao("cadeia_montada_em = now(), cadeia_tentativas = 0, passo = 'mariana'");
+    await naSessao("cadeia_montada_em = now(), cadeia_tentativas = 1");
     await naSessao("mecanismo = 'm4'");
     await naSessao("passo = 'fim'");
     await naSessao("concluida_em = now()");
@@ -439,7 +452,8 @@ describe("a porta da sala e a atividade em andamento", () => {
   test("com a atividade no ar, a entrada abre a rodada 1, sem acervo e sem blocos do fim", async () => {
     const pacoteId = await prepararAtividade();
     const s = SessaoSchema.parse(await entrar(ids.ana));
-    expect(s).toMatchObject({ pacoteId, rodada: 1, etapa: "exploracao", passo: "credencial", voto: null, pacotes: null, cadeia: null, mariana: null });
+    expect(s).toMatchObject({ pacoteId, rodada: 1, etapa: "exploracao", passo: "credencial", voto: null, cadeia: null, mariana: null });
+    expect(s).not.toHaveProperty("pacotes");
     expect(s.feed).toEqual({ posts: [], curtidos: [], completo: false });
     expect(s.categorias.map((c) => c.area)).toEqual(["area_a", "area_b", "area_c", "area_d"]);
     expect(GatePublicoSchema.parse(await service.gate(ESCOLA, ids.ana, ids.turma))).toEqual({ pacoteId, rodada: 1, etapa: "exploracao" });
@@ -549,7 +563,9 @@ describe("a Galeria Oculta e a revisão do voto", () => {
 
   test("as ações da galeria gravam a auditoria — sem o texto da busca", async () => {
     const g = GaleriaSchema.parse(await service.galeria(ESCOLA, ids.ana, ids.turma));
-    const ocultoFora = g.projetos.find((p) => !p.exibidoNoSeuFeed && p.area !== areaDoProjeto(votoDaAna))!;
+    /* Votou na área B: a D inteira ficou fora do feed. */
+    expect(areaDoProjeto(votoDaAna)).toBe("area_b");
+    const ocultoFora = g.projetos.find((p) => !p.exibidoNoSeuFeed && p.area === "area_d")!;
     await service.acaoDaGaleria(ESCOLA, ids.ana, ids.turma, { tipo: "abrir", projetoId: ocultoFora.id });
     await service.acaoDaGaleria(ESCOLA, ids.ana, ids.turma, { tipo: "abrir", projetoId: ocultoFora.id });
     await service.acaoDaGaleria(ESCOLA, ids.ana, ids.turma, { tipo: "buscar", busca: "hashtag", area: "area_d" });
@@ -566,53 +582,45 @@ describe("a Galeria Oculta e a revisão do voto", () => {
     expect([a, b].filter((r) => r.status === "fulfilled")).toHaveLength(1);
     const recusa = [a, b].find((r) => r.status === "rejected") as PromiseRejectedResult;
     expect((recusa.reason as HttpException).getResponse()).toMatchObject({ codigo: "voto-ja-revisado" });
-    expect((await entrar(ids.ana)).passo).toBe("pacotes");
-    /* Busca por outra área + um oculto aberto: a EF06CO01 é "atingiu". */
+    /* Sem o passo dos pacotes: a revisão leva direto à cadeia. */
+    expect((await entrar(ids.ana)).passo).toBe("cadeia");
+    /* A hashtag da área D + um oculto da D: a EF06CO01 é "atingiu"... */
     expect(await evidenciaDe(ids.ana, "EF06CO01")).toMatchObject([{ status: "atingiu", origem: "propria", rodada: 1 }]);
+    /* ...e um oculto só é auditoria por cima: a EF06CO10 é "em processo". */
+    expect(await evidenciaDe(ids.ana, "EF06CO10")).toMatchObject([{ status: "em_processo", origem: "propria", rodada: 1 }]);
+    expect(await marcasDe("classificacao", ids.ana)).toEqual([{ status: "atingiu", rodada: 1 }]);
     expect(await codigoDe(service.acaoDaGaleria(ESCOLA, ids.ana, ids.turma, { tipo: "abrir", projetoId: "proj-a1" }))).toBe("passo-invalido");
   });
 
   test("quem revisa sem abrir nem buscar nada é 'não atingiu'", async () => {
     await votar(ids.duda);
     await service.revisar(ESCOLA, ids.duda, ids.turma, { acao: "manter" });
+    expect(await evidenciaDe(ids.duda, "EF06CO10")).toMatchObject([{ status: "nao_atingiu" }]);
     expect(await evidenciaDe(ids.duda, "EF06CO01")).toMatchObject([{ status: "nao_atingiu" }]);
   });
 });
 
-describe("os pacotes, a cadeia, Mariana e as enquetes", () => {
+describe("a cadeia, Mariana e as enquetes", () => {
   beforeAll(async () => {
     await zerarMissao();
-    await ateOsPacotes(ids.ana);
+    await ateACadeia(ids.ana);
   });
 
-  test("os pacotes descem com ids opacos, fora de ordem e com o voto no trecho", async () => {
-    const s = SessaoSchema.parse(await entrar(ids.ana));
-    expect(s.pacotes?.itens).toHaveLength(4);
-    expect(s.pacotes?.itens.map((p) => p.id)).not.toEqual(ordemCertaDosPacotes((await sessaoDe(ids.ana)).semente));
-    const voto = s.voto!.projetoId;
-    const titulo = conteudoDeTeste().projetos.find((p) => p.id === voto)!.titulo;
-    expect(s.pacotes?.itens.find((p) => p.numero === 3)?.trecho).toBe(`Projeto: ${titulo}`);
-    expect(s.cadeia).toBeNull();
-    expect((await entrar(ids.ana)).pacotes).toEqual(s.pacotes);
+  test("dois ocultos de duas áreas antes de manter: a EF06CO10 é atingiu; sem busca, a EF06CO01 não", async () => {
+    expect(await evidenciaDe(ids.ana, "EF06CO10")).toMatchObject([{ status: "atingiu" }]);
+    expect(await evidenciaDe(ids.ana, "EF06CO01")).toMatchObject([{ status: "nao_atingiu" }]);
+    expect(await evidenciaDe(ids.ana, "EF06CO07")).toEqual([]);
   });
 
-  test("ids de outra sessão são 400; erro conta tentativa; certo na segunda = em processo; reenvio não conta", async () => {
+  test("ids de outra sessão são 400; erro conta tentativa; reenvio da certa não conta de novo", async () => {
     const semente = (await sessaoDe(ids.ana)).semente;
-    const certa = ordemCertaDosPacotes(semente);
-    expect(await codigoDe(service.remontarPacotes(ESCOLA, ids.ana, ids.turma, ordemCertaDosPacotes("outra")))).toBe("payload-invalido");
-    expect(await codigoDe(service.montarCadeia(ESCOLA, ids.ana, ids.turma, ordemCertaDaCadeia(semente)))).toBe("passo-invalido");
-    const errada = TentativaSchema.parse(await service.remontarPacotes(ESCOLA, ids.ana, ids.turma, [...certa].reverse()));
-    expect(errada).toEqual({ correta: false, tentativas: 1, passo: "pacotes" });
-    const [r1, r2] = await Promise.all([
-      service.remontarPacotes(ESCOLA, ids.ana, ids.turma, certa),
-      service.remontarPacotes(ESCOLA, ids.ana, ids.turma, certa),
-    ]);
-    expect([r1, r2]).toEqual([
-      { correta: true, tentativas: 2, passo: "cadeia" },
-      { correta: true, tentativas: 2, passo: "cadeia" },
-    ]);
-    expect(await marcasDe("pacotes", ids.ana)).toEqual([{ status: "em_processo", rodada: 1 }]);
-    expect(await evidenciaDe(ids.ana, "EF06CO07")).toMatchObject([{ status: "em_processo" }]);
+    expect(await codigoDe(service.montarCadeia(ESCOLA, ids.ana, ids.turma, ordemCertaDaCadeia("outra")))).toBe("payload-invalido");
+    const errada = TentativaSchema.parse(
+      await service.montarCadeia(ESCOLA, ids.ana, ids.turma, [...ordemCertaDaCadeia(semente)].reverse()),
+    );
+    expect(errada).toEqual({ correta: false, tentativas: 1, passo: "cadeia" });
+    /* A errada contou: zera a contagem para o teste seguinte medir a 1ª tentativa certa. */
+    await prisma.exp06ef1bSessao.updateMany({ where: { escolaId: ESCOLA, estudanteId: ids.ana }, data: { cadeiaTentativas: 0 } });
   });
 
   test("a cadeia certa de primeira = atingiu, e o caso Mariana desce sem o certo", async () => {
@@ -631,7 +639,7 @@ describe("os pacotes, a cadeia, Mariana e as enquetes", () => {
   test("o resolvedor: `null` antes das enquetes, o contexto nelas; cartões uma vez; concluir idempotente", async () => {
     const antes = await prisma.comTenancy((tx) => service.contextoDaAtividade(tx, ESCOLA, ids.ana), ESCOLA);
     expect(antes).toBeNull();
-    expect(await codigoDe(evidencias.responder(ESCOLA, ids.ana, EXP_ID, "p1", "A1"))).toBe("sem-atividade-em-andamento");
+    expect(await codigoDe(evidencias.responder(ESCOLA, ids.ana, EXP_ID, "p1", "D1"))).toBe("sem-atividade-em-andamento");
     expect(await codigoDe(service.concluir(ESCOLA, ids.ana, ids.turma))).toBe("passo-invalido");
 
     expect(EstadoSchema.parse(await service.escolherCartoes(ESCOLA, ids.ana, ids.turma, { mecanismo: "m2", atitude: "t1" }))).toMatchObject({
@@ -643,7 +651,9 @@ describe("os pacotes, a cadeia, Mariana e as enquetes", () => {
     const s = await entrar(ids.ana);
     const contexto = await prisma.comTenancy((tx) => service.contextoDaAtividade(tx, ESCOLA, ids.ana), ESCOLA);
     expect(contexto).toEqual({ turmaId: ids.turma, atividadeId: s.pacoteId, rodada: 1 });
-    expect(await evidencias.responder(ESCOLA, ids.ana, EXP_ID, "p1", "A1")).toEqual({ enviada: true });
+    expect(await evidencias.responder(ESCOLA, ids.ana, EXP_ID, "p1", "D1")).toEqual({ enviada: true });
+    /* A P1 é da EF06CO10 agora: a resposta certa leva ao atingiu (vale o melhor). */
+    expect(await evidenciaDe(ids.ana, "EF06CO10")).toMatchObject([{ status: "atingiu" }]);
 
     expect(await service.concluir(ESCOLA, ids.ana, ids.turma)).toEqual({ passo: "fim", etapa: "galeria" });
     expect(await service.concluir(ESCOLA, ids.ana, ids.turma)).toEqual({ passo: "fim", etapa: "galeria" });
@@ -654,22 +664,22 @@ describe("os pacotes, a cadeia, Mariana e as enquetes", () => {
     expect(await service.zerar(ESCOLA, ids.turma, ids.professora)).toMatchObject({ rodada: 2, etapa: "exploracao" });
     expect(await prisma.comTenancy((tx) => service.contextoDaAtividade(tx, ESCOLA, ids.ana), ESCOLA)).toBeNull();
     expect(await entrar(ids.ana)).toMatchObject({ rodada: 2, passo: "credencial", voto: null });
-    await ateOsPacotes(ids.ana);
+    await ateACadeia(ids.ana);
     expect((await marcasDe("auditoria", ids.ana)).map((m) => m.rodada).sort()).toEqual([1, 2]);
     expect(await prisma.exp06ef1bSessao.count({ where: { escolaId: ESCOLA, estudanteId: ids.ana } })).toBe(2);
   });
 
   test("zerar no meio de uma jogada que marca: ou ela termina antes, ou recebe `rodada-mudou`", async () => {
-    const certa = ordemCertaDosPacotes((await sessaoDe(ids.ana)).semente);
+    const certa = ordemCertaDaCadeia((await sessaoDe(ids.ana)).semente);
     const [jogada] = await Promise.allSettled([
-      service.remontarPacotes(ESCOLA, ids.ana, ids.turma, certa),
+      service.montarCadeia(ESCOLA, ids.ana, ids.turma, certa),
       service.zerar(ESCOLA, ids.turma, ids.professora),
     ]);
     if (jogada.status === "rejected") {
       expect(["rodada-mudou", "passo-invalido"]).toContain(((jogada.reason as HttpException).getResponse() as { codigo: string }).codigo);
     }
-    /* Toda marca dos pacotes caiu numa rodada que tinha sessão da Ana. */
-    for (const m of await marcasDe("pacotes", ids.ana)) expect([1, 2]).toContain(m.rodada);
+    /* Toda marca da cadeia caiu numa rodada que tinha sessão da Ana. */
+    for (const m of await marcasDe("cadeia", ids.ana)) expect([1, 2]).toContain(m.rodada);
   });
 });
 
@@ -681,15 +691,30 @@ describe("atividade × rodada", () => {
     const deNovo = await service.homologar(ESCOLA, ids.turma, ids.professora, ids.professora, {
       parametros: PARAMETROS_DE_TESTE,
       conteudo: conteudoDeTeste(),
+      podcast: FALAS_DO_TEMA_PADRAO,
     });
     expect(deNovo).toMatchObject({ id: antes.pacoteId, ativo: true });
     const nova = await service.homologar(ESCOLA, ids.turma, ids.professora, ids.professora, {
       parametros: PARAMETROS_DE_TESTE,
       conteudo: conteudoDeTeste("Outra mostra da cidade"),
+      podcast: FALAS_DO_TEMA_PADRAO,
     });
     expect(nova).toMatchObject({ ativo: false, origem: "ia", tema: "Outra mostra da cidade" });
     expect((await entrar(ids.ana)).pacoteId).toBe(antes.pacoteId);
 
+    /* Só os textos aprovados: sem a segunda fase, não vai ao ar. */
+    expect(await codigoDe(service.colocarEmAndamento(ESCOLA, ids.turma, ids.professora, nova.id))).toBe("imagens-nao-aprovadas");
+    expect((await service.pacote(ESCOLA, ids.turma, ids.professora, nova.id)).imagensAprovadasEm).toBeNull();
+    const historico = PacotesSchema.parse(await service.pacotes(ESCOLA, ids.turma, ids.professora)).historico;
+    expect(historico.map((p) => [p.id, p.imagensAprovadas])).toEqual([
+      [nova.id, false],
+      [antes.pacoteId, true],
+    ]);
+    const aprovadas = await service.aprovarImagens(ESCOLA, ids.turma, ids.professora, nova.id);
+    /* Idempotente: a segunda aprovação devolve o carimbo da primeira. */
+    expect(await service.aprovarImagens(ESCOLA, ids.turma, ids.professora, nova.id)).toEqual(aprovadas);
+    /* Aprovadas, as imagens não mudam mais: gerar a que falta é 409. */
+    expect(await codigoDe(service.pacoteParaMidia(ESCOLA, ids.turma, ids.professora, nova.id))).toBe("imagens-ja-aprovadas");
     expect(await service.colocarEmAndamento(ESCOLA, ids.turma, ids.professora, nova.id)).toMatchObject({ rodada: 1, mudou: true });
     expect(await entrar(ids.ana)).toMatchObject({ pacoteId: nova.id, rodada: 1, passo: "credencial" });
     const pacotes = PacotesSchema.parse(await service.pacotes(ESCOLA, ids.turma, ids.professora));
@@ -703,6 +728,40 @@ describe("atividade × rodada", () => {
     expect(await service.colocarEmAndamento(ESCOLA, ids.turma, ids.professora, antes.pacoteId)).toMatchObject({ mudou: false });
   });
 
+  test("o podcast (ADR-151): a homologação grava as falas na transação, o segundo clique as troca, e a atividade vale depois das imagens", async () => {
+    /* A mais recente é a "Outra mostra da cidade", de imagens aprovadas no teste anterior; a em andamento é a primeira. */
+    const ultima = await prisma.exp06ef1bPacote.findFirstOrThrow({ where: { escolaId: ESCOLA, turmaId: ids.turma }, orderBy: { criadoEm: "desc" } });
+    const ativa = await prisma.exp06ef1bPacote.findFirstOrThrow({ where: { escolaId: ESCOLA, turmaId: ids.turma, ativo: true } });
+    const linha = await prisma.podcastRoteiro.findUniqueOrThrow({
+      where: { escolaId_expId_atividadeId: { escolaId: ESCOLA, expId: EXP_ID, atividadeId: ultima.id } },
+    });
+    expect(linha.falas).toEqual(FALAS_DO_TEMA_PADRAO);
+    expect(linha.aprovadoPor).toBe(ids.professora);
+
+    /* O segundo clique, com o MESMO conteúdo e uma fala editada: nenhuma atividade nova, e a fala nova vale. */
+    const editadas = {
+      ...FALAS_DO_TEMA_PADRAO,
+      mesa: "Pois é! E para a mesa ao lado não apareceu nenhum projeto do Rafa, só os de outra área, um atrás do outro.",
+    };
+    const deNovo = await service.homologar(ESCOLA, ids.turma, ids.professora, ids.professora, {
+      parametros: PARAMETROS_DE_TESTE,
+      conteudo: conteudoDeTeste("Outra mostra da cidade"),
+      podcast: editadas,
+    });
+    expect(deNovo.id).toBe(ultima.id);
+    const trocada = await prisma.podcastRoteiro.findMany({ where: { escolaId: ESCOLA, expId: EXP_ID, atividadeId: ultima.id } });
+    expect(trocada).toHaveLength(1);
+    expect(trocada[0]!.falas).toEqual(editadas);
+
+    /* A atividade do podcast vale com as imagens APROVADAS (o pacoteParaMidia a recusaria), com a guarda de turma. */
+    const fonte = fonteDoPodcastDaExp06ef1b(service);
+    expect(await codigoDe(service.pacoteParaMidia(ESCOLA, ids.turma, ids.professora, ultima.id))).toBe("imagens-ja-aprovadas");
+    expect(await fonte.atividade(ESCOLA, ids.turma, ids.professora, ultima.id)).toEqual({ id: ultima.id, tema: ultima.tema, padrao: false });
+    expect(await fonte.atividade(ESCOLA, ids.turma, ids.professora, undefined)).toMatchObject({ id: ativa.id });
+    expect(await codigoDe(fonte.atividade(ESCOLA, ids.turma, ids.outroProfessor, ultima.id))).toBe("turma-nao-encontrada");
+    expect(await codigoDe(fonte.atividade(OUTRA_ESCOLA, ids.turmaVizinha, undefined, ultima.id))).toBe("atividade-nao-encontrada");
+  });
+
   test("as imagens: gravadas por concatenação, e herdadas pela mesma descrição", async () => {
     const ativo = await prisma.exp06ef1bPacote.findFirstOrThrow({ where: { escolaId: ESCOLA, turmaId: ids.turma, ativo: true } });
     await service.registrarMidia(ESCOLA, ativo.id, "proj-a1", "https://cdn/a1.webp");
@@ -714,6 +773,7 @@ describe("atividade × rodada", () => {
     const herdeira = await service.homologar(ESCOLA, ids.turma, ids.professora, ids.professora, {
       parametros: { ...PARAMETROS_DE_TESTE, contexto: "Turma da tarde" },
       conteudo: conteudoDeTeste("Mostra herdeira"),
+      podcast: FALAS_DO_TEMA_PADRAO,
     });
     const linha = await prisma.exp06ef1bPacote.findUniqueOrThrow({ where: { id: herdeira.id } });
     expect(linha.midia).toEqual({ "proj-a1": "https://cdn/a1.webp", "proj-b2": "https://cdn/b2.webp" });

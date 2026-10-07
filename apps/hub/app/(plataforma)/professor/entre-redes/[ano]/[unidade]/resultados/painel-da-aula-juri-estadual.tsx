@@ -52,8 +52,8 @@ import { ListaDoJuri } from "./lista-do-juri";
  * visível.
  *
  * A exceção é a EVIDÊNCIA (ADR-146): quando muda o que o painel de
- * habilidades mostra (`mudouAEvidencia` — alguém revisou o voto, remontou a
- * curtida, montou a cadeia ou concluiu depois das enquetes; ou a
+ * habilidades mostra (`mudouAEvidencia` — alguém revisou o voto, montou a
+ * cadeia ou concluiu depois das enquetes; ou a
  * atividade/rodada trocou), a página é refeita, e o professor vê o nível
  * chegar sem recarregar. Uma leitura basta: a api marca na MESMA transação do
  * passo que o painel mostra, então quando a folha anda a marca já está lá —
@@ -208,8 +208,8 @@ export function PainelDaAulaJuriEstadual({
             </div>
           ) : (
             <p className="text-[13px] leading-snug text-unooria-neutral-700">
-              A Galeria Oculta está aberta. Cada computador segue no próprio ritmo pela revisão do voto, pelos pacotes,
-              pela cadeia, pelo caso Mariana e pelas enquetes. Para aplicar de novo, use Zerar a turma, mais abaixo.
+              A Galeria Oculta está aberta. Cada computador segue no próprio ritmo pela revisão do voto, pela cadeia,
+              pelo caso Mariana e pelas enquetes. Para aplicar de novo, use Zerar a turma, mais abaixo.
             </p>
           )}
 

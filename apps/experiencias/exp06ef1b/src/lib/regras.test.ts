@@ -7,6 +7,7 @@ import {
   estandesDoFeed,
   gateMudou,
   iniciais,
+  lerGesto,
   nomeDaConta,
   normalizar,
   ordemValida,
@@ -110,13 +111,13 @@ describe("a busca da galeria", () => {
   });
 });
 
-describe("a calha dos pacotes e da cadeia", () => {
+describe("a calha da cadeia", () => {
   test("tocar na bandeja encaixa na próxima vaga; tocar na vaga devolve", () => {
     let ordem: string[] = [];
-    ordem = tocarNoBloco(ordem, "pk-aaa", 4);
-    ordem = tocarNoBloco(ordem, "pk-bbb", 4);
-    expect(ordem).toEqual(["pk-aaa", "pk-bbb"]);
-    expect(tocarNoBloco(ordem, "pk-aaa", 4)).toEqual(["pk-bbb"]);
+    ordem = tocarNoBloco(ordem, "bl-aaa", 4);
+    ordem = tocarNoBloco(ordem, "bl-bbb", 4);
+    expect(ordem).toEqual(["bl-aaa", "bl-bbb"]);
+    expect(tocarNoBloco(ordem, "bl-aaa", 4)).toEqual(["bl-bbb"]);
   });
 
   test("calha cheia não aceita mais", () => {
@@ -124,7 +125,7 @@ describe("a calha dos pacotes e da cadeia", () => {
   });
 
   test("a ordem guardada só vale para os ids desta rodada", () => {
-    expect(ordemValida(["pk-old", "pk-aaa", "pk-aaa", "pk-bbb"], ["pk-aaa", "pk-bbb"], 4)).toEqual(["pk-aaa", "pk-bbb"]);
+    expect(ordemValida(["bl-old", "bl-aaa", "bl-aaa", "bl-bbb"], ["bl-aaa", "bl-bbb"], 4)).toEqual(["bl-aaa", "bl-bbb"]);
   });
 });
 
@@ -142,11 +143,26 @@ describe("pequenas coisas da tela", () => {
     expect(protocoloDoVoto("pacote", 1, "proj-b2")).not.toBe(a);
   });
 
-  test("só os pacotes e a cadeia falam pela escola", () => {
-    expect(vozDaTela("pacotes")).toBe("escola");
+  test("só a cadeia fala pela escola", () => {
     expect(vozDaTela("cadeia")).toBe("escola");
     for (const t of ["credencial", "feed", "espera", "galeria", "mariana", "enquetes", "fim"] as const) {
       expect(vozDaTela(t)).toBe("clone");
     }
+  });
+});
+
+describe("o gesto na mídia do post (dedo e mouse)", () => {
+  test("arrastar 40 px ou mais para a esquerda mostra a próxima lâmina; para a direita, a anterior", () => {
+    expect(lerGesto(-120, 4)).toBe("proxima");
+    expect(lerGesto(-40, 0)).toBe("proxima");
+    expect(lerGesto(90, -6)).toBe("anterior");
+  });
+
+  test("andar pouco é toque (o toque duplo curte); rolar ou arrastar torto não é nada", () => {
+    expect(lerGesto(3, -2)).toBe("toque");
+    expect(lerGesto(0, 0)).toBe("toque");
+    expect(lerGesto(-30, 2)).toBe("nada");
+    expect(lerGesto(-80, 60)).toBe("nada");
+    expect(lerGesto(2, 120)).toBe("nada");
   });
 });

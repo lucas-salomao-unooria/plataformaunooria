@@ -13,6 +13,9 @@ import {
   GateDaTurmaSchema,
   GateSchema,
   HomologacaoSchema,
+  IdDeProjetoSchema,
+  ImagemRefeitaSchema,
+  ImagensAprovadasSchema,
   PacoteDetalheSchema,
   PacoteHomologadoSchema,
   PacotesSchema,
@@ -224,6 +227,7 @@ export class JuriEstadualTurmasController {
     notas: [
       "**Idempotente**: pôr no ar o que já está no ar devolve `mudou: false` e não muda nada.",
       "Trocar com a aula correndo leva quem está jogando para a atividade nova: a experiência nota o `pacoteId` novo no polling do gate e recarrega.",
+      "Sem a segunda fase da aprovação (`POST aprovar-imagens`), **409** `imagens-nao-aprovadas`: a turma abriria com imagem que o professor não viu. Os pacotes criados antes desta regra entraram aprovados (migração `20261006120000`).",
       "Pacote de outra turma responde **404** `atividade-nao-encontrada`.",
     ],
   })
@@ -238,6 +242,71 @@ export class JuriEstadualTurmasController {
       turmaOu404(turmaId),
       professorDoToken(req.auth),
       pacoteOpcional(pacoteId) ?? "",
+    );
+  }
+
+  @Post(":turmaId/pacotes/:pacoteId/aprovar-imagens")
+  @HttpCode(200)
+  @Contrato({
+    resumo: "A segunda fase da aprovação: o professor viu as imagens dos estandes e as aprova.",
+    descricao:
+      "A primeira fase é o `POST homologar` (os textos). As imagens se geram em seguida (`POST gerar-midia?pacoteId=`), o professor vê cada uma e refaz a que não serve (`POST …/imagens/:projetoId/refazer`). Só depois desta rota a atividade vai ao ar: `POST em-andamento` responde **409** `imagens-nao-aprovadas` sem ela. Depois dela, as imagens não mudam mais.",
+    params: PARAMS_DO_PACOTE,
+    query: QUERY,
+    resposta: ImagensAprovadasSchema,
+    notas: [
+      "**Idempotente**: a segunda aprovação devolve o carimbo da primeira.",
+      "Não exige imagem em todo estande: a geração pode falhar ou a quota acabar, e o estande segue com a arte procedural, que o professor vê marcada na grade. Quem segura o botão até a geração terminar é a tela.",
+      "Pacote de outra turma responde **404** `atividade-nao-encontrada`.",
+    ],
+  })
+  aprovarImagens(
+    @Param("turmaId") turmaId: string,
+    @Param("pacoteId") pacoteId: string,
+    @Query("escolaId") escolaIdPedida: string | undefined,
+    @Req() req: Autenticado,
+  ) {
+    return this.missao.aprovarImagens(
+      escolaAlvo(req.auth, escolaIdPedida),
+      turmaOu404(turmaId),
+      professorDoToken(req.auth),
+      pacoteOpcional(pacoteId) ?? "",
+    );
+  }
+
+  @Post(":turmaId/pacotes/:pacoteId/imagens/:projetoId/refazer")
+  @HttpCode(200)
+  @Contrato({
+    resumo: '"Gerar outra imagem": uma imagem nova para UM estande, enquanto as imagens estão em validação.',
+    descricao:
+      "O professor viu a imagem do estande e ela não serve, ou o estande ficou sem imagem. Gera outra, SEMPRE paga, num arquivo novo — sobrescrever o da descrição trocaria a imagem de todo pacote que a herdou, inclusive o de uma turma em aula.",
+    params: PARAMS_DO_PACOTE.extend({ projetoId: IdDeProjetoSchema }),
+    query: QUERY,
+    resposta: ImagemRefeitaSchema,
+    notas: [
+      "Depois de `aprovar-imagens`, **409** `imagens-ja-aprovadas`: a turma pode estar olhando para elas.",
+      "Quota do professor, com o custo estimado de uma imagem. Sem saldo, **429** `sem-saldo-de-ia`; com o provedor fora do ar, **503** `ia-indisponivel` — e o estande fica com a imagem que tinha.",
+      "`projetoId` fora de `proj-a1`…`proj-d4` responde **400** `payload-invalido`.",
+    ],
+  })
+  refazerImagem(
+    @Param("turmaId") turmaId: string,
+    @Param("pacoteId") pacoteId: string,
+    @Param("projetoId") projetoId: string,
+    @Query("escolaId") escolaIdPedida: string | undefined,
+    @Req() req: Autenticado,
+  ) {
+    const escolaId = escolaAlvo(req.auth, escolaIdPedida);
+    if (!IdDeProjetoSchema.safeParse(projetoId).success) throw erroDeJogo("payload-invalido");
+    limitar(req.auth.usuarioId, "refazer-imagem", 20);
+    return this.midia.refazer(
+      escolaId,
+      turmaOu404(turmaId),
+      professorDoToken(req.auth),
+      req.auth.usuarioId,
+      req.auth.perfil,
+      pacoteOpcional(pacoteId) ?? "",
+      projetoId,
     );
   }
 
@@ -315,13 +384,14 @@ export class JuriEstadualTurmasController {
   @Contrato({
     resumo: '"Criar atividade" — a curadoria humana (ADR-66/67).',
     descricao:
-      "Grava a mostra como o professor a deixou, numa ATIVIDADE NOVA que nasce **pronta, não no ar** (ADR-130): o pacote em andamento continua em andamento, e quem escolhe o que a turma faz é o professor (`POST :turmaId/pacotes/:pacoteId/em-andamento`). O mesmo conteúdo do pacote mais recente não cria outro: é o segundo clique.\n\nAs imagens de projeto com a MESMA descrição de um pacote recente da turma são herdadas — o arquivo no bucket é o hash da descrição.",
+      "Grava a mostra como o professor a deixou, numa ATIVIDADE NOVA que nasce **pronta, não no ar** (ADR-130): o pacote em andamento continua em andamento, e quem escolhe o que a turma faz é o professor (`POST :turmaId/pacotes/:pacoteId/em-andamento`). O mesmo conteúdo do pacote mais recente não cria outro: é o segundo clique.\n\nÉ a PRIMEIRA fase da aprovação (os textos): o pacote nasce com `imagensAprovadasEm` nulo e só vai ao ar depois da segunda (`POST :turmaId/pacotes/:pacoteId/aprovar-imagens`).\n\nAs imagens de projeto com a MESMA descrição de um pacote recente da turma são herdadas — o arquivo no bucket é o hash da descrição.",
     params: PARAMS,
     query: QUERY,
     corpo: HomologacaoSchema,
     resposta: PacoteHomologadoSchema,
     notas: [
       "O pacote é recusado com **400** `pacote-invalido` e a LISTA de problemas em `erros`, em frases para o professor: quatro categorias, uma por área, com hashtags diferentes no formato `#minusculas`; os dezesseis projetos `proj-a1` a `proj-d4`, cada um na área que o id diz e começando pela hashtag da área; perfil com @; legenda até 60 palavras e bastidor até 40; e nenhuma marca ou plataforma real no que a criança lê. (`.superRefine()` some do OpenAPI; daí esta nota.)",
+      "`podcast` são as três falas do podcast de recapitulação que o professor revisou na criação (ADR-150, ADR-151): `dois`, `rafa` e `mesa`, cada uma de 12 a 60 palavras, até 400 bytes, sem link, e-mail nem @. Vão para `podcast_roteiros` na MESMA transação, também no segundo clique — que as substitui.",
     ],
   })
   homologar(
@@ -353,6 +423,7 @@ export class JuriEstadualTurmasController {
       "`?pacoteId=` diz a atividade (a pronta, preparada antes de ir ao ar); sem ele, a em andamento — e sem nenhuma, **403** `atividade-nao-preparada`.",
       "Quota do professor, com custo ESTIMADO por imagem (a geração não devolve contagem de tokens). Sem saldo responde **429** `sem-saldo-de-ia` — e a missão roda igual, com a arte procedural.",
       "Duas chamadas simultâneas para o mesmo pacote recebem o mesmo trabalho (lock de processo).",
+      "Só antes da aprovação das imagens: depois de `aprovar-imagens`, **409** `imagens-ja-aprovadas` — gerar a que falta levaria à turma uma imagem que o professor não viu.",
     ],
   })
   gerarMidia(

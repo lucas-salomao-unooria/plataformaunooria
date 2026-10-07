@@ -1,6 +1,6 @@
-import { useRef, useState, type KeyboardEvent, type PointerEvent, type Ref } from "react";
-import { ButtonUnv, GestureHint, PostCard } from "@edu/ui/ds-unoovista";
-import { iniciais, nomeDaConta } from "../../lib/regras";
+import { useRef, useState, type DragEvent, type KeyboardEvent, type PointerEvent, type Ref } from "react";
+import { ButtonUnv, GestureHint, IconUnv, PostCard } from "@edu/ui/ds-unoovista";
+import { iniciais, lerGesto, nomeDaConta } from "../../lib/regras";
 import { E2, GLOBAL } from "../../lib/textos";
 import type { Categoria, PostPublico } from "../../lib/tipos";
 import { srcDoEstande, type usePaleta } from "../componentes/midia";
@@ -9,8 +9,6 @@ import { srcDoEstande, type usePaleta } from "../componentes/midia";
 const LEGENDA_CURTA = 96;
 /** Dois toques em até este intervalo são o toque duplo que curte. */
 const TOQUE_DUPLO_MS = 320;
-/** Arrasto horizontal mínimo para trocar de lâmina (e máximo de deriva vertical). */
-const DESLIZE_PX = 40;
 
 type Gesto = "coracao" | "toque-duplo";
 
@@ -32,10 +30,21 @@ export function recolher(texto: string, limite = LEGENDA_CURTA): string {
  * coração da pílula ou pelo toque duplo na mídia, como no app real. O toque
  * duplo só CURTE — descurtir é pelo coração, também como no app real.
  *
- * **O carrossel desliza com o dedo** (arrasto horizontal; `touch-action: pan-y`
- * deixa a rolagem vertical do feed com o navegador) e pelas setas do teclado
- * na mídia focada. O DS publica o contador e os pontos (`currentIndex`/
- * `totalCount`), não o deslize: o gesto é do produto.
+ * **O carrossel desliza com o dedo E com o mouse** (arrasto horizontal;
+ * `touch-action: pan-y` deixa a rolagem vertical do feed com o navegador), pelas
+ * SETAS sobre a mídia e pelas setas do teclado na mídia focada. O DS publica o
+ * contador e os pontos (`currentIndex`/`totalCount`), não o deslize: o gesto é
+ * do produto.
+ *
+ * O arrasto com MOUSE não funcionava até a 0.1.2 (o pedido do PO): o `<img>` do
+ * `PostCard.Media` é arrastável por padrão, e o arrasto nativo da imagem
+ * (`dragstart`) cancelava o gesto com um `pointercancel` — a lâmina nunca
+ * trocava. Agora o `dragstart` é cancelado, o ponteiro é CAPTURADO no
+ * `pointerdown` (o `pointerup` chega mesmo fora da mídia) e a seleção de texto
+ * fica desligada durante o arrasto (CSS). As setas são a navegação VISÍVEL por
+ * clique — o computador da escola é de mouse —, com `ButtonUnv` + `IconUnv`
+ * do DS numa camada posicionada como a da dica (compensação de posição: o
+ * `PostCard.Media` da 0.2.18 não tem prop de navegação; pedido no AGENTS.md).
  *
  * **A dica do gesto** (`GestureHint`, só no primeiro post) mora numa camada
  * posicionada ANTES da mídia no DOM: depois dela, quebraria o
@@ -78,18 +87,23 @@ export function PostDoFeed({
   const gestos = {
     onPointerDown: (e: PointerEvent<HTMLDivElement>) => {
       toque.current = { x: e.clientX, y: e.clientY, t: Date.now() };
+      /* O `pointerup` volta para cá mesmo que o mouse saia da mídia no arrasto. */
+      try {
+        e.currentTarget.setPointerCapture(e.pointerId);
+      } catch {
+        /* Ponteiro que já acabou (o navegador recusa): o gesto segue sem captura. */
+      }
     },
     onPointerUp: (e: PointerEvent<HTMLDivElement>) => {
       const inicio = toque.current;
       toque.current = null;
       if (!inicio) return;
-      const dx = e.clientX - inicio.x;
-      const dy = e.clientY - inicio.y;
-      if (Math.abs(dx) >= DESLIZE_PX && Math.abs(dy) < DESLIZE_PX) {
-        irPara(dx < 0 ? lamina + 1 : lamina - 1);
+      const gesto = lerGesto(e.clientX - inicio.x, e.clientY - inicio.y);
+      if (gesto === "proxima" || gesto === "anterior") {
+        irPara(gesto === "proxima" ? lamina + 1 : lamina - 1);
         return;
       }
-      if (Math.abs(dx) > 10 || Math.abs(dy) > 10) return;
+      if (gesto !== "toque") return;
       const agora = Date.now();
       if (agora - ultimoToque.current <= TOQUE_DUPLO_MS) {
         ultimoToque.current = 0;
@@ -101,6 +115,8 @@ export function PostDoFeed({
     onPointerCancel: () => {
       toque.current = null;
     },
+    /* O arrasto NATIVO da imagem roubaria o gesto do mouse (`pointercancel`). */
+    onDragStart: (e: DragEvent<HTMLDivElement>) => e.preventDefault(),
     onKeyDown: (e: KeyboardEvent<HTMLDivElement>) => {
       if (e.key === "ArrowRight") irPara(lamina + 1);
       if (e.key === "ArrowLeft") irPara(lamina - 1);
@@ -124,6 +140,33 @@ export function PostDoFeed({
           </div>
         </div>
       )}
+      {/* As setas: a navegação por clique. Mostram só a direção que existe. */}
+      <div className="setas-do-carrossel">
+        <div className="setas-do-carrossel__palco">
+          {lamina > 1 && (
+            <ButtonUnv
+              variant="primary"
+              size="sm"
+              className="setas-do-carrossel__seta setas-do-carrossel__seta--anterior"
+              aria-label={E2.laminaAnterior}
+              data-seta="anterior"
+              leadingIcon={<IconUnv name="back" size="sm" tone="inherit" />}
+              onClick={() => irPara(lamina - 1)}
+            />
+          )}
+          {lamina < 2 && (
+            <ButtonUnv
+              variant="primary"
+              size="sm"
+              className="setas-do-carrossel__seta setas-do-carrossel__seta--proxima"
+              aria-label={E2.proximaLamina}
+              data-seta="proxima"
+              leadingIcon={<IconUnv name="back" size="sm" tone="inherit" flipX />}
+              onClick={() => irPara(lamina + 1)}
+            />
+          )}
+        </div>
+      </div>
       {lamina === 1 ? (
         <PostCard.Media
           {...gestos}

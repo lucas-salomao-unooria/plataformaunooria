@@ -19,7 +19,6 @@ import { E2, E3 } from "../lib/textos";
 import {
   ROTA,
   TOTAL_DE_BLOCOS,
-  TOTAL_DE_PACOTES,
   type AcaoDaGaleria,
   type Conviccao,
   type Estado,
@@ -40,7 +39,7 @@ import { Fim } from "./clone/fim";
 import { Galeria } from "./clone/galeria";
 import { Mariana } from "./clone/mariana";
 import type { Conexao } from "./conexao";
-import { Cadeia, Indisponivel, Pacotes } from "./escola/telas-da-escola";
+import { Cadeia, Indisponivel } from "./escola/telas-da-escola";
 import { useInatividade } from "./inatividade";
 
 /** Junta curtidas e permanências por este tempo antes de ir à api (um toque duplo não vira duas idas). */
@@ -394,7 +393,7 @@ export function JuriApp({ inicial, conexao }: { inicial: Sessao; conexao: Conexa
       const estado = await executar(() => api.post<Estado>(`${ROTA}/revisao`, corpo));
       telemetria.revisou(corpo.acao);
       aplicarEstado(estado);
-      // Os pacotes só descem do passo deles em diante: relê a sessão.
+      // A cadeia só desce do passo dela em diante: relê a sessão.
       await recarregar();
     } catch (erro) {
       tratarFalha(erro);
@@ -403,12 +402,11 @@ export function JuriApp({ inicial, conexao }: { inicial: Sessao; conexao: Conexa
     }
   }
 
-  async function conferir(rota: "pacotes" | "cadeia", ordem: string[]): Promise<boolean | null> {
+  async function conferirACadeia(ordem: string[]): Promise<boolean | null> {
     setOcupado(true);
     try {
-      const t = await executar(() => api.post<Tentativa>(`${ROTA}/${rota}`, { ordem }));
-      if (rota === "pacotes") telemetria.remontou(t.correta, t.tentativas);
-      else telemetria.montouACadeia(t.correta, t.tentativas);
+      const t = await executar(() => api.post<Tentativa>(`${ROTA}/cadeia`, { ordem }));
+      telemetria.montouACadeia(t.correta, t.tentativas);
       return t.correta;
     } catch (erro) {
       tratarFalha(erro);
@@ -539,21 +537,6 @@ export function JuriApp({ inicial, conexao }: { inicial: Sessao; conexao: Conexa
           </div>
         );
 
-      case "pacotes":
-        return sessao.pacotes ? (
-          <Pacotes
-            key={`${sessao.pacoteId}:${sessao.rodada}`}
-            itens={sessao.pacotes.itens}
-            ordemInicial={ordemValida(memoria.ordemDosPacotes, sessao.pacotes.itens.map((p) => p.id), TOTAL_DE_PACOTES)}
-            enviando={ocupado}
-            aoMudarOrdem={(ordem) => lembrar({ ordemDosPacotes: ordem })}
-            aoConferir={(ordem) => conferir("pacotes", ordem)}
-            aoContinuar={() => void recarregar()}
-          />
-        ) : (
-          <div className="escola" aria-busy="true" />
-        );
-
       case "cadeia":
         return sessao.cadeia ? (
           <Cadeia
@@ -562,7 +545,7 @@ export function JuriApp({ inicial, conexao }: { inicial: Sessao; conexao: Conexa
             ordemInicial={ordemValida(memoria.ordemDaCadeia, sessao.cadeia.blocos.map((b) => b.id), TOTAL_DE_BLOCOS)}
             enviando={ocupado}
             aoMudarOrdem={(ordem) => lembrar({ ordemDaCadeia: ordem })}
-            aoConferir={(ordem) => conferir("cadeia", ordem)}
+            aoConferir={conferirACadeia}
             aoContinuar={() => void recarregar()}
           />
         ) : (

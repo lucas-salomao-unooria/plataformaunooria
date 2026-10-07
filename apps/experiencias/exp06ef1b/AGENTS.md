@@ -4,7 +4,7 @@ Complementa o `AGENTS.md` da raiz e o de `apps/experiencias`.
 
 | Manifesto | Dev | DS | api | e2e |
 |---|---|---|---|---|
-| `exp06ef1b` · 6EF · unidade 1 · `entre-redes` · `viewport` 375×812 · `permissoes: ["forms"]` · versão **0.1.0** | `:5185` (`strictPort`), hub `/exp/exp06ef1b` | `@edu/ui/ds-unoovista` (clone, DS `^0.2.11`) + `@edu/ui/ds` (escola) | `apps/api/src/juri-estadual` ↔ `/juri-estadual/*`; enquetes em `/evidencias/exp06ef1b/perguntas/*` (E14) | `scripts/e2e/estudante/13-juri-estadual.mjs` (dois estudantes + a professora) |
+| `exp06ef1b` · 6EF · unidade 1 · `entre-redes` · `viewport` 375×812 · `permissoes: ["forms"]` · versão **0.2.0** | `:5185` (`strictPort`), hub `/exp/exp06ef1b` | `@edu/ui/ds-unoovista` (clone, DS `^0.2.11`) + `@edu/ui/ds` (escola) | `apps/api/src/juri-estadual` ↔ `/juri-estadual/*`; enquetes em `/evidencias/exp06ef1b/perguntas/*` (E14) | `scripts/e2e/estudante/13-juri-estadual.mjs` (dois estudantes + a professora) |
 
 ## O passo manda na tela
 
@@ -19,13 +19,12 @@ nos CAMPOS dos schemas que a tela lê.
 | Passo | Tela | Quem fala | Componentes do DS |
 |---|---|---|---|
 | `credencial` | E1 — o crachá | comissão (clone) | `TopBar`, `PostCard` (`.Header` com `verified`, `.Media` sem `src` = o crachá), `IconUnv`, `BadgeUnv` (as áreas), `ButtonUnv` |
-| `feed` | E2/E3-ALU-01 — o feed | app | `TopBar`, `InlineHint` (dica do carrossel; depois "10 estandes avaliados…"), `PostCard` (`.Header/.Media/.Actions/.Caption`, carrossel de 2 lâminas com `currentIndex/totalCount`), `GestureHint` (`swipe-left`, só no 1º post), `ButtonUnv` `link` ("...mais"), `FloatingButton` (a barra da cédula), `TabBar` (2 abas), `SnackbarUnv` (inatividade 60 s; "Avalie os dez…") |
+| `feed` | E2/E3-ALU-01 — o feed | app | `TopBar`, `InlineHint` (dica do carrossel; depois "10 estandes avaliados…"), `PostCard` (`.Header/.Media/.Actions/.Caption`, carrossel de 2 lâminas com `currentIndex/totalCount`), `GestureHint` (`swipe-left`, só no 1º post), `ButtonUnv` + `IconUnv` `back` (as setas do carrossel), `ButtonUnv` `link` ("...mais"), `FloatingButton` (a barra da cédula), `TabBar` (2 abas), `SnackbarUnv` (inatividade 60 s; "Avalie os dez…") |
 | `feed` (cédula aberta) | E3-ALU-02 — a cédula | app | `BottomSheetUnv` modal, `ListItem` + `AvatarUnv` + `IconUnv` (`Escolha`, rádio por atributos), `Chip` (convicção), `ButtonUnv` |
 | — (depois do voto) | E3-ALU-03 — o lacre | app | `TopBar`, `IconUnv` (o carimbo é moldura local, ver abaixo) |
 | `lacrada` | E4-ALU-01 — a plenária, o PICO | comissão | `IconUnv` (brasão) — e só: **três elementos** |
 | `galeria` | E4-ALU-02/03 — a Galeria Oculta | comissão, depois app | `TopBar`, `InlineHint` `friction` (a taxa real), `SearchField`, `Chip` (4 hashtags), `MediaGrid`, `BottomSheetUnv` (ficha; cédula de revisão), `BadgeUnv` `wrap`, `ButtonUnv` |
-| `pacotes` | E5 — a curtida em pacotes (EF06CO07) | **escola** | `ScrollBar`, `Logo`, `SectionHeader` (o Léo), `PuzzleBlock`, `PuzzleTrack`, `AlertBox` (a errada), `Button` |
-| `cadeia` | E5 — a cadeia (EF06CO03) | **escola** | os mesmos |
+| `cadeia` | E5 — a cadeia (EF06CO03) | **escola** | `ScrollBar`, `Logo`, `SectionHeader` (o Léo no título), `PuzzleBlock`, `PuzzleTrack`, `AlertBox` (a errada), `Button` |
 | `mariana` | E6-ALU-01 — o caso Mariana | comissão (clone) | `TopBar`, `PostCard` (só `.Header` + `.Caption`), `ListItem` (`Escolha`), `ButtonUnv` |
 | `enquetes` | E6-ALU-02 — a consulta nos Stories | comissão, tema ESCURO | `StoryViewer` (3 segmentos, `onNext`/`onPrev`, `footer`), `StoryPoll` (DS 0.2.12, sobre a mídia; se centraliza sozinho), `ButtonUnv` |
 | `fim` | E6-ALU-03 — o crachá homologado | comissão | `TopBar`, `PostCard` (o crachá), `IconUnv`, `ListItem` (o infográfico em texto e ícone) |
@@ -38,8 +37,8 @@ cada ida).
 ## A fronteira do disfarce é QUEM FALA
 
 Do crachá à galeria quem conduz é a comissão da mostra, dentro do Unoovista —
-inclusive a revelação (a Galeria Oculta é um comunicado da comissão). Os pacotes
-e a cadeia saem do clone: são a Unooria mostrando a engrenagem, e dentro do app
+inclusive a revelação (a Galeria Oculta é um comunicado da comissão). A cadeia sai do
+clone: são a Unooria mostrando a engrenagem, e dentro do app
 a explicação voltaria para a ficção que a missão acabou de desmontar. O caso
 Mariana, a consulta e o fim voltam ao clone, porque quem pergunta e quem
 homologa é a comissão. Os avisos globais seguem a mesma regra (`app/avisos.tsx`,
@@ -91,7 +90,7 @@ leria como queda de rede e a `comRepeticao` repetiria para sempre.
   repetição de uma ida perdida volta 409 e a tela relê a sessão.
 - O **lacre** é a passagem (4 s), não um passo: num F5 depois do voto, a criança
   cai direto na plenária.
-- **Pacotes, cadeia, cartões e enquetes** reabrem como estavam: a calha montada
+- **Cadeia, cartões e enquetes** reabrem como estavam: a calha montada
   pela metade, os cartões tocados e a alternativa de cada enquete ficam no
   `sessionStorage` (`lib/memoria.ts`, só ids, chave = estudante + atividade +
   rodada). A api guarda a primeira resposta de cada enquete de qualquer jeito.
@@ -105,7 +104,7 @@ acerto. Da enquete, a telemetria leva a PERGUNTA, nunca a alternativa.
 
 ## O que o bundle NÃO sabe
 
-A ordem certa dos pacotes e dos blocos (os ids são opacos por sessão), o cartão
+A ordem certa dos blocos (os ids são opacos por sessão), o cartão
 certo do caso Mariana, os pesos e o limiar do motor do feed, a área líder, os
 estandes que o feed NÃO serviu (só descem no `GET galeria`, depois da liberação)
 e o nível das alternativas das enquetes. `lib/tipos.ts` não tem campo para
@@ -132,11 +131,24 @@ find dist -name '*.js' | xargs grep -l -F -e "certo:" -e "LIMIAR_DA_BOLHA" -e "P
    `PostCard.Media`.
 4. **O botão preso na base da folha** (`.cedula__confirmar`): `position: sticky`
    dentro do corpo que rola do `BottomSheetUnv`. Posição pura.
+5. **As setas do carrossel** (`.setas-do-carrossel`, 0.2.0, o pedido do PO: o
+   carrossel não andava com MOUSE). O `PostCard.Media` da 0.2.18 não tem prop
+   de navegação; as setas são `ButtonUnv` `primary` `sm` com o `IconUnv` `back`
+   (espelhado com `flipX` para a próxima), numa camada posicionada como a da
+   dica — daqui sai só ONDE elas ficam. Pedido: `onPrevious`/`onNext` (ou
+   setas próprias) no `PostCard.Media`, e um glifo `forward` no registro.
 
 **Não são compensação**: o carimbo do lacre (moldura tracejada de ficção — o
 desenho do selo é o `IconUnv`), a arte procedural dos estandes (conteúdo, não
 controle) e o deslize do carrossel (o DS publica os pontos, o gesto é do
 produto; `touch-action: pan-y` deixa a rolagem com o navegador).
+
+**O arrasto com MOUSE (0.2.0)**: o `<img>` do `PostCard.Media` é arrastável, e
+o `dragstart` nativo da imagem cancelava o gesto com `pointercancel` — no
+computador da escola a lâmina nunca trocava. Hoje o `dragstart` é cancelado, o
+ponteiro é CAPTURADO no `pointerdown` e a leitura do gesto é pura
+(`regras.ts#lerGesto`, com teste). A e2e arrasta com `page.mouse`, não com
+teclado: o teclado já funcionava e escondia o defeito.
 
 ## Ausências deliberadas
 
@@ -183,6 +195,5 @@ api), UMA exclamação na missão (a do Léo), nenhuma marca real. O
 
 Não mora no repositório. A receita: um `vite.config` fora da pasta com `root`
 nesta experiência e um alias de `@edu/sdk` para uma SDK falsa que responde a api
-por `?passo=` (`credencial`, `feed&posts=N`, `lacrada`, `galeria`, `pacotes`,
-`cadeia`, `mariana`, `enquetes`, `fim`, `bloqueada=1`), fotografada pelo
+por `?passo=` (`credencial`, `feed&posts=N`, `lacrada`, `galeria`, `cadeia`, `mariana`, `enquetes`, `fim`, `bloqueada=1`), fotografada pelo
 Playwright do pnpm (`node_modules/.pnpm/playwright@*/`). Molde: a da exp07ef1b.

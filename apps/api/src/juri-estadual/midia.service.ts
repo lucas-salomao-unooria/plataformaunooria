@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { Inject, Injectable } from "@nestjs/common";
 import { AI_PROVIDER, type AiProvider } from "../ai/provider";
 import { QuotaService } from "../ai/quota.service";
@@ -22,6 +22,11 @@ import { EXP_ID } from "./vocabulario";
  * **O arquivo é o hash da DESCRIÇÃO** (`imagem.descricao`), em
  * `experiencias/exp06ef1b/mostra/`: a mesma cena gerada uma vez serve a toda
  * turma que a homologar, e uma descrição editada pelo professor é outro arquivo.
+ *
+ * **O professor VÊ e APROVA as imagens antes da turma** (pedido do PO, no molde
+ * da exp07ef1b, ADR-146): gerar e refazer só valem enquanto o pacote está com
+ * `imagens_aprovadas_em` nulo (`JuriEstadualService.pacoteParaMidia`, 409
+ * `imagens-ja-aprovadas`), e sem a aprovação a atividade não vai ao ar.
  */
 
 /** Quantas imagens NOVAS por chamada. Cada uma leva de 5 a 10 s; o BFF corta em 30. */
@@ -55,9 +60,26 @@ export interface ProgressoDaMidia {
   imagens: Record<string, string>;
 }
 
-/** O nome do arquivo no bucket, abaixo de `experiencias/exp06ef1b/`. */
-export function nomeDaImagem(descricao: string): string {
-  const hash = createHash("sha256").update(`${VERSAO_DO_PEDIDO_DE_IMAGEM}|${descricao.trim()}`).digest("hex");
+/** As regerações em andamento, por pacote e projeto: dois cliques não pagam duas imagens. */
+const refazendo = new Map<string, Promise<ImagemRefeita>>();
+
+export interface ImagemRefeita {
+  pacoteId: string;
+  projetoId: string;
+  url: string;
+}
+
+/**
+ * O nome do arquivo no bucket, abaixo de `experiencias/exp06ef1b/`.
+ *
+ * `variacao` é a imagem REFEITA: o professor recusou a da descrição, e a nova
+ * não pode cair no mesmo arquivo — sobrescrevê-lo trocaria a imagem de todo
+ * pacote que herdou aquela descrição, inclusive o de uma turma em aula. Sem
+ * variação, o nome continua sendo só o da descrição.
+ */
+export function nomeDaImagem(descricao: string, variacao?: string): string {
+  const chave = [VERSAO_DO_PEDIDO_DE_IMAGEM, descricao.trim(), ...(variacao ? [variacao] : [])].join("|");
+  const hash = createHash("sha256").update(chave).digest("hex");
   return `mostra/${hash.slice(0, 32)}.webp`;
 }
 
@@ -92,6 +114,60 @@ export class MidiaDaExp06ef1bService {
       emPreparo.delete(pacote.id);
     });
     emPreparo.set(pacote.id, trabalho);
+    return trabalho;
+  }
+
+  /**
+   * "GERAR OUTRA IMAGEM": o professor viu a imagem do estande e ela não serve
+   * (ou o estande ficou sem imagem e ele quer tentar de novo). Uma imagem
+   * nova, SEMPRE paga — o arquivo é novo, a variação entra no nome —, e só
+   * enquanto as imagens estão em validação.
+   *
+   * Uma por chamada, num lock de processo por (pacote, projeto), pela mesma
+   * razão da geração em lote: dois cliques não pagam duas imagens. A falha do
+   * provedor aqui é 503 (o professor pediu ESTA imagem e espera a resposta); o
+   * estande continua com a imagem que tinha, ou com a arte procedural.
+   */
+  async refazer(
+    escolaId: string,
+    turmaId: string,
+    professorId: string | undefined,
+    usuarioId: string,
+    perfil: Perfil,
+    pacoteId: string,
+    projetoId: string,
+  ): Promise<ImagemRefeita> {
+    const pacote = await this.juri.pacoteParaMidia(escolaId, turmaId, professorId, pacoteId);
+    const projeto = pacote.conteudo.projetos.find((p) => p.id === projetoId);
+    if (!projeto) throw erroDeJogo("payload-invalido");
+
+    const chave = `${pacote.id}:${projetoId}`;
+    const emCurso = refazendo.get(chave);
+    if (emCurso) return emCurso;
+    const trabalho = (async () => {
+      if (!(await this.quota.temSaldo(escolaId, usuarioId, perfil))) throw erroDeJogo("sem-saldo-de-ia");
+      let bytes: Buffer;
+      try {
+        bytes = await this.ia.generateImage(promptDaImagem(projeto.imagem.descricao), { proporcao: "4:3" });
+      } catch {
+        logger.warn(
+          { codigo: "exp06ef1b-midia-falhou", escolaId, projeto: projeto.id },
+          "imagem não refeita — o estande segue com a que tinha",
+        );
+        throw erroDeJogo("ia-indisponivel");
+      }
+      const url = await this.assets.salvarMidiaDeExperiencia({
+        expId: EXP_ID,
+        nome: nomeDaImagem(projeto.imagem.descricao, randomUUID()),
+        bytes,
+        contentType: "image/webp",
+        imagem: { ...TAMANHO_DA_IMAGEM },
+      });
+      await this.quota.consumir(escolaId, usuarioId, CUSTO_ESTIMADO_POR_IMAGEM);
+      await this.juri.registrarMidia(escolaId, pacote.id, projeto.id, url);
+      return { pacoteId: pacote.id, projetoId: projeto.id, url };
+    })().finally(() => refazendo.delete(chave));
+    refazendo.set(chave, trabalho);
     return trabalho;
   }
 

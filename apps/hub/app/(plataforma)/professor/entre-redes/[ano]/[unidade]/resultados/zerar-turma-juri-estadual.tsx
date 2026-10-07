@@ -9,8 +9,7 @@ import { caminhoDaTurma, erroDaResposta } from "@/lib/juri-estadual-tipos";
  * ZERAR A TURMA da exp06ef1b — uma RODADA NOVA do mesmo pacote, SEM apagar.
  * Molde: o zerar do Jornal (`zerar-turma-jornal-escola.tsx`).
  *
- * A rodada passada fica — os votos, a auditoria da galeria, os pacotes e a
- * cadeia —, porque é ela que o painel de habilidades mostra. A turma volta à
+ * A rodada passada fica — os votos, a auditoria da galeria e a cadeia —, porque é ela que o painel de habilidades mostra. A turma volta à
  * exploração, a Galeria Oculta fecha e cada computador recomeça pela
  * credencial.
  *
@@ -70,8 +69,8 @@ export function ZerarTurmaJuriEstadual({
         <div className="flex flex-col gap-4">
           <p className="text-[14px] leading-relaxed text-unooria-neutral-800">
             A turma volta ao começo — a credencial, o feed e a cédula —, a Galeria Oculta fecha e cada computador
-            julga a mostra de novo. <strong>Nada é apagado</strong>: os votos, a auditoria da galeria, os pacotes e a
-            cadeia desta rodada continuam guardados, e a evidência dela segue no painel de habilidades.
+            julga a mostra de novo. <strong>Nada é apagado</strong>: os votos, a auditoria da galeria e a cadeia
+            desta rodada continuam guardados, e a evidência dela segue no painel de habilidades.
           </p>
           <FeedbackAlert
             type="warning"

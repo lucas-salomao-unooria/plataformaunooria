@@ -95,9 +95,9 @@ Os diagramas entidade-relacionamento estão no Capítulo~\ref{cap:dados}.
 \zebra \cd{exp06ef2b\_auditorias} & Tenant & Cada abertura de \enquote{Dados da mensagem} --- a evidência que a missão mede\\
 \cd{exp06ef2b\_reflexoes} & Tenant & O \enquote{Meu percurso} (texto livre do estudante)\\
 \zebra \cd{exp06ef2b\_gates\_turma} & Tenant & A etapa da aula, por turma\\
-\cd{exp06ef1b\_pacotes} & Tenant & A ATIVIDADE do Júri Estadual de Projetos: as 4 áreas e os 16 projetos que a IA gerou e o professor aprovou, e as URLs das imagens\\
+\cd{exp06ef1b\_pacotes} & Tenant & A ATIVIDADE do Júri Estadual de Projetos: as 4 áreas e os 16 projetos que a IA gerou e o professor aprovou, as URLs das imagens e \cd{imagens\_aprovadas\_em}, a segunda fase da aprovação (\adrr{ADR-151})\\
 \zebra \cd{exp06ef1b\_gates\_turma} & Tenant & A etapa da aula (a Galeria Oculta), a atividade em andamento e a rodada, por turma\\
-\cd{exp06ef1b\_sessoes} & Tenant & Uma sessão por estudante, pacote e rodada: o feed servido, as curtidas, os dois votos, a auditoria da galeria, os pacotes, a cadeia e os cartões --- sem texto livre\\
+\cd{exp06ef1b\_sessoes} & Tenant & Uma sessão por estudante, pacote e rodada: o feed servido, as curtidas, os dois votos, a auditoria da galeria, a cadeia e os cartões --- sem texto livre\\
 \zebra \cd{exp07ef1b\_coberturas} & Tenant & A ATIVIDADE da A Seleção: o tema homologado, os 12 posts com o gabarito (e os comentários com autor), as URLs da mídia, o carimbo da aprovação das imagens (\adrr{ADR-146}) e as três falas do podcast\\
 \cd{exp07ef1b\_gates\_turma} & Tenant & A etapa da aula, a cobertura e a rodada, por turma\\
 \zebra \cd{exp07ef1b\_sessoes} & Tenant & Uma sessão por estudante, cobertura e rodada: a tríade, a legenda, a matriz e o par\\
@@ -1056,7 +1056,7 @@ A Seleção não grava aqui --- as falas dela moram em
 \zebra \cd{escola\_id} & \cd{TEXT} & \cd{NOT NULL}; a chave da RLS.\\
 \cd{exp\_id} & \cd{TEXT} & O código da experiência. \emph{CHECK}
   (\cd{podcast\_\B roteiros\_\B exp\_\B id\_\B formato}) no formato da
-  \adrr{ADR-110}: \cd{exp04ef1b}, \cd{exp05ef1b}.\\
+  \adrr{ADR-110}: \cd{exp04ef1b}, \cd{exp05ef1b}, \cd{exp06ef1b}.\\
 \zebra \cd{atividade\_id} & \cd{UUID} & A atividade da missão (o pacote
   homologado). \textbf{Sem FK}: cada missão guarda a atividade numa tabela
   própria, e o id é de uma delas.\\
@@ -1449,26 +1449,29 @@ as colunas da sessão, que é onde o feed e os \emph{latches} moram.
   \cd{TIMESTAMPTZ?} & O \emph{latch} 1, juntos. A convicção é
   \cd{examinei\_bem} $|$ \cd{vi\_tudo} --- as duas afirmam certeza.\\
 \zebra \cd{auditoria} & \cd{JSONB} & \cd{\{abertos: string[], buscas: [\{tipo,
-  area\}]\}}: o que a criança abriu e buscou na galeria, a base da EF06CO01. O
-  texto digitado nunca chega aqui.\\
+  area\}]\}}: o que a criança abriu e buscou na galeria, a base da EF06CO10
+  (os ocultos abertos) e da EF06CO01 (a busca pela \emph{hashtag} de outra
+  área), com réguas diferentes (\adrr{ADR-151}). O texto digitado nunca chega
+  aqui.\\
 \cd{revisao\_acao}, \cd{voto\_\B{}revisado}, \cd{revisado\_em} & \cd{TEXT?},
   \cd{TIMESTAMPTZ?} & O \emph{latch} 2: \cd{manter} (o voto final repete o
   lacrado) $|$ \cd{trocar} (outro dos dezesseis).\\
-\zebra \cd{pacotes\_\B{}tentativas}, \cd{pacotes\_\B{}remontados\_em} & \cd{INTEGER},
-  \cd{TIMESTAMPTZ?} & A base da EF06CO07. Remontada exige ao menos uma
-  tentativa.\\
-\cd{cadeia\_\B{}tentativas}, \cd{cadeia\_\B{}montada\_em} & \cd{INTEGER},
-  \cd{TIMESTAMPTZ?} & A base da EF06CO03, com a mesma régua.\\
-\zebra \cd{mecanismo}, \cd{atitude}, \cd{cartoes\_em} & \cd{TEXT?},
+\zebra \cd{cadeia\_\B{}tentativas}, \cd{cadeia\_\B{}montada\_em} & \cd{INTEGER},
+  \cd{TIMESTAMPTZ?} & A base da EF06CO03: uma tentativa = atingiu, duas ou
+  três = em processo, mais = não atingiu. Montada exige ao menos uma
+  tentativa. (As colunas \cd{pacotes\_tentativas} e
+  \cd{pacotes\_remontados\_em}, da EF06CO07, foram apagadas pela
+  \arq{20261006120000}, \adrr{ADR-151}.)\\
+\cd{mecanismo}, \cd{atitude}, \cd{cartoes\_em} & \cd{TEXT?},
   \cd{TIMESTAMPTZ?} & O caso Mariana: \cd{m1}--\cd{m3} e \cd{t1}--\cd{t2}. Não é
   evidência.\\
-\cd{concluida\_em} & \cd{TIMESTAMPTZ?} & EQUIVALENTE ao passo \cd{fim}.\\
-\zebra \cd{versao\_instrumento} & \cd{TEXT} & \cd{1.0.0}.\\
+\zebra \cd{concluida\_em} & \cd{TIMESTAMPTZ?} & EQUIVALENTE ao passo \cd{fim}.\\
+\cd{versao\_instrumento} & \cd{TEXT} & \cd{1.0.0}.\\
 \bottomrule
 \end{tabularx}
 
 \begin{regra}
-A ordem certa dos pacotes e da cadeia e o cartão certo de Mariana \textbf{não
+A ordem certa da cadeia e o cartão certo de Mariana \textbf{não
 estão no banco}: são o esqueleto da missão, em \arq{conteudo.ts}, e só
 \rota{GET /juri-estadual/professor/material} os devolve. A mostra --- os
 dezesseis projetos --- mora no \cd{JSONB} de \cd{exp06ef1b\_pacotes}, e o

@@ -21,7 +21,7 @@
  *   2026-10-02): sem saldo de IA não há atividade, e a tela diz isso em vez de
  *   oferecer um atalho que não existe.
  *
- * O GABARITO (a ordem dos pacotes e dos blocos, os cartões certos do caso
+ * O GABARITO (a ordem dos blocos da cadeia, os cartões certos do caso
  * Mariana) aparece em `MaterialDoJuri`, que só rota de professor devolve.
  *
  * As funções daqui são PURAS: o painel ao vivo e a criação da atividade são
@@ -97,7 +97,6 @@ export const PASSOS = [
   "feed",
   "lacrada",
   "galeria",
-  "pacotes",
   "cadeia",
   "mariana",
   "enquetes",
@@ -266,6 +265,8 @@ export interface PacotesDoJuri {
       criadoEm: string;
       /** A maior rodada com sessão; 0 = nunca rodou. */
       rodadas: number;
+      /** A segunda fase da aprovação passou? Sem ela, a atividade não vai ao ar (409 `imagens-nao-aprovadas`). */
+      imagensAprovadas: boolean;
     }
   >;
 }
@@ -277,6 +278,21 @@ export interface PacoteDetalhe extends PacoteNaTela {
   etapa: EtapaDaTurma | null;
   criadoEm: string;
   rodadas: number;
+  /** Quando o professor aprovou as imagens; `null` = a segunda fase não passou, e a atividade não vai ao ar. */
+  imagensAprovadasEm: string | null;
+}
+
+/** `POST :turmaId/pacotes/:pacoteId/aprovar-imagens` — a segunda fase da aprovação. */
+export interface ImagensAprovadas {
+  pacoteId: string;
+  imagensAprovadasEm: string;
+}
+
+/** `POST :turmaId/pacotes/:pacoteId/imagens/:projetoId/refazer` — a imagem nova de UM estande. */
+export interface ImagemRefeita {
+  pacoteId: string;
+  projetoId: string;
+  url: string;
 }
 
 /** `POST gerar-conteudo` — RASCUNHO, não persiste. */
@@ -385,7 +401,6 @@ interface CartaoComGabarito {
 
 /** `GET /juri-estadual/professor/material` — o esqueleto fixo COM gabarito, a plenária e a regra do feed. */
 export interface MaterialDoJuri {
-  pacotes: Array<{ numero: number; trecho: string; rota: string[] }>;
   blocos: Array<{ posicao: number; rotulo: string }>;
   mariana: { caso: string; mecanismos: CartaoComGabarito[]; atitudes: CartaoComGabarito[] };
   plenaria: string[];
@@ -437,13 +452,29 @@ export function rotuloDoBotao(proxima: EtapaDaTurma | null): string | null {
   return ROTULO_DO_BOTAO[proxima];
 }
 
+/** O aviso do podcast com a Galeria Oculta já liberada na aula em andamento. */
+export const AVISO_DO_PODCAST_NA_GALERIA =
+  "A Galeria Oculta já está liberada: o episódio pode tocar no fechamento, depois da revisão do voto.";
+/** O aviso do podcast antes da galeria — ou com a atividade fora do ar. */
+export const AVISO_DO_PODCAST_ANTES_DA_GALERIA =
+  "Este episódio revela a virada da missão: toque para a turma só depois de liberar a Galeria Oculta, nunca antes da aula.";
+
+/**
+ * O aviso no topo do cartão do podcast (ADR-150). O módulo de podcast não tem
+ * trava por etapa, e o episódio conta o que o feed escondeu — tocado antes da
+ * galeria, estraga a aula. Só com a atividade EM ANDAMENTO e a galeria aberta o
+ * aviso libera; fora do ar, a página não sabe em que ponto a turma vai estar.
+ */
+export function avisoDoPodcast(emAndamento: boolean, etapa: EtapaDaTurma | null): string {
+  return emAndamento && etapa === "galeria" ? AVISO_DO_PODCAST_NA_GALERIA : AVISO_DO_PODCAST_ANTES_DA_GALERIA;
+}
+
 /** O que o computador está vendo agora, em uma linha. */
 export const ROTULO_DO_PASSO: Record<PassoDoEstudante, string> = {
   credencial: "Na credencial de jurado",
   feed: "No feed da mostra",
   lacrada: "Votou — esperando a plenária",
   galeria: "Na Galeria Oculta",
-  pacotes: "Remontando a curtida (pacotes)",
   cadeia: "Montando a cadeia do feed",
   mariana: "No caso Mariana",
   enquetes: "Nas enquetes",
@@ -529,12 +560,11 @@ function passaramDe(linhas: readonly Pick<LinhaDoPainel, "passo">[], passo: Pass
 
 /**
  * Mudou algo que a EVIDÊNCIA registra (ADR-146)? As três ações da ficha são
- * marcadas na MESMA transação do passo que o painel mostra: a EF06CO01 no
- * latch da revisão do voto (`revisaram`), a EF06CO07 quando a curtida se
- * remonta (a linha sai de `pacotes`) e a EF06CO03 quando a cadeia se monta (sai
- * de `cadeia`) — e as enquetes vêm antes do crachá (`concluiram`). Pacotes e
- * cadeia não têm contador no resumo, por isso a conta é sobre o passo de cada
- * linha. A atividade troca com um pacote novo ou uma rodada nova. Só nesses
+ * marcadas na MESMA transação do passo que o painel mostra: a EF06CO10 e a
+ * EF06CO01 no latch da revisão do voto (`revisaram`) e a EF06CO03 quando a
+ * cadeia se monta (a linha sai de `cadeia`) — e as enquetes vêm antes do crachá
+ * (`concluiram`). A cadeia não tem contador no resumo, por isso a conta é sobre
+ * o passo de cada linha. A atividade troca com um pacote novo ou uma rodada nova. Só nesses
  * casos o painel da aula relê a página inteira, para o painel de habilidades
  * acompanhar sem o professor apertar F5. É o mesmo desenho da exp05ef1b
  * (`mudouAEvidencia` em `quem-mandou-regras.ts`).
@@ -545,7 +575,6 @@ export function mudouAEvidencia(
 ): boolean {
   return (
     antes.resumo.revisaram !== depois.resumo.revisaram ||
-    passaramDe(antes.linhas, "pacotes") !== passaramDe(depois.linhas, "pacotes") ||
     passaramDe(antes.linhas, "cadeia") !== passaramDe(depois.linhas, "cadeia") ||
     antes.resumo.concluiram !== depois.resumo.concluiram ||
     antes.pacote.id !== depois.pacote.id ||
@@ -730,6 +759,21 @@ export function continuarGerando(p: Pick<ProgressoDaMidia, "completo" | "geradas
 export function falhasAcumuladas(anteriores: readonly string[], p: Pick<ProgressoDaMidia, "falharam" | "imagens">): string[] {
   const todas = new Set([...anteriores, ...p.falharam]);
   return [...todas].filter((id) => !p.imagens[id]).sort();
+}
+
+/** O estado da imagem de UM estande na grade da aprovação. */
+export type EstadoDaImagem = "aprovada" | "aguardando" | "gerando" | "sem-imagem";
+
+/**
+ * Onde a imagem de um estande está: refazendo/gerando agora, sem imagem (a
+ * criança vê a arte desenhada), à espera do OK, ou aprovada. A aprovação é UMA
+ * para o pacote (como na exp07ef1b, ADR-146): aprovadas, todas congelam — e o
+ * estande sem imagem segue "sem imagem", com a arte procedural.
+ */
+export function estadoDaImagem(e: { temImagem: boolean; gerando: boolean; aprovadas: boolean }): EstadoDaImagem {
+  if (e.gerando) return "gerando";
+  if (!e.temImagem) return "sem-imagem";
+  return e.aprovadas ? "aprovada" : "aguardando";
 }
 
 /** "3 de 16 imagens prontas." */

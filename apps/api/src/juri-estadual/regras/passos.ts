@@ -17,10 +17,15 @@
  *
  *   credencial → feed ──(voto, LATCH 1)──→ lacrada
  *     → [professor libera a galeria] → galeria
- *     ──(revisão do voto, LATCH 2)──→ pacotes → cadeia → mariana → enquetes → fim
+ *     ──(revisão do voto, LATCH 2)──→ cadeia → mariana → enquetes → fim
  *
  * `galeria` nunca é GRAVADO: a etapa da turma o impõe a quem está em `lacrada`.
- * O passo gravado sai de `lacrada` só na revisão do voto (`pacotes`).
+ * O passo gravado sai de `lacrada` só na revisão do voto (`cadeia`).
+ *
+ * Até a 0.1.x havia um passo `pacotes` (a curtida remontada em pacotes, a
+ * EF06CO07) entre a revisão e a cadeia. O PO o tirou com a habilidade
+ * (2026-10-06): a migração `20261006120000_exp06ef1b_ajustes_do_po` moveu para
+ * `cadeia` as sessões que estavam nele.
  */
 
 /** Passos do estudante, na ordem em que ele os percorre. */
@@ -29,7 +34,6 @@ export const PASSOS = [
   "feed",
   "lacrada",
   "galeria",
-  "pacotes",
   "cadeia",
   "mariana",
   "enquetes",
@@ -49,9 +53,8 @@ export const PASSOS_ANTES_DO_VOTO: readonly Passo[] = ["credencial", "feed"];
 
 /**
  * Os passos que a própria criança pede, por `POST passo`. Os outros nascem das
- * rotas que os carimbam: `lacrada` (o voto), `pacotes` (a revisão), `cadeia`
- * (os pacotes remontados), `mariana` (a cadeia), `enquetes` (os cartões),
- * `fim` (concluir).
+ * rotas que os carimbam: `lacrada` (o voto), `cadeia` (a revisão), `mariana`
+ * (a cadeia), `enquetes` (os cartões), `fim` (concluir).
  */
 export const PASSOS_PEDIDOS = ["feed"] as const;
 export type PassoPedido = (typeof PASSOS_PEDIDOS)[number];
@@ -104,7 +107,7 @@ export function votou(passo: Passo): boolean {
  *    abre a galeria de um feed que não terminou, e a taxa dele precisa do voto).
  * 2. Em `lacrada`, a etapa manda: espera na exploração, galeria quando o
  *    professor libera.
- * 3. Da revisão em diante (`pacotes`...`fim`) o passo é da criança, e nada o
+ * 3. Da revisão em diante (`cadeia`...`fim`) o passo é da criança, e nada o
  *    puxa de volta. O gate nunca volta dentro de uma rodada — e quando a
  *    rodada muda (zerar, atividade nova) a sessão é outra.
  */
