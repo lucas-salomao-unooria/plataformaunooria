@@ -56,8 +56,8 @@ export const CHAVES_REDIGIDAS: ReadonlySet<string> = new Set([
   "consequencia",
   "pilaremfalta",
   // O esqueleto do Júri Estadual (exp06ef1b): `certo` marca o cartão certo do
-  // caso Mariana. O resto do gabarito da missão (a ordem dos pacotes e dos
-  // blocos) não tem chave — é a POSIÇÃO —, e os ids que descem são opacos.
+  // caso Mariana. O resto do gabarito da missão (a ordem dos blocos da cadeia)
+  // não tem chave — é a POSIÇÃO —, e os ids que descem são opacos.
   "certo",
   // O `Então` da regra Se/Então da exp05ef1b — TEXTO LIVRE DE MENOR (RF-014).
   // `entao` no corpo e na resposta, `acaoEntao` no Prisma, `acao_entao` na

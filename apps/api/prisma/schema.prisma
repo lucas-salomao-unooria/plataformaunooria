@@ -3203,9 +3203,9 @@ model AjudaLimite {
 // servidor, `juri-estadual/regras/afunilamento.ts`), vota numa cédula lacrada
 // (LATCH 1) e espera o professor liberar a Galeria Oculta, onde vê o que nunca
 // chegou ao feed dele, com a taxa REAL de invisibilidade, e mantém ou troca o
-// voto (LATCH 2). Depois remonta a curtida em pacotes (EF06CO07), monta a
-// cadeia Interações → Dados → Algoritmo → Bolha (EF06CO03), resolve o caso
-// Mariana e responde as enquetes (P1–P3, pela evidência).
+// voto (LATCH 2). Depois monta a cadeia Interações → Dados → Algoritmo →
+// Bolha (EF06CO03), resolve o caso Mariana e responde as enquetes (P1–P3, pela
+// evidência; a P1 é da EF06CO10, o foco primário).
 //
 // TRÊS tabelas. A ATIVIDADE (no sentido da evidência pedagógica, ADR-112) é o
 // PACOTE homologado — os dezesseis projetos gerados por IA no preparo, sem
@@ -3245,6 +3245,11 @@ model Exp06ef1bPacote {
 
   /// As URLs das imagens geradas, por id de projeto (`{ "proj-a1": url }`).
   midia Json @default("{}")
+
+  /// A SEGUNDA fase da aprovação (como na exp07ef1b, ADR-146): o professor viu
+  /// as imagens dos estandes e as aprovou. NULO = a atividade não vai ao ar
+  /// (409 `imagens-nao-aprovadas`), e as imagens ainda podem ser refeitas.
+  imagensAprovadasEm DateTime? @map("imagens_aprovadas_em") @db.Timestamptz(6)
 
   ativo Boolean @default(false)
 
@@ -3308,12 +3313,12 @@ model Exp06ef1bSessao {
   rodada      Int
   estudanteId String @map("estudante_id") @db.Uuid
 
-  /// credencial | feed | lacrada | pacotes | cadeia | mariana | enquetes | fim
+  /// credencial | feed | lacrada | cadeia | mariana | enquetes | fim
   /// (CHECK; a ordem é `regras/passos.ts`). `galeria` NUNCA é gravado: a etapa
   /// da turma o impõe a quem está em `lacrada`.
   passo   String @default("credencial")
   /// O texto estável que sorteia esta sessão: a abertura e o feed, os ids
-  /// opacos e a ordem de chegada dos pacotes e dos blocos. Nasce no servidor,
+  /// opacos e a ordem de chegada dos blocos. Nasce no servidor,
   /// aleatório, e não muda — o F5 rende o mesmo feed.
   semente String
 
@@ -3340,12 +3345,10 @@ model Exp06ef1bSessao {
   votoRevisado String?   @map("voto_revisado")
   revisadoEm   DateTime? @map("revisado_em") @db.Timestamptz(6)
 
-  /// Cada envio da remontagem é uma tentativa (EF06CO07).
-  pacotesTentativas   Int       @default(0) @map("pacotes_tentativas")
-  pacotesRemontadosEm DateTime? @map("pacotes_remontados_em") @db.Timestamptz(6)
-  /// Cada envio da cadeia é uma tentativa (EF06CO03).
-  cadeiaTentativas    Int       @default(0) @map("cadeia_tentativas")
-  cadeiaMontadaEm     DateTime? @map("cadeia_montada_em") @db.Timestamptz(6)
+  /// Cada envio da cadeia é uma tentativa (EF06CO03). (Os pacotes da curtida,
+  /// EF06CO07, saíram com as colunas deles na `20261006120000`.)
+  cadeiaTentativas Int       @default(0) @map("cadeia_tentativas")
+  cadeiaMontadaEm  DateTime? @map("cadeia_montada_em") @db.Timestamptz(6)
 
   /// O caso Mariana: a escolha de um cartão de mecanismo e um de atitude. Não
   /// vira nota: a evidência da missão está nas três habilidades.

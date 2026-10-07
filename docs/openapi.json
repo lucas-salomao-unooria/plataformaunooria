@@ -53129,7 +53129,6 @@
                         "feed",
                         "lacrada",
                         "galeria",
-                        "pacotes",
                         "cadeia",
                         "mariana",
                         "enquetes",
@@ -53143,7 +53142,6 @@
                         "feed",
                         "lacrada",
                         "galeria",
-                        "pacotes",
                         "cadeia",
                         "mariana",
                         "enquetes",
@@ -53341,61 +53339,6 @@
                       "additionalProperties": false,
                       "nullable": true
                     },
-                    "pacotes": {
-                      "type": "object",
-                      "properties": {
-                        "itens": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "properties": {
-                              "id": {
-                                "type": "string",
-                                "pattern": "^[a-z]{2}-[a-z0-9]{3}$"
-                              },
-                              "numero": {
-                                "type": "integer",
-                                "minimum": 1,
-                                "maximum": 4
-                              },
-                              "trecho": {
-                                "type": "string"
-                              },
-                              "rota": {
-                                "type": "array",
-                                "items": {
-                                  "type": "string"
-                                },
-                                "minItems": 2
-                              }
-                            },
-                            "required": [
-                              "id",
-                              "numero",
-                              "trecho",
-                              "rota"
-                            ],
-                            "additionalProperties": false
-                          },
-                          "minItems": 4,
-                          "maxItems": 4
-                        },
-                        "tentativas": {
-                          "type": "integer",
-                          "minimum": 0
-                        },
-                        "remontados": {
-                          "type": "boolean"
-                        }
-                      },
-                      "required": [
-                        "itens",
-                        "tentativas",
-                        "remontados"
-                      ],
-                      "additionalProperties": false,
-                      "nullable": true
-                    },
                     "cadeia": {
                       "type": "object",
                       "properties": {
@@ -53406,7 +53349,7 @@
                             "properties": {
                               "id": {
                                 "type": "string",
-                                "pattern": "^[a-z]{2}-[a-z0-9]{3}$"
+                                "pattern": "^bl-[a-z0-9]{3}$"
                               },
                               "rotulo": {
                                 "type": "string"
@@ -53524,7 +53467,6 @@
                     "feed",
                     "voto",
                     "revisao",
-                    "pacotes",
                     "cadeia",
                     "mariana",
                     "concluida"
@@ -53539,7 +53481,7 @@
           "juri-estadual"
         ],
         "summary": "O estado da missão: o passo, o feed servido até aqui, o voto e os blocos do fim.",
-        "description": "Boot da experiência e o F5. O feed traz **só os posts que o motor serviu** — o acervo da mostra existe só no servidor até a Galeria Oculta. Nenhum peso, nenhuma área líder: a regra do feed é o que a Etapa 5 ensina, e a criança a descobre depois.\n\n`pacotes` (a curtida em quatro pacotes, na ORDEM DE CHEGADA desta sessão), `cadeia` (os quatro blocos embaralhados) e `mariana` (o caso e os cartões) só vêm do passo deles em diante, com ids OPACOS e estáveis num F5. Nenhum diz a posição certa, e nenhum cartão diz se é o certo.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- `passo` já vem reconciliado com a etapa da turma; `passoDoEstudante` é o gravado. A etapa só conduz quem votou: quem ainda está no feed continua no feed com a galeria liberada.\n- `pacoteId` é a ATIVIDADE e `rodada` é a rodada dela: mudam quando o professor põe outra atividade no ar ou zera a turma, e a sessão é outra.\n- `imagem.url` é `null` enquanto o professor não gerou as imagens — a tela desenha a arte procedural do estande.\n- Missão não liberada na turma responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`); sem atividade em andamento, **403** `atividade-nao-preparada`. Estudante sem turma responde **409** `sem-turma`. Corpo fora do formato responde **400** `payload-invalido`.",
+        "description": "Boot da experiência e o F5. O feed traz **só os posts que o motor serviu** — o acervo da mostra existe só no servidor até a Galeria Oculta. Nenhum peso, nenhuma área líder: a regra do feed é o que a Etapa 5 ensina, e a criança a descobre depois.\n\n`cadeia` (os quatro blocos embaralhados) e `mariana` (o caso e os cartões) só vêm do passo deles em diante, com ids OPACOS e estáveis num F5. Nenhum diz a posição certa, e nenhum cartão diz se é o certo.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- `passo` já vem reconciliado com a etapa da turma; `passoDoEstudante` é o gravado. A etapa só conduz quem votou: quem ainda está no feed continua no feed com a galeria liberada.\n- `pacoteId` é a ATIVIDADE e `rodada` é a rodada dela: mudam quando o professor põe outra atividade no ar ou zera a turma, e a sessão é outra.\n- `imagem.url` é `null` enquanto o professor não gerou as imagens — a tela desenha a arte procedural do estande.\n- Missão não liberada na turma responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`); sem atividade em andamento, **403** `atividade-nao-preparada`. Estudante sem turma responde **409** `sem-turma`. Corpo fora do formato responde **400** `payload-invalido`.",
         "security": [
           {
             "token-da-plataforma": []
@@ -53958,7 +53900,6 @@
                         "feed",
                         "lacrada",
                         "galeria",
-                        "pacotes",
                         "cadeia",
                         "mariana",
                         "enquetes",
@@ -54279,7 +54220,6 @@
                         "feed",
                         "lacrada",
                         "galeria",
-                        "pacotes",
                         "cadeia",
                         "mariana",
                         "enquetes",
@@ -54308,7 +54248,7 @@
           "juri-estadual"
         ],
         "summary": "Manter ou trocar o voto, depois da galeria (latch).",
-        "description": "`trocar` aceita qualquer um dos dezesseis estandes (a galeria mostrou todos), menos o do voto lacrado. Grava a ação, o voto final, o carimbo e o passo `pacotes` juntos, e marca a EF06CO01 (`auditoria`) pelo que a criança fez na galeria antes de decidir.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- `trocar` para o mesmo projeto do voto responde **400** `payload-invalido`.\n- A segunda revisão — inclusive duas simultâneas — responde **409** `voto-ja-revisado`. Antes da galeria, **403** `galeria-nao-liberada`. Com a rodada trocada no meio (o professor zerou), **409** `rodada-mudou`.\n- Missão não liberada na turma responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`); sem atividade em andamento, **403** `atividade-nao-preparada`. Estudante sem turma responde **409** `sem-turma`. Corpo fora do formato responde **400** `payload-invalido`.",
+        "description": "`trocar` aceita qualquer um dos dezesseis estandes (a galeria mostrou todos), menos o do voto lacrado. Grava a ação, o voto final, o carimbo e o passo `cadeia` juntos, e marca a EF06CO10 (`auditoria`: quantos estandes ocultos ela abriu) e a EF06CO01 (`classificacao`: se buscou pela hashtag de outra área e abriu um oculto dela) pelo que a criança fez na galeria antes de decidir.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- `trocar` para o mesmo projeto do voto responde **400** `payload-invalido`.\n- A segunda revisão — inclusive duas simultâneas — responde **409** `voto-ja-revisado`. Antes da galeria, **403** `galeria-nao-liberada`. Com a rodada trocada no meio (o professor zerou), **409** `rodada-mudou`.\n- Missão não liberada na turma responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`); sem atividade em andamento, **403** `atividade-nao-preparada`. Estudante sem turma responde **409** `sem-turma`. Corpo fora do formato responde **400** `payload-invalido`.",
         "security": [
           {
             "token-da-plataforma": []
@@ -54366,92 +54306,6 @@
         }
       }
     },
-    "/juri-estadual/pacotes": {
-      "post": {
-        "operationId": "JuriEstadualController_pacotes",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "Sucesso.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "correta": {
-                      "type": "boolean"
-                    },
-                    "tentativas": {
-                      "type": "integer",
-                      "minimum": 1
-                    },
-                    "passo": {
-                      "type": "string",
-                      "enum": [
-                        "credencial",
-                        "feed",
-                        "lacrada",
-                        "galeria",
-                        "pacotes",
-                        "cadeia",
-                        "mariana",
-                        "enquetes",
-                        "fim"
-                      ]
-                    }
-                  },
-                  "required": [
-                    "correta",
-                    "tentativas",
-                    "passo"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "juri-estadual"
-        ],
-        "summary": "Uma tentativa de remontar a curtida: os quatro pacotes na ordem dos números.",
-        "description": "Cada envio é uma TENTATIVA. A resposta diz só se a ordem confere — nunca qual vaga errou. Na certa, o passo vai a `cadeia` e a EF06CO07 (`pacotes`) é marcada pelo número de tentativas (1 = atingiu, 2–3 = em processo, mais = não atingiu). Com a curtida já remontada, responde `correta: true` sem contar outra tentativa.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- `ordem`: os quatro ids OPACOS desta sessão (`pk-` e três caracteres), sem repetir. (O `.refine()` some do OpenAPI; daí esta nota.) Id de outra sessão responde **400** `payload-invalido`.\n- Fora do passo `pacotes` responde **409** `passo-invalido`; com a rodada trocada no meio, **409** `rodada-mudou`.\n- Missão não liberada na turma responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`); sem atividade em andamento, **403** `atividade-nao-preparada`. Estudante sem turma responde **409** `sem-turma`. Corpo fora do formato responde **400** `payload-invalido`.",
-        "security": [
-          {
-            "token-da-plataforma": []
-          }
-        ],
-        "x-papeis": [
-          "estudante"
-        ],
-        "x-acesso": "token",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "ordem": {
-                    "type": "array",
-                    "items": {
-                      "type": "string",
-                      "pattern": "^[a-z]{2}-[a-z0-9]{3}$"
-                    },
-                    "minItems": 4,
-                    "maxItems": 4
-                  }
-                },
-                "required": [
-                  "ordem"
-                ],
-                "additionalProperties": false
-              }
-            }
-          }
-        }
-      }
-    },
     "/juri-estadual/cadeia": {
       "post": {
         "operationId": "JuriEstadualController_cadeia",
@@ -54478,7 +54332,6 @@
                         "feed",
                         "lacrada",
                         "galeria",
-                        "pacotes",
                         "cadeia",
                         "mariana",
                         "enquetes",
@@ -54501,7 +54354,7 @@
           "juri-estadual"
         ],
         "summary": "Uma tentativa de montar a cadeia: Interações → Dados → Algoritmo → Bolha.",
-        "description": "A mesma régua dos pacotes. Na certa, o passo vai a `mariana` e a EF06CO03 (`cadeia`) é marcada pelo número de tentativas. Com a cadeia já montada, responde `correta: true` sem contar.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- `ordem`: os quatro ids OPACOS desta sessão (`bl-` e três caracteres), sem repetir. Id de outra sessão responde **400** `payload-invalido`.\n- Fora do passo `cadeia` responde **409** `passo-invalido`; com a rodada trocada no meio, **409** `rodada-mudou`.\n- Missão não liberada na turma responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`); sem atividade em andamento, **403** `atividade-nao-preparada`. Estudante sem turma responde **409** `sem-turma`. Corpo fora do formato responde **400** `payload-invalido`.",
+        "description": "Cada envio é uma TENTATIVA. A resposta diz só se a ordem confere — nunca qual vaga errou. Na certa, o passo vai a `mariana` e a EF06CO03 (`cadeia`) é marcada pelo número de tentativas (1 = atingiu, 2–3 = em processo, mais = não atingiu). Com a cadeia já montada, responde `correta: true` sem contar outra tentativa.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- `ordem`: os quatro ids OPACOS desta sessão (`bl-` e três caracteres), sem repetir. (O `.refine()` some do OpenAPI; daí esta nota.) Id de outra sessão responde **400** `payload-invalido`.\n- Fora do passo `cadeia` responde **409** `passo-invalido`; com a rodada trocada no meio, **409** `rodada-mudou`.\n- Missão não liberada na turma responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`); sem atividade em andamento, **403** `atividade-nao-preparada`. Estudante sem turma responde **409** `sem-turma`. Corpo fora do formato responde **400** `payload-invalido`.",
         "security": [
           {
             "token-da-plataforma": []
@@ -54522,7 +54375,7 @@
                     "type": "array",
                     "items": {
                       "type": "string",
-                      "pattern": "^[a-z]{2}-[a-z0-9]{3}$"
+                      "pattern": "^bl-[a-z0-9]{3}$"
                     },
                     "minItems": 4,
                     "maxItems": 4
@@ -54557,7 +54410,6 @@
                         "feed",
                         "lacrada",
                         "galeria",
-                        "pacotes",
                         "cadeia",
                         "mariana",
                         "enquetes",
@@ -54649,7 +54501,6 @@
                         "feed",
                         "lacrada",
                         "galeria",
-                        "pacotes",
                         "cadeia",
                         "mariana",
                         "enquetes",
@@ -54944,7 +54795,6 @@
                               "feed",
                               "lacrada",
                               "galeria",
-                              "pacotes",
                               "cadeia",
                               "mariana",
                               "enquetes",
@@ -55547,6 +55397,9 @@
                           "rodadas": {
                             "type": "integer",
                             "minimum": 0
+                          },
+                          "imagensAprovadas": {
+                            "type": "boolean"
                           }
                         },
                         "required": [
@@ -55556,7 +55409,8 @@
                           "origem",
                           "ativo",
                           "criadoEm",
-                          "rodadas"
+                          "rodadas",
+                          "imagensAprovadas"
                         ],
                         "additionalProperties": false
                       }
@@ -55709,6 +55563,10 @@
                     "rodadas": {
                       "type": "integer",
                       "minimum": 0
+                    },
+                    "imagensAprovadasEm": {
+                      "type": "string",
+                      "nullable": true
                     }
                   },
                   "required": [
@@ -55724,7 +55582,8 @@
                     "rodada",
                     "etapa",
                     "criadoEm",
-                    "rodadas"
+                    "rodadas",
+                    "imagensAprovadasEm"
                   ],
                   "additionalProperties": false
                 }
@@ -55827,7 +55686,175 @@
           "juri-estadual"
         ],
         "summary": "\"Usar esta atividade agora\" — o professor escolhe o que a turma faz (ADR-130).",
-        "description": "O escolhido passa a ser a ATIVIDADE EM ANDAMENTO da turma; o que estava volta a ser pronto — fica, com as sessões e as rodadas. A etapa volta à exploração, com a galeria fechada.\n\nA RODADA: o pacote que nunca rodou começa na 1; o que já rodou abre a SEGUINTE à última — retomar a mesma depois da galeria liberada seria o \"voltar\" que o botão único proíbe.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- **Idempotente**: pôr no ar o que já está no ar devolve `mudou: false` e não muda nada.\n- Trocar com a aula correndo leva quem está jogando para a atividade nova: a experiência nota o `pacoteId` novo no polling do gate e recarrega.\n- Pacote de outra turma responde **404** `atividade-nao-encontrada`.",
+        "description": "O escolhido passa a ser a ATIVIDADE EM ANDAMENTO da turma; o que estava volta a ser pronto — fica, com as sessões e as rodadas. A etapa volta à exploração, com a galeria fechada.\n\nA RODADA: o pacote que nunca rodou começa na 1; o que já rodou abre a SEGUINTE à última — retomar a mesma depois da galeria liberada seria o \"voltar\" que o botão único proíbe.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- **Idempotente**: pôr no ar o que já está no ar devolve `mudou: false` e não muda nada.\n- Trocar com a aula correndo leva quem está jogando para a atividade nova: a experiência nota o `pacoteId` novo no polling do gate e recarrega.\n- Sem a segunda fase da aprovação (`POST aprovar-imagens`), **409** `imagens-nao-aprovadas`: a turma abriria com imagem que o professor não viu. Os pacotes criados antes desta regra entraram aprovados (migração `20261006120000`).\n- Pacote de outra turma responde **404** `atividade-nao-encontrada`.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/juri-estadual/turmas/{turmaId}/pacotes/{pacoteId}/aprovar-imagens": {
+      "post": {
+        "operationId": "JuriEstadualTurmasController_aprovarImagens",
+        "parameters": [
+          {
+            "name": "turmaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "pacoteId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "pacoteId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "imagensAprovadasEm": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "pacoteId",
+                    "imagensAprovadasEm"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "juri-estadual"
+        ],
+        "summary": "A segunda fase da aprovação: o professor viu as imagens dos estandes e as aprova.",
+        "description": "A primeira fase é o `POST homologar` (os textos). As imagens se geram em seguida (`POST gerar-midia?pacoteId=`), o professor vê cada uma e refaz a que não serve (`POST …/imagens/:projetoId/refazer`). Só depois desta rota a atividade vai ao ar: `POST em-andamento` responde **409** `imagens-nao-aprovadas` sem ela. Depois dela, as imagens não mudam mais.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- **Idempotente**: a segunda aprovação devolve o carimbo da primeira.\n- Não exige imagem em todo estande: a geração pode falhar ou a quota acabar, e o estande segue com a arte procedural, que o professor vê marcada na grade. Quem segura o botão até a geração terminar é a tela.\n- Pacote de outra turma responde **404** `atividade-nao-encontrada`.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/juri-estadual/turmas/{turmaId}/pacotes/{pacoteId}/imagens/{projetoId}/refazer": {
+      "post": {
+        "operationId": "JuriEstadualTurmasController_refazerImagem",
+        "parameters": [
+          {
+            "name": "turmaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "pacoteId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "projetoId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^proj-[a-d][1-4]$"
+            }
+          },
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "pacoteId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "projetoId": {
+                      "type": "string",
+                      "pattern": "^proj-[a-d][1-4]$"
+                    },
+                    "url": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "pacoteId",
+                    "projetoId",
+                    "url"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "juri-estadual"
+        ],
+        "summary": "\"Gerar outra imagem\": uma imagem nova para UM estande, enquanto as imagens estão em validação.",
+        "description": "O professor viu a imagem do estande e ela não serve, ou o estande ficou sem imagem. Gera outra, SEMPRE paga, num arquivo novo — sobrescrever o da descrição trocaria a imagem de todo pacote que a herdou, inclusive o de uma turma em aula.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Depois de `aprovar-imagens`, **409** `imagens-ja-aprovadas`: a turma pode estar olhando para elas.\n- Quota do professor, com o custo estimado de uma imagem. Sem saldo, **429** `sem-saldo-de-ia`; com o provedor fora do ar, **503** `ia-indisponivel` — e o estande fica com a imagem que tinha.\n- `projetoId` fora de `proj-a1`…`proj-d4` responde **400** `payload-invalido`.",
         "security": [
           {
             "token-da-plataforma": []
@@ -56400,7 +56427,7 @@
           "juri-estadual"
         ],
         "summary": "\"Criar atividade\" — a curadoria humana (ADR-66/67).",
-        "description": "Grava a mostra como o professor a deixou, numa ATIVIDADE NOVA que nasce **pronta, não no ar** (ADR-130): o pacote em andamento continua em andamento, e quem escolhe o que a turma faz é o professor (`POST :turmaId/pacotes/:pacoteId/em-andamento`). O mesmo conteúdo do pacote mais recente não cria outro: é o segundo clique.\n\nAs imagens de projeto com a MESMA descrição de um pacote recente da turma são herdadas — o arquivo no bucket é o hash da descrição.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- O pacote é recusado com **400** `pacote-invalido` e a LISTA de problemas em `erros`, em frases para o professor: quatro categorias, uma por área, com hashtags diferentes no formato `#minusculas`; os dezesseis projetos `proj-a1` a `proj-d4`, cada um na área que o id diz e começando pela hashtag da área; perfil com @; legenda até 60 palavras e bastidor até 40; e nenhuma marca ou plataforma real no que a criança lê. (`.superRefine()` some do OpenAPI; daí esta nota.)",
+        "description": "Grava a mostra como o professor a deixou, numa ATIVIDADE NOVA que nasce **pronta, não no ar** (ADR-130): o pacote em andamento continua em andamento, e quem escolhe o que a turma faz é o professor (`POST :turmaId/pacotes/:pacoteId/em-andamento`). O mesmo conteúdo do pacote mais recente não cria outro: é o segundo clique.\n\nÉ a PRIMEIRA fase da aprovação (os textos): o pacote nasce com `imagensAprovadasEm` nulo e só vai ao ar depois da segunda (`POST :turmaId/pacotes/:pacoteId/aprovar-imagens`).\n\nAs imagens de projeto com a MESMA descrição de um pacote recente da turma são herdadas — o arquivo no bucket é o hash da descrição.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- O pacote é recusado com **400** `pacote-invalido` e a LISTA de problemas em `erros`, em frases para o professor: quatro categorias, uma por área, com hashtags diferentes no formato `#minusculas`; os dezesseis projetos `proj-a1` a `proj-d4`, cada um na área que o id diz e começando pela hashtag da área; perfil com @; legenda até 60 palavras e bastidor até 40; e nenhuma marca ou plataforma real no que a criança lê. (`.superRefine()` some do OpenAPI; daí esta nota.)",
         "security": [
           {
             "token-da-plataforma": []
@@ -56706,7 +56733,7 @@
           "juri-estadual"
         ],
         "summary": "Gera as próximas imagens dos estandes de uma atividade — incremental.",
-        "description": "As dezesseis imagens não cabem nos 30 s que o BFF dá a uma chamada: cada chamada gera ATÉ DUAS novas (4:3), grava as URLs no pacote e devolve o progresso. **Repita enquanto `completo` for `false` e a chamada anterior tiver gerado alguma** — `falharam` diz o que não saiu, e esses estandes seguem com a arte procedural.\n\nIdempotente: o que já tem URL é pulado, e a imagem de mesma descrição que já está no bucket entra sem custo.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- `?pacoteId=` diz a atividade (a pronta, preparada antes de ir ao ar); sem ele, a em andamento — e sem nenhuma, **403** `atividade-nao-preparada`.\n- Quota do professor, com custo ESTIMADO por imagem (a geração não devolve contagem de tokens). Sem saldo responde **429** `sem-saldo-de-ia` — e a missão roda igual, com a arte procedural.\n- Duas chamadas simultâneas para o mesmo pacote recebem o mesmo trabalho (lock de processo).",
+        "description": "As dezesseis imagens não cabem nos 30 s que o BFF dá a uma chamada: cada chamada gera ATÉ DUAS novas (4:3), grava as URLs no pacote e devolve o progresso. **Repita enquanto `completo` for `false` e a chamada anterior tiver gerado alguma** — `falharam` diz o que não saiu, e esses estandes seguem com a arte procedural.\n\nIdempotente: o que já tem URL é pulado, e a imagem de mesma descrição que já está no bucket entra sem custo.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- `?pacoteId=` diz a atividade (a pronta, preparada antes de ir ao ar); sem ele, a em andamento — e sem nenhuma, **403** `atividade-nao-preparada`.\n- Quota do professor, com custo ESTIMADO por imagem (a geração não devolve contagem de tokens). Sem saldo responde **429** `sem-saldo-de-ia` — e a missão roda igual, com a arte procedural.\n- Duas chamadas simultâneas para o mesmo pacote recebem o mesmo trabalho (lock de processo).\n- Só antes da aprovação das imagens: depois de `aprovar-imagens`, **409** `imagens-ja-aprovadas` — gerar a que falta levaria à turma uma imagem que o professor não viu.",
         "security": [
           {
             "token-da-plataforma": []
@@ -56734,32 +56761,6 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "pacotes": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "numero": {
-                            "type": "integer"
-                          },
-                          "trecho": {
-                            "type": "string"
-                          },
-                          "rota": {
-                            "type": "array",
-                            "items": {
-                              "type": "string"
-                            }
-                          }
-                        },
-                        "required": [
-                          "numero",
-                          "trecho",
-                          "rota"
-                        ],
-                        "additionalProperties": false
-                      }
-                    },
                     "blocos": {
                       "type": "array",
                       "items": {
@@ -56871,7 +56872,6 @@
                     }
                   },
                   "required": [
-                    "pacotes",
                     "blocos",
                     "mariana",
                     "plenaria",
@@ -56887,7 +56887,7 @@
           "juri-estadual"
         ],
         "summary": "O esqueleto da missão com o gabarito, a plenária e a regra do feed.",
-        "description": "**Professor e gestores.** É o bloco vivo do guia: os quatro pacotes na ordem certa (com o molde do trecho, `{projeto}` e `{hashtag}`), a cadeia Interações → Dados → Algoritmo → Bolha, o caso Mariana com os cartões certos marcados, as quatro perguntas de contraste da plenária e os números do motor (o que a Etapa 5 ensina: duas curtidas na mesma área fecham a bolha).\n\nA MOSTRA da turma não está aqui: ela é da atividade, em `GET /juri-estadual/turmas/:turmaId/pacotes`.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Nada aqui é escopado por escola: é o catálogo da missão, igual para todo contrato.\n- `mecanismos[].certo` e `atitudes[].certo` são gabarito, e só existem nesta rota de professor.",
+        "description": "**Professor e gestores.** É o bloco vivo do guia: a cadeia Interações → Dados → Algoritmo → Bolha, o caso Mariana com os cartões certos marcados, as quatro perguntas de contraste da plenária e os números do motor (o que a Etapa 5 ensina: duas curtidas na mesma área fecham a bolha).\n\nA MOSTRA da turma não está aqui: ela é da atividade, em `GET /juri-estadual/turmas/:turmaId/pacotes`.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Nada aqui é escopado por escola: é o catálogo da missão, igual para todo contrato.\n- `mecanismos[].certo` e `atitudes[].certo` são gabarito, e só existem nesta rota de professor.",
         "security": [
           {
             "token-da-plataforma": []

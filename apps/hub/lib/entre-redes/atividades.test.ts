@@ -94,12 +94,31 @@ describe("a lista de atividades", () => {
       {
         ativo: null,
         historico: [
-          { id: "p1", disciplina: "ciencias", tema: "Feira da água", origem: "ia", ativo: true, criadoEm: "2026-10-02T10:00:00Z", rodadas: 1 },
+          { id: "p1", disciplina: "ciencias", tema: "Feira da água", origem: "ia", ativo: true, criadoEm: "2026-10-02T10:00:00Z", rodadas: 1, imagensAprovadas: true },
         ],
       },
       (slug) => (slug === "ciencias" ? "Ciências" : slug),
     );
     expect(a).toMatchObject({ id: "p1", titulo: "Feira da água", detalhe: "Ciências · gerada com IA", estado: "em-andamento", rodadas: 1 });
+  });
+
+  test("o Júri: sem as imagens aprovadas, a atividade está em preparo", () => {
+    const lista = atividadesDoJuri(
+      {
+        ativo: null,
+        historico: [
+          { id: "no-ar", disciplina: "ciencias", tema: "No ar", origem: "ia", ativo: true, criadoEm: "2026-10-01T00:00:00Z", rodadas: 1, imagensAprovadas: true },
+          { id: "pronta", disciplina: "ciencias", tema: "Pronta", origem: "ia", ativo: false, criadoEm: "2026-10-02T00:00:00Z", rodadas: 0, imagensAprovadas: true },
+          { id: "nova", disciplina: "ciencias", tema: "Nova", origem: "ia", ativo: false, criadoEm: "2026-10-03T00:00:00Z", rodadas: 0, imagensAprovadas: false },
+        ],
+      },
+      (slug) => slug,
+    );
+    expect(lista.map((a) => [a.id, a.estado])).toEqual([
+      ["no-ar", "em-andamento"],
+      ["pronta", "pronta"],
+      ["nova", "em-preparo"],
+    ]);
   });
 
   test("as rodadas em palavras", () => {

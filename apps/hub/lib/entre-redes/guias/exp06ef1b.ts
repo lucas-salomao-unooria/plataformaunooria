@@ -10,9 +10,8 @@ import type { GuiaDaAula } from "./tipos";
  * - as QUATRO PERGUNTAS DA PLENÁRIA (`PERGUNTAS_DA_PLENARIA`, na api) — a
  *   mediação do pico, entre o voto e a galeria; o painel da aula mostra as
  *   mesmas frases ao lado do botão, e uma fonte só não diverge;
- * - a REGRA do feed (os pesos e o limiar que o motor executou), o caminho dos
- *   quatro pacotes da curtida, a ordem da cadeia e os cartões do caso Mariana
- *   COM o gabarito — é o que a turma lê e monta na tela, e descrever também é
+ * - a REGRA do feed (os pesos e o limiar que o motor executou), a ordem da
+ *   cadeia e os cartões do caso Mariana COM o gabarito — é o que a turma lê e monta na tela, e descrever também é
  *   copiar.
  *
  * Por isso as perguntas de `debate.perguntas` abaixo NÃO são as da plenária:
@@ -26,8 +25,12 @@ import type { GuiaDaAula } from "./tipos";
  * Fontes: o PRD (§5, as seis etapas; §8, os requisitos; §10, as telas e quem
  * fala), a copy revisada (`design/06-copy-strings-revisada.md`, §4) e a spec
  * do ambiente simulado (§8.5, o painel e o relógio da turma; §8.6, a
- * plenária; §10, os cenários de dispositivo). A EF06CO10 dos artefatos SAI: as
- * habilidades são EF06CO01, EF06CO03 e EF06CO07, como na ficha da api.
+ * plenária; §10, os cenários de dispositivo). As habilidades são as da spec
+ * v1.5.2, como na ficha da api: EF06CO10 (a principal), EF06CO01 e EF06CO03. A
+ * EF06CO07 (os pacotes da curtida) saiu com a tela dela, a pedido do PO
+ * (2026-10-06). A EF06CO10 é ancorada no livro didático da coleção (Rodrigo
+ * Assis, Entre Redes, cap. 1): o consumo crítico das plataformas, a mediação
+ * algorítmica e o afunilamento informacional.
  */
 export const GUIA_EXP06EF1B: GuiaDaAula = {
   expId: "exp06ef1b",
@@ -68,22 +71,34 @@ export const GUIA_EXP06EF1B: GuiaDaAula = {
     "Reconhecer que um feed que se adapta às curtidas mostra só uma parte do que existe, mesmo quando parece completo.",
     "Explicar que o aplicativo classificou cada curtida pela área do estande, agrupando os dados para decidir o que mostrar.",
     "Descrever com precisão a regra que o feed executou, na forma “se… então…”, e montar a cadeia interações, dados, algoritmo, bolha.",
-    "Explicar que a curtida viajou do celular ao servidor em pacotes, por caminhos diferentes, e foi remontada no destino pela numeração.",
+    "Analisar criticamente o consumo de uma plataforma: perceber que o que se vê nela é mediado por um algoritmo e se afunila a cada interação, e auditar o que ficou de fora antes de decidir.",
     "Propor uma atitude para ver o que o feed esconde: buscar de propósito outros assuntos e conversar fora da rede antes de decidir.",
   ],
 
   bncc: [
     {
-      /* A PRINCIPAL, verbatim do complemento de Computação à BNCC (a mesma
-         linha de `apps/api/src/curriculo/dados/habilidades-computacao.ts`,
-         sem ponto final, como lá). A ficha a mede pela auditoria da galeria e
-         pela enquete `p2`. */
+      /* A PRINCIPAL (o foco primário da spec), verbatim do complemento de
+         Computação à BNCC — a mesma linha de
+         `apps/api/src/curriculo/dados/habilidades-computacao.ts`. A ficha a
+         mede pela auditoria da Galeria Oculta e pela enquete `p1` (a frase do
+         jurado). O texto oficial fala em consumo de tecnologia; a missão o
+         recorta como no livro didático da coleção. */
+      codigo: "EF06CO10",
+      texto:
+        "Analisar o consumo de tecnologia na sociedade, compreendendo criticamente o caminho da produção dos recursos bem como aspectos ligados à obsolescência e a sustentabilidade.",
+      eixo: "Cultura Digital",
+      principal: true,
+      ondeAcontece:
+        "Na Galeria Oculta e na enquete da frase do jurado. É o recorte do livro didático da coleção (Rodrigo Assis, Entre Redes, cap. 1): consumir uma plataforma de forma crítica, percebendo a mediação algorítmica — o feed escolhe o que chega à tela — e o afunilamento informacional que as próprias curtidas produzem. A criança audita os estandes que o feed escondeu antes de manter ou trocar o voto; o painel de habilidades lê quantos concorrentes ocultos ela foi ver e a resposta da enquete.",
+    },
+    {
+      /* Verbatim do mesmo documento (sem ponto final, como lá). A ficha a mede
+         pela busca por categoria na galeria e pela enquete `p2`. */
       codigo: "EF06CO01",
       texto: "Classificar informações, agrupando-as em coleções (conjuntos) e associando cada coleção a um ‘tipo de dados’",
       eixo: "Pensamento Computacional",
-      principal: true,
       ondeAcontece:
-        "Na Galeria Oculta: os dezesseis estandes aparecem agrupados pelas quatro áreas da mostra, cada uma com a sua hashtag, e a criança audita o que ficou de fora abrindo estandes e buscando por área antes de revisar o voto. O painel de habilidades lê essa auditoria e a enquete sobre como o aplicativo organizou as curtidas.",
+        "Na Galeria Oculta: os dezesseis estandes aparecem agrupados pelas quatro áreas da mostra, cada uma com a sua hashtag, e a busca por hashtag é a chave de cada coleção. O painel de habilidades lê se a criança buscou a hashtag de outra área e abriu um estande que o feed escondeu dela, e a enquete sobre como o aplicativo organizou as curtidas.",
     },
     {
       /* Verbatim do mesmo documento. A ficha a mede pelas tentativas da cadeia
@@ -92,17 +107,7 @@ export const GUIA_EXP06EF1B: GuiaDaAula = {
       texto: "Descrever com precisão a solução de um problema, construindo o programa que implementa a solução descrita.",
       eixo: "Pensamento Computacional",
       ondeAcontece:
-        "Na cadeia do feed: a criança monta, com quatro blocos, a engrenagem que controlou o feed dela — interações, dados, algoritmo, bolha — e, na enquete, escolhe a regra “se… então…” que o programa executou. Montar na primeira tentativa é o nível mais alto.",
-    },
-    {
-      /* Verbatim do mesmo documento. A ficha a mede pelas tentativas dos
-         pacotes e pela enquete `p1`. */
-      codigo: "EF06CO07",
-      texto:
-        "Entender o processo de transmissão de dados, como a informação é quebrada em pedaços, transmitida em pacotes através de múltiplos equipamentos, e reconstruída no destino.",
-      eixo: "Mundo Digital",
-      ondeAcontece:
-        "Nos pacotes da curtida: o voto da criança sai do celular em quatro pacotes numerados, cada um por um caminho de equipamentos, e chega ao servidor da mostra fora de ordem; ela o remonta pela numeração. Contam as tentativas e a enquete sobre o caminho da curtida.",
+        "Na cadeia do feed: a criança monta, com quatro blocos, a engrenagem que controlou o feed dela — interações do jurado, registro de dados e padrões, algoritmo de recomendação, formação de bolha temática — e, na enquete, escolhe a regra “se… então…” que o programa executou. Montar na primeira tentativa é o nível mais alto.",
     },
   ],
 
@@ -124,9 +129,9 @@ export const GUIA_EXP06EF1B: GuiaDaAula = {
           "São quatro áreas com quatro estandes cada. Leia o título, a legenda e o bastidor de cada um, edite o que quiser e regenere o estande que não servir. Nada gerado por inteligência artificial chega à turma sem passar por você.",
       },
       {
-        titulo: "Gere as imagens na página da atividade",
+        titulo: "Aprove as imagens antes de abrir a turma",
         texto:
-          "O botão Gerar imagens trabalha duas por vez e mostra quantas estão prontas; pode levar alguns minutos. Estande sem imagem aparece com uma arte desenhada, e a missão roda igual.",
+          "A aprovação tem duas fases. Primeiro os textos dos estandes; depois as imagens, que a inteligência artificial gera em seguida, duas por vez (pode levar alguns minutos). Confira cada imagem junto do estande, use Gerar outra imagem na que não servir e aprove: sem as imagens aprovadas, a atividade não vai ao ar. Estande sem imagem aparece com uma arte desenhada, marcado na grade antes de você aprovar.",
       },
       {
         titulo: "Monte as equipes se faltar aparelho",
@@ -143,7 +148,7 @@ export const GUIA_EXP06EF1B: GuiaDaAula = {
       {
         titulo: "Leia a regra do feed e o gabarito antes",
         texto:
-          "Estão no bloco logo abaixo: quanto vale uma curtida, quando o feed se fecha numa área, a ordem dos pacotes e da cadeia e os cartões do caso Mariana. Saber a regra é o que permite conduzir a plenária sem entregá-la.",
+          "Estão no bloco logo abaixo: quanto vale uma curtida, quando o feed se fecha numa área, a ordem da cadeia e os cartões do caso Mariana. Saber a regra é o que permite conduzir a plenária sem entregá-la.",
       },
       {
         titulo: "Prepare a plenária do pico",
@@ -200,9 +205,9 @@ export const GUIA_EXP06EF1B: GuiaDaAula = {
       },
       {
         tempo: "36–45",
-        momento: "Os pacotes, a cadeia, Mariana e as enquetes",
+        momento: "A cadeia, Mariana e as enquetes",
         professor:
-          "Cada computador no próprio ritmo. Quem trava nos pacotes ou na cadeia recebe uma dica na tela, sem punição: pergunte o que veio primeiro, sem dizer a ordem. Quem termina antes lê o infográfico em silêncio.",
+          "Cada computador no próprio ritmo. A tela da cadeia abre ligando o que a turma viveu ao livro didático. Quem trava na cadeia recebe uma dica na tela, sem punição: pergunte o que veio primeiro, sem dizer a ordem. Quem termina antes lê o infográfico em silêncio.",
       },
       {
         tempo: "45–50",
@@ -212,7 +217,7 @@ export const GUIA_EXP06EF1B: GuiaDaAula = {
       },
     ],
     nota:
-      "Em dois blocos de 25 min, corte depois da revisão do voto: no segundo, cada computador volta direto aos pacotes, com tudo salvo. O que não se corta é a plenária entre o voto e a galeria — é ela que faz a turma ver junta que se dividiu.",
+      "Em dois blocos de 25 min, corte depois da revisão do voto: no segundo, cada computador volta direto à cadeia, com tudo salvo. O que não se corta é a plenária entre o voto e a galeria — é ela que faz a turma ver junta que se dividiu.",
   },
 
   debate: {
@@ -234,9 +239,9 @@ export const GUIA_EXP06EF1B: GuiaDaAula = {
       },
       {
         nivel: "analise",
-        pergunta: "Sua curtida saiu do celular em pacotes, por caminhos diferentes, e chegou fora de ordem. Como o servidor da mostra soube montá-la de novo?",
+        pergunta: "Um jurado disse que só viu robótica porque era a única área de verdade na feira. O que ele não percebeu sobre o aplicativo que usou?",
         porQue:
-          "Retoma os pacotes pela numeração, que é o que a EF06CO07 pede: a informação quebrada em pedaços, por vários equipamentos, e reconstruída no destino.",
+          "É a frase da enquete da EF06CO10, agora em voz alta: confundir o que foi recomendado com tudo o que existe. Leva ao consumo crítico da plataforma, como no capítulo 1 do livro didático — quem consome sem auditar acha que o feed é o mundo.",
       },
       {
         nivel: "generalizacao",
@@ -303,9 +308,9 @@ export const GUIA_EXP06EF1B: GuiaDaAula = {
         "Decide a maioria de braços erguidos. Na dupla, quem está no toque da cédula decide, e o outro fica com a busca na galeria.",
     },
     {
-      quando: "Um computador erra a ordem dos pacotes ou da cadeia várias vezes",
+      quando: "Um computador erra a ordem da cadeia várias vezes",
       faca:
-        "Nos pacotes, pergunte qual é o número de cada um; na cadeia, o que veio primeiro: o toque do jurado ou a resposta do aplicativo?",
+        "Pergunte o que veio primeiro: o toque do jurado ou a resposta do aplicativo? E o que o aplicativo guardou antes de decidir?",
       naoFaca: "Dizer a ordem. Cada envio conta no painel de habilidades, e a dica da tela já não pune o erro.",
     },
   ],
@@ -317,7 +322,7 @@ export const GUIA_EXP06EF1B: GuiaDaAula = {
       "Para ver o resto, é preciso procurar de propósito — buscar outros assuntos e conversar fora da rede antes de decidir.",
     ],
     registro:
-      "As três enquetes nos Stories, respondidas por quem entrou no computador, depois do caso Mariana. A tela da criança não mostra nível nenhum; a auditoria da galeria, os pacotes, a cadeia e as enquetes vão para o painel de habilidades, na página da atividade.",
+      "As três enquetes nos Stories, respondidas por quem entrou no computador, depois do caso Mariana. A tela da criança não mostra nível nenhum; a auditoria da galeria, a busca por hashtag, a cadeia e as enquetes vão para o painel de habilidades, na página da atividade.",
     produto: {
       titulo: "A mostra inteira, no mural da sala",
       itens: [
@@ -328,7 +333,7 @@ export const GUIA_EXP06EF1B: GuiaDaAula = {
     },
     rubrica: {
       nota:
-        "Formativa, e sobre o RACIOCÍNIO — nunca sobre o voto nem sobre a taxa de invisibilidade. O painel de habilidades já traz a auditoria, os pacotes, a cadeia e as enquetes; esta rubrica é para a conversa.",
+        "Formativa, e sobre o RACIOCÍNIO — nunca sobre o voto nem sobre a taxa de invisibilidade. O painel de habilidades já traz a auditoria, a busca por hashtag, a cadeia e as enquetes; esta rubrica é para a conversa.",
       criterios: [
         {
           criterio: "Perceber o recorte",
@@ -386,7 +391,7 @@ export const GUIA_EXP06EF1B: GuiaDaAula = {
     {
       contexto: "Duas aulas de 25 minutos",
       comoAdaptar:
-        "No primeiro bloco, a credencial, o feed, o voto, a plenária e a galeria, até a revisão do voto. No segundo, cada computador volta direto aos pacotes, com tudo salvo, e a aula fecha com Mariana, as enquetes e a escada do debate.",
+        "No primeiro bloco, a credencial, o feed, o voto, a plenária e a galeria, até a revisão do voto. No segundo, cada computador volta direto à cadeia, com tudo salvo, e a aula fecha com Mariana, as enquetes e a escada do debate.",
     },
     {
       contexto: "Turma com leitura ainda em construção",
@@ -399,7 +404,7 @@ export const GUIA_EXP06EF1B: GuiaDaAula = {
     {
       pergunta: "Preciso preparar alguma coisa antes?",
       resposta:
-        "Sim: a missão não tem banco pronto. Crie a atividade sobre o seu tema (a geração dos dezesseis estandes pode levar perto de um minuto), revise e gere as imagens antes da aula. Sem imagem, a arte desenhada cobre o estande.",
+        "Sim: a missão não tem banco pronto. Crie a atividade sobre o seu tema (a geração dos dezesseis estandes pode levar perto de um minuto), aprove os textos e depois as imagens antes da aula — sem as imagens aprovadas, a atividade não vai ao ar. Estande sem imagem fica com a arte desenhada.",
     },
     {
       pergunta: "E se eu estiver sem saldo de geração com IA?",
