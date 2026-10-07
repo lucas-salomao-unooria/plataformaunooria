@@ -141,14 +141,20 @@ export function EditorDoEstande({
   categoria: CategoriaDaMostra | undefined;
   problemas: Partial<Record<CampoDoEstande, string>>;
   errosDaApi: readonly string[];
-  aoMudar: (p: ProjetoDoPacote) => void;
+  /**
+   * Muda SÓ os campos de `parcial` no estande `id`, sobre o estado ATUAL do
+   * rascunho. Nunca o estande inteiro a partir da prop: com digitação rápida,
+   * duas teclas chegam antes do re-render e a segunda, montada sobre a prop
+   * velha, apagava a primeira ("Protótipo" virava "Proótipo" na e2e).
+   */
+  aoMudar: (id: string, parcial: Partial<ProjetoDoPacote>) => void;
   aoFechar: () => void;
   aoRegenerar: () => void;
   regenerando: boolean;
   ocupado: boolean;
 }) {
   const p = projeto;
-  const mudar = (parcial: Partial<ProjetoDoPacote>) => aoMudar({ ...p, ...parcial });
+  const mudar = (parcial: Partial<ProjetoDoPacote>) => aoMudar(p.id, parcial);
   /* Os campos que esta janela NÃO edita também podem ter problema (um estande
      regenerado, por exemplo): a lista deles aparece no topo, para o professor
      saber que a saída é regenerar. */
