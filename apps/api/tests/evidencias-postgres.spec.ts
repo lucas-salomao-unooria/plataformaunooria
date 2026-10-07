@@ -34,10 +34,13 @@ import { criarTurmaDeTeste } from "./turma-de-teste";
  * projeção que espera o professor, o ajuste, a pergunta de múltipla escolha,
  * o painel e o perfil.
  *
- * A suíte registra uma ficha DE TESTE para a exp08ef1b com `registrarFicha`
- * (a única ficha real do registro é a da exp05ef1b, que a suíte dela exercita),
- * e um resolvedor de contexto que ela controla. Os códigos são da BNCC de
- * verdade — o `registrarFicha` valida como o registro estático.
+ * A suíte registra uma ficha DE TESTE para a exp08ef1b com `registrarFicha`,
+ * que SUBSTITUI a real do registro — só nesta instância do serviço, de
+ * propósito: as regras da plataforma pedem marcador de ação e duas habilidades
+ * numa pergunta, e a ficha real (só perguntas) não as exercita. A ficha real e o
+ * resolvedor do motor são provados em `motor-evidencia-postgres.spec.ts`. Os
+ * códigos daqui são da BNCC de verdade — o `registrarFicha` valida como o
+ * registro estático.
  *
  * UMA ESCOLA POR SUÍTE (mais a vizinha, para a RLS). Molde:
  * `equipes-postgres.spec.ts`.

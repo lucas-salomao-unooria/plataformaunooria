@@ -2,6 +2,7 @@ import { FICHA_EXP04EF1B } from "./exp04ef1b";
 import { FICHA_EXP05EF1B } from "./exp05ef1b";
 import { FICHA_EXP06EF1B } from "./exp06ef1b";
 import { FICHA_EXP07EF1B } from "./exp07ef1b";
+import { FICHA_EXP08EF1B } from "./exp08ef1b";
 import type { FichaPedagogica } from "./tipos";
 
 export type { FichaPedagogica, HabilidadeDaFicha, MarcadorDaFicha, PerguntaDaFicha } from "./tipos";
@@ -11,7 +12,7 @@ export type { FichaPedagogica, HabilidadeDaFicha, MarcadorDaFicha, PerguntaDaFic
  *
  * A plataforma da evidência entrou antes de qualquer missão medir alguma coisa;
  * a primeira foi Quem Mandou Isso? v2.2 (exp05ef1b), a segunda A Seleção
- * (exp07ef1b) a terceira o Jornal da Escola (exp04ef1b) e a quarta O Júri Estadual de Projetos (exp06ef1b). Cada missão que for adaptada acrescenta a ficha dela aqui (um
+ * (exp07ef1b), a terceira o Jornal da Escola (exp04ef1b), a quarta O Júri Estadual de Projetos (exp06ef1b) e a quinta O Conteúdo que não chegou (exp08ef1b). Cada missão que for adaptada acrescenta a ficha dela aqui (um
  * arquivo `fichas/<expId>.ts`), no MESMO trabalho que faz a missão chamar
  * `EvidenciasService.marcar` e `registrarContexto`.
  *
@@ -29,4 +30,5 @@ export const FICHAS: readonly FichaPedagogica[] = [
   FICHA_EXP07EF1B,
   FICHA_EXP04EF1B,
   FICHA_EXP06EF1B,
+  FICHA_EXP08EF1B,
 ];
