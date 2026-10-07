@@ -520,9 +520,14 @@ await suite(
     await prof.reload({ waitUntil: "domcontentloaded" });
     await prof.waitForSelector("[data-envio]", { timeout: 20_000 });
     const folha = await prof.locator("main").innerText();
+    /* Pelos CABEÇALHOS das colunas, não pelo texto da página: a folha mostra a
+       seleção e a legenda de cada estudante, e o lote da IA escreve o que quiser
+       ("Usuários pedem mais pontos de água potável…" reprovou a corrida de
+       2026-10-07). É o mesmo conserto da `estudante/12`. */
+    const colunas = await prof.locator("main").getByRole("columnheader").allInnerTexts();
     r.exigir(
-      !/\b(pontos|nota|score|ranking)\b/i.test(folha),
-      "a folha da turma não tem coluna de pontos",
+      colunas.length > 0 && !colunas.some((c) => /\b(pontos|nota|score|ranking)\b/i.test(c)),
+      `a folha da turma não tem coluna de pontos (colunas: ${colunas.join(", ")})`,
     );
     r.exigir(/EF07CO11/.test(folha), "o painel de habilidades da BNCC aparece com a EF07CO11");
     await r.registrar(prof, "resultados-e-habilidades", {
