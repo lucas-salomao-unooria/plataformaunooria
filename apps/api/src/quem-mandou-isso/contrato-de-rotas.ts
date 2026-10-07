@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { falasDoTemaSchema } from "../podcast/roteiro";
+import { VAGAS_DO_PODCAST } from "./podcast";
 import { STATUS_DE_MARCA } from "../evidencias/regras";
 import {
   ASSUNTOS_MAX,
@@ -91,6 +93,11 @@ export const MensagemDoPacoteSchema = z.object({
 export const AprovarSchema = RecorteBaseSchema.extend({
   origem: z.enum(ORIGENS),
   mensagens: z.array(MensagemDoPacoteSchema).max(TOTAL_DE_MENSAGENS * 2),
+  /**
+   * As três falas do podcast de recapitulação que o professor revisou na
+   * customização (ADR-150). No banco padrão, as do sheet.
+   */
+  podcast: falasDoTemaSchema(VAGAS_DO_PODCAST),
 }).superRefine((p, ctx) => {
   for (const mensagem of validarPacote(p)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: mensagem });
 });

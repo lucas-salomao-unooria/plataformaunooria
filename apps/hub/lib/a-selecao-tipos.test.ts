@@ -1,8 +1,6 @@
 import { describe, expect, test } from "vitest";
 import {
-  continuarGerandoPodcast,
   problemaDaFala,
-  textoDoProgressoDoPodcast,
   aulaEmAndamento,
   estadoDaImagem,
   mudouAEvidencia,
@@ -280,18 +278,6 @@ describe("o podcast de recapitulação", () => {
     const base = { tema: "A biblioteca", foco: null, posts: [], podcast: FALAS };
     expect(mesmoLote(base, { ...base, podcast: { ...FALAS } })).toBe(true);
     expect(mesmoLote(base, { ...base, podcast: { ...FALAS, comunitario: `${FALAS.comunitario} Muito barulho.` } })).toBe(false);
-  });
-
-  test("o laço do áudio para com o episódio pronto ou quando uma chamada não anda", () => {
-    expect(continuarGerandoPodcast({ completo: false, gerado: "abertura" })).toBe(true);
-    expect(continuarGerandoPodcast({ completo: true, gerado: "encerramento" })).toBe(false);
-    expect(continuarGerandoPodcast({ completo: false, gerado: null })).toBe(false);
-  });
-
-  test("a linha de estado sob o player", () => {
-    expect(textoDoProgressoDoPodcast({ trechos: { total: 5, prontos: 0 }, url: null })).toBe("O áudio ainda não foi gerado.");
-    expect(textoDoProgressoDoPodcast({ trechos: { total: 5, prontos: 2 }, url: null })).toBe("2 de 5 trechos do áudio prontos.");
-    expect(textoDoProgressoDoPodcast({ trechos: { total: 5, prontos: 5 }, url: "https://x/ep.mp3" })).toBe("O áudio está pronto.");
   });
 });
 

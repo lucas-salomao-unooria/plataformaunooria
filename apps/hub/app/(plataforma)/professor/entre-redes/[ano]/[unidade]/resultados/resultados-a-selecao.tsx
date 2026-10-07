@@ -10,7 +10,6 @@ import {
   type CoberturasDaTurma,
   type MaterialDaSelecao,
   type PainelDaSelecao,
-  type PodcastDaTurma,
   type TurmaDaSelecao,
 } from "@/lib/a-selecao-tipos";
 import { apiDoServidor } from "@/lib/api-servidor";
@@ -18,6 +17,7 @@ import { auth } from "@/lib/auth";
 import { ROTULO_DO_ESTADO, textoDasRodadas } from "@/lib/entre-redes/atividades";
 import { rotaDaMissao, type Missao } from "@/lib/entre-redes/catalogo";
 import type { MembroNoPainel } from "@/lib/equipe-no-painel";
+import { podcastDaAtividade } from "@/lib/podcast-servidor";
 import { equipesDaMissao } from "@/lib/equipes-servidor";
 import { painelDeHabilidades } from "@/lib/evidencias-servidor";
 import { rotaDoGuiaDaMissao } from "@/lib/rotas-da-missao";
@@ -27,7 +27,7 @@ import type { TurmaResumo } from "@/lib/turmas-tipos";
 import { FaseDasImagens } from "../grade-da-cobertura";
 import { ImagensDaCobertura } from "./imagens-da-cobertura";
 import { PainelDaAulaASelecao } from "./painel-da-aula-a-selecao";
-import { PodcastASelecao } from "./podcast-a-selecao";
+import { CartaoDoPodcast } from "./podcast-da-aula";
 import { SeletorDeTurma } from "./seletor-de-turma";
 import { ZerarTurmaASelecao } from "./zerar-turma-a-selecao";
 
@@ -100,7 +100,7 @@ export async function ResultadosASelecao({
              equipes DESTA atividade, para a primeira célula dizer quem senta ali. */
           equipesDaMissao(turma, EXP_ID, atividadeId),
           auth(),
-          apiDoServidor<PodcastDaTurma>(`${base}/podcast?coberturaId=${encodeURIComponent(atividadeId)}`),
+          podcastDaAtividade(EXP_ID, turma, atividadeId),
           detalhe.rodadas > 0 || emAndamento ? painelDeHabilidades(turma, EXP_ID, atividadeId) : Promise.resolve(null),
         ])
       : [null, null, null, null, null, null];
@@ -258,11 +258,8 @@ export async function ResultadosASelecao({
             </>
           ) : null}
 
-          {/* Depois da aula: o podcast. A `key` é a atividade — o laço do áudio
-              vive em `useState`. */}
-          {podcast ? (
-            <PodcastASelecao key={`podcast-${detalhe.id}`} turmaId={turma} coberturaId={detalhe.id} inicial={podcast} />
-          ) : null}
+          {/* Depois da aula: o podcast da plataforma (ADR-150). */}
+          <CartaoDoPodcast expId={EXP_ID} turmaId={turma} atividadeId={detalhe.id} podcast={podcast} />
 
           {/* O painel de habilidades (E14) — invisível sem ficha
               (`temFicha: false`), e só o `professor` confirma e ajusta: a

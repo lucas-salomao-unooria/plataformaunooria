@@ -37,6 +37,7 @@ import { FASES } from "../src/quem-mandou-isso/regras/passos";
 import { liberarParaTeste } from "./liberar-de-teste";
 import { criarRoleDeRuntime, urlDeRuntime } from "./role-de-runtime";
 import { criarTurmaDeTeste } from "./turma-de-teste";
+import { FALAS_DO_TEMA_PADRAO } from "../src/quem-mandou-isso/podcast";
 
 /**
  * Quem Mandou Isso? v2.2 (exp05ef1b) no Postgres: o que só o banco responde.
@@ -170,6 +171,7 @@ function corpoDoPreset(mensagens: MensagemDoPacote[] = mensagensDoPadrao()) {
     contexto: null,
     origem: "padrao",
     mensagens,
+    podcast: FALAS_DO_TEMA_PADRAO,
   };
 }
 

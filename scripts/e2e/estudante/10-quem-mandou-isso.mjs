@@ -1,6 +1,7 @@
 import { BFF, HUB, suite } from "../lib/roteiro.mjs";
 import { conta, contasDe, senhaDemo } from "../lib/credenciais.mjs";
 import { ALERTA_DE_ERRO, esperarOuFalharCedo, esperarOuFalharPorHttp } from "../lib/smoke.mjs";
+import { esperarFalasDoTema, provarFalasNaCriacao, provarPodcastNaAula } from "../lib/podcast.mjs";
 
 /**
  * Quem mandou isso? v2.2 (exp05ef1b), nas duas pontas da sala: a professora
@@ -325,6 +326,9 @@ await suite(
       (res) => /\/quem-mandou-isso\/turmas\/[^/]+\/gerar$/.test(new URL(res.url()).pathname) && res.request().method() === "POST",
       { timeout: 180_000 },
     );
+    /* As falas do podcast são pedidas quando o pacote chega (ADR-150): a
+       espera nasce ANTES do clique, para não perder a resposta. */
+    const respostaDasFalas = esperarFalasDoTema(prof, "exp05ef1b");
     await prof.locator('[data-acao="gerar-pacote"]').click();
     const geracao = await respostaDaGeracao;
     const gerado = await geracao.json().catch(() => null);
@@ -340,6 +344,19 @@ await suite(
       prof.locator("[data-preparo]").locator(ALERTA_DE_ERRO),
       { timeout: 20_000, oQue: "mostrar o pacote gerado pela IA na curadoria" },
     );
+    /* O PODCAST na criação (ADR-150): a IA escreve as três falas que contam
+       este grupo, e a professora as revisa antes de criar. */
+    await provarFalasNaCriacao(r, prof, await respostaDasFalas, {
+      comIa: true,
+      passo: "criacao-falas-do-podcast",
+      titulo: "As falas do podcast, para revisar",
+      mostra:
+        "Na curadoria, as três falas do podcast de recapitulação que contam este grupo: o que ele trazia, a " +
+        "mensagem calma que não era verdadeira e a desesperada que era.",
+      prova:
+        "A IA escreve as falas a partir das oito mensagens (Vertex), e a professora as revisa e edita na criação: " +
+        "elas vão no mesmo “Criar atividade”. O resto do roteiro, com Lucas e Camila, é o aprovado pela Unooria.",
+    });
     const cartoes = await prof.locator("[data-curadoria] [data-mensagem]").count();
     const porQuadrante = await prof
       .locator("[data-curadoria] [data-quadrante]")
@@ -1144,6 +1161,15 @@ await suite(
       prova:
         "É a tela dela, não a do projetor: tem nome. Não tem coluna de acerto — o nível por habilidade " +
         "mora no bloco da BNCC, onde ela também o ajusta.",
+    });
+
+    // ═══ PROFESSORA: o podcast de recapitulação ══════════════════════════
+    await provarPodcastNaAula(r, prof, {
+      blocos: ["Abertura", "Recapitulação da vivência", "A revelação", "Provocação e conexão com a vida real", "Encerramento"],
+      vozes: ["Lucas", "Camila"],
+      trechos: 5,
+      passo: "podcast",
+      descricao: "Lucas e Camila, cerca de 3 min 40 s",
     });
   },
 );

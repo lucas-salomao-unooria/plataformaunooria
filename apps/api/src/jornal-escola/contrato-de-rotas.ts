@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { falasDoTemaSchema } from "../podcast/roteiro";
+import { VAGAS_DO_PODCAST } from "./podcast";
 import { problemasDoPacote } from "./invariantes";
 import { ETAPAS, PASSOS, PASSOS_PEDIDOS } from "./regras/passos";
 import {
@@ -156,6 +158,12 @@ export const HomologacaoSchema = z.object({
     .superRefine((noticias, ctx) => {
       for (const problema of problemasDoPacote(noticias)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: problema });
     }),
+  /**
+   * As três falas do podcast de recapitulação que o professor revisou na
+   * customização (ADR-150): a notícia antiga, a reação a ela e o aviso sem
+   * assinatura. No banco padrão, as do sheet.
+   */
+  podcast: falasDoTemaSchema(VAGAS_DO_PODCAST),
 });
 
 /**

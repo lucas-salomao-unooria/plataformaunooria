@@ -5,51 +5,56 @@ import { AudioPlayer, Button, Card, FeedbackAlert, Icon } from "@edu/ui/ds";
 import {
   continuarGerandoPodcast,
   textoDoProgressoDoPodcast,
-  type ErroDaSelecao,
-  type PodcastDaTurma,
+  type PodcastDaAtividade,
   type ProgressoDoPodcast,
-} from "@/lib/a-selecao-tipos";
+} from "@/lib/podcast-tipos";
+import type { PodcastNaAula } from "@/lib/podcast-servidor";
 
 /**
- * O PODCAST DE RECAPITULAÇÃO — do professor, para tocar à turma depois da aula
- * se quiser (decisão do dono do produto, 2026-09-26). O texto fala com o
- * estudante; quem decide quando ele toca é quem conduz.
+ * O PODCAST DE RECAPITULAÇÃO de qualquer missão (ADR-150) — do professor, para
+ * tocar à turma depois da aula se quiser (decisão do dono do produto,
+ * 2026-09-26). O texto fala com o estudante; quem decide quando ele toca é quem
+ * conduz. As rotas são as da plataforma (`/podcast/:expId/…`), e a missão
+ * entra pelo `expId`.
  *
- * Mora AQUI, na aula da turma, e não no guia: o Bloco 2 conta o que cada
- * veículo mostrou no tema DESTA turma (`preparo-a-selecao.tsx`), e o guia é o
+ * Mora AQUI, na aula da turma, e não no guia: as falas do tema contam o que a
+ * turma viu NESTA atividade (o professor as revisou na criação), e o guia é o
  * mesmo para todas.
  *
  * O áudio é um laço do cliente, como as imagens: a api sintetiza UM trecho por
- * chamada — a voz é o TTS do Gemini, pelo provider da api — e, com os cinco,
+ * chamada — a voz é o TTS do Gemini, pelo provider da api — e, com todos,
  * emenda o episódio. Os blocos fixos saem uma vez por contrato; o que custa é o
- * Bloco 2 de um tema novo.
+ * bloco com as falas de um tema novo.
  *
  * **A transcrição fica sempre na tela** (é o roteiro inteiro): sem áudio — o
  * mock falha fechado em dev, e o provedor pode estar fora — o podcast não
  * some, só não toca. O `AudioPlayer` do DS diz o porquê no lugar da barra.
  */
-export function PodcastASelecao({
+export function PodcastDaAula({
+  expId,
   turmaId,
-  coberturaId,
+  atividadeId,
   inicial,
 }: {
+  /** O código da missão (ADR-110): `exp04ef1b`, `exp07ef1b`. */
+  expId: string;
   turmaId: string;
   /** A atividade do podcast (ADR-130): a da página, em andamento ou pronta. */
-  coberturaId: string;
-  inicial: PodcastDaTurma;
+  atividadeId: string;
+  inicial: PodcastDaAtividade;
 }) {
-  const [estado, setEstado] = useState<PodcastDaTurma>(inicial);
+  const [estado, setEstado] = useState<PodcastDaAtividade>(inicial);
   const [gerando, setGerando] = useState(false);
   const [falhou, setFalhou] = useState(false);
   const [aviso, setAviso] = useState<string | null>(null);
   const [lendo, setLendo] = useState(false);
 
-  /* A cobertura mudou (uma aprovação nova): o roteiro é outro. Ajuste de
+  /* A atividade mudou (uma aprovação nova): o roteiro é outro. Ajuste de
      estado durante o render, pelo id — o `router.refresh()` das imagens entrega
-     um objeto novo com a MESMA cobertura, e isso não pode apagar o progresso. */
-  const [coberturaVista, setCoberturaVista] = useState(inicial.coberturaId);
-  if (inicial.coberturaId !== coberturaVista) {
-    setCoberturaVista(inicial.coberturaId);
+     um objeto novo com a MESMA atividade, e isso não pode apagar o progresso. */
+  const [atividadeVista, setAtividadeVista] = useState(inicial.atividadeId);
+  if (inicial.atividadeId !== atividadeVista) {
+    setAtividadeVista(inicial.atividadeId);
     setEstado(inicial);
     setFalhou(false);
     setAviso(null);
@@ -64,7 +69,7 @@ export function PodcastASelecao({
     };
   }, []);
 
-  const base = `/api/plataforma/a-selecao/turmas/${encodeURIComponent(turmaId)}`;
+  const base = `/api/plataforma/podcast/${encodeURIComponent(expId)}/turmas/${encodeURIComponent(turmaId)}`;
 
   async function gerarAudio() {
     setGerando(true);
@@ -75,18 +80,18 @@ export function PodcastASelecao({
     const tetoDeVoltas = Math.max(estado.trechos.total, 1) + 2;
     try {
       for (let volta = 0; volta < tetoDeVoltas && vivo.current; volta += 1) {
-        const r = await fetch(`${base}/gerar-podcast?coberturaId=${encodeURIComponent(coberturaId)}`, {
+        const r = await fetch(`${base}/gerar?atividadeId=${encodeURIComponent(atividadeId)}`, {
           method: "POST",
         });
         if (!r.ok) {
           /* 429 `sem-saldo-de-ia` (a quota do professor) ou o limite por
              minuto: a mensagem da api já está na voz certa. */
-          const corpo = (await r.json().catch(() => ({}))) as ErroDaSelecao;
+          const corpo = (await r.json().catch(() => ({}))) as { mensagem?: string };
           setAviso(corpo.mensagem ?? "O áudio não pôde ser gerado agora. A transcrição continua abaixo.");
           break;
         }
         const progresso = (await r.json()) as ProgressoDoPodcast;
-        if (progresso.coberturaId !== estado.coberturaId) break; // outra aprovação trocou a cobertura
+        if (progresso.atividadeId !== estado.atividadeId) break; // outra aprovação trocou a atividade
         setEstado(progresso);
         if (progresso.falhou) setFalhou(true);
         if (!continuarGerandoPodcast(progresso)) break;
@@ -107,18 +112,17 @@ export function PodcastASelecao({
 
   return (
     <Card variant="elevated" title="Podcast de recapitulação">
-      <div className="flex flex-col gap-4" data-podcast-selecao data-podcast-pronto={pronto ? "sim" : "nao"}>
+      <div className="flex flex-col gap-4" data-podcast-da-aula data-podcast-pronto={pronto ? "sim" : "nao"}>
         <p className="max-w-3xl text-[13px] leading-relaxed text-unooria-neutral-700">
-          Um episódio de cerca de 3 minutos e 45 segundos em que Lucas e Clara recapitulam a missão
-          com a turma. <strong>É seu:</strong> toque depois da aula, no projetor ou na caixa de som,
-          se achar que ajuda a fechar a conversa. O trecho sobre os três veículos conta o tema desta
-          turma, “{estado.tema}”.
+          Um episódio curto que recapitula a missão com a turma. <strong>É seu:</strong> toque depois
+          da aula, no projetor ou na caixa de som, se achar que ajuda a fechar a conversa. As falas
+          que contam o que a turma viu são as desta atividade, “{estado.tema}”.
         </p>
 
         <AudioPlayer
           src={estado.url ?? undefined}
-          title="A Seleção — o podcast de recapitulação"
-          description="Lucas e Clara · cerca de 3 min 45 s"
+          title={estado.titulo}
+          description={estado.descricao}
           unavailableReason={motivo}
         />
 
@@ -192,5 +196,44 @@ export function PodcastASelecao({
         ) : null}
       </div>
     </Card>
+  );
+}
+
+/**
+ * O cartão da aula: o podcast, ou o aviso de que a atividade com tema próprio
+ * foi criada antes do podcast (409 da api) — sem o aviso o cartão sumiria, e o
+ * professor procuraria pelo que o guia promete. `null` (api fora, missão sem
+ * podcast) não mostra nada. A `key` é a atividade: o laço do áudio vive em
+ * `useState`.
+ */
+export function CartaoDoPodcast({
+  expId,
+  turmaId,
+  atividadeId,
+  podcast,
+}: {
+  expId: string;
+  turmaId: string;
+  atividadeId: string;
+  podcast: PodcastNaAula;
+}) {
+  if (!podcast) return null;
+  if ("indisponivel" in podcast) {
+    return (
+      <Card variant="elevated" title="Podcast de recapitulação">
+        <div data-podcast-indisponivel>
+          <FeedbackAlert type="info" description={podcast.indisponivel} />
+        </div>
+      </Card>
+    );
+  }
+  return (
+    <PodcastDaAula
+      key={`podcast-${atividadeId}`}
+      expId={expId}
+      turmaId={turmaId}
+      atividadeId={atividadeId}
+      inicial={podcast.podcast}
+    />
   );
 }

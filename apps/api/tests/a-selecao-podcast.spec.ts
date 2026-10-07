@@ -17,8 +17,10 @@ import {
   roteiroDoPodcast,
   type FalasDoTema,
 } from "../src/a-selecao/podcast";
-import { PodcastDaExp07ef1bService } from "../src/a-selecao/podcast.service";
-import { concatenarMp3, tamanhoDoQuadro } from "../src/a-selecao/regras/mp3";
+import { fonteDoPodcastDaExp07ef1b } from "../src/a-selecao/podcast-fonte";
+import { concatenarMp3, tamanhoDoQuadro } from "../src/podcast/mp3";
+import { PodcastService } from "../src/podcast/podcast.service";
+import type { PrismaService } from "../src/prisma/prisma.service";
 
 /**
  * O podcast de recapitulação da exp07ef1b — SEM banco: o roteiro, as réguas das
@@ -150,7 +152,7 @@ describe("a régua das três falas do tema", () => {
         "A fala do podcast sobre a Folha Oficial tem 2 palavra(s); precisa ter de 12 a 60.",
         "A fala do podcast sobre a Voz Coletiva tem um link.",
         "A fala do podcast sobre a Voz Coletiva tem um e-mail.",
-        "A fala do podcast sobre a Métrica Urbana tem uma menção com @ (escreva o nome do veículo por extenso).",
+        "A fala do podcast sobre a Métrica Urbana tem uma menção com @ (escreva o nome por extenso).",
         "A fala do podcast sobre a Métrica Urbana tem um delimitador de instrução.",
         "A fala do podcast sobre a Métrica Urbana está longa demais para o áudio; encurte um pouco.",
       ]),
@@ -179,6 +181,21 @@ describe("os nomes dos arquivos", () => {
     expect(nomesCurado[1]).not.toBe(nomesBiblioteca[1]);
     expect(nomeDoEpisodio(curado)).not.toBe(nomeDoEpisodio(biblioteca));
     expect(new Set(nomesCurado).size).toBe(5);
+  });
+
+  test("os nomes que os contratos JÁ têm no bucket não mudam com o motor comum (ADR-150)", () => {
+    /* Congelados em 2026-10-06, antes de o motor sair da A Seleção: mudar a
+       forma do nome ou os insumos do hash faria todo contrato sintetizar de
+       novo o que já tem. */
+    const roteiro = roteiroDoPodcast(FALAS_DO_TEMA_PADRAO);
+    expect(roteiro.map(nomeDoTrecho)).toEqual([
+      "selecao/podcast/trecho-1f97ce0be87fbf8a1128b60f3f600761.mp3",
+      "selecao/podcast/trecho-fa0357ba8873e15520027eefbc500112.mp3",
+      "selecao/podcast/trecho-1cdf7b395316d159c0cb41b83bbc5375.mp3",
+      "selecao/podcast/trecho-18348bc52c6a673b9b6b6a8122ec0576.mp3",
+      "selecao/podcast/trecho-8927ffdae55065f75cd1b33b10791039.mp3",
+    ]);
+    expect(nomeDoEpisodio(roteiro)).toBe("selecao/podcast/episodio-bae0ca60260300b7e8fe57ecef9099a6.mp3");
   });
 
   test("o nome é estável e mora no subprefixo da A Seleção", () => {
@@ -259,15 +276,21 @@ function montar(opcoes: { tema?: FalasDoTema; saldo?: boolean; falhar?: boolean 
     coberturaParaMidia: async () => ({ id: "11111111-1111-4111-8111-111111111111", tema: "Tema", podcast: tema }),
   } as unknown as ASelecaoService;
 
-  const service = new PodcastDaExp07ef1bService(ia, assets, quota, selecao);
-  const gerar = () => service.gerar("escola", "turma", "professora", "professora", "professor");
+  /* O motor é o da plataforma (ADR-150); a A Seleção entra pela fonte dela, e
+     as falas vêm da cobertura — o banco não é lido. */
+  const podcast = new PodcastService(ia, assets, quota, {} as PrismaService);
+  podcast.registrarFonte(fonteDoPodcastDaExp07ef1b(selecao));
+  const service = {
+    estado: () => podcast.estado("exp07ef1b", "escola", "turma", "professora", undefined),
+  };
+  const gerar = () => podcast.gerar("exp07ef1b", "escola", "turma", "professora", "professora", "professor", undefined);
   return { service, gerar, bucket, pedidos, consumido, trocarTema: (t: FalasDoTema) => (tema = t) };
 }
 
 describe("o serviço do podcast", () => {
   test("um trecho por chamada, na ordem; a quinta emenda o episódio; a sexta não sintetiza nada", async () => {
     const m = montar();
-    const estado = await m.service.estado("escola", "turma", "professora");
+    const estado = await m.service.estado();
     expect(estado).toMatchObject({ trechos: { total: 5, prontos: 0 }, url: null });
     expect(estado.roteiro).toHaveLength(5);
 

@@ -8,7 +8,7 @@ import { ASelecaoController } from "./a-selecao.controller";
 import { ASelecaoService } from "./a-selecao.service";
 import { ClassificacaoService } from "./classificacao.service";
 import { MidiaDaExp07ef1bService } from "./midia.service";
-import { PodcastDaExp07ef1bService } from "./podcast.service";
+import { PodcastDaExp07ef1b } from "./podcast-fonte";
 import { PreparoDaExp07ef1bService } from "./preparo.service";
 
 /**
@@ -39,7 +39,7 @@ import { PreparoDaExp07ef1bService } from "./preparo.service";
     ClassificacaoService,
     PreparoDaExp07ef1bService,
     MidiaDaExp07ef1bService,
-    PodcastDaExp07ef1bService,
+    PodcastDaExp07ef1b,
   ],
   exports: [ASelecaoService],
 })

@@ -40288,6 +40288,32 @@
                       "additionalProperties": false
                     },
                     "maxItems": 16
+                  },
+                  "podcast": {
+                    "type": "object",
+                    "properties": {
+                      "grupo": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 600
+                      },
+                      "falsaNeutra": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 600
+                      },
+                      "verdadeiraEmocional": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 600
+                      }
+                    },
+                    "required": [
+                      "grupo",
+                      "falsaNeutra",
+                      "verdadeiraEmocional"
+                    ],
+                    "additionalProperties": false
                   }
                 },
                 "required": [
@@ -40295,7 +40321,8 @@
                   "tema",
                   "assuntos",
                   "origem",
-                  "mensagens"
+                  "mensagens",
+                  "podcast"
                 ],
                 "additionalProperties": false
               }
@@ -46020,340 +46047,6 @@
         ],
         "summary": "Gera as próximas imagens dos posts de uma atividade — incremental.",
         "description": "Doze imagens não cabem nos 30 s que o BFF dá a uma chamada: cada chamada gera ATÉ DUAS imagens novas, grava as URLs na cobertura e devolve o progresso. **Repita enquanto `completo` for `false` e a chamada anterior tiver gerado alguma** — `falharam` diz o que não saiu, e esses posts seguem com o card da descrição.\n\nIdempotente: o que já tem URL é pulado, e a imagem de mesma descrição que já está no bucket entra sem custo. Os posts de métricas do banco curado não pedem imagem: a experiência desenha o gráfico.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- `?coberturaId=` diz a atividade (a pronta, preparada antes de ir ao ar); sem ele, a em andamento — e sem nenhuma, **403** `atividade-nao-preparada`.\n- Quota do professor, com custo ESTIMADO por imagem (a geração não devolve contagem de tokens). Sem saldo responde **429** `sem-saldo-de-ia` — e a missão roda igual, com os cards.\n- Duas chamadas simultâneas para a mesma cobertura recebem o mesmo trabalho (lock de processo).",
-        "security": [
-          {
-            "token-da-plataforma": []
-          }
-        ],
-        "x-papeis": [
-          "professor",
-          "gestor_escola",
-          "gestor_regional",
-          "gestor_contrato",
-          "admin"
-        ],
-        "x-acesso": "token"
-      }
-    },
-    "/a-selecao/turmas/{turmaId}/podcast": {
-      "get": {
-        "operationId": "ASelecaoTurmasController_podcastDaTurma",
-        "parameters": [
-          {
-            "name": "turmaId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "escolaId",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "coberturaId",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Sucesso.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "coberturaId": {
-                      "type": "string",
-                      "format": "uuid"
-                    },
-                    "tema": {
-                      "type": "string"
-                    },
-                    "roteiro": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "bloco": {
-                            "type": "string",
-                            "enum": [
-                              "abertura",
-                              "recapitulacao",
-                              "revelacao",
-                              "provocacao",
-                              "encerramento"
-                            ]
-                          },
-                          "titulo": {
-                            "type": "string"
-                          },
-                          "falas": {
-                            "type": "array",
-                            "items": {
-                              "type": "object",
-                              "properties": {
-                                "falante": {
-                                  "type": "string",
-                                  "enum": [
-                                    "Lucas",
-                                    "Clara"
-                                  ]
-                                },
-                                "texto": {
-                                  "type": "string"
-                                }
-                              },
-                              "required": [
-                                "falante",
-                                "texto"
-                              ],
-                              "additionalProperties": false
-                            },
-                            "minItems": 1
-                          }
-                        },
-                        "required": [
-                          "bloco",
-                          "titulo",
-                          "falas"
-                        ],
-                        "additionalProperties": false
-                      }
-                    },
-                    "trechos": {
-                      "type": "object",
-                      "properties": {
-                        "total": {
-                          "type": "integer",
-                          "minimum": 0
-                        },
-                        "prontos": {
-                          "type": "integer",
-                          "minimum": 0
-                        }
-                      },
-                      "required": [
-                        "total",
-                        "prontos"
-                      ],
-                      "additionalProperties": false
-                    },
-                    "url": {
-                      "type": "string",
-                      "nullable": true
-                    }
-                  },
-                  "required": [
-                    "coberturaId",
-                    "tema",
-                    "roteiro",
-                    "trechos",
-                    "url"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "a-selecao"
-        ],
-        "summary": "O podcast de recapitulação de uma atividade: o roteiro e o estado do áudio.",
-        "description": "O podcast é do PROFESSOR, para tocar à turma depois da aula se quiser. `roteiro` é o texto inteiro (a transcrição, que fica na tela junto do player): os cinco blocos do sheet aprovado, com as três falas do Bloco 2 que a cobertura trouxe. `url` é o episódio, quando os cinco trechos já foram sintetizados e emendados; `null` enquanto não.\n\n**Não gera nada** — é o `POST gerar-podcast`.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- `?coberturaId=` diz a atividade; sem ele, a em andamento — e sem nenhuma, **403** `atividade-nao-preparada`.",
-        "security": [
-          {
-            "token-da-plataforma": []
-          }
-        ],
-        "x-papeis": [
-          "professor",
-          "gestor_escola",
-          "gestor_regional",
-          "gestor_contrato",
-          "admin"
-        ],
-        "x-acesso": "token"
-      }
-    },
-    "/a-selecao/turmas/{turmaId}/gerar-podcast": {
-      "post": {
-        "operationId": "ASelecaoTurmasController_gerarPodcast",
-        "parameters": [
-          {
-            "name": "turmaId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "escolaId",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "coberturaId",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Sucesso.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "coberturaId": {
-                      "type": "string",
-                      "format": "uuid"
-                    },
-                    "tema": {
-                      "type": "string"
-                    },
-                    "roteiro": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "bloco": {
-                            "type": "string",
-                            "enum": [
-                              "abertura",
-                              "recapitulacao",
-                              "revelacao",
-                              "provocacao",
-                              "encerramento"
-                            ]
-                          },
-                          "titulo": {
-                            "type": "string"
-                          },
-                          "falas": {
-                            "type": "array",
-                            "items": {
-                              "type": "object",
-                              "properties": {
-                                "falante": {
-                                  "type": "string",
-                                  "enum": [
-                                    "Lucas",
-                                    "Clara"
-                                  ]
-                                },
-                                "texto": {
-                                  "type": "string"
-                                }
-                              },
-                              "required": [
-                                "falante",
-                                "texto"
-                              ],
-                              "additionalProperties": false
-                            },
-                            "minItems": 1
-                          }
-                        },
-                        "required": [
-                          "bloco",
-                          "titulo",
-                          "falas"
-                        ],
-                        "additionalProperties": false
-                      }
-                    },
-                    "trechos": {
-                      "type": "object",
-                      "properties": {
-                        "total": {
-                          "type": "integer",
-                          "minimum": 0
-                        },
-                        "prontos": {
-                          "type": "integer",
-                          "minimum": 0
-                        }
-                      },
-                      "required": [
-                        "total",
-                        "prontos"
-                      ],
-                      "additionalProperties": false
-                    },
-                    "url": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "gerado": {
-                      "type": "string",
-                      "enum": [
-                        "abertura",
-                        "recapitulacao",
-                        "revelacao",
-                        "provocacao",
-                        "encerramento"
-                      ],
-                      "nullable": true
-                    },
-                    "falhou": {
-                      "type": "string",
-                      "enum": [
-                        "abertura",
-                        "recapitulacao",
-                        "revelacao",
-                        "provocacao",
-                        "encerramento"
-                      ],
-                      "nullable": true
-                    },
-                    "completo": {
-                      "type": "boolean"
-                    }
-                  },
-                  "required": [
-                    "coberturaId",
-                    "tema",
-                    "roteiro",
-                    "trechos",
-                    "url",
-                    "gerado",
-                    "falhou",
-                    "completo"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "a-selecao"
-        ],
-        "summary": "Sintetiza o próximo trecho do podcast e, com os cinco prontos, emenda o episódio — incremental.",
-        "description": "Os cinco blocos não cabem numa chamada de 30 s: cada chamada sintetiza UM trecho (a voz é o TTS do Gemini pelo provider da api, `generateSpeech`, Lucas e Clara numa chamada de diálogo) e, quando os cinco existem, emenda o episódio num MP3 só. **Repita enquanto `completo` for `false` e a chamada anterior tiver gerado um trecho** — `falhou` diz qual bloco não saiu, e a transcrição continua na tela.\n\nIdempotente: o trecho que já está no bucket é pulado. O nome de cada trecho é o hash do texto e do pedido de voz, então os blocos fixos saem UMA vez por contrato e só o Bloco 2 de um tema da IA custa síntese nova.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- `?coberturaId=` diz a atividade; sem ele, a em andamento.\n- Quota do professor, com custo ESTIMADO por trecho (a síntese é cobrada por caractere e não devolve contagem). Sem saldo responde **429** `sem-saldo-de-ia`.\n- Duas chamadas simultâneas para o mesmo episódio recebem o mesmo trabalho (lock de processo).",
         "security": [
           {
             "token-da-plataforma": []
@@ -52678,13 +52371,40 @@
                     },
                     "minItems": 8,
                     "maxItems": 8
+                  },
+                  "podcast": {
+                    "type": "object",
+                    "properties": {
+                      "isca": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 600
+                      },
+                      "reacao": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 600
+                      },
+                      "boato": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 600
+                      }
+                    },
+                    "required": [
+                      "isca",
+                      "reacao",
+                      "boato"
+                    ],
+                    "additionalProperties": false
                   }
                 },
                 "required": [
                   "disciplina",
                   "tema",
                   "origem",
-                  "noticias"
+                  "noticias",
+                  "podcast"
                 ],
                 "additionalProperties": false
               }
@@ -58840,6 +58560,473 @@
           "admin"
         ],
         "x-acesso": "token"
+      }
+    },
+    "/podcast/{expId}/turmas/{turmaId}": {
+      "get": {
+        "operationId": "PodcastController_estado",
+        "parameters": [
+          {
+            "name": "expId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 40
+            }
+          },
+          {
+            "name": "turmaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "atividadeId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "atividadeId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "tema": {
+                      "type": "string"
+                    },
+                    "titulo": {
+                      "type": "string"
+                    },
+                    "descricao": {
+                      "type": "string"
+                    },
+                    "roteiro": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "bloco": {
+                            "type": "string"
+                          },
+                          "titulo": {
+                            "type": "string"
+                          },
+                          "falas": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "falante": {
+                                  "type": "string"
+                                },
+                                "texto": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "falante",
+                                "texto"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "minItems": 1
+                          }
+                        },
+                        "required": [
+                          "bloco",
+                          "titulo",
+                          "falas"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "trechos": {
+                      "type": "object",
+                      "properties": {
+                        "total": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "prontos": {
+                          "type": "integer",
+                          "minimum": 0
+                        }
+                      },
+                      "required": [
+                        "total",
+                        "prontos"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "url": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "atividadeId",
+                    "tema",
+                    "titulo",
+                    "descricao",
+                    "roteiro",
+                    "trechos",
+                    "url"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "podcast"
+        ],
+        "summary": "O podcast de recapitulação de uma atividade: o roteiro e o estado do áudio.",
+        "description": "O podcast é do PROFESSOR, para tocar à turma depois da aula se quiser. `roteiro` é o texto inteiro (a transcrição, que fica na tela junto do player): os blocos do sheet aprovado da missão, com as falas do tema que o professor aprovou na customização — ou as do sheet, quando a atividade é o banco padrão. `url` é o episódio, quando todos os trechos já foram sintetizados e emendados; `null` enquanto não.\n\n**Não gera nada** — é o `POST gerar`.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- `?atividadeId=` diz a atividade (ADR-130); sem ele, a em andamento. Os erros da atividade são os da missão: turma que o professor não leciona e atividade de outra turma são **404**; sem atividade em andamento, **403** `atividade-nao-preparada`.\n- Missão sem podcast: **404** `experiencia-sem-podcast`. Atividade com tema próprio criada antes do podcast (sem falas aprovadas): **409** `roteiro-indisponivel`.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/podcast/{expId}/turmas/{turmaId}/gerar": {
+      "post": {
+        "operationId": "PodcastController_gerar",
+        "parameters": [
+          {
+            "name": "expId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 40
+            }
+          },
+          {
+            "name": "turmaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "atividadeId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "atividadeId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "tema": {
+                      "type": "string"
+                    },
+                    "titulo": {
+                      "type": "string"
+                    },
+                    "descricao": {
+                      "type": "string"
+                    },
+                    "roteiro": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "bloco": {
+                            "type": "string"
+                          },
+                          "titulo": {
+                            "type": "string"
+                          },
+                          "falas": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "falante": {
+                                  "type": "string"
+                                },
+                                "texto": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "falante",
+                                "texto"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "minItems": 1
+                          }
+                        },
+                        "required": [
+                          "bloco",
+                          "titulo",
+                          "falas"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "trechos": {
+                      "type": "object",
+                      "properties": {
+                        "total": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "prontos": {
+                          "type": "integer",
+                          "minimum": 0
+                        }
+                      },
+                      "required": [
+                        "total",
+                        "prontos"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "url": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "gerado": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "falhou": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "completo": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "atividadeId",
+                    "tema",
+                    "titulo",
+                    "descricao",
+                    "roteiro",
+                    "trechos",
+                    "url",
+                    "gerado",
+                    "falhou",
+                    "completo"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "podcast"
+        ],
+        "summary": "Sintetiza o próximo trecho do podcast e, com todos prontos, emenda o episódio — incremental.",
+        "description": "O episódio não cabe numa chamada: cada uma sintetiza UM trecho (um bloco do roteiro, numa chamada de diálogo do TTS do Gemini pelo provider da api, `generateSpeech`) e, quando todos existem, emenda o episódio num MP3 só. **Repita enquanto `completo` for `false` e a chamada anterior tiver gerado um trecho** — `falhou` diz qual bloco não saiu, e a transcrição continua na tela.\n\nIdempotente: o trecho que já está no bucket é pulado. O nome de cada trecho é o hash do texto e do pedido de voz, então os blocos fixos saem UMA vez por contrato e só os blocos com fala do tema custam síntese nova.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- `?atividadeId=` diz a atividade (ADR-130); sem ele, a em andamento. Os erros da atividade são os da missão: turma que o professor não leciona e atividade de outra turma são **404**; sem atividade em andamento, **403** `atividade-nao-preparada`.\n- Quota do professor, com custo ESTIMADO por trecho (a síntese é cobrada por caractere e não devolve contagem). Sem saldo responde **429** `sem-saldo-de-ia`.\n- Duas chamadas simultâneas para o mesmo episódio recebem o mesmo trabalho (lock de processo).",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/podcast/{expId}/turmas/{turmaId}/falas-do-tema": {
+      "post": {
+        "operationId": "PodcastController_falasDoTema",
+        "parameters": [
+          {
+            "name": "expId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 40
+            }
+          },
+          {
+            "name": "turmaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "atividadeId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "vagas": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "falante": {
+                            "type": "string"
+                          },
+                          "sobre": {
+                            "type": "string"
+                          },
+                          "texto": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "falante",
+                          "sobre",
+                          "texto"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "usouIa": {
+                      "type": "boolean"
+                    },
+                    "motivo": {
+                      "type": "string",
+                      "enum": [
+                        "sem-saldo-de-ia",
+                        "ia-indisponivel"
+                      ],
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "vagas",
+                    "usouIa",
+                    "motivo"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "podcast"
+        ],
+        "summary": "Escreve as falas do podcast que contam o tema da atividade — rascunho para o professor revisar na customização.",
+        "description": "Chamada pela tela de criação da atividade, com o conteúdo como ela o tem (o rascunho, ainda não gravado). As falas voltam para o professor revisar e editar; quem as grava é a homologação da missão, com elas no corpo.\n\nO banco padrão intocado devolve as falas do sheet aprovado, sem IA. Sem saldo ou com a IA fora do ar, a resposta é 200 com as falas do sheet e o `motivo`: o professor sempre tem texto para revisar, e a tela avisa que ele conta o banco padrão.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- `conteudo` tem a forma da missão (as notícias do Jornal, as mensagens de Quem Mandou Isso?); fora dela, **400** `payload-invalido`.\n- Cada fala tem de 12 a 60 palavras, até 400 bytes, sem link, e-mail nem @ — a mesma régua da homologação. A IA que fere a régua é regerada uma vez com o motivo.\n- Quota do professor (ADR-105), debitada pelo que o vendor cobrou, inclusive nas tentativas recusadas (ADR-74).",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "conteudo": {}
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        }
       }
     }
   },

@@ -3373,3 +3373,33 @@ model Exp06ef1bSessao {
   @@index([escolaId, estudanteId], map: "exp06ef1b_sessoes_estudante_idx")
   @@map("exp06ef1b_sessoes")
 }
+
+/// As FALAS DO TEMA do podcast de recapitulação de uma atividade (ADR-150) —
+/// tabela da PLATAFORMA, sem prefixo: serve a toda missão com podcast. Só as
+/// falas que mudam com o tema moram aqui; os blocos fixos são do roteiro da
+/// missão (`<modulo>/podcast.ts`). Sem linha = o roteiro do banco padrão,
+/// quando a atividade é dele (`podcast/fonte.ts`).
+///
+/// A A Seleção NÃO grava aqui: as falas dela nasceram com a cobertura
+/// (`exp07ef1b_coberturas.podcast`, ADR-119) e continuam lá.
+model PodcastRoteiro {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  escolaId    String   @map("escola_id")
+  /// O código da experiência (ADR-110): `exp04ef1b`, `exp05ef1b`.
+  expId       String   @map("exp_id")
+  /// A ATIVIDADE (o pacote homologado da missão). Sem FK: cada missão tem a
+  /// sua tabela de atividade, e o id é de uma delas.
+  atividadeId String   @map("atividade_id") @db.Uuid
+  /// `{ <vaga>: "<fala>" }`, conferido contra as vagas da missão na escrita E
+  /// na leitura (`podcast/roteiro.ts#falasGravadas`).
+  falas       Json
+  /// Quem aprovou: o professor revisa SEMPRE, na customização da missão.
+  aprovadoPor String?  @map("aprovado_por") @db.Uuid
+  aprovadoEm  DateTime @default(now()) @map("aprovado_em") @db.Timestamptz(6)
+
+  criadoEm     DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  @@unique([escolaId, expId, atividadeId], map: "podcast_roteiros_um_por_atividade")
+  @@map("podcast_roteiros")
+}

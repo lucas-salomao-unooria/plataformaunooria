@@ -34,17 +34,14 @@ import {
   ImagensAprovadasSchema,
   PainelSchema,
   ParametrosDoPreparoSchema,
-  PodcastSchema,
   ProgressoDaMidiaSchema,
   QueryDaCoberturaSchema,
-  ProgressoDoPodcastSchema,
   RascunhoSchema,
   TurmasSchema,
   ZerarTurmaSchema,
 } from "./contrato-de-rotas";
 import { erroDeJogo } from "./erros";
 import { MidiaDaExp07ef1bService } from "./midia.service";
-import { PodcastDaExp07ef1bService } from "./podcast.service";
 import { PreparoDaExp07ef1bService } from "./preparo.service";
 
 /**
@@ -117,7 +114,6 @@ export class ASelecaoTurmasController {
     private readonly missao: ASelecaoService,
     private readonly preparo: PreparoDaExp07ef1bService,
     private readonly midia: MidiaDaExp07ef1bService,
-    private readonly podcast: PodcastDaExp07ef1bService,
   ) {}
 
   @Get()
@@ -431,63 +427,6 @@ export class ASelecaoTurmasController {
     const escolaId = escolaAlvo(req.auth, escolaIdPedida);
     limitar(req.auth.usuarioId, "gerar-midia", 20);
     return this.midia.gerar(
-      escolaId,
-      turmaOu400(turmaId),
-      professorDoToken(req.auth),
-      req.auth.usuarioId,
-      req.auth.perfil,
-      coberturaOpcional(coberturaId),
-    );
-  }
-
-  @Get(":turmaId/podcast")
-  @Contrato({
-    resumo: "O podcast de recapitulação de uma atividade: o roteiro e o estado do áudio.",
-    descricao:
-      "O podcast é do PROFESSOR, para tocar à turma depois da aula se quiser. `roteiro` é o texto inteiro (a transcrição, que fica na tela junto do player): os cinco blocos do sheet aprovado, com as três falas do Bloco 2 que a cobertura trouxe. `url` é o episódio, quando os cinco trechos já foram sintetizados e emendados; `null` enquanto não.\n\n**Não gera nada** — é o `POST gerar-podcast`.",
-    params: PARAMS,
-    query: QueryDaCoberturaSchema,
-    resposta: PodcastSchema,
-    notas: ["`?coberturaId=` diz a atividade; sem ele, a em andamento — e sem nenhuma, **403** `atividade-nao-preparada`."],
-  })
-  podcastDaTurma(
-    @Param("turmaId") turmaId: string,
-    @Query("escolaId") escolaIdPedida: string | undefined,
-    @Query("coberturaId") coberturaId: string | undefined,
-    @Req() req: Autenticado,
-  ) {
-    return this.podcast.estado(
-      escolaAlvo(req.auth, escolaIdPedida),
-      turmaOu400(turmaId),
-      professorDoToken(req.auth),
-      coberturaOpcional(coberturaId),
-    );
-  }
-
-  @Post(":turmaId/gerar-podcast")
-  @HttpCode(200)
-  @Contrato({
-    resumo: "Sintetiza o próximo trecho do podcast e, com os cinco prontos, emenda o episódio — incremental.",
-    descricao:
-      "Os cinco blocos não cabem numa chamada de 30 s: cada chamada sintetiza UM trecho (a voz é o TTS do Gemini pelo provider da api, `generateSpeech`, Lucas e Clara numa chamada de diálogo) e, quando os cinco existem, emenda o episódio num MP3 só. **Repita enquanto `completo` for `false` e a chamada anterior tiver gerado um trecho** — `falhou` diz qual bloco não saiu, e a transcrição continua na tela.\n\nIdempotente: o trecho que já está no bucket é pulado. O nome de cada trecho é o hash do texto e do pedido de voz, então os blocos fixos saem UMA vez por contrato e só o Bloco 2 de um tema da IA custa síntese nova.",
-    params: PARAMS,
-    query: QueryDaCoberturaSchema,
-    resposta: ProgressoDoPodcastSchema,
-    notas: [
-      "`?coberturaId=` diz a atividade; sem ele, a em andamento.",
-      "Quota do professor, com custo ESTIMADO por trecho (a síntese é cobrada por caractere e não devolve contagem). Sem saldo responde **429** `sem-saldo-de-ia`.",
-      "Duas chamadas simultâneas para o mesmo episódio recebem o mesmo trabalho (lock de processo).",
-    ],
-  })
-  gerarPodcast(
-    @Param("turmaId") turmaId: string,
-    @Query("escolaId") escolaIdPedida: string | undefined,
-    @Query("coberturaId") coberturaId: string | undefined,
-    @Req() req: Autenticado,
-  ) {
-    const escolaId = escolaAlvo(req.auth, escolaIdPedida);
-    limitar(req.auth.usuarioId, "gerar-podcast", 20);
-    return this.podcast.gerar(
       escolaId,
       turmaOu400(turmaId),
       professorDoToken(req.auth),

@@ -36,6 +36,7 @@ import {
   type Origem,
 } from "./catalogo";
 import { MensagemDoPacoteSchema, type CorpoDaAprovacao, type RevelacaoSchema } from "./contrato-de-rotas";
+import { gravarFalasDoPodcast } from "../podcast/podcast.service";
 import { erroDeJogo } from "./erros";
 import { PreparoDaExp05ef1bService, type MotivoDoPadrao } from "./preparo.service";
 import { MARCADOR_DA_SELECAO, nivelCO08 } from "./regras/evidencia";
@@ -143,6 +144,17 @@ function normalizarMensagens(mensagens: readonly MensagemDoPacote[]): MensagemDo
 }
 
 /** Uma assinatura estável do conteúdo — o JSONB do Postgres reordena chaves, então comparar JSON cru mentiria. */
+/**
+ * As mensagens são as do banco padrão, como a Unooria as escreveu? É o que
+ * decide se o podcast usa as falas do sheet sem IA (ADR-150). Comparadas na
+ * forma GRAVADA e pelo id: a tela pode mandar outra ordem e outro espaço.
+ */
+export function mensagensSaoAsDoPadrao(mensagens: readonly MensagemDoPacote[]): boolean {
+  const forma = (lista: readonly MensagemDoPacote[]) =>
+    JSON.stringify(normalizarMensagens([...lista].sort((a, b) => a.id.localeCompare(b.id))));
+  return forma(mensagens) === forma(mensagensDoPadrao());
+}
+
 function assinatura(c: {
   disciplina: string;
   tema: string;
@@ -517,6 +529,26 @@ export class QuemMandouIssoService implements OnModuleInit {
    * devolve o mesmo pacote, sem atividade nova (o duplo clique de um professor
    * nervoso). O rascunho, se houver, é o que vira o aprovado (mesmo id).
    */
+  /** A guarda de turma, sozinha — a da escrita das falas do podcast, ANTES de gastar token. */
+  async exigirTurmaVisivel(escolaId: string, turmaId: string, professorId?: string): Promise<void> {
+    await this.prisma.comTenancy((tx) => this.turmaVisivel(tx, escolaId, turmaId, professorId), escolaId);
+  }
+
+  /**
+   * O pacote do podcast de recapitulação (ADR-150): o pedido — APROVADO, desta
+   * turma — ou o em andamento sem pedido. É a atividade que o professor
+   * prepara antes de pôr no ar, como as imagens das outras missões.
+   */
+  async pacoteParaPodcast(escolaId: string, turmaId: string, professorId: string | undefined, pacoteId?: string) {
+    return this.prisma.comTenancy(async (tx) => {
+      await this.turmaVisivel(tx, escolaId, turmaId, professorId);
+      const id = pacoteId ?? (await this.exigirPacoteAtivo(tx, escolaId, turmaId)).id;
+      const linha = await this.pacoteAprovadoDaTurma(tx, escolaId, turmaId, id);
+      const pacote = this.exigirParaProfessor(linha);
+      return { id: pacote.id, tema: pacote.tema, origem: pacote.origem, mensagens: pacote.mensagens };
+    }, escolaId);
+  }
+
   async aprovar(escolaId: string, turmaId: string, professorId: string, corpo: CorpoDaAprovacao) {
     return this.prisma.comTenancy(async (tx) => {
       await this.turmaVisivel(tx, escolaId, turmaId, professorId);
@@ -530,6 +562,9 @@ export class QuemMandouIssoService implements OnModuleInit {
       if (ultimo) {
         const mensagens = lerMensagens(ultimo.mensagensJson);
         if (mensagens && assinatura({ ...ultimo, mensagens }) === assinatura(conteudo)) {
+          /* O segundo clique pode trazer as falas do podcast editadas: elas
+             valem, mesmo sem atividade nova (ADR-150). */
+          await gravarFalasDoPodcast(tx, { escolaId, expId: EXP_ID, atividadeId: ultimo.id, falas: corpo.podcast, aprovadoPor: professorId });
           return this.exigirParaProfessor(ultimo);
         }
       }
@@ -553,6 +588,7 @@ export class QuemMandouIssoService implements OnModuleInit {
       const aprovado = rascunho
         ? await tx.exp05ef1bPacote.update({ where: { id: rascunho.id }, data: dados })
         : await tx.exp05ef1bPacote.create({ data: { escolaId, turmaId, ...dados } });
+      await gravarFalasDoPodcast(tx, { escolaId, expId: EXP_ID, atividadeId: aprovado.id, falas: corpo.podcast, aprovadoPor: professorId });
       return this.exigirParaProfessor(aprovado);
     }, escolaId);
   }
