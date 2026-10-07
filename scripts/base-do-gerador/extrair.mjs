@@ -98,7 +98,10 @@ export const FONTES = [
   ["apps/api/src/juri-estadual/invariantes.ts", "exemplo-juri-invariantes.md"],
   ["apps/experiencias/exp06ef1b/public/experiencia.json", "exemplo-manifesto-exp06ef1b.md"],
   ["apps/experiencias/exp06ef1b/src/lib/telemetria.ts", "exemplo-telemetria-exp06ef1b.md"],
-  { glob: ["apps/api/prisma/migrations", /_exp06ef1b_/, "migration.sql"], destino: "exemplo-migration-exp06ef1b.md" },
+  // A migração que CRIA as tabelas da missão (o exemplar de missão nova). As de
+  // ajuste depois dela (ex.: 20261006120000_exp06ef1b_ajustes_do_po, ADR-151)
+  // não entram: o padrão casa só a de criação, pelo nome inteiro.
+  { glob: ["apps/api/prisma/migrations", /_exp06ef1b_juri_estadual$/, "migration.sql"], destino: "exemplo-migration-exp06ef1b.md" },
   // A Seleção: o molde de "zerar = rodada nova"; unooGPT: o chat com IA real
   ["apps/api/src/a-selecao/contrato-de-rotas.ts", "exemplo-a-selecao-contrato-rotas.md"],
   ["apps/api/src/unoogpt/AGENTS.md", "exemplo-unoogpt-agents.md"],
