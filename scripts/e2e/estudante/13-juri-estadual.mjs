@@ -1488,7 +1488,8 @@ await suite(
     const bandejaDaCadeia = () => q().getByRole("region", { name: "Blocos da engrenagem" });
     const bloco = (rotulo) => bandejaDaCadeia().getByRole("button", { name: new RegExp(`^${escaparRegex(rotulo)}`) });
     const DADOS = "Registro de dados e padrões";
-    const INTERACOES = "Interações do jurado (curtidas)";
+    /* O rótulo da api (`conteudo.ts#BLOCOS_DA_CADEIA`): desde a 0.3.0 o salvar também é sinal. */
+    const INTERACOES = "Interações do jurado (curtidas e salvos)";
     const ALGORITMO = "Algoritmo de recomendação";
     const BOLHA = "Formação de bolha temática";
     for (const rotulo of [DADOS, INTERACOES, ALGORITMO, BOLHA]) await bloco(rotulo).click();
