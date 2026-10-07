@@ -18,7 +18,7 @@ export const EXP_ID = "exp02em1b";
 // o dado de uso fica atribuido a uma versao que nao esta no ar, e a pergunta
 // "esta regressao veio da versao X?" deixa de ter resposta. Sobe JUNTO com o
 // `versao` do `public/experiencia.json`.
-export const EXP_VERSION = "1.3.0";
+export const EXP_VERSION = "1.4.0";
 
 /** Toda grandeza do modelo é FAIXA, nunca número seco. */
 export interface Faixa {
