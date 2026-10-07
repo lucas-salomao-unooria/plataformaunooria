@@ -8,6 +8,7 @@ import { JornalEscolaTurmasController } from "./jornal-escola-turmas.controller"
 import { JornalEscolaController } from "./jornal-escola.controller";
 import { JornalEscolaService } from "./jornal-escola.service";
 import { MidiaDaExp04ef1bService } from "./midia.service";
+import { PodcastDaExp04ef1b } from "./podcast-fonte";
 import { PreparoDaExp04ef1bService } from "./preparo.service";
 
 /**
@@ -28,11 +29,21 @@ import { PreparoDaExp04ef1bService } from "./preparo.service";
  * espera o Vertex para ver a próxima tela.
  *
  * **`AssetsModule`** é o bucket das imagens (`experiencias/exp04ef1b/jornal/`).
+ *
+ * **`PodcastService`** (global) é o podcast de recapitulação da plataforma (ADR-150): a
+ * missão registra a fonte (`podcast-fonte.ts`) e a homologação grava as falas
+ * do tema que o professor revisou.
  */
 @Module({
   imports: [AiModule, AssetsModule, EvidenciasModule],
   controllers: [JornalEscolaController, JornalEscolaTurmasController, JornalEscolaProfessorController],
-  providers: [JornalEscolaService, DiagramacaoService, PreparoDaExp04ef1bService, MidiaDaExp04ef1bService],
+  providers: [
+    JornalEscolaService,
+    DiagramacaoService,
+    PreparoDaExp04ef1bService,
+    MidiaDaExp04ef1bService,
+    PodcastDaExp04ef1b,
+  ],
   exports: [JornalEscolaService],
 })
 export class JornalEscolaModule {}

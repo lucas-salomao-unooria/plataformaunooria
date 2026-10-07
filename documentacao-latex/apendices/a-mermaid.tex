@@ -244,6 +244,9 @@ C4Component
     %% --- plataforma, fora da figura TikZ (2026-10-02, ADR-132)
     Component(ajuda, "ajuda/", "", "Ajuda com avatar: ajuda.controller (hub, @Produto('ajuda')) e ajuda-llm.controller (vendor, fora dos guards de pessoa)")
     Component(avporta, "AvatarAoVivoPort", "ai/liveavatar.client.ts", "A terceira porta de ai/: so ela conhece o LiveAvatar; abre e fecha a sala")
+
+    %% --- plataforma, fora da figura TikZ (2026-10-06, ADR-150)
+    Component(podcast, "podcast/", "", "Podcast de recapitulacao de toda missao: rotas /podcast/:expId/*, motor do audio, escrita das falas; @Global, o ultimo do app.module")
   }
 
   Rel(guard, roles, "antes de")
@@ -275,6 +278,10 @@ C4Component
   Rel(ajuda, prisma, "ajuda_sessoes, ajuda_limites: fora de comTenancy, por usuario_id")
   Rel(ajuda, comum, "exigirProdutoDisponivel (a cada turno do LLM)")
   Rel(recs, prisma, "limites-da-ajuda: escrita so admin")
+  Rel(podcast, ai, "generateSpeech + generateJson; QuotaService: temSaldo antes, consumir depois")
+  Rel(podcast, assets, "trechos e episodio no bucket")
+  Rel(podcast, prisma, "comTenancy: podcast_roteiros")
+  Rel(outros, podcast, "exp04ef1b, exp05ef1b, exp07ef1b: registrarFonte na subida; gravarFalasDoPodcast na transacao da homologacao")
 
   %% A figura TikZ desenha a infraestrutura ENTRE a plataforma e o dominio, com
   %% a coluna 2 vazia: e por ela que unootube/ e unoogpt/ sobem ate equipes/.
@@ -2308,6 +2315,7 @@ flowchart TB
     eq["/equipes/* - prof. monta, gestor le; /minha: estudante (ADR-111)"]
     ev["/evidencias/* - prof. confirma e ajusta, gestor le; estudante: so a pergunta e a resposta (ADR-112)"]
     agp["/agente-professor/* - SO PROFESSOR, posse; a mensagem responde SSE (ADR-126)"]
+    pod["/podcast/:expId/* - prof., gestor; nenhuma de estudante (ADR-150)"]
   end
   subgraph E01["exp08ef1b - Instanooria"]
     atv["/atividades/* - professor"]; rn["/runs/* - estudante (/eventos: professor tb.)"]

@@ -90,6 +90,12 @@ Quatro tabelas (`exp05ef1b_pacotes`, `_gates_turma`, `_sessoes`,
   fica de fora de propósito: a "Professora Helena" escreve no grupo da turma.
 - **Vocabulário em dois lugares**: disciplina, origem, motivo, condição e fase
   estão no código e nos CHECKs; a suíte de Postgres compara os dois.
+- **O podcast de recapitulação é da plataforma** (ADR-150, `src/podcast/`):
+  aqui ficam o roteiro do one-pager v2.2 (`podcast.ts`, Lucas e Camila, com o
+  Unoochat no lugar do WhatsApp e sem a "regra da tela final" do Se/Então que
+  saiu) e a fonte (`podcast-fonte.ts`). As três vagas (o que o grupo trazia, a
+  falsa calma, a verdadeira desesperada) o professor revisa na criação, e
+  `aprovar` as grava em `podcast_roteiros` na MESMA transação.
 
 ## As duas suítes
 

@@ -162,13 +162,18 @@ folha por computador, zerar, podcast e habilidades. A criação é
   para em `completo` ou quando uma volta não gera nada. Na página da atividade
   o laço antigo só roda para cobertura aprovada antes da ADR-146 com post sem
   imagem.
-- **O podcast de recapitulação é do professor** (`podcast-a-selecao.tsx`, entre
-  o painel da aula e o zerar) — e mora AQUI, não no guia: o Bloco 2 conta o que
-  cada veículo mostrou no tema DESTA turma, e o guia é o mesmo para todas. O
-  áudio é outro laço do cliente (`continuarGerandoPodcast`, um trecho por
-  chamada) e a transcrição fica sempre na tela; o player é o `AudioPlayer` do DS.
-  As três falas do Bloco 2 se editam na CRIAÇÃO, junto dos posts, e vão na
-  mesma gravação.
+- **Podcast**: o da plataforma (abaixo); as falas do Bloco 2 vêm com os posts.
+
+## O podcast de recapitulação (ADR-150)
+
+Na página da atividade (`resultados/podcast-da-aula.tsx`); é do professor.
+
+- **As falas do tema se revisam na CRIAÇÃO, sempre** (Lucas, 2026-10-06):
+  `atividades/nova/falas-do-podcast.tsx` as pede quando o conteúdo chega, e o
+  "Aprovar"/"Criar" só acende com elas na régua.
+- **Atividade da IA anterior ao podcast**: 409, e o cartão mostra a frase, sem sumir
+  (`lib/podcast-servidor.ts`).
+- E2e com IA real: `scripts/e2e/lib/podcast.mjs`.
 
 ## O Júri Estadual de Projetos (exp06ef1b)
 

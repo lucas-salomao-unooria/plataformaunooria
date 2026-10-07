@@ -9,7 +9,7 @@ import {
   TIPOS_DE_GRAFICO,
   TOTAL_DE_POSTS,
 } from "./catalogo";
-import { BLOCOS_DO_PODCAST, FalasDoTemaSchema } from "./podcast";
+import { FalasDoTemaSchema } from "./podcast";
 import { problemasDoLote } from "./regras/lote";
 import { ETAPAS, PASSOS, PASSOS_PEDIDOS } from "./regras/passos";
 import {
@@ -448,38 +448,12 @@ export const EmAndamentoSchema = z.object({
   mudou: z.boolean(),
 });
 
-/** `?coberturaId=` das rotas de imagem e de podcast: a atividade PRONTA sendo preparada. */
+/** `?coberturaId=` das rotas de imagem: a atividade PRONTA sendo preparada. */
 export const QueryDaCoberturaSchema = z.object({
   escolaId: z.string().optional(),
   coberturaId: z.string().uuid().optional(),
 });
 
-const FalaDoPodcastSchema = z.object({ falante: z.enum(["Lucas", "Clara"]), texto: z.string() });
-
-/**
- * O podcast de recapitulação da cobertura em andamento — o roteiro inteiro (é
- * a transcrição, que fica na tela junto do player) e o estado do áudio.
- */
-export const PodcastSchema = z.object({
-  coberturaId: z.string().uuid(),
-  tema: z.string(),
-  roteiro: z.array(
-    z.object({ bloco: z.enum(BLOCOS_DO_PODCAST), titulo: z.string(), falas: z.array(FalaDoPodcastSchema).min(1) }),
-  ),
-  trechos: z.object({ total: z.number().int().min(0), prontos: z.number().int().min(0) }),
-  /** O episódio inteiro, quando os cinco trechos existem e já foram emendados. */
-  url: z.string().nullable(),
-});
-
-/** O progresso de UMA chamada de geração: um trecho por vez, e o episódio no fim. */
-export const ProgressoDoPodcastSchema = PodcastSchema.extend({
-  /** O bloco sintetizado NESTA chamada. */
-  gerado: z.enum(BLOCOS_DO_PODCAST).nullable(),
-  /** O bloco que falhou NESTA chamada — a transcrição continua na tela. */
-  falhou: z.enum(BLOCOS_DO_PODCAST).nullable(),
-  /** `true` quando o episódio existe: o cliente para de repetir. */
-  completo: z.boolean(),
-});
 
 export const ProgressoDaMidiaSchema = z.object({
   coberturaId: z.string().uuid(),

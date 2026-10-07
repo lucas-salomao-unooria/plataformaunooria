@@ -22,7 +22,7 @@ import { cabecalhosComoObjeto, logDaRequisicao } from "@/lib/log";
  *   - `quem-mandou-isso/.../gerar` (8 mensagens) ......... 6 a 13 s
  *   - `jornal-escola/.../gerar-conteudo` (8 notícias) .... 19 a 24 s
  *   - `a-selecao/.../gerar-conteudo` (12 posts + 3 falas)  20 a 30,1 s
- *   - `a-selecao/.../gerar-podcast` (UM trecho por volta)  ~21 s, 5 voltas
+ *   - `podcast/.../gerar` (UM trecho por volta) ......... ~21 s, 5 voltas
  *
  * A Seleção virou moeda ao ar: a MESMA chamada deu 200 em 24,9 s e 504 em
  * 30,1 s na mesma sessão. E o 504 aqui é caro de um jeito que não aparece: o
@@ -131,6 +131,11 @@ const PREFIXOS_PERMITIDOS = [
      aperta na frente da sala e as telas andam na hora pelo polling (ADR-93).
      As guardas de papel estão na api (`@Roles("professor", ...GESTORES)`). */
   "a-selecao",
+  /* O podcast de recapitulação de toda missão (ADR-150): as falas do tema na
+     criação da atividade e o áudio na aula — um laço do cliente, UM trecho por
+     chamada, porque o episódio não cabe numa. É do professor; as guardas de
+     papel e de turma estão na api. */
+  "podcast",
   /* exp04ef1b: o preparo do pacote (gerar, regenerar uma notícia, homologar e o
      "Usar Banco Padrão", que lê `professor/material` e homologa na hora), as
      imagens — o mesmo laço do cliente da exp07ef1b, duas por chamada, porque

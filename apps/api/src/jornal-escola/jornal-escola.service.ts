@@ -9,6 +9,8 @@ import { EvidenciasService, type ContextoDaAtividade } from "../evidencias/evide
 import type { Nivel } from "../evidencias/regras";
 import { logger } from "../observabilidade/logger";
 import { ehUuid } from "../motor/guardas";
+import { gravarFalasDoPodcast } from "../podcast/podcast.service";
+import type { FalasDoTema } from "../podcast/roteiro";
 import { PrismaService } from "../prisma/prisma.service";
 import { BLOCOS_DA_CHAVE, noticiasPadrao } from "./catalogo";
 import { NoticiaDoPacoteSchema, type NoticiaDoPacote } from "./contrato-de-rotas";
@@ -1118,7 +1120,14 @@ export class JornalEscolaService implements OnModuleInit {
     turmaId: string,
     professorId: string | undefined,
     aprovadoPor: string,
-    corpo: { disciplina: string; tema: string; topicos?: string; origem: OrigemDoPacote; noticias: NoticiaDoPacote[] },
+    corpo: {
+      disciplina: string;
+      tema: string;
+      topicos?: string;
+      origem: OrigemDoPacote;
+      noticias: NoticiaDoPacote[];
+      podcast: FalasDoTema;
+    },
   ) {
     return this.prisma.comTenancy(async (tx) => {
       await this.turmaVisivel(tx, escolaId, turmaId, professorId);
@@ -1138,6 +1147,9 @@ export class JornalEscolaService implements OnModuleInit {
       const [ultimo] = recentes;
       if (ultimo && this.mesmoConteudo(pacoteDaLinha(ultimo), corpo.origem, corpo.tema, noticias)) {
         const lido = pacoteDaLinha(ultimo);
+        /* O segundo clique pode trazer as falas do podcast editadas: elas
+           valem, mesmo sem atividade nova (ADR-150). */
+        await gravarFalasDoPodcast(tx, { escolaId, expId: EXP_ID, atividadeId: lido.id, falas: corpo.podcast, aprovadoPor });
         return {
           id: lido.id,
           disciplina: lido.disciplina,
@@ -1177,6 +1189,7 @@ export class JornalEscolaService implements OnModuleInit {
         },
         select: { id: true, disciplina: true, tema: true, origem: true },
       });
+      await gravarFalasDoPodcast(tx, { escolaId, expId: EXP_ID, atividadeId: novo.id, falas: corpo.podcast, aprovadoPor });
       return {
         id: novo.id,
         disciplina: novo.disciplina,

@@ -4,9 +4,9 @@
 \chapter{Dicionário de dados}
 \label{ap:dicionario}
 
-Catálogo das 83 tabelas de \cd{public}, mais o \emph{schema} \cd{particoes}.
+Catálogo das 84 tabelas de \cd{public}, mais o \emph{schema} \cd{particoes}.
 O número é o de \cd{model} em \arq{apps/api/prisma/schema.prisma} em
-2026-10-02 (todos com \cd{@@map}; a \cd{\_prisma\_migrations} é do Prisma e
+2026-10-06 (todos com \cd{@@map}; a \cd{\_prisma\_migrations} é do Prisma e
 fica fora), e o índice abaixo tem uma linha por \cd{model}: tabela nova sem
 linha aqui é o sinal de que este apêndice ficou para trás.
 Os diagramas entidade-relacionamento estão no Capítulo~\ref{cap:dados}.
@@ -62,64 +62,65 @@ Os diagramas entidade-relacionamento estão no Capítulo~\ref{cap:dados}.
 \zebra \cd{agente\_professor\_conversas} & Tenant & \textbf{A posse} das conversas do agente de IA do professor; o conteúdo mora no Agent Engine (\adrr{ADR-126})\\
 \cd{ajuda\_limites} & \textbf{Catálogo} & \textbf{Os minutos da Ajuda com avatar}, por pessoa e dia e por sessão --- o par de \cd{ia\_quotas} (\adrr{ADR-132})\\
 \zebra \cd{ajuda\_sessoes} & \textbf{Medidor sem RLS} & Uma linha por sessão de vídeo da Ajuda: início, teto e fim, nenhuma palavra da conversa. \cd{escola\_id} nulo nos papéis de contrato (\adrr{ADR-132})\\
-\cd{telemetria\_eventos} & Tenant, particionada & Canal analítico\\
-\zebra \cd{exp08ef1b\_activities} & Tenant & Atividade preparada pelo professor\\
-\cd{exp08ef1b\_authors} & Tenant & Personas fictícias\\
-\zebra \cd{exp08ef1b\_posts} & Tenant & Posts gerados\\
-\cd{exp08ef1b\_post\_comments} & Tenant & Comentários dos posts\\
-\zebra \cd{exp08ef1b\_generation\_jobs} & Tenant & Fila de geração\\
-\cd{exp08ef1b\_runs} & Tenant & Sessão de um estudante\\
-\zebra \cd{exp08ef1b\_events} & Tenant & Canal \textbf{operacional} de telemetria\\
-\cd{exp08ef1b\_student\_posts} & Tenant & Posts publicados pelo estudante\\
-\zebra \cd{exp08ef1b\_conclusoes} & Tenant & Inclinação escolhida --- a ÚLTIMA em \cd{inclinacao} e a PRIMEIRA em \cd{inclinacao\_inicial}, com \cd{trocas}. A tela convida a mudar de ideia (``vale a última'') e o \cd{upsert} apagava a primeira; \cd{atualizado\_em} existe porque \cd{created\_at} congelava no primeiro envio e passava a mentir (ADR-43)\\
-\cd{exp08ef1b\_reflexoes} & Tenant & Texto de fechamento\\
-\zebra \cd{exp08ef1b\_dossiers} & Tenant & Dossiê calculado\\
-\cd{exp08ef1b\_comentarios\_da\_sessao} & Tenant & Comentários da sessão\\
-\zebra \cd{exp08ef1b\_app\_70\_perfis\_importados} & Tenant &
+\cd{podcast\_roteiros} & Tenant & As falas do tema do podcast de recapitulação, por missão e atividade, aprovadas pelo professor na customização (\adrr{ADR-150})\\
+\zebra \cd{telemetria\_eventos} & Tenant, particionada & Canal analítico\\
+\cd{exp08ef1b\_activities} & Tenant & Atividade preparada pelo professor\\
+\zebra \cd{exp08ef1b\_authors} & Tenant & Personas fictícias\\
+\cd{exp08ef1b\_posts} & Tenant & Posts gerados\\
+\zebra \cd{exp08ef1b\_post\_comments} & Tenant & Comentários dos posts\\
+\cd{exp08ef1b\_generation\_jobs} & Tenant & Fila de geração\\
+\zebra \cd{exp08ef1b\_runs} & Tenant & Sessão de um estudante\\
+\cd{exp08ef1b\_events} & Tenant & Canal \textbf{operacional} de telemetria\\
+\zebra \cd{exp08ef1b\_student\_posts} & Tenant & Posts publicados pelo estudante\\
+\cd{exp08ef1b\_conclusoes} & Tenant & Inclinação escolhida --- a ÚLTIMA em \cd{inclinacao} e a PRIMEIRA em \cd{inclinacao\_inicial}, com \cd{trocas}. A tela convida a mudar de ideia (``vale a última'') e o \cd{upsert} apagava a primeira; \cd{atualizado\_em} existe porque \cd{created\_at} congelava no primeiro envio e passava a mentir (ADR-43)\\
+\zebra \cd{exp08ef1b\_reflexoes} & Tenant & Texto de fechamento\\
+\cd{exp08ef1b\_dossiers} & Tenant & Dossiê calculado\\
+\zebra \cd{exp08ef1b\_comentarios\_da\_sessao} & Tenant & Comentários da sessão\\
+\cd{exp08ef1b\_app\_70\_perfis\_importados} & Tenant &
   \textbf{Contrato entre duas experiências}\\
-\cd{backup\_exp04ef1b\_sessoes} & Tenant & Estado da missão do UnooTube (arquivada, \adrr{ADR-116})\\
-\zebra \cd{exp04ef1b\_pacotes} & Tenant & A ATIVIDADE do Jornal da Escola: as 8 notícias com o gabarito e a consequência, as URLs das imagens e a URL que o professor aprovou por notícia (\cd{midia\_aprovada}, \adrr{ADR-147})\\
-\cd{exp04ef1b\_gates\_turma} & Tenant & A etapa da aula (os dois portões), o pacote e a rodada, por turma\\
-\zebra \cd{exp04ef1b\_sessoes} & Tenant & Uma sessão por estudante, pacote e rodada: as pistas abertas, as duas edições, o motivo e a Chave --- sem texto livre\\
-\cd{exp04ef1b\_diagramacoes} & Tenant & O \emph{cache} do layout escolhido pela IA, por pacote e combinação de vagas\\
-\zebra \cd{exp02em1b\_sessoes} & Tenant & Estado da partida da Missão Tempestade\\
-\cd{exp02em1b\_mensagens} & Tenant & A Transcrição (texto livre do estudante)\\
-\zebra \cd{exp02em1b\_marcos} & Tenant & Trilha da decisão\\
-\cd{exp02em1b\_simulacoes} & Tenant & Desfecho por tentativa\\
-\zebra \cd{exp02em1b\_relogio\_turma} & Tenant & O Relógio da Aula, por turma\\
-\cd{exp01ef1b\_turma\_config} & Tenant & A aula da exp01ef1b por turma: pacote aprovado, latch e tentativa\\
-\zebra \cd{exp01ef1b\_runs} & Tenant & Execução por estudante e tentativa (reset arquiva, não apaga)\\
-\cd{exp01ef1b\_posts\_turma} & Tenant & O mural coletivo, assinado pela marca --- sem nome de criança\\
-\zebra \cd{exp06ef2b\_sessoes} & Tenant & Estado da missão de O Rastro do Boato: passo, opção e latência da decisão\\
-\cd{exp06ef2b\_auditorias} & Tenant & Cada abertura de \enquote{Dados da mensagem} --- a evidência que a missão mede\\
-\zebra \cd{exp06ef2b\_reflexoes} & Tenant & O \enquote{Meu percurso} (texto livre do estudante)\\
-\cd{exp06ef2b\_gates\_turma} & Tenant & A etapa da aula, por turma\\
-\zebra \cd{exp06ef1b\_pacotes} & Tenant & A ATIVIDADE do Júri Estadual de Projetos: as 4 áreas e os 16 projetos que a IA gerou e o professor aprovou, e as URLs das imagens\\
-\cd{exp06ef1b\_gates\_turma} & Tenant & A etapa da aula (a Galeria Oculta), a atividade em andamento e a rodada, por turma\\
-\zebra \cd{exp06ef1b\_sessoes} & Tenant & Uma sessão por estudante, pacote e rodada: o feed servido, as curtidas, os dois votos, a auditoria da galeria, os pacotes, a cadeia e os cartões --- sem texto livre\\
-\cd{exp07ef1b\_coberturas} & Tenant & A ATIVIDADE da A Seleção: o tema homologado, os 12 posts com o gabarito (e os comentários com autor), as URLs da mídia, o carimbo da aprovação das imagens (\adrr{ADR-146}) e as três falas do podcast\\
-\zebra \cd{exp07ef1b\_gates\_turma} & Tenant & A etapa da aula, a cobertura e a rodada, por turma\\
-\cd{exp07ef1b\_sessoes} & Tenant & Uma sessão por estudante, cobertura e rodada: a tríade, a legenda, a matriz e o par\\
-\zebra \cd{exp07ef1b\_reflexoes} & Tenant & A reflexão (texto livre do estudante, só do professor)\\
-\cd{exp08ef4b\_conteudo\_turma} & Tenant & O pacote curado da turma, homologado pela professora\\
-\zebra \cd{exp08ef4b\_sessoes} & Tenant & Estado da missão de O Manifesto da IA\\
-\cd{exp08ef4b\_auditorias} & Tenant & Cada questionamento disparado contra a máquina\\
-\zebra \cd{exp08ef4b\_respostas\_percurso} & Tenant & O \enquote{Meu percurso} (texto livre do estudante)\\
-\cd{exp08ef4b\_gates\_turma} & Tenant & O \emph{checkpoint} do debate, por turma\\
-\zebra \cd{exp05ef1b\_pacotes} & Tenant & O pacote da turma --- as 8 mensagens com o gabarito; é a atividade da evidência\\
-\cd{exp05ef1b\_gates\_turma} & Tenant & O relógio da turma: triagem, revelação, síntese, reflexão\\
-\zebra \cd{exp05ef1b\_sessoes} & Tenant & A sessão por rodada, com os \emph{latches} (Mural, voto, conclusão)\\
-\cd{exp05ef1b\_reflexoes} & Tenant & A regra Se/Então (texto livre do estudante); só histórico desde a \adrr{ADR-145}\\
-\zebra \cd{app\_70\_sessoes} & Tenant & Uma partida da Vila do Lume\\
-\cd{app\_70\_perfis} & Tenant & Retrato Schwartz recalculado\\
-\zebra \cd{app\_70\_bolhas} & Tenant & Bolha por estudante\\
-\cd{app\_90\_planos} & Tenant+posse & Metadados do plano de aula\\
-\zebra \cd{app\_90\_referencias} & \textbf{Catálogo} & Referências curriculares\\
-\cd{app\_92\_configuracoes} & Tenant+posse & A regência: componente, ano, carga e grade\\
-\zebra \cd{app\_92\_planos\_anuais} & Tenant+posse & Plano anual e a distribuição por período\\
-\cd{app\_92\_planos\_de\_periodo} & Tenant+posse & As aulas da semana ou quinzena\\
-\zebra \cd{app\_91\_ciclos} & Tenant+posse & Ciclo do DASS-21 (\textbf{sensível})\\
-\cd{app\_91\_checkins} & Tenant+posse & \emph{Check-in} diário
+\zebra \cd{backup\_exp04ef1b\_sessoes} & Tenant & Estado da missão do UnooTube (arquivada, \adrr{ADR-116})\\
+\cd{exp04ef1b\_pacotes} & Tenant & A ATIVIDADE do Jornal da Escola: as 8 notícias com o gabarito e a consequência, as URLs das imagens e a URL que o professor aprovou por notícia (\cd{midia\_aprovada}, \adrr{ADR-147})\\
+\zebra \cd{exp04ef1b\_gates\_turma} & Tenant & A etapa da aula (os dois portões), o pacote e a rodada, por turma\\
+\cd{exp04ef1b\_sessoes} & Tenant & Uma sessão por estudante, pacote e rodada: as pistas abertas, as duas edições, o motivo e a Chave --- sem texto livre\\
+\zebra \cd{exp04ef1b\_diagramacoes} & Tenant & O \emph{cache} do layout escolhido pela IA, por pacote e combinação de vagas\\
+\cd{exp02em1b\_sessoes} & Tenant & Estado da partida da Missão Tempestade\\
+\zebra \cd{exp02em1b\_mensagens} & Tenant & A Transcrição (texto livre do estudante)\\
+\cd{exp02em1b\_marcos} & Tenant & Trilha da decisão\\
+\zebra \cd{exp02em1b\_simulacoes} & Tenant & Desfecho por tentativa\\
+\cd{exp02em1b\_relogio\_turma} & Tenant & O Relógio da Aula, por turma\\
+\zebra \cd{exp01ef1b\_turma\_config} & Tenant & A aula da exp01ef1b por turma: pacote aprovado, latch e tentativa\\
+\cd{exp01ef1b\_runs} & Tenant & Execução por estudante e tentativa (reset arquiva, não apaga)\\
+\zebra \cd{exp01ef1b\_posts\_turma} & Tenant & O mural coletivo, assinado pela marca --- sem nome de criança\\
+\cd{exp06ef2b\_sessoes} & Tenant & Estado da missão de O Rastro do Boato: passo, opção e latência da decisão\\
+\zebra \cd{exp06ef2b\_auditorias} & Tenant & Cada abertura de \enquote{Dados da mensagem} --- a evidência que a missão mede\\
+\cd{exp06ef2b\_reflexoes} & Tenant & O \enquote{Meu percurso} (texto livre do estudante)\\
+\zebra \cd{exp06ef2b\_gates\_turma} & Tenant & A etapa da aula, por turma\\
+\cd{exp06ef1b\_pacotes} & Tenant & A ATIVIDADE do Júri Estadual de Projetos: as 4 áreas e os 16 projetos que a IA gerou e o professor aprovou, e as URLs das imagens\\
+\zebra \cd{exp06ef1b\_gates\_turma} & Tenant & A etapa da aula (a Galeria Oculta), a atividade em andamento e a rodada, por turma\\
+\cd{exp06ef1b\_sessoes} & Tenant & Uma sessão por estudante, pacote e rodada: o feed servido, as curtidas, os dois votos, a auditoria da galeria, os pacotes, a cadeia e os cartões --- sem texto livre\\
+\zebra \cd{exp07ef1b\_coberturas} & Tenant & A ATIVIDADE da A Seleção: o tema homologado, os 12 posts com o gabarito (e os comentários com autor), as URLs da mídia, o carimbo da aprovação das imagens (\adrr{ADR-146}) e as três falas do podcast\\
+\cd{exp07ef1b\_gates\_turma} & Tenant & A etapa da aula, a cobertura e a rodada, por turma\\
+\zebra \cd{exp07ef1b\_sessoes} & Tenant & Uma sessão por estudante, cobertura e rodada: a tríade, a legenda, a matriz e o par\\
+\cd{exp07ef1b\_reflexoes} & Tenant & A reflexão (texto livre do estudante, só do professor)\\
+\zebra \cd{exp08ef4b\_conteudo\_turma} & Tenant & O pacote curado da turma, homologado pela professora\\
+\cd{exp08ef4b\_sessoes} & Tenant & Estado da missão de O Manifesto da IA\\
+\zebra \cd{exp08ef4b\_auditorias} & Tenant & Cada questionamento disparado contra a máquina\\
+\cd{exp08ef4b\_respostas\_percurso} & Tenant & O \enquote{Meu percurso} (texto livre do estudante)\\
+\zebra \cd{exp08ef4b\_gates\_turma} & Tenant & O \emph{checkpoint} do debate, por turma\\
+\cd{exp05ef1b\_pacotes} & Tenant & O pacote da turma --- as 8 mensagens com o gabarito; é a atividade da evidência\\
+\zebra \cd{exp05ef1b\_gates\_turma} & Tenant & O relógio da turma: triagem, revelação, síntese, reflexão\\
+\cd{exp05ef1b\_sessoes} & Tenant & A sessão por rodada, com os \emph{latches} (Mural, voto, conclusão)\\
+\zebra \cd{exp05ef1b\_reflexoes} & Tenant & A regra Se/Então (texto livre do estudante); só histórico desde a \adrr{ADR-145}\\
+\cd{app\_70\_sessoes} & Tenant & Uma partida da Vila do Lume\\
+\zebra \cd{app\_70\_perfis} & Tenant & Retrato Schwartz recalculado\\
+\cd{app\_70\_bolhas} & Tenant & Bolha por estudante\\
+\zebra \cd{app\_90\_planos} & Tenant+posse & Metadados do plano de aula\\
+\cd{app\_90\_referencias} & \textbf{Catálogo} & Referências curriculares\\
+\zebra \cd{app\_92\_configuracoes} & Tenant+posse & A regência: componente, ano, carga e grade\\
+\cd{app\_92\_planos\_anuais} & Tenant+posse & Plano anual e a distribuição por período\\
+\zebra \cd{app\_92\_planos\_de\_periodo} & Tenant+posse & As aulas da semana ou quinzena\\
+\cd{app\_91\_ciclos} & Tenant+posse & Ciclo do DASS-21 (\textbf{sensível})\\
+\zebra \cd{app\_91\_checkins} & Tenant+posse & \emph{Check-in} diário
   (\textbf{sensível})\\
 \bottomrule
 \end{tabularx}
@@ -1037,6 +1038,47 @@ nem a do \cd{admin}.
 de uma pessoa. \emph{Grant} da role de runtime: \cd{SELECT, INSERT, UPDATE}, sem
 \cd{DELETE} --- a linha é medição, e só se fecha. Migração
 \arq{20261002120000\_\B ajuda\_\B com\_\B avatar}.
+
+\subsection{\cd{podcast\_roteiros}}
+
+\textbf{As falas do tema do podcast de recapitulação} (\adrr{ADR-150}): só as
+falas que contam o que a turma viu numa atividade, revisadas pelo professor na
+customização da missão; os blocos fixos do roteiro são do código de cada
+missão. Tabela da PLATAFORMA, sem prefixo: serve a toda missão com podcast. A
+A Seleção não grava aqui --- as falas dela moram em
+\cd{exp07ef1b\_coberturas.podcast} (\adrr{ADR-119}).
+
+\begin{tabularx}{\linewidth}{@{}L{28mm}L{26mm}X@{}}
+\toprule
+\headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
+\midrule
+\pk{id} & \cd{UUID} PK & \cd{gen\_random\_uuid()}.\\
+\zebra \cd{escola\_id} & \cd{TEXT} & \cd{NOT NULL}; a chave da RLS.\\
+\cd{exp\_id} & \cd{TEXT} & O código da experiência. \emph{CHECK}
+  (\cd{podcast\_\B roteiros\_\B exp\_\B id\_\B formato}) no formato da
+  \adrr{ADR-110}: \cd{exp04ef1b}, \cd{exp05ef1b}.\\
+\zebra \cd{atividade\_id} & \cd{UUID} & A atividade da missão (o pacote
+  homologado). \textbf{Sem FK}: cada missão guarda a atividade numa tabela
+  própria, e o id é de uma delas.\\
+\cd{falas} & \cd{JSONB} & \cd{\{ vaga: fala \}}. \emph{CHECK}
+  (\cd{podcast\_\B roteiros\_\B falas\_\B objeto}) de OBJETO; as vagas são da
+  missão, conferidas na escrita e na leitura. Linha torta é ignorada com aviso
+  no \emph{log}.\\
+\zebra \cd{aprovado\_por} & \cd{UUID?} & Quem aprovou as falas na
+  customização.\\
+\cd{aprovado\_em} & \cd{TIMESTAMPTZ(6)} & \cd{DEFAULT CURRENT\_TIMESTAMP};
+  renovado a cada aprovação (o segundo clique substitui a linha).\\
+\zebra \cd{criado\_em}, \cd{atualizado\_em} & \cd{TIMESTAMPTZ(6)} &
+  \cd{DEFAULT CURRENT\_TIMESTAMP}.\\
+\bottomrule
+\end{tabularx}
+
+\textbf{RLS} \cd{ENABLE} + \cd{FORCE}, política
+\cd{podcast\_\B roteiros\_\B por\_\B escola}. Índice único
+\cd{podcast\_\B roteiros\_\B um\_\B por\_\B atividade} em
+\cd{(escola\_id, exp\_id, atividade\_id)}. \emph{Grant} da role de runtime:
+\cd{SELECT, INSERT, UPDATE, DELETE}, guardado pela existência da \emph{role}.
+Migração \arq{20261006200000\_\B podcast\_\B roteiros}.
 
 \subsection{\cd{progresso}}
 

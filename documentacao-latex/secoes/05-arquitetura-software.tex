@@ -406,6 +406,20 @@ não têm escola. A base de conhecimento é gerada
 (\arq{ajuda/\B base/\B base-da-ajuda.\B gerada.ts}) e nunca editada à mão. As
 relações dele também estão só no par Mermaid.
 
+O quarto, de 2026-10-06, é \arq{podcast/}, o podcast de recapitulação
+(\adrr{ADR-150}). Também é de \textbf{plataforma}: as rotas
+(\rota{/podcast/:expId/*}, do professor e da gestão), o motor do áudio
+(\cd{generateSpeech} por trecho e a emenda do MP3 em \arq{podcast/\B mp3.ts}), a
+escrita das falas do tema pela IA (com o \cd{QuotaService}) e a tabela
+\cd{podcast\_\B roteiros}. Não conhece missão nenhuma pelo nome: cada missão com
+podcast --- \arq{a-selecao/}, \arq{jornal-escola/} e \arq{quem-mandou-isso/} ---
+registra uma \cd{FonteDoPodcast} na subida (\cd{PodcastService.\B registrarFonte}),
+no molde do \cd{registrarContexto} de \arq{evidencias/}, e a homologação dela
+grava as falas aprovadas com \cd{gravarFalasDoPodcast}, função livre sobre o
+\cd{tx}. O módulo é \cd{@Global()} e o último do \cd{app.module}, para que uma
+missão nova com podcast não reordene o OpenAPI. As relações dele também estão
+só no par Mermaid.
+
 \begin{figure}[H]
 \centering
 \fitpage{%

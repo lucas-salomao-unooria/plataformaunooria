@@ -1,6 +1,7 @@
 import { BFF, HUB, suite } from "../lib/roteiro.mjs";
 import { conta, contasDe } from "../lib/credenciais.mjs";
 import { ALERTA_DE_ERRO, esperarOuFalharCedo } from "../lib/smoke.mjs";
+import { esperarFalasDoTema, provarFalasNaCriacao, provarPodcastNaAula } from "../lib/podcast.mjs";
 
 /**
  * Jornal da Escola: A Edição de Bento (exp04ef1b), nas duas pontas da sala: a
@@ -210,6 +211,9 @@ await suite(
       (res) => /\/jornal-escola\/turmas\/[^/]+\/gerar-conteudo$/.test(new URL(res.url()).pathname) && res.request().method() === "POST",
       { timeout: 180_000 },
     );
+    /* As falas do podcast são pedidas logo depois que a mesa chega (ADR-150):
+       a espera nasce ANTES do clique, para não perder a resposta. */
+    const respostaDasFalas = esperarFalasDoTema(prof, "exp04ef1b");
     await gerarPacote.click();
     const geracao = await respostaDaGeracao;
     const gerado = await geracao.json().catch(() => null);
@@ -243,7 +247,21 @@ await suite(
         "consequência de cada uma, no molde sorteado no servidor. É rascunho: nada vai à turma sem o clique em Criar.",
       inteira: true,
     });
+    /* O PODCAST na criação (ADR-150): a IA escreve as três falas que contam
+       esta mesa, e a professora as revisa antes de aprovar. */
+    await provarFalasNaCriacao(r, prof, await respostaDasFalas, {
+      comIa: true,
+      passo: "criacao-falas-do-podcast",
+      titulo: "As falas do podcast, para revisar",
+      mostra:
+        "Abaixo da mesa, as três falas do podcast de recapitulação que contam esta atividade: a notícia antiga, " +
+        "a reação a ela e o aviso sem assinatura.",
+      prova:
+        "A IA escreve as falas a partir das notícias da mesa (Vertex), e a professora as revisa e edita na criação: " +
+        "elas vão na mesma aprovação dos textos. O resto do roteiro é o aprovado pela Unooria.",
+    });
     const aprovarTextos = prof.locator('[data-acao="aprovar-textos"]');
+    await prof.locator('[data-acao="aprovar-textos"]:not([disabled])').waitFor({ timeout: 20_000 }).catch(() => undefined);
     if (await aprovarTextos.isDisabled()) {
       const pendencias = await preparo.locator('[role="status"]').allInnerTexts();
       throw new Error(`a curadoria recusou o pacote gerado pela IA: ${pendencias.join(" | ").slice(0, 400)}`);
@@ -856,6 +874,15 @@ await suite(
         "A folha diz só o progresso; o nível de cada habilidade vem das pistas, da Chave, da 2ª edição e " +
         "das duas perguntas, e fica no painel de habilidades, com o ajuste da professora.",
       inteira: true,
+    });
+
+    // ═══ PROFESSORA: o podcast de recapitulação ══════════════════════════
+    await provarPodcastNaAula(r, prof, {
+      blocos: ["Abertura", "Recapitulação da vivência", "A grande revelação", "Provocação e transferência", "Encerramento"],
+      vozes: ["Lucas", "Clara"],
+      trechos: 5,
+      passo: "podcast",
+      descricao: "Lucas e Clara, cerca de 3 min 30 s",
     });
   },
 );

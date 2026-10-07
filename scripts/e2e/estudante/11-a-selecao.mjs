@@ -538,7 +538,7 @@ await suite(
     });
 
     // ═══ PROFESSORA: o podcast de recapitulação ══════════════════════════
-    const cartao = prof.locator("[data-podcast-selecao]");
+    const cartao = prof.locator("[data-podcast-da-aula]");
     await cartao.waitFor({ timeout: 20_000 });
     await prof.click('[data-acao="ler-transcricao"]');
     const transcricao = prof.locator("[data-transcricao-podcast]");
@@ -569,7 +569,7 @@ await suite(
       await prof.click('[data-acao="gerar-podcast"]');
       await prof
         .locator(
-          '[data-podcast-pronto="sim"], [data-podcast-selecao] :text-matches("não pôde ser gerado|sem saldo|limite", "i")',
+          '[data-podcast-pronto="sim"], [data-podcast-da-aula] :text-matches("não pôde ser gerado|sem saldo|limite", "i")',
         )
         .first()
         .waitFor({ timeout: 300_000 });

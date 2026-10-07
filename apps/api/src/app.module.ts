@@ -27,6 +27,7 @@ import { ManifestoIaModule } from "./manifesto-ia/manifesto-ia.module";
 import { QuemMandouIssoModule } from "./quem-mandou-isso/quem-mandou-isso.module";
 import { ASelecaoModule } from "./a-selecao/a-selecao.module";
 import { JornalEscolaModule } from "./jornal-escola/jornal-escola.module";
+import { PodcastModule } from "./podcast/podcast.module";
 import { JuriEstadualModule } from "./juri-estadual/juri-estadual.module";
 import { SalasModule } from "./salas/salas.module";
 import { EquipesModule } from "./equipes/equipes.module";
@@ -88,6 +89,8 @@ import { ContratoInterceptor } from "./openapi/contrato.interceptor";
     JornalEscolaModule,
     JuriEstadualModule,
     FotoContaModule,
+    // O ÚLTIMO, de propósito: é global (`podcast/podcast.module.ts`).
+    PodcastModule,
   ],
   providers: [
     // Depois dos guards em toda rota: preenche a escola do token no
