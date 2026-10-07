@@ -54,8 +54,17 @@ Preparo da mostra & exp06ef1b, \arq{src/juri-estadual/} &
   As quatro áreas e os dezesseis estandes da mostra científica sobre o tema e
   os assuntos do professor, e as imagens a partir da descrição de cada um.
   \textbf{Sem acervo padrão}: sem saldo (429) ou sem provedor (503), não há
-  atividade. Nada chega à turma sem a homologação, e em sala a IA não roda
-  (\adrr{ADR-137}).\\
+  atividade. Nada chega à turma sem as DUAS fases da aprovação --- os textos
+  na homologação, as imagens num OK próprio, depois do qual elas congelam ---,
+  e em sala a IA não roda (\adrr{ADR-137}, \adrr{ADR-151}).\\
+\zebra Falas do podcast do Júri & exp06ef1b, \arq{src/juri-estadual/\B{}podcast-fonte.ts}
+  + \arq{src/podcast/} &
+  As três vagas do roteiro (os dois estandes de áreas diferentes, o feed do
+  Rafa, o da mesa ao lado), escritas a partir dos dezesseis estandes do
+  rascunho pela rota única \rota{falas-do-tema} (\adrr{ADR-150}), com a quota
+  do professor. Sem banco padrão, a IA escreve SEMPRE; sem ela, voltam as
+  falas do sheet e a tela pede a reescrita. O professor as revisa antes de
+  homologar (\adrr{ADR-151}).\\
 \zebra Agente de IA do professor & produto \cd{agente-professor}, \arq{apps/agente-professor}
   + \arq{src/agente-professor/} &
   Respostas sobre a BNCC e o acervo de livros da Unooria, com as fontes (título
@@ -151,7 +160,15 @@ rotas que gastam IA têm também um teto de requisição por minuto.
 \enquote{Regenerar} um estande sem saldo é 429; com a IA fora, 200 com
 \cd{usouIa: false} e o estande como estava. As imagens são incrementais, duas
 por chamada, com custo estimado na quota do professor, e sem elas a tela desenha
-a arte procedural. O \emph{prompt} pede personas de 11 e 12 anos, nomes
+a arte procedural. Desde a \adrr{ADR-151} elas têm aprovação própria: o
+professor vê a grade, pede \enquote{gerar outra imagem} para um estande (um
+arquivo NOVO, fora do \emph{hash} da descrição, sempre pago; com o provedor
+fora, 503 e o estande fica com a que tinha) e aprova. Aprovadas, nenhuma
+imagem se gera mais naquela atividade (409 \cd{imagens-ja-aprovadas}): a que
+faltasse chegaria à turma sem que ninguém a visse. O podcast de recapitulação
+(\adrr{ADR-150}) também passa pela IA na criação: as três falas do tema são
+escritas a partir do rascunho da mostra --- não há banco padrão de onde tirá-las
+---, revisadas pelo professor e gravadas pela homologação. O \emph{prompt} pede personas de 11 e 12 anos, nomes
 brasileiros com gênero equilibrado e escolas fictícias, e o tema, os assuntos e
 o contexto do professor entram como DADO delimitado, com tetos de tamanho que
 são a primeira barreira contra injeção de instrução.
