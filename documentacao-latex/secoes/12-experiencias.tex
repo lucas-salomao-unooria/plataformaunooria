@@ -556,6 +556,33 @@ lista mostra a atividade \enquote{Em preparo}, sem \enquote{Usar esta
 atividade agora}, e a página dela mostra o cartão \enquote{Aprove as imagens
 antes de abrir a turma} e a grade antes das equipes.
 
+\subsection{O podcast de recapitulação}
+
+O Jornal tem o podcast de recapitulação da plataforma (\adrr{ADR-150}), do
+\textbf{professor}, como o da A Seleção: Lucas e Clara, locutores da rádio da
+escola, em cerca de 3\,min 30\,s e cinco blocos, com o roteiro do one-pager em
+\arq{jornal-escola/\B{}podcast.ts} --- e \enquote{oficina de robótica} no lugar
+de \enquote{gincana}, porque os artefatos davam os dois nomes à mesma notícia.
+Só \textbf{três falas} mudam com o tema: a notícia antiga que mais chamava a
+atenção, a reação dos leitores a ela e o aviso sem assinatura.
+
+\begin{itemize}
+  \item \textbf{Na criação}, quando a mesa chega à tela (gerada, banco pronto
+    ou rascunho), o hub pede as falas pelo \rota{POST
+    /podcast/exp04ef1b/\B{}turmas/\B{}:t/\B{}falas-do-tema}
+    (\arq{atividades/\B{}nova/\B{}falas-do-podcast.tsx}); o professor as lê e
+    edita abaixo da mesa, e o \enquote{Aprovar textos} espera por elas. O banco
+    padrão intocado volta com as falas do sheet, sem IA.
+  \item \textbf{A homologação} recebe as falas (\cd{HomologacaoSchema.podcast})
+    e as grava em \cd{podcast\_roteiros} na mesma transação do pacote,
+    inclusive no segundo clique.
+  \item \textbf{Na página da atividade}, em \enquote{A aula e os resultados}, o
+    cartão do podcast (\arq{resultados/\B{}podcast-da-aula.tsx}) mostra a
+    transcrição e o botão de gerar o áudio, um trecho por vez. Atividade da IA
+    criada antes do podcast responde 409 \cd{roteiro-indisponivel}, e o cartão
+    mostra a frase.
+\end{itemize}
+
 \subsection{Ausências deliberadas}
 
 \begin{itemize}
@@ -601,7 +628,10 @@ os oito meios, três ou mais publicáveis, duas ou mais antigas e ao menos uma s
 fonte --- e exige \cd{origem: "ia"} em TODA resposta do \rota{POST
 /jornal-escola/diagramar}: a página do modelo deixou de ser verde. Rodá-la a partir de uma worktree exige a api, o hub e o Vite da
 missão nas portas alternativas (3011, 3010 e 5174) sobre um banco descartável,
-sem subir o \emph{compose}.
+sem subir o \emph{compose}. Com a \adrr{ADR-150} ela prova também o podcast
+(\arq{scripts/\B{}e2e/\B{}lib/\B{}podcast.mjs}): as três falas escritas pela IA na
+criação, para a professora revisar, e na página da atividade a transcrição com
+os cinco blocos e o episódio sintetizado inteiro.
 
 \section{backup-exp04ef1b --- UnooTube (arquivada)}
 
@@ -1309,6 +1339,27 @@ com o texto no \cd{alt}); o
 link é a prévia montada da legenda, no formato \enquote{Nome do site: manchete};
 tocar em qualquer um abre a mídia em tela cheia com a transcrição. Não há áudio
 assistivo nesta versão (entra quando houver gravação) e não há botão de ouvir.
+O único áudio da missão é o podcast de recapitulação, que é do professor e
+fica fora da aula (abaixo).
+
+\subsection{O podcast de recapitulação}
+
+A missão tem o podcast de recapitulação da plataforma (\adrr{ADR-150}), do
+\textbf{professor}: Lucas e Camila, em cerca de 3\,min 40\,s e cinco blocos, com
+o roteiro do one-pager v2.2 em \arq{quem-mandou-isso/\B{}podcast.ts} e três
+ajustes ao texto do PO --- o grupo é no Unoochat (\adrr{ADR-134}), não no
+WhatsApp; a última fala aponta o telão, e não a regra Se/Então da tela final,
+que saiu (\adrr{ADR-145}); e a mensagem desesperada perdeu os \enquote{emojis de
+fogo}. Só \textbf{três falas} mudam com o tema: o que o grupo trazia, a mensagem
+calma que não era verdadeira e a mensagem desesperada que era.
+
+Na criação, quando as oito mensagens chegam à tela, o hub pede as falas pelo
+\rota{POST /podcast/exp05ef1b/\B{}turmas/\B{}:t/\B{}falas-do-tema}, e o professor
+as revisa antes de aprovar; a aprovação (\cd{AprovarSchema.podcast}) as grava
+em \cd{podcast\_roteiros} na mesma transação, inclusive no segundo clique. O
+pacote curado padrão intocado usa as falas do sheet, sem IA. O cartão do
+podcast fica na página da atividade, em \enquote{A aula e os resultados}, com a
+transcrição e o botão de gerar o áudio.
 
 \begin{atencao}
 Os rádios do \cd{Poll} são campos de formulário, e o manifesto declara
@@ -1320,8 +1371,9 @@ formulário morre em silêncio (a lição da exp02em1b). O
 
 \begin{limitacao}
 \textbf{A IA vive no preparo, e só.} O \cd{capabilities} do manifesto não
-declara \cd{ia}: a única chamada ao provedor é a geração do pacote, pela
-professora, antes da aula. Curadoria, \emph{latches}, régua, Termômetro e
+declara \cd{ia}: as chamadas ao provedor são da professora, antes e depois da
+aula --- a geração do pacote, as falas do podcast na criação e a voz do podcast
+(\adrr{ADR-150}). Curadoria, \emph{latches}, régua, Termômetro e
 síntese são determinísticos --- uma turma de trinta às oito da manhã não depende
 do Vertex responder.
 \end{limitacao}
@@ -1331,7 +1383,9 @@ atividade por \enquote{Gerar Atividade com IA}, com a IA de verdade, e exige
 \cd{usouIa} na resposta, a origem \cd{ia} no rascunho e a atividade em
 andamento com a origem \cd{ia} na lista da turma (\adrr{ADR-148}). Antes ela
 carregava o pacote curado padrão, e a geração pela IA ficava sem prova de ponta
-a ponta.
+a ponta. Com a \adrr{ADR-150} ela prova também o podcast: as três falas
+escritas pela IA na criação e, na página da atividade, a transcrição e o
+episódio sintetizado inteiro.
 
 % ---------------------------------------------------------------------------
 \section{exp07ef1b --- A Seleção}
@@ -1428,7 +1482,13 @@ Clara recapitulam a missão. O texto fala com o estudante, mas o podcast é do
 \textbf{professor}, que o toca à turma depois da aula se quiser
 (\adrr{ADR-119}): ele mora em \enquote{A aula e os resultados}, com o
 \cd{AudioPlayer} do DS e a transcrição sempre na tela, e nenhuma rota de
-estudante o serve.
+estudante o serve. Desde a \adrr{ADR-150} o motor do áudio e as rotas não são
+mais da A Seleção: são do módulo \cd{podcast} da plataforma
+(\rota{/podcast/:expId/turmas/:turmaId}, \rota{.../gerar}), que serve também o
+Jornal da Escola e Quem Mandou Isso?. A A Seleção entra nele declarando uma
+\cd{FonteDoPodcast} (\arq{a-selecao/\B{}podcast-fonte.ts}); as rotas antigas
+(\rota{a-selecao/turmas/:t/podcast} e \rota{.../gerar-podcast}) saíram, e os
+nomes dos arquivos dela no \emph{bucket} não mudaram --- um teste os congela.
 
 \begin{tabularx}{\linewidth}{@{}L{34mm}X@{}}
 \toprule
@@ -1440,13 +1500,17 @@ O roteiro & O do sheet aprovado, cinco blocos, em \arq{a-selecao/podcast.ts}.
 \zebra O tema da IA & As três falas saem do MESMO lote do preparo, sob a régua da
   aprovação (12 a 60 palavras, até 400 bytes, sem link, e-mail nem \enquote{@}),
   e a professora as revisa junto com os posts. Ficam em
-  \cd{exp07ef1b\_coberturas.podcast}; nulo lê as do sheet.\\
+  \cd{exp07ef1b\_coberturas.podcast}; nulo lê as do sheet. A A Seleção é a
+  única missão que NÃO usa a tabela \cd{podcast\_roteiros} nem a rota
+  \rota{.../falas-do-tema} (\adrr{ADR-150}): a fonte dela entrega as falas da
+  cobertura prontas.\\
 A voz & O TTS do Gemini pelo \emph{provider} da api (\cd{generateSpeech}):
   Lucas e Clara numa chamada de diálogo por bloco, com a direção de atuação do
   \emph{brief}. Um trecho por chamada, porque o episódio não cabe nos 30\,s do
   BFF.\\
 \zebra O episódio & Com os cinco trechos, a mesma chamada os emenda num MP3
-  (\arq{regras/mp3.ts}), tirando de cada um as etiquetas e o quadro de duração.
+  (\arq{podcast/\B{}mp3.ts}, do módulo da plataforma), tirando de cada um as
+  etiquetas e o quadro de duração.
   Cada trecho é o \emph{hash} do texto e do pedido de voz: os blocos fixos saem
   uma vez por contrato, e um tema novo paga só o Bloco 2.\\
 \bottomrule

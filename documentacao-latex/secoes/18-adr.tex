@@ -9,7 +9,7 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{148 decisões}, numeradas até ADR-148. A 132 (a Ajuda com
+São \textbf{150 decisões}, numeradas até ADR-150. A 132 (a Ajuda com
 avatar) entrou no código antes de ter seção aqui, e por um dia o número foi
 citado sem existir; a 133 pulou para não colidir com ela. A 133 e a 134 nasceram no mesmo dia, em frentes paralelas
 (Unoovista e Unoochat), e entraram juntas no merge; a 135 e a 136 levaram as
@@ -169,7 +169,7 @@ que a cercam.
 \zebra \adrr{ADR-116} & A experiência que perde o código é arquivada, não apagada & 2026-09-25 & Aceita\\
 \adrr{ADR-117} & Jornal da Escola: a redação é da Unooria, o professor abre o resultado e a revisão, e a IA só escolhe o layout & 2026-09-27 & Aceita; as imagens passam pelo OK do professor, uma a uma (\adrr{ADR-147}); a diagramação ficou sem teto de saída (\adrr{ADR-148})\\
 \zebra \adrr{ADR-118} & Quem mandou isso? v2.2: atividade é o pacote, rodada é a reaplicação, e a régua mede pela seleção e pelas perguntas do PO & 2026-09-25 & Aceita; a régua foi substituída pela \adrr{ADR-120}\\
-\adrr{ADR-119} & O podcast da A Seleção é do professor, e a IA reescreve só as três falas que dependem do tema & 2026-09-26 & Aceita\\
+\adrr{ADR-119} & O podcast da A Seleção é do professor, e a IA reescreve só as três falas que dependem do tema & 2026-09-26 & Aceita; revista pela \adrr{ADR-150} (o podcast vira recurso da plataforma, com rotas únicas)\\
 \zebra \adrr{ADR-120} & A régua v2 de Quem mandou isso?: cada habilidade pelo verbo dela, e refazer o mesmo pacote não mede memória & 2026-09-26 & Aceita; as perguntas voltaram às do PO (\adrr{ADR-131}); a medição única e a rubrica do Se/Então saíram (\adrr{ADR-145})\\
 \adrr{ADR-121} & O CI verifica só os PRs para \cd{dev}, \cd{hml} e \cd{main} & 2026-09-26 & Aceita\\
 \zebra \adrr{ADR-122} & A modelagem UML entra no Capítulo 5, com os catorze tipos da UML 2.5.1 e par Mermaid mesmo onde o Mermaid não tem o tipo & 2026-09-27 & Aceita\\
@@ -200,6 +200,7 @@ que a cercam.
 \zebra \adrr{ADR-147} & O Jornal da Escola: o professor aprova cada imagem antes da turma, e a mesa leva a criança à página & 2026-10-05 & Aceita; complementa a \adrr{ADR-117}\\
 \adrr{ADR-148} & As duas chamadas curtas de IA em sala não têm teto de saída, e as missões revisadas se testam com a IA real & 2026-10-05 & Aceita; revê o teto da \adrr{ADR-115} e da \adrr{ADR-117}\\
 \zebra \adrr{ADR-149} & A plataforma publica a base que o gerador de missões lê & 2026-10-06 & Aceita\\
+\adrr{ADR-150} & O podcast de recapitulação vira recurso da plataforma, com rotas únicas, e o professor revisa as falas do tema na customização & 2026-10-06 & Aceita; revê a \adrr{ADR-119}\\
 \bottomrule
 \end{tabularx}
 
@@ -13153,3 +13154,144 @@ que ninguém lia.
 uma segunda stack de gerador por contrato; a forma de uma fonte mudar com
 frequência a ponto de o \emph{job} ficar mais vermelho que verde; ou a base de
 \cd{dev-local} induzir o gerador a citar o que não chegou a \cd{dev}.
+
+% ---------------------------------------------------------------------------
+\section{ADR-150 --- O podcast de recapitulação vira recurso da plataforma, com rotas únicas, e o professor revisa as falas do tema na customização}
+\label{adr:podcast-da-plataforma}
+
+\textbf{Data.} 2026-10-06. \textbf{Status.} Aceita. \textbf{Revê} a
+\adrr{ADR-119}: o que ela decidiu sobre o podcast da A Seleção continua
+valendo (é do professor, mora na aula da turma, só as falas do tema mudam, um
+trecho por chamada e a emenda no fim, o nome do trecho é o hash do texto e do
+pedido de voz); o que muda é ONDE ele mora. \textbf{Usa} a porta das missões
+pelo registro na subida, o desenho de \cd{EvidenciasService.registrarContexto},
+e a quota do professor (\adrr{ADR-105}).
+
+\begin{especificacao}{Contexto}
+O 4º ano (Jornal da Escola, \cd{exp04ef1b}) e o 5º ano (Quem Mandou Isso?,
+\cd{exp05ef1b}) ganharam, no one-pager de cada missão, o mesmo podcast de
+recapitulação que a A Seleção já tinha: dois locutores, um roteiro fechado no
+sheet e três falas que contam o que a turma viu. O motor do áudio --- a
+síntese de diálogo pelo \cd{generateSpeech}, um bloco por chamada, a emenda
+do MP3 sem ffmpeg, a trava de processo por episódio, o custo estimado por
+trecho --- morava dentro do módulo da A Seleção, com as rotas
+\rota{a-selecao/turmas/:t/podcast} e \rota{\ldots{}/gerar-podcast}. Três fatos
+decidiram a forma:
+
+\begin{itemize}
+  \item \textbf{Copiar o motor em cada missão} seriam três cópias de um código
+    que já custou caro acertar (as etiquetas e o quadro de duração de cada
+    trecho, a trava, o teto de 4.000 bytes por chamada).
+  \item \textbf{No Jornal e no Quem Mandou Isso? a IA gera a atividade} num
+    passo que não tem lote de preparo como o da A Seleção: o conteúdo chega à
+    tela de criação, o professor edita, e só a homologação grava.
+  \item \textbf{Os artefatos do PO tinham três desvios} que o texto não pode
+    levar: no 4º ano, a mesma notícia se chamava \enquote{oficina de robótica}
+    no título e na imagem e \enquote{gincana} na reação dos leitores; no 5º
+    ano, o grupo era no WhatsApp (a missão é no Unoochat, \adrr{ADR-134}), a
+    última fala citava a regra Se/Então da tela final (que saiu,
+    \adrr{ADR-145}) e uma mensagem tinha \enquote{emojis de fogo} que nenhuma
+    mensagem do banco padrão tem.
+\end{itemize}
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{itemize}
+  \item \textbf{O podcast é um módulo da plataforma}, \arq{apps/\B{}api/\B{}src/\B{}podcast/},
+    com \textbf{rotas únicas}: \rota{GET /podcast/:expId/turmas/:turmaId} (o
+    roteiro e o estado do áudio, sem gerar nada),
+    \rota{POST \ldots{}/gerar} (um trecho por chamada, e a emenda quando todos
+    existem) e \rota{POST \ldots{}/falas-do-tema} (o rascunho das falas, que não
+    grava). Professor e gestores; \textbf{nenhuma rota de estudante}. As rotas
+    antigas da A Seleção saíram, e o motor (\arq{podcast/\B{}mp3.ts},
+    \arq{podcast/\B{}roteiro.ts}) saiu com elas; os nomes dos arquivos da A
+    Seleção no bucket não mudaram, e um teste os congela.
+  \item \textbf{A missão declara uma \cd{FonteDoPodcast}}
+    (\arq{podcast/\B{}fonte.ts}) e a registra no \cd{onModuleInit} com
+    \cd{PodcastService.registrarFonte}: o roteiro em blocos com as vagas do
+    tema, os falantes, o pedido de voz, as falas do banco padrão e o
+    carregador da atividade --- o mesmo que a missão já usa para as imagens,
+    com a guarda de turma dela. O módulo \cd{podcast} não importa missão
+    nenhuma; é \cd{@Global()} e o ÚLTIMO do \cd{app.module}, para que uma
+    missão nova com podcast não reordene o \arq{docs/\B{}openapi.json}.
+  \item \textbf{O roteiro de cada missão é o do one-pager}, puro, em
+    \arq{<modulo>/\B{}podcast.ts}: no 4º ano, Lucas e Clara, cerca de
+    3\,min 30\,s, com \enquote{oficina de robótica} no lugar de
+    \enquote{gincana}; no 5º ano (one-pager v2.2), Lucas e Camila, cerca de
+    3\,min 40\,s, com o Unoochat no lugar do WhatsApp, a última fala apontando
+    o telão em vez da regra Se/Então e sem os \enquote{emojis de fogo}.
+  \item \textbf{O professor SEMPRE revisa as falas do tema na customização}
+    (decisão do Lucas, 2026-10-06). Quando o conteúdo chega à tela de criação,
+    o hub pede \rota{falas-do-tema}; o banco padrão intocado volta com as falas
+    do sheet, sem IA; um tema próprio, com as falas que a IA escreveu sob a
+    régua da \adrr{ADR-119} (12 a 60 palavras, até 400 bytes, sem link,
+    e-mail nem \enquote{@}). Sem saldo ou com a IA fora do ar, a resposta é
+    200 com as falas do sheet e um \cd{motivo}, e a tela avisa que elas contam
+    o banco padrão. O botão de aprovar espera as falas.
+  \item \textbf{As falas aprovadas moram numa tabela da plataforma},
+    \cd{podcast\_roteiros} (uma linha por escola, missão e atividade, com RLS
+    forçada), gravada pela homologação do Jornal
+    (\cd{HomologacaoSchema.podcast}) e pela aprovação do Quem Mandou Isso?
+    (\cd{AprovarSchema.podcast}) \textbf{na mesma transação} --- inclusive no
+    segundo clique, que devolve o pacote existente. \textbf{A A Seleção não usa
+    a tabela}: as falas dela continuam nascendo no lote do preparo e morando
+    na cobertura (\cd{exp07ef1b\_coberturas.podcast}), e a fonte dela as
+    entrega prontas.
+  \item \textbf{Sem linha na tabela}, a atividade que é o banco padrão
+    intocado toca as falas do sheet; a atividade da IA criada antes do podcast
+    responde 409 \cd{roteiro-indisponivel}, e o hub mostra a frase (criar a
+    atividade de novo).
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Copiar o motor em cada missão}, com rotas
+    \rota{jornal-escola/\ldots{}/podcast} e \rota{quem-mandou-isso/\ldots{}/podcast}. Três
+    cópias do mesmo código delicado, e cada correção feita três vezes --- ou
+    duas, e a terceira divergindo.
+  \item \textbf{Uma coluna por missão} (\cd{podcast} na tabela de pacote de
+    cada uma, como a cobertura da A Seleção). Cada missão nova pediria uma
+    migração e um caminho de leitura próprio no motor; a tabela única serve a
+    toda missão com as vagas que ela declarar.
+  \item \textbf{A IA escrevendo as falas no lote do preparo de cada missão},
+    como a A Seleção faz, em vez de uma rota única. Mexeria em dois prompts de
+    geração já revisados com a IA real (\adrr{ADR-148}) para pendurar três
+    falas neles, e o conteúdo que o professor EDITA depois da geração ficaria
+    sem falas que o acompanhem; a rota única escreve a partir do rascunho como
+    ele está na tela.
+  \item \textbf{Um roteiro fixo genérico, sem IA}, que não cite o conteúdo da
+    atividade. Desviaria do texto aprovado e tiraria do podcast o que ele
+    recapitula --- o mesmo argumento que a \adrr{ADR-119} já usou contra o
+    Bloco 2 genérico.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{O professor espera as falas antes de aprovar}: a chamada de IA
+    roda depois que o conteúdo chega, e o botão de aprovar fica preso até ela
+    voltar. Com a IA fora do ar ele não fica sem texto, mas recebe as falas do
+    banco padrão para reescrever à mão.
+  \item \textbf{As atividades da IA criadas antes do podcast ficam sem
+    podcast} (409 \cd{roteiro-indisponivel}): não há falas aprovadas para
+    elas, e inventar um texto que o professor não revisou é o que esta decisão
+    proíbe. O remédio é criar a atividade de novo.
+  \item \textbf{Uma chamada de IA a mais por atividade} com tema próprio,
+    debitada da quota do professor --- inclusive nas tentativas recusadas
+    (\adrr{ADR-74}).
+  \item \textbf{Se o professor muda o conteúdo depois das falas}, a tela avisa
+    que elas podem não contar mais o que a turma vai ver, mas não bloqueia: o
+    texto aprovado pode ficar desencontrado da mesa.
+  \item \textbf{A tabela não tem chave estrangeira} para a atividade: cada
+    missão guarda a sua numa tabela própria, e o \cd{atividade\_id} é de uma
+    delas. Uma linha órfã não é apagada sozinha.
+  \item \textbf{A A Seleção continua num caminho à parte} para as falas (a
+    cobertura), e quem ler o módulo precisa saber das duas origens.
+\end{itemize}
+
+\textbf{Gatilho.} Uma missão pedir podcast com falas que não cabem em vagas
+(o roteiro inteiro por tema); o PO pedir o podcast ao estudante; o tempo de
+espera pelas falas virar queixa na criação da atividade; ou a A Seleção ser
+refeita, e as falas dela poderem migrar para \cd{podcast\_roteiros}.

@@ -137,6 +137,8 @@ método e esquema, é o Apêndice~\ref{ap:endpoints}.
     {\texttt{/evidencias/*}\desc{prof.\ ajusta, gestor lê;\\estudante: só a pergunta}};
   \node[rt, fill=unooRedWash, draw=unooRed] (agp) at (5.9,-8.5)
     {\texttt{/agente-professor/*}\desc{\textbf{só professor}, posse;\\a mensagem responde SSE}};
+  \node[rt] (pod) at (9.85,-8.5)
+    {\texttt{/podcast/:expId/*}\desc{prof., gestor;\\nenhuma de estudante}};
 
   \node[camadalbl, anchor=west] at (0.1,-9.8) {exp08ef1b --- Instanooria};
   \node[rt] (atv) at (1.95,-10.9)
@@ -162,7 +164,8 @@ método e esquema, é o Apêndice~\ref{ap:endpoints}.
   \texttt{/evidencias/*} (\adrr{ADR-112}), em que o estudante alcança só a
   pergunta e a resposta, nunca o próprio resultado. \texttt{/agente-professor/*}
   é só do professor, e cada um alcança só as próprias conversas na escola ativa
-  (\adrr{ADR-126}).}
+  (\adrr{ADR-126}). \texttt{/podcast/:expId/*} é o podcast de recapitulação de
+  toda missão que o tem, do professor e da gestão (\adrr{ADR-150}).}
 \label{fig:mapa-rotas}
 \end{figure}
 
@@ -791,6 +794,58 @@ escreve na resposta crua (\cd{@Res()}); no OpenAPI a resposta aparece como
 \cd{string}, com \cd{acesso: servico}.
 \end{atencao}
 
+\subsection{O podcast de recapitulação}
+\label{sec:api-podcast}
+
+\adrr{ADR-150}. O módulo \arq{src/podcast} é o podcast de recapitulação de
+TODA missão que o tem --- hoje a A Seleção (\cd{exp07ef1b}), o Jornal da Escola
+(\cd{exp04ef1b}) e Quem Mandou Isso? (\cd{exp05ef1b}) ---, com rotas únicas e
+a missão entrando pelo \cd{:expId}. A classe tem \cd{OidcGuard} e
+\cd{RolesGuard} com \cd{professor} e os gestores: \textbf{nenhuma rota de
+estudante}, porque o podcast é do professor (\adrr{ADR-119}). A guarda de turma
+é da MISSÃO: cada uma registra uma \cd{FonteDoPodcast} no \cd{onModuleInit}
+(\cd{PodcastService.registrarFonte}), com o carregador da atividade que ela já
+usa para as imagens --- turma que o professor não leciona e atividade de outra
+turma são 404; sem atividade em andamento, o erro é o da missão (403
+\cd{atividade-nao-preparada} no Jornal e na A Seleção).
+\cd{?atividadeId=} diz a atividade (\adrr{ADR-130}); sem ele, a em andamento.
+
+\begin{tabularx}{\linewidth}{@{}L{44mm}L{16mm}X@{}}
+\toprule
+\headrow \thd{Rota} & \thd{Código} & \thd{Semântica}\\
+\midrule
+\rota{GET /podcast/:expId/\B{}turmas/\B{}:turmaId} & 200 & O roteiro inteiro
+  (a transcrição) e o estado do áudio: trechos prontos e a \cd{url} do
+  episódio, ou \cd{null}. Não gera nada. 404 \cd{experiencia-sem-podcast}
+  para missão sem podcast; 409 \cd{roteiro-indisponivel} para a atividade de
+  tema próprio criada antes do podcast, sem falas aprovadas.\\
+\zebra \rota{POST .../gerar} & 200 & Sintetiza UM trecho (um bloco, numa chamada
+  de diálogo pelo \cd{generateSpeech}) e, com todos prontos, emenda o
+  episódio num MP3. O cliente repete até \cd{completo}; \cd{falhou} diz o
+  bloco que não saiu. Idempotente (o trecho no \emph{bucket} é pulado), trava
+  de processo por episódio, quota do professor com custo ESTIMADO por trecho
+  (429 \cd{sem-saldo-de-ia}) e 20 chamadas por minuto.\\
+\rota{POST .../falas-do-tema} & 200 & As falas que contam o tema da
+  atividade, escritas pela IA a partir do conteúdo como a tela de criação o
+  tem (\cd{\{conteudo\}}, na forma da missão; fora dela, 400
+  \cd{payload-invalido}). \textbf{Rascunho: não grava} --- quem grava é a
+  homologação da missão. O banco padrão intocado volta com as falas do sheet,
+  sem IA; sem saldo ou com a IA fora do ar, 200 com as do sheet e o
+  \cd{motivo}. Cada fala tem de 12 a 60 palavras, até 400 bytes, sem link,
+  e-mail nem \enquote{@}. Quota do professor pelo que o \emph{vendor} cobrou
+  (\adrr{ADR-105}, \adrr{ADR-74}) e 10 chamadas por minuto.\\
+\bottomrule
+\end{tabularx}
+
+\begin{decisao}
+\textbf{O módulo é \cd{@Global()} e o ÚLTIMO do \cd{app.module}.} Importado
+pelas missões, ele entraria no roteador junto da primeira delas e reordenaria o
+\arq{docs/openapi.json} inteiro --- e o Apêndice~\ref{ap:endpoints} --- a cada
+missão nova com podcast. Ele não importa missão nenhuma: a dependência vai num
+sentido só, pelo registro da fonte. As rotas antigas da A Seleção
+(\rota{a-selecao/turmas/:t/podcast} e \rota{.../gerar-podcast}) saíram.
+\end{decisao}
+
 \subsection{Planejamento de ensino (app-92)}
 
 Duas famílias: a \textbf{regência} (o que o professor leciona) e o que pende
@@ -1007,7 +1062,9 @@ deste módulo: passam por \rota{/evidencias/exp05ef1b/perguntas/*}
 \rota{POST .../aprovar} & \textbf{só professor} & \enquote{Aprovar Pacote}, com o
   pacote INTEIRO: a régua de \cd{validarPacote} (400 \cd{pacote-invalido} com a
   lista de \cd{erros}). Pacote diferente abre atividade nova; o mesmo é
-  idempotente.\\
+  idempotente. Leva também as três falas do podcast que o professor revisou
+  (\cd{podcast}), gravadas em \cd{podcast\_roteiros} na mesma transação,
+  inclusive no segundo clique (\adrr{ADR-150}).\\
 \zebra \rota{POST .../gate} & \textbf{só professor} & Os três botões
   (\cd{liberar\_revelacao}, \cd{apresentar\_sintese}, \cd{liberar\_reflexao}).
   Só para a frente: o clique repetido ou fora de ordem não recua a fase.\\
@@ -1134,7 +1191,9 @@ módulo: passam por \rota{/evidencias/exp04ef1b/perguntas/*}
 \rota{POST .../homologar} & prof., gestor & \enquote{Aprovar Pacote}, com as
   oito notícias INTEIRAS e a régua de \arq{invariantes.ts} (400
   \cd{pacote-invalido} com a lista de \cd{erros}). Pacote novo é atividade nova;
-  o mesmo conteúdo é idempotente.\\
+  o mesmo conteúdo é idempotente. Leva também as três falas do podcast que o
+  professor revisou (\cd{podcast}), gravadas em \cd{podcast\_roteiros} na mesma
+  transação, inclusive no segundo clique (\adrr{ADR-150}).\\
 \zebra \rota{POST .../gerar-midia} & prof., gestor & Até duas imagens novas por
   chamada, com custo estimado na quota do professor; repetir até
   \cd{completo}. A imagem gerada não vai à turma: espera o

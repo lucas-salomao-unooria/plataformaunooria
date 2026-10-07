@@ -100,7 +100,7 @@ export const GUIA_EXP05EF1B: GuiaDaAula = {
       {
         titulo: "Aprove o pacote da turma — sem ele a aula não existe",
         texto:
-          "Em A aula e os resultados: escolha o componente curricular, escreva o tema (ele completa a fala da Nina, “Rolou uma confusão sobre…”, então vai em minúscula e sem ponto, como “o passeio ao museu”), liste de 3 a 6 fatos da aula e clique em Gerar Atividade com IA — ou em Usar Pacote Curado Padrão. Leia as 8 mensagens, edite o que quiser, revise as três falas do podcast que contam o grupo e clique em Aprovar Pacote.",
+          "Em A aula e os resultados: escolha o componente curricular, escreva o tema (ele completa a fala da Nina, “Rolou uma confusão sobre…”, então vai em minúscula e sem ponto, como “o passeio ao museu”), liste de 3 a 6 fatos da aula e clique em Gerar Atividade com IA — ou em Usar Pacote Curado Padrão. Leia as 8 mensagens, edite o que quiser, revise as três falas do podcast que contam o grupo e siga até Criar atividade.",
       },
       {
         titulo: "Monte as equipes, se a turma divide computadores",
