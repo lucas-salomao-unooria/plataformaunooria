@@ -6,7 +6,7 @@ import { AREAS, IDS_DE_PROJETO, PROJETOS_POR_AREA, TOTAL_DE_PROJETOS, areaDoProj
 /**
  * Os contratos da exp06ef1b com a IA — e todos moram AQUI, no servidor. Só
  * existem do lado do PROFESSOR, antes da aula: a aula em si (o feed, o voto, a
- * galeria, os pacotes, a cadeia) é determinística, e nenhuma criança espera o
+ * galeria, a cadeia) é determinística, e nenhuma criança espera o
  * Vertex para ver a próxima tela.
  *
  * 1. O PREPARO: os dezesseis projetos da mostra (quatro áreas × quatro) sobre o

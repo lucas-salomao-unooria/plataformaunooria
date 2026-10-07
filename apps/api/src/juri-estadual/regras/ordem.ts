@@ -1,16 +1,16 @@
 import { createHash } from "node:crypto";
-import { BLOCOS_DA_CADEIA, PACOTES_DA_CURTIDA } from "../conteudo";
+import { BLOCOS_DA_CADEIA } from "../conteudo";
 import { embaralhar } from "./afunilamento";
 
 /**
- * Os pacotes da curtida (EF06CO07) e os blocos da cadeia (EF06CO03) como a
- * SESSÃO os vê — puro e determinístico pela semente.
+ * Os blocos da cadeia (EF06CO03) como a SESSÃO os vê — puro e determinístico
+ * pela semente. (Os pacotes da curtida, `pk-`, saíram com a EF06CO07.)
  *
  * A ordem certa é gabarito (regra 3), então duas coisas descem diferentes do
  * que está em `conteudo.ts`:
  *
- * 1. **O id é OPACO** (`pk-x7q`, `bl-3fa`): sai da semente, não da posição. Um
- *    id que dissesse a posição (`pacote-3`, `bloco-2`) entregaria a resposta a
+ * 1. **O id é OPACO** (`bl-3fa`): sai da semente, não da posição. Um id que
+ *    dissesse a posição (`bloco-2`) entregaria a resposta a
  *    quem abre o DevTools. Estável num F5, porque a semente é da sessão.
  * 2. **A ordem de chegada NUNCA coincide com a certa**: o embaralhamento que
  *    cai na ordem certa é refeito com outro rótulo. Chegar já montado seria uma
@@ -21,9 +21,9 @@ const ALFABETO = "abcdefghijklmnopqrstuvwxyz0123456789";
 
 /**
  * `quantos` ids opacos e DIFERENTES, na ordem do item certo (o índice 0 é o
- * pacote 1 ou o bloco 1). Colisão (1 em ~46 mil) é resolvida com outro sal.
+ * bloco 1). Colisão (1 em ~46 mil) é resolvida com outro sal.
  */
-export function idsOpacos(semente: string, prefixo: "pk" | "bl", quantos: number): string[] {
+export function idsOpacos(semente: string, prefixo: "bl", quantos: number): string[] {
   const ids: string[] = [];
   for (let i = 0; i < quantos; i++) {
     for (let sal = 0; ; sal++) {
@@ -50,28 +50,6 @@ export function embaralharForaDeOrdem<T>(certa: readonly T[], semente: string, r
     if (r.some((x, i) => x !== certa[i])) return r;
   }
   return [...certa.slice(1), certa[0] as T];
-}
-
-/** O que preenche o molde dos pacotes: o voto INICIAL da sessão. */
-export type VotoDoMolde = { tituloDoProjeto: string; hashtagDaArea: string };
-
-export type PacoteDaSessao = { id: string; numero: number; trecho: string; rota: string[] };
-
-/** Os quatro pacotes na ORDEM DE CHEGADA desta sessão, com o trecho preenchido. */
-export function pacotesDaSessao(semente: string, voto: VotoDoMolde): PacoteDaSessao[] {
-  const ids = idsOpacos(semente, "pk", PACOTES_DA_CURTIDA.length);
-  const certos = PACOTES_DA_CURTIDA.map((p, i) => ({
-    id: ids[i] as string,
-    numero: p.numero,
-    trecho: p.trecho.replace("{projeto}", voto.tituloDoProjeto).replace("{hashtag}", voto.hashtagDaArea),
-    rota: [...p.rota],
-  }));
-  return embaralharForaDeOrdem(certos, semente, "pacotes");
-}
-
-/** A remontagem certa: os ids opacos na ordem dos números, de 1 a 4. */
-export function ordemCertaDosPacotes(semente: string): string[] {
-  return idsOpacos(semente, "pk", PACOTES_DA_CURTIDA.length);
 }
 
 export type BlocoDaSessao = { id: string; rotulo: string };

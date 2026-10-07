@@ -15,14 +15,15 @@ import { PreparoDaExp06ef1bService } from "./preparo.service";
  *
  * **`EvidenciasModule` entra** porque a missão tem ficha pedagógica (E14): o
  * service registra o contexto das enquetes no `onModuleInit` e marca as três
- * ações dentro das transações da revisão do voto, dos pacotes e da cadeia. As
+ * ações dentro das transações da revisão do voto (EF06CO10 e EF06CO01) e da
+ * cadeia (EF06CO03). As
  * equipes NÃO entram como módulo: o painel lê `equipes/consulta.ts`, funções
  * livres sobre o `tx`.
  *
  * **`AiModule` entra em DUAS superfícies, as duas do professor, antes da aula**:
  * o rascunho da mostra (`preparo.service.ts`) e as imagens dos estandes
- * (`midia.service.ts`). A aula inteira (o feed, o voto, a galeria, os pacotes, a
- * cadeia) é determinística, e nenhuma criança espera o Vertex.
+ * (`midia.service.ts`). A aula inteira (o feed, o voto, a galeria, a cadeia) é
+ * determinística, e nenhuma criança espera o Vertex.
  *
  * **`AssetsModule`** é o bucket das imagens (`experiencias/exp06ef1b/mostra/`).
  */
