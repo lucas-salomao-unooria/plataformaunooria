@@ -967,17 +967,18 @@ export const MISSAO_JURI_ESTADUAL: Missao = {
       {
         rotulo: "2 — O feed da mostra",
         texto:
-          "As quatro primeiras publicações são uma de cada área. Daí em diante, cada curtida e " +
-          "cada parada longa num post mudam o que vem a seguir, sem nenhum aviso na tela: quem " +
+          "As quatro primeiras publicações são uma de cada área. Daí em diante, cada curtida, cada " +
+          "salvo e cada parada longa num post mudam o que vem a seguir, sem nenhum aviso na tela: quem " +
           "curte duas vezes a mesma área passa a receber só ela. Depois de dez publicações, a " +
           "cédula abre.",
       },
       {
         rotulo: "3 — A cédula lacrada",
         texto:
-          "O estudante escolhe um dos estandes que viu e declara a convicção (as duas opções " +
-          "afirmam certeza, de propósito). O voto é lacrado e não volta. A tela entra em espera, " +
-          "pedindo atenção à projeção da sala.",
+          "O estudante escolhe um dos estandes que viu, declara a convicção (as duas opções " +
+          "afirmam certeza, de propósito) e justifica: um cartão de motivo e a frase da legenda que " +
+          "mais pesou. O voto é lacrado e não volta. A tela entra em espera, pedindo atenção à " +
+          "projeção da sala.",
       },
       {
         rotulo: "4 — A plenária e a Galeria Oculta (o seu botão)",
@@ -985,18 +986,27 @@ export const MISSAO_JURI_ESTADUAL: Missao = {
           "Com a maioria votada, você projeta o gráfico dos votos por área e conduz as perguntas " +
           "da plenária: como a turma se dividiu tanto, se estava todo mundo na mesma mostra? Aí " +
           "você aperta Liberar a Galeria Oculta. Cada computador vê os estandes que não chegaram " +
-          "ao feed dele, com a parte real que ficou de fora — diferente para cada um —, busca por " +
-          "hashtag e mantém ou troca o voto.",
+          "ao feed dele, com a parte real que ficou de fora — diferente para cada um —, e busca por " +
+          "hashtag. Na revisão, a justificativa da cédula volta ao lado da mostra inteira, e ele " +
+          "mantém, troca ou complementa o voto, com um cartão novo.",
       },
       {
-        rotulo: "5 — A cadeia do feed",
+        rotulo: "5 — A rodada de desvio (o seu segundo botão)",
+        texto:
+          "Com a maioria revisada, você aperta Liberar a rodada de desvio. Cada computador recebe " +
+          "uma rodada curta do feed, que começa pelas áreas que quase não apareceram para ele: quem " +
+          "curte ou salva o que nunca via vê o feed virar para essa área, e a tela compara o feed do " +
+          "júri com a rodada.",
+      },
+      {
+        rotulo: "6 — A cadeia do feed",
         texto:
           "Numa tela da Unooria, que abre ligando o que ele viveu ao livro didático, o estudante " +
           "monta a engrenagem que controlou o feed: interações do jurado, registro de dados e " +
           "padrões, algoritmo de recomendação, formação de bolha temática.",
       },
       {
-        rotulo: "6 — Mariana e as enquetes",
+        rotulo: "7 — Mariana e as enquetes",
         texto:
           "O caso da eleição do grêmio da escola de Mariana leva a lição para fora da mostra: " +
           "um cartão para o que aconteceu com o feed dela e outro para o que fazer. Por fim, três " +
@@ -1013,10 +1023,10 @@ export const MISSAO_JURI_ESTADUAL: Missao = {
       "Aprove em duas fases: primeiro os textos dos estandes; depois as imagens, que a inteligência " +
         "artificial gera em seguida. Confira cada imagem, gere outra para a que não servir e aprove — sem " +
         "as imagens aprovadas, a atividade não vai ao ar. Estande sem imagem aparece com uma arte desenhada.",
-      "Se a turma divide computadores, escolha as equipes na criação. Com 2 a 4 por computador, combine o " +
-        "revezamento antes de começar (está no guia da aula). O painel conta por computador.",
-      "Durante a aula é um botão só — Liberar a Galeria Oculta — e ele não volta. Deixe o projetor pronto: " +
-        "o gráfico dos votos é para a lousa.",
+      "Se a turma divide computadores, escolha as equipes na criação. O sistema não distingue quem toca a " +
+        "tela: como a comissão se organiza fica com você e com a turma. O painel conta por computador.",
+      "Durante a aula são dois botões, na ordem — Liberar a Galeria Oculta e Liberar a rodada de desvio —, " +
+        "e nenhum volta. Deixe o projetor pronto: o gráfico dos votos é para a lousa.",
       "Não diga que a aula é sobre algoritmo, bolha ou filtro: a missão mede o que a turma vota quando " +
         "ninguém avisou que o feed se adapta.",
     ],

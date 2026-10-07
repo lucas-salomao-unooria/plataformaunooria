@@ -50,6 +50,7 @@ const DEMAIS_COLUNAS: TableColumn<Linha>[] = [
   { key: "abriuAGaleria", title: "Galeria Oculta", width: 140, render: (_, l) => feito(l.abriuAGaleria, "abriu") },
   { key: "buscou", title: "Busca", width: 110, render: (_, l) => feito(l.buscou, "buscou") },
   { key: "revisou", title: "Revisão do voto", width: 140, render: (_, l) => feito(l.revisou, "revisou") },
+  { key: "desviou", title: "Rodada de desvio", width: 150, render: (_, l) => feito(l.desviou, "fez") },
   { key: "concluiu", title: "Missão", width: 120, render: (_, l) => feito(l.concluiu, "concluiu") },
 ];
 

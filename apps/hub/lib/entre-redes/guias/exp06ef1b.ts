@@ -22,6 +22,13 @@ import type { GuiaDaAula } from "./tipos";
  * computador para computador. Um percentual cravado no guia faria o professor
  * anunciar à turma um número que a tela de quase ninguém mostra.
  *
+ * O CICLO DO VOTO (2026-10-07, o pedido do PO que a spec perdeu): a
+ * justificativa antes e depois, o complementar e a rodada de desvio estão no
+ * roteiro; o revezamento J1–J4 e o desempate SAÍRAM — o PO pediu para não
+ * prescrever protocolo de operador: o sistema não distingue quem toca a tela, e
+ * a organização da comissão é do professor. O podcast é opcional e do
+ * professor: o guia recomenda o momento, não proíbe.
+ *
  * Fontes: o PRD (§5, as seis etapas; §8, os requisitos; §10, as telas e quem
  * fala), a copy revisada (`design/06-copy-strings-revisada.md`, §4) e a spec
  * do ambiente simulado (§8.5, o painel e o relógio da turma; §8.6, a
@@ -50,11 +57,12 @@ export const GUIA_EXP06EF1B: GuiaDaAula = {
     },
     {
       tom: "warning",
-      titulo: "Um botão só, e ele não volta",
+      titulo: "Dois botões, na ordem, e nenhum volta",
       texto:
-        "Na página da atividade, Liberar a Galeria Oculta abre a galeria para a turma inteira. Aperte depois " +
-        "da plenária, com a maioria votada: quem ainda não votou continua no feed e entra na galeria quando " +
-        "votar. Não há como fechar a galeria de novo nesta rodada.",
+        "Na página da atividade, Liberar a Galeria Oculta abre a galeria para a turma inteira: aperte depois " +
+        "da plenária, com a maioria votada. Depois, Liberar a rodada de desvio abre uma rodada curta do feed: " +
+        "aperte quando a maioria tiver revisado o voto. Sem o segundo botão, a turma fica esperando e não chega " +
+        "à cadeia. Quem atrasa entra em cada etapa quando chegar a ela.",
     },
     {
       tom: "info",
@@ -71,6 +79,7 @@ export const GUIA_EXP06EF1B: GuiaDaAula = {
     "Reconhecer que um feed que se adapta às curtidas mostra só uma parte do que existe, mesmo quando parece completo.",
     "Explicar que o aplicativo classificou cada curtida pela área do estande, agrupando os dados para decidir o que mostrar.",
     "Descrever com precisão a regra que o feed executou, na forma “se… então…”, e montar a cadeia interações, dados, algoritmo, bolha.",
+    "Verificar, mudando de propósito o próprio comportamento numa rodada nova, que o feed responde às interações — e comparar o raciocínio de antes com o de depois da descoberta.",
     "Analisar criticamente o consumo de uma plataforma: perceber que o que se vê nela é mediado por um algoritmo e se afunila a cada interação, e auditar o que ficou de fora antes de decidir.",
     "Propor uma atitude para ver o que o feed esconde: buscar de propósito outros assuntos e conversar fora da rede antes de decidir.",
   ],
@@ -136,12 +145,12 @@ export const GUIA_EXP06EF1B: GuiaDaAula = {
       {
         titulo: "Revise as falas do podcast e gere o áudio, se for usá-lo",
         texto:
-          "O podcast de recapitulação é seu: cerca de 3 minutos e 45 segundos em que Bia e Rafa retomam a missão com a turma. Ao criar a atividade, logo abaixo dos estandes, revise as três falas que citam a mostra — elas são aprovadas junto dos textos; o resto do roteiro é o mesmo para todas as turmas. O áudio fica em A aula e os resultados, com o botão Gerar o áudio do podcast, que sai um trecho por vez. A transcrição está sempre ao lado, mesmo sem áudio. O episódio conta a virada da missão: só toque depois da Galeria Oculta.",
+          "O podcast de recapitulação é seu: cerca de 3 minutos e 45 segundos em que Bia e Rafa retomam a missão com a turma. Ao criar a atividade, logo abaixo dos estandes, revise as três falas que citam a mostra — elas são aprovadas junto dos textos; o resto do roteiro é o mesmo para todas as turmas. O áudio fica em A aula e os resultados, com o botão Gerar o áudio do podcast, que sai um trecho por vez. A transcrição está sempre ao lado, mesmo sem áudio. Ele é opcional e toca na sua tela, para a sala: o melhor momento é o fechamento, porque o episódio conta a virada da missão.",
       },
       {
         titulo: "Monte as equipes se faltar aparelho",
         texto:
-          "Na criação da atividade, no passo das equipes. Com 2 a 4 estudantes por computador, combine o revezamento antes de começar (veja “Menos aparelhos que estudantes”, em Adaptações). O painel conta por computador.",
+          "Na criação da atividade, no passo das equipes. Com 2 a 4 estudantes por computador, quem toca a tela em cada momento é combinado por você e pela turma (veja “Menos aparelhos que estudantes”, em Adaptações). O painel conta por computador.",
       },
       {
         titulo: "Deixe o painel aberto e o projetor pronto",
@@ -158,12 +167,17 @@ export const GUIA_EXP06EF1B: GuiaDaAula = {
       {
         titulo: "Prepare a plenária do pico",
         texto:
-          "Entre o voto e a galeria, as telas esperam e você assume a palavra com o gráfico projetado. São cerca de oito minutos, com as quatro perguntas da seção do debate. É ali que a turma percebe que se dividiu sem saber por quê.",
+          "Entre o voto e a galeria, as telas esperam e você assume a palavra com o gráfico projetado. São cerca de sete minutos, com as quatro perguntas da seção do debate. É ali que a turma percebe que se dividiu sem saber por quê.",
       },
       {
-        titulo: "Combine como a comissão decide",
+        titulo: "A comissão se organiza do seu jeito",
         texto:
-          "Com equipes, o voto é da comissão: em caso de divergência, decide a maioria de braços erguidos antes de confirmar. Não explique o revezamento como estratégia: ele é só para todo mundo tocar na tela.",
+          "Com equipes, o voto é da comissão, e o sistema não distingue quem está tocando a tela: registra o que for confirmado. Como o grupo divide o toque e decide uma divergência fica com você e com a turma.",
+      },
+      {
+        titulo: "Leia os cartões de motivo antes",
+        texto:
+          "Na cédula, cada computador escolhe um dos três cartões de motivo do voto e toca na frase da legenda que mais pesou. Na revisão, depois da galeria, os dois voltam ao lado da mostra inteira, e a comissão escolhe um cartão novo. É o “antes eu pensava… agora eu percebo…”: os cartões não têm resposta certa, e nada disso vira nota.",
       },
     ],
     naoDiga: [
@@ -175,60 +189,67 @@ export const GUIA_EXP06EF1B: GuiaDaAula = {
   },
 
   roteiro: {
-    total: "1 aula · 50 min (24 em tela)",
+    total: "1 aula · 50 min (26 em tela)",
     linhas: [
       {
-        tempo: "0–5",
+        tempo: "0–4",
         momento: "Abertura: a credencial de jurado",
         professor:
-          "Acolha a turma com seriedade institucional: foram convidados como jurados oficiais para escolher o melhor projeto escolar do estado. Não mencione algoritmo, bolha nem filtro. Se há equipes, combine o revezamento agora.",
+          "Acolha a turma com seriedade institucional: foram convidados como jurados oficiais para escolher o melhor projeto escolar do estado. Não mencione algoritmo, bolha nem filtro.",
       },
       {
-        tempo: "5–15",
+        tempo: "4–13",
         momento: "O feed da mostra",
         professor:
-          "Circule pela sala sem interferir no que cada um curte. Garanta o revezamento nos aparelhos divididos (posts 1 a 5 com o Jurado 1; 6 a 10 com o Jurado 2). Acompanhe no painel quantos já votaram.",
+          "Circule pela sala sem interferir no que cada um curte ou salva. Acompanhe no painel quantos já votaram.",
       },
       {
-        tempo: "15–18",
+        tempo: "13–17",
         momento: "A cédula lacrada",
         professor:
-          "Lembre que o voto é oficial e não volta. Quem votou vê a tela de espera da comissão, pedindo atenção à projeção da sala.",
+          "Lembre que o voto é oficial e não volta. Na cédula, além do projeto e da certeza, cada computador escolhe o motivo e toca na frase da legenda que mais pesou — é o “antes” que a galeria vai confrontar. Quem votou vê a tela de espera da comissão.",
       },
       {
-        tempo: "18–26",
+        tempo: "17–24",
         momento: "A plenária (o pico)",
         professor:
           "Com a maioria votada, projete o painel de votação da turma e explore a divergência com as quatro perguntas do bloco do debate. Não diga ainda que o feed se adaptou: deixe a pergunta “como nos dividimos tanto?” no ar.",
       },
       {
-        tempo: "26–36",
+        tempo: "24–32",
         momento: "A Galeria Oculta e a revisão do voto",
         professor:
-          "Aperte depois da plenária. Cada computador vê os estandes que não chegaram ao feed dele, com a taxa real, busca por hashtag e mantém ou troca o voto. Quando a maioria tiver revisado, projete o gráfico dos votos depois da galeria e compare com o de antes.",
+          "Aperte depois da plenária. Cada computador vê os estandes que não chegaram ao feed dele, com a taxa real, e busca por hashtag. Na revisão, a justificativa da cédula volta ao lado da mostra inteira: a comissão mantém, troca ou complementa o voto (indica também um estande que só a galeria mostrou), com um cartão novo. Quando a maioria tiver revisado, projete o gráfico dos votos depois da galeria e compare com o de antes.",
         botao: "Liberar a Galeria Oculta",
       },
       {
-        tempo: "36–45",
+        tempo: "32–35",
+        momento: "A rodada de desvio",
+        professor:
+          "Aperte quando a maioria tiver revisado. Cada computador recebe uma rodada curta do feed, que começa pelas áreas que quase não apareceram para ele: peça que curtam ou salvem de propósito o que nunca viam e reparem no que chega depois. No fim, a tela compara o feed do júri com a rodada. Não explique ainda por quê — a cadeia, a seguir, dá nome ao que eles acabaram de provocar.",
+        botao: "Liberar a rodada de desvio",
+      },
+      {
+        tempo: "35–44",
         momento: "A cadeia, Mariana e as enquetes",
         professor:
           "Cada computador no próprio ritmo. A tela da cadeia abre ligando o que a turma viveu ao livro didático. Quem trava na cadeia recebe uma dica na tela, sem punição: pergunte o que veio primeiro, sem dizer a ordem. Quem termina antes lê o infográfico em silêncio.",
       },
       {
-        tempo: "45–50",
+        tempo: "44–50",
         momento: "Fechamento",
         professor:
-          "Conduza a escada do debate abaixo, ligue o caso Mariana ao que a turma viveu na mostra e feche com a síntese em voz alta. Se for usar o podcast de recapitulação (cerca de 3 min 45 s, com Bia e Rafa), toque aqui, depois da Galeria Oculta e da revisão do voto — nunca antes: ele conta a virada da missão.",
+          "Conduza a escada do debate abaixo, ligue o caso Mariana ao que a turma viveu na mostra e feche com a síntese em voz alta. O podcast de recapitulação (cerca de 3 min 45 s, com Bia e Rafa) é opcional e toca na sua tela, para a sala: se for usar, este é o melhor momento — ele conta a virada da missão.",
       },
     ],
     nota:
-      "Em dois blocos de 25 min, corte depois da revisão do voto: no segundo, cada computador volta direto à cadeia, com tudo salvo. O que não se corta é a plenária entre o voto e a galeria — é ela que faz a turma ver junta que se dividiu.",
+      "Em dois blocos de 25 min, corte depois da revisão do voto e abra o segundo com a rodada de desvio: cada computador volta direto a ela, com tudo salvo. O que não se corta é a plenária entre o voto e a galeria — é ela que faz a turma ver junta que se dividiu — nem a rodada de desvio, que é a vivência de que mudar o comportamento muda o feed. Os tempos somam a rodada de desvio e os cartões de motivo: a plenária encolheu um minuto para caber.",
   },
 
   debate: {
     aberturaNaLousa: "Estávamos todos na mesma mostra. Por que cada um julgou uma feira diferente?",
     tempo:
-      "Cerca de 8 minutos no pico, entre o voto e a galeria, com as quatro perguntas da plenária do bloco abaixo, e mais 5 no fechamento, com esta escada, depois do caso Mariana.",
+      "Cerca de 7 minutos no pico, entre o voto e a galeria, com as quatro perguntas da plenária do bloco abaixo, e mais 5 no fechamento, com esta escada, depois do caso Mariana.",
     perguntas: [
       {
         nivel: "retomada",
@@ -247,6 +268,13 @@ export const GUIA_EXP06EF1B: GuiaDaAula = {
         pergunta: "Um jurado disse que só viu robótica porque era a única área de verdade na feira. O que ele não percebeu sobre o aplicativo que usou?",
         porQue:
           "É a frase da enquete da EF06CO10, agora em voz alta: confundir o que foi recomendado com tudo o que existe. Leva ao consumo crítico da plataforma, como no capítulo 1 do livro didático — quem consome sem auditar acha que o feed é o mundo.",
+      },
+      {
+        nivel: "analise",
+        pergunta:
+          "Na rodada de desvio, o que chegou depois que vocês curtiram ou salvaram uma área que não aparecia? Quem estava decidindo o feed, afinal?",
+        porQue:
+          "É a prova vivida de que o feed responde ao comportamento: a criança mudou o que fez e viu o feed mudar. Ajuda a desmontar a ideia de que o aplicativo “sabe” do que ela gosta.",
       },
       {
         nivel: "generalizacao",
@@ -270,7 +298,8 @@ export const GUIA_EXP06EF1B: GuiaDaAula = {
     marcas: [
       { letra: "D", texto: "Desconfiou do feed antes da galeria: disse que faltava alguma coisa." },
       { letra: "B", texto: "Usou a busca por hashtag para procurar outra área, sem ninguém pedir." },
-      { letra: "R", texto: "Explicou a troca (ou a manutenção) do voto pelo que viu na galeria." },
+      { letra: "R", texto: "Explicou a troca, a manutenção ou o complemento do voto pelo que viu na galeria — comparando com o motivo que deu na cédula." },
+      { letra: "V", texto: "Na rodada de desvio, percebeu e disse em voz alta que o feed mudou porque ele mudou o que fazia." },
       { letra: "E", texto: "Descreveu a regra do feed com as próprias palavras, na forma “se… então…”." },
     ],
     nota:
@@ -310,7 +339,13 @@ export const GUIA_EXP06EF1B: GuiaDaAula = {
     {
       quando: "A comissão não chega a um acordo sobre o voto",
       faca:
-        "Decide a maioria de braços erguidos. Na dupla, quem está no toque da cédula decide, e o outro fica com a busca na galeria.",
+        "A decisão é da comissão, do jeito que a turma combinou: o sistema registra o que for confirmado na tela. Peça que cada um diga em uma frase o que viu no feed, e deixe o grupo decidir.",
+    },
+    {
+      quando: "Na rodada de desvio, um computador não curte nem salva nada",
+      faca:
+        "Lembre o pedido da comissão: curtir ou salvar o que quase não aparecia. A tela não deixa encerrar sem ao menos uma interação, porque a rodada só mostra a mudança para quem mexeu no feed.",
+      naoFaca: "Dizer o que vai acontecer. A surpresa de ver o feed virar é o que a cadeia nomeia em seguida.",
     },
     {
       quando: "Um computador erra a ordem da cadeia várias vezes",
@@ -361,7 +396,7 @@ export const GUIA_EXP06EF1B: GuiaDaAula = {
       ],
     },
     desdobramentos: [
-      "O podcast de recapitulação, em A aula e os resultados: toque para a turma no fim da aula ou no começo da seguinte, se ajudar a retomar a conversa — sempre depois da Galeria Oculta, porque ele revela o que o feed escondeu. Ele fala com os estudantes, mas quem decide quando ele toca é você.",
+      "O podcast de recapitulação, em A aula e os resultados, é opcional: toque para a turma no fim da aula ou no começo da seguinte, se ajudar a retomar a conversa. O melhor momento é depois da Galeria Oculta, porque ele conta o que o feed escondeu. Ele fala com os estudantes, mas quem decide se e quando ele toca é você.",
       "Na disciplina do tema da mostra: os estandes que ficaram de fora do feed da maioria são o material pronto da aula seguinte — a turma estuda o que quase ninguém viu.",
       "Língua Portuguesa: ler as legendas dos estandes como texto de divulgação científica — o que o título promete e o que a legenda entrega.",
       "Matemática: com os votos por área da lousa, calcular a parte de cada área e discutir como seria o gráfico se todo mundo tivesse visto os dezesseis estandes.",
@@ -371,7 +406,8 @@ export const GUIA_EXP06EF1B: GuiaDaAula = {
 
   cuidados: [
     "A taxa da Galeria Oculta é real e de cada computador: não a apresente como nota nem compare em voz alta quem teve mais. Na lousa vão só os votos por área e a média da turma, sem nomes.",
-    "A folha da turma, com os nomes, é para a sua tela, não para o projetor. Ela não tem voto nem taxa — só quem já votou, abriu a galeria, buscou, revisou e concluiu.",
+    "A folha da turma, com os nomes, é para a sua tela, não para o projetor. Ela não tem voto nem taxa — só quem já votou, abriu a galeria, buscou, revisou, fez a rodada de desvio e concluiu.",
+    "Os cartões de motivo e a frase grifada não viram nota nem nível: são o registro do raciocínio de antes e de depois, para a conversa. A criança escolhe cartões prontos; nada do que ela pensa é digitado.",
     "Os estandes, as escolas e os perfis da mostra são fictícios, escritos pela inteligência artificial sobre o seu tema. Revise para não sair pessoa real identificável, escola real nem marca de empresa.",
     "Durante a aula o feed não usa inteligência artificial: é uma regra fixa, que roda no servidor e é a mesma que a cadeia ensina. A IA só escreve os estandes no preparo.",
     "A busca da galeria não guarda o que a criança digita: fica só se buscou por hashtag ou por texto, e a área que encontrou.",
@@ -382,7 +418,7 @@ export const GUIA_EXP06EF1B: GuiaDaAula = {
     {
       contexto: "Menos aparelhos que estudantes (2 a 4 por computador)",
       comoAdaptar:
-        "Escolha as equipes na criação da atividade: só um da comissão entra, e ele representa o grupo. Combine o revezamento do toque antes de começar — Jurado 1: a rolagem e as curtidas dos posts 1 a 5; Jurado 2: os posts 6 a 10; Jurado 3: a cédula e o voto; Jurado 4 (ou a comissão reunida): a busca e a auditoria na Galeria Oculta. Com três, o Jurado 3 fica também com a galeria; com dois, um faz os posts 1 a 5 e a cédula, o outro os posts 6 a 10 e a galeria. Na divergência, vale a maioria de braços erguidos. Nos resultados, cada computador é uma linha.",
+        "Escolha as equipes na criação da atividade: só um da comissão entra, e ele representa o grupo. O sistema não distingue quem está tocando a tela, então como a comissão divide o toque e decide uma divergência fica com você e com a turma. Nos resultados, cada computador é uma linha.",
     },
     {
       contexto: "Um computador só (a aula projetada)",
@@ -397,7 +433,7 @@ export const GUIA_EXP06EF1B: GuiaDaAula = {
     {
       contexto: "Duas aulas de 25 minutos",
       comoAdaptar:
-        "No primeiro bloco, a credencial, o feed, o voto, a plenária e a galeria, até a revisão do voto. No segundo, cada computador volta direto à cadeia, com tudo salvo, e a aula fecha com Mariana, as enquetes e a escada do debate.",
+        "No primeiro bloco, a credencial, o feed, o voto, a plenária e a galeria, até a revisão do voto. No segundo, você libera a rodada de desvio: cada computador entra direto nela, com tudo salvo, e a aula segue pela cadeia, Mariana, as enquetes e a escada do debate.",
     },
     {
       contexto: "Turma com leitura ainda em construção",
@@ -426,6 +462,11 @@ export const GUIA_EXP06EF1B: GuiaDaAula = {
       pergunta: "Apertei Liberar a Galeria Oculta cedo demais. Dá para voltar?",
       resposta:
         "Não: o botão abre a galeria para a turma inteira e não fecha. Quem ainda não votou continua no feed e entra na galeria depois de votar. Para recomeçar do zero, use Zerar a turma — ele abre uma rodada nova sem apagar a anterior.",
+    },
+    {
+      pergunta: "Preciso apertar Liberar a rodada de desvio?",
+      resposta:
+        "Sim. Depois da revisão do voto, cada computador espera por ela, e sem ela a turma não chega à cadeia. É a rodada em que a criança muda de propósito o que faz no feed e vê o feed mudar — a vivência que a explicação da cadeia nomeia em seguida.",
     },
     {
       pergunta: "O estudante vê o nível da habilidade?",
