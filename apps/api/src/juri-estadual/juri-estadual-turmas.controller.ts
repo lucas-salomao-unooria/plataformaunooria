@@ -391,6 +391,7 @@ export class JuriEstadualTurmasController {
     resposta: PacoteHomologadoSchema,
     notas: [
       "O pacote é recusado com **400** `pacote-invalido` e a LISTA de problemas em `erros`, em frases para o professor: quatro categorias, uma por área, com hashtags diferentes no formato `#minusculas`; os dezesseis projetos `proj-a1` a `proj-d4`, cada um na área que o id diz e começando pela hashtag da área; perfil com @; legenda até 60 palavras e bastidor até 40; e nenhuma marca ou plataforma real no que a criança lê. (`.superRefine()` some do OpenAPI; daí esta nota.)",
+      "`podcast` são as três falas do podcast de recapitulação que o professor revisou na criação (ADR-150, ADR-151): `dois`, `rafa` e `mesa`, cada uma de 12 a 60 palavras, até 400 bytes, sem link, e-mail nem @. Vão para `podcast_roteiros` na MESMA transação, também no segundo clique — que as substitui.",
     ],
   })
   homologar(

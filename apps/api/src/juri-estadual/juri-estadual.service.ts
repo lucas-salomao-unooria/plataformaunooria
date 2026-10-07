@@ -10,6 +10,8 @@ import { EvidenciasService, type ContextoDaAtividade } from "../evidencias/evide
 import type { Nivel } from "../evidencias/regras";
 import { ehUuid } from "../motor/guardas";
 import { logger } from "../observabilidade/logger";
+import { gravarFalasDoPodcast } from "../podcast/podcast.service";
+import type { FalasDoTema } from "../podcast/roteiro";
 import { PrismaService } from "../prisma/prisma.service";
 import { CARTOES_DE_ATITUDE, CARTOES_DE_MECANISMO, CASO_MARIANA } from "./conteudo";
 import { AreaSchema, ProjetoDoPacoteSchema } from "./contrato-de-rotas";
@@ -951,11 +953,15 @@ export class JuriEstadualService implements OnModuleInit {
     corpo: {
       parametros: { disciplina: Disciplina; tema: string; assuntos: string; contexto?: string };
       conteudo: ConteudoDoPacote;
+      /** As três falas do podcast que o professor revisou na criação (ADR-150, ADR-151). */
+      podcast: FalasDoTema;
     },
   ) {
     return this.prisma.comTenancy(async (tx) => {
       await this.turmaVisivel(tx, escolaId, turmaId, professorId);
       await this.travarTurma(tx, escolaId, turmaId, "exclusivo");
+      const gravarFalas = (atividadeId: string) =>
+        gravarFalasDoPodcast(tx, { escolaId, expId: EXP_ID, atividadeId, falas: corpo.podcast, aprovadoPor: criadoPor });
 
       const recentes = await tx.exp06ef1bPacote.findMany({
         where: { escolaId, turmaId },
@@ -975,6 +981,9 @@ export class JuriEstadualService implements OnModuleInit {
         ultimo.contexto === contexto &&
         canonico(ultimo.conteudo) === canonico(conteudo)
       ) {
+        /* O segundo clique pode trazer as falas do podcast editadas: elas
+           valem, mesmo sem atividade nova (ADR-150). */
+        await gravarFalas(ultimo.id);
         return { id: ultimo.id, disciplina: parametros.disciplina, tema: ultimo.tema, origem: "ia" as const, ativo: ultimo.ativo };
       }
 
@@ -1011,6 +1020,7 @@ export class JuriEstadualService implements OnModuleInit {
         },
         select: { id: true, tema: true },
       });
+      await gravarFalas(novo.id);
       return { id: novo.id, disciplina: parametros.disciplina, tema: novo.tema, origem: "ia" as const, ativo: false };
     }, escolaId);
   }
@@ -1060,6 +1070,27 @@ export class JuriEstadualService implements OnModuleInit {
         : await this.pacoteDaTurma(tx, escolaId, turmaId, (await this.exigirPacote(tx, escolaId, turmaId)).pacote.id);
       if (linha.imagensAprovadasEm) throw erroDeJogo("imagens-ja-aprovadas");
       return pacoteDaLinha(linha);
+    }, escolaId);
+  }
+
+  /**
+   * O pacote do podcast de recapitulação (ADR-150, ADR-151): o pedido — desta
+   * turma — ou o em andamento sem pedido. Ao contrário de `pacoteParaMidia`,
+   * vale DEPOIS das imagens aprovadas: o podcast se gera para a atividade
+   * pronta ou no ar. A guarda de turma (404) e o "sem atividade" (403) são os
+   * mesmos.
+   */
+  async pacoteParaPodcast(
+    escolaId: string,
+    turmaId: string,
+    professorId?: string,
+    pacoteId?: string,
+  ): Promise<{ id: string; tema: string }> {
+    return this.prisma.comTenancy(async (tx) => {
+      await this.turmaVisivel(tx, escolaId, turmaId, professorId);
+      const id = pacoteId ?? (await this.exigirPacote(tx, escolaId, turmaId)).pacote.id;
+      const linha = await this.pacoteDaTurma(tx, escolaId, turmaId, id);
+      return { id: linha.id, tema: linha.tema };
     }, escolaId);
   }
 

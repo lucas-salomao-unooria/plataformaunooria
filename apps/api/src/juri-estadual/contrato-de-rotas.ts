@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { falasDoTemaSchema } from "../podcast/roteiro";
+import { VAGAS_DO_PODCAST } from "./podcast";
 import { problemasDoPacote } from "./invariantes";
 import { ETAPAS, PASSOS, PASSOS_PEDIDOS } from "./regras/passos";
 import { IDS_DE_ATITUDE, IDS_DE_MECANISMO, TOTAL_DE_BLOCOS } from "./conteudo";
@@ -250,6 +252,12 @@ export const ConteudoDoPacoteSchema = z
 export const HomologacaoSchema = z.object({
   parametros: ParametrosDoPreparoSchema,
   conteudo: ConteudoDoPacoteSchema,
+  /**
+   * As três falas do podcast de recapitulação que o professor revisou na
+   * criação (ADR-150, ADR-151): os dois estandes de áreas diferentes, o que o
+   * feed do Rafa mostrou e o que o da mesa ao lado mostrou.
+   */
+  podcast: falasDoTemaSchema(VAGAS_DO_PODCAST),
 });
 
 export const RegenerarProjetoSchema = ParametrosDoPreparoSchema.extend({

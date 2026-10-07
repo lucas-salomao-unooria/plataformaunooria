@@ -7,6 +7,7 @@ import { JuriEstadualTurmasController } from "./juri-estadual-turmas.controller"
 import { JuriEstadualController } from "./juri-estadual.controller";
 import { JuriEstadualService } from "./juri-estadual.service";
 import { MidiaDaExp06ef1bService } from "./midia.service";
+import { PodcastDaExp06ef1b } from "./podcast-fonte";
 import { PreparoDaExp06ef1bService } from "./preparo.service";
 
 /**
@@ -26,11 +27,15 @@ import { PreparoDaExp06ef1bService } from "./preparo.service";
  * determinística, e nenhuma criança espera o Vertex.
  *
  * **`AssetsModule`** é o bucket das imagens (`experiencias/exp06ef1b/mostra/`).
+ *
+ * **`PodcastService`** (global) é o podcast de recapitulação da plataforma
+ * (ADR-150, ADR-151): a missão registra a fonte (`podcast-fonte.ts`) e a
+ * homologação grava as falas do tema que o professor revisou.
  */
 @Module({
   imports: [AiModule, AssetsModule, EvidenciasModule],
   controllers: [JuriEstadualController, JuriEstadualTurmasController, JuriEstadualProfessorController],
-  providers: [JuriEstadualService, PreparoDaExp06ef1bService, MidiaDaExp06ef1bService],
+  providers: [JuriEstadualService, PreparoDaExp06ef1bService, MidiaDaExp06ef1bService, PodcastDaExp06ef1b],
   exports: [JuriEstadualService],
 })
 export class JuriEstadualModule {}

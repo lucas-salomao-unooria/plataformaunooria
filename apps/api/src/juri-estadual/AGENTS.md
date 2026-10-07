@@ -91,7 +91,22 @@ silêncio.
   (`midia.refazer`) é a exceção ao hash: o nome leva uma variação, é arquivo
   NOVO e sempre pago — sobrescrever o da descrição trocaria a imagem de todo
   pacote que a herdou. O provedor fora do ar ali é 503, e o estande fica com a
-  imagem que tinha. O podcast não existe.
+  imagem que tinha.
+- **O podcast de recapitulação é da plataforma** (ADR-150, ADR-151,
+  `src/podcast/`): aqui ficam o roteiro do one-pager ("A Mostra que Ninguém Viu
+  Inteira", Bia e Rafa, em `podcast.ts`, puro) e a fonte (`podcast-fonte.ts`).
+  O roteiro foi CORRIGIDO: sem número cravado ("os outros 12 projetos" e "três
+  quartos" contradiziam a taxa real), Unoovista no lugar do `instanooria`, sem
+  "da Unooria" dentro da ficção, e o texto fixo sem área (a mostra é da IA). As
+  três vagas (os dois estandes de áreas diferentes, o feed do Rafa, o da mesa
+  ao lado) a IA escreve com os estandes do rascunho e o professor revisa na
+  criação; `homologar` as grava em `podcast_roteiros` na MESMA transação,
+  também no segundo clique. **Sem banco padrão**, `padrao` é sempre `false`:
+  atividade sem falas gravadas (a de antes do podcast) é 409
+  `roteiro-indisponivel`. A atividade do podcast é `pacoteParaPodcast` — NÃO o
+  `pacoteParaMidia`, que recusa o pacote de imagens aprovadas. **Ele revela a
+  virada e toca depois da Galeria Oculta**: o módulo não tem trava por etapa,
+  então quem avisa é o cartão da aula (pela etapa do gate) e o guia.
 
 ## A evidência (E14)
 
@@ -125,5 +140,10 @@ nunca é gravado (só o tipo e a área); `certo` está em
   servido, os latches concorrentes, o portão, a auditoria (CO10 e CO01), a
   cadeia, as duas fases da aprovação, Mariana, o resolvedor, zerar e ADR-120, atividade × rodada, imagens, o painel
   por computador e o preparo com IA falsa.
+- O podcast: `juri-estadual-regras.spec.ts` (o roteiro na régua e no teto,
+  sem número cravado nem `instanooria`), `podcast.spec.ts` (as vagas, o texto
+  fixo sem área, a escrita sempre com IA, o 409 sem falas) e
+  `juri-estadual-postgres.spec.ts` (a homologação grava as falas na transação,
+  o segundo clique as troca, e a atividade vale com as imagens aprovadas).
 - A fixture (`tests/juri-estadual-fixture.ts`) é a mostra que a IA devolveria:
   não há acervo padrão para a suíte usar.
