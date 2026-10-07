@@ -6,7 +6,7 @@ Complementa o `AGENTS.md` da raiz e o de `apps/experiencias`.
 |---|---|
 | Manifesto | `exp08ef1b` · 8EF · `telemetria, progresso, ia` · viewport 375×812 |
 | Dev | `pnpm --filter @edu/exp08ef1b dev` → :5173 |
-| DS | `@edu/ui/ds-unoovista` no disfarce (desde a 1.2.0, ADR-133; antes era `ds-insta`), `@edu/ui/ds` só nos gráficos do dossiê |
+| DS | `@edu/ui/ds-unoovista` no disfarce (desde a 1.2.0, ADR-133; antes era `ds-insta`), `@edu/ui/ds` só depois da revelação: os gráficos do dossiê e as perguntas de evidência (1.3.0, ADR-153), as duas no chunk `lazy`, para o CSS da plataforma não descer com o feed |
 | api | `motor`, `geracao`, `dossie`, `atividades` — tabelas `exp08ef1b_*` |
 | e2e | `scripts/e2e/estudante/02-instanooria.mjs` (sobe DOIS contextos: o docente conduz) |
 | Copy da revelação | `src/lib/copy-da-revelacao.ts` — **cópia gêmea** de `apps/hub/lib/insta/copy-da-revelacao.ts`, que o guia do professor lê. Mexeu numa, mexa na outra: nada no build cobra isso |
