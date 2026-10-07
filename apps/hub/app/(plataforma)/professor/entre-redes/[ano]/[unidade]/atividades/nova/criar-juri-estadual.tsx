@@ -200,6 +200,13 @@ export function CriarJuriEstadual({
     setParametros((atual) => ({ ...atual, [campo]: valor }));
   }
 
+  /** Um campo editado na janela, sobre o estado atual (ver `EditorDoEstande#aoMudar`). */
+  function mudarProjeto(id: string, parcial: Partial<ProjetoDoPacote>) {
+    setConteudo((atual) =>
+      atual ? { ...atual, projetos: atual.projetos.map((p) => (p.id === id ? { ...p, ...parcial } : p)) } : atual,
+    );
+  }
+
   function trocarProjeto(novo: ProjetoDoPacote) {
     setConteudo((atual) => (atual ? { ...atual, projetos: atual.projetos.map((p) => (p.id === novo.id ? novo : p)) } : atual));
   }
@@ -624,7 +631,7 @@ export function CriarJuriEstadual({
                 categoria={conteudo.categorias.find((c) => c.area === emEdicao.area)}
                 problemas={problemasDeCampo.get(emEdicao.id) ?? {}}
                 errosDaApi={errosDaApi.porProjeto[emEdicao.id] ?? []}
-                aoMudar={trocarProjeto}
+                aoMudar={mudarProjeto}
                 aoFechar={() => setEditando(null)}
                 aoRegenerar={() => void regenerar(turmaId, emEdicao.id)}
                 regenerando={regenerando === emEdicao.id}
