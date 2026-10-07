@@ -12,6 +12,7 @@ import { auth } from "@/lib/auth";
 import { ROTULO_DO_ESTADO, textoDasRodadas } from "@/lib/entre-redes/atividades";
 import { rotaDaMissao, type Missao } from "@/lib/entre-redes/catalogo";
 import { painelDeHabilidades } from "@/lib/evidencias-servidor";
+import { podcastDaAtividade } from "@/lib/podcast-servidor";
 import {
   ROTULO_DA_ORIGEM,
   type MaterialDoProfessor,
@@ -28,6 +29,7 @@ import { minhasTurmas } from "@/lib/turmas";
 import { EscolhaDeTurma } from "./escolha-de-turma";
 import { MensagensDoPacote } from "./matriz-do-pacote-quem-mandou";
 import { PainelDaAulaQuemMandou } from "./painel-da-aula-quem-mandou";
+import { CartaoDoPodcast } from "./podcast-da-aula";
 import { ZerarTurmaQuemMandou } from "./zerar-turma-quem-mandou";
 
 const EXP_ID = "exp05ef1b";
@@ -111,7 +113,7 @@ export async function ResultadosQuemMandouIsso({
   const emAndamento = detalhe?.ativo === true;
   const tituloDoEmAndamento = historico.find((h) => h.ativo)?.tema ?? null;
 
-  const [painel, material, preparo, sala, habilidades] =
+  const [painel, material, preparo, sala, habilidades, podcast] =
     detalhe && atividadeId
       ? await Promise.all([
           emAndamento ? apiDoServidor<PainelDaTurma>(`${base}/painel`) : Promise.resolve(null),
@@ -119,8 +121,9 @@ export async function ResultadosQuemMandouIsso({
           apiDoServidor<PacoteDaTurma>(`${base}/pacote`),
           podeConduzir ? salaDaTurma(turma) : Promise.resolve(null),
           detalhe.rodadas > 0 || emAndamento ? painelDeHabilidades(turma, EXP_ID, atividadeId) : Promise.resolve(null),
+          podcastDaAtividade(EXP_ID, turma, atividadeId),
         ])
-      : [null, null, null, null, null];
+      : [null, null, null, null, null, null];
 
   /* A atividade que o painel conta é a EM ANDAMENTO da turma; se ela não for a
      desta página (outra aba trocou entre as duas leituras), a folha não nomeia
@@ -328,6 +331,10 @@ export async function ResultadosQuemMandouIsso({
               ) : null}
             </>
           ) : null}
+
+          {/* Depois da aula: o podcast da plataforma (ADR-150), com as falas
+              que o professor revisou na criação desta atividade. */}
+          <CartaoDoPodcast expId={EXP_ID} turmaId={turma} atividadeId={detalhe.id} podcast={podcast} />
 
           {/* EVIDÊNCIA (E14): a atividade é o PACOTE (`atividadeId = pacoteId`);
               a rodada é a reaplicação, e o próprio painel mostra as rodadas e o

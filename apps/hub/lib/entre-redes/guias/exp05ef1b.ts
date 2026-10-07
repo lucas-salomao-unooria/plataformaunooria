@@ -100,7 +100,7 @@ export const GUIA_EXP05EF1B: GuiaDaAula = {
       {
         titulo: "Aprove o pacote da turma — sem ele a aula não existe",
         texto:
-          "Em A aula e os resultados: escolha o componente curricular, escreva o tema (ele completa a fala da Nina, “Rolou uma confusão sobre…”, então vai em minúscula e sem ponto, como “o passeio ao museu”), liste de 3 a 6 fatos da aula e clique em Gerar Atividade com IA — ou em Usar Pacote Curado Padrão. Leia as 8 mensagens, edite o que quiser e clique em Aprovar Pacote.",
+          "Em A aula e os resultados: escolha o componente curricular, escreva o tema (ele completa a fala da Nina, “Rolou uma confusão sobre…”, então vai em minúscula e sem ponto, como “o passeio ao museu”), liste de 3 a 6 fatos da aula e clique em Gerar Atividade com IA — ou em Usar Pacote Curado Padrão. Leia as 8 mensagens, edite o que quiser, revise as três falas do podcast que contam o grupo e clique em Aprovar Pacote.",
       },
       {
         titulo: "Monte as equipes, se a turma divide computadores",
@@ -113,9 +113,14 @@ export const GUIA_EXP05EF1B: GuiaDaAula = {
           "São três botões durante a aula — Liberar Revelação, Apresentar Síntese e Liberar Reflexão —, na ordem, e nenhum volta atrás. Os selos e a folha da turma são para a sua tela; o botão Projetar o Termômetro abre, em tela cheia, só as contas da turma.",
       },
       {
-        titulo: "Não há mídia para preparar",
+        titulo: "A aula não depende de mídia",
         texto:
-          "A imagem é um comunicado desenhado a partir do texto e o link é uma prévia com a manchete. Nada depende de fone nem de download.",
+          "A imagem é um comunicado desenhado a partir do texto e o link é uma prévia com a manchete. Nada da aula depende de fone nem de download; o único áudio é o podcast de recapitulação, que é seu e fica para depois.",
+      },
+      {
+        titulo: "Gere o áudio do podcast, se for usá-lo",
+        texto:
+          "O podcast de recapitulação é seu: cerca de 3 minutos e 40 segundos em que Lucas e Camila retomam a missão com a turma. Fica em A aula e os resultados, com o botão Gerar o áudio do podcast, que sai um trecho por vez. As três falas que contam o grupo são as que você revisou ao criar a atividade; o resto do roteiro é o mesmo para todas. A transcrição está sempre ao lado, mesmo sem áudio.",
       },
     ],
     pedagogico: [
@@ -320,6 +325,7 @@ export const GUIA_EXP05EF1B: GuiaDaAula = {
       ],
     },
     desdobramentos: [
+      "O podcast de recapitulação, em A aula e os resultados: toque para a turma no fim da aula ou no começo da seguinte, se ajudar a retomar a conversa. Ele fala com os estudantes, mas quem decide quando ele toca é você.",
       "Língua Portuguesa: comparar a mensagem falsa neutra com uma notícia real sobre o mesmo assunto (EF05LP16) — o mesmo fato em dois lugares, qual é mais confiável e por quê.",
       "Matemática: ler o Termômetro como tratamento da informação (EF05MA24) — quantos de quantos, e o que cada barra quer dizer.",
       "Na sua disciplina: aplicar de novo com um tema dela. Um pacote novo é uma atividade nova, e o painel de habilidades mostra as duas.",

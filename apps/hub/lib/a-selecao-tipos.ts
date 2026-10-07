@@ -631,64 +631,9 @@ export const FALAS_DO_PODCAST: ReadonlyArray<{
   { campo: "estatistico", falante: "Lucas", veiculo: "a Métrica Urbana" },
 ];
 
-/** A régua de cada fala, espelho de `podcast.ts#problemasDasFalasDoTema`. */
-export const PALAVRAS_DA_FALA = { min: 12, max: 60 } as const;
-export const BYTES_DA_FALA = 400;
-
 /**
- * O que impede UMA fala de ir para o áudio, na frase do campo — ou `null`. A
- * api confere de novo na aprovação (e é a palavra final); aqui é para a
- * professora ver o problema enquanto digita, no campo certo.
+ * A régua de cada fala é a do podcast da plataforma (ADR-150), espelho de
+ * `apps/api/src/podcast/roteiro.ts` — uma só para toda missão.
  */
-export function problemaDaFala(texto: string): string | null {
-  const n = palavras(texto);
-  if (n === 0) return "A fala não pode ficar vazia.";
-  if (/https?:\/\/|www\.|\.com\b|\.br\b/i.test(texto)) return "Tire o link: ele não se lê em voz alta.";
-  if (/[\w.+-]+@[\w-]+\.[\w.]+/.test(texto)) return "Tire o e-mail: ele não se lê em voz alta.";
-  if (/(^|\s)@\w/.test(texto)) return "Escreva o nome do veículo por extenso, sem @.";
-  if (new TextEncoder().encode(texto.trim()).length > BYTES_DA_FALA) return "Está longa demais para o áudio; encurte um pouco.";
-  if (n < PALAVRAS_DA_FALA.min) return `Tem ${n} palavras; o mínimo é ${PALAVRAS_DA_FALA.min}.`;
-  if (n > PALAVRAS_DA_FALA.max) return `Tem ${n} palavras; o máximo é ${PALAVRAS_DA_FALA.max}.`;
-  return null;
-}
-
-export type BlocoDoPodcast = "abertura" | "recapitulacao" | "revelacao" | "provocacao" | "encerramento";
-
-/** `GET /a-selecao/turmas/:turmaId/podcast` — o roteiro (a transcrição) e o estado do áudio. */
-export interface PodcastDaTurma {
-  coberturaId: string;
-  tema: string;
-  roteiro: Array<{
-    bloco: BlocoDoPodcast;
-    titulo: string;
-    falas: Array<{ falante: "Lucas" | "Clara"; texto: string }>;
-  }>;
-  trechos: { total: number; prontos: number };
-  /** O episódio inteiro, quando os cinco trechos já foram sintetizados e emendados. */
-  url: string | null;
-}
-
-/** `POST gerar-podcast` — o progresso de UMA chamada (um trecho, e a emenda no fim). */
-export interface ProgressoDoPodcast extends PodcastDaTurma {
-  gerado: BlocoDoPodcast | null;
-  falhou: BlocoDoPodcast | null;
-  completo: boolean;
-}
-
-/**
- * O laço do "Gerar o áudio": a api sintetiza UM trecho por chamada (o BFF corta
- * em 30 s e o episódio tem cinco). Para quando o episódio existe, ou quando uma
- * chamada não andou — repetir aí é pedir de novo o trecho que o provedor acabou
- * de recusar, e cobrar da quota a cada volta.
- */
-export function continuarGerandoPodcast(p: Pick<ProgressoDoPodcast, "completo" | "gerado">): boolean {
-  return !p.completo && p.gerado !== null;
-}
-
-/** A linha de estado sob o player. */
-export function textoDoProgressoDoPodcast(p: Pick<PodcastDaTurma, "trechos" | "url">): string {
-  if (p.url) return "O áudio está pronto.";
-  if (p.trechos.prontos === 0) return "O áudio ainda não foi gerado.";
-  return `${p.trechos.prontos} de ${p.trechos.total} trechos do áudio prontos.`;
-}
+export { BYTES_DA_FALA, PALAVRAS_DA_FALA, problemaDaFala } from "./podcast-tipos";
 

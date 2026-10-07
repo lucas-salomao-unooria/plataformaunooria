@@ -12,6 +12,7 @@ import { rotaDaMissao, type Missao } from "@/lib/entre-redes/catalogo";
 import type { MembroNoPainel } from "@/lib/equipe-no-painel";
 import { equipesDaMissao } from "@/lib/equipes-servidor";
 import { painelDeHabilidades } from "@/lib/evidencias-servidor";
+import { podcastDaAtividade } from "@/lib/podcast-servidor";
 import {
   ROTULO_DA_ORIGEM,
   imagensProntasParaAula,
@@ -27,6 +28,7 @@ import { normalizarSerie } from "@/lib/series";
 import { EscolhaDeTurma } from "./escolha-de-turma";
 import { ImagensDoPacote } from "./imagens-do-pacote";
 import { PainelDaAulaJornalEscola } from "./painel-da-aula-jornal-escola";
+import { CartaoDoPodcast } from "./podcast-da-aula";
 import { ZerarTurmaJornalEscola } from "./zerar-turma-jornal-escola";
 
 const EXP_ID = "exp04ef1b";
@@ -111,7 +113,7 @@ export async function ResultadosJornalEscola({
     : null;
   const emAndamento = detalhe?.ativo === true;
 
-  const [painel, material, equipes, session, habilidades] =
+  const [painel, material, equipes, session, habilidades, podcast] =
     detalhe && atividadeId
       ? await Promise.all([
           emAndamento ? apiDoServidor<PainelDoJornal>(`${base}/painel`) : Promise.resolve(null),
@@ -125,8 +127,9 @@ export async function ResultadosJornalEscola({
           /* Pacote que nunca rodou não tem o que mostrar no painel de
              habilidades — e a leitura dele custaria uma chamada à toa. */
           detalhe.rodadas > 0 || emAndamento ? painelDeHabilidades(turma, EXP_ID, atividadeId) : Promise.resolve(null),
+          podcastDaAtividade(EXP_ID, turma, atividadeId),
         ])
-      : [null, null, null, null, null];
+      : [null, null, null, null, null, null];
 
   const imagensDoPacote = detalhe ? (
     <ImagensDoPacote
@@ -293,6 +296,10 @@ export async function ResultadosJornalEscola({
               <ZerarTurmaJornalEscola turmaId={turma} nomeDaTurma={painel.turma.nome} tema={detalhe.tema} />
             </>
           ) : null}
+
+          {/* Depois da aula: o podcast da plataforma (ADR-150), com as falas
+              que o professor revisou na criação desta atividade. */}
+          <CartaoDoPodcast expId={EXP_ID} turmaId={turma} atividadeId={detalhe.id} podcast={podcast} />
 
           {/* O painel de habilidades (E14) — invisível sem ficha
               (`temFicha: false`), e só o `professor` confirma e ajusta: a
