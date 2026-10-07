@@ -38,6 +38,11 @@ import {
  * descrição da imagem ficam como a geração os deixou — a primeira hashtag é a
  * da área, e trocá-la desmontaria a busca da galeria; quem quiser outro
  * estande usa "Regenerar estande", que escreve um novo para caber no resto.
+ *
+ * **As hashtags vão em `subtags`, nunca em `tags`** (o pedido do PO): `tags` é o
+ * cabeçalho do `Card`, uma linha só e sem quebra — as três ou quatro hashtags
+ * de um estande vazavam pela borda do cartão logo depois da geração. `subtags`
+ * é o contêiner do DS que quebra linha, abaixo da descrição.
  */
 
 /** "7 palavras · até 60" — a régua à vista enquanto o professor digita. */
@@ -78,7 +83,7 @@ export function CartaoDoEstande({
         title={projeto.titulo}
         subtitle={`${projeto.escola} · ${projeto.perfil}`}
         description={projeto.legenda}
-        tags={projeto.hashtags.map((h) => (
+        subtags={projeto.hashtags.map((h) => (
           <Tag key={h} variant="neutral" size="sm">
             {h}
           </Tag>

@@ -60,8 +60,9 @@ import { ZerarTurmaJuriEstadual } from "./zerar-turma-juri-estadual";
  *   botão); as equipes DESTA atividade e o painel de habilidades com
  *   `atividadeId = pacoteId`;
  * - **do navegador, pelo BFF** (`/api/plataforma/juri-estadual/...`): pôr em
- *   andamento, as imagens (`gerar-midia?pacoteId=`), o gate, o zerar e o `GET
- *   .../painel` do polling.
+ *   andamento, as imagens (`gerar-midia?pacoteId=`, `…/imagens/:projetoId/refazer`
+ *   e `…/aprovar-imagens` — a segunda fase da aprovação), o gate, o zerar e o
+ *   `GET .../painel` do polling.
  *
  * O painel, o gate e o zerar são da turma, não do pacote: com uma atividade
  * PRONTA na tela, mostrá-los conduziria a outra. Por isso só aparecem quando a
@@ -131,7 +132,23 @@ export async function ResultadosJuriEstadual({
   const membros: Record<string, MembroNoPainel[]> = Object.fromEntries(
     (equipes?.equipes ?? []).map((e) => [e.id, e.membros]),
   );
-  const estado = ROTULO_DO_ESTADO[emAndamento ? "em-andamento" : "pronta"];
+  /* Sem as imagens aprovadas (a segunda fase, o pedido do PO), a atividade não
+     vai ao ar: "Em preparo", e o "Usar esta atividade agora" dá lugar à
+     aprovação. A que já está no ar continua em andamento. */
+  const prontaParaAula = detalhe ? detalhe.imagensAprovadasEm !== null : false;
+  const chaveDoEstado = emAndamento ? "em-andamento" : prontaParaAula ? "pronta" : "em-preparo";
+  const estado = ROTULO_DO_ESTADO[chaveDoEstado];
+  const imagensDoJuri = detalhe ? (
+    <ImagensDoJuri
+      key={`imagens-${detalhe.id}`}
+      turmaId={turma}
+      pacoteId={detalhe.id}
+      conteudo={detalhe.conteudo}
+      imagensIniciais={detalhe.imagens}
+      aprovadasEmInicial={detalhe.imagensAprovadasEm}
+      podeEditar={session?.usuario.papel === "professor"}
+    />
+  ) : null;
 
   return (
     <div className="flex flex-col gap-6">
@@ -146,7 +163,7 @@ export async function ResultadosJuriEstadual({
             {detalhe ? `“${detalhe.tema}”` : "A aula e os resultados"}
           </h1>
           {detalhe ? (
-            <Badge variant={estado.variante} data-estado-da-atividade={emAndamento ? "em-andamento" : "pronta"}>
+            <Badge variant={estado.variante} data-estado-da-atividade={chaveDoEstado}>
               {estado.rotulo}
             </Badge>
           ) : null}
@@ -211,7 +228,19 @@ export async function ResultadosJuriEstadual({
         </div>
       ) : (
         <>
-          {!emAndamento ? (
+          {!emAndamento && !prontaParaAula ? (
+            /* A turma não abre com imagem que o professor não viu: a api
+               recusaria o "Usar esta atividade agora" com 409
+               `imagens-nao-aprovadas`, então ele nem aparece. */
+            <Card variant="outlined" title="Aprove as imagens antes de abrir a turma">
+              <div className="flex flex-col gap-3" data-atividade-em-preparo>
+                <FeedbackAlert
+                  type="info"
+                  description="As imagens dos estandes são geradas por inteligência artificial. Em “Imagens dos estandes”, logo abaixo, gere as que faltam, confira cada uma junto do estande, gere outra para a que não servir e aprove: só então a atividade pode ir ao ar."
+                />
+              </div>
+            </Card>
+          ) : !emAndamento ? (
             <Card variant="outlined">
               <div className="flex flex-col gap-3" data-atividade-pronta>
                 <FeedbackAlert
@@ -237,6 +266,9 @@ export async function ResultadosJuriEstadual({
             </Card>
           ) : null}
 
+          {/* Em preparo, as imagens vêm ANTES das equipes: é o passo que falta. */}
+          {!emAndamento && !prontaParaAula ? imagensDoJuri : null}
+
           <EquipesDaAtividade
             key={`equipes-${detalhe.id}`}
             turmaId={turma}
@@ -246,7 +278,7 @@ export async function ResultadosJuriEstadual({
           />
 
           {/* A `key` é a atividade: o laço das imagens vive em `useState`. */}
-          <ImagensDoJuri key={`imagens-${detalhe.id}`} turmaId={turma} pacoteId={detalhe.id} inicial={detalhe.midia} />
+          {emAndamento || prontaParaAula ? imagensDoJuri : null}
 
           <EstandesDaAtividade detalhe={detalhe} />
 
