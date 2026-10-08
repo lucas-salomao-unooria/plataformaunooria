@@ -140,7 +140,10 @@ export function Perguntas({ runId }: { runId: string }) {
               </span>
             }
             options={q.alternativas.map((a) => ({ value: a.id, label: a.texto }))}
-            value={q.enviada ?? escolha ?? undefined}
+            /* Controlado desde o primeiro render: `''` é "nada escolhido". Com
+               `undefined` no começo, o rádio trocava de não controlado para
+               controlado na primeira escolha, e o React avisava no console. */
+            value={q.enviada ?? escolha ?? ''}
             disabled={q.enviada !== null || enviando}
             onChange={(valor) => setEscolha(String(valor))}
           />

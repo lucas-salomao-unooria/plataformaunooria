@@ -7,6 +7,7 @@
   "unidade": 1,
   "capabilities": ["telemetria", "progresso", "ia"],
   "viewport": { "largura": 375, "altura": 812 },
+  "permissoes": ["forms"],
   "verbos": {
     "attempted": "entrou no aparelho",
     "completed": "concluiu a missão (dossiê visto)",
