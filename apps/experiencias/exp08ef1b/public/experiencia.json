@@ -1,12 +1,13 @@
 {
   "id": "exp08ef1b",
   "nome": "Unoovista — O Conteúdo que não chegou",
-  "versao": "1.2.3",
+  "versao": "1.3.0",
   "produto": "entre-redes",
   "series": ["8EF"],
   "unidade": 1,
   "capabilities": ["telemetria", "progresso", "ia"],
   "viewport": { "largura": 375, "altura": 812 },
+  "permissoes": ["forms"],
   "verbos": {
     "attempted": "entrou no aparelho",
     "completed": "concluiu a missão (dossiê visto)",

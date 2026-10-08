@@ -16,6 +16,22 @@ export interface FichaPedagogica {
   readonly versao: number;
   readonly habilidades: readonly HabilidadeDaFicha[];
   readonly perguntas: readonly PerguntaDaFicha[];
+  /**
+   * A pergunta respondida DE NOVO na mesma rodada. `primeira` (o padrão): vale a
+   * primeira resposta, e a segunda nem é gravada. `melhor`: fica a melhor das
+   * respostas — uma marca só, substituída quando a nova é melhor, sem guardar
+   * cada resposta. É a régua de missão em que a pergunta reaparece a cada
+   * tentativa (a exp02em1b, ADR-154).
+   */
+  readonly respostas?: "primeira" | "melhor";
+  /**
+   * `true`: a marca é gravada na hora, mas só VIRA EVIDÊNCIA quando o professor
+   * encerra a missão na Sala de Aula (`SalasService.aoEncerrarMissao`). Até lá
+   * o painel não mostra nível nenhum. Depois de encerrada, a porta da missão
+   * fecha e a pergunta responde 403: o nível fica definitivo. Reliberada, a
+   * resposta melhor volta a esperar o próximo encerramento (ADR-154).
+   */
+  readonly contaAoEncerrarAMissao?: boolean;
 }
 
 export interface HabilidadeDaFicha {

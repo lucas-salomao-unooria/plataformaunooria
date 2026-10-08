@@ -108,8 +108,10 @@ decide nível, cópia e o que conta é a api (`apps/api/src/evidencias/`).
   andamento) — e nos do Jornal da Escola e do Júri Estadual, onde é o PACOTE
   (`?pacote=`). Sem turma, sem painel.
 - **Invisível sem ficha, de propósito**: `temFicha: false` não desenha nada, e
-  hoje só a exp05ef1b (ADR-118), a exp07ef1b (ADR-115), a exp04ef1b e a exp06ef1b têm ficha — no
-  Instanooria o bloco não aparece, e não é defeito: confira `temFicha` antes.
+  hoje a exp05ef1b (ADR-118), a exp07ef1b (ADR-115), a exp04ef1b, a exp06ef1b e a
+  exp08ef1b têm ficha — missão sem ficha não mostra o bloco, e não é defeito:
+  confira `temFicha` antes. No Unoovista a rodada é sempre 1 (uma aplicação
+  nova é uma atividade nova), então o painel não recebe `rodadaEmAndamento`.
 - **Ausência é "Não avaliado", nunca "Não atingiu".** A cópia da aula projetada
   chega "a revisar" e só conta depois de "Confirmar para a turma".
 - **A rodada em andamento tem aba mesmo vazia** (`rodadaEmAndamento`, ADR-145):

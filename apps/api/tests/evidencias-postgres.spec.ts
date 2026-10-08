@@ -34,10 +34,13 @@ import { criarTurmaDeTeste } from "./turma-de-teste";
  * projeção que espera o professor, o ajuste, a pergunta de múltipla escolha,
  * o painel e o perfil.
  *
- * A suíte registra uma ficha DE TESTE para a exp08ef1b com `registrarFicha`
- * (a única ficha real do registro é a da exp05ef1b, que a suíte dela exercita),
- * e um resolvedor de contexto que ela controla. Os códigos são da BNCC de
- * verdade — o `registrarFicha` valida como o registro estático.
+ * A suíte registra uma ficha DE TESTE para a exp08ef1b com `registrarFicha`,
+ * que SUBSTITUI a real do registro — só nesta instância do serviço, de
+ * propósito: as regras da plataforma pedem marcador de ação e duas habilidades
+ * numa pergunta, e a ficha real (só perguntas) não as exercita. A ficha real e o
+ * resolvedor do motor são provados em `motor-evidencia-postgres.spec.ts`. Os
+ * códigos daqui são da BNCC de verdade — o `registrarFicha` valida como o
+ * registro estático.
  *
  * UMA ESCOLA POR SUÍTE (mais a vizinha, para a RLS). Molde:
  * `equipes-postgres.spec.ts`.
@@ -60,8 +63,8 @@ const runtime = new PrismaService({
 }) as PrismaService & PrismaClient;
 
 const INSTA = "exp08ef1b";
-/** Missão real que aceita equipe e NÃO tem ficha (a Missão Tempestade). */
-const SEM_FICHA = "exp02em1b";
+/** Missão real que NÃO tem ficha (o Manifesto da IA; a Missão Tempestade ganhou a dela na ADR-154). */
+const SEM_FICHA = "exp08ef4b";
 const H1 = "EF08CO01";
 const H2 = "EF08CO02";
 /**

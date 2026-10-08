@@ -96,10 +96,10 @@ export default async function AtividadePage({
     EVIDÊNCIA PEDAGÓGICA (E14): as habilidades da BNCC de cada estudante nesta
     atividade. A evidência é por TURMA, então a atividade anterior à coluna
     `turma_id` (que vale para a escola inteira) não tem painel. E a missão sem
-    ficha pedagógica responde `temFicha: false` — é o caso do Instanooria, e o
-    bloco não aparece; ele acende sozinho no dia em que o Instanooria publicar a
-    ficha dele (as que já têm, Quem mandou isso? v2.2 e A Seleção, montam o
-    painel nos próprios resultados). `MISSAO_ATUAL` pela mesma razão da missão de origem acima.
+    ficha pedagógica responde `temFicha: false` e o bloco não aparece. A do
+    Unoovista entrou em 2026-10-07 (as três perguntas depois da reflexão, rodada
+    sempre 1), e o bloco acendeu sem mudar esta página; as outras missões com
+    ficha montam o painel nos próprios resultados. `MISSAO_ATUAL` pela mesma razão da missão de origem acima.
   */
   const expIdDaAtividade = MISSAO_ATUAL.expId;
   const [painel, session] = await Promise.all([

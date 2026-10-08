@@ -6,10 +6,21 @@ Complementa o `AGENTS.md` da raiz e o de `apps/experiencias`.
 |---|---|
 | Manifesto | `exp08ef1b` · 8EF · `telemetria, progresso, ia` · viewport 375×812 |
 | Dev | `pnpm --filter @edu/exp08ef1b dev` → :5173 |
-| DS | `@edu/ui/ds-unoovista` no disfarce (desde a 1.2.0, ADR-133; antes era `ds-insta`), `@edu/ui/ds` só nos gráficos do dossiê |
+| DS | `@edu/ui/ds-unoovista` no disfarce (desde a 1.2.0, ADR-133; antes era `ds-insta`), `@edu/ui/ds` só depois da revelação: os gráficos do dossiê e as perguntas de evidência (1.3.0, ADR-153), as duas no chunk `lazy`, para o CSS da plataforma não descer com o feed |
 | api | `motor`, `geracao`, `dossie`, `atividades` — tabelas `exp08ef1b_*` |
 | e2e | `scripts/e2e/estudante/02-instanooria.mjs` (sobe DOIS contextos: o docente conduz) |
 | Copy da revelação | `src/lib/copy-da-revelacao.ts` — **cópia gêmea** de `apps/hub/lib/insta/copy-da-revelacao.ts`, que o guia do professor lê. Mexeu numa, mexa na outra: nada no build cobra isso |
+
+## Duas armadilhas que fizeram o post do estudante sumir (corrigidas na 1.3.0)
+
+- **`permissoes: ["forms"]` no manifesto.** O compositor do post é o
+  `StoryComposer` do DS, que é um `<form>`; sem `allow-forms` no `sandbox` do
+  iframe o navegador bloqueia o envio ANTES do `onSubmit`, e o "Compartilhar"
+  só fecha a tela. O sintoma no console é "Blocked form submission".
+- **Rota que chama o modelo usa `api.postLento`** (45 s, `lib/api.ts`). O
+  padrão do SDK é 10 s e as reações das personas levam 20–30 s: o navegador
+  abortava, o servidor gravava as reações, e o `catch` do "sem rede" escondia
+  que o estudante nunca as via.
 
 ## O cliente MEDE; quem decide é o servidor
 

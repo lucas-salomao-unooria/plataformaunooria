@@ -360,6 +360,21 @@ Largada por perfil, sorteio ou redistribuição & \arq{perfis/largada.ts},
   com precedência explícita e \cd{lado\_origem} gravado para auditoria.\\
 \zebra Casca de aparelho de 375$\times$812 & \cd{viewport} no manifesto \implica{}
   \cd{DispositivoFrame}.\\
+\zebra Publicar no \emph{feed} & \cd{permissoes: ["forms"]} no manifesto (o
+  compositor do DS é um \cd{<form>}, e sem \cd{allow-forms} o envio é bloqueado
+  antes do \cd{onSubmit}) e \cd{api.postLento} (45\,s) no post: as reações das
+  personas levam de 20 a 30\,s, e com os 10\,s padrão do SDK o navegador
+  desistia e o estudante nunca as via. As duas faltas vieram com a 1.2.0 e só a
+  suíte as mostrou.\\
+Evidência pedagógica (E14) & A ficha \arq{evidencias/fichas/exp08ef1b.ts}, a quinta
+  da plataforma (\adrr{ADR-153}): \textbf{EF08CO11}, \textbf{EF08CO09} e
+  \textbf{EF08CO07}, uma pergunta de múltipla escolha cada, com o texto do PO,
+  DEPOIS da reflexão salva e na mesma tela escura (\cd{RadioGroup} da seção
+  \cd{unooria}, no \emph{chunk} tardio). O resolvedor
+  \arq{motor/contexto-da-evidencia.ts} devolve a atividade da run e a
+  \textbf{rodada 1, sempre}: aplicar de novo é criar outra atividade. Sem
+  reflexão salva, ou em atividade sem turma, a resposta é 409. O painel é o da
+  página da atividade, que já estava montado.\\
 \bottomrule
 \end{tabularx}
 
@@ -909,6 +924,32 @@ A ficha do catálogo e o guia foram redigidos a partir das ADRs, dos dois
 passou por playtest em sala} --- estão marcados no código como ponto de partida
 para revisão pedagógica, não palavra final.
 \end{limitacao}
+
+\subsection{A evidência pedagógica: vale a melhor, conta ao encerrar}
+
+A ficha \arq{evidencias/fichas/exp02em1b.ts} (\adrr{ADR-154}) mede quatro
+habilidades por quatro perguntas de múltipla escolha do PO, na tela de
+resultado: \textbf{EM13CO14}, \textbf{EM13CO08}, \textbf{EM13CO24} e
+\textbf{EM13CO26}. A missão não tinha nem atividade nem rodada, e as duas
+foram resolvidas sem refazê-la:
+
+\begin{itemize}
+  \item \textbf{A atividade é a sintética \cd{"turma"}}, o mesmo id que as
+    equipes dela já usam (\cd{ATIVIDADE\_DA\_TURMA}): com outro, a cópia do
+    nível para os colegas de computador não acharia a equipe, em silêncio.
+  \item \textbf{A rodada é da turma}, em \cd{exp02em1b\_gate\_turma}, e só o
+    \enquote{Zerar a turma} a sobe. A sessão grava a rodada em que nasceu, e o
+    resolvedor (\arq{unoogpt/contexto-da-evidencia.ts}) recusa a resposta fora
+    do passo \cd{resultado} ou de uma sessão de rodada que acabou.
+  \item \textbf{Vale a MELHOR resposta} (\cd{respostas: "melhor"} na ficha): a
+    pergunta reaparece no resultado de cada \enquote{Tentar de novo}, e a marca
+    única só muda quando a resposta nova é melhor.
+  \item \textbf{Só conta quando o professor ENCERRA a missão na Sala de Aula}
+    (\cd{contaAoEncerrarAMissao}): até lá a marca fica guardada e o painel vem
+    com \cd{aguardandoEncerramento}. O encerramento (\cd{SalasService.aoEncerrarMissao})
+    grava a evidência própria na transação de quem encerrou, e a porta da
+    missão, fechada, recusa resposta nova.
+\end{itemize}
 
 % ---------------------------------------------------------------------------
 \section{exp01ef1b --- O Que a Foto Conta}

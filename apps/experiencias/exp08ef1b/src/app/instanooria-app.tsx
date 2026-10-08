@@ -813,7 +813,7 @@ export function InstanooriaApp({
 
               if (!runId) return;
               try {
-                const dados = await api.post<{
+                const dados = await api.postLento<{
                   comentariosDeApoio?: { handle: string; texto: string }[];
                 }>(`/runs/${runId}/student-post`, { texto, template });
                 setMeusPosts((atual) =>

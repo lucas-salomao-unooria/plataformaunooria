@@ -21,9 +21,28 @@ import {
  * é turma, série e catálogo; o que cada missão faz por dentro continua sendo
  * assunto do módulo dela.
  */
+/** Quem quer saber que a missão foi encerrada numa turma (ADR-154). */
+export type AoEncerrarMissao = (
+  tx: Prisma.TransactionClient,
+  alvo: { escolaId: string; turmaId: string; expId: string },
+) => Promise<void>;
+
 @Injectable()
 export class SalasService {
+  private readonly aoEncerrar: AoEncerrarMissao[] = [];
+
   constructor(private readonly prisma: PrismaService) {}
+
+  /**
+   * O gancho de "a missão foi ENCERRADA nesta turma", chamado por quem depende
+   * disso na subida (o `onModuleInit` do `EvidenciasService`, ADR-154). Cada
+   * registro acrescenta, e todos rodam na transação de quem encerrou: um erro
+   * ali desfaz o encerramento. A dependência é nesta direção — `evidencias`
+   * conhece `salas`, nunca o contrário —, o molde de `EquipesService.aoMudarEquipes`.
+   */
+  aoEncerrarMissao(callback: AoEncerrarMissao): void {
+    this.aoEncerrar.push(callback);
+  }
 
   /**
    * O catálogo de experiências.
@@ -284,6 +303,10 @@ export class SalasService {
         },
         select: { expId: true, estado: true, liberadaEm: true, encerradaEm: true },
       });
+
+      if (liberacao.estado === "encerrada") {
+        for (const callback of this.aoEncerrar) await callback(tx, { escolaId, turmaId, expId });
+      }
 
       return {
         expId: liberacao.expId,

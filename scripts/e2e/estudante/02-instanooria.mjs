@@ -466,15 +466,19 @@ await suite(
       let no = botao?.parentElement ?? document.body;
       while (no && no !== document.documentElement) {
         const cor = getComputedStyle(no).backgroundColor;
-        if (cor && cor !== "transparent" && !cor.endsWith(", 0)")) return cor;
+        if (cor && cor !== "transparent" && !cor.endsWith(", 0)") && !cor.endsWith("/ 0)")) return cor;
         no = no.parentElement;
       }
       return getComputedStyle(document.body).backgroundColor;
     });
+    /* Dois formatos: `rgb(255, 255, 255)` e `color(srgb 1 1 1)` — o Chrome passou
+       a devolver o segundo quando o CSS declara a cor no espaço sRGB, com os
+       canais de 0 a 1. Lido como `rgb`, o branco virava (1, 1, 1) e "escuro". */
     const claro = (() => {
-      const m = fundo.match(/\d+/g);
+      const m = fundo.match(/[\d.]+/g);
       if (!m) return false;
-      const [vermelho, verde, azul] = m.map(Number);
+      const escala = fundo.startsWith("color(") ? 255 : 1;
+      const [vermelho, verde, azul] = m.slice(0, 3).map((v) => Number(v) * escala);
       return (vermelho + verde + azul) / 3 > 200;
     })();
     r.exigir(claro, `o relatório é de tema CLARO (backgroundColor computado: ${fundo})`);
@@ -549,6 +553,39 @@ await suite(
       detalhe: `${voltou.length} caracteres devolvidos pelo servidor`,
     });
 
+    // ═══ AS PERGUNTAS DE EVIDÊNCIA (E14) ═════════════════════════════════
+    /* Três perguntas do PO, DEPOIS da reflexão salva, uma de cada vez. As
+       alternativas chegam embaralhadas a cada leitura, então a escolha é pelo
+       TEXTO (o nome acessível do rádio), nunca pela posição. Uma resposta de cada
+       nível, para o painel mostrar os três. */
+    const RESPOSTAS = [
+      { pergunta: "O que fez a plataforma montar esse feed", escolha: /O resto ficou de fora/ },
+      { pergunta: "O que isso tem a ver com as regras", escolha: /é assim que o algoritmo funciona/ },
+      { pergunta: "o que muda quando alguém compartilha", escolha: /circula incompleta/ },
+    ];
+    for (const [i, resposta] of RESPOSTAS.entries()) {
+      await telaDepois.getByText(resposta.pergunta, { exact: false }).waitFor({ timeout: 20_000 });
+      await telaDepois.getByRole("radio", { name: resposta.escolha }).check();
+      await telaDepois.getByRole("button", { name: "Enviar resposta" }).click();
+      await telaDepois.getByText("Resposta enviada ✓").nth(i).waitFor({ timeout: 20_000 });
+    }
+    await telaDepois.getByText("Pronto. Suas respostas foram enviadas.").waitFor({ timeout: 20_000 });
+    await r.registrar(p, "perguntas-de-evidencia", {
+      titulo: "As três perguntas depois da reflexão",
+      mostra: "As perguntas do PO, uma de cada vez, com a resposta escolhida e enviada.",
+      prova:
+        "A tela nunca diz se acertou: o gabarito mora na api, que devolve as alternativas " +
+        "embaralhadas e sem o nível, e responde igual para qualquer escolha.",
+    });
+
+    /* No F5, as três voltam TRAVADAS: a api guarda a primeira resposta, e a tela
+       não convida a um segundo envio que não valeria nada. */
+    await p.reload({ waitUntil: "domcontentloaded" });
+    const telaTravada = p.frameLocator('iframe[title="experiencia"]');
+    await telaTravada.getByText("Pronto. Suas respostas foram enviadas.").waitFor({ timeout: 40_000 });
+    const travadas = await telaTravada.getByText("Resposta enviada ✓").count();
+    r.exigir(travadas === 3, `as três perguntas reabrem travadas depois do F5 (${travadas} de 3)`);
+
     // ═══ A TELEMETRIA CHEGOU? ════════════════════════════════════════════
     /* O dwell de cada post é a medida central da missão, e ela viaja por dois
        canais: os eventos OPERACIONAIS (`POST /runs/:id/eventos`, que alimentam
@@ -579,6 +616,11 @@ await suite(
     await moverEtapa(prof, atividade.id, "fim");
     await prof.reload({ waitUntil: "domcontentloaded" });
     await prof.waitForTimeout(3000);
+    const paginaDoProfessor = await prof.locator("main").innerText();
+    r.exigir(
+      ["EF08CO11", "EF08CO09", "EF08CO07"].every((c) => paginaDoProfessor.includes(c)),
+      "o painel \"Habilidades da BNCC\" da atividade mostra as três habilidades do Unoovista",
+    );
     await r.registrar(prof, "professor-ao-fim", {
       titulo: "A turma, pelo lado do professor",
       mostra: "O monitor com a linha deste estudante: de que lado o feed nasceu, o que ele fez e como respondeu.",

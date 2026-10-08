@@ -231,6 +231,7 @@ model Turma {
   /// aqui: `turmas` serve a plataforma inteira, e uma coluna de cronômetro de
   /// uma missão só faria toda experiência futura herdar o vocabulário dela.
   unoogptRelogio    UnoogptRelogioTurma[]
+  unoogptGate       UnoogptGateTurma[]
   rastroGates       RastroGateTurma[]
   manifestoGates    Exp08ef4bGateTurma[]
   /// O pacote curado da exp08ef4b é POR TURMA: cada professora contextualiza os
@@ -1419,6 +1420,11 @@ model UnoogptSessao {
   /// conversa: para o estudante a tela limpa, para o professor a aula continua
   /// legível.
   tentativa          Int      @default(1) @db.SmallInt
+  /// A RODADA DA TURMA em que esta partida nasceu (`exp02em1b_gate_turma`). A
+  /// evidência pedagógica só aceita a resposta da sessão da rodada vigente: o
+  /// "Tentar de novo" é livre e não abre rodada; quem abre é o professor, ao
+  /// zerar a turma (ADR-154).
+  rodada             Int      @default(1)
   /// Minuto NARRATIVO decorrido desde as 17h00 — snapshot do que o relógio da
   /// turma já produziu. A fonte da verdade é `exp02em1b_relogio_turma`; isto é o
   /// instante congelado da última ação, e é o minuto de SAÍDA das equipes
@@ -3424,4 +3430,24 @@ model PodcastRoteiro {
 
   @@unique([escolaId, expId, atividadeId], map: "podcast_roteiros_um_por_atividade")
   @@map("podcast_roteiros")
+}
+
+/// A RODADA DA TURMA na Missão Tempestade (exp02em1b) — o contador que a
+/// evidência pedagógica precisa e a missão não tinha (ADR-154). A missão não tem
+/// atividade (a evidência usa a atividade sintética "turma", a mesma das equipes)
+/// e o "Tentar de novo" de cada estudante é livre; a rodada só sobe quando o
+/// professor ZERA a turma. Separada do relógio porque o zerar apaga o relógio, e
+/// o contador tem de sobreviver a ele. Ausência de linha = rodada 1.
+model UnoogptGateTurma {
+  escolaId String @map("escola_id")
+  turmaId  String @map("turma_id") @db.Uuid
+  /// ≥ 1 (CHECK). "Zerar a turma" soma um.
+  rodada   Int    @default(1)
+
+  atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  turma Turma @relation(fields: [turmaId], references: [id], onDelete: Cascade)
+
+  @@id([escolaId, turmaId])
+  @@map("exp02em1b_gate_turma")
 }

@@ -88,6 +88,7 @@ Os diagramas entidade-relacionamento estão no Capítulo~\ref{cap:dados}.
 \cd{exp02em1b\_marcos} & Tenant & Trilha da decisão\\
 \zebra \cd{exp02em1b\_simulacoes} & Tenant & Desfecho por tentativa\\
 \cd{exp02em1b\_relogio\_turma} & Tenant & O Relógio da Aula, por turma\\
+\cd{exp02em1b\_gate\_turma} & Tenant & A rodada da turma na evidência pedagógica\\
 \zebra \cd{exp01ef1b\_turma\_config} & Tenant & A aula da exp01ef1b por turma: pacote aprovado, latch e tentativa\\
 \cd{exp01ef1b\_runs} & Tenant & Execução por estudante e tentativa (reset arquiva, não apaga)\\
 \zebra \cd{exp01ef1b\_posts\_turma} & Tenant & O mural coletivo, assinado pela marca --- sem nome de criança\\
@@ -1520,6 +1521,9 @@ estudante só recebe os posts que o feed serviu até a galeria abrir
   aconteceu na conversa, não de um clique de avançar.\\
 \zebra \cd{tentativa} & \cd{SMALLINT} & Recomeçar abre a seguinte. \emph{CHECK}
   $\geq 1$.\\
+\cd{rodada} & \cd{INT} & A rodada DA TURMA em que a partida nasceu
+  (\cd{exp02em1b\_gate\_turma}, \adrr{ADR-154}). A evidência só aceita a
+  resposta da sessão da rodada vigente. \emph{CHECK} $\geq 1$.\\
 \cd{minutos\_gastos} & \cd{INT} & Minuto narrativo desde as 17h00. \emph{Snapshot}
   do que o relógio da turma já produziu --- a fonte da verdade é
   \cd{exp02em1b\_relogio\_turma}. É também o minuto de \textbf{saída} das equipes
@@ -1629,6 +1633,20 @@ estudante só recebe os posts que o feed serviu até a galeria abrir
   onde o relógio da cidade estava quando a duração mudou. É o que impede o minuto
   narrativo de rebobinar --- aos 4:00 de 5:00 o estudante está no minuto 48, e
   recalcular com 7:00 daria 34.\\
+\bottomrule
+\end{tabularx}
+
+\subsection{\cd{exp02em1b\_gate\_turma}}
+
+\begin{tabularx}{\linewidth}{@{}L{34mm}L{22mm}X@{}}
+\toprule
+\headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
+\midrule
+\pk{(escola\_id, turma\_id)} & PK composta & A rodada é da \textbf{turma}
+  (\adrr{ADR-154}). Ausência de linha = rodada 1.\\
+\zebra \cd{rodada} & \cd{INT} & O \enquote{Zerar a turma} soma um, e a linha
+  sobrevive ao zerar (que apaga o relógio). \emph{CHECK} $\geq 1$.\\
+\cd{atualizado\_em} & \cd{TIMESTAMPTZ} & Carimbo do último zerar.\\
 \bottomrule
 \end{tabularx}
 

@@ -70,6 +70,9 @@ await suite(
     await prof.selectOption("select#turma", alvo.value);
     await prof.waitForURL("**turmaId=**", { timeout: 20_000 });
     await prof.waitForSelector("text=Relógio da aula", { timeout: 20_000 });
+    /* Os resultados DESTA turma: o roteiro abre depois a tela de um estudante,
+       e o painel de habilidades do fim está aqui, não lá. */
+    const resultadosDaTurma = prof.url();
 
     /* ZERAR PRIMEIRO: o estado é server-side e sobrevive ao roteiro. Sem isto a
        segunda execução encontra o estudante já na investigação e o smoke passa
@@ -274,6 +277,44 @@ await suite(
         "O painel cabe inteiro ao lado do mapa: o motivo da chegada quebra linha em vez de ser " +
         "cortado. E não há nota — o número é da cidade, não do estudante.",
       detalhe: `${largura.conteudo}px de conteúdo em ${largura.coluna}px de coluna`,
+    });
+
+    // ═══ ESTUDANTE: o resultado e as perguntas de evidência (ADR-154) ═══
+    /* As quatro perguntas do PO, no Resultado, com o `ChoicePoll` do UnooriaAI.
+       As alternativas chegam embaralhadas: a escolha é pelo TEXTO (o nome do
+       rádio), nunca pela posição. O voto é definitivo no toque. */
+    await q4.locator("button", { hasText: /Ver o resultado completo/ }).first().click();
+    await q4.getByText("Antes de fechar").waitFor({ timeout: 30_000 });
+    const ESCOLHAS = [
+      /previsão firme e o que é estimativa/,
+      /corretos e atualizados/,
+      /segurança física das pessoas/,
+      /reclamar se o bairro delas/,
+    ];
+    for (const [i, escolha] of ESCOLHAS.entries()) {
+      await q4.getByRole("radio", { name: escolha }).click();
+      await q4.getByText("Resposta enviada ✓").nth(i).waitFor({ timeout: 20_000 });
+    }
+    await r.registrar(p, "perguntas-de-evidencia", {
+      titulo: "Quatro perguntas no resultado",
+      mostra: "As perguntas do PO dentro do UnooriaAI, cada uma travada com \"Resposta enviada\".",
+      prova:
+        "A tela nunca diz se acertou. As perguntas voltam a cada \"Tentar de novo\" e o servidor " +
+        "guarda a melhor resposta; o nível só conta quando o professor encerra a missão.",
+      inteira: true,
+    });
+
+    // ═══ PROFESSOR: o painel espera o encerramento ══════════════════════
+    await prof.goto(resultadosDaTurma, { waitUntil: "domcontentloaded" });
+    await prof
+      .getByText("O nível aparece quando você encerrar a missão na Sala de Aula")
+      .waitFor({ timeout: 30_000 });
+    await r.registrar(prof, "habilidades-esperando-encerramento", {
+      titulo: "As habilidades esperam o encerramento",
+      mostra: "O bloco \"Habilidades da BNCC\" nos resultados, avisando que o nível vem ao encerrar.",
+      prova:
+        "Com a missão aberta, as respostas estão guardadas mas não viram nível: a melhor resposta " +
+        "de cada estudante só vale depois que o professor encerra a missão na Sala de Aula.",
     });
   },
 );

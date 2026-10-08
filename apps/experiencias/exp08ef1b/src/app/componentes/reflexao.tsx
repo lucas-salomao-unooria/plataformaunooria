@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import { api } from '../../lib/api';
+import { Perguntas } from './perguntas';
 
 /**
  * A REFLEXÃO que fecha a atividade (fluxo v2). É pós-revelação: aqui o
@@ -35,6 +36,16 @@ export function Reflexao({ runId }: { runId: string }) {
   const [salvo, setSalvo] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [minimo, setMinimo] = useState(MINIMO_ATE_A_API_RESPONDER);
+  /**
+   * As perguntas de evidência abrem depois da PRIMEIRA reflexão salva e não
+   * fecham mais: voltar a editar o texto apaga o "salvo", mas não pode sumir com
+   * a pergunta que a criança está respondendo. A api confere o mesmo (sem
+   * reflexão, a resposta é 409).
+   */
+  const [perguntasAbertas, setPerguntasAbertas] = useState(false);
+  useEffect(() => {
+    if (salvo) setPerguntasAbertas(true);
+  }, [salvo]);
 
   /** Recupera o que ele já escreveu: reabrir a tela não pode perder texto. */
   useEffect(() => {
@@ -135,6 +146,8 @@ export function Reflexao({ runId }: { runId: string }) {
             Guardado. Pode continuar escrevendo se lembrar de mais alguma coisa.
           </p>
         ) : null}
+
+        {perguntasAbertas ? <Perguntas runId={runId} /> : null}
       </div>
     </div>
   );
