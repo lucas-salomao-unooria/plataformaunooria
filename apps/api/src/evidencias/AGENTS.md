@@ -23,14 +23,18 @@ legenda numa transação SÓ DELA, depois do latch da publicação: a IA leva at
 **A terceira é o Jornal da Escola (`exp04ef1b`)**: `fichas/exp04ef1b.ts`
 (EF15CO04 por `pistas`, EF15CO02 por `chave`, EF04CO08 por `edicao-2`, `p1` e
 `p2`), as três ações marcadas DENTRO das transações dos latches e da Chave.
-**A Missão Tempestade (`exp02em1b`, ADR-154)** é a primeira do EM e a única com
-duas regras próprias, declaradas na ficha: `respostas: "melhor"` (a pergunta
-reaparece a cada tentativa, e a marca única só muda para melhor) e
-`contaAoEncerrarAMissao` (a marca é guardada, mas só vira evidência quando o
-professor ENCERRA a missão na Sala de Aula — o gancho
-`SalasService.aoEncerrarMissao` chama `aoEncerrarAMissao` na transação de quem
-encerrou, pelo mesmo `gravarPropria` da marca). A atividade é a sintética
-`"turma"` (a das equipes) e a rodada é a da turma (`exp02em1b_gate_turma`).
+A quarta é o Júri Estadual (`exp06ef1b`, ADR-151/152).
+**A quinta é o Unoovista (`exp08ef1b`, ADR-153)**: `fichas/exp08ef1b.ts`, três
+perguntas do PO (EF08CO11, EF08CO09, EF08CO07) e NENHUMA ação. O contexto é o
+provider `motor/contexto-da-evidencia.ts` (o `MotorModule` importa o
+`EvidenciasModule`): a run mais recente numa atividade ativa, `null` sem
+reflexão salva ou em atividade sem turma, e a **rodada sempre 1** — o motor não
+tem rodada, e aplicar de novo é criar outra atividade.
+**A sexta é a Missão Tempestade (`exp02em1b`, ADR-154)**, com duas regras só
+dela, na ficha: `respostas: "melhor"` (a marca única só muda para melhor) e
+`contaAoEncerrarAMissao` (vira evidência só no encerramento da missão na Sala
+de Aula: `SalasService.aoEncerrarMissao` → `aoEncerrarAMissao`, pelo mesmo
+`gravarPropria`). Atividade `"turma"` (a das equipes), rodada da turma.
 
 Três tabelas de PLATAFORMA (sem prefixo, como `liberacoes` e `equipes`), todas
 com `escola_id` + RLS forçada:
@@ -106,9 +110,11 @@ Missão com ficha faz TRÊS coisas, no mesmo trabalho:
    mesmo pacote; o PO pediu a medição inteira, e a melhor rodada por
    habilidade já impede que a repetição derrube o resultado.
 
-`registrarFicha` existe **só para teste** (a suíte registra uma ficha da
-exp08ef1b em tempo de execução). A ficha de uma missão real vai no registro
-estático, onde a trava a confere.
+`registrarFicha` existe **só para teste**. A suíte da plataforma registra uma
+ficha FALSA da exp08ef1b, que SUBSTITUI a real só na instância dela, de
+propósito (as regras pedem marcador de ação, e a real só tem perguntas); a real
+e o resolvedor do motor são provados em `tests/motor-evidencia-postgres.spec.ts`.
+A ficha real vai no registro estático, onde a trava a confere.
 
 O resolvedor da missão devolve `null` sempre que a resposta não deve contar:
 na A Seleção, antes da reflexão (a enquete vem depois dela, na ordem do PO) e

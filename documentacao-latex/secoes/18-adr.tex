@@ -9,7 +9,7 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{153 decisões}, numeradas até ADR-154. A 153 (a evidência do Unoovista) e a 154 nasceram no mesmo dia, em frentes paralelas. A 132 (a Ajuda com
+São \textbf{154 decisões}, numeradas até ADR-154. A 153 (a evidência do Unoovista) e a 154 (a da Missão Tempestade) nasceram no mesmo dia, em frentes paralelas. A 132 (a Ajuda com
 avatar) entrou no código antes de ter seção aqui, e por um dia o número foi
 citado sem existir; a 133 pulou para não colidir com ela. A 133 e a 134 nasceram no mesmo dia, em frentes paralelas
 (Unoovista e Unoochat), e entraram juntas no merge; a 135 e a 136 levaram as
@@ -203,6 +203,7 @@ que a cercam.
 \adrr{ADR-150} & O podcast de recapitulação vira recurso da plataforma, com rotas únicas, e o professor revisa as falas do tema na customização & 2026-10-06 & Aceita; revê a \adrr{ADR-119}\\
 \zebra \adrr{ADR-151} & O Júri Estadual volta ao foco EF06CO10, aprova as imagens antes da turma e ganha o podcast & 2026-10-06 & Aceita; substitui em parte a \adrr{ADR-137}; complementada pela \adrr{ADR-152}\\
 \adrr{ADR-152} & O Júri Estadual recupera o ciclo do voto: salvar pesa, a justificativa vem antes e depois, complementar, e a rodada de desvio & 2026-10-07 & Aceita; complementa a \adrr{ADR-151}\\
+\zebra \adrr{ADR-153} & O Unoovista mede a evidência pelas três perguntas do PO, depois da reflexão, numa rodada só & 2026-10-07 & Aceita; aplica a \adrr{ADR-112}\\
 \adrr{ADR-154} & A Missão Tempestade mede a evidência numa atividade sintética, com rodada da turma, a melhor resposta e o nível só ao encerrar a missão & 2026-10-07 & Aceita; aplica a \adrr{ADR-112}\\
 \bottomrule
 \end{tabularx}
@@ -13654,6 +13655,90 @@ desvio ou pela justificativa; o painel de habilidades mostrar muita gente com
 ganha um teto por marcador ausente, para todas as missões); ou o DS tirar os
 ícones de comentar e compartilhar do \cd{PostCard.Actions}.
 
+\section{ADR-153 --- O Unoovista mede a evidência pelas três perguntas do PO, depois da reflexão, numa rodada só}
+\label{adr:exp08ef1b-evidencia}
+
+\textbf{Data.} 2026-10-07. \textbf{Status.} Aceita. \textbf{Aplica} a
+\adrr{ADR-112} (a evidência pedagógica por atividade e rodada) à missão do 8º
+ano, no modelo de atividade da \adrr{ADR-130}.
+
+\begin{especificacao}{Contexto}
+O Unoovista (\cd{exp08ef1b}, \enquote{O Conteúdo que não chegou}, 8º ano,
+Unidade 1) era a última missão com atividades sem ficha pedagógica. Em
+2026-10-02 o PO mandou três perguntas de múltipla escolha, mas com os códigos
+EF08CO01, EF08CO05 e EF08CO07; na BNCC carregada na api os dois primeiros são
+recursão e paralelismo, e o painel mostraria a descrição oficial, não a da
+pergunta. O trabalho parou até o PO corrigir. Em 2026-10-07 ele trocou para
+\textbf{EF08CO11} (vieses em fontes eletrônicas), \textbf{EF08CO09} (termos de
+uso) e \textbf{EF08CO07} (compartilhar entendendo a dinâmica da rede), e os
+três conferem com o documento. O motor da missão não tem rodada: cada estudante
+tem uma run por atividade, o reset de um estudante reaproveita a mesma run, e o
+\enquote{rodar de novo} do modelo do Instanooria é criar uma atividade nova.
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{itemize}
+  \item \textbf{A ficha} (\arq{evidencias/fichas/exp08ef1b.ts}, versão 1):
+    uma pergunta por habilidade, enunciado e alternativas LITERAIS do PO, e os
+    critérios por nível tirados do \enquote{Por que essa calibragem} dele.
+  \item \textbf{A reflexão escrita fica}, e as perguntas vêm DEPOIS dela salva,
+    na mesma tela escura (decisão do Lucas em 2026-10-02; o PO falava em
+    trocá-la). Perguntar antes sugeriria a resposta que a reflexão pede. O
+    resolvedor do motor (\arq{motor/contexto-da-evidencia.ts}) só devolve
+    contexto quando a run mais recente numa atividade ativa tem a linha de
+    \cd{exp08ef1b\_reflexoes}.
+  \item \textbf{A rodada é sempre 1.} Uma aplicação nova é uma atividade nova;
+    a resposta de quem foi resetado não reabre (vale a primeira), e o professor
+    corrige pelo ajuste do painel.
+  \item \textbf{Atividade sem turma não tem evidência}: a evidência é por
+    turma. Como toda atividade criada pelo hub exige turma, só o seed de
+    demonstração criava a do formato legado; ele passou a criá-la na 8A.
+  \item \textbf{A tela é da plataforma}: \cd{RadioGroup} e \cd{Button} da seção
+    \cd{unooria} no tema escuro, carregados no \emph{chunk} tardio da reflexão,
+    como os gráficos do dossiê, para o CSS da plataforma não acompanhar o feed.
+  \item \textbf{O hub não mudou}: o painel \enquote{Habilidades da BNCC} da
+    página da atividade já estava montado e acendeu com a ficha.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Um contador de rodada no motor}, que subisse no reset ou no
+    \enquote{limpar sessões}. Exigiria migração e uma regra nova para um caso
+    que o modelo de atividade já resolve: aplicar de novo é criar outra.
+  \item \textbf{Trocar a reflexão pelas perguntas}, como o PO propunha. A
+    reflexão é a única produção textual longa da missão e alimenta o
+    relatório do estudante.
+  \item \textbf{A enquete do clone} (\cd{DmPoll}/\cd{StoryPoll} do
+    \cd{unoovista}). Depois da revelação quem fala é a escola, não o app; a
+    peça do clone ali seria o disfarce depois de ele acabar.
+  \item \textbf{Usar a turma do estudante na atividade legada.} A marca
+    existiria, mas a página dessa atividade não tem painel (não tem turma), e
+    o professor não teria onde ajustá-la.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{O reset de um estudante não refaz a evidência}: a criança
+    responde de novo, a tela diz \enquote{enviada}, e vale a primeira resposta.
+    Só o ajuste do professor muda o nível.
+  \item \textbf{A medida é só pela pergunta}: nenhuma ação do feed (curtir,
+    salvar, parar) entra no nível, embora o motor as tenha. Uma criança que
+    viveu bem a missão e erra a pergunta fica com o nível da pergunta.
+  \item \textbf{O seed mudou}: a atividade de demonstração deixou de valer para
+    a escola inteira; quem não é da 8A não a vê mais.
+  \item \textbf{A suíte de ponta a ponta} (\arq{02-instanooria.mjs}) ganhou as
+    perguntas e o painel, mas só corre na cópia principal, depois do
+    \emph{merge} e de semear de novo a demonstração.
+\end{itemize}
+
+\textbf{Gatilho.} O PO pedir que uma ação do feed meça alguma das três
+habilidades (então a ficha ganha marcador de ação e sobe de versão); o piloto
+mostrar professores reaplicando a mesma atividade em vez de criar outra (então
+o motor ganha rodada); ou uma quarta pergunta.
+
 \section{ADR-154 --- A Missão Tempestade mede a evidência numa atividade sintética, com rodada da turma, a melhor resposta e o nível só ao encerrar a missão}
 \label{adr:exp02em1b-evidencia}
 
@@ -13750,4 +13835,3 @@ missão não tinha o que a evidência exige: não tem atividade (ficou fora da
 sai); o piloto mostrar turmas com \enquote{atingiu} concentrado em quem tentou
 muitas vezes (então a régua volta a \enquote{vale a primeira}); ou professores
 que não encerram a missão (então o nível passa a contar no zerar também).
-
