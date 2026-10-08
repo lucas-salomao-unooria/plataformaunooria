@@ -30,6 +30,11 @@ provider `motor/contexto-da-evidencia.ts` (o `MotorModule` importa o
 `EvidenciasModule`): a run mais recente numa atividade ativa, `null` sem
 reflexão salva ou em atividade sem turma, e a **rodada sempre 1** — o motor não
 tem rodada, e aplicar de novo é criar outra atividade.
+**A sexta é a Missão Tempestade (`exp02em1b`, ADR-154)**, com duas regras só
+dela, na ficha: `respostas: "melhor"` (a marca única só muda para melhor) e
+`contaAoEncerrarAMissao` (vira evidência só no encerramento da missão na Sala
+de Aula: `SalasService.aoEncerrarMissao` → `aoEncerrarAMissao`, pelo mesmo
+`gravarPropria`). Atividade `"turma"` (a das equipes), rodada da turma.
 
 Três tabelas de PLATAFORMA (sem prefixo, como `liberacoes` e `equipes`), todas
 com `escola_id` + RLS forçada:
@@ -69,7 +74,8 @@ com `escola_id` + RLS forçada:
   FICA com a confirmação que tinha (`diferencaDasCopias`).
 - **Múltipla escolha: o gabarito é do servidor.** O estudante recebe a pergunta
   sem `status`, responde só a alternativa, e recebe `{ enviada: true }` —
-  sempre, na primeira e na segunda. **Vale a PRIMEIRA resposta.** Atividade e
+  sempre, na primeira e na segunda. **Vale a PRIMEIRA resposta** — salvo a
+  ficha com `respostas: "melhor"` (ADR-154). Atividade e
   rodada NUNCA vêm do cliente: saem do resolvedor da missão.
 - **As alternativas saem EMBARALHADAS, numa ordem nova a cada leitura**
   (`regras.ts#embaralhar`, Fisher–Yates sobre uma cópia). A ficha as guarda na
@@ -108,7 +114,7 @@ Missão com ficha faz TRÊS coisas, no mesmo trabalho:
 ficha FALSA da exp08ef1b, que SUBSTITUI a real só na instância dela, de
 propósito (as regras pedem marcador de ação, e a real só tem perguntas); a real
 e o resolvedor do motor são provados em `tests/motor-evidencia-postgres.spec.ts`.
-A ficha de uma missão real vai no registro estático, onde a trava a confere.
+A ficha real vai no registro estático, onde a trava a confere.
 
 O resolvedor da missão devolve `null` sempre que a resposta não deve contar:
 na A Seleção, antes da reflexão (a enquete vem depois dela, na ordem do PO) e

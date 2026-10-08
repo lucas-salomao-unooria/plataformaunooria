@@ -76,6 +76,9 @@ export { Button, IconButton, Avatar, Badge, Tag, Divider, Toggle } from '@unoori
 /** Superfícies compostas: o diálogo e os cartões. */
 export { Modal, AssistantCard, FeatureCard, SettingsRow } from '@unooria/design-system/unooriaai';
 
+/** A enquete de escolha única (0.2.19): as perguntas de evidência da exp02em1b (ADR-154). */
+export { ChoicePoll } from '@unooria/design-system/unooriaai';
+
 /**
  * Ícones da seção. `uaiIcons` é o registro (nome → ligadura do Material
  * Symbols) e `uaiIconNames` serve de fonte para o `UaiIconName`.
@@ -89,6 +92,8 @@ export type {
   UaiButtonProps,
   UaiButtonSize,
   UaiButtonVariant,
+  UaiChoicePollOption,
+  UaiChoicePollProps,
   UaiChatBubbleProps,
   UaiChatBubbleRole,
   UaiComposerDockProps,

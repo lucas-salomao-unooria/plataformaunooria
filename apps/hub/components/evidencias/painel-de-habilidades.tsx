@@ -60,9 +60,10 @@ const SEM_REDE = "Não deu para falar com a plataforma. Confira a conexão e ten
  *
  * **Missão sem ficha pedagógica não desenha nada** (`temFicha: false`). As
  * que têm ficha são Quem mandou isso? v2.2 (ADR-118), A Seleção
- * (exp07ef1b), o Jornal da Escola (exp04ef1b) e o Júri Estadual (exp06ef1b),
- * cada uma nos resultados dela, e o Unoovista (exp08ef1b), na página da
- * atividade — onde o bloco acendeu sozinho quando a ficha entrou.
+ * (exp07ef1b), o Jornal da Escola (exp04ef1b), o Júri Estadual (exp06ef1b) e
+ * a Missão Tempestade (exp02em1b, que só conta ao encerrar a missão), cada uma
+ * nos resultados dela, e o Unoovista (exp08ef1b), na página da atividade —
+ * onde o bloco acendeu sozinho quando a ficha entrou.
  *
  * Não há ranking: a ordem é a alfabética (a equipe junta), nenhuma coluna
  * ordena, e nada soma níveis. O estudante nunca vê esta tela.
@@ -235,6 +236,17 @@ function PainelComFicha({ turmaId, expId, atividadeId, inicial, podeEditar, roda
 
       {aviso ? <Snackbar severity="success" title={aviso} onClose={() => setAviso(null)} /> : null}
       {!janelaAberta ? <ErroDoPainel erro={erro} /> : null}
+
+      {/* A régua que só conta ao encerrar (ADR-154): as respostas já estão
+          guardadas, mas o nível só existe depois do encerramento. Sem este aviso,
+          a tabela vazia no meio da aula parecia defeito. */}
+      {dados.aguardandoEncerramento ? (
+        <FeedbackAlert
+          type="info"
+          title="O nível aparece quando você encerrar a missão na Sala de Aula"
+          description="As respostas dos estudantes já estão guardadas: vale a melhor de cada um. Ao encerrar, a missão fecha para a turma e os níveis aparecem aqui, para você confirmar ou ajustar."
+        />
+      ) : null}
 
       <Tabs
         value={valorDoRecorte(recorte)}

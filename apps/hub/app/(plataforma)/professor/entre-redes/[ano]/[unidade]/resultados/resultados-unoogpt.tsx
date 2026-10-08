@@ -1,9 +1,13 @@
 import Link from "next/link";
 import { Card, EmptyState, MetricCard, ScrollBar } from "@edu/ui/ds";
+import { PainelDeHabilidades } from "@/components/evidencias/painel-de-habilidades";
 import { LinkButton } from "@/components/link-button";
 import { RotuloDaTrilha } from "@/components/trilha";
 import { apiDoServidor } from "@/lib/api-servidor";
+import { auth } from "@/lib/auth";
+import { painelDeHabilidades } from "@/lib/evidencias-servidor";
 import { AVISO_POR_COMPUTADOR, chaveDaLinha } from "@/lib/equipe-no-painel";
+import { ATIVIDADE_DA_TURMA } from "@/lib/equipes";
 import {
   rotaDaMissao,
   type Missao,
@@ -49,9 +53,13 @@ export async function ResultadosUnooGPT({
       ? "Você não tem turma de 2ª série do EM, e esta missão é dessa série. Para conduzir uma missão, entre pela turma em Minhas turmas."
       : undefined;
 
-  const folha = turma
-    ? await apiDoServidor<FolhaDaTurma>(`/unoogpt/professor/turmas/${encodeURIComponent(turma)}`)
-    : null;
+  /* A evidência (E14, ADR-154): a missão não tem atividade, e a da evidência é
+     a sintética "turma" — a mesma das equipes. */
+  const [folha, habilidades, session] = await Promise.all([
+    turma ? apiDoServidor<FolhaDaTurma>(`/unoogpt/professor/turmas/${encodeURIComponent(turma)}`) : null,
+    turma && missao.expId ? painelDeHabilidades(turma, missao.expId, ATIVIDADE_DA_TURMA) : null,
+    auth(),
+  ]);
   /* Com equipes nesta missão (E13), cada linha é um computador e o retrato
      conta computadores. */
   const porComputador = folha?.retrato.porComputador === true;
@@ -231,6 +239,22 @@ export async function ResultadosUnooGPT({
               crianças por acerto viraria ranking. O número está na tela de cada estudante.
             </p>
           </Card>
+
+          {/* O painel de habilidades (E14, ADR-154). Só conta quando a missão é
+              encerrada na Sala de Aula: até lá ele diz isso, sem nível. Só o
+              `professor` confirma e ajusta; a coordenação lê. */}
+          {habilidades?.temFicha && missao.expId ? (
+            <div className="flex flex-col gap-3" data-habilidades-da-tempestade>
+              <PainelDeHabilidades
+                key={turma}
+                turmaId={turma}
+                expId={missao.expId}
+                atividadeId={ATIVIDADE_DA_TURMA}
+                inicial={habilidades}
+                podeEditar={session?.usuario.papel === "professor"}
+              />
+            </div>
+          ) : null}
         </>
       )}
     </div>
