@@ -466,15 +466,19 @@ await suite(
       let no = botao?.parentElement ?? document.body;
       while (no && no !== document.documentElement) {
         const cor = getComputedStyle(no).backgroundColor;
-        if (cor && cor !== "transparent" && !cor.endsWith(", 0)")) return cor;
+        if (cor && cor !== "transparent" && !cor.endsWith(", 0)") && !cor.endsWith("/ 0)")) return cor;
         no = no.parentElement;
       }
       return getComputedStyle(document.body).backgroundColor;
     });
+    /* Dois formatos: `rgb(255, 255, 255)` e `color(srgb 1 1 1)` — o Chrome passou
+       a devolver o segundo quando o CSS declara a cor no espaço sRGB, com os
+       canais de 0 a 1. Lido como `rgb`, o branco virava (1, 1, 1) e "escuro". */
     const claro = (() => {
-      const m = fundo.match(/\d+/g);
+      const m = fundo.match(/[\d.]+/g);
       if (!m) return false;
-      const [vermelho, verde, azul] = m.map(Number);
+      const escala = fundo.startsWith("color(") ? 255 : 1;
+      const [vermelho, verde, azul] = m.slice(0, 3).map((v) => Number(v) * escala);
       return (vermelho + verde + azul) / 3 > 200;
     })();
     r.exigir(claro, `o relatório é de tema CLARO (backgroundColor computado: ${fundo})`);
