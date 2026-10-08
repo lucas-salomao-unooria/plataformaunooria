@@ -10,6 +10,7 @@ import { api } from '../../lib/api';
 import type { Desfecho, MarcoDaTrilha, Tentativa } from '../../lib/tipos';
 import { agruparEmpatados } from '../../lib/visao';
 import { IconeDaFonte } from '../arte/icones';
+import { Perguntas } from './perguntas';
 
 const milhar = (n: number) => n.toLocaleString('pt-BR');
 
@@ -617,6 +618,11 @@ export function Resultado({
           salvasReais={totais.salvas}
         />
       )}
+
+      {/* As perguntas de evidência (ADR-154): só na rodada mais recente, que é
+          a que a resposta descreve. Elas reaparecem a cada "Tentar de novo", e
+          o servidor guarda a melhor; nada aqui segura o recomeço. */}
+      {vendo === null && <Perguntas tentativa={rodadas[rodadas.length - 1]?.ordem ?? 1} />}
 
       {/* Uma rodada só ensina que aconteceu; duas ensinam que podia ter sido
           diferente. Recomeçar é livre e precisa ser dito aqui, no momento em

@@ -1,4 +1,6 @@
 import { Module } from "@nestjs/common";
+import { EvidenciasModule } from "../evidencias/evidencias.module";
+import { ContextoDaEvidenciaDaTempestade } from "./contexto-da-evidencia";
 import { UnoogptAgregadoController } from "./unoogpt-agregado.controller";
 import { UnoogptTurmasController } from "./unoogpt-turmas.controller";
 import { UnoogptController } from "./unoogpt.controller";
@@ -15,7 +17,8 @@ import { UnoogptService } from "./unoogpt.service";
  * Transcrição de uma criança por descuido.
  */
 @Module({
+  imports: [EvidenciasModule],
   controllers: [UnoogptController, UnoogptTurmasController, UnoogptAgregadoController],
-  providers: [UnoogptService],
+  providers: [UnoogptService, ContextoDaEvidenciaDaTempestade],
 })
 export class UnoogptModule {}

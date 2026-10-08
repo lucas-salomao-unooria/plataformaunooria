@@ -58,7 +58,7 @@ export const GUIA_EXP02EM1B: GuiaDaAula = {
         "Avaliar a confiabilidade das informações encontradas em meio digital, investigando seus modos de construção e considerando a autoria, a estrutura e o propósito da mensagem.",
       eixo: "Cultura Digital",
       ondeAcontece:
-        "O debate: cada viés vem do MODO DE CONSTRUÇÃO da fonte — satélite vê telhado, cadastro tem nove anos, telefonia conta aparelho e não pessoa.",
+        "O debate: cada viés vem do MODO DE CONSTRUÇÃO da fonte — satélite vê telhado, cadastro tem nove anos, telefonia conta aparelho e não pessoa. Medida na 1ª pergunta do resultado: o que a faixa e o nível de confiança dizem sobre o que o Cientista passou.",
     },
     {
       codigo: "EM13CO10",
@@ -75,6 +75,30 @@ export const GUIA_EXP02EM1B: GuiaDaAula = {
       eixo: "Pensamento Computacional",
       ondeAcontece:
         "O desfecho é uma FAIXA com 20 corridas da mesma decisão: a turma vê, de graça, que um modelo devolve distribuição e não profecia.",
+    },
+    {
+      codigo: "EM13CO08",
+      texto:
+        "Entender como mudanças na tecnologia afetam a segurança, incluindo novas maneiras de preservar sua privacidade e dados pessoais on-line, reportando suspeitas e buscando ajuda em situações de risco.",
+      eixo: "Cultura Digital",
+      ondeAcontece:
+        "Medida na 2ª pergunta do resultado: cadastro de moradores e registros por bairro dizem onde mora quem é vulnerável — que cuidado um sistema real exigiria com esses dados.",
+    },
+    {
+      codigo: "EM13CO24",
+      texto:
+        "Identificar e reconhecer como as redes sociais e artefatos computacionais em geral interferem na saúde física e mental de seus usuários.",
+      eixo: "Cultura Digital",
+      ondeAcontece:
+        "Medida na 3ª pergunta do resultado: o bairro sem equipe teve gente exposta pela combinação entre o sistema e as perguntas que o estudante fez.",
+    },
+    {
+      codigo: "EM13CO26",
+      texto:
+        "Aplicar os conceitos e pressupostos do direito digital em sua conduta e experiências com o cotidiano da cultura digital, bem como na produção e uso de artefatos computacionais.",
+      eixo: "Cultura Digital",
+      ondeAcontece:
+        "Medida na 4ª pergunta do resultado: os direitos de quem é afetado por uma decisão automatizada — transparência, responsável e a chance de questionar.",
     },
   ],
 
@@ -327,7 +351,7 @@ export const GUIA_EXP02EM1B: GuiaDaAula = {
       "“A mesma decisão, rodada vinte vezes, deu resultados diferentes. Vocês não controlavam o desfecho: controlavam a pergunta que fizeram antes.”",
     ],
     registro:
-      "Duas linhas, individuais, entregues no fim da aula: “se eu tivesse uma quarta pergunta, faria ___, porque ___”. É a avaliação mais honesta desta missão — mostra o que o estudante entendeu do próprio ponto cego, e não a sorte que ele teve na simulação.",
+      "Duas linhas, individuais, entregues no fim da aula: “se eu tivesse uma quarta pergunta, faria ___, porque ___”. É a avaliação mais honesta desta missão — mostra o que o estudante entendeu do próprio ponto cego, e não a sorte que ele teve na simulação. No resultado, cada um responde ainda quatro perguntas de múltipla escolha; vale a melhor resposta, e o nível só aparece em “Habilidades da BNCC” depois que você encerra a missão na Sala de Aula.",
     produto: {
       titulo: "Registro estendido (para quem quiser levar a duas aulas)",
       itens: [

@@ -30,7 +30,7 @@ E os módulos de experiência, um por missão:
 | Módulo | Experiência |
 |---|---|
 | [`src/comum/insta/`](src/comum/insta/AGENTS.md) | exp08ef1b Unoovista — o relógio da aula (ADR-92); com ficha (E14, ADR-153), contexto em `src/motor/contexto-da-evidencia.ts` |
-| [`src/unoogpt/`](src/unoogpt/AGENTS.md) | exp02em1b Missão Tempestade |
+| [`src/unoogpt/`](src/unoogpt/AGENTS.md) | exp02em1b Missão Tempestade — com ficha (E14, ADR-154: atividade "turma", vale a melhor, conta ao encerrar) e equipe (E13) |
 | [`src/a-selecao/`](src/a-selecao/AGENTS.md) | exp07ef1b A Seleção — com ficha (E14) e o Mural pareado por computador (E13) |
 | [`src/quem-mandou-isso/`](src/quem-mandou-isso/AGENTS.md) | exp05ef1b Quem Mandou Isso? v2.2 — com ficha (E14) e equipe (E13) |
 | [`src/jornal-escola/`](src/jornal-escola/AGENTS.md) | exp04ef1b Jornal da Escola: A Edição de Bento — com ficha (E14), equipe (E13) e a IA que só diagrama |

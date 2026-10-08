@@ -4,6 +4,7 @@ import {
   Injectable,
   NotFoundException,
   type OnModuleInit,
+  Optional,
 } from "@nestjs/common";
 import { Prisma } from "@prisma/client";
 import { exigirMissaoLiberada } from "../comum/liberacao";
@@ -12,6 +13,7 @@ import { habilidadePorCodigo } from "../curriculo/consulta";
 import { computadoresDaMontagem, mapaDeEquipes } from "../equipes/consulta";
 import { EquipesService, type AlvoDaMontagem } from "../equipes/equipes.service";
 import { PrismaService } from "../prisma/prisma.service";
+import { SalasService } from "../salas/salas.service";
 import type { Ajustes } from "./contrato-de-rotas";
 import { FICHAS, type FichaPedagogica } from "./fichas";
 import {
@@ -107,6 +109,20 @@ function json(valor: Prisma.InputJsonValue | null): Prisma.InputJsonValue | type
   return valor === null ? Prisma.DbNull : valor;
 }
 
+/** A missão está ENCERRADA nesta turma, na Sala de Aula? (`liberacoes.estado`) */
+async function missaoEncerrada(
+  tx: Prisma.TransactionClient,
+  escolaId: string,
+  turmaId: string,
+  expId: string,
+): Promise<boolean> {
+  const linha = await tx.liberacao.findUnique({
+    where: { escolaId_turmaId_expId: { escolaId, turmaId, expId } },
+    select: { estado: true },
+  });
+  return linha?.estado === "encerrada";
+}
+
 /** Existe na BNCC, com a grafia exata — `habilidadePorCodigo` sozinho aceitaria minúscula. */
 const CODIGOS_DA_BNCC = { has: (codigo: string) => habilidadePorCodigo(codigo)?.codigo === codigo };
 
@@ -145,6 +161,9 @@ export class EvidenciasService implements OnModuleInit {
   constructor(
     private readonly prisma: PrismaService,
     private readonly equipes: EquipesService,
+    /* Opcional só para as suítes que montam o serviço à mão e não exercitam o
+       encerramento; no módulo, o Nest sempre o injeta. */
+    @Optional() private readonly salas?: SalasService,
   ) {}
 
   /**
@@ -155,6 +174,9 @@ export class EvidenciasService implements OnModuleInit {
    */
   onModuleInit(): void {
     this.equipes.aoMudarEquipes((tx, alvo) => this.recalcularCopias(tx, alvo));
+    /* E no encerramento da missão na Sala de Aula: a régua que só conta ao
+       encerrar (ADR-154) vira evidência aqui, na transação de quem encerrou. */
+    this.salas?.aoEncerrarMissao((tx, alvo) => this.aoEncerrarAMissao(tx, alvo));
   }
 
   /** A ficha da missão, ou `null` — missão sem ficha não tem evidência. */
@@ -303,8 +325,10 @@ export class EvidenciasService implements OnModuleInit {
 
     let marcaAnterior: Nivel | null = null;
     if (criou.count === 0) {
-      /* A PRIMEIRA resposta vale: a segunda nem renova o carimbo. */
-      if (marcador.tipo === "multipla_escolha") {
+      /* A PRIMEIRA resposta vale: a segunda nem renova o carimbo. Na régua de
+         `respostas: "melhor"` (ADR-154) a pergunta segue o caminho da ação: a
+         marca fica com a melhor resposta, e só ela. */
+      if (marcador.tipo === "multipla_escolha" && ficha.respostas !== "melhor") {
         return { registrada: false, evidencia: await this.statusAtual(tx, m, habilidade), copias: 0 };
       }
       const existente = await tx.evidenciaMarca.findUnique({
@@ -322,17 +346,50 @@ export class EvidenciasService implements OnModuleInit {
       }
     }
 
+    /* A régua que só conta AO ENCERRAR (ADR-154): a marca está gravada, e a
+       evidência espera o professor encerrar a missão na Sala de Aula
+       (`aoEncerrarAMissao`). Sem evento por resposta — o histórico guarda a
+       evidência, não cada tentativa. */
+    if (ficha.contaAoEncerrarAMissao) {
+      return { registrada: true, evidencia: await this.statusAtual(tx, m, habilidade), copias: 0 };
+    }
+
+    const marcasDaHabilidade = await tx.evidenciaMarca.findMany({
+      where: {
+        escolaId: m.escolaId,
+        expId: m.expId,
+        atividadeId: m.atividadeId,
+        rodada: m.rodada,
+        estudanteId: m.estudanteId,
+        habilidade,
+      },
+      select: { status: true },
+    });
+    const proprio = statusProprio(marcasDaHabilidade.map((x) => ({ status: x.status as Nivel }))) ?? m.status;
+    return this.gravarPropria(tx, m, habilidade, proprio, { marcador: marcador.id, marca: m.status, marcaAnterior });
+  }
+
+  /**
+   * A EVIDÊNCIA PRÓPRIA de uma habilidade numa rodada — os passos 3 a 5 de
+   * `marcar`, e o caminho do encerramento (`aoEncerrarAMissao`).
+   *
+   * `daMarca` é a marca que acabou de chegar, e vai para o histórico. `null` é o
+   * encerramento: aí a evidência que já está igual não é reescrita, não
+   * historia nem copia de novo — encerrar duas vezes não duplica nada.
+   */
+  private async gravarPropria(
+    tx: Prisma.TransactionClient,
+    m: Omit<MarcaDaMissao, "marcador" | "status">,
+    habilidade: string,
+    proprio: Nivel,
+    daMarca: { marcador: string; marca: Nivel; marcaAnterior: Nivel | null } | null,
+  ): Promise<ResultadoDaMarca> {
     const daRodada = {
       escolaId: m.escolaId,
       expId: m.expId,
       atividadeId: m.atividadeId,
       rodada: m.rodada,
     };
-    const marcasDaHabilidade = await tx.evidenciaMarca.findMany({
-      where: { ...daRodada, estudanteId: m.estudanteId, habilidade },
-      select: { status: true },
-    });
-    const proprio = statusProprio(marcasDaHabilidade.map((x) => ({ status: x.status as Nivel }))) ?? m.status;
 
     const chaveDaEvidencia = { ...daRodada, estudanteId: m.estudanteId, habilidade };
     const atual = await tx.evidencia.findUnique({
@@ -366,6 +423,7 @@ export class EvidenciasService implements OnModuleInit {
       }
       depois = { status: proprio, origem: "propria", situacao: "valida" };
     }
+    if (!daMarca && depois === antes) return { registrada: false, evidencia: antes?.status ?? null, copias: 0 };
 
     await this.registrarEventos(tx, [
       {
@@ -375,7 +433,7 @@ export class EvidenciasService implements OnModuleInit {
         habilidade,
         tipo: "marca",
         de: antes ? { ...antes } : null,
-        para: { ...(depois ?? {}), marcador: marcador.id, marca: m.status, marcaAnterior },
+        para: { ...(depois ?? {}), ...(daMarca ?? { encerramento: true }) },
         autorId: m.estudanteId,
       },
     ]);
@@ -422,7 +480,7 @@ export class EvidenciasService implements OnModuleInit {
    */
   private async copiarParaAEquipe(
     tx: Prisma.TransactionClient,
-    m: MarcaDaMissao,
+    m: Omit<MarcaDaMissao, "marcador" | "status">,
     habilidade: string,
     status: Nivel,
   ): Promise<number> {
@@ -538,8 +596,12 @@ export class EvidenciasService implements OnModuleInit {
    * cópia que não mudou fica com a confirmação que tinha.
    */
   async recalcularCopias(tx: Prisma.TransactionClient, alvo: AlvoDaMontagem): Promise<void> {
-    if (!this.fichas.has(alvo.expId)) return;
+    const ficha = this.fichas.get(alvo.expId);
+    if (!ficha) return;
     const { escolaId, turmaId, expId, atividadeId } = alvo;
+    /* Régua que só conta ao encerrar (ADR-154): com a missão aberta não há
+       evidência a copiar — as cópias saem no encerramento, com a equipe de então. */
+    if (ficha.contaAoEncerrarAMissao && !(await missaoEncerrada(tx, escolaId, turmaId, expId))) return;
 
     const ultima = await tx.evidenciaMarca.findFirst({
       where: { escolaId, turmaId, expId, atividadeId },
@@ -608,6 +670,47 @@ export class EvidenciasService implements OnModuleInit {
         autorId: null,
       })),
     );
+  }
+
+  /**
+   * O ENCERRAMENTO DA MISSÃO NA SALA DE AULA — registrado no gancho
+   * `SalasService.aoEncerrarMissao`, e roda na transação de quem encerrou.
+   *
+   * Só faz alguma coisa na régua de `contaAoEncerrarAMissao` (ADR-154): cada
+   * marca da turma vira a evidência PRÓPRIA da criança, pelo mesmo caminho da
+   * marca na hora (`gravarPropria`: o ajuste do professor fica, a cópia vai para
+   * a equipe, e o histórico registra). Encerrar de novo depois de reliberar
+   * acrescenta só o que mudou: a evidência que já está igual não é reescrita.
+   */
+  async aoEncerrarAMissao(
+    tx: Prisma.TransactionClient,
+    alvo: { escolaId: string; turmaId: string; expId: string },
+  ): Promise<void> {
+    const ficha = this.fichas.get(alvo.expId);
+    if (!ficha?.contaAoEncerrarAMissao) return;
+    const { escolaId, turmaId, expId } = alvo;
+    const ids = (await this.estudantesDaTurma(tx, escolaId, turmaId)).map((e) => e.id);
+    const marcas = await tx.evidenciaMarca.findMany({
+      where: { escolaId, turmaId, expId, estudanteId: { in: ids } },
+      select: { atividadeId: true, rodada: true, estudanteId: true, habilidade: true, status: true },
+      orderBy: [{ atividadeId: "asc" }, { rodada: "asc" }, { estudanteId: "asc" }, { habilidade: "asc" }],
+    });
+
+    /* Dois marcadores da mesma habilidade na mesma rodada: vale o MELHOR. */
+    const grupos = new Map<string, { m: Omit<MarcaDaMissao, "marcador" | "status">; habilidade: string; status: Nivel }>();
+    for (const x of marcas) {
+      const chave = [x.atividadeId, x.rodada, x.estudanteId, x.habilidade].join("|");
+      const atual = grupos.get(chave);
+      const status = melhor(atual?.status, x.status as Nivel) ?? (x.status as Nivel);
+      grupos.set(chave, {
+        m: { escolaId, turmaId, expId, atividadeId: x.atividadeId, rodada: x.rodada, estudanteId: x.estudanteId },
+        habilidade: x.habilidade,
+        status,
+      });
+    }
+    for (const g of grupos.values()) {
+      await this.gravarPropria(tx, g.m, g.habilidade, g.status, null);
+    }
   }
 
   /**
@@ -692,6 +795,8 @@ export class EvidenciasService implements OnModuleInit {
   ) {
     const ficha = this.fichas.get(expId);
     if (!ficha) return { temFicha: false, habilidades: [], rodadas: [], estudantes: [], pendentes: {} };
+    const aguardandoEncerramento =
+      ficha.contaAoEncerrarAMissao === true && !(await missaoEncerrada(tx, escolaId, turmaId, expId));
 
     const [estudantes, mapa, linhas] = await Promise.all([
       this.estudantesDaTurma(tx, escolaId, turmaId),
@@ -723,6 +828,7 @@ export class EvidenciasService implements OnModuleInit {
 
     return {
       temFicha: true,
+      ...(ficha.contaAoEncerrarAMissao ? { aguardandoEncerramento } : {}),
       habilidades: codigos.map((codigo) => ({
         codigo,
         descricao: habilidadePorCodigo(codigo)?.descricao ?? "",

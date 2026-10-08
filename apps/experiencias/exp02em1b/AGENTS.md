@@ -35,6 +35,16 @@ Unooria (ADR-138), e três diferenças morderam a troca:
   recolher a trilha são `<Icon name="arrowForward">` (a de recolher, com
   `rotate`). Sem `fonts/unooriaai.css` a tela escreve o nome do ícone.
 
+## As perguntas de evidência ficam no clone (1.4.0, ADR-154)
+
+As quatro perguntas do PO aparecem no Resultado, na rodada mais recente, com o
+`ChoicePoll` da seção `unooriaai` (`componentes/perguntas.tsx`) — nunca o
+`RadioGroup` da plataforma: aqui não há revelação. Elas reaparecem a cada
+"Tentar de novo" (o servidor guarda a MELHOR resposta e só a conta quando o
+professor encerra a missão), e a trava de F5 é por tentativa
+(`sessionStorage`, só ids). Erro (409 fora do resultado ou da rodada da turma,
+403 com a missão encerrada) faz o bloco sumir, sem prender o Resultado.
+
 ## O timeout padrão do SDK está errado nesta experiência
 
 Um turno do Cientista passa por até 6 voltas de ferramenta e leva de 10 a 30
