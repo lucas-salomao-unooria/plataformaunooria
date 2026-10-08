@@ -70,6 +70,9 @@ await suite(
     await prof.selectOption("select#turma", alvo.value);
     await prof.waitForURL("**turmaId=**", { timeout: 20_000 });
     await prof.waitForSelector("text=Relógio da aula", { timeout: 20_000 });
+    /* Os resultados DESTA turma: o roteiro abre depois a tela de um estudante,
+       e o painel de habilidades do fim está aqui, não lá. */
+    const resultadosDaTurma = prof.url();
 
     /* ZERAR PRIMEIRO: o estado é server-side e sobrevive ao roteiro. Sem isto a
        segunda execução encontra o estudante já na investigação e o smoke passa
@@ -302,7 +305,7 @@ await suite(
     });
 
     // ═══ PROFESSOR: o painel espera o encerramento ══════════════════════
-    await prof.reload({ waitUntil: "domcontentloaded" });
+    await prof.goto(resultadosDaTurma, { waitUntil: "domcontentloaded" });
     await prof
       .getByText("O nível aparece quando você encerrar a missão na Sala de Aula")
       .waitFor({ timeout: 30_000 });
