@@ -44,7 +44,7 @@ export const GUIA_EXP08EF1B: GuiaDaAula = {
       eixo: "Cultura Digital",
       principal: true,
       ondeAcontece:
-        "O estudante vê a própria coleção ao lado da do colega e descobre que a abrangência do que ele leu foi decidida por outra pessoa.",
+        "O estudante vê a própria coleção ao lado da do colega e descobre que a abrangência do que ele leu foi decidida por outra pessoa. Medida na 1ª pergunta do fim, depois da reflexão: o que fez a plataforma montar o feed.",
     },
     {
       codigo: "EF08CO07",
@@ -52,7 +52,7 @@ export const GUIA_EXP08EF1B: GuiaDaAula = {
         "Compartilhar informações por meio de redes sociais, compreendendo a sua dinâmica de funcionamento, de forma responsável e avaliando sua confiabilidade, considerando o respeito e a ética.",
       eixo: "Cultura Digital",
       ondeAcontece:
-        "A explicação individual mostra a dinâmica pelo avesso: quais gestos dele o feed leu, e o que fez com eles.",
+        "A explicação individual mostra a dinâmica pelo avesso: quais gestos dele o feed leu, e o que fez com eles. Medida na 3ª pergunta do fim: o que muda quando alguém compartilha o que viu.",
     },
     {
       codigo: "EF08CO09",
@@ -60,7 +60,7 @@ export const GUIA_EXP08EF1B: GuiaDaAula = {
         "Analisar criticamente as políticas de termos de uso das redes sociais e demais plataformas.",
       eixo: "Cultura Digital",
       ondeAcontece:
-        "Desdobramento para a aula seguinte: ler nos termos de uso de uma rede real o trecho que descreve a personalização do feed.",
+        "Medida na 2ª pergunta do fim: a plataforma usou as interações sem avisar, e isso é regra dela. Desdobramento para a aula seguinte: ler nos termos de uso de uma rede real o trecho que descreve a personalização do feed.",
     },
   ],
 
@@ -213,7 +213,7 @@ export const GUIA_EXP08EF1B: GuiaDaAula = {
         tempo: "88–100",
         momento: "Reflexão escrita individual e combinados para furar a bolha.",
         professor:
-          "Escrita livre, sem limite de caracteres. Recolha dois combinados da turma inteira e escreva-os na lousa — eles voltam na próxima aula.",
+          "Escrita livre, sem limite de caracteres. Depois de salvar, cada um responde três perguntas de múltipla escolha, que acendem as habilidades da BNCC na página da atividade. Recolha dois combinados da turma inteira e escreva-os na lousa — eles voltam na próxima aula.",
         botao: "Abrir reflexão",
       },
     ],
@@ -347,7 +347,7 @@ export const GUIA_EXP08EF1B: GuiaDaAula = {
       "“Ninguém escapa por ser inteligente. Escapa quem procura de propósito o que não chegou.”",
     ],
     registro:
-      "A reflexão escrita individual (últimos 12 min, sem limite de caracteres) fecha a missão dentro do app, e o texto fica no relatório do estudante. Recolha da turma inteira dois combinados para furar a bolha, escreva-os na lousa e retome-os na aula seguinte: sem essa retomada, a aula vira um evento isolado e a semana engole o combinado.",
+      "A reflexão escrita individual (últimos 12 min, sem limite de caracteres) fecha a missão dentro do app, e o texto fica no relatório do estudante. Logo depois dela vêm as três perguntas de múltipla escolha: o nível de cada habilidade aparece em “Habilidades da BNCC”, na página da atividade, e você pode ajustá-lo. Recolha da turma inteira dois combinados para furar a bolha, escreva-os na lousa e retome-os na aula seguinte: sem essa retomada, a aula vira um evento isolado e a semana engole o combinado.",
     produto: {
       titulo: "Relatório comparativo (entregável, em duplas de bolhas opostas)",
       itens: [

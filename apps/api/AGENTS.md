@@ -29,7 +29,7 @@ E os módulos de experiência, um por missão:
 
 | Módulo | Experiência |
 |---|---|
-| [`src/comum/insta/`](src/comum/insta/AGENTS.md) | exp08ef1b Instanooria — o relógio da aula (ADR-92) |
+| [`src/comum/insta/`](src/comum/insta/AGENTS.md) | exp08ef1b Unoovista — o relógio da aula (ADR-92); com ficha (E14, ADR-153), contexto em `src/motor/contexto-da-evidencia.ts` |
 | [`src/unoogpt/`](src/unoogpt/AGENTS.md) | exp02em1b Missão Tempestade |
 | [`src/a-selecao/`](src/a-selecao/AGENTS.md) | exp07ef1b A Seleção — com ficha (E14) e o Mural pareado por computador (E13) |
 | [`src/quem-mandou-isso/`](src/quem-mandou-isso/AGENTS.md) | exp05ef1b Quem Mandou Isso? v2.2 — com ficha (E14) e equipe (E13) |

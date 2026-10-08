@@ -6,8 +6,8 @@ import { validarFicha } from "../src/evidencias/regras";
 /**
  * TODA FICHA DO REGISTRO É CONFERIDA (E14).
  *
- * As fichas do registro são a de Quem Mandou Isso? v2.2 (exp05ef1b) e a da A
- * Seleção (exp07ef1b). Cada uma entra com a trava: os códigos existem na BNCC
+ * Toda ficha do registro (`FICHAS`: Quem Mandou Isso?, A Seleção, Jornal da
+ * Escola, Júri Estadual e O Conteúdo que não chegou) entra com a trava: os códigos existem na BNCC
  * homologada (`curriculo/`), o `expId` existe nos manifestos, o gabarito só usa
  * níveis válidos e todo marcador de pergunta aponta para uma pergunta que existe.
  *
@@ -85,5 +85,19 @@ test("a ficha da exp05ef1b está no registro, com as três habilidades da régua
   expect(ficha?.perguntas.map((p) => [p.id, p.alternativas.map((a) => [a.id, a.status])])).toEqual([
     ["p1", [["A1", "atingiu"], ["A2", "em_processo"], ["A3", "nao_atingiu"]]],
     ["p2", [["B1", "atingiu"], ["B2", "em_processo"], ["B3", "nao_atingiu"]]],
+  ]);
+});
+
+test("a ficha da exp08ef1b está no registro: três perguntas, uma por habilidade, gabarito do PO", () => {
+  const ficha = FICHAS.find((f) => f.expId === "exp08ef1b");
+  expect(ficha?.habilidades.map((h) => [h.codigo, h.marcadores.map((m) => [m.id, m.tipo, m.perguntaId ?? null])])).toEqual([
+    ["EF08CO11", [["p1", "multipla_escolha", "p1"]]],
+    ["EF08CO09", [["p2", "multipla_escolha", "p2"]]],
+    ["EF08CO07", [["p3", "multipla_escolha", "p3"]]],
+  ]);
+  expect(ficha?.perguntas.map((p) => [p.id, p.alternativas.map((a) => [a.id, a.status])])).toEqual([
+    ["p1", [["A1", "atingiu"], ["A2", "em_processo"], ["A3", "nao_atingiu"]]],
+    ["p2", [["B1", "atingiu"], ["B2", "em_processo"], ["B3", "nao_atingiu"]]],
+    ["p3", [["C1", "atingiu"], ["C2", "em_processo"], ["C3", "nao_atingiu"]]],
   ]);
 });
