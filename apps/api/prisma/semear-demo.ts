@@ -92,14 +92,18 @@ async function apagar() {
 async function semear(qtdEstudantes: number) {
   /* Por MATRÍCULA, não por login: o seed gera docentes com nome de gente, e
      fixar `prof.demo` aqui voltaria a acoplar este script a um login inventado.
-     Quem interessa é quem leciona no 8º ano — é a turma do Instanooria. */
+     Quem interessa é quem leciona no 8º ano — é a turma do Instanooria.
+     Entre os professores da 8A, o que tem MENOS turmas: o seed também gera uma
+     docente que dá aula nas 24, e ela vinha primeiro pela ordem alfabética —
+     a atividade ficava com ela, e a suíte `estudante/02` (que entra pelo
+     professor da 8A no `credenciais-demo.csv`) não a achava na lista. */
   const professor = await prisma.user.findFirst({
     where: {
       role: "professor",
       escolaId: ESCOLA_ID,
       matriculas: { some: { fim: null, turma: { nome: "8A" } } },
     },
-    orderBy: { username: "asc" },
+    orderBy: [{ matriculas: { _count: "asc" } }, { username: "asc" }],
   });
   if (!professor) {
     console.error(
