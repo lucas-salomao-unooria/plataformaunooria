@@ -90,7 +90,8 @@ export function LimparSessoes({
               As <strong>{sessoes}</strong>{' '}
               {sessoes === 1 ? 'sessão vai sumir' : 'sessões vão sumir'} com tudo que a turma
               produziu: leitura, conclusões escritas e relatórios. Isso não tem volta, e a análise
-              da turma some junto.
+              da turma some junto — e as <strong>habilidades da atividade</strong> no painel também,
+              inclusive os ajustes que você fez, para a turma poder ser avaliada de novo.
             </p>
             <p className="text-[14px] leading-relaxed text-unooria-neutral-800">
               A atividade continua de pé — pergunta-chave, os dois lados, posts, imagens e os

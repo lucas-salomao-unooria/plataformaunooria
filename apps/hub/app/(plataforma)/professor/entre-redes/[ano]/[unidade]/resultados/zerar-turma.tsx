@@ -67,7 +67,8 @@ export function ZerarTurma({ turmaId, nomeDaTurma }: { turmaId: string; nomeDaTu
             <div className="flex flex-col gap-3 text-[14px] leading-relaxed text-unooria-neutral-800">
               <p>
                 Isto apaga <strong>todas as partidas desta turma</strong> — as conversas com o
-                assistente, as decisões e os desfechos. Não tem volta.
+                assistente, as decisões e os desfechos — e as <strong>habilidades da turma</strong> no
+                painel, inclusive os ajustes que você fez. Não tem volta.
               </p>
               <p>
                 O <strong>relógio da aula volta ao início</strong> junto. É de propósito: rodar de
