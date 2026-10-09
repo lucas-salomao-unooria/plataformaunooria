@@ -129,6 +129,8 @@ export const SessaoPublicaSchema = z.object({
   perguntasGastas: z.number(),
   /** Qual partida do estudante. Recomeçar abre a seguinte. */
   tentativa: z.number(),
+  /** A rodada da TURMA em que a sessão nasceu: o "Zerar a turma" a sobe (ADR-154). */
+  rodadaDaTurma: z.number(),
   alocacao: z.object({ alfa: z.string().nullable(), bravo: z.string().nullable() }),
   justificativas: z.object({ alfa: z.string().nullable(), bravo: z.string().nullable() }),
 });

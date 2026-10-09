@@ -428,6 +428,7 @@ export function MissaoApp({ inicial }: { inicial: RespostaSessao }) {
                       }))}
                     onRecomecar={() => reiniciar("resultado")}
                     ocupado={ocupado}
+                    rodadaDaTurma={sessao.rodadaDaTurma}
                   />
                 )}
 
