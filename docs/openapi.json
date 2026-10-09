@@ -22129,6 +22129,9 @@
                         "tentativa": {
                           "type": "number"
                         },
+                        "rodadaDaTurma": {
+                          "type": "number"
+                        },
                         "alocacao": {
                           "type": "object",
                           "properties": {
@@ -22173,6 +22176,7 @@
                         "rodadas",
                         "perguntasGastas",
                         "tentativa",
+                        "rodadaDaTurma",
                         "alocacao",
                         "justificativas"
                       ],
@@ -23773,6 +23777,9 @@
                         "tentativa": {
                           "type": "number"
                         },
+                        "rodadaDaTurma": {
+                          "type": "number"
+                        },
                         "alocacao": {
                           "type": "object",
                           "properties": {
@@ -23817,6 +23824,7 @@
                         "rodadas",
                         "perguntasGastas",
                         "tentativa",
+                        "rodadaDaTurma",
                         "alocacao",
                         "justificativas"
                       ],
@@ -24188,6 +24196,9 @@
                         "tentativa": {
                           "type": "number"
                         },
+                        "rodadaDaTurma": {
+                          "type": "number"
+                        },
                         "alocacao": {
                           "type": "object",
                           "properties": {
@@ -24232,6 +24243,7 @@
                         "rodadas",
                         "perguntasGastas",
                         "tentativa",
+                        "rodadaDaTurma",
                         "alocacao",
                         "justificativas"
                       ],
@@ -24551,6 +24563,9 @@
                         "tentativa": {
                           "type": "number"
                         },
+                        "rodadaDaTurma": {
+                          "type": "number"
+                        },
                         "alocacao": {
                           "type": "object",
                           "properties": {
@@ -24595,6 +24610,7 @@
                         "rodadas",
                         "perguntasGastas",
                         "tentativa",
+                        "rodadaDaTurma",
                         "alocacao",
                         "justificativas"
                       ],
@@ -25829,6 +25845,9 @@
                         "tentativa": {
                           "type": "number"
                         },
+                        "rodadaDaTurma": {
+                          "type": "number"
+                        },
                         "alocacao": {
                           "type": "object",
                           "properties": {
@@ -25873,6 +25892,7 @@
                         "rodadas",
                         "perguntasGastas",
                         "tentativa",
+                        "rodadaDaTurma",
                         "alocacao",
                         "justificativas"
                       ],
@@ -25971,6 +25991,9 @@
                         "tentativa": {
                           "type": "number"
                         },
+                        "rodadaDaTurma": {
+                          "type": "number"
+                        },
                         "alocacao": {
                           "type": "object",
                           "properties": {
@@ -26015,6 +26038,7 @@
                         "rodadas",
                         "perguntasGastas",
                         "tentativa",
+                        "rodadaDaTurma",
                         "alocacao",
                         "justificativas"
                       ],
