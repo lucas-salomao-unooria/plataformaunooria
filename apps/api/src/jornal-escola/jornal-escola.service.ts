@@ -6,6 +6,7 @@ import { ondeAsTurmasSaoVisiveis, professorLeciona } from "../comum/turmas-do-pr
 import { computadoresDaMontagem, mapaDeEquipes } from "../equipes/consulta";
 import { colapsarEmUnidades } from "../equipes/regras";
 import { EvidenciasService, type ContextoDaAtividade } from "../evidencias/evidencias.service";
+import { apagarEvidenciaDaAtividade } from "../evidencias/apagar-da-atividade";
 import type { Nivel } from "../evidencias/regras";
 import { logger } from "../observabilidade/logger";
 import { ehUuid } from "../motor/guardas";
@@ -899,9 +900,10 @@ export class JornalEscolaService implements OnModuleInit {
   }
 
   /**
-   * "Zerar a turma" — a segunda aplicação, SEM apagar nada: sobe a rodada e
-   * volta à exploração. As sessões da rodada anterior ficam, com as edições e
-   * as pistas: é a rodada passada que o painel de habilidades mostra (ADR-112).
+   * "Zerar a turma" — a segunda aplicação: sobe a rodada e volta à
+   * exploração, e APAGA a evidência pedagógica do pacote, de todas as rodadas
+   * (ADR-155) — a turma recomeça do zero no painel de habilidades. As sessões
+   * da rodada anterior ficam, com as edições e as pistas.
    * Os carimbos dos portões são da rodada, e voltam a nulo (CHECK).
    */
   async zerar(escolaId: string, turmaId: string, professorId?: string) {
@@ -909,6 +911,7 @@ export class JornalEscolaService implements OnModuleInit {
       await this.turmaVisivel(tx, escolaId, turmaId, professorId);
       await this.travarTurma(tx, escolaId, turmaId, "exclusivo");
       const { gate } = await this.exigirPacote(tx, escolaId, turmaId);
+      await apagarEvidenciaDaAtividade(tx, { escolaId, turmaId, expId: EXP_ID, atividadeId: gate.pacoteId });
       const linha = await tx.exp04ef1bGateTurma.update({
         where: { escolaId_turmaId: { escolaId, turmaId } },
         data: { rodada: gate.rodada + 1, etapa: ETAPA_INICIAL, resultadoLiberadoEm: null, revisaoLiberadaEm: null },

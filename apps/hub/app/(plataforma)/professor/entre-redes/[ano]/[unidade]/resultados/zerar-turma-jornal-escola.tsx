@@ -63,16 +63,17 @@ export function ZerarTurmaJornalEscola({
         Zerar a turma
       </Button>
       <p className="max-w-3xl text-[12px] leading-snug text-unooria-neutral-600">
-        Abre uma rodada nova de {nomeDaTurma} com o mesmo pacote e volta a aula para a exploração. Nada é
-        apagado: a rodada anterior fica no painel de habilidades.
+        Abre uma rodada nova de {nomeDaTurma} com o mesmo pacote e volta a aula para a exploração. As
+        habilidades deste pacote são apagadas do painel, e a turma é avaliada de novo.
       </p>
 
       <Modal isOpen={aberto} onClose={() => setAberto(false)} title={`Zerar ${nomeDaTurma}?`}>
         <div className="flex flex-col gap-4">
           <p className="text-[14px] leading-relaxed text-unooria-neutral-800">
             A turma volta ao começo — o Bento, a mesa e a 1ª edição —, o resultado e a revisão fecham e cada
-            computador monta a capa de novo. <strong>Nada é apagado</strong>: as duas edições, as pistas abertas
-            e a Chave desta rodada continuam guardadas, e a evidência dela segue no painel de habilidades.
+            computador monta a capa de novo. <strong>As habilidades deste pacote são apagadas</strong> do painel,
+            inclusive os ajustes que você fez, e a turma é avaliada do zero. As duas edições, as pistas abertas e
+            a Chave desta rodada continuam guardadas na folha da turma.
           </p>
           <FeedbackAlert
             type="warning"

@@ -22,8 +22,9 @@ espelhos declarados dessas listas; mudar a forma aqui sem avisar quebra os dois
 em silêncio.
 
 - **Atividade = o PACOTE; rodada = o "Zerar".** O gate diz qual (pacote,
-  rodada) está em andamento, e a sessão é por essa dupla. Zerar sobe a rodada e
-  volta à exploração **sem apagar nada**. Um ativo (= EM ANDAMENTO) por turma:
+  rodada) está em andamento, e a sessão é por essa dupla. Zerar sobe a rodada,
+  volta à exploração e **apaga a evidência do pacote** (ADR-155); as sessões
+  ficam. Um ativo (= EM ANDAMENTO) por turma:
   índice único PARCIAL (`exp04ef1b_pacotes_um_ativo`), que o Prisma não enxerga.
 - **A plataforma NUNCA cria o pacote (ADR-130).** `homologar` cria a atividade
   PRONTA (`ativo: false`) — o em andamento continua —, e `colocarEmAndamento`

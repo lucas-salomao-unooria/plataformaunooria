@@ -6,6 +6,7 @@ import { ondeAsTurmasSaoVisiveis, professorLeciona } from "../comum/turmas-do-pr
 import { computadoresDaMontagem, equipeDoEstudante, mapaDeEquipes } from "../equipes/consulta";
 import { colapsarEmUnidades, rotulosSemRepeticao, type EquipeDoMapa } from "../equipes/regras";
 import { EvidenciasService, type ContextoDaAtividade } from "../evidencias/evidencias.service";
+import { apagarEvidenciaDaAtividade } from "../evidencias/apagar-da-atividade";
 import { logger } from "../observabilidade/logger";
 import { ehUuid } from "../motor/guardas";
 import { PrismaService } from "../prisma/prisma.service";
@@ -830,19 +831,20 @@ export class ASelecaoService implements OnModuleInit {
   }
 
   /**
-   * "Zerar a turma" — a segunda aplicação, SEM apagar nada.
+   * "Zerar a turma" — a segunda aplicação.
    *
-   * Sobe a rodada e volta a etapa para a exploração. As sessões da rodada
-   * anterior ficam, com as tríades, os pares e as reflexões: é a rodada passada
-   * que o painel de habilidades mostra (ADR-112), e o "zerar" que apagava — o
-   * da v1 da exp05ef1b — é exatamente o que a evidência não pode ter. A cobertura
-   * também fica: o preparo custou tempo da professora.
+   * Sobe a rodada e volta a etapa para a exploração. A EVIDÊNCIA PEDAGÓGICA da
+   * cobertura sai, de todas as rodadas (ADR-155): a turma recomeça do zero no
+   * painel de habilidades. As sessões da rodada anterior ficam (são o histórico
+   * da missão, e nenhuma tela as soma ao resultado), e a cobertura também: o
+   * preparo custou tempo da professora.
    */
   async zerar(escolaId: string, turmaId: string, professorId?: string) {
     return this.prisma.comTenancy(async (tx) => {
       await this.turmaVisivel(tx, escolaId, turmaId, professorId);
       await this.travarTurma(tx, escolaId, turmaId, "exclusivo");
       const { gate } = await this.exigirGate(tx, escolaId, turmaId);
+      await apagarEvidenciaDaAtividade(tx, { escolaId, turmaId, expId: EXP_ID, atividadeId: gate.coberturaId });
       const linha = await tx.exp07ef1bGateTurma.update({
         where: { escolaId_turmaId: { escolaId, turmaId } },
         data: { rodada: gate.rodada + 1, etapa: ETAPA_INICIAL },

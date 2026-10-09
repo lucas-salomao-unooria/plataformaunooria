@@ -73,16 +73,16 @@ export function ZerarTurmaASelecao({
       </Button>
       <p className="max-w-3xl text-[12px] leading-snug text-unooria-neutral-600">
         Abre uma rodada nova de {nomeDaTurma} com a mesma cobertura e volta a aula para a
-        exploração. Nada é apagado: a rodada anterior fica no painel de habilidades.
+        exploração. As habilidades desta cobertura são apagadas do painel, e a turma é avaliada de novo.
       </p>
 
       <Modal isOpen={aberto} onClose={() => setAberto(false)} title={`Zerar ${nomeDaTurma}?`}>
         <div className="flex flex-col gap-4">
           <p className="text-[14px] leading-relaxed text-unooria-neutral-800">
             A turma volta ao começo — o pedido da Amara, o feed e a publicação —, o Mural fecha e
-            cada computador escolhe de novo. <strong>Nada é apagado</strong>: as seleções, as
-            legendas e as reflexões desta rodada continuam guardadas, e a evidência dela segue no
-            painel de habilidades.
+            cada computador escolhe de novo. <strong>As habilidades desta cobertura são apagadas</strong>{" "}
+            do painel, inclusive os ajustes que você fez, e a turma é avaliada do zero. As seleções,
+            as legendas e as reflexões desta rodada continuam guardadas na folha da turma.
           </p>
           <FeedbackAlert
             type="warning"

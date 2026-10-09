@@ -269,8 +269,8 @@ export class AtividadesController {
   @Post(":id/limpar")
   @HttpCode(200)
   @Contrato({
-    resumo: "Apaga as sessões dos estudantes, mantendo a atividade e os posts.",
-    descricao: "É o botão de rodar a mesma atividade com outra turma.",
+    resumo: "Apaga as sessões dos estudantes e a evidência pedagógica da atividade, mantendo a atividade e os posts.",
+    descricao: "É o botão de rodar a mesma atividade com outra turma, ou de a mesma turma passar de novo pela missão (ADR-155).",
     params: z.object({ id: z.string().uuid() }),
     resposta: LimpaSchema,
   })
@@ -279,7 +279,7 @@ export class AtividadesController {
     return this.prisma.comTenancy(async (tx) => {
       const atividade = await atividadeDoProfessor(tx, id, req.auth.usuarioId, req.auth.escolaId);
       if (!atividade) naoEncontrado();
-      const { sessoes } = await limparDadosDosEstudantes(tx, id);
+      const { sessoes } = await limparDadosDosEstudantes(tx, atividade);
       return { ok: true, sessoes };
     });
   }

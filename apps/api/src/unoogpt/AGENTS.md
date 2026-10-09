@@ -40,7 +40,9 @@ Complementa o `AGENTS.md` de `apps/api`, que vence em conflito.
   diante da mesma tela — não confundir com as equipes Alfa e Bravo da cidade.
 - **A evidência pedagógica (E14, ADR-154) não tem atividade: é a `"turma"`**,
   o mesmo id das equipes, e a rodada é da TURMA (`exp02em1b_gate_turma`). Só o
-  `zerarTurma` a sobe (o gate sobrevive ao zerar; o relógio, não), e a sessão
+  `zerarTurma` a sobe (o gate sobrevive ao zerar; o relógio, não) — e APAGA a
+  evidência da turma, marcas e níveis de todas as rodadas (ADR-155): sem isso,
+  o encerramento seguinte relia as respostas de antes. A sessão
   grava a rodada em que nasceu. O resolvedor (`contexto-da-evidencia.ts`) só
   aceita resposta no passo `resultado` e da sessão da rodada vigente. NÃO use a
   `tentativa` como rodada: com "Tentar de novo" livre e a melhor rodada, o

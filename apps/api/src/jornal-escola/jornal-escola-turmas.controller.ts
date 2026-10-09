@@ -168,9 +168,9 @@ export class JornalEscolaTurmasController {
   @Post(":turmaId/zerar")
   @HttpCode(200)
   @Contrato({
-    resumo: '"Zerar a turma" — abre a próxima rodada, sem apagar nada.',
+    resumo: '"Zerar a turma" — abre a próxima rodada e apaga a evidência pedagógica da atividade.',
     descricao:
-      "Sobe a rodada da atividade e volta a etapa para a exploração, com os portões fechados. **Nada é apagado**: as sessões, as edições e as pistas da rodada anterior ficam, e são elas que o painel de habilidades mostra como a rodada passada (ADR-112). O pacote também fica.",
+      "Sobe a rodada da atividade e volta a etapa para a exploração, com os portões fechados. **A evidência pedagógica do pacote é apagada**, de todas as rodadas (ADR-155): o painel de habilidades recomeça do zero. As sessões, as edições e as pistas da rodada anterior ficam na folha da turma, e o pacote também.",
     params: PARAMS,
     query: QUERY,
     resposta: ZerarTurmaSchema,

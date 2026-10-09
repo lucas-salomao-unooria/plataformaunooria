@@ -1,5 +1,7 @@
 import type { Prisma } from "@prisma/client";
 import type { AssetsService } from "../assets/assets.service";
+import { EXP_ID } from "../comum/insta/defaults";
+import { apagarEvidenciaDaAtividade } from "../evidencias/apagar-da-atividade";
 import { PrismaService } from "../prisma/prisma.service";
 
 /**
@@ -18,12 +20,25 @@ import { PrismaService } from "../prisma/prisma.service";
  * e `exp08ef1b_dossiers`. Sobrevivem de propósito o conteúdo gerado, os
  * `exp08ef1b_app_70_perfis_importados` (insumo do Ato 1, valem para a próxima turma) e o
  * `status` da atividade.
+ *
+ * E a EVIDÊNCIA PEDAGÓGICA da atividade sai junto (ADR-155): no Unoovista a
+ * rodada é sempre 1 e vale a PRIMEIRA resposta, então a marca que ficasse
+ * travaria a turma — quem passasse de novo pela missão nunca seria medido.
+ * Atividade sem turma não tem evidência (o resolvedor devolve `null`).
  */
 export async function limparDadosDosEstudantes(
   tx: Prisma.TransactionClient,
-  activityId: string,
+  atividade: { id: string; escolaId: string; turmaId: string | null },
 ): Promise<{ sessoes: number }> {
-  const { count } = await tx.run.deleteMany({ where: { activityId } });
+  const { count } = await tx.run.deleteMany({ where: { activityId: atividade.id } });
+  if (atividade.turmaId) {
+    await apagarEvidenciaDaAtividade(tx, {
+      escolaId: atividade.escolaId,
+      turmaId: atividade.turmaId,
+      expId: EXP_ID,
+      atividadeId: atividade.id,
+    });
+  }
   return { sessoes: count };
 }
 

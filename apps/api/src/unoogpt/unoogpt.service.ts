@@ -27,6 +27,7 @@ import { passoDerivado, type PassoDerivavel } from "./regras/anexos";
 import { montarMapa, naoCarregados, oQueSobrou } from "./regras/camadas";
 import { projetar } from "./regras/projecao";
 import { EXP_ID, TETO_CHAMADAS_SESSAO, TETO_TOKENS_SESSAO } from "./regras/defaults";
+import { apagarEvidenciaDaAtividade } from "../evidencias/apagar-da-atividade";
 import {
   INTUICAO,
   comoOProfessorLe,
@@ -1354,7 +1355,8 @@ export class UnoogptService {
    * coluna que nenhuma rotina cumpre.
    *
    * O relógio vai junto porque rodar de novo com a aula "já começada" faria a
-   * segunda rodada nascer no meio da tempestade.
+   * segunda rodada nascer no meio da tempestade. E a evidência pedagógica da
+   * turma também (ADR-155).
    */
   async zerarTurma(escolaId: string, turmaId: string, professorId?: string) {
     return this.prisma.comTenancy(async (tx) => {
@@ -1369,9 +1371,11 @@ export class UnoogptService {
         where: { escolaId, estudanteId: { in: ids } },
       });
       await tx.unoogptRelogioTurma.deleteMany({ where: { escolaId, turmaId } });
-      /* Zerar abre a RODADA seguinte da evidência pedagógica (ADR-154). O
-         contador sobrevive ao zerar — é o que separa as respostas de antes e de
-         depois —, e as marcas antigas ficam: a rodada passada continua no painel. */
+      /* Zerar APAGA a evidência pedagógica da turma (ADR-155): as respostas e
+         os níveis de todas as rodadas saem, e a turma recomeça do zero. O
+         contador de rodada continua subindo — é ele que recusa a resposta
+         atrasada de quem estava com o resultado aberto. */
+      await apagarEvidenciaDaAtividade(tx, { escolaId, turmaId, expId: EXP_ID, atividadeId: ATIVIDADE_DA_TURMA });
       await tx.unoogptGateTurma.upsert({
         where: { escolaId_turmaId: { escolaId, turmaId } },
         update: { rodada: { increment: 1 } },
