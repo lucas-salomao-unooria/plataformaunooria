@@ -7,6 +7,7 @@ import { professorLeciona } from "../comum/turmas-do-professor";
 import { mapaDeEquipes } from "../equipes/consulta";
 import { colapsarEmUnidades, type EquipeDoMapa } from "../equipes/regras";
 import { EvidenciasService, type ContextoDaAtividade } from "../evidencias/evidencias.service";
+import { apagarEvidenciaDaAtividade } from "../evidencias/apagar-da-atividade";
 import { FICHA_EXP05EF1B } from "../evidencias/fichas/exp05ef1b";
 import { logger } from "../observabilidade/logger";
 import { ehUuid } from "../motor/guardas";
@@ -699,9 +700,9 @@ export class QuemMandouIssoService implements OnModuleInit {
 
   /**
    * "Zerar Turma para Nova Aplicação" — abre a RODADA seguinte do mesmo pacote
-   * e GUARDA o histórico: nada é apagado (as sessões e a evidência da rodada
-   * anterior ficam; a turma recomeça numa sessão nova). A fase volta à
-   * triagem.
+   * e APAGA a evidência pedagógica dele, de todas as rodadas (ADR-155): a turma
+   * recomeça do zero no painel de habilidades. As sessões da rodada anterior
+   * ficam, e a turma recomeça numa sessão nova. A fase volta à triagem.
    *
    * `rodada` é a que o professor VIU: se ela ainda é a atual, avança; se a
    * atual já é a seguinte (o segundo clique), devolve sem avançar de novo; se
@@ -717,6 +718,7 @@ export class QuemMandouIssoService implements OnModuleInit {
         return { atividade: { pacoteId: pacote.id, rodada: pacote.rodadaAtual }, fase: normalizarFase(gate?.fase) };
       }
       if (pacote.rodadaAtual !== rodadaVista) throw erroDeJogo("rodada-desatualizada");
+      await apagarEvidenciaDaAtividade(tx, { escolaId, turmaId, expId: EXP_ID, atividadeId: pacote.id });
       const atualizado = await tx.exp05ef1bPacote.update({
         where: { id: pacote.id },
         data: { rodadaAtual: { increment: 1 } },

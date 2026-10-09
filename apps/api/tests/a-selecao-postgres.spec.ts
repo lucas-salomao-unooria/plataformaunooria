@@ -661,7 +661,7 @@ describe("a sala de UM computador (projeção)", () => {
   });
 });
 
-describe("atividade × rodada: zerar guarda, a atividade nova nasce pronta", () => {
+describe("atividade × rodada: zerar guarda a sessão (a evidência sai), a atividade nova nasce pronta", () => {
   beforeAll(zerarMissao);
 
   test("zerar abre a rodada 2 e a sessão da rodada 1 FICA, com a tríade", async () => {
@@ -847,8 +847,12 @@ describe("a reflexão, as enquetes e o resolvedor da evidência", () => {
     expect(linhaG).toMatchObject({ entregouReflexao: true, publicou: true, legenda: null, reflexaoTexto: null });
   });
 
-  test("depois de zerar, o resolvedor devolve `null` — a resposta atrasada não cai na rodada nova", async () => {
+  test("depois de zerar, a evidência da cobertura sai (ADR-155) e o resolvedor devolve `null` — a resposta atrasada não cai na rodada nova", async () => {
+    const naTurma = { escolaId: ESCOLA, turmaId: ids.turma, expId: EXP_ID };
+    expect(await prisma.evidenciaMarca.count({ where: naTurma })).toBeGreaterThan(0);
     await service.zerar(ESCOLA, ids.turma, ids.professora);
+    expect(await prisma.evidenciaMarca.count({ where: naTurma })).toBe(0);
+    expect(await prisma.evidencia.count({ where: naTurma })).toBe(0);
     const contexto = await prisma.comTenancy((tx) => service.contextoDaAtividade(tx, ESCOLA, ids.ana), ESCOLA);
     expect(contexto).toBeNull();
     expect(await codigoDe(evidencias.responder(ESCOLA, ids.ana, EXP_ID, "p2", "B1"))).toBe("sem-atividade-em-andamento");

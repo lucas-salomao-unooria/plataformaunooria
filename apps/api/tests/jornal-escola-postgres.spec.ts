@@ -818,9 +818,13 @@ describe("a Chave, a revisão, a 2ª edição e o Desafio Final", () => {
     expect((await service.concluir(ESCOLA, ids.ana, ids.turma)).concluidaEm).toBe(a.concluidaEm);
   });
 
-  test("depois de zerar: o resolvedor devolve `null`, a rodada 2 abre limpa e os portões fecham", async () => {
+  test("depois de zerar: o resolvedor devolve `null`, a rodada 2 abre limpa, os portões fecham e a evidência sai (ADR-155)", async () => {
+    expect((await marcasDe("pistas")).length).toBeGreaterThan(0);
     const z = await service.zerar(ESCOLA, ids.turma, ids.professora);
     expect(z).toMatchObject({ rodada: 2, etapa: "exploracao" });
+    /* Zerar apaga a evidência do pacote, de todas as rodadas: marca e nível. */
+    expect(await prisma.evidenciaMarca.count({ where: { escolaId: ESCOLA, expId: EXP_ID } })).toBe(0);
+    expect(await prisma.evidencia.count({ where: { escolaId: ESCOLA, expId: EXP_ID } })).toBe(0);
     const contexto = await prisma.comTenancy((tx) => service.contextoDaAtividade(tx, ESCOLA, ids.ana), ESCOLA);
     expect(contexto).toBeNull();
     const gate = await prisma.exp04ef1bGateTurma.findUniqueOrThrow({
@@ -832,11 +836,11 @@ describe("a Chave, a revisão, a 2ª edição e o Desafio Final", () => {
     expect(await prisma.exp04ef1bSessao.count({ where: { escolaId: ESCOLA, estudanteId: ids.ana } })).toBe(2);
   });
 
-  test("na rodada 2 do MESMO pacote, quem já foi avaliada é medida de novo (ADR-145)", async () => {
+  test("na rodada 2 do MESMO pacote, quem já foi avaliada é medida de novo (ADR-145) — e só a rodada 2 existe (ADR-155)", async () => {
     await naMesa(ids.ana);
     await abrirTodas(ids.ana, ["n1", "n4"]);
     await service.publicar(ESCOLA, ids.ana, ids.turma, publicacao(["n1", "n4", "n6"]));
-    expect((await marcasDe("pistas")).filter((m) => m.estudanteId === ids.ana).map((m) => m.rodada).sort()).toEqual([1, 2]);
+    expect((await marcasDe("pistas")).filter((m) => m.estudanteId === ids.ana).map((m) => m.rodada).sort()).toEqual([2]);
   });
 });
 
