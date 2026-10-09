@@ -41,8 +41,13 @@ As quatro perguntas do PO aparecem no Resultado, na rodada mais recente, com o
 `ChoicePoll` da seção `unooriaai` (`componentes/perguntas.tsx`) — nunca o
 `RadioGroup` da plataforma: aqui não há revelação. Elas reaparecem a cada
 "Tentar de novo" (o servidor guarda a MELHOR resposta e só a conta quando o
-professor encerra a missão), e a trava de F5 é por tentativa
-(`sessionStorage`, só ids). Erro (409 fora do resultado ou da rodada da turma,
+professor encerra a missão), e a trava de F5 é por PARTIDA — estudante, rodada
+da turma (`rodadaDaTurma`, que a api devolve na sessão) e tentativa —, em
+`src/lib/memoria-das-perguntas.ts` (`sessionStorage`, só ids). **Nunca só a
+tentativa**: o `sessionStorage` é da aba, não do estudante, e com a chave
+`exp02em1b:perguntas:1` as perguntas chegavam já marcadas (e travadas) depois do
+"Zerar a turma" e para o próximo estudante na mesma aba (1.4.1). Ao montar, a
+tela apaga as chaves de outras partidas. Erro (409 fora do resultado ou da rodada da turma,
 403 com a missão encerrada) faz o bloco sumir, sem prender o Resultado.
 
 ## O timeout padrão do SDK está errado nesta experiência

@@ -18,7 +18,7 @@ export const EXP_ID = "exp02em1b";
 // o dado de uso fica atribuido a uma versao que nao esta no ar, e a pergunta
 // "esta regressao veio da versao X?" deixa de ter resposta. Sobe JUNTO com o
 // `versao` do `public/experiencia.json`.
-export const EXP_VERSION = "1.4.0";
+export const EXP_VERSION = "1.4.1";
 
 /** Toda grandeza do modelo é FAIXA, nunca número seco. */
 export interface Faixa {
@@ -76,6 +76,8 @@ export interface SessaoPublica {
   rodadas: number;
   perguntasGastas: number;
   tentativa: number;
+  /** A rodada da TURMA em que a sessão nasceu: o "Zerar a turma" a sobe. */
+  rodadaDaTurma: number;
   alocacao: { alfa: string | null; bravo: string | null };
   justificativas: { alfa: string | null; bravo: string | null };
 }
