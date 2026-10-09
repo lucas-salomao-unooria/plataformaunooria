@@ -61,16 +61,17 @@ export function ZerarTurmaJuriEstadual({
         Zerar a turma
       </Button>
       <p className="max-w-3xl text-[12px] leading-snug text-unooria-neutral-600">
-        Abre uma rodada nova de {nomeDaTurma} com a mesma mostra e volta a aula para a exploração. Nada é apagado: a
-        rodada anterior fica no painel de habilidades.
+        Abre uma rodada nova de {nomeDaTurma} com a mesma mostra e volta a aula para a exploração. As habilidades
+        desta mostra são apagadas do painel, e a turma é avaliada de novo.
       </p>
 
       <Modal isOpen={aberto} onClose={() => setAberto(false)} title={`Zerar ${nomeDaTurma}?`}>
         <div className="flex flex-col gap-4">
           <p className="text-[14px] leading-relaxed text-unooria-neutral-800">
             A turma volta ao começo — a credencial, o feed e a cédula —, a Galeria Oculta fecha e cada computador
-            julga a mostra de novo. <strong>Nada é apagado</strong>: os votos, a auditoria da galeria e a cadeia
-            desta rodada continuam guardados, e a evidência dela segue no painel de habilidades.
+            julga a mostra de novo. <strong>As habilidades desta mostra são apagadas</strong> do painel, inclusive
+            os ajustes que você fez, e a turma é avaliada do zero. Os votos, a auditoria da galeria e a cadeia
+            desta rodada continuam guardados na folha da turma.
           </p>
           <FeedbackAlert
             type="warning"

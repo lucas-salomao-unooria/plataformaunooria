@@ -194,9 +194,9 @@ export class QuemMandouIssoTurmasController {
   @HttpCode(200)
   @Roles("professor")
   @Contrato({
-    resumo: '"Zerar Turma para Nova Aplicação" — abre a rodada seguinte, guardando o histórico.',
+    resumo: '"Zerar Turma para Nova Aplicação" — abre a rodada seguinte e apaga a evidência pedagógica do pacote.',
     descricao:
-      "Nada é apagado: as sessões e a evidência da rodada anterior ficam (o `PainelDeHabilidades` mostra as rodadas, e o resultado é a melhor por habilidade). A turma recomeça numa sessão nova, do mesmo pacote, e a fase volta à triagem.\n\n`rodada` é a que o professor VIU no painel: o segundo clique (a atual já é a seguinte) devolve sem avançar de novo.",
+      "A evidência pedagógica do pacote é apagada, de todas as rodadas (ADR-155): o painel de habilidades recomeça do zero. As sessões da rodada anterior ficam. A turma recomeça numa sessão nova, do mesmo pacote, e a fase volta à triagem.\n\n`rodada` é a que o professor VIU no painel: o segundo clique (a atual já é a seguinte) devolve sem avançar de novo.",
     params: ParamsDaTurmaSchema,
     query: QueryDaEscolaSchema,
     corpo: NovaRodadaSchema,

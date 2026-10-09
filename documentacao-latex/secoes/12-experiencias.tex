@@ -447,7 +447,8 @@ A redação e as peças & Mesa, gaveta, página, Bento, leitores, Chave e o Desa
   de partida da criação. Criar não põe no ar: o pacote nasce pronto --- ou
   \enquote{Em preparo}, enquanto faltar o OK das imagens (\adrr{ADR-147}) ---,
   e o professor escolhe o em andamento na lista; pô-lo no ar abre a rodada
-  seguinte à última. Zerar sobe a rodada sem apagar nada; criar o mesmo conteúdo do mais
+  seguinte à última. Zerar sobe a rodada e apaga a evidência da cobertura
+  (\adrr{ADR-155}); criar o mesmo conteúdo do mais
   recente é idempotente (\adrr{ADR-112}).\\
 Dois portões, um botão & \cd{exploracao} \seta{} \cd{resultado} \seta{}
   \cd{revisao}, uma etapa por vez, sem pular nem voltar (409
@@ -938,7 +939,9 @@ foram resolvidas sem refazê-la:
     equipes dela já usam (\cd{ATIVIDADE\_DA\_TURMA}): com outro, a cópia do
     nível para os colegas de computador não acharia a equipe, em silêncio.
   \item \textbf{A rodada é da turma}, em \cd{exp02em1b\_gate\_turma}, e só o
-    \enquote{Zerar a turma} a sobe. A sessão grava a rodada em que nasceu, e o
+    \enquote{Zerar a turma} a sobe --- e apaga as respostas e os níveis da
+    turma, de todas as rodadas (\adrr{ADR-155}): sem isso, o encerramento
+    seguinte relia as respostas de antes. A sessão grava a rodada em que nasceu, e o
     resolvedor (\arq{unoogpt/contexto-da-evidencia.ts}) recusa a resposta fora
     do passo \cd{resultado} ou de uma sessão de rodada que acabou.
   \item \textbf{Vale a MELHOR resposta} (\cd{respostas: "melhor"} na ficha): a
@@ -1224,7 +1227,7 @@ Pacote}.
 \textbf{O pacote aprovado é a ATIVIDADE da evidência pedagógica}
 (\adrr{ADR-112}): o identificador do pacote é o \cd{atividadeId} das marcas.
 \enquote{Zerar Turma para Nova Aplicação} abre a RODADA seguinte do mesmo
-pacote e não apaga nada;
+pacote e apaga a evidência dele (\adrr{ADR-155});
 aprovar um pacote diferente abre atividade nova, e aprovar o mesmo é
 idempotente. Os dois voltam a turma à triagem --- senão a turma nova nasceria
 com a revelação aberta, e o gabarito desceria na entrada.
@@ -1646,7 +1649,7 @@ O acervo não desce antes da galeria & O post é uma \emph{allowlist}
   (\rota{POST .../homologar}) não põe no ar (\adrr{ADR-130}); \enquote{Usar
   esta atividade agora} desliga a anterior, liga a escolhida e aponta o
   \emph{gate} para a rodada SEGUINTE à última com sessão. Zerar abre a rodada
-  seguinte sem apagar nada (\adrr{ADR-112}).\\
+  seguinte e apaga a evidência do pacote (\adrr{ADR-155}).\\
 Dois botões & \cd{exploracao} \seta{} \cd{galeria} \seta{} \cd{desvio},
   uma etapa por vez e sem volta (409 \cd{transicao-de-etapa-invalida}).
   \cd{passoEfetivo} (\arq{regras/passos.ts}) impõe \cd{galeria} a quem está

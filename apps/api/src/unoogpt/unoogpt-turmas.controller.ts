@@ -113,7 +113,7 @@ export class UnoogptTurmasController {
   }
 
   /**
-   * ZERAR A TURMA: apaga as partidas e o relógio.
+   * ZERAR A TURMA: apaga as partidas, o relógio e a evidência pedagógica (ADR-155).
    *
    * É o caminho de exclusão que substitui o `expires_at` do projeto de origem —
    * prazo apertado por quem tem a posse pedagógica, em vez de coluna que nenhuma
@@ -121,9 +121,9 @@ export class UnoogptTurmasController {
    */
   @Delete("turmas/:turmaId")
   @Contrato({
-    resumo: "Zera a turma: apaga as partidas E o relógio.",
+    resumo: "Zera a turma: apaga as partidas, o relógio E a evidência pedagógica da turma.",
     descricao:
-      "É o caminho de exclusão que substitui o `expires_at` do app de origem — prazo real, apertado por quem tem a posse pedagógica, em vez de coluna que nenhuma rotina cumpre.\n\nO relógio vai junto porque rodar de novo com a aula \"já começada\" faria a segunda rodada nascer no meio da tempestade.",
+      "É o caminho de exclusão que substitui o `expires_at` do app de origem — prazo real, apertado por quem tem a posse pedagógica, em vez de coluna que nenhuma rotina cumpre.\n\nO relógio vai junto porque rodar de novo com a aula \"já começada\" faria a segunda rodada nascer no meio da tempestade.\n\nA evidência pedagógica da turma (respostas e níveis, de todas as rodadas) sai junto (ADR-155): o encerramento seguinte só conta o que a turma fizer depois do zerar.",
     params: z.object({ turmaId: z.string().uuid() }),
     query: z.object({ escolaId: z.string().optional() }),
     resposta: TurmaZeradaDoUnoogptSchema,

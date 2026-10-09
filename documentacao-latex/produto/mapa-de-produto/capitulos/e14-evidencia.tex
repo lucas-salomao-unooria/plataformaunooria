@@ -61,8 +61,10 @@ sustentam:
     professor gerou e aprovou (\id{H06.10.4}); e no Júri Estadual, a mostra de
     dezesseis estandes que o professor gerou e aprovou (\id{H06.14.1}). O UnooriaAI será refeito com
     atividades numa próxima onda (o UnooTube foi arquivado).
-  \item \textbf{A rodada é cada vez que a atividade é feita.} Reiniciar a
-    atividade abre uma rodada nova, e a anterior fica guardada.
+  \item \textbf{A rodada é cada vez que a atividade é feita.} Voltar a usar a
+    atividade abre uma rodada nova, e a anterior fica guardada. O
+    \enquote{Zerar a turma} é diferente: apaga as habilidades da atividade, e a
+    turma é avaliada do zero (\id{H14.2.4}).
   \item \textbf{A régua pedagógica diz o que a missão mede}: quais habilidades,
     em quais momentos, qual pergunta e quanto vale cada alternativa.
 \end{itemize}
@@ -239,14 +241,37 @@ chance sem apagar o que cada estudante já tinha mostrado}
     atingiu uma habilidade na primeira rodada e outra na segunda atingiu as
     duas.
   \item Uma rodada pior depois não apaga o que já tinha sido demonstrado.
-  \item Em Quem mandou isso? e na A Seleção, quem abre a rodada seguinte é o
-    \enquote{Zerar} da turma (\id{H07.1.2}), e a tela mostra em que rodada a
-    turma está.
+  \item Voltar a usar uma atividade que já rodou abre a rodada seguinte, e a
+    tela mostra em que rodada a turma está. O \enquote{Zerar} da turma também
+    abre a rodada seguinte, mas apaga o que já tinha sido demonstrado
+    (\id{H14.2.4}).
   \item Toda rodada mede todas as habilidades de novo, também com a mesma
     atividade.
   \item A rodada nova aparece no bloco logo depois do \enquote{Zerar}, sem
     recarregar a página, com o aviso de que os resultados chegam conforme a
     turma joga.
+\end{itemize}
+\end{historia}
+
+\begin{historia}{H14.2.4}{Zerar a turma recomeça as habilidades do zero}{\pronto}
+\hu{Professor}{zerar a turma para aplicar a missão de novo}{avaliar a turma do
+zero, sem o resultado da aplicação anterior no painel}
+\aceite
+\begin{itemize}
+  \item Em toda missão com habilidades, o \enquote{Zerar a turma} apaga as
+    respostas e os níveis da atividade, de todas as rodadas, inclusive os
+    ajustes que eu fiz.
+  \item A janela de confirmação diz que as habilidades serão apagadas antes
+    do clique.
+  \item O painel fica em \enquote{Não avaliado} logo depois de zerar, sem
+    recarregar a página, e volta a mostrar níveis só com o que a turma fizer
+    daqui para a frente.
+  \item No UnooriaAI, encerrar a missão de novo depois de zerar não traz de
+    volta as respostas de antes.
+  \item No Unoovista, o \enquote{Apagar as sessões da turma} faz o mesmo: a
+    turma pode passar de novo pela missão e ser avaliada.
+  \item Nas missões em que o zerar guarda o que a turma produziu (as escolhas,
+    os textos), isso continua na folha da turma; só as habilidades recomeçam.
 \end{itemize}
 \end{historia}
 

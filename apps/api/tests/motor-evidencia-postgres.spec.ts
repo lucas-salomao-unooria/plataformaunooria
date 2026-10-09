@@ -4,6 +4,7 @@ import { PrismaClient } from "@prisma/client";
 import { EquipesService } from "../src/equipes/equipes.service";
 import { EvidenciasService } from "../src/evidencias/evidencias.service";
 import { ContextoDaEvidenciaDoUnoovista, RODADA_DO_UNOOVISTA } from "../src/motor/contexto-da-evidencia";
+import { limparDadosDosEstudantes } from "../src/atividades/manutencao";
 import { PrismaService } from "../src/prisma/prisma.service";
 import { liberarParaTeste } from "./liberar-de-teste";
 import { criarTurmaDeTeste } from "./turma-de-teste";
@@ -179,5 +180,22 @@ describe("a evidência do Unoovista, com a ficha e o resolvedor reais", () => {
     expect(await recusa(evidencias.responder(ESCOLA, estudantes.caio!, UNOOVISTA, "p1", "A1"))).toMatchObject({
       status: 409,
     });
+  });
+  it("\"Apagar as sessões da turma\" apaga a evidência da atividade, e a turma é medida de novo (ADR-155)", async () => {
+    const daAtividade = { escolaId: ESCOLA, expId: UNOOVISTA, atividadeId };
+    expect(await prisma.evidencia.count({ where: daAtividade })).toBeGreaterThan(0);
+    const atividade = await prisma.activity.findUniqueOrThrow({ where: { id: atividadeId } });
+    await prisma.comTenancy((tx) => limparDadosDosEstudantes(tx, atividade), ESCOLA);
+    expect(await prisma.evidencia.count({ where: daAtividade })).toBe(0);
+    expect(await prisma.evidenciaMarca.count({ where: daAtividade })).toBe(0);
+    expect(await prisma.run.count({ where: { activityId: atividadeId } })).toBe(0);
+    // Uma sessão nova da Ana, com reflexão: a primeira resposta volta a valer.
+    const nova = await prisma.run.create({
+      data: { escolaId: ESCOLA, activityId: atividadeId, estudanteId: estudantes.ana!, fase: "reflexao", ladoInicial: "A", engineState: {} },
+      select: { id: true },
+    });
+    await salvarReflexao(nova.id);
+    await evidencias.responder(ESCOLA, estudantes.ana!, UNOOVISTA, "p1", "A1");
+    expect((await evidenciaDe(estudantes.ana!, "EF08CO11"))?.status).toBe("atingiu");
   });
 });

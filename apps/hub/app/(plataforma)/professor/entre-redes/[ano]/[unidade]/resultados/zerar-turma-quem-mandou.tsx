@@ -22,12 +22,11 @@ const SEM_REDE = "A conexão falhou. Confira a internet e tente de novo.";
  * "Zerar Turma para Nova Aplicação" (`e7.professor.btn_zerar_turma`) — a
  * REAPLICAÇÃO da exp05ef1b.
  *
- * **Nada é apagado, e a janela diz isso.** É a diferença desta missão para as
- * outras "zerar a turma" do hub: aqui zerar abre a RODADA seguinte do mesmo
- * pacote (`POST /nova-rodada`), e as escolhas, as regras e a evidência da
- * rodada anterior ficam — o painel de habilidades mostra as rodadas e fica com
- * a melhor de cada habilidade (a política da E14). A turma recomeça do grupo, e
- * a fase volta à triagem.
+ * **A evidência é apagada, e a janela diz isso** (ADR-155): zerar abre a
+ * RODADA seguinte do mesmo pacote (`POST /nova-rodada`) e o painel de
+ * habilidades do pacote recomeça do zero. As escolhas e as regras da rodada
+ * anterior ficam na folha da turma. A turma recomeça do grupo, e a fase volta
+ * à triagem.
  *
  * A confirmação é DELIBERADA (a caixa "Entendi…" antes do botão): o clique
  * move a sala inteira para o começo no meio de uma manhã, e um toque perdido
@@ -95,8 +94,8 @@ export function ZerarTurmaQuemMandou({
         Zerar Turma para Nova Aplicação
       </Button>
       <p className="max-w-3xl text-[12px] leading-snug text-unooria-neutral-600">
-        Abre a {rodada + 1}ª rodada com o mesmo pacote e volta a aula ao começo. Nada é apagado: a{" "}
-        {rodada}ª rodada fica no histórico, e a rodada nova mede todas as habilidades de novo.
+        Abre a {rodada + 1}ª rodada com o mesmo pacote e volta a aula ao começo. As habilidades deste pacote
+        são apagadas do painel, e a {rodada + 1}ª rodada avalia a turma do zero.
       </p>
 
       <Modal isOpen={aberto} onClose={fechar} size="sm" theme="light" aria-labelledby={idDoTitulo}>
@@ -111,13 +110,13 @@ export function ZerarTurmaQuemMandou({
               triagem.
             </p>
             <p className="text-[13px] text-unooria-neutral-600">
-              <strong>Nada é apagado.</strong> O que cada estudante escolheu e escreveu na {rodada}ª rodada
-              fica guardado, e o painel de habilidades mostra as rodadas e fica com a melhor de cada
-              habilidade.
+              <strong>As habilidades deste pacote são apagadas do painel</strong>, inclusive os ajustes que
+              você fez. O que cada estudante escolheu e escreveu na {rodada}ª rodada continua guardado na
+              folha da turma.
             </p>
             <p className="text-[13px] text-unooria-neutral-600">
-              <strong>A rodada nova mede todas as habilidades de novo</strong>, com o mesmo pacote. Como o
-              resultado é a melhor rodada, refazer só pode melhorar o nível de cada estudante.
+              <strong>A rodada nova mede todas as habilidades do zero</strong>, com o mesmo pacote: o nível
+              de cada estudante passa a ser o desta aplicação.
             </p>
             <Checkbox
               label="Entendi: a turma recomeça do começo numa rodada nova."

@@ -193,9 +193,15 @@ describe("a evidência da Missão Tempestade, com a ficha e o resolvedor reais",
     expect((await evidenciaDe("bia", "EM13CO08"))[0]?.status).toBe("atingiu");
   });
 
-  test("zerar a turma abre a rodada 2, e a sessão da rodada que acabou não responde", async () => {
+  test("zerar a turma apaga a evidência (ADR-155), abre a rodada 2, e a sessão da rodada que acabou não responde", async () => {
     await salas.definirEstado(ESCOLA, turmaId, TEMPESTADE, "liberada", professorId);
+    expect(await evidenciaDe("ana", "EM13CO14")).toHaveLength(1);
     await missao.zerarTurma(ESCOLA, turmaId, professorId);
+    /* Marca e nível da turma saem, de todas as rodadas: a turma recomeça do
+       zero, e o painel não guarda a aplicação anterior. */
+    expect(await evidenciaDe("ana", "EM13CO14")).toHaveLength(0);
+    expect(await prisma.evidenciaMarca.count({ where: { escolaId: ESCOLA, turmaId, expId: TEMPESTADE } })).toBe(0);
+    expect(await prisma.evidencia.count({ where: { escolaId: ESCOLA, turmaId, expId: TEMPESTADE } })).toBe(0);
     const gate = await prisma.unoogptGateTurma.findUnique({
       where: { escolaId_turmaId: { escolaId: ESCOLA, turmaId } },
       select: { rodada: true },
@@ -208,7 +214,12 @@ describe("a evidência da Missão Tempestade, com a ficha e o resolvedor reais",
     await sessao("caio", "resultado", 2);
     await responder("caio", "p3", "C1");
     expect(await marcaDe("caio", "p3")).toEqual([{ status: "atingiu", atividadeId: TURMA, rodada: 2 }]);
-    // A rodada 1 continua no banco: o zerar não apaga evidência.
-    expect(await evidenciaDe("ana", "EM13CO14")).toHaveLength(1);
+    // Encerrar de novo NÃO ressuscita as respostas de antes do zerar: só a da
+    // rodada 2 vira evidência.
+    await salas.definirEstado(ESCOLA, turmaId, TEMPESTADE, "encerrada", professorId);
+    expect(await evidenciaDe("ana", "EM13CO14")).toHaveLength(0);
+    expect(await prisma.evidencia.findMany({ where: { escolaId: ESCOLA, turmaId, expId: TEMPESTADE }, select: { rodada: true } }))
+      .toEqual(expect.arrayContaining([{ rodada: 2 }]));
+    expect(await prisma.evidencia.count({ where: { escolaId: ESCOLA, turmaId, expId: TEMPESTADE, rodada: 1 } })).toBe(0);
   });
 });

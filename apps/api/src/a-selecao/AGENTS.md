@@ -15,9 +15,9 @@ e a primeira em que o dado do MURAL é do computador (E13, o gatilho da ADR-111)
 
 - **Atividade = a COBERTURA; rodada = o "Zerar".** O gate da turma diz qual
   (cobertura, rodada) está em andamento, e a sessão é por essa dupla. Zerar
-  sobe a rodada e volta à exploração **sem apagar nada** — a rodada passada é o
-  que o painel de habilidades mostra (ADR-112): zerar que apaga é o que a
-  evidência não pode ter (ADR-114). Uma ativa (= EM ANDAMENTO) por turma:
+  sobe a rodada, volta à exploração e **apaga a evidência da cobertura**, de
+  todas as rodadas (ADR-155, `evidencias/apagar-da-atividade.ts`); as sessões
+  ficam. Uma ativa (= EM ANDAMENTO) por turma:
   índice único PARCIAL, que o Prisma não enxerga (não está no schema nem no
   `migrate diff`).
 - **A plataforma NUNCA cria a cobertura (ADR-130).** `homologar` cria a

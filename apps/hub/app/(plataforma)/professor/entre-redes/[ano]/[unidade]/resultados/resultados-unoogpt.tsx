@@ -165,8 +165,8 @@ export async function ResultadosUnooGPT({
           <div className="flex flex-wrap items-center gap-3">
             <ZerarTurma turmaId={turma} nomeDaTurma={folha.turma.nome} />
             <p className="text-[12px] leading-snug text-unooria-neutral-500">
-              Apaga as partidas desta turma e devolve o relógio ao início. Use para rodar a missão
-              de novo com a mesma turma.
+              Apaga as partidas e as habilidades desta turma e devolve o relógio ao início. Use para
+              rodar a missão de novo com a mesma turma.
             </p>
           </div>
 

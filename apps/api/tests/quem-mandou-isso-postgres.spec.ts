@@ -674,7 +674,7 @@ describe("a aula na 5A — os três latches, a evidência e a revelação", () =
   });
 });
 
-describe("a rodada nova e o pacote novo — o histórico fica", () => {
+describe("a rodada nova e o pacote novo — a sessão fica, a evidência sai (ADR-155)", () => {
   test("zerar a turma abre a rodada 2 do MESMO pacote; o duplo clique não pula a 3; rodada velha é 409", async () => {
     expect(await service.novaRodada(ESCOLA, ids.turma5A, ids.professora, 1)).toEqual({
       atividade: { pacoteId: pacote5A, rodada: 2 },
@@ -687,21 +687,23 @@ describe("a rodada nova e o pacote novo — o histórico fica", () => {
     expect(await codigo(service.novaRodada(ESCOLA, ids.turma5A, ids.professora, 5))).toBe("rodada-desatualizada");
   });
 
-  test("a Ana recomeça do zero na rodada 2, e a rodada 1 continua no banco — sessão, regra e evidência", async () => {
+  test("a Ana recomeça do zero na rodada 2: a sessão da rodada 1 fica, a evidência dela sai (ADR-155)", async () => {
     const sessao = await service.sessao(ESCOLA, ids.ana);
     expect(sessao).toMatchObject({ passo: "abertura", atividade: { pacoteId: pacote5A, rodada: 2 }, selecao: [] });
     await service.entrar(ESCOLA, ids.ana);
     await service.enviarAoMural(ESCOLA, ids.ana, ["msg_2", "msg_6", "msg_4"]);
     expect(await prisma.exp05ef1bSessao.count({ where: { escolaId: ESCOLA, estudanteId: ids.ana } })).toBe(2);
     /* Toda rodada mede de novo, também no MESMO pacote (ADR-145): as três
-       falsas da Ana marcam "não atingiu" na rodada 2, e o resultado continua
-       "atingiu", porque é a melhor rodada da habilidade. */
+       falsas da Ana marcam "não atingiu" na rodada 2. E o zerar apagou a
+       evidência da rodada 1 (ADR-155): o resultado agora é o da rodada 2. */
     expect((await prisma.exp05ef1bSessao.findFirstOrThrow({ where: { escolaId: ESCOLA, estudanteId: ids.ana, rodada: 2 } })).confirmadoEm).not.toBeNull();
     expect(
       await prisma.evidencia.findFirstOrThrow({ where: { escolaId: ESCOLA, estudanteId: ids.ana, habilidade: "EF05CO08", rodada: 2 } }),
     ).toMatchObject({ origem: "propria", status: "nao_atingiu" });
     const painel = await evidencias.painel(ESCOLA, ids.turma5A, EXP_ID, pacote5A, ids.professora);
-    expect(painel.estudantes.find((e) => e.id === ids.ana)?.resultado).toMatchObject({ EF05CO08: "atingiu" });
+    expect(painel.estudantes.find((e) => e.id === ids.ana)?.resultado).toMatchObject({ EF05CO08: "nao_atingiu" });
+    expect(await prisma.evidencia.count({ where: { escolaId: ESCOLA, expId: EXP_ID, atividadeId: pacote5A, rodada: 1 } })).toBe(0);
+    expect(await prisma.evidenciaMarca.count({ where: { escolaId: ESCOLA, expId: EXP_ID, atividadeId: pacote5A, rodada: 1 } })).toBe(0);
   });
 
   test("rodada 2 do MESMO pacote: quem recebeu pela equipe na 1 é medido de novo, e o resultado sobe", async () => {
@@ -710,9 +712,10 @@ describe("a rodada nova e o pacote novo — o histórico fica", () => {
     expect(
       await prisma.evidencia.findFirstOrThrow({ where: { escolaId: ESCOLA, estudanteId: ids.caio, habilidade: "EF05CO08", rodada: 2 } }),
     ).toMatchObject({ origem: "propria", status: "atingiu" });
+    /* A cópia da equipe da rodada 1 saiu com o zerar (ADR-155). */
     expect(
-      await prisma.evidencia.findFirstOrThrow({ where: { escolaId: ESCOLA, estudanteId: ids.caio, habilidade: "EF05CO08", rodada: 1 } }),
-    ).toMatchObject({ origem: "equipe", status: "nao_atingiu" });
+      await prisma.evidencia.findFirst({ where: { escolaId: ESCOLA, estudanteId: ids.caio, habilidade: "EF05CO08", rodada: 1 } }),
+    ).toBeNull();
     const painel = await evidencias.painel(ESCOLA, ids.turma5A, EXP_ID, pacote5A, ids.professora);
     expect(painel.estudantes.find((e) => e.id === ids.caio)?.resultado).toMatchObject({ EF05CO08: "atingiu" });
   });

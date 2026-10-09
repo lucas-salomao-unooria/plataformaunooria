@@ -7,6 +7,7 @@ import { ondeAsTurmasSaoVisiveis, professorLeciona } from "../comum/turmas-do-pr
 import { computadoresDaMontagem, mapaDeEquipes } from "../equipes/consulta";
 import { colapsarEmUnidades } from "../equipes/regras";
 import { EvidenciasService, type ContextoDaAtividade } from "../evidencias/evidencias.service";
+import { apagarEvidenciaDaAtividade } from "../evidencias/apagar-da-atividade";
 import type { Nivel } from "../evidencias/regras";
 import { ehUuid } from "../motor/guardas";
 import { logger } from "../observabilidade/logger";
@@ -923,17 +924,18 @@ export class JuriEstadualService implements OnModuleInit {
   }
 
   /**
-   * "Zerar a turma" — a segunda aplicação, SEM apagar nada: sobe a rodada e
-   * volta à exploração. As sessões da rodada anterior ficam, com os votos e o
-   * que cada criança fez na galeria: é a rodada passada que o painel de
-   * habilidades mostra (ADR-112). Os carimbos da galeria e do desvio voltam a
-   * nulo (CHECK).
+   * "Zerar a turma" — a segunda aplicação: sobe a rodada e volta à
+   * exploração, e APAGA a evidência pedagógica do pacote, de todas as rodadas
+   * (ADR-155) — a turma recomeça do zero no painel de habilidades. As sessões
+   * da rodada anterior ficam, com os votos e o que cada criança fez na
+   * galeria. Os carimbos da galeria e do desvio voltam a nulo (CHECK).
    */
   async zerar(escolaId: string, turmaId: string, professorId?: string) {
     return this.prisma.comTenancy(async (tx) => {
       await this.turmaVisivel(tx, escolaId, turmaId, professorId);
       await this.travarTurma(tx, escolaId, turmaId, "exclusivo");
       const { gate } = await this.exigirPacote(tx, escolaId, turmaId);
+      await apagarEvidenciaDaAtividade(tx, { escolaId, turmaId, expId: EXP_ID, atividadeId: gate.pacoteId });
       const linha = await tx.exp06ef1bGateTurma.update({
         where: { turmaId, escolaId },
         data: { rodada: gate.rodada + 1, etapa: ETAPA_INICIAL, galeriaLiberadaEm: null, desvioLiberadoEm: null },

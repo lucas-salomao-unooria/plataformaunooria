@@ -36,6 +36,8 @@ await suite(
       "O mapa começa VAZIO: ponto cego é ausência de dado, não zero",
       "O turno com o Cientista é gravado no servidor e sobrevive a um F5",
       "A folha da turma não tem coluna de resgatados — não é ranking de crianças",
+      "Ao encerrar a missão, o nível aparece no painel aberto, sem recarregar",
+      "Zerar a turma apaga as habilidades, e o painel recomeça do zero",
       "A tela individual traz a transcrição inteira para o professor",
       "A conclusão da operação cabe na coluna ao lado do mapa, sem nada cortado",
     ],
@@ -316,5 +318,72 @@ await suite(
         "Com a missão aberta, as respostas estão guardadas mas não viram nível: a melhor resposta " +
         "de cada estudante só vale depois que o professor encerra a missão na Sala de Aula.",
     });
+
+    // ═══ PROFESSOR: encerrar acende o nível SEM recarregar a página ═════
+    /* A página de resultados fica aberta; a missão é encerrada na Sala de Aula
+       (o mesmo PUT da tela da sala, pelo BFF). Quem traz o nível para esta
+       página é o `router.refresh()` de 10 s do painel do relógio — a marca na
+       `window` prova que ninguém recarregou: um F5 a apagaria. */
+    const turmaId = new URL(resultadosDaTurma).searchParams.get("turmaId");
+    const estadoNaSala = (estado) =>
+      prof.evaluate(
+        async ({ turmaId, estado }) =>
+          (
+            await fetch(`/api/plataforma/salas/turma/${turmaId}/missoes/exp02em1b`, {
+              method: "PUT",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify({ estado }),
+            })
+          ).status,
+        { turmaId, estado },
+      );
+    await prof.evaluate(() => {
+      window.__semRecarga = true;
+    });
+    const niveis = prof
+      .locator("[data-habilidades-da-tempestade] tbody")
+      .getByText(/^(Atingiu|Em processo|Não atingiu)$/);
+    const encerrou = await estadoNaSala("encerrada");
+    r.exigir(encerrou === 200, `a missão encerra na sala (veio ${encerrou})`);
+    await niveis.first().waitFor({ timeout: 40_000 });
+    r.exigir(
+      await prof.evaluate(() => window.__semRecarga === true),
+      "o nível apareceu no painel aberto, sem recarregar a página",
+    );
+    r.exigir(
+      (await prof.getByText("O nível aparece quando você encerrar a missão na Sala de Aula").count()) === 0,
+      "o aviso de espera sai quando a missão é encerrada",
+    );
+    await prof.locator("[data-habilidades-da-tempestade]").scrollIntoViewIfNeeded();
+    await r.registrar(prof, "habilidades-sem-recarregar", {
+      titulo: "O nível aparece sozinho ao encerrar",
+      mostra: "O bloco \"Habilidades da BNCC\" com o nível das respostas, na mesma página, sem recarregar.",
+      prova:
+        "A página dos resultados acompanha a aula: ao encerrar a missão na Sala de Aula, o nível " +
+        "chega em até 10 segundos, sem o professor apertar F5.",
+    });
+
+    // ═══ PROFESSOR: zerar apaga as habilidades da turma (ADR-155) ════════
+    await prof.click("[data-zerar-turma]");
+    await prof.locator("text=/habilidades da turma/i").first().waitFor({ timeout: 10_000 });
+    await prof.locator("button", { hasText: /^Zerar a turma$/ }).last().click();
+    const limpo = Date.now() + 30_000;
+    while ((await niveis.count()) > 0 && Date.now() < limpo) await prof.waitForTimeout(500);
+    r.exigir((await niveis.count()) === 0, "zerar a turma apaga o nível de todos, e o painel recomeça do zero");
+    r.exigir(
+      await prof.evaluate(() => window.__semRecarga === true),
+      "o painel esvaziou na mesma página, sem recarregar",
+    );
+    await prof.locator("[data-habilidades-da-tempestade]").scrollIntoViewIfNeeded();
+    await r.registrar(prof, "habilidades-zeradas", {
+      titulo: "Zerar recomeça as habilidades do zero",
+      mostra: "O bloco \"Habilidades da BNCC\" sem nível nenhum, logo depois de zerar a turma.",
+      prova:
+        "Zerar a turma é aplicar a missão de novo: as respostas e os níveis da aplicação anterior " +
+        "saem, e o encerramento seguinte só conta o que a turma fizer daqui para a frente.",
+    });
+
+    /* Devolve a sala como o seed a deixa: a próxima corrida entra liberada. */
+    r.exigir((await estadoNaSala("liberada")) === 200, "a missão volta a ficar liberada para a turma");
   },
 );

@@ -44,7 +44,8 @@ Quatro tabelas (`exp05ef1b_pacotes`, `_gates_turma`, `_sessoes`,
   rodada SEGUINTE à última com sessão e volta a fase a `triagem` — senão a
   atividade nova nasceria com a revelação aberta. A lista das atividades é
   `GET :turmaId/pacotes` (os APROVADOS; o rascunho não é atividade). "Zerar a
-  turma" é `rodada_atual + 1` — NADA é apagado.
+  turma" é `rodada_atual + 1` e apaga a evidência do pacote (ADR-155); as
+  sessões ficam.
 - **A marca da EF05CO08 é da MESMA transação do latch do Mural.** Se a
   evidência falhar, o Mural não fecha (há teste com o `marcar` quebrado). A
   régua é `regras/evidencia.ts#nivelCO08` (a v2, ADR-120: só três verdadeiras

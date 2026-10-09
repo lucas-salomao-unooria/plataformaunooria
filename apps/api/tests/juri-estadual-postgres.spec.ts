@@ -836,12 +836,15 @@ describe("a cadeia, Mariana e as enquetes", () => {
     expect(SessaoSchema.parse(await entrar(ids.ana)).concluida).toBe(true);
   });
 
-  test("depois de zerar: o resolvedor devolve `null`, a rodada 2 abre limpa, e quem já foi avaliada é medida de novo (ADR-145)", async () => {
+  test("depois de zerar: o resolvedor devolve `null`, a rodada 2 abre limpa, a evidência sai (ADR-155) e quem já foi avaliada é medida de novo (ADR-145)", async () => {
+    expect((await marcasDe("auditoria", ids.ana)).length).toBeGreaterThan(0);
     expect(await service.zerar(ESCOLA, ids.turma, ids.professora)).toMatchObject({ rodada: 2, etapa: "exploracao" });
+    expect(await prisma.evidenciaMarca.count({ where: { escolaId: ESCOLA, expId: EXP_ID } })).toBe(0);
+    expect(await prisma.evidencia.count({ where: { escolaId: ESCOLA, expId: EXP_ID } })).toBe(0);
     expect(await prisma.comTenancy((tx) => service.contextoDaAtividade(tx, ESCOLA, ids.ana), ESCOLA)).toBeNull();
     expect(await entrar(ids.ana)).toMatchObject({ rodada: 2, passo: "credencial", voto: null });
     await ateACadeia(ids.ana);
-    expect((await marcasDe("auditoria", ids.ana)).map((m) => m.rodada).sort()).toEqual([1, 2]);
+    expect((await marcasDe("auditoria", ids.ana)).map((m) => m.rodada).sort()).toEqual([2]);
     expect(await prisma.exp06ef1bSessao.count({ where: { escolaId: ESCOLA, estudanteId: ids.ana } })).toBe(2);
   });
 

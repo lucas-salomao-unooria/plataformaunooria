@@ -506,7 +506,7 @@ await suite(
       await prof.waitForFunction((el) => !el.disabled, await confirmar.elementHandle(), { timeout: 10_000 });
       await confirmar.click();
       await esperarOuFalharCedo(
-        prof.getByText(new RegExp(`a ${rodada + 1}ª rodada fica no histórico`)),
+        prof.getByText(new RegExp(`a ${rodada + 1}ª rodada avalia a turma do zero`)),
         prof.locator(ALERTA_DE_ERRO),
         { timeout: 30_000, oQue: "zerar a turma" },
       );
@@ -526,12 +526,12 @@ await suite(
       );
       await prof.locator("[data-zerar-turma]").scrollIntoViewIfNeeded();
       await r.registrar(prof, "turma-zerada", {
-        titulo: "Zerar abre uma rodada nova, e nada é apagado",
-        mostra: `Na página da atividade em andamento, a ${painel.turma.nome} na ${rodada + 1}ª rodada, com o mesmo pacote; a ${rodada}ª fica no histórico.`,
+        titulo: "Zerar abre uma rodada nova, e as habilidades recomeçam do zero",
+        mostra: `Na página da atividade em andamento, a ${painel.turma.nome} na ${rodada + 1}ª rodada, com o mesmo pacote, e o painel de habilidades recomeçando do zero.`,
         prova:
-          "É a reaplicação da evidência (E14): a rodada anterior não some — o painel de habilidades " +
-          "fica com a melhor de cada habilidade. E a confirmação é deliberada: um toque perdido no " +
-          "botão não move a sala inteira para o começo.",
+          "É a reaplicação da missão (ADR-155): as habilidades do pacote são apagadas e a turma é " +
+          "avaliada de novo. E a confirmação é deliberada: um toque perdido no botão não apaga a " +
+          "avaliação da sala inteira.",
       });
     } else {
       r.ressalva(
