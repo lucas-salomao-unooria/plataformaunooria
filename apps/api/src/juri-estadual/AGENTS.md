@@ -54,8 +54,8 @@ silêncio.
   gabarito só em `GET professor/material`.
 - **Atividade = o PACOTE; rodada = o "Zerar".** O gate (PK `turma_id`) diz qual
   (pacote, rodada) está em andamento, e a sessão é por essa dupla (UNIQUE
-  `pacote_id, rodada, estudante_id`). Zerar sobe a rodada e volta à exploração
-  **sem apagar nada**. Um ativo por turma: índice único PARCIAL
+  `pacote_id, rodada, estudante_id`). Zerar sobe a rodada, volta à exploração
+  e **apaga a evidência do pacote** (ADR-155); as sessões ficam. Um ativo por turma: índice único PARCIAL
   (`exp06ef1b_pacotes_um_ativo`). `homologar` cria PRONTO (ADR-130) e é
   idempotente para o mesmo conteúdo; `colocarEmAndamento` desliga o anterior,
   liga o escolhido e aponta o gate para a rodada SEGUINTE à última com sessão.

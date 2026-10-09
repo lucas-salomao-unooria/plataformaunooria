@@ -11015,6 +11015,9 @@
                     "temFicha": {
                       "type": "boolean"
                     },
+                    "aguardandoEncerramento": {
+                      "type": "boolean"
+                    },
                     "habilidades": {
                       "type": "array",
                       "items": {
@@ -11262,6 +11265,9 @@
                     "temFicha": {
                       "type": "boolean"
                     },
+                    "aguardandoEncerramento": {
+                      "type": "boolean"
+                    },
                     "habilidades": {
                       "type": "array",
                       "items": {
@@ -11503,6 +11509,9 @@
                   "type": "object",
                   "properties": {
                     "temFicha": {
+                      "type": "boolean"
+                    },
+                    "aguardandoEncerramento": {
                       "type": "boolean"
                     },
                     "habilidades": {
@@ -15818,8 +15827,8 @@
         "tags": [
           "atividades"
         ],
-        "summary": "Apaga as sessões dos estudantes, mantendo a atividade e os posts.",
-        "description": "É o botão de rodar a mesma atividade com outra turma.\n\n**Papéis:** professor.",
+        "summary": "Apaga as sessões dos estudantes e a evidência pedagógica da atividade, mantendo a atividade e os posts.",
+        "description": "É o botão de rodar a mesma atividade com outra turma, ou de a mesma turma passar de novo pela missão (ADR-155).\n\n**Papéis:** professor.",
         "security": [
           {
             "token-da-plataforma": []
@@ -26475,8 +26484,8 @@
         "tags": [
           "unoogpt"
         ],
-        "summary": "Zera a turma: apaga as partidas E o relógio.",
-        "description": "É o caminho de exclusão que substitui o `expires_at` do app de origem — prazo real, apertado por quem tem a posse pedagógica, em vez de coluna que nenhuma rotina cumpre.\n\nO relógio vai junto porque rodar de novo com a aula \"já começada\" faria a segunda rodada nascer no meio da tempestade.\n\n**Papéis:** professor, gestor_contrato, admin.",
+        "summary": "Zera a turma: apaga as partidas, o relógio E a evidência pedagógica da turma.",
+        "description": "É o caminho de exclusão que substitui o `expires_at` do app de origem — prazo real, apertado por quem tem a posse pedagógica, em vez de coluna que nenhuma rotina cumpre.\n\nO relógio vai junto porque rodar de novo com a aula \"já começada\" faria a segunda rodada nascer no meio da tempestade.\n\nA evidência pedagógica da turma (respostas e níveis, de todas as rodadas) sai junto (ADR-155): o encerramento seguinte só conta o que a turma fizer depois do zerar.\n\n**Papéis:** professor, gestor_contrato, admin.",
         "security": [
           {
             "token-da-plataforma": []
@@ -40930,8 +40939,8 @@
         "tags": [
           "quem-mandou-isso"
         ],
-        "summary": "\"Zerar Turma para Nova Aplicação\" — abre a rodada seguinte, guardando o histórico.",
-        "description": "Nada é apagado: as sessões e a evidência da rodada anterior ficam (o `PainelDeHabilidades` mostra as rodadas, e o resultado é a melhor por habilidade). A turma recomeça numa sessão nova, do mesmo pacote, e a fase volta à triagem.\n\n`rodada` é a que o professor VIU no painel: o segundo clique (a atual já é a seguinte) devolve sem avançar de novo.\n\n**Papéis:** professor.\n\n**Restrições:**\n- Turma em que o professor não tem matrícula responde **404** `turma-nao-encontrada`, não 403: um \"sem permissão\" já contaria que a turma existe.\n- Sem pacote aprovado: **409** `pacote-nao-aprovado`. Rodada que não é nem a atual nem a anterior: **409** `rodada-desatualizada`.",
+        "summary": "\"Zerar Turma para Nova Aplicação\" — abre a rodada seguinte e apaga a evidência pedagógica do pacote.",
+        "description": "A evidência pedagógica do pacote é apagada, de todas as rodadas (ADR-155): o painel de habilidades recomeça do zero. As sessões da rodada anterior ficam. A turma recomeça numa sessão nova, do mesmo pacote, e a fase volta à triagem.\n\n`rodada` é a que o professor VIU no painel: o segundo clique (a atual já é a seguinte) devolve sem avançar de novo.\n\n**Papéis:** professor.\n\n**Restrições:**\n- Turma em que o professor não tem matrícula responde **404** `turma-nao-encontrada`, não 403: um \"sem permissão\" já contaria que a turma existe.\n- Sem pacote aprovado: **409** `pacote-nao-aprovado`. Rodada que não é nem a atual nem a anterior: **409** `rodada-desatualizada`.",
         "security": [
           {
             "token-da-plataforma": []
@@ -43999,8 +44008,8 @@
         "tags": [
           "a-selecao"
         ],
-        "summary": "\"Zerar a turma\" — abre a próxima rodada, sem apagar nada.",
-        "description": "Sobe a rodada da atividade e volta a etapa para a exploração. **Nada é apagado**: as sessões, as tríades, os pares e as reflexões da rodada anterior ficam, e são elas que o painel de habilidades mostra como a rodada passada (ADR-112). A cobertura também fica — o preparo custou tempo da professora.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Repetir o mesmo tema com a mesma turma mede memória, não leitura (PED-13): a tela avisa antes, e o guia recomenda criar um tema novo, que é OUTRA atividade.\n- Sem atividade em andamento na turma, **403** `atividade-nao-preparada`: a plataforma não cria atividade — a professora cria e põe em andamento (`POST :turmaId/coberturas/:coberturaId/em-andamento`).",
+        "summary": "\"Zerar a turma\" — abre a próxima rodada e apaga a evidência pedagógica da atividade.",
+        "description": "Sobe a rodada da atividade e volta a etapa para a exploração. **A evidência pedagógica da cobertura é apagada**, de todas as rodadas (ADR-155): o painel de habilidades recomeça do zero. As sessões, as tríades, os pares e as reflexões da rodada anterior ficam na folha da turma, e a cobertura também — o preparo custou tempo da professora.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Repetir o mesmo tema com a mesma turma mede memória, não leitura (PED-13): a tela avisa antes, e o guia recomenda criar um tema novo, que é OUTRA atividade.\n- Sem atividade em andamento na turma, **403** `atividade-nao-preparada`: a plataforma não cria atividade — a professora cria e põe em andamento (`POST :turmaId/coberturas/:coberturaId/em-andamento`).",
         "security": [
           {
             "token-da-plataforma": []
@@ -50190,8 +50199,8 @@
         "tags": [
           "jornal-escola"
         ],
-        "summary": "\"Zerar a turma\" — abre a próxima rodada, sem apagar nada.",
-        "description": "Sobe a rodada da atividade e volta a etapa para a exploração, com os portões fechados. **Nada é apagado**: as sessões, as edições e as pistas da rodada anterior ficam, e são elas que o painel de habilidades mostra como a rodada passada (ADR-112). O pacote também fica.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Na rodada nova do MESMO pacote, quem já foi avaliado numa anterior refaz sem marca nova nas ações (ADR-120): já viu o resultado e a Chave. O guia recomenda criar outro pacote, que é OUTRA atividade.\n- Sem atividade em andamento na turma, **403** `atividade-nao-preparada`: a plataforma não cria atividade — o professor cria e põe em andamento (`POST :turmaId/pacotes/:pacoteId/em-andamento`).",
+        "summary": "\"Zerar a turma\" — abre a próxima rodada e apaga a evidência pedagógica da atividade.",
+        "description": "Sobe a rodada da atividade e volta a etapa para a exploração, com os portões fechados. **A evidência pedagógica do pacote é apagada**, de todas as rodadas (ADR-155): o painel de habilidades recomeça do zero. As sessões, as edições e as pistas da rodada anterior ficam na folha da turma, e o pacote também.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Na rodada nova do MESMO pacote, quem já foi avaliado numa anterior refaz sem marca nova nas ações (ADR-120): já viu o resultado e a Chave. O guia recomenda criar outro pacote, que é OUTRA atividade.\n- Sem atividade em andamento na turma, **403** `atividade-nao-preparada`: a plataforma não cria atividade — o professor cria e põe em andamento (`POST :turmaId/pacotes/:pacoteId/em-andamento`).",
         "security": [
           {
             "token-da-plataforma": []
@@ -52961,6 +52970,9 @@
                               "texto": {
                                 "type": "string"
                               },
+                              "legenda": {
+                                "type": "string"
+                              },
                               "hashtags": {
                                 "type": "array",
                                 "items": {
@@ -52994,6 +53006,7 @@
                               "escola",
                               "perfil",
                               "texto",
+                              "legenda",
                               "hashtags",
                               "imagem"
                             ],
@@ -53203,6 +53216,9 @@
                               "texto": {
                                 "type": "string"
                               },
+                              "legenda": {
+                                "type": "string"
+                              },
                               "hashtags": {
                                 "type": "array",
                                 "items": {
@@ -53236,6 +53252,7 @@
                               "escola",
                               "perfil",
                               "texto",
+                              "legenda",
                               "hashtags",
                               "imagem"
                             ],
@@ -53579,6 +53596,9 @@
                           "texto": {
                             "type": "string"
                           },
+                          "legenda": {
+                            "type": "string"
+                          },
                           "hashtags": {
                             "type": "array",
                             "items": {
@@ -53612,6 +53632,7 @@
                           "escola",
                           "perfil",
                           "texto",
+                          "legenda",
                           "hashtags",
                           "imagem"
                         ],
@@ -53740,6 +53761,9 @@
                           "texto": {
                             "type": "string"
                           },
+                          "legenda": {
+                            "type": "string"
+                          },
                           "hashtags": {
                             "type": "array",
                             "items": {
@@ -53773,6 +53797,7 @@
                           "escola",
                           "perfil",
                           "texto",
+                          "legenda",
                           "hashtags",
                           "imagem"
                         ],
@@ -54460,6 +54485,9 @@
                           "texto": {
                             "type": "string"
                           },
+                          "legenda": {
+                            "type": "string"
+                          },
                           "hashtags": {
                             "type": "array",
                             "items": {
@@ -54493,6 +54521,7 @@
                           "escola",
                           "perfil",
                           "texto",
+                          "legenda",
                           "hashtags",
                           "imagem"
                         ],
@@ -55668,8 +55697,8 @@
         "tags": [
           "juri-estadual"
         ],
-        "summary": "\"Zerar a turma\" — abre a próxima rodada, sem apagar nada.",
-        "description": "Sobe a rodada da atividade e volta a etapa para a exploração, com a galeria fechada. **Nada é apagado**: as sessões, os votos e o que cada criança fez na galeria ficam, e são eles que o painel de habilidades mostra como a rodada passada (ADR-112).\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Na rodada nova do MESMO pacote, quem já foi avaliado numa anterior refaz sem marca nova nas ações (ADR-120): já viu a galeria e a regra. O guia recomenda criar outra atividade.\n- Sem atividade em andamento na turma, **403** `atividade-nao-preparada`: a plataforma não cria atividade — o professor gera, cria e põe em andamento (`POST :turmaId/pacotes/:pacoteId/em-andamento`).",
+        "summary": "\"Zerar a turma\" — abre a próxima rodada e apaga a evidência pedagógica da atividade.",
+        "description": "Sobe a rodada da atividade e volta a etapa para a exploração, com a galeria fechada. **A evidência pedagógica do pacote é apagada**, de todas as rodadas (ADR-155): o painel de habilidades recomeça do zero. As sessões, os votos e o que cada criança fez na galeria ficam na folha da turma.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Na rodada nova do MESMO pacote, quem já foi avaliado numa anterior refaz sem marca nova nas ações (ADR-120): já viu a galeria e a regra. O guia recomenda criar outra atividade.\n- Sem atividade em andamento na turma, **403** `atividade-nao-preparada`: a plataforma não cria atividade — o professor gera, cria e põe em andamento (`POST :turmaId/pacotes/:pacoteId/em-andamento`).",
         "security": [
           {
             "token-da-plataforma": []

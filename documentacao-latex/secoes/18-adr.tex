@@ -9,7 +9,7 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{154 decisões}, numeradas até ADR-154. A 153 (a evidência do Unoovista) e a 154 (a da Missão Tempestade) nasceram no mesmo dia, em frentes paralelas. A 132 (a Ajuda com
+São \textbf{155 decisões}, numeradas até ADR-155. A 153 (a evidência do Unoovista) e a 154 (a da Missão Tempestade) nasceram no mesmo dia, em frentes paralelas. A 132 (a Ajuda com
 avatar) entrou no código antes de ter seção aqui, e por um dia o número foi
 citado sem existir; a 133 pulou para não colidir com ela. A 133 e a 134 nasceram no mesmo dia, em frentes paralelas
 (Unoovista e Unoochat), e entraram juntas no merge; a 135 e a 136 levaram as
@@ -205,6 +205,7 @@ que a cercam.
 \adrr{ADR-152} & O Júri Estadual recupera o ciclo do voto: salvar pesa, a justificativa vem antes e depois, complementar, e a rodada de desvio & 2026-10-07 & Aceita; complementa a \adrr{ADR-151}\\
 \zebra \adrr{ADR-153} & O Unoovista mede a evidência pelas três perguntas do PO, depois da reflexão, numa rodada só & 2026-10-07 & Aceita; aplica a \adrr{ADR-112}\\
 \adrr{ADR-154} & A Missão Tempestade mede a evidência numa atividade sintética, com rodada da turma, a melhor resposta e o nível só ao encerrar a missão & 2026-10-07 & Aceita; aplica a \adrr{ADR-112}\\
+\zebra \adrr{ADR-155} & Zerar a turma apaga a evidência pedagógica da atividade & 2026-10-09 & Aceita; reverte parte da \adrr{ADR-112}\\
 \bottomrule
 \end{tabularx}
 
@@ -13835,3 +13836,84 @@ missão não tinha o que a evidência exige: não tem atividade (ficou fora da
 sai); o piloto mostrar turmas com \enquote{atingiu} concentrado em quem tentou
 muitas vezes (então a régua volta a \enquote{vale a primeira}); ou professores
 que não encerram a missão (então o nível passa a contar no zerar também).
+
+% ---------------------------------------------------------------------------
+\section{ADR-155 --- Zerar a turma apaga a evidência pedagógica da atividade}
+\label{adr:zerar-apaga-evidencia}
+
+\textbf{Data.} 2026-10-09. \textbf{Status.} Aceita. Reverte, para o zerar, a
+regra da \adrr{ADR-112} de que reiniciar a atividade guarda a rodada anterior;
+para voltar a usar uma atividade, a regra continua.
+
+\begin{especificacao}{Contexto}
+Desde a \adrr{ADR-112}, o \enquote{Zerar a turma} de toda missão com ficha
+abria a rodada seguinte e GUARDAVA a evidência das anteriores: o painel de
+habilidades mostrava as rodadas e ficava com a melhor de cada habilidade. A
+\adrr{ADR-145} e a \adrr{ADR-154} se apoiaram nisso. Na prática, o professor
+zera para aplicar a missão DE NOVO, e esperava ver o painel recomeçar. Na
+Missão Tempestade o efeito era pior: o nível só nasce ao encerrar a missão, e
+o encerramento relia TODAS as marcas da turma --- as respostas de antes do
+zerar voltavam. No Unoovista, o \enquote{Apagar as sessões da turma} tinha o
+mesmo papel e deixava as marcas, e como lá vale a PRIMEIRA resposta, a turma
+que passasse de novo nunca seria medida.
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{itemize}
+  \item \textbf{Zerar apaga a evidência da atividade}, de todas as rodadas: as
+    marcas (o dado bruto) e os níveis, inclusive cópias de equipe e ajustes do
+    professor. Uma função só, \arq{evidencias/apagar-da-atividade.ts}, chamada
+    na MESMA transação de cada zerar: A Seleção (a cobertura), o Jornal da
+    Escola e o Júri Estadual (o pacote), Quem mandou isso? (o pacote, só
+    quando a rodada avança de fato) e a Missão Tempestade (a atividade
+    \cd{"turma"}); e no \enquote{Apagar as sessões da turma} do Unoovista (a
+    atividade).
+  \item \textbf{A rodada continua subindo}: é ela que recusa a resposta
+    atrasada de quem estava com a tela aberta durante o zerar.
+  \item \textbf{O histórico fica.} \cd{evidencias\_eventos} é append-only por
+    desenho (a role de runtime só tem \cd{SELECT, INSERT}); ele é auditoria, e
+    nenhuma tela o lê como evidência.
+  \item \textbf{O que a missão guarda da turma não muda}: onde o zerar mantinha
+    as sessões (A Seleção, Jornal, Júri, Quem mandou isso?), elas ficam; onde
+    apagava as partidas (Tempestade, Unoovista), continua apagando.
+  \item \textbf{As janelas de confirmação dizem que as habilidades serão
+    apagadas}, inclusive os ajustes do professor. O \enquote{nada é apagado}
+    saiu das quatro que o diziam.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Manter a rodada guardada e só esconder as anteriores no
+    painel.} O resultado é a melhor rodada: escondida a rodada, o nível antigo
+    continuaria valendo no resultado, no perfil e no painel de habilidades da
+    escola, sem aparecer na tela que o professor olha.
+  \item \textbf{Apagar só na Missão Tempestade}, onde o defeito apareceu. O
+    professor pediu a mesma regra para toda missão: o \enquote{Zerar} com
+    sentidos diferentes por missão é o botão que ninguém consegue prever.
+  \item \textbf{Apagar também o histórico.} A role de runtime não tem
+    \cd{DELETE} nele, de propósito, e afrouxar a permissão para isso abriria a
+    reescrita da auditoria inteira.
+  \item \textbf{Zerar a contagem de rodada para 1.} Seria a única forma de a
+    aba do painel voltar a dizer \enquote{1}, ao custo de aceitar a resposta
+    atrasada de uma sessão de antes do zerar na rodada nova.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{Zerar por engano apaga a avaliação da turma}, sem volta. A
+    confirmação diz isso, e em Quem mandou isso? continua exigindo a caixa
+    \enquote{Entendi}.
+  \item \textbf{A melhor rodada deixa de proteger o nível} em quem refaz depois
+    de zerar: a rodada nova avalia do zero e pode sair pior que a anterior.
+  \item \textbf{A aba da rodada continua numerada} pela contagem que só sobe:
+    depois de zerar, a turma pode estar na \enquote{rodada 3} sem as duas
+    primeiras.
+\end{itemize}
+
+\textbf{Gatilho.} Um professor precisar recuperar a avaliação de antes do
+zerar (então o zerar passa a arquivar em vez de apagar), ou a rede pedir
+histórico de avaliação por aplicação.
+

@@ -155,8 +155,8 @@ folha por computador, zerar, podcast e habilidades. A criação é
   `aprovar-imagens` antes do `concluirCriacao`. Sem a segunda fase a atividade
   é "Em preparo", sem "Usar esta atividade agora" (a api daria 409), e a página
   dela mostra a mesma grade com "Aprovar imagens".
-- Pôr no ar abre a rodada seguinte à última; **zerar = rodada nova**, sem
-  apagar nada.
+- Pôr no ar abre a rodada seguinte à última; **zerar = rodada nova** e apaga
+  as habilidades da cobertura (ADR-155), em toda missão com ficha.
 - **UM botão**, com o rótulo de `proximaEtapa` da api; não volta.
 - **O painel consulta `…/painel`** a cada 5 s e só refaz a página quando muda a
   evidência (acima): a página lê seis rotas.

@@ -1470,7 +1470,8 @@ Retenção & A da vigência contratual, sem rotina de expurgo (\adrr{ADR-13}).\\
   nulo, a cobertura existe mas não vai ao ar.\\
 \zebra \cd{exp07ef1b\_gates\_turma} & O relógio da turma: \cd{exploracao} $|$
   \cd{mural} $|$ \cd{fichas} $|$ \cd{explicacao}, mais a cobertura e a
-  \textbf{rodada}. Zerar incrementa a rodada, não apaga.\\
+  \textbf{rodada}. Zerar incrementa a rodada e apaga a evidência da
+  cobertura (\adrr{ADR-155}); as sessões ficam.\\
 \cd{exp07ef1b\_sessoes} & Uma linha por estudante, cobertura e rodada. A tríade
   (três ids distintos do feed), a legenda (10 a 140 \emph{code points}), a matriz
   (as três lentes somando 3), o par (\cd{par\_sessao\_id} sem FK ou
@@ -1565,7 +1566,8 @@ em produção, que é onde ela existe.
   (\adrr{ADR-25}). Chave \cd{(escola\_id, turma\_id)}.\\
 \zebra \cd{exp02em1b\_gate\_turma} & A \textbf{rodada da turma} para a evidência
   pedagógica (\adrr{ADR-154}): só o \enquote{Zerar a turma} a sobe, e ela
-  sobrevive ao zerar, que apaga o relógio. Ausência de linha = rodada 1.\\
+  sobrevive ao zerar, que apaga o relógio e a evidência da turma
+  (\adrr{ADR-155}). Ausência de linha = rodada 1.\\
 \bottomrule
 \end{tabularx}
 

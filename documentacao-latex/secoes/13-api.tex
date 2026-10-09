@@ -1076,7 +1076,8 @@ deste módulo: passam por \rota{/evidencias/exp05ef1b/perguntas/*}
   \cd{null} para quem não leciona na turma.\\
 \zebra \rota{POST .../nova-rodada} & \textbf{só professor} & \enquote{Zerar Turma
   para Nova Aplicação}: a rodada que o professor VIU no corpo torna o duplo
-  clique idempotente; rodada velha é 409 \cd{rodada-desatualizada}.\\
+  clique idempotente; rodada velha é 409 \cd{rodada-desatualizada}. Apaga a
+  evidência do pacote (\adrr{ADR-155}).\\
 \rota{GET /quem-mandou-isso/\B{}professor/\B{}material} & prof., gestor & O guia da aula:
   o banco curado com gabarito, o roteiro, as falas e as perguntas de evidência
   COM o nível. Catálogo, sem \emph{tenancy} (\adrr{ADR-86}).\\
@@ -1160,8 +1161,8 @@ módulo: passam por \rota{/evidencias/exp04ef1b/perguntas/*}
 \zebra \rota{POST .../gate} & prof., gestor & O botão único:
   \cd{exploracao} \seta{} \cd{resultado} \seta{} \cd{revisao}. Destino igual
   ao atual é aceito e não muda nada; fora de ordem, 409.\\
-\rota{POST .../zerar} & prof., gestor & A próxima rodada do mesmo pacote, sem
-  apagar nada.\\
+\rota{POST .../zerar} & prof., gestor & A próxima rodada do mesmo pacote; apaga
+  a evidência dele (\adrr{ADR-155}).\\
 \zebra \rota{GET .../pacotes} & prof., gestor & O pacote em andamento
   \textbf{com} o gabarito, e o histórico das atividades da turma (o
   \cd{?pacote=} do painel de habilidades), cada uma com
@@ -1300,7 +1301,7 @@ três enquetes não são deste módulo: passam por
   \cd{galeria} \seta{} \cd{desvio}, uma por vez. O segundo clique não muda
   nada; não volta.\\
 \rota{POST .../zerar} & prof., gestor & A próxima rodada da mesma
-  atividade, sem apagar nada.\\
+  atividade; apaga a evidência dela (\adrr{ADR-155}).\\
 \zebra \rota{GET .../pacotes} & prof., gestor & A atividade em andamento, inteira, e
   a lista de todas, cada uma com \cd{imagensAprovadas}; \cd{ativo} é
   \cd{null} sem nenhuma no ar.\\

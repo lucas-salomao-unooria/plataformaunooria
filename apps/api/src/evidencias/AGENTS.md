@@ -49,7 +49,9 @@ com `escola_id` + RLS forçada:
 
 - **A unidade é ATIVIDADE + RODADA.** A atividade é um id OPACO da missão
   (`ATIVIDADE_ID_RE`); reiniciar a atividade abre a rodada seguinte, e a
-  anterior fica.
+  anterior fica — **salvo o "Zerar a turma"** (e o "Apagar as sessões" do
+  Unoovista), que apaga marcas e níveis da atividade: `apagar-da-atividade.ts`,
+  ADR-155. O histórico fica (a role não apaga).
 - **A escala: atingiu > em_processo > nao_atingiu. N/A é a AUSÊNCIA de linha.**
   `nao_participou` é o N/A EXPLÍCITO que só o professor põe, e existe para
   BARRAR a cópia da equipe. No perfil ele conta como N/A.
