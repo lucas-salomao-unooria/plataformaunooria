@@ -1,5 +1,6 @@
 import { HUB, suite } from "../lib/roteiro.mjs";
 import { conta } from "../lib/credenciais.mjs";
+import { provarPodcastNaAula } from "../lib/podcast.mjs";
 
 /**
  * A Missão Tempestade (exp02em1b), nas duas pontas da sala.
@@ -402,6 +403,21 @@ await suite(
         "Zerar a turma é aplicar a missão de novo: as respostas e os níveis da aplicação anterior " +
         "saem, e o encerramento seguinte só conta o que a turma fizer daqui para a frente.",
     });
+
+    // ═══ PROFESSOR: o podcast FIXO da missão (ADR-156) ═══════════════════
+    /* Sem falas para revisar: a missão não tem customização, e o roteiro é o
+       mesmo em toda turma. Ele fica nos resultados, depois do debate. */
+    await provarPodcastNaAula(r, prof, {
+      blocos: ["Abertura", "Recapitulação da missão", "O que cada fonte enxergava", "Provocação e transferência", "Encerramento"],
+      vozes: ["Lia", "Caio"],
+      trechos: 5,
+      passo: "podcast",
+      descricao: "Lia e Caio, cerca de 3 min 30 s",
+    });
+    r.exigir(
+      (await prof.locator("[data-falas-do-podcast]").count()) === 0,
+      "o podcast da Tempestade não tem falas para revisar: o roteiro é fixo",
+    );
 
     /* Devolve a sala como o seed a deixa: a próxima corrida entra liberada. */
     r.exigir((await estadoNaSala("liberada")) === 200, "a missão volta a ficar liberada para a turma");

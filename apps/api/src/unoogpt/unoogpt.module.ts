@@ -5,6 +5,7 @@ import { UnoogptAgregadoController } from "./unoogpt-agregado.controller";
 import { UnoogptTurmasController } from "./unoogpt-turmas.controller";
 import { UnoogptController } from "./unoogpt.controller";
 import { UnoogptService } from "./unoogpt.service";
+import { PodcastDaExp02em1b } from "./podcast-fonte";
 
 /**
  * exp02em1b — a Missão Tempestade.
@@ -19,6 +20,6 @@ import { UnoogptService } from "./unoogpt.service";
 @Module({
   imports: [EvidenciasModule],
   controllers: [UnoogptController, UnoogptTurmasController, UnoogptAgregadoController],
-  providers: [UnoogptService, ContextoDaEvidenciaDaTempestade],
+  providers: [UnoogptService, ContextoDaEvidenciaDaTempestade, PodcastDaExp02em1b],
 })
 export class UnoogptModule {}

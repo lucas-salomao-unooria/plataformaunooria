@@ -47,3 +47,8 @@ Complementa o `AGENTS.md` de `apps/api`, que vence em conflito.
   aceita resposta no passo `resultado` e da sessão da rodada vigente. NÃO use a
   `tentativa` como rodada: com "Tentar de novo" livre e a melhor rodada, o
   estudante chega a "atingiu" por exclusão.
+- **O podcast de recapitulação é FIXO** (ADR-156, `podcast.ts` +
+  `podcast-fonte.ts`): o mesmo roteiro em toda turma, sem vaga, sem IA e sem
+  edição do professor, com a atividade `"turma"`. Ele cita três vieses das
+  fontes (satélite, cadastro, telefonia) — mexer na ficha (`cenario.ts`) ou nos
+  vieses que ele cita exige reler o texto e subir a `versao` do pedido de voz.

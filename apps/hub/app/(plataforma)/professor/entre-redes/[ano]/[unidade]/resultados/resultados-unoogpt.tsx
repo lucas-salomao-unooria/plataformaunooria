@@ -6,6 +6,7 @@ import { RotuloDaTrilha } from "@/components/trilha";
 import { apiDoServidor } from "@/lib/api-servidor";
 import { auth } from "@/lib/auth";
 import { painelDeHabilidades } from "@/lib/evidencias-servidor";
+import { podcastDaAtividade } from "@/lib/podcast-servidor";
 import { AVISO_POR_COMPUTADOR, chaveDaLinha } from "@/lib/equipe-no-painel";
 import { ATIVIDADE_DA_TURMA } from "@/lib/equipes";
 import {
@@ -18,6 +19,7 @@ import type { FolhaDaTurma, TurmaResumo } from "@/lib/unoogpt-tipos";
 
 import { EquipeNaLinha } from "./equipe-na-linha";
 import { PainelDoRelogio } from "./painel-do-relogio";
+import { CartaoDoPodcast } from "./podcast-da-aula";
 import { SeletorDeTurma } from "./seletor-de-turma";
 import { ZerarTurma } from "./zerar-turma";
 
@@ -55,10 +57,11 @@ export async function ResultadosUnooGPT({
 
   /* A evidência (E14, ADR-154): a missão não tem atividade, e a da evidência é
      a sintética "turma" — a mesma das equipes. */
-  const [folha, habilidades, session] = await Promise.all([
+  const [folha, habilidades, session, podcast] = await Promise.all([
     turma ? apiDoServidor<FolhaDaTurma>(`/unoogpt/professor/turmas/${encodeURIComponent(turma)}`) : null,
     turma && missao.expId ? painelDeHabilidades(turma, missao.expId, ATIVIDADE_DA_TURMA) : null,
     auth(),
+    turma && missao.expId ? podcastDaAtividade(missao.expId, turma, ATIVIDADE_DA_TURMA) : null,
   ]);
   /* Com equipes nesta missão (E13), cada linha é um computador e o retrato
      conta computadores. */
@@ -239,6 +242,20 @@ export async function ResultadosUnooGPT({
               crianças por acerto viraria ranking. O número está na tela de cada estudante.
             </p>
           </Card>
+
+          {/* Depois do debate: o podcast da plataforma (ADR-150, ADR-156). Aqui
+              ele é FIXO — a missão não tem customização, e o roteiro é o
+              mesmo em toda turma, sem falas para revisar. Ele cita vieses das
+              fontes, então o aviso pede a hora certa: depois da conversa. */}
+          {missao.expId ? (
+            <CartaoDoPodcast
+              expId={missao.expId}
+              turmaId={turma}
+              atividadeId={ATIVIDADE_DA_TURMA}
+              podcast={podcast}
+              aviso="Toque o episódio só depois do debate: ele conta à turma o que três das fontes não enxergavam."
+            />
+          ) : null}
 
           {/* O painel de habilidades (E14, ADR-154). Só conta quando a missão é
               encerrada na Sala de Aula: até lá ele diz isso, sem nível. Só o

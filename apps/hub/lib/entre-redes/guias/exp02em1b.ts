@@ -124,6 +124,11 @@ export const GUIA_EXP02EM1B: GuiaDaAula = {
           "Ela é o roteiro do debate. Não é para decorar as oito: escolha três que você vai puxar — sugestão de partida: satélite (vê telhado, não vê gente), cadastro (nove anos de defasagem) e telefonia (conta aparelho, e idoso e criança somem).",
       },
       {
+        titulo: "Gere o áudio do podcast, se for usá-lo.",
+        texto:
+          "O podcast de recapitulação é seu: cerca de 3 minutos e meio em que Lia e Caio retomam a missão com a turma. O roteiro é o mesmo para todas as turmas e não precisa de revisão. Ele fica em A aula e os resultados, com o botão Gerar o áudio do podcast, e a transcrição está sempre ao lado. É opcional, e toca só DEPOIS do debate: ele conta o que três das fontes não enxergavam.",
+      },
+      {
         titulo: "Combine a largada em voz alta.",
         texto:
           "O relógio é da turma: quem chega antes espera, e a espera é a aula — não a tela travada. Diga que vai largar e conte até três.",

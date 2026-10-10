@@ -6,8 +6,38 @@ import { AlertBox, Badge, Button, Card, ScrollBar, Tag } from "@edu/ui/ds";
 
 import { CartaoPost } from "./cartao-post";
 import { FICHAS, PERFIS } from "@/lib/insta-tipos";
+import { falasParaHomologar, type FalasEscritas } from "@/lib/podcast-tipos";
+import {
+  EscreverAoChegar,
+  FalasDoPodcast,
+  falasComProblema,
+  pedirFalasDoTema,
+} from "@/app/(plataforma)/professor/entre-redes/[ano]/[unidade]/atividades/nova/falas-do-podcast";
 
-import type { RespostaPosts } from "./tipos-revisao";
+import type { PostRevisao, RespostaPosts } from "./tipos-revisao";
+
+/** O lado como a IA do podcast o lê: o rótulo e a tese que o professor validou. */
+export interface LadoDoPodcast {
+  rotulo: string;
+  tese: string;
+  argumentos: string[];
+}
+
+/** O material das falas do podcast (ADR-156): o tema, a pergunta e os dois lados validados. */
+export interface MaterialDoPodcast {
+  tema: string;
+  pergunta: string;
+  ladoA: LadoDoPodcast;
+  ladoB: LadoDoPodcast;
+}
+
+/** Até seis legendas aprovadas de cada lado, da página de posts que a tela já tem. */
+function postsDoLado(posts: readonly PostRevisao[], lado: "A" | "B"): string[] {
+  return posts
+    .filter((p) => p.lado === lado && p.aprovado)
+    .slice(0, 6)
+    .map((p) => p.caption.slice(0, 500));
+}
 
 interface Filtros {
   lado: string;
@@ -34,10 +64,16 @@ export function PainelRevisao({
   activityId,
   status,
   qtdPostsTese,
+  turmaId,
+  material,
 }: {
   activityId: string;
   status: string;
   qtdPostsTese: number;
+  /** A turma da atividade; `null` = a atividade antiga, sem turma, que não tem podcast. */
+  turmaId: string | null;
+  /** O que as falas do podcast contam; `null` sem antagonismo validado. */
+  material: MaterialDoPodcast | null;
 }) {
   const [filtros, setFiltros] = useState<Filtros>(FILTROS_INICIAIS);
   const [dados, setDados] = useState<RespostaPosts | null>(null);
@@ -46,6 +82,33 @@ export function PainelRevisao({
   const [pendencias, setPendencias] = useState<string[]>([]);
   const [ativando, setAtivando] = useState(false);
   const [statusAtual, setStatusAtual] = useState(status);
+
+  /* As falas do podcast que contam ESTA atividade (ADR-156): a IA as escreve
+     quando a revisão abre, o professor as revisa e elas vão no corpo do
+     "Ativar". Só na PRIMEIRA ativação (`revisao`): reativar a encerrada
+     mantém as falas gravadas, sem gastar IA a cada visita. Sem turma ou sem
+     antagonismo, não há podcast. */
+  const comPodcast = turmaId !== null && material !== null && statusAtual === "revisao";
+  const [falas, setFalas] = useState<FalasEscritas | null>(null);
+  const [escrevendoFalas, setEscrevendoFalas] = useState(false);
+  const [falhaDasFalas, setFalhaDasFalas] = useState<string | null>(null);
+  const problemasDasFalas = falasComProblema(falas);
+  const faltamFalas = comPodcast && (escrevendoFalas || falas === null || problemasDasFalas > 0);
+
+  async function escreverFalas() {
+    if (!turmaId || !material) return;
+    setEscrevendoFalas(true);
+    setFalhaDasFalas(null);
+    const posts = dados?.posts ?? [];
+    const r = await pedirFalasDoTema("exp08ef1b", turmaId, {
+      ...material,
+      ladoA: { ...material.ladoA, posts: postsDoLado(posts, "A") },
+      ladoB: { ...material.ladoB, posts: postsDoLado(posts, "B") },
+    });
+    if (r.ok) setFalas(r.falas);
+    else setFalhaDasFalas(r.mensagem);
+    setEscrevendoFalas(false);
+  }
 
   const buscar = useCallback(async () => {
     setCarregando(true);
@@ -83,7 +146,9 @@ export function PainelRevisao({
       const resposta = await fetch(`/api/plataforma/atividades/${activityId}/ativar`, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ forcar }),
+        body: JSON.stringify(
+          comPodcast && falas ? { forcar, podcast: falasParaHomologar(falas.vagas) } : { forcar },
+        ),
       });
       const corpo = (await resposta.json().catch(() => null)) as {
         mensagem?: string;
@@ -135,13 +200,38 @@ export function PainelRevisao({
             <Button
               variant="primary"
               isLoading={ativando}
+              isDisabled={faltamFalas}
               onClick={() => void ativar(false)}
             >
               Ativar atividade
             </Button>
           ) : null}
         </div>
+        {comPodcast && faltamFalas && !escrevendoFalas ? (
+          <p className="mt-3 text-[13px] text-unooria-neutral-600" data-falta-falas-do-podcast>
+            {falas === null
+              ? "Faltam as falas do podcast de recapitulação, logo abaixo."
+              : `${problemasDasFalas === 1 ? "1 fala do podcast precisa" : `${problemasDasFalas} falas do podcast precisam`} de ajuste antes de ativar.`}
+          </p>
+        ) : null}
       </Card>
+
+      {/* As falas do podcast, revisadas antes de ativar (ADR-156). Pedidas
+          quando os posts chegam: a IA lê alguns deles junto dos dois lados. */}
+      {comPodcast ? (
+        <>
+          <EscreverAoChegar chave={dados ? activityId : null} aoChegar={() => void escreverFalas()} />
+          <FalasDoPodcast
+            falas={falas}
+            escrevendo={escrevendoFalas}
+            falha={falhaDasFalas}
+            desatualizadas={false}
+            travado={ativando}
+            aoMudar={(vagas) => setFalas((atual) => (atual ? { ...atual, vagas } : atual))}
+            aoReescrever={() => void escreverFalas()}
+          />
+        </>
+      ) : null}
 
       {/*
         Matriz 2×4 (doc 05 §4). Existe porque a contagem por lado ESCONDE o que
