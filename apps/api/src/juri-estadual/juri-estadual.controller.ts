@@ -6,8 +6,8 @@ import { rateLimit } from "../comum/rate-limit";
 import { Contrato } from "../openapi/contrato";
 import {
   AcaoDaGaleriaSchema,
+  BatimentoDaCedulaSchema,
   CartoesSchema,
-  DesvioSchema,
   EstadoSchema,
   EventosDoFeedSchema,
   FeedSchema,
@@ -38,8 +38,11 @@ import { JuriEstadualService } from "./juri-estadual.service";
 
 type Autenticado = { auth: AuthClaims };
 
-/** `POST galeria/acoes` responde 204, sem corpo. */
+/** `POST galeria/acoes` e `POST cedula/batimento` respondem 204, sem corpo. */
 const SemCorpoSchema = z.void();
+
+/** `POST passo`: o feed (para `feed`) ou o estado curto (para `cadeia`). */
+const RespostaDoPassoSchema = z.union([FeedSchema, EstadoSchema]);
 
 /**
  * Por usuário, nunca por IP: a turma inteira sai pelo mesmo NAT da escola. E o
@@ -108,12 +111,12 @@ export class JuriEstadualController {
   @Post("passo")
   @HttpCode(200)
   @Contrato({
-    resumo: '"Acessar o feed da mostra" — da credencial para o feed, com a abertura.',
+    resumo: '"Acessar Feed da Mostra" (da credencial para o feed) e o "avançar" da revisão para a cadeia.',
     descricao:
-      "Grava o passo `feed` e, com o feed vazio, serve a ABERTURA: quatro posts, a apresentação de um projeto de cada área, em ordem sorteada pela sessão — a criança vê que a mostra é variada antes de a bolha fechar. Pedir de novo devolve o feed como está; depois do voto, também (a escada é de sentido único).",
+      "`para: \"feed\"` grava o passo `feed` e, com o feed vazio, serve a ABERTURA: quatro posts, a apresentação de um projeto de cada área, em ordem sorteada pela sessão. Responde o feed.\n\n`para: \"cadeia\"` leva a sessão de `revisada` (a revisão do voto gravada) para a `cadeia` (Etapa 5). Responde o estado curto. Pedir de novo devolve o estado como está (a escada é de sentido único).",
     corpo: PedirPassoSchema,
-    resposta: FeedSchema,
-    notas: [PORTA],
+    resposta: RespostaDoPassoSchema,
+    notas: ["`cadeia` antes da revisão responde **409** `passo-invalido`.", PORTA],
   })
   passo(@Body() corpo: unknown, @Req() req: Autenticado) {
     limitar(req.auth.usuarioId);
@@ -126,7 +129,7 @@ export class JuriEstadualController {
   @Contrato({
     resumo: "O que a tela mediu (curtidas e permanências) e, se pedido, o próximo post.",
     descricao:
-      "A curtida e o salvo são ESTADO (`curtiu`/`salvou: true/false`; desfazer devolve o peso), a permanência é FATO (mais de 5 s num post, uma vez por post). Os três sinais entram antes de o motor escolher o próximo, porque são eles que afunilam: com duas curtidas na mesma área, o resto do feed é dela. Comentar e compartilhar não pesam e não viajam. `proximo: true` quando a tela chegou ao último post servido: o servidor serve UM a mais, até dez.",
+      "A curtida e o salvo são ESTADO (`curtiu`/`salvou: true/false`), a permanência é FATO (mais de 5 s num post, uma vez por post). Curtir (3) e permanecer (1) pesam e entram antes de o motor escolher o próximo; **salvar é gravado e não pesa**. Com a área em foco, os posts seguintes são só dela, repetindo os projetos em formatos diferentes (`tipo`: apresentação, bastidor, protótipo, depoimento). `proximo: true` quando a tela chegou ao último post servido: o servidor serve UM a mais, até dez.\n\nO primeiro `proximo: true` é a 1ª rolagem e liga o relógio de **8 minutos do servidor** (`encerraEm`); recarregar não zera. Com o tempo esgotado (`tempoEsgotado`), o feed não serve mais post e `cedulaLiberada` fica `true`.",
     corpo: EventosDoFeedSchema,
     resposta: FeedSchema,
     notas: [
@@ -141,16 +144,32 @@ export class JuriEstadualController {
     return this.missao.eventosDoFeed(req.auth.escolaId, req.auth.usuarioId, turmaDo(req.auth), eventos);
   }
 
+  @Post("cedula/batimento")
+  @HttpCode(204)
+  @Contrato({
+    resumo: "O batimento da cédula aberta (a cada 15 s): o sinalizador de ociosos do professor.",
+    descricao:
+      "Com a cédula aberta, a tela manda a cada 15 s há quantos segundos não há toque nela (`segundosSemToque`). O servidor grava o instante do batimento e o do último toque; o painel do professor acende o ícone de ocioso ao lado do nome com mais de 60 s. Sem batimento por 40 s (a cédula fechou, o voto foi), a marca some sozinha; `aberta: false` a apaga na hora. Viaja junto com o polling que a tela já faz — não há rota de polling nova.",
+    corpo: BatimentoDaCedulaSchema,
+    resposta: SemCorpoSchema,
+    notas: ["Fora do feed (depois do voto) responde 204 sem gravar: o batimento atrasado não acende ninguém.", PORTA],
+  })
+  async batimento(@Body() corpo: unknown, @Req() req: Autenticado): Promise<void> {
+    limitar(req.auth.usuarioId, 240);
+    const batimento = valida(BatimentoDaCedulaSchema, corpo);
+    await this.missao.batimentoDaCedula(req.auth.escolaId, req.auth.usuarioId, turmaDo(req.auth), batimento);
+  }
+
   @Post("voto")
   @HttpCode(200)
   @Contrato({
-    resumo: "A cédula lacrada — o voto, a convicção e a justificativa de antes (latch).",
+    resumo: "A cédula lacrada — o projeto e a certeza (latch).",
     descricao:
-      "O gesto que a missão confronta, e ele é IRREVERSÍVEL: grava o projeto, a convicção, a JUSTIFICATIVA (um cartão de motivo, `v1`–`v3`, e o trecho grifado: o índice de uma frase da legenda do estande votado), o carimbo e o passo `lacrada` juntos. Depois dele, a criança espera a turma (o pico): o professor projeta a dispersão de votos e libera a Galeria Oculta. A justificativa volta ao lado dos estandes escondidos, na revisão.",
+      "O gesto que a missão confronta, e ele é IRREVERSÍVEL: grava o projeto, a certeza (`examinei_bem` = \"Sim\", `vi_tudo` = \"Com certeza\"), o carimbo e o passo `lacrada` juntos. A cédula tem quatro elementos e nenhuma justificativa. Depois dele, a criança espera a turma (o pico): o professor projeta a dispersão de votos e libera a auditoria.",
     corpo: VotoSchema,
     resposta: EstadoSchema,
     notas: [
-      "Com menos de dez posts servidos responde **409** `feed-incompleto`; projeto que não apareceu no feed DESTA criança, **409** `projeto-fora-do-feed`; `trecho` que não é uma frase da legenda dele, **400** `payload-invalido`.",
+      "Antes da cédula liberada (menos de dez posts E menos de 8 minutos desde a 1ª rolagem) responde **409** `feed-incompleto`; projeto que não apareceu no feed DESTA criança, **409** `projeto-fora-do-feed`.",
       "O segundo voto — inclusive dois simultâneos — responde **409** `voto-ja-lacrado`.",
       PORTA,
     ],
@@ -165,7 +184,7 @@ export class JuriEstadualController {
   @Contrato({
     resumo: "A Galeria Oculta: os 16 estandes, os que não chegaram ao feed primeiro, e a taxa REAL.",
     descricao:
-      "`invisibilidade` é o número desta sessão, calculado no servidor: os projetos que o feed nunca mostrou sobre os dezesseis. Quem curtiu duas vezes a mesma área fica perto de 56%; quem não interagiu, perto de 38%. Nada é cravado na copy, e a grade tem tamanho variável. `exibidoNoSeuFeed` diz quais chegaram.",
+      "`invisibilidade` é o número desta sessão, calculado no servidor: os projetos que o feed nunca mostrou sobre os dezesseis — o do badge (\"{n}% dos projetos da feira ficaram fora do seu feed\") e o tamanho da grade de três colunas. Quem curte fica em 69% (11 de 16) com a saturação; quem não interagiu, perto de 38%. `exibidoNoSeuFeed` diz quais chegaram; `podeManter`, se o \"Manter meu voto inicial\" já vale (abriu um oculto).",
     resposta: GaleriaSchema,
     notas: [
       "Antes de a galeria abrir para esta criança (sem voto, ou com a etapa da turma ainda na exploração) responde **403** `galeria-nao-liberada`.",
@@ -182,7 +201,7 @@ export class JuriEstadualController {
   @Contrato({
     resumo: "Registra o que a criança fez na galeria: abriu um estande ou buscou.",
     descricao:
-      "É o registro da EF06CO01, lido no latch da revisão do voto. Abrir de novo o mesmo estande não conta. Da busca, só o TIPO (`hashtag` ou `texto`) e a área que casou, ou `null` — **o texto digitado nunca sai do aparelho** (texto livre de menor). Até 30 buscas são gravadas.",
+      "É o registro da EF06CO10 e da EF06CO01, lido no latch da revisão do voto. Abrir de novo o mesmo estande não conta. Da busca, só o TIPO (`hashtag` ou `texto`) e a área que casou, ou `null` — **o texto digitado nunca sai do aparelho** (texto livre de menor). Até 30 buscas são gravadas.",
     corpo: AcaoDaGaleriaSchema,
     resposta: SemCorpoSchema,
     notas: [
@@ -199,13 +218,13 @@ export class JuriEstadualController {
   @Post("revisao")
   @HttpCode(200)
   @Contrato({
-    resumo: "Manter, trocar ou complementar o voto, depois da galeria, com a justificativa de depois (latch).",
+    resumo: '"Manter meu voto inicial" ou "Confirmar Voto Revisado", depois da galeria (latch).',
     descricao:
-      "`trocar` aceita qualquer um dos dezesseis estandes (a galeria mostrou todos), menos o do voto lacrado; `complementar` mantém o voto e indica também outro estande. Toda ação leva a justificativa de DEPOIS — um cartão de motivo (`r1`–`r3`) e o trecho grifado, da legenda do estande da decisão (o do voto, ao manter). Grava a ação, o voto final, o complemento, a justificativa, o carimbo e o passo `revisada` (a espera da rodada de desvio) juntos, e marca a EF06CO10 (`auditoria`: quantos estandes ocultos ela abriu) e a EF06CO01 (`classificacao`: se buscou pela hashtag de outra área e abriu um oculto dela) pelo que a criança fez na galeria antes de decidir. Quem não abriu nem buscou nada fica SEM a marca de ação (ausência): decide a pergunta da habilidade.",
+      "`manter` só vale depois de abrir ao menos UM estande oculto; `trocar` aceita qualquer um dos dezesseis, menos o do voto lacrado. Sem justificativa. Grava a ação, o voto final, o carimbo e o passo `revisada` juntos, e marca a EF06CO10 (`auditoria`: dois ocultos abertos E uma busca = atingiu; abriu algum = em processo) e a EF06CO01 (`classificacao`: buscou pela hashtag de uma categoria fora da bolha E abriu um projeto dela = atingiu; buscou ou abriu um oculto = em processo). Quem não fez nada fica SEM a marca de ação: decide a pergunta. Depois, `POST passo` com `para: \"cadeia\"`.",
     corpo: RevisaoDoVotoSchema,
     resposta: EstadoSchema,
     notas: [
-      "`trocar` ou `complementar` com o mesmo projeto do voto, ou `trecho` fora da legenda, responde **400** `payload-invalido`.",
+      "`manter` sem nenhum oculto aberto responde **409** `galeria-sem-inspecao`; `trocar` com o mesmo projeto do voto, **400** `payload-invalido`.",
       "A segunda revisão — inclusive duas simultâneas — responde **409** `voto-ja-revisado`. Antes da galeria, **403** `galeria-nao-liberada`. Com a rodada trocada no meio (o professor zerou), **409** `rodada-mudou`.",
       PORTA,
     ],
@@ -213,49 +232,7 @@ export class JuriEstadualController {
   revisao(@Body() corpo: unknown, @Req() req: Autenticado) {
     limitar(req.auth.usuarioId);
     const revisao = valida(RevisaoDoVotoSchema, corpo);
-    return this.missao.revisar(
-      req.auth.escolaId,
-      req.auth.usuarioId,
-      turmaDo(req.auth),
-      revisao,
-    );
-  }
-
-  @Post("desvio/eventos")
-  @HttpCode(200)
-  @Contrato({
-    resumo: "A rodada de desvio: o que a tela mediu e, se pedido, o próximo post.",
-    descricao:
-      "Depois da revisão, o professor libera uma rodada curta do feed (seis posts) para a criança interagir com o que o feed dela não mostrava — e ver o feed mudar. O MESMO corpo e o MESMO motor do feed do júri, com os pesos SÓ desta rodada: os dois primeiros posts vêm das duas áreas que menos apareceram para ela, e o resto segue as curtidas e os salvos que ela fizer agora. Na primeira chamada (mesmo vazia) serve a abertura. Com os seis servidos, `comparacao` traz quantos posts de cada área o feed do júri e o desvio trouxeram.",
-    corpo: EventosDoFeedSchema,
-    resposta: DesvioSchema,
-    notas: [
-      "Antes de o professor liberar (ou antes da revisão do voto) responde **403** `desvio-nao-liberado`; depois de concluído, **409** `desvio-ja-concluido`.",
-      "Post que esta rodada não serviu responde **400** `post-desconhecido`.",
-      PORTA,
-    ],
-  })
-  desvio(@Body() corpo: unknown, @Req() req: Autenticado) {
-    limitar(req.auth.usuarioId, 240);
-    const eventos = valida(EventosDoFeedSchema, corpo);
-    return this.missao.eventosDoDesvio(req.auth.escolaId, req.auth.usuarioId, turmaDo(req.auth), eventos);
-  }
-
-  @Post("desvio/concluir")
-  @HttpCode(200)
-  @Contrato({
-    resumo: "Encerra a rodada de desvio e abre a cadeia.",
-    descricao:
-      "Leva a sessão de `revisada` a `cadeia` e carimba o desvio, no mesmo update. Pede os seis posts servidos e ao menos uma curtida ou um salvo: sem interação, não houve desvio. **Não marca evidência** — a vivência é obrigatória, não medida; o painel mostra quem concluiu. Encerrar de novo devolve o mesmo estado.",
-    resposta: EstadoSchema,
-    notas: [
-      "Com menos de seis posts responde **409** `desvio-incompleto`; sem curtida nem salvo, **409** `desvio-sem-interacao`; antes da liberação, **403** `desvio-nao-liberado`.",
-      PORTA,
-    ],
-  })
-  concluirDesvio(@Req() req: Autenticado) {
-    limitar(req.auth.usuarioId);
-    return this.missao.concluirDesvio(req.auth.escolaId, req.auth.usuarioId, turmaDo(req.auth));
+    return this.missao.revisar(req.auth.escolaId, req.auth.usuarioId, turmaDo(req.auth), revisao);
   }
 
   @Post("cadeia")
@@ -263,7 +240,7 @@ export class JuriEstadualController {
   @Contrato({
     resumo: "Uma tentativa de montar a cadeia: Interações → Dados → Algoritmo → Bolha.",
     descricao:
-      "Do passo `cadeia` (depois da rodada de desvio). Cada envio é uma TENTATIVA. A resposta diz só se a ordem confere — nunca qual vaga errou. Na certa, o passo vai a `mariana` e a EF06CO03 (`cadeia`) é marcada pelo número de tentativas (1 = atingiu, 2–3 = em processo, mais = não atingiu). Com a cadeia já montada, responde `correta: true` sem contar outra tentativa.",
+      "Do passo `cadeia`. Cada envio é uma TENTATIVA. Na certa (200), o passo vai a `mariana` e a EF06CO03 (`cadeia`) é marcada pelo número de tentativas (1 = atingiu, 2–3 = em processo, mais = não atingiu). Na errada, **422** `ordem-incorreta` com `tentativas` no corpo — a tentativa CONTA, e a resposta nunca diz qual vaga errou. Com a cadeia já montada, responde `correta: true` sem contar outra tentativa.",
     corpo: OrdemDaCadeiaSchema,
     resposta: TentativaSchema,
     notas: [

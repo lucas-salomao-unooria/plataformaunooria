@@ -25,6 +25,13 @@ export interface FichaPedagogica {
    */
   readonly respostas?: "primeira" | "melhor";
   /**
+   * A ORDEM das alternativas que o estudante recebe. `a-cada-leitura` (o
+   * padrão, ADR-118): embaralhada de novo a cada leitura. `por-estudante`:
+   * embaralhada, mas ESTÁVEL para o mesmo estudante e pergunta — a mesma ordem
+   * ao recarregar (o Júri Estadual, melhoria 4 do PRD v2).
+   */
+  readonly ordemDasAlternativas?: "a-cada-leitura" | "por-estudante";
+  /**
    * `true`: a marca é gravada na hora, mas só VIRA EVIDÊNCIA quando o professor
    * encerra a missão na Sala de Aula (`SalasService.aoEncerrarMissao`). Até lá
    * o painel não mostra nível nenhum. Depois de encerrada, a porta da missão

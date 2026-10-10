@@ -24,6 +24,7 @@ import {
   decidirCopia,
   diferencaDasCopias,
   ehNivel,
+  aleatorioDe,
   embaralhar,
   ehProjecao,
   marcadorDaFicha,
@@ -729,7 +730,12 @@ export class EvidenciasService implements OnModuleInit {
       await exigirMissaoLiberada(tx, escolaId, estudanteId, expId);
       return {
         enunciado: pergunta.enunciado,
-        alternativas: embaralhar(pergunta.alternativas).map((a) => ({ id: a.id, texto: a.texto })),
+        alternativas: embaralhar(
+          pergunta.alternativas,
+          this.fichas.get(expId)?.ordemDasAlternativas === "por-estudante"
+            ? aleatorioDe(`${expId}:${perguntaId}:${estudanteId}`)
+            : undefined,
+        ).map((a) => ({ id: a.id, texto: a.texto })),
       };
     }, escolaId);
   }

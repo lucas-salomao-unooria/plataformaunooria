@@ -7,27 +7,28 @@
  *
  * A regra é a que a Etapa 5 ensina e a enquete da EF06CO03 pergunta:
  *
- *   SE uma área somar 6 pontos (duas curtidas, ou curtida + salvo +
- *   permanência, ou três salvos)
- *   ENTÃO as próximas posições do feed são só dessa área.
+ *   SE uma área somar 6 pontos (duas curtidas, ou curtida + três
+ *   permanências) ENTÃO as próximas posições do feed são só dessa área.
  *
- * Os PESOS não são gravados: saem das curtidas, dos salvos e das permanências
- * da sessão (`pesos`). Um valor derivado não diverge do que o gerou.
+ * Os PESOS não são gravados: saem das curtidas e das permanências da sessão
+ * (`pesos`). Salvar NÃO pesa (melhoria 6 do PRD v2): fica na lista para a tela
+ * e para a telemetria, e o motor não o lê.
  *
- * O MESMO motor serve a RODADA DE DESVIO (`proximoDoDesvio`), com um estado de
- * feed só dela: é a prova, vivida, de que a regra responde ao comportamento —
- * curtir outra área faz o feed virar para ela.
+ * A SATURAÇÃO (melhoria 1, 2026-10-10): com a área em FOCO, os posts 5 a 10 são
+ * só dela e repetem os projetos que já chegaram em FORMATOS diferentes
+ * (apresentação, bastidor, protótipo, depoimento) — no máximo um projeto novo
+ * dela entra. Quem curte vê 5 projetos distintos e 11 de 16 ficam fora do feed
+ * (69%); a taxa é REAL, e a galeria mostra o número desta sessão.
  */
 import {
   AREAS,
   LIMIAR_DA_BOLHA,
   PESO_DA_CURTIDA,
   PESO_DA_PERMANENCIA,
-  PESO_DO_SALVAR,
   POSTS_DE_ABERTURA,
-  POSTS_DE_ABERTURA_DO_DESVIO,
-  POSTS_NO_DESVIO,
   POSTS_NO_FEED,
+  TETO_DO_FEED_MS,
+  TIPOS_DE_POST,
   TOTAL_DE_PROJETOS,
   areaDoProjeto,
   idDoPost,
@@ -35,13 +36,13 @@ import {
   type Area,
 } from "../vocabulario";
 
-/** O que a sessão guarda do feed — quatro listas de ids de post. A rodada de desvio tem as suas. */
+/** O que a sessão guarda do feed — quatro listas de ids de post. */
 export type EstadoDoFeed = {
   /** Os posts que o feed serviu, na ordem da tela. */
   servidos: readonly string[];
   /** Os posts curtidos AGORA (descurtir tira daqui). */
   curtidos: readonly string[];
-  /** Os posts salvos AGORA (tirar dos salvos tira daqui). */
+  /** Os posts salvos AGORA (tirar dos salvos tira daqui). Não pesa no motor. */
   salvos: readonly string[];
   /** Os posts em que o estudante ficou mais de 5 s (conta uma vez por post). */
   permanencias: readonly string[];
@@ -88,34 +89,80 @@ export function embaralhar<T>(lista: readonly T[], semente: string, rotulo: stri
 
 // ------------------------------------------------------------------- pesos
 
-/** Os pontos de cada área agora: 3 por curtida, 2 por salvo, 1 por permanência. */
+/** Os pontos de cada área agora: 3 por curtida, 1 por permanência. Salvar não conta. */
 export function pesos(estado: EstadoDoFeed): Record<Area, number> {
   const total = Object.fromEntries(AREAS.map((a) => [a, 0])) as Record<Area, number>;
   for (const post of estado.curtidos) total[areaDoProjeto(projetoDoPost(post))] += PESO_DA_CURTIDA;
-  for (const post of estado.salvos) total[areaDoProjeto(projetoDoPost(post))] += PESO_DO_SALVAR;
   for (const post of estado.permanencias) total[areaDoProjeto(projetoDoPost(post))] += PESO_DA_PERMANENCIA;
   return total;
 }
 
+function contagem(posts: readonly string[], area: Area): number {
+  return posts.filter((post) => areaDoProjeto(projetoDoPost(post)) === area).length;
+}
+
+function primeiraPosicao(estado: EstadoDoFeed, area: Area): number {
+  const i = estado.servidos.findIndex((post) => areaDoProjeto(projetoDoPost(post)) === area);
+  return i < 0 ? Number.MAX_SAFE_INTEGER : i;
+}
+
 /**
- * A área que fechou a bolha, ou `null`. Com duas acima do limiar, vence a de
- * mais pontos; no empate, a que tem mais curtidas; depois, a que apareceu
- * primeiro no feed. Determinístico, sem relógio.
+ * A área LÍDER, ou `null`:
+ *
+ * 1. a que somou 6 ou mais (com duas acima, a de mais pontos; empate, a de mais
+ *    curtidas; depois, a que apareceu primeiro no feed);
+ * 2. SEM curtida nenhuma, a permanência sozinha elege: a área com mais posts
+ *    vistos por mais de 5 s (empate, a que apareceu primeiro) — melhoria 1.
+ *
+ * Determinístico, sem relógio.
  */
 export function areaLider(estado: EstadoDoFeed): Area | null {
   const p = pesos(estado);
-  const curtidasPorArea = (area: Area) =>
-    estado.curtidos.filter((post) => areaDoProjeto(projetoDoPost(post)) === area).length;
-  const primeiraPosicao = (area: Area) => {
-    const i = estado.servidos.findIndex((post) => areaDoProjeto(projetoDoPost(post)) === area);
-    return i < 0 ? Number.MAX_SAFE_INTEGER : i;
-  };
   const acima = AREAS.filter((a) => p[a] >= LIMIAR_DA_BOLHA);
-  if (acima.length === 0) return null;
+  if (acima.length > 0) {
+    return (
+      [...acima].sort(
+        (x, y) =>
+          p[y] - p[x] ||
+          contagem(estado.curtidos, y) - contagem(estado.curtidos, x) ||
+          primeiraPosicao(estado, x) - primeiraPosicao(estado, y),
+      )[0] ?? null
+    );
+  }
+  if (estado.curtidos.length === 0 && estado.permanencias.length > 0) {
+    return (
+      [...AREAS]
+        .filter((a) => contagem(estado.permanencias, a) > 0)
+        .sort(
+          (x, y) =>
+            contagem(estado.permanencias, y) - contagem(estado.permanencias, x) ||
+            primeiraPosicao(estado, x) - primeiraPosicao(estado, y),
+        )[0] ?? null
+    );
+  }
+  return null;
+}
+
+/**
+ * A área para onde o feed PUXA: a líder; sem líder, mas com alguma curtida, a de
+ * maior peso (o feed já puxa para o que a criança engajou, antes do limiar, como
+ * uma recomendação de verdade — é o que faz a segunda curtida acontecer cedo).
+ * Sem sinal nenhum, `null`: o feed segue variado (RF-002, caso de borda).
+ */
+export function areaEmFoco(estado: EstadoDoFeed): Area | null {
+  const lider = areaLider(estado);
+  if (lider) return lider;
+  if (estado.curtidos.length === 0) return null;
+  const p = pesos(estado);
   return (
-    [...acima].sort(
-      (x, y) => p[y] - p[x] || curtidasPorArea(y) - curtidasPorArea(x) || primeiraPosicao(x) - primeiraPosicao(y),
-    )[0] ?? null
+    [...AREAS]
+      .filter((a) => p[a] > 0)
+      .sort(
+        (x, y) =>
+          p[y] - p[x] ||
+          contagem(estado.curtidos, y) - contagem(estado.curtidos, x) ||
+          primeiraPosicao(estado, x) - primeiraPosicao(estado, y),
+      )[0] ?? null
   );
 }
 
@@ -146,17 +193,24 @@ function projetosServidos(servidos: readonly string[]): Set<string> {
   return new Set(servidos.map(projetoDoPost));
 }
 
+/** Os projetos servidos, na ordem em que chegaram pela primeira vez. */
+function projetosNaOrdem(servidos: readonly string[]): string[] {
+  return [...new Set(servidos.map(projetoDoPost))];
+}
+
+/** Quantos projetos DISTINTOS da área em foco podem chegar ao feed (o da abertura e mais um). */
+export const PROJETOS_DA_AREA_EM_FOCO = 2;
+
 /**
  * O próximo post do feed, ou `null` se o feed já tem os dez.
  *
- * - COM bolha: a área líder. Primeiro as apresentações de projetos dela que o
- *   estudante ainda não viu; depois os BASTIDORES, começando pelos projetos já
- *   vistos (é a área líder repetindo o projeto com outro post).
- * - SEM bolha: a apresentação de um projeto novo da área de MAIOR peso — o
- *   feed já puxa para o que o estudante engajou, antes do limiar, como uma
- *   recomendação de verdade (é o que faz a segunda curtida acontecer cedo).
- *   Sem peso nenhum, a área menos vista: quem não interage vê um feed variado.
- *   Empate: ordem sorteada pela sessão. Sem apresentação sobrando, um bastidor.
+ * - Os quatro primeiros: a abertura (um de cada área).
+ * - COM área em FOCO (`areaEmFoco`): só ela. Enquanto ela tiver menos de dois
+ *   projetos no feed, a apresentação de um projeto NOVO dela; depois, os
+ *   formatos que faltam dos projetos dela que já chegaram (apresentação,
+ *   bastidor, protótipo, depoimento), na ordem em que chegaram — é a SATURAÇÃO.
+ * - SEM foco (ninguém curtiu nem ficou num post): a apresentação de um projeto
+ *   novo da área MENOS vista — quem não interage vê um feed variado.
  */
 export function proximoPost(
   projetos: readonly ProjetoDoMotor[],
@@ -177,32 +231,38 @@ export function proximoPost(
     ordenados.find(
       (p) => (area === null || p.area === area) && !vistos.has(p.id) && !jaServidos.has(idDoPost(p.id, "apresentacao")),
     );
-  const bastidor = (area: Area | null) => {
-    const daArea = ordenados.filter((p) => area === null || p.area === area);
-    const vistosPrimeiro = [...daArea.filter((p) => vistos.has(p.id)), ...daArea.filter((p) => !vistos.has(p.id))];
-    return vistosPrimeiro.find((p) => !jaServidos.has(idDoPost(p.id, "bastidor")));
+  const formatoQueFalta = (area: Area | null): string | null => {
+    for (const projetoId of projetosNaOrdem(estado.servidos)) {
+      if (area !== null && areaDoProjeto(projetoId) !== area) continue;
+      for (const tipo of TIPOS_DE_POST) {
+        const post = idDoPost(projetoId, tipo);
+        if (!jaServidos.has(post)) return post;
+      }
+    }
+    return null;
   };
 
-  const lider = areaLider(estado);
-  if (lider) {
-    const nova = apresentacaoNova(lider);
+  const foco = areaEmFoco(estado);
+  if (foco) {
+    const vistosDoFoco = projetosNaOrdem(estado.servidos).filter((id) => areaDoProjeto(id) === foco);
+    if (vistosDoFoco.length < PROJETOS_DA_AREA_EM_FOCO) {
+      const nova = apresentacaoNova(foco);
+      if (nova) return idDoPost(nova.id, "apresentacao");
+    }
+    const repetido = formatoQueFalta(foco);
+    if (repetido) return repetido;
+    const nova = apresentacaoNova(foco);
     if (nova) return idDoPost(nova.id, "apresentacao");
-    const repetido = bastidor(lider);
-    if (repetido) return idDoPost(repetido.id, "bastidor");
   }
 
-  // Sem bolha (ou a líder esgotou): a de maior peso; sem peso, a menos vista.
-  const p = pesos(estado);
+  // Sem foco (ou a área esgotou): a menos vista, para o feed seguir variado.
   const vistosPorArea = (area: Area) => projetos.filter((x) => x.area === area && vistos.has(x.id)).length;
-  const areas = embaralhar(AREAS, semente, `variado:${posicao}`).sort(
-    (x, y) => p[y] - p[x] || vistosPorArea(x) - vistosPorArea(y),
-  );
+  const areas = embaralhar(AREAS, semente, `variado:${posicao}`).sort((x, y) => vistosPorArea(x) - vistosPorArea(y));
   for (const area of areas) {
     const nova = apresentacaoNova(area);
     if (nova) return idDoPost(nova.id, "apresentacao");
   }
-  const qualquer = bastidor(null);
-  return qualquer ? idDoPost(qualquer.id, "bastidor") : null;
+  return formatoQueFalta(null);
 }
 
 /** Serve posts até `quantos` (ou até o feed completar). Puro: devolve a lista nova. */
@@ -221,9 +281,28 @@ export function servirAte(
   return servidos;
 }
 
-/** O feed chegou aos dez posts? É o que abre a cédula. */
+/** O feed chegou aos dez posts? */
 export function feedCompleto(estado: EstadoDoFeed): boolean {
   return estado.servidos.length >= POSTS_NO_FEED;
+}
+
+/**
+ * O teto de tempo do feed (RNF-USA-002, melhoria 9): oito minutos contados
+ * pelo SERVIDOR desde a primeira rolagem (`feed_iniciado_em`). Recarregar não
+ * zera, porque o início está gravado.
+ */
+export function tempoDoFeedEsgotado(iniciadoEm: Date | null, agora: Date): boolean {
+  return iniciadoEm !== null && agora.getTime() - iniciadoEm.getTime() >= TETO_DO_FEED_MS;
+}
+
+/** Quando o feed encerra por tempo, ou `null` antes da primeira rolagem. */
+export function fimDoFeed(iniciadoEm: Date | null): Date | null {
+  return iniciadoEm ? new Date(iniciadoEm.getTime() + TETO_DO_FEED_MS) : null;
+}
+
+/** A cédula abre com os dez posts OU com o tempo esgotado — o que vier primeiro. */
+export function cedulaLiberada(estado: EstadoDoFeed, iniciadoEm: Date | null, agora: Date): boolean {
+  return feedCompleto(estado) || tempoDoFeedEsgotado(iniciadoEm, agora);
 }
 
 // ------------------------------------------------------------- eventos
@@ -288,16 +367,16 @@ export function projetoFoiExibido(servidos: readonly string[], projetoId: string
   return projetosServidos(servidos).has(projetoId);
 }
 
-// ------------------------------------------------------- a rodada de desvio
+// ------------------------------------------------------- contagens por área
 
-/** Quantos projetos de cada área chegaram a um feed (por qualquer dos dois posts). */
+/** Quantos projetos de cada área chegaram ao feed (por qualquer formato). */
 export function projetosVistosPorArea(servidos: readonly string[]): Record<Area, number> {
   const total = Object.fromEntries(AREAS.map((a) => [a, 0])) as Record<Area, number>;
   for (const projeto of projetosServidos(servidos)) total[areaDoProjeto(projeto)] += 1;
   return total;
 }
 
-/** Quantos POSTS de cada área um feed serviu — a comparação "antes e agora" do fim do desvio. */
+/** Quantos POSTS de cada área o feed serviu. */
 export function postsPorArea(servidos: readonly string[]): Record<Area, number> {
   const total = Object.fromEntries(AREAS.map((a) => [a, 0])) as Record<Area, number>;
   for (const post of servidos) total[areaDoProjeto(projetoDoPost(post))] += 1;
@@ -305,99 +384,21 @@ export function postsPorArea(servidos: readonly string[]): Record<Area, number> 
 }
 
 /**
- * As duas áreas por onde o desvio COMEÇA: as que menos apareceram no feed do
- * júri (projetos vistos), empate pela ordem sorteada da sessão. São "os temas
- * que estavam na mostra e não chegaram" — o pedido do PO.
+ * A área que DOMINOU o feed: a de mais posts servidos (empate: a de mais
+ * curtidas, depois a que apareceu primeiro). É a "bolha" de quem não chegou a
+ * eleger líder — a régua da EF06CO01 a usa para dizer o que ficou fora.
  */
-export function areasDoDesvio(feed: readonly string[], semente: string): Area[] {
-  const vistos = projetosVistosPorArea(feed);
-  return embaralhar(AREAS, semente, "desvio:areas")
-    .sort((x, y) => vistos[x] - vistos[y])
-    .slice(0, POSTS_DE_ABERTURA_DO_DESVIO);
-}
-
-/**
- * O próximo post da RODADA DE DESVIO, ou `null` com os seis servidos.
- *
- * - Os dois primeiros: a apresentação de um projeto de cada uma das duas
- *   áreas que menos apareceram no feed (`areasDoDesvio`).
- * - Depois, a regra do feed, com os pesos SÓ do desvio: com bolha, a área
- *   líder; sem bolha, a de maior peso; sem peso nenhum, a menos vista nos dois
- *   feeds somados. É assim que a criança que curte a área nova vê o feed virar
- *   para ela.
- *
- * Dentro da área: primeiro o estande que o feed do júri NÃO mostrou, depois o
- * que mostrou; a apresentação antes do bastidor; nada repete dentro do desvio.
- */
-export function proximoDoDesvio(
-  projetos: readonly ProjetoDoMotor[],
-  desvio: EstadoDoFeed,
-  feed: readonly string[],
-  semente: string,
-): string | null {
-  const posicao = desvio.servidos.length;
-  if (posicao >= POSTS_NO_DESVIO) return null;
-  const jaServidos = new Set(desvio.servidos);
-  const vistosNoFeed = projetosServidos(feed);
-  const ordenados = embaralhar(projetos, semente, `desvio:posicao:${posicao}`);
-
-  const daArea = (area: Area): string | null => {
-    const candidatos = ordenados.filter((p) => p.area === area);
-    const ocultosPrimeiro = [
-      ...candidatos.filter((p) => !vistosNoFeed.has(p.id)),
-      ...candidatos.filter((p) => vistosNoFeed.has(p.id)),
-    ];
-    for (const tipo of ["apresentacao", "bastidor"] as const) {
-      const achado = ocultosPrimeiro.find((p) => !jaServidos.has(idDoPost(p.id, tipo)));
-      if (achado) return idDoPost(achado.id, tipo);
-    }
-    return null;
-  };
-
-  if (posicao < POSTS_DE_ABERTURA_DO_DESVIO) {
-    const area = areasDoDesvio(feed, semente)[posicao];
-    const post = area ? daArea(area) : null;
-    if (post) return post;
-  }
-
-  const lider = areaLider(desvio);
-  if (lider) {
-    const post = daArea(lider);
-    if (post) return post;
-  }
-  const p = pesos(desvio);
-  const vistos = postsPorArea([...feed, ...desvio.servidos]);
-  const areas = embaralhar(AREAS, semente, `desvio:variado:${posicao}`).sort((x, y) => p[y] - p[x] || vistos[x] - vistos[y]);
-  for (const area of areas) {
-    const post = daArea(area);
-    if (post) return post;
-  }
-  return null;
-}
-
-/** Serve o desvio até `quantos` (ou até completar). Puro: devolve a lista nova. */
-export function servirDesvioAte(
-  projetos: readonly ProjetoDoMotor[],
-  desvio: EstadoDoFeed,
-  feed: readonly string[],
-  semente: string,
-  quantos: number,
-): string[] {
-  const servidos = [...desvio.servidos];
-  while (servidos.length < Math.min(quantos, POSTS_NO_DESVIO)) {
-    const proximo = proximoDoDesvio(projetos, { ...desvio, servidos }, feed, semente);
-    if (!proximo) break;
-    servidos.push(proximo);
-  }
-  return servidos;
-}
-
-/** O desvio chegou aos seis posts? */
-export function desvioCompleto(desvio: EstadoDoFeed): boolean {
-  return desvio.servidos.length >= POSTS_NO_DESVIO;
-}
-
-/** Houve desvio? A criança curtiu ou salvou ao menos um post da rodada. */
-export function desvioComInteracao(desvio: EstadoDoFeed): boolean {
-  return desvio.curtidos.length > 0 || desvio.salvos.length > 0;
+export function areaDominante(estado: EstadoDoFeed): Area | null {
+  if (estado.servidos.length === 0) return null;
+  const lider = areaLider(estado);
+  if (lider) return lider;
+  const posts = postsPorArea(estado.servidos);
+  return (
+    [...AREAS].sort(
+      (x, y) =>
+        posts[y] - posts[x] ||
+        contagem(estado.curtidos, y) - contagem(estado.curtidos, x) ||
+        primeiraPosicao(estado, x) - primeiraPosicao(estado, y),
+    )[0] ?? null
+  );
 }

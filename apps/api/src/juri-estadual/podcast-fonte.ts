@@ -2,6 +2,7 @@ import { Injectable, type OnModuleInit } from "@nestjs/common";
 import { z } from "zod";
 import type { FonteDoPodcast } from "../podcast/fonte";
 import { PodcastService } from "../podcast/podcast.service";
+import { ehConteudoDoBancoPadrao } from "./banco-padrao";
 import { AreaSchema, ProjetoDoPacoteSchema } from "./contrato-de-rotas";
 import { JuriEstadualService } from "./juri-estadual.service";
 import {
@@ -18,10 +19,11 @@ import { AREAS, EXP_ID, TOTAL_DE_PROJETOS } from "./vocabulario";
  * PACOTE (com a guarda de turma do service), e a escrita das falas lê os
  * dezesseis estandes do rascunho que a tela de criação tem.
  *
- * **Sem banco padrão** (a mostra é sempre da IA, decisão de 2026-10-02):
- * `padrao` é sempre `false` e `ehPadrao` nunca é verdade. Atividade sem falas
- * gravadas — a criada antes do podcast — responde 409 `roteiro-indisponivel`,
- * e o cartão da aula diz isso.
+ * **O banco padrão** (PRD v2, RF-008): a atividade `padrao` intocada tem o
+ * podcast FIXO do sheet (aud-exp06ef1b-01) — `padrao: true`, sem linha na
+ * tabela. Na criação, o conteúdo igual ao banco padrão não vai à IA
+ * (`ehPadrao`). Atividade da IA sem falas gravadas — a criada antes do podcast
+ * — responde 409 `roteiro-indisponivel`, e o cartão da aula diz isso.
  */
 
 /**
@@ -65,12 +67,12 @@ export function fonteDoPodcastDaExp06ef1b(
     roteiro: roteiroDoPodcast,
     async atividade(escolaId, turmaId, professorId, atividadeId) {
       const pacote = await juri.pacoteParaPodcast(escolaId, turmaId, professorId, atividadeId);
-      return { id: pacote.id, tema: pacote.tema, padrao: false };
+      return { id: pacote.id, tema: pacote.tema, padrao: pacote.padrao };
     },
     escrita: {
       conteudo: ConteudoDoPodcastSchema,
       exigirTurma: (escolaId, turmaId, professorId) => juri.exigirTurmaVisivel(escolaId, turmaId, professorId),
-      ehPadrao: () => false,
+      ehPadrao: (conteudo) => ehConteudoDoBancoPadrao(conteudo),
       material: (conteudo) => materialDoPodcast(conteudo as ConteudoDoPodcast),
       publico: "pré-adolescentes de 11 e 12 anos do 6º ano do Ensino Fundamental",
     },

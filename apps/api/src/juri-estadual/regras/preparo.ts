@@ -29,6 +29,8 @@ const ProjetoDaIaSchema = z.object({
   perfil: z.string(),
   legenda: z.string(),
   bastidor: z.string(),
+  prototipo: z.string().optional(),
+  depoimento: z.string().optional(),
   hashtags: z.array(z.string()),
   imagem: z.object({ descricao: z.string(), alt: z.string() }),
 });
@@ -81,6 +83,8 @@ function projetoNormalizado(bruto: z.infer<typeof ProjetoDaIaSchema>, hashtagDaA
     perfil: normalizarPerfil(bruto.perfil),
     legenda: texto(bruto.legenda),
     bastidor: texto(bruto.bastidor),
+    ...(bruto.prototipo?.trim() ? { prototipo: texto(bruto.prototipo) } : {}),
+    ...(bruto.depoimento?.trim() ? { depoimento: texto(bruto.depoimento) } : {}),
     hashtags: hashtagsDoProjeto(bruto.hashtags, hashtagDaArea.get(area) ?? ""),
     imagem: { descricao: texto(bruto.imagem.descricao), alt: texto(bruto.imagem.alt) },
   };

@@ -69,6 +69,9 @@ export type ProjetoParaInvariante = {
   perfil: string;
   legenda: string;
   bastidor: string;
+  /** Os formatos da saturação (opcionais: o banco padrão não os tem, e o post cai no bastidor e na legenda). */
+  prototipo?: string;
+  depoimento?: string;
   hashtags: readonly string[];
   imagem: { descricao: string; alt: string };
 };
@@ -87,7 +90,7 @@ export type ConteudoParaInvariante = {
  * - dezesseis projetos, os ids exatos, cada um na área que o id diz;
  * - a PRIMEIRA hashtag de cada projeto é a da área dele (é a que o chip da
  *   busca encontra);
- * - legenda até 60 palavras, bastidor até 40;
+ * - legenda até 60 palavras; bastidor, protótipo e depoimento até 40;
  * - nenhum termo proibido em texto que a criança lê.
  */
 export function problemasDoPacote(conteudo: ConteudoParaInvariante): string[] {
@@ -117,7 +120,15 @@ export function problemasDoPacote(conteudo: ConteudoParaInvariante): string[] {
     if (!PERFIL_RE.test(p.perfil)) problemas.push(`perfil inválido em ${p.id}`);
     if (contarPalavras(p.legenda) > MAX_PALAVRAS_DA_LEGENDA) problemas.push(`legenda longa demais em ${p.id}`);
     if (contarPalavras(p.bastidor) > MAX_PALAVRAS_DO_BASTIDOR) problemas.push(`bastidor longo demais em ${p.id}`);
-    const proibidos = termosProibidosEm([p.titulo, p.escola, p.legenda, p.bastidor, p.imagem.alt].join(" "));
+    if (p.prototipo !== undefined && contarPalavras(p.prototipo) > MAX_PALAVRAS_DO_BASTIDOR) {
+      problemas.push(`protótipo longo demais em ${p.id}`);
+    }
+    if (p.depoimento !== undefined && contarPalavras(p.depoimento) > MAX_PALAVRAS_DO_BASTIDOR) {
+      problemas.push(`depoimento longo demais em ${p.id}`);
+    }
+    const proibidos = termosProibidosEm(
+      [p.titulo, p.escola, p.legenda, p.bastidor, p.prototipo ?? "", p.depoimento ?? "", p.imagem.alt].join(" "),
+    );
     if (proibidos.length > 0) problemas.push(`${p.id} cita ${proibidos.join(", ")}`);
   }
   const proibidosNoTema = termosProibidosEm(conteudo.tema);

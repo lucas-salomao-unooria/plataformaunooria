@@ -1,53 +1,40 @@
 import type { FichaPedagogica } from "./tipos";
 
 /**
- * A FICHA DO JÚRI ESTADUAL DE PROJETOS (exp06ef1b, 6º ano, unidade 1). Três
- * habilidades, as da spec v1.5.2 (a decisão de 2026-10-02 de medir a EF06CO07
- * foi revertida pelo PO em 2026-10-06: a missão mede a EF06CO10 como foco
- * primário, e os pacotes saíram). Seis marcadores, uma AÇÃO e uma PERGUNTA por
- * habilidade, e **vale o MELHOR dos dois** (`regras.ts#statusProprio`):
+ * A FICHA DO JÚRI ESTADUAL DE PROJETOS (exp06ef1b, 6º ano, unidade 1) —
+ * **versão 4 (2026-10-10, PRD v2 §14.2 com as melhorias 3 e 4)**. Três
+ * habilidades, seis marcadores, uma AÇÃO e uma PERGUNTA por habilidade, e
+ * **vale o MELHOR dos dois** (`regras.ts#statusProprio`):
  *
- * - **EF06CO10** (analisar criticamente o consumo de tecnologia) — `auditoria`,
- *   AÇÃO, marcada no LATCH da revisão do voto sobre o que a criança fez na
- *   Galeria Oculta: abriu ao menos dois estandes que o feed escondeu = atingiu;
- *   entrou superficialmente (um oculto, só vistos, ou buscou sem abrir) = em
- *   processo; revisou sem abrir nem buscar nada = SEM marca de ação, e a `p1`
- *   decide (`juri-estadual/regras/evidencia.ts#nivelDaAuditoria`). É a matriz da spec
- *   ("inspeciona ≥ 2 projetos ocultos e valida ou revisa o voto"). E a `p1`.
- *   A ancoragem é o livro didático (Rodrigo Assis, Entre Redes, cap. 1): o
- *   consumo crítico das plataformas, a mediação algorítmica e o afunilamento
- *   informacional — o recorte da EF06CO10 que a missão faz viver.
- * - **EF06CO01** (classificar informações em coleções / tipos de dados) —
- *   `classificacao`, AÇÃO, no MESMO latch, mas medindo OUTRA coisa: buscou
- *   pela hashtag de uma área que não a do voto E abriu um oculto daquela área
- *   = atingiu (usou a categoria como chave da coleção); buscou alguma coisa =
- *   em processo; não buscou = SEM marca de ação, e a `p2` decide
- *   (`#nivelDaClassificacao`). Separar
- *   as duas réguas é o ponto: abrir ocultos ao acaso é investigar (CO10) sem
- *   classificar (CO01). E a `p2`.
- * - **EF06CO03** (descrever com precisão a solução, o programa) — `cadeia`,
- *   AÇÃO, marcada quando a cadeia de quatro blocos se monta: uma tentativa =
- *   atingiu; duas ou três = em processo; mais = não atingiu. E a `p3` (a regra
- *   SE…ENTÃO que o motor executou).
+ * - **EF06CO10** (o foco primário) — `auditoria`, AÇÃO, no LATCH da revisão do
+ *   voto, sobre o que a criança fez na Galeria Oculta
+ *   (`juri-estadual/regras/evidencia.ts#nivelDaAuditoria`): abriu ao menos DOIS
+ *   estandes que o feed escondeu E buscou ao menos uma vez = atingiu; abriu
+ *   algum = em processo; não abriu nada = SEM marca de ação (a `p1` decide).
+ * - **EF06CO01** — `classificacao`, AÇÃO, no MESMO latch, a régua da melhoria
+ *   3 (`#nivelDaClassificacao`): buscou pela HASHTAG de uma categoria que ficou
+ *   fora da bolha (não a que dominou o feed) E abriu um projeto dela = atingiu;
+ *   buscou qualquer coisa ou abriu um oculto = em processo; nada = SEM marca.
+ *   A lista do professor mostra qual categoria a criança buscou.
+ * - **EF06CO03** — `cadeia`, AÇÃO, quando a cadeia de quatro blocos se monta:
+ *   uma tentativa = atingiu; duas ou três = em processo; mais = não atingiu. A
+ *   ordem errada é 422 `ordem-incorreta`, e a tentativa conta.
  *
- * **Versão 3 (2026-10-07):** quem revisa o voto sem explorar a galeria não
- * ganha mais "não atingiu" nas duas ações dela — é AUSÊNCIA de comportamento
- * (a spec se contradizia entre "em processo" e "não atingiu"), e o nível sai da
- * pergunta. A ficha não muda de forma; muda a régua, e a versão gravada em cada
- * evidência diz qual valeu.
+ * As perguntas são VERBATIM do banco de conteúdo (doc-exp06ef1b-02). As
+ * alternativas descem EMBARALHADAS de forma DETERMINÍSTICA por estudante
+ * (`ordemDasAlternativas: "por-estudante"`, melhoria 4): a mesma ordem ao
+ * recarregar; ids e gabarito ficam no servidor, e o estudante recebe
+ * `{ enviada: true }`.
  *
  * Toda rodada mede as ações de novo, também na mesma atividade (ADR-145): o
- * resultado é a melhor rodada de cada habilidade.
- *
- * As três perguntas são VERBATIM da spec (seção 9.6, itens 1, 2 e 3). A `p1`
- * tem alternativas com ids NOVOS (`D1`–`D3`): até a versão 1 ela media a
- * EF06CO07 com `A1`–`A3`, e uma resposta antiga não pode ser lida como desta
- * pergunta. A plataforma EMBARALHA as alternativas a cada leitura (ADR-118), e
- * o estudante recebe `{ enviada: true }` — a criança nunca sabe o nível.
+ * resultado é a melhor rodada de cada habilidade. A versão gravada em cada
+ * evidência diz qual régua valeu (a 3 contava só os ocultos abertos na CO10, e
+ * a CO01 pedia a hashtag de área ≠ do voto).
  */
 export const FICHA_EXP06EF1B: FichaPedagogica = {
   expId: "exp06ef1b",
-  versao: 3,
+  versao: 4,
+  ordemDasAlternativas: "por-estudante",
   habilidades: [
     {
       codigo: "EF06CO10",
@@ -57,12 +44,12 @@ export const FICHA_EXP06EF1B: FichaPedagogica = {
       ],
       criterios: {
         atingiu:
-          "Antes de manter ou trocar o voto, abre na Galeria Oculta pelo menos dois estandes que o feed escondeu; ou, na pergunta, reconhece que as próprias curtidas fizeram o algoritmo filtrar o feed.",
+          "Antes de manter ou trocar o voto, faz busca ativa na Galeria Oculta e inspeciona pelo menos dois projetos que o feed escondeu; ou, na pergunta, reconhece que as próprias interações fizeram o algoritmo filtrar o feed.",
         em_processo:
-          "Entra na Galeria Oculta só por cima (abre um estande oculto, abre só os que já tinha visto, ou busca sem abrir); ou, na pergunta, atribui o feed a outra causa técnica.",
+          "Abre a Galeria Oculta superficialmente: inspeciona algum projeto, mas sem a busca ativa e os dois ocultos; ou, na pergunta, atribui o feed a outra causa técnica.",
         nao_atingiu: "Na pergunta, diz que os outros projetos foram apagados, sem uma auditoria da galeria que mostre outra coisa.",
         observacao:
-          "Vale o melhor entre a auditoria da Galeria Oculta e a pergunta sobre a frase do jurado. Quem revisa o voto sem abrir nem buscar nada não tem a auditoria contada: decide a pergunta.",
+          "Vale o melhor entre a auditoria da Galeria Oculta e a pergunta sobre a frase do jurado. Quem revisa o voto sem inspecionar nenhum projeto não tem a auditoria contada: decide a pergunta.",
       },
     },
     {
@@ -73,12 +60,12 @@ export const FICHA_EXP06EF1B: FichaPedagogica = {
       ],
       criterios: {
         atingiu:
-          "Na Galeria Oculta, busca pela hashtag de uma área que não a do voto e abre um estande oculto dessa área; ou, na pergunta, diz que cada curtida foi associada à categoria do projeto.",
+          "Na Galeria Oculta, busca pela hashtag de uma categoria que ficou fora do seu feed e abre um projeto dessa categoria; ou, na pergunta, diz que cada curtida foi associada à categoria do projeto.",
         em_processo:
-          "Busca alguma coisa na galeria (por texto, pela própria área, ou pela hashtag sem abrir o resultado); ou, na pergunta, diz que o sistema só contou os cliques.",
+          "Busca alguma coisa na galeria, ou abre um projeto oculto, sem usar a categoria como chave; ou, na pergunta, diz que o sistema só contou os cliques.",
         nao_atingiu: "Na pergunta, diz que o aplicativo adivinhou pela foto de perfil, sem uma busca na galeria que mostre outra coisa.",
         observacao:
-          "Vale o melhor entre a busca por categoria na galeria e a pergunta sobre como o aplicativo organizou as curtidas. Quem revisa o voto sem usar a busca não tem a busca contada: decide a pergunta.",
+          "Vale o melhor entre a busca por categoria na galeria e a pergunta sobre como o aplicativo organizou as curtidas. Quem revisa o voto sem buscar nem abrir nada não tem a ação contada: decide a pergunta. A lista do painel mostra qual categoria a criança buscou.",
       },
     },
     {

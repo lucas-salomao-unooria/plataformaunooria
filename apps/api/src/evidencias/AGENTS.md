@@ -86,6 +86,8 @@ com `escola_id` + RLS forçada:
   não na tela: o bundle é público e a tela é de cada missão; aqui a regra vale
   para todas sem nenhuma lembrar. A tela responde pelo `id`, nunca pela
   posição. O teste de Postgres lê 60 vezes e cobra mais de uma ordem.
+  Ficha com `ordemDasAlternativas: "por-estudante"` (Júri): ordem fixa por
+  estudante (`regras.ts#aleatorioDe`).
 - **O professor ajusta a qualquer momento**, mesmo com a missão encerrada, um ou
   vários (1..200); cada mudança vai para o histórico. **Gestor só LÊ. O
   estudante nunca vê o próprio resultado. Não há ranking em lugar nenhum.**
