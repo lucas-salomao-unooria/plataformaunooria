@@ -95,6 +95,13 @@ export interface SessaoPublica {
   perguntasGastas: number;
   /** Qual partida do estudante. Recomeçar abre a seguinte. */
   tentativa: number;
+  /**
+   * A rodada da TURMA em que a sessão nasceu (ADR-154): só o "Zerar a turma" a
+   * sobe. A tela a usa na chave da memória das perguntas de evidência — sem
+   * ela, depois de zerar (tentativa de volta a 1), as respostas de antes
+   * reapareciam marcadas.
+   */
+  rodadaDaTurma: number;
   alocacao: { alfa: string | null; bravo: string | null };
   justificativas: { alfa: string | null; bravo: string | null };
 }
@@ -106,6 +113,7 @@ interface SessaoBruta {
   rodadas: number;
   perguntasGastas: number;
   tentativa: number;
+  rodada: number;
   alocacaoAlfa: string | null;
   alocacaoBravo: string | null;
   justificativaAlfa: string | null;
@@ -121,6 +129,7 @@ export function sanitizarSessao(bruta: SessaoBruta): SessaoPublica {
     rodadas: bruta.rodadas,
     perguntasGastas: bruta.perguntasGastas,
     tentativa: bruta.tentativa,
+    rodadaDaTurma: bruta.rodada,
     alocacao: { alfa: bruta.alocacaoAlfa, bravo: bruta.alocacaoBravo },
     justificativas: { alfa: bruta.justificativaAlfa, bravo: bruta.justificativaBravo },
   };

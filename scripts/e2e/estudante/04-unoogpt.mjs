@@ -1,5 +1,6 @@
 import { HUB, suite } from "../lib/roteiro.mjs";
 import { conta } from "../lib/credenciais.mjs";
+import { provarPodcastNaAula } from "../lib/podcast.mjs";
 
 /**
  * A Missão Tempestade (exp02em1b), nas duas pontas da sala.
@@ -38,6 +39,7 @@ await suite(
       "A folha da turma não tem coluna de resgatados — não é ranking de crianças",
       "Ao encerrar a missão, o nível aparece no painel aberto, sem recarregar",
       "Zerar a turma apaga as habilidades, e o painel recomeça do zero",
+      "As perguntas de evidência chegam sem resposta marcada, mesmo numa aba usada antes",
       "A tela individual traz a transcrição inteira para o professor",
       "A conclusão da operação cabe na coluna ao lado do mapa, sem nada cortado",
     ],
@@ -285,8 +287,27 @@ await suite(
     /* As quatro perguntas do PO, no Resultado, com o `ChoicePoll` do UnooriaAI.
        As alternativas chegam embaralhadas: a escolha é pelo TEXTO (o nome do
        rádio), nunca pela posição. O voto é definitivo no toque. */
+    /* A RECLAMAÇÃO (1.4.1): as perguntas chegavam com a resposta marcada. A
+       memória de F5 mora no `sessionStorage` da ABA, e a chave era só a
+       tentativa — depois do "Zerar a turma", ou com outro estudante na mesma
+       aba, a resposta de antes voltava marcada e travada. Aqui a aba já chega
+       "suja", no formato velho e no de outro estudante, e nenhuma opção pode
+       vir marcada. */
+    const aparelho = await p.locator('iframe[title="experiencia"]').elementHandle();
+    await (await aparelho.contentFrame()).evaluate(() => {
+      const velhas = { p1: "A1", p2: "B1", p3: "C1", p4: "D1" };
+      window.sessionStorage.setItem("exp02em1b:perguntas:1", JSON.stringify(velhas));
+      window.sessionStorage.setItem("exp02em1b:perguntas:outro-estudante:1:1", JSON.stringify(velhas));
+    });
     await q4.locator("button", { hasText: /Ver o resultado completo/ }).first().click();
     await q4.getByText("Antes de fechar").waitFor({ timeout: 30_000 });
+    await q4.getByRole("radio").first().waitFor({ timeout: 20_000 });
+    const marcadas = await q4.locator('[role="radio"][aria-checked="true"]').count();
+    r.exigir(marcadas === 0, `as perguntas chegam sem resposta marcada, mesmo com a aba de outra partida (${marcadas} marcadas)`);
+    r.exigir(
+      (await q4.getByText("Resposta enviada ✓").count()) === 0,
+      "nenhuma pergunta chega como já enviada",
+    );
     const ESCOLHAS = [
       /previsão firme e o que é estimativa/,
       /corretos e atualizados/,
@@ -382,6 +403,21 @@ await suite(
         "Zerar a turma é aplicar a missão de novo: as respostas e os níveis da aplicação anterior " +
         "saem, e o encerramento seguinte só conta o que a turma fizer daqui para a frente.",
     });
+
+    // ═══ PROFESSOR: o podcast FIXO da missão (ADR-156) ═══════════════════
+    /* Sem falas para revisar: a missão não tem customização, e o roteiro é o
+       mesmo em toda turma. Ele fica nos resultados, depois do debate. */
+    await provarPodcastNaAula(r, prof, {
+      blocos: ["Abertura", "Recapitulação da missão", "O que cada fonte enxergava", "Provocação e transferência", "Encerramento"],
+      vozes: ["Lia", "Caio"],
+      trechos: 5,
+      passo: "podcast",
+      descricao: "Lia e Caio, cerca de 3 min 30 s",
+    });
+    r.exigir(
+      (await prof.locator("[data-falas-do-podcast]").count()) === 0,
+      "o podcast da Tempestade não tem falas para revisar: o roteiro é fixo",
+    );
 
     /* Devolve a sala como o seed a deixa: a próxima corrida entra liberada. */
     r.exigir((await estadoNaSala("liberada")) === 200, "a missão volta a ficar liberada para a turma");

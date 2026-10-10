@@ -802,7 +802,10 @@ TODA missão que o tem --- hoje a A Seleção (\cd{exp07ef1b}), o Jornal da Esco
 (\cd{exp04ef1b}), Quem Mandou Isso? (\cd{exp05ef1b}) e O Júri Estadual de
 Projetos (\cd{exp06ef1b}, \adrr{ADR-151}, sem banco padrão: as falas são
 sempre da IA, e a atividade é \cd{pacoteParaPodcast}, que aceita a de imagens
-já aprovadas) ---, com rotas únicas e
+já aprovadas), o Unoovista (\cd{exp08ef1b}, \adrr{ADR-156}: as falas vão no
+corpo do \rota{POST /atividades/:id/ativar}) e a Missão Tempestade
+(\cd{exp02em1b}, \adrr{ADR-156}: o podcast FIXO, sem vaga e sem
+\rota{falas-do-tema}, com a atividade \cd{"turma"}) ---, com rotas únicas e
 a missão entrando pelo \cd{:expId}. A classe tem \cd{OidcGuard} e
 \cd{RolesGuard} com \cd{professor} e os gestores: \textbf{nenhuma rota de
 estudante}, porque o podcast é do professor (\adrr{ADR-119}). A guarda de turma
@@ -811,7 +814,8 @@ estudante}, porque o podcast é do professor (\adrr{ADR-119}). A guarda de turma
 usa para as imagens --- turma que o professor não leciona e atividade de outra
 turma são 404; sem atividade em andamento, o erro é o da missão (403
 \cd{atividade-nao-preparada} no Jornal, na A Seleção e no Júri).
-\cd{?atividadeId=} diz a atividade (\adrr{ADR-130}); sem ele, a em andamento.
+\cd{?atividadeId=} diz a atividade (\adrr{ADR-130}): um uuid, ou \cd{turma}
+para a missão sem atividade; sem ele, a em andamento.
 
 \begin{tabularx}{\linewidth}{@{}L{44mm}L{16mm}X@{}}
 \toprule

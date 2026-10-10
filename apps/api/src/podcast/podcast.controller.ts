@@ -1,3 +1,4 @@
+import { ATIVIDADE_DA_TURMA } from "../equipes/regras";
 import { Body, Controller, Get, HttpCode, Param, Post, Query, Req, UseGuards } from "@nestjs/common";
 import { GESTORES } from "../auth/claims";
 import { OidcGuard, type AuthClaims } from "../auth/oidc.guard";
@@ -35,7 +36,9 @@ type Autenticado = { auth: AuthClaims };
 /** Turma e atividade inválidas são 404 — como a de outra escola. */
 function idOu404(id: string | undefined): string | undefined {
   if (id === undefined || id === "") return undefined;
-  if (!ehUuid(id)) throw erroDoPodcast("experiencia-sem-podcast");
+  /* `"turma"` é a atividade da missão sem atividade (ADR-154, ADR-156); a
+     fonte de missão com atividade de verdade a recusa com o 404 dela. */
+  if (id !== ATIVIDADE_DA_TURMA && !ehUuid(id)) throw erroDoPodcast("experiencia-sem-podcast");
   return id;
 }
 

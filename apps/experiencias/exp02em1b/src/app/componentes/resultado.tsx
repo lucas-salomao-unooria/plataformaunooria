@@ -348,7 +348,8 @@ export function Resultado({
   sobrou,
   onRecomecar,
   ocupado,
-}: DadosDoResultado & { onRecomecar?: () => void; ocupado?: boolean }) {
+  rodadaDaTurma,
+}: DadosDoResultado & { onRecomecar?: () => void; ocupado?: boolean; rodadaDaTurma: number }) {
   // Qual rodada está na tela. A última é a que acabou de acontecer; as
   // anteriores continuam abertas, porque comparar decisões é a Missão.
   const rodadas = tentativas ?? [];
@@ -622,7 +623,7 @@ export function Resultado({
       {/* As perguntas de evidência (ADR-154): só na rodada mais recente, que é
           a que a resposta descreve. Elas reaparecem a cada "Tentar de novo", e
           o servidor guarda a melhor; nada aqui segura o recomeço. */}
-      {vendo === null && <Perguntas tentativa={rodadas[rodadas.length - 1]?.ordem ?? 1} />}
+      {vendo === null && <Perguntas rodadaDaTurma={rodadaDaTurma} tentativa={rodadas[rodadas.length - 1]?.ordem ?? 1} />}
 
       {/* Uma rodada só ensina que aconteceu; duas ensinam que podia ter sido
           diferente. Recomeçar é livre e precisa ser dito aqui, no momento em

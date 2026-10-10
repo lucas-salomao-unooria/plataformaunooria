@@ -45,6 +45,8 @@ import { normalizarEstado } from "../motor/estado";
 import { PrismaService } from "../prisma/prisma.service";
 import { logger } from "../observabilidade/logger";
 import { excluirAtividade, limparDadosDosEstudantes } from "./manutencao";
+import { EXP_ID } from "./podcast-fonte";
+import { gravarFalasDoPodcast } from "../podcast/podcast.service";
 import { Contrato } from "../openapi/contrato";
 import {
   EstudanteDaAtividadeSchema,
@@ -313,11 +315,21 @@ export class AtividadesController {
     params: z.object({ id: z.string().uuid() }),
     corpo: AtivarSchema,
     resposta: AtivadaSchema,
-    notas: ["`forcar: true` ativa com a matriz incompleta, de propósito — e a resposta devolve `forcado: true` para a tela dizer isso."],
+    notas: [
+      "`forcar: true` ativa com a matriz incompleta, de propósito — e a resposta devolve `forcado: true` para a tela dizer isso.",
+      "`podcast` traz as três falas do podcast de recapitulação revisadas pelo professor (ADR-156): de 12 a 60 palavras, sem link, e-mail ou @. Vêm na mesma transação da ativação; ausentes, valem as já gravadas.",
+    ],
   })
   async ativar(@Param("id") id: string, @Body() body: unknown, @Req() req: Autenticado) {
     const parsed = AtivarSchema.safeParse(body ?? {});
+    /* Falas do podcast tortas não podem sumir em silêncio no `forcar: false`
+       de antes: a régua volta ao professor, frase por frase. */
+    if (!parsed.success && body && typeof body === "object" && "podcast" in body) {
+      const problemas = parsed.error.issues.map((i) => i.message);
+      throw new BadRequestException({ codigo: "payload-invalido", mensagem: problemas.join(" "), problemas });
+    }
     const forcar = parsed.success ? parsed.data.forcar : false;
+    const podcast = parsed.success ? parsed.data.podcast : undefined;
 
     return this.prisma.comTenancy(async (tx) => {
       const atividade = await atividadeDoProfessor(tx, id, req.auth.usuarioId, req.auth.escolaId);
@@ -423,6 +435,15 @@ export class AtividadesController {
         data: { status: "encerrada" },
       });
       await tx.activity.update({ where: { id }, data: { status: "ativa" } });
+      if (podcast) {
+        await gravarFalasDoPodcast(tx, {
+          escolaId: req.auth.escolaId,
+          expId: EXP_ID,
+          atividadeId: id,
+          falas: podcast,
+          aprovadoPor: req.auth.usuarioId,
+        });
+      }
 
       return {
         ok: true,

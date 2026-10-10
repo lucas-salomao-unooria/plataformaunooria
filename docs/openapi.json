@@ -16003,7 +16003,7 @@
           "atividades"
         ],
         "summary": "Ativa a atividade para os estudantes entrarem.",
-        "description": "Devolve a MATRIZ 2 lados × 4 perfis: é ela que diz se a geração fechou. Célula vazia significa que um perfil de um lado não tem post — e o feed daquele estudante nasceria torto.\n\n**Papéis:** professor.\n\n**Restrições:**\n- `forcar: true` ativa com a matriz incompleta, de propósito — e a resposta devolve `forcado: true` para a tela dizer isso.",
+        "description": "Devolve a MATRIZ 2 lados × 4 perfis: é ela que diz se a geração fechou. Célula vazia significa que um perfil de um lado não tem post — e o feed daquele estudante nasceria torto.\n\n**Papéis:** professor.\n\n**Restrições:**\n- `forcar: true` ativa com a matriz incompleta, de propósito — e a resposta devolve `forcado: true` para a tela dizer isso.\n- `podcast` traz as três falas do podcast de recapitulação revisadas pelo professor (ADR-156): de 12 a 60 palavras, sem link, e-mail ou @. Vêm na mesma transação da ativação; ausentes, valem as já gravadas.",
         "security": [
           {
             "token-da-plataforma": []
@@ -16023,6 +16023,32 @@
                   "forcar": {
                     "type": "boolean",
                     "default": false
+                  },
+                  "podcast": {
+                    "type": "object",
+                    "properties": {
+                      "pergunta": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 600
+                      },
+                      "ladoA": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 600
+                      },
+                      "ladoB": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 600
+                      }
+                    },
+                    "required": [
+                      "pergunta",
+                      "ladoA",
+                      "ladoB"
+                    ],
+                    "additionalProperties": false
                   }
                 },
                 "additionalProperties": false,
@@ -22129,6 +22155,9 @@
                         "tentativa": {
                           "type": "number"
                         },
+                        "rodadaDaTurma": {
+                          "type": "number"
+                        },
                         "alocacao": {
                           "type": "object",
                           "properties": {
@@ -22173,6 +22202,7 @@
                         "rodadas",
                         "perguntasGastas",
                         "tentativa",
+                        "rodadaDaTurma",
                         "alocacao",
                         "justificativas"
                       ],
@@ -23773,6 +23803,9 @@
                         "tentativa": {
                           "type": "number"
                         },
+                        "rodadaDaTurma": {
+                          "type": "number"
+                        },
                         "alocacao": {
                           "type": "object",
                           "properties": {
@@ -23817,6 +23850,7 @@
                         "rodadas",
                         "perguntasGastas",
                         "tentativa",
+                        "rodadaDaTurma",
                         "alocacao",
                         "justificativas"
                       ],
@@ -24188,6 +24222,9 @@
                         "tentativa": {
                           "type": "number"
                         },
+                        "rodadaDaTurma": {
+                          "type": "number"
+                        },
                         "alocacao": {
                           "type": "object",
                           "properties": {
@@ -24232,6 +24269,7 @@
                         "rodadas",
                         "perguntasGastas",
                         "tentativa",
+                        "rodadaDaTurma",
                         "alocacao",
                         "justificativas"
                       ],
@@ -24551,6 +24589,9 @@
                         "tentativa": {
                           "type": "number"
                         },
+                        "rodadaDaTurma": {
+                          "type": "number"
+                        },
                         "alocacao": {
                           "type": "object",
                           "properties": {
@@ -24595,6 +24636,7 @@
                         "rodadas",
                         "perguntasGastas",
                         "tentativa",
+                        "rodadaDaTurma",
                         "alocacao",
                         "justificativas"
                       ],
@@ -25829,6 +25871,9 @@
                         "tentativa": {
                           "type": "number"
                         },
+                        "rodadaDaTurma": {
+                          "type": "number"
+                        },
                         "alocacao": {
                           "type": "object",
                           "properties": {
@@ -25873,6 +25918,7 @@
                         "rodadas",
                         "perguntasGastas",
                         "tentativa",
+                        "rodadaDaTurma",
                         "alocacao",
                         "justificativas"
                       ],
@@ -25971,6 +26017,9 @@
                         "tentativa": {
                           "type": "number"
                         },
+                        "rodadaDaTurma": {
+                          "type": "number"
+                        },
                         "alocacao": {
                           "type": "object",
                           "properties": {
@@ -26015,6 +26064,7 @@
                         "rodadas",
                         "perguntasGastas",
                         "tentativa",
+                        "rodadaDaTurma",
                         "alocacao",
                         "justificativas"
                       ],
@@ -59390,8 +59440,18 @@
             "in": "query",
             "required": false,
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    "turma"
+                  ]
+                }
+              ]
             }
           }
         ],
@@ -59404,8 +59464,18 @@
                   "type": "object",
                   "properties": {
                     "atividadeId": {
-                      "type": "string",
-                      "format": "uuid"
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "turma"
+                          ]
+                        }
+                      ]
                     },
                     "tema": {
                       "type": "string"
@@ -59550,8 +59620,18 @@
             "in": "query",
             "required": false,
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    "turma"
+                  ]
+                }
+              ]
             }
           }
         ],
@@ -59564,8 +59644,18 @@
                   "type": "object",
                   "properties": {
                     "atividadeId": {
-                      "type": "string",
-                      "format": "uuid"
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "turma"
+                          ]
+                        }
+                      ]
                     },
                     "tema": {
                       "type": "string"
@@ -59724,8 +59814,18 @@
             "in": "query",
             "required": false,
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    "turma"
+                  ]
+                }
+              ]
             }
           }
         ],

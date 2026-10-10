@@ -1,7 +1,8 @@
 import { ChoicePoll } from '@edu/ui/ds-unooriaai';
 import { useEffect, useState } from 'react';
-import { api } from '../../lib/api';
+import { api, estudanteAtual } from '../../lib/api';
 import { EXP_ID } from '../../lib/tipos';
+import { limparOutras, lerEnviadas, gravarEnviadas, type Partida } from '../../lib/memoria-das-perguntas';
 
 /** As quatro perguntas da ficha (`apps/api/src/evidencias/fichas/exp02em1b.ts`), na ordem do PO. */
 export const PERGUNTAS = ['p1', 'p2', 'p3', 'p4'] as const;
@@ -17,34 +18,6 @@ interface PerguntaNaTela extends PerguntaDaApi {
 }
 
 /**
- * A memória de F5 — `sessionStorage`, só com IDS, por TENTATIVA: a pergunta
- * reaparece em cada "Tentar de novo" (vale a melhor resposta, ADR-154), então a
- * trava vale só para o resultado em que ela foi respondida. Nunca
- * `localStorage` (a máquina da escola é compartilhada) e tudo em `try/catch`.
- */
-const chave = (tentativa: number) => `${EXP_ID}:perguntas:${tentativa}`;
-
-function lerEnviadas(tentativa: number): Record<string, string> {
-  try {
-    const dado: unknown = JSON.parse(window.sessionStorage.getItem(chave(tentativa)) ?? '{}');
-    if (!dado || typeof dado !== 'object') return {};
-    return Object.fromEntries(
-      Object.entries(dado as Record<string, unknown>).filter((par): par is [string, string] => typeof par[1] === 'string'),
-    );
-  } catch {
-    return {};
-  }
-}
-
-function gravarEnviadas(tentativa: number, enviadas: Record<string, string>) {
-  try {
-    window.sessionStorage.setItem(chave(tentativa), JSON.stringify(enviadas));
-  } catch {
-    /* Armazenamento bloqueado: a tela segue, só sem o F5 amigável. */
-  }
-}
-
-/**
  * AS PERGUNTAS DE EVIDÊNCIA (E14, ADR-154) — as quatro do PO, no Resultado,
  * dentro do UnooriaAI: a missão não sai do disfarce, então a escolha é o
  * `ChoicePoll` da seção `unooriaai`.
@@ -56,15 +29,28 @@ function gravarEnviadas(tentativa: number, enviadas: Record<string, string>) {
  * - **Falhou, some** (409 fora do resultado ou da rodada da turma, 403 com a
  *   missão encerrada, rede): o Resultado continua inteiro.
  */
-export function Perguntas({ tentativa }: { tentativa: number }) {
+/** O `sessionStorage`, ou `null` quando o navegador o bloqueia. */
+function armazem(): Storage | null {
+  try {
+    return window.sessionStorage;
+  } catch {
+    return null;
+  }
+}
+
+export function Perguntas({ rodadaDaTurma, tentativa }: { rodadaDaTurma: number; tentativa: number }) {
+  const estudanteId = estudanteAtual().id;
+  const partida: Partida = { estudanteId, rodadaDaTurma, tentativa };
   const [perguntas, setPerguntas] = useState<PerguntaNaTela[] | null>(null);
-  const [enviadas, setEnviadas] = useState<Record<string, string>>(() => lerEnviadas(tentativa));
+  const [enviadas, setEnviadas] = useState<Record<string, string>>(() => lerEnviadas(armazem(), partida));
   const [enviando, setEnviando] = useState<IdDaPergunta | null>(null);
   const [falhou, setFalhou] = useState(false);
 
   useEffect(() => {
     let viva = true;
-    setEnviadas(lerEnviadas(tentativa));
+    const atual = { estudanteId, rodadaDaTurma, tentativa };
+    limparOutras(armazem(), atual);
+    setEnviadas(lerEnviadas(armazem(), atual));
     Promise.all(
       PERGUNTAS.map(async (id) => ({ id, ...(await api.get<PerguntaDaApi>(`/evidencias/${EXP_ID}/perguntas/${id}`)) })),
     )
@@ -73,7 +59,7 @@ export function Perguntas({ tentativa }: { tentativa: number }) {
     return () => {
       viva = false;
     };
-  }, [tentativa]);
+  }, [estudanteId, rodadaDaTurma, tentativa]);
 
   async function votar(id: IdDaPergunta, alternativaId: string) {
     if (enviando) return;
@@ -82,7 +68,7 @@ export function Perguntas({ tentativa }: { tentativa: number }) {
       await api.post(`/evidencias/${EXP_ID}/perguntas/${id}/resposta`, { alternativaId });
       const proximas = { ...enviadas, [id]: alternativaId };
       setEnviadas(proximas);
-      gravarEnviadas(tentativa, proximas);
+      gravarEnviadas(armazem(), partida, proximas);
     } catch {
       setFalhou(true);
     } finally {
@@ -103,7 +89,7 @@ export function Perguntas({ tentativa }: { tentativa: number }) {
       </div>
       {perguntas.map((p) => (
         <ChoicePoll
-          key={`${tentativa}-${p.id}`}
+          key={`${estudanteId}-${rodadaDaTurma}-${tentativa}-${p.id}`}
           question={p.enunciado}
           options={p.alternativas.map((a) => ({ id: a.id, label: a.texto }))}
           value={enviadas[p.id] ?? null}

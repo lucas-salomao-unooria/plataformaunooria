@@ -175,6 +175,8 @@ Na página da atividade (`resultados/podcast-da-aula.tsx`); é do professor.
   "Aprovar"/"Criar" só acende com elas na régua.
 - **Atividade da IA anterior ao podcast**: 409, e o cartão mostra a frase, sem sumir
   (`lib/podcast-servidor.ts`).
+- ADR-156: o 8º revisa as falas no `painel-revisao.tsx` (só em `revisao`) e
+  as manda no "Ativar"; a Tempestade é FIXA, só o cartão, atividade `"turma"`.
 - E2e com IA real: `scripts/e2e/lib/podcast.mjs`.
 
 ## O Júri Estadual de Projetos (exp06ef1b)
