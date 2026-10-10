@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { SnackbarUnv } from "@edu/ui/ds-unoovista";
-import { api, concluir, enviarEstado, idDoEstudante, postSemResposta, reportarErro, tipoDaFalha } from "../lib/api";
+import { api, concluir, enviarEstado, idDoEstudante, postSemResposta, reportarErro, statusDoErro, tipoDaFalha } from "../lib/api";
 import { gravarMemoria, lerMemoria, type ChaveDaSessao } from "../lib/memoria";
 import {
   INTERVALO_DO_GATE_MS,
   SEGUNDOS_DE_INATIVIDADE,
-  SEGUNDOS_DO_LACRE,
+  SEGUNDOS_DO_BATIMENTO,
   TELA_DO_PASSO,
   curtidosNaTela,
+  esperaAteEncerrar,
   estandesDoFeed,
   gateMudou,
   ordemValida,
@@ -15,35 +16,31 @@ import {
   vozDaTela,
 } from "../lib/regras";
 import { telemetria } from "../lib/telemetria";
-import { DESVIO, E2, E3 } from "../lib/textos";
+import { E2 } from "../lib/textos";
 import {
   ROTA,
   TOTAL_DE_BLOCOS,
   type AcaoDaGaleria,
   type Conviccao,
-  type Desvio as DadosDoDesvio,
   type Estado,
   type Feed as DadosDoFeed,
   type Galeria as DadosDaGaleria,
   type Gate,
   type IdDaEnquete,
-  type MotivoDoVoto,
   type Sessao,
   type Tentativa,
 } from "../lib/tipos";
 import { Avisos } from "./avisos";
-import { Cedula, Lacre } from "./clone/cedula";
-import { ComparacaoDoDesvio } from "./clone/comparacao-do-desvio";
+import { Cedula } from "./clone/cedula";
 import { Credencial } from "./clone/credencial";
 import { Enquetes } from "./clone/enquetes";
 import { Espera } from "./clone/espera";
 import { Feed } from "./clone/feed";
 import { Fim } from "./clone/fim";
 import { Galeria, type CorpoDaRevisao } from "./clone/galeria";
-import { Mariana } from "./clone/mariana";
 import type { Conexao } from "./conexao";
-import { Cadeia, Indisponivel } from "./escola/telas-da-escola";
-import { useInatividade } from "./inatividade";
+import { Cadeia, Indisponivel, Mariana } from "./escola/telas-da-escola";
+import { useOciosidade } from "./inatividade";
 
 /** Junta curtidas, salvos e permanências por este tempo antes de ir à api (um toque duplo não vira duas idas). */
 const JANELA_DOS_EVENTOS_MS = 400;
@@ -54,6 +51,8 @@ interface FilaDoFeed {
   permanencias: Set<string>;
   /** O tamanho do feed para o qual o próximo já foi pedido — o mesmo fim não pede dois. */
   proximoPara: number | null;
+  /** Uma ida vazia pedida pelo relógio dos 8 minutos: o servidor diz se o tempo acabou. */
+  releitura: boolean;
 }
 
 /**
@@ -92,12 +91,10 @@ export function JuriApp({ inicial, conexao }: { inicial: Sessao; conexao: Conexa
   const [bloqueada, setBloqueada] = useState(false);
   const [ocupado, setOcupado] = useState(false);
   const [cedulaAberta, setCedulaAberta] = useState(false);
-  const [lacre, setLacre] = useState<{ protocolo: string; titulo: string | null } | null>(null);
   const [carregandoPost, setCarregandoPost] = useState(false);
-  const [avisoCedo, setAvisoCedo] = useState(false);
-  /** O aviso curto da comissão: comentar/compartilhar fechados, ou o que falta para encerrar o desvio. */
+  /** O aviso curto da comissão: comentar, compartilhar e a busca fechados. */
   const [aviso, setAviso] = useState<string | null>(null);
-  /* Curtidas e salvos do feed que está na TELA — o do júri ou o da rodada de desvio (nunca os dois ao mesmo tempo). */
+  /* Curtidas e salvos que a tela mostra: o que o servidor devolveu, com o que ainda está na fila. */
   const [curtidos, setCurtidos] = useState<ReadonlySet<string>>(() => new Set(inicial.feed.curtidos));
   const [salvos, setSalvos] = useState<ReadonlySet<string>>(() => new Set(inicial.feed.salvos));
   const { executar, sinalizar } = conexao;
@@ -122,7 +119,6 @@ export function JuriApp({ inicial, conexao }: { inicial: Sessao; conexao: Conexa
     setChaveDaMemoria(chave);
     setMemoria(lerMemoria(chave));
     setGaleria(null);
-    setLacre(null);
     setCedulaAberta(false);
     setCurtidos(new Set(sessao.feed.curtidos));
     setSalvos(new Set(sessao.feed.salvos));
@@ -137,11 +133,9 @@ export function JuriApp({ inicial, conexao }: { inicial: Sessao; conexao: Conexa
 
   // ─────────────────────────────────────────── ler e aplicar o servidor
 
-  /** As marcas da tela saem do feed que ela mostra: o do desvio, no passo dele. */
   const marcarDaSessao = useCallback((nova: Sessao) => {
-    const fonte = nova.passo === "desvio" && nova.desvio ? nova.desvio : nova.feed;
-    setCurtidos(new Set(fonte.curtidos));
-    setSalvos(new Set(fonte.salvos));
+    setCurtidos(new Set(nova.feed.curtidos));
+    setSalvos(new Set(nova.feed.salvos));
   }, []);
 
   const recarregar = useCallback(async () => {
@@ -155,13 +149,13 @@ export function JuriApp({ inicial, conexao }: { inicial: Sessao; conexao: Conexa
     }
   }, [executar, marcarDaSessao]);
 
-  /** O estado que uma rota de passo devolveu (voto, revisão, desvio, cartões, concluir). */
+  /** O estado que uma rota de passo devolveu (voto, revisão, passo, cartões, concluir). */
   const aplicarEstado = useCallback((estado: Estado) => {
     setSessao((atual) => ({
       ...atual,
       passo: estado.passo,
       etapa: estado.etapa,
-      aguardandoOProfessor: estado.passo === "lacrada" || estado.passo === "revisada",
+      aguardandoOProfessor: estado.passo === "lacrada",
     }));
   }, []);
 
@@ -182,7 +176,7 @@ export function JuriApp({ inicial, conexao }: { inicial: Sessao; conexao: Conexa
     [recarregar],
   );
 
-  const tela = lacre ? "lacre" : TELA_DO_PASSO[sessao.passo];
+  const tela = TELA_DO_PASSO[sessao.passo];
 
   // ────────────────────────────────────────────── efeitos da casca
 
@@ -191,13 +185,6 @@ export function JuriApp({ inicial, conexao }: { inicial: Sessao; conexao: Conexa
     enviarEstado({ passo: sessao.passo });
     if (sessao.passo === "lacrada") telemetria.esperou();
   }, [sessao.passo]);
-
-  // O lacre fica alguns segundos e dá lugar à plenária.
-  useEffect(() => {
-    if (!lacre) return;
-    const relogio = window.setTimeout(() => setLacre(null), SEGUNDOS_DO_LACRE * 1000);
-    return () => window.clearTimeout(relogio);
-  }, [lacre]);
 
   /**
    * O polling do gate da turma (HTTP de 3 s, nunca WebSocket) — SÓ enquanto a
@@ -256,32 +243,32 @@ export function JuriApp({ inicial, conexao }: { inicial: Sessao; conexao: Conexa
 
   // ─────────────────────────────────────────── o feed: eventos e próximo post
 
-  const fila = useRef<FilaDoFeed>({ curtidas: new Map(), salvamentos: new Map(), permanencias: new Set(), proximoPara: null });
+  const fila = useRef<FilaDoFeed>({
+    curtidas: new Map(),
+    salvamentos: new Map(),
+    permanencias: new Set(),
+    proximoPara: null,
+    releitura: false,
+  });
   const emVoo = useRef(false);
   const deNovo = useRef(false);
   const janela = useRef<number | null>(null);
-  const completouAntes = useRef(inicial.feed.completo);
+  const liberadaAntes = useRef(inicial.feed.cedulaLiberada);
 
   const aplicarFeed = useCallback((feed: DadosDoFeed) => {
     setSessao((s) => ({ ...s, feed }));
     setCurtidos(curtidosNaTela(feed.curtidos, fila.current.curtidas));
     setSalvos(curtidosNaTela(feed.salvos, fila.current.salvamentos));
-    if (feed.completo && !completouAntes.current) {
-      completouAntes.current = true;
-      telemetria.completouOFeed();
+    if (feed.cedulaLiberada && !liberadaAntes.current) {
+      liberadaAntes.current = true;
+      telemetria.completouOFeed(!feed.completo);
     }
   }, []);
 
-  const aplicarDesvio = useCallback((desvio: DadosDoDesvio) => {
-    setSessao((s) => ({ ...s, desvio }));
-    setCurtidos(curtidosNaTela(desvio.curtidos, fila.current.curtidas));
-    setSalvos(curtidosNaTela(desvio.salvos, fila.current.salvamentos));
-  }, []);
-
   /**
-   * A fila manda os eventos ao feed que está na TELA: o do júri (`feed/eventos`)
-   * ou o da rodada de desvio (`desvio/eventos`). Os dois nunca convivem — o
-   * passo decide —, então UMA fila basta, com o mesmo pedido do próximo.
+   * A fila manda ao servidor as curtidas, os salvos e as permanências juntos, e
+   * o pedido do próximo post. UMA ida por vez; o que chega no meio vai na
+   * seguinte.
    */
   const sincronizar = useCallback(async () => {
     if (emVoo.current) {
@@ -289,11 +276,12 @@ export function JuriApp({ inicial, conexao }: { inicial: Sessao; conexao: Conexa
       return;
     }
     const f = fila.current;
-    const noDesvio = sessaoRef.current.passo === "desvio";
-    const atual = noDesvio ? sessaoRef.current.desvio : sessaoRef.current.feed;
-    const servidos = atual?.posts.length ?? 0;
-    const proximo = f.proximoPara === servidos && !atual?.completo;
-    if (f.curtidas.size === 0 && f.salvamentos.size === 0 && f.permanencias.size === 0 && !proximo) return;
+    const atual = sessaoRef.current.feed;
+    const servidos = atual.posts.length;
+    const proximo = f.proximoPara === servidos && !atual.completo && !atual.tempoEsgotado;
+    const releitura = f.releitura;
+    f.releitura = false;
+    if (f.curtidas.size === 0 && f.salvamentos.size === 0 && f.permanencias.size === 0 && !proximo && !releitura) return;
     const curtidas = [...f.curtidas].map(([postId, curtiu]) => ({ postId, curtiu }));
     const salvamentos = [...f.salvamentos].map(([postId, salvou]) => ({ postId, salvou }));
     const permanencias = [...f.permanencias];
@@ -304,10 +292,6 @@ export function JuriApp({ inicial, conexao }: { inicial: Sessao; conexao: Conexa
     if (proximo) setCarregandoPost(true);
     try {
       const corpo = { curtidas, salvamentos, permanencias, proximo };
-      if (noDesvio) {
-        aplicarDesvio(await executar(() => api.post<DadosDoDesvio>(`${ROTA}/desvio/eventos`, corpo)));
-        return;
-      }
       const feed = await executar(() => api.post<DadosDoFeed>(`${ROTA}/feed/eventos`, corpo));
       aplicarFeed(feed);
       if (permanencias.length) {
@@ -325,7 +309,7 @@ export function JuriApp({ inicial, conexao }: { inicial: Sessao; conexao: Conexa
         void sincronizar();
       }
     }
-  }, [executar, aplicarFeed, aplicarDesvio, tratarFalha, chave, lembrar]);
+  }, [executar, aplicarFeed, tratarFalha, chave, lembrar]);
 
   const sincronizarEmBreve = useCallback(() => {
     if (janela.current !== null) window.clearTimeout(janela.current);
@@ -342,24 +326,40 @@ export function JuriApp({ inicial, conexao }: { inicial: Sessao; conexao: Conexa
     [],
   );
 
+  /**
+   * O relógio dos 8 minutos é do SERVIDOR (`encerraEm`, desde a 1ª rolagem;
+   * recarregar não zera). Quando ele vence, a tela faz uma ida vazia e o
+   * servidor responde `tempoEsgotado` e `cedulaLiberada` — é ele quem decide.
+   */
+  const feedAtual = sessao.feed;
+  useEffect(() => {
+    if (tela !== "feed" || feedAtual.cedulaLiberada) return;
+    const espera = esperaAteEncerrar(feedAtual.encerraEm, Date.now());
+    if (espera === null) return;
+    const relogio = window.setTimeout(() => {
+      fila.current.releitura = true;
+      void sincronizar();
+    }, espera);
+    return () => window.clearTimeout(relogio);
+  }, [tela, feedAtual.cedulaLiberada, feedAtual.encerraEm, sincronizar]);
+
   function curtir(postId: string, curtiu: boolean, gesto: "coracao" | "toque-duplo") {
     fila.current.curtidas.set(postId, curtiu);
     setCurtidos((atual) => alternar(atual, postId, curtiu));
-    if (sessaoRef.current.passo === "desvio") telemetria.curtiuNoDesvio(postId, curtiu);
-    else telemetria.curtiu(postId, curtiu, gesto);
+    telemetria.curtiu(postId, curtiu, gesto);
     sincronizarEmBreve();
   }
 
   function salvar(postId: string, salvou: boolean) {
     fila.current.salvamentos.set(postId, salvou);
     setSalvos((atual) => alternar(atual, postId, salvou));
-    telemetria.salvou(postId, salvou, sessaoRef.current.passo === "desvio");
+    telemetria.salvou(postId, salvou);
     sincronizarEmBreve();
   }
 
-  function interacaoFechada(acao: "comentar" | "compartilhar") {
+  function fechado(acao: "comentar" | "compartilhar" | "buscar") {
     telemetria.tocouFechado(acao);
-    setAviso(E2.interacaoFechada);
+    setAviso(acao === "buscar" ? E2.buscaFechada : E2.comentariosFechados);
   }
 
   function permanecer(postId: string) {
@@ -368,9 +368,9 @@ export function JuriApp({ inicial, conexao }: { inicial: Sessao; conexao: Conexa
   }
 
   function pedirProximo() {
-    const atual = sessaoRef.current.passo === "desvio" ? sessaoRef.current.desvio : sessaoRef.current.feed;
-    const servidos = atual?.posts.length ?? 0;
-    if (!atual || atual.completo || fila.current.proximoPara === servidos) return;
+    const atual = sessaoRef.current.feed;
+    const servidos = atual.posts.length;
+    if (atual.completo || atual.tempoEsgotado || fila.current.proximoPara === servidos) return;
     fila.current.proximoPara = servidos;
     void sincronizar();
   }
@@ -404,18 +404,16 @@ export function JuriApp({ inicial, conexao }: { inicial: Sessao; conexao: Conexa
     }
   }
 
-  async function votar(voto: { projetoId: string; conviccao: Conviccao; motivo: MotivoDoVoto; trecho: number }) {
-    const { projetoId, conviccao, motivo, trecho } = voto;
+  async function votar(voto: { projetoId: string; conviccao: Conviccao }) {
+    const { projetoId, conviccao } = voto;
     setOcupado(true);
     try {
       // As curtidas, os salvos e as permanências que ainda estão na janela vão antes do voto.
       await esvaziarAFila();
       const estado = await executar(() => api.post<Estado>(`${ROTA}/voto`, voto));
-      const titulo = sessaoRef.current.feed.posts.find((p) => p.projetoId === projetoId)?.titulo ?? null;
-      telemetria.votou(conviccao, motivo, estandesDoFeed(sessaoRef.current.feed.posts).length);
+      telemetria.votou(conviccao, estandesDoFeed(sessaoRef.current.feed.posts).length);
       setCedulaAberta(false);
-      setSessao((s) => ({ ...s, voto: { projetoId, conviccao, justificativa: { motivo, trecho } } }));
-      setLacre({ protocolo: protocoloDoVoto(sessaoRef.current.pacoteId, sessaoRef.current.rodada, projetoId), titulo });
+      setSessao((s) => ({ ...s, voto: { projetoId, conviccao } }));
       aplicarEstado(estado);
     } catch (erro) {
       setCedulaAberta(false);
@@ -446,15 +444,19 @@ export function JuriApp({ inicial, conexao }: { inicial: Sessao; conexao: Conexa
       });
   }
 
+  /**
+   * A revisão (LATCH 2) e, logo depois, o "avançar" para a cadeia (`POST passo
+   * {para:"cadeia"}`, PRD §6.3): a copy não tem tela entre os dois. A cadeia
+   * só desce do passo dela em diante, então a sessão é relida no fim.
+   */
   async function revisar(corpo: CorpoDaRevisao) {
     setOcupado(true);
     try {
       await filaDaGaleria.current;
       const estado = await executar(() => api.post<Estado>(`${ROTA}/revisao`, corpo));
-      telemetria.revisou(corpo.acao, corpo.motivo);
+      telemetria.revisou(corpo.acao);
       aplicarEstado(estado);
-      // A revisão e o desvio (se já liberado) só descem relidos: relê a sessão.
-      await recarregar();
+      await avancarParaACadeia();
     } catch (erro) {
       tratarFalha(erro);
     } finally {
@@ -462,68 +464,38 @@ export function JuriApp({ inicial, conexao }: { inicial: Sessao; conexao: Conexa
     }
   }
 
-  // ──────────────────────────────────────────────── a rodada de desvio
+  async function avancarParaACadeia() {
+    const estado = await executar(() => api.post<Estado>(`${ROTA}/passo`, { para: "cadeia" }));
+    aplicarEstado(estado);
+    await recarregar();
+  }
 
-  /* Ao entrar no desvio (e depois de um F5 nele), a primeira ida serve a
-     abertura: dois posts das áreas que menos apareceram para a criança. */
-  const desvioAberto = useRef<string | null>(null);
+  /* `revisada` num F5 (a revisão foi, o avanço não): a tela pede o avanço sozinha. */
+  const avancando = useRef(false);
   useEffect(() => {
-    if (tela !== "desvio") return;
-    const marca = `${sessao.pacoteId}:${sessao.rodada}`;
-    if (desvioAberto.current === marca) return;
-    desvioAberto.current = marca;
-    if (sessao.desvio && sessao.desvio.posts.length > 0) return;
-    telemetria.entrouNoDesvio();
-    void (async () => {
-      try {
-        aplicarDesvio(
-          await executar(() =>
-            api.post<DadosDoDesvio>(`${ROTA}/desvio/eventos`, { curtidas: [], salvamentos: [], permanencias: [], proximo: false }),
-          ),
-        );
-      } catch (erro) {
-        if (tipoDaFalha(erro) === "bloqueada") void recarregar();
-        else tratarFalha(erro);
-      }
-    })();
-  }, [tela, sessao.pacoteId, sessao.rodada, sessao.desvio, executar, aplicarDesvio, recarregar, tratarFalha]);
+    if (tela !== "avancando" || avancando.current) return;
+    avancando.current = true;
+    void avancarParaACadeia()
+      .catch(tratarFalha)
+      .finally(() => {
+        avancando.current = false;
+      });
+    // `avancarParaACadeia` só usa callbacks estáveis da casca.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tela]);
 
-  /**
-   * Encerrar a rodada: os seis servidos e ao menos uma curtida ou um salvo (a
-   * api cobra os dois; a tela diz o que falta antes de ir). Depois, a cadeia.
-   */
-  async function encerrarODesvio() {
-    await esvaziarAFila();
-    const d = sessaoRef.current.desvio;
-    if (!d?.completo) {
-      setAviso(DESVIO.ateOFim);
-      return;
-    }
-    if (!d.comInteracao) {
-      setAviso(DESVIO.semInteracao);
-      return;
-    }
-    setOcupado(true);
-    try {
-      const estado = await executar(() => api.post<Estado>(`${ROTA}/desvio/concluir`));
-      telemetria.concluiuODesvio(d.curtidos.length + d.salvos.length);
-      aplicarEstado(estado);
-      // A cadeia só desce do passo dela em diante: relê a sessão.
-      await recarregar();
-    } catch (erro) {
-      tratarFalha(erro);
-    } finally {
-      setOcupado(false);
-    }
-  }
-
+  /** A cadeia: 200 é a certa; **422 `ordem-incorreta`** é a errada, e a tentativa conta. */
   async function conferirACadeia(ordem: string[]): Promise<boolean | null> {
     setOcupado(true);
     try {
       const t = await executar(() => api.post<Tentativa>(`${ROTA}/cadeia`, { ordem }));
-      telemetria.montouACadeia(t.correta, t.tentativas);
-      return t.correta;
+      telemetria.montouACadeia(true, t.tentativas);
+      return true;
     } catch (erro) {
+      if (statusDoErro(erro) === 422) {
+        telemetria.montouACadeia(false, (sessaoRef.current.cadeia?.tentativas ?? 0) + 1);
+        return false;
+      }
       tratarFalha(erro);
       return null;
     } finally {
@@ -560,13 +532,34 @@ export function JuriApp({ inicial, conexao }: { inicial: Sessao; conexao: Conexa
     }
   }
 
-  // ─────────────────────────────────── o aviso de inatividade da cédula
+  // ───────────────────── a cédula aberta: o aviso de 60 s e o batimento de 15 s
 
-  const cedulaPronta = tela === "feed" && sessao.feed.completo;
-  const parado = useInatividade(cedulaPronta, SEGUNDOS_DE_INATIVIDADE);
+  const { parado, segundosSemToque } = useOciosidade(cedulaAberta && tela === "feed", SEGUNDOS_DE_INATIVIDADE);
   useEffect(() => {
     if (parado) telemetria.ficouParado();
   }, [parado]);
+
+  /*
+   * Com a cédula aberta, a cada 15 s: há quantos segundos não há toque. O
+   * servidor marca o ocioso para o painel do professor. Ao fechar, `aberta:
+   * false` apaga a marca na hora. Rota 204: `postSemResposta`, e a falha é
+   * silenciosa (o batimento seguinte corrige; a marca some sozinha em 40 s).
+   */
+  useEffect(() => {
+    if (!cedulaAberta || tela !== "feed") return;
+    const bater = (aberta: boolean) =>
+      postSemResposta(`${ROTA}/cedula/batimento`, { aberta, segundosSemToque: aberta ? segundosSemToque() : 0 }).catch(
+        (erro: unknown) => {
+          if (tipoDaFalha(erro) === "invalida") reportarErro(erro);
+        },
+      );
+    void bater(true);
+    const relogio = window.setInterval(() => void bater(true), SEGUNDOS_DO_BATIMENTO * 1000);
+    return () => {
+      window.clearInterval(relogio);
+      void bater(false);
+    };
+  }, [cedulaAberta, tela, segundosSemToque]);
 
   // ─────────────────────────────────────────────── a tela
 
@@ -575,14 +568,7 @@ export function JuriApp({ inicial, conexao }: { inicial: Sessao; conexao: Conexa
   const desenhar = () => {
     switch (tela) {
       case "credencial":
-        return (
-          <Credencial
-            tema={sessao.tema}
-            categorias={sessao.categorias}
-            ocupado={ocupado}
-            aoAcessar={() => void acessarOFeed()}
-          />
-        );
+        return <Credencial categorias={sessao.categorias} ocupado={ocupado} aoAcessar={() => void acessarOFeed()} />;
 
       case "feed":
         return (
@@ -590,20 +576,20 @@ export function JuriApp({ inicial, conexao }: { inicial: Sessao; conexao: Conexa
             <Feed
               key={`${sessao.pacoteId}:${sessao.rodada}`}
               posts={sessao.feed.posts}
-              categorias={sessao.categorias}
               curtidos={curtidos}
               salvos={salvos}
-              completo={sessao.feed.completo}
+              podeCrescer={!sessao.feed.completo && !sessao.feed.tempoEsgotado}
+              cedulaLiberada={sessao.feed.cedulaLiberada}
               carregando={carregandoPost}
               comDica={!memoria.gestoUsado}
               permanenciasContadas={memoria.permanencias}
               aoCurtir={curtir}
               aoSalvar={salvar}
-              aoInteracaoFechada={interacaoFechada}
+              aoFechado={fechado}
               aoPermanecer={permanecer}
               aoChegarNoFim={pedirProximo}
-              aoDeslizar={(postId, lamina) => {
-                telemetria.deslizou(postId, lamina);
+              aoDeslizar={(postId, foto) => {
+                telemetria.deslizou(postId, foto);
                 if (!memoria.gestoUsado) lembrar({ gestoUsado: true });
               }}
               aoExpandir={(postId) => telemetria.expandiu(postId)}
@@ -611,68 +597,24 @@ export function JuriApp({ inicial, conexao }: { inicial: Sessao; conexao: Conexa
                 telemetria.abriuACedula();
                 setCedulaAberta(true);
               }}
-              aoTocarCedulaCedo={() => setAvisoCedo(true)}
+              aoTrocarDeAba={(aba) => telemetria.trocouDeAba(aba)}
             />
             <Cedula
               aberta={cedulaAberta}
               estandes={estandesDoFeed(sessao.feed.posts)}
-              motivos={sessao.motivos.voto}
+              parado={parado}
               enviando={ocupado}
               aoFechar={() => setCedulaAberta(false)}
               aoVotar={(voto) => void votar(voto)}
             />
-            <SnackbarUnv open={parado && !cedulaAberta} message={E3.inatividade} offset="calc(var(--unv-tabbar-height) + 64px)" />
-            <SnackbarUnv
-              open={avisoCedo}
-              message={E2.feedIncompleto}
-              duration={4000}
-              onClose={() => setAvisoCedo(false)}
-              offset="calc(var(--unv-tabbar-height) + 8px)"
-            />
           </>
         );
 
-      case "lacre":
-        return <Lacre protocolo={lacre?.protocolo ?? ""} titulo={lacre?.titulo ?? null} />;
-
       case "espera":
-        return <Espera />;
-
-      case "espera-do-desvio":
-        return <Espera daRodada />;
-
-      case "desvio":
-        return sessao.desvio ? (
-          <Feed
-            key={`desvio:${sessao.pacoteId}:${sessao.rodada}`}
-            modo="desvio"
-            posts={sessao.desvio.posts}
-            categorias={sessao.categorias}
-            curtidos={curtidos}
-            salvos={salvos}
-            completo={sessao.desvio.completo}
-            carregando={carregandoPost}
-            comDica={false}
-            permanenciasContadas={[]}
-            rodape={
-              sessao.desvio.comparacao ? (
-                <ComparacaoDoDesvio comparacao={sessao.desvio.comparacao} categorias={sessao.categorias} />
-              ) : null
-            }
-            aoCurtir={curtir}
-            aoSalvar={salvar}
-            aoInteracaoFechada={interacaoFechada}
-            aoPermanecer={permanecer}
-            aoChegarNoFim={pedirProximo}
-            aoDeslizar={(postId, lamina) => telemetria.deslizou(postId, lamina)}
-            aoExpandir={(postId) => telemetria.expandiu(postId)}
-            aoAbrirCedula={() => void encerrarODesvio()}
-            aoTocarCedulaCedo={() => setAviso(DESVIO.ateOFim)}
+        return (
+          <Espera
+            protocolo={sessao.voto ? protocoloDoVoto(sessao.pacoteId, sessao.rodada, sessao.voto.projetoId) : null}
           />
-        ) : (
-          <div className="tela" aria-busy="true">
-            <div className="esqueleto__topo" />
-          </div>
         );
 
       case "galeria":
@@ -682,7 +624,6 @@ export function JuriApp({ inicial, conexao }: { inicial: Sessao; conexao: Conexa
             galeria={galeria}
             categorias={sessao.categorias}
             voto={sessao.voto}
-            motivos={sessao.motivos}
             enviando={ocupado}
             aoAcao={registrarNaGaleria}
             aoRevisar={(corpo) => void revisar(corpo)}
@@ -693,11 +634,20 @@ export function JuriApp({ inicial, conexao }: { inicial: Sessao; conexao: Conexa
           </div>
         );
 
+      case "avancando":
+        return (
+          <div className="tela" aria-busy="true">
+            <div className="esqueleto__topo" />
+          </div>
+        );
+
       case "cadeia":
         return sessao.cadeia ? (
           <Cadeia
             key={`${sessao.pacoteId}:${sessao.rodada}`}
             blocos={sessao.cadeia.blocos}
+            parSimulado={sessao.cadeia.parSimulado}
+            categorias={sessao.categorias}
             ordemInicial={ordemValida(memoria.ordemDaCadeia, sessao.cadeia.blocos.map((b) => b.id), TOTAL_DE_BLOCOS)}
             enviando={ocupado}
             aoMudarOrdem={(ordem) => lembrar({ ordemDaCadeia: ordem })}
@@ -724,7 +674,7 @@ export function JuriApp({ inicial, conexao }: { inicial: Sessao; conexao: Conexa
             aoRegistrar={(m, a) => void registrarCartoes(m, a)}
           />
         ) : (
-          <div className="tela" aria-busy="true" />
+          <div className="escola" aria-busy="true" />
         );
 
       case "enquetes":
@@ -739,7 +689,7 @@ export function JuriApp({ inicial, conexao }: { inicial: Sessao; conexao: Conexa
         );
 
       case "fim":
-        return <Fim tema={sessao.tema} categorias={sessao.categorias} />;
+        return <Fim />;
     }
   };
 
@@ -753,7 +703,7 @@ export function JuriApp({ inicial, conexao }: { inicial: Sessao; conexao: Conexa
         onClose={() => setAviso(null)}
         offset={tela === "feed" ? "calc(var(--unv-tabbar-height) + 8px)" : "var(--unv-spacing-l)"}
       />
-      <Avisos aviso={conexao.aviso} voz={tela === "lacre" ? "clone" : vozDaTela(tela)} aoRevalidar={conexao.revalidar} />
+      <Avisos aviso={conexao.aviso} voz={vozDaTela(tela)} aoRevalidar={conexao.revalidar} />
     </div>
   );
 }
