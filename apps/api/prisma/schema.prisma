@@ -266,6 +266,7 @@ model Turma {
   juriPacotes       Exp06ef1bPacote[]
   juriGates         Exp06ef1bGateTurma[]
   juriSessoes       Exp06ef1bSessao[]
+  juriGatesHistorico Exp06ef1bGateHistorico[]
 
   @@unique([escolaId, periodoLetivoId, nome])
   @@index([escolaId])
@@ -3232,7 +3233,7 @@ model Exp06ef1bPacote {
   id         String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   escolaId   String  @map("escola_id")
   turmaId    String  @map("turma_id") @db.Uuid
-  /// ia (CHECK). A missão não tem acervo padrão.
+  /// ia | padrao (CHECK). `padrao` = o banco padrão do PRD v2 (`juri-estadual/banco-padrao.ts`).
   origem     String
   /// O slug de `juri-estadual/vocabulario.ts#DISCIPLINAS` (CHECK).
   disciplina String
@@ -3271,6 +3272,14 @@ model Exp06ef1bPacote {
   iaGeracoes Int @default(0) @map("ia_geracoes")
   iaTokens   Int @default(0) @map("ia_tokens")
 
+  /// A telemetria docente (PRD v2 §13): quando o preparo começou (EVT-P01),
+  /// quem aprovou e quando (EVT-P03), e as leituras do painel (EVT-P04).
+  preparoIniciadoEm DateTime  @default(now()) @map("preparo_iniciado_em") @db.Timestamptz(6)
+  aprovadoEm        DateTime? @map("aprovado_em") @db.Timestamptz(6)
+  aprovadoPor       String?   @map("aprovado_por")
+  painelVistoEm     DateTime? @map("painel_visto_em") @db.Timestamptz(6)
+  painelVistas      Int       @default(0) @map("painel_vistas")
+
   turma   Turma                @relation(fields: [turmaId], references: [id], onDelete: Cascade)
   gates   Exp06ef1bGateTurma[]
   sessoes Exp06ef1bSessao[]
@@ -3291,12 +3300,12 @@ model Exp06ef1bGateTurma {
   pacoteId String @map("pacote_id") @db.Uuid
   /// ≥ 1 (CHECK). "Zerar turma" soma um; pacote novo abre a seguinte à última.
   rodada   Int    @default(1)
-  /// exploracao | galeria | desvio (CHECK; a ordem é `regras/passos.ts`).
+  /// exploracao | galeria (CHECK; a ordem é `regras/passos.ts`). O `desvio` saiu na 0.4.0.
   etapa    String @default("exploracao")
 
   /// Quando a galeria abriu NESTA rodada. Fica com o desvio; volta a nulo ao zerar (CHECK).
   galeriaLiberadaEm DateTime? @map("galeria_liberada_em") @db.Timestamptz(6)
-  /// Quando a rodada de desvio abriu NESTA rodada. Volta a nulo ao zerar (CHECK).
+  /// SEM USO desde a 0.4.0 (a rodada de desvio saiu): sempre nulo (CHECK).
   desvioLiberadoEm  DateTime? @map("desvio_liberado_em") @db.Timestamptz(6)
 
   atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
@@ -3322,8 +3331,8 @@ model Exp06ef1bSessao {
   estudanteId String @map("estudante_id") @db.Uuid
 
   /// credencial | feed | lacrada | revisada | cadeia | mariana | enquetes | fim
-  /// (CHECK; a ordem é `regras/passos.ts`). `galeria` e `desvio` NUNCA são
-  /// gravados: a etapa da turma os impõe a quem está em `lacrada` e `revisada`.
+  /// (CHECK; a ordem é `regras/passos.ts`). `galeria` NUNCA é gravada: a etapa
+  /// da turma a impõe a quem está em `lacrada`.
   passo   String @default("credencial")
   /// O texto estável que sorteia esta sessão: a abertura e o feed, os ids
   /// opacos e a ordem de chegada dos blocos. Nasce no servidor,
@@ -3385,6 +3394,21 @@ model Exp06ef1bSessao {
   cartoesEm DateTime? @map("cartoes_em") @db.Timestamptz(6)
 
   concluidaEm DateTime? @map("concluida_em") @db.Timestamptz(6)
+
+  /// A 1ª rolagem do feed: daqui contam os 8 minutos do servidor (melhoria 9).
+  feedIniciadoEm      DateTime? @map("feed_iniciado_em") @db.Timestamptz(6)
+  /// O batimento da cédula aberta e o instante do último toque nela — o
+  /// sinalizador de ociosos do painel (melhoria 8). Par (CHECK), só antes do voto.
+  cedulaBatimentoEm   DateTime? @map("cedula_batimento_em") @db.Timestamptz(6)
+  cedulaInativaDesde  DateTime? @map("cedula_inativa_desde") @db.Timestamptz(6)
+  /// O nível das três ações (PRD §11.1), gravado com a marca; nulo = sem marca.
+  auditoriaStatus     String?   @map("auditoria_status") @db.VarChar(16)
+  classificacaoStatus String?   @map("classificacao_status") @db.VarChar(16)
+  logicaStatus        String?   @map("logica_status") @db.VarChar(16)
+  /// As alternativas das enquetes (PRD §11.1). Sem uso: a resposta mora em `evidencias_marcas`.
+  enqueteEf06co10Alt  String?   @map("enquete_ef06co10_alt") @db.VarChar(64)
+  enqueteEf06co01Alt  String?   @map("enquete_ef06co01_alt") @db.VarChar(64)
+  enqueteEf06co03Alt  String?   @map("enquete_ef06co03_alt") @db.VarChar(64)
 
   /// A versão do instrumento, para reprocessamento histórico.
   versaoInstrumento String @default("1.0.0") @map("versao_instrumento")
@@ -3450,4 +3474,20 @@ model UnoogptGateTurma {
 
   @@id([escolaId, turmaId])
   @@map("exp02em1b_gate_turma")
+}
+
+/// O HISTÓRICO do relógio da turma do Júri Estadual (exp06ef1b, PRD v2 §13,
+/// EVT-P05): uma linha por etapa liberada no botão único do painel.
+model Exp06ef1bGateHistorico {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  turmaId    String   @map("turma_id") @db.Uuid
+  escolaId   String   @map("escola_id")
+  /// exploracao | galeria (CHECK).
+  etapa      String
+  liberadaEm DateTime @default(now()) @map("liberada_em") @db.Timestamptz(6)
+
+  turma Turma @relation(fields: [turmaId], references: [id], onDelete: Cascade)
+
+  @@index([escolaId, turmaId], map: "exp06ef1b_gates_historico_escola_turma_idx")
+  @@map("exp06ef1b_gates_historico")
 }
