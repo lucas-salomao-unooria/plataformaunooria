@@ -191,7 +191,11 @@ async function rolarFeed(estudanteId: string, area?: Area, turmaId = ids.turma, 
   let feitos = 0;
   const tocar = () => {
     const ja = modo === "curtir" ? feed.curtidos : feed.salvos;
-    const alvos = feed.posts.filter((p) => area && p.area === area && !ja.includes(p.id)).slice(0, quantos - feitos);
+    /* Salvar não pesa, então o feed sem foco gira as áreas e uma delas pode
+       chegar só duas vezes: salva o que vier, de qualquer área. */
+    const alvos = feed.posts
+      .filter((p) => (modo === "salvar" || (area && p.area === area)) && !ja.includes(p.id))
+      .slice(0, quantos - feitos);
     feitos += alvos.length;
     return alvos.map((p) => p.id);
   };
