@@ -1733,9 +1733,10 @@ As suítes da api (\arq{tests/\B{}juri-estadual-\B{}regras.spec.ts}, sem banco,
 e \arq{tests/\B{}juri-estadual-\B{}postgres.spec.ts}, com a RLS das quatro
 tabelas) cobrem a saturação, o relógio, o batimento, os \emph{latches}, o 422
 que conta a tentativa, o banco padrão e o \emph{fallback}. A suíte de ponta a
-ponta \arq{scripts/e2e/estudante/\B{}13-juri-estadual.mjs} ainda descreve a
-0.3.0 e \textbf{precisa ser reescrita} para o PRD v2; nada aqui afirma que ela
-passa.
+ponta \arq{scripts/e2e/estudante/\B{}13-juri-estadual.mjs} foi reescrita para
+o PRD v2 e passou com IA real (79 verificações): geração pela IA e banco padrão,
+saturação com 69\% fora para quem curte, cédula de quatro elementos, ocioso no
+painel, revisão de dois botões, par simulado, 422 na cadeia e Canal B.
 
 % ---------------------------------------------------------------------------
 \section{exp06ef2b --- O Rastro do Boato}

@@ -180,7 +180,7 @@ são a primeira barreira contra injeção de instrução.
 \begin{atencao}
 Com \env{AI\_PROVIDER}\cd{=mock}, o \cd{generateJson} sempre falha, e o
 preparo cai no banco padrão (\adrr{ADR-157}). A suíte de ponta a ponta
-(\arq{13-juri-estadual.mjs}) ainda descreve a 0.3.0 e precisa ser reescrita.
+(\arq{13-juri-estadual.mjs}) exerce a geração com IA real, nunca o mock.
 \end{atencao}
 
 \section{A camada única}
