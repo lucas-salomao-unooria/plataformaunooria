@@ -402,9 +402,10 @@ experiência: serve a toda missão com podcast.
 
 \textbf{Sem linha}, a atividade que é o banco padrão intocado toca as falas do
 sheet, e a atividade da IA criada antes do podcast fica sem ele (409
-\cd{roteiro-indisponivel}). O Júri Estadual (\adrr{ADR-151}) não tem banco
-padrão: toda atividade dele precisa da linha, que a homologação grava com as
-três vagas (\cd{dois}, \cd{rafa}, \cd{mesa}) --- a de antes do podcast é 409.
+\cd{roteiro-indisponivel}). O Júri Estadual tem banco padrão desde a \adrr{ADR-157}: o intocado toca o
+roteiro literal sem linha; a mostra da IA precisa da linha, que a homologação
+grava com as três vagas (\cd{dois}, \cd{rafa}, \cd{mesa}) --- a de antes do
+podcast é 409.
 O Unoovista (\adrr{ADR-156}) também não tem banco padrão: a linha é gravada no
 \enquote{Ativar}, com as vagas \cd{pergunta}, \cd{ladoA} e \cd{ladoB}, e a
 \cd{atividade\_id} é a de \cd{exp08ef1b\_activities}. \textbf{A Missão
@@ -1356,12 +1357,14 @@ Os vocabulários em DOIS lugares & Etapa, passo, meio, layout, motivo e origem
 \bottomrule
 \end{tabularx}
 
-\section{As três tabelas da exp06ef1b}
+\section{As quatro tabelas da exp06ef1b}
 \label{sec:tabelas-exp06ef1b}
 
 O Júri Estadual de Projetos (\adrr{ADR-137}), com o Jornal da Escola como
 molde. A migração é a
-\arq{20261002180000\_\B{}exp06ef1b\_\B{}juri\_\B{}estadual}, e as três têm \cd{escola\_id NOT NULL}, RLS \cd{ENABLE} +
+\arq{20261002180000\_\B{}exp06ef1b\_\B{}juri\_\B{}estadual} (a quarta,
+\cd{exp06ef1b\_gates\_historico}, entrou na
+\arq{20261010120000\_\B{}exp06ef1b\_\B{}prd\_\B{}v2}, \adrr{ADR-157}), e as quatro têm \cd{escola\_id NOT NULL}, RLS \cd{ENABLE} +
 \cd{FORCE} com a política por escola --- o pacote entra junto: o tema e os
 assuntos que um professor escreveu são da escola dele, e o acervo inteiro é o
 que a galeria só revela com o portão aberto ---, e nenhuma sequência: as chaves
@@ -1378,28 +1381,37 @@ tabela, guardado.
   o bastidor, as \emph{hashtags} e a descrição da imagem); a \cd{midia} (as URLs
   geradas, por projeto), \cd{imagens\_aprovadas\_em} (a SEGUNDA fase da
   aprovação, \adrr{ADR-151}: nulo, a atividade não vai ao ar e as imagens
-  ainda se refazem; preenchido, elas congelam), a \cd{origem} (só \cd{ia}: não
-  há acervo padrão), \cd{ativo} (a em andamento) e os contadores da IA do
+  ainda se refazem; preenchido, elas congelam), a \cd{origem} (\cd{ia} ou \cd{padrao}, o banco padrão da
+  \adrr{ADR-157}), a telemetria docente (\cd{preparo\_iniciado\_em},
+  \cd{aprovado\_em}, \cd{aprovado\_por}, \cd{painel\_visto\_em},
+  \cd{painel\_vistas}), \cd{ativo} (a em andamento) e os contadores da IA do
   preparo (\cd{ia\_geracoes}, \cd{ia\_tokens}).\\
 \zebra \cd{exp06ef1b\_gates\_turma} & O \textbf{relógio da turma}, com a turma
   como chave: o pacote em andamento, a \textbf{rodada}, a etapa
-  (\cd{exploracao} $|$ \cd{galeria} $|$ \cd{desvio}, a terceira desde a
-  \adrr{ADR-152}) e os carimbos dos dois portões (\cd{galeria\_liberada\_em},
-  \cd{desvio\_liberado\_em}). É a linha que o \emph{polling} de 3\,s lê
+  (\cd{exploracao} $|$ \cd{galeria}; o \cd{desvio} da \adrr{ADR-152} saiu
+  com a \adrr{ADR-157}) e o carimbo do portão (\cd{galeria\_liberada\_em};
+  \cd{desvio\_liberado\_em} fica, sempre nulo). É a linha que o \emph{polling} de 3\,s lê
   (\adrr{ADR-93}). Zerar e pôr outra atividade no ar voltam a etapa e limpam os
   carimbos no mesmo \cd{UPDATE}.\\
-\cd{exp06ef1b\_sessoes} & Uma linha por estudante, pacote e rodada
+\cd{exp06ef1b\_gates\_historico} & Uma linha por etapa liberada (EVT-P05,
+  \adrr{ADR-157}): turma, etapa e \cd{liberada\_em}.\\
+\zebra \cd{exp06ef1b\_sessoes} & Uma linha por estudante, pacote e rodada
   (\cd{exp06ef1b\_sessao\_unica\_por\_rodada}). O passo gravado, a \cd{semente}
-  e as quatro listas do feed (servidos, curtidos, salvos, permanências); o
-  voto, a convicção, a justificativa de antes (cartão e índice da frase
-  grifada) e o carimbo do \emph{latch} 1; a \cd{auditoria} da galeria
-  (\cd{JSONB} \cd{\{abertos, buscas\}}, sem o texto da busca); a ação da
-  revisão, o voto final, o complemento, a justificativa de depois e o carimbo
-  do \emph{latch} 2; as quatro listas e o carimbo da rodada de desvio
-  (\adrr{ADR-152}); as tentativas e o
+  e as quatro listas do feed (servidos, curtidos, salvos, permanências), o
+  relógio do feed (\cd{feed\_iniciado\_em}, os 8\,min) e o batimento da
+  cédula aberta (\cd{cedula\_batimento\_em}, \cd{cedula\_inativa\_desde},
+  um par que só existe antes do voto); o voto, a convicção e o carimbo do
+  \emph{latch} 1; a \cd{auditoria} da galeria (\cd{JSONB}
+  \cd{\{abertos, buscas\}}, sem o texto da busca); a ação da revisão, o voto
+  final e o carimbo do \emph{latch} 2; os \cd{*\_status} das três ações; as
+  tentativas e o
   carimbo da cadeia (as colunas dos pacotes, \cd{pacotes\_tentativas} e
   \cd{pacotes\_remontados\_em}, saíram com a \adrr{ADR-151}); os cartões de Mariana; a conclusão e a
-  versão do instrumento. \textbf{Nenhum campo de texto livre.}\\
+  versão do instrumento. \textbf{Nenhum campo de texto livre.} Desde a
+  \adrr{ADR-157} ficam SEM USO a justificativa (\cd{voto\_motivo},
+  \cd{voto\_trecho}, \cd{revisao\_*}), o \cd{complemento\_projeto} e as
+  colunas \cd{desvio\_*}; \cd{enquete\_*\_alt} existem e não são escritas
+  (a resposta mora em \cd{evidencias\_marcas}).\\
 \bottomrule
 \end{tabularx}
 
@@ -1408,16 +1420,15 @@ tabela, guardado.
 Jornal: \cd{votado\_em} existe se e só se o passo saiu de \cd{credencial} e
 \cd{feed}; \cd{revisado\_em}, se e só se está de \cd{revisada} em diante
 (até a \adrr{ADR-151}, de \cd{pacotes}, o passo que saiu; até a
-\adrr{ADR-152}, de \cd{cadeia}); \cd{desvio\_concluido\_em}, de
-\cd{cadeia} em diante; \cd{cadeia\_montada\_em}, de \cd{mariana} em diante; \cd{cartoes\_em}, de
+\adrr{ADR-152}, de \cd{cadeia}); \cd{desvio\_concluido\_em} só existe
+nas sessões antigas, e só depois da revisão (a equivalência com a cadeia caiu
+na \adrr{ADR-157}); \cd{cadeia\_montada\_em}, de \cd{mariana} em diante; \cd{cartoes\_em}, de
 \cd{enquetes} em diante; e \cd{fim} se e só se há \cd{concluida\_em}. O voto,
-a convicção e o carimbo andam juntos, e a revisão também: \cd{manter} e
-\cd{complementar} repetem o voto lacrado, \cd{trocar} escolhe outro, e
-\cd{complemento\_projeto} existe só no \cd{complementar}, nunca igual ao voto.
-A justificativa é um PAR: cartão e trecho juntos, e só com o carimbo do gesto
-deles. Os passos \cd{galeria} e \cd{desvio} \textbf{nunca} são
-gravados --- a etapa os impõe a quem está em \cd{lacrada} e em
-\cd{revisada} ---, e um \emph{CHECK} os recusa: gravado, faria o F5 de uma rodada zerada abrir a galeria sem o
+a convicção e o carimbo andam juntos, e a revisão também: \cd{manter}
+repete o voto lacrado e \cd{trocar} escolhe outro (\cd{complementar} segue
+aceito no \emph{CHECK} pelas linhas da 0.3.0 e é lido como manter). O passo
+\cd{galeria} \textbf{nunca} é gravado --- a etapa o impõe a quem está em
+\cd{lacrada} ---, e um \emph{CHECK} o recusa: gravado, faria o F5 de uma rodada zerada abrir a galeria sem o
 professor ter liberado. O \emph{CHECK} vale por \emph{statement}, então o
 \emph{service} grava carimbo e passo no MESMO \cd{UPDATE}.
 \end{regra}
@@ -1431,10 +1442,9 @@ Um índice único \textbf{parcial} por turma & \cd{exp06ef1b\_pacotes\_um\_ativo
   passadas, com as sessões delas), e a turma tem uma só em andamento. O Prisma
   não o enxerga.\\
 \zebra Os pesos não são gravados & A sessão guarda as listas de posts servidos,
-  curtidos, salvos e com permanência (e as mesmas quatro da rodada de
-  desvio); os pesos por área e a área líder são DERIVADOS delas pelo motor
+  curtidos, salvos e com permanência; os pesos por área e a área líder são DERIVADOS delas pelo motor
   puro. Um valor derivado não diverge do que o gerou. O \emph{CHECK} limita
-  os servidos a dez, e os do desvio a seis.\\
+  os servidos a dez.\\
 Quatro categorias e dezesseis projetos, e a régua fora do banco & O
   \emph{CHECK} cobra os dois \emph{arrays} com o tamanho certo; ids, áreas,
   \emph{hashtags}, réguas de palavras e termos proibidos são o Zod da
@@ -1907,6 +1917,15 @@ decisão \emph{futura}, com DPA e \emph{k}-anonimato --- e não sai de um
   portão, passo, feed, vocabulário, revisão e \emph{latch} 2 são recriados, e
   entram o da justificativa (o par) e o do desvio. Sem RLS nova: as colunas
   herdam a das tabelas.\\
+\zebra \arq{20261010120000\_\B{}exp06ef1b\_\B{}prd\_\B{}v2} & O Júri
+  Estadual no PRD v2 (\adrr{ADR-157}). Nenhuma coluna sai: a origem aceita
+  \cd{padrao}; a etapa e o passo \cd{desvio} saem dos \emph{CHECKs} (os
+  \emph{gates} no desvio voltam à \cd{galeria}); entram a telemetria docente
+  no pacote, o relógio do feed, o batimento da cédula, os \cd{*\_status} e
+  \cd{enquete\_*\_alt} na sessão, e a tabela
+  \cd{exp06ef1b\_gates\_historico}, com \cd{escola\_id NOT NULL}, RLS
+  \cd{FORCE}, política por escola e o \cd{GRANT} guardado. Os
+  \cd{UPDATE}s rodam com \cd{NO FORCE} e o recolocam.\\
 \bottomrule
 \end{tabularx}
 

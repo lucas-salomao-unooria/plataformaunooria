@@ -53,8 +53,8 @@ Preparo do pacote & exp04ef1b, \arq{src/jornal-escola/} &
 Preparo da mostra & exp06ef1b, \arq{src/juri-estadual/} &
   As quatro áreas e os dezesseis estandes da mostra científica sobre o tema e
   os assuntos do professor, e as imagens a partir da descrição de cada um.
-  \textbf{Sem acervo padrão}: sem saldo (429) ou sem provedor (503), não há
-  atividade. Nada chega à turma sem as DUAS fases da aprovação --- os textos
+  Sem saldo ou sem provedor, a geração cai no \textbf{banco padrão} (200,
+  \cd{usouIa: false}, \adrr{ADR-157}), que o professor também escolhe direto. Nada chega à turma sem as DUAS fases da aprovação --- os textos
   na homologação, as imagens num OK próprio, depois do qual elas congelam ---,
   e em sala a IA não roda (\adrr{ADR-137}, \adrr{ADR-151}).\\
 \zebra Falas do podcast do Júri & exp06ef1b, \arq{src/juri-estadual/\B{}podcast-fonte.ts}
@@ -62,8 +62,9 @@ Preparo da mostra & exp06ef1b, \arq{src/juri-estadual/} &
   As três vagas do roteiro (os dois estandes de áreas diferentes, o feed do
   Rafa, o da mesa ao lado), escritas a partir dos dezesseis estandes do
   rascunho pela rota única \rota{falas-do-tema} (\adrr{ADR-150}), com a quota
-  do professor. Sem banco padrão, a IA escreve SEMPRE; sem ela, voltam as
-  falas do sheet e a tela pede a reescrita. O professor as revisa antes de
+  do professor. O banco padrão intocado usa o roteiro literal, sem IA
+  (\adrr{ADR-157}); na mostra da IA, sem ela, voltam as falas do sheet e a
+  tela pede a reescrita. O professor as revisa antes de
   homologar (\adrr{ADR-151}).\\
 \zebra Agente de IA do professor & produto \cd{agente-professor}, \arq{apps/agente-professor}
   + \arq{src/agente-professor/} &
@@ -143,13 +144,16 @@ de quem prepara, com o que o \emph{vendor} cobrou debitado por tentativa,
 inclusive as recusadas.
 \end{nota}
 
-\subsection{O preparo do Júri Estadual: a única missão sem material pronto}
+\subsection{O preparo do Júri Estadual: IA ou banco padrão}
 
 Em toda missão com preparo por IA, a falta dela tinha um caminho: o banco curado
 da A Seleção, o banco padrão do Jornal da Escola, o pacote pronto de Quem mandou
-isso?. O Júri Estadual de Projetos (\adrr{ADR-137}) é a exceção, e declarada:
-os dezesseis estandes são da ATIVIDADE, gerados no preparo e homologados pelo
-professor, e \textbf{sem IA não há aula}. \arq{preparo.service.ts} roda
+isso?. O Júri Estadual de Projetos (\adrr{ADR-137}) foi a exceção até a
+\adrr{ADR-157}, que trouxe o banco padrão do PRD v2 (\arq{banco-padrao.ts}):
+o professor escolhe \enquote{Usar Banco Padrão Oficial}, ou a geração, sem
+saldo ou com o provedor fora, cai nele (200 com \cd{usouIa: false},
+\cd{origem: "padrao"} e o \cd{motivo}). Na mostra da IA, os dezesseis estandes
+são gerados no preparo e homologados pelo professor. \arq{preparo.service.ts} roda
 \cd{temSaldo} com o perfil de quem prepara, chama o \cd{generateJson} com
 \textbf{duas} tentativas e um \cd{validar} que normaliza o cosmético
 (\cd{semExclamacao}, \emph{hashtag} e perfil em minúsculas, a \emph{hashtag} da
@@ -167,18 +171,16 @@ fora, 503 e o estande fica com a que tinha) e aprova. Aprovadas, nenhuma
 imagem se gera mais naquela atividade (409 \cd{imagens-ja-aprovadas}): a que
 faltasse chegaria à turma sem que ninguém a visse. O podcast de recapitulação
 (\adrr{ADR-150}) também passa pela IA na criação: as três falas do tema são
-escritas a partir do rascunho da mostra --- não há banco padrão de onde tirá-las
----, revisadas pelo professor e gravadas pela homologação. O \emph{prompt} pede personas de 11 e 12 anos, nomes
+escritas a partir do rascunho da mostra da IA (o banco padrão tem o roteiro
+literal), revisadas pelo professor e gravadas pela homologação. O \emph{prompt} pede personas de 11 e 12 anos, nomes
 brasileiros com gênero equilibrado e escolas fictícias, e o tema, os assuntos e
 o contexto do professor entram como DADO delimitado, com tetos de tamanho que
 são a primeira barreira contra injeção de instrução.
 
 \begin{atencao}
-Com \env{AI\_PROVIDER}\cd{=mock}, o \cd{generateJson} sempre falha: o preparo
-responde 503 e a turma fica sem atividade. Em \emph{dev}, o Júri só tem aula com
-o Vertex. A suíte de ponta a ponta (\arq{13-juri-estadual.mjs}, escrita e ainda
-não rodada) tenta a IA de verdade e, se a geração falhar, responde o gerador com
-a mostra de \emph{fixture} das suítes da api.
+Com \env{AI\_PROVIDER}\cd{=mock}, o \cd{generateJson} sempre falha, e o
+preparo cai no banco padrão (\adrr{ADR-157}). A suíte de ponta a ponta
+(\arq{13-juri-estadual.mjs}) ainda descreve a 0.3.0 e precisa ser reescrita.
 \end{atencao}
 
 \section{A camada única}

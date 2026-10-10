@@ -835,7 +835,7 @@ A resposta --- que devolve só \enquote{enviada}, nunca o resultado &
 \zebra O Júri Estadual de Projetos: a própria missão (\adrr{ADR-137}) &
   \rota{/juri-estadual/*} & \yes & \no & \no & \no\\
 \textbf{O Júri Estadual: preparar a mostra, conduzir e ler a lousa} (atividades,
-  imagens e o OK delas --- \adrr{ADR-151} ---, a Galeria Oculta e a rodada de desvio --- \adrr{ADR-152} ---, zerar), e o material do guia &
+  imagens e o OK delas --- \adrr{ADR-151} ---, o banco padrão e a Galeria Oculta --- \adrr{ADR-157} ---, zerar), e o material do guia &
   \rota{/juri-estadual/\B turmas/*}, \rota{/professor/\B material} & \no &
   \yes\footnotesize{\ddag} & \yes & \yes\\
 \zebra unooGPT: a própria partida & \rota{/unoogpt/*} & \yes & \no & \no & \no\\
@@ -1169,11 +1169,10 @@ acredita ter declarado algo.
     liberado, o pilar da vaga depois da Chave --- e o conjunto da Chave, nunca
     (\adrr{ADR-117}).
   \item No Júri Estadual de Projetos (\adrr{ADR-137}), o \emph{bundle} não
-    recebe o acervo nem a regra: os pesos (curtir, salvar, ficar) e o limiar do
+    recebe o acervo nem a regra: os pesos (curtir, ficar) e o limiar do
     motor do feed, a área líder e os estandes que o feed não serviu ficam no
-    servidor até a Galeria Oculta abrir, e a rodada de desvio desce um post
-    por vez, sem a regra que o escolheu (\adrr{ADR-152}); a frase grifada da
-    justificativa viaja como índice, e o servidor confere que ela existe; a ordem certa da cadeia não desce (os ids são
+    servidor até a Galeria Oculta abrir; o par simulado da cadeia é gerado das
+    áreas que a própria criança viu, nunca de colega (\adrr{ADR-157}); a ordem certa da cadeia não desce (os ids são
     opacos por sessão; os pacotes da curtida saíram com a \adrr{ADR-151}), nem o cartão certo do caso Mariana (\cd{certo} está na
     redação do \emph{log}), nem o nível das alternativas das enquetes.
   \item Os textos dos cartões da app-70 chegam ao jogo \textbf{sem gabarito}, e

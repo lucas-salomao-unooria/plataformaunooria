@@ -33,7 +33,8 @@ token e prefixo de classe próprios. Elas nunca se cruzam.
   \rota{/admin}, \rota{/analise}; \emph{header} de todos os papéis; telas
   \textbf{pós-revelação} do estudante; a redação INTEIRA do Jornal da Escola
   (exp04ef1b), que não é clone de nada; e a tela da escola do Júri Estadual
-  de Projetos (exp06ef1b: a cadeia; os pacotes saíram com a \adrr{ADR-151})\\
+  de Projetos (exp06ef1b: a cadeia, o caso Mariana e, numa faixa própria embaixo do fim
+  da comissão, o infográfico final, \adrr{ADR-157})\\
 \zebra \cd{instanooria} (21 + 7 extensões) & \cd{/instanooria} & \cd{--insta-*}, \cd{insta-} &
   exp07ef1b; e só o \cd{PostCard} na gaveta do Jornal da Escola
   (Seção~\ref{sec:ds-peca-imitada})\\
@@ -878,8 +879,8 @@ botões de comentar, compartilhar e salvar do \cd{PostCard.Actions} ficavam na
 pílula sem ação --- o DS não tinha \emph{prop} para escondê-los, e escondê-los por
 CSS seria mexer na aparência do controle (pedido: ações configuráveis).
 \textbf{Resolvido pela 0.2.18}, que publicou \cd{saved}, \cd{onSave},
-\cd{onComment} e \cd{onShare}: desde a exp06ef1b 0.3.0 (\adrr{ADR-152}) o
-salvar pesa no feed, e comentar e compartilhar respondem com o aviso da
+\cd{onComment} e \cd{onShare}: na exp06ef1b 0.4.0 (\adrr{ADR-157}) o
+salvar grava o evento sem pesar no feed, e comentar e compartilhar respondem com o aviso da
 comissão. O
 \cd{ListItem} não aceita \cd{type} nem \cd{disabled}: o desabilitado é
 \cd{aria-disabled} com guarda no toque. O \cd{TopBar} reserva os 44\,px da
