@@ -677,10 +677,11 @@ describe("o podcast de recapitulação (ADR-151, RF-008)", () => {
     }
   });
 
-  test("o BANCO PADRÃO tem o roteiro do sheet LITERAL (aud-exp06ef1b-01), com o Unoovista", () => {
+  test("o BANCO PADRÃO tem o roteiro do sheet (aud-exp06ef1b-01) com os estandes DELE e sem número cravado", () => {
     const roteiro = texto(FALAS_DO_TEMA_PADRAO);
-    expect(roteiro).toContain("escondeu os outros 12 projetos da mostra");
-    expect(roteiro).toContain("esconder três quartos de uma feira escolar");
+    expect(roteiro).toContain("escondeu os projetos das outras áreas da mostra");
+    expect(roteiro).toContain("esconder mais da metade de uma feira escolar");
+    expect(roteiro).not.toMatch(/\b12\b|doze|três quartos/i);
     expect(roteiro).toContain("O Rafa gosta de meio ambiente!");
     expect(roteiro).toContain("no Unoovista");
     expect(roteiro).not.toMatch(/instanooria/i);

@@ -84,8 +84,11 @@ lados têm espelhos dessas listas; mudar a forma aqui sem avisar quebra os dois.
 - **A IA só existe do lado do professor**: preparo (agora com os 4 formatos),
   regeneração, imagens — quota do perfil (ADR-105). Sem acervo no runtime.
 - **O podcast** (ADR-150/151, RF-008): o banco padrão intocado tem o roteiro do
-  sheet LITERAL (aud-exp06ef1b-01, `ROTEIRO_DO_BANCO_PADRAO`: "os outros 12
-  projetos", "três quartos" — coerentes com a saturação) e `padrao: true` sem
+  sheet (aud-exp06ef1b-01, `ROTEIRO_DO_BANCO_PADRAO`) com os estandes DO BANCO
+  nas três vagas (o sheet citava robô dos bueiros, hortas e drones, que não
+  existem nele) e sem número cravado ("os projetos das outras áreas", "mais da
+  metade": a taxa é de cada computador). Mudou o texto? Suba
+  `VERSAO_DO_PEDIDO_DE_VOZ`, senão o áudio velho continua tocando. `padrao: true` sem
   linha na tabela; as falas do sheet ativam esse roteiro
   (`ehFalaDoBancoPadrao`). Mostra da IA: texto fixo corrigido + as três vagas
   revisadas na criação (`homologar`). Toca depois da Etapa 4 (o guia avisa).

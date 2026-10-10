@@ -134,23 +134,31 @@ export const VAGAS_DO_PODCAST: readonly VagaDoTema[] = [
 ];
 
 /**
- * As três falas do SHEET (aud-exp06ef1b-01), literais — o robô dos bueiros e a
- * composteira da merenda. São as do BANCO PADRÃO (PRD v2, RF-008): com elas, o
- * roteiro inteiro é o do sheet (`ROTEIRO_DO_BANCO_PADRAO`). Numa mostra da IA,
- * só chegam à tela quando a IA não responde, com o aviso para reescrever.
+ * As três falas do BANCO PADRÃO (PRD v2, RF-008), com os estandes que ELE tem.
+ * O sheet (aud-exp06ef1b-01) citava o "robô dos bueiros", "hortas" e "drones",
+ * que não estão entre os dezesseis: a turma ouviria falar de projetos que nunca
+ * viu, logo depois de conferir a mostra inteira na Galeria Oculta. Ficaram a
+ * forma e o tom do sheet, trocando os projetos pelos reais: proj-a3 (alarme de
+ * enchente) contra proj-b2 (composteira da merenda); Rafa vê b1/b4/b3, e a mesa
+ * ao lado a1/a2/a4. Com elas, o roteiro inteiro é o `ROTEIRO_DO_BANCO_PADRAO`.
+ * Numa mostra da IA, só chegam à tela quando a IA não responde, com o aviso
+ * para reescrever. Aprovação do PO: card "Missão 6º ano 1º B", item 5.
  */
 export const FALAS_DO_TEMA_PADRAO: FalasDoTema = {
-  dois: "Com certeza, Rafa! Mas me responde uma coisa: você votou naquele robô que recolhe plástico nos bueiros, ou votou no projeto da composteira orgânica da merenda?",
-  rafa: "Ué, Bia... que robô? Na minha tela só tinha projetos de meio ambiente, hortas inteligentes e reflorestamento! Não apareceu nenhum robô pra mim!",
-  mesa: "Pois é! E para os jurados da mesa ao lado, não apareceu nenhuma horta! A tela deles só tinha tecnologia, drones e circuitos!",
+  dois: "Com certeza, Rafa! Mas me responde uma coisa: você votou naquele alarme de enchente com sensor de nível, ou no projeto da composteira térmica com os restos da merenda?",
+  rafa: "Ué, Bia... que alarme? Na minha tela só tinha projetos de meio ambiente: irrigador solar, telhado verde e filtro de água de chuva! Não apareceu nenhum alarme pra mim!",
+  mesa: "Pois é! E para os jurados da mesa ao lado, não apareceu nenhuma composteira! A tela deles só tinha tecnologia: braço mecânico, carrinho seguidor de linha e semáforo inteligente!",
 };
 
 /**
- * O roteiro do BANCO PADRÃO — o aud-exp06ef1b-01 do banco de conteúdo,
- * LITERAL (PRD v2: o podcast fixo pós-Etapa 4 do banco padrão), sem as
- * rubricas de trilha. Única mudança: o nome do app com maiúscula (Unoovista).
- * Os números ("os outros 12 projetos", "três quartos") ficam: com a saturação
- * (melhoria 1), quem curte fica com 11 ou 12 de 16 fora do feed.
+ * O roteiro do BANCO PADRÃO — o aud-exp06ef1b-01 do banco de conteúdo (PRD v2:
+ * o podcast fixo pós-Etapa 4 do banco padrão), sem as rubricas de trilha. Três
+ * mudanças, todas para o texto não contradizer a missão: os estandes das vagas
+ * são os do banco (`FALAS_DO_TEMA_PADRAO`), o nome do app com maiúscula
+ * (Unoovista) e NENHUM número cravado — "os outros 12 projetos" e "três
+ * quartos" viraram "os projetos das outras áreas" e "mais da metade", porque a
+ * taxa é de cada computador (quem curte fica com 11 de 16 fora, 69%) e a tela
+ * da criança já mostra a dela.
  */
 const ROTEIRO_DO_BANCO_PADRAO: Record<(typeof BLOCOS_DO_PODCAST)[number], readonly FalaDoPodcast[]> = {
   abertura: [
@@ -181,7 +189,7 @@ const ROTEIRO_DO_BANCO_PADRAO: Record<(typeof BLOCOS_DO_PODCAST)[number], readon
     {
       falante: "Bia",
       texto:
-        'E o que o aplicativo fez? Ele não lê a sua mente, Rafa. Ele leu os seus cliques! O sistema registrou essas curtidas como dados e identificou um padrão imediato: "O Rafa gosta de meio ambiente!". A partir desse segundo, a regra do algoritmo começou a trabalhar para prender sua atenção: escondeu os outros 12 projetos da mostra e entregou apenas o que você acabou de curtir.',
+        'E o que o aplicativo fez? Ele não lê a sua mente, Rafa. Ele leu os seus cliques! O sistema registrou essas curtidas como dados e identificou um padrão imediato: "O Rafa gosta de meio ambiente!". A partir desse segundo, a regra do algoritmo começou a trabalhar para prender sua atenção: escondeu os projetos das outras áreas da mostra e entregou apenas o que você acabou de curtir.',
     },
     {
       falante: "Rafa",
@@ -193,7 +201,7 @@ const ROTEIRO_DO_BANCO_PADRAO: Record<(typeof BLOCOS_DO_PODCAST)[number], readon
     {
       falante: "Bia",
       texto:
-        "Exatamente! E aí vem a provocação para o nosso dia a dia fora da escola: se um algoritmo conseguiu esconder três quartos de uma feira escolar só porque a gente curtiu duas postagens, o que será que as redes sociais estão escondendo de nós todos os dias?",
+        "Exatamente! E aí vem a provocação para o nosso dia a dia fora da escola: se um algoritmo conseguiu esconder mais da metade de uma feira escolar só porque a gente curtiu duas postagens, o que será que as redes sociais estão escondendo de nós todos os dias?",
     },
     {
       falante: "Rafa",
@@ -265,7 +273,7 @@ export const DIRECAO_DO_PODCAST =
   "As falas se emendam como numa conversa de verdade, com pausas curtas entre uma e outra.";
 
 /** Suba quando a direção, os timbres ou o texto fixo mudarem (o hash do arquivo muda junto). */
-export const VERSAO_DO_PEDIDO_DE_VOZ = 1;
+export const VERSAO_DO_PEDIDO_DE_VOZ = 2;
 
 export const VOZ_DO_PODCAST: PedidoDeVoz = {
   prefixo: "podcast",
