@@ -38,6 +38,7 @@ export function Bootstrap() {
   const [pronto, setPronto] = useState(false);
   const [inicial, setInicial] = useState<Sessao | null>(null);
   const [falha, setFalha] = useState<Falha | null>(null);
+  const iconesProntos = useFonteDeIcones();
 
   const carregar = useCallback(async () => {
     setFalha(null);
@@ -94,7 +95,7 @@ export function Bootstrap() {
     );
   }
 
-  if (!inicial) {
+  if (!inicial || !iconesProntos) {
     /* O esqueleto do próprio app — a barra do topo, sem conteúdo —, e não um
        "carregando" genérico: ele denunciaria que algo está sendo montado. */
     return (
@@ -106,4 +107,33 @@ export function Bootstrap() {
   }
 
   return <JuriApp inicial={inicial} conexao={conexao} />;
+}
+
+/** Teto da espera pela fonte: passou disso, a tela abre de qualquer jeito. */
+const ESPERA_MAXIMA_DOS_ICONES_MS = 2500;
+
+/**
+ * O `Icon` do Unoovista é ligadura do Material Symbols, e a folha do DS declara
+ * a fonte com `font-display: swap`: até o arquivo chegar, o navegador desenha o
+ * NOME do glifo, cortado na caixa do ícone ("ve" no lugar do selo `verified`).
+ * O crachá é a primeira tela, então é ele que cai nessa janela. A abertura
+ * espera a fonte (com teto) e mostra o esqueleto enquanto isso.
+ */
+function useFonteDeIcones(): boolean {
+  const [pronta, setPronta] = useState(false);
+  useEffect(() => {
+    let vivo = true;
+    const liberar = () => {
+      if (vivo) setPronta(true);
+    };
+    const teto = window.setTimeout(liberar, ESPERA_MAXIMA_DOS_ICONES_MS);
+    const fontes = typeof document !== "undefined" ? document.fonts : undefined;
+    if (!fontes?.load) liberar();
+    else void fontes.load('24px "Material Symbols Rounded"', "verified").then(liberar, liberar);
+    return () => {
+      vivo = false;
+      window.clearTimeout(teto);
+    };
+  }, []);
+  return pronta;
 }
