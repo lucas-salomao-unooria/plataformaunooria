@@ -297,7 +297,7 @@ export function Mariana({
         label={E6.grupoDoMecanismo}
         theme="light"
         disabled={enviando}
-        value={mecanismo ?? undefined}
+        value={mecanismo ?? ""}
         options={mecanismos.map((c) => ({ value: c.id, label: c.texto }))}
         onChange={(v) => {
           const id = String(v);
@@ -310,7 +310,7 @@ export function Mariana({
         label={E6.grupoDaAtitude}
         theme="light"
         disabled={enviando}
-        value={atitude ?? undefined}
+        value={atitude ?? ""}
         options={atitudes.map((c) => ({ value: c.id, label: c.texto }))}
         onChange={(v) => {
           const id = String(v);
