@@ -185,24 +185,32 @@ A página da atividade é `resultados/resultados-juri-estadual.tsx`; a criação
 `atividades/nova/criar-juri-estadual.tsx`; o espelho do contrato,
 `lib/juri-estadual-tipos.ts` (com teste que lê a api como texto).
 
-- **Não há banco padrão** (decisão de 2026-10-02): o 429 da geração diz que o
-  saldo acabou e NÃO oferece atalho — oferecer um seria prometer o que não
-  existe.
+- **Banco padrão (PRD v2, 0.4.0)**: o caminho curto "Usar Banco Padrão
+  Oficial" fica no TOPO do preparo e chama `POST banco-padrao` — a atividade
+  nasce pronta (`origem: "padrao"`), sem curadoria nem imagens a aprovar, e o
+  assistente segue para a turma. Sem cota ou sem IA, o `gerar-conteudo`
+  responde 200 com `usouIa: false` e `motivo`: a tela mostra o aviso
+  (`AVISO_DO_BANCO_PADRAO`, copy literal) e o botão "Usar Acervo Padrão da
+  Mostra" — o banco NÃO entra na curadoria como se fosse a mostra gerada (o
+  `homologar` o gravaria como `ia`). O `homologar` leva `preparoIniciadoEm`.
 - **Duas fases, como no Jornal** (PO, 2026-10-06), na grade
   `resultados/imagens-do-juri.tsx`: UM carimbo do pacote (A Seleção), sem
   exigir imagem em todo estande (o sem imagem aparece "arte desenhada" antes
   do clique); aprovada, congela. Hashtag vai em `subtags` do `Card` (`tags` é
   o cabeçalho, sem quebra, e vazava).
-- **Podcast**: falas na FASE 1 (o `homologar` as exige). É do professor e é
-  OPCIONAL (Lucas, 2026-10-07): toca na tela dele, para a sala, se e quando
-  quiser. O módulo não trava por etapa, e o cartão RECOMENDA o momento
-  (`avisoDoPodcast`: o fechamento, depois da Galeria Oculta).
-- **Dois botões** (2026-10-07): Liberar a Galeria Oculta e depois Liberar a
-  rodada de desvio (`ROTULO_DO_BOTAO`). Sem o segundo, a turma espera e não
-  chega à cadeia. A folha ganhou a coluna da rodada; o resumo, `desviaram` e
-  `complementaram`. O guia não prescreve revezamento nem desempate (o PO).
-- **A invisibilidade média só vai para a lousa depois de liberar a galeria**:
-  projetada no pico, ela contaria à turma o que a Galeria Oculta mostra a cada
-  um. O número é o da api; nenhum percentual é cravado na copy nem no guia.
+- **Podcast**: falas na FASE 1 (o `homologar` as exige; o banco padrão usa o
+  roteiro fixo). É o recurso FIXO do fechamento (PRD v2, RF-008): o professor
+  toca depois da Etapa 4. O cartão traz o aviso LITERAL do one-pager
+  (`avisoDoPodcast`); o módulo não trava por etapa.
+- **Um botão só** (PRD v2): "Liberar Auditoria" abre a Galeria Oculta; depois
+  dela cada computador segue no próprio ritmo. A rodada de desvio, o
+  complementar e a justificativa SAÍRAM (sem coluna nem contador). Acima do
+  botão, a instrução de gatilho (D0-4).
+- **A folha**: o SINALIZADOR DE OCIOSOS é o ícone de alerta ao lado do nome
+  (`ocioso`, com texto para leitor de tela), e a coluna "Categorias buscadas"
+  mostra as hashtags que a criança buscou (EF06CO01). O nível ternário das três
+  habilidades fica no painel de habilidades (E14), não na folha.
+- **A invisibilidade média está na lousa desde o pico** (PRD v2, E4-PROF-01). O
+  número é o da api; nenhum percentual é cravado na copy nem no guia.
 - **O gráfico de votos usa "Área A"… no eixo** (o `BarChart` corta acima de ~8
   caracteres) e o nome da área na legenda; as barras vão em % dos votos.

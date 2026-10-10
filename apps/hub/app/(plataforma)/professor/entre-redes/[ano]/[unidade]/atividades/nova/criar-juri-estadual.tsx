@@ -8,12 +8,15 @@ import {
   type TurmaDoAssistente,
 } from "@/components/atividades/assistente-de-atividade";
 import {
+  COPY_DO_PREPARO,
   DISCIPLINAS,
   PARAMETROS,
   PARAMETROS_VAZIOS,
   ROTULO_DA_DISCIPLINA,
   TOTAL_DE_PROJETOS,
+  avisoDoRascunho,
   caminhoDaTurma,
+  caminhoDoBancoPadrao,
   conteudoCompleto,
   corpoDosParametros,
   distribuirErros,
@@ -40,26 +43,25 @@ import { CartaoDoEstande, EditorDoEstande } from "../../resultados/estande-do-pr
 import { ImagensDoJuri } from "../../resultados/imagens-do-juri";
 import { FalasDoPodcast, falasComProblema, pedirFalasDoTema } from "./falas-do-podcast";
 
-/** A copy revisada (§1, E0-PROF-02 a 04), no que ela sobreviveu à criação. A suíte e2e casa por texto exato. */
+/**
+ * A copy revisada do PRD v2 (`e0.prof.*`, design/06-copy-strings-revisada.md).
+ * A suíte e2e casa por texto exato.
+ */
 const COPY = {
-  titulo: "Configuração Pedagógica da Mostra",
-  rotuloDaDisciplina: "Componente Curricular",
-  ajudaDaDisciplina: "Selecione a matéria para contextualizar os 16 estandes da mostra científica.",
-  rotuloDoTema: "Tema Geral da Feira",
+  titulo: "Planejamento da Mostra: Recorte da Aula",
+  rotuloDaDisciplina: "Componente curricular",
+  rotuloDoTema: "Título da mostra escolar",
+  ajudaDoTema: "Defina o tema central em até 60 caracteres.",
   exemploDoTema: "Exemplo: Feira de Inovações para a Comunidade Escolar.",
-  rotuloDosAssuntos: "Objetos de Conhecimento da Aula",
-  ajudaDosAssuntos: "Liste de 3 a 6 tópicos trabalhados nesta semana para distribuir nas 4 áreas.",
+  rotuloDosAssuntos: "Assuntos curriculares da semana",
+  ajudaDosAssuntos: "Liste de 3 a 6 tópicos trabalhados nas últimas aulas para inspirar os protótipos da feira.",
   rotuloDoContexto: "Contexto da escola (opcional)",
   exemploDoContexto: "Exemplo: escola em área rural, perto de um rio.",
-  gerar: "Gerar Mostra Personalizada com IA",
-  gerando: "Organizando os 16 estandes da feira com inteligência artificial...",
-  espera: "Isso pode levar perto de um minuto. Aguarde a montagem das categorias.",
-  tituloDaCuradoria: "Curadoria da Mostra: 16 Estandes",
-  instrucaoDaCuradoria:
-    "Revise os títulos e os textos das postagens. Use Editar estande para mudar qualquer um, ou Regenerar estande para pedir outro.",
-  /* Sem banco padrão nesta missão (decisão de 2026-10-02): a frase não oferece saída que não existe. */
-  semSaldo:
-    "Limite de geração com IA atingido por hoje. Esta missão não tem mostra pronta: a atividade pode ser criada quando o saldo voltar.",
+  gerar: COPY_DO_PREPARO.botaoGerar,
+  gerando: COPY_DO_PREPARO.gerando,
+  espera: "Isso pode levar perto de um minuto.",
+  tituloDaCuradoria: "Curadoria de Projetos Finalistas (16 projetos)",
+  instrucaoDaCuradoria: "Revise os textos e escolas dos projetos antes de liberar a mostra aos jurados da turma.",
   falhaDaIa: "O serviço de geração automática oscilou. Tente novamente em instantes.",
 } as const;
 
@@ -76,6 +78,12 @@ interface TextosAprovados {
   aprovadasEm: string | null;
 }
 
+/** O BANCO PADRÃO: a atividade pronta, sem IA (`POST banco-padrao`). As imagens já nascem aprovadas (arte procedural). */
+interface BancoPadraoAplicado {
+  id: string;
+  turmaId: string;
+}
+
 /** De onde veio a falha da IA — é o que o "Tentar de novo" repete. */
 type FalhaDaIa = { tipo: "sem-saldo" | "indisponivel"; de: "gerar" | string };
 
@@ -90,9 +98,16 @@ type FalhaDaIa = { tipo: "sem-saldo" | "indisponivel"; de: "gerar" | string };
  *
  * 1. **parametrizar** — componente curricular (as nove disciplinas da missão),
  *    tema, assuntos e, se quiser, o contexto da escola;
- * 2. **gerar com IA** (`gerar-conteudo`), com a espera à vista. O 429 diz que
- *    o saldo acabou e NÃO oferece banco padrão — a missão não tem um (decisão
- *    de 2026-10-02); o 503 oferece tentar de novo;
+ * 2. **gerar com IA** (`gerar-conteudo`), com a espera à vista. Sem cota ou
+ *    sem IA a api responde 200 com o BANCO PADRÃO (`usouIa: false`, `motivo`):
+ *    a tela mostra o aviso da contingência e o botão "Usar Acervo Padrão da
+ *    Mostra" (E0-PROF-03), em vez de pôr o banco na curadoria como se fosse
+ *    a mostra gerada;
+ *
+ * O CAMINHO CURTO (E0-PROF-02) fica no topo: "Usar Banco Padrão Oficial" chama
+ * `POST banco-padrao` e a atividade nasce pronta, sem curadoria nem imagens a
+ * aprovar — o assistente segue direto para a turma e o "Pôr no ar agora".
+ *
  * 3. **curar** os dezesseis estandes, em quatro grupos (um por área): editar
  *    título, legenda e bastidor, e regenerar um estande (`regenerar-projeto`),
  *    que sem IA devolve o estande como estava;
@@ -127,6 +142,12 @@ export function CriarJuriEstadual({
   rotaDaMissao: string;
 }) {
   const [parametros, setParametros] = useState<ParametrosNaTela>(PARAMETROS_VAZIOS);
+  /* EVT-P01: quando o professor ABRIU o preparo. Vai no `homologar`. */
+  const [preparoIniciadoEm] = useState(() => new Date().toISOString());
+  const [bancoPadrao, setBancoPadrao] = useState<BancoPadraoAplicado | null>(null);
+  const [aplicandoPadrao, setAplicandoPadrao] = useState(false);
+  /* O aviso da contingência: a geração caiu no banco padrão. */
+  const [contingencia, setContingencia] = useState<string | null>(null);
   const [conteudo, setConteudo] = useState<ConteudoDoPacote | null>(null);
   /* O tema para o qual OS ESTANDES NA TELA foram escritos. Trocar o texto do
      tema sem gerar de novo deixaria a mostra falando de outro assunto. */
@@ -169,7 +190,7 @@ export function CriarJuriEstadual({
     falas !== null &&
     problemasDasFalas === 0 &&
     !escrevendoFalas;
-  const ocupado = gerando || regenerando !== null;
+  const ocupado = gerando || regenerando !== null || aplicandoPadrao;
   const emEdicao = editando ? (conteudo?.projetos.find((p) => p.id === editando) ?? null) : null;
   /* A criação nasce vazia: o erro de um campo só aparece depois que o
      professor escreveu nele — campo vazio de saída não é engano dele. */
@@ -179,6 +200,30 @@ export function CriarJuriEstadual({
     setErro(null);
     setAviso(null);
     setFalha(null);
+    setContingencia(null);
+  }
+
+  /** "Usar Banco Padrão Oficial" / "Usar Acervo Padrão da Mostra": a atividade pronta, sem IA, fora do ar. */
+  async function usarBancoPadrao(turmaId: string) {
+    setAplicandoPadrao(true);
+    limparRecados();
+    try {
+      const r = await fetch(`/api/plataforma${caminhoDoBancoPadrao(turmaId)}`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ porNoAr: false }),
+      });
+      if (!r.ok) {
+        setErro(erroDaResposta(await r.json().catch(() => null), "Não deu para usar o banco padrão agora."));
+        return;
+      }
+      const criado = (await r.json()) as PacoteHomologado;
+      setBancoPadrao({ id: criado.id, turmaId });
+    } catch {
+      setErro({ mensagem: SEM_CONEXAO, erros: [] });
+    } finally {
+      setAplicandoPadrao(false);
+    }
   }
 
   /** Pede as falas do podcast para a mostra, na forma que o `homologar` grava. */
@@ -230,6 +275,13 @@ export function CriarJuriEstadual({
         return;
       }
       const rascunho = corpo as RascunhoDoPacote;
+      const avisoDoPadrao = avisoDoRascunho(rascunho);
+      if (avisoDoPadrao) {
+        /* Sem cota ou sem IA: o conteúdo é o banco padrão. Ele não entra na
+           curadoria como se fosse a mostra gerada — o botão o aplica inteiro. */
+        setContingencia(avisoDoPadrao);
+        return;
+      }
       setParametros(parametrosNaTela(rascunho.parametros));
       setConteudo(rascunho.conteudo);
       setTemaDosEstandes(rascunho.parametros.tema);
@@ -301,6 +353,7 @@ export function CriarJuriEstadual({
         body: JSON.stringify({
           parametros: corpoDosParametros(parametros),
           conteudo: normalizarConteudo(conteudo),
+          preparoIniciadoEm,
           podcast: falasParaHomologar(falas?.vagas ?? []),
         }),
       });
@@ -336,6 +389,11 @@ export function CriarJuriEstadual({
 
   /** O "Criar atividade" do assistente: o pacote já está gravado, com as imagens aprovadas. */
   async function criar(turmaId: string): Promise<ResultadoDaCriacao> {
+    if (bancoPadrao) {
+      return bancoPadrao.turmaId === turmaId
+        ? { ok: true, id: bancoPadrao.id }
+        : { ok: false, mensagem: "O banco padrão foi aplicado para outra turma. Volte a ela ou aplique de novo.", erros: [] };
+    }
     if (!aprovados || aprovados.turmaId !== turmaId || !imagensAprovadas) {
       return { ok: false, mensagem: "Aprove os textos e as imagens desta turma antes de criar a atividade.", erros: [] };
     }
@@ -343,6 +401,7 @@ export function CriarJuriEstadual({
   }
 
   function recomecar() {
+    setBancoPadrao(null);
     setAprovados(null);
     setImagensAprovadas(false);
   }
@@ -353,15 +412,51 @@ export function CriarJuriEstadual({
       rotaDaMissao={rotaDaMissao}
       turmas={turmas}
       turmaInicial={turmaInicial}
-      conteudoPronto={aprovados !== null && imagensAprovadas}
+      conteudoPronto={bancoPadrao !== null || (aprovados !== null && imagensAprovadas)}
       resumoDoConteudo={
-        aprovados && conteudo
+        bancoPadrao
+          ? `Banco padrão oficial · Feira de Ciências e Sustentabilidade · ${TOTAL_DE_PROJETOS} estandes em 4 áreas, sem IA`
+          : aprovados && conteudo
           ? `“${conteudo.tema.trim()}” · ${rotuloDaDisciplina(parametros.disciplina)} · ${TOTAL_DE_PROJETOS} estandes em 4 áreas, com os textos e as imagens aprovados`
           : null
       }
       criar={criar}
       conteudo={(turmaId) =>
-        aprovados ? (
+        bancoPadrao ? (
+          <Card variant="outlined" title={COPY.titulo}>
+            <div className="flex flex-col gap-3" data-preparo-juri data-fase="banco-padrao">
+              {bancoPadrao.turmaId !== turmaId ? (
+                <FeedbackAlert
+                  type="warning"
+                  description={
+                    <span className="flex flex-col items-start gap-2">
+                      <span>O banco padrão foi aplicado para outra turma. Volte à turma anterior, ou aplique de novo para esta.</span>
+                      <Button variant="secondary" size="sm" onClick={recomecar} data-acao="recomecar-mostra">
+                        Recomeçar o preparo
+                      </Button>
+                    </span>
+                  }
+                />
+              ) : (
+                <>
+                  <FeedbackAlert
+                    type="success"
+                    description="O Banco Padrão Oficial está pronto: os 16 estandes da Feira de Ciências e Sustentabilidade, sem uso de IA. Continue para escolher a turma e pôr no ar."
+                  />
+                  <p className="max-w-3xl text-[12px] leading-snug text-unooria-neutral-600">
+                    Os estandes usam a arte desenhada da missão, sem imagem gerada. O podcast de recapitulação é o
+                    roteiro fixo do episódio. Para personalizar o tema, recomece e gere com IA.
+                  </p>
+                  <div>
+                    <Button variant="secondary" size="sm" onClick={recomecar} data-acao="recomecar-mostra">
+                      Recomeçar o preparo
+                    </Button>
+                  </div>
+                </>
+              )}
+            </div>
+          </Card>
+        ) : aprovados ? (
           <Card variant="outlined" title={COPY.titulo}>
             <div className="flex flex-col gap-5" data-preparo-juri data-fase="imagens">
               <p className="text-[13px] font-semibold text-unooria-neutral-950" data-fase-da-aprovacao>
@@ -414,9 +509,27 @@ export function CriarJuriEstadual({
             <p className="text-[13px] font-semibold text-unooria-neutral-950" data-fase-da-aprovacao>
               Fase 1 de 2: os textos
             </p>
+            {/* O CAMINHO CURTO (E0-PROF-02): no topo, antes de qualquer campo. */}
+            <div className="flex flex-col items-start gap-2 rounded-lg border border-unooria-neutral-200 p-4" data-caminho-curto>
+              <p className="max-w-3xl text-[13px] leading-relaxed text-unooria-neutral-700">
+                Para ir direto, use a mostra oficial já pronta — a Feira de Ciências e Sustentabilidade, com 16
+                estandes em quatro áreas —, sem digitar nada e sem uso de IA.
+              </p>
+              <Button
+                variant="primary"
+                size="sm"
+                leftIcon={<Icon name="inventory_2" size={18} />}
+                onClick={() => void usarBancoPadrao(turmaId)}
+                isDisabled={ocupado}
+                isLoading={aplicandoPadrao}
+                data-acao="usar-banco-padrao"
+              >
+                {COPY_DO_PREPARO.botaoPadrao}
+              </Button>
+            </div>
             <p className="max-w-3xl text-[13px] leading-relaxed text-unooria-neutral-700">
-              A inteligência artificial escreve os 16 estandes da mostra sobre o tema da sua aula, em quatro áreas.
-              Esta missão não tem mostra pronta: sem gerar, não há atividade.{" "}
+              Ou personalize: a inteligência artificial escreve os 16 estandes sobre o tema da sua aula, em quatro
+              áreas.{" "}
               <strong>Nenhum texto gerado por inteligência artificial é exibido aos estudantes sem a sua aprovação.</strong>
             </p>
 
@@ -425,7 +538,6 @@ export function CriarJuriEstadual({
               <div className="grid gap-3 lg:grid-cols-2">
                 <Selection
                   label={COPY.rotuloDaDisciplina}
-                  helperText={COPY.ajudaDaDisciplina}
                   placeholder="Selecione"
                   value={parametros.disciplina || undefined}
                   showOptionCheckbox={false}
@@ -435,7 +547,7 @@ export function CriarJuriEstadual({
                 <TextField
                   label={COPY.rotuloDoTema}
                   placeholder={COPY.exemploDoTema}
-                  helperText={erroDoCampo("tema") ? undefined : `De ${PARAMETROS.tema.min} a ${PARAMETROS.tema.max} caracteres.`}
+                  helperText={erroDoCampo("tema") ? undefined : COPY.ajudaDoTema}
                   value={parametros.tema}
                   maxLength={PARAMETROS.tema.max}
                   error={erroDoCampo("tema")}
@@ -486,11 +598,36 @@ export function CriarJuriEstadual({
               ) : null}
             </div>
 
+            {contingencia ? (
+              <div data-contingencia-banco-padrao aria-live="polite">
+                <FeedbackAlert
+                  type="warning"
+                  description={contingencia}
+                  action={
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={() => void usarBancoPadrao(turmaId)}
+                      isDisabled={ocupado}
+                      isLoading={aplicandoPadrao}
+                      autoFocus
+                      data-acao="usar-acervo-padrao"
+                    >
+                      {COPY_DO_PREPARO.botaoContingencia}
+                    </Button>
+                  }
+                />
+              </div>
+            ) : null}
             {falha ? (
               <div data-falha-da-ia={falha.tipo}>
                 <FeedbackAlert
                   type={falha.tipo === "sem-saldo" ? "warning" : "error"}
-                  description={falha.tipo === "sem-saldo" ? COPY.semSaldo : COPY.falhaDaIa}
+                  description={
+                    falha.tipo === "sem-saldo"
+                      ? "Limite de geração com IA atingido por hoje: o estande ficou como estava."
+                      : COPY.falhaDaIa
+                  }
                   action={
                     falha.tipo === "indisponivel" ? (
                       <Button variant="secondary" size="sm" onClick={() => repetirAposFalha(turmaId)} isDisabled={ocupado}>

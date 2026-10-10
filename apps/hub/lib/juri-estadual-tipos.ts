@@ -17,9 +17,10 @@
  *   de habilidades (`lib/evidencias.ts`).
  * - **Nenhum tipo de sessão de estudante.** O lado dele vive no bundle da
  *   experiência; daqui o hub só prepara e conduz.
- * - **Nenhum acervo padrão.** A missão não tem banco pronto (decisão de
- *   2026-10-02): sem saldo de IA não há atividade, e a tela diz isso em vez de
- *   oferecer um atalho que não existe.
+ * - **Nenhum conteúdo do banco padrão.** O banco padrão (PRD v2, E0-PROF-02)
+ *   mora SÓ na api: o hub pede `POST banco-padrao` e recebe a atividade
+ *   pronta, ou recebe o banco já no rascunho quando a geração caiu nele
+ *   (`usouIa: false`, sem cota ou sem IA).
  *
  * O GABARITO (a ordem dos blocos da cadeia, os cartões certos do caso
  * Mariana) aparece em `MaterialDoJuri`, que só rota de professor devolve.
@@ -87,8 +88,8 @@ export function rotuloDaDisciplina(slug: string): string {
   return (ROTULO_DA_DISCIPLINA as Record<string, string>)[slug] ?? slug;
 }
 
-/** Só `ia`: a missão não tem acervo padrão. */
-export const ORIGENS_DO_PACOTE = ["ia"] as const;
+/** `ia` (gerado e curado pelo professor) ou `padrao` (o banco padrão oficial, sem IA). */
+export const ORIGENS_DO_PACOTE = ["ia", "padrao"] as const;
 export type OrigemDoPacote = (typeof ORIGENS_DO_PACOTE)[number];
 
 /** Onde o estudante está, na ordem em que ele percorre a missão. */
@@ -98,7 +99,6 @@ export const PASSOS = [
   "lacrada",
   "galeria",
   "revisada",
-  "desvio",
   "cadeia",
   "mariana",
   "enquetes",
@@ -106,8 +106,8 @@ export const PASSOS = [
 ] as const;
 export type PassoDoEstudante = (typeof PASSOS)[number];
 
-/** As etapas da TURMA, na ordem em que o botão único as abre. */
-export const ETAPAS = ["exploracao", "galeria", "desvio"] as const;
+/** As etapas da TURMA, na ordem em que o botão único as abre. Depois da galeria, o ritmo é de cada um. */
+export const ETAPAS = ["exploracao", "galeria"] as const;
 export type EtapaDaTurma = (typeof ETAPAS)[number];
 
 // ─────────────────────────────────────────────────── as invariantes do pacote
@@ -143,6 +143,8 @@ export const CARACTERES = {
   escola: { min: 3, max: 60 },
   legenda: { min: 10, max: 420 },
   bastidor: { min: 10, max: 280 },
+  prototipo: { min: 10, max: 280 },
+  depoimento: { min: 10, max: 280 },
   descricao: { min: 10, max: 240 },
   alt: { min: 3, max: 140 },
 } as const;
@@ -197,6 +199,9 @@ export interface ProjetoDoPacote {
   legenda: string;
   /** O texto do post de bastidor (o protótipo sendo testado). */
   bastidor: string;
+  /** Os formatos da saturação (até 40 palavras). O banco padrão não os tem. */
+  prototipo?: string;
+  depoimento?: string;
   hashtags: string[];
   /** `descricao` é o pedido da geração da imagem; `alt`, o texto alternativo que a criança ouve. */
   imagem: { descricao: string; alt: string };
@@ -297,11 +302,49 @@ export interface ImagemRefeita {
   url: string;
 }
 
-/** `POST gerar-conteudo` — RASCUNHO, não persiste. */
+/** Por que a geração caiu no banco padrão. */
+export type MotivoDoBancoPadrao = "sem-saldo-de-ia" | "ia-indisponivel";
+
+/**
+ * `POST gerar-conteudo` — RASCUNHO, não persiste. `usouIa: false` é o
+ * FALLBACK (RF-007): sem cota ou sem IA, o conteúdo é o banco padrão
+ * (`origem: "padrao"`) e `motivo` diz por quê — a resposta é 200.
+ */
 export interface RascunhoDoPacote {
   parametros: ParametrosDoPreparo;
   conteudo: ConteudoDoPacote;
+  usouIa: boolean;
+  origem: OrigemDoPacote;
+  motivo: MotivoDoBancoPadrao | null;
 }
+
+/** O caminho da contingência: `POST banco-padrao` com `{porNoAr}` — a atividade pronta, sem IA. */
+export function caminhoDoBancoPadrao(turmaId: string): string {
+  return `${caminhoDaTurma(turmaId)}/banco-padrao`;
+}
+
+/** Copy `e0.prof.ia_quota_alerta` (429) e `e0.prof.ia_erro_503_msg` (503), literais. */
+export const AVISO_DO_BANCO_PADRAO: Record<MotivoDoBancoPadrao, string> = {
+  "sem-saldo-de-ia":
+    "O assistente de geração personalizada da Mostra está temporariamente fora de alcance. O Acervo Padrão da Feira de Ciências e Sustentabilidade foi preparado para a sua aula prosseguir normalmente.",
+  "ia-indisponivel":
+    "Os servidores da Mostra demoraram a responder. O Acervo Padrão da Feira de Ciências e Sustentabilidade está pronto para uso imediato.",
+};
+
+/** O aviso do rascunho que caiu no banco padrão; `null` quando a IA gerou. */
+export function avisoDoRascunho(r: Pick<RascunhoDoPacote, "usouIa" | "motivo">): string | null {
+  if (r.usouIa) return null;
+  return AVISO_DO_BANCO_PADRAO[r.motivo ?? "ia-indisponivel"];
+}
+
+/** Os rótulos do preparo (copy `e0.prof.*`). */
+export const COPY_DO_PREPARO = {
+  botaoPadrao: "Usar Banco Padrão Oficial",
+  botaoPadraoENoAr: "Usar Banco Padrão e Pôr no ar",
+  botaoContingencia: "Usar Acervo Padrão da Mostra",
+  botaoGerar: "Gerar com IA",
+  gerando: "Gerando estandes da Mostra...",
+} as const;
 
 /** `POST regenerar-projeto`. `usouIa: false` = o projeto voltou como estava. */
 export interface ProjetoRegenerado {
@@ -344,11 +387,13 @@ export interface LinhaDoPainel {
   entrou: boolean;
   passo: PassoDoEstudante;
   votou: boolean;
+  /** O SINALIZADOR DE OCIOSOS: cédula aberta e mais de 60 s sem toque. Volta a `false` sozinho. */
+  ocioso: boolean;
   abriuAGaleria: boolean;
   buscou: boolean;
+  /** As categorias que a criança buscou pela hashtag na galeria (a leitura da EF06CO01). */
+  categoriasBuscadas: Area[];
   revisou: boolean;
-  /** Encerrou a rodada de desvio. */
-  desviou: boolean;
   concluiu: boolean;
 }
 
@@ -367,15 +412,16 @@ export interface PainelDoJuri {
     entraram: number;
     votaram: number;
     revisaram: number;
-    desviaram: number;
     concluiram: number;
+    /** Quantos estão ociosos na cédula agora. */
+    ociosos: number;
     computadores: { votaram: number; total: number };
     porComputador: boolean;
     /** A lousa do PICO: o voto inicial (lacrado), por área. */
     votosPorArea: VotosDaArea[];
     /** A média da taxa real de quem votou, 0–100, ou `null` sem voto. */
     invisibilidadeMedia: number | null;
-    revisao: { mantiveram: number; trocaram: number; complementaram: number };
+    revisao: { mantiveram: number; trocaram: number };
     /** O voto final (revisado, se trocou), por área — a lousa depois da galeria. */
     votosRevisadosPorArea: VotosDaArea[];
   };
@@ -409,13 +455,14 @@ export interface MaterialDoJuri {
   blocos: Array<{ posicao: number; rotulo: string }>;
   mariana: { caso: string; mecanismos: CartaoComGabarito[]; atitudes: CartaoComGabarito[] };
   plenaria: string[];
+  /** O retorno que a criança lê ao montar a cadeia, certa ou errada. */
+  feedbackDaCadeia: { correta: string; incorreta: string };
   regra: {
     pesoDaCurtida: number;
-    pesoDoSalvar: number;
     pesoDaPermanencia: number;
     limiar: number;
     postsNoFeed: number;
-    postsNoDesvio: number;
+    minutosNoFeed: number;
   };
 }
 
@@ -437,9 +484,9 @@ export function erroDaResposta(corpo: unknown, padrao: string): { codigo: string
 }
 
 /**
- * A falha da IA pelo status OU pelo código (o BFF repassa os dois). Sem saldo
- * NÃO tem saída nesta missão — não há banco padrão —; indisponível pede para
- * tentar de novo.
+ * A falha da IA pelo status OU pelo código (o BFF repassa os dois). O
+ * `gerar-conteudo` não responde mais com elas (cai no banco padrão, 200); quem
+ * ainda responde é o `regenerar-projeto` sem saldo (429).
  */
 export function falhaDaIa(status: number, codigo: string | null): "sem-saldo" | "indisponivel" | null {
   if (status === 429 || codigo === "sem-saldo-de-ia") return "sem-saldo";
@@ -451,14 +498,12 @@ export function falhaDaIa(status: number, codigo: string | null): "sem-saldo" | 
 
 export const ROTULO_DA_ETAPA: Record<EtapaDaTurma, string> = {
   exploracao: "Exploração — cada computador navega no feed da mostra e lacra o voto",
-  galeria: "Galeria Oculta liberada — cada computador audita o que não viu, revisa o voto e espera a nova rodada",
-  desvio: "Rodada de desvio liberada — cada computador interage com o que não via, vê o feed mudar e segue no próprio ritmo",
+  galeria: "Auditoria liberada — cada computador audita a Galeria Oculta, revisa o voto e segue no próprio ritmo até o fim",
 };
 
-/** O rótulo do botão único, pela etapa de DESTINO. A suíte e2e casa por texto exato. */
+/** O rótulo do botão único, pela etapa de DESTINO (copy `e4.prof.btn_liberar_auditoria`). A suíte e2e casa por texto exato. */
 export const ROTULO_DO_BOTAO: Record<Exclude<EtapaDaTurma, "exploracao">, string> = {
-  galeria: "Liberar a Galeria Oculta",
-  desvio: "Liberar a rodada de desvio",
+  galeria: "Liberar Auditoria",
 };
 
 export function rotuloDoBotao(proxima: EtapaDaTurma | null): string | null {
@@ -466,26 +511,28 @@ export function rotuloDoBotao(proxima: EtapaDaTurma | null): string | null {
   return ROTULO_DO_BOTAO[proxima];
 }
 
-/** O aviso do podcast com a Galeria Oculta já aberta na aula em andamento. */
-export const AVISO_DO_PODCAST_NA_GALERIA =
-  "A Galeria Oculta já está aberta: o melhor momento para o episódio é o fechamento, depois da rodada de desvio. Tocar é escolha sua.";
-/** O aviso do podcast antes da galeria — ou com a atividade fora do ar. */
-export const AVISO_DO_PODCAST_ANTES_DA_GALERIA =
-  "Este episódio conta a virada da missão: o melhor momento é o fechamento, depois da Galeria Oculta. Tocar é escolha sua; antes da galeria, ele entrega a descoberta.";
+/** Copy do painel da lousa (E4-PROF-01), literal. */
+export const TITULO_DO_PAINEL = "Painel Coletivo de Votos da Turma";
+/** D0-4: o aviso ao professor antes do botão. */
+export const INSTRUCAO_DO_GATILHO = "Projete a distribuição de votos na tela da sala antes de acionar o botão abaixo.";
 
 /**
- * O aviso no topo do cartão do podcast (ADR-150). O podcast é do PROFESSOR e é
- * opcional (decisão do Lucas, 2026-10-07): ele dá o play na tela dele, para a
- * sala, se e quando quiser — a missão não depende dele. Por isso o módulo não
- * trava por etapa, e o cartão RECOMENDA o momento: o episódio conta o que o
- * feed escondeu, e tocado antes da galeria entrega a descoberta. Com a
- * atividade EM ANDAMENTO e a galeria aberta (ou o desvio), o aviso diz que é a
- * hora; fora do ar, a página não sabe em que ponto a turma vai estar.
+ * O aviso do podcast — LITERAL do one-pager (§11, aprovado pelo PO). O
+ * podcast é o recurso FIXO do fechamento, depois da Etapa 4 (RF-008).
+ */
+export const AVISO_DO_PODCAST_ANTES_DA_GALERIA =
+  "Este podcast recapitula toda a missão e revela a virada pedagógica. Deve ser transmitido aos estudantes estritamente após a conclusão da Etapa 4, nunca antes da aula.";
+/** Com a auditoria já liberada na aula em andamento: a hora está chegando. */
+export const AVISO_DO_PODCAST_NA_GALERIA =
+  "A auditoria já está liberada: toque o episódio no fechamento, depois que a turma concluir a Etapa 4 e o debate da virada.";
+
+/**
+ * O aviso no topo do cartão do podcast (ADR-150). Com a atividade EM
+ * ANDAMENTO e a auditoria liberada, o aviso diz que a hora chegou; antes
+ * dela (ou fora do ar), repete a regra do one-pager.
  */
 export function avisoDoPodcast(emAndamento: boolean, etapa: EtapaDaTurma | null): string {
-  return emAndamento && (etapa === "galeria" || etapa === "desvio")
-    ? AVISO_DO_PODCAST_NA_GALERIA
-    : AVISO_DO_PODCAST_ANTES_DA_GALERIA;
+  return emAndamento && etapa === "galeria" ? AVISO_DO_PODCAST_NA_GALERIA : AVISO_DO_PODCAST_ANTES_DA_GALERIA;
 }
 
 /** O que o computador está vendo agora, em uma linha. */
@@ -494,8 +541,7 @@ export const ROTULO_DO_PASSO: Record<PassoDoEstudante, string> = {
   feed: "No feed da mostra",
   lacrada: "Votou — esperando a plenária",
   galeria: "Na Galeria Oculta",
-  revisada: "Revisou — esperando a nova rodada",
-  desvio: "Na rodada de desvio",
+  revisada: "Revisou o voto",
   cadeia: "Montando a cadeia do feed",
   mariana: "No caso Mariana",
   enquetes: "Nas enquetes",
@@ -505,6 +551,7 @@ export const ROTULO_DO_PASSO: Record<PassoDoEstudante, string> = {
 export const ROTULO_DA_ORIGEM: Record<OrigemDoPacote, string> = {
   /* "aprovado", sem "por você": quem aprovou pode ter sido a coordenação. */
   ia: "gerado com IA e aprovado",
+  padrao: "banco padrão oficial",
 };
 
 // ────────────────────────────────────────────────────── as leituras do painel
@@ -537,24 +584,34 @@ export function textoDoQueFalta(c: { votaram: number; total: number }, porComput
 /** A taxa média, como o professor a lê. O número é o REAL, calculado pela api. */
 export function textoDaInvisibilidade(media: number | null): string {
   if (media === null) return "Aparece quando o primeiro voto for lacrado.";
-  return `Em média, ${media}% dos estandes da mostra não chegaram ao feed de quem votou.`;
+  return `Em média, ${media}% dos projetos da feira foram ocultados dos feeds dos estudantes.`;
 }
 
-/** "3 jurados trocaram o voto, 2 complementaram e 20 mantiveram." */
-export function textoDaRevisao(
-  r: { mantiveram: number; trocaram: number; complementaram: number },
-  porComputador: boolean,
-): string | null {
-  if (r.mantiveram + r.trocaram + r.complementaram === 0) return null;
+/** "3 jurados trocaram o voto e 20 mantiveram." */
+export function textoDaRevisao(r: { mantiveram: number; trocaram: number }, porComputador: boolean): string | null {
+  if (r.mantiveram + r.trocaram === 0) return null;
   const trocaram = `${r.trocaram} ${sujeito(porComputador, r.trocaram)} ${r.trocaram === 1 ? "trocou" : "trocaram"} o voto`;
-  const complementaram = `${r.complementaram} ${r.complementaram === 1 ? "complementou" : "complementaram"}`;
   const mantiveram = `${r.mantiveram} ${r.mantiveram === 1 ? "manteve" : "mantiveram"}`;
-  return `${trocaram}, ${complementaram} e ${mantiveram}.`;
+  return `${trocaram} e ${mantiveram}.`;
 }
 
-/** "5 de 26 jurados terminaram a rodada de desvio." */
-export function textoDoDesvio(desviaram: number, total: number, porComputador: boolean): string {
-  return `${desviaram} de ${total} ${sujeito(porComputador, total)} ${desviaram === 1 && total === 1 ? "terminou" : "terminaram"} a rodada de desvio.`;
+/** Copy `e6.prof.taxa_revisao_turma`: "{revisoes} de {total} jurados revisaram o voto após a busca ativa na Galeria Oculta." */
+export function textoDaTaxaDeRevisao(trocaram: number, total: number, porComputador: boolean): string {
+  return `${trocaram} de ${total} ${sujeito(porComputador, total)} revisaram o voto após a busca ativa na Galeria Oculta.`;
+}
+
+/** O sinalizador de ocioso, em texto (o ícone não basta para leitor de tela). */
+export const TEXTO_DO_OCIOSO = "Cédula aberta parada há mais de 1 minuto";
+
+/** "Robótica (#robotica), Saúde (#saude)" — as categorias que a linha buscou, com o nome do pacote. */
+export function textoDasCategoriasBuscadas(areas: readonly Area[], categorias: readonly CategoriaDaMostra[]): string {
+  if (areas.length === 0) return "Nenhuma";
+  return AREAS.filter((a) => areas.includes(a))
+    .map((a) => {
+      const c = categorias.find((k) => k.area === a);
+      return c ? `${c.nome} (${c.hashtag})` : rotuloCurtoDaArea(a);
+    })
+    .join(", ");
 }
 
 export function totalDeVotos(v: readonly VotosDaArea[]): number {
@@ -578,10 +635,10 @@ export function textoDosVotosDaArea(a: VotosDaArea): string {
 
 /**
  * A aula ainda CORRE? É o que decide se o painel continua consultando. Para
- * quando a turma inteira concluiu com a última etapa aberta (o desvio).
+ * quando a turma inteira concluiu com a última etapa aberta (a galeria).
  */
 export function aulaEmAndamento(p: Pick<PainelDoJuri, "etapa" | "resumo">): boolean {
-  return !(p.etapa === "desvio" && p.resumo.total > 0 && p.resumo.concluiram >= p.resumo.total);
+  return !(p.etapa === "galeria" && p.resumo.total > 0 && p.resumo.concluiram >= p.resumo.total);
 }
 
 /** Quantas linhas já passaram de `passo` — o que o resumo não conta, a folha diz. */
@@ -761,6 +818,8 @@ export function normalizarProjeto(p: ProjetoDoPacote): ProjetoDoPacote {
     perfil: p.perfil.trim(),
     legenda: limpo(p.legenda),
     bastidor: limpo(p.bastidor),
+    ...(p.prototipo !== undefined ? { prototipo: limpo(p.prototipo) } : {}),
+    ...(p.depoimento !== undefined ? { depoimento: limpo(p.depoimento) } : {}),
     hashtags: p.hashtags.map((h) => h.trim()),
     imagem: { descricao: p.imagem.descricao.trim(), alt: limpo(p.imagem.alt) },
   };

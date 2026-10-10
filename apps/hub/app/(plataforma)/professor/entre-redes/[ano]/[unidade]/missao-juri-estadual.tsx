@@ -15,8 +15,8 @@ import { AtividadesDaMissao } from "./atividades-da-missao";
  * caminho para a página da atividade, onde se liberam a galeria e a lousa.
  *
  * A ficha abre com os dois fatos que mudam a condução, e eles não podem estar
- * no fim de uma lista: **não há mostra pronta** (sem gerar com IA, não há
- * atividade — prepare antes) e **é um botão só, que não volta**.
+ * no fim de uma lista: **a mostra se prepara antes** (o banco padrão em um
+ * toque, ou a personalizada com IA) e **é um botão só, que não volta**.
  *
  * `FeedbackAlert` e não `AlertBox`: o segundo é diálogo de 436px, e aqui a
  * faixa é de contexto (o prop é `type`, não `variant`).
@@ -53,9 +53,9 @@ export function MissaoJuriEstadual({
       </header>
 
       <FeedbackAlert
-        type="warning"
-        title="Prepare antes: esta missão não tem mostra pronta"
-        description="Os dezesseis estandes são escritos pela inteligência artificial sobre o tema da sua aula, em Nova atividade. Sem saldo de geração com IA, a atividade não sai até o saldo voltar. Durante a aula é um botão só — Liberar a Galeria Oculta —, e ele não volta. A missão só abre para a turma com uma atividade sua em andamento."
+        type="info"
+        title="Prepare antes: banco padrão ou mostra personalizada"
+        description="Em Nova atividade, use o Banco Padrão Oficial (a Feira de Ciências e Sustentabilidade, sem IA, em um toque) ou gere os dezesseis estandes com IA sobre o tema da sua aula. Sem saldo de IA, o banco padrão entra no lugar. Durante a aula é um botão só — Liberar Auditoria —, e ele não volta. A missão só abre para a turma com uma atividade sua em andamento."
       />
 
       <section className="grid gap-4 lg:grid-cols-2">

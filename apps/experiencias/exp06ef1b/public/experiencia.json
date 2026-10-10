@@ -1,7 +1,7 @@
 {
   "id": "exp06ef1b",
   "nome": "O Júri Estadual de Projetos",
-  "versao": "0.3.0",
+  "versao": "0.4.0",
   "produto": "entre-redes",
   "series": [
     "6EF"
@@ -24,7 +24,7 @@
   "verbos": {
     "attempted": "votou na cédula lacrada da mostra estadual",
     "interacted": "curtiu e avaliou os estandes do feed da mostra",
-    "progressed": "auditou a Galeria Oculta e revisou o voto",
-    "completed": "remontou a curtida, montou a cadeia do feed e respondeu à consulta aos jurados"
+    "progressed": "auditou a Galeria Oculta e manteve ou revisou o voto",
+    "completed": "montou a cadeia do feed, analisou o caso Mariana e respondeu à consulta aos jurados"
   }
 }

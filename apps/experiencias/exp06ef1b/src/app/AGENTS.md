@@ -11,7 +11,7 @@ passam no typecheck e enganam.
 1. **Resolvida em 2026-10-02:** a `DmPoll` no lugar do `StoryPoll`. O DS 0.2.12
    publicou o `StoryPoll` (pedido por esta missão), a ponte `ds-unoovista` o
    exporta, e a casca `figurinha-de-enquete.tsx` e a regra CSS saíram.
-2. **`ListItem` que quebra linha** (`.escolha`, `.infografico__passos`): o
+2. **`ListItem` que quebra linha** (`.escolha`): o
    `ListItem` corta título e subtítulo numa linha, certo para conversas e errado
    para um cartão de 20 palavras. Só `white-space` e alinhamento. Pedido: prop
    `wrap` no `ListItem`.
@@ -29,7 +29,13 @@ passam no typecheck e enganam.
    dica — daqui sai só ONDE elas ficam. Pedido: `onPrevious`/`onNext` (ou
    setas próprias) no `PostCard.Media`, e um glifo `forward` no registro.
 
-**Não são compensação**: o carimbo do lacre (moldura tracejada de ficção — o
+6. **A grade da Galeria Oculta** (`.grade-oculta`, 0.4.0): a copy pede o botão
+   "Inspecionar Projeto" VISÍVEL em cada miniatura, e o `MediaGrid` do DS não
+   tem ação por bloco. A grade é CSS (3 colunas, as linhas crescem com os
+   ocultos); cada célula é a miniatura e o `ButtonUnv` do DS. Pedido: ação ou
+   rótulo por bloco no `MediaGrid`.
+
+**Não são compensação**: o carimbo do voto (moldura tracejada de ficção — o
 desenho do selo é o `IconUnv`), a arte procedural dos estandes (conteúdo, não
 controle) e o deslize do carrossel (o DS publica os pontos, o gesto é do
 produto; `touch-action: pan-y` deixa a rolagem com o navegador).

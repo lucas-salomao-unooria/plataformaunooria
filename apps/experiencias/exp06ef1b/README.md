@@ -76,24 +76,22 @@ projeto votado ou a alternativa de uma enquete.
 | `progressed` | `missao:entrada` | depois da primeira leitura | `contexto: { passo }` |
 | `progressed` | `credencial:acessar-feed` | "Acessar Feed da Mostra" | — |
 | `interacted` | `feed:curtir` | curtiu/descurtiu | `resultado: { curtiu }`, `contexto: { postId, gesto }` |
-| `interacted` | `feed:salvar` | salvou/tirou dos salvos (0.3.0) | `resultado: { salvou }`, `contexto: { postId }` |
-| `interacted` | `feed:fechado` | tocou comentar ou compartilhar (0.3.0; não pesa) | `contexto: { acao }` |
-| `interacted` | `feed:carrossel` | deslizou a lâmina | `contexto: { postId, lamina }` |
+| `interacted` | `feed:salvar` | salvou/tirou dos salvos (grava, não pesa) | `resultado: { salvou }`, `contexto: { postId }` |
+| `interacted` | `feed:fechado` | tocou comentar, compartilhar ou a aba Busca (não pesa) | `contexto: { acao }` |
+| `interacted` | `feed:aba` | trocou de aba (Início, Notificações, Jurado) | `contexto: { aba }` |
+| `interacted` | `feed:carrossel` | deslizou a foto (1 a 3) | `contexto: { postId, lamina }` |
 | `interacted` | `feed:legenda` | "...mais" | `contexto: { postId }` |
 | `interacted` | `feed:post` | um post novo chegou | `contexto: { posicao }` |
-| `progressed` | `feed:completo` | o décimo chegou | — |
+| `progressed` | `feed:completo` | a cédula foi liberada (o décimo chegou ou os 8 min do servidor acabaram) | `contexto: { porTempo }` |
 | `interacted` | `cedula:abrir` | abriu a cédula | — |
-| `interacted` | `cedula:inatividade` | 60 s parado com a cédula pronta | — |
-| `attempted` | `cedula:votar` | o LATCH 1, confirmado | `resultado: { estandes }`, `contexto: { conviccao, motivo }` |
-| `progressed` | `plenaria:espera` | entrou na plenária | — |
+| `interacted` | `cedula:inatividade` | 60 s sem toque com a cédula ABERTA | — |
+| `attempted` | `cedula:votar` | o LATCH 1, confirmado | `resultado: { estandes }`, `contexto: { conviccao }` |
+| `progressed` | `plenaria:espera` | entrou na espera do voto lacrado | — |
 | `progressed` | `galeria:abrir` | a galeria abriu | `resultado: { ocultos, percentual }` |
 | `interacted` | `galeria:inspecionar` | abriu a ficha de um estande | `contexto: { projetoId, oculto }` |
 | `interacted` | `galeria:buscar` | buscou (o TIPO, nunca o texto) | `contexto: { busca, area }` |
-| `progressed` | `galeria:revisar` | o LATCH 2, confirmado | `contexto: { acao, motivo }` |
-| `progressed` | `desvio:entrada` | a rodada de desvio abriu (0.3.0) | — |
-| `interacted` | `desvio:curtir` · `desvio:salvar` | curtiu ou salvou na rodada | `resultado: { curtiu }` / `{ salvou }`, `contexto: { postId }` |
-| `progressed` | `desvio:concluido` | encerrou a rodada, confirmado | `resultado: { interacoes }` |
-| `attempted` | `cadeia:validar` | conferiu a cadeia | `resultado: { correta, tentativas }` |
+| `progressed` | `galeria:revisar` | o LATCH 2, confirmado (`manter` ou `trocar`) | `contexto: { acao }` |
+| `attempted` | `cadeia:validar` | conferiu a cadeia (a errada é o 422) | `resultado: { correta, tentativas }` |
 | `progressed` | `mariana:cartoes` | registrou os cartões (sem dizer quais) | — |
 | `interacted` | `enquete:responder` | respondeu (a PERGUNTA) | `contexto: { perguntaId }` |
 | `interacted` | `enquete:pulada` | a enquete falhou | `contexto: { perguntaId, status }` |
@@ -107,7 +105,9 @@ auditoria, revisão, tentativas, cartões) e a ficha de evidência
 ## A copy escrita aqui
 
 O que o sheet da missão (`design/06-copy-strings-revisada.md`) não tinha e a tela
-precisou está marcado `ESCRITA AQUI` em `src/lib/textos.ts`: as setas do
-carrossel (0.2.0), a taxa da galeria sem número cravado, a cédula de
-revisão, o infográfico do fim, os rótulos de leitor de tela e os avisos da
-escola. Para o PO revisar.
+precisou está marcado `ESCRITA AQUI` em `src/lib/textos.ts` (0.4.0, PRD v2):
+as setas do carrossel, a aba Busca fechada no julgamento, a notificação do
+crachá na aba Notificações, a explicação de "Manter" travado, a contagem de
+resultados da busca, os rótulos do par simulado ("Você" / "Outro jurado"), os
+nomes dos grupos de cartões, o título da consulta nos Stories, os rótulos de
+leitor de tela e os avisos da escola. Para o PO revisar.

@@ -8,7 +8,9 @@ import { rateLimit } from "../comum/rate-limit";
 import { professorDoToken } from "../comum/turmas-do-professor";
 import { ehUuid } from "../motor/guardas";
 import { Contrato } from "../openapi/contrato";
+import { conteudoDoBancoPadrao } from "./banco-padrao";
 import {
+  BancoPadraoSchema,
   EmAndamentoSchema,
   GateDaTurmaSchema,
   GateSchema,
@@ -121,9 +123,9 @@ export class JuriEstadualTurmasController {
 
   @Get(":turmaId/painel")
   @Contrato({
-    resumo: "O painel da aula: o botão da galeria, o progresso POR COMPUTADOR e a lousa do pico.",
+    resumo: "O painel da aula: o botão da auditoria, o progresso POR COMPUTADOR, os ociosos e a lousa do pico.",
     descricao:
-      "Uma linha por computador quando a turma montou equipes para esta atividade (`colapsarEmUnidades`), uma por criança quando não — `resumo.porComputador` diz qual. `resumo.computadores` é o \"X de Y computadores votaram\": o Y sai da montagem das equipes.\n\n**Só progresso por linha.** O painel é PROJETADO na lousa no pico, então o voto, a taxa e o nível de cada criança NÃO estão na linha. A lousa lê o resumo ANÔNIMO: `votosPorArea` (o voto lacrado), `invisibilidadeMedia` (a média da taxa real de quem votou), `revisao` (quantos mantiveram e trocaram) e `votosRevisadosPorArea` (o voto final). O nível por habilidade mora no painel de habilidades (`/evidencias/turma/:turmaId/missao/exp06ef1b/atividade/:pacoteId`).",
+      "Uma linha por computador quando a turma montou equipes para esta atividade (`colapsarEmUnidades`), uma por criança quando não — `resumo.porComputador` diz qual. `resumo.computadores` é o \"X de Y computadores votaram\": o Y sai da montagem das equipes.\n\n**Só progresso por linha.** O painel é PROJETADO na lousa no pico, então o voto, a taxa e o nível de cada criança NÃO estão na linha. A lousa lê o resumo ANÔNIMO: `votosPorArea` (o voto lacrado), `invisibilidadeMedia` (a média da taxa real de quem votou), `revisao` (quantos mantiveram e trocaram) e `votosRevisadosPorArea` (o voto final).\n\n**O sinalizador de ociosos**: `ocioso` na linha (e `resumo.ociosos`) acende com a cédula aberta e mais de 60 s sem toque (o batimento da tela, a cada 15 s); apaga sozinho. `categoriasBuscadas` diz quais categorias a criança buscou pela hashtag na galeria (a leitura da EF06CO01). Cada leitura conta em `painel_vistas` (EVT-P04). O nível por habilidade mora no painel de habilidades (`/evidencias/turma/:turmaId/missao/exp06ef1b/atividade/:pacoteId`).",
     params: PARAMS,
     query: QUERY,
     resposta: PainelSchema,
@@ -136,9 +138,9 @@ export class JuriEstadualTurmasController {
   @Post(":turmaId/gate")
   @HttpCode(200)
   @Contrato({
-    resumo: '"Liberar a Galeria Oculta", depois "Liberar a rodada de desvio" — o botão único da aula.',
+    resumo: '"Liberar Auditoria" — o botão único da aula (a Galeria Oculta).',
     descricao:
-      "O corpo diz a etapa de DESTINO: `exploracao → galeria → desvio`, uma por vez, nunca volta; destino igual ao atual é aceito e não muda nada (o segundo clique). Grava quando cada portão abriu.\n\nQuem ainda não votou continua no feed com a galeria liberada: o voto atrasado é caminho previsto, e a galeria abre para ele depois do voto. Com o desvio liberado, quem ainda está na galeria termina a revisão e entra direto no desvio.",
+      "O corpo diz a etapa de DESTINO: `exploracao → galeria`, nunca volta; destino igual ao atual é aceito e não muda nada (o segundo clique). Grava quando o portão abriu e uma linha em `exp06ef1b_gates_historico` (EVT-P05).\n\nQuem ainda não votou continua no feed com a galeria liberada: o voto atrasado é caminho previsto, e a galeria abre para ele depois do voto. A rodada de desvio da 0.3.0 saiu.",
     params: PARAMS,
     query: QUERY,
     corpo: GateSchema,
@@ -313,15 +315,15 @@ export class JuriEstadualTurmasController {
   @Post(":turmaId/gerar-conteudo")
   @HttpCode(200)
   @Contrato({
-    resumo: "Gera um RASCUNHO da mostra com IA: 4 áreas e 16 projetos sobre o tema do professor.",
+    resumo: "Gera um RASCUNHO da mostra com IA: 4 áreas e 16 projetos sobre o tema do professor — ou o banco padrão.",
     descricao:
-      "**Não persiste nada**: o que volta é rascunho para a tela editar, e criar a atividade é o `POST homologar`. A IA escreve as quatro áreas e os dezesseis projetos (personas de 11 e 12 anos, escolas brasileiras fictícias); a saída que fere as regras da missão é regerada uma vez.\n\n**Não há acervo padrão**: sem saldo ou com a IA fora do ar, a resposta é o ERRO, e não há atividade até a IA responder.",
+      "**Não persiste nada**: o que volta é rascunho para a tela editar, e criar a atividade é o `POST homologar`. A IA escreve as quatro áreas e os dezesseis projetos (com os quatro formatos de post); a saída que fere as regras da missão é regerada uma vez.\n\n**Fallback (RF-007, §12.2):** sem saldo de IA ou com a IA fora do ar, a resposta é **200** com o BANCO PADRÃO (os dezesseis projetos do PRD), `usouIa: false`, `origem: \"padrao\"` e `motivo` (`sem-saldo-de-ia` ou `ia-indisponivel`). A tela mostra o aviso e segue com um toque.",
     params: PARAMS,
     query: QUERY,
     corpo: ParametrosDoPreparoSchema,
     resposta: RascunhoSchema,
     notas: [
-      "Quota do PERFIL do professor (ADR-105): `temSaldo` antes, e o que o vendor cobrou é debitado por tentativa, inclusive as recusadas. Sem saldo responde **429** `sem-saldo-de-ia`; com o provedor fora do ar ou a saída fora das regras, **503** `ia-indisponivel`.",
+      "Quota do PERFIL do professor (ADR-105): `temSaldo` antes, e o que o vendor cobrou é debitado por tentativa, inclusive as recusadas.",
       "Os tetos de `tema` (3 a 60), `assuntos` (10 a 600) e `contexto` (até 120) são a primeira barreira contra injeção de instrução no gerador.",
     ],
   })
@@ -339,8 +341,37 @@ export class JuriEstadualTurmasController {
     await this.missao.exigirTurmaVisivel(escolaId, turma, professorDoToken(req.auth));
     const r = await this.preparo.gerar(escolaId, req.auth.usuarioId, req.auth.perfil, parametros);
     if (r.chamouIa) await this.missao.registrarGeracao(escolaId, turma, r.tokens);
-    if (!r.ok) throw erroDeJogo(r.codigo);
-    return { parametros, conteudo: r.valor };
+    if (r.ok) return { parametros, conteudo: r.valor, usouIa: true, origem: "ia" as const, motivo: null };
+    /* Sem cota ou sem IA: o banco padrão, para a aula acontecer (RF-007, §12.2). */
+    return { parametros, conteudo: conteudoDoBancoPadrao(), usouIa: false, origem: "padrao" as const, motivo: r.codigo };
+  }
+
+  @Post(":turmaId/banco-padrao")
+  @HttpCode(200)
+  @Contrato({
+    resumo: '"Usar Banco Padrão Oficial" — a atividade pronta, sem IA, em um toque (e no ar, com `porNoAr`).',
+    descricao:
+      "O caminho curto do professor (E0-PROF-02, RF-007): cria a ATIVIDADE com os dezesseis projetos do banco padrão (`origem: \"padrao\"`), sem chamada de IA, sem curadoria e com as imagens já aprovadas (os estandes usam a arte procedural). Se a turma já tem esse pacote, reaproveita. Com `porNoAr: true`, põe em andamento na mesma chamada — o \"Usar Banco Padrão e Pôr no ar\" (as mesmas regras de `POST …/em-andamento`). O podcast dele é o roteiro fixo do sheet: não há falas a revisar.",
+    params: PARAMS,
+    query: QUERY,
+    corpo: BancoPadraoSchema,
+    resposta: PacoteHomologadoSchema,
+    notas: ["Turma que o professor não leciona responde **404** `turma-nao-encontrada`."],
+  })
+  bancoPadrao(
+    @Param("turmaId") turmaId: string,
+    @Query("escolaId") escolaIdPedida: string | undefined,
+    @Body() corpo: unknown,
+    @Req() req: Autenticado,
+  ) {
+    const { porNoAr } = valida(BancoPadraoSchema, corpo ?? {});
+    return this.missao.usarBancoPadrao(
+      escolaAlvo(req.auth, escolaIdPedida),
+      turmaOu404(turmaId),
+      professorDoToken(req.auth),
+      req.auth.usuarioId,
+      porNoAr,
+    );
   }
 
   @Post(":turmaId/regenerar-projeto")
@@ -390,8 +421,9 @@ export class JuriEstadualTurmasController {
     corpo: HomologacaoSchema,
     resposta: PacoteHomologadoSchema,
     notas: [
-      "O pacote é recusado com **400** `pacote-invalido` e a LISTA de problemas em `erros`, em frases para o professor: quatro categorias, uma por área, com hashtags diferentes no formato `#minusculas`; os dezesseis projetos `proj-a1` a `proj-d4`, cada um na área que o id diz e começando pela hashtag da área; perfil com @; legenda até 60 palavras e bastidor até 40; e nenhuma marca ou plataforma real no que a criança lê. (`.superRefine()` some do OpenAPI; daí esta nota.)",
+      "O pacote é recusado com **400** `pacote-invalido` e a LISTA de problemas em `erros`, em frases para o professor: quatro categorias, uma por área, com hashtags diferentes no formato `#minusculas`; os dezesseis projetos `proj-a1` a `proj-d4`, cada um na área que o id diz e começando pela hashtag da área; perfil com @; legenda até 60 palavras, e bastidor, protótipo e depoimento até 40; e nenhuma marca ou plataforma real no que a criança lê. (`.superRefine()` some do OpenAPI; daí esta nota.)",
       "`podcast` são as três falas do podcast de recapitulação que o professor revisou na criação (ADR-150, ADR-151): `dois`, `rafa` e `mesa`, cada uma de 12 a 60 palavras, até 400 bytes, sem link, e-mail nem @. Vão para `podcast_roteiros` na MESMA transação, também no segundo clique — que as substitui.",
+      "O conteúdo IGUAL ao banco padrão (o fallback homologado como veio) cria o pacote com `origem: \"padrao\"`. `preparoIniciadoEm` (opcional) é quando a tela de criação abriu (EVT-P01); a homologação grava `aprovado_em`/`aprovado_por` (EVT-P03).",
     ],
   })
   homologar(

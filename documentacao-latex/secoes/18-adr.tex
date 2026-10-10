@@ -9,7 +9,7 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{156 decisões}, numeradas até ADR-156. A 153 (a evidência do Unoovista) e a 154 (a da Missão Tempestade) nasceram no mesmo dia, em frentes paralelas. A 132 (a Ajuda com
+São \textbf{157 decisões}, numeradas até ADR-157. A 153 (a evidência do Unoovista) e a 154 (a da Missão Tempestade) nasceram no mesmo dia, em frentes paralelas. A 132 (a Ajuda com
 avatar) entrou no código antes de ter seção aqui, e por um dia o número foi
 citado sem existir; a 133 pulou para não colidir com ela. A 133 e a 134 nasceram no mesmo dia, em frentes paralelas
 (Unoovista e Unoochat), e entraram juntas no merge; a 135 e a 136 levaram as
@@ -207,6 +207,7 @@ que a cercam.
 \adrr{ADR-154} & A Missão Tempestade mede a evidência numa atividade sintética, com rodada da turma, a melhor resposta e o nível só ao encerrar a missão & 2026-10-07 & Aceita; aplica a \adrr{ADR-112}\\
 \zebra \adrr{ADR-155} & Zerar a turma apaga a evidência pedagógica da atividade & 2026-10-09 & Aceita; reverte parte da \adrr{ADR-112}\\
 \adrr{ADR-156} & O Unoovista ganha o podcast com as falas revisadas no Ativar, e a Missão Tempestade ganha o primeiro podcast fixo & 2026-10-10 & Aceita; aplica a \adrr{ADR-150}\\
+\zebra \adrr{ADR-157} & O Júri Estadual segue o PRD v2 (0.4.0) & 2026-10-10 & Aceita; supera em parte a \adrr{ADR-151} e a \adrr{ADR-152}\\
 \bottomrule
 \end{tabularx}
 
@@ -13328,6 +13329,8 @@ refeita, e as falas dela poderem migrar para \cd{podcast\_roteiros}.
 \textbf{Data.} 2026-10-06. \textbf{Status.} Aceita; \textbf{complementada
 pela \adrr{ADR-152}} (2026-10-07): o ciclo do voto que a esteira perdeu
 volta, a régua de quem não explora a galeria muda e o podcast fica opcional.
+\textbf{Superada em parte pela \adrr{ADR-157}} (2026-10-10): o banco padrão
+volta, a régua da EF06CO01 muda e o podcast vira recurso fixo.
 \textbf{Substitui em
 parte} a \adrr{ADR-137} (as habilidades medidas e a remontagem dos pacotes;
 o feed no servidor, a taxa real e a mostra sem acervo padrão continuam).
@@ -13498,7 +13501,9 @@ recorte por missão da descrição oficial.
 \section{ADR-152 --- O Júri Estadual recupera o ciclo do voto: salvar pesa, a justificativa vem antes e depois, complementar, e a rodada de desvio}
 \label{adr:exp06ef1b-ciclo-do-voto}
 
-\textbf{Data.} 2026-10-07. \textbf{Status.} Aceita. \textbf{Complementa} a
+\textbf{Data.} 2026-10-07. \textbf{Status.} Aceita; \textbf{superada pela
+\adrr{ADR-157}} (2026-10-10) no ciclo do voto: salvar deixa de pesar, e a
+justificativa, o complementar e a rodada de desvio saem. \textbf{Complementa} a
 \adrr{ADR-151} (recupera as diretrizes do PO que ela declarou fora) e a
 \adrr{ADR-137} (o feed no servidor e a taxa real continuam). \textbf{Revê} a
 régua de quem não explora a Galeria Oculta (a ficha sobe para a versão 3) e o
@@ -13998,3 +14003,125 @@ existia para as duas.
 \textbf{Gatilho.} O PO entregar um roteiro próprio para uma das duas missões,
 ou a Tempestade ganhar customização (então ela passa a ter vagas como as
 outras).
+
+\section{ADR-157 --- O Júri Estadual segue o PRD v2 (0.4.0)}
+\label{adr:exp06ef1b-prd-v2}
+
+\textbf{Data.} 2026-10-10. \textbf{Status.} Aceita. \textbf{Supera} a
+\adrr{ADR-151} e a \adrr{ADR-152} no que conflitam com ela (o ciclo do voto, o
+salvar com peso, a rodada de desvio, a ausência de banco padrão, o podcast
+opcional, a régua da EF06CO01); o resto delas (duas fases de aprovação,
+atividade = pacote, rodada = zerar) continua valendo.
+
+\begin{especificacao}{Contexto}
+O PO entregou o PRD v2 do Júri Estadual de Projetos (\cd{exp06ef1b}), com o
+banco de conteúdo (16 projetos, o podcast \cd{aud-exp06ef1b-01}, os cartões
+do caso Mariana) e a copy revisada. A regra do dono foi explícita: a
+implementação segue o PRD novo, e nada da 0.3.0 fica só porque foi decidido
+antes. Os únicos desvios são nove melhorias que o Lucas aprovou, onde o PRD
+não fecha a conta da habilidade ou a plataforma não comporta.
+\end{especificacao}
+
+\textbf{Decisão.} A exp06ef1b sobe para a \textbf{0.4.0} (manifesto,
+\cd{package.json} e \cd{EXP\_VERSION} juntos) e segue o PRD v2: banco padrão de
+16 projetos com origem \cd{padrao} (atalho do professor e \emph{fallback} sem
+cota ou com a IA fora, 200 \cd{usouIa: false}); podcast de recapitulação fixo
+depois da Etapa 4; quatro abas no clone; teto de 8 minutos no feed; aviso de
+60\,s com a cédula aberta e o sinalizador de ociosos no painel; um só botão
+na lousa (\enquote{Liberar Auditoria}); revisão com dois botões; par simulado
+na cadeia; 422 \cd{ordem-incorreta} que ainda conta a tentativa; caso Mariana
+e infográfico na seção \cd{unooria} do DS; telemetria docente (migração
+\arq{20261010120000\_\B{}exp06ef1b\_\B{}prd\_\B{}v2}, tabela
+\cd{exp06ef1b\_gates\_historico}); ficha da evidência na versão 4.
+
+\textbf{Os desvios do PRD} (as melhorias aprovadas):
+
+\begin{enumerate}
+  \item \textbf{Saturação por formatos, com a taxa real.} Vencida a área líder
+    (\(\geq 6\) pontos; sem curtida, a permanência sozinha elege), os posts
+    5 a 10 vêm só dela, repetindo os projetos dela em formatos diferentes
+    (apresentação, bastidor, protótipo, depoimento). Quem curte vê 4--5
+    projetos e 11--12 de 16 ficam ocultos (69--75\,\%); o badge e a grade usam
+    o número que o servidor calculou, nunca um cravado.
+  \item \textbf{Áreas por formato no Zod.} O banco padrão usa as quatro áreas
+    do PRD (\cd{\#robotica}, \cd{\#meioambiente}, \cd{\#artes},
+    \cd{\#saude}); a mostra da IA traz quatro categorias com nome e
+    \emph{hashtag}, e o Zod valida a forma (\cd{area\_a}\ldots\cd{area\_d}),
+    não uma lista fixa.
+  \item \textbf{A régua da EF06CO01 contra a área dominante.} Atingiu = buscou
+    a \emph{hashtag} de uma categoria que não dominou o feed dele e abriu um
+    projeto dela; em processo = buscou algo ou abriu um oculto; sem marca =
+    nada. Como a abertura mostra um post de cada área, \enquote{não apareceu}
+    do PRD não teria como acontecer.
+  \item \textbf{Ordem das alternativas embaralhada}, determinística por
+    estudante (a mesma num F5); ids e gabarito ficam no servidor.
+  \item \textbf{Exceções nomeadas de teto de palavras.} Os textos literais
+    aprovados que estouram (o cartão \cd{m1}, 27 palavras; o crachá, 36)
+    entram numa lista nomeada do teste de invariantes; texto gerado pela IA
+    continua barrado.
+  \item \textbf{O ciclo do voto da 0.3.0 sai} (\adrr{ADR-152}): cédula com
+    quatro elementos, sem justificativa, frase grifada nem complementar;
+    revisão com \enquote{Manter meu voto inicial} (só depois de abrir um
+    oculto, senão 409 \cd{galeria-sem-inspecao}) e \enquote{Confirmar Voto
+    Revisado}; salvar grava o evento e não pesa; a rodada de desvio sai
+    (rotas, telas, etapa e passo). As colunas ficam, sem uso.
+  \item \textbf{Os blocos da cadeia sem número.} A copy escreve \enquote{1.
+    Suas interações\ldots}; o número entregaria a ordem, que é o gabarito.
+  \item \textbf{O infográfico final numa faixa \cd{unooria}} embaixo do fim
+    da comissão (que fica no clone): as duas vozes, sem misturar os tokens.
+  \item \textbf{O podcast do banco padrão cita os estandes DELE.} O roteiro
+    \cd{aud-exp06ef1b-01} falava em \enquote{robô dos bueiros},
+    \enquote{hortas} e \enquote{drones}, que não estão entre os dezesseis, e
+    cravava \enquote{os outros 12 projetos} e \enquote{três quartos}. As três
+    vagas passaram a citar o alarme de enchente e a composteira da merenda (e o
+    que cada feed mostrou), e os números viraram \enquote{os projetos das outras
+    áreas} e \enquote{mais da metade}: a taxa é de cada computador. A forma e o
+    tom do PO ficam; o áudio é regerado (\cd{VERSAO\_DO\_PEDIDO\_DE\_VOZ} 2).
+    Na mostra da IA nada muda: as vagas já saem dos estandes do professor.
+  \item \textbf{Sem \enquote{Pausar Sessão} nem \enquote{Exportar}} no
+    professor: a plataforma não tem pausa de sessão nem exportação por
+    missão. A turma para naturalmente na espera do voto lacrado.
+\end{enumerate}
+
+\noindent Também do lado do servidor, e não do PRD: o par simulado é gerado a
+partir das áreas que ESTA criança viu (nunca dado de colega); o batimento da
+cédula (\rota{POST /juri-estadual/cedula/batimento}, a cada 15\,s) viaja junto
+do \emph{polling} que já existe; e os 8 minutos contam desde a 1ª rolagem,
+no servidor (F5 não zera).
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Preservar o ciclo do voto da 0.3.0} ao lado do PRD v2. O PO
+    redesenhou a revisão em dois botões; manter a justificativa e o desvio
+    seria duas missões numa tela.
+  \item \textbf{Saturação como o PRD descreve} (sorteio entre áreas com peso).
+    Com 10 posts e 16 projetos, a taxa de invisibilidade variava demais para
+    sustentar a Galeria Oculta; a saturação por formatos dá 69--75\,\%.
+  \item \textbf{Lista fixa de áreas no Zod.} Recusaria a mostra da IA, que
+    escolhe as categorias pelo tema da turma.
+  \item \textbf{Cravar a taxa do badge} (\enquote{75\,\%}). A tela mentiria
+    para quem curtiu tarde ou não curtiu.
+  \item \textbf{Migração que apaga as colunas do desvio e da justificativa.}
+    Destrutiva e sem ganho; as linhas antigas seguem válidas.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{Colunas mortas} em \cd{exp06ef1b\_sessoes} e
+    \cd{exp06ef1b\_gates\_turma} (justificativa, complementar, desvio), e
+    \cd{enquete\_*\_alt} criadas e não escritas: a resposta mora em
+    \cd{evidencias\_marcas}.
+  \item \textbf{Quem não curte nada} vê um feed variado (cerca de 38\,\% oculto):
+    a lição da bolha fica menor para essa criança, e o número diz isso.
+  \item \textbf{O banco padrão não tem perfil, imagem, protótipo nem
+    depoimento}: o perfil sai da escola, a imagem é a arte procedural, e os
+    formatos faltantes caem no bastidor e na legenda.
+  \item \textbf{Sem pausa nem exportação}, o professor que divide a aula em
+    duas sessões depende da espera do voto lacrado.
+\end{itemize}
+
+\textbf{Gatilho.} A plataforma ganhar pausa de sessão ou exportação por
+missão; o PO revisar a taxa de invisibilidade alvo; ou a mostra da IA precisar
+de mais de quatro categorias.

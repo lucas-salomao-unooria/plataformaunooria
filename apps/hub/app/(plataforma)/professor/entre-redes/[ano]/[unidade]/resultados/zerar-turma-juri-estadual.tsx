@@ -18,8 +18,11 @@ import { caminhoDaTurma, erroDaResposta } from "@/lib/juri-estadual-tipos";
  * mede tudo de novo, ADR-145, mas o voto deixa de ser espontâneo). O caminho
  * para reaplicar é uma atividade nova, com outro tema.
  *
- * O atributo `data-zerar-turma` e os textos "Zerar {turma}?" / "Zerar a
- * turma" são os que as suítes e2e procuram, como nas outras missões.
+ * Os rótulos são a copy do PRD v2 (`e6.prof.btn_zerar_turma`,
+ * `modal_zerar_msg`, `modal_zerar_confirmar`, `modal_zerar_cancelar`); o
+ * atributo `data-zerar-turma` e o título "Zerar {turma}?" continuam os que a
+ * suíte e2e procura. O que o PRD não diz e a ADR-155 exige — as habilidades
+ * da rodada são APAGADAS do painel — fica no corpo do diálogo.
  */
 export function ZerarTurmaJuriEstadual({
   turmaId,
@@ -58,7 +61,7 @@ export function ZerarTurmaJuriEstadual({
   return (
     <div className="flex flex-col items-start gap-2">
       <Button variant="outline" className="acao-destrutiva" size="sm" onClick={() => setAberto(true)} data-zerar-turma>
-        Zerar a turma
+        Reiniciar Missão (Zerar Turma)
       </Button>
       <p className="max-w-3xl text-[12px] leading-snug text-unooria-neutral-600">
         Abre uma rodada nova de {nomeDaTurma} com a mesma mostra e volta a aula para a exploração. As habilidades
@@ -67,6 +70,10 @@ export function ZerarTurmaJuriEstadual({
 
       <Modal isOpen={aberto} onClose={() => setAberto(false)} title={`Zerar ${nomeDaTurma}?`}>
         <div className="flex flex-col gap-4">
+          <p className="text-[14px] font-semibold leading-relaxed text-unooria-neutral-950">
+            Deseja iniciar uma nova rodada? Os resultados da 1ª rodada serão arquivados com segurança no histórico da
+            turma.
+          </p>
           <p className="text-[14px] leading-relaxed text-unooria-neutral-800">
             A turma volta ao começo — a credencial, o feed e a cédula —, a Galeria Oculta fecha e cada computador
             julga a mostra de novo. <strong>As habilidades desta mostra são apagadas</strong> do painel, inclusive
@@ -84,10 +91,10 @@ export function ZerarTurmaJuriEstadual({
           {erro ? <FeedbackAlert type="error" description={erro} /> : null}
           <div className="flex gap-2">
             <Button variant="danger" onClick={() => void zerar()} isDisabled={enviando}>
-              {enviando ? "Zerando…" : "Zerar a turma"}
+              {enviando ? "Zerando…" : "Iniciar Nova Rodada"}
             </Button>
             <Button variant="secondary" onClick={() => setAberto(false)} isDisabled={enviando}>
-              Cancelar
+              Manter Resultados Atuais
             </Button>
           </div>
         </div>

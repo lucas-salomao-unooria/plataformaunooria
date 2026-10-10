@@ -3,32 +3,22 @@ import { areaDoProjeto, type Area } from "../vocabulario";
 import type { Auditoria } from "./galeria";
 
 /**
- * As RÉGUAS das três ações da ficha (`evidencias/fichas/exp06ef1b.ts`). Puras:
- * a missão calcula o nível AQUI e o entrega pela porta `marcar`, dentro da
- * transação do latch (a revisão do voto) ou da montagem (a cadeia).
+ * As RÉGUAS das três ações da ficha (`evidencias/fichas/exp06ef1b.ts`, versão
+ * 4 — PRD v2 §14.2 com a melhoria 3). Puras: a missão calcula o nível AQUI e o
+ * entrega pela porta `marcar`, dentro da transação do latch (a revisão do
+ * voto) ou da montagem (a cadeia).
  *
  * Quem sai antes de uma ação não tem marca dela — "Não avaliado", a AUSÊNCIA
- * de linha (E14) —, nunca "não atingiu". O "não atingiu" de cada régua é de
- * quem FEZ a ação sem o que ela mede.
+ * de linha (E14) —, nunca "não atingiu". E quem revisa o voto sem explorar a
+ * galeria também fica SEM marca de ação (ficha versão 3): a régua devolve
+ * `null`, e o nível sai da pergunta da habilidade (vale o melhor).
  *
- * **Quem não explora a galeria também fica SEM marca** (decisão de
- * 2026-10-07, que resolve a contradição da spec entre "em processo" e "não
- * atingiu"): revisar o voto sem abrir nem buscar nada é AUSÊNCIA de
- * comportamento, não prova de que a criança não entendeu. As duas réguas da
- * galeria devolvem `null` e não marcam; quem decide o nível é a pergunta da
- * mesma habilidade (`p1`, `p2`), pela regra de sempre da ficha — vale o melhor
- * dos marcadores, e o que não existe não puxa para baixo.
+ * As duas réguas da galeria leem o MESMO registro e medem coisas DIFERENTES:
  *
- * As duas réguas da galeria (EF06CO10 e EF06CO01) leem o MESMO registro — o que
- * a criança abriu e buscou antes de revisar o voto — e medem coisas DIFERENTES
- * de propósito (pedido do PO, 2026-10-06):
- *
- * - a **EF06CO10** olha a INVESTIGAÇÃO: quantos concorrentes que o feed
- *   escondeu ela foi ver antes de decidir. É a auditoria da mediação
- *   algorítmica — o consumo crítico da plataforma;
- * - a **EF06CO01** olha a CLASSIFICAÇÃO: se ela usou a categoria (a hashtag da
- *   área) como chave para chegar à coleção que o feed não mostrou. Abrir
- *   ocultos ao acaso, sem a hashtag, é investigar sem classificar.
+ * - a **EF06CO10** olha a INVESTIGAÇÃO: abriu concorrentes que o feed escondeu
+ *   E fez busca ativa (PRD §14.2: `abertos ≥ 2 AND buscas ≥ 1`);
+ * - a **EF06CO01** olha a CLASSIFICAÇÃO: usou a hashtag de uma categoria que
+ *   FICOU FORA da bolha como chave para chegar à coleção dela.
  */
 
 /** Os marcadores de ação da ficha. Os ids são contrato com `fichas/exp06ef1b.ts`. */
@@ -36,61 +26,58 @@ export const MARCADOR_DA_AUDITORIA = "auditoria";
 export const MARCADOR_DA_CLASSIFICACAO = "classificacao";
 export const MARCADOR_DA_CADEIA = "cadeia";
 
-/** Quantos estandes OCULTOS a EF06CO10 pede abertos para "atingiu" (a matriz da spec: "≥ 2 projetos ocultos"). */
+/** Quantos estandes OCULTOS a EF06CO10 pede abertos para "atingiu" (PRD §14.1: "≥ 2 projetos ocultos"). */
 export const OCULTOS_PARA_ATINGIR = 2;
 
 /**
- * **EF06CO10** (analisar criticamente o consumo de tecnologia — aqui, a
- * mediação do feed), marcada no LATCH da revisão do voto, sobre o que a
- * criança fez na Galeria Oculta ANTES de manter ou trocar o voto:
+ * **EF06CO10** (PRD v2 §14.2), no LATCH da revisão do voto:
  *
- * - atingiu: abriu ao menos DOIS estandes que o feed dela escondeu — ela foi
- *   conferir os concorrentes antes de validar (ou trocar) a escolha;
- * - em processo: entrou na auditoria, mas superficialmente — abriu um oculto
- *   só, abriu só estandes que já tinha visto, ou buscou sem abrir;
- * - sem marca (`null`): revisou o voto sem abrir nem buscar nada. A ação não
- *   aconteceu; a `p1` decide.
- *
- * Esta régua não devolve "não atingiu": o único caminho para ele, revisar sem
- * inspecionar nada, virou ausência.
+ * - atingiu: abriu ao menos DOIS estandes que o feed escondeu E buscou ao
+ *   menos uma vez (hashtag ou texto);
+ * - em processo: abriu algum estande (oculto ou não) sem fechar o par;
+ * - sem marca (`null`): não abriu nada. Buscar sem abrir também fica sem
+ *   marca AQUI (o PRD só conta a abertura no "em processo") — a busca conta na
+ *   EF06CO01.
  */
 export function nivelDaAuditoria(auditoria: Auditoria, ocultos: readonly string[]): Nivel | null {
   const oculto = new Set(ocultos);
   const ocultosAbertos = auditoria.abertos.filter((id) => oculto.has(id));
-  if (ocultosAbertos.length >= OCULTOS_PARA_ATINGIR) return "atingiu";
-  if (auditoria.abertos.length > 0 || auditoria.buscas.length > 0) return "em_processo";
+  if (ocultosAbertos.length >= OCULTOS_PARA_ATINGIR && auditoria.buscas.length >= 1) return "atingiu";
+  if (auditoria.abertos.length >= 1) return "em_processo";
   return null;
 }
 
 /**
- * **EF06CO01** (classificar informações em coleções e associar cada uma a um
- * tipo de dado), no mesmo latch:
+ * **EF06CO01** — a régua da melhoria 3 (2026-10-10), no mesmo latch:
  *
- * - atingiu: buscou pela HASHTAG de uma área que não a do voto E abriu um
- *   estande oculto DAQUELA área — usou a categoria como chave da coleção;
- * - em processo: buscou alguma coisa (por texto, pela própria área, ou pela
- *   hashtag sem abrir o que ela trouxe);
- * - sem marca (`null`): não buscou — a classificação não foi exercida, e a
- *   `p2` decide.
+ * - atingiu: buscou pela HASHTAG de uma categoria que ficou FORA do feed dele
+ *   E abriu um projeto dessa categoria;
+ * - em processo: buscou qualquer coisa, ou abriu algum estande oculto;
+ * - sem marca (`null`): nada.
  *
- * `areaDoVoto` é a área do voto INICIAL (o lacrado): é a bolha que a galeria
- * confronta.
+ * "Ficou fora do feed": a abertura do feed mostra UM estande de cada área, então
+ * nenhuma categoria fica literalmente ausente. A categoria fora é qualquer uma
+ * que NÃO é a que dominou o feed (`areaDominante`: a líder, ou a de mais posts)
+ * — é a coleção que a bolha escondeu.
  */
-export function nivelDaClassificacao(auditoria: Auditoria, ocultos: readonly string[], areaDoVoto: Area): Nivel | null {
-  const oculto = new Set(ocultos);
-  const areasDosOcultosAbertos = new Set(auditoria.abertos.filter((id) => oculto.has(id)).map(areaDoProjeto));
+export function nivelDaClassificacao(
+  auditoria: Auditoria,
+  ocultos: readonly string[],
+  areaDoFeed: Area | null,
+): Nivel | null {
+  const areasAbertas = new Set(auditoria.abertos.map(areaDoProjeto));
   const classificou = auditoria.buscas.some(
-    (b) => b.tipo === "hashtag" && b.area !== null && b.area !== areaDoVoto && areasDosOcultosAbertos.has(b.area),
+    (b) => b.tipo === "hashtag" && b.area !== null && b.area !== areaDoFeed && areasAbertas.has(b.area),
   );
   if (classificou) return "atingiu";
-  if (auditoria.buscas.length > 0) return "em_processo";
+  const oculto = new Set(ocultos);
+  if (auditoria.buscas.length > 0 || auditoria.abertos.some((id) => oculto.has(id))) return "em_processo";
   return null;
 }
 
 /**
- * **EF06CO03** (a cadeia), pelo número de tentativas até a montagem certa — a
- * régua da Chave do Jornal: uma = atingiu; duas ou três = em processo; mais de
- * três = não atingiu.
+ * **EF06CO03** (a cadeia), pelo número de tentativas até a montagem certa: uma
+ * = atingiu; duas ou três = em processo; mais de três = não atingiu.
  */
 export function nivelPorTentativas(tentativas: number): Nivel {
   if (tentativas <= 1) return "atingiu";

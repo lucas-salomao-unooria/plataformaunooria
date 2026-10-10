@@ -134,54 +134,73 @@ body {
 }
 
 
-/* ─────────────────────────────────────────── E1: o crachá */
+/* `hidden` vence o `display` das áreas que rolam (o feed fica montado nas outras abas). */
+.rolagem[hidden] {
+  display: none;
+}
 
-.cracha__corpo {
+/* O crachá `@jurado_oficial` na barra do topo: texto e glifo na mesma linha. */
+.cabecalho__cracha {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--unv-spacing-3xs, 4px);
+}
+
+/* ─────────────────────────────────────────── E1: o crachá sobre a timeline */
+
+/* A timeline atrás do modal: a casca do app, desfocada e inerte (só aparência). */
+.timeline-desfocada {
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
+  min-height: 0;
+  filter: blur(6px);
+  pointer-events: none;
+  user-select: none;
+}
+
+.cracha {
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: var(--unv-spacing-xs, 8px);
-  padding: var(--unv-spacing-xxl, 24px);
+  gap: var(--unv-spacing-m, 12px);
   text-align: center;
-  background: var(--unv-color-background-tertiary, #efeef5);
 }
 
-.cracha__titulo {
+.cracha__emissor {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--unv-spacing-3xs, 4px);
   margin: 0;
-  font-size: var(--unv-font-title-lg-size, 18px);
-  font-weight: 700;
-  line-height: 1.3;
-}
-
-.cracha__funcao,
-.cracha__tema {
-  margin: 0;
-  font-size: var(--unv-font-body-md-size, 14px);
-  line-height: 1.4;
-  color: var(--unv-color-text-secondary, #475157);
-}
-
-.cracha__rotulo {
-  margin: var(--unv-spacing-m, 12px) 0 0;
   font-size: var(--unv-font-caption-md-size, 12px);
   font-weight: 600;
   color: var(--unv-color-text-secondary, #475157);
 }
 
-.cracha__areas {
+.cracha__selo {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: var(--unv-spacing-xxs, 6px);
+  flex-direction: column;
+  align-items: center;
+  gap: var(--unv-spacing-xs, 8px);
 }
 
-.cracha__mandato {
+.cracha__corpo {
   margin: 0;
-  padding: 0 var(--unv-gutter, 16px) var(--unv-spacing-xl, 20px);
   font-size: var(--unv-font-body-lg-size, 16px);
   line-height: 1.5;
+}
+
+/* As abas Notificações e Jurado. */
+.aba__titulo {
+  margin: 0;
+  padding: var(--unv-spacing-m, 12px) var(--unv-gutter, 16px);
+  font-size: var(--unv-font-title-md-size, 16px);
+  font-weight: 700;
+}
+
+.perfil__mandato {
+  display: block;
+  margin-top: var(--unv-spacing-xs, 8px);
 }
 
 /* ─────────────────────────────────────────── E2: o feed */
@@ -280,55 +299,6 @@ body {
   right: var(--unv-spacing-s, 8px);
 }
 
-/* A 2ª lâmina: a ficha técnica em texto, dentro do slide sem fotografia do DS.
-   A folga da base é a pílula de ações e os pontos, que ficam POR CIMA da mídia
-   no Unoovista (as medidas são as do próprio `PostCard`). */
-.ficha-tecnica {
-  display: flex;
-  flex: 1 1 auto;
-  flex-direction: column;
-  gap: var(--unv-spacing-xs, 8px);
-  padding: var(--unv-spacing-l, 16px);
-  padding-bottom: calc(
-    var(--unv-post-card-pill-inset, 12px) + var(--unv-post-card-pill-height, 52px) + var(--unv-spacing-xxl, 24px)
-  );
-  overflow: hidden;
-}
-
-.ficha-tecnica__titulo {
-  margin: 0;
-  font-size: var(--unv-font-title-md-size, 16px);
-  font-weight: 700;
-}
-
-.ficha-tecnica__lista,
-.ficha__lista {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: var(--unv-spacing-3xs, 4px) var(--unv-spacing-m, 12px);
-  margin: 0;
-  font-size: var(--unv-font-body-md-size, 14px);
-  line-height: 1.35;
-}
-
-.ficha-tecnica__lista dt,
-.ficha__lista dt {
-  font-weight: 600;
-  color: var(--unv-color-text-secondary, #475157);
-}
-
-.ficha-tecnica__lista dd,
-.ficha__lista dd {
-  margin: 0;
-  overflow-wrap: anywhere;
-}
-
-.ficha-tecnica__nota {
-  margin: 0;
-  font-size: var(--unv-font-caption-md-size, 12px);
-  color: var(--unv-color-text-secondary, #475157);
-}
-
 /* O "...mais" é o `Button` `link` do DS, em linha com a legenda. */
 .unv-post-card__caption > .legenda__mais {
   display: inline;
@@ -407,125 +377,37 @@ body {
   overflow: visible;
 }
 
-.cedula__explicacao {
-  margin: 0;
-  font-size: var(--unv-font-caption-lg-size, 13px);
-  line-height: 1.4;
-  color: var(--unv-color-text-secondary, #6b6b80);
+/* O aviso de inatividade: a região `role="alert"` no topo da folha, vazia até os 60 s. */
+.cedula__alerta:empty {
+  display: none;
 }
 
-/*
- * A justificativa de ANTES, na cédula extraordinária (0.3.0): o cartão e a
- * frase que a criança grifou na cédula, ao lado da mostra inteira. Bloco de
- * leitura, não controle — a mesma família de tokens da ficha do estande.
- */
-.justificativa-de-antes {
-  display: flex;
-  flex-direction: column;
-  gap: var(--unv-spacing-xxs, 4px);
-  padding: var(--unv-spacing-m, 12px);
-  border-radius: var(--unv-radius-m, 12px);
-  background: var(--unv-color-background-secondary, #f4f3f8);
-}
+/* ─────────────────────────────── E3-ALU-02: o voto lacrado e a espera */
 
-.justificativa-de-antes__voto,
-.justificativa-de-antes__motivo,
-.justificativa-de-antes__rotulo,
-.justificativa-de-antes__trecho {
-  margin: 0;
-  font-size: var(--unv-font-body-md-size, 14px);
-  line-height: 1.45;
-}
+/* ─────────────────────────────── E4: a plenária — o PICO (3 elementos) */
 
-.justificativa-de-antes__voto {
-  font-weight: 600;
-}
-
-.justificativa-de-antes__rotulo {
-  color: var(--unv-color-text-secondary, #6b6b80);
-  font-size: var(--unv-font-caption-lg-size, 13px);
-}
-
-.justificativa-de-antes__trecho {
-  padding-left: var(--unv-spacing-s, 10px);
-  border-left: 3px solid var(--unv-color-text-link, #716c98);
-  font-style: italic;
-}
-
-/* ─────────────────────────────── a rodada de desvio: a comparação no fim */
-
-.comparacao-do-desvio {
-  display: flex;
-  flex-direction: column;
-  margin: var(--unv-spacing-m, 12px) var(--unv-gutter, 16px) 0;
-  padding: var(--unv-spacing-m, 12px) 0;
-  border-top: 1px solid var(--unv-color-border-default, #e6e4ee);
-}
-
-.comparacao-do-desvio__titulo {
-  margin: 0 0 var(--unv-spacing-xs, 8px);
-  font-size: var(--unv-font-body-md-size, 14px);
-  font-weight: 600;
-}
-
-/* A mesma quebra de linha da `.escolha` (o `ListItem` corta numa linha). */
-.comparacao-do-desvio > .unv-list-item .unv-list-item__title,
-.comparacao-do-desvio > .unv-list-item .unv-list-item__subtitle {
-  white-space: normal;
-  overflow: visible;
-}
-
-.lacre {
+.plenaria {
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: var(--unv-spacing-xl, 20px);
-  padding: var(--unv-spacing-xxl, 24px);
-  text-align: center;
-}
-
-/* O carimbo: moldura e medida (o desenho do selo é o glifo do DS). */
-.lacre__carimbo {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--unv-spacing-xs, 8px);
-  padding: var(--unv-spacing-xl, 20px) var(--unv-spacing-xxl, 24px);
-  border: 2px dashed var(--unv-color-action-primary, #716c98);
-  border-radius: var(--unv-radius-l, 16px);
-  transform: rotate(-3deg);
-}
-
-.lacre__titulo {
-  margin: 0;
-  font-size: var(--unv-font-title-lg-size, 18px);
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--unv-color-action-primary, #716c98);
-}
-
-.lacre__projeto {
-  margin: 0;
-  font-size: var(--unv-font-body-md-size, 14px);
-}
-
-.lacre__protocolo {
-  margin: 0;
-  font-size: var(--unv-font-caption-md-size, 12px);
-  color: var(--unv-color-text-secondary, #475157);
-}
-
-/* ─────────────────────────────── E4: a plenária — o PICO (3 elementos) */
-
-.plenaria {
-  align-items: center;
-  justify-content: center;
   gap: var(--unv-spacing-xxl, 24px);
   padding: var(--unv-spacing-3xl, 32px);
   text-align: center;
+}
+
+/* O carimbo do protocolo: moldura e medida (o desenho do selo é o glifo do DS). */
+.plenaria__carimbo {
+  margin: 0;
+  padding: var(--unv-spacing-m, 12px) var(--unv-spacing-l, 16px);
+  border: 2px dashed var(--unv-color-action-primary, #716c98);
+  border-radius: var(--unv-radius-l, 16px);
+  transform: rotate(-2deg);
+  font-size: var(--unv-font-title-md-size, 16px);
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--unv-color-action-primary, #716c98);
 }
 
 .plenaria__ordem {
@@ -561,23 +443,33 @@ body {
 
 /* ─────────────────────────────────────── E4: a Galeria Oculta */
 
-.galeria__cabeca {
+.galeria {
   display: flex;
   flex-direction: column;
   gap: var(--unv-spacing-m, 12px);
-  padding: var(--unv-spacing-m, 12px) var(--unv-gutter, 16px);
+  padding: var(--unv-spacing-m, 12px) var(--unv-gutter, 16px) var(--unv-spacing-l, 16px);
 }
 
-.galeria__comunicado {
-  margin: 0;
-  font-size: var(--unv-font-title-md-size, 16px);
-  font-weight: 700;
-}
-
-.galeria__instrucao {
+.galeria__voto,
+.galeria__subtitulo,
+.galeria__resultados {
   margin: 0;
   font-size: var(--unv-font-body-md-size, 14px);
   line-height: 1.45;
+}
+
+.galeria__voto-rotulo {
+  font-weight: 700;
+}
+
+.galeria__titulo {
+  margin: 0;
+  font-size: var(--unv-font-title-lg-size, 18px);
+  font-weight: 700;
+}
+
+.galeria__resultados {
+  color: var(--unv-color-text-secondary, #475157);
 }
 
 .galeria__chips {
@@ -586,12 +478,54 @@ body {
   gap: var(--unv-spacing-xs, 8px);
 }
 
-.galeria__vazia {
+/*
+ * A grade da Galeria Oculta: 3 colunas, e as linhas crescem com o número de
+ * ocultos (12 = 3×4). GRADE pura: cada célula é a miniatura e o `ButtonUnv`
+ * "Inspecionar Projeto" do DS. O `MediaGrid` do DS não entra porque não tem
+ * botão por bloco (a copy pede o botão visível); pedido ao `storybook-unooria`:
+ * ação por bloco no `MediaGrid`.
+ */
+.grade-oculta {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--unv-spacing-xs, 8px);
   margin: 0;
-  padding: var(--unv-spacing-xxl, 24px) var(--unv-gutter, 16px);
-  text-align: center;
+  padding: 0;
+  list-style: none;
+}
+
+.grade-oculta__item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--unv-spacing-3xs, 4px);
+  min-width: 0;
+}
+
+.grade-oculta__miniatura {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: var(--unv-radius-s, 8px);
+}
+
+/* O rótulo de duas palavras quebra na coluna estreita (o `Button` do DS é de uma linha). */
+.grade-oculta__item > .unv-button {
+  white-space: normal;
+  line-height: 1.2;
+}
+
+.revisao__titulo {
+  margin: 0;
   font-size: var(--unv-font-body-md-size, 14px);
-  line-height: 1.45;
+  font-weight: 700;
+}
+
+.revisao__explicacao {
+  margin: 0;
+  font-size: var(--unv-font-caption-lg-size, 13px);
+  line-height: 1.4;
+  color: var(--unv-color-text-secondary, #475157);
 }
 
 .ficha {
@@ -600,10 +534,31 @@ body {
   gap: var(--unv-spacing-m, 12px);
 }
 
-.ficha__etiquetas {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--unv-spacing-xxs, 6px);
+.ficha__projeto {
+  margin: 0;
+  font-size: var(--unv-font-title-md-size, 16px);
+  font-weight: 700;
+}
+
+.ficha__escola,
+.ficha__resumo {
+  margin: 0;
+  font-size: var(--unv-font-body-md-size, 14px);
+  line-height: 1.5;
+}
+
+.ficha__escola {
+  color: var(--unv-color-text-secondary, #475157);
+}
+
+/* O carrossel da ficha: as três fotos lado a lado, roladas na horizontal. */
+.ficha__fotos {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 80%;
+  gap: var(--unv-spacing-xs, 8px);
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
 }
 
 .ficha__imagem {
@@ -612,41 +567,13 @@ body {
   aspect-ratio: 1 / 1;
   object-fit: cover;
   border-radius: var(--unv-radius-m, 12px);
-}
-
-.ficha__legenda,
-.ficha__hashtags {
-  margin: 0;
-  font-size: var(--unv-font-body-md-size, 14px);
-  line-height: 1.5;
+  scroll-snap-align: start;
 }
 
 .ficha__hashtags {
-  color: var(--unv-color-text-link, #716c98);
-}
-
-/* ─────────────────────────────────────── E6: o caso Mariana */
-
-.mariana {
-  padding-bottom: var(--unv-spacing-l, 16px);
-}
-
-.mariana__instrucao {
-  margin: 0;
-  padding: var(--unv-spacing-m, 12px) var(--unv-gutter, 16px) 0;
-  font-size: var(--unv-font-body-md-size, 14px);
-  font-weight: 600;
-  line-height: 1.45;
-}
-
-.mariana__grupo {
-  margin: 0;
-  padding: var(--unv-spacing-l, 16px) var(--unv-gutter, 16px) var(--unv-spacing-3xs, 4px);
-  font-size: var(--unv-font-caption-md-size, 12px);
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--unv-color-text-secondary, #475157);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--unv-spacing-xxs, 6px);
 }
 
 /* ─────────────────────────────── a consulta nos Stories (tema escuro) */
@@ -683,57 +610,33 @@ body {
   color: var(--unv-color-text-on-media, #fff);
 }
 
-/* ─────────────────────────────────────────── o fim */
+/* ─────────────────────────────────────────── o fim (a comissão) */
 
-.fim__carimbo {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--unv-spacing-xs, 8px);
-  margin: 0;
-  padding: var(--unv-spacing-m, 12px) var(--unv-gutter, 16px) 0;
-  font-size: var(--unv-font-title-sm-size, 14px);
-  font-weight: 700;
-  color: var(--unv-color-action-primary, #716c98);
-}
-
-.fim__leitura {
-  margin: 0;
-  padding: 0 var(--unv-gutter, 16px) var(--unv-spacing-m, 12px);
-  font-size: var(--unv-font-body-md-size, 14px);
-  line-height: 1.5;
-}
-
-.infografico {
-  padding: 0 var(--unv-gutter, 16px) var(--unv-spacing-xxl, 24px);
-}
-
-.infografico__titulo {
-  margin: 0 0 var(--unv-spacing-xs, 8px);
-  font-size: var(--unv-font-title-md-size, 16px);
-  font-weight: 700;
-  line-height: 1.35;
-}
-
-.infografico__passos {
+.fim__comissao {
   display: flex;
   flex-direction: column;
-  gap: var(--unv-spacing-m, 12px);
-  margin: 0;
-  padding: 0;
-  list-style: none;
+  align-items: center;
+  gap: var(--unv-spacing-xs, 8px);
+  padding: var(--unv-spacing-xxl, 24px) var(--unv-gutter, 16px);
+  text-align: center;
 }
 
-/* A mesma quebra de linha da `.escolha` (o `ListItem` corta numa linha). */
-.infografico__passos > .unv-list-item .unv-list-item__subtitle,
-.infografico__passos > .unv-list-item .unv-list-item__title {
-  white-space: normal;
-  overflow: visible;
+.fim__titulo {
+  margin: 0;
+  font-size: var(--unv-font-title-lg-size, 18px);
+  font-weight: 700;
+}
+
+.fim__subtitulo {
+  margin: 0;
+  font-size: var(--unv-font-body-md-size, 14px);
+  line-height: 1.5;
+  color: var(--unv-color-text-secondary, #475157);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
    A ESCOLA — tokens `--unooria-*`, e só eles.
-   A cadeia e a missão ainda não aberta.
+   A cadeia, o caso Mariana, o infográfico do fim e a missão ainda não aberta.
    ═══════════════════════════════════════════════════════════════════════ */
 
 /* O `ScrollBar` do DS é o contêiner que rola (aqui a seção É a `unooria`);
@@ -788,4 +691,61 @@ body {
   z-index: 30;
   display: flex;
   justify-content: center;
+}
+
+.escola__instrucao {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+/* O par simulado: os dois lados LADO A LADO (grade pura; cada lado é um `Card` do DS). */
+.par {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.par__principal {
+  margin: 4px 0 8px;
+  font-size: 13px;
+}
+
+.par__areas {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.par__area {
+  display: block;
+  font-weight: 600;
+}
+
+.par__numeros {
+  color: var(--unooria-color-neutral-600, #536167);
+}
+
+.mariana__caso {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+/*
+ * O infográfico do fim: a escola toma a palavra depois da comissão (PRD §10.1).
+ * A faixa tem fundo e fonte da seção `unooria` — a fronteira entre as duas
+ * vozes fica visível, e nenhum token `--unv-*` entra aqui.
+ */
+.fim__escola {
+  padding: 20px 16px 28px;
+  background: var(--unooria-color-neutral-50, #fff);
+  color: var(--unooria-color-neutral-950, #22272a);
+  font-family: var(--unooria-font-sans, system-ui, sans-serif);
 }

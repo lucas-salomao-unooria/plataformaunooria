@@ -1,4 +1,4 @@
-import { AREAS, areaDoProjeto, type Area } from "../vocabulario";
+import { AREAS, BATIMENTO_VALIDO_MS, SEGUNDOS_PARA_OCIOSO, areaDoProjeto, type Area } from "../vocabulario";
 
 /**
  * O PAINEL do professor — o que ele conta, puro.
@@ -7,6 +7,10 @@ import { AREAS, areaDoProjeto, type Area } from "../vocabulario";
  * Então a linha de cada computador diz só PROGRESSO (entrou, votou, abriu a
  * galeria, buscou, revisou, concluiu), e o que a turma escolheu vive no resumo
  * ANÔNIMO: os votos por área, a taxa média, quantos mantiveram ou trocaram.
+ *
+ * O SINALIZADOR DE OCIOSOS (PRD v2, Anexo §9; melhoria 8) é progresso, não
+ * escolha: o ícone ao lado do nome de quem está com a cédula aberta e parado há
+ * mais de 60 s.
  */
 
 /**
@@ -50,4 +54,21 @@ export function votosPorArea(votos: readonly string[]): Record<Area, number> {
 export function mediaDasTaxas(percentuais: readonly number[]): number | null {
   if (percentuais.length === 0) return null;
   return Math.round(percentuais.reduce((s, p) => s + p, 0) / percentuais.length);
+}
+
+/**
+ * A criança está OCIOSA na cédula? A tela manda um batimento a cada 15 s com a
+ * cédula aberta e há quantos segundos não há toque nela (`cedula_inativa_desde`
+ * = o instante do último toque). Ocioso = batimento recente (até 40 s) E mais
+ * de 60 s sem toque. Sem batimento, volta ao normal sozinho: a cédula fechou,
+ * ou o voto foi.
+ */
+export function ociosoNaCedula(
+  batimentoEm: Date | null,
+  inativaDesde: Date | null,
+  agora: Date,
+): boolean {
+  if (!batimentoEm || !inativaDesde) return false;
+  if (agora.getTime() - batimentoEm.getTime() > BATIMENTO_VALIDO_MS) return false;
+  return agora.getTime() - inativaDesde.getTime() > SEGUNDOS_PARA_OCIOSO * 1000;
 }

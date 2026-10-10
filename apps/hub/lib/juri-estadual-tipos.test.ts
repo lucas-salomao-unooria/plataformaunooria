@@ -47,7 +47,10 @@ import {
   termosProibidosEm,
   textoDaInvisibilidade,
   textoDaRevisao,
-  textoDoDesvio,
+  textoDaTaxaDeRevisao,
+  textoDasCategoriasBuscadas,
+  avisoDoRascunho,
+  AVISO_DO_BANCO_PADRAO,
   textoDoProgressoDaMidia,
   textoDoQueFalta,
   textoDosVotos,
@@ -155,7 +158,7 @@ describe("o espelho das invariantes e do contrato", () => {
   test("a linha do painel não tem voto, taxa nem nível", () => {
     const linha = /export const LinhaDoPainelSchema = z\.object\(\{([\s\S]*?)\n\}\);/.exec(contrato)?.[1] ?? "";
     const campos = [...linha.matchAll(/^\s{2}(\w+):/gm)].map((m) => m[1]);
-    expect(campos).toEqual(["estudanteId", "nome", "usuario", "equipe", "entrou", "passo", "votou", "abriuAGaleria", "buscou", "revisou", "desviou", "concluiu"]);
+    expect(campos).toEqual(["estudanteId", "nome", "usuario", "equipe", "entrou", "passo", "votou", "ocioso", "abriuAGaleria", "buscou", "categoriasBuscadas", "revisou", "concluiu"]);
   });
 });
 
@@ -251,6 +254,12 @@ describe("o preparo", () => {
     });
   });
 
+  test("o rascunho que caiu no banco padrão diz por quê; o da IA não avisa nada", () => {
+    expect(avisoDoRascunho({ usouIa: true, motivo: null })).toBeNull();
+    expect(avisoDoRascunho({ usouIa: false, motivo: "sem-saldo-de-ia" })).toBe(AVISO_DO_BANCO_PADRAO["sem-saldo-de-ia"]);
+    expect(avisoDoRascunho({ usouIa: false, motivo: "ia-indisponivel" })).toMatch(/demoraram a responder/);
+  });
+
   test("o caminho da turma escapa o id", () => {
     expect(caminhoDaTurma("a b")).toBe("/juri-estadual/turmas/a%20b");
   });
@@ -261,21 +270,18 @@ describe("o painel da aula", () => {
     [a, b, c, d].map((v, i) => ({ area: AREAS[i]!, nome: `Área ${i}`, hashtag: `#a${i}`, votos: v }));
 
   test("um botão só, e ele diz a etapa de destino", () => {
-    expect(rotuloDoBotao("galeria")).toBe("Liberar a Galeria Oculta");
-    expect(rotuloDoBotao("desvio")).toBe("Liberar a rodada de desvio");
+    expect(rotuloDoBotao("galeria")).toBe("Liberar Auditoria");
+    expect(rotuloDoBotao("exploracao")).toBeNull();
     expect(rotuloDoBotao(null)).toBeNull();
   });
 
-  test("o aviso do podcast recomenda o momento: depois da Galeria Oculta, na aula em andamento", () => {
+  test("o aviso do podcast: o literal do one-pager antes da auditoria, a hora certa depois dela", () => {
     expect(avisoDoPodcast(true, "galeria")).toBe(AVISO_DO_PODCAST_NA_GALERIA);
-    expect(avisoDoPodcast(true, "desvio")).toBe(AVISO_DO_PODCAST_NA_GALERIA);
-    /* O podcast é opcional e do professor: o aviso recomenda, não proíbe. */
-    expect(AVISO_DO_PODCAST_ANTES_DA_GALERIA).toMatch(/escolha sua/);
+    expect(AVISO_DO_PODCAST_ANTES_DA_GALERIA).toMatch(/estritamente após a conclusão da Etapa 4/);
     expect(avisoDoPodcast(true, "exploracao")).toBe(AVISO_DO_PODCAST_ANTES_DA_GALERIA);
     expect(avisoDoPodcast(true, null)).toBe(AVISO_DO_PODCAST_ANTES_DA_GALERIA);
     /* Fora do ar, a etapa gravada é de outra rodada: o aviso é o de antes. */
     expect(avisoDoPodcast(false, "galeria")).toBe(AVISO_DO_PODCAST_ANTES_DA_GALERIA);
-    expect(AVISO_DO_PODCAST_ANTES_DA_GALERIA).toMatch(/Galeria Oculta/);
   });
 
   test("os votos em percentual do total, na ordem das áreas", () => {
@@ -289,12 +295,15 @@ describe("o painel da aula", () => {
     expect(textoDosVotos({ votaram: 3, total: 8 }, true)).toBe("3 de 8 computadores votaram.");
     expect(textoDoQueFalta({ votaram: 24, total: 26 }, false)).toBe("Aguardando 2 jurados para fechar o lacre coletivo.");
     expect(textoDoQueFalta({ votaram: 26, total: 26 }, false)).toBeNull();
-    expect(textoDaRevisao({ mantiveram: 20, trocaram: 1, complementaram: 2 }, false)).toBe(
-      "1 jurado trocou o voto, 2 complementaram e 20 mantiveram.",
-    );
-    expect(textoDaRevisao({ mantiveram: 0, trocaram: 0, complementaram: 0 }, false)).toBeNull();
-    expect(textoDoDesvio(5, 26, false)).toBe("5 de 26 jurados terminaram a rodada de desvio.");
-    expect(textoDoDesvio(1, 3, true)).toBe("1 de 3 computadores terminaram a rodada de desvio.");
+    expect(textoDaRevisao({ mantiveram: 20, trocaram: 1 }, false)).toBe("1 jurado trocou o voto e 20 mantiveram.");
+    expect(textoDaRevisao({ mantiveram: 0, trocaram: 0 }, false)).toBeNull();
+    expect(textoDaTaxaDeRevisao(3, 26, false)).toBe("3 de 26 jurados revisaram o voto após a busca ativa na Galeria Oculta.");
+  });
+
+  test("as categorias buscadas saem com o nome e a hashtag do pacote, na ordem das áreas", () => {
+    const categorias = AREAS.map((area, i) => ({ area, nome: `Cat${i}`, hashtag: `#c${i}` }));
+    expect(textoDasCategoriasBuscadas(["area_c", "area_a"], categorias)).toBe("Cat0 (#c0), Cat2 (#c2)");
+    expect(textoDasCategoriasBuscadas([], categorias)).toBe("Nenhuma");
   });
 
   test("a invisibilidade é o número da api, nunca um número cravado", () => {
@@ -302,10 +311,10 @@ describe("o painel da aula", () => {
     expect(textoDaInvisibilidade(47)).toContain("47%");
   });
 
-  test("a aula para de consultar quando todos concluíram com o desvio aberto", () => {
+  test("a aula para de consultar quando todos concluíram com a auditoria liberada", () => {
     const resumo = { total: 2, concluiram: 2 } as Parameters<typeof aulaEmAndamento>[0]["resumo"];
-    expect(aulaEmAndamento({ etapa: "desvio", resumo })).toBe(false);
-    expect(aulaEmAndamento({ etapa: "galeria", resumo })).toBe(true);
+    expect(aulaEmAndamento({ etapa: "galeria", resumo })).toBe(false);
+    expect(aulaEmAndamento({ etapa: "galeria", resumo: { ...resumo, concluiram: 1 } })).toBe(true);
     expect(aulaEmAndamento({ etapa: "exploracao", resumo })).toBe(true);
   });
 
@@ -318,10 +327,11 @@ describe("o painel da aula", () => {
       entrou: true,
       passo: "feed",
       votou: false,
+      ocioso: false,
       abriuAGaleria: false,
       buscou: false,
+      categoriasBuscadas: [],
       revisou: false,
-      desviou: false,
       concluiu: false,
     });
     expect(ordenarLinhas([linha("Zé", "Equipe 10"), linha("Ana", "Equipe 2"), linha("Bia", null)]).map((l) => l.equipe?.nome ?? l.nome)).toEqual([
@@ -342,10 +352,11 @@ describe("o que faz o painel de habilidades se atualizar sozinho", () => {
     entrou: true,
     passo,
     votou: true,
+    ocioso: false,
     abriuAGaleria: false,
     buscou: false,
+    categoriasBuscadas: [],
     revisou: false,
-    desviou: false,
     concluiu: false,
   });
   const painel = (
@@ -362,13 +373,13 @@ describe("o que faz o painel de habilidades se atualizar sozinho", () => {
       entraram: passos.length,
       votaram: passos.length,
       revisaram: 3,
-      desviaram: 0,
       concluiram: 0,
+      ociosos: 0,
       computadores: { votaram: passos.length, total: passos.length },
       porComputador: false,
       votosPorArea: [],
       invisibilidadeMedia: null,
-      revisao: { mantiveram: 3, trocaram: 0, complementaram: 0 },
+      revisao: { mantiveram: 3, trocaram: 0 },
       votosRevisadosPorArea: [],
       ...resumo,
     },

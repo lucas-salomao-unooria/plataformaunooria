@@ -28,9 +28,9 @@ import type { Disciplina } from "./vocabulario";
  * 2. **Não aceita o que fere a régua.** O `validar` normaliza o cosmético
  *    (`semExclamacao`, hashtag e perfil) e recusa o resto pelo MESMO schema da
  *    homologação (`regras/preparo.ts`); o `generateJson` regera com o motivo.
- * 3. **Não esconde a falha.** Não há acervo padrão (decisão de 2026-10-02): sem
- *    saldo, a resposta é 429 `sem-saldo-de-ia`, e com a IA fora do ar, 503
- *    `ia-indisponivel` — sem IA, não há atividade.
+ * 3. **Não decide o fallback.** Sem saldo devolve `sem-saldo-de-ia`, com a IA
+ *    fora do ar `ia-indisponivel`; quem troca isso pelo BANCO PADRÃO (200 com
+ *    `usouIa: false`, RF-007 e §12.2) é a rota `gerar-conteudo`.
  *
  * Quota: a do PERFIL (ADR-105), `temSaldo` antes e o que o vendor cobrou
  * debitado por tentativa, inclusive as recusadas pelo `validar` (ADR-74).

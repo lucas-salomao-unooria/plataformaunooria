@@ -236,6 +236,27 @@ export function embaralhar<T>(lista: readonly T[], aleatorio: () => number = Mat
   return copia;
 }
 
+/**
+ * Um gerador DETERMINÍSTICO para `embaralhar`: o mesmo texto sempre dá a mesma
+ * sequência (FNV-1a + mulberry32). É o da ordem `por-estudante` das
+ * alternativas: a chave é a pergunta e o estudante, e a ordem não muda num F5.
+ */
+export function aleatorioDe(chave: string): () => number {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < chave.length; i++) {
+    h ^= chave.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  let a = h >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
 /** Os marcadores de múltipla escolha que corrigem esta pergunta — pode haver mais de um. */
 export function marcadoresDaPergunta(ficha: FichaPedagogica, perguntaId: string): string[] {
   return ficha.habilidades.flatMap((h) =>

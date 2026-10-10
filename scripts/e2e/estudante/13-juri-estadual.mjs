@@ -4,109 +4,69 @@ import { ALERTA_DE_ERRO, esperarOuFalharCedo } from "../lib/smoke.mjs";
 import { esperarFalasDoTema, provarFalasNaCriacao, provarPodcastNaAula } from "../lib/podcast.mjs";
 
 /**
- * O Júri Estadual de Projetos (exp06ef1b, 6º ano, unidade 1), nas três pontas
- * da sala: a professora cria a atividade e conduz, e dois estudantes da mesma
- * turma julgam a mesma mostra — um curte, o outro não.
+ * O Júri Estadual de Projetos (exp06ef1b 0.4.0, PRD v2 — 6º ano, unidade 1),
+ * nas três pontas da sala: a professora prepara e conduz, e dois estudantes da
+ * mesma turma julgam a mesma mostra — um curte, o outro não.
  *
  * O que esta suíte cobra, e por que cada item é uma regra do software:
  *
- * 1. **A mostra é da professora, e nasce da IA** (decisão de 2026-10-02: não há
- *    acervo padrão). Parametrizar → gerar → curar → aprovar os TEXTOS (grava) →
- *    aprovar as IMAGENS (o pedido do PO: vistas, refeitas e aprovadas antes da
- *    turma; sem isso, 409 `imagens-nao-aprovadas`) → criar (ADR-66/67, ADR-130).
- * 2. **As curtidas afunilam o feed EM SILÊNCIO, no servidor.** Quem curte duas
- *    vezes a mesma área vê menos da mostra do que quem não curte nada — e a
- *    prova de que a taxa da Galeria Oculta é REAL (calculada pela api para cada
- *    sessão, nunca cravada na copy) é que os dois chegam a ela com números
- *    DIFERENTES, e o de quem curtiu é maior.
- * 3. **O voto é um latch, e o pico tem três elementos.** A cédula pede o
- *    motivo e a frase grifada da legenda (a justificativa de ANTES); depois, o
- *    lacre e a plenária: o brasão, a ordem da comissão e o pulso — nada mais.
- *    Um F5 no latch volta à plenária, nunca ao feed; e depois da revisão do voto
- *    (o latch 2), volta à espera da nova rodada, nunca à galeria.
- * 4. **A lousa do pico é anônima e só a professora move a sala**: "X de Y
- *    votaram" e os votos por área, sem nome; a taxa média só depois da galeria;
- *    DOIS botões, na ordem (Liberar a Galeria Oculta, Liberar a rodada de
- *    desvio), e nenhum volta.
- * 5. **A galeria é auditoria**: os ocultos primeiro, a busca por hashtag, a
- *    ficha que diz se o estande chegou ao feed, e a cédula extraordinária com a
- *    justificativa de antes ao lado — manter, trocar ou complementar, com um
- *    cartão novo.
- * 5b. **A rodada de desvio** (o pedido do PO que a spec perdeu): quem curte a
- *    área nova vê o feed virar para ela, e a tela compara com o feed do júri;
- *    encerrar sem curtir nem salvar é recusado, e o salvar conta.
- * 6. **A engrenagem é da escola**: a cadeia Interações → Dados → Algoritmo →
- *    Bolha (EF06CO03), aberta pela frase do Léo, com a errada que devolve
- *    à bandeja sem dizer qual vaga errou; depois o caso Mariana e as três
- *    enquetes, sem acerto, e o crachá homologado.
- * 7. **O painel da professora não tem voto, taxa nem nível por criança**, e as
- *    três habilidades da ficha (EF06CO10, EF06CO01, EF06CO03) ficam no painel de
- *    habilidades, com a régua de cada nível (ADR-145).
- * 8. **O carrossel anda com o MOUSE** (o pedido do PO): arrasto real com
- *    `page.mouse`, e as setas sobre a mídia.
- * 9. **O podcast de recapitulação é da plataforma** (ADR-150): na criação, as
- *    três falas que citam a mostra chegam de `falas-do-tema` e são revisadas
- *    antes de aprovar os textos (o `homologar` as exige); na página da
- *    atividade, Bia e Rafa nos cinco blocos do roteiro, o áudio sintetizado
- *    trecho a trecho e o AVISO de que o episódio revela a virada — o módulo
- *    não trava por etapa, então só depois da Galeria Oculta é recado à
- *    professora (`[data-aviso-do-podcast]`).
- *
- * ─── A IA, e por que a suíte NÃO depende dela ──────────────────────────────
- *
- * A missão não tem acervo padrão: sem a geração, não há atividade. E a geração
- * dos dezesseis estandes é inviável como pré-condição de uma suíte:
- *
- * - em dev e na e2e a IA costuma ser o MOCK (`AI_PROVIDER=mock`, o padrão do
- *   compose), e o `generateJson` do mock SEMPRE lança — a api responde 503
- *   `ia-indisponivel` (memória "AI_PROVIDER=mock quebra a criação de atividade");
- * - com o Vertex de verdade, os dezesseis estandes passam com folga dos 30 s
- *   que o BFF dá a uma chamada: o 504 do BFF é moeda ao ar, como na A Seleção
- *   (memória "Teto de 30s do BFF corta a geração por IA"), e parece IA fora do ar;
- * - o professor demo pode estar sem saldo (429 `sem-saldo-de-ia`, ADR-105).
- *
- * Por isso a suíte faz assim (`JURI_IA`, padrão `auto`):
- *
- * 1. clica no botão REAL "Gerar Mostra Personalizada com IA" e espera a UNIÃO
- *    dos desfechos — a curadoria com os 16 estandes, o aviso de falha da IA
- *    (`[data-falha-da-ia]`) ou o alerta de erro (o 504 do BFF) — correndo contra
- *    o erro, nunca pelo relógio;
- * 2. se a IA respondeu, segue com o que ela escreveu: a suíte não lê título nem
- *    hashtag do código, só da api e da tela;
- * 3. se não respondeu, declara o erro como PROVOCADO, registra a ressalva e
- *    responde a `POST …/gerar-conteudo` pelo `page.route` do Playwright com a
- *    MOSTRA DE FIXTURE (a cópia de `apps/api/tests/juri-estadual-fixture.ts`,
- *    abaixo) — o que a IA devolveria. Clica de novo no MESMO botão: a curadoria,
- *    a edição, o "Criar atividade" (`homologar`, que revalida tudo pelo mesmo
- *    schema da api), as equipes e o "pôr no ar" seguem sendo os de verdade.
- *    Só a resposta do gerador é fixture, e o rascunho não persiste (a rota não
- *    grava nada), então nada entra no banco sem passar pela api.
- *
- * `JURI_IA=fixture` pula a tentativa real (poupa a quota e os 30 s); `JURI_IA=real`
- * a exige e reprova se ela falhar. O "Regenerar estande" não é exercido: ele é
- * a mesma IA atrás do mesmo teto, e os três desfechos dele (novo, "ficou como
- * estava", sem saldo) estão em `apps/api/tests/juri-estadual-postgres.spec.ts`.
- *
- * As IMAGENS são opcionais por desenho (sem elas, a arte procedural): a suíte
- * aperta "Gerar imagens" e espera só a PRIMEIRA ida (até duas imagens), e o
- * que ela disser — prontas, falharam, sem saldo — é um desfecho legítimo.
+ * 1. **Dois caminhos de preparo** (PRD v2, E0-PROF-01/02): a mostra
+ *    personalizada pela IA REAL (Vertex) — parametrizar, gerar, ver os 16
+ *    estandes na curadoria e as falas do podcast — e o caminho curto "Usar
+ *    Banco Padrão Oficial", sem IA, que é o que vai ao ar para a turma. A
+ *    turma roda no banco padrão de propósito: as quatro áreas e as hashtags
+ *    são as do PRD, e a prova da saturação não depende do que a IA escreveu.
+ *    A geração por IA NÃO tem fixture: falhou, a verificação reprova (memória
+ *    "Teste sempre com IA real") e a suíte segue pelo banco padrão.
+ * 2. **O crachá é um modal sobre a timeline desfocada**, e a TopBar do
+ *    Unoovista traz `@jurado_oficial` em toda tela do clone; a barra tem as
+ *    QUATRO abas da copy (Início, Busca, Notificações, Jurado), e a Busca está
+ *    fechada durante o julgamento (responde com o aviso, como comentar).
+ * 3. **A saturação** (melhoria 1): duas curtidas na mesma área a fazem líder,
+ *    e os posts 5 a 10 vêm SÓ dela, repetindo os projetos em outros formatos.
+ *    Quem curte chega à galeria com 69–75% da feira escondida; quem não curte,
+ *    com bem menos — os dois números são da api, nunca da copy.
+ * 4. **Salvar não pesa** (melhoria 6): o segundo estudante salva três posts e
+ *    o feed dele segue variado.
+ * 5. **A cédula tem quatro elementos** — o título, os projetos do feed, a
+ *    certeza ("Sim"/"Com certeza") e o botão —, sem justificativa nem frase
+ *    grifada. Parado 60 s com ela aberta, o aviso da comissão acende NO TOPO
+ *    dela (`role="alert"`), e o painel da professora põe o ícone de ocioso ao
+ *    lado do nome (o batimento de 15 s, melhoria 8).
+ * 6. **O lacre e a espera**: o carimbo com o protocolo, e a plenária com três
+ *    elementos (brasão, carimbo, ordem). O F5 volta à espera.
+ * 7. **Um botão só** ("Liberar Auditoria"), e ele não volta. Não há rodada de
+ *    desvio (saiu com a melhoria 6).
+ * 8. **A Galeria Oculta**: o badge "{n}% dos projetos da feira ficaram fora do
+ *    seu feed" com o número REAL, a grade de três colunas que cresce com os
+ *    ocultos, a busca por hashtag e por texto, a ficha de auditoria e a
+ *    revisão de DOIS botões — "Manter meu voto inicial" só acende depois de
+ *    abrir um oculto. O F5 depois da revisão não reabre a galeria.
+ * 9. **Etapa 5, da escola**: o Léo, o par simulado OPOSTO lado a lado (gerado
+ *    pelo servidor) e a cadeia com os blocos do 01e; a ordem errada é 422
+ *    `ordem-incorreta` e devolve os blocos à bandeja sem dizer qual vaga errou.
+ * 10. **Mariana e o Canal B**: os cinco cartões literais (3 de mecanismo, 2 de
+ *    atitude), as três enquetes nos Stories sem acerto, e o fim com a faixa da
+ *    Unooria (o infográfico "Como os robôs leem nossas curtidas").
+ * 11. **O painel da professora** não tem voto, taxa nem nível por criança;
+ *    mostra as categorias que cada um buscou, e as três habilidades da ficha
+ *    (EF06CO10, EF06CO01, EF06CO03) ficam no painel de habilidades.
+ * 12. **O podcast de recapitulação** do banco padrão é o roteiro fixo
+ *    (aud-exp06ef1b-01), na página da atividade.
  *
  * ─── O estado de ontem ─────────────────────────────────────────────────────
  *
- * FIXTURE: a 6A (o seed libera a exp06ef1b lá). O estado é do servidor e
- * sobrevive ao roteiro. Criar de novo EXATAMENTE o pacote mais recente devolve
- * a mesma atividade (`homologar` é idempotente); se ela já estava no ar (a
- * corrida de ontem com a fixture), a suíte zera a turma — zerar abre a rodada
- * seguinte sem apagar nada. Atividade nova, ou que volta ao ar, já começa numa
- * rodada nova. Na rodada nova do MESMO pacote, quem já foi avaliado não ganha
- * marca nova nas ações (ADR-120): o painel de habilidades mostra as três
- * habilidades do mesmo jeito.
+ * FIXTURE: a 6A (o seed libera a exp06ef1b lá). O banco padrão é idempotente
+ * por turma ("se a turma já tem esse pacote, reaproveita"): se a atividade
+ * criada é a que já estava no ar, a suíte zera a turma (ADR-155), que abre a
+ * rodada seguinte.
  */
 const SERIE = "6EF";
 const EXP_ID = "exp06ef1b";
 const FICHA = `${HUB}/professor/entre-redes/6-ano/unidade-1`;
 const TITULO_DA_MISSAO = "O Júri Estadual de Projetos";
-const MODO_DA_IA = (process.env.JURI_IA ?? "auto").toLowerCase();
+/** `JURI_IA=pular` dispensa a tentativa da IA (só quando o ADC está vencido, e a corrida diz isso). */
+const MODO_DA_IA = (process.env.JURI_IA ?? "real").toLowerCase();
 
 /* A turma vem do CSV do seed, não fixada aqui. */
 const PRIMEIRO = conta("estudante", { serie: SERIE });
@@ -114,122 +74,58 @@ const TURMA = process.env.TURMA ?? PRIMEIRO.turma;
 const SEGUNDO = contasDe("estudante").find((c) => c.turma === PRIMEIRO.turma && c.login !== PRIMEIRO.login);
 if (!SEGUNDO) throw new Error(`a turma ${TURMA} precisa de dois estudantes (rode o seed)`);
 
-/** Os parâmetros do preparo, como a professora os digita. */
+/** Os parâmetros do preparo por IA, como a professora os digita. */
 const PARAMETROS = {
-  disciplina: "ciencias",
   rotuloDaDisciplina: "Ciências",
   tema: "Ciência que cuida da cidade",
   assuntos: "Energia, água, alimentação e reaproveitamento de materiais na escola.",
 };
 
-/** A curadoria da suíte: um título trocado, o mesmo a cada corrida (a idempotência depende disso). */
-const TITULO_CURADO = "Protótipo revisado pela professora";
-
 /** O que nunca pode aparecer na tela da criança: carimbo, nota, acerto. */
 const CARIMBO_OU_ACERTO = /\b(correta|incorreta|errou|acertou|errada|pontos|sua nota)\b/i;
 
-/** O que a missão não diz antes da galeria (o `textos.test.ts` da experiência cobra o mesmo da copy). */
+/** O que a missão não diz antes da galeria. */
 const SPOILER = /\b(algoritmo|bolha|filtro|ocult[ao]s?)\b/i;
 
-// ─────────────────────────────────────────────── a mostra de fixture
+/** Os rótulos da cadeia (`conteudo.ts#BLOCOS_DA_CADEIA`, 01e doc-03), na ordem certa. */
+const CADEIA = [
+  "Suas interações com cliques e curtidas no feed",
+  "Registro de dados e identificação de padrões",
+  "Algoritmo de recomendação escolhendo novos posts",
+  "Afunilamento do feed e criação da bolha",
+];
 
-/**
- * CÓPIA de `apps/api/tests/juri-estadual-fixture.ts#conteudoDeTeste` — a mostra
- * que a IA devolveria, dentro da régua de `invariantes.ts`. A suíte não importa
- * o `.ts` da api (o ESM do Node não resolve o import sem extensão de lá); se a
- * régua mudar, o "Criar atividade" recusa com a lista de problemas e a suíte
- * reprova dizendo qual.
- */
-const AREAS = ["area_a", "area_b", "area_c", "area_d"];
-const CATEGORIAS = {
-  area_a: {
-    nome: "Energia limpa",
-    hashtag: "#energialimpa",
-    tema: "energia",
-    titulos: ["Placa solar de garrafa", "Cata-vento que acende luz", "Forno solar de caixa", "Pedal que carrega celular"],
-  },
-  area_b: {
-    nome: "Água e cuidado",
-    hashtag: "#aguaecuidado",
-    tema: "água",
-    titulos: ["Filtro de areia e carvão", "Cisterna da quadra", "Sensor de vazamento", "Chuveiro que avisa o tempo"],
-  },
-  area_c: {
-    nome: "Alimentação",
-    hashtag: "#alimentacao",
-    tema: "comida",
-    titulos: ["Horta vertical de pallet", "Composteira da cantina", "Mapa do lanche nutritivo", "Secador solar de frutas"],
-  },
-  area_d: {
-    nome: "Robótica de sucata",
-    hashtag: "#roboticasucata",
-    tema: "robô",
-    titulos: ["Braço hidráulico de seringa", "Carrinho de motor reciclado", "Robô que separa lixo", "Semáforo para a escola"],
-  },
+/** A copy da experiência (`lib/textos.ts`) que a suíte confere. */
+const COPY = {
+  topo: "10ª Mostra Estadual de Projetos Escolares",
+  jurado: "@jurado_oficial",
+  entrar: "Acessar Feed da Mostra",
+  abas: ["Início", "Busca", "Notificações", "Jurado"],
+  buscaFechada: "Busca restrita à coordenação da mostra estadual durante o julgamento.",
+  comentariosFechados: "Comentários restritos à coordenação da mostra estadual.",
+  abrirCedula: "Cédula Oficial de Votação — Jurado",
+  cabecalhoDaCedula: "Selecione o projeto que receberá a nota máxima e o troféu de Grande Campeão Estadual.",
+  inatividade: "Jurado, a plenária aguarda seu voto para prosseguir.",
+  espera: "Aguardando o encerramento do prazo de votação da comissão de jurados.",
+  badge: (n) => `${n}% dos projetos da feira ficaram fora do seu feed`,
+  gradeOculta: "Projetos que não chegaram ao seu feed",
+  gradeBusca: "Projetos encontrados",
+  busca: "Pesquisar projetos ou categorias...",
+  manter: "Manter meu voto inicial",
+  manterTravado: "Inspecione ao menos um projeto que não apareceu no seu feed antes de manter o voto.",
+  confirmarRevisao: "Confirmar Voto Revisado",
+  revisao: "Janela Extraordinária de Revisão de Voto",
+  ficha: "Ficha Técnica de Auditoria",
+  voltar: "Voltar à Galeria",
+  leo: "Você viveu na prática o que Léo investigou no livro didático!",
+  cadeiaErro: "A ordem das regras precisa de ajuste. Lembre-se: primeiro vêm suas ações, depois os dados registrados pela máquina.",
+  cadeiaCerta: "Cadeia lógica confirmada. O sistema usou suas ações como dados para prever e limitar o que você via.",
+  avancar: "Continuar para a Reflexão",
+  submeter: "Submeter Análise do Júri",
+  confirmadas: ["Resposta registrada na ata do júri", "Dados computados", "Regra conferida"],
+  fimTitulo: "Credenciamento de Jurado Concluído",
+  infografico: "Como os robôs leem nossas curtidas",
 };
-const ESCOLAS = [
-  "Escola Municipal Professora Lúcia Andrade",
-  "Escola Estadual Rio das Pedras",
-  "Escola Municipal Vila Esperança",
-  "Escola Estadual Monte Verde",
-  "Escola Municipal Dona Cecília Prado",
-  "Escola Estadual Campo Alegre",
-  "Escola Municipal Sítio Novo",
-  "Escola Estadual Vale do Sol",
-  "Escola Municipal Mestre Benedito",
-  "Escola Estadual Lagoa Azul",
-  "Escola Municipal Recanto das Flores",
-  "Escola Estadual Serra Bonita",
-  "Escola Municipal Ponte Alta",
-  "Escola Estadual Boa Vista do Norte",
-  "Escola Municipal Jardim Primavera",
-  "Escola Estadual Porto Seguro do Sul",
-];
-const EQUIPES = [
-  "ana.e.joao",
-  "lab.da.julia",
-  "davi_e_yasmin",
-  "equipe.kaua",
-  "isadora.ciencia",
-  "pedro.e.lara",
-  "maria.eduarda.lab",
-  "time.do.enzo",
-  "beatriz.e.caio",
-  "gabriel.inventa",
-  "sofia.e.miguel",
-  "clube.da.alice",
-  "heitor.e.lis",
-  "valentina.lab",
-  "arthur.e.manu",
-  "laura.e.theo",
-];
-
-function mostraDeFixture(tema) {
-  const ids = AREAS.flatMap((area) => [1, 2, 3, 4].map((n) => `proj-${area.slice(-1)}${n}`));
-  return {
-    tema,
-    categorias: AREAS.map((area) => ({ area, nome: CATEGORIAS[area].nome, hashtag: CATEGORIAS[area].hashtag })),
-    projetos: ids.map((id, i) => {
-      const area = `area_${id.charAt(5)}`;
-      const c = CATEGORIAS[area];
-      const titulo = c.titulos[Number(id.charAt(6)) - 1];
-      return {
-        id,
-        area,
-        titulo,
-        escola: ESCOLAS[i],
-        perfil: `@${EQUIPES[i]}`,
-        legenda: `Nossa equipe montou o projeto ${titulo} com material reciclado da escola. A ideia ajuda a cuidar da ${c.tema} no bairro.`,
-        bastidor: `Hoje testamos o protótipo do ${titulo} no pátio e anotamos o que precisa melhorar.`,
-        hashtags: [c.hashtag, "#mostraestadual"],
-        imagem: {
-          descricao: `Ilustração colorida do protótipo ${titulo} em um estande de feira de ciências escolar.`,
-          alt: `Protótipo ${titulo} no estande da mostra.`,
-        },
-      };
-    }),
-  };
-}
 
 // ─────────────────────────────────────────────────────── utilitários
 
@@ -306,17 +202,18 @@ function escaparRegex(texto) {
   return texto.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-/** A frase da taxa, igual à da experiência (`lib/textos.ts#E4.taxa`) — o número vem da api. */
-function fraseDaTaxa({ ocultos, total, percentual }) {
-  return ocultos === 0
-    ? `Todos os ${total} estandes da mostra chegaram ao seu feed.`
-    : `${ocultos} de ${total} estandes ${ocultos === 1 ? "nunca chegou" : "nunca chegaram"} ao seu feed (${percentual}% da mostra).`;
-}
-
 /** "2 de 30 jurados votaram." — a mesma frase de `juri-estadual-tipos.ts#textoDosVotos`. */
 function fraseDosVotos({ votaram, total }, porComputador) {
   const sujeito = porComputador ? (total === 1 ? "computador" : "computadores") : total === 1 ? "jurado" : "jurados";
   return `${votaram} de ${total} ${sujeito} ${votaram === 1 && total === 1 ? "votou" : "votaram"}.`;
+}
+
+/** As caixas de dois elementos lado a lado: mesma linha, sem sobreposição. */
+async function ladoALado(locator) {
+  const caixas = await locator.evaluateAll((els) => els.map((e) => e.getBoundingClientRect().toJSON()));
+  if (caixas.length !== 2) return { ok: false, caixas };
+  const [a, b] = caixas;
+  return { ok: Math.abs(a.top - b.top) < 4 && a.right <= b.left + 1 && a.width > 60 && b.width > 60, caixas };
 }
 
 await suite(
@@ -324,34 +221,30 @@ await suite(
     slug: "estudante/13-juri-estadual",
     papel: "estudante",
     titulo: "O Júri Estadual de Projetos — o feed que esconde a mostra",
-    subtitulo: "curtir, lacrar o voto, ver o que nunca chegou ao feed e montar a engrenagem que escondeu",
+    subtitulo: "curtir, lacrar o voto, auditar o que nunca chegou ao feed e montar a regra que escondeu",
     contexto:
-      "A criança é jurada de uma mostra científica estadual num feed de rede social: dezesseis estandes " +
-      "de quatro áreas, escritos sobre o tema da aula. As curtidas dela mudam o que o feed mostra, sem " +
-      "aviso. Depois de dez publicações ela lacra o voto e a turma espera junta, enquanto a professora " +
-      "projeta como os votos se dividiram. Na Galeria Oculta, cada uma vê o que não chegou à própria " +
-      "tela — com a parte real que ficou de fora — e depois remonta a curtida e a engrenagem do feed.",
+      "A criança é jurada de uma mostra científica estadual num feed de rede social: dezesseis projetos de " +
+      "quatro áreas. As curtidas dela mudam o que o feed mostra, sem aviso: depois que uma área vence, o resto " +
+      "do feed é só dela, em outros formatos. Ela lacra o voto e a turma espera junta, enquanto a professora " +
+      "projeta como os votos se dividiram. Na Galeria Oculta cada uma vê, com o número real, quanto da feira " +
+      "ficou fora do seu feed — e depois remonta a regra que fez isso.",
     prova: [
-      "A atividade nasce da professora: parametrizar, gerar com IA, curar, aprovar os textos e depois as imagens (vistas, refeitas e aprovadas antes da turma) e criar",
-      "As curtidas afunilam o feed no servidor: quem curte duas vezes a mesma área chega à galeria com uma taxa de invisibilidade MAIOR que a de quem não curte",
-      "Votar é um latch com justificativa (o motivo e a frase grifada): o lacre, e a plenária com exatamente três elementos; o F5 volta à plenária",
-      "Comentar e compartilhar respondem com o aviso da comissão, e salvar é um sinal do feed",
-      "A lousa do pico diz quantos votaram e como os votos se dividiram por área, sem nome; a taxa média só aparece depois da galeria",
-      "Só os botões da professora abrem a Galeria Oculta e depois a rodada de desvio, e nenhum volta",
-      "Na galeria: os ocultos primeiro, a busca por hashtag e por texto, a ficha de cada estande e a revisão com a justificativa de antes ao lado — mantido ou trocado; o F5 depois da revisão volta à espera da nova rodada",
-      "Na rodada de desvio, curtir a área nova vira o feed para ela, a tela compara com o feed do júri, e encerrar sem curtir nem salvar é recusado",
-      "O carrossel do feed anda arrastando com o mouse e pelas setas",
-      "A cadeia é tela da escola, aberta pelo Léo: a ordem errada volta para a bandeja sem dizer qual vaga errou",
-      "Caso Mariana, as três enquetes sem acerto e o crachá homologado",
-      "O painel da professora não tem voto, taxa nem nível por criança, e mostra EF06CO10, EF06CO01 e EF06CO03 com a régua",
+      "A professora prepara pela IA real (16 estandes e as falas do podcast) e põe no ar pelo Banco Padrão Oficial, sem IA",
+      "O crachá é um modal sobre a timeline desfocada; a TopBar traz @jurado_oficial e a barra tem as quatro abas, com a Busca fechada",
+      "Duas curtidas na mesma área saturam o feed: os posts 5 a 10 são só dela, e 69–75% da feira fica fora",
+      "Salvar grava e não pesa: quem só salva vê um feed variado",
+      "A cédula tem quatro elementos, e parado 60 s com ela aberta o aviso acende no topo e a professora vê o ícone de ocioso",
+      "O lacre e a espera com três elementos; o F5 volta à espera",
+      "Um botão só, Liberar Auditoria, e ele não volta",
+      "A Galeria Oculta com a taxa real, a grade de três colunas, a busca e a revisão de dois botões — Manter só depois de abrir um oculto",
+      "A Etapa 5 com o par simulado oposto lado a lado, e a cadeia errada respondida com 422 sem dizer qual vaga",
+      "Mariana, os cinco cartões, as três enquetes do Canal B sem acerto e a faixa da Unooria no fim",
+      "O painel da professora: sem voto, taxa nem nível; as categorias buscadas; EF06CO10, EF06CO01 e EF06CO03",
     ],
     comando: "node scripts/e2e/estudante/13-juri-estadual.mjs",
   },
   async (r) => {
-    /**
-     * Aperta o botão da aula e espera a etapa nova no painel — e a hidratação,
-     * porque depois de um reload o botão do SSR já está no DOM sem o handler.
-     */
+    /** Aperta o botão da aula e espera a etapa nova — e a hidratação, depois de um reload. */
     const apertar = async (pagina, etapa) => {
       const botao = pagina.locator(`[data-gate="${etapa}"]`);
       await hidratado(pagina, botao);
@@ -382,9 +275,6 @@ await suite(
     if (!r.exigir(Boolean(turmaId), `${professora.login} vê a ${TURMA} no seletor do Júri Estadual`)) return;
     const caminhoDaTurma = `/juri-estadual/turmas/${turmaId}`;
 
-    /* O que a turma JÁ TEM no ar (ADR-130): só quando a atividade criada é a
-       que já estava no ar (a mesma de ontem, pela idempotência) a turma
-       precisa ser zerada. */
     const pacotesAntes = await lerApi(prof, `${caminhoDaTurma}/pacotes`);
     if (pacotesAntes.status !== 200) {
       throw new Error(
@@ -394,446 +284,194 @@ await suite(
     const noArAntes = pacotesAntes.corpo?.ativo ?? null;
 
     await prof.goto(`${FICHA}?turmaId=${turmaId}`, { waitUntil: "domcontentloaded" });
-    await prof.getByRole("heading", { name: new RegExp(TITULO_DA_MISSAO) }).first().waitFor({ timeout: 30_000 });
-    await prof.getByText("Prepare antes: esta missão não tem mostra pronta").first().waitFor({ timeout: 15_000 });
+    await prof.getByRole("heading", { name: new RegExp(TITULO_DA_MISSAO) }).first().waitFor({ timeout: 60_000 });
+    await prof.getByText("Prepare antes: banco padrão ou mostra personalizada").first().waitFor({ timeout: 15_000 });
     await prof.locator("[data-atividades-da-missao]").waitFor({ timeout: 20_000 });
     await r.registrar(prof, "ficha-da-missao", {
       titulo: "A ficha do 6º ano",
       mostra:
-        "A missão explicada para quem conduz, o aviso “Prepare antes: esta missão não tem mostra pronta” e a " +
+        "A missão explicada para quem conduz, o aviso “Prepare antes: banco padrão ou mostra personalizada” e a " +
         "lista “Suas atividades com a turma”, com Nova atividade.",
       prova:
-        "A professora sabe ANTES que os dezesseis estandes são escritos pela IA sobre o tema da aula dela, que " +
-        "durante a aula é um botão só, e que a missão só abre com uma atividade dela em andamento (ADR-130).",
+        "A professora sabe ANTES que há dois caminhos — o banco padrão, em um toque, ou a mostra da IA sobre o tema " +
+        "da aula — e que a missão só abre com uma atividade dela em andamento (ADR-130).",
     });
 
-    // ═══ PROFESSORA: parametrizar ════════════════════════════════════════
-    /* O `LinkButton` é um `<a>` com `role="button"` (o `Button` do DS
-       polimórfico): pelo elemento, e não pelo papel. */
-    await prof.locator("a", { hasText: "Nova atividade" }).first().click();
-    await prof.waitForURL("**/atividades/nova**", { timeout: 30_000 });
-    await prof.locator("[data-assistente-de-atividade]").waitFor({ timeout: 30_000 });
-    const preparo = prof.locator("[data-passo-conteudo] [data-preparo-juri]");
-    await preparo.waitFor({ timeout: 30_000 });
-    r.exigir(
-      (await prof.locator("[data-mostra-vazia]").count()) === 1 && (await prof.locator("[data-curadoria-da-mostra]").count()) === 0,
-      "a criação nasce VAZIA: nenhum estande antes de a professora gerar a mostra",
-    );
-
-    /* O componente curricular é o `Selection` do DS (combobox + listbox, o
-       rótulo liga por `aria-labelledby`). O portão é o próprio listbox: sem
-       hidratação o clique não abre nada. */
-    const disciplina = prof.getByRole("combobox", { name: /^Componente Curricular/ });
-    await hidratado(prof, disciplina);
-    await disciplina.click();
-    const opcao = prof.getByRole("listbox").getByRole("option", { name: new RegExp(PARAMETROS.rotuloDaDisciplina) }).first();
-    await opcao.waitFor({ timeout: 10_000 }).catch(() => {
-      throw new Error("o seletor de componente curricular não abriu: a página ainda não estava hidratada");
-    });
-    await opcao.click();
-    /* Digitado, não `fill`: é o `onChange` de cada tecla que move o estado do React. */
-    const tema = preparo.getByRole("textbox", { name: /^Tema Geral da Feira/ });
-    await tema.click();
-    await tema.pressSequentially(PARAMETROS.tema);
-    const assuntos = preparo.getByRole("textbox", { name: /^Objetos de Conhecimento da Aula/ });
-    await assuntos.click();
-    await assuntos.pressSequentially(PARAMETROS.assuntos);
-    const gerar = prof.locator('[data-acao="gerar-mostra"]');
-    await prof.waitForFunction(
-      () => !document.querySelector('[data-acao="gerar-mostra"]')?.hasAttribute("disabled"),
-      null,
-      { timeout: 10_000 },
-    );
-    await r.registrar(prof, "preparo-parametros", {
-      titulo: "Parametrizar a mostra",
-      mostra:
-        `O passo Conteúdo da criação: o componente curricular (${PARAMETROS.rotuloDaDisciplina}), o tema geral da feira ` +
-        "e os objetos de conhecimento da aula, e o botão Gerar Mostra Personalizada com IA.",
-      prova:
-        "A missão é transversal: qualquer professor escreve a mostra sobre a própria aula. Os tetos dos campos " +
-        "(tema de 3 a 60, assuntos de 10 a 600) são a primeira barreira contra instrução injetada no gerador.",
-    });
-
-    // ═══ PROFESSORA: gerar com IA (ou a fixture, se a IA não responder) ══
-    const curadoria = prof.locator("[data-curadoria-da-mostra]");
-    const falhaDaIa = preparo.locator(`[data-falha-da-ia], ${ALERTA_DE_ERRO}`);
-    let origemDaMostra = "ia";
-
-    const usarFixture = async (motivo) => {
-      origemDaMostra = "fixture";
-      if (MODO_DA_IA === "real") throw new Error(`JURI_IA=real e a geração não respondeu: ${motivo}`);
-      if (motivo) {
-        r.provocado(
-          /gerar-conteudo/,
-          "a geração da mostra falhou (mock, sem saldo ou o teto de 30 s do BFF) e a suíte seguiu com a fixture",
-        );
-        r.ressalva(`a IA não gerou a mostra (${motivo}): a suíte respondeu ao gerador com a mostra de fixture`);
-      } else {
-        r.ressalva("JURI_IA=fixture: a resposta do gerador é a mostra de fixture, sem tentar a IA");
-      }
-      /* SÓ a resposta do gerador é fixture: os parâmetros são os que a tela
-         mandou, e o rascunho não persiste — quem grava é o `homologar` real. */
-      await prof.route("**/api/plataforma/juri-estadual/turmas/*/gerar-conteudo", async (rota) => {
-        const enviados = rota.request().postDataJSON() ?? {};
-        await rota.fulfill({
-          status: 200,
-          contentType: "application/json",
-          body: JSON.stringify({ parametros: enviados, conteudo: mostraDeFixture(enviados.tema ?? PARAMETROS.tema) }),
-        });
-      });
-      await gerar.click();
-      /* Vigiar o alerta só DEPOIS de o estado novo começar: o clique limpa o
-         aviso da tentativa anterior, e a corrida não pode ver o alerta velho. */
-      await falhaDaIa.first().waitFor({ state: "detached", timeout: 10_000 });
-      await esperarOuFalharCedo(curadoria, falhaDaIa, { timeout: 20_000, oQue: "gerar a mostra com a fixture" });
+    /** Abre "Nova atividade" e espera o preparo na fase dos textos. */
+    const abrirNovaAtividade = async () => {
+      await prof.goto(`${FICHA}/atividades/nova?turmaId=${turmaId}`, { waitUntil: "domcontentloaded" });
+      await prof.locator("[data-assistente-de-atividade]").waitFor({ timeout: 60_000 });
+      const preparo = prof.locator('[data-passo-conteudo] [data-preparo-juri][data-fase="textos"]');
+      await preparo.waitFor({ timeout: 30_000 });
+      return preparo;
     };
 
-    /* As falas do podcast são pedidas logo depois que a mostra chega (ADR-150):
-       a espera nasce ANTES do clique — e, se a IA falhar, a mesma espera pega
-       o pedido do clique da fixture. O `catch` vazio só impede a rejeição
-       solta: quem decide o que a falta significa é o passo das falas. */
-    const respostaDasFalas = esperarFalasDoTema(prof, "exp06ef1b");
-    respostaDasFalas.catch(() => undefined);
-
-    if (MODO_DA_IA === "fixture") {
-      await usarFixture(null);
+    // ═══ PROFESSORA: o caminho da IA REAL ════════════════════════════════
+    const preparoDaIa = await abrirNovaAtividade();
+    r.exigir(
+      (await prof.locator("[data-mostra-vazia]").count()) === 1 && (await prof.locator("[data-curadoria-da-mostra]").count()) === 0,
+      "a criação nasce VAZIA: nenhum estande antes de a professora escolher o caminho",
+    );
+    r.exigir(
+      (await preparoDaIa.locator('[data-caminho-curto] [data-acao="usar-banco-padrao"]').count()) === 1,
+      "o caminho curto “Usar Banco Padrão Oficial” fica no topo do preparo, antes de qualquer campo",
+    );
+    if (MODO_DA_IA === "pular") {
+      r.ressalva("JURI_IA=pular: a geração da mostra por IA não foi exercida nesta corrida");
     } else {
-      await gerar.click();
+      const disciplina = prof.getByRole("combobox", { name: /^Componente curricular/i });
+      await hidratado(prof, disciplina);
+      await disciplina.click();
+      const opcao = prof.getByRole("listbox").getByRole("option", { name: new RegExp(PARAMETROS.rotuloDaDisciplina) }).first();
+      await opcao.waitFor({ timeout: 10_000 }).catch(() => {
+        throw new Error("o seletor de componente curricular não abriu: a página ainda não estava hidratada");
+      });
+      await opcao.click();
+      const tema = preparoDaIa.getByRole("textbox", { name: /^Título da mostra escolar/i });
+      await tema.click();
+      await tema.pressSequentially(PARAMETROS.tema);
+      const assuntos = preparoDaIa.getByRole("textbox", { name: /^Assuntos curriculares da semana/i });
+      await assuntos.click();
+      await assuntos.pressSequentially(PARAMETROS.assuntos);
+      await prof.waitForFunction(
+        () => !document.querySelector('[data-acao="gerar-mostra"]')?.hasAttribute("disabled"),
+        null,
+        { timeout: 10_000 },
+      );
+      await r.registrar(prof, "preparo-parametros", {
+        titulo: "Dois caminhos: o banco padrão ou a IA",
+        mostra:
+          "A fase 1 da criação: no topo, “Usar Banco Padrão Oficial”; abaixo, o componente curricular, o tema da " +
+          "feira e os objetos de conhecimento, e o botão Gerar com IA.",
+        prova:
+          "O caminho curto não pede nada e não usa IA; o personalizado escreve a mostra sobre a aula da professora, " +
+          "e nada gerado chega à turma sem a aprovação dela.",
+      });
+
+      const curadoria = prof.locator("[data-curadoria-da-mostra]");
+      const falhaDaIa = prof.locator(`[data-preparo-juri] [data-falha-da-ia], [data-preparo-juri] ${ALERTA_DE_ERRO}`);
+      const respostaDasFalas = esperarFalasDoTema(prof, EXP_ID);
+      respostaDasFalas.catch(() => undefined);
+      await prof.locator('[data-acao="gerar-mostra"]').click();
       const desfecho = await primeiroQueAparecer(
         { curadoria, falha: falhaDaIa },
-        /* 30 s é o teto do BFF; o resto é folga para o 504 chegar à tela. */
-        { timeout: 60_000, oQue: "a geração da mostra com IA" },
+        { timeout: 120_000, oQue: "a geração da mostra com IA" },
       );
       if (desfecho === "falha") {
         const texto = (await falhaDaIa.first().innerText().catch(() => "")).replace(/\s+/g, " ").trim();
         await r.registrar(prof, "preparo-ia-falhou", {
           titulo: "Quando a IA não responde",
-          mostra: `O aviso da falha na voz da plataforma: “${texto.slice(0, 160)}”.`,
-          prova:
-            "Sem acervo padrão, a tela não oferece saída que não existe: sem saldo diz que a atividade sai quando " +
-            "o saldo voltar; com o gerador fora, oferece tentar de novo. Nada é gravado.",
+          mostra: `O aviso da falha na voz da plataforma: “${texto.slice(0, 160)}”, e o botão do acervo padrão.`,
+          prova: "Sem saldo ou com o gerador fora, a aula não para: o banco padrão entra no lugar (RF-007).",
         });
-        await usarFixture(texto || "sem texto na tela");
+        r.exigir(false, `a IA REAL gerou a mostra (a tela respondeu: “${texto.slice(0, 200)}”)`);
+      } else {
+        const estandes = await curadoria.locator("[data-estande]").count();
+        const areasNaTela = await curadoria.locator("section[data-area]").count();
+        r.exigir(estandes === 16 && areasNaTela === 4, `a IA real escreveu 16 estandes em 4 áreas (${estandes} em ${areasNaTela})`);
+        await curadoria.scrollIntoViewIfNeeded();
+        await r.registrar(prof, "curadoria-da-ia", {
+          titulo: "A mostra escrita pela IA, na curadoria",
+          mostra: "Os dezesseis estandes que o Vertex escreveu, em quatro categorias com nome e hashtag, cada um com Editar e Regenerar.",
+          prova:
+            "A IA traz as categorias no pacote (melhoria 2: o Zod valida o FORMATO, não uma lista fixa), e o rascunho " +
+            "não persiste: só o “Aprovar textos” grava.",
+          inteira: true,
+        });
+        await provarFalasNaCriacao(r, prof, await respostaDasFalas, {
+          comIa: true,
+          passo: "criacao-falas-do-podcast",
+          titulo: "As falas do podcast, para revisar",
+          mostra: "Abaixo da curadoria, as três falas do podcast de recapitulação que citam esta mostra, editáveis.",
+          prova: "A IA escreve as falas a partir dos estandes; a professora as revisa antes de aprovar os textos.",
+        });
+        r.ressalva("a mostra da IA foi gerada e curada, e NÃO foi gravada: a aula desta corrida vai ao ar pelo banco padrão");
       }
     }
-    if (origemDaMostra === "ia") r.ressalva("a IA respondeu: a mostra desta corrida foi escrita pelo gerador de verdade");
 
-    const estandes = await curadoria.locator("[data-estande]").count();
-    const areasNaTela = await curadoria.locator("section[data-area]").count();
-    r.exigir(estandes === 16 && areasNaTela === 4, `a curadoria mostra 16 estandes em 4 áreas (${estandes} em ${areasNaTela})`);
-    await curadoria.scrollIntoViewIfNeeded();
-    await r.registrar(prof, "curadoria-da-mostra", {
-      titulo: "Curadoria da Mostra: 16 Estandes",
-      mostra:
-        "Os dezesseis estandes em quatro áreas, cada uma com a hashtag dela, com Editar estande e Regenerar " +
-        `estande em cada cartão${origemDaMostra === "fixture" ? " (a mostra de fixture, no lugar da resposta do gerador)" : ""}.`,
-      prova:
-        "Nenhum texto gerado por IA chega à turma sem a aprovação da professora: o rascunho não persiste, e só o " +
-        "“Criar atividade” grava. A primeira hashtag de cada estande é a da área — é por ela que a galeria busca.",
-      inteira: true,
-    });
-
-    // ═══ PROFESSORA: as falas do podcast, na criação ═════════════════════
-    const tituloDasFalas = "As falas do podcast, para revisar";
-    const mostraDasFalas =
-      "Abaixo da curadoria, as três falas do podcast de recapitulação que citam esta mostra: duas da Bia e " +
-      "uma do Rafa, editáveis antes de aprovar os textos.";
-    if (origemDaMostra === "ia") {
-      await provarFalasNaCriacao(r, prof, await respostaDasFalas, {
-        comIa: true,
-        passo: "criacao-falas-do-podcast",
-        titulo: tituloDasFalas,
-        mostra: mostraDasFalas,
-        prova:
-          "A IA escreve as falas a partir dos estandes da mostra (Vertex), e a professora as revisa e edita na " +
-          "criação: elas vão no mesmo “Aprovar textos”, que as exige. O resto do roteiro é o aprovado pela Unooria.",
-      });
-    } else {
-      /* Com a fixture, a IA pode não responder também às falas: a api devolve as
-         do roteiro, sem IA, e isso é desfecho legítimo — não se exige `usouIa`. */
-      const resposta = await respostaDasFalas.catch(() => null);
-      const corpo = resposta ? await resposta.json().catch(() => null) : null;
-      if (corpo?.usouIa !== true) {
-        r.ressalva(
-          `as falas do podcast vieram sem IA (falas-do-tema ${resposta?.status() ?? "sem resposta"}, ` +
-            `motivo=${corpo?.motivo ?? "?"}): a mostra é de fixture`,
-        );
-      }
-      const caixas = prof.locator("[data-falas-do-podcast] textarea");
-      await caixas.first().waitFor({ timeout: 20_000 });
-      const textos = await caixas.evaluateAll((ts) => ts.map((t) => t.value.trim()));
-      r.exigir(
-        textos.length === 3 && textos.every((t) => t.length > 0),
-        `a criação mostra as 3 falas do podcast, preenchidas, para a professora revisar (${textos.length} na tela)`,
-      );
-      await r.registrar(prof, "criacao-falas-do-podcast", {
-        titulo: tituloDasFalas,
-        mostra: `${mostraDasFalas} Com a mostra de fixture, as falas podem ser as do roteiro, sem IA.`,
-        prova:
-          "As falas vão no mesmo “Aprovar textos”, que as exige: sem elas na régua, o botão não acende e a lista " +
-          "de pendências diz o que falta.",
-        inteira: true,
-      });
-    }
-
-    // ═══ PROFESSORA: curar um estande ════════════════════════════════════
-    const estande = curadoria.locator('[data-estande="proj-a1"]');
-    const editar = estande.getByRole("button", { name: "Editar estande" });
-    await hidratado(prof, editar);
-    await editar.click();
-    const editor = prof.locator('[data-editor-do-estande="proj-a1"]');
-    await editor.waitFor({ timeout: 10_000 });
-    const titulo = editor.getByRole("textbox", { name: /^Título do estande/ });
-    /* De UMA vez, não `fill("")` + `pressSequentially`: digitar logo depois de
-       esvaziar corria contra o render do campo vazio (que acende o erro) no
-       next dev, e o React devolvia o campo a um valor anterior no meio da
-       digitação — "Prótipo", "Proótipo". Com uma pausa entre os dois, 3 de 3
-       corridas passavam; sem ela, 3 de 3 perdiam letra. */
-    await titulo.fill(TITULO_CURADO);
-    r.exigir((await titulo.inputValue()) === TITULO_CURADO, "o campo do título ficou com o que a professora escreveu");
-    await r.registrar(prof, "curadoria-editar-estande", {
-      titulo: "Editar o que a criança lê",
-      mostra: "A janela Editar Projeto Escolar: o título, a legenda da apresentação e o bastidor, com a régua de palavras à vista.",
-      prova:
-        "O que se edita é o que a criança lê. A área, as hashtags e a descrição da imagem ficam como a geração " +
-        "os deixou: trocar a hashtag da área desmontaria a busca da Galeria Oculta.",
-    });
-    await prof.getByRole("button", { name: "Pronto", exact: true }).click();
-    await editor.waitFor({ state: "detached", timeout: 10_000 });
-    r.exigir(
-      (await estande.getByText(TITULO_CURADO).count()) > 0,
-      "o cartão do estande mostra o título que a professora escreveu",
-    );
-
-    // ═══ PROFESSORA: as DUAS FASES da aprovação (o pedido do PO) ═════════
-    /* Fase 1, os textos: "Aprovar textos e gerar as imagens" grava o pacote
-       (homologar), PRONTO e fora do ar. Fase 2, as imagens: geram-se sozinhas
-       na grade; a professora vê cada uma, gera outra para a que não serve e
-       aprova. O "Continuar" só acende depois das duas. */
-    const continuar = prof.locator('[data-acao="continuar-criacao"]');
-    r.exigir(await continuar.isDisabled(), "antes de aprovar textos e imagens, o “Continuar” da criação fica apagado");
-    const aprovarTextos = prof.locator('[data-acao="aprovar-textos"]');
-    await prof.locator('[data-acao="aprovar-textos"]:not([disabled])').waitFor({ timeout: 20_000 }).catch(() => undefined);
-    if (await aprovarTextos.isDisabled()) {
-      const pendencias = await prof.locator("[data-preparo-juri] [role='status']").allInnerTexts();
-      throw new Error(`a curadoria recusou a mostra gerada pela IA: ${pendencias.join(" | ").slice(0, 400)}`);
-    }
-    await aprovarTextos.click();
+    // ═══ PROFESSORA: o caminho curto — Usar Banco Padrão Oficial ═════════
+    const preparo = await abrirNovaAtividade();
+    const usarPadrao = preparo.locator('[data-acao="usar-banco-padrao"]');
+    await hidratado(prof, usarPadrao);
+    await usarPadrao.click();
     await esperarOuFalharCedo(
-      prof.locator('[data-preparo-juri][data-fase="imagens"] [data-imagens-do-juri]'),
-      prof.locator("[data-preparo-juri]").locator(ALERTA_DE_ERRO),
-      { timeout: 60_000, oQue: "aprovar os textos e abrir a fase das imagens" },
+      prof.locator('[data-preparo-juri][data-fase="banco-padrao"]'),
+      prof.locator(`[data-preparo-juri] ${ALERTA_DE_ERRO}`),
+      { timeout: 30_000, oQue: "usar o Banco Padrão Oficial" },
     );
-    const grade = prof.locator("[data-imagens-do-juri]");
-    const pacoteDaCriacao = await grade.getAttribute("data-pacote-das-imagens");
-    const jaAprovada = (await grade.getAttribute("data-imagens-aprovadas")) === "sim";
-    /** Espera a geração parar — e falha CEDO no aviso da grade (sem saldo, provedor fora). */
-    const imagensProntas = async (oQue) => {
-      const fim = Date.now() + 300_000;
-      for (;;) {
-        const gerando = await grade.locator('[data-estado-da-imagem="gerando"]').count();
-        const sem = await grade.locator('[data-estado-da-imagem="sem-imagem"]').count();
-        if (gerando === 0 && (sem === 0 || jaAprovada)) return;
-        const aviso = grade.locator(".unooria-feedback-alert--warning");
-        if ((await aviso.count()) > 0 && gerando === 0) {
-          throw new Error(`${oQue}: ${(await aviso.first().innerText()).trim()}`);
-        }
-        if (Date.now() > fim) throw new Error(`${oQue}: a geração não terminou em 5 minutos`);
-        await prof.waitForTimeout(1_000);
-      }
-    };
-    await imagensProntas("gerar as imagens dos estandes (o ADC está válido?)");
-    const cartoesDeImagem = grade.locator("[data-imagem-do-estande]");
-    r.exigir((await cartoesDeImagem.count()) === 16, "a fase 2 mostra os 16 estandes, cada um com a sua imagem");
-
-    /* A atividade gravada ainda não vai ao ar: a api recusa sem o OK. */
-    if (pacoteDaCriacao && !jaAprovada) {
-      const recusa = await mandarApi(prof, `${caminhoDaTurma}/pacotes/${pacoteDaCriacao}/em-andamento`);
-      r.exigir(
-        recusa.status === 409 && recusa.corpo?.codigo === "imagens-nao-aprovadas",
-        `sem as imagens aprovadas, pôr no ar é recusado com 409 imagens-nao-aprovadas (veio ${recusa.status} ${recusa.corpo?.codigo ?? ""})`,
-      );
-      r.exigir(
-        (await cartoesDeImagem.locator("img").count()) === 16,
-        "cada estande aparece com a imagem gerada, grande, junto do título e do que ela deveria mostrar",
-      );
-    }
-    await r.registrar(prof, "criacao-imagens", {
-      titulo: "As imagens, antes da turma",
-      mostra:
-        "A fase 2 da criação: os 16 estandes por área, cada um com a imagem gerada por IA, o título, o que ela " +
-        "deveria mostrar, o estado “Aguardando seu OK” e os botões “Gerar outra imagem” e “Aprovar as imagens”.",
+    r.exigir(
+      /Banco Padrão Oficial está pronto/.test(await prof.locator('[data-preparo-juri][data-fase="banco-padrao"]').innerText()),
+      "o banco padrão fica pronto em um toque, sem IA e sem curadoria",
+    );
+    await r.registrar(prof, "banco-padrao", {
+      titulo: "O Banco Padrão Oficial, em um toque",
+      mostra: "A confirmação: os 16 estandes da Feira de Ciências e Sustentabilidade prontos, sem IA, com a arte da missão.",
       prova:
-        "Nenhuma imagem gerada por IA chega ao feed das crianças sem o OK da professora (o pedido do PO): os textos " +
-        "já estão gravados, e a atividade não vai ao ar sem a segunda fase.",
-      inteira: true,
+        "É o caminho curto do PRD (E0-PROF-02) e o fallback quando falta cota de IA: a atividade fica gravada, fora " +
+        "do ar, com as imagens já aprovadas (a arte procedural).",
     });
-
-    if (!jaAprovada) {
-      /* "Gerar outra imagem" troca SÓ aquela, num arquivo novo. */
-      const primeira = cartoesDeImagem.first();
-      const idDaPrimeira = await primeira.getAttribute("data-imagem-do-estande");
-      const srcAntes = await primeira.locator("img").getAttribute("src");
-      await primeira.locator('[data-acao="gerar-outra-imagem"]').click();
-      const daPrimeira = grade.locator(`[data-imagem-do-estande="${idDaPrimeira}"]`);
-      await esperarOuFalharCedo(
-        daPrimeira.locator(`img:not([src="${srcAntes}"])`),
-        grade.locator(".unooria-feedback-alert--warning"),
-        { timeout: 90_000, oQue: "gerar outra imagem para um estande" },
-      );
-      r.exigir(
-        (await daPrimeira.getAttribute("data-estado-da-imagem")) === "aguardando",
-        "a imagem refeita é outra, e continua esperando o OK",
-      );
-
-      await grade.locator('[data-acao="aprovar-imagens"]').click();
-      await esperarOuFalharCedo(
-        prof.locator('[data-imagens-do-juri][data-imagens-aprovadas="sim"]'),
-        grade.locator(".unooria-feedback-alert--warning"),
-        { timeout: 30_000, oQue: "aprovar as imagens" },
-      );
-      r.exigir(
-        (await grade.locator('[data-acao="gerar-outra-imagem"]').count()) === 0,
-        "aprovadas, as imagens congelam: some o “Gerar outra imagem”",
-      );
-      const depois = await mandarApi(prof, `${caminhoDaTurma}/pacotes/${pacoteDaCriacao}/imagens/proj-a1/refazer`);
-      r.exigir(
-        depois.status === 409 && depois.corpo?.codigo === "imagens-ja-aprovadas",
-        `depois da aprovação, refazer é 409 imagens-ja-aprovadas (veio ${depois.status} ${depois.corpo?.codigo ?? ""})`,
-      );
-    } else {
-      r.ressalva("a mostra criada é a mesma de uma corrida anterior, já com as imagens aprovadas: a fase 2 só confere");
-    }
-    r.exigir(!(await continuar.isDisabled()), "com textos e imagens aprovados, o “Continuar” acende");
-    await r.registrar(prof, "criacao-imagens-aprovadas", {
-      titulo: "Imagens aprovadas",
-      mostra: "Os 16 estandes com a etiqueta “Aprovada” e a barra cheia.",
-      prova: "É esta aprovação que deixa a atividade ir ao ar; depois dela, as imagens não mudam mais.",
-    });
-
-    // ═══ PROFESSORA: equipes, revisar, criar ═════════════════════════════
+    const continuar = prof.locator('[data-acao="continuar-criacao"]');
+    await prof.locator('[data-acao="continuar-criacao"]:not([disabled])').waitFor({ timeout: 10_000 });
     await continuar.click();
-    /* Rádio do DS pelo PAPEL: o `<input>` transparente cobre o rótulo inteiro. */
     const umPorComputador = prof.getByRole("radio", { name: "Um aluno por computador", exact: true });
     await umPorComputador.click();
     r.exigir(await umPorComputador.isChecked(), "o passo de equipes marca “Um aluno por computador”");
-
     await prof.locator('[data-acao="continuar-criacao"]').click();
     const revisao = prof.locator("[data-revisao-da-criacao]");
     await revisao.waitFor({ timeout: 10_000 });
-    /* "Pôr no ar agora" nasce desligado quando a turma já tem uma em andamento.
-       O `<input>` do `Toggle` do DS é invisível de propósito (opacidade 0, sem
-       ponteiro): espera-se o input no DOM e o toque vai como evento. */
     const noAr = prof.getByLabel("Pôr esta atividade no ar agora");
     await noAr.waitFor({ state: "attached", timeout: 10_000 });
     if (!(await noAr.isChecked())) await noAr.dispatchEvent("click");
     r.exigir(await noAr.isChecked(), "“Pôr esta atividade no ar agora” fica ligado");
-    r.exigir(
-      /16 estandes em 4 áreas/.test(await revisao.innerText()),
-      "a revisão resume o tema, o componente curricular e os 16 estandes em 4 áreas",
-    );
-    await r.registrar(prof, "criacao-revisar", {
-      titulo: "Revisar e criar",
-      mostra:
-        "O último passo: a turma, o tema com os 16 estandes em 4 áreas, um aluno por computador e o interruptor " +
-        "“Pôr esta atividade no ar agora”, ligado.",
-      prova:
-        "Os textos e as imagens já foram aprovados nas duas fases (a mostra está gravada, PRONTA); criar só faz o " +
-        "resto — o interruptor a põe em andamento.",
-    });
-
     await prof.locator('[data-acao="criar-atividade"]').click();
-    /* O desfecho é a PÁGINA DA ATIVIDADE em andamento; a corrida é contra o
-       erro da criação (o `pacote-invalido` traz a lista de problemas) e contra
-       o aviso "A atividade foi criada" (criou, mas não entrou no ar). */
     await esperarOuFalharCedo(
       prof.locator('[data-estado-da-atividade="em-andamento"]'),
       revisao.locator(`${ALERTA_DE_ERRO}, .unooria-feedback-alert--warning`),
-      { timeout: 60_000, oQue: "criar a atividade e pô-la no ar" },
+      { timeout: 60_000, oQue: "criar a atividade do banco padrão e pô-la no ar" },
     );
     await prof.waitForURL("**/resultados?**pacote=**", { timeout: 30_000 });
     const atividadeId = new URL(prof.url()).searchParams.get("pacote");
     if (!r.exigir(Boolean(atividadeId), `a página da atividade leva o id dela na URL (${prof.url()})`)) return;
-    await prof.locator(`[data-pacote="${atividadeId}"]`).waitFor({ timeout: 20_000 });
     const pacotesDepois = (await lerApi(prof, `${caminhoDaTurma}/pacotes`)).corpo;
-    r.exigir(
-      pacotesDepois?.ativo?.id === atividadeId,
-      "a atividade criada é a EM ANDAMENTO da turma (GET /juri-estadual/turmas/:turmaId/pacotes)",
-    );
-    r.exigir(
-      pacotesDepois?.ativo?.conteudo?.projetos?.find((x) => x.id === "proj-a1")?.titulo === TITULO_CURADO,
-      "a api gravou a mostra como a professora a deixou (o título curado)",
-    );
-    const jaExistia = (pacotesAntes.corpo?.historico ?? []).some((h) => h.id === atividadeId);
-    if (!jaExistia) {
-      r.exigir(
-        pacotesDepois?.ativo?.rodada === 1,
-        `a atividade nova começa na 1ª rodada (veio ${pacotesDepois?.ativo?.rodada ?? "nada"})`,
-      );
-    }
+    r.exigir(pacotesDepois?.ativo?.id === atividadeId, "a atividade do banco padrão é a EM ANDAMENTO da turma");
+    r.exigir(pacotesDepois?.ativo?.origem === "padrao", `a origem gravada é “padrao” (veio ${pacotesDepois?.ativo?.origem})`);
 
-    /* ZERAR só quando a atividade criada é a que JÁ estava no ar: sem isto a
-       segunda corrida encontra os estudantes já votados, e o roteiro passa por
-       cima do latch que ele existe para provar. */
     if (noArAntes?.id === atividadeId) {
       const rodada = noArAntes.rodada;
       const zerar = prof.locator("[data-zerar-turma]");
       await hidratado(prof, zerar);
       await zerar.click();
-      await prof.getByRole("dialog").getByRole("button", { name: /Zerar a turma/ }).click();
+      await prof.getByRole("dialog").getByRole("button", { name: "Iniciar Nova Rodada" }).click();
       await esperarOuFalharCedo(
-        prof.locator(`[data-pacote="${atividadeId}"]`, { hasText: `rodada ${rodada + 1} em andamento` }),
+        prof.locator(`[data-pacote="${atividadeId}"]`, { hasText: `rodada ${rodada + 1}` }),
         prof.getByRole("dialog").locator(ALERTA_DE_ERRO),
         { timeout: 30_000, oQue: "zerar a turma" },
       );
-      r.ressalva(
-        `a atividade criada é a que já estava no ar (corrida anterior, mesma mostra): a turma foi zerada para a ${rodada + 1}ª rodada`,
-      );
+      r.ressalva(`o banco padrão já estava no ar (corrida anterior): a turma foi zerada para a ${rodada + 1}ª rodada`);
     }
     await prof.waitForSelector('[data-etapa="exploracao"]', { timeout: 20_000 });
-    await prof.locator("[data-estandes-da-atividade]").waitFor({ timeout: 20_000 });
-
     await r.registrar(prof, "atividade-em-andamento", {
-      titulo: "A atividade em andamento: imagens aprovadas, estandes e o botão da aula",
-      mostra:
-        "A página da atividade: em andamento, as equipes, as imagens dos estandes já aprovadas, os 16 estandes " +
-        "por área (as hashtags quebram linha dentro do cartão) e o painel da aula na exploração, com Liberar a " +
-        "Galeria Oculta.",
-      prova:
-        "As imagens foram vistas e aprovadas na criação; aqui elas não mudam mais. As hashtags vão no rodapé do " +
-        "cartão, que quebra linha — no cabeçalho, sem quebra, elas vazavam (o pedido do PO).",
+      titulo: "A atividade em andamento, e o botão da aula",
+      mostra: "A página da atividade do banco padrão: em andamento, os 16 estandes e o painel da aula com Liberar Auditoria.",
+      prova: "Um botão só (PRD v2): Liberar Auditoria abre a Galeria Oculta para a turma inteira, e não volta.",
       inteira: true,
     });
-    const hashtagsDoEstande = prof.locator('[data-estandes-da-atividade] [data-estande="proj-a1"] .unooria-card__subtags-container');
-    r.exigir(
-      (await hashtagsDoEstande.count()) === 1,
-      "as hashtags do estande moram no contêiner do DS que quebra linha (subtags), não no cabeçalho do cartão",
-    );
 
-    // ═══ ESTUDANTES: a grade, a credencial e o feed ══════════════════════
-    /** Entra pela GRADE do hub do estudante — o cartão da missão, não a URL. */
+    // ═══ ESTUDANTES: utilitários ═════════════════════════════════════════
     const entrarPelaGrade = async (pagina, login) => {
       await r.entrar(pagina, login);
       if (!new URL(pagina.url()).pathname.startsWith("/estudante")) {
         await pagina.goto(`${HUB}/estudante`, { waitUntil: "domcontentloaded" });
       }
       const cartao = pagina.locator("main a", { hasText: TITULO_DA_MISSAO }).first();
-      await cartao.waitFor({ timeout: 20_000 }).catch(() => {
-        throw new Error(
-          `o cartão “${TITULO_DA_MISSAO}” não está ABERTO na grade da ${TURMA}: o seed libera a missão lá, e a ` +
-            "atividade criada acima precisa estar em andamento",
-        );
+      await cartao.waitFor({ timeout: 30_000 }).catch(() => {
+        throw new Error(`o cartão “${TITULO_DA_MISSAO}” não está ABERTO na grade da ${TURMA}`);
       });
       await hidratado(pagina, cartao);
       await cartao.click();
       await pagina.waitForURL(`**/exp/${EXP_ID}**`, { timeout: 30_000 });
     };
     const frameDe = (pagina) => () => pagina.frameLocator('iframe[title="experiencia"]');
-    /**
-     * Espera o FIM das animações finitas antes da captura (o fade das folhas do
-     * Unoovista saía desbotado no print). A infinita (o pulso da plenária)
-     * nunca termina e não entra na conta.
-     */
     const semAnimacao = (q) =>
       q()
         .locator("body")
@@ -850,20 +488,14 @@ await suite(
       if (s.status !== 200) throw new Error(`a sessão da missão não abriu (HTTP ${s.status}): ${JSON.stringify(s.corpo).slice(0, 200)}`);
       return s.corpo;
     };
-
-    /** A credencial: o crachá e o botão. */
-    const abrirACredencial = async (q) => {
-      const acessar = q().getByRole("button", { name: "Acessar Feed da Mostra" });
-      await acessar.waitFor({ timeout: 40_000 });
-      return acessar;
-    };
+    const aviso = (q, texto) => q().getByText(texto).first();
+    const botaoDaCedula = (q) => q().getByRole("button", { name: COPY.abrirCedula });
 
     /**
-     * Rola o feed até os dez. O feed é servido UM post por vez: cada vez que o
-     * último servido fica ≥ 60% visível, a tela pede o próximo ao motor da api.
-     * `aoChegar(post)` roda a cada post novo, antes da rolagem seguinte.
+     * Rola o feed até os dez, um post por vez (o motor serve o próximo quando o
+     * último fica ≥ 60% visível). `aoChegar(postId)` roda a cada post novo.
      */
-    const rolarAteOsDez = async (pagina, q, aoChegar = async () => {}) => {
+    const rolarAteOsDez = async (q, aoChegar = async () => {}) => {
       const artigos = q().locator("article[data-post-id]");
       await artigos.nth(3).waitFor({ timeout: 20_000 });
       const vistos = new Set();
@@ -885,94 +517,72 @@ await suite(
             throw new Error(`o feed parou em ${total} posts: rolar até o último não trouxe o próximo do motor`);
           });
       }
-      await q().getByText("10 estandes avaliados. Toque abaixo para emitir seu voto final.").first().waitFor({ timeout: 15_000 });
+      await botaoDaCedula(q).waitFor({ timeout: 15_000 });
     };
 
-    /**
-     * A cédula: o projeto pelo título, a convicção e a JUSTIFICATIVA — o cartão
-     * de motivo (o primeiro) e a frase da legenda (a primeira) —, e o latch.
-     */
-    const votar = async (q, tituloDoProjeto, conviccao) => {
-      await q().getByRole("button", { name: "Cédula Oficial de Votação — Jurado" }).click();
-      const urna = q().getByRole("dialog", { name: "Urna Oficial de Votação do Júri" });
-      await urna.waitFor({ timeout: 10_000 });
-      const projetos = urna.getByRole("radiogroup", { name: "Projetos do seu feed" });
+    /** A cédula: os quatro elementos, e o voto. */
+    const abrirACedula = async (q) => {
+      await botaoDaCedula(q).click();
+      const folha = q().getByRole("dialog", { name: COPY.cabecalhoDaCedula });
+      await folha.waitFor({ timeout: 10_000 });
+      return folha;
+    };
+    const marcarOVoto = async (folha, tituloDoProjeto, certeza) => {
+      const projetos = folha.getByRole("radiogroup", { name: "Projetos do seu feed" });
       const opcao = tituloDoProjeto
         ? projetos.getByRole("radio", { name: new RegExp(`^${escaparRegex(tituloDoProjeto)}`) }).first()
-        : projetos.getByRole("radio").first();
+        : projetos.getByRole("radio").last();
+      await opcao.scrollIntoViewIfNeeded();
       await opcao.click();
-      await urna.getByRole("button", { name: conviccao, exact: true }).click();
-      await urna.getByRole("radiogroup", { name: "Motivo do seu voto" }).getByRole("radio").first().click();
-      await urna.getByRole("radiogroup", { name: "Frases da legenda do projeto" }).getByRole("radio").first().click();
-      return urna;
+      /* A opção do alto pode ficar sob a borda da folha: o clique tem de MARCAR. */
+      if ((await opcao.getAttribute("aria-checked")) !== "true") await opcao.dispatchEvent("click");
+      if ((await opcao.getAttribute("aria-checked")) !== "true") throw new Error("a cédula não marcou o projeto tocado");
+      await folha.getByRole("group", { name: "Sua certeza" }).getByRole("button", { name: certeza, exact: true }).click();
+    };
+    const lacrar = async (q, folha) => {
+      await folha.getByRole("button", { name: "Confirmar Voto Oficial" }).click();
+      await q().getByText(/^Voto Registrado e Lacrado — Protocolo #/).first().waitFor({ timeout: 15_000 });
     };
 
-    /**
-     * A cédula extraordinária: a decisão (o chip), o estande quando é troca ou
-     * complemento, o cartão de motivo NOVO e a frase da legenda do estande da
-     * decisão.
-     */
-    const decidirARevisao = async (revisao, acao) => {
-      if (acao !== "Manter") await revisao.getByRole("button", { name: acao, exact: true }).click();
-      if (acao !== "Manter") await revisao.getByRole("radiogroup", { name: "Estandes da mostra" }).getByRole("radio").first().click();
-      await revisao.getByRole("radiogroup", { name: "Motivo da sua decisão" }).getByRole("radio").first().click();
-      await revisao.getByRole("radiogroup", { name: "Frases da legenda do projeto" }).getByRole("radio").first().click();
+    const plenaria = (qq) => qq().locator(".plenaria");
+    const conferirOPico = async (qq, quem) => {
+      await plenaria(qq).waitFor({ timeout: 20_000 });
+      const elementos = await plenaria(qq).evaluate((el) => el.children.length);
+      const texto = await plenaria(qq).innerText();
+      r.exigir(elementos === 3, `${quem}: a espera tem exatamente três elementos — brasão, carimbo e ordem (${elementos})`);
+      r.exigir(
+        (await qq().locator(".tela").locator("button, [role=tab], article").count()) === 0,
+        `${quem}: na espera não há botão, aba nem post — nada leva de volta`,
+      );
+      r.exigir(texto.includes(COPY.espera), `${quem}: a ordem da comissão é “${COPY.espera}”`);
+      r.exigir(!SPOILER.test(texto), `${quem}: a espera não diz algoritmo, bolha, filtro nem oculto`);
     };
 
-    /** A espera da nova rodada: a mesma moldura do pico, com a frase da rodada de desvio. */
-    const esperaDoDesvio = (qq) => qq().locator('.tela.plenaria[data-espera="desvio"]');
-
-    /**
-     * Rola a rodada de desvio até os seis. `aoChegar(post)` roda a cada post
-     * novo, antes da rolagem seguinte — como no feed do júri.
-     */
-    const rolarODesvio = async (q, aoChegar = async () => {}) => {
-      const artigos = q().locator("article[data-post-id]");
-      await artigos.nth(1).waitFor({ timeout: 20_000 });
-      const vistos = new Set();
-      for (;;) {
-        const total = await artigos.count();
-        for (let i = 0; i < total; i += 1) {
-          const id = await artigos.nth(i).getAttribute("data-post-id");
-          if (id && !vistos.has(id)) {
-            vistos.add(id);
-            await aoChegar(id, i);
-          }
-        }
-        if (total >= 6) break;
-        await artigos.nth(total - 1).scrollIntoViewIfNeeded();
-        await artigos
-          .nth(total)
-          .waitFor({ timeout: 20_000 })
-          .catch(() => {
-            throw new Error(`a rodada de desvio parou em ${total} posts: rolar até o último não trouxe o próximo`);
-          });
-      }
-      await q().locator('[data-comparacao="desvio"]').waitFor({ timeout: 15_000 });
-    };
-
-    // ── ESTUDANTE 1: o que curte ─────────────────────────────────────────
+    // ── ESTUDANTE 1: o crachá, as abas, o carrossel ──────────────────────
     const p = await r.pagina("estudante", { viewport: { width: 1280, height: 950 } });
     await entrarPelaGrade(p, PRIMEIRO.login);
     const q = frameDe(p);
-    const acessar1 = await abrirACredencial(q);
+    const cracha = q().getByRole("dialog", { name: COPY.topo });
+    await cracha.waitFor({ timeout: 60_000 });
+    const acessar = cracha.getByRole("button", { name: COPY.entrar });
+    await acessar.waitFor({ timeout: 20_000 });
+    r.exigir((await cracha.getByText(COPY.jurado).count()) > 0, "o crachá-modal traz o selo @jurado_oficial");
     r.exigir(
-      (await q().getByText("Credencial Oficial de Jurado Estudantil").count()) > 0,
-      "a missão abre pelo crachá da comissão",
+      (await q().locator(".timeline-desfocada").count()) === 1,
+      "atrás do crachá, a timeline do Unoovista desfocada e inerte",
     );
-    r.exigir(
-      (await q().getByText(`Mostra: ${PARAMETROS.tema}`).count()) > 0,
-      "o crachá traz o tema da mostra da professora",
-    );
-    await r.registrar(p, "credencial", {
-      titulo: "A credencial de jurado",
-      mostra: "O crachá da Comissão Estadual: o tema da mostra, as quatro áreas em disputa e o mandato de jurado.",
+    await semAnimacao(q);
+    await r.registrar(p, "cracha-modal", {
+      titulo: "O crachá, sobre a timeline desfocada",
+      mostra:
+        "A folha da comissão (“10ª Mostra Estadual de Projetos Escolares”) com o emissor @comissao_juri, o selo " +
+        "@jurado_oficial, o mandato e “Acessar Feed da Mostra” — e atrás, a timeline desfocada.",
       prova:
-        "A missão abre pelo papel de jurado e pela promessa de explorar as escolas concorrentes. Nenhuma palavra " +
-        "sobre o feed se adaptar: a descoberta é dela, depois.",
+        "A missão abre pelo papel de jurado; o modal não fecha pelo véu nem por ESC: o único caminho é entrar no " +
+        "feed. Nenhuma palavra sobre o feed se adaptar.",
     });
 
-    await acessar1.click();
+    await acessar.click();
     const artigos1 = q().locator("article[data-post-id]");
     await artigos1.nth(3).waitFor({ timeout: 20_000 });
     const abertura = (await sessaoDe(p)).feed.posts;
@@ -980,11 +590,38 @@ await suite(
       abertura.length === 4 && new Set(abertura.map((x) => x.area)).size === 4,
       `a abertura do feed traz 4 posts, um de cada área (${abertura.map((x) => x.area).join(", ")})`,
     );
+    const topo = q().locator("header, [class*='topbar' i]").first();
+    r.exigir(
+      (await q().getByText(COPY.jurado).first().isVisible()) && (await q().getByText("Unoovista").first().isVisible()),
+      "a TopBar do Unoovista traz a marca e o crachá @jurado_oficial",
+    );
+    const navegacao = q().getByRole("navigation", { name: "Navegação do app" });
+    /* A aba inativa do `TabBar` do DS mostra só o ícone: o nome vai no rótulo acessível. */
+    const aba = (nome) => navegacao.getByLabel(nome, { exact: true }).or(navegacao.getByText(nome, { exact: true })).first();
+    const abasPresentes = [];
+    for (const a of COPY.abas) if ((await aba(a).count()) > 0) abasPresentes.push(a);
+    r.exigir(
+      abasPresentes.length === 4,
+      `a barra de abas tem as quatro da copy — Início, Busca, Notificações, Jurado (achou: ${abasPresentes.join(", ")})`,
+    );
+    await semAnimacao(q);
+    await r.registrar(p, "feed-topbar", {
+      titulo: "O feed, com o crachá na TopBar",
+      mostra: "A TopBar “Unoovista” com o selo @jurado_oficial à direita, a abertura do feed e as quatro abas embaixo.",
+      prova: "O crachá fica em toda tela do clone; a abertura mostra um projeto de cada área — a mostra é variada antes de a bolha fechar.",
+    });
+    void topo;
 
-    /* A 2ª lâmina do carrossel (a ficha técnica), ARRASTANDO COM O MOUSE — o
-       pedido do PO: o carrossel era só de toque, e no computador da escola o
-       arrasto nativo da imagem cancelava o gesto. O teclado já funcionava e
-       escondia o defeito; por isso a prova é o mouse de verdade. */
+    /* A aba BUSCA está fechada durante o julgamento: responde com o aviso. */
+    await aba("Busca").click();
+    await aviso(q, COPY.buscaFechada).waitFor({ timeout: 10_000 });
+    r.exigir((await sessaoDe(p)).passo === "feed", "a Busca fechada não tira a criança do feed");
+    await aba("Jurado").click();
+    await q().getByText(COPY.topo).first().waitFor({ timeout: 10_000 });
+    await aba("Início").click();
+    await artigos1.first().waitFor({ timeout: 10_000 });
+
+    /* O CARROSSEL anda com o MOUSE (arrasto real) e pelas setas. */
     const primeiroPost = artigos1.first();
     const midia = primeiroPost.locator('[aria-roledescription="carrossel"]').first();
     await midia.scrollIntoViewIfNeeded();
@@ -996,46 +633,21 @@ await suite(
     await p.mouse.move(caixa.x + caixa.width * 0.5, yDoMeio, { steps: 6 });
     await p.mouse.move(caixa.x + caixa.width * 0.2, yDoMeio, { steps: 6 });
     await p.mouse.up();
-    await primeiroPost.getByText("Ficha técnica").first().waitFor({ timeout: 10_000 });
-    /* E as SETAS, a navegação por clique: a anterior volta, a próxima avança. */
+    await primeiroPost.locator('[aria-label="Foto 2 de 3"]').first().waitFor({ timeout: 10_000 });
     await primeiroPost.locator('[data-seta="anterior"]').click();
-    await primeiroPost.getByRole("button", { name: "Próxima lâmina" }).waitFor({ timeout: 10_000 });
-    r.exigir(
-      (await primeiroPost.getByText("Ficha técnica").count()) === 0,
-      "a seta “Lâmina anterior” volta à fotografia do estande",
-    );
-    await primeiroPost.locator('[data-seta="proxima"]').click();
-    await primeiroPost.getByText("Ficha técnica").first().waitFor({ timeout: 10_000 });
-    await r.registrar(p, "feed-ficha-tecnica", {
-      titulo: "O feed da mostra, e a ficha técnica",
-      mostra:
-        "O primeiro post da abertura com a 2ª lâmina do carrossel — aberta ARRASTANDO COM O MOUSE — e a seta de " +
-        "voltar sobre a mídia: projeto, escola, área e perfil.",
-      prova:
-        "O carrossel anda com o dedo, com o mouse e pelas setas (o pedido do PO). A abertura mostra um estande de " +
-        "cada área — a mostra é variada antes de a bolha fechar; o que não desce é o acervo: só os posts servidos.",
-    });
-    await primeiroPost.locator('[data-seta="anterior"]').click();
+    await primeiroPost.locator('[aria-label="Foto 1 de 3"]').first().waitFor({ timeout: 10_000 });
+    r.exigir(true, "o carrossel anda arrastando com o mouse (foto 2 de 3) e volta pela seta (foto 1 de 3)");
 
-    /* COMENTAR E COMPARTILHAR respondem (o botão morto parecia defeito), e não
-       pesam no feed: nada vai à api. */
+    /* COMENTAR responde com o aviso, e não pesa. */
     await primeiroPost.getByRole("button", { name: "Comentar publicação", exact: true }).click();
-    await q().getByText("Durante o julgamento, comentários e compartilhamentos ficam fechados.").first().waitFor({ timeout: 10_000 });
-    r.exigir(
-      (await sessaoDe(p)).feed.curtidos.length === 0,
-      "comentar responde com o aviso da comissão e não vira sinal do feed",
-    );
+    await aviso(q, COPY.comentariosFechados).waitFor({ timeout: 10_000 });
+    r.exigir((await sessaoDe(p)).feed.curtidos.length === 0, "comentar responde com o aviso da comissão e não vira sinal do feed");
 
-    /* CURTIR DUAS VEZES A MESMA ÁREA. A primeira curtida é no 1º post; a área
-       dele vira a do jurado. Sem bolha, o motor serve a apresentação nova da
-       área de MAIOR peso — a 2ª curtida acontece cedo, como num app de verdade.
-       Cada curtida espera a API registrá-la ANTES da rolagem seguinte: é a
-       curtida que entra antes de o motor escolher o próximo. */
+    // ── ESTUDANTE 1: curtir duas vezes a mesma área — a saturação ────────
     const areaCurtida = abertura[0].area;
     const curtidas = [];
     const curtir = async (postId) => {
       const artigo = q().locator(`article[data-post-id="${postId}"]`);
-      /* `exact`: sem ele, "Curtir publicação" casa também "Descurtir publicação". */
       await artigo.getByRole("button", { name: "Curtir publicação", exact: true }).click();
       await artigo.getByRole("button", { name: "Descurtir publicação", exact: true }).waitFor({ timeout: 5_000 });
       await esperarNaApi(p, "/juri-estadual/sessao", (s) => s?.feed?.curtidos?.includes(postId), {
@@ -1044,124 +656,129 @@ await suite(
       curtidas.push(postId);
     };
     await curtir(abertura[0].id);
-    await rolarAteOsDez(p, q, async (postId) => {
+    await rolarAteOsDez(q, async (postId) => {
       if (curtidas.length >= 2 || curtidas.includes(postId)) return;
       const post = (await sessaoDe(p)).feed.posts.find((x) => x.id === postId);
       if (post?.area === areaCurtida) await curtir(postId);
     });
     const feed1 = (await sessaoDe(p)).feed;
-    if (
-      !r.exigir(
-        curtidas.length === 2 && feed1.curtidos.length === 2,
-        `o primeiro estudante curtiu DUAS vezes a mesma área (${areaCurtida}: ${curtidas.join(", ") || "nenhuma"})`,
-      )
-    ) {
-      throw new Error(
-        `pré-condição da prova da taxa: o feed não serviu um segundo post de ${areaCurtida} para curtir — o motor ` +
-          "deveria puxar a área de maior peso (regras/afunilamento.ts#proximoPost)",
-      );
+    if (!r.exigir(curtidas.length === 2, `o primeiro estudante curtiu DUAS vezes a mesma área (${areaCurtida}: ${curtidas.join(", ")})`)) {
+      throw new Error("pré-condição da saturação: o feed não serviu um segundo post da área curtida (regras/afunilamento.ts)");
     }
-    const daArea = feed1.posts.filter((x) => x.area === areaCurtida).length;
+    const depoisDaAbertura = feed1.posts.slice(4);
+    const projetosDistintos1 = new Set(feed1.posts.map((x) => x.projetoId)).size;
     r.exigir(
-      feed1.posts.length === 10 && daArea >= 7,
-      `com duas curtidas na mesma área, o resto do feed é dela (${daArea} de ${feed1.posts.length} posts de ${areaCurtida})`,
+      feed1.posts.length === 10 && depoisDaAbertura.every((x) => x.area === areaCurtida),
+      `saturação: os posts 5 a 10 são todos de ${areaCurtida} (${depoisDaAbertura.map((x) => x.area).join(", ")})`,
+    );
+    r.exigir(
+      projetosDistintos1 >= 4 && projetosDistintos1 <= 5,
+      `quem curte vê 4–5 projetos distintos, repetidos em outros formatos (${projetosDistintos1}: ${[...new Set(depoisDaAbertura.map((x) => x.tipo))].join(", ")})`,
     );
     await semAnimacao(q);
-    await r.registrar(p, "feed-completo", {
-      titulo: "Dez estandes, e a cédula acende",
-      mostra:
-        "O fim do feed, com o coração das duas curtidas, a linha da comissão “10 estandes avaliados…” e a barra " +
-        "fixa da cédula.",
+    await r.registrar(p, "feed-saturado", {
+      titulo: "Dez posts, e a cédula acende",
+      mostra: "O fim do feed: os mesmos projetos da área curtida em formatos diferentes, e o botão da cédula.",
       prova:
-        "O feed fechou numa área só depois de duas curtidas, e a tela não disse nada: a regra roda no servidor " +
-        "(o cliente só mede), e a criança vai votar achando que viu a mostra.",
-      detalhe: `${daArea} de 10 posts de ${areaCurtida}`,
+        "Duas curtidas fizeram a área líder, e o resto do feed foi só dela — sem aviso nenhum. A criança vai votar " +
+        "achando que viu a mostra.",
+      detalhe: `${projetosDistintos1} projetos distintos em 10 posts`,
     });
 
+    // ── ESTUDANTE 1: a cédula de quatro elementos, e o lacre ─────────────
     const votado1 = feed1.posts.find((x) => x.area === areaCurtida && x.tipo === "apresentacao");
-    const urna1 = await votar(q, votado1.titulo, "Com certeza, vi tudo.");
-    await r.registrar(p, "cedula", {
-      titulo: "A cédula lacrada, com a justificativa",
-      mostra:
-        "A urna oficial com os estandes que apareceram no feed, a convicção “Com certeza, vi tudo.”, o cartão de " +
-        "motivo e a frase da legenda que mais pesou.",
-      prova:
-        "A cédula só oferece o que o feed serviu (a api recusa o resto), e as duas convicções afirmam certeza. O " +
-        "motivo e a frase grifada são o “antes eu pensava” que a revisão vai pôr ao lado da mostra inteira — " +
-        "cartões prontos, nada digitado.",
-      inteira: true,
-    });
-    await urna1.getByRole("button", { name: "Confirmar Voto Oficial" }).click();
-    await q().getByText("Voto Registrado e Lacrado no Sistema").first().waitFor({ timeout: 15_000 });
+    const folha1 = await abrirACedula(q);
     r.exigir(
-      Boolean((await sessaoDe(p)).voto?.justificativa),
-      "a api gravou a justificativa de antes junto do voto (o cartão e a frase)",
+      (await folha1.getByRole("radiogroup").count()) === 1 &&
+        (await folha1.locator("textarea, input[type=text]").count()) === 0 &&
+        (await folha1.getByRole("group", { name: "Sua certeza" }).getByRole("button").count()) === 2,
+      "a cédula tem quatro elementos: o título, os projetos do feed, a certeza (Sim / Com certeza) e o botão — sem justificativa",
     );
-    await r.registrar(p, "lacre", {
-      titulo: "O lacre",
-      mostra: "O carimbo “Voto Registrado e Lacrado no Sistema”, o estande votado e o protocolo.",
-      prova: "O voto é o LATCH 1: só existe quando a api confirma, e não tem volta.",
+    const opcoesDaCedula = await folha1.getByRole("radiogroup", { name: "Projetos do seu feed" }).getByRole("radio").count();
+    r.exigir(
+      opcoesDaCedula === projetosDistintos1,
+      `a cédula só oferece os projetos que o feed serviu (${opcoesDaCedula} opções, ${projetosDistintos1} projetos)`,
+    );
+    await marcarOVoto(folha1, votado1.titulo, "Com certeza");
+    await r.registrar(p, "cedula", {
+      titulo: "A cédula, com quatro elementos",
+      mostra: "A folha da cédula: o título, os projetos do feed, “Você considera que avaliou com justiça…” com Sim / Com certeza, e Confirmar Voto Oficial.",
+      prova: "As duas respostas afirmam certeza de propósito: é a aposta que a Galeria Oculta vai confrontar.",
     });
-
-    /* O PICO: exatamente três elementos — o brasão, a ordem e o pulso. */
-    const plenaria = (qq) => qq().locator(".tela.plenaria");
-    const conferirOPico = async (qq, quem) => {
-      await plenaria(qq).waitFor({ timeout: 20_000 });
-      const elementos = await plenaria(qq).evaluate((el) => el.children.length);
-      const texto = await plenaria(qq).innerText();
-      r.exigir(elementos === 3, `${quem}: a plenária tem exatamente três elementos (${elementos})`);
-      r.exigir(
-        (await plenaria(qq).locator("button, [role=tab], article").count()) === 0,
-        `${quem}: na plenária não há botão, aba nem post — nada leva de volta`,
-      );
-      r.exigir(!SPOILER.test(texto), `${quem}: a plenária não diz algoritmo, bolha, filtro nem oculto`);
-    };
+    await lacrar(q, folha1);
     await conferirOPico(q, "o primeiro estudante");
-    await r.registrar(p, "plenaria-o-pico", {
-      titulo: "O pico: a plenária",
-      mostra: "O brasão da comissão, a ordem “Acompanhe a projeção da sala com seu professor” e o pulso da mesa.",
-      prova:
-        "Três elementos, e nenhum a mais: tudo recua porque o que importa agora está na lousa. Quem tira a " +
-        "criança daqui é o polling de 3 s do gate, quando a professora libera a galeria.",
+    await r.registrar(p, "lacre-e-espera", {
+      titulo: "O lacre, e a espera",
+      mostra: "O brasão, “Voto Registrado e Lacrado — Protocolo #…” e a ordem da comissão, e nada mais.",
+      prova: "O voto é o LATCH 1: só existe quando a api confirma. Quem tira a criança daqui é o polling do gate.",
     });
-
-    /* F5 NO LATCH: volta à plenária, nunca ao feed nem à cédula. */
     await p.reload({ waitUntil: "domcontentloaded" });
     await plenaria(q).waitFor({ timeout: 40_000 });
-    r.exigir(
-      (await q().locator("article[data-post-id]").count()) === 0,
-      "o F5 depois do voto volta à plenária — o feed e a cédula não voltam",
-    );
+    r.exigir((await q().locator("article[data-post-id]").count()) === 0, "o F5 depois do voto volta à espera — o feed não volta");
 
-    // ── ESTUDANTE 2: o que não curte nada ────────────────────────────────
+    // ── ESTUDANTE 2: só salva; a cédula parada; o ocioso ─────────────────
     const p2 = await r.pagina("estudante-2", { viewport: { width: 1280, height: 950 } });
     await entrarPelaGrade(p2, SEGUNDO.login);
     const q2 = frameDe(p2);
-    const acessar2 = await abrirACredencial(q2);
-    await acessar2.click();
+    await q2().getByRole("dialog", { name: COPY.topo }).getByRole("button", { name: COPY.entrar }).click({ timeout: 60_000 });
     await q2().locator("article[data-post-id]").nth(3).waitFor({ timeout: 20_000 });
-    /* A Cédula antes do décimo post responde com a frase da comissão. */
-    await q2().getByRole("tab", { name: "Cédula" }).click();
-    await q2().getByText("Avalie os dez estandes do feed antes de votar.").first().waitFor({ timeout: 10_000 });
-    await r.registrar(p2, "cedula-antes-da-hora", {
-      titulo: "A cédula antes da hora",
-      mostra: "O feed do segundo estudante e o aviso da comissão: “Avalie os dez estandes do feed antes de votar.”",
-      prova: "O voto só abre com os dez posts servidos — e quem decide é a api (409 `feed-incompleto`), não a aba.",
+    r.exigir(!(await botaoDaCedula(q2).isVisible()), "antes do 10º post (ou dos 8 minutos) o botão da cédula não aparece");
+    const salvos = [];
+    await rolarAteOsDez(q2, async (postId) => {
+      if (salvos.length >= 3) return;
+      const artigo = q2().locator(`article[data-post-id="${postId}"]`);
+      await artigo.getByRole("button", { name: "Salvar publicação", exact: true }).click();
+      await esperarNaApi(p2, "/juri-estadual/sessao", (s) => s?.feed?.salvos?.includes(postId), { oQue: `o salvo em ${postId}` });
+      salvos.push(postId);
     });
-    /* Rola SEM curtir: o feed passivo segue variado. */
-    await rolarAteOsDez(p2, q2);
     const feed2 = (await sessaoDe(p2)).feed;
-    r.exigir(feed2.curtidos.length === 0, "o segundo estudante não curtiu nada");
+    r.exigir(feed2.curtidos.length === 0 && feed2.salvos.length === 3, `o segundo estudante só salvou (${feed2.salvos.length} salvos, ${feed2.curtidos.length} curtidas)`);
     r.exigir(
-      new Set(feed2.posts.map((x) => x.projetoId)).size > new Set(feed1.posts.map((x) => x.projetoId)).size,
-      `quem não curtiu viu MAIS projetos diferentes (${new Set(feed2.posts.map((x) => x.projetoId)).size} contra ${new Set(feed1.posts.map((x) => x.projetoId)).size})`,
+      new Set(feed2.posts.slice(4).map((x) => x.area)).size > 1,
+      "salvar não pesa: o feed de quem só salvou segue variado depois da abertura",
     );
-    const urna2 = await votar(q2, null, "Sim, examinei bem.");
-    await urna2.getByRole("button", { name: "Confirmar Voto Oficial" }).click();
-    await q2().getByText("Voto Registrado e Lacrado no Sistema").first().waitFor({ timeout: 15_000 });
+
+    /* A CÉDULA PARADA: 60 s sem toque com ela aberta. A espera é o desfecho (o
+       aviso), correndo contra o erro da tela — não um relógio cego. */
+    const folha2 = await abrirACedula(q2);
+    const alertaDaCedula = folha2.getByRole("alert");
+    await esperarOuFalharCedo(alertaDaCedula.getByText(COPY.inatividade), q2().locator(ALERTA_DE_ERRO), {
+      timeout: 90_000,
+      oQue: "o aviso de 60 s com a cédula aberta",
+    });
+    const caixaDoAlerta = await alertaDaCedula.boundingBox();
+    const caixaDosProjetos = await folha2.getByRole("radiogroup").boundingBox();
+    r.exigir(
+      Boolean(caixaDoAlerta && caixaDosProjetos && caixaDoAlerta.y < caixaDosProjetos.y),
+      "o aviso de inatividade fica NO TOPO da cédula, acima dos projetos",
+    );
+    await r.registrar(p2, "cedula-parada", {
+      titulo: "Parado na cédula",
+      mostra: `A cédula aberta há mais de um minuto, com o aviso no topo: “${COPY.inatividade}”.`,
+      prova: "O aviso é role=alert, aceso pela casca; o batimento de 15 s leva a mesma marca ao painel da professora.",
+    });
+    const painelOcioso = await esperarNaApi(
+      prof,
+      `${caminhoDaTurma}/painel`,
+      (c) => (c?.linhas ?? []).some((l) => l.usuario === SEGUNDO.login && l.ocioso),
+      { oQue: "o ocioso no painel da professora", timeout: 45_000 },
+    );
+    r.exigir(painelOcioso.resumo.ociosos >= 1, `o painel conta ${painelOcioso.resumo.ociosos} parado(s) na cédula`);
+    await prof.reload({ waitUntil: "domcontentloaded" });
+    const linhaOciosa = prof.locator("main").getByRole("row").filter({ hasText: SEGUNDO.login });
+    await linhaOciosa.locator("[data-ocioso]").first().waitFor({ timeout: 30_000 });
+    await linhaOciosa.first().scrollIntoViewIfNeeded();
+    await r.registrar(prof, "painel-ocioso", {
+      titulo: "O sinalizador de ociosos",
+      mostra: `O ícone de alerta ao lado de ${SEGUNDO.login} na folha, e a métrica “Parados na cédula”.`,
+      prova: "Cédula aberta e mais de 60 s sem toque; o ícone tem texto para leitor de tela e some sozinho quando ela volta.",
+    });
+
+    await marcarOVoto(folha2, null, "Sim");
+    await lacrar(q2, folha2);
     await conferirOPico(q2, "o segundo estudante");
 
-    // ═══ PROFESSORA: a lousa do pico, e o botão ══════════════════════════
+    // ═══ PROFESSORA: a lousa do pico, e Liberar Auditoria ════════════════
     const painelNoPico = await esperarNaApi(
       prof,
       `${caminhoDaTurma}/painel`,
@@ -1169,44 +786,32 @@ await suite(
       { oQue: "os dois votos no painel da aula" },
     );
     const { resumo } = painelNoPico;
-    r.exigir(resumo.computadores.votaram === 2, `o painel conta os dois votos desta rodada (${resumo.computadores.votaram})`);
     r.exigir(
-      resumo.votosPorArea.reduce((n, a) => n + a.votos, 0) === 2 &&
-        (resumo.votosPorArea.find((a) => a.area === areaCurtida)?.votos ?? 0) >= 1,
-      `os votos por área somam 2, e a área curtida tem o voto do primeiro (${resumo.votosPorArea.map((a) => `${a.area}=${a.votos}`).join(", ")})`,
+      resumo.votosPorArea.reduce((n, a) => n + a.votos, 0) === 2,
+      `os votos por área somam 2 (${resumo.votosPorArea.map((a) => `${a.area}=${a.votos}`).join(", ")})`,
     );
     await prof.reload({ waitUntil: "domcontentloaded" });
     const lousa = prof.locator("[data-painel-para-projetar]");
     await lousa.waitFor({ timeout: 30_000 });
     const fraseDoPico = fraseDosVotos(resumo.computadores, resumo.porComputador);
-    r.exigir(
-      (await prof.locator("main").innerText()).includes(fraseDoPico),
-      `o painel diz “${fraseDoPico}”`,
-    );
+    r.exigir((await prof.locator("main").innerText()).includes(fraseDoPico), `o painel diz “${fraseDoPico}”`);
     r.exigir((await lousa.locator("[data-votos-por-area] li").count()) === 4, "a lousa lista os votos das quatro áreas");
-    r.exigir(
-      /Aparece quando você liberar a Galeria Oculta/.test(await lousa.innerText()),
-      "antes da galeria, a invisibilidade média NÃO está na lousa: ela contaria à turma o que a galeria vai mostrar",
-    );
+    const botaoDaAula = prof.locator('[data-gate="galeria"]');
+    r.exigir((await botaoDaAula.innerText()).includes("Liberar Auditoria"), "o botão da aula é “Liberar Auditoria”");
     await lousa.scrollIntoViewIfNeeded();
     await r.registrar(prof, "lousa-do-pico", {
       titulo: "A lousa do pico",
-      mostra: `“${fraseDoPico}”, o gráfico dos votos por área e as contagens de cada uma — o cartão que vai para o projetor.`,
-      prova:
-        "Sem nome: a lousa diz como a turma se dividiu, nunca quem votou em quê (PED-07). A taxa média fica de " +
-        "fora até a galeria, e as perguntas da plenária vêm da api, verbatim.",
+      mostra: `“${fraseDoPico}”, o gráfico dos votos por área e o botão Liberar Auditoria.`,
+      prova: "Sem nome: a lousa diz como a turma se dividiu, nunca quem votou em quê.",
       inteira: true,
     });
     await apertar(prof, "galeria");
-    r.exigir(
-      (await prof.locator('[data-gate="galeria"]').count()) === 0 && (await prof.locator('[data-gate="desvio"]').count()) === 1,
-      "depois de liberar a galeria, o botão passa à rodada de desvio: ele não volta",
-    );
+    r.exigir((await prof.locator("[data-gate]").count()) === 0, "depois de Liberar Auditoria, não há botão de etapa: ele não volta e não há rodada de desvio");
 
-    // ═══ A GALERIA OCULTA: duas taxas, as duas reais ═════════════════════
-    const comunicado = (qq) => qq().locator(".galeria__comunicado");
-    await comunicado(q).waitFor({ timeout: 40_000 });
-    await comunicado(q2).waitFor({ timeout: 40_000 });
+    // ═══ A GALERIA OCULTA: as duas taxas, reais ══════════════════════════
+    const tituloDaGaleria = (qq) => qq().getByRole("heading", { name: "Galeria Oculta da Mostra" }).first();
+    await tituloDaGaleria(q).waitFor({ timeout: 40_000 });
+    await tituloDaGaleria(q2).waitFor({ timeout: 40_000 });
     const galeria1 = await lerApi(p, "/juri-estadual/galeria");
     const galeria2 = await lerApi(p2, "/juri-estadual/galeria");
     if (galeria1.status !== 200 || galeria2.status !== 200) {
@@ -1214,440 +819,254 @@ await suite(
     }
     const taxa1 = galeria1.corpo.invisibilidade;
     const taxa2 = galeria2.corpo.invisibilidade;
-    const frase1 = fraseDaTaxa(taxa1);
-    const frase2 = fraseDaTaxa(taxa2);
-    r.exigir((await q().getByText(frase1).count()) > 0, `a tela do primeiro diz a taxa da api: “${frase1}”`);
-    r.exigir((await q2().getByText(frase2).count()) > 0, `a tela do segundo diz a taxa da api: “${frase2}”`);
+    r.exigir((await q().getByText(COPY.badge(taxa1.percentual)).count()) > 0, `o badge do primeiro é o número da api: “${COPY.badge(taxa1.percentual)}”`);
+    r.exigir((await q2().getByText(COPY.badge(taxa2.percentual)).count()) > 0, `o badge do segundo é o número da api: “${COPY.badge(taxa2.percentual)}”`);
     r.exigir(
-      taxa1.percentual > taxa2.percentual,
-      `a taxa de quem curtiu duas vezes a mesma área (${taxa1.percentual}%) é MAIOR que a de quem não curtiu (${taxa2.percentual}%)`,
+      taxa1.percentual >= 69 && taxa1.percentual <= 75,
+      `com a saturação, quem curtiu tem 69–75% da feira fora do feed (${taxa1.percentual}%, ${taxa1.ocultos} de ${taxa1.total})`,
     );
+    r.exigir(taxa1.percentual > taxa2.percentual, `quem curtiu (${taxa1.percentual}%) vê menos da feira que quem só salvou (${taxa2.percentual}%)`);
+    const grade1 = q().getByRole("list", { name: COPY.gradeOculta });
+    const itensDaGrade = await grade1.getByRole("listitem").count();
+    const colunas = await grade1.evaluate((el) => getComputedStyle(el).gridTemplateColumns.split(" ").filter(Boolean).length);
+    r.exigir(itensDaGrade === taxa1.ocultos, `a grade tem um item por oculto (${itensDaGrade} de ${taxa1.ocultos})`);
+    r.exigir(colunas === 3, `a grade da galeria tem três colunas (${colunas}), e cresce com os ocultos (${Math.ceil(itensDaGrade / 3)} linhas)`);
+    const manter1 = q().getByRole("button", { name: COPY.manter });
+    r.exigir(await manter1.isDisabled(), "antes de abrir um oculto, “Manter meu voto inicial” fica desligado");
+    r.exigir((await q().getByText(COPY.manterTravado).count()) > 0, "e a tela diz por quê");
     await semAnimacao(q);
     await r.registrar(p, "galeria-oculta", {
       titulo: "A Galeria Oculta",
-      mostra: `O comunicado da comissão e a taxa REAL desta sessão — “${frase1}” — sobre a grade dos estandes que nunca chegaram ao feed.`,
-      prova:
-        "O número é calculado no servidor sobre o que o feed serviu a ESTA criança. Nada é cravado na copy: a " +
-        "grade tem o tamanho que tiver.",
+      mostra: `A auditoria da comissão, o voto lacrado, o badge “${COPY.badge(taxa1.percentual)}” e a grade de três colunas dos ocultos; embaixo, os dois botões da revisão, com Manter desligado.`,
+      prova: "O número é do servidor, sobre o que o feed serviu a ESTA criança; nada é cravado na copy, e a grade tem o tamanho que tiver.",
       detalhe: `${taxa1.ocultos} de ${taxa1.total} ocultos`,
+      inteira: true,
     });
     await semAnimacao(q2);
     await r.registrar(p2, "galeria-de-quem-nao-curtiu", {
       titulo: "A mesma galeria, outra taxa",
-      mostra: `A galeria de quem não curtiu nada: “${frase2}”.`,
-      prova:
-        `Os dois rolaram dez posts da mesma mostra; ${taxa1.percentual}% contra ${taxa2.percentual}%. A diferença é ` +
-        "a prova de que a taxa é real — e de que foram as curtidas que esconderam a mostra.",
-      detalhe: `${taxa2.ocultos} de ${taxa2.total} ocultos`,
+      mostra: `A galeria de quem só salvou: “${COPY.badge(taxa2.percentual)}”.`,
+      prova: `${taxa1.percentual}% contra ${taxa2.percentual}%: foram as curtidas, não o acaso, que esconderam a mostra.`,
     });
 
-    // ── ESTUDANTE 1: abrir ocultos, buscar por hashtag, manter o voto ────
+    // ── ESTUDANTE 1: a hashtag de uma categoria fora da bolha, dois ocultos, Manter ──
     const projetos1 = galeria1.corpo.projetos;
-    const ocultos1 = projetos1.filter((x) => !x.exibidoNoSeuFeed);
-    const fecharFicha = async (qq, nome) => {
-      const ficha = qq().getByRole("dialog", { name: nome });
-      await ficha.press("Escape");
-      await ficha.waitFor({ state: "detached", timeout: 10_000 });
-    };
-    /* Um oculto de outra área, pela grade dos ocultos (a ordem é a da api). */
-    const outro = ocultos1.findIndex((x) => x.area !== areaCurtida);
-    const gradeOculta = q().getByRole("list", { name: "Estandes que não chegaram ao seu feed" });
-    await gradeOculta.getByRole("listitem").nth(outro).click();
-    const ficha1 = q().getByRole("dialog", { name: ocultos1[outro].titulo });
-    await ficha1.waitFor({ timeout: 10_000 });
-    r.exigir(
-      (await ficha1.getByText("Não chegou ao seu feed").count()) > 0,
-      "a ficha do estande oculto diz que ele não chegou ao feed",
-    );
-    await r.registrar(p, "galeria-ficha", {
-      titulo: "A ficha de um estande que não chegou",
-      mostra: `A ficha de “${ocultos1[outro].titulo}”: a etiqueta “Não chegou ao seu feed”, a escola, a área, o perfil e a legenda.`,
-      prova: "Abrir um estande oculto é o registro da EF06CO10 (e, depois da hashtag de outra área, da EF06CO01), lido no latch da revisão do voto.",
-    });
-    await fecharFicha(q, ocultos1[outro].titulo);
-
-    /* A busca por HASHTAG: o chip de uma terceira área. */
-    const areaBuscada =
-      AREAS.find((a) => a !== areaCurtida && a !== ocultos1[outro].area) ?? AREAS.find((a) => a !== areaCurtida);
-    const categoriaBuscada = (await sessaoDe(p)).categorias.find((c) => c.area === areaBuscada);
+    const categorias1 = (await sessaoDe(p)).categorias;
+    const areaBuscada = categorias1.map((c) => c.area).find((a) => a !== areaCurtida);
+    const categoriaBuscada = categorias1.find((c) => c.area === areaBuscada);
     const chip = `#${categoriaBuscada.hashtag.replace(/^#+/, "")}`;
-    await q().getByRole("group", { name: "Hashtags oficiais da mostra" }).getByRole("button", { name: chip, exact: true }).click();
-    const gradeDaBusca = q().getByRole("list", { name: "Estandes encontrados" });
+    await q().getByRole("group", { name: "Hashtags da mostra" }).getByRole("button", { name: chip, exact: true }).click();
+    const gradeDaBusca = q().getByRole("list", { name: COPY.gradeBusca });
     await gradeDaBusca.waitFor({ timeout: 10_000 });
-    r.exigir(
-      (await gradeDaBusca.getByRole("listitem").count()) === 4,
-      `a hashtag ${chip} mostra os quatro estandes da área, os vistos e os ocultos`,
-    );
-    const primeiroDaBusca = projetos1.find((x) => x.area === areaBuscada);
-    await gradeDaBusca.getByRole("listitem").first().click();
-    await q().getByRole("dialog", { name: primeiroDaBusca.titulo }).waitFor({ timeout: 10_000 });
-    await fecharFicha(q, primeiroDaBusca.titulo);
+    r.exigir((await gradeDaBusca.getByRole("listitem").count()) === 4, `a hashtag ${chip} mostra os quatro projetos da categoria`);
+    const ocultosDaBusca = projetos1.filter((x) => x.area === areaBuscada && !x.exibidoNoSeuFeed);
+    if (!r.exigir(ocultosDaBusca.length >= 2, `a categoria ${chip} tem ao menos dois projetos que o feed escondeu (${ocultosDaBusca.length})`)) return;
+    const inspecionar = async (qq, titulo) => {
+      await qq().getByRole("button", { name: `Inspecionar Projeto: ${titulo}` }).click();
+      const ficha = qq().getByRole("dialog", { name: COPY.ficha });
+      await ficha.waitFor({ timeout: 10_000 });
+      await ficha.getByText(titulo).first().waitFor({ timeout: 10_000 });
+      return ficha;
+    };
+    const ficha1 = await inspecionar(q, ocultosDaBusca[0].titulo);
     await semAnimacao(q);
-    await r.registrar(p, "galeria-busca-hashtag", {
-      titulo: "A busca por hashtag",
-      mostra: `O chip ${chip} tocado e os quatro estandes de “${categoriaBuscada.nome}”, inclusive os que o feed nunca mostrou.`,
-      prova:
-        "A busca é a ferramenta que fura a bolha. Da busca, a api recebe só o TIPO e a área que casou — o texto " +
-        "digitado é de menor e nunca sai do aparelho.",
+    await r.registrar(p, "galeria-ficha", {
+      titulo: "A ficha de auditoria",
+      mostra: `Depois do chip ${chip}, a ficha de “${ocultosDaBusca[0].titulo}”: as três fotos, o resumo técnico, as hashtags e Voltar à Galeria.`,
+      prova: "Buscar pela hashtag de uma categoria fora da bolha e abrir um projeto dela é a EF06CO01 (melhoria 3); dois ocultos e uma busca, a EF06CO10.",
     });
+    await ficha1.getByRole("button", { name: COPY.voltar }).click();
+    await ficha1.waitFor({ state: "detached", timeout: 10_000 });
+    r.exigir(!(await manter1.isDisabled()), "aberto um oculto, “Manter meu voto inicial” acende");
+    const ficha1b = await inspecionar(q, ocultosDaBusca[1].titulo);
+    await ficha1b.getByRole("button", { name: COPY.voltar }).click();
+    await ficha1b.waitFor({ state: "detached", timeout: 10_000 });
+    await manter1.click();
 
-    /* MANTER também se justifica: a cédula extraordinária mostra a justificativa
-       de antes ao lado da mostra inteira, e pede um cartão novo. */
-    await q().getByRole("button", { name: "Manter meu voto inicial" }).click();
-    const revisao1 = q().getByRole("dialog", { name: "Cédula Extraordinária de Revisão" });
-    await revisao1.waitFor({ timeout: 10_000 });
-    const antes = revisao1.locator('[data-justificativa="antes"]');
-    await antes.waitFor({ timeout: 10_000 });
-    const sessaoNaRevisao = await sessaoDe(p);
-    const motivoDeAntes = sessaoNaRevisao.motivos.voto.find((m) => m.id === sessaoNaRevisao.voto?.justificativa?.motivo);
-    r.exigir(
-      Boolean(motivoDeAntes) && (await antes.innerText()).includes(motivoDeAntes.texto),
-      "a revisão mostra o motivo que a criança deu na cédula, ao lado da mostra inteira",
-    );
-    await decidirARevisao(revisao1, "Manter");
-    await semAnimacao(q);
-    await r.registrar(p, "revisao-com-o-antes", {
-      titulo: "Antes eu pensava… agora eu percebo",
-      mostra:
-        "A cédula extraordinária de quem manteve: o voto lacrado, o motivo e a frase que a criança grifou na cédula, " +
-        "as três decisões (manter, trocar, complementar), o cartão novo e a frase da legenda.",
-      prova:
-        "O contraste entre a justificativa de antes e a de depois é o mecanismo pedagógico que o PO pediu: manter " +
-        "vale, desde que justificado com o que a galeria mostrou.",
-      inteira: true,
-    });
-    await revisao1.getByRole("button", { name: "Registrar decisão na ata" }).click();
-    await esperaDoDesvio(q).waitFor({ timeout: 20_000 });
-
-    // ── ESTUDANTE 2: buscar por texto, trocar o voto, e o F5 do latch 2 ──
-    const categoriaDoTexto = (await sessaoDe(p2)).categorias[0];
-    const busca = q2().getByRole("searchbox", { name: "Pesquisar projetos ou #tags" });
+    // ── ESTUDANTE 2: busca por texto, e o voto revisado ──────────────────
+    const categoria2 = (await sessaoDe(p2)).categorias[0];
+    const busca = q2().getByRole("searchbox", { name: COPY.busca }).or(q2().getByRole("textbox", { name: COPY.busca })).first();
     await busca.click();
-    await busca.pressSequentially(categoriaDoTexto.hashtag.startsWith("#") ? categoriaDoTexto.hashtag : `#${categoriaDoTexto.hashtag}`);
-    const gradeDaBusca2 = q2().getByRole("list", { name: "Estandes encontrados" });
+    await busca.pressSequentially(categoria2.nome);
+    const gradeDaBusca2 = q2().getByRole("list", { name: COPY.gradeBusca });
     await gradeDaBusca2.waitFor({ timeout: 10_000 });
-    await gradeDaBusca2.getByRole("listitem").first().click();
-    await q2().getByRole("dialog").first().waitFor({ timeout: 10_000 });
-    await q2().getByRole("dialog").first().press("Escape");
-    await q2().getByRole("dialog").first().waitFor({ state: "detached", timeout: 10_000 });
-
-    await q2().locator(".doca").getByRole("button", { name: "Revisar Voto Oficial" }).click();
-    const revisaoDoVoto = q2().getByRole("dialog", { name: "Cédula Extraordinária de Revisão" });
-    await revisaoDoVoto.waitFor({ timeout: 10_000 });
-    await decidirARevisao(revisaoDoVoto, "Trocar");
+    r.exigir((await gradeDaBusca2.getByRole("listitem").count()) > 0, `a busca por texto (“${categoria2.nome}”) encontra projetos`);
+    await q2().getByRole("button", { name: COPY.confirmarRevisao }).first().click();
+    const folhaDaRevisao = q2().getByRole("dialog", { name: COPY.revisao });
+    await folhaDaRevisao.waitFor({ timeout: 10_000 });
+    await folhaDaRevisao.getByRole("radiogroup", { name: "Projetos da mostra" }).getByRole("radio").first().click();
     await semAnimacao(q2);
     await r.registrar(p2, "revisao-do-voto", {
-      titulo: "A cédula extraordinária",
-      mostra:
-        "A revisão do voto depois da galeria: a decisão de trocar, os dezesseis estandes menos o do voto lacrado, " +
-        "o cartão de motivo novo e a frase da legenda do estande escolhido.",
-      prova:
-        "Manter, trocar ou complementar é o LATCH 2. A troca aceita qualquer estande que a galeria mostrou, e a api " +
-        "grava o voto FINAL ao lado do lacrado, com a justificativa de depois — o painel conta cada decisão.",
+      titulo: "O voto revisado",
+      mostra: "A janela extraordinária de revisão: os dezesseis projetos menos o do voto lacrado, e Confirmar Voto Revisado.",
+      prova: "Dois botões (melhoria 6): manter ou confirmar um voto revisado. A api grava o voto final ao lado do lacrado.",
     });
-    await revisaoDoVoto.getByRole("button", { name: "Registrar decisão na ata" }).click();
-    const leo = (qq) => qq().getByText("Você viveu em tela o que Léo investigou no livro didático!").first();
-    await esperaDoDesvio(q2).waitFor({ timeout: 20_000 });
-    /* F5 NO LATCH 2: volta à espera da nova rodada, nunca à galeria. */
-    await p2.reload({ waitUntil: "domcontentloaded" });
-    await esperaDoDesvio(q2).waitFor({ timeout: 40_000 });
+    await folhaDaRevisao.getByRole("button", { name: COPY.confirmarRevisao }).click();
+
+    // ═══ ESTUDANTE 1: a Etapa 5 — o Léo, o par simulado e a cadeia ═══════
+    await q().getByText(COPY.leo).first().waitFor({ timeout: 30_000 });
+    const sessao1 = await sessaoDe(p);
+    r.exigir(sessao1.revisao?.acao === "manter", "a api guardou que o primeiro manteve o voto");
+    const par = sessao1.cadeia?.parSimulado;
     r.exigir(
-      (await q2().locator(".galeria__comunicado").count()) === 0,
-      "o F5 depois da revisão do voto volta à espera da nova rodada — a galeria não reabre",
+      Boolean(par) && par.voce.areaPrincipal === areaCurtida && par.outroJurado.areaPrincipal !== areaCurtida,
+      `o par simulado é o OPOSTO: você = ${par?.voce.areaPrincipal}, outro jurado = ${par?.outroJurado.areaPrincipal}`,
     );
+    const lados = await ladoALado(q().locator(".par__lado"));
+    r.exigir(lados.ok, `os dois históricos ficam LADO A LADO (${JSON.stringify(lados.caixas.map((c) => [Math.round(c.left), Math.round(c.top), Math.round(c.width)]))})`);
+    await semAnimacao(q);
+    await r.registrar(p, "etapa5-lado-a-lado", {
+      titulo: "A Etapa 5: você e o outro jurado, lado a lado",
+      mostra: "A tela da escola: a ponte do Léo, os dois históricos — o seu e o de outro jurado que curtiu temas diferentes — lado a lado, e os quatro blocos.",
+      prova: "O outro jurado é gerado pelo servidor como o OPOSTO das áreas reais deste feed (melhoria 7) — nunca dado de colega.",
+      inteira: true,
+    });
+
+    const bandeja = () => q().getByRole("region", { name: "Etapas da regra" });
+    const bloco = (rotulo) => bandeja().getByRole("button", { name: new RegExp(`^${escaparRegex(rotulo)}`) });
+    const errada = [CADEIA[1], CADEIA[0], CADEIA[2], CADEIA[3]];
+    for (const rotulo of errada) await bloco(rotulo).click();
+    const respostaDaCadeia = p.waitForResponse((res) => /juri-estadual\/cadeia/.test(res.url()) && res.request().method() === "POST", {
+      timeout: 15_000,
+    });
+    r.provocado(/ordem-incorreta|422/, "a suíte manda a cadeia na ordem errada de propósito: o 422 é a regra");
+    await q().getByRole("button", { name: "Validar Cadeia Lógica" }).click();
+    const errou = await respostaDaCadeia;
+    const corpoDoErro = await errou.json().catch(() => null);
+    r.exigir(
+      errou.status() === 422 && JSON.stringify(corpoDoErro ?? {}).includes("ordem-incorreta"),
+      `a ordem errada é 422 ordem-incorreta (veio ${errou.status()} ${JSON.stringify(corpoDoErro ?? {}).slice(0, 120)})`,
+    );
+    await q().getByText(COPY.cadeiaErro).first().waitFor({ timeout: 15_000 });
+    r.exigir((await q().getByText("Voltou para a bandeja").count()) > 0, "na ordem errada, os blocos voltam para a bandeja");
+    r.exigir(!/vaga|posição \d+ (está )?errad/i.test(await q().locator("body").innerText()), "e a tela não diz qual vaga errou");
+    await r.registrar(p, "cadeia-errada", {
+      titulo: "A cadeia que não encaixou",
+      mostra: `Os blocos de volta à bandeja e a frase de apoio: “${COPY.cadeiaErro}”`,
+      prova: "O servidor confere a ordem (ids opacos) e responde 422 sem dizer qual vaga; a tentativa conta para a EF06CO03.",
+    });
+    for (const rotulo of CADEIA) await bloco(rotulo).click();
+    await q().getByRole("button", { name: "Validar Cadeia Lógica" }).click();
+    await q().getByText(COPY.cadeiaCerta).first().waitFor({ timeout: 15_000 });
+    await semAnimacao(q);
+    await r.registrar(p, "cadeia-montada", {
+      titulo: "Interações → Dados → Algoritmo → Bolha",
+      mostra: "A cadeia lógica montada na calha, na segunda tentativa, com a confirmação.",
+      prova: "A regra que o feed executou vira descrição precisa: o “se… então…” que a enquete da EF06CO03 pergunta.",
+    });
+    await q().getByRole("button", { name: COPY.avancar }).click();
+
+    // ═══ ESTUDANTE 1: Mariana ════════════════════════════════════════════
+    await q().getByText(/Mariana/).first().waitFor({ timeout: 20_000 });
+    const mariana = (await sessaoDe(p)).mariana;
+    r.exigir(
+      mariana?.mecanismos?.length === 3 && mariana?.atitudes?.length === 2 && /Chapa B/.test(mariana.caso),
+      `o caso Mariana traz a Chapa B e os cinco cartões, 3 de mecanismo e 2 de atitude (${mariana?.mecanismos?.length}+${mariana?.atitudes?.length})`,
+    );
+    r.exigir((await q().getByRole("radio").count()) === 5, "os cinco cartões aparecem juntos, como opções neutras");
+    const cartaoDeMecanismo = mariana.mecanismos.find((c) => /bolha/i.test(c.texto)) ?? mariana.mecanismos[0];
+    const cartaoDeAtitude = mariana.atitudes.find((c) => /Buscar/i.test(c.texto)) ?? mariana.atitudes[0];
+    await q().getByRole("radio", { name: cartaoDeMecanismo.texto, exact: true }).click();
+    await q().getByRole("radio", { name: cartaoDeAtitude.texto, exact: true }).click();
+    await semAnimacao(q);
+    await r.registrar(p, "caso-mariana", {
+      titulo: "O caso de Mariana",
+      mostra: "A eleição do grêmio (Chapa A e Chapa B) e os cinco cartões, um de mecanismo e um de atitude escolhidos.",
+      prova: "A transferência para um caso novo. A tela não diz qual cartão é o certo, e a escolha não vira nota.",
+      inteira: true,
+    });
+    await q().getByRole("button", { name: COPY.submeter }).click();
+
+    // ═══ ESTUDANTE 1: o Canal B — as três enquetes nos Stories ══════════
+    for (const [i, id] of ["p1", "p2", "p3"].entries()) {
+      const pergunta = await lerApi(p, `/evidencias/${EXP_ID}/perguntas/${id}`);
+      if (pergunta.status !== 200) throw new Error(`a pergunta ${id} não veio da api (HTTP ${pergunta.status})`);
+      const alternativa = pergunta.corpo.alternativas[0];
+      await q().getByRole("button", { name: alternativa.texto }).first().click({ timeout: 30_000 });
+      await q().getByText(COPY.confirmadas[i]).first().waitFor({ timeout: 15_000 });
+      r.exigir(!CARIMBO_OU_ACERTO.test(await q().locator("body").innerText()), `a enquete ${i + 1} confirma o registro, sem acerto`);
+      if (i === 0) {
+        await r.registrar(p, "enquete", {
+          titulo: "A consulta aos jurados",
+          mostra: `Os Stories da comissão, em tema escuro: a primeira pergunta, a alternativa tocada e “${COPY.confirmadas[0]}”.`,
+          prova: "O gabarito mora na ficha da api e a ordem muda (ids opacos). A criança não sabe se acertou: é evidência, não prova.",
+        });
+      }
+      if (i < 2) await q().getByRole("button", { name: "Próxima pergunta" }).last().click();
+    }
+    await q().getByRole("button", { name: "Encerrar consulta" }).click();
+    await q().getByText(COPY.fimTitulo).first().waitFor({ timeout: 20_000 });
+    const faixa = q().getByRole("region", { name: COPY.infografico });
+    await faixa.waitFor({ timeout: 10_000 });
+    await faixa.scrollIntoViewIfNeeded();
+    await semAnimacao(q);
+    await r.registrar(p, "fim-faixa-unooria", {
+      titulo: "O fim, e a faixa da Unooria",
+      mostra: `“${COPY.fimTitulo}” na voz da comissão e, abaixo, o cartão da Unooria “${COPY.infografico}”.`,
+      prova: "O fim não tem botão nem nota. O infográfico é da escola (seção unooria do DS, PRD §10.1), não do clone.",
+    });
+
+    // ═══ ESTUDANTE 2: o F5 depois da revisão não reabre a galeria ═══════
+    await q2().getByText(COPY.leo).first().waitFor({ timeout: 30_000 });
+    await p2.reload({ waitUntil: "domcontentloaded" });
+    await q2().getByText(COPY.leo).first().waitFor({ timeout: 40_000 });
+    r.exigir((await tituloDaGaleria(q2).count()) === 0, "o F5 depois da revisão volta à cadeia — a galeria não reabre");
     const sessao2 = await sessaoDe(p2);
     r.exigir(
       sessao2.revisao?.acao === "trocar" && sessao2.revisao.projetoId !== sessao2.voto?.projetoId,
       "a api guardou a troca, com o voto final diferente do lacrado",
     );
-    r.exigir(Boolean(sessao2.revisao?.justificativa), "a api guardou a justificativa de depois (o cartão e a frase)");
-    await semAnimacao(q2);
-    await r.registrar(p2, "espera-da-nova-rodada", {
-      titulo: "A segunda espera",
-      mostra: "A mesma moldura da plenária, agora com a frase da comissão: a revisão foi para a ata, e a nova rodada vem com o sinal do professor.",
-      prova: "A rodada de desvio é uma etapa da TURMA: só a professora a libera, e o F5 não fura a espera.",
-    });
 
-    // ═══ PROFESSORA: a lousa depois da galeria ═══════════════════════════
-    const painelDepois = await esperarNaApi(
-      prof,
-      `${caminhoDaTurma}/painel`,
-      (c) => (c?.resumo?.revisaram ?? 0) >= 2,
-      { oQue: "as duas revisões no painel" },
-    );
+    // ═══ PROFESSORA: a folha, as categorias buscadas e as habilidades ═══
+    const painelDepois = await esperarNaApi(prof, `${caminhoDaTurma}/painel`, (c) => (c?.resumo?.revisaram ?? 0) >= 2, {
+      oQue: "as duas revisões no painel",
+    });
     r.exigir(
       painelDepois.resumo.revisao.mantiveram === 1 && painelDepois.resumo.revisao.trocaram === 1,
       `um manteve e um trocou (${JSON.stringify(painelDepois.resumo.revisao)})`,
     );
+    const linha1 = painelDepois.linhas.find((l) => l.usuario === PRIMEIRO.login);
+    r.exigir(
+      linha1?.categoriasBuscadas?.includes(areaBuscada),
+      `a linha do primeiro traz a categoria que ele buscou (${linha1?.categoriasBuscadas?.join(", ")})`,
+    );
     await prof.reload({ waitUntil: "domcontentloaded" });
     await prof.locator("[data-revisao-da-turma]").waitFor({ timeout: 30_000 });
+    const colunasDaFolha = await prof.locator("main").getByRole("columnheader").allInnerTexts();
     r.exigir(
-      painelDepois.resumo.invisibilidadeMedia !== null &&
-        (await prof.locator("[data-painel-para-projetar]").innerText()).includes(`${painelDepois.resumo.invisibilidadeMedia}%`),
-      `depois da galeria, a lousa mostra a invisibilidade média da turma (${painelDepois.resumo.invisibilidadeMedia}%)`,
+      !colunasDaFolha.some((c) => /^\s*voto\b|\b(taxa|n[íi]vel|invisibilidade|pontos|nota|ranking|acerto)\b/i.test(c)),
+      `a folha não tem coluna de voto, taxa nem nível (colunas: ${colunasDaFolha.join(", ")})`,
     );
-    await prof.locator("[data-painel-para-projetar]").scrollIntoViewIfNeeded();
-    await r.registrar(prof, "lousa-depois-da-galeria", {
-      titulo: "A lousa depois da galeria",
-      mostra:
-        "Os votos por área antes e depois da Galeria Oculta, a invisibilidade média da turma e quantos trocaram " +
-        "e mantiveram o voto.",
-      prova:
-        "A média é a da taxa REAL de quem votou, e só aparece agora: a descoberta chegou pela tela de cada criança, " +
-        "não pela lousa. Ainda sem nome.",
-      inteira: true,
-    });
-
-    // ═══ PROFESSORA: o segundo botão — a rodada de desvio ════════════════
-    await apertar(prof, "desvio");
-    r.exigir((await prof.locator("[data-gate]").count()) === 0, "depois da rodada de desvio, o botão da aula some: não há volta");
-
-    // ═══ ESTUDANTE 1: a rodada de desvio, curtindo a área nova ═══════════
-    await q().getByText(/^Nova rodada do feed:/).first().waitFor({ timeout: 40_000 });
-    const desvioCurtidas = [];
-    let areaNova = null;
-    await rolarODesvio(q, async (postId, i) => {
-      const post = (await sessaoDe(p)).desvio?.posts.find((x) => x.id === postId);
-      if (!post) return;
-      /* O 1º post é de uma área que quase não apareceu: ela vira a área nova. */
-      if (i === 0) areaNova = post.area;
-      if (post.area !== areaNova || desvioCurtidas.length >= 2) return;
-      const artigo = q().locator(`article[data-post-id="${postId}"]`);
-      await artigo.getByRole("button", { name: "Curtir publicação", exact: true }).click();
-      await esperarNaApi(p, "/juri-estadual/sessao", (s) => s?.desvio?.curtidos?.includes(postId), {
-        oQue: `a curtida em ${postId} na rodada de desvio`,
-      });
-      desvioCurtidas.push(postId);
-    });
-    const desvio1 = (await sessaoDe(p)).desvio;
+    const linhaDoPrimeiro = prof.locator("main").getByRole("row").filter({ hasText: PRIMEIRO.login }).first();
     r.exigir(
-      Boolean(areaNova) && areaNova !== areaCurtida,
-      `a rodada de desvio abre por uma área que quase não apareceu (${areaNova}, e a bolha era ${areaCurtida})`,
+      (await linhaDoPrimeiro.innerText()).includes(categoriaBuscada.hashtag.startsWith("#") ? categoriaBuscada.hashtag : `#${categoriaBuscada.hashtag}`),
+      `a coluna “Categorias buscadas” mostra ${chip} na linha do primeiro`,
     );
-    const daAreaNova = desvio1.posts.filter((x) => x.area === areaNova).length;
-    r.exigir(
-      desvio1.posts.length === 6 && daAreaNova >= 4,
-      `curtir a área nova vira a rodada para ela (${daAreaNova} de ${desvio1.posts.length} posts de ${areaNova})`,
-    );
-    const linhaNova = desvio1.comparacao?.find((c) => c.area === areaNova);
-    r.exigir(
-      Boolean(linhaNova) && linhaNova.noDesvio > linhaNova.noFeed,
-      `a comparação mostra a área nova crescendo (${linhaNova?.noFeed} no feed do júri → ${linhaNova?.noDesvio} na rodada)`,
-    );
-    await q().locator('[data-comparacao="desvio"]').scrollIntoViewIfNeeded();
-    await semAnimacao(q);
-    await r.registrar(p, "rodada-de-desvio", {
-      titulo: "A rodada de desvio",
-      mostra:
-        "A nova rodada do feed: a instrução da comissão, os posts da área que quase não aparecia, curtidos, e no fim " +
-        "a comparação, área por área, entre o feed do júri e a rodada.",
-      prova:
-        "É a vivência que o PO pediu e a spec perdeu: mudar o comportamento muda a recomendação. A tela mostra o " +
-        "efeito, sem a regra — quem a nomeia é a cadeia, a seguir.",
-      detalhe: `${daAreaNova} de 6 posts de ${areaNova}`,
-    });
-    await q().getByRole("button", { name: "Encerrar a nova rodada" }).click();
-
-    // ═══ ESTUDANTE 2: encerrar sem interagir é recusado; o SALVAR conta ════
-    await q2().getByText(/^Nova rodada do feed:/).first().waitFor({ timeout: 40_000 });
-    await rolarODesvio(q2);
-    await q2().getByRole("button", { name: "Encerrar a nova rodada" }).click();
-    await q2().getByText("Curta ou salve ao menos uma publicação desta rodada antes de encerrar.").first().waitFor({ timeout: 10_000 });
-    r.exigir((await esperaDoDesvio(q2).count()) === 0 && (await leo(q2).count()) === 0, "sem curtir nem salvar, a rodada não encerra");
-    const primeiroDoDesvio2 = q2().locator("article[data-post-id]").first();
-    await primeiroDoDesvio2.scrollIntoViewIfNeeded();
-    await primeiroDoDesvio2.getByRole("button", { name: "Salvar publicação", exact: true }).click();
-    await esperarNaApi(p2, "/juri-estadual/sessao", (s) => (s?.desvio?.salvos?.length ?? 0) > 0, { oQue: "o salvo na rodada de desvio" });
-    await semAnimacao(q2);
-    await r.registrar(p2, "desvio-salvar", {
-      titulo: "Salvar também é sinal",
-      mostra: "A rodada de desvio de quem não interagia: o aviso “Curta ou salve ao menos uma publicação…” e o post salvo.",
-      prova:
-        "Encerrar sem interação é recusado na tela e na api (409 `desvio-sem-interacao`): sem mexer no feed, não há " +
-        "desvio. O salvar é o segundo sinal do feed (curtir, salvar e o tempo no post).",
-    });
-    await q2().getByRole("button", { name: "Encerrar a nova rodada" }).click();
-    await leo(q2).waitFor({ timeout: 20_000 });
-
-    // ═══ ESTUDANTE 1: a cadeia (EF06CO03), errando uma vez ═══════════════
-    /* Sem a tela dos pacotes (a EF06CO07 saiu, o pedido do PO): a rodada de
-       desvio leva à cadeia, e a frase do Léo abre a tela dela. */
-    await q().getByRole("region", { name: "Blocos da engrenagem" }).waitFor({ timeout: 20_000 });
-    r.exigir(
-      (await leo(q).count()) > 0 && (await q().getByText(/pacotes? numerad|Remontar mensagem/).count()) === 0,
-      "a cadeia abre com a frase do Léo, e não há mais tela de pacotes",
-    );
-    await semAnimacao(q);
-    await r.registrar(p, "cadeia-com-o-leo", {
-      titulo: "O Léo, no topo da cadeia",
-      mostra: "A tela da escola: “Você viveu em tela o que Léo investigou no livro didático!”, a instrução e os quatro blocos.",
-      prova:
-        "A missão sai do clone para EXPLICAR (a fronteira do disfarce é quem fala). A única exclamação da missão " +
-        "é a ponte com o livro didático, agora no primeiro momento em que a Unooria mostra a engrenagem.",
-    });
-    const bandejaDaCadeia = () => q().getByRole("region", { name: "Blocos da engrenagem" });
-    const bloco = (rotulo) => bandejaDaCadeia().getByRole("button", { name: new RegExp(`^${escaparRegex(rotulo)}`) });
-    const DADOS = "Registro de dados e padrões";
-    /* O rótulo da api (`conteudo.ts#BLOCOS_DA_CADEIA`): desde a 0.3.0 o salvar também é sinal. */
-    const INTERACOES = "Interações do jurado (curtidas e salvos)";
-    const ALGORITMO = "Algoritmo de recomendação";
-    const BOLHA = "Formação de bolha temática";
-    for (const rotulo of [DADOS, INTERACOES, ALGORITMO, BOLHA]) await bloco(rotulo).click();
-    await q().getByRole("button", { name: "Validar Cadeia Lógica" }).click();
-    await q().getByText(/A sequência lógica ainda não encaixou/).first().waitFor({ timeout: 15_000 });
-    r.exigir(
-      (await q().getByText("Voltou para a bandeja").count()) > 0,
-      "na ordem errada, os blocos voltam para a bandeja",
-    );
-    r.exigir(
-      !CARIMBO_OU_ACERTO.test(await q().locator("body").innerText()),
-      "e a tela não diz qual vaga errou nem fala em erro",
-    );
-    await r.registrar(p, "cadeia-errada", {
-      titulo: "A cadeia que não encaixou",
-      mostra: "Os quatro blocos de volta à bandeja e a frase de apoio: “Pense no que você fez primeiro e como o aplicativo respondeu.”",
-      prova:
-        "O servidor confere a ordem (os ids são opacos e a certa nunca desce) e responde só certo ou não. Cada " +
-        "envio é uma tentativa: é delas que sai o nível da EF06CO03.",
-    });
-    for (const rotulo of [INTERACOES, DADOS, ALGORITMO, BOLHA]) await bloco(rotulo).click();
-    await q().getByRole("button", { name: "Validar Cadeia Lógica" }).click();
-    await q().getByText("Cadeia lógica montada").first().waitFor({ timeout: 15_000 });
-    await semAnimacao(q);
-    await r.registrar(p, "cadeia-montada", {
-      titulo: "Interações → Dados → Algoritmo → Bolha",
-      mostra: "A cadeia lógica montada na calha, na segunda tentativa.",
-      prova: "A regra que o feed executou vira descrição precisa: o “se… então…” que a enquete da EF06CO03 pergunta.",
-    });
-    await q().getByRole("button", { name: "Continuar", exact: true }).click();
-
-    // ═══ ESTUDANTE 1: o caso Mariana ═════════════════════════════════════
-    /* Os cartões vêm EMBARALHADOS: casa-se pelo texto, pelo papel. */
-    const mecanismo = q().getByRole("radio", { name: /^O aplicativo usou a curtida como dado/ });
-    await mecanismo.waitFor({ timeout: 20_000 });
-    await mecanismo.click();
-    await q().getByRole("radio", { name: /^Fazer buscas ativas pelos canais da Chapa B/ }).click();
-    await semAnimacao(q);
-    await r.registrar(p, "caso-mariana", {
-      titulo: "O caso de Mariana",
-      mostra: "A eleição do grêmio contada pela comissão, e um cartão de mecanismo e um de atitude escolhidos.",
-      prova:
-        "A transferência para um caso novo, de volta ao clone. A tela não diz qual cartão é o certo — nem depois: " +
-        "a escolha vai para a plenária, e não vira nota.",
-    });
-    await q().getByRole("button", { name: "Registrar Explicação e Avançar" }).click();
-
-    // ═══ ESTUDANTE 1: as três enquetes nos Stories ═══════════════════════
-    const ENQUETES = [
-      /* A P1 é a da EF06CO10 (o foco primário), verbatim da spec 9.6, item 1. */
-      { alternativa: /^Revela um engano: o jurado não percebeu/, confirmada: "Resposta registrada na ata do júri." },
-      { alternativa: /^O sistema associou cada curtida a um tipo de dado temático/, confirmada: "Dados computados na ata oficial." },
-      { alternativa: /^SE o jurado curtir dois ou mais posts do mesmo tema/, confirmada: "Regra lógica conferida e arquivada." },
-    ];
-    for (const [i, enquete] of ENQUETES.entries()) {
-      /* As alternativas vêm EMBARALHADAS a cada leitura: casa-se pelo texto. */
-      await q().getByRole("button", { name: enquete.alternativa }).click({ timeout: 30_000 });
-      await q().getByText(enquete.confirmada).first().waitFor({ timeout: 15_000 });
-      r.exigir(
-        !CARIMBO_OU_ACERTO.test(await q().locator("body").innerText()),
-        `a enquete ${i + 1} confirma o registro na ata, sem acerto`,
-      );
-      if (i === 0) {
-        r.exigir(
-          (await q().getByText(/^Ao final da mostra, um jurado disse:/).count()) > 0,
-          "a primeira enquete é a da EF06CO10: a frase do jurado que só viu robótica",
-        );
-        await r.registrar(p, "enquete", {
-          titulo: "A consulta aos jurados",
-          mostra:
-            "Os Stories da comissão, em tema escuro: a primeira pergunta — a frase do jurado (EF06CO10) —, a " +
-            "alternativa tocada e “Resposta registrada na ata do júri.”",
-          prova:
-            "O gabarito mora na ficha da api e a ordem muda a cada leitura (ADR-118). A criança não sabe se " +
-            "“acertou” — é evidência para a professora, não prova.",
-        });
-      }
-      if (i < ENQUETES.length - 1) await q().locator("button", { hasText: "Próxima pergunta" }).last().click();
-    }
-    await q().getByRole("button", { name: "Encerrar consulta" }).click();
-    await q().locator(".fim__carimbo").waitFor({ timeout: 20_000 });
-    r.exigir(
-      (await q().getByText("Missão Cumprida · Credencial de Jurado Homologada").count()) > 0,
-      "a missão termina com o crachá homologado",
-    );
-    await semAnimacao(q);
-    await r.registrar(p, "cracha-homologado", {
-      titulo: "Missão cumprida",
-      mostra: "O mesmo crachá da entrada, agora homologado, e o infográfico de leitura silenciosa: como os robôs leem nossas curtidas.",
-      prova: "O fim não tem botão nem nota: a missão acabou, e o nível de cada habilidade é do servidor.",
-    });
-
-    // ═══ PROFESSORA: a folha e as habilidades ════════════════════════════
-    await prof.reload({ waitUntil: "domcontentloaded" });
     const habilidades = prof.locator("[data-habilidades-do-juri]");
     await habilidades.waitFor({ timeout: 30_000 });
     await habilidades.getByText("EF06CO10").first().waitFor({ timeout: 30_000 });
     const textoDasHabilidades = await habilidades.innerText();
     r.exigir(
-      ["EF06CO10", "EF06CO01", "EF06CO03"].every((codigo) => textoDasHabilidades.includes(codigo)) &&
-        !textoDasHabilidades.includes("EF06CO07"),
-      "o painel de habilidades mostra EF06CO10, EF06CO01 e EF06CO03 — e não a EF06CO07",
+      ["EF06CO10", "EF06CO01", "EF06CO03"].every((codigo) => textoDasHabilidades.includes(codigo)),
+      "o painel de habilidades mostra EF06CO10, EF06CO01 e EF06CO03",
     );
-    /* A RÉGUA (ADR-145): o critério de cada nível, em texto, no fim do painel —
-       a da EF06CO10 conta os estandes ocultos; a da EF06CO01, a hashtag de outra área. */
-    r.exigir(
-      textoDasHabilidades.includes("pelo menos dois estandes que o feed escondeu") &&
-        textoDasHabilidades.includes("busca pela hashtag de uma área que não a do voto"),
-      "o painel lista a régua da EF06CO10 (ocultos abertos) e a da EF06CO01 (hashtag de outra área)",
-    );
-    /* E toda rodada mede as ações (ADR-145): a revisão do voto marcou as duas. */
-    const painelDeHabilidades = await lerApi(
-      prof,
-      `/evidencias/turma/${turmaId}/missao/exp06ef1b/atividade/${atividadeId}`,
-    );
-    const textoDoPainel = JSON.stringify(painelDeHabilidades.corpo ?? {});
-    r.exigir(
-      painelDeHabilidades.status === 200 && textoDoPainel.includes("EF06CO10") && textoDoPainel.includes("EF06CO01"),
-      `a api do painel de habilidades traz a EF06CO10 e a EF06CO01 desta atividade (HTTP ${painelDeHabilidades.status})`,
-    );
-    /* Pelos CABEÇALHOS das colunas, não pelo texto da página: a folha explica à
-       professora que "não há coluna de voto, de taxa nem de nível", e a frase
-       que nega a coluna não pode reprovar a suíte que prova a ausência dela. */
-    const colunas = await prof.locator("main").getByRole("columnheader").allInnerTexts();
-    r.exigir(colunas.length > 0, "a folha da turma está na tela, com as colunas");
-    r.exigir(
-      !colunas.some((c) => /^\s*voto\b|\b(taxa|n[íi]vel|invisibilidade|pontos|nota|ranking|acerto)\b/i.test(c)),
-      `a folha não tem coluna de voto, taxa nem nível (colunas: ${colunas.join(", ")})`,
-    );
-    await habilidades.scrollIntoViewIfNeeded();
+    const painelDeHabilidades = await lerApi(prof, `/evidencias/turma/${turmaId}/missao/${EXP_ID}/atividade/${atividadeId}`);
+    r.exigir(painelDeHabilidades.status === 200, `a api do painel de habilidades responde para esta atividade (HTTP ${painelDeHabilidades.status})`);
+    await linhaDoPrimeiro.scrollIntoViewIfNeeded();
     await r.registrar(prof, "resultados-e-habilidades", {
-      titulo: "A folha da turma, e as habilidades",
-      mostra:
-        "Onde cada computador está — cédula, galeria, busca, revisão, missão — e o painel de habilidades da BNCC " +
-        "desta atividade: EF06CO10, EF06CO01 e EF06CO03, com a régua de cada nível.",
-      prova:
-        "A folha diz só o progresso: ela tem nomes, então não liga nome a voto nem a taxa. O nível vem da " +
-        "auditoria da galeria (os ocultos abertos para a EF06CO10, a hashtag de outra área para a EF06CO01), da " +
-        "cadeia e das três enquetes, e fica no painel de habilidades, com a confirmação da professora.",
+      titulo: "A folha da turma, as categorias buscadas e as habilidades",
+      mostra: "Onde cada um está, a coluna “Categorias buscadas” com a hashtag que o primeiro usou, e o painel de habilidades da BNCC.",
+      prova: "A folha diz só o progresso e o que cada um buscou — nunca voto, taxa ou nível ligados a nome. O nível mora no painel de habilidades.",
       inteira: true,
     });
 
-    // ═══ PROFESSORA: o podcast de recapitulação ══════════════════════════
-    /* O episódio revela a virada, e o módulo de podcast não trava por etapa:
-       o cartão leva o aviso de quando tocar. Ele existe em toda etapa (o texto
-       muda com a galeria), então a prova é estar à vista. */
-    const avisoDoPodcast = prof.locator("[data-aviso-do-podcast]");
-    await avisoDoPodcast.waitFor({ timeout: 20_000 }).catch(() => undefined);
-    r.exigir(
-      await avisoDoPodcast.isVisible(),
-      "o cartão do podcast avisa que o episódio revela a virada e só toca depois da Galeria Oculta",
-    );
+    // ═══ PROFESSORA: o podcast do banco padrão (roteiro fixo) ════════════
     await provarPodcastNaAula(r, prof, {
       blocos: ["Abertura", "Recapitulação da vivência", "A grande revelação", "Provocação e transferência", "Encerramento"],
       vozes: ["Bia", "Rafa"],
       trechos: 5,
       passo: "podcast",
-      descricao: "Bia e Rafa, cerca de 3 min 45 s",
+      descricao: "o roteiro fixo do banco padrão (aud-exp06ef1b-01)",
     });
   },
 );

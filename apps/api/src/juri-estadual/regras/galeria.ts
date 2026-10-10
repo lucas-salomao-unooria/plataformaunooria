@@ -40,24 +40,8 @@ export function feedDaLinha(linha: {
   };
 }
 
-/** As quatro listas da RODADA DE DESVIO — um feed à parte, com o mesmo motor. */
-export function desvioDaLinha(linha: {
-  desvioServidos: unknown;
-  desvioCurtidos: unknown;
-  desvioSalvos: unknown;
-  desvioPermanencias: unknown;
-}): EstadoDoFeed {
-  return {
-    ...FEED_VAZIO,
-    servidos: listaDePosts(linha.desvioServidos),
-    curtidos: listaDePosts(linha.desvioCurtidos),
-    salvos: listaDePosts(linha.desvioSalvos),
-    permanencias: listaDePosts(linha.desvioPermanencias),
-  };
-}
-
 /**
- * O que a criança FEZ na galeria — é o dado da EF06CO01 (`regras/evidencia.ts`).
+ * O que a criança FEZ na galeria — é o dado da EF06CO10 e da EF06CO01 (`regras/evidencia.ts`).
  *
  * - `abertos`: os estandes cuja ficha ela abriu, sem repetir;
  * - `buscas`: o TIPO de cada busca (hashtag ou texto) e a área que casou, ou
@@ -122,4 +106,15 @@ export function ordemDaGaleria(servidos: readonly string[]): string[] {
   const ocultos = IDS_DE_PROJETO.filter((id) => !projetoFoiExibido(servidos, id));
   const vistos = IDS_DE_PROJETO.filter((id) => projetoFoiExibido(servidos, id));
   return [...ocultos, ...vistos];
+}
+
+/** Quantos estandes OCULTOS a criança abriu — o "Manter" só vale com um (melhoria 6). */
+export function ocultosAbertos(auditoria: Auditoria, ocultos: readonly string[]): number {
+  const oculto = new Set(ocultos);
+  return auditoria.abertos.filter((id) => oculto.has(id)).length;
+}
+
+/** As áreas que a criança buscou pela HASHTAG, sem repetir — a lista do professor mostra (melhoria 3). */
+export function areasBuscadas(auditoria: Auditoria): Area[] {
+  return [...new Set(auditoria.buscas.filter((b) => b.tipo === "hashtag" && b.area !== null).map((b) => b.area as Area))];
 }

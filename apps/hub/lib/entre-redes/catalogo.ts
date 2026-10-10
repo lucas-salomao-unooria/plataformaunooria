@@ -916,8 +916,10 @@ export const MISSAO_A_SELECAO: Missao = {
  * EF06CO10 se ancora no livro didático (o consumo crítico das plataformas).
  *
  * Tem ficha pedagógica (E14): a atividade é o PACOTE homologado e a rodada é o
- * "Zerar". E NÃO tem acervo padrão, como a exp08ef1b: os dezesseis estandes
- * são gerados por IA no preparo; sem saldo de IA, não há atividade.
+ * "Zerar". Desde a 0.4.0 (PRD v2) tem BANCO PADRÃO: o professor usa a Feira
+ * de Ciências e Sustentabilidade em um toque, ou gera os dezesseis estandes
+ * com IA sobre o tema dele; sem saldo de IA, o banco padrão entra no lugar. A
+ * rodada de desvio saiu: o único botão da aula é Liberar Auditoria.
  */
 export const MISSAO_JURI_ESTADUAL: Missao = {
   anoSlug: "6-ano",
@@ -926,12 +928,11 @@ export const MISSAO_JURI_ESTADUAL: Missao = {
   expId: "exp06ef1b",
   titulo: "O Júri Estadual de Projetos",
   resumo:
-    "O estudante é jurado de uma mostra científica estadual num feed de rede social: dezesseis " +
-    "estandes de quatro áreas, escritos sobre o tema da sua aula. As curtidas dele mudam o que o " +
-    "feed mostra, sem aviso. Depois de dez publicações ele lacra o voto, e a turma espera junta " +
-    "enquanto você projeta como os votos se dividiram. Quando você libera a Galeria Oculta, cada " +
-    "um vê os estandes que nunca chegaram à tela dele, com a parte real que ficou de fora, e " +
-    "mantém ou troca o voto.",
+    "Simulação de rede social onde as curtidas do estudante revelam como funcionam as bolhas " +
+    "algorítmicas e os sistemas de recomendação. Ele é jurado de uma mostra estadual com dezesseis " +
+    "estandes de quatro áreas — do banco padrão ou escritos sobre o tema da sua aula —, lacra o " +
+    "voto e, quando você libera a auditoria, descobre na Galeria Oculta os estandes que as " +
+    "próprias curtidas esconderam dele.",
   status: "disponivel",
   // Sem spoiler: é o mandato da credencial (`e1.instrucao.missao_jurado`), e
   // nada nele diz que o feed se adapta.
@@ -951,7 +952,7 @@ export const MISSAO_JURI_ESTADUAL: Missao = {
       "(conjuntos) e associando cada coleção a um ‘tipo de dados’) e EF06CO03 (descrever com " +
       "precisão a solução de um problema, construindo o programa que implementa a solução " +
       "descrita).",
-    duracao: "1 aula de 50 min (ou 2 de 25 min)",
+    duracao: "1 aula de 50 min, 29 em tela (ou 2 sessões de 25 min)",
     formato:
       "Clone de rede social de fotos (o Unoovista): a credencial de jurado, o feed da mostra, a " +
       "cédula lacrada, a Galeria Oculta com a busca por hashtag, o caso Mariana e as enquetes nos " +
@@ -967,66 +968,55 @@ export const MISSAO_JURI_ESTADUAL: Missao = {
       {
         rotulo: "2 — O feed da mostra",
         texto:
-          "As quatro primeiras publicações são uma de cada área. Daí em diante, cada curtida, cada " +
-          "salvo e cada parada longa num post mudam o que vem a seguir, sem nenhum aviso na tela: quem " +
-          "curte duas vezes a mesma área passa a receber só ela. Depois de dez publicações, a " +
-          "cédula abre.",
+          "As quatro primeiras publicações são uma de cada área. Daí em diante, cada curtida e cada " +
+          "parada longa num post mudam o que vem a seguir, sem nenhum aviso na tela: quem curte " +
+          "duas vezes a mesma área passa a receber só ela. Depois de dez publicações, ou de 8 " +
+          "minutos, a cédula abre.",
       },
       {
         rotulo: "3 — A cédula lacrada",
         texto:
-          "O estudante escolhe um dos estandes que viu, declara a convicção (as duas opções " +
-          "afirmam certeza, de propósito) e justifica: um cartão de motivo e a frase da legenda que " +
-          "mais pesou. O voto é lacrado e não volta. A tela entra em espera, pedindo atenção à " +
-          "projeção da sala.",
+          "Quatro elementos: o título, um dos estandes que ele viu, a certeza (as duas opções " +
+          "afirmam certeza, de propósito) e o botão de confirmar. O voto é lacrado e não volta. Se a " +
+          "cédula ficar parada mais de um minuto, a tela lembra que a comissão aguarda, e o seu " +
+          "painel mostra um alerta ao lado do nome.",
       },
       {
-        rotulo: "4 — A plenária e a Galeria Oculta (o seu botão)",
+        rotulo: "4 — A lousa e a Galeria Oculta (o seu botão)",
         texto:
-          "Com a maioria votada, você projeta o gráfico dos votos por área e conduz as perguntas " +
-          "da plenária: como a turma se dividiu tanto, se estava todo mundo na mesma mostra? Aí " +
-          "você aperta Liberar a Galeria Oculta. Cada computador vê os estandes que não chegaram " +
-          "ao feed dele, com a parte real que ficou de fora — diferente para cada um —, e busca por " +
-          "hashtag. Na revisão, a justificativa da cédula volta ao lado da mostra inteira, e ele " +
-          "mantém, troca ou complementa o voto, com um cartão novo.",
+          "Com a maioria votada, você projeta o Painel Coletivo de Votos da Turma e conduz as " +
+          "perguntas da plenária. Aí você aperta Liberar Auditoria. Cada computador vê os estandes " +
+          "que não chegaram ao feed dele, com a parte real que ficou de fora — diferente para cada " +
+          "um —, busca por hashtag e decide entre manter o voto inicial ou confirmar um voto revisado.",
       },
       {
-        rotulo: "5 — A rodada de desvio (o seu segundo botão)",
+        rotulo: "5 — A cadeia do feed",
         texto:
-          "Com a maioria revisada, você aperta Liberar a rodada de desvio. Cada computador recebe " +
-          "uma rodada curta do feed, que começa pelas áreas que quase não apareceram para ele: quem " +
-          "curte ou salva o que nunca via vê o feed virar para essa área, e a tela compara o feed do " +
-          "júri com a rodada.",
+          "Numa tela da Unooria, ao lado do histórico de outro jurado simulado que curtiu temas " +
+          "opostos, o estudante monta a engrenagem que controlou o feed: interações do jurado, " +
+          "registro de dados e padrões, algoritmo de recomendação, formação de bolha temática.",
       },
       {
-        rotulo: "6 — A cadeia do feed",
-        texto:
-          "Numa tela da Unooria, que abre ligando o que ele viveu ao livro didático, o estudante " +
-          "monta a engrenagem que controlou o feed: interações do jurado, registro de dados e " +
-          "padrões, algoritmo de recomendação, formação de bolha temática.",
-      },
-      {
-        rotulo: "7 — Mariana e as enquetes",
+        rotulo: "6 — Mariana e as enquetes",
         texto:
           "O caso da eleição do grêmio da escola de Mariana leva a lição para fora da mostra: " +
           "um cartão para o que aconteceu com o feed dela e outro para o que fazer. Por fim, três " +
-          "enquetes nos Stories, que alimentam o painel de habilidades, e o crachá homologado.",
+          "enquetes nos Stories, que alimentam o painel de habilidades, e o crachá homologado. O " +
+          "podcast de recapitulação fecha a aula, depois da Etapa 4.",
       },
     ],
     preparo: [
       "Libere a missão para a turma na sala de aula — sem a liberação, o cartão fica com cadeado para as crianças.",
-      "Crie a atividade aqui na ficha, em Nova atividade: escolha o componente curricular, escreva o tema " +
-        "da feira e os assuntos da semana, e a inteligência artificial escreve os dezesseis estandes. Não há " +
-        "banco pronto: sem saldo de geração com IA, a atividade não sai — prepare com antecedência.",
-      "Revise os estandes antes de criar: título, legenda e bastidor de cada um, e regenere o que não servir. " +
+      "Crie a atividade aqui na ficha, em Nova atividade. O caminho curto é Usar Banco Padrão Oficial: " +
+        "um toque, sem IA. Para personalizar, escolha o componente curricular, o título da mostra e os " +
+        "assuntos da semana e gere com IA; sem saldo de IA, o Acervo Padrão da Mostra entra no lugar.",
+      "Na mostra personalizada, revise os estandes (título, legenda e bastidor; regenere o que não servir) " +
+        "e aprove em duas fases: os textos, depois as imagens — sem as imagens aprovadas, ela não vai ao ar. " +
         "Nada gerado por inteligência artificial chega à turma sem a sua revisão.",
-      "Aprove em duas fases: primeiro os textos dos estandes; depois as imagens, que a inteligência " +
-        "artificial gera em seguida. Confira cada imagem, gere outra para a que não servir e aprove — sem " +
-        "as imagens aprovadas, a atividade não vai ao ar. Estande sem imagem aparece com uma arte desenhada.",
-      "Se a turma divide computadores, escolha as equipes na criação. O sistema não distingue quem toca a " +
-        "tela: como a comissão se organiza fica com você e com a turma. O painel conta por computador.",
-      "Durante a aula são dois botões, na ordem — Liberar a Galeria Oculta e Liberar a rodada de desvio —, " +
-        "e nenhum volta. Deixe o projetor pronto: o gráfico dos votos é para a lousa.",
+      "Se a turma divide computadores, escolha as equipes na criação. Não há rodízio obrigatório de quem " +
+        "toca a tela: a organização do grupo fica com você. O painel conta por computador.",
+      "Durante a aula é um botão só — Liberar Auditoria —, e ele não volta. Deixe o projetor pronto: o " +
+        "painel de votos é para a lousa.",
       "Não diga que a aula é sobre algoritmo, bolha ou filtro: a missão mede o que a turma vota quando " +
         "ninguém avisou que o feed se adapta.",
     ],

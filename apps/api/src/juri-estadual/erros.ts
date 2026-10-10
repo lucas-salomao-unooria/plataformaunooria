@@ -31,10 +31,8 @@ export type CodigoErro =
   | "voto-ja-lacrado"
   | "galeria-nao-liberada"
   | "voto-ja-revisado"
-  | "desvio-nao-liberado"
-  | "desvio-incompleto"
-  | "desvio-sem-interacao"
-  | "desvio-ja-concluido"
+  | "galeria-sem-inspecao"
+  | "ordem-incorreta"
   | "transicao-de-etapa-invalida"
   | "pacote-invalido"
   | "imagens-nao-aprovadas"
@@ -60,11 +58,12 @@ export const STATUS: Record<CodigoErro, number> = {
   "voto-ja-lacrado": 409,
   "galeria-nao-liberada": 403,
   "voto-ja-revisado": 409,
-  /* O relógio da turma de novo, como a galeria: 403, e a tela relê a sessão. */
-  "desvio-nao-liberado": 403,
-  "desvio-incompleto": 409,
-  "desvio-sem-interacao": 409,
-  "desvio-ja-concluido": 409,
+  /* "Manter meu voto inicial" só depois de abrir ao menos um estande oculto
+     (melhoria 6): o botão fica apagado na tela, e a rota cobra o mesmo. */
+  "galeria-sem-inspecao": 409,
+  /* A cadeia montada fora da ordem (PRD §12.1). 422, e a TENTATIVA CONTA para a
+     EF06CO03: o service grava a contagem e só depois responde o erro. */
+  "ordem-incorreta": 422,
   "transicao-de-etapa-invalida": 409,
   "pacote-invalido": 400,
   /* A segunda fase da aprovação (como na exp07ef1b, ADR-146): o pacote existe,
@@ -86,7 +85,7 @@ export const MENSAGENS: Record<CodigoErro, string> = {
   "passo-invalido": "Essa parte da mostra não está aberta agora.",
   "rodada-mudou": "A mostra foi atualizada. Recarregue para continuar.",
   "post-desconhecido": "Essa publicação não está no seu feed.",
-  "feed-incompleto": "Avalie os dez estandes do feed antes de votar.",
+  "feed-incompleto": "Continue avaliando os estandes do feed: a cédula abre na 10ª publicação ou aos 8 minutos.",
   "projeto-fora-do-feed": "A cédula só aceita estandes que apareceram no seu feed.",
   // O LATCH 1. Quem já votou não pode achar que perdeu o voto.
   "voto-ja-lacrado": "Seu voto já foi registrado e lacrado na urna.",
@@ -94,11 +93,10 @@ export const MENSAGENS: Record<CodigoErro, string> = {
   "galeria-nao-liberada": "A comissão está reunida em plenária. Aguarde o sinal do professor.",
   // O LATCH 2.
   "voto-ja-revisado": "A revisão do seu voto já foi registrada na ata.",
-  // A segunda espera: a rodada de desvio abre com o sinal do professor.
-  "desvio-nao-liberado": "A comissão vai abrir uma nova rodada do feed. Aguarde o sinal do professor.",
-  "desvio-incompleto": "Veja as seis publicações da nova rodada antes de encerrar.",
-  "desvio-sem-interacao": "Curta ou salve ao menos uma publicação da nova rodada antes de encerrar.",
-  "desvio-ja-concluido": "A nova rodada do seu feed já foi encerrada.",
+  "galeria-sem-inspecao": "Inspecione ao menos um projeto que não apareceu no seu feed antes de manter o voto.",
+  // O texto literal do feedback de erro da Etapa 5 (copy revisada, e5.feedback.cadeia_erro).
+  "ordem-incorreta":
+    "A ordem das regras precisa de ajuste. Lembre-se: primeiro vêm suas ações, depois os dados registrados pela máquina.",
   "transicao-de-etapa-invalida": "A turma avança uma etapa por vez, e nunca volta.",
   "pacote-invalido": "Os estandes gerados não atendem às regras da missão.",
   "imagens-nao-aprovadas":
