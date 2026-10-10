@@ -79,9 +79,12 @@ const GUIAS = [
        projeta, e paráfrase no guia deixaria a turma comentando outra frase. */
     vivo: [
       /A regra do feed e o gabarito — só para você/i,
-      /Formação de bolha temática/,
+      /Afunilamento do feed e criação da bolha/,
       /As quatro perguntas da plenária — entre o voto e a galeria/i,
-      /como a turma votou em áreas tão diferentes/i,
+      /parte da turma tenha votado em robôs e outra parte em projetos de meio ambiente/,
+      /* A nota pedagógica da EF06CO10 é LITERAL do PRD (Anexo §9): a ampliação
+         deliberada do objeto da habilidade, dita ao professor antes da aula. */
+      /Esta missão trabalha EF06CO10 com ampliação deliberada do objeto/,
     ],
     bncc: "EF06CO10",
   },
