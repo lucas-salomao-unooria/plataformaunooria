@@ -409,11 +409,12 @@ describe("o podcast do Júri Estadual (6º ano)", () => {
     ]);
   });
 
-  test("o banco padrão (PRD v2): com as falas do sheet, o roteiro inteiro é o aud-exp06ef1b-01 literal", () => {
+  test("o banco padrão (PRD v2): o roteiro do aud-exp06ef1b-01 com os estandes do banco e sem número cravado", () => {
     const roteiro = texto(Juri.FALAS_DO_TEMA_PADRAO);
     expect(roteiro).toContain("podcast da Mostra Estadual de Projetos da Unooria");
-    expect(roteiro).toContain("escondeu os outros 12 projetos da mostra");
-    expect(roteiro).toContain("três quartos de uma feira escolar");
+    expect(roteiro).toContain("escondeu os projetos das outras áreas da mostra");
+    expect(roteiro).toContain("mais da metade de uma feira escolar");
+    expect(roteiro).not.toMatch(/\b12\b|doze|três quartos|bueiro|drone|horta/i);
     expect(roteiro).not.toMatch(/instanooria/i);
   });
 
