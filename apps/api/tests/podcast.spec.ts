@@ -28,6 +28,11 @@ import { HomologacaoSchema as HomologacaoDoJuri } from "../src/juri-estadual/con
 import * as Juri from "../src/juri-estadual/podcast";
 import { fonteDoPodcastDaExp06ef1b, materialDoPodcast as materialDoJuri } from "../src/juri-estadual/podcast-fonte";
 import { PARAMETROS_DE_TESTE, conteudoDeTeste } from "./juri-estadual-fixture";
+import { AtivarSchema } from "../src/atividades/contrato-de-rotas";
+import * as Unoovista from "../src/atividades/podcast";
+import { fonteDoPodcastDaExp08ef1b, materialDoPodcast as materialDoUnoovista } from "../src/atividades/podcast-fonte";
+import * as Tempestade from "../src/unoogpt/podcast";
+import { fonteDoPodcastDaExp02em1b } from "../src/unoogpt/podcast-fonte";
 
 /**
  * O podcast de recapitulação como recurso da plataforma (ADR-150) — SEM
@@ -41,6 +46,7 @@ const MISSOES = [
   { nome: "Jornal da Escola (4º ano)", modulo: Jornal },
   { nome: "Quem Mandou Isso? (5º ano)", modulo: Quem },
   { nome: "Júri Estadual de Projetos (6º ano)", modulo: Juri },
+  { nome: "Unoovista (8º ano)", modulo: Unoovista },
 ] as const;
 
 /** Uma fala no teto da régua: 57 palavras e 398 bytes (o "ç" e o "ã" contam 2). */
@@ -460,5 +466,175 @@ describe("o podcast do Júri Estadual (6º ano)", () => {
       undefined,
     );
     expect(r).toMatchObject({ titulo: "O Júri Estadual — A Mostra que Ninguém Viu Inteira", trechos: { total: 5, prontos: 0 } });
+  });
+});
+
+// ───────────────────────────────────── o Unoovista (8º ano) e a Tempestade (2ª EM), ADR-156
+
+const ATIVIDADE_DO_8 = "44444444-4444-4444-8444-444444444444";
+
+/** O Prisma que as duas fontes leem: a turma existe, a atividade é a pedida, e a linha do roteiro é a dada. */
+function prismaDasFontes(linha: { falas: unknown } | null, atividade: object | null = { id: ATIVIDADE_DO_8, recorte: "Ciclovias", temaGeral: "Mobilidade" }) {
+  const consultas: unknown[] = [];
+  const tx = {
+    turma: { findFirst: async () => ({ id: "turma" }) },
+    activity: {
+      findFirst: async (q: unknown) => {
+        consultas.push(q);
+        return atividade;
+      },
+    },
+    podcastRoteiro: { findUnique: async () => linha },
+  };
+  const prisma = { comTenancy: async (fn: (tx: unknown) => unknown) => fn(tx) } as unknown as PrismaService;
+  return { prisma, consultas };
+}
+
+function motorDe(fonte: FonteDoPodcast, prisma: PrismaService) {
+  const assets = { midiaDeExperienciaExiste: async () => false } as unknown as AssetsService;
+  const podcast = new PodcastService({} as AiProvider, assets, {} as QuotaService, prisma);
+  podcast.registrarFonte(fonte);
+  return podcast;
+}
+
+const CONTEUDO_DO_8 = {
+  tema: "Ciclovias na cidade",
+  pergunta: "A cidade deve trocar faixas de carro por ciclovias?",
+  ladoA: { rotulo: "Mais ciclovias", tese: "Ciclovia salva vidas.", argumentos: ["Menos acidentes"], posts: ["Pedalar é saúde"] },
+  ladoB: { rotulo: "Menos ciclovias", tese: "O trânsito vai travar.", argumentos: ["Comércio perde clientes"], posts: [] },
+};
+
+describe("o podcast do Unoovista (8º ano)", () => {
+  test("o texto FIXO não cita tema nem lado, e não fala do jogo do Ato 1", () => {
+    const marcadas = Object.fromEntries(Unoovista.VAGAS_DO_PODCAST.map((v) => [v.id, `[[${v.id}]]`]));
+    const fixo = Unoovista.roteiroDoPodcast(marcadas)
+      .flatMap((t) => t.falas.map((f) => f.texto))
+      .filter((f) => !f.startsWith("[["))
+      .join(" ");
+    expect(fixo).not.toMatch(/Vila|Lume|jogo|perfil/i);
+    expect(fixo).toContain("Unoovista");
+    expect(Unoovista.VAGAS_DO_PODCAST.map((v) => [v.id, v.falante])).toEqual([
+      ["pergunta", "Duda"],
+      ["ladoA", "Téo"],
+      ["ladoB", "Duda"],
+    ]);
+  });
+
+  test("o ativar aceita as falas revisadas, recusa as tortas e segue aceitando o corpo sem elas", () => {
+    expect(AtivarSchema.safeParse({ forcar: false, podcast: Unoovista.FALAS_DO_TEMA_PADRAO }).success).toBe(true);
+    expect(AtivarSchema.safeParse({ forcar: true }).success).toBe(true);
+    expect(AtivarSchema.safeParse(undefined).success).toBe(true);
+    const r = AtivarSchema.safeParse({ podcast: { ...Unoovista.FALAS_DO_TEMA_PADRAO, ladoA: "No meu feed, nada." } });
+    expect(r.success ? [] : r.error.issues.map((i) => i.message)).toContain(
+      "A fala do podcast sobre o que o feed do Téo mostrou tem 4 palavra(s); precisa ter de 12 a 60.",
+    );
+  });
+
+  test("o material da IA traz a pergunta e os dois lados, na ordem das vagas", () => {
+    const material = materialDoUnoovista(CONTEUDO_DO_8);
+    expect(material).toContain(CONTEUDO_DO_8.pergunta);
+    expect(material.indexOf("Mais ciclovias")).toBeLessThan(material.indexOf("Menos ciclovias"));
+    expect(material).toContain("Pedalar é saúde");
+  });
+
+  test("a escrita SEMPRE vai à IA (não há banco padrão), e o corpo torto é 400", async () => {
+    const reescritas: FalasDoTema = {
+      pergunta: "Vamos lembrar: a pergunta da missão era se a cidade deve trocar faixas de carro por ciclovias, com posts de mais ciclovias e de menos ciclovias.",
+      ladoA: "No meu feed, quase tudo dizia que ciclovia salva vidas e diminui acidentes. Eu saí de lá certo de que a cidade precisava de mais ciclovias.",
+      ladoB: "Pois no meu, a maioria dos posts dizia que o trânsito ia travar e que o comércio perderia clientes. Achei que todo mundo tinha visto isso.",
+    };
+    const ia = { generateJson: jest.fn(async (req: AiJsonRequest<unknown>) => req.validar(reescritas)) } as unknown as AiProvider;
+    const quota = { temSaldo: async () => true, consumir: async () => undefined } as unknown as QuotaService;
+    const { prisma } = prismaDasFontes(null);
+    const podcast = new PodcastService(ia, {} as AssetsService, quota, prisma);
+    podcast.registrarFonte(fonteDoPodcastDaExp08ef1b(prisma));
+    const escrita = new EscritaDasFalasService(ia, quota, podcast);
+
+    const r = await escrita.escrever("exp08ef1b", "escola", "turma", undefined, "prof", "professor", CONTEUDO_DO_8);
+    expect(r).toMatchObject({ usouIa: true, motivo: null });
+    expect(r.vagas.map((v) => v.texto)).toEqual([reescritas.pergunta, reescritas.ladoA, reescritas.ladoB]);
+
+    const torto = await escrita
+      .escrever("exp08ef1b", "escola", "turma", undefined, "prof", "professor", { tema: "x" })
+      .catch((e: unknown) => e);
+    expect((torto as HttpException).getStatus()).toBe(400);
+  });
+
+  test("atividade sem falas é 409; com a linha aprovada, o roteiro sai com elas", async () => {
+    const sem = prismaDasFontes(null);
+    const erro = await motorDe(fonteDoPodcastDaExp08ef1b(sem.prisma), sem.prisma)
+      .estado("exp08ef1b", "escola", "turma", undefined, ATIVIDADE_DO_8)
+      .catch((e: unknown) => e);
+    expect((erro as HttpException).getStatus()).toBe(409);
+
+    const com = prismaDasFontes({ falas: Unoovista.FALAS_DO_TEMA_PADRAO });
+    const r = await motorDe(fonteDoPodcastDaExp08ef1b(com.prisma), com.prisma).estado(
+      "exp08ef1b",
+      "escola",
+      "turma",
+      undefined,
+      ATIVIDADE_DO_8,
+    );
+    expect(r).toMatchObject({ atividadeId: ATIVIDADE_DO_8, tema: "Ciclovias", trechos: { total: 5, prontos: 0 } });
+    expect(com.consultas[0]).toMatchObject({ where: { id: ATIVIDADE_DO_8, escolaId: "escola", turmaId: "turma" } });
+  });
+
+  test("sem atividade pedida, vale a ATIVA da turma; nenhuma = 403; `turma` não é atividade aqui (404)", async () => {
+    const com = prismaDasFontes({ falas: Unoovista.FALAS_DO_TEMA_PADRAO });
+    await motorDe(fonteDoPodcastDaExp08ef1b(com.prisma), com.prisma).estado("exp08ef1b", "escola", "turma", undefined, undefined);
+    expect(com.consultas[0]).toMatchObject({ where: { escolaId: "escola", turmaId: "turma", status: "ativa" } });
+
+    const vazia = prismaDasFontes(null, null);
+    const semAtiva = await motorDe(fonteDoPodcastDaExp08ef1b(vazia.prisma), vazia.prisma)
+      .estado("exp08ef1b", "escola", "turma", undefined, undefined)
+      .catch((e: unknown) => e);
+    expect((semAtiva as HttpException).getStatus()).toBe(403);
+
+    const turma = await motorDe(fonteDoPodcastDaExp08ef1b(com.prisma), com.prisma)
+      .estado("exp08ef1b", "escola", "turma", undefined, "turma")
+      .catch((e: unknown) => e);
+    expect((turma as HttpException).getStatus()).toBe(404);
+  });
+});
+
+describe("o podcast FIXO da Missão Tempestade (2ª série do EM)", () => {
+  const roteiro = Tempestade.roteiroDoPodcast();
+  const texto = roteiro.flatMap((t) => t.falas.map((f) => f.texto)).join(" ");
+
+  test("cinco blocos, só Lia e Caio, todo trecho no teto da síntese", () => {
+    expect(roteiro.map((t) => t.bloco)).toEqual([...Tempestade.BLOCOS_DO_PODCAST]);
+    for (const t of roteiro) for (const f of t.falas) expect(["Lia", "Caio"]).toContain(f.falante);
+    expect(trechosAlemDoTeto(roteiro)).toEqual([]);
+    expect(Tempestade.VAGAS_DO_PODCAST).toEqual([]);
+  });
+
+  test("fala da cidade da ficha e dos três vieses do guia, e não promete resposta certa", () => {
+    for (const bairro of ["Ribeirinha", "Vale Verde", "Morro Alto", "Industrial"]) expect(texto).toContain(bairro);
+    expect(texto).toMatch(/satélite/i);
+    expect(texto).toMatch(/cadastro/i);
+    expect(texto).toMatch(/telefonia/i);
+    expect(texto).toContain("Não sabemos nunca é zero");
+    expect(texto).not.toMatch(/resposta certa era|alocação (certa|ótima) era/i);
+  });
+
+  test("toda turma ouve o MESMO episódio: sem tabela, sem 409, atividade `turma`", async () => {
+    const { prisma } = prismaDasFontes(null);
+    const r = await motorDe(fonteDoPodcastDaExp02em1b(prisma), prisma).estado("exp02em1b", "escola", "turma", undefined, "turma");
+    expect(r).toMatchObject({
+      atividadeId: "turma",
+      titulo: "Missão Tempestade — a cidade que ninguém viu inteira",
+      trechos: { total: 5, prontos: 0 },
+    });
+    expect(r.roteiro).toEqual(roteiro);
+  });
+
+  test("não há falas para a IA escrever: a rota de falas responde 404", async () => {
+    const { prisma } = prismaDasFontes(null);
+    const quota = {} as QuotaService;
+    const podcast = motorDe(fonteDoPodcastDaExp02em1b(prisma), prisma);
+    const erro = await new EscritaDasFalasService({} as AiProvider, quota, podcast)
+      .escrever("exp02em1b", "escola", "turma", undefined, "prof", "professor", {})
+      .catch((e: unknown) => e);
+    expect((erro as HttpException).getStatus()).toBe(404);
   });
 });

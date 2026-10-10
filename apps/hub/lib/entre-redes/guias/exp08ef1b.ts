@@ -87,6 +87,11 @@ export const GUIA_EXP08EF1B: GuiaDaAula = {
           "Use a visão de matriz (2 lados × 4 perfis) para checar se alguma linguagem ficou fraca.",
       },
       {
+        titulo: "Revise as falas do podcast antes de ativar.",
+        texto:
+          "O podcast de recapitulação é seu: cerca de 3 minutos e meio em que Duda e Téo retomam a missão com a turma. Logo abaixo da revisão dos posts, revise as três falas que contam a pergunta e os dois lados — elas vão junto com o Ativar; o resto do roteiro é o mesmo para todas as turmas. O áudio fica na página da atividade, com o botão Gerar o áudio do podcast, e a transcrição está sempre ao lado. Ele é opcional e conta a virada da missão: toque só depois da revelação.",
+      },
+      {
         titulo: "Ative a atividade e teste você mesmo",
         texto: "com um usuário de estudante, antes de a turma entrar.",
       },

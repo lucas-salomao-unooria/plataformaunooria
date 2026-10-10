@@ -8,6 +8,8 @@ import { RotuloDaTrilha } from "@/components/trilha";
 import { apiDoServidor } from "@/lib/api-servidor";
 import { auth } from "@/lib/auth";
 import { painelDeHabilidades } from "@/lib/evidencias-servidor";
+import { podcastDaAtividade } from "@/lib/podcast-servidor";
+import { CartaoDoPodcast } from "@/app/(plataforma)/professor/entre-redes/[ano]/[unidade]/resultados/podcast-da-aula";
 import {
   MISSAO_ATUAL,
   buscarMissao,
@@ -102,11 +104,14 @@ export default async function AtividadePage({
     ficha montam o painel nos próprios resultados. `MISSAO_ATUAL` pela mesma razão da missão de origem acima.
   */
   const expIdDaAtividade = MISSAO_ATUAL.expId;
-  const [painel, session] = await Promise.all([
+  const [painel, session, podcast] = await Promise.all([
     atividade.turma && expIdDaAtividade
       ? painelDeHabilidades(atividade.turma.id, expIdDaAtividade, atividade.id)
       : Promise.resolve(null),
     auth(),
+    atividade.turma && (atividade.status === "ativa" || atividade.status === "encerrada")
+      ? podcastDaAtividade("exp08ef1b", atividade.turma.id, atividade.id)
+      : Promise.resolve(null),
   ]);
 
   return (
@@ -201,6 +206,30 @@ export default async function AtividadePage({
           activityId={atividade.id}
           status={atividade.status}
           qtdPostsTese={atividade.qtdPostsTese}
+          turmaId={atividade.turma?.id ?? null}
+          material={
+            antagonismo
+              ? {
+                  tema: atividade.recorte,
+                  pergunta: atividade.perguntaChave,
+                  ladoA: { rotulo: antagonismo.ladoA.label, tese: antagonismo.ladoA.tese, argumentos: antagonismo.ladoA.argumentos },
+                  ladoB: { rotulo: antagonismo.ladoB.label, tese: antagonismo.ladoB.tese, argumentos: antagonismo.ladoB.argumentos },
+                }
+              : null
+          }
+        />
+      ) : null}
+
+      {/* Depois da aula: o podcast da plataforma (ADR-150, ADR-156), com as falas
+          que o professor revisou antes de ativar. É do professor, e toca depois
+          da revelação — ele conta a virada. */}
+      {atividade.turma && (atividade.status === "ativa" || atividade.status === "encerrada") ? (
+        <CartaoDoPodcast
+          expId="exp08ef1b"
+          turmaId={atividade.turma.id}
+          atividadeId={atividade.id}
+          podcast={podcast}
+          aviso="Toque o episódio depois da revelação: ele conta à turma por que cada um viu um feed diferente."
         />
       ) : null}
 

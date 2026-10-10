@@ -1,6 +1,7 @@
 import { BFF, HUB, suite } from "../lib/roteiro.mjs";
 import { ALERTA_DE_ERRO, esperarOuFalharCedo, esperarOuFalharPorHttp } from "../lib/smoke.mjs";
 import { conta } from "../lib/credenciais.mjs";
+import { esperarFalasDoTema, provarFalasNaCriacao, provarPodcastNaAula } from "../lib/podcast.mjs";
 
 /**
  * Uma atividade do Instanooria criada DO ZERO, pela tela, até ficar ativa.
@@ -20,7 +21,9 @@ import { conta } from "../lib/credenciais.mjs";
  *  - a geração não pode ser aprovada com equilíbrio ruim sem o professor
  *    assumir isso explicitamente;
  *  - a grade de revisão existe e é filtrável ANTES de qualquer criança entrar;
- *  - ativar é um ato separado, e é ele que abre a atividade para a turma.
+ *  - ativar é um ato separado, e é ele que abre a atividade para a turma;
+ *  - as falas do podcast de recapitulação (ADR-156) chegam escritas pela IA na
+ *    revisão, vão junto do "Ativar", e o episódio sintetiza na atividade ativa.
  */
 const TURMA = process.env.TURMA ?? "8A";
 /** Múltiplo de 8 (2 lados × 4 perfis): é o piso que o formulário aceita. */
@@ -227,6 +230,9 @@ await suite(
       status === "revisao",
       `a geração terminou e a atividade foi para revisão (etapa ${etapa}, status ${status})`,
     );
+    /* As falas do podcast são pedidas quando a revisão abre: a promessa nasce
+       ANTES do reload que a dispara. */
+    const respostaDasFalas = esperarFalasDoTema(p, "exp08ef1b");
     await p.reload({ waitUntil: "domcontentloaded" });
     await p.waitForTimeout(3000);
 
@@ -241,6 +247,19 @@ await suite(
         "'a escola aprovou' — e é o filtro por INTENSIDADE que deixa ele tirar o que passou do ponto.",
       detalhe: `${filtros} filtros`,
       inteira: true,
+    });
+
+    // ── passo 5b: as falas do podcast ───────────────────────────────────
+    await provarFalasNaCriacao(r, p, await respostaDasFalas, {
+      comIa: true,
+      passo: "falas-do-podcast",
+      titulo: "As falas do podcast, revisadas antes de ativar",
+      mostra:
+        "Abaixo do Ativar, as três falas do podcast de recapitulação que contam a pergunta e os dois lados: " +
+        "duas da Duda e uma do Téo, editáveis.",
+      prova:
+        "A IA escreve as falas a partir da pergunta-chave, dos dois lados validados e de posts aprovados (Vertex), " +
+        "e o professor as revisa: elas vão no mesmo Ativar. O resto do roteiro é o aprovado pela Unooria.",
     });
 
     // ── passo 6: a distribuição da turma ────────────────────────────────
@@ -303,6 +322,15 @@ await suite(
         "amanhã e ativar na hora da aula. Enquanto ele não ativa, nenhuma criança entra.",
       detalhe: `status: ${statusFinal}`,
       inteira: true,
+    });
+
+    // ── passo 8: o podcast da atividade ativa ───────────────────────────
+    await provarPodcastNaAula(r, p, {
+      blocos: ["Abertura", "Recapitulação da investigação", "A grande revelação", "Provocação e transferência", "Encerramento"],
+      vozes: ["Duda", "Téo"],
+      trechos: 5,
+      passo: "podcast",
+      descricao: "Duda e Téo, cerca de 3 min 30 s",
     });
 
     /* Limpeza: esta suíte CRIA uma atividade a cada execução, e um banco de

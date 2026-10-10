@@ -9,7 +9,7 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{155 decisões}, numeradas até ADR-155. A 153 (a evidência do Unoovista) e a 154 (a da Missão Tempestade) nasceram no mesmo dia, em frentes paralelas. A 132 (a Ajuda com
+São \textbf{156 decisões}, numeradas até ADR-156. A 153 (a evidência do Unoovista) e a 154 (a da Missão Tempestade) nasceram no mesmo dia, em frentes paralelas. A 132 (a Ajuda com
 avatar) entrou no código antes de ter seção aqui, e por um dia o número foi
 citado sem existir; a 133 pulou para não colidir com ela. A 133 e a 134 nasceram no mesmo dia, em frentes paralelas
 (Unoovista e Unoochat), e entraram juntas no merge; a 135 e a 136 levaram as
@@ -206,6 +206,7 @@ que a cercam.
 \zebra \adrr{ADR-153} & O Unoovista mede a evidência pelas três perguntas do PO, depois da reflexão, numa rodada só & 2026-10-07 & Aceita; aplica a \adrr{ADR-112}\\
 \adrr{ADR-154} & A Missão Tempestade mede a evidência numa atividade sintética, com rodada da turma, a melhor resposta e o nível só ao encerrar a missão & 2026-10-07 & Aceita; aplica a \adrr{ADR-112}\\
 \zebra \adrr{ADR-155} & Zerar a turma apaga a evidência pedagógica da atividade & 2026-10-09 & Aceita; reverte parte da \adrr{ADR-112}\\
+\adrr{ADR-156} & O Unoovista ganha o podcast com as falas revisadas no Ativar, e a Missão Tempestade ganha o primeiro podcast fixo & 2026-10-10 & Aceita; aplica a \adrr{ADR-150}\\
 \bottomrule
 \end{tabularx}
 
@@ -13917,3 +13918,83 @@ que passasse de novo nunca seria medida.
 zerar (então o zerar passa a arquivar em vez de apagar), ou a rede pedir
 histórico de avaliação por aplicação.
 
+\section{ADR-156 --- O Unoovista ganha o podcast com as falas revisadas no Ativar, e a Missão Tempestade ganha o primeiro podcast fixo}
+\label{adr:podcast-unoovista-tempestade}
+
+\textbf{Data.} 2026-10-10. \textbf{Status.} Aceita. \textbf{Aplica} a
+\adrr{ADR-150} a duas missões que não cabiam no molde dela: uma sem tela de
+customização com homologação, e uma sem customização nenhuma.
+
+\begin{especificacao}{Contexto}
+O Lucas pediu o podcast de recapitulação, na área do professor e com a
+transcrição, para o 8º ano (O Conteúdo que não chegou, \cd{exp08ef1b}) e para
+a 2ª série do EM (Missão Tempestade, \cd{exp02em1b}). As missões com podcast
+até aqui (4º ao 7º ano) têm uma tela de criação que termina numa homologação,
+onde as falas revisadas viajam. O 8º ano não tem essa tela: a atividade passa
+por destilar, gerar e revisar, e quem abre a turma é o \enquote{Ativar}. A
+Tempestade não tem atividade (a evidência usa a \cd{"turma"}, \adrr{ADR-154})
+nem customização: Serra do Sauá é a mesma em toda turma. Nenhum roteiro do PO
+existia para as duas.
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{itemize}
+  \item \textbf{O 8º ano segue o molde}: blocos fixos (Duda e Téo, cerca de
+    3\,min 30\,s) e três vagas --- a pergunta-chave e o que o feed de cada um
+    mostrou ---, escritas pela IA a partir do tema, da pergunta, dos dois lados
+    validados e de até seis posts aprovados de cada lado. Sem banco padrão:
+    \cd{padrao} é sempre falso, como no Júri.
+  \item \textbf{As falas do 8º aparecem na revisão dos posts} (status
+    \cd{revisao}) e vão no corpo do \rota{POST /atividades/:id/ativar}
+    (\cd{podcast}, opcional), gravadas por \cd{gravarFalasDoPodcast} na
+    transação da ativação. O botão não acende sem as três falas na régua.
+    Reativar uma atividade encerrada não pede falas de novo: valem as gravadas,
+    e nenhuma visita à página gasta IA.
+  \item \textbf{A Tempestade é o primeiro podcast FIXO}: Lia e Caio, cerca de
+    3\,min 30\,s, sem vaga (\cd{vagas: []}), sem \cd{escrita} e com
+    \cd{padrao: true} --- o motor nunca procura falas na tabela nem responde
+    409, e \rota{falas-do-tema} responde 404 para ela. A atividade é a
+    \cd{"turma"}: as rotas do podcast passam a aceitá-la além do uuid, e a
+    fonte de missão com atividade de verdade a recusa com 404. O texto é igual
+    em toda turma, então o áudio sai uma vez por contrato.
+  \item \textbf{Os dois roteiros foram rascunhados pela Unooria} a partir do
+    guia da aula e da ficha da missão (o 8º sem citar o jogo do Ato 1; a
+    Tempestade citando só os três vieses que o guia sugere puxar) e aguardam a
+    leitura do PO. Ambos tocam DEPOIS da virada --- a revelação, no 8º; o
+    debate, na Tempestade ---, e o cartão da aula diz isso.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Vagas escritas pela IA na Tempestade.} Não há tema para a IA
+    contar: as vagas sairiam iguais em toda turma, com custo de IA e de revisão
+    a cada aula, e o professor revisaria um texto que nada tem da turma dele.
+  \item \textbf{O professor editar a transcrição da Tempestade} nos
+    resultados da turma. Recusado pelo Lucas: o roteiro é da missão, não da
+    turma, e o que não tem customização não ganha edição.
+  \item \textbf{Falas do 8º logo depois de aprovar o antagonismo.} Seriam
+    escritas antes dos posts, sem o que a turma vai ver de fato; e a geração
+    ainda pode falhar e mudar a atividade.
+  \item \textbf{Exigir as falas em todo \enquote{Ativar}.} O \enquote{pôr no
+    ar} da sala de aula reativa a atividade sem passar pela revisão, e
+    quebraria.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{A atividade do 8º ativada antes do podcast} responde 409, e o
+    cartão diz que ela foi criada antes; não há como revisar as falas sem criar
+    outra.
+  \item \textbf{O texto fixo não passou pelo PO}: mudar uma frase depois exige
+    subir a \cd{versao} do pedido de voz, e o áudio é sintetizado de novo.
+  \item \textbf{O podcast cita vieses da Tempestade}: tocado antes do debate,
+    entrega parte da aula. Não há trava por etapa, só o aviso no cartão e no
+    guia.
+\end{itemize}
+
+\textbf{Gatilho.} O PO entregar um roteiro próprio para uma das duas missões,
+ou a Tempestade ganhar customização (então ela passa a ter vagas como as
+outras).

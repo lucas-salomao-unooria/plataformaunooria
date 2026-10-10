@@ -10,10 +10,17 @@ export const ParamsDoPodcastSchema = z.object({
   turmaId: z.string().uuid(),
 });
 
+/**
+ * O id da atividade: um uuid, ou `"turma"` — a "atividade" da missão sem
+ * atividade (a Missão Tempestade, ADR-154 e ADR-156), a mesma das equipes e
+ * da evidência.
+ */
+const AtividadeIdSchema = z.union([z.string().uuid(), z.literal("turma")]);
+
 /** `?atividadeId=` diz a atividade (ADR-130); sem ele, a em andamento. `?escolaId=` é do gestor de contrato. */
 export const QueryDoPodcastSchema = z.object({
   escolaId: z.string().optional(),
-  atividadeId: z.string().uuid().optional(),
+  atividadeId: AtividadeIdSchema.optional(),
 });
 
 const FalaSchema = z.object({ falante: z.string(), texto: z.string() });
@@ -23,7 +30,7 @@ const FalaSchema = z.object({ falante: z.string(), texto: z.string() });
  * tela junto do player) e o estado do áudio.
  */
 export const PodcastSchema = z.object({
-  atividadeId: z.string().uuid(),
+  atividadeId: AtividadeIdSchema,
   tema: z.string(),
   titulo: z.string(),
   descricao: z.string(),

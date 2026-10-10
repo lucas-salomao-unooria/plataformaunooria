@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { falasDoTemaSchema } from "../podcast/roteiro";
+import { VAGAS_DO_PODCAST } from "./podcast";
 import { DIVISOR_TESE, ESTILOS_VISUAIS, MODOS_NEUTROS } from "../comum/insta/defaults";
 import { ETAPAS_DA_TURMA } from "../comum/insta/etapas";
 
@@ -51,7 +53,15 @@ export const AtividadesQuery = z.object({ turmaId: Uuid.optional() });
 export const EtapaSchema = z.object({ etapa: z.enum(ETAPAS_DA_TURMA) });
 export const IaSchema = z.object({ ativo: z.boolean() });
 export const AtivarSchema = z
-  .object({ forcar: z.boolean().default(false) })
+  .object({
+    forcar: z.boolean().default(false),
+    /**
+     * As três falas do podcast de recapitulação que o professor revisou na
+     * revisão dos posts (ADR-156). Opcional: o "pôr no ar" da sala de aula
+     * reativa sem passar pela revisão e mantém as falas já gravadas.
+     */
+    podcast: falasDoTemaSchema(VAGAS_DO_PODCAST).optional(),
+  })
   .default({ forcar: false });
 
 // -------------------------------------------------------------------- saída
