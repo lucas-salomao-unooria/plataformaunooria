@@ -1,74 +1,75 @@
-import { BadgeUnv, ButtonUnv, IconUnv, PostCard, TopBar } from "@edu/ui/ds-unoovista";
+import { BadgeUnv, BottomSheetUnv, ButtonUnv, IconUnv, PostCard, TabBar } from "@edu/ui/ds-unoovista";
 import { iniciais } from "../../lib/regras";
-import { CONTAS, E1, E2 } from "../../lib/textos";
+import { CONTAS, E1 } from "../../lib/textos";
 import type { Categoria } from "../../lib/tipos";
+import { ABAS } from "./abas";
+import { Cabecalho } from "./cabecalho";
 
 /**
- * O CRACHÁ de jurado — a peça que a comissão entrega, montada como uma
- * publicação da própria comissão (`PostCard` do Unoovista): o cabeçalho é a
- * conta oficial (`@comissao.mostra`, com o selo), a mídia é o crachá impresso
- * (o slide sem fotografia que o DS publica para isto) e a legenda é o mandato.
+ * E1-ALU-01 — o crachá: o modal diegético da comissão SOBRE A TIMELINE
+ * DESFOCADA do Unoovista (PRD §6, E1). Atrás, a casca do app (a barra do topo,
+ * dois cartões de publicação ainda sem fotografia e a barra de abas), inerte e
+ * desfocada — o feed de verdade só é servido no toque em "Acessar Feed da
+ * Mostra" (é ele que pede `POST passo {para:"feed"}`).
+ *
+ * O modal é a `BottomSheetUnv` modal do DS, que não fecha pelo véu nem por
+ * ESC: o único caminho é entrar no feed. Na folha: o cabeçalho institucional
+ * (o título da folha), o emissor `@comissao_juri`, o crachá `@jurado_oficial`,
+ * o mandato e o botão.
  *
  * É a tela de abertura da missão, e é do CLONE: quem fala é a comissão, e o
  * disfarce começa aqui (o 403 de missão fechada, antes dela, é da escola).
- * O mesmo crachá volta homologado no fim (`fim.tsx`).
  */
-export function Cracha({
-  tema,
-  categorias,
-  homologado = false,
-}: {
-  tema: string;
-  categorias: readonly Categoria[];
-  homologado?: boolean;
-}) {
-  return (
-    <PostCard className="cracha">
-      <PostCard.Header username={CONTAS.comissao} initials={iniciais(CONTAS.comissao)} verified location={E1.orgao} />
-      <PostCard.Media aspectRatio={4 / 5}>
-        <div className="cracha__corpo">
-          <IconUnv name={homologado ? "check" : "verified"} size={44} tone="link" />
-          <p className="cracha__titulo">{E1.titulo}</p>
-          <p className="cracha__funcao">{E1.funcao}</p>
-          <p className="cracha__tema">{E1.tema(tema)}</p>
-          <p className="cracha__rotulo">{E1.areas}</p>
-          <div className="cracha__areas">
-            {categorias.map((c) => (
-              <BadgeUnv key={c.area} variant="neutral" wrap>
-                {c.nome}
-              </BadgeUnv>
-            ))}
-          </div>
-        </div>
-      </PostCard.Media>
-    </PostCard>
-  );
-}
-
 export function Credencial({
-  tema,
   categorias,
   ocupado,
   aoAcessar,
 }: {
-  tema: string;
   categorias: readonly Categoria[];
   ocupado: boolean;
   aoAcessar: () => void;
 }) {
   return (
     <div className="tela">
-      <h1 className="so-leitor">{E1.titulo}</h1>
-      <TopBar title={E2.topo} withStatusBarInset={false} />
-      <div className="rolagem rolagem--sem-barra">
-        <Cracha tema={tema} categorias={categorias} />
-        <p className="cracha__mandato">{E1.missao}</p>
+      <h1 className="so-leitor">{E1.topo}</h1>
+      <div className="timeline-desfocada" aria-hidden="true" inert>
+        <Cabecalho />
+        <div className="rolagem rolagem--sem-barra feed">
+          {categorias.slice(0, 2).map((c) => (
+            <PostCard key={c.area} className="post">
+              <PostCard.Header username={c.hashtag.replace(/^#/, "")} initials={iniciais(c.nome)} />
+              <PostCard.Media alt={E1.timeline}>
+                <span />
+              </PostCard.Media>
+            </PostCard>
+          ))}
+        </div>
+        <TabBar items={ABAS} activeId="inicio" ariaLabel={E1.timeline} withHomeIndicatorInset={false} />
       </div>
-      <div className="doca">
-        <ButtonUnv variant="primary" size="lg" block disabled={ocupado} onClick={aoAcessar}>
-          {E1.acessar}
-        </ButtonUnv>
-      </div>
+      <BottomSheetUnv open modal title={E1.topo} maxHeight="88%" onOpenChange={() => undefined}>
+        <div className="cracha">
+          <p className="cracha__emissor">
+            <IconUnv name="verified" size="sm" tone="link" /> {E1.emissor}
+          </p>
+          <div className="cracha__selo">
+            <IconUnv name="verified" size={44} tone="link" title={CONTAS.comissao} />
+            <BadgeUnv variant="neutral" wrap>
+              {CONTAS.jurado}
+            </BadgeUnv>
+          </div>
+          <p className="cracha__corpo">{E1.corpo}</p>
+          <ButtonUnv
+            variant="primary"
+            size="lg"
+            block
+            disabled={ocupado}
+            leadingIcon={<IconUnv name="home" size={18} tone="inherit" />}
+            onClick={aoAcessar}
+          >
+            {E1.entrar}
+          </ButtonUnv>
+        </div>
+      </BottomSheetUnv>
     </div>
   );
 }

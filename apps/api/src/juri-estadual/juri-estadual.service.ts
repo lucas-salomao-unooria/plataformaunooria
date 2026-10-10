@@ -15,28 +15,28 @@ import { gravarFalasDoPodcast } from "../podcast/podcast.service";
 import type { FalasDoTema } from "../podcast/roteiro";
 import { PrismaService } from "../prisma/prisma.service";
 import {
-  CARTOES_DE_ATITUDE,
-  CARTOES_DE_MECANISMO,
-  CASO_MARIANA,
-  MOTIVOS_DA_REVISAO_TEXTO,
-  MOTIVOS_DO_VOTO_TEXTO,
-} from "./conteudo";
+  ASSUNTOS_DO_BANCO_PADRAO,
+  DISCIPLINA_DO_BANCO_PADRAO,
+  conteudoDoBancoPadrao,
+  ehConteudoDoBancoPadrao as ehDoBancoPadrao,
+} from "./banco-padrao";
+import { CARTOES_DE_ATITUDE, CARTOES_DE_MECANISMO, CASO_MARIANA } from "./conteudo";
 import { AreaSchema, ProjetoDoPacoteSchema } from "./contrato-de-rotas";
 import { erroDeJogo } from "./erros";
 import {
   aplicarCurtida,
   aplicarPermanencia,
   aplicarSalvamento,
-  desvioComInteracao,
-  desvioCompleto,
+  areaDominante,
+  cedulaLiberada,
   embaralhar,
   feedCompleto,
+  fimDoFeed,
   invisibilidade,
-  postsPorArea,
   projetoFoiExibido,
   projetosOcultos,
   servirAte,
-  servirDesvioAte,
+  tempoDoFeedEsgotado,
   type EstadoDoFeed,
   type ProjetoDoMotor,
 } from "./regras/afunilamento";
@@ -49,16 +49,17 @@ import {
   nivelPorTentativas,
 } from "./regras/evidencia";
 import {
+  areasBuscadas,
   auditoriaDaLinha,
-  desvioDaLinha,
   feedDaLinha,
+  ocultosAbertos,
   ordemDaGaleria,
   registrarAcao,
   type AcaoDaGaleria,
 } from "./regras/galeria";
-import { trechoValido } from "./regras/justificativa";
 import { blocosDaSessao, idsDaSessao, ordemCertaDaCadeia, ordemConfere } from "./regras/ordem";
-import { mediaDasTaxas, votosPorArea } from "./regras/painel";
+import { mediaDasTaxas, ociosoNaCedula, votosPorArea } from "./regras/painel";
+import { parSimulado } from "./regras/par";
 import {
   ETAPA_INICIAL,
   aguardandoOProfessor,
@@ -83,15 +84,13 @@ import {
   EXP_ID,
   IDS_DE_PROJETO,
   ID_DE_PROJETO_RE,
+  ORIGENS_DO_PACOTE,
   POSTS_DE_ABERTURA,
-  POSTS_DE_ABERTURA_DO_DESVIO,
   VERSAO_DO_INSTRUMENTO,
   areaDoProjeto,
   type AcaoDaRevisao,
   type Conviccao,
   type Disciplina,
-  type MotivoDaRevisao,
-  type MotivoDoVoto,
   type OrigemDoPacote,
 } from "./vocabulario";
 
@@ -165,6 +164,10 @@ const SELECAO_DO_PACOTE = {
   midia: true,
 } satisfies Prisma.Exp06ef1bPacoteSelect;
 
+function ehOrigem(valor: string): valor is OrigemDoPacote {
+  return (ORIGENS_DO_PACOTE as readonly string[]).includes(valor);
+}
+
 /**
  * Lê o conteúdo do `Json` do pacote. A homologação validou na ESCRITA, com a
  * régua inteira; aqui só a forma, porque uma régua que apertou depois (um termo
@@ -212,7 +215,7 @@ function pacoteDaLinha(linha: Prisma.Exp06ef1bPacoteGetPayload<{ select: typeof 
     tema: linha.tema,
     assuntos: linha.assuntos,
     contexto: linha.contexto,
-    origem: "ia",
+    origem: ehOrigem(linha.origem) ? linha.origem : "ia",
     conteudo: conteudoDaLinha(linha.conteudo, { escolaId: linha.escolaId, pacoteId: linha.id }),
     midia: midiaDaLinha(linha.midia),
   };
@@ -252,7 +255,7 @@ function pesoDaLinha(votadoEm: Date | null, atualizadoEm: Date | null): number {
   return (votadoEm ? 1e13 : 0) + recencia;
 }
 
-/** O que a tela MEDIU num feed (o do júri ou o do desvio) — o corpo de `EventosDoFeedSchema`. */
+/** O que a tela MEDIU no feed — o corpo de `EventosDoFeedSchema`. */
 type EventosMedidos = {
   curtidas: { postId: string; curtiu: boolean }[];
   salvamentos: { postId: string; salvou: boolean }[];
@@ -278,9 +281,15 @@ function aplicarEventos(antes: EstadoDoFeed, eventos: EventosMedidos): EstadoDoF
   return estado;
 }
 
-/** A justificativa gravada, ou `null` (a sessão de antes dos cartões não tem). */
-function justificativaDaLinha(motivo: string | null, trecho: number | null): { motivo: string; trecho: number } | null {
-  return motivo !== null && trecho !== null ? { motivo, trecho } : null;
+/**
+ * O início do preparo que a tela mandou (EVT-P01), se for plausível: no
+ * passado e nas últimas 24 h. Fora disso, o instante da homologação.
+ */
+function inicioDoPreparo(enviado: string | undefined, agora: Date): Date {
+  if (!enviado) return agora;
+  const t = new Date(enviado).getTime();
+  if (Number.isNaN(t) || t > agora.getTime() || agora.getTime() - t > 86_400_000) return agora;
+  return new Date(t);
 }
 
 /** A semente da sessão: aleatória, de servidor, e fixa depois de gravada. */
@@ -367,9 +376,10 @@ export class JuriEstadualService implements OnModuleInit {
   }
 
   /**
-   * "Acessar o feed da mostra": da credencial para o feed. Grava o passo e, com
-   * o feed vazio, serve a ABERTURA (um post de cada área) no MESMO update.
-   * Pedir de novo devolve o feed como está.
+   * O passo que a criança PEDE: "Acessar Feed da Mostra" (da credencial para o
+   * feed, com a ABERTURA — um post de cada área — no MESMO update) e o
+   * "avançar" depois da revisão (de `revisada` para a `cadeia`). Pedir de novo
+   * devolve o estado como está.
    */
   async pedirPasso(escolaId: string, estudanteId: string, turmaId: string | null, para: PassoPedido) {
     return this.prisma.comTenancy(async (tx) => {
@@ -377,6 +387,15 @@ export class JuriEstadualService implements OnModuleInit {
       const atual = normalizarPasso(ctx.sessao.passo);
       const r = pedirPasso(atual, para);
       if (!r.ok) throw erroDeJogo(r.codigo);
+      if (para === "cadeia") {
+        if (r.passo !== atual) {
+          await tx.exp06ef1bSessao.updateMany({
+            where: { id: ctx.sessao.id, escolaId, passo: "revisada" },
+            data: { passo: "cadeia" },
+          });
+        }
+        return { passo: passoEfetivo(r.passo, ctx.gate.etapa), etapa: ctx.gate.etapa };
+      }
       let estado = feedDaLinha(ctx.sessao);
       if (r.passo === "feed" && (atual !== "feed" || estado.servidos.length === 0)) {
         const servidos =
@@ -389,15 +408,19 @@ export class JuriEstadualService implements OnModuleInit {
         });
         estado = { ...estado, servidos };
       }
-      return this.feedPublico(ctx.pacote, estado);
+      return this.feedPublico(ctx.pacote, estado, ctx.sessao.feedIniciadoEm);
     }, escolaId);
   }
 
   /**
-   * O que a tela MEDIU desde a última chamada — curtidas (estado) e
+   * O que a tela MEDIU desde a última chamada — curtidas e salvos (estado) e
    * permanências (fato) —, e o próximo post quando ela chegou ao fim do que foi
    * servido. A ordem importa: as curtidas entram ANTES de o motor escolher o
    * próximo, porque é a curtida que afunila.
+   *
+   * O primeiro `proximo: true` é a 1ª ROLAGEM: grava `feed_iniciado_em`, e daí
+   * contam os 8 minutos do feed (melhoria 9) — no SERVIDOR, então o F5 não
+   * zera. Com o tempo esgotado, o feed não serve mais post: a cédula abre.
    */
   async eventosDoFeed(
     escolaId: string,
@@ -411,16 +434,19 @@ export class JuriEstadualService implements OnModuleInit {
       if (ctx.sessao.votadoEm || votou(atual)) throw erroDeJogo("voto-ja-lacrado");
       if (atual !== "feed") throw erroDeJogo("passo-invalido");
 
+      const agora = new Date();
+      const iniciadoEm = ctx.sessao.feedIniciadoEm ?? (eventos.proximo ? agora : null);
       const antes = feedDaLinha(ctx.sessao);
       let estado = aplicarEventos(antes, eventos);
-      if (eventos.proximo) {
+      if (eventos.proximo && !tempoDoFeedEsgotado(iniciadoEm, agora)) {
         estado = {
           ...estado,
           servidos: servirAte(projetosDoMotor(ctx.pacote), estado, ctx.sessao.semente, estado.servidos.length + 1),
         };
       }
 
-      if (canonico(estado) !== canonico(antes)) {
+      const iniciouAgora = ctx.sessao.feedIniciadoEm === null && iniciadoEm !== null;
+      if (iniciouAgora || canonico(estado) !== canonico(antes)) {
         await tx.exp06ef1bSessao.update({
           where: { id: ctx.sessao.id },
           data: {
@@ -428,18 +454,49 @@ export class JuriEstadualService implements OnModuleInit {
             curtidos: [...estado.curtidos],
             salvos: [...estado.salvos],
             permanencias: [...estado.permanencias],
+            ...(iniciouAgora ? { feedIniciadoEm: iniciadoEm } : {}),
           },
         });
       }
-      return this.feedPublico(ctx.pacote, estado);
+      return this.feedPublico(ctx.pacote, estado, iniciadoEm, agora);
     }, escolaId);
   }
 
   /**
-   * A cédula — O LATCH 1. Projeto, convicção, a JUSTIFICATIVA de antes (o
-   * cartão de motivo e o trecho grifado da legenda do estande), carimbo e o
-   * passo `lacrada` no MESMO update (os CHECKs valem por statement). O trecho
-   * tem de ser uma frase que existe na legenda do projeto votado.
+   * O BATIMENTO da cédula aberta (melhoria 8): a cada 15 s, há quantos segundos
+   * não há toque nela. Grava o instante do batimento e o do último toque; o
+   * painel do professor acende o ícone de ocioso com mais de 60 s
+   * (`regras/painel.ts#ociosoNaCedula`). `aberta: false` apaga a marca. Só no
+   * feed, antes do voto: depois dele, responde sem gravar (o batimento atrasado
+   * não acende ninguém).
+   */
+  async batimentoDaCedula(
+    escolaId: string,
+    estudanteId: string,
+    turmaId: string | null,
+    batimento: { aberta: boolean; segundosSemToque: number },
+  ): Promise<void> {
+    await this.prisma.comTenancy(async (tx) => {
+      const ctx = await this.garantirSessao(tx, escolaId, estudanteId, turmaId);
+      if (normalizarPasso(ctx.sessao.passo) !== "feed") return;
+      const agora = new Date();
+      await tx.exp06ef1bSessao.updateMany({
+        where: { id: ctx.sessao.id, escolaId, passo: "feed" },
+        data: batimento.aberta
+          ? {
+              cedulaBatimentoEm: agora,
+              cedulaInativaDesde: new Date(agora.getTime() - batimento.segundosSemToque * 1000),
+            }
+          : { cedulaBatimentoEm: null, cedulaInativaDesde: null },
+      });
+    }, escolaId);
+  }
+
+  /**
+   * A cédula — O LATCH 1. Projeto e certeza, carimbo e o passo `lacrada` no
+   * MESMO update (os CHECKs valem por statement). A cédula abre com os dez posts
+   * OU com os 8 minutos do feed esgotados; o projeto tem de ter aparecido no
+   * feed desta criança. O batimento da cédula se apaga no mesmo update.
    *
    * Concorrente: dois toques chegam como duas requisições, o lock por
    * estudante as põe em fila, e a segunda relê a sessão já votada — 409
@@ -450,7 +507,7 @@ export class JuriEstadualService implements OnModuleInit {
     escolaId: string,
     estudanteId: string,
     turmaId: string | null,
-    voto: { projetoId: string; conviccao: Conviccao; motivo: MotivoDoVoto; trecho: number },
+    voto: { projetoId: string; conviccao: Conviccao },
   ) {
     return this.prisma.comTenancy(async (tx) => {
       const ctx = await this.garantirSessao(tx, escolaId, estudanteId, turmaId);
@@ -458,19 +515,18 @@ export class JuriEstadualService implements OnModuleInit {
       if (ctx.sessao.votadoEm || votou(atual)) throw erroDeJogo("voto-ja-lacrado");
       if (atual !== "feed") throw erroDeJogo("passo-invalido");
       const feed = feedDaLinha(ctx.sessao);
-      if (!feedCompleto(feed)) throw erroDeJogo("feed-incompleto");
+      if (!cedulaLiberada(feed, ctx.sessao.feedIniciadoEm, new Date())) throw erroDeJogo("feed-incompleto");
       if (!projetoFoiExibido(feed.servidos, voto.projetoId)) throw erroDeJogo("projeto-fora-do-feed");
-      if (!trechoValido(this.legendaDe(ctx.pacote, voto.projetoId), voto.trecho)) throw erroDeJogo("payload-invalido");
 
       const { count } = await tx.exp06ef1bSessao.updateMany({
         where: { id: ctx.sessao.id, escolaId, votadoEm: null, passo: "feed" },
         data: {
           votoProjeto: voto.projetoId,
           conviccao: voto.conviccao,
-          votoMotivo: voto.motivo,
-          votoTrecho: voto.trecho,
           votadoEm: new Date(),
           passo: "lacrada",
+          cedulaBatimentoEm: null,
+          cedulaInativaDesde: null,
         },
       });
       if (count === 0) throw erroDeJogo("voto-ja-lacrado");
@@ -481,9 +537,10 @@ export class JuriEstadualService implements OnModuleInit {
 
   /**
    * A Galeria Oculta: os dezesseis estandes, os que NÃO chegaram ao feed
-   * primeiro, e a taxa REAL desta sessão. Só com o passo efetivo `galeria` ou
-   * além — o voto lacrado E a etapa liberada pelo professor; quem ainda não
-   * votou não a abre nem com a etapa aberta (a taxa dele precisa do voto).
+   * primeiro, e a taxa REAL desta sessão — o número do badge e o tamanho da
+   * grade. Só com o passo efetivo `galeria` ou além — o voto lacrado E a etapa
+   * liberada pelo professor. `podeManter` diz se o "Manter meu voto inicial"
+   * já vale (abriu ao menos um oculto).
    */
   async galeria(escolaId: string, estudanteId: string, turmaId: string | null) {
     return this.prisma.comTenancy(async (tx) => {
@@ -492,20 +549,25 @@ export class JuriEstadualService implements OnModuleInit {
       if (!passoNoMinimo(efetivo, "galeria")) throw erroDeJogo("galeria-nao-liberada");
       const { servidos } = feedDaLinha(ctx.sessao);
       const porId = new Map(ctx.pacote.conteudo.projetos.map((p) => [p.id, p]));
+      const ocultos = projetosOcultos(projetosDoMotor(ctx.pacote), servidos);
+      const abertos = ocultosAbertos(auditoriaDaLinha(ctx.sessao.auditoria), ocultos);
       return {
         invisibilidade: invisibilidade(servidos),
         projetos: ordemDaGaleria(servidos)
           .map((id) => porId.get(id))
           .filter((p): p is NonNullable<typeof p> => Boolean(p))
           .map((p) => projetoDaGaleria(p, ctx.pacote.midia, projetoFoiExibido(servidos, p.id))),
+        ocultosAbertos: abertos,
+        podeManter: abertos >= 1,
       };
     }, escolaId);
   }
 
   /**
    * Abrir a ficha de um estande ou buscar — o registro da EF06CO10 e da
-   * EF06CO01, lido no latch da revisão. Só na galeria (antes, a porta está fechada; depois da
-   * revisão, a medida já foi tomada). Da busca, só o tipo e a área que casou.
+   * EF06CO01, lido no latch da revisão. Só na galeria (antes, a porta está
+   * fechada; depois da revisão, a medida já foi tomada). Da busca, só o tipo e
+   * a área que casou.
    */
   async acaoDaGaleria(escolaId: string, estudanteId: string, turmaId: string | null, acao: AcaoDaGaleria): Promise<void> {
     await this.prisma.comTenancy(async (tx) => {
@@ -525,15 +587,13 @@ export class JuriEstadualService implements OnModuleInit {
   }
 
   /**
-   * Manter, trocar ou complementar o voto — O LATCH 2. Só da galeria.
-   * `trocar` aceita qualquer um dos dezesseis (a galeria mostrou todos), menos
-   * o voto lacrado; `complementar` mantém o voto e indica TAMBÉM outro estande.
-   * Toda ação leva a justificativa de DEPOIS (o cartão e o trecho, da legenda do
-   * estande da decisão). Ação, voto FINAL, complemento, justificativa, carimbo e
-   * o passo `revisada` (a espera do desvio) no mesmo update, e as marcas da
-   * EF06CO10 (`auditoria`) e da EF06CO01 (`classificacao`) na mesma transação,
-   * sobre o que a criança fez na galeria ANTES de decidir. A régua que devolve
-   * `null` (não explorou a galeria) não marca: é ausência (ficha versão 3).
+   * "Manter meu voto inicial" ou "Confirmar Voto Revisado" — O LATCH 2, só da
+   * galeria. `manter` exige ao menos UM estande oculto aberto (409
+   * `galeria-sem-inspecao`, melhoria 6); `trocar` aceita qualquer um dos
+   * dezesseis, menos o voto lacrado. Ação, voto FINAL, carimbo e o passo
+   * `revisada` no mesmo update, e as marcas da EF06CO10 (`auditoria`) e da
+   * EF06CO01 (`classificacao`) na mesma transação — com os status gravados
+   * também na sessão (PRD §11.1). A régua que devolve `null` não marca.
    *
    * O lock COMPARTILHADO da turma e a releitura do gate fecham a corrida com o
    * "Zerar": a marca não cai numa rodada que já acabou (409 `rodada-mudou`).
@@ -542,7 +602,7 @@ export class JuriEstadualService implements OnModuleInit {
     escolaId: string,
     estudanteId: string,
     turmaId: string | null,
-    revisao: { acao: AcaoDaRevisao; projetoId?: string; motivo: MotivoDaRevisao; trecho: number },
+    revisao: { acao: AcaoDaRevisao; projetoId?: string },
   ) {
     return this.prisma.comTenancy(async (tx) => {
       const ctx = await this.garantirSessao(tx, escolaId, estudanteId, turmaId);
@@ -552,131 +612,55 @@ export class JuriEstadualService implements OnModuleInit {
       if (efetivo !== "galeria") throw erroDeJogo("passo-invalido");
       const voto = ctx.sessao.votoProjeto;
       if (!voto) throw erroDeJogo("passo-invalido");
-      const outro = revisao.acao === "manter" ? null : (revisao.projetoId ?? null);
-      if (revisao.acao !== "manter" && (!outro || outro === voto)) throw erroDeJogo("payload-invalido");
-      const final = revisao.acao === "trocar" ? (outro as string) : voto;
-      const daDecisao = outro ?? voto;
-      if (!trechoValido(this.legendaDe(ctx.pacote, daDecisao), revisao.trecho)) throw erroDeJogo("payload-invalido");
+
+      const feed = feedDaLinha(ctx.sessao);
+      const auditoria = auditoriaDaLinha(ctx.sessao.auditoria);
+      const ocultos = projetosOcultos(projetosDoMotor(ctx.pacote), feed.servidos);
+      let final = voto;
+      if (revisao.acao === "trocar") {
+        if (!revisao.projetoId || revisao.projetoId === voto) throw erroDeJogo("payload-invalido");
+        final = revisao.projetoId;
+      } else if (ocultosAbertos(auditoria, ocultos) < 1) {
+        throw erroDeJogo("galeria-sem-inspecao");
+      }
       const gate = await this.gateDaSessao(tx, escolaId, ctx);
 
+      const nivelCo10 = nivelDaAuditoria(auditoria, ocultos);
+      const nivelCo01 = nivelDaClassificacao(auditoria, ocultos, areaDominante(feed));
       const { count } = await tx.exp06ef1bSessao.updateMany({
         where: { id: ctx.sessao.id, escolaId, revisadoEm: null, passo: "lacrada" },
         data: {
           revisaoAcao: revisao.acao,
           votoRevisado: final,
-          complementoProjeto: revisao.acao === "complementar" ? outro : null,
-          revisaoMotivo: revisao.motivo,
-          revisaoTrecho: revisao.trecho,
           revisadoEm: new Date(),
           passo: "revisada",
+          auditoriaStatus: nivelCo10,
+          classificacaoStatus: nivelCo01,
         },
       });
       if (count === 0) throw erroDeJogo("voto-ja-revisado");
 
-      const { servidos } = feedDaLinha(ctx.sessao);
-      const auditoria = auditoriaDaLinha(ctx.sessao.auditoria);
-      const ocultos = projetosOcultos(projetosDoMotor(ctx.pacote), servidos);
-      await this.marcar(tx, ctx, gate, MARCADOR_DA_AUDITORIA, nivelDaAuditoria(auditoria, ocultos));
-      await this.marcar(
-        tx,
-        ctx,
-        gate,
-        MARCADOR_DA_CLASSIFICACAO,
-        nivelDaClassificacao(auditoria, ocultos, areaDoProjeto(voto)),
-      );
+      await this.marcar(tx, ctx, gate, MARCADOR_DA_AUDITORIA, nivelCo10);
+      await this.marcar(tx, ctx, gate, MARCADOR_DA_CLASSIFICACAO, nivelCo01);
       const sessao = await tx.exp06ef1bSessao.findUniqueOrThrow({ where: { id: ctx.sessao.id } });
       return this.estado(sessao, gate);
     }, escolaId);
   }
 
   /**
-   * A RODADA DE DESVIO — o que a tela mediu e, se pedido, o próximo post. O
-   * mesmo corpo do feed do júri e o mesmo motor, com um estado só do desvio:
-   * os pesos que contam aqui são os da rodada, e é por isso que curtir a área
-   * nova faz o feed virar para ela. Só com o passo efetivo `desvio` (o
-   * professor liberou E a criança revisou o voto). Na primeira chamada, serve a
-   * abertura: dois posts das áreas que menos apareceram no feed dela.
-   *
-   * Sem evidência: a vivência é obrigatória (o PO), não medida — o painel
-   * mostra quem concluiu.
-   */
-  async eventosDoDesvio(escolaId: string, estudanteId: string, turmaId: string | null, eventos: EventosMedidos) {
-    return this.prisma.comTenancy(async (tx) => {
-      const ctx = await this.garantirSessao(tx, escolaId, estudanteId, turmaId);
-      const efetivo = passoEfetivo(normalizarPasso(ctx.sessao.passo), ctx.gate.etapa);
-      if (ctx.sessao.desvioConcluidoEm) throw erroDeJogo("desvio-ja-concluido");
-      if (efetivo !== "desvio") throw erroDeJogo(passoAntes(efetivo, "desvio") ? "desvio-nao-liberado" : "passo-invalido");
-
-      const feed = feedDaLinha(ctx.sessao).servidos;
-      const projetos = projetosDoMotor(ctx.pacote);
-      const antes = desvioDaLinha(ctx.sessao);
-      let estado = antes;
-      if (estado.servidos.length === 0) {
-        estado = {
-          ...estado,
-          servidos: servirDesvioAte(projetos, estado, feed, ctx.sessao.semente, POSTS_DE_ABERTURA_DO_DESVIO),
-        };
-      }
-      estado = aplicarEventos(estado, eventos);
-      if (eventos.proximo) {
-        estado = {
-          ...estado,
-          servidos: servirDesvioAte(projetos, estado, feed, ctx.sessao.semente, estado.servidos.length + 1),
-        };
-      }
-      if (canonico(estado) !== canonico(antes)) {
-        await tx.exp06ef1bSessao.update({
-          where: { id: ctx.sessao.id },
-          data: {
-            desvioServidos: [...estado.servidos],
-            desvioCurtidos: [...estado.curtidos],
-            desvioSalvos: [...estado.salvos],
-            desvioPermanencias: [...estado.permanencias],
-          },
-        });
-      }
-      return this.desvioPublico(ctx.pacote, feed, estado, false);
-    }, escolaId);
-  }
-
-  /**
-   * Fecha a rodada de desvio: de `revisada` (com o desvio efetivo) para
-   * `cadeia`, com o carimbo, no mesmo update. Pede os seis posts servidos e
-   * ao menos uma curtida ou um salvo — sem interação, não houve desvio
-   * nenhum, e a vivência é o que o PO pediu. Idempotente depois de concluído.
-   */
-  async concluirDesvio(escolaId: string, estudanteId: string, turmaId: string | null) {
-    return this.prisma.comTenancy(async (tx) => {
-      const ctx = await this.garantirSessao(tx, escolaId, estudanteId, turmaId);
-      if (ctx.sessao.desvioConcluidoEm) return this.estado(ctx.sessao, ctx.gate);
-      const efetivo = passoEfetivo(normalizarPasso(ctx.sessao.passo), ctx.gate.etapa);
-      if (efetivo !== "desvio") throw erroDeJogo(passoAntes(efetivo, "desvio") ? "desvio-nao-liberado" : "passo-invalido");
-      const desvio = desvioDaLinha(ctx.sessao);
-      if (!desvioCompleto(desvio)) throw erroDeJogo("desvio-incompleto");
-      if (!desvioComInteracao(desvio)) throw erroDeJogo("desvio-sem-interacao");
-      const { count } = await tx.exp06ef1bSessao.updateMany({
-        where: { id: ctx.sessao.id, escolaId, desvioConcluidoEm: null, passo: "revisada" },
-        data: { desvioConcluidoEm: new Date(), passo: "cadeia" },
-      });
-      if (count === 0) throw erroDeJogo("passo-invalido");
-      const sessao = await tx.exp06ef1bSessao.findUniqueOrThrow({ where: { id: ctx.sessao.id } });
-      return this.estado(sessao, ctx.gate);
-    }, escolaId);
-  }
-
-  /**
    * Uma tentativa de montar a cadeia (EF06CO03): Interações → Dados →
-   * Algoritmo → Bolha — a doutrina da Chave do Jornal: cada envio conta; a
-   * resposta é certa ou não, nunca qual vaga errou; na certa, o passo anda e a
-   * habilidade é marcada pelas tentativas. Com a cadeia já montada, responde
-   * certa sem contar — o F5 e o toque duplo não viram tentativa.
+   * Algoritmo → Bolha. Cada envio conta. A ordem ERRADA responde **422**
+   * `ordem-incorreta` (PRD §12.1) — e a tentativa é gravada ANTES: a transação
+   * devolve o resultado e o erro é lançado fora dela, senão o rollback
+   * apagaria a contagem. Na certa, o passo anda e a habilidade é marcada pelas
+   * tentativas. Com a cadeia já montada, responde certa sem contar.
    */
   async montarCadeia(escolaId: string, estudanteId: string, turmaId: string | null, ordem: readonly string[]) {
-    return this.prisma.comTenancy(async (tx) => {
+    const r = await this.prisma.comTenancy(async (tx) => {
       const ctx = await this.garantirSessao(tx, escolaId, estudanteId, turmaId);
       const s = ctx.sessao;
       if (s.cadeiaMontadaEm) {
-        return { correta: true, tentativas: s.cadeiaTentativas, passo: this.estado(s, ctx.gate).passo };
+        return { correta: true as const, tentativas: s.cadeiaTentativas, passo: this.estado(s, ctx.gate).passo };
       }
       if (normalizarPasso(s.passo) !== "cadeia") throw erroDeJogo("passo-invalido");
       const certa = ordemCertaDaCadeia(s.semente);
@@ -686,18 +670,21 @@ export class JuriEstadualService implements OnModuleInit {
       const tentativas = s.cadeiaTentativas + 1;
       if (!ordemConfere(ordem, certa)) {
         await tx.exp06ef1bSessao.update({ where: { id: s.id }, data: { cadeiaTentativas: tentativas } });
-        return { correta: false, tentativas, passo: "cadeia" as const };
+        return { correta: false as const, tentativas };
       }
 
+      const nivel = nivelPorTentativas(tentativas);
       const { count } = await tx.exp06ef1bSessao.updateMany({
         where: { id: s.id, escolaId, cadeiaMontadaEm: null, passo: "cadeia" },
-        data: { cadeiaTentativas: tentativas, cadeiaMontadaEm: new Date(), passo: "mariana" },
+        data: { cadeiaTentativas: tentativas, cadeiaMontadaEm: new Date(), passo: "mariana", logicaStatus: nivel },
       });
       /* Sem linha atualizada, já estava montada: não conta nem marca de novo. */
-      if (count > 0) await this.marcar(tx, ctx, gate, MARCADOR_DA_CADEIA, nivelPorTentativas(tentativas));
+      if (count > 0) await this.marcar(tx, ctx, gate, MARCADOR_DA_CADEIA, nivel);
       const depois = await tx.exp06ef1bSessao.findUniqueOrThrow({ where: { id: s.id } });
-      return { correta: true, tentativas: depois.cadeiaTentativas, passo: this.estado(depois, gate).passo };
+      return { correta: true as const, tentativas: depois.cadeiaTentativas, passo: this.estado(depois, gate).passo };
     }, escolaId);
+    if (!r.correta) throw erroDeJogo("ordem-incorreta", { tentativas: r.tentativas });
+    return r;
   }
 
   /**
@@ -796,9 +783,16 @@ export class JuriEstadualService implements OnModuleInit {
         computadoresDaMontagem(tx, escolaId, turmaId, EXP_ID, gate.pacoteId),
       ]);
 
+      /* EVT-P04: cada leitura do painel conta (o hub o lê no polling da aula). */
+      await tx.exp06ef1bPacote.updateMany({
+        where: { id: gate.pacoteId, escolaId },
+        data: { painelVistoEm: new Date(), painelVistas: { increment: 1 } },
+      });
+      const agora = new Date();
       const linhas = estudantes.map((e) => {
         const s = e.juriSessoes[0];
         const auditoria = auditoriaDaLinha(s?.auditoria ?? null);
+        const passoGravado = s ? normalizarPasso(s.passo) : ("credencial" as Passo);
         return {
           estudanteId: e.id,
           nome: e.displayName,
@@ -807,10 +801,12 @@ export class JuriEstadualService implements OnModuleInit {
           /* O passo EFETIVO, o mesmo da tela da criança. */
           passo: s ? passoEfetivo(normalizarPasso(s.passo), gate.etapa) : ("credencial" as Passo),
           votou: Boolean(s?.votadoEm),
+          ocioso:
+            passoGravado === "feed" && ociosoNaCedula(s?.cedulaBatimentoEm ?? null, s?.cedulaInativaDesde ?? null, agora),
           abriuAGaleria: auditoria.abertos.length > 0,
           buscou: auditoria.buscas.length > 0,
+          categoriasBuscadas: areasBuscadas(auditoria),
           revisou: Boolean(s?.revisadoEm),
-          desviou: Boolean(s?.desvioConcluidoEm),
           concluiu: Boolean(s?.concluidaEm),
           _sessao: s ?? null,
           _peso: pesoDaLinha(s?.votadoEm ?? null, s?.atualizadoEm ?? null),
@@ -831,7 +827,7 @@ export class JuriEstadualService implements OnModuleInit {
       const iniciais: string[] = [];
       const revisados: string[] = [];
       const taxas: number[] = [];
-      const revisao = { mantiveram: 0, trocaram: 0, complementaram: 0 };
+      const revisao = { mantiveram: 0, trocaram: 0 };
       for (const { linha } of unidades) {
         const s = linha._sessao;
         if (!s?.votadoEm || !s.votoProjeto) continue;
@@ -839,8 +835,8 @@ export class JuriEstadualService implements OnModuleInit {
         taxas.push(invisibilidade(feedDaLinha(s).servidos).percentual);
         if (s.revisadoEm && s.votoRevisado) {
           revisados.push(s.votoRevisado);
+          /* O `complementar` das sessões da 0.3.0 manteve o voto: conta como manter. */
           if (s.revisaoAcao === "trocar") revisao.trocaram += 1;
-          else if (s.revisaoAcao === "complementar") revisao.complementaram += 1;
           else revisao.mantiveram += 1;
         }
       }
@@ -871,8 +867,8 @@ export class JuriEstadualService implements OnModuleInit {
           entraram: saida.filter((u) => u.entrou).length,
           votaram,
           revisaram: saida.filter((u) => u.revisou).length,
-          desviaram: saida.filter((u) => u.desviou).length,
           concluiram: saida.filter((u) => u.concluiu).length,
+          ociosos: saida.filter((u) => u.ocioso).length,
           computadores: { votaram, total: computadores ?? saida.length },
           porComputador: mapa.size > 0,
           votosPorArea: pacote.conteudo.categorias.map((c) => ({ ...c, votos: porArea[c.area] })),
@@ -885,11 +881,11 @@ export class JuriEstadualService implements OnModuleInit {
   }
 
   /**
-   * O botão único do painel: "Liberar a Galeria Oculta", depois "Liberar a
-   * rodada de desvio". Idempotente, uma etapa por vez, sem voltar
-   * (`regras/passos.ts#transicaoDoGate`), com o lock EXCLUSIVO da turma — que
-   * espera as jogadas em voo (elas pegam o compartilhado). Grava quando cada
-   * portão abriu; o da galeria fica quando o desvio abre.
+   * O botão único do painel: "Liberar Auditoria" (a Galeria Oculta).
+   * Idempotente, uma etapa por vez, sem voltar (`regras/passos.ts#transicaoDoGate`),
+   * com o lock EXCLUSIVO da turma — que espera as jogadas em voo (elas pegam o
+   * compartilhado). Grava quando o portão abriu e, a cada etapa liberada, uma
+   * linha em `exp06ef1b_gates_historico` (EVT-P05).
    */
   async mudarEtapa(escolaId: string, turmaId: string, professorId: string | undefined, para: Etapa) {
     return this.prisma.comTenancy(async (tx) => {
@@ -902,14 +898,13 @@ export class JuriEstadualService implements OnModuleInit {
 
       let atualizadoEm = gate.atualizadoEm;
       if (r.mudou) {
+        const agora = new Date();
         const linha = await tx.exp06ef1bGateTurma.update({
           where: { turmaId, escolaId },
-          data:
-            para === "desvio"
-              ? { etapa: para, desvioLiberadoEm: new Date() }
-              : { etapa: para, galeriaLiberadaEm: para === "galeria" ? new Date() : null, desvioLiberadoEm: null },
+          data: { etapa: para, galeriaLiberadaEm: para === "galeria" ? agora : null, desvioLiberadoEm: null },
           select: { atualizadoEm: true },
         });
+        await tx.exp06ef1bGateHistorico.create({ data: { escolaId, turmaId, etapa: para, liberadaEm: agora } });
         atualizadoEm = linha.atualizadoEm;
       }
       return {
@@ -928,7 +923,7 @@ export class JuriEstadualService implements OnModuleInit {
    * exploração, e APAGA a evidência pedagógica do pacote, de todas as rodadas
    * (ADR-155) — a turma recomeça do zero no painel de habilidades. As sessões
    * da rodada anterior ficam, com os votos e o que cada criança fez na
-   * galeria. Os carimbos da galeria e do desvio voltam a nulo (CHECK).
+   * galeria. O carimbo da galeria volta a nulo (CHECK).
    */
   async zerar(escolaId: string, turmaId: string, professorId?: string) {
     return this.prisma.comTenancy(async (tx) => {
@@ -987,7 +982,7 @@ export class JuriEstadualService implements OnModuleInit {
           id: p.id,
           disciplina: ehDisciplina(p.disciplina) ? p.disciplina : ("projeto-interdisciplinar" as const),
           tema: p.tema,
-          origem: "ia" as const,
+          origem: ehOrigem(p.origem) ? p.origem : ("ia" as const),
           ativo: p.ativo,
           criadoEm: p.criadoEm.toISOString(),
           rodadas: maiorRodada.get(p.id) ?? 0,
@@ -1114,6 +1109,8 @@ export class JuriEstadualService implements OnModuleInit {
       conteudo: ConteudoDoPacote;
       /** As três falas do podcast que o professor revisou na criação (ADR-150, ADR-151). */
       podcast: FalasDoTema;
+      /** Quando o professor abriu o preparo (EVT-P01); sem ele, agora. */
+      preparoIniciadoEm?: string;
     },
   ) {
     return this.prisma.comTenancy(async (tx) => {
@@ -1131,6 +1128,9 @@ export class JuriEstadualService implements OnModuleInit {
       const { parametros } = corpo;
       const conteudo = this.emOrdem(corpo.conteudo);
       const contexto = parametros.contexto?.trim() || null;
+      /* O rascunho que é o banco padrão intocado (o fallback sem cota, homologado
+         como veio) é um pacote `padrao`: o podcast dele é o roteiro fixo. */
+      const origem: OrigemDoPacote = ehDoBancoPadrao(conteudo) ? "padrao" : "ia";
 
       const [ultimo] = recentes;
       if (
@@ -1143,7 +1143,13 @@ export class JuriEstadualService implements OnModuleInit {
         /* O segundo clique pode trazer as falas do podcast editadas: elas
            valem, mesmo sem atividade nova (ADR-150). */
         await gravarFalas(ultimo.id);
-        return { id: ultimo.id, disciplina: parametros.disciplina, tema: ultimo.tema, origem: "ia" as const, ativo: ultimo.ativo };
+        return {
+          id: ultimo.id,
+          disciplina: parametros.disciplina,
+          tema: ultimo.tema,
+          origem: ehOrigem(ultimo.origem) ? ultimo.origem : origem,
+          ativo: ultimo.ativo,
+        };
       }
 
       const urlDaDescricao = new Map<string, string>();
@@ -1162,11 +1168,12 @@ export class JuriEstadualService implements OnModuleInit {
         if (url) herdada[p.id] = url;
       }
 
+      const agora = new Date();
       const novo = await tx.exp06ef1bPacote.create({
         data: {
           escolaId,
           turmaId,
-          origem: "ia",
+          origem,
           disciplina: parametros.disciplina,
           /* O tema da mostra é o que o estudante LÊ: o do conteúdo. */
           tema: conteudo.tema,
@@ -1176,12 +1183,76 @@ export class JuriEstadualService implements OnModuleInit {
           midia: herdada,
           ativo: false,
           criadoPor,
+          /* A telemetria docente (PRD §13, EVT-P01 e EVT-P03). */
+          preparoIniciadoEm: inicioDoPreparo(corpo.preparoIniciadoEm, agora),
+          aprovadoEm: agora,
+          aprovadoPor: criadoPor,
         },
         select: { id: true, tema: true },
       });
       await gravarFalas(novo.id);
-      return { id: novo.id, disciplina: parametros.disciplina, tema: novo.tema, origem: "ia" as const, ativo: false };
+      return { id: novo.id, disciplina: parametros.disciplina, tema: novo.tema, origem, ativo: false };
     }, escolaId);
+  }
+
+  /**
+   * "Usar Banco Padrão Oficial" (E0-PROF-02, RF-007) — o caminho curto do
+   * professor: sem IA, sem curadoria e sem imagem gerada. Cria (ou reaproveita,
+   * se a turma já tem) o pacote `padrao` com os dezesseis projetos do 01e, já
+   * com as imagens APROVADAS (os estandes usam a arte procedural, que não muda),
+   * e com `porNoAr` o põe em andamento na mesma transação — o "Usar Banco
+   * Padrão e Pôr no ar" de dois toques (Anexo §9a). O podcast dele é o roteiro
+   * fixo do sheet (`podcast.ts`): não há falas a gravar.
+   */
+  async usarBancoPadrao(
+    escolaId: string,
+    turmaId: string,
+    professorId: string | undefined,
+    criadoPor: string,
+    porNoAr: boolean,
+  ) {
+    const pacote = await this.prisma.comTenancy(async (tx) => {
+      await this.turmaVisivel(tx, escolaId, turmaId, professorId);
+      await this.travarTurma(tx, escolaId, turmaId, "exclusivo");
+      const conteudo = this.emOrdem(conteudoDoBancoPadrao());
+      const existentes = await tx.exp06ef1bPacote.findMany({
+        where: { escolaId, turmaId, origem: "padrao" },
+        orderBy: { criadoEm: "desc" },
+        select: { id: true, tema: true, ativo: true, conteudo: true },
+      });
+      const igual = existentes.find((p) => canonico(p.conteudo) === canonico(conteudo));
+      if (igual) return { id: igual.id, tema: igual.tema, ativo: igual.ativo };
+      const agora = new Date();
+      const novo = await tx.exp06ef1bPacote.create({
+        data: {
+          escolaId,
+          turmaId,
+          origem: "padrao",
+          disciplina: DISCIPLINA_DO_BANCO_PADRAO,
+          tema: conteudo.tema,
+          assuntos: ASSUNTOS_DO_BANCO_PADRAO,
+          contexto: null,
+          conteudo: conteudo as unknown as Prisma.InputJsonValue,
+          midia: {},
+          imagensAprovadasEm: agora,
+          ativo: false,
+          criadoPor,
+          preparoIniciadoEm: agora,
+          aprovadoEm: agora,
+          aprovadoPor: criadoPor,
+        },
+        select: { id: true, tema: true, ativo: true },
+      });
+      return novo;
+    }, escolaId);
+    const emAndamento = porNoAr ? await this.colocarEmAndamento(escolaId, turmaId, professorId, pacote.id) : null;
+    return {
+      id: pacote.id,
+      disciplina: DISCIPLINA_DO_BANCO_PADRAO,
+      tema: pacote.tema,
+      origem: "padrao" as const,
+      ativo: emAndamento ? true : pacote.ativo,
+    };
   }
 
   /** A guarda de turma, sozinha — a do preparo, ANTES de gastar token. */
@@ -1244,12 +1315,13 @@ export class JuriEstadualService implements OnModuleInit {
     turmaId: string,
     professorId?: string,
     pacoteId?: string,
-  ): Promise<{ id: string; tema: string }> {
+  ): Promise<{ id: string; tema: string; padrao: boolean }> {
     return this.prisma.comTenancy(async (tx) => {
       await this.turmaVisivel(tx, escolaId, turmaId, professorId);
       const id = pacoteId ?? (await this.exigirPacote(tx, escolaId, turmaId)).pacote.id;
       const linha = await this.pacoteDaTurma(tx, escolaId, turmaId, id);
-      return { id: linha.id, tema: linha.tema };
+      /* O banco padrão INTOCADO tem o podcast fixo do sheet (aud-exp06ef1b-01). */
+      return { id: linha.id, tema: linha.tema, padrao: linha.origem === "padrao" && ehDoBancoPadrao(linha.conteudo) };
     }, escolaId);
   }
 
@@ -1288,39 +1360,18 @@ export class JuriEstadualService implements OnModuleInit {
       .filter((p): p is PostPublico => p !== null);
   }
 
-  /** O feed como a tela o desenha: os posts servidos, pela allowlist. */
-  private feedPublico(pacote: PacoteLido, estado: EstadoDoFeed) {
+  /** O feed como a tela o desenha: os posts servidos, pela allowlist, e o relógio dos 8 minutos. */
+  private feedPublico(pacote: PacoteLido, estado: EstadoDoFeed, iniciadoEm: Date | null, agora = new Date()) {
+    const fim = fimDoFeed(iniciadoEm);
     return {
       posts: this.postsPublicos(pacote, estado.servidos),
       curtidos: [...estado.curtidos],
       salvos: [...estado.salvos],
       completo: feedCompleto(estado),
+      tempoEsgotado: tempoDoFeedEsgotado(iniciadoEm, agora),
+      encerraEm: fim ? fim.toISOString() : null,
+      cedulaLiberada: cedulaLiberada(estado, iniciadoEm, agora),
     };
-  }
-
-  /**
-   * A rodada de desvio como a tela a desenha (`DesvioSchema`). Com os seis
-   * servidos, a COMPARAÇÃO: quantos posts de cada área o feed do júri trouxe e
-   * quantos o desvio trouxe — o efeito, sem a regra.
-   */
-  private desvioPublico(pacote: PacoteLido, feed: readonly string[], desvio: EstadoDoFeed, concluido: boolean) {
-    const completo = desvioCompleto(desvio);
-    const noFeed = postsPorArea(feed);
-    const noDesvio = postsPorArea(desvio.servidos);
-    return {
-      posts: this.postsPublicos(pacote, desvio.servidos),
-      curtidos: [...desvio.curtidos],
-      salvos: [...desvio.salvos],
-      completo,
-      comInteracao: desvioComInteracao(desvio),
-      concluido,
-      comparacao: completo ? AREAS.map((area) => ({ area, noFeed: noFeed[area], noDesvio: noDesvio[area] })) : null,
-    };
-  }
-
-  /** A legenda do estande — é dela que sai o trecho grifado da justificativa. */
-  private legendaDe(pacote: PacoteLido, projetoId: string): string {
-    return pacote.conteudo.projetos.find((p) => p.id === projetoId)?.legenda ?? "";
   }
 
   /** A sessão inteira do estudante (`SessaoSchema`): cada bloco do fim só do passo dele em diante. */
@@ -1329,14 +1380,7 @@ export class JuriEstadualService implements OnModuleInit {
     const passo = normalizarPasso(sessao.passo);
     const efetivo = passoEfetivo(passo, gate.etapa);
     const feed = feedDaLinha(sessao);
-    const voto =
-      sessao.votoProjeto && sessao.conviccao
-        ? {
-            projetoId: sessao.votoProjeto,
-            conviccao: sessao.conviccao,
-            justificativa: justificativaDaLinha(sessao.votoMotivo, sessao.votoTrecho),
-          }
-        : null;
+    const acao = sessao.revisaoAcao;
 
     return {
       pacoteId: sessao.pacoteId,
@@ -1347,38 +1391,27 @@ export class JuriEstadualService implements OnModuleInit {
       aguardandoOProfessor: aguardandoOProfessor(passo, gate.etapa),
       tema: pacote.conteudo.tema,
       categorias: pacote.conteudo.categorias.map((c) => ({ area: c.area, nome: c.nome, hashtag: c.hashtag })),
-      feed: this.feedPublico(pacote, feed),
-      motivos: {
-        voto: MOTIVOS_DO_VOTO_TEXTO.map((m) => ({ id: m.id, texto: m.texto })),
-        revisao: MOTIVOS_DA_REVISAO_TEXTO.map((m) => ({ id: m.id, texto: m.texto })),
-      },
-      voto,
-      revisao: sessao.revisaoAcao
-        ? {
-            acao: sessao.revisaoAcao as AcaoDaRevisao,
-            projetoId:
-              sessao.revisaoAcao === "trocar"
-                ? sessao.votoRevisado
-                : sessao.revisaoAcao === "complementar"
-                  ? sessao.complementoProjeto
-                  : null,
-            justificativa: justificativaDaLinha(sessao.revisaoMotivo, sessao.revisaoTrecho),
-          }
-        : null,
-      desvio: passoNoMinimo(efetivo, "desvio")
-        ? this.desvioPublico(pacote, feed.servidos, desvioDaLinha(sessao), sessao.desvioConcluidoEm !== null)
-        : null,
+      feed: this.feedPublico(pacote, feed, sessao.feedIniciadoEm),
+      voto:
+        sessao.votoProjeto && sessao.conviccao
+          ? { projetoId: sessao.votoProjeto, conviccao: sessao.conviccao as Conviccao }
+          : null,
+      revisao:
+        acao === "manter" || acao === "trocar" || acao === "complementar"
+          ? { acao, projetoId: acao === "trocar" ? sessao.votoRevisado : null }
+          : null,
       cadeia: passoNoMinimo(efetivo, "cadeia")
         ? {
             blocos: blocosDaSessao(sessao.semente),
             tentativas: sessao.cadeiaTentativas,
             montada: sessao.cadeiaMontadaEm !== null,
+            parSimulado: parSimulado(feed, sessao.semente),
           }
         : null,
       mariana: passoNoMinimo(efetivo, "mariana")
         ? {
             caso: CASO_MARIANA,
-            /* Embaralhados pela sessão: o certo não é sempre o primeiro. `certo` não desce. */
+            /* Os cinco juntos, embaralhados pela sessão: o certo não é sempre o primeiro. `certo` não desce. */
             mecanismos: embaralhar(CARTOES_DE_MECANISMO, sessao.semente, "mecanismos").map((c) => ({ id: c.id, texto: c.texto })),
             atitudes: embaralhar(CARTOES_DE_ATITUDE, sessao.semente, "atitudes").map((c) => ({ id: c.id, texto: c.texto })),
             escolha: sessao.mecanismo && sessao.atitude ? { mecanismo: sessao.mecanismo, atitude: sessao.atitude } : null,

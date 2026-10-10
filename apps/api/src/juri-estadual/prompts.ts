@@ -11,7 +11,7 @@ import { AREAS, IDS_DE_PROJETO, PROJETOS_POR_AREA, TOTAL_DE_PROJETOS, areaDoProj
  *
  * 1. O PREPARO: os dezesseis projetos da mostra (quatro áreas × quatro) sobre o
  *    tema, a disciplina e os assuntos do professor. Rascunho: só vale depois de
- *    homologado (decisão de 2026-10-02: não há acervo padrão).
+ *    homologado. Sem cota, o preparo cai no BANCO PADRÃO (`banco-padrao.ts`).
  * 2. A REGENERAÇÃO de um projeto do rascunho.
  * 3. A IMAGEM de cada projeto.
  *
@@ -60,6 +60,8 @@ Cada projeto:
 - "perfil": o perfil da equipe no aplicativo, começando com "@", de 3 a 30 letras minúsculas, números, ponto ou sublinhado, sem acento (ex.: "@lab.da.julia"). Todos diferentes.
 - "legenda": até ${MAX_PALAVRAS_DA_LEGENDA} palavras, a publicação da equipe apresentando o projeto, na voz dos próprios estudantes.
 - "bastidor": até ${MAX_PALAVRAS_DO_BASTIDOR} palavras, uma segunda publicação mostrando o protótipo sendo testado (um ajuste, um erro corrigido, uma medição).
+- "prototipo": até ${MAX_PALAVRAS_DO_BASTIDOR} palavras, uma terceira publicação mostrando o protótipo de perto (uma peça, um material, como ele funciona).
+- "depoimento": até ${MAX_PALAVRAS_DO_BASTIDOR} palavras, uma quarta publicação com o depoimento da equipe (o que aprenderam, o que foi mais difícil), na voz dos estudantes.
 - "hashtags": de 2 a 4. A PRIMEIRA é sempre a hashtag da área do projeto; as outras são do assunto.
 - "imagem": "descricao" (de 10 a 240 caracteres) é o que a ilustração mostra, para o gerador de imagem: o protótipo ou o estande, em estilo ilustração colorida, sem pessoa real e sem rosto de criança identificável; "alt" (de 3 a 140 caracteres) é o texto alternativo que o leitor de tela lê.
 
@@ -113,7 +115,7 @@ Distribua os assuntos pelas quatro áreas. Devolva as ${AREAS.length} categorias
 
 const SCHEMA_DO_PROJETO: AiJsonSchema = {
   type: "object",
-  required: ["id", "titulo", "escola", "perfil", "legenda", "bastidor", "hashtags", "imagem"],
+  required: ["id", "titulo", "escola", "perfil", "legenda", "bastidor", "prototipo", "depoimento", "hashtags", "imagem"],
   properties: {
     id: { type: "string", enum: [...IDS_DE_PROJETO] },
     titulo: { type: "string", description: "De 3 a 60 caracteres." },
@@ -121,6 +123,8 @@ const SCHEMA_DO_PROJETO: AiJsonSchema = {
     perfil: { type: "string", description: "Perfil da equipe, começando com @." },
     legenda: { type: "string", description: `Até ${MAX_PALAVRAS_DA_LEGENDA} palavras.` },
     bastidor: { type: "string", description: `Até ${MAX_PALAVRAS_DO_BASTIDOR} palavras.` },
+    prototipo: { type: "string", description: `Até ${MAX_PALAVRAS_DO_BASTIDOR} palavras.` },
+    depoimento: { type: "string", description: `Até ${MAX_PALAVRAS_DO_BASTIDOR} palavras.` },
     hashtags: { type: "array", items: { type: "string" }, description: "De 2 a 4; a primeira é a da área." },
     imagem: {
       type: "object",
@@ -154,11 +158,11 @@ export const SCHEMA_DO_PREPARO: AiJsonSchema = {
 };
 
 /**
- * Teto de saída do preparo. Dezesseis projetos ficam em torno de 4.500 tokens;
+ * Teto de saída do preparo. Dezesseis projetos com os quatro formatos ficam em torno de 6.500 tokens;
  * o teto existe porque JSON truncado não chega como `MAX_TOKENS` legível —
  * chega como `JSON.parse` falhando (ADR-74).
  */
-export const MAX_TOKENS_DO_PREPARO = 10_000;
+export const MAX_TOKENS_DO_PREPARO = 14_000;
 
 /** Duas tentativas: cada uma é o acervo inteiro (decisão do desenho). */
 export const TENTATIVAS_DO_PREPARO = 2;

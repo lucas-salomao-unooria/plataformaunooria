@@ -4,6 +4,7 @@ import {
   classificarBusca,
   comCerquilha,
   curtidosNaTela,
+  esperaAteEncerrar,
   estandesDoFeed,
   gateMudou,
   iniciais,
@@ -17,7 +18,7 @@ import {
 } from "./regras";
 import type { Categoria, PostPublico, ProjetoDaGaleria } from "./tipos";
 
-const post = (projetoId: string, tipo: "apresentacao" | "bastidor" = "apresentacao"): PostPublico => ({
+const post = (projetoId: string, tipo: PostPublico["tipo"] = "apresentacao"): PostPublico => ({
   id: `${projetoId}:${tipo}`,
   projetoId,
   tipo,
@@ -45,14 +46,15 @@ const projeto = (id: string, titulo: string, exibido = false): ProjetoDaGaleria 
   escola: "Escola Municipal Norte",
   perfil: "@estande.norte",
   legenda: "Legenda do estande.",
+  resumo: "Resumo técnico do estande.",
   hashtags: [],
   imagem: { url: null, alt: "" },
   exibidoNoSeuFeed: exibido,
 });
 
 describe("a cédula oferece os estandes que apareceram no feed", () => {
-  test("na ordem em que apareceram, sem repetir o bastidor", () => {
-    const feed = [post("proj-a1"), post("proj-b2"), post("proj-a1", "bastidor"), post("proj-c3")];
+  test("na ordem em que apareceram, sem repetir os formatos da saturação", () => {
+    const feed = [post("proj-a1"), post("proj-b2"), post("proj-a1", "bastidor"), post("proj-a1", "depoimento"), post("proj-c3")];
     expect(estandesDoFeed(feed).map((e) => e.projetoId)).toEqual(["proj-a1", "proj-b2", "proj-c3"]);
   });
 });
@@ -132,8 +134,8 @@ describe("a calha da cadeia", () => {
 
 describe("pequenas coisas da tela", () => {
   test("a conta sem @ e as iniciais", () => {
-    expect(nomeDaConta("@comissao.mostra")).toBe("comissao.mostra");
-    expect(iniciais("@comissao.mostra")).toBe("CM");
+    expect(nomeDaConta("@comissao_juri")).toBe("comissao_juri");
+    expect(iniciais("@comissao_juri")).toBe("CJ");
     expect(iniciais("@robos")).toBe("RO");
   });
 
@@ -144,11 +146,22 @@ describe("pequenas coisas da tela", () => {
     expect(protocoloDoVoto("pacote", 1, "proj-b2")).not.toBe(a);
   });
 
-  test("só a cadeia fala pela escola", () => {
+  test("a cadeia e o caso Mariana falam pela escola (PRD §10.1)", () => {
     expect(vozDaTela("cadeia")).toBe("escola");
-    for (const t of ["credencial", "feed", "espera", "galeria", "mariana", "enquetes", "fim"] as const) {
+    expect(vozDaTela("mariana")).toBe("escola");
+    for (const t of ["credencial", "feed", "espera", "galeria", "avancando", "enquetes", "fim"] as const) {
       expect(vozDaTela(t)).toBe("clone");
     }
+  });
+});
+
+describe("o relógio dos 8 minutos é do servidor", () => {
+  test("sem 1ª rolagem não há relógio; depois, espera até o fim mais 1 s, nunca menos de 1 s", () => {
+    expect(esperaAteEncerrar(null, 0)).toBeNull();
+    expect(esperaAteEncerrar("lixo", 0)).toBeNull();
+    const agora = Date.parse("2026-10-10T10:00:00Z");
+    expect(esperaAteEncerrar("2026-10-10T10:08:00Z", agora)).toBe(8 * 60_000 + 1_000);
+    expect(esperaAteEncerrar("2026-10-10T09:00:00Z", agora)).toBe(1_000);
   });
 });
 

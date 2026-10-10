@@ -58,3 +58,17 @@ export function srcDoEstande(
   if (estande.imagem.url) return estande.imagem.url;
   return dataUriDeSvg(svgDoEstande(estande.projetoId, estande.titulo, paleta, formato));
 }
+
+/**
+ * A foto `n` (1 a 3) do carrossel de um post: a 1ª é a do estande; a 2ª e a
+ * 3ª, as "fotos técnicas", são a arte procedural com outra semente — o pacote
+ * tem UMA fotografia por projeto.
+ */
+export function srcDaFoto(
+  estande: { projetoId: string; titulo: string; imagem: ImagemPublica },
+  n: number,
+  paleta: Paleta,
+): string {
+  if (n <= 1) return srcDoEstande(estande, paleta);
+  return dataUriDeSvg(svgDoEstande(`${estande.projetoId}:foto${n}`, estande.titulo, paleta));
+}

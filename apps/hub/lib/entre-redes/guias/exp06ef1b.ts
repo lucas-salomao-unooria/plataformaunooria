@@ -22,17 +22,17 @@ import type { GuiaDaAula } from "./tipos";
  * computador para computador. Um percentual cravado no guia faria o professor
  * anunciar à turma um número que a tela de quase ninguém mostra.
  *
- * O CICLO DO VOTO (2026-10-07, o pedido do PO que a spec perdeu): a
- * justificativa antes e depois, o complementar e a rodada de desvio estão no
- * roteiro; o revezamento J1–J4 e o desempate SAÍRAM — o PO pediu para não
- * prescrever protocolo de operador: o sistema não distingue quem toca a tela, e
- * a organização da comissão é do professor. O podcast é opcional e do
- * professor: o guia recomenda o momento, não proíbe.
+ * O PRD v2 (0.4.0) e o one-pager pedagógico aprovado pelo PO: a cédula tem
+ * quatro elementos (sem cartão de motivo nem frase grifada), a revisão tem dois
+ * botões, e a rodada de desvio SAIU — da Galeria Oculta em diante, cada
+ * computador segue no próprio ritmo. Um botão só: Liberar Auditoria. O
+ * roteiro segue a tabela do one-pager (§10): 50 min, 29 em tela, e o corte de
+ * 25 + 25 depois do Passo 3. Sem rodízio de quem toca a tela (o one-pager diz
+ * por quê). O podcast é o recurso fixo do fechamento, depois da Etapa 4. A
+ * nota pedagógica da EF06CO10 é LITERAL do PRD (Anexo §9).
  *
- * Fontes: o PRD (§5, as seis etapas; §8, os requisitos; §10, as telas e quem
- * fala), a copy revisada (`design/06-copy-strings-revisada.md`, §4) e a spec
- * do ambiente simulado (§8.5, o painel e o relógio da turma; §8.6, a
- * plenária; §10, os cenários de dispositivo). As habilidades são as da spec
+ * Fontes: o PRD v2 (§5, as seis etapas; §7, as telas; Anexo §9–§11), o
+ * one-pager pedagógico e a copy revisada (`design/06-copy-strings-revisada.md`). As habilidades são as da spec
  * v1.5.2, como na ficha da api: EF06CO10 (a principal), EF06CO01 e EF06CO03. A
  * EF06CO07 (os pacotes da curtida) saiu com a tela dela, a pedido do PO
  * (2026-10-06). A EF06CO10 é ancorada no livro didático da coleção (Rodrigo
@@ -57,12 +57,20 @@ export const GUIA_EXP06EF1B: GuiaDaAula = {
     },
     {
       tom: "warning",
-      titulo: "Dois botões, na ordem, e nenhum volta",
+      titulo: "Um botão só, e ele não volta: Liberar Auditoria",
       texto:
-        "Na página da atividade, Liberar a Galeria Oculta abre a galeria para a turma inteira: aperte depois " +
-        "da plenária, com a maioria votada. Depois, Liberar a rodada de desvio abre uma rodada curta do feed: " +
-        "aperte quando a maioria tiver revisado o voto. Sem o segundo botão, a turma fica esperando e não chega " +
-        "à cadeia. Quem atrasa entra em cada etapa quando chegar a ela.",
+        "Na página da atividade, projete o Painel Coletivo de Votos da Turma, conduza as quatro perguntas da " +
+        "plenária e só então aperte Liberar Auditoria: as telas da turma inteira destravam a Galeria Oculta. " +
+        "Daí em diante cada computador segue no próprio ritmo — galeria, revisão do voto, cadeia, caso Mariana " +
+        "e enquetes. Quem ainda não votou continua no feed e entra na auditoria depois de votar.",
+    },
+    {
+      tom: "info",
+      titulo: "Nota pedagógica",
+      texto:
+        "Esta missão trabalha EF06CO10 com ampliação deliberada do objeto — o foco em sistemas de recomendação e " +
+        "economia da atenção constitui uma expansão prática do conceito de ‘consumo de tecnologia’, que no texto " +
+        "oficial da BNCC enfatiza obsolescência e sustentabilidade de recursos.",
     },
     {
       tom: "info",
@@ -79,7 +87,7 @@ export const GUIA_EXP06EF1B: GuiaDaAula = {
     "Reconhecer que um feed que se adapta às curtidas mostra só uma parte do que existe, mesmo quando parece completo.",
     "Explicar que o aplicativo classificou cada curtida pela área do estande, agrupando os dados para decidir o que mostrar.",
     "Descrever com precisão a regra que o feed executou, na forma “se… então…”, e montar a cadeia interações, dados, algoritmo, bolha.",
-    "Verificar, mudando de propósito o próprio comportamento numa rodada nova, que o feed responde às interações — e comparar o raciocínio de antes com o de depois da descoberta.",
+    "Auditar a Galeria Oculta e buscar de propósito outras áreas antes de manter ou revisar a própria decisão.",
     "Analisar criticamente o consumo de uma plataforma: perceber que o que se vê nela é mediado por um algoritmo e se afunila a cada interação, e auditar o que ficou de fora antes de decidir.",
     "Propor uma atitude para ver o que o feed esconde: buscar de propósito outros assuntos e conversar fora da rede antes de decidir.",
   ],
@@ -128,34 +136,29 @@ export const GUIA_EXP06EF1B: GuiaDaAula = {
           "Em Minhas turmas, na aba Missões da turma. Sem a liberação, o cartão fica com cadeado para as crianças.",
       },
       {
-        titulo: "Crie a atividade com antecedência",
+        titulo: "Prepare a mostra: banco padrão ou personalizada",
         texto:
-          "A missão não tem banco pronto: os dezesseis estandes são escritos pela inteligência artificial sobre o seu tema. Na ficha, em Nova atividade, escolha o componente curricular, escreva o tema da feira e os assuntos da semana e gere a mostra. Sem saldo de geração com IA, a atividade não sai até o saldo voltar — por isso, prepare antes do dia.",
+          "Na ficha, em Nova atividade. O caminho curto é um toque: Usar Banco Padrão Oficial — a Feira de Ciências e Sustentabilidade, com dezesseis estandes prontos em quatro áreas, sem uso de IA (cerca de 2 minutos de preparo). Para trabalhar a sua matéria, escolha o componente curricular, o título da mostra e os assuntos da semana e toque em Gerar com IA (cerca de 5 minutos). Se a escola estiver sem saldo de IA, o aviso aparece e o Acervo Padrão da Mostra entra com um toque.",
       },
       {
-        titulo: "Revise os estandes antes de criar",
+        titulo: "Na mostra personalizada, revise os estandes e as imagens",
         texto:
-          "São quatro áreas com quatro estandes cada. Leia o título, a legenda e o bastidor de cada um, edite o que quiser e regenere o estande que não servir. Nada gerado por inteligência artificial chega à turma sem passar por você.",
+          "São quatro áreas com quatro estandes cada. Leia o título, a legenda e o bastidor de cada um, edite o que quiser e regenere o estande que não servir. Depois vêm as imagens, que a inteligência artificial gera em seguida: confira cada uma, gere outra para a que não servir e aprove — sem isso, a atividade personalizada não vai ao ar. Nada gerado por inteligência artificial chega à turma sem passar por você. O banco padrão não passa por estas fases: os estandes usam a arte desenhada da missão.",
       },
       {
-        titulo: "Aprove as imagens antes de abrir a turma",
+        titulo: "O podcast de recapitulação é o fechamento fixo",
         texto:
-          "A aprovação tem duas fases. Primeiro os textos dos estandes; depois as imagens, que a inteligência artificial gera em seguida, duas por vez (pode levar alguns minutos). Confira cada imagem junto do estande, use Gerar outra imagem na que não servir e aprove: sem as imagens aprovadas, a atividade não vai ao ar. Estande sem imagem aparece com uma arte desenhada, marcado na grade antes de você aprovar.",
-      },
-      {
-        titulo: "Revise as falas do podcast e gere o áudio, se for usá-lo",
-        texto:
-          "O podcast de recapitulação é seu: cerca de 3 minutos e 45 segundos em que Bia e Rafa retomam a missão com a turma. Ao criar a atividade, logo abaixo dos estandes, revise as três falas que citam a mostra — elas são aprovadas junto dos textos; o resto do roteiro é o mesmo para todas as turmas. O áudio fica em A aula e os resultados, com o botão Gerar o áudio do podcast, que sai um trecho por vez. A transcrição está sempre ao lado, mesmo sem áudio. Ele é opcional e toca na sua tela, para a sala: o melhor momento é o fechamento, porque o episódio conta a virada da missão.",
+          "“A Mostra que Ninguém Viu Inteira”: cerca de 3 minutos e 45 segundos em que Bia e Rafa recapitulam a missão. Na mostra personalizada, revise as três falas que citam a mostra, logo abaixo dos estandes; no banco padrão, o roteiro é o fixo. O áudio fica em A aula e os resultados (Gerar o áudio do podcast), com a transcrição sempre ao lado. Este podcast recapitula toda a missão e revela a virada pedagógica. Deve ser transmitido aos estudantes estritamente após a conclusão da Etapa 4, nunca antes da aula.",
       },
       {
         titulo: "Monte as equipes se faltar aparelho",
         texto:
-          "Na criação da atividade, no passo das equipes. Com 2 a 4 estudantes por computador, quem toca a tela em cada momento é combinado por você e pela turma (veja “Menos aparelhos que estudantes”, em Adaptações). O painel conta por computador.",
+          "Na criação da atividade, no passo das equipes. Com 2 a 4 estudantes por computador, não há rodízio obrigatório de quem toca a tela: a organização do grupo fica com você e com a turma (veja “Menos aparelhos que estudantes”, em Adaptações). O painel conta por computador.",
       },
       {
         titulo: "Deixe o painel aberto e o projetor pronto",
         texto:
-          "O número de votos anda sozinho no painel, e é por ele que você decide a hora da plenária. O gráfico dos votos por área é para a lousa; a folha com os nomes, não.",
+          "O número de votos anda sozinho no painel, e é por ele que você decide a hora da plenária. Ao lado do nome de quem está com a cédula aberta e parada há mais de um minuto aparece um ícone de alerta: é a hora de passar pela mesa. O gráfico dos votos por área é para a lousa; a folha com os nomes, não.",
       },
     ],
     pedagogico: [
@@ -175,9 +178,9 @@ export const GUIA_EXP06EF1B: GuiaDaAula = {
           "Com equipes, o voto é da comissão, e o sistema não distingue quem está tocando a tela: registra o que for confirmado. Como o grupo divide o toque e decide uma divergência fica com você e com a turma.",
       },
       {
-        titulo: "Leia os cartões de motivo antes",
+        titulo: "Saiba como o voto é revisado",
         texto:
-          "Na cédula, cada computador escolhe um dos três cartões de motivo do voto e toca na frase da legenda que mais pesou. Na revisão, depois da galeria, os dois voltam ao lado da mostra inteira, e a comissão escolhe um cartão novo. É o “antes eu pensava… agora eu percebo…”: os cartões não têm resposta certa, e nada disso vira nota.",
+          "A cédula tem só quatro elementos: o título, o projeto escolhido entre os que passaram pelo feed, a certeza e o botão de confirmar — e trava. Depois da auditoria, a revisão tem dois botões: Manter meu voto inicial, que só acende depois de abrir ao menos um estande oculto, e Confirmar Voto Revisado. Nada disso vira nota.",
       },
     ],
     naoDiga: [
@@ -189,67 +192,54 @@ export const GUIA_EXP06EF1B: GuiaDaAula = {
   },
 
   roteiro: {
-    total: "1 aula · 50 min (26 em tela)",
+    total: "1 aula · 50 min (29 em tela)",
     linhas: [
       {
-        tempo: "0–4",
-        momento: "Abertura: a credencial de jurado",
+        tempo: "0–5",
+        momento: "Passo 1 — Desafiar: a credencial de jurado",
         professor:
-          "Acolha a turma com seriedade institucional: foram convidados como jurados oficiais para escolher o melhor projeto escolar do estado. Não mencione algoritmo, bolha nem filtro.",
+          "Diga apenas: “Vocês foram nomeados jurados oficiais de uma mostra escolar estadual. O papel de vocês é avaliar os projetos no feed e votar no melhor da feira.” Não mencione algoritmo, bolha nem filtro. Em tela: 2 min.",
       },
       {
-        tempo: "4–13",
-        momento: "O feed da mostra",
+        tempo: "5–13",
+        momento: "Passo 2 — Navegar: o feed da mostra",
         professor:
-          "Circule pela sala sem interferir no que cada um curte ou salva. Acompanhe no painel quantos já votaram.",
+          "Circule pela sala observando as reações, sem interferir no que cada um curte. Acompanhe no painel a barra de quem já votou. O feed tem teto de 8 minutos, contado desde a primeira rolagem: depois disso, a cédula abre sozinha.",
       },
       {
-        tempo: "13–17",
-        momento: "A cédula lacrada",
+        tempo: "13–18",
+        momento: "Passo 3 — Decidir: a cédula lacrada",
         professor:
-          "Lembre que o voto é oficial e não volta. Na cédula, além do projeto e da certeza, cada computador escolhe o motivo e toca na frase da legenda que mais pesou — é o “antes” que a galeria vai confrontar. Quem votou vê a tela de espera da comissão.",
+          "Lembre que o voto é oficial e não volta. A cédula pede só o projeto e a certeza, e trava com o carimbo da comissão. Se alguém ficar com a cédula parada por mais de um minuto, a tela dele lembra que a comissão aguarda, e o ícone de alerta aparece no seu painel. Em tela: 4 min.",
       },
       {
-        tempo: "17–24",
-        momento: "A plenária (o pico)",
+        tempo: "18–33",
+        momento: "Passo 4 — Resultado: a lousa, a plenária e a auditoria",
         professor:
-          "Com a maioria votada, projete o painel de votação da turma e explore a divergência com as quatro perguntas do bloco do debate. Não diga ainda que o feed se adaptou: deixe a pergunta “como nos dividimos tanto?” no ar.",
+          "Com a maioria votada, projete o Painel Coletivo de Votos da Turma: a turma nota que cada grupo votou numa área diferente. Conduza as quatro perguntas da plenária e, depois de ouvir as respostas, aperte Liberar Auditoria. Cada computador abre a Galeria Oculta, com a taxa real dele, busca por hashtag e decide entre manter o voto ou confirmar um voto revisado. Em tela: 6 min; fora dela: 9.",
+        botao: "Liberar Auditoria",
       },
       {
-        tempo: "24–32",
-        momento: "A Galeria Oculta e a revisão do voto",
+        tempo: "33–41",
+        momento: "Passo 5 — Explicar: a cadeia do feed",
         professor:
-          "Aperte depois da plenária. Cada computador vê os estandes que não chegaram ao feed dele, com a taxa real, e busca por hashtag. Na revisão, a justificativa da cédula volta ao lado da mostra inteira: a comissão mantém, troca ou complementa o voto (indica também um estande que só a galeria mostrou), com um cartão novo. Quando a maioria tiver revisado, projete o gráfico dos votos depois da galeria e compare com o de antes.",
-        botao: "Liberar a Galeria Oculta",
+          "Cada computador no próprio ritmo. A tela compara o histórico dele com o de outro jurado simulado, que curtiu temas opostos, e pede a cadeia em quatro blocos. Quem trava recebe retorno na tela: pergunte o que veio primeiro, sem dizer a ordem. Ligue a cadeia ao livro didático (A Bolha do Léo). Em tela: 4 min; fora dela: 4.",
       },
       {
-        tempo: "32–35",
-        momento: "A rodada de desvio",
+        tempo: "41–50",
+        momento: "Passo 6 — Refletir: Mariana, as enquetes e o fechamento",
         professor:
-          "Aperte quando a maioria tiver revisado. Cada computador recebe uma rodada curta do feed, que começa pelas áreas que quase não apareceram para ele: peça que curtam ou salvem de propósito o que nunca viam e reparem no que chega depois. No fim, a tela compara o feed do júri com a rodada. Não explique ainda por quê — a cadeia, a seguir, dá nome ao que eles acabaram de provocar.",
-        botao: "Liberar a rodada de desvio",
-      },
-      {
-        tempo: "35–44",
-        momento: "A cadeia, Mariana e as enquetes",
-        professor:
-          "Cada computador no próprio ritmo. A tela da cadeia abre ligando o que a turma viveu ao livro didático. Quem trava na cadeia recebe uma dica na tela, sem punição: pergunte o que veio primeiro, sem dizer a ordem. Quem termina antes lê o infográfico em silêncio.",
-      },
-      {
-        tempo: "44–50",
-        momento: "Fechamento",
-        professor:
-          "Conduza a escada do debate abaixo, ligue o caso Mariana ao que a turma viveu na mostra e feche com a síntese em voz alta. O podcast de recapitulação (cerca de 3 min 45 s, com Bia e Rafa) é opcional e toca na sua tela, para a sala: se for usar, este é o melhor momento — ele conta a virada da missão.",
+          "O caso Mariana, os cinco cartões e as três enquetes nos Stories. Quem termina antes lê o infográfico em silêncio. Feche com a pergunta-ponte: “Em que outras situações da nossa vida a gente acha que ‘todo mundo concorda comigo’ só porque o nosso feed só mostra aquilo?” Depois, toque o podcast de recapitulação para a sala. Em tela: 5 min; fora dela: 4.",
       },
     ],
     nota:
-      "Em dois blocos de 25 min, corte depois da revisão do voto e abra o segundo com a rodada de desvio: cada computador volta direto a ela, com tudo salvo. O que não se corta é a plenária entre o voto e a galeria — é ela que faz a turma ver junta que se dividiu — nem a rodada de desvio, que é a vivência de que mudar o comportamento muda o feed. Os tempos somam a rodada de desvio e os cartões de motivo: a plenária encolheu um minuto para caber.",
+      "Os 29 minutos em tela numa aula de 50 são a ressalva aceita pelo PO. Em duas aulas de 50 minutos: na primeira, os Passos 1 a 3 e uma roda sobre quem vocês acham que venceu, sem revelar o segredo; na segunda, a lousa, a auditoria, a cadeia e o caso Mariana. Em duas sessões de 25 minutos: corte depois do Passo 3 — o voto travado congela o progresso com segurança — e abra a segunda sessão projetando a lousa e liberando a auditoria.",
   },
 
   debate: {
     aberturaNaLousa: "Estávamos todos na mesma mostra. Por que cada um julgou uma feira diferente?",
     tempo:
-      "Cerca de 7 minutos no pico, entre o voto e a galeria, com as quatro perguntas da plenária do bloco abaixo, e mais 5 no fechamento, com esta escada, depois do caso Mariana.",
+      "Cerca de 7 minutos no pico, entre o voto e a auditoria, com as quatro perguntas da plenária do bloco abaixo, e mais alguns no fechamento, com esta escada, depois do caso Mariana.",
     perguntas: [
       {
         nivel: "retomada",
@@ -268,13 +258,6 @@ export const GUIA_EXP06EF1B: GuiaDaAula = {
         pergunta: "Um jurado disse que só viu robótica porque era a única área de verdade na feira. O que ele não percebeu sobre o aplicativo que usou?",
         porQue:
           "É a frase da enquete da EF06CO10, agora em voz alta: confundir o que foi recomendado com tudo o que existe. Leva ao consumo crítico da plataforma, como no capítulo 1 do livro didático — quem consome sem auditar acha que o feed é o mundo.",
-      },
-      {
-        nivel: "analise",
-        pergunta:
-          "Na rodada de desvio, o que chegou depois que vocês curtiram ou salvaram uma área que não aparecia? Quem estava decidindo o feed, afinal?",
-        porQue:
-          "É a prova vivida de que o feed responde ao comportamento: a criança mudou o que fez e viu o feed mudar. Ajuda a desmontar a ideia de que o aplicativo “sabe” do que ela gosta.",
       },
       {
         nivel: "generalizacao",
@@ -298,8 +281,7 @@ export const GUIA_EXP06EF1B: GuiaDaAula = {
     marcas: [
       { letra: "D", texto: "Desconfiou do feed antes da galeria: disse que faltava alguma coisa." },
       { letra: "B", texto: "Usou a busca por hashtag para procurar outra área, sem ninguém pedir." },
-      { letra: "R", texto: "Explicou a troca, a manutenção ou o complemento do voto pelo que viu na galeria — comparando com o motivo que deu na cédula." },
-      { letra: "V", texto: "Na rodada de desvio, percebeu e disse em voz alta que o feed mudou porque ele mudou o que fazia." },
+      { letra: "R", texto: "Explicou por que manteve ou revisou o voto pelo que viu na Galeria Oculta." },
       { letra: "E", texto: "Descreveu a regra do feed com as próprias palavras, na forma “se… então…”." },
     ],
     nota:
@@ -342,10 +324,10 @@ export const GUIA_EXP06EF1B: GuiaDaAula = {
         "A decisão é da comissão, do jeito que a turma combinou: o sistema registra o que for confirmado na tela. Peça que cada um diga em uma frase o que viu no feed, e deixe o grupo decidir.",
     },
     {
-      quando: "Na rodada de desvio, um computador não curte nem salva nada",
+      quando: "Um computador está com a cédula aberta e parada há mais de um minuto",
       faca:
-        "Lembre o pedido da comissão: curtir ou salvar o que quase não aparecia. A tela não deixa encerrar sem ao menos uma interação, porque a rodada só mostra a mudança para quem mexeu no feed.",
-      naoFaca: "Dizer o que vai acontecer. A surpresa de ver o feed virar é o que a cadeia nomeia em seguida.",
+        "O ícone de alerta aparece ao lado do nome no seu painel, e a tela dele já lembrou que a comissão aguarda. Passe pela mesa e pergunte qual projeto chamou mais a atenção no feed.",
+      naoFaca: "Sugerir um projeto. O voto é dele, com o que o feed dele mostrou.",
     },
     {
       quando: "Um computador erra a ordem da cadeia várias vezes",
@@ -396,7 +378,7 @@ export const GUIA_EXP06EF1B: GuiaDaAula = {
       ],
     },
     desdobramentos: [
-      "O podcast de recapitulação, em A aula e os resultados, é opcional: toque para a turma no fim da aula ou no começo da seguinte, se ajudar a retomar a conversa. O melhor momento é depois da Galeria Oculta, porque ele conta o que o feed escondeu. Ele fala com os estudantes, mas quem decide se e quando ele toca é você.",
+      "O podcast de recapitulação, em A aula e os resultados, é o fechamento fixo da missão: toque para a sala no fim da aula, depois da Etapa 4 — ou no começo da seguinte, para retomar a conversa. Nunca antes da aula: ele conta a virada.",
       "Na disciplina do tema da mostra: os estandes que ficaram de fora do feed da maioria são o material pronto da aula seguinte — a turma estuda o que quase ninguém viu.",
       "Língua Portuguesa: ler as legendas dos estandes como texto de divulgação científica — o que o título promete e o que a legenda entrega.",
       "Matemática: com os votos por área da lousa, calcular a parte de cada área e discutir como seria o gráfico se todo mundo tivesse visto os dezesseis estandes.",
@@ -406,39 +388,39 @@ export const GUIA_EXP06EF1B: GuiaDaAula = {
 
   cuidados: [
     "A taxa da Galeria Oculta é real e de cada computador: não a apresente como nota nem compare em voz alta quem teve mais. Na lousa vão só os votos por área e a média da turma, sem nomes.",
-    "A folha da turma, com os nomes, é para a sua tela, não para o projetor. Ela não tem voto nem taxa — só quem já votou, abriu a galeria, buscou, revisou, fez a rodada de desvio e concluiu.",
-    "Os cartões de motivo e a frase grifada não viram nota nem nível: são o registro do raciocínio de antes e de depois, para a conversa. A criança escolhe cartões prontos; nada do que ela pensa é digitado.",
-    "Os estandes, as escolas e os perfis da mostra são fictícios, escritos pela inteligência artificial sobre o seu tema. Revise para não sair pessoa real identificável, escola real nem marca de empresa.",
+    "A folha da turma, com os nomes, é para a sua tela, não para o projetor. Ela não tem voto nem taxa — só quem já votou, abriu a galeria, buscou (e por quais categorias), revisou e concluiu, e o alerta de quem está parado na cédula.",
+    "Os cartões do caso Mariana não viram nota nem nível: a criança escolhe cartões prontos; nada do que ela pensa é digitado.",
+    "Os estandes, as escolas e os perfis da mostra são fictícios — os do banco padrão e os escritos pela inteligência artificial sobre o seu tema. Na mostra personalizada, revise para não sair pessoa real identificável, escola real nem marca de empresa.",
     "Durante a aula o feed não usa inteligência artificial: é uma regra fixa, que roda no servidor e é a mesma que a cadeia ensina. A IA só escreve os estandes no preparo.",
     "A busca da galeria não guarda o que a criança digita: fica só se buscou por hashtag ou por texto, e a área que encontrou.",
-    "Na rodada nova (Zerar a turma) com a mesma atividade, todas as habilidades são medidas de novo, mas a turma já sabe que o feed se adapta e o voto deixa de ser espontâneo. Para reaplicar, prefira uma atividade com outro tema.",
+    "Na rodada nova (Reiniciar Missão) com a mesma atividade, todas as habilidades são medidas de novo, mas a turma já sabe que o feed se adapta e o voto deixa de ser espontâneo. Para reaplicar, prefira uma atividade com outro tema.",
   ],
 
   adaptacoes: [
     {
       contexto: "Menos aparelhos que estudantes (2 a 4 por computador)",
       comoAdaptar:
-        "Escolha as equipes na criação da atividade: só um da comissão entra, e ele representa o grupo. O sistema não distingue quem está tocando a tela, então como a comissão divide o toque e decide uma divergência fica com você e com a turma. Nos resultados, cada computador é uma linha.",
+        "Escolha as equipes na criação da atividade: só um da comissão entra, e ele representa o grupo. A dinâmica funciona normalmente: a comissão conversa e debate antes de clicar e confirmar o voto em conjunto. Não há rodízio obrigatório de quem toca a tela — a realidade de cada escola varia, e a organização dos grupos fica a seu critério. Nos resultados, cada computador é uma linha.",
     },
     {
       contexto: "Um computador só (a aula projetada)",
       comoAdaptar:
-        "Monte uma equipe só, com 1 computador, e projete o feed. A cada publicação a sala decide em voz alta se curte, e a turma vê nascer uma bolha coletiva. O botão continua no seu painel, noutra aba; na galeria, você abre com a turma os estandes que a sala inteira fez o feed esconder. A evidência chega para todos a revisar, até você confirmar no painel de habilidades.",
+        "Monte uma equipe só, com 1 computador, e projete o feed. A cada publicação a sala decide em voz alta se curte, e a turma vê nascer uma bolha coletiva. O botão Liberar Auditoria continua no seu painel, noutra aba; na galeria, você abre com a turma os estandes que a sala inteira fez o feed esconder. A evidência chega para todos a revisar, até você confirmar no painel de habilidades.",
     },
     {
       contexto: "Sem projetor",
       comoAdaptar:
-        "Leia em voz alta os votos por área e desenhe as quatro barras na lousa, com o nome de cada área. Depois da galeria, desenhe as barras de novo, ao lado. Nada de nomes na lousa.",
+        "Anote no quadro quantos estudantes votaram em cada categoria e desenhe as quatro barras, com o nome de cada área. Depois da auditoria, desenhe as barras de novo, ao lado. Nada de nomes na lousa.",
     },
     {
-      contexto: "Duas aulas de 25 minutos",
+      contexto: "Duas sessões de 25 minutos",
       comoAdaptar:
-        "No primeiro bloco, a credencial, o feed, o voto, a plenária e a galeria, até a revisão do voto. No segundo, você libera a rodada de desvio: cada computador entra direto nela, com tudo salvo, e a aula segue pela cadeia, Mariana, as enquetes e a escada do debate.",
+        "Na primeira sessão, os Passos 1 a 3: a credencial, o feed e o voto travado, que congela o progresso com segurança. A segunda retoma exatamente a partir da projeção da lousa: a plenária, Liberar Auditoria, a Galeria Oculta, a cadeia, o caso Mariana e as enquetes.",
     },
     {
       contexto: "Turma com leitura ainda em construção",
       comoAdaptar:
-        "Leia a credencial e o caso Mariana em voz alta. Na comissão, um lê a legenda e o outro toca; a busca da galeria tem as hashtags prontas para tocar, sem digitar.",
+        "Leia a credencial e o caso Mariana em voz alta. Os botões têm ícones universais (coração para curtir, lupa para buscar, cadeado no voto travado), e a busca da galeria tem as hashtags prontas para tocar, sem digitar.",
     },
   ],
 
@@ -446,12 +428,12 @@ export const GUIA_EXP06EF1B: GuiaDaAula = {
     {
       pergunta: "Preciso preparar alguma coisa antes?",
       resposta:
-        "Sim: a missão não tem banco pronto. Crie a atividade sobre o seu tema (a geração dos dezesseis estandes pode levar perto de um minuto), aprove os textos e depois as imagens antes da aula — sem as imagens aprovadas, a atividade não vai ao ar. Estande sem imagem fica com a arte desenhada.",
+        "Pouco. Com o Banco Padrão Oficial, um toque cria a atividade com os dezesseis estandes prontos (cerca de 2 minutos). Para personalizar o tema, gere com IA, revise os textos e aprove as imagens antes da aula (cerca de 5 minutos) — sem as imagens aprovadas, a mostra personalizada não vai ao ar.",
     },
     {
       pergunta: "E se eu estiver sem saldo de geração com IA?",
       resposta:
-        "A atividade não sai até o saldo voltar — o limite é diário. Por isso, prepare com antecedência. Uma atividade criada fica pronta na lista da turma e pode ser reaplicada com Zerar a turma.",
+        "A plataforma mostra o aviso e oferece o Acervo Padrão da Mostra com um toque: a aula acontece do mesmo jeito, com a Feira de Ciências e Sustentabilidade.",
     },
     {
       pergunta: "Por que a taxa de um computador é diferente da do outro?",
@@ -459,14 +441,9 @@ export const GUIA_EXP06EF1B: GuiaDaAula = {
         "Porque ela é real: é a parte dos dezesseis estandes que não chegou àquele feed. Quem curtiu duas vezes a mesma área recebeu só ela e vê a taxa mais alta; quem não curtiu nada viu um feed mais misturado e vê uma taxa menor. A diferença é o assunto da conversa.",
     },
     {
-      pergunta: "Apertei Liberar a Galeria Oculta cedo demais. Dá para voltar?",
+      pergunta: "Apertei Liberar Auditoria cedo demais. Dá para voltar?",
       resposta:
-        "Não: o botão abre a galeria para a turma inteira e não fecha. Quem ainda não votou continua no feed e entra na galeria depois de votar. Para recomeçar do zero, use Zerar a turma — ele abre uma rodada nova sem apagar a anterior.",
-    },
-    {
-      pergunta: "Preciso apertar Liberar a rodada de desvio?",
-      resposta:
-        "Sim. Depois da revisão do voto, cada computador espera por ela, e sem ela a turma não chega à cadeia. É a rodada em que a criança muda de propósito o que faz no feed e vê o feed mudar — a vivência que a explicação da cadeia nomeia em seguida.",
+        "Não: o botão abre a Galeria Oculta para a turma inteira e não fecha. Quem ainda não votou continua no feed e entra na auditoria depois de votar. Para recomeçar do zero, use Reiniciar Missão (Zerar Turma) — ele abre uma rodada nova, e os votos da anterior ficam no histórico.",
     },
     {
       pergunta: "O estudante vê o nível da habilidade?",
@@ -476,7 +453,7 @@ export const GUIA_EXP06EF1B: GuiaDaAula = {
     {
       pergunta: "Posso aplicar de novo na mesma turma?",
       resposta:
-        "Pode, com Zerar a turma — mas a turma já sabe que o feed se adapta, e a galeria não surpreende. Para reaplicar, prefira uma atividade nova, com outro tema: ela começa na rodada 1, e a anterior fica no histórico.",
+        "Pode, com Reiniciar Missão (Zerar Turma) — mas a turma já sabe que o feed se adapta, e a galeria não surpreende. Para reaplicar, prefira uma atividade nova, com outro tema: ela começa na rodada 1, e a anterior fica no histórico.",
     },
     {
       pergunta: "E se uma imagem não aparecer?",

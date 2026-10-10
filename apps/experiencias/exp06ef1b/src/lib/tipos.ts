@@ -21,7 +21,7 @@ export const EXP_ID = "exp06ef1b";
  * `public/experiencia.json`. O CI lê a do manifesto, e a divergência já causou
  * bug — o `versao.test.ts` compara os três (ADR-84).
  */
-export const EXP_VERSION = "0.3.0";
+export const EXP_VERSION = "0.4.0";
 
 /** O prefixo das rotas da missão na api. */
 export const ROTA = "/juri-estadual";
@@ -35,7 +35,6 @@ export const PASSOS = [
   "lacrada",
   "galeria",
   "revisada",
-  "desvio",
   "cadeia",
   "mariana",
   "enquetes",
@@ -44,39 +43,36 @@ export const PASSOS = [
 export type Passo = (typeof PASSOS)[number];
 
 /** `regras/passos.ts#ETAPAS` — o relógio da turma. */
-export const ETAPAS = ["exploracao", "galeria", "desvio"] as const;
+export const ETAPAS = ["exploracao", "galeria"] as const;
 export type Etapa = (typeof ETAPAS)[number];
 
-/** `regras/passos.ts#PASSOS_PEDIDOS` — o único passo que a criança pede. */
-export const PASSOS_PEDIDOS = ["feed"] as const;
+/**
+ * `regras/passos.ts#PASSOS_PEDIDOS` — os passos que a criança pede: o `feed`
+ * ("Acessar Feed da Mostra") e a `cadeia` (o avanço depois da revisão do voto).
+ */
+export const PASSOS_PEDIDOS = ["feed", "cadeia"] as const;
 
 /** `vocabulario.ts#AREAS` — o slug é fixo; o nome de cada área vem do pacote do professor. */
 export const AREAS = ["area_a", "area_b", "area_c", "area_d"] as const;
 export type Area = (typeof AREAS)[number];
 
 /** `vocabulario.ts#TIPOS_DE_POST`. */
-export const TIPOS_DE_POST = ["apresentacao", "bastidor"] as const;
+export const TIPOS_DE_POST = ["apresentacao", "bastidor", "prototipo", "depoimento"] as const;
 export type TipoDePost = (typeof TIPOS_DE_POST)[number];
 
 /** `vocabulario.ts#CONVICCOES` — as duas afirmam certeza, de propósito. */
 export const CONVICCOES = ["examinei_bem", "vi_tudo"] as const;
 export type Conviccao = (typeof CONVICCOES)[number];
 
-/** `vocabulario.ts#ACOES_DA_REVISAO`. */
-export const ACOES_DA_REVISAO = ["manter", "trocar", "complementar"] as const;
+/**
+ * `vocabulario.ts#ACOES_DA_REVISAO` — os dois botões da revisão (PRD v2):
+ * "Manter meu voto inicial" e "Confirmar Voto Revisado".
+ */
+export const ACOES_DA_REVISAO = ["manter", "trocar"] as const;
 export type AcaoDaRevisao = (typeof ACOES_DA_REVISAO)[number];
 
-/** `vocabulario.ts#MOTIVOS_DO_VOTO` e `MOTIVOS_DA_REVISAO` — o texto de cada cartão vem da api (`sessao.motivos`). */
-export const MOTIVOS_DO_VOTO = ["v1", "v2", "v3"] as const;
-export type MotivoDoVoto = (typeof MOTIVOS_DO_VOTO)[number];
-export const MOTIVOS_DA_REVISAO = ["r1", "r2", "r3"] as const;
-export type MotivoDaRevisao = (typeof MOTIVOS_DA_REVISAO)[number];
-
-/** `vocabulario.ts#MAX_FRASES_DA_LEGENDA` — o teto de frases que a legenda oferece para grifar. */
-export const MAX_FRASES_DA_LEGENDA = 12;
-
-/** `vocabulario.ts#POSTS_NO_DESVIO` — a rodada de desvio tem seis posts. */
-export const POSTS_NO_DESVIO = 6;
+/** `vocabulario.ts#MINUTOS_NO_FEED` — o teto do feed, contado no SERVIDOR desde a 1ª rolagem. */
+export const MINUTOS_NO_FEED = 8;
 
 /** `vocabulario.ts#TIPOS_DE_BUSCA` — da busca, só o TIPO; o texto nunca sai do aparelho. */
 export const TIPOS_DE_BUSCA = ["hashtag", "texto"] as const;
@@ -118,14 +114,15 @@ export interface ImagemPublica {
 export interface PostPublico {
   id: string;
   projetoId: string;
+  /** O formato: a apresentação, o bastidor, o protótipo de perto ou o depoimento da equipe. */
   tipo: TipoDePost;
   area: Area;
   titulo: string;
   escola: string;
   perfil: string;
-  /** A legenda da apresentação, ou o texto do bastidor. */
+  /** O texto do FORMATO. */
   texto: string;
-  /** A legenda do ESTANDE, nos dois tipos: é dela que a cédula oferece o trecho a grifar. */
+  /** A legenda do ESTANDE, em qualquer formato. */
   legenda: string;
   hashtags: string[];
   imagem: ImagemPublica;
@@ -136,21 +133,14 @@ export interface Feed {
   posts: PostPublico[];
   curtidos: string[];
   salvos: string[];
-  /** Os dez chegaram: a cédula pode abrir. */
+  /** Os dez chegaram. */
   completo: boolean;
-}
-
-/** `DesvioSchema` — a rodada de desvio: seis posts, o mesmo motor, os pesos só dela. */
-export interface Desvio {
-  posts: PostPublico[];
-  curtidos: string[];
-  salvos: string[];
-  completo: boolean;
-  /** Curtiu ou salvou algum post da rodada? Sem isso, a api recusa encerrar. */
-  comInteracao: boolean;
-  concluido: boolean;
-  /** Com os seis servidos: quantos posts de cada área o feed do júri e esta rodada trouxeram. */
-  comparacao: { area: Area; noFeed: number; noDesvio: number }[] | null;
+  /** Os 8 minutos do servidor acabaram: o feed não serve mais. */
+  tempoEsgotado: boolean;
+  /** Quando o feed encerra por tempo (ISO), ou `null` antes da 1ª rolagem. */
+  encerraEm: string | null;
+  /** A cédula pode abrir: `completo` OU `tempoEsgotado`. Quem decide é o servidor. */
+  cedulaLiberada: boolean;
 }
 
 export interface BlocoDaCadeia {
@@ -164,17 +154,24 @@ export interface Cartao {
   texto: string;
 }
 
-/** A justificativa gravada: o cartão de motivo e o índice da frase grifada. */
-export interface Justificativa {
-  motivo: string;
-  trecho: number;
-}
-
 export interface Voto {
   projetoId: string;
   conviccao: Conviccao;
-  /** `null` só nas sessões de antes dos cartões. */
-  justificativa: Justificativa | null;
+}
+
+/** Um dos dois lados do par simulado: quantos posts e curtidas de cada área. */
+export interface Historico {
+  areaPrincipal: Area | null;
+  porArea: { area: Area; posts: number; curtidas: number }[];
+}
+
+/**
+ * `ParSimuladoSchema` — o histórico desta criança ao lado do de "outro jurado
+ * que curtiu temas diferentes", GERADO pelo servidor (nunca dado de colega).
+ */
+export interface ParSimulado {
+  voce: Historico;
+  outroJurado: Historico;
 }
 
 /** `SessaoSchema` — o boot e o F5. */
@@ -190,15 +187,11 @@ export interface Sessao {
   tema: string;
   categorias: Categoria[];
   feed: Feed;
-  /** Os cartões de motivo, antes (cédula) e depois (revisão). Nenhum é o "certo". */
-  motivos: { voto: Cartao[]; revisao: Cartao[] };
   voto: Voto | null;
-  /** `projetoId`: o estande da troca ou do complemento; `null` ao manter. */
-  revisao: { acao: AcaoDaRevisao; projetoId: string | null; justificativa: Justificativa | null } | null;
-  /** Do passo `desvio` em diante. */
-  desvio: Desvio | null;
+  /** `complementar` só nas sessões da 0.3.0. `projetoId`: o estande da troca; `null` ao manter. */
+  revisao: { acao: AcaoDaRevisao | "complementar"; projetoId: string | null } | null;
   /** Do passo `cadeia` em diante. */
-  cadeia: { blocos: BlocoDaCadeia[]; tentativas: number; montada: boolean } | null;
+  cadeia: { blocos: BlocoDaCadeia[]; tentativas: number; montada: boolean; parSimulado: ParSimulado } | null;
   /** Do passo `mariana` em diante. */
   mariana: {
     caso: string;
@@ -222,9 +215,12 @@ export interface Estado {
   etapa: Etapa;
 }
 
-/** `TentativaSchema` — a cadeia: certa ou não, nunca qual vaga errou. */
+/**
+ * `TentativaSchema` — a cadeia CERTA (200). A errada é **422**
+ * `ordem-incorreta` (a tentativa conta), nunca qual vaga errou.
+ */
 export interface Tentativa {
-  correta: boolean;
+  correta: true;
   tentativas: number;
   passo: Passo;
 }
@@ -237,6 +233,8 @@ export interface ProjetoDaGaleria {
   escola: string;
   perfil: string;
   legenda: string;
+  /** O resumo técnico da ficha de inspeção (E4-ALU-02). */
+  resumo: string;
   hashtags: string[];
   imagem: ImagemPublica;
   exibidoNoSeuFeed: boolean;
@@ -247,6 +245,10 @@ export interface Galeria {
   invisibilidade: { vistos: number; ocultos: number; total: number; percentual: number };
   /** Os dezesseis, os que NÃO chegaram primeiro. */
   projetos: ProjetoDaGaleria[];
+  /** Quantos estandes ocultos a criança já abriu. */
+  ocultosAbertos: number;
+  /** "Manter meu voto inicial" está liberado (abriu ao menos um oculto). */
+  podeManter: boolean;
 }
 
 /** `AcaoDaGaleriaSchema` — o texto digitado NUNCA viaja (texto livre de menor). */

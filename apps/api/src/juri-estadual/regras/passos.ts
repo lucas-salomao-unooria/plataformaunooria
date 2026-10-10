@@ -4,7 +4,7 @@
  * Dois relógios, como nas outras missões de sala (exp04ef1b, exp07ef1b):
  *
  * - `exp06ef1b_gates_turma.etapa` — o relógio da TURMA. UM botão no painel:
- *   "Liberar a Galeria Oculta".
+ *   "Liberar Auditoria" (a Galeria Oculta).
  * - `exp06ef1b_sessoes.passo` — a tela daquele computador. Antes do voto cada
  *   um anda no seu ritmo; entre o voto e a galeria a turma espera junta (é o
  *   PICO: a lousa com a dispersão de votos); da galeria em diante, cada um anda
@@ -13,28 +13,17 @@
  * `passoEfetivo` resolve os dois num só valor e mora aqui — puro e testável —
  * porque a api e a experiência precisam chegar à MESMA resposta num F5.
  *
- * O caminho de uma criança:
+ * O caminho de uma criança (PRD v2, §6.3):
  *
  *   credencial → feed ──(voto, LATCH 1)──→ lacrada
- *     → [professor libera a galeria] → galeria
+ *     → [professor libera a auditoria] → galeria
  *     ──(revisão do voto, LATCH 2)──→ revisada
- *     → [professor libera a rodada de desvio] → desvio
- *     ──(concluir o desvio)──→ cadeia → mariana → enquetes → fim
+ *     ──("Avançar", POST passo)──→ cadeia → mariana → enquetes → fim
  *
- * `galeria` e `desvio` nunca são GRAVADOS: a etapa da turma os impõe a quem
- * está em `lacrada` e em `revisada`, as duas esperas. O passo gravado sai de
- * `lacrada` na revisão do voto (`revisada`) e de `revisada` quando a criança
- * conclui a rodada de desvio (`cadeia`).
+ * `galeria` nunca é GRAVADO: a etapa da turma o impõe a quem está em `lacrada`.
  *
- * A RODADA DE DESVIO (2026-10-07, pedido do PO que a spec perdeu) é a segunda
- * espera de propósito: o professor a libera quando a turma terminou a galeria,
- * e ela vem ANTES da explicação (a cadeia), porque é a vivência que a explicação
- * nomeia.
- *
- * Até a 0.1.x havia um passo `pacotes` (a curtida remontada em pacotes, a
- * EF06CO07) entre a revisão e a cadeia. O PO o tirou com a habilidade
- * (2026-10-06): a migração `20261006120000_exp06ef1b_ajustes_do_po` moveu para
- * `cadeia` as sessões que estavam nele.
+ * A RODADA DE DESVIO da 0.3.0 SAIU (melhoria 6 do PRD v2): a etapa `desvio`, o
+ * passo `desvio` e as rotas dela. As colunas `desvio_*` ficam no banco, sem uso.
  */
 
 /** Passos do estudante, na ordem em que ele os percorre. */
@@ -44,7 +33,6 @@ export const PASSOS = [
   "lacrada",
   "galeria",
   "revisada",
-  "desvio",
   "cadeia",
   "mariana",
   "enquetes",
@@ -53,7 +41,7 @@ export const PASSOS = [
 export type Passo = (typeof PASSOS)[number];
 
 /** Etapas da turma, na ordem em que o professor as abre. */
-export const ETAPAS = ["exploracao", "galeria", "desvio"] as const;
+export const ETAPAS = ["exploracao", "galeria"] as const;
 export type Etapa = (typeof ETAPAS)[number];
 
 export const ETAPA_INICIAL: Etapa = "exploracao";
@@ -63,12 +51,12 @@ export const PASSO_INICIAL: Passo = "credencial";
 export const PASSOS_ANTES_DO_VOTO: readonly Passo[] = ["credencial", "feed"];
 
 /**
- * Os passos que a própria criança pede, por `POST passo`. Os outros nascem das
- * rotas que os carimbam: `lacrada` (o voto), `revisada` (a revisão), `cadeia`
- * (concluir o desvio), `mariana` (a cadeia), `enquetes` (os cartões), `fim`
- * (concluir).
+ * Os passos que a própria criança pede, por `POST passo`: o `feed` (o toque em
+ * "Acessar Feed da Mostra") e a `cadeia` (o "avançar" depois da revisão). Os
+ * outros nascem das rotas que os carimbam: `lacrada` (o voto), `revisada` (a
+ * revisão), `mariana` (a cadeia), `enquetes` (os cartões), `fim` (concluir).
  */
-export const PASSOS_PEDIDOS = ["feed"] as const;
+export const PASSOS_PEDIDOS = ["feed", "cadeia"] as const;
 export type PassoPedido = (typeof PASSOS_PEDIDOS)[number];
 
 const ORDEM: Record<Passo, number> = Object.fromEntries(PASSOS.map((p, i) => [p, i])) as Record<Passo, number>;
@@ -90,8 +78,9 @@ export function normalizarPasso(valor: string | null | undefined): Passo {
   return valor && ehPasso(valor) ? valor : PASSO_INICIAL;
 }
 
+/** A etapa `desvio` das linhas antigas virou `galeria` na migração; o fallback cobre o resto. */
 export function normalizarEtapa(valor: string | null | undefined): Etapa {
-  return valor && ehEtapa(valor) ? valor : ETAPA_INICIAL;
+  return valor && ehEtapa(valor) ? valor : valor === "desvio" ? "galeria" : ETAPA_INICIAL;
 }
 
 export function passoAntes(a: Passo, b: Passo): boolean {
@@ -115,26 +104,19 @@ export function votou(passo: Passo): boolean {
  * O passo que o estudante deve ver, dado o dele e a etapa da turma.
  *
  * 1. Antes de votar, a etapa não o toca: com a galeria liberada, quem ainda
- *    navega continua navegando (o voto atrasado é caminho previsto — ninguém
- *    abre a galeria de um feed que não terminou, e a taxa dele precisa do voto).
+ *    navega continua navegando (o voto atrasado é caminho previsto).
  * 2. Em `lacrada`, a etapa manda: espera na exploração, galeria quando o
- *    professor libera (e também com o desvio já liberado: quem votou atrasado
- *    passa pela galeria antes do desvio — a ordem da criança não pula etapa).
- * 3. Em `revisada`, de novo a etapa: espera até o professor liberar o desvio.
- * 4. Do desvio concluído em diante (`cadeia`...`fim`) o passo é da criança, e
- *    nada o puxa de volta. O gate nunca volta dentro de uma rodada — e quando a
- *    rodada muda (zerar, atividade nova) a sessão é outra.
+ *    professor libera.
+ * 3. Da revisão em diante o passo é da criança, e nada o puxa de volta.
  */
 export function passoEfetivo(passo: Passo, etapa: Etapa): Passo {
   if (passo === "lacrada" || passo === "galeria") return etapaAntes(etapa, "galeria") ? "lacrada" : "galeria";
-  if (passo === "revisada" || passo === "desvio") return etapa === "desvio" ? "desvio" : "revisada";
   return passo;
 }
 
-/** O estudante espera o professor? São as duas esperas: a plenária (o PICO) e a do desvio. */
+/** O estudante espera o professor? Só na plenária (o PICO). */
 export function aguardandoOProfessor(passo: Passo, etapa: Etapa): boolean {
-  const efetivo = passoEfetivo(passo, etapa);
-  return efetivo === "lacrada" || efetivo === "revisada";
+  return passoEfetivo(passo, etapa) === "lacrada";
 }
 
 /** A etapa seguinte, ou `null` na última — é o rótulo do botão único do painel. */
@@ -160,15 +142,18 @@ export type ResultadoDoPasso = { ok: true; passo: Passo } | { ok: false; codigo:
 /**
  * O passo que a criança PEDE, sobre o passo GRAVADO dela.
  *
- * - `feed`: da credencial para o feed (o toque em "Acessar o feed da mostra").
- *   Pedir de novo no feed devolve o feed; depois do voto, devolve o passo em
- *   que ela está (a escada é de sentido único, e um F5 não pode reabrir a
- *   cédula).
+ * - `feed`: da credencial para o feed. Pedir de novo no feed devolve o feed;
+ *   depois do voto, devolve o passo em que ela está (a escada é de sentido
+ *   único, e um F5 não pode reabrir a cédula).
+ * - `cadeia`: de `revisada` para a cadeia (o "avançar" do PRD, §6.3). Já na
+ *   cadeia ou adiante, devolve o passo dela; antes da revisão, recusado.
  */
 export function pedirPasso(atual: Passo, para: PassoPedido): ResultadoDoPasso {
   if (para === "feed") {
     if (atual === "credencial" || atual === "feed") return { ok: true, passo: "feed" };
     return { ok: true, passo: atual };
   }
+  if (atual === "revisada") return { ok: true, passo: "cadeia" };
+  if (passoNoMinimo(atual, "cadeia")) return { ok: true, passo: atual };
   return { ok: false, codigo: "passo-invalido" };
 }

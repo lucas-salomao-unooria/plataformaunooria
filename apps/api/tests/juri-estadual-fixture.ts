@@ -3,9 +3,9 @@ import { AREAS, IDS_DE_PROJETO, areaDoProjeto, type Area } from "../src/juri-est
 
 /**
  * Uma MOSTRA válida para as suítes da exp06ef1b — o que a IA devolveria e o
- * professor homologaria. Não há acervo padrão na missão (decisão de
- * 2026-10-02), então a suíte escreve o seu: quatro áreas, dezesseis projetos,
- * dentro da régua de `invariantes.ts`.
+ * professor homologaria (com os quatro formatos de post): quatro áreas,
+ * dezesseis projetos, dentro da régua de `invariantes.ts`. O banco padrão do
+ * PRD v2 é outro (`src/juri-estadual/banco-padrao.ts`).
  */
 
 const CATEGORIAS: Record<Area, { nome: string; hashtag: string; titulos: string[]; tema: string }> = {
@@ -89,6 +89,8 @@ export function conteudoDeTeste(tema = "Ciência que cuida da cidade"): Conteudo
         perfil: `@${EQUIPES[i]}`,
         legenda: `Nossa equipe montou o projeto ${titulo} com material reciclado da escola. A ideia ajuda a cuidar da ${c.tema} no bairro.`,
         bastidor: `Hoje testamos o protótipo do ${titulo} no pátio e anotamos o que precisa melhorar.`,
+        prototipo: `De perto, o protótipo do ${titulo} mostra as peças recicladas que a equipe juntou.`,
+        depoimento: `A equipe do ${titulo} conta que o mais difícil foi testar e refazer até funcionar.`,
         hashtags: [c.hashtag, "#mostraestadual"],
         imagem: {
           descricao: `Ilustração colorida do protótipo ${titulo} em um estande de feira de ciências escolar.`,

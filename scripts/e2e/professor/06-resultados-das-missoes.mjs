@@ -28,7 +28,7 @@ await suite(
       "O relógio da aula do unooGPT é operável da mesma tela dos resultados",
       "O relatório de um estudante do unooGPT diz QUANDO: até a primeira fala, com quanto relógio, se estourou",
       "A aula da A Seleção (o botão único e a etapa) mora na mesma tela dos resultados, sem coluna de pontos",
-      "A aula do Júri Estadual mora na página da atividade: a lousa anônima dos votos por área, e a folha sem coluna de voto, taxa nem nível",
+      "A aula do Júri Estadual mora na página da atividade: a lousa anônima dos votos por área, a folha sem coluna de voto, taxa nem nível, e com as categorias buscadas e os parados na cédula",
     ],
     comando: "node scripts/e2e/professor/06-resultados-das-missoes.mjs",
   },
@@ -205,12 +205,32 @@ await suite(
           !colunasDoJuri.some((c) => /^\s*voto\b|\b(taxa|n[íi]vel|invisibilidade|pontos|nota|ranking)\b/i.test(c)),
         `a folha do Júri não tem coluna de voto, taxa nem nível (colunas: ${colunasDoJuri.join(", ")})`,
       );
+      /* PRD v2: a folha diz QUAIS categorias cada um buscou na galeria (a leitura
+         da EF06CO01), e o painel conta quem está parado na cédula — o ícone ao
+         lado do nome é provado AO VIVO na estudante/13 (ele some sozinho 40 s
+         depois de a cédula fechar, então aqui só a coluna e a métrica). */
+      r.exigir(
+        colunasDoJuri.some((c) => /Categorias buscadas/.test(c)),
+        `a folha do Júri tem a coluna “Categorias buscadas” (colunas: ${colunasDoJuri.join(", ")})`,
+      );
+      r.exigir(
+        (await p.getByText("Parados na cédula", { exact: true }).count()) > 0,
+        "o painel da aula conta quem está parado na cédula (o sinalizador de ociosos)",
+      );
+      const linhasDoJuri = await p.locator("main").getByRole("row").allInnerTexts();
+      const comBusca = linhasDoJuri.filter((l) => /\(#[^)]+\)/.test(l));
+      if (comBusca.length === 0) {
+        r.ressalva("nenhuma linha da folha tem categoria buscada: rode antes a estudante/13-juri-estadual, que busca por hashtag");
+      } else {
+        r.exigir(true, `a folha mostra a categoria buscada com o nome e a hashtag (${comBusca[0].replace(/\s+/g, " ").slice(0, 120)})`);
+      }
     }
     await r.registrar(p, "resultados-juri-estadual", {
       titulo: "A atividade do Júri Estadual: a aula e os resultados",
       mostra:
-        "A atividade em andamento: as equipes, as imagens, os 16 estandes, o botão da aula, a lousa com os votos " +
-        "por área antes e depois da galeria, a folha por computador e o painel de habilidades da BNCC.",
+        "A atividade em andamento: os 16 estandes, o botão Liberar Auditoria, os parados na cédula, a lousa com os " +
+        "votos por área antes e depois da galeria, a folha por computador com as categorias buscadas e o painel de " +
+        "habilidades da BNCC.",
       prova:
         "A lousa vai para o projetor e não tem nome; a folha tem nome e por isso não liga ninguém a um voto ou a " +
         "uma taxa. O nível de cada habilidade fica no painel de habilidades, com a confirmação da professora.",

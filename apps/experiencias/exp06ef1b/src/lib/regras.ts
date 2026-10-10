@@ -1,4 +1,3 @@
-import { MAX_FRASES_DA_LEGENDA } from "./tipos";
 import type {
   Area,
   Categoria,
@@ -31,11 +30,27 @@ import type {
 /** De quanto em quanto a espera pergunta se a professora liberou a galeria. */
 export const INTERVALO_DO_GATE_MS = 3_000;
 
-/** Sem toque com a cédula pronta: o aviso da comissão (`e3.feedback.inatividade_aviso`). */
+/** Sem toque com a cédula ABERTA: o aviso da comissão no topo dela (`e3.erro.toast_inatividade`). */
 export const SEGUNDOS_DE_INATIVIDADE = 60;
 
-/** Quanto tempo o carimbo do lacre fica na tela antes da plenária (o PICO). */
-export const SEGUNDOS_DO_LACRE = 4;
+/**
+ * O batimento da cédula aberta (`POST cedula/batimento`, melhoria 8): a cada
+ * 15 s, há quantos segundos não há toque nela. O servidor marca o ocioso para
+ * o painel do professor (> 60 s), e a marca some sozinha sem batimento.
+ */
+export const SEGUNDOS_DO_BATIMENTO = 15;
+
+/**
+ * Quanto esperar até reler o feed por TEMPO (os 8 minutos são do servidor).
+ * O relógio do aparelho pode estar adiantado ou atrasado: a resposta do
+ * servidor manda, e quem chega cedo demais só agenda de novo.
+ */
+export function esperaAteEncerrar(encerraEm: string | null, agora: number): number | null {
+  if (!encerraEm) return null;
+  const fim = Date.parse(encerraEm);
+  if (Number.isNaN(fim)) return null;
+  return Math.max(1_000, fim - agora + 1_000);
+}
 
 /**
  * A permanência que conta, espelho de `vocabulario.ts#PERMANENCIA_MS`: mais de
@@ -58,11 +73,10 @@ const ORDEM: Record<Passo, number> = {
   lacrada: 2,
   galeria: 3,
   revisada: 4,
-  desvio: 5,
-  cadeia: 6,
-  mariana: 7,
-  enquetes: 8,
-  fim: 9,
+  cadeia: 5,
+  mariana: 6,
+  enquetes: 7,
+  fim: 8,
 };
 
 /**
@@ -72,7 +86,6 @@ const ORDEM: Record<Passo, number> = {
  */
 export function passoEfetivo(passo: Passo, etapa: Etapa): Passo {
   if (passo === "lacrada" || passo === "galeria") return etapa === "exploracao" ? "lacrada" : "galeria";
-  if (passo === "revisada" || passo === "desvio") return etapa === "desvio" ? "desvio" : "revisada";
   return passo;
 }
 
@@ -81,16 +94,16 @@ export function passoNoMinimo(passo: Passo, piso: Passo): boolean {
 }
 
 /**
- * As telas da missão. `lacrada` é a ESPERA (o PICO): o carimbo e a plenária.
- * `revisada` é a SEGUNDA espera — a comissão vai abrir a rodada de desvio.
+ * As telas da missão. `lacrada` é a ESPERA (E3-ALU-02: o carimbo e o latch).
+ * `revisada` é a passagem para a cadeia: a tela pede `POST passo
+ * {para:"cadeia"}` sozinha (o "avançar" do PRD, §6.3), e num F5 também.
  */
 export type Tela =
   | "credencial"
   | "feed"
   | "espera"
   | "galeria"
-  | "espera-do-desvio"
-  | "desvio"
+  | "avancando"
   | "cadeia"
   | "mariana"
   | "enquetes"
@@ -101,17 +114,19 @@ export const TELA_DO_PASSO: Record<Passo, Tela> = {
   feed: "feed",
   lacrada: "espera",
   galeria: "galeria",
-  revisada: "espera-do-desvio",
-  desvio: "desvio",
+  revisada: "avancando",
   cadeia: "cadeia",
   mariana: "mariana",
   enquetes: "enquetes",
   fim: "fim",
 };
 
-/** Quem FALA em cada tela — e, por isso, em que seção do DS o aviso de rede sai. */
+/**
+ * Quem FALA em cada tela — e, por isso, em que seção do DS o aviso de rede
+ * sai. PRD §10.1: a cadeia (E5) e o caso Mariana (E6-ALU-01) são a Unooria.
+ */
 export function vozDaTela(tela: Tela): "clone" | "escola" {
-  return tela === "cadeia" ? "escola" : "clone";
+  return tela === "cadeia" || tela === "mariana" ? "escola" : "clone";
 }
 
 /**
@@ -144,14 +159,12 @@ export interface EstandeDoFeed {
   titulo: string;
   escola: string;
   perfil: string;
-  /** A legenda do estande: as frases que a cédula oferece para grifar. */
-  legenda: string;
   imagem: PostPublico["imagem"];
 }
 
 /**
  * Os estandes que APARECERAM no feed, na ordem em que apareceram e sem
- * repetição (o bastidor repete o projeto com outro post). É a lista da cédula:
+ * repetição (a saturação repete o projeto em outros formatos). É a lista da cédula:
  * a api recusa voto fora dela (`projeto-fora-do-feed`), e a cédula não pode
  * oferecer o que o feed não serviu.
  */
@@ -165,7 +178,6 @@ export function estandesDoFeed(posts: readonly PostPublico[]): EstandeDoFeed[] {
       titulo: p.titulo,
       escola: p.escola,
       perfil: p.perfil,
-      legenda: p.legenda,
       imagem: p.imagem,
     });
   }
@@ -196,21 +208,6 @@ export function protocoloDoVoto(pacoteId: string, rodada: number, projetoId: str
   return `PR-${String((h >>> 0) % 9000 + 1000)}`;
 }
 
-// ───────────────────────────────────────── a justificativa: o trecho grifado
-
-/**
- * Espelho de `apps/api/src/juri-estadual/regras/justificativa.ts`: a legenda em
- * frases, pelo ponto final. A tela oferece estas frases para a criança tocar, e
- * a api confere que o ÍNDICE tocado existe — a frase em si nunca viaja.
- */
-export function frasesDaLegenda(legenda: string): string[] {
-  return legenda
-    .split(/(?<=[.!?])\s+/u)
-    .map((f) => f.trim())
-    .filter((f) => f.length > 0)
-    .slice(0, MAX_FRASES_DA_LEGENDA);
-}
-
 // ─────────────────────────────────────────────── a busca da galeria
 
 /** Caixa baixa, sem acento, sem `#` e sem espaço sobrando. */
@@ -229,7 +226,7 @@ export function casaComABusca(projeto: ProjetoDaGaleria, texto: string, categori
   const alvo = normalizar(texto);
   if (!alvo) return true;
   const area = categorias.find((c) => c.area === projeto.area);
-  const campos = [projeto.titulo, projeto.escola, projeto.perfil, projeto.legenda, ...projeto.hashtags, area?.nome ?? "", area?.hashtag ?? ""];
+  const campos = [projeto.titulo, projeto.escola, projeto.perfil, projeto.legenda, projeto.resumo, ...projeto.hashtags, area?.nome ?? "", area?.hashtag ?? ""];
   return campos.some((c) => normalizar(c).includes(alvo));
 }
 

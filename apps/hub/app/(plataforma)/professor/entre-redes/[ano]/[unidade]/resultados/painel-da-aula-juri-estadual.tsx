@@ -6,7 +6,9 @@ import { BarChart, Button, Card, FeedbackAlert, Icon, MetricCard, ProgressBar, U
 import { AVISO_POR_COMPUTADOR, type MembroNoPainel } from "@/lib/equipe-no-painel";
 import {
   AREAS,
+  INSTRUCAO_DO_GATILHO,
   ROTULO_DA_ETAPA,
+  TITULO_DO_PAINEL,
   aulaEmAndamento,
   caminhoDaTurma,
   erroDaResposta,
@@ -15,9 +17,7 @@ import {
   rotuloCurtoDaArea,
   rotuloDoBotao,
   textoDaInvisibilidade,
-  sujeito,
   textoDaRevisao,
-  textoDoDesvio,
   textoDoQueFalta,
   textoDosVotos,
   textoDosVotosDaArea,
@@ -34,20 +34,19 @@ import { ListaDoJuri } from "./lista-do-juri";
  * jurados votaram", a lousa do pico e a folha da turma, AO VIVO.
  *
  * **UM botão, e ele diz a etapa de DESTINO.** O rótulo sai de `proximaEtapa`,
- * que a api calcula: Liberar a Galeria Oculta, depois Liberar a rodada de
- * desvio (2026-10-07, o pedido do PO), e depois nada. Ele nunca volta (409
- * `transicao-de-etapa-invalida`).
+ * que a api calcula: "Liberar Auditoria" (PRD v2, E4-PROF-01) abre a Galeria
+ * Oculta, e depois nada — da galeria em diante cada computador segue no
+ * próprio ritmo. Ele nunca volta (409 `transicao-de-etapa-invalida`).
  *
- * **Duas superfícies, e só UMA vai para o telão.** O cartão "Painel de
- * Votação da Turma" não tem nome: são os votos por área (o voto INICIAL,
+ * **Duas superfícies, e só UMA vai para o telão.** O cartão "Painel Coletivo
+ * de Votos da Turma" não tem nome: são os votos por área (o voto INICIAL,
  * lacrado; e, depois da galeria, o revisado), a contagem de quem votou e a
  * invisibilidade média — o que a lousa do pico precisa. A folha tem nomes, e
  * por isso não vai: e nem ela liga nome a voto (`PROIBIDO_NA_LINHA_DO_PAINEL`).
  *
- * **A invisibilidade média só aparece depois da galeria.** Projetada no pico,
- * ela diria à turma o que a Galeria Oculta vai mostrar a cada um — a descoberta
- * chegaria pela lousa, e não pela tela da criança. O número é o REAL, calculado
- * pela api; nenhum percentual é cravado aqui.
+ * **A invisibilidade média está na lousa desde o pico** (PRD v2, E4-PROF-01:
+ * o `MetricCard` ao lado do gráfico). O número é o REAL, calculado pela api;
+ * nenhum percentual é cravado aqui.
  *
  * **Consulta LEVE, e não `router.refresh()`.** A página lê cinco rotas;
  * refazê-la a cada 5 s seria cinco chamadas por professor durante a aula. Aqui
@@ -189,15 +188,17 @@ export function PainelDaAulaJuriEstadual({
           {rotulo ? (
             <div className="flex flex-col gap-2">
               <p className="max-w-3xl text-[12px] leading-snug text-unooria-neutral-600">
-                {proxima === "desvio"
-                  ? `${textoDaRevisaoNaFolha(resumo.revisaram, y, resumo.porComputador)} Quando a maioria tiver revisado o voto, libere a rodada de desvio: cada computador interage com o que não aparecia para ele e vê o feed mudar. Quem ainda estiver na galeria termina a revisão e entra direto nela.`
-                  : "Quando a maioria tiver votado, projete o painel de votação abaixo e explore a divergência com as perguntas da plenária — só depois libere a galeria. Quem ainda estiver no feed continua, vota quando terminar e entra na galeria em seguida."}
+                Quando a maioria tiver votado, explore a divergência com as perguntas da plenária. Quem ainda estiver
+                no feed continua, vota quando terminar e entra na auditoria em seguida.
+              </p>
+              <p className="max-w-3xl text-[13px] font-semibold leading-snug text-unooria-neutral-900" data-instrucao-do-gatilho>
+                {INSTRUCAO_DO_GATILHO}
               </p>
               <div>
                 <Button
                   variant="primary"
                   size="md"
-                  leftIcon={<Icon name={proxima === "desvio" ? "swap_horiz" : "visibility"} size={18} />}
+                  leftIcon={<Icon name="visibility" size={18} />}
                   onClick={() => void avancar()}
                   isDisabled={enviando}
                   data-gate={proxima}
@@ -211,9 +212,9 @@ export function PainelDaAulaJuriEstadual({
             </div>
           ) : (
             <p className="text-[13px] leading-snug text-unooria-neutral-700">
-              A rodada de desvio está aberta. Cada computador segue no próprio ritmo pela nova rodada do feed, pela
-              cadeia, pelo caso Mariana e pelas enquetes. {textoDoDesvio(resumo.desviaram, y, resumo.porComputador)}{" "}
-              Para aplicar de novo, use Zerar a turma, mais abaixo.
+              A auditoria está liberada. Cada computador segue no próprio ritmo pela Galeria Oculta, pela cadeia, pelo
+              caso Mariana e pelas enquetes. Depois que a turma concluir a Etapa 4 e o debate da virada, toque o
+              podcast de recapitulação, mais abaixo. Para aplicar de novo, use Reiniciar Missão, mais abaixo.
             </p>
           )}
 
@@ -227,7 +228,11 @@ export function PainelDaAulaJuriEstadual({
         <MetricCard title="Entraram na mostra" value={`${resumo.entraram}/${resumo.total}`} />
         <MetricCard title="Lacraram o voto" value={`${votaram}/${y}`} />
         <MetricCard title="Revisaram o voto" value={`${resumo.revisaram}/${y}`} />
-        <MetricCard title="Fizeram a rodada de desvio" value={`${resumo.desviaram}/${y}`} />
+        <MetricCard
+          title="Parados na cédula"
+          value={String(resumo.ociosos)}
+          description="Cédula aberta há mais de 1 minuto sem toque. O ícone de alerta aparece ao lado do nome, na folha."
+        />
         <MetricCard title="Concluíram a missão" value={`${resumo.concluiram}/${y}`} />
       </div>
       {resumo.porComputador ? (
@@ -245,33 +250,37 @@ export function PainelDaAulaJuriEstadual({
             painel de habilidades, lá embaixo, com a sua confirmação.
           </p>
           <p>
-            “Busca” diz se o computador usou a busca da Galeria Oculta. Buscar não comprova que entendeu: use a folha
+            O ícone de alerta ao lado do nome marca quem está com a cédula aberta e parada há mais de 1 minuto: é a
+            hora de passar pela mesa. Ele some sozinho quando o computador volta a mexer.
+          </p>
+          <p>
+            “Busca” diz se o computador usou a busca da Galeria Oculta, e “Categorias buscadas”, por quais hashtags. Buscar não comprova que entendeu: use a folha
             para puxar a conversa, não para comparar.
           </p>
         </div>
-        <ListaDoJuri linhas={painel.linhas} porComputador={resumo.porComputador} membros={membros} />
+        <ListaDoJuri
+          linhas={painel.linhas}
+          porComputador={resumo.porComputador}
+          membros={membros}
+          categorias={resumo.votosPorArea}
+        />
       </Card>
     </>
   );
 }
 
-/** "18 de 26 jurados revisaram o voto." — o número que decide a hora da rodada de desvio. */
-function textoDaRevisaoNaFolha(revisaram: number, total: number, porComputador: boolean): string {
-  return `${revisaram} de ${total} ${sujeito(porComputador, total)} ${revisaram === 1 && total === 1 ? "revisou" : "revisaram"} o voto.`;
-}
-
 /**
- * O que vai para o telão (E4-PROF-01): quantos votaram, os votos por área e,
- * depois da galeria, a invisibilidade média e os votos revisados. Nenhum nome.
+ * O que vai para o telão (E4-PROF-01): quantos votaram, os votos por área, a
+ * invisibilidade média e, depois da galeria, os votos revisados. Nenhum nome.
  */
 function PainelParaProjetar({ painel }: { painel: PainelDoJuri }) {
   const { resumo, etapa } = painel;
-  /* Da galeria em diante (a rodada de desvio também): a lousa pode mostrar o que a galeria revelou. */
+  /* Da galeria em diante: a lousa mostra também os votos revisados. */
   const naGaleria = etapa !== "exploracao";
   const totalAntes = totalDeVotos(resumo.votosPorArea);
   const totalDepois = totalDeVotos(resumo.votosRevisadosPorArea);
   const comRevisao =
-    naGaleria && resumo.revisao.trocaram + resumo.revisao.mantiveram + resumo.revisao.complementaram > 0;
+    naGaleria && resumo.revisao.trocaram + resumo.revisao.mantiveram > 0;
   const antes = votosEmPercentual(resumo.votosPorArea);
   const depois = votosEmPercentual(resumo.votosRevisadosPorArea);
   const falta = textoDoQueFalta(resumo.computadores, resumo.porComputador);
@@ -280,11 +289,11 @@ function PainelParaProjetar({ painel }: { painel: PainelDoJuri }) {
     AREAS.map((area) => lista.find((a) => a.area === area)).filter((a): a is NonNullable<typeof a> => Boolean(a));
 
   return (
-    <Card variant="elevated" title="Painel de Votação da Turma: Distribuição por Categoria">
+    <Card variant="elevated" title={TITULO_DO_PAINEL}>
       <div className="flex flex-col gap-4" data-painel-para-projetar>
         <p className="text-[12px] leading-snug text-unooria-neutral-600">
           Sem nomes: este cartão pode ir para o projetor.
-          {naGaleria ? null : " Projete esta tela na lousa antes de liberar a Galeria Oculta."}
+          {naGaleria ? null : " Projete esta tela na lousa antes de liberar a auditoria."}
         </p>
 
         <div className="grid gap-3 sm:grid-cols-2">
@@ -295,12 +304,8 @@ function PainelParaProjetar({ painel }: { painel: PainelDoJuri }) {
           />
           <MetricCard
             title="Invisibilidade média da turma"
-            value={naGaleria && resumo.invisibilidadeMedia !== null ? `${resumo.invisibilidadeMedia}%` : "—"}
-            description={
-              naGaleria
-                ? textoDaInvisibilidade(resumo.invisibilidadeMedia)
-                : "Aparece quando você liberar a Galeria Oculta: antes, a lousa contaria à turma o que a galeria vai mostrar."
-            }
+            value={resumo.invisibilidadeMedia !== null ? `${resumo.invisibilidadeMedia}%` : "—"}
+            description={textoDaInvisibilidade(resumo.invisibilidadeMedia)}
           />
         </div>
 
@@ -369,7 +374,7 @@ function PerguntasDaPlenaria({ plenaria }: { plenaria: string[] | null }) {
         ) : (
           <>
             <p className="max-w-3xl text-[12px] leading-snug text-unooria-neutral-600">
-              Com a lousa projetada, antes de liberar a galeria: explore como a turma se dividiu sem dizer ainda que
+              Com a lousa projetada, antes de liberar a auditoria: explore como a turma se dividiu sem dizer ainda que
               o feed se adaptou. A última leva a conversa para fora da tela e pode voltar no fechamento.
             </p>
             <ol className="flex max-w-3xl list-decimal flex-col gap-2 pl-5 text-[14px] leading-relaxed text-unooria-neutral-900">

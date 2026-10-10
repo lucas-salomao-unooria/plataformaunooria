@@ -1,14 +1,16 @@
 import { useRef, useState, type DragEvent, type KeyboardEvent, type PointerEvent, type Ref } from "react";
 import { ButtonUnv, GestureHint, IconUnv, PostCard } from "@edu/ui/ds-unoovista";
 import { iniciais, lerGesto, nomeDaConta } from "../../lib/regras";
-import { E2, GLOBAL } from "../../lib/textos";
-import type { Categoria, PostPublico } from "../../lib/tipos";
-import { srcDoEstande, type usePaleta } from "../componentes/midia";
+import { E2 } from "../../lib/textos";
+import type { PostPublico } from "../../lib/tipos";
+import { srcDaFoto, type usePaleta } from "../componentes/midia";
 
 /** Acima disto, a legenda sai recolhida com o "...mais" (o app real corta em duas linhas). */
 const LEGENDA_CURTA = 96;
 /** Dois toques em até este intervalo são o toque duplo que curte. */
 const TOQUE_DUPLO_MS = 320;
+/** O carrossel do estande: a capa e as fotos técnicas 2 e 3 (`e2.instrucao.carrossel_contador`). */
+const FOTOS = 3;
 
 type Gesto = "coracao" | "toque-duplo";
 
@@ -21,44 +23,30 @@ export function recolher(texto: string, limite = LEGENDA_CURTA): string {
 }
 
 /**
- * Um post do feed da mostra: o `PostCard` do Unoovista com um carrossel de
- * DUAS lâminas — a fotografia do estande (ou a arte procedural) e a ficha
- * técnica em texto —, as ações em pílula sobre a mídia, e a legenda recolhida
- * com o "...mais".
+ * Um post do feed da mostra: o `PostCard` do Unoovista com o carrossel de TRÊS
+ * fotos (a capa do estande e as fotos técnicas 2 e 3, "Foto 2 de 3"), as ações
+ * em pílula sobre a mídia e a legenda recolhida com "...mais" / "menos".
  *
- * **Curtir** é o gesto da missão (é ele que afunila o feed, no servidor): pelo
- * coração da pílula ou pelo toque duplo na mídia, como no app real. O toque
- * duplo só CURTE — descurtir é pelo coração, também como no app real.
+ * **Curtir** é o gesto que afunila o feed, no servidor: pelo coração da pílula
+ * ou pelo toque duplo na mídia, como no app real. O toque duplo só CURTE.
+ * **Salvar** grava o evento e não pesa (PRD v2). **Comentar e compartilhar**
+ * respondem com a linha da comissão (`e2.rotulo.comentarios_desabilitados`):
+ * um botão morto parece defeito para a criança.
  *
- * **Salvar** é o segundo sinal (pesa 2, contra os 3 da curtida — o desenho do
- * PO: "curtir, salvar, tempo"). **Comentar e compartilhar** RESPONDEM — o
- * aviso da comissão de que estão fechados no julgamento — e não pesam: um
- * botão morto parece defeito para a criança (decisão de 2026-10-07).
+ * **A mídia que não carrega** cai no estado `PLACEHOLDER_DIEGETICO` do próprio
+ * `PostCard.Media` (o rótulo técnico e a legenda de sincronização da copy), e
+ * a legenda e as ações do estande continuam — o estande ainda pode ser julgado.
  *
- * **O carrossel desliza com o dedo E com o mouse** (arrasto horizontal;
- * `touch-action: pan-y` deixa a rolagem vertical do feed com o navegador), pelas
- * SETAS sobre a mídia e pelas setas do teclado na mídia focada. O DS publica o
- * contador e os pontos (`currentIndex`/`totalCount`), não o deslize: o gesto é
- * do produto.
+ * **As fotos 2 e 3** são a arte procedural do estande com outra semente: o
+ * pacote do professor tem UMA fotografia por projeto (`ImagemPublicaSchema`).
  *
- * O arrasto com MOUSE não funcionava até a 0.1.2 (o pedido do PO): o `<img>` do
- * `PostCard.Media` é arrastável por padrão, e o arrasto nativo da imagem
- * (`dragstart`) cancelava o gesto com um `pointercancel` — a lâmina nunca
- * trocava. Agora o `dragstart` é cancelado, o ponteiro é CAPTURADO no
- * `pointerdown` (o `pointerup` chega mesmo fora da mídia) e a seleção de texto
- * fica desligada durante o arrasto (CSS). As setas são a navegação VISÍVEL por
- * clique — o computador da escola é de mouse —, com `ButtonUnv` + `IconUnv`
- * do DS numa camada posicionada como a da dica (compensação de posição: o
- * `PostCard.Media` da 0.2.18 não tem prop de navegação; pedido no AGENTS.md).
- *
- * **A dica do gesto** (`GestureHint`, só no primeiro post) mora numa camada
- * posicionada ANTES da mídia no DOM: depois dela, quebraria o
- * `.unv-post-card__media + .unv-post-card__actions` que põe a pílula sobre a
- * imagem (ver `.gesto-do-carrossel` no CSS).
+ * **O carrossel desliza com o dedo E com o mouse** (o `dragstart` nativo da
+ * imagem é cancelado e o ponteiro é capturado), pelas setas sobre a mídia e
+ * pelas setas do teclado na mídia focada. A dica do gesto (`GestureHint`, só no
+ * primeiro post) mora numa camada ANTES da mídia no DOM (ver o CSS).
  */
 export function PostDoFeed({
   post,
-  categoria,
   curtido,
   salvo,
   paleta,
@@ -66,12 +54,11 @@ export function PostDoFeed({
   refDoCartao,
   aoCurtir,
   aoSalvar,
-  aoInteracaoFechada,
+  aoFechado,
   aoDeslizar,
   aoExpandir,
 }: {
   post: PostPublico;
-  categoria: Categoria | undefined;
   curtido: boolean;
   salvo: boolean;
   paleta: ReturnType<typeof usePaleta>;
@@ -80,7 +67,7 @@ export function PostDoFeed({
   aoCurtir: (curtiu: boolean, gesto: Gesto) => void;
   aoSalvar: (salvou: boolean) => void;
   /** Comentar ou compartilhar: a comissão responde que estão fechados. */
-  aoInteracaoFechada: (acao: "comentar" | "compartilhar") => void;
+  aoFechado: (acao: "comentar" | "compartilhar") => void;
   aoDeslizar: (lamina: number) => void;
   aoExpandir: () => void;
 }) {
@@ -91,7 +78,7 @@ export function PostDoFeed({
   const conta = nomeDaConta(post.perfil);
 
   function irPara(nova: number) {
-    if (nova === lamina || nova < 1 || nova > 2) return;
+    if (nova === lamina || nova < 1 || nova > FOTOS) return;
     setLamina(nova);
     aoDeslizar(nova);
   }
@@ -135,12 +122,13 @@ export function PostDoFeed({
     },
     tabIndex: 0,
     "aria-roledescription": "carrossel",
-    "aria-label": E2.lamina(lamina, 2),
+    "aria-label": E2.foto(lamina),
     className: "midia-deslizavel",
   };
 
   const legenda = `${post.texto} ${post.hashtags.join(" ")}`.trim();
-  const recolhida = !aberta && [...legenda].length > LEGENDA_CURTA;
+  const longa = [...legenda].length > LEGENDA_CURTA;
+  const recolhida = !aberta && longa;
 
   return (
     <PostCard ref={refDoCartao} className="post" data-post-id={post.id}>
@@ -160,18 +148,18 @@ export function PostDoFeed({
               variant="primary"
               size="sm"
               className="setas-do-carrossel__seta setas-do-carrossel__seta--anterior"
-              aria-label={E2.laminaAnterior}
+              aria-label={E2.fotoAnterior}
               data-seta="anterior"
               leadingIcon={<IconUnv name="back" size="sm" tone="inherit" />}
               onClick={() => irPara(lamina - 1)}
             />
           )}
-          {lamina < 2 && (
+          {lamina < FOTOS && (
             <ButtonUnv
               variant="primary"
               size="sm"
               className="setas-do-carrossel__seta setas-do-carrossel__seta--proxima"
-              aria-label={E2.proximaLamina}
+              aria-label={E2.proximaFoto}
               data-seta="proxima"
               leadingIcon={<IconUnv name="back" size="sm" tone="inherit" flipX />}
               onClick={() => irPara(lamina + 1)}
@@ -179,52 +167,40 @@ export function PostDoFeed({
           )}
         </div>
       </div>
-      {lamina === 1 ? (
-        <PostCard.Media
-          {...gestos}
-          src={srcDoEstande(post, paleta)}
-          alt={post.imagem.alt}
-          errorLabel={E2.midiaErro}
-          retryLabel={GLOBAL.tentarNovamente}
-          currentIndex={1}
-          totalCount={2}
-        />
-      ) : (
-        <PostCard.Media {...gestos} currentIndex={2} totalCount={2}>
-          <div className="ficha-tecnica">
-            <p className="ficha-tecnica__titulo">{E2.fichaTitulo}</p>
-            <dl className="ficha-tecnica__lista">
-              <dt>{E2.fichaProjeto}</dt>
-              <dd>{post.titulo}</dd>
-              <dt>{E2.fichaEscola}</dt>
-              <dd>{post.escola}</dd>
-              <dt>{E2.fichaArea}</dt>
-              <dd>{categoria ? `${categoria.nome} · ${categoria.hashtag}` : post.hashtags[0] ?? ""}</dd>
-              <dt>{E2.fichaPerfil}</dt>
-              <dd>{post.perfil}</dd>
-            </dl>
-            {post.tipo === "bastidor" && <p className="ficha-tecnica__nota">{E2.fichaBastidor}</p>}
-          </div>
-        </PostCard.Media>
-      )}
+      <PostCard.Media
+        {...gestos}
+        key={lamina}
+        src={srcDaFoto(post, lamina, paleta)}
+        alt={post.imagem.alt}
+        errorLabel={E2.placeholderMidia}
+        errorDescription={E2.placeholderLegenda}
+        currentIndex={lamina}
+        totalCount={FOTOS}
+      />
       <PostCard.Actions
         liked={curtido}
         saved={salvo}
         currentIndex={lamina}
-        totalCount={2}
+        totalCount={FOTOS}
         onLike={() => aoCurtir(!curtido, "coracao")}
         onSave={() => aoSalvar(!salvo)}
-        onComment={() => aoInteracaoFechada("comentar")}
-        onShare={() => aoInteracaoFechada("compartilhar")}
+        onComment={() => aoFechado("comentar")}
+        onShare={() => aoFechado("compartilhar")}
       />
       <PostCard.Caption username={conta}>
-        {recolhida ? `${recolher(legenda)} ` : legenda}
-        {recolhida && (
-          <ButtonUnv variant="link" size="sm" className="legenda__mais" onClick={() => {
-              setAberta(true);
-              aoExpandir();
-            }}>
-            {E2.mais}
+        {recolhida ? `${recolher(legenda)} ` : `${legenda} `}
+        {longa && (
+          <ButtonUnv
+            variant="link"
+            size="sm"
+            className="legenda__mais"
+            aria-expanded={aberta}
+            onClick={() => {
+              if (!aberta) aoExpandir();
+              setAberta(!aberta);
+            }}
+          >
+            {aberta ? E2.menos : E2.mais}
           </ButtonUnv>
         )}
       </PostCard.Caption>

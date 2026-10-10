@@ -6,66 +6,52 @@ import {
   Chip,
   IconUnv,
   InlineHint,
-  MediaGrid,
+  NotificationItem,
   SearchField,
-  TopBar,
-  type UnvMediaItem,
 } from "@edu/ui/ds-unoovista";
-import { casaComABusca, classificarBusca, comCerquilha, frasesDaLegenda } from "../../lib/regras";
-import { E2, E3, E4 } from "../../lib/textos";
-import {
-  ACOES_DA_REVISAO,
-  type AcaoDaGaleria,
-  type AcaoDaRevisao,
-  type Area,
-  type Cartao,
-  type Categoria,
-  type Galeria as DadosDaGaleria,
-  type MotivoDaRevisao,
-  type ProjetoDaGaleria,
-  type Voto,
+import { casaComABusca, classificarBusca, comCerquilha, iniciais } from "../../lib/regras";
+import { CONTAS, E4 } from "../../lib/textos";
+import type {
+  AcaoDaGaleria,
+  Area,
+  Categoria,
+  Galeria as DadosDaGaleria,
+  ProjetoDaGaleria,
+  Voto,
 } from "../../lib/tipos";
-import { srcDoEstande, usePaleta } from "../componentes/midia";
+import { srcDaFoto, srcDoEstande, usePaleta } from "../componentes/midia";
+import { Cabecalho } from "./cabecalho";
 import { Escolha } from "./escolha";
 
 /** Quanto a digitação precisa parar para a busca valer como UMA busca (para a api). */
 const PAUSA_DA_BUSCA_MS = 1_200;
 
-/**
- * E4-ALU-02/03 — a Galeria Oculta: o AHA e o MEMORÁVEL na mesma tela.
- *
- * - **A taxa é a REAL desta sessão** (`GaleriaSchema.invisibilidade`, calculada
- *   no servidor sobre os posts que o feed serviu). Nada cravado: quem curtiu a
- *   mesma área duas vezes vê ~9 de 16; quem não interagiu, ~6. A grade tem o
- *   tamanho que tiver.
- * - **A grade abre com os OCULTOS** (os que nunca chegaram ao feed). A busca e
- *   as quatro hashtags filtram os DEZESSEIS — é assim que a criança descobre
- *   que os estandes da área dela também estavam lá o tempo todo.
- * - **Da busca, a api recebe só o TIPO e a área que casou** (`AcaoDaGaleria`):
- *   o texto digitado é de menor e nunca sai do aparelho. Uma busca conta
- *   quando a digitação para (ou no toque do chip), e a mesma busca seguida não
- *   conta duas vezes.
- * - **A ficha de cada estande abre numa folha** (`BottomSheetUnv` modal), e a
- *   abertura é registrada — é o que a EF06CO01 lê na revisão do voto.
- * - **"Manter" e "Revisar"** abrem a cédula extraordinária (LATCH 2), que
- *   mostra a justificativa de ANTES (o cartão e a frase grifada na cédula) ao
- *   lado da mostra inteira: é o contraste "Antes eu pensava… Agora eu percebo…"
- *   que o PO pediu. A criança decide manter, trocar ou COMPLEMENTAR (manter o
- *   voto e indicar outro estande), e justifica com um cartão novo e uma frase
- *   da legenda do estande da decisão. Manter vale, desde que justificado. Quem
- *   decide se a decisão vale é a api; a tela só não oferece o próprio voto como
- *   troca nem como complemento.
- */
+/** A revisão como a api a recebe (`RevisaoDoVotoSchema`). */
+export type CorpoDaRevisao = { acao: "manter" } | { acao: "trocar"; projetoId: string };
 
-/** A decisão montada na cédula extraordinária, como a api a recebe. */
-export type CorpoDaRevisao =
-  | { acao: "manter"; motivo: MotivoDaRevisao; trecho: number }
-  | { acao: "trocar" | "complementar"; projetoId: string; motivo: MotivoDaRevisao; trecho: number };
+/**
+ * E4-ALU-01/02/03 — a Galeria Oculta: o AHA e o MEMORÁVEL.
+ *
+ * - **A notificação da comissão** abre a tela, e logo abaixo o voto lacrado.
+ * - **O badge e o subtítulo usam o número REAL** desta sessão
+ *   (`GaleriaSchema.invisibilidade`), na moldura da copy. Com a saturação, quem
+ *   curte vê 11–12 de 16 fora (69–75%); quem não curte, o que a permanência deu.
+ * - **A grade tem 3 colunas e cresce com os ocultos** (12 = 3×4). Cada
+ *   miniatura tem o botão "Inspecionar Projeto", que abre a "Ficha Técnica de
+ *   Auditoria" (folha modal, foco preso pelo DS, "Voltar à Galeria"). A
+ *   abertura é registrada — é o que libera "Manter" e o que a EF06CO01 lê.
+ * - **A busca e os chips** (as hashtags que a API mandou) filtram os
+ *   DEZESSEIS: é assim que a criança descobre que os da área dela também
+ *   estavam lá. Da busca, a api recebe só o TIPO e a área (texto de menor não
+ *   sai do aparelho).
+ * - **A revisão tem dois botões** (PRD v2): "Manter meu voto inicial", travado
+ *   com a explicação até a criança abrir ao menos UM oculto, e "Confirmar Voto
+ *   Revisado", que abre a lista para escolher o novo projeto.
+ */
 export function Galeria({
   galeria,
   categorias,
   voto,
-  motivos,
   enviando,
   aoAcao,
   aoRevisar,
@@ -73,8 +59,6 @@ export function Galeria({
   galeria: DadosDaGaleria;
   categorias: readonly Categoria[];
   voto: Voto | null;
-  /** Os cartões de antes (para mostrar o que a criança escolheu) e os de depois. */
-  motivos: { voto: readonly Cartao[]; revisao: readonly Cartao[] };
   enviando: boolean;
   aoAcao: (acao: AcaoDaGaleria) => void;
   aoRevisar: (corpo: CorpoDaRevisao) => void;
@@ -83,43 +67,19 @@ export function Galeria({
   const [texto, setTexto] = useState("");
   const [chip, setChip] = useState<Area | null>(null);
   const [ficha, setFicha] = useState<ProjetoDaGaleria | null>(null);
-  const [revisando, setRevisando] = useState(false);
-  const [acao, setAcao] = useState<AcaoDaRevisao | null>(null);
-  const [outro, setOutro] = useState<string | null>(null);
-  const [motivo, setMotivo] = useState<string | null>(null);
-  const [trecho, setTrecho] = useState<number | null>(null);
+  const [trocando, setTrocando] = useState(false);
+  const [novo, setNovo] = useState<string | null>(null);
+  /* "Manter" destrava na hora do toque num oculto; o servidor confirma no latch (409 `galeria-sem-inspecao`). */
+  const [abriuOculto, setAbriuOculto] = useState(galeria.podeManter);
   const ultimaBusca = useRef<string | null>(null);
 
   const porId = useMemo(() => new Map(galeria.projetos.map((p) => [p.id, p])), [galeria.projetos]);
   const doVoto = voto ? porId.get(voto.projetoId) : undefined;
-  /* O estande da DECISÃO: o do voto ao manter, o escolhido ao trocar ou complementar. A frase grifada é da legenda dele. */
-  const daDecisao = acao === "manter" ? doVoto : outro ? porId.get(outro) : undefined;
-  const frasesDaDecisao = frasesDaLegenda(daDecisao?.legenda ?? "");
-  const pode =
-    acao !== null && motivo !== null && trecho !== null && (acao === "manter" || outro !== null) && !enviando;
 
-  function abrirRevisao(inicial: AcaoDaRevisao | null) {
-    setAcao(inicial);
-    setOutro(null);
-    setTrecho(null);
-    setRevisando(true);
-  }
-
-  function registrar() {
-    if (!pode || acao === null || motivo === null || trecho === null) return;
-    const m = motivo as MotivoDaRevisao;
-    if (acao === "manter") aoRevisar({ acao, motivo: m, trecho });
-    else if (outro) aoRevisar({ acao, projetoId: outro, motivo: m, trecho });
-  }
   const buscando = chip !== null || texto.trim() !== "";
   const visiveis = galeria.projetos.filter((p) =>
     chip !== null ? p.area === chip : texto.trim() ? casaComABusca(p, texto, categorias) : !p.exibidoNoSeuFeed,
   );
-  const itens: UnvMediaItem[] = visiveis.map((p) => ({
-    id: p.id,
-    src: srcDoEstande({ projetoId: p.id, titulo: p.titulo, imagem: p.imagem }, paleta),
-    alt: p.imagem.alt || p.titulo,
-  }));
 
   function registrarBusca(acao: Extract<AcaoDaGaleria, { tipo: "buscar" }>) {
     const chave = `${acao.busca}:${acao.area ?? "-"}`;
@@ -150,199 +110,176 @@ export function Galeria({
     registrarBusca({ tipo: "buscar", busca: "hashtag", area });
   }
 
-  function abrir(projetoId: string) {
-    const p = porId.get(projetoId);
-    if (!p) return;
+  function inspecionar(p: ProjetoDaGaleria) {
     setFicha(p);
-    aoAcao({ tipo: "abrir", projetoId });
+    if (!p.exibidoNoSeuFeed) setAbriuOculto(true);
+    aoAcao({ tipo: "abrir", projetoId: p.id });
   }
 
-  const { ocultos, total, percentual } = galeria.invisibilidade;
-  const categoriaDaFicha = ficha ? categorias.find((c) => c.area === ficha.area) : undefined;
+  const { ocultos, percentual } = galeria.invisibilidade;
 
   return (
     <div className="tela">
-      <h1 className="so-leitor">{E4.comunicado}</h1>
-      <TopBar title={E2.topo} withStatusBarInset={false} />
+      <h1 className="so-leitor">{E4.titulo}</h1>
+      <Cabecalho />
       <div className="rolagem galeria">
-        <div className="galeria__cabeca">
-          <p className="galeria__comunicado">{E4.comunicado}</p>
-          <InlineHint tone="friction" announce>
-            {E4.taxa(ocultos, total, percentual)}
-          </InlineHint>
-          <p className="galeria__instrucao">{E4.instrucao}</p>
-          <SearchField
-            block
-            value={texto}
-            placeholder={E4.busca}
-            ariaLabel={E4.busca}
-            clearable
-            clearLabel={E4.limparBusca}
-            onClear={() => setTexto("")}
-            onChange={(e) => {
-              setChip(null);
-              setTexto(e.target.value);
-            }}
-          />
-          <div className="galeria__chips" role="group" aria-label={E4.hashtags}>
-            {categorias.map((c) => (
-              <Chip key={c.area} selected={chip === c.area} onClick={() => tocarNoChip(c.area)}>
-                {comCerquilha(c.hashtag)}
-              </Chip>
-            ))}
-          </div>
-        </div>
-        {itens.length > 0 ? (
-          <MediaGrid
-            items={itens}
-            columns={3}
-            ariaLabel={buscando ? E4.gradeBusca : E4.gradeOculta}
-            onSelect={(item) => abrir(item.id)}
-          />
-        ) : (
-          <p className="galeria__vazia" role="status">
-            {E4.semResultados}
+        <NotificationItem
+          className="galeria__notificacao"
+          username={CONTAS.comissao}
+          initials={iniciais(CONTAS.comissao)}
+          action={E4.notificacao}
+          unread
+        />
+        {doVoto && (
+          <p className="galeria__voto">
+            <span className="galeria__voto-rotulo">{E4.seuVoto}</span> {doVoto.titulo}
           </p>
         )}
+        <h2 className="galeria__titulo">{E4.titulo}</h2>
+        <InlineHint tone="friction" announce>
+          {E4.badge(percentual)}
+        </InlineHint>
+        <p className="galeria__subtitulo">{E4.subtitulo(ocultos)}</p>
+        <SearchField
+          block
+          value={texto}
+          placeholder={E4.busca}
+          ariaLabel={E4.busca}
+          clearable
+          clearLabel={E4.limparBusca}
+          onClear={() => setTexto("")}
+          onChange={(e) => {
+            setChip(null);
+            setTexto(e.target.value);
+          }}
+        />
+        <div className="galeria__chips" role="group" aria-label={E4.hashtags}>
+          {categorias.map((c) => (
+            <Chip key={c.area} selected={chip === c.area} aria-pressed={chip === c.area} onClick={() => tocarNoChip(c.area)}>
+              {comCerquilha(c.hashtag)}
+            </Chip>
+          ))}
+        </div>
+        {buscando && (
+          <p className="galeria__resultados" role="status">
+            {E4.resultados(visiveis.length)}
+          </p>
+        )}
+        <ul className="grade-oculta" aria-label={buscando ? E4.gradeBusca : E4.gradeOculta}>
+          {visiveis.map((p) => (
+            <li key={p.id} className="grade-oculta__item">
+              <img
+                className="grade-oculta__miniatura"
+                src={srcDoEstande({ projetoId: p.id, titulo: p.titulo, imagem: p.imagem }, paleta)}
+                alt={p.titulo}
+              />
+              <ButtonUnv variant="secondary" size="sm" block aria-label={E4.inspecionarO(p.titulo)} onClick={() => inspecionar(p)}>
+                {E4.inspecionar}
+              </ButtonUnv>
+            </li>
+          ))}
+        </ul>
       </div>
-      <div className="doca">
-        <ButtonUnv variant="secondary" size="md" block disabled={enviando} onClick={() => abrirRevisao("manter")}>
+      <div className="doca revisao">
+        <p className="revisao__titulo">{E4.revisao}</p>
+        <ButtonUnv
+          variant="secondary"
+          size="md"
+          block
+          disabled={!abriuOculto || enviando}
+          aria-describedby={abriuOculto ? undefined : "revisao-travada"}
+          onClick={() => aoRevisar({ acao: "manter" })}
+        >
           {E4.manter}
         </ButtonUnv>
+        {!abriuOculto && (
+          <p id="revisao-travada" className="revisao__explicacao">
+            {E4.manterTravado}
+          </p>
+        )}
         <ButtonUnv
           variant="primary"
           size="md"
           block
           disabled={enviando}
-          leadingIcon={<IconUnv name="search" size={18} tone="inherit" />}
-          onClick={() => abrirRevisao(null)}
+          leadingIcon={<IconUnv name="check" size={18} tone="inherit" />}
+          onClick={() => {
+            setNovo(null);
+            setTrocando(true);
+          }}
         >
-          {E4.revisar}
+          {E4.confirmarRevisao}
         </ButtonUnv>
       </div>
 
-      <BottomSheetUnv open={ficha !== null} modal title={ficha?.titulo} maxHeight="80%" onOpenChange={(o) => !o && setFicha(null)}>
+      <BottomSheetUnv open={ficha !== null} modal title={E4.fichaTitulo} maxHeight="85%" onOpenChange={(o) => !o && setFicha(null)}>
         {ficha && (
           <div className="ficha">
-            <div className="ficha__etiquetas">
-              <BadgeUnv variant="neutral" wrap>
-                {ficha.exibidoNoSeuFeed ? E4.vistoNoFeed : E4.ocultoNoFeed}
-              </BadgeUnv>
-              {voto?.projetoId === ficha.id && (
-                <BadgeUnv variant="neutral" wrap>
-                  {E4.seuVoto}
-                </BadgeUnv>
-              )}
+            <h2 className="ficha__projeto">{ficha.titulo}</h2>
+            <p className="ficha__escola">{ficha.escola}</p>
+            <div className="ficha__fotos">
+              {[1, 2, 3].map((n) => (
+                <img
+                  key={n}
+                  className="ficha__imagem"
+                  src={srcDaFoto({ projetoId: ficha.id, titulo: ficha.titulo, imagem: ficha.imagem }, n, paleta)}
+                  alt={n === 1 ? ficha.imagem.alt : ""}
+                />
+              ))}
             </div>
-            <img
-              className="ficha__imagem"
-              src={srcDoEstande({ projetoId: ficha.id, titulo: ficha.titulo, imagem: ficha.imagem }, paleta)}
-              alt={ficha.imagem.alt}
-            />
-            <dl className="ficha__lista">
-              <dt>{E2.fichaEscola}</dt>
-              <dd>{ficha.escola}</dd>
-              <dt>{E2.fichaArea}</dt>
-              <dd>{categoriaDaFicha ? `${categoriaDaFicha.nome} · ${comCerquilha(categoriaDaFicha.hashtag)}` : ""}</dd>
-              <dt>{E2.fichaPerfil}</dt>
-              <dd>{ficha.perfil}</dd>
-            </dl>
-            <p className="ficha__legenda">{ficha.legenda}</p>
-            <p className="ficha__hashtags">{ficha.hashtags.join(" ")}</p>
+            <p className="ficha__resumo">{ficha.resumo}</p>
+            <div className="ficha__hashtags">
+              {ficha.hashtags.map((h) => (
+                <BadgeUnv key={h} variant="neutral">
+                  {comCerquilha(h)}
+                </BadgeUnv>
+              ))}
+            </div>
+            <ButtonUnv
+              variant="secondary"
+              size="md"
+              block
+              leadingIcon={<IconUnv name="back" size={18} tone="inherit" />}
+              onClick={() => setFicha(null)}
+            >
+              {E4.voltar}
+            </ButtonUnv>
           </div>
         )}
       </BottomSheetUnv>
 
       <BottomSheetUnv
-        open={revisando}
+        open={trocando}
         modal
-        title={E4.revisaoTitulo}
+        title={E4.revisao}
         maxHeight="88%"
-        onOpenChange={(o) => !o && !enviando && setRevisando(false)}
+        onOpenChange={(o) => !o && !enviando && setTrocando(false)}
       >
         <div className="cedula">
-          {doVoto && voto?.justificativa && (
-            <div className="justificativa-de-antes" data-justificativa="antes">
-              <p className="cedula__instrucao">{E4.antes}</p>
-              <p className="justificativa-de-antes__voto">{E4.seuVotoLacrado(doVoto.titulo)}</p>
-              <p className="justificativa-de-antes__motivo">
-                {motivos.voto.find((m) => m.id === voto.justificativa?.motivo)?.texto ?? ""}
-              </p>
-              <p className="justificativa-de-antes__rotulo">{E4.voceGrifou}</p>
-              <blockquote className="justificativa-de-antes__trecho">
-                {frasesDaLegenda(doVoto.legenda)[voto.justificativa.trecho] ?? ""}
-              </blockquote>
-            </div>
-          )}
-          <p className="cedula__instrucao">{E4.decisao}</p>
-          <div className="cedula__certeza" role="group" aria-label={E4.grupoDaDecisao}>
-            {ACOES_DA_REVISAO.map((a) => (
-              <Chip
-                key={a}
-                selected={acao === a}
-                disabled={enviando}
-                onClick={() => {
-                  if (a !== acao) {
-                    setOutro(null);
-                    setTrecho(null);
-                  }
-                  setAcao(a);
-                }}
-              >
-                {E4.acoes[a]}
-              </Chip>
-            ))}
-          </div>
-          {acao && <p className="cedula__explicacao">{E4.explicacao[acao]}</p>}
-          {(acao === "trocar" || acao === "complementar") && (
-            <>
-              <p className="cedula__instrucao">{acao === "trocar" ? E4.revisaoInstrucao : E4.complementarInstrucao}</p>
-              <Escolha
-                rotulo={E4.grupoDaRevisao}
-                valor={outro}
-                desabilitada={enviando}
-                aoEscolher={(id) => {
-                  if (id !== outro) setTrecho(null);
-                  setOutro(id);
-                }}
-                opcoes={galeria.projetos
-                  .filter((p) => p.id !== voto?.projetoId)
-                  .map((p) => ({
-                    id: p.id,
-                    titulo: p.titulo,
-                    subtitulo: p.escola,
-                    imagem: { src: srcDoEstande({ projetoId: p.id, titulo: p.titulo, imagem: p.imagem }, paleta), alt: "" },
-                  }))}
-              />
-            </>
-          )}
-          {acao && (
-            <>
-              <p className="cedula__instrucao">{E4.motivoDepois}</p>
-              <Escolha
-                rotulo={E4.grupoDoMotivoDepois}
-                valor={motivo}
-                desabilitada={enviando}
-                aoEscolher={setMotivo}
-                opcoes={motivos.revisao.map((m) => ({ id: m.id, titulo: m.texto }))}
-              />
-            </>
-          )}
-          {daDecisao && (
-            <>
-              <p className="cedula__instrucao">{E4.trechoDepois(daDecisao.titulo)}</p>
-              <Escolha
-                rotulo={E3.grupoDoTrecho}
-                valor={trecho === null ? null : String(trecho)}
-                desabilitada={enviando}
-                aoEscolher={(id) => setTrecho(Number(id))}
-                opcoes={frasesDaDecisao.map((f, i) => ({ id: String(i), titulo: f }))}
-              />
-            </>
-          )}
+          <p className="cedula__instrucao">{E4.escolhaONovo}</p>
+          <Escolha
+            rotulo={E4.grupoDaRevisao}
+            valor={novo}
+            desabilitada={enviando}
+            aoEscolher={setNovo}
+            opcoes={galeria.projetos
+              .filter((p) => p.id !== voto?.projetoId)
+              .map((p) => ({
+                id: p.id,
+                titulo: p.titulo,
+                subtitulo: p.escola,
+                imagem: { src: srcDoEstande({ projetoId: p.id, titulo: p.titulo, imagem: p.imagem }, paleta), alt: "" },
+              }))}
+          />
           <div className="cedula__confirmar">
-            <ButtonUnv variant="primary" size="lg" block disabled={!pode} onClick={registrar}>
-              {E4.registrar}
+            <ButtonUnv
+              variant="primary"
+              size="lg"
+              block
+              disabled={novo === null || enviando}
+              onClick={() => novo && aoRevisar({ acao: "trocar", projetoId: novo })}
+            >
+              {E4.confirmarRevisao}
             </ButtonUnv>
           </div>
         </div>

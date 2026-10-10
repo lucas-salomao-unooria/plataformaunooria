@@ -26,6 +26,7 @@ import { fonteDoPodcastDaExp05ef1b } from "../src/quem-mandou-isso/podcast-fonte
 import { mensagensSaoAsDoPadrao } from "../src/quem-mandou-isso/quem-mandou-isso.service";
 import { HomologacaoSchema as HomologacaoDoJuri } from "../src/juri-estadual/contrato-de-rotas";
 import * as Juri from "../src/juri-estadual/podcast";
+import { conteudoDoBancoPadrao } from "../src/juri-estadual/banco-padrao";
 import { fonteDoPodcastDaExp06ef1b, materialDoPodcast as materialDoJuri } from "../src/juri-estadual/podcast-fonte";
 import { PARAMETROS_DE_TESTE, conteudoDeTeste } from "./juri-estadual-fixture";
 import { AtivarSchema } from "../src/atividades/contrato-de-rotas";
@@ -127,7 +128,13 @@ describe.each(MISSOES)("o roteiro do $nome", ({ modulo }) => {
         .filter((t) => t.falas.some((f) => f.texto.startsWith("[[")))
         .map((t) => t.bloco),
     );
-    padrao.forEach((trecho, i) => {
+    /* O Júri (PRD v2) tem o roteiro do sheet LITERAL no banco padrão, diferente
+       do texto fixo das mostras da IA: ali a comparação é entre dois temas da IA. */
+    const base =
+      "ehFalaDoBancoPadrao" in modulo
+        ? modulo.roteiroDoPodcast(Object.fromEntries(modulo.VAGAS_DO_PODCAST.map((v) => [v.id, `${FALA_NO_TETO} outra`])))
+        : padrao;
+    base.forEach((trecho, i) => {
       const igual = nomeDoTrecho(modulo.VOZ_DO_PODCAST, trecho) === nomeDoTrecho(modulo.VOZ_DO_PODCAST, outro[i]!);
       expect(igual).toBe(!comVaga.has(trecho.bloco));
     });
@@ -360,8 +367,8 @@ describe("as falas de cada atividade", () => {
 
 // ───────────────────────────────────────────── o Júri Estadual (6º ano, ADR-151)
 
-const juriFalso = () => ({
-  pacoteParaPodcast: async () => ({ id: "33333333-3333-4333-8333-333333333333", tema: "Ciência que cuida da cidade" }),
+const juriFalso = (padrao = false) => ({
+  pacoteParaPodcast: async () => ({ id: "33333333-3333-4333-8333-333333333333", tema: "Ciência que cuida da cidade", padrao }),
   exigirTurmaVisivel: async () => undefined,
 });
 
@@ -371,8 +378,15 @@ describe("o podcast do Júri Estadual (6º ano)", () => {
       .flatMap((t) => t.falas.map((f) => f.texto))
       .join(" ");
 
-  test("as correções do sheet: sem número que contradiz a taxa real, Unoovista, e sem a Unooria dentro da ficção", () => {
-    const roteiro = texto(Juri.FALAS_DO_TEMA_PADRAO);
+  /** Falas que a IA escreveria para uma mostra do professor (não as do sheet). */
+  const DA_IA: FalasDoTema = {
+    dois: "Com certeza, Rafa. Mas me responde uma coisa: você votou naquele sensor de enchente da escola ribeirinha, ou na feira de trocas de livros?",
+    rafa: "Ué, Bia... que sensor? Na minha tela só tinha projetos de leitura, clube do livro e sarau. Esse sensor nunca apareceu pra mim!",
+    mesa: "Pois é! E para os jurados da mesa ao lado não apareceu nenhum livro. A tela deles só tinha sensores, enchentes e mapas de chuva.",
+  };
+
+  test("a mostra da IA: o texto fixo corrigido, sem número que contradiz a taxa real, Unoovista, e sem a Unooria dentro da ficção", () => {
+    const roteiro = texto(DA_IA);
     expect(roteiro).not.toMatch(/\b12\b|doze|três quartos|3\/4|75 ?%/i);
     expect(roteiro).not.toMatch(/instanooria/i);
     expect(roteiro).not.toMatch(/da Unooria/);
@@ -395,8 +409,16 @@ describe("o podcast do Júri Estadual (6º ano)", () => {
     ]);
   });
 
-  test("exclamação com parcimônia: no máximo uma por fala, e longe da maioria delas", () => {
-    const falas = Juri.roteiroDoPodcast(Juri.FALAS_DO_TEMA_PADRAO).flatMap((t) => t.falas);
+  test("o banco padrão (PRD v2): com as falas do sheet, o roteiro inteiro é o aud-exp06ef1b-01 literal", () => {
+    const roteiro = texto(Juri.FALAS_DO_TEMA_PADRAO);
+    expect(roteiro).toContain("podcast da Mostra Estadual de Projetos da Unooria");
+    expect(roteiro).toContain("escondeu os outros 12 projetos da mostra");
+    expect(roteiro).toContain("três quartos de uma feira escolar");
+    expect(roteiro).not.toMatch(/instanooria/i);
+  });
+
+  test("exclamação com parcimônia na mostra da IA: no máximo uma por fala, e longe da maioria delas", () => {
+    const falas = Juri.roteiroDoPodcast(DA_IA).flatMap((t) => t.falas);
     for (const f of falas) expect((f.texto.match(/!/g) ?? []).length).toBeLessThanOrEqual(1);
     expect(falas.filter((f) => f.texto.includes("!")).length).toBeLessThan(falas.length / 2);
   });
@@ -418,7 +440,7 @@ describe("o podcast do Júri Estadual (6º ano)", () => {
     for (const p of conteudo.projetos) expect(material).toContain(p.titulo);
   });
 
-  test("sem banco padrão: a mostra da tela SEMPRE vai à IA, e sem IA volta o sheet com o motivo", async () => {
+  test("a mostra da IA vai à IA (o banco padrão não), e sem IA volta o sheet com o motivo", async () => {
     const pedidos: AiJsonRequest<unknown>[] = [];
     const reescritas: FalasDoTema = {
       dois: "Com certeza, Rafa. Mas me responde uma coisa: você votou naquele sensor de enchente da escola ribeirinha, ou na feira de trocas de livros?",
@@ -447,13 +469,21 @@ describe("o podcast do Júri Estadual (6º ano)", () => {
     expect(semSaldo).toMatchObject({ usouIa: false, motivo: "sem-saldo-de-ia" });
     expect(Object.fromEntries(semSaldo.vagas.map((v) => [v.id, v.texto]))).toEqual(Juri.FALAS_DO_TEMA_PADRAO);
 
+    /* O banco padrão intocado não gasta IA: valem as falas do sheet. */
+    const chamadasAntes = pedidos.length;
+    const doBanco = await montar(true).escrever("exp06ef1b", "escola", "turma", "prof", "prof", "professor", conteudoDoBancoPadrao());
+    expect(pedidos.length).toBe(chamadasAntes);
+    expect(Object.fromEntries(doBanco.vagas.map((v) => [v.id, v.texto]))).toEqual(Juri.FALAS_DO_TEMA_PADRAO);
+
     const fora = await montar(true)
       .escrever("exp06ef1b", "escola", "turma", "prof", "prof", "professor", { tema: "x" })
       .catch((e: unknown) => e);
     expect((fora as HttpException).getStatus()).toBe(400);
   });
 
-  test("atividade sem falas gravadas é 409: não há banco padrão para cair", async () => {
+  test("atividade da IA sem falas gravadas é 409; a do banco padrão tem o roteiro fixo, sem linha", async () => {
+    const padrao = await motor(fonteDoPodcastDaExp06ef1b(juriFalso(true)), null).estado("exp06ef1b", "escola", "turma", undefined, undefined);
+    expect(padrao).toMatchObject({ trechos: { total: 5 } });
     const erro = await motor(fonteDoPodcastDaExp06ef1b(juriFalso()), null)
       .estado("exp06ef1b", "escola", "turma", undefined, undefined)
       .catch((e: unknown) => e);

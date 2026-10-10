@@ -48,31 +48,33 @@ export const telemetria = {
   /** Curtiu ou descurtiu (`gesto`: o coração ou o toque duplo). */
   curtiu: (postId: string, curtiu: boolean, gesto: "coracao" | "toque-duplo") =>
     track("interacted", "feed:curtir", { resultado: { curtiu }, contexto: { postId, gesto } }),
-  /** Salvou ou tirou dos salvos — o segundo sinal do feed (`desvio`: na rodada de desvio). */
-  salvou: (postId: string, salvou: boolean, desvio = false) =>
-    track("interacted", desvio ? "desvio:salvar" : "feed:salvar", { resultado: { salvou }, contexto: { postId } }),
-  /** Tocou comentar ou compartilhar: a comissão avisou que estão fechados (não pesa no feed). */
-  tocouFechado: (acao: "comentar" | "compartilhar") => track("interacted", "feed:fechado", { contexto: { acao } }),
+  /** Salvou ou tirou dos salvos. O servidor grava e NÃO pesa no feed (PRD v2). */
+  salvou: (postId: string, salvou: boolean) =>
+    track("interacted", "feed:salvar", { resultado: { salvou }, contexto: { postId } }),
+  /** Tocou comentar, compartilhar ou a aba Busca: a comissão avisou que estão fechados (não pesa no feed). */
+  tocouFechado: (acao: "comentar" | "compartilhar" | "buscar") => track("interacted", "feed:fechado", { contexto: { acao } }),
+  /** Trocou de aba na barra do app (Início, Busca, Notificações, Jurado). */
+  trocouDeAba: (aba: string) => track("interacted", "feed:aba", { contexto: { aba } }),
   /** Deslizou o carrossel de um post. */
   deslizou: (postId: string, lamina: number) => track("interacted", "feed:carrossel", { contexto: { postId, lamina } }),
   /** Abriu a legenda inteira ("...mais"). */
   expandiu: (postId: string) => track("interacted", "feed:legenda", { contexto: { postId } }),
   /** Um post chegou à tela. `posicao` é 1..10. */
   recebeuPost: (posicao: number) => track("interacted", "feed:post", { contexto: { posicao } }),
-  /** O décimo post chegou: a barra da cédula acendeu. */
-  completouOFeed: () => track("progressed", "feed:completo"),
+  /** A cédula foi liberada pelo servidor: o décimo post chegou OU os 8 minutos acabaram. */
+  completouOFeed: (porTempo: boolean) => track("progressed", "feed:completo", { contexto: { porTempo } }),
 
   // E3
   /** Abriu a cédula. */
   abriuACedula: () => track("interacted", "cedula:abrir"),
-  /** O aviso de inatividade da comissão acendeu. */
+  /** O aviso de inatividade da comissão acendeu (60 s sem toque com a cédula aberta). */
   ficouParado: () => track("interacted", "cedula:inatividade"),
-  /** O LATCH 1, confirmado pela api. A convicção e o cartão são vocabulário fechado; o projeto e a frase não saem. */
-  votou: (conviccao: string, motivo: string, estandes: number) =>
-    track("attempted", "cedula:votar", { resultado: { estandes }, contexto: { conviccao, motivo } }),
+  /** O LATCH 1, confirmado pela api. A convicção é vocabulário fechado; o projeto não sai. */
+  votou: (conviccao: string, estandes: number) =>
+    track("attempted", "cedula:votar", { resultado: { estandes }, contexto: { conviccao } }),
 
   // E4
-  /** Entrou na espera da plenária. */
+  /** Entrou na espera (o latch do voto). */
   esperou: () => track("progressed", "plenaria:espera"),
   /** A galeria abriu. `ocultos` é a taxa real da sessão (número, não nome). */
   abriuAGaleria: (ocultos: number, percentual: number) =>
@@ -83,21 +85,11 @@ export const telemetria = {
   /** Buscou. Só o TIPO e a área — nunca o texto. */
   buscou: (busca: string, area: string | null) =>
     track("interacted", "galeria:buscar", { contexto: { busca, area: area ?? "nenhuma" } }),
-  /** O LATCH 2, confirmado pela api. A ação e o cartão; o projeto e a frase não saem. */
-  revisou: (acao: "manter" | "trocar" | "complementar", motivo: string) =>
-    track("progressed", "galeria:revisar", { contexto: { acao, motivo } }),
-
-  // A rodada de desvio
-  /** Curtiu ou descurtiu na rodada de desvio. */
-  curtiuNoDesvio: (postId: string, curtiu: boolean) =>
-    track("interacted", "desvio:curtir", { resultado: { curtiu }, contexto: { postId } }),
-  /** A rodada de desvio abriu para esta criança. */
-  entrouNoDesvio: () => track("progressed", "desvio:entrada"),
-  /** Encerrou a rodada de desvio, confirmado pela api. */
-  concluiuODesvio: (interacoes: number) => track("progressed", "desvio:concluido", { resultado: { interacoes } }),
+  /** O LATCH 2, confirmado pela api. A ação; o projeto não sai. */
+  revisou: (acao: "manter" | "trocar") => track("progressed", "galeria:revisar", { contexto: { acao } }),
 
   // E5
-  /** Conferiu a cadeia. */
+  /** Conferiu a cadeia (a errada é o 422 `ordem-incorreta`, e a tentativa conta). */
   montouACadeia: (correta: boolean, tentativas: number) =>
     track("attempted", "cadeia:validar", { resultado: { correta, tentativas } }),
 
