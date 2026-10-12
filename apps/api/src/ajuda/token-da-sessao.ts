@@ -20,7 +20,12 @@ import { PERFIS_DA_AJUDA } from "./regras";
  * (`sid`) — nunca nome nem e-mail: o vendor vê o prompt (regra 6).
  */
 const EMISSOR = "plataforma-api";
-const AUDIENCIA = "ajuda-llm";
+/**
+ * Duas audiências, a MESMA chave: `ajuda-llm` é o token que o vendor do avatar
+ * devolve no prompt; `ajuda-mascote` é o BILHETE com que o navegador entra na
+ * conexão de voz do mascote (ADR-158). Um não abre a porta do outro.
+ */
+export type AudienciaDoToken = "ajuda-llm" | "ajuda-mascote";
 const FOLGA_S = 60;
 
 export const ClaimsDaSessaoSchema = z.object({
@@ -35,23 +40,32 @@ function chave(segredo: string): Uint8Array {
   return new TextEncoder().encode(segredo);
 }
 
-export async function assinarTokenDaSessao(claims: ClaimsDaSessao, duracaoS: number, segredo: string): Promise<string> {
+export async function assinarTokenDaSessao(
+  claims: ClaimsDaSessao,
+  duracaoS: number,
+  segredo: string,
+  audiencia: AudienciaDoToken = "ajuda-llm",
+): Promise<string> {
   return new SignJWT({ escola: claims.escola, perfil: claims.perfil, sid: claims.sid })
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(claims.sub)
     .setIssuer(EMISSOR)
-    .setAudience(AUDIENCIA)
+    .setAudience(audiencia)
     .setIssuedAt()
     .setExpirationTime(Math.floor(Date.now() / 1000) + duracaoS + FOLGA_S)
     .sign(chave(segredo));
 }
 
 /** `null` para qualquer token que não sirva — vencido, adulterado, de outra audiência. */
-export async function verificarTokenDaSessao(token: string, segredo: string): Promise<ClaimsDaSessao | null> {
+export async function verificarTokenDaSessao(
+  token: string,
+  segredo: string,
+  audiencia: AudienciaDoToken = "ajuda-llm",
+): Promise<ClaimsDaSessao | null> {
   try {
     const { payload } = await jwtVerify(token, chave(segredo), {
       issuer: EMISSOR,
-      audience: AUDIENCIA,
+      audience: audiencia,
       algorithms: ["HS256"],
     });
     const lido = ClaimsDaSessaoSchema.safeParse(payload);

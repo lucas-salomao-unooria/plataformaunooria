@@ -1,4 +1,4 @@
-# apps/api/src/ajuda — a Ajuda com avatar (ADR-132)
+# apps/api/src/ajuda — a Ajuda: o avatar (ADR-132) e o mascote (ADR-158)
 
 Complementa o `AGENTS.md` de `apps/api`, que vence em conflito.
 
@@ -9,6 +9,11 @@ escuta, a voz e o vídeo; o LLM é o NOSSO — o vendor chama
 (Gemini) com a base de conhecimento no prompt. O cliente do vendor é
 `src/ai/liveavatar.client.ts` (a porta `AVATAR_AO_VIVO`); este módulo não
 conhece o vendor.
+
+**Dois atendentes desde a ADR-158**: o avatar acima e o MASCOTE da Unooria
+(seção própria, embaixo). Quem abre é o padrão da rede em `ajuda_configuracao`
+(`atendenteEfetivo`: o pedido da pessoa só se a troca é permitida; o escolhido
+fora do ar cede ao outro). Os minutos (`ajuda_limites`) valem para os dois.
 
 ## O que o vendor faz e a doc dele não diz (MEDIDO no spike, sandbox, 2026-10-02)
 
@@ -86,3 +91,47 @@ A api precisa de URL PÚBLICA para o vendor alcançar o `/ajuda/llm`; em dev loc
 só com túnel. Os ids do vendor (contexto, configuração de LLM) saem de
 `scripts/liveavatar-configurar.mjs`, um conjunto por contrato/ambiente. Sem o
 conjunto completo de envs a Ajuda responde 503 — nunca derruba a subida.
+
+## O mascote (ADR-158): Gemini Live por um proxy WebSocket NESTA api
+
+O rosto é do hub (three.js + lip sync por áudio); a voz é o Gemini Live na
+Vertex, pela porta `VOZ_AO_VIVO` (`src/ai/gemini-live.client.ts`, ADC). O
+navegador fala com `WS /ajuda/mascote/ao-vivo` (`mascote-ao-vivo.ts`, `ws`
+pendurado no servidor HTTP do Nest — não há `@nestjs/websockets`).
+
+- **A instrução do sistema é montada AQUI** (`promptDoAtendente(perfil,
+  "mascote")`, a mesma base com outra apresentação). O navegador manda só
+  `MensagemDoNavegadorSchema` (`.strict()`): `entrar`, `texto` (500),
+  `audio` (base64 de 100 ms de PCM 16 kHz) e `fim-do-audio`. Um `setup` vindo
+  do navegador fecha a conexão com 4429 — é o teste que prova a regra 2.
+- **O bilhete vai na PRIMEIRA mensagem, nunca na URL** (log de balanceador).
+  HS256 com `AJUDA_SESSAO_CHAVE`, audiência `ajuda-mascote` — o token do LLM
+  do avatar (`ajuda-llm`) não abre esta porta, nem o contrário. Vale 2 min
+  para ENTRAR e entra UMA vez: `entrarNoMascote` marca
+  `avatar_sessao_id = 'ao-vivo:<uuid>'` com `updateMany` condicionado à coluna
+  nula. Por isso `pararNoVendor` ignora esse prefixo.
+- **O `Origin` é conferido contra `config/origens.ts`** (a mesma lista do
+  CORS, que não alcança WebSocket). Origem nova do hub = `CORS_ORIGINS`.
+- **Teto**: a conexão cai no prazo da sessão (início + teto), e a cada 30 s
+  confere a linha (`sessaoValida`) e o produto (`produtoLigado`). Encerrar em
+  outra aba ou desligar a Ajuda derruba a conversa no ar.
+- **Fechamentos** (`FECHAMENTOS_DO_MASCOTE`, espelhados em
+  `apps/hub/lib/ajuda/mascote/conexao.ts`): 4401 bilhete, 4403 produto
+  desligado, 4408 tempo, 4429 abuso/ritmo (30 msg/s), 4502 vendor, 4503
+  indisponível. O motivo do vendor vai só ao log.
+- **Log**: `ajuda.mascote` (sid, perfil, duracaoMs, turnos, motivo) — nunca o
+  que foi dito. A voz não passa pelo `MedidorDeProvider` (não é `AiProvider`).
+- **Medido em 2026-10-12** (dev, ADC): `gemini-3.8-live` em `us-central1`
+  (`AJUDA_MASCOTE_REGIAO`; o `global` do texto não serve o Live), base inteira
+  na instrução: setup 2,5 s, primeira fala 1,2 s; pelo proxy, 3 s até `pronto`.
+  Na Vertex o texto vai em `realtimeInput.text` e o modelo com o caminho
+  `projects/.../publishers/google/models/...`.
+- **O modelo 3D** (`CAMINHO_DO_MODELO_DO_MASCOTE`, `ajuda/mascote/mascote-v1.glb`)
+  mora no bucket de assets; `GET /ajuda/configuracao` devolve a URL. Em dev,
+  copie o GLB para `apps/api/storage/ajuda/mascote/` (gitignorado). Mascote
+  novo = `-v2` e trocar a constante: o caminho publicado é imutável.
+- **A configuração** (`ajuda_configuracao`, linha única) é escrita só por
+  `recursos/configuracao-da-ajuda.controller.ts` (`admin`, motivo obrigatório,
+  `configuracao-alterada` no histórico). Voz é lista fechada
+  (`VOZES_DO_MASCOTE`); o CHECK do banco cobra o formato da voz e do modelo.
+

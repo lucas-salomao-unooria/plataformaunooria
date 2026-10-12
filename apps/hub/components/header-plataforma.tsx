@@ -107,7 +107,14 @@ export async function HeaderPlataforma({
               barra. O nome e o papel foram para dentro do `MenuDaConta` porque
               a tira do `HeaderMenu` abre POR CIMA do que está à esquerda do
               gatilho; o porquê inteiro está lá. */}
-          <MenuDaConta nome={usuario.nome} apoio={apoio} comAjuda={comAjuda} />
+          <MenuDaConta
+            nome={usuario.nome}
+            apoio={apoio}
+            comAjuda={comAjuda}
+            // Env de RUNTIME, lida aqui no servidor (não é inlinada no bundle):
+            // o mascote da Ajuda abre a conexão de voz direto na api (ADR-158).
+            apiUrl={comAjuda ? (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001") : ""}
+          />
         </div>
       </div>
     </header>

@@ -60,8 +60,9 @@ Os diagramas entidade-relacionamento estão no Capítulo~\ref{cap:dados}.
 \zebra \cd{ia\_uso\_diario} & Tenant & Contador de quota de IA\\
 \cd{ia\_quotas} & \textbf{Catálogo} & \textbf{O teto diário de IA por perfil} (\adrr{ADR-105})\\
 \zebra \cd{agente\_professor\_conversas} & Tenant & \textbf{A posse} das conversas do agente de IA do professor; o conteúdo mora no Agent Engine (\adrr{ADR-126})\\
-\cd{ajuda\_limites} & \textbf{Catálogo} & \textbf{Os minutos da Ajuda com avatar}, por pessoa e dia e por sessão --- o par de \cd{ia\_quotas} (\adrr{ADR-132})\\
-\zebra \cd{ajuda\_sessoes} & \textbf{Medidor sem RLS} & Uma linha por sessão de vídeo da Ajuda: início, teto e fim, nenhuma palavra da conversa. \cd{escola\_id} nulo nos papéis de contrato (\adrr{ADR-132})\\
+\cd{ajuda\_limites} & \textbf{Catálogo} & \textbf{Os minutos da Ajuda}, por pessoa e dia e por sessão, os mesmos para o avatar e o mascote --- o par de \cd{ia\_quotas} (\adrr{ADR-132}, \adrr{ADR-158})\\
+\zebra \cd{ajuda\_sessoes} & \textbf{Medidor sem RLS} & Uma linha por sessão da Ajuda (avatar ou mascote): início, teto e fim, nenhuma palavra da conversa. \cd{escola\_id} nulo nos papéis de contrato (\adrr{ADR-132})\\
+\cd{ajuda\_configuracao} & \textbf{Catálogo} & \textbf{Quem atende na Ajuda}: linha única com o atendente padrão, a troca e os ajustes do mascote (\adrr{ADR-158})\\
 \cd{podcast\_roteiros} & Tenant & As falas do tema do podcast de recapitulação, por missão e atividade, aprovadas pelo professor na customização (\adrr{ADR-150})\\
 \zebra \cd{telemetria\_eventos} & Tenant, particionada & Canal analítico\\
 \cd{exp08ef1b\_activities} & Tenant & Atividade preparada pelo professor\\
@@ -826,7 +827,8 @@ por que o produto dela mudou de estado é informação do cliente.
   (\cd{ck\_recursos\_auditoria\_acao}), espelhando \cd{ACOES\_DE\_AUDITORIA} do
   código: \cd{ligado}, \cd{desligado}, \cd{herdado}, \cd{versao-ativada},
   \cd{versao-fixada}, \cd{versao-soltada}, \cd{quota-alterada}
-  (\adrr{ADR-105}). O teste prende os dois lados, porque a divergência só
+  (\adrr{ADR-105}), \cd{configuracao-alterada} (\adrr{ADR-158}; \cd{recurso\_id}
+  \cd{ajuda:configuracao}, sem \cd{detalhe}). O teste prende os dois lados, porque a divergência só
   apareceria como 500 no log.\\
 \cd{versao} & \cd{TEXT?} & \emph{CHECK} BICONDICIONAL: preenchida exatamente nas
   duas ações de versão, nula em todas as outras. Campo cheio onde não significa
@@ -943,7 +945,7 @@ depois da sessão. Migração \arq{20260930120000\_\B agente\_\B professor}.
 
 \subsection{\cd{ajuda\_limites} (catálogo)}
 
-\textbf{Os minutos da Ajuda com avatar} (\adrr{ADR-132}) --- o par de
+\textbf{Os minutos da Ajuda} (\adrr{ADR-132}) --- o par de
 \cd{ia\_quotas}, para um produto cujo custo é o minuto de vídeo e não o
 \emph{token} (exceção à regra 5). A Ajuda lê as linhas a cada abertura de sessão,
 sem \emph{cache}: o teto da sessão é o menor entre \cd{minutos-por-sessao} e o
@@ -952,7 +954,8 @@ pela migração e sobrescrita só pelo \cd{admin} em \rota{/unooria/uso-de-ia}
 (\rota{PUT /recursos/\B limites-da-ajuda/:chave}); o histórico vive em
 \cd{recursos\_auditoria} (ação \cd{quota-alterada}, \cd{recurso\_id}
 \cd{ajuda:<chave>}, com \cd{\{de, para\}}). Vale na PRÓXIMA sessão; a que está no
-ar mantém o teto com que nasceu.
+ar mantém o teto com que nasceu. \textbf{Os minutos valem para os dois
+atendentes juntos} (o avatar e o mascote, \adrr{ADR-158}): é o mesmo medidor.
 
 \begin{tabularx}{\linewidth}{@{}L{28mm}L{26mm}X@{}}
 \toprule
@@ -1019,9 +1022,11 @@ nem a do \cd{admin}.
   espelhando \cd{PERFIS\_DA\_AJUDA}. O \cd{@Roles} já barra; o \emph{CHECK} é a
   segunda tranca, para que uma rota nova esquecida não grave a linha de uma
   criança.\\
-\cd{avatar\_sessao\_id} & \cd{TEXT?} & O id da sessão no vendor --- é com ele
-  que a api encerra a sala. Nulo só no instante entre reservar a linha e o vendor
-  responder.\\
+\cd{avatar\_sessao\_id} & \cd{TEXT?} & No avatar, o id da sessão no vendor ---
+  é com ele que a api encerra a sala; nulo só no instante entre reservar a linha
+  e o vendor responder. No mascote, a marca \cd{ao-vivo:<uuid>} que a conexão de
+  voz grava ao entrar, num \cd{UPDATE} condicionado à coluna nula: a trava de
+  uma entrada por bilhete (\adrr{ADR-158}).\\
 \zebra \cd{inicio} & \cd{TIMESTAMPTZ(6)} & \cd{DEFAULT CURRENT\_TIMESTAMP}.\\
 \cd{duracao\_max\_s} & \cd{INTEGER} & O teto pedido ao vendor, que derruba a
   sala ao atingi-lo. \emph{CHECK} (\cd{ck\_ajuda\_sessoes\_duracao}) entre 30 e
@@ -1031,7 +1036,11 @@ nem a do \cd{admin}.
   nulo ou $\geq$ \cd{inicio}. \textbf{Nulo conta o teto INTEIRO no dia} ---
   falha para o lado do custo, porque o vendor cobra até a sala fechar. Abrir
   outra sessão fecha a que ficou aberta; vendor fora do ar fecha a linha com
-  duração zero.\\
+  duração zero. No mascote, a queda da conexão de voz grava o \cd{fim}.\\
+\cd{atendente} & \cd{TEXT} & \cd{NOT NULL DEFAULT 'avatar'}. \emph{CHECK}
+  (\cd{ck\_ajuda\_sessoes\_atendente}): \cd{avatar} $|$ \cd{mascote}, espelhando
+  \cd{ATENDENTES}. As linhas anteriores à \adrr{ADR-158} são todas do avatar.
+  Migração \arq{20261012120000\_\B ajuda\_\B mascote}.\\
 \bottomrule
 \end{tabularx}
 
@@ -1040,6 +1049,68 @@ nem a do \cd{admin}.
 de uma pessoa. \emph{Grant} da role de runtime: \cd{SELECT, INSERT, UPDATE}, sem
 \cd{DELETE} --- a linha é medição, e só se fecha. Migração
 \arq{20261002120000\_\B ajuda\_\B com\_\B avatar}.
+
+\subsection{\cd{ajuda\_configuracao} (catálogo, linha única)}
+
+\textbf{Quem atende na Ajuda} (\adrr{ADR-158}): o atendente padrão da rede (o
+mascote 3D, pelo Gemini Live, ou o avatar em vídeo do LiveAvatar), se a pessoa
+pode trocar, e os ajustes do mascote. \textbf{Uma linha só}, escopo do contrato
+inteiro, como \cd{ia\_quotas} e \cd{ajuda\_limites}: lida a cada abertura de
+sessão, sem \emph{cache}, e sobrescrita só pelo \cd{admin} em
+\rota{/unooria/uso-de-ia} (\rota{PUT /recursos/\B configuracao-da-ajuda}, com
+TODOS os campos e motivo obrigatório); o histórico vive em
+\cd{recursos\_auditoria} (ação \cd{configuracao-alterada}, \cd{recurso\_id}
+\cd{ajuda:configuracao}). Vale na PRÓXIMA sessão; a conversa no ar mantém a voz
+e o modelo com que começou. Se o padrão não está montado na stack, a Ajuda abre
+o outro (\cd{atendenteEfetivo}).
+
+\begin{tabularx}{\linewidth}{@{}L{28mm}L{26mm}X@{}}
+\toprule
+\headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
+\midrule
+\pk{id} & \cd{SMALLINT} PK & \cd{DEFAULT 1}, \emph{CHECK}
+  (\cd{ck\_ajuda\_configuracao\_unica}) \cd{id = 1}: a configuração é da rede,
+  não de alguém.\\
+\zebra \cd{atendente\_padrao} & \cd{TEXT} & \cd{DEFAULT 'mascote'}. \emph{CHECK}
+  (\cd{ck\_ajuda\_configuracao\_atendente}): \cd{avatar} $|$ \cd{mascote},
+  espelhando \cd{ATENDENTES} de \arq{src/ajuda/regras.ts}.\\
+\cd{permitir\_troca} & \cd{BOOLEAN} & \cd{DEFAULT true}. Verdadeiro e o outro
+  atendente montado: a janela da Ajuda oferece a troca, e
+  \rota{POST /ajuda/sessoes} aceita \cd{\{ atendente \}} no corpo.\\
+\zebra \cd{mascote\_voz} & \cd{TEXT} & \cd{DEFAULT 'Leda'}. Uma das 30 vozes
+  pré-definidas do Gemini Live, lista FECHADA no Zod
+  (\cd{VOZES\_DO\_MASCOTE}); o \emph{CHECK} (\cd{ck\_ajuda\_configuracao\_voz})
+  cobra só o formato de um nome (2 a 30 letras): a voz vai ao pedido de
+  abertura do vendor, e nada de texto livre entra nele.\\
+\cd{mascote\_modelo} & \cd{TEXT} & \cd{DEFAULT 'gemini-3.8-live'}. O modelo do
+  Live, sem prefixo. \emph{CHECK} (\cd{ck\_ajuda\_configuracao\_modelo}) de
+  formato de nome (minúsculas, dígitos, ponto e hífen, de 3 a 81
+  caracteres), espelhando
+  \cd{MODELO\_DO\_MASCOTE\_RE}.\\
+\zebra \cd{mascote\_sensibilidade}, \cd{mascote\_suavizacao},
+  \cd{mascote\_boca\_repouso} & \cd{DOUBLE PRECISION} & \cd{DEFAULT 0.5}. Os
+  ajustes da boca do mascote (o \emph{lip sync} do hub), entre 0 e 1
+  (\emph{CHECK} \cd{ck\_ajuda\_configuracao\_boca}). Nada aqui é segredo: vão ao
+  navegador na abertura da sessão.\\
+\cd{mascote\_antecipacao\_ms} & \cd{INTEGER} & \cd{DEFAULT 60}. Quanto a boca
+  se adianta ao áudio, de 0 a 200\,ms (mesmo \emph{CHECK}).\\
+\zebra \cd{motivo} & \cd{TEXT?} & Obrigatório na rota (Zod), sempre. A semente
+  traz o motivo do padrão da plataforma.\\
+\cd{definido\_por} & \cd{UUID?} & \textbf{Sem FK}, pela razão de
+  \cd{ajuda\_limites}. \cd{NULL} = veio da migração.\\
+\zebra \cd{definido\_em}, \cd{atualizado\_em} & \cd{TIMESTAMPTZ(6)} & \\
+\bottomrule
+\end{tabularx}
+
+\textbf{Semente}: o mascote atende, a troca é permitida, a voz \cd{Leda}, o
+\cd{gemini-3.8-live} e os ajustes que o teste do mascote deixou como padrão
+(decisão do dono do produto, 2026-10-12). \textbf{Sem RLS e sem
+\cd{escola\_id}}: é configuração comercial da rede, e o \cd{admin} não tem escola
+no \emph{token}. \emph{Grant} da role de runtime: \cd{SELECT, INSERT, UPDATE},
+sem \cd{DELETE} --- sem a linha, vale a constante do código
+(\cd{CONFIGURACAO\_PADRAO}) e o registro acusa
+\cd{ajuda-configuracao-sem-linha}. Migração
+\arq{20261012120000\_\B ajuda\_\B mascote}.
 
 \subsection{\cd{podcast\_roteiros}}
 

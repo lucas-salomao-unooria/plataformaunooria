@@ -1,4 +1,4 @@
-import { Controller, HttpCode, NotFoundException, Param, Post, Req, UseGuards } from "@nestjs/common";
+import { BadRequestException, Body, Controller, Get, HttpCode, NotFoundException, Param, Post, Req, UseGuards } from "@nestjs/common";
 import { z } from "zod";
 import { OidcGuard, type AuthClaims } from "../auth/oidc.guard";
 import { Roles, RolesGuard } from "../auth/roles";
@@ -6,11 +6,20 @@ import { DisponibilidadeGuard, Produto, SemDisponibilidade } from "../comum/disp
 import { rateLimit } from "../comum/rate-limit";
 import { Contrato } from "../openapi/contrato";
 import { AjudaService, type Quem } from "./ajuda.service";
-import { EncerradaSchema, erroDaAjuda, SessaoAbertaSchema, SessaoIdSchema } from "./contrato-de-rotas";
-import { PERFIS_DA_AJUDA } from "./regras";
+import {
+  AbrirSessaoSchema,
+  ConfiguracaoDaJanelaSchema,
+  EncerradaSchema,
+  erroDaAjuda,
+  SessaoAbertaSchema,
+  SessaoIdSchema,
+} from "./contrato-de-rotas";
+import { atendenteEfetivo, PERFIS_DA_AJUDA } from "./regras";
 
 /**
- * A AJUDA COM AVATAR, lado do HUB (ADR-132): abrir e encerrar a sessão de vídeo.
+ * A AJUDA, lado do HUB (ADR-132, ADR-158): saber quem atende, abrir e encerrar
+ * a sessão. Dois atendentes — o mascote (Gemini Live, pela conexão de voz do
+ * `MascoteAoVivo`) e o avatar em vídeo (LiveAvatar); o `admin` escolhe o padrão.
  *
  * Todos os papéis MENOS o estudante (decisão do dono do produto). O
  * interruptor da rede é por PRODUTO, na CLASSE — rota nova nasce coberta; o
@@ -38,26 +47,48 @@ export class AjudaController {
     return { usuarioId, escolaId, perfil: lido.data };
   }
 
+  @Get("configuracao")
+  @Contrato({
+    resumo: "Quem atende na Ajuda desta rede, e se a pessoa pode trocar.",
+    descricao:
+      "Lê `ajuda_configuracao` (o padrão que o `admin` escolheu) e o que está montado nesta stack: se o padrão não está, abre o outro. Nada aqui é segredo — os ajustes do mascote chegam na abertura da sessão.",
+    resposta: ConfiguracaoDaJanelaSchema,
+  })
+  async configuracao() {
+    const config = await this.service.configuracao();
+    const disponiveis = this.service.disponiveis();
+    const atendente = atendenteEfetivo(config, disponiveis);
+    const outro = atendente === "mascote" ? "avatar" : "mascote";
+    return {
+      atendente,
+      podeTrocar: Boolean(atendente && config.permitirTroca && disponiveis[outro]),
+      modeloDoMascote: this.service.urlDoModeloDoMascote(),
+    };
+  }
+
   @Post("sessoes")
   @HttpCode(201)
   @Contrato({
-    resumo: "Abre a Ajuda: reserva os minutos e pede a sala de vídeo do atendente.",
+    resumo: "Abre a Ajuda: reserva os minutos e prepara o atendente (mascote ou avatar).",
     descricao:
-      "Confere os minutos de hoje (`ajuda_limites` × `ajuda_sessoes`), fecha a sessão anterior da pessoa que tenha ficado aberta, e pede ao vendor do avatar uma sessão com o teto calculado. Devolve o token que o SDK do vendor usa NO NAVEGADOR — a chave da conta nunca sai da api. A conversa não passa por esta rota: o vendor chama `POST /ajuda/llm/chat/completions`.",
+      "Confere os minutos de hoje (`ajuda_limites` × `ajuda_sessoes`, os mesmos para os dois atendentes), fecha a sessão anterior da pessoa que tenha ficado aberta e reserva a linha. **Avatar**: pede ao vendor uma sala com o teto calculado e devolve o token que o SDK usa no navegador; a conversa vai por `POST /ajuda/llm/chat/completions`. **Mascote**: devolve um bilhete (2 min, uma entrada) para a conexão de voz `WS /ajuda/mascote/ao-vivo` e os ajustes da boca. O corpo `{ atendente }` vale só se o `admin` permitiu a troca.",
+    corpo: AbrirSessaoSchema,
     resposta: SessaoAbertaSchema,
     notas: [
-      "**503** `{ codigo: \"AJUDA_INDISPONIVEL\" }` quando a stack não tem o vendor configurado (as envs `LIVEAVATAR_*` e `AJUDA_*`).",
+      "**503** `{ codigo: \"AJUDA_INDISPONIVEL\" }` quando a stack não tem nenhum dos dois atendentes montado (o avatar pede `LIVEAVATAR_*` e `AJUDA_*`; o mascote, a Vertex e `AJUDA_SESSAO_CHAVE`).",
       "**429** `{ codigo: \"SEM_MINUTOS\", minutosPorDia }` quando o que sobra do dia é menos de 1 minuto. **429** `{ codigo: \"RATE_LIMIT\" }` acima de 6 aberturas por minuto.",
       "**502** `{ codigo: \"AVATAR_FALHOU\" }` quando o vendor não abre a sala — a linha reservada fecha com duração zero e não conta minuto.",
       "**403** `{ codigo: \"recurso-indisponivel\" }` com o produto `ajuda` desligado para a escola.",
       "O dia é o do fuso da plataforma (ADR-99). Sessão sem `fim` conta o teto inteiro.",
     ],
   })
-  async abrir(@Req() req: Autenticado) {
+  async abrir(@Req() req: Autenticado, @Body() body: unknown) {
     const quem = this.quem(req);
+    const corpo = AbrirSessaoSchema.safeParse(body ?? {});
+    if (!corpo.success) throw new BadRequestException({ mensagem: "Pedido inválido." });
     const limite = rateLimit(`ajuda:abrir:${quem.usuarioId}`, 6, 60_000);
     if (!limite.ok) throw erroDaAjuda("RATE_LIMIT", 429, { retryAfterSeconds: limite.retryAfterSeconds });
-    return this.service.abrirSessao(quem);
+    return this.service.abrirSessao(quem, corpo.data.atendente);
   }
 
   /* Fora do interruptor: fechar a sala nunca fica preso ao produto desligado. */

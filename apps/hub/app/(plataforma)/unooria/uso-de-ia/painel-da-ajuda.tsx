@@ -17,16 +17,20 @@ import {
   TextField,
 } from "@edu/ui/ds";
 import { HistoricoDeRecursos } from "@/components/historico-de-recursos";
-import type { ChaveDeLimite, LimiteDaAjuda } from "./tipos";
+import { PainelDoAtendente } from "./painel-do-atendente";
+import type { ChaveDeLimite, ConfiguracaoDaAjuda, LimiteDaAjuda } from "./tipos";
 
 /**
  * OS MINUTOS DA AJUDA COM ATENDENTE (ADR-132) — o par do painel de quotas, com
  * o mesmo desenho (cartão por limite, janela com motivo obrigatório, histórico
  * recortado).
  *
- * A Ajuda NÃO conta tokens: o que ela custa é o tempo de vídeo do atendente,
- * que o fornecedor cobra por minuto. Por isso a unidade aqui é o minuto, e a
- * régua ao lado traduz em conversas.
+ * A Ajuda NÃO conta tokens: o que ela custa é o tempo de conversa — vídeo do
+ * avatar, que o fornecedor cobra por minuto, ou voz do mascote (ADR-158). Por
+ * isso a unidade aqui é o minuto, e vale para os dois atendentes juntos.
+ *
+ * Em cima, QUEM atende (`PainelDoAtendente`, ADR-158): o histórico embaixo é
+ * um só para os dois painéis (`prefixo="ajuda:"`), e qualquer mudança remonta.
  */
 const LIMITES: Record<ChaveDeLimite, { titulo: string; explica: string; teto: number }> = {
   "minutos-por-dia": {
@@ -46,7 +50,14 @@ function lerInteiro(texto: string): number {
   return limpo === "" ? Number.NaN : Number(limpo);
 }
 
-export function PainelDaAjuda({ inicial }: { inicial: LimiteDaAjuda[] }) {
+export function PainelDaAjuda({
+  inicial,
+  configuracao,
+}: {
+  inicial: LimiteDaAjuda[];
+  /** `null` = a api não respondeu essa parte; o painel dos minutos segue. */
+  configuracao: ConfiguracaoDaAjuda | null;
+}) {
   const [limites, setLimites] = useState(inicial);
   const [editando, setEditando] = useState<LimiteDaAjuda | null>(null);
   const [valor, setValor] = useState("");
@@ -103,11 +114,23 @@ export function PainelDaAjuda({ inicial }: { inicial: LimiteDaAjuda[] }) {
     }
   }, [editando, podeGravar, novoValor, motivo, reler]);
 
+  const aoMudarAtendente = useCallback(() => setMudancas((n) => n + 1), []);
+
   return (
     <div className="flex flex-col gap-6">
+      {configuracao ? (
+        <PainelDoAtendente inicial={configuracao} aoMudar={aoMudarAtendente} />
+      ) : (
+        <FeedbackAlert
+          type="error"
+          title="Quem atende na Ajuda não carregou"
+          description="A api não respondeu. Recarregue a página antes de alterar o atendente."
+        />
+      )}
+
       <SectionHeader
-        title="Ajuda com atendente"
-        description="O atendente em vídeo do menu Ajuda não usa a quota de tokens acima: o custo dele é o tempo de conversa. Estes limites valem para cada pessoa, na rede inteira, a partir da próxima conversa."
+        title="Minutos da Ajuda"
+        description="A Ajuda não usa a quota de tokens acima: o custo dela é o tempo de conversa, com o mascote ou com o atendente em vídeo. Estes limites valem para cada pessoa, na rede inteira, a partir da próxima conversa."
       />
 
       {erro && !editando ? <FeedbackAlert type="error" title="Não deu" description={erro} /> : null}
@@ -201,7 +224,7 @@ export function PainelDaAjuda({ inicial }: { inicial: LimiteDaAjuda[] }) {
       <div className="flex flex-col gap-3">
         <SectionHeader
           title="Histórico da Ajuda"
-          description="Quem mudou um limite de minutos, de quanto para quanto, quando e por quê."
+          description="Quem mudou um limite de minutos ou quem atende, quando e por quê."
         />
         <HistoricoDeRecursos key={mudancas} prefixo="ajuda:" />
       </div>

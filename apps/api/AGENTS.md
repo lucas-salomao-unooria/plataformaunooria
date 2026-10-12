@@ -22,7 +22,7 @@ Aqui fica **o que vale para TODA a api**. O que é de um módulo vive no
 | [`src/openapi/`](src/openapi/AGENTS.md) | OpenAPI derivado do Zod |
 | [`src/ai/`](src/ai/AGENTS.md) | o provider de IA — **nenhuma chamada acontece fora daqui** |
 | [`src/agente-professor/`](src/agente-professor/AGENTS.md) | o agente de IA do professor: posse da conversa e o SSE do turno (contrato em `docs/regras/agente-professor.md`) |
-| [`src/ajuda/`](src/ajuda/AGENTS.md) | a Ajuda com avatar (ADR-132): o LLM OpenAI-compatível que o LiveAvatar chama, o token da sessão dentro do prompt e o medidor de minutos — **fora da quota de tokens** |
+| [`src/ajuda/`](src/ajuda/AGENTS.md) | a Ajuda (ADR-132, ADR-158): o avatar (o LLM OpenAI-compatível que o LiveAvatar chama) e o mascote (o proxy WebSocket do Gemini Live, com bilhete), o medidor de minutos dos dois — **fora da quota de tokens** |
 | [`src/podcast/`](src/podcast/AGENTS.md) | o podcast de recapitulação de toda missão (ADR-150): rotas únicas, a fonte que a missão registra e as falas do tema que o professor revisa |
 
 E os módulos de experiência, um por missão:

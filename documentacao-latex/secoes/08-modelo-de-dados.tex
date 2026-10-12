@@ -267,10 +267,17 @@ Duas armadilhas registradas naquela migração, ambas produzindo o mesmo sintoma
 \zebra \cd{ajuda\_sessoes} & \textbf{Sem RLS} & O MEDIDOR de minutos da Ajuda
   com avatar (\adrr{ADR-132}): uma linha por sessão de vídeo, com início, teto e
   fim --- nenhuma palavra da conversa. \cd{escola\_id} nulo para os papéis de
-  contrato. Ver Seção~\ref{sec:ajuda-dados}.\\
+  contrato; \cd{atendente} diz qual dos dois atendeu (\adrr{ADR-158}). Ver
+  Seção~\ref{sec:ajuda-dados}.\\
 \cd{ajuda\_limites} & Catálogo & Os minutos da Ajuda por pessoa e dia e por
-  sessão, escopo do contrato. O par de \cd{ia\_quotas}, com o mesmo desenho:
-  semeada, sobrescrita pelo \cd{admin}, histórico em \cd{recursos\_auditoria}.\\
+  sessão, escopo do contrato, \textbf{os mesmos para os dois atendentes}. O par
+  de \cd{ia\_quotas}, com o mesmo desenho: semeada, sobrescrita pelo
+  \cd{admin}, histórico em \cd{recursos\_auditoria}.\\
+\zebra \cd{ajuda\_configuracao} & Catálogo & \textbf{Uma linha só} (\cd{id = 1}):
+  quem atende na Ajuda por padrão (o mascote ou o avatar), se a pessoa pode
+  trocar, e os ajustes do mascote (voz, modelo do Live, boca). Semeada com o
+  mascote; sobrescrita só pelo \cd{admin}, histórico em
+  \cd{recursos\_auditoria} (\adrr{ADR-158}).\\
 \bottomrule
 \end{tabularx}
 
@@ -323,7 +330,7 @@ A mesma migração acrescenta \cd{agente-professor} ao \emph{CHECK}
 primeiro produto SEM experiência ---, mas o \emph{CHECK} espelha a tupla
 \cd{PRODUTOS} inteira, e um teste compara os dois textos.
 
-\section{Os minutos da Ajuda com avatar: \cd{ajuda\_sessoes} e \cd{ajuda\_limites}}
+\section{Os minutos da Ajuda: \cd{ajuda\_sessoes}, \cd{ajuda\_limites} e \cd{ajuda\_configuracao}}
 \label{sec:ajuda-dados}
 
 \adrr{ADR-132}. O vendor do avatar cobra por MINUTO de vídeo, e a decisão do dono
@@ -370,6 +377,48 @@ A mesma migração acrescenta \cd{ajuda} ao \emph{CHECK}
 experiência --- nenhuma linha de \cd{experiencias} aponta para ele ---, mas o
 \emph{CHECK} espelha a tupla \cd{PRODUTOS} inteira, e
 \arq{tests/disponibilidades-postgres.spec.ts} compara os dois textos.
+
+\subsection{O segundo atendente: o mascote (\adrr{ADR-158})}
+
+Desde 2026-10-12 a Ajuda tem dois atendentes: o avatar em vídeo do LiveAvatar e
+o mascote 3D da Unooria, que fala pelo Gemini Live da Vertex. \textbf{O medidor é
+o mesmo}: os minutos de \cd{ajuda\_limites} valem para os dois juntos, e cada
+sessão continua sendo uma linha de \cd{ajuda\_sessoes}. A migração
+\arq{20261012120000\_\B{}ajuda\_\B{}mascote} acrescenta três coisas:
+
+\begin{itemize}
+  \item \textbf{\cd{ajuda\_sessoes.atendente}} (\cd{TEXT NOT NULL DEFAULT
+    'avatar'}, \emph{CHECK} \cd{avatar} $|$ \cd{mascote}): qual dos dois a
+    pessoa usou. As linhas que já existiam são todas do avatar, o único até ali.
+    Na sessão do mascote não há sala no vendor, e \cd{avatar\_sessao\_id}
+    ganha outro uso: a conexão de voz grava nela a marca
+    \cd{ao-vivo:<uuid>} ao entrar, num \cd{UPDATE} condicionado à coluna nula
+    --- é a trava atômica de \textbf{uma entrada por bilhete} (duas abas com o
+    mesmo bilhete não abrem duas conversas pagas na mesma linha).
+  \item \textbf{\cd{ajuda\_configuracao}}, \textbf{uma linha só} (\emph{CHECK}
+    \cd{id = 1}), escopo do contrato inteiro, como \cd{ia\_quotas} e
+    \cd{ajuda\_limites}: \textbf{sem RLS e sem \cd{escola\_id}} --- é
+    configuração comercial da rede, e o \cd{admin} não tem escola no
+    \emph{token}. Colunas: \cd{atendente\_padrao} (\cd{mascote} $|$
+    \cd{avatar}, padrão \cd{mascote}), \cd{permitir\_troca} (padrão
+    verdadeiro), \cd{mascote\_voz} (uma das 30 vozes pré-definidas do Gemini,
+    lista fechada no Zod; o \emph{CHECK} cobra o formato de um nome, 2 a 30
+    letras), \cd{mascote\_modelo} (padrão \cd{gemini-3.8-live}, \emph{CHECK} de
+    formato de nome de modelo), \cd{mascote\_sensibilidade},
+    \cd{mascote\_suavizacao} e \cd{mascote\_boca\_repouso} (de 0 a 1),
+    \cd{mascote\_antecipacao\_ms} (de 0 a 200), e a autoria: \cd{motivo},
+    \cd{definido\_por} (sem FK, pela razão de \cd{ajuda\_limites}),
+    \cd{definido\_em}, \cd{atualizado\_em}. \textbf{A voz e o modelo vão ao
+    vendor}, e por isso os dois \emph{CHECKs} de formato: nada de texto livre
+    dentro do pedido de abertura.
+  \item A ação \cd{configuracao-alterada} no \emph{CHECK} de
+    \cd{recursos\_auditoria}, com \cd{recurso\_id} \cd{ajuda:configuracao}.
+\end{itemize}
+
+Sem a linha, vale a constante do código (\cd{CONFIGURACAO\_PADRAO}), e o
+\emph{log} \cd{ajuda-configuracao-sem-linha} acusa; por isso o \cd{GRANT} é
+\cd{SELECT, INSERT, UPDATE}, \textbf{sem \cd{DELETE}}. A configuração vale na
+PRÓXIMA sessão aberta: a conversa no ar mantém a voz e o modelo com que começou.
 
 \section{As falas do podcast de recapitulação: \cd{podcast\_roteiros}}
 \label{sec:podcast-dados}
@@ -1926,6 +1975,13 @@ decisão \emph{futura}, com DPA e \emph{k}-anonimato --- e não sai de um
   \cd{exp06ef1b\_gates\_historico}, com \cd{escola\_id NOT NULL}, RLS
   \cd{FORCE}, política por escola e o \cd{GRANT} guardado. Os
   \cd{UPDATE}s rodam com \cd{NO FORCE} e o recolocam.\\
+\arq{20261012120000\_\B{}ajuda\_\B{}mascote} & O mascote como segundo atendente
+  da Ajuda (\adrr{ADR-158}): \cd{ajuda\_sessoes.atendente} (padrão
+  \cd{avatar}, com \emph{CHECK}); \cd{ajuda\_configuracao}, linha única
+  (\emph{CHECK} \cd{id = 1}), sem RLS e sem \cd{escola\_id}, com os
+  \emph{CHECKs} de atendente, de formato da voz e do modelo e das faixas da
+  boca, semeada com o mascote; \cd{configuracao-alterada} no \emph{CHECK} de
+  \cd{recursos\_auditoria}; o \cd{GRANT} sem \cd{DELETE}, guardado.\\
 \bottomrule
 \end{tabularx}
 

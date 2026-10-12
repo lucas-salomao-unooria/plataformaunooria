@@ -73,7 +73,10 @@ Desde a \adrr{ADR-132}, mais duas: \rota{GET /ajuda/llm/models} e
 \rota{POST /ajuda/llm/chat/completions}, chamadas pelo servidor do \emph{vendor}
 do avatar. Trancam por segredo em \cd{Authorization: Bearer} \textbf{e} por um
 \emph{token} de sessão que viaja dentro da mensagem \cd{system}, e respondem 503
-sem as duas \emph{envs} (Seção~\ref{sec:api-ajuda}).
+sem as duas \emph{envs} (Seção~\ref{sec:api-ajuda}). E, desde a
+\adrr{ADR-158}, a única rota da api que não é HTTP: \rota{WS
+/ajuda/mascote/ao-vivo}, a conexão de voz do mascote da Ajuda, que tranca pelo
+\cd{Origin} e por um bilhete na PRIMEIRA mensagem, não por cabeçalho.
 \end{atencao}
 
 \section{Mapa de rotas por área}
@@ -723,11 +726,15 @@ cada \cd{data:} é o teste, contra \cd{DADOS\_POR\_EVENTO} de
 rota que infla o p95 da api (\adrr{ADR-128}).
 \end{atencao}
 
-\subsection{A Ajuda com avatar}
+\subsection{A Ajuda: o avatar e o mascote}
 \label{sec:api-ajuda}
 
-\adrr{ADR-132}. O módulo \arq{src/ajuda} tem DUAS classes sob o mesmo prefixo, com
-guardas opostas, e é isso que ele tem de estranho:
+\adrr{ADR-132}, \adrr{ADR-158}. A Ajuda tem dois atendentes: o avatar em vídeo do
+LiveAvatar e, desde 2026-10-12, o mascote 3D da Unooria, que fala pelo Gemini
+Live da Vertex. Qual abre é a linha de \cd{ajuda\_configuracao}, que o
+\cd{admin} edita (abaixo); se o padrão não está montado na stack, abre o outro.
+O módulo \arq{src/ajuda} tem DUAS classes sob o mesmo prefixo, com guardas
+opostas, e mais a conexão de voz do mascote, que não é \emph{controller}:
 
 \begin{itemize}
   \item \cd{AjudaController} --- o lado do \textbf{hub}: \cd{OidcGuard},
@@ -740,30 +747,57 @@ guardas opostas, e é isso que ele tem de estranho:
     mensagem \cd{system} (Seção~\ref{sec:contrato-ajuda}). É registrada
     primeiro no módulo: a classe de rota literal antes da de parâmetro é o
     hábito que evita a armadilha de \rota{/planos/:id}.
+  \item \cd{MascoteAoVivo} (\arq{mascote-ao-vivo.ts}) --- a conexão de voz
+    do mascote, \rota{WS /ajuda/mascote/ao-vivo}. \textbf{Não é um
+    \emph{gateway} do \cd{@nestjs/websockets}}: é um caminho só, pendurado no
+    \cd{upgrade} do servidor HTTP do Nest, com o \cd{ws}; sem salas nem
+    \emph{broadcast}, o \emph{adapter} inteiro seria dependência para nada. A
+    api é o \emph{proxy}: o navegador fala com ela, e só ela fala com o Gemini
+    Live (porta \cd{VOZ\_AO\_VIVO}). O protocolo está na
+    Seção~\ref{sec:contrato-ajuda-mascote}.
 \end{itemize}
 
 \begin{tabularx}{\linewidth}{@{}L{44mm}L{16mm}X@{}}
 \toprule
 \headrow \thd{Rota} & \thd{Código} & \thd{Semântica}\\
 \midrule
-\rota{POST /ajuda/sessoes} & \textbf{201} & Fecha a sessão anterior da pessoa que
-  tenha ficado aberta, confere os minutos do dia (\cd{ajuda\_limites} contra
-  \cd{ajuda\_sessoes}), reserva a linha ANTES do \emph{vendor} (o id dela vai no
-  \emph{token}) e pede a sala. Devolve \cd{\{id, tokenDaSessao, duracaoMaximaS,
-  segundosRestantesHoje\}}. 503 \cd{AJUDA\_INDISPONIVEL} (\emph{envs}
-  incompletas), 429 \cd{SEM\_MINUTOS} (menos de 1 minuto no dia), 429
+\rota{GET /ajuda/configuracao} & 200 & O que a janela da Ajuda precisa antes
+  de abrir: \cd{\{atendente, podeTrocar, modeloDoMascote\}}. \cd{atendente} é o
+  padrão da rede, ou o outro se o padrão não está montado, ou \cd{null}
+  (nenhum); \cd{podeTrocar} exige a troca permitida E o outro montado;
+  \cd{modeloDoMascote} é a URL do modelo 3D no bucket de assets. Nada aqui é
+  segredo.\\
+\zebra \rota{POST /ajuda/sessoes} & \textbf{201} & Corpo opcional
+  \cd{\{atendente?: "mascote" | "avatar"\}} (vale só com a troca permitida).
+  Fecha a sessão anterior da pessoa que tenha ficado aberta, confere os minutos
+  do dia (\cd{ajuda\_limites} contra \cd{ajuda\_sessoes}, os MESMOS para os dois
+  atendentes) e reserva a linha. Devolve uma união discriminada por
+  \cd{atendente}, com \cd{\{id, duracaoMaximaS, segundosRestantesHoje\}} em
+  comum. \textbf{Avatar}: pede a sala ao \emph{vendor} (o id da linha vai no
+  \emph{token}) e devolve \cd{tokenDaSessao}. \textbf{Mascote}: não pede nada a
+  ninguém; devolve o \cd{bilhete} da conexão de voz (HS256, audiência
+  \cd{ajuda-mascote}, 2 minutos, uma entrada) e os \cd{ajustes} da boca e da
+  voz. 503 \cd{AJUDA\_INDISPONIVEL} (nenhum dos dois montado), 400 (corpo fora
+  do contrato), 429 \cd{SEM\_MINUTOS} (menos de 1 minuto no dia), 429
   \cd{RATE\_LIMIT} (6 aberturas por minuto), 502 \cd{AVATAR\_FALHOU} (a linha
   fecha com duração zero) e 403 \cd{recurso-indisponivel}.\\
-\zebra \rota{POST /ajuda/sessoes/\B :id/encerrar} & \textbf{204} & Grava o \cd{fim} e
-  pede ao \emph{vendor} que feche a sala. Idempotente: encerrada, inexistente, de
-  outra pessoa ou id que não é UUID respondem 204 igual --- não há o que
-  confirmar. \cd{@SemDisponibilidade}.\\
-\rota{GET /ajuda/llm/models} & 200 & Para o \emph{vendor}, na abertura da sala:
+\rota{POST /ajuda/sessoes/\B :id/encerrar} & \textbf{204} & Grava o \cd{fim} e,
+  no avatar, pede ao \emph{vendor} que feche a sala. Idempotente: encerrada,
+  inexistente, de outra pessoa ou id que não é UUID respondem 204 igual --- não
+  há o que confirmar. \cd{@SemDisponibilidade}. No mascote, a conexão de voz no
+  ar cai na conferência seguinte (até 30\,s).\\
+\zebra \rota{GET /ajuda/llm/models} & 200 & Para o \emph{vendor}, na abertura da sala:
   um modelo só, \cd{unooria-ajuda}.\\
-\zebra \rota{POST /ajuda/llm/\B chat/completions} & 200 SSE & Um turno do atendente,
+\rota{POST /ajuda/llm/\B chat/completions} & 200 SSE & Um turno do atendente,
   em \cd{chat.completion.chunk}. 401 sem segredo ou sem \emph{token} de sessão
   válido; 503 sem \env{AJUDA\_LLM\_SEGREDO}/\env{AJUDA\_SESSAO\_CHAVE}; o resto
   é 200.\\
+\zebra \rota{WS /ajuda/mascote/\B ao-vivo} & 101 & A conversa de voz do mascote.
+  \cd{Origin} fora de \env{CORS\_ORIGINS} recebe 403 antes do \emph{upgrade}.
+  Depois, os erros são CÓDIGOS DE FECHAMENTO, não \emph{status}: 4401 (bilhete
+  ausente, inválido, vencido ou já usado), 4403 (produto desligado), 4408 (teto
+  da sessão), 4429 (ritmo ou formato), 4502 (o Gemini não abriu ou caiu), 4503
+  (stack sem Vertex ou sem \env{AJUDA\_SESSAO\_CHAVE}).\\
 \bottomrule
 \end{tabularx}
 
@@ -792,6 +826,19 @@ tabela não guarda conversa nenhuma e não é dado de estudante (o CHECK do perf
 o barra). O \cd{ContratoInterceptor} não confere o \rota{chat/completions}, que
 escreve na resposta crua (\cd{@Res()}); no OpenAPI a resposta aparece como
 \cd{string}, com \cd{acesso: servico}.
+\end{atencao}
+
+\begin{atencao}
+\textbf{A conexão de voz do mascote não está no OpenAPI nem no
+Apêndice~\ref{ap:endpoints}}: não é rota HTTP, e o \cd{@Contrato} não a
+alcança. Quem a confere é \arq{tests/ajuda-mascote.spec.ts}, contra o
+\cd{MensagemDoNavegadorSchema} de \arq{contrato-de-rotas.ts}. O CORS também não
+alcança WebSocket: por isso o \cd{Origin} é conferido à mão contra a MESMA lista
+(\arq{src/config/origens.ts}), que o \cd{enableCors} de \arq{main.ts} passou a
+ler. A conversa dura até o teto da sessão (no máximo 60 minutos, o limite por
+sessão): o \emph{timeout} de \emph{backend} do LB e o \emph{request timeout} do
+Cloud Run precisam cobrir a sessão inteira, ou a conexão cai no meio
+(Capítulo~\ref{cap:arqnuvem}).
 \end{atencao}
 
 \subsection{O podcast de recapitulação}
@@ -1626,7 +1673,10 @@ mais, pela razão da quota --- quanto de avatar uma rede gasta por dia é decis�
 comercial da fornecedora, porque o \emph{vendor} cobra por minuto. Está em
 \arq{src/recursos}, e não em \arq{src/ajuda}, porque quem a opera é o painel da
 Unooria: mesma guarda, mesmo histórico, mesmo prefixo do BFF. A Ajuda só LÊ a
-linha, a cada abertura de sessão.
+linha, a cada abertura de sessão. Ao lado dele, desde a \adrr{ADR-158}, o
+\cd{ConfiguracaoDaAjudaController}, com a mesma guarda e pela mesma razão: os
+dois atendentes custam diferente (o avatar por minuto de vídeo, o mascote por
+\emph{token} de áudio do Gemini), e a escolha é da fornecedora.
 
 \begin{itemize}
   \item \rota{GET /recursos/limites-da-ajuda} --- uma linha por chave de
@@ -1640,6 +1690,18 @@ linha, a cada abertura de sessão.
     \cd{codigo: ajuda-limite-alterado} e a linha de \cd{recursos\_auditoria}
     (ação \cd{quota-alterada}, \cd{recurso\_id} \cd{ajuda:<chave>}). Vale na
     PRÓXIMA sessão; a que está no ar mantém o teto com que nasceu.
+  \item \rota{GET /recursos/configuracao-da-ajuda} --- a linha única de
+    \cd{ajuda\_configuracao} (atendente padrão, troca, voz, modelo do Live e os
+    quatro ajustes da boca), com a autoria, o que está montado nesta stack
+    (\cd{disponiveis}, pela MESMA regra que a janela da Ajuda usa) e a lista
+    fechada das 30 vozes com o jeito de cada uma. Sem a linha, a constante.
+  \item \rota{PUT /recursos/configuracao-da-ajuda} --- sobrescreve a linha com
+    TODOS os campos (o painel manda o formulário inteiro) e motivo obrigatório.
+    Nada mudou devolve \cd{alterada: false} e não grava nem historia. Registra
+    \cd{codigo: ajuda-configuracao-alterada} com os nomes e valores dos campos
+    que mudaram, e a linha de \cd{recursos\_auditoria} (ação
+    \cd{configuracao-alterada}, \cd{recurso\_id} \cd{ajuda:configuracao}, sem
+    \cd{detalhe}). Vale na PRÓXIMA sessão.
 \end{itemize}
 
 \section{Prospecção: a única escrita sem token (\adrr{ADR-107})}

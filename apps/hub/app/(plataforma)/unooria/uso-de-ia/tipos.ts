@@ -37,3 +37,28 @@ export interface LimiteDaAjuda {
 export interface LimitesDaAjuda {
   limites: LimiteDaAjuda[];
 }
+
+/** O contrato de `GET /recursos/configuracao-da-ajuda` (ADR-158) — mesma cópia deliberada. */
+export type Atendente = "mascote" | "avatar";
+
+export interface CamposDaConfiguracao {
+  atendentePadrao: Atendente;
+  permitirTroca: boolean;
+  mascoteVoz: string;
+  mascoteModelo: string;
+  mascoteSensibilidade: number;
+  mascoteSuavizacao: number;
+  mascoteAntecipacaoMs: number;
+  mascoteBocaRepouso: number;
+}
+
+export interface ConfiguracaoDaAjuda extends CamposDaConfiguracao {
+  motivo: string | null;
+  /** `null` = veio da migration; ninguém decidiu ainda. */
+  definidoPorNome: string | null;
+  definidoEm: string;
+  /** O que está montado nesta stack: o padrão escolhido pode não estar. */
+  disponiveis: Record<Atendente, boolean>;
+  /** A lista fechada de vozes do mascote, com o jeito de cada uma. */
+  vozes: Array<{ nome: string; jeito: string }>;
+}

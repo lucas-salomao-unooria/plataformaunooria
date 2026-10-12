@@ -212,6 +212,33 @@ do vendor e não cria nada no GCP: os três segredos chegam ao Secret Manager pe
 Terraform (\arq{docs/INFRA.md}), e os dois ids entram como \emph{env} comum.
 \end{atencao}
 
+\subsection{O mascote da Ajuda (\adrr{ADR-158})}
+
+O segundo atendente da Ajuda: o mascote 3D da Unooria, que fala pelo Gemini Live
+da Vertex por uma conexão de voz da própria api (\rota{WS /ajuda/mascote/ao-vivo}).
+\textbf{Não tem chave própria}: usa o ADC e o \env{VERTEX\_PROJECT\_ID} de todo o
+resto da IA (\adrr{ADR-16}) e a \env{AJUDA\_SESSAO\_CHAVE} acima, que assina o
+bilhete de entrada da conexão (audiência \cd{ajuda-mascote}). Sem projeto da
+Vertex (\env{AI\_PROVIDER=mock}) ou sem a chave da sessão, o mascote fica
+desligado; se o avatar estiver montado, a Ajuda abre o avatar, e sem nenhum dos
+dois \rota{POST /ajuda/sessoes} responde \cd{AJUDA\_INDISPONIVEL} (503). O modelo
+do Live e a voz \textbf{não são \emph{env}}: são da linha de
+\cd{ajuda\_configuracao}, editada pelo \cd{admin} em \rota{/unooria/uso-de-ia}. O
+modelo 3D (\cd{ajuda/mascote/mascote-v1.glb}, 3,4\,MB) sai do bucket de assets
+pela mesma \env{ASSETS\_PUBLIC\_URL} das imagens geradas.
+
+\begin{tabularx}{\linewidth}{@{}L{44mm}L{26mm}X@{}}
+\toprule
+\headrow \thd{Variável} & \thd{Default} & \thd{Papel}\\
+\midrule
+\env{AJUDA\_MASCOTE\_REGIAO} & \cd{us-central1} & A região da Vertex onde abre a
+  sessão do Gemini Live. \textbf{O Live não está no \cd{global}} do texto
+  (\env{VERTEX\_LOCATION}): medido em 2026-10-12 no projeto de dev,
+  \cd{us-central1} serve o \cd{gemini-3.8-live} (abertura em 2,5\,s com a base
+  inteira, primeira fala em 1,2\,s). Zod: só letras minúsculas, dígitos e hífen.\\
+\bottomrule
+\end{tabularx}
+
 \subsection{Armazenamento}
 
 \begin{tabularx}{\linewidth}{@{}L{34mm}L{20mm}X@{}}
@@ -555,7 +582,8 @@ ASSETS_DRIVER=local       # a API serve /assets
 PLANOS_DRIVER=local       # grava em storage-privado/
 TELEMETRIA_TOPIC=         # vazio: eventos so no console
 # TELEMETRIA_PUSH_* vazias  => /telemetry/ingest responde 401 (correto em dev)
-# LIVEAVATAR_* / AJUDA_* vazias => POST /ajuda/sessoes responde 503 (a api sobe)
+# LIVEAVATAR_* / AJUDA_* vazias => POST /ajuda/sessoes responde 503 (a api sobe;
+#   com mock, o mascote tambem fica desligado: ele usa a Vertex, ADR-158)
 
 # HUB
 NEXT_PUBLIC_API_URL=http://localhost:3001

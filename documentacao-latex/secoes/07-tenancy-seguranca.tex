@@ -500,6 +500,54 @@ encerrada); sem as duas envs, a rota responde 503 --- desligada, nunca aberta.
     porque desligar o produto não pode deixar uma sala aberta cobrando.
 \end{itemize}
 
+\subsection{O mascote: a conexão de voz e as suas trancas}
+
+O segundo atendente da Ajuda (\adrr{ADR-158}) é o mascote 3D da Unooria, que fala
+pelo Gemini Live da Vertex. Ele reaproveita a tabela de minutos e o recorte de
+papéis acima, e acrescenta uma porta: a conexão de voz
+\rota{WS /ajuda/mascote/ao-vivo}, aberta pelo navegador direto na api (o BFF não
+repassa WebSocket, então o \emph{cookie} do hub não chega lá). As trancas:
+
+\begin{itemize}
+  \item \textbf{Bilhete na primeira mensagem, não na URL.} \rota{POST
+    /ajuda/sessoes} --- que passa por \cd{OidcGuard}, \cd{RolesGuard} e o
+    interruptor --- devolve um HS256 assinado com \env{AJUDA\_SESSAO\_CHAVE},
+    audiência \cd{ajuda-mascote} (um \emph{token} da rota de LLM não entra
+    aqui, nem o contrário), válido por 2 minutos e com \cd{\{sub, escola,
+    perfil, sid\}}. A URL iria parar em \emph{log} de balanceador. Sem bilhete
+    em 10\,s, a conexão fecha (4401).
+  \item \textbf{Uma entrada por bilhete}: a api marca a linha de
+    \cd{ajuda\_sessoes} num \cd{UPDATE} condicionado (\cd{atendente =
+    'mascote'}, \cd{fim} nulo e a marca vazia). Bilhete copiado, ou duas abas,
+    não abrem duas conversas pagas na mesma linha.
+  \item \textbf{\cd{Origin} conferido contra \env{CORS\_ORIGINS}} antes do
+    \emph{upgrade} (403 fora da lista): o CORS do navegador não alcança
+    WebSocket. É a segunda tranca, não a primeira.
+  \item \textbf{Protocolo fechado}: depois do bilhete, só \cd{texto} (até 500
+    caracteres), \cd{audio} e \cd{fim-do-audio}, em Zod \cd{.strict()}, até 30
+    mensagens por segundo; o resto fecha (4429). \textbf{A instrução do sistema
+    e a base são montadas na api} e nunca chegam ao navegador (regra 2); nada do
+    formato do Gemini atravessa a api.
+  \item \textbf{O teto vale também com a conexão no ar}: ela cai no prazo da
+    sessão (4408), e a cada 30\,s a api confere a linha e o produto ---
+    encerrar em outra aba ou desligar a Ajuda derruba a conversa (4408, 4403).
+  \item \textbf{Nada da conversa é gravado nem vai a \emph{log}}, como no avatar:
+    a linha é \cd{ajuda.mascote}, com \cd{sid}, \cd{perfil}, \cd{duracaoMs},
+    \cd{turnos} e \cd{motivo}. O microfone começa desligado, e o modal continua
+    inteiro sob \cd{data-clarity-mask}.
+\end{itemize}
+
+\begin{regra}
+\textbf{\cd{ajuda\_configuracao} também fica sem RLS e sem \cd{escola\_id}},
+como \cd{ia\_quotas} e \cd{ajuda\_limites}: é UMA linha de configuração comercial
+da rede (quem atende por padrão, se a pessoa pode trocar, a voz e o modelo do
+mascote), não dado de pessoa. A escrita é só do \cd{admin}
+(\rota{/recursos/configuracao-da-ajuda}), com motivo obrigatório e histórico em
+\cd{recursos\_auditoria}. A voz e o modelo vão ao pedido de abertura do Gemini, e
+por isso são lista fechada (voz) e formato de nome (modelo) no Zod e no
+\emph{CHECK}: nada de texto livre do painel dentro do pedido ao \emph{vendor}.
+\end{regra}
+
 \section{O interruptor da rede: um nível que não é de tenancy}
 
 A \adrr{ADR-87} acrescentou um eixo que decide se algo abre e que \textbf{não é
@@ -591,10 +639,14 @@ estado não é. \rota{GET /recursos/painel} e as escritas seguem em 403 para o
 IA uma rede pode gastar por dia é o custo variável da fornecedora. Aqui nem a
 leitura volta atrás da linha --- o \cd{gestor\_contrato} recebe 403 no GET e no
 PUT, e a tela \rota{/unooria/uso-de-ia} o manda embora pelo \emph{middleware}.
-Na mesma tela, e pelo mesmo motivo, ficam \textbf{os minutos da Ajuda com
-avatar} (\rota{/recursos/limites-da-ajuda/*}, \adrr{ADR-132}): o vendor cobra
+Na mesma tela, e pelo mesmo motivo, ficam \textbf{os minutos da Ajuda}
+(\rota{/recursos/limites-da-ajuda/*}, \adrr{ADR-132}): o vendor cobra
 por minuto de vídeo, e quanto uma rede pode gastar por dia é decisão comercial
-da fornecedora. Também só \cd{admin}, na leitura e na escrita.
+da fornecedora. Também só \cd{admin}, na leitura e na escrita. E, desde a
+\adrr{ADR-158}, \textbf{quem atende na Ajuda}
+(\rota{/recursos/configuracao-da-ajuda}): o mascote e o avatar custam diferente
+(\emph{token} de áudio do Gemini e minuto de vídeo), e a escolha também é da
+fornecedora.
 
 \textbf{E a lista das experiências arquivadas} (\rota{GET /recursos/arquivadas},
 \adrr{ADR-116}) também é só dele: a rota não conta nada em tempo de uso --- os
@@ -852,13 +904,16 @@ A resposta --- que devolve só \enquote{enviada}, nunca o resultado &
   \no & \no & \no & \yes\\
 Chamar a IA (com quota diária POR PERFIL) & \rota{POST /ai/gerar} &
   \yes & \yes & \yes & \yes\\
-\zebra \textbf{Abrir e encerrar a Ajuda com avatar} --- só a PRÓPRIA sessão,
-  limitada por MINUTOS, não pela quota (\adrr{ADR-132}) &
-  \rota{POST /ajuda/\B sessoes}, \rota{.../\B :id/\B encerrar} & \no & \yes & \yes & \yes\\
+\zebra \textbf{Abrir e encerrar a Ajuda} (o avatar ou o mascote) --- só a PRÓPRIA
+  sessão, limitada por MINUTOS, não pela quota (\adrr{ADR-132},
+  \adrr{ADR-158}) &
+  \rota{GET /ajuda/\B configuracao}, \rota{POST /ajuda/\B sessoes},
+  \rota{.../\B :id/\B encerrar}, \rota{WS /ajuda/\B mascote/\B ao-vivo} & \no & \yes & \yes & \yes\\
 \textbf{Alterar o teto diário de IA de um perfil} (só \cd{admin}, \adrr{ADR-105}) &
   \rota{/recursos/quotas-de-ia/*} & \no & \no & \no & \no\\
-\zebra \textbf{Ler e alterar os minutos da Ajuda} (só \cd{admin}, \adrr{ADR-132}) &
-  \rota{/recursos/\B limites-da-ajuda/*} & \no & \no & \no & \no\\
+\zebra \textbf{Ler e alterar os minutos e o atendente da Ajuda} (só \cd{admin},
+  \adrr{ADR-132}, \adrr{ADR-158}) &
+  \rota{/recursos/\B limites-da-ajuda/*}, \rota{/recursos/\B configuracao-da-ajuda} & \no & \no & \no & \no\\
 \textbf{Listar as experiências arquivadas} (só \cd{admin}, \adrr{ADR-116}) &
   \rota{GET /recursos/arquivadas} & \no & \no & \no & \no\\
 \zebra Enviar telemetria & \rota{POST /telemetry/batch} & \yes & \yes & \yes & \yes\\
@@ -953,6 +1008,11 @@ matriz acima poderia concluir, erradamente, que não existe.
   IA fora do \cd{QuotaService} e sem \emph{token} da plataforma --- e as duas
   exceções não se estendem (Seção~\ref{sec:ajuda-seguranca}). O
   \rota{/models} exige só o segredo.\\
+\rota{WS /ajuda/mascote/\B ao-vivo} & Bilhete HS256 na PRIMEIRA mensagem, e
+  \cd{Origin} na lista do CORS & A conversa de voz do mascote da Ajuda
+  (\adrr{ADR-158}), aberta pelo navegador direto na api, sem o \emph{cookie}
+  do hub. O bilhete sai de \rota{POST /ajuda/sessoes}, que passa pelos
+  \emph{guards} de pessoa; vale 2 minutos e uma entrada.\\
 \bottomrule
 \end{tabularx}
 
@@ -1158,7 +1218,9 @@ acredita ter declarado algo.
     \cd{[sessao:\$\{sessao\}]}, e o \cd{system} que ele devolve é descartado. A
     chave da conta (\env{LIVEAVATAR\_API\_KEY}) e as duas chaves da rota de LLM
     ficam na api; o navegador recebe só o \emph{token} da sala de vídeo daquela
-    sessão (Seção~\ref{sec:ajuda-seguranca}).
+    sessão (Seção~\ref{sec:ajuda-seguranca}). No mascote (\adrr{ADR-158}), a
+    instrução do sistema vai da api ao Gemini Live na abertura da conversa, e o
+    navegador recebe só o bilhete de entrada e os ajustes da boca.
   \item O gabarito do UnooTube arquivado (\cd{factual}, hoje em
     \arq{backup-unootube}) não era persistido no estado do estudante nem
     devolvido em nenhuma rota de estudante.
@@ -1451,9 +1513,11 @@ Roubo de \emph{token} do \cd{iframe} & Exposição de credencial &
   Consumo de recurso & Quota diária persistida por (escola, usuário, dia), com
   incremento atômico, verificada \emph{antes} da chamada; \emph{rate limit} por
   usuário.\\
-Esgotamento dos minutos do avatar (a Ajuda) & Consumo de recurso &
+Esgotamento dos minutos da Ajuda (avatar ou mascote) & Consumo de recurso &
   \textbf{Exceção à regra 5} (\adrr{ADR-132}): a Ajuda não passa pela quota de
-  \emph{tokens}, porque o custo dela é o minuto de vídeo. Limite em MINUTOS por
+  \emph{tokens}, porque o custo dela é o minuto de vídeo. O mascote
+  (\adrr{ADR-158}) cobra por \emph{token} de áudio, mas usa o MESMO limite em
+  minutos, aplicado pela própria api, que derruba a conexão no prazo. Limite em MINUTOS por
   pessoa e dia e por sessão (\cd{ajuda\_limites}, só o \cd{admin} edita), com
   \cd{ajuda\_sessoes} de medidor: sessão sem fim conta o teto inteiro, abrir
   fecha a anterior que ficou aberta. 6 aberturas e 20 turnos por minuto por

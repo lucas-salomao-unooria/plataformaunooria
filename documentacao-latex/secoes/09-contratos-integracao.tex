@@ -893,6 +893,134 @@ lado do \emph{vendor}? O desenho inteiro sai dessas medições: refaça o
 ou o segredo pede recriar a configuração de LLM no \emph{vendor} (ele não tem
 edição documentada; apagar o segredo ANTES da configuração a quebra sem aviso).
 
+\section{Contrato da conexão de voz do mascote da Ajuda}
+\label{sec:contrato-ajuda-mascote}
+
+O mascote (\adrr{ADR-158}) é o segundo atendente da Ajuda, ao lado do avatar.
+Aqui o \emph{vendor} é o Gemini Live da Vertex, uma conversa de VOZ bidirecional,
+e o rosto é nosso: o mascote 3D do hub, com a boca tirada do próprio áudio. São
+dois trechos, e a api fica no meio dos dois: \textbf{o navegador fala com a api}
+por \rota{WS /ajuda/mascote/ao-vivo}, num protocolo NEUTRO e fechado; \textbf{só
+a api fala com o Gemini}, com o ADC, pela porta \cd{VOZ\_AO\_VIVO}. Nada do
+formato do \emph{vendor} atravessa --- nem para lá, nem para cá ---, e a
+instrução do sistema (a mesma base da Ajuda, com a apresentação do mascote) é
+montada na api e nunca chega ao navegador (regra 2).
+
+\begin{lstlisting}[language=tsunoo, caption={\arq{apps/api/src/ai/voz-ao-vivo.port.ts} --- a quarta porta de \arq{src/ai} (abreviado)}, label={lst:vozport}]
+export const VOZ_AO_VIVO = "VOZ_AO_VIVO";
+
+export interface PedidoDeVoz {
+  modelo: string;      // do painel (ajuda_configuracao), ex.: gemini-3.8-live
+  voz: string;         // uma das vozes pre-definidas do Gemini, ex.: Leda
+  instrucao: string;   // o prompt do atendente, com a base: nunca vai ao hub
+}
+
+export type EntradaDaVoz =             // o que o navegador pode mandar
+  | { tipo: "texto"; texto: string }
+  | { tipo: "audio"; base64: string }  // 100 ms de PCM 16 bits, 16 kHz
+  | { tipo: "fim-do-audio" };
+
+export type EventoDaVoz =              // o que volta ao navegador
+  | { tipo: "audio"; base64: string; taxa: number }   // PCM 16 bits, 24 kHz
+  | { tipo: "transcricao-saida"; texto: string }
+  | { tipo: "transcricao-entrada"; texto: string }
+  | { tipo: "interrompido" }           // falou por cima: descartar a fila
+  | { tipo: "fim-do-turno" };
+
+export interface VozAoVivoPort {
+  readonly ligada: boolean;            // false sem projeto da Vertex (mock)
+  abrir(pedido: PedidoDeVoz): Promise<ConversaDeVoz>;
+}
+\end{lstlisting}
+
+\begin{regra}
+\textbf{Só \arq{gemini-live.client.ts} conhece o \cd{BidiGenerateContent}}, pela
+regra do \cd{AiProvider}: \arq{src/ajuda} fala com a porta, e trocar de
+\emph{vendor} é escrever outro cliente. É porta própria pela razão da do avatar:
+não gera texto, abre uma conversa com ciclo de vida. O cliente abre
+\cd{wss://<regiao>-aiplatform.googleapis.com/ws/\B google.cloud.aiplatform.\B
+v1beta1.\B LlmBidiService/\B BidiGenerateContent} com o ADC, na região
+\env{AJUDA\_MASCOTE\_REGIAO} (o Live não está no \cd{global}), e o modelo vai com
+o caminho inteiro \cd{projects/<p>/locations/<r>/publishers/google/models/<m>}.
+\end{regra}
+
+\subsection{O protocolo entre o navegador e a api}
+
+\begin{tabularx}{\linewidth}{@{}L{34mm}L{18mm}X@{}}
+\toprule
+\headrow \thd{Mensagem} & \thd{Sentido} & \thd{Regra}\\
+\midrule
+\cd{\{tipo: "entrar", bilhete\}} & \textbf{1ª}, ida & SEMPRE a primeira. O
+  bilhete é o que \rota{POST /ajuda/sessoes} devolveu: HS256 com
+  \env{AJUDA\_SESSAO\_CHAVE}, audiência \cd{ajuda-mascote}, 2 minutos, claims
+  \cd{\{sub, escola, perfil, sid\}}. Vai na mensagem, e não na URL, que acaba em
+  \emph{log} de balanceador. \textbf{Uma entrada por bilhete}: a api marca a
+  linha de \cd{ajuda\_sessoes} de forma atômica. Sem bilhete em 10\,s, fecha.\\
+\zebra \cd{\{tipo: "texto", texto\}} & ida & O que a pessoa escreveu, de 1 a 500
+  caracteres.\\
+\cd{\{tipo: "audio", base64\}} & ida & 100\,ms de microfone, PCM 16 bits
+  \emph{little-endian}, 16\,kHz.\\
+\zebra \cd{\{tipo: "fim-do-audio"\}} & ida & O microfone desligou: o modelo fecha o
+  que ouviu e responde.\\
+\cd{\{tipo: "pronto", prazo\}} & volta & O Gemini confirmou a abertura; \cd{prazo}
+  é o fim da sessão (início + teto), em ISO.\\
+\zebra \cd{\{tipo: "audio", base64, taxa\}} & volta & A fala do mascote, PCM 16 bits
+  a 24\,kHz. É dela que o hub tira a boca.\\
+\cd{transcricao-saida}, \cd{transcricao-entrada} & volta & O texto do que o
+  mascote disse e do que a pessoa disse, para a conversa escrita da janela.\\
+\zebra \cd{interrompido}, \cd{fim-do-turno} & volta & A pessoa falou por cima (o
+  hub descarta o áudio na fila); o turno do mascote acabou.\\
+\bottomrule
+\end{tabularx}
+
+Mensagem que não é JSON, fora do \cd{MensagemDoNavegadorSchema} (Zod,
+\cd{.strict()}) ou acima de 30 por segundo fecha a conexão. Os fechamentos são o
+canal de erro, porque WebSocket aberto não tem \emph{status}:
+
+\begin{tabularx}{\linewidth}{@{}L{16mm}X@{}}
+\toprule
+\headrow \thd{Código} & \thd{Quando}\\
+\midrule
+4401 & O bilhete não chegou em 10\,s, não confere, venceu ou já foi usado.\\
+\zebra 4403 & O produto \cd{ajuda} está desligado para a escola --- na entrada ou
+  numa conferência.\\
+4408 & O teto da sessão chegou, ou a sessão foi encerrada (outra aba,
+  \rota{POST /ajuda/sessoes/:id/encerrar}, outra sessão aberta).\\
+\zebra 4429 & Mensagem demais, ou fora do protocolo.\\
+4502 & O Gemini não abriu a sessão, ou caiu no meio.\\
+\zebra 4503 & A stack não tem a Vertex nem a \env{AJUDA\_SESSAO\_CHAVE}.\\
+\bottomrule
+\end{tabularx}
+
+\begin{regra}
+\textbf{O custo tem teto, e quem o aplica é a api.} A conexão cai no prazo da
+sessão (o mesmo cálculo de minutos do avatar), e a cada 30\,s a api confere se a
+linha de \cd{ajuda\_sessoes} continua aberta e se o produto continua ligado:
+encerrar em outra aba, ou o \cd{admin} desligar a Ajuda, derruba a conversa no
+ar. Banco fora do ar por um instante não derruba: o prazo ainda vale. A queda da
+conexão, de qualquer lado, grava o \cd{fim} da linha.
+\end{regra}
+
+\begin{atencao}
+\textbf{O \cd{Origin} é conferido à mão}, antes do \emph{upgrade}, contra a mesma
+lista do CORS (\env{CORS\_ORIGINS}, \arq{src/config/origens.ts}): o CORS não
+alcança WebSocket. Fora da lista, 403. Não é a tranca principal --- sem bilhete
+ninguém passa da primeira mensagem --- mas fecha a porta a qualquer site aberto no
+navegador. \textbf{O que foi dito ou escrito não vai ao \emph{log}} (regra 6): a
+linha da sessão é \cd{ajuda.mascote}, com \cd{sid}, \cd{perfil}, \cd{duracaoMs},
+\cd{turnos} e \cd{motivo}.
+\end{atencao}
+
+\textbf{Três comportamentos do \emph{vendor} medidos no PoC} (que a api herdou):
+\cd{responseModalities} e \cd{speechConfig} vão DENTRO de
+\cd{generationConfig}, e a \cd{systemInstruction} tem de ser um \cd{Content}
+(texto puro é recusado); o servidor valida o JSON da abertura antes da
+credencial, então campo errado volta 1007 \enquote{Unknown name} até com
+credencial ruim; e chega \cd{sessionResumptionUpdate} sem pedir, que é
+ignorado. \textbf{Política de evolução}: mensagem nova do protocolo entra no
+\cd{MensagemDoNavegadorSchema} e em \cd{EventoDaVoz} antes de sair do hub ou da
+api, e \arq{tests/ajuda-mascote.spec.ts} prende os dois lados.
+
 \section{Contrato entre duas experiências}
 
 Quando uma experiência precisa do resultado de outra, a comunicação nunca é

@@ -8057,6 +8057,438 @@
         }
       }
     },
+    "/recursos/configuracao-da-ajuda": {
+      "get": {
+        "operationId": "ConfiguracaoDaAjudaController_configuracao",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "atendentePadrao": {
+                      "type": "string",
+                      "enum": [
+                        "mascote",
+                        "avatar"
+                      ]
+                    },
+                    "permitirTroca": {
+                      "type": "boolean"
+                    },
+                    "mascoteVoz": {
+                      "type": "string",
+                      "enum": [
+                        "Leda",
+                        "Puck",
+                        "Zephyr",
+                        "Kore",
+                        "Aoede",
+                        "Achird",
+                        "Laomedeia",
+                        "Sadachbia",
+                        "Autonoe",
+                        "Callirrhoe",
+                        "Umbriel",
+                        "Despina",
+                        "Algieba",
+                        "Vindemiatrix",
+                        "Achernar",
+                        "Sulafat",
+                        "Erinome",
+                        "Iapetus",
+                        "Charon",
+                        "Rasalgethi",
+                        "Fenrir",
+                        "Orus",
+                        "Alnilam",
+                        "Schedar",
+                        "Gacrux",
+                        "Pulcherrima",
+                        "Zubenelgenubi",
+                        "Sadaltager",
+                        "Enceladus",
+                        "Algenib"
+                      ]
+                    },
+                    "mascoteModelo": {
+                      "type": "string",
+                      "pattern": "^[a-z0-9][a-z0-9.-]{2,80}$"
+                    },
+                    "mascoteSensibilidade": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1
+                    },
+                    "mascoteSuavizacao": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1
+                    },
+                    "mascoteAntecipacaoMs": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 200
+                    },
+                    "mascoteBocaRepouso": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1
+                    },
+                    "motivo": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "definidoPorNome": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "definidoEm": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "disponiveis": {
+                      "type": "object",
+                      "properties": {
+                        "mascote": {
+                          "type": "boolean"
+                        },
+                        "avatar": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "mascote",
+                        "avatar"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "vozes": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "nome": {
+                            "type": "string"
+                          },
+                          "jeito": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "nome",
+                          "jeito"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "atendentePadrao",
+                    "permitirTroca",
+                    "mascoteVoz",
+                    "mascoteModelo",
+                    "mascoteSensibilidade",
+                    "mascoteSuavizacao",
+                    "mascoteAntecipacaoMs",
+                    "mascoteBocaRepouso",
+                    "motivo",
+                    "definidoPorNome",
+                    "definidoEm",
+                    "disponiveis",
+                    "vozes"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "recursos"
+        ],
+        "summary": "A configuração da Ajuda: quem atende por padrão e os ajustes do mascote.",
+        "description": "A linha única de `ajuda_configuracao`, mais o que está montado nesta stack (`disponiveis`) e a lista fechada de vozes do mascote. É o que a Ajuda consulta ao abrir cada sessão.\n\n**Papéis:** admin.\n\n**Restrições:**\n- Só `admin` (ADR-88/158).",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "admin"
+        ],
+        "x-acesso": "token"
+      },
+      "put": {
+        "operationId": "ConfiguracaoDaAjudaController_definir",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "atendentePadrao": {
+                      "type": "string",
+                      "enum": [
+                        "mascote",
+                        "avatar"
+                      ]
+                    },
+                    "permitirTroca": {
+                      "type": "boolean"
+                    },
+                    "mascoteVoz": {
+                      "type": "string",
+                      "enum": [
+                        "Leda",
+                        "Puck",
+                        "Zephyr",
+                        "Kore",
+                        "Aoede",
+                        "Achird",
+                        "Laomedeia",
+                        "Sadachbia",
+                        "Autonoe",
+                        "Callirrhoe",
+                        "Umbriel",
+                        "Despina",
+                        "Algieba",
+                        "Vindemiatrix",
+                        "Achernar",
+                        "Sulafat",
+                        "Erinome",
+                        "Iapetus",
+                        "Charon",
+                        "Rasalgethi",
+                        "Fenrir",
+                        "Orus",
+                        "Alnilam",
+                        "Schedar",
+                        "Gacrux",
+                        "Pulcherrima",
+                        "Zubenelgenubi",
+                        "Sadaltager",
+                        "Enceladus",
+                        "Algenib"
+                      ]
+                    },
+                    "mascoteModelo": {
+                      "type": "string",
+                      "pattern": "^[a-z0-9][a-z0-9.-]{2,80}$"
+                    },
+                    "mascoteSensibilidade": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1
+                    },
+                    "mascoteSuavizacao": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1
+                    },
+                    "mascoteAntecipacaoMs": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 200
+                    },
+                    "mascoteBocaRepouso": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1
+                    },
+                    "motivo": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "definidoPorNome": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "definidoEm": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "disponiveis": {
+                      "type": "object",
+                      "properties": {
+                        "mascote": {
+                          "type": "boolean"
+                        },
+                        "avatar": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "mascote",
+                        "avatar"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "vozes": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "nome": {
+                            "type": "string"
+                          },
+                          "jeito": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "nome",
+                          "jeito"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "alterada": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "atendentePadrao",
+                    "permitirTroca",
+                    "mascoteVoz",
+                    "mascoteModelo",
+                    "mascoteSensibilidade",
+                    "mascoteSuavizacao",
+                    "mascoteAntecipacaoMs",
+                    "mascoteBocaRepouso",
+                    "motivo",
+                    "definidoPorNome",
+                    "definidoEm",
+                    "disponiveis",
+                    "vozes",
+                    "alterada"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "recursos"
+        ],
+        "summary": "Define a configuração da Ajuda.",
+        "description": "Sobrescreve a linha de `ajuda_configuracao` com TODOS os campos (o painel manda o formulário inteiro). **Motivo obrigatório sempre.** A mudança entra no histórico do painel (`recursos_auditoria`, ação `configuracao-alterada`, `recurso_id` `ajuda:configuracao`).\n\n**Papéis:** admin.\n\n**Restrições:**\n- A voz é da lista fechada do Gemini Live; o modelo, só no formato de nome (Zod e CHECK).\n- Vale na PRÓXIMA sessão aberta; a conversa no ar mantém a voz e o modelo com que começou.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "admin"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "atendentePadrao": {
+                    "type": "string",
+                    "enum": [
+                      "mascote",
+                      "avatar"
+                    ]
+                  },
+                  "permitirTroca": {
+                    "type": "boolean"
+                  },
+                  "mascoteVoz": {
+                    "type": "string",
+                    "enum": [
+                      "Leda",
+                      "Puck",
+                      "Zephyr",
+                      "Kore",
+                      "Aoede",
+                      "Achird",
+                      "Laomedeia",
+                      "Sadachbia",
+                      "Autonoe",
+                      "Callirrhoe",
+                      "Umbriel",
+                      "Despina",
+                      "Algieba",
+                      "Vindemiatrix",
+                      "Achernar",
+                      "Sulafat",
+                      "Erinome",
+                      "Iapetus",
+                      "Charon",
+                      "Rasalgethi",
+                      "Fenrir",
+                      "Orus",
+                      "Alnilam",
+                      "Schedar",
+                      "Gacrux",
+                      "Pulcherrima",
+                      "Zubenelgenubi",
+                      "Sadaltager",
+                      "Enceladus",
+                      "Algenib"
+                    ]
+                  },
+                  "mascoteModelo": {
+                    "type": "string",
+                    "pattern": "^[a-z0-9][a-z0-9.-]{2,80}$"
+                  },
+                  "mascoteSensibilidade": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "mascoteSuavizacao": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "mascoteAntecipacaoMs": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 200
+                  },
+                  "mascoteBocaRepouso": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "motivo": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 500
+                  }
+                },
+                "required": [
+                  "atendentePadrao",
+                  "permitirTroca",
+                  "mascoteVoz",
+                  "mascoteModelo",
+                  "mascoteSensibilidade",
+                  "mascoteSuavizacao",
+                  "mascoteAntecipacaoMs",
+                  "mascoteBocaRepouso",
+                  "motivo"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
     "/recursos/auditoria": {
       "get": {
         "operationId": "RecursosAuditoriaController_auditoria",
@@ -32773,41 +33205,38 @@
         }
       }
     },
-    "/ajuda/sessoes": {
-      "post": {
-        "operationId": "AjudaController_abrir",
+    "/ajuda/configuracao": {
+      "get": {
+        "operationId": "AjudaController_configuracao",
         "parameters": [],
         "responses": {
-          "201": {
+          "200": {
             "description": "Sucesso.",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "id": {
+                    "atendente": {
                       "type": "string",
-                      "format": "uuid"
+                      "enum": [
+                        "mascote",
+                        "avatar"
+                      ],
+                      "nullable": true
                     },
-                    "tokenDaSessao": {
+                    "podeTrocar": {
+                      "type": "boolean"
+                    },
+                    "modeloDoMascote": {
                       "type": "string",
-                      "minLength": 1
-                    },
-                    "duracaoMaximaS": {
-                      "type": "integer",
-                      "exclusiveMinimum": true,
-                      "minimum": 0
-                    },
-                    "segundosRestantesHoje": {
-                      "type": "integer",
-                      "minimum": 0
+                      "format": "uri"
                     }
                   },
                   "required": [
-                    "id",
-                    "tokenDaSessao",
-                    "duracaoMaximaS",
-                    "segundosRestantesHoje"
+                    "atendente",
+                    "podeTrocar",
+                    "modeloDoMascote"
                   ],
                   "additionalProperties": false
                 }
@@ -32818,8 +33247,8 @@
         "tags": [
           "ajuda"
         ],
-        "summary": "Abre a Ajuda: reserva os minutos e pede a sala de vídeo do atendente.",
-        "description": "Confere os minutos de hoje (`ajuda_limites` × `ajuda_sessoes`), fecha a sessão anterior da pessoa que tenha ficado aberta, e pede ao vendor do avatar uma sessão com o teto calculado. Devolve o token que o SDK do vendor usa NO NAVEGADOR — a chave da conta nunca sai da api. A conversa não passa por esta rota: o vendor chama `POST /ajuda/llm/chat/completions`.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- **503** `{ codigo: \"AJUDA_INDISPONIVEL\" }` quando a stack não tem o vendor configurado (as envs `LIVEAVATAR_*` e `AJUDA_*`).\n- **429** `{ codigo: \"SEM_MINUTOS\", minutosPorDia }` quando o que sobra do dia é menos de 1 minuto. **429** `{ codigo: \"RATE_LIMIT\" }` acima de 6 aberturas por minuto.\n- **502** `{ codigo: \"AVATAR_FALHOU\" }` quando o vendor não abre a sala — a linha reservada fecha com duração zero e não conta minuto.\n- **403** `{ codigo: \"recurso-indisponivel\" }` com o produto `ajuda` desligado para a escola.\n- O dia é o do fuso da plataforma (ADR-99). Sessão sem `fim` conta o teto inteiro.",
+        "summary": "Quem atende na Ajuda desta rede, e se a pessoa pode trocar.",
+        "description": "Lê `ajuda_configuracao` (o padrão que o `admin` escolheu) e o que está montado nesta stack: se o padrão não está, abre o outro. Nada aqui é segredo — os ajustes do mascote chegam na abertura da sessão.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.",
         "security": [
           {
             "token-da-plataforma": []
@@ -32833,6 +33262,176 @@
           "admin"
         ],
         "x-acesso": "token"
+      }
+    },
+    "/ajuda/sessoes": {
+      "post": {
+        "operationId": "AjudaController_abrir",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "duracaoMaximaS": {
+                          "type": "integer",
+                          "exclusiveMinimum": true,
+                          "minimum": 0
+                        },
+                        "segundosRestantesHoje": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "atendente": {
+                          "type": "string",
+                          "enum": [
+                            "avatar"
+                          ]
+                        },
+                        "tokenDaSessao": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "duracaoMaximaS",
+                        "segundosRestantesHoje",
+                        "atendente",
+                        "tokenDaSessao"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "duracaoMaximaS": {
+                          "type": "integer",
+                          "exclusiveMinimum": true,
+                          "minimum": 0
+                        },
+                        "segundosRestantesHoje": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "atendente": {
+                          "type": "string",
+                          "enum": [
+                            "mascote"
+                          ]
+                        },
+                        "bilhete": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "ajustes": {
+                          "type": "object",
+                          "properties": {
+                            "voz": {
+                              "type": "string"
+                            },
+                            "modelo": {
+                              "type": "string"
+                            },
+                            "sensibilidade": {
+                              "type": "number",
+                              "minimum": 0,
+                              "maximum": 1
+                            },
+                            "suavizacao": {
+                              "type": "number",
+                              "minimum": 0,
+                              "maximum": 1
+                            },
+                            "antecipacaoMs": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 200
+                            },
+                            "bocaRepouso": {
+                              "type": "number",
+                              "minimum": 0,
+                              "maximum": 1
+                            }
+                          },
+                          "required": [
+                            "voz",
+                            "modelo",
+                            "sensibilidade",
+                            "suavizacao",
+                            "antecipacaoMs",
+                            "bocaRepouso"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "duracaoMaximaS",
+                        "segundosRestantesHoje",
+                        "atendente",
+                        "bilhete",
+                        "ajustes"
+                      ],
+                      "additionalProperties": false
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "ajuda"
+        ],
+        "summary": "Abre a Ajuda: reserva os minutos e prepara o atendente (mascote ou avatar).",
+        "description": "Confere os minutos de hoje (`ajuda_limites` × `ajuda_sessoes`, os mesmos para os dois atendentes), fecha a sessão anterior da pessoa que tenha ficado aberta e reserva a linha. **Avatar**: pede ao vendor uma sala com o teto calculado e devolve o token que o SDK usa no navegador; a conversa vai por `POST /ajuda/llm/chat/completions`. **Mascote**: devolve um bilhete (2 min, uma entrada) para a conexão de voz `WS /ajuda/mascote/ao-vivo` e os ajustes da boca. O corpo `{ atendente }` vale só se o `admin` permitiu a troca.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- **503** `{ codigo: \"AJUDA_INDISPONIVEL\" }` quando a stack não tem nenhum dos dois atendentes montado (o avatar pede `LIVEAVATAR_*` e `AJUDA_*`; o mascote, a Vertex e `AJUDA_SESSAO_CHAVE`).\n- **429** `{ codigo: \"SEM_MINUTOS\", minutosPorDia }` quando o que sobra do dia é menos de 1 minuto. **429** `{ codigo: \"RATE_LIMIT\" }` acima de 6 aberturas por minuto.\n- **502** `{ codigo: \"AVATAR_FALHOU\" }` quando o vendor não abre a sala — a linha reservada fecha com duração zero e não conta minuto.\n- **403** `{ codigo: \"recurso-indisponivel\" }` com o produto `ajuda` desligado para a escola.\n- O dia é o do fuso da plataforma (ADR-99). Sessão sem `fim` conta o teto inteiro.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "atendente": {
+                    "type": "string",
+                    "enum": [
+                      "mascote",
+                      "avatar"
+                    ]
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        }
       }
     },
     "/ajuda/sessoes/{id}/encerrar": {

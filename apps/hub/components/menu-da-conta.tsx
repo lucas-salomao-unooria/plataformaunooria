@@ -47,7 +47,18 @@ import { ModalDaAjuda } from "@/components/ajuda/modal-da-ajuda";
  * continua colada no avatar) e só aparece com `comAjuda`: o header decide pelo
  * papel (nunca estudante) e pelo interruptor do produto `ajuda`.
  */
-export function MenuDaConta({ nome, apoio, comAjuda = false }: { nome: string; apoio: string; comAjuda?: boolean }) {
+export function MenuDaConta({
+  nome,
+  apoio,
+  comAjuda = false,
+  apiUrl = "",
+}: {
+  nome: string;
+  apoio: string;
+  comAjuda?: boolean;
+  /** O endereço público da api: o mascote da Ajuda (ADR-158) abre a conexão de voz direto nela. */
+  apiUrl?: string;
+}) {
   const [aberto, setAberto] = useState(false);
   const [ajudaAberta, setAjudaAberta] = useState(false);
   const router = useRouter();
@@ -107,7 +118,7 @@ export function MenuDaConta({ nome, apoio, comAjuda = false }: { nome: string; a
         open={aberto}
         onOpenChange={setAberto}
       />
-      {comAjuda ? <ModalDaAjuda aberto={ajudaAberta} aoFechar={() => setAjudaAberta(false)} /> : null}
+      {comAjuda ? <ModalDaAjuda aberto={ajudaAberta} aoFechar={() => setAjudaAberta(false)} apiUrl={apiUrl} /> : null}
     </div>
   );
 }

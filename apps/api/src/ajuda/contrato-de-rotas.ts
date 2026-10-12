@@ -1,5 +1,6 @@
 import { HttpException } from "@nestjs/common";
 import { z } from "zod";
+import { ATENDENTES, MAXIMO_DO_AUDIO_DO_MASCOTE, MAXIMO_DO_TEXTO_DO_MASCOTE } from "./regras";
 
 /**
  * O contrato HTTP da Ajuda com avatar (ADR-132). Dois lados:
@@ -9,17 +10,73 @@ import { z } from "zod";
 
 export const SessaoIdSchema = z.string().uuid();
 
-/** O que o hub recebe ao abrir a Ajuda: só o necessário para entrar na sala de vídeo. */
-export const SessaoAbertaSchema = z.object({
+export const AtendenteSchema = z.enum(ATENDENTES);
+
+/** Os ajustes da boca do mascote — o hub os aplica no lip sync, nada aqui é segredo. */
+export const AjustesDoMascoteSchema = z.object({
+  voz: z.string(),
+  modelo: z.string(),
+  sensibilidade: z.number().min(0).max(1),
+  suavizacao: z.number().min(0).max(1),
+  antecipacaoMs: z.number().int().min(0).max(200),
+  bocaRepouso: z.number().min(0).max(1),
+});
+
+const SessaoComumSchema = z.object({
   /** A NOSSA sessão (linha de `ajuda_sessoes`) — é ela que o hub encerra. */
   id: z.string().uuid(),
-  /** O token que o SDK do vendor usa no navegador. Vale só para esta sessão. */
-  tokenDaSessao: z.string().min(1),
-  /** O teto desta sessão, em segundos — o vendor fecha a sala ao atingi-lo. */
+  /** O teto desta sessão, em segundos — ao atingi-lo, a sala (ou a conexão de voz) fecha. */
   duracaoMaximaS: z.number().int().positive(),
   /** Quanto sobra no dia DEPOIS desta sessão inteira, em segundos. */
   segundosRestantesHoje: z.number().int().min(0),
 });
+
+/** O que o hub recebe ao abrir a Ajuda: só o necessário para o atendente que vai atender. */
+export const SessaoAbertaSchema = z.discriminatedUnion("atendente", [
+  SessaoComumSchema.extend({
+    atendente: z.literal("avatar"),
+    /** O token que o SDK do vendor usa no navegador. Vale só para esta sessão. */
+    tokenDaSessao: z.string().min(1),
+  }),
+  SessaoComumSchema.extend({
+    atendente: z.literal("mascote"),
+    /** O bilhete da conexão de voz (`/ajuda/mascote/ao-vivo`): 2 min para entrar, uma entrada. */
+    bilhete: z.string().min(1),
+    ajustes: AjustesDoMascoteSchema,
+  }),
+]);
+
+/** O corpo de `POST /ajuda/sessoes`: o atendente que a pessoa escolheu (vale se a troca é permitida). */
+export const AbrirSessaoSchema = z.object({ atendente: AtendenteSchema.optional() }).strict();
+
+/** O que a janela da Ajuda precisa saber antes de abrir: quem atende e se dá para trocar. */
+export const ConfiguracaoDaJanelaSchema = z.object({
+  /** O atendente que abre: o padrão da rede, ou o outro se o padrão não está montado. `null` = nenhum. */
+  atendente: AtendenteSchema.nullable(),
+  /** Dá para trocar para o outro (a troca é permitida E o outro está montado). */
+  podeTrocar: z.boolean(),
+  /**
+   * O modelo 3D do mascote (GLB, ~3,4 MB), no bucket de assets atrás da CDN —
+   * nunca no repositório (binário > 2 MB). Em dev, servido pela api em `/assets`.
+   */
+  modeloDoMascote: z.string().url(),
+});
+
+/* ---------------------------------------- o protocolo do mascote ao vivo */
+
+/** O que o navegador manda na conexão de voz. A primeira mensagem é SEMPRE `entrar`. */
+export const MensagemDoNavegadorSchema = z.discriminatedUnion("tipo", [
+  z.object({ tipo: z.literal("entrar"), bilhete: z.string().min(20).max(2000) }).strict(),
+  z.object({ tipo: z.literal("texto"), texto: z.string().trim().min(1).max(MAXIMO_DO_TEXTO_DO_MASCOTE) }).strict(),
+  z
+    .object({
+      tipo: z.literal("audio"),
+      base64: z.string().min(1).max(MAXIMO_DO_AUDIO_DO_MASCOTE).regex(/^[A-Za-z0-9+/]+={0,2}$/),
+    })
+    .strict(),
+  z.object({ tipo: z.literal("fim-do-audio") }).strict(),
+]);
+export type MensagemDoNavegador = z.infer<typeof MensagemDoNavegadorSchema>;
 
 /** `encerrar` responde 204. */
 export const EncerradaSchema = z.void();
