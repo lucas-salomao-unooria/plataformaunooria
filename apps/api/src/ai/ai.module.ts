@@ -11,6 +11,8 @@ import { AGENTE_PROFESSOR, type ModoDoAgente } from "./agente-professor.port";
 import { criarAgenteProfessor } from "./agent-engine.client";
 import { AVATAR_AO_VIVO } from "./avatar-ao-vivo.port";
 import { criarAvatarAoVivo } from "./liveavatar.client";
+import { VOZ_AO_VIVO } from "./voz-ao-vivo.port";
+import { criarVozAoVivo } from "./gemini-live.client";
 
 /** Global: o MotorModule (reações ao vivo) e o GeracaoModule injetam o
  *  provider pelo token AI_PROVIDER — nenhum deles conhece o vendor. */
@@ -66,7 +68,19 @@ import { criarAvatarAoVivo } from "./liveavatar.client";
           sandbox: config.get<string>("LIVEAVATAR_SANDBOX") === "1",
         }),
     },
+    {
+      /* O mascote da Ajuda (ADR-158): o Gemini Live da Vertex, com o MESMO ADC
+         do provider. Sem projeto (`AI_PROVIDER=mock`) a porta nasce desligada e
+         o mascote some da Ajuda — nunca derruba a subida. */
+      provide: VOZ_AO_VIVO,
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) =>
+        criarVozAoVivo({
+          projeto: config.get("AI_PROVIDER") === "mock" ? undefined : config.get<string>("VERTEX_PROJECT_ID"),
+          regiao: config.get<string>("AJUDA_MASCOTE_REGIAO") ?? "us-central1",
+        }),
+    },
   ],
-  exports: [AI_PROVIDER, QuotaService, AGENTE_PROFESSOR, AVATAR_AO_VIVO],
+  exports: [AI_PROVIDER, QuotaService, AGENTE_PROFESSOR, AVATAR_AO_VIVO, VOZ_AO_VIVO],
 })
 export class AiModule {}

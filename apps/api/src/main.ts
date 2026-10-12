@@ -10,6 +10,7 @@ import { AppModule } from "./app.module";
 import { contextoMiddleware } from "./observabilidade/contexto.middleware";
 import { logger } from "./observabilidade/logger";
 import { AssetsService } from "./assets/assets.service";
+import { origensPermitidas } from "./config/origens";
 import { construirDocumento } from "./openapi/documento";
 import { credenciaisDoDocs, portaDoDocs } from "./openapi/porta-do-docs";
 import { TETO_EM_MB } from "./rostering/rostering.service";
@@ -40,36 +41,17 @@ async function bootstrap() {
   // OneRoster de uma rede.
   app.useBodyParser("json", { limit: "2mb" });
   app.useBodyParser("text", { type: "text/csv", limit: `${TETO_EM_MB}mb` });
+  // ANTES do `/assets`: o mascote da Ajuda (ADR-158) baixa o modelo 3D por
+  // `fetch`, que é cross-origin e precisa do cabeçalho — registrado depois do
+  // static, o CORS nunca chegava às respostas de lá. A lista mora em
+  // `config/origens.ts`: a conexão de voz do mascote confere o `Origin` contra
+  // a MESMA lista — o CORS não alcança WebSocket.
+  app.enableCors({ origin: origensPermitidas() });
   // Driver LOCAL de assets (dev): a api serve as imagens geradas em /assets.
   // Em produção (gcs) a CDN serve o bucket e este static nunca é usado.
   if ((process.env.ASSETS_DRIVER ?? "local") !== "gcs") {
     app.useStaticAssets(app.get(AssetsService).dirLocal(), { prefix: "/assets" });
   }
-  app.enableCors({
-    origin: (
-      // **Toda porta de experiência nova entra AQUI.** O fallback já parou na
-      // 5175 uma vez, e as exps 5176/5177/5178 ficaram fora: o navegador barra
-      // a chamada com um erro que fala de CORS, não da porta que faltou — o
-      // sintoma na tela é a experiência abrindo e morrendo em "Failed to
-      // fetch", como se a api estivesse fora do ar.
-      //
-      // 5179 (A Seleção, que substituiu o Eco no Grupo na mesma porta — ADR-113),
-      // 5180 (plano de ensino) e 5181 (Rastro do Boato) entraram depois. A lista viva é
-      // `apps/hub/lib/experiencias-dev.ts`.
-      process.env.CORS_ORIGINS ??
-      [
-        "http://localhost:3000",
-        "http://localhost:5173",
-        "http://localhost:5174",
-        "http://localhost:5175",
-        "http://localhost:5176",
-        "http://localhost:5177",
-        "http://localhost:5178",
-        "http://localhost:5179",
-        "http://localhost:5180",
-        "http://localhost:5181",
-      ].join(",")    ).split(","),
-  });
   /**
    * Documentação OpenAPI em `/docs`, e o JSON em `/docs-json`.
    *

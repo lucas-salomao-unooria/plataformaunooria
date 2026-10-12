@@ -168,3 +168,142 @@ export function pedacoSse(
   if (uso) corpo.usage = uso;
   return `data: ${JSON.stringify(corpo)}\n\n`;
 }
+
+/* ------------------------------------------------- os dois atendentes (ADR-158) */
+
+/**
+ * Quem atende na Ajuda: o `mascote` (o mascote 3D da Unooria falando pelo
+ * Gemini Live) ou o `avatar` (o atendente em vídeo do LiveAvatar, ADR-132). Os
+ * CHECKs `ck_ajuda_sessoes_atendente` e `ck_ajuda_configuracao_atendente`
+ * espelham esta tupla.
+ */
+export const ATENDENTES = ["mascote", "avatar"] as const;
+export type Atendente = (typeof ATENDENTES)[number];
+
+/**
+ * As 30 vozes pré-definidas do Gemini Live, com o jeito de cada uma segundo o
+ * catálogo (lista do PoC do mascote, out/2026). É a lista FECHADA que o painel
+ * oferece: a voz vai para o setup do vendor, e um nome livre ali seria texto
+ * de fora entrando no pedido.
+ */
+export const VOZES_DO_MASCOTE = [
+  ["Leda", "jovem"], ["Puck", "animada"], ["Zephyr", "brilhante"], ["Kore", "firme"],
+  ["Aoede", "leve"], ["Achird", "amigável"], ["Laomedeia", "animada"], ["Sadachbia", "viva"],
+  ["Autonoe", "brilhante"], ["Callirrhoe", "tranquila"], ["Umbriel", "tranquila"],
+  ["Despina", "suave"], ["Algieba", "suave"], ["Vindemiatrix", "gentil"], ["Achernar", "macia"],
+  ["Sulafat", "calorosa"], ["Erinome", "clara"], ["Iapetus", "clara"], ["Charon", "informativa"],
+  ["Rasalgethi", "informativa"], ["Fenrir", "empolgada"], ["Orus", "firme"], ["Alnilam", "firme"],
+  ["Schedar", "equilibrada"], ["Gacrux", "madura"], ["Pulcherrima", "direta"],
+  ["Zubenelgenubi", "casual"], ["Sadaltager", "experiente"], ["Enceladus", "sussurrada"],
+  ["Algenib", "rouca"],
+] as const satisfies ReadonlyArray<readonly [string, string]>;
+export type VozDoMascote = (typeof VOZES_DO_MASCOTE)[number][0];
+export const NOMES_DAS_VOZES = VOZES_DO_MASCOTE.map(([nome]) => nome) as [VozDoMascote, ...VozDoMascote[]];
+
+/**
+ * O modelo 3D do mascote no bucket de assets (`gs://{contrato}-assets/...`).
+ * Sai do PoC comprimido (meshopt + texturas 1024: 12,7 MB → 3,4 MB); subir um
+ * mascote novo é publicar `-v2` e trocar AQUI — o caminho publicado é imutável.
+ */
+export const CAMINHO_DO_MODELO_DO_MASCOTE = "ajuda/mascote/mascote-v1.glb";
+
+/** O formato do nome de modelo — o CHECK `ck_ajuda_configuracao_modelo` cobra o mesmo. */
+export const MODELO_DO_MASCOTE_RE = /^[a-z0-9][a-z0-9.-]{2,80}$/;
+
+/** A configuração da Ajuda como a api a usa (a linha `ajuda_configuracao`, sem a autoria). */
+export interface ConfiguracaoDaAjuda {
+  atendentePadrao: Atendente;
+  permitirTroca: boolean;
+  mascote: {
+    voz: string;
+    modelo: string;
+    /** 0 a 1: quantos dB abaixo do pico ainda abrem a boca. */
+    sensibilidade: number;
+    /** 0 a 1: o quanto a boca demora para abrir e fechar. */
+    suavizacao: number;
+    /** 0 a 200 ms: a boca se mexe antes do som, como na fala de verdade. */
+    antecipacaoMs: number;
+    /** 0 a 1: parado, de boca fechada (0) até o sorriso original do modelo (1). */
+    bocaRepouso: number;
+  };
+}
+
+/**
+ * O que vale sem a linha — e ela deveria existir, porque a migration a semeia.
+ * Falha ABERTA, como `LIMITES_PADRAO`; o log `ajuda-configuracao-sem-linha` acusa.
+ */
+export const CONFIGURACAO_PADRAO: ConfiguracaoDaAjuda = {
+  atendentePadrao: "mascote",
+  permitirTroca: true,
+  mascote: { voz: "Leda", modelo: "gemini-3.8-live", sensibilidade: 0.5, suavizacao: 0.5, antecipacaoMs: 60, bocaRepouso: 0.5 },
+};
+
+/**
+ * Quais atendentes estão MONTADOS nesta stack. Um lugar só, porque duas telas
+ * perguntam (a janela da Ajuda e o painel do `admin`) e a resposta não pode
+ * divergir: o avatar precisa do vendor e das duas chaves da api; o mascote, da
+ * Vertex (o Gemini Live) e da chave que assina o bilhete.
+ */
+export function atendentesMontados(pecas: {
+  avatarLigado: boolean;
+  vozLigada: boolean;
+  chaveDaSessao: unknown;
+  segredoDoLlm: unknown;
+}): Record<Atendente, boolean> {
+  const chave = Boolean(pecas.chaveDaSessao);
+  return {
+    avatar: pecas.avatarLigado && chave && Boolean(pecas.segredoDoLlm),
+    mascote: pecas.vozLigada && chave,
+  };
+}
+
+/**
+ * Quem atende de fato: o pedido da pessoa (se a troca é permitida), senão o
+ * padrão — e, se o escolhido não está montado nesta stack, o outro. `null` =
+ * nenhum dos dois está disponível.
+ */
+export function atendenteEfetivo(
+  config: Pick<ConfiguracaoDaAjuda, "atendentePadrao" | "permitirTroca">,
+  disponiveis: Record<Atendente, boolean>,
+  pedido?: Atendente,
+): Atendente | null {
+  const preferido = pedido && config.permitirTroca ? pedido : config.atendentePadrao;
+  if (disponiveis[preferido]) return preferido;
+  const outro: Atendente = preferido === "mascote" ? "avatar" : "mascote";
+  return disponiveis[outro] ? outro : null;
+}
+
+/* ------------------------------------------- o protocolo do mascote ao vivo */
+
+/** Teto de uma pergunta escrita — o mesmo do `ChatComposer` do hub. */
+export const MAXIMO_DO_TEXTO_DO_MASCOTE = 500;
+/**
+ * Teto de um pedaço de microfone em base64. O hub manda 100 ms de PCM 16 kHz
+ * (3.200 bytes → ~4,3 mil caracteres); dez vezes isso é folga, não convite.
+ */
+export const MAXIMO_DO_AUDIO_DO_MASCOTE = 48_000;
+/** Mensagens por segundo vindas do navegador: o microfone manda 10; o resto é abuso. */
+export const MENSAGENS_POR_SEGUNDO_DO_MASCOTE = 30;
+/** A primeira mensagem (o bilhete) tem de chegar logo depois de a conexão abrir. */
+export const ESPERA_DO_BILHETE_MS = 10_000;
+/** O bilhete vale para ENTRAR — a conexão tem de abrir logo depois do `POST /ajuda/sessoes`. */
+export const VALIDADE_DO_BILHETE_S = 120;
+
+/**
+ * Os códigos com que a api fecha a conexão do mascote — o hub traduz cada um
+ * numa frase (`lib/ajuda/mascote.ts`). Faixa 4000–4999, a das aplicações.
+ */
+export const FECHAMENTOS_DO_MASCOTE = {
+  /** O bilhete não chegou, não confere, venceu ou já foi usado. */
+  BILHETE_INVALIDO: 4401,
+  /** O produto `ajuda` foi desligado para a escola. */
+  PRODUTO_DESLIGADO: 4403,
+  /** O teto da sessão chegou. */
+  TEMPO_ESGOTADO: 4408,
+  /** A pessoa mandou mensagem demais, ou fora do formato. */
+  ABUSO: 4429,
+  /** O Gemini não abriu a sessão, ou caiu no meio. */
+  VOZ_FALHOU: 4502,
+  /** A stack não tem a Vertex nem a chave da sessão. */
+  INDISPONIVEL: 4503,
+} as const;
