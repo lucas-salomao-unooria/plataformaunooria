@@ -76,14 +76,19 @@ Duas coisas para saber antes de mexer nele:
   quando `/trocar-senha` passou a aceitar a troca VOLUNTÁRIA: antes o
   `middleware.ts` devolvia quem já tinha trocado para a home do papel. A tela é
   a mesma do primeiro acesso, com texto e saída próprios (Cancelar, e não Sair).
-- **"Ajuda" é o segundo item, e abre JANELA, não rota** (ADR-132): o atendente
-  em vídeo (`components/ajuda/`), para todo papel MENOS o estudante — o header
+- **"Ajuda" é o segundo item, e abre JANELA, não rota** (ADR-132, ADR-158):
+  quem atende é o padrão da rede — o MASCOTE 3D (Gemini Live pela conexão de
+  voz da api, `use-sessao-do-mascote.ts`, `lib/ajuda/mascote/`) ou o atendente
+  em vídeo (`use-sessao-da-ajuda.ts`) — e, se o `admin` permitir, a pessoa troca
+  por um botão (`components/ajuda/`), para todo papel MENOS o estudante — o header
   é o mesmo dentro de `/exp`, então quem esconde é o `papel !== "estudante"` do
   header, junto do interruptor `produtoLigado("ajuda")`. Quem tranca é a api.
   A sala do vendor abre na MONTAGEM do conteúdo do modal e fecha na
   desmontagem: renderizar o conteúdo com o modal fechado abriria sessões (e
   cobraria minutos) sem ninguém ver. O microfone começa desligado; o SDK do
-  vendor só carrega por `import()` quando a janela abre.
+  vendor e o `three` só carregam por `import()` quando a janela abre. O
+  endereço da conexão de voz sai de `NEXT_PUBLIC_API_URL` lido no SERVIDOR (o
+  header passa `apiUrl` ao `MenuDaConta`): essa env não é inlinada no bundle.
 
 ## O detalhe está na pasta
 
