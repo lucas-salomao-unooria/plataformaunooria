@@ -486,18 +486,55 @@ NDJSON puro, no mesmo serviço; o cliente decide por linha, não pelo
 \emph{camelCase}: o cliente normaliza os dois em \cd{EventoAgente}.
 \end{nota}
 
-\section{Ajuda com avatar --- a sessão e o LLM do \emph{vendor}}
+\section{Ajuda --- a sessão, o LLM do \emph{vendor} e a voz do mascote}
 \label{sec:payload-ajuda}
 
 O contrato está na Seção~\ref{sec:contrato-ajuda}; os \emph{schemas}, em
 \arq{src/ajuda/contrato-de-rotas.ts}. Os exemplos são sintéticos: os
 \emph{tokens} e segredos abaixo não são reais.
 
-\begin{lstlisting}[language=jsonunoo, caption={\rota{POST /ajuda/sessoes} --- 201 (sem corpo no pedido)}]
-{ "id": "3f6c2a10-8d4e-4b7a-9c21-5e0f7a9b1c34",  // a NOSSA sessao (ajuda_sessoes)
+\begin{lstlisting}[language=jsonunoo, caption={\rota{POST /ajuda/sessoes} --- 201, avatar (corpo opcional \cd{\{ "atendente": "avatar" \}})}]
+{ "atendente": "avatar",
+  "id": "3f6c2a10-8d4e-4b7a-9c21-5e0f7a9b1c34",  // a NOSSA sessao (ajuda_sessoes)
   "tokenDaSessao": "eyJhbGciOi...<token do vendor>", // so entra na sala de video
   "duracaoMaximaS": 600,                           // o teto: o vendor fecha a sala
   "segundosRestantesHoje": 1200 }                  // o que sobra DEPOIS desta sessao
+\end{lstlisting}
+
+\begin{lstlisting}[language=jsonunoo, caption={\rota{POST /ajuda/sessoes} --- 201, mascote (\adrr{ADR-158})}]
+{ "atendente": "mascote",
+  "id": "8b1d4e22-0c3a-4f6e-a7b9-2d5c6e7f8a90",
+  "bilhete": "eyJhbGciOiJIUzI1NiJ9...",   // HS256, aud ajuda-mascote, 2 min, 1 entrada
+  "duracaoMaximaS": 600,                  // a api derruba a conexao de voz no prazo
+  "segundosRestantesHoje": 1200,
+  "ajustes": { "voz": "Leda", "modelo": "gemini-3.8-live",
+               "sensibilidade": 0.5, "suavizacao": 0.5,
+               "antecipacaoMs": 60, "bocaRepouso": 0.5 } }
+\end{lstlisting}
+
+\begin{lstlisting}[language=jsonunoo, caption={\rota{GET /ajuda/configuracao} --- 200}]
+{ "atendente": "mascote",       // o padrao da rede, ou o outro se o padrao nao esta montado; null = nenhum
+  "podeTrocar": true,           // troca permitida E o outro atendente montado
+  "modeloDoMascote": "https://assets.<contrato>.../ajuda/mascote/mascote-v1.glb" }
+\end{lstlisting}
+
+\begin{lstlisting}[language=jsonunoo, caption={\rota{WS /ajuda/mascote/ao-vivo} --- uma conversa (\adrr{ADR-158})}]
+// navegador -> api (a PRIMEIRA mensagem e sempre esta)
+{ "tipo": "entrar", "bilhete": "eyJhbGciOiJIUzI1NiJ9..." }
+// api -> navegador: o Gemini confirmou a abertura
+{ "tipo": "pronto", "prazo": "2026-10-12T14:10:00.000Z" }
+// navegador -> api
+{ "tipo": "audio", "base64": "AAEAAgAD..." }      // 100 ms de PCM 16 bits, 16 kHz
+{ "tipo": "fim-do-audio" }
+{ "tipo": "texto", "texto": "Como libero uma missao para a turma?" }
+// api -> navegador
+{ "tipo": "transcricao-entrada", "texto": "como libero uma missao" }
+{ "tipo": "audio", "base64": "AP8A/gD9...", "taxa": 24000 }
+{ "tipo": "transcricao-saida", "texto": "Primeiro, abra a turma..." }
+{ "tipo": "interrompido" }                         // a pessoa falou por cima
+{ "tipo": "fim-do-turno" }
+// fechamentos: 4401 bilhete, 4403 produto desligado, 4408 prazo,
+//              4429 ritmo ou formato, 4502 Gemini, 4503 indisponivel
 \end{lstlisting}
 
 \begin{lstlisting}[language=jsonunoo, caption={As recusas de \rota{POST /ajuda/sessoes}, que o hub mostra como vieram}]

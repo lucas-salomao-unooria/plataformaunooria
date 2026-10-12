@@ -278,6 +278,31 @@ Vendor externo: LiveAvatar (HeyGen), FULL Mode com o LLM NOSSO. O que a app espe
   (nunca de estudante) passam pelo vendor nos EUA: precisa constar do
   contrato/DPA da rede e da página de privacidade.
 
+**O mascote da Ajuda** (2026-10-12, ADR-158; doutrina em `apps/api/src/ajuda/AGENTS.md`).
+O segundo atendente: o Gemini Live da Vertex, por um WebSocket da PRÓPRIA api
+(`/ajuda/mascote/ao-vivo`). Sem vendor novo e sem segredo novo. O que a app espera:
+
+- **IAM**: o mesmo `roles/aiplatform.user` da SA da api (o Live usa o ADC).
+  Região do Live: `AJUDA_MASCOTE_REGIAO` (padrão `us-central1`; o `global` do
+  texto não serve o `gemini-3.8-live`). Assina o bilhete com a
+  `AJUDA_SESSAO_CHAVE` que a Ajuda já tem.
+- **WebSocket atrás do LB**: o `timeout_sec` do *backend service* da api é o
+  tempo MÁXIMO de uma conexão WebSocket no HTTPS LB — tem de cobrir o teto de
+  minutos por conversa (semente 10 min → ≥ 900 s; o painel aceita até 60 min →
+  3600 s; o padrão de 30 s derruba a conversa no meio). O *request timeout* do
+  Cloud Run da api também. Cloud Armor:
+  o `Upgrade: websocket` em `/ajuda/mascote/ao-vivo` não pode ser recusado.
+- **Origem**: o hub precisa estar em `CORS_ORIGINS` da api — a conexão confere
+  o `Origin` contra a mesma lista.
+- **O modelo 3D vai ao bucket de assets, uma vez por contrato**:
+  `gcloud storage cp mascote-v1.glb gs://{contrato}-assets/ajuda/mascote/mascote-v1.glb`
+  (3,4 MB, comprimido com meshopt; o original está no PoC `poc-mascote-visemas`).
+  O hub baixa por `fetch` a partir do domínio dele, então o **bucket precisa de
+  CORS** liberando `GET` para a origem do hub. Sem o arquivo, a janela abre e a
+  conversa funciona, mas o mascote não aparece.
+- **Custo**: o Live cobra a janela de contexto a cada turno, e a base inteira da
+  Ajuda vai na instrução. O teto continua sendo os minutos de `ajuda_limites`.
+
 **Telemetria: fica no Postgres, e sem serviço novo** (decisão de 2026-08-27).
 Avaliamos mandar o canal analítico para o BigQuery por subscription nativa do
 Pub/Sub. Não foi: os relatórios do professor NÃO leem `telemetria_eventos` (leem
