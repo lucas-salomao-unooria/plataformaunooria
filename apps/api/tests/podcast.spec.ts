@@ -515,7 +515,17 @@ function prismaDasFontes(linha: { falas: unknown } | null, atividade: object | n
         return atividade;
       },
     },
-    podcastRoteiro: { findUnique: async () => linha },
+    podcastRoteiro: {
+      /* Como o Postgres: `atividade_id` é `@db.Uuid`, e id que não é UUID faz
+         o Prisma recusar a consulta inteira (foi o que quebrou a Tempestade). */
+      findUnique: async (q: { where: { escolaId_expId_atividadeId: { atividadeId: string } } }) => {
+        const id = q.where.escolaId_expId_atividadeId.atividadeId;
+        if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
+          throw new Error(`Error creating UUID, invalid character: ${id}`);
+        }
+        return linha;
+      },
+    },
   };
   const prisma = { comTenancy: async (fn: (tx: unknown) => unknown) => fn(tx) } as unknown as PrismaService;
   return { prisma, consultas };

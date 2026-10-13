@@ -17,6 +17,9 @@ import {
   type TrechoDoRoteiro,
 } from "./roteiro";
 
+/** UUID canônico — a forma de `podcast_roteiros.atividade_id`. */
+const ID_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 /**
  * O PODCAST DE RECAPITULAÇÃO de toda missão (ADR-150): gerado pelo
  * professor, servido ao professor. Nasceu na A Seleção (ADR-119) e virou
@@ -169,14 +172,20 @@ export class PodcastService {
    */
   private async falasDa(fonte: FonteDoPodcast, escolaId: string, atividade: AtividadeDoPodcast): Promise<FalasDoTema> {
     if (atividade.falasProprias) return atividade.falasProprias;
-    const linha = await this.prisma.comTenancy(
-      (tx) =>
-        tx.podcastRoteiro.findUnique({
-          where: { escolaId_expId_atividadeId: { escolaId, expId: fonte.expId, atividadeId: atividade.id } },
-          select: { falas: true },
-        }),
-      escolaId,
-    );
+    /* Só id UUID está na tabela: `atividade_id` é `@db.Uuid`. A atividade
+       SINTÉTICA de missão sem atividade (`"turma"`, ADR-154/156) faz o Prisma
+       recusar a consulta inteira — a Tempestade quebrava aqui antes de chegar
+       ao `padrao`. Sem linha possível, ela cai direto nas falas padrão. */
+    const linha = ID_UUID.test(atividade.id)
+      ? await this.prisma.comTenancy(
+          (tx) =>
+            tx.podcastRoteiro.findUnique({
+              where: { escolaId_expId_atividadeId: { escolaId, expId: fonte.expId, atividadeId: atividade.id } },
+              select: { falas: true },
+            }),
+          escolaId,
+        )
+      : null;
     if (linha) {
       const falas = falasGravadas(fonte.vagas, linha.falas);
       if (falas) return falas;
