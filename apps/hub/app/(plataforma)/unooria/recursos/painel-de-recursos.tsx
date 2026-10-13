@@ -353,7 +353,6 @@ export function PainelDeRecursos({
                             <Tag
                               variant={exp.fixacaoEsquecida ? "warning" : exp.versaoFixa ? "info" : "neutral"}
                               size="sm"
-                              clickable
                             >
                               v{exp.versaoFixa ?? exp.versaoAtiva}
                               {exp.versaoFixa ? " · fixada" : ""}

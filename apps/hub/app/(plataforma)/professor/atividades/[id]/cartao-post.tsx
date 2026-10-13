@@ -111,7 +111,7 @@ export function CartaoPost({
             style={{ background: arte.corFundo }}
           >
             <span className="text-[40px]">{arte.emojis}</span>
-            <span className="px-6 text-center text-[11px] text-black/50">
+            <span className="px-6 text-center text-[11px] text-black/70">
               {post.imageStatus === "pendente"
                 ? "imagem na fila"
                 : "arte procedural (fallback)"}

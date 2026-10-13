@@ -9,7 +9,7 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{161 decisões}, numeradas até ADR-161. A 160 (o painel de habilidades pelo total) e a 161 (os custos de IA) nasceram no mesmo dia, em frentes paralelas, e a 161 foi escrita depois de conferir que a 160 já estava tomada em \cd{dev-local}. A 153 (a evidência do Unoovista) e a 154 (a da Missão Tempestade) nasceram no mesmo dia, em frentes paralelas. A 132 (a Ajuda com
+São \textbf{162 decisões}, numeradas até ADR-162. A 160 (o painel de habilidades pelo total) e a 161 (os custos de IA) nasceram no mesmo dia, em frentes paralelas, e a 161 foi escrita depois de conferir que a 160 já estava tomada em \cd{dev-local}. A 153 (a evidência do Unoovista) e a 154 (a da Missão Tempestade) nasceram no mesmo dia, em frentes paralelas. A 132 (a Ajuda com
 avatar) entrou no código antes de ter seção aqui, e por um dia o número foi
 citado sem existir; a 133 pulou para não colidir com ela. A 133 e a 134 nasceram no mesmo dia, em frentes paralelas
 (Unoovista e Unoochat), e entraram juntas no merge; a 135 e a 136 levaram as
@@ -212,6 +212,7 @@ que a cercam.
 \zebra \adrr{ADR-159} & O hub no celular e no tablet: \cd{min-w-0} na coluna ao lado da \cd{SideBar}, e a \cd{Tag} que quebra linha & 2026-10-12 & Aceita; complementa a \adrr{ADR-83}\\
 \adrr{ADR-160} & O painel de habilidades abre pelo total, e o contrato desce pela regional & 2026-10-13 & Aceita; complementa a \adrr{ADR-144}\\
 \adrr{ADR-161} & Custos de IA: o consumo medido por dia, produto, escola e modelo, e o custo derivado na leitura, com preço datado e a PTAX do dia & 2026-10-13 & Aceita; complementa a \adrr{ADR-105} e a \adrr{ADR-158}\\
+\zebra \adrr{ADR-162} & Acessibilidade WCAG 2.2 AA: o axe como portão, e a correção no \emph{design system}, não na tela & 2026-10-13 & Aceita; reclassifica o risco R-07\\
 \bottomrule
 \end{tabularx}
 
@@ -14538,3 +14539,106 @@ apareciam na fatura da Vertex, passam a entrar na conta.
 \textbf{Gatilho.} Diferença de mais de 10\% entre o painel e a fatura do mês;
 \cd{ia\_consumo\_diario} passar de cerca de 5 milhões de linhas; ou o DS
 publicar escala pelo dado nos gráficos (a compensação morre).
+% ---------------------------------------------------------------------------
+\section{ADR-162 --- Acessibilidade WCAG 2.2 AA: o axe como portão, e a correção no \emph{design system}, não na tela}
+\label{adr:acessibilidade-aa}
+
+\textbf{Data.} 2026-10-13. \textbf{Status.} Aceita. \textbf{Reclassifica} o
+risco \cd{R-07} (Capítulo~\ref{cap:riscos}) e tira a linha
+\enquote{Acessibilidade} do estado \enquote{Ausente} no
+Capítulo~\ref{cap:qualidade}.
+
+\begin{especificacao}{Contexto}
+\begin{itemize}
+  \item \textbf{Rede pública exige acessibilidade, e a plataforma não tinha
+    como prometer nenhuma.} Não havia verificação de contraste, foco ou leitor
+    de tela; a história H12.6.1 do mapa de produto dizia, com razão, que
+    \enquote{não é possível prometer acessibilidade a uma rede}.
+  \item \textbf{A primeira medição (axe-core 4.10, critérios A e AA da WCAG
+    2.0, 2.1 e 2.2)} percorreu 65 telas do hub por papel e a abertura das
+    onze missões liberadas: \textbf{5 regras violadas no hub, nenhuma nas
+    missões}. Os 106 nós de contraste, em 23 telas, eram \textbf{quatro peças}
+    do DS (\cd{Tag} \emph{brand}, \cd{FeedbackAlert}, \cd{Badge}, contador da
+    \cd{Tab}); as outras regras eram \cd{aria-controls} das \cd{Tabs} apontando
+    para painel que não existe, um controle aninhado e alvo de 1,7\,px em
+    \rota{/unooria/recursos}, e a legenda rolável do gráfico de rosca sem
+    teclado.
+  \item \textbf{O DS inteiro, medido história por história no Storybook},
+    tinha 104 nós reais na seção \cd{unooria} (outros 630 eram da moldura das
+    próprias histórias, que não vai no pacote). A causa dominante era UM tom:
+    o \cd{brandnavy-700} (\cd{\#6487C2}) usado como TEXTO, ou como fundo de
+    texto branco, dá 3,62:1 contra branco.
+\end{itemize}
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{enumerate}
+  \item \textbf{Corrigir no pacote, e só no pacote, o que é do componente}
+    (\arq{storybook-unooria}, versões 0.2.20 e 0.2.21 --- a segunda com o que só
+    a medição DENTRO das missões achou: o texto de ajuda do \cd{TextField}
+    desabilitado, o alvo do \cd{ChatHeader} e o \cd{BottomSheet} rolável):
+    resolver no DS é resolver uma
+    vez; compensar nas telas seria resolver 48 vezes, e a compensação some na
+    próxima subida. No hub ficam só os defeitos da TELA: o título do
+    \emph{iframe} (o nome do manifesto, no lugar de \enquote{experiencia}),
+    a \cd{Tag} clicável dentro de um botão, o cartão \enquote{em breve} apagado
+    por \cd{opacity} e o \cd{:focus-visible} que o \cd{outline: none} do
+    \cd{.unooria-select} engolia.
+  \item \textbf{A regra de cor que vale para o DS todo:} o \cd{brandnavy-700}
+    continua como cor de controle (fundo de \emph{checkbox}, rádio,
+    \emph{toggle} --- 3:1 basta para o que não é texto) e sai de todo TEXTO e de
+    todo fundo com texto branco, trocado pelo \cd{brandnavy-800}
+    (\cd{\#49699F}, 5,52:1); no tema escuro o texto azul vai para o 600, e o
+    botão cheio claro leva texto escuro. Os tons semânticos 500 não são cor de
+    texto. E \textbf{nada de \cd{opacity} em texto}: foi ela, e não o token,
+    que derrubou a descrição do \cd{FeedbackAlert} e o cartão \enquote{em
+    breve}.
+  \item \textbf{O axe vira portão, em duas portas com a mesma fonte}
+    (\arq{scripts/e2e/lib/acessibilidade.mjs}): a ferramenta
+    \arq{ferramentas/medir-acessibilidade.mjs}, que percorre as telas por papel
+    e sai 1 com violação (LARGURA), e \cd{E2E\_ACESSIBILIDADE=1} nas suítes,
+    que mede cada passo, inclusive DENTRO das missões (PROFUNDIDADE).
+  \item \textbf{Verde no axe é condição necessária do AA, não suficiente.} A
+    declaração de conformidade exige ainda a passada manual de teclado e leitor
+    de tela do Capítulo~\ref{cap:qualidade}.
+\end{enumerate}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Compensar nas telas do hub} (classe local por cima do DS). É a
+    forma exata da dívida que a regra de ouro do DS proíbe: corrige onde se
+    mediu, deixa o resto das 48 experiências com o defeito e morre calada na
+    próxima versão.
+  \item \textbf{Trocar a cor da marca} (o \cd{brandnavy-700} inteiro). O 700
+    passa como cor de controle; escurecer tudo mudaria a identidade para
+    resolver um problema que é só do texto.
+  \item \textbf{Ligar \cd{a11y.test: 'error'} no Storybook do DS já}: 115 das
+    360 histórias da seção \cd{unooria} reprovavam, a maioria pela moldura de
+    documentação. O portão do pacote entra quando a moldura estiver limpa.
+  \item \textbf{Axe em todo passo de toda suíte, sempre}: custa cerca de
+    1\,s por passo numa suíte que já leva o tempo de um almoço; fica opcional.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{O azul da marca escurece} no texto, nos botões cheios e nos
+    selos do DS. É visível, e é a troca que o AA cobra.
+  \item \textbf{Os clones que imitam um aplicativo real} (Instanooria, ChatGPT,
+    WhatsApp) reprovam porque copiam as cores dele; escurecê-los aproxima do AA
+    e afasta da fidelidade que a missão mede. Fica para o dono do produto.
+  \item \textbf{A imagem do post do Instanooria não tem texto alternativo}: o
+    banco tem só o \cd{image\_brief} de geração, que pode entregar o gabarito e
+    por isso NÃO vai ao cliente. Falta um campo revisado pelo PO.
+  \item \textbf{Ficam lacunas nomeadas no DS} em componentes sem consumidor na
+    plataforma: o botão de remover do \cd{Avatar} (22\,px e aninhado no avatar
+    clicável) e o \cd{TimePicker} (botão de limpar dentro do gatilho).
+  \item \textbf{Medir a stack inteira derruba a VM do Docker}: a medição
+    corre por lote (Apêndice~\ref{ap:operacao}).
+\end{itemize}
+
+\textbf{Gatilho.} Violação nova na medição de LARGURA; a passada manual achar
+o que o axe não acha; ou o PO decidir as cores dos clones.
+

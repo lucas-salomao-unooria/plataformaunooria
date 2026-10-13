@@ -52,7 +52,7 @@ await suite(
     await cartao.first().click();
     await p.waitForURL((url) => url.pathname === "/professor/plano-de-aula", { timeout: 30_000 });
 
-    const exp = p.frameLocator('iframe[title="experiencia"]');
+    const exp = p.frameLocator('iframe[data-experiencia]');
     await exp.getByText("Meus planos de aula").waitFor({ timeout: 60_000 });
     await r.registrar(p, "meus-planos", {
       titulo: "Meus planos de aula",
@@ -114,7 +114,7 @@ await suite(
     await exp.getByText(/Salvo às/).waitFor({ timeout: 20_000 });
 
     await p.reload({ waitUntil: "domcontentloaded" });
-    const exp2 = p.frameLocator('iframe[title="experiencia"]');
+    const exp2 = p.frameLocator('iframe[data-experiencia]');
     await exp2.getByText("Meus planos de aula").waitFor({ timeout: 60_000 });
     const primeiro = exp2.locator("li, [role=listitem]").filter({ hasText: /Plano|aula/ }).first();
     await primeiro.click().catch(async () => {

@@ -489,7 +489,7 @@ await suite(
     });
     await r.entrar(p, PRIMEIRO.login);
     await p.goto(`${HUB}/exp/${EXP_ID}`, { waitUntil: "domcontentloaded" });
-    const q = () => p.frameLocator('iframe[title="experiencia"]');
+    const q = () => p.frameLocator('iframe[data-experiencia]');
     /**
      * O painel da aba do DS entra com um fade (`unooria-tab-fade-in`, 0,2 s): a
      * captura logo depois da troca saía desbotada, e o deck mostrava uma tela
@@ -715,7 +715,7 @@ await suite(
     await r.entrar(p2, SEGUNDO.login);
     await p2.goto(`${HUB}/exp/${EXP_ID}`, { waitUntil: "domcontentloaded" });
     await p2
-      .frameLocator('iframe[title="experiencia"]')
+      .frameLocator('iframe[data-experiencia]')
       .getByRole("button", { name: /Explorar Mesa de Notícias/ })
       .waitFor({ timeout: 40_000 });
     await mandarApi(p2, "/jornal-escola/passo", { para: "mesa" });

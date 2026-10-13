@@ -79,7 +79,7 @@ await suite(
     });
 
     await p.goto(`${HUB}/exp/${EXP}`, { waitUntil: "domcontentloaded" });
-    const aparelho = p.locator('iframe[title="experiencia"]');
+    const aparelho = p.locator('iframe[data-experiencia]');
     await aparelho.waitFor({ state: "attached", timeout: 20_000 });
 
     const sandbox = await aparelho.getAttribute("sandbox");
@@ -88,7 +88,7 @@ await suite(
       `o manifesto pediu pointer-lock e o iframe concedeu (sandbox="${sandbox}")`,
     );
 
-    const tela = p.frameLocator('iframe[title="experiencia"]');
+    const tela = p.frameLocator('iframe[data-experiencia]');
     /* A tela inicial só monta depois do handshake do SDK e da injeção dos 19
        scripts: é a prova de que a ordem está certa e a identidade chegou. */
     await tela.locator(".hub-titulo").waitFor({ timeout: 40_000 });

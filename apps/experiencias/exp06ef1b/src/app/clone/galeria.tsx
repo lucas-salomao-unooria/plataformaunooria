@@ -217,7 +217,9 @@ export function Galeria({
           <div className="ficha">
             <h2 className="ficha__projeto">{ficha.titulo}</h2>
             <p className="ficha__escola">{ficha.escola}</p>
-            <div className="ficha__fotos">
+            {/* A faixa rola na horizontal: recebe foco para o teclado alcançar as
+                fotos escondidas (WCAG 2.1.1, ADR-162). */}
+            <div className="ficha__fotos" tabIndex={0} role="group" aria-label="Fotos do projeto">
               {[1, 2, 3].map((n) => (
                 <img
                   key={n}

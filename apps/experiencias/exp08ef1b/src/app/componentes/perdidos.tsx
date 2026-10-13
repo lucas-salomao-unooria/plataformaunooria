@@ -90,7 +90,7 @@ export function Perdidos({ runId }: { runId: string }) {
         <p className="text-[11px] uppercase tracking-widest text-muted">o que você não viu</p>
         <p className="mt-0.5 text-[26px] font-bold leading-none text-ink">
           {dados.contagem.perdidos}
-          <span className="ml-1.5 text-[13px] font-normal text-ink/60">
+          <span className="ml-1.5 text-[13px] font-normal text-ink/75">
             posts que nunca chegaram até você
           </span>
         </p>
@@ -110,7 +110,9 @@ export function Perdidos({ runId }: { runId: string }) {
           <article key={post.id} className="border-b border-hairline pb-3">
             <header className="flex items-center gap-2.5 px-3 py-2.5">
               <span
-                className="flex h-8 w-8 items-center justify-center rounded-full text-[13px] font-semibold text-white"
+                /* Iniciais em tinta escura: os fundos são tons pastel, e o branco
+                   dava 1,3:1 (WCAG 1.4.3, ADR-162). */
+                className="flex h-8 w-8 items-center justify-center rounded-full text-[13px] font-semibold text-ink"
                 style={{ background: post.fallbackArt?.corFundo ?? '#8a8a8a' }}
               >
                 {post.author.handle.replace('@', '').slice(0, 2).toUpperCase()}

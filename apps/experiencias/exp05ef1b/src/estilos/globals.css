@@ -308,7 +308,8 @@ body {
   font-weight: var(--unc-font-weight-bold);
   line-height: 1.2;
   text-transform: uppercase;
-  color: var(--unc-color-attach-gallery);
+  /* Texto, e não ícone: o acento da galeria dava 3,1:1 no papel (ADR-162). */
+  color: var(--unc-color-accent-strong);
 }
 
 .desenho-cartaz__corpo {
@@ -502,7 +503,8 @@ body {
   margin: 0;
   font-size: 12px;
   font-weight: var(--unc-font-weight-bold);
-  color: var(--unc-color-accent);
+  /* O accent (brandpurple-600) dava 4,2:1 no papel (ADR-162). */
+  color: var(--unc-color-accent-strong);
 }
 
 /* ============================================================================

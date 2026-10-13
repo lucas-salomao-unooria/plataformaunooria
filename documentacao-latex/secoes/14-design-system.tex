@@ -502,7 +502,34 @@ acontecia com \enquote{Zerar a turma} do UnooGPT e do Eco no Grupo (retirado,
 não pega. Ao escrever um \cd{variant}, confira contra \cd{ButtonVariant}.
 \end{atencao}
 
-\subsection{Lacuna aberta em \cd{Collapse} na 0.1.19 (app-92, 2026-09-10)}
+\subsection{Acessibilidade AA na 0.2.20 (\adrr{ADR-162})}
+
+A medição com o axe (WCAG 2.2 A/AA) mostrou que quase toda violação da
+plataforma era UMA peça do DS repetida em várias telas, e a 0.2.20 as corrige na
+origem. A regra que ficou, para componente novo também:
+
+\begin{regra}
+\textbf{\cd{brandnavy-700} é cor de CONTROLE, não de texto.} Contra branco ele
+dá 3,62:1: passa como fundo de \emph{checkbox}, rádio ou \emph{toggle} (3:1 para o
+que não é texto) e reprova como texto ou como fundo de texto branco (4,5:1).
+Texto e botão cheio vão no \cd{brandnavy-800} (5,52:1), e o \emph{hover} escurece
+para o 900 --- nunca clareia, porque o branco sobre o 600 dá 2,5:1. No tema
+escuro o texto azul vai para o 600 e o botão cheio claro leva texto escuro. Os
+tons semânticos 500 também não são texto. E \textbf{nenhum texto leva
+\cd{opacity}}: a descrição do \cd{FeedbackAlert} (0,92) e o texto sutil (0,8)
+reprovavam com o token certo.
+\end{regra}
+
+Além do contraste: o \cd{Collapse} fechado ganhou \cd{inert} (a lacuna abaixo
+fecha), as \cd{Tabs} só declaram \cd{aria-controls} para \cd{TabPanel}
+registrado (o hub usa as abas como navegação, sem painel), a legenda rolável do
+gráfico de rosca recebe foco, a lista da \cd{Selection} leva o nome do campo, o
+status do \cd{Avatar} ganhou \cd{role="img"} e o \emph{checkbox} do
+\cd{ListSectionItem} leva o nome do título. Ficaram como lacunas, por não terem
+consumidor na plataforma: o botão de remover do \cd{Avatar} (22\,px, aninhado no
+avatar clicável) e o botão de limpar dentro do gatilho do \cd{TimePicker}.
+
+\subsection{Lacuna aberta em \cd{Collapse} na 0.1.19 (app-92, 2026-09-10) --- fechada na 0.2.20}
 
 O \cd{Collapse} esconde o corpo fechado com \cd{grid-template-rows: 0fr},
 \cd{opacity: 0} e \cd{aria-hidden="true"}, e o \cd{\_\_body-inner} com
@@ -523,9 +550,9 @@ visível.
 \cd{visibility: hidden} no corpo com \cd{aria-hidden="true"} --- é a única
 propriedade CSS que tira do foco sem tirar do fluxo --- com \cd{transition} de
 \cd{visibility} atrasada pela duração do collapse, para que o fechamento
-continue animado. Ela não muda aparência nenhuma. \textbf{Morre quando o pacote
-publicar \cd{inert} no corpo fechado}, e o pedido está aberto no
-\arq{storybook-unooria}.
+continue animado. Ela não muda aparência nenhuma. \textbf{Morreu na 0.2.20}:
+o pacote passou a pôr \cd{inert} no corpo fechado (\adrr{ADR-162}), e a
+compensação saiu da app-92 na 1.1.8.
 
 \begin{regra}
 \textbf{A compensação é guardada por teste.} A suíte

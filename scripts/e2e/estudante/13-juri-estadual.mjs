@@ -471,7 +471,7 @@ await suite(
       await cartao.click();
       await pagina.waitForURL(`**/exp/${EXP_ID}**`, { timeout: 30_000 });
     };
-    const frameDe = (pagina) => () => pagina.frameLocator('iframe[title="experiencia"]');
+    const frameDe = (pagina) => () => pagina.frameLocator('iframe[data-experiencia]');
     const semAnimacao = (q) =>
       q()
         .locator("body")

@@ -101,7 +101,7 @@ await suite(
     await r.entrar(p, estudante.login);
 
     await p.goto(`${HUB}/exp/exp01ef1b`, { waitUntil: "domcontentloaded" });
-    const q = p.frameLocator('iframe[title="experiencia"]');
+    const q = p.frameLocator('iframe[data-experiencia]');
     /* Corre contra o erro (não espera cega): se o boot falhar, a mensagem traz
        o status e o corpo — nunca "timeout esperando o seletor". */
     await esperarOuFalharPorHttp(
@@ -187,7 +187,7 @@ await suite(
     const botoesNoLatch = await q.locator(".fc-congelamento button, .fc-congelamento a").count();
     r.exigir(botoesNoLatch === 0, `o latch não tem botão nem link (achei ${botoesNoLatch})`);
     await p.reload({ waitUntil: "domcontentloaded" });
-    const q2 = p.frameLocator('iframe[title="experiencia"]');
+    const q2 = p.frameLocator('iframe[data-experiencia]');
     await q2.locator("text=HORA DA RODA DE CONVERSA!").waitFor({ timeout: 40_000 });
     await r.registrar(p, "o-latch-da-roda", {
       titulo: "O tablet vira porta-retrato",

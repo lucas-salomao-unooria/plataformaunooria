@@ -486,7 +486,7 @@ function Pastilha({
           : 'border border-black/[0.07] bg-canvas text-ink'
       }`}
     >
-      <span className="text-[10px] uppercase tracking-wide opacity-60">{rotulo}</span>
+      <span className="text-[10px] uppercase tracking-wide opacity-85">{rotulo}</span>
       <span className="text-[14px] font-bold leading-tight">{valor}</span>
     </span>
   );

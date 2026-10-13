@@ -111,7 +111,7 @@ export function Reflexao({ runId }: { runId: string }) {
 
         <label className="flex flex-col gap-1.5">
           <textarea
-            className="min-h-[220px] w-full rounded-xl border border-white/20 bg-white/5 p-3 text-[15px] leading-relaxed text-white outline-none placeholder:text-white/40 focus:border-brand-coral"
+            className="min-h-[220px] w-full rounded-xl border border-white/20 bg-white/5 p-3 text-[15px] leading-relaxed text-white placeholder:text-white/60 focus:border-brand-coral"
             placeholder="Escreve com suas palavras — umas duas linhas já bastam."
             value={texto}
             disabled={!carregado}

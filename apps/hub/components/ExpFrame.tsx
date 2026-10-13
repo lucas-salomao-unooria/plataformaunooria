@@ -35,6 +35,12 @@ export function ExpFrame(props: {
    * experiências tinham antes deste campo existir.
    */
   permissoes?: readonly string[];
+  /**
+   * O nome acessível do iframe — o `nome` do manifesto. É o que o leitor de
+   * tela anuncia ao entrar no conteúdo (WCAG 4.1.2); `title="experiencia"`
+   * dizia o mesmo de toda missão, e com acento faltando.
+   */
+  titulo?: string | null;
   onConcluir?: (payload: { score?: number; dados?: Record<string, unknown> }) => void;
   onEstado?: (estado: Record<string, unknown>) => void;
   /** `exp:erro`: a experiência quebrou; o hub troca a tela. O registro é da SDK → api. */
@@ -301,7 +307,10 @@ export function ExpFrame(props: {
     <iframe
       ref={frame}
       src={props.src}
-      title="experiencia"
+      title={props.titulo || "Conteúdo da missão"}
+      /* O gancho da automação é ESTE atributo, nunca o `title`: o título é o
+         nome que o leitor de tela anuncia e muda por missão (ADR-162). */
+      data-experiencia=""
       style={{ border: 0, width: "100%", height: "100%", display: "block" }}
       sandbox={sandbox}
       // `autoplay`: a Permissions-Policy tem default 'self' — sem delegar,

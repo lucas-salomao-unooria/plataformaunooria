@@ -48,7 +48,7 @@ await suite(
     await cartao.click();
     await p.waitForURL("**/exp/exp04ef1b**", { timeout: 30_000 });
 
-    const tela = p.frameLocator('iframe[title="experiencia"]');
+    const tela = p.frameLocator('iframe[data-experiencia]');
     await tela.locator(".uni-topbar .uni-logo").first().waitFor({ timeout: 30_000 });
 
     /* Estado anterior? Reinicia pelo perfil — é o caminho do produto, e de
@@ -282,7 +282,7 @@ await suite(
 
     // ── o F5 ─────────────────────────────────────────────────────────────
     await p.reload({ waitUntil: "domcontentloaded" });
-    const depoisDoF5 = p.frameLocator('iframe[title="experiencia"]');
+    const depoisDoF5 = p.frameLocator('iframe[data-experiencia]');
     await depoisDoF5.locator("article.short-item").first().waitFor({ timeout: 30_000 });
     await p.waitForTimeout(1500);
     const salvosDepois = await depoisDoF5.locator('button[aria-label="Remover dos salvos"]').count();

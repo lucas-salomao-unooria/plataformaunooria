@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
 
 import { ehRuidoDeDev, pendenciaConhecida, vigiarFalhasDaApi } from "./smoke.mjs";
+import { achatar, medirPaginaEFrames } from "./acessibilidade.mjs";
 
 /**
  * A casca compartilhada de TODAS as suítes de ponta a ponta.
@@ -74,6 +75,11 @@ export class Roteiro {
     this.ruidoIgnorado = 0;
     this.comecouEm = Date.now();
     this.paginas = new Map();
+    /* `E2E_ACESSIBILIDADE=1`: cada passo também passa pelo axe (WCAG 2.2 A/AA,
+       ADR-162). Desligado por padrão — o axe custa ~1s por tela, e a corrida
+       normal prova o produto, não a acessibilidade. */
+    this.medirAcessibilidade = process.env.E2E_ACESSIBILIDADE === "1";
+    this.acessibilidade = new Map();
 
     rmSync(this.saida, { recursive: true, force: true });
     mkdirSync(this.saida, { recursive: true });
@@ -242,6 +248,7 @@ export class Roteiro {
        duas pontas o print foi tirado — senão a sequência parece uma pessoa só
        fazendo coisas impossíveis. */
     const contexto = [...this.paginas].find(([, v]) => v.pagina === pagina)?.[0] ?? "";
+    if (this.medirAcessibilidade) await this.#medirAcessibilidade(pagina, `${numero}-${nome}`);
 
     const passo = {
       n: numero,
@@ -260,6 +267,24 @@ export class Roteiro {
         `${contexto ? ` [${contexto}]` : ""}${passo.detalhe ? ` — ${passo.detalhe}` : ""}`,
     );
     return passo;
+  }
+
+  /**
+   * O axe no passo. Agrupa por regra e por ELEMENTO (o mesmo `html`), porque a
+   * mesma peça reaparece em todo passo da mesma tela — contar por passo diria
+   * "40 violações" de um defeito só.
+   */
+  async #medirAcessibilidade(pagina, passo) {
+    try {
+      for (const [onde, v] of achatar(passo, await medirPaginaEFrames(pagina))) {
+        const r = this.acessibilidade.get(v.id) ?? { ...v, nos: new Map() };
+        for (const n of v.nos) if (!r.nos.has(n.html)) r.nos.set(n.html, { ...n, onde });
+        this.acessibilidade.set(v.id, r);
+      }
+    } catch (e) {
+      /* A tela navegou no meio da medição: o passo seguinte mede de novo. */
+      console.log(`      · acessibilidade não medida em ${passo}: ${String(e).slice(0, 80)}`);
+    }
   }
 
   /** Uma asserção nomeada. Reprovar aqui reprova a suíte inteira. */
@@ -297,6 +322,15 @@ export class Roteiro {
    * saída. `falha` é a exceção que interrompeu, quando houve.
    */
   async encerrar(falha = null) {
+    if (this.medirAcessibilidade) {
+      const regras = [...this.acessibilidade.values()].map((r) => ({ ...r, nos: [...r.nos.values()] }));
+      writeFileSync(join(this.saida, "acessibilidade.json"), JSON.stringify(regras, null, 2), "utf8");
+      if (!regras.length) this.exigir(true, "acessibilidade: nenhuma violação WCAG 2.2 A/AA nos passos (axe)");
+      for (const r of regras) {
+        const ex = r.nos[0];
+        this.exigir(false, `acessibilidade: ${r.id} (${r.criterios.join(",")}) em ${r.nos.length} elemento(s) — ${ex.onde}: ${ex.html.slice(0, 100)}`);
+      }
+    }
     const reprovadas = this.verificacoes.filter((v) => !v.ok);
     /* Separa o que a suíte PROVOCOU do que ela descobriu. Os dois vão para o
        relatório; só o segundo reprova. */

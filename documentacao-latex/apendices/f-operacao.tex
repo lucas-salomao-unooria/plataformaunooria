@@ -1278,6 +1278,17 @@ o que já SUBIU} &
   teto de cerca de 6\,s; com \cd{sem-saldo}, a quota do estudante. A e2e do
   Jornal (\cd{origem: "ia"} no \rota{POST /jornal-escola/\B{}diagramar}) e a da A
   Seleção (o Canal A antes da enquete) ficam vermelhas neste caso.\\
+\textbf{A medição de acessibilidade (ou uma suíte longa) acusa
+  \enquote{Internal Server Error} e \enquote{\cd{<html>} sem \cd{lang}} em
+  dezenas de telas, e os \emph{logins} seguintes falham com \enquote{usuário ou
+  senha incorretos}} &
+  Não é o produto. Duas causas já medidas (2026-10-13, \adrr{ADR-162}): a VM do
+  Docker (cerca de 10\,GB) esgotou com pg, api, hub e cinco experiências de pé
+  --- \cd{docker ps} não responde, e a api devolve \cd{erro-interno} no
+  \emph{login} porque perdeu o banco ---; ou o Turbopack do \cd{next dev}
+  registrou erro interno e apagou o próprio \emph{cache} (está no \emph{log} do
+  hub). A página de erro é texto puro, e o axe a mede como se fosse a tela.
+  Meça por lote, só com as experiências do lote de pé.\\
 \bottomrule
 \end{tabularx}
 

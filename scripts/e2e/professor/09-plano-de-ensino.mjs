@@ -75,7 +75,7 @@ await suite(
     await cartao.first().click();
     await p.waitForURL((url) => url.pathname === "/professor/plano-de-ensino", { timeout: 30_000 });
 
-    const exp = p.frameLocator('iframe[title="experiencia"]');
+    const exp = p.frameLocator('iframe[data-experiencia]');
     await exp.getByText(/Regência|Meus planejamentos/).first().waitFor({ timeout: 60_000 });
 
     const doOitavo = exp
