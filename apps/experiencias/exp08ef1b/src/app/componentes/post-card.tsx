@@ -139,7 +139,9 @@ export function PostCard({
 
       <PostCardUnv.Media
         src={post.imageUrl ?? undefined}
-        alt={altDaImagem(post.imageAlt, post.author.handle)}
+        /* Só com imagem: sem `src` o Media usa o `alt` como nome do grupo, e
+           ali a arte de emojis e as hashtags já são o texto (ADR-163). */
+        alt={post.imageUrl ? altDaImagem(post.imageAlt, post.author.handle) : undefined}
         aspectRatio={4 / 5}
         className="select-none"
         onPointerUp={aoTocarMidia}
