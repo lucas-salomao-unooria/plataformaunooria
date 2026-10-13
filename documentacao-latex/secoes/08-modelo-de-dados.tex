@@ -99,7 +99,7 @@ Duas armadilhas registradas naquela migração, ambas produzindo o mesmo sintoma
      \fk{pai\_id} \seta{} \texttt{escolas}\\
      \texttt{created\_at}};
 
-  \node[tabelaplat, tb] (tur) at (8.25,0)
+  \node[tabelaplat, tb] (tur) at (8.65,0)
     {\etitulo{turmas}\sub{sem RLS}
      \nodepart{two}
      \pk{id} \texttt{UUID}\\
@@ -110,7 +110,7 @@ Duas armadilhas registradas naquela migração, ambas produzindo o mesmo sintoma
      \quad\texttt{periodo\_letivo\_id,}\\
      \quad\texttt{nome)}};
 
-  \node[tabelaplat, tbl] (usr) at (14.25,0)
+  \node[tabelaplat, tbl] (usr) at (15.05,0)
     {\etitulo{users}\sub{sem RLS: lida no \emph{login}}
      \nodepart{two}
      \pk{id} \texttt{UUID}\\
@@ -126,7 +126,7 @@ Duas armadilhas registradas naquela migração, ambas produzindo o mesmo sintoma
      \quad\texttt{username)}};
 
   % --- linha 2
-  \coordinate (r2) at ($(usr.south)+(0,-1.3)$);
+  \coordinate (r2) at ($(usr.south)+(0,-1.65)$);
   \node[tabelacat, tb] (exp) at (esc.north |- r2)
     {\etitulo{experiencias}\sub{catálogo, sem escola}
      \nodepart{two}
@@ -163,7 +163,7 @@ Duas armadilhas registradas naquela migração, ambas produzindo o mesmo sintoma
      \texttt{atualizada\_em}};
 
   % --- linha 3
-  \coordinate (r3) at ($(tel.south)+(0,-1.1)$);
+  \coordinate (r3) at ($(tel.south)+(0,-1.35)$);
   \node[tabelaplat, tb] (prog) at (esc.north |- r3)
     {\etitulo{progresso}
      \nodepart{two}
@@ -195,9 +195,9 @@ Duas armadilhas registradas naquela migração, ambas produzindo o mesmo sintoma
   \node[ercard] at ($(esc.north)+(0,0.27)$) {1};
   \node[ercard] at ($(usr.north)+(0,0.27)$) {N};
   % agente_professor_conversas: escola e dono
-  \coordinate (g2) at ($(usr.south)+(0,-0.65)$);
+  \coordinate (g2) at ($(usr.south)+(0,-0.82)$);
   \coordinate (ga) at ([xshift=-12mm]agt.north);
-  \draw[erel] (esc.east |- 0,-1.75) -- (5.35,-1.75) |- (g2 -| ga) -- (ga);
+  \draw[erel] (esc.east |- 0,-1.75) -- (5.55,-1.75) |- (g2 -| ga) -- (ga);
   \node[ercard] at ($(esc.east |- 0,-1.75)+(0.4,0)$) {1};
   \node[ercard] at ($(ga)+(0,0.3)$) {N};
   \draw[erel] ([xshift=12mm]usr.south) -- ([xshift=12mm]agt.north)
@@ -688,7 +688,7 @@ o padrão em si só aparece na fronteira de importação.
      \texttt{fonte\_id}\\
      \texttt{UNIQUE (tipo, titulo)}};
 
-  \node[tabelaplat, tbl] (tur) at (8.45,0)
+  \node[tabelaplat, tbl] (tur) at (8.85,0)
     {\etitulo{turmas}\sub{sem RLS}
      \nodepart{two}
      \pk{id} \texttt{UUID}\\
@@ -700,7 +700,7 @@ o padrão em si só aparece na fronteira de importação.
      \quad\texttt{periodo\_letivo\_id, nome)}};
 
   % --- linha 2: quem está na sala, e o que a sala abriu
-  \coordinate (r2) at ($(per.south)+(0,-1.4)$);
+  \coordinate (r2) at ($(per.south)+(0,-1.65)$);
   \node[tabelaplat, tb] (lib) at (per.north |- r2)
     {\etitulo{liberacoes}\sub{RLS por escola}
      \nodepart{two}
@@ -726,7 +726,7 @@ o padrão em si só aparece na fronteira de importação.
      \texttt{UNIQUE (escola\_id, turma\_id,}\\
      \quad\texttt{usuario\_id, papel)}};
 
-  \node[tabelaplat, tb] (usr) at (14.45,0 |- r2)
+  \node[tabelaplat, tb] (usr) at (15.25,0 |- r2)
     {\etitulo{users}\sub{identidade, sem RLS}
      \nodepart{two}
      \pk{id} \texttt{UUID}\\
@@ -996,7 +996,7 @@ tabelas \cd{exp08ef1b\_} mais a tabela de contrato com a app-70.
      \texttt{estilo\_visual}\\
      \texttt{status} \nt{rascunho \ldots{} encerrada}};
 
-  \node[tabela, tb] (aut) at (8.45,0)
+  \node[tabela, tb] (aut) at (8.85,0)
     {\etitulo{exp08ef1b\_authors}
      \nodepart{two}
      \pk{id}, \fk{escola\_id}\\
@@ -1008,7 +1008,7 @@ tabelas \cd{exp08ef1b\_} mais a tabela de contrato com a app-70.
      \texttt{UNIQUE (activity\_id,}\\
      \quad\texttt{handle)}};
 
-  \node[tabela, tbl] (pos) at (14.25,0)
+  \node[tabela, tbl] (pos) at (15.05,0)
     {\etitulo{exp08ef1b\_posts}
      \nodepart{two}
      \pk{id}, \fk{escola\_id}, \fk{activity\_id}\\
@@ -1027,7 +1027,7 @@ tabelas \cd{exp08ef1b\_} mais a tabela de contrato com a app-70.
      \quad\texttt{aprovado)}};
 
   % --- linha 2
-  \coordinate (r2) at ($(act.south)+(0,-1.3)$);
+  \coordinate (r2) at ($(act.south)+(0,-1.65)$);
   \node[tabela, tbl] (job) at (act.north |- r2)
     {\etitulo{exp08ef1b\_generation\_jobs}
      \nodepart{two}
@@ -1058,10 +1058,10 @@ tabelas \cd{exp08ef1b\_} mais a tabela de contrato com a app-70.
   \node[ercard] at ($(act.north)+(0,0.27)$) {1};
   \node[ercard] at ($(pos.north)+(0,0.27)$) {N};
   \draw[erel] (act.south) -- (job.north)
-    node[ercard, pos=0.2]{1} node[ercard, pos=0.8]{N};
+    node[ercard, pos=0.22]{1} node[ercard, pos=0.78]{N};
   % comentários: do post (1:N) e, opcional, do autor
   \draw[erel] (aut.south) -- (pc.north)
-    node[ercard, pos=0.06]{0..1} node[ercard, pos=0.94]{N};
+    node[ercard, pos=0.22]{0..1} node[ercard, pos=0.78]{N};
   \draw[erel] (pos.south) |- ($(pc.east)+(0,0.3)$);
   \node[ercard] at ($(pos.south)+(0,-0.3)$) {1};
   \node[ercard] at ($(pc.east)+(0.35,0.3)$) {N};
@@ -1086,7 +1086,7 @@ tabelas \cd{exp08ef1b\_} mais a tabela de contrato com a app-70.
   \def\sub#1{\\{\color{white}#1}}
 
   % --- coluna central: a sessão
-  \node[tabela, tbl] (run) at (8.3,0)
+  \node[tabela, tbl] (run) at (8.7,0)
     {\etitulo{exp08ef1b\_runs}\sub{a sessão de um estudante}
      \nodepart{two}
      \pk{id}, \fk{escola\_id}, \fk{activity\_id}\\
@@ -1124,14 +1124,14 @@ tabelas \cd{exp08ef1b\_} mais a tabela de contrato com a app-70.
      \texttt{atualizado\_em}};
 
   % --- coluna da direita
-  \node[tabela, tb] (sp) at (14.2,0)
+  \node[tabela, tb] (sp) at (15.0,0)
     {\etitulo{exp08ef1b\_student\_posts}
      \nodepart{two}
      \pk{id}, \fk{escola\_id}, \fk{run\_id}\\
      \texttt{texto}, \texttt{template}\\
      \texttt{lado\_inferido}, \texttt{created\_at}};
 
-  \node[tabela, tb] (cs) at ($(sp.south)+(0,-1.3)$)
+  \node[tabela, tb] (cs) at ($(sp.south)+(0,-1.55)$)
     {\etitulo{exp08ef1b\_comentarios\_\\da\_sessao}
      \nodepart{two}
      \pk{id}, \fk{escola\_id}, \fk{run\_id}\\
@@ -1141,7 +1141,7 @@ tabelas \cd{exp08ef1b\_} mais a tabela de contrato com a app-70.
      \texttt{de\_ia}, \texttt{texto}};
 
   % --- linha de baixo
-  \coordinate (r2) at ($(con.south)+(0,-1.3)$);
+  \coordinate (r2) at ($(con.south)+(0,-1.55)$);
   \node[tabela, tb] (dos) at (ev.north |- r2)
     {\etitulo{exp08ef1b\_dossiers}
      \nodepart{two}
@@ -1189,11 +1189,11 @@ tabelas \cd{exp08ef1b\_} mais a tabela de contrato com a app-70.
     node[ercard, pos=0.22]{1} node[ercard, pos=0.78]{N};
   % 1:1 com conclusoes (pela esquerda) e N com comentarios (pela direita)
   \coordinate (cl) at ($(con.east)+(0,0.4)$);
-  \draw[erel] (run.west |- 0,-3.2) -- (5.35,-3.2) |- (cl);
+  \draw[erel] (run.west |- 0,-3.2) -- (5.5,-3.2) |- (cl);
   \node[ercard] at ($(run.west |- 0,-3.2)+(-0.3,0)$) {1};
   \node[ercard] at ($(cl)+(0.3,0)$) {1};
   \coordinate (cr) at ($(cs.west)+(0,0.4)$);
-  \draw[erel] (run.east |- 0,-3.2) -- (11.25,-3.2) |- (cr);
+  \draw[erel] (run.east |- 0,-3.2) -- (11.9,-3.2) |- (cr);
   \node[ercard] at ($(run.east |- 0,-3.2)+(0.3,0)$) {1};
   \node[ercard] at ($(cr)+(-0.3,0)$) {N};
   % comentário sobre o post do próprio estudante
@@ -1201,7 +1201,7 @@ tabelas \cd{exp08ef1b\_} mais a tabela de contrato com a app-70.
     node[ercard, pos=0.22]{0..1} node[ercard, pos=0.78]{N};
   % 1:1 com reflexoes e dossiers
   \draw[erel] (run.south) -- (ref.north)
-    node[ercard, pos=0.1]{1} node[ercard, pos=0.9]{1};
+    node[ercard, pos=0.22]{1} node[ercard, pos=0.78]{1};
   \coordinate (gd) at ($(r2)+(0,0.6)$);
   \draw[erel] ([xshift=-14mm]run.south) |- (gd -| dos.north) -- (dos.north);
   \node[ercard] at ($([xshift=-14mm]run.south)+(0,-0.3)$) {1};

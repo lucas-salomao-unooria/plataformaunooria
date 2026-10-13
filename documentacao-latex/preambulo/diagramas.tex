@@ -394,7 +394,8 @@
 %  Legenda padronizada de diagrama
 % ---------------------------------------------------------------------------
 \newcommand{\amostra}[1]{%
-  \tikz[baseline=-0.55ex]{\node[#1, text width=0pt, minimum width=3.6mm,
+  \tikz[baseline=-0.55ex]{\node[#1, rectangle, rounded corners=1.2pt,
+    path picture={}, text width=0pt, minimum width=3.6mm,
     minimum height=3.0mm, inner sep=0pt, font=\tiny]{};}%
 }
 \newenvironment{legendadiag}

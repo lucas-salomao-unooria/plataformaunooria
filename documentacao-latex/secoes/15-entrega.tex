@@ -245,6 +245,13 @@ Pub/Sub: env ausente é porta fechada, não porta aberta.
   \draw[pipe] (man) -- (smoke);
 
 \end{tikzpicture}}
+\begin{legendadiag}
+\amostra{etapaio} gatilho \quad
+\amostra{etapa} passo \quad
+\amostra{etapaout} troca o que está no ar \quad
+\amostra{actnote} nota \quad
+barra preta: \emph{fork} e \emph{join} (o \texttt{needs} do \emph{workflow})
+\end{legendadiag}
 \caption[Pipeline de entrega]{O \emph{pipeline} de entrega
   (\arq{.github/workflows/deploy.yml}). O portão e o \emph{job} \cd{mudancas}
   correm em paralelo e, juntos, liberam as trilhas; api, hub e o agente de IA do
@@ -254,14 +261,6 @@ Pub/Sub: env ausente é porta fechada, não porta aberta.
   agente.}
 \label{fig:pipeline-deploy}
 \end{figure}
-
-\begin{legendadiag}
-\amostra{etapaio} gatilho \quad
-\amostra{etapa} passo \quad
-\amostra{etapaout} troca o que está no ar \quad
-\amostra{actnote} nota \quad
-barra preta: \emph{fork} e \emph{join} (o \texttt{needs} do \emph{workflow})
-\end{legendadiag}
 
 \subsection{O agente de IA do professor: imagem, \cd{PATCH} e a ordem dos \emph{applies}}
 

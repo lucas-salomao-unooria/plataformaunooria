@@ -129,13 +129,24 @@ que existe --- e que ninguém destrói quando o contrato termina.
   % LiveAvatar: a API abre a sala; o vendor chama /ajuda/llm de volta
   \draw[netbi] ([yshift=-5mm]api.west) -- (8.35,-3.3) -- (8.35,-8.6) -- (lav.east)
     node[portlbl, pos=0.55, above=1pt]{sessões; \texttt{/ajuda/llm}};
-  \draw[netpriv] ([yshift=-1.5mm]api.west) -- (7.75,-2.95) |- (sql.east)
-    node[portlbl, pos=0.25, left=1pt]{5432};
+  \draw[netpriv] ([yshift=-1.5mm]api.west) -- (7.75,-2.95) |- (sql.east);
+  \node[portlbl, left=1pt] at (7.75,-3.95) {5432};
   % vídeo direto ao navegador
   \draw[netpub] (net.west) -- (-0.75,0) |- (lav.west)
     node[portlbl, pos=0.25, sloped, above=1pt]{WebRTC};
 
 \end{tikzpicture}}
+\begin{legendadiag}
+\textcolor{unooOrange}{\textbf{---}} tráfego público (TLS) \quad
+\textcolor{unooGreen!70!black}{\textbf{---}} tráfego privado \quad
+\textcolor{unooInkSoft}{\textbf{---}} nos dois sentidos \quad
+\amostra{servicoger} borda \quad
+\amostra{servico} aplicação \quad
+\amostra{volume} dados \quad
+\amostra{servicobroker} mensageria \quad
+\amostra{servico, fill=unooLavender, draw=unooLavenderSoft} IA gerenciada \quad
+\amostra{externo} fora da \emph{stack}
+\end{legendadiag}
 \caption[Implantação de um contrato]{Implantação de um contrato. Um único
   \emph{Load Balancer} global recebe todo o tráfego HTTPS e distribui por
   \emph{host rules}: hub, API, \emph{bundles} e \emph{assets} respondem em
@@ -153,18 +164,6 @@ que existe --- e que ninguém destrói quando o contrato termina.
   ao navegador da escola.}
 \label{fig:deploy-contrato}
 \end{figure}
-
-\begin{legendadiag}
-\textcolor{unooOrange}{\textbf{---}} tráfego público (TLS) \quad
-\textcolor{unooGreen!70!black}{\textbf{---}} tráfego privado \quad
-\textcolor{unooInkSoft}{\textbf{---}} nos dois sentidos \quad
-\amostra{servicoger} borda \quad
-\amostra{servico} aplicação \quad
-\amostra{volume} dados \quad
-\amostra{servicobroker} mensageria \quad
-\amostra{servico, fill=unooLavender, draw=unooLavenderSoft} IA gerenciada \quad
-\amostra{externo} fora da \emph{stack}
-\end{legendadiag}
 
 \section{Diagrama de implantação detalhado}
 
@@ -187,25 +186,24 @@ Figura~\ref{fig:identidade-maquina}.
   importa/.style={-{Stealth[length=5pt,width=4pt]}, line width=0.9pt,
                   draw=unooInkSoft, dashed, dash pattern=on 3pt off 2pt}]
 
-  % grade: externos em x = 0.6; colunas c1 = 4.4, c2 = 7.8, c3 = 11.2,
-  % c4 = 15.0; linhas 0, -3, -6, -9. Rotas nos corredores y = -1.5,
-  % -4.6 e -7.6.
+  % grade: externos em x = 0.6; colunas c1 = 4.4, c2 = 8.4, c3 = 12.4,
+  % c4 = 17.0; linhas 0, -3.3, -6.5, -9.8.
 
   % ------------------------------------------------ fora do Google
   \node[internet, minimum width=25mm] (net) at (0.6,0) {Navegador};
-  \node[externo, text width=24mm, minimum height=14mm] (idp) at (0.6,-3)
+  \node[externo, text width=24mm, minimum height=14mm] (idp) at (0.6,-3.3)
     {\textbf{WSO2 IS}\desc{projeto próprio}};
 
   % ------------------------------------------------ borda global
   \node[servicoger, caixa] (armor) at (4.4,0)
     {\textbf{Cloud Armor}\desc{WAF nos \emph{backends}; SQLi, XSS, RCE\ldots}};
-  \node[servicoger, caixa] (lb) at (7.8,0)
+  \node[servicoger, caixa] (lb) at (8.4,0)
     {\textbf{Load Balancer}\desc{1 IP, \emph{host rules}; um certificado por domínio}};
-  \node[servicoger, caixa] (cdn) at (11.2,0)
+  \node[servicoger, caixa] (cdn) at (12.4,0)
     {\textbf{Cloud CDN}\desc{\emph{bundles} e \emph{assets}}};
 
   % ------------------------------------------------ buckets
-  \node[balde, text width=39mm, align=left, minimum height=22mm] (gcs) at (15.6,-0.45)
+  \node[balde, text width=39mm, align=left, minimum height=22mm] (gcs) at (17.0,-0.45)
     {\textbf{Cloud Storage}\\[2pt]
      \texttt{-exp}: \emph{bundles}; público, CDN\\
      \texttt{-assets}: mídia; público, CDN\\
@@ -214,29 +212,29 @@ Figura~\ref{fig:identidade-maquina}.
      \texttt{-agente-professor}: privado};
 
   % ------------------------------------------------ aplicação (us-east1)
-  \node[servico, caixa] (hub) at (4.4,-3)
+  \node[servico, caixa] (hub) at (4.4,-3.3)
     {\textbf{Cloud Run} \texttt{-frontend}\desc{hub; \texttt{min=1}}};
-  \node[servico, caixa, text width=29mm] (api) at (7.8,-3)
+  \node[servico, caixa, text width=29mm] (api) at (8.4,-3.3)
     {\textbf{Cloud Run} \texttt{-api}\desc{CPU sempre alocada, \texttt{min}$\geq$1, conc.~80}};
-  \node[ia, caixa] (agente) at (11.2,-3)
+  \node[ia, caixa] (agente) at (12.4,-3.3)
     {\textbf{Agent Engine}\\\texttt{agente-professor}\desc{\texttt{us-east1}; SA \texttt{-agente}}};
 
   % ------------------------------------------------ VPC
-  \node[servicoger, caixa] (conn) at (4.4,-6)
+  \node[servicoger, caixa] (conn) at (4.4,-6.5)
     {\textbf{Serverless VPC Access}\desc{conector}};
-  \node[volume, text width=25mm, minimum height=15mm] (sql) at (4.4,-9)
+  \node[volume, text width=25mm, minimum height=15mm] (sql) at (4.4,-9.8)
     {\textbf{Cloud SQL} \texttt{-pg}\desc{PostgreSQL HA, PITR, \emph{pooler}; sem IP público}};
-  \node[servicoger, caixa] (job) at (7.8,-9)
+  \node[servicoger, caixa] (job) at (8.4,-9.8)
     {\textbf{Cloud Run Job}\\\texttt{-migrate}\desc{\texttt{prisma migrate deploy}}};
 
   % ------------------------------------------------ IA global
-  \node[ia, caixa] (gemini) at (11.2,-6)
+  \node[ia, caixa] (gemini) at (12.4,-6.5)
     {\textbf{Gemini}\desc{\texttt{global}, reserva em \texttt{us}; Live em \texttt{us-central1}}};
-  \node[ia, caixa] (busca) at (15.6,-6)
+  \node[ia, caixa] (busca) at (17.0,-6.5)
     {\textbf{Vertex AI Search}\desc{\texttt{-habilidades} e \texttt{-acervo}; \texttt{global}}};
 
   % ------------------------------------------------ mensageria
-  \node[servicobroker, text width=31mm, minimum height=14mm] (ps) at (11.2,-9)
+  \node[servicobroker, text width=31mm, minimum height=14mm] (ps) at (12.4,-9.8)
     {\textbf{Pub/Sub}\desc{\emph{topic} \texttt{-telemetria}\\\emph{push sub} \texttt{-telemetria-ingest}}};
 
   % ------------------------------------------------ zonas
@@ -259,26 +257,37 @@ Figura~\ref{fig:identidade-maquina}.
   \draw[netpub] (armor.east) -- (lb.west);
   \draw[netpub] (lb.east) -- (cdn.west);
   \draw[netpub] (cdn.east) -- (cdn.east -| gcs.west);
-  \draw[netpub] ([xshift=-5mm]lb.south) |- (4.4,-1.5) -- (hub.north);
+  \draw[netpub] ([xshift=-5mm]lb.south) |- (4.4,-1.75) -- (hub.north);
   \draw[netpub] ([xshift=5mm]lb.south) -- ([xshift=5mm]lb.south |- api.north);
   \draw[netpub] (hub.east) -- (api.west) node[portlbl, midway, above=1pt]{BFF};
   \draw[netpub] (hub.west) -- (idp.east) node[portlbl, pos=0.35, above=1pt]{OIDC};
-  \draw[netpub] ([xshift=-4mm]api.north east) |- (gcs.west |- 0,-1.5)
+  \draw[netpub] ([xshift=-4mm]api.north east) |- (gcs.west |- 0,-1.75)
     node[portlbl, pos=0.7, above=1pt]{\texttt{-assets}, \texttt{-planos}};
   \draw[netpub] (api.east) -- (agente.west) node[portlbl, midway, above=1pt]{SSE};
   \draw[netpub] (agente.south) -- (gemini.north);
-  \draw[netpub] (agente.east) -| (busca.north) node[portlbl, pos=0.3, above=1pt]{busca};
-  \draw[importa] ([xshift=8mm]busca.north |- gcs.south) -- ([xshift=8mm]busca.north)
-    node[portlbl, pos=0.8, left=1pt]{lê \texttt{-agente-professor}};
-  \draw[netpriv] ([xshift=-9mm]api.south) |- (4.4,-4.6) -- (conn.north);
+  \draw[netpub] (agente.east) -| ([xshift=-5mm]busca.north) node[portlbl, pos=0.25, above=1pt]{busca};
+  \draw[importa] ([xshift=7mm]busca.north |- gcs.south) -- ([xshift=7mm]busca.north)
+    node[portlbl, pos=0.22, left=2pt]{lê \texttt{-agente-professor}};
+  \draw[netpriv] ([xshift=-9mm]api.south) |- (4.4,-4.9) -- (conn.north);
   \draw[netpriv] (conn.south) -- (sql.north) node[portlbl, midway, right=2pt]{5432};
   \draw[netpriv] (job.north) |- (conn.east);
   \draw[netpub] ([xshift=9mm]api.south) |- (gemini.west)
-    node[portlbl, pos=0.75, above=1pt]{HTTPS, WSS};
-  \draw[netbi] ([xshift=4mm]api.south) |- (11.2,-7.85) -- (ps.north)
+    node[portlbl, pos=0.66, above=1.5pt, fill=unooSurface, inner sep=1pt]{HTTPS, WSS};
+  \draw[netbi] ([xshift=4mm]api.south) |- (12.4,-8.35) -- (ps.north)
     node[portlbl, pos=0.35, above=1pt]{publica; \emph{push} \texttt{/telemetry/ingest}};
 
 \end{tikzpicture}}
+\begin{legendadiag}
+\textcolor{unooOrange}{\textbf{---}} público (TLS) \quad
+\textcolor{unooGreen!70!black}{\textbf{---}} privado (VPC) \quad
+\textcolor{unooInkSoft}{\textbf{---}} nos dois sentidos \quad
+\textcolor{unooInkSoft}{\textbf{- - -}} importação interna do Google \quad
+\amostra{servicoger} borda e infraestrutura \quad
+\amostra{servico} aplicação \quad
+\amostra{servico, fill=unooGreen!75, draw=unooGreen!55!black} armazenamento \quad
+\amostra{servico, fill=unooLavender, draw=unooLavenderSoft} IA gerenciada \quad
+\amostra{servicobroker} mensageria
+\end{legendadiag}
 \caption[Implantação detalhada --- o caminho da requisição]{Implantação
   detalhada, em execução. Os \emph{buckets} têm regimes de acesso
   deliberadamente diferentes: o de \emph{bundles} e o de \emph{assets} são
@@ -295,18 +304,6 @@ Figura~\ref{fig:identidade-maquina}.
   que o CI publica, na Figura~\ref{fig:deploy-publicacao}.}
 \label{fig:deploy-detalhe}
 \end{figure}
-
-\begin{legendadiag}
-\textcolor{unooOrange}{\textbf{---}} público (TLS) \quad
-\textcolor{unooGreen!70!black}{\textbf{---}} privado (VPC) \quad
-\textcolor{unooInkSoft}{\textbf{---}} nos dois sentidos \quad
-\textcolor{unooInkSoft}{\textbf{- - -}} importação interna do Google \quad
-\amostra{servicoger} borda e infraestrutura \quad
-\amostra{servico} aplicação \quad
-\amostra{servico, fill=unooGreen!75, draw=unooGreen!55!black} armazenamento \quad
-\amostra{servico, fill=unooLavender, draw=unooLavenderSoft} IA gerenciada \quad
-\amostra{servicobroker} mensageria
-\end{legendadiag}
 A Figura~\ref{fig:deploy-publicacao} mostra o outro lado: o que o CI escreve em
 cada recurso, e com qual credencial. Todo passo usa o mesmo \emph{token} curto da
 \cd{DEPLOY\_SA}, obtido pelo WIF sem chave JSON; a única exceção é a ativação da
@@ -611,7 +608,7 @@ sem nenhuma linha no log da API.
   destino/.style={etapaout, text width=30mm, minimum height=15mm},
   fileira/.style={font=\scriptsize\bfseries\color{unooNavy}, anchor=south west, inner sep=1pt}]
 
-  % quatro fileiras, uma por identidade; colunas em x = 0, 4.0, 8.3, 12.6
+  % quatro fileiras, uma por identidade; colunas em x = 0, 4.0, 8.5, 13.0
   \foreach \y/\rot in {0/{CI --- publicar}, -2.9/{API --- chamar a IA},
                        -5.8/{Agente --- consultar modelo e acervo},
                        -8.7/{Pub/Sub --- entregar a telemetria}}
@@ -621,36 +618,36 @@ sem nenhuma linha no log da API.
     {\textbf{GitHub Actions}\desc{\emph{job} com \texttt{id-token: write}}};
   \node[passo] (oidc) at (4.0,0)
     {\emph{token} OIDC do GitHub\desc{repo, \emph{ref}, \emph{workflow}}};
-  \node[passo, text width=35mm] (wif) at (8.3,0)
+  \node[passo, text width=38mm] (wif) at (8.5,0)
     {\textbf{WIF} \emph{pool} \texttt{github}\desc{valida e troca}};
-  \node[destino] (dsa) at (12.6,0)
+  \node[destino] (dsa) at (13.0,0)
     {\emph{access token} da \texttt{DEPLOY\_SA}\desc{curta duração}};
 
   \node[origem] (run) at (0,-2.9)
     {\textbf{Cloud Run} \texttt{-api}\desc{sem \emph{env} de credencial}};
   \node[passo] (md) at (4.0,-2.9)
     {\emph{metadata server}\desc{ADC, nível 3}};
-  \node[passo, text width=35mm] (saapi) at (8.3,-2.9)
+  \node[passo, text width=38mm] (saapi) at (8.5,-2.9)
     {SA \texttt{\{contrato\}-api}\desc{\texttt{aiplatform.user};\\\texttt{agenteProfessorInvocador}}};
-  \node[destino] (vx) at (12.6,-2.9)
+  \node[destino] (vx) at (13.0,-2.9)
     {\textbf{Gemini} e \textbf{Agent Engine}\desc{autorizados}};
 
   \node[origem] (eng) at (0,-5.8)
     {\textbf{Agent Engine}\desc{o agente em execução}};
   \node[passo] (mdeng) at (4.0,-5.8)
     {credencial do \emph{runtime}\desc{a SA do engine}};
-  \node[passo, text width=35mm] (saag) at (8.3,-5.8)
+  \node[passo, text width=38mm] (saag) at (8.5,-5.8)
     {SA \texttt{\{prefixo\}-agente}\desc{\texttt{aiplatform.user};\\\texttt{discoveryengine.viewer}}};
-  \node[destino] (ds) at (12.6,-5.8)
+  \node[destino] (ds) at (13.0,-5.8)
     {\textbf{Gemini} e os dois \emph{data stores}\desc{autorizados}};
 
   \node[origem] (sub) at (0,-8.7)
     {\emph{push sub}\\\texttt{-telemetria-ingest}};
   \node[passo] (idt) at (4.0,-8.7)
     {\emph{ID token} da SA \texttt{\{contrato\}-push}\desc{\texttt{oidc\_token} da \emph{subscription}}};
-  \node[passo, text width=35mm] (guard) at (8.3,-8.7)
+  \node[passo, text width=38mm] (guard) at (8.5,-8.7)
     {\texttt{PubSubPushGuard}\desc{emissor Google,\\\texttt{aud} e \texttt{email}}};
-  \node[destino] (ing) at (12.6,-8.7)
+  \node[destino] (ing) at (13.0,-8.7)
     {\texttt{POST /telemetry/\B ingest}\desc{aceito}};
 
   \foreach \a/\b in {gh/oidc, oidc/wif, wif/dsa, run/md, md/saapi, saapi/vx,

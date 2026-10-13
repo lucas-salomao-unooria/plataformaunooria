@@ -88,33 +88,33 @@ Pub/Sub & Secundário & Transporte durável do canal analítico de telemetria.\\
 
   % ---- fronteira do sistema (por fit, com folga)
   \begin{scope}[on background layer]
-    \node[ucsystem, inner sep=0pt, fit={(2.40,0.75) (13.00,-16.45)}] (sis) {};
+    \node[ucsystem, inner sep=0pt, fit={(2.30,0.75) (13.00,-16.45)}] (sis) {};
   \end{scope}
-  \node[font=\small\bfseries\color{unooNavy}, anchor=north] at (7.70,0.62)
+  \node[font=\small\bfseries\color{unooNavy}, anchor=north] at (7.65,0.62)
     {Plataforma Unooria};
 
   % ---- atores primarios
-  \ator{estudante}{(0.9,-2.65)}{Estudante}
-  \ator{prof}{(0.9,-10.0)}{Professor}
-  \ator{gestor}{(15.0,-11.95)}{Gestor de escola}
-  \ator{admin}{(15.0,-14.65)}{Gestor do contrato}
+  \ator{estudante}{(0.55,-2.65)}{Estudante}
+  \ator{prof}{(0.55,-10.15)}{Professor}
+  \ator{gestor}{(15.35,-12.10)}{Gestor de escola}
+  \ator{admin}{(15.35,-14.80)}{Gestor do contrato}
 
   % ---- atores secundarios
-  \node[sec] (idp) at (15.0,-0.85)
+  \node[sec] (idp) at (15.35,-0.85)
     {{\scriptsize$\ll$ator$\gg$}\\\textbf{Provedor de}\\\textbf{identidade}};
-  \node[sec] (pubsub) at (15.0,-3.45) {{\scriptsize$\ll$ator$\gg$}\\\textbf{Pub/Sub}};
-  \node[sec] (vertex) at (15.0,-8.85)
+  \node[sec] (pubsub) at (15.35,-3.45) {{\scriptsize$\ll$ator$\gg$}\\\textbf{Pub/Sub}};
+  \node[sec] (vertex) at (15.35,-8.85)
     {{\scriptsize$\ll$ator$\gg$}\\\textbf{Vertex AI}\\Gemini e\\Agent Engine};
   \node[sec] (ci) at (10.65,-17.55) {{\scriptsize$\ll$ator$\gg$}\\\textbf{CI/CD}};
 
   % ---- relacoes dos atores primarios
-  \foreach \u in {uc01, uc02, uc03, uc06} \draw[ucrel] (estudante) -- (\u.west);
+  \foreach \u in {uc01, uc02, uc03, uc06} \draw[ucrel] (estudante.east) -- (\u.west);
   \foreach \u in {uc10, uc14, uc15, uc45, uc12, uc13, uc16}
-    \draw[ucrel] (prof) -- (\u.west);
-  \draw[ucrel] (gestor) -- (uc20.east);
-  \draw[ucrel] (gestor) -- (uc21.east);
-  \draw[ucrel] (admin) -- (uc22.east);
-  \draw[ucrel] (admin) -- (uc23.east);
+    \draw[ucrel] (prof.east) -- (\u.west);
+  \draw[ucrel] (gestor.west) -- (uc20.east);
+  \draw[ucrel] (gestor.west) -- (uc21.east);
+  \draw[ucrel] (admin.west) -- (uc22.east);
+  \draw[ucrel] (admin.west) -- (uc23.east);
 
   % ---- include / extend (a seta parte de quem inclui, ou de quem estende)
   \draw[ucinclude] (uc03.east) -- (uc04.west)
@@ -130,12 +130,18 @@ Pub/Sub & Secundário & Transporte durável do canal analítico de telemetria.\\
   \draw[ucrel] (uc01.east) -- (idp.west);
   \draw[ucrel] (uc04.east) -- (pubsub.west);
   \draw[ucrel] (uc11.east) -| (vertex.north);
-  \draw[ucrel] (uc14.east) -- (13.40,-7.55) |- ($(vertex.west)+(0,0.3)$);
+  \draw[ucrel] (uc14.east) -- (13.65,-7.55) |- ($(vertex.west)+(0,0.32)$);
   \draw[ucrel] (uc15.east) -- (vertex.west);
-  \draw[ucrel] (uc45.east) -- (13.40,-10.15) |- ($(vertex.west)+(0,-0.3)$);
+  \draw[ucrel] (uc45.east) -- (13.65,-10.15) |- ($(vertex.west)+(0,-0.32)$);
   \draw[ucrel] (uc23.south) -- (ci.north);
 
 \end{tikzpicture}}
+\begin{legendadiag}
+\amostra{ucase} caso de uso primário \quad
+\amostra{ucasesec} caso de uso de suporte \quad
+\textcolor{unooGreen}{\textbf{- - -}} $\ll$include$\gg$ \quad
+\textcolor{unooOrange}{\textbf{- - -}} $\ll$extend$\gg$
+\end{legendadiag}
 \caption[Casos de uso da plataforma]{Casos de uso da plataforma. As elipses em
   tom claro são casos de uso de \emph{suporte}, incluídos por outros e nunca
   iniciados diretamente por um ator humano. \ucr{UC-01} vale para todo papel; o
@@ -146,13 +152,6 @@ Pub/Sub & Secundário & Transporte durável do canal analítico de telemetria.\\
   estão na Figura~\ref{fig:uml-casos-gestao}.}
 \label{fig:casos-de-uso}
 \end{figure}
-
-\begin{legendadiag}
-\amostra{ucase} caso de uso primário \quad
-\amostra{ucasesec} caso de uso de suporte \quad
-\textcolor{unooGreen}{\textbf{- - -}} $\ll$include$\gg$ \quad
-\textcolor{unooOrange}{\textbf{- - -}} $\ll$extend$\gg$
-\end{legendadiag}
 
 \section{Especificação dos casos de uso}
 

@@ -176,86 +176,97 @@ professor no Vertex AI Agent Engine (\adrr{ADR-126}): o único contêiner que
   cont/.style={c4container, text width=31mm, minimum height=17mm},
   pessoa/.style={c4person, text width=20mm, minimum height=10mm}]
 
-  % colunas c1 = 1.9, c2 = 5.9, c3 = 10.5, c4 = 14.7; o hub ocupa c1 e c2.
-  % linhas: pessoas 0; hub e experiência -3.0; SDK -4.8; API -7.2;
-  % agente -10.2; externos -13.6
+  % colunas c1 = 1.7, c2 = 5.5, c3 = 9.8, c4 = 15.2; o hub ocupa c1 e c2.
+  % linhas: pessoas 1.1; hub -3.3; experiência -2.6; SDK -4.9; API -7.9;
+  % agente -10.9; externos -14.2
 
-  \node[pessoa] (estudante) at (1.3,1.0) {\textbf{Estudante}};
-  \node[pessoa] (prof)      at (3.9,1.0) {\textbf{Professor}};
-  \node[pessoa] (adm)       at (6.5,1.0) {\textbf{Gestão e admin}};
+  \node[pessoa] (estudante) at (1.1,1.1) {\textbf{Estudante}};
+  \node[pessoa] (prof)      at (3.6,1.1) {\textbf{Professor}};
+  \node[pessoa] (adm)       at (6.1,1.1) {\textbf{Gestão e admin}};
 
-  \node[c4container, text width=69mm, minimum height=24mm] (hub) at (3.9,-3.3)
+  \node[c4container, text width=62mm, minimum height=24mm] (hub) at (3.6,-3.3)
     {\textbf{Hub}\tech{Next.js App Router}\desc{Sessão, roteamento por papel,
      \emph{chrome} institucional, montagem do \emph{embed}, BFF (inclusive o
      \emph{stream} do chat do agente), JWKS e assinatura de \emph{token}}};
 
-  \node[bundle, text width=31mm, minimum height=15mm] (exp) at (10.5,-2.6)
+  \node[bundle, text width=31mm, minimum height=15mm] (exp) at (9.8,-2.6)
     {\textbf{Experiência}\tech{Vite + React, estático}\desc{uma por missão; roda no navegador}};
-  \node[c4component, text width=31mm, minimum height=10mm] (sdk) at (10.5,-4.9)
+  \node[c4component, text width=31mm, minimum height=10mm] (sdk) at (9.8,-4.9)
     {\textbf{\texttt{@edu/sdk}}\desc{ponte, telemetria, API, progresso}};
 
-  \node[c4artifact, text width=31mm, minimum height=15mm] (gcs) at (14.7,-2.6)
+  \node[c4artifact, text width=29mm, minimum height=15mm] (gcs) at (15.2,-2.6)
     {\textbf{Object Storage}\desc{\emph{bundles} e \emph{assets} na CDN; planos privados}};
 
-  \node[cont] (api) at (10.5,-7.6)
+  \node[cont] (api) at (9.8,-7.9)
     {\textbf{API}\tech{NestJS + Prisma}\desc{papel, \emph{tenancy}, regra de domínio,
      correção, \emph{gateway} de IA, telemetria}};
-  \node[c4db, text width=27mm, minimum height=17mm] (pg) at (14.7,-7.6)
+  \node[c4db, text width=27mm, minimum height=17mm] (pg) at (15.2,-7.9)
     {\textbf{PostgreSQL}\tech{Cloud SQL}\desc{um banco, um \emph{schema}; RLS por escola}};
 
-  \node[cont, minimum height=15mm] (agente) at (5.9,-10.6)
+  \node[cont, minimum height=15mm] (agente) at (5.5,-10.9)
     {\textbf{Agente do professor}\tech{Python + ADK, Agent Engine}\desc{ferramentas, escopo, título}};
-  \node[c4db, text width=27mm, minimum height=15mm] (ds) at (1.9,-10.6)
+  \node[c4db, text width=27mm, minimum height=15mm] (ds) at (1.7,-10.9)
     {\textbf{Vertex AI Search}\desc{habilidades e acervo}};
-  \node[c4queue, text width=27mm, minimum height=13mm] (ps) at (14.7,-10.6)
+  \node[c4queue, text width=27mm, minimum height=13mm] (ps) at (15.2,-10.9)
     {\textbf{Pub/Sub}\desc{canal analítico de telemetria}};
 
-  \node[c4systemext, text width=27mm, minimum height=13mm] (idp) at (1.9,-14.0)
+  \node[c4systemext, text width=27mm, minimum height=13mm] (idp) at (1.7,-14.2)
     {\textbf{WSO2 IS}\desc{identidade}};
-  \node[c4systemext, text width=27mm, minimum height=13mm] (vertex) at (10.5,-14.0)
+  \node[c4systemext, text width=27mm, minimum height=13mm] (vertex) at (9.8,-14.2)
     {\textbf{Vertex AI}\desc{Gemini e Gemini Live}};
-  \node[c4systemext, text width=27mm, minimum height=13mm] (avatar) at (14.7,-14.0)
+  \node[c4systemext, text width=27mm, minimum height=13mm] (avatar) at (15.2,-14.2)
     {\textbf{LiveAvatar}\desc{HeyGen; vídeo da Ajuda}};
 
   % --- fronteiras
   \begin{scope}[on background layer]
-    \node[c4zone, fit={(hub) (gcs) (pg) (ds) (ps) (agente)}, inner sep=12pt,
-          yshift=4pt] (stack) {};
     \node[iframe, fit=(exp) (sdk), inner sep=7pt, yshift=3pt] (ifr) {};
   \end{scope}
-  \node[c4boundarylbl, fill=unooSurface, anchor=south west]
-    at ([xshift=6pt, yshift=-1pt]stack.north west)
-    {Plataforma Unooria --- \emph{stack} de um contrato};
-  \node[iframelbl, anchor=south west] at ([xshift=4pt, yshift=-1pt]ifr.north west)
+  \node[iframelbl, anchor=south west] (ifrlbl) at ([xshift=4pt, yshift=-1pt]ifr.north west)
     {\texttt{iframe} --- \emph{sandbox}};
+  \begin{scope}[on background layer]
+    \node[c4zone, fit={(hub) (ifr) (ifrlbl) (gcs) (pg) (ds) (ps) (agente)}, inner sep=12pt,
+          yshift=2pt] (stack) {};
+  \end{scope}
+  \node[c4boundarylbl, fill=unooSurface, anchor=south east]
+    at ([xshift=-6pt, yshift=1pt]stack.north east)
+    {Plataforma Unooria --- \emph{stack} de um contrato};
 
   % --- relações
   \foreach \p in {estudante, prof, adm}
     \draw[c4rel] (\p.south) -- (\p.south |- hub.north);
-  \node[cxlabel] at (2.6,-0.15) {HTTPS};
+  \node[cxlabel] at (2.35,-0.15) {HTTPS};
   \draw[c4relbi] (hub.east |- exp.west) -- (exp.west)
-    node[cxlabel, midway, above=1pt, text width=14mm]{\texttt{post\-Message}\\v1};
+    node[cxlabel, midway, above=2pt, text width=14mm]{\texttt{post\-Message}\\v1};
   \draw[c4rel] (exp.south) -- (sdk.north);
-  \draw[c4reldash] (gcs.west) -- (exp.east) node[cxlabel, midway, above=1pt]{CDN};
-  \draw[c4rel] (sdk.south) -- (api.north) node[cxlabel, midway, left=1pt]{HTTPS + \emph{Bearer}};
-  \draw[c4rel] ([xshift=10mm]hub.south) |- (api.west) node[cxlabel, pos=0.75, above=1pt]{BFF};
-  \draw[c4relbi] (api.east) -- (pg.west) node[cxlabel, midway, above=1pt]{SQL + RLS};
-  \draw[c4rel] ([xshift=-4mm]api.north east) |- (12.7,-6.05) -| (gcs.south)
-    node[cxlabel, pos=0.75, right=1pt]{\emph{assets}, planos};
-  \draw[c4relbi] ([yshift=-3mm]api.east) -| (12.95,-10.6) -- (ps.west)
-    node[cxlabel, pos=0.55, above=1pt]{\emph{push}};
-  \draw[c4relbi] ([yshift=-6mm]api.east) -| (12.6,-14.0) -- (avatar.west);
-  \node[cxlabel, rotate=90] at (12.6,-12.3) {sala; \texttt{/ajuda/llm}};
-  \draw[c4rel] ([xshift=-8mm]api.south) |- (5.9,-9.25) -- (agente.north)
-    node[cxlabel, pos=0.3, above=1pt]{SSE};
-  \draw[c4rel] (api.south) -- (vertex.north) node[cxlabel, pos=0.62, right=1pt]{HTTPS, WSS};
-  \draw[c4rel] (agente.west) -- (ds.east) node[cxlabel, midway, above=1pt]{busca};
-  \draw[c4rel] ([xshift=6mm]agente.south) |- (9.8,-12.45) -- (9.8,-14.0 |- vertex.north)
-    node[cxlabel, pos=0.25, above=1pt]{Gemini};
-  \draw[c4reldash] (hub.west) -| (-0.5,-14.0) -- (idp.west);
-  \node[cxlabel, rotate=90] at (-0.5,-8.0) {OIDC};
+  \draw[c4reldash] (gcs.west) -- (exp.east) node[cxlabel, midway, above=2pt]{CDN};
+  \draw[c4rel] (sdk.south) -- (api.north) node[cxlabel, pos=0.62, left=2pt]{HTTPS + \emph{Bearer}};
+  \draw[c4rel] ([xshift=10mm]hub.south) |- (api.west) node[cxlabel, pos=0.75, above=2pt]{BFF};
+  \draw[c4relbi] (api.east) -- (pg.west) node[cxlabel, midway, above=2pt]{SQL + RLS};
+  \draw[c4rel] ([xshift=11mm]api.north) -- (10.9,-6.15) -| (gcs.south)
+    node[cxlabel, pos=0.75, right=2pt]{\emph{assets}, planos};
+  \draw[c4relbi] ([yshift=-3.5mm]api.east) -| (12.8,-10.9) -- (ps.west)
+    node[cxlabel, pos=0.5, above=2pt]{\emph{push}};
+  \draw[c4relbi] ([yshift=-7mm]api.east) -| (12.1,-14.2) -- (avatar.west);
+  \node[cxlabel, rotate=90, above=1.5pt] at (12.1,-12.5) {sala; \texttt{/ajuda/llm}};
+  \draw[c4rel] ([xshift=-8mm]api.south) |- (5.5,-9.45) -- (agente.north)
+    node[cxlabel, pos=0.3, above=2pt]{SSE};
+  \draw[c4rel] (api.south) -- (vertex.north) node[cxlabel, pos=0.62, right=2pt]{HTTPS, WSS};
+  \draw[c4rel] (agente.west) -- (ds.east) node[cxlabel, midway, above=2pt]{busca};
+  \draw[c4rel] ([xshift=6mm]agente.south) |- (9.1,-12.65) -- (9.1,-14.2 |- vertex.north)
+    node[cxlabel, pos=0.25, above=2pt]{Gemini};
+  \draw[c4reldash] (hub.west) -| (-0.5,-14.2) -- (idp.west);
+  \node[cxlabel, rotate=90, above=1.5pt] at (-0.5,-8.0) {OIDC};
 
 \end{tikzpicture}}
+\begin{legendadiag}
+\amostra{c4container} contêiner em execução \quad
+\amostra{bundle} artefato estático \quad
+\amostra{c4component} biblioteca \quad
+\amostra{c4db} banco \quad
+\amostra{c4queue} fila \quad
+\amostra{c4artifact} armazenamento de objetos \quad
+\amostra{c4systemext} externo
+\end{legendadiag}
 \caption[C4 nível 2 --- contêineres]{C4 nível 2: contêineres. Só o hub, a API, o
   banco, o Pub/Sub e o agente de IA do professor são peças em execução; o agente
   roda no Vertex AI Agent Engine e só a API o chama --- o navegador nunca fala
@@ -272,16 +283,6 @@ professor no Vertex AI Agent Engine (\adrr{ADR-126}): o único contêiner que
   \emph{frontend}.}
 \label{fig:c4l2}
 \end{figure}
-
-\begin{legendadiag}
-\amostra{c4container} contêiner em execução \quad
-\amostra{bundle} artefato estático \quad
-\amostra{c4component} biblioteca \quad
-\amostra{c4db} banco \quad
-\amostra{c4queue} fila \quad
-\amostra{c4artifact} armazenamento de objetos \quad
-\amostra{c4systemext} externo
-\end{legendadiag}
 
 \subsection{Catálogo de contêineres e artefatos}
 
@@ -525,8 +526,8 @@ missões fazem até ele e a dele até \arq{ai/}; as outras estão no par Mermaid
 
   % ---- relações: transversal
   \draw[c4rel] (guard.east) -- (roles.west);
-  \draw[c4reldash] (tenint.south) -- (10.15,-2.30) -- (13.20,-2.30) -- (13.20,0 |- prisma.north);
-  \node[cxlabel] at (11.70,-2.30) {escola do \emph{token}};
+  \draw[c4reldash] (tenint.south) -- (10.15,-2.35) -- (13.20,-2.35) -- (13.20,0 |- prisma.north);
+  \node[cxlabel, above=1.5pt] at (11.70,-2.35) {escola do \emph{token}};
 
   % ---- relações: plataforma
   \draw[c4rel] (salas.south) -- (equipes.north)
@@ -549,6 +550,12 @@ missões fazem até ele e a dele até \arq{ai/}; as outras estão no par Mermaid
   \draw[c4rel] (apps.east |- 0,-15.55) -- (store.west |- 0,-15.55);
 
 \end{tikzpicture}}
+\begin{legendadiag}
+\amostra{c4component} plataforma e transversal \quad
+\amostra{c4component, fill=unooLavender!24, draw=unooLavenderSoft} infraestrutura \quad
+\amostra{c4component, fill=unooGreen!22, draw=unooGreen} domínio por experiência \quad
+seta cheia: chama ou lê \quad seta tracejada: contexto da requisição
+\end{legendadiag}
 \caption[C4 nível 3 --- componentes da API]{C4 nível 3: componentes da API,
   agrupados para caber em vinte caixas (a lista completa dos módulos está no
   texto e no par Mermaid do Apêndice~\ref{ap:mermaid}). A faixa transversal roda
@@ -570,13 +577,6 @@ missões fazem até ele e a dele até \arq{ai/}; as outras estão no par Mermaid
   até as guardas de \texttt{comum/}, nem as das outras missões.}
 \label{fig:c4l3api}
 \end{figure}
-
-\begin{legendadiag}
-\amostra{c4component} plataforma e transversal \quad
-\amostra{c4component, fill=unooLavender!24, draw=unooLavenderSoft} infraestrutura \quad
-\amostra{c4component, fill=unooGreen!22, draw=unooGreen} domínio por experiência \quad
-seta cheia: chama ou lê \quad seta tracejada: contexto da requisição
-\end{legendadiag}
 
 \begin{regra}
 \begin{nota}
@@ -674,14 +674,14 @@ pelo \cd{VilaService}, num sentido só (as funções utilitárias de
   comp/.style={lib, fill=unooLavender!24, draw=unooLavenderSoft}]
   % Grade (2026-10-13): quatro colunas de 3,95 cm de passo (c1 = 2,10;
   % c2 = 6,05; c3 = 10,00; c4 = 13,95), caixas de 35,5 mm e 4 mm de vão; seis
-  % linhas (y = -1,35; -3,70; -6,10; -8,35; -10,55; -12,75), mais folga sob as
+  % linhas (y = -1,35; -3,75; -6,45; -8,95; -11,45; -13,80), mais folga sob as
   % rotas, que têm três linhas. A chave de assinatura fica no centro (c3, L4)
   % e quem a usa encosta nela: o embed em cima, o JWKS à esquerda, o
   % api-servidor à direita e o lib/bff.ts embaixo. A coluna c2 da L6 fica VAZIA
   % de propósito: é por ela que o BFF desce até a API. O api-servidor desce pela
   % margem direita (x = 16,10).
 
-  \draw[c4zone] (0,0) rectangle (16.40,-13.85);
+  \draw[c4zone] (0,0) rectangle (16.40,-14.90);
   \node[c4boundarylbl, fill=unooSurface, anchor=south west] at (0.3,-0.1)
     {Contêiner: Hub (Next.js)};
 
@@ -694,47 +694,47 @@ pelo \cd{VilaService}, num sentido só (as funções utilitárias de
     {\texttt{lib/auth.ts}\desc{NextAuth: a sessão}};
 
   % ---- L2: rotas (app/)
-  \node[rota] (publicas) at (2.1,-3.70)
+  \node[rota] (publicas) at (2.1,-3.75)
     {Rotas públicas\desc{\texttt{/}, \texttt{/login},\\\texttt{/privacidade}, \texttt{/termos}}};
-  \node[rota] (areas) at (6.05,-3.70)
+  \node[rota] (areas) at (6.05,-3.75)
     {Áreas por papel\desc{\texttt{/estudante}, \texttt{/professor},\\\texttt{/admin}, \texttt{/analise},\\\texttt{/unooria}}};
-  \node[rota] (paginas) at (10.0,-3.70)
+  \node[rota] (paginas) at (10.0,-3.75)
     {Páginas com \emph{embed}\desc{\texttt{/exp/:expId}, \texttt{/dev-embed}\\e três do professor}};
 
   % ---- L3: casca e embed
-  \node[comp] (casca) at (2.1,-6.10)
+  \node[comp] (casca) at (2.1,-6.45)
     {\texttt{CascaPlataforma}\desc{CSS do DS e fontes}};
-  \node[comp] (exphost) at (6.05,-6.10)
+  \node[comp] (exphost) at (6.05,-6.45)
     {\texttt{ExpHost}\desc{\texttt{DispositivoFrame}\\+ \texttt{ExpFrame} (\emph{sandbox})}};
-  \node[lib] (embed) at (10.0,-6.10)
+  \node[lib] (embed) at (10.0,-6.45)
     {\texttt{lib/embed-}\\\texttt{experiencia.ts}\desc{\emph{token}, manifesto, origem}};
-  \node[lib] (devsrv) at (13.95,-6.10)
+  \node[lib] (devsrv) at (13.95,-6.45)
     {\texttt{lib/experiencias-}\\\texttt{dev.ts}\desc{porta do \emph{dev server}}};
 
   % ---- L4: a chave
-  \node[comp] (header) at (2.1,-8.35)
+  \node[comp] (header) at (2.1,-8.95)
     {\texttt{HeaderPlataforma}\desc{um só para todos\\os papéis}};
-  \node[rota] (jwks) at (6.05,-8.35)
+  \node[rota] (jwks) at (6.05,-8.95)
     {\texttt{/.well-known/}\\\texttt{jwks.json}\desc{a chave pública}};
-  \node[lib, draw=unooNavy, line width=1.1pt] (chave) at (10.0,-8.35)
+  \node[lib, draw=unooNavy, line width=1.1pt] (chave) at (10.0,-8.95)
     {\texttt{lib/chave-token.ts}\desc{assina RS256,\\TTL 15 min}};
-  \node[lib, text width=33mm] (apiserv) at (13.95,-8.35)
+  \node[lib, text width=33mm] (apiserv) at (13.95,-8.95)
     {\texttt{lib/api-servidor.ts}\desc{a API vista dos\\\emph{Server Components}}};
 
   % ---- L5 e L6: a passagem do navegador para a API
-  \node[comp] (ajuda) at (2.1,-10.55)
+  \node[comp] (ajuda) at (2.1,-11.45)
     {\texttt{components/ajuda/}\desc{a janela da Ajuda}};
-  \node[rota] (bff) at (6.05,-10.55)
+  \node[rota] (bff) at (6.05,-11.45)
     {\texttt{/api/plataforma/}\\\texttt{[...path]}\desc{BFF genérico, 180 s}};
-  \node[lib] (bffts) at (10.0,-10.55)
+  \node[lib] (bffts) at (10.0,-11.45)
     {\texttt{lib/bff.ts}\desc{sessão e \emph{token} curto}};
-  \node[rota] (stream) at (10.0,-12.75)
+  \node[rota] (stream) at (10.0,-13.80)
     {Rota de \emph{stream}\desc{\texttt{/api/plataforma/}\\\texttt{agente-professor/\ldots}}};
-  \node[comp] (chat) at (13.95,-12.75)
+  \node[comp] (chat) at (13.95,-13.80)
     {\texttt{components/}\\\texttt{agente-professor/}\desc{o chat do agente}};
 
   % ---- externo
-  \node[c4containerext, text width=104mm, minimum height=10mm] (api) at (10.0,-15.05)
+  \node[c4containerext, text width=104mm, minimum height=10mm] (api) at (10.0,-16.10)
     {\textbf{API} (NestJS)\desc{valida o \emph{token} pelo JWKS do hub}};
 
   % ---- relações
@@ -759,11 +759,19 @@ pelo \cd{VilaService}, num sentido só (as funções utilitárias de
     node[cxlabel, pos=0.45, right=2pt] {HTTPS + \emph{Bearer}};
   \draw[c4rel] (stream.south) -- (stream.south |- api.north)
     node[cxlabel, midway, right=2pt] {SSE};
-  \draw[c4rel] (apiserv.east) -- (16.10,-8.35) -- (16.10,-15.05) -- (api.east);
-  \draw[c4rel] (ajuda.south) -- (2.1,-15.05)
+  \draw[c4rel] (apiserv.east) -- (16.10,-8.95) -- (16.10,-16.10) -- (api.east);
+  \draw[c4rel] (ajuda.south) -- (2.1,-16.10)
     node[cxlabel, pos=0.45, right=2pt] {WSS do mascote} -- (api.west);
 
 \end{tikzpicture}}
+\begin{legendadiag}
+\amostra{c4component, fill=unooBlueWash, draw=unooBlue} rota de \cd{app/} e
+\emph{middleware} \quad
+\amostra{c4component} \cd{lib/}, no servidor \quad
+\amostra{c4component, fill=unooLavender!24, draw=unooLavenderSoft} componente
+de \cd{components/} \quad
+\amostra{c4containerext} contêiner externo
+\end{legendadiag}
 \caption[C4 nível 3 --- componentes do hub]{C4 nível 3: componentes do hub. A
   chave de assinatura (\texttt{lib/chave-token.ts}) está no centro, e tudo que
   fala com a API passa por ela: a montagem do \emph{embed}, o
@@ -781,15 +789,6 @@ pelo \cd{VilaService}, num sentido só (as funções utilitárias de
   pelo hub (\adrr{ADR-158}).}
 \label{fig:c4l3hub}
 \end{figure}
-
-\begin{legendadiag}
-\amostra{c4component, fill=unooBlueWash, draw=unooBlue} rota de \cd{app/} e
-\emph{middleware} \quad
-\amostra{c4component} \cd{lib/}, no servidor \quad
-\amostra{c4component, fill=unooLavender!24, draw=unooLavenderSoft} componente
-de \cd{components/} \quad
-\amostra{c4containerext} contêiner externo
-\end{legendadiag}
 
 \begin{decisao}
 \textbf{Um único \emph{header} para todos os papéis, e uma única casca visual.}
@@ -1097,7 +1096,7 @@ são separados e cobrem exatamente o que não dá para afirmar sem ele:
 \arq{apps/hub} & Aplicação Next.js: rotas por papel, \emph{embed}, BFF, JWKS.\\
 \zebra \arq{apps/api} & Aplicação NestJS: 38 módulos no \arq{app.module}, Prisma,
   61 migrações (contagem de 2026-10-13).\\
-\arq{apps/agente-professor} & O agente de IA do professor: Python + ADK, no
+\arq{apps/\B agente-professor} & O agente de IA do professor: Python + ADK, no
   Vertex AI Agent Engine (\adrr{ADR-126}).\\
 \zebra \arq{apps/experiencias/*} & Uma pasta por experiência, mais \arq{\_template}.\\
 \arq{packages/sdk} & Contrato da ponte e telemetria.\\
@@ -1139,10 +1138,10 @@ Este é o fluxo com mais concorrência da plataforma e o que mais exige do banco
   % uma raia fica no trecho ANTES dela (pos = 0,25), nunca sobre a linha de
   % vida. As duas notas vão embaixo, para o desenho caber em 16 cm sem encolher.
 
-  \raia{1.6}{-13.3}{Experiência}{exp08ef1b no \texttt{iframe}}
-  \raia{5.6}{-13.3}{\texttt{runs.controller}}{casca HTTP}
-  \raia{9.6}{-13.3}{\texttt{motor/servico.ts}}{regra + persistência}
-  \raiaext{13.6}{-13.3}{PostgreSQL}{Cloud SQL}
+  \raia{1.6}{-13.8}{Experiência}{exp08ef1b no \texttt{iframe}}
+  \raia{5.6}{-13.8}{\texttt{runs.controller}}{casca HTTP}
+  \raia{9.6}{-13.8}{\texttt{motor/servico.ts}}{regra + persistência}
+  \raiaext{13.6}{-13.8}{PostgreSQL}{Cloud SQL}
 
   % ---- 1. os eventos chegam antes, num lote
   \node[seqcond] at (1.75,-0.85) {durante o \emph{feed}};
@@ -1167,29 +1166,29 @@ Este é o fluxo com mais concorrência da plataforma e o que mais exige do banco
     node[rot, midway] {\texttt{pg\_advisory\_xact\_lock}};
   \draw[seqret] (13.6,-7.70) -- (9.6,-7.70)
     node[rot, midway] {\texttt{run}, eventos, catálogo};
-  \draw[seqself] (9.6,-8.30) -- ++(0.62,0) -- ++(0,-0.42) -- ++(-0.62,0);
-  \node[seqlbl, anchor=west, text width=27mm, align=left] at (10.32,-8.51)
+  \draw[seqself] (9.6,-8.35) -- ++(0.62,0) -- ++(0,-0.45) -- ++(-0.62,0);
+  \node[seqlbl, anchor=west, text width=27mm, align=left] at (10.32,-8.58)
     {\texttt{aplicarEventos} e \texttt{curarBloco}: puras};
-  \draw[seqmsg] (9.6,-9.42) -- (13.6,-9.42)
+  \draw[seqmsg] (9.6,-9.75) -- (13.6,-9.75)
     node[rot, midway] {\texttt{UPDATE engine\_state}};
-  \draw[seqself] (9.6,-10.02) -- ++(0.62,0) -- ++(0,-0.42) -- ++(-0.62,0);
-  \node[seqlbl, anchor=west, text width=27mm, align=left] at (10.32,-10.23)
+  \draw[seqself] (9.6,-10.40) -- ++(0.62,0) -- ++(0,-0.45) -- ++(-0.62,0);
+  \node[seqlbl, anchor=west, text width=27mm, align=left] at (10.32,-10.63)
     {\texttt{paraFeedPost}: sem lado, perfil nem intensidade};
-  \draw[seqmsg] (9.6,-11.44) -- (13.6,-11.44)
+  \draw[seqmsg] (9.6,-11.95) -- (13.6,-11.95)
     node[rot, midway] {\texttt{COMMIT} (solta o \emph{lock})};
-  \draw[seqret] (9.6,-12.16) -- (5.6,-12.16)
+  \draw[seqret] (9.6,-12.67) -- (5.6,-12.67)
     node[rot, midway] {posts, módulos, diagnóstico};
-  \draw[seqret] (5.6,-12.88) -- (1.6,-12.88)
+  \draw[seqret] (5.6,-13.39) -- (1.6,-13.39)
     node[rot, midway] {só posts e módulos};
 
   % ---- notas
-  \node[actnote, text width=66mm, anchor=north west] at (0.3,-13.75)
+  \node[actnote, text width=66mm, anchor=north west] at (0.3,-14.25)
     {\textbf{Por que o \emph{lock}:} dois pedidos simultâneos de bloco (duas abas,
      um \emph{reload} no meio do \emph{fetch}, um \emph{retry}) se sobrescreviam
      e um bloco inteiro desaparecia do estado --- posts já entregues voltavam a
      ser servidos e a série por bloco do dossiê ficava corrompida. A transação
      tem \texttt{timeout} de \SI{20}{\second}.};
-  \node[actnote, text width=66mm, anchor=north east] at (14.9,-13.75)
+  \node[actnote, text width=66mm, anchor=north east] at (14.9,-14.25)
     {\textbf{Por que o sanitizador:} \texttt{lado}, \texttt{perfil} e
      \texttt{intensidade} são \emph{a variável independente do experimento}. Se
      chegassem ao cliente, a experiência poderia exibi-los --- e o estudante

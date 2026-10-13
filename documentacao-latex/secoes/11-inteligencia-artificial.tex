@@ -224,10 +224,10 @@ preparo cai no banco padrão (\adrr{ADR-157}). A suíte de ponta a ponta
   \node[impl] (aec) at (11.4,-7.2) {\texttt{agent-engine.}\\\texttt{client.ts}\desc{SSE, ADC}};
   \node[impl] (liv) at (14.7,-7.2) {\texttt{gemini-live.}\\\texttt{client.ts} e \texttt{liveavatar.}\\\texttt{client.ts}};
 
-  \node[ext, text width=59mm] (vertex) at (3.15,-10.2) {\textbf{Vertex AI --- Gemini}\desc{\texttt{global}, reserva em \texttt{us}}};
-  \node[ext] (eng) at (11.4,-10.2) {\textbf{Agent Engine}\desc{o agente do professor}};
-  \node[ext] (glive) at (14.7,-10.2) {\textbf{Gemini Live}\desc{\texttt{us-central1}}};
-  \node[ext] (lav) at (14.7,-12.2) {\textbf{LiveAvatar}\desc{HeyGen}};
+  \node[ext, text width=59mm] (vertex) at (3.15,-10.8) {\textbf{Vertex AI --- Gemini}\desc{\texttt{global}, reserva em \texttt{us}}};
+  \node[ext] (eng) at (11.4,-10.8) {\textbf{Agent Engine}\desc{o agente do professor}};
+  \node[ext] (glive) at (14.7,-10.8) {\textbf{Gemini Live}\desc{\texttt{us-central1}}};
+  \node[ext] (lav) at (14.7,-12.8) {\textbf{LiveAvatar}\desc{HeyGen}};
 
   % --- fronteiras
   \begin{scope}[on background layer]
@@ -238,7 +238,7 @@ preparo cai no banco padrão (\adrr{ADR-157}). A suíte de ponta a ponta
   \node[c4boundarylbl, fill=unooSurface, anchor=south west] at ([xshift=6pt, yshift=-1pt]apiz.north west)
     {API --- \texttt{apps/api/src}};
   \node[c4boundarylbl, fill=unooSurface, text=unooGreen!60!black, anchor=north west]
-    at ([xshift=6pt, yshift=-1pt]srcai.south west) {\texttt{src/ai/} --- a ÚNICA porta para a IA};
+    at ([xshift=28mm, yshift=-1pt]srcai.south west) {\texttt{src/ai/} --- a ÚNICA porta para a IA};
 
   % --- relações
   \draw[c4reldash, draw=unooRed] (ger.south) -- (ger.south |- prov.north)
@@ -256,9 +256,9 @@ preparo cai no banco padrão (\adrr{ADR-157}). A suíte de ponta a ponta
   \draw[c4reldash] (pp.north |- prov.south) -- (pp.north);
   \draw[c4rel] (pag.south) -- (aec.north);
   \draw[c4rel] (pao.south) -- (liv.north);
-  \draw[c4rel] (vx.south) -- (vx.south |- vertex.north) node[cxlabel, pos=0.86]{HTTPS};
-  \draw[c4rel] (aec.south) -- (eng.north) node[cxlabel, pos=0.86]{\texttt{:streamQuery}};
-  \draw[c4rel] (liv.south) -- (glive.north) node[cxlabel, pos=0.86]{WSS};
+  \draw[c4rel] (vx.south) -- (vx.south |- vertex.north) node[cxlabel, pos=0.58]{HTTPS};
+  \draw[c4rel] (aec.south) -- (eng.north) node[cxlabel, pos=0.58]{\texttt{:streamQuery}};
+  \draw[c4rel] (liv.south) -- (glive.north) node[cxlabel, pos=0.58]{WSS};
   \draw[c4relbi] (liv.east) -- ++(0.75,0) |- (lav.east);
 
 \end{tikzpicture}}
@@ -623,14 +623,14 @@ validada~\cite{vignola2014dass21}, em domínio público.
     {\texttt{GET /bemestar/hoje}\\3 itens da permutação do ciclo};
   \node[decision, text width=30mm] (sinal) at (0,-3.6)
     {sinal de apoio?\\item 17 ou 21 $\geq$ 2, ou termo de risco};
-  \node[actionerr, text width=40mm] (fixo) at (-5.9,-3.6)
+  \node[actionerr, text width=40mm] (fixo) at (-6.3,-3.6)
     {texto FIXO de apoio\\CVV 188, SAMU 192, CAPS/UBS\\
      \textbf{a IA não é chamada}\\\texttt{origem\_texto = 'seguranca'}};
   \node[decision, text width=24mm] (saldo) at (0,-6.3) {tem saldo e \emph{provider}?};
   \node[action, text width=40mm] (ia) at (0,-8.8)
     {a IA gera abertura, pergunta aberta e acolhimento; recebe só dia da
      semana, mês, nº do \emph{check-in} e o texto livre delimitado};
-  \node[actionsys, text width=38mm] (fall) at (5.8,-8.8)
+  \node[actionsys, text width=38mm] (fall) at (6.2,-8.8)
     {texto FIXO do catálogo\\\texttt{origem\_texto = 'fallback'}};
   \node[decision, text width=29mm] (val) at (0,-11.3) {\texttt{validarTextoDaIa}?};
   \node[actionok, text width=34mm] (ok) at (0,-13.4) {\texttt{origem\_texto = 'ia'}};
@@ -648,7 +648,7 @@ validada~\cite{vignola2014dass21}, em domínio público.
   \draw[flow] (val) -- (ok) node[flowlbl, midway]{passou};
   \draw[flow] (ok) -- (fim);
   \draw[flow] (fixo.south) |- (fim.west);
-  \draw[flow] (fall.east) -- (8.4,-8.8) |- (fim.east);
+  \draw[flow] (fall.east) -- (8.8,-8.8) |- (fim.east);
 
 \end{tikzpicture}}
 \caption[Guardrails do check-in de bem-estar]{Os \emph{guardrails} do
