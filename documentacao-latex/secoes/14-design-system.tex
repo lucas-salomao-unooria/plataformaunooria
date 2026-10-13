@@ -1242,6 +1242,56 @@ A superfície PÚBLICA (\cd{/}, \cd{/privacidade}, \cd{/termos}) ficou fora por
 decisão: \cd{.landing-nav\_\_miolo} mantém 1440px centralizado e \cd{Logo
 size="md"}, porque é outra superfície com outro público.
 
+\section{O hub no celular e no tablet (\adrr{ADR-159})}
+\label{ds:responsivo}
+
+Medido em 2026-10-12, logado nos seis papéis, em 375, 768 e 1280px de largura
+(cerca de 80 rotas, cada uma nas três): o desktop não tinha defeito, e o
+celular e o tablet tinham \textbf{dois}, os dois de \emph{layout} e nenhum de
+componente.
+
+\begin{itemize}
+  \item \textbf{Toda a área \rota{/admin} e \rota{/unooria} rolava de lado.} A
+    página media 419px num celular de 375 (375 + os 44px da \cd{SideBar}) e,
+    nas telas com tabela, 812px num tablet de 768. A coluna de conteúdo é
+    \textbf{item de \emph{flex}} ao lado da \cd{SideBar}, e item de \emph{flex}
+    não encolhe abaixo do próprio conteúdo (\cd{min-width: auto}): a tabela
+    larga empurrava a coluna para fora da janela em vez de rolar dentro do
+    \cd{ScrollBar}. O conserto é \cd{min-w-0} na coluna dos dois layouts, e
+    \cd{max-w-full} nos filtros de largura fixa (o padrão de
+    \arq{escolha-de-escola.tsx}): a coluna tem 283px úteis no celular.
+  \item \textbf{A \cd{Tag} com frase vazava.} A duração no cabeçalho das fichas
+    de missão e as fichas dos posts no guia de A Seleção são frases dentro de
+    uma \cd{Tag}, que no DS é \cd{nowrap} com altura fixa: 395 a 457px numa
+    tela de 375.
+\end{itemize}
+
+\begin{atencao}
+\textbf{Coluna de conteúdo que é item de \emph{flex} leva \cd{min-w-0}.} Sem ele,
+o \cd{ScrollBar} de uma tabela nunca chega a rolar no celular: quem rola é a
+página inteira, e a coluna da direita da tabela some fora da janela. O
+defeito não aparece no desktop, onde a coluna de 1180px sempre tem folga.
+\end{atencao}
+
+\textbf{A \cd{SideBar} fica no celular.} Ela tem 44px (só ícones) e cabe. Trocar
+por \cd{BottomBar} abaixo de um \emph{breakpoint} daria duas navegações para
+manter em sincronia, e a área do gestor tem até dez itens --- mais do que uma
+barra de base comporta.
+
+\textbf{A lacuna da \cd{Tag} é compensada em \arq{plataforma.css}}: a tag ocupa no
+máximo a linha e o texto quebra, no contêiner e no \cd{\_\_label} (que tem
+\cd{nowrap} e reticências próprios --- só limitar a largura trocaria o
+vazamento por uma frase cortada). A altura de cada tamanho vira piso
+(\cd{min-height} de 24, 28 e 32px), então tag curta sai idêntica. Morre quando o
+DS publicar tag que quebra, ou quando as frases saírem da \cd{Tag} para texto
+corrido --- o mesmo movimento que tirou a frase do \cd{MetricCard}.
+
+\textbf{Como medir de novo.} O detector precisa comparar com a largura
+\emph{nominal} da tela: emulando celular, o Chrome afasta o \emph{zoom} para
+caber o transbordo, e \cd{window.innerWidth} cresce junto --- uma página de
+419px responde \enquote{419 de 419} e parece certa. A primeira rodada desta
+medição deu tudo verde por isso.
+
 \section{Cor da plataforma: classe escrita à mão}
 
 \begin{atencao}

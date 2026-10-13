@@ -216,7 +216,7 @@ export function RelatorioDaRegional({
       {erro ? <AlertBox theme="light" variant="error" device="auto" description={erro} /> : null}
 
       {daContrato ? (
-        <div className="w-[320px]">
+        <div className="w-[320px] max-w-full">
           <Selection
             id="regional-do-relatorio"
             label="Regional"

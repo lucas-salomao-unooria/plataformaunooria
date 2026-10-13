@@ -9,7 +9,7 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{158 decisões}, numeradas até ADR-158. A 153 (a evidência do Unoovista) e a 154 (a da Missão Tempestade) nasceram no mesmo dia, em frentes paralelas. A 132 (a Ajuda com
+São \textbf{159 decisões}, numeradas até ADR-159. A 153 (a evidência do Unoovista) e a 154 (a da Missão Tempestade) nasceram no mesmo dia, em frentes paralelas. A 132 (a Ajuda com
 avatar) entrou no código antes de ter seção aqui, e por um dia o número foi
 citado sem existir; a 133 pulou para não colidir com ela. A 133 e a 134 nasceram no mesmo dia, em frentes paralelas
 (Unoovista e Unoochat), e entraram juntas no merge; a 135 e a 136 levaram as
@@ -209,6 +209,7 @@ que a cercam.
 \adrr{ADR-156} & O Unoovista ganha o podcast com as falas revisadas no Ativar, e a Missão Tempestade ganha o primeiro podcast fixo & 2026-10-10 & Aceita; aplica a \adrr{ADR-150}\\
 \zebra \adrr{ADR-157} & O Júri Estadual segue o PRD v2 (0.4.0) & 2026-10-10 & Aceita; supera em parte a \adrr{ADR-151} e a \adrr{ADR-152}\\
 \adrr{ADR-158} & O mascote na Ajuda: voz do Gemini Live por um proxy na api, rosto 3D no hub, e o padrão escolhido no painel & 2026-10-12 & Aceita; complementa a \adrr{ADR-132}\\
+\zebra \adrr{ADR-159} & O hub no celular e no tablet: \cd{min-w-0} na coluna ao lado da \cd{SideBar}, e a \cd{Tag} que quebra linha & 2026-10-12 & Aceita; complementa a \adrr{ADR-83}\\
 \bottomrule
 \end{tabularx}
 
@@ -14245,3 +14246,83 @@ lá a escolha continua valendo.
 \textbf{Gatilho.} O gasto do Live medido na fatura passar do avatar por
 minuto; o Google publicar visemas ou tempos no Live; ou a Vertex aceitar token
 efêmero com o ADC.
+
+% ---------------------------------------------------------------------------
+\section{ADR-159 --- O hub no celular e no tablet: \cd{min-w-0} na coluna ao lado da \cd{SideBar}, e a \cd{Tag} que quebra linha}
+\label{adr:hub-responsivo}
+
+\textbf{Data.} 2026-10-12. \textbf{Status.} Aceita. \textbf{Complementa} a
+\adrr{ADR-83}: a barra ancora na janela, e agora a coluna também cabe nela em
+qualquer largura. Vale para a PLATAFORMA (o hub); o que roda dentro do
+aparelho de uma missão fica fora.
+
+\begin{especificacao}{Contexto}
+O hub foi medido logado nos seis papéis, em 375, 768 e 1280px (cerca de 80
+rotas, cada uma nas três larguras, com Playwright emulando aparelho). O
+desktop não tinha defeito. No celular e no tablet:
+\begin{itemize}
+  \item \textbf{13 das 18 rotas medidas em \rota{/admin} e \rota{/unooria}
+    rolavam de lado} (as outras cinco só por sorte do conteúdo) --- 419px de página num celular de 375 e, nas que têm tabela,
+    812px num tablet de 768, com a coluna da direita da tabela fora da janela;
+  \item \textbf{duas fichas de missão e o guia de A Seleção vazavam} (419 a
+    498px em 375): frases longas dentro de uma \cd{Tag} do DS, que é
+    \cd{nowrap} com altura fixa.
+\end{itemize}
+A causa do primeiro é de \emph{layout}: a coluna de conteúdo é item de
+\emph{flex} ao lado da \cd{SideBar}, e item de \emph{flex} não encolhe abaixo do
+conteúdo (\cd{min-width: auto}). A tabela empurrava a coluna em vez de rolar
+dentro do \cd{ScrollBar}.
+\end{especificacao}
+
+\textbf{Decisão.}
+\begin{enumerate}
+  \item \cd{min-w-0} na coluna de conteúdo de \arq{admin/layout.tsx} e
+    \arq{unooria/layout.tsx}. A \cd{SideBar} de 44px fica em todas as larguras.
+  \item Compensação MARCADA em \arq{packages/ui/styles/plataforma.css}: a
+    \cd{.unooria-tag} ocupa no máximo a linha e quebra o texto (também no
+    \cd{\_\_label}), e a altura fixa de cada tamanho vira piso
+    (\cd{min-height} 24/28/32px) --- tag curta sai idêntica.
+  \item O formulário de novo usuário empilha os pares de campos abaixo de
+    \cd{sm} (\cd{grid-cols-1 sm:grid-cols-2}).
+  \item Os filtros de largura fixa do \rota{/admin} e do \rota{/unooria} (180 a
+    320px) ganham \cd{max-w-full} --- o padrão que \arq{escolha-de-escola.tsx}
+    já usava --- e os grupos de botões de \rota{/admin/escolas} quebram linha.
+    Com 283px úteis no celular, os de 280px cabiam por 3px; os do contrato
+    (seletor de regional, \enquote{Vincular professor ou gestor}) já não cabiam.
+\end{enumerate}
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \textbf{Trocar a \cd{SideBar} por \cd{BottomBar} no celular.} O DS
+    publica a barra de base, mas seriam duas navegações para manter em
+    sincronia, a área do gestor tem até dez itens, e a \cd{SideBar} de ícones
+    já cabe: o defeito nunca foi ela.
+  \item \textbf{Tirar as frases da \cd{Tag}} (como se fez com o
+    \cd{MetricCard}). É o certo a prazo, mas são onze fichas de missão e o
+    guia, com copy aprovada pelo PO; a compensação resolve a tela hoje e morre
+    quando o texto sair da etiqueta.
+  \item \textbf{Só \cd{max-width} na \cd{Tag}.} O \cd{\_\_label} tem reticências
+    próprias: a frase sairia cortada (\enquote{1 aula de 50 min, com pa\ldots}),
+    e é exatamente a informação que o professor foi ler.
+  \item \textbf{\cd{overflow-x: hidden} na casca.} Esconderia o sintoma e
+    cortaria a coluna da direita das tabelas sem barra para chegar a ela.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+\begin{itemize}
+  \item A compensação vale para TODA \cd{Tag} do hub: uma etiqueta que antes
+    estourava a linha agora quebra em duas, e a pílula de duas linhas é menos
+    bonita que a de uma.
+  \item A medição não abre janelas (modais) nem telas que dependem de dado de
+    aula --- com a base de demonstração, os resultados das missões estão
+    vazios. As tabelas desses painéis já rolam dentro do \cd{ScrollBar}, mas
+    não foram medidas cheias.
+  \item No celular, a coluna do \rota{/admin} tem 283px úteis (375 menos a
+    \cd{SideBar} e os dois \emph{gutters} de 24px). Cabe, mas aperta; reduzir o
+    \emph{gutter} desalinharia a marca da coluna, que a \adrr{ADR-83} amarrou.
+\end{itemize}
+
+\textbf{Gatilho.} O DS publicar \cd{Tag} que quebra linha (a compensação morre);
+a área do gestor ganhar navegação que não caiba em 44px; ou uma tela nova
+voltar a rolar de lado na medição em 375px.
+

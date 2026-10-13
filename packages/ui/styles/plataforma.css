@@ -391,3 +391,49 @@ main:has(> .tela-cheia) {
     padding-bottom: calc(var(--unooria-chat-offset, 24px) + var(--unooria-chat-launcher-size, 64px) + 16px);
   }
 }
+
+/*
+ * A `Tag` com FRASE não pode vazar da janela no celular.
+ *
+ * LACUNA DO DS (0.2.19): `.unooria-tag` é `white-space: nowrap` com
+ * `height: 28px` — feita para rótulo curto. O hub põe frase nela em dois
+ * lugares: a duração no cabeçalho de cada ficha de missão ("1 aula de 50 min,
+ * com pausa de 10 min para debate — ou 2 sessões de 25 min") e as fichas dos
+ * posts no guia de A Seleção ("Fonte ouvida: …"). Medido em 375px: a tag media
+ * 395–457px e a página rolava de lado (419–498px de largura), com o fim da
+ * frase cortado.
+ *
+ * O que isto faz: deixa a tag ocupar no máximo a linha e QUEBRAR o texto — no
+ * contêiner E no `__label`, que tem `nowrap` + reticências próprios (só limitar
+ * a largura trocaria o vazamento por "1 aula de 50 min, com pa…", e a frase
+ * cortada é a informação que o professor foi ler). A altura fixa de cada tamanho
+ * vira PISO (`min-height`), então tag curta sai idêntica — 24/28/32px — e só a
+ * que não cabe ganha a segunda linha.
+ *
+ * Morre quando o `Tag` do DS aceitar texto que quebra (pedido a abrir no
+ * `storybook-unooria`), ou quando essas frases saírem da `Tag` para texto
+ * corrido — o mesmo movimento que tirou a frase do `MetricCard`.
+ *
+ * A classe DOBRADA (`.unooria-tag.unooria-tag`) não é descuido: o CSS do `Tag`
+ * chega pelo módulo JS do componente, DEPOIS desta folha, e com a mesma
+ * especificidade o `height: 24px` do `--sm` vencia — o texto quebrava e saía
+ * por cima e por baixo da pílula, que continuava com uma linha de altura.
+ */
+.unooria-tag.unooria-tag {
+  max-width: 100%;
+  height: auto;
+  min-height: 28px;
+  white-space: normal;
+  text-align: left;
+}
+.unooria-tag.unooria-tag--sm {
+  min-height: 24px;
+}
+.unooria-tag.unooria-tag--lg {
+  min-height: 32px;
+}
+.unooria-tag .unooria-tag__label {
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}

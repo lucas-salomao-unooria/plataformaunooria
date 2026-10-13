@@ -30,8 +30,9 @@ export default async function UnooriaLayout({ children }: { children: React.Reac
         <NavUnooria />
         {/* Mesma largura de coluna da área administrativa: as duas são telas de
             trabalho com tabela, e a trilha do layout precisa nascer alinhada
-            com o texto. */}
-        <div className="mx-auto w-full max-w-[1180px] flex-1 px-6 py-6">
+            com o texto. O `min-w-0` também é o mesmo, e pelo mesmo motivo:
+            item de flex ao lado da SideBar não encolhe abaixo do conteúdo. */}
+        <div className="mx-auto w-full min-w-0 max-w-[1180px] flex-1 px-6 py-6">
           <ProvedorDaTrilha>
             <TrilhaDaRota papel={session!.usuario.papel} />
             {children}
