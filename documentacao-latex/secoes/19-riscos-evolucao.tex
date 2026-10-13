@@ -102,11 +102,13 @@ severidade, e a severidade considera o prazo de novembro de 2026.
   intrusão. & Alta & \textbf{Alto} &
   Item de contratação, não de engenharia. Para plataforma que trata dado de menor
   em rede pública, é exigência prática de edital.\\
-\cd{R-07} & \textbf{Acessibilidade não verificada.} Nenhuma checagem de
-  contraste, foco ou leitor de tela. & Alta & Médio &
-  Rede pública tem exigência legal e prática. O \emph{design system} é o lugar
-  certo para resolver de uma vez --- o que torna isto um pedido ao
-  \arq{storybook-unooria}, não 48 correções.\\
+\cd{R-07} & \textbf{Acessibilidade verificada só por máquina.} O axe
+  (\adrr{ADR-162}) cobre contraste, nomes, papéis e alvo de toque, e está verde
+  no hub; faltam a passada manual de teclado e leitor de tela, as cores dos
+  clones que imitam app real e o texto alternativo das imagens de post. & Média & Médio &
+  Rede pública tem exigência legal e prática. A correção foi feita no
+  \emph{design system} (0.2.20), uma vez para todas as telas; o que resta é
+  decisão de produto e a passada manual.\\
 \zebra \cd{R-08} & \textbf{Partição de telemetria sem \emph{job}.} As faixas vão
   até 2028-12 e não há rotina que crie novas. & Baixa & Médio &
   A partição \cd{DEFAULT} é rede de segurança (evento não é recusado). Verificar a

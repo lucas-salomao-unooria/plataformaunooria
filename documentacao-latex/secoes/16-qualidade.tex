@@ -369,8 +369,13 @@ Telas & \yes{} Ponta a ponta & Trinta e sete suítes, seis papéis; não é cobe
   executado. Risco \cd{R-01}.\\
 Segurança externa & \no{} Ausente & Sem revisão externa nem teste de intrusão.
   Risco \cd{R-06}.\\
-\zebra Acessibilidade & \no{} Ausente & Nenhuma verificação automatizada de
-  contraste, foco ou leitor de tela. Risco \cd{R-07}.\\
+\zebra Acessibilidade & \yes{} Parcial & axe-core contra a WCAG 2.2 A/AA
+  (\adrr{ADR-162}): a ferramenta \arq{medir-acessibilidade.mjs} mede as telas por
+  papel e sai 1 com violação, e \cd{E2E\_ACESSIBILIDADE=1} mede cada passo das
+  suítes. Hoje: 0 violação nas 65 telas do hub e na abertura das missões. O axe
+  não julga ordem de foco nem leitor de tela: a \textbf{passada manual} de
+  teclado e VoiceOver nos fluxos de cada papel continua pendente, e é ela que
+  autoriza declarar AA. Risco \cd{R-07}.\\
 \bottomrule
 \end{tabularx}
 

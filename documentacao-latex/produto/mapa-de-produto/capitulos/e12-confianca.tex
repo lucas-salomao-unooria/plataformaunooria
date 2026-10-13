@@ -29,7 +29,7 @@
 \id{F12.3} & Guarda e eliminação de dados & \afazer\\
 \zebra \id{F12.4} & Aguentar as 8h da manhã & \parcial\\
 \id{F12.5} & A equipe sabe quando algo quebra & \parcial\\
-\zebra \id{F12.6} & Acessibilidade & \afazer\\
+\zebra \id{F12.6} & Acessibilidade & \parcial\\
 \id{F12.7} & Português do Brasil & \pronto\\
 \bottomrule
 \end{tabularx}
@@ -131,9 +131,9 @@ alerta de custo.}
 \end{historia}
 
 % ---------------------------------------------------------------------------
-\feature{F12.6}{Acessibilidade}{\afazer}
+\feature{F12.6}{Acessibilidade}{\parcial}
 
-\begin{historia}{H12.6.1}{Usar a plataforma com deficiência}{\afazer}
+\begin{historia}{H12.6.1}{Usar a plataforma com deficiência}{\parcial}
 \hu{estudante com deficiência visual ou motora}{usar a plataforma com leitor
 de tela e teclado}{participar da aula como os colegas}
 \aceiteproposta
@@ -142,9 +142,15 @@ de tela e teclado}{participar da aula como os colegas}
     verificados em todas as telas da plataforma e nas missões.
   \item A transcrição de todo áudio continua sempre visível (isso já existe).
 \end{itemize}
-\pendencia{hoje não há verificação sistemática; a correção deve ser feita no
-componente visual compartilhado, para valer em todas as telas de uma vez.
-Até lá, não é possível prometer acessibilidade a uma rede.}
+\textbf{O que já vale (13/10/2026):} todas as telas da plataforma, de todos
+os papéis, e a abertura de cada missão passam na verificação automática de
+contraste, nomes dos controles e tamanho de toque. A correção foi feita uma vez,
+nos componentes visuais compartilhados, e por isso vale para toda tela.
+\pendencia{falta a passada manual com teclado e leitor de tela nos caminhos de
+cada papel, que é o que permite prometer o nível AA a uma rede; falta decidir
+as cores das missões que imitam um aplicativo real (Instanooria, ChatGPT,
+WhatsApp), que hoje copiam o contraste baixo do original; e falta uma descrição
+revisada para as imagens dos posts do Instanooria.}
 \end{historia}
 
 % ---------------------------------------------------------------------------
