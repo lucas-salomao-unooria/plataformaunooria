@@ -8,6 +8,7 @@ capacidade que `admin` tem e `gestor_contrato` não.
 Área própria, papel `admin`, layout próprio (e portanto trilha própria).
 `NavUnooria` + `lib/recursos.ts` + `app/(plataforma)/unooria/recursos/` +
 `app/(plataforma)/unooria/uso-de-ia/` (ADR-105) +
+`app/(plataforma)/unooria/custos-de-ia/` (ADR-161, com `AGENTS.md` próprio) +
 `app/(plataforma)/unooria/prospeccao/` (ADR-107) +
 `app/(plataforma)/unooria/arquivados/` (ADR-116).
 

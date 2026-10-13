@@ -21,6 +21,8 @@ export interface ContextoDaRequisicao {
   amostrado?: boolean;
   escolaId?: string;
   perfil?: string;
+  /** O primeiro segmento da rota (`podcast`, `planos`): a quem o painel de custos de IA atribui a chamada (ADR-161). */
+  recurso?: string;
 }
 
 const storage = new AsyncLocalStorage<ContextoDaRequisicao>();

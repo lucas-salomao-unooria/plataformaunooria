@@ -77,7 +77,18 @@ export interface AiJsonRequest<T> {
    * a app-92 não debitava nada e a exp07ef1b debitava 1.500 fixo, chute que não
    * acompanha prompt nem modelo. Ver ADR-74.
    */
-  aoUsarTokens?: (tokens: number) => void;
+  aoUsarTokens?: (tokens: number, divisao?: DivisaoDeTokens) => void;
+}
+
+/**
+ * A divisão do que o vendor cobrou, quando ele a informa. `saida` é o total
+ * MENOS a entrada — inclui o raciocínio, que o `candidatesTokenCount` não
+ * conta e a tarifa de saída cobra (ADR-161). Quem só precisa do total (a
+ * quota) ignora o segundo argumento.
+ */
+export interface DivisaoDeTokens {
+  entrada: number;
+  saida: number;
 }
 
 /**
@@ -162,6 +173,8 @@ export type AiProporcao = "1:1" | "2:3" | "3:2" | "3:4" | "4:3" | "4:5" | "5:4" 
 
 export interface AiImagemOpcoes {
   proporcao?: AiProporcao;
+  /** O que a geração cobrou (o `usageMetadata` da resposta). Só o medidor passa. */
+  aoUsarTokens?: (tokens: number, divisao?: DivisaoDeTokens) => void;
 }
 
 /**

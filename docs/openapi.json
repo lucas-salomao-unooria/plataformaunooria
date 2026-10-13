@@ -7679,6 +7679,761 @@
         }
       }
     },
+    "/recursos/custos-de-ia": {
+      "get": {
+        "operationId": "CustosDeIaController_painel",
+        "parameters": [
+          {
+            "name": "de",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            }
+          },
+          {
+            "name": "ate",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "periodo": {
+                      "type": "object",
+                      "properties": {
+                        "de": {
+                          "type": "string"
+                        },
+                        "ate": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "de",
+                        "ate"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "cotacao": {
+                      "type": "object",
+                      "properties": {
+                        "ultima": {
+                          "type": "object",
+                          "properties": {
+                            "dia": {
+                              "type": "string"
+                            },
+                            "compra": {
+                              "type": "number"
+                            },
+                            "venda": {
+                              "type": "number"
+                            },
+                            "cotadoEm": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "dia",
+                            "compra",
+                            "venda",
+                            "cotadoEm"
+                          ],
+                          "additionalProperties": false,
+                          "nullable": true
+                        },
+                        "falhou": {
+                          "type": "boolean"
+                        },
+                        "fonte": {
+                          "type": "string",
+                          "enum": [
+                            "Banco Central do Brasil — PTAX de venda"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "ultima",
+                        "falhou",
+                        "fonte"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "totais": {
+                      "type": "object",
+                      "properties": {
+                        "usd": {
+                          "type": "number"
+                        },
+                        "brl": {
+                          "type": "number",
+                          "nullable": true
+                        },
+                        "tokensEntrada": {
+                          "type": "number"
+                        },
+                        "tokensSaida": {
+                          "type": "number"
+                        },
+                        "chamadas": {
+                          "type": "number"
+                        },
+                        "falhas": {
+                          "type": "number"
+                        },
+                        "imagens": {
+                          "type": "number"
+                        },
+                        "segundosDeAudio": {
+                          "type": "number"
+                        },
+                        "minutosDeVideo": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "usd",
+                        "brl",
+                        "tokensEntrada",
+                        "tokensSaida",
+                        "chamadas",
+                        "falhas",
+                        "imagens",
+                        "segundosDeAudio",
+                        "minutosDeVideo"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "porDia": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "usd": {
+                            "type": "number"
+                          },
+                          "brl": {
+                            "type": "number",
+                            "nullable": true
+                          },
+                          "tokensEntrada": {
+                            "type": "number"
+                          },
+                          "tokensSaida": {
+                            "type": "number"
+                          },
+                          "chamadas": {
+                            "type": "number"
+                          },
+                          "falhas": {
+                            "type": "number"
+                          },
+                          "imagens": {
+                            "type": "number"
+                          },
+                          "segundos": {
+                            "type": "number"
+                          },
+                          "minutos": {
+                            "type": "number"
+                          },
+                          "estimado": {
+                            "type": "boolean"
+                          },
+                          "semPreco": {
+                            "type": "boolean"
+                          },
+                          "semCotacao": {
+                            "type": "boolean"
+                          },
+                          "dia": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "usd",
+                          "brl",
+                          "tokensEntrada",
+                          "tokensSaida",
+                          "chamadas",
+                          "falhas",
+                          "imagens",
+                          "segundos",
+                          "minutos",
+                          "estimado",
+                          "semPreco",
+                          "semCotacao",
+                          "dia"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "porRecurso": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "usd": {
+                            "type": "number"
+                          },
+                          "brl": {
+                            "type": "number",
+                            "nullable": true
+                          },
+                          "tokensEntrada": {
+                            "type": "number"
+                          },
+                          "tokensSaida": {
+                            "type": "number"
+                          },
+                          "chamadas": {
+                            "type": "number"
+                          },
+                          "falhas": {
+                            "type": "number"
+                          },
+                          "imagens": {
+                            "type": "number"
+                          },
+                          "segundos": {
+                            "type": "number"
+                          },
+                          "minutos": {
+                            "type": "number"
+                          },
+                          "estimado": {
+                            "type": "boolean"
+                          },
+                          "semPreco": {
+                            "type": "boolean"
+                          },
+                          "semCotacao": {
+                            "type": "boolean"
+                          },
+                          "recurso": {
+                            "type": "string"
+                          },
+                          "nome": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "usd",
+                          "brl",
+                          "tokensEntrada",
+                          "tokensSaida",
+                          "chamadas",
+                          "falhas",
+                          "imagens",
+                          "segundos",
+                          "minutos",
+                          "estimado",
+                          "semPreco",
+                          "semCotacao",
+                          "recurso",
+                          "nome"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "porModelo": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "usd": {
+                            "type": "number"
+                          },
+                          "brl": {
+                            "type": "number",
+                            "nullable": true
+                          },
+                          "tokensEntrada": {
+                            "type": "number"
+                          },
+                          "tokensSaida": {
+                            "type": "number"
+                          },
+                          "chamadas": {
+                            "type": "number"
+                          },
+                          "falhas": {
+                            "type": "number"
+                          },
+                          "imagens": {
+                            "type": "number"
+                          },
+                          "segundos": {
+                            "type": "number"
+                          },
+                          "minutos": {
+                            "type": "number"
+                          },
+                          "estimado": {
+                            "type": "boolean"
+                          },
+                          "semPreco": {
+                            "type": "boolean"
+                          },
+                          "semCotacao": {
+                            "type": "boolean"
+                          },
+                          "modelo": {
+                            "type": "string"
+                          },
+                          "modalidade": {
+                            "type": "string",
+                            "enum": [
+                              "texto",
+                              "imagem",
+                              "audio",
+                              "video"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "usd",
+                          "brl",
+                          "tokensEntrada",
+                          "tokensSaida",
+                          "chamadas",
+                          "falhas",
+                          "imagens",
+                          "segundos",
+                          "minutos",
+                          "estimado",
+                          "semPreco",
+                          "semCotacao",
+                          "modelo",
+                          "modalidade"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "porModalidade": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "usd": {
+                            "type": "number"
+                          },
+                          "brl": {
+                            "type": "number",
+                            "nullable": true
+                          },
+                          "tokensEntrada": {
+                            "type": "number"
+                          },
+                          "tokensSaida": {
+                            "type": "number"
+                          },
+                          "chamadas": {
+                            "type": "number"
+                          },
+                          "falhas": {
+                            "type": "number"
+                          },
+                          "imagens": {
+                            "type": "number"
+                          },
+                          "segundos": {
+                            "type": "number"
+                          },
+                          "minutos": {
+                            "type": "number"
+                          },
+                          "estimado": {
+                            "type": "boolean"
+                          },
+                          "semPreco": {
+                            "type": "boolean"
+                          },
+                          "semCotacao": {
+                            "type": "boolean"
+                          },
+                          "modalidade": {
+                            "type": "string",
+                            "enum": [
+                              "texto",
+                              "imagem",
+                              "audio",
+                              "video"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "usd",
+                          "brl",
+                          "tokensEntrada",
+                          "tokensSaida",
+                          "chamadas",
+                          "falhas",
+                          "imagens",
+                          "segundos",
+                          "minutos",
+                          "estimado",
+                          "semPreco",
+                          "semCotacao",
+                          "modalidade"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "porEscola": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "usd": {
+                            "type": "number"
+                          },
+                          "brl": {
+                            "type": "number",
+                            "nullable": true
+                          },
+                          "tokensEntrada": {
+                            "type": "number"
+                          },
+                          "tokensSaida": {
+                            "type": "number"
+                          },
+                          "chamadas": {
+                            "type": "number"
+                          },
+                          "falhas": {
+                            "type": "number"
+                          },
+                          "imagens": {
+                            "type": "number"
+                          },
+                          "segundos": {
+                            "type": "number"
+                          },
+                          "minutos": {
+                            "type": "number"
+                          },
+                          "estimado": {
+                            "type": "boolean"
+                          },
+                          "semPreco": {
+                            "type": "boolean"
+                          },
+                          "semCotacao": {
+                            "type": "boolean"
+                          },
+                          "escolaId": {
+                            "type": "string"
+                          },
+                          "nome": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "usd",
+                          "brl",
+                          "tokensEntrada",
+                          "tokensSaida",
+                          "chamadas",
+                          "falhas",
+                          "imagens",
+                          "segundos",
+                          "minutos",
+                          "estimado",
+                          "semPreco",
+                          "semCotacao",
+                          "escolaId",
+                          "nome"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "modelosSemPreco": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "required": [
+                    "periodo",
+                    "cotacao",
+                    "totais",
+                    "porDia",
+                    "porRecurso",
+                    "porModelo",
+                    "porModalidade",
+                    "porEscola",
+                    "modelosSemPreco"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "recursos"
+        ],
+        "summary": "O custo de IA da rede num período, por dia, produto, modelo, modalidade e escola.",
+        "description": "Soma o que cada chamada de IA pagou (tokens de entrada e de saída, imagens, segundos de voz, minutos de avatar) e converte com o preço vigente em cada dia e a PTAX de venda do Banco Central do mesmo dia (dia sem PTAX usa a do último dia útil). Antes de somar, tenta trazer do BCB as cotações que faltam — sem o BCB, converte com o que já tem e diz que falhou.\n\n**Papéis:** admin.\n\n**Restrições:**\n- Só `admin` (ADR-161): é o custo da fornecedora, não informação do cliente.\n- Período padrão: os últimos 30 dias, hoje incluído, no fuso da plataforma. Teto de 366 dias.\n- Modelo sem preço vigente entra com custo ZERO e sai em `modelosSemPreco` — a conta está incompleta, e a tela diz isso.\n- A voz (Cloud Text-to-Speech) não devolve contagem de tokens: sai ESTIMADA pelo tamanho do roteiro e do MP3 (`estimado`).\n- Sem `usuario_id` em lugar nenhum: o painel responde EM QUÊ se gastou, nunca QUEM gastou.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "admin"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/recursos/custos-de-ia/precos": {
+      "get": {
+        "operationId": "CustosDeIaController_precos",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "precos": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "modelo": {
+                            "type": "string"
+                          },
+                          "componente": {
+                            "type": "string",
+                            "enum": [
+                              "entrada",
+                              "saida",
+                              "minuto"
+                            ]
+                          },
+                          "usd": {
+                            "type": "number"
+                          },
+                          "vigenteDesde": {
+                            "type": "string"
+                          },
+                          "motivo": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "definidoPorNome": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "definidoEm": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "modelo",
+                          "componente",
+                          "usd",
+                          "vigenteDesde",
+                          "motivo",
+                          "definidoPorNome",
+                          "definidoEm"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "modelosEmUso": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "required": [
+                    "precos",
+                    "modelosEmUso"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "recursos"
+        ],
+        "summary": "A tabela de preços de IA, com o histórico de vigências.",
+        "description": "Uma linha por (modelo, componente, vigente desde). Vale num dia o preço de maior `vigenteDesde` que não passa dele. A semente da migration é o preço de LISTA da Vertex e da LiveAvatar lido em 13/10/2026 (`definidoPorNome` nulo).\n\n**Papéis:** admin.\n\n**Restrições:**\n- `usd` é por 1 milhão de tokens em `entrada`/`saida`, e por minuto em `minuto` (o avatar em vídeo).",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "admin"
+        ],
+        "x-acesso": "token"
+      },
+      "post": {
+        "operationId": "CustosDeIaController_definirPreco",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "precos": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "modelo": {
+                            "type": "string"
+                          },
+                          "componente": {
+                            "type": "string",
+                            "enum": [
+                              "entrada",
+                              "saida",
+                              "minuto"
+                            ]
+                          },
+                          "usd": {
+                            "type": "number"
+                          },
+                          "vigenteDesde": {
+                            "type": "string"
+                          },
+                          "motivo": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "definidoPorNome": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "definidoEm": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "modelo",
+                          "componente",
+                          "usd",
+                          "vigenteDesde",
+                          "motivo",
+                          "definidoPorNome",
+                          "definidoEm"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "modelosEmUso": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "required": [
+                    "precos",
+                    "modelosEmUso"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "recursos"
+        ],
+        "summary": "Grava um preço de IA a partir de uma data.",
+        "description": "Acrescenta uma vigência. **Nunca apaga a anterior**: a tabela é o próprio histórico. Mesma (modelo, componente, data) substitui o valor daquela vigência — é a correção de um preço digitado errado. Data no passado RECALCULA o painel daquele dia em diante; é assim que um desconto de contrato descoberto depois entra na conta.\n\n**Papéis:** admin.\n\n**Restrições:**\n- Motivo obrigatório (Zod), como na quota (ADR-105).\n- Teto de sanidade de US$ 10.000 por unidade: um zero a mais no campo não vira a fatura do mês.\n- O nome de quem gravou é CONGELADO na linha, como em `recursos_auditoria`.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "admin"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "modelo": {
+                    "type": "string",
+                    "pattern": "^[a-z0-9][a-z0-9._-]{1,79}$"
+                  },
+                  "componente": {
+                    "type": "string",
+                    "enum": [
+                      "entrada",
+                      "saida",
+                      "minuto"
+                    ]
+                  },
+                  "usd": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 10000
+                  },
+                  "vigenteDesde": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  },
+                  "motivo": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 500
+                  }
+                },
+                "required": [
+                  "modelo",
+                  "componente",
+                  "usd",
+                  "vigenteDesde",
+                  "motivo"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
     "/recursos/quotas-de-ia": {
       "get": {
         "operationId": "QuotasDeIaController_quotas",
@@ -12651,6 +13406,102 @@
                         "additionalProperties": false
                       }
                     },
+                    "total": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "serie": {
+                            "type": "string"
+                          },
+                          "turmas": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "estudantes": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "missoes": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "expId": {
+                                  "type": "string"
+                                },
+                                "habilidades": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "codigo": {
+                                        "type": "string"
+                                      },
+                                      "distribuicao": {
+                                        "type": "object",
+                                        "properties": {
+                                          "atingiu": {
+                                            "type": "integer",
+                                            "minimum": 0
+                                          },
+                                          "emProcesso": {
+                                            "type": "integer",
+                                            "minimum": 0
+                                          },
+                                          "naoAtingiu": {
+                                            "type": "integer",
+                                            "minimum": 0
+                                          },
+                                          "naoAvaliado": {
+                                            "type": "integer",
+                                            "minimum": 0
+                                          },
+                                          "total": {
+                                            "type": "integer",
+                                            "minimum": 0
+                                          }
+                                        },
+                                        "required": [
+                                          "atingiu",
+                                          "emProcesso",
+                                          "naoAtingiu",
+                                          "naoAvaliado",
+                                          "total"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    },
+                                    "required": [
+                                      "codigo",
+                                      "distribuicao"
+                                    ],
+                                    "additionalProperties": false
+                                  }
+                                },
+                                "turmasAplicadas": {
+                                  "type": "integer",
+                                  "minimum": 0
+                                }
+                              },
+                              "required": [
+                                "expId",
+                                "habilidades",
+                                "turmasAplicadas"
+                              ],
+                              "additionalProperties": false
+                            }
+                          }
+                        },
+                        "required": [
+                          "serie",
+                          "turmas",
+                          "estudantes",
+                          "missoes"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
                     "turmas": {
                       "type": "array",
                       "items": {
@@ -12755,6 +13606,7 @@
                     "escola",
                     "periodo",
                     "missoes",
+                    "total",
                     "turmas"
                   ],
                   "additionalProperties": false
@@ -12767,7 +13619,7 @@
           "evidencias"
         ],
         "summary": "O painel de habilidades da escola: as turmas do ano letivo vigente, por série.",
-        "description": "Cada turma do ano letivo vigente que tem alguma missão com ficha, com a distribuição por habilidade de cada missão — em contagem; a tela faz a porcentagem. As missões (nome, unidade, texto da BNCC) vêm uma vez só, em `missoes`.\n\nTurmas por série (na ordem da trilha) e, dentro dela, por nome.\n\n**Papéis:** gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Professor não chega aqui (403): a visão dele é a da turma.\n- A REGIONAL pode pedir `?escolaId=` de qualquer escola da regional dela; fora dela, **403**.\n- O nível de uma criança numa habilidade da missão é o MELHOR entre todas as atividades e rodadas da missão. A mesma habilidade em duas missões aparece duas vezes, uma por missão.\n- `naoAvaliado` é a criança SEM evidência que conte (não fez, saiu antes, projeção ainda não confirmada, \"Não participou\") — nunca entra em `naoAtingiu`.\n- **Sem ranking**: estudantes, turmas e escolas saem em ordem alfabética (turmas por série antes), e nenhum campo soma níveis numa nota.",
+        "description": "Cada turma do ano letivo vigente que tem alguma missão com ficha, com a distribuição por habilidade de cada missão — em contagem; a tela faz a porcentagem. As missões (nome, unidade, texto da BNCC) vêm uma vez só, em `missoes`.\n\n`total` é o TOPO: a escola inteira, série a série, a soma de todas as turmas de `turmas`.\n\nTurmas por série (na ordem da trilha) e, dentro dela, por nome.\n\n**Papéis:** gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Professor não chega aqui (403): a visão dele é a da turma.\n- A REGIONAL pode pedir `?escolaId=` de qualquer escola da regional dela; fora dela, **403**.\n- O nível de uma criança numa habilidade da missão é o MELHOR entre todas as atividades e rodadas da missão. A mesma habilidade em duas missões aparece duas vezes, uma por missão.\n- `naoAvaliado` é a criança SEM evidência que conte (não fez, saiu antes, projeção ainda não confirmada, \"Não participou\") — nunca entra em `naoAtingiu`.\n- **Sem ranking**: estudantes, turmas e escolas saem em ordem alfabética (turmas por série antes), e nenhum campo soma níveis numa nota.",
         "security": [
           {
             "token-da-plataforma": []
@@ -12890,7 +13742,103 @@
                         "additionalProperties": false
                       }
                     },
-                    "escolas": {
+                    "total": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "serie": {
+                            "type": "string"
+                          },
+                          "turmas": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "estudantes": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "missoes": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "expId": {
+                                  "type": "string"
+                                },
+                                "habilidades": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "codigo": {
+                                        "type": "string"
+                                      },
+                                      "distribuicao": {
+                                        "type": "object",
+                                        "properties": {
+                                          "atingiu": {
+                                            "type": "integer",
+                                            "minimum": 0
+                                          },
+                                          "emProcesso": {
+                                            "type": "integer",
+                                            "minimum": 0
+                                          },
+                                          "naoAtingiu": {
+                                            "type": "integer",
+                                            "minimum": 0
+                                          },
+                                          "naoAvaliado": {
+                                            "type": "integer",
+                                            "minimum": 0
+                                          },
+                                          "total": {
+                                            "type": "integer",
+                                            "minimum": 0
+                                          }
+                                        },
+                                        "required": [
+                                          "atingiu",
+                                          "emProcesso",
+                                          "naoAtingiu",
+                                          "naoAvaliado",
+                                          "total"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    },
+                                    "required": [
+                                      "codigo",
+                                      "distribuicao"
+                                    ],
+                                    "additionalProperties": false
+                                  }
+                                },
+                                "turmasAplicadas": {
+                                  "type": "integer",
+                                  "minimum": 0
+                                }
+                              },
+                              "required": [
+                                "expId",
+                                "habilidades",
+                                "turmasAplicadas"
+                              ],
+                              "additionalProperties": false
+                            }
+                          }
+                        },
+                        "required": [
+                          "serie",
+                          "turmas",
+                          "estudantes",
+                          "missoes"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "regionais": {
                       "type": "array",
                       "items": {
                         "type": "object",
@@ -12900,6 +13848,10 @@
                           },
                           "nome": {
                             "type": "string"
+                          },
+                          "escolas": {
+                            "type": "integer",
+                            "minimum": 0
                           },
                           "series": {
                             "type": "array",
@@ -13001,6 +13953,128 @@
                         "required": [
                           "id",
                           "nome",
+                          "escolas",
+                          "series"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "escolas": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "nome": {
+                            "type": "string"
+                          },
+                          "regionalId": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "series": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "serie": {
+                                  "type": "string"
+                                },
+                                "turmas": {
+                                  "type": "integer",
+                                  "minimum": 0
+                                },
+                                "estudantes": {
+                                  "type": "integer",
+                                  "minimum": 0
+                                },
+                                "missoes": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "expId": {
+                                        "type": "string"
+                                      },
+                                      "habilidades": {
+                                        "type": "array",
+                                        "items": {
+                                          "type": "object",
+                                          "properties": {
+                                            "codigo": {
+                                              "type": "string"
+                                            },
+                                            "distribuicao": {
+                                              "type": "object",
+                                              "properties": {
+                                                "atingiu": {
+                                                  "type": "integer",
+                                                  "minimum": 0
+                                                },
+                                                "emProcesso": {
+                                                  "type": "integer",
+                                                  "minimum": 0
+                                                },
+                                                "naoAtingiu": {
+                                                  "type": "integer",
+                                                  "minimum": 0
+                                                },
+                                                "naoAvaliado": {
+                                                  "type": "integer",
+                                                  "minimum": 0
+                                                },
+                                                "total": {
+                                                  "type": "integer",
+                                                  "minimum": 0
+                                                }
+                                              },
+                                              "required": [
+                                                "atingiu",
+                                                "emProcesso",
+                                                "naoAtingiu",
+                                                "naoAvaliado",
+                                                "total"
+                                              ],
+                                              "additionalProperties": false
+                                            }
+                                          },
+                                          "required": [
+                                            "codigo",
+                                            "distribuicao"
+                                          ],
+                                          "additionalProperties": false
+                                        }
+                                      },
+                                      "turmasAplicadas": {
+                                        "type": "integer",
+                                        "minimum": 0
+                                      }
+                                    },
+                                    "required": [
+                                      "expId",
+                                      "habilidades",
+                                      "turmasAplicadas"
+                                    ],
+                                    "additionalProperties": false
+                                  }
+                                }
+                              },
+                              "required": [
+                                "serie",
+                                "turmas",
+                                "estudantes",
+                                "missoes"
+                              ],
+                              "additionalProperties": false
+                            }
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "nome",
+                          "regionalId",
                           "series"
                         ],
                         "additionalProperties": false
@@ -13011,6 +14085,8 @@
                     "regional",
                     "periodo",
                     "missoes",
+                    "total",
+                    "regionais",
                     "escolas"
                   ],
                   "additionalProperties": false
@@ -13023,7 +14099,7 @@
           "evidencias"
         ],
         "summary": "O painel de habilidades da rede: cada escola, cada série, a soma das turmas.",
-        "description": "A coordenação REGIONAL lê as escolas da própria regional; os perfis de contrato escolhem a regional (`?regionalId=`) ou leem a rede inteira. Por escola, as séries com turma no ano letivo vigente, e em cada uma a soma da distribuição das turmas — a turma que não aplicou a missão entra como `naoAvaliado`.\n\n**Atravessa escolas SEM afrouxar a RLS**: uma transação por escola, em lotes de 8, somando na aplicação — o padrão do relatório da diretoria (ADR-82).\n\n**Papéis:** gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Para a `gestor_regional` o `?regionalId=` é IGNORADO, não validado: aceitá-lo seria dar a diretoria do vizinho por querystring.\n- **Nome de criança nunca aparece**: o painel da rede é contagem. Para ver uma criança, abre-se a escola e a turma dela.\n- **Sem ranking**: estudantes, turmas e escolas saem em ordem alfabética (turmas por série antes), e nenhum campo soma níveis numa nota.",
+        "description": "A coordenação REGIONAL lê as escolas da própria regional; os perfis de contrato escolhem a regional (`?regionalId=`) ou leem a rede inteira. Por escola, as séries com turma no ano letivo vigente, e em cada uma a soma da distribuição das turmas — a turma que não aplicou a missão entra como `naoAvaliado`.\n\n`total` é o TOPO (a regional lida, ou a rede inteira): a soma de todas as escolas de `escolas`. `regionais` é o degrau entre a rede e a escola, só para o contrato lendo a rede inteira: cada regional com a soma das escolas dela.\n\n**Atravessa escolas SEM afrouxar a RLS**: uma transação por escola, em lotes de 8, somando na aplicação — o padrão do relatório da diretoria (ADR-82).\n\n**Papéis:** gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Para a `gestor_regional` o `?regionalId=` é IGNORADO, não validado: aceitá-lo seria dar a diretoria do vizinho por querystring.\n- **Nome de criança nunca aparece**: o painel da rede é contagem. Para ver uma criança, abre-se a escola e a turma dela.\n- **Sem ranking**: estudantes, turmas e escolas saem em ordem alfabética (turmas por série antes), e nenhum campo soma níveis numa nota.",
         "security": [
           {
             "token-da-plataforma": []

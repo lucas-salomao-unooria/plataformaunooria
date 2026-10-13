@@ -531,8 +531,19 @@ export interface AiJsonRequest<T> {
   modelo?: "padrao" | "longo";   // mesma familia neutra de AiRequest
   /** Quanto o vendor cobrou, UMA VEZ POR TENTATIVA -- inclusive as que
    *  `validar` rejeitou: foram pagas igual. Quem chama `temSaldo` TEM de
-   *  passar isto; sem ele nao ha de onde tirar o numero (ADR-74). */
-  aoUsarTokens?: (tokens: number) => void;
+   *  passar isto; sem ele nao ha de onde tirar o numero (ADR-74).
+   *  `divisao` (ADR-161): entrada e saida, quando o vendor informa; a quota
+   *  ignora, o painel de custos usa. */
+  aoUsarTokens?: (tokens: number, divisao?: DivisaoDeTokens) => void;
+}
+
+/** saida = total - entrada: inclui o raciocinio, cobrado na tarifa de saida. */
+export interface DivisaoDeTokens { entrada: number; saida: number }
+
+export interface AiImagemOpcoes {
+  proporcao?: AiProporcao;
+  /** O usageMetadata da geracao. So o MedidorDeProvider passa (ADR-161). */
+  aoUsarTokens?: (tokens: number, divisao?: DivisaoDeTokens) => void;
 }
 
 export interface AiProvider {
@@ -581,6 +592,37 @@ O corolário aparece em \cd{AiTimbre} e \cd{AiProporcao}: quem chama pede
 que traduz para o nome de voz e o \cd{imageConfig} do fornecedor do dia. Um id
 de voz do catálogo do Google atravessando o domínio seria \emph{vendor} vazando
 para dentro da missão.
+\end{regra}
+
+\begin{regra}
+\textbf{Toda chamada de IA deixa uma linha de consumo, e quem chama não faz
+nada para isso} (\adrr{ADR-161}). O \cd{MedidorDeProvider}, que já embrulhava o
+\emph{provider} para as métricas, recebe o \cd{RegistroDeConsumo}
+(\arq{ai/consumo-de-ia.ts}) e registra cada operação no fim dela, com o que foi
+PAGO:
+\begin{itemize}
+  \item \cd{generate}, \cd{conversar} e \cd{conversarEmFluxo}: a entrada é o
+    \cd{promptTokenCount}, e a saída é o total MENOS a entrada --- o que inclui
+    o raciocínio, cobrado na tarifa de saída (Seção~\ref{sec:ia-raciocinio}).
+  \item \cd{generateJson}: a soma das TENTATIVAS, inclusive as que \cd{validar}
+    recusou, pelo \cd{aoUsarTokens(tokens, divisao)}. O segundo argumento é
+    novo e opcional: quem só precisa do total (a quota) o ignora; sem divisão,
+    o total conta como saída, a tarifa mais cara.
+  \item \cd{generateImage}: pelo \cd{aoUsarTokens} novo de \cd{AiImagemOpcoes},
+    que só o medidor passa, e uma imagem por geração que deu certo.
+  \item \cd{generateSpeech}: \textbf{estimado}, porque a Cloud TTS não devolve
+    contagem --- a duração sai do MP3 (32\,kbps), a saída de 25 \emph{tokens}
+    por segundo e a entrada de $\approx$ 4 \emph{bytes} por \emph{token} do
+    roteiro.
+\end{itemize}
+As duas portas fora do \cd{AiProvider} registram por conta própria: o agente do
+professor no fim do turno (\cd{consumoDoTurno}, só eventos não parciais) e o
+mascote uma linha por sessão, somando o \cd{usageMetadata} de cada turno. A
+\textbf{atribuição} (escola, perfil e recurso) sai do contexto da requisição: o
+\cd{contextoMiddleware} põe em \cd{ContextoDaRequisicao.recurso} o primeiro
+segmento da rota, e a voz ao vivo, que chega por WebSocket fora desse contexto,
+a recebe em \cd{PedidoDeVoz.atribuicao}. O registro \textbf{nunca} derruba a
+chamada: uma falha de banco vira o \emph{log} \cd{ia-consumo-nao-gravado}.
 \end{regra}
 
 \begin{nota}
@@ -913,6 +955,9 @@ export interface PedidoDeVoz {
   modelo: string;      // do painel (ajuda_configuracao), ex.: gemini-3.8-live
   voz: string;         // uma das vozes pre-definidas do Gemini, ex.: Leda
   instrucao: string;   // o prompt do atendente, com a base: nunca vai ao hub
+  /** A quem o painel de custos atribui a sessao (ADR-161): o WebSocket chega
+   *  por `upgrade`, fora do middleware que abre o contexto da requisicao. */
+  atribuicao?: { escolaId?: string | null; perfil?: string | null; recurso?: string };
 }
 
 export type EntradaDaVoz =             // o que o navegador pode mandar

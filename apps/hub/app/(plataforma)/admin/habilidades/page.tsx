@@ -15,7 +15,8 @@ export const metadata = { title: "Painel de habilidades — Plataforma Unooria" 
  * A mesma entrada no menu, duas alturas, pelo papel:
  *   - a COORDENAÇÃO DA ESCOLA lê a própria escola (H14.7.2);
  *   - a COORDENAÇÃO REGIONAL lê as escolas da regional dela, e os perfis de
- *     contrato escolhem a regional ou leem a rede inteira (H14.7.3).
+ *     contrato escolhem a regional ou leem a rede inteira (H14.7.3) — na rede
+ *     inteira, uma linha por regional, que volta aqui com `?regionalId=`.
  *
  * Quem decide o alcance é a api (`/evidencias/rede/consolidado` ignora o
  * `?regionalId=` da regional). O seletor de regional só existe para o
@@ -67,7 +68,15 @@ export default async function HabilidadesDaGestaoPage({
           opcoes={[{ value: "", label: "Todas as regionais" }, ...regionais.map((r) => ({ value: r.id, label: r.nome }))]}
         />
       ) : null}
-      {painel ? <PainelDaRede painel={painel} linkDaEscola={{ prefixo: "/admin/habilidades/escolas/" }} /> : <Indisponivel />}
+      {painel ? (
+        <PainelDaRede
+          painel={painel}
+          linkDaEscola={{ prefixo: "/admin/habilidades/escolas/" }}
+          linkDaRegional={{ prefixo: "/admin/habilidades?regionalId=" }}
+        />
+      ) : (
+        <Indisponivel />
+      )}
     </div>
   );
 }

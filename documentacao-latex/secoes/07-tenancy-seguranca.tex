@@ -648,6 +648,17 @@ da fornecedora. Também só \cd{admin}, na leitura e na escrita. E, desde a
 (\emph{token} de áudio do Gemini e minuto de vídeo), e a escolha também é da
 fornecedora.
 
+\textbf{E os custos de IA} (\rota{/recursos/custos-de-ia/*}, \adrr{ADR-161}),
+na tela \rota{/unooria/custos-de-ia}: quanto a IA da rede custa à Unooria, em
+reais, por produto, modelo e escola. O \cd{gestor\_contrato} é o cliente, e
+ver o custo seria ver a margem do contrato; ele recebe 403 na leitura e na
+escrita, e o \emph{middleware} o tira da tela. As três tabelas do painel são de
+contrato e ficam \textbf{sem RLS} --- \cd{ia\_consumo\_diario} tem
+\cd{escola\_id} na chave, mas \textbf{não tem \cd{usuario\_id}}: é contagem
+por escola, perfil e produto, sem pessoa, e quem a tranca é o papel. Não é uma
+terceira exceção à regra 1 para dado de pessoa; tabela nova com pessoa não a
+herda.
+
 \textbf{E a lista das experiências arquivadas} (\rota{GET /recursos/arquivadas},
 \adrr{ADR-116}) também é só dele: a rota não conta nada em tempo de uso --- os
 números de turmas e estudantes guardados são a fotografia que a migração tirou ao
@@ -672,7 +683,7 @@ fornecedora.
 \zebra \cd{gestor\_regional} & As escolas da regional vinculada &
   Alternar entre escolas da regional, visualizar panorama unificado (\adrr{ADR-81}), relatório pedagógico por laço de oito escolas (\adrr{ADR-82}) e o painel de habilidades da regional, descendo até a escola, a turma e o estudante sem lotação --- uma escola por vez, com a RLS intacta (\adrr{ADR-144}).\\
 \cd{gestor\_contrato} & Toda a rede (cross-escola) &
-  Criar escolas, importar CSVs de enturmamento, provisionar supervisores regionais e emitir consolidados.\\
+  Criar escolas, importar CSVs de enturmamento, provisionar supervisores regionais e emitir consolidados. No painel de habilidades, desce da rede inteira à regional, à escola, à turma e ao estudante --- cada degrau lê uma escola por vez, com \cd{?escolaId=} obrigatório (\adrr{ADR-160}).\\
 \zebra \cd{admin} & Toda a rede (conta Unooria) &
   Mesmas capacidades operacionais de \cd{gestor\_contrato}, preservando a autoria na cadeia de atribuição transitiva descendente (\adrr{ADR-80}).\\
 \bottomrule
@@ -916,6 +927,9 @@ Chamar a IA (com quota diária POR PERFIL) & \rota{POST /ai/gerar} &
   \rota{/recursos/\B limites-da-ajuda/*}, \rota{/recursos/\B configuracao-da-ajuda} & \no & \no & \no & \no\\
 \textbf{Listar as experiências arquivadas} (só \cd{admin}, \adrr{ADR-116}) &
   \rota{GET /recursos/arquivadas} & \no & \no & \no & \no\\
+\textbf{Ver o custo da IA e cadastrar preço} (só \cd{admin}, \adrr{ADR-161};
+  tela \rota{/unooria/\B custos-de-ia}) &
+  \rota{/recursos/\B custos-\B de-\B ia/*} & \no & \no & \no & \no\\
 \zebra Enviar telemetria & \rota{POST /telemetry/batch} & \yes & \yes & \yes & \yes\\
 \bottomrule
 \end{tabularx}

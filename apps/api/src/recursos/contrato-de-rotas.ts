@@ -2,6 +2,7 @@ import { z } from "zod";
 import { PERFIS_COM_QUOTA } from "../ai/quota.service";
 import { PRODUTOS } from "./catalogo";
 import { DetalheDeQuotaSchema } from "./auditoria";
+import { COMPONENTES_DE_PRECO, MODELO_DE_PRECO_RE, ehDiaValido } from "./custos-de-ia";
 import { ATENDENTES, CHAVES_DE_LIMITE, MAXIMO_POR_DIA, MODELO_DO_MASCOTE_RE, NOMES_DAS_VOZES } from "../ajuda/regras";
 
 /**
@@ -390,4 +391,99 @@ export const ExperienciaArquivadaSchema = z.object({
 
 export const ExperienciasArquivadasSchema = z.object({
   arquivadas: z.array(ExperienciaArquivadaSchema),
+});
+
+/* ==========================================================================
+   CUSTOS DE IA — só `admin` (ADR-161)
+
+   O FinOps da Unooria: o que cada produto gastou de IA, em tokens, em dólar e
+   em real (PTAX do Banco Central). Mesma razão da quota (ADR-105): é o custo
+   variável da fornecedora, não informação do cliente.
+   ========================================================================== */
+
+const diaIso = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/)
+  .refine(ehDiaValido, "dia inexistente no calendário");
+
+/** `z.object` puro (o `@Contrato` exige): a ordem do período o controller confere, com a frase certa. */
+export const PeriodoDosCustosSchema = z.object({ de: diaIso.optional(), ate: diaIso.optional() });
+
+const NumerosDoGrupoSchema = z.object({
+  usd: z.number(),
+  /** `null` = nenhum dia do grupo tinha cotação (o BCB nunca respondeu nesta stack). */
+  brl: z.number().nullable(),
+  tokensEntrada: z.number(),
+  tokensSaida: z.number(),
+  chamadas: z.number(),
+  falhas: z.number(),
+  imagens: z.number(),
+  segundos: z.number(),
+  minutos: z.number(),
+  /** Alguma linha do grupo foi ESTIMADA (a voz): a tela mostra "≈". */
+  estimado: z.boolean(),
+  /** Algum modelo do grupo não tem preço vigente: o custo está INCOMPLETO. */
+  semPreco: z.boolean(),
+  semCotacao: z.boolean(),
+});
+
+const CotacaoSchema = z.object({ dia: z.string(), compra: z.number(), venda: z.number(), cotadoEm: z.string() });
+
+export const PainelDeCustosSchema = z.object({
+  periodo: z.object({ de: z.string(), ate: z.string() }),
+  cotacao: z.object({
+    ultima: CotacaoSchema.nullable(),
+    /** A tentativa de atualizar agora falhou: o painel converte com o que tem. */
+    falhou: z.boolean(),
+    fonte: z.literal("Banco Central do Brasil — PTAX de venda"),
+  }),
+  totais: z.object({
+    usd: z.number(),
+    brl: z.number().nullable(),
+    tokensEntrada: z.number(),
+    tokensSaida: z.number(),
+    chamadas: z.number(),
+    falhas: z.number(),
+    imagens: z.number(),
+    segundosDeAudio: z.number(),
+    minutosDeVideo: z.number(),
+  }),
+  porDia: z.array(NumerosDoGrupoSchema.extend({ dia: z.string() })),
+  porRecurso: z.array(NumerosDoGrupoSchema.extend({ recurso: z.string(), nome: z.string() })),
+  porModelo: z.array(NumerosDoGrupoSchema.extend({ modelo: z.string(), modalidade: z.enum(["texto", "imagem", "audio", "video"]) })),
+  porModalidade: z.array(NumerosDoGrupoSchema.extend({ modalidade: z.enum(["texto", "imagem", "audio", "video"]) })),
+  porEscola: z.array(NumerosDoGrupoSchema.extend({ escolaId: z.string(), nome: z.string() })),
+  /** Os modelos com consumo no período e SEM preço vigente — a conta deles é zero. */
+  modelosSemPreco: z.array(z.string()),
+});
+
+export const ComponenteDePrecoSchema = z.enum(COMPONENTES_DE_PRECO);
+
+export const PrecoDeIaSchema = z.object({
+  id: z.string(),
+  modelo: z.string(),
+  componente: ComponenteDePrecoSchema,
+  /** Por 1 milhão de tokens (`entrada`/`saida`) ou por minuto (`minuto`). */
+  usd: z.number(),
+  vigenteDesde: z.string(),
+  motivo: z.string().nullable(),
+  /** `null` = veio da migration (a semente com o preço de lista). */
+  definidoPorNome: z.string().nullable(),
+  definidoEm: z.string(),
+});
+
+export const PrecosDeIaSchema = z.object({
+  precos: z.array(PrecoDeIaSchema),
+  /** Os modelos que já apareceram no consumo — o formulário os sugere. */
+  modelosEmUso: z.array(z.string()),
+});
+
+export const DefinirPrecoDeIaSchema = z.object({
+  modelo: z.string().trim().toLowerCase().regex(MODELO_DE_PRECO_RE, "só letras minúsculas, dígitos, ponto, hífen e sublinhado"),
+  componente: ComponenteDePrecoSchema,
+  /** Teto de sanidade: nenhum modelo de hoje passa de US$ 200 por milhão; um zero a mais não vira a fatura. */
+  usd: z.number().min(0).max(10_000),
+  vigenteDesde: diaIso,
+  /** Obrigatório, como na quota: é ele que diz, meses depois, se foi desconto de contrato ou correção. */
+  motivo: z.string().trim().min(3).max(500),
 });

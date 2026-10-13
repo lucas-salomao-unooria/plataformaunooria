@@ -9,7 +9,7 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{159 decisões}, numeradas até ADR-159. A 153 (a evidência do Unoovista) e a 154 (a da Missão Tempestade) nasceram no mesmo dia, em frentes paralelas. A 132 (a Ajuda com
+São \textbf{161 decisões}, numeradas até ADR-161. A 160 (o painel de habilidades pelo total) e a 161 (os custos de IA) nasceram no mesmo dia, em frentes paralelas, e a 161 foi escrita depois de conferir que a 160 já estava tomada em \cd{dev-local}. A 153 (a evidência do Unoovista) e a 154 (a da Missão Tempestade) nasceram no mesmo dia, em frentes paralelas. A 132 (a Ajuda com
 avatar) entrou no código antes de ter seção aqui, e por um dia o número foi
 citado sem existir; a 133 pulou para não colidir com ela. A 133 e a 134 nasceram no mesmo dia, em frentes paralelas
 (Unoovista e Unoochat), e entraram juntas no merge; a 135 e a 136 levaram as
@@ -210,6 +210,8 @@ que a cercam.
 \zebra \adrr{ADR-157} & O Júri Estadual segue o PRD v2 (0.4.0) & 2026-10-10 & Aceita; supera em parte a \adrr{ADR-151} e a \adrr{ADR-152}\\
 \adrr{ADR-158} & O mascote na Ajuda: voz do Gemini Live por um proxy na api, rosto 3D no hub, e o padrão escolhido no painel & 2026-10-12 & Aceita; complementa a \adrr{ADR-132}\\
 \zebra \adrr{ADR-159} & O hub no celular e no tablet: \cd{min-w-0} na coluna ao lado da \cd{SideBar}, e a \cd{Tag} que quebra linha & 2026-10-12 & Aceita; complementa a \adrr{ADR-83}\\
+\adrr{ADR-160} & O painel de habilidades abre pelo total, e o contrato desce pela regional & 2026-10-13 & Aceita; complementa a \adrr{ADR-144}\\
+\adrr{ADR-161} & Custos de IA: o consumo medido por dia, produto, escola e modelo, e o custo derivado na leitura, com preço datado e a PTAX do dia & 2026-10-13 & Aceita; complementa a \adrr{ADR-105} e a \adrr{ADR-158}\\
 \bottomrule
 \end{tabularx}
 
@@ -14326,3 +14328,213 @@ dentro do \cd{ScrollBar}.
 a área do gestor ganhar navegação que não caiba em 44px; ou uma tela nova
 voltar a rolar de lado na medição em 375px.
 
+
+\section{ADR-160 --- O painel de habilidades abre pelo total, e o contrato desce pela regional}
+\label{adr:painel-de-habilidades-total}
+
+\textbf{Data.} 2026-10-13. \textbf{Status.} Aceita. \textbf{Complementa} a
+\adrr{ADR-144}: as alturas e a regra do nível na missão continuam as mesmas;
+muda o que cada altura mostra no topo, e o degrau do contrato.
+
+\begin{especificacao}{Contexto}
+O painel de habilidades (\adrr{ADR-144}) já tinha as quatro alturas e a trava
+de cada papel: o professor só nas turmas em que dá aula, a coordenação da
+escola na escola, a regional nas escolas dela, o contrato na rede. Faltavam
+duas coisas para ler \enquote{do mais alto ao mais granular}:
+\begin{itemize}
+  \item \textbf{não havia o total.} O painel da escola listava as turmas, e o da
+    rede as escolas, mas nenhum dos dois dizia quanto a escola, a regional ou a
+    rede inteira tinha atingido numa habilidade. A coordenação somava de cabeça;
+  \item \textbf{o contrato via a rede como lista plana de escolas.} Com cem
+    escolas, a lista é ilegível, e a regional --- o degrau que a hierarquia da
+    rede já tem --- só existia no seletor.
+\end{itemize}
+A auditoria das rotas não achou furo de alcance, mas quatro negações não eram
+provadas: a turma de outra escola pedida junto de uma escola liberada, o perfil
+de criança de outra escola, o contrato sem \cd{?escolaId=}, e o professor
+abrindo criança da turma vizinha.
+\end{especificacao}
+
+\textbf{Decisão.}
+\begin{enumerate}
+  \item \rota{GET /evidencias/escola/consolidado} e
+    \rota{GET /evidencias/rede/consolidado} devolvem \cd{total}: a soma de
+    TODAS as linhas da resposta, série a série, por missão --- contagens, nunca
+    porcentagens (\cd{somarPorSerie} e \cd{juntarSeries}, funções puras com
+    teste sem banco). A turma que não aplicou a missão continua entrando como
+    \enquote{não avaliado}.
+  \item Na rede inteira, o contrato recebe \cd{regionais}, cada uma com a soma
+    das escolas dela, e cada escola diz a sua \cd{regionalId}. A tela mostra
+    uma linha por regional (que abre o painel dela, \cd{?regionalId=}) e só a
+    escola sem regional sozinha --- sem ela, o total não fecharia com as linhas.
+  \item Cada cartão de missão abre pela linha somada (\enquote{Escola inteira},
+    \enquote{Regional inteira}, \enquote{Rede inteira}), com a mesma barra das
+    turmas.
+  \item A veracidade vira teste: no Postgres, o total da escola é a soma das
+    turmas, o da regional a das escolas DELA (a vizinha fora), o da rede a das
+    regionais mais as escolas soltas, e a linha de uma regional no painel do
+    contrato é o MESMO número que a coordenação regional lê. A suíte de ponta a
+    ponta do contrato confere a soma caixa a caixa contra a api.
+  \item As quatro negações que faltavam entraram na suíte de Postgres.
+\end{enumerate}
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \textbf{Somar na tela.} Os números já chegam ao hub, e a soma é uma
+    linha de código; mas seriam duas regras de soma (a api já soma as turmas
+    por série para a rede), e o total que a tela inventa não tem teste contra o
+    banco.
+  \item \textbf{Um total por habilidade juntando as missões.} A
+    \adrr{ADR-144} manteve cada missão separada; juntar exigiria decidir qual
+    nível vale quando a criança fez a mesma habilidade em duas missões, que é
+    regra pedagógica, não de painel.
+  \item \textbf{Manter a lista plana de escolas para o contrato.} Menos
+    trabalho, e ilegível na escala do contrato (cem escolas por cartão).
+  \item \textbf{Uma rota própria para as regionais.} Seria a mesma leitura
+    escola a escola duas vezes; a soma por regional sai das escolas que a rota
+    da rede já leu.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+\begin{itemize}
+  \item A resposta da rede inteira carrega as escolas E as regionais: o mesmo
+    número aparece duas vezes no JSON. Com cem escolas e quatro séries ainda é
+    pequeno, e manter as escolas evita uma segunda leitura quando a tela
+    precisar delas.
+  \item O total soma crianças de turmas que não aplicaram a missão como
+    \enquote{não avaliado}: numa série em que só uma turma de dez aplicou, a
+    barra do topo é quase toda cinza. É a leitura honesta (a missão não chegou
+    a elas), mas assusta quem lê só a cor.
+  \item A rede inteira continua lendo escola por escola, em lotes de 8. O total
+    não mudou o custo, mas também não o resolveu.
+\end{itemize}
+
+\textbf{Gatilho.} A rede inteira passar de alguns segundos para abrir (o
+caminho é agregado materializado, nunca afrouxar a RLS); a rede ganhar um nível
+entre regional e escola; ou o pedagógico pedir o total entre missões.
+% ---------------------------------------------------------------------------
+\section{ADR-161 --- Custos de IA: o consumo medido por dia, produto, escola e modelo, e o custo derivado na leitura, com preço datado e a PTAX do dia}
+\label{adr:custos-de-ia}
+
+\textbf{Data.} 2026-10-13. \textbf{Status.} Aceita. \textbf{Complementa} a
+\adrr{ADR-105}: a quota diz quanto cada perfil PODE gastar; este painel diz
+quanto a rede GASTOU, em quê, e quanto isso custou em reais. E fecha uma
+consequência ruim da \adrr{ADR-158} --- os \emph{tokens} do mascote, que só
+apareciam na fatura da Vertex, passam a entrar na conta.
+
+\begin{especificacao}{Contexto}
+\begin{itemize}
+  \item \textbf{A IA é o custo variável da plataforma, e ninguém sabia quanto
+    ela custava.} As métricas do Capítulo~\ref{cap:observabilidade}
+    (\cd{iaTokens}) dizem quantos \emph{tokens} a stack gastou, mas o rótulo é
+    só o modelo, por cardinalidade: não respondem \enquote{qual produto},
+    \enquote{qual escola} nem \enquote{qual modalidade}. A fatura do Google
+    responde por SKU, em dólar, um mês depois.
+  \item \textbf{Quatro portas cobram de quatro jeitos.} O \cd{AiProvider}
+    (texto, imagem e voz) devolve \emph{tokens} --- menos a voz da Cloud
+    Text-to-Speech, que devolve só o MP3; o agente do professor
+    (\adrr{ADR-126}) roda no Agent Engine, fora do medidor; o mascote
+    (\adrr{ADR-158}) cobra a janela inteira de contexto a cada turno; e o
+    avatar em vídeo (\adrr{ADR-132}) cobra minuto de sala aberta.
+  \item \textbf{O preço muda, e o de lista não é o do contrato.} O Gemini 3.x
+    Flash tem preço introdutório até 31/12/2026 e dobra em 01/01/2027; o
+    contrato com o Google pode ter desconto que só se descobre na fatura.
+  \item \textbf{A fatura é em dólar, e o PO lê em real.} O câmbio do dia em que
+    a chamada foi feita é o que faz o número bater com o que a Unooria paga.
+\end{itemize}
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{enumerate}
+  \item \textbf{Medir o que foi PAGO, agregado por dia}, em
+    \cd{ia\_consumo\_diario}: uma linha por (dia no fuso da plataforma,
+    \cd{escola\_id}, perfil, recurso, operação, modelo), com chamadas, falhas,
+    \emph{tokens} de entrada e de saída, imagens, segundos de áudio e a marca
+    \cd{estimado}. O \cd{Registro\B De\B Consumo} (\arq{ai/\B consumo-\B de-\B ia.ts}) faz um
+    \emph{upsert} atômico por chamada. \textbf{Sem \cd{usuario\_id}}: FinOps
+    pergunta EM QUÊ se gastou, nunca QUEM (regra 6); o teto por pessoa é da
+    quota, outra tabela e outra pergunta.
+  \item \textbf{Capturar em quatro pontos, e só neles.} O
+    \cd{MedidorDeProvider} registra toda operação do \cd{AiProvider}; o
+    serviço do agente registra no fim do turno (\cd{consumoDoTurno}); o
+    cliente do Gemini Live registra uma linha por sessão do mascote; e o avatar
+    não grava nada novo --- os minutos já estão em \cd{ajuda\_sessoes}.
+  \item \textbf{Atribuir pela ROTA, não por declaração.} O
+    \cd{contextoMiddleware} põe no contexto da requisição o primeiro segmento
+    da rota (\rota{/podcast/...} \seta{} \cd{podcast}), e a escola e o perfil
+    vêm do mesmo contexto. Consumidor novo nasce atribuído, sem linha a
+    lembrar; rota sem nome na tela aparece como \enquote{Outro (slug)}, para
+    ninguém concluir que o custo sumiu.
+  \item \textbf{O preço é DADO, com vigência}, em \cd{ia\_precos}: por
+    modelo e componente (\cd{entrada}, \cd{saida} por 1 milhão de
+    \emph{tokens}; \cd{minuto} para o avatar), a data a partir da qual vale e o
+    motivo. \textbf{Só se insere}: a tabela é o histórico; a mesma
+    (modelo, componente, data) substitui aquela vigência, que é a correção de
+    um valor digitado errado. Semente com o preço de lista lido em 13/10/2026.
+  \item \textbf{O câmbio é a PTAX de VENDA do Banco Central}, buscada na API
+    pública Olinda e guardada em \cd{cotacoes\_dolar}. Dia sem PTAX (fim de
+    semana, feriado) usa o último dia útil anterior.
+  \item \textbf{O custo é DERIVADO na leitura, nunca gravado}: consumo
+    $\times$ o preço vigente NAQUELE dia $\times$ a PTAX daquele dia, numa
+    consulta só, com \cd{GROUPING SETS}, para o total, os dias, os produtos, os
+    modelos, as modalidades e as escolas baterem entre si. Corrigir um preço
+    com data no passado recalcula o painel para trás.
+  \item \textbf{Só o \cd{admin} vê}, na tela \rota{/unooria/custos-de-ia}
+    (\cd{@Roles("admin")}, como a quota). O \cd{gestor\_contrato} recebe 403.
+\end{enumerate}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Gravar o custo na linha de consumo.} Congelaria para sempre um
+    preço errado da semente; o desconto de contrato descoberto na fatura não
+    teria como voltar ao passado.
+  \item \textbf{Uma linha por chamada (evento) em vez do agregado diário.}
+    Milhões de linhas por mês por contrato, sem nenhuma pergunta do FinOps que
+    precise de granularidade horária --- e cada linha seria um rastro a mais de
+    uso por pessoa.
+  \item \textbf{Usar só as métricas OTel \cd{iaTokens}.} O rótulo é só o
+    modelo, por cardinalidade (Capítulo~\ref{cap:observabilidade}): não
+    respondem produto nem escola, e o preço não entra numa métrica.
+  \item \textbf{Preço em \emph{env} ou constante} (o \arq{catalogo-modelos.ts}
+    que o cap. 17 previa). A mesma razão da \adrr{ADR-105}: é dado, editável
+    pelo \cd{admin}, com histórico de quem mudou e por quê; mudar preço não pode
+    exigir \emph{deploy}.
+  \item \textbf{Cache da PTAX em memória, ou o navegador chamando o BCB.} São
+    três instâncias da api (três caches, três idas ao BCB), e o cache no banco é
+    também o que mantém o painel convertendo com o BCB fora do ar; no navegador,
+    seria CORS e mais uma URL externa no \emph{bundle}.
+  \item \textbf{Mostrar o painel ao \cd{gestor\_contrato}.} Ele é o cliente:
+    ver o custo da IA da rede é ver a margem do contrato da fornecedora.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{A voz é estimativa.} A Cloud TTS não devolve contagem: a
+    duração sai do tamanho do MP3 (32\,kbps), a saída de 25 \emph{tokens} por
+    segundo, a entrada de $\approx$ 4 \emph{bytes} por \emph{token} do roteiro.
+    A linha leva \cd{estimado}, e a tela mostra \enquote{$\approx$}.
+  \item \textbf{Só o custo VARIÁVEL entra.} O custo fixo do Agent Engine (a
+    vCPU-hora do engine implantado, cobrada com ou sem conversa) e o da
+    infraestrutura (Cloud Run, Cloud SQL, rede) ficam fora do painel.
+  \item \textbf{O preço semeado é de LISTA}, sem desconto de contrato; até o
+    \cd{admin} corrigir, o painel superestima.
+  \item \textbf{O consumo de antes do \emph{deploy} não existe}: a medição
+    começa com ele, e os meses anteriores não se reconstroem.
+  \item \textbf{A escrita é \emph{fire-and-forget}}: o registro nunca derruba a
+    chamada de IA (a resposta já foi paga e entregue), e uma falha de banco
+    perde a linha --- com o \emph{log} \cd{ia-consumo-nao-gravado}, nunca em
+    silêncio.
+  \item \textbf{Modelo sem preço entra com custo zero}, listado em
+    \cd{modelosSemPreco}: a tela avisa que a conta está incompleta, mas o total
+    do topo sai menor do que foi.
+  \item \textbf{Os gráficos compensam uma lacuna do DS 0.2.19}
+    (Capítulo~\ref{cap:ds}): \cd{LineChart} e \cd{BarChart} desenham numa escala
+    cravada em 0--100, e o \emph{tooltip} fica desligado.
+\end{itemize}
+
+\textbf{Gatilho.} Diferença de mais de 10\% entre o painel e a fatura do mês;
+\cd{ia\_consumo\_diario} passar de cerca de 5 milhões de linhas; ou o DS
+publicar escala pelo dado nos gráficos (a compensação morre).

@@ -199,6 +199,19 @@ const MissaoDaLinhaSchema = z.object({
 });
 
 /**
+ * Uma SÉRIE SOMADA: quantas turmas, quantas crianças e, em cada missão,
+ * quantas turmas a aplicaram e a soma da distribuição de cada habilidade. É a
+ * linha da escola no painel da rede, e o TOTAL no topo da escola, da regional
+ * e da rede.
+ */
+const SerieSomadaSchema = z.object({
+  serie: z.string(),
+  turmas: z.number().int().nonnegative(),
+  estudantes: z.number().int().nonnegative(),
+  missoes: z.array(MissaoDaLinhaSchema.extend({ turmasAplicadas: z.number().int().nonnegative() })),
+});
+
+/**
  * O PAINEL DA ESCOLA: as turmas do ano letivo vigente, e em cada uma a
  * distribuição por habilidade de cada missão. As missões (nome, unidade,
  * texto da BNCC) vêm uma vez só, em `missoes`; as turmas trazem só os números.
@@ -208,6 +221,8 @@ export const EscolaConsolidadaSchema = z.object({
   /** O ano letivo de onde as turmas saíram; `null` sem nenhum cadastrado. */
   periodo: z.object({ id: Uuid, titulo: z.string() }).nullable(),
   missoes: z.array(MissaoDoPainelSchema),
+  /** O TOPO: a escola inteira, série a série — a soma de todas as turmas de `turmas`. */
+  total: z.array(SerieSomadaSchema),
   /** Por série (na ordem da trilha) e, dentro dela, por nome. */
   turmas: z.array(
     z.object({
@@ -232,19 +247,29 @@ export const RedeConsolidadaSchema = z.object({
   regional: z.object({ id: z.string(), nome: z.string() }).nullable(),
   periodo: z.object({ id: Uuid, titulo: z.string() }).nullable(),
   missoes: z.array(MissaoDoPainelSchema),
+  /** O TOPO: a regional lida, ou a rede inteira — a soma de todas as escolas de `escolas`. */
+  total: z.array(SerieSomadaSchema),
+  /**
+   * O degrau entre a rede e a escola: cada regional com a soma das escolas
+   * dela. Só vem para o perfil de contrato lendo a rede inteira; vazio quando
+   * uma regional foi escolhida, e sempre vazio para a coordenação regional.
+   */
+  regionais: z.array(
+    z.object({
+      id: z.string(),
+      nome: z.string(),
+      escolas: z.number().int().nonnegative(),
+      series: z.array(SerieSomadaSchema),
+    }),
+  ),
   escolas: z.array(
     z.object({
       id: z.string(),
       nome: z.string(),
+      /** A regional da escola; `null` para a escola pendurada direto no contrato. */
+      regionalId: z.string().nullable(),
       /** Só as séries que têm turma no ano letivo vigente. */
-      series: z.array(
-        z.object({
-          serie: z.string(),
-          turmas: z.number().int().nonnegative(),
-          estudantes: z.number().int().nonnegative(),
-          missoes: z.array(MissaoDaLinhaSchema.extend({ turmasAplicadas: z.number().int().nonnegative() })),
-        }),
-      ),
+      series: z.array(SerieSomadaSchema),
     }),
   ),
 });

@@ -30,6 +30,14 @@ em hora diferente. Todo perfil que não é `estudante` cai em `professor`
   e as reações ao vivo dele (`motor/runs.controller.ts`), já apontados na
   ADR-74. Quota configurável só vale para quem chama `temSaldo`.
 
+## O custo de toda chamada é registrado (ADR-161)
+
+`consumo-de-ia.ts` (`RegistroDeConsumo`) soma em `ia_consumo_diario` o que cada
+chamada PAGOU; o `MedidorDeProvider` registra todo o `AiProvider`, e as portas
+fora dele (Agent Engine, Gemini Live) se registram sozinhas. Porta ou vendor
+novo de IA entra no painel no mesmo commit — a regra inteira está em
+`docs/regras/custos-de-ia.md`.
+
 ## Provider de IA (`apps/api/src/ai/provider.ts`)
 Interface única `AiProvider` (`generate`, `generateJson`, `conversar`,
 `generateImage`, `generateSpeech`). Implementações: `vertex.provider.ts`

@@ -46,6 +46,7 @@ await suite(
       "O item \"Habilidades\" está no menu da gestão",
       "A coordenação da escola vê as turmas por série, com os números da api",
       "Do painel da escola, a turma abre a visão do professor, e o estudante o perfil",
+      "Cada cartão abre pelo total: \"Escola inteira\" e \"Regional inteira\"",
       "A regional vê as escolas dela, sem seletor de regional",
       "A regional desce da rede à escola e à turma, sem lotação",
       "A coordenação de UMA escola não lê o painel da rede (403), e a regional não lê escola fora dela (403)",
@@ -83,6 +84,7 @@ await suite(
       (await p.getByRole("combobox", { name: /Ano\/série/ }).count()) === 1,
       "o filtro de ano/série está na tela",
     );
+    r.exigir(texto.includes("Escola inteira"), 'cada cartão abre pelo topo: a linha "Escola inteira"');
     await r.registrar(p, "painel-da-escola", {
       titulo: "A escola, por série",
       mostra: `${escola.escola.nome}: as turmas do ano letivo agrupadas por série, cada missão num cartão.`,
@@ -148,6 +150,8 @@ await suite(
     if (!r.exigir(Boolean(alvo), "alguma escola da regional já aplicou missão com ficha (pré-condição)")) return;
     const textoDaRede = await g.locator("body").innerText();
     r.exigir(textoDaRede.includes(alvo.nome), `a escola ${alvo.nome} está no painel da regional`);
+    r.exigir(textoDaRede.includes("Regional inteira"), 'cada cartão abre pelo topo: a linha "Regional inteira"');
+    r.exigir(daRede.regionais.length === 0, "a regional não tem o degrau das regionais: lê só a dela");
     await r.registrar(g, "painel-da-rede", {
       titulo: "A regional, escola por escola",
       mostra: `${daRede.regional?.nome ?? "A regional"}: por série, cada escola com a soma das turmas em cada habilidade.`,

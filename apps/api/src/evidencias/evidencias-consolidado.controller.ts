@@ -69,7 +69,7 @@ export class EvidenciasConsolidadoController {
   @Contrato({
     resumo: "O painel de habilidades da escola: as turmas do ano letivo vigente, por série.",
     descricao:
-      "Cada turma do ano letivo vigente que tem alguma missão com ficha, com a distribuição por habilidade de cada missão — em contagem; a tela faz a porcentagem. As missões (nome, unidade, texto da BNCC) vêm uma vez só, em `missoes`.\n\nTurmas por série (na ordem da trilha) e, dentro dela, por nome.",
+      "Cada turma do ano letivo vigente que tem alguma missão com ficha, com a distribuição por habilidade de cada missão — em contagem; a tela faz a porcentagem. As missões (nome, unidade, texto da BNCC) vêm uma vez só, em `missoes`.\n\n`total` é o TOPO: a escola inteira, série a série, a soma de todas as turmas de `turmas`.\n\nTurmas por série (na ordem da trilha) e, dentro dela, por nome.",
     query: QueryDaEscolaSchema,
     resposta: EscolaConsolidadaSchema,
     notas: [
@@ -90,7 +90,7 @@ export class EvidenciasConsolidadoController {
   @Contrato({
     resumo: "O painel de habilidades da rede: cada escola, cada série, a soma das turmas.",
     descricao:
-      "A coordenação REGIONAL lê as escolas da própria regional; os perfis de contrato escolhem a regional (`?regionalId=`) ou leem a rede inteira. Por escola, as séries com turma no ano letivo vigente, e em cada uma a soma da distribuição das turmas — a turma que não aplicou a missão entra como `naoAvaliado`.\n\n**Atravessa escolas SEM afrouxar a RLS**: uma transação por escola, em lotes de 8, somando na aplicação — o padrão do relatório da diretoria (ADR-82).",
+      "A coordenação REGIONAL lê as escolas da própria regional; os perfis de contrato escolhem a regional (`?regionalId=`) ou leem a rede inteira. Por escola, as séries com turma no ano letivo vigente, e em cada uma a soma da distribuição das turmas — a turma que não aplicou a missão entra como `naoAvaliado`.\n\n`total` é o TOPO (a regional lida, ou a rede inteira): a soma de todas as escolas de `escolas`. `regionais` é o degrau entre a rede e a escola, só para o contrato lendo a rede inteira: cada regional com a soma das escolas dela.\n\n**Atravessa escolas SEM afrouxar a RLS**: uma transação por escola, em lotes de 8, somando na aplicação — o padrão do relatório da diretoria (ADR-82).",
     query: RedeConsolidadaQuerySchema,
     resposta: RedeConsolidadaSchema,
     notas: [

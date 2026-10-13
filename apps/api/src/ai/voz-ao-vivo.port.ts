@@ -1,3 +1,5 @@
+import type { AtribuicaoDoConsumo } from "./consumo-de-ia";
+
 /**
  * A porta da VOZ AO VIVO — o mascote da Ajuda (ADR-158).
  *
@@ -24,6 +26,12 @@ export interface PedidoDeVoz {
   voz: string;
   /** A instrução do sistema — o prompt do atendente, com a base. */
   instrucao: string;
+  /**
+   * A quem o painel de custos atribui a sessão (ADR-161). A conexão chega por
+   * `upgrade`, fora do middleware que abre o contexto da requisição — então
+   * quem abre a voz diz de quem ela é.
+   */
+  atribuicao?: AtribuicaoDoConsumo;
 }
 
 /** O que o navegador pode mandar. Nada além disto atravessa a api. */

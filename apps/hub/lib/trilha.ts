@@ -207,6 +207,8 @@ const NOS: Record<string, NoDaTrilha> = {
   "/unooria/recursos": { rotulo: "Recursos" },
   // A quota diária de IA por perfil (ADR-105).
   "/unooria/uso-de-ia": { rotulo: "Uso de IA" },
+  // O FinOps: o custo da IA em tokens, dólar e real (ADR-161).
+  "/unooria/custos-de-ia": { rotulo: "Custos de IA" },
   "/unooria/prospeccao": { rotulo: "Prospecção" },
   // As experiências arquivadas: tiradas do produto sem serem apagadas (ADR-116).
   "/unooria/arquivados": { rotulo: "Arquivados" },
