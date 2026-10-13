@@ -145,7 +145,7 @@ await suite(
       await cartao.click();
       await p.waitForURL(`**/exp/${missao.expId}**`, { timeout: 30_000 });
 
-      const iframe = p.locator('iframe[title="experiencia"]');
+      const iframe = p.locator('iframe[data-experiencia]');
       await iframe.waitFor({ state: "attached", timeout: 20_000 });
       const sandbox = (await iframe.getAttribute("sandbox")) ?? "";
       const src = (await iframe.getAttribute("src")) ?? "";
@@ -168,7 +168,7 @@ await suite(
 
       /* Que a experiência MONTOU é o que prova o handshake: sem `exp:ready` →
          `hub:init` ela nunca recebe identidade e fica na tela de carregamento. */
-      const dentro = p.frameLocator('iframe[title="experiencia"]');
+      const dentro = p.frameLocator('iframe[data-experiencia]');
       await dentro.locator("body").waitFor({ timeout: 30_000 });
       await p.waitForTimeout(3500);
       const montou = await dentro

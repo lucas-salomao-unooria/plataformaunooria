@@ -238,7 +238,7 @@ await suite(
       p = await r.pagina("estudante", { viewport: { width: 1280, height: 950 } });
       await r.entrar(p, estudante.login, senhaDe(estudante));
       await p.goto(`${HUB}/exp/${EXP_ID}`, { waitUntil: "domcontentloaded" });
-      q = p.frameLocator('iframe[title="experiencia"]');
+      q = p.frameLocator('iframe[data-experiencia]');
       await esperarOuFalharPorHttp(
         p,
         q.locator(".unc-chatlistitem, .lista__vazia, .aviso-de-rede"),
@@ -906,7 +906,7 @@ await suite(
 
     /* O F5 no meio da aula: o passo é do servidor, e a tela volta onde estava. */
     await p.reload({ waitUntil: "domcontentloaded" });
-    q = p.frameLocator('iframe[title="experiencia"]');
+    q = p.frameLocator('iframe[data-experiencia]');
     await esperarOuFalharPorHttp(p, q.locator(".crachas").first(), /quem-mandou-isso\/sessao/, {
       timeout: 40_000,
       oQue: "a revelação depois do F5",

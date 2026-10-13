@@ -308,6 +308,9 @@ export function ExpFrame(props: {
       ref={frame}
       src={props.src}
       title={props.titulo || "Conteúdo da missão"}
+      /* O gancho da automação é ESTE atributo, nunca o `title`: o título é o
+         nome que o leitor de tela anuncia e muda por missão (ADR-162). */
+      data-experiencia=""
       style={{ border: 0, width: "100%", height: "100%", display: "block" }}
       sandbox={sandbox}
       // `autoplay`: a Permissions-Policy tem default 'self' — sem delegar,
