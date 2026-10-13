@@ -17,7 +17,7 @@
     "test": "turbo test",
     "typecheck": "turbo typecheck",
     "new:exp": "node scripts/create-experiencia.mjs",
-  "worktree": "node scripts/worktree.mjs",
+    "worktree": "node scripts/worktree.mjs",
     "lint:all": "eslint apps packages scripts"
   },
   "pnpm": {
@@ -35,6 +35,7 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@next/eslint-plugin-next": "^16.3.2",
+    "axe-core": "4.10.3",
     "eslint": "^9",
     "eslint-plugin-react-hooks": "^7.1.1",
     "globals": "^17.11.0",
