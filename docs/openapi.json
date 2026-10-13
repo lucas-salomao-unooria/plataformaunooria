@@ -12651,6 +12651,102 @@
                         "additionalProperties": false
                       }
                     },
+                    "total": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "serie": {
+                            "type": "string"
+                          },
+                          "turmas": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "estudantes": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "missoes": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "expId": {
+                                  "type": "string"
+                                },
+                                "habilidades": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "codigo": {
+                                        "type": "string"
+                                      },
+                                      "distribuicao": {
+                                        "type": "object",
+                                        "properties": {
+                                          "atingiu": {
+                                            "type": "integer",
+                                            "minimum": 0
+                                          },
+                                          "emProcesso": {
+                                            "type": "integer",
+                                            "minimum": 0
+                                          },
+                                          "naoAtingiu": {
+                                            "type": "integer",
+                                            "minimum": 0
+                                          },
+                                          "naoAvaliado": {
+                                            "type": "integer",
+                                            "minimum": 0
+                                          },
+                                          "total": {
+                                            "type": "integer",
+                                            "minimum": 0
+                                          }
+                                        },
+                                        "required": [
+                                          "atingiu",
+                                          "emProcesso",
+                                          "naoAtingiu",
+                                          "naoAvaliado",
+                                          "total"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    },
+                                    "required": [
+                                      "codigo",
+                                      "distribuicao"
+                                    ],
+                                    "additionalProperties": false
+                                  }
+                                },
+                                "turmasAplicadas": {
+                                  "type": "integer",
+                                  "minimum": 0
+                                }
+                              },
+                              "required": [
+                                "expId",
+                                "habilidades",
+                                "turmasAplicadas"
+                              ],
+                              "additionalProperties": false
+                            }
+                          }
+                        },
+                        "required": [
+                          "serie",
+                          "turmas",
+                          "estudantes",
+                          "missoes"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
                     "turmas": {
                       "type": "array",
                       "items": {
@@ -12755,6 +12851,7 @@
                     "escola",
                     "periodo",
                     "missoes",
+                    "total",
                     "turmas"
                   ],
                   "additionalProperties": false
@@ -12767,7 +12864,7 @@
           "evidencias"
         ],
         "summary": "O painel de habilidades da escola: as turmas do ano letivo vigente, por série.",
-        "description": "Cada turma do ano letivo vigente que tem alguma missão com ficha, com a distribuição por habilidade de cada missão — em contagem; a tela faz a porcentagem. As missões (nome, unidade, texto da BNCC) vêm uma vez só, em `missoes`.\n\nTurmas por série (na ordem da trilha) e, dentro dela, por nome.\n\n**Papéis:** gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Professor não chega aqui (403): a visão dele é a da turma.\n- A REGIONAL pode pedir `?escolaId=` de qualquer escola da regional dela; fora dela, **403**.\n- O nível de uma criança numa habilidade da missão é o MELHOR entre todas as atividades e rodadas da missão. A mesma habilidade em duas missões aparece duas vezes, uma por missão.\n- `naoAvaliado` é a criança SEM evidência que conte (não fez, saiu antes, projeção ainda não confirmada, \"Não participou\") — nunca entra em `naoAtingiu`.\n- **Sem ranking**: estudantes, turmas e escolas saem em ordem alfabética (turmas por série antes), e nenhum campo soma níveis numa nota.",
+        "description": "Cada turma do ano letivo vigente que tem alguma missão com ficha, com a distribuição por habilidade de cada missão — em contagem; a tela faz a porcentagem. As missões (nome, unidade, texto da BNCC) vêm uma vez só, em `missoes`.\n\n`total` é o TOPO: a escola inteira, série a série, a soma de todas as turmas de `turmas`.\n\nTurmas por série (na ordem da trilha) e, dentro dela, por nome.\n\n**Papéis:** gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Professor não chega aqui (403): a visão dele é a da turma.\n- A REGIONAL pode pedir `?escolaId=` de qualquer escola da regional dela; fora dela, **403**.\n- O nível de uma criança numa habilidade da missão é o MELHOR entre todas as atividades e rodadas da missão. A mesma habilidade em duas missões aparece duas vezes, uma por missão.\n- `naoAvaliado` é a criança SEM evidência que conte (não fez, saiu antes, projeção ainda não confirmada, \"Não participou\") — nunca entra em `naoAtingiu`.\n- **Sem ranking**: estudantes, turmas e escolas saem em ordem alfabética (turmas por série antes), e nenhum campo soma níveis numa nota.",
         "security": [
           {
             "token-da-plataforma": []
@@ -12890,7 +12987,103 @@
                         "additionalProperties": false
                       }
                     },
-                    "escolas": {
+                    "total": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "serie": {
+                            "type": "string"
+                          },
+                          "turmas": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "estudantes": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "missoes": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "expId": {
+                                  "type": "string"
+                                },
+                                "habilidades": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "codigo": {
+                                        "type": "string"
+                                      },
+                                      "distribuicao": {
+                                        "type": "object",
+                                        "properties": {
+                                          "atingiu": {
+                                            "type": "integer",
+                                            "minimum": 0
+                                          },
+                                          "emProcesso": {
+                                            "type": "integer",
+                                            "minimum": 0
+                                          },
+                                          "naoAtingiu": {
+                                            "type": "integer",
+                                            "minimum": 0
+                                          },
+                                          "naoAvaliado": {
+                                            "type": "integer",
+                                            "minimum": 0
+                                          },
+                                          "total": {
+                                            "type": "integer",
+                                            "minimum": 0
+                                          }
+                                        },
+                                        "required": [
+                                          "atingiu",
+                                          "emProcesso",
+                                          "naoAtingiu",
+                                          "naoAvaliado",
+                                          "total"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    },
+                                    "required": [
+                                      "codigo",
+                                      "distribuicao"
+                                    ],
+                                    "additionalProperties": false
+                                  }
+                                },
+                                "turmasAplicadas": {
+                                  "type": "integer",
+                                  "minimum": 0
+                                }
+                              },
+                              "required": [
+                                "expId",
+                                "habilidades",
+                                "turmasAplicadas"
+                              ],
+                              "additionalProperties": false
+                            }
+                          }
+                        },
+                        "required": [
+                          "serie",
+                          "turmas",
+                          "estudantes",
+                          "missoes"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "regionais": {
                       "type": "array",
                       "items": {
                         "type": "object",
@@ -12900,6 +13093,10 @@
                           },
                           "nome": {
                             "type": "string"
+                          },
+                          "escolas": {
+                            "type": "integer",
+                            "minimum": 0
                           },
                           "series": {
                             "type": "array",
@@ -13001,6 +13198,128 @@
                         "required": [
                           "id",
                           "nome",
+                          "escolas",
+                          "series"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "escolas": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "nome": {
+                            "type": "string"
+                          },
+                          "regionalId": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "series": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "serie": {
+                                  "type": "string"
+                                },
+                                "turmas": {
+                                  "type": "integer",
+                                  "minimum": 0
+                                },
+                                "estudantes": {
+                                  "type": "integer",
+                                  "minimum": 0
+                                },
+                                "missoes": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "expId": {
+                                        "type": "string"
+                                      },
+                                      "habilidades": {
+                                        "type": "array",
+                                        "items": {
+                                          "type": "object",
+                                          "properties": {
+                                            "codigo": {
+                                              "type": "string"
+                                            },
+                                            "distribuicao": {
+                                              "type": "object",
+                                              "properties": {
+                                                "atingiu": {
+                                                  "type": "integer",
+                                                  "minimum": 0
+                                                },
+                                                "emProcesso": {
+                                                  "type": "integer",
+                                                  "minimum": 0
+                                                },
+                                                "naoAtingiu": {
+                                                  "type": "integer",
+                                                  "minimum": 0
+                                                },
+                                                "naoAvaliado": {
+                                                  "type": "integer",
+                                                  "minimum": 0
+                                                },
+                                                "total": {
+                                                  "type": "integer",
+                                                  "minimum": 0
+                                                }
+                                              },
+                                              "required": [
+                                                "atingiu",
+                                                "emProcesso",
+                                                "naoAtingiu",
+                                                "naoAvaliado",
+                                                "total"
+                                              ],
+                                              "additionalProperties": false
+                                            }
+                                          },
+                                          "required": [
+                                            "codigo",
+                                            "distribuicao"
+                                          ],
+                                          "additionalProperties": false
+                                        }
+                                      },
+                                      "turmasAplicadas": {
+                                        "type": "integer",
+                                        "minimum": 0
+                                      }
+                                    },
+                                    "required": [
+                                      "expId",
+                                      "habilidades",
+                                      "turmasAplicadas"
+                                    ],
+                                    "additionalProperties": false
+                                  }
+                                }
+                              },
+                              "required": [
+                                "serie",
+                                "turmas",
+                                "estudantes",
+                                "missoes"
+                              ],
+                              "additionalProperties": false
+                            }
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "nome",
+                          "regionalId",
                           "series"
                         ],
                         "additionalProperties": false
@@ -13011,6 +13330,8 @@
                     "regional",
                     "periodo",
                     "missoes",
+                    "total",
+                    "regionais",
                     "escolas"
                   ],
                   "additionalProperties": false
@@ -13023,7 +13344,7 @@
           "evidencias"
         ],
         "summary": "O painel de habilidades da rede: cada escola, cada série, a soma das turmas.",
-        "description": "A coordenação REGIONAL lê as escolas da própria regional; os perfis de contrato escolhem a regional (`?regionalId=`) ou leem a rede inteira. Por escola, as séries com turma no ano letivo vigente, e em cada uma a soma da distribuição das turmas — a turma que não aplicou a missão entra como `naoAvaliado`.\n\n**Atravessa escolas SEM afrouxar a RLS**: uma transação por escola, em lotes de 8, somando na aplicação — o padrão do relatório da diretoria (ADR-82).\n\n**Papéis:** gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Para a `gestor_regional` o `?regionalId=` é IGNORADO, não validado: aceitá-lo seria dar a diretoria do vizinho por querystring.\n- **Nome de criança nunca aparece**: o painel da rede é contagem. Para ver uma criança, abre-se a escola e a turma dela.\n- **Sem ranking**: estudantes, turmas e escolas saem em ordem alfabética (turmas por série antes), e nenhum campo soma níveis numa nota.",
+        "description": "A coordenação REGIONAL lê as escolas da própria regional; os perfis de contrato escolhem a regional (`?regionalId=`) ou leem a rede inteira. Por escola, as séries com turma no ano letivo vigente, e em cada uma a soma da distribuição das turmas — a turma que não aplicou a missão entra como `naoAvaliado`.\n\n`total` é o TOPO (a regional lida, ou a rede inteira): a soma de todas as escolas de `escolas`. `regionais` é o degrau entre a rede e a escola, só para o contrato lendo a rede inteira: cada regional com a soma das escolas dela.\n\n**Atravessa escolas SEM afrouxar a RLS**: uma transação por escola, em lotes de 8, somando na aplicação — o padrão do relatório da diretoria (ADR-82).\n\n**Papéis:** gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Para a `gestor_regional` o `?regionalId=` é IGNORADO, não validado: aceitá-lo seria dar a diretoria do vizinho por querystring.\n- **Nome de criança nunca aparece**: o painel da rede é contagem. Para ver uma criança, abre-se a escola e a turma dela.\n- **Sem ranking**: estudantes, turmas e escolas saem em ordem alfabética (turmas por série antes), e nenhum campo soma níveis numa nota.",
         "security": [
           {
             "token-da-plataforma": []

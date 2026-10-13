@@ -12,6 +12,7 @@ import {
   type EscolaConsolidada,
 } from "@/lib/painel-de-habilidades";
 import { BarraDaHabilidade } from "./barra-da-habilidade";
+import { LinhaSomada } from "./linha-somada";
 
 const TODAS = "todas";
 
@@ -20,6 +21,10 @@ const TODAS = "todas";
  * cada missão num cartão e, dentro dele, cada turma com a barra de cada
  * habilidade. A barra mostra contagem e porcentagem — é a porcentagem que
  * deixa ler lado a lado turmas de tamanhos diferentes.
+ *
+ * O cartão abre pelo TOPO: "Escola inteira", a soma das turmas da série que a
+ * api mandou em `total` — é a altura em que a coordenação começa, e embaixo
+ * vêm as turmas que somam aquele número.
  *
  * Sem ranking entre turmas: série na ordem da trilha, nome dentro dela, como a
  * api manda. A coordenação só LÊ; o nome da turma abre a visão do professor.
@@ -83,6 +88,12 @@ export function PainelDaEscola({
               title={`${rotuloDaUnidade(missao.unidade)} · ${copyDaMissao(missao.expId)?.titulo ?? missao.nome}`}
             >
               <ul className="flex flex-col gap-4">
+                <LinhaSomada
+                  rotulo="Escola inteira"
+                  destaque
+                  serie={painel.total.find((s) => s.serie === grupo.serie)}
+                  missao={missao}
+                />
                 {grupo.turmas.map((turma) => {
                   const daTurma = turma.missoes.find((m) => m.expId === missao.expId);
                   if (!daTurma) return null;

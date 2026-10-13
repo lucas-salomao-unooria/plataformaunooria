@@ -1,4 +1,4 @@
-import { somarPorSerie, type TurmaMedida } from "../src/evidencias/evidencias-consolidado.service";
+import { juntarSeries, somarPorSerie, type TurmaMedida } from "../src/evidencias/evidencias-consolidado.service";
 import {
   DISTRIBUICAO_VAZIA,
   distribuir,
@@ -166,5 +166,22 @@ describe("a soma por série (o painel da rede)", () => {
     expect(quinto.missoes).toEqual([
       { expId: "exp05ef1b", turmasAplicadas: 1, habilidades: [{ codigo: "EF05CO08", distribuicao: d(2, 3) }] },
     ]);
+  });
+
+  test("o TOPO (regional, rede) junta as escolas sem perder nem duplicar criança", () => {
+    const escolaA = somarPorSerie(turmas);
+    const escolaB = somarPorSerie([turmas[0]!]);
+    const juntas = juntarSeries([escolaA, escolaB, []]);
+    expect(juntas.map((s) => s.serie)).toEqual(["4EF", "5EF"]);
+    const quinto = juntas[1]!;
+    // 5 crianças e 2 turmas da A, mais 3 crianças e 1 turma da B.
+    expect(quinto).toMatchObject({ turmas: 3, estudantes: 8 });
+    expect(quinto.missoes).toEqual([
+      { expId: "exp05ef1b", turmasAplicadas: 2, habilidades: [{ codigo: "EF05CO08", distribuicao: d(4, 4) }] },
+    ]);
+    // A série que só uma escola tem passa inteira.
+    expect(juntas[0]).toEqual(escolaA[0]);
+    // E juntar uma lista só devolve ela mesma.
+    expect(juntarSeries([escolaA])).toEqual(escolaA);
   });
 });

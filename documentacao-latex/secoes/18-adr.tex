@@ -9,7 +9,7 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{159 decisões}, numeradas até ADR-159. A 153 (a evidência do Unoovista) e a 154 (a da Missão Tempestade) nasceram no mesmo dia, em frentes paralelas. A 132 (a Ajuda com
+São \textbf{160 decisões}, numeradas até ADR-160. A 153 (a evidência do Unoovista) e a 154 (a da Missão Tempestade) nasceram no mesmo dia, em frentes paralelas. A 132 (a Ajuda com
 avatar) entrou no código antes de ter seção aqui, e por um dia o número foi
 citado sem existir; a 133 pulou para não colidir com ela. A 133 e a 134 nasceram no mesmo dia, em frentes paralelas
 (Unoovista e Unoochat), e entraram juntas no merge; a 135 e a 136 levaram as
@@ -210,6 +210,7 @@ que a cercam.
 \zebra \adrr{ADR-157} & O Júri Estadual segue o PRD v2 (0.4.0) & 2026-10-10 & Aceita; supera em parte a \adrr{ADR-151} e a \adrr{ADR-152}\\
 \adrr{ADR-158} & O mascote na Ajuda: voz do Gemini Live por um proxy na api, rosto 3D no hub, e o padrão escolhido no painel & 2026-10-12 & Aceita; complementa a \adrr{ADR-132}\\
 \zebra \adrr{ADR-159} & O hub no celular e no tablet: \cd{min-w-0} na coluna ao lado da \cd{SideBar}, e a \cd{Tag} que quebra linha & 2026-10-12 & Aceita; complementa a \adrr{ADR-83}\\
+\adrr{ADR-160} & O painel de habilidades abre pelo total, e o contrato desce pela regional & 2026-10-13 & Aceita; complementa a \adrr{ADR-144}\\
 \bottomrule
 \end{tabularx}
 
@@ -14326,3 +14327,87 @@ dentro do \cd{ScrollBar}.
 a área do gestor ganhar navegação que não caiba em 44px; ou uma tela nova
 voltar a rolar de lado na medição em 375px.
 
+
+\section{ADR-160 --- O painel de habilidades abre pelo total, e o contrato desce pela regional}
+\label{adr:painel-de-habilidades-total}
+
+\textbf{Data.} 2026-10-13. \textbf{Status.} Aceita. \textbf{Complementa} a
+\adrr{ADR-144}: as alturas e a regra do nível na missão continuam as mesmas;
+muda o que cada altura mostra no topo, e o degrau do contrato.
+
+\begin{especificacao}{Contexto}
+O painel de habilidades (\adrr{ADR-144}) já tinha as quatro alturas e a trava
+de cada papel: o professor só nas turmas em que dá aula, a coordenação da
+escola na escola, a regional nas escolas dela, o contrato na rede. Faltavam
+duas coisas para ler \enquote{do mais alto ao mais granular}:
+\begin{itemize}
+  \item \textbf{não havia o total.} O painel da escola listava as turmas, e o da
+    rede as escolas, mas nenhum dos dois dizia quanto a escola, a regional ou a
+    rede inteira tinha atingido numa habilidade. A coordenação somava de cabeça;
+  \item \textbf{o contrato via a rede como lista plana de escolas.} Com cem
+    escolas, a lista é ilegível, e a regional --- o degrau que a hierarquia da
+    rede já tem --- só existia no seletor.
+\end{itemize}
+A auditoria das rotas não achou furo de alcance, mas quatro negações não eram
+provadas: a turma de outra escola pedida junto de uma escola liberada, o perfil
+de criança de outra escola, o contrato sem \cd{?escolaId=}, e o professor
+abrindo criança da turma vizinha.
+\end{especificacao}
+
+\textbf{Decisão.}
+\begin{enumerate}
+  \item \rota{GET /evidencias/escola/consolidado} e
+    \rota{GET /evidencias/rede/consolidado} devolvem \cd{total}: a soma de
+    TODAS as linhas da resposta, série a série, por missão --- contagens, nunca
+    porcentagens (\cd{somarPorSerie} e \cd{juntarSeries}, funções puras com
+    teste sem banco). A turma que não aplicou a missão continua entrando como
+    \enquote{não avaliado}.
+  \item Na rede inteira, o contrato recebe \cd{regionais}, cada uma com a soma
+    das escolas dela, e cada escola diz a sua \cd{regionalId}. A tela mostra
+    uma linha por regional (que abre o painel dela, \cd{?regionalId=}) e só a
+    escola sem regional sozinha --- sem ela, o total não fecharia com as linhas.
+  \item Cada cartão de missão abre pela linha somada (\enquote{Escola inteira},
+    \enquote{Regional inteira}, \enquote{Rede inteira}), com a mesma barra das
+    turmas.
+  \item A veracidade vira teste: no Postgres, o total da escola é a soma das
+    turmas, o da regional a das escolas DELA (a vizinha fora), o da rede a das
+    regionais mais as escolas soltas, e a linha de uma regional no painel do
+    contrato é o MESMO número que a coordenação regional lê. A suíte de ponta a
+    ponta do contrato confere a soma caixa a caixa contra a api.
+  \item As quatro negações que faltavam entraram na suíte de Postgres.
+\end{enumerate}
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \textbf{Somar na tela.} Os números já chegam ao hub, e a soma é uma
+    linha de código; mas seriam duas regras de soma (a api já soma as turmas
+    por série para a rede), e o total que a tela inventa não tem teste contra o
+    banco.
+  \item \textbf{Um total por habilidade juntando as missões.} A
+    \adrr{ADR-144} manteve cada missão separada; juntar exigiria decidir qual
+    nível vale quando a criança fez a mesma habilidade em duas missões, que é
+    regra pedagógica, não de painel.
+  \item \textbf{Manter a lista plana de escolas para o contrato.} Menos
+    trabalho, e ilegível na escala do contrato (cem escolas por cartão).
+  \item \textbf{Uma rota própria para as regionais.} Seria a mesma leitura
+    escola a escola duas vezes; a soma por regional sai das escolas que a rota
+    da rede já leu.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+\begin{itemize}
+  \item A resposta da rede inteira carrega as escolas E as regionais: o mesmo
+    número aparece duas vezes no JSON. Com cem escolas e quatro séries ainda é
+    pequeno, e manter as escolas evita uma segunda leitura quando a tela
+    precisar delas.
+  \item O total soma crianças de turmas que não aplicaram a missão como
+    \enquote{não avaliado}: numa série em que só uma turma de dez aplicou, a
+    barra do topo é quase toda cinza. É a leitura honesta (a missão não chegou
+    a elas), mas assusta quem lê só a cor.
+  \item A rede inteira continua lendo escola por escola, em lotes de 8. O total
+    não mudou o custo, mas também não o resolveu.
+\end{itemize}
+
+\textbf{Gatilho.} A rede inteira passar de alguns segundos para abrir (o
+caminho é agregado materializado, nunca afrouxar a RLS); a rede ganhar um nível
+entre regional e escola; ou o pedagógico pedir o total entre missões.

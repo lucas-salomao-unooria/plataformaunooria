@@ -312,7 +312,8 @@ export class EvidenciasConsolidadoService {
       (tx) => this.lerEscola(tx, escolaId, periodo?.id ?? null, catalogo),
       escolaId,
     );
-    return { escola, periodo, missoes: catalogo, turmas };
+    /* O TOPO: a escola inteira, série a série — a soma de todas as turmas. */
+    return { escola, periodo, missoes: catalogo, total: somarPorSerie(turmas), turmas };
   }
 
   /**
@@ -326,7 +327,7 @@ export class EvidenciasConsolidadoService {
     const regionalId = ehDoContrato(auth.perfil)
       ? (regionalPedida ?? null)
       : await this.escolas.regionalDoRelatorio(auth);
-    if (!ehDoContrato(auth.perfil) && !regionalId) return { regional: null, escolas: [] };
+    if (!ehDoContrato(auth.perfil) && !regionalId) return { regional: null, regionais: [], escolas: [] };
 
     if (regionalId) {
       const regional = await this.prisma.escola.findFirst({
@@ -339,14 +340,32 @@ export class EvidenciasConsolidadoService {
         select: { id: true, nome: true },
         orderBy: { nome: "asc" },
       });
-      return { regional, escolas };
+      return { regional, regionais: [], escolas: escolas.map((e) => ({ ...e, regionalId })) };
     }
-    const escolas = await this.prisma.escola.findMany({
-      where: { tipo: "escola" },
-      select: { id: true, nome: true },
-      orderBy: { nome: "asc" },
-    });
-    return { regional: null, escolas };
+    const [regionais, escolas] = await Promise.all([
+      this.prisma.escola.findMany({
+        where: { tipo: "regional" },
+        select: { id: true, nome: true },
+        orderBy: { nome: "asc" },
+      }),
+      this.prisma.escola.findMany({
+        where: { tipo: "escola" },
+        select: { id: true, nome: true, paiId: true },
+        orderBy: { nome: "asc" },
+      }),
+    ]);
+    /* A regional da escola é o PAI dela quando o pai é uma regional; escola
+       pendurada direto no contrato fica com `null` e aparece sozinha. */
+    const ehRegional = new Set(regionais.map((r) => r.id));
+    return {
+      regional: null,
+      regionais,
+      escolas: escolas.map((e) => ({
+        id: e.id,
+        nome: e.nome,
+        regionalId: e.paiId && ehRegional.has(e.paiId) ? e.paiId : null,
+      })),
+    };
   }
 
   /**
@@ -354,11 +373,11 @@ export class EvidenciasConsolidadoService {
    * Uma transação por escola, em lotes — a RLS não é tocada.
    */
   async daRede(auth: AuthClaims, regionalPedida?: string, agora: Date = new Date()) {
-    const { regional, escolas } = await this.escolasDaRede(auth, regionalPedida);
+    const { regional, regionais, escolas } = await this.escolasDaRede(auth, regionalPedida);
     const periodo = await this.periodoDoPainel(agora);
     const catalogo = await this.catalogo(this.prisma);
 
-    const lidas: { id: string; nome: string; turmas: TurmaMedida[] }[] = [];
+    const lidas: { id: string; nome: string; regionalId: string | null; turmas: TurmaMedida[] }[] = [];
     for (const lote of emLotes(escolas, ESCOLAS_POR_LOTE)) {
       lidas.push(
         ...(await Promise.all(
@@ -373,13 +392,44 @@ export class EvidenciasConsolidadoService {
       );
     }
 
+    const somadas = lidas.map((escola) => ({
+      id: escola.id,
+      nome: escola.nome,
+      regionalId: escola.regionalId,
+      series: somarPorSerie(escola.turmas),
+    }));
     return {
       regional,
       periodo,
       missoes: catalogo,
-      escolas: lidas.map((escola) => ({ id: escola.id, nome: escola.nome, series: somarPorSerie(escola.turmas) })),
+      /* O TOPO: a regional lida, ou a rede inteira — a soma de TODAS as
+         escolas lidas, e não das linhas que a tela mostra. */
+      total: juntarSeries(somadas.map((e) => e.series)),
+      /* O degrau entre a rede e a escola, só para o contrato em "todas as
+         regionais". Regional sem escola não aparece: não há o que somar. */
+      regionais: regionais
+        .map((r) => ({
+          id: r.id,
+          nome: r.nome,
+          escolas: somadas.filter((e) => e.regionalId === r.id).length,
+          series: juntarSeries(somadas.filter((e) => e.regionalId === r.id).map((e) => e.series)),
+        }))
+        .filter((r) => r.escolas > 0),
+      escolas: somadas,
     };
   }
+}
+
+/** Uma série somada: quantas turmas, quantas crianças, e cada missão somada. */
+export interface SerieSomada {
+  serie: string;
+  turmas: number;
+  estudantes: number;
+  missoes: {
+    expId: string;
+    turmasAplicadas: number;
+    habilidades: { codigo: string; distribuicao: Distribuicao }[];
+  }[];
 }
 
 /**
@@ -388,7 +438,7 @@ export class EvidenciasConsolidadoService {
  * distribuição de cada habilidade. A turma que não aplicou entra na soma como
  * "não avaliado" — são crianças da série que a missão ainda não alcançou.
  */
-export function somarPorSerie(turmas: readonly TurmaMedida[]) {
+export function somarPorSerie(turmas: readonly TurmaMedida[]): SerieSomada[] {
   const porSerie = new Map<
     string,
     {
@@ -410,6 +460,51 @@ export function somarPorSerie(turmas: readonly TurmaMedida[]) {
       serie.missoes.set(missao.expId, soma);
     }
     porSerie.set(turma.serie, serie);
+  }
+  return [...porSerie.entries()]
+    .sort(([a], [b]) => ordemDaSerie(a) - ordemDaSerie(b))
+    .map(([serie, s]) => ({
+      serie,
+      turmas: s.turmas,
+      estudantes: s.estudantes,
+      missoes: [...s.missoes.entries()].map(([expId, m]) => ({
+        expId,
+        turmasAplicadas: m.turmasAplicadas,
+        habilidades: [...m.habilidades.entries()].map(([codigo, distribuicao]) => ({ codigo, distribuicao })),
+      })),
+    }));
+}
+
+/**
+ * VÁRIAS LISTAS DE SÉRIES SOMADAS NUMA SÓ — a regional é a soma das escolas
+ * dela, a rede a de todas. Soma as contagens, nunca porcentagens: a escola
+ * grande pesa o que tem de crianças, e o total continua batendo com a soma das
+ * linhas que a tela mostra embaixo dele.
+ */
+export function juntarSeries(listas: readonly (readonly SerieSomada[])[]): SerieSomada[] {
+  const porSerie = new Map<
+    string,
+    {
+      turmas: number;
+      estudantes: number;
+      missoes: Map<string, { turmasAplicadas: number; habilidades: Map<string, Distribuicao> }>;
+    }
+  >();
+  for (const lista of listas) {
+    for (const s of lista) {
+      const serie = porSerie.get(s.serie) ?? { turmas: 0, estudantes: 0, missoes: new Map() };
+      serie.turmas += s.turmas;
+      serie.estudantes += s.estudantes;
+      for (const missao of s.missoes) {
+        const soma = serie.missoes.get(missao.expId) ?? { turmasAplicadas: 0, habilidades: new Map() };
+        soma.turmasAplicadas += missao.turmasAplicadas;
+        for (const h of missao.habilidades) {
+          soma.habilidades.set(h.codigo, somar(soma.habilidades.get(h.codigo) ?? DISTRIBUICAO_VAZIA, h.distribuicao));
+        }
+        serie.missoes.set(missao.expId, soma);
+      }
+      porSerie.set(s.serie, serie);
+    }
   }
   return [...porSerie.entries()]
     .sort(([a], [b]) => ordemDaSerie(a) - ordemDaSerie(b))
