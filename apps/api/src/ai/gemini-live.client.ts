@@ -1,5 +1,6 @@
 import { GoogleAuth } from "google-auth-library";
 import { WebSocket } from "ws";
+import { inteiro, type RegistrarConsumo } from "./consumo-de-ia";
 import {
   ErroDaVoz,
   type ConversaDeVoz,
@@ -36,6 +37,8 @@ const auth = new GoogleAuth({ scopes: ["https://www.googleapis.com/auth/cloud-pl
 export interface ConfigDoGeminiLive {
   projeto?: string;
   regiao: string;
+  /** O registro de consumo do painel de custos (ADR-161). Ausente no teste. */
+  registrar?: RegistrarConsumo;
 }
 
 export function urlDoLive(regiao: string): string {
@@ -44,7 +47,7 @@ export function urlDoLive(regiao: string): string {
 }
 
 /** A primeira mensagem da sessão. Pura — o teste confere o que vai ao vendor. */
-export function mensagemDeSetup(config: Required<ConfigDoGeminiLive>, pedido: PedidoDeVoz): Record<string, unknown> {
+export function mensagemDeSetup(config: { projeto: string; regiao: string }, pedido: PedidoDeVoz): Record<string, unknown> {
   const modelo = pedido.modelo.replace(/^.*models\//, "");
   return {
     setup: {
@@ -111,6 +114,25 @@ export function doVendor(msg: unknown): EventoDaVoz[] {
   return eventos;
 }
 
+/**
+ * O que o vendor cobrou numa mensagem (`usageMetadata`, que o Live manda por
+ * turno). Saída = total − entrada, como no `vertex.provider.ts`: o raciocínio
+ * e o áudio gerado saem juntos na tarifa de saída. Pura.
+ *
+ * O Live cobra a janela de contexto INTEIRA a cada turno — os turnos
+ * anteriores entram de novo na entrada do seguinte. É por isso que somamos o
+ * que cada mensagem diz, e não só o último número: cada turno foi pago.
+ */
+export function usoDoVendor(msg: unknown): { entrada: number; saida: number } | null {
+  if (!ehObjeto(msg) || !ehObjeto(msg.usageMetadata)) return null;
+  const uso = msg.usageMetadata;
+  const entrada = inteiro(typeof uso.promptTokenCount === "number" ? uso.promptTokenCount : undefined);
+  const total = typeof uso.totalTokenCount === "number" ? uso.totalTokenCount : undefined;
+  const resposta = typeof uso.responseTokenCount === "number" ? uso.responseTokenCount : undefined;
+  const saida = total !== undefined ? Math.max(0, inteiro(total) - entrada) : inteiro(resposta);
+  return entrada + saida > 0 ? { entrada, saida } : null;
+}
+
 function lerJson(dados: unknown): unknown {
   try {
     const texto = Buffer.isBuffer(dados) ? dados.toString("utf8") : String(dados);
@@ -124,11 +146,33 @@ class ConversaNoGemini implements ConversaDeVoz {
   private cbEvento: (evento: EventoDaVoz) => void = () => undefined;
   private cbFechar: (info: { codigo: number; motivo: string }) => void = () => undefined;
 
-  constructor(private readonly ws: WebSocket) {
+  private readonly pago = { entrada: 0, saida: 0 };
+  private contabilizada = false;
+
+  constructor(
+    private readonly ws: WebSocket,
+    private readonly aoEncerrar?: (pago: { entrada: number; saida: number }) => void,
+  ) {
     ws.on("message", (dados) => {
-      for (const evento of doVendor(lerJson(dados))) this.cbEvento(evento);
+      const msg = lerJson(dados);
+      const uso = usoDoVendor(msg);
+      if (uso) {
+        this.pago.entrada += uso.entrada;
+        this.pago.saida += uso.saida;
+      }
+      for (const evento of doVendor(msg)) this.cbEvento(evento);
     });
-    ws.on("close", (codigo, motivo) => this.cbFechar({ codigo, motivo: motivo.toString("utf8") }));
+    ws.on("close", (codigo, motivo) => {
+      this.contabilizar();
+      this.cbFechar({ codigo, motivo: motivo.toString("utf8") });
+    });
+  }
+
+  /** UMA linha por sessão, no fim dela — quem fechou não importa. */
+  private contabilizar(): void {
+    if (this.contabilizada) return;
+    this.contabilizada = true;
+    this.aoEncerrar?.(this.pago);
   }
 
   enviar(entrada: EntradaDaVoz): void {
@@ -200,7 +244,20 @@ export class GeminiLiveClient implements VozAoVivoPort {
         ws.removeAllListeners();
         // Depois do setup, erro de socket vira `close` — quem escuta é a conversa.
         ws.on("error", () => undefined);
-        resolver(new ConversaNoGemini(ws));
+        const registrar = this.config.registrar;
+        resolver(
+          new ConversaNoGemini(ws, (pago) =>
+            registrar?.({
+              operacao: "voz-ao-vivo",
+              modelo: pedido.modelo.replace(/^.*models\//, ""),
+              modalidade: "audio",
+              ok: true,
+              tokensEntrada: pago.entrada,
+              tokensSaida: pago.saida,
+              atribuicao: pedido.atribuicao,
+            }),
+          ),
+        );
       });
     });
   }

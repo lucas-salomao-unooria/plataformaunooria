@@ -31,7 +31,8 @@ uma experiência \textbf{arquivada} ganha \cd{backup\_} antes do código
 \cd{escolas}, \cd{turmas}, \cd{users}, \cd{experiencias},
 \cd{experiencias\_versoes}, \cd{experiencias\_arquivadas}, \cd{disponibilidades}, \cd{ia\_quotas},
 \cd{recursos\_auditoria}, \cd{progresso},
-\cd{telemetria\_eventos}, \cd{ia\_uso\_diario}.
+\cd{telemetria\_eventos}, \cd{ia\_uso\_diario}, \cd{ia\_consumo\_diario},
+\cd{ia\_precos}, \cd{cotacoes\_dolar}.
 
 \textbf{Tabela que é contrato entre duas experiências carrega os dois números}:
 \cd{exp08ef1b\_app\_70\_perfis\_importados} --- a app-70 escreve, a exp08ef1b lê.
@@ -278,6 +279,15 @@ Duas armadilhas registradas naquela migração, ambas produzindo o mesmo sintoma
   trocar, e os ajustes do mascote (voz, modelo do Live, boca). Semeada com o
   mascote; sobrescrita só pelo \cd{admin}, histórico em
   \cd{recursos\_auditoria} (\adrr{ADR-158}).\\
+\cd{ia\_consumo\_\B diario} & \textbf{Sem RLS} & O que cada chamada de IA PAGOU
+  (\adrr{ADR-161}), somado por dia, escola, perfil, recurso, operação e modelo:
+  \emph{tokens}, imagens, segundos de voz. \textbf{Sem \cd{usuario\_id}}.
+  Tabela de contrato, lida só pelo \cd{admin}. Ver
+  Seção~\ref{sec:custos-de-ia-dados}.\\
+\zebra \cd{ia\_precos} & Catálogo & O preço de cada modelo, com vigência e
+  motivo; só se insere, e a tabela é o histórico (\adrr{ADR-161}).\\
+\cd{cotacoes\_\B dolar} & Catálogo & A PTAX de venda do Banco Central por dia
+  útil, o \emph{cache} da conversão em reais (\adrr{ADR-161}).\\
 \bottomrule
 \end{tabularx}
 
@@ -419,6 +429,58 @@ Sem a linha, vale a constante do código (\cd{CONFIGURACAO\_PADRAO}), e o
 \emph{log} \cd{ajuda-configuracao-sem-linha} acusa; por isso o \cd{GRANT} é
 \cd{SELECT, INSERT, UPDATE}, \textbf{sem \cd{DELETE}}. A configuração vale na
 PRÓXIMA sessão aberta: a conversa no ar mantém a voz e o modelo com que começou.
+
+\section{Os custos de IA: \cd{ia\_consumo\_diario}, \cd{ia\_precos} e \cd{cotacoes\_dolar}}
+\label{sec:custos-de-ia-dados}
+
+\adrr{ADR-161}. O painel de custos da Unooria (\rota{/unooria/custos-de-ia})
+responde quanto a IA custou, em quê e em que escola. As três tabelas guardam o
+que se MEDIU, o PREÇO e o CÂMBIO; \textbf{o custo não é gravado em lugar
+nenhum} --- é derivado na leitura (consumo $\times$ preço vigente no dia
+$\times$ PTAX do dia), para que a correção de um preço valha para trás. São
+tabelas de CONTRATO, como \cd{ia\_quotas}: \textbf{sem RLS}, fora do
+\cd{comTenancy}, lidas só pelo \cd{admin}. Migração
+\arq{20261013120000\_\B{}custos\_\B{}de\_\B{}ia}.
+
+\begin{itemize}
+  \item \textbf{\cd{ia\_consumo\_diario} é um agregado, não um evento.} PK
+    \cd{(dia, escola\_id, perfil, recurso, operacao, modelo)}, e cada chamada
+    faz \cd{INSERT ... ON CONFLICT DO UPDATE} somando \cd{chamadas},
+    \cd{falhas}, \cd{tokens\_entrada}, \cd{tokens\_saida} (\cd{BIGINT}),
+    \cd{imagens} e \cd{segundos}; \cd{estimado} vira verdadeiro se qualquer
+    chamada do grupo foi estimada (a voz). \cd{modalidade} (\emph{CHECK}
+    \cd{texto} $|$ \cd{imagem} $|$ \cd{audio} $|$ \cd{video}) acompanha o
+    modelo. O dia é o do fuso da plataforma (\adrr{ADR-99}).
+  \item \textbf{\cd{escola\_id} e \cd{perfil} usam \cd{''} como sentinela},
+    e não \cd{NULL}: a chave do agregado é a PK, e no Postgres
+    \cd{NULL} $\neq$ \cd{NULL} --- duas chamadas sem escola (papel de contrato,
+    tarefa de fundo) criariam duas linhas e o \cd{ON CONFLICT} nunca casaria.
+  \item \textbf{Sem \cd{usuario\_id}, de propósito} (regra 6): o FinOps
+    pergunta EM QUÊ, nunca QUEM, e a linha vive mais que qualquer dado de
+    pessoa. Com isso a tabela não é dado de estudante, e a falta de RLS não
+    abre nada que a política protegeria: o que sobra é escola, perfil e
+    contagem.
+  \item \textbf{\cd{ia\_precos}}: \cd{modelo} (\emph{CHECK} de formato de id de
+    modelo), \cd{componente} (\emph{CHECK} \cd{entrada} $|$ \cd{saida} $|$
+    \cd{minuto}), \cd{usd} (\cd{NUMERIC(14,6)}, $\ge 0$; por 1 milhão de
+    \emph{tokens}, ou por minuto no avatar), \cd{vigente\_desde},
+    \cd{motivo}, \cd{definido\_por} (sem FK, como \cd{ia\_quotas}),
+    \cd{definido\_por\_nome} (CONGELADO) e \cd{definido\_em}. Índice único
+    \cd{(modelo, componente, vigente\_desde)}: dois preços no mesmo dia seriam
+    uma escolha pela ordem do índice, e o segundo SUBSTITUI o primeiro.
+  \item \textbf{\cd{cotacoes\_dolar}}: PK \cd{dia} (só dias úteis),
+    \cd{compra}, \cd{venda}, \cd{cotado\_em} (o horário de publicação do BCB)
+    e \cd{buscado\_em}. O dia sem linha usa a do último dia útil anterior.
+\end{itemize}
+
+\begin{nota}
+\textbf{O avatar em vídeo não tem linha em \cd{ia\_consumo\_diario}.} O
+minuto dele já é medido em \cd{ajuda\_sessoes} (\adrr{ADR-132}), e a consulta
+do painel o soma por \cd{UNION ALL} como o modelo \cd{liveavatar-full}: sessão
+com \cd{atendente = 'avatar'} e \cd{avatar\_sessao\_id} preenchido, a duração
+real limitada ao teto, e a sessão sem \cd{fim} contando o teto inteiro --- a
+mesma regra dos minutos da Ajuda.
+\end{nota}
 
 \section{As falas do podcast de recapitulação: \cd{podcast\_roteiros}}
 \label{sec:podcast-dados}
@@ -1982,6 +2044,13 @@ decisão \emph{futura}, com DPA e \emph{k}-anonimato --- e não sai de um
   \emph{CHECKs} de atendente, de formato da voz e do modelo e das faixas da
   boca, semeada com o mascote; \cd{configuracao-alterada} no \emph{CHECK} de
   \cd{recursos\_auditoria}; o \cd{GRANT} sem \cd{DELETE}, guardado.\\
+\zebra \arq{20261013120000\_\B{}custos\_\B{}de\_\B{}ia} & O painel de custos de
+  IA (\adrr{ADR-161}): \cd{ia\_consumo\_diario} (PK do agregado, \cd{''} como
+  sentinela de escola e perfil, \emph{CHECK} de modalidade, índice por dia),
+  \cd{ia\_precos} (\emph{CHECKs} de componente, valor e formato do modelo,
+  vigência única por modelo e componente, semeada com o preço de lista de
+  13/10/2026) e \cd{cotacoes\_dolar}. Sem RLS nas três; sem
+  \cd{usuario\_id}.\\
 \bottomrule
 \end{tabularx}
 

@@ -83,6 +83,29 @@ export function somarTokens(eventos: Iterable<EventoAgente>): number {
   return total;
 }
 
+/**
+ * O mesmo recorte de `somarTokens`, dividido para o painel de custos
+ * (ADR-161): entrada e saída cobradas, e o modelo que respondeu. A saída é o
+ * total menos a entrada — o raciocínio sai na tarifa de saída. Evento sem
+ * `prompt_token_count` conta inteiro como saída (a tarifa mais cara).
+ */
+export function consumoDoTurno(
+  eventos: Iterable<EventoAgente>,
+  modeloPadrao: string,
+): { entrada: number; saida: number; modelo: string } {
+  let entrada = 0;
+  let saida = 0;
+  let modelo: string | undefined;
+  for (const e of eventos) {
+    if (e.parcial || typeof e.tokens !== "number" || e.tokens <= 0) continue;
+    const deEntrada = Math.min(e.tokens, Math.max(0, e.tokensEntrada ?? 0));
+    entrada += deEntrada;
+    saida += e.tokens - deEntrada;
+    modelo ??= e.modelo;
+  }
+  return { entrada, saida, modelo: modelo ?? modeloPadrao };
+}
+
 export interface Fonte {
   titulo: string;
   paginaInicio: number | null;

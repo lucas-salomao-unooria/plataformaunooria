@@ -16,9 +16,10 @@ function traceAtivo(): { traceId: string; spanId: string; amostrado: boolean } |
 }
 
 /** O pedaço do `Request`/`Response` do Express que este middleware lê — sem `@types/express`. */
-type Requisicao = { headers: Record<string, string | string[] | undefined> };
+type Requisicao = { headers: Record<string, string | string[] | undefined>; originalUrl?: string; url?: string };
 type Resposta = { setHeader(nome: string, valor: string): unknown };
 import { abrirContexto, type ContextoDaRequisicao } from "../tenancy/tenancy-context";
+import { recursoDaRota } from "../ai/consumo-de-ia";
 import { lerTrace } from "./trace-da-requisicao";
 
 /**
@@ -37,6 +38,8 @@ export function contextoMiddleware(req: Requisicao, res: Resposta, next: () => v
     traceId: t?.traceId,
     spanId: t?.spanId,
     amostrado: t?.amostrado,
+    // A ROTA, e não o handler: o middleware roda antes do roteamento do Nest.
+    recurso: recursoDaRota(req.originalUrl ?? req.url),
   };
   res.setHeader("x-request-id", contexto.requestId);
   abrirContexto(contexto, () => next());

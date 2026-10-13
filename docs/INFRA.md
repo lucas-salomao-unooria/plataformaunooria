@@ -303,6 +303,20 @@ O segundo atendente: o Gemini Live da Vertex, por um WebSocket da PRÓPRIA api
 - **Custo**: o Live cobra a janela de contexto a cada turno, e a base inteira da
   Ajuda vai na instrução. O teto continua sendo os minutos de `ajuda_limites`.
 
+**Custos de IA** (2026-10-13, ADR-161; doutrina em `docs/regras/custos-de-ia.md`).
+Nada novo no Terraform: sem env, sem segredo, sem bucket. Duas expectativas:
+
+- **A api sai para `olinda.bcb.gov.br:443`** (a PTAX do Banco Central, API
+  pública, sem chave), do servidor e sob demanda — no máximo uma vez por hora,
+  quando o `admin` abre o painel. É tráfego público como o de
+  `api.liveavatar.com`; com egress `private-ranges-only` ele já sai direto. Se
+  um contrato fechar a saída da api para a internet, o painel continua no ar e
+  converte com as cotações guardadas, avisando que o BCB não respondeu.
+- **Trocar o modelo de IA numa env do Terraform** (`VERTEX_MODEL`,
+  `VERTEX_TTS_MODEL`, o do agente) pede o PREÇO do modelo novo no painel
+  `/unooria/custos-de-ia` no mesmo dia: sem ele, o consumo entra com custo zero
+  e a tela avisa.
+
 **Telemetria: fica no Postgres, e sem serviço novo** (decisão de 2026-08-27).
 Avaliamos mandar o canal analítico para o BigQuery por subscription nativa do
 Pub/Sub. Não foi: os relatórios do professor NÃO leem `telemetria_eventos` (leem

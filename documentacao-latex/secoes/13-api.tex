@@ -1709,6 +1709,38 @@ dois atendentes custam diferente (o avatar por minuto de vídeo, o mascote por
     \cd{detalhe}). Vale na PRÓXIMA sessão.
 \end{itemize}
 
+\textbf{Os CUSTOS DE IA moram no mesmo prefixo} (\adrr{ADR-161}). O
+controlador deles só aceita o \cd{admin} (\cd{@Roles("admin")} e nada mais),
+pela razão da quota --- é o custo variável da fornecedora, e mostrá-lo à rede seria entregar a
+margem do contrato. O \cd{gestor\_contrato} recebe 403 nas três rotas. Quem
+MEDE é \arq{src/ai} (\cd{Registro\B De\B Consumo}); aqui só se lê e se dá preço.
+
+\begin{itemize}
+  \item \rota{GET /recursos/custos-de-ia?de\&ate} --- o custo do período
+    (\cd{YYYY-MM-DD}, no fuso da plataforma; padrão: os últimos 30 dias, hoje
+    incluído; teto de 366 dias; início depois do fim responde 400). Antes de
+    somar, tenta trazer do BCB as PTAX que faltam; sem o BCB, converte com o
+    \emph{cache} e devolve o aviso em \cd{cotacao}. Devolve \cd{totais}
+    (US\$, R\$, \emph{tokens} de entrada e saída, chamadas, falhas, imagens,
+    segundos de áudio, minutos de vídeo), \cd{porDia}, \cd{porRecurso} (com o
+    nome da tela), \cd{porModelo}, \cd{porModalidade}, \cd{porEscola} (com o
+    nome; \cd{''} é \enquote{Sem escola}) e \cd{modelosSemPreco}. Tudo sai de
+    UMA consulta com \cd{GROUPING SETS}, para os recortes baterem entre si.
+    Nenhum \cd{usuario\_id} em lugar nenhum.
+  \item \rota{GET /recursos/custos-de-ia/precos} --- a tabela de preços
+    inteira, com o histórico de vigências (a mais nova primeiro dentro de cada
+    modelo e componente), e \cd{modelosEmUso}, para a janela de cadastro
+    oferecer os modelos que já consumiram.
+  \item \rota{POST /recursos/custos-de-ia/precos} --- grava um preço a partir
+    de uma data: \cd{\{modelo, componente, usd, vigenteDesde, motivo\}}.
+    \textbf{Motivo obrigatório} (Zod), teto de sanidade de US\$\,\num{10000}
+    por unidade. \textbf{Nunca apaga a anterior}: a mesma (modelo, componente,
+    data) substitui o valor daquela vigência, que é a correção de um valor
+    digitado errado. Data no passado recalcula o painel daquele dia em diante.
+    Registra \cd{codigo: ia-preco-definido}; o nome de quem gravou fica
+    congelado na linha. Devolve a tabela atualizada.
+\end{itemize}
+
 \section{Prospecção: a única escrita sem token (\adrr{ADR-107})}
 
 O formulário do site público (\cd{/}) grava pela api, e não num banco próprio.

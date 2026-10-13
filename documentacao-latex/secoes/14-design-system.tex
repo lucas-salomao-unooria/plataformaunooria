@@ -1292,6 +1292,39 @@ caber o transbordo, e \cd{window.innerWidth} cresce junto --- uma página de
 419px responde \enquote{419 de 419} e parece certa. A primeira rodada desta
 medição deu tudo verde por isso.
 
+\section{Os gráficos do painel de custos de IA (\adrr{ADR-161})}
+\label{ds:graficos-custos}
+
+O painel \rota{/unooria/custos-de-ia} é a primeira tela da plataforma que
+desenha \textbf{valor monetário} num gráfico: custo em reais, que vive em
+centavos e dezenas. Ele usa as peças do DS (\cd{MetricCard}, \cd{LineChart},
+\cd{SemiDonutChart}, \cd{Table}), e duas delas mostraram uma lacuna na 0.2.19.
+
+\begin{tabularx}{\linewidth}{@{}L{48mm}X@{}}
+\toprule
+\headrow \thd{Lacuna aberta na 0.2.19} & \thd{Compensação em \arq{painel-de-custos.tsx}}\\
+\midrule
+\cd{LineChart} e \cd{BarChart} desenham numa escala CRAVADA em 0--100
+  (\cd{val / 100}; o \cd{BarChart} usa 100 como piso do máximo), e o eixo
+  vertical é só texto. Uma curva de R\$\,0,10 saía rente ao chão, com o eixo
+  dizendo 0 a 100. & A série vai em \textbf{percentual de um teto redondo}
+  (\cd{tetoRedondo}: 1, 2, 2,5, 5 ou 10 vezes a ordem de grandeza do maior
+  dia), e os valores reais desse teto entram em \cd{yAxisLabels}. O
+  \emph{tooltip} fica \textbf{desligado}, porque mostraria o percentual, não o
+  valor. Os rótulos de data vão espaçados (cerca de dez), porque com 30 ou 365
+  dias eles se atropelam.\\
+\zebra \cd{SemiDonutChart} escreve o número cru na legenda (\enquote{0.1}, com
+  ponto decimal). & Recebe o \textbf{percentual inteiro} do custo por
+  modalidade, que lê bem sem formatador.\\
+\bottomrule
+\end{tabularx}
+
+A compensação está marcada no comentário e no \arq{AGENTS.md} da área, e
+\textbf{morre} quando o DS publicar escala pelo dado (ou \cd{maxValue}) e um
+formatador do valor no \emph{tooltip} e na legenda --- o pedido feito ao
+\cd{storybook-unooria}. Até lá, gráfico novo com valor que não seja
+percentual repete a mesma compensação, ou sai com a curva rente ao chão.
+
 \section{Cor da plataforma: classe escrita à mão}
 
 \begin{atencao}

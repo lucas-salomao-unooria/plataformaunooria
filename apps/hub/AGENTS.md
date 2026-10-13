@@ -102,6 +102,7 @@ sessão abre a pasta:
 | [`app/(plataforma)/professor/`](<app/(plataforma)/professor/AGENTS.md>) | a sala de aula e o guia da aula |
 | [`app/(plataforma)/professor/entre-redes/`](<app/(plataforma)/professor/entre-redes/AGENTS.md>) | a ficha da missão: o despachante, equipes, evidência, A Seleção |
 | [`app/(plataforma)/unooria/`](<app/(plataforma)/unooria/AGENTS.md>) | o painel da fornecedora e o interruptor na porta do produto |
+| [`app/(plataforma)/unooria/custos-de-ia/`](<app/(plataforma)/unooria/custos-de-ia/AGENTS.md>) | o FinOps da IA: custo em real e dólar, a tabela de preços e a lacuna dos gráficos do DS |
 | [`app/exp/`](app/exp/AGENTS.md) | o embed da experiência, e a allowlist do BFF |
 | [`components/`](components/AGENTS.md) | a casca e as medidas: marca, fontes, alturas, rolagem |
 | [`components/site/`](components/site/AGENTS.md) | o site público: o que é porte literal e como conferir |
