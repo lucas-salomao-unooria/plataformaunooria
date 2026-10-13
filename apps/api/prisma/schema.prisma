@@ -3519,3 +3519,70 @@ model AjudaConfiguracao {
 
   @@map("ajuda_configuracao")
 }
+
+// ════════════════════════════════════════ custos de IA — o FinOps da Unooria (ADR-161)
+
+/// O que cada chamada de IA PAGOU, somado por dia. Uma linha por (dia, escola,
+/// perfil, recurso, operação, modelo); o `RegistroDeConsumo` (src/ai) faz o
+/// upsert a cada chamada. Sem RLS e sem `usuario_id`: tabela de contrato, lida
+/// só pelo `admin`. `escolaId`/`perfil` = '' quando não há (papel de contrato,
+/// tarefa de fundo) — a PK não aceita NULL. O CUSTO não mora aqui: é derivado
+/// na leitura com `ia_precos` e `cotacoes_dolar`.
+model IaConsumoDiario {
+  dia           DateTime @db.Date
+  escolaId      String   @default("") @map("escola_id")
+  perfil        String   @default("")
+  /// O primeiro segmento da rota que disparou a chamada (`podcast`, `planos`).
+  recurso       String
+  /// `generate` | `generateJson` | `generateImage` | `generateSpeech` | `conversar` | `conversarEmFluxo` | `agente` | `voz-ao-vivo`
+  operacao      String
+  modelo        String
+  /// `texto` | `imagem` | `audio` | `video` — CHECK na migration.
+  modalidade    String
+  chamadas      Int      @default(0)
+  falhas        Int      @default(0)
+  tokensEntrada BigInt   @default(0) @map("tokens_entrada")
+  tokensSaida   BigInt   @default(0) @map("tokens_saida")
+  imagens       Int      @default(0)
+  segundos      BigInt   @default(0)
+  /// A contagem foi ESTIMADA (a voz da Cloud TTS não devolve tokens).
+  estimado      Boolean  @default(false)
+  atualizadoEm  DateTime @default(now()) @map("atualizado_em") @db.Timestamptz(6)
+
+  @@id([dia, escolaId, perfil, recurso, operacao, modelo])
+  @@index([dia], map: "ia_consumo_diario_dia_idx")
+  @@map("ia_consumo_diario")
+}
+
+/// O preço de cada modelo, com VIGÊNCIA (ADR-161). Só se insere — a tabela é o
+/// histórico. `usd` é por 1M de tokens (`entrada`/`saida`) ou por minuto
+/// (`minuto`, o avatar em vídeo). Vale o de maior `vigenteDesde` <= o dia.
+model IaPreco {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  modelo          String
+  /// `entrada` | `saida` | `minuto` — CHECK na migration.
+  componente      String
+  usd             Decimal  @db.Decimal(14, 6)
+  vigenteDesde    DateTime @map("vigente_desde") @db.Date
+  motivo          String?
+  /// NULO = veio da migration.
+  definidoPor     String?  @map("definido_por") @db.Uuid
+  /// Congelado na escrita, como o `autorNome` de `recursos_auditoria`.
+  definidoPorNome String?  @map("definido_por_nome")
+  definidoEm      DateTime @default(now()) @map("definido_em") @db.Timestamptz(6)
+
+  @@unique([modelo, componente, vigenteDesde], map: "ia_precos_vigencia_unica")
+  @@map("ia_precos")
+}
+
+/// A PTAX do Banco Central, por dia útil (ADR-161). Cache do que a API Olinda
+/// devolveu: a conversão do painel não depende de o BCB estar no ar.
+model CotacaoDolar {
+  dia       DateTime @id @db.Date
+  compra    Decimal  @db.Decimal(10, 4)
+  venda     Decimal  @db.Decimal(10, 4)
+  cotadoEm  DateTime @map("cotado_em") @db.Timestamptz(6)
+  buscadoEm DateTime @default(now()) @map("buscado_em") @db.Timestamptz(6)
+
+  @@map("cotacoes_dolar")
+}
