@@ -24,6 +24,18 @@ export const TAGS_AA = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
 
 /** As violações de UM documento (página ou frame do Playwright). */
 export async function violacoesEm(alvo) {
+  /* Mede o ESTADO FINAL da tela: animação em curso (o fade-in da revelação)
+     pinta o texto a meio caminho do fundo, e o axe acusava 1,3:1 num texto
+     que termina branco. Concluir a animação só antecipa o fim dela. */
+  await alvo.evaluate(() => {
+    for (const a of document.getAnimations()) {
+      try {
+        a.finish();
+      } catch {
+        /* animação infinita não termina: fica como está */
+      }
+    }
+  });
   await alvo.evaluate(fonteDoAxe());
   return alvo.evaluate(async (tags) => {
     const r = await window.axe.run(document, {

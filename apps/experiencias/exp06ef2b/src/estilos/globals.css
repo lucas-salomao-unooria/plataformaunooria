@@ -499,3 +499,11 @@ body {
   font-size: 13px;
   line-height: 1.5;
 }
+
+/* A lista de conversas é `<ul>` (o `ChatListItem` desenha `<li>`): zera o
+   recuo e o marcador que o navegador põe, para o layout seguir o do app. */
+.lista-de-conversas {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}

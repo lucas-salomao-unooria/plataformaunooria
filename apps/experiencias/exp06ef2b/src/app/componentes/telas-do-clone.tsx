@@ -41,7 +41,9 @@ export function ListaDeConversas({
     <div className="app">
       <StatusBar />
       <TopBar title="Conversas" />
-      <div className="app__corpo">
+      {/* O `ChatListItem` desenha `<li>`: sem a lista em volta, o leitor de tela
+          perde "lista, N itens" (WCAG 1.3.1, ADR-162). */}
+      <ul className="app__corpo lista-de-conversas">
         {conversas.map((c) => {
           const auditadas = auditadasDo(estado, mensagens, c.id);
           return (
@@ -61,7 +63,7 @@ export function ListaDeConversas({
             />
           );
         })}
-      </div>
+      </ul>
       <div className="app__rodape">
         <p className="aviso-de-rede" role="status">
           Dados de mensagem abertos: {estado.totalAuditadas} de 3
