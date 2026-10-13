@@ -8,6 +8,7 @@ import type {
   AiJsonRequest,
   AiJsonSchema,
   AiProvider,
+  DivisaoDeTokens,
   AiRequest,
   AiResult,
   AiSpeechRequest,
@@ -200,13 +201,26 @@ export type RespostaGenerate = {
     content?: ConteudoVertex;
     finishReason?: string;
   }>;
-  usageMetadata?: {
-    totalTokenCount?: number;
-    thoughtsTokenCount?: number;
-    promptTokenCount?: number;
-    candidatesTokenCount?: number;
-  };
+  usageMetadata?: UsoDoVertex;
 };
+
+type UsoDoVertex = {
+  totalTokenCount?: number;
+  thoughtsTokenCount?: number;
+  promptTokenCount?: number;
+  candidatesTokenCount?: number;
+};
+
+/**
+ * Entrada e saída COBRADAS. A saída é o total menos a entrada, e não o
+ * `candidatesTokenCount`: o raciocínio (`thoughtsTokenCount`) fica fora deste,
+ * e a Vertex o cobra na tarifa de saída. Sem `usageMetadata`, nada a dividir.
+ */
+export function divisaoDoUso(uso: UsoDoVertex | undefined): DivisaoDeTokens | undefined {
+  if (!uso || typeof uso.totalTokenCount !== "number") return undefined;
+  const entrada = uso.promptTokenCount ?? 0;
+  return { entrada, saida: Math.max(0, uso.totalTokenCount - entrada) };
+}
 
 /** Provider Vertex/Gemini. Único arquivo que conhece o vendor.
  *  Trocar de provedor = novo arquivo implementando AiProvider + env AI_PROVIDER. */
@@ -325,7 +339,7 @@ export class VertexProvider implements AiProvider {
         const data = (await res.json()) as RespostaGenerate;
         // ANTES de validar: uma tentativa rejeitada por `validar` foi cobrada
         // igual, e a quota conta o que foi pago, não o que serviu.
-        req.aoUsarTokens?.(data.usageMetadata?.totalTokenCount ?? 0);
+        req.aoUsarTokens?.(data.usageMetadata?.totalTokenCount ?? 0, divisaoDoUso(data.usageMetadata));
         const candidato = data.candidates?.[0];
         const texto = candidato?.content?.parts?.map((p) => p.text ?? "").join("").trim();
         // JSON truncado falha no `JSON.parse` com "Unexpected end of JSON
@@ -602,7 +616,10 @@ export class VertexProvider implements AiProvider {
     });
     const data = (await res.json()) as {
       candidates?: Array<{ content?: { parts?: Array<{ inlineData?: { data?: string } }> } }>;
+      usageMetadata?: UsoDoVertex;
     };
+    // Antes de conferir a imagem: resposta sem imagem foi cobrada igual.
+    opcoes?.aoUsarTokens?.(data.usageMetadata?.totalTokenCount ?? 0, divisaoDoUso(data.usageMetadata));
     const inline = data.candidates?.[0]?.content?.parts?.find((p) => p.inlineData)?.inlineData;
     if (!inline?.data) throw new ErroDeGeracao("O modelo não devolveu imagem.");
     return Buffer.from(inline.data, "base64");

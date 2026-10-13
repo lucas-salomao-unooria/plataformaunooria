@@ -413,6 +413,14 @@ Nativas do Google Cloud & Cloud Run: \cd{request\_count} por
   --- o teto diário de IA de um perfil mudou (\adrr{ADR-105}), com \cd{de},
   \cd{para} e motivo, e \cd{ia-quota-sem-linha} quando a api está aplicando a
   constante do código porque a linha de \cd{ia\_quotas} não existe;
+  \enquote{linhas com \cd{codigo=ia-consumo-nao-gravado}} --- a chamada de IA
+  foi feita e paga, mas a linha do painel de custos não foi gravada
+  (\adrr{ADR-161}: o registro nunca derruba a chamada), com operação, modelo e
+  recurso; \cd{cotacao-dolar-indisponivel} --- a PTAX não foi atualizada (o Banco
+  Central não respondeu em 5\,s, respondeu com erro ou fora do formato), e o
+  painel converteu com o \emph{cache};
+  \cd{ia-preco-definido} --- o \cd{admin} gravou um preço de IA, com modelo,
+  componente, valor, vigência e motivo;
   \enquote{linhas com \cd{codigo=telemetria-descartada}},
   \enquote{\cd{severity=ERROR} da revisão X}, \enquote{execução do
   \emph{job} \cd{-migrate} com falha}. &
@@ -682,10 +690,15 @@ lugar onde uma chamada de IA acontece, envolvendo o \emph{provider} real na
 --- que emite, por chamada: latência (histograma por modelo e rota), \emph{tokens}
 de entrada e saída, \cd{finishReason}, \cd{voltas}, \cd{tentativas} e o
 resultado (\cd{ok}, \cd{erro-provider}, \cd{quota}). O \cd{QuotaService}
-emite as recusas por perfil. Custo é métrica \emph{derivada}: uma tabela de
-preço por modelo em \arq{catalogo-modelos.ts}, multiplicada no painel, não
-no processo --- preço muda sem \emph{deploy}, e a métrica de \emph{tokens} é
-a que vale.
+emite as recusas por perfil. Custo é \emph{derivado}, não medido no processo
+--- preço muda sem \emph{deploy}. O desenho previa uma tabela de preço em
+\arq{catalogo-modelos.ts} multiplicada num painel de métricas; o que entrou
+(\adrr{ADR-161}) é outro: a métrica tem só o modelo como rótulo, e a pergunta
+do FinOps é por produto e escola. O mesmo medidor grava o consumo em
+\cd{ia\_consumo\_diario}, o preço é dado editável (\cd{ia\_precos}, com
+vigência), e o custo em reais se lê em \rota{/unooria/custos-de-ia}
+(Seção~\ref{sec:ia-custos}). A métrica de \emph{tokens} continua sendo a de
+alerta.
 
 Três alertas saem daqui: erro do \emph{provider} acima de 10\% em 5 minutos
 (\emph{acorda}, se em horário escolar: é a exp02em1b inteira), latência p95
@@ -695,7 +708,9 @@ laço). O \cd{R-14} mediu uma partida em 71.397 \emph{tokens} à mão; com isto,
 a medida é contínua.
 
 \textbf{O agente de IA do professor não passa pelo medidor} (\adrr{ADR-126}): o
-modelo é chamado de dentro do Agent Engine. O sinal dele é \textbf{uma linha de
+modelo é chamado de dentro do Agent Engine. Para o custo, o turno grava a sua
+linha em \cd{ia\_consumo\_diario} (\adrr{ADR-161}), como o mascote da Ajuda
+grava a da sessão; para a operação, o sinal dele é \textbf{uma linha de
 log por turno}, emitida no \cd{finally} do \emph{service}, inclusive no abandono:
 
 \begin{tabularx}{\linewidth}{@{}L{34mm}X@{}}

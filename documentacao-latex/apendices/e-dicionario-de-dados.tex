@@ -4,9 +4,9 @@
 \chapter{Dicionário de dados}
 \label{ap:dicionario}
 
-Catálogo das 84 tabelas de \cd{public}, mais o \emph{schema} \cd{particoes}.
+Catálogo das 90 tabelas de \cd{public}, mais o \emph{schema} \cd{particoes}.
 O número é o de \cd{model} em \arq{apps/api/prisma/schema.prisma} em
-2026-10-06 (todos com \cd{@@map}; a \cd{\_prisma\_migrations} é do Prisma e
+2026-10-13 (todos com \cd{@@map}; a \cd{\_prisma\_migrations} é do Prisma e
 fica fora), e o índice abaixo tem uma linha por \cd{model}: tabela nova sem
 linha aqui é o sinal de que este apêndice ficou para trás.
 Os diagramas entidade-relacionamento estão no Capítulo~\ref{cap:dados}.
@@ -26,6 +26,10 @@ Os diagramas entidade-relacionamento estão no Capítulo~\ref{cap:dados}.
   escrita no Capítulo~\ref{cap:tenancy}: \cd{escola\_id} existe mas é nulável,
   porque a pessoa pode ser de um papel sem escola. Toda \emph{query} filtra pelo
   \cd{usuario\_id} do \emph{token}. Hoje, só \cd{ajuda\_sessoes}.\\
+\textbf{Agregado de contrato} & Contagem SEM pessoa, fora da RLS: \cd{escola\_id}
+  é parte da chave (com \cd{''} para \enquote{sem escola}), não há
+  \cd{usuario\_id}, e só o \cd{admin} lê, por rota de contrato
+  (\adrr{ADR-161}). Hoje, só \cd{ia\_consumo\_diario}.\\
 \bottomrule
 \end{tabularx}
 
@@ -63,6 +67,9 @@ Os diagramas entidade-relacionamento estão no Capítulo~\ref{cap:dados}.
 \cd{ajuda\_limites} & \textbf{Catálogo} & \textbf{Os minutos da Ajuda}, por pessoa e dia e por sessão, os mesmos para o avatar e o mascote --- o par de \cd{ia\_quotas} (\adrr{ADR-132}, \adrr{ADR-158})\\
 \zebra \cd{ajuda\_sessoes} & \textbf{Medidor sem RLS} & Uma linha por sessão da Ajuda (avatar ou mascote): início, teto e fim, nenhuma palavra da conversa. \cd{escola\_id} nulo nos papéis de contrato (\adrr{ADR-132})\\
 \cd{ajuda\_configuracao} & \textbf{Catálogo} & \textbf{Quem atende na Ajuda}: linha única com o atendente padrão, a troca e os ajustes do mascote (\adrr{ADR-158})\\
+\zebra \cd{ia\_consumo\_diario} & \textbf{Agregado de contrato} & \textbf{O que a IA consumiu}, por dia, escola, perfil, recurso, operação e modelo --- sem \cd{usuario\_id} (\adrr{ADR-161})\\
+\cd{ia\_precos} & \textbf{Catálogo} & \textbf{O preço de cada modelo}, com vigência e motivo; só se insere (\adrr{ADR-161})\\
+\zebra \cd{cotacoes\_dolar} & \textbf{Catálogo} & A PTAX de venda do Banco Central por dia útil (\adrr{ADR-161})\\
 \cd{podcast\_roteiros} & Tenant & As falas do tema do podcast de recapitulação, por missão e atividade, aprovadas pelo professor na customização (\adrr{ADR-150})\\
 \zebra \cd{telemetria\_eventos} & Tenant, particionada & Canal analítico\\
 \cd{exp08ef1b\_activities} & Tenant & Atividade preparada pelo professor\\
@@ -1111,6 +1118,120 @@ sem \cd{DELETE} --- sem a linha, vale a constante do código
 (\cd{CONFIGURACAO\_PADRAO}) e o registro acusa
 \cd{ajuda-configuracao-sem-linha}. Migração
 \arq{20261012120000\_\B ajuda\_\B mascote}.
+
+\subsection{\cd{ia\_consumo\_diario} (agregado de contrato, sem RLS)}
+
+\textbf{O que cada chamada de IA PAGOU} (\adrr{ADR-161}), somado. Uma linha por
+(dia, escola, perfil, recurso, operação, modelo); o \cd{RegistroDeConsumo}
+(\arq{ai/consumo-de-ia.ts}) faz \cd{INSERT ... ON CONFLICT DO UPDATE} a cada
+chamada, fora do \cd{comTenancy}. \textbf{O custo não está aqui}: é derivado na
+leitura, com \cd{ia\_precos} e \cd{cotacoes\_dolar}.
+
+\begin{tabularx}{\linewidth}{@{}L{28mm}L{26mm}X@{}}
+\toprule
+\headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
+\midrule
+\pk{dia} & \cd{DATE} & O dia no fuso da plataforma (\adrr{ADR-99}), não o UTC.\\
+\zebra \pk{escola\_id} & \cd{TEXT} & \cd{DEFAULT ''}: \cd{''} = sem escola
+  (papel de contrato, tarefa de fundo). Não é \cd{NULL} porque a coluna é da PK,
+  e \cd{NULL} $\neq$ \cd{NULL} quebraria o \cd{ON CONFLICT}. Sem FK.\\
+\pk{perfil} & \cd{TEXT} & O papel de quem chamou, com o mesmo \cd{''}.\\
+\zebra \pk{recurso} & \cd{TEXT} & O primeiro segmento da rota que disparou a
+  chamada (\cd{podcast}, \cd{planos}); \cd{sem-rota} fora de requisição. O nome
+  da tela sai de \cd{RECURSOS\_DE\_IA}.\\
+\pk{operacao} & \cd{TEXT} & \cd{generate}, \cd{generateJson},
+  \cd{generateImage}, \cd{generateSpeech}, \cd{conversar},
+  \cd{conversarEmFluxo}, \cd{agente}, \cd{voz-ao-vivo}.\\
+\zebra \pk{modelo} & \cd{TEXT} & O modelo que cobrou (o da \emph{env} no
+  \cd{AiProvider}; o \cd{model\_version} no agente).\\
+\cd{modalidade} & \cd{TEXT} & \emph{CHECK} (\cd{ck\_ia\_consumo\_diario\_\B
+  modalidade}): \cd{texto} $|$ \cd{imagem} $|$ \cd{audio} $|$ \cd{video}.\\
+\zebra \cd{chamadas}, \cd{falhas} & \cd{INTEGER} & A chamada que falhou
+  depois de o \emph{vendor} cobrar conta o que foi pago.\\
+\cd{tokens\_entrada}, \cd{tokens\_saida} & \cd{BIGINT} & A saída é o total
+  menos a entrada: inclui o raciocínio, cobrado na tarifa de saída.\\
+\zebra \cd{imagens}, \cd{segundos} & \cd{INTEGER}, \cd{BIGINT} & Imagens
+  geradas; segundos de voz sintetizada.\\
+\cd{estimado} & \cd{BOOLEAN} & Verdadeiro se alguma chamada do grupo foi
+  ESTIMADA (a voz da Cloud TTS, que não devolve contagem). A tela mostra
+  \enquote{$\approx$}.\\
+\zebra \cd{atualizado\_em} & \cd{TIMESTAMPTZ(6)} & \\
+\bottomrule
+\end{tabularx}
+
+\textbf{Sem RLS e sem \cd{usuario\_id}}: FinOps pergunta EM QUÊ, nunca QUEM
+(regra 6), e sem pessoa na linha a política por escola não protegeria nada que
+a rota já não tranque --- só o \cd{admin} lê. Índice \cd{(dia)}: toda leitura
+é por período.
+
+\subsection{\cd{ia\_precos} (catálogo)}
+
+\textbf{O preço de cada modelo, com VIGÊNCIA} (\adrr{ADR-161}). Vale num dia o
+preço de maior \cd{vigente\_desde} que não passa dele, casando o modelo exato
+ou a família (\cd{gemini-3.7-flash} vale para \cd{gemini-3.7-\B flash-\B 001}; o mais
+específico ganha). \textbf{Só se insere}: a tabela é o próprio histórico, e a
+tela não tem editar nem apagar. Gravado pelo \cd{admin} em
+\rota{POST /recursos/\B custos-\B de-\B ia/\B precos}.
+
+\begin{tabularx}{\linewidth}{@{}L{28mm}L{26mm}X@{}}
+\toprule
+\headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
+\midrule
+\pk{id} & \cd{UUID} PK & \cd{gen\_random\_uuid()}.\\
+\zebra \cd{modelo} & \cd{TEXT} & \emph{CHECK} (\cd{ck\_ia\_precos\_modelo}) de
+  formato de id de modelo (minúsculas, dígitos, ponto, sublinhado e hífen, 2 a
+  80 caracteres): o nome vai à tela e à busca do preço.\\
+\cd{componente} & \cd{TEXT} & \emph{CHECK} (\cd{ck\_ia\_precos\_componente}):
+  \cd{entrada} $|$ \cd{saida} $|$ \cd{minuto}.\\
+\zebra \cd{usd} & \cd{NUMERIC(14,6)} & $\ge 0$ (\cd{ck\_ia\_precos\_usd}). Por
+  1 milhão de \emph{tokens} em \cd{entrada}/\cd{saida}; por minuto em
+  \cd{minuto}. Teto de sanidade de US\$\,\num{10000} no Zod.\\
+\cd{vigente\_desde} & \cd{DATE} & Data no passado recalcula o painel daquele
+  dia em diante.\\
+\zebra \cd{motivo} & \cd{TEXT?} & Obrigatório na rota (Zod). A semente traz a
+  fonte e a data da leitura.\\
+\cd{definido\_por} & \cd{UUID?} & Sem FK, como \cd{ia\_quotas}. \cd{NULL} = veio
+  da migração.\\
+\zebra \cd{definido\_por\_nome} & \cd{TEXT?} & CONGELADO na linha, como em
+  \cd{recursos\_auditoria}.\\
+\cd{definido\_em} & \cd{TIMESTAMPTZ(6)} & \\
+\bottomrule
+\end{tabularx}
+
+Índice único \cd{ia\_precos\_\B vigencia\_\B unica} \cd{(modelo, componente,
+vigente\_desde)}: a mesma data SUBSTITUI o valor daquela vigência
+(\cd{ON CONFLICT}), que é a correção de um valor digitado errado.
+\textbf{Semente} (preço de lista lido em 13/10/2026, por 1 milhão de
+\emph{tokens}, entrada/saída): \cd{gemini-3.6-flash}, \cd{gemini-3.7-flash} e
+\cd{gemini-3.8-\B flash} a US\$\,0,75/3,75 (e 1,50/7,50 a partir de 01/01/2027,
+fim do preço introdutório); \cd{gemini-3.5-\B flash-\B lite} a 0,30/2,50;
+\cd{gemini-3.1-\B flash-\B image} a 0,50/60,00 (saída de imagem);
+\cd{gemini-2.5-\B flash-\B tts} a 0,50/10,00 (saída de áudio); \cd{gemini-3.8-live} a
+3,00/12,00 (áudio); e \cd{liveavatar-\B full} a US\$\,0,18 por minuto (2 créditos
+a $\approx$ US\$\,0,09, plano Essential).
+
+\subsection{\cd{cotacoes\_dolar} (catálogo)}
+
+\textbf{A PTAX de venda do Banco Central}, por dia útil (\adrr{ADR-161}): o
+\emph{cache} do que a API Olinda (\cd{Cotacao\B Dolar\B Periodo}) devolveu. A PTAX de
+um dia não muda depois de publicada; o \emph{cache} fica no banco, e não em
+memória, porque são três instâncias da api, e é ele que mantém o painel
+convertendo com o BCB fora do ar.
+
+\begin{tabularx}{\linewidth}{@{}L{28mm}L{26mm}X@{}}
+\toprule
+\headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
+\midrule
+\pk{dia} & \cd{DATE} PK & Só dias úteis. Fim de semana e feriado não têm
+  linha: vale a do último dia útil anterior.\\
+\zebra \cd{compra}, \cd{venda} & \cd{NUMERIC(10,4)} & A conta usa a de
+  \textbf{venda}; a de compra vem na mesma resposta e fica guardada.\\
+\cd{cotado\_em} & \cd{TIMESTAMPTZ(6)} & O horário de publicação do BCB (o de
+  Brasília, que vem sem fuso).\\
+\zebra \cd{buscado\_em} & \cd{TIMESTAMPTZ(6)} & Quando a api trouxe a linha:
+  com mais de uma hora, o painel tenta de novo.\\
+\bottomrule
+\end{tabularx}
 
 \subsection{\cd{podcast\_roteiros}}
 

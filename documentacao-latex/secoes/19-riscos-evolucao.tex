@@ -271,6 +271,16 @@ severidade, e a severidade considera o prazo de novembro de 2026.
   vira PRONTO no mapa de produto engorda a base; a métrica é a linha
   \cd{ajuda.turno} (\cd{duracaoMs}, \cd{tokens}). O gatilho de rever é a
   chamada fria passar do teto mesmo com a fala de espera.\\
+\zebra \cd{R-38} & \textbf{O painel de custos de IA não é a fatura.} A voz é
+  estimada (a Cloud TTS não devolve contagem), o custo fixo do Agent Engine (a
+  vCPU-hora do engine implantado) e o da infraestrutura ficam fora, e o preço
+  semeado é o de lista. & Alta & Médio &
+  \textbf{Aceito e declarado} (\adrr{ADR-161}): a voz sai marcada
+  \enquote{$\approx$} na tela, o preço é editável pelo \cd{admin} com data no
+  passado (o painel recalcula para trás), e o painel mede só o custo
+  variável por chamada. O gatilho é a diferença entre o painel e a fatura do mês
+  passar de 10\%; aí o que falta (o custo fixo do engine, um desconto de
+  contrato) entra como preço ou como linha própria.\\
 \bottomrule
 \end{tabularx}
 

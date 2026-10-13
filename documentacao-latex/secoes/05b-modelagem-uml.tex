@@ -686,6 +686,17 @@ já saiu quando a validação poderia recusá-lo. Ela existe para a Ajuda com av
 \cd{MedidorDeProvider}. O vídeo em si fica fora desta figura, numa terceira
 porta de \arq{src/ai}, a \cd{AvatarAoVivoPort} (Figura~\ref{fig:uml-seq-ajuda}).
 
+Desde a \adrr{ADR-161} o decorador tem uma segunda saída, que a figura não
+desenha: além das métricas, ele entrega cada chamada ao \cd{RegistroDeConsumo}
+(\arq{ai/consumo-de-ia.ts}), que soma o que foi pago em
+\cd{ia\_consumo\_diario} para o painel de custos. É o mesmo ponto de
+captura, e por isso a quota e o custo nunca divergem sobre o que é uma
+chamada: o \cd{consumir} da quota (DEPOIS) e a linha de consumo saem da mesma
+contagem do \emph{vendor} --- no \cd{generateJson}, do mesmo
+\cd{aoUsarTokens}, que agora leva também a divisão entre entrada e saída. A
+quota continua sendo o que barra; o registro só mede, e nunca derruba a
+chamada (Seção~\ref{sec:ia-custos}).
+
 \begin{figure}[H]
 \centering
 \fitwidth{%

@@ -1,11 +1,13 @@
-import { HttpException, Inject, Injectable, NotFoundException } from "@nestjs/common";
+import { HttpException, Inject, Injectable, NotFoundException, Optional } from "@nestjs/common";
 import {
   AGENTE_PROFESSOR,
   AgenteIndisponivel,
+  MODELO_PADRAO_DO_AGENTE,
   SessaoInexistente,
   type AgenteProfessorPort,
   type EventoAgente,
 } from "../ai/agente-professor.port";
+import { RegistroDeConsumo } from "../ai/consumo-de-ia";
 import { QuotaService } from "../ai/quota.service";
 import { habilidadePorCodigo } from "../curriculo/consulta";
 import { logger } from "../observabilidade/logger";
@@ -18,6 +20,7 @@ import {
   extrairFontes,
   mensagensDaSessao,
   primeiroNome,
+  consumoDoTurno,
   somarTokens,
   tituloDoEstado,
 } from "./regras";
@@ -139,6 +142,8 @@ export class AgenteProfessorService {
     private readonly prisma: PrismaService,
     @Inject(AGENTE_PROFESSOR) private readonly agente: AgenteProfessorPort,
     private readonly quota: QuotaService,
+    /* Opcional: as suítes que montam o service à mão não precisam dele. */
+    @Optional() private readonly consumo?: RegistroDeConsumo,
   ) {}
 
   /** As conversas do professor NA ESCOLA ATIVA, a mais recente primeiro. */
@@ -360,6 +365,18 @@ export class AgenteProfessorService {
       /* No `finally`, inclusive no abort e no erro: o que o modelo gerou foi
          pago, tenha o professor lido ou não. */
       const tokens = somarTokens(eventos);
+      /* O painel de custos (ADR-161): o MedidorDeProvider não vê o Agent
+         Engine, então o turno se registra aqui. Atribuição pelo contexto da
+         requisição (`agente-professor`, a escola e o perfil do token). */
+      const pago = consumoDoTurno(eventos, MODELO_PADRAO_DO_AGENTE);
+      void this.consumo?.registrar({
+        operacao: "agente",
+        modelo: pago.modelo,
+        modalidade: "texto",
+        ok: resultado === "fim",
+        tokensEntrada: pago.entrada,
+        tokensSaida: pago.saida,
+      });
       if (tokens > 0) {
         await this.quota.consumir(quem.escolaId, quem.usuarioId, tokens).catch((erro: unknown) =>
           logger.error({ codigo: "agente-professor.quota-nao-consumida", conversaId: conversa.id, tokens, err: erro }, "tokens do turno não foram contados"),

@@ -33,6 +33,10 @@ export interface EventoAgente {
   estadoDelta?: Record<string, unknown>;
   /** `usage_metadata.total_token_count`. Só vale nos NÃO parciais (ver regras). */
   tokens?: number;
+  /** `usage_metadata.prompt_token_count` — a entrada; a saída é `tokens` menos ela (ADR-161). */
+  tokensEntrada?: number;
+  /** `model_version` do ADK: o modelo que respondeu este evento, quando o engine o informa. */
+  modelo?: string;
   fimDeTurno?: boolean;
   /** `error_code`/`error_message` do ADK: o agente falhou no meio do turno. */
   erro?: { codigo: string; mensagem?: string };
@@ -102,3 +106,10 @@ export class SessaoInexistente extends Error {
     this.name = "SessaoInexistente";
   }
 }
+
+/**
+ * O modelo do agente quando o evento não diz qual (`model_version` ausente).
+ * ESPELHA o padrão de `apps/agente-professor/agente_professor/config.py`
+ * (`modelo`): o painel de custos precisa de um modelo para achar o preço.
+ */
+export const MODELO_PADRAO_DO_AGENTE = "gemini-3.7-flash";

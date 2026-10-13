@@ -37,6 +37,7 @@ de escrever**: cada uma traz o custo já pago que produziu a regra.
 | [`ferramentas-externas.md`](docs/regras/ferramentas-externas.md) | o que o agente NÃO dispara (Snyk é do CI) |
 | [`infra.md`](docs/regras/infra.md) | Terraform vive em outro repo |
 | [`agente-professor.md`](docs/regras/agente-professor.md) | o agente de IA do professor: o contrato entre agente, api, hub e infra |
+| [`custos-de-ia.md`](docs/regras/custos-de-ia.md) | qualquer porta ou vendor de IA novo: toda chamada paga entra no painel de custos (ADR-161) |
 | [`bridge-postmessage.md`](docs/regras/bridge-postmessage.md) · [`manifesto-de-experiencias.md`](docs/regras/manifesto-de-experiencias.md) | os dois contratos da experiência |
 
 E na raiz: [`CONTEXT.md`](CONTEXT.md) (o glossário, com a fonte de verdade de

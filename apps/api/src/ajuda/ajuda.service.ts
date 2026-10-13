@@ -297,6 +297,8 @@ export class AjudaService {
       modelo: config.mascote.modelo,
       voz: config.mascote.voz,
       instrucao: promptDoAtendente(claims.perfil, "mascote"),
+      // O WebSocket chega fora do contexto da requisição: o custo diz de quem é (ADR-161).
+      atribuicao: { escolaId: claims.escola ?? null, perfil: claims.perfil, recurso: "ajuda" },
     });
   }
 

@@ -118,6 +118,8 @@ export function normalizarEvento(bruto: unknown): EventoAgente | null {
 
   const uso = objeto(campo(o, "usage_metadata", "usageMetadata"));
   const total = campo(uso, "total_token_count", "totalTokenCount");
+  const entrada = campo(uso, "prompt_token_count", "promptTokenCount");
+  const modelo = texto(campo(o, "model_version", "modelVersion"));
   const acoes = objeto(o.actions);
   const delta = objeto(campo(acoes, "state_delta", "stateDelta"));
   const codigoDeErro = texto(campo(o, "error_code", "errorCode"));
@@ -131,6 +133,8 @@ export function normalizarEvento(bruto: unknown): EventoAgente | null {
   };
   if (delta && Object.keys(delta).length > 0) evento.estadoDelta = delta;
   if (typeof total === "number" && Number.isFinite(total)) evento.tokens = total;
+  if (typeof entrada === "number" && Number.isFinite(entrada)) evento.tokensEntrada = entrada;
+  if (modelo) evento.modelo = modelo;
   if (campo(o, "turn_complete", "turnComplete") === true) evento.fimDeTurno = true;
   if (codigoDeErro) {
     evento.erro = {

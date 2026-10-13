@@ -7,8 +7,8 @@
 \begin{fichaepico}
 \begin{campos}
   \item[Objetivo] A equipe da Unooria decide o que existe em cada rede, qual
-    versão de cada missão está no ar e quanto de IA cada perfil pode usar ---
-    e recebe os interessados do site.
+    versão de cada missão está no ar, quanto de IA cada perfil pode usar e
+    quanto a IA está custando --- e recebe os interessados do site.
   \item[Para quem] Administrador Unooria. O Administrador do contrato só lê o
     histórico.
   \item[Valor] É o que permite vender produtos separadamente, desligar uma
@@ -28,6 +28,7 @@
 \zebra \id{F10.4} & Uso de IA & \pronto\\
 \id{F10.5} & Prospecção & \pronto\\
 \zebra \id{F10.6} & Experiências arquivadas & \pronto\\
+\id{F10.7} & Custos de IA & \pronto\\
 \bottomrule
 \end{tabularx}
 
@@ -309,5 +310,90 @@ guardado delas}{saber o que a plataforma já teve e responder por aqueles dados}
   \item A lista só mostra: ninguém joga uma missão arquivada, e trazê-la de
     volta é trabalho do time técnico.
   \item Só a Unooria vê esta lista.
+\end{itemize}
+\end{historia}
+
+% ---------------------------------------------------------------------------
+\feature{F10.7}{Custos de IA}{\pronto}
+
+A IA é o custo que cresce com o uso: cada plano de aula, cada imagem, cada
+conversa com a Ajuda é cobrada pelo fornecedor, em dólar, e a conta chega um mês
+depois, sem dizer em que produto nem em que escola. Esta tela responde isso
+para a equipe da Unooria, em reais.
+
+\begin{historia}{H10.7.1}{Saber quanto a IA custou, e em quê}{\pronto}
+\hu{Administrador Unooria}{ver quanto a IA da rede custou num período, em reais,
+e em que produto, escola e tipo de uso}{acompanhar a margem do contrato e
+descobrir cedo o que está gastando mais do que deveria}
+\aceite
+\begin{itemize}
+  \item \enquote{Custos de IA} aparece na barra do painel da Unooria. O
+    \enquote{Período} oferece \enquote{Últimos 7 dias}, \enquote{Últimos 30
+    dias} (o padrão), \enquote{Últimos 90 dias}, \enquote{Este mês},
+    \enquote{Mês passado} e \enquote{Este ano}.
+  \item Os cartões do topo mostram o custo total em real e em dólar, os \enquote{Tokens de entrada} e os
+    \enquote{Tokens de saída}, as \enquote{Chamadas de IA} (com as que
+    falharam), as \enquote{Imagens geradas}, o \enquote{Áudio gerado} e o
+    \enquote{Vídeo do avatar}, em minutos.
+  \item Uma curva mostra o custo dia a dia; dia sem uso aparece como zero, e
+    não some. Um semicírculo divide o custo por tipo de uso: texto, imagem,
+    áudio (voz e podcast) e vídeo (o avatar da Ajuda).
+  \item Três tabelas, a mais cara primeiro: \enquote{Por produto} (a parte da
+    plataforma que chamou a IA --- o plano de aula, o podcast, cada missão, a
+    Ajuda), \enquote{Por modelo} (com o que cada um produziu) e
+    \enquote{Por escola}. O que as contas da gestão da rede e da Unooria usam
+    aparece numa linha só, \enquote{Sem escola (contas do contrato)}.
+  \item \textbf{O valor em reais usa a cotação oficial do dólar do próprio
+    dia} --- a de venda que o Banco Central publica (PTAX). Fim de semana e
+    feriado usam a do último dia útil. A tela diz qual cotação usou e de
+    onde ela veio.
+  \item Se o Banco Central não responde, a tela avisa e converte com as
+    cotações que já tem; o custo nunca some por causa disso.
+  \item \textbf{A voz é estimada}: o serviço de voz não diz quanto cobrou, e o
+    número é calculado pelo tamanho do áudio. Esses valores aparecem marcados
+    com o sinal de aproximado na frente.
+  \item Uso de um modelo sem preço cadastrado entra com custo zero, e a tela
+    avisa \enquote{Há consumo sem preço}, dizendo qual modelo falta.
+  \item O painel conta \textbf{quanto} se gastou e em quê --- nunca quem gastou:
+    não há nome de pessoa em lugar nenhum da tela.
+  \item \textbf{Só a Unooria vê esta tela.} O Administrador do contrato não a
+    vê nem pela barra nem pelo endereço: o custo da IA para a Unooria é
+    informação da fornecedora, não da rede.
+  \item Se um período novo não carrega, os números do anterior ficam na tela,
+    com o aviso.
+\end{itemize}
+\pendencia{o painel mostra o custo de cada uso de IA, não a conta inteira: o
+custo fixo de manter o agente de IA do professor no ar e o da infraestrutura
+ficam fora, e o uso de antes desta tela entrar no ar não aparece. Se o total do
+mês ficar longe da conta do fornecedor, o preço ou a forma de medir precisa
+ser revisto.}
+\end{historia}
+
+\begin{historia}{H10.7.2}{Corrigir o preço de um modelo de IA}{\pronto}
+\hu{Administrador Unooria}{cadastrar o preço de cada modelo de IA, com a data
+a partir da qual ele vale}{que o painel use o preço que a Unooria de fato
+paga, inclusive um desconto descoberto depois}
+\aceite
+\begin{itemize}
+  \item Abaixo do painel, a \enquote{Tabela de preços} lista cada modelo, o
+    \enquote{O que é cobrado} (entrada, saída ou minuto de vídeo), o preço em
+    dólar, \enquote{Vale desde} e \enquote{Quem e por quê}. O preço que vale
+    hoje leva a etiqueta \enquote{vale hoje}; um preço com data futura,
+    \enquote{a partir da data}.
+  \item A tabela começa com o preço de lista do Google e do fornecedor do
+    avatar, lido em 13 de outubro de 2026, já com o aumento anunciado para
+    1º de janeiro de 2027 --- \enquote{Preço de lista inicial da plataforma}.
+  \item \enquote{Cadastrar preço} (ou \enquote{Novo preço}, numa linha) abre a
+    janela com o modelo, o que é cobrado, o preço em dólar, o
+    \enquote{Vale a partir de} e o \enquote{Motivo}, que é obrigatório.
+  \item \textbf{Nada é apagado}: o preço novo vale a partir da data escolhida,
+    e o anterior continua valendo antes dela. A mesma data para o mesmo modelo
+    substitui só aquela vigência --- é assim que se corrige um valor digitado
+    errado.
+  \item \textbf{Uma data no passado recalcula o painel daquele dia em diante},
+    na hora: é assim que um desconto de contrato entra na conta.
+  \item Um valor absurdo (acima de 10 mil dólares) é recusado, para um zero a
+    mais não virar a conta do mês.
+  \item O nome de quem gravou fica como era no dia.
 \end{itemize}
 \end{historia}
