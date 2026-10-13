@@ -50,25 +50,19 @@ barreiras, e todas devem continuar existindo: o prompt proíbe (R1/R2), o
 `PUT .../distribuicao` recusa código fora do recorte, e `costurarAulas()` filtra
 o que o modelo devolveu. Nenhuma sozinha basta.
 
-## O `Collapse` do DS sequestra o teclado, e a compensação é obrigatória
+## O `Collapse` do DS sequestrava o teclado — resolvido no pacote (0.2.20)
 
-**LACUNA REAL DO DS.** O `Collapse` esconde o corpo com
-`grid-template-rows: 0fr` + `opacity: 0` + `aria-hidden="true"`, e nada disso
-remove do FOCO — nem `inert`, nem `visibility`, nem `display: none`. Descendente
-focável dentro de `aria-hidden="true"` é foco fantasma: o Tab entra e o leitor
-de tela não anuncia nada, porque para ele aquilo não existe.
+Até a 0.2.19 o `Collapse` escondia o corpo com `grid-template-rows: 0fr` +
+`opacity: 0` + `aria-hidden="true"`, e nada disso removia do FOCO: os três
+bimestres fechados deixavam **30 botões de semana** recebendo foco, um foco
+fantasma que o leitor de tela não anunciava. Esta tela compensou com
+`visibility: hidden` desde 2026-09-10. A 0.2.20 pôs `inert` no corpo fechado
+(ADR-162), e a compensação saiu na 1.1.8.
 
-Sem ela, os três bimestres fechados deixam **30 botões de semana** recebendo
-foco. A compensação está em `src/estilos/globals.css`
-(`visibility: hidden` no corpo com `aria-hidden="true"`, com o delay que preserva
-a animação), marcada, e **morre quando o pacote publicar `inert`** — pedido
-aberto no `storybook-unooria`.
+**A suíte `professor/09` continua contando os focáveis e reprova se voltarem** —
+é ela que avisa se uma versão do DS perder o `inert`.
 
-**A suíte `professor/09` conta os focáveis e reprova se voltarem.** Não remova a
-compensação sem o pacote: passa no typecheck, passa no build, e o defeito só
-aparece navegando por teclado.
-
-E ela é a razão de um segundo cuidado: o corpo fechado FICA no DOM, então
+O corpo fechado ainda FICA no DOM, e isso pede um cuidado na automação:
 `locator(...).filter(...)` acha conteúdo de bimestre fechado, o Playwright o
 considera visível e o clique morre interceptado. Quem automatiza esta tela abre
 os bimestres antes de procurar.
