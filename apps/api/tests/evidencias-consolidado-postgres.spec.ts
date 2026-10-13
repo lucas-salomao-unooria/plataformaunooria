@@ -1,4 +1,4 @@
-import { ForbiddenException, NotFoundException, type ExecutionContext } from "@nestjs/common";
+import { BadRequestException, ForbiddenException, NotFoundException, type ExecutionContext } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import type { PrismaClient } from "@prisma/client";
 import type { AuthClaims, Perfil } from "../src/auth/claims";
@@ -11,7 +11,11 @@ import {
   TurmaConsolidadaSchema,
 } from "../src/evidencias/contrato-de-rotas";
 import { EvidenciasConsolidadoController } from "../src/evidencias/evidencias-consolidado.controller";
-import { EvidenciasConsolidadoService } from "../src/evidencias/evidencias-consolidado.service";
+import {
+  EvidenciasConsolidadoService,
+  juntarSeries,
+  type SerieSomada,
+} from "../src/evidencias/evidencias-consolidado.service";
 import { EvidenciasService } from "../src/evidencias/evidencias.service";
 import { PrismaService } from "../src/prisma/prisma.service";
 import { EscolasService } from "../src/rostering/escolas.service";
@@ -98,6 +102,15 @@ function evidencia(
 
 const regional = (): AuthClaims => ({ usuarioId: ids.regional!, escolaId: ESCOLA, perfil: "gestor_regional" });
 const coordenacao = (): AuthClaims => ({ usuarioId: "coord", escolaId: ESCOLA, perfil: "gestor_escola" });
+const contrato = (): AuthClaims => ({ usuarioId: "contrato", escolaId: "", perfil: "gestor_contrato" });
+
+/** A distribuição de uma habilidade numa lista de séries somadas. */
+function daHabilidade(series: readonly SerieSomada[], serie: string, codigo: string) {
+  return series
+    .find((s) => s.serie === serie)
+    ?.missoes.find((m) => m.expId === MISSAO)
+    ?.habilidades.find((h) => h.codigo === codigo)?.distribuicao;
+}
 
 beforeAll(async () => {
   await limpar();
@@ -219,6 +232,33 @@ describe("o painel da escola (H14.7.2)", () => {
     // Nada de outra escola entra: a RLS armada nesta escola é a tranca.
     expect(painel.turmas.some((t) => t.id === ids.t5C)).toBe(false);
   });
+
+  test("o TOPO é a escola inteira: a soma das turmas, com a que não aplicou como 'não avaliado'", async () => {
+    const painel = EscolaConsolidadaSchema.parse(await consolidado.daEscola(ESCOLA, AGORA));
+    const quinto = painel.total.find((s) => s.serie === "5EF")!;
+    expect(quinto).toMatchObject({ turmas: 2, estudantes: 6 });
+    expect(quinto.missoes.find((m) => m.expId === MISSAO)!.turmasAplicadas).toBe(1);
+    expect(daHabilidade(painel.total, "5EF", "EF05CO08")).toEqual({
+      atingiu: 1,
+      emProcesso: 1,
+      naoAtingiu: 0,
+      naoAvaliado: 4,
+      total: 6,
+    });
+    // A veracidade: o topo é EXATAMENTE a soma das linhas que a tela mostra embaixo.
+    for (const codigo of ["EF05CO08", "EF05CO03", "EF05CO04"]) {
+      const soma = painel.turmas
+        .map((t) => t.missoes.find((m) => m.expId === MISSAO)!.habilidades.find((h) => h.codigo === codigo)!.distribuicao)
+        .reduce((a, b) => ({
+          atingiu: a.atingiu + b.atingiu,
+          emProcesso: a.emProcesso + b.emProcesso,
+          naoAtingiu: a.naoAtingiu + b.naoAtingiu,
+          naoAvaliado: a.naoAvaliado + b.naoAvaliado,
+          total: a.total + b.total,
+        }));
+      expect(daHabilidade(painel.total, "5EF", codigo)).toEqual(soma);
+    }
+  });
 });
 
 describe("o painel da rede (H14.7.3)", () => {
@@ -248,9 +288,45 @@ describe("o painel da rede (H14.7.3)", () => {
   });
 
   test("o perfil de contrato escolhe a regional", async () => {
-    const contrato: AuthClaims = { usuarioId: "contrato", escolaId: "", perfil: "gestor_contrato" };
-    const painel = await consolidado.daRede(contrato, OUTRA_REGIONAL, AGORA);
+    const painel = await consolidado.daRede(contrato(), OUTRA_REGIONAL, AGORA);
     expect(painel.escolas.map((e) => e.id)).toEqual([VIZINHA]);
+    expect(painel.regionais).toEqual([]);
+  });
+
+  test("o TOPO da regional é a soma das escolas DELA — a vizinha não entra", async () => {
+    const painel = RedeConsolidadaSchema.parse(await consolidado.daRede(regional(), undefined, AGORA));
+    // A regional não tem o degrau das regionais: ela lê só a dela.
+    expect(painel.regionais).toEqual([]);
+    // 5A (4) + 5B (2) + 5C (1): Ana e Gabi atingiram, Bia em processo; o Hugo, da vizinha, fica de fora.
+    expect(painel.total.find((s) => s.serie === "5EF")).toMatchObject({ turmas: 3, estudantes: 7 });
+    expect(daHabilidade(painel.total, "5EF", "EF05CO08")).toEqual({
+      atingiu: 2,
+      emProcesso: 1,
+      naoAtingiu: 0,
+      naoAvaliado: 4,
+      total: 7,
+    });
+    expect(painel.total).toEqual(juntarSeries(painel.escolas.map((e) => e.series)));
+  });
+
+  test("o contrato na rede inteira: o topo, uma linha por regional, e cada regional igual ao painel dela", async () => {
+    const painel = RedeConsolidadaSchema.parse(await consolidado.daRede(contrato(), undefined, AGORA));
+    // O banco pode ter outras escolas (o seed): o que se prova é a igualdade, não o número.
+    expect(painel.total).toEqual(juntarSeries(painel.escolas.map((e) => e.series)));
+
+    const daSuite = painel.regionais.find((r) => r.id === REGIONAL)!;
+    const vizinha = painel.regionais.find((r) => r.id === OUTRA_REGIONAL)!;
+    expect(daSuite).toMatchObject({ nome: "DE do painel (teste)", escolas: 2 });
+    expect(vizinha.escolas).toBe(1);
+    // A linha da regional no painel do contrato é o MESMO número que a coordenação regional lê.
+    const lidaPelaRegional = await consolidado.daRede(regional(), undefined, AGORA);
+    expect(daSuite.series).toEqual(lidaPelaRegional.total);
+    expect(daHabilidade(vizinha.series, "5EF", "EF05CO08")).toMatchObject({ atingiu: 1, total: 1 });
+
+    // Cada escola sabe a regional dela; as regionais mais as escolas soltas fecham o topo.
+    expect(painel.escolas.find((e) => e.id === VIZINHA)!.regionalId).toBe(OUTRA_REGIONAL);
+    const soltas = painel.escolas.filter((e) => e.regionalId === null).map((e) => e.series);
+    expect(juntarSeries([...painel.regionais.map((r) => r.series), ...soltas])).toEqual(painel.total);
   });
 });
 
@@ -263,6 +339,26 @@ describe("a porta da regional (escolaDaConsulta)", () => {
   test("a coordenação da escola continua presa à própria", async () => {
     await expect(consolidado.escolaDaConsulta(coordenacao())).resolves.toBe(ESCOLA);
     await expect(consolidado.escolaDaConsulta(coordenacao(), IRMA)).rejects.toBeInstanceOf(ForbiddenException);
+  });
+
+  test("o contrato precisa dizer a escola: sem ?escolaId= é 400, nunca 'a primeira que achar'", async () => {
+    await expect(consolidado.escolaDaConsulta(contrato())).rejects.toBeInstanceOf(BadRequestException);
+    await expect(consolidado.escolaDaConsulta(contrato(), VIZINHA)).resolves.toBe(VIZINHA);
+  });
+
+  test("escola liberada não abre turma de OUTRA escola: a turma é procurada sob a escola armada", async () => {
+    // A regional pede a irmã (legítimo) e manda a turma da vizinha no caminho.
+    const escolaId = await consolidado.escolaDaConsulta(regional(), IRMA);
+    await expect(consolidado.daTurma(escolaId, ids.t5D!)).rejects.toBeInstanceOf(NotFoundException);
+    // E a coordenação, presa à dela, não lê a turma da irmã.
+    await expect(consolidado.daTurma(ESCOLA, ids.t5C!)).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  test("o perfil de criança de outra escola é 404, mesmo com a escola liberada", async () => {
+    const escolaId = await consolidado.escolaDaConsulta(regional(), IRMA);
+    await expect(evidencias.perfil(escolaId, ids.gabi!)).resolves.toBeTruthy();
+    await expect(evidencias.perfil(escolaId, ids.hugo!)).rejects.toBeInstanceOf(NotFoundException);
+    await expect(evidencias.perfil(ESCOLA, ids.gabi!)).rejects.toBeInstanceOf(NotFoundException);
   });
 });
 
@@ -278,6 +374,12 @@ describe("o perfil do estudante por missão (H14.7.4)", () => {
     ]);
     // E embaixo, cada atividade com o que ela mediu.
     expect(missao.atividades.map((a) => a.atividadeId).sort()).toEqual(["atv-1", "atv-2"]);
+  });
+
+  test("o professor abre só criança das turmas em que leciona: a da turma vizinha é 404", async () => {
+    await expect(evidencias.perfil(ESCOLA, ids.ana!, ids.prof5A)).resolves.toBeTruthy();
+    // Eli é da 5B, mesma escola, outra turma.
+    await expect(evidencias.perfil(ESCOLA, ids.eli!, ids.prof5A)).rejects.toBeInstanceOf(NotFoundException);
   });
 });
 

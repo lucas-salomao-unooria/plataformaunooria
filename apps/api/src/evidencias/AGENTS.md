@@ -167,6 +167,22 @@ e com as regras puras em `regras-do-consolidado.ts`:
 - **O perfil ganhou o nível POR MISSÃO** (`habilidades`, com `null` =
   "não avaliado"), `unidade` e `ultimaEm`, e as missões saem da mais recente
   para a mais antiga. As `atividades` continuam ali.
+- **Toda altura abre pelo TOTAL** (ADR-160): `escola/consolidado` e
+  `rede/consolidado` devolvem `total`, a soma de TODAS as linhas da resposta,
+  série a série — `somarPorSerie` (turmas → escola) e `juntarSeries` (escolas →
+  regional → rede), só contagens. A tela não soma nada: total inventado no hub
+  não tem teste contra o banco.
+- **O contrato na rede inteira desce pela REGIONAL**: a resposta traz
+  `regionais` (cada uma com a soma das escolas dela) e cada escola diz a sua
+  `regionalId` (`null` = pendurada direto no contrato, e aparece sozinha — sem
+  ela o total não fecha). Com `?regionalId=`, e sempre para a `gestor_regional`,
+  `regionais` vem vazio.
+- **A veracidade é teste, não promessa**: `tests/evidencias-consolidado-postgres.spec.ts`
+  prova que cada total é a soma das linhas, que a linha de uma regional no
+  painel do contrato é o MESMO número que a coordenação regional lê, e as
+  negações por papel (turma de outra escola com escola liberada, perfil de
+  criança de outra escola, contrato sem `?escolaId=` = 400, professor e a
+  criança da turma vizinha = 404).
 - Fora, por decisão: a planilha (CSV) com aviso de LGPD e registro de auditoria.
 
 ## Armadilhas

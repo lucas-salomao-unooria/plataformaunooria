@@ -94,6 +94,7 @@ describe("as séries", () => {
       escola: { id: "e", nome: "E" },
       periodo: null,
       missoes: [missao("exp04ef1b", 1, ["4EF"]), missao("exp05ef1b", 1, ["5EF"])],
+      total: [],
       turmas: [
         { id: "1", nome: "4A", serie: "4EF", estudantes: 2, missoes: [{ expId: "exp04ef1b", aplicada: false, habilidades: [] }] },
         { id: "2", nome: "5A", serie: "5EF", estudantes: 2, missoes: [{ expId: "exp05ef1b", aplicada: true, habilidades: [] }] },
@@ -112,10 +113,13 @@ describe("as séries", () => {
       regional: null,
       periodo: null,
       missoes: [missao("exp04ef1b", 1, ["4EF"]), missao("exp05ef1b", 1, ["5EF"])],
+      total: [],
+      regionais: [],
       escolas: [
         {
           id: "a",
           nome: "A",
+          regionalId: null,
           series: [
             { serie: "5EF", turmas: 1, estudantes: 3, missoes: [{ expId: "exp05ef1b", turmasAplicadas: 1, habilidades: [] }] },
           ],
@@ -123,6 +127,7 @@ describe("as séries", () => {
         {
           id: "b",
           nome: "B",
+          regionalId: null,
           series: [
             { serie: "4EF", turmas: 1, estudantes: 3, missoes: [{ expId: "exp04ef1b", turmasAplicadas: 0, habilidades: [] }] },
           ],

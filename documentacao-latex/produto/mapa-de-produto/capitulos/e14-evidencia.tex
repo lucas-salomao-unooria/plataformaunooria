@@ -25,7 +25,7 @@
     \enquote{Zerar} abre e pelo ajuste do professor num estudante; falta um
     teste que passe pelas equipes, pela aula projetada, pelo ajuste de vários
     estudantes e pelo \enquote{Não participou}. O painel de habilidades
-    (\id{F14.7}) já junta tudo por turma, escola e regional; falta a planilha
+    (\id{F14.7}) já junta tudo por turma, escola, regional e rede; falta a planilha
     para a coordenação.
 \end{campos}
 \end{fichaepico}
@@ -517,13 +517,18 @@ missão}
 % ---------------------------------------------------------------------------
 \feature{F14.7}{O painel de habilidades}{\parcial}
 
-Um painel só, em três alturas: a turma, a escola e a regional. A coluna é a
+Um painel só, em quatro alturas: a turma, a escola, a regional e a rede
+inteira. Cada altura abre pelo TOTAL (a escola inteira, a regional inteira, a
+rede inteira) e desce até o estudante; o total é sempre a soma das linhas que
+aparecem embaixo dele. Cada pessoa só desce pelo que é dela: o professor, pelas
+turmas em que dá aula; a coordenação da escola, pela escola; a regional, pelas
+escolas da regional; o Administrador do contrato, pela rede. A coluna é a
 UNIDADE do ano em que a missão mora (não o bimestre do calendário), e em cada
 habilidade aparece quantos estudantes atingiram, estão em processo, não
 atingiram e não foram avaliados. Em cada missão vale o melhor resultado do
 estudante entre as atividades; quem não tem registro é \enquote{não
 avaliado}, e isso nunca conta como \enquote{não atingiu}. Sem ranking em
-nenhuma das três.
+nenhuma delas.
 
 \begin{historia}{H14.7.1}{Ver as habilidades da BNCC da minha turma}{\pronto}
 \hu{Professor}{ver num painel as habilidades da BNCC de Computação da minha
@@ -556,6 +561,9 @@ cada professor}
   \item O painel abre pelo item Habilidades do menu.
   \item As turmas do ano letivo aparecem agrupadas por ano/série, por nome,
     cada missão num cartão; o filtro de ano/série recorta a tela.
+  \item Cada cartão abre pela linha \enquote{Escola inteira}: a soma de todas
+    as turmas daquele ano/série, com quantas já aplicaram a missão. Embaixo,
+    as turmas que somam aquele número.
   \item Cada habilidade mostra a contagem e a porcentagem de cada nível, para
     comparar turmas de tamanhos diferentes.
   \item A turma abre a mesma visão do professor, só para ler; dela, o
@@ -573,12 +581,11 @@ regional}{saber onde a regional avança e onde apoiar}
 \begin{itemize}
   \item O painel abre pelo item Habilidades do menu, com as escolas da minha
     regional em ordem alfabética; não escolho outra regional.
-  \item Por ano/série, cada escola mostra a soma das turmas em cada
-    habilidade, e quantas turmas já aplicaram a missão.
+  \item Cada cartão abre pela linha \enquote{Regional inteira}: a soma das
+    escolas da regional. Embaixo, por ano/série, cada escola mostra a soma das
+    turmas em cada habilidade, e quantas turmas já aplicaram a missão.
   \item A escola abre o painel daquela escola; dele, a turma --- mesmo eu não
     estando lotada em escola nenhuma.
-  \item O Administrador do contrato e o Administrador Unooria escolhem a
-    regional, ou veem a rede inteira.
   \item Nome de estudante não aparece no painel da regional.
 \end{itemize}
 \pendencia{a exportação em planilha, com aviso de proteção de dados e
@@ -586,7 +593,8 @@ registro de quem baixou, ainda não existe.}
 \end{historia}
 
 \begin{historia}{H14.7.4}{Ver o desempenho de um estudante por missão}{\pronto}
-\hu{Professor, Coordenação da escola ou Coordenação regional}{ver um estudante
+\hu{Professor, Coordenação da escola, Coordenação regional ou Administrador do
+contrato}{ver um estudante
 missão a missão}{entender onde ele está forte e onde precisa de reforço}
 \aceite
 \begin{itemize}
@@ -595,5 +603,30 @@ missão a missão}{entender onde ele está forte e onde precisa de reforço}
   \item Cada habilidade da missão mostra o melhor nível entre as atividades,
     ou \enquote{Não avaliado}, que nunca conta como \enquote{Não atingiu}.
   \item Nenhum dado de outro estudante aparece nesta tela.
+  \item O professor só abre estudante das turmas em que dá aula; a
+    coordenação, só os da escola (ou das escolas da regional). Fora disso, a
+    tela responde que o estudante não foi encontrado.
 \end{itemize}
+\end{historia}
+
+\begin{historia}{H14.7.5}{Ver as habilidades da rede inteira, por regional}{\parcial}
+\hu{Administrador do contrato ou Administrador Unooria}{ver as habilidades da
+rede inteira e descer até o estudante}{saber onde a rede avança e qual regional
+precisa de apoio, sem pedir relatório a cada uma}
+\aceite
+\begin{itemize}
+  \item O painel abre pelo item Habilidades do menu, com a rede inteira; o
+    seletor de regional recorta para uma regional só.
+  \item Na rede inteira, cada cartão abre pela linha \enquote{Rede inteira} e
+    desce uma linha por regional, em ordem alfabética --- não uma por escola.
+    A escola que não pertence a nenhuma regional aparece sozinha, para que a
+    soma feche.
+  \item O total da rede é exatamente a soma das linhas embaixo dele, e a linha
+    de uma regional é o mesmo número que a coordenação daquela regional vê.
+  \item A regional abre o painel dela (\id{H14.7.3}); dele, a escola, a turma e
+    o estudante (\id{H14.7.4}).
+  \item Nome de estudante não aparece no painel da rede nem no da regional.
+\end{itemize}
+\pendencia{a exportação em planilha, com aviso de proteção de dados e
+registro de quem baixou, ainda não existe.}
 \end{historia}

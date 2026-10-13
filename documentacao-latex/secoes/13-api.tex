@@ -566,12 +566,17 @@ MELHOR entre as atividades. Quem não tem evidência que conte é
     lista de estudantes, alfabética, para o drill-down.
   \item \rota{GET /evidencias/escola/consolidado} (gestores) --- as turmas do
     ano letivo vigente que têm missão com ficha, por série e nome, com a
-    distribuição de cada habilidade.
+    distribuição de cada habilidade; e \cd{total}, a escola inteira série a
+    série, a soma das turmas (\adrr{ADR-160}).
   \item \rota{GET /evidencias/rede/consolidado} (\cd{gestor\_regional} e
     perfis de contrato) --- cada escola, cada série, a soma das turmas. A
     regional lê a PRÓPRIA (o \cd{?regionalId=} dela é ignorado); o contrato
     escolhe a regional ou lê a rede inteira. Uma transação por escola, em
-    lotes de 8, como o relatório da diretoria (\adrr{ADR-82}).
+    lotes de 8, como o relatório da diretoria (\adrr{ADR-82}). Vem também o
+    \cd{total} (a regional lida, ou a rede inteira: a soma das escolas) e, só
+    para o contrato na rede inteira, \cd{regionais}, cada uma com a soma das
+    escolas dela; cada escola diz a sua \cd{regionalId}, \cd{null} quando
+    pendurada direto no contrato (\adrr{ADR-160}).
 \end{itemize}
 
 Nas rotas de turma, escola e perfil, a coordenação REGIONAL pode pedir
