@@ -143,3 +143,32 @@ naquele segundo; e a mesma rota, chamada direto na api com um token de
 legível. **A pasta é apagada no começo de cada execução**: print de duas
 corridas na mesma pasta conta uma história que nunca aconteceu. `testes/` inteira
 está no `.gitignore` — tudo ali é reproduzível rodando a suíte de novo.
+
+## Acessibilidade (WCAG 2.2 A/AA, ADR-162)
+
+Duas portas para o mesmo axe-core (`lib/acessibilidade.mjs`):
+
+- **`node scripts/e2e/ferramentas/medir-acessibilidade.mjs [papel…]`** percorre
+  as telas de cada papel e o iframe de cada missão liberada, e sai 1 com
+  violação. É a medida de LARGURA — toda tela, mas a missão só na abertura.
+  Papéis: `publico`, `professor`, `gestor_escola`, `gestor_contrato`, `admin` e
+  `estudante@<turma>` (um por turma com missão liberada: o estudante só vê o que
+  foi liberado na sala dele). Meça por lote, com só as experiências do lote de
+  pé: a stack inteira mais o Chromium esgotou a VM do Docker no meio da corrida
+  e TODA tela virou timeout — vermelho que não diz nada do produto.
+- **`E2E_ACESSIBILIDADE=1 node scripts/e2e/rodar.mjs <papel>`** mede CADA passo
+  das suítes, página e iframe. É a medida de PROFUNDIDADE: alcança as telas de
+  dentro das missões, que só uma suíte sabe percorrer. Agrupa por regra e por
+  elemento (a mesma peça em 40 passos é UM defeito), grava
+  `testes/<papel>/<suíte>/acessibilidade.json` e reprova uma verificação por regra.
+  Desligado por padrão: custa ~1 s por passo.
+
+**Verde no axe é condição NECESSÁRIA do AA, não suficiente.** Ele não julga
+ordem de foco, foco preso em janela, se o texto alternativo descreve a imagem,
+nem se o leitor de tela anuncia o que muda. Isso é a passada manual de teclado e
+VoiceOver do cap. 16.
+
+**A violação quase sempre é UMA peça do DS**, não a tela: a medição de
+2026-10-13 achou 106 nós de contraste em 23 telas e eles eram quatro
+componentes. Corrija no `storybook-unooria` e suba a versão; compensar na tela é
+corrigir 48 vezes.
