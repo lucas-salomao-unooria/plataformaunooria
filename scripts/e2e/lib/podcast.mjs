@@ -73,8 +73,12 @@ export async function provarPodcastNaAula(r, pagina, { blocos, vozes, trechos, p
   if ((await cartao.getAttribute("data-podcast-pronto")) !== "sim") {
     await pagina.click('[data-acao="gerar-podcast"]');
     await pagina
+      /* O erro só pode vir do ALERTA ou da linha do trecho que não saiu —
+         nunca do cartão inteiro: a transcrição da Tempestade diz "o limite não
+         estava na inteligência artificial", e a espera terminava na hora,
+         com o áudio ainda sendo gerado. */
       .locator(
-        '[data-podcast-pronto="sim"], [data-podcast-da-aula] :text-matches("não pôde ser gerado|sem saldo|limite|não saiu", "i")',
+        '[data-podcast-pronto="sim"], [data-podcast-da-aula] .unooria-feedback-alert--warning, [data-podcast-da-aula] :text("Um trecho do áudio não saiu")',
       )
       .first()
       .waitFor({ timeout: 300_000 });
