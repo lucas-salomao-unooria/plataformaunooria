@@ -13,32 +13,31 @@ sob erro de programação --- devolver o dado de uma escola a outra.
 \begin{figure}[H]
 \centering
 \fitwidth{%
-\begin{tikzpicture}[x=1cm, y=1cm]
+\begin{tikzpicture}[x=1cm, y=1cm,
+    nivel/.style={camadalbl, anchor=south west, inner sep=0pt},
+    papel/.style={c4component, text width=27mm, minimum height=14mm,
+                  fill=unooSurface, draw=unooBlue}]
 
-  \draw[nuvem] (0.2,0.6) rectangle (7.4,-6.4);
-  \node[nuvemlbl] at (0.5,0.5) {Contrato A --- \emph{stack} GCP};
-  \draw[nuvem, draw=unooMuted, fill=unooPaper] (8.2,0.6) rectangle (15.4,-6.4);
-  \node[nuvemlbl, text=unooInkSoft] at (8.5,0.5) {Contrato B --- outra \emph{stack}};
+  % --- Nível 1: físico (uma stack por contrato)
+  \node[nivel] at (0,0.75)
+    {Nível 1 --- físico: uma \emph{stack} GCP por contrato};
 
-  \node[servico, text width=26mm] (apiA) at (2.0,-0.6) {API do contrato A};
-  \node[volume, text width=24mm, minimum height=13mm] (pgA) at (5.6,-1.0)
+  \node[servico, text width=26mm] (apiA) at (2.3,-1.0) {API do contrato A};
+  \node[volume, text width=24mm, minimum height=13mm] (pgA) at (7.0,-1.0)
     {PostgreSQL do contrato A};
-  \node[servico, text width=26mm, fill=unooMuted, draw=unooInkSoft] (apiB) at (10.0,-0.6)
-    {API do contrato B};
-  \node[volume, text width=24mm, minimum height=13mm, fill=unooMuted, draw=unooInkSoft] (pgB) at (13.6,-1.0)
-    {PostgreSQL do contrato B};
-
   \draw[netpriv] (apiA) -- (pgA);
-  \draw[netpriv] (apiB) -- (pgB);
 
-  % --- escolas dentro do contrato A
-  \node[camadalbl, anchor=west] at (0.6,-2.3) {Dentro de UMA \emph{stack}: isolamento lógico};
-  \node[c4component, text width=20mm] (e1) at (1.8,-3.3) {escola \texttt{sp-001}};
-  \node[c4component, text width=20mm] (e2) at (4.2,-3.3) {escola \texttt{sp-002}};
-  \node[c4component, text width=20mm, fill=unooPaper, draw=unooAxis] (e3) at (6.6,-3.3)
-    {\ldots{} 100+};
+  % --- Nível 2: lógico, dentro de UMA stack
+  \node[nivel] at (0.45,-2.35)
+    {Nível 2 --- lógico: as escolas dividem a \emph{stack}};
+  \node[c4component, text width=27mm, minimum height=11mm] (e1) at (1.85,-3.15)
+    {escola \texttt{sp-001}};
+  \node[c4component, text width=27mm, minimum height=11mm] (e2) at (5.15,-3.15)
+    {escola \texttt{sp-002}};
+  \node[c4component, text width=27mm, minimum height=11mm,
+        fill=unooPaper, draw=unooAxis] (e3) at (8.45,-3.15) {\ldots{} 100+};
 
-  \node[tabelaplat, text width=52mm] (tab) at (3.8,-5.2)
+  \node[tabelaplat, text width=86mm, anchor=north] (tab) at (5.15,-4.25)
     {\etitulo{Toda tabela de dado de estudante}
      \nodepart{two}
      \pk{escola\_id} \texttt{TEXT NOT NULL}\\
@@ -47,16 +46,46 @@ sob erro de programação --- devolver o dado de uma escola a outra.
      \texttt{POLICY USING (escola\_id =}\\
      \quad\texttt{current\_setting('app.escola\_id', true))}};
 
-  \draw[c4reldash] (e1.south) -- (2.4,-4.2);
-  \draw[c4reldash] (e2.south) -- (3.8,-4.2);
-  \draw[c4reldash] (e3.south) -- (5.4,-4.2);
+  \foreach \e in {e1, e2, e3}
+    \draw[c4reldash] (\e.south) -- (\e.south |- tab.north);
 
-  \node[actnote, text width=48mm, anchor=north west] at (8.6,-2.3)
+  % --- Nível 3: autorização, dentro da escola
+  \node[nivel] (n3) at ($(tab.south west)+(-0.2,-0.6)$)
+    {Nível 3 --- autorização: dentro da escola, por papel};
+  \node[papel, anchor=north] (p1) at ($(e1 |- n3.south)+(0,-0.2)$)
+    {\texttt{estudante}\desc{a própria matrícula e o progresso}};
+  \node[papel, anchor=north] (p2) at ($(e2 |- n3.south)+(0,-0.2)$)
+    {\texttt{professor}\desc{só as turmas em que leciona}};
+  \node[papel, anchor=north] (p3) at ($(e3 |- n3.south)+(0,-0.2)$)
+    {\texttt{gestor\_escola}\desc{a escola inteira}};
+
+  % fronteiras dos contratos
+  \begin{scope}[on background layer]
+    \node[nuvem, fit={(apiA) (pgA) (e1) (e3) (tab) (p1) (p3) (0.45,-2.35)},
+          inner sep=9pt] (cA) {};
+  \end{scope}
+  \node[nuvemlbl] at ($(cA.north west)+(0.15,-0.1)$) {Contrato A};
+
+  \node[servico, text width=26mm, fill=unooMuted, draw=unooInkSoft] (apiB)
+    at (13.5,-1.0) {API do contrato B};
+  \node[volume, text width=24mm, minimum height=13mm, fill=unooMuted,
+        draw=unooInkSoft] (pgB) at (13.5,-3.4) {PostgreSQL do contrato B};
+  \draw[netpriv] (apiB) -- (pgB);
+  \begin{scope}[on background layer]
+    \node[nuvem, draw=unooMuted, fill=unooPaper, inner sep=0pt,
+          fit={(11.25,0 |- cA.north) (15.75,0 |- cA.south)}] (cB) {};
+  \end{scope}
+  \node[nuvemlbl, text=unooInkSoft] at ($(cB.north west)+(0.15,-0.1)$)
+    {Contrato B --- outra \emph{stack}};
+
+  % --- por que este desenho
+  \node[actnote, text width=74mm, anchor=north west] at ($(cA.south west)+(0,-0.4)$)
     {\textbf{Por que não uma \emph{stack} por escola:} seriam cem
      infraestruturas por contrato --- cem bancos, cem \emph{deploys}, cem
      conjuntos de segredos --- operados por uma pessoa. E o custo fixo de uma
-     escola pequena passaria a ser o de uma rede.\\[4pt]
-     \textbf{Por que não uma \emph{stack} para todos os contratos:} um incidente
+     escola pequena passaria a ser o de uma rede.};
+  \node[actnote, text width=74mm, anchor=north east] at ($(cB.south east)+(0,-0.4)$)
+    {\textbf{Por que não uma \emph{stack} para todos os contratos:} um incidente
      num município seria um incidente em todos, e o desenho não sobreviveria à
      primeira análise jurídica de um edital.};
 
@@ -202,35 +231,45 @@ lista de estudantes da turma sai de \cd{users.turma\_id} com o \cd{escolaId} no
 \begin{figure}[H]
 \centering
 \fitwidth{%
-\begin{tikzpicture}[x=1cm, y=1cm]
+\begin{tikzpicture}[x=1cm, y=1cm,
+    e/.style={text width=30mm, minimum height=15mm}]
 
-  \node[etapaio, text width=25mm] (req) at (0,0)
-    {Requisição HTTP\desc{\texttt{Authorization: Bearer}}};
-  \node[etapa, text width=25mm] (guard) at (3.5,0)
-    {\texttt{OidcGuard}\desc{JWKS; injeta \texttt{req.auth}}};
-  \node[etapa, text width=25mm] (roles) at (7.0,0)
+  % --- linha 1: o que acontece ANTES do controller
+  \node[etapaio, e] (req) at (1.75,0)
+    {Requisição HTTP\desc{\texttt{Authorization:}\\\texttt{Bearer <token>}}};
+  \node[etapa, e] (guard) at (5.85,0)
+    {\texttt{OidcGuard}\desc{valida pelo JWKS;\\injeta \texttt{req.auth}}};
+  \node[etapa, e] (roles) at (9.95,0)
     {\texttt{RolesGuard}\desc{lê \texttt{req.auth.perfil}}};
-  \node[etapa, text width=27mm] (int) at (10.6,0)
-    {\texttt{TenancyInterceptor}\desc{\texttt{definirTenancyNoContexto}}};
-  \node[etapa, text width=25mm] (ctrl) at (14.2,0)
-    {\emph{controller}};
+  \node[etapa, e] (int) at (14.05,0)
+    {\texttt{TenancyInterceptor}\desc{\texttt{definirTenancy}\\\texttt{NoContexto}}};
 
-  \node[etapa, text width=27mm] (svc) at (10.6,-2.4)
+  % --- linha 2: o controller e a porta única do banco
+  \node[etapa, e] (ctrl) at (1.75,-2.9) {\emph{controller}};
+  \node[etapa, e] (svc) at (5.85,-2.9)
     {\emph{service}\desc{\texttt{comTenancy(fn)}}};
-  \node[etapaout, text width=27mm] (tx) at (14.2,-2.4)
-    {Transação\desc{\texttt{set\_config} + \emph{query}}};
-  \node[etapaerr, text width=27mm] (fail) at (6.6,-2.4)
-    {Sem escola no contexto\desc{\textbf{lança}}};
+  \node[etapaout, e] (tx) at (9.95,-2.9)
+    {Transação\desc{\texttt{set\_config} da escola\\+ \emph{query}}};
+  \node[etapaerr, e] (fail) at (5.85,-5.5)
+    {\textbf{lança}\desc{erro alto, sem \emph{query}}};
 
   \draw[pipe] (req) -- (guard);
   \draw[pipe] (guard) -- (roles);
   \draw[pipe] (roles) -- (int);
-  \draw[pipe] (int) -- (ctrl);
-  \draw[pipe] (ctrl.south) -- (14.2,-1.2) -- (11.9,-1.2) -- (svc.north east);
+  \draw[pipe] (int.south) -- ++(0,-0.7) -| (ctrl.north);
+  \draw[pipe] (ctrl) -- (svc);
   \draw[pipe] (svc) -- (tx);
-  \draw[pipe, draw=unooRed] (svc) -- (fail);
+  \draw[pipe, draw=unooRed] (svc) -- (fail)
+    node[pipelbl, midway, left=3pt, align=right]{sem escola\\no contexto};
 
-  \node[actnote, text width=54mm, anchor=north west] at (0,-3.6)
+  % --- as duas notas
+  \node[actnote, text width=62mm, anchor=north west] (rls) at (8.2,-4.3)
+    {\textbf{A RLS é rede de segurança, não a única tranca.} Os
+     \emph{services} continuam filtrando \texttt{escola\_id} explicitamente em toda
+     \emph{query}. Duas trancas independentes: se a política falhar por erro de
+     migração, o filtro da aplicação segura; se o filtro faltar por esquecimento,
+     a política segura.};
+  \node[actnote, text width=153mm, anchor=north west] at ($(0,0 |- rls.south)+(0,-0.4)$)
     {\textbf{A ordem não é acidental.} O \texttt{AsyncLocalStorage} da
      requisição é aberto por um \emph{middleware} do Express em
      \texttt{main.ts}, antes de tudo (é o que dá \texttt{requestId} a um 401).
@@ -240,12 +279,6 @@ lista de estudantes da turma sai de \cd{users.turma\_id} com o \cd{escolaId} no
      \texttt{OidcGuard} --- \texttt{/healthz}, \texttt{/telemetry/beacon},
      \texttt{/telemetry/ingest} --- fica sem escola; e \texttt{comTenancy} sem
      escola explícita falha alto, o que fecha o círculo.};
-  \node[actnote, text width=54mm, anchor=north west] at (8.6,-3.6)
-    {\textbf{A RLS é rede de segurança, não a única tranca.} Os
-     \emph{services} continuam filtrando \texttt{escola\_id} explicitamente em toda
-     \emph{query}. Duas trancas independentes: se a política falhar por erro de
-     migração, o filtro da aplicação segura; se o filtro faltar por esquecimento,
-     a política segura.};
 
 \end{tikzpicture}}
 \caption[Propagação da escola pela requisição]{Como a escola do \emph{token}

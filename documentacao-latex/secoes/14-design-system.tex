@@ -95,44 +95,46 @@ uma aproximação, e a experiência mede reconhecimento.
 \fitwidth{%
 \begin{tikzpicture}[x=1cm, y=1cm]
 
-  \draw[iframe] (0.5,0.7) rectangle (8.0,-4.6);
+  % Duas fronteiras com a mesma altura; 1,8 cm entre elas para a seta.
+  \draw[iframe] (0.5,0.7) rectangle (8.0,-4.9);
   \node[iframelbl] at (0.7,0.85) {Dentro do \texttt{iframe} --- antes da revelação};
+  \node[cxlabel, fill=unooOrangeWash!45, anchor=north] at (4.25,0.30)
+    {\texttt{@edu/ui/ds-unootube} --- seção do CLONE};
 
-  \node[c4component, text width=26mm, fill=unooPaper, draw=unooAxis] (feed) at (2.4,-0.6)
+  \node[c4component, text width=26mm, fill=unooPaper, draw=unooAxis] (feed) at (2.45,-0.95)
     {\emph{feed} de vídeos};
-  \node[c4component, text width=26mm, fill=unooPaper, draw=unooAxis] (cromo) at (6.0,-0.6)
+  \node[c4component, text width=26mm, fill=unooPaper, draw=unooAxis] (cromo) at (6.05,-0.95)
     {cromo, busca, menu};
-  \node[c4component, text width=26mm, fill=unooPaper, draw=unooAxis] (play) at (2.4,-2.4)
+  \node[c4component, text width=26mm, fill=unooPaper, draw=unooAxis] (play) at (2.45,-2.55)
     {\emph{playlists}};
-  \node[c4component, text width=26mm, fill=unooPaper, draw=unooAxis] (canal) at (6.0,-2.4)
+  \node[c4component, text width=26mm, fill=unooPaper, draw=unooAxis] (canal) at (6.05,-2.55)
     {canal do estudante};
-  \node[c4component, text width=26mm, fill=unooPaper, draw=unooAxis] (toast) at (4.2,-3.9)
-    {\emph{toast}: \enquote{Vídeo salvo!}};
-  \node[cxlabel, anchor=north] at (4.2,0.55) {\texttt{@edu/ui/ds-unootube} --- seção do CLONE};
+  \node[c4component, text width=26mm, fill=unooPaper, draw=unooAxis] (toast) at (4.25,-4.10)
+    {\emph{toast}:\\\enquote{Vídeo salvo!}};
 
-  \draw[c4boundary, draw=unooNavy] (9.0,0.7) rectangle (15.5,-4.6);
-  \node[c4boundarylbl, fill=unooSurface, text=unooNavy] at (9.2,0.85)
+  \draw[c4boundary, draw=unooNavy] (9.8,0.7) rectangle (16.3,-4.9);
+  \node[c4boundarylbl, fill=unooSurface, text=unooNavy] at (10.0,0.85)
     {Depois da revelação --- ainda no mesmo \texttt{iframe}};
+  \node[cxlabel, anchor=north] at (13.05,0.30) {\texttt{@edu/ui/ds} --- seção da PLATAFORMA};
 
-  \node[c4component, text width=26mm] (rank) at (10.9,-0.6) {ranking};
-  \node[c4component, text width=26mm] (d1) at (14.2,-0.6) {diálogo 1 da missão};
-  \node[c4component, text width=26mm] (d2) at (10.9,-2.4) {diálogo 2 da missão};
-  \node[c4component, text width=26mm] (fim) at (14.2,-2.4) {fechamento};
-  \node[cxlabel, anchor=north] at (12.3,0.55) {\texttt{@edu/ui/ds} --- seção da PLATAFORMA};
+  \node[c4component, text width=26mm] (rank) at (11.25,-0.95) {ranking};
+  \node[c4component, text width=26mm] (d1) at (14.85,-0.95) {diálogo 1 da missão};
+  \node[c4component, text width=26mm] (d2) at (11.25,-2.55) {diálogo 2 da missão};
+  \node[c4component, text width=26mm] (fim) at (14.85,-2.55) {fechamento};
 
-  \node[actnote, text width=52mm, anchor=north west] at (0.5,-5.4)
+  \draw[c4relhi] (8.0,-2.1) -- (9.8,-2.1) node[cxlabel, midway, above=2pt]{revelação};
+
+  \node[actnote, text width=70mm, align=flush left, anchor=north west] at (0.5,-5.5)
     {\textbf{A linha é a revelação, não o arquivo.} Enquanto o estudante acha que
      está num aplicativo de vídeo, tudo é clone. Da virada da missão em diante ele
      está de volta na Unooria, e a linguagem institucional é \emph{parte do que se
      ensina}. Um \texttt{Button} da plataforma no \emph{feed} quebra a ilusão que
      a experiência está medindo.};
 
-  \node[actnote, text width=52mm, anchor=north west] at (9.0,-5.4)
+  \node[actnote, text width=61mm, align=flush left, anchor=north west] at (9.8,-5.5)
     {\textbf{O \emph{toast} não cruza a linha:} ele fala de dentro da ficção
      (\enquote{Vídeo salvo!}). É o exemplo mais fino da regra --- o critério não é
      \enquote{é depois no tempo?}, é \enquote{quem está falando?}.};
-
-  \draw[c4relhi] (8.0,-2.0) -- (9.0,-2.0) node[cxlabel, midway, above]{revelação};
 
 \end{tikzpicture}}
 \caption[A linha da revelação]{A linha da revelação, no UnooTube (hoje \texttt{backup-exp04ef1b}). As duas seções do

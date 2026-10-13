@@ -1902,7 +1902,9 @@ comparáveis).
 \fitwidth{%
 \begin{tikzpicture}[x=1cm, y=1cm]
 
-  \node[classe, text width=42mm] (sc) at (0,0)
+  % Grade 2 x 2 (ancorada no topo, para as linhas alinharem) e as notas numa
+  % terceira coluna, cada uma na altura da linha a que se refere.
+  \node[classe, text width=44mm, anchor=north] (sc) at (2.6,0)
     {\etitulo{grau: 'scored'}
      \nodepart{two}
      $\geq$ 2 sinais independentes
@@ -1911,7 +1913,7 @@ comparáveis).
      entra na média\\
      \textbf{é publicado com número}};
 
-  \node[classe, text width=42mm, right=8mm of sc] (ind)
+  \node[classe, text width=44mm, anchor=north] (ind) at (8.0,0)
     {\etitulo{grau: 'indicative'}
      \nodepart{two}
      exatamente 1 sinal
@@ -1920,15 +1922,15 @@ comparáveis).
      descrito em TEXTO\\
      fora dos eixos e das médias};
 
-  \node[classe, text width=42mm, below=8mm of sc] (ze)
+  \node[classe, text width=44mm, anchor=north] (ze) at (2.6,-3.8)
     {\etitulo{grau: 'zero'}
      \nodepart{two}
      teve a chance e não foi
      \nodepart{three}
      \texttt{numero: null}\\
-     \textbf{entra na média} como zero de verdade};
+     \textbf{entra na média}\\como zero de verdade};
 
-  \node[classe, text width=42mm, right=8mm of ze] (no)
+  \node[classe, text width=44mm, anchor=north] (no) at (8.0,-3.8)
     {\etitulo{grau: 'none'}
      \nodepart{two}
      a oportunidade não chegou
@@ -1936,20 +1938,20 @@ comparáveis).
      \texttt{numero: null}\\
      \textbf{sai da conta} --- não é zero};
 
-  \node[actnote, text width=42mm, right=8mm of ind] (n1)
+  \node[actnote, text width=46mm, anchor=north west] (n1) at (11.2,0)
     {\textbf{Por que o tipo, e não a tela:} no aplicativo de origem esta decisão
      vivia na camada de interface, e qualquer tela nova que lesse os valores
      direto podia imprimir \enquote{Poder 100} a partir de um sinal só. O arquivo
      avisava disso em prosa --- e prosa não é controle.};
 
-  \node[actnote, text width=42mm, right=8mm of no] (n2)
+  \node[actnote, text width=46mm, anchor=north west] (n2) at (11.2,-3.8)
     {\textbf{A distinção mais importante do modelo} é entre \texttt{zero} e
      \texttt{none}. Tratar \enquote{não teve chance} como \enquote{escolheu não}
      faz uma criança parecer ter recusado algo que nunca lhe foi oferecido --- e
      esse número vai ser lido por um adulto que decide sobre ela.};
 
-  \draw[actnoteline] (ind) -- (n1);
-  \draw[actnoteline] (no) -- (n2);
+  \draw[actnoteline] (ind.east) -- (ind.east -| n1.west);
+  \draw[actnoteline] (no.east) -- (no.east -| n2.west);
 
 \end{tikzpicture}}
 \caption[Os quatro graus de medida]{Os quatro graus de medida da app-70. A API
@@ -2111,12 +2113,12 @@ documento ser auditável.
              text=unooInk}]
 
   % ---- a Base, preparada fora do produto --------------------------------
-  \node[actionsys, text width=40mm, anchor=north] (pdfs) at (-5.9,0.7)
+  \node[actionsys, text width=40mm, anchor=north] (pdfs) at (-5.7,0.7)
     {\textbf{Fora do produto, uma vez}\\[2pt]
      PDFs homologados do MEC \seta{} \texttt{scripts/extrair-bncc.mjs}};
-  \node[objflow, text width=40mm, anchor=north] (dados) at (-5.9,-1.8)
-    {\texttt{api/src/curriculo/dados/*.ts}\\[2pt]
-     1.304 EF · 183 EM · 130 Computação};
+  \node[objflow, text width=40mm, anchor=north] (dados) at (-5.7,-1.8)
+    {\texttt{api/src/curriculo/}\\\texttt{dados/*.ts}\\[2pt]
+     1.304 EF · 183 EM\\130 Computação};
   \draw[flow] (pdfs.south) -- (dados.north);
 
   % ---- a coluna do professor --------------------------------------------
@@ -2132,7 +2134,7 @@ documento ser auditável.
      \texttt{PUT .../planos-anuais/}\\\texttt{:id/distribuicao}};
   \node[action, text width=42mm] (anual) at (0,-8.0)
     {\textbf{3. Plano anual}\\[2pt]
-     a prosa pedagógica do ano, gerada e depois \textbf{reescrita} pelo
+     a prosa pedagógica do ano,\\gerada e depois \textbf{reescrita}\\pelo
      professor\\[2pt]
      \texttt{POST .../planos-anuais/}\\\texttt{:id/gerar}};
   \node[action, text width=42mm] (aulas) at (0,-11.3)
@@ -2141,12 +2143,13 @@ documento ser auditável.
      \texttt{POST .../periodos/}\\\texttt{:ordem/gerar}};
   \node[actionsys, text width=42mm] (export) at (0,-14.3)
     {\textbf{Exportação}\\[2pt]
-     montada no NAVEGADOR, sem rota e sem modelo: \texttt{.doc} (HTML com os
-     \emph{namespaces} do Office) e impressão};
-  \node[actend] (fim) at (0,-15.8) {};
+     montada no NAVEGADOR,\\sem rota e sem modelo:\\\texttt{.doc} (HTML com os\\
+     \emph{namespaces} do Office)\\e impressão};
+  \node[actend, below=7mm of export] (fim) {};
 
-  \node[ia, anchor=west] (iaA) at (2.4,-8.0) {IA};
-  \node[ia, anchor=west] (iaB) at (2.4,-11.3) {IA};
+  % O selo IA fica ACIMA da seta que sai do passo, nunca sobre ela.
+  \node[ia, anchor=south west] (iaA) at ([xshift=1.5mm, yshift=1.5mm]anual.east) {IA};
+  \node[ia, anchor=south west] (iaB) at ([xshift=1.5mm, yshift=1.5mm]aulas.east) {IA};
 
   \draw[flow] (ini) -- (reg);
   \draw[flow] (reg) -- (dist);
@@ -2157,21 +2160,21 @@ documento ser auditável.
   \draw[flow] (dados.south) |- (dist.west);
 
   % ---- o que cada passo deixa gravado ------------------------------------
-  \node[objflow, text width=42mm] (cfg) at (6.6,-1.9)
+  \node[objflow, text width=46mm] (cfg) at (6.3,-1.9)
     {\texttt{app\_92\_configuracoes}\\[2pt]
-     e, se a rede ainda não tinha, \texttt{periodos\_letivos} --- catálogo do
+     e, se a rede ainda não tinha,\\\texttt{periodos\_letivos} --- catálogo\\do
      CONTRATO};
-  \node[objflow, text width=42mm] (jdist) at (6.6,-4.9)
+  \node[objflow, text width=46mm] (jdist) at (6.3,-4.9)
     {\texttt{app\_92\_planos\_anuais.}\\\texttt{distribuicao} (JSONB)\\[2pt]
-     o insumo do gerador, e o que sobrevive a reescrever o documento inteiro};
-  \node[objflow, text width=42mm] (docs) at (6.6,-8.0)
+     o insumo do gerador, e o que\\sobrevive a reescrever\\o documento inteiro};
+  \node[objflow, text width=46mm] (docs) at (6.3,-8.0)
     {\emph{bucket} privado:\\
-     \texttt{gerado.md} (imutável, o original da IA)\\
-     \texttt{atual.html} (sanitizado por \emph{allowlist})};
-  \node[objflow, text width=42mm] (jaulas) at (6.6,-11.3)
+     \texttt{gerado.md}\\(imutável, o original da IA)\\
+     \texttt{atual.html}\\(sanitizado por \emph{allowlist})};
+  \node[objflow, text width=46mm] (jaulas) at (6.3,-11.3)
     {\texttt{app\_92\_planos\_de\_}\\\texttt{periodo.aulas} (JSONB)\\[2pt]
-     dado estruturado, não prosa: dá para editar quinta sem tocar em terça};
-  \node[objflow, text width=42mm] (recortes) at (6.6,-14.3)
+     dado estruturado, não prosa:\\dá para editar quinta\\sem tocar em terça};
+  \node[objflow, text width=46mm] (recortes) at (6.3,-14.3)
     {três recortes, só das semanas \texttt{pronto}: esta semana · esta e a
      próxima (a entrega quinzenal) · o período de avaliação inteiro --- cujo
      rótulo segue a divisão do ano: bimestre, trimestre ou semestre};
@@ -2183,7 +2186,7 @@ documento ser auditável.
   \draw[flow] (export) -- (recortes);
 
   % ---- o que a IA nao toca ------------------------------------------------
-  \node[actnote, text width=46mm, anchor=north west] (naoia) at (-8.2,-6.6)
+  \node[actnote, text width=44mm, anchor=north west] (naoia) at (-8.0,-6.6)
     {\textbf{Onde a IA NÃO entra}\\[2pt]
      a extração da Base; a consulta de habilidades (exata por componente e ano,
      \textbf{sem busca vetorial}); a distribuição; o esqueleto das aulas; a
@@ -2316,14 +2319,15 @@ habilidade inventado.
              text=unooInk}]
 
   % ---- os tres insumos ---------------------------------------------------
-  \node[actionsys, text width=42mm] (cal) at (-5.3,0)
+  % Os três insumos alinhados pelo topo; as setas entram no briefing pelos
+  % lados e pelo topo, sempre em ângulo reto.
+  \node[actionsys, text width=42mm, anchor=north] (cal) at (-5.3,0.9)
     {\textbf{Calendário} (\texttt{calendario.ts})\\[2pt]
-     número, data, dia da semana e horário das aulas DESTA semana, da grade
-     real do professor. Feriado \textbf{remove} a aula, não a desloca};
-  \node[objflow, text width=42mm] (rec) at (0,0)
+     número, data, dia da semana\\e horário das aulas DESTA\\semana, da grade real\\do professor. Feriado\\\textbf{remove} a aula, não a desloca};
+  \node[objflow, text width=42mm, anchor=north] (rec) at (0,0.9)
     {\textbf{O recorte da distribuição}\\[2pt]
-     só os códigos do período de avaliação em que esta semana cai};
-  \node[objflow, text width=42mm] (reg2) at (5.3,0)
+     só os códigos do período\\de avaliação em que\\esta semana cai};
+  \node[objflow, text width=42mm, anchor=north] (reg2) at (5.3,0.9)
     {\textbf{A regência}\\[2pt]
      componente, série e minutos por aula};
 
@@ -2334,9 +2338,9 @@ habilidade inventado.
      entrar};
   \node[action, text width=52mm] (gen) at (0,-5.8)
     {\texttt{provider.generateJson}\\[2pt]
-     \emph{schema} de resposta, modelo longo, temperatura 0,5.\\
-     Devolve \textbf{só o conteúdo pedagógico} das aulas};
-  \node[ia, anchor=west] at (2.9,-5.8) {IA};
+     \emph{schema} de resposta, modelo longo,\\temperatura 0,5.
+     Devolve \textbf{só o conteúdo}\\\textbf{pedagógico} das aulas};
+  \node[ia, anchor=west] at ([xshift=1.5mm]gen.east) {IA};
   \node[actionsys, text width=52mm] (cost) at (0,-8.8)
     {\texttt{costurarAulas} --- a conciliação entre o que o modelo devolveu e
      as aulas que existem de verdade};
@@ -2345,20 +2349,20 @@ habilidade inventado.
      JSONB estruturado, \texttt{status = pronto}};
   \node[action, text width=52mm] (edita) at (0,-13.8)
     {O professor edita\\[2pt]
-     \texttt{PUT /planejamento/periodos/:id/aulas}\\[2pt]
-     \texttt{cumprida} e a observação da aula são registro DELE, nunca do
+     \texttt{PUT /planejamento/}\\\texttt{periodos/:id/aulas}\\[2pt]
+     \texttt{cumprida} e a observação da aula\\são registro DELE, nunca do
      modelo};
 
-  \draw[flow] (cal.south) |- (-3.1,-2.2) -- (brief.north west);
+  \draw[flow] (cal.south) |- (brief.west);
   \draw[flow] (rec) -- (brief);
-  \draw[flow] (reg2.south) |- (3.1,-2.2) -- (brief.north east);
+  \draw[flow] (reg2.south) |- (brief.east);
   \draw[flow] (brief) -- (gen);
   \draw[flow] (gen) -- (cost);
   \draw[flow] (cost) -- (out);
   \draw[flow] (out) -- (edita);
 
   % ---- as tres regras da costura -----------------------------------------
-  \node[actnote, text width=46mm, anchor=north west] (regras) at (3.1,-7.6)
+  \node[actnote, text width=46mm, anchor=north west] (regras) at (3.3,-8.2)
     {\textbf{As três regras da costura}\\[2pt]
      1. O esqueleto é do CALENDÁRIO. Oito aulas para uma semana de três: a
      sobra é descartada. Uma para três: as outras duas nascem em branco.\\[2pt]
@@ -2367,15 +2371,15 @@ habilidade inventado.
      ausente na tela é indistinguível de \enquote{ainda não preenchi}.};
 
   % ---- as tres barreiras --------------------------------------------------
-  \node[actnote, text width=46mm, anchor=north east] (barreiras) at (-3.1,-7.6)
+  \node[actnote, text width=46mm, anchor=north east] (barreiras) at (-3.3,-8.2)
     {\textbf{Três barreiras contra um código inventado}\\[2pt]
      o \emph{prompt} (instrução, não garantia), o
      \texttt{PUT .../distribuicao} (valida o que o PROFESSOR escolheu) e a
      costura (remove o que o MODELO escreveu depois). Nenhuma sozinha
      basta.};
 
-  \draw[actnoteline] (regras.west) -- (cost.east);
-  \draw[actnoteline] (barreiras.east) -- (cost.west);
+  \draw[actnoteline] (cost.east) -- (cost.east -| regras.west);
+  \draw[actnoteline] (cost.west) -- (cost.west -| barreiras.east);
 
 \end{tikzpicture}}
 \caption[app-92: como uma semana nasce]{Como uma semana de aulas nasce. O modelo

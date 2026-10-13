@@ -87,64 +87,59 @@ Os princípios que atravessam todo o código:
 \begin{figure}[H]
 \centering
 \fitwidth{%
-\begin{tikzpicture}[x=1cm, y=1cm]
+\begin{tikzpicture}[x=1cm, y=1cm,
+  every node/.append style={execute at begin node={\hyphenpenalty=10000\exhyphenpenalty=10000}},
+  pessoa/.style={c4person, text width=27mm, minimum height=16mm},
+  ext/.style={c4systemext, text width=24mm, minimum height=23mm}]
 
-  % --- pessoas
-  \node[c4person] (estudante) at (1.9,0)  {\textbf{Estudante}\desc{1º EF ao 3º EM}};
-  \node[c4person] (prof)  at (6.0,0)  {\textbf{Professor}\desc{Conduz a aula}};
-  \node[c4person] (gest)  at (10.1,0) {\textbf{Gestor escolar}\desc{Mantém usuários}};
-  \node[c4person] (admin) at (14.2,0) {\textbf{Admin do contrato}\desc{Rede}};
+  % pessoas em x = 1.8, 5.6, 9.4, 13.2; externos em x = 1.4, 4.4, 7.4, 10.4, 13.4
+  \node[pessoa] (estudante) at (1.8,0) {\textbf{Estudante}\desc{do 1º EF ao 3º EM}};
+  \node[pessoa] (prof)      at (5.6,0) {\textbf{Professor}\desc{conduz a turma}};
+  \node[pessoa] (gest)      at (9.4,0) {\textbf{Gestão da rede}\desc{escola, regional\\e contrato}};
+  \node[pessoa] (admin)     at (13.2,0) {\textbf{Admin da Unooria}\desc{opera a rede inteira}};
 
-  % --- sistema central
-  \node[c4system, text width=76mm, minimum height=26mm] (sis) at (8.0,-4.4)
-    {\textbf{Plataforma Unooria}\desc{Hub multi-tenant que autentica por papel,
-     embeda experiências imersivas versionadas, corrige e pontua no servidor,
-     coleta telemetria de aprendizagem e produz leitura de turma --- com
-     isolamento lógico por escola}};
+  \node[c4system, text width=142mm, minimum height=20mm] (sis) at (7.5,-4.1)
+    {\textbf{Plataforma Unooria}\desc{Hub multi-tenant que autentica por papel, embeda
+     experiências imersivas versionadas, corrige e pontua no servidor, coleta
+     telemetria de aprendizagem, produz leitura de turma e dá ao professor um
+     agente de IA --- com isolamento lógico por escola}};
 
-  % --- sistemas externos
-  \node[c4systemext, text width=26mm, minimum height=18mm] (idp) at (1.6,-4.4)
-    {\textbf{WSO2 Identity Server}\desc{Identidade central, vários contratos}};
-  \node[c4systemext, text width=26mm, minimum height=18mm] (vertex) at (14.4,-4.4)
-    {\textbf{Vertex AI --- Gemini}\desc{Texto e imagem generativos}};
-  \node[c4systemext, text width=32mm, minimum height=14mm] (ci) at (3.4,-8.6)
-    {\textbf{GitHub Actions}\desc{Publica \emph{bundles} e manifestos}};
-  \node[c4systemext, text width=32mm, minimum height=14mm] (tf) at (12.6,-8.6)
-    {\textbf{Terraform (repo separado)}\desc{Provisiona a \emph{stack} do contrato}};
-  % --- o vendor da Ajuda com avatar (ADR-132): fora do Google, cobra por minuto
-  \node[c4systemext, text width=30mm, minimum height=14mm] (avatar) at (8.0,-8.6)
-    {\textbf{LiveAvatar (HeyGen)}\desc{Escuta, voz e vídeo do atendente da Ajuda}};
+  \node[ext] (idp) at (1.4,-8.4)
+    {\textbf{WSO2}\\\textbf{Identity Server}\desc{identidade central, vários contratos}};
+  \node[ext] (vertex) at (4.4,-8.4)
+    {\textbf{Vertex AI}\desc{Gemini, Agent Engine e Vertex AI Search}};
+  \node[ext] (avatar) at (7.4,-8.4)
+    {\textbf{LiveAvatar}\\\textbf{(HeyGen)}\desc{voz e vídeo do atendente da Ajuda}};
+  \node[ext] (ci) at (10.4,-8.4)
+    {\textbf{GitHub Actions}\desc{publica imagens, \emph{bundles} e manifestos}};
+  \node[ext] (tf) at (13.4,-8.4)
+    {\textbf{Terraform}\desc{repositório separado; provisiona a \emph{stack}}};
 
-  % --- relações
-  \draw[c4rel] (estudante.south) -- (4.4,-3.1)
-    node[cxlabel, pos=0.42, left=1pt]{realiza missões};
-  \draw[c4rel] (prof.south) -- (6.6,-3.1)
-    node[cxlabel, pos=0.40, right=1pt]{prepara, conduz, lê};
-  \draw[c4rel] (gest.south) -- (9.6,-3.1)
-    node[cxlabel, pos=0.40, left=1pt]{administra};
-  \draw[c4rel] (admin.south) -- (11.6,-3.1)
-    node[cxlabel, pos=0.42, right=1pt]{lê o agregado};
-  \draw[c4reldash] (idp.east) -- (sis.west)
-    node[cxlabel, midway, above=3pt]{OIDC};
-  \draw[c4relbi] (sis.east) -- (vertex.west)
-    node[cxlabel, midway, above=3pt]{HTTPS + ADC};
-  \draw[c4rel] (ci.north) -- (5.6,-5.9)
-    node[cxlabel, pos=0.5, left=1pt]{publica};
-  \draw[c4reldash] (tf.north) -- (10.6,-5.9)
-    node[cxlabel, pos=0.5, right=1pt]{provisiona};
-  \draw[c4relbi] (sis.south) -- (avatar.north)
-    node[cxlabel, midway, right=1pt]{sala; \texttt{/ajuda/llm}};
+  \foreach \p/\rot in {estudante/{realiza missões}, prof/{libera, conduz, lê; conversa com o agente},
+                       gest/{administra pessoas; lê o agregado}, admin/{liga recursos; tetos de IA}}
+    \draw[c4rel] (\p.south) -- (\p.south |- sis.north)
+      node[cxlabel, midway, text width=24mm]{\rot};
+
+  \draw[c4reldash] (idp.north) -- (idp.north |- sis.south) node[cxlabel, midway]{OIDC};
+  \draw[c4relbi] (vertex.north) -- (vertex.north |- sis.south) node[cxlabel, midway]{HTTPS + ADC};
+  \draw[c4relbi] (avatar.north) -- (avatar.north |- sis.south)
+    node[cxlabel, midway, text width=20mm]{sala; \texttt{/ajuda/llm}};
+  \draw[c4rel] (ci.north) -- (ci.north |- sis.south) node[cxlabel, midway]{publica};
+  \draw[c4reldash] (tf.north) -- (tf.north |- sis.south) node[cxlabel, midway]{provisiona};
 
 \end{tikzpicture}}
-\caption[C4 nível 1 --- contexto]{C4 nível 1: contexto. Quatro papéis humanos
-  mutuamente exclusivos, um provedor de identidade compartilhado entre contratos,
-  dois serviços externos de IA, e dois atores de automação. O segundo serviço de
-  IA, desde 2026-10-02, é o LiveAvatar da Ajuda com avatar (\adrr{ADR-132}): a
-  relação é de mão dupla porque a API pede a sala de vídeo ao vendor e o vendor
-  chama de volta o LLM da API (\rota{/ajuda/llm}); e é o único externo que o
-  navegador também alcança direto, pela sala de vídeo (WebRTC). O
-  Terraform aparece porque a fronteira entre os dois repositórios é um contrato
-  explícito, não um detalhe de operação.}
+\caption[C4 nível 1 --- contexto]{C4 nível 1: contexto. Seis papéis humanos em
+  quatro grupos (a gestão reúne os gestores de escola, de regional e de
+  contrato; o admin é o da Unooria, o único que liga e desliga recursos e
+  ajusta os tetos de IA), um provedor de identidade compartilhado entre
+  contratos, dois serviços externos de IA e dois atores de automação. O
+  Vertex AI hospeda o modelo, o agente de IA do professor (Agent Engine,
+  \adrr{ADR-126}) e o acervo dele (Vertex AI Search). O LiveAvatar, da Ajuda com
+  avatar (\adrr{ADR-132}), tem relação de mão dupla: a API pede a sala de vídeo
+  ao \emph{vendor}, e o \emph{vendor} chama de volta o LLM da API
+  (\rota{/ajuda/llm}); é também o único externo que o navegador alcança direto,
+  pela sala de vídeo (WebRTC). O Terraform aparece porque a fronteira entre os
+  dois repositórios é um contrato explícito, não um detalhe de operação.}
 \label{fig:c4l1}
 \end{figure}
 
@@ -176,114 +171,105 @@ professor no Vertex AI Agent Engine (\adrr{ADR-126}): o único contêiner que
 \begin{figure}[H]
 \centering
 \fitpage{%
-\begin{tikzpicture}[x=1cm, y=1cm]
+\begin{tikzpicture}[x=1cm, y=1cm,
+  every node/.append style={execute at begin node={\hyphenpenalty=10000\exhyphenpenalty=10000}},
+  cont/.style={c4container, text width=31mm, minimum height=17mm},
+  pessoa/.style={c4person, text width=20mm, minimum height=10mm}]
 
-  % --- fronteira do sistema
-  \draw[c4zone] (0.6,-1.6) rectangle (15.4,-17.4);
-  \node[c4boundarylbl, fill=unooSurface] at (1.0,-1.45)
-    {Plataforma Unooria --- \emph{stack} de um contrato};
+  % colunas c1 = 1.9, c2 = 5.9, c3 = 10.5, c4 = 14.7; o hub ocupa c1 e c2.
+  % linhas: pessoas 0; hub e experiência -3.0; SDK -4.8; API -7.2;
+  % agente -10.2; externos -13.6
 
-  % --- pessoas
-  \node[c4person, text width=24mm, minimum height=12mm] (estudante) at (3.0,-0.2)
-    {\textbf{Estudante}};
-  \node[c4person, text width=24mm, minimum height=12mm] (prof) at (7.0,-0.2)
-    {\textbf{Professor}};
-  \node[c4person, text width=26mm, minimum height=12mm] (adm) at (11.4,-0.2)
-    {\textbf{Gestor / Admin}};
+  \node[pessoa] (estudante) at (1.3,1.0) {\textbf{Estudante}};
+  \node[pessoa] (prof)      at (3.9,1.0) {\textbf{Professor}};
+  \node[pessoa] (adm)       at (6.5,1.0) {\textbf{Gestão e admin}};
 
-  % --- navegador
-  \draw[iframe] (8.9,-2.4) rectangle (14.9,-6.1);
-  \node[iframelbl] at (9.1,-2.3) {\texttt{iframe} --- \emph{sandbox}};
-
-  \node[c4container, text width=34mm, minimum height=17mm] (hub) at (4.3,-4.0)
+  \node[c4container, text width=69mm, minimum height=24mm] (hub) at (3.9,-3.3)
     {\textbf{Hub}\tech{Next.js App Router}\desc{Sessão, roteamento por papel,
-     \emph{chrome} institucional, montagem do \emph{embed}, BFF, JWKS e
-     assinatura de \emph{token}}};
+     \emph{chrome} institucional, montagem do \emph{embed}, BFF (inclusive o
+     \emph{stream} do chat do agente), JWKS e assinatura de \emph{token}}};
 
-  \node[bundle, text width=34mm, minimum height=17mm] (exp) at (11.9,-4.2)
-    {\textbf{Experiência}\tech{Vite + React, estático}\desc{Uma por missão.
-     Roda no navegador do estudante; nunca é um processo do servidor}};
+  \node[bundle, text width=31mm, minimum height=15mm] (exp) at (10.5,-2.6)
+    {\textbf{Experiência}\tech{Vite + React, estático}\desc{uma por missão; roda no navegador}};
+  \node[c4component, text width=31mm, minimum height=10mm] (sdk) at (10.5,-4.9)
+    {\textbf{\texttt{@edu/sdk}}\desc{ponte, telemetria, API, progresso}};
 
-  \node[c4component, text width=24mm, minimum height=11mm] (sdk) at (11.9,-7.3)
-    {\textbf{\texttt{@edu/sdk}}\tech{TypeScript}\desc{Ponte, telemetria, API,
-     progresso}};
+  \node[c4artifact, text width=31mm, minimum height=15mm] (gcs) at (14.7,-2.6)
+    {\textbf{Object Storage}\desc{\emph{bundles} e \emph{assets} na CDN; planos privados}};
 
-  \node[c4container, text width=36mm, minimum height=19mm] (api) at (4.3,-8.6)
-    {\textbf{API}\tech{NestJS + Prisma}\desc{Autorização por papel,
-     \emph{tenancy}, regra de domínio por experiência, gabarito, correção,
-     \emph{gateway} de IA, ingestão de telemetria}};
+  \node[cont] (api) at (10.5,-7.6)
+    {\textbf{API}\tech{NestJS + Prisma}\desc{papel, \emph{tenancy}, regra de domínio,
+     correção, \emph{gateway} de IA, telemetria}};
+  \node[c4db, text width=27mm, minimum height=17mm] (pg) at (14.7,-7.6)
+    {\textbf{PostgreSQL}\tech{Cloud SQL}\desc{um banco, um \emph{schema}; RLS por escola}};
 
-  \node[c4db, text width=27mm, minimum height=19mm] (pg) at (8.9,-8.6)
-    {\textbf{PostgreSQL}\tech{Cloud SQL, HA + PITR}\desc{Único banco, único
-     \emph{schema}; RLS por escola}};
+  \node[cont, minimum height=15mm] (agente) at (5.9,-10.6)
+    {\textbf{Agente do professor}\tech{Python + ADK, Agent Engine}\desc{ferramentas, escopo, título}};
+  \node[c4db, text width=27mm, minimum height=15mm] (ds) at (1.9,-10.6)
+    {\textbf{Vertex AI Search}\desc{habilidades e acervo}};
+  \node[c4queue, text width=27mm, minimum height=13mm] (ps) at (14.7,-10.6)
+    {\textbf{Pub/Sub}\desc{canal analítico de telemetria}};
 
-  \node[c4queue, text width=26mm, minimum height=13mm] (ps) at (13.2,-9.1)
-    {\textbf{Pub/Sub}\desc{Canal analítico de telemetria}};
-
-  \node[c4artifact, text width=28mm, minimum height=12mm] (buckets) at (2.6,-12.2)
-    {\textbf{Object Storage}\desc{\emph{bundles}, \emph{assets} públicos,
-     planos privados}};
-
-  \node[c4systemext, text width=26mm, minimum height=12mm] (vertex) at (7.4,-12.2)
-    {\textbf{Vertex AI}};
-  \node[c4containerext, text width=26mm, minimum height=12mm] (idp) at (11.6,-12.2)
-    {\textbf{WSO2 IS}\desc{externo à \emph{stack}}};
-
-  % --- o agente de IA do professor (ADR-126/127): so a API o chama
-  \node[c4container, text width=30mm, minimum height=15mm] (engine) at (7.6,-15.4)
-    {\textbf{Agente do professor}\tech{Python + ADK, Agent Engine}\desc{Sessão,
-     ferramentas, guarda de escopo e título}};
-  \node[c4db, text width=30mm, minimum height=15mm] (ds) at (12.4,-15.6)
-    {\textbf{Vertex AI Search}\tech{dois \emph{data stores}, \texttt{global}}\desc{habilidades
-     (estruturado) e acervo (PDFs)}};
-
-  % --- o vendor da Ajuda com avatar (ADR-132): fora da stack e fora do Google
-  \node[c4systemext, text width=26mm, minimum height=12mm] (avatar) at (2.6,-16.4)
+  \node[c4systemext, text width=27mm, minimum height=13mm] (idp) at (1.9,-14.0)
+    {\textbf{WSO2 IS}\desc{identidade}};
+  \node[c4systemext, text width=27mm, minimum height=13mm] (vertex) at (10.5,-14.0)
+    {\textbf{Vertex AI}\desc{Gemini e Gemini Live}};
+  \node[c4systemext, text width=27mm, minimum height=13mm] (avatar) at (14.7,-14.0)
     {\textbf{LiveAvatar}\desc{HeyGen; vídeo da Ajuda}};
 
+  % --- fronteiras
+  \begin{scope}[on background layer]
+    \node[c4zone, fit={(hub) (gcs) (pg) (ds) (ps) (agente)}, inner sep=12pt,
+          yshift=4pt] (stack) {};
+    \node[iframe, fit=(exp) (sdk), inner sep=7pt, yshift=3pt] (ifr) {};
+  \end{scope}
+  \node[c4boundarylbl, fill=unooSurface, anchor=south west]
+    at ([xshift=6pt, yshift=-1pt]stack.north west)
+    {Plataforma Unooria --- \emph{stack} de um contrato};
+  \node[iframelbl, anchor=south west] at ([xshift=4pt, yshift=-1pt]ifr.north west)
+    {\texttt{iframe} --- \emph{sandbox}};
+
   % --- relações
-  \draw[c4rel] (estudante.south) -- (3.6,-3.1) node[cxlabel, pos=0.45, left=1pt]{HTTPS};
-  \draw[c4rel] (prof.south) -- (5.0,-3.1) node[cxlabel, pos=0.45, right=1pt]{HTTPS};
-  \draw[c4rel] (adm.south) -- (5.4,-3.3);
-  \draw[c4relbi] (hub.east) -- (exp.west)
-    node[cxlabel, pos=0.5, above]{\texttt{postMessage} v1}
-    node[cxlabel, pos=0.5, below]{\emph{targetOrigin} explícito};
+  \foreach \p in {estudante, prof, adm}
+    \draw[c4rel] (\p.south) -- (\p.south |- hub.north);
+  \node[cxlabel] at (2.6,-0.15) {HTTPS};
+  \draw[c4relbi] (hub.east |- exp.west) -- (exp.west)
+    node[cxlabel, midway, above=1pt, text width=14mm]{\texttt{post\-Message}\\v1};
   \draw[c4rel] (exp.south) -- (sdk.north);
-  \draw[c4rel] (sdk.south west) -- (api.north east)
-    node[cxlabel, pos=0.42, above right=-2pt]{HTTPS + \emph{Bearer}};
-  \draw[c4rel] (hub.south) -- (api.north) node[cxlabel, midway, right=2pt]{BFF};
-  \draw[c4relbi] (api.east) -- (pg.west) node[cxlabel, midway, above]{SQL + RLS};
-  \draw[c4rel] (api.south east) -- (ps.south west)
-    node[cxlabel, pos=0.72, below]{publica};
-  \draw[c4rel] (ps.north west) -- (5.9,-7.4)
-    node[cxlabel, pos=0.62, above]{\emph{push} \texttt{/telemetry/ingest}};
-  \draw[c4rel] (api.south) -- (buckets.north east)
-    node[cxlabel, pos=0.5, left=1pt]{assets, planos};
-  \draw[c4rel] (api.south) -- (vertex.north);
-  \draw[c4rel] (5.4,-10.5) -- (5.4,-15.4) -- (engine.west)
-    node[cxlabel, pos=0.3, left=1pt]{\texttt{:streamQuery}, ADC};
-  \draw[c4rel] (engine.north) -- (vertex.south)
-    node[cxlabel, midway, right=1pt]{Gemini};
-  \draw[c4rel] (engine.east) -- (engine.east -| ds.west) node[cxlabel, midway, above]{busca};
-  \draw[c4relbi] (4.8,0 |- api.south) -- (4.8,-14.0) -- (2.6,-14.0)
-    node[cxlabel, pos=0.6, above]{sala; \texttt{/ajuda/llm}} -- (avatar.north);
-  \draw[c4reldash] (hub.west) -- (0.9,-4.0) -- (0.9,-12.2) -- (idp.west)
-    node[cxlabel, pos=0.86, above]{OIDC};
-  \draw[c4reldash] (buckets.north) -- (2.6,-6.6) -- (9.2,-6.6)
-    node[cxlabel, pos=0.72, above]{CDN serve o \emph{bundle}};
+  \draw[c4reldash] (gcs.west) -- (exp.east) node[cxlabel, midway, above=1pt]{CDN};
+  \draw[c4rel] (sdk.south) -- (api.north) node[cxlabel, midway, left=1pt]{HTTPS + \emph{Bearer}};
+  \draw[c4rel] ([xshift=10mm]hub.south) |- (api.west) node[cxlabel, pos=0.75, above=1pt]{BFF};
+  \draw[c4relbi] (api.east) -- (pg.west) node[cxlabel, midway, above=1pt]{SQL + RLS};
+  \draw[c4rel] ([xshift=-4mm]api.north east) |- (12.7,-6.05) -| (gcs.south)
+    node[cxlabel, pos=0.75, right=1pt]{\emph{assets}, planos};
+  \draw[c4relbi] ([yshift=-3mm]api.east) -| (12.95,-10.6) -- (ps.west)
+    node[cxlabel, pos=0.55, above=1pt]{\emph{push}};
+  \draw[c4relbi] ([yshift=-6mm]api.east) -| (12.6,-14.0) -- (avatar.west);
+  \node[cxlabel, rotate=90] at (12.6,-12.3) {sala; \texttt{/ajuda/llm}};
+  \draw[c4rel] ([xshift=-8mm]api.south) |- (5.9,-9.25) -- (agente.north)
+    node[cxlabel, pos=0.3, above=1pt]{SSE};
+  \draw[c4rel] (api.south) -- (vertex.north) node[cxlabel, pos=0.62, right=1pt]{HTTPS, WSS};
+  \draw[c4rel] (agente.west) -- (ds.east) node[cxlabel, midway, above=1pt]{busca};
+  \draw[c4rel] ([xshift=6mm]agente.south) |- (9.8,-12.45) -- (9.8,-14.0 |- vertex.north)
+    node[cxlabel, pos=0.25, above=1pt]{Gemini};
+  \draw[c4reldash] (hub.west) -| (-0.5,-14.0) -- (idp.west);
+  \node[cxlabel, rotate=90] at (-0.5,-8.0) {OIDC};
 
 \end{tikzpicture}}
 \caption[C4 nível 2 --- contêineres]{C4 nível 2: contêineres. Só o hub, a API, o
   banco, o Pub/Sub e o agente de IA do professor são peças em execução; o agente
   roda no Vertex AI Agent Engine e só a API o chama --- o navegador nunca fala
-  com ele nem com os \emph{data stores} (\adrr{ADR-126}). O LiveAvatar, da Ajuda
-  com avatar, é externo à \emph{stack}: a API abre e fecha a sala e o vendor chama
-  de volta \rota{/ajuda/llm} pela URL pública da API; o vídeo vai direto do
-  vendor ao navegador (WebRTC), sem passar pela \emph{stack}; a chave da conta,
-  o \emph{prompt} e a base nunca saem da API (\adrr{ADR-132}). A experiência é um \emph{artefato}
-  servido pela CDN e executado no navegador; a SDK é biblioteca dentro dele. A
-  linha tracejada laranja é a fronteira do \emph{sandbox} do \cd{iframe} --- a
-  fronteira de segurança mais importante do desenho de \emph{frontend}.}
+  com ele nem com os \emph{data stores} (\adrr{ADR-126}); o chat chega ao
+  navegador pelo BFF do hub, por SSE. A API fala também direto com o Gemini
+  (a geração, e o Gemini Live do mascote da Ajuda, \adrr{ADR-158}). O LiveAvatar,
+  da Ajuda com avatar, é externo à \emph{stack}: a API abre e fecha a sala e o
+  \emph{vendor} chama de volta \rota{/ajuda/llm} pela URL pública da API; o vídeo
+  vai direto do \emph{vendor} ao navegador (WebRTC); a chave da conta, o
+  \emph{prompt} e a base nunca saem da API (\adrr{ADR-132}). A experiência é um
+  \emph{artefato} servido pela CDN e executado no navegador; a SDK é biblioteca
+  dentro dele. A linha tracejada laranja é a fronteira do \emph{sandbox} do
+  \cd{iframe} --- a fronteira de segurança mais importante do desenho de
+  \emph{frontend}.}
 \label{fig:c4l2}
 \end{figure}
 
@@ -361,8 +347,7 @@ prefixo para tabela de plataforma (Capítulo~\ref{cap:dados}).
 
 A API é organizada em módulos NestJS. A Figura~\ref{fig:c4l3api} separa-os em
 quatro faixas, e a faixa a que um módulo pertence determina o que ele pode
-conhecer. Desde 2026-09-02 a faixa transversal tem um quinto componente que
-a figura não desenha, \cd{observabilidade/} (Capítulo~\ref{cap:observabilidade}):
+conhecer. Desde 2026-09-02 a faixa transversal tem \cd{observabilidade/} (Capítulo~\ref{cap:observabilidade}):
 o \emph{middleware} que abre o contexto da requisição antes dos \emph{guards}
 (o \cd{TenancyInterceptor} passou a \emph{preencher} a escola nesse mesmo
 objeto, em vez de abri-lo), o \emph{logger} pino com \emph{redaction}, o
@@ -371,7 +356,7 @@ que é a \textbf{primeira importação} do \arq{main.ts}, porque a
 instrumentação automática do OpenTelemetry precisa alterar \cd{http},
 \cd{express}, \cd{undici} e o Prisma antes de o Nest os carregar.
 
-Há um segundo componente que a figura não desenha, de 2026-09-30:
+Há um segundo módulo novo, de 2026-09-30:
 \arq{agente-professor/}, o módulo do agente de IA do professor
 (\adrr{ADR-126}). Ele é de \textbf{plataforma}, não de experiência --- o agente é
 um produto sem experiência, trancado por \cd{@Produto(\B"agente-\B professor")} ---, e
@@ -380,8 +365,8 @@ usa três portas: \cd{comTenancy} para a posse da conversa
 saldo e o consumo, e a \cd{AgenteProfessorPort}, a segunda porta de \arq{ai/},
 que só \arq{ai/\B agent-engine.\B client.ts} implementa. De \arq{curriculo/} ele lê
 \cd{habilidade\B Por\B Codigo}, como \arq{evidencias/}, para conferir os códigos que o
-agente cita (\adrr{ADR-127}). O par Mermaid do
-Apêndice~\ref{ap:mermaid} traz as relações dele.
+agente cita (\adrr{ADR-127}). A figura desenha a seta dele até \arq{ai/}; o par Mermaid do
+Apêndice~\ref{ap:mermaid} traz as outras.
 
 O terceiro, de 2026-10-02, é \arq{ajuda/}, a Ajuda com avatar
 (\adrr{ADR-132}): o atendente do menu da conta, para todo papel menos o
@@ -407,8 +392,8 @@ editada pelo \cd{admin} em \arq{recursos/\B limites-da-ajuda.\B controller.ts}) 
 medido em \cd{ajuda\_\B sessoes}, as duas fora de \cd{comTenancy} e consultadas
 pelo \cd{usuario\_id} do \emph{token} --- o \cd{gestor\_contrato} e o \cd{admin}
 não têm escola. A base de conhecimento é gerada
-(\arq{ajuda/\B base/\B base-da-ajuda.\B gerada.ts}) e nunca editada à mão. As
-relações dele também estão só no par Mermaid.
+(\arq{ajuda/\B base/\B base-da-ajuda.\B gerada.ts}) e nunca editada à mão. A
+figura desenha só a seta dele até \arq{ai/}; as outras estão no par Mermaid.
 
 \textbf{O mascote da Ajuda} (\adrr{ADR-158}) acrescenta ao módulo uma terceira
 porta de entrada, que não é \emph{controller}: \arq{ajuda/\B mascote-ao-vivo.ts},
@@ -438,159 +423,160 @@ registra uma \cd{FonteDoPodcast} na subida (\cd{PodcastService.\B registrarFonte
 no molde do \cd{registrarContexto} de \arq{evidencias/}, e a homologação dela
 grava as falas aprovadas com \cd{gravarFalasDoPodcast}, função livre sobre o
 \cd{tx}. O módulo é \cd{@Global()} e o último do \cd{app.module}, para que uma
-missão nova com podcast não reordene o OpenAPI. As relações dele também estão
-só no par Mermaid.
+missão nova com podcast não reordene o OpenAPI. A figura desenha a seta que as
+missões fazem até ele e a dele até \arq{ai/}; as outras estão no par Mermaid.
 
 \begin{figure}[H]
 \centering
 \fitpage{%
-\begin{tikzpicture}[x=1cm, y=1cm]
-  % Grade (2026-09-25): cinco colunas de 32mm de passo (x = 1,85 / 5,05 / 8,25 /
-  % 11,45 / 14,65) com caixas de 25,5mm e 3mm de vão entre elas; a faixa
-  % transversal usa quatro colunas mais largas porque `TenancyInterceptor` não
-  % cabe em 25,5mm. A versão anterior encavalava caixas (`salas/` sobre
-  % `health/`, `recursos/` sobre `analise/`) e o rótulo do domínio sobre as
-  % duas: typecheck nenhum pega isso --- só a página renderizada.
-  % A infraestrutura fica ENTRE a plataforma e o domínio para que as duas
-  % faixas que a usam cheguem a ela sem atravessar a outra; a coluna 2 da
-  % infraestrutura fica VAZIA de propósito: é por ela que os painéis sobem até
-  % `equipes/`. Os rótulos das faixas vão à direita porque a esquerda é a
-  % pista das setas.
+\begin{tikzpicture}[x=1cm, y=1cm, % c4l3api
+  every node/.append style={execute at begin node={\hyphenpenalty=10000\exhyphenpenalty=10000}},
+  comp/.style={c4component, text width=31mm, minimum height=15mm},
+  infra/.style={comp, fill=unooLavender!24, draw=unooLavenderSoft},
+  dom/.style={comp, fill=unooGreen!22, draw=unooGreen},
+  faixa/.style={draw=none, rounded corners=3pt},
+  faixalbl/.style={font=\scriptsize\bfseries\color{unooInkSoft}, inner sep=1pt}]
+  % Grade (2026-10-13). Colunas de 3,5 cm: c1 = 2,05; c2 = 6,10; c3 = 10,15
+  % (vão de 0,55); c4 = 14,50, separada de c3 por uma PISTA de 0,85
+  % (x = 11,90 a 12,75). c1-c3 empilham plataforma e domínio; c4 é a coluna da
+  % infraestrutura, para que as duas faixas cheguem a ela na HORIZONTAL, sem uma
+  % atravessar a outra.
+  % Linhas (centro): transversal -1,25; plataforma P0 -3,85, P1 -5,65,
+  % P2 -7,85, P3 -10,15; domínio D1 -12,85, D2 -15,25. Os canais entre linhas
+  % (y = -2,30; -6,75; -14,15) são as rotas das setas longas.
+  % 20 caixas: o resto do módulo está no texto e no par Mermaid.
 
-  \draw[c4zone] (0,0) rectangle (16.5,-15.95);
-  \node[c4boundarylbl, fill=unooSurface] at (0.4,0.15) {Contêiner: API (NestJS)};
+  % ---- faixas (fundo)
+  \begin{scope}[on background layer]
+    \fill[faixa, unooPaper]         (0.15,-0.15) rectangle (16.40,-1.95);
+    \fill[faixa, unooBlueWash]      (0.15,-2.60) rectangle (12.05,-11.35);
+    \fill[faixa, unooGreenWash]     (0.15,-11.35) rectangle (12.05,-16.25);
+    \fill[faixa, unooLavenderWash]  (12.60,-2.60) rectangle (16.40,-16.25);
+  \end{scope}
+  \draw[c4boundary] (0,0) rectangle (16.55,-16.40);
+  \node[c4boundarylbl, fill=unooSurface, anchor=south west] at (0.3,-0.1)
+    {Contêiner: API (NestJS)};
 
-  % ---- faixa 1: transversal
-  \node[camadalbl, anchor=east] at (16.1,-0.5) {Transversal --- toda rota passa por aqui};
-  \node[c4component, text width=31mm, minimum height=16mm] (guard) at (2.125,-1.55)
+  \node[faixalbl, anchor=west] at (0.30,-0.40) {Transversal --- toda rota passa por aqui};
+  \node[faixalbl, anchor=west] at (0.30,-2.85) {Plataforma --- serve a todas as experiências};
+  \node[faixalbl, anchor=east] at (16.25,-2.85) {Infraestrutura};
+  \node[faixalbl, anchor=west] at (0.30,-11.62) {Domínio};
+
+  % ---- transversal
+  \node[comp, minimum height=12mm] (guard)  at (2.05,-1.25)
     {\texttt{OidcGuard}\desc{valida JWT por JWKS}};
-  \node[c4component, text width=31mm, minimum height=16mm] (roles) at (6.208,-1.55)
+  \node[comp, minimum height=12mm] (roles)  at (6.10,-1.25)
     {\texttt{RolesGuard}\desc{restringe por papel}};
-  \node[c4component, text width=31mm, minimum height=16mm] (tenint) at (10.292,-1.55)
-    {\texttt{TenancyInterceptor}\desc{escola no \texttt{AsyncLocalStorage}}};
-  \node[c4component, text width=31mm, minimum height=16mm] (env) at (14.375,-1.55)
-    {\texttt{validarEnv}\desc{Zod no \emph{boot}}};
+  \node[comp, minimum height=12mm] (tenint) at (10.15,-1.25)
+    {\texttt{TenancyInterceptor}\desc{escola no contexto}};
+  \node[comp, minimum height=12mm] (obs)    at (14.50,-1.25)
+    {\texttt{observabilidade/}\desc{contexto, \emph{log}, \emph{trace}}};
 
-  % ---- faixa 2: plataforma
-  \node[camadalbl, anchor=east] at (16.1,-2.95) {Plataforma --- serve a todas as experiências};
-  \node[c4component, text width=25.5mm, minimum height=16mm] (auth) at (1.85,-4.0)
-    {\texttt{auth/}\desc{\texttt{TokenService}}};
-  \node[c4component, text width=25.5mm, minimum height=16mm] (usu) at (5.05,-4.0)
-    {\texttt{usuarios/}\desc{listar, editar, senha}};
-  \node[c4component, text width=25.5mm, minimum height=16mm] (expmod) at (8.25,-4.0)
-    {\texttt{experiencias/}\desc{manifesto}};
-  \node[c4component, text width=25.5mm, minimum height=16mm] (tel) at (11.45,-4.0)
-    {\texttt{telemetry/}\desc{\emph{batch}, \emph{ingest}}};
-  \node[c4component, text width=25.5mm, minimum height=16mm] (prog) at (14.65,-4.0)
-    {\texttt{progress/}\desc{progresso genérico}};
-  \node[c4component, text width=25.5mm, minimum height=16mm] (health) at (1.85,-5.95)
-    {\texttt{health/}\desc{\texttt{healthz}, \texttt{readyz}}};
-  \node[c4component, text width=25.5mm, minimum height=16mm] (analise) at (5.05,-5.95)
-    {\texttt{analise/}\desc{turma e rede, CSV}};
-  \node[c4component, text width=25.5mm, minimum height=16mm] (comum) at (8.25,-5.95)
-    {\texttt{comum/}\desc{séries, escopo de turma}};
-  \node[c4component, text width=25.5mm, minimum height=16mm] (rost) at (11.45,-5.95)
-    {\texttt{rostering/}\desc{pessoas, \mbox{escolas}, turmas}};
-  \node[c4component, text width=25.5mm, minimum height=16mm] (port) at (14.65,-5.95)
-    {\texttt{portabilidade/}\desc{perfil portátil}};
-  \node[c4component, text width=25.5mm, minimum height=16mm] (salas) at (1.85,-8.1)
-    {\texttt{salas/}\desc{a sala: grade e liberação}};
-  \node[c4component, text width=25.5mm, minimum height=16mm] (equipes) at (5.05,-8.1)
-    {\texttt{equipes/}\desc{quem divide um computador}};
-  \node[c4component, text width=25.5mm, minimum height=16mm] (recs) at (8.25,-8.1)
-    {\texttt{recursos/}\desc{o interruptor da rede e a versão}};
-  \node[c4component, text width=25.5mm, minimum height=16mm] (prosp) at (11.45,-8.1)
-    {\texttt{prospeccao/}\desc{o site público, sem \emph{tenant}}};
-  \node[c4component, text width=25.5mm, minimum height=16mm] (evid) at (14.65,-8.1)
-    {\texttt{evidencias/}\desc{habilidade da BNCC por atividade}};
+  % ---- plataforma
+  \node[comp, text width=112mm, minimum height=11mm] (maisplat) at (6.10,-3.85)
+    {Também de plataforma, sem setas aqui:
+     \texttt{analise/} \textperiodcentered{} \texttt{telemetry/} \textperiodcentered{}
+     \texttt{progress/} \textperiodcentered{} \texttt{portabilidade/} \textperiodcentered{}
+     \texttt{prospeccao/} (sem \emph{tenant}) \textperiodcentered{} \texttt{health/}};
+  \node[comp] (ident) at (2.05,-5.65)
+    {Identidade\desc{\texttt{auth/}, \texttt{usuarios/},\\\texttt{rostering/}}};
+  \node[comp] (expmod) at (6.10,-5.65)
+    {\texttt{experiencias/}\desc{catálogo e versão}};
+  \node[comp] (recs) at (10.15,-5.65)
+    {\texttt{recursos/}\desc{disponibilidade, quotas\\e custos de IA}};
+  \node[comp] (salas) at (2.05,-7.85)
+    {\texttt{salas/}\desc{liberação por turma}};
+  \node[comp] (agente) at (6.10,-7.85)
+    {\texttt{agente-professor/}\desc{agente de IA do\\professor (SSE)}};
+  \node[comp] (ajuda) at (10.15,-7.85)
+    {\texttt{ajuda/}\desc{avatar e mascote;\\por minutos}};
+  \node[comp] (equipes) at (2.05,-10.15)
+    {\texttt{equipes/}\desc{quem divide\\um computador}};
+  \node[comp] (evid) at (6.10,-10.15)
+    {\texttt{evidencias/}\desc{habilidade da BNCC\\por atividade}};
+  \node[comp] (podcast) at (10.15,-10.15)
+    {\texttt{podcast/}\desc{recapitulação\\de toda missão}};
 
-  % ---- faixa 3: infraestrutura (coluna 2 vazia: a pista das equipes)
-  \node[camadalbl, anchor=east] at (16.1,-9.25) {Infraestrutura --- as portas únicas};
-  \node[c4component, text width=25.5mm, minimum height=16mm] (prisma) at (1.85,-10.4)
-    {\texttt{PrismaService}\desc{\texttt{comTenancy}: transação + RLS}};
-  \node[c4component, text width=25.5mm, minimum height=16mm] (ai) at (8.25,-10.4)
-    {\texttt{ai/}\desc{\texttt{AiProvider}, \texttt{QuotaService}}};
-  \node[c4component, text width=25.5mm, minimum height=16mm] (store) at (11.45,-10.4)
-    {\texttt{object-storage/}\desc{local $|$ GCS}};
-  \node[c4component, text width=25.5mm, minimum height=16mm] (assets) at (14.65,-10.4)
-    {\texttt{assets/}\desc{imagem gerada}};
+  % ---- infraestrutura (coluna c4)
+  \node[infra] (prisma) at (14.50,-3.85)
+    {\texttt{PrismaService}\desc{\texttt{comTenancy}:\\transação + RLS}};
+  \node[infra] (comum) at (14.50,-5.65)
+    {\texttt{comum/}\desc{guardas da liberação\\e da disponibilidade}};
+  \node[infra, minimum height=60.5mm] (ai) at (14.50,-10.375)
+    {\texttt{ai/}\desc{\texttt{AiProvider}, medido\\(custo por chamada)\\[4pt]
+     \texttt{QuotaService}\\[4pt]
+     \texttt{AgenteProfessorPort}\\\texttt{AvatarAoVivoPort}\\\texttt{VozAoVivoPort}}};
+  \node[infra] (store) at (14.50,-15.25)
+    {\texttt{object-storage/}\desc{e \texttt{assets/}:\\local $|$ GCS}};
 
-  % ---- faixa 4: dominio por experiencia
-  % Linha de cima alinhada à grade; a de baixo DESLOCADA meia coluna, para a
-  % seta de cada caixa subir pelo vão entre duas da linha de cima.
-  \node[camadalbl, anchor=east] at (16.1,-11.82) {Domínio por experiência};
-  \node[c4component, text width=25.5mm, minimum height=19.5mm, fill=unooGreen!22, draw=unooGreen] (motor) at (1.85,-13.075)
-    {\texttt{motor/} e mais 4\desc{geracao, dossie, atividades, perfis --- exp08ef1b}};
-  \node[c4component, text width=25.5mm, minimum height=19.5mm, fill=unooGreen!22, draw=unooGreen] (utube) at (5.05,-13.075)
-    {\texttt{unootube/}\desc{exp04ef1b}};
-  \node[c4component, text width=25.5mm, minimum height=19.5mm, fill=unooGreen!22, draw=unooGreen] (bem) at (8.25,-13.075)
-    {\texttt{bemestar/}\desc{app-91}};
-  % planos/ ocupa a quarta coluna da linha de cima desde que o o-eco-no-grupo/
-  % saiu (ADR-113): é o módulo que usa as mesmas DUAS portas.
-  \node[c4component, text width=25.5mm, minimum height=19.5mm, fill=unooGreen!22, draw=unooGreen] (planos) at (11.45,-13.075)
-    {\texttt{planos/}\desc{app-90}};
-  \node[c4component, text width=27mm, minimum height=35.5mm, fill=unooGreen!22, draw=unooGreen, font=\scriptsize] (outros) at (14.73,-13.875)
-    {\texttt{rastro-boato/}\\\texttt{manifesto-ia/}\\\texttt{quem-mandou-isso/}\\\texttt{foto-conta/}\\\texttt{planejamento/}};
-  \node[c4component, text width=25.5mm, minimum height=13mm, fill=unooGreen!22, draw=unooGreen] (vila) at (3.45,-15.0)
-    {\texttt{vila/}\desc{app-70}};
-  \node[c4component, text width=25.5mm, minimum height=13mm, fill=unooGreen!22, draw=unooGreen] (ugpt) at (6.65,-15.0)
-    {\texttt{unoogpt/}\desc{exp02em1b}};
+  % ---- domínio
+  \node[dom, text width=112mm, minimum height=18mm] (missoes) at (6.10,-12.90)
+    {Missões com ficha, equipe e podcast\desc{\texttt{motor/} \texttt{geracao/}
+     \texttt{dossie/} \texttt{atividades/} \texttt{perfis/} (exp08ef1b, o Unoovista)\\
+     \texttt{unoogpt/} (exp02em1b) \textperiodcentered{} \texttt{a-selecao/} (exp07ef1b)
+     \textperiodcentered{} \texttt{jornal-escola/} (exp04ef1b)\\
+     \texttt{juri-estadual/} (exp06ef1b) \textperiodcentered{}
+     \texttt{quem-mandou-isso/} (exp05ef1b)}};
+  \node[dom, text width=71.5mm] (outras) at (4.075,-15.25)
+    {Outras missões\desc{\texttt{vila/} (app-70) \textperiodcentered{} \texttt{rastro-boato/} (exp06ef2b)\\
+     \texttt{manifesto-ia/} (exp08ef4b) \textperiodcentered{} \texttt{foto-conta/} (exp01ef1b)}};
+  \node[dom] (apps) at (10.15,-15.25)
+    {Apps do professor\desc{\texttt{planos/}, \texttt{bemestar/},\\\texttt{planejamento/}}};
 
   % ---- relações: transversal
   \draw[c4rel] (guard.east) -- (roles.west);
-  % a escola do token desce pela margem esquerda, fora de toda caixa
-  \draw[c4reldash] (tenint.south) -- (10.292,-2.6) -- (0.2,-2.6) -- (0.2,-10.4) -- (prisma.west);
-  \node[cxlabel] at (6.208,-2.6) {escola do \emph{token}};
+  \draw[c4reldash] (tenint.south) -- (10.15,-2.30) -- (13.20,-2.30) -- (13.20,0 |- prisma.north);
+  \node[cxlabel] at (11.70,-2.30) {escola do \emph{token}};
 
   % ---- relações: plataforma
-  \draw[c4rel] (2.6,-7.3) -- (2.6,-7.05) -- (4.6,-7.05) -- (4.6,-7.3);
-  \node[cxlabel] at (3.6,-7.05) {contagem};
-  \draw[c4rel] (salas.south) -- (prisma.north);
-  \draw[c4rel] (3.75,-8.9) -- (3.75,-9.25) -- (2.9,-9.25) -- (2.9,-9.6);
-  % evidencias/ -> equipes/: pelo vão entre a 2a e a 3a linha da plataforma,
-  % acima de recursos/ e prospeccao/, e descendo no terço direito de equipes/
-  % (o terço esquerdo é a chegada da contagem da sala).
-  \draw[c4rel] (evid.north) -- (14.65,-7.05) -- (5.6,-7.05) -- (5.6,-7.3);
-  \node[cxlabel] at (10.05,-7.05) {gancho \texttt{aoMudarEquipes} + \texttt{consulta.ts}};
+  \draw[c4rel] (salas.south) -- (equipes.north)
+    node[cxlabel, midway, right=2pt] {contagem};
+  \draw[c4rel] (evid.west) -- (equipes.east);
+  \draw[c4rel] (agente.north) -- (6.10,-6.75) -- (13.20,-6.75) -- (13.20,0 |- ai.north);
+  \draw[c4rel] (ajuda.east) -- (ajuda.east -| ai.west);
+  \draw[c4rel] (podcast.east) -- (podcast.east -| ai.west);
 
-  % ---- relações: domínio (as que sobem até equipes/ passam pela coluna vazia)
-  \draw[c4rel] (motor.north) -- (1.85,-11.2);
-  \draw[c4rel] (3.45,-14.35) -- (3.45,-11.75) -- (2.9,-11.75) -- (2.9,-11.2);
-  \draw[c4rel] (4.4,-12.1) -- (4.4,-8.9);
-  \draw[c4rel] (6.65,-14.35) -- (6.65,-11.75) -- (5.0,-11.75) -- (5.0,-8.9);
-  \draw[c4rel] (6.65,-11.75) -- (7.4,-11.75) -- (7.4,-11.2);
-  \node[cxlabel, anchor=west] at (5.15,-9.25) {\texttt{consulta.ts}};
-  \draw[c4rel] (bem.north) -- (8.25,-11.2);
-  % planos usa as DUAS portas: uma saída sobe ao bucket, a outra desvia para a IA
-  \draw[c4rel] (planos.north) -- (11.45,-11.2);
-  \draw[c4rel] (11.45,-11.75) -- (9.2,-11.75) -- (9.2,-11.2);
-  \fill[unooInkSoft] (11.45,-11.75) circle (1.5pt)
-                     (6.65,-11.75) circle (1.5pt);
-  \node[cxlabel] at (10.65,-11.47) {IA + quota};
-  \node[cxlabel, anchor=west] at (11.55,-11.47) {\emph{bucket}};
+  % ---- relações: domínio (sobem à plataforma pelo terço direito de cada coluna)
+  \draw[c4rel] (2.85,0 |- missoes.north) -- (2.85,0 |- equipes.south)
+    node[cxlabel, midway, right=2pt] {\texttt{consulta.ts}};
+  \draw[c4rel] (6.90,0 |- missoes.north) -- (6.90,0 |- evid.south)
+    node[cxlabel, midway, right=2pt] {\texttt{marcar}};
+  \draw[c4rel] (10.95,0 |- missoes.north) -- (10.95,0 |- podcast.south)
+    node[cxlabel, midway, left=2pt] {\texttt{registrarFonte}};
+  \draw[c4rel] (missoes.east |- 0,-12.60) -- (ai.west |- 0,-12.60);
+  \draw[c4rel] (apps.east |- 0,-14.95) -- (12.325,-14.95) -- (12.325,-14.15)
+    -- (13.20,-14.15) -- (13.20,0 |- ai.south);
+  \draw[c4rel] (apps.east |- 0,-15.55) -- (store.west |- 0,-15.55);
 
 \end{tikzpicture}}
-\caption[C4 nível 3 --- componentes da API]{C4 nível 3: componentes da API. A
-  faixa transversal roda em toda rota; a de plataforma serve a todas as
-  experiências; a de infraestrutura contém as portas únicas (banco, IA,
-  armazenamento); a de domínio tem um módulo por experiência ---
-  \texttt{catalogo.ts} + \texttt{regras.ts} + \emph{service} + \emph{controllers}
-  por papel ---, e nenhum módulo dessa faixa conhece outro. \texttt{equipes/}
-  (\adrr{ADR-111}) é lido por \texttt{salas/} (\adrr{ADR-69}), que mostra a
-  contagem na sala, e pelos painéis de \texttt{unootube/} e \texttt{unoogpt/},
-  pela porta \texttt{equipes/consulta.ts}; \texttt{evidencias/}
-  (\adrr{ADR-112}) lê a mesma porta e se registra no gancho
-  \texttt{aoMudarEquipes}, e as missões o chamam pela porta \texttt{marcar}
-  --- hoje só \texttt{quem-mandou-isso/} (\adrr{ADR-118}), que também lê
-  \texttt{equipes/consulta.ts} e usa IA com quota no preparo. A caixa da
-  direita reúne, sem setas, os módulos da exp06ef2b, da exp08ef4b, da
-  exp05ef1b, da exp01ef1b e da app-92, na ordem em que aparecem; as setas da
-  exp05ef1b estão no par Mermaid, para não cruzarem a faixa de plataforma.
-  Todo módulo com dado passa por
-  \texttt{comTenancy}: as setas até o \texttt{PrismaService} são uma amostra, e a
-  fonte Mermaid do Apêndice~\ref{ap:mermaid} lista as relações por módulo.}
+\caption[C4 nível 3 --- componentes da API]{C4 nível 3: componentes da API,
+  agrupados para caber em vinte caixas (a lista completa dos módulos está no
+  texto e no par Mermaid do Apêndice~\ref{ap:mermaid}). A faixa transversal roda
+  em toda rota (o \texttt{validarEnv}, que roda no \emph{boot}, não está
+  desenhado); a de plataforma serve a todas as experiências e não conhece missão
+  nenhuma pelo nome; a infraestrutura, à direita, tem as portas únicas --- o banco
+  (\texttt{comTenancy}), as guardas de liberação e de disponibilidade, a IA e o
+  armazenamento. O domínio tem um módulo por experiência, e as missões chegam à
+  plataforma por três portas: \texttt{equipes/consulta.ts} (\adrr{ADR-111}), a
+  \texttt{marcar} de \texttt{evidencias/} (\adrr{ADR-112}) e a
+  \texttt{registrarFonte} de \texttt{podcast/} (\adrr{ADR-150}).
+  \texttt{salas/} lê \texttt{equipes/} para a contagem na sala (\adrr{ADR-69}), e
+  \texttt{evidencias/} lê a mesma porta e se registra no gancho
+  \texttt{aoMudarEquipes}. Toda chamada de IA passa por \texttt{ai/}: o
+  \emph{provider} medido (o custo de cada chamada, \adrr{ADR-161}), o
+  \texttt{QuotaService} --- de que só a Ajuda fica fora, porque conta minutos ---
+  e as portas do agente, do avatar e da voz. Por serem de todo módulo com dado ou
+  de toda missão, não estão desenhadas as setas até o \texttt{PrismaService} e
+  até as guardas de \texttt{comum/}, nem as das outras missões.}
 \label{fig:c4l3api}
 \end{figure}
+
+\begin{legendadiag}
+\amostra{c4component} plataforma e transversal \quad
+\amostra{c4component, fill=unooLavender!24, draw=unooLavenderSoft} infraestrutura \quad
+\amostra{c4component, fill=unooGreen!22, draw=unooGreen} domínio por experiência \quad
+seta cheia: chama ou lê \quad seta tracejada: contexto da requisição
+\end{legendadiag}
 
 \begin{regra}
 \begin{nota}
@@ -625,8 +611,8 @@ esquecida viraria uma porta aberta em silêncio (\adrr{ADR-69}).
 (\adrr{ADR-111}). Ele diz QUEM DIVIDE UM COMPUTADOR em cada missão de cada
 turma, e a única coisa que sabe de missão é a lista
 \cd{EXPERIENCIAS\_COM\_EQUIPE}. O que cada missão FAZ com a equipe --- o painel
-contando por computador --- é assunto do módulo dela: \arq{unootube/} e
-\arq{unoogpt/} leem \arq{equipes/consulta.ts} (funções livres que recebem o
+contando por computador --- é assunto do módulo dela: \arq{unoogpt/},
+\arq{jornal-escola/} e as demais missões com equipe leem \arq{equipes/consulta.ts} (funções livres que recebem o
 \cd{tx}, como \arq{comum/liberacao.ts}) e aplicam \cd{colapsarEmUnidades}, de
 \arq{equipes/regras.ts}, sem injetar provedor nenhum. O sentido inverso --- a
 missão dizendo ao sorteio o lado de cada criança --- é um REGISTRO: o módulo da
@@ -666,12 +652,14 @@ tem ficha) e nos resultados da exp05ef1b, onde a atividade é o pacote aprovado
 pela aba Estudantes da turma.
 
 \textbf{Módulo de domínio não conhece módulo de domínio.} \arq{vila/} não importa
-\arq{unootube/}. Quando duas experiências precisam se comunicar --- o perfil da
+\arq{perfis/}. Quando duas experiências precisam se comunicar --- o perfil da
 Vila alimentando a largada do Instanooria --- a comunicação é por \emph{tabela de
 contrato} explícita (\cd{exp08ef1b\_app\_70\_perfis\_importados}, que carrega os
 dois números no nome) e por um \emph{endpoint} de fronteira
-(\rota{POST /atividades/:id/perfis/da-vila}). Chamar a tabela por um número só
-mentiria sobre quem depende dela.
+(\rota{POST /atividades/:id/perfis/da-vila}), que é a única dependência de
+módulo Nest entre domínios: \arq{perfis/} importa o \cd{VilaModule} e lê o perfil
+pelo \cd{VilaService}, num sentido só (as funções utilitárias de
+\arq{motor/guardas.ts}, que várias missões importam, não são dependência de módulo). Chamar a tabela por um número só mentiria sobre quem depende dela.
 \end{regra}
 
 \subsection{Componentes do hub}
@@ -679,69 +667,135 @@ mentiria sobre quem depende dela.
 \begin{figure}[H]
 \centering
 \fitwidth{%
-\begin{tikzpicture}[x=1cm, y=1cm]
+\begin{tikzpicture}[x=1cm, y=1cm, % c4l3hub
+  every node/.append style={execute at begin node={\hyphenpenalty=10000\exhyphenpenalty=10000}},
+  lib/.style={c4component, text width=32mm, minimum height=15mm},
+  rota/.style={lib, fill=unooBlueWash, draw=unooBlue},
+  comp/.style={lib, fill=unooLavender!24, draw=unooLavenderSoft}]
+  % Grade (2026-10-13): quatro colunas de 3,95 cm de passo (c1 = 2,10;
+  % c2 = 6,05; c3 = 10,00; c4 = 13,95), caixas de 35,5 mm e 4 mm de vão; seis
+  % linhas (y = -1,35; -3,70; -6,10; -8,35; -10,55; -12,75), mais folga sob as
+  % rotas, que têm três linhas. A chave de assinatura fica no centro (c3, L4)
+  % e quem a usa encosta nela: o embed em cima, o JWKS à esquerda, o
+  % api-servidor à direita e o lib/bff.ts embaixo. A coluna c2 da L6 fica VAZIA
+  % de propósito: é por ela que o BFF desce até a API. O api-servidor desce pela
+  % margem direita (x = 16,10).
 
-  \draw[c4zone] (0.5,-0.5) rectangle (15.5,-10.3);
-  \node[c4boundarylbl, fill=unooSurface] at (0.9,-0.35) {Contêiner: Hub (Next.js)};
+  \draw[c4zone] (0,0) rectangle (16.40,-13.85);
+  \node[c4boundarylbl, fill=unooSurface, anchor=south west] at (0.3,-0.1)
+    {Contêiner: Hub (Next.js)};
 
-  \node[camadalbl, anchor=west] at (0.8,-1.2) {Borda};
-  \node[c4component, text width=29mm] (mw) at (2.7,-2.3)
-    {\texttt{middleware.ts}\desc{sessão + área do papel}};
-  \node[c4component, text width=29mm] (papeis) at (6.4,-2.3)
-    {\texttt{lib/papeis.ts}\desc{\emph{edge-safe}: papel \seta{} área}};
-  \node[c4component, text width=29mm] (authlib) at (10.1,-2.3)
-    {\texttt{lib/auth.ts}\desc{NextAuth, sessão}};
-  \node[c4component, text width=29mm] (jwks) at (13.6,-2.3)
-    {\texttt{/.well-known/jwks.json}\desc{chave pública}};
+  % ---- L1: borda
+  \node[lib] (papeis) at (2.1,-1.35)
+    {\texttt{lib/papeis.ts}\desc{\emph{edge-safe}:\\papel \seta{} área}};
+  \node[rota] (mw) at (6.05,-1.35)
+    {\texttt{middleware.ts}\desc{sessão e área do papel}};
+  \node[lib] (auth) at (10.0,-1.35)
+    {\texttt{lib/auth.ts}\desc{NextAuth: a sessão}};
 
-  \node[camadalbl, anchor=west] at (0.8,-3.9) {Montagem do \emph{embed}};
-  \node[c4component, text width=32mm] (embed) at (3.0,-5.1)
-    {\texttt{lib/embed-experiencia.ts}\desc{token + manifesto + origem, uma só vez}};
-  \node[c4component, text width=28mm] (chave) at (7.2,-5.1)
-    {\texttt{lib/chave-token.ts}\desc{assina RS256, TTL 15 min}};
-  \node[c4component, text width=28mm] (devsrv) at (11.0,-5.1)
-    {\texttt{lib/experiencias-dev.ts}\desc{porta do \emph{dev server}}};
-  \node[c4component, text width=24mm] (apiserv) at (14.4,-5.1)
-    {\texttt{lib/api-servidor.ts}\desc{BFF}};
+  % ---- L2: rotas (app/)
+  \node[rota] (publicas) at (2.1,-3.70)
+    {Rotas públicas\desc{\texttt{/}, \texttt{/login},\\\texttt{/privacidade}, \texttt{/termos}}};
+  \node[rota] (areas) at (6.05,-3.70)
+    {Áreas por papel\desc{\texttt{/estudante}, \texttt{/professor},\\\texttt{/admin}, \texttt{/analise},\\\texttt{/unooria}}};
+  \node[rota] (paginas) at (10.0,-3.70)
+    {Páginas com \emph{embed}\desc{\texttt{/exp/:expId}, \texttt{/dev-embed}\\e três do professor}};
 
-  \node[camadalbl, anchor=west] at (0.8,-6.7) {Casca visual e \emph{host} do \texttt{iframe}};
-  \node[c4component, text width=30mm] (casca) at (2.9,-7.9)
-    {\texttt{CascaPlataforma}\desc{CSS do DS + fontes}};
-  \node[c4component, text width=30mm] (header) at (6.7,-7.9)
-    {\texttt{HeaderPlataforma}\desc{um só para todos os papéis}};
-  \node[c4component, text width=28mm] (disp) at (10.4,-7.9)
-    {\texttt{DispositivoFrame}\desc{casca de aparelho}};
-  \node[c4component, text width=28mm] (frame) at (13.9,-7.9)
-    {\texttt{ExpFrame}\desc{\emph{sandbox} + protocolo v1}};
+  % ---- L3: casca e embed
+  \node[comp] (casca) at (2.1,-6.10)
+    {\texttt{CascaPlataforma}\desc{CSS do DS e fontes}};
+  \node[comp] (exphost) at (6.05,-6.10)
+    {\texttt{ExpHost}\desc{\texttt{DispositivoFrame}\\+ \texttt{ExpFrame} (\emph{sandbox})}};
+  \node[lib] (embed) at (10.0,-6.10)
+    {\texttt{lib/embed-}\\\texttt{experiencia.ts}\desc{\emph{token}, manifesto, origem}};
+  \node[lib] (devsrv) at (13.95,-6.10)
+    {\texttt{lib/experiencias-}\\\texttt{dev.ts}\desc{porta do \emph{dev server}}};
 
-  \node[c4component, text width=30mm] (rotas) at (4.4,-9.5)
-    {Rotas: \texttt{/} (\emph{landing}), \texttt{/privacidade}, \texttt{/termos},
-     \texttt{/estudante}, \texttt{/professor/*},
-     \texttt{/admin/*}, \texttt{/analise/*}, \texttt{/unooria/*},
-     \texttt{/exp/:expId}, \texttt{/dev-embed}};
-  \node[c4component, text width=30mm] (bff) at (10.4,-9.5)
-    {\texttt{/api/plataforma/[...path]}\desc{\emph{proxy} autenticado para a API}};
+  % ---- L4: a chave
+  \node[comp] (header) at (2.1,-8.35)
+    {\texttt{HeaderPlataforma}\desc{um só para todos\\os papéis}};
+  \node[rota] (jwks) at (6.05,-8.35)
+    {\texttt{/.well-known/}\\\texttt{jwks.json}\desc{a chave pública}};
+  \node[lib, draw=unooNavy, line width=1.1pt] (chave) at (10.0,-8.35)
+    {\texttt{lib/chave-token.ts}\desc{assina RS256,\\TTL 15 min}};
+  \node[lib, text width=33mm] (apiserv) at (13.95,-8.35)
+    {\texttt{lib/api-servidor.ts}\desc{a API vista dos\\\emph{Server Components}}};
 
-  \draw[c4rel] (mw.east) -- (papeis.west);
-  \draw[c4rel] (embed.east) -- (chave.west);
-  \draw[c4rel] (embed.south) -- (4.4,-8.9);
-  \draw[c4rel] (disp.south east) -- (frame.north west);
+  % ---- L5 e L6: a passagem do navegador para a API
+  \node[comp] (ajuda) at (2.1,-10.55)
+    {\texttt{components/ajuda/}\desc{a janela da Ajuda}};
+  \node[rota] (bff) at (6.05,-10.55)
+    {\texttt{/api/plataforma/}\\\texttt{[...path]}\desc{BFF genérico, 180 s}};
+  \node[lib] (bffts) at (10.0,-10.55)
+    {\texttt{lib/bff.ts}\desc{sessão e \emph{token} curto}};
+  \node[rota] (stream) at (10.0,-12.75)
+    {Rota de \emph{stream}\desc{\texttt{/api/plataforma/}\\\texttt{agente-professor/\ldots}}};
+  \node[comp] (chat) at (13.95,-12.75)
+    {\texttt{components/}\\\texttt{agente-professor/}\desc{o chat do agente}};
+
+  % ---- externo
+  \node[c4containerext, text width=104mm, minimum height=10mm] (api) at (10.0,-15.05)
+    {\textbf{API} (NestJS)\desc{valida o \emph{token} pelo JWKS do hub}};
+
+  % ---- relações
+  \draw[c4rel] (mw.west) -- (papeis.east);
+  \draw[c4rel] (mw.east) -- (auth.west);
+  \draw[c4rel] (paginas.south) -- (embed.north)
+    node[cxlabel, midway, right=2pt] {\texttt{montarEmbed}};
+  \draw[c4rel] (embed.west) -- (exphost.east);
+  \draw[c4rel] (embed.east) -- (devsrv.west);
+  \draw[c4rel] (embed.south) -- (chave.north);
+  \draw[c4rel] (jwks.east) -- (chave.west);
+  \draw[c4rel] (apiserv.west) -- (chave.east);
+  \draw[c4rel] (bffts.north) -- (chave.south)
+    node[cxlabel, midway, right=2pt] {\emph{token} curto};
+  \draw[c4rel] (header.south) -- (ajuda.north)
+    node[cxlabel, midway, right=2pt] {menu da conta};
+  \draw[c4rel] (ajuda.east) -- (bff.west);
+  \draw[c4rel] (bff.east) -- (bffts.west);
+  \draw[c4rel] (stream.north) -- (bffts.south);
+  \draw[c4rel] (chat.west) -- (stream.east);
+  \draw[c4rel] (bff.south) -- (bff.south |- api.north)
+    node[cxlabel, pos=0.45, right=2pt] {HTTPS + \emph{Bearer}};
+  \draw[c4rel] (stream.south) -- (stream.south |- api.north)
+    node[cxlabel, midway, right=2pt] {SSE};
+  \draw[c4rel] (apiserv.east) -- (16.10,-8.35) -- (16.10,-15.05) -- (api.east);
+  \draw[c4rel] (ajuda.south) -- (2.1,-15.05)
+    node[cxlabel, pos=0.45, right=2pt] {WSS do mascote} -- (api.west);
 
 \end{tikzpicture}}
 \caption[C4 nível 3 --- componentes do hub]{C4 nível 3: componentes do hub. A
-  montagem do \emph{embed} é \emph{uma só função} usada pelas quatro superfícies
-  que embedam (\rota{/exp/[expId]}, \rota{/dev-embed},
-  \rota{/professor/plano-de-aula} e \rota{/professor/bem-estar}) --- duplicá-la
-  era o caminho mais curto para uma delas passar a assinar o \emph{token} com
-  \emph{claims} diferentes.}
+  chave de assinatura (\texttt{lib/chave-token.ts}) está no centro, e tudo que
+  fala com a API passa por ela: a montagem do \emph{embed}, o
+  \texttt{api-servidor} dos \emph{Server Components} e o \texttt{lib/bff.ts},
+  que o BFF genérico e a rota de \emph{stream} do agente de IA do professor
+  dividem (\adrr{ADR-128}); o JWKS publica a metade pública dela. A montagem do
+  \emph{embed} é \emph{uma só função}, usada pelas cinco páginas que embedam
+  (\rota{/exp/[expId]}, \rota{/dev-embed}, \rota{/professor/plano-de-aula},
+  \rota{/professor/plano-de-ensino} e \rota{/professor/bem-estar}) ---
+  duplicá-la era o caminho mais curto para uma delas passar a assinar o
+  \emph{token} com \emph{claims} diferentes. O chat do agente, montado pelo
+  \emph{layout} de \rota{/professor}, usa a rota de \emph{stream} só para o
+  turno; listar e apagar conversas segue pelo BFF genérico. A Ajuda abre e
+  encerra a sessão pelo BFF, e a voz do mascote vai direto à API, sem passar
+  pelo hub (\adrr{ADR-158}).}
 \label{fig:c4l3hub}
 \end{figure}
+
+\begin{legendadiag}
+\amostra{c4component, fill=unooBlueWash, draw=unooBlue} rota de \cd{app/} e
+\emph{middleware} \quad
+\amostra{c4component} \cd{lib/}, no servidor \quad
+\amostra{c4component, fill=unooLavender!24, draw=unooLavenderSoft} componente
+de \cd{components/} \quad
+\amostra{c4containerext} contêiner externo
+\end{legendadiag}
 
 \begin{decisao}
 \textbf{Um único \emph{header} para todos os papéis, e uma única casca visual.}
 Antes, cada área copiava o próprio \emph{header} e a experiência não tinha
 nenhum. Hoje \cd{HeaderPlataforma} serve \rota{/estudante}, \rota{/professor},
-\rota{/admin}, \rota{/analise} \emph{e} \rota{/exp/*}, e a casca visual saiu do
+\rota{/admin}, \rota{/analise}, \rota{/unooria} \emph{e} \rota{/exp/*}, e a casca visual saiu do
 \emph{layout} do grupo de rotas para \cd{CascaPlataforma}, porque \rota{/exp/*} e
 \rota{/dev-embed} estão fora do grupo e também precisam dela. A regra de ouro
 passou a valer um nível abaixo: o \emph{header} é \emph{chrome} do hub, desenhado
@@ -860,10 +914,14 @@ O nível 4 do C4 raramente vale a pena desenhar por inteiro. Vale aqui para
 \begin{figure}[H]
 \centering
 \fitwidth{%
-\begin{tikzpicture}[x=1cm, y=1cm, node distance=6mm]
+\begin{tikzpicture}[x=1cm, y=1cm, node distance=6mm, % c4l4
+  every node/.append style={execute at begin node={\hyphenpenalty=10000\exhyphenpenalty=10000}}]
+  % Grade (2026-10-13): duas colunas, a da esquerda centrada em x = 3,6 e a da
+  % direita em x = 11,4; três linhas com o TOPO alinhado (y = 0; -4,0; -7,6),
+  % uma por regra que o tipo carrega. As setas são horizontais, dentro da linha.
 
-  \node[classe, text width=48mm] (bridge) at (0,0)
-    {\etitulo{connectToHub}
+  \node[classe, text width=58mm, anchor=north] (bridge) at (3.6,0)
+    {\etitulo{connectToHub} {\color{white}(\texttt{@edu/sdk})}
      \nodepart{two}
      \texttt{hubOrigin: string}\\
      \texttt{timeoutMs = 8000}\\
@@ -871,10 +929,10 @@ O nível 4 do C4 raramente vale a pena desenhar por inteiro. Vale aqui para
      \nodepart{three}
      valida \texttt{ev.origin} \seta{} descarta\\
      reenvia \texttt{exp:ready} até responder\\
-     compara \texttt{protocolVersion} maior\\
-     valida pós-\emph{init} com Zod};
+     compara o maior de \texttt{protocolVersion}\\
+     valida o pós-\emph{init} com Zod};
 
-  \node[classe, text width=44mm, right=14mm of bridge] (types)
+  \node[classe, text width=52mm, anchor=north] (types) at (11.4,0)
     {\etitulo{@edu/sdk/types}
      \nodepart{two}
      \texttt{PROTOCOL\_VERSION = 2}\\
@@ -883,50 +941,51 @@ O nível 4 do C4 raramente vale a pena desenhar por inteiro. Vale aqui para
      \texttt{ExpParaHubSchema}
      \nodepart{three}
      uniões discriminadas por \texttt{type}\\
-     mensagem que não casa é\\
-     descartada com aviso};
+     mensagem que não casa é descartada\\
+     com aviso};
 
-  \node[classe, text width=46mm, below=13mm of bridge] (prismas)
+  \node[classe, text width=58mm, anchor=north] (prismas) at (3.6,-4.0)
     {\etitulo{PrismaService}
      \nodepart{two}
      \texttt{extends PrismaClient}
      \nodepart{three}
      \texttt{comTenancy(fn, escolaId?, opts?)}\\
      \quad abre \texttt{\$transaction}\\
-     \quad \texttt{set\_config('app.escola\_id', ..., true)}\\
+     \quad \texttt{set\_config('app.escola\_id', \ldots, true)}\\
      \quad executa \texttt{fn(tx)}\\
      sem escola \seta{} \textbf{lança}};
 
-  \node[classe, text width=42mm, right=14mm of prismas] (ctx)
+  \node[classe, text width=52mm, anchor=north] (ctx) at (11.4,-4.0)
     {\etitulo{tenancy-context}
      \nodepart{two}
-     \texttt{AsyncLocalStorage<string>}
+     \texttt{AsyncLocalStorage<}\\
+     \quad\texttt{ContextoDaRequisicao>}
      \nodepart{three}
      \texttt{comEscolaNoContexto(id, fn)}\\
      \texttt{escolaDoContexto(): string?}};
 
-  \node[classe, text width=44mm, below=13mm of prismas] (leitura)
-    {\etitulo{LinhaDeLeitura (união)}
+  \node[classe, text width=58mm, anchor=north] (leitura) at (3.6,-7.6)
+    {\etitulo{LinhaDeLeitura} {\color{white}(união)}
      \nodepart{two}
      \texttt{\{ grau: 'scored', numero: number \}}\\
-     \texttt{\{ grau: 'indicative', numero: null \}}\\
-     \texttt{\{ grau: 'zero', numero: null \}}\\
-     \texttt{\{ grau: 'none', numero: null \}}
+     \texttt{\{ grau: 'indicative' | 'zero'}\\
+     \quad\texttt{| 'none', numero: null \}}
      \nodepart{three}
-     o hub \emph{não pode} imprimir número\\
-     onde não há medida --- o tipo\\
-     não o oferece};
+     o hub \emph{não pode} imprimir número onde\\
+     não há medida --- o tipo não o oferece};
 
-  \node[actnote, text width=52mm, right=14mm of leitura] (nota)
+  \node[actnote, text width=52mm, anchor=north] (nota) at (11.4,-7.6)
     {\textbf{Por que nível 4 aqui:} nos três casos a regra é imposta pelo
      \emph{tipo}, não por revisão de código. Comentário avisa; tipo impede.
      \texttt{comTenancy} sem escola \emph{lança} em vez de consultar sem filtro;
      mensagem inválida é descartada em vez de despachada crua; leitura sem
      medida não tem campo numérico para ser lido.};
 
-  \draw[depend] (bridge) -- (types) node[cxlabel, midway, above]{usa};
-  \draw[depend] (prismas) -- (ctx) node[cxlabel, midway, above]{lê};
-  \draw[actnoteline] (leitura) -- (nota);
+  \draw[depend] (bridge.east |- types.center) -- (types.west)
+    node[cxlabel, midway, above=1pt]{usa};
+  \draw[depend] (prismas.east |- ctx.center) -- (ctx.west)
+    node[cxlabel, midway, above=1pt]{lê};
+  \draw[actnoteline] (leitura.east |- nota.center) -- (nota.west);
 
 \end{tikzpicture}}
 \caption[C4 nível 4 --- tipos que carregam a regra]{C4 nível 4: os três pontos em
@@ -958,7 +1017,7 @@ apps/api/src/<slug>/
 
 \begin{nota}
 A consequência prática dessa forma aparece nos testes: \arq{vila-regras.spec.ts},
-\arq{unootube-regras.spec.ts} e \arq{bemestar-regras.spec.ts} rodam
+\arq{backup-\B unootube-\B regras.spec.ts} (o UnooTube está arquivado, \adrr{ADR-116}) e \arq{bemestar-regras.spec.ts} rodam
 \emph{milissegundos} sem PostgreSQL, porque exercitam \arq{regras.ts} puro. Os
 testes que precisam de banco (\arq{*-postgres.spec.ts}, \arq{tenancy.spec.ts})
 são separados e cobrem exatamente o que não dá para afirmar sem ele:
@@ -971,48 +1030,63 @@ são separados e cobrem exatamente o que não dá para afirmar sem ele:
 \begin{figure}[H]
 \centering
 \fitwidth{%
-\begin{tikzpicture}[x=1cm, y=1cm]
+\begin{tikzpicture}[x=1cm, y=1cm, % monorepo
+  every node/.append style={execute at begin node={\hyphenpenalty=10000\exhyphenpenalty=10000}},
+  pac/.style={c4component, text width=34mm, minimum height=13mm, fill=unooBlueWash}]
+  % Grade (2026-10-13): os três pacotes de que alguém depende ficam numa
+  % COLUNA central (x = 8,2; y = 0; -2,1; -4,2) e os dois consumidores que
+  % dependem dos três ficam de cada lado, altos o bastante para receber as três
+  % setas na horizontal (experiências à esquerda, hub à direita). Assim nenhuma
+  % seta cruza outra. A linha de baixo (y = -6,5) tem quem depende só da SDK
+  % (app-70, embaixo dela) e quem não depende de pacote nenhum.
 
-  \node[c4component, text width=28mm, fill=unooBlueWash] (sdk) at (7.5,0)
-    {\texttt{packages/sdk}\desc{Zod + \emph{fetch}. Zero dependência pesada}};
-  \node[c4component, text width=28mm, fill=unooBlueWash] (ui) at (12.0,0)
-    {\texttt{packages/ui}\desc{ponte para o \emph{design system}}};
+  \node[c4systemext, text width=38mm, minimum height=13mm] (ds) at (8.2,0)
+    {\texttt{@unooria/design-system}\desc{npm público}};
+  \node[pac] (ui) at (8.2,-2.1)
+    {\texttt{packages/ui}\desc{as pontes do \emph{design system}}};
+  \node[pac] (sdk) at (8.2,-4.2)
+    {\texttt{packages/sdk}\desc{Zod + \emph{fetch}; nenhuma dependência pesada}};
 
-  \node[c4container, text width=26mm] (hub) at (2.0,-3.2) {\texttt{apps/hub}};
-  \node[c4container, text width=26mm] (api) at (5.6,-3.2) {\texttt{apps/api}};
-  \node[bundle, text width=24mm] (e01) at (9.0,-3.2) {\texttt{exp08ef1b}};
-  \node[bundle, text width=24mm] (e02) at (11.9,-3.2) {\texttt{exp04ef1b}};
-  \node[bundle, text width=24mm] (e70) at (14.8,-3.2) {\texttt{app-70}};
-  \node[bundle, text width=24mm] (e90) at (9.0,-5.2) {\texttt{app-90}};
-  \node[bundle, text width=24mm] (e91) at (11.9,-5.2) {\texttt{app-91}};
-  \node[bundle, text width=24mm, fill=unooMuted, draw=unooInkSoft] (tpl) at (14.8,-5.2)
-    {\texttt{\_template}};
+  \node[bundle, text width=38mm, minimum height=55mm, font=\footnotesize] (exps) at (2.2,-2.1)
+    {\textbf{Experiências com interface}\desc{\texttt{exp01ef1b}, \texttt{exp02em1b},
+     \texttt{exp04ef1b}, \texttt{exp05ef1b}, \texttt{exp06ef1b}, \texttt{exp06ef2b},
+     \texttt{exp07ef1b}, \texttt{exp08ef1b}, \texttt{exp08ef4b};\\[2pt]
+     \texttt{app-90}, \texttt{app-91}, \texttt{app-92};\\[2pt]
+     \texttt{\_template} e \texttt{backup-exp04ef1b}}};
+  \node[c4container, text width=30mm, minimum height=55mm] (hub) at (13.8,-2.1)
+    {\texttt{apps/hub}\desc{Next.js}};
 
-  \node[c4systemext, text width=34mm] (ds) at (12.0,2.6)
-    {\texttt{@unooria/design-system}\desc{npm público, repo \texttt{storybook-unooria}}};
+  \node[bundle, text width=34mm, minimum height=12mm, font=\footnotesize] (e70) at (8.2,-6.5)
+    {\texttt{app-70}\desc{jogo em \emph{canvas} 3D}};
+  \node[c4container, text width=38mm, minimum height=12mm] (api) at (2.2,-6.5)
+    {\texttt{apps/api}\desc{NestJS; não importa pacote do \emph{workspace}}};
+  \node[c4container, text width=30mm, minimum height=12mm] (agente) at (13.8,-6.5)
+    {\texttt{apps/agente-}\\\texttt{professor}\desc{Python + ADK; também não}};
 
-  \draw[c4rel] (ds.south) -- (ui.north) node[cxlabel, midway, right=2pt]{versão publicada};
-  \draw[c4rel] (sdk.south) -- (hub.north east);
-  \draw[c4rel] (sdk.south) -- (e01.north);
-  \draw[c4rel] (sdk.south) -- (e02.north);
+  \draw[c4rel] (ds.south) -- (ui.north)
+    node[cxlabel, midway, right=2pt] {versão publicada};
+  \draw[c4rel] (ds.west) -- (ds.west -| exps.east)
+    node[cxlabel, midway, above=1pt] {CSS e fontes};
+  \draw[c4rel] (ds.east) -- (ds.east -| hub.west)
+    node[cxlabel, midway, above=1pt] {CSS e fontes};
+  \draw[c4rel] (ui.west) -- (ui.west -| exps.east);
+  \draw[c4rel] (ui.east) -- (ui.east -| hub.west);
+  \draw[c4rel] (sdk.west) -- (sdk.west -| exps.east);
+  \draw[c4rel] (sdk.east) -- (sdk.east -| hub.west);
   \draw[c4rel] (sdk.south) -- (e70.north);
-  \draw[c4rel] (sdk.south) -- (9.0,-4.4) -- (e90.north);
-  \draw[c4rel] (sdk.south) -- (11.9,-4.4) -- (e91.north);
-  \draw[c4rel] (ui.south) -- (hub.north east);
-  \draw[c4rel] (ui.south) -- (e01.north east);
-  \draw[c4rel] (ui.south) -- (e02.north east);
-  \draw[c4rel] (ui.south) -- (e90.north east);
-  \draw[c4rel] (ui.south) -- (e91.north east);
 
 \end{tikzpicture}}
 \caption[Grafo de dependências do monorepo]{Grafo de dependências do
-  \emph{monorepo}, com uma amostra das experiências. A SDK é consumida pelo hub e
-  por toda experiência --- é por isso que uma mudança nela precisa testar todas
-  no mesmo \emph{pull request}, e por isso o \emph{monorepo} (\adrr{ADR-02}). A API
-  não importa pacote nenhum do \emph{workspace}: valida o que recebe com os
-  próprios \emph{schemas} (Figura~\ref{fig:uml-pacotes}). A app-70 não depende de \arq{packages/ui}: é
-  jogo em \emph{canvas} 3D, sem DOM de interface, e é a exceção registrada em ADR
-  à regra do \emph{design system}.}
+  \emph{monorepo}. A SDK é consumida pelo hub e por toda experiência --- é por
+  isso que uma mudança nela precisa testar todas no mesmo \emph{pull request}, e
+  por isso o \emph{monorepo} (\adrr{ADR-02}). O \emph{design system} é pacote npm
+  externo (repositório \texttt{storybook-unooria}), numa versão só para todos
+  (\adrr{ADR-139}): chega pelas pontes de \arq{packages/ui} e, direto, como CSS e
+  fontes. A API não importa pacote nenhum do \emph{workspace}: valida o que
+  recebe com os próprios \emph{schemas} (Figura~\ref{fig:uml-pacotes}); o agente
+  de IA do professor é Python e também não. A app-70 não depende de
+  \arq{packages/ui}: é jogo em \emph{canvas} 3D, sem DOM de interface, e é a
+  exceção registrada em ADR à regra do \emph{design system}.}
 \label{fig:monorepo}
 \end{figure}
 
@@ -1021,18 +1095,20 @@ são separados e cobrem exatamente o que não dá para afirmar sem ele:
 \headrow \thd{Diretório} & \thd{Conteúdo}\\
 \midrule
 \arq{apps/hub} & Aplicação Next.js: rotas por papel, \emph{embed}, BFF, JWKS.\\
-\zebra \arq{apps/api} & Aplicação NestJS: 34 módulos, Prisma, 40 migrações
-  (contagem de 2026-09-25).\\
-\arq{apps/experiencias/*} & Uma pasta por experiência, mais \arq{\_template}.\\
-\zebra \arq{packages/sdk} & Contrato da ponte e telemetria.\\
-\arq{packages/ui} & Ponte do \emph{design system} e CSS da plataforma.\\
-\zebra \arq{docs/} & Contratos com infraestrutura e registro de decisões.\\
-\arq{scripts/} & \emph{Scaffolding}, chave de assinatura, importação de
+\zebra \arq{apps/api} & Aplicação NestJS: 38 módulos no \arq{app.module}, Prisma,
+  61 migrações (contagem de 2026-10-13).\\
+\arq{apps/agente-professor} & O agente de IA do professor: Python + ADK, no
+  Vertex AI Agent Engine (\adrr{ADR-126}).\\
+\zebra \arq{apps/experiencias/*} & Uma pasta por experiência, mais \arq{\_template}.\\
+\arq{packages/sdk} & Contrato da ponte e telemetria.\\
+\zebra \arq{packages/ui} & Ponte do \emph{design system} e CSS da plataforma.\\
+\arq{docs/} & Contratos com infraestrutura e registro de decisões.\\
+\zebra \arq{scripts/} & \emph{Scaffolding}, chave de assinatura, importação de
   referências, a suíte de ponta a ponta (\arq{scripts/e2e/}), \emph{probe} de
   \emph{pointer lock}.\\
-\zebra \arq{wso2/} & \emph{Compose} próprio do provedor de identidade, com ciclo
+\arq{wso2/} & \emph{Compose} próprio do provedor de identidade, com ciclo
   de vida separado.\\
-\arq{documentacao-latex/} & Este documento.\\
+\zebra \arq{documentacao-latex/} & Este documento.\\
 \bottomrule
 \end{tabularx}
 
@@ -1055,42 +1131,79 @@ Este é o fluxo com mais concorrência da plataforma e o que mais exige do banco
 \begin{figure}[H]
 \centering
 \fitwidth{%
-\begin{tikzpicture}[x=1cm, y=1cm]
+\begin{tikzpicture}[x=1cm, y=1cm, % seq-feed
+  every node/.append style={execute at begin node={\hyphenpenalty=10000\exhyphenpenalty=10000}},
+  rot/.style={seqlbl, above=0.4pt}]
+  % Grade (2026-10-13): quatro raias de 4,0 cm de passo (x = 1,6; 5,6; 9,6;
+  % 13,6), mensagens a cada 0,72 cm. O rótulo de uma mensagem que atravessa
+  % uma raia fica no trecho ANTES dela (pos = 0,25), nunca sobre a linha de
+  % vida. As duas notas vão embaixo, para o desenho caber em 16 cm sem encolher.
 
-  \raia{1.4}{-10.4}{Experiência}{exp08ef1b no \texttt{iframe}}
-  \raia{5.4}{-10.4}{\texttt{runs.controller}}{NestJS}
-  \raia{9.4}{-10.4}{\texttt{motor/servico}}{regra + persistência}
-  \raiaext{13.4}{-10.4}{PostgreSQL}{Cloud SQL}
+  \raia{1.6}{-13.3}{Experiência}{exp08ef1b no \texttt{iframe}}
+  \raia{5.6}{-13.3}{\texttt{runs.controller}}{casca HTTP}
+  \raia{9.6}{-13.3}{\texttt{motor/servico.ts}}{regra + persistência}
+  \raiaext{13.6}{-13.3}{PostgreSQL}{Cloud SQL}
 
-  \msgs{1.4}{5.4}{-1.1}{\texttt{POST /runs/:id/eventos} (\emph{dwell}, curtidas)}
-  \msgs{5.4}{9.4}{-1.9}{\texttt{aplicarEventos}}
-  \msgs{9.4}{13.4}{-2.7}{\texttt{comTenancy}: \texttt{set\_config('app.escola\_id')}}
-  \msgs{9.4}{13.4}{-3.5}{\texttt{pg\_advisory\_xact\_lock(runId)}}
-  \msgr{13.4}{9.4}{-4.3}{estado da \texttt{run}}
+  % ---- 1. os eventos chegam antes, num lote
+  \node[seqcond] at (1.75,-0.85) {durante o \emph{feed}};
+  \draw[seqmsg] (1.6,-1.40) -- (5.6,-1.40)
+    node[rot, midway] {\texttt{POST /runs/:id/eventos}};
+  \draw[seqmsg] (5.6,-2.12) -- (13.6,-2.12)
+    node[rot, pos=0.25] {grava os eventos novos};
+  \draw[seqret] (5.6,-2.84) -- (1.6,-2.84)
+    node[rot, midway] {gravados, descartados};
 
-  \msgself{9.4}{-5.1}{\texttt{curarBloco}: puro e determinístico}
-  \msgs{9.4}{13.4}{-6.3}{\texttt{UPDATE engine\_state} + posts entregues}
-  \msgr{13.4}{9.4}{-7.1}{\texttt{COMMIT} (libera o \emph{lock})}
-  \msgr{9.4}{5.4}{-7.9}{bloco + módulos + diagnóstico}
-  \msgself{5.4}{-8.7}{\texttt{paraFeedPost}: remove metadados de curadoria}
-  \msgr{5.4}{1.4}{-9.9}{\texttt{GET /runs/:id/feed} --- \textbf{sem} lado, perfil nem intensidade}
+  % ---- 2. o bloco é curado quando a experiência o pede
+  \node[seqcond] at (1.75,-3.55) {a cada bloco};
+  \draw[seqmsg] (1.6,-4.10) -- (5.6,-4.10)
+    node[rot, midway] {\texttt{GET /runs/:id/feed}};
+  \draw[seqmsg] (5.6,-4.82) -- (13.6,-4.82)
+    node[rot, pos=0.25] {a \texttt{run} é do estudante?};
+  \draw[seqmsg] (5.6,-5.54) -- (9.6,-5.54)
+    node[rot, midway] {\texttt{proximoBlocoDoFeed}};
+  \draw[seqmsg] (9.6,-6.26) -- (13.6,-6.26)
+    node[rot, midway] {\texttt{comTenancy} (escola)};
+  \draw[seqmsg] (9.6,-6.98) -- (13.6,-6.98)
+    node[rot, midway] {\texttt{pg\_advisory\_xact\_lock}};
+  \draw[seqret] (13.6,-7.70) -- (9.6,-7.70)
+    node[rot, midway] {\texttt{run}, eventos, catálogo};
+  \draw[seqself] (9.6,-8.30) -- ++(0.62,0) -- ++(0,-0.42) -- ++(-0.62,0);
+  \node[seqlbl, anchor=west, text width=27mm, align=left] at (10.32,-8.51)
+    {\texttt{aplicarEventos} e \texttt{curarBloco}: puras};
+  \draw[seqmsg] (9.6,-9.42) -- (13.6,-9.42)
+    node[rot, midway] {\texttt{UPDATE engine\_state}};
+  \draw[seqself] (9.6,-10.02) -- ++(0.62,0) -- ++(0,-0.42) -- ++(-0.62,0);
+  \node[seqlbl, anchor=west, text width=27mm, align=left] at (10.32,-10.23)
+    {\texttt{paraFeedPost}: sem lado, perfil nem intensidade};
+  \draw[seqmsg] (9.6,-11.44) -- (13.6,-11.44)
+    node[rot, midway] {\texttt{COMMIT} (solta o \emph{lock})};
+  \draw[seqret] (9.6,-12.16) -- (5.6,-12.16)
+    node[rot, midway] {posts, módulos, diagnóstico};
+  \draw[seqret] (5.6,-12.88) -- (1.6,-12.88)
+    node[rot, midway] {só posts e módulos};
 
-  \node[actnote, text width=44mm, anchor=north west] at (15.0,-1.0)
+  % ---- notas
+  \node[actnote, text width=66mm, anchor=north west] at (0.3,-13.75)
     {\textbf{Por que o \emph{lock}:} dois pedidos simultâneos de bloco (duas abas,
      um \emph{reload} no meio do \emph{fetch}, um \emph{retry}) se sobrescreviam
      e um bloco inteiro desaparecia do estado --- posts já entregues voltavam a
-     ser servidos e a série por bloco do dossiê ficava corrompida. Transação com
-     \texttt{timeout} de \SI{20}{\second}.};
-  \node[actnote, text width=44mm, anchor=north west] at (15.0,-6.0)
-    {\textbf{Por que o sanitizador:} \texttt{lado}, \texttt{perfil} e \texttt{intensidade}
-     são \emph{a variável independente do experimento}. Se chegassem ao cliente,
-     a experiência poderia exibi-los --- e o estudante saberia de que lado o
-     algoritmo o colocou antes da revelação.};
+     ser servidos e a série por bloco do dossiê ficava corrompida. A transação
+     tem \texttt{timeout} de \SI{20}{\second}.};
+  \node[actnote, text width=66mm, anchor=north east] at (14.9,-13.75)
+    {\textbf{Por que o sanitizador:} \texttt{lado}, \texttt{perfil} e
+     \texttt{intensidade} são \emph{a variável independente do experimento}. Se
+     chegassem ao cliente, a experiência poderia exibi-los --- e o estudante
+     saberia de que lado o algoritmo o colocou antes da revelação. O diagnóstico
+     do motor (domínio, lado dominante) também fica no servidor.};
 
 \end{tikzpicture}}
 \caption[Sequência: curadoria de um bloco de feed]{Sequência da curadoria de um
-  bloco de \emph{feed}. A regra (\cd{curarBloco}) é pura; o \emph{service} lê com
-  \emph{lock}, aplica e grava; o \emph{controller} sanitiza. As três
+  bloco de \emph{feed}. Os eventos chegam antes, num lote síncrono que o
+  \emph{controller} grava; o bloco é curado quando a experiência o pede. A regra
+  (\cd{aplicarEventos}, \cd{curarBloco}) é pura; o \emph{service}
+  (\arq{motor/servico.ts}) lê com \emph{lock}, aplica e grava; o sanitizador
+  (\cd{paraFeedPost}, em \arq{motor/sanitizador.ts}) monta o post sem o que
+  revela o lado; e o \emph{controller} não devolve o diagnóstico. As
   responsabilidades ficam em arquivos diferentes de propósito.}
 \label{fig:seq-feed}
 \end{figure}
@@ -1098,43 +1211,60 @@ Este é o fluxo com mais concorrência da plataforma e o que mais exige do banco
 \subsection{Estados de uma geração assíncrona}
 
 Duas rotinas da plataforma são assíncronas e longas: a geração de \emph{feed} da
-exp08ef1b e a geração de plano de aula da app-90. Ambas seguem a mesma máquina de
-estados, com \emph{claim} atômico em vez de fila externa.
+exp08ef1b e a geração de plano de aula da app-90. As duas seguem o mesmo desenho,
+com \emph{claim} atômico em vez de fila externa; a figura mostra a do plano de aula,
+e a legenda diz em que a do \emph{feed} difere.
 
 \begin{figure}[H]
 \centering
 \fitwidth{%
-\begin{tikzpicture}[x=1cm, y=1cm]
+\begin{tikzpicture}[x=1cm, y=1cm, % estados-geracao
+  every node/.append style={execute at begin node={\hyphenpenalty=10000\exhyphenpenalty=10000}},
+  est/.style={text width=20mm}]
+  % Grade (2026-10-13): os estados do caminho feliz numa linha (y = 0), com
+  % passo largo o bastante para o rótulo de cada transição caber ACIMA da seta
+  % sem encostar nos estados; o erro fica embaixo de "gerando" (y = -2,6) e a
+  % retomada de órfã é um laço acima de "gerando". A nota vai embaixo, à
+  % esquerda, longe de toda seta.
 
-  \node[actstart] (ini) at (0,0) {};
-  \node[estado, right=10mm of ini] (pend) {\texttt{pendente}};
-  \node[estado, right=16mm of pend] (ger) {\texttt{gerando}};
-  \node[estadofim, right=16mm of ger] (ok) {\texttt{pronto}};
-  \node[estadoerr, below=13mm of ger] (err) {\texttt{erro}};
-  \node[actend, right=12mm of ok] (fim) {};
+  \node[actstart] (ini) at (0.2,0) {};
+  \node[estado, est] (pend)  at (3.5,0) {\texttt{pendente}};
+  \node[estado, est] (ger)   at (8.2,0) {\texttt{gerando}};
+  \node[estadofim, est] (ok) at (12.9,0) {\texttt{pronto}};
+  \node[actend] (fim)   at (15.3,0) {};
+  \node[estadoerr, est] (err) at (8.2,-2.6) {\texttt{erro}};
 
-  \draw[trans] (ini) -- (pend) node[translbl, midway, above]{\texttt{POST} (202)};
-  \draw[trans] (pend) -- (ger)
-    node[translbl, midway, above, align=center]{\emph{claim} atômico\\\texttt{updateMany} por \texttt{status}};
-  \draw[trans] (ger) -- (ok) node[translbl, midway, above]{gravou o artefato};
-  \draw[trans] (ger) -- (err)
-    node[translbl, midway, right=2pt, align=left]{falha do \emph{provider}\\ou \texttt{finishReason=MAX\_TOKENS}};
-  \draw[trans] (ok) -- (fim);
-  \draw[trans] (ger.north) to[out=60, in=120, looseness=1.6] (pend.north);
-  \node[translbl] at (7.0,1.35) {órfã ($>$ 12 min sem \emph{worker}) --- até 2 retomadas};
+  \draw[trans] (ini) -- (pend.west)
+    node[translbl, midway, above=3pt] {\texttt{POST} (202)};
+  \draw[trans] (pend.east) -- (ger.west)
+    node[translbl, midway, above=3pt, align=center]
+    {\emph{claim} atômico\\(\texttt{updateMany})};
+  \draw[trans] (ger.east) -- (ok.west)
+    node[translbl, midway, above=3pt] {gravou o plano};
+  \draw[trans] (ok.east) -- (fim);
+  \draw[trans] (ger.south) -- (err.north)
+    node[translbl, midway, right=3pt, align=left]
+    {falha do \emph{provider}, \texttt{MAX\_TOKENS}\\ou órfã já na 2ª tentativa};
+  \draw[trans] ([xshift=-6mm]ger.north) -- ++(0,0.75) -| ([xshift=6mm]ger.north);
+  \node[translbl, align=center, anchor=south] at (8.2,1.35)
+    {órfã ($>$ 12 min sem \emph{worker}) e só 1 tentativa:\\novo \emph{claim}, disparado pela leitura do plano};
 
-  \node[actnote, text width=54mm, anchor=north west] at (0,-3.0)
-    {O \emph{claim} atômico (\texttt{UPDATE ... WHERE status = 'pendente'} com
-     contagem de linhas afetadas) substitui uma fila externa: duas instâncias do
-     Cloud Run podem tentar, e só uma ganha a linha. É a menor peça possível que
-     resolve o problema --- e não exige operar um serviço a mais
-     (\adrr{ADR-17}).};
+  \node[actnote, text width=56mm, anchor=north west] at (0,-1.55)
+    {O \emph{claim} atômico (um \texttt{updateMany} que só casa com o plano
+     \texttt{pendente}, ou \texttt{gerando} há mais de 12 min, e conta as
+     linhas afetadas) substitui uma fila externa: duas instâncias do Cloud Run
+     podem tentar, e só uma ganha a linha. É a menor peça possível que resolve
+     o problema --- e não exige operar um serviço a mais (\adrr{ADR-17}).};
 
 \end{tikzpicture}}
-\caption[Estados de uma geração assíncrona]{Máquina de estados das gerações
-  assíncronas (exp08ef1b e app-90). O \emph{claim} atômico dispensa fila externa; a
-  retomada de órfã é disparada pelo \emph{polling} do próprio painel, não por um
-  \emph{scheduler}.}
+\caption[Estados de uma geração assíncrona]{Máquina de estados da geração de
+  plano de aula (app-90, \arq{planos/}). O \emph{claim} atômico dispensa fila
+  externa; a retomada de órfã é disparada pela leitura do plano --- o
+  \emph{polling} do próprio painel ---, não por um \emph{scheduler}, e cada plano
+  tem no máximo duas tentativas. A geração do \emph{feed} da exp08ef1b
+  (\arq{geracao/}) segue o mesmo desenho por \emph{job} (\texttt{pendente},
+  \texttt{rodando}, \texttt{ok} ou \texttt{erro}, também com duas tentativas), e
+  a fila órfã dela também é retomada pelo \emph{polling}.}
 \label{fig:estados-geracao}
 \end{figure}
 

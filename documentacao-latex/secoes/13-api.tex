@@ -103,7 +103,7 @@ método e esquema, é o Apêndice~\ref{ap:endpoints}.
   \node[rt] (he) at (5.9,-1.1)
     {\texttt{/healthz}, \texttt{/readyz}\desc{público}};
   \node[rt] (ex) at (9.85,-1.1)
-    {\texttt{/experiencias}\desc{GET: qualquer; PUT: admin}};
+    {\texttt{/experiencias}\desc{GET: qualquer;\\PUT: contrato, admin}};
   \node[rt] (pg) at (13.8,-1.1)
     {\texttt{/progresso/:expId}\desc{estudante}};
 
@@ -114,7 +114,7 @@ método e esquema, é o Apêndice~\ref{ap:endpoints}.
   \node[rt] (ai) at (9.85,-2.95)
     {\texttt{/ai/gerar}\desc{autenticado + quota}};
   \node[rt] (an) at (13.8,-2.95)
-    {\texttt{/analise/*}\desc{\textbf{admin-contrato}}};
+    {\texttt{/analise/*}\desc{\textbf{gestor de contrato},\\admin}};
 
   \node[rt] (ro) at (1.95,-4.8)
     {\texttt{/rostering/*}\desc{gestor, admin}};
@@ -139,21 +139,39 @@ método e esquema, é o Apêndice~\ref{ap:endpoints}.
   \node[rt] (evi) at (1.95,-8.5)
     {\texttt{/evidencias/*}\desc{prof.\ ajusta, gestor lê;\\estudante: só a pergunta}};
   \node[rt, fill=unooRedWash, draw=unooRed] (agp) at (5.9,-8.5)
-    {\texttt{/agente-professor/*}\desc{\textbf{só professor}, posse;\\a mensagem responde SSE}};
+    {\texttt{/agente-professor/*}\desc{\textbf{só professor}, posse;\\resposta em SSE}};
   \node[rt] (pod) at (9.85,-8.5)
     {\texttt{/podcast/:expId/*}\desc{prof., gestor;\\nenhuma de estudante}};
+  \node[rt] (aj) at (13.8,-8.5)
+    {\texttt{/ajuda/*}\desc{prof.\ e gestão;\\teto em minutos por dia}};
 
-  \node[camadalbl, anchor=west] at (0.1,-9.8) {exp08ef1b --- Instanooria};
-  \node[rt] (atv) at (1.95,-10.9)
+  % 6a linha (2026-10-13): as áreas da plataforma que faltavam no mapa.
+  \node[rt] (obs) at (1.95,-10.35)
+    {\texttt{/observabilidade/*}\desc{autenticado;\\\texttt{/publico}: sem sessão}};
+  \node[rt] (prs) at (5.9,-10.35)
+    {\texttt{/prospeccao/*}\desc{\texttt{/publico}: visitante;\\cadastros: \textbf{admin}}};
+  \node[rt] (esc) at (9.85,-10.35)
+    {\texttt{/escolas/*}\desc{e \texttt{/lotacoes}: gestão;\\criar escola: contrato}};
+  \node[rt] (est) at (13.8,-10.35)
+    {\texttt{/estudantes/:id/*}\desc{gestão: transferência\\e portabilidade}};
+
+  \node[camadalbl, anchor=west] at (0.1,-11.65) {exp08ef1b --- Instanooria};
+  \node[rt] (atv) at (1.95,-12.75)
     {\texttt{/atividades/*}\desc{professor}};
-  \node[rt] (rn) at (5.9,-10.9)
+  \node[rt] (rn) at (5.9,-12.75)
     {\texttt{/runs/*}\desc{estudante (\texttt{/eventos}: professor tb.)}};
-  \node[rt] (po) at (9.85,-10.9)
+  \node[rt] (po) at (9.85,-12.75)
     {\texttt{/posts/:id/\B{}comentarios}\desc{estudante}};
-  \node[rt] (pf) at (13.8,-10.9)
+  \node[rt] (pf) at (13.8,-12.75)
     {\texttt{/perfis/importar}\desc{chave de serviço}};
 
 \end{tikzpicture}}
+\begin{legendadiag}
+\amostra{fill=unooBlueWash, draw=unooBlue} um dos três eixos que nenhuma
+experiência conhece pelo nome \quad
+\amostra{fill=unooRedWash, draw=unooRed} só o professor, e só o que é dele:
+nenhuma rota de gestão alcança
+\end{legendadiag}
 \caption[Mapa de rotas da API --- plataforma e exp08ef1b]{Mapa das rotas da
   plataforma e da exp08ef1b, por papel autorizado; as das demais experiências
   estão na Figura~\ref{fig:mapa-rotas-exps}. Em \texttt{/turmas/*} a autorização
@@ -168,7 +186,10 @@ método e esquema, é o Apêndice~\ref{ap:endpoints}.
   pergunta e a resposta, nunca o próprio resultado. \texttt{/agente-professor/*}
   é só do professor, e cada um alcança só as próprias conversas na escola ativa
   (\adrr{ADR-126}). \texttt{/podcast/:expId/*} é o podcast de recapitulação de
-  toda missão que o tem, do professor e da gestão (\adrr{ADR-150}).}
+  toda missão que o tem, do professor e da gestão (\adrr{ADR-150}). A
+  \texttt{/ajuda/*} tem teto em minutos por dia, e não em \emph{token}
+  (\adrr{ADR-132}); a \texttt{/prospeccao/publico} é a única escrita de
+  visitante sem sessão (\adrr{ADR-107}).}
 \label{fig:mapa-rotas}
 \end{figure}
 
@@ -186,128 +207,151 @@ método e esquema, é o Apêndice~\ref{ap:endpoints}.
     exprot/.style={anchor=west, font=\scriptsize, text width=20mm, align=left,
                    inner sep=0pt}]
 
-  % Uma linha por experiência; a coluna diz QUEM chama. Célula vazia é
-  % ausência, e as destacadas em vermelho são ausência DELIBERADA.
+  % Uma linha por experiência, na ordem do código; a coluna diz QUEM chama.
+  % Célula vazia é ausência, e as destacadas em vermelho são ausência
+  % DELIBERADA. As linhas são empilhadas com vão fixo de 3 mm (2026-10-13).
   \node[camadalbl] at (4.5,-0.25) {o estudante};
   \node[camadalbl] at (9.05,-0.25) {o professor e a gestão};
   \node[camadalbl] at (13.6,-0.25) {o guia, o agregado e o serviço};
 
-  % ---- exp04ef1b
-  \node[exprot] at (0.1,-1.35) {\textbf{backup-exp04ef1b}\\UnooTube (arquivada)};
-  \node[rt, minimum height=15mm] at (4.5,-1.35)
-    {\texttt{---}\desc{sem rotas: fora do \cd{app.module} (ADR-116)}};
-  \node[rt, minimum height=15mm] at (9.05,-1.35)
+  % ---- backup-exp04ef1b
+  \node[exprot] at (0.1,-1.4) {\textbf{backup-}\\\textbf{exp04ef1b}\\UnooTube\\(arquivada)};
+  \node[rt, minimum height=15mm] at (4.5,-1.4)
+    {\texttt{---}\desc{sem rotas: fora do\\\texttt{app.module} (ADR-116)}};
+  \node[rt, minimum height=15mm] at (9.05,-1.4)
     {\texttt{---}\desc{era \texttt{/unootube/turmas/*}}};
-  \node[rt, minimum height=15mm] at (13.6,-1.35)
+  \node[rt, minimum height=15mm] at (13.6,-1.4)
     {\texttt{---}\desc{era \texttt{/unootube/professor/*}}};
 
   % ---- app-70
-  \node[exprot] at (0.1,-2.925) {\textbf{app-70}\\Vila do Lume};
-  \node[rt, minimum height=11.5mm] at (4.5,-2.925)
+  \node[exprot] at (0.1,-3.025) {\textbf{app-70}\\Vila do Lume};
+  \node[rt, minimum height=11.5mm] at (4.5,-3.025)
     {\texttt{/vila/sessoes}\desc{estudante}};
-  \node[rt, minimum height=11.5mm] at (9.05,-2.925)
+  \node[rt, minimum height=11.5mm] at (9.05,-3.025)
     {\texttt{/vila/professor/*}\desc{\textbf{professor}}};
-  \node[rt, minimum height=11.5mm] at (13.6,-2.925)
+  \node[rt, minimum height=11.5mm] at (13.6,-3.025)
     {\texttt{/vila/agregado/*}\desc{prof., gestor}};
 
   % ---- app-90
-  \node[exprot] at (0.1,-4.325) {\textbf{app-90}\\Plano de aula};
-  \node[rt, minimum height=11.5mm] at (9.05,-4.325)
+  \node[exprot] at (0.1,-4.475) {\textbf{app-90}\\Plano de aula};
+  \node[rt, minimum height=11.5mm] at (9.05,-4.475)
     {\texttt{/planos/*}\desc{professor}};
-  \node[rt, minimum height=11.5mm] at (13.6,-4.325)
+  \node[rt, minimum height=11.5mm] at (13.6,-4.475)
     {\texttt{/planos/referencias}\desc{chave de serviço}};
 
   % ---- app-91
-  \node[exprot] at (0.1,-5.725) {\textbf{app-91}\\Bem-estar};
-  \node[rt, minimum height=11.5mm, fill=unooRedWash, draw=unooRed] at (9.05,-5.725)
+  \node[exprot] at (0.1,-5.925) {\textbf{app-91}\\Bem-estar};
+  \node[rt, minimum height=11.5mm, fill=unooRedWash, draw=unooRed] at (9.05,-5.925)
     {\texttt{/bemestar/*}\desc{\textbf{só professor}, posse}};
 
-  % ---- exp02em1b
-  \node[exprot] at (0.1,-7.3) {\textbf{exp02em1b}\\unooGPT};
-  \node[rt, minimum height=15mm] at (4.5,-7.3)
-    {\texttt{/unoogpt/*}\desc{estudante}};
-  \node[rt, minimum height=15mm, fill=unooRedWash, draw=unooRed] at (9.05,-7.3)
-    {\texttt{/unoogpt/professor/*}\desc{\textbf{só professor}, transcrição}};
-  \node[rt, minimum height=15mm] at (13.6,-7.3)
-    {\texttt{/unoogpt/agregado/*}\desc{gestor, admin --- sem \texttt{estudanteId}}};
-
-  % ---- exp06ef2b
-  \node[exprot] at (0.1,-9.225) {\textbf{exp06ef2b}\\O Rastro do Boato};
-  \node[rt, minimum height=18.5mm] at (4.5,-9.225)
-    {\texttt{/rastro-boato/*}\desc{estudante}};
-  \node[rt, minimum height=18.5mm] at (9.05,-9.225)
-    {\texttt{/rastro-boato/\B{}turmas/*}\desc{prof., gestor, admin --- o \emph{gate} da aula}};
-  \node[rt, minimum height=18.5mm] at (13.6,-9.225)
-    {\texttt{/rastro-boato/\B{}professor/*}\desc{prof., gestor --- material do guia}};
-
-  % ---- exp08ef4b
-  \node[exprot] at (0.1,-11.15) {\textbf{exp08ef4b}\\O Manifesto da IA};
-  \node[rt, minimum height=15mm] at (4.5,-11.15)
-    {\texttt{/manifesto-ia/*}\desc{estudante}};
-  \node[rt, minimum height=15mm] at (9.05,-11.15)
-    {\texttt{/manifesto-ia/\B{}turmas/*}\desc{prof., gestor --- o debate E o conteúdo da turma}};
+  % ---- app-92
+  \node[exprot] at (0.1,-7.375) {\textbf{app-92}\\Plano de\\ensino};
+  \node[rt, minimum height=11.5mm] at (9.05,-7.375)
+    {\texttt{/planejamento/*}\desc{\textbf{professor}}};
+  \node[rt, minimum height=11.5mm] at (13.6,-7.375)
+    {\texttt{/planejamento/\B{}curriculo/*}\desc{prof., gestor --- a Base}};
 
   % ---- exp01ef1b
-  \node[exprot] at (0.1,-12.9) {\textbf{exp01ef1b}\\O Que a Foto Conta};
-  \node[rt, minimum height=15mm] at (4.5,-12.9)
+  \node[exprot] at (0.1,-8.825) {\textbf{exp01ef1b}\\O Que a\\Foto Conta};
+  \node[rt, minimum height=11.5mm] at (4.5,-8.825)
     {\texttt{/foto-conta/*}\desc{estudante}};
-  \node[rt, minimum height=15mm] at (9.05,-12.9)
+  \node[rt, minimum height=11.5mm] at (9.05,-8.825)
     {\texttt{/foto-conta/\B{}turmas/*}\desc{prof., gestor --- o \emph{latch} da Roda}};
 
-  % ---- exp04ef1b (o Jornal da Escola, ADR-117): no vão que o Eco e a v1 da
-  % exp05ef1b deixaram, entre a exp01ef1b e a exp05ef1b.
-  \node[exprot] at (0.1,-14.825) {\textbf{exp04ef1b}\\Jornal da Escola};
-  \node[rt, minimum height=18.5mm] at (4.5,-14.825)
-    {\texttt{/jornal-escola/*}\desc{estudante --- e as perguntas em \texttt{/evidencias}}};
-  \node[rt, minimum height=18.5mm, fill=unooBlueWash, draw=unooBlue] at (9.05,-14.825)
-    {\texttt{/jornal-escola/\B{}turmas/*}\desc{prof., gestor --- o pacote, os dois portões e o painel}};
-  \node[rt, minimum height=18.5mm] at (13.6,-14.825)
+  % ---- exp02em1b
+  \node[exprot] at (0.1,-10.45) {\textbf{exp02em1b}\\unooGPT};
+  \node[rt, minimum height=15mm] at (4.5,-10.45)
+    {\texttt{/unoogpt/*}\desc{estudante}};
+  \node[rt, minimum height=15mm, fill=unooRedWash, draw=unooRed] at (9.05,-10.45)
+    {\texttt{/unoogpt/professor/*}\desc{\textbf{só professor}, transcrição}};
+  \node[rt, minimum height=15mm] at (13.6,-10.45)
+    {\texttt{/unoogpt/agregado/*}\desc{gestor, admin --- sem \texttt{estudanteId}}};
+
+  % ---- exp04ef1b
+  \node[exprot] at (0.1,-12.25) {\textbf{exp04ef1b}\\Jornal da\\Escola};
+  \node[rt, minimum height=15mm] at (4.5,-12.25)
+    {\texttt{/jornal-escola/*}\desc{estudante --- e as perguntas\\em \texttt{/evidencias}}};
+  \node[rt, minimum height=15mm] at (9.05,-12.25)
+    {\texttt{/jornal-escola/\B{}turmas/*}\desc{prof., gestor --- o pacote,\\os dois portões e o painel}};
+  \node[rt, minimum height=15mm] at (13.6,-12.25)
     {\texttt{/jornal-escola/\B{}professor/*}\desc{prof., gestor --- material do guia}};
 
   % ---- exp05ef1b
-  \node[exprot] at (0.1,-16.925) {\textbf{exp05ef1b}\\Quem mandou isso?};
-  \node[rt, minimum height=18.5mm] at (4.5,-16.925)
-    {\texttt{/quem-mandou-isso/*}\desc{estudante --- e as perguntas em \texttt{/evidencias}}};
-  \node[rt, minimum height=18.5mm, fill=unooBlueWash, draw=unooBlue] at (9.05,-16.925)
-    {\texttt{/quem-mandou-isso/\B{}turmas/*}\desc{prof., gestor --- o pacote E o relógio da turma}};
-  \node[rt, minimum height=18.5mm] at (13.6,-16.925)
+  \node[exprot] at (0.1,-14.05) {\textbf{exp05ef1b}\\Quem mandou\\isso?};
+  \node[rt, minimum height=15mm] at (4.5,-14.05)
+    {\texttt{/quem-mandou-isso/*}\desc{estudante --- e as perguntas\\em \texttt{/evidencias}}};
+  \node[rt, minimum height=15mm] at (9.05,-14.05)
+    {\texttt{/quem-mandou-isso/\B{}turmas/*}\desc{prof., gestor --- o pacote\\E o relógio da turma}};
+  \node[rt, minimum height=15mm] at (13.6,-14.05)
     {\texttt{/quem-mandou-isso/\B{}professor/*}\desc{prof., gestor --- material do guia}};
 
-  % ---- exp06ef1b (O Júri Estadual de Projetos, ADR-137)
-  \node[exprot] at (0.1,-19.025) {\textbf{exp06ef1b}\\Júri Estadual};
-  \node[rt, minimum height=18.5mm] at (4.5,-19.025)
-    {\texttt{/juri-estadual/*}\desc{estudante --- e as enquetes em \texttt{/evidencias}}};
-  \node[rt, minimum height=18.5mm, fill=unooBlueWash, draw=unooBlue] at (9.05,-19.025)
-    {\texttt{/juri-estadual/\B{}turmas/*}\desc{prof., gestor --- a mostra, a Galeria Oculta e a lousa}};
-  \node[rt, minimum height=18.5mm] at (13.6,-19.025)
+  % ---- exp06ef1b
+  \node[exprot] at (0.1,-15.85) {\textbf{exp06ef1b}\\Júri Estadual};
+  \node[rt, minimum height=15mm] at (4.5,-15.85)
+    {\texttt{/juri-estadual/*}\desc{estudante --- e as enquetes\\em \texttt{/evidencias}}};
+  \node[rt, minimum height=15mm] at (9.05,-15.85)
+    {\texttt{/juri-estadual/\B{}turmas/*}\desc{prof., gestor --- a mostra,\\a Galeria Oculta e a lousa}};
+  \node[rt, minimum height=15mm] at (13.6,-15.85)
     {\texttt{/juri-estadual/\B{}professor/*}\desc{prof., gestor --- material do guia}};
 
+  % ---- exp06ef2b
+  \node[exprot] at (0.1,-17.65) {\textbf{exp06ef2b}\\O Rastro\\do Boato};
+  \node[rt, minimum height=15mm] at (4.5,-17.65)
+    {\texttt{/rastro-boato/*}\desc{estudante}};
+  \node[rt, minimum height=15mm] at (9.05,-17.65)
+    {\texttt{/rastro-boato/\B{}turmas/*}\desc{prof., gestor, admin ---\\o \emph{gate} da aula}};
+  \node[rt, minimum height=15mm] at (13.6,-17.65)
+    {\texttt{/rastro-boato/\B{}professor/*}\desc{prof., gestor --- material do guia}};
+
+  % ---- exp07ef1b
+  \node[exprot] at (0.1,-19.45) {\textbf{exp07ef1b}\\A Seleção};
+  \node[rt, minimum height=15mm] at (4.5,-19.45)
+    {\texttt{/a-selecao/*}\desc{estudante}};
+  \node[rt, minimum height=15mm] at (9.05,-19.45)
+    {\texttt{/a-selecao/\B{}turmas/*}\desc{prof., gestor --- as coberturas,\\as imagens e o portão}};
+  \node[rt, minimum height=15mm] at (13.6,-19.45)
+    {\texttt{/a-selecao/\B{}professor/*}\desc{prof., gestor --- material do guia}};
+
+  % ---- exp08ef4b
+  \node[exprot] at (0.1,-21.25) {\textbf{exp08ef4b}\\O Manifesto\\da IA};
+  \node[rt, minimum height=15mm] at (4.5,-21.25)
+    {\texttt{/manifesto-ia/*}\desc{estudante}};
+  \node[rt, minimum height=15mm] at (9.05,-21.25)
+    {\texttt{/manifesto-ia/\B{}turmas/*}\desc{prof., gestor --- o debate\\E o conteúdo da turma}};
+
 \end{tikzpicture}}
+\begin{legendadiag}
+\amostra{fill=unooRedWash, draw=unooRed} ausência deliberada: só o professor,
+sem rota de gestor nem de agregado que alcance o mesmo dado \quad
+célula vazia: a experiência não tem rota para aquele público
+\end{legendadiag}
 \caption[Mapa de rotas da API --- demais experiências]{Mapa das rotas das
   demais experiências: uma linha por experiência, uma coluna por quem chama.
   Duas áreas estão destacadas por \textbf{ausência deliberada}: bem-estar não
   tem nenhuma rota de gestor nem de agregado; e no unooGPT a transcrição do
   estudante só existe no controller do professor --- o do gestor \textbf{não tem
   uma rota que aceite \texttt{estudanteId}}, o que torna estrutural, e não
-  disciplinar, o limite do que ele alcança (\adrr{ADR-27}). Em
-  \texttt{/rastro-boato/turmas/*} mora o
-  \emph{gate} da aula: é a professora quem move a turma de etapa, e a rota é
-  \textbf{idempotente} de propósito --- é o clique que se dá duas vezes. As
-  \texttt{/<slug>/professor/*} servem o \textbf{material do guia da aula}:
-  catálogo com gabarito, sem \texttt{escolaId} e sem \emph{tenancy}, em que o que
-  a guarda protege é só o papel (\adrr{ADR-86}). A exp08ef4b \textbf{não} tem uma
-  dessas, e a ausência é o desenho: o material de mediação dela é o pacote
-  CURADO por turma, então ele mora em \texttt{/manifesto-ia/turmas/:id/conteudo}
-  --- com \emph{tenancy}, porque o conteúdo não é igual para todo contrato. A
-  exp05ef1b tem \textbf{as duas coisas}, e elas respondem perguntas diferentes:
-  \texttt{/quem-mandou-isso/professor/material} é o banco curado da Unooria,
-  igual em todo contrato, e \texttt{/quem-mandou-isso/turmas/:id/pacote} é o
-  pacote que AQUELA professora aprovou --- o único que a turma dela vai ler. O
-  Jornal da Escola repete o desenho (\adrr{ADR-117}), e o Júri Estadual de
-  Projetos também, com uma diferença: o material do guia é só o esqueleto da
-  missão, porque a mostra é sempre a da atividade (\adrr{ADR-137}).}
+  disciplinar, o limite do que ele alcança (\adrr{ADR-27}).}
 \label{fig:mapa-rotas-exps}
 \end{figure}
+
+Na Figura~\ref{fig:mapa-rotas-exps}, em \rota{/rastro-boato/turmas/*} mora o
+\emph{gate} da aula: é a professora quem move a turma de etapa, e a rota é
+\textbf{idempotente} de propósito --- é o clique que se dá duas vezes. As
+\rota{/<slug>/professor/*} servem o \textbf{material do guia da aula}:
+catálogo com gabarito, sem \cd{escolaId} e sem \emph{tenancy}, em que o que
+a guarda protege é só o papel (\adrr{ADR-86}). A exp08ef4b \textbf{não} tem uma
+dessas, e a ausência é o desenho: o material de mediação dela é o pacote
+CURADO por turma, então ele mora em \rota{/manifesto-ia/turmas/:id/conteudo}
+--- com \emph{tenancy}, porque o conteúdo não é igual para todo contrato. A
+exp05ef1b tem \textbf{as duas coisas}, e elas respondem perguntas diferentes:
+\rota{/quem-mandou-isso/professor/material} é o banco curado da Unooria,
+igual em todo contrato, e \rota{/quem-mandou-isso/turmas/:id/pacote} é o
+pacote que AQUELA professora aprovou --- o único que a turma dela vai ler. O
+Jornal da Escola repete o desenho (\adrr{ADR-117}), e o Júri Estadual de
+Projetos também, com uma diferença: o material do guia é só o esqueleto da
+missão, porque a mostra é sempre a da atividade (\adrr{ADR-137}).
+
 
 \section{Superfície que a SDK consome}
 

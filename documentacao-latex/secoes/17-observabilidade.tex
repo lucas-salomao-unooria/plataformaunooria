@@ -197,64 +197,72 @@ métricas da aplicação, e tudo do hub e da SDK.
 \end{nota}
 
 A Figura~\ref{fig:cadeia-visibilidade} percorre a cadeia de uma requisição e
-marca, elo por elo, o que se enxerga hoje e o que está cego.
+marca, elo por elo, o que se enxergava no levantamento e o que estava cego.
 
 \begin{figure}[H]
 \centering
 \fitwidth{%
-\begin{tikzpicture}[x=1cm, y=1cm]
+\begin{tikzpicture}[x=1cm, y=1cm,
+    ve/.style={camada, text width=24mm, align=flush left, fill=unooGreenWash,
+               draw=unooGreen, anchor=north, minimum height=18mm},
+    cego/.style={camada, text width=24mm, align=flush left, fill=unooOrangeWash,
+                 draw=unooOrange, anchor=north, minimum height=28.5mm}]
 
+  % Grade: elos em x = 0 / 3.1 / 6.2 / 9.3 / 12.6; quadros a partir de y=-2.2.
   \node[internet, minimum width=24mm] (nav) at (0,0) {Navegador\\\texttt{iframe} da exp};
   \node[servicoger, text width=22mm] (lb) at (3.1,0) {\textbf{LB + CDN}};
   \node[servico, text width=22mm] (hub) at (6.2,0) {\textbf{Cloud Run}\\\texttt{-frontend}};
   \node[servico, text width=22mm] (api) at (9.3,0) {\textbf{Cloud Run}\\\texttt{-api}};
-  \node[volume, text width=18mm, minimum height=12mm] (sql) at (12.6,0.9) {\textbf{Cloud SQL}};
-  \node[servicobroker, text width=18mm, minimum height=10mm] (ps) at (12.6,-0.5) {\textbf{Pub/Sub}};
-  \node[externo, text width=18mm, minimum height=10mm] (vx) at (12.6,-1.9) {\textbf{Vertex AI}};
+  \node[volume, text width=18mm, minimum height=10mm] (sql) at (12.6,1.3) {\textbf{Cloud SQL}};
+  \node[servicobroker, text width=18mm, minimum height=9mm] (ps) at (12.6,0) {\textbf{Pub/Sub}};
+  \node[externo, text width=18mm, minimum height=9mm] (vx) at (12.6,-1.25) {\textbf{Vertex AI}};
 
   \draw[netpub] (nav) -- (lb);
   \draw[netpub] (lb) -- (hub);
   \draw[netpub] (hub) -- (api) node[portlbl, midway, above]{BFF};
-  \draw[netpriv] (api.east) -- (11.3,0) -- (11.3,0.9) -- (sql.west);
-  \draw[netbi] (api.east) -- (11.3,0) -- (11.3,-0.5) -- (ps.west);
-  \draw[netpub] (api.east) -- (11.3,0) -- (11.3,-1.9) -- (vx.west);
+  \draw[netpriv] (api.north) |- (sql.west);
+  \draw[netbi] (api.east) -- (ps.west);
+  \draw[netpub] (api.south) |- (vx.west);
 
-  % --- o que se ve (verde)
-  \node[camada, text width=24mm, fill=unooGreenWash, draw=unooGreen, anchor=north] at (0,-1.6)
-    {\textbf{vê-se:} nada};
-  \node[camada, text width=24mm, fill=unooGreenWash, draw=unooGreen, anchor=north] at (3.1,-1.6)
-    {\textbf{vê-se:} contagem e latência por \emph{host}; log amostrável};
-  \node[camada, text width=24mm, fill=unooGreenWash, draw=unooGreen, anchor=north] at (6.2,-1.6)
-    {\textbf{vê-se:} log de requisição, instâncias, CPU/mem};
-  \node[camada, text width=24mm, fill=unooGreenWash, draw=unooGreen, anchor=north] at (9.3,-1.6)
-    {\textbf{vê-se:} idem + \texttt{/readyz} (se alguém abrir)};
-  \node[camada, text width=24mm, fill=unooGreenWash, draw=unooGreen, anchor=north] at (12.6,-3.0)
-    {\textbf{vê-se:} conexões, CPU, disco; \emph{backlog} da \emph{subscription}};
+  % --- o que se ve (verde) e o que esta cego (laranja), elo por elo
+  \node[ve] (v0) at (0,-2.2)   {\textbf{vê-se:} nada};
+  \node[ve] (v1) at (3.1,-2.2) {\textbf{vê-se:} contagem e latência por \emph{host}; log amostrável};
+  \node[ve] (v2) at (6.2,-2.2) {\textbf{vê-se:} log de requisição, instâncias, CPU/mem};
+  \node[ve] (v3) at (9.3,-2.2) {\textbf{vê-se:} idem + \texttt{/readyz} (se alguém abrir)};
+  \node[ve] (v4) at (12.6,-2.2) {\textbf{SQL e Pub/Sub ---} \textbf{vê-se:} conexões, CPU, disco; \emph{backlog}};
 
-  % --- o que esta cego (laranja)
-  \node[camada, text width=24mm, fill=unooOrangeWash, draw=unooOrange, anchor=north] at (0,-3.35)
+  \node[cego] at ($(v0.south)+(0,-0.15)$)
     {\textbf{cego:} \emph{crash} do \emph{bundle}, ponte sem \texttt{hub:init}, \emph{token} não renovado, lote de telemetria perdido};
-  \node[camada, text width=24mm, fill=unooOrangeWash, draw=unooOrange, anchor=north] at (3.1,-3.35)
+  \node[cego] at ($(v1.south)+(0,-0.15)$)
     {\textbf{cego:} quem foi afetado --- sem correlação com o resto};
-  \node[camada, text width=24mm, fill=unooOrangeWash, draw=unooOrange, anchor=north] at (6.2,-3.35)
+  \node[cego] at ($(v2.south)+(0,-0.15)$)
     {\textbf{cego:} \texttt{null} do \texttt{apiDoServidor}, \emph{redirect} em laço, erro de \emph{render}};
-  \node[camada, text width=24mm, fill=unooOrangeWash, draw=unooOrange, anchor=north] at (9.3,-3.35)
+  \node[cego] at ($(v3.south)+(0,-0.15)$)
     {\textbf{cego:} causa do 500, latência da IA, descarte de telemetria, fila em erro};
-  \node[camada, text width=24mm, fill=unooOrangeWash, draw=unooOrange, anchor=north] at (12.6,-4.75)
+  \node[cego] (c4) at ($(v4.south)+(0,-0.15)$)
     {\textbf{cego:} \emph{query} lenta por rota; \emph{dead letter} (não existe)};
 
-  \node[legenda, anchor=north west, text width=60mm] at (-1.2,-6.6)
+  \node[legenda, anchor=north west, text width=100mm, align=flush left] at (-1.3,-7.45)
     {Nenhum elo propaga identificador de correlação: o mesmo pedido do
      estudante aparece como quatro registros que não se reconhecem.};
 
 \end{tikzpicture}}
-\caption[Cadeia de uma requisição e o que cada elo revela hoje]{A cadeia de
-  uma requisição e o que cada elo revela hoje. O verde é o que a
-  infraestrutura entrega sem configuração; o laranja é onde a plataforma
-  está cega. O primeiro elo --- o navegador, onde a experiência roda --- é
-  o mais cego e o que mais importa: é lá que a criança está.}
+\caption[Cadeia de uma requisição e o que cada elo revelava em 1º de setembro
+  de 2026]{A cadeia de uma requisição e o que cada elo revelava no
+  levantamento de 1º de setembro de 2026 --- o ponto de partida, não o estado
+  corrente (Seção~\ref{sec:obs-implantado}); por isso o agente de IA do
+  professor, posterior, não aparece. O verde é o que a infraestrutura
+  entregava sem configuração; o laranja é onde a plataforma estava cega. O
+  primeiro elo --- o navegador, onde a experiência roda --- é o mais cego e o
+  que mais importa: é lá que a criança está.}
 \label{fig:cadeia-visibilidade}
 \end{figure}
+
+\begin{legendadiag}
+\tikz[baseline=-0.55ex]\draw[netpub] (0,0) -- (0.6,0); tráfego público \quad
+\tikz[baseline=-0.55ex]\draw[netpriv] (0,0) -- (0.6,0); rede privada (VPC) \quad
+\tikz[baseline=-0.55ex]\draw[netbi] (0,0) -- (0.6,0); ida e volta (publica e recebe o \emph{push})
+\end{legendadiag}
 
 \section{Princípios}
 
@@ -551,21 +559,43 @@ escola e a regra 6 (Figura~\ref{fig:seq-erro-cliente}).
 \centering
 \fitwidth{%
 \begin{tikzpicture}[x=1cm, y=1cm]
-  \raia{0}{-6.2}{Experiência}{\texttt{@edu/sdk}}
-  \raia{3.4}{-6.2}{Hub}{\texttt{ExpFrame}}
-  \raia{6.8}{-6.2}{API}{\texttt{/observabilidade}}
-  \raiaext{10.2}{-6.2}{Cloud Logging}{Error Reporting}
+  % Raias em x = 0 / 3.8 / 7.8 / 11.6; todo rótulo cabe entre duas raias.
+  \raia{0}{-10.65}{Experiência}{\texttt{@edu/sdk}}
+  \raia{3.8}{-10.65}{Hub}{\texttt{ExpFrame}}
+  \raia{7.8}{-10.65}{API}{\texttt{/observabilidade}}
+  \raiaext{11.6}{-10.65}{Cloud Logging}{Error Reporting}
 
-  \msgself{0}{-0.9}{\texttt{window.onerror} / \texttt{unhandledrejection}}
-  \node[seqcond] at (0.7,-1.75) {dedupe por \emph{hash}, máx. 5 por sessão, 8\,KB};
-  \msgs{0}{6.8}{-2.3}{\texttt{POST /observabilidade/erros-cliente} (Bearer)}
-  \node[seqcond] at (7.1,-2.75) {Zod: \texttt{expId}, \texttt{versao}, \texttt{mensagem}, \texttt{stack}, \texttt{url}};
-  \msgself{6.8}{-3.3}{\emph{redaction} + \texttt{escola\_id} do \emph{token}}
-  \msgs{6.8}{10.2}{-4.1}{\emph{stdout} JSON, \texttt{severity: ERROR}, \texttt{@type: ReportedErrorEvent}}
-  \msgself{10.2}{-4.6}{agrupa por assinatura; \enquote{novo na versão X}}
-  \msgr{6.8}{0}{-5.1}{\texttt{204} (ou \texttt{429}: cota da sessão)}
-  \draw[seqret] (0,-5.7) -- (3.4,-5.7) node[seqlbl, midway, above=0.4pt]{\texttt{exp:erro} (opcional, \texttt{targetOrigin} explícito)};
-  \node[seqcond] at (3.7,-6.05) {hub mostra \enquote{algo deu errado} e oferece recarregar};
+  \draw[seqself] (0,-1.0) -- ++(0.62,0) -- ++(0,-0.42) -- ++(-0.62,0);
+  \node[seqlbl, anchor=west, align=left] at (0.72,-1.21)
+    {\texttt{window.onerror} /\\\texttt{unhandledrejection}};
+  \node[seqcond, align=left] at (0.2,-2.05) {\emph{dedupe} por \emph{hash};\\máx. 5 por sessão, 8\,KB};
+
+  \draw[seqmsg] (0,-3.2) -- (7.8,-3.2)
+    node[seqlbl, pos=0.74, above=0.4pt, align=center]
+    {\texttt{POST /observabilidade/}\\\texttt{erros-cliente} (Bearer)};
+  \node[seqcond, align=left] at (8.1,-3.95)
+    {Zod: \texttt{expId}, \texttt{versao},\\\texttt{mensagem}, \texttt{stack},\\\texttt{url}};
+
+  \draw[seqself] (7.8,-4.9) -- ++(0.62,0) -- ++(0,-0.42) -- ++(-0.62,0);
+  \node[seqlbl, anchor=west, align=left] at (8.52,-5.11)
+    {\emph{redaction} +\\\texttt{escola\_id} do \emph{token}};
+
+  \draw[seqmsg] (7.8,-6.95) -- (11.6,-6.95)
+    node[seqlbl, midway, above=0.4pt, align=center]
+    {\emph{stdout} JSON,\\\texttt{severity: ERROR},\\\texttt{ReportedErrorEvent}};
+
+  \draw[seqself] (11.6,-7.3) -- ++(0.62,0) -- ++(0,-0.42) -- ++(-0.62,0);
+  \node[seqlbl, anchor=west, align=left] at (12.32,-7.51)
+    {agrupa por\\assinatura;\\\enquote{novo na versão X}};
+
+  \draw[seqret] (7.8,-8.4) -- (0,-8.4)
+    node[seqlbl, pos=0.26, above=0.4pt]{\texttt{204} (ou \texttt{429}: cota da sessão)};
+
+  \draw[seqmsg] (0,-9.4) -- (3.8,-9.4)
+    node[seqlbl, midway, above=0.4pt, align=center]
+    {\texttt{exp:erro} (opcional,\\\texttt{targetOrigin} explícito)};
+  \node[seqcond, align=left] at (4.0,-10.0)
+    {hub mostra\\\enquote{algo deu errado} e\\oferece recarregar};
 \end{tikzpicture}}
 \caption[Erro de cliente entra pela API]{Um erro não capturado dentro do
   \cd{iframe} chega ao Error Reporting pela API, nunca por um serviço de

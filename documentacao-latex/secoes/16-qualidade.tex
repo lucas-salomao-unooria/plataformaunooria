@@ -33,44 +33,53 @@ revisão em par que uma pessoa não tem.
 \begin{figure}[H]
 \centering
 \fitwidth{%
-\begin{tikzpicture}[x=1cm, y=1cm]
+\begin{tikzpicture}[x=1cm, y=1cm,
+    nivel/.style={camada, align=flush center, minimum height=15mm}]
 
-  \node[camada, text width=140mm, fill=unooGreenWash, draw=unooGreen] (u) at (7.5,0)
-    {\textbf{Regra pura} --- Vitest / Jest, milissegundos, sem banco\\
-     \arq{vila-regras}, \arq{unootube-regras}, \arq{bemestar-regras},
-     \arq{motor-pesos}, \arq{motor-bolha}, \arq{motor-sugestoes},
-     \arq{motor-reversibilidade}, \arq{dossie-relatorio}, \arq{bridge.test},
-     e os testes de \arq{lib/} do hub};
+  % Pirâmide de verdade: a base (regra pura) embaixo e mais larga; cada
+  % camada acima é 14 mm mais estreita de cada lado e apoia na de baixo.
+  \node[nivel, anchor=south, text width=148mm, fill=unooGreenWash, draw=unooGreen] (u) at (7.8,0)
+    {\textbf{Regra pura} --- Vitest / Jest / \texttt{pytest}, milissegundos, sem banco\\
+     o \texttt{*-regras.spec.ts} de cada módulo (\texttt{motor-}, \texttt{equipes-},
+     \texttt{evidencias-}, \texttt{agente-professor-}\ldots),\\\texttt{motor-pesos},
+     \texttt{dossie-relatorio}, \texttt{bridge.test} do SDK, os testes de
+     \texttt{lib/} do hub\\e o \texttt{pytest} do agente de IA do professor};
 
-  \node[camada, text width=140mm, fill=unooBlueWash, draw=unooBlue] (i) at (7.5,-2.0)
+  \node[nivel, anchor=south, text width=120mm, fill=unooBlueWash, draw=unooBlue] (i)
+    at (u.north)
     {\textbf{Integração com PostgreSQL} --- o que não dá para afirmar sem banco\\
-     \arq{tenancy}, \arq{planos-tenancy}, \arq{motor-concorrencia},
-     \arq{motor-postgres}, \arq{unootube-postgres}, \arq{vila-postgres},
-     \arq{vila-ato1}, \arq{usuarios}, \arq{planos}, \arq{bemestar},
-     \arq{geracao-paginacao}};
+     o \texttt{*-postgres.spec.ts} de cada módulo, \texttt{tenancy},
+     \texttt{matriculas-tenancy},\\\texttt{planos-tenancy},
+     \texttt{motor-concorrencia}, \texttt{geracao-paginacao}};
 
-  \node[camada, text width=140mm, fill=unooYellowWash, draw=unooYellow] (c) at (7.5,-4.0)
+  \node[nivel, anchor=south, text width=92mm, fill=unooLavenderWash, draw=unooLavender] (c)
+    at (i.north)
     {\textbf{Contrato externo} --- o que quebra em produção sem aviso\\
-     \arq{telemetria-push} (o \emph{guard} do Pub/Sub),
-     \arq{vertex-provider} (a cadeia ADC e o formato da requisição)};
+     \texttt{telemetria-push} (o \emph{guard} do Pub/Sub),\\
+     \texttt{vertex-provider} (a cadeia ADC e o formato da requisição),\\
+     \texttt{agente-professor-cliente} (o \emph{stream} do Agent Engine)};
 
-  \node[camada, text width=140mm, fill=unooOrangeWash, draw=unooOrange] (v) at (7.5,-6.0)
-    {\textbf{Ponta a ponta} --- Playwright com navegador real, por PAPEL\\
-     \arq{scripts/e2e/publico} (2), \arq{estudante} (5), \arq{professor} (7),
-     \arq{gestor} (2), \arq{admin-contrato} (5), \arq{probe-pointerlock}};
+  \node[nivel, anchor=south, text width=64mm, fill=unooOrangeWash, draw=unooOrange] (v)
+    at (c.north)
+    {\textbf{Ponta a ponta} --- Playwright, navegador real\\
+     \texttt{scripts/e2e/}, uma pasta por PAPEL:\\\texttt{publico},
+     \texttt{estudante}, \texttt{professor}, \texttt{gestor\_escola},\\
+     \texttt{gestor\_contrato}, \texttt{admin}; e o \texttt{probe-pointerlock}};
 
-  \node[actnote, text width=64mm, anchor=north west] at (0.4,-7.4)
+  \node[actnote, text width=70mm, align=flush left, anchor=north west]
+    at ($(u.south west)+(0,-0.4)$)
     {\textbf{A pirâmide é larga na base de propósito.} Cada módulo de domínio
-     separa \arq{regras.ts} puro do \emph{service} que persiste, e é isso que
+     separa \texttt{regras.ts} puro do \emph{service} que persiste, e é isso que
      permite a maior parte da regra de negócio ser testada sem banco --- em
      milissegundos, no \emph{watch} do editor.};
 
-  \node[actnote, text width=64mm, anchor=north west] at (8.2,-7.4)
+  \node[actnote, text width=70mm, align=flush left, anchor=north east]
+    at ($(u.south east)+(0,-0.4)$)
     {\textbf{E tem um topo que a pirâmide clássica não prevê.} O \emph{smoke}
      visual não é \enquote{E2E de fluxo}: é verificação de que a INTERFACE
      apareceu. Ele existe porque as falhas mais frequentes deste projeto ---
-     ícone virando texto, \cd{iframe} vazio, cor inexistente, fonte removida pelo
-     Next --- são \emph{invisíveis} para o compilador.};
+     ícone virando texto, \texttt{iframe} vazio, cor inexistente, fonte removida
+     pelo Next --- são \emph{invisíveis} para o compilador.};
 
 \end{tikzpicture}}
 \caption[Estratégia de testes]{As quatro camadas de verificação. A quarta é
@@ -93,13 +102,14 @@ política de mídia do navegador.
 \toprule
 \headrow \thd{Camada} & \thd{Ferramenta} & \thd{Mínimo obrigatório}\\
 \midrule
-Regra pura & Vitest (SDK, experiências) / Jest (NestJS) &
+Regra pura & Vitest (SDK, experiências) / Jest (NestJS) / \cd{pytest} (agente) &
   Contratos: ponte, telemetria, \emph{guards} de \emph{tenancy}. Toda função de
   \arq{regras.ts}.\\
 \zebra Integração & Jest + PostgreSQL de teste &
   \emph{Tenancy}, \emph{lock}, concorrência, idempotência.\\
 Contrato externo & Jest com \emph{fake} de rede &
-  \emph{Guard} do Pub/Sub e formato da requisição ao Vertex.\\
+  \emph{Guard} do Pub/Sub, formato da requisição ao Vertex e o \emph{stream}
+  do Agent Engine.\\
 \zebra \emph{Smoke} visual & Playwright, navegador real &
   Toda mudança de tela.\\
 \bottomrule
@@ -108,8 +118,8 @@ Contrato externo & Jest com \emph{fake} de rede &
 \section{A suíte de ponta a ponta, em detalhe}
 
 Ela vive em \arq{scripts/e2e/}, organizada por PAPEL --- \cd{publico} (3
-suítes), \cd{estudante} (10), \cd{professor} (11), \cd{gestor\_escola} (4),
-\cd{gestor\_contrato} (6) e \cd{admin} (3), contadas em 2026-09-25. Por papel, e não pelo nome da experiência, porque é o
+suítes), \cd{estudante} (11), \cd{professor} (13), \cd{gestor\_escola} (5),
+\cd{gestor\_contrato} (7) e \cd{admin} (5), contadas em 2026-10-13. Por papel, e não pelo nome da experiência, porque é o
 crachá que decide o que a pessoa alcança, e porque a organização antiga escondia
 as telas da PLATAFORMA, que são a maioria (ADR-51,
 \autoref{adr:e2e-por-papel}).
