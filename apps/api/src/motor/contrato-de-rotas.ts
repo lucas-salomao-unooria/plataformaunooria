@@ -61,6 +61,8 @@ export const FeedPostSchema = z.object({
     avatarSeed: z.string(),
   }),
   imageUrl: z.string().nullable(),
+  /** O texto alternativo da imagem gerada, ou `null` (ADR-163). */
+  imageAlt: z.string().nullable(),
   /** Arte procedural quando a imagem não ficou pronta: o feed nunca fica com
    *  buraco, e `fallback` não é erro. */
   fallbackArt: z.object({ corFundo: z.string(), emojis: z.string() }).optional(),
@@ -153,6 +155,7 @@ const PostPerdidoSchema = z.object({
   id: Uuid,
   author: z.object({ handle: z.string(), displayName: z.string(), verificado: z.boolean() }),
   imageUrl: z.string().nullable(),
+  imageAlt: z.string().nullable(),
   caption: z.string(),
   hashtags: z.array(z.string()),
   likesCount: z.number().int(),
@@ -233,6 +236,7 @@ const PostDoDossieSchema = z.object({
   intensidade: z.number(),
   caption: z.string(),
   imageUrl: z.string().nullable(),
+  imageAlt: z.string().nullable(),
   imageStatus: z.string(),
   categoria: z.string(),
   handle: z.string(),

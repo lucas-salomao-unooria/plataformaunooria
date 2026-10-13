@@ -1,3 +1,4 @@
+import { textoAlternativoDaImagem } from '../comum/insta/texto-alternativo';
 import { arteFallback } from '../geracao/arte-fallback';
 
 import type { FeedPost } from './tipos';
@@ -15,6 +16,8 @@ export interface PostCompleto {
   timestampLabel: string;
   imageUrl: string | null;
   imageStatus: string;
+  /** Só para o texto alternativo: a descrição visual da imagem gerada. */
+  imageBrief?: string | null;
   categoria: string;
   author: { handle: string; displayName: string; verificado: boolean };
   comments: { handle: string; texto: string }[];
@@ -33,6 +36,7 @@ export function paraFeedPost(post: PostCompleto, sugerido: boolean): FeedPost {
       avatarSeed: post.author.handle,
     },
     imageUrl: temImagem ? post.imageUrl : null,
+    imageAlt: textoAlternativoDaImagem(post),
     ...(temImagem ? {} : { fallbackArt: arteFallback(post.id, post.categoria) }),
     caption: post.caption,
     hashtags: post.hashtags,

@@ -9,7 +9,7 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{162 decisões}, numeradas até ADR-162. A 160 (o painel de habilidades pelo total) e a 161 (os custos de IA) nasceram no mesmo dia, em frentes paralelas, e a 161 foi escrita depois de conferir que a 160 já estava tomada em \cd{dev-local}. A 153 (a evidência do Unoovista) e a 154 (a da Missão Tempestade) nasceram no mesmo dia, em frentes paralelas. A 132 (a Ajuda com
+São \textbf{163 decisões}, numeradas até ADR-163. A 160 (o painel de habilidades pelo total) e a 161 (os custos de IA) nasceram no mesmo dia, em frentes paralelas, e a 161 foi escrita depois de conferir que a 160 já estava tomada em \cd{dev-local}. A 153 (a evidência do Unoovista) e a 154 (a da Missão Tempestade) nasceram no mesmo dia, em frentes paralelas. A 132 (a Ajuda com
 avatar) entrou no código antes de ter seção aqui, e por um dia o número foi
 citado sem existir; a 133 pulou para não colidir com ela. A 133 e a 134 nasceram no mesmo dia, em frentes paralelas
 (Unoovista e Unoochat), e entraram juntas no merge; a 135 e a 136 levaram as
@@ -213,6 +213,7 @@ que a cercam.
 \adrr{ADR-160} & O painel de habilidades abre pelo total, e o contrato desce pela regional & 2026-10-13 & Aceita; complementa a \adrr{ADR-144}\\
 \adrr{ADR-161} & Custos de IA: o consumo medido por dia, produto, escola e modelo, e o custo derivado na leitura, com preço datado e a PTAX do dia & 2026-10-13 & Aceita; complementa a \adrr{ADR-105} e a \adrr{ADR-158}\\
 \zebra \adrr{ADR-162} & Acessibilidade WCAG 2.2 AA: o axe como portão, e a correção no \emph{design system}, não na tela & 2026-10-13 & Aceita; reclassifica o risco R-07\\
+\adrr{ADR-163} & O texto alternativo da imagem do post é o \emph{brief} que a gerou; as fotos fixas são descritas no \emph{bundle} & 2026-10-13 & Aceita; corrige uma consequência da \adrr{ADR-162}\\
 \bottomrule
 \end{tabularx}
 
@@ -14627,11 +14628,11 @@ Capítulo~\ref{cap:qualidade}.
   \item \textbf{O azul da marca escurece} no texto, nos botões cheios e nos
     selos do DS. É visível, e é a troca que o AA cobra.
   \item \textbf{Os clones que imitam um aplicativo real} (Instanooria, ChatGPT,
-    WhatsApp) reprovam porque copiam as cores dele; escurecê-los aproxima do AA
-    e afasta da fidelidade que a missão mede. Fica para o dono do produto.
-  \item \textbf{A imagem do post do Instanooria não tem texto alternativo}: o
-    banco tem só o \cd{image\_brief} de geração, que pode entregar o gabarito e
-    por isso NÃO vai ao cliente. Falta um campo revisado pelo PO.
+    WhatsApp) reprovavam porque copiam as cores dele. O dono do produto decidiu
+    pelo AA: cinzas e azuis um pouco mais escuros que o original, na 0.2.20.
+  \item \textbf{A imagem do post do Instanooria não tinha texto alternativo}, e
+    a primeira leitura foi que o \cd{image\_brief} poderia entregar o gabarito.
+    Não entrega: ver \adrr{ADR-163}, que fechou o ponto.
   \item \textbf{Ficam lacunas nomeadas no DS} em componentes sem consumidor na
     plataforma: o botão de remover do \cd{Avatar} (22\,px e aninhado no avatar
     clicável) e o \cd{TimePicker} (botão de limpar dentro do gatilho).
@@ -14641,4 +14642,75 @@ Capítulo~\ref{cap:qualidade}.
 
 \textbf{Gatilho.} Violação nova na medição de LARGURA; a passada manual achar
 o que o axe não acha; ou o PO decidir as cores dos clones.
+% ---------------------------------------------------------------------------
+\section{ADR-163 --- O texto alternativo da imagem do post é o \emph{brief} que a gerou; as fotos fixas são descritas no \emph{bundle}}
+\label{adr:texto-alternativo}
+
+\textbf{Data.} 2026-10-13. \textbf{Status.} Aceita. \textbf{Corrige} uma
+consequência da \adrr{ADR-162}, que deixava a imagem do post sem texto
+alternativo à espera de um campo revisado pelo PO.
+
+\begin{especificacao}{Contexto}
+\begin{itemize}
+  \item \textbf{Imagem de conteúdo sem descrição reprova a WCAG 1.1.1, de nível
+    A.} No Instanooria (exp08ef1b) toda imagem de post ia com \cd{alt=""}, e no
+    \enquote{O Que a Foto Conta} (exp01ef1b) as duas fotos do par decisório
+    tinham só \enquote{Foto 1} e \enquote{Foto 2}: o botão tinha nome, a imagem
+    não tinha descrição.
+  \item \textbf{A imagem do post é GERADA a partir de um \emph{brief}.} A
+    geração pede à IA, para cada post, um \cd{image\_brief}: \enquote{descrição
+    visual objetiva da foto, em uma frase, sem texto}, em português, que passa
+    pelos mesmos filtros de palavra bloqueada da legenda e que o professor já
+    lê na curadoria.
+  \item \textbf{O receio era o gabarito.} Mas o \emph{brief} descreve só o que a
+    imagem mostra; o lado, o perfil e a intensidade do post são outros campos e
+    continuam no servidor. Descrever a imagem dá ao estudante cego o que o
+    colega que enxerga já vê --- nada além.
+\end{itemize}
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{enumerate}
+  \item \textbf{Na exp08ef1b o texto alternativo é o \cd{imageBrief}}, servido
+    como \cd{imageAlt} pelo feed, pelos perdidos, pelo dossiê e pela visão do
+    professor, todos pela mesma função
+    (\arq{apps/api/src/comum/insta/texto-alternativo.ts}). Só vale para a
+    imagem GERADA (\cd{imageStatus} \cd{ok}): na arte procedural o \emph{brief}
+    não descreve o que aparece, e ali os emojis já são texto na tela. Sem
+    \emph{brief}, o cliente diz ao menos de quem é a foto, nunca \cd{alt=""}.
+  \item \textbf{Na exp01ef1b as cinco fotos são fixas e do \emph{bundle}}, então
+    a descrição mora ao lado do arquivo (\cd{altDaFoto} em
+    \arq{componentes/clone.tsx}): o enquadramento e o que aparece, sem dizer
+    qual escolha é a certa --- a missão não tem foto certa, e o que muda é o que
+    cada uma deixa de fora. No seletor do par, o botão leva \enquote{Foto 1:} e
+    a descrição.
+\end{enumerate}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Um campo de texto alternativo novo, revisado pelo PO.} Seria uma
+    segunda descrição da mesma imagem, escrita depois dela e sem a garantia de
+    concordar com o que a IA desenhou; o \emph{brief} é a descrição de que a
+    imagem NASCEU.
+  \item \textbf{Pedir à IA uma segunda descrição olhando a imagem pronta.} Mais
+    uma chamada paga por post, e mais um texto a filtrar, para dizer o que o
+    \emph{brief} já diz.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{A IA de imagem pode desenhar diferente do \emph{brief}}: a
+    descrição é a INTENÇÃO da imagem, não um laudo dela. O professor vê as duas
+    lado a lado na curadoria e pode regerar a imagem.
+  \item \textbf{Foto nova da exp01ef1b sem linha em \cd{DESCRICAO\_DAS\_FOTOS}}
+    cai na descrição genérica (\enquote{Foto do mural da turma}), que dá nome
+    mas não descreve. Foto nova entra com a descrição no mesmo commit.
+\end{itemize}
+
+\textbf{Gatilho.} Reclamação de que a descrição não bate com a imagem; ou a
+exp01ef1b ganhar fotos por tema geradas por IA (aí o \emph{brief} delas passa
+a ser a descrição, como na exp08ef1b).
 

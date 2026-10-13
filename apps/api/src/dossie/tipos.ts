@@ -168,6 +168,8 @@ export interface PostDoDossie {
   intensidade: number;
   caption: string;
   imageUrl: string | null;
+  /** O texto alternativo da imagem gerada, ou `null` (ADR-163). */
+  imageAlt: string | null;
   imageStatus: string;
   categoria: string;
   handle: string;

@@ -6,6 +6,7 @@ import { formatarContagem } from '../../lib/avatar';
 import type { FeedPostCliente } from '../../lib/tipos';
 
 import { retratoDe } from './avatar-perfil';
+import { altDaImagem } from '../../lib/alt-da-imagem';
 
 const LIMITE_CAPTION = 125;
 
@@ -138,7 +139,7 @@ export function PostCard({
 
       <PostCardUnv.Media
         src={post.imageUrl ?? undefined}
-        alt=""
+        alt={altDaImagem(post.imageAlt, post.author.handle)}
         aspectRatio={4 / 5}
         className="select-none"
         onPointerUp={aoTocarMidia}
