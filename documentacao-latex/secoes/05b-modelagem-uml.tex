@@ -363,11 +363,11 @@ importador (\adrr{ADR-54}, \adrr{ADR-59}).
   % ---- atores da cadeia (esquerda): o filho faz tudo o que o pai faz
   \ator{gesc}{(1.5,-2.35)}{Gestor de escola}
   \ator{greg}{(1.5,-6.7)}{Gestor regional}
-  \ator{gctr}{(1.5,-11.55)}{Gestor do contrato}
+  \ator{gctr}{(1.5,-11.75)}{Gestor do contrato}
   \ator{gadm}{(1.5,-16.4)}{Admin (Unooria)}
-  \draw[ucgen] (greg.west) -- ++(-0.95,0) |- (gesc.west);
-  \draw[ucgen] (gctr.west) -- ++(-0.95,0) |- ([yshift=-2mm]greg.west);
-  \draw[ucgen] (gadm.west) -- ++(-0.95,0) |- ([yshift=-2mm]gctr.west);
+  \draw[ucgen] ([yshift=1.5mm]greg.north) -- ([yshift=-5.5mm]gesc.south);
+  \draw[ucgen] ([yshift=1.5mm]gctr.north) -- ([yshift=-5.5mm]greg.south);
+  \draw[ucgen] ([yshift=1.5mm]gadm.north) -- ([yshift=-5.5mm]gctr.south);
 
   % ---- atores da direita
   \ator{prof}{(15.3,-1.55)}{Professor}
@@ -400,14 +400,14 @@ importador (\adrr{ADR-54}, \adrr{ADR-59}).
   \node[uc]  (uc41) at (11.2,-17.4) {\ucr{UC-41} Cadastrar\\interesse};
 
   % ---- associacoes
-  \foreach \u in {uc29, uc20, uc21} \draw[ucrel] (gesc) -- (\u.west);
-  \foreach \u in {uc32, uc33, uc34} \draw[ucrel] (greg) -- (\u.west);
-  \foreach \u in {uc31, uc35, uc22, uc36} \draw[ucrel] (gctr) -- (\u.west);
-  \foreach \u in {uc37, uc39, uc40} \draw[ucrel] (gadm) -- (\u.west);
-  \draw[ucrel] (prof) -- (uc44.east);
-  \draw[ucrel] (prof) -- (uc42.east);
-  \draw[ucrel] (ci) -- (uc23.east);
-  \draw[ucrel] (visit) -- (uc41.east);
+  \foreach \u in {uc29, uc20, uc21} \draw[ucrel] (gesc.east) -- (\u.west);
+  \foreach \u in {uc32, uc33, uc34} \draw[ucrel] (greg.east) -- (\u.west);
+  \foreach \u in {uc31, uc35, uc22, uc36} \draw[ucrel] (gctr.east) -- (\u.west);
+  \foreach \u in {uc37, uc39, uc40} \draw[ucrel] (gadm.east) -- (\u.west);
+  \draw[ucrel] (prof.west) -- (uc44.east);
+  \draw[ucrel] (prof.west) -- (uc42.east);
+  \draw[ucrel] (ci.west) -- (uc23.east);
+  \draw[ucrel] (visit.west) -- (uc41.east);
 
   % ---- include / extend
   \draw[ucinclude] (uc29.south) -- (uc20.north)
@@ -426,6 +426,11 @@ importador (\adrr{ADR-54}, \adrr{ADR-59}).
     node[ucl, pos=0.45, below=2pt]{\estereo{extend}};
 
 \end{tikzpicture}}
+\begin{legendadiag}
+\amostra{ucase} caso de uso primário \quad
+\amostra{ucasesec} caso de uso de suporte (incluído ou extensão) \quad
+seta de triângulo aberto entre atores: generalização
+\end{legendadiag}
 \caption[Casos de uso da administração da rede]{Casos de uso da administração da
   rede, com os seis papéis da \adrr{ADR-80}. A seta de generalização entre atores é
   a regra: o \emph{admin} faz tudo o que o gestor do contrato faz, e mais o painel
@@ -436,12 +441,6 @@ importador (\adrr{ADR-54}, \adrr{ADR-59}).
   \emph{controller}.}
 \label{fig:uml-casos-gestao}
 \end{figure}
-
-\begin{legendadiag}
-\amostra{ucase} caso de uso primário \quad
-\amostra{ucasesec} caso de uso de suporte (incluído ou extensão) \quad
-seta de triângulo aberto entre atores: generalização
-\end{legendadiag}
 
 \begin{nota}
 \textbf{Três ausências deliberadas.} O professor não herda de gestor nenhum: a
@@ -485,7 +484,7 @@ salvo o produto em teste interno, que nasce desligado
   % sem hifenizacao: a quebra das restricoes vai a mao
   \hyphenpenalty=10000 \exhyphenpenalty=10000
   % ---- linha 1: escola, turma, periodo
-  \node[classe, text width=42mm, anchor=north] (esc) at (2.6,0)
+  \node[classe, text width=42mm, anchor=north] (esc) at (2.3,0)
     {\etitulo{Escola}
      \nodepart{two}
      \texttt{nome: String}\\
@@ -498,7 +497,7 @@ salvo o produto em teste interno, que nasce desligado
      \{o contrato não é linha:\\
      \ \ é a \emph{stack}\}};
 
-  \node[classe, text width=40mm, anchor=north] (tur) at (8.6,0)
+  \node[classe, text width=40mm, anchor=north] (tur) at (8.9,0)
     {\etitulo{Turma}
      \nodepart{two}
      \texttt{nome: String}\\
@@ -510,7 +509,7 @@ salvo o produto em teste interno, que nasce desligado
      \ \ e nome\}\\
      \{fora da RLS: o filtro é a tranca\}};
 
-  \node[classe, text width=34mm, anchor=north] (per) at (14.4,0)
+  \node[classe, text width=34mm, anchor=north] (per) at (14.8,0)
     {\etitulo{PeriodoLetivo}
      \nodepart{two}
      \texttt{tipo, titulo: String}\\
@@ -520,7 +519,7 @@ salvo o produto em teste interno, que nasce desligado
      \{do contrato, sem escola\}};
 
   % ---- linha 2: lotacao, matricula, liberacao
-  \node[classe, text width=42mm, anchor=north] (lot) at (2.6,-5.0)
+  \node[classe, text width=42mm, anchor=north] (lot) at (2.3,-5.0)
     {\etitulo{Lotacao}
      \nodepart{two}
      \texttt{papel: estudante | professor}\\
@@ -532,7 +531,7 @@ salvo o produto em teste interno, que nasce desligado
      \{única por escola, usuário\\
      \ \ e papel\}};
 
-  \node[classe, text width=40mm, anchor=north] (mat) at (8.6,-5.0)
+  \node[classe, text width=40mm, anchor=north] (mat) at (8.9,-5.0)
     {\ctitulo{TabelaDeTenant}{Matricula}
      \nodepart{two}
      \texttt{papel: estudante}\\
@@ -544,7 +543,7 @@ salvo o produto em teste interno, que nasce desligado
      \{no máximo uma principal ativa\\
      \ \ por estudante\}};
 
-  \node[classe, text width=34mm, anchor=north] (lib) at (14.4,-5.0)
+  \node[classe, text width=34mm, anchor=north] (lib) at (14.8,-5.0)
     {\ctitulo{TabelaDeTenant}{Liberacao}
      \nodepart{two}
      \texttt{estado: liberada}\\
@@ -556,7 +555,7 @@ salvo o produto em teste interno, que nasce desligado
      \{única por turma e \texttt{expId}\}};
 
   % ---- linha 3: usuario, disponibilidade, experiencia
-  \node[classe, text width=42mm, anchor=north] (usu) at (2.6,-10.1)
+  \node[classe, text width=42mm, anchor=north] (usu) at (2.3,-10.1)
     {\etitulo{Usuario}
      \nodepart{two}
      \texttt{username: String}\\
@@ -572,7 +571,7 @@ salvo o produto em teste interno, que nasce desligado
      \{\texttt{role = gestor\_regional} \texttt{<=>}\\
      \ \ \texttt{regional} não nula\}};
 
-  \node[classe, text width=40mm, anchor=north] (dis) at (8.6,-10.1)
+  \node[classe, text width=40mm, anchor=north] (dis) at (8.9,-10.1)
     {\etitulo{Disponibilidade}
      \nodepart{two}
      \texttt{ligado: Boolean}\\
@@ -585,7 +584,7 @@ salvo o produto em teste interno, que nasce desligado
      \{única por recurso e escopo\}\\
      \{escopo nulo = o contrato\}};
 
-  \node[entidade, text width=34mm, anchor=north] (exp) at (14.4,-10.1)
+  \node[entidade, text width=34mm, anchor=north] (exp) at (14.8,-10.1)
     {\etitulo{Experiencia}
      \nodepart{two}
      \texttt{expId: String}\\
@@ -595,7 +594,7 @@ salvo o produto em teste interno, que nasce desligado
      \texttt{permissoes: String [*]}};
 
   % ---- linha 4: papel, recurso, produto
-  \node[enumeracao, text width=30mm, anchor=north] (pap) at (2.6,-16.3)
+  \node[enumeracao, text width=30mm, anchor=north] (pap) at (2.3,-16.3)
     {\ctitulo{enumeração}{Papel}
      \nodepart{two}
      \texttt{estudante}\\
@@ -606,13 +605,13 @@ salvo o produto em teste interno, que nasce desligado
      \texttt{admin}};
 
   \node[entidade, text width=40mm, anchor=north,
-        rectangle split part fill={unooInkSoft, unooSurface}] (rec) at (8.6,-15.4)
+        rectangle split part fill={unooInkSoft, unooSurface}] (rec) at (8.9,-15.4)
     {\textcolor{white}{\textbf{\textit{Recurso}}}
      \nodepart{two}
      \texttt{/recursoId: String}\\
      {\color{unooMuted}\texttt{produto:<slug>} ou \texttt{experiencia:<expId>}}};
 
-  \node[entidade, text width=34mm, anchor=north] (pro) at (14.4,-15.4)
+  \node[entidade, text width=34mm, anchor=north] (pro) at (14.8,-15.4)
     {\etitulo{Produto}
      \nodepart{two}
      \texttt{slug: Produto}\\
@@ -638,7 +637,7 @@ salvo o produto em teste interno, que nasce desligado
   % turma -- matricula -- usuario
   \draw[associa] (tur.south) -- (mat.north)
     node[multip, pos=0.15, right]{1} node[multip, pos=0.85, right]{*};
-  \draw[associa] (usu.east |- 0,-11.0) -- (5.95,-11.0) |- (mat.west |- 0,-7.0)
+  \draw[associa] (usu.east |- 0,-11.0) -- (5.35,-11.0) |- (mat.west |- 0,-7.0)
     node[multip, pos=0.92, above]{*};
   \node[multip, anchor=south west] at (usu.east |- 0,-11.0) {1};
   % turma -- liberacao -- experiencia
@@ -648,18 +647,18 @@ salvo o produto em teste interno, que nasce desligado
     node[multip, pos=0.15, right]{*} node[multip, pos=0.85, right]{1}
     node[papelassoc, midway, left=2pt, align=right]{por \texttt{expId},\\sem FK};
   % usuario -- escola (regional do gestor)
-  \draw[associa] (usu.west) -- ++(-0.55,0) |- (esc.west);
-  \node[papelassoc, anchor=south east] at (esc.west) {regional 0..1};
+  \draw[associa] (usu.west) -- (-0.45,-11.0) |- (esc.west);
+  \node[papelassoc, rotate=90, above=1.5pt] at (-0.45,-6.5) {regional 0..1};
   % disponibilidade -- escola (escopo), pelo corredor entre as colunas
-  \draw[associa] (dis.west |- 0,-12.0) -- (5.45,-12.0) |- (esc.east |- 0,-3.3);
-  \node[papelassoc, anchor=south west] at (esc.east |- 0,-3.3) {escopo 0..1};
+  \draw[associa] (dis.west |- 0,-12.0) -- (6.15,-12.0) |- (esc.east |- 0,-3.3);
+  \node[papelassoc, anchor=south west] at (esc.east |- 0,-3.28) {escopo 0..1};
   \node[multip, anchor=south east] at (dis.west |- 0,-12.0) {*};
   % disponibilidade -- recurso
   \draw[associa] (dis.south) -- (rec.north)
     node[multip, pos=0.2, right]{*} node[multip, pos=0.8, right]{1};
   % recurso <|-- produto, experiencia (alvo compartilhado)
   \draw[hered] (pro.west |- rec.east) -- (rec.east);
-  \draw[associa] (exp.west |- 0,-13.0) -| (11.55,0 |- rec.east);
+  \draw[associa] (exp.west |- 0,-13.0) -| (11.9,0 |- rec.east);
   % produto -- experiencia (o teto)
   \draw[associa] (pro.north) -- (exp.south)
     node[multip, pos=0.15, right]{0..1} node[multip, pos=0.85, right]{*}
@@ -767,7 +766,7 @@ chamada (Seção~\ref{sec:ia-custos}).
      \texttt{tokens\_usados}};
 
   % ---- linha 2: os consumidores
-  \node[classe, text width=34mm, anchor=north] (ctrl) at (\xA,-4.5)
+  \node[classe, text width=34mm, anchor=north] (ctrl) at (\xA,-4.9)
     {\ctitulo{controller}{AiController}
      \nodepart{two}
      \texttt{- provider: AiProvider}\\
@@ -776,7 +775,7 @@ chamada (Seção~\ref{sec:ia-custos}).
      \texttt{+ gerar(corpo): \{texto\}}\\
      \cm{\texttt{POST /ai/gerar},}\\
      \cm{só \texttt{OidcGuard}}};
-  \node[classe, text width=34mm, anchor=north] (dom) at (\xB,-4.5)
+  \node[classe, text width=34mm, anchor=north] (dom) at (\xB,-4.9)
     {\ctitulo{service}{PlanosService}
      \nodepart{two}
      \cm{e mais treze módulos}\\
@@ -785,7 +784,7 @@ chamada (Seção~\ref{sec:ia-custos}).
      \texttt{+ gerar(\ldots)}\\
      \cm{\texttt{temSaldo} \seta{} \emph{provider}}\\
      \cm{\seta{} \texttt{consumir}}};
-  \node[classe, text width=34mm, anchor=north] (ags) at (\xD,-4.5)
+  \node[classe, text width=34mm, anchor=north] (ags) at (\xD,-4.9)
     {\ctitulo{service}{AgenteProfessorService}
      \nodepart{two}
      \texttt{- agente:}\\
@@ -794,14 +793,14 @@ chamada (Seção~\ref{sec:ia-custos}).
      \nodepart{three}
      \texttt{+ temSaldo(quem)}\\
      \texttt{+ transmitir(\ldots)} \cm{SSE}};
-  \node[actnote, text width=32mm, anchor=north] (nota) at (\xC,-4.5)
+  \node[actnote, text width=32mm, anchor=north] (nota) at (\xC,-4.9)
     {\textbf{O que o tipo não garante:} nada obriga a chamar
      \texttt{temSaldo}, e entre ele e o \texttt{consumir} não há trava:
      duas chamadas simultâneas podem passar o teto em uma resposta
      cada.};
 
   % ---- linha 3: as duas portas e o tipo de resultado
-  \node[interface, text width=72mm, anchor=north] (prov) at (\xAB,-8.7)
+  \node[interface, text width=72mm, anchor=north] (prov) at (\xAB,-9.3)
     {\ctitulo{interface}{AiProvider}
      \nodepart{two}
      \cm{injetado pelo \emph{token} \texttt{AI\_PROVIDER}}
@@ -814,7 +813,7 @@ chamada (Seção~\ref{sec:ia-custos}).
      \texttt{+ conversar(req): Promise<AiResult>}\\
      \texttt{+ conversarEmFluxo(req): AsyncIterable}};
   \node[entidade, text width=32mm, anchor=north,
-        rectangle split part fill={unooMuted, unooSurface}] (tipos) at (10.75,-8.7)
+        rectangle split part fill={unooMuted, unooSurface}] (tipos) at (10.75,-9.3)
     {\ctitulo{tipo de dado}{AiResult}
      \nodepart{two}
      \texttt{texto: string}\\
@@ -823,7 +822,7 @@ chamada (Seção~\ref{sec:ia-custos}).
      \texttt{tokensSaida?}\\
      \texttt{finishReason?}\\
      \texttt{voltas?, tentativas?}};
-  \node[interface, text width=34mm, anchor=north] (port) at (\xD,-8.7)
+  \node[interface, text width=34mm, anchor=north] (port) at (\xD,-9.3)
     {\ctitulo{interface}{AgenteProfessorPort}
      \nodepart{two}
      \texttt{+ modo: ModoDoAgente}\\
@@ -836,7 +835,7 @@ chamada (Seção~\ref{sec:ia-custos}).
      \texttt{+ renovarSessao?(\ldots)}\\
      \texttt{+ enviar(\ldots)}\\
      \texttt{\ \ : AsyncIterable<\ldots>}};
-  \path (port.south) ++(0,-0.55) coordinate (r4);
+  \path (port.south) ++(0,-1.05) coordinate (r4);
 
   % ---- linha 4: as implementacoes
   \node[classe, text width=34mm, anchor=north] (vert) at (\xA,0 |- r4)
@@ -878,7 +877,7 @@ chamada (Seção~\ref{sec:ia-custos}).
      \cm{\texttt{:query} e}\\
      \cm{\texttt{:streamQuery?alt=sse}}\\
      \cm{no Agent Engine}};
-  \path (med.south) ++(0,-0.9) coordinate (r5);
+  \path (med.south) ++(0,-1.25) coordinate (r5);
 
   % ---- linha 5: o erro, a fabrica e a nota da fabrica
   \node[entidade, text width=30mm, anchor=north] (erro) at (\xB,0 |- r5)
@@ -907,7 +906,7 @@ chamada (Seção~\ref{sec:ia-custos}).
      linha aqui.};
 
   % ---- quem usa a quota (pela faixa entre as linhas 1 e 2)
-  \def\yg{-4.05}
+  \def\yg{-4.35}
   \draw[depend] (ctrl.north) |- (4.9,\yg) -- (4.9,0 |- quota.south);
   \draw[depend] (dom.north) -- (dom.north |- quota.south);
   \draw[depend] (ags.north) |- (11.9,\yg) -- (11.9,0 |- quota.south);
@@ -922,15 +921,15 @@ chamada (Seção~\ref{sec:ia-custos}).
     node[cxlabel, midway, right=2pt]{\texttt{@Inject(AI\_PROVIDER)}};
   \draw[depend] (ags.south) -- (port.north)
     node[cxlabel, midway, left=2pt]{\texttt{@Inject(AGENTE\_PROFESSOR)}};
-  \draw[depend] (prov.east |- 0,-9.0) -- (tipos.west |- 0,-9.0)
+  \draw[depend] (prov.east |- 0,-9.6) -- (tipos.west |- 0,-9.6)
     node[cxlabel, midway, above=1pt, inner sep=0.8pt]{\estereo{usa}};
 
   % ---- realizacoes, e o decorador que embrulha o real
   \draw[realiza] (vert.north) -- (vert.north |- prov.south);
-  \draw[realiza] ([xshift=-5mm]mock.north) -- ([xshift=-5mm]mock.north |- prov.south);
-  \path (prov.south) ++(0,-0.35) coordinate (yB) ++(0,-0.4) coordinate (yA);
-  \draw[agrega] (9.3,0 |- med.north) |- (6.95,0 |- yA) -- (6.95,0 |- prov.south)
-    node[papelassoc, pos=0.5, left=1pt]{\texttt{real} 1};
+  \draw[realiza] ([xshift=-9mm]mock.north) -- ([xshift=-9mm]mock.north |- prov.south);
+  \path (prov.south) ++(0,-0.4) coordinate (yB) ++(0,-0.45) coordinate (yA);
+  \draw[agrega] (9.3,0 |- med.north) |- (6.85,0 |- yA) -- (6.85,0 |- prov.south)
+    node[papelassoc, pos=0.45, left=1.5pt]{\texttt{real} 1};
   \draw[realiza] (10.1,0 |- med.north) |- (7.65,0 |- yB) -- (7.65,0 |- prov.south);
   \draw[realiza] (cli.north) -- (port.south);
   \draw[depend] (mock.south) -- (erro.north)
@@ -1134,7 +1133,7 @@ domínio.
   \hyphenpenalty=10000 \exhyphenpenalty=10000
 
   % ---- o monorepo; os pacotes levam o nome qualificado (apps/, packages/)
-  \pacote[fill=unooPaper]{mono}{(0,0)}{(12.4,-18.75)}{\estereo{monorepo} plataforma-unooria}
+  \pacote[fill=unooPaper]{mono}{(0,0)}{(12.4,-19.35)}{\estereo{monorepo} plataforma-unooria}
 
   % ---- linha 1: a api e as quatro faixas
   \pacote{api}{(0.4,-0.95)}{(12.0,-8.4)}{apps/api}
@@ -1165,35 +1164,35 @@ domínio.
     {Python + Google ADK, no\\Vertex AI Agent Engine\\{\color{unooMuted}não importa nem é importado:}\\{\color{unooMuted}só a API o chama, por HTTP}};
 
   % ---- linha 3: os pacotes do workspace e o externo
-  \pacote{sdk}{(0.4,-12.8)}{(5.0,-14.9)}{packages/sdk}
-  \node[pk, text width=44mm] at (0.45,-12.85)
+  \pacote{sdk}{(0.4,-13.1)}{(5.0,-15.2)}{packages/sdk}
+  \node[pk, text width=44mm] at (0.45,-13.15)
     {\texttt{@edu/sdk}\\TypeScript + Zod\\ponte \texttt{postMessage} v2, cliente\\HTTP, telemetria em lote};
-  \pacote{ui}{(6.2,-12.8)}{(10.8,-14.9)}{packages/ui}
-  \node[pk, text width=44mm] at (6.25,-12.85)
+  \pacote{ui}{(6.2,-13.1)}{(10.8,-15.2)}{packages/ui}
+  \node[pk, text width=44mm] at (6.25,-13.15)
     {\texttt{@edu/ui}\\as oito pontes do DS, uma\\por seção: \texttt{'use client'},\\nomes sem colisão};
-  \pacote[fill=unooPaper, draw=unooInkSoft]{ds}{(13.2,-12.8)}{(17.2,-14.9)}{\estereo{externo} npm}
-  \node[pk, text width=38mm] at (13.25,-12.85)
+  \pacote[fill=unooPaper, draw=unooInkSoft]{ds}{(13.2,-13.1)}{(17.2,-15.2)}{\estereo{externo} npm}
+  \node[pk, text width=38mm] at (13.25,-13.15)
     {\texttt{@unooria/design-system}\\repo \texttt{storybook-unooria}\\componentes + CSS\\de seção};
 
   % ---- linha 4: as experiencias
-  \pacote{exps}{(0.4,-16.1)}{(7.4,-18.35)}{apps/experiencias}
-  \node[pk, text width=68mm] at (0.45,-16.15)
+  \pacote{exps}{(0.4,-16.7)}{(7.4,-18.95)}{apps/experiencias}
+  \node[pk, text width=68mm] at (0.45,-16.75)
     {\texttt{\_template} \ \texttt{exp01ef1b} \ldots{} \texttt{exp08ef4b}\\\texttt{app-70} \ \texttt{app-90} \ \texttt{app-91} \ \texttt{app-92}\\{\color{unooMuted}13 \emph{bundles} Vite publicados;}\\{\color{unooMuted}\texttt{\_template} e \texttt{backup-*} ficam fora do \emph{deploy}}};
 
-  % ---- o hub chega aos pacotes por cima, as experiencias por baixo
-  \draw[pacotedep] (hub.south -| 2.2,0) -- (sdk.north -| 2.2,0)
-    node[cxlabel, midway, right=2pt]{\estereo{import}};
-  \draw[pacotedep] (hub.south -| 4.2,0) |- (7.6,-12.2) -- (ui.north -| 7.6,0);
-  \node[cxlabel, anchor=south] at (5.9,-12.2) {\estereo{import}};
-  \draw[pacotedep] (hub.east |- 0,-11.45) -- (15.2,-11.45) -- (ds.north -| 15.2,0);
-  \node[cxlabel, anchor=north] at (9.1,-11.45) {\estereo{use} só CSS da seção e fontes};
-  \draw[pacotedep] (exps.north -| 2.2,0) -- (sdk.south -| 2.2,0)
+  % ---- o hub chega aos pacotes por cima, as experiencias por baixo (fora das abas!)
+  \draw[pacotedep] (hub.south -| 3.6,0) -- (sdk.north -| 3.6,0)
+    node[cxlabel, midway, left=2pt]{\estereo{import}};
+  \draw[pacotedep] (hub.south -| 4.4,0) |- (9.5,-12.25) -- (ui.north -| 9.5,0);
+  \node[cxlabel, anchor=south] at (6.9,-12.25) {\estereo{import}};
+  \draw[pacotedep] (hub.east |- 0,-11.45) -- (16.4,-11.45) -- (ds.north -| 16.4,0);
+  \node[cxlabel, anchor=north] at (9.8,-11.45) {\estereo{use} só CSS da seção e fontes};
+  \draw[pacotedep] (exps.north -| 3.8,0) -- (sdk.south -| 3.8,0)
     node[cxlabel, midway, right=2pt]{\estereo{import}};
   \draw[pacotedep] (exps.north -| 6.8,0) -- (ui.south -| 6.8,0)
     node[cxlabel, midway, right=2pt]{\estereo{import}};
-  \draw[pacotedep] (exps.east |- 0,-17.2) -- (15.2,-17.2) -- (ds.south -| 15.2,0);
-  \node[cxlabel, anchor=south] at (10.1,-17.2) {\estereo{use} só CSS da seção e fontes};
-  \draw[pacotedep] (ui.east |- 0,-13.85) -- (ds.west |- 0,-13.85)
+  \draw[pacotedep] (exps.east |- 0,-17.8) -- (15.2,-17.8) -- (ds.south -| 15.2,0);
+  \node[cxlabel, anchor=south] at (10.5,-17.8) {\estereo{use} só CSS da seção e fontes};
+  \draw[pacotedep] (ui.east |- 0,-14.15) -- (ds.west |- 0,-14.15)
     node[cxlabel, midway, above=1pt]{\estereo{import}};
 
 \end{tikzpicture}}
@@ -1279,17 +1278,17 @@ não há \emph{worker}; é a assinatura \emph{push} que chama
   \draw[associa] (1.5,0 |- hub.north) -- (1.5,-1.35) -- (4.67,-1.35);
   \draw[associa] (exp.west |- 0,-1.35) -- (5.02,-1.35);
   \bola{(4.8,-1.35)} \soquete{(4.8,-1.35)}{180}
-  \node[ifacelbl, anchor=south] at (4.0,-1.15) {Ponte \texttt{postMessage} v2};
-  \node[ifacelbl, anchor=north, align=left] at (4.0,-1.6)
+  \node[ifacelbl, anchor=south] at (4.0,-1.12) {Ponte \texttt{postMessage} v2};
+  \node[ifacelbl, anchor=north, align=left] at (4.0,-1.62)
     {\texttt{hub:init}, \texttt{hub:token},\\\texttt{hub:pause}/\texttt{resume}};
 
   % ---- hub <-> api (pelo vao entre os dois)
   \montD{-5.7}{3.17}{6.6}{4.9}
-  \node[ifacelbl, anchor=south west, align=left] at (3.35,-5.55) {\texttt{POST /auth/login}\\\cm{\emph{Credentials}}};
+  \node[ifacelbl, anchor=south west, align=left] at (3.35,-5.48) {\texttt{POST /auth/login}\\\cm{\emph{Credentials}}};
   \montD{-7.2}{3.17}{6.6}{4.9}
-  \node[ifacelbl, anchor=south west, align=left] at (3.35,-7.05) {REST pelo BFF\\\cm{\texttt{/api/plataforma/*}}};
+  \node[ifacelbl, anchor=south west, align=left] at (3.35,-6.98) {REST pelo BFF\\\cm{\texttt{/api/plataforma/*}}};
   \montE{-8.7}{3.17}{6.6}{4.9}
-  \node[ifacelbl, anchor=south west, align=left] at (3.35,-8.55) {JWKS \cm{\texttt{/.well-known/}}\\\cm{\texttt{jwks.json}}};
+  \node[ifacelbl, anchor=south west, align=left] at (3.35,-8.48) {JWKS \cm{\texttt{/.well-known/}}\\\cm{\texttt{jwks.json}}};
 
   % ---- experiencia (pela sdk) <-> api
   \montBaixo{7.7}{-3.1}{-5.0}{-4.05}
@@ -1299,7 +1298,7 @@ não há \emph{worker}; é a assinatura \emph{push} que chama
 
   % ---- api <-> PostgreSQL e Pub/Sub
   \montE{-10.9}{2.47}{6.6}{4.9}
-  \node[ifacelbl, anchor=south west, align=left] at (3.35,-10.75) {SQL + RLS\\\cm{\texttt{comTenancy}}};
+  \node[ifacelbl, anchor=south west, align=left] at (3.35,-10.68) {SQL + RLS\\\cm{\texttt{comTenancy}}};
   \montBaixo{7.6}{-12.2}{-14.1}{-13.15}
   \node[ifacelbl, anchor=east, align=right] at (7.35,-13.15) {Publicação\\\cm{\texttt{\{contrato\}-telemetria}}};
   \montCima{10.9}{-12.2}{-14.1}{-13.15}
@@ -1307,15 +1306,15 @@ não há \emph{worker}; é a assinatura \emph{push} que chama
 
   % ---- api <-> externos da direita
   \montD{-5.55}{11.67}{15.3}{13.5}
-  \node[ifacelbl, anchor=south, align=left] at (13.45,-5.4) {Geração e voz ao vivo\\\cm{ADC, \texttt{:generateContent},}\\\cm{Live por WebSocket}};
+  \node[ifacelbl, anchor=south, align=left] at (13.45,-5.32) {Geração e voz ao vivo\\\cm{ADC, \texttt{:generateContent},}\\\cm{Live por WebSocket}};
   \montD{-7.5}{11.67}{15.3}{13.5}
-  \node[ifacelbl, anchor=south, align=left] at (13.45,-7.35) {Turnos do agente\\\cm{\texttt{:query}, \texttt{:streamQuery}}};
+  \node[ifacelbl, anchor=south, align=left] at (13.45,-7.27) {Turnos do agente\\\cm{\texttt{:query}, \texttt{:streamQuery}}};
   \montE{-9.45}{11.67}{15.3}{13.5}
-  \node[ifacelbl, anchor=south, align=left] at (13.45,-9.3) {LLM \cm{\texttt{/ajuda/llm}}};
+  \node[ifacelbl, anchor=south, align=left] at (13.45,-9.22) {LLM \cm{\texttt{/ajuda/llm}}};
   \montD{-10.35}{11.67}{15.3}{13.5}
-  \node[ifacelbl, anchor=north, align=left] at (13.45,-10.5) {Sessões \cm{\texttt{/v1/sessions}}};
+  \node[ifacelbl, anchor=north, align=left] at (13.45,-10.58) {Sessões \cm{\texttt{/v1/sessions}}};
   \montD{-11.65}{11.67}{15.3}{13.5}
-  \node[ifacelbl, anchor=north, align=left] at (13.45,-11.8) {Objetos\\\cm{\emph{assets}, planos}};
+  \node[ifacelbl, anchor=north, align=left] at (13.45,-11.88) {Objetos\\\cm{\emph{assets}, planos}};
 
 \end{tikzpicture}}
 \caption[Componentes e interfaces]{Diagrama de componentes: bola é interface
@@ -1402,7 +1401,7 @@ passa pelo hub: sai direto do \cd{iframe}, com o \emph{token} da memória
     {\textbf{ponte : protocolo v2}\\{\color{unooMuted}\texttt{postMessage}; \texttt{ev.origin} + Zod}};
 
   % ---- portas
-  \node[porta] (pEmbed) at (1.8,0) {};
+  \node[porta] (pEmbed) at (4.1,0) {};
   \node[porta] (pProg) at (14.0,0) {};
   \node[porta] (pTok) at (10.6,-9.25) {};
   \node[porta] (pLog) at (14.1,-9.25) {};
@@ -1412,7 +1411,7 @@ passa pelo hub: sai direto do \cd{iframe}, com o \emph{token} da memória
   \node[font=\scriptsize\bfseries\color{unooOrange}, anchor=north west] at (pSrc.south east) {src};
 
   % ---- externos (em cima: quem entrega; embaixo: as rotas do hub)
-  \node[externo2, text width=34mm, anchor=south west] (page) at (0,0.85)
+  \node[externo2, text width=34mm, anchor=south west] (page) at (2.2,0.85)
     {\estereo{server component}\\\textbf{app/exp/[expId]/page.tsx}\\\texttt{montarEmbed()}: \emph{token},\\\texttt{src}, \texttt{expOrigin},\\\texttt{permissoes}, \texttt{viewport}};
   \node[externo2, text width=37mm, anchor=south] (cdn) at (8.0,0.85)
     {\estereo{CDN}\\\texttt{\{cdn\}/\{expId\}/\{versao\}/}\\\texttt{index.html?hubOrigin=\ldots}};
@@ -1487,57 +1486,57 @@ Tabela~\ref{tab:uml-objetos} moram inteiras na partição da direita.
   }
 
   % ---- particoes
-  \draw[lane] (0,0.2) rectangle (7.4,-21.2);
-  \draw[lane] (7.4,0.2) rectangle (18.0,-21.2);
+  \draw[lane] (0,0.2) rectangle (7.4,-22.5);
+  \draw[lane] (7.4,0.2) rectangle (18.0,-22.5);
   \node[lanehdr, minimum width=74mm, minimum height=7mm, anchor=north west] at (0,0.2)
     {\texttt{comum/disponibilidade.ts} --- com banco};
   \node[lanehdr, minimum width=106mm, minimum height=7mm, anchor=north west] at (7.4,0.2)
     {\texttt{recursos/regras.ts} --- função pura};
 
   % ---- particao da esquerda: ler
-  \node[actstart] (ini) at (3.7,-1.2) {};
-  \node[ac] (a1) at (3.7,-2.3) {buscar \texttt{experiencias[expId]}\\{\color{unooMuted}\texttt{produto}, \texttt{publico}; pode não existir}};
-  \node[ac] (a2) at (3.7,-3.8) {\texttt{cadeiaDaEscola}\\{\color{unooMuted}\texttt{[escola]} ou \texttt{[escola, regional]}}};
-  \node[ac] (a3) at (3.7,-5.3) {\texttt{linhasDoEscopo}\\{\color{unooMuted}escola nula \textbf{ou} na cadeia; só \emph{ids} legíveis}};
-  \node[ac] (a4) at (3.7,-6.8) {\texttt{produtoConhecido}\\{\color{unooMuted}fora do vocabulário \seta{} \texttt{null}}};
+  \node[actstart] (ini) at (3.7,-1.1) {};
+  \node[ac] (a1) at (3.7,-2.25) {buscar \texttt{experiencias[expId]}\\{\color{unooMuted}\texttt{produto}, \texttt{publico}; pode não existir}};
+  \node[ac] (a2) at (3.7,-3.9) {\texttt{cadeiaDaEscola}\\{\color{unooMuted}\texttt{[escola]} ou \texttt{[escola, regional]}}};
+  \node[ac] (a3) at (3.7,-5.55) {\texttt{linhasDoEscopo}\\{\color{unooMuted}escola nula \textbf{ou} na cadeia; só \emph{ids} legíveis}};
+  \node[ac] (a4) at (3.7,-7.2) {\texttt{produtoConhecido}\\{\color{unooMuted}fora do vocabulário \seta{} \texttt{null}}};
 
   % ---- particao da direita: decidir
-  \node[dc] (d1) at (12.4,-7.8) {produto?};
-  \node[ac] (a5) at (12.4,-9.4) {\texttt{maisEspecifica(}\\\texttt{"produto:<slug>")}\\{\color{unooMuted}sem linha: \texttt{ligadoPorPadrao}}};
-  \node[dc] (d2) at (12.4,-11.0) {produto ligado?};
-  \node[actionerr, text width=25mm] (r1) at (16.45,-11.0) {desligado,\\\texttt{tetoDoProduto}};
-  \node[escolha] (m1) at (12.4,-12.5) {};
-  \node[ac] (a6) at (12.4,-13.6) {\texttt{maisEspecifica(}\\\texttt{"experiencia:<expId>")}};
-  \node[dc] (d3) at (12.4,-15.2) {linha da\\experiência?};
-  \node[actionok, text width=26mm] (r2) at (9.4,-16.8) {ligado,\\\texttt{versaoFixa = null}};
-  \node[action, text width=32mm] (r3) at (13.4,-16.8) {\texttt{ligado} e \texttt{versaoFixa}\\da linha};
-  \node[escolha] (m2) at (12.4,-18.4) {};
+  \node[dc] (d1) at (12.4,-8.2) {produto?};
+  \node[ac] (a5) at (12.4,-10.0) {\texttt{maisEspecifica(}\\\texttt{"produto:<slug>")}\\{\color{unooMuted}sem linha: \texttt{ligadoPorPadrao}}};
+  \node[dc] (d2) at (12.4,-11.8) {produto ligado?};
+  \node[actionerr, text width=25mm] (r1) at (16.45,-11.8) {desligado,\\\texttt{tetoDoProduto}};
+  \node[escolha] (m1) at (12.4,-13.3) {};
+  \node[ac] (a6) at (12.4,-14.6) {\texttt{maisEspecifica(}\\\texttt{"experiencia:<expId>")}};
+  \node[dc] (d3) at (12.4,-16.4) {linha da\\experiência?};
+  \node[actionok, text width=26mm] (r2) at (9.4,-18.2) {ligado,\\\texttt{versaoFixa = null}};
+  \node[action, text width=32mm] (r3) at (13.4,-18.2) {\texttt{ligado} e \texttt{versaoFixa}\\da linha};
+  \node[escolha] (m2) at (12.4,-19.8) {};
 
   % ---- de volta a esquerda: agir
-  \node[dc] (d4) at (3.7,-19.1) {\texttt{efetivo.ligado}?};
-  \node[actend] (fim) at (0.9,-19.1) {};
-  \node[actionerr, text width=40mm] (a7) at (3.7,-20.5) {lança 403 \texttt{recurso-indisponivel}};
-  \node[flowfinal] (ff) at (6.6,-20.5) {};
+  \node[dc] (d4) at (3.7,-20.4) {\texttt{efetivo.ligado}?};
+  \node[actend] (fim) at (0.9,-20.4) {};
+  \node[actionerr, text width=40mm] (a7) at (3.7,-21.8) {lança 403 \texttt{recurso-indisponivel}};
+  \node[flowfinal] (ff) at (6.6,-21.8) {};
 
   % ---- fluxos
   \draw[flow] (ini) -- (a1);
   \draw[flow] (a1) -- (a2);
   \draw[flow] (a2) -- (a3);
   \draw[flow] (a3) -- (a4);
-  \draw[flow] (a4.east) -- (12.4,-6.8) -- (d1.north);
-  \node[flowlbl, anchor=south] at (9.3,-6.8) {\texttt{resolverExperiencia}};
+  \draw[flow] (a4.east) -- (12.4,-7.2) -- (d1.north);
+  \node[flowlbl, anchor=south] at (9.3,-7.2) {\texttt{resolverExperiencia}};
   \draw[flow] (d1) -- (a5) node[flowlbl, midway, right=2pt]{[sim]};
   \draw[flow] (a5) -- (d2);
   \draw[flow] (d2) -- (r1) node[flowlbl, midway, above]{[não]};
   \draw[flow] (d2) -- (m1) node[flowlbl, midway, right=2pt]{[sim]};
-  \draw[flow] (d1.west) -- node[flowlbl, above]{[não]} (9.2,-7.8) -- (9.2,-12.5) -- (m1.west);
+  \draw[flow] (d1.west) -- node[flowlbl, above]{[não]} (9.2,-8.2) -- (9.2,-13.3) -- (m1.west);
   \draw[flow] (m1) -- (a6);
   \draw[flow] (a6) -- (d3);
   \draw[flow] (d3.west) -| (r2.north) node[flowlbl, pos=0.3, above]{[nenhuma]};
   \draw[flow] (d3.south) -- (d3.south |- r3.north) node[flowlbl, midway, right=2pt]{[uma linha]};
   \draw[flow] (r2.south) |- (m2.west);
   \draw[flow] (r3.south -| 12.4,0) -- (m2.north);
-  \draw[flow] (r1.south) -- (16.45,-18.4) -- (m2.east);
+  \draw[flow] (r1.south) -- (16.45,-19.8) -- (m2.east);
   \draw[flow] (m2.south) |- (d4.east);
   \draw[flow] (d4) -- (fim) node[flowlbl, midway, above]{[sim]};
   \draw[flow] (d4) -- (a7) node[flowlbl, midway, left=2pt]{[não]};
@@ -1553,11 +1552,11 @@ Tabela~\ref{tab:uml-objetos} moram inteiras na partição da direita.
     {\textbf{A linha inteira é a decisão:} \texttt{ligado} e \texttt{versaoFixa}
      não se resolvem em cadeias separadas. A tela mostra exatamente a linha que
      vale.};
-  \node[actnote, text width=30mm, anchor=north west] at (0.35,-8.2)
+  \node[actnote, text width=30mm, anchor=north west] at (0.35,-8.6)
     {\textbf{Sem linha em \texttt{experiencias}} (\emph{stack} nova, antes do
      primeiro \emph{publish}) \textbf{não tranca}: sem produto, vale só o
      interruptor da própria experiência.};
-  \node[actnote, text width=30mm, anchor=north west] at (3.9,-8.2)
+  \node[actnote, text width=30mm, anchor=north west] at (3.9,-8.6)
     {\textbf{A mensagem depende do público:} \enquote{Este recurso não está
      disponível para a sua rede.} para professor; \enquote{Esta missão não está
      aberta agora.} para estudante.};
@@ -1911,7 +1910,7 @@ de erro (medido no \emph{spike}, sem nova tentativa e sem evento ao navegador).
 \begin{tikzpicture}[x=1cm, y=1cm]
 
   \tikzset{guarda/.append style={align=left}}
-  \def\fundo{-23.55}
+  \def\fundo{-23.75}
   \def\msgp#1#2#3#4#5{\draw[seqmsg] (#1,#3) -- (#2,#3) node[seqlbl, pos=#4, above=0.4pt]{#5};}
   \def\retp#1#2#3#4#5{\draw[seqret] (#1,#3) -- (#2,#3) node[seqlbl, pos=#4, above=0.4pt]{#5};}
 
@@ -1935,27 +1934,27 @@ de erro (medido no \emph{spike}, sem nova tentativa e sem evento ao navegador).
   \msgself{5.4}{-7.35}{assina o \emph{token}\\da sessão (HS256)}
   \msgp{5.4}{13.4}{-8.95}{0.7}{\texttt{POST /v1/sessions/token}\\(\texttt{FULL}, com o \emph{token} da sessão)}
   \retp{13.4}{5.4}{-9.65}{0.3}{\texttt{session\_id}, \texttt{session\_token}}
-  \msgr{5.4}{1.4}{-10.6}{201 \{\texttt{id}, \texttt{tokenDaSessao},\\\texttt{duracaoMaximaS}, \ldots\}}
-  \msgp{1.4}{13.4}{-11.3}{0.85}{\texttt{start()}: entra na sala (WebRTC)}
-  \msgp{13.4}{5.4}{-12.0}{0.3}{\texttt{GET /ajuda/llm/models} (\emph{Bearer})}
+  \msgr{5.4}{1.4}{-10.65}{201 \{\texttt{id},\\\texttt{tokenDaSessao}, \ldots\}}
+  \msgp{1.4}{13.4}{-11.4}{0.85}{\texttt{start()}: entra na sala (WebRTC)}
+  \msgp{13.4}{5.4}{-12.1}{0.3}{\texttt{GET /ajuda/llm/models} (\emph{Bearer})}
 
   % ---- cada fala: o vendor chama o nosso LLM
-  \draw[seqframe] (0.4,-12.4) rectangle (18.3,-19.55);
-  \node[frameop] at (0.4,-12.4) {loop};
-  \node[guarda] at (1.55,-12.8) {[cada fala, por voz\\ou por escrito]};
-  \msgp{1.4}{13.4}{-13.5}{0.85}{fala ou \texttt{message(texto)}}
-  \msgp{13.4}{5.4}{-14.45}{0.3}{\texttt{POST /ajuda/llm/chat/completions}\\(\emph{Bearer} + \texttt{[sessao:\ldots]} no \texttt{system})}
-  \msgself{5.4}{-15.1}{duas trancas\\(senão 401); produto\\ligado? até 20/min?\\(senão vira fala)}
-  \msgp{5.4}{17.2}{-16.6}{0.85}{\texttt{conversarEmFluxo}\\(prefixo fixo + papel,\\histórico)}
-  \retp{17.2}{5.4}{-17.55}{0.16}{pedaços (SSE do\\Vertex)}
-  \retp{5.4}{13.4}{-18.5}{0.7}{\texttt{chat.completion.chunk}\\em SSE, até \texttt{[DONE]}}
-  \retp{13.4}{1.4}{-19.2}{0.15}{voz, vídeo e transcrições, pela sala}
+  \draw[seqframe] (0.4,-12.5) rectangle (18.3,-19.65);
+  \node[frameop] at (0.4,-12.5) {loop};
+  \node[guarda] at (1.55,-12.9) {[cada fala, por voz\\ou por escrito]};
+  \msgp{1.4}{13.4}{-13.6}{0.85}{fala ou \texttt{message(texto)}}
+  \msgp{13.4}{5.4}{-14.55}{0.3}{\texttt{POST /ajuda/llm/chat/completions}\\(\emph{Bearer} + \texttt{[sessao:\ldots]} no \texttt{system})}
+  \msgself{5.4}{-15.2}{duas trancas\\(senão 401); produto\\ligado? até 20/min?\\(senão vira fala)}
+  \msgp{5.4}{17.2}{-16.7}{0.85}{\texttt{conversarEmFluxo}\\(prefixo fixo + papel,\\histórico)}
+  \retp{17.2}{5.4}{-17.65}{0.16}{pedaços (SSE do\\Vertex)}
+  \retp{5.4}{13.4}{-18.6}{0.7}{\texttt{chat.completion.chunk}\\em SSE, até \texttt{[DONE]}}
+  \retp{13.4}{1.4}{-19.3}{0.15}{voz, vídeo e transcrições, pela sala}
 
   % ---- fechar
-  \msgp{1.4}{13.4}{-20.3}{0.85}{\texttt{stop()} (fechar o modal)}
-  \msgs{1.4}{5.4}{-21}{\texttt{POST} \ldots\texttt{/encerrar} (\texttt{keepalive})}
-  \msgs{5.4}{9.0}{-21.7}{\texttt{fim = agora}}
-  \msgp{5.4}{13.4}{-22.4}{0.7}{\texttt{POST /v1/sessions/stop}}
+  \msgp{1.4}{13.4}{-20.35}{0.85}{\texttt{stop()} (fechar o modal)}
+  \msgs{1.4}{5.4}{-21.3}{\texttt{POST} \ldots\texttt{/encerrar}\\(\texttt{keepalive})}
+  \msgs{5.4}{9.0}{-22.05}{\texttt{fim = agora}}
+  \msgp{5.4}{13.4}{-22.75}{0.7}{\texttt{POST /v1/sessions/stop}}
 
 \end{tikzpicture}}
 \caption[Sequência: uma sessão da Ajuda com avatar]{Sequência de uma sessão da
@@ -2143,13 +2142,13 @@ renovação (\adrr{ADR-95}), que o próprio pedido de \emph{token} provoca
   \node[font=\scriptsize\bfseries\color{unooRed}, anchor=west] at (\T{30.3},-1.15) {\{5 min de 401\}};
 
   % ---- faixa 2: linha de valor (qual token esta em uso)
-  \def\valor#1#2#3{% t0, t1, rotulo
+  \def\valor#1#2#3#4{% t0, t1, t_label, rotulo
     \draw[tempolinha, line width=0.8pt] (\T{#1+0.35},-2.2) -- (\T{#2-0.35},-2.2)
       -- (\T{#2},-2.525) -- (\T{#2-0.35},-2.85) -- (\T{#1+0.35},-2.85) -- (\T{#1},-2.525) -- cycle;
-    \node[font=\scriptsize] at (\T{(#1+#2)/2},-2.525) {#3};}
-  \valor{0}{10}{\texttt{A}: vale até 15}
-  \valor{10}{30}{\texttt{B}: vale até 25}
-  \valor{30}{40}{\texttt{D}: vale até 45}
+    \node[font=\scriptsize, fill=unooSurface, inner sep=1pt] at (\T{#3},-2.525) {#4};}
+  \valor{0}{10}{5}{\texttt{A}: vale até 15}
+  \valor{10}{30}{15}{\texttt{B}: vale até 25}
+  \valor{30}{40}{35}{\texttt{D}: vale até 45}
   \fill[pattern={Lines[angle=45, distance=3pt, line width=0.4pt]}, pattern color=unooRed]
     (\T{25},-2.2) rectangle (\T{30-0.35},-2.85);
   \draw[<->, draw=unooNavy, line width=0.6pt] (\T{10},-3.3) -- (\T{25},-3.3)
@@ -2338,37 +2337,37 @@ aula: cada quadro diz em que figura a conversa está desenhada por inteiro.
         (path picture bounding box.north west) -- (path picture bounding box.south east);}},
   }
 
-  \node[actstart] (ini) at (8.2,0.4) {};
+  \node[actstart] (ini) at (8.2,0.5) {};
   \node[rf] (login) at (8.2,-0.9)
     {\emph{login} (\ucr{UC-01})\\\texttt{signIn("credentials")} \seta{} \texttt{POST /auth/login}};
-  \node[dc] (dsenha) at (8.2,-2.55) {senha provisória?};
-  \node[rf=36mm] (senha) at (13.6,-2.55) {trocar a senha\\\texttt{/trocar-senha} (\ucr{UC-25})};
-  \node[escolha] (m1) at (8.2,-3.85) {};
-  \node[rf] (grade) at (8.2,-5.0)
+  \node[dc] (dsenha) at (8.2,-2.65) {senha provisória?};
+  \node[rf=36mm] (senha) at (13.6,-2.65) {trocar a senha\\\texttt{/trocar-senha} (\ucr{UC-25})};
+  \node[escolha] (m1) at (8.2,-4.05) {};
+  \node[rf] (grade) at (8.2,-5.3)
     {a grade do estudante\\\texttt{GET /salas/minhas}, sem as indisponíveis};
-  \node[dc] (dlib) at (8.2,-6.65) {o \emph{card} está liberado?};
-  \node[action, text width=34mm] (cad) at (2.6,-6.65) {cadeado: \enquote{Ainda não abriu} ou \enquote{Esta você já fechou}};
-  \node[flowfinal] (ff1) at (2.6,-7.85) {};
-  \node[rf] (entra) at (8.2,-8.55)
+  \node[dc] (dlib) at (8.2,-7.15) {o \emph{card} está liberado?};
+  \node[action, text width=34mm] (cad) at (2.6,-7.15) {cadeado: \enquote{Ainda não abriu} ou \enquote{Esta você já fechou}};
+  \node[flowfinal] (ff1) at (2.6,-8.45) {};
+  \node[rf] (entra) at (8.2,-9.15)
     {entrada na missão\\as duas travas (Figura~\ref{fig:uml-seq-entrada})};
-  \node[rf] (hand) at (8.2,-9.95)
+  \node[rf] (hand) at (8.2,-10.85)
     {\emph{handshake}\\\texttt{exp:ready}/\texttt{hub:init} (Figura~\ref{fig:seq-handshake})};
-  \node[bar, minimum width=120mm] (fork) at (8.2,-11.05) {};
-  \node[rf=40mm] (dom) at (2.9,-12.3)
+  \node[bar, minimum width=120mm] (fork) at (8.2,-12.1) {};
+  \node[rf=40mm] (dom) at (2.9,-13.45)
     {rotas de domínio\\e IA com quota (Fig.~\ref{fig:uml-seq-ia})};
-  \node[rf=40mm] (tel) at (8.2,-12.3)
+  \node[rf=40mm] (tel) at (8.2,-13.45)
     {telemetria em lote\\(Figura~\ref{fig:uml-comunicacao})};
-  \node[rf=40mm] (ren) at (13.5,-12.3)
+  \node[rf=40mm] (ren) at (13.5,-13.45)
     {renovação do \emph{token}\\a cada 10 min (Fig.~\ref{fig:uml-tempo})};
-  \node[bar, minimum width=120mm] (join) at (8.2,-13.55) {};
-  \node[dc] (dfim) at (8.2,-14.8) {como a missão\\termina?};
-  \node[rf=40mm] (conc) at (2.9,-17.2)
+  \node[bar, minimum width=120mm] (join) at (8.2,-14.8) {};
+  \node[dc] (dfim) at (8.2,-16.15) {como a missão\\termina?};
+  \node[rf=40mm] (conc) at (2.9,-18.65)
     {concluir\\\texttt{POST .../progresso/}\\\texttt{:expId/concluir}};
-  \node[actionerr, text width=38mm] (exp) at (8.2,-17.2) {aviso \enquote{Sua sessão expirou};\\\texttt{hub:pause}};
-  \node[actionerr, text width=38mm] (trav) at (13.5,-17.2) {\enquote{A missão travou},\\com o \emph{hash} do erro};
-  \node[actend] (f1) at (2.9,-18.6) {};
-  \node[actend] (f2) at (8.2,-18.6) {};
-  \node[actend] (f3) at (13.5,-18.6) {};
+  \node[actionerr, text width=38mm] (exp) at (8.2,-18.65) {aviso \enquote{Sua sessão expirou};\\\texttt{hub:pause}};
+  \node[actionerr, text width=38mm] (trav) at (13.5,-18.65) {\enquote{A missão travou},\\com o \emph{hash} do erro};
+  \node[actend] (f1) at (2.9,-20.15) {};
+  \node[actend] (f2) at (8.2,-20.15) {};
+  \node[actend] (f3) at (13.5,-20.15) {};
 
   \draw[flow] (ini) -- (login);
   \draw[flow] (login) -- (dsenha);
@@ -2441,91 +2440,91 @@ ambiente.
     nl/.default=31mm,
     ext/.style={fill=unooPaper, draw=unooInkSoft},
   }
-  % grade: coluna externa x 0-3.4; dentro da nuvem B 5.2-8.6, C 10.2-13.6, D 14.9-18.3
-  %        linhas R1 0/-2.6, R2 -3.6/-7.4, R3 -8.4/-10.8, R4 -11.8/-14.2, R5 -15.2/-16.8
+  % grade: coluna externa x 0-3.4; dentro da nuvem B 5.5-8.9, C 10.8-14.2, D 16.1-19.5
+  %        linhas R1 0/-2.6, R2 -4.15/-7.95, R3 -9.55/-12.05, R4 -13.55/-16.05, R5 -17.35/-18.95
 
   % ---- fora do Google: o vendor da Ajuda e o navegador
   \nodo[ext]{lav}{(0,2.5)}{(3.4,0.7)}{\estereo{externo} \textbf{LiveAvatar}\\HeyGen, na AWS}
-  \nodo{nav}{(0,-0.2)}{(3.4,-7.4)}{\estereo{device}\\\textbf{Navegador} da escola}
+  \nodo{nav}{(0,-0.2)}{(3.4,-7.95)}{\estereo{device}\\\textbf{Navegador} da escola}
   \nodo[fill=unooBlueWash]{navenv}{(0.2,-1.2)}{(3.1,-3.3)}{\estereo{browser} aba do hub}
   \node[art=22mm] at (1.6,-2.5) {\estereo{artefato}\\página do hub};
-  \nodo[fill=unooOrangeWash, draw=unooOrange]{ifr}{(0.2,-3.9)}{(3.1,-7.15)}{\estereo{sandbox} \texttt{iframe}}
+  \nodo[fill=unooOrangeWash, draw=unooOrange]{ifr}{(0.2,-3.9)}{(3.1,-7.6)}{\estereo{sandbox} \texttt{iframe}}
   \node[font=\scriptsize\color{unooMuted}, align=center] at (1.6,-4.85) {\emph{token} só\\em memória};
-  \node[art=22mm] (bnav) at (1.6,-6.3) {\estereo{Bundle}\\\texttt{\{expId\}/}\\\texttt{\{versao\}/}};
-  \nodo[ext]{gha}{(0,-11.8)}{(3.4,-14.2)}{\estereo{nó} \textbf{GitHub}\\\textbf{Actions}}
-  \node[nl=30mm] at (0.05,-12.75) {\texttt{deploy.yml}; WIF,\\sem chave JSON};
+  \node[art=22mm] (bnav) at (1.6,-6.85) {\estereo{Bundle}\\\texttt{\{expId\}/}\\\texttt{\{versao\}/}};
+  \nodo[ext]{gha}{(0,-13.55)}{(3.4,-16.05)}{\estereo{nó} \textbf{GitHub}\\\textbf{Actions}}
+  \node[nl=30mm] at (0.05,-14.5) {\texttt{deploy.yml}; WIF,\\sem chave JSON};
 
   % ---- a stack do contrato
-  \draw[nuvem] (4.6,0.8) rectangle (19.0,-17.3);
-  \node[nuvemlbl] at (4.8,0.95) {\estereo{projeto GCP} uma \emph{stack} por contrato};
+  \draw[nuvem] (4.8,0.8) rectangle (20.2,-19.15);
+  \node[nuvemlbl] at (5.0,0.95) {\estereo{projeto GCP} uma \emph{stack} por contrato};
 
   % R1
-  \nodo{lb}{(5.2,0)}{(8.6,-2.6)}{\estereo{nó} \textbf{Load Balancer}\\global + Cloud CDN}
-  \node[nl] at (5.25,-1.25) {um IP; \emph{host rules}:\\\texttt{hub}, \texttt{api}, \texttt{exp}, \texttt{assets}};
-  \nodo[fill=unooBlueWash]{runhub}{(10.2,0)}{(13.6,-2.6)}{\estereo{Cloud Run}\\\texttt{\{contrato\}-frontend}}
-  \node[art] at (11.9,-1.75) {\estereo{imagem}\\\texttt{hub:\{sha\}}\\\texttt{apps/hub/server.js}};
-  \nodo[fill=unooBlueWash]{job}{(14.9,0)}{(18.3,-2.6)}{\estereo{Cloud Run Job}\\\texttt{\{contrato\}-migrate}}
-  \node[art] at (16.6,-1.75) {\estereo{imagem}\\\texttt{api:\{sha\}}\\\texttt{prisma migrate deploy}};
+  \nodo{lb}{(5.5,0)}{(8.9,-2.6)}{\estereo{nó} \textbf{Load Balancer}\\global + Cloud CDN}
+  \node[nl] at (5.55,-1.25) {um IP; \emph{host rules}:\\\texttt{hub}, \texttt{api}, \texttt{exp}, \texttt{assets}};
+  \nodo[fill=unooBlueWash]{runhub}{(10.8,0)}{(14.2,-2.6)}{\estereo{Cloud Run}\\\texttt{\{contrato\}-frontend}}
+  \node[art] at (12.5,-1.75) {\estereo{imagem}\\\texttt{hub:\{sha\}}\\\texttt{apps/hub/server.js}};
+  \nodo[fill=unooBlueWash]{job}{(16.1,0)}{(19.5,-2.6)}{\estereo{Cloud Run Job}\\\texttt{\{contrato\}-migrate}}
+  \node[art] at (17.8,-1.75) {\estereo{imagem}\\\texttt{api:\{sha\}}\\\texttt{prisma migrate deploy}};
 
   % R2
-  \nodo{gcs}{(5.2,-3.6)}{(8.6,-7.4)}{\estereo{nó} \textbf{Cloud Storage}}
-  \node[nl] at (5.25,-4.1) {\texttt{-exp}, \texttt{-assets}: públicos;\\\texttt{-planos} e mapas:\\\textbf{privados}};
-  \node[art] (bgcs) at (6.9,-6.3) {\estereo{Bundle}\\\texttt{\{expId\}/\{versao\}/}\\{\color{unooMuted}\texttt{index.html}:}\\{\color{unooMuted}\texttt{max-age=60}}};
-  \nodo[fill=unooBlueWash]{runapi}{(10.2,-3.6)}{(13.6,-7.4)}{\estereo{Cloud Run}\\\texttt{\{contrato\}-api}}
-  \node[art] at (11.9,-5.75) {\estereo{imagem}\\\texttt{api:\{sha\}}\\\texttt{dist/src/main.js}};
-  \nodo{sql}{(14.9,-3.6)}{(18.3,-7.4)}{\estereo{nó} \textbf{Cloud SQL}\\\texttt{\{contrato\}-pg}}
-  \node[nl] at (14.95,-4.45) {PostgreSQL, HA + PITR;\\só IP privado; \emph{role}\\\texttt{app} sem \texttt{BYPASSRLS};\\a posse das conversas\\do agente};
+  \nodo{gcs}{(5.5,-4.15)}{(8.9,-7.95)}{\estereo{nó} \textbf{Cloud Storage}}
+  \node[nl] at (5.55,-4.65) {\texttt{-exp}, \texttt{-assets}: públicos;\\\texttt{-planos} e mapas:\\\textbf{privados}};
+  \node[art] (bgcs) at (7.2,-6.85) {\estereo{Bundle}\\\texttt{\{expId\}/\{versao\}/}\\{\color{unooMuted}\texttt{index.html}:}\\{\color{unooMuted}\texttt{max-age=60}}};
+  \nodo[fill=unooBlueWash]{runapi}{(10.8,-4.15)}{(14.2,-7.95)}{\estereo{Cloud Run}\\\texttt{\{contrato\}-api}}
+  \node[art] at (12.5,-6.3) {\estereo{imagem}\\\texttt{api:\{sha\}}\\\texttt{dist/src/main.js}};
+  \nodo{sql}{(16.1,-4.15)}{(19.5,-7.95)}{\estereo{nó} \textbf{Cloud SQL}\\\texttt{\{contrato\}-pg}}
+  \node[nl] at (16.15,-5.0) {PostgreSQL, HA + PITR;\\só IP privado; \emph{role}\\\texttt{app} sem \texttt{BYPASSRLS};\\a posse das conversas\\do agente};
 
   % R3
-  \nodo{ps}{(5.2,-8.4)}{(8.6,-10.8)}{\estereo{nó} \textbf{Pub/Sub}}
-  \node[nl] at (5.25,-8.85) {\emph{topic} \texttt{-telemetria};\\\emph{push}\\\texttt{-telemetria-ingest}};
-  \nodo[ext]{vx}{(10.2,-8.4)}{(13.6,-10.8)}{\estereo{serviço gerenciado}\\\textbf{Vertex AI}}
-  \node[nl] at (10.25,-9.25) {Gemini em \texttt{global}\\(reserva \texttt{us}); Live\\em \texttt{us-central1}};
-  \nodo[fill=unooBlueWash]{eng}{(14.9,-8.4)}{(18.3,-10.8)}{\estereo{Agent Engine} \texttt{us-east1}}
-  \node[art=30mm] (aeng) at (16.6,-9.45) {\estereo{imagem}\\\texttt{agente-professor:}\\\texttt{\{sha\}}};
-  \node[font=\scriptsize] at (16.6,-10.5) {SA \texttt{\{prefixo\}-agente}};
+  \nodo{ps}{(5.5,-9.55)}{(8.9,-12.05)}{\estereo{nó} \textbf{Pub/Sub}}
+  \node[nl] at (5.55,-10.0) {\emph{topic} \texttt{-telemetria};\\\emph{push}\\\texttt{-telemetria-ingest}};
+  \nodo[ext]{vx}{(10.8,-9.55)}{(14.2,-12.05)}{\estereo{serviço gerenciado}\\\textbf{Vertex AI}}
+  \node[nl] at (10.85,-10.4) {Gemini em \texttt{global}\\(reserva \texttt{us}); Live\\em \texttt{us-central1}};
+  \nodo[fill=unooBlueWash]{eng}{(16.1,-9.55)}{(19.5,-12.05)}{\estereo{Agent Engine} \texttt{us-east1}}
+  \node[art=30mm] (aeng) at (17.8,-10.65) {\estereo{imagem}\\\texttt{agente-professor:}\\\texttt{\{sha\}}};
+  \node[font=\scriptsize] at (17.8,-11.7) {SA \texttt{\{prefixo\}-agente}};
 
   % R4
-  \nodo{ar}{(5.2,-11.8)}{(8.6,-14.2)}{\estereo{nó} \textbf{Artifact Registry}}
-  \node[nl] at (5.25,-12.25) {\texttt{hub}, \texttt{api} e\\\texttt{agente-professor},\\por \texttt{\{sha\}}};
-  \nodo{bag}{(10.2,-11.8)}{(13.6,-14.2)}{\estereo{nó} \textbf{Cloud Storage}\\\texttt{-agente-professor}}
-  \node[nl] at (10.25,-12.65) {privado: BNCC, livros\\e habilidades};
-  \nodo[ext]{vs}{(14.9,-11.8)}{(18.3,-14.2)}{\estereo{serviço gerenciado}\\\textbf{Vertex AI Search}}
-  \node[nl] at (14.95,-12.6) {\emph{data stores} em\\\texttt{global}: \texttt{-habilidades}\\(estruturado) e\\\texttt{-acervo} (PDFs)};
+  \nodo{ar}{(5.5,-13.55)}{(8.9,-16.05)}{\estereo{nó} \textbf{Artifact Registry}}
+  \node[nl] at (5.55,-14.0) {\texttt{hub}, \texttt{api} e\\\texttt{agente-professor},\\por \texttt{\{sha\}}};
+  \nodo{bag}{(10.8,-13.55)}{(14.2,-16.05)}{\estereo{nó} \textbf{Cloud Storage}\\\texttt{-agente-professor}}
+  \node[nl] at (10.85,-14.4) {privado: BNCC, livros\\e habilidades};
+  \nodo[ext]{vs}{(16.1,-13.55)}{(19.5,-16.05)}{\estereo{serviço gerenciado}\\\textbf{Vertex AI Search}}
+  \node[nl] at (16.15,-14.35) {\emph{data stores} em\\\texttt{global}: \texttt{-habilidades}\\(estruturado) e\\\texttt{-acervo} (PDFs)};
 
   % R5
-  \nodo{sm}{(5.2,-15.2)}{(8.6,-16.8)}{\estereo{nó} \textbf{Secret Manager}}
-  \node[nl] at (5.25,-15.6) {dez segredos, \emph{env}\\do hub e da API};
+  \nodo{sm}{(5.5,-17.35)}{(8.9,-18.95)}{\estereo{nó} \textbf{Secret Manager}}
+  \node[nl] at (5.55,-17.75) {dez segredos, \emph{env}\\do hub e da API};
 
   % ---- caminhos de comunicacao
-  \draw[caminhocom] (lav.south) -- (lav.south |- nav.north)
+  \draw[caminhocom] (lav.south) -- ([yshift=1.8mm]nav.north)
     node[cxlabel, midway, right=2pt]{WebRTC (vídeo)};
-  \draw[caminhocom] (nav.east |- 0,-1.3) -- (lb.west |- 0,-1.3)
-    node[cxlabel, pos=0.3, above=1pt, align=center]{HTTPS\\e WSS};
-  \draw[caminhocom] (lb.east |- 0,-1.0) -- (runhub.west |- 0,-1.0)
-    node[cxlabel, midway, above]{\texttt{hub}};
-  \draw[caminhocom] (lb.east |- 0,-2.1) -- (9.3,-2.1) -- node[cxlabel, pos=0.45, right=1pt]{\texttt{api}} (9.3,-4.5) -- (runapi.west |- 0,-4.5);
-  \draw[caminhocom] (lb.south) -- (gcs.north) node[cxlabel, midway, right=2pt]{CDN};
-  \draw[caminhocom] (12.9,-2.6) -- (12.9,-3.6)
+  \draw[caminhocom] ([xshift=2.2mm]nav.east |- 0,-1.3) -- (lb.west |- 0,-1.3)
+    node[cxlabel, pos=0.35, above=1.5pt, align=center]{HTTPS\\e WSS};
+  \draw[caminhocom] ([xshift=2.2mm]lb.east |- 0,-1.0) -- (runhub.west |- 0,-1.0)
+    node[cxlabel, midway, above=1.5pt]{\texttt{hub}};
+  \draw[caminhocom] ([xshift=2.2mm]lb.east |- 0,-2.1) -- (9.8,-2.1) -- node[cxlabel, pos=0.45, right=2pt]{\texttt{api}} (9.8,-5.0) -- (runapi.west |- 0,-5.0);
+  \draw[caminhocom] (lb.south) -- ([yshift=1.8mm]gcs.north) node[cxlabel, midway, right=2pt]{CDN};
+  \draw[caminhocom] (13.3,-2.6) -- (13.3,-3.97)
     node[cxlabel, midway, left=2pt]{\texttt{API\_INTERNAL\_URL}};
-  \draw[caminhocom] (runapi.west |- 0,-5.6) -- (gcs.east |- 0,-5.6)
-    node[cxlabel, midway, above=1pt, align=center]{\emph{assets},\\planos};
-  \draw[caminhocom] (runapi.west |- 0,-6.7) -- (9.6,-6.7) -- node[cxlabel, pos=0.5, align=center]{publica;\\\emph{push}} (9.6,-9.6) -- (ps.east |- 0,-9.6);
-  \draw[caminhocom] (runapi.east |- 0,-5.6) -- (sql.west |- 0,-5.6) node[cxlabel, midway, above]{VPC};
-  \draw[caminhocom] (job.south) -- (sql.north) node[cxlabel, midway, right=2pt]{VPC};
-  \draw[caminhocom] (11.0,-7.4) -- (11.0,-8.4) node[cxlabel, pos=0.45, right=2pt]{Gemini e Live};
-  \draw[caminhocom] (13.1,-7.4) -- (13.1,-7.85) -- node[cxlabel, pos=0.5]{SSE (\texttt{:streamQuery})} (16.6,-7.85) -- (16.6,-8.4);
-  \draw[caminhocom] (eng.west |- 0,-10.2) -- (vx.east |- 0,-10.2) node[cxlabel, midway, above]{Gemini};
-  \draw[caminhocom] (eng.south) -- (vs.north) node[cxlabel, midway, right=2pt]{busca};
-  \draw[caminhocom] (vs.west |- 0,-13.3) -- (bag.east |- 0,-13.3) node[cxlabel, midway, above]{lê};
-  \draw[caminhocom] (lav.east |- 0,1.6) -- node[cxlabel, pos=0.5, above=1pt]{HTTPS: \texttt{/v1/sessions} (API \seta{} \emph{vendor}) e \texttt{/ajuda/llm} (\emph{vendor} \seta{} LB \seta{} API)} (14.35,1.6) -- (14.35,-4.4) -- (runapi.east |- 0,-4.4);
+  \draw[caminhocom] (runapi.west |- 0,-6.1) -- ([xshift=2.2mm]gcs.east |- 0,-6.1)
+    node[cxlabel, midway, above=1.5pt, align=center]{\emph{assets},\\planos};
+  \draw[caminhocom] (runapi.west |- 0,-7.3) -- (9.95,-7.3) -- node[cxlabel, pos=0.52, fill=unooSurface, inner sep=1.2pt, align=center]{publica;\\\emph{push}} (9.95,-10.8) -- ([xshift=2.2mm]ps.east |- 0,-10.8);
+  \draw[caminhocom] ([xshift=2.2mm]runapi.east |- 0,-6.1) -- (sql.west |- 0,-6.1) node[cxlabel, midway, above=1.5pt]{VPC};
+  \draw[caminhocom] (job.south) -- ([yshift=1.8mm]sql.north) node[cxlabel, midway, right=2pt]{VPC};
+  \draw[caminhocom] (11.6,-7.95) -- (11.6,-9.37) node[cxlabel, midway, right=2pt]{Gemini e Live};
+  \draw[caminhocom] (13.7,-7.95) -- (13.7,-8.65) -- node[cxlabel, pos=0.5, above=1pt]{SSE (\texttt{:streamQuery})} (17.8,-8.65) -- (17.8,-9.37);
+  \draw[caminhocom] (eng.west |- 0,-11.3) -- ([xshift=2.2mm]vx.east |- 0,-11.3) node[cxlabel, midway, above=1.5pt]{Gemini};
+  \draw[caminhocom] (eng.south) -- ([yshift=1.8mm]vs.north) node[cxlabel, midway, right=2pt]{busca};
+  \draw[caminhocom] (vs.west |- 0,-15.0) -- ([xshift=2.2mm]bag.east |- 0,-15.0) node[cxlabel, midway, above=1.5pt]{lê};
+  \draw[caminhocom] ([xshift=2.2mm]lav.east |- 0,1.6) -- node[cxlabel, pos=0.5, above=1.5pt]{HTTPS: \texttt{/v1/sessions} (API \seta{} \emph{vendor}) e \texttt{/ajuda/llm} (\emph{vendor} \seta{} LB \seta{} API)} (15.25,1.6) -- (15.25,-4.9) -- ([xshift=2.2mm]runapi.east |- 0,-4.9);
 
   % ---- o CI implanta cada artefato
-  \draw[implanta] (bgcs.west) -- (bnav.east) node[cxlabel, pos=0.68, above=1pt]{baixa};
-  \draw[implanta] (gha.east |- 0,-12.3) -- (4.1,-12.3) -- (4.1,-7.0) -- (gcs.west |- 0,-7.0);
-  \node[cxlabel, anchor=east] at (4.0,-9.6) {\texttt{rsync}};
-  \draw[implanta] (gha.east |- 0,-13.4) -- (ar.west |- 0,-13.4) node[cxlabel, pos=0.35, above=1pt]{\emph{push}};
-  \draw[implanta] (gha.south) -- (gha.south |- 0,-17.8) -- node[cxlabel, pos=0.5, above=1pt]{\texttt{PATCH} da \texttt{imageUri}} (18.75,-17.8) -- (18.75,-10.2) -- (eng.east |- 0,-10.2);
+  \draw[implanta] (bgcs.west) -- (bnav.east) node[cxlabel, pos=0.62, above=1.5pt]{baixa};
+  \draw[implanta] ([xshift=2.2mm]gha.east |- 0,-14.1) -- (4.2,-14.1) -- (4.2,-7.5) -- (gcs.west |- 0,-7.5);
+  \node[cxlabel, anchor=east] at (4.1,-10.8) {\texttt{rsync}};
+  \draw[implanta] ([xshift=2.2mm]gha.east |- 0,-15.2) -- (ar.west |- 0,-15.2) node[cxlabel, pos=0.42, above=1.5pt]{\emph{push}};
+  \draw[implanta] (gha.south) -- (gha.south |- 0,-19.65) -- node[cxlabel, pos=0.5, above=1.5pt]{\texttt{PATCH} da \texttt{imageUri}} (19.95,-19.65) -- (19.95,-11.3) -- ([xshift=2.2mm]eng.east |- 0,-11.3);
 
 \end{tikzpicture}}
 \begin{legendadiag}

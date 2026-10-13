@@ -74,13 +74,13 @@ que o estudante está esperando.
     {\textbf{\texttt{TelemetryClient}}\desc{\emph{buffer} em memória;\\
      lote de 50 ou \SI{10}{\second}}};
 
-  \node[etapa, text width=28mm, minimum height=15mm] (batch) at (9.15,0)
+  \node[etapa, text width=28mm, minimum height=15mm] (batch) at (9.45,0)
     {\texttt{POST}\\\texttt{/telemetry/batch}\desc{\texttt{OidcGuard};\\identidade vem do TOKEN}};
 
-  \node[fita, text width=24mm, minimum height=14mm] (topic) at (13.9,0)
+  \node[fita, text width=24mm, minimum height=14mm] (topic) at (14.3,0)
     {\textbf{Pub/Sub}\desc{\emph{topic} \texttt{-telemetria}}};
 
-  \node[etapaerr, text width=28mm, minimum height=13mm] (beacon) at (9.15,-3.2)
+  \node[etapaerr, text width=28mm, minimum height=13mm] (beacon) at (9.45,-3.2)
     {\texttt{POST}\\\texttt{/telemetry/beacon}\desc{\texttt{pagehide}; \emph{token} NO\\CORPO; 204 sempre}};
 
   \node[etapa, text width=36mm, minimum height=15mm] (ingest) at (11.4,-6.3)
@@ -95,9 +95,9 @@ que o estudante está esperando.
   \draw[pipe] (batch) -- (topic);
   \draw[pipe] (sdk.south) |- (beacon.west)
     node[pipelbl, pos=0.75, above=1pt]{\texttt{sendBeacon}};
-  \draw[pipe] (beacon.east) -- (13.2,-3.2) -- (13.2,0 |- topic.south)
+  \draw[pipe] (beacon.east) -- (13.6,-3.2) -- (13.6,0 |- topic.south)
     node[pipelbl, pos=0.5, left=2pt, align=right]{publica no\\mesmo \emph{topic}};
-  \draw[pipe] (14.6,0 |- topic.south) |- (ingest.east)
+  \draw[pipe] (15.0,0 |- topic.south) |- (ingest.east)
     node[pipelbl, pos=0.3, left=2pt, align=right]{\emph{push}\\autenticado};
   \draw[pipe] (ingest) -- (pg);
 
