@@ -130,7 +130,11 @@ function Consultando({ fontes }: { fontes: number }) {
           <span className="h-1.5 w-1.5 animate-pulse rounded-uai-full bg-uai-acao [animation-delay:300ms]" />
         </span>
         {linha}
-        <span className="tabular-nums text-uai-suave-60">{segundos}s</span>
+        {/* Só visual: dentro do `role="log"` o contador seria anunciado a cada
+            segundo, por cima da resposta (ADR-162). */}
+        <span className="tabular-nums text-uai-suave-60" aria-hidden="true">
+          {segundos}s
+        </span>
       </span>
       {/* Enquanto ele responde, o campo continua vivo: escrever a próxima
           pergunta é a única coisa que o estudante pode fazer com o tempo que o

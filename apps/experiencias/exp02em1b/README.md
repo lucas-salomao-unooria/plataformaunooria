@@ -93,7 +93,7 @@ Mudar um deles é mudar o teste.
 
 | O que | Seletor / texto |
 |---|---|
-| iframe no hub | `iframe[title="experiencia"]` |
+| iframe no hub | `iframe[data-experiencia]` (o `title` é o nome da missão, para o leitor de tela — ADR-162) |
 | briefing | texto `Não dá para atender todos` |
 | botão de começar | `button` com `Começar` |
 | cronômetro parado | texto `Aguardando o professor` |

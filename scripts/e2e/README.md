@@ -161,7 +161,10 @@ Duas portas para o mesmo axe-core (`lib/acessibilidade.mjs`):
   dentro das missões, que só uma suíte sabe percorrer. Agrupa por regra e por
   elemento (a mesma peça em 40 passos é UM defeito), grava
   `testes/<papel>/<suíte>/acessibilidade.json` e reprova uma verificação por regra.
-  Desligado por padrão: custa ~1 s por passo.
+  Desligado por padrão: custa ~1 s por passo. **Ele ADIANTA as animações**
+  (`getAnimations().finish()`) antes de medir, para medir o estado final e não o
+  meio de um fade — o que dispara `animationend`/`transitionend` mais cedo. Tela
+  que avança estado nesses eventos pode se comportar diferente só neste modo.
 
 **Verde no axe é condição NECESSÁRIA do AA, não suficiente.** Ele não julga
 ordem de foco, foco preso em janela, se o texto alternativo descreve a imagem,
