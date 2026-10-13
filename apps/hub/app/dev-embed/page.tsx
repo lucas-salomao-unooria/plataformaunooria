@@ -45,6 +45,7 @@ export default async function DevEmbedPage({
         apiUrl={embed.apiUrl}
         viewport={embed.viewport}
         permissoes={embed.permissoes}
+        titulo={embed.manifesto?.nome}
         obs={embed.obs}
       />
     </>

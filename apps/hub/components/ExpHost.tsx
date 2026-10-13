@@ -40,6 +40,8 @@ export function ExpHost(props: {
   viewport?: { largura: number; altura: number } | null;
   /** Do manifesto da experiência; segue no spread para o `ExpFrame`. */
   permissoes?: readonly string[];
+  /** O nome da experiência, para o `title` do iframe; segue no spread. */
+  titulo?: string | null;
   /** Observabilidade do navegador (ratio de spans); entra em `config.obs` do hub:init. */
   obs?: { traceRatio: number };
 }) {

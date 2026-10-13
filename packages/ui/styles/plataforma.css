@@ -51,6 +51,14 @@
   border-color: var(--unooria-color-brandnavy-800, #49699f);
 }
 
+/* O `outline: none` acima apagava o anel do `:focus-visible` global: sobrava
+   só a troca de cor de uma borda de 1px, fraca demais para quem navega por
+   teclado (WCAG 2.4.7, ADR-162). */
+.unooria-select:focus-visible {
+  outline: 2px solid var(--unooria-color-brandnavy-800, #49699f);
+  outline-offset: 2px;
+}
+
 .unooria-rotulo-de-campo {
   display: block;
   margin-bottom: 6px;
@@ -157,9 +165,11 @@
 /*
  * Unidade ainda não publicada: fica na grade (a grade de 4 é a informação),
  * mas apagada e sem afordância de clique — nada aqui responde ao ponteiro.
+ * "Apagada" pelo FUNDO, pela borda sem sombra e pelo `Badge` "Em breve" —
+ * nunca por `opacity`: 0.62 levava o texto a 2,5–4,5:1 e reprovava a WCAG
+ * 1.4.3 (ADR-162). Texto num card que não se clica continua sendo lido.
  */
 .cartao-missao--em-breve {
-  opacity: 0.62;
   background: var(--unooria-color-neutral-100, #f5f5f5);
   box-shadow: none;
 }

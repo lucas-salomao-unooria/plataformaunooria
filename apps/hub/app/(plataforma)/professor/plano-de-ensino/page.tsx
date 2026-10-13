@@ -44,6 +44,7 @@ export default async function PlanoDeEnsinoPage({
         apiUrl={embed.apiUrl}
         config={{ expId: EXP_PLANO_DE_ENSINO, obs: embed.obs }}
         permissoes={embed.permissoes}
+        titulo={embed.manifesto?.nome}
       />
     </div>
   );
