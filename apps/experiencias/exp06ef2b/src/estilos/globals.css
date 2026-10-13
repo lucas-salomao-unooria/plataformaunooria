@@ -226,13 +226,15 @@ body {
 
 .metadados__detalhe {
   font-size: 12px;
-  color: var(--wa-color-text-meta);
+  /* O text-meta dava 4,1:1 no painel; o secundário (DS 0.2.20) dá 4,8 (ADR-162). */
+  color: var(--wa-color-text-secondary);
   margin: 2px 0 0;
 }
 
 .metadados__progresso {
   font-size: 12px;
-  color: var(--wa-color-text-meta);
+  /* O text-meta dava 4,1:1 no painel; o secundário (DS 0.2.20) dá 4,8 (ADR-162). */
+  color: var(--wa-color-text-secondary);
   margin: 0;
 }
 

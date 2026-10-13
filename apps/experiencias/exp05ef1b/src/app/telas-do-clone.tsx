@@ -482,8 +482,16 @@ export function MuralDaTurma({
       <ChatWallpaper className="app__corpo">
         <div className="conversa">
           <div ref={topo} />
-          {/* E3-ALU-02: na enquete, o histórico recua a 30% — o PICO é um elemento só. */}
-          <div className={etapa === "enquete" ? "historico historico--esmaecido" : "historico"}>
+          {/* E3-ALU-02: na enquete, o histórico recua a 30% — o PICO é um elemento só.
+              Recuado, ele é FUNDO, como atrás de uma janela: sai da leitura e do
+              foco (`inert` + `aria-hidden`). A 30% o texto não passaria em
+              contraste nenhum, e o leitor de tela teria o que o olho não tem
+              (WCAG 1.4.3, ADR-162). */}
+          <div
+            className={etapa === "enquete" ? "historico historico--esmaecido" : "historico"}
+            inert={etapa === "enquete" || undefined}
+            aria-hidden={etapa === "enquete" || undefined}
+          >
             {mensagens.map((m) => {
               const crachas = revelado ? crachasDe(revelacao, m.id) : null;
               return (

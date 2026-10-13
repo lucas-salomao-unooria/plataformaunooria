@@ -318,7 +318,9 @@
    módulo do componente, ou seja, DEPOIS desta — no empate quem ganha é o DS, e
    o botão volta ao navy. Medido: com dois seletores o vermelho não aparece. */
 .unooria-button.acao-destrutiva.unooria-button--variant-outline {
-  color: var(--unooria-color-danger-600, #e31a1a);
+  /* Texto no 700: o 600 dava 4,34:1 sobre o cinza do botão (WCAG 1.4.3,
+     ADR-162). A borda fica no 600 — para borda 3:1 basta. */
+  color: var(--unooria-color-danger-700, #c11414);
   border-color: var(--unooria-color-danger-600, #e31a1a);
 }
 
@@ -326,7 +328,7 @@
 .unooria-button.acao-destrutiva.unooria-button--variant-outline:focus-visible {
   background-color: var(--unooria-color-opacity-danger-100, rgba(227, 26, 26, 0.1));
   border-color: var(--unooria-color-danger-600, #e31a1a);
-  color: var(--unooria-color-danger-600, #e31a1a);
+  color: var(--unooria-color-danger-700, #c11414);
 }
 
 /*

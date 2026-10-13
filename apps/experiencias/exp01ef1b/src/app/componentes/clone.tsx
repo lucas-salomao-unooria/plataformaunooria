@@ -64,12 +64,16 @@ export function PhotoComparisonSelector({
   const fotos = [fotoAId, fotoBId];
   return (
     <div className="fc-seletor-fotos" role="radiogroup" aria-label={TEXTO.e3.selecionarFoto}>
-      {fotos.map((id) => (
+      {fotos.map((id, i) => (
         <button
           key={id}
           type="button"
           role="radio"
           aria-checked={selecionada === id}
+          /* Nome NEUTRO, de propósito: descrever a foto entregaria a escolha
+             (regra de não-adivinhação). Sem nenhum, o leitor de tela dizia só
+             "botão de opção" (WCAG 4.1.2, ADR-162). */
+          aria-label={`Foto ${i + 1}`}
           className={`fc-foto-opcao${selecionada === id ? " fc-foto-opcao--ativa" : ""}`}
           onClick={() => aoEscolher(id)}
         >

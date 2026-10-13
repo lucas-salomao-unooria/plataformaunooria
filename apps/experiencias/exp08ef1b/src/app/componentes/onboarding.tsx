@@ -58,13 +58,15 @@ export function Onboarding({
             375px sem virar miniatura ilegível. O `aria-label` usa o nome da
             figurinha, não o id — "Capivara", não "avatar-01".
           */}
-          <ul
+          {/* `div`, não `ul`: com `role="radiogroup"` a lista perde o papel e os
+              `li` ficavam órfãos (WCAG 1.3.1, ADR-162). */}
+          <div
             role="radiogroup"
             aria-label="Escolha sua figurinha"
             className="grid max-h-[42vh] grid-cols-4 gap-4 overflow-y-auto overscroll-contain p-1"
           >
             {AVATARES.map((item) => (
-              <li key={item.id}>
+              <div key={item.id}>
                 <button
                   type="button"
                   role="radio"
@@ -75,9 +77,9 @@ export function Onboarding({
                 >
                   <AvatarPerfil seed={item.id} tamanho={56} />
                 </button>
-              </li>
+              </div>
             ))}
-          </ul>
+          </div>
 
           <TextFieldUnv
             block

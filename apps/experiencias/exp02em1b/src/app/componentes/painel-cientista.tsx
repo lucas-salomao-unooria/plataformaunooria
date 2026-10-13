@@ -273,7 +273,9 @@ export function PainelCientista({
     // recurso mais escasso desta tela.
     <section className="flex h-full w-full flex-col">
       {/* A rolagem vive AQUI: só as mensagens rolam. */}
-      <div className="min-h-0 flex-1 space-y-2 overflow-y-auto p-5">
+      {/* `log` + foco: a conversa rola, e o teclado precisa alcançá-la; o papel
+          faz o leitor de tela anunciar a fala nova (WCAG 2.1.1/4.1.3, ADR-162). */}
+      <div className="min-h-0 flex-1 space-y-2 overflow-y-auto p-5" role="log" aria-label="Conversa com o cientista" tabIndex={0}>
         {falas.length === 0 && (
           <ChatBubble role="assistant" avatarInitials="CD" className="w-full">
             <span className="block">
