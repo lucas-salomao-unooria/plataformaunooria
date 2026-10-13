@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import { api } from '../../lib/api';
+import { altDaImagem } from '../../lib/alt-da-imagem';
 
 /**
  * O FEED QUE ELE NÃO RECEBEU (fluxo v2).
@@ -21,6 +22,7 @@ interface PostPerdido {
   id: string;
   author: { handle: string; displayName: string; verificado: boolean };
   imageUrl: string | null;
+  imageAlt?: string | null;
   fallbackArt: { corFundo: string; emojis: string } | null;
   caption: string;
   hashtags: string[];
@@ -123,7 +125,7 @@ export function Perdidos({ runId }: { runId: string }) {
             <div className="aspect-[4/5] w-full overflow-hidden bg-canvas">
               {post.imageUrl ? (
                  
-                <img src={post.imageUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
+                <img src={post.imageUrl} alt={altDaImagem(post.imageAlt, post.author.handle)} className="h-full w-full object-cover" loading="lazy" />
               ) : (
                 <span
                   className="flex h-full w-full items-center justify-center text-[52px]"

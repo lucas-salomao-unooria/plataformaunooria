@@ -1,3 +1,4 @@
+import { textoAlternativoDaImagem } from "../comum/insta/texto-alternativo";
 import {
   BadRequestException,
   Body,
@@ -815,6 +816,7 @@ export class AtividadesController {
           caption: true,
           imageUrl: true,
           imageStatus: true,
+          imageBrief: true,
           author: { select: { handle: true } },
         },
       });
@@ -840,6 +842,7 @@ export class AtividadesController {
           handle: post.author.handle,
           caption: post.caption,
           imageUrl: post.imageStatus === "ok" ? post.imageUrl : null,
+          imageAlt: textoAlternativoDaImagem(post),
           fallbackArt: post.imageStatus === "ok" ? null : arteFallback(post.id, post.categoria),
           lado: post.lado,
           ladoRotulo: rotulo(post.lado),
