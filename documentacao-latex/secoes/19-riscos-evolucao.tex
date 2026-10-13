@@ -289,50 +289,50 @@ severidade, e a severidade considera o prazo de novembro de 2026.
 \begin{figure}[H]
 \centering
 \fitwidth{%
-\begin{tikzpicture}[x=1.9cm, y=1.5cm]
+\begin{tikzpicture}[x=1cm, y=1cm,
+    cel/.style={font=\scriptsize, text width=29mm, align=center,
+                inner sep=0pt},
+    crit/.style={cel, font=\scriptsize\bfseries, text=unooRed},
+    alto/.style={cel, font=\scriptsize\bfseries, text=unooOrange!80!black},
+    resto/.style={cel, text=unooInkSoft}]
 
-  \draw[draw=unooAxis, line width=0.7pt] (0.4,0.4) rectangle (3.6,3.6);
-  \foreach \x in {1.4,2.4} \draw[draw=unooGrid] (\x,0.4) -- (\x,3.6);
-  \foreach \y in {1.4,2.4} \draw[draw=unooGrid] (0.4,\y) -- (3.6,\y);
+  % Celulas de 3,2 x 2,2 cm. Colunas: probabilidade baixa / media / alta;
+  % linhas: impacto baixo / medio / alto. Fonte: a tabela acima (certa conta
+  % como alta; possivel, como media).
+  \fill[unooRedWash] (6.4,4.4) rectangle (9.6,6.6);
+  \fill[unooOrangeWash] (3.2,4.4) rectangle (6.4,6.6);
+  \fill[unooOrangeWash] (6.4,2.2) rectangle (9.6,4.4);
+  \draw[draw=unooAxis, line width=0.7pt] (0,0) rectangle (9.6,6.6);
+  \foreach \x in {3.2,6.4} \draw[draw=unooGrid] (\x,0) -- (\x,6.6);
+  \foreach \y in {2.2,4.4} \draw[draw=unooGrid] (0,\y) -- (9.6,\y);
 
-  \node[legenda, rotate=90] at (-0.28,2.0) {Impacto};
-  \node[legenda] at (2.0,0.05) {Probabilidade};
-  \node[legenda] at (0.9,0.22) {baixa}; \node[legenda] at (1.9,0.22) {média};
-  \node[legenda] at (2.9,0.22) {alta};
-  \node[legenda, anchor=east] at (0.35,0.9) {baixo};
-  \node[legenda, anchor=east] at (0.35,1.9) {médio};
-  \node[legenda, anchor=east] at (0.35,2.9) {alto};
+  \node[legenda, rotate=90] at (-1.75,3.3) {Impacto};
+  \node[legenda] at (4.8,-0.75) {Probabilidade};
+  \node[legenda] at (1.6,-0.3) {baixa};
+  \node[legenda] at (4.8,-0.3) {média};
+  \node[legenda] at (8.0,-0.3) {alta};
+  \node[legenda, anchor=east] at (-0.15,1.1) {baixo};
+  \node[legenda, anchor=east] at (-0.15,3.3) {médio};
+  \node[legenda, anchor=east] at (-0.15,5.5) {alto};
 
-  % zona critica
-  \fill[unooRedWash, opacity=0.6] (2.4,2.4) rectangle (3.6,3.6);
-  \fill[unooOrangeWash, opacity=0.5] (1.4,2.4) rectangle (2.4,3.6);
-  \fill[unooOrangeWash, opacity=0.5] (2.4,1.4) rectangle (3.6,2.4);
+  % impacto alto
+  \node[alto] at (4.8,5.5) {R-01 \quad R-17\\R-24 \quad R-32};
+  \node[crit] at (8.0,5.5) {R-02 \quad R-04 \quad R-06\\R-14 \quad R-16 \quad R-19\\R-27};
+  % impacto medio
+  \node[resto] at (1.6,3.3) {R-08 \quad R-34};
+  \node[resto] at (4.8,3.3) {R-07 \quad R-15 \quad R-25\\R-29 \quad R-31 \quad R-33\\R-35 \quad R-36};
+  \node[alto] at (8.0,3.3) {R-03 \quad R-05 \quad R-12\\R-18 \quad R-21 \quad R-23\\R-28 \quad R-30 \quad R-37\\R-38};
+  % impacto baixo
+  \node[resto] at (4.8,1.1) {R-10 \quad R-11 \quad R-13};
+  \node[resto] at (8.0,1.1) {R-09 \quad R-26};
 
-  % zona vermelha (probabilidade alta/certa x impacto alto)
-  \node[font=\scriptsize\bfseries\color{unooRed}] at (3.0,3.30) {R-02  R-04};
-  \node[font=\scriptsize\bfseries\color{unooRed}] at (3.0,3.00) {R-06  R-14};
-  \node[font=\scriptsize\bfseries\color{unooRed}] at (3.0,2.70) {R-16  R-19};
-  % impacto alto, probabilidade media
-  \node[font=\scriptsize\bfseries\color{unooRed}] at (1.9,3.00) {R-01};
-  \node[font=\scriptsize\bfseries\color{unooRed}] at (1.9,2.70) {R-17};
-  % faixa laranja: impacto medio, probabilidade alta/certa
-  \node[font=\scriptsize\bfseries\color{unooOrange}] at (3.0,2.10) {R-05  R-07};
-  \node[font=\scriptsize\bfseries\color{unooOrange}] at (3.0,1.85) {R-12  R-18};
-  \node[font=\scriptsize\bfseries\color{unooOrange}] at (3.0,1.60) {R-21};
-  % restante
-  \node[font=\scriptsize\color{unooInkSoft}] at (1.9,2.05) {R-03$^{*}$};
-  \node[font=\scriptsize\color{unooInkSoft}] at (1.9,1.75) {R-15  R-23};
-  \node[font=\scriptsize\color{unooInkSoft}] at (2.9,0.9) {R-09};
-  \node[font=\scriptsize\color{unooInkSoft}] at (1.9,0.9) {R-10  R-11  R-13};
-  \node[font=\scriptsize\color{unooInkSoft}] at (0.9,1.9) {R-08};
-
-  \node[legenda, anchor=north west, text width=44mm] at (3.75,3.5)
-    {$^{*}$ R-03 tem probabilidade \emph{certa} --- é consequência aceita, não
-     eventualidade. Está posicionado em \enquote{média} apenas para caber na
-     matriz.\\[4pt]
-     A zona vermelha concentra o que \textbf{tem de ser resolvido antes de
-     novembro de 2026}: carga verificada, retenção decidida e revisão de
-     segurança contratada.};
+  \node[legenda, anchor=north west, text width=50mm, align=flush left] at (10.1,6.6)
+    {Probabilidade como na tabela: \emph{certa} conta como alta, e
+     \emph{possível}, como média.\\[4pt]
+     O vermelho e o laranja do alto impacto concentram o que \textbf{tem de
+     ser resolvido antes de novembro de 2026}: carga verificada (R-01),
+     retenção decidida (R-02), revisão de segurança contratada (R-06) e o
+     aumento da quota do Agent Engine pedido (R-27).};
 
 \end{tikzpicture}}
 \caption[Matriz de riscos]{Matriz de riscos. A maioria dos riscos da zona

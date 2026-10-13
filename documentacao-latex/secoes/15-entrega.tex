@@ -157,83 +157,116 @@ Pub/Sub: env ausente é porta fechada, não porta aberta.
 \begin{figure}[H]
 \centering
 \fitpage{%
-\begin{tikzpicture}[x=1cm, y=1cm]
+\begin{tikzpicture}[x=1cm, y=1cm,
+    e/.style={etapa, text width=30mm, minimum height=14mm},
+    eo/.style={etapaout, text width=30mm, minimum height=14mm},
+    trilha/.style={camadalbl, anchor=south west, inner sep=0pt}]
 
-  \node[etapaio, text width=26mm] (push) at (1.4,0)
+  % Grade: colunas em x = 1.9 / 5.7 / 9.5 / 13.3; trilhas a cada 2,4 cm.
+  % ---- gatilho, portao e diff (paralelos) -> needs: [verificar, mudancas]
+  \node[etapaio, text width=26mm, minimum height=14mm] (push) at (1.9,0)
     {\emph{push} para \texttt{dev} ou \texttt{hml}\desc{merge de um PR}};
-  \node[etapa, text width=26mm, fill=unooGreenWash, draw=unooGreen] (ver) at (5.0,0)
-    {\textbf{portão}: \texttt{ci.yml}\desc{typecheck, lint, test, build}};
-  \node[etapa, text width=30mm] (diff) at (9.0,0)
-    {\emph{job} \texttt{mudancas}\desc{\texttt{git diff HEAD\^{} HEAD}\\api $|$ hub $|$ exps}};
+  \node[barv, minimum height=34mm] (fork) at (4.0,0) {};
+  \node[e] (ver) at (6.3,0.85)
+    {\textbf{portão} \texttt{verificar}\desc{\texttt{ci.yml}: typecheck,\\lint, test, build}};
+  \node[e] (diff) at (6.3,-0.85)
+    {\emph{job} \texttt{mudancas}\desc{\texttt{git diff HEAD\^{} HEAD}}};
+  \node[barv, minimum height=34mm] (join) at (8.6,0) {};
+  \node[actnote, text width=42mm, align=flush left, anchor=west] at (10.6,0)
+    {Os \emph{jobs} de \emph{deploy} declaram \texttt{needs: [verificar,}
+     \texttt{mudancas]}: nada sobe sem o portão, e o \emph{diff} liga só a
+     trilha do que mudou (api, hub, agente, experiências).};
 
-  % --- trilha da api (job proprio)
-  \node[camadalbl, anchor=west] at (0.4,-3.6)
-    {\emph{job} \texttt{deploy-api} --- a ORDEM importa};
-  \node[etapa, text width=28mm] (img) at (2.4,-4.8)
-    {imagem da api\desc{camada de deps do \texttt{pnpm fetch}, \emph{cache} GHA}};
-  \node[etapa, text width=30mm, fill=unooYellowWash, draw=unooYellow] (mig) at (6.4,-4.8)
-    {\textbf{Cloud Run Job} \texttt{-migrate}\desc{na VPC, \texttt{--wait}}};
-  \node[etapaout, text width=28mm] (dep) at (10.4,-4.8)
-    {\texttt{gcloud run deploy}\desc{revisão nova}};
+  \draw[pipe] (push) -- (fork);
+  \draw[pipe] (fork.east |- ver) -- (ver);
+  \draw[pipe] (fork.east |- diff) -- (diff);
+  \draw[pipe] (ver) -- (join.west |- ver);
+  \draw[pipe] (diff) -- (join.west |- diff);
 
-  % --- trilha do hub (job proprio, em paralelo com a api)
-  \node[camadalbl, anchor=west] at (0.4,-6.4)
-    {\emph{job} \texttt{deploy-hub} --- em PARALELO com a api};
-  \node[etapa, text width=28mm] (imgh) at (2.4,-7.4)
-    {imagem do hub\desc{camada de deps do \texttt{pnpm fetch}, \emph{cache} GHA}};
-  \node[etapaout, text width=28mm] (deph) at (6.4,-7.4)
-    {\texttt{gcloud run deploy}};
+  % ---- trilha 1: api
+  \node[trilha] at (0.4,-2.85) {\emph{job} \texttt{deploy-api} --- a ORDEM importa};
+  \node[e]  (img)  at (1.9,-3.85)  {imagem da api\desc{camada de deps\\com \emph{cache}}};
+  \node[e]  (mig)  at (5.7,-3.85)
+    {Cloud Run Job \texttt{-migrate}\desc{na VPC, \texttt{--wait}}};
+  \node[eo] (dep)  at (9.5,-3.85)  {\texttt{gcloud run deploy}\desc{revisão nova da api}};
+  \node[e]  (sapi) at (13.3,-3.85) {sonda pós-\emph{deploy}\desc{\texttt{/readyz}, até 2 min}};
 
-  % --- trilha das experiencias (dois jobs: subir e ativar)
-  \node[camadalbl, anchor=west] at (0.4,-10.6)
-    {\emph{jobs} \texttt{publicar-exps} (em paralelo) \seta{} \texttt{ativar-exps} (depois dos dois)};
-  \node[etapa, text width=24mm] (build) at (1.8,-11.8)
-    {\texttt{turbo build}\desc{filtrado, ou tudo se \texttt{forcar}}};
-  \node[etapa, text width=30mm] (rsync) at (5.4,-11.8)
-    {\texttt{gcloud storage rsync}\desc{\texttt{gs://\{bucket\}/}\\\texttt{\{exp\}/\{ver\}/}}};
-  \node[etapa, text width=28mm] (cc) at (9.2,-11.8)
-    {\texttt{Cache-Control}\desc{\texttt{max-age=60} só no \texttt{index.html}}};
-  \node[etapaout, text width=30mm] (man) at (13.0,-11.8)
-    {\texttt{publicar-manifesto.mjs}\desc{\emph{job} \texttt{ativar-exps}:
-     \texttt{PUT /experiencias/:expId}, token de 5 min}};
+  % ---- trilha 2: hub
+  \node[trilha] at (0.4,-5.25) {\emph{job} \texttt{deploy-hub} --- em PARALELO};
+  \node[e]  (imgh) at (1.9,-6.25) {imagem do hub\desc{camada de deps\\com \emph{cache}}};
+  \node[eo] (deph) at (5.7,-6.25) {\texttt{gcloud run deploy}\desc{revisão nova do hub}};
+  \node[e]  (shub) at (9.5,-6.25)
+    {sonda pós-\emph{deploy}\desc{\texttt{/api/healthz} e JWKS}};
 
-  \draw[pipe] (push) -- (ver);
-  \draw[pipe] (ver) -- (diff);
-  \draw[pipe] (diff.south) -- (9.0,-1.6) -- (-0.4,-1.6) -- (-0.4,-4.8) -- (img.west);
-  \draw[pipe] (-0.4,-4.8) -- (-0.4,-7.4) -- (imgh.west);
+  % ---- trilha 3: agente de IA do professor
+  \node[trilha] at (0.4,-7.65)
+    {\emph{job} \texttt{deploy-agente-professor} --- em PARALELO};
+  \node[e]  (imga) at (1.9,-8.65)
+    {imagem do agente\desc{\texttt{uv sync --locked}}};
+  \node[eo] (pat)  at (5.7,-8.65)
+    {\texttt{PATCH} do Agent Engine\desc{só a \texttt{imageUri};\\espera a operação}};
+  \node[actnote, text width=26mm, align=flush left, anchor=west] at (7.75,-8.65)
+    {Engine ainda não existe? Só publica a imagem e avisa (\emph{apply}~2).};
+
+  % ---- trilha 4: experiencias (subir; a ativacao espera api e hub)
+  \node[trilha] at (0.4,-10.05)
+    {\emph{job} \texttt{publicar-exps} (sobe, inerte) \seta{} \emph{job} \texttt{ativar-exps}};
+  \node[e]  (build) at (1.9,-11.05) {\texttt{turbo build}\desc{filtrado, ou tudo\\se \texttt{forcar}}};
+  \node[e]  (rsync) at (5.7,-11.05)
+    {\texttt{gcloud storage rsync}\desc{caminho com a versão,\\sem \texttt{.map}}};
+  \node[e]  (cc)    at (9.5,-11.05)
+    {\texttt{Cache-Control}\desc{\texttt{max-age=60} só\\no \texttt{index.html}}};
+  \node[eo] (man)   at (13.3,-11.05)
+    {\texttt{ativar-exps}\desc{\texttt{PUT} do manifesto\\(\texttt{versaoAtiva})}};
+
+  % ---- fim: smoke
+  \node[e] (smoke) at (13.3,-13.45)
+    {\emph{job} \texttt{smoke}\desc{e2e \texttt{publico/01}\\contra o ambiente}};
+
+  % ---- espinha: do join para as quatro trilhas
+  \draw[pipe] (join.south) -- (8.6,-2.1) -- (-0.3,-2.1) -- (-0.3,-3.85) -- (img.west);
+  \draw[pipe] (-0.3,-3.85) -- (-0.3,-6.25) -- (imgh.west);
+  \draw[pipe] (-0.3,-6.25) -- (-0.3,-8.65) -- (imga.west);
+  \draw[pipe] (-0.3,-8.65) -- (-0.3,-11.05) -- (build.west);
+
   \draw[pipe] (img) -- (mig);
   \draw[pipe] (mig) -- (dep);
+  \draw[pipe] (dep) -- (sapi);
   \draw[pipe] (imgh) -- (deph);
-  \draw[pipe] (dep.south) -- (10.4,-9.4) -- (6.4,-9.4);
-  \draw[pipe] (deph.south) -- (6.4,-9.4) -- (-0.4,-9.4) -- (-0.4,-11.8) -- (build.west);
+  \draw[pipe] (deph) -- (shub);
+  \draw[pipe] (imga) -- (pat);
   \draw[pipe] (build) -- (rsync);
   \draw[pipe] (rsync) -- (cc);
   \draw[pipe] (cc) -- (man);
 
-  \node[actnote, text width=44mm, anchor=north west] at (12.2,-3.4)
-    {\textbf{Por que a migração antes do \emph{deploy}:} o \emph{schema} novo tem
-     de estar no banco \emph{antes} de a revisão nova receber tráfego, senão a
-     API roda contra um banco velho. O \texttt{--wait} faz o passo falhar se a
-     migração falhar --- e o \emph{deploy} não acontece.};
-
-  \node[actnote, text width=44mm, anchor=north west] at (12.2,-6.9)
-    {\textbf{Por que as experiências depois do hub:} o \texttt{PUT} do manifesto é
-     validado pela API contra o JWKS que o \emph{hub} serve. Hub fora do ar =
-     manifesto rejeitado --- e um manifesto rejeitado é melhor que um manifesto
-     aceito apontando para um hub que não subiu.};
+  % ---- ativar espera as duas sondas; smoke espera a ativacao
+  \draw[pipe] (14.2,0 |- sapi.south) -- (14.2,0 |- man.north);
+  \draw[pipe] (shub.east) -- (12.4,-6.25) -- (12.4,0 |- man.north);
+  \draw[pipe] (man) -- (smoke);
 
 \end{tikzpicture}}
-\caption[Pipeline de entrega]{O \emph{pipeline} de entrega. O portão e o
-  \emph{job} \cd{mudancas} decidem o que roda; api e hub sobem em \emph{jobs}
-  paralelos (cada um autentica por WIF, sem chave JSON); as experiências
-  publicam por último, depois dos dois.}
+\caption[Pipeline de entrega]{O \emph{pipeline} de entrega
+  (\arq{.github/workflows/deploy.yml}). O portão e o \emph{job} \cd{mudancas}
+  correm em paralelo e, juntos, liberam as trilhas; api, hub e o agente de IA do
+  professor sobem em \emph{jobs} paralelos (cada um autentica por WIF, sem chave
+  JSON). As experiências SOBEM cedo, inertes, e só são ATIVADAS depois que as
+  sondas da api e do hub passam; o \cd{smoke} fecha a corrida e não espera o
+  agente.}
 \label{fig:pipeline-deploy}
 \end{figure}
 
+\begin{legendadiag}
+\amostra{etapaio} gatilho \quad
+\amostra{etapa} passo \quad
+\amostra{etapaout} troca o que está no ar \quad
+\amostra{actnote} nota \quad
+barra preta: \emph{fork} e \emph{join} (o \texttt{needs} do \emph{workflow})
+\end{legendadiag}
+
 \subsection{O agente de IA do professor: imagem, \cd{PATCH} e a ordem dos \emph{applies}}
 
-O agente (\adrr{ADR-126}) não é um Cloud Run, e a figura acima não o desenha: é
-um quarto \emph{job}, \cd{deploy-agente-professor}, em paralelo com os da api e
+O agente (\adrr{ADR-126}) não é um Cloud Run: é a terceira trilha da figura
+acima, um \emph{job} \cd{deploy-agente-professor} em paralelo com os da api e
 do hub, disparado quando o \emph{job} \cd{mudancas} vê \arq{apps/agente-professor}
 no \emph{diff} (o pacote é Python e não lê nada de \arq{packages/} nem do
 \emph{lockfile} do pnpm). Ele constrói a imagem pelo \arq{Dockerfile} do pacote

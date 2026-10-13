@@ -102,61 +102,67 @@ A Figura~\ref{fig:visao-geral} resume o caminho de uma sessão de estudante, do
 \begin{figure}[H]
 \centering
 \fitwidth{%
-\begin{tikzpicture}[x=1cm, y=1cm]
+\begin{tikzpicture}[x=1cm, y=1cm,
+  every node/.append style={execute at begin node={\hyphenpenalty=10000\exhyphenpenalty=10000}},
+  cx/.style={text width=29mm, minimum height=15mm}]
 
-  \node[c4person, text width=22mm, minimum height=12mm] (estudante) at (0,0)
-    {\textbf{Estudante}};
+  % colunas 0, 4.4, 8.8 (agente), 10.4 (experiência), 13.2; linhas 2.6
+  % (identidade), 0 (porta), -3.4 (núcleo), -6.4 (apoio). Corredor entre a
+  % porta e o núcleo: (meio), a meia altura entre hub.south e api.north,
+  % ancorado pelos nós (eles crescem com o texto).
+  % A Experiência fica em 10.4 para o rótulo postMessage ter folga entre
+  % Hub e Experiência.
 
-  \node[c4container, text width=30mm, minimum height=14mm] (hub) at (4.1,0)
-    {\textbf{Hub}\tech{Next.js}\desc{autentica, roteia, embeda}};
+  \node[c4person, text width=20mm, minimum height=10mm] (estudante) at (0,0.75) {\textbf{Estudante}};
+  \node[c4person, text width=20mm, minimum height=10mm] (prof) at (0,-0.75) {\textbf{Professor}};
 
-  \node[bundle, text width=30mm, minimum height=14mm] (exp) at (8.6,0)
-    {\textbf{Experiência}\tech{Vite estático + CDN}\desc{roda no iframe}};
+  \node[c4systemext, cx, minimum height=11mm] (idp) at (4.4,2.6) {\textbf{WSO2 IS}\desc{identidade}};
+  \node[c4container, cx] (hub) at (4.4,0) {\textbf{Hub}\tech{Next.js}\desc{autentica, roteia, embeda}};
+  \node[bundle, cx] (exp) at (10.4,0) {\textbf{Experiência}\tech{Vite estático + CDN}\desc{roda no \texttt{iframe}}};
 
-  \node[c4container, text width=30mm, minimum height=14mm] (api) at (4.1,-3.6)
-    {\textbf{API}\tech{NestJS}\desc{regra, gabarito, tenancy}};
+  \node[c4db, text width=24mm] (pg) at (0,-3.4) {\textbf{PostgreSQL}\tech{Cloud SQL}};
+  \node[c4container, cx] (api) at (4.4,-3.4) {\textbf{API}\tech{NestJS}\desc{regra, gabarito, \emph{tenancy}}};
+  \node[c4systemext, cx] (vertex) at (13.2,-3.4) {\textbf{Vertex AI}\desc{Gemini}};
 
-  \node[c4db, text width=24mm] (pg) at (0,-3.6)
-    {\textbf{PostgreSQL}\tech{Cloud SQL}};
+  \node[c4queue, cx, minimum height=12mm] (ps) at (0,-6.4) {\textbf{Pub/Sub}\desc{telemetria analítica}};
+  \node[c4container, cx] (age) at (8.8,-6.4) {\textbf{Agente do professor}\tech{Python + ADK}\desc{Agent Engine}};
 
-  \node[c4queue, text width=26mm, minimum height=12mm] (ps) at (8.6,-3.6)
-    {\textbf{Pub/Sub}\desc{telemetria analítica}};
-
-  \node[c4systemext, text width=26mm, minimum height=12mm] (vertex) at (12.9,-3.6)
-    {\textbf{Vertex AI}\desc{Gemini}};
-
-  \node[c4systemext, text width=26mm, minimum height=12mm] (idp) at (12.9,0)
-    {\textbf{WSO2 IS}\desc{identidade, futuro}};
-
-  \draw[c4rel] (estudante) -- (hub) node[cxlabel, midway, above]{HTTPS};
-  \draw[c4relbi] (hub) -- (exp)
-    node[cxlabel, midway, above]{\texttt{postMessage}}
-    node[cxlabel, midway, below]{token, contexto};
-  \draw[c4reldash] (hub) -- (idp) node[cxlabel, midway, above]{OIDC};
-  \draw[c4rel] (hub) -- (api) node[cxlabel, midway, right=2pt]{BFF};
-  \draw[c4rel] (exp.south) -- (api.east)
-    node[cxlabel, pos=0.42, above right=-1pt]{SDK: \texttt{/telemetry}, \texttt{/ai}, domínio};
-  \draw[c4relbi] (api) -- (pg) node[cxlabel, midway, above]{RLS};
-  \draw[c4rel] (api) -- (ps) node[cxlabel, midway, above]{publica};
-  \draw[c4rel] (ps.south) -- ++(0,-1.0) -| (api.south)
-    node[cxlabel, pos=0.28, below]{\emph{push} \texttt{/telemetry/ingest}};
-  \draw[c4rel] (api) -- (vertex) node[cxlabel, pos=0.62, below]{quota por perfil};
+  \draw[c4rel] (estudante.east) -- (estudante.east -| hub.west) node[cxlabel, midway, above=1pt]{HTTPS};
+  \draw[c4rel] (prof.east) -- (prof.east -| hub.west);
+  \draw[c4reldash] (hub.north) -- (idp.south) node[cxlabel, midway, right=1pt]{OIDC};
+  \draw[c4relbi] (hub.east) -- (exp.west)
+    node[cxlabel, midway, above=1pt]{\texttt{postMessage}};
+  \draw[c4rel] ([xshift=-4mm]hub.south) -- ([xshift=-4mm]hub.south |- api.north)
+    node[cxlabel, pos=0.3, left=1pt]{BFF};
+  \coordinate (meio) at ($(hub.south)!0.5!(api.north)$);
+  \draw[c4rel] (exp.south) |- (5.2,0 |- meio) -- (5.2,0 |- api.north);
+  \node[cxlabel, above=1pt, text width=24mm] at (7.6,0 |- meio)
+    {SDK: domínio,\\\texttt{/telemetry}, \texttt{/ai}};
+  \draw[c4relbi] (api.west) -- (pg.east) node[cxlabel, midway, above=1pt]{RLS};
+  \draw[c4rel] (api.east) -- (vertex.west) node[cxlabel, midway, above=1pt]{quota por perfil};
+  \draw[c4relbi] ([xshift=-6mm]api.south) |- (ps.east)
+    node[cxlabel, pos=0.75, above=1pt]{publica; \emph{push}};
+  \draw[c4rel] ([xshift=6mm]api.south) |- (age.west) node[cxlabel, pos=0.75, above=1pt]{SSE};
+  \draw[c4rel] (age.east) -| (vertex.south) node[cxlabel, pos=0.25, above=1pt]{Gemini, acervo};
 
 \end{tikzpicture}}
 \caption[Visão geral da plataforma]{Visão geral: o hub é a única porta do
   usuário; a experiência é estática e recebe o contexto por \cd{postMessage}; a
-  API concentra regra, gabarito e \textit{tenancy}; a telemetria analítica sai
-  pelo Pub/Sub e volta à própria API por \emph{push}.}
+  API concentra regra, gabarito e \textit{tenancy}, e é a única porta do
+  usuário para a IA --- fala com o Gemini direto, e com o agente de IA do professor,
+  que roda à parte no Vertex AI Agent Engine e, por sua vez, consulta o Gemini e
+  o acervo (\adrr{ADR-126}); a telemetria analítica sai pelo
+  Pub/Sub e volta à própria API por \emph{push}.}
 \label{fig:visao-geral}
 \end{figure}
 
 \begin{legendadiag}
-\amostra{c4person} pessoa \quad
-\amostra{c4container} contêiner da plataforma \quad
-\amostra{bundle} artefato estático \quad
-\amostra{c4db} banco de dados \quad
-\amostra{c4queue} fila \quad
-\amostra{c4systemext} sistema externo
+\mbox{\amostra{c4person} pessoa} \quad
+\mbox{\amostra{c4container} contêiner da plataforma} \quad
+\mbox{\amostra{bundle} artefato estático} \quad
+\mbox{\amostra{c4db} banco de dados} \quad
+\mbox{\amostra{c4queue} fila} \quad
+\mbox{\amostra{c4systemext} sistema externo}
 \end{legendadiag}
 
 \section{Como ler este documento}
