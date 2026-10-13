@@ -73,12 +73,14 @@ Preparo da mostra & exp06ef1b, \arq{src/juri-estadual/} &
   (\adrr{ADR-126}). Recusa o que está fora do escopo; não planeja aula nem
   avalia estudante, e o código de habilidade que cita é conferido pela api
   (\adrr{ADR-127}).\\
-Ajuda com avatar & produto \cd{ajuda}, \arq{src/ajuda/} &
-  A resposta do atendente em vídeo a quem tem dúvida sobre o uso da plataforma
+Ajuda (avatar ou mascote) & produto \cd{ajuda}, \arq{src/ajuda/} &
+  A resposta do atendente a quem tem dúvida sobre o uso da plataforma
   (todo papel menos o estudante), a partir de uma base \textbf{gerada} do mapa de
-  produto e dos guias da aula. O \emph{vendor} do avatar só escuta, fala e mostra o
-  rosto; o texto é do nosso Gemini. \textbf{Fora da quota de \emph{tokens}}: o
-  limite é em minutos de vídeo (\adrr{ADR-132}, Seção~\ref{sec:ia-ajuda}).\\
+  produto e dos guias da aula. No avatar, o \emph{vendor} só escuta, fala e mostra
+  o rosto, e o texto é do nosso Gemini; no mascote (\adrr{ADR-158}), o Gemini Live
+  da Vertex ouve e fala, e o rosto é nosso. \textbf{Fora da quota de
+  \emph{tokens}}: o limite é em minutos (\adrr{ADR-132},
+  Seção~\ref{sec:ia-ajuda}).\\
 \bottomrule
 \end{tabularx}
 
@@ -855,6 +857,47 @@ registra latência e \emph{tokens} com \cd{operacao=conversarEmFluxo}
 \emph{tokens} custa por turno, e se o \emph{cache} implícito está pagando a
 repetição.
 
+\subsection{O segundo atendente: o mascote no Gemini Live}
+\label{sec:ia-ajuda-mascote}
+
+Desde 2026-10-12 a Ajuda tem dois atendentes (\adrr{ADR-158}). O segundo é o
+mascote 3D da Unooria, e o \emph{vendor} dele é o \textbf{Gemini Live da
+Vertex}: uma conversa de voz bidirecional em que o próprio modelo ouve o
+microfone e devolve áudio (PCM a 24\,kHz) com a transcrição. A voz é uma das 30
+pré-definidas do Gemini, e a boca do mascote é tirada do próprio áudio, no
+navegador (15 visemas, a partir de nível, formantes e chiado). Quem atende por
+padrão é decisão do \cd{admin} no painel da Unooria (\cd{ajuda\_configuracao},
+semeada com o mascote); se o padrão não está montado na stack, abre o outro.
+
+\begin{itemize}
+  \item \textbf{A camada única continua de pé.} A conversa com o Gemini é aberta
+    pela api, com o ADC, por uma porta nova de \arq{src/ai}
+    (\cd{VOZ\_AO\_VIVO}, só \arq{gemini-live.client.ts} a implementa); o
+    navegador fala com a api por um WebSocket com protocolo neutro
+    (Seção~\ref{sec:contrato-ajuda-mascote}). É isso que distingue o mascote do
+    \emph{LITE Mode} descartado na \adrr{ADR-132}: lá a chave e o \emph{prompt}
+    iriam para a HeyGen; aqui, nem para o navegador.
+  \item \textbf{O \emph{prompt} é o mesmo}, com a apresentação trocada
+    (\cd{promptDoAtendente(perfil, "mascote")}): \enquote{você é o mascote da
+    Unooria}, fala em voz alta e acolhedora, as mesmas quatro frases curtas e
+    a mesma base gerada. Vai na \cd{systemInstruction} da abertura, uma vez por
+    sessão.
+  \item \textbf{A região é outra}: o Live não está no \cd{global} do texto, e
+    a sessão abre em \env{AJUDA\_MASCOTE\_REGIAO} (padrão \cd{us-central1}). O
+    modelo (\cd{gemini-3.8-live}) e a voz vêm do painel, não de \emph{env}.
+  \item \textbf{Os minutos são os mesmos}: a sessão do mascote é uma linha de
+    \cd{ajuda\_sessoes} como a do avatar, e o limite do dia vale para os dois
+    juntos. Quem derruba a conversa no prazo é a própria api.
+\end{itemize}
+
+\begin{limitacao}
+\textbf{Os \emph{tokens} do mascote não passam pelo \cd{MedidorDeProvider}}: a
+porta de voz não é o \cd{AiProvider}, e o custo dela (\emph{tokens} de áudio do
+Live) só aparece no faturamento do projeto, não na métrica da api. O que a api
+registra por sessão é a linha \cd{ajuda.mascote} (\cd{duracaoMs}, \cd{turnos},
+\cd{motivo}).
+\end{limitacao}
+
 \section{Variáveis de configuração da IA}
 
 \begin{tabularx}{\linewidth}{@{}L{46mm}L{22mm}X@{}}
@@ -889,6 +932,9 @@ repetição.
   Conjunto incompleto = Ajuda
   desligada (503), sem derrubar a subida; \env{LIVEAVATAR\_SANDBOX=1} é recusado
   em produção. Ver Apêndice~\ref{ap:envs}.\\
+\zebra \env{AJUDA\_MASCOTE\_REGIAO} & \cd{us-central1} & A região do Gemini Live
+  do mascote da Ajuda (Seção~\ref{sec:ia-ajuda-mascote}). Sem projeto da Vertex
+  (\cd{mock}), o mascote fica desligado.\\
 \bottomrule
 \end{tabularx}
 

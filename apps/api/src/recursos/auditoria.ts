@@ -20,6 +20,8 @@ export const ACOES_DE_AUDITORIA = [
   "versao-soltada",
   /** O teto diário de IA de um perfil mudou (ADR-105). `recurso_id` é `quota:<perfil>`. */
   "quota-alterada",
+  /** A configuração da Ajuda mudou (ADR-158). `recurso_id` é `ajuda:configuracao`; sem `detalhe`. */
+  "configuracao-alterada",
 ] as const;
 
 export type AcaoDeAuditoria = (typeof ACOES_DE_AUDITORIA)[number];

@@ -2,7 +2,7 @@ import { z } from "zod";
 import { PERFIS_COM_QUOTA } from "../ai/quota.service";
 import { PRODUTOS } from "./catalogo";
 import { DetalheDeQuotaSchema } from "./auditoria";
-import { CHAVES_DE_LIMITE, MAXIMO_POR_DIA } from "../ajuda/regras";
+import { ATENDENTES, CHAVES_DE_LIMITE, MAXIMO_POR_DIA, MODELO_DO_MASCOTE_RE, NOMES_DAS_VOZES } from "../ajuda/regras";
 
 /**
  * O que o hub precisa saber para montar os cards e trancar as rotas de produto.
@@ -319,6 +319,47 @@ export const DefinirLimiteDaAjudaSchema = z.object({
 export const LimiteAlteradoSchema = LimiteDaAjudaSchema.extend({
   /** `false` quando o valor pedido já era o que valia: nada foi gravado nem historiado. */
   alterado: z.boolean(),
+});
+
+/* ==========================================================================
+   A CONFIGURAÇÃO DA AJUDA (ADR-158) — só `admin`, ao lado dos minutos
+
+   Quem atende por padrão (o mascote ou o avatar em vídeo), se a pessoa pode
+   trocar, e os ajustes do mascote (voz, modelo do Live, boca). UMA linha
+   (`ajuda_configuracao`), motivo obrigatório, histórico em `recursos_auditoria`
+   (`configuracao-alterada`, `recurso_id` = `ajuda:configuracao`).
+   ========================================================================== */
+
+export const ConfiguracaoDaAjudaSchema = z.object({
+  atendentePadrao: z.enum(ATENDENTES),
+  permitirTroca: z.boolean(),
+  mascoteVoz: z.enum(NOMES_DAS_VOZES),
+  mascoteModelo: z.string().regex(MODELO_DO_MASCOTE_RE, "use o nome do modelo do Live, por exemplo gemini-3.8-live"),
+  mascoteSensibilidade: z.number().min(0).max(1),
+  mascoteSuavizacao: z.number().min(0).max(1),
+  mascoteAntecipacaoMs: z.number().int().min(0).max(200),
+  mascoteBocaRepouso: z.number().min(0).max(1),
+});
+
+export const ConfiguracaoDaAjudaLidaSchema = ConfiguracaoDaAjudaSchema.extend({
+  motivo: z.string().nullable(),
+  /** `null` = veio da migration; ninguém decidiu ainda. */
+  definidoPorNome: z.string().nullable(),
+  definidoEm: z.string().datetime(),
+  /** O que está montado nesta stack — o painel avisa quando o padrão não pode abrir. */
+  disponiveis: z.object({ mascote: z.boolean(), avatar: z.boolean() }),
+  /** As vozes que o painel oferece, com o jeito de cada uma. */
+  vozes: z.array(z.object({ nome: z.string(), jeito: z.string() })),
+});
+
+export const DefinirConfiguracaoDaAjudaSchema = ConfiguracaoDaAjudaSchema.extend({
+  /** Obrigatório SEMPRE, como nos minutos. */
+  motivo: z.string().trim().min(3, "diga por quê — o motivo fica no histórico").max(500),
+}).strict();
+
+export const ConfiguracaoAlteradaSchema = ConfiguracaoDaAjudaLidaSchema.extend({
+  /** `false` quando nada mudou: nada foi gravado nem historiado. */
+  alterada: z.boolean(),
 });
 
 /* ======================================================================

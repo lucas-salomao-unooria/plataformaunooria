@@ -3182,6 +3182,9 @@ model AjudaSessao {
   /// O teto pedido ao vendor. Sessão não encerrada conta INTEIRA no dia.
   duracaoMaxS    Int       @map("duracao_max_s")
   fim            DateTime? @db.Timestamptz(6)
+  /// `avatar` (LiveAvatar, ADR-132) | `mascote` (Gemini Live, ADR-158) — CHECK
+  /// na migration. Os minutos do dia valem para os dois juntos.
+  atendente      String    @default("avatar")
 
   @@index([usuarioId, inicio(sort: Desc)], map: "ajuda_sessoes_por_pessoa_idx")
   @@map("ajuda_sessoes")
@@ -3490,4 +3493,29 @@ model Exp06ef1bGateHistorico {
 
   @@index([escolaId, turmaId], map: "exp06ef1b_gates_historico_escola_turma_idx")
   @@map("exp06ef1b_gates_historico")
+}
+
+/// A CONFIGURAÇÃO DA AJUDA (ADR-158): qual atendente abre por padrão — o
+/// mascote (Gemini Live) ou o avatar em vídeo (LiveAvatar) — e os ajustes do
+/// mascote. UMA linha (id = 1, CHECK), escopo do contrato, editada só pelo
+/// `admin` em `/unooria/uso-de-ia`; sem RLS e sem `escola_id`, como
+/// `ajuda_limites`.
+model AjudaConfiguracao {
+  id                   Int      @id @default(1) @db.SmallInt
+  /// `mascote` | `avatar` — CHECK na migration.
+  atendentePadrao      String   @default("mascote") @map("atendente_padrao")
+  /// A pessoa pode trocar para o outro atendente dentro da janela da Ajuda.
+  permitirTroca        Boolean  @default(true) @map("permitir_troca")
+  mascoteVoz           String   @default("Leda") @map("mascote_voz")
+  mascoteModelo        String   @default("gemini-3.8-live") @map("mascote_modelo")
+  mascoteSensibilidade Float    @default(0.5) @map("mascote_sensibilidade")
+  mascoteSuavizacao    Float    @default(0.5) @map("mascote_suavizacao")
+  mascoteAntecipacaoMs Int      @default(60) @map("mascote_antecipacao_ms")
+  mascoteBocaRepouso   Float    @default(0.5) @map("mascote_boca_repouso")
+  motivo               String?
+  definidoPor          String?  @map("definido_por") @db.Uuid
+  definidoEm           DateTime @default(now()) @map("definido_em") @db.Timestamptz(6)
+  atualizadoEm         DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  @@map("ajuda_configuracao")
 }

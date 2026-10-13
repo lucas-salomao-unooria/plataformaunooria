@@ -39,6 +39,7 @@ const ACOES: Record<string, { rotulo: string; cor: "success" | "error" | "info" 
   "versao-fixada": { rotulo: "Versão fixada", cor: "info" },
   "versao-soltada": { rotulo: "Fixação removida", cor: "neutral" },
   "quota-alterada": { rotulo: "Quota de IA alterada", cor: "info" },
+  "configuracao-alterada": { rotulo: "Atendente da Ajuda alterado", cor: "info" },
 };
 
 /** `quota:estudante` vira "Quota de IA · estudantes"; o resto fica como está. */
@@ -48,6 +49,8 @@ function rotuloDoRecurso(recursoId: string): string {
   // Os minutos da Ajuda com atendente (ADR-132) usam a mesma ação de quota.
   if (recursoId === "ajuda:minutos-por-dia") return "Ajuda · minutos por dia";
   if (recursoId === "ajuda:minutos-por-sessao") return "Ajuda · minutos por conversa";
+  // Quem atende — o mascote ou o avatar em vídeo (ADR-158).
+  if (recursoId === "ajuda:configuracao") return "Ajuda · quem atende";
   return recursoId;
 }
 
@@ -101,7 +104,9 @@ export function HistoricoDeRecursos({
       render: (_v, linha) => {
         const acao = ACOES[linha.acao];
         // A mudança de minutos da Ajuda grava `quota-alterada`, mas não é de tokens de IA.
-        const rotulo = linha.recursoId.startsWith("ajuda:") ? "Limite da Ajuda alterado" : acao?.rotulo;
+        // Os minutos da Ajuda usam a ação de quota; o atendente (ADR-158) tem a dele.
+        const rotulo =
+          linha.acao === "quota-alterada" && linha.recursoId.startsWith("ajuda:") ? "Limite da Ajuda alterado" : acao?.rotulo;
         return (
           <Badge variant={acao?.cor ?? "neutral"}>
             {rotulo ?? linha.acao}

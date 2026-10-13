@@ -3,6 +3,7 @@ import { HttpException } from "@nestjs/common";
 import type { ConfigService } from "@nestjs/config";
 import { Reflector } from "@nestjs/core";
 import type { AvatarAoVivoPort, PedidoDeSessao } from "../src/ai/avatar-ao-vivo.port";
+import type { VozAoVivoPort } from "../src/ai/voz-ao-vivo.port";
 import { MockProvider } from "../src/ai/mock.provider";
 import type { AiFluxoEvento, AiProvider } from "../src/ai/provider";
 import { ROLES_KEY } from "../src/auth/roles";
@@ -63,6 +64,20 @@ class PrismaFalso {
     });
   }
 
+  /* Estas rotas testam o AVATAR (ADR-132): a rede escolheu o avatar como
+     padrão. O mascote (ADR-158) tem a suíte dele, `ajuda-mascote.spec.ts`. */
+  configuracao = {
+    id: 1,
+    atendentePadrao: "avatar",
+    permitirTroca: true,
+    mascoteVoz: "Leda",
+    mascoteModelo: "gemini-3.8-live",
+    mascoteSensibilidade: 0.5,
+    mascoteSuavizacao: 0.5,
+    mascoteAntecipacaoMs: 60,
+    mascoteBocaRepouso: 0.5,
+  };
+  ajudaConfiguracao = { findUnique: async () => this.configuracao };
   ajudaLimite = { findMany: async () => this.limites };
   ajudaSessao = {
     findMany: async ({ where }: { where: Partial<Record<string, unknown>> }) => this.sessoes.filter((s) => this.casa(s, where)),
@@ -137,7 +152,9 @@ function montar(opcoes: { ia?: AiProvider; comChaves?: boolean } = {}) {
   const envs: Record<string, string> =
     opcoes.comChaves === false ? {} : { AJUDA_LLM_SEGREDO: SEGREDO, AJUDA_SESSAO_CHAVE: CHAVE };
   const config = { get: (k: string) => envs[k] } as unknown as ConfigService;
-  const service = new AjudaService(prisma as unknown as PrismaService, config, avatar, opcoes.ia ?? new MockProvider());
+  /* Sem o mascote montado: "sem o vendor" aqui quer dizer sem atendente nenhum. */
+  const voz: VozAoVivoPort = { ligada: false, abrir: () => Promise.reject(new Error("sem voz")) };
+  const service = new AjudaService(prisma as unknown as PrismaService, config, avatar, opcoes.ia ?? new MockProvider(), voz);
   return { prisma, avatar, service, hub: new AjudaController(service), llm: new AjudaLlmController(service, config) };
 }
 
@@ -147,7 +164,7 @@ const req = (perfil = "professor", usuarioId = USUARIO, escolaId = "escola-1") =
 
 /** Abre uma sessão e devolve o `system` que o vendor mandaria de volta. */
 async function abrirEDevolverSystem(m: ReturnType<typeof montar>, perfil = "professor", escolaId = "escola-1") {
-  const aberta = await m.hub.abrir(req(perfil, USUARIO, escolaId));
+  const aberta = await m.hub.abrir(req(perfil, USUARIO, escolaId), {});
   const token = m.avatar.pedidos.at(-1)!.variaveis.sessao!;
   return { aberta, system: `Você é o atendente. ${MARCADOR_DA_SESSAO.replace("${sessao}", token)}` };
 }
@@ -195,7 +212,7 @@ describe("quem abre a Ajuda (metadados das guardas)", () => {
 describe("POST /ajuda/sessoes", () => {
   it("abre com o teto do limite por sessão e manda o token da sessão ao vendor", async () => {
     const m = montar();
-    const aberta = await m.hub.abrir(req());
+    const aberta = await m.hub.abrir(req(), {});
     expect(aberta).toMatchObject({ tokenDaSessao: "token-1", duracaoMaximaS: 600, segundosRestantesHoje: 1200 });
     expect(m.avatar.pedidos[0]!.duracaoMaximaS).toBe(600);
     expect(m.avatar.pedidos[0]!.variaveis.sessao).toMatch(/^[\w-]+\.[\w-]+\.[\w-]+$/);
@@ -204,22 +221,22 @@ describe("POST /ajuda/sessoes", () => {
 
   it("papel de CONTRATO abre sem escola (a linha nasce com escola nula)", async () => {
     const m = montar();
-    await m.hub.abrir(req("gestor_contrato", USUARIO, ""));
+    await m.hub.abrir(req("gestor_contrato", USUARIO, ""), {});
     expect(m.prisma.sessoes[0]!.escolaId).toBeNull();
   });
 
   it("503 sem o vendor ou sem as chaves — nunca abre sem vídeo", async () => {
     const semVendor = montar();
     semVendor.avatar.ligado = false;
-    expect((await falha(semVendor.hub.abrir(req()))).corpo.codigo).toBe("AJUDA_INDISPONIVEL");
+    expect((await falha(semVendor.hub.abrir(req(), {}))).corpo.codigo).toBe("AJUDA_INDISPONIVEL");
     const semChaves = montar({ comChaves: false });
-    expect((await falha(semChaves.hub.abrir(req()))).status).toBe(503);
+    expect((await falha(semChaves.hub.abrir(req(), {}))).status).toBe(503);
   });
 
   it("fecha a sessão anterior que ficou aberta antes de abrir outra", async () => {
     const m = montar();
-    await m.hub.abrir(req());
-    await m.hub.abrir(req());
+    await m.hub.abrir(req(), {});
+    await m.hub.abrir(req(), {});
     expect(m.prisma.sessoes[0]!.fim).not.toBeNull();
     expect(m.avatar.encerradas).toEqual(["vendor-1"]);
     expect(m.prisma.sessoes[1]!.fim).toBeNull();
@@ -228,10 +245,10 @@ describe("POST /ajuda/sessoes", () => {
   it("429 SEM_MINUTOS quando o dia acabou", async () => {
     const m = montar();
     m.prisma.limites[0]!.valor = 10; // 10 min por dia = uma sessão de 10 min
-    await m.hub.abrir(req());
+    await m.hub.abrir(req(), {});
     // A sessão de 10 min aberta há 11 min: o teto já foi atingido, ela conta inteira.
     m.prisma.sessoes[0]!.inicio = new Date(Date.now() - 11 * 60_000);
-    const recusa = await falha(m.hub.abrir(req()));
+    const recusa = await falha(m.hub.abrir(req(), {}));
     expect(recusa.status).toBe(429);
     expect(recusa.corpo).toMatchObject({ codigo: "SEM_MINUTOS", minutosPorDia: 10 });
   });
@@ -239,14 +256,14 @@ describe("POST /ajuda/sessoes", () => {
   it("vendor fora do ar = 502, e a linha fecha com duração zero (não conta minuto)", async () => {
     const m = montar();
     m.avatar.falhar = true;
-    expect((await falha(m.hub.abrir(req()))).corpo.codigo).toBe("AVATAR_FALHOU");
+    expect((await falha(m.hub.abrir(req(), {}))).corpo.codigo).toBe("AVATAR_FALHOU");
     const s = m.prisma.sessoes[0]!;
     expect(s.fim?.getTime()).toBe(s.inicio.getTime());
   });
 
   it("encerrar grava o fim, avisa o vendor e ignora sessão de outra pessoa", async () => {
     const m = montar();
-    const { id } = await m.hub.abrir(req());
+    const { id } = await m.hub.abrir(req(), {});
     await m.hub.encerrar(id, req("professor", OUTRO));
     expect(m.prisma.sessoes[0]!.fim).toBeNull();
     await m.hub.encerrar(id, req());

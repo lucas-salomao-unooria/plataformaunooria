@@ -157,7 +157,10 @@ degradam para texto fixo (app-91) ou recusam a geração com mensagem clara
 (app-90). Essa contenção de acoplamento é deliberada (\rf{RNF-12}).
 O LiveAvatar é ainda mais contido: fora do ar, só a Ajuda falha
 (\rota{POST /ajuda/sessoes} responde 502 \cd{AVATAR\_FALHOU}), e sem as variáveis
-dele a API sobe normal e a Ajuda responde 503 (\adrr{ADR-132}).
+dele a API sobe normal e a Ajuda responde 503 (\adrr{ADR-132}). Desde a
+\adrr{ADR-158} a Ajuda tem um segundo atendente, o mascote, que fala pelo Gemini
+Live do próprio Vertex: com o LiveAvatar fora do ar ou sem as variáveis dele, a
+Ajuda abre o mascote, e vice-versa.
 \end{nota}
 
 \section{C4 nível 2 --- Contêineres}
@@ -381,8 +384,9 @@ agente cita (\adrr{ADR-127}). O par Mermaid do
 Apêndice~\ref{ap:mermaid} traz as relações dele.
 
 O terceiro, de 2026-10-02, é \arq{ajuda/}, a Ajuda com avatar
-(\adrr{ADR-132}): o atendente em vídeo do menu da conta, para todo papel menos o
-estudante. Também é de \textbf{plataforma} e produto sem experiência
+(\adrr{ADR-132}): o atendente do menu da conta, para todo papel menos o
+estudante --- o avatar em vídeo do LiveAvatar ou, desde a \adrr{ADR-158}, o
+mascote 3D da Unooria (abaixo). Também é de \textbf{plataforma} e produto sem experiência
 (\cd{@Produto(\B"ajuda")}), e tem \textbf{dois} \emph{controllers} com portas de
 entrada diferentes. \arq{ajuda.\B controller.ts} é o lado do hub (abrir e encerrar
 a sessão), atrás de \cd{OidcGuard}, \cd{RolesGuard} e \cd{DisponibilidadeGuard}
@@ -405,6 +409,20 @@ pelo \cd{usuario\_id} do \emph{token} --- o \cd{gestor\_contrato} e o \cd{admin}
 não têm escola. A base de conhecimento é gerada
 (\arq{ajuda/\B base/\B base-da-ajuda.\B gerada.ts}) e nunca editada à mão. As
 relações dele também estão só no par Mermaid.
+
+\textbf{O mascote da Ajuda} (\adrr{ADR-158}) acrescenta ao módulo uma terceira
+porta de entrada, que não é \emph{controller}: \arq{ajuda/\B mascote-ao-vivo.ts},
+a conexão de voz \rota{WS /ajuda/mascote/ao-vivo}, pendurada no \cd{upgrade} do
+servidor HTTP do Nest com o \cd{ws} (um caminho só, sem o \emph{adapter} do
+\cd{@nestjs/websockets}). A API é o \emph{proxy}: o navegador fala com ela num
+protocolo neutro, e só ela fala com o Gemini Live, pela \cd{VozAoVivoPort}
+(\emph{token} \cd{VOZ\_AO\_VIVO}), a quarta porta de \arq{ai/}, que só
+\arq{ai/\B gemini-live.\B client.ts} implementa. A instrução do sistema é a mesma
+base da Ajuda, com a apresentação do mascote, montada na API. Quem atende por
+padrão é a linha de \cd{ajuda\_configuracao}, que o \cd{admin} edita em
+\arq{recursos/\B configuracao-da-ajuda.\B controller.ts}; os minutos são os
+mesmos dos dois atendentes. O contrato está na
+Seção~\ref{sec:contrato-ajuda-mascote}.
 
 O quarto, de 2026-10-06, é \arq{podcast/}, o podcast de recapitulação
 (\adrr{ADR-150}). Também é de \textbf{plataforma}: as rotas
@@ -781,6 +799,21 @@ peças puras, com teste: \arq{transporte.ts} (abrir e encerrar pelo BFF genéric
 \rota{/api/plataforma/ajuda/\ldots}) e \arq{conversa.ts}, o redutor que monta a
 conversa das \emph{transcrições} que o \emph{vendor} devolve pela sala --- o texto
 não passa pelo hub. Nada é guardado, e o modal leva \cd{data-clarity-mask}.
+
+\textbf{O mascote} (\adrr{ADR-158}) divide a mesma janela: ela lê
+\rota{GET /ajuda/configuracao} ao abrir, mostra o atendente que a rede escolheu e,
+se o \cd{admin} permitiu, um botão de troca. O ciclo do mascote mora em
+\arq{components/\B ajuda/\B use-sessao-do-mascote.ts}, e as peças puras em
+\arq{lib/\B ajuda/\B mascote/}: \arq{conexao.ts} (o protocolo da conexão de
+voz, com teste), \arq{audio.ts} (microfone a 16\,kHz e a fila da fala a
+24\,kHz), \arq{lipsync.ts} (a boca tirada do próprio áudio --- nível,
+formantes e chiado viram uma distribuição sobre 15 visemas) e \arq{cena.ts}
+(o \emph{canvas} do \cd{three}, carregado só por \cd{import()}, com o modelo
+3D baixado do bucket de assets). \textbf{A conexão de voz não passa pelo BFF}:
+o Next não repassa WebSocket, e o navegador abre a conexão direto na URL
+pública da API (\env{NEXT\_PUBLIC\_API\_URL}, lida no servidor pelo
+\emph{header}); a tranca é o bilhete de 2 minutos que o BFF entregou, e não o
+\emph{cookie}.
 \end{decisao}
 
 \begin{nota}

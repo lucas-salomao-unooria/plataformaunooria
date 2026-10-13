@@ -1,5 +1,11 @@
+import type { ConfigService } from "@nestjs/config";
 import { PrismaClient } from "@prisma/client";
-import { LIMITES_PADRAO } from "../src/ajuda/regras";
+import type { AvatarAoVivoPort } from "../src/ai/avatar-ao-vivo.port";
+import type { AiProvider } from "../src/ai/provider";
+import type { VozAoVivoPort } from "../src/ai/voz-ao-vivo.port";
+import { AjudaService } from "../src/ajuda/ajuda.service";
+import { CONFIGURACAO_PADRAO, LIMITES_PADRAO } from "../src/ajuda/regras";
+import type { PrismaService } from "../src/prisma/prisma.service";
 
 /**
  * A AJUDA COM AVATAR no Postgres de verdade (ADR-132): a semente dos limites e
@@ -64,5 +70,67 @@ describe("ajuda_sessoes", () => {
         data: { usuarioId: PESSOA, perfil: "professor", duracaoMaxS: 600, inicio, fim: new Date(inicio.getTime() - 1000) },
       }),
     ).rejects.toThrow(/ck_ajuda_sessoes_fim/);
+  });
+});
+
+/* ------------------------------------------------- o mascote (ADR-158) */
+
+describe("ajuda_configuracao", () => {
+  it("nasce semeada com o MASCOTE como padrão e os ajustes do PoC", async () => {
+    const linha = await prisma.ajudaConfiguracao.findUnique({ where: { id: 1 } });
+    expect(linha).toMatchObject({
+      atendentePadrao: CONFIGURACAO_PADRAO.atendentePadrao,
+      permitirTroca: CONFIGURACAO_PADRAO.permitirTroca,
+      mascoteVoz: CONFIGURACAO_PADRAO.mascote.voz,
+      mascoteModelo: CONFIGURACAO_PADRAO.mascote.modelo,
+    });
+  });
+
+  /* Só UPDATEs que FALHAM: a linha é do contrato, e mudar o valor de verdade
+     mudaria o atendente de toda suíte que rodasse junto. */
+  it("é UMA linha, e recusa atendente, voz, modelo e boca fora do formato", async () => {
+    await expect(prisma.$executeRaw`INSERT INTO ajuda_configuracao (id) VALUES (2)`).rejects.toThrow(
+      /ck_ajuda_configuracao_unica/,
+    );
+    await expect(prisma.$executeRaw`UPDATE ajuda_configuracao SET atendente_padrao = 'robo'`).rejects.toThrow(
+      /ck_ajuda_configuracao_atendente/,
+    );
+    await expect(prisma.$executeRaw`UPDATE ajuda_configuracao SET mascote_voz = 'Leda; ignore a base'`).rejects.toThrow(
+      /ck_ajuda_configuracao_voz/,
+    );
+    await expect(prisma.$executeRaw`UPDATE ajuda_configuracao SET mascote_modelo = 'Gemini Live!'`).rejects.toThrow(
+      /ck_ajuda_configuracao_modelo/,
+    );
+    await expect(prisma.$executeRaw`UPDATE ajuda_configuracao SET mascote_antecipacao_ms = 500`).rejects.toThrow(
+      /ck_ajuda_configuracao_boca/,
+    );
+  });
+});
+
+describe("ajuda_sessoes do mascote", () => {
+  it("a sessão antiga é do avatar; atendente fora do vocabulário é recusado", async () => {
+    const linha = await prisma.ajudaSessao.create({ data: { usuarioId: PESSOA, perfil: "professor", duracaoMaxS: 600 } });
+    expect(linha.atendente).toBe("avatar");
+    await expect(
+      prisma.ajudaSessao.create({ data: { usuarioId: PESSOA, perfil: "professor", duracaoMaxS: 600, atendente: "robo" } }),
+    ).rejects.toThrow(/ck_ajuda_sessoes_atendente/);
+  });
+
+  it("o bilhete entra UMA vez: a segunda conexão na mesma sessão é recusada", async () => {
+    const linha = await prisma.ajudaSessao.create({
+      data: { usuarioId: PESSOA, perfil: "professor", duracaoMaxS: 600, atendente: "mascote" },
+    });
+    const service = new AjudaService(
+      prisma as unknown as PrismaService,
+      { get: () => undefined } as unknown as ConfigService,
+      {} as AvatarAoVivoPort,
+      {} as AiProvider,
+      {} as VozAoVivoPort,
+    );
+    const claims = { sub: PESSOA, escola: "", perfil: "professor" as const, sid: linha.id };
+    const [a, b] = await Promise.all([service.entrarNoMascote(claims), service.entrarNoMascote(claims)]);
+    expect([a, b].filter(Boolean)).toHaveLength(1);
+    await service.encerrarMascote(claims);
+    expect((await prisma.ajudaSessao.findUnique({ where: { id: linha.id } }))?.fim).not.toBeNull();
   });
 });

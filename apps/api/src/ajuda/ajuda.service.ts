@@ -3,19 +3,27 @@ import { ConfigService } from "@nestjs/config";
 import { randomUUID } from "node:crypto";
 import { AVATAR_AO_VIVO, type AvatarAoVivoPort } from "../ai/avatar-ao-vivo.port";
 import { AI_PROVIDER, type AiProvider } from "../ai/provider";
+import { VOZ_AO_VIVO, type VozAoVivoPort } from "../ai/voz-ao-vivo.port";
 import { exigirProdutoDisponivel } from "../comum/disponibilidade";
 import { logger } from "../observabilidade/logger";
 import { PrismaService } from "../prisma/prisma.service";
 import { erroDaAjuda, MODELO_ANUNCIADO } from "./contrato-de-rotas";
 import { promptDoAtendente } from "./prompt";
 import {
+  atendenteEfetivo,
+  atendentesMontados,
+  CAMINHO_DO_MODELO_DO_MASCOTE,
   CHAVES_DE_LIMITE,
+  CONFIGURACAO_PADRAO,
   duracaoDaProximaSessao,
   FALA_DE_FALHA,
   LIMITES_PADRAO,
   paraHistorico,
   pedacoSse,
   segundosUsadosNoDia,
+  VALIDADE_DO_BILHETE_S,
+  type Atendente,
+  type ConfiguracaoDaAjuda,
   type Limites,
   type MensagemOpenAi,
   type PERFIS_DA_AJUDA,
@@ -30,6 +38,22 @@ export interface Quem {
   escolaId: string;
   perfil: PerfilDaAjuda;
 }
+
+/** O que o hub recebe ao abrir — o avatar entra na sala do vendor; o mascote, na conexão de voz desta api. */
+export type SessaoAberta =
+  | { atendente: "avatar"; id: string; tokenDaSessao: string; duracaoMaximaS: number; segundosRestantesHoje: number }
+  | {
+      atendente: "mascote";
+      id: string;
+      /** O bilhete com que o navegador entra em `/ajuda/mascote/ao-vivo` (vale 2 min, uma entrada). */
+      bilhete: string;
+      duracaoMaximaS: number;
+      segundosRestantesHoje: number;
+      ajustes: ConfiguracaoDaAjuda["mascote"];
+    };
+
+/** O marcador que uma sessão do mascote grava em `avatar_sessao_id` quando a conexão de voz entra. */
+export const PREFIXO_DA_CONEXAO_DO_MASCOTE = "ao-vivo:";
 
 /** O pedaço do `Response` do express que o stream usa — o teste o imita. */
 export interface RespostaDoStream {
@@ -66,6 +90,7 @@ const TEMPERATURA = 0.3;
 @Injectable()
 export class AjudaService {
   private avisouSemLinha = false;
+  private avisouSemConfiguracao = false;
   /** Sobrescrito no teste, para não esperar 7 s de verdade. */
   esperaAteAFalaDeEsperaMs = ESPERA_ATE_A_FALA_DE_ESPERA_MS;
 
@@ -74,13 +99,58 @@ export class AjudaService {
     private readonly config: ConfigService,
     @Inject(AVATAR_AO_VIVO) private readonly avatar: AvatarAoVivoPort,
     @Inject(AI_PROVIDER) private readonly ia: AiProvider,
+    @Inject(VOZ_AO_VIVO) private readonly voz: VozAoVivoPort,
   ) {}
 
-  /** A Ajuda só abre com o vendor E com as duas chaves da api. Faltou peça = 503. */
-  get ligada(): boolean {
-    return (
-      this.avatar.ligado && Boolean(this.config.get("AJUDA_SESSAO_CHAVE")) && Boolean(this.config.get("AJUDA_LLM_SEGREDO"))
-    );
+  /** Os atendentes montados nesta stack (`atendentesMontados`, a regra única). */
+  disponiveis(): Record<Atendente, boolean> {
+    return atendentesMontados({
+      avatarLigado: this.avatar.ligado,
+      vozLigada: this.voz.ligada,
+      chaveDaSessao: this.config.get("AJUDA_SESSAO_CHAVE"),
+      segredoDoLlm: this.config.get("AJUDA_LLM_SEGREDO"),
+    });
+  }
+
+  /**
+   * Onde o navegador baixa o modelo 3D do mascote: o bucket de assets atrás da
+   * CDN (`ASSETS_PUBLIC_URL`), ou a própria api em dev — a mesma base do
+   * `AssetsService`. O caminho carrega a versão: o arquivo publicado é imutável,
+   * e um mascote novo é um `-v2` (a CDN guarda o anterior por dias).
+   */
+  urlDoModeloDoMascote(): string {
+    const base =
+      this.config.get<string>("ASSETS_PUBLIC_URL") ?? `http://localhost:${this.config.get("PORT") ?? 3001}/assets`;
+    return `${base.replace(/\/$/, "")}/${CAMINHO_DO_MODELO_DO_MASCOTE}`;
+  }
+
+  /** O mascote precisa da Vertex (o Gemini Live) e da chave que assina o bilhete. */
+  get mascoteLigado(): boolean {
+    return this.disponiveis().mascote;
+  }
+
+  /** A configuração da Ajuda, lida a cada abertura (sem cache, como os limites). */
+  async configuracao(): Promise<ConfiguracaoDaAjuda> {
+    const linha = await this.prisma.ajudaConfiguracao.findUnique({ where: { id: 1 } });
+    if (!linha) {
+      if (!this.avisouSemConfiguracao) {
+        this.avisouSemConfiguracao = true;
+        logger.warn({ codigo: "ajuda-configuracao-sem-linha" }, "ajuda_configuracao sem a linha; vale a constante do código");
+      }
+      return CONFIGURACAO_PADRAO;
+    }
+    return {
+      atendentePadrao: linha.atendentePadrao === "avatar" ? "avatar" : "mascote",
+      permitirTroca: linha.permitirTroca,
+      mascote: {
+        voz: linha.mascoteVoz,
+        modelo: linha.mascoteModelo,
+        sensibilidade: linha.mascoteSensibilidade,
+        suavizacao: linha.mascoteSuavizacao,
+        antecipacaoMs: linha.mascoteAntecipacaoMs,
+        bocaRepouso: linha.mascoteBocaRepouso,
+      },
+    };
   }
 
   /** Os limites de minutos, lidos a cada abertura (sem cache, como `ia_quotas`). */
@@ -106,11 +176,11 @@ export class AjudaService {
    * sessão. Se o vendor falhar, a linha é fechada com duração zero — não conta
    * minuto, e o histórico do dia continua honesto.
    */
-  async abrirSessao(
-    quem: Quem,
-  ): Promise<{ id: string; tokenDaSessao: string; duracaoMaximaS: number; segundosRestantesHoje: number }> {
+  async abrirSessao(quem: Quem, pedido?: Atendente): Promise<SessaoAberta> {
     const chave = this.config.get<string>("AJUDA_SESSAO_CHAVE");
-    if (!this.ligada || !chave) throw erroDaAjuda("AJUDA_INDISPONIVEL", 503);
+    const config = await this.configuracao();
+    const atendente = atendenteEfetivo(config, this.disponiveis(), pedido);
+    if (!atendente || !chave) throw erroDaAjuda("AJUDA_INDISPONIVEL", 503);
 
     const agora = new Date();
     await this.fecharAbertas(quem.usuarioId, agora);
@@ -135,24 +205,41 @@ export class AjudaService {
         perfil: quem.perfil,
         duracaoMaxS: duracao,
         inicio: agora,
+        atendente,
       },
       select: { id: true },
     });
 
     const claims: ClaimsDaSessao = { sub: quem.usuarioId, escola: quem.escolaId, perfil: quem.perfil, sid: linha.id };
+    const segundosRestantesHoje = Math.max(0, limites["minutos-por-dia"] * 60 - usados - duracao);
+
+    if (atendente === "mascote") {
+      // Nada a pedir a vendor nenhum aqui: a sessão do Gemini Live abre quando o
+      // navegador entra na conexão de voz com este bilhete. Sem a entrada, a
+      // linha fica aberta e conta o teto (como a do avatar), até a pessoa
+      // encerrar ou abrir outra.
+      const bilhete = await assinarTokenDaSessao(claims, VALIDADE_DO_BILHETE_S, chave, "ajuda-mascote");
+      logger.info(
+        { codigo: "ajuda.sessao-aberta", sid: linha.id, perfil: quem.perfil, duracaoMaxS: duracao, atendente },
+        "sessão da Ajuda aberta",
+      );
+      return { atendente, id: linha.id, bilhete, duracaoMaximaS: duracao, segundosRestantesHoje, ajustes: config.mascote };
+    }
+
     try {
       const token = await assinarTokenDaSessao(claims, duracao, chave);
       const sessao = await this.avatar.criarSessao({ duracaoMaximaS: duracao, variaveis: { sessao: token } });
       await this.prisma.ajudaSessao.update({ where: { id: linha.id }, data: { avatarSessaoId: sessao.sessaoId } });
       logger.info(
-        { codigo: "ajuda.sessao-aberta", sid: linha.id, perfil: quem.perfil, duracaoMaxS: duracao },
+        { codigo: "ajuda.sessao-aberta", sid: linha.id, perfil: quem.perfil, duracaoMaxS: duracao, atendente },
         "sessão da Ajuda aberta",
       );
       return {
+        atendente,
         id: linha.id,
         tokenDaSessao: sessao.tokenDaSessao,
         duracaoMaximaS: duracao,
-        segundosRestantesHoje: Math.max(0, limites["minutos-por-dia"] * 60 - usados - duracao),
+        segundosRestantesHoje,
       };
     } catch (erro) {
       await this.prisma.ajudaSessao.update({ where: { id: linha.id }, data: { fim: agora } }).catch(() => undefined);
@@ -170,6 +257,47 @@ export class AjudaService {
     if (!linha || linha.fim) return;
     await this.prisma.ajudaSessao.update({ where: { id: linha.id }, data: { fim: new Date() } });
     if (linha.avatarSessaoId) await this.pararNoVendor(linha.avatarSessaoId, linha.id);
+  }
+
+  /**
+   * A conexão de voz do mascote ENTRA na sessão do bilhete — uma vez só. A
+   * marca em `avatar_sessao_id` (`ao-vivo:<uuid>`) é atômica (`updateMany` com
+   * a coluna nula na condição): duas abas com o mesmo bilhete, ou um bilhete
+   * copiado, não abrem duas conversas pagas na mesma linha.
+   *
+   * Devolve o prazo da sessão (início + teto), ou `null` se ela não vale mais.
+   */
+  async entrarNoMascote(claims: ClaimsDaSessao): Promise<{ prazo: Date } | null> {
+    const marca = `${PREFIXO_DA_CONEXAO_DO_MASCOTE}${randomUUID()}`;
+    const { count } = await this.prisma.ajudaSessao.updateMany({
+      where: { id: claims.sid, usuarioId: claims.sub, atendente: "mascote", fim: null, avatarSessaoId: null },
+      data: { avatarSessaoId: marca },
+    });
+    if (count !== 1) return null;
+    const linha = await this.prisma.ajudaSessao.findUnique({
+      where: { id: claims.sid },
+      select: { inicio: true, duracaoMaxS: true },
+    });
+    if (!linha) return null;
+    return { prazo: new Date(linha.inicio.getTime() + linha.duracaoMaxS * 1000) };
+  }
+
+  /** A conexão do mascote caiu: grava o fim (o tempo real passa a contar). Idempotente. */
+  async encerrarMascote(claims: ClaimsDaSessao): Promise<void> {
+    await this.prisma.ajudaSessao.updateMany({
+      where: { id: claims.sid, usuarioId: claims.sub, fim: null },
+      data: { fim: new Date() },
+    });
+  }
+
+  /** Abre a conversa de voz do mascote no vendor, com o prompt e a voz desta rede. */
+  async abrirVozDoMascote(claims: ClaimsDaSessao) {
+    const config = await this.configuracao();
+    return this.voz.abrir({
+      modelo: config.mascote.modelo,
+      voz: config.mascote.voz,
+      instrucao: promptDoAtendente(claims.perfil, "mascote"),
+    });
   }
 
   /**
@@ -191,6 +319,9 @@ export class AjudaService {
   }
 
   private async pararNoVendor(avatarSessaoId: string, sid: string): Promise<void> {
+    // A sessão do mascote não tem sala no vendor do avatar: quem a fecha é a
+    // própria conexão de voz, que confere a linha a cada meio minuto.
+    if (avatarSessaoId.startsWith(PREFIXO_DA_CONEXAO_DO_MASCOTE)) return;
     try {
       await this.avatar.encerrarSessao(avatarSessaoId);
     } catch (erro) {

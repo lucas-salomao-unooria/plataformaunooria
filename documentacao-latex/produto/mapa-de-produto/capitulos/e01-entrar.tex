@@ -210,9 +210,13 @@ sistemas da secretaria}{não ter mais uma senha para decorar}
 % ---------------------------------------------------------------------------
 \feature{F01.6}{Tirar dúvidas com o atendente da Ajuda}{\parcial}
 
-Um atendente em vídeo que conhece a plataforma. A pessoa abre
+Um atendente que conhece a plataforma. A pessoa abre
 \enquote{Ajuda} no menu do próprio nome, no alto da tela, e pergunta falando
-ou escrevendo; o atendente responde em voz e o texto aparece embaixo do vídeo.
+ou escrevendo; o atendente responde em voz e o texto aparece embaixo dele.
+São dois atendentes: o \textbf{mascote da Unooria}, um personagem 3D que fala
+com a pessoa (\id{H01.6.4}), e o \textbf{atendente em vídeo}, uma pessoa
+virtual de um serviço contratado. Quem atende primeiro é escolha do
+Administrador Unooria (\id{H10.4.3}); hoje, o mascote.
 Ele sabe o que este mapa diz que está pronto, os guias da aula e as missões
 --- e mais nada: não vê turma, estudante nem resultado.
 
@@ -220,7 +224,8 @@ Ele sabe o que este mapa diz que está pronto, os guias da aula e as missões
 \textbf{O tempo de conversa é limitado.} Cada conversa e cada dia têm um teto
 de minutos, que o Administrador Unooria define (\id{H10.4.2}). Começa em 10
 minutos por conversa e 30 por dia, por pessoa. A Ajuda não gasta o limite
-diário de IA de ninguém (\id{F09.4}).
+diário de IA de ninguém (\id{F09.4}). Os minutos são os mesmos para os dois
+atendentes: trocar de um para o outro não dá tempo novo.
 \end{nota}
 
 \begin{historia}{H01.6.1}{Perguntar ao atendente sem sair da tela}{\parcial}
@@ -280,4 +285,39 @@ tempo, e quando o tempo do dia acabou}{não achar que o atendente travou}
     conseguir responder, pede que a pessoa repita a pergunta.
 \end{itemize}
 \pendencia{a mesma de \id{H01.6.1}.}
+\end{historia}
+
+\begin{historia}{H01.6.4}{Conversar com o mascote da Unooria}{\pronto}
+\hu{Professor, Coordenação ou Administrador}{tirar a minha dúvida conversando
+com o mascote da Unooria}{ser atendido por um personagem da própria
+plataforma, que responde na hora, em voz e por escrito}
+\aceite
+\begin{itemize}
+  \item Quando o mascote é quem atende, a janela da Ajuda mostra o mascote da
+    Unooria em cima e a conversa escrita embaixo, no lugar do vídeo. Enquanto
+    ele chega, a janela diz \enquote{Chamando o mascote\ldots} e depois
+    \enquote{Conectando a conversa\ldots}.
+  \item O mascote fala em voz alta, e a boca dele acompanha a fala. O que ele
+    diz aparece por escrito na conversa, como no atendente em vídeo; o que a
+    pessoa fala também.
+  \item A pessoa pergunta falando ou escrevendo, do mesmo jeito que no
+    atendente em vídeo: o microfone começa desligado e pode ser ligado e
+    silenciado a qualquer momento; sem microfone, a conversa segue por escrito.
+    Se a pessoa fala por cima, o mascote para e escuta.
+  \item O mascote sabe o mesmo que o atendente em vídeo, responde no papel de
+    quem pergunta e diz quando algo ainda não existe. Nada da conversa é
+    guardado, e o aviso \enquote{Não diga nem escreva nomes de estudantes.}
+    continua fixo junto do campo.
+  \item Os minutos são os mesmos da Ajuda (\id{H01.6.3}): no fim do tempo da
+    conversa, a janela mostra \enquote{A conversa terminou}, com
+    \enquote{Começar de novo}.
+  \item Se o Administrador Unooria deixou trocar de atendente, aparece um botão
+    na janela --- \enquote{Conversar com o atendente em vídeo} ou
+    \enquote{Conversar com o mascote} ---, e a conversa recomeça com o outro.
+    Se o atendente escolhido não está disponível, a Ajuda abre com o outro;
+    sem nenhum dos dois, diz \enquote{A Ajuda com atendente não está
+    disponível agora.} e oferece \enquote{Tentar de novo}.
+  \item Como toda a Ajuda, só aparece onde o Administrador Unooria a ligou
+    (\id{H10.1.5}).
+\end{itemize}
 \end{historia}

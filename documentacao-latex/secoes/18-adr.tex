@@ -9,7 +9,7 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{157 decisões}, numeradas até ADR-157. A 153 (a evidência do Unoovista) e a 154 (a da Missão Tempestade) nasceram no mesmo dia, em frentes paralelas. A 132 (a Ajuda com
+São \textbf{158 decisões}, numeradas até ADR-158. A 153 (a evidência do Unoovista) e a 154 (a da Missão Tempestade) nasceram no mesmo dia, em frentes paralelas. A 132 (a Ajuda com
 avatar) entrou no código antes de ter seção aqui, e por um dia o número foi
 citado sem existir; a 133 pulou para não colidir com ela. A 133 e a 134 nasceram no mesmo dia, em frentes paralelas
 (Unoovista e Unoochat), e entraram juntas no merge; a 135 e a 136 levaram as
@@ -208,6 +208,7 @@ que a cercam.
 \zebra \adrr{ADR-155} & Zerar a turma apaga a evidência pedagógica da atividade & 2026-10-09 & Aceita; reverte parte da \adrr{ADR-112}\\
 \adrr{ADR-156} & O Unoovista ganha o podcast com as falas revisadas no Ativar, e a Missão Tempestade ganha o primeiro podcast fixo & 2026-10-10 & Aceita; aplica a \adrr{ADR-150}\\
 \zebra \adrr{ADR-157} & O Júri Estadual segue o PRD v2 (0.4.0) & 2026-10-10 & Aceita; supera em parte a \adrr{ADR-151} e a \adrr{ADR-152}\\
+\adrr{ADR-158} & O mascote na Ajuda: voz do Gemini Live por um proxy na api, rosto 3D no hub, e o padrão escolhido no painel & 2026-10-12 & Aceita; complementa a \adrr{ADR-132}\\
 \bottomrule
 \end{tabularx}
 
@@ -11516,7 +11517,9 @@ os professores relatarem que a turma acerta pelo tamanho da alternativa.
 \section{ADR-132 --- A Ajuda com avatar: o vídeo é do vendor, o LLM é nosso, e o limite é em minutos}
 \label{adr:ajuda-com-avatar}
 
-\textbf{Data.} 2026-10-02. \textbf{Status.} Aceita. \textbf{Abre a única
+\textbf{Data.} 2026-10-02. \textbf{Status.} Aceita; \textbf{complementada
+pela \adrr{ADR-158}} (2026-10-12), que pôs o mascote como segundo atendente e
+o padrão no painel. \textbf{Abre a única
 exceção} à regra inviolável nº~5 e à \adrr{ADR-105}: a Ajuda não passa pelo
 \cd{QuotaService}, e o que a limita são minutos, não \emph{tokens}. Usa a
 \adrr{ADR-87} (o produto \cd{ajuda} no painel de recursos) e a \adrr{ADR-99} (o
@@ -14125,3 +14128,120 @@ no servidor (F5 não zera).
 \textbf{Gatilho.} A plataforma ganhar pausa de sessão ou exportação por
 missão; o PO revisar a taxa de invisibilidade alvo; ou a mostra da IA precisar
 de mais de quatro categorias.
+
+% ---------------------------------------------------------------------------
+\section{ADR-158 --- O mascote na Ajuda: voz do Gemini Live por um proxy na api, rosto 3D no hub, e o padrão escolhido no painel}
+\label{adr:ajuda-mascote}
+
+\textbf{Data.} 2026-10-12. \textbf{Status.} Aceita. \textbf{Complementa} a
+\adrr{ADR-132}: a Ajuda passa a ter \textbf{dois atendentes} --- o avatar em
+vídeo do LiveAvatar e o \textbf{mascote} da Unooria --- e o \cd{admin} escolhe o
+padrão da rede. Herda dela a exceção à regra 5 (minutos, não \emph{tokens}): os
+minutos de \cd{ajuda\_limites} valem para os dois atendentes juntos. É o
+\textbf{primeiro WebSocket de aplicação} na api, ao contrário do que as
+\adrr{ADR-93} e \adrr{ADR-94} escolheram para o \emph{polling} das missões ---
+lá a escolha continua valendo.
+
+\begin{especificacao}{Contexto}
+\begin{itemize}
+  \item \textbf{O teste.} Em out/2026 um PoC fora do repositório
+    (\cd{poc-mascote-visemas}) pôs o mascote 3D da marca para conversar pelo
+    Gemini Live: o modelo devolve só o \textbf{áudio} (PCM 24\,kHz) e a
+    transcrição, sem visemas nem tempos, e a boca sai do próprio som (nível,
+    formantes por LPC e energia aguda), sobre 15 \emph{shape keys} no padrão
+    Meta/Oculus. O dono do produto pediu o mascote como segunda opção da Ajuda,
+    com o padrão escolhido no painel e o mascote como padrão.
+  \item \textbf{Medido em 2026-10-12}, no projeto de dev, com o ADC da Vertex:
+    o \cd{gemini-3.8-live} responde em \cd{us-central1}; com a base inteira da
+    Ajuda na instrução (cerca de 330 mil caracteres) o setup confirma em 2,5\,s
+    e a primeira fala sai em 1,2\,s, ancorada na base; pelo proxy da api, 3\,s
+    até a conversa ficar pronta.
+\end{itemize}
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{enumerate}
+  \item \textbf{A voz vem do Gemini Live na Vertex, com o ADC} --- a mesma
+    credencial de toda a IA da api, sem chave do AI Studio. Porta nova em
+    \cd{src/ai} (\cd{VOZ\_AO\_VIVO}, cliente \cd{gemini-live.client.ts}), com
+    protocolo NEUTRO: nada do formato do vendor chega ao módulo \cd{ajuda} nem
+    ao navegador.
+  \item \textbf{O navegador fala com a api por WebSocket}
+    (\rota{WS /ajuda/mascote/ao-vivo}), e só a api fala com a Vertex. A
+    \textbf{instrução do sistema} (a mesma base da Ajuda, com a apresentação do
+    mascote) \textbf{é montada no servidor} (regra 2): o navegador só manda o
+    texto da pessoa e o microfone, num protocolo fechado (Zod
+    \cd{.strict()}).
+  \item \textbf{Quem entra prova quem é com um bilhete}, na PRIMEIRA mensagem
+    (nunca na URL, que vai a log de balanceador): HS256 com
+    \cd{AJUDA\_SESSAO\_CHAVE}, audiência \cd{ajuda-mascote} (o token do LLM do
+    avatar não abre esta porta, nem o contrário), 2 minutos, e \textbf{uma
+    entrada só} --- a conexão marca \cd{ajuda\_sessoes.avatar\_sessao\_id} de
+    forma atômica. O \cd{Origin} é conferido contra a lista do CORS.
+  \item \textbf{O custo tem teto na conexão}: ela cai no prazo da sessão, e a
+    cada 30\,s confere a linha e o produto --- encerrar em outra aba ou o
+    \cd{admin} desligar a Ajuda derruba a conversa no ar.
+  \item \textbf{O rosto é do hub}: \cd{three.js} (carregado por \cd{import()}
+    só quando a janela abre), o lip sync do PoC portado sem mudar a análise, e o
+    modelo GLB \textbf{comprimido} (\emph{meshopt} e texturas em 1024: de
+    12,7\,MB para 3,4\,MB) no bucket de assets (\cd{ajuda/mascote/mascote-v1.glb},
+    caminho imutável), nunca no repositório.
+  \item \textbf{O padrão é DADO} (\cd{ajuda\_configuracao}, linha única, só o
+    \cd{admin} edita em \cd{/unooria/uso-de-ia}, motivo obrigatório,
+    histórico \cd{configuracao-alterada}): atendente padrão (semente:
+    \textbf{mascote}), se a pessoa pode trocar, voz (lista fechada de 30),
+    modelo do Live e os quatro ajustes da boca. Se o escolhido não está montado
+    na stack, a Ajuda abre o outro.
+\end{enumerate}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{O proxy do PoC como serviço próprio no Cloud Run.} A regra é
+    não criar serviço sem necessidade demonstrada, e a api já tem o ADC, o
+    bilhete e o medidor de minutos.
+  \item \textbf{Token efêmero do Gemini direto no navegador.} Existe só na API
+    do AI Studio (chave por projeto, fora do ADC), e o navegador montaria o
+    setup: a instrução e a base iriam para o cliente.
+  \item \textbf{Live só como leitor de voz}, com a resposta vinda do
+    \cd{conversarEmFluxo} da \adrr{ADR-132}. Duas chamadas por turno e a
+    escuta da pessoa teria de sair de outro lugar; o Live com a base mediu
+    1,2\,s até a primeira fala.
+  \item \textbf{Bilhete na URL do WebSocket.} Vai parar em log de balanceador
+    e de proxy.
+  \item \textbf{\cd{@nestjs/websockets}}: um caminho só, sem salas nem
+    \emph{broadcast}; o \cd{ws} pendurado no servidor HTTP basta.
+  \item \textbf{O GLB de 12,7\,MB no \cd{public/} do hub}: binário acima de
+    2\,MB não entra no repositório.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{O Live cobra a janela de contexto a cada turno}: com a base
+    inteira na instrução, cada pergunta paga a base de novo. O teto é o mesmo
+    dos minutos; o gasto real precisa ser medido na fatura.
+  \item \textbf{WebSocket atrás do balanceador}: o \emph{timeout} de
+    \emph{backend} do LB e o \emph{request timeout} do Cloud Run limitam a
+    duração da conversa --- precisam ser de pelo menos 10 minutos (o teto da
+    sessão), no Terraform, fora deste repositório. Se o \cd{admin} subir os
+    minutos por conversa (o teto é 60), o \emph{timeout} tem de subir junto,
+    ou a conversa cai no meio.
+  \item \textbf{Os tokens do mascote não entram na métrica da api}: a voz não
+    é \cd{AiProvider} e não passa pelo \cd{MedidorDeProvider}; o gasto só
+    aparece na fatura da Vertex.
+  \item \textbf{O bucket de assets precisa de CORS} para o \cd{fetch} do GLB
+    a partir do domínio do hub, e o arquivo é subido à mão, uma vez por
+    contrato.
+  \item \textbf{A malha tem 252 mil triângulos}: pesa em Chromebook. Reduzir
+    exige refazer os visemas no Blender sobre a malha nova.
+  \item \textbf{O lip sync por áudio não separa tudo}: \cd{TH} e \cd{RR} não
+    aparecem, e m/n saem como lábios fechados nas quedas de volume.
+  \item \textbf{Sem fone, o microfone fica surdo enquanto o mascote fala}
+    (senão ele se ouve e se interrompe).
+\end{itemize}
+
+\textbf{Gatilho.} O gasto do Live medido na fatura passar do avatar por
+minuto; o Google publicar visemas ou tempos no Live; ou a Vertex aceitar token
+efêmero com o ADC.

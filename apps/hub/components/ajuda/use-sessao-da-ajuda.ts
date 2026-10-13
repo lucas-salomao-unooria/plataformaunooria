@@ -98,7 +98,8 @@ export function useSessaoDaAjuda(video: RefObject<HTMLVideoElement | null>): Ses
     setMicrofone("desligado");
 
     void (async () => {
-      const abertura = await abrirSessao();
+      // Pedido EXPLÍCITO: o padrão da rede pode ser o mascote (ADR-158).
+      const abertura = await abrirSessao("avatar");
       if (!viva) {
         if (abertura.ok) encerrarSessao(abertura.sessao.id);
         return;
@@ -109,15 +110,24 @@ export function useSessaoDaAjuda(video: RefObject<HTMLVideoElement | null>): Ses
         return;
       }
       idRef.current = abertura.sessao.id;
+      if (abertura.sessao.atendente !== "avatar") {
+        // A rede não deixa trocar, ou o avatar saiu do ar entre a janela abrir e agora.
+        encerrarSessao(abertura.sessao.id);
+        idRef.current = null;
+        setErro({ mensagem: "A Ajuda com o atendente em vídeo não está disponível agora.", podeRepetir: true });
+        setFase("erro");
+        return;
+      }
+      const sessaoAberta = abertura.sessao;
       setFase("conectando");
 
       try {
         const sdk = await import("@heygen/liveavatar-web-sdk");
         if (!viva) {
-          encerrarSessao(abertura.sessao.id);
+          encerrarSessao(sessaoAberta.id);
           return;
         }
-        const sessao = new sdk.LiveAvatarSession(abertura.sessao.tokenDaSessao, {
+        const sessao = new sdk.LiveAvatarSession(sessaoAberta.tokenDaSessao, {
           autoKeepAlive: true,
         }) as unknown as SessaoDoVendor;
         sessaoRef.current = sessao;
@@ -153,8 +163,8 @@ export function useSessaoDaAjuda(video: RefObject<HTMLVideoElement | null>): Ses
 
         await sessao.start();
         if (!viva) return;
-        prazoRef.current = Date.now() + abertura.sessao.duracaoMaximaS * 1000;
-        setRestanteS(abertura.sessao.duracaoMaximaS);
+        prazoRef.current = Date.now() + sessaoAberta.duracaoMaximaS * 1000;
+        setRestanteS(sessaoAberta.duracaoMaximaS);
         setFase("conversando");
       } catch {
         if (!viva) return;

@@ -12,18 +12,46 @@ type Fetch = typeof fetch;
 
 export const BASE_DA_AJUDA = "/api/plataforma/ajuda";
 
-/** Espelha `SessaoAbertaSchema` de `apps/api/src/ajuda/contrato-de-rotas.ts`. */
-export const SessaoAbertaSchema = z.object({
+export const ATENDENTES = ["mascote", "avatar"] as const;
+export type Atendente = (typeof ATENDENTES)[number];
+
+/** Espelha `AjustesDoMascoteSchema` de `apps/api/src/ajuda/contrato-de-rotas.ts`. */
+export const AjustesDoMascoteSchema = z.object({
+  voz: z.string(),
+  modelo: z.string(),
+  sensibilidade: z.number().min(0).max(1),
+  suavizacao: z.number().min(0).max(1),
+  antecipacaoMs: z.number().int().min(0).max(200),
+  bocaRepouso: z.number().min(0).max(1),
+});
+export type AjustesDoMascote = z.infer<typeof AjustesDoMascoteSchema>;
+
+const SessaoComumSchema = z.object({
   id: z.string().uuid(),
-  tokenDaSessao: z.string().min(1),
   duracaoMaximaS: z.number().int().positive(),
   segundosRestantesHoje: z.number().int().min(0),
 });
+
+/** Espelha `SessaoAbertaSchema` de `apps/api/src/ajuda/contrato-de-rotas.ts` (ADR-132, ADR-158). */
+export const SessaoAbertaSchema = z.discriminatedUnion("atendente", [
+  SessaoComumSchema.extend({ atendente: z.literal("avatar"), tokenDaSessao: z.string().min(1) }),
+  SessaoComumSchema.extend({ atendente: z.literal("mascote"), bilhete: z.string().min(1), ajustes: AjustesDoMascoteSchema }),
+]);
 export type SessaoAberta = z.infer<typeof SessaoAbertaSchema>;
+export type SessaoDoAvatar = Extract<SessaoAberta, { atendente: "avatar" }>;
+export type SessaoDoMascote = Extract<SessaoAberta, { atendente: "mascote" }>;
+
+/** Espelha `ConfiguracaoDaJanelaSchema`: quem atende, se dá para trocar, e onde está o modelo 3D. */
+export const ConfiguracaoDaJanelaSchema = z.object({
+  atendente: z.enum(ATENDENTES).nullable(),
+  podeTrocar: z.boolean(),
+  modeloDoMascote: z.string().url(),
+});
+export type ConfiguracaoDaJanela = z.infer<typeof ConfiguracaoDaJanelaSchema>;
 
 const RecusaSchema = z.object({ codigo: z.string().optional(), mensagem: z.string().optional() }).passthrough();
 
-export type Abertura = { ok: true; sessao: SessaoAberta } | { ok: false; mensagem: string; podeRepetir: boolean };
+export type Abertura<S = SessaoAberta> = { ok: true; sessao: S } | { ok: false; mensagem: string; podeRepetir: boolean };
 
 const SEM_CONEXAO = "Não foi possível falar com a plataforma. Confira a conexão e tente de novo.";
 
@@ -50,13 +78,33 @@ export function recusaParaTela(status: number, corpo: unknown): { mensagem: stri
   return { mensagem: daApi ?? SEM_CONEXAO, podeRepetir: true };
 }
 
-export async function abrirSessao(f: Fetch = fetch): Promise<Abertura> {
+/**
+ * Quem atende: o padrão da rede (o `admin` escolhe em `/unooria/uso-de-ia`) e
+ * se a pessoa pode trocar. Falha = `null`, e a janela tenta abrir do jeito
+ * padrão — a api decide de novo na abertura.
+ */
+export async function lerConfiguracao(f: Fetch = fetch): Promise<ConfiguracaoDaJanela | null> {
+  try {
+    const res = await f(`${BASE_DA_AJUDA}/configuracao`);
+    if (!res.ok) return null;
+    const lido = ConfiguracaoDaJanelaSchema.safeParse(await res.json());
+    return lido.success ? lido.data : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Abre a sessão. `atendente` é o pedido da pessoa (vale se a troca é
+ * permitida); sem ele, a api abre o padrão da rede.
+ */
+export async function abrirSessao(atendente?: Atendente, f: Fetch = fetch): Promise<Abertura> {
   let res: Response;
   try {
     res = await f(`${BASE_DA_AJUDA}/sessoes`, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: "{}",
+      body: JSON.stringify(atendente ? { atendente } : {}),
     });
   } catch {
     return { ok: false, mensagem: SEM_CONEXAO, podeRepetir: true };

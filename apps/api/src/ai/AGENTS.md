@@ -127,6 +127,19 @@ transcrição, que já está na tela por acessibilidade.
   nunca derruba a subida. O sandbox (`LIVEAVATAR_SANDBOX=1`) troca o avatar pelo
   de testes do vendor (~1 min, sem crédito) e é recusado em produção.
 
+## A voz ao vivo: o mascote da Ajuda (ADR-158)
+
+`voz-ao-vivo.port.ts` + `gemini-live.client.ts`: o Gemini Live da Vertex
+(`BidiGenerateContent` por WebSocket), com o MESMO ADC. A porta fala um
+protocolo NEUTRO (`EntradaDaVoz`/`EventoDaVoz`); o setup (modelo com o caminho
+`projects/<p>/locations/<r>/...`, `generationConfig` com `responseModalities`
+e `speechConfig`, `systemInstruction` como Content, as duas transcrições) é
+montado aqui e conferido em `tests/ajuda-mascote.spec.ts`. Região própria
+(`AJUDA_MASCOTE_REGIAO`, padrão `us-central1`): o Live não está no `global`.
+Sem `VERTEX_PROJECT_ID` (ou com `AI_PROVIDER=mock`) a porta nasce desligada e
+o mascote some da Ajuda. Não é método do `AiProvider` pela razão do avatar:
+é uma sessão com ciclo de vida, não uma chamada.
+
 ## O segundo vendor: o Agent Engine (agente de IA do professor)
 
 `agent-engine.client.ts` é a ÚNICA peça da api que conhece o Vertex AI Agent

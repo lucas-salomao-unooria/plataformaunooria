@@ -136,6 +136,18 @@ export const EnvSchema = z.object({
   AJUDA_LLM_SEGREDO: vazioEhAusente(z.string().min(32)),
   AJUDA_SESSAO_CHAVE: vazioEhAusente(z.string().min(32)),
 
+  /**
+   * O MASCOTE da Ajuda (ADR-158): o Gemini Live na Vertex, com o ADC e o
+   * `VERTEX_PROJECT_ID` de todo o resto. Não tem chave própria — basta a Vertex
+   * e a `AJUDA_SESSAO_CHAVE` (assina o bilhete da conexão de voz).
+   *
+   * `AJUDA_MASCOTE_REGIAO`: o Live NÃO está no `global` do texto; medido em
+   * 2026-10-12 no projeto de dev, `us-central1` serve o `gemini-3.8-live`
+   * (setup em 2,5 s com a base inteira, primeira fala em 1,2 s). O modelo e a
+   * voz são do painel (`ajuda_configuracao`), não daqui.
+   */
+  AJUDA_MASCOTE_REGIAO: z.string().regex(/^[a-z0-9-]+$/).default("us-central1"),
+
   // Imagens geradas: local (dev, servido pela api em /assets) | gcs (bucket
   // {contrato}-assets atrás da CDN — docs/INFRA.md).
   ASSETS_DRIVER: z.enum(["local", "gcs"]).default("local"),

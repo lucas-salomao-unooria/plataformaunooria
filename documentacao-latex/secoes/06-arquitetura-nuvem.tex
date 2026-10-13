@@ -104,7 +104,10 @@ que existe --- e que ninguém destrói quando o contrato termina.
   Ajuda com avatar (\adrr{ADR-132}), é o único externo com tráfego nos dois
   sentidos: a API abre e fecha a sala em \texttt{api.liveavatar.com}, e o
   \emph{vendor} entra pelo mesmo LB para chamar \texttt{/ajuda/llm}; o vídeo vai
-  dele direto ao navegador da escola.}
+  dele direto ao navegador da escola. O mascote da Ajuda (\adrr{ADR-158}) não
+  acrescenta caixa: a conversa de voz é um WebSocket do navegador à API pelo
+  mesmo LB, e da API ao Gemini Live do mesmo Vertex AI, em
+  \texttt{us-central1}.}
 \label{fig:deploy-contrato}
 \end{figure}
 
@@ -355,6 +358,33 @@ o segredo é apagar a configuração (e depois o segredo) no painel do
 documentada, e apagar o segredo antes da configuração a quebra sem aviso.
 \end{nota}
 
+\begin{atencao}
+\textbf{O mascote da Ajuda também não tem recurso próprio, mas pede duas coisas
+ao caminho} (\adrr{ADR-158}). Ele usa o Vertex AI pelo mesmo ADC e a mesma SA da
+API (o Gemini Live, na região \env{AJUDA\_MASCOTE\_REGIAO}, padrão
+\cd{us-central1}: o Live não está no \cd{global}) e a mesma
+\cd{\{contrato\}-ajuda-sessao-chave}; o modelo 3D
+(\cd{ajuda/mascote/mascote-v1.glb}, 3,4\,MB) é um objeto do bucket de
+\emph{assets}, publicado uma vez por contrato, atrás da CDN, nunca no
+repositório. O que o caminho precisa:
+\begin{enumerate}
+  \item \textbf{\emph{Timeout} que cubra a sessão inteira.} A conversa é um
+    WebSocket aberto do navegador à API (\rota{/ajuda/mascote/ao-vivo}) pelo
+    mesmo LB e o mesmo Cloud Run. No Cloud Run, a conexão WebSocket morre no
+    \emph{request timeout} do serviço; no LB com NEG \emph{serverless}, o
+    \emph{timeout} de \emph{backend} é fixo em 60 minutos. Os 900\,s da API
+    cobrem o padrão (10 minutos por sessão), mas o \emph{timeout} da API tem de
+    ficar \textbf{acima de 10 minutos sempre}, e acompanhar o
+    \cd{minutos-por-sessao} se o \cd{admin} subi-lo (o teto é 60) --- ou a
+    conversa cai no meio com um fechamento que não é nosso. Sem afinidade de
+    sessão: cada conversa é UMA conexão, e a instância que a recebe a leva até
+    o fim.
+  \item \textbf{O \emph{host} da API em \env{CORS\_ORIGINS} do lado certo}: a
+    API confere o \cd{Origin} do \emph{upgrade} contra a lista do CORS; o hub
+    precisa estar nela, como já está para o \cd{fetch}.
+\end{enumerate}
+\end{atencao}
+
 \begin{decisao}
 \textbf{Uma \emph{role} de banco, não duas.} O desenho original previa duas
 \emph{roles}: uma dona do \emph{schema} para as migrações e uma \cd{app\_runtime}
@@ -394,7 +424,17 @@ API \seta{} Vertex AI & Pública, TLS + ADC & Endpoint \cd{global}.\\
 Agent Engine \seta{} Gemini e \emph{data stores} & Pública, TLS + SA do
   agente & Modelo em \cd{global} com reserva em \cd{us}; \emph{data stores} em
   \cd{global}. O navegador nunca chega aqui.\\
-\zebra API \seta{} LiveAvatar (\cd{api.liveavatar.com}) & Pública, TLS +
+\zebra Navegador \seta{} LB \seta{} API (\rota{WS /ajuda/mascote/ao-vivo}) &
+  Pública, WSS + bilhete & A conversa de voz do mascote da Ajuda
+  (\adrr{ADR-158}), direto na URL pública da API, sem passar pelo hub (o Next
+  não repassa WebSocket). \cd{Origin} conferido contra \env{CORS\_ORIGINS};
+  bilhete de 2 minutos na primeira mensagem. Dura até o teto da sessão: o
+  \emph{timeout} do Cloud Run da API tem de ser maior que ele.\\
+API \seta{} Vertex AI (Gemini Live) & Pública, WSS + ADC & O
+  \cd{BidiGenerateContent} em \cd{us-central1-aiplatform.googleapis.com}
+  (\env{AJUDA\_MASCOTE\_REGIAO}). Só a API fala com ele; a instrução do sistema
+  nunca vai ao navegador.\\
+API \seta{} LiveAvatar (\cd{api.liveavatar.com}) & Pública, TLS +
   \cd{x-api-key} & Abrir e fechar a sala da Ajuda (\rota{/v1/sessions}), com
   \emph{timeout} de 10\,s (\adrr{ADR-132}). A chave nunca sai da API.\\
 LiveAvatar \seta{} LB \seta{} API (\rota{/ajuda/llm}) & Pública, TLS +
