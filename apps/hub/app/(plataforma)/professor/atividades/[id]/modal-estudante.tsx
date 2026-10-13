@@ -29,6 +29,8 @@ interface Interacao {
   handle: string;
   caption: string;
   imageUrl: string | null;
+  /** O texto alternativo da imagem gerada, ou `null` (ADR-163). */
+  imageAlt?: string | null;
   fallbackArt: { corFundo: string; emojis: string } | null;
   ladoRotulo: string;
   perfil: string;
@@ -255,7 +257,7 @@ export function ModalEstudante({
                       <span className="h-14 w-14 shrink-0 overflow-hidden rounded-md">
                         {post.imageUrl ? (
                           // eslint-disable-next-line @next/next/no-img-element
-                          <img src={post.imageUrl} alt="" className="h-full w-full object-cover" />
+                          <img src={post.imageUrl} alt={post.imageAlt || `Foto do post de ${post.handle}`} className="h-full w-full object-cover" />
                         ) : (
                           <span
                             className="flex h-full w-full items-center justify-center text-[20px]"

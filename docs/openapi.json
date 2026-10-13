@@ -14409,6 +14409,10 @@
                             "type": "string",
                             "nullable": true
                           },
+                          "imageAlt": {
+                            "type": "string",
+                            "nullable": true
+                          },
                           "fallbackArt": {
                             "type": "object",
                             "properties": {
@@ -14470,6 +14474,7 @@
                           "id",
                           "author",
                           "imageUrl",
+                          "imageAlt",
                           "caption",
                           "hashtags",
                           "likesCount",
@@ -15065,6 +15070,10 @@
                             "type": "string",
                             "nullable": true
                           },
+                          "imageAlt": {
+                            "type": "string",
+                            "nullable": true
+                          },
                           "fallbackArt": {
                             "type": "object",
                             "properties": {
@@ -15126,6 +15135,7 @@
                           "id",
                           "author",
                           "imageUrl",
+                          "imageAlt",
                           "caption",
                           "hashtags",
                           "likesCount",
@@ -15227,6 +15237,10 @@
                             "type": "string",
                             "nullable": true
                           },
+                          "imageAlt": {
+                            "type": "string",
+                            "nullable": true
+                          },
                           "fallbackArt": {
                             "type": "object",
                             "properties": {
@@ -15288,6 +15302,7 @@
                           "id",
                           "author",
                           "imageUrl",
+                          "imageAlt",
                           "caption",
                           "hashtags",
                           "likesCount",
@@ -15420,6 +15435,10 @@
                             "type": "string",
                             "nullable": true
                           },
+                          "imageAlt": {
+                            "type": "string",
+                            "nullable": true
+                          },
                           "caption": {
                             "type": "string"
                           },
@@ -15440,6 +15459,7 @@
                           "id",
                           "author",
                           "imageUrl",
+                          "imageAlt",
                           "caption",
                           "hashtags",
                           "likesCount",
@@ -16552,6 +16572,10 @@
                                 "type": "string",
                                 "nullable": true
                               },
+                              "imageAlt": {
+                                "type": "string",
+                                "nullable": true
+                              },
                               "imageStatus": {
                                 "type": "string"
                               },
@@ -16590,6 +16614,7 @@
                               "intensidade",
                               "caption",
                               "imageUrl",
+                              "imageAlt",
                               "imageStatus",
                               "categoria",
                               "handle",
@@ -16619,6 +16644,10 @@
                                 "type": "string"
                               },
                               "imageUrl": {
+                                "type": "string",
+                                "nullable": true
+                              },
+                              "imageAlt": {
                                 "type": "string",
                                 "nullable": true
                               },
@@ -16654,6 +16683,7 @@
                               "intensidade",
                               "caption",
                               "imageUrl",
+                              "imageAlt",
                               "imageStatus",
                               "categoria",
                               "handle",
@@ -18268,6 +18298,10 @@
                             "type": "string",
                             "nullable": true
                           },
+                          "imageAlt": {
+                            "type": "string",
+                            "nullable": true
+                          },
                           "fallbackArt": {
                             "nullable": true
                           },
@@ -18310,6 +18344,7 @@
                           "handle",
                           "caption",
                           "imageUrl",
+                          "imageAlt",
                           "lado",
                           "ladoRotulo",
                           "perfil",

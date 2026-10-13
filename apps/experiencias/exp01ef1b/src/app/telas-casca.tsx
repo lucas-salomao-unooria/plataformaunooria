@@ -15,7 +15,7 @@ import {
   IlustracaoNinaMegafone,
 } from "./componentes/casca";
 import { PicGlobo, PicLupa, PicMedalhaDetetive } from "./componentes/pictogramas";
-import { urlDaFoto } from "./componentes/clone";
+import { altDaFoto, urlDaFoto } from "./componentes/clone";
 
 /* ------------------------------ E1: Desafiar ------------------------------ */
 
@@ -144,7 +144,7 @@ export function TelaConclusao({
         <div className="fc-galeria">
           {galeria.map((p, i) => (
             <figure key={`${p.criadoEm}-${i}`} className="fc-galeria-item">
-              <img src={urlDaFoto(p.fotoId)} alt="" />
+              <img src={urlDaFoto(p.fotoId)} alt={altDaFoto(p.fotoId)} />
               <figcaption>{p.legendaTexto}</figcaption>
             </figure>
           ))}

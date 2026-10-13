@@ -101,7 +101,9 @@ export function CartaoPost({
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={post.imageUrl}
-            alt=""
+            /* A imagem foi GERADA a partir deste brief: é a descrição dela
+               (WCAG 1.1.1, ADR-163). */
+            alt={post.imageBrief || `Foto do post de ${post.author.handle}`}
             className="h-full w-full object-cover"
             loading="lazy"
           />
