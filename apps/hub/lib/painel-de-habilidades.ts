@@ -60,11 +60,24 @@ interface MissaoDaLinha {
   habilidades: { codigo: string; distribuicao: Distribuicao }[];
 }
 
+/**
+ * Uma SÉRIE SOMADA: a linha de uma escola no painel da rede, de uma regional
+ * no painel do contrato, e o TOTAL no topo de cada painel.
+ */
+export interface SerieSomada {
+  serie: string;
+  turmas: number;
+  estudantes: number;
+  missoes: (MissaoDaLinha & { turmasAplicadas: number })[];
+}
+
 /** `GET /evidencias/escola/consolidado`. */
 export interface EscolaConsolidada {
   escola: { id: string; nome: string };
   periodo: { id: string; titulo: string } | null;
   missoes: MissaoDoPainel[];
+  /** O TOPO: a escola inteira, série a série — a soma das turmas. */
+  total: SerieSomada[];
   turmas: {
     id: string;
     nome: string;
@@ -79,15 +92,16 @@ export interface RedeConsolidada {
   regional: { id: string; nome: string } | null;
   periodo: { id: string; titulo: string } | null;
   missoes: MissaoDoPainel[];
+  /** O TOPO: a regional lida, ou a rede inteira — a soma das escolas. */
+  total: SerieSomada[];
+  /** Só para o contrato na rede inteira: cada regional com a soma das escolas dela. */
+  regionais: { id: string; nome: string; escolas: number; series: SerieSomada[] }[];
   escolas: {
     id: string;
     nome: string;
-    series: {
-      serie: string;
-      turmas: number;
-      estudantes: number;
-      missoes: (MissaoDaLinha & { turmasAplicadas: number })[];
-    }[];
+    /** `null` = escola pendurada direto no contrato, sem regional. */
+    regionalId: string | null;
+    series: SerieSomada[];
   }[];
 }
 

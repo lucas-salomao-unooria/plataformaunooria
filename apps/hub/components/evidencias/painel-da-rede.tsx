@@ -1,23 +1,29 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
-import { Card, EmptyState, Selection, Tag } from "@edu/ui/ds";
+import { Card, EmptyState, Selection } from "@edu/ui/ds";
 import { copyDaMissao } from "@/lib/missoes-do-estudante";
 import {
-  distribuicaoDa,
   rotuloDaSerieDoPainel,
   rotuloDaUnidade,
   seriesDaRede,
   type RedeConsolidada,
+  type SerieSomada,
 } from "@/lib/painel-de-habilidades";
-import { BarraDaHabilidade } from "./barra-da-habilidade";
+import { LinhaSomada } from "./linha-somada";
+
+const daSerie = (series: readonly SerieSomada[], serie: string) => series.find((s) => s.serie === serie);
 
 const TODAS = "todas";
 
 /**
  * O PAINEL DA REDE (H14.7.3): por série, cada missão num cartão e, dentro
  * dele, cada escola com a soma das turmas — em contagem e porcentagem.
+ *
+ * O cartão abre pelo TOPO ("Regional inteira" ou "Rede inteira", o `total` da
+ * api). Para o contrato na rede inteira há um degrau a mais: em vez de cem
+ * escolas, uma linha por REGIONAL, que abre o painel dela; só a escola sem
+ * regional aparece sozinha — sem ela o topo não fecharia com as linhas.
  *
  * Escolas por NOME, sem ranking: o objetivo é acompanhar e direcionar apoio,
  * não comparar. O nome da escola abre o painel daquela escola; de lá, a turma
@@ -26,11 +32,16 @@ const TODAS = "todas";
 export function PainelDaRede({
   painel,
   linkDaEscola,
+  linkDaRegional,
 }: {
   painel: RedeConsolidada;
   /** O endereço do painel da escola é `${prefixo}${id}`. */
   linkDaEscola: { prefixo: string };
+  /** O endereço do painel da regional é `${prefixo}${id}` — só o contrato chega a ele. */
+  linkDaRegional: { prefixo: string };
 }) {
+  const porRegional = painel.regionais.length > 0;
+  const escolasEmLinha = porRegional ? painel.escolas.filter((e) => e.regionalId === null) : painel.escolas;
   const series = seriesDaRede(painel);
   const [serie, setSerie] = useState<string>(TODAS);
   const visiveis = serie === TODAS ? series : series.filter((s) => s.serie === serie);
@@ -88,44 +99,32 @@ export function PainelDaRede({
               title={`${rotuloDaUnidade(missao.unidade)} · ${copyDaMissao(missao.expId)?.titulo ?? missao.nome}`}
             >
               <ul className="flex flex-col gap-4">
-                {painel.escolas.map((escola) => {
-                  const daSerie = escola.series.find((s) => s.serie === grupo.serie);
-                  const daMissao = daSerie?.missoes.find((m) => m.expId === missao.expId);
-                  if (!daSerie || !daMissao) return null;
-                  return (
-                    <li key={escola.id} className="linha-de-lista flex flex-col gap-2 pb-4">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <Link
-                          href={`${linkDaEscola.prefixo}${encodeURIComponent(escola.id)}`}
-                          className="text-[15px] font-semibold text-unooria-neutral-950 hover:text-unooria-navy-800"
-                        >
-                          {escola.nome}
-                        </Link>
-                        <span className="text-[13px] text-unooria-neutral-500">
-                          {daMissao.turmasAplicadas} de {daSerie.turmas} {daSerie.turmas === 1 ? "turma" : "turmas"}{" "}
-                          aplicaram · {daSerie.estudantes} estudantes
-                        </span>
-                      </div>
-                      {daMissao.turmasAplicadas === 0 ? (
-                        <Tag size="sm">Ainda não aplicada</Tag>
-                      ) : (
-                        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                          {missao.habilidades.map((h) => {
-                            const d = distribuicaoDa(daSerie.missoes, missao.expId, h.codigo);
-                            return d ? (
-                              <BarraDaHabilidade
-                                key={h.codigo}
-                                titulo={h.codigo}
-                                subtitulo={h.descricao || "Habilidade da BNCC de Computação"}
-                                distribuicao={d}
-                              />
-                            ) : null;
-                          })}
-                        </div>
-                      )}
-                    </li>
-                  );
-                })}
+                <LinhaSomada
+                  rotulo={painel.regional ? "Regional inteira" : "Rede inteira"}
+                  destaque
+                  serie={daSerie(painel.total, grupo.serie)}
+                  missao={missao}
+                />
+                {porRegional
+                  ? painel.regionais.map((regional) => (
+                      <LinhaSomada
+                        key={regional.id}
+                        rotulo={regional.nome}
+                        href={`${linkDaRegional.prefixo}${encodeURIComponent(regional.id)}`}
+                        serie={daSerie(regional.series, grupo.serie)}
+                        missao={missao}
+                      />
+                    ))
+                  : null}
+                {escolasEmLinha.map((escola) => (
+                  <LinhaSomada
+                    key={escola.id}
+                    rotulo={escola.nome}
+                    href={`${linkDaEscola.prefixo}${encodeURIComponent(escola.id)}`}
+                    serie={daSerie(escola.series, grupo.serie)}
+                    missao={missao}
+                  />
+                ))}
               </ul>
             </Card>
           ))}
