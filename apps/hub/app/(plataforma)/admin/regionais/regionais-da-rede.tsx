@@ -248,7 +248,7 @@ export function RegionaisDaRede() {
       {erro ? <AlertBox theme="light" variant="error" device="auto" description={erro} /> : null}
 
       <div className="flex flex-wrap items-end justify-between gap-4">
-        <div className="w-[280px]">
+        <div className="w-[280px] max-w-full">
           <SearchInput
             id="busca-regional"
             label="Buscar regional"

@@ -28,8 +28,12 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         />
         {/* A largura da coluna é DAQUI. Cada página trazia a sua (1080px em
             quatro, 1180px em duas, sem razão registrada) e a trilha, que agora
-            é do layout, nasceria desalinhada do texto em metade da área. */}
-        <div className="mx-auto w-full max-w-[1180px] flex-1 px-6 py-6">
+            é do layout, nasceria desalinhada do texto em metade da área.
+            `min-w-0` porque esta coluna é item de flex ao lado da SideBar, e
+            item de flex não encolhe abaixo do conteúdo: sem ele, a tabela larga
+            empurrava a coluna para fora da janela (419px de página em 375, e
+            812 em 768) em vez de rolar dentro do `ScrollBar`. */}
+        <div className="mx-auto w-full min-w-0 max-w-[1180px] flex-1 px-6 py-6">
           <ProvedorDaTrilha>
             <TrilhaDaRota papel={session!.usuario.papel} />
             <EscopoDaEscola>{children}</EscopoDaEscola>

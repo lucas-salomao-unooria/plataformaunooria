@@ -321,7 +321,7 @@ export function GestaoUsuarios({
 
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="flex flex-wrap items-end gap-3">
-          <div className="w-[280px]">
+          <div className="w-[280px] max-w-full">
             <SearchInput
               id="busca"
               label="Buscar"
@@ -333,7 +333,7 @@ export function GestaoUsuarios({
               }}
             />
           </div>
-          <div className="w-[200px]">
+          <div className="w-[200px] max-w-full">
             <Selection
               label="Papel"
               value={filtroPapel}
@@ -344,7 +344,7 @@ export function GestaoUsuarios({
               options={PAPEIS}
             />
           </div>
-          <div className="w-[220px]">
+          <div className="w-[220px] max-w-full">
             <Selection
               label="Situação"
               value={situacao}

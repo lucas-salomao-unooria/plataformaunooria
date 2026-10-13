@@ -324,7 +324,7 @@ export function NovoUsuario({
             />
           ) : null}
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <TextField
               id="novo-cpf"
               label="CPF"
@@ -345,7 +345,7 @@ export function NovoUsuario({
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <TextField
               id="novo-usuario"
               label="Usuário"
@@ -364,7 +364,7 @@ export function NovoUsuario({
           </div>
 
           {pedeTurma ? (
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Selection
                 label="Turma"
                 required={papelNovo === "estudante"}
