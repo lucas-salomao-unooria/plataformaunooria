@@ -47,6 +47,23 @@ superfícies, com outro público e outra linguagem; mexer nelas é decisão de
 marketing, não de chrome. Quem for reabrir a da landing: a mudança é trocar o
 `max-width` do `.landing-nav__miolo` por `none`.
 
+## Celular e tablet: a coluna ao lado da `SideBar` leva `min-w-0` (ADR-159)
+
+**Coluna de conteúdo que é item de `flex` leva `min-w-0`.** Em `/admin` e
+`/unooria` a coluna mora ao lado da `SideBar`, e item de flex não encolhe abaixo
+do conteúdo: a tabela larga empurrava a coluna para fora da janela (419px de
+página num celular de 375, 812 num tablet de 768) e o `ScrollBar` dela nunca
+rolava — rolava a página inteira, com a coluna da direita fora da tela. No
+desktop não aparece. Área nova com barra lateral nasce com o `min-w-0`.
+
+**A `SideBar` fica no celular** (44px, só ícones): o defeito nunca foi ela.
+**`Tag` com frase quebra linha** por compensação em `plataforma.css` — a lacuna,
+e quando ela morre, estão no comentário de lá.
+
+**Medir de novo**: compare com a largura NOMINAL da tela. Emulando celular, o
+Chrome afasta o zoom para caber o transbordo e `window.innerWidth` cresce junto —
+uma página de 419px responde "419 de 419" e parece certa.
+
 ## As fontes do DS não vêm de graça
 
 **No hub, o CSS do DS não basta: as fontes também.** `components/casca-plataforma.tsx`

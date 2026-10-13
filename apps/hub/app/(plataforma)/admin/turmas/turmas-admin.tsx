@@ -189,7 +189,7 @@ export function TurmasAdmin({ papel, escolaIdInicial }: { papel: Papel; escolaId
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="flex flex-wrap items-end gap-3">
           {periodos.length > 1 ? (
-            <div className="w-[260px]">
+            <div className="w-[260px] max-w-full">
               <Selection
                 label="Ano letivo"
                 value={periodoFiltro}

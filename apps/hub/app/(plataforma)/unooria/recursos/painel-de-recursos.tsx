@@ -311,7 +311,7 @@ export function PainelDeRecursos({
                     {explicacaoDoEfetivo(produto)}
                   </p>
                 </div>
-                <div className="w-[200px]">
+                <div className="w-[200px] max-w-full">
                   <Selection
                     id={`interruptor-${produto.slug}`}
                     label="Neste escopo"
@@ -365,7 +365,7 @@ export function PainelDeRecursos({
                           {exp.expId} · {explicacaoDoEfetivo(exp)}
                         </span>
                       </div>
-                      <div className="w-[200px]">
+                      <div className="w-[200px] max-w-full">
                         <Selection
                           id={`interruptor-${exp.expId}`}
                           label="Neste escopo"
