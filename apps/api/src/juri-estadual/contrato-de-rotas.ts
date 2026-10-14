@@ -157,7 +157,7 @@ export const PostPublicoSchema = z.object({
   texto: z.string(),
   /** A legenda do ESTANDE, em qualquer formato (o "...mais" da apresentação). */
   legenda: z.string(),
-  /** O resumo técnico do estande (o bastidor): a segunda lâmina do carrossel do post. */
+  /** O resumo técnico do estande (o bastidor): a última lâmina do carrossel do post ("Bastidores do estande"). */
   bastidor: z.string(),
   hashtags: z.array(z.string()),
   imagem: ImagemPublicaSchema,
@@ -345,7 +345,7 @@ export const ProjetoDoPacoteSchema = z.object({
   escola: z.string().trim().min(3).max(60),
   perfil: z.string().trim(),
   legenda: z.string().trim().min(10).max(420),
-  /** O resumo técnico (a ficha de inspeção da galeria e a segunda lâmina do post). */
+  /** O resumo técnico (a ficha de inspeção da galeria e a última lâmina do carrossel do post). */
   bastidor: z.string().trim().min(10).max(280),
   /** Só nos pacotes da 0.4.x (os formatos da saturação): lidos, nunca escritos. */
   prototipo: z.string().trim().min(10).max(280).optional(),

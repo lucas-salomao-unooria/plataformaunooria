@@ -9,6 +9,7 @@ import {
   ModalBody,
   ModalFooter,
   ModalHeader,
+  ScrollBar,
   Tabs,
   Tag,
   TextArea,
@@ -76,11 +77,16 @@ export function AbasDasAreas({ abas, rotulo }: { abas: readonly AbaDaArea[]; rot
   if (!aberta) return null;
   return (
     <div className="flex flex-col gap-4" aria-label={rotulo} role="group">
-      <Tabs
-        value={aberta.area}
-        onChange={(valor) => setArea(String(valor) as Area)}
-        items={abas.map((a) => ({ value: a.area, label: a.rotulo }))}
-      />
+      {/* Sem o ícone padrão do `Tab` (um "+" que leria como "adicionar"), e numa
+          faixa que rola na horizontal: o nome da área vem da IA e pode ser
+          longo, e a quarta aba saía cortada a 1440 px (e2e 13). */}
+      <ScrollBar orientation="horizontal" autoHide>
+        <Tabs
+          value={aberta.area}
+          onChange={(valor) => setArea(String(valor) as Area)}
+          items={abas.map((a) => ({ value: a.area, label: a.rotulo, showIcon: false }))}
+        />
+      </ScrollBar>
       <div key={aberta.area} data-area={aberta.area}>
         {aberta.conteudo}
       </div>

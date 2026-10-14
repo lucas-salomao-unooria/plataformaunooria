@@ -73,7 +73,7 @@ lados têm espelhos dessas listas; mudar a forma aqui sem avisar quebra os dois.
   Quem curte cedo: 7/1/1/1; quem não interage: 3/3/2/2 (a menos vista). Os dois
   ficam com 30 de 40 fora — o que muda é QUAIS. A saturação por formatos da
   0.4.x (`formatoQueFalta`, `PROJETOS_DA_AREA_EM_FOCO`) SAIU; o `bastidor`
-  continua como texto (o `bastidor` do post, a segunda lâmina do carrossel, e o
+  continua como texto (o `bastidor` do post, a última lâmina do carrossel, e o
   `resumo` da galeria). Uma sessão 2.0.0 continua de onde parou, só com
   apresentações de projetos novos.
 - **8 minutos do servidor** (melhoria 9): o 1º `proximo: true` grava

@@ -169,6 +169,7 @@ export function ImagensDoBancoDoJuri({ inicial }: { inicial: ImagensDoBancoPadra
                 quantos: a.ids.filter((id) => !banco.imagens[id]).length,
                 texto: "sem imagem",
               }),
+              showIcon: false,
             }))}
           />
           {aberta ? (
