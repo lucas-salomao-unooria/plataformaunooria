@@ -21,8 +21,8 @@ import { EquipeNaLinha } from "./equipe-na-linha";
  * e não atravessa a fronteira RSC, e o painel ao vivo, acima, repassa a lista
  * nova a cada consulta.
  *
- * O que ela NÃO tem, e cada ausência é regra: o VOTO, a taxa de invisibilidade
- * e o nível (`PROIBIDO_NA_LINHA_DO_PAINEL`, na api) — nome ligado a escolha
+ * O que ela NÃO tem, e cada ausência é regra: o VOTO, a concentração do feed
+ * (só agregada, no cartão da lousa) e o nível (`PROIBIDO_NA_LINHA_DO_PAINEL`, na api) — nome ligado a escolha
  * não vai para a lousa do pico —, e ordenação. A ordem é alfabética pelo que a
  * primeira célula mostra (`ordenarLinhas`) e nenhuma coluna é `sortable`:
  * listagem ordenável por progresso vira ranking.

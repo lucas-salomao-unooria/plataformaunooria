@@ -145,14 +145,17 @@ const PREFIXOS_PERMITIDOS = [
      telas andam pelo polling do gate (ADR-93). As guardas de papel estão na
      api (`@Roles("professor", ...GESTORES)`, e `turmaVisivel` por turma). */
   "jornal-escola",
-  /* exp06ef1b: o preparo da mostra (gerar os dezesseis estandes, regenerar um
-     estande e homologar — não há banco padrão: sem saldo de IA, 429 e nada a
-     oferecer), as imagens — o mesmo laço do cliente do Jornal, duas por
-     chamada —, o botão ÚNICO da aula (Liberar a Galeria Oculta), a consulta
-     leve do painel a cada 5 s e o "zerar turma" são client-side: o professor
-     aperta na frente da sala e as telas andam pelo polling do gate de 3 s
-     (ADR-93). As guardas de papel estão na api (`@Roles("professor",
-     ...GESTORES)`, e a turma conferida por escola). */
+  /* exp06ef1b: o preparo da mostra (gerar os quarenta estandes — cinco
+     chamadas na api, ~42 s, dentro do teto deste BFF —, regenerar um estande,
+     homologar e o "Usar Banco Padrão"), as imagens — o mesmo laço do cliente do
+     Jornal, quatro por chamada, porque quarenta não cabem numa —, o botão ÚNICO
+     da aula (Liberar a Galeria Oculta), a consulta leve do painel a cada 5 s e
+     o "zerar turma" são client-side: o professor aperta na frente da sala e as
+     telas andam pelo polling do gate de 3 s (ADR-93). As guardas de papel estão
+     na api (`@Roles("professor", ...GESTORES)`, e a turma conferida por escola).
+     O mesmo prefixo leva as imagens do BANCO PADRÃO
+     (`juri-estadual/banco-padrao/imagens`, a tela `/unooria/recursos/imagens-do-juri`),
+     que só o `admin` alcança: o `@Roles("admin")` está na api. */
   "juri-estadual",
   /* Os cadastros de interesse do site público (ADR-107) — a LEITURA e a
      eliminação a pedido do titular (H10.5.2), só `admin` (o `@Roles` está na
