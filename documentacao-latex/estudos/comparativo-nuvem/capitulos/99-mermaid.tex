@@ -1,0 +1,85 @@
+% =============================================================================
+% APÊNDICE A — Código-Fonte Mermaid dos Diagramas
+% =============================================================================
+\chapter{Código-Fonte Mermaid dos Diagramas}
+\label{ap:mermaid}
+
+Em conformidade com a convenção da documentação técnica da Plataforma Unooria, este apêndice preserva a representação em \textbf{Mermaid} equivalente aos diagramas \textbf{TikZ} renderizados nos capítulos anteriores, facilitando a manutenção futura por agentes de código e ferramentas externas.
+
+% =============================================================================
+\section{Topologia Geral Comparada (Figura~\ref{fig:topologia-comparada})}
+
+\begin{lstlisting}[language=mermaid, label={lst:mermaid-topologia}]
+flowchart TB
+  subgraph GCP["1. GCP (Arquitetura Atual)"]
+    G_EDGE["Cloud DNS + Cloud Armor WAF + Global HTTPS LB"]
+    G_CDN["Cloud CDN + 4 Buckets GCS (-exp, -assets, -planos, -mapas)"]
+    G_RUN["Cloud Run v2: Hub (Next.js) + API (NestJS 2vCPU/2GiB) + Job (migrate)"]
+    G_ASYNC["Cloud Pub/Sub (Push OIDC) -> POST /telemetry/worker"]
+    G_DB["Cloud SQL PostgreSQL 16 (HA Regional + RLS + Private IP)"]
+    G_AI["Vertex AI: Gemini 3.6/3.7 + Agent Engine (ADK) + Vertex AI Search + Gemini Live"]
+    G_EDGE --> G_CDN
+    G_EDGE --> G_RUN
+    G_RUN --> G_ASYNC
+    G_RUN --> G_DB
+    G_RUN --> G_AI
+  end
+
+  subgraph AWS["2. AWS (Equivalência)"]
+    A_EDGE["Route 53 + AWS WAF + CloudFront + ALB"]
+    A_CDN["CloudFront OAC + 4 Buckets S3"]
+    A_RUN["ECS Fargate: Hub + API (2vCPU/4GB) + Standalone Task (migrate)"]
+    A_ASYNC["SQS + EventBridge Pipe (API Destination) -> POST /telemetry/worker"]
+    A_DB["RDS PostgreSQL 16 Multi-AZ + RDS Proxy + RLS"]
+    A_AI["Amazon Bedrock: Claude/Nova + AgentCore + RDS pgvector + Nova Sonic"]
+    A_EDGE --> A_CDN
+    A_EDGE --> A_RUN
+    A_RUN --> A_ASYNC
+    A_RUN --> A_DB
+    A_RUN --> A_AI
+  end
+
+  subgraph AZURE["3. Azure (Equivalência)"]
+    Z_EDGE["Azure DNS + Front Door WAF + Application Gateway"]
+    Z_CDN["Front Door CDN + 4 Containers Blob Storage"]
+    Z_RUN["Azure Container Apps (ACA): Hub + API + ACA Job (migrate)"]
+    Z_ASYNC["Event Grid / Storage Queue -> POST /telemetry/worker"]
+    Z_DB["Azure Database for PostgreSQL 16 Flexible Server (Zone-Redundant + PgBouncer)"]
+    Z_AI["Azure AI Foundry: GPT-4.1 + ACA/Agent Service + AI Search/pgvector + GPT-4o Realtime"]
+    Z_EDGE --> Z_CDN
+    Z_EDGE --> Z_RUN
+    Z_RUN --> Z_ASYNC
+    Z_RUN --> Z_DB
+    Z_RUN --> Z_AI
+  end
+\end{lstlisting}
+
+% =============================================================================
+\section{Topologia Comparada da Stack de IA (Figura~\ref{fig:topologia-ia-comparada})}
+
+\begin{lstlisting}[language=mermaid]
+flowchart LR
+  subgraph GCP_IA["GCP - Stack de IA Atual"]
+    G1["AiProvider: Vertex Gemini 3.6/3.7 Flash + Flash Image (4:5) + Flash TTS Multi-voz"]
+    G2["Agente Professor: Vertex AI Agent Engine (BYOC Python + Google ADK + Sessoes Nativas)"]
+    G3["RAG Duplo: Vertex AI Search (NO_CONTENT p/ BNCC + Layout Parser pageSpan p/ PDFs)"]
+    G4["Voz Ao Vivo: Vertex Gemini Live (gemini-3.8-live WSS Bidi PCM 24kHz)"]
+    G1 --> G2 --> G3 --> G4
+  end
+
+  subgraph AWS_IA["AWS - Equivalencia de IA"]
+    A1["AiProvider: Bedrock (Claude/Nova) + Nova Canvas (4:5) + Polly (concatenar turnos)"]
+    A2["Agente Professor: Bedrock AgentCore ou ECS Fargate (Strands/LangGraph + DynamoDB/RDS)"]
+    A3["RAG Duplo: RDS PostgreSQL pgvector (evita custo fixo do OpenSearch Serverless)"]
+    A4["Voz Ao Vivo: Amazon Nova Sonic (Bedrock Bidirectional Stream PCM)"]
+    A1 --> A2 --> A3 --> A4
+  end
+
+  subgraph AZ_IA["Azure - Equivalencia de IA"]
+    Z1["AiProvider: Azure OpenAI (GPT-4.1) + gpt-image-1 (crop sharp 4:5) + AI Speech SSML"]
+    Z2["Agente Professor: ACA Interno ou AI Agent Service (LangGraph/SK + PostgreSQL)"]
+    Z3["RAG Duplo: Azure AI Search + Document Intelligence (Layout) ou PostgreSQL pgvector"]
+    Z4["Voz Ao Vivo: Azure OpenAI GPT-4o Realtime API (WSS / WebRTC PCM 24kHz)"]
+    Z1 --> Z2 --> Z3 --> Z4
+  end
+\end{lstlisting}

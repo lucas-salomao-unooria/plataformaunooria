@@ -1,0 +1,194 @@
+% ===========================================================================
+%  CAPITULO 1 — Como ler este comparativo e premissas inegociaveis
+% ===========================================================================
+\chapter{Como ler este comparativo e premissas da plataforma}
+\label{cap:como-ler}
+
+Este documento analisa, peça por peça, a infraestrutura em nuvem da
+\textbf{Plataforma Unooria} e compara a arquitetura atualmente implantada no
+\textbf{Google Cloud Platform (GCP)} com as suas traduções arquiteturais diretas
+em \textbf{Amazon Web Services (AWS)} e \textbf{Microsoft Azure}.
+
+Diferente de um comparativo genérico de mercado, este estudo parte das
+\textbf{invariantes reais do código e do modelo de negócio} da Unooria ---
+documentadas nas ADRs do monorepo e nos módulos Terraform do repositório de
+fundação. O objetivo é responder a três perguntas práticas:
+
+\begin{enumerate}
+  \item \textbf{Equivalência técnica:} Qual serviço de cada nuvem cumpre
+    exatamente o papel das peças atuais da Plataforma, das Experiências, da API
+    e do Uso de IA sem violar as regras invioláveis de segurança, \emph{tenancy}
+    e tempo de resposta?
+  \item \textbf{Custo de operação para uma pessoa:} Onde a troca de nuvem reduz
+    ou multiplica a carga cognitiva e operacional de um único desenvolvedor
+    mantendo múltiplos contratos B2G?
+  \item \textbf{Estrutura de custos (TCO) e acoplamento:} Como se comportam o
+    piso fixo mensal por contrato e o custo variável de IA nas três nuvens, e
+    quais componentes têm portabilidade imediata versus acoplamento profundo?
+\end{enumerate}
+
+\section{Estrutura do documento e convenções visuais}
+
+O estudo está organizado nos quatro eixos solicitados, precedidos por uma visão
+executiva de equivalência e seguidos pela análise financeira e de migração:
+
+\begin{itemize}
+  \item \textbf{Capítulo~\ref{cap:visao-geral} --- Visão geral e matriz de equivalência:}
+    diagrama comparativo da topologia completa e tabela sintética de mapeamento
+    serviço a serviço (\cd{GCP} $\times$ \cd{AWS} $\times$ \cd{Azure}).
+  \item \textbf{Capítulo~\ref{cap:eixo-plataforma} --- Eixo 1: Plataforma:}
+    borda única (Load Balancer, TLS e WAF), hospedagem do \arq{apps/hub}
+    (Next.js App Router), banco de dados PostgreSQL com \emph{Row-Level Security}
+    (RLS), mensageria de telemetria (\emph{push} autenticado), identidade
+    federada (\emph{keyless}) e observabilidade (logs, métricas, alertas e OTLP).
+  \item \textbf{Capítulo~\ref{cap:eixo-experiencias} --- Eixo 2: Experiências:}
+    entrega de \emph{bundles} estáticos imutáveis por versão (\arq{apps/experiencias/*}),
+    estratégia de \emph{cache} e \emph{rollback} em segundos via CDN, isolamento
+    de origem para \cd{postMessage}, mídia pesada (\cd{-assets}), guarda
+    versionada de planos de aula (\cd{-planos}) e \emph{sourcemaps} privados.
+  \item \textbf{Capítulo~\ref{cap:eixo-api} --- Eixo 3: API:}
+    runtime \emph{serverless} do \arq{apps/api} (NestJS), alocação contínua de
+    CPU para \emph{workers} em segundo plano pós-\cd{HTTP 202}, concorrência por
+    instância, \emph{timeouts} longos para \emph{streams} SSE e WebSockets de
+    voz ao vivo, saída privada de rede (VPC) e execução de \emph{migrations} via
+    \emph{job} isolado.
+  \item \textbf{Capítulo~\ref{cap:eixo-ia} --- Eixo 4: Uso de Inteligência Artificial:}
+    a camada única (\cd{AiProvider} com texto curto, saída longa de 64k
+    \emph{tokens}, JSON validado, geração de imagem com proporção nativa e TTS),
+    o Agente de IA do Professor (\arq{apps/agente-professor} em Python/ADK com
+    sessões gerenciadas e dupla busca híbrida estruturada/layout com
+    \cd{pageSpan}) e a Ajuda por voz bidirecional (\cd{Gemini Live}) e vídeo
+    (\cd{LiveAvatar}).
+  \item \textbf{Capítulo~\ref{cap:custos-migracao} --- Custos, operação solo e matriz de acoplamento:}
+    estimativa comparada do piso fixo mensal por contrato e consumo variável de
+    IA, impacto na rotina de operação de uma única pessoa e esforço real de
+    portabilidade de cada peça.
+\end{itemize}
+
+\subsection{Selos de aderência arquitetural}
+
+Cada componente analisado nos Capítulos~\ref{cap:eixo-plataforma}
+a~\ref{cap:eixo-ia} traz uma ficha técnica e selos que classificam o grau de
+aderência de cada nuvem aos requisitos da Unooria:
+
+\begin{tabularx}{\linewidth}{@{}L{42mm}X@{}}
+\toprule
+\headrow \thd{Selo} & \thd{Significado técnico neste estudo}\\
+\midrule
+\nativo &
+  O serviço da nuvem atende ao requisito de forma nativa e direta, com
+  configuração declarativa em Terraform e sem exigir peças intermediárias nem
+  mudanças no código da aplicação.\\
+\zebra \equivalente &
+  A nuvem oferece capacidade funcional e de segurança equivalente, mas exige a
+  combinação de dois recursos (ex.: fila + função consumidora, ou proxy de
+  conexões separado) ou pequenos ajustes em variáveis/adaptadores.\\
+\adaptacao &
+  A nuvem atende ao caso de uso, porém impõe mudança relevante de arquitetura,
+  reescrita de cliente/SDK (ex.: refatorar o agente ADK ou o pipeline de
+  \emph{chunking} de PDFs com páginas) ou salto expressivo no piso fixo de custo.\\
+\zebra \incompativel &
+  O serviço candidato viola uma premissa técnica da plataforma (ex.: limite
+  rígido de 15 minutos ou congelamento de CPU no AWS Lambda para conexões
+  WebSocket de 60 minutos e \emph{jobs} \emph{in-process} pós-202).\\
+\bottomrule
+\end{tabularx}
+
+\section{Premissas de negócio e arquitetura que a nuvem precisa respeitar}
+
+Qualquer comparação honesta entre GCP, AWS e Azure precisa julgar os serviços
+contra as restrições reais do produto. Uma solução que exige um time de
+SRE dedicado ou que encarece o piso ocioso de cada contrato em milhares de
+dólares é inviável para o modelo da Unooria, ainda que seja tecnicamente
+elegante.
+
+\begin{fichaeixo}{Invariantes de negócio e operação da Plataforma Unooria}
+\begin{campos}
+  \item[Modelo B2G] \textbf{1 contrato = 1 stack isolada de infraestrutura},
+    provisionada por Terraform em projeto/conta própria. Dentro do contrato,
+    100+ escolas compartilham a stack com isolamento lógico estrito por
+    \cd{escola\_id} (\emph{Row-Level Security} no PostgreSQL).
+  \item[Escala por contrato] Cerca de \textbf{\num{10000} estudantes} ativos,
+    com picos concentrados de \textbf{\num{2000} a \num{4000} usuários
+    simultâneos} no início do turno escolar (8h da manhã) e vales profundos à
+    noite e nos fins de semana.
+  \item[Equipe de operação] \textbf{Uma pessoa} desenvolve o código, mantém os
+    módulos Terraform, responde a incidentes e publica versões. Todo serviço que
+    exige manutenção de cluster (como Kubernetes/EKS/AKS/GKE) ou ajustes manuais
+    de rede/certificados é descartado em favor de serviços gerenciados
+    \emph{serverless}.
+  \item[Zero credenciais longas] Nenhuma chave estática de API ou JSON de conta
+    de serviço em código, \arq{.env} de produção ou segredos do GitHub. O CI/CD
+    autentica por federação OIDC (\emph{Workload Identity}) e os serviços em
+    execução usam a identidade nativa do ambiente (ADC / Task Role / Managed
+    Identity).
+\end{campos}
+\end{fichaeixo}
+
+\subsection{Requisitos técnicos determinantes por eixo}
+
+A Tabela~\ref{tab:requisitos-determinantes} sintetiza os requisitos técnicos que
+funcionam como \enquote{filtro eliminatório} ao escolher o serviço correspondente
+em AWS e Azure.
+
+\begin{table}[H]
+\centering
+\caption{Requisitos técnicos da Unooria que determinam a escolha dos serviços em nuvem}
+\label{tab:requisitos-determinantes}
+\begin{tabularx}{\linewidth}{@{}L{28mm}L{44mm}X@{}}
+\toprule
+\headrow \thd{Eixo} & \thd{Requisito crítico} & \thd{Por que elimina soluções comuns de mercado}\\
+\midrule
+\textbf{Plataforma} &
+  Borda única com roteamento por \emph{hostname}, WAF OWASP e certificados
+  validados por DNS sem janela sem TLS &
+  O Hub, a API, as Experiências e os Assets respondem sob domínios próprios no
+  mesmo balanceador. Adicionar um domínio nunca pode recriar o certificado de
+  quem já está no ar (\adrr{ADR-57}, \arq{loadbalancer.tf}).\\
+\zebra \textbf{Plataforma} &
+  PostgreSQL 16 privado com \cd{FORCE ROW LEVEL SECURITY}, particionamento
+  mensal e duas \emph{roles} sem \cd{BYPASSRLS} &
+  Descarta bancos NoSQL e exige PostgreSQL gerenciado real, sem IP público, com
+  acesso administrativo exclusivamente via túnel autenticado por IAM (IAP/SSM) e
+  \emph{connection pooling} para absorver escalonamento de contêineres.\\
+\textbf{Plataforma} &
+  Fila de telemetria com entrega \emph{push} HTTP autenticada por OIDC e DLQ &
+  A API centraliza a ingestão em \rota{POST /telemetry/ingest}. A nuvem deve
+  empurrar a mensagem autenticada para a própria API sem exigir um serviço
+  \emph{worker} separado rodando 24/7 só para fazer \emph{polling} de fila.\\
+\zebra \textbf{Experiências} &
+  \emph{Bundles} estáticos imutáveis em \cd{/\{expId\}/\{versao\}/} com origem
+  própria no CDN &
+  Experiências nunca rodam em contêiner (\emph{regra inviolável}). Precisam de
+  domínio dedicado (\cd{exp\_domain}) para que o \cd{targetOrigin} do
+  \cd{postMessage} do Hub não compartilhe origem com o restante da nuvem.\\
+\textbf{API} &
+  Contêiner \emph{serverless} com alta concorrência (80 req/instância), CPU
+  sempre alocada e \emph{timeout} de até \num{3600}\,s &
+  A geração de planos e pacotes responde \cd{HTTP 202} e segue processando em
+  segundo plano no mesmo processo; o Agente do Professor mantém SSE por até
+  300\,s; o mascote da Ajuda mantém WebSocket bidirecional por até 60 minutos.\\
+\zebra \textbf{Uso de IA} &
+  Saída longa (64k \emph{tokens}), controle de orçamento de raciocínio, geração
+  de imagem com \emph{aspect ratio} nativo (\cd{4:5}) e voz bidirecional &
+  Planos de aula anuais cortam em 32k \emph{tokens}; chamadas rápidas em sala de
+  aula (\cd{diagramar}) não podem estourar latência nem orçamento oculto de
+  \emph{thinking tokens} (\adrr{ADR-148}).\\
+\textbf{Uso de IA} &
+  Runtime gerenciado para agente Python (ADK) com sessões persistentes + busca
+  estruturada (BNCC) e por \emph{layout} de PDF com \cd{pageSpan} &
+  O Agente do Professor precisa listar 100\% das habilidades de um ano por
+  filtro exato e citar livro + intervalo exato de páginas (\cd{p. X--Y}) sem
+  manter banco vetorial provisionado por hora a custo proibitivo.\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{regra}
+\textbf{Simplicidade operacional é requisito funcional.} Quando uma nuvem oferece
+dois caminhos para o mesmo problema --- por exemplo, rodar a API em Kubernetes
+(EKS/AKS) versus rodá-la em um serviço de contêineres \emph{serverless} (ECS
+Fargate / Azure Container Apps) ---, este estudo seleciona sempre o caminho
+\textbf{gerenciado e sem cluster}, preservando a regra de negócio de que toda a
+plataforma é operada por uma única pessoa.
+\end{regra}

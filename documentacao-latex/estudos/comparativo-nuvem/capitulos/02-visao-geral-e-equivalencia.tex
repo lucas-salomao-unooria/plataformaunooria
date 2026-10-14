@@ -1,0 +1,241 @@
+% ===========================================================================
+%  CAPITULO 2 — Visao geral e matriz de equivalencia (GCP x AWS x Azure)
+% ===========================================================================
+\chapter{Visão geral e matriz de equivalência}
+\label{cap:visao-geral}
+
+Antes de mergulhar nas particularidades de cada um dos quatro eixos, este
+capítulo apresenta o mapa completo de correspondência arquitetural entre a pilha
+atual da Unooria no \textbf{GCP} e as suas arquiteturas equivalentes na
+\textbf{AWS} e no \textbf{Azure}.
+
+\begin{fichaeixo}{Síntese executiva da comparação entre as três nuvens}
+\begin{campos}
+  \item[GCP (Atual)] \nativo\enspace É a nuvem onde o desenho atual atinge a
+    \textbf{menor fricção operacional por contrato}: um único Load Balancer
+    global agrega tanto contêineres (\emph{Serverless NEGs} do Cloud Run) quanto
+    buckets estáticos (\emph{Backend Buckets} do GCS) sob o mesmo IP e WAF; o
+    Cloud Run combina alta concorrência (80 req/instância), CPU sempre alocada,
+    WebSockets de 60 minutos e \emph{Jobs} de migração no mesmo modelo; o
+    Pub/Sub faz \emph{push} HTTP autenticado por OIDC direto para a API; e o
+    ecossistema Vertex AI concentra Gemini (64k saída, imagem \cd{4:5}, Live
+    voz), Agent Engine (ADK nativo com sessões) e Vertex AI Search (busca
+    estruturada + \emph{layout parser} com \cd{pageSpan} cobrado por uso).
+  \item[AWS] \adaptacao\enspace Oferece maturidade exemplar em rede, banco de
+    dados (RDS Multi-AZ + RDS Proxy) e entrega estática (CloudFront + S3 com
+    OAC), mas \textbf{fragmenta peças que no GCP são unificadas}: o ALB não
+    aponta para buckets S3 (exigindo CloudFront na frente de tudo para unificar
+    borda e WAF); o AWS Lambda é incompatível com os requisitos da API (limite
+    de 15 min e modelo de execução), levando ao \textbf{ECS Fargate} (ou App
+    Runner com ressalvas de VPC/Jobs); o SQS não faz \emph{push} HTTP nativo
+    sem peça intermediária (EventBridge Pipe / Lambda); e no eixo de IA, as
+    \emph{Bedrock Knowledge Bases} exigem um banco vetorial subjacente (como
+    OpenSearch Serverless, com piso fixo elevado em OCUs, ou Aurora pgvector) e
+    reescrita do agente ADK.
+  \item[Azure] \equivalente\enspace É a alternativa \textbf{mais próxima do
+    modelo operacional do Cloud Run} para computação e borda: o \textbf{Azure
+    Front Door} roteia nativamente para contêineres e Blob Storage com WAF
+    integrado; o \textbf{Azure Container Apps} (ACA) entrega experiência muito
+    similar ao Cloud Run (concorrência HTTP, \emph{scale-to-zero} ou réplicas
+    mínimas, sessões WebSocket longas e \emph{Container Apps Jobs} para o
+    \cd{prisma migrate deploy}); e o PostgreSQL Flexible Server já traz
+    \emph{PgBouncer} embutido sem custo extra. No eixo de IA, combina Azure
+    OpenAI (\cd{GPT-4o} + \cd{Realtime API}) e \textbf{Azure AI Search} com
+    \emph{Document Intelligence}, mas ainda exige portar o código do agente ADK
+    e gerenciar índices cobrados por hora.
+\end{campos}
+\end{fichaeixo}
+
+\section{Topologia comparada nas três nuvens}
+
+A Figura~\ref{fig:topologia-comparada} ilustra como os quatro eixos da
+Plataforma Unooria (Borda/Plataforma, Experiências, API/Dados e Uso de IA) se
+organizam em cada provedor de nuvem. O código Mermaid correspondente encontra-se
+no Apêndice~\ref{ap:mermaid} (Listagem~\ref{lst:mermaid-topologia}).
+
+\begin{figure}[H]
+\centering
+\fitwidth{%
+\begin{tikzpicture}[x=1cm, y=1cm,
+  every node/.append style={execute at begin node={\hyphenpenalty=10000\exhyphenpenalty=10000}},
+  basebox/.style={rectangle, rounded corners=2pt, line width=0.7pt, inner sep=4pt, align=center},
+  colhdr/.style={basebox, draw=none, font=\sffamily\bfseries\footnotesize, text=white, minimum height=9mm, text width=50mm},
+  rowlbl/.style={basebox, fill=unooLavenderWash, draw=unooLavender, text=unooNavy, font=\sffamily\bfseries\scriptsize, text width=24mm, minimum height=19mm},
+  cellgcp/.style={basebox, fill=unooBlueWash, draw=unooBlue, font=\scriptsize, text width=50mm, minimum height=19mm},
+  cellaws/.style={basebox, fill=unooOrangeWash, draw=unooOrange!85!black, font=\scriptsize, text width=50mm, minimum height=19mm},
+  cellaz/.style={basebox, fill=unooSurface, draw=unooNavy, font=\scriptsize, text width=50mm, minimum height=19mm}]
+
+  % Cabecalhos das colunas
+  \node[colhdr, fill=unooBlue]            (hgcp) at (4.5,  0) {GCP (Arquitetura Atual)};
+  \node[colhdr, fill=unooOrange!85!black] (haws) at (10.0, 0) {AWS (Equivalente)};
+  \node[colhdr, fill=unooNavy]            (haz)  at (15.5, 0) {Azure (Equivalente)};
+
+  % Linha 1: Borda e Entrega Estatica (Eixos 1 e 2)
+  \node[rowlbl]  (r1)   at (0.4, -1.65) {1. Borda, WAF\\e Experiências\\(Eixos 1 e 2)};
+  \node[cellgcp] (g1)   at (4.5, -1.65) {\textbf{Global External ALB + Cloud Armor}\\Cert Manager DNS + Cloud CDN\\\texttt{Backend Buckets}: \texttt{-exp}, \texttt{-assets}};
+  \node[cellaws] (w1)   at (10.0,-1.65) {\textbf{CloudFront + AWS WAF + ACM}\\Roteia estático p/ \textbf{S3 (OAC)} e\\dinâmico p/ \textbf{ALB} (\texttt{hub} e \texttt{api})};
+  \node[cellaz]  (z1)   at (15.5,-1.65) {\textbf{Azure Front Door + WAF}\\Certificados gerenciados + CDN\\Origens: \textbf{Blob Storage} e \textbf{ACA}};
+
+  % Linha 2: Computacao Serverless (Eixos 1 e 3)
+  \node[rowlbl]  (r2)   at (0.4, -3.95) {2. Hub, API\\e Migrations\\(Eixos 1 e 3)};
+  \node[cellgcp] (g2)   at (4.5, -3.95) {\textbf{Cloud Run Services + Jobs}\\\texttt{hub} e \texttt{api} (CPU 24/7, conc. 80,\\\texttt{timeout} 900--3600s) + Job \texttt{migrate}};
+  \node[cellaws] (w2)   at (10.0,-3.95) {\textbf{ECS Fargate} (Service + Task)\\\texttt{hub} e \texttt{api} em Fargate atrás do ALB\\+ Task avulsa p/ \texttt{prisma migrate}};
+  \node[cellaz]  (z2)   at (15.5,-3.95) {\textbf{Azure Container Apps (ACA)}\\Apps p/ \texttt{hub} e \texttt{api} (KEDA, Envoy\\timeout longo) + \textbf{ACA Job} \texttt{migrate}};
+
+  % Linha 3: Dados, Mensageria e Rede Privada (Eixo 1)
+  \node[rowlbl]  (r3)   at (0.4, -6.25) {3. Banco, Fila\\e Rede Privada\\(Eixo 1)};
+  \node[cellgcp] (g3)   at (4.5, -6.25) {\textbf{Cloud SQL PG 16} (HA, IP privado)\\Direct VPC Egress + Bastion \textbf{IAP}\\\textbf{Pub/Sub} Push OIDC \seta{} \texttt{/ingest}};
+  \node[cellaws] (w3)   at (10.0,-6.25) {\textbf{RDS PG 16 Multi-AZ + RDS Proxy}\\Subnets privadas + Bastion \textbf{SSM}\\\textbf{SQS + EventBridge Pipe} \seta{} API};
+  \node[cellaz]  (z3)   at (15.5,-6.25) {\textbf{Flexible Server PG 16} (PgBouncer)\\VNet Integration + \textbf{Azure Bastion}\\\textbf{Event Grid / Service Bus} \seta{} API};
+
+  % Linha 4: Camada de IA, Agente e Voz (Eixo 4)
+  \node[rowlbl]  (r4)   at (0.4, -8.55) {4. Modelos, RAG,\\Agente e Voz\\(Eixo 4)};
+  \node[cellgcp] (g4)   at (4.5, -8.55) {\textbf{Vertex AI}: Gemini 3.6/3.7, Imagen,\\Cloud TTS e \textbf{Gemini Live} (WSS)\\\textbf{Agent Engine} + \textbf{Vertex AI Search}};
+  \node[cellaws] (w4)   at (10.0,-8.55) {\textbf{Amazon Bedrock}: Claude/Nova, Titan,\\Polly e \textbf{Nova Sonic} (voz)\\\textbf{AgentCore} + \textbf{Knowledge Bases}};
+  \node[cellaz]  (z4)   at (15.5,-8.55) {\textbf{Azure AI Foundry}: GPT-4o, DALL-E,\\AI Speech e \textbf{GPT-4o Realtime}\\\textbf{AI Agent Service} + \textbf{AI Search}};
+
+  % Setas verticais entre camadas por coluna
+  \foreach \c in {g, w, z} {
+    \draw[flow] (\c1.south) -- (\c2.north);
+    \draw[flow] (\c2.south) -- (\c3.north);
+    \draw[flow] (\c2.south) -- (\c4.north);
+  }
+\end{tikzpicture}}
+\caption[Topologia comparada GCP, AWS e Azure]{Correspondência estrutural das
+  quatro camadas entre GCP, AWS e Azure para um contrato da Plataforma Unooria.}
+\label{fig:topologia-comparada}
+\end{figure}
+
+\section{Matriz completa de equivalência serviço a serviço}
+
+A Tabela~\ref{tab:matriz-equivalencia} mapeia todos os recursos declarados nos
+arquivos \arq{.tf} do repositório \arq{Fundacao Plataforma Unooria} para os seus
+equivalentes diretos em AWS e Azure.
+
+\begin{table}[H]
+\centering
+\caption{Mapeamento completo dos serviços da Plataforma Unooria entre GCP, AWS e Azure}
+\label{tab:matriz-equivalencia}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}L{29mm}L{38mm}L{38mm}X@{}}
+\toprule
+\headrow \thd{Função na Unooria} & \thd{GCP (Atual)} & \thd{AWS} & \thd{Azure}\\
+\midrule
+\multicolumn{4}{@{}l}{\textbf{\sffamily\color{unooNavy}Eixo 1 --- Plataforma (Borda, Hub, Banco, Rede, Mensageria, Segurança e Observabilidade)}}\\
+\midrule
+Isolamento por contrato &
+  1 GCP Project por ambiente/contrato &
+  1 AWS Account (via AWS Organizations) &
+  1 Subscription ou Resource Group isolado\\
+\zebra Entrada única HTTP/S &
+  Global External Application Load Balancer &
+  Amazon CloudFront + Application Load Balancer (ALB) &
+  Azure Front Door (Standard/Premium)\\
+WAF e \emph{rate limit} &
+  Cloud Armor Standard (OWASP CRS 3.3 + RPM/IP) &
+  AWS WAF v2 (\emph{Managed Rules} + \emph{Rate-based rule}) &
+  Azure WAF no Front Door (OWASP DRS + \emph{Rate limit})\\
+\zebra Certificados TLS &
+  Certificate Manager (validação DNS por host) &
+  AWS Certificate Manager --- ACM (validação DNS) &
+  Front Door Managed Certificates / Key Vault\\
+Hospedagem do \cd{hub} &
+  Cloud Run Service (\cd{1--2 vCPU}, \cd{min=1}) &
+  ECS Fargate Service (ou AWS App Runner) &
+  Azure Container Apps --- ACA (\cd{minReplicas=1})\\
+\zebra Banco relacional + RLS &
+  Cloud SQL for PostgreSQL 16 (Regional HA, IP privado) &
+  Amazon RDS for PostgreSQL 16 (Multi-AZ) + RDS Proxy &
+  Azure Database for PostgreSQL Flexible Server (HA + PgBouncer)\\
+Rede privada e saída &
+  VPC + Direct VPC Egress + Cloud NAT + PSA &
+  VPC (Subnets privadas) + NAT Gateway &
+  Virtual Network (VNet) + VNet Integration + NAT Gateway\\
+\zebra Acesso dev ao banco &
+  VM Bastion (\cd{e2-micro}) sem IP público + túnel IAP &
+  Instância \cd{t4g.nano} privada + SSM Session Manager &
+  Azure Bastion (\emph{Developer} / \emph{Basic}) ou ACA túnel\\
+Fila de telemetria (\emph{push}) &
+  Cloud Pub/Sub (tópico + \emph{Push} OIDC + DLQ) &
+  Amazon SQS + EventBridge Pipe (\emph{API Destination}) + DLQ &
+  Azure Event Grid (\emph{Push} c/ Entra ID) ou Service Bus\\
+\zebra Segredos de runtime &
+  Secret Manager (injetado como \emph{env} no boot) &
+  AWS Secrets Manager / SSM Parameter Store &
+  Azure Key Vault (referenciado no Container App)\\
+Registro de imagens &
+  Artifact Registry (limpeza em 7 dias, 20 tags) &
+  Amazon ECR (\emph{Lifecycle Policy} equivalente) &
+  Azure Container Registry --- ACR (retenção por política)\\
+\zebra Federação CI/CD &
+  Workload Identity Federation (OIDC GitHub) &
+  IAM OIDC Identity Provider (\cd{sts:\B{}AssumeRoleWithWebIdentity}) &
+  Entra ID Workload Identity Federation (\emph{Federated Creds})\\
+Observabilidade e OTLP &
+  Cloud Logging, Monitoring, Trace, Error Reporting e API OTLP &
+  CloudWatch (Logs, Metrics, Synthetics, Alarms) + X-Ray / ADOT &
+  Azure Monitor + Log Analytics + Application Insights\\
+\midrule
+\multicolumn{4}{@{}l}{\textbf{\sffamily\color{unooNavy}Eixo 2 --- Experiências (Bundles Estáticos, CDN, Assets e Planos)}}\\
+\midrule
+Bundles imutáveis (\cd{-exp}) &
+  Cloud Storage + Backend Bucket no LB + Cloud CDN &
+  Amazon S3 + CloudFront (\emph{Origin Access Control}) &
+  Azure Blob Storage + Azure Front Door CDN\\
+\zebra Mídia pública (\cd{-assets}) &
+  Cloud Storage público + Cloud CDN (\cd{assets\_domain}) &
+  Amazon S3 + CloudFront (\cd{assets\_domain}) &
+  Azure Blob Storage + Front Door CDN\\
+Planos e áudios (\cd{-planos}) &
+  Cloud Storage privado com \emph{Object Versioning} (180d) &
+  Amazon S3 privado com \emph{S3 Versioning} + \emph{Lifecycle} &
+  Azure Blob Storage privado com \emph{Blob Versioning}\\
+\zebra Mapas (\cd{-exp-mapas}) &
+  Cloud Storage privado (leitura restrita) &
+  Amazon S3 privado (leitura restrita via IAM) &
+  Azure Blob Storage privado\\
+\midrule
+\multicolumn{4}{@{}l}{\textbf{\sffamily\color{unooNavy}Eixo 3 --- API (Computação Serverless, Jobs em Fundo, SSE e WebSockets)}}\\
+\midrule
+Hospedagem da \cd{api} &
+  Cloud Run (\cd{cpu\_idle=false}, conc. 80, \cd{timeout} 900s) &
+  ECS Fargate (\cd{2 vCPU/4 GB}, ALB \cd{idle\_timeout} alto) &
+  Azure Container Apps (\emph{Dedicated/Consumption}, Envoy 900s+)\\
+\zebra WebSockets longos (60m) &
+  Cloud Run (\cd{timeout} \num{3600}\,s nativo p/ WS) &
+  ECS Fargate + ALB (ajuste de \cd{idle\_timeout} até \num{4000}\,s) &
+  Azure Container Apps (suporte nativo a WS longos)\\
+Job de migração SQL &
+  Cloud Run Job (\cd{\{contrato\}-migrate} na VPC) &
+  ECS Fargate Standalone Task (\cd{RunTask} no CI) &
+  Azure Container Apps Job (\emph{Manual trigger} no CI)\\
+\midrule
+\multicolumn{4}{@{}l}{\textbf{\sffamily\color{unooNavy}Eixo 4 --- Uso de Inteligência Artificial (Modelos, Agente, RAG e Voz)}}\\
+\midrule
+LLM texto e saída longa &
+  Vertex AI (\cd{gemini-3.6-flash} / \cd{3.7-flash}, 64k saída) &
+  Amazon Bedrock (\cd{Claude 3.7/4 Sonnet}, \cd{Amazon Nova Pro/Lite}) &
+  Azure OpenAI / AI Foundry (\cd{GPT-4o}, \cd{GPT-4.1}, \cd{o3-mini})\\
+\zebra Geração de imagem &
+  Vertex AI (\cd{gemini-3.1-flash-image}, ratio \cd{4:5} nativo) &
+  Amazon Bedrock (\cd{Amazon Nova Canvas} / \cd{Titan Image}) &
+  Azure OpenAI (\cd{gpt-image-1} / \cd{DALL-E 3})\\
+Síntese de voz (TTS) &
+  Cloud Text-to-Speech (\cd{gemini-2.5-flash-tts}, multi-voz) &
+  Amazon Polly (\emph{Generative / Neural Voices}) &
+  Azure AI Speech (\emph{Neural HD Voices} + SSML multi-voz)\\
+\zebra Voz bidirecional (Mascote) &
+  Vertex AI \textbf{Gemini Live} (\cd{gemini-3.8-live} via WSS) &
+  Amazon Bedrock \textbf{Nova Sonic} (stream bidirecional) &
+  Azure OpenAI \textbf{GPT-4o Realtime API} (WSS/WebRTC)\\
+Runtime do Agente &
+  Vertex AI \textbf{Agent Engine} (\cd{ReasoningEngine} BYOC + sessões) &
+  \textbf{Bedrock AgentCore} (ou agente em ECS Fargate + DynamoDB) &
+  \textbf{Azure AI Agent Service} (ou ACA + Cosmos DB/Postgres)\\
+\zebra Busca RAG (BNCC + PDFs) &
+  \textbf{Vertex AI Search} (1 estruturado + 1 \emph{layout chunking} c/ página) &
+  \textbf{Bedrock Knowledge Bases} + OpenSearch Serverless / Aurora &
+  \textbf{Azure AI Search} + \textbf{Document Intelligence} (\emph{Layout})\\
+\bottomrule
+\end{tabularx}
+\end{table}

@@ -1,0 +1,346 @@
+% =============================================================================
+% CAPÍTULO 6 — Eixo 4: Uso de IA (Vertex AI, Agente do Professor, RAG e Voz)
+% =============================================================================
+\chapter{Eixo 4 --- Uso de IA (Modelos, Agente, RAG e Voz Ao Vivo)}
+\label{cap:eixo-ia}
+
+\begin{fichaeixo}{Ficha do Eixo 4 --- Uso de IA (Modelos, Agente do Professor, RAG e Voz Ao Vivo)}
+\begin{campos}
+  \item[Serviços no código] \arq{apps/api/src/ai/}, \arq{apps/agente-professor/} (Python + Google ADK), \arq{apps/api/src/agente-professor/}, \arq{apps/api/src/ajuda/}, \arq{apps/api/src/planos/} e \arq{apps/api/src/geracao/}.
+  \item[Arquivos Terraform] \arq{agente\_professor.tf}, \arq{cloudrun.tf}, \arq{iam.tf} e \arq{apis.tf}.
+  \item[Contratos e ADRs] ADR-105 (quotas no banco), ADR-126/127 (Agent Engine + Vertex AI Search), ADR-132 (LiveAvatar), ADR-158 (Mascote Gemini Live) e ADR-161 (painel de custos de IA).
+  \item[Aderência por nuvem] \sgcp~\nativo \quad \saws~\adaptacao\ (alto esforço e custo fixo de RAG) \quad \sazure~\adaptacao\ (reescrita do agente + custo fixo de Search)
+\end{campos}
+\end{fichaeixo}
+
+Se nos eixos de Plataforma, Experiências e API a migração entre GCP, AWS e Azure é essencialmente um exercício de infraestrutura (\emph{Terraform}, rede e IAM) sem tocar no código de aplicação, \textbf{o Eixo 4 (Uso de IA) é onde reside a assimetria real entre as três nuvens}.
+
+A Plataforma Unooria não consome inteligência artificial apenas como um ``chat genérico de texto''. Ela opera quatro subsistemas distintos de IA, cada um explorando capacidades específicas do ecossistema \textbf{Google Vertex AI}:
+\begin{enumerate}
+  \item \textbf{Camada Pluggable da API (\arq{apps/api/src/ai/}):} geração de texto pedagógico e correção estruturada com controle de orçamento de raciocínio (\cd{thinkingBudget}) e até \cd{65.536} tokens de saída (planos de aula anuais), geração de ilustrações nativas na proporção \cd{4:5} e síntese de áudio multi-locutor (\cd{multiSpeakerMarkup}) em uma única chamada.
+  \item \textbf{Agente de IA do Professor (\arq{apps/agente-professor/}):} agente autônomo escrito em Python sobre o \textbf{Google Agent Development Kit (ADK)} e hospedado no \textbf{Vertex AI Agent Engine} (\cd{ReasoningEngine}), que gerencia sessões conversacionais nativas sem banco de dados auxiliar.
+  \item \textbf{RAG Pedagógico Duplo (\textbf{Vertex AI Search / Discovery Engine}):} duas bases de conhecimento com semânticas opostas --- uma base estruturada sem conteúdo (\cd{NO\_CONTENT}) para filtro exato + paginação integral das habilidades da BNCC e currículos locais, e uma base não-estruturada (\cd{CONTENT\_REQUIRED}) com \emph{Layout Parser} de PDFs que devolve trechos com numeração exata de página inicial e final (\cd{pageSpan: pageStart..pageEnd}).
+  \item \textbf{Ajuda Multimodal em Tempo Real (\arq{apps/api/src/ajuda/}):} Mascote 3D com conversação de voz bidirecional nativa (\emph{speech-to-speech} via WebSocket no \textbf{Vertex Gemini Live}) e Avatar em Vídeo (\textbf{HeyGen LiveAvatar} em modo FULL conectado ao LLM da API com \emph{Implicit Prompt Caching} de uma base de conhecimento de $\sim 65$ mil tokens).
+\end{enumerate}
+
+% =============================================================================
+\section{Topologia Comparada da Stack de IA}
+\label{sec:topologia-ia}
+
+A Figura~\ref{fig:topologia-ia-comparada} contrasta a arquitetura atual de IA na GCP com as composições equivalentes na AWS e na Azure.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+  font=\sffamily\scriptsize,
+  node distance=0.35cm and 0.4cm,
+  colbox/.style={
+    draw=unooGrid, rounded corners=4pt, fill=unooPaper,
+    minimum width=5.1cm, minimum height=10.6cm, anchor=north
+  },
+  colhead/.style={
+    rounded corners=3pt, fill=unooNavy, text=white, font=\sffamily\bfseries\footnotesize,
+    minimum width=4.9cm, minimum height=0.65cm, align=center
+  },
+  svc/.style={
+    draw=unooGrid, rounded corners=3pt, fill=unooSurface, text=unooInk,
+    minimum width=4.6cm, minimum height=1.15cm, align=center, inner sep=3pt
+  },
+  svcgcp/.style={
+    draw=unooBlue, line width=0.8pt, rounded corners=3pt, fill=unooBlueWash, text=unooInk,
+    minimum width=4.6cm, minimum height=1.15cm, align=center, inner sep=3pt
+  },
+  svcwarn/.style={
+    draw=unooOrange, line width=0.8pt, rounded corners=3pt, fill=unooOrangeWash, text=unooInk,
+    minimum width=4.6cm, minimum height=1.15cm, align=center, inner sep=3pt
+  }
+]
+
+% Coluna GCP
+\node[colbox] (gcpbox) at (0,0) {};
+\node[colhead, fill=unooBlue] at (0,-0.15) {GCP (Arquitetura Atual)};
+
+\node[svcgcp] (gcp1) at (0,-1.25) {
+  \textbf{1. Modelos na API (\texttt{src/ai})}\\
+  Vertex AI \texttt{gemini-3.6/3.7-flash}\\
+  Imagem \texttt{4:5}: \texttt{gemini-3.1-flash-image}\\
+  TTS Multi-voz: \texttt{gemini-2.5-flash-tts}
+};
+
+\node[svcgcp] (gcp2) at (0,-2.85) {
+  \textbf{2. Runtime do Agente + Sessão}\\
+  \textbf{Vertex AI Agent Engine} (\texttt{BYOC})\\
+  Container Python + \textbf{Google ADK}\\
+  Sessões persistidas pelo próprio serviço
+};
+
+\node[svcgcp] (gcp3) at (0,-4.65) {
+  \textbf{3. RAG BNCC + Acervo PDF}\\
+  \textbf{Vertex AI Search} (Discovery Engine)\\
+  Store 1: \texttt{NO\_CONTENT} (filtro + pag.)\\
+  Store 2: \texttt{Layout Parser} (\texttt{pageSpan})\\
+  \textbf{Custo ocioso: $\sim$US\$ 0/mês}
+};
+
+\node[svcgcp] (gcp4) at (0,-6.45) {
+  \textbf{4. Voz Ao Vivo (Mascote 3D)}\\
+  \textbf{Vertex Gemini Live} (\texttt{us-central1})\\
+  \texttt{gemini-3.8-live} (WSS Bidi PCM 24kHz)\\
+  Cache implícito (prefixo 65k tokens)
+};
+
+\node[svc] (gcp5) at (0,-8.15) {
+  \textbf{5. Governança e Custos}\\
+  \texttt{MedidorDeProvider} + \texttt{QuotaService}\\
+  Tarifas por modelo em \texttt{ia\_quotas}\\
+  Autenticação 100\% via ADC (IAM)
+};
+
+\node[svc] (gcp6) at (0,-9.65) {
+  \textbf{6. Avatar em Vídeo (Externo)}\\
+  HeyGen LiveAvatar (Modo FULL)\\
+  Callback SSE \seta{} \texttt{/ajuda/llm/*}
+};
+
+% Coluna AWS
+\node[colbox] (awsbox) at (5.5,0) {};
+\node[colhead, fill=unooOrange!85!black] at (5.5,-0.15) {AWS (Equivalência Proposta)};
+
+\node[svc] (aws1) at (5.5,-1.25) {
+  \textbf{1. Modelos na API (\texttt{src/ai})}\\
+  Bedrock: \texttt{Claude 3.7/4 Sonnet} / \texttt{Nova Pro}\\
+  Imagem: \texttt{Nova Canvas} (\texttt{1024x1280})\\
+  TTS: \texttt{Amazon Polly} (concatenar vozes)
+};
+
+\node[svcwarn] (aws2) at (5.5,-2.85) {
+  \textbf{2. Runtime do Agente + Sessão}\\
+  \textbf{Bedrock AgentCore} ou \textbf{ECS Fargate}\\
+  Requer portar ADK \seta{} Strands/LangGraph\\
+  + \textbf{DynamoDB/RDS} p/ sessões se Fargate
+};
+
+\node[svcwarn] (aws3) at (5.5,-4.65) {
+  \textbf{3. RAG BNCC + Acervo PDF}\\
+  \textbf{Bedrock Knowledge Bases}\\
+  Exige banco vetorial subjacente:\\
+  OpenSearch Serverless (\textbf{US\$ 350+/mês})\\
+  ou \textbf{RDS pgvector} + parser PDF custom
+};
+
+\node[svc] (aws4) at (5.5,-6.45) {
+  \textbf{4. Voz Ao Vivo (Mascote 3D)}\\
+  \textbf{Amazon Nova Sonic} (Bedrock)\\
+  Streaming bidirecional HTTP/2\\
+  Cache explícito via \texttt{cachePoint}
+};
+
+\node[svc] (aws5) at (5.5,-8.15) {
+  \textbf{5. Governança e Custos}\\
+  Mesmo \texttt{MedidorDeProvider} na API\\
+  Novo adapter \texttt{BedrockAiProvider}\\
+  Autenticação via IAM Task Role
+};
+
+\node[svc] (aws6) at (5.5,-9.65) {
+  \textbf{6. Avatar em Vídeo (Externo)}\\
+  HeyGen LiveAvatar (Modo FULL)\\
+  Callback SSE \seta{} \texttt{/ajuda/llm/*}
+};
+
+% Coluna Azure
+\node[colbox] (azbox) at (11.0,0) {};
+\node[colhead, fill=unooNavy] at (11.0,-0.15) {Azure (Equivalência Proposta)};
+
+\node[svc] (az1) at (11.0,-1.25) {
+  \textbf{1. Modelos na API (\texttt{src/ai})}\\
+  Azure OpenAI: \texttt{GPT-4.1} / \texttt{GPT-4o}\\
+  Imagem: \texttt{gpt-image-1} (+ crop \texttt{4:5})\\
+  TTS: \texttt{Azure AI Speech} (SSML multi-voz)
+};
+
+\node[svcwarn] (az2) at (11.0,-2.85) {
+  \textbf{2. Runtime do Agente + Sessão}\\
+  \textbf{Azure AI Agent Service} ou \textbf{ACA}\\
+  Requer portar Google ADK \seta{} Semantic\\
+  Kernel / LangGraph + \textbf{Cosmos DB/PG}
+};
+
+\node[svcwarn] (az3) at (11.0,-4.65) {
+  \textbf{3. RAG BNCC + Acervo PDF}\\
+  \textbf{Azure AI Search} + \textbf{Doc Intelligence}\\
+  Excelente busca híbrida e filtro OData,\\
+  mas cobra instância fixa (\textbf{US\$ 75--250/mês})
+};
+
+\node[svc] (az4) at (11.0,-6.45) {
+  \textbf{4. Voz Ao Vivo (Mascote 3D)}\\
+  \textbf{GPT-4o Realtime API}\\
+  WebSocket / WebRTC áudio nativo\\
+  Cache automático de prefixo ($>1024$ tok)
+};
+
+\node[svc] (az5) at (11.0,-8.15) {
+  \textbf{5. Governança e Custos}\\
+  Mesmo \texttt{MedidorDeProvider} na API\\
+  Novo adapter \texttt{AzureOpenAiProvider}\\
+  Autenticação via Managed Identity
+};
+
+\node[svc] (az6) at (11.0,-9.65) {
+  \textbf{6. Avatar em Vídeo (Externo)}\\
+  HeyGen LiveAvatar (Modo FULL)\\
+  Callback SSE \seta{} \texttt{/ajuda/llm/*}
+};
+
+\end{tikzpicture}
+\caption[Comparação da pilha de Inteligência Artificial]{Comparação camada a camada dos subsistemas de Inteligência Artificial entre GCP, AWS e Azure. Os blocos destacados em laranja indicam pontos onde há necessidade de refatoração de código ou degrau relevante de custo fixo mensal.}
+\label{fig:topologia-ia-comparada}
+\end{figure}
+
+% =============================================================================
+\section{Peças Arquiteturais do Eixo Uso de IA}
+\label{sec:pecas-ia}
+
+% -----------------------------------------------------------------------------
+\begin{pecaarq}{IA-01}{Camada Plugável de Modelos na API (\texttt{AiProvider}): Texto, Imagem 4:5 e TTS}{\sgcp~\nativo\enspace\saws~\adaptacao\enspace\sazure~\equivalente}
+\begin{campos}
+  \item[Código na API] \arq{apps/api/src/ai/ai.provider.ts}, \arq{vertex-gemini.provider.ts}, \arq{medidor.provider.ts} e \arq{quota.service.ts}.
+  \item[Modelos atuais (GCP)] \cd{gemini-3.6-flash} (padrão), \cd{gemini-3.7-flash} (planos de aula, até 65.536 tokens de saída), \cd{gemini-3.1-flash-image} (imagens \cd{4:5}) e \cd{gemini-2.5-flash-tts} (áudio MP3 com \cd{multiSpeakerMarkup}).
+  \item[Como é hoje (GCP)] Na API, todo consumo de IA passa pela interface abstrata \cd{AiProvider}, decorada pelo \cd{MedidorDeProvider} (que intercepta o \cd{usageMetadata} de cada chamada e grava o consumo exato de tokens, imagens ou caracteres no PostgreSQL para o painel \cd{/unooria/uso-de-ia}, conforme ADR-161). O \cd{VertexGeminiProvider} explora quatro recursos importantes do Vertex AI:
+  \begin{enumerate}
+    \item \textbf{Orçamento de raciocínio controlável (\cd{thinkingBudget}):} chamadas que exigem resposta rápida (como correções curtas ou interações síncronas de estudantes) enviam \cd{thinkingBudget: 0} (desligando o pensamento oculto para derrubar a latência e o custo de tokens de saída), enquanto a geração de planos de aula e pacotes pedagógicos habilita o raciocínio profundo e janela de saída de até \textbf{65.536 tokens} em uma única geração.
+    \item \textbf{Cache implícito de contexto (\emph{Implicit Caching}):} o endpoint da Ajuda (\cd{/ajuda/llm/chat/completions}) injeta a base completa de conhecimento da plataforma ($\sim 65.000$ tokens estáticos) no \cd{systemInstruction}. No Vertex Gemini, o prefixo repetido atinge automaticamente 75\% a 90\% de desconto (\cd{cached\_Tokens}) sem precisar criar ou gerenciar ciclo de vida de objetos de cache.
+    \item \textbf{Proporção nativa \cd{4:5} na geração de imagem:} o \cd{gemini-3.1-flash-image} aceita \cd{imageConfig: \{ aspectRatio: '4:5' \}}, entregando a imagem exatamente na proporção exigida pelos cards e etapas do Design System antes da conversão para \cd{.webp}.
+    \item \textbf{Diálogo multi-locutor nativo em uma única chamada TTS:} na geração de áudios de missões (ex.: diálogos entre personagens ou postagens narradas na Exp08), o \textbf{Cloud Text-to-Speech} (\cd{gemini-2.5-flash-tts}) recebe um array de turnos (\cd{multiSpeakerMarkup}) com vozes distintas (ex.: \cd{Aoede} e \cd{Puck}) e devolve um único arquivo MP3 já mixado e com prosódia conversacional entre os interlocutores.
+  \end{enumerate}
+  \item[Equivalente AWS] Como a arquitetura da API já isola o vendor atrás do token de injeção \cd{AI\_PROVIDER}, migrar para a AWS exige apenas escrever um \cd{BedrockAiProvider} sem alterar nenhum controller de negócio. Contudo, há diferenças funcionais nos modelos:
+  \begin{itemize}
+    \item \textbf{Texto e JSON Estruturado:} a API \emph{Bedrock Converse} oferece suporte a \textbf{Anthropic Claude 3.7 / 4 Sonnet} (com \emph{extended thinking} configurável e saída de até 64k tokens) e à família \textbf{Amazon Nova Pro / Lite}. Para aproveitar o desconto de cache nos 65k tokens da Ajuda, o adapter precisará inserir blocos explícitos \cd{cachePoint} no payload do Bedrock.
+    \item \textbf{Geração de Imagens (\cd{4:5}):} os modelos \textbf{Amazon Nova Canvas} e \textbf{Titan Image Generator v2} aceitam resoluções customizadas (ex.: \cd{1024x1280}, que corresponde exatamente à razão \cd{4:5}), permitindo manter a compatibilidade visual.
+    \item \textbf{Síntese de Voz Multi-Locutor (\adaptacao):} o \textbf{Amazon Polly} \textbf{não suporta múltiplos locutores em uma única chamada SSML} da mesma forma que o \cd{multiSpeakerMarkup} do Gemini TTS. Para sintetizar um diálogo entre dois personagens no Polly, o \cd{BedrockAiProvider} precisará quebrar o roteiro por turno, disparar $N$ chamadas paralelas ao Polly (uma por fala/voz) e concatenar os buffers de áudio na própria API antes de enviar ao S3.
+  \end{itemize}
+  \item[Equivalente Azure] No ecossistema Microsoft:
+  \begin{itemize}
+    \item \textbf{Texto e Cache:} o \textbf{Azure OpenAI Service} (\cd{gpt-4.1}, \cd{gpt-4.1-mini} e série \cd{o3-mini}/\cd{o4-mini}) possui \emph{Prompt Caching} 100\% automático para prefixos acima de 1.024 tokens (mesma ergonomia zero-configuração do Vertex Gemini). Limite de saída: \cd{gpt-4.1} suporta até 32.768 tokens de saída (metade dos 65.536 do Gemini 3.7 Flash).
+    \item \textbf{Geração de Imagens (\cd{4:5}):} o modelo \textbf{gpt-image-1} (e \cd{DALL-E 3}) na Azure trabalha apenas com três resoluções fixas (\cd{1024x1024}, \cd{1024x1536} retrato 2:3 e \cd{1536x1024} paisagem 3:2). O adapter \cd{AzureOpenAiProvider} solicita \cd{1024x1536} e usa a própria biblioteca \cd{sharp} (já presente na API) para aplicar um \emph{center crop} automático para \cd{1024x1280} (\cd{4:5}) junto com a conversão para \cd{.webp}.
+    \item \textbf{Síntese de Voz Multi-Locutor (\nativo):} o \textbf{Azure AI Speech} suporta múltiplas tags \cd{<voice name="pt-BR-FranciscaNeural">...</voice><voice name="pt-BR-AntonioNeural">...</voice>} intercaladas em um único documento SSML e devolve um único stream MP3 pronto.
+  \end{itemize}
+\end{campos}
+\end{pecaarq}
+
+% -----------------------------------------------------------------------------
+\begin{pecaarq}{IA-02}{Agente de IA do Professor: Runtime (\texttt{apps/agente-professor}) e Sessões}{\sgcp~\nativo\enspace\saws~\adaptacao\enspace\sazure~\adaptacao}
+\begin{campos}
+  \item[Código e stack] \arq{apps/agente-professor/agente\_professor/} (Python 3.12 + \cd{google-adk}) + cliente HTTP na API (\arq{apps/api/src/agente-professor/agent-engine.client.ts}).
+  \item[Configuração GCP] \cd{google\_vertex\_ai\_reasoning\_engine.agente\_professor} (\arq{agente\_professor.tf}): modo \cd{BYOC} (imagem Docker no Artifact Registry), \cd{4 vCPU}, \cd{4 GiB RAM}, \cd{min\_instances = 1}, \cd{max\_instances = 5}, \cd{concurrency = 36}.
+  \item[Como é hoje (GCP)] O Agente do Professor foi construído em Python utilizando o \textbf{Google Agent Development Kit (ADK)} (\cd{LlmAgent}, ferramentas Python tipadas e callbacks de telemetria) e implantado no \textbf{Vertex AI Agent Engine} (\cd{ReasoningEngine}) em \cd{us-central1} (ADR-126). Essa escolha resolve dois problemas em um único recurso Terraform:
+  \begin{enumerate}
+    \item \textbf{Hospedagem gerenciada do contêiner Python (\cd{BYOC}):} o Agent Engine executa a imagem do Artifact Registry sem que a equipe precise gerenciar cluster Kubernetes ou balanceador interno. A API NestJS chama os endpoints REST nativos do Vertex AI (\cd{:query} e \cd{:streamQuery}) autenticada via ADC.
+    \item \textbf{Estado e memória de sessão embutidos (\emph{Zero-DB Session Store}):} o histórico de turnos e eventos da conversa do professor com o agente \textbf{não é reenviado pela API a cada mensagem}. O Agent Engine persiste nativamente as sessões (\cd{async\_create\_session}, \cd{async\_get\_session}, \cd{async\_list\_sessions}) e permite renovar o TTL de expiração via \cd{PATCH} no recurso da sessão (\cd{expireTime = +365d} a cada nova mensagem). No PostgreSQL da plataforma (\cd{agente\_professor\_conversas}), a API guarda apenas o ponteiro \cd{sessao\_remota\_id} e o título.
+  \end{enumerate}
+  \item[Equivalente AWS] Este é o ponto de \textbf{maior acoplamento de código (\emph{lock-in})} de todo o monorepo:
+  \begin{itemize}
+    \item \textbf{Framework do Agente:} o servidor de produção do Google ADK e seu gerenciador de sessões (\cd{VertexAiSessionService}) são acoplados ao protocolo do Vertex AI Agent Engine. Na AWS, o caminho natural é migrar a definição do agente (cerca de 400 linhas de Python em \arq{apps/agente-professor/agente\_professor/}) para o \textbf{Strands Agents SDK} (framework oficial open-source da AWS) ou \textbf{LangGraph}.
+    \item \textbf{Hospedagem e Sessões:} se hospedado no \textbf{Amazon Bedrock AgentCore Runtime} (para agentes customizados em contêiner com memória de sessão gerenciada), preserva-se a arquitetura sem banco adicional, mas reescreve-se todo o cliente \arq{agent-engine.client.ts} da API para assinar requisições AWS \emph{SigV4}. Alternativamente, roda-se o contêiner Python como um serviço privado no \textbf{ECS Fargate} persistindo os turnos de sessão no próprio \textbf{RDS PostgreSQL}.
+  \end{itemize}
+  \item[Equivalente Azure] Na Azure, existem duas abordagens equivalentes:
+  \begin{itemize}
+    \item \textbf{Abordagem 1 --- Azure Container Apps interno + PostgreSQL (Mais simples):} empacotar \arq{apps/agente-professor/} como uma aplicação FastAPI + LangGraph/Semantic Kernel rodando em um \textbf{Container App com ingress interno} (visível apenas para a API na mesma VNet) e apontando o \emph{checkpointer} de sessão para o próprio \textbf{Azure Database for PostgreSQL} já existente no contrato.
+    \item \textbf{Abordagem 2 --- Azure AI Foundry Agent Service:} serviço gerenciado de agentes da Azure que persiste \emph{Threads}, \emph{Runs} e \emph{Messages} automaticamente (análogo às sessões do Vertex Agent Engine), mas exige remodelar o registro das ferramentas Python.
+  \end{itemize}
+\end{campos}
+\end{pecaarq}
+
+% -----------------------------------------------------------------------------
+\begin{pecaarq}{IA-03}{RAG Pedagógico Duplo: Habilidades (BNCC) e Acervo PDF com Páginas}{\sgcp~\nativo\enspace\saws~\adaptacao\enspace\sazure~\adaptacao}
+\begin{campos}
+  \item[Código de busca] \arq{apps/agente-professor/agente\_professor/ferramentas.py} e \arq{ingestao/} (\cd{ingerir\_habilidades.py}, \cd{ingerir\_acervo.py}, \cd{esquema\_habilidades.json}).
+  \item[Configuração GCP] 2 Data Stores no \textbf{Vertex AI Search} (\cd{google\_discovery\_engine\_data\_store} em \arq{agente\_professor.tf}): \cd{habilidades} (\cd{NO\_CONTENT}, schema estrito) e \cd{acervo} (\cd{CONTENT\_REQUIRED}, \cd{layout\_parsing\_config} + \cd{chunk\_size = 500} com \cd{include\_ancestor\_headings = true}).
+  \item[Como é hoje (GCP)] O Agente do Professor possui duas ferramentas de consulta com comportamentos que raramente coexistem bem em um banco vetorial simples (ADR-127):
+  \begin{enumerate}
+    \item \textbf{\cd{consultar\_habilidades} (Data Store \cd{habilidades} --- \cd{NO\_CONTENT}):} armazena dezenas de milhares de habilidades da BNCC e dos currículos locais com esquema rígido (\cd{dynamic = "false"}): \cd{codigo} (\cd{EF06MA01}), \cd{anos} (\cd{["6º ano"]}), \cd{componente\_slug}, \cd{etapa}, \cd{unidade\_tematica}, \cd{objeto\_conhecimento} e \cd{descricao}. Quando o professor pede \emph{``liste todas as habilidades de Matemática do 6º ano''}, a ferramenta aplica filtro booleano exato (\cd{anos: ANY("6º ano") AND componente\_slug: ANY("matematica")}) com \cd{query=""} e \textbf{pagina até o fim} (blocos de 100 documentos) para devolver 100\% da matriz curricular sem omitir nenhuma habilidade. Quando busca por tema, combina o mesmo filtro exato com busca híbrida.
+    \item \textbf{\cd{consultar\_acervo} (Data Store \cd{acervo} --- \cd{CONTENT\_REQUIRED}):} ingere livros didáticos e diretrizes em PDF. O \textbf{Layout Parser} nativo do Discovery Engine analisa a estrutura visual do PDF, divide em blocos de 500 tokens preservando os títulos ancestrais (\cd{include\_ancestor\_headings = true}) e anota em cada chunk o intervalo exato de páginas (\cd{chunkMetadata.pageSpan.pageStart} e \cd{pageEnd}). Assim, o agente cita o título da obra e as páginas exatas.
+  \end{enumerate}
+  Além da precisão técnica, o modelo de cobrança do \textbf{Vertex AI Search} é \textbf{100\% serverless por consumo} (poucos dólares por mil consultas e por GB indexado, com \textbf{zero custo fixo de cluster ligado}).
+  \item[Equivalente AWS] O \textbf{Amazon Bedrock Knowledge Bases} gerencia a ingestão de PDFs a partir do S3, mas exige um banco vetorial subjacente provisionado:
+  \begin{itemize}
+    \item \textbf{Opção A --- Amazon OpenSearch Serverless (Padrão AWS, mas caro):} cada coleção exige um mínimo faturado de \textbf{2 a 4 OCUs} funcionando 24x7, gerando um piso fixo de \textbf{US\$ 175 a US\$ 350/mês por contrato} apenas para manter o índice no ar.
+    \item \textbf{Opção B --- RDS PostgreSQL (\cd{pgvector}) + Full-Text Search (Recomendada na AWS):} aproveita a instância \textbf{RDS PostgreSQL 16} já existente no contrato (custo adicional zero de infraestrutura). A ferramenta \cd{consultar\_habilidades} torna-se uma query SQL híbrida direta no PostgreSQL (filtros exatos determinísticos + \cd{tsvector} + distância cosseno com embeddings \cd{Titan Text Embeddings v2}), e o \cd{ingerir\_acervo.py} extrai os blocos paginados via \textbf{Amazon Textract} ou \cd{Docling}/\cd{PyMuPDF} gravando \cd{page\_start} e \cd{page\_end} na tabela de chunks.
+  \end{itemize}
+  \item[Equivalente Azure] O \textbf{Azure AI Search} combinado ao \textbf{Azure AI Document Intelligence} (modelo \cd{prebuilt-layout}) entrega a mesma qualidade técnica do Discovery Engine (filtros OData exatos, paginação determinística, busca híbrida com \emph{Semantic Ranker} e chunking por layout com número de página). Contudo, cobra por instância provisionada: o tier \textbf{Basic} custa cerca de \textbf{US\$ 75/mês fixos} (e o \textbf{Standard S1} custa \textbf{US\$ 250/mês}). Para eliminar esse custo fixo por contrato na Azure, aplica-se a mesma estratégia de usar \textbf{\cd{pgvector}} no Azure Database for PostgreSQL.
+\end{campos}
+\end{pecaarq}
+
+% -----------------------------------------------------------------------------
+\begin{pecaarq}{IA-04}{Ajuda em Tempo Real: Mascote com Voz Ao Vivo e Avatar em Vídeo}{\sgcp~\nativo\enspace\saws~\equivalente\enspace\sazure~\nativo}
+\begin{campos}
+  \item[Código na API] \arq{apps/api/src/ajuda/} (\cd{mascote-live.gateway.ts}, \cd{ajuda-llm.controller.ts}, \cd{liveavatar.service.ts}, \cd{ajuda.service.ts}).
+  \item[Serviços atuais] \textbf{Vertex Gemini Live} (\cd{gemini-3.8-live} via WSS em \cd{us-central1}) para o Mascote 3D e \textbf{HeyGen LiveAvatar} (SaaS externo) + \cd{gemini-3.6-flash} (com cache de 65k tokens) para o Avatar em Vídeo.
+  \item[Mascote 3D (Voz)] No modo Mascote Ao Vivo (\cd{VOZ\_AO\_VIVO}, ADR-158), a API abre um túnel WebSocket autenticando na Vertex AI (\cd{BidiGenerateContent}) com o modelo \textbf{\cd{gemini-3.8-live}} (áudio nativo de entrada PCM 16 kHz e saída PCM 24 kHz + transcrição em tempo real e detecção de interrupção/\emph{barge-in}):
+  \begin{itemize}
+    \item \textbf{Na AWS (\equivalente):} o equivalente nativo é o \textbf{Amazon Nova Sonic} no Bedrock (\cd{amazon.nova-sonic-v1:0}), modelo \emph{speech-to-speech} bidirecional via stream HTTP/2 (\cd{InvokeModelWithBidirectionalStream}), suportando barge-in e transcrição. Exige reescrever o adaptador em \arq{mascote-live.gateway.ts}.
+    \item \textbf{Na Azure (\nativo):} o equivalente direto é a \textbf{Azure OpenAI GPT-4o Realtime API} (\cd{gpt-4o-realtime-preview} / \cd{gpt-4o-mini-realtime-preview}), que também opera sobre WebSockets com áudio PCM16 a 24 kHz, detecção automática de atividade de voz (\cd{server\_vad}) e eventos JSON muito similares aos do Gemini Live.
+  \end{itemize}
+  \item[Avatar em Vídeo] O vídeo do avatar humano (\cd{AVATAR\_AO\_VIVO}, ADR-132) é processado pelo SaaS externo \textbf{HeyGen LiveAvatar} (Modo FULL via WebRTC), sendo \textbf{100\% agnóstico de nuvem}. Os servidores da HeyGen chamam \cd{POST https://api.<dominio>/ajuda/llm/chat/completions} (SSE); basta que o balanceador da AWS ou Azure não faça bufferização dos chunks SSE para que a \cd{FALA\_DE\_ESPERA} de 7 segundos funcione nas três nuvens.
+\end{campos}
+\end{pecaarq}
+
+% -----------------------------------------------------------------------------
+\begin{pecaarq}{IA-05}{Governança de Quotas (\texttt{ia\_quotas}) e Painel de Custos (ADR-105 / ADR-161)}{\sgcp~\nativo\enspace\saws~\nativo\enspace\sazure~\nativo}
+\begin{campos}
+  \item[Código na API] \arq{apps/api/src/ai/quota.service.ts}, \arq{medidor.provider.ts} e \arq{apps/api/src/unooria/uso-ia.service.ts}.
+  \item[Tabelas PostgreSQL] \cd{ia\_quotas} (tetos diários e preços por 1M de tokens configuráveis pelo \cd{admin}), \cd{ia\_uso\_diario}, \cd{ia\_chamadas\_log} e \cd{ajuda\_limites} (minutos de voz/avatar por escola).
+  \item[Portabilidade] Por decisão arquitetural (ADR-105 e ADR-161), toda a governança de consumo de IA da Plataforma Unooria foi construída \textbf{dentro da própria aplicação e do PostgreSQL}, e não em serviços proprietários de faturamento da GCP. Ao migrar para AWS (Bedrock) ou Azure (Foundry/OpenAI), \textbf{o painel de custos de IA e as travas de quota por estudante/professor continuam funcionando sem alterar uma única linha de banco ou de frontend}.
+\end{campos}
+\end{pecaarq}
+
+% =============================================================================
+\section{Síntese Comparativa do Eixo Uso de IA}
+
+\begin{table}[H]
+\centering
+\begin{tabularx}{\textwidth}{@{}L{32mm}YYY@{}}
+\toprule
+\headrow
+\thd{Capacidade de IA} &
+\thd{GCP (Vertex AI)} &
+\thd{AWS (Amazon Bedrock)} &
+\thd{Azure (AI Foundry / OpenAI)} \\
+\midrule
+\textbf{LLM Rápido + Planos Longos} &
+\cd{gemini-3.6-flash} e \cd{3.7-flash} (saída até \textbf{65.536} tok; \cd{thinkingBudget}) &
+\cd{Nova Pro/Lite} e \cd{Claude 3.7/4 Sonnet} (saída até \textbf{64.000} tok) &
+\cd{GPT-4.1} / \cd{4.1-mini} / \cd{o4-mini} (saída até \textbf{32.768} tok no GPT-4.1) \\
+\zebra
+\textbf{Cache de Contexto (65k tok Ajuda)} &
+\textbf{Implícito e automático} (75--90\% desc. em prefixos repetidos) &
+\textbf{Explícito} (requer inserir marcador \cd{cachePoint} no prompt) &
+\textbf{Implícito e automático} (50--75\% desc. acima de 1.024 tok) \\
+\textbf{Geração de Imagem \cd{4:5}} &
+\cd{gemini-3.1-flash-image} (\cd{aspectRatio: '4:5'} nativo) &
+\cd{Amazon Nova Canvas} (resolução \cd{1024x1280} nativa \cd{4:5}) &
+\cd{gpt-image-1} (\cd{1024x1536} + crop automático \cd{4:5} via \cd{sharp}) \\
+\zebra
+\textbf{TTS Diálogo Multi-Locutor} &
+\cd{gemini-2.5-flash-tts} (\cd{multiSpeakerMarkup} em 1 chamada) &
+\cd{Amazon Polly} (exige 1 chamada por fala + concatenação MP3) &
+\cd{Azure AI Speech} (múltiplas tags \cd{<voice>} em 1 chamada SSML) \\
+\textbf{Runtime do Agente + Sessão} &
+\textbf{Vertex AI Agent Engine} (\cd{BYOC} + Google ADK + sessão nativa sem DB) &
+\textbf{Bedrock AgentCore} ou ECS Fargate (portar ADK \seta{} Strands/LangGraph) &
+\textbf{AI Agent Service} ou ACA interno (portar ADK \seta{} LangGraph/SK) \\
+\zebra
+\textbf{RAG Híbrido (BNCC + PDF \cd{pageSpan})} &
+\textbf{Vertex AI Search} (Layout Parser nativo + \textbf{US\$ 0 fixo/mês}) &
+\textbf{Bedrock KB} (OpenSearch custa \textbf{US\$ 175--350/mês}; ou \cd{pgvector} no RDS) &
+\textbf{Azure AI Search} + Doc Intelligence (Basic custa \textbf{US\$ 75/mês}; ou \cd{pgvector}) \\
+\textbf{Voz Ao Vivo (Mascote 3D)} &
+\textbf{Vertex Gemini Live} (\cd{gemini-3.8-live}, WSS PCM 24kHz) &
+\textbf{Amazon Nova Sonic} (stream HTTP/2 bidirecional PCM) &
+\textbf{GPT-4o Realtime API} (WSS / WebRTC PCM 24kHz) \\
+\bottomrule
+\end{tabularx}
+\caption{Comparativo funcional e econômico dos subsistemas de Inteligência Artificial nas três nuvens.}
+\label{tab:comparativo-eixo-ia}
+\end{table}
