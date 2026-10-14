@@ -1679,9 +1679,11 @@ tabela, guardado.
 \midrule
 \cd{exp06ef1b\_pacotes} & A \textbf{atividade} da evidência: a disciplina, o
   tema, os assuntos, o contexto opcional e a mostra em \cd{JSONB} (quatro
-  categorias e dezesseis projetos, com o título, a escola, o perfil, a legenda,
-  o bastidor, as \emph{hashtags} e a descrição da imagem); a \cd{midia} (as URLs
-  geradas, por projeto), \cd{imagens\_aprovadas\_em} (a SEGUNDA fase da
+  categorias e quarenta projetos --- dez por área, \adrr{ADR-164}; os pacotes
+  de dezesseis da 0.4.x continuam legíveis ---, com o título, a escola, o
+  perfil, a legenda, o bastidor, as \emph{hashtags} e a descrição da imagem); a
+  \cd{midia} (as URLs geradas, por projeto; no banco padrão, as imagens do
+  banco que existem), \cd{imagens\_aprovadas\_em} (a SEGUNDA fase da
   aprovação, \adrr{ADR-151}: nulo, a atividade não vai ao ar e as imagens
   ainda se refazem; preenchido, elas congelam), a \cd{origem} (\cd{ia} ou \cd{padrao}, o banco padrão da
   \adrr{ADR-157}), a telemetria docente (\cd{preparo\_iniciado\_em},
@@ -1699,7 +1701,9 @@ tabela, guardado.
   \adrr{ADR-157}): turma, etapa e \cd{liberada\_em}.\\
 \zebra \cd{exp06ef1b\_sessoes} & Uma linha por estudante, pacote e rodada
   (\cd{exp06ef1b\_sessao\_unica\_por\_rodada}). O passo gravado, a \cd{semente}
-  e as quatro listas do feed (servidos, curtidos, salvos, permanências), o
+  e as quatro listas do feed (servidos, curtidos, salvos, permanências; desde o
+  instrumento 3.0.0, os servidos são só apresentações, sem repetir projeto, e as
+  sessões 2.0.0 trazem também os outros três formatos), o
   relógio do feed (\cd{feed\_iniciado\_em}, os 8\,min) e o batimento da
   cédula aberta (\cd{cedula\_batimento\_em}, \cd{cedula\_inativa\_desde},
   um par que só existe antes do voto); o voto, a convicção e o carimbo do
@@ -1709,7 +1713,7 @@ tabela, guardado.
   tentativas e o
   carimbo da cadeia (as colunas dos pacotes, \cd{pacotes\_tentativas} e
   \cd{pacotes\_remontados\_em}, saíram com a \adrr{ADR-151}); os cartões de Mariana; a conclusão e a
-  versão do instrumento. \textbf{Nenhum campo de texto livre.} Desde a
+  versão do instrumento (\cd{3.0.0} desde a \adrr{ADR-164}). \textbf{Nenhum campo de texto livre.} Desde a
   \adrr{ADR-157} ficam SEM USO a justificativa (\cd{voto\_motivo},
   \cd{voto\_trecho}, \cd{revisao\_*}), o \cd{complemento\_projeto} e as
   colunas \cd{desvio\_*}; \cd{enquete\_*\_alt} existem e não são escritas
@@ -1747,12 +1751,15 @@ Um índice único \textbf{parcial} por turma & \cd{exp06ef1b\_pacotes\_um\_ativo
   curtidos, salvos e com permanência; os pesos por área e a área líder são DERIVADOS delas pelo motor
   puro. Um valor derivado não diverge do que o gerou. O \emph{CHECK} limita
   os servidos a dez.\\
-Quatro categorias e dezesseis projetos, e a régua fora do banco & O
-  \emph{CHECK} cobra os dois \emph{arrays} com o tamanho certo; ids, áreas,
+Quatro categorias e quarenta projetos, e a régua fora do banco & O
+  \emph{CHECK} cobra os dois \emph{arrays} com o tamanho certo (16 ou 40
+  projetos desde a \adrr{ADR-164}: a leitura aceita o pacote antigo, e é o Zod
+  da escrita que exige 40); ids, áreas,
   \emph{hashtags}, réguas de palavras e termos proibidos são o Zod da
   homologação (\arq{invariantes.ts}).\\
 \zebra Os ids do voto têm forma & \cd{voto\_projeto}, \cd{voto\_revisado} e
-  \cd{complemento\_projeto} casam \cd{\textasciicircum{}proj-[a-d][1-4]\$}, e
+  \cd{complemento\_projeto} casam \cd{\textasciicircum{}proj-[a-d](10|[1-9])\$}
+  (de \cd{proj-a1} a \cd{proj-d10}, \adrr{ADR-164}), e
   convicção, ação da revisão, cartões de motivo (\cd{v1}--\cd{v3},
   \cd{r1}--\cd{r3}) e cartões de Mariana são vocabulário fechado. O trecho
   é um índice de 0 a 11: o texto da frase nunca é gravado.\\
@@ -2242,6 +2249,14 @@ decisão \emph{futura}, com DPA e \emph{k}-anonimato --- e não sai de um
   vigência única por modelo e componente, semeada com o preço de lista de
   13/10/2026) e \cd{cotacoes\_dolar}. Sem RLS nas três; sem
   \cd{usuario\_id}.\\
+\arq{20261014120000\_\B{}exp06ef1b\_\B{}quarenta\_\B{}projetos} & O Júri
+  Estadual com quarenta projetos (\adrr{ADR-164}). Nenhuma coluna entra nem sai,
+  nenhuma linha muda e a RLS não afrouxa: dois \emph{CHECKs} são recriados. O
+  de conteúdo de \cd{exp06ef1b\_pacotes} aceita 16 OU 40 projetos (os pacotes
+  de dezesseis da 0.4.x continuam legíveis; a escrita só produz 40), e o de
+  vocabulário de \cd{exp06ef1b\_sessoes} passa o id de projeto a
+  \cd{\textasciicircum{}proj-[a-d](10|[1-9])\$} nas três colunas que o guardam
+  --- a regex nova contém a antiga.\\
 \bottomrule
 \end{tabularx}
 

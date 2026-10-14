@@ -56,8 +56,9 @@ de \arq{evidencias}, e não pelo módulo de cada uma.
 
 A unidade 1 do 6º ano é \textbf{O Júri Estadual de Projetos}
 (\adrr{ADR-137}), no Unoovista, que nasceu na 0.1.0, na porta 5185, e está
-na 0.4.0 desde o PRD v2 (\adrr{ADR-157}), depois da 0.2.0 dos ajustes do PO
-(\adrr{ADR-151}) e da 0.3.0 do ciclo do voto (\adrr{ADR-152}). O 6º ano
+na 0.5.0 desde os quarenta projetos (\adrr{ADR-164}), depois da 0.2.0 dos
+ajustes do PO (\adrr{ADR-151}), da 0.3.0 do ciclo do voto (\adrr{ADR-152}) e da
+0.4.0 do PRD v2 (\adrr{ADR-157}). O 6º ano
 passa a ter duas missões: ela e O Rastro do Boato (\cd{exp06ef2b}), da
 unidade 2.
 
@@ -238,12 +239,15 @@ da missão injeta o que só ela sabe montar:
     \rota{GET /juri-estadual/\B{}professor/\B{}material} devolve o esqueleto
     da missão COM o gabarito: as quatro perguntas de contraste da plenária (as
     MESMAS que o painel da aula mostra ao lado do botão), a regra do feed que o
-    motor executou (curtir e ficar pesam, salvar não, o limiar e a saturação,
-    \adrr{ADR-157}), a cadeia na ordem certa e o caso Mariana com os cartões
+    motor executou (curtir e ficar pesam, salvar não, o limiar e o resto do
+    feed só com projetos novos da área em foco, \adrr{ADR-157},
+    \adrr{ADR-164}), a cadeia na ordem certa e o caso Mariana com os cartões
     certos marcados. O componente é \arq{guia/\B{}material-do-juri.tsx}. O
     guia tem 29\,min em tela, o corte depois do Passo 3 e a nota pedagógica da
-    EF06CO10 literal do PRD; a taxa de invisibilidade continua sendo a de cada
-    sessão, nunca um número para anunciar.
+    EF06CO10 literal do PRD. Com quarenta estandes, o total fora do feed é o
+    mesmo para todos; o guia manda comparar as telas ÁREA POR ÁREA e o feed
+    \enquote{sem as suas curtidas}, nunca anunciar um número
+    (\adrr{ADR-164}).
   \item \textbf{backup-exp04ef1b} (o UnooTube, arquivado na \adrr{ADR-116}; o
     bloco saiu do guia com ele) --- a tabela dos 21 vídeos, com o \cd{factual} de
     cada um, vinha de \rota{GET /unootube/professor/videos}. A criança de nove
@@ -1581,27 +1585,29 @@ e exige o \emph{podcast} pronto, com a voz do TTS. Antes, a suíte aceitava o
 
 \textbf{6º ano \textperiodcentered{} Unidade 1 \textperiodcentered{} clone de
 rede social de fotos \textperiodcentered{} \cd{unoovista}, com a tela da escola
-em \cd{unooria} \textperiodcentered{} 0.4.0 (PRD v2)}
+em \cd{unooria} \textperiodcentered{} 0.5.0 (quarenta projetos)}
 
 O estudante é jurado de uma mostra científica estadual, dentro do Unoovista. A
 comissão entrega o crachá, e ele rola um feed de dez posts dos estandes ---
-quatro áreas, quatro projetos por área --- ou oito minutos, o que vier
-primeiro, curtindo o que quiser. As curtidas e o tempo parado num post
-\textbf{afunilam o feed em silêncio}: vencida a área líder, o resto do feed é
-só dela, repetindo os projetos dela em outros formatos. Ele vota numa cédula
+quatro áreas, dez projetos por área, nenhum post repetido --- ou oito minutos,
+o que vier primeiro, curtindo o que quiser. As curtidas e o tempo parado num
+post \textbf{afunilam o feed em silêncio}: vencida a área líder, o resto do
+feed é só dela, com projetos novos dela. Ele vota numa cédula
 lacrada de quatro elementos (o \emph{latch} 1) e espera a turma: é o PICO, em
 que o professor projeta na lousa a dispersão dos votos por área e conduz a
 plenária. Quando o professor clica \enquote{Liberar Auditoria}, cada um vê a
-\textbf{Galeria Oculta} com a \textbf{taxa de invisibilidade} REAL da própria
-sessão, busca por \emph{hashtag}, inspeciona estandes e \enquote{Mantém o voto
+\textbf{Galeria Oculta}: quantos dos estandes nunca chegaram ao feed dele,
+\textbf{o que ficou fora por área} e o \textbf{contraste sem curtidas} --- o
+feed que ele teria visto sem as próprias curtidas ---, busca por \emph{hashtag}, inspeciona estandes e \enquote{Mantém o voto
 inicial} ou \enquote{Confirma o Voto Revisado} (o \emph{latch} 2). Daí segue
 sozinho: na tela da escola, com o par simulado ao lado, monta a cadeia
 Interações \seta{} Dados \seta{} Algoritmo \seta{} Bolha (EF06CO03); ainda na
 escola, resolve o caso Mariana; responde a três enquetes nos Stories da
 comissão e recebe o crachá homologado, com o infográfico da Unooria embaixo.
-A versão vigente segue o PRD v2 com nove desvios aprovados (\adrr{ADR-157}),
-que supera a \adrr{ADR-151} e a \adrr{ADR-152} no que conflitam; a origem está
-na \adrr{ADR-137}.
+A versão vigente segue o PRD v2 com os desvios aprovados (\adrr{ADR-157}),
+que supera a \adrr{ADR-151} e a \adrr{ADR-152} no que conflitam, e os
+quarenta projetos (\adrr{ADR-164}), que substituem a saturação por formatos e a
+taxa de invisibilidade; a origem está na \adrr{ADR-137}.
 
 \begin{tabularx}{\linewidth}{@{}L{34mm}X@{}}
 \toprule
@@ -1615,14 +1621,16 @@ O motor do feed é do servidor & \arq{regras/afunilamento.ts}, puro e
   cada área. Curtida vale 3, permanência vale 1, \textbf{salvar vale 0} (grava
   o evento, não pesa). Com 6 numa área ela é a líder; \textbf{sem curtida
   nenhuma, a permanência sozinha elege}.\\
-\zebra Saturação e a taxa real & Com área em foco, os posts 5 a 10 são SÓ
-  dela: um projeto novo no máximo, depois os formatos que faltam
-  (\cd{apresentacao}, \cd{bastidor}, \cd{prototipo}, \cd{depoimento}; id
-  \cd{proj-xN:formato}). Quem curte na abertura vê 4--5 projetos e fica com
-  11--12 de 16 ocultos (69--75\,\%, provado em 300 sementes); sem interação, o
-  feed é variado (cerca de 38\,\%). O badge (\enquote{\{n\}\,\% dos projetos
-  da feira ficaram fora do seu feed}) e a grade de 3 colunas usam o número do
-  servidor.\\
+\zebra O feed sem repetição & Desde a 0.5.0 (\adrr{ADR-164}) o motor serve
+  só \cd{apresentacao} (id \cd{proj-xN:apresentacao}, de \cd{proj-a1} a
+  \cd{proj-d10}) e nenhum post se repete: com área em foco, os posts 5 a 10 são
+  projetos NOVOS dela (o da abertura e até mais seis; ela tem dez). Quem curte
+  cedo vê 7/1/1/1 projetos por área; quem não interage, 3/3/2/2 --- os dois
+  ficam com 30 de 40 fora, e o que muda é QUAIS. O \cd{bastidor} é a quarta
+  lâmina do carrossel do próprio post (\enquote{Bastidores do estande}, depois
+  das três fotos). A saturação por formatos da 0.4.0 (bastidor, protótipo e
+  depoimento como posts) saiu; as sessões 2.0.0 continuam de onde pararam, só
+  com apresentações novas.\\
 Os 8 minutos & O 1º \cd{proximo: true} grava \cd{feed\_iniciado\_em};
   esgotado, o feed não serve mais e \cd{cedulaLiberada} vira verdadeiro (voto
   aceito com menos de dez). F5 não zera. Sem cronômetro na tela.\\
@@ -1635,10 +1643,19 @@ Os 8 minutos & O 1º \cd{proximo: true} grava \cd{feed\_iniciado\_em};
 O acervo não desce antes da galeria & O post é uma \emph{allowlist}
   (\arq{regras/publico.ts}). \rota{GET /juri-estadual/galeria} exige o passo
   efetivo \cd{galeria} --- o voto E a etapa (403 \cd{galeria-nao-liberada}) ---
-  e traz \cd{ocultosAbertos}, \cd{podeManter} e o \cd{resumo} (a ficha de
-  inspeção).\\
+  e traz, tudo calculado no servidor (o motor nunca desce):
+  \cd{invisibilidade} \cd{\{ocultos, total\}} (\enquote{30 de 40 estandes
+  nunca chegaram ao seu feed}, sem porcentagem; o total é o do pacote),
+  \cd{porArea} (\enquote{Tecnologia: você viu 7 de 10}), \cd{semCurtidas} (o
+  \textbf{contrafactual} \enquote{Sem as suas curtidas, o seu feed teria
+  trazido:\ldots}: o feed desta sessão recalculado com a mesma semente, sem
+  curtidas nem permanências, com N = os posts que a criança viu),
+  \cd{ocultosAbertos}, \cd{podeManter} e o \cd{resumo} (o bastidor, a ficha de
+  inspeção). A grade de 3 colunas mostra os ocultos de UMA área, escolhida por
+  \emph{chips}; abre na área que mais ficou fora.\\
 \zebra A revisão: dois botões & \cd{manter} exige ao menos um oculto aberto
-  (409 \cd{galeria-sem-inspecao}); \cd{trocar} aceita os quinze outros. Depois,
+  (409 \cd{galeria-sem-inspecao}); \cd{trocar} aceita os outros projetos do
+  pacote (a lista é filtrada pelos mesmos \emph{chips} de área). Depois,
   a tela pede \rota{POST passo \{para: "cadeia"\}} sozinha. Justificativa,
   frase grifada, complementar e a rodada de desvio da 0.3.0 \textbf{saíram};
   as colunas ficam no banco, sem uso.\\
@@ -1669,13 +1686,19 @@ Evidência & A ficha \arq{evidencias/fichas/exp06ef1b.ts}, \textbf{versão 4},
   \cd{em\_processo}; mais = \cd{nao\_atingiu}. As enquetes \cd{p1}--\cd{p3}
   verbatim, valendo o melhor; toda rodada mede de novo (\adrr{ADR-145}).\\
 \zebra Equipes e o painel & O painel conta por COMPUTADOR e é PROJETADO: a
-  linha diz só progresso, \cd{ocioso} e \cd{categoriasBuscadas}; voto, taxa e
-  nível ficam no resumo anônimo (votos por área, lacrado e final;
-  invisibilidade média; quantos mantiveram e trocaram). Cada leitura conta em
+  linha diz só progresso, \cd{ocioso} e \cd{categoriasBuscadas}; voto,
+  concentração e nível ficam no resumo anônimo (votos por área, lacrado e
+  final; quantos mantiveram e trocaram; e, só depois de \enquote{Liberar
+  Auditoria}, a \textbf{concentração do feed} --- a média da fração do feed na
+  área mais vista, de quem curtiu, cerca de 70\,\%, e de quem não curtiu, cerca
+  de 30\,\% ---, que substituiu a invisibilidade média, \adrr{ADR-164}). Cada leitura conta em
   \cd{painel\_vistas}.\\
 Mídia & As imagens são do professor, no preparo, em duas fases
-  (\rota{homologar} e \rota{aprovar-imagens}); sem imagem, a arte procedural.
-  O banco padrão já nasce com as imagens aprovadas (a arte procedural).\\
+  (\rota{homologar} e \rota{aprovar-imagens}), quatro por chamada, quarenta por
+  atividade; sem imagem, a arte procedural. O banco padrão já nasce com as
+  imagens aprovadas: as do banco que o \cd{admin} gerou
+  (\rota{/unooria/recursos/imagens-do-juri}, \adrr{ADR-164}), e a arte
+  procedural no estande que ainda não tem.\\
 \bottomrule
 \end{tabularx}
 
@@ -1683,12 +1706,15 @@ Mídia & As imagens são do professor, no preparo, em duas fases
 
 O professor cria a atividade em \enquote{Nova atividade}. Há dois caminhos:
 \enquote{Usar Banco Padrão Oficial} (\rota{POST
-.../turmas/:t/banco-padrao}), os dezesseis projetos do banco de conteúdo do
-PRD (\arq{banco-padrao.ts}; áreas Tecnologia, Meio Ambiente, Cultura e Saúde),
-sem IA e já com as imagens aprovadas; ou \enquote{Gerar Mostra Personalizada
-com IA}, que devolve um RASCUNHO de quatro categorias (nome e \emph{hashtag}
-validados pela forma, não por lista) e dezesseis estandes com os quatro
-formatos. Sem saldo de IA ou com o provedor fora, a geração \textbf{cai no
+.../turmas/:t/banco-padrao}), os quarenta projetos do banco padrão
+(\arq{banco-padrao.ts}; áreas Tecnologia, Meio Ambiente, Cultura e Saúde ---
+os dezesseis do banco de conteúdo do PRD, intactos, e vinte e quatro novos no
+mesmo molde, \adrr{ADR-164}), sem IA e já com as imagens aprovadas; ou
+\enquote{Gerar Mostra Personalizada com IA}, que devolve um RASCUNHO de quatro
+categorias (nome e \emph{hashtag} validados pela forma, não por lista) e
+quarenta estandes, dez por área, em cinco chamadas (as categorias e as quatro
+áreas em paralelo). A curadoria, a grade das imagens e a página da atividade
+têm uma aba por área (\cd{Tabs} do DS), com a pendência no rótulo. Sem saldo de IA ou com o provedor fora, a geração \textbf{cai no
 banco padrão}: 200 com \cd{usouIa: false}, \cd{origem: "padrao"} e o
 \cd{motivo}, e a tela avisa. Homologar grava \cd{aprovado\_em}/\cd{por} e o
 \cd{preparo\_iniciado\_em}. Os textos literais aprovados que estouram o teto de
@@ -1701,8 +1727,8 @@ barrado.
 para a sala depois da Galeria Oculta, e o guia avisa. O banco padrão intocado
 usa o roteiro \cd{aud-exp06ef1b-01} com os estandes do próprio banco nas três
 vagas (o texto do PO citava projetos que não existem nele) e sem número cravado
-(\enquote{os projetos das outras áreas}, \enquote{mais da metade}: a taxa é de
-cada computador), com \cd{padrao: true} e
+(\enquote{os projetos das outras áreas}, \enquote{mais da metade}: verdade com
+30 de 40), com \cd{padrao: true} e
 sem linha em \cd{podcast\_roteiros}. A mostra da IA usa o texto fixo e as três
 vagas que a IA escreve e o professor revisa na criação (\rota{homologar}).
 
@@ -1713,6 +1739,8 @@ vagas que a IA escreve e o professor revisa na criação (\rota{homologar}).
     professor: a plataforma não comporta (\adrr{ADR-157}).
   \item \textbf{Sem justificativa, complementar nem rodada de desvio} (saíram
     na 0.4.0).
+  \item \textbf{Sem porcentagem na Galeria Oculta} (\enquote{X de Y
+    estandes}) e \textbf{sem post repetido} no feed (0.5.0).
   \item \textbf{Sem busca antes do voto}: a aba Busca responde fechada.
   \item \textbf{Sem contagem de curtidas} no post e \textbf{sem cronômetro}.
   \item \textbf{Sem número nos blocos da cadeia}.
@@ -1726,19 +1754,28 @@ O manifesto declara \cd{viewport} 375 por 812, \cd{permissoes: ["forms"]}, o
 inferior tem \textbf{quatro abas} (Início, Busca, Notificações, Jurado),
 nenhuma com fluxo próprio. O caso Mariana e o infográfico final estão na seção
 \cd{unooria} do DS --- o infográfico numa faixa própria (\cd{.fim\_\_escola})
-embaixo do fim da comissão. A versão está na \textbf{0.4.0} nos três lugares
-(\arq{experiencia.json}, \arq{package.json} e \cd{EXP\_VERSION}). A migração
-\arq{20261010120000\_\B{}exp06ef1b\_\B{}prd\_\B{}v2} não apaga coluna.
+embaixo do fim da comissão. A versão está na \textbf{0.5.0} nos três lugares
+(\arq{experiencia.json}, \arq{package.json} e \cd{EXP\_VERSION}), com o
+instrumento 3.0.0. As migrações
+\arq{20261010120000\_\B{}exp06ef1b\_\B{}prd\_\B{}v2} e
+\arq{20261014120000\_\B{}exp06ef1b\_\B{}quarenta\_\B{}projetos} não apagam
+coluna; a segunda só troca dois \emph{CHECKs} (16 ou 40 projetos; o id
+\cd{proj-a10}). Pacotes de dezesseis e sessões 2.0.0 continuam legíveis.
 \end{atencao}
 
 As suítes da api (\arq{tests/\B{}juri-estadual-\B{}regras.spec.ts}, sem banco,
 e \arq{tests/\B{}juri-estadual-\B{}postgres.spec.ts}, com a RLS das quatro
-tabelas) cobrem a saturação, o relógio, o batimento, os \emph{latches}, o 422
-que conta a tentativa, o banco padrão e o \emph{fallback}. A suíte de ponta a
-ponta \arq{scripts/e2e/estudante/\B{}13-juri-estadual.mjs} foi reescrita para
-o PRD v2 e passou com IA real (79 verificações): geração pela IA e banco padrão,
-saturação com 69\% fora para quem curte, cédula de quatro elementos, ocioso no
-painel, revisão de dois botões, par simulado, 422 na cadeia e Canal B.
+tabelas) e \arq{tests/\B{}juri-estadual-\B{}midia.spec.ts} cobrem os
+quarenta em centenas de sementes (curtiu cedo: dez distintos, 7/1/1/1; sem
+toque: 3/3/2/2; 30 de 40; o contrafactual; a concentração 70 por 30), a 0.4.x
+continuada, os \emph{CHECKs} (16 e 40 sim, 15 não; \cd{proj-d10} sim,
+\cd{proj-a11} não), o relógio, o batimento, os \emph{latches}, o 422 que conta a
+tentativa, o banco padrão de quarenta e as imagens dele (guarda de \cd{admin},
+só as que faltam, atribuição no medidor), o preparo em cinco chamadas e o
+\emph{fallback}. A suíte de ponta a ponta
+\arq{scripts/e2e/estudante/\B{}13-juri-estadual.mjs} passou com IA real na
+0.4.0 (79 verificações); a versão dela para os quarenta estava em revisão na
+data desta atualização.
 
 % ---------------------------------------------------------------------------
 \section{exp06ef2b --- O Rastro do Boato}

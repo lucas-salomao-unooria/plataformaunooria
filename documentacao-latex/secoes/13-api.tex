@@ -1324,11 +1324,13 @@ teto de requisição por minuto.
 % Esta tabela e ESCRITA A MAO; a verdade e o Apendice C (`apendices/c-endpoints.tex`),
 % gerado de `docs/openapi.json`. Confira LINHA A LINHA contra ele antes de mexer.
 
-Vinte e sete rotas em três \emph{controllers} (\adrr{ADR-137},
-\adrr{ADR-151}, \adrr{ADR-157}): doze do
+Vinte e nove rotas em quatro \emph{controllers} (\adrr{ADR-137},
+\adrr{ADR-151}, \adrr{ADR-157}, \adrr{ADR-164}): doze do
 estudante (\cd{@Roles("estudante")} na classe, e \cd{exigirMissaoLiberada} no
 funil \cd{garantirSessao} de TODAS, com a disponibilidade junto), catorze por
-turma, para professor e gestores, e uma de catálogo. A \rota{POST
+turma, para professor e gestores, uma de catálogo e duas do \cd{admin} (as
+imagens do banco padrão, \cd{@Roles("admin")} numa classe própria: professor e
+gestores recebem 403). A \rota{POST
 /juri-estadual/pacotes} (a remontagem da curtida, EF06CO07) saiu com a
 \adrr{ADR-151}; as duas da rodada de desvio (\adrr{ADR-152}) saíram com a
 \adrr{ADR-157}, que trouxe o batimento da cédula e o banco padrão. O podcast não está aqui: é do módulo da plataforma
@@ -1354,7 +1356,8 @@ três enquetes não são deste módulo: passam por
 \zebra \rota{POST /juri-estadual/\B{}feed/\B{}eventos} & estudante & As curtidas e os
   salvos (estado; salvar não pesa) e as permanências (fato) que a tela mediu e, com \cd{proximo: true}, um post a
   mais, até dez ou 8\,min desde a 1ª rolagem (\cd{tempoEsgotado},
-  \cd{cedulaLiberada}). A saturação escolhe o próximo (\adrr{ADR-157}). Post que o feed não serviu, 400 \cd{post-desconhecido}; depois
+  \cd{cedulaLiberada}). O motor escolhe o próximo sem repetir post: só
+  apresentações, e projetos NOVOS da área em foco (\adrr{ADR-164}). Post que o feed não serviu, 400 \cd{post-desconhecido}; depois
   do voto, 409 \cd{voto-ja-lacrado}.\\
 \rota{POST /juri-estadual/\B{}cedula/\B{}batimento} & estudante & Com a cédula
   aberta, a cada 15\,s, os segundos sem toque: o sinalizador de ociosos do
@@ -1364,9 +1367,13 @@ três enquetes não são deste módulo: passam por
   \cd{lacrada} juntos. Com menos de dez servidos e o tempo não esgotado, 409
   \cd{feed-incompleto}; projeto que não apareceu no feed DESTA criança, 409
   \cd{projeto-fora-do-feed}.\\
-\rota{GET /juri-estadual/galeria} & estudante & Os dezesseis estandes,
-  os ocultos primeiro, a \cd{invisibilidade} REAL da sessão,
-  \cd{ocultosAbertos} e \cd{podeManter}. Antes do voto e da
+\rota{GET /juri-estadual/galeria} & estudante & Os estandes do pacote
+  (quarenta; dezesseis no pacote antigo), os ocultos primeiro, a
+  \cd{invisibilidade} \cd{\{ocultos, total\}}, \cd{porArea}
+  (\cd{\{area, vistos, total\}}), \cd{semCurtidas} (o contrafactual: o feed
+  desta sessão sem curtidas nem permanências, com N = os posts vistos,
+  calculado no servidor, \adrr{ADR-164}), \cd{ocultosAbertos} e
+  \cd{podeManter}. Antes do voto e da
   etapa, 403 \cd{galeria-nao-liberada}.\\
 \zebra \rota{POST /juri-estadual/\B{}galeria/\B{}acoes} & estudante & Abrir um estande ou
   buscar --- da busca, só o tipo e a área, nunca o texto. 204 sem corpo.\\
@@ -1389,9 +1396,11 @@ três enquetes não são deste módulo: passam por
   para o professor.\\
 \zebra \rota{GET .../\B{}turmas/\B{}:id/\B{}painel} & prof., gestor & O botão,
   o progresso POR COMPUTADOR (com \cd{ocioso} e \cd{categoriasBuscadas}) e a
-  lousa do pico: votos por área (o lacrado e o final), a invisibilidade média
-  e quantos mantiveram ou trocaram, tudo anônimo. Nenhum voto, taxa ou nível
-  por linha. Cada leitura conta em \cd{painel\_vistas}.\\
+  lousa do pico: votos por área (o lacrado e o final), quantos mantiveram ou
+  trocaram e a \cd{concentracao} \cd{\{curtiram, naoCurtiram\}} --- a média da
+  fração do feed na área mais vista, entre quem votou, que substituiu a
+  invisibilidade média (\adrr{ADR-164}) ---, tudo anônimo. Nenhum voto,
+  concentração ou nível por linha. Cada leitura conta em \cd{painel\_vistas}.\\
 \rota{POST .../gate} & prof., gestor & \enquote{Liberar Auditoria}:
   \cd{exploracao} \seta{} \cd{galeria}, com uma linha em
   \cd{exp06ef1b\_gates\_historico}. O segundo clique não muda nada; não
@@ -1421,10 +1430,13 @@ três enquetes não são deste módulo: passam por
 \rota{POST .../\B{}gerar-conteudo} & prof., gestor & O rascunho da mostra
   por IA, \textbf{pré-aula}. Não persiste. Sem saldo ou sem provedor, cai no
   banco padrão: 200 com \cd{usouIa: false}, \cd{origem: "padrao"} e o
-  \cd{motivo} (\adrr{ADR-157}).\\
+  \cd{motivo} (\adrr{ADR-157}), com as imagens do banco que existem. Com IA,
+  cinco chamadas: as categorias e as quatro áreas em paralelo
+  (\adrr{ADR-164}).\\
 \zebra \rota{POST .../\B{}banco-padrao} & prof., gestor & \enquote{Usar Banco
-  Padrão Oficial}: os dezesseis projetos do PRD, sem IA, com as imagens já
-  aprovadas (a arte procedural); \cd{porNoAr} põe em andamento.\\
+  Padrão Oficial}: os quarenta projetos do banco, sem IA, com as imagens já
+  aprovadas --- as do banco que existem, e a arte procedural no resto;
+  \cd{porNoAr} põe em andamento.\\
 \rota{POST .../\B{}regenerar-projeto} & prof., gestor & Um estande novo com o
   mesmo id e a mesma área. Falha da IA é 200 com \cd{usouIa: false}.\\
 \zebra \rota{POST .../homologar} & prof., gestor & A PRIMEIRA fase, a dos textos:
@@ -1436,15 +1448,25 @@ três enquetes não são deste módulo: passam por
   não cria outro, e o segundo clique substitui as falas. Grava
   \cd{aprovado\_em}/\cd{por} e \cd{preparo\_iniciado\_em}; o banco
   padrão intocado não pede falas (roteiro fixo).\\
-\rota{POST .../gerar-midia} & prof., gestor & Até duas imagens novas por
+\rota{POST .../gerar-midia} & prof., gestor & Até quatro imagens novas por
   chamada, de uma atividade pronta ou da em andamento; repetir até
   \cd{completo}. Depois da aprovação das imagens, 409
   \cd{imagens-ja-aprovadas}.\\
 \zebra \rota{GET /juri-estadual/\B{}professor/\B{}material} & prof., gestor & O
   esqueleto com gabarito: a cadeia na ordem certa, o caso Mariana
   com os cartões certos, as perguntas da plenária e os números do motor
-  (salvar sem peso, o limiar e a saturação).
+  (salvar sem peso, o limiar, o feed sem repetição).
   Catálogo, sem \emph{tenancy} (\adrr{ADR-86}).\\
+\rota{GET /juri-estadual/\B{}banco-padrao/\B{}imagens} & \cd{admin} & Quantas
+  imagens do banco padrão existem, quais faltam e as URLs. O storage é o
+  registro: o nome é determinístico (o \emph{hash} da descrição da imagem),
+  o mesmo da customização (\adrr{ADR-164}).\\
+\zebra \rota{POST /juri-estadual/\B{}banco-padrao/\B{}imagens} & \cd{admin} &
+  Gera até quatro das que faltam, na ordem do banco; idempotente (a que existe
+  não se gera de novo; duas chamadas simultâneas recebem o mesmo trabalho).
+  Sem quota de professor, \emph{rate limit} de 20 por minuto, e medido no
+  painel de custos como \cd{juri-estadual-banco-padrao}, perfil \cd{admin},
+  sem escola.\\
 \bottomrule
 \end{tabularx}
 

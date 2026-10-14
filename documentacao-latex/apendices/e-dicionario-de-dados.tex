@@ -104,7 +104,7 @@ Os diagramas entidade-relacionamento estão no Capítulo~\ref{cap:dados}.
 \zebra \cd{exp06ef2b\_auditorias} & Tenant & Cada abertura de \enquote{Dados da mensagem} --- a evidência que a missão mede\\
 \cd{exp06ef2b\_reflexoes} & Tenant & O \enquote{Meu percurso} (texto livre do estudante)\\
 \zebra \cd{exp06ef2b\_gates\_turma} & Tenant & A etapa da aula, por turma\\
-\cd{exp06ef1b\_pacotes} & Tenant & A ATIVIDADE do Júri Estadual de Projetos: as 4 áreas e os 16 projetos que a IA gerou ou o banco padrão trouxe (\adrr{ADR-157}) e o professor aprovou, a telemetria docente, as URLs das imagens e \cd{imagens\_aprovadas\_em}, a segunda fase da aprovação (\adrr{ADR-151})\\
+\cd{exp06ef1b\_pacotes} & Tenant & A ATIVIDADE do Júri Estadual de Projetos: as 4 áreas e os 40 projetos (16 nos pacotes da 0.4.x, ainda legíveis, \adrr{ADR-164}) que a IA gerou ou o banco padrão trouxe (\adrr{ADR-157}) e o professor aprovou, a telemetria docente, as URLs das imagens e \cd{imagens\_aprovadas\_em}, a segunda fase da aprovação (\adrr{ADR-151})\\
 \zebra \cd{exp06ef1b\_gates\_turma} & Tenant & A etapa da aula (a Galeria Oculta; o desvio saiu com a \adrr{ADR-157}), a atividade em andamento e a rodada, por turma\\
 \cd{exp06ef1b\_sessoes} & Tenant & Uma sessão por estudante, pacote e rodada: o feed servido e o relógio dele, as curtidas e os salvos, o batimento da cédula, os dois votos, a auditoria da galeria, os status das ações, a cadeia e os cartões --- sem texto livre (as colunas da justificativa e do desvio ficam sem uso, \adrr{ADR-157})\\
 \zebra \cd{exp06ef1b\_gates\_historico} & Tenant & Uma linha por etapa liberada pelo professor (\adrr{ADR-157})\\
@@ -1643,7 +1643,10 @@ as colunas da sessão, que é onde o feed e os \emph{latches} moram.
   saem a abertura, o embaralhamento e os ids opacos --- o F5 rende o mesmo
   feed.\\
 \zebra \cd{posts\_\B{}servidos}, \cd{curtidos}, \cd{salvos}, \cd{permanencias} & \cd{JSONB} &
-  \emph{Arrays} de ids de post (\cd{proj-b2:bastidor}); os servidos, até dez. Os
+  \emph{Arrays} de ids de post (\cd{proj-b10:apresentacao}); os servidos, até
+  dez e, desde o instrumento 3.0.0 (\adrr{ADR-164}), só apresentações, sem
+  repetir projeto --- as sessões 2.0.0 trazem também \cd{bastidor},
+  \cd{prototipo} e \cd{depoimento}. Os
   pesos por área são derivados delas (curtida 3, permanência 1; o salvo
   pesa 0 desde a \adrr{ADR-157}), nunca gravados.\\
 \cd{voto\_\B{}projeto}, \cd{conviccao}, \cd{votado\_em} & \cd{TEXT?},
@@ -1662,7 +1665,7 @@ as colunas da sessão, que é onde o feed e os \emph{latches} moram.
   (\adrr{ADR-152}).\\
 \zebra \cd{revisao\_acao}, \cd{voto\_\B{}revisado}, \cd{revisado\_em} & \cd{TEXT?},
   \cd{TIMESTAMPTZ?} & O \emph{latch} 2: \cd{manter} (o voto final repete o
-  lacrado) $|$ \cd{trocar} (outro dos dezesseis) (\cd{complementar}, da 0.3.0, segue aceito e é lido
+  lacrado) $|$ \cd{trocar} (outro projeto do pacote) (\cd{complementar}, da 0.3.0, segue aceito e é lido
   como manter). O carimbo leva o passo a \cd{revisada}.\\
 \cd{auditoria\_status}, \cd{classificacao\_status}, \cd{logica\_status} &
   \cd{VARCHAR(16)?} & O nível das três ações (\cd{atingiu} $|$
@@ -1692,8 +1695,8 @@ as colunas da sessão, que é onde o feed e os \emph{latches} moram.
   \cd{TIMESTAMPTZ?} & O caso Mariana: \cd{m1}--\cd{m3} e \cd{t1}--\cd{t2}. Não é
   evidência.\\
 \cd{concluida\_em} & \cd{TIMESTAMPTZ?} & EQUIVALENTE ao passo \cd{fim}.\\
-\zebra \cd{versao\_instrumento} & \cd{TEXT} & \cd{2.0.0} desde a \adrr{ADR-157}
-  (\cd{1.1.0} da \adrr{ADR-152}, \cd{1.0.0} antes).\\
+\zebra \cd{versao\_instrumento} & \cd{TEXT} & \cd{3.0.0} desde a \adrr{ADR-164}
+  (\cd{2.0.0} da \adrr{ADR-157}, \cd{1.1.0} da \adrr{ADR-152}, \cd{1.0.0} antes).\\
 \bottomrule
 \end{tabularx}
 
@@ -1701,7 +1704,7 @@ as colunas da sessão, que é onde o feed e os \emph{latches} moram.
 A ordem certa da cadeia e o cartão certo de Mariana \textbf{não
 estão no banco}: são o esqueleto da missão, em \arq{conteudo.ts}, e só
 \rota{GET /juri-estadual/professor/material} os devolve. A mostra --- os
-dezesseis projetos --- mora no \cd{JSONB} de \cd{exp06ef1b\_pacotes}, e o
+quarenta projetos (dezesseis nos pacotes da 0.4.x) --- mora no \cd{JSONB} de \cd{exp06ef1b\_pacotes}, e o
 estudante só recebe os posts que o feed serviu até a galeria abrir
 (Seção~\ref{sec:exp06ef1b}). A chave \cd{certo} está na redação do \emph{log}.
 \end{regra}
