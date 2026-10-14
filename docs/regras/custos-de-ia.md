@@ -46,7 +46,12 @@ Sem isso o custo dele não existe no painel.
 - **A atribuição sai do contexto da requisição**: `recurso` é o primeiro
   segmento da rota (`contextoMiddleware`), escola e perfil vêm do token. Quem
   chega FORA do middleware (o WebSocket do mascote, uma tarefa de fundo) passa
-  `atribuicao` explícita — senão a linha cai em `sem-rota`/sem escola.
+  `atribuicao` explícita — senão a linha cai em `sem-rota`/sem escola. Pelo
+  `AiProvider`, a imagem aceita `atribuicao` nas opções
+  (`AiImagemOpcoes.atribuicao`, lida pelo medidor) quando a rota não diz a
+  verdade: as imagens do banco padrão do Júri, geradas pelo `admin`, são
+  `juri-estadual-banco-padrao`, perfil `admin`, sem escola — custo da
+  plataforma, não da rede.
 - **Sem `usuario_id`**: o painel responde EM QUÊ se gastou, nunca QUEM (regra 6).
   Teto por pessoa é a quota (`ia_uso_diario`), outra pergunta.
 
