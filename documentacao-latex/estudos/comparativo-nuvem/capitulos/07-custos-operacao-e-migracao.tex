@@ -1,0 +1,266 @@
+% =============================================================================
+% CAPÍTULO 7 — Custos (TCO), Operação Solo e Matriz de Migração (Lock-in)
+% =============================================================================
+\chapter{Custos (TCO), Operação Solo e Matriz de Migração}
+\label{cap:custos-migracao}
+
+\begin{fichaeixo}{Ficha de Síntese Decisória --- TCO, Operação Solo e Esforço de Migração}
+\begin{campos}
+  \item[Unidade econômica] 1 contrato público (1 stack dedicada no Terraform) atendendo $\sim \num{10000}$ estudantes (pico de \num{2000} a \num{4000} simultâneos).
+  \item[Regiões de referência] GCP \cd{southamerica-east1} (SP) + \cd{us-central1} (IA) $\mid$ AWS \cd{sa-east-1} (SP) + \cd{us-east-1} (IA) $\mid$ Azure \cd{brazilsouth} (SP) + \cd{eastus2} (IA).
+  \item[Recomendação executiva] \textbf{Permanecer na GCP como nuvem padrão.} Em editais B2G com exigência contratual estrita de AWS ou Azure, adotar a arquitetura com \cd{pgvector} no PostgreSQL existente para evitar o custo fixo de busca vetorial dedicada.
+\end{campos}
+\end{fichaeixo}
+
+Em contratos B2G educacionais, o custo de infraestrutura por contrato tem dois componentes muito diferentes: o \textbf{piso fixo mensal de prontidão} (aquilo que a nuvem cobra 24x7 apenas para manter a stack isolada do município/estado ligada, com banco HA e réplicas mínimas aquecidas, mesmo durante férias escolares ou domingos) e o \textbf{custo variável de tráfego e IA} (proporcional ao uso efetivo pelos estudantes e professores).
+
+Como cada contrato público ganha uma stack fisicamente isolada (um projeto/conta/resource group próprio), qualquer serviço que cobre uma mensalidade fixa mínima elevada multiplica esse custo pelo número de municípios/estados atendidos.
+
+% =============================================================================
+\section{Estimativa Comparada de TCO Mensal por Contrato (Produção)}
+\label{sec:tco-mensal}
+
+A Tabela~\ref{tab:tco-comparado} projeta o custo mensal estimado (em dólares americanos, preços públicos sob demanda sem descontos de \emph{Committed Use} / \emph{Savings Plans}) para \textbf{1 contrato em produção} nas regiões de São Paulo (\cd{southamerica-east1}, \cd{sa-east-1} e \cd{brazilsouth}) para computação/dados e EUA para os endpoints de IA generativa.
+
+{\footnotesize
+\begin{tabularx}{\textwidth}{@{}L{36mm}R{23mm}R{25mm}R{25mm}Y@{}}
+\caption{Comparativo estimado de TCO mensal (em US\$) para 1 contrato B2G de 10.000 estudantes em produção.}
+\label{tab:tco-comparado} \\
+\toprule
+\headrow
+\thd{Camada / Recurso (Prd)} &
+\thd{GCP (US\$/mês)} &
+\thd{AWS (US\$/mês)} &
+\thd{Azure (US\$/mês)} &
+\thd{Justificativa da Diferença} \\
+\midrule
+\endfirsthead
+\toprule
+\headrow
+\thd{Camada / Recurso (Prd)} &
+\thd{GCP (US\$/mês)} &
+\thd{AWS (US\$/mês)} &
+\thd{Azure (US\$/mês)} &
+\thd{Justificativa da Diferença} \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+\textbf{1. Borda, LB Global e WAF} &
+$\sim\text{US\$ } 32$ &
+$\sim\text{US\$ } 48$ &
+$\sim\text{US\$ } 55$ &
+AWS exige CloudFront WAF + ALB regional; Azure Front Door Standard (\$\,35 base + WAF policy). \\
+\zebra
+\textbf{2. Rede Privada e Egress (NAT)} &
+$\sim\text{US\$ } 0\text{--}15$ &
+$\sim\text{US\$ } 65\text{--}110$ &
+$\sim\text{US\$ } 45$ &
+GCP Direct VPC Egress dispensa NAT para serviços Google; AWS NAT Gateway cobra por hora por AZ em SP. \\
+\textbf{3. Hub Next.js (\cd{min=1} a \cd{5})} &
+$\sim\text{US\$ } 38$ &
+$\sim\text{US\$ } 52$ &
+$\sim\text{US\$ } 42$ &
+1 vCPU / 1--2 GiB sempre aquecido + picos diários das 7h30 às 17h30 em dias letivos. \\
+\zebra
+\textbf{4. API NestJS (\cd{2 vCPU}, \cd{min=1} a \cd{5})} &
+$\sim\text{US\$ } 95$ &
+$\sim\text{US\$ } 135$ &
+$\sim\text{US\$ } 110$ &
+CPU 100\% alocada (\cd{cpu\_idle=false}); Fargate exige mínimo de 4 GB RAM para 2 vCPU em \cd{sa-east-1}. \\
+\textbf{5. PostgreSQL 16 HA (2 vCPU, 8 GiB)} &
+$\sim\text{US\$ } 290$ &
+$\sim\text{US\$ } 310$ &
+$\sim\text{US\$ } 285$ &
+Instância dedicada com failover automático entre zonas (Regional HA / Multi-AZ) + 50 GB SSD + backups 30d. \\
+\zebra
+\textbf{6. Storage + CDN (4 buckets)} &
+$\sim\text{US\$ } 18$ &
+$\sim\text{US\$ } 22$ &
+$\sim\text{US\$ } 20$ &
+Bundles estáticos com cache longo (1 ano) e mídia otimizada em \cd{.webp}. \\
+\textbf{7. Fila de Telemetria + Logs} &
+$\sim\text{US\$ } 12$ &
+$\sim\text{US\$ } 18$ &
+$\sim\text{US\$ } 20$ &
+Pub/Sub + Cloud Logging (franquia inicial gratuita de 50 GiB/mês por projeto na GCP). \\
+\zebra
+\textbf{8. Runtime Agente Professor (\cd{min=1})} &
+$\sim\text{US\$ } 115$ &
+$\sim\text{US\$ } 110$ &
+$\sim\text{US\$ } 95$ &
+Contêiner Python aquecido (Agent Engine na GCP vs. ECS Fargate na AWS vs. ACA na Azure). \\
+\textbf{9. Índice RAG (BNCC + Acervo PDF)} &
+\textbf{$\sim\text{US\$ } 2$} &
+\textbf{$\sim\text{US\$ } 350$} \newline {\scriptsize (ou US\$ 5 c/ \cd{pgvector})} &
+\textbf{$\sim\text{US\$ } 75$} \newline {\scriptsize (ou US\$ 5 c/ \cd{pgvector})} &
+Vertex AI Search é 100\% serverless por query/GB; OpenSearch Serverless tem piso de OCUs; AI Search Basic é fixo. \\
+\midrule
+\rowcolor{unooBlueWash}
+\textbf{Subtotal Infraestrutura Fixa/Base} &
+\textbf{$\sim\text{US\$ } 602$} &
+\textbf{$\sim\text{US\$ } 1.110$} \newline {\scriptsize (\textbf{US\$ 765} c/ \cd{pgvector})} &
+\textbf{$\sim\text{US\$ } 747$} \newline {\scriptsize (\textbf{US\$ 677} c/ \cd{pgvector})} &
+Na GCP, o piso mensal por contrato é entre \textbf{20\% e 45\% menor} que nas concorrentes. \\
+\midrule
+\textbf{10. Consumo Variável de IA (10k alunos)} &
+$\sim\text{US\$ } 180\text{--}320$ &
+$\sim\text{US\$ } 210\text{--}390$ &
+$\sim\text{US\$ } 220\text{--}410$ &
+Governado pelo teto em \cd{ia\_quotas} e \cd{ajuda\_limites}; Gemini Flash e cache implícito reduzem custo na GCP. \\
+\midrule
+\headrow
+\thd{TCO Total Estimado / Contrato} &
+\thd{US\$ 780 -- 920} &
+\thd{US\$ 975 -- 1.500} &
+\thd{US\$ 895 -- 1.155} &
+\thd{Vantagem estrutural da GCP em multi-stack B2G} \\
+\end{tabularx}
+}
+
+\subsection{Três lições econômicas da tabela de TCO}
+
+\begin{enumerate}
+  \item \textbf{O efeito multiplicador em ambientes de ``Desenvolvimento'' e ``Homologação'':}
+  No ambiente \cd{dev} da GCP (\arq{envs/dev.tfvars}), o banco usa tier compartilhado (\cd{db-f1-micro}, sem HA), os contêineres permitem \cd{min\_instances = 0} ou \cd{1} leve, não há NAT Gateway pago por hora e o Vertex AI Search custa zero parado. Isso mantém o ambiente \cd{dev} da GCP em cerca de \textbf{US\$ 45 a US\$ 70/mês}. Na AWS, apenas ligar uma VPC com NAT Gateway Multi-AZ, um ALB e uma coleção OpenSearch Serverless em um ambiente de homologação já consumiria mais de \textbf{US\$ 400/mês antes do primeiro login}.
+
+  \item \textbf{Em AWS ou Azure, \cd{pgvector} no PostgreSQL é obrigatório para proteger a margem:}
+  Se um edital público exigir contratação em nuvem AWS ou Azure, \textbf{não se deve utilizar o Amazon OpenSearch Serverless} para o Agente do Professor. Ao armazenar os embeddings e metadados de página das habilidades BNCC e dos PDFs em tabelas \cd{pgvector} dentro do próprio RDS PostgreSQL / Azure Database for PostgreSQL já pago pelo contrato, economizam-se de US\$ 900 a US\$ 4.200 por ano por contrato.
+
+  \item \textbf{Direct VPC Egress vs. NAT Gateways:}
+  Na GCP, como a API e o Hub se comunicam apenas com o Cloud SQL (IP privado na VPC) e com APIs do Google (Vertex AI, Cloud Storage, Pub/Sub, Secret Manager --- todas alcançáveis via \emph{Private Google Access} gratuito), o custo de gateway NAT é virtualmente zero. Na AWS, a menos que se provisionem múltiplos \emph{VPC Interface Endpoints (PrivateLink)} --- que também cobram por hora e por AZ ---, todo o tráfego da API em subnet privada para o Bedrock, S3, SQS e HeyGen passa pelo \textbf{NAT Gateway} tarifado por hora e por GB processado.
+\end{enumerate}
+
+% =============================================================================
+\section{Operação por Uma Única Pessoa (Carga Cognitiva)}
+\label{sec:operacao-solo}
+
+A premissa organizacional da Plataforma Unooria (\emph{``Prazo: produção em novembro/2026. Uma pessoa desenvolve. Simplicidade $>$ sofisticação''}) torna a complexidade de manutenção tão importante quanto o custo financeiro. A Tabela~\ref{tab:carga-operacional} avalia o esforço diário de operação nos três provedores.
+
+{\footnotesize
+\begin{tabularx}{\textwidth}{@{}L{35mm}YYY@{}}
+\caption{Comparativo de carga cognitiva e complexidade operacional para um único desenvolvedor.}
+\label{tab:carga-operacional} \\
+\toprule
+\headrow
+\thd{Dimensão Operacional} &
+\thd{GCP (Atual)} &
+\thd{AWS} &
+\thd{Azure} \\
+\midrule
+\endfirsthead
+\toprule
+\headrow
+\thd{Dimensão Operacional} &
+\thd{GCP (Atual)} &
+\thd{AWS} &
+\thd{Azure} \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+\textbf{Quantidade de recursos no Terraform por contrato} &
+\textbf{$\sim 45$ recursos} (1 LB global, 2 Cloud Run services, 1 Job, 1 SQL, 4 buckets, 1 Pub/Sub, Agent Engine) &
+\textbf{$\sim 85$ a $100$ recursos} (VPC, 4+ Subnets, Route Tables, IGW, NAT GW, Security Groups, CloudFront, ALB, Target Groups, ECS Cluster, Task Defs, EventBridge Pipe) &
+\textbf{$\sim 55$ a $65$ recursos} (VNet, Subnets, Front Door, ACA Environment, 2 Container Apps, 1 ACA Job, Flexible Server, 4 Containers Blob, Event Grid) \\
+\zebra
+\textbf{Túnel de manutenção ao banco de dados} &
+\textbf{1 comando CLI} (\cd{gcloud compute ssh --tunnel-\B through-iap}) sem gerenciar chaves SSH &
+\textbf{1 comando CLI} (\cd{aws ssm start-session} c/ port forwarding) sem chaves SSH &
+Exige subir VM de salto + \textbf{Azure Bastion} ou abrir regra temporária de firewall \\
+\textbf{Acesso da API às ferramentas de IA e Storage} &
+\textbf{1 único mecanismo IAM} (ADC via Service Account da revisão Cloud Run para SQL, GCS, Pub/Sub e Vertex AI) &
+\textbf{IAM Task Role} unificada (SigV4 para S3, SQS e Bedrock), mas exige conciliar Security Groups de rede + políticas de bucket &
+\textbf{Managed Identity} unificada (Entra ID RBAC para Blob, Event Grid e Azure OpenAI) \\
+\zebra
+\textbf{Deploy e Rollback de código backend} &
+Revisões imutáveis nativas no Cloud Run (rollback de tráfego em \textbf{5 segundos}) &
+Nova revisão de Task Definition + rolling update no ECS (\textbf{2 a 4 minutos}) &
+Revisões imutáveis nativas no Container Apps (rollback em \textbf{10 segundos}) \\
+\end{tabularx}
+}
+
+% =============================================================================
+\section{Matriz de Portabilidade e Esforço de Migração (Lock-in)}
+\label{sec:matriz-migracao}
+
+Para responder com precisão à pergunta \emph{``quanto custaria, em dias de engenharia, portar a Plataforma Unooria hoje para a AWS ou para a Azure?''}, a Tabela~\ref{tab:matriz-portabilidade} classifica cada parte do sistema pelo seu grau real de acoplamento à GCP.
+
+{\footnotesize
+\begin{tabularx}{\textwidth}{@{}L{34mm}L{25mm}YR{22mm}@{}}
+\caption{Matriz de acoplamento (lock-in) e esforço estimado de engenharia para migrar a plataforma para AWS ou Azure.}
+\label{tab:matriz-portabilidade} \\
+\toprule
+\headrow
+\thd{Componente / Repo} &
+\thd{Acoplamento} &
+\thd{O que precisa ser alterado para rodar em AWS ou Azure} &
+\thd{Esforço} \\
+\midrule
+\endfirsthead
+\toprule
+\headrow
+\thd{Componente / Repo} &
+\thd{Acoplamento} &
+\thd{O que precisa ser alterado para rodar em AWS ou Azure} &
+\thd{Esforço} \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+\textbf{Hub Web} \newline (\cd{apps/hub}, Next.js, OIDC/JWKS) &
+\textbf{Zero} \newline (100\% portável) &
+Nenhuma linha de código. O Dockerfile standalone, a assinatura RS256 dos tokens de experiência e o cliente OIDC funcionam identicamente em ECS Fargate ou Azure Container Apps. &
+\textbf{0 dias} \\
+\zebra
+\textbf{Experiências e Pacotes} \newline (\cd{apps/experiencias/*}, \cd{sdk}, \cd{ui}) &
+\textbf{Zero} \newline (100\% portável) &
+Nenhuma linha de código nas experiências. Apenas ajustar os scripts \arq{scripts/publicar-\B experiencia.mjs} e \arq{publicar-\B manifesto.mjs} para suportar \cd{aws s3 sync} ou \cd{az storage blob sync} além de \cd{gcloud storage}. &
+\textbf{0,5 dia} \\
+\textbf{Banco, RLS e Prisma} \newline (\cd{apps/api/prisma}) &
+\textbf{Zero} \newline (100\% portável) &
+Nenhuma linha de SQL ou schema. O PostgreSQL 16 puro com Row-Level Security (\cd{app.current\_escola\_id}) e \cd{comTenancy} roda sem alterações no Amazon RDS ou no Azure Database for PostgreSQL. &
+\textbf{0 dias} \\
+\zebra
+\textbf{Storage e Telemetria} \newline (\cd{storage}, \cd{telemetry}) &
+\textbf{Baixo} \newline (Isolado em serviços) &
+Substituir o SDK \cd{@google-cloud/storage} pelo \cd{@aws-sdk/client-s3} (ou \cd{@azure/storage-blob}) nos módulos de planos/geração, e adaptar o publicador de telemetria (\cd{@google-cloud/pubsub} \seta{} SQS ou Event Grid). O endpoint receptor \cd{POST /telemetry/worker} permanece igual. &
+\textbf{1,5 a 2 dias} \\
+\textbf{Camada de Modelos IA} \newline (\cd{apps/api/src/ai/}) &
+\textbf{Baixo a Médio} \newline (Plugável via DI) &
+Criar \cd{BedrockAiProvider} ou \cd{AzureOpenAiProvider} implementando a interface existente \cd{AiProvider}. O \cd{MedidorDeProvider} e o \cd{QuotaService} não mudam. Na AWS, adicionar concatenação de turnos para o Polly TTS; na Azure, adicionar crop \cd{4:5} no \cd{sharp} para imagens. &
+\textbf{2 a 3 dias} \\
+\zebra
+\textbf{Mascote Voz Ao Vivo} \newline (\cd{mascote-live.\B gateway.ts}) &
+\textbf{Médio} \newline (Protocolo WSS) &
+Adaptar o proxy WebSocket em \arq{apps/api/src/ajuda/mascote-live.gateway.ts} para traduzir os pacotes de áudio PCM 16/24 kHz para a \textbf{GPT-4o Realtime API} (muito similar na Azure) ou para o stream bidirecional do \textbf{Amazon Nova Sonic} (na AWS). &
+\textbf{2 a 3 dias} \\
+\textbf{Infra como Código} \newline (Repo \cd{Fundacao}) &
+\textbf{Alto} \newline (Específico da nuvem) &
+Escrever um novo módulo raiz de Terraform para AWS ou Azure espelhando as variáveis de \arq{variables.tf} e os ambientes \cd{dev}/\cd{prd}, mais atualização dos workflows de deploy no GitHub Actions (OIDC federado). &
+\textbf{5 a 7 dias} \\
+\zebra
+\textbf{Agente do Professor} \newline (\cd{apps/agente-\B professor}) &
+\textbf{Alto} \newline (ADK + Agent Engine + Search) &
+Portar a definição do agente do Google ADK para LangGraph / Strands / Semantic Kernel, reescrever \arq{agent-engine.client.ts} na API e migrar a ingestão/consulta das habilidades BNCC e dos PDFs paginados para \textbf{Azure AI Search} ou \textbf{PostgreSQL \cd{pgvector}}. &
+\textbf{5 a 8 dias} \\
+\midrule
+\rowcolor{unooBlueWash}
+\textbf{Total para Migração Completa} &
+\textbf{Arquitetura desacoplada} &
+85\% do código do monorepo (Hub, Experiências, SDK, Design System, Regras de Negócio e Banco RLS) possui \textbf{zero lock-in}. Todo o esforço concentra-se no Terraform, nos adapters de IA/Storage e no Agente do Professor. &
+\textbf{16 a 23 dias úteis} \\
+\end{tabularx}
+}
+
+% =============================================================================
+\section{Conclusão e Diretriz Arquitetural}
+\label{sec:conclusao-comparativo}
+
+A análise detalhada dos quatro eixos confirma que \textbf{a escolha da Google Cloud Platform (GCP) para a Plataforma Unooria é tecnicamente e economicamente superior para o contexto atual do negócio}:
+
+\begin{enumerate}
+  \item \textbf{Aderência nativa aos 4 eixos com menor complexidade operacional:} o par \textbf{Cloud Run v2} (\cd{cpu\_idle = false}, \cd{timeout = 3600s}, scale-out em segundos) + \textbf{Cloud Run Jobs} resolve tanto o Hub quanto o backend monolítico da API sem a sobrecarga de rede e lentidão de escalonamento do ECS Fargate na AWS.
+  \item \textbf{Vantagem decisiva no Eixo de IA e RAG:} a combinação de \textbf{Vertex Gemini 3.6/3.7 Flash} (saída de 64k tokens, controle de \cd{thinkingBudget}, cache implícito de 65k tokens, imagens \cd{4:5} nativas e TTS multi-locutor em chamada única), \textbf{Vertex AI Agent Engine} (hospedagem do agente Python com sessão embutida sem banco extra), \textbf{Vertex AI Search} (Layout Parser com \cd{pageSpan} e custo fixo zero) e \textbf{Vertex Gemini Live} entrega capacidades que, na AWS ou na Azure, exigiriam costurar múltiplos serviços distintos e assumir pisos mensais fixos mais altos.
+  \item \textbf{Portabilidade preservada como seguro estratégico:} graças às decisões de engenharia já tomadas no monorepo --- PostgreSQL puro com RLS, autenticação OIDC padrão, experiências estáticas desacopladas e interface \cd{AiProvider} plugável ---, cerca de \textbf{85\% da base de código não sabe em qual nuvem está rodando}. Caso um contrato governamental específico exija implantação em \textbf{Azure} (a segunda colocada em aderência operacional, graças ao \textbf{Azure Container Apps} e à \textbf{GPT-4o Realtime API}) ou em \textbf{AWS} (via \textbf{ECS Fargate} + \textbf{RDS PostgreSQL com \cd{pgvector}}), a migração completa é executável em cerca de 3 a 4 semanas de engenharia sem alterar nenhuma tela, experiência ou regra de negócio.
+\end{enumerate}

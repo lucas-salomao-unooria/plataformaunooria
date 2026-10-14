@@ -1,0 +1,143 @@
+% =============================================================================
+% CAPÍTULO 5 — Eixo 3: API (Backend Único, Jobs, Filas e Tempo Real)
+% =============================================================================
+\chapter{Eixo 3 --- API (\texttt{apps/api})}
+\label{cap:eixo-api}
+
+\begin{fichaeixo}{Ficha do Eixo 3 --- API (\texttt{apps/api}: Backend Único, Jobs, SSE e WebSockets)}
+\begin{campos}
+  \item[Serviços no código] \arq{apps/api/src/*} (17 módulos de domínio) e job de migração \arq{prisma migrate deploy}.
+  \item[Arquivos Terraform] \arq{cloudrun.tf}, \arq{iam.tf}, \arq{network.tf} e \arq{variables.tf}.
+  \item[Dimensionamento atual] 2 vCPU, 2 GiB RAM (\cd{sharp} + Prisma Client), \cd{min=1}, \cd{max=5}, concorrência 80, CPU sempre alocada (\cd{cpu\_idle = false}).
+  \item[Aderência por nuvem] \sgcp~\nativo \quad \saws~\equivalente\ (ECS Fargate) / \incompativel\ (Lambda) \quad \sazure~\nativo\ (Container Apps)
+\end{campos}
+\end{fichaeixo}
+
+Por decisão arquitetural deliberada (ADR-01 e regra \emph{``Não criar serviço Cloud Run novo sem necessidade demonstrada''}), a \arq{apps/api} concentra \textbf{todos} os papéis de backend da plataforma em um único artefato implantável: API REST síncrona, receptor de \emph{push} da fila de telemetria, proxy e orquestrador de chamadas de IA, processador de geração assíncrona em segundo plano (após responder \cd{HTTP 202}) e servidor de conexões persistentes (SSE e WebSockets bidirecionais de até 60 minutos).
+
+Essa consolidação reduz drasticamente o custo operacional para uma equipe de uma única pessoa, mas impõe quatro requisitos técnicos severos ao serviço de hospedagem de contêineres da nuvem escolhida --- requisitos que eliminam imediatamente plataformas de funções efêmeras (\emph{Function-as-a-Service} como AWS Lambda ou Azure Functions).
+
+% =============================================================================
+\section{Por que a API não cabe em FaaS (Lambda / Functions)}
+\label{sec:api-requisitos-computacao}
+
+Antes de comparar os serviços de cada provedor, é essencial documentar os quatro comportamentos reais do código de \arq{apps/api/} que determinam o modelo de computação:
+
+\begin{enumerate}
+  \item \textbf{CPU sempre alocada fora do ciclo de requisição HTTP (\cd{cpu\_idle = false}):}
+  Em dois fluxos críticos --- a geração de planos de aula com IA (\arq{apps/api/src/planos/}) e a geração de pacotes de missões inéditas (\arq{apps/api/src/geracao/}) --- a rota HTTP grava o registro inicial com status \cd{gerando}, devolve \textbf{\cd{HTTP 202 Accepted}} imediatamente ao navegador e dispara a execução pesada de forma assíncrona no mesmo processo Node.js (\cd{void this.processarEmBackground(...)}). Em ambientes onde a CPU é congelada no instante em que a resposta HTTP é enviada (comportamento padrão do AWS Lambda e do modo \emph{request-based} do Cloud Run), a geração simplesmente para no meio ou leva minutos para avançar poucos milissegundos de CPU.
+
+  \item \textbf{Memória nativa para processamento de imagem (\cd{sharp}) e Prisma Client (2 GiB RAM):}
+  Quando a IA gera ilustrações de capa ou de etapas pedagógicas, a API recebe os bytes brutos e executa conversão em memória para \cd{.webp} (qualidade 85) via \cd{sharp} (biblioteca C++ \emph{libvips}) antes de gravar no bucket \cd{-assets}, mantendo simultaneamente o motor Rust/N-API do Prisma Client e buffers de áudio PCM. O consumo em pico exige \textbf{2 vCPU e 2 GiB de RAM} por réplica.
+
+  \item \textbf{Streaming SSE de longa duração (até 300 segundos) sem bufferização:}
+  As rotas do Agente de IA do Professor (\cd{POST /agente-professor/conversas/:id/mensagens}) e o endpoint de LLM customizado consumido pelo HeyGen LiveAvatar (\cd{POST /ajuda/llm/chat/completions}) mantêm streams \cd{text/event-stream} abertos por vários minutos. No caso do LiveAvatar, se o primeiro chunk SSE demorar mais de 10 segundos (\emph{Time-To-First-Token}), o provedor de vídeo aborta a sessão --- razão pela qual a API emite uma \cd{FALA\_DE\_ESPERA} em 7 segundos caso o Gemini ainda esteja raciocinando. Se o proxy reverso da nuvem retiver chunks em buffer (comportamento de certos gateways serverless), a fala de espera não chega a tempo e o avatar cai.
+
+  \item \textbf{WebSockets bidirecionais de até 60 minutos (\cd{timeout = 3600s}):}
+  A API sustenta dois canais WebSocket de longa duração:
+  \begin{itemize}
+    \item \textbf{Mascote com Voz Ao Vivo (\cd{/ajuda/mascote/ao-vivo}, ADR-158):} o navegador transmite áudio PCM 16 kHz pelo WebSocket até a API, que mantém um segundo WebSocket persistente com o \textbf{Vertex Gemini Live} (\cd{BidiGenerateContent}) e devolve áudio PCM 24 kHz em tempo real, com orçamento de até 30 minutos contínuos.
+    \item \textbf{Unoocraft Multiplayer (\arq{apps/api/src/unoocraft/}):} servidor Socket.IO embutido na API para sincronização de estado das salas multijogador da turma, exigindo timeout de conexão de até 3600 segundos e roteamento com afinidade de sessão (\emph{sticky sessions}) quando há mais de uma réplica ativa.
+  \end{itemize}
+\end{enumerate}
+
+% =============================================================================
+\section{Peças Arquiteturais do Eixo API}
+\label{sec:pecas-api}
+
+% -----------------------------------------------------------------------------
+\begin{pecaarq}{API-01}{Computação do Backend (\texttt{apps/api}) --- CPU Alocada e Concorrência}{\sgcp~\nativo\enspace\saws~\equivalente\enspace\sazure~\nativo}
+\begin{campos}
+  \item[Configuração GCP] \cd{google\_cloud\_run\_v2\_service.api} (\arq{cloudrun.tf}): \cd{cpu = "2"}, \cd{memory = "2Gi"}, \cd{cpu\_idle = false}, \cd{min\_instance\_count = 1}, \cd{max\_instance\_count = 5}, \cd{max\_instance\_request\_concurrency = 80}, \cd{timeout = "900s"} (expansível até \cd{"3600s"}), \cd{startup\_cpu\_boost = true}.
+  \item[Sondas de saúde] \cd{startup\_probe} e \cd{liveness\_probe} HTTP em \cd{GET /health} (porta 3001).
+  \item[Como é hoje (GCP)] O Cloud Run v2 combina a simplicidade de um PaaS serverless (deploy de imagem em 15 segundos, revisões imutáveis, tráfego dividido para rollback imediato) com controle fino do ciclo de vida da CPU. Ao definir \cd{cpu\_idle = false}, as réplicas ativas mantêm as 2 vCPUs 100\% disponíveis tanto durante as 80 requisições simultâneas quanto nos intervalos entre elas, garantindo que as tarefas em segundo plano (\cd{HTTP 202}) terminem em segundos. O faturamento de 1 réplica mínima aquecida 24x7 com CPU sempre alocada fica em torno de US\$ 68/mês em \cd{southamerica-east1}, escalando até 5 réplicas apenas durante o pico escolar das 8h da manhã.
+  \item[Alternativas AWS] Na AWS, existem três candidatos com comportamentos muito distintos para o perfil da \arq{apps/api}:
+  \begin{itemize}
+    \item \textbf{AWS Lambda (\incompativel):} Inviável sem reescrever a arquitetura da API. O limite máximo inegociável de execução é de 15 minutos (quebrando sessões de 30--60 minutos do Mascote Ao Vivo e do Unoocraft), o modelo congela o processo imediatamente após o retorno do \cd{HTTP 202} (travando a geração de planos de aula e missões), e WebSockets exigem o \textbf{API Gateway WebSocket API}, que não mantém conexão TCP direta com o processo Node.js (transforma cada frame WS em uma invocação HTTP separada, incompatível com o proxy stateful do Gemini Live e com o Socket.IO em memória).
+    \item \textbf{AWS App Runner (\adaptacao):} Mais próximo da experiência do Cloud Run, mas apresenta limitações severas para a Unooria: o timeout máximo de requisição no ingress Envoy do App Runner historicamente trava em 120 segundos (insuficiente para streams SSE longos e conexões WebSocket de 60 minutos), não possui recurso nativo de \emph{one-off Job} para rodar migrações do banco (\cd{prisma migrate deploy}) e exige configurações extras para coexistir atrás de um mesmo ALB.
+    \item \textbf{Amazon ECS on AWS Fargate (\equivalente\ --- Recomendado na AWS):} É a escolha tecnicamente sólida na AWS. Uma \emph{Task Definition} Fargate com \cd{2 vCPU} e \cd{4 GB RAM} (o Fargate exige no mínimo 4 GB para 2 vCPU) tem CPU sempre alocada por natureza, sustenta centenas de conexões concorrentes no mesmo processo Node.js e integra-se nativamente ao Application Load Balancer (ALB). O ponto de atenção é operacional: o escalonamento horizontal do ECS Fargate baseado em métricas do CloudWatch é significativamente mais lento que o do Cloud Run (leva de 90 a 180 segundos para provisionar e registrar uma nova Task no Target Group durante a rampa das 8h da manhã, contra 5 a 10 segundos no Cloud Run).
+  \end{itemize}
+  \item[Equivalente Azure] O \textbf{Azure Container Apps (ACA)} no perfil de carga \emph{Consumption} (ou \emph{Dedicated}) é o equivalente direto (\nativo) do Cloud Run. Enquanto uma réplica está ativa (\cd{minReplicas = 1}), a CPU permanece alocada ao contêiner sem congelamento pós-resposta HTTP, permitindo que as rotinas \cd{HTTP 202} rodem normalmente. O escalonamento via KEDA responde rapidamente a regras de concorrência HTTP (\cd{concurrentRequests = "80"}), e as sondas \cd{startupProbe} e \cd{livenessProbe} mapeiam 1:1 com a declaração atual.
+\end{campos}
+\end{pecaarq}
+
+% -----------------------------------------------------------------------------
+\begin{pecaarq}{API-02}{Conexões de Longa Duração: SSE, WebSockets (60 min) e Afinidade}{\sgcp~\nativo\enspace\saws~\equivalente\enspace\sazure~\nativo}
+\begin{campos}
+  \item[Rotas críticas] SSE: \cd{/agente-professor/*}, \cd{/ajuda/llm/chat/completions}. WebSockets: \cd{/ajuda/mascote/ao-vivo} (voz PCM bidirecional) e \cd{/socket.io/*} (Unoocraft).
+  \item[Requisitos de rede] Desativação de bufferização de resposta no proxy, timeout de inatividade/conexão $\ge 3600\text{s}$ e \emph{session affinity} para Socket.IO.
+  \item[Como é hoje (GCP)] O Cloud Load Balancing Global em conjunto com o Cloud Run suporta upgrade HTTP/1.1 \cd{Connection: Upgrade} (WebSockets) e streaming SSE sem bufferização intermediária (desde que o Cloud CDN esteja desabilitado no Backend Service da API, como já configurado em \arq{loadbalancer.tf}). O timeout do serviço Cloud Run permite até \textbf{3600 segundos} (60 minutos), e a afinidade de sessão garante que os pacotes de reconexão do Socket.IO atinjam a mesma instância.
+  \item[Equivalente AWS] No par \textbf{ALB + ECS Fargate}, tanto SSE quanto WebSockets funcionam de maneira nativa e estável, mas exigem três ajustes obrigatórios no Terraform da AWS (sem os quais as conexões caem aos 60 segundos):
+  \begin{enumerate}
+    \item Elevar o \cd{idle\_timeout} do Application Load Balancer do padrão de \cd{60} segundos para \textbf{\cd{3600}} segundos (o ALB suporta até 4000 segundos).
+    \item Habilitar \textbf{Stickiness} (afinidade por cookie gerenciado pelo ALB ou duração de sessão) no \emph{Target Group} da API para que o handshake do Socket.IO e o upgrade WebSocket não caiam em Tasks Fargate diferentes quando \cd{desired\_count > 1}.
+    \item Configurar \cd{deregistration\_delay.timeout\_seconds} no Target Group para pelo menos \cd{300} segundos, evitando que o desligamento de uma Task corte abruptamente uma sessão ativa de voz com o mascote ou uma aula com o Agente do Professor.
+  \end{enumerate}
+  \item[Equivalente Azure] O ingress Envoy do \textbf{Azure Container Apps} suporta nativamente WebSockets e streaming SSE, além de oferecer afinidade de sessão embutida (\cd{stickySessions.affinity = "sticky"}). Quando exposto atrás do \textbf{Azure Application Gateway} (ou Front Door), ajusta-se o \emph{Request Timeout} para \cd{3600} segundos (no Front Door padrão, onde há limite de 240 segundos de inatividade por pacote, os \emph{heartbeats} WS e comentários SSE \cd{: keepalive} enviados a cada 30 segundos pela API mantêm o túnel aberto).
+\end{campos}
+\end{pecaarq}
+
+% -----------------------------------------------------------------------------
+\begin{pecaarq}{API-03}{Job de Migração de Banco (\texttt{prisma migrate deploy})}{\sgcp~\nativo\enspace\saws~\equivalente\enspace\sazure~\nativo}
+\begin{campos}
+  \item[Configuração GCP] \cd{google\_cloud\_run\_v2\_job.migrate} (\arq{cloudrun.tf}): mesma imagem da API, comando \cd{["pnpm", "--filter", "@edu/api", "prisma", "migrate", "deploy"]}, 1 vCPU / 1 GiB RAM, \cd{max\_retries = 0}, \cd{timeout = "600s"}.
+  \item[Como é hoje (GCP)] Para nunca executar \cd{prisma migrate deploy} no \cd{entrypoint} das réplicas web (o que causaria corrida de locks no PostgreSQL quando múltiplas réplicas subissem juntas e atrasaria o \cd{startup\_probe}), a fundação separa a migração em um \textbf{Cloud Run Job} (\cd{\{contrato\}-migrate}). O pipeline de CI/CD atualiza a imagem do Job, dispara \cd{gcloud run jobs execute --wait} dentro da VPC e só promove o tráfego da API se o Job terminar com código \cd{0}.
+  \item[Equivalente AWS] Utiliza-se o \textbf{Amazon ECS RunTask} (Standalone Task). Define-se uma \cd{aws\_ecs\_task\_definition} dedicada para migração (1 vCPU, 2 GB RAM, comando sobrescrito para \cd{prisma migrate deploy}, anexada às subnets privadas e ao Security Group do RDS). No deploy, a GitHub Action invoca \cd{aws ecs run-task} seguido de \cd{aws ecs wait tasks-stopped} e verifica o \cd{exitCode} do contêiner antes de atualizar o serviço principal no ECS.
+  \item[Equivalente Azure] O \textbf{Azure Container Apps Jobs} (\cd{azurerm\_container\_app\_job} com \cd{trigger\_type = "Manual"}, \cd{replica\_timeout\_in\_seconds = 600} e \cd{replica\_retry\_limit = 0}) é idêntico ao Cloud Run Jobs em semântica, declaração Terraform e disparo via CLI (\cd{az containerapp job start --wait}).
+\end{campos}
+\end{pecaarq}
+
+% -----------------------------------------------------------------------------
+\begin{pecaarq}{API-04}{Processamento em Background (\texttt{HTTP 202}) vs. Filas Dedicadas}{\sgcp~\nativo\enspace\saws~\equivalente\enspace\sazure~\nativo}
+\begin{campos}
+  \item[Fluxos na API] Planos de aula (\cd{POST /planos/gerar}) e pacotes de missões (\cd{POST /geracao/pacotes}).
+  \item[Mecanismo atual] Execução assíncrona no próprio processo com \cd{cpu\_idle = false} + recuperação automática de registros órfãos em \cd{gerando} há mais de 10 minutos.
+  \item[Análise nos 3 provedores] Tanto no Cloud Run (\cd{cpu\_idle = false}) quanto no ECS Fargate e no Azure Container Apps, o padrão atual --- disparar a promessa assíncrona no processo da API após responder \cd{HTTP 202} e consultar o status por polling no Hub --- funciona sem necessidade de criar um serviço worker separado. Caso um deploy ou desligamento de réplica interrompa uma geração em andamento, a própria API detecta registros presos no estado \cd{gerando} além do limite de tempo (10 minutos) e permite a retentativa limpa pelo professor. No estágio atual de 10 mil estudantes por contrato, manter tudo no mesmo serviço da API permanece a decisão correta em qualquer uma das três nuvens.
+\end{campos}
+\end{pecaarq}
+
+% =============================================================================
+\section{Síntese Comparativa do Eixo API}
+
+\begin{table}[H]
+\centering
+\begin{tabularx}{\textwidth}{@{}L{34mm}YYY@{}}
+\toprule
+\headrow
+\thd{Requisito da API} &
+\thd{GCP (Cloud Run v2)} &
+\thd{AWS (ECS Fargate + ALB)} &
+\thd{Azure (Container Apps)} \\
+\midrule
+\textbf{CPU ativa pós-\cd{HTTP 202}} &
+Sim (\cd{cpu\_idle = false}) &
+Sim (nativo da Task Fargate) &
+Sim (réplica ativa mantém CPU) \\
+\zebra
+\textbf{Dimensionamento unitário} &
+2 vCPU / 2 GiB RAM &
+2 vCPU / 4 GB RAM (mínimo Fargate p/ 2 vCPU) &
+2 vCPU / 4 GiB RAM (perfil Consumption) \\
+\textbf{Concorrência por réplica} &
+Até 80 req/instância (configurável até 1000) &
+Ilimitada pelo Fargate (governada pelo Node.js e CPU) &
+Regra KEDA HTTP (\cd{concurrentRequests = 80}) \\
+\zebra
+\textbf{Velocidade de scale-out} &
+\textbf{5 a 15 segundos} (revisão pré-aquecida no pool Google) &
+\textbf{90 a 180 segundos} (pull da imagem + ENI + health check ALB) &
+\textbf{15 a 35 segundos} (provisionamento de pod no ACA) \\
+\textbf{Timeout máximo (WS / SSE)} &
+\textbf{3.600 s} (60 min) nativo no serviço &
+\textbf{4.000 s} no ALB (\cd{idle\_timeout} ajustado) &
+\textbf{3.600 s+} no ACA / App Gateway (heartbeat p/ Front Door) \\
+\zebra
+\textbf{Migração (\cd{prisma migrate})} &
+Cloud Run Job (\cd{--wait}) &
+ECS Standalone Task (\cd{run-task} + \cd{wait}) &
+Container Apps Job (\cd{job start --wait}) \\
+\bottomrule
+\end{tabularx}
+\caption{Comparativo técnico de execução do backend monolítico (\texttt{apps/api}) nas três nuvens.}
+\label{tab:comparativo-eixo-api}
+\end{table}
