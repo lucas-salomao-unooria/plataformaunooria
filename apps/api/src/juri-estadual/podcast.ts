@@ -8,9 +8,10 @@ import type { FalaDoPodcast, FalasDoTema, PedidoDeVoz, TrechoDoRoteiro, VagaDoTe
  * para não contradizer a missão:
  *
  * - **nenhum número cravado**: "escondeu os outros 12 projetos" e "três quartos
- *   de uma feira" contradiziam a taxa REAL, que é de cada computador (com duas
- *   curtidas na mesma área, 9 de 16 ficam ocultos). O texto diz "os projetos
- *   das outras áreas" e "mais da metade de uma feira";
+ *   de uma feira" contradiziam a mostra (hoje de quarenta: 30 ficam fora do
+ *   feed de dez, e quem parou antes pelos 8 minutos vê mais). O texto diz "os
+ *   projetos das outras áreas" e "mais da metade de uma feira" — verdade para
+ *   toda criança;
  * - **o app é o Unoovista**, e não o `instanooria`; e "da Unooria" sai de dentro
  *   da ficção: é o podcast da Mostra Estadual de Projetos;
  * - **as áreas que o Rafa curtiu não estão no texto fixo** ("plantas e
@@ -136,11 +137,12 @@ export const VAGAS_DO_PODCAST: readonly VagaDoTema[] = [
 /**
  * As três falas do BANCO PADRÃO (PRD v2, RF-008), com os estandes que ELE tem.
  * O sheet (aud-exp06ef1b-01) citava o "robô dos bueiros", "hortas" e "drones",
- * que não estão entre os dezesseis: a turma ouviria falar de projetos que nunca
+ * que não estão no banco: a turma ouviria falar de projetos que nunca
  * viu, logo depois de conferir a mostra inteira na Galeria Oculta. Ficaram a
  * forma e o tom do sheet, trocando os projetos pelos reais: proj-a3 (alarme de
  * enchente) contra proj-b2 (composteira da merenda); Rafa vê b1/b4/b3, e a mesa
- * ao lado a1/a2/a4. Com elas, o roteiro inteiro é o `ROTEIRO_DO_BANCO_PADRAO`.
+ * ao lado a1/a2/a4 — todos entre os projetos 1 a 4 de cada área, que o banco de
+ * quarenta mantém com o mesmo id e o mesmo texto. Com elas, o roteiro inteiro é o `ROTEIRO_DO_BANCO_PADRAO`.
  * Numa mostra da IA, só chegam à tela quando a IA não responde, com o aviso
  * para reescrever. Aprovação do PO: card "Missão 6º ano 1º B", item 5.
  */
@@ -157,8 +159,8 @@ export const FALAS_DO_TEMA_PADRAO: FalasDoTema = {
  * são os do banco (`FALAS_DO_TEMA_PADRAO`), o nome do app com maiúscula
  * (Unoovista) e NENHUM número cravado — "os outros 12 projetos" e "três
  * quartos" viraram "os projetos das outras áreas" e "mais da metade", porque a
- * taxa é de cada computador (quem curte fica com 11 de 16 fora, 69%) e a tela
- * da criança já mostra a dela.
+ * tela da criança já mostra o número dela (30 de 40 com o feed inteiro; mais,
+ * se o feed parou pelos 8 minutos) e, na galeria, o que sumiu por área.
  */
 const ROTEIRO_DO_BANCO_PADRAO: Record<(typeof BLOCOS_DO_PODCAST)[number], readonly FalaDoPodcast[]> = {
   abertura: [

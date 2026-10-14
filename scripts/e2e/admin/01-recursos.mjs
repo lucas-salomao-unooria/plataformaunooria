@@ -1,4 +1,4 @@
-import { HUB, suite } from "../lib/roteiro.mjs";
+import { BFF, HUB, suite } from "../lib/roteiro.mjs";
 import { conta, senhaDemo } from "../lib/credenciais.mjs";
 import { ALERTA_DE_ERRO, esperarOuFalharCedo } from "../lib/smoke.mjs";
 
@@ -79,6 +79,7 @@ await suite(
       "A janela de versão mostra o histórico publicado e diz quando a experiência está em rollback",
       "O histórico registra cada mudança com o motivo e o nome de quem a fez — e sem UPDATE possível",
       "A REDE lê o histórico dela em /admin/recursos, e não alcança nenhuma escrita (403)",
+      "As imagens do banco padrão do Júri Estadual: a tela do admin com o progresso “X de 40”, uma aba por área — e o professor recebe 403",
     ],
     comando: "node scripts/e2e/admin/01-recursos.mjs",
   },
@@ -379,5 +380,118 @@ await suite(
 
     await janela.getByRole("button", { name: "Fechar", exact: true }).click();
     await p.waitForTimeout(400);
+
+    // ── as imagens do banco padrão do Júri Estadual (exp06ef1b) ─────────
+    /* Conteúdo de PRODUTO, o mesmo para toda rede: o cartão fica no fim de
+       Recursos, fora do escopo do painel. Uma imagem por projeto do banco
+       padrão (40), gerada uma vez pela conta da Unooria; o storage é o
+       registro. A suíte prova a tela, o progresso e a guarda de papel. GERAR
+       custa (IA real, e as 40 levam minutos): a rodada de geração — UMA ida,
+       até quatro imagens — só roda com `E2E_GERAR_IMAGENS_DO_JURI=1`. */
+    await p.goto(`${HUB}/unooria/recursos`, { waitUntil: "domcontentloaded" });
+    const cartaoDoBanco = cartao(p, "Conteúdo padrão das missões");
+    await cartaoDoBanco.waitFor({ timeout: 30_000 });
+    const linkDoBanco = cartaoDoBanco.locator('a[href="/unooria/recursos/imagens-do-juri"]');
+    r.exigir(
+      (await linkDoBanco.count()) === 1,
+      "Recursos tem o cartão “Conteúdo padrão das missões” com o caminho para as imagens do banco do Júri",
+    );
+    await linkDoBanco.click();
+    await p.waitForURL("**/unooria/recursos/imagens-do-juri", { timeout: 30_000 });
+    const telaDoBanco = p.locator("[data-imagens-do-banco-do-juri]");
+    await esperarOuFalharCedo(telaDoBanco, p.locator(ALERTA_DE_ERRO), {
+      timeout: 60_000,
+      oQue: "a tela das imagens do banco padrão do Júri",
+    });
+    const lerBanco = async (pagina) => {
+      const resposta = await pagina.request.get(`${BFF}/juri-estadual/banco-padrao/imagens`);
+      return { status: resposta.status(), corpo: await resposta.json().catch(() => null) };
+    };
+    const banco = await lerBanco(p);
+    r.exigir(
+      banco.status === 200 && banco.corpo?.total === 40 && banco.corpo.prontas + banco.corpo.faltam.length === 40,
+      `a api do banco padrão responde ao admin: ${banco.corpo?.prontas} de ${banco.corpo?.total} prontas, ${banco.corpo?.faltam?.length} faltando (HTTP ${banco.status})`,
+    );
+    const progressoNaTela = `${banco.corpo?.prontas} de ${banco.corpo?.total}`;
+    r.exigir(
+      (await telaDoBanco.getByRole("heading", { name: "Imagens do banco padrão do Júri Estadual" }).count()) > 0 &&
+        (await telaDoBanco.getByText(progressoNaTela).count()) > 0,
+      `a tela “Imagens do banco padrão do Júri Estadual” mostra o progresso da api: “${progressoNaTela}”`,
+    );
+    const gerarBanco = telaDoBanco.getByRole("button", { name: "Gerar as imagens que faltam" });
+    r.exigir(
+      (await gerarBanco.count()) === 1 && (await gerarBanco.isDisabled()) === Boolean(banco.corpo?.completo),
+      `o botão “Gerar as imagens que faltam” existe, e só fica desligado com as 40 prontas (completo=${banco.corpo?.completo})`,
+    );
+    /* Só a aba aberta é desenhada: a prova dos 40 anda pelas quatro. */
+    const abasDoBanco = telaDoBanco.getByRole("tab");
+    const porAba = [];
+    for (let i = 0; i < (await abasDoBanco.count()); i += 1) {
+      await abasDoBanco.nth(i).click();
+      await p.waitForFunction((el) => el.getAttribute("aria-selected") === "true", await abasDoBanco.nth(i).elementHandle(), {
+        timeout: 10_000,
+      });
+      porAba.push({
+        rotulo: (await abasDoBanco.nth(i).innerText()).replace(/\s+/g, " ").trim().replace(/^add /, ""),
+        itens: await telaDoBanco.locator("[data-imagem-do-banco]").count(),
+      });
+    }
+    if (porAba.length > 0) await abasDoBanco.first().click();
+    r.exigir(
+      porAba.length === 4 && porAba.every((a) => a.itens === 10),
+      `a grade tem uma aba por área, dez projetos em cada (${porAba.map((a) => `${a.rotulo} → ${a.itens}`).join("; ")})`,
+    );
+    await r.registrar(p, "imagens-do-banco-do-juri", {
+      titulo: "As imagens do banco padrão do Júri Estadual",
+      mostra:
+        `Recursos › Imagens do banco padrão do Júri Estadual: o progresso “${progressoNaTela}”, o botão ` +
+        "“Gerar as imagens que faltam” e a grade por área (Área A–D, dez projetos cada), com Pronta/Falta.",
+      prova:
+        "Uma imagem por projeto do banco (40), gerada UMA vez pela conta da Unooria e usada por toda atividade " +
+        "criada com o banco padrão; o projeto sem imagem segue com a arte desenhada. É custo da plataforma — " +
+        "sem quota de professor, medido no painel de custos — e só o admin chega aqui.",
+      detalhe: `${progressoNaTela} · ${porAba.map((a) => `${a.rotulo} → ${a.itens}`).join("; ")}`,
+      inteira: true,
+    });
+
+    if (process.env.E2E_GERAR_IMAGENS_DO_JURI === "1" && !banco.corpo?.completo) {
+      /* UMA ida (até quatro imagens), pela mesma rota que o botão chama em
+         laço — clicar no botão geraria TODAS as que faltam. IA real. */
+      const ida = await p.request.fetch(`${BFF}/juri-estadual/banco-padrao/imagens`, { method: "POST", timeout: 200_000 });
+      const geracao = await ida.json().catch(() => null);
+      r.exigir(
+        ida.status() === 200 && Array.isArray(geracao?.geradas) && geracao.geradas.length > 0 && geracao.geradas.length <= 4,
+        `uma rodada gera até quatro imagens com a IA real (HTTP ${ida.status()}: ${geracao?.geradas?.length ?? "?"} geradas, ${geracao?.prontas} de ${geracao?.total})`,
+      );
+      await p.reload({ waitUntil: "domcontentloaded" });
+      await telaDoBanco.waitFor({ timeout: 60_000 });
+      const depois = `${geracao?.prontas} de ${geracao?.total}`;
+      r.exigir(
+        geracao?.prontas === banco.corpo.prontas + geracao.geradas.length && (await telaDoBanco.getByText(depois).count()) > 0,
+        `o progresso anda com a rodada: de “${progressoNaTela}” para “${depois}”, e a tela relida diz o mesmo`,
+      );
+      await r.registrar(p, "imagens-do-banco-uma-rodada", {
+        titulo: "Uma rodada de geração",
+        mostra: `A mesma tela depois de UMA ida à api: “${depois}”, e as imagens novas na grade como Pronta.`,
+        prova:
+          "A api gera até quatro por chamada (o BFF corta a espera em 3 min) e só as que faltam: a mesma rota é " +
+          "idempotente, e o botão da tela a repete até não faltar nenhuma.",
+        detalhe: `geradas: ${(geracao?.geradas ?? []).join(", ")}`,
+        inteira: true,
+      });
+    } else if (!banco.corpo?.completo) {
+      r.ressalva(
+        "a geração das imagens do banco não foi exercida (custa IA real): rode com E2E_GERAR_IMAGENS_DO_JURI=1 para uma rodada de até quatro",
+      );
+    }
+
+    /* A guarda de papel: o professor não lê nem gera as imagens do banco. A
+       sonda vai por `page.request` (sem evento de rede na página: o vigia de
+       console pintaria a suíte de vermelho pelo 403 esperado). */
+    const doProfessor = await lerBanco(pp);
+    r.exigir(
+      doProfessor.status === 403,
+      `para o professor, a rota das imagens do banco responde 403 pelo BFF (veio ${doProfessor.status})`,
+    );
   },
 );

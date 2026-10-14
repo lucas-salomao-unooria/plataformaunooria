@@ -12,9 +12,9 @@ import { EXP_ID } from "./vocabulario";
 
 /**
  * As IMAGENS dos estandes: geradas pelo professor no preparo, servidas a todos.
- * Molde: `jornal-escola/midia.service.ts` — INCREMENTAL (até duas novas por
- * chamada: o BFF do hub corta em 30 s), idempotente, com o custo estimado e o
- * `falharam[]`.
+ * Molde: `jornal-escola/midia.service.ts` — INCREMENTAL (até quatro novas por
+ * chamada: o BFF do hub corta em 180 s; as quarenta saem em umas dez idas),
+ * idempotente, com o custo estimado e o `falharam[]`.
  *
  * **Sem imagem a missão roda igual**: o post chega com `imagem.url: null`, e a
  * experiência desenha a arte procedural do estande (o `alt` continua valendo).
@@ -29,8 +29,12 @@ import { EXP_ID } from "./vocabulario";
  * `imagens-ja-aprovadas`), e sem a aprovação a atividade não vai ao ar.
  */
 
-/** Quantas imagens NOVAS por chamada. Cada uma leva de 5 a 10 s; o BFF corta em 30. */
-export const IMAGENS_POR_CHAMADA = 2;
+/**
+ * Quantas imagens NOVAS por chamada. Cada uma leva de 5 a 10 s, uma depois da
+ * outra; o BFF do hub corta em 180 s, e quatro deixam folga larga mesmo com o
+ * provedor lento. Com quarenta estandes, são umas dez idas.
+ */
+export const IMAGENS_POR_CHAMADA = 4;
 
 /**
  * Custo estimado por imagem, em tokens: a geração de imagem é cobrada por

@@ -9,8 +9,8 @@ import { projetoDoPost, tipoDoPost, type Area, type TipoDePost } from "../vocabu
  * pedido ao gerador, escrito para o professor) não chegar ao bundle.
  *
  * Antes da galeria, só os posts que o feed SERVIU descem (`postPublico`); os
- * outros projetos existem só no servidor. Na galeria, os dezesseis
- * (`projetoDaGaleria`).
+ * outros projetos existem só no servidor. Na galeria, os quarenta (ou os
+ * dezesseis do pacote legado) — `projetoDaGaleria`.
  */
 
 export type ProjetoDoPacote = z.infer<typeof ProjetoDoPacoteSchema>;
@@ -21,10 +21,11 @@ export type ProjetoDaGaleria = z.infer<typeof ProjetoDaGaleriaSchema>;
 export type Midia = Partial<Record<string, string>>;
 
 /**
- * O texto de cada FORMATO do post (a saturação repete o projeto em formatos
- * diferentes). O protótipo e o depoimento são opcionais no pacote: o banco
- * padrão não os tem, e aí o protótipo mostra o bastidor e o depoimento, a
- * legenda — a tela distingue o formato pelo `tipo`.
+ * O texto de cada FORMATO do post. O motor serve só a `apresentacao` (a
+ * legenda); os outros três são das sessões 2.0.0, cujo feed gravado repetia o
+ * projeto em formatos diferentes. O protótipo e o depoimento só existem nos
+ * pacotes da 0.4.x que os tinham: sem eles, o protótipo mostra o bastidor e o
+ * depoimento, a legenda — a tela distingue o formato pelo `tipo`.
  */
 function textoDoFormato(projeto: ProjetoDoPacote, tipo: TipoDePost): string {
   if (tipo === "bastidor") return projeto.bastidor;
@@ -33,7 +34,7 @@ function textoDoFormato(projeto: ProjetoDoPacote, tipo: TipoDePost): string {
   return projeto.legenda;
 }
 
-/** Um post do feed, em um dos quatro formatos. */
+/** Um post do feed: a apresentação (ou, numa sessão 2.0.0, um formato legado). */
 export function postPublico(postId: string, projetos: readonly ProjetoDoPacote[], midia: Midia): PostPublico | null {
   const projeto = projetos.find((p) => p.id === projetoDoPost(postId));
   if (!projeto) return null;
@@ -48,6 +49,7 @@ export function postPublico(postId: string, projetos: readonly ProjetoDoPacote[]
     perfil: projeto.perfil,
     texto: textoDoFormato(projeto, tipo),
     legenda: projeto.legenda,
+    bastidor: projeto.bastidor,
     hashtags: [...projeto.hashtags],
     imagem: { url: midia[projeto.id] ?? null, alt: projeto.imagem.alt },
   };

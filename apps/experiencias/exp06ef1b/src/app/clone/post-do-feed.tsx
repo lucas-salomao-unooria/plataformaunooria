@@ -1,6 +1,6 @@
 import { useRef, useState, type DragEvent, type KeyboardEvent, type PointerEvent, type Ref } from "react";
 import { ButtonUnv, GestureHint, IconUnv, PostCard } from "@edu/ui/ds-unoovista";
-import { iniciais, lerGesto, nomeDaConta } from "../../lib/regras";
+import { FOTOS_DO_POST, iniciais, laminasDoPost, lerGesto, nomeDaConta } from "../../lib/regras";
 import { E2 } from "../../lib/textos";
 import type { PostPublico } from "../../lib/tipos";
 import { srcDaFoto, type usePaleta } from "../componentes/midia";
@@ -9,8 +9,6 @@ import { srcDaFoto, type usePaleta } from "../componentes/midia";
 const LEGENDA_CURTA = 96;
 /** Dois toques em até este intervalo são o toque duplo que curte. */
 const TOQUE_DUPLO_MS = 320;
-/** O carrossel do estande: a capa e as fotos técnicas 2 e 3 (`e2.instrucao.carrossel_contador`). */
-const FOTOS = 3;
 
 type Gesto = "coracao" | "toque-duplo";
 
@@ -39,6 +37,11 @@ export function recolher(texto: string, limite = LEGENDA_CURTA): string {
  *
  * **As fotos 2 e 3** são a arte procedural do estande com outra semente: o
  * pacote do professor tem UMA fotografia por projeto (`ImagemPublicaSchema`).
+ *
+ * **A última lâmina é o BASTIDOR** (0.5.0): o texto do protótipo em teste, que
+ * até a 0.4.x era um post separado (a saturação). É o `PostCard.Media` SEM
+ * `src` — o DS desenha `children` como o slide de texto —, com o mesmo gesto,
+ * as mesmas setas e os mesmos pontos das fotos.
  *
  * **O carrossel desliza com o dedo E com o mouse** (o `dragstart` nativo da
  * imagem é cancelado e o ponteiro é capturado), pelas setas sobre a mídia e
@@ -76,9 +79,11 @@ export function PostDoFeed({
   const toque = useRef<{ x: number; y: number; t: number } | null>(null);
   const ultimoToque = useRef(0);
   const conta = nomeDaConta(post.perfil);
+  const total = laminasDoPost(post);
+  const noBastidor = lamina > FOTOS_DO_POST;
 
   function irPara(nova: number) {
-    if (nova === lamina || nova < 1 || nova > FOTOS) return;
+    if (nova === lamina || nova < 1 || nova > total) return;
     setLamina(nova);
     aoDeslizar(nova);
   }
@@ -122,7 +127,7 @@ export function PostDoFeed({
     },
     tabIndex: 0,
     "aria-roledescription": "carrossel",
-    "aria-label": E2.foto(lamina),
+    "aria-label": noBastidor ? E2.bastidor : E2.foto(lamina),
     className: "midia-deslizavel",
   };
 
@@ -154,7 +159,7 @@ export function PostDoFeed({
               onClick={() => irPara(lamina - 1)}
             />
           )}
-          {lamina < FOTOS && (
+          {lamina < total && (
             <ButtonUnv
               variant="primary"
               size="sm"
@@ -167,21 +172,30 @@ export function PostDoFeed({
           )}
         </div>
       </div>
-      <PostCard.Media
-        {...gestos}
-        key={lamina}
-        src={srcDaFoto(post, lamina, paleta)}
-        alt={post.imagem.alt}
-        errorLabel={E2.placeholderMidia}
-        errorDescription={E2.placeholderLegenda}
-        currentIndex={lamina}
-        totalCount={FOTOS}
-      />
+      {noBastidor ? (
+        <PostCard.Media {...gestos} key={lamina} alt={E2.bastidor} currentIndex={lamina} totalCount={total}>
+          <div className="lamina-do-bastidor">
+            <p className="lamina-do-bastidor__titulo">{E2.bastidor}</p>
+            <p className="lamina-do-bastidor__texto">{post.bastidor}</p>
+          </div>
+        </PostCard.Media>
+      ) : (
+        <PostCard.Media
+          {...gestos}
+          key={lamina}
+          src={srcDaFoto(post, lamina, paleta)}
+          alt={post.imagem.alt}
+          errorLabel={E2.placeholderMidia}
+          errorDescription={E2.placeholderLegenda}
+          currentIndex={lamina}
+          totalCount={total}
+        />
+      )}
       <PostCard.Actions
         liked={curtido}
         saved={salvo}
         currentIndex={lamina}
-        totalCount={FOTOS}
+        totalCount={total}
         onLike={() => aoCurtir(!curtido, "coracao")}
         onSave={() => aoSalvar(!salvo)}
         onComment={() => aoFechado("comentar")}

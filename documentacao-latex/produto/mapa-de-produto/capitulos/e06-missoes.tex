@@ -423,9 +423,14 @@ e a EF06CO03. \textbf{Desde 10 de outubro de 2026 a missão segue o PRD v2 do
 PO}: volta a mostra pronta da Unooria (dezesseis projetos), a cédula fica com
 quatro elementos e a revisão com dois botões, e saem a justificativa por
 cartões, o complementar e a rodada de desvio que tinham entrado em 7 de
-outubro. O PO aprovou nove ajustes ao PRD (por exemplo: o feed repete a área
-preferida em formatos diferentes, para a bolha ficar clara; e não há
+outubro. O PO aprovou nove ajustes ao PRD (por exemplo: não há
 \enquote{Pausar Sessão} nem \enquote{Exportar}, que a plataforma não tem).
+\textbf{Desde 14 de outubro de 2026 a mostra tem quarenta projetos}, dez por
+área, aprovados pelo PO: o feed não repete post nenhum (antes, a área preferida
+voltava com os mesmos projetos em outros formatos), e a Galeria Oculta mostra
+O QUE sumiu --- quantos estandes de cada área chegaram ao feed e o feed que o
+estudante teria visto sem as próprias curtidas ---, porque a quantidade
+escondida passou a ser a mesma para todos.
 
 \begin{historia}{H06.14.1}{Preparar a mostra da turma}{\parcial}
 \hu{Professor}{usar a mostra pronta da Unooria, ou gerar uma sobre o que a
@@ -435,24 +440,34 @@ projetos que conversam com a minha aula}
 \begin{itemize}
   \item Crio a atividade pela \enquote{Nova atividade} da ficha (\id{F06.13}).
     O caminho curto vem primeiro: \enquote{Usar Banco Padrão Oficial} cria a
-    atividade com os dezesseis projetos prontos da Unooria (Tecnologia, Meio
-    Ambiente, Cultura e Saúde), já com as imagens aprovadas.
+    atividade com os quarenta projetos prontos da Unooria, dez em cada área
+    (Tecnologia, Meio Ambiente, Cultura e Saúde), já aprovados, com as imagens
+    que a Unooria gerou para eles (\id{H06.14.9}); o estande que ainda não tem
+    imagem aparece com a arte desenhada da missão.
   \item Ou, em \enquote{Configuração Pedagógica da Mostra}, escolho o
     componente curricular, escrevo o tema da feira, de três a seis assuntos da
     semana e, se quiser, um contexto da escola, e \enquote{Gerar Mostra
-    Personalizada com IA} monta quatro áreas e dezesseis estandes. Leio,
-    edito e posso \enquote{Regenerar} um estande; a tela recusa o que foge das
-    regras e diz o que corrigir.
+    Personalizada com IA} monta quatro áreas e quarenta estandes, dez por
+    área, em cerca de um minuto. Os estandes aparecem numa aba por área, e a
+    aba avisa quantos daquela área precisam de ajuste. Leio, edito e posso
+    \enquote{Regenerar} um estande; a tela recusa o que foge das regras e diz o
+    que corrigir.
   \item Se o limite do dia de IA acabou ou a IA está fora do ar, a tela avisa
     e oferece a mostra pronta (\enquote{Usar Acervo Padrão da Mostra}): a aula
     não fica sem mostra.
   \item A aprovação da mostra gerada tem \textbf{duas fases}: os textos (com
     as falas do podcast, \id{H06.14.7}) e depois as imagens, na grade da
-    página da atividade. Sem as imagens aprovadas, a atividade não vai ao ar;
+    página da atividade, também com uma aba por área. As quarenta imagens
+    saem quatro por vez e levam vários minutos: o guia recomenda preparar
+    antes do dia da aula. Sem as imagens aprovadas, a atividade não vai ao ar;
     aprovadas, elas não mudam mais.
+  \item A página da atividade mostra os estandes também separados por área,
+    numa aba para cada uma.
 \end{itemize}
-\pendencia{o teste que percorre a missão como professora e dois estudantes
-ainda descreve a versão de 7 de outubro e precisa ser reescrito para o PRD v2.}
+\pendencia{os vinte e quatro projetos novos da mostra pronta foram escritos pela
+equipe no molde dos dezesseis do PO e ainda esperam a leitura dele; e o teste
+que percorre a missão como professora e dois estudantes precisa ser atualizado
+para os quarenta estandes.}
 \end{historia}
 
 \begin{historia}{H06.14.2}{Julgar a mostra pelo feed e lacrar o voto}{\parcial}
@@ -466,8 +481,10 @@ a feira inteira}
   \item O feed tem dez posts, ou acaba em oito minutos. Os quatro primeiros
     são um de cada área; depois, o que aparece depende do que eu curto e de
     onde eu paro --- e a tela não me diz isso. Quando uma área ganha, o resto
-    do feed é só dela, com os mesmos projetos em outros formatos
-    (apresentação, bastidor, protótipo, depoimento). Salvar guarda o post mas
+    do feed é só dela, com outros projetos dela: \textbf{nenhum post se
+    repete}. Cada post tem três fotos e, por último, a lâmina
+    \enquote{Bastidores do estande}, que conta como a equipe fez o projeto.
+    Salvar guarda o post mas
     não muda o feed; comentar e compartilhar respondem com um aviso da
     comissão. Recarregar a página não zera os oito minutos.
   \item Embaixo, quatro abas (Início, Busca, Notificações, Jurado); a Busca
@@ -478,7 +495,8 @@ a feira inteira}
     no topo dela. Confirmo, e o voto é lacrado: não volto atrás, e espero o
     professor.
 \end{itemize}
-\pendencia{o teste que percorre a missão precisa ser reescrito para o PRD v2.}
+\pendencia{o teste que percorre a missão precisa ser atualizado para os
+quarenta estandes.}
 \end{historia}
 
 \begin{historia}{H06.14.3}{Descobrir a Galeria Oculta e revisar o voto}{\parcial}
@@ -487,20 +505,30 @@ decidir de novo}{perceber que o feed escolheu por mim o que eu julguei}
 \aceite
 \begin{itemize}
   \item Quando o professor clica \enquote{Liberar Auditoria}, a comissão diz
-    quantos por cento dos projetos da feira ficaram fora do MEU feed --- o
-    número é o meu, calculado pela plataforma (quem curte fica com cerca de
-    três quartos escondidos; quem não curte nada, com menos).
-  \item A galeria mostra os escondidos numa grade; posso inspecionar cada um
-    e buscar por \emph{hashtag}. O que eu digito não sai do meu aparelho.
+    quantos estandes nunca chegaram ao meu feed (\enquote{30 de 40 estandes
+    nunca chegaram ao seu feed}), sem porcentagem. Esse total é o mesmo para
+    quase todo mundo; o que muda é QUAIS estandes sumiram.
+  \item Logo abaixo, a contagem por área (\enquote{Tecnologia: você viu 7 de
+    10}) e o contraste com o meu próprio feed: \enquote{Sem as suas curtidas,
+    o seu feed teria trazido:} quantos posts de cada área eu teria visto se
+    não tivesse curtido nada nem parado em post nenhum --- o mesmo feed, com
+    o mesmo número de posts que eu vi, calculado pela plataforma. Quem curtiu
+    vê que quase tudo veio de uma área; sem as curtidas, viriam as quatro
+    misturadas.
+  \item A galeria mostra os escondidos de uma área por vez, numa grade: os
+    botões das áreas trocam a área, e ela abre na que mais ficou de fora.
+    Posso inspecionar cada estande e buscar por \emph{hashtag}. O que eu
+    digito não sai do meu aparelho.
   \item O que faço aqui é o que o professor vê: abrir dois escondidos e
     buscar mostra a EF06CO10; buscar a \emph{hashtag} de uma área que não
     dominou o meu feed e abrir um projeto dela mostra a EF06CO01.
   \item Decido entre dois botões: \enquote{Manter meu voto inicial} (só
     depois de inspecionar ao menos um escondido) ou \enquote{Confirmar Voto
-    Revisado}, escolhendo outro estande. Sem volta; daí sigo sozinho para a
-    engrenagem.
+    Revisado}, escolhendo outro estande, numa lista também separada por
+    área. Sem volta; daí sigo sozinho para a engrenagem.
 \end{itemize}
-\pendencia{o teste que percorre a missão precisa ser reescrito para o PRD v2.}
+\pendencia{o teste que percorre a missão precisa ser atualizado para os
+quarenta estandes.}
 \end{historia}
 
 \begin{historia}{H06.14.4}{Desmontar a engrenagem do feed}{\parcial}
@@ -517,7 +545,8 @@ feed}{entender como a minha curtida virou dado e o dado virou bolha}
   \item Se a ordem não encaixa, a tela me pede para conferir e tentar de novo,
     sem dizer qual peça está errada; cada tentativa conta para a EF06CO03.
 \end{itemize}
-\pendencia{o teste que percorre a missão precisa ser reescrito para o PRD v2.}
+\pendencia{o teste que percorre a missão precisa ser atualizado para os
+quarenta estandes.}
 \end{historia}
 
 \begin{historia}{H06.14.5}{Resolver o caso Mariana e responder à consulta}{\parcial}
@@ -534,7 +563,8 @@ uma decisão da minha escola}
   \item No fim, o crachá homologado da comissão e, embaixo, o infográfico da
     Unooria para leitura silenciosa.
 \end{itemize}
-\pendencia{o teste que percorre a missão precisa ser reescrito para o PRD v2.}
+\pendencia{o teste que percorre a missão precisa ser atualizado para os
+quarenta estandes.}
 \end{historia}
 
 \begin{historia}{H06.14.6}{Conduzir a plenária e ler a turma}{\parcial}
@@ -547,9 +577,13 @@ sem expor ninguém}
     lado de quem está parado há mais de um minuto com a cédula aberta; o
     gráfico dos votos por área, sem nome, vai para a lousa.
   \item Um botão só, \enquote{Liberar Auditoria}, com a instrução do momento
-    ao lado. Depois dele, a lousa mostra a invisibilidade média da turma, os
-    votos antes e depois e quantos mantiveram ou trocaram; a lista mostra que
-    categoria cada um buscou.
+    ao lado. Depois dele, a lousa mostra a \textbf{concentração do feed}:
+    em média, quanto do feed caiu numa área só para quem curtiu (algo perto de
+    sete em cada dez posts) e para quem não curtiu nada (perto de três em
+    dez), sem nome --- é o contraste para a conversa. Também os votos antes e
+    depois e quantos mantiveram ou trocaram; a lista mostra que categoria
+    cada um buscou. A concentração só aparece depois de \enquote{Liberar
+    Auditoria}: antes, ela contaria à turma o que a plenária ainda pergunta.
   \item O bloco \enquote{Habilidades da BNCC} mostra a EF06CO10 e a EF06CO01
     pela galeria e a EF06CO03 pela engrenagem, e cada uma também pela enquete,
     valendo a melhor (\id{E14}).
@@ -557,10 +591,12 @@ sem expor ninguém}
     a avaliação dela.
   \item O guia da aula tem 29 minutos em tela, o corte depois do Passo 3, a
     nota pedagógica da EF06CO10 e as respostas da engrenagem e do caso
-    Mariana. Não há \enquote{Pausar Sessão} nem \enquote{Exportar}: a turma
-    para naturalmente na espera do voto lacrado.
+    Mariana. O guia não anuncia número: pede que a turma compare as telas
+    área por área. Não há \enquote{Pausar Sessão} nem \enquote{Exportar}: a
+    turma para naturalmente na espera do voto lacrado.
 \end{itemize}
-\pendencia{o teste que percorre a missão precisa ser reescrito para o PRD v2.}
+\pendencia{o teste que percorre a missão precisa ser atualizado para os
+quarenta estandes.}
 \end{historia}
 
 \begin{historia}{H06.14.7}{O podcast de recapitulação}{\parcial}
@@ -588,6 +624,31 @@ quase não aparecia para mim}{ver que o feed muda quando eu mudo o que faço}
   \item \textbf{Saiu da missão em 10 de outubro de 2026}, com o PRD v2: a
     revisão leva direto à engrenagem, e o par simulado ao lado dela mostra o
     efeito que a rodada mostrava. Os registros antigos ficam guardados.
+\end{itemize}
+\end{historia}
+
+\begin{historia}{H06.14.9}{Gerar as imagens da mostra pronta}{\pronto}
+\hu{Administrador Unooria}{gerar, de uma vez, as imagens dos quarenta
+estandes da mostra pronta da Unooria}{que o professor que usa a mostra pronta
+mostre à turma estandes com foto, e não só com a arte desenhada}
+\aceite
+\begin{itemize}
+  \item No painel da Unooria, em Recursos, \enquote{Imagens do banco padrão
+    do Júri Estadual} mostra quantas das quarenta imagens já existem e quais
+    faltam, numa aba por área.
+  \item \enquote{Gerar as imagens que faltam} gera só as que faltam, quatro
+    por vez, e continua sozinho até terminar. A imagem que já existe não é
+    gerada de novo; clicar duas vezes não paga a mesma imagem duas vezes.
+  \item Cada imagem é a mesma para todas as redes: uma vez gerada, toda turma
+    que usar a mostra pronta a recebe (\id{H06.14.1}). Estande sem imagem
+    continua com a arte desenhada da missão.
+  \item É custo da Unooria, não da escola: não gasta o limite diário de IA de
+    nenhum professor, e aparece no painel de custos de IA (\id{H10.7.1}) numa
+    linha própria, \enquote{O Júri Estadual --- imagens do banco padrão}.
+  \item Só a Unooria vê esta página; professor e gestão da rede não têm
+    acesso. Se alguma imagem falhar, a tela diz quantas falharam, e
+    \enquote{Gerar as imagens que faltam} tenta de novo só as que faltam; as
+    que já saíram ficam guardadas.
 \end{itemize}
 \end{historia}
 

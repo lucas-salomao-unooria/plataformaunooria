@@ -850,14 +850,22 @@ nenhuma mistura as duas seções.
 \toprule
 \headrow \thd{Tela} & \thd{Componentes do DS}\\
 \midrule
-O feed e a cédula & \cd{TopBar}, \cd{PostCard} (o carrossel de duas lâminas com
-  \cd{currentIndex}/\cd{totalCount}), \cd{InlineHint}, \cd{GestureHint},
-  \cd{FloatingButton} (a barra da cédula), \cd{TabBar} com duas abas,
+O feed e a cédula & \cd{TopBar}, \cd{PostCard} (o carrossel com
+  \cd{currentIndex}/\cd{totalCount}: três fotos, \enquote{Foto 2 de 3}, e,
+  desde a 0.5.0, a quarta lâmina \enquote{Bastidores do estande} --- o
+  \cd{PostCard.Media} SEM \cd{src}, que o DS desenha com os \cd{children} como
+  lâmina, \adrr{ADR-164}), \cd{InlineHint}, \cd{GestureHint},
+  \cd{FloatingButton} (a barra da cédula), \cd{TabBar} com quatro abas,
   \cd{BottomSheetUnv} com \cd{ListItem} e \cd{Chip}, \cd{SnackbarUnv}.\\
-\zebra A Galeria Oculta & \cd{InlineHint} \cd{friction} (a taxa real),
-  \cd{SearchField}, \cd{Chip} (as quatro \emph{hashtags}), \cd{MediaGrid},
-  \cd{BottomSheetUnv} (a ficha e a cédula da revisão), \cd{BadgeUnv} com
-  \cd{wrap}.\\
+\zebra A Galeria Oculta & \cd{InlineHint} \cd{friction} (\enquote{X de Y
+  estandes}, sem porcentagem, desde a 0.5.0), \cd{ListItem} (a contagem por
+  área), \cd{BadgeUnv} (o contraste sem curtidas, um por área; sem barra: o DS
+  não tem gráfico, e o número basta), \cd{SearchField}, \cd{Chip} (as
+  \emph{hashtags} e a área da grade), a grade de três colunas em \textbf{CSS},
+  não \cd{MediaGrid} (cada célula é a miniatura e o \cd{ButtonUnv}
+  \enquote{Inspecionar Projeto}: o \cd{MediaGrid} não tem ação nem rótulo por
+  bloco), \cd{BottomSheetUnv} (a ficha e a troca do voto, com os mesmos
+  \emph{chips}), \cd{BadgeUnv} com \cd{wrap}.\\
 Os pacotes e a cadeia (escola) & \cd{ScrollBar}, \cd{Logo},
   \cd{SectionHeader}, \cd{PuzzleBlock}, \cd{PuzzleTrack}, \cd{AlertBox},
   \cd{Button}.\\
@@ -899,8 +907,20 @@ O \cd{GestureHint} se posiciona contra o pai, e a mídia com \cd{src} não
 \zebra O botão de confirmar rola com o corpo da folha & \cd{.cedula\_\_confirmar},
   \cd{position: sticky} dentro do corpo que rola do \cd{BottomSheetUnv}. Posição
   pura.\\
+O \cd{MediaGrid} não tem ação nem rótulo por bloco & A grade da Galeria Oculta
+  é CSS (três colunas), e cada célula é a miniatura e o \cd{ButtonUnv} do DS.
+  Desde a 0.5.0 ela mostra os ocultos de UMA área (de 3 a 9, não 30). A 0.5.0
+  não abriu compensação nova. Pedido: ação ou rótulo por bloco no
+  \cd{MediaGrid}.\\
 \bottomrule
 \end{tabularx}
+
+\textbf{No hub, os quarenta estandes vão em abas} (\adrr{ADR-164}): a
+curadoria, a grade das imagens e a página da atividade usam as \cd{Tabs} da
+seção \cd{unooria}, controladas, uma por área, com a pendência no rótulo
+(\enquote{Saúde \textperiodcentered{} 2 com ajuste}) e só a aba aberta
+renderizada --- nunca \cd{Collapse}, que deixa os botões das áreas fechadas
+focáveis dentro de \cd{aria-hidden}.
 
 \begin{atencao}
 \textbf{O que a 0.2.11 não deixava esconder, e as \emph{props} que enganam.} Os

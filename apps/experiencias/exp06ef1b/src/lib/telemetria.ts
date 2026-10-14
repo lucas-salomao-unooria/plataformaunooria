@@ -76,9 +76,13 @@ export const telemetria = {
   // E4
   /** Entrou na espera (o latch do voto). */
   esperou: () => track("progressed", "plenaria:espera"),
-  /** A galeria abriu. `ocultos` é a taxa real da sessão (número, não nome). */
-  abriuAGaleria: (ocultos: number, percentual: number) =>
-    track("progressed", "galeria:abrir", { resultado: { ocultos, percentual } }),
+  /**
+   * A galeria abriu: "{ocultos} de {total}", os números REAIS da sessão (0.5.0:
+   * sem percentual — com quarenta estandes o total escondido é o mesmo para
+   * todos, e o `total` distingue o pacote antigo de dezesseis).
+   */
+  abriuAGaleria: (ocultos: number, total: number) =>
+    track("progressed", "galeria:abrir", { resultado: { ocultos, total } }),
   /** Abriu a ficha de um estande na galeria. */
   inspecionou: (projetoId: string, oculto: boolean) =>
     track("interacted", "galeria:inspecionar", { contexto: { projetoId, oculto } }),

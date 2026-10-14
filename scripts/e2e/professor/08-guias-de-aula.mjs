@@ -82,6 +82,12 @@ const GUIAS = [
       /Afunilamento do feed e criação da bolha/,
       /As quatro perguntas da plenária — entre o voto e a galeria/i,
       /parte da turma tenha votado em robôs e outra parte em projetos de meio ambiente/,
+      /* 40 projetos (2026-10-14): a regra do feed não repete post — a área
+         líder traz OUTROS projetos dela, não os mesmos em outros formatos — e
+         o total escondido é igual para todos; o que muda é quais áreas. Os
+         números saem da api (`regra.postsNoFeed`) e do total da mostra. */
+      /outros projetos da mesma área,\s+nenhum repetido/,
+      /Com 40 estandes e 10 publicações, todo computador que chega ao fim do feed\s+fica com 30 estandes fora dele/,
       /* A nota pedagógica da EF06CO10 é LITERAL do PRD (Anexo §9): a ampliação
          deliberada do objeto da habilidade, dita ao professor antes da aula. */
       /Esta missão trabalha EF06CO10 com ampliação deliberada do objeto/,

@@ -6,10 +6,20 @@ import {
   Chip,
   IconUnv,
   InlineHint,
+  ListItem,
   NotificationItem,
   SearchField,
 } from "@edu/ui/ds-unoovista";
-import { casaComABusca, classificarBusca, comCerquilha, iniciais } from "../../lib/regras";
+import {
+  areaComMaisOcultos,
+  casaComABusca,
+  classificarBusca,
+  comCerquilha,
+  contagemSemCurtidas,
+  iniciais,
+  ocultosDaArea,
+  opcoesDaTroca,
+} from "../../lib/regras";
 import { CONTAS, E4 } from "../../lib/textos";
 import type {
   AcaoDaGaleria,
@@ -33,20 +43,25 @@ export type CorpoDaRevisao = { acao: "manter" } | { acao: "trocar"; projetoId: s
  * E4-ALU-01/02/03 — a Galeria Oculta: o AHA e o MEMORÁVEL.
  *
  * - **A notificação da comissão** abre a tela, e logo abaixo o voto lacrado.
- * - **O badge e o subtítulo usam o número REAL** desta sessão
- *   (`GaleriaSchema.invisibilidade`), na moldura da copy. Com a saturação, quem
- *   curte vê 11–12 de 16 fora (69–75%); quem não curte, o que a permanência deu.
- * - **A grade tem 3 colunas e cresce com os ocultos** (12 = 3×4). Cada
- *   miniatura tem o botão "Inspecionar Projeto", que abre a "Ficha Técnica de
- *   Auditoria" (folha modal, foco preso pelo DS, "Voltar à Galeria"). A
- *   abertura é registrada — é o que libera "Manter" e o que a EF06CO01 lê.
- * - **A busca e os chips** (as hashtags que a API mandou) filtram os
- *   DEZESSEIS: é assim que a criança descobre que os da área dela também
- *   estavam lá. Da busca, a api recebe só o TIPO e a área (texto de menor não
- *   sai do aparelho).
+ * - **O badge é "X de Y"** (0.5.0), os dois números REAIS da sessão
+ *   (`GaleriaSchema.invisibilidade`), sem porcentagem. Com quarenta estandes e
+ *   dez posts sem repetição, o X é o MESMO para toda criança (30 de 40) — por
+ *   isso a prova central é o que vem logo abaixo:
+ * - **Por área** ("Tecnologia: você viu 7 de 10", `porArea`) e o **contraste**
+ *   ("Sem as suas curtidas, o seu feed teria trazido: Tecnologia 3, …",
+ *   `semCurtidas`): o feed que ESTA criança teria tido. Os dois vêm calculados
+ *   da api — o motor não desce para o bundle; a tela só conta e escreve.
+ * - **A grade é dos ocultos DE UMA ÁREA**, a dos chips. Abre na área que mais
+ *   ficou fora (sem contar como busca: a criança não tocou em nada); tocar num
+ *   chip troca a área e conta como busca por hashtag (a EF06CO01). Cada
+ *   miniatura tem "Inspecionar Projeto", que abre a "Ficha Técnica de
+ *   Auditoria". A abertura é registrada — é o que libera "Manter".
+ * - **A busca por texto** procura nos quarenta. Da busca, a api recebe só o
+ *   TIPO e a área (texto de menor não sai do aparelho).
  * - **A revisão tem dois botões** (PRD v2): "Manter meu voto inicial", travado
  *   com a explicação até a criança abrir ao menos UM oculto, e "Confirmar Voto
- *   Revisado", que abre a lista para escolher o novo projeto.
+ *   Revisado", que abre a lista — FILTRADA pelos mesmos chips de área (39
+ *   opções soltas não se escolhem num celular).
  */
 export function Galeria({
   galeria,
@@ -65,7 +80,11 @@ export function Galeria({
 }) {
   const paleta = usePaleta();
   const [texto, setTexto] = useState("");
-  const [chip, setChip] = useState<Area | null>(null);
+  /* A área da grade: abre na que mais ficou fora, e os chips a trocam. Nunca vazia. */
+  const [chip, setChip] = useState<Area>(
+    () => areaComMaisOcultos(galeria.porArea) ?? categorias[0]?.area ?? "area_a",
+  );
+  const [areaDaTroca, setAreaDaTroca] = useState<Area>(chip);
   const [ficha, setFicha] = useState<ProjetoDaGaleria | null>(null);
   const [trocando, setTrocando] = useState(false);
   const [novo, setNovo] = useState<string | null>(null);
@@ -76,10 +95,10 @@ export function Galeria({
   const porId = useMemo(() => new Map(galeria.projetos.map((p) => [p.id, p])), [galeria.projetos]);
   const doVoto = voto ? porId.get(voto.projetoId) : undefined;
 
-  const buscando = chip !== null || texto.trim() !== "";
-  const visiveis = galeria.projetos.filter((p) =>
-    chip !== null ? p.area === chip : texto.trim() ? casaComABusca(p, texto, categorias) : !p.exibidoNoSeuFeed,
-  );
+  const nomeDa = (area: Area) => categorias.find((c) => c.area === area)?.nome ?? area;
+  const buscando = texto.trim() !== "";
+  const ocultosDoChip = ocultosDaArea(galeria.projetos, chip);
+  const visiveis = buscando ? galeria.projetos.filter((p) => casaComABusca(p, texto, categorias)) : ocultosDoChip;
 
   function registrarBusca(acao: Extract<AcaoDaGaleria, { tipo: "buscar" }>) {
     const chave = `${acao.busca}:${acao.area ?? "-"}`;
@@ -90,7 +109,7 @@ export function Galeria({
 
   // A busca por texto vale quando a digitação para.
   useEffect(() => {
-    if (chip !== null) return;
+    if (!texto.trim()) return;
     const relogio = window.setTimeout(() => {
       const classe = classificarBusca(texto, categorias, galeria.projetos);
       if (classe) registrarBusca({ tipo: "buscar", ...classe });
@@ -98,13 +117,12 @@ export function Galeria({
     return () => window.clearTimeout(relogio);
     // `registrarBusca` lê só refs e a prop estável `aoAcao`.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [texto, chip, categorias, galeria.projetos]);
+  }, [texto, categorias, galeria.projetos]);
 
+  /* O chip troca a área da grade e limpa o texto. Tocar no chip já escolhido com
+     texto digitado volta à área; sem texto, não muda nada (e não conta). */
   function tocarNoChip(area: Area) {
-    if (chip === area) {
-      setChip(null);
-      return;
-    }
+    if (chip === area && !buscando) return;
     setChip(area);
     setTexto("");
     registrarBusca({ tipo: "buscar", busca: "hashtag", area });
@@ -116,7 +134,8 @@ export function Galeria({
     aoAcao({ tipo: "abrir", projetoId: p.id });
   }
 
-  const { ocultos, percentual } = galeria.invisibilidade;
+  const { ocultos, total } = galeria.invisibilidade;
+  const contraste = contagemSemCurtidas(galeria.semCurtidas);
 
   return (
     <div className="tela">
@@ -137,9 +156,26 @@ export function Galeria({
         )}
         <h2 className="galeria__titulo">{E4.titulo}</h2>
         <InlineHint tone="friction" announce>
-          {E4.badge(percentual)}
+          {E4.badge(ocultos, total)}
         </InlineHint>
-        <p className="galeria__subtitulo">{E4.subtitulo(ocultos)}</p>
+        <h3 className="galeria__secao">{E4.porArea}</h3>
+        <ul className="galeria__areas">
+          {galeria.porArea.map((a) => (
+            <li key={a.area}>
+              <ListItem size="sm" title={E4.vistosNaArea(nomeDa(a.area), a.vistos, a.total)} />
+            </li>
+          ))}
+        </ul>
+        <h3 className="galeria__secao" id="galeria-contraste">
+          {E4.semCurtidas}
+        </h3>
+        <ul className="galeria__contraste" aria-labelledby="galeria-contraste">
+          {contraste.map((a) => (
+            <li key={a.area}>
+              <BadgeUnv variant="neutral">{E4.semCurtidasDaArea(nomeDa(a.area), a.posts)}</BadgeUnv>
+            </li>
+          ))}
+        </ul>
         <SearchField
           block
           value={texto}
@@ -148,24 +184,28 @@ export function Galeria({
           clearable
           clearLabel={E4.limparBusca}
           onClear={() => setTexto("")}
-          onChange={(e) => {
-            setChip(null);
-            setTexto(e.target.value);
-          }}
+          onChange={(e) => setTexto(e.target.value)}
         />
         <div className="galeria__chips" role="group" aria-label={E4.hashtags}>
-          {categorias.map((c) => (
-            <Chip key={c.area} selected={chip === c.area} aria-pressed={chip === c.area} onClick={() => tocarNoChip(c.area)}>
-              {comCerquilha(c.hashtag)}
-            </Chip>
-          ))}
+          {categorias.map((c) => {
+            const ativo = !buscando && chip === c.area;
+            return (
+              <Chip key={c.area} selected={ativo} aria-pressed={ativo} onClick={() => tocarNoChip(c.area)}>
+                {comCerquilha(c.hashtag)}
+              </Chip>
+            );
+          })}
         </div>
-        {buscando && (
+        {buscando ? (
           <p className="galeria__resultados" role="status">
             {E4.resultados(visiveis.length)}
           </p>
+        ) : (
+          <p className="galeria__subtitulo" role="status">
+            {E4.subtitulo(ocultosDoChip.length)}
+          </p>
         )}
-        <ul className="grade-oculta" aria-label={buscando ? E4.gradeBusca : E4.gradeOculta}>
+        <ul className="grade-oculta" aria-label={buscando ? E4.gradeBusca : E4.gradeOculta(nomeDa(chip))}>
           {visiveis.map((p) => (
             <li key={p.id} className="grade-oculta__item">
               <img
@@ -205,6 +245,7 @@ export function Galeria({
           leadingIcon={<IconUnv name="check" size={18} tone="inherit" />}
           onClick={() => {
             setNovo(null);
+            setAreaDaTroca(chip);
             setTrocando(true);
           }}
         >
@@ -259,13 +300,24 @@ export function Galeria({
       >
         <div className="cedula">
           <p className="cedula__instrucao">{E4.escolhaONovo}</p>
+          <div className="galeria__chips" role="group" aria-label={E4.hashtags}>
+            {categorias.map((c) => (
+              <Chip
+                key={c.area}
+                selected={areaDaTroca === c.area}
+                aria-pressed={areaDaTroca === c.area}
+                onClick={() => setAreaDaTroca(c.area)}
+              >
+                {comCerquilha(c.hashtag)}
+              </Chip>
+            ))}
+          </div>
           <Escolha
-            rotulo={E4.grupoDaRevisao}
+            rotulo={`${E4.grupoDaRevisao}: ${nomeDa(areaDaTroca)}`}
             valor={novo}
             desabilitada={enviando}
             aoEscolher={setNovo}
-            opcoes={galeria.projetos
-              .filter((p) => p.id !== voto?.projetoId)
+            opcoes={opcoesDaTroca(galeria.projetos, areaDaTroca, voto?.projetoId ?? null)
               .map((p) => ({
                 id: p.id,
                 titulo: p.titulo,

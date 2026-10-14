@@ -11,6 +11,7 @@ import {
   estandesPorArea,
   falhasAcumuladas,
   rotuloCurtoDaArea,
+  rotuloDaAbaDaArea,
   textoDoProgressoDaMidia,
   type ConteudoDoPacote,
   type EstadoDaImagem,
@@ -18,6 +19,8 @@ import {
   type ImagensAprovadas,
   type ProgressoDaMidia,
 } from "@/lib/juri-estadual-tipos";
+
+import { AbasDasAreas } from "./estande-do-preparo";
 
 const SEM_CONEXAO = "A conexão falhou. Tente de novo.";
 
@@ -37,10 +40,13 @@ const ROTULO_DO_ESTADO: Record<EstadoDaImagem, { texto: string; variante: "succe
  * com a aprovação da exp07ef1b (ADR-146) — UM carimbo para o pacote.
  *
  * - "Gerar imagens" é o laço de sempre (`continuarGerando`): a api gera até
- *   duas por chamada, porque o BFF corta e dezesseis não cabem numa.
+ *   quatro por chamada, porque o BFF corta e quarenta não cabem numa — as
+ *   quarenta levam vários minutos (aceito pelo Lucas, 2026-10-14).
  *   `?pacoteId=` diz qual atividade — a pronta também, que ainda não está no ar.
  * - Cada estande aparece com a imagem grande, o título e o que ela deveria
- *   mostrar; "Gerar outra imagem" troca só aquela (arquivo novo, sempre pago).
+ *   mostrar, numa ABA por área (`AbasDasAreas`; o rótulo diz quantos estão
+ *   sem imagem); "Gerar outra imagem" troca só aquela (arquivo novo, sempre
+ *   pago). O total é o do PACOTE: o de dezesseis da 0.4.x continua abrindo.
  * - "Aprovar as imagens" é a SEGUNDA fase. Ela não exige imagem em todo
  *   estande: o que falhou fica com a arte desenhada, e a grade diz qual é
  *   ANTES do clique. Aprovadas, as imagens congelam (a api responde 409
@@ -128,7 +134,7 @@ export function ImagensDoJuri({
     setAviso(null);
     let acumuladas = falhas;
     /* Teto de voltas por precaução: `continuarGerando` já para quando uma
-       chamada não anda, e cada volta faz até duas imagens. */
+       chamada não anda, e cada volta faz até quatro imagens. */
     const tetoDeVoltas = Math.max(total, 1) + 2;
     try {
       for (let volta = 0; volta < tetoDeVoltas && vivo.current; volta += 1) {
@@ -255,7 +261,7 @@ export function ImagensDoJuri({
         <p className="max-w-3xl text-[12px] leading-snug text-unooria-neutral-600">
           {aprovadas
             ? "As imagens foram aprovadas e não mudam mais: é isto que a turma vê no feed e na Galeria Oculta."
-            : "As imagens são geradas por inteligência artificial e só aparecem para a turma depois do seu OK. Confira cada uma junto do estande; se uma não combinar, use “Gerar outra imagem”. Estande sem imagem aparece com uma arte desenhada. Elas saem duas por vez e podem levar alguns minutos: faça antes da aula."}
+            : `As imagens são geradas por inteligência artificial e só aparecem para a turma depois do seu OK. Confira cada uma junto do estande, área por área; se uma não combinar, use “Gerar outra imagem”. Estande sem imagem aparece com uma arte desenhada. Elas saem quatro por vez, e as ${total} levam vários minutos: faça antes da aula, e deixe esta tela aberta enquanto geram.`}
         </p>
       </div>
 
@@ -301,70 +307,80 @@ export function ImagensDoJuri({
       ) : null}
       {aviso ? <FeedbackAlert type="warning" description={aviso} /> : null}
 
-      {estandesPorArea(conteudo).map(({ categoria, projetos: daArea }) => (
-        <section key={categoria.area} className="flex flex-col gap-2" data-area-das-imagens={categoria.area}>
-          <span className="text-[13px] font-semibold text-unooria-neutral-950">
-            {rotuloCurtoDaArea(categoria.area)} — {categoria.nome}
-          </span>
-          <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4" aria-label={`As imagens da ${rotuloCurtoDaArea(categoria.area)}`}>
-            {daArea.map((p) => {
-              const estado = estadoDe(p.id);
-              const url = imagens[p.id];
-              const rotulo = ROTULO_DO_ESTADO[estado];
-              return (
-                <li
-                  key={p.id}
-                  className="flex flex-col gap-2 rounded-lg border border-unooria-neutral-200 p-3"
-                  data-imagem-do-estande={p.id}
-                  data-estado-da-imagem={estado}
-                >
-                  <div>
-                    <Tag variant={rotulo.variante} size="sm">
-                      {rotulo.texto}
-                    </Tag>
-                  </div>
+      <AbasDasAreas
+        rotulo="As imagens dos estandes, por área"
+        abas={estandesPorArea(conteudo).map(({ categoria, projetos: daArea }) => ({
+          area: categoria.area,
+          rotulo: rotuloDaAbaDaArea(categoria.nome, daArea.length, {
+            quantos: daArea.filter((p) => !imagens[p.id]).length,
+            texto: "sem imagem",
+          }),
+          conteudo: (
+            <section className="flex flex-col gap-2" data-area-das-imagens={categoria.area}>
+              <span className="text-[13px] font-semibold text-unooria-neutral-950">
+                {rotuloCurtoDaArea(categoria.area)} — {categoria.nome}
+              </span>
+              <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4" aria-label={`As imagens da ${rotuloCurtoDaArea(categoria.area)}`}>
+                {daArea.map((p) => {
+                  const estado = estadoDe(p.id);
+                  const url = imagens[p.id];
+                  const rotulo = ROTULO_DO_ESTADO[estado];
+                  return (
+                    <li
+                      key={p.id}
+                      className="flex flex-col gap-2 rounded-lg border border-unooria-neutral-200 p-3"
+                      data-imagem-do-estande={p.id}
+                      data-estado-da-imagem={estado}
+                    >
+                      <div>
+                        <Tag variant={rotulo.variante} size="sm">
+                          {rotulo.texto}
+                        </Tag>
+                      </div>
 
-                  {/* O quadro tem a proporção da foto do estande no post (4:3). É MEDIDA, não componente. */}
-                  <div className="relative flex aspect-[4/3] w-full items-center justify-center overflow-hidden rounded-md bg-unooria-neutral-100">
-                    {estado === "gerando" ? (
-                      <span className="flex items-center gap-2 text-[12px] text-unooria-neutral-600" role="status">
-                        <Icon name="hourglass_top" size={18} /> Gerando a imagem…
-                      </span>
-                    ) : url ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={url} alt={p.imagem.alt} className="h-full w-full object-cover" />
-                    ) : (
-                      <span className="px-3 text-center text-[12px] text-unooria-neutral-600">
-                        Sem imagem: a turma vê uma arte desenhada com o título
-                      </span>
-                    )}
-                  </div>
+                      {/* O quadro tem a proporção da foto do estande no post (4:3). É MEDIDA, não componente. */}
+                      <div className="relative flex aspect-[4/3] w-full items-center justify-center overflow-hidden rounded-md bg-unooria-neutral-100">
+                        {estado === "gerando" ? (
+                          <span className="flex items-center gap-2 text-[12px] text-unooria-neutral-600" role="status">
+                            <Icon name="hourglass_top" size={18} /> Gerando a imagem…
+                          </span>
+                        ) : url ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={url} alt={p.imagem.alt} className="h-full w-full object-cover" />
+                        ) : (
+                          <span className="px-3 text-center text-[12px] text-unooria-neutral-600">
+                            Sem imagem: a turma vê uma arte desenhada com o título
+                          </span>
+                        )}
+                      </div>
 
-                  <p className="text-[13px] font-semibold leading-snug text-unooria-neutral-950">{p.titulo}</p>
-                  <p className="text-[12px] leading-snug text-unooria-neutral-600">
-                    <span className="font-semibold">O que a imagem deve mostrar:</span> {p.imagem.descricao}
-                  </p>
+                      <p className="text-[13px] font-semibold leading-snug text-unooria-neutral-950">{p.titulo}</p>
+                      <p className="text-[12px] leading-snug text-unooria-neutral-600">
+                        <span className="font-semibold">O que a imagem deve mostrar:</span> {p.imagem.descricao}
+                      </p>
 
-                  {podeEditar && !aprovadas && estado !== "gerando" ? (
-                    <div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        leftIcon={<Icon name="refresh" size={16} />}
-                        onClick={() => void refazer(p.id)}
-                        isDisabled={ocupado}
-                        data-acao="gerar-outra-imagem"
-                      >
-                        {url ? "Gerar outra imagem" : "Tentar gerar a imagem"}
-                      </Button>
-                    </div>
-                  ) : null}
-                </li>
-              );
-            })}
-          </ul>
-        </section>
-      ))}
+                      {podeEditar && !aprovadas && estado !== "gerando" ? (
+                        <div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            leftIcon={<Icon name="refresh" size={16} />}
+                            onClick={() => void refazer(p.id)}
+                            isDisabled={ocupado}
+                            data-acao="gerar-outra-imagem"
+                          >
+                            {url ? "Gerar outra imagem" : "Tentar gerar a imagem"}
+                          </Button>
+                        </div>
+                      ) : null}
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          ),
+        }))}
+      />
     </div>
   );
 

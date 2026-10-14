@@ -40,9 +40,10 @@ describe("grade do Entre Redes", () => {
 
   /* A ficha do Júri cita as habilidades da spec (o pedido do PO, 2026-10-06):
      a EF06CO10 é o foco, com a EF06CO01 e a EF06CO03 — e a EF06CO07 (os
-     pacotes) saiu. O texto é o OFICIAL, lido da fonte única do currículo. E a
-     invisibilidade é o número REAL de cada sessão: nenhum percentual cravado. */
-  test("o Júri Estadual cita EF06CO10, EF06CO01 e EF06CO03 com o texto oficial, e nenhum número de invisibilidade", () => {
+     pacotes) saiu. O texto é o OFICIAL, lido da fonte única do currículo. E o
+     que a galeria e a lousa contam (por área, a concentração) são números
+     REAIS de cada sessão: nenhum percentual cravado. */
+  test("o Júri Estadual cita EF06CO10, EF06CO01 e EF06CO03 com o texto oficial, e nenhum percentual cravado", () => {
     const juri = buscarMissao("6-ano", "unidade-1")?.missao;
     expect(juri?.titulo).toBe("O Júri Estadual de Projetos");
     const competencia = juri?.ficha?.competencia ?? "";

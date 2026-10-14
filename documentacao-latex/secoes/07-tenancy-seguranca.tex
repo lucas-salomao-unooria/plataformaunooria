@@ -931,7 +931,7 @@ A resposta --- que devolve só \enquote{enviada}, nunca o resultado &
 \zebra O Júri Estadual de Projetos: a própria missão (\adrr{ADR-137}) &
   \rota{/juri-estadual/*} & \yes & \no & \no & \no\\
 \textbf{O Júri Estadual: preparar a mostra, conduzir e ler a lousa} (atividades,
-  imagens e o OK delas --- \adrr{ADR-151} ---, o banco padrão e a Galeria Oculta --- \adrr{ADR-157} ---, zerar), e o material do guia &
+  imagens e o OK delas --- \adrr{ADR-151} ---, o banco padrão e a Galeria Oculta --- \adrr{ADR-157}, \adrr{ADR-164} ---, zerar), e o material do guia &
   \rota{/juri-estadual/\B turmas/*}, \rota{/professor/\B material} & \no &
   \yes\footnotesize{\ddag} & \yes & \yes\\
 \zebra unooGPT: a própria partida & \rota{/unoogpt/*} & \yes & \no & \no & \no\\
@@ -963,7 +963,11 @@ Chamar a IA (com quota diária POR PERFIL) & \rota{POST /ai/gerar} &
 \textbf{Ver o custo da IA e cadastrar preço} (só \cd{admin}, \adrr{ADR-161};
   tela \rota{/unooria/\B custos-de-ia}) &
   \rota{/recursos/\B custos-\B de-\B ia/*} & \no & \no & \no & \no\\
-\zebra Enviar telemetria & \rota{POST /telemetry/batch} & \yes & \yes & \yes & \yes\\
+\zebra \textbf{Gerar as imagens do banco padrão do Júri Estadual} (só \cd{admin},
+  sem quota de professor, medidas no painel de custos, \adrr{ADR-164}; tela
+  \rota{/unooria/\B recursos/\B imagens-\B do-\B juri}) &
+  \rota{/juri-estadual/\B banco-\B padrao/\B imagens} & \no & \no & \no & \no\\
+Enviar telemetria & \rota{POST /telemetry/batch} & \yes & \yes & \yes & \yes\\
 \bottomrule
 \end{tabularx}
 
@@ -1280,7 +1284,9 @@ acredita ter declarado algo.
   \item No Júri Estadual de Projetos (\adrr{ADR-137}), o \emph{bundle} não
     recebe o acervo nem a regra: os pesos (curtir, ficar) e o limiar do
     motor do feed, a área líder e os estandes que o feed não serviu ficam no
-    servidor até a Galeria Oculta abrir; o par simulado da cadeia é gerado das
+    servidor até a Galeria Oculta abrir --- e, depois dela, o contrafactual
+    \enquote{sem as suas curtidas} desce já calculado, nunca o motor
+    (\adrr{ADR-164}); o par simulado da cadeia é gerado das
     áreas que a própria criança viu, nunca de colega (\adrr{ADR-157}); a ordem certa da cadeia não desce (os ids são
     opacos por sessão; os pacotes da curtida saíram com a \adrr{ADR-151}), nem o cartão certo do caso Mariana (\cd{certo} está na
     redação do \emph{log}), nem o nível das alternativas das enquetes.
@@ -1334,8 +1340,9 @@ Ranking sem menor real & O ranking do UnooTube (hoje \cd{backup-exp04ef1b})
   Escola, em que o painel só mostra as verificadas num histograma anônimo e a
   criança não vê a edição de ninguém, nem no Júri Estadual de Projetos, cujo
   painel é PROJETADO na lousa: a linha de cada computador diz só progresso, e o
-  voto e a taxa de invisibilidade aparecem apenas no agregado por área, sem
-  nome (\adrr{ADR-137}).\\
+  voto aparece apenas no agregado por área e a concentração do feed só na média
+  de quem curtiu e de quem não curtiu, sem nome (\adrr{ADR-137},
+  \adrr{ADR-164}).\\
 \zebra Dado de saúde com posse & \cd{app\_91\_ciclos} e \cd{app\_91\_checkins}
   têm RLS \emph{e} filtro por \cd{professor\_id} em toda \emph{query}, e não
   existe rota de gestor nem agregado. O próprio titular apaga tudo.\\

@@ -9,7 +9,7 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{163 decisões}, numeradas até ADR-163. A 160 (o painel de habilidades pelo total) e a 161 (os custos de IA) nasceram no mesmo dia, em frentes paralelas, e a 161 foi escrita depois de conferir que a 160 já estava tomada em \cd{dev-local}. A 153 (a evidência do Unoovista) e a 154 (a da Missão Tempestade) nasceram no mesmo dia, em frentes paralelas. A 132 (a Ajuda com
+São \textbf{164 decisões}, numeradas até ADR-164. A 160 (o painel de habilidades pelo total) e a 161 (os custos de IA) nasceram no mesmo dia, em frentes paralelas, e a 161 foi escrita depois de conferir que a 160 já estava tomada em \cd{dev-local}. A 153 (a evidência do Unoovista) e a 154 (a da Missão Tempestade) nasceram no mesmo dia, em frentes paralelas. A 132 (a Ajuda com
 avatar) entrou no código antes de ter seção aqui, e por um dia o número foi
 citado sem existir; a 133 pulou para não colidir com ela. A 133 e a 134 nasceram no mesmo dia, em frentes paralelas
 (Unoovista e Unoochat), e entraram juntas no merge; a 135 e a 136 levaram as
@@ -207,13 +207,14 @@ que a cercam.
 \adrr{ADR-154} & A Missão Tempestade mede a evidência numa atividade sintética, com rodada da turma, a melhor resposta e o nível só ao encerrar a missão & 2026-10-07 & Aceita; aplica a \adrr{ADR-112}\\
 \zebra \adrr{ADR-155} & Zerar a turma apaga a evidência pedagógica da atividade & 2026-10-09 & Aceita; reverte parte da \adrr{ADR-112}\\
 \adrr{ADR-156} & O Unoovista ganha o podcast com as falas revisadas no Ativar, e a Missão Tempestade ganha o primeiro podcast fixo & 2026-10-10 & Aceita; aplica a \adrr{ADR-150}\\
-\zebra \adrr{ADR-157} & O Júri Estadual segue o PRD v2 (0.4.0) & 2026-10-10 & Aceita; supera em parte a \adrr{ADR-151} e a \adrr{ADR-152}\\
+\zebra \adrr{ADR-157} & O Júri Estadual segue o PRD v2 (0.4.0) & 2026-10-10 & Aceita; supera em parte a \adrr{ADR-151} e a \adrr{ADR-152}; superada em parte pela \adrr{ADR-164}\\
 \adrr{ADR-158} & O mascote na Ajuda: voz do Gemini Live por um proxy na api, rosto 3D no hub, e o padrão escolhido no painel & 2026-10-12 & Aceita; complementa a \adrr{ADR-132}\\
 \zebra \adrr{ADR-159} & O hub no celular e no tablet: \cd{min-w-0} na coluna ao lado da \cd{SideBar}, e a \cd{Tag} que quebra linha & 2026-10-12 & Aceita; complementa a \adrr{ADR-83}\\
 \adrr{ADR-160} & O painel de habilidades abre pelo total, e o contrato desce pela regional & 2026-10-13 & Aceita; complementa a \adrr{ADR-144}\\
 \adrr{ADR-161} & Custos de IA: o consumo medido por dia, produto, escola e modelo, e o custo derivado na leitura, com preço datado e a PTAX do dia & 2026-10-13 & Aceita; complementa a \adrr{ADR-105} e a \adrr{ADR-158}\\
 \zebra \adrr{ADR-162} & Acessibilidade WCAG 2.2 AA: o axe como portão, e a correção no \emph{design system}, não na tela & 2026-10-13 & Aceita; reclassifica o risco R-07\\
 \adrr{ADR-163} & O texto alternativo da imagem do post é o \emph{brief} que a gerou; as fotos fixas são descritas no \emph{bundle} & 2026-10-13 & Aceita; corrige uma consequência da \adrr{ADR-162}\\
+\zebra \adrr{ADR-164} & O Júri Estadual com quarenta projetos: o feed sem repetir post, a galeria mostra O QUE sumiu, e o banco padrão ganha imagens & 2026-10-14 & Aceita; supera em parte a \adrr{ADR-157}\\
 \bottomrule
 \end{tabularx}
 
@@ -14015,7 +14016,11 @@ outras).
 \section{ADR-157 --- O Júri Estadual segue o PRD v2 (0.4.0)}
 \label{adr:exp06ef1b-prd-v2}
 
-\textbf{Data.} 2026-10-10. \textbf{Status.} Aceita. \textbf{Supera} a
+\textbf{Data.} 2026-10-10. \textbf{Status.} Aceita; \textbf{superada em parte
+pela \adrr{ADR-164}} (2026-10-14): os dezesseis projetos, a saturação por
+formatos (o desvio 1) e a taxa de invisibilidade como a prova da Galeria Oculta
+deram lugar aos quarenta projetos, ao feed sem repetir post e à galeria que
+mostra O QUE sumiu; o resto continua valendo. \textbf{Supera} a
 \adrr{ADR-151} e a \adrr{ADR-152} no que conflitam com ela (o ciclo do voto, o
 salvar com peso, a rodada de desvio, a ausência de banco padrão, o podcast
 opcional, a régua da EF06CO01); o resto delas (duas fases de aprovação,
@@ -14714,3 +14719,149 @@ alternativo à espera de um campo revisado pelo PO.
 exp01ef1b ganhar fotos por tema geradas por IA (aí o \emph{brief} delas passa
 a ser a descrição, como na exp08ef1b).
 
+
+% ---------------------------------------------------------------------------
+\section{ADR-164 --- O Júri Estadual com quarenta projetos: o feed sem repetir post, a galeria mostra O QUE sumiu, e o banco padrão ganha imagens}
+\label{adr:exp06ef1b-quarenta-projetos}
+
+\textbf{Data.} 2026-10-14. \textbf{Status.} Aceita (aprovada pelo PO em
+2026-10-14). \textbf{Supera em parte} a \adrr{ADR-157}: os dezesseis projetos, a
+saturação por formatos (o desvio 1 dela) e a taxa de invisibilidade como a prova
+da Galeria Oculta. O resto da \adrr{ADR-157} continua valendo (o ciclo do voto
+em dois botões, os 8 minutos do servidor, o batimento da cédula, a cadeia, o caso
+Mariana, a ficha da evidência).
+
+\begin{especificacao}{Contexto}
+\begin{itemize}
+  \item \textbf{Com dezesseis projetos, a bolha só se formava repetindo
+    estande.} Quatro por área, dez posts e a área em foco dominando os posts 5
+    a 10: a \adrr{ADR-157} resolveu a conta servindo os MESMOS projetos em
+    formatos diferentes (apresentação, bastidor, protótipo, depoimento). A
+    criança via o mesmo estande três vezes e lia isso como defeito do app, não
+    como afunilamento.
+  \item \textbf{O PO aprovou dez projetos por área} (quarenta) e um feed de dez
+    posts ou 8 minutos \textbf{sem repetir post}, com o mesmo afunilamento:
+    quem curte cedo vê 7/1/1/1 projetos por área; quem não interage, 3/3/2/2.
+  \item \textbf{Com quarenta, o total escondido virou igual para todos}: dez
+    posts distintos deixam 30 de 40 fora, curtindo ou não. A taxa de
+    invisibilidade, que era a prova da galeria, deixou de separar quem curtiu
+    de quem não curtiu --- o que muda é QUAIS estandes sumiram.
+  \item \textbf{A diretriz do PO de \enquote{contraste de feeds na tela do
+    próprio aluno}} estava na conversa com o PO e não chegou à spec da
+    \adrr{ADR-157}: a galeria comparava a criança com um número, não com o
+    feed que ela teria sem as curtidas.
+  \item \textbf{O banco padrão não tinha imagem nenhuma}: o atalho do professor
+    e o \emph{fallback} sem cota mostravam a arte procedural nos dezesseis.
+\end{itemize}
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{enumerate}
+  \item \textbf{Quarenta projetos, dez por área}, ids
+    \cd{proj-[a-d](10|[1-9])} em ordem numérica (\cd{proj-a9} antes de
+    \cd{proj-a10}). A exp06ef1b sobe para a \textbf{0.5.0} e o instrumento para
+    o \textbf{3.0.0}.
+  \item \textbf{O feed não repete post.} O motor serve só \cd{apresentacao}; a
+    área em foco recebe projetos NOVOS dela (o da abertura e até mais seis). A
+    saturação por formatos sai, e \cd{prototipo} e \cd{depoimento} saem do
+    pacote. O \cd{bastidor} fica como texto: virou a quarta lâmina do carrossel
+    do próprio post (\enquote{Bastidores do estande}, depois das três fotos) e
+    a ficha de inspeção da galeria.
+  \item \textbf{A galeria mostra O QUE sumiu}, tudo calculado no servidor (o
+    motor nunca desce para o \emph{bundle}): \enquote{X de Y estandes nunca
+    chegaram ao seu feed} (Y = o tamanho do pacote, sem porcentagem); a
+    contagem por área (\enquote{Tecnologia: você viu 7 de 10}); e o
+    \textbf{contrafactual} \enquote{Sem as suas curtidas, o seu feed teria
+    trazido:\ldots} --- o feed desta mesma sessão recalculado pelo motor
+    determinístico com a mesma semente, sem curtidas nem permanências, com N =
+    os posts que a criança viu (o feed cortado pelos 8 minutos também tem N).
+    A grade dos ocultos mostra uma área por vez, escolhida por \emph{chips}.
+  \item \textbf{A lousa troca a invisibilidade média pela concentração do
+    feed}: entre quem votou, a média da fração do feed na área mais vista,
+    separando quem curtiu ao menos uma vez (cerca de 70\,\%) de quem não curtiu
+    (cerca de 30\,\%). Só agregado, e só depois de \enquote{Liberar Auditoria}:
+    o número diz que o feed se adaptou, e a plenária do pico pede para não
+    dizer ainda.
+  \item \textbf{Compatibilidade de leitura, exigência na escrita.} Pacotes de
+    dezesseis e sessões 2.0.0 (posts nos quatro formatos) continuam legíveis até
+    a turma trocar de atividade; homologar, o preparo e o banco padrão só
+    escrevem quarenta. A migração
+    \arq{20261014120000\_\B{}exp06ef1b\_\B{}quarenta\_\B{}projetos} troca dois
+    CHECKs (o conteúdo aceita 16 ou 40 projetos; o id de projeto aceita
+    \cd{proj-a10}) e não mexe em coluna, linha nem RLS.
+  \item \textbf{O preparo com IA são cinco chamadas}: as categorias, depois as
+    quatro áreas em paralelo (dez estandes cada), e o estande que repetir título
+    ou perfil de outra área é regerado sozinho. Medido com IA real: os quarenta
+    numa chamada levaram 92,7\,s (a segunda tentativa estouraria o teto de
+    180\,s do BFF); por área, cerca de 25\,s, e o preparo inteiro cerca de
+    42\,s. A customização gera as quarenta imagens quatro por chamada.
+  \item \textbf{O banco padrão tem quarenta projetos}: os dezesseis do banco de
+    conteúdo do PRD, intactos e com os mesmos ids (o podcast padrão os cita),
+    e vinte e quatro novos no mesmo molde, escritos pela equipe para o PO ler.
+  \item \textbf{As imagens do banco padrão}, geradas pelo \cd{admin}
+    (\rota{GET/POST /juri-estadual/banco-padrao/imagens}, página
+    \rota{/unooria/recursos/imagens-do-juri}, \enquote{Gerar as imagens que
+    faltam}): até quatro por chamada, idempotente (só as que faltam), com o
+    mesmo nome determinístico da customização (o \emph{hash} da descrição da
+    imagem), pelo provider de IA, medidas no painel de custos
+    (\adrr{ADR-161}) com atribuição própria (\cd{juri-estadual-banco-padrao},
+    perfil \cd{admin}, sem escola) e \textbf{sem quota de professor} --- é
+    custo da plataforma, e o \cd{QuotaService} não conhece o \cd{admin}; quem
+    segura a mão é o \emph{rate limit} da rota e o lote de quatro. O storage é
+    o registro (sem tabela). O pacote do banco padrão --- o atalho e o
+    \emph{fallback} sem cota --- usa as imagens que existem; sem imagem, a arte
+    procedural.
+  \item \textbf{No hub}, a curadoria, a grade de imagens e a página da atividade
+    ganham uma aba por área (\cd{Tabs} do DS), com a pendência no rótulo.
+  \item \textbf{A evidência não muda}: a ficha segue na versão 4.
+\end{enumerate}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Manter dezesseis com a saturação por formatos}
+    (\adrr{ADR-157}). É o que existia: a bolha se formava repetindo o mesmo
+    estande em quatro formatos, e o PO pediu que nenhum post se repetisse.
+  \item \textbf{Dezesseis, com o feed acabando quando a área esgota.} Quatro
+    projetos por área não sustentam dez posts: o feed de quem curte acabaria no
+    quinto ou sexto post, antes de a bolha ter forma, e a cédula abriria cedo
+    demais.
+  \item \textbf{Preencher a bolha com posts temáticos que não são estande}
+    (notícias da mostra, recados da comissão). Seriam posts sem projeto para
+    votar, e a galeria não teria o que mostrar deles: a bolha viraria ruído,
+    não afunilamento de estandes.
+  \item \textbf{Gerar os quarenta numa chamada só.} Medido: 92,7\,s e cerca de
+    9.900 \emph{tokens} de saída. Com a segunda tentativa, passa dos 180\,s do
+    BFF e o professor recebe um 504 que parece a IA fora do ar.
+  \item \textbf{Manter a taxa de invisibilidade como a medida da galeria.} Com
+    quarenta e dez posts sem repetição, ela é 30 de 40 para todos: a lousa
+    mostraria o mesmo número nas duas colunas, e a prova da bolha sumiria.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{Custo e tempo de geração cerca de 2,5 vezes maiores}: quarenta
+    estandes e quarenta imagens por atividade, contra dezesseis. O preparo cabe
+    no teto do BFF por ir em paralelo; as imagens levam minutos.
+  \item \textbf{A curadoria do professor é de quarenta estandes}, não de
+    dezesseis. As abas por área dividem o trabalho, mas não o diminuem.
+  \item \textbf{Os vinte e quatro projetos novos do banco padrão ainda não
+    passaram pela leitura do PO.} Foram escritos pela equipe no molde dos
+    dezesseis dele.
+  \item \textbf{O número da galeria deixou de diferenciar alunos}: \enquote{30
+    de 40} é igual para quem curtiu e para quem não curtiu. A diferença passa a
+    morar na contagem por área, no contrafactual e na concentração da lousa ---
+    e a criança precisa ler a contagem por área, não só o total, para ver a
+    própria bolha.
+  \item \textbf{Dois formatos de pacote e de sessão convivem} até a última turma
+    trocar de atividade: a leitura aceita os dois, e o teste de Postgres prova
+    que a 0.4.x continua abrindo.
+\end{itemize}
+
+\textbf{Gatilho.} O PO revisar o tamanho da mostra ou o número de posts do
+feed; a geração por área passar do teto do BFF (modelo mais lento, mais
+estandes); a concentração da lousa deixar de separar quem curtiu de quem não
+curtiu numa turma real; ou o PO pedir mudança nos vinte e quatro projetos novos
+do banco.

@@ -13,14 +13,18 @@ import {
   POSTS_NO_FEED,
   TIPOS_DE_BUSCA,
   TIPOS_DE_POST,
+  TIPOS_DE_POST_LEGADOS,
+  TIPOS_DE_POST_LIDOS,
   TOTAL_DE_BLOCOS,
   TOTAL_DE_PROJETOS,
+  type AreaSemCurtidas,
   type Feed,
   type Galeria,
   type PostPublico,
   type ParSimulado,
   type ProjetoDaGaleria,
   type Sessao,
+  type VistosPorArea,
 } from "./tipos";
 
 /**
@@ -88,9 +92,15 @@ const CHAVES = {
   } satisfies Record<keyof Feed, 1>,
   par: { voce: 1, outroJurado: 1 } satisfies Record<keyof ParSimulado, 1>,
   post: {
-    id: 1, projetoId: 1, tipo: 1, area: 1, titulo: 1, escola: 1, perfil: 1, texto: 1, legenda: 1, hashtags: 1, imagem: 1,
+    id: 1, projetoId: 1, tipo: 1, area: 1, titulo: 1, escola: 1, perfil: 1, texto: 1, legenda: 1, bastidor: 1,
+    hashtags: 1, imagem: 1,
   } satisfies Record<keyof PostPublico, 1>,
-  galeria: { invisibilidade: 1, projetos: 1, ocultosAbertos: 1, podeManter: 1 } satisfies Record<keyof Galeria, 1>,
+  galeria: {
+    invisibilidade: 1, porArea: 1, semCurtidas: 1, projetos: 1, ocultosAbertos: 1, podeManter: 1,
+  } satisfies Record<keyof Galeria, 1>,
+  invisibilidade: { ocultos: 1, total: 1 } satisfies Record<keyof Galeria["invisibilidade"], 1>,
+  porArea: { area: 1, vistos: 1, total: 1 } satisfies Record<keyof VistosPorArea, 1>,
+  semCurtidas: { area: 1, posts: 1 } satisfies Record<keyof AreaSemCurtidas, 1>,
   projeto: {
     id: 1, area: 1, titulo: 1, escola: 1, perfil: 1, legenda: 1, resumo: 1, hashtags: 1, imagem: 1, exibidoNoSeuFeed: 1,
   } satisfies Record<keyof ProjetoDaGaleria, 1>,
@@ -103,11 +113,20 @@ describe("o vocabulário é o da api, na mesma ordem", () => {
     ["PASSOS_PEDIDOS", PASSOS_PEDIDOS, PASSOS_DA_API],
     ["AREAS", AREAS, VOCABULARIO],
     ["TIPOS_DE_POST", TIPOS_DE_POST, VOCABULARIO],
+    ["TIPOS_DE_POST_LEGADOS", TIPOS_DE_POST_LEGADOS, VOCABULARIO],
     ["CONVICCOES", CONVICCOES, VOCABULARIO],
     ["ACOES_DA_REVISAO", ACOES_DA_REVISAO, VOCABULARIO],
     ["TIPOS_DE_BUSCA", TIPOS_DE_BUSCA, VOCABULARIO],
   ] as const)("%s", (nome, lista, arquivo) => {
     expect([...lista]).toEqual(listaDoArquivo(arquivo, nome));
+  });
+
+  test("a leitura aceita o formato servido e os legados, nesta ordem (como `TIPOS_DE_POST_LIDOS` da api)", () => {
+    expect(ler(VOCABULARIO)).toContain(
+      "export const TIPOS_DE_POST_LIDOS = [...TIPOS_DE_POST, ...TIPOS_DE_POST_LEGADOS] as const;",
+    );
+    expect([...TIPOS_DE_POST_LIDOS]).toEqual([...TIPOS_DE_POST, ...TIPOS_DE_POST_LEGADOS]);
+    expect([...TIPOS_DE_POST]).toEqual(["apresentacao"]);
   });
 
   test("os números do feed e da mostra", () => {
@@ -155,6 +174,9 @@ describe("os campos do espelho são os do contrato", () => {
     ["ParSimuladoSchema", CHAVES.par],
     ["PostPublicoSchema", CHAVES.post],
     ["GaleriaSchema", CHAVES.galeria],
+    ["InvisibilidadeSchema", CHAVES.invisibilidade],
+    ["VistosPorAreaSchema", CHAVES.porArea],
+    ["AreaSemCurtidasSchema", CHAVES.semCurtidas],
     ["ProjetoDaGaleriaSchema", CHAVES.projeto],
   ] as const)("%s", (nome, chaves) => {
     expect(chavesDoSchema(nome)).toEqual(Object.keys(chaves).sort());

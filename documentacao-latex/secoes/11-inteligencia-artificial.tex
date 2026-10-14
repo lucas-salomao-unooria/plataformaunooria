@@ -51,8 +51,9 @@ Preparo do pacote & exp04ef1b, \arq{src/jornal-escola/} &
   reordena as vagas, não vê o gabarito. Qualquer falha cai no modelo
   automático (\adrr{ADR-117}).\\
 Preparo da mostra & exp06ef1b, \arq{src/juri-estadual/} &
-  As quatro áreas e os dezesseis estandes da mostra científica sobre o tema e
-  os assuntos do professor, e as imagens a partir da descrição de cada um.
+  As quatro áreas e os quarenta estandes da mostra científica sobre o tema e
+  os assuntos do professor (cinco chamadas: as categorias e as quatro áreas em
+  paralelo, \adrr{ADR-164}), e as imagens a partir da descrição de cada um.
   Sem saldo ou sem provedor, a geração cai no \textbf{banco padrão} (200,
   \cd{usouIa: false}, \adrr{ADR-157}), que o professor também escolhe direto. Nada chega à turma sem as DUAS fases da aprovação --- os textos
   na homologação, as imagens num OK próprio, depois do qual elas congelam ---,
@@ -60,7 +61,7 @@ Preparo da mostra & exp06ef1b, \arq{src/juri-estadual/} &
 \zebra Falas do podcast do Júri & exp06ef1b, \arq{src/juri-estadual/\B{}podcast-fonte.ts}
   + \arq{src/podcast/} &
   As três vagas do roteiro (os dois estandes de áreas diferentes, o feed do
-  Rafa, o da mesa ao lado), escritas a partir dos dezesseis estandes do
+  Rafa, o da mesa ao lado), escritas a partir dos quarenta estandes do
   rascunho pela rota única \rota{falas-do-tema} (\adrr{ADR-150}), com a quota
   do professor. O banco padrão intocado usa o roteiro literal, sem IA
   (\adrr{ADR-157}); na mostra da IA, sem ela, voltam as falas do sheet e a
@@ -154,18 +155,27 @@ isso?. O Júri Estadual de Projetos (\adrr{ADR-137}) foi a exceção até a
 \adrr{ADR-157}, que trouxe o banco padrão do PRD v2 (\arq{banco-padrao.ts}):
 o professor escolhe \enquote{Usar Banco Padrão Oficial}, ou a geração, sem
 saldo ou com o provedor fora, cai nele (200 com \cd{usouIa: false},
-\cd{origem: "padrao"} e o \cd{motivo}). Na mostra da IA, os dezesseis estandes
-são gerados no preparo e homologados pelo professor. \arq{preparo.service.ts} roda
-\cd{temSaldo} com o perfil de quem prepara, chama o \cd{generateJson} com
-\textbf{duas} tentativas e um \cd{validar} que normaliza o cosmético
-(\cd{semExclamacao}, \emph{hashtag} e perfil em minúsculas, a \emph{hashtag} da
-área primeiro) e recusa o resto pelo MESMO \cd{ConteudoDoPacoteSchema} da
-homologação --- uma régua escrita duas vezes é a que diverge. O débito vem do
+\cd{origem: "padrao"} e o \cd{motivo}). Na mostra da IA, os quarenta estandes
+(dez por área, \adrr{ADR-164}) são gerados no preparo e homologados pelo
+professor. \arq{preparo.service.ts} roda \cd{temSaldo} com o perfil de quem
+prepara e faz \textbf{cinco} chamadas ao \cd{generateJson}, cada uma com
+\textbf{duas} tentativas: as quatro categorias, depois as quatro áreas em
+paralelo (dez estandes cada), e o estande que repetir título ou perfil de outra
+área é regerado sozinho, com os outros 39 no \emph{prompt}. A conta foi medida
+com IA real: os quarenta numa chamada levaram 92,7\,s e cerca de 9.900
+\emph{tokens} de saída, e a segunda tentativa estouraria o teto de 180\,s do
+BFF; por área são cerca de 25\,s, e o preparo inteiro, cerca de 42\,s. Área que
+falha derruba o rascunho inteiro (meia mostra não serve) e a rota cai no banco
+padrão. Cada \cd{validar} normaliza o cosmético (\cd{semExclamacao},
+\emph{hashtag} e perfil em minúsculas, a \emph{hashtag} da área primeiro), e o
+pacote montado passa pelo MESMO \cd{ConteudoDoPacoteSchema} da homologação ---
+uma régua escrita duas vezes é a que diverge. O débito vem do
 \cd{aoUsarTokens}, por tentativa, inclusive as recusadas (\adrr{ADR-74}); as
 rotas que gastam IA têm também um teto de requisição por minuto.
 \enquote{Regenerar} um estande sem saldo é 429; com a IA fora, 200 com
-\cd{usouIa: false} e o estande como estava. As imagens são incrementais, duas
-por chamada, com custo estimado na quota do professor, e sem elas a tela desenha
+\cd{usouIa: false} e o estande como estava. As imagens são incrementais,
+quatro por chamada (quarenta por atividade), com custo estimado na quota do
+professor, e sem elas a tela desenha
 a arte procedural. Desde a \adrr{ADR-151} elas têm aprovação própria: o
 professor vê a grade, pede \enquote{gerar outra imagem} para um estande (um
 arquivo NOVO, fora do \emph{hash} da descrição, sempre pago; com o provedor
@@ -178,6 +188,21 @@ literal), revisadas pelo professor e gravadas pela homologação. O \emph{prompt
 brasileiros com gênero equilibrado e escolas fictícias, e o tema, os assuntos e
 o contexto do professor entram como DADO delimitado, com tetos de tamanho que
 são a primeira barreira contra injeção de instrução.
+
+\textbf{As imagens do banco padrão} (\adrr{ADR-164}) são a outra porta de IA
+do Júri, e não são do professor: o \cd{admin} as gera em
+\rota{/unooria/recursos/imagens-do-juri} (\rota{POST
+/juri-estadual/banco-padrao/imagens}), até quatro por chamada, só as que faltam,
+com o mesmo nome determinístico da customização (o \emph{hash} da descrição da
+imagem do projeto) --- o storage é o registro, sem tabela. É custo da
+plataforma: \textbf{sem quota de professor} (o \cd{QuotaService} não conhece o
+\cd{admin}), com \emph{rate limit} por usuário e medido no painel de custos
+(\adrr{ADR-161}) com atribuição explícita nas opções da imagem
+(\cd{AiImagemOpcoes.atribuicao}: recurso \cd{juri-estadual-banco-padrao},
+perfil \cd{admin}, sem escola), porque a rota não diz a verdade sobre quem
+paga. O pacote do banco padrão --- o atalho e o \emph{fallback} --- leva na
+\cd{midia} as imagens que existem; o estande sem imagem fica com a arte
+procedural.
 
 \begin{atencao}
 Com \env{AI\_PROVIDER}\cd{=mock}, o \cd{generateJson} sempre falha, e o
@@ -543,7 +568,9 @@ quê e quanto isso custou em reais. São três peças, e só a primeira mora em
 \zebra \cd{generateJson} & texto & A soma de todas as tentativas, inclusive as
   recusadas pelo \cd{validar}, por \cd{aoUsarTokens(tokens, divisao)}.\\
 \cd{generateImage} & imagem & O \cd{usageMetadata} da geração, pelo
-  \cd{AiImagemOpcoes.aoUsarTokens}, e uma imagem quando ela veio.\\
+  \cd{AiImagemOpcoes.aoUsarTokens}, e uma imagem quando ela veio. A atribuição
+  é a da requisição, salvo \cd{AiImagemOpcoes.atribuicao} (as imagens do banco
+  padrão do Júri, \adrr{ADR-164}).\\
 \zebra \cd{generateSpeech} & áudio & \textbf{Estimado}: segundos pelo tamanho do
   MP3 de 32\,kbps, saída de 25 \emph{tokens} por segundo, entrada de
   $\approx$ \emph{bytes}/4 do roteiro. Marcado \cd{estimado}; a tela mostra

@@ -185,32 +185,31 @@ A página da atividade é `resultados/resultados-juri-estadual.tsx`; a criação
 `atividades/nova/criar-juri-estadual.tsx`; o espelho do contrato,
 `lib/juri-estadual-tipos.ts` (com teste que lê a api como texto).
 
-- **Banco padrão (PRD v2, 0.4.0)**: o caminho curto "Usar Banco Padrão
-  Oficial" fica no TOPO do preparo e chama `POST banco-padrao` — a atividade
-  nasce pronta (`origem: "padrao"`), sem curadoria nem imagens a aprovar, e o
-  assistente segue para a turma. Sem cota ou sem IA, o `gerar-conteudo`
-  responde 200 com `usouIa: false` e `motivo`: a tela mostra o aviso
-  (`AVISO_DO_BANCO_PADRAO`, copy literal) e o botão "Usar Acervo Padrão da
-  Mostra" — o banco NÃO entra na curadoria como se fosse a mostra gerada (o
-  `homologar` o gravaria como `ia`). O `homologar` leva `preparoIniciadoEm`.
-- **Duas fases, como no Jornal** (PO, 2026-10-06), na grade
-  `resultados/imagens-do-juri.tsx`: UM carimbo do pacote (A Seleção), sem
-  exigir imagem em todo estande (o sem imagem aparece "arte desenhada" antes
-  do clique); aprovada, congela. Hashtag vai em `subtags` do `Card` (`tags` é
-  o cabeçalho, sem quebra, e vazava).
-- **Podcast**: falas na FASE 1 (o `homologar` as exige; o banco padrão usa o
-  roteiro fixo). É o recurso FIXO do fechamento (PRD v2, RF-008): o professor
-  toca depois da Etapa 4. O cartão traz o aviso LITERAL do one-pager
-  (`avisoDoPodcast`); o módulo não trava por etapa.
-- **Um botão só** (PRD v2): "Liberar Auditoria" abre a Galeria Oculta; depois
-  dela cada computador segue no próprio ritmo. A rodada de desvio, o
-  complementar e a justificativa SAÍRAM (sem coluna nem contador). Acima do
-  botão, a instrução de gatilho (D0-4).
-- **A folha**: o SINALIZADOR DE OCIOSOS é o ícone de alerta ao lado do nome
-  (`ocioso`, com texto para leitor de tela), e a coluna "Categorias buscadas"
-  mostra as hashtags que a criança buscou (EF06CO01). O nível ternário das três
-  habilidades fica no painel de habilidades (E14), não na folha.
-- **A invisibilidade média está na lousa desde o pico** (PRD v2, E4-PROF-01). O
-  número é o da api; nenhum percentual é cravado na copy nem no guia.
+- **QUARENTA estandes, dez por área** (PO, 2026-10-14). Ids
+  `proj-[a-d](10|[1-9])` em ordem NUMÉRICA (`compararIdsDeProjeto`). O pacote
+  de 16 da 0.4.x continua abrindo: tela que mostra pacote usa o tamanho DELE,
+  nunca `TOTAL_DE_PROJETOS` (que é da escrita). Sem `prototipo`/`depoimento`.
+- **Uma aba por área** (`AbasDasAreas`, em `resultados/estande-do-preparo.tsx`)
+  na curadoria, na grade das imagens e nos estandes da atividade: `Tabs` do DS
+  controlado, a pendência no rótulo ("Saúde · 2 com ajuste") e só a aba aberta
+  renderizada — nunca `Collapse`.
+- **Banco padrão**: "Usar Banco Padrão Oficial" no TOPO do preparo (`POST
+  banco-padrao`, nasce pronto, com as imagens do banco que existem). Sem cota
+  ou sem IA, o `gerar-conteudo` dá 200 `usouIa: false`: o aviso
+  (`AVISO_DO_BANCO_PADRAO`, literal) e "Usar Acervo Padrão da Mostra" — o
+  banco NÃO entra na curadoria (o `homologar` o gravaria como `ia`).
+- **Duas fases** (PO, 2026-10-06), na grade `resultados/imagens-do-juri.tsx`:
+  UM carimbo do pacote, sem exigir imagem em todo estande; aprovada, congela.
+  Quatro imagens por chamada: as 40 levam minutos. Hashtag em `subtags`.
+- **Podcast**: falas na FASE 1; recurso FIXO do fechamento, depois da Etapa 4
+  (`avisoDoPodcast`, literal do one-pager).
+- **Um botão só**: "Liberar Auditoria", com a instrução de gatilho acima.
+- **A folha**: o ícone de ocioso ao lado do nome e "Categorias buscadas".
+  Sem voto, taxa, concentração nem nível.
+- **A lousa mostra a CONCENTRAÇÃO** (`resumo.concentracao`, quem curtiu ×
+  quem não curtiu, dois `MetricCard`) **só depois de Liberar Auditoria**: ela
+  diz que o feed se adaptou, e a plenária do pico pede para não dizer ainda. A
+  "invisibilidade média" saiu (30 de 40 para todos). Número da api, nunca
+  cravado na copy nem no guia.
 - **O gráfico de votos usa "Área A"… no eixo** (o `BarChart` corta acima de ~8
-  caracteres) e o nome da área na legenda; as barras vão em % dos votos.
+  caracteres) e o nome na legenda; as barras em % dos votos.

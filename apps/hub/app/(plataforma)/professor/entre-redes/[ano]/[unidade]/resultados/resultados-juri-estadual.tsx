@@ -22,6 +22,7 @@ import {
   caminhoDaTurma,
   estandesPorArea,
   rotuloCurtoDaArea,
+  rotuloDaAbaDaArea,
   rotuloDaDisciplina,
   type MaterialDoJuri,
   type PacoteDetalhe,
@@ -33,7 +34,7 @@ import { rotaDoGuiaDaMissao } from "@/lib/rotas-da-missao";
 import { normalizarSerie } from "@/lib/series";
 
 import { EscolhaDeTurma } from "./escolha-de-turma";
-import { CartaoDoEstande } from "./estande-do-preparo";
+import { AbasDasAreas, CartaoDoEstande } from "./estande-do-preparo";
 import { ImagensDoJuri } from "./imagens-do-juri";
 import { PainelDaAulaJuriEstadual } from "./painel-da-aula-juri-estadual";
 import { CartaoDoPodcast } from "./podcast-da-aula";
@@ -338,35 +339,44 @@ export async function ResultadosJuriEstadual({
 }
 
 /**
- * Os dezesseis estandes da atividade, só leitura, por área — para o professor
- * reconhecer o estande que a criança cita pelo título ou pela escola. Editar
- * é na criação: a atividade gravada é o que a turma viu.
+ * Os estandes da atividade (quarenta; dezesseis num pacote da 0.4.x), só
+ * leitura, uma ABA por área — para o professor reconhecer o estande que a
+ * criança cita pelo título ou pela escola. Editar é na criação: a atividade
+ * gravada é o que a turma viu. O total sai do pacote, não de constante.
  */
 function EstandesDaAtividade({ detalhe }: { detalhe: PacoteDetalhe }) {
+  const total = detalhe.conteudo.projetos.length;
   return (
     <Card variant="outlined" title="Os estandes da mostra">
-      <div className="flex flex-col gap-6" data-estandes-da-atividade>
+      <div className="flex flex-col gap-4" data-estandes-da-atividade data-total-de-estandes={total}>
         <p className="max-w-3xl text-[12px] leading-snug text-unooria-neutral-600">
-          É o que a turma encontra no feed e na Galeria Oculta. Cada computador vê só uma parte deles antes da galeria
-          — qual parte depende do que ele curtiu.
+          São {total} estandes, e é o que a turma encontra no feed e na Galeria Oculta. Cada computador vê só uma
+          parte deles antes da galeria — quais áreas chegam depende do que ele curtiu.
         </p>
-        {estandesPorArea(detalhe.conteudo).map(({ categoria, projetos }) => (
-          <section key={categoria.area} className="flex flex-col gap-3" data-area={categoria.area}>
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-[14px] font-semibold text-unooria-neutral-950">
-                {rotuloCurtoDaArea(categoria.area)} — {categoria.nome}
-              </span>
-              <Tag variant="info" size="sm">
-                {categoria.hashtag}
-              </Tag>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              {projetos.map((p) => (
-                <CartaoDoEstande key={p.id} projeto={p} imagem={detalhe.imagens[p.id]} />
-              ))}
-            </div>
-          </section>
-        ))}
+        <AbasDasAreas
+          rotulo="Os estandes da mostra, por área"
+          abas={estandesPorArea(detalhe.conteudo).map(({ categoria, projetos }) => ({
+            area: categoria.area,
+            rotulo: rotuloDaAbaDaArea(categoria.nome, projetos.length),
+            conteudo: (
+              <section className="flex flex-col gap-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-[14px] font-semibold text-unooria-neutral-950">
+                    {rotuloCurtoDaArea(categoria.area)} — {categoria.nome}
+                  </span>
+                  <Tag variant="info" size="sm">
+                    {categoria.hashtag}
+                  </Tag>
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                  {projetos.map((p) => (
+                    <CartaoDoEstande key={p.id} projeto={p} imagem={detalhe.imagens[p.id]} />
+                  ))}
+                </div>
+              </section>
+            ),
+          }))}
+        />
       </div>
     </Card>
   );

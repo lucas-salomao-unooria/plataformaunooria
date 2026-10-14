@@ -1,16 +1,22 @@
 import { describe, expect, test } from "vitest";
 import {
+  FOTOS_DO_POST,
+  areaComMaisOcultos,
   casaComABusca,
   classificarBusca,
   comCerquilha,
+  contagemSemCurtidas,
   curtidosNaTela,
   esperaAteEncerrar,
   estandesDoFeed,
   gateMudou,
   iniciais,
+  laminasDoPost,
   lerGesto,
   nomeDaConta,
   normalizar,
+  ocultosDaArea,
+  opcoesDaTroca,
   ordemValida,
   protocoloDoVoto,
   tocarNoBloco,
@@ -28,6 +34,7 @@ const post = (projetoId: string, tipo: PostPublico["tipo"] = "apresentacao"): Po
   perfil: "@estande.centro",
   texto: "Uma legenda.",
   legenda: "Uma legenda. Com duas frases.",
+  bastidor: "O protótipo em teste na bancada.",
   hashtags: ["#robotica"],
   imagem: { url: null, alt: "Foto do estande." },
 });
@@ -52,8 +59,60 @@ const projeto = (id: string, titulo: string, exibido = false): ProjetoDaGaleria 
   exibidoNoSeuFeed: exibido,
 });
 
+describe("o carrossel do post: três fotos e a lâmina do bastidor (0.5.0)", () => {
+  test("com bastidor, quatro lâminas; sem texto, só as fotos", () => {
+    expect(laminasDoPost(post("proj-a10"))).toBe(FOTOS_DO_POST + 1);
+    expect(laminasDoPost({ bastidor: "   " })).toBe(FOTOS_DO_POST);
+  });
+});
+
+describe("a galeria por área e o contraste sem as curtidas (0.5.0)", () => {
+  const porArea = [
+    { area: "area_a" as const, vistos: 7, total: 10 },
+    { area: "area_b" as const, vistos: 1, total: 10 },
+    { area: "area_c" as const, vistos: 1, total: 10 },
+    { area: "area_d" as const, vistos: 1, total: 10 },
+  ];
+
+  test("a grade abre na área que mais ficou fora (empate: a ordem das áreas)", () => {
+    expect(areaComMaisOcultos(porArea)).toBe("area_b");
+    expect(areaComMaisOcultos([{ area: "area_c", vistos: 0, total: 4 }, { area: "area_d", vistos: 0, total: 4 }])).toBe(
+      "area_c",
+    );
+    expect(areaComMaisOcultos([])).toBeNull();
+  });
+
+  test("o contrafactual é CONTADO por área: a lista vem da api, a tela não escolhe", () => {
+    expect(
+      contagemSemCurtidas([
+        { area: "area_a", posts: ["proj-a1", "proj-a2", "proj-a10"] },
+        { area: "area_b", posts: ["proj-b1", "proj-b2"] },
+        { area: "area_c", posts: ["proj-c1", "proj-c2", "proj-c3"] },
+        { area: "area_d", posts: ["proj-d1", "proj-d2"] },
+      ]),
+    ).toEqual([
+      { area: "area_a", posts: 3 },
+      { area: "area_b", posts: 2 },
+      { area: "area_c", posts: 3 },
+      { area: "area_d", posts: 2 },
+    ]);
+  });
+
+  test("a grade mostra só os OCULTOS da área; a troca, a área inteira menos o voto", () => {
+    const projetos = [
+      projeto("proj-a9", "A9"),
+      projeto("proj-a10", "A10"),
+      projeto("proj-b1", "B1"),
+      projeto("proj-a1", "A1", true),
+    ];
+    expect(ocultosDaArea(projetos, "area_a").map((p) => p.id)).toEqual(["proj-a9", "proj-a10"]);
+    expect(opcoesDaTroca(projetos, "area_a", "proj-a1").map((p) => p.id)).toEqual(["proj-a9", "proj-a10"]);
+    expect(opcoesDaTroca(projetos, "area_a", null)).toHaveLength(3);
+  });
+});
+
 describe("a cédula oferece os estandes que apareceram no feed", () => {
-  test("na ordem em que apareceram, sem repetir os formatos da saturação", () => {
+  test("na ordem em que apareceram, sem repetir os formatos da saturação (o feed gravado de uma sessão 2.0.0)", () => {
     const feed = [post("proj-a1"), post("proj-b2"), post("proj-a1", "bastidor"), post("proj-a1", "depoimento"), post("proj-c3")];
     expect(estandesDoFeed(feed).map((e) => e.projetoId)).toEqual(["proj-a1", "proj-b2", "proj-c3"]);
   });

@@ -28,6 +28,7 @@ import {
   problemasDosParametros,
   problemasPorCampo,
   rotuloCurtoDaArea,
+  rotuloDaAbaDaArea,
   rotuloDaDisciplina,
   type ConteudoDoPacote,
   type PacoteDetalhe,
@@ -39,7 +40,7 @@ import {
 } from "@/lib/juri-estadual-tipos";
 import { falasParaHomologar, type FalasEscritas } from "@/lib/podcast-tipos";
 
-import { CartaoDoEstande, EditorDoEstande } from "../../resultados/estande-do-preparo";
+import { AbasDasAreas, CartaoDoEstande, EditorDoEstande } from "../../resultados/estande-do-preparo";
 import { ImagensDoJuri } from "../../resultados/imagens-do-juri";
 import { FalasDoPodcast, falasComProblema, pedirFalasDoTema } from "./falas-do-podcast";
 
@@ -59,8 +60,8 @@ const COPY = {
   exemploDoContexto: "Exemplo: escola em área rural, perto de um rio.",
   gerar: COPY_DO_PREPARO.botaoGerar,
   gerando: COPY_DO_PREPARO.gerando,
-  espera: "Isso pode levar perto de um minuto.",
-  tituloDaCuradoria: "Curadoria de Projetos Finalistas (16 projetos)",
+  espera: "Isso leva perto de um minuto: a inteligência artificial escreve as quatro áreas, com dez estandes em cada uma.",
+  tituloDaCuradoria: `Curadoria de Projetos Finalistas (${TOTAL_DE_PROJETOS} projetos)`,
   instrucaoDaCuradoria: "Revise os textos e escolas dos projetos antes de liberar a mostra aos jurados da turma.",
   falhaDaIa: "O serviço de geração automática oscilou. Tente novamente em instantes.",
 } as const;
@@ -78,7 +79,10 @@ interface TextosAprovados {
   aprovadasEm: string | null;
 }
 
-/** O BANCO PADRÃO: a atividade pronta, sem IA (`POST banco-padrao`). As imagens já nascem aprovadas (arte procedural). */
+/**
+ * O BANCO PADRÃO: a atividade pronta, sem IA (`POST banco-padrao`). Leva as
+ * imagens do banco que já existem; o estande sem imagem usa a arte desenhada.
+ */
 interface BancoPadraoAplicado {
   id: string;
   turmaId: string;
@@ -91,14 +95,16 @@ type FalhaDaIa = { tipo: "sem-saldo" | "indisponivel"; de: "gerar" | string };
  * NOVA ATIVIDADE do JÚRI ESTADUAL DE PROJETOS (ADR-130): o preparo da mostra é
  * o passo de conteúdo da criação, no molde do Jornal da Escola
  * (`criar-jornal-escola.tsx`). A missão é o esqueleto (o feed, a cédula, a
- * galeria, os pacotes, a cadeia, Mariana); o PACOTE — os dezesseis estandes
- * em quatro áreas, sobre o tema do professor — é a atividade.
+ * galeria, a cadeia, Mariana); o PACOTE — os quarenta estandes em quatro
+ * áreas, dez em cada, sobre o tema do professor — é a atividade.
  *
  * O caminho, na ordem da tela:
  *
  * 1. **parametrizar** — componente curricular (as nove disciplinas da missão),
  *    tema, assuntos e, se quiser, o contexto da escola;
- * 2. **gerar com IA** (`gerar-conteudo`), com a espera à vista. Sem cota ou
+ * 2. **gerar com IA** (`gerar-conteudo`: cinco chamadas na api — as categorias
+ *    e as quatro áreas em paralelo —, perto de um minuto), com a espera à
+ *    vista. Sem cota ou
  *    sem IA a api responde 200 com o BANCO PADRÃO (`usouIa: false`, `motivo`):
  *    a tela mostra o aviso da contingência e o botão "Usar Acervo Padrão da
  *    Mostra" (E0-PROF-03), em vez de pôr o banco na curadoria como se fosse
@@ -108,7 +114,8 @@ type FalhaDaIa = { tipo: "sem-saldo" | "indisponivel"; de: "gerar" | string };
  * `POST banco-padrao` e a atividade nasce pronta, sem curadoria nem imagens a
  * aprovar — o assistente segue direto para a turma e o "Pôr no ar agora".
  *
- * 3. **curar** os dezesseis estandes, em quatro grupos (um por área): editar
+ * 3. **curar** os quarenta estandes, uma ABA por área (`AbasDasAreas`, com as
+ *    pendências da área no rótulo): editar
  *    título, legenda e bastidor, e regenerar um estande (`regenerar-projeto`),
  *    que sem IA devolve o estande como estava;
  * 4. **aprovar em DUAS fases, na mesma tela** (o pedido do PO: "o professor
@@ -149,6 +156,9 @@ export function CriarJuriEstadual({
   /* O aviso da contingência: a geração caiu no banco padrão. */
   const [contingencia, setContingencia] = useState<string | null>(null);
   const [conteudo, setConteudo] = useState<ConteudoDoPacote | null>(null);
+  /* As imagens que o rascunho JÁ traz (só o do banco padrão as tem; o da IA
+     vem vazio). Aparecem no cartão do estande. */
+  const [imagensDoRascunho, setImagensDoRascunho] = useState<Record<string, string>>({});
   /* O tema para o qual OS ESTANDES NA TELA foram escritos. Trocar o texto do
      tema sem gerar de novo deixaria a mostra falando de outro assunto. */
   const [temaDosEstandes, setTemaDosEstandes] = useState("");
@@ -284,13 +294,14 @@ export function CriarJuriEstadual({
       }
       setParametros(parametrosNaTela(rascunho.parametros));
       setConteudo(rascunho.conteudo);
+      setImagensDoRascunho(rascunho.imagens ?? {});
       setTemaDosEstandes(rascunho.parametros.tema);
       setEditando(null);
       void escreverFalas(turmaId, rascunho.conteudo);
       setAviso({
         tipo: "success",
         texto:
-          "Mostra gerada. Leia os 16 estandes e edite o que quiser antes de criar a atividade — nada vai à turma sem o seu clique.",
+          `Mostra gerada. Leia os ${TOTAL_DE_PROJETOS} estandes, área por área, e edite o que quiser antes de criar a atividade — nada vai à turma sem o seu clique.`,
       });
     } catch {
       setErro({ mensagem: SEM_CONEXAO, erros: [] });
@@ -441,11 +452,12 @@ export function CriarJuriEstadual({
                 <>
                   <FeedbackAlert
                     type="success"
-                    description="O Banco Padrão Oficial está pronto: os 16 estandes da Feira de Ciências e Sustentabilidade, sem uso de IA. Continue para escolher a turma e pôr no ar."
+                    description={`O Banco Padrão Oficial está pronto: os ${TOTAL_DE_PROJETOS} estandes da Feira de Ciências e Sustentabilidade, sem uso de IA. Continue para escolher a turma e pôr no ar.`}
                   />
                   <p className="max-w-3xl text-[12px] leading-snug text-unooria-neutral-600">
-                    Os estandes usam a arte desenhada da missão, sem imagem gerada. O podcast de recapitulação é o
-                    roteiro fixo do episódio. Para personalizar o tema, recomece e gere com IA.
+                    Os estandes usam as imagens do banco padrão; o que ainda não tem imagem aparece com a arte
+                    desenhada da missão. O podcast de recapitulação é o roteiro fixo do episódio. Para personalizar o
+                    tema, recomece e gere com IA.
                   </p>
                   <div>
                     <Button variant="secondary" size="sm" onClick={recomecar} data-acao="recomecar-mostra">
@@ -512,8 +524,8 @@ export function CriarJuriEstadual({
             {/* O CAMINHO CURTO (E0-PROF-02): no topo, antes de qualquer campo. */}
             <div className="flex flex-col items-start gap-2 rounded-lg border border-unooria-neutral-200 p-4" data-caminho-curto>
               <p className="max-w-3xl text-[13px] leading-relaxed text-unooria-neutral-700">
-                Para ir direto, use a mostra oficial já pronta — a Feira de Ciências e Sustentabilidade, com 16
-                estandes em quatro áreas —, sem digitar nada e sem uso de IA.
+                Para ir direto, use a mostra oficial já pronta — a Feira de Ciências e Sustentabilidade, com{" "}
+                {TOTAL_DE_PROJETOS} estandes em quatro áreas —, sem digitar nada e sem uso de IA.
               </p>
               <Button
                 variant="primary"
@@ -528,8 +540,8 @@ export function CriarJuriEstadual({
               </Button>
             </div>
             <p className="max-w-3xl text-[13px] leading-relaxed text-unooria-neutral-700">
-              Ou personalize: a inteligência artificial escreve os 16 estandes sobre o tema da sua aula, em quatro
-              áreas.{" "}
+              Ou personalize: a inteligência artificial escreve os {TOTAL_DE_PROJETOS} estandes sobre o tema da sua
+              aula, dez em cada uma das quatro áreas.{" "}
               <strong>Nenhum texto gerado por inteligência artificial é exibido aos estudantes sem a sua aprovação.</strong>
             </p>
 
@@ -667,8 +679,8 @@ export function CriarJuriEstadual({
               <p className="text-[14px] font-semibold text-unooria-neutral-950">{COPY.tituloDaCuradoria}</p>
               {!completo || !conteudo ? (
                 <p className="text-[12px] leading-snug text-unooria-neutral-600" data-mostra-vazia>
-                  Preencha os campos acima e gere a mostra. Os 16 estandes aparecem aqui, em quatro áreas, para você ler
-                  e editar.
+                  Preencha os campos acima e gere a mostra. Os {TOTAL_DE_PROJETOS} estandes aparecem aqui, uma aba por
+                  área, para você ler e editar.
                 </p>
               ) : (
                 <>
@@ -692,39 +704,54 @@ export function CriarJuriEstadual({
                       {comProblema.length > 0 ? (
                         <p>
                           {comProblema.length === 1 ? "Um estande precisa" : `${comProblema.length} estandes precisam`} de ajuste.
-                          Eles estão marcados abaixo.
+                          A aba da área diz quantos, e o cartão está marcado.
                         </p>
                       ) : null}
                     </div>
                   ) : null}
 
-                  <div className="flex flex-col gap-6" data-curadoria-da-mostra>
-                    {estandesPorArea(conteudo).map(({ categoria, projetos }) => (
-                      <section key={categoria.area} className="flex flex-col gap-3" data-area={categoria.area}>
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="text-[14px] font-semibold text-unooria-neutral-950">
-                            {rotuloCurtoDaArea(categoria.area)} — {categoria.nome}
-                          </span>
-                          <Tag variant="info" size="sm">
-                            {categoria.hashtag}
-                          </Tag>
-                        </div>
-                        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                          {projetos.map((p) => (
-                            <CartaoDoEstande
-                              key={p.id}
-                              projeto={p}
-                              problemas={Object.keys(problemasDeCampo.get(p.id) ?? {}).length}
-                              errosDaApi={errosDaApi.porProjeto[p.id] ?? []}
-                              aoEditar={() => setEditando(p.id)}
-                              aoRegenerar={() => void regenerar(turmaId, p.id)}
-                              regenerando={regenerando === p.id}
-                              ocupado={ocupado}
-                            />
-                          ))}
-                        </div>
-                      </section>
-                    ))}
+                  <div data-curadoria-da-mostra>
+                    <AbasDasAreas
+                      rotulo="Os estandes da mostra, por área"
+                      abas={estandesPorArea(conteudo).map(({ categoria, projetos }) => {
+                        const pendentes = projetos.filter(
+                          (p) =>
+                            Object.keys(problemasDeCampo.get(p.id) ?? {}).length > 0 ||
+                            (errosDaApi.porProjeto[p.id]?.length ?? 0) > 0,
+                        ).length;
+                        return {
+                          area: categoria.area,
+                          rotulo: rotuloDaAbaDaArea(categoria.nome, projetos.length, { quantos: pendentes, texto: "com ajuste" }),
+                          conteudo: (
+                            <section className="flex flex-col gap-3">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span className="text-[14px] font-semibold text-unooria-neutral-950">
+                                  {rotuloCurtoDaArea(categoria.area)} — {categoria.nome}
+                                </span>
+                                <Tag variant="info" size="sm">
+                                  {categoria.hashtag}
+                                </Tag>
+                              </div>
+                              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                                {projetos.map((p) => (
+                                  <CartaoDoEstande
+                                    key={p.id}
+                                    projeto={p}
+                                    imagem={imagensDoRascunho[p.id]}
+                                    problemas={Object.keys(problemasDeCampo.get(p.id) ?? {}).length}
+                                    errosDaApi={errosDaApi.porProjeto[p.id] ?? []}
+                                    aoEditar={() => setEditando(p.id)}
+                                    aoRegenerar={() => void regenerar(turmaId, p.id)}
+                                    regenerando={regenerando === p.id}
+                                    ocupado={ocupado}
+                                  />
+                                ))}
+                              </div>
+                            </section>
+                          ),
+                        };
+                      })}
+                    />
                   </div>
                 </>
               )}

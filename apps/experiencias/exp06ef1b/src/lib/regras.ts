@@ -1,5 +1,6 @@
 import type {
   Area,
+  AreaSemCurtidas,
   Categoria,
   Etapa,
   Gate,
@@ -8,12 +9,14 @@ import type {
   ProjetoDaGaleria,
   Sessao,
   TipoDeBusca,
+  VistosPorArea,
 } from "./tipos";
 
 /**
  * As poucas regras que são do CLIENTE — e por que são tão poucas.
  *
- * Tudo o que decide o que VALE (o motor do feed, a taxa de invisibilidade, a
+ * Tudo o que decide o que VALE (o motor do feed, a contagem dos ocultos e o
+ * contrafactual "sem as suas curtidas", a
  * ordem certa dos blocos da cadeia, o cartão certo, o nível das enquetes,
  * o relógio da turma) mora no servidor, em `apps/api/src/juri-estadual/`. O que
  * sobra aqui é o que a tela decide sozinha, sem ida à api: qual tela o passo
@@ -164,7 +167,8 @@ export interface EstandeDoFeed {
 
 /**
  * Os estandes que APARECERAM no feed, na ordem em que apareceram e sem
- * repetição (a saturação repete o projeto em outros formatos). É a lista da cédula:
+ * repetição (desde a 0.5.0 o motor não repete post; o feed gravado de uma
+ * sessão 2.0.0 ainda repete o projeto em outros formatos). É a lista da cédula:
  * a api recusa voto fora dela (`projeto-fora-do-feed`), e a cédula não pode
  * oferecer o que o feed não serviu.
  */
@@ -206,6 +210,60 @@ export function protocoloDoVoto(pacoteId: string, rodada: number, projetoId: str
     h = Math.imul(h, 16777619);
   }
   return `PR-${String((h >>> 0) % 9000 + 1000)}`;
+}
+
+// ───────────────────────────────────── o carrossel do post: fotos e bastidor
+
+/** As fotos do carrossel: a capa do estande e as fotos técnicas 2 e 3 (`e2.instrucao.carrossel_contador`). */
+export const FOTOS_DO_POST = 3;
+
+/**
+ * Quantas lâminas o carrossel de um post tem: as três fotos e, quando o estande
+ * tem bastidor, a lâmina de TEXTO dele no fim (o protótipo em teste). O
+ * bastidor deixou de ser um post separado na 0.5.0 e virou parte do post.
+ */
+export function laminasDoPost(post: Pick<PostPublico, "bastidor">): number {
+  return FOTOS_DO_POST + (temBastidor(post) ? 1 : 0);
+}
+
+/** O post tem a lâmina do bastidor? (Texto vazio não vira lâmina.) */
+export function temBastidor(post: Pick<PostPublico, "bastidor">): boolean {
+  return typeof post.bastidor === "string" && post.bastidor.trim() !== "";
+}
+
+// ─────────────────────────────────────────── a galeria: por área e o contraste
+
+/**
+ * A área que a grade dos ocultos mostra ao abrir: a que MAIS ficou fora do
+ * feed (empate: a ordem das áreas). Com quarenta estandes são ~30 ocultos —
+ * soltos num 375 px, a grade vira um mural sem fim; por área, cabem.
+ */
+export function areaComMaisOcultos(porArea: readonly VistosPorArea[]): Area | null {
+  let melhor: VistosPorArea | null = null;
+  for (const a of porArea) if (!melhor || a.total - a.vistos > melhor.total - melhor.vistos) melhor = a;
+  return melhor?.area ?? null;
+}
+
+/**
+ * O contrafactual CONTADO: quantos posts de cada área o feed teria trazido sem
+ * as curtidas. A lista de projetos vem calculada da api; a tela só conta.
+ */
+export function contagemSemCurtidas(semCurtidas: readonly AreaSemCurtidas[]): { area: Area; posts: number }[] {
+  return semCurtidas.map((a) => ({ area: a.area, posts: a.posts.length }));
+}
+
+/** Os estandes OCULTOS de uma área, na ordem da galeria. */
+export function ocultosDaArea(projetos: readonly ProjetoDaGaleria[], area: Area): ProjetoDaGaleria[] {
+  return projetos.filter((p) => p.area === area && !p.exibidoNoSeuFeed);
+}
+
+/** As opções da troca do voto numa área: todos os estandes dela, menos o votado. */
+export function opcoesDaTroca(
+  projetos: readonly ProjetoDaGaleria[],
+  area: Area,
+  votoId: string | null,
+): ProjetoDaGaleria[] {
+  return projetos.filter((p) => p.area === area && p.id !== votoId);
 }
 
 // ─────────────────────────────────────────────── a busca da galeria

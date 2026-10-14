@@ -905,9 +905,12 @@ export const MISSAO_A_SELECAO: Missao = {
  * social (o Unoovista). As curtidas dele afunilam o feed em silêncio; depois de
  * dez posts ele lacra o voto e espera — é o PICO: o professor projeta como os
  * votos da turma se dividiram e libera a Galeria Oculta, onde cada um vê o que
- * nunca chegou à tela dele, com a taxa REAL de invisibilidade (calculada na
- * api para cada sessão: quem curte duas vezes a mesma área vê menos; quem não
- * curte nada vê mais). Nenhum número cravado na copy, de propósito.
+ * nunca chegou à tela dele. Com QUARENTA estandes (PO, 2026-10-14) e dez posts,
+ * o total escondido é o mesmo para todos; a galeria prova O QUE sumiu — a
+ * contagem por área e o feed "sem as suas curtidas" (calculados na api para
+ * cada sessão: quem curte duas vezes a mesma área recebe quase só ela; quem não
+ * curte nada vê as quatro misturadas). Nenhum número cravado na copy, de
+ * propósito.
  *
  * As habilidades são as da spec v1.5.2: EF06CO10 (o foco primário), EF06CO01
  * e EF06CO03, com o TEXTO OFICIAL de `apps/api/src/curriculo/dados/
@@ -917,7 +920,7 @@ export const MISSAO_A_SELECAO: Missao = {
  *
  * Tem ficha pedagógica (E14): a atividade é o PACOTE homologado e a rodada é o
  * "Zerar". Desde a 0.4.0 (PRD v2) tem BANCO PADRÃO: o professor usa a Feira
- * de Ciências e Sustentabilidade em um toque, ou gera os dezesseis estandes
+ * de Ciências e Sustentabilidade em um toque, ou gera os quarenta estandes
  * com IA sobre o tema dele; sem saldo de IA, o banco padrão entra no lugar. A
  * rodada de desvio saiu: o único botão da aula é Liberar Auditoria.
  */
@@ -929,7 +932,7 @@ export const MISSAO_JURI_ESTADUAL: Missao = {
   titulo: "O Júri Estadual de Projetos",
   resumo:
     "Simulação de rede social onde as curtidas do estudante revelam como funcionam as bolhas " +
-    "algorítmicas e os sistemas de recomendação. Ele é jurado de uma mostra estadual com dezesseis " +
+    "algorítmicas e os sistemas de recomendação. Ele é jurado de uma mostra estadual com quarenta " +
     "estandes de quatro áreas — do banco padrão ou escritos sobre o tema da sua aula —, lacra o " +
     "voto e, quando você libera a auditoria, descobre na Galeria Oculta os estandes que as " +
     "próprias curtidas esconderam dele.",
@@ -970,8 +973,8 @@ export const MISSAO_JURI_ESTADUAL: Missao = {
         texto:
           "As quatro primeiras publicações são uma de cada área. Daí em diante, cada curtida e cada " +
           "parada longa num post mudam o que vem a seguir, sem nenhum aviso na tela: quem curte " +
-          "duas vezes a mesma área passa a receber só ela. Depois de dez publicações, ou de 8 " +
-          "minutos, a cédula abre.",
+          "duas vezes a mesma área passa a receber só ela — outros projetos da mesma área, nenhum " +
+          "repetido. Depois de dez publicações, ou de 8 minutos, a cédula abre.",
       },
       {
         rotulo: "3 — A cédula lacrada",
@@ -986,8 +989,10 @@ export const MISSAO_JURI_ESTADUAL: Missao = {
         texto:
           "Com a maioria votada, você projeta o Painel Coletivo de Votos da Turma e conduz as " +
           "perguntas da plenária. Aí você aperta Liberar Auditoria. Cada computador vê os estandes " +
-          "que não chegaram ao feed dele, com a parte real que ficou de fora — diferente para cada " +
-          "um —, busca por hashtag e decide entre manter o voto inicial ou confirmar um voto revisado.",
+          "que não chegaram ao feed dele: quantos de cada área ficaram de fora — o total é igual para " +
+          "todos, as áreas não — e o feed que ele teria visto sem as próprias curtidas. Busca por " +
+          "hashtag e decide entre manter o voto inicial ou confirmar um voto revisado. Na lousa, " +
+          "você mostra quanto do feed caiu numa área só para quem curtiu e para quem não curtiu.",
       },
       {
         rotulo: "5 — A cadeia do feed",
@@ -1010,8 +1015,9 @@ export const MISSAO_JURI_ESTADUAL: Missao = {
       "Crie a atividade aqui na ficha, em Nova atividade. O caminho curto é Usar Banco Padrão Oficial: " +
         "um toque, sem IA. Para personalizar, escolha o componente curricular, o título da mostra e os " +
         "assuntos da semana e gere com IA; sem saldo de IA, o Acervo Padrão da Mostra entra no lugar.",
-      "Na mostra personalizada, revise os estandes (título, legenda e bastidor; regenere o que não servir) " +
-        "e aprove em duas fases: os textos, depois as imagens — sem as imagens aprovadas, ela não vai ao ar. " +
+      "Na mostra personalizada, revise os quarenta estandes, uma aba por área (título, legenda e bastidor; " +
+        "regenere o que não servir), e aprove em duas fases: os textos, depois as imagens — que saem quatro " +
+        "por vez e levam vários minutos; sem elas aprovadas, a mostra não vai ao ar. Faça antes do dia da aula. " +
         "Nada gerado por inteligência artificial chega à turma sem a sua revisão.",
       "Se a turma divide computadores, escolha as equipes na criação. Não há rodízio obrigatório de quem " +
         "toca a tela: a organização do grupo fica com você. O painel conta por computador.",

@@ -1,7 +1,7 @@
 /**
  * O ESQUELETO fixo da exp06ef1b — o que não é gerado pelo professor: os blocos
  * da cadeia (EF06CO03), o caso Mariana e os cinco cartões, e as perguntas da
- * plenária. Os dezesseis estandes do banco padrão moram em `banco-padrao.ts`.
+ * plenária. Os quarenta estandes do banco padrão moram em `banco-padrao.ts`.
  *
  * Texto LITERAL do banco de conteúdo do PRD v2 (`dev/01e-banco-conteudo.md`,
  * doc-exp06ef1b-01 e doc-exp06ef1b-03) e do Anexo (one-pager §9, o roteiro de

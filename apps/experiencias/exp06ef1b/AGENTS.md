@@ -4,7 +4,7 @@ Complementa o `AGENTS.md` da raiz e o de `apps/experiencias`.
 
 | Manifesto | Dev | DS | api | e2e |
 |---|---|---|---|---|
-| `exp06ef1b` · 6EF · unidade 1 · `entre-redes` · `viewport` 375×812 · `permissoes: ["forms"]` · versão **0.4.0** (PRD v2) | `:5185` (`strictPort`), hub `/exp/exp06ef1b` | `@edu/ui/ds-unoovista` (clone, DS `^0.2.11`) + `@edu/ui/ds` (escola) | `apps/api/src/juri-estadual` ↔ `/juri-estadual/*`; enquetes em `/evidencias/exp06ef1b/perguntas/*` (E14) | `scripts/e2e/estudante/13-juri-estadual.mjs` (dois estudantes + a professora) |
+| `exp06ef1b` · 6EF · unidade 1 · `entre-redes` · `viewport` 375×812 · `permissoes: ["forms"]` · versão **0.5.0** (40 projetos) | `:5185` (`strictPort`), hub `/exp/exp06ef1b` | `@edu/ui/ds-unoovista` (clone, DS `^0.2.11`) + `@edu/ui/ds` (escola) | `apps/api/src/juri-estadual` ↔ `/juri-estadual/*`; enquetes em `/evidencias/exp06ef1b/perguntas/*` (E14) | `scripts/e2e/estudante/13-juri-estadual.mjs` (dois estudantes + a professora) |
 
 ## O passo manda na tela
 
@@ -19,10 +19,10 @@ nos CAMPOS dos schemas que a tela lê.
 | Passo | Tela | Quem fala | Componentes do DS |
 |---|---|---|---|
 | `credencial` | E1-ALU-01 — o crachá, modal sobre a timeline DESFOCADA | comissão (clone) | a casca do app desfocada e `inert` (`TopBar`, `PostCard` sem foto, `TabBar`), `BottomSheetUnv` modal (não fecha), `IconUnv`, `BadgeUnv` (`@jurado_oficial`), `ButtonUnv` |
-| `feed` | E2-ALU-01/02 — o feed | app | `TopBar` ("Unoovista" + `BadgeUnv` `@jurado_oficial`, `clone/cabecalho.tsx`), `PostCard` (carrossel de 3 fotos, "Foto 2 de 3"; `errorLabel`/`errorDescription` = `PLACEHOLDER_DIEGETICO`), `GestureHint`, `ButtonUnv` (setas; "...mais"/"menos"), `FloatingButton` (a cédula), `TabBar` (4 abas), `NotificationItem` e `ProfileHeader` (as abas), `SnackbarUnv` |
+| `feed` | E2-ALU-01/02 — o feed | app | `TopBar` ("Unoovista" + `BadgeUnv` `@jurado_oficial`, `clone/cabecalho.tsx`), `PostCard` (carrossel de 3 fotos, "Foto 2 de 3", e a 4ª lâmina "Bastidores do estande", o `PostCard.Media` sem `src`; `errorLabel`/`errorDescription` = `PLACEHOLDER_DIEGETICO`), `GestureHint`, `ButtonUnv` (setas; "...mais"/"menos"), `FloatingButton` (a cédula), `TabBar` (4 abas), `NotificationItem` e `ProfileHeader` (as abas), `SnackbarUnv` |
 | `feed` (cédula aberta) | E3-ALU-01 — a cédula, 4 elementos | app | `BottomSheetUnv` modal, `InlineHint` `friction` num `role="alert"` (E3-SIS-01, 60 s), `Escolha` (`ListItem` + `AvatarUnv`), `Chip` (Sim / Com certeza), `ButtonUnv` |
 | `lacrada` | E3-ALU-02 — o voto lacrado e a espera | comissão | `TopBar`, `IconUnv`, o carimbo "Protocolo #…" e a linha da espera |
-| `galeria` | E4-ALU-01/02/03 — a Galeria Oculta e a revisão | comissão, depois app | `NotificationItem` (a comissão), `InlineHint` `friction` (o badge com a taxa REAL), `SearchField`, `Chip` (as hashtags da api), a grade de 3 colunas com `ButtonUnv` "Inspecionar Projeto", `BottomSheetUnv` ("Ficha Técnica de Auditoria"; a troca do voto), `Escolha`, `BadgeUnv` |
+| `galeria` | E4-ALU-01/02/03 — a Galeria Oculta e a revisão | comissão, depois app | `NotificationItem` (a comissão), `InlineHint` `friction` ("X de Y estandes"), `ListItem` (por área), `BadgeUnv` (o contraste sem curtidas), `SearchField`, `Chip` (as hashtags; a área da grade), a grade de 3 colunas com `ButtonUnv` "Inspecionar Projeto", `BottomSheetUnv` ("Ficha Técnica de Auditoria"; a troca do voto, com os mesmos chips), `Escolha` |
 | `revisada` | — (passagem) | — | a tela pede `POST passo {para:"cadeia"}` sozinha, também num F5 |
 | `cadeia` | E5-ALU-01 — a ponte do Léo, o par simulado e a cadeia | **escola** | `ScrollBar`, `Logo`, `SectionHeader`, `Card` + `Tag` (os dois lados do par), `PuzzleBlock`, `PuzzleTrack`, `AlertBox` (a errada e a certa), `Button` |
 | `mariana` | E6-ALU-01 — o caso Mariana | **escola** (PRD §10.1) | `ScrollBar`, `Logo`, `Card` (o caso), `RadioGroup` ×2 (mecanismo, atitude), `Button` |
@@ -45,16 +45,12 @@ quem homologa é a comissão. Os avisos globais seguem a mesma regra (`app/aviso
 `regras.ts#vozDaTela`): `SnackbarUnv`/`BottomSheetUnv` no clone, `AlertBox` na
 escola.
 
-A tela de abertura (o crachá) é do clone, e não é exceção à regra da entrada: a
-escola fala ANTES dela só quando a porta está fechada (o 403).
+O crachá é do clone; a escola fala antes dele só no 403.
 
-**PRD v2 §10.1 mudou dois lugares**: o caso Mariana passou para a escola (é a
-transferência para a vida da criança, fora da mostra), e o fim tem as DUAS
-vozes — a comissão no topo (casca do Unoovista) e o infográfico da Unooria
-numa faixa própria embaixo (`.fim__escola`: fundo, fonte e `Card` da seção
-`unooria`, nenhum token `--unv-*`). Não é a plataforma vestida de app, e o
-inverso também não acontece: a peça da Unooria não leva a barra nem as abas do
-clone.
+**PRD v2 §10.1**: o caso Mariana é da escola (a transferência para a vida da
+criança), e o fim tem as DUAS vozes — a comissão no topo e o infográfico da
+Unooria numa faixa própria (`.fim__escola`: `Card` da seção `unooria`, nenhum
+token `--unv-*`, sem a barra nem as abas do clone).
 
 ## O voto e a revisão (PRD v2)
 
@@ -67,47 +63,58 @@ clone.
 - **A revisão tem dois botões**: "Manter meu voto inicial" (travado, com a
   explicação, até a criança abrir UM oculto — a api responde 409
   `galeria-sem-inspecao` se a tela errar) e "Confirmar Voto Revisado" (abre a
-  lista dos quinze outros). Depois do latch, a tela pede a cadeia sozinha.
-- **Saíram** a justificativa, o complementar e a rodada de desvio (rotas,
-  telas, etapa e passo). As colunas antigas ficam no banco, sem uso.
+  lista dos 39 outros, FILTRADA por área pelos chips — abre na área da grade).
+  Depois do latch, a tela pede a cadeia sozinha.
+- **Saíram** a justificativa, o complementar e a rodada de desvio (as
+  colunas ficam no banco, sem uso).
 
 ## As quatro abas
 
-`clone/abas.ts`. **Início** é o feed; **Busca** responde que está fechada no
-julgamento (a busca é a ferramenta da Galeria Oculta, e abri-la antes deixaria a
-criança furar a bolha antes de o feed formá-la); **Notificações** mostra a
-notificação que a criança já recebeu (o crachá); **Jurado** é o perfil do
-crachá. Nenhuma abre fluxo novo; o feed só se esconde nas outras.
+`clone/abas.ts`. **Início** é o feed; **Busca** responde fechada no julgamento
+(abri-la antes furaria a bolha antes de o feed formá-la); **Notificações** mostra
+o crachá; **Jurado** é o perfil. Nenhuma abre fluxo novo.
 
 ## O relógio de 8 minutos é do servidor
 
 O primeiro `proximo: true` liga o relógio (`encerraEm`); recarregar não zera.
-A tela agenda UMA ida vazia para `encerraEm` (`regras.ts#esperaAteEncerrar`); o
-servidor responde `tempoEsgotado` e `cedulaLiberada`. A barra da cédula só
-acende com `cedulaLiberada` — a tela nunca decide sozinha. Sem cronômetro
-visível (a copy não tem a string).
+A tela agenda UMA ida vazia para `encerraEm` (`regras.ts#esperaAteEncerrar`), e
+a barra da cédula só acende com `cedulaLiberada` do servidor. Sem cronômetro.
 
 ## A cédula aberta: o aviso de 60 s e o batimento de 15 s
 
 `app/inatividade.ts#useOciosidade`: 60 s sem toque com a cédula ABERTA acende a
-linha da comissão no topo da folha (`role="alert"`). Enquanto a folha está
-aberta, `POST cedula/batimento {aberta:true, segundosSemToque}` a cada 15 s
-(204, por `postSemResposta`); ao fechar, `{aberta:false}`. É o sinalizador de
-ociosos do painel do professor.
+linha da comissão (`role="alert"`). Folha aberta: `POST cedula/batimento
+{aberta:true, segundosSemToque}` a cada 15 s (204); ao fechar, `{aberta:false}`
+— o sinalizador de ociosos do painel do professor.
+
+## A Galeria Oculta (0.5.0): o que sumiu, não quanto
+
+Com 40 estandes e dez posts sem repetição, o total oculto é igual para todos
+(30 de 40): a prova é QUAL área sumiu. Tudo vem calculado da api
+(`GaleriaSchema`; o motor nunca desce); a tela só conta, na voz da comissão:
+
+- `invisibilidade` → "30 de 40 estandes nunca chegaram ao seu feed" (Y = o
+  pacote: 16 no antigo). Sem porcentagem.
+- `porArea` → "Tecnologia: você viu 7 de 10" (`ListItem`).
+- `semCurtidas` (o CONTRAFACTUAL) → "Sem as suas curtidas, o seu feed teria
+  trazido:" e um `BadgeUnv` por área com `posts.length`.
+- **A grade é dos ocultos de UMA área**, a do chip: abre na que mais ficou fora
+  (`regras.ts#areaComMaisOcultos`) sem contar como busca; o toque conta.
 
 ## O feed é servido um post por vez
 
 `POST /juri-estadual/passo {para:"feed"}` serve a abertura (4 posts, um de cada
-área). Cada vez que o ÚLTIMO post servido fica ≥ 60% visível, a tela pede o
-próximo (`POST feed/eventos` com `proximo: true`), junto com as curtidas e as
-permanências da fila. A fila (`juri-app.tsx`) junta os eventos por 400 ms, manda
-UMA ida por vez e guarda para qual tamanho de feed o próximo já foi pedido — o
-mesmo fim não pede dois. Quem escolhe o post seguinte é o motor da api; a tela
-não sabe a regra. Antes do voto, a fila é esvaziada (o voto vai DEPOIS das
-últimas curtidas).
+área). Quando o ÚLTIMO post fica ≥ 60% visível, a tela pede o próximo (`POST
+feed/eventos`, `proximo: true`) com as curtidas e permanências da fila. A fila
+(`juri-app.tsx`) junta por 400 ms, manda UMA ida por vez e não pede dois para o
+mesmo fim. O motor da api escolhe o post; antes do voto, a fila é esvaziada.
 
 A permanência (`lib/permanencia.ts`) é um FATO por post (> 5 s seguidos com
 ≥ 60% visível), não o tempo somado.
+
+Desde a 0.5.0 o motor serve só `apresentacao`, sem repetir; o `bastidor` é a
+ÚLTIMA lâmina do carrossel do post. Sessões 2.0.0 ainda trazem os formatos
+legados: a tela os desenha, e a cédula não repete o estande.
 
 ## Polling SÓ na espera
 
@@ -126,9 +133,8 @@ tela, e a revisão do voto ESPERA a fila esvaziar: a evidência da EF06CO01 é
 marcada no latch da revisão sobre o que a api já gravou.
 
 `galeria/acoes` responde **204 sem corpo**, e o SDK faz `res.json()` em toda
-resposta `ok`: o corpo vazio vira `SyntaxError` sem status, que a `tipoDaFalha`
-leria como queda de rede e a `comRepeticao` repetiria para sempre.
-`lib/api.ts#postSemResposta` trata o `SyntaxError` como o sucesso que ele é.
+resposta `ok`: o `SyntaxError` sem status seria lido como queda de rede e
+repetido para sempre. `lib/api.ts#postSemResposta` o trata como sucesso.
 
 ## Os latches e o F5
 
@@ -139,17 +145,15 @@ leria como queda de rede e a `comRepeticao` repetiria para sempre.
 - A **cadeia errada** é o **422 `ordem-incorreta`** (sem gabarito, a tentativa
   conta para a EF06CO03): `juri-app.tsx#conferirACadeia` o lê como "errada", não
   como falha.
-- **Cadeia, cartões e enquetes** reabrem como estavam: a calha montada
-  pela metade, os cartões tocados e a alternativa de cada enquete ficam no
-  `sessionStorage` (`lib/memoria.ts`, só ids, chave = estudante + atividade +
-  rodada). A api guarda a primeira resposta de cada enquete de qualquer jeito.
+- **Cadeia, cartões e enquetes** reabrem como estavam (`lib/memoria.ts`:
+  `sessionStorage`, só ids, chave = estudante + atividade + rodada).
 - A **dica do carrossel** não volta depois do primeiro deslize (memória).
 
 ## As enquetes pulam para o fim
 
-Uma tentativa por pergunta, sem repetição: falhou (409, rede, 404), a consulta
-encerra e o botão "Encerrar consulta" leva ao `POST concluir`. Nunca mostram
-acerto. Da enquete, a telemetria leva a PERGUNTA, nunca a alternativa.
+Uma tentativa por pergunta: falhou (409, rede, 404), a consulta encerra e
+"Encerrar consulta" leva ao `POST concluir`. Nunca mostram acerto; a telemetria
+leva a PERGUNTA, nunca a alternativa.
 
 ## O que o bundle NÃO sabe
 
@@ -184,8 +188,8 @@ As compensações locais do DS (cada uma com a lacuna e o pedido ao
 
 A fonte é `design/06-copy-strings-revisada.md` do PRD v2, chave por chave em
 `lib/textos.ts`; o que a copy não tinha está marcado `ESCRITA AQUI` (o
-inventário no `README.md`). O "75%" e os "12 projetos" da copy viram o número
-REAL da sessão na mesma moldura. UMA exclamação na missão (a do Léo). O
+inventário no `README.md`). O "75%" e os "12 projetos" da copy viraram, na
+0.5.0, a moldura "X de Y estandes" com os números REAIS (nenhum `%` na tela). UMA exclamação na missão (a do Léo). O
 `lib/textos.test.ts` cobra as duas, o teto de 25 palavras com as exceções
 NOMEADAS (o crachá e o infográfico, literais do PO), os feedbacks da cadeia
 iguais aos da api, e que nada antes da galeria diga "algoritmo", "bolha",
@@ -193,7 +197,6 @@ iguais aos da api, e que nada antes da galeria diga "algoritmo", "bolha",
 
 ## Vitrine (verificação visual)
 
-Não mora no repositório. A receita: um `vite.config` fora da pasta com `root`
-nesta experiência e um alias de `@edu/sdk` para uma SDK falsa que responde a api
-por `?passo=` (`credencial`, `feed&posts=N`, `lacrada`, `galeria`, `cadeia`, `mariana`, `enquetes`, `fim`, `bloqueada=1`), fotografada pelo
-Playwright do pnpm (`node_modules/.pnpm/playwright@*/`).
+Fora do repositório: um `vite.config` com `root` nesta experiência e um alias de
+`@edu/sdk` para uma SDK falsa que responde por `?passo=` (`feed&posts=N`,
+`galeria`, `bloqueada=1`...), fotografada pelo Playwright do pnpm.

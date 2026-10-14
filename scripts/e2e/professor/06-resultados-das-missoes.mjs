@@ -28,7 +28,7 @@ await suite(
       "O relógio da aula do unooGPT é operável da mesma tela dos resultados",
       "O relatório de um estudante do unooGPT diz QUANDO: até a primeira fala, com quanto relógio, se estourou",
       "A aula da A Seleção (o botão único e a etapa) mora na mesma tela dos resultados, sem coluna de pontos",
-      "A aula do Júri Estadual mora na página da atividade: a lousa anônima dos votos por área, a folha sem coluna de voto, taxa nem nível, e com as categorias buscadas e os parados na cédula",
+      "A aula do Júri Estadual mora na página da atividade: os 40 estandes, a lousa anônima dos votos por área e — depois da auditoria — da concentração do feed, a folha sem coluna de voto, taxa, concentração nem nível, e com as categorias buscadas e os parados na cédula",
     ],
     comando: "node scripts/e2e/professor/06-resultados-das-missoes.mjs",
   },
@@ -202,9 +202,34 @@ await suite(
       const colunasDoJuri = await p.locator("main").getByRole("columnheader").allInnerTexts();
       r.exigir(
         colunasDoJuri.length > 0 &&
-          !colunasDoJuri.some((c) => /^\s*voto\b|\b(taxa|n[íi]vel|invisibilidade|pontos|nota|ranking)\b/i.test(c)),
-        `a folha do Júri não tem coluna de voto, taxa nem nível (colunas: ${colunasDoJuri.join(", ")})`,
+          !colunasDoJuri.some((c) => /^\s*voto\b|\b(taxa|n[íi]vel|invisibilidade|concentra\w*|pontos|nota|ranking)\b/i.test(c)),
+        `a folha do Júri não tem coluna de voto, taxa, concentração nem nível (colunas: ${colunasDoJuri.join(", ")})`,
       );
+      /* 40 projetos (2026-10-14): o total da página vem do PACOTE. */
+      const totalDeEstandes = await p.locator("[data-estandes-da-atividade]").getAttribute("data-total-de-estandes");
+      r.exigir(totalDeEstandes === "40", `a atividade do banco padrão mostra os 40 estandes, uma aba por área (${totalDeEstandes})`);
+      /* A lousa trocou a “invisibilidade média” (com 40 estandes, 30 de 40 para
+         todo computador — sempre a mesma) pela CONCENTRAÇÃO do feed, e ela só
+         aparece depois de Liberar Auditoria. A estudante/13 deixa a turma na
+         galeria; rodando sozinha, a turma pode estar antes dela — os dois ramos
+         são legítimos e cada um é provado. */
+      const lousaDoJuri = p.locator("[data-painel-para-projetar]");
+      r.exigir(
+        !/Invisibilidade média/i.test(await lousaDoJuri.innerText()),
+        "a lousa não tem mais a “invisibilidade média da turma”: com 40 estandes ela seria a mesma para todos",
+      );
+      const concentracaoDoJuri = p.locator("[data-concentracao-do-feed]");
+      if ((await p.locator('[data-etapa="galeria"]').count()) > 0) {
+        await concentracaoDoJuri.waitFor({ timeout: 15_000 });
+        const textoDaConcentracao = (await concentracaoDoJuri.innerText()).replace(/\s+/g, " ");
+        r.exigir(
+          /Quem curtiu algum post/.test(textoDaConcentracao) && /Quem não curtiu nenhum/.test(textoDaConcentracao),
+          `depois da auditoria, a lousa mostra a concentração do feed — “Quem curtiu algum post” e “Quem não curtiu nenhum” (${textoDaConcentracao.slice(0, 160)})`,
+        );
+      } else {
+        r.ressalva("a 6A ainda não liberou a auditoria: a concentração do feed não aparece por desenho (rode antes a estudante/13)");
+        r.exigir((await concentracaoDoJuri.count()) === 0, "antes da auditoria, a lousa não mostra a concentração do feed");
+      }
       /* PRD v2: a folha diz QUAIS categorias cada um buscou na galeria (a leitura
          da EF06CO01), e o painel conta quem está parado na cédula — o ícone ao
          lado do nome é provado AO VIVO na estudante/13 (ele some sozinho 40 s
@@ -228,12 +253,13 @@ await suite(
     await r.registrar(p, "resultados-juri-estadual", {
       titulo: "A atividade do Júri Estadual: a aula e os resultados",
       mostra:
-        "A atividade em andamento: os 16 estandes, o botão Liberar Auditoria, os parados na cédula, a lousa com os " +
-        "votos por área antes e depois da galeria, a folha por computador com as categorias buscadas e o painel de " +
-        "habilidades da BNCC.",
+        "A atividade em andamento: os 40 estandes em abas por área, o botão Liberar Auditoria, os parados na " +
+        "cédula, a lousa com os votos por área antes e depois da galeria e a concentração do feed (quem curtiu × " +
+        "quem não curtiu), a folha por computador com as categorias buscadas e o painel de habilidades da BNCC.",
       prova:
-        "A lousa vai para o projetor e não tem nome; a folha tem nome e por isso não liga ninguém a um voto ou a " +
-        "uma taxa. O nível de cada habilidade fica no painel de habilidades, com a confirmação da professora.",
+        "A lousa vai para o projetor e não tem nome; a folha tem nome e por isso não liga ninguém a um voto, a uma " +
+        "taxa ou à concentração do feed. O nível de cada habilidade fica no painel de habilidades, com a " +
+        "confirmação da professora.",
       inteira: true,
     });
   },

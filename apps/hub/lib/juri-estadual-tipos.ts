@@ -20,7 +20,9 @@
  * - **Nenhum conteúdo do banco padrão.** O banco padrão (PRD v2, E0-PROF-02)
  *   mora SÓ na api: o hub pede `POST banco-padrao` e recebe a atividade
  *   pronta, ou recebe o banco já no rascunho quando a geração caiu nele
- *   (`usouIa: false`, sem cota ou sem IA).
+ *   (`usouIa: false`, sem cota ou sem IA). As IMAGENS dele são do `admin`
+ *   (`/juri-estadual/banco-padrao/imagens`): o hub só lê o progresso e pede
+ *   as que faltam.
  *
  * O GABARITO (a ordem dos blocos da cadeia, os cartões certos do caso
  * Mariana) aparece em `MaterialDoJuri`, que só rota de professor devolve.
@@ -38,17 +40,42 @@ export const EXP_ID = "exp06ef1b";
 export const AREAS = ["area_a", "area_b", "area_c", "area_d"] as const;
 export type Area = (typeof AREAS)[number];
 
-export const PROJETOS_POR_AREA = 4;
+/**
+ * DEZ projetos por área, QUARENTA na mostra (PO, 2026-10-14). Até a 0.4.x eram
+ * quatro por área (dezesseis): esses pacotes continuam abrindo — a tela que
+ * MOSTRA um pacote usa o tamanho dele (`conteudo.projetos.length`), nunca esta
+ * constante. Ela vale para o que se ESCREVE (a curadoria e o banco padrão).
+ */
+export const PROJETOS_POR_AREA = 10;
 export const TOTAL_DE_PROJETOS = AREAS.length * PROJETOS_POR_AREA;
+/** O pacote de dezesseis da 0.4.x: só leitura, até a turma trocar de atividade. */
+export const PROJETOS_POR_AREA_LEGADO = 4;
+export const TOTAL_DE_PROJETOS_LEGADO = AREAS.length * PROJETOS_POR_AREA_LEGADO;
 
-/** `proj-<letra da área><n>`: a letra diz a área (e a área está à vista na hashtag do post). */
-export const IDS_DE_PROJETO: readonly string[] = AREAS.flatMap((area) =>
-  Array.from({ length: PROJETOS_POR_AREA }, (_, i) => `proj-${area.slice(-1)}${i + 1}`),
-);
-export const ID_DE_PROJETO_RE = /^proj-[a-d][1-4]$/;
+function idsComAte(porArea: number): readonly string[] {
+  return AREAS.flatMap((area) => Array.from({ length: porArea }, (_, i) => `proj-${area.slice(-1)}${i + 1}`));
+}
+
+/** `proj-<letra da área><n>`, n de 1 a 10: a letra diz a área (e a área está à vista na hashtag do post). */
+export const IDS_DE_PROJETO = idsComAte(PROJETOS_POR_AREA);
+export const IDS_DE_PROJETO_LEGADOS = idsComAte(PROJETOS_POR_AREA_LEGADO);
+export const ID_DE_PROJETO_RE = /^proj-[a-d](10|[1-9])$/;
 
 export function areaDoProjeto(projetoId: string): Area {
   return `area_${projetoId.charAt(5)}` as Area;
+}
+
+/** O número do projeto dentro da área: `proj-a10` → 10 (`charAt(6)` leria só o 1). */
+export function numeroDoProjeto(projetoId: string): number {
+  return Number.parseInt(projetoId.slice(6), 10) || 0;
+}
+
+/**
+ * A ordem da api (`compararIdsDeProjeto`): área a área, e dentro dela a
+ * NUMÉRICA — `proj-a9` antes de `proj-a10`, que a ordem de texto inverteria.
+ */
+export function compararIdsDeProjeto(x: string, y: string): number {
+  return AREAS.indexOf(areaDoProjeto(x)) - AREAS.indexOf(areaDoProjeto(y)) || numeroDoProjeto(x) - numeroDoProjeto(y);
 }
 
 /** "Área A" — o rótulo curto do eixo do gráfico (o `BarChart` do DS corta acima de ~8 caracteres). */
@@ -137,14 +164,16 @@ export const TERMOS_PROIBIDOS = [
   "openai",
 ] as const;
 
-/** Os tetos de CARACTERE de `ProjetoDoPacoteSchema` (depois do `trim`). */
+/**
+ * Os tetos de CARACTERE de `ProjetoDoPacoteEscritaSchema` (depois do `trim`).
+ * Sem `prototipo` nem `depoimento`: os formatos da 0.4.x saíram do pacote que
+ * se escreve, e o hub não edita pacote de dezesseis.
+ */
 export const CARACTERES = {
   titulo: { min: 3, max: 60 },
   escola: { min: 3, max: 60 },
   legenda: { min: 10, max: 420 },
   bastidor: { min: 10, max: 280 },
-  prototipo: { min: 10, max: 280 },
-  depoimento: { min: 10, max: 280 },
   descricao: { min: 10, max: 240 },
   alt: { min: 3, max: 140 },
 } as const;
@@ -197,11 +226,11 @@ export interface ProjetoDoPacote {
   perfil: string;
   /** A legenda da apresentação (o post do estande). */
   legenda: string;
-  /** O texto do post de bastidor (o protótipo sendo testado). */
+  /**
+   * O resumo técnico do estande: a segunda lâmina do carrossel do post e a
+   * ficha de inspeção da Galeria Oculta. Não é mais um post à parte (0.5.0).
+   */
   bastidor: string;
-  /** Os formatos da saturação (até 40 palavras). O banco padrão não os tem. */
-  prototipo?: string;
-  depoimento?: string;
   hashtags: string[];
   /** `descricao` é o pedido da geração da imagem; `alt`, o texto alternativo que a criança ouve. */
   imagem: { descricao: string; alt: string };
@@ -316,6 +345,12 @@ export interface RascunhoDoPacote {
   usouIa: boolean;
   origem: OrigemDoPacote;
   motivo: MotivoDoBancoPadrao | null;
+  /**
+   * As URLs das imagens que o rascunho JÁ tem, por id de projeto. Só o banco
+   * padrão (o fallback) as traz — as do banco que já existem no storage; o
+   * rascunho da IA vem vazio (as imagens dele se geram depois de criar).
+   */
+  imagens: Record<string, string>;
 }
 
 /** O caminho da contingência: `POST banco-padrao` com `{porNoAr}` — a atividade pronta, sem IA. */
@@ -365,7 +400,7 @@ export interface EmAndamento {
   mudou: boolean;
 }
 
-/** `POST gerar-midia?pacoteId=` — o progresso de UMA chamada (até duas imagens novas). */
+/** `POST gerar-midia?pacoteId=` — o progresso de UMA chamada (até quatro imagens novas). */
 export interface ProgressoDaMidia {
   pacoteId: string;
   total: number;
@@ -419,8 +454,13 @@ export interface PainelDoJuri {
     porComputador: boolean;
     /** A lousa do PICO: o voto inicial (lacrado), por área. */
     votosPorArea: VotosDaArea[];
-    /** A média da taxa real de quem votou, 0–100, ou `null` sem voto. */
-    invisibilidadeMedia: number | null;
+    /**
+     * A CONCENTRAÇÃO do feed (a lousa do contraste): entre quem votou, a média
+     * da fração do feed (0–100) que caiu na área mais vista — de quem curtiu
+     * algum post e de quem não curtiu nenhum. `null` = ninguém naquele grupo.
+     * Só agregado: nenhuma linha diz de quem é.
+     */
+    concentracao: { curtiram: number | null; naoCurtiram: number | null };
     revisao: { mantiveram: number; trocaram: number };
     /** O voto final (revisado, se trocou), por área — a lousa depois da galeria. */
     votosRevisadosPorArea: VotosDaArea[];
@@ -581,10 +621,18 @@ export function textoDoQueFalta(c: { votaram: number; total: number }, porComput
   return `Aguardando ${faltam} ${sujeito(porComputador, faltam)} para fechar o lacre coletivo.`;
 }
 
-/** A taxa média, como o professor a lê. O número é o REAL, calculado pela api. */
-export function textoDaInvisibilidade(media: number | null): string {
-  if (media === null) return "Aparece quando o primeiro voto for lacrado.";
-  return `Em média, ${media}% dos projetos da feira foram ocultados dos feeds dos estudantes.`;
+/**
+ * A concentração, como o professor a lê na lousa: quanto do feed, em média,
+ * caiu numa área só — de quem curtiu e de quem não curtiu. Os números são os da
+ * api; nenhum é cravado aqui. Com 40 estandes e 10 posts, o total escondido é
+ * o MESMO para todos (30 de 40): o contraste está em QUAIS áreas sumiram.
+ */
+export function textoDaConcentracao(c: { curtiram: number | null; naoCurtiram: number | null }): string {
+  const { curtiram, naoCurtiram } = c;
+  if (curtiram === null && naoCurtiram === null) return "Aparece quando o primeiro voto for lacrado.";
+  if (naoCurtiram === null) return `Quem curtiu: em média ${curtiram}% do feed numa área só. Todos que votaram curtiram algum post.`;
+  if (curtiram === null) return `Quem não curtiu: em média ${naoCurtiram}% do feed numa área só. Ninguém que votou curtiu algum post.`;
+  return `Quem curtiu: em média ${curtiram}% do feed numa área só. Quem não curtiu: ${naoCurtiram}%.`;
 }
 
 /** "3 jurados trocaram o voto e 20 mantiveram." */
@@ -779,11 +827,24 @@ export function problemasPorCampo(p: ProjetoDoPacote, hashtagDaArea: string | un
 export function estandesPorArea(conteudo: ConteudoDoPacote): Array<{ categoria: CategoriaDaMostra; projetos: ProjetoDoPacote[] }> {
   return AREAS.map((area) => ({
     categoria: conteudo.categorias.find((c) => c.area === area) ?? { area, nome: rotuloCurtoDaArea(area), hashtag: "" },
-    projetos: conteudo.projetos.filter((p) => p.area === area).sort((a, b) => a.id.localeCompare(b.id)),
+    projetos: conteudo.projetos.filter((p) => p.area === area).sort((a, b) => compararIdsDeProjeto(a.id, b.id)),
   }));
 }
 
-/** O conteúdo tem a forma da mostra? Dezesseis estandes, quatro categorias. */
+/**
+ * O rótulo da ABA de uma área (as telas de 40 têm uma aba por área): o nome da
+ * área e quantos estandes ela tem, ou — quando há — a pendência dela, que é o
+ * que o professor precisa achar ("Saúde · 2 com ajuste", "Saúde · 3 sem imagem").
+ */
+export function rotuloDaAbaDaArea(nome: string, estandes: number, pendencia?: { quantos: number; texto: string }): string {
+  if (pendencia && pendencia.quantos > 0) return `${nome} · ${pendencia.quantos} ${pendencia.texto}`;
+  return `${nome} · ${estandes}`;
+}
+
+/**
+ * O conteúdo tem a forma da mostra que se ESCREVE? Quarenta estandes, quatro
+ * categorias — a curadoria só homologa o pacote novo (a api recusa 16).
+ */
 export function conteudoCompleto(conteudo: ConteudoDoPacote | null): conteudo is ConteudoDoPacote {
   return Boolean(conteudo && conteudo.projetos.length === TOTAL_DE_PROJETOS && conteudo.categorias.length === AREAS.length);
 }
@@ -797,7 +858,7 @@ export function distribuirErros(erros: readonly string[]): { porProjeto: Record<
   const porProjeto: Record<string, string[]> = {};
   const geral: string[] = [];
   for (const erro of erros) {
-    const id = /\bproj-[a-d][1-4]\b/.exec(erro)?.[0];
+    const id = /\bproj-[a-d](?:10|[1-9])\b/.exec(erro)?.[0];
     if (id) (porProjeto[id] ??= []).push(erro);
     else geral.push(erro);
   }
@@ -818,8 +879,6 @@ export function normalizarProjeto(p: ProjetoDoPacote): ProjetoDoPacote {
     perfil: p.perfil.trim(),
     legenda: limpo(p.legenda),
     bastidor: limpo(p.bastidor),
-    ...(p.prototipo !== undefined ? { prototipo: limpo(p.prototipo) } : {}),
-    ...(p.depoimento !== undefined ? { depoimento: limpo(p.depoimento) } : {}),
     hashtags: p.hashtags.map((h) => h.trim()),
     imagem: { descricao: p.imagem.descricao.trim(), alt: limpo(p.imagem.alt) },
   };
@@ -836,8 +895,9 @@ export function normalizarConteudo(c: ConteudoDoPacote): ConteudoDoPacote {
 // ─────────────────────────────────────────────────────────────── as imagens
 
 /**
- * O laço do "Gerar imagens": a api gera ATÉ DUAS por chamada (o BFF corta a
- * espera), e o cliente repete. Para quando não falta nada, ou quando a chamada
+ * O laço do "Gerar imagens": a api gera ATÉ QUATRO por chamada (o BFF corta a
+ * espera; quarenta não cabem numa), e o cliente repete. O mesmo laço serve às
+ * imagens do banco padrão, na área da Unooria. Para quando não falta nada, ou quando a chamada
  * não gerou NENHUMA — repetir aí é pedir de novo as mesmas imagens que o
  * provedor acabou de recusar, cobrando da quota do professor a cada volta. A
  * falha não bloqueia nada: o estande sem imagem sai com a arte procedural.
@@ -867,9 +927,53 @@ export function estadoDaImagem(e: { temImagem: boolean; gerando: boolean; aprova
   return e.aprovadas ? "aprovada" : "aguardando";
 }
 
-/** "3 de 16 imagens prontas." */
+/** "3 de 40 imagens prontas." — o total é o do pacote (16 no legado). */
 export function textoDoProgressoDaMidia(m: ResumoDaMidia): string {
   if (m.total === 0) return "Nenhum estande deste pacote pede imagem.";
   if (m.prontas >= m.total) return m.total === 1 ? "A imagem está pronta." : `As ${m.total} imagens estão prontas.`;
   return `${m.prontas} de ${m.total} ${m.total === 1 ? "imagem pronta" : "imagens prontas"}.`;
+}
+
+// ─────────────────────────────────────────── as imagens do banco padrão (admin)
+
+/** `GET`/`POST /juri-estadual/banco-padrao/imagens` — só do `admin`. */
+export const CAMINHO_DAS_IMAGENS_DO_BANCO = "/juri-estadual/banco-padrao/imagens";
+
+/**
+ * `GET /juri-estadual/banco-padrao/imagens`: uma imagem por projeto do banco
+ * padrão (quarenta). O storage é o registro; `faltam` são os IDS sem arquivo.
+ */
+export interface ImagensDoBancoPadrao {
+  total: number;
+  prontas: number;
+  faltam: string[];
+  completo: boolean;
+  imagens: Record<string, string>;
+}
+
+/** `POST /juri-estadual/banco-padrao/imagens`: o progresso, e o que ESTA chamada gerou ou não conseguiu. */
+export interface GeracaoDoBancoPadrao extends ImagensDoBancoPadrao {
+  geradas: string[];
+  /** As que falharam NESTA chamada — chame de novo. */
+  falharam: string[];
+}
+
+/**
+ * Os ids do banco por área, na ordem numérica: os que têm imagem e os que
+ * faltam, juntos. A api não manda o título do projeto (o conteúdo do banco
+ * mora só nela), então a grade nomeia pelo número dentro da área.
+ */
+export function idsDoBancoPorArea(b: Pick<ImagensDoBancoPadrao, "faltam" | "imagens">): Array<{ area: Area; ids: string[] }> {
+  const todos = [...new Set([...Object.keys(b.imagens), ...b.faltam])].filter((id) => ID_DE_PROJETO_RE.test(id));
+  return AREAS.map((area) => ({
+    area,
+    ids: todos.filter((id) => areaDoProjeto(id) === area).sort(compararIdsDeProjeto),
+  }));
+}
+
+/** "12 de 40 imagens do banco prontas." */
+export function textoDoProgressoDoBanco(b: Pick<ImagensDoBancoPadrao, "total" | "prontas">): string {
+  if (b.total === 0) return "O banco padrão não tem projetos.";
+  if (b.prontas >= b.total) return `As ${b.total} imagens do banco estão prontas.`;
+  return `${b.prontas} de ${b.total} imagens do banco prontas.`;
 }

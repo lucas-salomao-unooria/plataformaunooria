@@ -129,7 +129,7 @@ export class JuriEstadualController {
   @Contrato({
     resumo: "O que a tela mediu (curtidas e permanências) e, se pedido, o próximo post.",
     descricao:
-      "A curtida e o salvo são ESTADO (`curtiu`/`salvou: true/false`), a permanência é FATO (mais de 5 s num post, uma vez por post). Curtir (3) e permanecer (1) pesam e entram antes de o motor escolher o próximo; **salvar é gravado e não pesa**. Com a área em foco, os posts seguintes são só dela, repetindo os projetos em formatos diferentes (`tipo`: apresentação, bastidor, protótipo, depoimento). `proximo: true` quando a tela chegou ao último post servido: o servidor serve UM a mais, até dez.\n\nO primeiro `proximo: true` é a 1ª rolagem e liga o relógio de **8 minutos do servidor** (`encerraEm`); recarregar não zera. Com o tempo esgotado (`tempoEsgotado`), o feed não serve mais post e `cedulaLiberada` fica `true`.",
+      "A curtida e o salvo são ESTADO (`curtiu`/`salvou: true/false`), a permanência é FATO (mais de 5 s num post, uma vez por post). Curtir (3) e permanecer (1) pesam e entram antes de o motor escolher o próximo; **salvar é gravado e não pesa**. Com a área em foco, os posts seguintes são só dela — projetos NOVOS dela (são dez por área). Nenhum post se repete, e todo post servido é a `apresentacao` de um projeto; os formatos `bastidor`, `prototipo` e `depoimento` só aparecem no feed gravado de uma sessão antiga (instrumento 2.0.0). `proximo: true` quando a tela chegou ao último post servido: o servidor serve UM a mais, até dez.\n\nO primeiro `proximo: true` é a 1ª rolagem e liga o relógio de **8 minutos do servidor** (`encerraEm`); recarregar não zera. Com o tempo esgotado (`tempoEsgotado`), o feed não serve mais post e `cedulaLiberada` fica `true`.",
     corpo: EventosDoFeedSchema,
     resposta: FeedSchema,
     notas: [
@@ -182,9 +182,9 @@ export class JuriEstadualController {
 
   @Get("galeria")
   @Contrato({
-    resumo: "A Galeria Oculta: os 16 estandes, os que não chegaram ao feed primeiro, e a taxa REAL.",
+    resumo: "A Galeria Oculta: os 40 estandes, os que não chegaram ao feed primeiro, por área e o contrafactual sem curtidas.",
     descricao:
-      "`invisibilidade` é o número desta sessão, calculado no servidor: os projetos que o feed nunca mostrou sobre os dezesseis — o do badge (\"{n}% dos projetos da feira ficaram fora do seu feed\") e o tamanho da grade de três colunas. Quem curte fica em 69% (11 de 16) com a saturação; quem não interagiu, perto de 38%. `exibidoNoSeuFeed` diz quais chegaram; `podeManter`, se o \"Manter meu voto inicial\" já vale (abriu um oculto).",
+      "Tudo calculado no servidor (o motor não desce):\n\n- `invisibilidade` — `{ocultos, total}`: os projetos que o feed nunca mostrou sobre o total do pacote (\"30 de 40\"). Com dez posts sem repetição, é o mesmo número para quem curtiu e para quem não interagiu; quem parou antes pelos 8 minutos vê mais ocultos.\n- `porArea` — projetos DISTINTOS vistos por área (`vistos` de `total`): quem curtiu cedo uma área fica perto de 7/1/1/1; quem não interagiu, 3/3/2/2.\n- `semCurtidas` — o CONTRAFACTUAL: o feed que esta sessão teria tido sem nenhuma curtida e nenhuma permanência (a mesma semente, o mesmo motor), com o mesmo número de posts que a criança viu. Os ids de projeto por área, na ordem do pacote. Sem curtida nem permanência, é igual ao feed real.\n\n`projetos` traz os 40 (16 num pacote antigo, da 0.4.x) com os ocultos primeiro; `exibidoNoSeuFeed` diz quais chegaram; `podeManter`, se o \"Manter meu voto inicial\" já vale (abriu um oculto).",
     resposta: GaleriaSchema,
     notas: [
       "Antes de a galeria abrir para esta criança (sem voto, ou com a etapa da turma ainda na exploração) responde **403** `galeria-nao-liberada`.",
@@ -220,11 +220,11 @@ export class JuriEstadualController {
   @Contrato({
     resumo: '"Manter meu voto inicial" ou "Confirmar Voto Revisado", depois da galeria (latch).',
     descricao:
-      "`manter` só vale depois de abrir ao menos UM estande oculto; `trocar` aceita qualquer um dos dezesseis, menos o do voto lacrado. Sem justificativa. Grava a ação, o voto final, o carimbo e o passo `revisada` juntos, e marca a EF06CO10 (`auditoria`: dois ocultos abertos E uma busca = atingiu; abriu algum = em processo) e a EF06CO01 (`classificacao`: buscou pela hashtag de uma categoria fora da bolha E abriu um projeto dela = atingiu; buscou ou abriu um oculto = em processo). Quem não fez nada fica SEM a marca de ação: decide a pergunta. Depois, `POST passo` com `para: \"cadeia\"`.",
+      "`manter` só vale depois de abrir ao menos UM estande oculto; `trocar` aceita qualquer estande do pacote (os 40; 16 num pacote antigo), menos o do voto lacrado. Sem justificativa. Grava a ação, o voto final, o carimbo e o passo `revisada` juntos, e marca a EF06CO10 (`auditoria`: dois ocultos abertos E uma busca = atingiu; abriu algum = em processo) e a EF06CO01 (`classificacao`: buscou pela hashtag de uma categoria fora da bolha E abriu um projeto dela = atingiu; buscou ou abriu um oculto = em processo). Quem não fez nada fica SEM a marca de ação: decide a pergunta. Depois, `POST passo` com `para: \"cadeia\"`.",
     corpo: RevisaoDoVotoSchema,
     resposta: EstadoSchema,
     notas: [
-      "`manter` sem nenhum oculto aberto responde **409** `galeria-sem-inspecao`; `trocar` com o mesmo projeto do voto, **400** `payload-invalido`.",
+      "`manter` sem nenhum oculto aberto responde **409** `galeria-sem-inspecao`; `trocar` com o mesmo projeto do voto, ou com um id que o pacote não tem, **400** `payload-invalido`.",
       "A segunda revisão — inclusive duas simultâneas — responde **409** `voto-ja-revisado`. Antes da galeria, **403** `galeria-nao-liberada`. Com a rodada trocada no meio (o professor zerou), **409** `rodada-mudou`.",
       PORTA,
     ],

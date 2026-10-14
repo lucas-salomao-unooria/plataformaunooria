@@ -1,4 +1,5 @@
 import { AREAS, BATIMENTO_VALIDO_MS, SEGUNDOS_PARA_OCIOSO, areaDoProjeto, type Area } from "../vocabulario";
+import { postsPorArea } from "./afunilamento";
 
 /**
  * O PAINEL do professor — o que ele conta, puro.
@@ -6,7 +7,8 @@ import { AREAS, BATIMENTO_VALIDO_MS, SEGUNDOS_PARA_OCIOSO, areaDoProjeto, type A
  * O painel é PROJETADO na lousa no pico (PED-07: sem nome ligado a escolha).
  * Então a linha de cada computador diz só PROGRESSO (entrou, votou, abriu a
  * galeria, buscou, revisou, concluiu), e o que a turma escolheu vive no resumo
- * ANÔNIMO: os votos por área, a taxa média, quantos mantiveram ou trocaram.
+ * ANÔNIMO: os votos por área, a concentração do feed de quem curtiu e de quem
+ * não curtiu, quantos mantiveram ou trocaram.
  *
  * O SINALIZADOR DE OCIOSOS (PRD v2, Anexo §9; melhoria 8) é progresso, não
  * escolha: o ícone ao lado do nome de quem está com a cédula aberta e parado há
@@ -27,6 +29,7 @@ export const PROIBIDO_NA_LINHA_DO_PAINEL = [
   "area",
   "conviccao",
   "invisibilidade",
+  "concentracao",
   "taxa",
   "percentual",
   "ocultos",
@@ -50,10 +53,40 @@ export function votosPorArea(votos: readonly string[]): Record<Area, number> {
   return total;
 }
 
-/** A média inteira das taxas de quem votou, ou `null` sem voto nenhum. */
-export function mediaDasTaxas(percentuais: readonly number[]): number | null {
-  if (percentuais.length === 0) return null;
-  return Math.round(percentuais.reduce((s, p) => s + p, 0) / percentuais.length);
+/**
+ * A CONCENTRAÇÃO de um feed: a fração (0–100, inteira) dos posts servidos que
+ * caiu na área MAIS vista — 70 para quem curtiu cedo (7 de 10), 30 para quem não
+ * interagiu (3 de 10). `null` num feed vazio. É o número da lousa do contraste;
+ * a linha do painel não o carrega (PED-07).
+ */
+export function concentracaoDoFeed(servidos: readonly string[]): number | null {
+  if (servidos.length === 0) return null;
+  const maior = Math.max(...Object.values(postsPorArea(servidos)));
+  return Math.round((maior / servidos.length) * 100);
+}
+
+/** A média inteira, ou `null` sem ninguém no grupo. */
+export function mediaInteira(valores: readonly number[]): number | null {
+  if (valores.length === 0) return null;
+  return Math.round(valores.reduce((s, p) => s + p, 0) / valores.length);
+}
+
+/**
+ * A concentração da TURMA: entre os computadores que votaram, a média da
+ * concentração de quem curtiu algum post e a de quem não curtiu nenhum. Esperado,
+ * com o motor de quarenta: perto de 70 contra perto de 30.
+ */
+export function concentracaoDaTurma(
+  feeds: readonly { servidos: readonly string[]; curtidos: readonly string[] }[],
+): { curtiram: number | null; naoCurtiram: number | null } {
+  const curtiram: number[] = [];
+  const naoCurtiram: number[] = [];
+  for (const feed of feeds) {
+    const c = concentracaoDoFeed(feed.servidos);
+    if (c === null) continue;
+    (feed.curtidos.length > 0 ? curtiram : naoCurtiram).push(c);
+  }
+  return { curtiram: mediaInteira(curtiram), naoCurtiram: mediaInteira(naoCurtiram) };
 }
 
 /**
