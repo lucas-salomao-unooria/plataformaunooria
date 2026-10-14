@@ -13,14 +13,15 @@ import type { Conviccao, IdDaEnquete } from "./tipos";
  *
  * Duas regras valem sobre a copy:
  *
- * - **nenhuma taxa cravada**: o "75%" e os "12 projetos" da copy são o caso
- *   típico da saturação, não o número desta criança. A taxa e a contagem são as
- *   REAIS da sessão, vindas da api (`GaleriaSchema.invisibilidade`), na moldura
- *   da copy;
+ * - **nenhuma taxa cravada**: o "75%" e os "12 projetos" da copy eram o caso
+ *   típico da saturação da 0.4.x, não o número desta criança. Desde a 0.5.0 a
+ *   moldura é "X de Y estandes" — os dois números REAIS da sessão, vindos da
+ *   api (`GaleriaSchema.invisibilidade`; Y é 40, ou 16 num pacote antigo) —,
+ *   sem porcentagem nenhuma;
  * - **uma exclamação só na missão inteira**: a do Léo (`E5.ponteLeo`). O
  *   `textos.test.ts` conta.
  *
- * O CONTEÚDO da missão (os dezesseis estandes, as categorias e hashtags, os
+ * O CONTEÚDO da missão (os quarenta estandes, as categorias e hashtags, os
  * blocos da cadeia, o caso Mariana e os cartões, as perguntas das enquetes)
  * NÃO mora aqui: vem da api, e corrigir uma palavra dele não pode exigir
  * republicar um caminho imutável no bucket.
@@ -115,6 +116,12 @@ export const E2 = {
   menos: "menos",
   /** `e2.instrucao.carrossel_contador` */
   foto: (atual: number) => `Foto ${atual} de 3`,
+  /**
+   * ESCRITA AQUI (0.5.0) — a última lâmina do carrossel: o texto do bastidor do
+   * estande (o protótipo em teste). É o título da lâmina e o nome dela para o
+   * leitor de tela.
+   */
+  bastidor: "Bastidores do estande",
   /** ESCRITA AQUI — as setas do carrossel (o mouse não arrasta como o dedo). */
   fotoAnterior: "Foto anterior",
   proximaFoto: "Próxima foto",
@@ -164,13 +171,29 @@ export const E4 = {
   seuVoto: "Seu Voto Lacrado:",
   /** `e4.narrativa.galeria_titulo` */
   titulo: "Galeria Oculta da Mostra",
-  /** `e4.narrativa.badge_invisivel` — com a taxa REAL da sessão. */
-  badge: (percentual: number) => `${percentual}% dos projetos da feira ficaram fora do seu feed`,
-  /** `e4.narrativa.galeria_subtitulo` — com a contagem REAL da sessão. */
+  /**
+   * `e4.narrativa.badge_invisivel`, REESCRITA na 0.5.0 (a decisão do PO e do
+   * Lucas): "X de Y", os dois números REAIS da sessão, sem porcentagem.
+   */
+  badge: (ocultos: number, total: number) => `${ocultos} de ${total} estandes nunca chegaram ao seu feed`,
+  /** ESCRITA AQUI (0.5.0) — o título da contagem por área. */
+  porArea: "O que chegou ao seu feed, por área:",
+  /** ESCRITA AQUI (0.5.0) — uma linha da contagem por área (o nome vem do pacote). */
+  vistosNaArea: (nome: string, vistos: number, total: number) => `${nome}: você viu ${vistos} de ${total}`,
+  /**
+   * ESCRITA AQUI (0.5.0) — o CONTRASTE: o feed que esta criança teria tido sem
+   * as curtidas (calculado na api). O total escondido é igual para todos; o que
+   * muda é QUAL área sumiu.
+   */
+  semCurtidas: "Sem as suas curtidas, o seu feed teria trazido:",
+  semCurtidasDaArea: (nome: string, posts: number) => `${nome} ${posts}`,
+  /** `e4.narrativa.galeria_subtitulo` — com a contagem REAL da ÁREA escolhida nos chips (0.5.0). */
   subtitulo: (ocultos: number) =>
-    ocultos === 1
-      ? "Este projeto concorrente nunca foi entregue à sua tela."
-      : `Estes ${ocultos} projetos concorrentes nunca foram entregues à sua tela.`,
+    ocultos === 0
+      ? "Nenhum projeto desta área ficou fora do seu feed."
+      : ocultos === 1
+        ? "Este projeto concorrente nunca foi entregue à sua tela."
+        : `Estes ${ocultos} projetos concorrentes nunca foram entregues à sua tela.`,
   /** `e4.rotulo.btn_inspecionar` */
   inspecionar: "Inspecionar Projeto",
   /** ESCRITA AQUI — o nome acessível de cada miniatura. */
@@ -185,8 +208,8 @@ export const E4 = {
   hashtags: "Hashtags da mostra",
   resultados: (n: number) =>
     n === 0 ? "Nenhum projeto encontrado." : `${n} ${plural(n, "projeto encontrado", "projetos encontrados")}.`,
-  /** ESCRITA AQUI — o nome das duas grades para o leitor de tela. */
-  gradeOculta: "Projetos que não chegaram ao seu feed",
+  /** ESCRITA AQUI — o nome das duas grades para o leitor de tela (0.5.0: a oculta é por área). */
+  gradeOculta: (nome: string) => `Projetos de ${nome} que não chegaram ao seu feed`,
   gradeBusca: "Projetos encontrados",
   /** `e4.instrucao.revisao_janela` */
   revisao: "Janela Extraordinária de Revisão de Voto",

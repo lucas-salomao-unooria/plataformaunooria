@@ -21,7 +21,7 @@ export const EXP_ID = "exp06ef1b";
  * `public/experiencia.json`. O CI lê a do manifesto, e a divergência já causou
  * bug — o `versao.test.ts` compara os três (ADR-84).
  */
-export const EXP_VERSION = "0.4.1";
+export const EXP_VERSION = "0.5.0";
 
 /** O prefixo das rotas da missão na api. */
 export const ROTA = "/juri-estadual";
@@ -56,9 +56,20 @@ export const PASSOS_PEDIDOS = ["feed", "cadeia"] as const;
 export const AREAS = ["area_a", "area_b", "area_c", "area_d"] as const;
 export type Area = (typeof AREAS)[number];
 
-/** `vocabulario.ts#TIPOS_DE_POST`. */
-export const TIPOS_DE_POST = ["apresentacao", "bastidor", "prototipo", "depoimento"] as const;
-export type TipoDePost = (typeof TIPOS_DE_POST)[number];
+/**
+ * `vocabulario.ts#TIPOS_DE_POST` — o formato que o motor SERVE desde a 0.5.0
+ * (instrumento 3.0.0): só a apresentação, e nenhum post se repete.
+ */
+export const TIPOS_DE_POST = ["apresentacao"] as const;
+/**
+ * `vocabulario.ts#TIPOS_DE_POST_LEGADOS` — os formatos da saturação da 0.4.x.
+ * Só chegam no feed GRAVADO de uma sessão 2.0.0, e a tela continua sabendo
+ * desenhá-los (o texto do formato vem em `texto`).
+ */
+export const TIPOS_DE_POST_LEGADOS = ["bastidor", "prototipo", "depoimento"] as const;
+/** `vocabulario.ts#TIPOS_DE_POST_LIDOS` — todo formato que a leitura aceita. */
+export const TIPOS_DE_POST_LIDOS = [...TIPOS_DE_POST, ...TIPOS_DE_POST_LEGADOS] as const;
+export type TipoDePost = (typeof TIPOS_DE_POST_LIDOS)[number];
 
 /** `vocabulario.ts#CONVICCOES` — as duas afirmam certeza, de propósito. */
 export const CONVICCOES = ["examinei_bem", "vi_tudo"] as const;
@@ -81,8 +92,12 @@ export type TipoDeBusca = (typeof TIPOS_DE_BUSCA)[number];
 /** `vocabulario.ts#POSTS_NO_FEED` — a cédula abre quando o décimo chega à tela. */
 export const POSTS_NO_FEED = 10;
 
-/** `vocabulario.ts#TOTAL_DE_PROJETOS` — os dezesseis estandes da mostra. */
-export const TOTAL_DE_PROJETOS = 16;
+/**
+ * `vocabulario.ts#TOTAL_DE_PROJETOS` — os quarenta estandes da mostra (dez por
+ * área). O pacote de dezesseis da 0.4.x continua legível na api: a tela nunca
+ * crava o total, ela lê `GaleriaSchema.invisibilidade.total`.
+ */
+export const TOTAL_DE_PROJETOS = 40;
 
 /** `conteudo.ts#TOTAL_DE_BLOCOS`. */
 export const TOTAL_DE_BLOCOS = 4;
@@ -114,7 +129,7 @@ export interface ImagemPublica {
 export interface PostPublico {
   id: string;
   projetoId: string;
-  /** O formato: a apresentação, o bastidor, o protótipo de perto ou o depoimento da equipe. */
+  /** O formato: a apresentação (ou, numa sessão 2.0.0, um formato legado). */
   tipo: TipoDePost;
   area: Area;
   titulo: string;
@@ -124,6 +139,8 @@ export interface PostPublico {
   texto: string;
   /** A legenda do ESTANDE, em qualquer formato. */
   legenda: string;
+  /** O resumo técnico do estande (o bastidor): a ÚLTIMA lâmina do carrossel do post. */
+  bastidor: string;
   hashtags: string[];
   imagem: ImagemPublica;
 }
@@ -240,10 +257,32 @@ export interface ProjetoDaGaleria {
   exibidoNoSeuFeed: boolean;
 }
 
+/** `VistosPorAreaSchema` — projetos DISTINTOS de uma área que chegaram ao feed, sobre os da área. */
+export interface VistosPorArea {
+  area: Area;
+  vistos: number;
+  total: number;
+}
+
+/**
+ * `AreaSemCurtidasSchema` — uma área do CONTRAFACTUAL: os projetos que o feed
+ * teria mostrado dela sem nenhuma curtida e nenhuma permanência. Calculado no
+ * SERVIDOR (o motor não desce para o bundle); a tela só conta.
+ */
+export interface AreaSemCurtidas {
+  area: Area;
+  posts: string[];
+}
+
 /** `GaleriaSchema`. */
 export interface Galeria {
-  invisibilidade: { vistos: number; ocultos: number; total: number; percentual: number };
-  /** Os dezesseis, os que NÃO chegaram primeiro. */
+  /** "{ocultos} de {total}": o total vem do pacote (40, ou 16 no legado). Sem percentual. */
+  invisibilidade: { ocultos: number; total: number };
+  /** As quatro áreas, na ordem delas. */
+  porArea: VistosPorArea[];
+  /** O contrafactual, nas quatro áreas. */
+  semCurtidas: AreaSemCurtidas[];
+  /** Os quarenta (ou dezesseis no pacote legado), os que NÃO chegaram primeiro. */
   projetos: ProjetoDaGaleria[];
   /** Quantos estandes ocultos a criança já abriu. */
   ocultosAbertos: number;

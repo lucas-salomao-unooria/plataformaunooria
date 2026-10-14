@@ -227,7 +227,7 @@ export function JuriApp({ inicial, conexao }: { inicial: Sessao; conexao: Conexa
       try {
         const g = await executar(() => api.get<DadosDaGaleria>(`${ROTA}/galeria`));
         if (!vivo) return;
-        telemetria.abriuAGaleria(g.invisibilidade.ocultos, g.invisibilidade.percentual);
+        telemetria.abriuAGaleria(g.invisibilidade.ocultos, g.invisibilidade.total);
         setGaleria(g);
       } catch (erro) {
         if (!vivo) return;

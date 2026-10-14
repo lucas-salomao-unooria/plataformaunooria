@@ -6,7 +6,10 @@ científica estadual e avalia, num feed, os estandes das escolas concorrentes. A
 curtidas dela afunilam o feed em silêncio: depois de dez posts, ela vota numa
 cédula lacrada e espera a plenária (o professor projeta a dispersão de votos da
 turma). Liberada a **Galeria Oculta**, ela vê os estandes que nunca chegaram ao
-feed dela, com a taxa REAL da sessão, busca por hashtag e mantém ou revisa o voto.
+feed dela ("X de Y estandes", os números REAIS da sessão), quantos viu de cada
+área e o feed que teria tido SEM as curtidas, busca por hashtag e mantém ou revisa
+o voto. Desde a 0.5.0 a mostra tem quarenta estandes (dez por área) e o feed,
+dez posts sem repetição.
 Depois monta a cadeia Interações → Dados → Algoritmo → Bolha (EF06CO03), numa
 tela que abre com a frase do Léo, resolve o caso Mariana e responde a três
 enquetes nos Stories (a primeira é a da EF06CO10, o foco primário). A tela dos
@@ -79,7 +82,7 @@ projeto votado ou a alternativa de uma enquete.
 | `interacted` | `feed:salvar` | salvou/tirou dos salvos (grava, não pesa) | `resultado: { salvou }`, `contexto: { postId }` |
 | `interacted` | `feed:fechado` | tocou comentar, compartilhar ou a aba Busca (não pesa) | `contexto: { acao }` |
 | `interacted` | `feed:aba` | trocou de aba (Início, Notificações, Jurado) | `contexto: { aba }` |
-| `interacted` | `feed:carrossel` | deslizou a foto (1 a 3) | `contexto: { postId, lamina }` |
+| `interacted` | `feed:carrossel` | deslizou o carrossel (fotos 1 a 3; 4 = a lâmina do bastidor, 0.5.0) | `contexto: { postId, lamina }` |
 | `interacted` | `feed:legenda` | "...mais" | `contexto: { postId }` |
 | `interacted` | `feed:post` | um post novo chegou | `contexto: { posicao }` |
 | `progressed` | `feed:completo` | a cédula foi liberada (o décimo chegou ou os 8 min do servidor acabaram) | `contexto: { porTempo }` |
@@ -87,7 +90,7 @@ projeto votado ou a alternativa de uma enquete.
 | `interacted` | `cedula:inatividade` | 60 s sem toque com a cédula ABERTA | — |
 | `attempted` | `cedula:votar` | o LATCH 1, confirmado | `resultado: { estandes }`, `contexto: { conviccao }` |
 | `progressed` | `plenaria:espera` | entrou na espera do voto lacrado | — |
-| `progressed` | `galeria:abrir` | a galeria abriu | `resultado: { ocultos, percentual }` |
+| `progressed` | `galeria:abrir` | a galeria abriu ("X de Y", sem percentual desde a 0.5.0) | `resultado: { ocultos, total }` |
 | `interacted` | `galeria:inspecionar` | abriu a ficha de um estande | `contexto: { projetoId, oculto }` |
 | `interacted` | `galeria:buscar` | buscou (o TIPO, nunca o texto) | `contexto: { busca, area }` |
 | `progressed` | `galeria:revisar` | o LATCH 2, confirmado (`manter` ou `trocar`) | `contexto: { acao }` |
@@ -110,4 +113,7 @@ as setas do carrossel, a aba Busca fechada no julgamento, a notificação do
 crachá na aba Notificações, a explicação de "Manter" travado, a contagem de
 resultados da busca, os rótulos do par simulado ("Você" / "Outro jurado"), os
 nomes dos grupos de cartões, o título da consulta nos Stories, os rótulos de
-leitor de tela e os avisos da escola. Para o PO revisar.
+leitor de tela e os avisos da escola. Na 0.5.0: a lâmina "Bastidores do estande",
+o badge "X de Y estandes nunca chegaram ao seu feed", a contagem por área
+("Tecnologia: você viu 7 de 10"), o contraste "Sem as suas curtidas, o seu feed
+teria trazido:" e o subtítulo da área sem ocultos. Para o PO revisar.
