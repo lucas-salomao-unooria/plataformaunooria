@@ -146,6 +146,8 @@ export interface FeedPost {
   id: string;
   author: { handle: string; displayName: string; verificado: boolean; avatarSeed: string };
   imageUrl: string | null;
+  /** O texto alternativo da imagem gerada (o `imageBrief`), ou `null` (ADR-163). */
+  imageAlt: string | null;
   fallbackArt?: { corFundo: string; emojis: string };
   caption: string;
   hashtags: string[];

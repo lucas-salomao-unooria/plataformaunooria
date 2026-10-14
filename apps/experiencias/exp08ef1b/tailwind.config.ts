@@ -42,7 +42,10 @@ const config: Config = {
         "on-action": token("--unv-color-text-on-action"),
         link: token("--unv-color-text-link"),
         like: token("--unv-color-brand-like"),
-        "like-texto": token("--unv-color-brand-like"),
+        // O vermelho do curtir como TEXTO: o token puro (#E31A1A) dava 4,4:1 no
+        // fundo da tela. Misturado a 18% de preto ele passa (~5,9:1) e continua
+        // derivado do token, sem hexadecimal de interface (ADR-162).
+        "like-texto": `color-mix(in srgb, color-mix(in srgb, var(--unv-color-brand-like) 82%, black) calc(<alpha-value> * 100%), transparent)`,
         // atmosfera da revelação/dossiê (fora do disfarce)
         night: "#0B0B10",
         // acento da reflexão, sobre `night` (fora do disfarce)

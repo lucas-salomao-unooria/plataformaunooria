@@ -107,7 +107,7 @@ await suite(
          novo = handshake refeito com o token da escola nova. Não depende da
          origem do bundle (dev server ou CDN), que muda por ambiente. */
       await p.goto(`${HUB}/professor/plano-de-aula`, { waitUntil: "domcontentloaded" });
-      const aparelho = p.locator('iframe[title="experiencia"]');
+      const aparelho = p.locator('iframe[data-experiencia]');
       await aparelho.waitFor({ state: "attached", timeout: 30_000 });
       await aparelho.evaluate((el) => {
         el.dataset.marcaDoTeste = "antes-da-troca";
@@ -123,7 +123,7 @@ await suite(
       await p.waitForTimeout(3000);
 
       const marcaSobreviveu = await p
-        .locator('iframe[title="experiencia"]')
+        .locator('iframe[data-experiencia]')
         .getAttribute("data-marca-do-teste");
       r.exigir(
         marcaSobreviveu === null,

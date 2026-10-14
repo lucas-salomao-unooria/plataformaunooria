@@ -294,6 +294,8 @@ export const EstudanteDaAtividadeSchema = z.object({
       handle: z.string(),
       caption: z.string(),
       imageUrl: z.string().nullable(),
+      /** O texto alternativo da imagem gerada, ou `null` (ADR-163). */
+      imageAlt: z.string().nullable(),
       /** Arte procedural quando a imagem não ficou pronta — o feed nunca fica
        *  com buraco. */
       fallbackArt: z.unknown().nullable(),

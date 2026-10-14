@@ -4,22 +4,38 @@ import { QuotaService } from "../ai/quota.service";
 import type { Perfil } from "../auth/claims";
 import { logger } from "../observabilidade/logger";
 import {
+  MAX_TOKENS_DA_AREA,
   MAX_TOKENS_DA_REGENERACAO,
-  MAX_TOKENS_DO_PREPARO,
+  MAX_TOKENS_DAS_CATEGORIAS,
   SCHEMA_DA_REGENERACAO,
-  SCHEMA_DO_PREPARO,
+  SCHEMA_DAS_CATEGORIAS,
   SYSTEM_DO_PREPARO,
   TENTATIVAS_DO_PREPARO,
+  promptDaArea,
   promptDaRegeneracao,
-  promptDoPreparo,
+  promptDasCategorias,
+  schemaDaArea,
 } from "./prompts";
-import { conteudoDaIa, projetoRegeneradoDaIa, type ConteudoDoPacote, type ProjetoDoPacote } from "./regras/preparo";
-import type { Disciplina } from "./vocabulario";
+import {
+  categoriasDaIa,
+  montarConteudo,
+  projetoRegeneradoDaIa,
+  projetosDaAreaDaIa,
+  type ConteudoDoPacote,
+  type ProjetoDoPacote,
+} from "./regras/preparo";
+import { AREAS, type Disciplina } from "./vocabulario";
 
 /**
- * O PREPARO da mostra com IA — os dezesseis projetos sobre o tema, a
+ * O PREPARO da mostra com IA — os quarenta projetos sobre o tema, a
  * disciplina e os assuntos do professor, antes da aula, e a regeneração de um
  * projeto isolado. Molde: `jornal-escola/preparo.service.ts`.
+ *
+ * **Quatro chamadas, não uma** (medido com IA real em 2026-10-14): os quarenta
+ * numa chamada levaram 93 s — uma segunda tentativa estouraria o teto de 180 s
+ * do BFF. O preparo pede as CATEGORIAS, depois as quatro ÁREAS em paralelo
+ * (dez projetos cada, ~25 s), monta o pacote e regera sozinho o estande que
+ * repetiu título ou perfil de outra área (`montarConteudo`).
  *
  * Três coisas que este serviço não faz, e cada ausência é uma regra:
  *
@@ -49,26 +65,69 @@ export class PreparoDaExp06ef1bService {
     private readonly quota: QuotaService,
   ) {}
 
-  /** O rascunho da mostra inteira. Nunca lança: a falha volta com o código. */
+  /**
+   * O rascunho da mostra inteira. Nunca lança: a falha volta com o código. Uma
+   * área que falha (as duas tentativas) derruba o rascunho inteiro — meia mostra
+   * não serve —, e a rota cai no banco padrão. Todas as tentativas de todas as
+   * chamadas são debitadas (ADR-74).
+   */
   async gerar(
     escolaId: string,
     usuarioId: string,
     perfil: Perfil,
     parametros: ParametrosDoPreparo,
   ): Promise<ResultadoDoPreparo<ConteudoDoPacote>> {
-    return this.chamar(escolaId, usuarioId, perfil, "preparo", (aoUsarTokens) =>
-      this.ia.generateJson({
+    return this.chamar(escolaId, usuarioId, perfil, "preparo", async (aoUsarTokens) => {
+      const categorias = await this.ia.generateJson({
         system: SYSTEM_DO_PREPARO,
-        prompt: promptDoPreparo(parametros),
-        responseSchema: SCHEMA_DO_PREPARO,
-        maxTokens: MAX_TOKENS_DO_PREPARO,
+        prompt: promptDasCategorias(parametros),
+        responseSchema: SCHEMA_DAS_CATEGORIAS,
+        maxTokens: MAX_TOKENS_DAS_CATEGORIAS,
         tentativas: TENTATIVAS_DO_PREPARO,
         modelo: "padrao",
         temperatura: 0.7,
         aoUsarTokens,
-        validar: (bruto) => conteudoDaIa(bruto, parametros.tema),
-      }),
-    );
+        validar: categoriasDaIa,
+      });
+      const porArea = await Promise.allSettled(
+        AREAS.map((area) =>
+          this.ia.generateJson({
+            system: SYSTEM_DO_PREPARO,
+            prompt: promptDaArea(parametros, categorias, area, { titulos: [], escolas: [], perfis: [] }),
+            responseSchema: schemaDaArea(area),
+            maxTokens: MAX_TOKENS_DA_AREA,
+            tentativas: TENTATIVAS_DO_PREPARO,
+            modelo: "padrao",
+            temperatura: 0.7,
+            aoUsarTokens,
+            validar: (bruto) => projetosDaAreaDaIa(bruto, area, categorias),
+          }),
+        ),
+      );
+      /* `allSettled`, e não `all`: as áreas que deram certo também foram pagas, e
+         o débito só fecha depois de TODAS voltarem. */
+      const falha = porArea.find((r): r is PromiseRejectedResult => r.status === "rejected");
+      if (falha) throw falha.reason;
+      const projetos = porArea.flatMap((r) => (r.status === "fulfilled" ? r.value : []));
+      let { conteudo, colidem } = montarConteudo(parametros.tema, categorias, projetos);
+      for (const projetoId of colidem) {
+        const novo = await this.ia.generateJson({
+          system: SYSTEM_DO_PREPARO,
+          prompt: promptDaRegeneracao(parametros, conteudo, projetoId),
+          responseSchema: SCHEMA_DA_REGENERACAO,
+          maxTokens: MAX_TOKENS_DA_REGENERACAO,
+          tentativas: TENTATIVAS_DO_PREPARO,
+          modelo: "padrao",
+          temperatura: 0.8,
+          aoUsarTokens,
+          validar: (bruto) => projetoRegeneradoDaIa(bruto, conteudo, projetoId),
+        });
+        conteudo = { ...conteudo, projetos: conteudo.projetos.map((p) => (p.id === projetoId ? novo : p)) };
+      }
+      ({ conteudo, colidem } = montarConteudo(parametros.tema, categorias, conteudo.projetos));
+      if (colidem.length > 0) throw new Error("projetos repetidos depois da regeneração");
+      return conteudo;
+    });
   }
 
   /**

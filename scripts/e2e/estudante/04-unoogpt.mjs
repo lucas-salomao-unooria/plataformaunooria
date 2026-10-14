@@ -111,7 +111,7 @@ await suite(
     await r.entrar(p, estudante.login);
 
     await p.goto(`${HUB}/exp/exp02em1b`, { waitUntil: "domcontentloaded" });
-    const quadro = p.frameLocator('iframe[title="experiencia"]');
+    const quadro = p.frameLocator('iframe[data-experiencia]');
     await quadro.locator("text=/Não dá para atender todos/i").waitFor({ timeout: 40_000 });
     await r.registrar(p, "a-missao", {
       titulo: "A missão: a emergência",
@@ -152,7 +152,7 @@ await suite(
     /* O polling do relógio é de 5s; recarregar é mais rápido e igualmente
        válido. O estudante NÃO volta à abertura — o passo é server-side. */
     await p.reload({ waitUntil: "domcontentloaded" });
-    const q2 = p.frameLocator('iframe[title="experiencia"]');
+    const q2 = p.frameLocator('iframe[data-experiencia]');
     const campo = q2.locator("form input").first();
     await campo.waitFor({ timeout: 40_000 });
     await q2.locator("text=/Perguntas:/i").waitFor({ timeout: 20_000 });
@@ -196,7 +196,7 @@ await suite(
        otimistamente e só a retira se a api falhar. O que só um turno gravado
        produz é a conversa voltar inteira depois do F5. */
     await p.reload({ waitUntil: "domcontentloaded" });
-    const q3 = p.frameLocator('iframe[title="experiencia"]');
+    const q3 = p.frameLocator('iframe[data-experiencia]');
     await q3.locator(`text=${PERGUNTA}`).first().waitFor({ timeout: 40_000 });
     const orcamento = await q3.locator("text=/Perguntas:/").first().innerText();
     await r.registrar(p, "turno-do-cientista", {
@@ -245,7 +245,7 @@ await suite(
        Investigação: destino das duas equipes, o "por quê" de cada uma, Enviar.
        Cada troca de destino é um POST — espera-se o select da justificativa
        aparecer, que só existe depois de o servidor registrar o bairro. */
-    const q4 = p.frameLocator('iframe[title="experiencia"]');
+    const q4 = p.frameLocator('iframe[data-experiencia]');
     await q4.locator("button", { hasText: /Definir destinos|Ver detalhes/ }).first().click();
     const modal = q4.locator('[aria-label="Decisão operacional"]');
     await modal.waitFor({ timeout: 20_000 });
@@ -293,7 +293,7 @@ await suite(
        aba, a resposta de antes voltava marcada e travada. Aqui a aba já chega
        "suja", no formato velho e no de outro estudante, e nenhuma opção pode
        vir marcada. */
-    const aparelho = await p.locator('iframe[title="experiencia"]').elementHandle();
+    const aparelho = await p.locator('iframe[data-experiencia]').elementHandle();
     await (await aparelho.contentFrame()).evaluate(() => {
       const velhas = { p1: "A1", p2: "B1", p3: "C1", p4: "D1" };
       window.sessionStorage.setItem("exp02em1b:perguntas:1", JSON.stringify(velhas));

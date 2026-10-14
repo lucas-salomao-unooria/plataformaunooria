@@ -7,6 +7,7 @@ import { formatarContagem } from '../../lib/avatar';
 
 import { retratoDe } from './avatar-perfil';
 import { Sheet } from './sheet';
+import { altDaImagem } from '../../lib/alt-da-imagem';
 
 const semArroba = (handle: string) => handle.replace(/^@/, '');
 
@@ -21,7 +22,7 @@ const semArroba = (handle: string) => handle.replace(/^@/, '');
  */
 function Miniatura({ post, tamanhoDoEmoji }: { post: FeedPostCliente; tamanhoDoEmoji: string }) {
   return post.imageUrl ? (
-    <img src={post.imageUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
+    <img src={post.imageUrl} alt={altDaImagem(post.imageAlt, post.author.handle)} className="h-full w-full object-cover" loading="lazy" />
   ) : (
     <span
       className={`flex h-full w-full items-center justify-center ${tamanhoDoEmoji}`}

@@ -63,7 +63,7 @@ await suite(
 
     await cartao.first().click();
     await p.waitForURL((url) => url.pathname === "/professor/bem-estar", { timeout: 30_000 });
-    let bem = p.frameLocator('iframe[title="experiencia"]');
+    let bem = p.frameLocator('iframe[data-experiencia]');
     await bem.getByText(/Como você está|Você já respondeu hoje/).first().waitFor({ timeout: 60_000 });
 
     /* APAGAR ANTES, e pela TELA. A resposta é uma por dia: sem limpar, a segunda
@@ -80,7 +80,7 @@ await suite(
       await apagar.click();
       await p.waitForTimeout(3000);
       await p.reload({ waitUntil: "domcontentloaded" });
-      bem = p.frameLocator('iframe[title="experiencia"]');
+      bem = p.frameLocator('iframe[data-experiencia]');
       await bem.getByText(/Como você está|Você já respondeu hoje/).first().waitFor({ timeout: 60_000 });
       await r.registrar(p, "dados-apagados", {
         titulo: "O professor apaga os próprios dados",
@@ -157,7 +157,7 @@ await suite(
 
     // ── um por dia ──────────────────────────────────────────────────────
     await p.reload({ waitUntil: "domcontentloaded" });
-    const bem2 = p.frameLocator('iframe[title="experiencia"]');
+    const bem2 = p.frameLocator('iframe[data-experiencia]');
     await bem2.getByText(/Como você está|Você já respondeu hoje/).first().waitFor({ timeout: 60_000 });
     const agoraJaFeito = await bem2.getByText("Você já respondeu hoje").isVisible().catch(() => false);
     r.exigir(agoraJaFeito, "reabrir no mesmo dia mostra a resposta de hoje já feita — é uma por dia");

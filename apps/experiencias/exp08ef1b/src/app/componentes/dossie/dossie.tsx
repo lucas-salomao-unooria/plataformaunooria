@@ -4,6 +4,7 @@ import { api } from '../../../lib/api';
 import type { RespostaDossie } from '../../../lib/dossie-tipos';
 
 import { dossieEmPng, dossieEmTexto } from './exportar';
+import { altDaImagem } from '../../../lib/alt-da-imagem';
 
 /**
  * O RELATÓRIO do estudante — a explicabilidade.
@@ -486,18 +487,22 @@ function Pastilha({
           : 'border border-black/[0.07] bg-canvas text-ink'
       }`}
     >
-      <span className="text-[10px] uppercase tracking-wide opacity-60">{rotulo}</span>
+      <span className="text-[10px] uppercase tracking-wide opacity-85">{rotulo}</span>
       <span className="text-[14px] font-bold leading-tight">{valor}</span>
     </span>
   );
 }
 
-function Miniatura({ post }: { post: { imageUrl: string | null; fallbackArt: { corFundo: string; emojis: string } } }) {
+function Miniatura({
+  post,
+}: {
+  post: { imageUrl: string | null; imageAlt?: string | null; handle: string; fallbackArt: { corFundo: string; emojis: string } };
+}) {
   return (
     <span className="h-12 w-12 shrink-0 overflow-hidden rounded-md">
       {post.imageUrl ? (
          
-        <img src={post.imageUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
+        <img src={post.imageUrl} alt={altDaImagem(post.imageAlt, post.handle)} className="h-full w-full object-cover" loading="lazy" />
       ) : (
         <span
           className="flex h-full w-full items-center justify-center text-[18px]"

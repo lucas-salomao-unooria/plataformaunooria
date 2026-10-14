@@ -14409,6 +14409,10 @@
                             "type": "string",
                             "nullable": true
                           },
+                          "imageAlt": {
+                            "type": "string",
+                            "nullable": true
+                          },
                           "fallbackArt": {
                             "type": "object",
                             "properties": {
@@ -14470,6 +14474,7 @@
                           "id",
                           "author",
                           "imageUrl",
+                          "imageAlt",
                           "caption",
                           "hashtags",
                           "likesCount",
@@ -15065,6 +15070,10 @@
                             "type": "string",
                             "nullable": true
                           },
+                          "imageAlt": {
+                            "type": "string",
+                            "nullable": true
+                          },
                           "fallbackArt": {
                             "type": "object",
                             "properties": {
@@ -15126,6 +15135,7 @@
                           "id",
                           "author",
                           "imageUrl",
+                          "imageAlt",
                           "caption",
                           "hashtags",
                           "likesCount",
@@ -15227,6 +15237,10 @@
                             "type": "string",
                             "nullable": true
                           },
+                          "imageAlt": {
+                            "type": "string",
+                            "nullable": true
+                          },
                           "fallbackArt": {
                             "type": "object",
                             "properties": {
@@ -15288,6 +15302,7 @@
                           "id",
                           "author",
                           "imageUrl",
+                          "imageAlt",
                           "caption",
                           "hashtags",
                           "likesCount",
@@ -15420,6 +15435,10 @@
                             "type": "string",
                             "nullable": true
                           },
+                          "imageAlt": {
+                            "type": "string",
+                            "nullable": true
+                          },
                           "caption": {
                             "type": "string"
                           },
@@ -15440,6 +15459,7 @@
                           "id",
                           "author",
                           "imageUrl",
+                          "imageAlt",
                           "caption",
                           "hashtags",
                           "likesCount",
@@ -16552,6 +16572,10 @@
                                 "type": "string",
                                 "nullable": true
                               },
+                              "imageAlt": {
+                                "type": "string",
+                                "nullable": true
+                              },
                               "imageStatus": {
                                 "type": "string"
                               },
@@ -16590,6 +16614,7 @@
                               "intensidade",
                               "caption",
                               "imageUrl",
+                              "imageAlt",
                               "imageStatus",
                               "categoria",
                               "handle",
@@ -16619,6 +16644,10 @@
                                 "type": "string"
                               },
                               "imageUrl": {
+                                "type": "string",
+                                "nullable": true
+                              },
+                              "imageAlt": {
                                 "type": "string",
                                 "nullable": true
                               },
@@ -16654,6 +16683,7 @@
                               "intensidade",
                               "caption",
                               "imageUrl",
+                              "imageAlt",
                               "imageStatus",
                               "categoria",
                               "handle",
@@ -18268,6 +18298,10 @@
                             "type": "string",
                             "nullable": true
                           },
+                          "imageAlt": {
+                            "type": "string",
+                            "nullable": true
+                          },
                           "fallbackArt": {
                             "nullable": true
                           },
@@ -18310,6 +18344,7 @@
                           "handle",
                           "caption",
                           "imageUrl",
+                          "imageAlt",
                           "lado",
                           "ladoRotulo",
                           "perfil",
@@ -54658,11 +54693,11 @@
                             "properties": {
                               "id": {
                                 "type": "string",
-                                "pattern": "^proj-[a-d][1-4]:(apresentacao|bastidor|prototipo|depoimento)$"
+                                "pattern": "^proj-[a-d](10|[1-9]):(apresentacao|bastidor|prototipo|depoimento)$"
                               },
                               "projetoId": {
                                 "type": "string",
-                                "pattern": "^proj-[a-d][1-4]$"
+                                "pattern": "^proj-[a-d](10|[1-9])$"
                               },
                               "tipo": {
                                 "type": "string",
@@ -54695,6 +54730,9 @@
                                 "type": "string"
                               },
                               "legenda": {
+                                "type": "string"
+                              },
+                              "bastidor": {
                                 "type": "string"
                               },
                               "hashtags": {
@@ -54731,6 +54769,7 @@
                               "perfil",
                               "texto",
                               "legenda",
+                              "bastidor",
                               "hashtags",
                               "imagem"
                             ],
@@ -54742,14 +54781,14 @@
                           "type": "array",
                           "items": {
                             "type": "string",
-                            "pattern": "^proj-[a-d][1-4]:(apresentacao|bastidor|prototipo|depoimento)$"
+                            "pattern": "^proj-[a-d](10|[1-9]):(apresentacao|bastidor|prototipo|depoimento)$"
                           }
                         },
                         "salvos": {
                           "type": "array",
                           "items": {
                             "type": "string",
-                            "pattern": "^proj-[a-d][1-4]:(apresentacao|bastidor|prototipo|depoimento)$"
+                            "pattern": "^proj-[a-d](10|[1-9]):(apresentacao|bastidor|prototipo|depoimento)$"
                           }
                         },
                         "completo": {
@@ -54782,7 +54821,7 @@
                       "properties": {
                         "projetoId": {
                           "type": "string",
-                          "pattern": "^proj-[a-d][1-4]$"
+                          "pattern": "^proj-[a-d](10|[1-9])$"
                         },
                         "conviccao": {
                           "type": "string",
@@ -54812,7 +54851,7 @@
                         },
                         "projetoId": {
                           "type": "string",
-                          "pattern": "^proj-[a-d][1-4]$",
+                          "pattern": "^proj-[a-d](10|[1-9])$",
                           "nullable": true
                         }
                       },
@@ -55171,11 +55210,11 @@
                             "properties": {
                               "id": {
                                 "type": "string",
-                                "pattern": "^proj-[a-d][1-4]:(apresentacao|bastidor|prototipo|depoimento)$"
+                                "pattern": "^proj-[a-d](10|[1-9]):(apresentacao|bastidor|prototipo|depoimento)$"
                               },
                               "projetoId": {
                                 "type": "string",
-                                "pattern": "^proj-[a-d][1-4]$"
+                                "pattern": "^proj-[a-d](10|[1-9])$"
                               },
                               "tipo": {
                                 "type": "string",
@@ -55208,6 +55247,9 @@
                                 "type": "string"
                               },
                               "legenda": {
+                                "type": "string"
+                              },
+                              "bastidor": {
                                 "type": "string"
                               },
                               "hashtags": {
@@ -55244,6 +55286,7 @@
                               "perfil",
                               "texto",
                               "legenda",
+                              "bastidor",
                               "hashtags",
                               "imagem"
                             ],
@@ -55255,14 +55298,14 @@
                           "type": "array",
                           "items": {
                             "type": "string",
-                            "pattern": "^proj-[a-d][1-4]:(apresentacao|bastidor|prototipo|depoimento)$"
+                            "pattern": "^proj-[a-d](10|[1-9]):(apresentacao|bastidor|prototipo|depoimento)$"
                           }
                         },
                         "salvos": {
                           "type": "array",
                           "items": {
                             "type": "string",
-                            "pattern": "^proj-[a-d][1-4]:(apresentacao|bastidor|prototipo|depoimento)$"
+                            "pattern": "^proj-[a-d](10|[1-9]):(apresentacao|bastidor|prototipo|depoimento)$"
                           }
                         },
                         "completo": {
@@ -55385,11 +55428,11 @@
                         "properties": {
                           "id": {
                             "type": "string",
-                            "pattern": "^proj-[a-d][1-4]:(apresentacao|bastidor|prototipo|depoimento)$"
+                            "pattern": "^proj-[a-d](10|[1-9]):(apresentacao|bastidor|prototipo|depoimento)$"
                           },
                           "projetoId": {
                             "type": "string",
-                            "pattern": "^proj-[a-d][1-4]$"
+                            "pattern": "^proj-[a-d](10|[1-9])$"
                           },
                           "tipo": {
                             "type": "string",
@@ -55422,6 +55465,9 @@
                             "type": "string"
                           },
                           "legenda": {
+                            "type": "string"
+                          },
+                          "bastidor": {
                             "type": "string"
                           },
                           "hashtags": {
@@ -55458,6 +55504,7 @@
                           "perfil",
                           "texto",
                           "legenda",
+                          "bastidor",
                           "hashtags",
                           "imagem"
                         ],
@@ -55469,14 +55516,14 @@
                       "type": "array",
                       "items": {
                         "type": "string",
-                        "pattern": "^proj-[a-d][1-4]:(apresentacao|bastidor|prototipo|depoimento)$"
+                        "pattern": "^proj-[a-d](10|[1-9]):(apresentacao|bastidor|prototipo|depoimento)$"
                       }
                     },
                     "salvos": {
                       "type": "array",
                       "items": {
                         "type": "string",
-                        "pattern": "^proj-[a-d][1-4]:(apresentacao|bastidor|prototipo|depoimento)$"
+                        "pattern": "^proj-[a-d](10|[1-9]):(apresentacao|bastidor|prototipo|depoimento)$"
                       }
                     },
                     "completo": {
@@ -55512,7 +55559,7 @@
           "juri-estadual"
         ],
         "summary": "O que a tela mediu (curtidas e permanências) e, se pedido, o próximo post.",
-        "description": "A curtida e o salvo são ESTADO (`curtiu`/`salvou: true/false`), a permanência é FATO (mais de 5 s num post, uma vez por post). Curtir (3) e permanecer (1) pesam e entram antes de o motor escolher o próximo; **salvar é gravado e não pesa**. Com a área em foco, os posts seguintes são só dela, repetindo os projetos em formatos diferentes (`tipo`: apresentação, bastidor, protótipo, depoimento). `proximo: true` quando a tela chegou ao último post servido: o servidor serve UM a mais, até dez.\n\nO primeiro `proximo: true` é a 1ª rolagem e liga o relógio de **8 minutos do servidor** (`encerraEm`); recarregar não zera. Com o tempo esgotado (`tempoEsgotado`), o feed não serve mais post e `cedulaLiberada` fica `true`.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- Post que o feed não serviu responde **400** `post-desconhecido` — o cliente não inventa post.\n- Depois do voto responde **409** `voto-ja-lacrado`; antes do feed, **409** `passo-invalido`.\n- Missão não liberada na turma responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`); sem atividade em andamento, **403** `atividade-nao-preparada`. Estudante sem turma responde **409** `sem-turma`. Corpo fora do formato responde **400** `payload-invalido`.",
+        "description": "A curtida e o salvo são ESTADO (`curtiu`/`salvou: true/false`), a permanência é FATO (mais de 5 s num post, uma vez por post). Curtir (3) e permanecer (1) pesam e entram antes de o motor escolher o próximo; **salvar é gravado e não pesa**. Com a área em foco, os posts seguintes são só dela — projetos NOVOS dela (são dez por área). Nenhum post se repete, e todo post servido é a `apresentacao` de um projeto; os formatos `bastidor`, `prototipo` e `depoimento` só aparecem no feed gravado de uma sessão antiga (instrumento 2.0.0). `proximo: true` quando a tela chegou ao último post servido: o servidor serve UM a mais, até dez.\n\nO primeiro `proximo: true` é a 1ª rolagem e liga o relógio de **8 minutos do servidor** (`encerraEm`); recarregar não zera. Com o tempo esgotado (`tempoEsgotado`), o feed não serve mais post e `cedulaLiberada` fica `true`.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- Post que o feed não serviu responde **400** `post-desconhecido` — o cliente não inventa post.\n- Depois do voto responde **409** `voto-ja-lacrado`; antes do feed, **409** `passo-invalido`.\n- Missão não liberada na turma responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`); sem atividade em andamento, **403** `atividade-nao-preparada`. Estudante sem turma responde **409** `sem-turma`. Corpo fora do formato responde **400** `payload-invalido`.",
         "security": [
           {
             "token-da-plataforma": []
@@ -55536,7 +55583,7 @@
                       "properties": {
                         "postId": {
                           "type": "string",
-                          "pattern": "^proj-[a-d][1-4]:(apresentacao|bastidor|prototipo|depoimento)$"
+                          "pattern": "^proj-[a-d](10|[1-9]):(apresentacao|bastidor|prototipo|depoimento)$"
                         },
                         "curtiu": {
                           "type": "boolean"
@@ -55558,7 +55605,7 @@
                       "properties": {
                         "postId": {
                           "type": "string",
-                          "pattern": "^proj-[a-d][1-4]:(apresentacao|bastidor|prototipo|depoimento)$"
+                          "pattern": "^proj-[a-d](10|[1-9]):(apresentacao|bastidor|prototipo|depoimento)$"
                         },
                         "salvou": {
                           "type": "boolean"
@@ -55577,7 +55624,7 @@
                     "type": "array",
                     "items": {
                       "type": "string",
-                      "pattern": "^proj-[a-d][1-4]:(apresentacao|bastidor|prototipo|depoimento)$"
+                      "pattern": "^proj-[a-d](10|[1-9]):(apresentacao|bastidor|prototipo|depoimento)$"
                     },
                     "maxItems": 20,
                     "default": []
@@ -55711,7 +55758,7 @@
                 "properties": {
                   "projetoId": {
                     "type": "string",
-                    "pattern": "^proj-[a-d][1-4]$"
+                    "pattern": "^proj-[a-d](10|[1-9])$"
                   },
                   "conviccao": {
                     "type": "string",
@@ -55747,43 +55794,26 @@
                     "invisibilidade": {
                       "type": "object",
                       "properties": {
-                        "vistos": {
-                          "type": "integer",
-                          "minimum": 0
-                        },
                         "ocultos": {
                           "type": "integer",
                           "minimum": 0
                         },
                         "total": {
-                          "type": "number",
-                          "enum": [
-                            16
-                          ]
-                        },
-                        "percentual": {
                           "type": "integer",
-                          "minimum": 0,
-                          "maximum": 100
+                          "minimum": 0
                         }
                       },
                       "required": [
-                        "vistos",
                         "ocultos",
-                        "total",
-                        "percentual"
+                        "total"
                       ],
                       "additionalProperties": false
                     },
-                    "projetos": {
+                    "porArea": {
                       "type": "array",
                       "items": {
                         "type": "object",
                         "properties": {
-                          "id": {
-                            "type": "string",
-                            "pattern": "^proj-[a-d][1-4]$"
-                          },
                           "area": {
                             "type": "string",
                             "enum": [
@@ -55793,65 +55823,57 @@
                               "area_d"
                             ]
                           },
-                          "titulo": {
-                            "type": "string"
+                          "vistos": {
+                            "type": "integer",
+                            "minimum": 0
                           },
-                          "escola": {
-                            "type": "string"
-                          },
-                          "perfil": {
-                            "type": "string"
-                          },
-                          "legenda": {
-                            "type": "string"
-                          },
-                          "resumo": {
-                            "type": "string"
-                          },
-                          "hashtags": {
-                            "type": "array",
-                            "items": {
-                              "type": "string"
-                            }
-                          },
-                          "imagem": {
-                            "type": "object",
-                            "properties": {
-                              "url": {
-                                "type": "string",
-                                "nullable": true
-                              },
-                              "alt": {
-                                "type": "string"
-                              }
-                            },
-                            "required": [
-                              "url",
-                              "alt"
-                            ],
-                            "additionalProperties": false
-                          },
-                          "exibidoNoSeuFeed": {
-                            "type": "boolean"
+                          "total": {
+                            "type": "integer",
+                            "minimum": 0
                           }
                         },
                         "required": [
-                          "id",
                           "area",
-                          "titulo",
-                          "escola",
-                          "perfil",
-                          "legenda",
-                          "resumo",
-                          "hashtags",
-                          "imagem",
-                          "exibidoNoSeuFeed"
+                          "vistos",
+                          "total"
                         ],
                         "additionalProperties": false
                       },
-                      "minItems": 16,
-                      "maxItems": 16
+                      "minItems": 4,
+                      "maxItems": 4
                     },
+                    "semCurtidas": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "area": {
+                            "type": "string",
+                            "enum": [
+                              "area_a",
+                              "area_b",
+                              "area_c",
+                              "area_d"
+                            ]
+                          },
+                          "posts": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "pattern": "^proj-[a-d](10|[1-9])$"
+                            }
+                          }
+                        },
+                        "required": [
+                          "area",
+                          "posts"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "minItems": 4,
+                      "maxItems": 4
+                    },
+                    "projetos": {},
                     "ocultosAbertos": {
                       "type": "integer",
                       "minimum": 0
@@ -55862,6 +55884,8 @@
                   },
                   "required": [
                     "invisibilidade",
+                    "porArea",
+                    "semCurtidas",
                     "projetos",
                     "ocultosAbertos",
                     "podeManter"
@@ -55875,8 +55899,8 @@
         "tags": [
           "juri-estadual"
         ],
-        "summary": "A Galeria Oculta: os 16 estandes, os que não chegaram ao feed primeiro, e a taxa REAL.",
-        "description": "`invisibilidade` é o número desta sessão, calculado no servidor: os projetos que o feed nunca mostrou sobre os dezesseis — o do badge (\"{n}% dos projetos da feira ficaram fora do seu feed\") e o tamanho da grade de três colunas. Quem curte fica em 69% (11 de 16) com a saturação; quem não interagiu, perto de 38%. `exibidoNoSeuFeed` diz quais chegaram; `podeManter`, se o \"Manter meu voto inicial\" já vale (abriu um oculto).\n\n**Papéis:** estudante.\n\n**Restrições:**\n- Antes de a galeria abrir para esta criança (sem voto, ou com a etapa da turma ainda na exploração) responde **403** `galeria-nao-liberada`.\n- Missão não liberada na turma responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`); sem atividade em andamento, **403** `atividade-nao-preparada`. Estudante sem turma responde **409** `sem-turma`. Corpo fora do formato responde **400** `payload-invalido`.",
+        "summary": "A Galeria Oculta: os 40 estandes, os que não chegaram ao feed primeiro, por área e o contrafactual sem curtidas.",
+        "description": "Tudo calculado no servidor (o motor não desce):\n\n- `invisibilidade` — `{ocultos, total}`: os projetos que o feed nunca mostrou sobre o total do pacote (\"30 de 40\"). Com dez posts sem repetição, é o mesmo número para quem curtiu e para quem não interagiu; quem parou antes pelos 8 minutos vê mais ocultos.\n- `porArea` — projetos DISTINTOS vistos por área (`vistos` de `total`): quem curtiu cedo uma área fica perto de 7/1/1/1; quem não interagiu, 3/3/2/2.\n- `semCurtidas` — o CONTRAFACTUAL: o feed que esta sessão teria tido sem nenhuma curtida e nenhuma permanência (a mesma semente, o mesmo motor), com o mesmo número de posts que a criança viu. Os ids de projeto por área, na ordem do pacote. Sem curtida nem permanência, é igual ao feed real.\n\n`projetos` traz os 40 (16 num pacote antigo, da 0.4.x) com os ocultos primeiro; `exibidoNoSeuFeed` diz quais chegaram; `podeManter`, se o \"Manter meu voto inicial\" já vale (abriu um oculto).\n\n**Papéis:** estudante.\n\n**Restrições:**\n- Antes de a galeria abrir para esta criança (sem voto, ou com a etapa da turma ainda na exploração) responde **403** `galeria-nao-liberada`.\n- Missão não liberada na turma responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`); sem atividade em andamento, **403** `atividade-nao-preparada`. Estudante sem turma responde **409** `sem-turma`. Corpo fora do formato responde **400** `payload-invalido`.",
         "security": [
           {
             "token-da-plataforma": []
@@ -55928,7 +55952,7 @@
                       },
                       "projetoId": {
                         "type": "string",
-                        "pattern": "^proj-[a-d][1-4]$"
+                        "pattern": "^proj-[a-d](10|[1-9])$"
                       }
                     },
                     "required": [
@@ -56026,7 +56050,7 @@
           "juri-estadual"
         ],
         "summary": "\"Manter meu voto inicial\" ou \"Confirmar Voto Revisado\", depois da galeria (latch).",
-        "description": "`manter` só vale depois de abrir ao menos UM estande oculto; `trocar` aceita qualquer um dos dezesseis, menos o do voto lacrado. Sem justificativa. Grava a ação, o voto final, o carimbo e o passo `revisada` juntos, e marca a EF06CO10 (`auditoria`: dois ocultos abertos E uma busca = atingiu; abriu algum = em processo) e a EF06CO01 (`classificacao`: buscou pela hashtag de uma categoria fora da bolha E abriu um projeto dela = atingiu; buscou ou abriu um oculto = em processo). Quem não fez nada fica SEM a marca de ação: decide a pergunta. Depois, `POST passo` com `para: \"cadeia\"`.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- `manter` sem nenhum oculto aberto responde **409** `galeria-sem-inspecao`; `trocar` com o mesmo projeto do voto, **400** `payload-invalido`.\n- A segunda revisão — inclusive duas simultâneas — responde **409** `voto-ja-revisado`. Antes da galeria, **403** `galeria-nao-liberada`. Com a rodada trocada no meio (o professor zerou), **409** `rodada-mudou`.\n- Missão não liberada na turma responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`); sem atividade em andamento, **403** `atividade-nao-preparada`. Estudante sem turma responde **409** `sem-turma`. Corpo fora do formato responde **400** `payload-invalido`.",
+        "description": "`manter` só vale depois de abrir ao menos UM estande oculto; `trocar` aceita qualquer estande do pacote (os 40; 16 num pacote antigo), menos o do voto lacrado. Sem justificativa. Grava a ação, o voto final, o carimbo e o passo `revisada` juntos, e marca a EF06CO10 (`auditoria`: dois ocultos abertos E uma busca = atingiu; abriu algum = em processo) e a EF06CO01 (`classificacao`: buscou pela hashtag de uma categoria fora da bolha E abriu um projeto dela = atingiu; buscou ou abriu um oculto = em processo). Quem não fez nada fica SEM a marca de ação: decide a pergunta. Depois, `POST passo` com `para: \"cadeia\"`.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- `manter` sem nenhum oculto aberto responde **409** `galeria-sem-inspecao`; `trocar` com o mesmo projeto do voto, ou com um id que o pacote não tem, **400** `payload-invalido`.\n- A segunda revisão — inclusive duas simultâneas — responde **409** `voto-ja-revisado`. Antes da galeria, **403** `galeria-nao-liberada`. Com a rodada trocada no meio (o professor zerou), **409** `rodada-mudou`.\n- Missão não liberada na turma responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`); sem atividade em andamento, **403** `atividade-nao-preparada`. Estudante sem turma responde **409** `sem-turma`. Corpo fora do formato responde **400** `payload-invalido`.",
         "security": [
           {
             "token-da-plataforma": []
@@ -56068,7 +56092,7 @@
                       },
                       "projetoId": {
                         "type": "string",
-                        "pattern": "^proj-[a-d][1-4]$"
+                        "pattern": "^proj-[a-d](10|[1-9])$"
                       }
                     },
                     "required": [
@@ -56720,11 +56744,27 @@
                           "minItems": 4,
                           "maxItems": 4
                         },
-                        "invisibilidadeMedia": {
-                          "type": "integer",
-                          "minimum": 0,
-                          "maximum": 100,
-                          "nullable": true
+                        "concentracao": {
+                          "type": "object",
+                          "properties": {
+                            "curtiram": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 100,
+                              "nullable": true
+                            },
+                            "naoCurtiram": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 100,
+                              "nullable": true
+                            }
+                          },
+                          "required": [
+                            "curtiram",
+                            "naoCurtiram"
+                          ],
+                          "additionalProperties": false
                         },
                         "revisao": {
                           "type": "object",
@@ -56791,7 +56831,7 @@
                         "computadores",
                         "porComputador",
                         "votosPorArea",
-                        "invisibilidadeMedia",
+                        "concentracao",
                         "revisao",
                         "votosRevisadosPorArea"
                       ],
@@ -57112,7 +57152,54 @@
                         "assuntos": {
                           "type": "string"
                         },
-                        "conteudo": {},
+                        "conteudo": {
+                          "type": "object",
+                          "properties": {
+                            "tema": {
+                              "type": "string"
+                            },
+                            "categorias": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "area": {
+                                    "type": "string",
+                                    "enum": [
+                                      "area_a",
+                                      "area_b",
+                                      "area_c",
+                                      "area_d"
+                                    ]
+                                  },
+                                  "nome": {
+                                    "type": "string",
+                                    "minLength": 2,
+                                    "maxLength": 30
+                                  },
+                                  "hashtag": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "area",
+                                  "nome",
+                                  "hashtag"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "minItems": 4,
+                              "maxItems": 4
+                            },
+                            "projetos": {}
+                          },
+                          "required": [
+                            "tema",
+                            "categorias",
+                            "projetos"
+                          ],
+                          "additionalProperties": false
+                        },
                         "midia": {
                           "type": "object",
                           "properties": {
@@ -57326,7 +57413,54 @@
                     "assuntos": {
                       "type": "string"
                     },
-                    "conteudo": {},
+                    "conteudo": {
+                      "type": "object",
+                      "properties": {
+                        "tema": {
+                          "type": "string"
+                        },
+                        "categorias": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "area": {
+                                "type": "string",
+                                "enum": [
+                                  "area_a",
+                                  "area_b",
+                                  "area_c",
+                                  "area_d"
+                                ]
+                              },
+                              "nome": {
+                                "type": "string",
+                                "minLength": 2,
+                                "maxLength": 30
+                              },
+                              "hashtag": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "area",
+                              "nome",
+                              "hashtag"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "minItems": 4,
+                          "maxItems": 4
+                        },
+                        "projetos": {}
+                      },
+                      "required": [
+                        "tema",
+                        "categorias",
+                        "projetos"
+                      ],
+                      "additionalProperties": false
+                    },
                     "midia": {
                       "type": "object",
                       "properties": {
@@ -57618,7 +57752,7 @@
             "required": true,
             "schema": {
               "type": "string",
-              "pattern": "^proj-[a-d][1-4]$"
+              "pattern": "^proj-[a-d](10|[1-9])$"
             }
           },
           {
@@ -57644,7 +57778,7 @@
                     },
                     "projetoId": {
                       "type": "string",
-                      "pattern": "^proj-[a-d][1-4]$"
+                      "pattern": "^proj-[a-d](10|[1-9])$"
                     },
                     "url": {
                       "type": "string"
@@ -57665,7 +57799,7 @@
           "juri-estadual"
         ],
         "summary": "\"Gerar outra imagem\": uma imagem nova para UM estande, enquanto as imagens estão em validação.",
-        "description": "O professor viu a imagem do estande e ela não serve, ou o estande ficou sem imagem. Gera outra, SEMPRE paga, num arquivo novo — sobrescrever o da descrição trocaria a imagem de todo pacote que a herdou, inclusive o de uma turma em aula.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Depois de `aprovar-imagens`, **409** `imagens-ja-aprovadas`: a turma pode estar olhando para elas.\n- Quota do professor, com o custo estimado de uma imagem. Sem saldo, **429** `sem-saldo-de-ia`; com o provedor fora do ar, **503** `ia-indisponivel` — e o estande fica com a imagem que tinha.\n- `projetoId` fora de `proj-a1`…`proj-d4` responde **400** `payload-invalido`.",
+        "description": "O professor viu a imagem do estande e ela não serve, ou o estande ficou sem imagem. Gera outra, SEMPRE paga, num arquivo novo — sobrescrever o da descrição trocaria a imagem de todo pacote que a herdou, inclusive o de uma turma em aula.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Depois de `aprovar-imagens`, **409** `imagens-ja-aprovadas`: a turma pode estar olhando para elas.\n- Quota do professor, com o custo estimado de uma imagem. Sem saldo, **429** `sem-saldo-de-ia`; com o provedor fora do ar, **503** `ia-indisponivel` — e o estande fica com a imagem que tinha.\n- `projetoId` fora de `proj-a1`…`proj-d10` responde **400** `payload-invalido`.",
         "security": [
           {
             "token-da-plataforma": []
@@ -57768,6 +57902,12 @@
                         "ia-indisponivel"
                       ],
                       "nullable": true
+                    },
+                    "imagens": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "string"
+                      }
                     }
                   },
                   "required": [
@@ -57775,7 +57915,8 @@
                     "conteudo",
                     "usouIa",
                     "origem",
-                    "motivo"
+                    "motivo",
+                    "imagens"
                   ],
                   "additionalProperties": false
                 }
@@ -57786,8 +57927,8 @@
         "tags": [
           "juri-estadual"
         ],
-        "summary": "Gera um RASCUNHO da mostra com IA: 4 áreas e 16 projetos sobre o tema do professor — ou o banco padrão.",
-        "description": "**Não persiste nada**: o que volta é rascunho para a tela editar, e criar a atividade é o `POST homologar`. A IA escreve as quatro áreas e os dezesseis projetos (com os quatro formatos de post); a saída que fere as regras da missão é regerada uma vez.\n\n**Fallback (RF-007, §12.2):** sem saldo de IA ou com a IA fora do ar, a resposta é **200** com o BANCO PADRÃO (os dezesseis projetos do PRD), `usouIa: false`, `origem: \"padrao\"` e `motivo` (`sem-saldo-de-ia` ou `ia-indisponivel`). A tela mostra o aviso e segue com um toque.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Quota do PERFIL do professor (ADR-105): `temSaldo` antes, e o que o vendor cobrou é debitado por tentativa, inclusive as recusadas.\n- Os tetos de `tema` (3 a 60), `assuntos` (10 a 600) e `contexto` (até 120) são a primeira barreira contra injeção de instrução no gerador.",
+        "summary": "Gera um RASCUNHO da mostra com IA: 4 áreas e 40 projetos sobre o tema do professor — ou o banco padrão.",
+        "description": "**Não persiste nada**: o que volta é rascunho para a tela editar, e criar a atividade é o `POST homologar`. A IA escreve as quatro áreas e os quarenta projetos (dez por área: título, escola, perfil, legenda, bastidor, hashtags e a imagem) em cinco chamadas — as categorias, depois as quatro áreas em paralelo — e regera sozinha o estande que repetir o título ou o perfil de outra área; a saída que fere as regras da missão é regerada uma vez. Medido com IA real: cerca de 45 s.\n\n**Fallback (RF-007, §12.2):** sem saldo de IA ou com a IA fora do ar, a resposta é **200** com o BANCO PADRÃO (os quarenta projetos), `usouIa: false`, `origem: \"padrao\"`, `motivo` (`sem-saldo-de-ia` ou `ia-indisponivel`) e, em `imagens`, as imagens do banco que já existem. A tela mostra o aviso e segue com um toque. O rascunho da IA vem com `imagens` vazio.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Quota do PERFIL do professor (ADR-105): `temSaldo` antes, e o que o vendor cobrou é debitado por tentativa, inclusive as recusadas.\n- Os tetos de `tema` (3 a 60), `assuntos` (10 a 600) e `contexto` (até 120) são a primeira barreira contra injeção de instrução no gerador.",
         "security": [
           {
             "token-da-plataforma": []
@@ -57928,7 +58069,7 @@
           "juri-estadual"
         ],
         "summary": "\"Usar Banco Padrão Oficial\" — a atividade pronta, sem IA, em um toque (e no ar, com `porNoAr`).",
-        "description": "O caminho curto do professor (E0-PROF-02, RF-007): cria a ATIVIDADE com os dezesseis projetos do banco padrão (`origem: \"padrao\"`), sem chamada de IA, sem curadoria e com as imagens já aprovadas (os estandes usam a arte procedural). Se a turma já tem esse pacote, reaproveita. Com `porNoAr: true`, põe em andamento na mesma chamada — o \"Usar Banco Padrão e Pôr no ar\" (as mesmas regras de `POST …/em-andamento`). O podcast dele é o roteiro fixo do sheet: não há falas a revisar.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Turma que o professor não leciona responde **404** `turma-nao-encontrada`.",
+        "description": "O caminho curto do professor (E0-PROF-02, RF-007): cria a ATIVIDADE com os quarenta projetos do banco padrão (`origem: \"padrao\"`), sem chamada de IA, sem curadoria e com as imagens já aprovadas: as imagens do banco que já existem no storage entram na `midia` (`GET /juri-estadual/banco-padrao/imagens`), e o estande sem imagem usa a arte procedural. Se a turma já tem esse pacote, reaproveita (e, fora do ar, ele ganha as imagens do banco que faltavam nele). Com `porNoAr: true`, põe em andamento na mesma chamada — o \"Usar Banco Padrão e Pôr no ar\" (as mesmas regras de `POST …/em-andamento`). O podcast dele é o roteiro fixo do sheet: não há falas a revisar.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Turma que o professor não leciona responde **404** `turma-nao-encontrada`.",
         "security": [
           {
             "token-da-plataforma": []
@@ -57996,7 +58137,7 @@
                       "properties": {
                         "id": {
                           "type": "string",
-                          "pattern": "^proj-[a-d][1-4]$"
+                          "pattern": "^proj-[a-d](10|[1-9])$"
                         },
                         "area": {
                           "type": "string",
@@ -58026,16 +58167,6 @@
                           "maxLength": 420
                         },
                         "bastidor": {
-                          "type": "string",
-                          "minLength": 10,
-                          "maxLength": 280
-                        },
-                        "prototipo": {
-                          "type": "string",
-                          "minLength": 10,
-                          "maxLength": 280
-                        },
-                        "depoimento": {
                           "type": "string",
                           "minLength": 10,
                           "maxLength": 280
@@ -58197,7 +58328,7 @@
                           "properties": {
                             "id": {
                               "type": "string",
-                              "pattern": "^proj-[a-d][1-4]$"
+                              "pattern": "^proj-[a-d](10|[1-9])$"
                             },
                             "area": {
                               "type": "string",
@@ -58227,16 +58358,6 @@
                               "maxLength": 420
                             },
                             "bastidor": {
-                              "type": "string",
-                              "minLength": 10,
-                              "maxLength": 280
-                            },
-                            "prototipo": {
-                              "type": "string",
-                              "minLength": 10,
-                              "maxLength": 280
-                            },
-                            "depoimento": {
                               "type": "string",
                               "minLength": 10,
                               "maxLength": 280
@@ -58283,8 +58404,8 @@
                           ],
                           "additionalProperties": false
                         },
-                        "minItems": 16,
-                        "maxItems": 16
+                        "minItems": 40,
+                        "maxItems": 40
                       }
                     },
                     "required": [
@@ -58296,7 +58417,7 @@
                   },
                   "projetoId": {
                     "type": "string",
-                    "pattern": "^proj-[a-d][1-4]$"
+                    "pattern": "^proj-[a-d](10|[1-9])$"
                   }
                 },
                 "required": [
@@ -58392,7 +58513,7 @@
           "juri-estadual"
         ],
         "summary": "\"Criar atividade\" — a curadoria humana (ADR-66/67).",
-        "description": "Grava a mostra como o professor a deixou, numa ATIVIDADE NOVA que nasce **pronta, não no ar** (ADR-130): o pacote em andamento continua em andamento, e quem escolhe o que a turma faz é o professor (`POST :turmaId/pacotes/:pacoteId/em-andamento`). O mesmo conteúdo do pacote mais recente não cria outro: é o segundo clique.\n\nÉ a PRIMEIRA fase da aprovação (os textos): o pacote nasce com `imagensAprovadasEm` nulo e só vai ao ar depois da segunda (`POST :turmaId/pacotes/:pacoteId/aprovar-imagens`).\n\nAs imagens de projeto com a MESMA descrição de um pacote recente da turma são herdadas — o arquivo no bucket é o hash da descrição.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- O pacote é recusado com **400** `pacote-invalido` e a LISTA de problemas em `erros`, em frases para o professor: quatro categorias, uma por área, com hashtags diferentes no formato `#minusculas`; os dezesseis projetos `proj-a1` a `proj-d4`, cada um na área que o id diz e começando pela hashtag da área; perfil com @; legenda até 60 palavras, e bastidor, protótipo e depoimento até 40; e nenhuma marca ou plataforma real no que a criança lê. (`.superRefine()` some do OpenAPI; daí esta nota.)\n- `podcast` são as três falas do podcast de recapitulação que o professor revisou na criação (ADR-150, ADR-151): `dois`, `rafa` e `mesa`, cada uma de 12 a 60 palavras, até 400 bytes, sem link, e-mail nem @. Vão para `podcast_roteiros` na MESMA transação, também no segundo clique — que as substitui.\n- O conteúdo IGUAL ao banco padrão (o fallback homologado como veio) cria o pacote com `origem: \"padrao\"`. `preparoIniciadoEm` (opcional) é quando a tela de criação abriu (EVT-P01); a homologação grava `aprovado_em`/`aprovado_por` (EVT-P03).",
+        "description": "Grava a mostra como o professor a deixou, numa ATIVIDADE NOVA que nasce **pronta, não no ar** (ADR-130): o pacote em andamento continua em andamento, e quem escolhe o que a turma faz é o professor (`POST :turmaId/pacotes/:pacoteId/em-andamento`). O mesmo conteúdo do pacote mais recente não cria outro: é o segundo clique.\n\nÉ a PRIMEIRA fase da aprovação (os textos): o pacote nasce com `imagensAprovadasEm` nulo e só vai ao ar depois da segunda (`POST :turmaId/pacotes/:pacoteId/aprovar-imagens`).\n\nAs imagens de projeto com a MESMA descrição de um pacote recente da turma são herdadas — o arquivo no bucket é o hash da descrição.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- O pacote é recusado com **400** `pacote-invalido` e a LISTA de problemas em `erros`, em frases para o professor: quatro categorias, uma por área, com hashtags diferentes no formato `#minusculas`; os QUARENTA projetos `proj-a1` a `proj-d10` (dez por área), cada um na área que o id diz e começando pela hashtag da área; perfil com @; legenda até 60 palavras e bastidor até 40; e nenhuma marca ou plataforma real no que a criança lê. O pacote de dezesseis da 0.4.x continua legível, mas não se homologa mais. `prototipo` e `depoimento` (formatos da 0.4.x) são descartados. (`.superRefine()` some do OpenAPI; daí esta nota.)\n- `podcast` são as três falas do podcast de recapitulação que o professor revisou na criação (ADR-150, ADR-151): `dois`, `rafa` e `mesa`, cada uma de 12 a 60 palavras, até 400 bytes, sem link, e-mail nem @. Vão para `podcast_roteiros` na MESMA transação, também no segundo clique — que as substitui.\n- O conteúdo IGUAL ao banco padrão (o fallback homologado como veio) cria o pacote com `origem: \"padrao\"` e com as imagens do banco que já existem no storage na `midia`. `preparoIniciadoEm` (opcional) é quando a tela de criação abriu (EVT-P01); a homologação grava `aprovado_em`/`aprovado_por` (EVT-P03).",
         "security": [
           {
             "token-da-plataforma": []
@@ -58500,7 +58621,7 @@
                           "properties": {
                             "id": {
                               "type": "string",
-                              "pattern": "^proj-[a-d][1-4]$"
+                              "pattern": "^proj-[a-d](10|[1-9])$"
                             },
                             "area": {
                               "type": "string",
@@ -58530,16 +58651,6 @@
                               "maxLength": 420
                             },
                             "bastidor": {
-                              "type": "string",
-                              "minLength": 10,
-                              "maxLength": 280
-                            },
-                            "prototipo": {
-                              "type": "string",
-                              "minLength": 10,
-                              "maxLength": 280
-                            },
-                            "depoimento": {
                               "type": "string",
                               "minLength": 10,
                               "maxLength": 280
@@ -58586,8 +58697,8 @@
                           ],
                           "additionalProperties": false
                         },
-                        "minItems": 16,
-                        "maxItems": 16
+                        "minItems": 40,
+                        "maxItems": 40
                       }
                     },
                     "required": [
@@ -58699,14 +58810,14 @@
                       "type": "array",
                       "items": {
                         "type": "string",
-                        "pattern": "^proj-[a-d][1-4]$"
+                        "pattern": "^proj-[a-d](10|[1-9])$"
                       }
                     },
                     "falharam": {
                       "type": "array",
                       "items": {
                         "type": "string",
-                        "pattern": "^proj-[a-d][1-4]$"
+                        "pattern": "^proj-[a-d](10|[1-9])$"
                       }
                     },
                     "completo": {
@@ -58739,7 +58850,7 @@
           "juri-estadual"
         ],
         "summary": "Gera as próximas imagens dos estandes de uma atividade — incremental.",
-        "description": "As dezesseis imagens não cabem nos 30 s que o BFF dá a uma chamada: cada chamada gera ATÉ DUAS novas (4:3), grava as URLs no pacote e devolve o progresso. **Repita enquanto `completo` for `false` e a chamada anterior tiver gerado alguma** — `falharam` diz o que não saiu, e esses estandes seguem com a arte procedural.\n\nIdempotente: o que já tem URL é pulado, e a imagem de mesma descrição que já está no bucket entra sem custo.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- `?pacoteId=` diz a atividade (a pronta, preparada antes de ir ao ar); sem ele, a em andamento — e sem nenhuma, **403** `atividade-nao-preparada`.\n- Quota do professor, com custo ESTIMADO por imagem (a geração não devolve contagem de tokens). Sem saldo responde **429** `sem-saldo-de-ia` — e a missão roda igual, com a arte procedural.\n- Duas chamadas simultâneas para o mesmo pacote recebem o mesmo trabalho (lock de processo).\n- Só antes da aprovação das imagens: depois de `aprovar-imagens`, **409** `imagens-ja-aprovadas` — gerar a que falta levaria à turma uma imagem que o professor não viu.",
+        "description": "As quarenta imagens não cabem nos 180 s que o BFF dá a uma chamada: cada chamada gera ATÉ QUATRO novas (4:3), grava as URLs no pacote e devolve o progresso — umas dez chamadas. **Repita enquanto `completo` for `false` e a chamada anterior tiver gerado alguma** — `falharam` diz o que não saiu, e esses estandes seguem com a arte procedural.\n\nIdempotente: o que já tem URL é pulado, e a imagem de mesma descrição que já está no bucket entra sem custo.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- `?pacoteId=` diz a atividade (a pronta, preparada antes de ir ao ar); sem ele, a em andamento — e sem nenhuma, **403** `atividade-nao-preparada`.\n- Quota do professor, com custo ESTIMADO por imagem (a geração não devolve contagem de tokens). Sem saldo responde **429** `sem-saldo-de-ia` — e a missão roda igual, com a arte procedural.\n- Duas chamadas simultâneas para o mesmo pacote recebem o mesmo trabalho (lock de processo).\n- Só antes da aprovação das imagens: depois de `aprovar-imagens`, **409** `imagens-ja-aprovadas` — gerar a que falta levaria à turma uma imagem que o professor não viu.",
         "security": [
           {
             "token-da-plataforma": []
@@ -58925,6 +59036,152 @@
           "gestor_escola",
           "gestor_regional",
           "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/juri-estadual/banco-padrao/imagens": {
+      "get": {
+        "operationId": "JuriEstadualBancoPadraoController_progresso",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "total": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "prontas": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "faltam": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "pattern": "^proj-[a-d](10|[1-9])$"
+                      }
+                    },
+                    "completo": {
+                      "type": "boolean"
+                    },
+                    "imagens": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "required": [
+                    "total",
+                    "prontas",
+                    "faltam",
+                    "completo",
+                    "imagens"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "juri-estadual"
+        ],
+        "summary": "As imagens do banco padrão do Júri: quantas existem, quais faltam e as URLs.",
+        "description": "**Só `admin`.** Uma imagem por projeto do banco padrão (quarenta), com o MESMO nome determinístico da customização do professor — o hash da descrição da imagem do projeto. O storage é o registro: `faltam` são os projetos sem arquivo.\n\nO pacote `padrao` (`POST /juri-estadual/turmas/:turmaId/banco-padrao`, e o fallback sem cota do `gerar-conteudo`) leva na `midia` as que existem; o projeto sem imagem segue com a arte procedural da experiência.\n\n**Papéis:** admin.\n\n**Restrições:**\n- Professor e gestores respondem **403**.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "admin"
+        ],
+        "x-acesso": "token"
+      },
+      "post": {
+        "operationId": "JuriEstadualBancoPadraoController_gerar",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "total": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "prontas": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "faltam": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "pattern": "^proj-[a-d](10|[1-9])$"
+                      }
+                    },
+                    "completo": {
+                      "type": "boolean"
+                    },
+                    "imagens": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "string"
+                      }
+                    },
+                    "geradas": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "pattern": "^proj-[a-d](10|[1-9])$"
+                      }
+                    },
+                    "falharam": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "pattern": "^proj-[a-d](10|[1-9])$"
+                      }
+                    }
+                  },
+                  "required": [
+                    "total",
+                    "prontas",
+                    "faltam",
+                    "completo",
+                    "imagens",
+                    "geradas",
+                    "falharam"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "juri-estadual"
+        ],
+        "summary": "Gera as próximas imagens que faltam no banco padrão do Júri — incremental.",
+        "description": "**Só `admin`.** Cada chamada gera ATÉ QUATRO imagens que faltam (4:3), na ordem do banco, e devolve o progresso — repita enquanto `completo` for `false` e a chamada anterior tiver gerado alguma. `falharam` diz o que não saiu NESTA chamada.\n\n**Idempotente**: a imagem que já existe no storage não é gerada de novo. Duas chamadas simultâneas recebem o mesmo trabalho (lock de processo).\n\n**Custo da plataforma, sem quota de professor**: cada imagem passa pelo provider de IA e é medida no painel de custos (`/recursos/custos-de-ia`) no recurso `juri-estadual-banco-padrao`, perfil `admin`, sem escola.\n\n**Papéis:** admin.\n\n**Restrições:**\n- Professor e gestores respondem **403**.\n- Rate limit por usuário: 20 chamadas por minuto, depois **429** `muitas-requisicoes`.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
           "admin"
         ],
         "x-acesso": "token"

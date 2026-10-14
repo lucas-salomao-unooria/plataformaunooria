@@ -10,6 +10,8 @@ import {
   ETAPAS,
   HASHTAG_RE,
   IDS_DE_PROJETO,
+  IDS_DE_PROJETO_LEGADOS,
+  ID_DE_PROJETO_RE,
   MAX_PALAVRAS_DA_LEGENDA,
   MAX_PALAVRAS_DO_BASTIDOR,
   ORIGENS_DO_PACOTE,
@@ -18,6 +20,8 @@ import {
   PASSOS,
   PERFIL_RE,
   PROJETOS_POR_AREA,
+  PROJETOS_POR_AREA_LEGADO,
+  TOTAL_DE_PROJETOS,
   ROTULO_DA_DISCIPLINA,
   ROTULO_DO_PASSO,
   TERMOS_PROIBIDOS,
@@ -27,6 +31,11 @@ import {
   areaDoProjeto,
   avisoDoPodcast,
   caminhoDaTurma,
+  compararIdsDeProjeto,
+  idsDoBancoPorArea,
+  numeroDoProjeto,
+  rotuloDaAbaDaArea,
+  textoDoProgressoDoBanco,
   continuarGerando,
   corpoDosParametros,
   distribuirErros,
@@ -45,7 +54,7 @@ import {
   rotuloDoBotao,
   semExclamacao,
   termosProibidosEm,
-  textoDaInvisibilidade,
+  textoDaConcentracao,
   textoDaRevisao,
   textoDaTaxaDeRevisao,
   textoDasCategoriasBuscadas,
@@ -110,6 +119,8 @@ describe("o espelho do vocabulário da api", () => {
     expect([...DISCIPLINAS]).toEqual(listaDaApi(vocabulario, "DISCIPLINAS"));
     expect([...ORIGENS_DO_PACOTE]).toEqual(listaDaApi(vocabulario, "ORIGENS_DO_PACOTE"));
     expect(PROJETOS_POR_AREA).toBe(numeroDaApi(vocabulario, "PROJETOS_POR_AREA"));
+    expect(PROJETOS_POR_AREA_LEGADO).toBe(numeroDaApi(vocabulario, "PROJETOS_POR_AREA_LEGADO"));
+    expect(ID_DE_PROJETO_RE.source).toBe(regexDaApi(vocabulario, "ID_DE_PROJETO_RE"));
   });
 
   test("toda disciplina tem rótulo em português", () => {
@@ -124,10 +135,21 @@ describe("o espelho do vocabulário da api", () => {
     expect(Object.keys(ROTULO_DO_PASSO)).toEqual([...PASSOS]);
   });
 
-  test("os ids dos dezesseis estandes, e a área que o id diz", () => {
-    expect(IDS_DE_PROJETO).toHaveLength(16);
-    expect(IDS_DE_PROJETO.slice(0, 5)).toEqual(["proj-a1", "proj-a2", "proj-a3", "proj-a4", "proj-b1"]);
+  test("os ids dos quarenta estandes (e dos dezesseis legados), e a área que o id diz", () => {
+    expect(TOTAL_DE_PROJETOS).toBe(40);
+    expect(IDS_DE_PROJETO).toHaveLength(40);
+    expect(IDS_DE_PROJETO.slice(8, 11)).toEqual(["proj-a9", "proj-a10", "proj-b1"]);
+    expect(IDS_DE_PROJETO_LEGADOS).toHaveLength(16);
+    expect(IDS_DE_PROJETO_LEGADOS.every((id) => IDS_DE_PROJETO.includes(id))).toBe(true);
+    expect(IDS_DE_PROJETO.every((id) => ID_DE_PROJETO_RE.test(id))).toBe(true);
+    expect(["proj-a0", "proj-a11", "proj-e1"].some((id) => ID_DE_PROJETO_RE.test(id))).toBe(false);
     expect(areaDoProjeto("proj-c3")).toBe("area_c");
+    expect(areaDoProjeto("proj-d10")).toBe("area_d");
+    expect(numeroDoProjeto("proj-b10")).toBe(10);
+  });
+
+  test("a ordem é numérica dentro da área, nunca a de texto", () => {
+    expect(["proj-b1", "proj-a10", "proj-a2", "proj-a9"].sort(compararIdsDeProjeto)).toEqual(["proj-a2", "proj-a9", "proj-a10", "proj-b1"]);
   });
 });
 
@@ -143,10 +165,40 @@ describe("o espelho das invariantes e do contrato", () => {
     expect([...TERMOS_PROIBIDOS]).toEqual(listaDaApi(invariantes, "TERMOS_PROIBIDOS"));
   });
 
-  test("os tetos de caractere do estande", () => {
+  test("os tetos de caractere do estande que se ESCREVE (sem os formatos da 0.4.x)", () => {
     const bloco = /export const ProjetoDoPacoteSchema = z\.object\(\{([\s\S]*?)\n\}\);/.exec(contrato)?.[1] ?? "";
     expect(bloco, "ProjetoDoPacoteSchema não foi encontrado na api").not.toBe("");
-    expect(tetosDoBloco(bloco)).toEqual(CARACTERES);
+    /* O esquema de escrita é o de leitura menos o que ele omite. */
+    const omitidos = /ProjetoDoPacoteEscritaSchema = ProjetoDoPacoteSchema\.omit\(\{([^}]*)\}\)/.exec(contrato)?.[1] ?? "";
+    expect(omitidos, "ProjetoDoPacoteEscritaSchema não foi encontrado na api").not.toBe("");
+    const fora = [...omitidos.matchAll(/(\w+): true/g)].map((m) => m[1]!);
+    expect(fora.sort()).toEqual(["depoimento", "prototipo"]);
+    const tetos = tetosDoBloco(bloco);
+    for (const campo of fora) delete tetos[campo];
+    expect(tetos).toEqual(CARACTERES);
+  });
+
+  test("a concentração está no resumo do painel, e não na linha", () => {
+    const painel = /export const PainelSchema = z\.object\(\{([\s\S]*?)\n\}\);/.exec(contrato)?.[1] ?? "";
+    expect(painel).toMatch(/concentracao: z\.object\(\{\s*curtiram:[^\n]*\n\s*naoCurtiram:/);
+    expect(painel).not.toContain("invisibilidadeMedia");
+  });
+
+  test("o rascunho traz as imagens que já existem", () => {
+    const rascunho = /export const RascunhoSchema = z\.object\(\{([\s\S]*?)\n\}\);/.exec(contrato)?.[1] ?? "";
+    expect(rascunho).toMatch(/imagens: z\.record\(z\.string\(\)\)/);
+  });
+
+  test("as imagens do banco padrão: a forma do progresso e da geração", () => {
+    const progresso = /export const ImagensDoBancoPadraoSchema = z\.object\(\{([\s\S]*?)\n\}\);/.exec(contrato)?.[1] ?? "";
+    expect([...progresso.matchAll(/^\s{2}(\w+):/gm)].map((m) => m[1])).toEqual(["total", "prontas", "faltam", "completo", "imagens"]);
+    expect(progresso).toMatch(/faltam: z\.array\(IdDeProjetoSchema\)/);
+    const geracao = /export const GeracaoDoBancoPadraoSchema = ImagensDoBancoPadraoSchema\.extend\(\{([\s\S]*?)\n\}\);/.exec(contrato)?.[1] ?? "";
+    expect([...geracao.matchAll(/^\s{2}(\w+):/gm)].map((m) => m[1])).toEqual(["geradas", "falharam"]);
+    const controller = ler("juri-estadual-banco-padrao.controller.ts");
+    expect(controller).toContain('@Controller("juri-estadual/banco-padrao")');
+    expect(controller).toContain('@Get("imagens")');
+    expect(controller).toContain('@Post("imagens")');
   });
 
   test("os tetos dos parâmetros do preparo", () => {
@@ -231,15 +283,36 @@ describe("o preparo", () => {
     });
   });
 
-  test("a grade da curadoria: quatro áreas, os estandes de cada uma na ordem do id", () => {
+  test("os erros de proj-b10 vão para o proj-b10, não para o proj-b1", () => {
+    expect(distribuirErros(["legenda longa demais em proj-b10"]).porProjeto).toEqual({ "proj-b10": ["legenda longa demais em proj-b10"] });
+  });
+
+  test("a grade da curadoria: quatro áreas, os estandes de cada uma na ordem NUMÉRICA do id", () => {
     const conteudo: ConteudoDoPacote = {
       tema: "Feira",
       categorias: AREAS.map((area) => ({ area, nome: area, hashtag: `#${area}` })),
-      projetos: [projeto({ id: "proj-b2", area: "area_b" }), projeto({ id: "proj-b1", area: "area_b" }), projeto()],
+      projetos: [
+        projeto({ id: "proj-b10", area: "area_b" }),
+        projeto({ id: "proj-b2", area: "area_b" }),
+        projeto({ id: "proj-b1", area: "area_b" }),
+        projeto(),
+      ],
     };
     const grade = estandesPorArea(conteudo);
     expect(grade.map((g) => g.categoria.area)).toEqual([...AREAS]);
-    expect(grade[1]?.projetos.map((p) => p.id)).toEqual(["proj-b1", "proj-b2"]);
+    expect(grade[1]?.projetos.map((p) => p.id)).toEqual(["proj-b1", "proj-b2", "proj-b10"]);
+  });
+
+  test("o rótulo da aba: o nome e a contagem, ou a pendência quando há", () => {
+    expect(rotuloDaAbaDaArea("Saúde", 10)).toBe("Saúde · 10");
+    expect(rotuloDaAbaDaArea("Saúde", 10, { quantos: 0, texto: "com ajuste" })).toBe("Saúde · 10");
+    expect(rotuloDaAbaDaArea("Saúde", 10, { quantos: 2, texto: "com ajuste" })).toBe("Saúde · 2 com ajuste");
+  });
+
+  test("o estande que viaja não leva os formatos da 0.4.x", () => {
+    const antigo = { ...projeto(), prototipo: "Um protótipo antigo", depoimento: "Um depoimento antigo" };
+    expect(Object.keys(normalizarProjeto(antigo))).not.toContain("prototipo");
+    expect(Object.keys(normalizarProjeto(antigo))).not.toContain("depoimento");
   });
 
   test("sem saldo e indisponível pelo status ou pelo código; o resto não é falha de IA", () => {
@@ -306,9 +379,13 @@ describe("o painel da aula", () => {
     expect(textoDasCategoriasBuscadas([], categorias)).toBe("Nenhuma");
   });
 
-  test("a invisibilidade é o número da api, nunca um número cravado", () => {
-    expect(textoDaInvisibilidade(null)).not.toMatch(/\d/);
-    expect(textoDaInvisibilidade(47)).toContain("47%");
+  test("a concentração é o número da api, nunca um número cravado", () => {
+    expect(textoDaConcentracao({ curtiram: null, naoCurtiram: null })).not.toMatch(/\d/);
+    expect(textoDaConcentracao({ curtiram: 70, naoCurtiram: 30 })).toBe(
+      "Quem curtiu: em média 70% do feed numa área só. Quem não curtiu: 30%.",
+    );
+    expect(textoDaConcentracao({ curtiram: 72, naoCurtiram: null })).toMatch(/^Quem curtiu: em média 72%.*Todos que votaram curtiram/);
+    expect(textoDaConcentracao({ curtiram: null, naoCurtiram: 31 })).toMatch(/^Quem não curtiu: em média 31%/);
   });
 
   test("a aula para de consultar quando todos concluíram com a auditoria liberada", () => {
@@ -365,7 +442,7 @@ describe("o que faz o painel de habilidades se atualizar sozinho", () => {
     rodada = 1,
     id = "p1",
   ) => ({
-    pacote: { id, disciplina: "ciencias", tema: "t", origem: "ia" as const, midia: { total: 16, prontas: 16 } },
+    pacote: { id, disciplina: "ciencias", tema: "t", origem: "ia" as const, midia: { total: 40, prontas: 40 } },
     rodada,
     linhas: passos.map(linha),
     resumo: {
@@ -378,7 +455,7 @@ describe("o que faz o painel de habilidades se atualizar sozinho", () => {
       computadores: { votaram: passos.length, total: passos.length },
       porComputador: false,
       votosPorArea: [],
-      invisibilidadeMedia: null,
+      concentracao: { curtiram: null, naoCurtiram: null },
       revisao: { mantiveram: 3, trocaram: 0 },
       votosRevisadosPorArea: [],
       ...resumo,
@@ -415,9 +492,18 @@ describe("as imagens", () => {
     expect(falhasAcumuladas(["proj-a1", "proj-b1"], { falharam: ["proj-c1"], imagens: { "proj-a1": "u" } })).toEqual(["proj-b1", "proj-c1"]);
   });
 
-  test("o progresso em palavras", () => {
-    expect(textoDoProgressoDaMidia({ total: 16, prontas: 3 })).toBe("3 de 16 imagens prontas.");
+  test("o progresso em palavras, com o total do pacote (40, ou 16 no legado)", () => {
+    expect(textoDoProgressoDaMidia({ total: 40, prontas: 3 })).toBe("3 de 40 imagens prontas.");
     expect(textoDoProgressoDaMidia({ total: 16, prontas: 16 })).toBe("As 16 imagens estão prontas.");
+  });
+
+  test("o banco padrão: os ids por área em ordem numérica, com e sem imagem, e o progresso", () => {
+    const porArea = idsDoBancoPorArea({ imagens: { "proj-a10": "u", "proj-a1": "u" }, faltam: ["proj-a2", "proj-b1", "nada"] });
+    expect(porArea.map((a) => a.area)).toEqual([...AREAS]);
+    expect(porArea[0]?.ids).toEqual(["proj-a1", "proj-a2", "proj-a10"]);
+    expect(porArea[1]?.ids).toEqual(["proj-b1"]);
+    expect(textoDoProgressoDoBanco({ total: 40, prontas: 12 })).toBe("12 de 40 imagens do banco prontas.");
+    expect(textoDoProgressoDoBanco({ total: 40, prontas: 40 })).toBe("As 40 imagens do banco estão prontas.");
   });
 });
 

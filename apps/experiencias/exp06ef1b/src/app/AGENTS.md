@@ -31,9 +31,14 @@ passam no typecheck e enganam.
 
 6. **A grade da Galeria Oculta** (`.grade-oculta`, 0.4.0): a copy pede o botão
    "Inspecionar Projeto" VISÍVEL em cada miniatura, e o `MediaGrid` do DS não
-   tem ação por bloco. A grade é CSS (3 colunas, as linhas crescem com os
-   ocultos); cada célula é a miniatura e o `ButtonUnv` do DS. Pedido: ação ou
-   rótulo por bloco no `MediaGrid`.
+   tem ação por bloco. A grade é CSS (3 colunas); cada célula é a miniatura e o
+   `ButtonUnv` do DS. Desde a 0.5.0 ela mostra os ocultos de UMA área (3 a 9,
+   não 30). Pedido: ação ou rótulo por bloco no `MediaGrid`.
+
+**A 0.5.0 não abriu compensação nova.** A contagem por área é `ListItem`, o
+contraste é `BadgeUnv` (sem barra: o DS não tem gráfico, e o número basta), e a
+lâmina do bastidor é o `PostCard.Media` SEM `src` — o DS desenha `children`
+como slide; `.lamina-do-bastidor` é só tipografia do conteúdo.
 
 **Não são compensação**: o carimbo do voto (moldura tracejada de ficção — o
 desenho do selo é o `IconUnv`), a arte procedural dos estandes (conteúdo, não

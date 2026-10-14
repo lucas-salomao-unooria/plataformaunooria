@@ -95,44 +95,46 @@ uma aproximação, e a experiência mede reconhecimento.
 \fitwidth{%
 \begin{tikzpicture}[x=1cm, y=1cm]
 
-  \draw[iframe] (0.5,0.7) rectangle (8.0,-4.6);
+  % Duas fronteiras com a mesma altura; 1,8 cm entre elas para a seta.
+  \draw[iframe] (0.5,0.7) rectangle (8.0,-4.9);
   \node[iframelbl] at (0.7,0.85) {Dentro do \texttt{iframe} --- antes da revelação};
+  \node[cxlabel, fill=unooOrangeWash!45, anchor=north] at (4.25,0.30)
+    {\texttt{@edu/ui/ds-unootube} --- seção do CLONE};
 
-  \node[c4component, text width=26mm, fill=unooPaper, draw=unooAxis] (feed) at (2.4,-0.6)
+  \node[c4component, text width=26mm, fill=unooPaper, draw=unooAxis] (feed) at (2.45,-0.95)
     {\emph{feed} de vídeos};
-  \node[c4component, text width=26mm, fill=unooPaper, draw=unooAxis] (cromo) at (6.0,-0.6)
+  \node[c4component, text width=26mm, fill=unooPaper, draw=unooAxis] (cromo) at (6.05,-0.95)
     {cromo, busca, menu};
-  \node[c4component, text width=26mm, fill=unooPaper, draw=unooAxis] (play) at (2.4,-2.4)
+  \node[c4component, text width=26mm, fill=unooPaper, draw=unooAxis] (play) at (2.45,-2.55)
     {\emph{playlists}};
-  \node[c4component, text width=26mm, fill=unooPaper, draw=unooAxis] (canal) at (6.0,-2.4)
+  \node[c4component, text width=26mm, fill=unooPaper, draw=unooAxis] (canal) at (6.05,-2.55)
     {canal do estudante};
-  \node[c4component, text width=26mm, fill=unooPaper, draw=unooAxis] (toast) at (4.2,-3.9)
-    {\emph{toast}: \enquote{Vídeo salvo!}};
-  \node[cxlabel, anchor=north] at (4.2,0.55) {\texttt{@edu/ui/ds-unootube} --- seção do CLONE};
+  \node[c4component, text width=26mm, fill=unooPaper, draw=unooAxis] (toast) at (4.25,-4.10)
+    {\emph{toast}:\\\enquote{Vídeo salvo!}};
 
-  \draw[c4boundary, draw=unooNavy] (9.0,0.7) rectangle (15.5,-4.6);
-  \node[c4boundarylbl, fill=unooSurface, text=unooNavy] at (9.2,0.85)
+  \draw[c4boundary, draw=unooNavy] (10.4,0.7) rectangle (16.9,-4.9);
+  \node[c4boundarylbl, fill=unooSurface, text=unooNavy] at (10.6,0.85)
     {Depois da revelação --- ainda no mesmo \texttt{iframe}};
+  \node[cxlabel, anchor=north] at (13.65,0.30) {\texttt{@edu/ui/ds} --- seção da PLATAFORMA};
 
-  \node[c4component, text width=26mm] (rank) at (10.9,-0.6) {ranking};
-  \node[c4component, text width=26mm] (d1) at (14.2,-0.6) {diálogo 1 da missão};
-  \node[c4component, text width=26mm] (d2) at (10.9,-2.4) {diálogo 2 da missão};
-  \node[c4component, text width=26mm] (fim) at (14.2,-2.4) {fechamento};
-  \node[cxlabel, anchor=north] at (12.3,0.55) {\texttt{@edu/ui/ds} --- seção da PLATAFORMA};
+  \node[c4component, text width=26mm] (rank) at (11.85,-0.95) {ranking};
+  \node[c4component, text width=26mm] (d1) at (15.45,-0.95) {diálogo 1 da missão};
+  \node[c4component, text width=26mm] (d2) at (11.85,-2.55) {diálogo 2 da missão};
+  \node[c4component, text width=26mm] (fim) at (15.45,-2.55) {fechamento};
 
-  \node[actnote, text width=52mm, anchor=north west] at (0.5,-5.4)
+  \draw[c4relhi] (8.0,-2.1) -- (10.4,-2.1) node[cxlabel, midway, above=2pt]{revelação};
+
+  \node[actnote, text width=70mm, align=flush left, anchor=north west] at (0.5,-5.5)
     {\textbf{A linha é a revelação, não o arquivo.} Enquanto o estudante acha que
      está num aplicativo de vídeo, tudo é clone. Da virada da missão em diante ele
      está de volta na Unooria, e a linguagem institucional é \emph{parte do que se
      ensina}. Um \texttt{Button} da plataforma no \emph{feed} quebra a ilusão que
      a experiência está medindo.};
 
-  \node[actnote, text width=52mm, anchor=north west] at (9.0,-5.4)
+  \node[actnote, text width=61mm, align=flush left, anchor=north west] at (10.4,-5.5)
     {\textbf{O \emph{toast} não cruza a linha:} ele fala de dentro da ficção
      (\enquote{Vídeo salvo!}). É o exemplo mais fino da regra --- o critério não é
      \enquote{é depois no tempo?}, é \enquote{quem está falando?}.};
-
-  \draw[c4relhi] (8.0,-2.0) -- (9.0,-2.0) node[cxlabel, midway, above]{revelação};
 
 \end{tikzpicture}}
 \caption[A linha da revelação]{A linha da revelação, no UnooTube (hoje \texttt{backup-exp04ef1b}). As duas seções do
@@ -502,7 +504,34 @@ acontecia com \enquote{Zerar a turma} do UnooGPT e do Eco no Grupo (retirado,
 não pega. Ao escrever um \cd{variant}, confira contra \cd{ButtonVariant}.
 \end{atencao}
 
-\subsection{Lacuna aberta em \cd{Collapse} na 0.1.19 (app-92, 2026-09-10)}
+\subsection{Acessibilidade AA na 0.2.20 (\adrr{ADR-162})}
+
+A medição com o axe (WCAG 2.2 A/AA) mostrou que quase toda violação da
+plataforma era UMA peça do DS repetida em várias telas, e a 0.2.20 as corrige na
+origem. A regra que ficou, para componente novo também:
+
+\begin{regra}
+\textbf{\cd{brandnavy-700} é cor de CONTROLE, não de texto.} Contra branco ele
+dá 3,62:1: passa como fundo de \emph{checkbox}, rádio ou \emph{toggle} (3:1 para o
+que não é texto) e reprova como texto ou como fundo de texto branco (4,5:1).
+Texto e botão cheio vão no \cd{brandnavy-800} (5,52:1), e o \emph{hover} escurece
+para o 900 --- nunca clareia, porque o branco sobre o 600 dá 2,5:1. No tema
+escuro o texto azul vai para o 600 e o botão cheio claro leva texto escuro. Os
+tons semânticos 500 também não são texto. E \textbf{nenhum texto leva
+\cd{opacity}}: a descrição do \cd{FeedbackAlert} (0,92) e o texto sutil (0,8)
+reprovavam com o token certo.
+\end{regra}
+
+Além do contraste: o \cd{Collapse} fechado ganhou \cd{inert} (a lacuna abaixo
+fecha), as \cd{Tabs} só declaram \cd{aria-controls} para \cd{TabPanel}
+registrado (o hub usa as abas como navegação, sem painel), a legenda rolável do
+gráfico de rosca recebe foco, a lista da \cd{Selection} leva o nome do campo, o
+status do \cd{Avatar} ganhou \cd{role="img"} e o \emph{checkbox} do
+\cd{ListSectionItem} leva o nome do título. Ficaram como lacunas, por não terem
+consumidor na plataforma: o botão de remover do \cd{Avatar} (22\,px, aninhado no
+avatar clicável) e o botão de limpar dentro do gatilho do \cd{TimePicker}.
+
+\subsection{Lacuna aberta em \cd{Collapse} na 0.1.19 (app-92, 2026-09-10) --- fechada na 0.2.20}
 
 O \cd{Collapse} esconde o corpo fechado com \cd{grid-template-rows: 0fr},
 \cd{opacity: 0} e \cd{aria-hidden="true"}, e o \cd{\_\_body-inner} com
@@ -523,9 +552,9 @@ visível.
 \cd{visibility: hidden} no corpo com \cd{aria-hidden="true"} --- é a única
 propriedade CSS que tira do foco sem tirar do fluxo --- com \cd{transition} de
 \cd{visibility} atrasada pela duração do collapse, para que o fechamento
-continue animado. Ela não muda aparência nenhuma. \textbf{Morre quando o pacote
-publicar \cd{inert} no corpo fechado}, e o pedido está aberto no
-\arq{storybook-unooria}.
+continue animado. Ela não muda aparência nenhuma. \textbf{Morreu na 0.2.20}:
+o pacote passou a pôr \cd{inert} no corpo fechado (\adrr{ADR-162}), e a
+compensação saiu da app-92 na 1.1.8.
 
 \begin{regra}
 \textbf{A compensação é guardada por teste.} A suíte
@@ -821,14 +850,22 @@ nenhuma mistura as duas seções.
 \toprule
 \headrow \thd{Tela} & \thd{Componentes do DS}\\
 \midrule
-O feed e a cédula & \cd{TopBar}, \cd{PostCard} (o carrossel de duas lâminas com
-  \cd{currentIndex}/\cd{totalCount}), \cd{InlineHint}, \cd{GestureHint},
-  \cd{FloatingButton} (a barra da cédula), \cd{TabBar} com duas abas,
+O feed e a cédula & \cd{TopBar}, \cd{PostCard} (o carrossel com
+  \cd{currentIndex}/\cd{totalCount}: três fotos, \enquote{Foto 2 de 3}, e,
+  desde a 0.5.0, a quarta lâmina \enquote{Bastidores do estande} --- o
+  \cd{PostCard.Media} SEM \cd{src}, que o DS desenha com os \cd{children} como
+  lâmina, \adrr{ADR-164}), \cd{InlineHint}, \cd{GestureHint},
+  \cd{FloatingButton} (a barra da cédula), \cd{TabBar} com quatro abas,
   \cd{BottomSheetUnv} com \cd{ListItem} e \cd{Chip}, \cd{SnackbarUnv}.\\
-\zebra A Galeria Oculta & \cd{InlineHint} \cd{friction} (a taxa real),
-  \cd{SearchField}, \cd{Chip} (as quatro \emph{hashtags}), \cd{MediaGrid},
-  \cd{BottomSheetUnv} (a ficha e a cédula da revisão), \cd{BadgeUnv} com
-  \cd{wrap}.\\
+\zebra A Galeria Oculta & \cd{InlineHint} \cd{friction} (\enquote{X de Y
+  estandes}, sem porcentagem, desde a 0.5.0), \cd{ListItem} (a contagem por
+  área), \cd{BadgeUnv} (o contraste sem curtidas, um por área; sem barra: o DS
+  não tem gráfico, e o número basta), \cd{SearchField}, \cd{Chip} (as
+  \emph{hashtags} e a área da grade), a grade de três colunas em \textbf{CSS},
+  não \cd{MediaGrid} (cada célula é a miniatura e o \cd{ButtonUnv}
+  \enquote{Inspecionar Projeto}: o \cd{MediaGrid} não tem ação nem rótulo por
+  bloco), \cd{BottomSheetUnv} (a ficha e a troca do voto, com os mesmos
+  \emph{chips}), \cd{BadgeUnv} com \cd{wrap}.\\
 Os pacotes e a cadeia (escola) & \cd{ScrollBar}, \cd{Logo},
   \cd{SectionHeader}, \cd{PuzzleBlock}, \cd{PuzzleTrack}, \cd{AlertBox},
   \cd{Button}.\\
@@ -870,8 +907,20 @@ O \cd{GestureHint} se posiciona contra o pai, e a mídia com \cd{src} não
 \zebra O botão de confirmar rola com o corpo da folha & \cd{.cedula\_\_confirmar},
   \cd{position: sticky} dentro do corpo que rola do \cd{BottomSheetUnv}. Posição
   pura.\\
+O \cd{MediaGrid} não tem ação nem rótulo por bloco & A grade da Galeria Oculta
+  é CSS (três colunas), e cada célula é a miniatura e o \cd{ButtonUnv} do DS.
+  Desde a 0.5.0 ela mostra os ocultos de UMA área (de 3 a 9, não 30). A 0.5.0
+  não abriu compensação nova. Pedido: ação ou rótulo por bloco no
+  \cd{MediaGrid}.\\
 \bottomrule
 \end{tabularx}
+
+\textbf{No hub, os quarenta estandes vão em abas} (\adrr{ADR-164}): a
+curadoria, a grade das imagens e a página da atividade usam as \cd{Tabs} da
+seção \cd{unooria}, controladas, uma por área, com a pendência no rótulo
+(\enquote{Saúde \textperiodcentered{} 2 com ajuste}) e só a aba aberta
+renderizada --- nunca \cd{Collapse}, que deixa os botões das áreas fechadas
+focáveis dentro de \cd{aria-hidden}.
 
 \begin{atencao}
 \textbf{O que a 0.2.11 não deixava esconder, e as \emph{props} que enganam.} Os

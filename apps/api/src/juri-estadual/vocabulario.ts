@@ -17,37 +17,84 @@ export const EXP_ID = "exp06ef1b";
 export const AREAS = ["area_a", "area_b", "area_c", "area_d"] as const;
 export type Area = (typeof AREAS)[number];
 
-/** Quatro projetos por área: dezesseis estandes na mostra. */
-export const PROJETOS_POR_AREA = 4;
+/**
+ * DEZ projetos por área: quarenta estandes na mostra (aprovado pelo PO em
+ * 2026-10-14; até a 0.4.x eram quatro por área, dezesseis). Com quarenta, o
+ * feed de dez posts deixa 30 de fora para TODA criança — o total oculto vira
+ * constante, e o que a galeria prova passa a ser O QUE sumiu: a contagem por
+ * área e o contrafactual "sem as suas curtidas".
+ */
+export const PROJETOS_POR_AREA = 10;
 export const TOTAL_DE_PROJETOS = AREAS.length * PROJETOS_POR_AREA;
 
 /**
- * Os ids dos projetos são `proj-<letra da área><n>`. A letra diz a área — e a
- * área NÃO é gabarito: cada post leva a hashtag dela, à vista. O que não desce
- * antes da galeria é o ACERVO: o estudante só recebe os posts que o feed serviu.
+ * O pacote de DEZESSEIS (quatro por área) da 0.4.x. Continua LEGÍVEL — a turma
+ * que tem um em andamento termina a aula com ele —, mas não se ESCREVE mais:
+ * homologar, o preparo e o banco padrão exigem os quarenta.
  */
-export const IDS_DE_PROJETO = AREAS.flatMap((area) =>
-  Array.from({ length: PROJETOS_POR_AREA }, (_, i) => `proj-${area.slice(-1)}${i + 1}`),
-) as readonly string[];
-export const ID_DE_PROJETO_RE = /^proj-[a-d][1-4]$/;
+export const PROJETOS_POR_AREA_LEGADO = 4;
+export const TOTAL_DE_PROJETOS_LEGADO = AREAS.length * PROJETOS_POR_AREA_LEGADO;
+/** Os tamanhos de pacote que a LEITURA aceita (e o CHECK da migração repete). */
+export const TOTAIS_DE_PROJETOS_LIDOS = [TOTAL_DE_PROJETOS_LEGADO, TOTAL_DE_PROJETOS] as const;
+
+function idsComAte(porArea: number): readonly string[] {
+  return AREAS.flatMap((area) => Array.from({ length: porArea }, (_, i) => `proj-${area.slice(-1)}${i + 1}`));
+}
+
+/**
+ * Os ids dos projetos são `proj-<letra da área><n>`, com `n` de 1 a 10 — o
+ * `proj-a10` vem DEPOIS do `proj-a9` (ordem numérica, nunca a de texto). A letra
+ * diz a área — e a área NÃO é gabarito: cada post leva a hashtag dela, à vista.
+ * O que não desce antes da galeria é o ACERVO: o estudante só recebe os posts
+ * que o feed serviu.
+ */
+export const IDS_DE_PROJETO = idsComAte(PROJETOS_POR_AREA);
+/** Os dezesseis ids do pacote legado (`proj-a1`…`proj-d4`), um subconjunto dos quarenta. */
+export const IDS_DE_PROJETO_LEGADOS = idsComAte(PROJETOS_POR_AREA_LEGADO);
+export const ID_DE_PROJETO_RE = /^proj-[a-d](10|[1-9])$/;
+
+/** Os ids que um pacote com `total` projetos tem, na ordem do vocabulário — ou `null` para um total desconhecido. */
+export function idsDoPacoteCom(total: number): readonly string[] | null {
+  if (total === TOTAL_DE_PROJETOS) return IDS_DE_PROJETO;
+  if (total === TOTAL_DE_PROJETOS_LEGADO) return IDS_DE_PROJETO_LEGADOS;
+  return null;
+}
 
 export function areaDoProjeto(projetoId: string): Area {
   return `area_${projetoId.charAt(5)}` as Area;
 }
 
+/** O número do projeto dentro da área: `proj-a10` → 10. */
+export function numeroDoProjeto(projetoId: string): number {
+  return Number.parseInt(projetoId.slice(6), 10) || 0;
+}
+
+/** A ordem do vocabulário: área a área, e dentro dela a NUMÉRICA (`proj-a9` antes de `proj-a10`). */
+export function compararIdsDeProjeto(x: string, y: string): number {
+  return AREAS.indexOf(areaDoProjeto(x)) - AREAS.indexOf(areaDoProjeto(y)) || numeroDoProjeto(x) - numeroDoProjeto(y);
+}
+
 /**
- * Cada projeto tem QUATRO formatos de post: a apresentação (o estande), o
- * bastidor (o protótipo sendo testado), o protótipo de perto e o depoimento da
- * equipe. Os formatos existem para a SATURAÇÃO (melhoria 1 aprovada pelo dono,
- * 2026-10-10): depois que a área líder vence, os posts 5 a 10 vêm SÓ dela,
- * repetindo os projetos dela em formatos diferentes — e a mostra fica com 11 ou
- * 12 dos 16 estandes fora do feed (69–75%), o número REAL que a galeria mostra.
+ * O FORMATO do post. Desde a 0.5.0 (instrumento 3.0.0) o motor serve SÓ a
+ * `apresentacao`, e nenhum post se repete: a área em foco recebe projetos NOVOS
+ * dela, que agora tem dez. O `bastidor` continua como TEXTO do projeto (a
+ * lâmina do carrossel do próprio post e o resumo da ficha técnica da galeria),
+ * mas não é mais servido como post separado.
  *
- * O id do post é `<projeto>:<formato>` — `proj-b2:depoimento`.
+ * Os outros três formatos (`bastidor`, `prototipo`, `depoimento`) são da
+ * saturação da 0.4.x e ficam só para a LEITURA: as sessões 2.0.0 têm posts
+ * deles no feed gravado, e a tela continua desenhando esses posts.
+ *
+ * O id do post é `<projeto>:<formato>` — `proj-b10:apresentacao`.
  */
-export const TIPOS_DE_POST = ["apresentacao", "bastidor", "prototipo", "depoimento"] as const;
-export type TipoDePost = (typeof TIPOS_DE_POST)[number];
-export const ID_DE_POST_RE = /^proj-[a-d][1-4]:(apresentacao|bastidor|prototipo|depoimento)$/;
+export const TIPOS_DE_POST = ["apresentacao"] as const;
+export type TipoServido = (typeof TIPOS_DE_POST)[number];
+/** Os formatos da saturação da 0.4.x — só nas sessões 2.0.0. */
+export const TIPOS_DE_POST_LEGADOS = ["bastidor", "prototipo", "depoimento"] as const;
+/** Todo formato que a leitura aceita: o servido hoje e os legados. */
+export const TIPOS_DE_POST_LIDOS = [...TIPOS_DE_POST, ...TIPOS_DE_POST_LEGADOS] as const;
+export type TipoDePost = (typeof TIPOS_DE_POST_LIDOS)[number];
+export const ID_DE_POST_RE = /^proj-[a-d](10|[1-9]):(apresentacao|bastidor|prototipo|depoimento)$/;
 
 export function idDoPost(projetoId: string, tipo: TipoDePost): string {
   return `${projetoId}:${tipo}`;
@@ -59,7 +106,7 @@ export function projetoDoPost(postId: string): string {
 
 export function tipoDoPost(postId: string): TipoDePost {
   const tipo = postId.split(":")[1];
-  return (TIPOS_DE_POST as readonly string[]).includes(tipo ?? "") ? (tipo as TipoDePost) : "apresentacao";
+  return (TIPOS_DE_POST_LIDOS as readonly string[]).includes(tipo ?? "") ? (tipo as TipoDePost) : "apresentacao";
 }
 
 /**
@@ -74,8 +121,9 @@ export function tipoDoPost(postId: string): TipoDePost {
  * - Curtir vale 3; ficar mais de 5 s num post vale 1 (uma vez por post).
  *   Descurtir devolve o peso. SALVAR não pesa (melhoria 6): grava o evento e
  *   responde na tela, como comentar e compartilhar.
- * - Com 6 ou mais numa área, ela é a LÍDER e o resto do feed é só dela. Sem
- *   curtida nenhuma, a permanência sozinha elege a líder.
+ * - Com 6 ou mais numa área, ela é a LÍDER e o resto do feed é só dela —
+ *   projetos NOVOS dela, sem repetir post. Sem curtida nenhuma, a permanência
+ *   sozinha elege a líder.
  */
 export const POSTS_NO_FEED = 10;
 export const POSTS_DE_ABERTURA = AREAS.length;
@@ -123,7 +171,8 @@ export type TipoDeBusca = (typeof TIPOS_DE_BUSCA)[number];
 
 /**
  * Origem do pacote: `ia` (gerado e curado pelo professor) ou `padrao` — o BANCO
- * PADRÃO dos dezesseis projetos do PRD (`banco-padrao.ts`, 01e), o caminho curto
+ * PADRÃO dos quarenta projetos (`banco-padrao.ts`: os dezesseis do 01e e mais
+ * vinte e quatro no mesmo molde), o caminho curto
  * do professor ("Usar Banco Padrão Oficial") e o fallback quando falta cota de
  * IA (RF-007, §12.2). A decisão de 2026-10-02 ("sem acervo padrão") caiu com o
  * PRD v2.
@@ -152,6 +201,8 @@ export type Disciplina = (typeof DISCIPLINAS)[number];
  * A versão do instrumento gravada em cada sessão (reprocessamento posterior).
  * 1.1.0 (2026-10-07): o ciclo do voto da 0.3.0. 2.0.0 (2026-10-10, PRD v2): o
  * salvar não pesa, saturação por formatos, teto de 8 min, revisão de dois
- * botões, sem justificativa nem rodada de desvio.
+ * botões, sem justificativa nem rodada de desvio. 3.0.0 (2026-10-14): quarenta
+ * projetos, só o formato `apresentacao`, nenhum post repetido; a galeria conta
+ * por área e mostra o contrafactual sem curtidas.
  */
-export const VERSAO_DO_INSTRUMENTO = "2.0.0";
+export const VERSAO_DO_INSTRUMENTO = "3.0.0";

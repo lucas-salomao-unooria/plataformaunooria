@@ -130,7 +130,11 @@ function Consultando({ fontes }: { fontes: number }) {
           <span className="h-1.5 w-1.5 animate-pulse rounded-uai-full bg-uai-acao [animation-delay:300ms]" />
         </span>
         {linha}
-        <span className="tabular-nums text-uai-suave-60">{segundos}s</span>
+        {/* Só visual: dentro do `role="log"` o contador seria anunciado a cada
+            segundo, por cima da resposta (ADR-162). */}
+        <span className="tabular-nums text-uai-suave-60" aria-hidden="true">
+          {segundos}s
+        </span>
       </span>
       {/* Enquanto ele responde, o campo continua vivo: escrever a próxima
           pergunta é a única coisa que o estudante pode fazer com o tempo que o
@@ -273,7 +277,9 @@ export function PainelCientista({
     // recurso mais escasso desta tela.
     <section className="flex h-full w-full flex-col">
       {/* A rolagem vive AQUI: só as mensagens rolam. */}
-      <div className="min-h-0 flex-1 space-y-2 overflow-y-auto p-5">
+      {/* `log` + foco: a conversa rola, e o teclado precisa alcançá-la; o papel
+          faz o leitor de tela anunciar a fala nova (WCAG 2.1.1/4.1.3, ADR-162). */}
+      <div className="min-h-0 flex-1 space-y-2 overflow-y-auto p-5" role="log" aria-label="Conversa com o cientista" tabIndex={0}>
         {falas.length === 0 && (
           <ChatBubble role="assistant" avatarInitials="CD" className="w-full">
             <span className="block">

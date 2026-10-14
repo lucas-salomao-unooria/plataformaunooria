@@ -51,8 +51,9 @@ Preparo do pacote & exp04ef1b, \arq{src/jornal-escola/} &
   reordena as vagas, não vê o gabarito. Qualquer falha cai no modelo
   automático (\adrr{ADR-117}).\\
 Preparo da mostra & exp06ef1b, \arq{src/juri-estadual/} &
-  As quatro áreas e os dezesseis estandes da mostra científica sobre o tema e
-  os assuntos do professor, e as imagens a partir da descrição de cada um.
+  As quatro áreas e os quarenta estandes da mostra científica sobre o tema e
+  os assuntos do professor (cinco chamadas: as categorias e as quatro áreas em
+  paralelo, \adrr{ADR-164}), e as imagens a partir da descrição de cada um.
   Sem saldo ou sem provedor, a geração cai no \textbf{banco padrão} (200,
   \cd{usouIa: false}, \adrr{ADR-157}), que o professor também escolhe direto. Nada chega à turma sem as DUAS fases da aprovação --- os textos
   na homologação, as imagens num OK próprio, depois do qual elas congelam ---,
@@ -60,7 +61,7 @@ Preparo da mostra & exp06ef1b, \arq{src/juri-estadual/} &
 \zebra Falas do podcast do Júri & exp06ef1b, \arq{src/juri-estadual/\B{}podcast-fonte.ts}
   + \arq{src/podcast/} &
   As três vagas do roteiro (os dois estandes de áreas diferentes, o feed do
-  Rafa, o da mesa ao lado), escritas a partir dos dezesseis estandes do
+  Rafa, o da mesa ao lado), escritas a partir dos quarenta estandes do
   rascunho pela rota única \rota{falas-do-tema} (\adrr{ADR-150}), com a quota
   do professor. O banco padrão intocado usa o roteiro literal, sem IA
   (\adrr{ADR-157}); na mostra da IA, sem ela, voltam as falas do sheet e a
@@ -154,18 +155,27 @@ isso?. O Júri Estadual de Projetos (\adrr{ADR-137}) foi a exceção até a
 \adrr{ADR-157}, que trouxe o banco padrão do PRD v2 (\arq{banco-padrao.ts}):
 o professor escolhe \enquote{Usar Banco Padrão Oficial}, ou a geração, sem
 saldo ou com o provedor fora, cai nele (200 com \cd{usouIa: false},
-\cd{origem: "padrao"} e o \cd{motivo}). Na mostra da IA, os dezesseis estandes
-são gerados no preparo e homologados pelo professor. \arq{preparo.service.ts} roda
-\cd{temSaldo} com o perfil de quem prepara, chama o \cd{generateJson} com
-\textbf{duas} tentativas e um \cd{validar} que normaliza o cosmético
-(\cd{semExclamacao}, \emph{hashtag} e perfil em minúsculas, a \emph{hashtag} da
-área primeiro) e recusa o resto pelo MESMO \cd{ConteudoDoPacoteSchema} da
-homologação --- uma régua escrita duas vezes é a que diverge. O débito vem do
+\cd{origem: "padrao"} e o \cd{motivo}). Na mostra da IA, os quarenta estandes
+(dez por área, \adrr{ADR-164}) são gerados no preparo e homologados pelo
+professor. \arq{preparo.service.ts} roda \cd{temSaldo} com o perfil de quem
+prepara e faz \textbf{cinco} chamadas ao \cd{generateJson}, cada uma com
+\textbf{duas} tentativas: as quatro categorias, depois as quatro áreas em
+paralelo (dez estandes cada), e o estande que repetir título ou perfil de outra
+área é regerado sozinho, com os outros 39 no \emph{prompt}. A conta foi medida
+com IA real: os quarenta numa chamada levaram 92,7\,s e cerca de 9.900
+\emph{tokens} de saída, e a segunda tentativa estouraria o teto de 180\,s do
+BFF; por área são cerca de 25\,s, e o preparo inteiro, cerca de 42\,s. Área que
+falha derruba o rascunho inteiro (meia mostra não serve) e a rota cai no banco
+padrão. Cada \cd{validar} normaliza o cosmético (\cd{semExclamacao},
+\emph{hashtag} e perfil em minúsculas, a \emph{hashtag} da área primeiro), e o
+pacote montado passa pelo MESMO \cd{ConteudoDoPacoteSchema} da homologação ---
+uma régua escrita duas vezes é a que diverge. O débito vem do
 \cd{aoUsarTokens}, por tentativa, inclusive as recusadas (\adrr{ADR-74}); as
 rotas que gastam IA têm também um teto de requisição por minuto.
 \enquote{Regenerar} um estande sem saldo é 429; com a IA fora, 200 com
-\cd{usouIa: false} e o estande como estava. As imagens são incrementais, duas
-por chamada, com custo estimado na quota do professor, e sem elas a tela desenha
+\cd{usouIa: false} e o estande como estava. As imagens são incrementais,
+quatro por chamada (quarenta por atividade), com custo estimado na quota do
+professor, e sem elas a tela desenha
 a arte procedural. Desde a \adrr{ADR-151} elas têm aprovação própria: o
 professor vê a grade, pede \enquote{gerar outra imagem} para um estande (um
 arquivo NOVO, fora do \emph{hash} da descrição, sempre pago; com o provedor
@@ -179,6 +189,21 @@ brasileiros com gênero equilibrado e escolas fictícias, e o tema, os assuntos 
 o contexto do professor entram como DADO delimitado, com tetos de tamanho que
 são a primeira barreira contra injeção de instrução.
 
+\textbf{As imagens do banco padrão} (\adrr{ADR-164}) são a outra porta de IA
+do Júri, e não são do professor: o \cd{admin} as gera em
+\rota{/unooria/recursos/imagens-do-juri} (\rota{POST
+/juri-estadual/banco-padrao/imagens}), até quatro por chamada, só as que faltam,
+com o mesmo nome determinístico da customização (o \emph{hash} da descrição da
+imagem do projeto) --- o storage é o registro, sem tabela. É custo da
+plataforma: \textbf{sem quota de professor} (o \cd{QuotaService} não conhece o
+\cd{admin}), com \emph{rate limit} por usuário e medido no painel de custos
+(\adrr{ADR-161}) com atribuição explícita nas opções da imagem
+(\cd{AiImagemOpcoes.atribuicao}: recurso \cd{juri-estadual-banco-padrao},
+perfil \cd{admin}, sem escola), porque a rota não diz a verdade sobre quem
+paga. O pacote do banco padrão --- o atalho e o \emph{fallback} --- leva na
+\cd{midia} as imagens que existem; o estande sem imagem fica com a arte
+procedural.
+
 \begin{atencao}
 Com \env{AI\_PROVIDER}\cd{=mock}, o \cd{generateJson} sempre falha, e o
 preparo cai no banco padrão (\adrr{ADR-157}). A suíte de ponta a ponta
@@ -190,65 +215,90 @@ preparo cai no banco padrão (\adrr{ADR-157}). A suíte de ponta a ponta
 \begin{figure}[H]
 \centering
 \fitwidth{%
-\begin{tikzpicture}[x=1cm, y=1cm]
+\begin{tikzpicture}[x=1cm, y=1cm,
+  every node/.append style={execute at begin node={\hyphenpenalty=10000\exhyphenpenalty=10000}},
+  mod/.style={c4component, font=\scriptsize, inner xsep=2pt, text width=30mm, minimum height=13mm},
+  porta/.style={c4component, font=\scriptsize, inner xsep=2pt, text width=30mm, minimum height=13mm, fill=unooGreenWash, draw=unooGreen},
+  impl/.style={c4component, font=\scriptsize, inner xsep=2pt, text width=30mm, minimum height=12mm, fill=unooSurface},
+  ext/.style={c4systemext, text width=28mm, minimum height=12mm}]
 
-  \draw[c4zone] (0.6,0.6) rectangle (15.4,-8.6);
-  \node[c4boundarylbl, fill=unooSurface] at (1.0,0.75) {API --- \arq{apps/api/src}};
+  % colunas c1 = 1.5, c2 = 4.8, c3 = 8.1, c4 = 11.4, c5 = 14.7
+  % linhas: módulos 0; quota -2.5; portas -4.8; implementações -7.2; externos -10.2
 
-  \node[c4component, text width=24mm] (g) at (2.4,-0.4) {\arq{geracao/}\desc{exp08ef1b}};
-  \node[c4component, text width=24mm] (m) at (5.6,-0.4) {\arq{motor/}\desc{exp08ef1b}};
-  \node[c4component, text width=24mm] (p) at (8.8,-0.4) {\arq{planos/}\desc{app-90}};
-  \node[c4component, text width=24mm] (b) at (12.0,-0.4) {\arq{bemestar/}\desc{app-91}};
-  \node[c4component, text width=20mm] (a) at (14.6,-2.0) {\rota{POST /ai/gerar}\desc{SDK}};
+  \node[mod] (ger) at (1.5,0) {\texttt{geracao/}, \texttt{motor/}\desc{exp08ef1b}};
+  \node[mod] (dom) at (4.8,0) {módulos de domínio\desc{\texttt{planos/}, \texttt{bemestar/} e os demais}};
+  \node[mod] (sdk) at (8.1,0) {\texttt{POST /ai/gerar}\desc{a rota da SDK}};
+  \node[mod] (age) at (11.4,0) {\texttt{agente-professor/}\desc{o chat do professor}};
+  \node[mod] (aju) at (14.7,0) {\texttt{ajuda/}\desc{mascote e avatar}};
 
-  \draw[c4boundary, draw=unooGreen!70] (1.4,-3.0) rectangle (14.6,-7.9);
-  \node[c4boundarylbl, fill=unooSurface, text=unooGreen!60!black] at (1.8,-2.85)
-    {\arq{src/ai/} --- a ÚNICA porta};
+  \node[porta, text width=91mm, minimum height=11mm] (quota) at (8.1,-2.5)
+    {\textbf{\texttt{QuotaService}} --- \texttt{temSaldo(escola, usuario, perfil)}
+     ANTES, \texttt{consumir(tokens)} DEPOIS\desc{teto em \texttt{ia\_quotas} (dado, não
+     \emph{env}); soma em \texttt{ia\_uso\_diario}}};
 
-  \node[c4component, text width=32mm, fill=unooGreenWash, draw=unooGreen] (q) at (4.0,-4.0)
-    {\textbf{\cd{QuotaService}}\desc{\cd{temSaldo(escola, usuario, perfil)}
-     ANTES; \cd{consumir(tokens)} DEPOIS}};
+  \node[porta, text width=91mm] (prov) at (4.8,-4.8)
+    {\textbf{\texttt{AiProvider}} --- \texttt{generate}, \texttt{generateJson},
+     \texttt{conversar}, \texttt{generateImage}, \texttt{generateSpeech}\desc{embrulhado
+     pelo \texttt{MedidorDeProvider}, que mede e registra o custo}};
+  \node[porta] (pag) at (11.4,-4.8) {\textbf{\texttt{AgenteProfessorPort}}};
+  \node[porta] (pao) at (14.7,-4.8) {\textbf{\texttt{VozAoVivoPort}}\\\textbf{\texttt{AvatarAoVivoPort}}};
 
-  \node[c4component, text width=32mm, fill=unooGreenWash, draw=unooGreen] (pr) at (8.4,-4.0)
-    {\textbf{\cd{AiProvider}}\desc{\cd{generate}, \cd{generateJson},
-     \cd{generateImage}, \cd{generateSpeech}}};
+  \node[impl] (vx) at (1.5,-7.2) {\texttt{vertex.provider.ts}\desc{\emph{default}; ADC + REST}};
+  \node[impl, fill=unooPaper, draw=unooAxis] (mk) at (4.8,-7.2) {\texttt{mock.provider.ts}\desc{só testes}};
+  \node[impl] (pp) at (8.1,-7.2) {\texttt{prompts.ts}\desc{\emph{prompt} de sistema; não sai daqui}};
+  \node[impl] (aec) at (11.4,-7.2) {\texttt{agent-engine.}\\\texttt{client.ts}\desc{SSE, ADC}};
+  \node[impl] (liv) at (14.7,-7.2) {\texttt{gemini-live.}\\\texttt{client.ts} e \texttt{liveavatar.}\\\texttt{client.ts}};
 
-  \node[c4component, text width=26mm] (pp) at (12.4,-4.0)
-    {\arq{prompts.ts}\desc{\emph{prompt} de sistema; nunca sai daqui}};
+  \node[ext, text width=59mm] (vertex) at (3.15,-10.8) {\textbf{Vertex AI --- Gemini}\desc{\texttt{global}, reserva em \texttt{us}}};
+  \node[ext] (eng) at (11.4,-10.8) {\textbf{Agent Engine}\desc{o agente do professor}};
+  \node[ext] (glive) at (14.7,-10.8) {\textbf{Gemini Live}\desc{\texttt{us-central1}}};
+  \node[ext] (lav) at (14.7,-12.8) {\textbf{LiveAvatar}\desc{HeyGen}};
 
-  \node[c4component, text width=30mm] (vx) at (5.0,-6.6)
-    {\arq{vertex.provider.ts}\desc{\emph{default}; ADC + REST}};
-  \node[c4component, text width=30mm, fill=unooPaper, draw=unooAxis] (mk) at (10.4,-6.6)
-    {\arq{mock.provider.ts}\desc{testes e \emph{dev} sem GCP}};
+  % --- fronteiras
+  \begin{scope}[on background layer]
+    % a zona de fora primeiro: o que vem depois fica por cima do fundo dela
+    \node[c4zone, fit={(ger) (aju) (vx) (liv)}, inner xsep=17pt, inner ysep=28pt, yshift=-6pt] (apiz) {};
+    \node[c4boundary, draw=unooGreen!70, fill=unooGreenWash!40, fit={(quota) (prov) (vx) (liv)}, inner sep=9pt, yshift=3pt] (srcai) {};
+  \end{scope}
+  \node[c4boundarylbl, fill=unooSurface, anchor=south west] at ([xshift=6pt, yshift=-1pt]apiz.north west)
+    {API --- \texttt{apps/api/src}};
+  \node[c4boundarylbl, fill=unooSurface, text=unooGreen!60!black, anchor=north west]
+    at ([xshift=28mm, yshift=-1pt]srcai.south west) {\texttt{src/ai/} --- a ÚNICA porta para a IA};
 
-  \node[c4db, text width=24mm] (ia) at (0.0,-4.4) {\texttt{ia\_uso\_diario}};
-  \node[c4systemext, text width=26mm, minimum height=13mm] (vertex) at (14.4,-9.8)
-    {\textbf{Vertex AI}\desc{endpoint \cd{global}}};
-
-  % geracao/ e as reacoes de motor/ chamam o provider SEM temSaldo (ADR-74,
-  % ai/AGENTS.md): a seta desvia do QuotaService e desce direto ao AiProvider.
-  \draw[c4reldash, draw=unooRed] (g.south) -- (2.4,-2.2) -- (7.2,-2.2) -- (7.2,-3.35);
-  \draw[c4reldash, draw=unooRed] (m.south) -- (5.6,-2.2);
-  \node[cxlabel, text=unooRed] at (4.0,-2.2) {sem quota (\adrr{ADR-74})};
-  \draw[c4rel] (p.south) -- (8.8,-3.4);
-  \draw[c4rel] (b.south) -- (12.0,-3.4);
-  \draw[c4rel] (a.west) -- (13.4,-2.0) -- (13.4,-3.4);
-  \draw[c4relbi] (q.west) -- (ia.east);
-  \draw[c4rel] (q.east) -- (pr.west) node[cxlabel, midway, above]{só com saldo};
-  \draw[c4reldash] (pr.east) -- (pp.west);
-  \draw[c4rel] (pr.south) -- (vx.north east);
-  \draw[c4reldash] (pr.south) -- (mk.north west);
-  \draw[c4rel] (vx.south east) -- (10.0,-9.8) -- (vertex.west)
-    node[cxlabel, pos=0.55, above]{HTTPS + ADC};
+  % --- relações
+  \draw[c4reldash, draw=unooRed] (ger.south) -- (ger.south |- prov.north)
+    node[cxlabel, text=unooRed, pos=0.42, text width=17mm]{sem quota (\adrr{ADR-74})};
+  \foreach \m in {dom, sdk, age}
+    \draw[c4rel] (\m.south) -- (\m.south |- quota.north);
+  \draw[c4rel] (dom.south |- quota.south) -- (dom.south |- prov.north)
+    node[cxlabel, midway]{só com saldo};
+  \draw[c4rel] (sdk.south |- quota.south) -- (sdk.south |- prov.north);
+  \draw[c4rel] (age.south |- quota.south) -- (pag.north);
+  \draw[c4rel] (aju.south) -- (pao.north)
+    node[cxlabel, pos=0.42, text width=20mm]{minutos por dia (\adrr{ADR-132})};
+  \draw[c4rel] (vx.north |- prov.south) -- (vx.north);
+  \draw[c4reldash] (mk.north |- prov.south) -- (mk.north);
+  \draw[c4reldash] (pp.north |- prov.south) -- (pp.north);
+  \draw[c4rel] (pag.south) -- (aec.north);
+  \draw[c4rel] (pao.south) -- (liv.north);
+  \draw[c4rel] (vx.south) -- (vx.south |- vertex.north) node[cxlabel, pos=0.58]{HTTPS};
+  \draw[c4rel] (aec.south) -- (eng.north) node[cxlabel, pos=0.58]{\texttt{:streamQuery}};
+  \draw[c4rel] (liv.south) -- (glive.north) node[cxlabel, pos=0.58]{WSS};
+  \draw[c4relbi] (liv.east) -- ++(0.75,0) |- (lav.east);
 
 \end{tikzpicture}}
-\caption[Camada de IA]{A camada de IA, com os quatro primeiros módulos de domínio
-  e a rota da SDK --- hoje são onze módulos que chamam o \emph{provider}, além da
-  rota (Figura~\ref{fig:uml-classes-ia}). \arq{planos/}, \arq{bemestar/} e a rota
-  passam por \cd{QuotaService} antes do \emph{provider}; \arq{geracao/} e as
-  reações de \arq{motor/} chamam o \emph{provider} direto, sem quota --- a exceção
-  registrada na \adrr{ADR-74} e em \arq{ai/AGENTS.md}. Nenhum módulo fora da
-  fronteira verde conhece o \emph{vendor} do modelo.}
+\caption[Camada de IA]{A camada de IA. Os módulos de domínio, a rota da SDK e
+  o agente de IA do professor passam pelo \cd{QuotaService} antes de chamar a
+  IA (Figura~\ref{fig:uml-classes-ia} lista os módulos um a um);
+  \arq{geracao/} e as reações de \arq{motor/} chamam o \emph{provider} direto,
+  sem quota --- a exceção registrada na \adrr{ADR-74} e em
+  \arq{ai/AGENTS.md}; a Ajuda é limitada por minutos, não por \emph{tokens}
+  (\adrr{ADR-132}). Além do \cd{AiProvider}, três portas ficam fora dele
+  porque não são \enquote{gerar texto}: o agente no Agent Engine
+  (\adrr{ADR-126}), a voz ao vivo do mascote (\adrr{ADR-158}) e a sala do
+  avatar. Todas registram o custo de cada chamada em \cd{ia\_consumo\_diario}
+  (\adrr{ADR-161}). Nenhum módulo fora da fronteira verde conhece o
+  \emph{vendor}.}
 \label{fig:camada-ia}
 \end{figure}
 
@@ -518,7 +568,9 @@ quê e quanto isso custou em reais. São três peças, e só a primeira mora em
 \zebra \cd{generateJson} & texto & A soma de todas as tentativas, inclusive as
   recusadas pelo \cd{validar}, por \cd{aoUsarTokens(tokens, divisao)}.\\
 \cd{generateImage} & imagem & O \cd{usageMetadata} da geração, pelo
-  \cd{AiImagemOpcoes.aoUsarTokens}, e uma imagem quando ela veio.\\
+  \cd{AiImagemOpcoes.aoUsarTokens}, e uma imagem quando ela veio. A atribuição
+  é a da requisição, salvo \cd{AiImagemOpcoes.atribuicao} (as imagens do banco
+  padrão do Júri, \adrr{ADR-164}).\\
 \zebra \cd{generateSpeech} & áudio & \textbf{Estimado}: segundos pelo tamanho do
   MP3 de 32\,kbps, saída de 25 \emph{tokens} por segundo, entrada de
   $\approx$ \emph{bytes}/4 do roteiro. Marcado \cd{estimado}; a tela mostra
@@ -587,50 +639,43 @@ validada~\cite{vignola2014dass21}, em domínio público.
 \begin{figure}[H]
 \centering
 \fitwidth{%
-\begin{tikzpicture}[x=1cm, y=1cm]
+\begin{tikzpicture}[x=1cm, y=1cm,
+  every node/.append style={execute at begin node={\hyphenpenalty=10000\exhyphenpenalty=10000}}]
+
+  % espinha em x = 0 (o caminho da IA); apoio à esquerda (x = -5.6);
+  % texto fixo do catálogo à direita (x = 5.6); retornos por x = -5.6 e 8.0
 
   \node[actstart] (ini) at (0,0) {};
-  \node[action, text width=32mm, right=8mm of ini] (abre)
-    {\rota{GET /bemestar/hoje}\\3 itens da permutação do ciclo};
-
-  \node[decision, text width=28mm, right=10mm of abre] (sinal)
-    {sinal de apoio? item 17 ou 21 $\geq$ 2, ou termo de risco};
-
-  \node[actionerr, text width=34mm, below=9mm of sinal] (fixo)
+  \node[action, text width=40mm] (abre) at (0,-1.3)
+    {\texttt{GET /bemestar/hoje}\\3 itens da permutação do ciclo};
+  \node[decision, text width=30mm] (sinal) at (0,-3.6)
+    {sinal de apoio?\\item 17 ou 21 $\geq$ 2, ou termo de risco};
+  \node[actionerr, text width=40mm] (fixo) at (-6.3,-3.6)
     {texto FIXO de apoio\\CVV 188, SAMU 192, CAPS/UBS\\
      \textbf{a IA não é chamada}\\\texttt{origem\_texto = 'seguranca'}};
-
-  \node[decision, text width=26mm, right=12mm of sinal] (saldo)
-    {tem saldo e \emph{provider}?};
-
-  \node[action, text width=32mm, below=9mm of saldo] (ia)
-    {IA gera abertura, pergunta aberta e acolhimento\\
-     recebe só: dia da semana, mês, nº do \emph{check-in},\\
-     texto livre delimitado};
-
-  \node[decision, text width=26mm, below=9mm of ia] (val)
-    {\cd{validarTextoDaIa}?};
-
-  \node[actionsys, text width=32mm, left=12mm of val] (fall)
-    {texto FIXO do catálogo\\\cd{origem\_texto = 'fallback'}};
-
-  \node[actionok, text width=30mm, below=9mm of val] (ok)
-    {\texttt{origem\_texto = 'ia'}};
-
-  \node[actend, left=12mm of ok] (fim) {};
+  \node[decision, text width=24mm] (saldo) at (0,-6.3) {tem saldo e \emph{provider}?};
+  \node[action, text width=40mm] (ia) at (0,-8.8)
+    {a IA gera abertura, pergunta aberta e acolhimento; recebe só dia da
+     semana, mês, nº do \emph{check-in} e o texto livre delimitado};
+  \node[actionsys, text width=38mm] (fall) at (6.2,-8.8)
+    {texto FIXO do catálogo\\\texttt{origem\_texto = 'fallback'}};
+  \node[decision, text width=29mm] (val) at (0,-11.3) {\texttt{validarTextoDaIa}?};
+  \node[actionok, text width=34mm] (ok) at (0,-13.4) {\texttt{origem\_texto = 'ia'}};
+  \node[actend] (fim) at (0,-15.0) {};
 
   \draw[flow] (ini) -- (abre);
   \draw[flow] (abre) -- (sinal);
-  \draw[flow] (sinal) -- (fixo) node[flowlbl, pos=0.5]{sim};
-  \draw[flow] (sinal) -- (saldo) node[flowlbl, pos=0.5]{não};
-  \draw[flow] (saldo) -- (ia) node[flowlbl, pos=0.5]{sim};
-  \draw[flow] (saldo.north) to[out=60,in=20] (fall.north east);
+  \draw[flow] (sinal) -- (fixo) node[flowlbl, midway]{sim};
+  \draw[flow] (sinal) -- (saldo) node[flowlbl, midway]{não};
+  \draw[flow] (saldo) -- (ia) node[flowlbl, midway]{sim};
+  \draw[flow] (saldo.east) -| (fall.north) node[flowlbl, pos=0.3]{não};
+  \draw[flow] (ia) -- (fall) node[flowlbl, midway]{falha};
   \draw[flow] (ia) -- (val);
-  \draw[flow] (val) -- (fall) node[flowlbl, pos=0.5]{barrado};
-  \draw[flow] (val) -- (ok) node[flowlbl, pos=0.5]{passou};
-  \draw[flow] (fall.south) -- (fall |- ok.north) -- (ok.west);
-  \draw[flow] (fixo.south) -- (fixo |- fim.north) -- (fim.north);
+  \draw[flow] (val.east) -| (fall.south) node[flowlbl, pos=0.3]{barrado};
+  \draw[flow] (val) -- (ok) node[flowlbl, midway]{passou};
   \draw[flow] (ok) -- (fim);
+  \draw[flow] (fixo.south) |- (fim.west);
+  \draw[flow] (fall.east) -- (8.8,-8.8) |- (fim.east);
 
 \end{tikzpicture}}
 \caption[Guardrails do check-in de bem-estar]{Os \emph{guardrails} do

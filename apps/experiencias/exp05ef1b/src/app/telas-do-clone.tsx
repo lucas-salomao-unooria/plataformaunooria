@@ -189,7 +189,8 @@ export function ChatDoConvite({
         presence={conectado ? TEXTOS.nina.presenca : TEXTOS.erros.conectando}
         onBack={aoVoltar}
       />
-      <ChatWallpaper className="app__corpo">
+      {/* A conversa rola: foco e nome para o teclado alcançá-la (WCAG 2.1.1, ADR-162). */}
+      <ChatWallpaper className="app__corpo" role="region" tabIndex={0} aria-label="Conversa">
         <div className="conversa">
           <MessageBubble direction="in" time={HORA_DA_NINA}>
             {convite}
@@ -310,7 +311,8 @@ export function GrupoDaTurma({
         </ChatBanner>
       )}
 
-      <ChatWallpaper className="app__corpo">
+      {/* A conversa rola: foco e nome para o teclado alcançá-la (WCAG 2.1.1, ADR-162). */}
+      <ChatWallpaper className="app__corpo" role="region" tabIndex={0} aria-label="Conversa">
         <div className="conversa">
           <SystemMessage>{TEXTOS.grupo.entrou}</SystemMessage>
           {pacote.mensagens.slice(0, chegaram).map((m, i) => {
@@ -479,11 +481,20 @@ export function MuralDaTurma({
       />
       {etapa === "revisao" && <ChatBanner>{TEXTOS.mural.confira}</ChatBanner>}
 
-      <ChatWallpaper className="app__corpo">
+      {/* A conversa rola: foco e nome para o teclado alcançá-la (WCAG 2.1.1, ADR-162). */}
+      <ChatWallpaper className="app__corpo" role="region" tabIndex={0} aria-label="Conversa">
         <div className="conversa">
           <div ref={topo} />
-          {/* E3-ALU-02: na enquete, o histórico recua a 30% — o PICO é um elemento só. */}
-          <div className={etapa === "enquete" ? "historico historico--esmaecido" : "historico"}>
+          {/* E3-ALU-02: na enquete, o histórico recua a 30% — o PICO é um elemento só.
+              Recuado, ele é FUNDO, como atrás de uma janela: sai da leitura e do
+              foco (`inert` + `aria-hidden`). A 30% o texto não passaria em
+              contraste nenhum, e o leitor de tela teria o que o olho não tem
+              (WCAG 1.4.3, ADR-162). */}
+          <div
+            className={etapa === "enquete" ? "historico historico--esmaecido" : "historico"}
+            inert={etapa === "enquete" || undefined}
+            aria-hidden={etapa === "enquete" || undefined}
+          >
             {mensagens.map((m) => {
               const crachas = revelado ? crachasDe(revelacao, m.id) : null;
               return (
@@ -688,7 +699,8 @@ export function ChatDasPerguntas({
         avatarSrc={FOTO_DA_NINA}
         presence={conectado ? TEXTOS.nina.presenca : TEXTOS.erros.conectando}
       />
-      <ChatWallpaper className="app__corpo">
+      {/* A conversa rola: foco e nome para o teclado alcançá-la (WCAG 2.1.1, ADR-162). */}
+      <ChatWallpaper className="app__corpo" role="region" tabIndex={0} aria-label="Conversa">
         <div className="conversa">
           {/* Sem o convite da abertura: repetido aqui, ele mandava a criança de
               novo ao grupo e ao Mural, que já ficaram para trás (o PO, 2026-10-05). */}

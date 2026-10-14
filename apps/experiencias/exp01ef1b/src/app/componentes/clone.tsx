@@ -18,6 +18,26 @@ import { PicBloco, PicVassoura } from "./pictogramas";
 
 /** A foto de um id do pacote — asset do bundle (`public/fotos/<id>.svg`,
  *  placeholders vetoriais até as fotografias WebP da Curadoria chegarem). */
+/**
+ * O que cada foto MOSTRA, para quem usa leitor de tela (WCAG 1.1.1, ADR-163).
+ * É a mesma informação que a criança que enxerga tem — descreve o enquadramento
+ * e o que aparece, nunca qual escolha é a certa (a missão não tem foto certa:
+ * o que muda é o que cada uma deixa de fora). Foto nova entra AQUI, junto com
+ * o arquivo em `public/fotos/`.
+ */
+const DESCRICAO_DAS_FOTOS: Record<string, string> = {
+  gato: "Um gato laranja dormindo em cima de um banco do pátio.",
+  corrida: "Três crianças correndo no pátio, de camiseta vermelha, azul e amarela.",
+  lanche: "Um prato visto de cima, com dois biscoitos e três frutinhas vermelhas.",
+  par_a: "O pátio visto de longe: muitas pecinhas coloridas espalhadas pelo chão e caixas cinza.",
+  par_b: "Um brinquedo de blocos coloridos visto de perto, em forma de castelo com dois telhados.",
+};
+
+/** A descrição da foto; id sem descrição (tema novo) diz ao menos o que é. */
+export function altDaFoto(fotoId: string): string {
+  return DESCRICAO_DAS_FOTOS[fotoId] ?? "Foto do mural da turma.";
+}
+
 export function urlDaFoto(fotoId: string): string {
   return `fotos/${fotoId}.svg`;
 }
@@ -64,12 +84,15 @@ export function PhotoComparisonSelector({
   const fotos = [fotoAId, fotoBId];
   return (
     <div className="fc-seletor-fotos" role="radiogroup" aria-label={TEXTO.e3.selecionarFoto}>
-      {fotos.map((id) => (
+      {fotos.map((id, i) => (
         <button
           key={id}
           type="button"
           role="radio"
           aria-checked={selecionada === id}
+          /* O nome do botão é a ordem e a descrição da foto: a mesma informação de
+             quem enxerga, sem dizer qual é a certa (WCAG 1.1.1/4.1.2, ADR-163). */
+          aria-label={`Foto ${i + 1}: ${altDaFoto(id)}`}
           className={`fc-foto-opcao${selecionada === id ? " fc-foto-opcao--ativa" : ""}`}
           onClick={() => aoEscolher(id)}
         >

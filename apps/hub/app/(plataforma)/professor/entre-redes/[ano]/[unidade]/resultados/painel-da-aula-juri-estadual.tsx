@@ -16,7 +16,7 @@ import {
   percentual,
   rotuloCurtoDaArea,
   rotuloDoBotao,
-  textoDaInvisibilidade,
+  textoDaConcentracao,
   textoDaRevisao,
   textoDoQueFalta,
   textoDosVotos,
@@ -40,13 +40,24 @@ import { ListaDoJuri } from "./lista-do-juri";
  *
  * **Duas superfícies, e só UMA vai para o telão.** O cartão "Painel Coletivo
  * de Votos da Turma" não tem nome: são os votos por área (o voto INICIAL,
- * lacrado; e, depois da galeria, o revisado), a contagem de quem votou e a
- * invisibilidade média — o que a lousa do pico precisa. A folha tem nomes, e
- * por isso não vai: e nem ela liga nome a voto (`PROIBIDO_NA_LINHA_DO_PAINEL`).
+ * lacrado; e, depois da galeria, o revisado), a contagem de quem votou e — da
+ * auditoria em diante — a CONCENTRAÇÃO do feed. A folha tem nomes, e por isso
+ * não vai: e nem ela liga nome a voto (`PROIBIDO_NA_LINHA_DO_PAINEL`).
  *
- * **A invisibilidade média está na lousa desde o pico** (PRD v2, E4-PROF-01:
- * o `MetricCard` ao lado do gráfico). O número é o REAL, calculado pela api;
- * nenhum percentual é cravado aqui.
+ * **A concentração substitui a "invisibilidade média"** (40 projetos,
+ * 2026-10-14). Com quarenta estandes e dez posts, o total escondido é 30 de 40
+ * para TODOS — a média seria sempre a mesma e não diria nada. O contraste que
+ * sobra é QUAIS áreas sumiram: quem curtiu teve, em média, quase todo o feed
+ * numa área só; quem não curtiu, um feed espalhado. A api manda os dois números
+ * (`resumo.concentracao`, só agregado, sem nome); nenhum é cravado aqui.
+ *
+ * **Ela só aparece depois de Liberar Auditoria**, e não desde o pico como a
+ * invisibilidade média aparecia. "Quem curtiu: 70% do feed numa área só" não
+ * revela a galeria, mas DIZ que o feed se adaptou às curtidas — e a plenária do
+ * pico pede justamente para explorar a divisão dos votos "sem dizer ainda que
+ * o feed se adaptou". Projetada antes, ela entregaria a descoberta que a
+ * Galeria Oculta existe para provocar. Depois do botão, é o par da lousa com o
+ * "sem as suas curtidas" que cada computador vê na galeria.
  *
  * **Consulta LEVE, e não `router.refresh()`.** A página lê cinco rotas;
  * refazê-la a cada 5 s seria cinco chamadas por professor durante a aula. Aqui
@@ -246,8 +257,8 @@ export function PainelDaAulaJuriEstadual({
         <div className="mb-3 flex flex-col gap-1 text-[12px] leading-snug text-unooria-neutral-600">
           <p>
             Esta folha é para a <strong>sua</strong> tela, não para o projetor: ela tem nomes. Não há coluna de voto,
-            de taxa nem de nível — os votos ficam só no gráfico por área, sem nome, e o nível das habilidades fica no
-            painel de habilidades, lá embaixo, com a sua confirmação.
+            de taxa, de concentração nem de nível — os votos e a concentração ficam só no cartão de cima, sem nome, e
+            o nível das habilidades fica no painel de habilidades, lá embaixo, com a sua confirmação.
           </p>
           <p>
             O ícone de alerta ao lado do nome marca quem está com a cédula aberta e parada há mais de 1 minuto: é a
@@ -270,8 +281,9 @@ export function PainelDaAulaJuriEstadual({
 }
 
 /**
- * O que vai para o telão (E4-PROF-01): quantos votaram, os votos por área, a
- * invisibilidade média e, depois da galeria, os votos revisados. Nenhum nome.
+ * O que vai para o telão (E4-PROF-01): quantos votaram, os votos por área e,
+ * depois de liberada a auditoria, a concentração do feed e os votos revisados.
+ * Nenhum nome.
  */
 function PainelParaProjetar({ painel }: { painel: PainelDoJuri }) {
   const { resumo, etapa } = painel;
@@ -302,12 +314,9 @@ function PainelParaProjetar({ painel }: { painel: PainelDoJuri }) {
             value={`${resumo.computadores.votaram} de ${resumo.computadores.total}`}
             description={falta ?? "Todos lacraram a urna."}
           />
-          <MetricCard
-            title="Invisibilidade média da turma"
-            value={resumo.invisibilidadeMedia !== null ? `${resumo.invisibilidadeMedia}%` : "—"}
-            description={textoDaInvisibilidade(resumo.invisibilidadeMedia)}
-          />
         </div>
+
+        {naGaleria ? <ConcentracaoDoFeed concentracao={resumo.concentracao} /> : null}
 
         {totalAntes === 0 ? (
           <p className="text-[13px] text-unooria-neutral-700">Ninguém votou ainda. O gráfico aparece com o primeiro voto lacrado.</p>
@@ -359,6 +368,39 @@ function PainelParaProjetar({ painel }: { painel: PainelDoJuri }) {
         )}
       </div>
     </Card>
+  );
+}
+
+/**
+ * A CONCENTRAÇÃO do feed, lado a lado: quanto do feed, em média, caiu numa área
+ * só — de quem curtiu algum post e de quem não curtiu nenhum. Dois
+ * `MetricCard` e a frase que o professor lê em voz alta. Grupo vazio é "—".
+ */
+function ConcentracaoDoFeed({ concentracao }: { concentracao: PainelDoJuri["resumo"]["concentracao"] }) {
+  const valor = (n: number | null) => (n === null ? "—" : `${n}%`);
+  return (
+    <div className="flex flex-col gap-2" data-concentracao-do-feed>
+      <p className="text-[13px] font-semibold text-unooria-neutral-900">Quanto do feed caiu numa área só</p>
+      <div className="grid gap-3 sm:grid-cols-2" data-concentracao={`${concentracao.curtiram ?? "-"}/${concentracao.naoCurtiram ?? "-"}`}>
+        <MetricCard
+          title="Quem curtiu algum post"
+          value={valor(concentracao.curtiram)}
+          description={concentracao.curtiram === null ? "Ninguém que votou curtiu." : "do feed, em média, numa área só"}
+        />
+        <MetricCard
+          title="Quem não curtiu nenhum"
+          value={valor(concentracao.naoCurtiram)}
+          description={concentracao.naoCurtiram === null ? "Todos que votaram curtiram algum post." : "do feed, em média, numa área só"}
+        />
+      </div>
+      <p className="max-w-3xl text-[14px] font-semibold leading-snug text-unooria-neutral-950" data-texto-da-concentracao>
+        {textoDaConcentracao(concentracao)}
+      </p>
+      <p className="max-w-3xl text-[12px] leading-snug text-unooria-neutral-600">
+        Todo computador ficou com a mesma quantidade de estandes fora do feed; o que muda é quais áreas sumiram. Peça
+        que comparem, na Galeria Oculta, a contagem por área e o feed “sem as suas curtidas”.
+      </p>
+    </div>
   );
 }
 

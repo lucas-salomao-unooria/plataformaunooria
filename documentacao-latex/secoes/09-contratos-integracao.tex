@@ -89,29 +89,40 @@ ignora --- o canal é genérico de propósito.
 \fitwidth{%
 \begin{tikzpicture}[x=1cm, y=1cm]
 
-  \raia{1.6}{-12.2}{Experiência}{\texttt{@edu/sdk} no \texttt{iframe}}
-  \raia{6.2}{-12.2}{\texttt{ExpFrame}}{React, no hub}
-  \raia{10.8}{-12.2}{Rota do hub}{Next.js, servidor}
-  \raiaext{15.0}{-12.2}{API}{NestJS}
+  % Raias: experiência, ExpFrame, rota do hub e api. Rótulo longo quebra em
+  % duas linhas para caber no vão entre as raias (nenhum cruza uma linha de vida).
+  \raia{1.4}{-15.9}{Experiência}{\texttt{@edu/sdk} no \texttt{iframe}}
+  \raia{6.2}{-15.9}{\texttt{ExpFrame}}{React, no hub}
+  \raia{10.4}{-15.9}{Rota do hub}{Next.js, servidor}
+  \raiaext{15.0}{-15.9}{API}{NestJS}
 
-  \msgs{10.8}{6.2}{-1.0}{monta o \emph{embed}: assina \emph{token} RS256 (15 min)}
-  \msgs{10.8}{15.0}{-1.8}{\rota{GET /experiencias/:expId} --- manifesto}
-  \msgr{15.0}{10.8}{-2.6}{\texttt{\{ versaoAtiva, viewport, permissoes \}}}
+  % 1. A rota do hub monta o embed (servidor)
+  \msgs{10.4}{15.0}{-1.1}{\texttt{GET /experiencias/:expId}}
+  \msgr{15.0}{10.4}{-2.1}{manifesto \texttt{\{ versaoAtiva,}\\\texttt{viewport, permissoes \}}}
+  \msgself{10.4}{-2.6}{assina o \emph{token}\\RS256, 15 min}
+  \msgs{10.4}{6.2}{-4.0}{\emph{props}: \texttt{src}, \emph{token}, \texttt{apiUrl}}
 
-  \msgs{6.2}{1.6}{-3.6}{renderiza \texttt{iframe src=} URL versionada}
-  \msgself{1.6}{-4.4}{\texttt{connectToHub(\{ hubOrigin \})}}
-  \msgs{1.6}{6.2}{-5.4}{\texttt{exp:ready \{ protocolVersion: 2 \}}}
-  \msgself{6.2}{-6.2}{valida \texttt{ev.origin} e a versão MAIOR}
-  \msgr{6.2}{1.6}{-7.2}{\texttt{hub:init \{ token, estudante, apiUrl, config \}}}
-  \msgself{1.6}{-8.0}{valida com Zod; resolve a \emph{Promise}}
+  % 2. Handshake no navegador
+  \msgs{6.2}{1.4}{-5.0}{renderiza o \texttt{iframe}\\com a URL versionada}
+  \msgself{1.4}{-5.5}{\texttt{connectToHub}\\\texttt{(\{ hubOrigin \})}}
+  \draw[seqframe] (0.8,-6.3) rectangle (6.8,-8.0);
+  \node[frameop] at (0.8,-6.3) {loop};
+  \node[guarda] at (1.85,-6.62) {[a cada 400 ms]};
+  \msgs{1.4}{6.2}{-7.75}{\texttt{exp:ready}\\\texttt{\{ protocolVersion: 2 \}}}
+  \msgself{6.2}{-8.35}{valida \texttt{ev.origin}\\e a versão MAIOR}
+  \msgr{6.2}{1.4}{-9.9}{\texttt{hub:init \{ token, estudante,}\\\texttt{apiUrl, config \}}}
+  \msgself{1.4}{-10.4}{valida com Zod;\\resolve a \emph{Promise}}
 
-  \msgs{1.6}{15.0}{-9.2}{chamadas de domínio, \rota{/telemetry/batch}, \rota{/ai/gerar}}
-  \msgs{1.6}{6.2}{-10.0}{\texttt{exp:token-expirando}}
-  \msgs{6.2}{10.8}{-10.8}{\rota{GET /api/exp-token}}
-  \msgr{10.8}{6.2}{-11.4}{\texttt{\{ token \}}}
-  \msgr{6.2}{1.6}{-11.9}{\texttt{hub:token \{ token \}}}
+  % 3. Uso e renovação do token
+  \draw[seqmsg] (1.4,-12.3) -- (15.0,-12.3)
+    node[seqlbl, pos=0.24, above=1pt, fill=white, inner sep=1.5pt]{chamadas de domínio,\\\texttt{/telemetry/batch},\\\texttt{/ai/gerar}};
+  \msgs{1.4}{6.2}{-13.3}{\texttt{exp:token-expirando}}
+  \msgs{6.2}{10.4}{-14.1}{\texttt{GET /api/exp-token}}
+  \msgr{10.4}{6.2}{-14.8}{\texttt{\{ token \}}}
+  \msgr{6.2}{1.4}{-15.5}{\texttt{hub:token \{ token \}}}
 
-  \node[actnote, text width=42mm, anchor=north west] at (16.6,-3.4)
+  % Notas: abaixo das raias, lado a lado, para o desenho caber em 16 cm
+  \node[actnote, text width=72mm, anchor=north west] at (0.1,-16.3)
     {\textbf{Por que o reenvio do \texttt{exp:ready}:} com os \emph{assets} em
      \emph{cache} (um F5), a experiência fica pronta ANTES de o \texttt{ExpFrame}
      hidratar o \emph{listener}, e um disparo único se perderia --- o
@@ -119,7 +130,7 @@ ignora --- o canal é genérico de propósito.
      \texttt{exp:ready} com um \texttt{hub:init}; só o primeiro conta, e
      \texttt{hub:init} repetido é tratado como evento normal, não como ruído.};
 
-  \node[actnote, text width=42mm, anchor=north west] at (16.6,-9.0)
+  \node[actnote, text width=72mm, anchor=north west] at (8.2,-16.3)
     {\textbf{Por que a renovação passa pelo hub:} a experiência não tem sessão
      --- ela tem um \emph{token} de 15 minutos. Quem tem sessão é o hub, e é ele
      que pode assinar outro. O \texttt{iframe} nunca recarrega, então o estado da
@@ -336,44 +347,60 @@ faz TODA experiência nova nascer errada.
 \fitwidth{%
 \begin{tikzpicture}[x=1cm, y=1cm]
 
-  \node[actstart] (ini) at (0,0) {};
-  \node[decision, text width=26mm, right=10mm of ini] (temman)
-    {tem linha em \texttt{experiencias}?};
+  % Vertical, em duas decisões: a 1ª decide de onde vêm viewport e
+  % permissões; a 2ª, o endereço do bundle (apps/hub/lib/embed-experiencia.ts).
+  \node[actstart] (ini) at (8,0) {};
+  \node[actionsys, text width=74mm, anchor=north] (le) at (8,-0.7)
+    {lê em paralelo, na api, com o \emph{token} recém-assinado:\\
+     \texttt{GET /experiencias/:expId} (o manifesto) e\\
+     \texttt{GET /recursos/efetivos} (a versão fixada na escola)};
+  \node[decision] (d1) at (8,-3.55) {tem manifesto?};
 
-  \node[action, text width=44mm, above right=6mm and 12mm of temman] (com)
-    {\texttt{\{cdn\}/\{expId\}/\{versaoAtiva\}/index.html}\\
-     \texttt{?hubOrigin=\ldots}};
-  \node[actionsys, text width=44mm, below right=6mm and 12mm of temman] (sem)
-    {\texttt{\{baseDev\}/?hubOrigin=\ldots}\\
-     porta de \arq{lib/experiencias-dev.ts}\\
-     ou o \texttt{src} explícito de \rota{/dev-embed}};
-
-  \node[action, text width=40mm, right=12mm of com] (vp1)
+  \node[action, text width=50mm] (vp1) at (3.3,-5.3)
     {\texttt{viewport} e \texttt{permissoes}\\vêm do MANIFESTO};
-  \node[actionsys, text width=44mm, right=12mm of sem] (vp2)
+  \node[actionsys, text width=50mm] (vp2) at (12.7,-5.3)
     {lê \texttt{\{baseInterna\}/experiencia.json}\\
-     \texttt{baseInterna} = \env{EXP\_INTERNAL\_HOST} aplicado à base};
+     (\texttt{EXP\_INTERNAL\_HOST} aplicado à base)};
 
-  \node[actionok, text width=40mm, below right=10mm and -6mm of vp1] (frame)
+  \node[decision] (d2) at (8,-7.75) {produção e com manifesto?};
+
+  \node[action, text width=50mm] (com) at (3.3,-9.9)
+    {\texttt{\{cdn\}/\{expId\}/\{versao\}/}\\
+     \texttt{index.html?hubOrigin=\ldots}\\[2pt]
+     \texttt{versao}: a fixada no escopo,\\senão a \texttt{versaoAtiva}};
+  \node[actionsys, text width=50mm] (sem) at (12.7,-9.9)
+    {\texttt{\{base\}/?hubOrigin=\ldots}\\[2pt]
+     \texttt{base}: em dev, o \texttt{src} de \texttt{/dev-embed}\\
+     ou a porta de \texttt{lib/experiencias-dev.ts};\\
+     em produção, o CDN};
+
+  \node[actionok, text width=58mm] (frame) at (8,-12.6)
     {\texttt{ExpFrame}: \emph{sandbox} + \texttt{allow},\\
-     dentro de \texttt{DispositivoFrame}\\se houver \texttt{viewport}};
+     dentro de \texttt{DispositivoFrame} se houver \texttt{viewport}};
+  \node[actend] (fim) at (8,-14.0) {};
 
-  \node[actend, below=8mm of frame] (fim) {};
+  \coordinate (j1) at (8,-6.3);
+  \coordinate (j2) at (8,-11.55);
 
-  \draw[flow] (ini) -- (temman);
-  \draw[flow] (temman) -- (com) node[flowlbl, pos=0.55]{sim};
-  \draw[flow] (temman) -- (sem) node[flowlbl, pos=0.55]{não};
-  \draw[flow] (com) -- (vp1);
-  \draw[flow] (sem) -- (vp2);
-  \draw[flow] (vp1) -- (frame);
-  \draw[flow] (vp2) -- (frame);
+  \draw[flow] (ini) -- (le);
+  \draw[flow] (le) -- (d1);
+  \draw[flow] (d1.west) -| (vp1.north) node[flowlbl, pos=0.25]{sim};
+  \draw[flow] (d1.east) -| (vp2.north) node[flowlbl, pos=0.25]{não};
+  \draw[line width=0.85pt, draw=unooInkSoft] (vp1.south) |- (j1) -| (vp2.south);
+  \draw[flow] (j1) -- (d2.north);
+  \draw[flow] (d2.west) -| (com.north) node[flowlbl, pos=0.25]{sim};
+  \draw[flow] (d2.east) -| (sem.north) node[flowlbl, pos=0.25]{não};
+  \draw[line width=0.85pt, draw=unooInkSoft] (com.south) |- (j2) -| (sem.south);
+  \draw[flow] (j2) -- (frame.north);
   \draw[flow] (frame) -- (fim);
 
 \end{tikzpicture}}
 \caption[Resolução da URL do embed]{Resolução da URL do \emph{embed} e da casca
   de aparelho. Os dois caminhos convergem: mesmo sem manifesto, o hub obtém
   \cd{viewport} e \cd{permissoes} lendo o \arq{experiencia.json} servido ao lado
-  do \arq{index.html} do \emph{bundle}.}
+  do \arq{index.html} do \emph{bundle}. No caminho versionado, a versão é a
+  fixada no escopo da escola (\adrr{ADR-87}), quando há, e senão a
+  \cd{versaoAtiva} do catálogo.}
 \label{fig:fluxo-embed}
 \end{figure}
 
@@ -1077,16 +1104,27 @@ direta --- módulos de domínio não se conhecem (Seção~\ref{sec:c4l3}). O con
 \fitwidth{%
 \begin{tikzpicture}[x=1cm, y=1cm]
 
-  \node[bundle, text width=28mm] (v) at (0.8,0) {\textbf{app-70}\desc{Vila do Lume}};
-  \node[c4component, text width=30mm] (mv) at (4.6,0)
-    {\arq{src/vila/}\desc{\texttt{quadrantes.ts}: colapso 10 \seta{} 4}};
-  \node[c4component, text width=34mm, fill=unooOrangeWash, draw=unooOrange] (t) at (9.2,0)
+  % Linha de cima: o jogo entrega o dado bruto; o professor dispara o colapso,
+  % que grava a tabela de contrato. Linha de baixo: o Instanooria a lê.
+  \node[c4person, text width=22mm, minimum height=10mm] (prof) at (7.0,2.7)
+    {\textbf{Professor}};
+  \node[bundle, text width=28mm] (v) at (1.7,0) {\textbf{app-70}\desc{Vila do Lume}};
+  \node[c4component, text width=34mm] (mv) at (7.0,0)
+    {\texttt{vila/quadrantes.ts}\desc{módulo \texttt{vila} da api:\\colapso 10 \seta{} 4}};
+  \node[c4component, text width=38mm, fill=unooOrangeWash, draw=unooOrange] (t) at (12.6,0)
     {\texttt{exp08ef1b\_app\_70\_}\\\texttt{perfis\_importados}\desc{a tabela de contrato}};
-  \node[c4component, text width=30mm] (mi) at (13.6,0)
-    {\arq{src/perfis/largada.ts}\desc{decide o lado do \emph{feed}}};
-  \node[bundle, text width=28mm] (i) at (13.6,-3.2) {\textbf{exp08ef1b}\desc{Instanooria}};
+  \node[c4component, text width=38mm] (mi) at (12.6,-3.2)
+    {\texttt{perfis/largada.ts}\desc{módulo \texttt{perfis} da api:\\decide o lado do \emph{feed}}};
+  \node[bundle, text width=28mm] (i) at (7.0,-3.2) {\textbf{exp08ef1b}\desc{Instanooria}};
 
-  \node[actnote, text width=52mm, anchor=north west] at (0.2,-2.2)
+  \draw[c4rel] (v) -- (mv) node[cxlabel, midway, above=1pt]{\emph{payload}\\bruto};
+  \draw[c4rel] (prof) -- (mv) node[cxlabel, midway, right=2pt, align=left]
+    {\texttt{POST /atividades/:id/}\\\texttt{perfis/da-vila}};
+  \draw[c4rel] (mv) -- (t) node[cxlabel, midway, above=1pt]{grava\\(\emph{upsert})};
+  \draw[c4rel] (t) -- (mi) node[cxlabel, midway, right=2pt]{lê};
+  \draw[c4rel] (mi) -- (i) node[cxlabel, midway, above=1pt]{lado inicial};
+
+  \node[actnote, text width=150mm, anchor=north west] at (0.15,-4.6)
     {\textbf{Duas travas que custam estudantes, de propósito:} valor não observado
      (\texttt{indicative} ou \texttt{none}) \textbf{fica fora da média} --- nunca
      entra como zero; e quadrante \emph{sem nenhum membro observado} invalida o
@@ -1094,12 +1132,13 @@ direta --- módulos de domínio não se conhecem (Seção~\ref{sec:c4l3}). O con
      honesto sobre não saber. O preço é real: parte da turma não terá perfil
      importado.};
 
-  \draw[c4rel] (v) -- (mv) node[cxlabel, midway, above]{\emph{payload} bruto};
-  \draw[c4rel] (mv) -- (t) node[cxlabel, midway, above]{\rota{POST /atividades/:id/perfis/da-vila}};
-  \draw[c4rel] (t) -- (mi) node[cxlabel, midway, above]{lê};
-  \draw[c4rel] (mi) -- (i);
-
 \end{tikzpicture}}
+\begin{legendadiag}
+\amostra{bundle} experiência (\emph{bundle}) \quad
+\amostra{c4component} módulo da api \quad
+\amostra{c4component, fill=unooOrangeWash, draw=unooOrange} a tabela de contrato \quad
+\amostra{fill=unooNavy, draw=unooNavy, rounded corners=1pt} pessoa
+\end{legendadiag}
 \caption[Contrato entre duas experiências]{O único acoplamento entre
   experiências, e como ele é explícito: uma tabela cujo nome carrega os dois
   números, escrita por um \emph{endpoint} de fronteira acionado pelo professor.}

@@ -3218,8 +3218,9 @@ model AjudaLimite {
 // evidência; a P1 é da EF06CO10, o foco primário).
 //
 // TRÊS tabelas. A ATIVIDADE (no sentido da evidência pedagógica, ADR-112) é o
-// PACOTE homologado — os dezesseis projetos gerados por IA no preparo, sem
-// acervo padrão (decisão de 2026-10-02) —, e a RODADA é o "Zerar turma".
+// PACOTE homologado — os quarenta projetos (dez por área) gerados por IA no
+// preparo, ou o banco padrão —, e a RODADA é o "Zerar turma". O pacote de
+// dezesseis da 0.4.x continua legível.
 //
 // SEM COLUNA DE NOTA e sem texto livre de menor: o texto da busca da galeria
 // nunca é gravado (só o tipo e a área que casou), e as respostas de P1–P3
@@ -3227,8 +3228,9 @@ model AjudaLimite {
 //
 // CHECKs, RLS e o índice único parcial vivem na migration.
 
-/// Um PACOTE — a mostra da aula: as quatro áreas e os dezesseis projetos,
-/// gerados por IA e homologados pelo professor. É a atividade.
+/// Um PACOTE — a mostra da aula: as quatro áreas e os quarenta projetos (os
+/// dezesseis da 0.4.x continuam legíveis), gerados por IA e homologados pelo
+/// professor, ou o banco padrão. É a atividade.
 ///
 /// Um ATIVO (= EM ANDAMENTO) por turma: índice único parcial na migration.
 /// Nasce PRONTO (`ativo = false`, ADR-130): quem põe no ar é o professor.
@@ -3247,13 +3249,14 @@ model Exp06ef1bPacote {
   /// O contexto opcional da turma (até 120 caracteres).
   contexto   String?
 
-  /// As quatro categorias e os dezesseis projetos. `Json` porque o pacote é
+  /// As quatro categorias e os quarenta projetos. `Json` porque o pacote é
   /// lido e escrito sempre inteiro; o schema real é o Zod de
-  /// `juri-estadual/contrato-de-rotas.ts#ConteudoDoPacoteSchema`, e o CHECK
-  /// cobra a forma (4 categorias, 16 projetos).
+  /// `juri-estadual/contrato-de-rotas.ts#ConteudoDoPacoteSchema` (a escrita
+  /// exige 40), e o CHECK cobra a forma (4 categorias, 16 ou 40 projetos — os
+  /// pacotes de 16 da 0.4.x existem).
   conteudo Json
 
-  /// As URLs das imagens geradas, por id de projeto (`{ "proj-a1": url }`).
+  /// As URLs das imagens geradas, por id de projeto (`{ "proj-a10": url }`).
   midia Json @default("{}")
 
   /// A SEGUNDA fase da aprovação (como na exp07ef1b, ADR-146): o professor viu
@@ -3342,7 +3345,9 @@ model Exp06ef1bSessao {
   /// aleatório, e não muda — o F5 rende o mesmo feed.
   semente String
 
-  /// Os ids de post que o feed serviu, na ordem da tela (até dez).
+  /// Os ids de post que o feed serviu, na ordem da tela (até dez). Desde o
+  /// instrumento 3.0.0, só `proj-xN:apresentacao`, sem repetir projeto; as
+  /// sessões 2.0.0 têm também `bastidor`, `prototipo` e `depoimento`.
   postsServidos Json @default("[]") @map("posts_servidos")
   /// Os posts curtidos AGORA (descurtir tira daqui).
   curtidos      Json @default("[]")

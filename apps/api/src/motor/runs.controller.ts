@@ -38,6 +38,7 @@ import {
   ORDEM_DA_ATIVIDADE_DO_ESTUDANTE,
   runDoEstudante,
 } from "./guardas";
+import { textoAlternativoDaImagem } from "../comum/insta/texto-alternativo";
 import { paraFeedPost } from "./sanitizador";
 import { proximoBlocoDoFeed } from "./servico";
 import type { EngineConfig } from "./tipos";
@@ -752,6 +753,7 @@ export class RunsController {
             verificado: post.author.verificado,
           },
           imageUrl: post.imageStatus === "ok" ? post.imageUrl : null,
+          imageAlt: textoAlternativoDaImagem(post),
           fallbackArt: post.imageStatus === "ok" ? null : arteFallback(post.id, post.categoria),
           caption: post.caption,
           hashtags: post.hashtags,

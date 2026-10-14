@@ -2,7 +2,6 @@ import {
   AREAS,
   ID_DE_POST_RE,
   ID_DE_PROJETO_RE,
-  IDS_DE_PROJETO,
   TIPOS_DE_BUSCA,
   type Area,
   type TipoDeBusca,
@@ -99,12 +98,13 @@ export function registrarAcao(atual: Auditoria, acao: AcaoDaGaleria): { auditori
 
 /**
  * A ordem da grade: os que NÃO chegaram ao feed primeiro (é a Galeria Oculta),
- * depois os vistos — e, dentro de cada grupo, a ordem dos ids (área a área,
- * que é como a busca por hashtag os agrupa).
+ * depois os vistos — e, dentro de cada grupo, a ordem do PACOTE (área a área e
+ * numérica: `proj-a9` antes de `proj-a10`), que é como a busca por hashtag os
+ * agrupa. `idsDoPacote` são os do pacote lido: 40, ou 16 no legado.
  */
-export function ordemDaGaleria(servidos: readonly string[]): string[] {
-  const ocultos = IDS_DE_PROJETO.filter((id) => !projetoFoiExibido(servidos, id));
-  const vistos = IDS_DE_PROJETO.filter((id) => projetoFoiExibido(servidos, id));
+export function ordemDaGaleria(idsDoPacote: readonly string[], servidos: readonly string[]): string[] {
+  const ocultos = idsDoPacote.filter((id) => !projetoFoiExibido(servidos, id));
+  const vistos = idsDoPacote.filter((id) => projetoFoiExibido(servidos, id));
   return [...ocultos, ...vistos];
 }
 

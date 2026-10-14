@@ -54,7 +54,7 @@ documentacao-latex/
 │   └── capa.tex             capa, ficha técnica e histórico de revisões
 ├── secoes/                  00-siglas … 21-pendencias; 05b-modelagem-uml continua o cap. 5
 ├── apendices/               a-mermaid … f-operacao
-├── estudos/                 estudos técnicos avulsos (PU-EST-001, teste de carga)
+├── estudos/                 estudos técnicos avulsos (PU-EST-001 teste de carga; PU-EST-002 comparativo nuvem)
 ├── produto/                 documentos de produto (PU-PRD-001, mapa de produto)
 ├── figuras/                 imagens externas (nenhuma hoje)
 └── build/                   pré-visualizações geradas (não versionado)
@@ -69,6 +69,7 @@ própria pasta, com `tectonic -k <arquivo>.tex`:
 | Documento | Onde | Para quem |
 |---|---|---|
 | PU-EST-001 — teste de carga | `estudos/teste-de-carga/` | engenharia e decisão |
+| PU-EST-002 — comparativo de infraestrutura em nuvem (GCP, AWS e Azure) | `estudos/comparativo-nuvem/` | engenharia, arquitetura e decisão |
 | PU-PRD-001 — mapa de produto (épicos, features, histórias) | `produto/mapa-de-produto/` | PO e time de desenvolvimento |
 
 **A PU-PRD-001 é escrita em linguagem de produto**: pessoas, telas e regras

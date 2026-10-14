@@ -55,7 +55,7 @@ export function MissaoJuriEstadual({
       <FeedbackAlert
         type="info"
         title="Prepare antes: banco padrão ou mostra personalizada"
-        description="Em Nova atividade, use o Banco Padrão Oficial (a Feira de Ciências e Sustentabilidade, sem IA, em um toque) ou gere os dezesseis estandes com IA sobre o tema da sua aula. Sem saldo de IA, o banco padrão entra no lugar. Durante a aula é um botão só — Liberar Auditoria —, e ele não volta. A missão só abre para a turma com uma atividade sua em andamento."
+        description="Em Nova atividade, use o Banco Padrão Oficial (a Feira de Ciências e Sustentabilidade, sem IA, em um toque) ou gere os quarenta estandes com IA sobre o tema da sua aula — dez em cada uma das quatro áreas. Sem saldo de IA, o banco padrão entra no lugar. Durante a aula é um botão só — Liberar Auditoria —, e ele não volta. A missão só abre para a turma com uma atividade sua em andamento."
       />
 
       <section className="grid gap-4 lg:grid-cols-2">
@@ -95,17 +95,19 @@ export function MissaoJuriEstadual({
             saber que a Galeria Oculta confronta.
           </p>
           <p className="max-w-3xl">
-            A taxa de invisibilidade que cada computador vê é <strong>real e diferente</strong> para cada um: é a parte
-            dos dezesseis estandes que não chegou àquele feed. Quem curtiu duas vezes a mesma área vê a taxa mais
-            alta; quem não curtiu nada viu um feed mais misturado. Não há número certo, e nenhum é anunciado.
+            Todo computador fica com a mesma quantidade de estandes fora do feed: são quarenta, e o feed mostra dez.
+            O que muda é <strong>quais áreas sumiram</strong>. A Galeria Oculta mostra a cada um a contagem por área e
+            o feed que ele teria visto “sem as suas curtidas”: quem curtiu recebeu quase só uma área; quem não curtiu
+            viu as quatro misturadas. Não há número certo, e nenhum é anunciado.
           </p>
           <p className="max-w-3xl">
             O voto é <strong>lacrado</strong>: depois de confirmar, não volta. É o que faz a turma chegar ao pico com
             uma escolha comprometida — e a revisão, depois da galeria, mostrar o que mudou com a evidência.
           </p>
           <p className="max-w-3xl text-[13px] text-unooria-neutral-500">
-            Não há nota, ranking nem “você errou”: na lousa vão só os votos por área e a média da turma, sem nomes, e
-            a folha com nomes não tem voto nem taxa. Durante a aula o feed segue uma regra fixa, sem inteligência
+            Não há nota, ranking nem “você errou”: na lousa vão só os votos por área e, depois da auditoria, quanto do
+            feed caiu numa área só (a média de quem curtiu e a de quem não curtiu), sem nomes; a folha com nomes não
+            tem voto nem concentração. Durante a aula o feed segue uma regra fixa, sem inteligência
             artificial — a IA só escreve os estandes no preparo.
           </p>
         </div>

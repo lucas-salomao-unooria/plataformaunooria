@@ -1,0 +1,179 @@
+% ===========================================================================
+%  CAPITULO 4 — Eixo 2: Experiencias (Bundles Estaticos, CDN, Assets e Planos)
+% ===========================================================================
+\chapter{Eixo 2 --- Experiências (Bundles Estáticos, CDN e Armazenamento)}
+\label{cap:eixo-experiencias}
+
+Na Plataforma Unooria, uma regra arquitetural inviolável determina que
+\textbf{experiências pedagógicas (\arq{apps/experiencias/*}) nunca viram
+serviços de contêiner no Cloud Run}. Elas são aplicações cliente puras (Vite +
+React + \cd{@edu/sdk}), compiladas para arquivos estáticos e publicadas em
+armazenamento de objetos atrás de CDN sob caminhos versionados e imutáveis:
+\cd{/\{expId\}/\{versao\}/}. Toda inteligência, correção de nota, estado de
+sessão e chamada de IA acontece no servidor (\arq{apps/api}).
+
+Além do bucket dos \emph{bundles} das experiências (\cd{-exp}), este eixo
+abrange os três outros buckets de objetos que sustentam o funcionamento das
+missões e das ferramentas do professor (\arq{storage.tf}): \cd{-assets} (mídia
+pesada pública e imagens geradas por IA), \cd{-planos} (planos de aula em
+Markdown e áudios DUA dos professores, privados e versionados) e
+\cd{-exp-mapas} (\emph{sourcemaps} privados para desofuscação de pilhas de erro).
+
+\begin{fichaeixo}{Ficha do Eixo 2 --- Experiências e Armazenamento de Objetos}
+\begin{campos}
+  \item[Arquivos de referência] \arq{storage.tf}, \arq{loadbalancer.tf},
+    \arq{scripts/publicar-manifesto.mjs} e \arq{apps/experiencias/AGENTS.md}.
+  \item[Aderência por nuvem] \sgcp~\nativo \quad \saws~\nativo \quad
+    \sazure~\nativo
+  \item[Ponto focal] Este é o eixo de \textbf{maior paridade e menor atrito de
+    migração} entre as três nuvens. GCS + Cloud CDN, Amazon S3 + CloudFront e
+    Azure Blob Storage + Azure Front Door oferecem garantias de durabilidade
+    (11 noves), versionamento de objetos, políticas de ciclo de vida e controle
+    de cache por cabeçalho \cd{Cache-Control} virtualmente idênticas.
+\end{campos}
+\end{fichaeixo}
+
+\section{Bundles estáticos imutáveis, CDN e isolamento de origem (\texttt{-exp})}
+
+O contrato entre o Hub e a experiência embutida no \cd{<iframe>} depende de duas
+propriedades da infraestrutura de entrega estática:
+
+\begin{enumerate}
+  \item \textbf{Imutabilidade e \emph{rollback} instantâneo:} publicar uma
+    experiência copia os arquivos com \emph{hash} para
+    \cd{/\{expId\}/\{versao\}/assets/*} com \cd{Cache-Control: public,
+    max-age=31536000, immutable}, e o \arq{index.html} + \arq{experiencia.json}
+    com \cd{Cache-Control: public, max-age=60}. Ativar ou reverter uma versão
+    não apaga nem move arquivos no bucket --- apenas aponta o manifesto para a
+    versão desejada (\arq{publicar-manifesto.mjs}), fazendo o \emph{rollback}
+    propagar em até 60 segundos sem invalidar o cache global da CDN.
+  \item \textbf{Origem dedicada para o \cd{postMessage}:} o Hub envia o token
+    JWT para o \cd{<iframe>} via \cd{postMessage} com \cd{targetOrigin}
+    explícito (nunca \cd{*}). Se as experiências fossem servidas por
+    \cd{https://storage.googleapis.com/\{bucket\}} (ou \cd{s3.amazonaws.com}),
+    elas dividiriam a mesma origem web (\emph{origin}) com qualquer outro bucket
+    público daquela nuvem. Por isso o Load Balancer/CDN expõe o bucket sob
+    domínio próprio do contrato (\cd{exp\_domain}, ex.:
+    \cd{https://exp-entreredes.unooria.com}).
+\end{enumerate}
+
+\begin{pecaarq}{EXP-01}{Entrega de Bundles Estáticos e Manifesto por CDN (\texttt{\{contrato\}-exp})}{\sgcp~\nativo\enspace\saws~\nativo\enspace\sazure~\nativo}
+\begin{campos}
+  \item[Como é hoje (GCP)] Bucket \textbf{Cloud Storage}
+    (\cd{\{project\_id\}-exp}) com \emph{Uniform Bucket-Level Access}, conectado
+    ao Global External Load Balancer como \cd{google\_compute\_backend\_bucket}
+    com \textbf{Cloud CDN} ativado no modo \cd{USE\_ORIGIN\_HEADERS}
+    (\arq{loadbalancer.tf}). A publicação no CI usa \cd{gcloud storage rsync}
+    com cabeçalhos diferenciados para \arq{assets/} versus \arq{index.html} e
+    \arq{experiencia.json}.
+  \item[Equivalente AWS] Bucket \textbf{Amazon S3} privado (com \emph{S3 Block
+    Public Access} ligado em 100\% do bucket) servido exclusivamente pelo
+    \textbf{Amazon CloudFront} usando \textbf{Origin Access Control (OAC)}. É um
+    pequeno ganho de segurança sobre o Backend Bucket clássico do GCP: na AWS, o
+    bucket S3 nem precisa ter leitura pública (\cd{allUsers}), pois apenas a
+    distribuição CloudFront assinada via SigV4 consegue ler os objetos. A
+    Política de Cache do CloudFront (\cd{UseOriginCacheControlHeaders}) respeita
+    exatamente o \cd{max-age=60} do \arq{index.html} e o \cd{immutable} dos
+    \emph{chunks} JS/CSS, e o deploy usa \cd{aws s3 sync}.
+  \item[Equivalente Azure] Conta de armazenamento \textbf{Azure Blob Storage}
+    (contêiner \cd{exp}) atrás do \textbf{Azure Front Door} com CDN habilitado e
+    respeito aos cabeçalhos \cd{Cache-Control} da origem. No Front Door
+    \emph{Premium}, o contêiner Blob também pode permanecer 100\% privado via
+    \emph{Private Link} entre a borda da Microsoft e o Storage Account; no
+    \emph{Standard}, usa acesso de leitura de blobs anônimos restrito ao
+    contêiner, igual ao GCS. O deploy usa \cd{az storage blob sync} ou \cd{azcopy
+    sync}.
+\end{campos}
+\end{pecaarq}
+
+\section{Mídia pesada e imagens geradas por IA (\texttt{-assets})}
+
+Para manter o repositório Git enxuto (regra inviolável: nenhum binário $>2\,\text{MB}$
+no Git), vídeos de abertura das missões (como os clipes MP4 da \cd{exp02em1b}),
+modelos 3D (\arq{mascote-unooria.glb}), áudios longos de podcasts e todas as
+imagens \arq{.webp} geradas pela IA no preparo do professor (deduplicadas por
+SHA-256 da descrição) moram no bucket \cd{\{contrato\}-assets}.
+
+\begin{pecaarq}{EXP-02}{Bucket Público de Assets e Escrita pela API (\texttt{\{contrato\}-assets})}{\sgcp~\nativo\enspace\saws~\nativo\enspace\sazure~\nativo}
+\begin{campos}
+  \item[Como é hoje (GCP)] Bucket \textbf{Cloud Storage}
+    (\cd{\{project\_id\}-assets}) exposto sob \cd{assets\_domain} no mesmo Load
+    Balancer + Cloud CDN, com política CORS permitindo \cd{GET}/\cd{HEAD} a
+    partir das origens do Hub e das Experiências (necessário para carregamento
+    de texturas WebGL/Three.js no mascote 3D e \cd{<canvas>}). A conta de
+    serviço da API possui \cd{roles/storage.objectAdmin} apenas neste bucket e
+    no de planos, gravando as imagens convertidas em \arq{.webp} via \cd{sharp}
+    com \cd{Cache-Control: public, max-age=31536000, immutable}.
+  \item[Equivalente AWS] Bucket \textbf{Amazon S3} (\cd{\{contrato\}-assets})
+    atrás do CloudFront (\cd{assets\_domain}) com \emph{Response Headers Policy}
+    para CORS (\cd{Access-Control-Allow-Origin} dinâmico por lista de origens
+    do contrato). A \emph{Task Role} da API no ECS Fargate recebe permissão IAM
+    \cd{s3:PutObject} e \cd{s3:HeadObject} restrita ao ARN do bucket, usando o
+    \cd{@aws-sdk/client-s3} (ou a interface compatível S3 do próprio GCS, se
+    desejado unificar código).
+  \item[Equivalente Azure] Contêiner \cd{assets} no \textbf{Azure Blob Storage}
+    atrás do Azure Front Door, com regras nativas de CORS no serviço de Blob e
+    permissão RBAC \emph{Storage Blob Data Contributor} atribuída à
+    \emph{Managed Identity} do Container App da API.
+\end{campos}
+\end{pecaarq}
+
+\section{Guarda versionada de planos de aula e sourcemaps privados}
+
+Os dois últimos buckets do Eixo 2 são estritamente privados (\cd{public\_read =
+false}) e nunca são expostos no Load Balancer nem na CDN:
+
+\begin{pecaarq}{EXP-03}{Buckets Privados: Planos Versionados (\texttt{-planos}) e Mapas (\texttt{-exp-mapas})}{\sgcp~\nativo\enspace\saws~\nativo\enspace\sazure~\nativo}
+\begin{campos}
+  \item[Planos e anexos DUA (\texttt{-planos})] Guarda os planos de aula anuais
+    gerados pela IA e editados pelos professores, além dos áudios e materiais
+    de Desenho Universal para a Aprendizagem (DUA). Possui \textbf{Object
+    Versioning} ativo e regra de ciclo de vida que retém versões não atuais por
+    \cd{planos\_historico\_dias} (180 dias em produção), garantindo que uma
+    edição acidental de plano nunca perca o texto anterior. Só a API lê e
+    escreve; o navegador nunca acessa este bucket diretamente.
+  \item[Sourcemaps (\texttt{-exp-mapas})] Guarda os arquivos \arq{*.js.map}
+    gerados no build das experiências (\cd{sourcemap: 'hidden'}), permitindo
+    desofuscar um \emph{stack trace} capturado em produção sem expor o código
+    original aos estudantes no bucket público \cd{-exp}.
+  \item[Tradução AWS e Azure] Tanto o \textbf{Amazon S3} (\emph{S3 Versioning} +
+    regra \cd{NoncurrentVersionExpiration} de 180 dias) quanto o \textbf{Azure
+    Blob Storage} (\emph{Blob Versioning} + política de gerenciamento de ciclo
+    de vida \cd{daysAfterVersionCreationGreaterThan: 180}) implementam esse
+    comportamento de maneira declarativa no Terraform, com paridade funcional de
+    100\%.
+\end{campos}
+\end{pecaarq}
+
+\begin{table}[H]
+\centering
+\caption{Comparativo técnico dos 4 buckets do Eixo de Experiências nas três nuvens}
+\label{tab:comparativo-buckets-exp}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}L{28mm}L{38mm}L{38mm}X@{}}
+\toprule
+\headrow \thd{Recurso / Requisito} & \thd{GCP (Cloud Storage)} & \thd{AWS (Amazon S3)} & \thd{Azure (Blob Storage)}\\
+\midrule
+SDK na API (\arq{apps/api}) &
+  \cd{@google-cloud/storage} (ADC nativo) &
+  \cd{@aws-sdk/client-s3} (IAM Task Role) &
+  \cd{@azure/storage-blob} (Managed Identity)\\
+\zebra Sincronização no CI &
+  \cd{gcloud storage rsync} &
+  \cd{aws s3 sync} &
+  \cd{azcopy sync} / \cd{az storage blob sync}\\
+Proteção da origem pública &
+  Bucket público lido pelo Cloud CDN &
+  Bucket privado lido via \textbf{CloudFront OAC} &
+  Contêiner público ou privado via \textbf{Private Link}\\
+\zebra Versionamento (\cd{-planos}) &
+  \cd{versioning = true} + \cd{num\_newer\_versions} / \cd{days\_since\_noncurrent} &
+  \cd{aws\_s3\_bucket\_versioning} + \cd{noncurrent\_version\_expiration} &
+  \cd{versioning\_enabled = true} + \cd{ManagementPolicy} por idade da versão\\
+Custo base (armazenamento Standard) &
+  $\approx$ US\$\,0,020 / GB-mês (\cd{us-east1}) &
+  $\approx$ US\$\,0,023 / GB-mês (\cd{us-east-1}) &
+  $\approx$ US\$\,0,018 a 0,021 / GB-mês (\emph{Hot tier})\\
+\bottomrule
+\end{tabularx}
+\end{table}

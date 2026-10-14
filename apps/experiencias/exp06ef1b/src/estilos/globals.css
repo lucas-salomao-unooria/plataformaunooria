@@ -299,6 +299,39 @@ body {
   right: var(--unv-spacing-s, 8px);
 }
 
+/*
+ * A lâmina do BASTIDOR (0.5.0): o último slide do carrossel é TEXTO — o
+ * `PostCard.Media` sem `src`, que o DS desenha como slide (`children`). Daqui
+ * sai só a tipografia e o respiro do conteúdo; a moldura, os pontos e o
+ * contador são do DS. Não é compensação: é conteúdo.
+ */
+.lamina-do-bastidor {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--unv-spacing-s, 8px);
+  /* O respiro lateral deixa as setas do carrossel (nas bordas) fora do texto;
+     o de baixo, os pontos e a pílula das ações que o DS sobrepõe à mídia. */
+  padding: var(--unv-spacing-l, 16px) var(--unv-spacing-4xl, 48px) 96px;
+  color: var(--unv-color-text-primary, #22272a);
+}
+
+.lamina-do-bastidor__titulo {
+  margin: 0;
+  font-size: var(--unv-font-label-md-size, 14px);
+  font-weight: 700;
+  color: var(--unv-color-text-secondary, #475157);
+}
+
+.lamina-do-bastidor__texto {
+  margin: 0;
+  /* O bastidor vai até 280 caracteres (`ProjetoDoPacoteSchema`): no corpo
+     médio ele cabe no quadrado acima da pílula das ações. */
+  font-size: var(--unv-font-body-md-size, 14px);
+  line-height: 1.5;
+}
+
 /* O "...mais" é o `Button` `link` do DS, em linha com a legenda. */
 .unv-post-card__caption > .legenda__mais {
   display: inline;
@@ -470,6 +503,31 @@ body {
 
 .galeria__resultados {
   color: var(--unv-color-text-secondary, #475157);
+}
+
+/* A contagem por área e o contraste sem as curtidas (0.5.0): `ListItem` e
+   `BadgeUnv` do DS; daqui só a lista sem marcador e o espaçamento. */
+.galeria__secao {
+  margin: 0;
+  font-size: var(--unv-font-body-md-size, 14px);
+  font-weight: 700;
+}
+
+.galeria__areas {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.galeria__contraste {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--unv-spacing-xxs, 6px);
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
 .galeria__chips {

@@ -20,7 +20,7 @@ import {
   CaptionPictogramCard,
   MicroSpinnerOverlay,
   PhotoComparisonSelector,
-  urlDaFoto,
+  altDaFoto, urlDaFoto,
 } from "./componentes/clone";
 
 /* ------------------------------ E2: o mural ------------------------------- */
@@ -96,7 +96,7 @@ export function TelaFeed({
                 if (e.detail >= 2) curtir(post.id);
               }}
             >
-              <PostCard.Media src={urlDaFoto(post.fotoId)} alt="" />
+              <PostCard.Media src={urlDaFoto(post.fotoId)} alt={altDaFoto(post.fotoId)} />
             </div>
             <PostCard.Actions liked={Boolean(curtidas[post.id])} />
             <PostCard.Caption username={TEXTO.e2.feedHeader}>{post.legenda}</PostCard.Caption>
@@ -170,7 +170,7 @@ export function TelaDecidir({
     // O PICO (E3-ALU-02): estritamente 3 elementos — preview, legenda, botão.
     return (
       <div className="fc-tela fc-tela-clone fc-pico">
-        <img className="fc-pico-preview" src={urlDaFoto(fotoId)} alt="" />
+        <img className="fc-pico-preview" src={urlDaFoto(fotoId)} alt={altDaFoto(fotoId)} />
         <p className="fc-pico-legenda">{legendaEscolhida.texto}</p>
         <ButtonInsta
           variant="primary"
@@ -283,7 +283,7 @@ export function TelaAha({
       <div className="fc-aha">
         <PostCard>
           <PostCard.Header username={TEXTO.e2.feedHeader} initials="TM" />
-          <PostCard.Media src={urlDaFoto(fotoId)} alt="" />
+          <PostCard.Media src={urlDaFoto(fotoId)} alt={altDaFoto(fotoId)} />
           <PostCard.Caption username={TEXTO.e2.feedHeader}>{legendaTexto}</PostCard.Caption>
         </PostCard>
         <BadgeInsta className="fc-badge-publicado">{TEXTO.e4.publicadoAgora}</BadgeInsta>
@@ -318,7 +318,7 @@ export function GaleriaDaTurma({ posts }: { posts: PostDaGaleria[] }): JSX.Eleme
     <div className="fc-galeria">
       {posts.map((p, i) => (
         <figure key={`${p.criadoEm}-${i}`} className="fc-galeria-item">
-          <img src={urlDaFoto(p.fotoId)} alt="" />
+          <img src={urlDaFoto(p.fotoId)} alt={altDaFoto(p.fotoId)} />
           <figcaption>{p.legendaTexto}</figcaption>
         </figure>
       ))}

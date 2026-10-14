@@ -12,6 +12,14 @@ capacidade que `admin` tem e `gestor_contrato` não.
 `app/(plataforma)/unooria/prospeccao/` (ADR-107) +
 `app/(plataforma)/unooria/arquivados/` (ADR-116).
 
+### Imagens do banco padrão do Júri (`recursos/imagens-do-juri`)
+
+Debaixo de Recursos, com link no fim de `/unooria/recursos`: `GET`/`POST
+/juri-estadual/banco-padrao/imagens`, só `admin` (prefixo `juri-estadual` do
+BFF). O laço é o `continuarGerando` (quatro por chamada); a api
+manda só ids e URLs, e a grade (aba por área) nomeia pelo número. Api fora do
+ar é erro, nunca "0 de 40".
+
 ### O segundo item: Uso de IA (ADR-105, 2026-09-15)
 
 `/unooria/uso-de-ia` — o teto diário de tokens por perfil, um cartão por perfil
@@ -82,12 +90,9 @@ sozinho depois de cada mudança. `useState` só usa o valor inicial na MONTAGEM:
 trocar de escopo faz `router.push`, o servidor devolve o painel da escola nova,
 e o componente não remontado continua exibindo o do escopo anterior.
 
-**O custo não é cosmético.** O `escolaId` que as escritas usam sai do painel em
-estado. Com o estado velho, escolher uma ESCOLA e desligar um produto gravava a
-linha no **CONTRATO** — a rede inteira — com a tela afirmando que era a escola.
-Foi medido: a suíte e2e do `admin` derrubou o produto para todas as escolas
-enquanto o roteiro dizia operar numa só, e o print mostrou o painel inteiro com
-os rótulos do escopo-contrato.
+**O custo não é cosmético** (medido na e2e do `admin`; o relato está em
+`recursos/page.tsx`): o `escolaId` das escritas sai do painel em estado, e com
+o estado velho desligar numa ESCOLA gravava no **CONTRATO** — a rede inteira.
 
 O conserto é o `key={escopo}` na página, e é a mesma doutrina do
 `<EscopoDaEscola>` (ADR-85): **quando o escopo é insumo de tudo o que a tela
@@ -117,12 +122,9 @@ razão está na ADR-87: fixar no contrato trocaria a versão do bundle SEM
 restaurar o manifesto, reabrindo o defeito do `allow-pointer-lock` que o
 histórico existe para consertar.
 
-**A janela FICA ABERTA depois de gravar**, e relê o próprio histórico. Os dois
-por medida: quem ativa uma versão precisa ver o aviso de que a conferência no
-CDN não foi possível (é ele que decide se o trabalho acabou), e sem reler o
-histórico a faixa "está em rollback" continuava na tela DEPOIS de a ativação
-resolver o rollback — a tela mentindo sobre o que ela mesma acabou de fazer.
-Visto no navegador.
+**A janela FICA ABERTA depois de gravar**, e relê o próprio histórico (visto no
+navegador): quem ativa precisa ver o aviso de que a conferência no CDN falhou,
+e sem reler a faixa "está em rollback" ficava na tela DEPOIS de resolvê-lo.
 
 **A etiqueta da versão É o botão** da janela: um botão "Versão" separado
 repetiria a informação que a etiqueta já dá.

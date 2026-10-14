@@ -4,30 +4,40 @@ import { ALERTA_DE_ERRO, esperarOuFalharCedo } from "../lib/smoke.mjs";
 import { esperarFalasDoTema, provarFalasNaCriacao, provarPodcastNaAula } from "../lib/podcast.mjs";
 
 /**
- * O Júri Estadual de Projetos (exp06ef1b 0.4.0, PRD v2 — 6º ano, unidade 1),
- * nas três pontas da sala: a professora prepara e conduz, e dois estudantes da
- * mesma turma julgam a mesma mostra — um curte, o outro não.
+ * O Júri Estadual de Projetos (exp06ef1b 0.5.0, PRD v2 com os 40 projetos de
+ * 2026-10-14 — 6º ano, unidade 1), nas três pontas da sala: a professora
+ * prepara e conduz, e dois estudantes da mesma turma julgam a mesma mostra —
+ * um curte, o outro não.
  *
  * O que esta suíte cobra, e por que cada item é uma regra do software:
  *
  * 1. **Dois caminhos de preparo** (PRD v2, E0-PROF-01/02): a mostra
- *    personalizada pela IA REAL (Vertex) — parametrizar, gerar, ver os 16
- *    estandes na curadoria e as falas do podcast — e o caminho curto "Usar
- *    Banco Padrão Oficial", sem IA, que é o que vai ao ar para a turma. A
- *    turma roda no banco padrão de propósito: as quatro áreas e as hashtags
- *    são as do PRD, e a prova da saturação não depende do que a IA escreveu.
- *    A geração por IA NÃO tem fixture: falhou, a verificação reprova (memória
- *    "Teste sempre com IA real") e a suíte segue pelo banco padrão.
+ *    personalizada pela IA REAL (Vertex) — parametrizar, gerar (cinco chamadas
+ *    na api, ~42 s; a espera vai até o teto do BFF, correndo contra a falha),
+ *    ver os 40 estandes na curadoria, uma ABA por área, e as falas do
+ *    podcast — e o caminho curto "Usar Banco Padrão Oficial", sem IA, que é o
+ *    que vai ao ar para a turma. A turma roda no banco padrão de propósito: as
+ *    quatro áreas e as hashtags são as do PRD, e a prova do afunilamento não
+ *    depende do que a IA escreveu. A geração por IA NÃO tem fixture: falhou, a
+ *    verificação reprova (memória "Teste sempre com IA real") e a suíte segue
+ *    pelo banco padrão.
+ *    **As abas do DS só renderizam a aba aberta**: contar `[data-estande]` na
+ *    página conta UMA área. Os 40 se provam percorrendo as quatro abas
+ *    (`percorrerAbas`), na curadoria, na grade de imagens e na página da
+ *    atividade.
  * 2. **O crachá é um modal sobre a timeline desfocada**, e a TopBar do
  *    Unoovista traz `@jurado_oficial` em toda tela do clone; a barra tem as
  *    QUATRO abas da copy (Início, Busca, Notificações, Jurado), e a Busca está
- *    fechada durante o julgamento (responde com o aviso, como comentar).
- * 3. **A saturação** (melhoria 1): duas curtidas na mesma área a fazem líder,
- *    e os posts 5 a 10 vêm SÓ dela, repetindo os projetos em outros formatos.
- *    Quem curte chega à galeria com 69–75% da feira escondida; quem não curte,
- *    com bem menos — os dois números são da api, nunca da copy.
+ *    fechada durante o julgamento (responde com o aviso, como comentar). O
+ *    carrossel tem três fotos e, na 4ª lâmina, os "Bastidores do estande" —
+ *    que até a 0.4.x era um post à parte.
+ * 3. **O afunilamento sem repetição** (instrumento 3.0.0): dez posts, todos
+ *    apresentação, dez projetos DISTINTOS. Quem curte cedo recebe os posts 5 a
+ *    10 só da área curtida — projetos NOVOS dela (7/1/1/1); quem não curte vê
+ *    as quatro misturadas (3/3/2/2). Os dois ficam com 30 de 40 fora do feed: o
+ *    que muda é QUAIS áreas sumiram — os números são da api, nunca da copy.
  * 4. **Salvar não pesa** (melhoria 6): o segundo estudante salva três posts e
- *    o feed dele segue variado.
+ *    o feed dele segue variado (3/3/2/2).
  * 5. **A cédula tem quatro elementos** — o título, os projetos do feed, a
  *    certeza ("Sim"/"Com certeza") e o botão —, sem justificativa nem frase
  *    grifada. Parado 60 s com ela aberta, o aviso da comissão acende NO TOPO
@@ -36,19 +46,27 @@ import { esperarFalasDoTema, provarFalasNaCriacao, provarPodcastNaAula } from ".
  * 6. **O lacre e a espera**: o carimbo com o protocolo, e a plenária com três
  *    elementos (brasão, carimbo, ordem). O F5 volta à espera.
  * 7. **Um botão só** ("Liberar Auditoria"), e ele não volta. Não há rodada de
- *    desvio (saiu com a melhoria 6).
- * 8. **A Galeria Oculta**: o badge "{n}% dos projetos da feira ficaram fora do
- *    seu feed" com o número REAL, a grade de três colunas que cresce com os
- *    ocultos, a busca por hashtag e por texto, a ficha de auditoria e a
- *    revisão de DOIS botões — "Manter meu voto inicial" só acende depois de
- *    abrir um oculto. O F5 depois da revisão não reabre a galeria.
+ *    desvio (saiu com a melhoria 6). A lousa só mostra a CONCENTRAÇÃO do feed
+ *    (quem curtiu × quem não curtiu, os dois `MetricCard`) depois dele: no pico
+ *    ela entregaria que o feed se adaptou.
+ * 8. **A Galeria Oculta**: "30 de 40 estandes nunca chegaram ao seu feed" —
+ *    IGUAL para quem curtiu e para quem não curtiu —, o que chegou POR ÁREA
+ *    ("Tecnologia: você viu 7 de 10"), e o contraste "Sem as suas curtidas, o
+ *    seu feed teria trazido:", que para quem não curtiu é o próprio feed real
+ *    e para quem curtiu é outro. A grade dos ocultos é de UMA área, a do chip
+ *    (abre na que mais ficou fora, e só o TOQUE no chip conta como busca), com
+ *    três colunas; a busca por texto, a ficha de auditoria e a revisão de DOIS
+ *    botões — "Manter meu voto inicial" só acende depois de abrir um oculto, e
+ *    a troca filtra os estandes por área. O F5 depois da revisão não reabre a
+ *    galeria.
  * 9. **Etapa 5, da escola**: o Léo, o par simulado OPOSTO lado a lado (gerado
  *    pelo servidor) e a cadeia com os blocos do 01e; a ordem errada é 422
  *    `ordem-incorreta` e devolve os blocos à bandeja sem dizer qual vaga errou.
  * 10. **Mariana e o Canal B**: os cinco cartões literais (3 de mecanismo, 2 de
  *    atitude), as três enquetes nos Stories sem acerto, e o fim com a faixa da
  *    Unooria (o infográfico "Como os robôs leem nossas curtidas").
- * 11. **O painel da professora** não tem voto, taxa nem nível por criança;
+ * 11. **O painel da professora** não tem voto, taxa, concentração nem nível
+ *    por criança;
  *    mostra as categorias que cada um buscou, e as três habilidades da ficha
  *    (EF06CO10, EF06CO01, EF06CO03) ficam no painel de habilidades.
  * 12. **O podcast de recapitulação** do banco padrão é o roteiro fixo
@@ -107,9 +125,14 @@ const COPY = {
   cabecalhoDaCedula: "Selecione o projeto que receberá a nota máxima e o troféu de Grande Campeão Estadual.",
   inatividade: "Jurado, a plenária aguarda seu voto para prosseguir.",
   espera: "Aguardando o encerramento do prazo de votação da comissão de jurados.",
-  badge: (n) => `${n}% dos projetos da feira ficaram fora do seu feed`,
-  gradeOculta: "Projetos que não chegaram ao seu feed",
+  badge: (ocultos, total) => `${ocultos} de ${total} estandes nunca chegaram ao seu feed`,
+  vistosNaArea: (nome, vistos, total) => `${nome}: você viu ${vistos} de ${total}`,
+  semCurtidas: "Sem as suas curtidas, o seu feed teria trazido:",
+  semCurtidasDaArea: (nome, posts) => `${nome} ${posts}`,
+  gradeOculta: (nome) => `Projetos de ${nome} que não chegaram ao seu feed`,
   gradeBusca: "Projetos encontrados",
+  grupoDaRevisao: "Projetos da mostra",
+  bastidor: "Bastidores do estande",
   busca: "Pesquisar projetos ou categorias...",
   manter: "Manter meu voto inicial",
   manterTravado: "Inspecione ao menos um projeto que não apareceu no seu feed antes de manter o voto.",
@@ -208,6 +231,57 @@ function fraseDosVotos({ votaram, total }, porComputador) {
   return `${votaram} de ${total} ${sujeito} ${votaram === 1 && total === 1 ? "votou" : "votaram"}.`;
 }
 
+/**
+ * As ABAS por área (o `Tabs` do DS, nas telas do professor): só a aba ABERTA é
+ * renderizada, então contar itens na página conta uma área só. Toca cada aba,
+ * espera ela ficar selecionada e conta os itens do contêiner — devolve o
+ * rótulo ("Tecnologia · 10") e a contagem de cada uma, e volta à primeira.
+ */
+async function percorrerAbas(pagina, conteiner, seletorDoItem) {
+  const abas = conteiner.getByRole("tab");
+  await hidratado(pagina, abas);
+  const porAba = [];
+  const quantas = await abas.count();
+  for (let i = 0; i < quantas; i += 1) {
+    const aba = abas.nth(i);
+    await aba.click();
+    await pagina.waitForFunction((el) => el.getAttribute("aria-selected") === "true", await aba.elementHandle(), {
+      timeout: 10_000,
+    });
+    porAba.push({
+      /* O `Tab` do DS desenha o ícone padrão (`add`, por ligadura): fora do rótulo. */
+      rotulo: (await aba.innerText()).replace(/\s+/g, " ").trim().replace(/^add /, ""),
+      itens: await conteiner.locator(seletorDoItem).count(),
+    });
+  }
+  if (quantas > 0) await abas.first().click();
+  return porAba;
+}
+
+/** "Tecnologia · 10; Meio Ambiente · 10; …" — para a mensagem da verificação. */
+function resumoDasAbas(porAba) {
+  return porAba.map((a) => `${a.rotulo} → ${a.itens}`).join("; ");
+}
+
+/** Quantos posts de cada área um feed tem, em ordem decrescente: [7, 1, 1, 1]. */
+function distribuicao(contagemPorArea) {
+  return Object.values(contagemPorArea).sort((a, b) => b - a);
+}
+
+/** Os posts de um feed contados por área: `{ area_a: 7, … }`. */
+function postsPorArea(posts) {
+  const total = {};
+  for (const post of posts) total[post.area] = (total[post.area] ?? 0) + 1;
+  return total;
+}
+
+/** A área que a grade dos ocultos abre: a que MAIS ficou fora (empate: a ordem das áreas) — `regras.ts#areaComMaisOcultos`. */
+function areaComMaisOcultos(porArea) {
+  let melhor = null;
+  for (const a of porArea) if (!melhor || a.total - a.vistos > melhor.total - melhor.vistos) melhor = a;
+  return melhor?.area ?? null;
+}
+
 /** As caixas de dois elementos lado a lado: mesma linha, sem sobreposição. */
 async function ladoALado(locator) {
   const caixas = await locator.evaluateAll((els) => els.map((e) => e.getBoundingClientRect().toJSON()));
@@ -223,23 +297,24 @@ await suite(
     titulo: "O Júri Estadual de Projetos — o feed que esconde a mostra",
     subtitulo: "curtir, lacrar o voto, auditar o que nunca chegou ao feed e montar a regra que escondeu",
     contexto:
-      "A criança é jurada de uma mostra científica estadual num feed de rede social: dezesseis projetos de " +
-      "quatro áreas. As curtidas dela mudam o que o feed mostra, sem aviso: depois que uma área vence, o resto " +
-      "do feed é só dela, em outros formatos. Ela lacra o voto e a turma espera junta, enquanto a professora " +
-      "projeta como os votos se dividiram. Na Galeria Oculta cada uma vê, com o número real, quanto da feira " +
-      "ficou fora do seu feed — e depois remonta a regra que fez isso.",
+      "A criança é jurada de uma mostra científica estadual num feed de rede social: quarenta projetos de " +
+      "quatro áreas, dez em cada. As curtidas dela mudam o que o feed mostra, sem aviso: depois que uma área " +
+      "vence, o resto do feed traz só projetos novos dela. Ela lacra o voto e a turma espera junta, enquanto a " +
+      "professora projeta como os votos se dividiram. Na Galeria Oculta todo mundo descobre que 30 dos 40 " +
+      "estandes ficaram fora do feed — e cada uma vê QUAIS áreas sumiram, e o feed que teria tido sem as " +
+      "curtidas. Depois remonta a regra que fez isso.",
     prova: [
-      "A professora prepara pela IA real (16 estandes e as falas do podcast) e põe no ar pelo Banco Padrão Oficial, sem IA",
-      "O crachá é um modal sobre a timeline desfocada; a TopBar traz @jurado_oficial e a barra tem as quatro abas, com a Busca fechada",
-      "Duas curtidas na mesma área saturam o feed: os posts 5 a 10 são só dela, e 69–75% da feira fica fora",
-      "Salvar grava e não pesa: quem só salva vê um feed variado",
+      "A professora prepara pela IA real (40 estandes, uma aba por área, e as falas do podcast) e põe no ar pelo Banco Padrão Oficial, sem IA",
+      "O crachá é um modal sobre a timeline desfocada; a TopBar traz @jurado_oficial, a barra tem as quatro abas, com a Busca fechada, e o carrossel termina nos Bastidores do estande",
+      "Dez posts sem repetir nenhum; quem curte cedo recebe os posts 5 a 10 só da área curtida, com projetos novos (7/1/1/1)",
+      "Salvar grava e não pesa: quem só salva vê as quatro áreas misturadas (3/3/2/2)",
       "A cédula tem quatro elementos, e parado 60 s com ela aberta o aviso acende no topo e a professora vê o ícone de ocioso",
       "O lacre e a espera com três elementos; o F5 volta à espera",
-      "Um botão só, Liberar Auditoria, e ele não volta",
-      "A Galeria Oculta com a taxa real, a grade de três colunas, a busca e a revisão de dois botões — Manter só depois de abrir um oculto",
+      "Um botão só, Liberar Auditoria, e ele não volta; só depois dele a lousa mostra a concentração do feed (quem curtiu × quem não curtiu)",
+      "A Galeria Oculta: 30 de 40 para os dois, o que chegou por área, o feed “sem as suas curtidas” (o real de quem não curtiu, outro para quem curtiu), a grade por área e a revisão de dois botões — Manter só depois de abrir um oculto",
       "A Etapa 5 com o par simulado oposto lado a lado, e a cadeia errada respondida com 422 sem dizer qual vaga",
       "Mariana, os cinco cartões, as três enquetes do Canal B sem acerto e a faixa da Unooria no fim",
-      "O painel da professora: sem voto, taxa nem nível; as categorias buscadas; EF06CO10, EF06CO01 e EF06CO03",
+      "O painel da professora: sem voto, taxa, concentração nem nível; as categorias buscadas; EF06CO10, EF06CO01 e EF06CO03",
     ],
     comando: "node scripts/e2e/estudante/13-juri-estadual.mjs",
   },
@@ -353,9 +428,14 @@ await suite(
       const respostaDasFalas = esperarFalasDoTema(prof, EXP_ID);
       respostaDasFalas.catch(() => undefined);
       await prof.locator('[data-acao="gerar-mostra"]').click();
+      /* A geração são CINCO chamadas na api (as categorias, depois as quatro
+         áreas em paralelo; ~42 s medidos). A espera é a UNIÃO dos desfechos —
+         a curadoria ou a falha —, e o teto passa do teto do BFF (180 s): quem
+         decide quando desistir é o produto, que responde com a falha, nunca o
+         relógio do roteiro. */
       const desfecho = await primeiroQueAparecer(
         { curadoria, falha: falhaDaIa },
-        { timeout: 120_000, oQue: "a geração da mostra com IA" },
+        { timeout: 200_000, oQue: "a geração da mostra com IA" },
       );
       if (desfecho === "falha") {
         const texto = (await falhaDaIa.first().innerText().catch(() => "")).replace(/\s+/g, " ").trim();
@@ -366,16 +446,27 @@ await suite(
         });
         r.exigir(false, `a IA REAL gerou a mostra (a tela respondeu: “${texto.slice(0, 200)}”)`);
       } else {
-        const estandes = await curadoria.locator("[data-estande]").count();
-        const areasNaTela = await curadoria.locator("section[data-area]").count();
-        r.exigir(estandes === 16 && areasNaTela === 4, `a IA real escreveu 16 estandes em 4 áreas (${estandes} em ${areasNaTela})`);
+        const abasDaCuradoria = await percorrerAbas(prof, curadoria, "[data-estande]");
+        const estandes = abasDaCuradoria.reduce((n, a) => n + a.itens, 0);
+        r.exigir(
+          abasDaCuradoria.length === 4 && abasDaCuradoria.every((a) => a.itens === 10) && estandes === 40,
+          `a IA real escreveu 40 estandes, dez em cada uma das 4 abas — só a aberta é desenhada (${resumoDasAbas(abasDaCuradoria)})`,
+        );
+        r.exigir(
+          abasDaCuradoria.every((a) => /\S · (10|\d+ com ajuste)$/.test(a.rotulo)),
+          `o rótulo de cada aba é “Nome · 10” (ou quantos estandes da área pedem ajuste): ${abasDaCuradoria.map((a) => a.rotulo).join(" | ")}`,
+        );
         await curadoria.scrollIntoViewIfNeeded();
         await r.registrar(prof, "curadoria-da-ia", {
           titulo: "A mostra escrita pela IA, na curadoria",
-          mostra: "Os dezesseis estandes que o Vertex escreveu, em quatro categorias com nome e hashtag, cada um com Editar e Regenerar.",
+          mostra:
+            "Os quarenta estandes que o Vertex escreveu, uma aba por área (“Nome · 10”), a primeira aberta: a " +
+            "categoria com nome e hashtag e os dez estandes dela, cada um com Editar e Regenerar.",
           prova:
             "A IA traz as categorias no pacote (melhoria 2: o Zod valida o FORMATO, não uma lista fixa), e o rascunho " +
-            "não persiste: só o “Aprovar textos” grava.",
+            "não persiste: só o “Aprovar textos” grava. Quarenta cartões soltos não se leem: a aba mostra uma área " +
+            "por vez e diz no rótulo quantos estandes dela pedem ajuste.",
+          detalhe: resumoDasAbas(abasDaCuradoria),
           inteira: true,
         });
         await provarFalasNaCriacao(r, prof, await respostaDasFalas, {
@@ -405,10 +496,12 @@ await suite(
     );
     await r.registrar(prof, "banco-padrao", {
       titulo: "O Banco Padrão Oficial, em um toque",
-      mostra: "A confirmação: os 16 estandes da Feira de Ciências e Sustentabilidade prontos, sem IA, com a arte da missão.",
+      mostra:
+        "A confirmação: os 40 estandes da Feira de Ciências e Sustentabilidade prontos, sem IA, com as imagens do " +
+        "banco padrão (e a arte da missão no estande que ainda não tem imagem).",
       prova:
         "É o caminho curto do PRD (E0-PROF-02) e o fallback quando falta cota de IA: a atividade fica gravada, fora " +
-        "do ar, com as imagens já aprovadas (a arte procedural).",
+        "do ar, com as imagens já aprovadas — as do banco padrão que existem, a arte procedural no resto.",
     });
     const continuar = prof.locator('[data-acao="continuar-criacao"]');
     await prof.locator('[data-acao="continuar-criacao"]:not([disabled])').waitFor({ timeout: 10_000 });
@@ -452,9 +545,44 @@ await suite(
     await prof.waitForSelector('[data-etapa="exploracao"]', { timeout: 20_000 });
     await r.registrar(prof, "atividade-em-andamento", {
       titulo: "A atividade em andamento, e o botão da aula",
-      mostra: "A página da atividade do banco padrão: em andamento, os 16 estandes e o painel da aula com Liberar Auditoria.",
+      mostra:
+        "A página da atividade do banco padrão: em andamento, as imagens e os 40 estandes em abas por área, e o " +
+        "painel da aula com Liberar Auditoria.",
       prova: "Um botão só (PRD v2): Liberar Auditoria abre a Galeria Oculta para a turma inteira, e não volta.",
       inteira: true,
+    });
+
+    /* Os 40 na página da atividade, nas DUAS grades com abas: os estandes (só
+       leitura) e as imagens. Só a aba aberta é desenhada, então a prova anda
+       pelas quatro. */
+    const estandesDaAtividade = prof.locator("[data-estandes-da-atividade]");
+    await estandesDaAtividade.waitFor({ timeout: 20_000 });
+    r.exigir(
+      (await estandesDaAtividade.getAttribute("data-total-de-estandes")) === "40",
+      `a página da atividade diz o total do PACOTE: 40 estandes (${await estandesDaAtividade.getAttribute("data-total-de-estandes")})`,
+    );
+    const abasDosEstandes = await percorrerAbas(prof, estandesDaAtividade, "[data-estande]");
+    r.exigir(
+      abasDosEstandes.length === 4 && abasDosEstandes.every((a) => a.itens === 10 && /\S · 10$/.test(a.rotulo)),
+      `os estandes da atividade: quatro abas “Nome · 10”, dez estandes em cada (${resumoDasAbas(abasDosEstandes)})`,
+    );
+    const gradeDeImagens = prof.locator("[data-imagens-do-juri]");
+    const abasDasImagens = await percorrerAbas(prof, gradeDeImagens, "[data-imagem-do-estande]");
+    r.exigir(
+      abasDasImagens.length === 4 && abasDasImagens.every((a) => a.itens === 10 && /\S · (10|\d+ sem imagem)$/.test(a.rotulo)),
+      `a grade de imagens: quatro abas, dez estandes em cada, e o rótulo diz quantos estão sem imagem (${resumoDasAbas(abasDasImagens)})`,
+    );
+    /* A foto enquadra a barra de abas (o contêiner é maior que a tela). */
+    await estandesDaAtividade.getByRole("tablist").first().evaluate((el) => el.scrollIntoView({ block: "start" }));
+    await r.registrar(prof, "estandes-em-abas", {
+      titulo: "Quarenta estandes, uma aba por área",
+      mostra:
+        "“Os estandes da mostra” na página da atividade: “São 40 estandes…”, as quatro abas (“Tecnologia · 10”, …) " +
+        "e os dez cartões da área aberta.",
+      prova:
+        "O total vem do PACOTE, não de uma constante (o de 16 da 0.4.x continua abrindo). As abas do DS desenham " +
+        "só a área aberta: a suíte tocou as quatro e contou dez em cada — e o mesmo na grade de imagens.",
+      detalhe: `estandes: ${resumoDasAbas(abasDosEstandes)} · imagens: ${resumoDasAbas(abasDasImagens)}`,
     });
 
     // ═══ ESTUDANTES: utilitários ═════════════════════════════════════════
@@ -471,7 +599,7 @@ await suite(
       await cartao.click();
       await pagina.waitForURL(`**/exp/${EXP_ID}**`, { timeout: 30_000 });
     };
-    const frameDe = (pagina) => () => pagina.frameLocator('iframe[title="experiencia"]');
+    const frameDe = (pagina) => () => pagina.frameLocator('iframe[data-experiencia]');
     const semAnimacao = (q) =>
       q()
         .locator("body")
@@ -621,29 +749,59 @@ await suite(
     await aba("Início").click();
     await artigos1.first().waitFor({ timeout: 10_000 });
 
-    /* O CARROSSEL anda com o MOUSE (arrasto real) e pelas setas. */
+    /* O CARROSSEL anda com o MOUSE (arrasto real) e pelas setas. São três fotos
+       e, na 4ª lâmina, os BASTIDORES do estande (0.5.0: o bastidor deixou de
+       ser um post à parte e virou parte do post). */
     const primeiroPost = artigos1.first();
     const midia = primeiroPost.locator('[aria-roledescription="carrossel"]').first();
     await midia.scrollIntoViewIfNeeded();
-    const caixa = await midia.boundingBox();
-    if (!caixa) throw new Error("a mídia do primeiro post não tem caixa na tela");
-    const yDoMeio = caixa.y + caixa.height / 2;
-    await p.mouse.move(caixa.x + caixa.width * 0.8, yDoMeio);
-    await p.mouse.down();
-    await p.mouse.move(caixa.x + caixa.width * 0.5, yDoMeio, { steps: 6 });
-    await p.mouse.move(caixa.x + caixa.width * 0.2, yDoMeio, { steps: 6 });
-    await p.mouse.up();
+    const arrastarParaAEsquerda = async () => {
+      const caixa = await midia.boundingBox();
+      if (!caixa) throw new Error("a mídia do primeiro post não tem caixa na tela");
+      const yDoMeio = caixa.y + caixa.height / 2;
+      await p.mouse.move(caixa.x + caixa.width * 0.8, yDoMeio);
+      await p.mouse.down();
+      await p.mouse.move(caixa.x + caixa.width * 0.5, yDoMeio, { steps: 6 });
+      await p.mouse.move(caixa.x + caixa.width * 0.2, yDoMeio, { steps: 6 });
+      await p.mouse.up();
+    };
+    await arrastarParaAEsquerda();
     await primeiroPost.locator('[aria-label="Foto 2 de 3"]').first().waitFor({ timeout: 10_000 });
+    await arrastarParaAEsquerda();
+    await primeiroPost.locator('[aria-label="Foto 3 de 3"]').first().waitFor({ timeout: 10_000 });
+    await arrastarParaAEsquerda();
+    const laminaDoBastidor = primeiroPost.locator(`[aria-roledescription="carrossel"][aria-label="${COPY.bastidor}"]`).first();
+    await laminaDoBastidor.waitFor({ timeout: 10_000 }).catch(() => {
+      throw new Error(`o terceiro arrasto não levou à 4ª lâmina, “${COPY.bastidor}”`);
+    });
+    const textoDaLamina = (await laminaDoBastidor.innerText()).replace(/\s+/g, " ").trim();
+    const bastidorDaApi = (abertura[0].bastidor ?? "").replace(/\s+/g, " ").trim();
+    r.exigir(
+      bastidorDaApi !== "" && textoDaLamina.includes(COPY.bastidor) && textoDaLamina.includes(bastidorDaApi),
+      `a 4ª lâmina, alcançada arrastando com o mouse, é “${COPY.bastidor}” com o texto do bastidor que a api mandou no post (${bastidorDaApi.slice(0, 60)}…)`,
+    );
+    r.exigir(
+      (await primeiroPost.locator('[data-seta="proxima"], [aria-label="Próxima foto"]').count()) === 0,
+      "na última lâmina, a seta de avançar some: o carrossel tem quatro lâminas, nem uma a mais",
+    );
+    await semAnimacao(q);
+    await r.registrar(p, "carrossel-bastidor", {
+      titulo: "O carrossel termina nos Bastidores do estande",
+      mostra: `O primeiro post depois de três arrastos com o mouse: a 4ª lâmina, “${COPY.bastidor}”, com o texto do protótipo em teste.`,
+      prova:
+        "Até a 0.4.x o bastidor era um post SEPARADO, que repetia o projeto (a saturação). Desde a 0.5.0 nenhum post " +
+        "se repete: o bastidor é a última lâmina do próprio post, com o mesmo gesto e as mesmas setas das fotos.",
+    });
     await primeiroPost.locator('[data-seta="anterior"]').click();
-    await primeiroPost.locator('[aria-label="Foto 1 de 3"]').first().waitFor({ timeout: 10_000 });
-    r.exigir(true, "o carrossel anda arrastando com o mouse (foto 2 de 3) e volta pela seta (foto 1 de 3)");
+    await primeiroPost.locator('[aria-label="Foto 3 de 3"]').first().waitFor({ timeout: 10_000 });
+    r.exigir(true, "o carrossel anda arrastando com o mouse (fotos 2 e 3, depois os bastidores) e volta pela seta (foto 3 de 3)");
 
     /* COMENTAR responde com o aviso, e não pesa. */
     await primeiroPost.getByRole("button", { name: "Comentar publicação", exact: true }).click();
     await aviso(q, COPY.comentariosFechados).waitFor({ timeout: 10_000 });
     r.exigir((await sessaoDe(p)).feed.curtidos.length === 0, "comentar responde com o aviso da comissão e não vira sinal do feed");
 
-    // ── ESTUDANTE 1: curtir duas vezes a mesma área — a saturação ────────
+    // ── ESTUDANTE 1: curtir duas vezes a mesma área — o afunilamento ─────
     const areaCurtida = abertura[0].area;
     const curtidas = [];
     const curtir = async (postId) => {
@@ -663,26 +821,34 @@ await suite(
     });
     const feed1 = (await sessaoDe(p)).feed;
     if (!r.exigir(curtidas.length === 2, `o primeiro estudante curtiu DUAS vezes a mesma área (${areaCurtida}: ${curtidas.join(", ")})`)) {
-      throw new Error("pré-condição da saturação: o feed não serviu um segundo post da área curtida (regras/afunilamento.ts)");
+      throw new Error("pré-condição do afunilamento: o feed não serviu um segundo post da área curtida (regras/afunilamento.ts)");
     }
     const depoisDaAbertura = feed1.posts.slice(4);
     const projetosDistintos1 = new Set(feed1.posts.map((x) => x.projetoId)).size;
     r.exigir(
-      feed1.posts.length === 10 && depoisDaAbertura.every((x) => x.area === areaCurtida),
-      `saturação: os posts 5 a 10 são todos de ${areaCurtida} (${depoisDaAbertura.map((x) => x.area).join(", ")})`,
+      feed1.posts.length === 10 &&
+        feed1.posts.every((x) => x.tipo === "apresentacao") &&
+        new Set(feed1.posts.map((x) => x.id)).size === 10 &&
+        projetosDistintos1 === 10,
+      `dez posts, todos apresentação, dez projetos DISTINTOS — nenhum post se repete (${feed1.posts.length} posts, ${projetosDistintos1} projetos, formatos: ${[...new Set(feed1.posts.map((x) => x.tipo))].join(", ")})`,
     );
     r.exigir(
-      projetosDistintos1 >= 4 && projetosDistintos1 <= 5,
-      `quem curte vê 4–5 projetos distintos, repetidos em outros formatos (${projetosDistintos1}: ${[...new Set(depoisDaAbertura.map((x) => x.tipo))].join(", ")})`,
+      depoisDaAbertura.every((x) => x.area === areaCurtida),
+      `quem curte cedo recebe os posts 5 a 10 só de ${areaCurtida}, com projetos NOVOS dela (${depoisDaAbertura.map((x) => x.area).join(", ")})`,
+    );
+    const distribuicao1 = distribuicao(postsPorArea(feed1.posts));
+    r.exigir(
+      JSON.stringify(distribuicao1) === "[7,1,1,1]",
+      `o feed de quem curtiu cedo fica 7/1/1/1 por área (${distribuicao1.join("/")})`,
     );
     await semAnimacao(q);
-    await r.registrar(p, "feed-saturado", {
+    await r.registrar(p, "feed-afunilado", {
       titulo: "Dez posts, e a cédula acende",
-      mostra: "O fim do feed: os mesmos projetos da área curtida em formatos diferentes, e o botão da cédula.",
+      mostra: "O fim do feed: projetos novos da área curtida, um atrás do outro, nenhum repetido, e o botão da cédula.",
       prova:
-        "Duas curtidas fizeram a área líder, e o resto do feed foi só dela — sem aviso nenhum. A criança vai votar " +
-        "achando que viu a mostra.",
-      detalhe: `${projetosDistintos1} projetos distintos em 10 posts`,
+        "Duas curtidas fizeram a área líder, e o resto do feed foi só dela — sem aviso nenhum e sem repetir post: a " +
+        "área tem dez projetos. A criança vai votar achando que viu a mostra.",
+      detalhe: `${projetosDistintos1} projetos distintos em 10 posts · por área ${distribuicao1.join("/")}`,
     });
 
     // ── ESTUDANTE 1: a cédula de quatro elementos, e o lacre ─────────────
@@ -733,9 +899,14 @@ await suite(
     });
     const feed2 = (await sessaoDe(p2)).feed;
     r.exigir(feed2.curtidos.length === 0 && feed2.salvos.length === 3, `o segundo estudante só salvou (${feed2.salvos.length} salvos, ${feed2.curtidos.length} curtidas)`);
+    const distribuicao2 = distribuicao(postsPorArea(feed2.posts));
     r.exigir(
-      new Set(feed2.posts.slice(4).map((x) => x.area)).size > 1,
-      "salvar não pesa: o feed de quem só salvou segue variado depois da abertura",
+      feed2.posts.length === 10 && new Set(feed2.posts.map((x) => x.projetoId)).size === 10,
+      `o feed de quem só salvou também tem dez projetos distintos (${new Set(feed2.posts.map((x) => x.projetoId)).size})`,
+    );
+    r.exigir(
+      JSON.stringify(distribuicao2) === "[3,3,2,2]",
+      `salvar não pesa: quem só salvou vê as quatro áreas misturadas, 3/3/2/2 (${distribuicao2.join("/")})`,
     );
 
     /* A CÉDULA PARADA: 60 s sem toque com ela aberta. A espera é o desfecho (o
@@ -798,6 +969,11 @@ await suite(
     r.exigir((await lousa.locator("[data-votos-por-area] li").count()) === 4, "a lousa lista os votos das quatro áreas");
     const botaoDaAula = prof.locator('[data-gate="galeria"]');
     r.exigir((await botaoDaAula.innerText()).includes("Liberar Auditoria"), "o botão da aula é “Liberar Auditoria”");
+    const concentracaoNaLousa = prof.locator("[data-concentracao-do-feed]");
+    r.exigir(
+      (await concentracaoNaLousa.count()) === 0 && !/Quem curtiu algum post|Invisibilidade média/.test(await lousa.innerText()),
+      "no pico a lousa NÃO mostra a concentração do feed (nem a antiga invisibilidade média): projetada antes da auditoria, ela diria que o feed se adaptou",
+    );
     await lousa.scrollIntoViewIfNeeded();
     await r.registrar(prof, "lousa-do-pico", {
       titulo: "A lousa do pico",
@@ -808,7 +984,46 @@ await suite(
     await apertar(prof, "galeria");
     r.exigir((await prof.locator("[data-gate]").count()) === 0, "depois de Liberar Auditoria, não há botão de etapa: ele não volta e não há rodada de desvio");
 
-    // ═══ A GALERIA OCULTA: as duas taxas, reais ══════════════════════════
+    /* A CONCENTRAÇÃO do feed, na lousa, só agora: entre quem votou, a média da
+       fração do feed na área mais vista — de quem curtiu e de quem não curtiu.
+       O número é da api (`resumo.concentracao`); a tela o projeta. */
+    const painelDaAuditoria = await esperarNaApi(
+      prof,
+      `${caminhoDaTurma}/painel`,
+      (c) => c?.resumo?.concentracao?.curtiram != null && c?.resumo?.concentracao?.naoCurtiram != null,
+      { oQue: "a concentração do feed no painel" },
+    );
+    const concentracao = painelDaAuditoria.resumo.concentracao;
+    r.exigir(
+      concentracao.curtiram === 70 && concentracao.naoCurtiram === 30,
+      `a concentração da api: quem curtiu teve 70% do feed numa área só, quem não curtiu 30% (veio ${concentracao.curtiram}% × ${concentracao.naoCurtiram}%)`,
+    );
+    await esperarOuFalharCedo(concentracaoNaLousa, prof.locator(ALERTA_DE_ERRO), {
+      timeout: 30_000,
+      oQue: "a concentração do feed na lousa, depois de Liberar Auditoria",
+    });
+    const textoDaConcentracao = (await concentracaoNaLousa.innerText()).replace(/\s+/g, " ");
+    r.exigir(
+      textoDaConcentracao.includes("Quem curtiu algum post") &&
+        textoDaConcentracao.includes("Quem não curtiu nenhum") &&
+        textoDaConcentracao.includes(`${concentracao.curtiram}%`) &&
+        textoDaConcentracao.includes(`${concentracao.naoCurtiram}%`),
+      `a lousa projeta os dois MetricCards — “Quem curtiu algum post” ${concentracao.curtiram}% e “Quem não curtiu nenhum” ${concentracao.naoCurtiram}% — com os números da api`,
+    );
+    await concentracaoNaLousa.scrollIntoViewIfNeeded();
+    await r.registrar(prof, "lousa-da-concentracao", {
+      titulo: "A lousa depois da auditoria: a concentração do feed",
+      mostra:
+        `“Quanto do feed caiu numa área só”: Quem curtiu algum post ${concentracao.curtiram}%, Quem não curtiu ` +
+        `nenhum ${concentracao.naoCurtiram}%, e a frase que a professora lê em voz alta.`,
+      prova:
+        "Com 40 estandes, todo computador fica com 30 de fora — a antiga “invisibilidade média” seria sempre a " +
+        "mesma. O contraste é QUAIS áreas sumiram: quem curtiu teve quase todo o feed numa área. Só agregado, sem " +
+        "nome, e só depois do botão: no pico, ele entregaria a descoberta da galeria.",
+      detalhe: `concentracao ${concentracao.curtiram}/${concentracao.naoCurtiram}`,
+    });
+
+    // ═══ A GALERIA OCULTA: 30 de 40 para os dois — o que muda é QUAIS ═════
     const tituloDaGaleria = (qq) => qq().getByRole("heading", { name: "Galeria Oculta da Mostra" }).first();
     await tituloDaGaleria(q).waitFor({ timeout: 40_000 });
     await tituloDaGaleria(q2).waitFor({ timeout: 40_000 });
@@ -817,49 +1032,173 @@ await suite(
     if (galeria1.status !== 200 || galeria2.status !== 200) {
       throw new Error(`a galeria não abriu pela api (HTTP ${galeria1.status} e ${galeria2.status})`);
     }
-    const taxa1 = galeria1.corpo.invisibilidade;
-    const taxa2 = galeria2.corpo.invisibilidade;
-    r.exigir((await q().getByText(COPY.badge(taxa1.percentual)).count()) > 0, `o badge do primeiro é o número da api: “${COPY.badge(taxa1.percentual)}”`);
-    r.exigir((await q2().getByText(COPY.badge(taxa2.percentual)).count()) > 0, `o badge do segundo é o número da api: “${COPY.badge(taxa2.percentual)}”`);
+    const g1 = galeria1.corpo;
+    const g2 = galeria2.corpo;
+    const categorias1 = (await sessaoDe(p)).categorias;
+    const nomeDa = (area) => categorias1.find((c) => c.area === area)?.nome ?? area;
+    const chipDa = (area) => `#${(categorias1.find((c) => c.area === area)?.hashtag ?? area).replace(/^#+/, "")}`;
+    const porAreaEmTexto = (porArea) => porArea.map((a) => `${nomeDa(a.area)} ${a.vistos}/${a.total}`).join(", ");
+    const contagemEmTexto = (contagem) => Object.entries(contagem).map(([area, n]) => `${nomeDa(area)} ${n}`).join(", ");
+
+    /* "30 de 40" — e o MESMO número para quem curtiu e para quem não curtiu. */
+    const fora1 = g1.invisibilidade;
+    const fora2 = g2.invisibilidade;
     r.exigir(
-      taxa1.percentual >= 69 && taxa1.percentual <= 75,
-      `com a saturação, quem curtiu tem 69–75% da feira fora do feed (${taxa1.percentual}%, ${taxa1.ocultos} de ${taxa1.total})`,
+      fora1.ocultos === 30 && fora1.total === 40 && fora2.ocultos === 30 && fora2.total === 40,
+      `30 de 40 para os DOIS: quem curtiu (${fora1.ocultos} de ${fora1.total}) e quem não curtiu (${fora2.ocultos} de ${fora2.total})`,
     );
-    r.exigir(taxa1.percentual > taxa2.percentual, `quem curtiu (${taxa1.percentual}%) vê menos da feira que quem só salvou (${taxa2.percentual}%)`);
-    const grade1 = q().getByRole("list", { name: COPY.gradeOculta });
+    r.exigir(
+      (await q().getByText(COPY.badge(fora1.ocultos, fora1.total)).count()) > 0,
+      `a galeria do primeiro diz o número da api: “${COPY.badge(fora1.ocultos, fora1.total)}”`,
+    );
+    r.exigir(
+      (await q2().getByText(COPY.badge(fora2.ocultos, fora2.total)).count()) > 0,
+      `a galeria do segundo diz o mesmo: “${COPY.badge(fora2.ocultos, fora2.total)}”`,
+    );
+    r.exigir(
+      !/\d\s*%/.test(await q().locator(".galeria").innerText()),
+      "nenhuma porcentagem na galeria: a moldura é “X de Y estandes”",
+    );
+
+    /* POR ÁREA: o que chegou ao feed de cada um — e é aí que os dois diferem. */
+    const confereComOFeed = (galeria, feed) => {
+      const reais = postsPorArea(feed.posts);
+      return galeria.porArea.every((a) => a.vistos === (reais[a.area] ?? 0) && a.total === 10);
+    };
+    r.exigir(
+      confereComOFeed(g1, feed1) && confereComOFeed(g2, feed2),
+      "o “por área” da api é o feed REAL de cada um, sobre os dez estandes de cada área",
+    );
+    const vistos1 = Object.fromEntries(g1.porArea.map((a) => [a.area, a.vistos]));
+    const vistos2 = Object.fromEntries(g2.porArea.map((a) => [a.area, a.vistos]));
+    r.exigir(
+      vistos1[areaCurtida] === 7 && JSON.stringify(distribuicao(vistos1)) === "[7,1,1,1]",
+      `quem curtiu viu 7 de 10 da área curtida e 1 de cada outra (${porAreaEmTexto(g1.porArea)})`,
+    );
+    r.exigir(
+      JSON.stringify(distribuicao(vistos2)) === "[3,3,2,2]",
+      `quem não curtiu viu as quatro áreas misturadas, 3/3/2/2 (${porAreaEmTexto(g2.porArea)})`,
+    );
+    for (const [qq, g, quem] of [
+      [q, g1, "do primeiro"],
+      [q2, g2, "do segundo"],
+    ]) {
+      const faltando = [];
+      for (const a of g.porArea) {
+        const linha = COPY.vistosNaArea(nomeDa(a.area), a.vistos, a.total);
+        if ((await qq().getByText(linha, { exact: true }).count()) === 0) faltando.push(linha);
+      }
+      r.exigir(
+        faltando.length === 0,
+        `a galeria ${quem} escreve o que chegou por área, com os números da api — “${COPY.vistosNaArea(nomeDa(g.porArea[0].area), g.porArea[0].vistos, g.porArea[0].total)}”…${faltando.length ? ` (faltou: ${faltando.join("; ")})` : ""}`,
+      );
+    }
+
+    /* O CONTRAFACTUAL: o feed que ESTA sessão teria tido sem curtidas e sem
+       permanências (a mesma semente, o mesmo motor). Para quem não curtiu, é o
+       próprio feed; para quem curtiu, é outro. */
+    const contagemSem = (g) => Object.fromEntries(g.semCurtidas.map((a) => [a.area, a.posts.length]));
+    const sem1 = contagemSem(g1);
+    const sem2 = contagemSem(g2);
+    const projetosSem2 = new Set(g2.semCurtidas.flatMap((a) => a.posts));
+    const projetosReais2 = new Set(feed2.posts.map((x) => x.projetoId));
+    r.exigir(
+      projetosSem2.size === projetosReais2.size && [...projetosReais2].every((id) => projetosSem2.has(id)),
+      `para quem NÃO curtiu, “sem as suas curtidas” é o próprio feed real: os mesmos ${projetosReais2.size} projetos (${contagemEmTexto(sem2)})`,
+    );
+    const reais1 = postsPorArea(feed1.posts);
+    const somaSem1 = Object.values(sem1).reduce((n, x) => n + x, 0);
+    r.exigir(
+      somaSem1 === 10 && g1.semCurtidas.some((a) => a.posts.length !== (reais1[a.area] ?? 0)),
+      `para quem curtiu, “sem as suas curtidas” é OUTRO feed: ${contagemEmTexto(sem1)} — contra o real ${contagemEmTexto(reais1)}`,
+    );
+    for (const [qq, g, quem] of [
+      [q, g1, "do primeiro"],
+      [q2, g2, "do segundo"],
+    ]) {
+      const contraste = qq().getByRole("list", { name: COPY.semCurtidas });
+      const faltando = [];
+      for (const a of g.semCurtidas) {
+        const badge = COPY.semCurtidasDaArea(nomeDa(a.area), a.posts.length);
+        if ((await contraste.getByText(badge, { exact: true }).count()) === 0) faltando.push(badge);
+      }
+      r.exigir(
+        (await qq().getByText(COPY.semCurtidas).count()) > 0 && faltando.length === 0,
+        `a galeria ${quem} mostra “${COPY.semCurtidas}” com um badge por área (${g.semCurtidas.map((a) => COPY.semCurtidasDaArea(nomeDa(a.area), a.posts.length)).join(", ")})${faltando.length ? ` — faltou: ${faltando.join("; ")}` : ""}`,
+      );
+    }
+
+    /* A GRADE é dos ocultos de UMA área: abre na que mais ficou fora. */
+    const areaInicial1 = areaComMaisOcultos(g1.porArea);
+    const grade1 = q().getByRole("list", { name: COPY.gradeOculta(nomeDa(areaInicial1)) });
+    await grade1.waitFor({ timeout: 10_000 }).catch(() => {
+      throw new Error(`a grade não abriu na área que mais ficou fora (${nomeDa(areaInicial1)})`);
+    });
+    const ocultosIniciais1 = g1.projetos.filter((x) => x.area === areaInicial1 && !x.exibidoNoSeuFeed).length;
     const itensDaGrade = await grade1.getByRole("listitem").count();
     const colunas = await grade1.evaluate((el) => getComputedStyle(el).gridTemplateColumns.split(" ").filter(Boolean).length);
-    r.exigir(itensDaGrade === taxa1.ocultos, `a grade tem um item por oculto (${itensDaGrade} de ${taxa1.ocultos})`);
-    r.exigir(colunas === 3, `a grade da galeria tem três colunas (${colunas}), e cresce com os ocultos (${Math.ceil(itensDaGrade / 3)} linhas)`);
+    r.exigir(
+      areaInicial1 !== areaCurtida && itensDaGrade === ocultosIniciais1,
+      `a grade abre na área que mais ficou fora (${nomeDa(areaInicial1)}), com um item por oculto DELA — ${itensDaGrade} de ${ocultosIniciais1}, não os ${fora1.ocultos} soltos`,
+    );
+    r.exigir(colunas === 3, `a grade da galeria tem três colunas (${colunas}), ${Math.ceil(itensDaGrade / 3)} linhas`);
     const manter1 = q().getByRole("button", { name: COPY.manter });
     r.exigir(await manter1.isDisabled(), "antes de abrir um oculto, “Manter meu voto inicial” fica desligado");
     r.exigir((await q().getByText(COPY.manterTravado).count()) > 0, "e a tela diz por quê");
     await semAnimacao(q);
     await r.registrar(p, "galeria-oculta", {
-      titulo: "A Galeria Oculta",
-      mostra: `A auditoria da comissão, o voto lacrado, o badge “${COPY.badge(taxa1.percentual)}” e a grade de três colunas dos ocultos; embaixo, os dois botões da revisão, com Manter desligado.`,
-      prova: "O número é do servidor, sobre o que o feed serviu a ESTA criança; nada é cravado na copy, e a grade tem o tamanho que tiver.",
-      detalhe: `${taxa1.ocultos} de ${taxa1.total} ocultos`,
+      titulo: "A Galeria Oculta: o que sumiu, por área",
+      mostra:
+        `A auditoria da comissão, o voto lacrado, “${COPY.badge(fora1.ocultos, fora1.total)}”, o que chegou por ` +
+        `área (${porAreaEmTexto(g1.porArea)}), “${COPY.semCurtidas}” com um badge por área, e a grade de três ` +
+        `colunas com os ocultos de ${nomeDa(areaInicial1)}; embaixo, os dois botões da revisão, com Manter desligado.`,
+      prova:
+        "Com 40 estandes e dez posts, o total escondido é igual para todos — a prova é QUAL área sumiu. Os números " +
+        "são do servidor, sobre o feed DESTA criança, e o contrafactual também: o motor nunca desce para o bundle.",
+      detalhe: `${fora1.ocultos} de ${fora1.total} · por área ${porAreaEmTexto(g1.porArea)} · sem curtidas ${contagemEmTexto(sem1)}`,
       inteira: true,
     });
+
+    const areaInicial2 = areaComMaisOcultos(g2.porArea);
+    const grade2 = q2().getByRole("list", { name: COPY.gradeOculta(nomeDa(areaInicial2)) });
+    await grade2.waitFor({ timeout: 10_000 });
+    const ocultosIniciais2 = g2.projetos.filter((x) => x.area === areaInicial2 && !x.exibidoNoSeuFeed).length;
+    r.exigir(
+      (await grade2.getByRole("listitem").count()) === ocultosIniciais2,
+      `a grade do segundo abre na área dele que mais ficou fora (${nomeDa(areaInicial2)}, ${ocultosIniciais2} ocultos)`,
+    );
     await semAnimacao(q2);
     await r.registrar(p2, "galeria-de-quem-nao-curtiu", {
-      titulo: "A mesma galeria, outra taxa",
-      mostra: `A galeria de quem só salvou: “${COPY.badge(taxa2.percentual)}”.`,
-      prova: `${taxa1.percentual}% contra ${taxa2.percentual}%: foram as curtidas, não o acaso, que esconderam a mostra.`,
+      titulo: "A mesma galeria, o mesmo total — outras áreas",
+      mostra:
+        `A galeria de quem só salvou: o mesmo “${COPY.badge(fora2.ocultos, fora2.total)}”, mas ` +
+        `${porAreaEmTexto(g2.porArea)} — e “sem as suas curtidas” igual ao feed que ele teve.`,
+      prova:
+        `${porAreaEmTexto(g1.porArea)} contra ${porAreaEmTexto(g2.porArea)}: o total não distingue os dois; as ` +
+        "áreas, sim. Foram as curtidas, não o acaso, que esconderam uma parte da mostra e não outra.",
+      inteira: true,
     });
 
     // ── ESTUDANTE 1: a hashtag de uma categoria fora da bolha, dois ocultos, Manter ──
-    const projetos1 = galeria1.corpo.projetos;
-    const categorias1 = (await sessaoDe(p)).categorias;
-    const areaBuscada = categorias1.map((c) => c.area).find((a) => a !== areaCurtida);
+    /* Só o TOQUE no chip conta como busca: abrir a galeria, que já mostra a
+       grade de uma área, não é busca nenhuma. */
+    const linhaAntesDoChip = (await lerApi(prof, `${caminhoDaTurma}/painel`)).corpo?.linhas?.find((l) => l.usuario === PRIMEIRO.login);
+    r.exigir(
+      (linhaAntesDoChip?.categoriasBuscadas ?? []).length === 0,
+      `abrir a galeria não conta como busca por hashtag: ninguém tocou num chip (categorias buscadas: ${JSON.stringify(linhaAntesDoChip?.categoriasBuscadas ?? null)})`,
+    );
+    const areaBuscada = categorias1.map((c) => c.area).find((a) => a !== areaCurtida && a !== areaInicial1);
     const categoriaBuscada = categorias1.find((c) => c.area === areaBuscada);
-    const chip = `#${categoriaBuscada.hashtag.replace(/^#+/, "")}`;
-    await q().getByRole("group", { name: "Hashtags da mostra" }).getByRole("button", { name: chip, exact: true }).click();
-    const gradeDaBusca = q().getByRole("list", { name: COPY.gradeBusca });
-    await gradeDaBusca.waitFor({ timeout: 10_000 });
-    r.exigir((await gradeDaBusca.getByRole("listitem").count()) === 4, `a hashtag ${chip} mostra os quatro projetos da categoria`);
-    const ocultosDaBusca = projetos1.filter((x) => x.area === areaBuscada && !x.exibidoNoSeuFeed);
+    const chip = chipDa(areaBuscada);
+    const botaoDoChip = q().getByRole("group", { name: "Hashtags da mostra" }).getByRole("button", { name: chip, exact: true });
+    await botaoDoChip.click();
+    const gradeDaArea = q().getByRole("list", { name: COPY.gradeOculta(categoriaBuscada.nome) });
+    await gradeDaArea.waitFor({ timeout: 10_000 });
+    const ocultosDaBusca = g1.projetos.filter((x) => x.area === areaBuscada && !x.exibidoNoSeuFeed);
+    r.exigir(
+      (await gradeDaArea.getByRole("listitem").count()) === ocultosDaBusca.length && (await botaoDoChip.getAttribute("aria-pressed")) === "true",
+      `o chip ${chip} troca a grade para os ocultos de ${categoriaBuscada.nome} (${ocultosDaBusca.length}), e fica marcado`,
+    );
     if (!r.exigir(ocultosDaBusca.length >= 2, `a categoria ${chip} tem ao menos dois projetos que o feed escondeu (${ocultosDaBusca.length})`)) return;
     const inspecionar = async (qq, titulo) => {
       await qq().getByRole("button", { name: `Inspecionar Projeto: ${titulo}` }).click();
@@ -872,8 +1211,8 @@ await suite(
     await semAnimacao(q);
     await r.registrar(p, "galeria-ficha", {
       titulo: "A ficha de auditoria",
-      mostra: `Depois do chip ${chip}, a ficha de “${ocultosDaBusca[0].titulo}”: as três fotos, o resumo técnico, as hashtags e Voltar à Galeria.`,
-      prova: "Buscar pela hashtag de uma categoria fora da bolha e abrir um projeto dela é a EF06CO01 (melhoria 3); dois ocultos e uma busca, a EF06CO10.",
+      mostra: `Depois do chip ${chip} (a grade trocou para ${categoriaBuscada.nome}), a ficha de “${ocultosDaBusca[0].titulo}”: as três fotos, o resumo técnico, as hashtags e Voltar à Galeria.`,
+      prova: "Tocar a hashtag de uma categoria fora da bolha e abrir um projeto dela é a EF06CO01 (melhoria 3); dois ocultos e uma busca, a EF06CO10.",
     });
     await ficha1.getByRole("button", { name: COPY.voltar }).click();
     await ficha1.waitFor({ state: "detached", timeout: 10_000 });
@@ -883,7 +1222,7 @@ await suite(
     await ficha1b.waitFor({ state: "detached", timeout: 10_000 });
     await manter1.click();
 
-    // ── ESTUDANTE 2: busca por texto, e o voto revisado ──────────────────
+    // ── ESTUDANTE 2: busca por texto, e o voto revisado, filtrado por área ──
     const categoria2 = (await sessaoDe(p2)).categorias[0];
     const busca = q2().getByRole("searchbox", { name: COPY.busca }).or(q2().getByRole("textbox", { name: COPY.busca })).first();
     await busca.click();
@@ -894,15 +1233,40 @@ await suite(
     await q2().getByRole("button", { name: COPY.confirmarRevisao }).first().click();
     const folhaDaRevisao = q2().getByRole("dialog", { name: COPY.revisao });
     await folhaDaRevisao.waitFor({ timeout: 10_000 });
-    await folhaDaRevisao.getByRole("radiogroup", { name: "Projetos da mostra" }).getByRole("radio").first().click();
+    const voto2 = (await sessaoDe(p2)).voto?.projetoId ?? null;
+    const areaDoVoto2 = g2.projetos.find((x) => x.id === voto2)?.area ?? null;
+    const opcoesNaArea = (area) => g2.projetos.filter((x) => x.area === area && x.id !== voto2).length;
+    const grupoDaTroca = folhaDaRevisao.getByRole("radiogroup", { name: new RegExp(`^${escaparRegex(COPY.grupoDaRevisao)}`) });
+    /* A lista abre na área da grade (a busca por texto não troca o chip). */
+    await grupoDaTroca.waitFor({ timeout: 10_000 });
+    const nomeDoGrupo = async () => (await grupoDaTroca.getAttribute("aria-label")) ?? "";
+    r.exigir(
+      (await nomeDoGrupo()) === `${COPY.grupoDaRevisao}: ${nomeDa(areaInicial2)}` &&
+        (await grupoDaTroca.getByRole("radio").count()) === opcoesNaArea(areaInicial2),
+      `a troca do voto abre FILTRADA na área da grade: “${await nomeDoGrupo()}”, ${await grupoDaTroca.getByRole("radio").count()} estandes (esperado ${opcoesNaArea(areaInicial2)})`,
+    );
+    const outraArea = areaDoVoto2 && areaDoVoto2 !== areaInicial2 ? areaDoVoto2 : categorias1.map((c) => c.area).find((a) => a !== areaInicial2);
+    await folhaDaRevisao.getByRole("group", { name: "Hashtags da mostra" }).getByRole("button", { name: chipDa(outraArea), exact: true }).click();
+    await q2()
+      .getByRole("radiogroup", { name: `${COPY.grupoDaRevisao}: ${nomeDa(outraArea)}` })
+      .waitFor({ timeout: 10_000 });
+    const opcoesDepoisDoChip = await grupoDaTroca.getByRole("radio").count();
+    r.exigir(
+      opcoesDepoisDoChip === opcoesNaArea(outraArea),
+      `o chip troca a área da lista: ${nomeDa(outraArea)} com ${opcoesDepoisDoChip} estandes${outraArea === areaDoVoto2 ? " — os dez dela menos o do voto lacrado" : ""} (esperado ${opcoesNaArea(outraArea)})`,
+    );
+    await grupoDaTroca.getByRole("radio").first().click();
     await semAnimacao(q2);
     await r.registrar(p2, "revisao-do-voto", {
-      titulo: "O voto revisado",
-      mostra: "A janela extraordinária de revisão: os dezesseis projetos menos o do voto lacrado, e Confirmar Voto Revisado.",
-      prova: "Dois botões (melhoria 6): manter ou confirmar um voto revisado. A api grava o voto final ao lado do lacrado.",
+      titulo: "O voto revisado, área por área",
+      mostra:
+        `A janela extraordinária de revisão: os chips das quatro áreas, a lista de ${nomeDa(outraArea)} ` +
+        `(${opcoesDepoisDoChip} estandes${outraArea === areaDoVoto2 ? ", sem o do voto lacrado" : ""}) e Confirmar Voto Revisado.`,
+      prova:
+        "Dois botões (melhoria 6): manter ou confirmar um voto revisado. Trinta e nove opções soltas não se escolhem " +
+        "num celular: a lista é filtrada pelos mesmos chips de área. A api grava o voto final ao lado do lacrado.",
     });
     await folhaDaRevisao.getByRole("button", { name: COPY.confirmarRevisao }).click();
-
     // ═══ ESTUDANTE 1: a Etapa 5 — o Léo, o par simulado e a cadeia ═══════
     await q().getByText(COPY.leo).first().waitFor({ timeout: 30_000 });
     const sessao1 = await sessaoDe(p);
@@ -1034,8 +1398,8 @@ await suite(
     await prof.locator("[data-revisao-da-turma]").waitFor({ timeout: 30_000 });
     const colunasDaFolha = await prof.locator("main").getByRole("columnheader").allInnerTexts();
     r.exigir(
-      !colunasDaFolha.some((c) => /^\s*voto\b|\b(taxa|n[íi]vel|invisibilidade|pontos|nota|ranking|acerto)\b/i.test(c)),
-      `a folha não tem coluna de voto, taxa nem nível (colunas: ${colunasDaFolha.join(", ")})`,
+      !colunasDaFolha.some((c) => /^\s*voto\b|\b(taxa|n[íi]vel|invisibilidade|concentra\w*|pontos|nota|ranking|acerto)\b/i.test(c)),
+      `a folha não tem coluna de voto, taxa, concentração nem nível (colunas: ${colunasDaFolha.join(", ")})`,
     );
     const linhaDoPrimeiro = prof.locator("main").getByRole("row").filter({ hasText: PRIMEIRO.login }).first();
     r.exigir(
@@ -1056,7 +1420,7 @@ await suite(
     await r.registrar(prof, "resultados-e-habilidades", {
       titulo: "A folha da turma, as categorias buscadas e as habilidades",
       mostra: "Onde cada um está, a coluna “Categorias buscadas” com a hashtag que o primeiro usou, e o painel de habilidades da BNCC.",
-      prova: "A folha diz só o progresso e o que cada um buscou — nunca voto, taxa ou nível ligados a nome. O nível mora no painel de habilidades.",
+      prova: "A folha diz só o progresso e o que cada um buscou — nunca voto, taxa, concentração ou nível ligados a nome. A concentração mora só na lousa, agregada; o nível, no painel de habilidades.",
       inteira: true,
     });
 

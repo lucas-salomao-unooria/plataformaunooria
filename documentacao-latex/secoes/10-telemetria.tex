@@ -64,44 +64,44 @@ que o estudante está esperando.
 \fitpage{%
 \begin{tikzpicture}[x=1cm, y=1cm]
 
-  \node[etapaio, text width=28mm, minimum height=15mm] (exp) at (1.8,0)
-    {\textbf{Experiência}\desc{\texttt{track(verbo, objeto, dados)}}};
+  % Três linhas: o caminho normal (em cima), o beacon do fechamento (meio) e a
+  % ingestão (embaixo). As duas descidas até o Pub/Sub e a partir dele correm
+  % paralelas, sem se cruzar.
+  \node[etapaio, text width=22mm, minimum height=15mm] (exp) at (1.35,0)
+    {\textbf{Experiência}\desc{\texttt{track(verbo,}\\\texttt{objeto, dados)}}};
 
-  \node[etapa, text width=30mm, minimum height=15mm] (sdk) at (5.8,0)
-    {\textbf{\texttt{TelemetryClient}}\desc{\emph{buffer} em memória;
+  \node[etapa, text width=28mm, minimum height=15mm] (sdk) at (4.95,0)
+    {\textbf{\texttt{TelemetryClient}}\desc{\emph{buffer} em memória;\\
      lote de 50 ou \SI{10}{\second}}};
 
-  \node[etapa, text width=30mm, minimum height=15mm] (batch) at (9.9,0)
-    {\rota{POST /telemetry/batch}\desc{\texttt{OidcGuard}; identidade vem do
-     TOKEN}};
+  \node[etapa, text width=28mm, minimum height=15mm] (batch) at (9.45,0)
+    {\texttt{POST}\\\texttt{/telemetry/batch}\desc{\texttt{OidcGuard};\\identidade vem do TOKEN}};
 
-  \node[fita, text width=26mm, minimum height=14mm] (topic) at (13.8,0)
+  \node[fita, text width=24mm, minimum height=14mm] (topic) at (14.3,0)
     {\textbf{Pub/Sub}\desc{\emph{topic} \texttt{-telemetria}}};
 
-  \node[etapa, text width=32mm, minimum height=15mm] (ingest) at (11.4,-4.0)
-    {\rota{POST /telemetry/ingest}\desc{\texttt{PubSubPushGuard}: ID token do
-     Google, \texttt{aud} e \texttt{email}}};
+  \node[etapaerr, text width=28mm, minimum height=13mm] (beacon) at (9.45,-3.2)
+    {\texttt{POST}\\\texttt{/telemetry/beacon}\desc{\texttt{pagehide}; \emph{token} NO\\CORPO; 204 sempre}};
 
-  \node[etapaout, text width=32mm, minimum height=16mm] (pg) at (6.6,-4.0)
-    {\textbf{\texttt{telemetria\_eventos}}\desc{\texttt{INSERT} multi-linha,
-     \texttt{ON CONFLICT (event\_id, ts) DO NOTHING}; particionada por mês}};
+  \node[etapa, text width=36mm, minimum height=15mm] (ingest) at (11.4,-6.3)
+    {\texttt{POST}\\\texttt{/telemetry/ingest}\desc{\texttt{PubSubPushGuard}:\\ID \emph{token} do Google,\\\texttt{aud} e \texttt{email}}};
 
-  \node[etapaerr, text width=28mm, minimum height=13mm] (beacon) at (2.0,-4.0)
-    {\rota{POST /telemetry/beacon}\desc{\texttt{pagehide}; token NO CORPO,
-     responde 204 sempre}};
+  \node[etapaout, text width=42mm, minimum height=16mm] (pg) at (5.6,-6.3)
+    {\textbf{\texttt{telemetria\_eventos}}\desc{\texttt{INSERT} multi-linha,\\
+     \texttt{ON CONFLICT (event\_id, ts)}\\\texttt{DO NOTHING};\\particionada por mês}};
 
   \draw[pipe] (exp) -- (sdk);
-  \draw[pipe] (sdk) -- (batch) node[pipelbl, midway, above]{$\leq$ 50 eventos};
+  \draw[pipe] (sdk) -- (batch) node[pipelbl, midway, above=1pt]{$\leq$ 50\\eventos};
   \draw[pipe] (batch) -- (topic);
-  \draw[pipe] (topic.south) -- (13.8,-4.0) -- (ingest.east)
-    node[pipelbl, pos=0.62, above]{\emph{push} autenticado};
+  \draw[pipe] (sdk.south) |- (beacon.west)
+    node[pipelbl, pos=0.75, above=1pt]{\texttt{sendBeacon}};
+  \draw[pipe] (beacon.east) -- (13.6,-3.2) -- (13.6,0 |- topic.south)
+    node[pipelbl, pos=0.5, left=2pt, align=right]{publica no\\mesmo \emph{topic}};
+  \draw[pipe] (15.0,0 |- topic.south) |- (ingest.east)
+    node[pipelbl, pos=0.3, left=2pt, align=right]{\emph{push}\\autenticado};
   \draw[pipe] (ingest) -- (pg);
-  \draw[pipe] (sdk.south) -- (5.8,-2.2) -- (2.0,-2.2) -- (beacon.north)
-    node[pipelbl, pos=0.30, above]{\texttt{sendBeacon}};
-  \draw[pipe] (beacon.east) -- (4.0,-4.0) -- (4.0,-6.1) -- (12.6,-6.1) -- (topic.south west)
-    node[pipelbl, pos=0.40, below]{publica no mesmo \emph{topic}};
 
-  \node[actnote, text width=52mm, anchor=north west] at (0.4,-7.4)
+  \node[actnote, text width=70mm, anchor=north west] at (0.05,-8.3)
     {\textbf{Onde há perda possível, e só ali:} entre o \texttt{track()} e o
      \emph{flush}. Se o processo do navegador morrer com o \emph{buffer} cheio ---
      aba fechada à força, queda de energia --- aqueles eventos somem. O
@@ -110,7 +110,7 @@ que o estudante está esperando.
      \emph{buffer} em Redis não substituiria o Pub/Sub --- ele reintroduziria a
      perda que o Pub/Sub eliminou.};
 
-  \node[actnote, text width=52mm, anchor=north west] at (9.0,-7.4)
+  \node[actnote, text width=70mm, anchor=north west] at (7.95,-8.3)
     {\textbf{Por que o \emph{beacon} responde 204 sempre:} o navegador já
      descartou a página e ninguém lê o corpo. Erro aqui só serviria para poluir o
      log do cliente. Falha de verificação de \emph{token} vira descarte
@@ -119,6 +119,12 @@ que o estudante está esperando.
      limitação da API do navegador, não escolha.};
 
 \end{tikzpicture}}
+\begin{legendadiag}
+\amostra{etapaio} origem (o código da experiência) \quad
+\amostra{etapa} caminho normal \quad
+\amostra{etapaerr} caminho do fechamento da página \quad
+\amostra{etapaout} destino durável
+\end{legendadiag}
 \caption[Canal analítico de telemetria]{O canal analítico ponta a ponta. Os
   únicos eventos que podem se perder são os que estão no \emph{buffer} em memória
   do navegador no instante em que o processo morre; do Pub/Sub em diante a

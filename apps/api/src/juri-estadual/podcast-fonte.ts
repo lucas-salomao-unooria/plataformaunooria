@@ -3,7 +3,7 @@ import { z } from "zod";
 import type { FonteDoPodcast } from "../podcast/fonte";
 import { PodcastService } from "../podcast/podcast.service";
 import { ehConteudoDoBancoPadrao } from "./banco-padrao";
-import { AreaSchema, ProjetoDoPacoteSchema } from "./contrato-de-rotas";
+import { AreaSchema, ProjetoDoPacoteEscritaSchema } from "./contrato-de-rotas";
 import { JuriEstadualService } from "./juri-estadual.service";
 import {
   FALANTES_DO_PODCAST,
@@ -17,7 +17,7 @@ import { AREAS, EXP_ID, TOTAL_DE_PROJETOS } from "./vocabulario";
 /**
  * O Júri Estadual no podcast da plataforma (ADR-150, ADR-151): a atividade é o
  * PACOTE (com a guarda de turma do service), e a escrita das falas lê os
- * dezesseis estandes do rascunho que a tela de criação tem.
+ * quarenta estandes do rascunho que a tela de criação tem.
  *
  * **O banco padrão** (PRD v2, RF-008): a atividade `padrao` intocada tem o
  * podcast FIXO do sheet (aud-exp06ef1b-01) — `padrao: true`, sem linha na
@@ -27,7 +27,8 @@ import { AREAS, EXP_ID, TOTAL_DE_PROJETOS } from "./vocabulario";
  */
 
 /**
- * O conteúdo que a tela de criação manda: o rascunho da mostra. A FORMA do
+ * O conteúdo que a tela de criação manda: o rascunho da mostra, com os
+ * QUARENTA (o rascunho é sempre o pacote novo). A FORMA do
  * `ConteudoDoPacoteSchema`, sem a régua da homologação — as falas se pedem de
  * novo com um estande ainda em edição, e quem barra a mostra torta é o
  * `homologar`.
@@ -37,11 +38,11 @@ export const ConteudoDoPodcastSchema = z.object({
   categorias: z
     .array(z.object({ area: AreaSchema, nome: z.string().trim().min(2).max(30), hashtag: z.string().trim().max(40) }))
     .length(AREAS.length),
-  projetos: z.array(ProjetoDoPacoteSchema).length(TOTAL_DE_PROJETOS),
+  projetos: z.array(ProjetoDoPacoteEscritaSchema).length(TOTAL_DE_PROJETOS),
 });
 type ConteudoDoPodcast = z.infer<typeof ConteudoDoPodcastSchema>;
 
-/** O que a IA lê: as quatro áreas da mostra e os quatro estandes de cada uma. */
+/** O que a IA lê: as quatro áreas da mostra e os dez estandes de cada uma. */
 export function materialDoPodcast(conteudo: ConteudoDoPodcast): string {
   const areas = conteudo.categorias.map((c) => {
     const estandes = conteudo.projetos
@@ -49,7 +50,7 @@ export function materialDoPodcast(conteudo: ConteudoDoPodcast): string {
       .map((p) => `  - ${p.titulo} (${p.escola}): ${p.legenda}`);
     return [`Área "${c.nome}":`, ...estandes].join("\n");
   });
-  return `Tema da mostra: ${conteudo.tema}\n\nAs quatro áreas e os dezesseis estandes:\n${areas.join("\n\n")}`;
+  return `Tema da mostra: ${conteudo.tema}\n\nAs quatro áreas e os ${conteudo.projetos.length} estandes:\n${areas.join("\n\n")}`;
 }
 
 /** A fonte do Júri no podcast da plataforma. */

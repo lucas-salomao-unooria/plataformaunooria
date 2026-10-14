@@ -17,10 +17,13 @@ import type { GuiaDaAula } from "./tipos";
  * Por isso as perguntas de `debate.perguntas` abaixo NÃO são as da plenária:
  * são a escada do FECHAMENTO, depois do caso Mariana.
  *
- * NENHUM número de invisibilidade aqui (decisão de 2026-10-02): a taxa que a
- * Galeria Oculta mostra é a REAL de cada sessão, calculada na api, e varia de
- * computador para computador. Um percentual cravado no guia faria o professor
- * anunciar à turma um número que a tela de quase ninguém mostra.
+ * QUARENTA estandes (PO, 2026-10-14): dez por área, e o feed de dez posts deixa
+ * 30 de fora para TODO computador. A "taxa de invisibilidade" deixou de ser o
+ * assunto — com o total igual para todos, ela não distingue ninguém. O que a
+ * Galeria Oculta prova é O QUE sumiu: a contagem POR ÁREA e o contraste do feed
+ * "sem as suas curtidas"; na lousa, depois da auditoria, a concentração do feed
+ * (quem curtiu × quem não curtiu). Nenhum percentual é cravado aqui: os números
+ * são os da api, de cada sessão.
  *
  * O PRD v2 (0.4.0) e o one-pager pedagógico aprovado pelo PO: a cédula tem
  * quatro elementos (sem cartão de motivo nem frase grifada), a revisão tem dois
@@ -74,12 +77,13 @@ export const GUIA_EXP06EF1B: GuiaDaAula = {
     },
     {
       tom: "info",
-      titulo: "A taxa de invisibilidade é real, e muda de computador para computador",
+      titulo: "O que sumiu é diferente para cada computador — e é por área",
       texto:
-        "A Galeria Oculta mostra a cada computador a parte dos dezesseis estandes que não chegou ao feed dele, " +
-        "calculada a partir do que ele fez. Quem curtiu duas vezes a mesma área recebeu só ela e vê a taxa mais " +
-        "alta; quem não curtiu nada viu um feed mais misturado e vê uma taxa menor. Não anuncie um número: a " +
-        "diferença entre as telas é o assunto da conversa.",
+        "A mostra tem quarenta estandes, dez por área, e o feed mostra até dez: todo computador fica com a mesma " +
+        "quantidade fora do feed. O que muda é QUAIS áreas sumiram. A Galeria Oculta mostra a cada um quantos " +
+        "estandes viu de cada área e o feed que ele teria visto “sem as suas curtidas”. Quem curtiu duas vezes a " +
+        "mesma área recebeu quase só ela; quem não curtiu nada viu as quatro misturadas. Não anuncie um número: a " +
+        "diferença entre as telas, área por área, é o assunto da conversa.",
     },
   ],
 
@@ -115,7 +119,7 @@ export const GUIA_EXP06EF1B: GuiaDaAula = {
       texto: "Classificar informações, agrupando-as em coleções (conjuntos) e associando cada coleção a um ‘tipo de dados’",
       eixo: "Pensamento Computacional",
       ondeAcontece:
-        "Na Galeria Oculta: os dezesseis estandes aparecem agrupados pelas quatro áreas da mostra, cada uma com a sua hashtag, e a busca por hashtag é a chave de cada coleção. O painel de habilidades lê se a criança buscou a hashtag de outra área e abriu um estande que o feed escondeu dela, e a enquete sobre como o aplicativo organizou as curtidas.",
+        "Na Galeria Oculta: os quarenta estandes aparecem agrupados pelas quatro áreas da mostra, cada uma com a sua hashtag e com a contagem do que chegou ao feed, e a busca por hashtag é a chave de cada coleção. O painel de habilidades lê se a criança buscou a hashtag de outra área e abriu um estande que o feed escondeu dela, e a enquete sobre como o aplicativo organizou as curtidas.",
     },
     {
       /* Verbatim do mesmo documento. A ficha a mede pelas tentativas da cadeia
@@ -138,12 +142,12 @@ export const GUIA_EXP06EF1B: GuiaDaAula = {
       {
         titulo: "Prepare a mostra: banco padrão ou personalizada",
         texto:
-          "Na ficha, em Nova atividade. O caminho curto é um toque: Usar Banco Padrão Oficial — a Feira de Ciências e Sustentabilidade, com dezesseis estandes prontos em quatro áreas, sem uso de IA (cerca de 2 minutos de preparo). Para trabalhar a sua matéria, escolha o componente curricular, o título da mostra e os assuntos da semana e toque em Gerar com IA (cerca de 5 minutos). Se a escola estiver sem saldo de IA, o aviso aparece e o Acervo Padrão da Mostra entra com um toque.",
+          "Na ficha, em Nova atividade. O caminho curto é um toque: Usar Banco Padrão Oficial — a Feira de Ciências e Sustentabilidade, com quarenta estandes prontos em quatro áreas, sem uso de IA (cerca de 2 minutos de preparo). Para trabalhar a sua matéria, escolha o componente curricular, o título da mostra e os assuntos da semana e toque em Gerar com IA: os textos saem em cerca de 1 minuto, e a revisão dos quarenta estandes e das imagens fica com você — faça antes do dia da aula. Se a escola estiver sem saldo de IA, o aviso aparece e o Acervo Padrão da Mostra entra com um toque.",
       },
       {
         titulo: "Na mostra personalizada, revise os estandes e as imagens",
         texto:
-          "São quatro áreas com quatro estandes cada. Leia o título, a legenda e o bastidor de cada um, edite o que quiser e regenere o estande que não servir. Depois vêm as imagens, que a inteligência artificial gera em seguida: confira cada uma, gere outra para a que não servir e aprove — sem isso, a atividade personalizada não vai ao ar. Nada gerado por inteligência artificial chega à turma sem passar por você. O banco padrão não passa por estas fases: os estandes usam a arte desenhada da missão.",
+          "São quatro áreas com dez estandes cada, uma aba por área; a aba avisa quantos estandes daquela área precisam de ajuste. Leia o título, a legenda e o bastidor de cada um, edite o que quiser e regenere o estande que não servir. Depois vêm as imagens, que a inteligência artificial gera em seguida, quatro por vez: as quarenta levam vários minutos, então deixe a tela aberta enquanto saem. Confira cada uma, gere outra para a que não servir e aprove — sem isso, a atividade personalizada não vai ao ar. Nada gerado por inteligência artificial chega à turma sem passar por você. O banco padrão não passa por estas fases: os estandes usam as imagens do banco, e o que ainda não tiver imagem aparece com a arte desenhada da missão.",
       },
       {
         titulo: "O podcast de recapitulação é o fechamento fixo",
@@ -186,7 +190,7 @@ export const GUIA_EXP06EF1B: GuiaDaAula = {
     naoDiga: [
       '"Hoje vamos aprender sobre algoritmo" (nem bolha, nem filtro). Anunciado o tema, a turma desconfia do feed de propósito e a galeria não surpreende ninguém.',
       '"Curtam de vários assuntos" ou "não curtam nada". Qualquer conselho sobre o que curtir muda o feed que a aula precisa mostrar.',
-      '"Todo mundo perdeu a mesma parte da mostra." A taxa é de cada computador, e nenhum número vale para a turma inteira: peça que comparem as telas.',
+      '"Todo mundo perdeu a mesma parte da mostra." A quantidade fora do feed é a mesma para todos, mas as áreas que sumiram não: peça que comparem as telas área por área.',
       '"Quem votou errado?" Não há voto errado: todo voto foi dado com o que cada feed mostrou, e é isso que a lousa revela.',
     ],
   },
@@ -216,7 +220,7 @@ export const GUIA_EXP06EF1B: GuiaDaAula = {
         tempo: "18–33",
         momento: "Passo 4 — Resultado: a lousa, a plenária e a auditoria",
         professor:
-          "Com a maioria votada, projete o Painel Coletivo de Votos da Turma: a turma nota que cada grupo votou numa área diferente. Conduza as quatro perguntas da plenária e, depois de ouvir as respostas, aperte Liberar Auditoria. Cada computador abre a Galeria Oculta, com a taxa real dele, busca por hashtag e decide entre manter o voto ou confirmar um voto revisado. Em tela: 6 min; fora dela: 9.",
+          "Com a maioria votada, projete o Painel Coletivo de Votos da Turma: a turma nota que cada grupo votou numa área diferente. Conduza as quatro perguntas da plenária e, depois de ouvir as respostas, aperte Liberar Auditoria. Cada computador abre a Galeria Oculta — o que ficou fora do feed dele, área por área, e o feed que ele teria visto “sem as suas curtidas” —, busca por hashtag e decide entre manter o voto ou confirmar um voto revisado. Na lousa, aparece quanto do feed caiu numa área só para quem curtiu e para quem não curtiu: é o contraste para a conversa. Em tela: 6 min; fora dela: 9.",
         botao: "Liberar Auditoria",
       },
       {
@@ -243,9 +247,9 @@ export const GUIA_EXP06EF1B: GuiaDaAula = {
     perguntas: [
       {
         nivel: "retomada",
-        pergunta: "Quantos estandes chegaram ao seu feed, e quantos ficaram de fora? O número da sua tela foi igual ao do colega do lado?",
+        pergunta: "Quantos estandes de cada área chegaram ao seu feed? A sua contagem por área foi igual à do colega do lado?",
         porQue:
-          "Começa pelo que está na tela de cada um, não pelo conceito. Os números diferentes são o fato a explicar: cada computador viu uma mostra diferente porque fez coisas diferentes no feed.",
+          "Começa pelo que está na tela de cada um, não pelo conceito. O total escondido é o mesmo para todos; as áreas, não — e essa diferença é o fato a explicar: cada computador viu uma mostra diferente porque fez coisas diferentes no feed.",
       },
       {
         nivel: "analise",
@@ -277,7 +281,7 @@ export const GUIA_EXP06EF1B: GuiaDaAula = {
 
   observacao: {
     intro:
-      "Anote ao lado do nome (ou da comissão) durante o feed, a plenária e a galeria. Nada disso é nota — e nada disso é a taxa de invisibilidade, que descreve o feed, não a criança.",
+      "Anote ao lado do nome (ou da comissão) durante o feed, a plenária e a galeria. Nada disso é nota — e nada disso é a contagem da Galeria Oculta, que descreve o feed, não a criança.",
     marcas: [
       { letra: "D", texto: "Desconfiou do feed antes da galeria: disse que faltava alguma coisa." },
       { letra: "B", texto: "Usou a busca por hashtag para procurar outra área, sem ninguém pedir." },
@@ -296,9 +300,9 @@ export const GUIA_EXP06EF1B: GuiaDaAula = {
       naoFaca: "Confirmar a mágica. A turma sai achando que o sistema sabe o que ela pensa, e não que ele segue uma regra.",
     },
     {
-      quando: "O computador que não curtiu nada tem a taxa mais baixa da sala",
+      quando: "O computador que não curtiu nada viu as quatro áreas misturadas",
       faca:
-        "É o contraste que a aula precisa: peça que compare a tela dele com a de quem curtiu duas vezes a mesma área. A diferença entre as duas é a curtida.",
+        "É o contraste que a aula precisa: o número de escondidos é o mesmo para os dois, mas peça que ele compare a contagem por área da tela dele com a de quem curtiu duas vezes a mesma área — e que os dois olhem o feed “sem as suas curtidas”. A diferença entre as duas telas é a curtida.",
       naoFaca: "Tratar quem não curtiu como quem “acertou”. Não curtir também é um dado, e a mostra dele também ficou incompleta.",
     },
     {
@@ -308,10 +312,10 @@ export const GUIA_EXP06EF1B: GuiaDaAula = {
       naoFaca: "Concordar. É o cartão distrator do caso Mariana: deixar de curtir e deixar o aplicativo decidir não fura bolha nenhuma.",
     },
     {
-      quando: "Alguém compara a própria taxa com a do colega como se fosse nota",
+      quando: "Alguém compara a própria contagem com a do colega como se fosse nota",
       faca:
-        "Diga que a taxa descreve o feed, não a pessoa, e que não há taxa certa. Na lousa só vão os votos por área e a média da turma, sem nomes.",
-      naoFaca: "Ler em voz alta quem teve a taxa mais alta. Não há ranking nem exposição.",
+        "Diga que a contagem descreve o feed, não a pessoa, e que não há contagem certa. Na lousa só vão os votos por área e a concentração da turma, sem nomes.",
+      naoFaca: "Ler em voz alta quem viu menos áreas. Não há ranking nem exposição.",
     },
     {
       quando: "Um computador ainda não votou quando você liberou a galeria",
@@ -355,7 +359,7 @@ export const GUIA_EXP06EF1B: GuiaDaAula = {
     },
     rubrica: {
       nota:
-        "Formativa, e sobre o RACIOCÍNIO — nunca sobre o voto nem sobre a taxa de invisibilidade. O painel de habilidades já traz a auditoria, a busca por hashtag, a cadeia e as enquetes; esta rubrica é para a conversa.",
+        "Formativa, e sobre o RACIOCÍNIO — nunca sobre o voto nem sobre o que a Galeria Oculta contou. O painel de habilidades já traz a auditoria, a busca por hashtag, a cadeia e as enquetes; esta rubrica é para a conversa.",
       criterios: [
         {
           criterio: "Perceber o recorte",
@@ -381,14 +385,14 @@ export const GUIA_EXP06EF1B: GuiaDaAula = {
       "O podcast de recapitulação, em A aula e os resultados, é o fechamento fixo da missão: toque para a sala no fim da aula, depois da Etapa 4 — ou no começo da seguinte, para retomar a conversa. Nunca antes da aula: ele conta a virada.",
       "Na disciplina do tema da mostra: os estandes que ficaram de fora do feed da maioria são o material pronto da aula seguinte — a turma estuda o que quase ninguém viu.",
       "Língua Portuguesa: ler as legendas dos estandes como texto de divulgação científica — o que o título promete e o que a legenda entrega.",
-      "Matemática: com os votos por área da lousa, calcular a parte de cada área e discutir como seria o gráfico se todo mundo tivesse visto os dezesseis estandes.",
+      "Matemática: com os votos por área da lousa, calcular a parte de cada área e discutir como seria o gráfico se todo mundo tivesse visto os quarenta estandes.",
       "No dia seguinte, peça que cada um repare num assunto que aparece muito no próprio feed e num que nunca aparece — sem mostrar o celular a ninguém.",
     ],
   },
 
   cuidados: [
-    "A taxa da Galeria Oculta é real e de cada computador: não a apresente como nota nem compare em voz alta quem teve mais. Na lousa vão só os votos por área e a média da turma, sem nomes.",
-    "A folha da turma, com os nomes, é para a sua tela, não para o projetor. Ela não tem voto nem taxa — só quem já votou, abriu a galeria, buscou (e por quais categorias), revisou e concluiu, e o alerta de quem está parado na cédula.",
+    "A contagem da Galeria Oculta — o que ficou fora do feed, área por área — é de cada computador: não a apresente como nota nem compare em voz alta quem viu menos. Na lousa vão só os votos por área e, depois da auditoria, a concentração da turma, sem nomes.",
+    "A folha da turma, com os nomes, é para a sua tela, não para o projetor. Ela não tem voto nem concentração — só quem já votou, abriu a galeria, buscou (e por quais categorias), revisou e concluiu, e o alerta de quem está parado na cédula.",
     "Os cartões do caso Mariana não viram nota nem nível: a criança escolhe cartões prontos; nada do que ela pensa é digitado.",
     "Os estandes, as escolas e os perfis da mostra são fictícios — os do banco padrão e os escritos pela inteligência artificial sobre o seu tema. Na mostra personalizada, revise para não sair pessoa real identificável, escola real nem marca de empresa.",
     "Durante a aula o feed não usa inteligência artificial: é uma regra fixa, que roda no servidor e é a mesma que a cadeia ensina. A IA só escreve os estandes no preparo.",
@@ -428,7 +432,7 @@ export const GUIA_EXP06EF1B: GuiaDaAula = {
     {
       pergunta: "Preciso preparar alguma coisa antes?",
       resposta:
-        "Pouco. Com o Banco Padrão Oficial, um toque cria a atividade com os dezesseis estandes prontos (cerca de 2 minutos). Para personalizar o tema, gere com IA, revise os textos e aprove as imagens antes da aula (cerca de 5 minutos) — sem as imagens aprovadas, a mostra personalizada não vai ao ar.",
+        "Pouco. Com o Banco Padrão Oficial, um toque cria a atividade com os quarenta estandes prontos (cerca de 2 minutos). Para personalizar o tema, gere com IA (os textos saem em cerca de 1 minuto), revise os quarenta estandes e aprove as imagens antes do dia da aula: elas saem quatro por vez e levam vários minutos — sem as imagens aprovadas, a mostra personalizada não vai ao ar.",
     },
     {
       pergunta: "E se eu estiver sem saldo de geração com IA?",
@@ -436,9 +440,9 @@ export const GUIA_EXP06EF1B: GuiaDaAula = {
         "A plataforma mostra o aviso e oferece o Acervo Padrão da Mostra com um toque: a aula acontece do mesmo jeito, com a Feira de Ciências e Sustentabilidade.",
     },
     {
-      pergunta: "Por que a taxa de um computador é diferente da do outro?",
+      pergunta: "Por que todo mundo ficou com o mesmo número de estandes escondidos?",
       resposta:
-        "Porque ela é real: é a parte dos dezesseis estandes que não chegou àquele feed. Quem curtiu duas vezes a mesma área recebeu só ela e vê a taxa mais alta; quem não curtiu nada viu um feed mais misturado e vê uma taxa menor. A diferença é o assunto da conversa.",
+        "Porque a mostra tem quarenta estandes e o feed mostra até dez: o número de escondidos é igual para todo mundo. O que muda é QUAIS áreas sumiram — compare as telas por área. Quem curtiu duas vezes a mesma área recebeu quase só ela; quem não curtiu nada viu as quatro misturadas. A Galeria Oculta mostra também o feed que cada um teria visto “sem as suas curtidas”: a diferença entre os dois é a curtida.",
     },
     {
       pergunta: "Apertei Liberar Auditoria cedo demais. Dá para voltar?",

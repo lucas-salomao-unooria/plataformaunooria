@@ -52,6 +52,7 @@ export default async function PlanoDeAulaPage({
          * `/dev-embed` sempre repassaram; as três rotas de professor, não.
          */
         permissoes={embed.permissoes}
+        titulo={embed.manifesto?.nome}
       />
     </div>
   );

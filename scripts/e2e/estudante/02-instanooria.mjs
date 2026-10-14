@@ -111,9 +111,9 @@ await suite(
     await r.entrar(p, estudante.login);
 
     await p.goto(`${HUB}/exp/exp08ef1b`, { waitUntil: "domcontentloaded" });
-    const aparelho = p.locator('iframe[title="experiencia"]');
+    const aparelho = p.locator('iframe[data-experiencia]');
     await aparelho.waitFor({ state: "attached", timeout: 20_000 });
-    const tela = p.frameLocator('iframe[title="experiencia"]');
+    const tela = p.frameLocator('iframe[data-experiencia]');
     // O nome do app é o `Logo` do DS (um SVG com `role="img"`), não texto.
     await tela.locator('[aria-label="Unoovista"]').first().waitFor({ timeout: 30_000 });
     await p.waitForTimeout(2000);
@@ -535,7 +535,7 @@ await suite(
 
     /* Sobreviver ao F5 é o que separa "apareceu na tela" de "foi gravado". */
     await p.reload({ waitUntil: "domcontentloaded" });
-    const telaDepois = p.frameLocator('iframe[title="experiencia"]');
+    const telaDepois = p.frameLocator('iframe[data-experiencia]');
     const escritaDepois = telaDepois.locator("textarea");
     await escritaDepois.waitFor({ timeout: 40_000 });
     await p.waitForTimeout(2000);
@@ -581,7 +581,7 @@ await suite(
     /* No F5, as três voltam TRAVADAS: a api guarda a primeira resposta, e a tela
        não convida a um segundo envio que não valeria nada. */
     await p.reload({ waitUntil: "domcontentloaded" });
-    const telaTravada = p.frameLocator('iframe[title="experiencia"]');
+    const telaTravada = p.frameLocator('iframe[data-experiencia]');
     await telaTravada.getByText("Pronto. Suas respostas foram enviadas.").waitFor({ timeout: 40_000 });
     const travadas = await telaTravada.getByText("Resposta enviada ✓").count();
     r.exigir(travadas === 3, `as três perguntas reabrem travadas depois do F5 (${travadas} de 3)`);

@@ -9,7 +9,7 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{161 decisões}, numeradas até ADR-161. A 160 (o painel de habilidades pelo total) e a 161 (os custos de IA) nasceram no mesmo dia, em frentes paralelas, e a 161 foi escrita depois de conferir que a 160 já estava tomada em \cd{dev-local}. A 153 (a evidência do Unoovista) e a 154 (a da Missão Tempestade) nasceram no mesmo dia, em frentes paralelas. A 132 (a Ajuda com
+São \textbf{164 decisões}, numeradas até ADR-164. A 160 (o painel de habilidades pelo total) e a 161 (os custos de IA) nasceram no mesmo dia, em frentes paralelas, e a 161 foi escrita depois de conferir que a 160 já estava tomada em \cd{dev-local}. A 153 (a evidência do Unoovista) e a 154 (a da Missão Tempestade) nasceram no mesmo dia, em frentes paralelas. A 132 (a Ajuda com
 avatar) entrou no código antes de ter seção aqui, e por um dia o número foi
 citado sem existir; a 133 pulou para não colidir com ela. A 133 e a 134 nasceram no mesmo dia, em frentes paralelas
 (Unoovista e Unoochat), e entraram juntas no merge; a 135 e a 136 levaram as
@@ -207,11 +207,14 @@ que a cercam.
 \adrr{ADR-154} & A Missão Tempestade mede a evidência numa atividade sintética, com rodada da turma, a melhor resposta e o nível só ao encerrar a missão & 2026-10-07 & Aceita; aplica a \adrr{ADR-112}\\
 \zebra \adrr{ADR-155} & Zerar a turma apaga a evidência pedagógica da atividade & 2026-10-09 & Aceita; reverte parte da \adrr{ADR-112}\\
 \adrr{ADR-156} & O Unoovista ganha o podcast com as falas revisadas no Ativar, e a Missão Tempestade ganha o primeiro podcast fixo & 2026-10-10 & Aceita; aplica a \adrr{ADR-150}\\
-\zebra \adrr{ADR-157} & O Júri Estadual segue o PRD v2 (0.4.0) & 2026-10-10 & Aceita; supera em parte a \adrr{ADR-151} e a \adrr{ADR-152}\\
+\zebra \adrr{ADR-157} & O Júri Estadual segue o PRD v2 (0.4.0) & 2026-10-10 & Aceita; supera em parte a \adrr{ADR-151} e a \adrr{ADR-152}; superada em parte pela \adrr{ADR-164}\\
 \adrr{ADR-158} & O mascote na Ajuda: voz do Gemini Live por um proxy na api, rosto 3D no hub, e o padrão escolhido no painel & 2026-10-12 & Aceita; complementa a \adrr{ADR-132}\\
 \zebra \adrr{ADR-159} & O hub no celular e no tablet: \cd{min-w-0} na coluna ao lado da \cd{SideBar}, e a \cd{Tag} que quebra linha & 2026-10-12 & Aceita; complementa a \adrr{ADR-83}\\
 \adrr{ADR-160} & O painel de habilidades abre pelo total, e o contrato desce pela regional & 2026-10-13 & Aceita; complementa a \adrr{ADR-144}\\
 \adrr{ADR-161} & Custos de IA: o consumo medido por dia, produto, escola e modelo, e o custo derivado na leitura, com preço datado e a PTAX do dia & 2026-10-13 & Aceita; complementa a \adrr{ADR-105} e a \adrr{ADR-158}\\
+\zebra \adrr{ADR-162} & Acessibilidade WCAG 2.2 AA: o axe como portão, e a correção no \emph{design system}, não na tela & 2026-10-13 & Aceita; reclassifica o risco R-07\\
+\adrr{ADR-163} & O texto alternativo da imagem do post é o \emph{brief} que a gerou; as fotos fixas são descritas no \emph{bundle} & 2026-10-13 & Aceita; corrige uma consequência da \adrr{ADR-162}\\
+\zebra \adrr{ADR-164} & O Júri Estadual com quarenta projetos: o feed sem repetir post, a galeria mostra O QUE sumiu, e o banco padrão ganha imagens & 2026-10-14 & Aceita; supera em parte a \adrr{ADR-157}\\
 \bottomrule
 \end{tabularx}
 
@@ -14013,7 +14016,11 @@ outras).
 \section{ADR-157 --- O Júri Estadual segue o PRD v2 (0.4.0)}
 \label{adr:exp06ef1b-prd-v2}
 
-\textbf{Data.} 2026-10-10. \textbf{Status.} Aceita. \textbf{Supera} a
+\textbf{Data.} 2026-10-10. \textbf{Status.} Aceita; \textbf{superada em parte
+pela \adrr{ADR-164}} (2026-10-14): os dezesseis projetos, a saturação por
+formatos (o desvio 1) e a taxa de invisibilidade como a prova da Galeria Oculta
+deram lugar aos quarenta projetos, ao feed sem repetir post e à galeria que
+mostra O QUE sumiu; o resto continua valendo. \textbf{Supera} a
 \adrr{ADR-151} e a \adrr{ADR-152} no que conflitam com ela (o ciclo do voto, o
 salvar com peso, a rodada de desvio, a ausência de banco padrão, o podcast
 opcional, a régua da EF06CO01); o resto delas (duas fases de aprovação,
@@ -14538,3 +14545,323 @@ apareciam na fatura da Vertex, passam a entrar na conta.
 \textbf{Gatilho.} Diferença de mais de 10\% entre o painel e a fatura do mês;
 \cd{ia\_consumo\_diario} passar de cerca de 5 milhões de linhas; ou o DS
 publicar escala pelo dado nos gráficos (a compensação morre).
+% ---------------------------------------------------------------------------
+\section{ADR-162 --- Acessibilidade WCAG 2.2 AA: o axe como portão, e a correção no \emph{design system}, não na tela}
+\label{adr:acessibilidade-aa}
+
+\textbf{Data.} 2026-10-13. \textbf{Status.} Aceita. \textbf{Reclassifica} o
+risco \cd{R-07} (Capítulo~\ref{cap:riscos}) e tira a linha
+\enquote{Acessibilidade} do estado \enquote{Ausente} no
+Capítulo~\ref{cap:qualidade}.
+
+\begin{especificacao}{Contexto}
+\begin{itemize}
+  \item \textbf{Rede pública exige acessibilidade, e a plataforma não tinha
+    como prometer nenhuma.} Não havia verificação de contraste, foco ou leitor
+    de tela; a história H12.6.1 do mapa de produto dizia, com razão, que
+    \enquote{não é possível prometer acessibilidade a uma rede}.
+  \item \textbf{A primeira medição (axe-core 4.10, critérios A e AA da WCAG
+    2.0, 2.1 e 2.2)} percorreu 65 telas do hub por papel e a abertura das
+    onze missões liberadas: \textbf{5 regras violadas no hub, nenhuma nas
+    missões}. Os 106 nós de contraste, em 23 telas, eram \textbf{quatro peças}
+    do DS (\cd{Tag} \emph{brand}, \cd{FeedbackAlert}, \cd{Badge}, contador da
+    \cd{Tab}); as outras regras eram \cd{aria-controls} das \cd{Tabs} apontando
+    para painel que não existe, um controle aninhado e alvo de 1,7\,px em
+    \rota{/unooria/recursos}, e a legenda rolável do gráfico de rosca sem
+    teclado.
+  \item \textbf{O DS inteiro, medido história por história no Storybook},
+    tinha 104 nós reais na seção \cd{unooria} (outros 630 eram da moldura das
+    próprias histórias, que não vai no pacote). A causa dominante era UM tom:
+    o \cd{brandnavy-700} (\cd{\#6487C2}) usado como TEXTO, ou como fundo de
+    texto branco, dá 3,62:1 contra branco.
+\end{itemize}
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{enumerate}
+  \item \textbf{Corrigir no pacote, e só no pacote, o que é do componente}
+    (\arq{storybook-unooria}, versões 0.2.20 e 0.2.21 --- a segunda com o que só
+    a medição DENTRO das missões achou: o texto de ajuda do \cd{TextField}
+    desabilitado, o alvo do \cd{ChatHeader} e o \cd{BottomSheet} rolável):
+    resolver no DS é resolver uma
+    vez; compensar nas telas seria resolver 48 vezes, e a compensação some na
+    próxima subida. No hub ficam só os defeitos da TELA: o título do
+    \emph{iframe} (o nome do manifesto, no lugar de \enquote{experiencia}),
+    a \cd{Tag} clicável dentro de um botão, o cartão \enquote{em breve} apagado
+    por \cd{opacity} e o \cd{:focus-visible} que o \cd{outline: none} do
+    \cd{.unooria-select} engolia.
+  \item \textbf{A regra de cor que vale para o DS todo:} o \cd{brandnavy-700}
+    continua como cor de controle (fundo de \emph{checkbox}, rádio,
+    \emph{toggle} --- 3:1 basta para o que não é texto) e sai de todo TEXTO e de
+    todo fundo com texto branco, trocado pelo \cd{brandnavy-800}
+    (\cd{\#49699F}, 5,52:1); no tema escuro o texto azul vai para o 600, e o
+    botão cheio claro leva texto escuro. Os tons semânticos 500 não são cor de
+    texto. E \textbf{nada de \cd{opacity} em texto}: foi ela, e não o token,
+    que derrubou a descrição do \cd{FeedbackAlert} e o cartão \enquote{em
+    breve}.
+  \item \textbf{O axe vira portão, em duas portas com a mesma fonte}
+    (\arq{scripts/e2e/lib/acessibilidade.mjs}): a ferramenta
+    \arq{ferramentas/medir-acessibilidade.mjs}, que percorre as telas por papel
+    e sai 1 com violação (LARGURA), e \cd{E2E\_ACESSIBILIDADE=1} nas suítes,
+    que mede cada passo, inclusive DENTRO das missões (PROFUNDIDADE).
+  \item \textbf{Verde no axe é condição necessária do AA, não suficiente.} A
+    declaração de conformidade exige ainda a passada manual de teclado e leitor
+    de tela do Capítulo~\ref{cap:qualidade}.
+\end{enumerate}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Compensar nas telas do hub} (classe local por cima do DS). É a
+    forma exata da dívida que a regra de ouro do DS proíbe: corrige onde se
+    mediu, deixa o resto das 48 experiências com o defeito e morre calada na
+    próxima versão.
+  \item \textbf{Trocar a cor da marca} (o \cd{brandnavy-700} inteiro). O 700
+    passa como cor de controle; escurecer tudo mudaria a identidade para
+    resolver um problema que é só do texto.
+  \item \textbf{Ligar \cd{a11y.test: 'error'} no Storybook do DS já}: 115 das
+    360 histórias da seção \cd{unooria} reprovavam, a maioria pela moldura de
+    documentação. O portão do pacote entra quando a moldura estiver limpa.
+  \item \textbf{Axe em todo passo de toda suíte, sempre}: custa cerca de
+    1\,s por passo numa suíte que já leva o tempo de um almoço; fica opcional.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{O azul da marca escurece} no texto, nos botões cheios e nos
+    selos do DS. É visível, e é a troca que o AA cobra.
+  \item \textbf{Os clones que imitam um aplicativo real} (Instanooria, ChatGPT,
+    WhatsApp) reprovavam porque copiam as cores dele. O dono do produto decidiu
+    pelo AA: cinzas e azuis um pouco mais escuros que o original, na 0.2.20.
+  \item \textbf{A imagem do post do Instanooria não tinha texto alternativo}, e
+    a primeira leitura foi que o \cd{image\_brief} poderia entregar o gabarito.
+    Não entrega: ver \adrr{ADR-163}, que fechou o ponto.
+  \item \textbf{Ficam lacunas nomeadas no DS} em componentes sem consumidor na
+    plataforma: o botão de remover do \cd{Avatar} (22\,px e aninhado no avatar
+    clicável) e o \cd{TimePicker} (botão de limpar dentro do gatilho).
+  \item \textbf{Medir a stack inteira derruba a VM do Docker}: a medição
+    corre por lote (Apêndice~\ref{ap:operacao}).
+\end{itemize}
+
+\textbf{Gatilho.} Violação nova na medição de LARGURA; a passada manual achar
+o que o axe não acha; ou o PO decidir as cores dos clones.
+% ---------------------------------------------------------------------------
+\section{ADR-163 --- O texto alternativo da imagem do post é o \emph{brief} que a gerou; as fotos fixas são descritas no \emph{bundle}}
+\label{adr:texto-alternativo}
+
+\textbf{Data.} 2026-10-13. \textbf{Status.} Aceita. \textbf{Corrige} uma
+consequência da \adrr{ADR-162}, que deixava a imagem do post sem texto
+alternativo à espera de um campo revisado pelo PO.
+
+\begin{especificacao}{Contexto}
+\begin{itemize}
+  \item \textbf{Imagem de conteúdo sem descrição reprova a WCAG 1.1.1, de nível
+    A.} No Instanooria (exp08ef1b) toda imagem de post ia com \cd{alt=""}, e no
+    \enquote{O Que a Foto Conta} (exp01ef1b) as duas fotos do par decisório
+    tinham só \enquote{Foto 1} e \enquote{Foto 2}: o botão tinha nome, a imagem
+    não tinha descrição.
+  \item \textbf{A imagem do post é GERADA a partir de um \emph{brief}.} A
+    geração pede à IA, para cada post, um \cd{image\_brief}: \enquote{descrição
+    visual objetiva da foto, em uma frase, sem texto}, em português, que passa
+    pelos mesmos filtros de palavra bloqueada da legenda e que o professor já
+    lê na curadoria.
+  \item \textbf{O receio era o gabarito.} Mas o \emph{brief} descreve só o que a
+    imagem mostra; o lado, o perfil e a intensidade do post são outros campos e
+    continuam no servidor. Descrever a imagem dá ao estudante cego o que o
+    colega que enxerga já vê --- nada além.
+\end{itemize}
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{enumerate}
+  \item \textbf{Na exp08ef1b o texto alternativo é o \cd{imageBrief}}, servido
+    como \cd{imageAlt} pelo feed, pelos perdidos, pelo dossiê e pela visão do
+    professor, todos pela mesma função
+    (\arq{apps/api/src/comum/insta/texto-alternativo.ts}). Só vale para a
+    imagem GERADA (\cd{imageStatus} \cd{ok}): na arte procedural o \emph{brief}
+    não descreve o que aparece, e ali os emojis já são texto na tela. Sem
+    \emph{brief}, o cliente diz ao menos de quem é a foto, nunca \cd{alt=""}.
+  \item \textbf{Na exp01ef1b as cinco fotos são fixas e do \emph{bundle}}, então
+    a descrição mora ao lado do arquivo (\cd{altDaFoto} em
+    \arq{componentes/clone.tsx}): o enquadramento e o que aparece, sem dizer
+    qual escolha é a certa --- a missão não tem foto certa, e o que muda é o que
+    cada uma deixa de fora. No seletor do par, o botão leva \enquote{Foto 1:} e
+    a descrição.
+\end{enumerate}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Um campo de texto alternativo novo, revisado pelo PO.} Seria uma
+    segunda descrição da mesma imagem, escrita depois dela e sem a garantia de
+    concordar com o que a IA desenhou; o \emph{brief} é a descrição de que a
+    imagem NASCEU.
+  \item \textbf{Pedir à IA uma segunda descrição olhando a imagem pronta.} Mais
+    uma chamada paga por post, e mais um texto a filtrar, para dizer o que o
+    \emph{brief} já diz.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{A IA de imagem pode desenhar diferente do \emph{brief}}: a
+    descrição é a INTENÇÃO da imagem, não um laudo dela. O professor vê as duas
+    lado a lado na curadoria e pode regerar a imagem.
+  \item \textbf{Foto nova da exp01ef1b sem linha em \cd{DESCRICAO\_DAS\_FOTOS}}
+    cai na descrição genérica (\enquote{Foto do mural da turma}), que dá nome
+    mas não descreve. Foto nova entra com a descrição no mesmo commit.
+\end{itemize}
+
+\textbf{Gatilho.} Reclamação de que a descrição não bate com a imagem; ou a
+exp01ef1b ganhar fotos por tema geradas por IA (aí o \emph{brief} delas passa
+a ser a descrição, como na exp08ef1b).
+
+
+% ---------------------------------------------------------------------------
+\section{ADR-164 --- O Júri Estadual com quarenta projetos: o feed sem repetir post, a galeria mostra O QUE sumiu, e o banco padrão ganha imagens}
+\label{adr:exp06ef1b-quarenta-projetos}
+
+\textbf{Data.} 2026-10-14. \textbf{Status.} Aceita (aprovada pelo PO em
+2026-10-14). \textbf{Supera em parte} a \adrr{ADR-157}: os dezesseis projetos, a
+saturação por formatos (o desvio 1 dela) e a taxa de invisibilidade como a prova
+da Galeria Oculta. O resto da \adrr{ADR-157} continua valendo (o ciclo do voto
+em dois botões, os 8 minutos do servidor, o batimento da cédula, a cadeia, o caso
+Mariana, a ficha da evidência).
+
+\begin{especificacao}{Contexto}
+\begin{itemize}
+  \item \textbf{Com dezesseis projetos, a bolha só se formava repetindo
+    estande.} Quatro por área, dez posts e a área em foco dominando os posts 5
+    a 10: a \adrr{ADR-157} resolveu a conta servindo os MESMOS projetos em
+    formatos diferentes (apresentação, bastidor, protótipo, depoimento). A
+    criança via o mesmo estande três vezes e lia isso como defeito do app, não
+    como afunilamento.
+  \item \textbf{O PO aprovou dez projetos por área} (quarenta) e um feed de dez
+    posts ou 8 minutos \textbf{sem repetir post}, com o mesmo afunilamento:
+    quem curte cedo vê 7/1/1/1 projetos por área; quem não interage, 3/3/2/2.
+  \item \textbf{Com quarenta, o total escondido virou igual para todos}: dez
+    posts distintos deixam 30 de 40 fora, curtindo ou não. A taxa de
+    invisibilidade, que era a prova da galeria, deixou de separar quem curtiu
+    de quem não curtiu --- o que muda é QUAIS estandes sumiram.
+  \item \textbf{A diretriz do PO de \enquote{contraste de feeds na tela do
+    próprio aluno}} estava na conversa com o PO e não chegou à spec da
+    \adrr{ADR-157}: a galeria comparava a criança com um número, não com o
+    feed que ela teria sem as curtidas.
+  \item \textbf{O banco padrão não tinha imagem nenhuma}: o atalho do professor
+    e o \emph{fallback} sem cota mostravam a arte procedural nos dezesseis.
+\end{itemize}
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{enumerate}
+  \item \textbf{Quarenta projetos, dez por área}, ids
+    \cd{proj-[a-d](10|[1-9])} em ordem numérica (\cd{proj-a9} antes de
+    \cd{proj-a10}). A exp06ef1b sobe para a \textbf{0.5.0} e o instrumento para
+    o \textbf{3.0.0}.
+  \item \textbf{O feed não repete post.} O motor serve só \cd{apresentacao}; a
+    área em foco recebe projetos NOVOS dela (o da abertura e até mais seis). A
+    saturação por formatos sai, e \cd{prototipo} e \cd{depoimento} saem do
+    pacote. O \cd{bastidor} fica como texto: virou a quarta lâmina do carrossel
+    do próprio post (\enquote{Bastidores do estande}, depois das três fotos) e
+    a ficha de inspeção da galeria.
+  \item \textbf{A galeria mostra O QUE sumiu}, tudo calculado no servidor (o
+    motor nunca desce para o \emph{bundle}): \enquote{X de Y estandes nunca
+    chegaram ao seu feed} (Y = o tamanho do pacote, sem porcentagem); a
+    contagem por área (\enquote{Tecnologia: você viu 7 de 10}); e o
+    \textbf{contrafactual} \enquote{Sem as suas curtidas, o seu feed teria
+    trazido:\ldots} --- o feed desta mesma sessão recalculado pelo motor
+    determinístico com a mesma semente, sem curtidas nem permanências, com N =
+    os posts que a criança viu (o feed cortado pelos 8 minutos também tem N).
+    A grade dos ocultos mostra uma área por vez, escolhida por \emph{chips}.
+  \item \textbf{A lousa troca a invisibilidade média pela concentração do
+    feed}: entre quem votou, a média da fração do feed na área mais vista,
+    separando quem curtiu ao menos uma vez (cerca de 70\,\%) de quem não curtiu
+    (cerca de 30\,\%). Só agregado, e só depois de \enquote{Liberar Auditoria}:
+    o número diz que o feed se adaptou, e a plenária do pico pede para não
+    dizer ainda.
+  \item \textbf{Compatibilidade de leitura, exigência na escrita.} Pacotes de
+    dezesseis e sessões 2.0.0 (posts nos quatro formatos) continuam legíveis até
+    a turma trocar de atividade; homologar, o preparo e o banco padrão só
+    escrevem quarenta. A migração
+    \arq{20261014120000\_\B{}exp06ef1b\_\B{}quarenta\_\B{}projetos} troca dois
+    CHECKs (o conteúdo aceita 16 ou 40 projetos; o id de projeto aceita
+    \cd{proj-a10}) e não mexe em coluna, linha nem RLS.
+  \item \textbf{O preparo com IA são cinco chamadas}: as categorias, depois as
+    quatro áreas em paralelo (dez estandes cada), e o estande que repetir título
+    ou perfil de outra área é regerado sozinho. Medido com IA real: os quarenta
+    numa chamada levaram 92,7\,s (a segunda tentativa estouraria o teto de
+    180\,s do BFF); por área, cerca de 25\,s, e o preparo inteiro cerca de
+    42\,s. A customização gera as quarenta imagens quatro por chamada.
+  \item \textbf{O banco padrão tem quarenta projetos}: os dezesseis do banco de
+    conteúdo do PRD, intactos e com os mesmos ids (o podcast padrão os cita),
+    e vinte e quatro novos no mesmo molde, escritos pela equipe para o PO ler.
+  \item \textbf{As imagens do banco padrão}, geradas pelo \cd{admin}
+    (\rota{GET/POST /juri-estadual/banco-padrao/imagens}, página
+    \rota{/unooria/recursos/imagens-do-juri}, \enquote{Gerar as imagens que
+    faltam}): até quatro por chamada, idempotente (só as que faltam), com o
+    mesmo nome determinístico da customização (o \emph{hash} da descrição da
+    imagem), pelo provider de IA, medidas no painel de custos
+    (\adrr{ADR-161}) com atribuição própria (\cd{juri-estadual-banco-padrao},
+    perfil \cd{admin}, sem escola) e \textbf{sem quota de professor} --- é
+    custo da plataforma, e o \cd{QuotaService} não conhece o \cd{admin}; quem
+    segura a mão é o \emph{rate limit} da rota e o lote de quatro. O storage é
+    o registro (sem tabela). O pacote do banco padrão --- o atalho e o
+    \emph{fallback} sem cota --- usa as imagens que existem; sem imagem, a arte
+    procedural.
+  \item \textbf{No hub}, a curadoria, a grade de imagens e a página da atividade
+    ganham uma aba por área (\cd{Tabs} do DS), com a pendência no rótulo.
+  \item \textbf{A evidência não muda}: a ficha segue na versão 4.
+\end{enumerate}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Manter dezesseis com a saturação por formatos}
+    (\adrr{ADR-157}). É o que existia: a bolha se formava repetindo o mesmo
+    estande em quatro formatos, e o PO pediu que nenhum post se repetisse.
+  \item \textbf{Dezesseis, com o feed acabando quando a área esgota.} Quatro
+    projetos por área não sustentam dez posts: o feed de quem curte acabaria no
+    quinto ou sexto post, antes de a bolha ter forma, e a cédula abriria cedo
+    demais.
+  \item \textbf{Preencher a bolha com posts temáticos que não são estande}
+    (notícias da mostra, recados da comissão). Seriam posts sem projeto para
+    votar, e a galeria não teria o que mostrar deles: a bolha viraria ruído,
+    não afunilamento de estandes.
+  \item \textbf{Gerar os quarenta numa chamada só.} Medido: 92,7\,s e cerca de
+    9.900 \emph{tokens} de saída. Com a segunda tentativa, passa dos 180\,s do
+    BFF e o professor recebe um 504 que parece a IA fora do ar.
+  \item \textbf{Manter a taxa de invisibilidade como a medida da galeria.} Com
+    quarenta e dez posts sem repetição, ela é 30 de 40 para todos: a lousa
+    mostraria o mesmo número nas duas colunas, e a prova da bolha sumiria.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{Custo e tempo de geração cerca de 2,5 vezes maiores}: quarenta
+    estandes e quarenta imagens por atividade, contra dezesseis. O preparo cabe
+    no teto do BFF por ir em paralelo; as imagens levam minutos.
+  \item \textbf{A curadoria do professor é de quarenta estandes}, não de
+    dezesseis. As abas por área dividem o trabalho, mas não o diminuem.
+  \item \textbf{Os vinte e quatro projetos novos do banco padrão ainda não
+    passaram pela leitura do PO.} Foram escritos pela equipe no molde dos
+    dezesseis dele.
+  \item \textbf{O número da galeria deixou de diferenciar alunos}: \enquote{30
+    de 40} é igual para quem curtiu e para quem não curtiu. A diferença passa a
+    morar na contagem por área, no contrafactual e na concentração da lousa ---
+    e a criança precisa ler a contagem por área, não só o total, para ver a
+    própria bolha.
+  \item \textbf{Dois formatos de pacote e de sessão convivem} até a última turma
+    trocar de atividade: a leitura aceita os dois, e o teste de Postgres prova
+    que a 0.4.x continua abrindo.
+\end{itemize}
+
+\textbf{Gatilho.} O PO revisar o tamanho da mostra ou o número de posts do
+feed; a geração por área passar do teto do BFF (modelo mais lento, mais
+estandes); a concentração da lousa deixar de separar quem curtiu de quem não
+curtiu numa turma real; ou o PO pedir mudança nos vinte e quatro projetos novos
+do banco.

@@ -6,6 +6,7 @@ import { api } from '../../lib/api';
 import type { FeedPostCliente } from '../../lib/tipos';
 
 import { PostCard, type AcoesDoPost } from './post-card';
+import { altDaImagem } from '../../lib/alt-da-imagem';
 
 /**
  * FASE do DEBATE (fluxo v2). A tela trava aqui, e é de propósito.
@@ -133,7 +134,7 @@ export function Debate({ runId }: { runId: string }) {
                   >
                     {post.imageUrl ? (
                        
-                      <img src={post.imageUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
+                      <img src={post.imageUrl} alt={altDaImagem(post.imageAlt, post.author.handle)} className="h-full w-full object-cover" loading="lazy" />
                     ) : (
                       <span
                         className="flex h-full w-full items-center justify-center text-[26px]"

@@ -101,7 +101,7 @@ await suite(
     await r.entrar(p, estudante.login);
 
     await p.goto(`${HUB}/exp/exp01ef1b`, { waitUntil: "domcontentloaded" });
-    const q = p.frameLocator('iframe[title="experiencia"]');
+    const q = p.frameLocator('iframe[data-experiencia]');
     /* Corre contra o erro (não espera cega): se o boot falhar, a mensagem traz
        o status e o corpo — nunca "timeout esperando o seletor". */
     await esperarOuFalharPorHttp(
@@ -133,6 +133,14 @@ await suite(
         "foco da faixa é a leitura da imagem, e texto livre de criança não existe nesta missão.",
     });
 
+    /* Toda foto do feed é descrita (WCAG 1.1.1, ADR-163): o leitor de tela
+       diz o que o colega que enxerga vê. `alt=""` aqui é a regressão. */
+    const altsDoFeed = await q.locator(".fc-feed img").evaluateAll((imgs) => imgs.map((i) => i.getAttribute("alt") ?? ""));
+    r.exigir(
+      altsDoFeed.length > 0 && altsDoFeed.every((alt) => alt.trim().length >= 10),
+      `toda foto do mural tem descrição (${altsDoFeed.length} fotos)`,
+    );
+
     /* Curtir libera o botão NOVA PUBLICAÇÃO sem esperar os 15s de permanência. */
     await q.locator(".fc-feed img").first().dblclick();
     const criar = q.getByRole("button", { name: "NOVA PUBLICAÇÃO" });
@@ -149,6 +157,14 @@ await suite(
         "As duas opções têm a mesma moldura e o mesmo tamanho: a criança não pode deduzir uma " +
         "'foto certa' pela apresentação — porque não existe foto certa.",
     });
+
+    /* As duas opções têm nome com a DESCRIÇÃO da foto, e nomes diferentes:
+       quem não enxerga também precisa saber o que cada uma deixa de fora. */
+    const nomesDoPar = await q.locator(".fc-foto-opcao").evaluateAll((bs) => bs.map((b) => b.getAttribute("aria-label") ?? ""));
+    r.exigir(
+      nomesDoPar.length === 2 && nomesDoPar.every((n) => /^Foto \d: .{10,}/.test(n)) && nomesDoPar[0] !== nomesDoPar[1],
+      "as duas fotos do par têm nome com a descrição de cada uma",
+    );
 
     await q.locator(".fc-foto-opcao").last().click(); // par_b, o detalhe
     await q.getByRole("radio", { name: /OLHA O BRINQUEDO/i }).click();
@@ -187,7 +203,7 @@ await suite(
     const botoesNoLatch = await q.locator(".fc-congelamento button, .fc-congelamento a").count();
     r.exigir(botoesNoLatch === 0, `o latch não tem botão nem link (achei ${botoesNoLatch})`);
     await p.reload({ waitUntil: "domcontentloaded" });
-    const q2 = p.frameLocator('iframe[title="experiencia"]');
+    const q2 = p.frameLocator('iframe[data-experiencia]');
     await q2.locator("text=HORA DA RODA DE CONVERSA!").waitFor({ timeout: 40_000 });
     await r.registrar(p, "o-latch-da-roda", {
       titulo: "O tablet vira porta-retrato",

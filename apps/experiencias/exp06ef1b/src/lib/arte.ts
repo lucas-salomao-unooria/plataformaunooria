@@ -3,7 +3,7 @@
  * Molde: `exp07ef1b/src/lib/graficos.ts`.
  *
  * A missão não tem acervo padrão (decisão de 2026-10-02): as imagens dos
- * dezesseis estandes são geradas pelo professor no preparo, duas por vez. Até
+ * quarenta estandes são geradas pelo professor no preparo, quatro por vez. Até
  * lá — ou quando uma geração falha — `imagem.url` chega `null`, e a tela
  * desenha aqui um estande em formas simples: o painel do projeto, a mesa e o
  * protótipo. **A forma sai do id do projeto** (a mesma num F5, diferente entre

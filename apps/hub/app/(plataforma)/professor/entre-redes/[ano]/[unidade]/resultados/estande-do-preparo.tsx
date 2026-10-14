@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, type ReactNode } from "react";
 import {
   Button,
   Card,
@@ -8,6 +9,8 @@ import {
   ModalBody,
   ModalFooter,
   ModalHeader,
+  ScrollBar,
+  Tabs,
   Tag,
   TextArea,
   TextField,
@@ -18,6 +21,7 @@ import {
   MAX_PALAVRAS_DO_BASTIDOR,
   palavras,
   rotuloCurtoDaArea,
+  type Area,
   type CampoDoEstande,
   type CategoriaDaMostra,
   type ProjetoDoPacote,
@@ -34,7 +38,8 @@ import {
  * a curadoria).
  *
  * **O que se edita é o que a criança lê**: o título, a legenda da
- * apresentação e o texto do bastidor. A área, as hashtags, o perfil e a
+ * apresentação e o bastidor (o resumo técnico: a segunda lâmina do post e a
+ * ficha da Galeria Oculta). A área, as hashtags, o perfil e a
  * descrição da imagem ficam como a geração os deixou — a primeira hashtag é a
  * da área, e trocá-la desmontaria a busca da galeria; quem quiser outro
  * estande usa "Regenerar estande", que escreve um novo para caber no resto.
@@ -44,6 +49,50 @@ import {
  * de um estande vazavam pela borda do cartão logo depois da geração. `subtags`
  * é o contêiner do DS que quebra linha, abaixo da descrição.
  */
+
+/** Uma aba de área: o rótulo (`rotuloDaAbaDaArea`) e o que ela mostra. */
+export interface AbaDaArea {
+  area: Area;
+  rotulo: string;
+  conteudo: ReactNode;
+}
+
+/**
+ * AS QUATRO ÁREAS EM ABAS — as telas de quarenta estandes (a curadoria, a
+ * grade das imagens e os estandes da página da atividade). Quarenta cartões
+ * numa coluna só eram uma rolagem em que o professor perdia o estande com
+ * ajuste; uma aba por área, com a pendência no rótulo, diz onde procurar.
+ *
+ * `Tabs` do DS em modo CONTROLADO (como `professor/turmas/[id]/abas-da-sala.tsx`),
+ * e só a aba aberta é RENDERIZADA — nunca `Collapse` nem painel escondido: a
+ * área fechada deixaria dezenas de botões focáveis dentro de `aria-hidden`.
+ * O estado é local (não `?aba=`): três telas montam o componente, uma delas
+ * dentro do assistente da criação, onde a URL é do assistente.
+ *
+ * Serve a Server Components: o conteúdo de cada aba chega pronto, como nó.
+ */
+export function AbasDasAreas({ abas, rotulo }: { abas: readonly AbaDaArea[]; rotulo: string }) {
+  const [area, setArea] = useState<Area | undefined>(abas[0]?.area);
+  const aberta = abas.find((a) => a.area === area) ?? abas[0];
+  if (!aberta) return null;
+  return (
+    <div className="flex flex-col gap-4" aria-label={rotulo} role="group">
+      {/* Sem o ícone padrão do `Tab` (um "+" que leria como "adicionar"), e numa
+          faixa que rola na horizontal: o nome da área vem da IA e pode ser
+          longo, e a quarta aba saía cortada a 1440 px (e2e 13). */}
+      <ScrollBar orientation="horizontal" autoHide>
+        <Tabs
+          value={aberta.area}
+          onChange={(valor) => setArea(String(valor) as Area)}
+          items={abas.map((a) => ({ value: a.area, label: a.rotulo, showIcon: false }))}
+        />
+      </ScrollBar>
+      <div key={aberta.area} data-area={aberta.area}>
+        {aberta.conteudo}
+      </div>
+    </div>
+  );
+}
 
 /** "7 palavras · até 60" — a régua à vista enquanto o professor digita. */
 function contagem(texto: string, max?: number): string {
@@ -125,7 +174,7 @@ export function CartaoDoEstande({
   );
 }
 
-/** A janela de edição de UM estande: o que a criança lê no post da apresentação e no do bastidor. */
+/** A janela de edição de UM estande: o que a criança lê no post e na ficha da Galeria Oculta. */
 export function EditorDoEstande({
   projeto,
   categoria,
@@ -195,7 +244,7 @@ export function EditorDoEstande({
             onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => mudar({ legenda: e.target.value })}
           />
           <TextArea
-            label="Bastidor (o post do protótipo sendo testado)"
+            label="Bastidor (o resumo técnico: a segunda página do carrossel do post e a ficha da Galeria Oculta)"
             value={p.bastidor}
             rows={3}
             maxLength={CARACTERES.bastidor.max}

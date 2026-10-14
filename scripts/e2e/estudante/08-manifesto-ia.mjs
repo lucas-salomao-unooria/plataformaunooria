@@ -145,7 +145,7 @@ await suite(
     await r.entrar(p, estudante.login);
 
     await p.goto(`${HUB}/exp/exp08ef4b`, { waitUntil: "domcontentloaded" });
-    let q = p.frameLocator('iframe[title="experiencia"]');
+    let q = p.frameLocator('iframe[data-experiencia]');
     await q.locator("text=/monitorar notas e presença/i").waitFor({ timeout: 40_000 });
     await r.registrar(p, "alerta-de-amara", {
       titulo: "Amara chama",
@@ -398,7 +398,7 @@ await suite(
     /* O F5 no meio da missão: o estado é do SERVIDOR, e a tela tem de voltar
        exatamente onde estava — no manifesto, que é onde a pausa a prendeu. */
     await p.reload({ waitUntil: "domcontentloaded" });
-    q = p.frameLocator('iframe[title="experiencia"]');
+    q = p.frameLocator('iframe[data-experiencia]');
     /* Retomar a missão NÃO empurra ninguém para a frente: devolve a criança ao
        passo dela, e quem avança é ela. Sem este clique o roteiro esperava o
        campo do Meu Percurso numa tela que ainda mostra o documento — e reporta

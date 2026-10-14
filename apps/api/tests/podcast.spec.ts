@@ -27,7 +27,11 @@ import { mensagensSaoAsDoPadrao } from "../src/quem-mandou-isso/quem-mandou-isso
 import { HomologacaoSchema as HomologacaoDoJuri } from "../src/juri-estadual/contrato-de-rotas";
 import * as Juri from "../src/juri-estadual/podcast";
 import { conteudoDoBancoPadrao } from "../src/juri-estadual/banco-padrao";
-import { fonteDoPodcastDaExp06ef1b, materialDoPodcast as materialDoJuri } from "../src/juri-estadual/podcast-fonte";
+import {
+  ConteudoDoPodcastSchema as ConteudoDoPodcastDoJuri,
+  fonteDoPodcastDaExp06ef1b,
+  materialDoPodcast as materialDoJuri,
+} from "../src/juri-estadual/podcast-fonte";
 import { PARAMETROS_DE_TESTE, conteudoDeTeste } from "./juri-estadual-fixture";
 import { AtivarSchema } from "../src/atividades/contrato-de-rotas";
 import * as Unoovista from "../src/atividades/podcast";
@@ -434,11 +438,26 @@ describe("o podcast do Júri Estadual (6º ano)", () => {
     );
   });
 
-  test("o material da IA traz as quatro áreas e os dezesseis estandes", () => {
+  test("o material da IA traz as quatro áreas e os QUARENTA estandes, e a escrita das falas exige os quarenta", () => {
     const conteudo = conteudoDeTeste();
     const material = materialDoJuri(conteudo);
     for (const c of conteudo.categorias) expect(material).toContain(`Área "${c.nome}"`);
     for (const p of conteudo.projetos) expect(material).toContain(p.titulo);
+    expect(material).toContain("os 40 estandes");
+    expect(ConteudoDoPodcastDoJuri.safeParse(conteudo).success).toBe(true);
+    expect(ConteudoDoPodcastDoJuri.safeParse({ ...conteudo, projetos: conteudo.projetos.slice(0, 16) }).success).toBe(false);
+  });
+
+  test("o banco de quarenta mantém os estandes que o roteiro do sheet cita (proj-a1..a4, b1..b4)", () => {
+    const banco = conteudoDoBancoPadrao();
+    const titulo = (id: string) => banco.projetos.find((p) => p.id === id)?.titulo.toLowerCase() ?? "";
+    const falas = Object.values(Juri.FALAS_DO_TEMA_PADRAO).join(" ").toLowerCase();
+    expect(banco.projetos).toHaveLength(40);
+    expect(titulo("proj-a3")).toContain("alarme de enchente");
+    expect(falas).toContain("alarme de enchente");
+    expect(titulo("proj-b2")).toContain("composteira térmica");
+    expect(falas).toContain("composteira térmica");
+    for (const id of ["proj-b1", "proj-b3", "proj-b4", "proj-a1", "proj-a2", "proj-a4"]) expect(titulo(id).length).toBeGreaterThan(0);
   });
 
   test("a mostra da IA vai à IA (o banco padrão não), e sem IA volta o sheet com o motivo", async () => {
@@ -515,7 +534,17 @@ function prismaDasFontes(linha: { falas: unknown } | null, atividade: object | n
         return atividade;
       },
     },
-    podcastRoteiro: { findUnique: async () => linha },
+    podcastRoteiro: {
+      /* Como o Postgres: `atividade_id` é `@db.Uuid`, e id que não é UUID faz
+         o Prisma recusar a consulta inteira (foi o que quebrou a Tempestade). */
+      findUnique: async (q: { where: { escolaId_expId_atividadeId: { atividadeId: string } } }) => {
+        const id = q.where.escolaId_expId_atividadeId.atividadeId;
+        if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
+          throw new Error(`Error creating UUID, invalid character: ${id}`);
+        }
+        return linha;
+      },
+    },
   };
   const prisma = { comTenancy: async (fn: (tx: unknown) => unknown) => fn(tx) } as unknown as PrismaService;
   return { prisma, consultas };

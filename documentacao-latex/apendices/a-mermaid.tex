@@ -38,6 +38,7 @@ C4Container
   title Visao geral da Plataforma Unooria
 
   Person(estudante, "Estudante", "1o EF ao 3o EM")
+  Person(prof, "Professor", "")
 
   Container_Boundary(plat, "Plataforma Unooria") {
     Container(hub, "Hub", "Next.js", "Autentica, roteia por papel, embeda")
@@ -45,12 +46,14 @@ C4Container
     Container(api, "API", "NestJS", "Regra, gabarito, tenancy")
     ContainerDb(pg, "PostgreSQL", "Cloud SQL", "RLS por escola")
     ContainerQueue(ps, "Pub/Sub", "", "Telemetria analitica")
+    Container(age, "Agente do professor", "Python + ADK", "Vertex AI Agent Engine")
   }
 
-  System_Ext(idp, "WSO2 Identity Server", "Identidade, futuro")
+  System_Ext(idp, "WSO2 Identity Server", "Identidade")
   System_Ext(vertex, "Vertex AI", "Gemini")
 
   Rel(estudante, hub, "HTTPS")
+  Rel(prof, hub, "HTTPS")
   BiRel(hub, exp, "postMessage v1", "token, contexto")
   Rel_L(hub, idp, "OIDC")
   Rel(hub, api, "BFF")
@@ -59,6 +62,8 @@ C4Container
   Rel(api, ps, "publica")
   Rel(ps, api, "push POST /telemetry/ingest")
   Rel(api, vertex, "quota por perfil")
+  Rel(api, age, "SSE")
+  Rel(age, vertex, "Gemini, acervo")
 \end{lstlisting}
 
 % ---------------------------------------------------------------------------
@@ -67,7 +72,8 @@ C4Container
 \begin{lstlisting}[language=mermaid]
 flowchart LR
   estudante([Estudante]); prof([Professor]); gestor([Gestor de escola]); admin([Gestor do contrato])
-  idp[[WSO2 IS]]; vertex[[Vertex AI]]; pubsub[[Pub/Sub]]; ci[[CI/CD]]
+  idp[["Provedor de identidade (WSO2 IS de destino; hoje o hub)"]]
+  vertex[["Vertex AI (Gemini e Agent Engine)"]]; pubsub[[Pub/Sub]]; ci[[CI/CD]]
 
   subgraph SIS["Plataforma Unooria"]
     UC01(("UC-01 Autenticar-se"))
@@ -83,27 +89,30 @@ flowchart LR
     UC14(("UC-14 Gerar plano de aula"))
     UC15(("UC-15 Check-in de bem-estar"))
     UC16(("UC-16 Zerar dados da turma"))
-    UC20(("UC-20 Importar usuarios por CSV"))
+    UC45(("UC-45 Conversar com o agente de IA"))
+    UC20(("UC-20 Importar pessoas e enturmar"))
     UC21(("UC-21 Editar pessoa e redefinir senha"))
     UC22(("UC-22 Ler agregado da rede"))
     UC23(("UC-23 Publicar manifesto"))
     UC24(("UC-24 Ativar ou reverter versao"))
   end
 
+  %% UC-01 vale para todo papel; o desenho o liga so ao estudante.
   estudante --- UC01 & UC02 & UC03 & UC06
-  prof  --- UC01 & UC10 & UC12 & UC13 & UC14 & UC15 & UC16
+  prof  --- UC10 & UC14 & UC15 & UC45 & UC12 & UC13 & UC16
   gestor --- UC20 & UC21
   admin --- UC22 & UC23
 
   UC03 -.->|include| UC04
   UC03 -.->|include| UC05
   UC10 -.->|include| UC11
-  UC23 -.->|extend| UC24
+  UC24 -.->|extend| UC23
 
   UC01 --- idp
   UC11 --- vertex
   UC14 --- vertex
   UC15 --- vertex
+  UC45 --- vertex
   UC04 --- pubsub
   UC23 --- ci
 \end{lstlisting}
@@ -115,23 +124,23 @@ flowchart LR
 C4Context
   title C4 nivel 1 - Contexto do sistema
 
-  Person(estudante, "Estudante", "1o EF ao 3o EM")
-  Person(prof, "Professor", "Conduz a aula")
-  Person(gestor, "Gestor escolar", "Mantem usuarios")
-  Person(admin, "Admin do contrato", "Rede")
+  Person(estudante, "Estudante", "do 1o EF ao 3o EM")
+  Person(prof, "Professor", "conduz a turma")
+  Person(gestor, "Gestao da rede", "escola, regional e contrato")
+  Person(admin, "Admin da Unooria", "opera a rede inteira")
 
-  System(sis, "Plataforma Unooria", "Hub multi-tenant que autentica por papel, embeda experiencias imersivas versionadas, corrige e pontua no servidor, coleta telemetria e produz leitura de turma - com isolamento logico por escola")
+  System(sis, "Plataforma Unooria", "Hub multi-tenant que autentica por papel, embeda experiencias imersivas versionadas, corrige e pontua no servidor, coleta telemetria, produz leitura de turma e da ao professor um agente de IA - com isolamento logico por escola")
 
   System_Ext(idp, "WSO2 Identity Server", "Identidade central, varios contratos")
-  System_Ext(vertex, "Vertex AI - Gemini", "Texto e imagem generativos")
-  System_Ext(ci, "GitHub Actions", "Publica bundles e manifestos")
+  System_Ext(vertex, "Vertex AI", "Gemini, Agent Engine e Vertex AI Search")
+  System_Ext(ci, "GitHub Actions", "Publica imagens, bundles e manifestos")
   System_Ext(tf, "Terraform (repo separado)", "Provisiona a stack do contrato")
   System_Ext(avatar, "LiveAvatar (HeyGen)", "Escuta, voz e video do atendente da Ajuda (ADR-132)")
 
   Rel(estudante, sis, "realiza missoes")
-  Rel(prof, sis, "prepara, conduz, le")
-  Rel(gestor, sis, "administra")
-  Rel(admin, sis, "le o agregado")
+  Rel(prof, sis, "libera, conduz, le; conversa com o agente")
+  Rel(gestor, sis, "administra pessoas; le o agregado")
+  Rel(admin, sis, "liga recursos; tetos de IA")
   Rel(idp, sis, "OIDC")
   BiRel(sis, vertex, "HTTPS + ADC")
   Rel(ci, sis, "publica")
@@ -150,10 +159,10 @@ C4Container
 
   Person(estudante, "Estudante")
   Person(prof, "Professor")
-  Person(adm, "Gestor / Admin")
+  Person(adm, "Gestao e admin")
 
   Container_Boundary(stack, "Plataforma Unooria - stack de um contrato") {
-    Container(hub, "Hub", "Next.js App Router", "Sessao, roteamento por papel, chrome institucional, montagem do embed, BFF, JWKS e assinatura de token")
+    Container(hub, "Hub", "Next.js App Router", "Sessao, roteamento por papel, chrome institucional, montagem do embed, BFF (inclusive o stream do chat do agente), JWKS e assinatura de token")
     Container(exp, "Experiencia", "Vite + React, ESTATICO", "Uma por missao. Roda no navegador; nunca e um processo do servidor")
     Component(sdk, "@edu/sdk", "TypeScript", "Ponte, telemetria, API, progresso")
     Container(api, "API", "NestJS + Prisma", "Autorizacao por papel, tenancy, regra de dominio, gabarito, correcao, gateway de IA, ingestao de telemetria")
@@ -164,7 +173,7 @@ C4Container
     ContainerDb(ds, "Vertex AI Search", "dois data stores, global", "habilidades (estruturado) e acervo (PDFs) - ADR-127")
   }
 
-  System_Ext(vertex, "Vertex AI")
+  System_Ext(vertex, "Vertex AI", "Gemini e Gemini Live")
   Container_Ext(idp, "WSO2 IS", "", "Externo a stack")
   System_Ext(avatar, "LiveAvatar", "HeyGen; video da Ajuda (ADR-132)")
 
@@ -179,12 +188,12 @@ C4Container
   Rel(api, ps, "publica")
   Rel(ps, api, "push /telemetry/ingest")
   Rel(api, buckets, "assets, planos")
-  Rel(api, vertex, "HTTPS + ADC")
-  Rel(api, engine, ":query / :streamQuery, ADC")
+  Rel(api, vertex, "HTTPS; WSS do Gemini Live (ADR-158)")
+  Rel(api, engine, "SSE (:streamQuery), ADC")
   Rel(engine, vertex, "Gemini")
   Rel(engine, ds, "busca")
   Rel(hub, idp, "OIDC")
-  Rel(buckets, exp, "CDN serve o bundle")
+  Rel(buckets, exp, "CDN")
   BiRel(api, avatar, "sala; /ajuda/llm")
   %% O video vai do vendor direto ao navegador (WebRTC), sem passar pela stack;
   %% a chave da conta, o prompt e a base nunca saem da API.
@@ -202,91 +211,69 @@ C4Component
     Component(guard,  "OidcGuard", "", "Valida JWT por JWKS")
     Component(roles,  "RolesGuard", "", "Restringe por papel")
     Component(tenint, "TenancyInterceptor", "", "Preenche escola/perfil no AsyncLocalStorage aberto pelo middleware")
-    Component(env,    "validarEnv", "Zod", "Valida env no boot")
     Component(obs,    "observabilidade/", "pino + OpenTelemetry", "Contexto da requisicao (middleware), logger com redaction, filtro global, sampler por rota; otel.ts e a primeira importacao do main.ts")
+    %% validarEnv (Zod no boot) nao esta na figura TikZ
+
+    %% --- plataforma: serve a todas as experiencias
+    Component(mais,   "analise/ telemetry/ progress/ portabilidade/ prospeccao/ health/", "", "Tambem de plataforma; sem setas na figura (prospeccao/ sem tenant, ADR-107)")
+    Component(ident,  "auth/ usuarios/ rostering/", "", "Identidade: TokenService; pessoas, escolas, turmas")
+    Component(expmod, "experiencias/", "", "Catalogo e versao")
+    Component(recs,   "recursos/", "", "Disponibilidade (ADR-87), quotas de IA (ADR-105), limites e configuracao da Ajuda, custos de IA (ADR-161); escrita so admin")
+    Component(salas,  "salas/", "", "Liberacao por turma (ADR-69)")
+    Component(agente, "agente-professor/", "", "Agente de IA do professor: posse da conversa, SSE; @Produto('agente-professor') (ADR-126)")
+    Component(ajuda,  "ajuda/", "", "Avatar (ajuda-llm, fora dos guards de pessoa) e mascote (WS /ajuda/mascote/ao-vivo); por minutos, fora do QuotaService (ADR-132, ADR-158)")
+    Component(equipes,"equipes/", "", "Quem divide um computador na missao (ADR-111); consulta.ts e a porta")
+    Component(evid,   "evidencias/", "", "Habilidade da BNCC por atividade e rodada (ADR-112); a porta marcar")
+    Component(podcast,"podcast/", "", "Recapitulacao de toda missao (ADR-150); registrarFonte na subida; @Global")
 
     %% --- infraestrutura: as portas unicas
     Component(prisma, "PrismaService", "Prisma", "comTenancy: transacao + RLS")
-    Component(ai,     "ai/", "", "AiProvider, QuotaService")
-    Component(store,  "object-storage/", "", "local | GCS")
-    Component(assets, "assets/", "", "Imagem gerada")
+    Component(comum,  "comum/", "", "Guardas de liberacao (exigirMissaoLiberada) e de disponibilidade; series, rate limit")
+    Component(ai,     "ai/", "", "AiProvider medido (MedidorDeProvider), QuotaService, AgenteProfessorPort, AvatarAoVivoPort, VozAoVivoPort")
+    Component(store,  "object-storage/ + assets/", "", "local | GCS")
 
-    %% --- plataforma: serve a todas as experiencias
-    Component(auth,   "auth/", "", "TokenService")
-    Component(usu,    "usuarios/", "", "CSV, senha")
-    Component(expmod, "experiencias/", "", "Manifesto")
-    Component(tel,    "telemetry/", "", "batch, beacon, ingest")
-    Component(prog,   "progress/", "", "Progresso generico")
-    Component(health, "health/", "", "healthz, readyz")
-    Component(analise,"analise/", "", "Turma e rede, CSV")
-    Component(comum,  "comum/", "", "Series, rate limit, guardas de liberacao e disponibilidade")
-    Component(rost,   "rostering/", "", "Pessoas, escolas, turmas")
-    Component(port,   "portabilidade/", "", "Perfil portatil")
-    Component(salas,  "salas/", "", "A sala: grade e liberacao por turma (ADR-69)")
-    Component(equipes,"equipes/", "", "Quem divide um computador na missao (ADR-111); consulta.ts e a porta dos paineis")
-    Component(recs,   "recursos/", "", "O interruptor da rede e a versao (ADR-87); escrita so admin")
-    Component(prosp,  "prospeccao/", "", "Cadastro de interesse do site publico, sem tenant (ADR-107)")
-    Component(evid,   "evidencias/", "", "Habilidade da BNCC por atividade e rodada (ADR-112); a porta marcar das missoes, que a exp05ef1b chama")
-
-    %% --- dominio por experiencia (nenhum conhece outro)
-    Component(motor,  "motor/ geracao/ dossie/ atividades/ perfis/", "", "exp08ef1b")
-    Component(utube,  "unootube/", "", "exp04ef1b - painel conta por computador")
-    Component(vila,   "vila/", "", "app-70")
-    Component(planos, "planos/", "", "app-90")
-    Component(bem,    "bemestar/", "", "app-91")
-    Component(ugpt,   "unoogpt/", "", "exp02em1b - motor probabilistico, agente com ferramentas, relogio da turma; painel conta por computador")
-    Component(outros, "rastro-boato/ manifesto-ia/ quem-mandou-isso/ foto-conta/ planejamento/", "", "exp06ef2b, exp08ef4b, exp05ef1b, exp01ef1b, app-92 - sem seta na figura")
-
-    %% --- plataforma, fora da figura TikZ (2026-09-30, ADR-126)
-    Component(agente, "agente-professor/", "", "Agente de IA do professor: posse da conversa, SSE, conferencia de codigos; @Produto('agente-professor')")
-    Component(porta, "AgenteProfessorPort", "ai/agent-engine.client.ts", "A segunda porta de ai/: so ela conhece o Vertex AI Agent Engine")
-
-    %% --- plataforma, fora da figura TikZ (2026-10-02, ADR-132)
-    Component(ajuda, "ajuda/", "", "Ajuda com avatar: ajuda.controller (hub, @Produto('ajuda')) e ajuda-llm.controller (vendor, fora dos guards de pessoa)")
-    Component(avporta, "AvatarAoVivoPort", "ai/liveavatar.client.ts", "A terceira porta de ai/: so ela conhece o LiveAvatar; abre e fecha a sala")
-
-    %% --- plataforma, fora da figura TikZ (2026-10-06, ADR-150)
-    Component(podcast, "podcast/", "", "Podcast de recapitulacao de toda missao: rotas /podcast/:expId/*, motor do audio, escrita das falas; @Global, o ultimo do app.module")
+    %% --- dominio por experiencia
+    Component(missoes, "motor/ geracao/ dossie/ atividades/ perfis/ unoogpt/ a-selecao/ jornal-escola/ juri-estadual/ quem-mandou-isso/", "", "Missoes com ficha, equipe e podcast: exp08ef1b, exp02em1b, exp07ef1b, exp04ef1b, exp06ef1b, exp05ef1b")
+    Component(outras,  "vila/ rastro-boato/ manifesto-ia/ foto-conta/", "", "Outras missoes: app-70, exp06ef2b, exp08ef4b, exp01ef1b; sem seta na figura")
+    Component(apps,    "planos/ bemestar/ planejamento/", "", "Apps do professor: app-90, app-91, app-92")
   }
 
+  %% --- relacoes desenhadas na figura TikZ
   Rel(guard, roles, "antes de")
   Rel(tenint, prisma, "escola do token")
   Rel(salas, equipes, "contagem na sala")
+  Rel(evid, equipes, "gancho aoMudarEquipes + consulta.ts")
+  Rel(agente, ai, "AgenteProfessorPort; QuotaService: temSaldo antes, consumir no finally")
+  Rel(ajuda, ai, "AiProvider.conversarEmFluxo, AvatarAoVivoPort, VozAoVivoPort; FORA do QuotaService")
+  Rel(podcast, ai, "generateSpeech + generateJson; QuotaService")
+  Rel(missoes, equipes, "consulta.ts (painel por computador; perfis/ registra a fonte de lado)")
+  Rel(missoes, evid, "marcar na transacao da jogada + registrarContexto")
+  Rel(missoes, podcast, "registrarFonte na subida; gravarFalasDoPodcast na homologacao")
+  Rel(missoes, ai, "IA + quota")
+  Rel(apps, ai, "IA + quota")
+  Rel(apps, store, "bucket privado (planos, planejamento)")
+
+  %% --- relacoes fora da figura TikZ (de todo modulo com dado ou de toda missao)
   Rel(salas, prisma, "comTenancy")
   Rel(equipes, prisma, "comTenancy")
-  Rel(utube, equipes, "consulta.ts")
-  Rel(ugpt, equipes, "consulta.ts")
-  Rel(evid, equipes, "gancho aoMudarEquipes + consulta.ts")
   Rel(evid, prisma, "comTenancy")
-  Rel(motor, prisma, "comTenancy")
-  Rel(vila, prisma, "comTenancy")
-  Rel(ugpt, prisma, "comTenancy")
-  Rel(ugpt, ai, "IA com ferramentas + quota")
-  Rel(planos, ai, "IA + quota")
-  Rel(bem, ai, "IA + quota")
-  Rel(planos, store, "bucket privado")
-  %% quem-mandou-isso/ (exp05ef1b, ADR-118) mora na caixa "outros" da figura, sem
-  %% seta; as relacoes dela ficam aqui: a primeira missao que chama marcar.
-  Rel(outros, evid, "exp05ef1b: marcar na transacao do Mural + registrarContexto")
-  Rel(outros, equipes, "exp05ef1b: consulta.ts (painel por computador)")
-  Rel(outros, ai, "exp05ef1b: IA + quota no preparo")
   Rel(agente, prisma, "comTenancy: agente_professor_conversas")
-  Rel(agente, ai, "QuotaService: temSaldo antes, consumir no finally")
-  Rel(agente, porta, "criar/ler/apagar sessao, enviar, renovar")
-  Rel(ajuda, ai, "AiProvider.conversarEmFluxo; FORA do QuotaService (minutos)")
-  Rel(ajuda, avporta, "criarSessao, encerrarSessao")
   Rel(ajuda, prisma, "ajuda_sessoes, ajuda_limites: fora de comTenancy, por usuario_id")
   Rel(ajuda, comum, "exigirProdutoDisponivel (a cada turno do LLM)")
-  Rel(recs, prisma, "limites-da-ajuda: escrita so admin")
-  Rel(podcast, ai, "generateSpeech + generateJson; QuotaService: temSaldo antes, consumir depois")
-  Rel(podcast, assets, "trechos e episodio no bucket")
   Rel(podcast, prisma, "comTenancy: podcast_roteiros")
-  Rel(outros, podcast, "exp04ef1b, exp05ef1b, exp06ef1b, exp07ef1b: registrarFonte na subida; gravarFalasDoPodcast na transacao da homologacao")
+  Rel(podcast, store, "trechos e episodio no bucket")
+  Rel(missoes, prisma, "comTenancy")
+  Rel(missoes, comum, "exigirMissaoLiberada")
+  Rel(outras, prisma, "comTenancy")
+  Rel(outras, comum, "exigirMissaoLiberada")
+  Rel(outras, ai, "manifesto-ia/ e foto-conta/: IA + quota")
+  Rel(apps, prisma, "comTenancy")
+  Rel(recs, prisma, "disponibilidades, ia_quotas, ajuda_limites, ia_precos")
+  Rel(missoes, outras, "perfis/ importa o VilaModule (POST /atividades/:id/perfis/da-vila): a unica dependencia de modulo entre dominios")
 
-  %% A figura TikZ desenha a infraestrutura ENTRE a plataforma e o dominio, com
-  %% a coluna 2 vazia: e por ela que unootube/ e unoogpt/ sobem ate equipes/.
-  %% evidencias/ chega a equipes/ pelo vao entre a 2a e a 3a linha da
-  %% plataforma, por cima de recursos/ e prospeccao/.
+  %% A figura TikZ poe a infraestrutura numa COLUNA a direita (c4), separada
+  %% por uma pista: plataforma e dominio chegam a ela na horizontal, sem uma
+  %% faixa atravessar a outra.
 \end{lstlisting}
 
 % ---------------------------------------------------------------------------
@@ -297,35 +284,57 @@ C4Component
   title C4 nivel 3 - Componentes do Hub (Next.js)
 
   Container_Boundary(hub, "Hub") {
-    Component(mw,      "middleware.ts", "", "Sessao + area do papel")
+    %% --- borda
     Component(papeis,  "lib/papeis.ts", "", "edge-safe: papel -> area")
-    Component(authlib, "lib/auth.ts", "NextAuth", "Sessao")
-    Component(jwks,    "/.well-known/jwks.json", "", "Chave publica")
+    Component(mw,      "middleware.ts", "", "Sessao + area do papel")
+    Component(authlib, "lib/auth.ts", "NextAuth", "A sessao")
 
-    Component(embed,  "lib/embed-experiencia.ts", "", "Token + manifesto + origem, UMA vez")
-    Component(chave,  "lib/chave-token.ts", "", "Assina RS256, TTL 15 min")
-    Component(devsrv, "lib/experiencias-dev.ts", "", "Porta do dev server")
-    Component(apiserv,"lib/api-servidor.ts", "", "BFF")
+    %% --- rotas (app/)
+    Component(publicas, "Rotas publicas", "", "/ (landing, ADR-40), /login, /privacidade, /termos; fora do matcher")
+    Component(areas,    "Areas por papel", "", "/estudante, /professor, /admin, /analise, /unooria; o layout faz trilha, largura e escola ativa")
+    Component(paginas,  "Paginas com embed", "", "/exp/:expId, /dev-embed, /professor/plano-de-aula, /professor/plano-de-ensino, /professor/bem-estar")
+    Component(jwks,     "/.well-known/jwks.json", "", "A chave publica")
+    Component(bff,      "/api/plataforma/[...path]", "", "BFF generico, teto de 180 s")
+    Component(stream,   "/api/plataforma/agente-professor/conversas/[id]/mensagens", "", "Rota de stream do turno do agente (ADR-128)")
 
-    Component(casca,  "CascaPlataforma", "", "CSS do DS + fontes")
-    Component(header, "HeaderPlataforma", "", "Um so para todos os papeis")
-    Component(disp,   "DispositivoFrame", "", "Casca de aparelho")
-    Component(frame,  "ExpFrame", "", "Sandbox + protocolo v1")
+    %% --- lib/ no servidor
+    Component(embed,   "lib/embed-experiencia.ts", "", "Token + manifesto + origem, UMA vez")
+    Component(devsrv,  "lib/experiencias-dev.ts", "", "Porta do dev server")
+    Component(chave,   "lib/chave-token.ts", "", "Assina RS256, TTL 15 min")
+    Component(apiserv, "lib/api-servidor.ts", "", "A API vista dos Server Components")
+    Component(bffts,   "lib/bff.ts", "", "Passagem da sessao e token curto, dividida pelas duas rotas")
 
-    Component(landing, "components/landing", "", "Rota / sem sessao: landing publica (ADR-40)")
-
-    %% --- fora da figura TikZ (2026-10-02, ADR-132)
-    Component(ajuda, "components/ajuda/", "", "Modal da Ajuda: video em cima, conversa embaixo; a sala abre na montagem e fecha na desmontagem")
-    Component(ajudalib, "lib/ajuda/", "", "transporte.ts (abrir/encerrar pelo BFF) e conversa.ts (redutor das transcricoes)")
+    %% --- components/
+    Component(casca,   "CascaPlataforma", "", "CSS do DS + fontes")
+    Component(header,  "HeaderPlataforma", "", "Um so para todos os papeis")
+    Component(exphost, "ExpHost", "", "DispositivoFrame + ExpFrame (sandbox + protocolo)")
+    Component(ajuda,   "components/ajuda/", "", "Janela da Ajuda: avatar e mascote; a sala abre na montagem e fecha na desmontagem")
+    Component(chat,    "components/agente-professor/", "", "Chat do agente, montado pelo layout de /professor")
   }
+  Container_Ext(api, "API", "NestJS", "Valida o token pelo JWKS do hub")
 
   Rel(mw, papeis, "usa")
-  Rel(landing, casca, "usa a casca do DS")
-  Rel(embed, chave, "assina")
+  Rel(mw, authlib, "le a sessao")
+  Rel(paginas, embed, "montarEmbed")
+  Rel(embed, exphost, "src, token e origem, pela pagina")
   Rel(embed, devsrv, "porta em dev")
-  Rel(disp, frame, "envolve")
+  Rel(embed, chave, "assina")
+  Rel(jwks, chave, "chave publica")
+  Rel(apiserv, chave, "assina o token curto")
+  Rel(bffts, chave, "token curto")
   Rel(header, ajuda, "item Ajuda do menu da conta: nao estudante e produto ligado")
-  Rel(ajuda, ajudalib, "usa")
+  Rel(ajuda, bff, "abrir e encerrar a sessao")
+  Rel(bff, bffts, "usa")
+  Rel(stream, bffts, "usa")
+  Rel(chat, stream, "o turno (SSE)")
+  Rel(bff, api, "HTTPS + Bearer")
+  Rel(stream, api, "SSE")
+  Rel(apiserv, api, "HTTPS + Bearer")
+  Rel(ajuda, api, "WSS do mascote, com o bilhete que o BFF entregou")
+
+  %% Fora da figura TikZ: o chat lista e apaga conversas pelo BFF generico;
+  %% CascaPlataforma e usada pelos layouts, por /exp e pela landing.
+  Rel(chat, bff, "listar, criar, ler e apagar conversas")
 \end{lstlisting}
 
 % ---------------------------------------------------------------------------
@@ -359,17 +368,15 @@ classDiagram
   }
 
   class TenancyContext {
-    +AsyncLocalStorage~string~
+    +AsyncLocalStorage~ContextoDaRequisicao~
     +comEscolaNoContexto(id, fn)
     +escolaDoContexto(): string?
   }
 
   class LinhaDeLeitura {
     <<union>>
-    scored:      numero: number
-    indicative:  numero: null
-    zero:        numero: null
-    none:        numero: null
+    grau scored: numero: number
+    grau indicative | zero | none: numero: null
   }
 
   connectToHub ..> SdkTypes : usa
@@ -381,18 +388,22 @@ classDiagram
 \section{Figura~\ref{fig:monorepo} --- Grafo de dependências do \emph{monorepo}}
 
 \begin{lstlisting}[language=mermaid]
-flowchart TB
-  ds[["@unooria/design-system (npm publico)"]]
-  sdk["packages/sdk"]
+flowchart LR
+  ds[["@unooria/design-system (npm publico, repo storybook-unooria)"]]
   ui["packages/ui"]
-  hub["apps/hub"]; api["apps/api"]
-  e01["exp08ef1b"]; e02["exp04ef1b"]; e70["app-70"]; e90["app-90"]; e91["app-91"]
-  tpl["_template"]
+  sdk["packages/sdk"]
+  exps["Experiencias com interface: exp01ef1b, exp02em1b, exp04ef1b, exp05ef1b,
+        exp06ef1b, exp06ef2b, exp07ef1b, exp08ef1b, exp08ef4b; app-90, app-91,
+        app-92; _template e backup-exp04ef1b"]
+  hub["apps/hub"]
+  e70["app-70"]
+  api["apps/api"]; agente["apps/agente-professor (Python + ADK)"]
 
   ds -->|versao publicada| ui
-  sdk --> hub & e01 & e02 & e70 & e90 & e91 & tpl
-  %% apps/api NAO importa pacote do workspace: valida o que recebe com os proprios schemas
-  ui --> hub & e01 & e02 & e90 & e91
+  ds -->|CSS e fontes| exps & hub
+  ui --> exps & hub
+  sdk --> exps & hub & e70
+  %% apps/api e apps/agente-professor NAO importam pacote do workspace
   %% app-70 NAO depende de packages/ui: canvas 3D, sem DOM de UI (ADR-18)
 \end{lstlisting}
 
@@ -403,23 +414,30 @@ flowchart TB
 sequenceDiagram
   autonumber
   participant E as Experiencia (exp08ef1b no iframe)
-  participant C as runs.controller (NestJS)
-  participant S as motor/servico
+  participant C as runs.controller (casca HTTP)
+  participant S as motor/servico.ts (regra + persistencia)
   participant P as PostgreSQL
 
-  E->>C: POST /runs/:id/eventos (dwell, curtidas)
-  C->>S: aplicarEventos
-  S->>P: comTenancy: set_config('app.escola_id')
-  S->>P: pg_advisory_xact_lock(runId)
+  Note over E,C: durante o feed
+  E->>C: POST /runs/:id/eventos
+  C->>P: grava os eventos novos (comTenancy, idempotente)
+  C-->>E: gravados, descartados
+
+  Note over E,C: a cada bloco
+  E->>C: GET /runs/:id/feed
+  C->>P: a run e do estudante? (comTenancy)
+  C->>S: proximoBlocoDoFeed
+  S->>P: comTenancy (escola)
+  S->>P: pg_advisory_xact_lock
   Note over S,P: Sem o lock, dois pedidos simultaneos de bloco<br/>se sobrescrevem e um bloco inteiro desaparece.<br/>Transacao com timeout de 20s.
-  P-->>S: estado da run
-  S->>S: curarBloco (puro e deterministico)
-  S->>P: UPDATE engine_state + posts entregues
-  P-->>S: COMMIT (libera o lock)
-  S-->>C: bloco + modulos + diagnostico
-  C->>C: paraFeedPost: remove lado, perfil, intensidade
-  Note over C: Esses campos sao a variavel independente<br/>do experimento. No cliente, o estudante saberia<br/>de que lado o algoritmo o colocou.
-  C-->>E: GET /runs/:id/feed (sanitizado)
+  P-->>S: run, eventos, catalogo
+  S->>S: aplicarEventos e curarBloco (puras)
+  S->>P: UPDATE engine_state
+  S->>S: paraFeedPost: sem lado, perfil nem intensidade
+  Note over S: Esses campos sao a variavel independente<br/>do experimento. No cliente, o estudante saberia<br/>de que lado o algoritmo o colocou.
+  S->>P: COMMIT (solta o lock)
+  S-->>C: posts, modulos, diagnostico
+  C-->>E: so posts e modulos (o diagnostico fica no servidor)
 \end{lstlisting}
 
 % ---------------------------------------------------------------------------
@@ -428,14 +446,16 @@ sequenceDiagram
 \begin{lstlisting}[language=mermaid]
 stateDiagram-v2
   [*] --> pendente : POST (202)
-  pendente --> gerando : claim atomico (updateMany por status)
-  gerando --> pronto : gravou o artefato
-  gerando --> erro : falha do provider OU finishReason=MAX_TOKENS
-  gerando --> pendente : orfa (>12 min sem worker), ate 2 retomadas
+  pendente --> gerando : claim atomico (updateMany)
+  gerando --> pronto : gravou o plano
+  gerando --> erro : falha do provider, MAX_TOKENS ou orfa ja na 2a tentativa
+  gerando --> gerando : orfa (>12 min sem worker) e so 1 tentativa - novo claim, disparado pela leitura do plano
   pronto --> [*]
 
   note right of pendente
-    O claim atomico substitui uma fila externa:
+    Plano de aula (app-90, planos/). O claim atomico
+    (updateMany: pendente, ou gerando ha mais de 12 min)
+    substitui uma fila externa:
     duas instancias podem tentar, so uma ganha a linha.
     Menor peca possivel que resolve o problema (ADR-17).
   end note
@@ -609,7 +629,7 @@ classDiagram
   note for Experiencia "{gabarito e correcao so na API}<br/>{token so em memoria}"
   note for Bundle "{imutavel: mudar o conteudo e subir a versao}<br/>{versao igual ao version do package.json}"
   note for RotaDeEstudante "{chama exigirMissaoLiberada no funil}<br/>{403 sem linha em liberacoes}"
-  note for ChamadaDeIA "{QuotaService.temSaldo antes}<br/>{QuotaService.consumir depois}<br/>{provider so por AI_PROVIDER}"
+  note for ChamadaDeIA "{QuotaService.temSaldo antes}<br/>{QuotaService.consumir depois}<br/>{vendor so atras de uma porta de ai/: AI_PROVIDER ou AGENTE_PROFESSOR}"
   note "Como ler: um elemento marcado TabelaDeTenant em outro diagrama<br/>carrega as tres restricoes sem repeti-las. A seta cheia e extensao<br/>de metaclasse; nao confundir com a heranca, de seta aberta."
   note "Onde o perfil ainda nao e lei: geracao/ e as reacoes de motor/<br/>chamam o provider sem temSaldo - as excecoes registradas na ADR-74<br/>e em ai/AGENTS.md. Uma ChamadaDeIA nova nao herda a excecao."
   %% A Ajuda com avatar (ADR-132) nao e ChamadaDeIA: e a excecao unica e
@@ -804,16 +824,23 @@ classDiagram
   }
   class PlanosService {
     <<service>>
-    e mais oito modulos de dominio
+    e mais treze modulos de dominio
     +gerar(...)
     temSaldo -> provider -> consumir
+  }
+  class AgenteProfessorService {
+    <<service>>
+    -agente: AgenteProfessorPort
+    -quota: QuotaService
+    +temSaldo(quem)
+    +transmitir(...) SSE
   }
   class AiResult {
     <<tipo de dado>>
     texto: string
     tokensUsados: number
     tokensEntrada?, tokensSaida?
-    finishReason?: string
+    finishReason?
     voltas?, tentativas?
   }
   class QuotaService {
@@ -826,17 +853,29 @@ classDiagram
   class AiProvider {
     <<interface>>
     injetado pelo token AI_PROVIDER
-    +generate(req: AiRequest) Promise~AiResult~
+    +generate(req) Promise~AiResult~
     +generateJson~T~(req) Promise~T~
     +generateImage(prompt, opcoes?) Promise~Buffer~
     +generateSpeech(req) Promise~Buffer~
     +conversar(req) Promise~AiResult~
-    +conversarEmFluxo(req) AsyncIterable~AiFluxoEvento~
+    +conversarEmFluxo(req) AsyncIterable
+  }
+  class AgenteProfessorPort {
+    <<interface>>
+    +modo: ModoDoAgente
+    injetada pelo token AGENTE_PROFESSOR
+    +criarSessao(...)
+    +lerSessao(...)
+    +apagarSessao(...)
+    +renovarSessao?(...)
+    +enviar(...) AsyncIterable
   }
   class AiModule {
     <<modulo @Global>>
-    exports: [AI_PROVIDER, QuotaService]
-    +useFactory(config, metricas) AiProvider
+    exports: [AI_PROVIDER, QuotaService, RegistroDeConsumo, AGENTE_PROFESSOR, AVATAR_AO_VIVO, VOZ_AO_VIVO]
+    +useFactory(config, metricas, registro) AiProvider
+    +useFactory(config) AgenteProfessorPort
+    = criarAgenteProfessor(modo, ...)
   }
   class VertexProvider {
     -auth: GoogleAuth
@@ -854,6 +893,10 @@ classDiagram
     -metricas: Metricas
     -modelos: ModelosDoMedidor
     as seis operacoes, cada uma por medir(op, modelo, fn)
+  }
+  class ClienteAgentEngine {
+    modo agent-engine (ADC) ou local (shim)
+    :query e :streamQuery?alt=sse no Agent Engine
   }
   class ErroDeGeracao {
     extends Error
@@ -873,18 +916,24 @@ classDiagram
   MockProvider ..|> AiProvider
   MedidorDeProvider ..|> AiProvider
   MedidorDeProvider o-- "1" AiProvider : real
+  ClienteAgentEngine ..|> AgenteProfessorPort
   MockProvider ..> ErroDeGeracao : lanca
   AiProvider ..> AiResult : usa
-  AiController ..> QuotaService : injeta
+  AiController ..> QuotaService
   AiController ..> AiProvider
   PlanosService ..> AiProvider : @Inject(AI_PROVIDER)
   PlanosService ..> QuotaService
+  AgenteProfessorService ..> AgenteProfessorPort : @Inject(AGENTE_PROFESSOR)
+  AgenteProfessorService ..> QuotaService
   AiModule ..> MedidorDeProvider : cria
+  AiModule ..> ClienteAgentEngine : cria
   QuotaService ..> ia_quotas : le
   QuotaService ..> ia_uso_diario : upsert
 
-  note for AiModule "A fabrica, no codigo: new MedidorDeProvider(env === 'mock'<br/>? new MockProvider() : new VertexProvider(), metricas, modelos).<br/>Trocar de fornecedor e um arquivo novo em src/ai e uma linha aqui."
-  note for QuotaService "O que o tipo nao garante: nenhum consumidor e obrigado a chamar<br/>temSaldo. Entre o temSaldo e o consumir nao ha trava, entao duas<br/>chamadas simultaneas do mesmo usuario passam as duas e podem<br/>ultrapassar o teto em ate uma resposta cada."
+  note for AiModule "A fabrica, no codigo: new MedidorDeProvider(env === 'mock'<br/>? new MockProvider() : new VertexProvider(), metricas, modelos, ...).<br/>Trocar de fornecedor e um arquivo novo em src/ai e uma linha aqui."
+  note "O que o tipo nao garante: nada obriga a chamar temSaldo, e entre ele<br/>e o consumir nao ha trava: duas chamadas simultaneas podem passar<br/>o teto em uma resposta cada."
+  %% AgenteProfessorPort tambem e implementada por AgenteProfessorMock (suite e2e)
+  %% e AgenteProfessorDesligado (o padrao), no mesmo agent-engine.client.ts.
 \end{lstlisting}
 
 % ---------------------------------------------------------------------------
@@ -932,39 +981,38 @@ flowchart TB
 %% aproximacao: o Mermaid nao tem diagrama de pacotes; cada pacote vira subgraph, e a dependencia de codigo (import/use) vira seta tracejada rotulada.
 flowchart TB
   subgraph MONO["monorepo - plataforma-unooria"]
-    subgraph APPS["apps"]
-      subgraph HUB["hub"]
-        hub["@edu/hub<br/>Next.js, App Router<br/>rotas por papel, BFF, JWKS,<br/>montagem do embed"]
+    subgraph API["apps/api - @edu/api - NestJS + Prisma"]
+      subgraph LTR["transversal"]
+        ltr["auth/ tenancy/ observabilidade/ config/"]
       end
-      subgraph EXPS["experiencias"]
-        exps["_template<br/>exp01ef1b ... exp08ef4b<br/>app-70, app-90,<br/>app-91, app-92<br/>13 bundles Vite; backup-*<br/>fora do deploy"]
+      subgraph LPL["plataforma"]
+        lpl["usuarios/ rostering/ salas/ equipes/ evidencias/<br/>recursos/ experiencias/ telemetry/ analise/ comum/ ..."]
       end
-      subgraph API["api - @edu/api - NestJS + Prisma"]
-        subgraph LTR["transversal"]
-          ltr["auth/ tenancy/ observabilidade/ config/"]
-        end
-        subgraph LPL["plataforma"]
-          lpl["usuarios/ rostering/ salas/ equipes/ evidencias/ recursos/<br/>experiencias/ telemetry/ analise/ progress/ comum/ ..."]
-        end
-        subgraph LIN["infraestrutura"]
-          lin["prisma/ ai/ object-storage/ assets/"]
-        end
-        subgraph LDO["dominio {nenhum modulo importa outro}"]
-          ldo["motor/ geracao/ vila/ unoogpt/ quem-mandou-isso/ a-selecao/ ..."]
-        end
+      subgraph LIN["infraestrutura"]
+        lin["prisma/ ai/ object-storage/ assets/"]
+      end
+      subgraph LDO["dominio {nenhum modulo importa outro}"]
+        ldo["motor/ geracao/ vila/ unoogpt/ quem-mandou-isso/ ..."]
       end
     end
-    subgraph PKGS["packages"]
-      subgraph SDK["sdk"]
-        sdk["@edu/sdk<br/>TypeScript + Zod<br/>ponte postMessage v2, cliente<br/>HTTP, telemetria em lote"]
-      end
-      subgraph UI["ui"]
-        ui["@edu/ui<br/>as cinco pontes do DS:<br/>'use client', nomes sem<br/>colisao, tree-shaking"]
-      end
+    subgraph HUB["apps/hub"]
+      hub["@edu/hub<br/>Next.js, App Router<br/>rotas por papel, BFF, JWKS,<br/>montagem do embed"]
     end
-    subgraph DS["externo - npm"]
-      ds["@unooria/design-system<br/>repo storybook-unooria<br/>componentes + CSS de secao"]
+    subgraph AGP["apps/agente-professor"]
+      agp["Python + Google ADK, no Vertex AI Agent Engine<br/>nao importa nem e importado:<br/>so a API o chama, por HTTP"]
     end
+    subgraph SDK["packages/sdk"]
+      sdk["@edu/sdk<br/>TypeScript + Zod<br/>ponte postMessage v2, cliente<br/>HTTP, telemetria em lote"]
+    end
+    subgraph UI["packages/ui"]
+      ui["@edu/ui<br/>as oito pontes do DS, uma<br/>por secao: 'use client',<br/>nomes sem colisao"]
+    end
+    subgraph EXPS["apps/experiencias"]
+      exps["_template exp01ef1b ... exp08ef4b<br/>app-70 app-90 app-91 app-92<br/>13 bundles Vite publicados;<br/>_template e backup-* ficam fora do deploy"]
+    end
+  end
+  subgraph DS["externo - npm"]
+    ds["@unooria/design-system<br/>repo storybook-unooria<br/>componentes + CSS de secao"]
   end
 
   %% dentro da api: toda faixa usa a transversal
@@ -974,19 +1022,20 @@ flowchart TB
   lpl -.->|"import - toda faixa usa a transversal"| ltr
 
   %% entre pacotes do workspace
-  exps -.->|import| sdk
-  exps -.->|import componentes| ui
-  exps -.->|use: so CSS da secao e fontes| ds
   hub -.->|import| sdk
-  hub -.->|import componentes| ui
+  hub -.->|import| ui
   hub -.->|use: so CSS da secao e fontes| ds
+  exps -.->|import| sdk
+  exps -.->|import| ui
+  exps -.->|use: so CSS da secao e fontes| ds
   ui -.->|import| ds
 
   %% A api NAO importa nada do workspace (nem @edu/sdk): o contrato da ponte e
   %% duplicado de proposito, com Zod de cada lado. Hub e api nao se importam:
-  %% falam por HTTP, pelo BFF. A app-70 importa so a SDK (jogo em canvas, sem
-  %% DOM de interface). No dominio, duas experiencias conversam por tabela de
-  %% contrato ou por endpoint de fronteira, nunca por import.
+  %% falam por HTTP, pelo BFF. O agente-professor (Python) tambem fica fora do
+  %% grafo de import: so a api o chama, por HTTP. A app-70 importa so a SDK
+  %% (jogo em canvas, sem DOM de interface). No dominio, duas experiencias
+  %% conversam por tabela de contrato ou por endpoint de fronteira, nunca por import.
 \end{lstlisting}
 
 % ---------------------------------------------------------------------------
@@ -1005,6 +1054,7 @@ flowchart TB
   vx["externo<br/>Vertex AI"]
   gcs["externo<br/>Cloud Storage"]
   lav["externo<br/>LiveAvatar<br/>[HeyGen]"]
+  agp["externo<br/>Agente do professor<br/>[ADK no Agent Engine]"]
 
   %% hub e experiencia: a ponte (o hub fornece, a experiencia requer)
   iPonte(("Ponte postMessage v2<br/>hub:init, hub:token,<br/>hub:pause/resume"))
@@ -1034,7 +1084,8 @@ flowchart TB
   iSql(("SQL + RLS<br/>comTenancy"))
   iPub(("Publicacao<br/>{contrato}-telemetria"))
   iIngest(("Ingestao push<br/>/telemetry/ingest"))
-  iGen(("Geracao<br/>ADC, :generateContent"))
+  iGen(("Geracao e voz ao vivo<br/>ADC, :generateContent,<br/>Live por WebSocket"))
+  iAgp(("Turnos do agente<br/>:query, :streamQuery"))
   iObj(("Objetos<br/>assets, planos"))
   pg --- iSql
   api -.-> iSql
@@ -1046,6 +1097,9 @@ flowchart TB
   api -.-> iGen
   gcs --- iObj
   api -.-> iObj
+  agp --- iAgp
+  api -.-> iAgp
+  %% So a API chama o Agente do professor; o navegador nunca fala com o Agent Engine.
 
   %% api e LiveAvatar (ADR-132): dois sentidos
   iLlm(("LLM<br/>/ajuda/llm"))
@@ -1287,40 +1341,46 @@ sequenceDiagram
   participant P as PostgreSQL (Cloud SQL)
   participant E as Agente (ADK no Agent Engine)
   participant G as Gemini (global -> us)
-  participant D as Data store (Vertex AI Search)
+  participant D as Data stores (Vertex AI Search)
 
   N->>H: POST {texto}
-  H->>A: POST /agente-professor/conversas/:id/mensagens (token curto)
-  A->>A: OidcGuard, RolesGuard (professor), @Produto
-  A->>P: daPosse: usuario_id e escola_id
+  H->>A: POST .../mensagens (token curto)
+  A->>P: daPosse (dono e escola)
   P-->>A: sessao_id
-  A->>P: temSaldo: ia_quotas, ia_uso_diario
+  A->>P: temSaldo (perfil professor)
   P-->>A: usado < limite
-  break corpo invalido, outro dono, mais de 10/min, sem saldo
-    A-->>N: 400 | 404 | 429 em JSON, antes do stream
+  break alguma recusa
+    A-->>N: 4xx em JSON, antes do stream
   end
-  A-->>H: 200 text/event-stream
-  H-->>N: repassa o corpo
-  A->>E: :streamQuery?alt=sse {user_id, session_id, message}
+  A-->>N: 200 event-stream (repassado pelo hub)
+  A->>E: :streamQuery?alt=sse user_id, session_id
   E->>E: guarda de escopo (modelo leve)
   E->>G: gerar, em stream
   G-->>E: function_call
-  E->>D: buscar_habilidades: filtro exato, paginando
-  D-->>E: habilidades
+  E->>D: buscar_habilidades ou buscar_acervo
+  D-->>E: habilidades ou trechos
   E->>G: com o retorno
   G-->>E: texto em pedacos
   loop cada evento do agente
     E-->>A: evento: parcial, final ou state_delta
-    A-->>N: event: delta (sem a repeticao do final agregado)
+    A-->>N: event: delta (sem repetir o final agregado)
   end
-  A->>A: fontes, titulo, conferencia dos codigos (habilidadePorCodigo)
-  A-->>N: fontes, titulo, aviso, fim
-  A->>P: finally: consumir(soma dos nao parciais)
-  A->>P: atualizada_em, titulo
-  A->>E: PATCH expireTime (renovar a sessao)
+  alt o agente terminou
+    A-->>N: event: fontes
+    A->>P: atualizada_em, titulo
+    A-->>N: titulo, aviso, fim
+  else falha do agente ou 240 s
+    A-->>N: event: erro
+  end
+  A->>P: finally: consumir (soma dos nao parciais)
+  A->>E: PATCH expireTime (so depois de fim)
 
+  %% As recusas do break, todas em JSON: 401 sem token, 403 sem o papel
+  %% professor ou com o produto desligado (OidcGuard, RolesGuard, @Produto),
+  %% 400 corpo invalido, 404 conversa de outro dono, 429 RATE_LIMIT (10/min) ou
+  %% QUOTA. O erro do stream e AGENTE_INDISPONIVEL ou TEMPO_ESGOTADO (240 s).
   %% Durante o loop a api escreve ": ping" a cada 15 s. "Parar" (ou fechar a
-  %% aba) aborta cada salto ate o Vertex; fechar o PAINEL nao aborta; o teto de 240 s vira event: erro TEMPO_ESGOTADO. O
+  %% aba) aborta cada salto ate o Vertex; fechar o PAINEL nao aborta. O
   %% consumo roda no finally tambem no abandono e no erro; a renovacao so depois
   %% de fim, e a falha dela e so log.
 \end{lstlisting}
@@ -1331,42 +1391,42 @@ sequenceDiagram
 \begin{lstlisting}[language=mermaid]
 sequenceDiagram
   participant N as Navegador (modal da Ajuda)
-  participant H as Hub (BFF)
   participant A as ajuda/ (controllers + service)
   participant P as PostgreSQL (Cloud SQL)
   participant V as LiveAvatar (HeyGen, FULL Mode)
   participant G as Gemini (pelo AiProvider)
 
-  N->>H: POST (montagem do modal)
-  H->>A: POST /ajuda/sessoes
-  A->>A: OidcGuard, RolesGuard (nao estudante), @Produto("ajuda")
-  A->>P: fecha as abertas, le ajuda_limites e ajuda_sessoes
+  N->>A: POST /ajuda/sessoes (BFF)
+  A->>P: fecha as abertas; le ajuda_limites e ajuda_sessoes
   P-->>A: segundos usados no dia (fuso da plataforma)
-  break desligado, sem envs, mais de 6/min, menos de 1 min no dia
-    A-->>N: 403 | 503 | 429 em JSON, antes da sala
+  break desligado, sem atendente, mais de 6/min ou menos de 1 min no dia
+    A-->>N: 403 | 503 | 429, antes da sala
   end
-  A->>P: reserva: inicio, duracao_max_s
-  A->>A: assina o token da sessao (HS256, {sub, escola, perfil, sid})
-  A->>V: POST /v1/sessions/token (FULL, dynamic_variables.sessao)
+  A->>P: reserva (inicio, duracao_max_s)
+  A->>A: assina o token da sessao (HS256)
+  A->>V: POST /v1/sessions/token (FULL, com o token da sessao)
   V-->>A: session_id, session_token
-  A-->>N: 201 {id, tokenDaSessao, duracaoMaximaS}, pelo BFF
+  A-->>N: 201 {id, tokenDaSessao, duracaoMaximaS, ...}
   N->>V: start(): entra na sala (WebRTC)
   V->>A: GET /ajuda/llm/models (Bearer)
   loop cada fala, por voz ou por escrito
-    N->>V: fala (microfone) ou message(texto)
+    N->>V: fala ou message(texto)
     V->>A: POST /ajuda/llm/chat/completions (Bearer + [sessao:...] no system)
-    A->>A: duas trancas (senao 401), produto ligado? ate 20/min? (senao vira fala)
+    A->>A: duas trancas (senao 401); produto ligado? ate 20/min? (senao vira fala)
     A->>G: conversarEmFluxo (prefixo fixo + papel, historico)
-    G-->>A: pedacos (streamGenerateContent?alt=sse)
-    A-->>V: chat.completion.chunk em SSE, [DONE]
+    G-->>A: pedacos (SSE do Vertex)
+    A-->>V: chat.completion.chunk em SSE, ate [DONE]
     V-->>N: voz, video e transcricoes, pela sala
   end
-  N->>V: stop() (fechar o modal desmonta a sala)
-  N->>H: POST .../encerrar (keepalive)
-  H->>A: POST /ajuda/sessoes/:id/encerrar
+  N->>V: stop() (fechar o modal)
+  N->>A: POST .../encerrar (keepalive)
   A->>P: fim = agora
   A->>V: POST /v1/sessions/stop
 
+  %% O navegador fala com a API pelo BFF do hub (/api/plataforma/ajuda/**).
+  %% Antes do break rodam as guardas da classe: OidcGuard, RolesGuard (nao
+  %% estudante) e @Produto("ajuda"). O token da sessao carrega
+  %% {sub, escola, perfil, sid} e vai em dynamic_variables.sessao.
   %% Se o vendor nao abre a sala, a linha reservada fecha com duracao zero e a
   %% resposta e 502 AVATAR_FALHOU. No loop, so a autenticacao responde erro: o
   %% vendor fica MUDO diante de status de erro, entao produto desligado e excesso
@@ -1552,90 +1612,99 @@ flowchart TB
 \begin{lstlisting}[language=mermaid]
 %% aproximacao: o Mermaid nao tem diagrama de implantacao; cada no (e ambiente de execucao) vira subgraph, cada artefato vira um no dentro dele, o caminho de comunicacao vira linha e a dependencia implanta vira seta grossa.
 flowchart LR
+  subgraph LAV["externo - LiveAvatar"]
+    ilav["HeyGen, na AWS"]
+  end
   subgraph NAV["device - Navegador da escola"]
     subgraph NAVENV["browser - aba do hub"]
       apag["artefato<br/>pagina do hub"]
     end
     subgraph IFR["sandbox - iframe"]
-      bnav["Bundle<br/>{expId}/{versao}/<br/>baixado da CDN; token so em memoria"]
+      bnav["Bundle<br/>{expId}/{versao}/<br/>token so em memoria"]
     end
-  end
-
-  subgraph WSO2["externo - WSO2 IS"]
-    iwso2["projeto proprio; futuro emissor - hoje e o hub"]
   end
   subgraph GHA["no - GitHub Actions"]
     igha["deploy.yml; WIF, sem chave JSON"]
   end
-  subgraph LAV["externo - LiveAvatar"]
-    ilav["HeyGen, na AWS; escuta, voz e video; o LLM e o da API"]
-  end
 
   subgraph GCP["projeto GCP - uma stack por contrato"]
     subgraph LB["no - Load Balancer global + Cloud CDN"]
-      ilb["um IP, host rules:<br/>hub, api, exp, assets"]
+      ilb["um IP; host rules:<br/>hub, api, exp, assets"]
     end
     subgraph RUNHUB["Cloud Run - {contrato}-frontend"]
-      ahub["imagem hub:{sha}<br/>node apps/hub/server.js"]
-    end
-    subgraph RUNAPI["Cloud Run - {contrato}-api"]
-      aapi["imagem api:{sha}<br/>node dist/src/main.js"]
+      ahub["imagem hub:{sha}<br/>apps/hub/server.js"]
     end
     subgraph JOB["Cloud Run Job - {contrato}-migrate"]
       ajob["imagem api:{sha}<br/>prisma migrate deploy"]
     end
-    subgraph SM["no - Secret Manager"]
-      ism["dez segredos: database-url, token-signing-key,<br/>auth-secret, os tres da Ajuda e mais quatro"]
-    end
     subgraph GCS["no - Cloud Storage"]
-      igcs["-exp: publico, CDN<br/>-assets: publico, CDN<br/>-planos: PRIVADO<br/>-mapas: sourcemaps, privado"]
-      bgcs["Bundle<br/>{expId}/{versao}/<br/>index.html com max-age=60"]
+      igcs["-exp, -assets: publicos;<br/>-planos e mapas: PRIVADOS"]
+      bgcs["Bundle<br/>{expId}/{versao}/<br/>index.html: max-age=60"]
+    end
+    subgraph RUNAPI["Cloud Run - {contrato}-api"]
+      aapi["imagem api:{sha}<br/>dist/src/main.js"]
     end
     subgraph SQL["no - Cloud SQL {contrato}-pg"]
-      isql["PostgreSQL, HA + PITR,<br/>so IP privado; role app<br/>sem BYPASSRLS"]
+      isql["PostgreSQL, HA + PITR; so IP privado;<br/>role app sem BYPASSRLS;<br/>a posse das conversas do agente"]
     end
     subgraph PS["no - Pub/Sub"]
-      ips["topic {contrato}-telemetria<br/>push -telemetria-ingest"]
-    end
-    subgraph AR["no - Artifact Registry"]
-      iar["hub:{sha}, api:{sha},<br/>agente-professor:{sha};<br/>push direto do CI"]
+      ips["topic -telemetria;<br/>push -telemetria-ingest"]
     end
     subgraph VX["servico gerenciado - Vertex AI"]
-      ivx["Gemini; ADC da conta {contrato}-api"]
+      ivx["Gemini em global (reserva us);<br/>Live em us-central1"]
     end
     subgraph ENG["Agent Engine - us-east1 (nasce no apply 2)"]
-      aeng["imagem agente-professor:{sha}<br/>SA {prefixo}-agente"]
+      aeng["imagem agente-professor:{sha}"]
+      ieng["SA {prefixo}-agente"]
+    end
+    subgraph AR["no - Artifact Registry"]
+      iar["hub, api e agente-professor,<br/>por {sha}"]
+    end
+    subgraph BAG["no - Cloud Storage -agente-professor"]
+      ibag["privado: BNCC, livros e habilidades"]
+    end
+    subgraph VS["servico gerenciado - Vertex AI Search"]
+      ivs["data stores em global:<br/>-habilidades (estruturado) e -acervo (PDFs)"]
+    end
+    subgraph SM["no - Secret Manager"]
+      ism["dez segredos, env do hub e da API"]
     end
   end
 
   %% caminhos de comunicacao
-  NAV ---|HTTPS| LB
+  LAV ---|"WebRTC (video)"| NAV
+  NAV ---|"HTTPS e WSS"| LB
   LB ---|hub| RUNHUB
   LB ---|api| RUNAPI
   LB ---|CDN| GCS
-  RUNHUB ---|"HTTPS, API_INTERNAL_URL"| RUNAPI
+  RUNHUB ---|API_INTERNAL_URL| RUNAPI
   RUNAPI ---|"assets, planos"| GCS
-  RUNAPI ---|"publica; push /telemetry/ingest"| PS
+  RUNAPI ---|"publica; push"| PS
   RUNAPI ---|VPC| SQL
   JOB ---|VPC| SQL
-  RUNAPI --- VX
-  RUNAPI ---|SSE| ENG
-  SM -.-|env| RUNHUB
-  LAV ---|"HTTPS: /ajuda/llm pelo LB; /v1/sessions"| RUNAPI
-  NAV ---|"WebRTC: o video da Ajuda"| LAV
+  RUNAPI ---|"Gemini e Live"| VX
+  RUNAPI ---|"SSE (:streamQuery)"| ENG
+  ENG ---|Gemini| VX
+  ENG ---|busca| VS
+  VS ---|le| BAG
+  LAV ---|"HTTPS: /v1/sessions (API -> vendor) e /ajuda/llm (vendor -> LB -> API)"| RUNAPI
 
   %% o CI implanta cada artefato
-  GHA ==>|implanta| AR
+  bgcs ==>|baixa| bnav
   GHA ==>|rsync| GCS
-  bgcs ==>|implanta| bnav
-  GHA ==>|"PATCH imageUri"| aeng
+  GHA ==>|push| AR
+  GHA ==>|"PATCH da imageUri"| aeng
 
   %% A mesma imagem api:{sha} esta implantada em dois nos, e o bundle esta
   %% armazenado num e executado em outro. O CI ainda executa o job de migracao e
   %% publica o manifesto (PUT /experiencias/:expId), o que o diagrama deixa no
   %% texto. Escala, rede e certificados sao do Terraform, em outro repositorio.
+  %% So a API chama o Agent Engine (ADC da SA da api, :query e :streamQuery?alt=sse);
+  %% o navegador nunca fala com ele nem com os data stores. O mascote da Ajuda
+  %% (ADR-158) e o WSS do navegador a API pelo LB, e da API ao Gemini Live.
   %% Nada do LiveAvatar e implantado pelo CI: o contexto e a configuracao de LLM
-  %% do vendor saem de scripts/liveavatar-configurar.mjs (ADR-132).
+  %% do vendor saem de scripts/liveavatar-configurar.mjs (ADR-132). O WSO2 nao
+  %% aparece: e o emissor futuro; hoje quem assina os tokens e o hub.
 \end{lstlisting}
 
 % ---------------------------------------------------------------------------
@@ -1646,97 +1715,113 @@ C4Deployment
   title Implantacao de um contrato
 
   Deployment_Node(internet, "Internet", "escola") {
-    Container(browser, "Navegador do estudante", "", "")
+    Container(browser, "Navegador da escola", "", "")
   }
 
   Deployment_Node(gcp, "Google Cloud - projeto do contrato", "GCP") {
-    Deployment_Node(borda, "Borda global", "") {
-      Container(lb,  "Cloud Load Balancing", "", "1 IP, host rules")
-      Container(cdn, "Cloud CDN", "", "")
+    Container(lb, "Cloud Load Balancing", "", "global, 1 IP, host rules: hub, API, bundles, assets")
+    Container(gcs, "Cloud Storage", "", "-exp e -assets atras da CDN; -planos privado")
+    Container(hub, "Cloud Run {contrato}-frontend", "hub (Next.js)", "")
+    Container(api, "Cloud Run {contrato}-api", "API (NestJS)", "")
+    ContainerQueue(ps, "Pub/Sub", "", "telemetria analitica")
+    Deployment_Node(vpc, "VPC (so IP privado)", "") {
+      ContainerDb(sql, "Cloud SQL {contrato}-pg", "HA, PITR, pooler", "")
     }
-    Deployment_Node(regiao, "Regiao de execucao (us-east1)", "") {
-      Container(hub, "Cloud Run {contrato}-frontend", "hub", "min>=1")
-      Container(api, "Cloud Run {contrato}-api", "", "CPU sempre alocada, conc. 80")
-      Deployment_Node(vpc, "VPC - rede privada", "") {
-        ContainerDb(sql, "Cloud SQL {contrato}-pg", "PostgreSQL HA, PITR, pooler", "")
-      }
+    Deployment_Node(ia, "IA gerenciada - Vertex AI", "") {
+      Container(agente, "Agent Engine agente-professor", "Python + ADK", "")
+      Container(gemini, "Gemini", "", "global; o Live em us-central1")
+      Container(busca, "Vertex AI Search", "", "dois data stores em global")
+      Container(bag, "Cloud Storage -agente-professor", "", "BNCC e acervo; privado")
     }
-    Deployment_Node(gcs, "Cloud Storage", "") {
-      Container(bexp, "{contrato}-exp", "publico, imutavel, CDN", "")
-      Container(bass, "{contrato}-assets", "publico, CDN", "")
-      Container(bpla, "{contrato}-planos", "PRIVADO, versionado", "")
-    }
-    ContainerQueue(ps, "Pub/Sub {contrato}-telemetria", "", "")
   }
 
-  System_Ext(idp, "WSO2 IS", "projeto proprio")
-  System_Ext(vertex, "Vertex AI", "endpoint global")
+  System_Ext(idp, "WSO2 Identity Server", "projeto proprio, varios contratos")
   System_Ext(lav, "LiveAvatar (HeyGen)", "video da Ajuda; fora do Google (ADR-132)")
 
   Rel(browser, lb, "443")
-  Rel(lb, cdn, "bundles e assets")
-  Rel(cdn, bexp, "serve")
+  Rel(lb, gcs, "bundles, assets (CDN)")
   Rel(lb, hub, "HTTPS")
   Rel(lb, api, "HTTPS")
-  Rel(api, sql, "5432 - IP PRIVADO")
-  Rel(api, bpla, "so pela API")
-  BiRel(api, ps, "publica / recebe push")
+  Rel(hub, api, "BFF")
   Rel(hub, idp, "OIDC")
-  Rel(api, vertex, "HTTPS + ADC")
+  Rel(api, gcs, "assets, planos")
+  BiRel(api, ps, "publica / recebe push")
+  Rel(api, sql, "5432 - IP PRIVADO")
+  Rel(api, gemini, "HTTPS; WSS do Gemini Live (ADR-158)")
+  Rel(api, agente, "SSE (ADR-126)")
+  Rel(agente, gemini, "modelo")
+  Rel(agente, busca, "busca")
+  Rel(bag, busca, "le")
   BiRel(api, lav, "sessoes; /ajuda/llm pelo LB")
   Rel(browser, lav, "WebRTC")
 \end{lstlisting}
 
 % ---------------------------------------------------------------------------
-\section{Figura~\ref{fig:deploy-detalhe} --- Implantação detalhada}
+\section{Figura~\ref{fig:deploy-detalhe} --- Implantação detalhada, em execução}
 
 \begin{lstlisting}[language=mermaid]
 flowchart TB
-  browser([Navegador do estudante]); gh[[GitHub Actions]]; wso2[[WSO2 IS]]; vertex[[Vertex AI - global]]
+  browser([Navegador]); wso2[[WSO2 IS - projeto proprio]]
 
   subgraph GCP["Google Cloud - projeto do contrato"]
     subgraph BORDA["Borda global"]
-      lb["Load Balancer (1 IP, host rules)"]; cdn["Cloud CDN"]; cert["Certificados gerenciados (um por dominio)"]
+      armor["Cloud Armor (WAF nos backends)"]
+      lb["Load Balancer (1 IP, host rules; um certificado por dominio)"]
+      cdn["Cloud CDN (bundles e assets)"]
     end
-    subgraph EXEC["Regiao de execucao (us-east1)"]
-      hub["Cloud Run -frontend (min>=1)"]
-      api["Cloud Run -api (CPU sempre alocada, conc. 80)"]
-      job["Cloud Run Job -migrate (na VPC)"]
-      subgraph VPC["VPC - rede privada"]
-        sql[("Cloud SQL -pg (HA, PITR, pooler)")]
-        conn["Serverless VPC Access (conector)"]
-      end
+    gcs["Cloud Storage: -exp e -assets publicos atras da CDN;<br/>-planos privado e versionado; -exp-mapas privado;<br/>-agente-professor privado"]
+    hub["Cloud Run -frontend (hub; min=1)"]
+    api["Cloud Run -api (CPU sempre alocada, min>=1, conc. 80)"]
+    job["Cloud Run Job -migrate (prisma migrate deploy)"]
+    subgraph VPC["VPC"]
+      conn["Serverless VPC Access (conector)"]
+      sql[("Cloud SQL -pg (HA, PITR, pooler; sem IP publico)")]
     end
-    subgraph STORAGE["Cloud Storage"]
-      bexp["{contrato}-exp - publico, imutavel, CDN"]
-      bass["{contrato}-assets - publico, CDN"]
-      bpla["{contrato}-planos - PRIVADO, sem CDN, versionado"]
+    subgraph IA["IA gerenciada - Vertex AI"]
+      eng["Agent Engine agente-professor (us-east1; SA -agente)"]
+      gemini["Gemini (global, reserva em us; Live em us-central1)"]
+      busca["Vertex AI Search (-habilidades e -acervo; global)"]
     end
-    subgraph MSG["Mensageria"]
-      topic["topic -telemetria"]; sub["push sub -telemetria-ingest (oidc_token)"]
-    end
-    subgraph GOV["Identidade, segredos e artefatos"]
-      sm["Secret Manager (10 segredos)"]; sa["Service Accounts (-api, -run, -push)"]
-      wif["WIF pool github (sem chave JSON)"]; ar["Artifact Registry"]
-      log["Cloud Logging / Monitoring"]
-    end
+    ps["Pub/Sub: topic -telemetria, push sub -telemetria-ingest"]
   end
 
-  browser -->|443| lb
-  lb --> cdn --> bexp & bass
+  browser -->|443| armor --> lb --> cdn --> gcs
   lb --> hub & api
   hub -->|BFF| api
-  api -->|5432 privado| conn --> sql
+  hub -->|OIDC| wso2
+  api -->|-assets, -planos| gcs
+  api -->|SSE| eng
+  eng --> gemini
+  eng -->|busca| busca
+  gcs -.->|le -agente-professor| busca
+  api -->|privado| conn -->|5432| sql
   job --> conn
-  api -->|so pela API| bpla
-  api --> bass
-  api --> topic --> sub -->|POST /telemetry/ingest| api
-  gh -->|OIDC do GitHub| wif
-  gh -->|push da imagem| ar
-  wso2 -->|OIDC| hub
-  api -->|ADC| vertex
-  sm --> api & hub
-  sa --> api & hub
+  api -->|HTTPS, WSS| gemini
+  api <-->|publica; push /telemetry/ingest| ps
+\end{lstlisting}
+
+% ---------------------------------------------------------------------------
+\section{Figura~\ref{fig:deploy-publicacao} --- O que o CI publica}
+
+\begin{lstlisting}[language=mermaid]
+flowchart LR
+  gh[[GitHub Actions - deploy.yml; id-token: write]]
+  wif["WIF pool github: troca o OIDC pelo token curto da DEPLOY_SA"]
+  ar["Artifact Registry {contrato}: imagens da API, do hub e do agente"]
+  job["Cloud Run Job -migrate (antes do deploy da API)"]
+  run["Cloud Run -api, -frontend (nova revisao + sonda)"]
+  eng["Agent Engine (so se apps/agente-professor mudou)"]
+  exp["Cloud Storage -exp (bundles), -exp-mapas"]
+  api["API: PUT do manifesto (versaoAtiva)"]
+
+  gh -->|OIDC| wif
+  wif -->|docker push| ar
+  wif -->|jobs execute| job
+  wif -->|run deploy| run
+  wif -->|PATCH| eng
+  wif -->|storage rsync| exp
+  gh -->|token RS256 de 5 min| api
+  ar -.->|imagem| job & run & eng
 \end{lstlisting}
 
 % ---------------------------------------------------------------------------
@@ -1744,24 +1829,35 @@ flowchart TB
 
 \begin{lstlisting}[language=mermaid]
 flowchart LR
-  subgraph CI["CI: Workload Identity Federation"]
+  subgraph CI["CI - publicar"]
     gh["GitHub Actions (id-token: write)"] --> tok["token OIDC do GitHub (repo, ref, workflow)"]
     tok --> wif["WIF pool github (valida e troca)"]
     wif --> sadeploy["access token da DEPLOY_SA (curta duracao)"]
   end
 
-  subgraph APP["Aplicacao: Application Default Credentials"]
-    run["Cloud Run (API) - sem env de credencial"] --> md["metadata server (ADC nivel 3)"]
-    md --> saapi["SA {contrato}-api (roles/aiplatform.user)"]
-    saapi --> vx["Vertex AI - autorizado"]
+  subgraph APP["API - chamar a IA"]
+    run["Cloud Run -api (sem env de credencial)"] --> md["metadata server (ADC nivel 3)"]
+    md --> saapi["SA {contrato}-api (aiplatform.user; agenteProfessorInvocador)"]
+    saapi --> vx["Gemini e Agent Engine - autorizados"]
   end
 
-  %% A mesma cadeia nos tres ambientes:
+  subgraph AG["Agente - consultar modelo e acervo"]
+    eng["Agent Engine (o agente em execucao)"] --> rt["credencial do runtime (a SA do engine)"]
+    rt --> saag["SA {prefixo}-agente (aiplatform.user; discoveryengine.viewer)"]
+    saag --> ds["Gemini e os dois data stores - autorizados"]
+  end
+
+  subgraph PS["Pub/Sub - entregar a telemetria"]
+    sub["push sub -telemetria-ingest"] --> idt["ID token da SA {contrato}-push (oidc_token)"]
+    idt --> guard["PubSubPushGuard (emissor Google, aud e email)"]
+    guard --> ing["POST /telemetry/ingest - aceito"]
+  end
+
+  %% A mesma cadeia de ADC nos tres ambientes:
   %%   1. GOOGLE_APPLICATION_CREDENTIALS
   %%   2. arquivo de `gcloud auth application-default login`
   %%   3. metadata server (Cloud Run)
-  %% Antes havia SO o nivel 3 — e por isso nenhuma chamada de IA funcionava
-  %% fora do Cloud Run. NUNCA chave de API.
+  %% NUNCA chave de API.
 \end{lstlisting}
 
 % ---------------------------------------------------------------------------
@@ -1769,13 +1865,19 @@ flowchart LR
 
 \begin{lstlisting}[language=mermaid]
 flowchart TB
+  %% Nivel 1 - fisico: uma stack GCP por contrato
   subgraph A["Contrato A - stack GCP"]
     apiA["API do contrato A"] --> pgA[("PostgreSQL do contrato A")]
-    subgraph ESC["Dentro de UMA stack: isolamento LOGICO"]
+    subgraph ESC["Nivel 2 - logico: as escolas dividem a stack"]
       e1["escola sp-001"]; e2["escola sp-002"]; e3["... 100+"]
     end
     tab["Toda tabela de dado de estudante:<br/>escola_id TEXT NOT NULL<br/>ENABLE + FORCE ROW LEVEL SECURITY<br/>POLICY USING (escola_id = current_setting('app.escola_id', true))"]
     e1 -.-> tab; e2 -.-> tab; e3 -.-> tab
+    subgraph N3["Nivel 3 - autorizacao: dentro da escola, por papel"]
+      p1["estudante: a propria matricula e o progresso"]
+      p2["professor: so as turmas em que leciona"]
+      p3["gestor_escola: a escola inteira"]
+    end
   end
   subgraph B["Contrato B - OUTRA stack"]
     apiB["API do contrato B"] --> pgB[("PostgreSQL do contrato B")]
@@ -1806,52 +1908,72 @@ flowchart LR
 \begin{lstlisting}[language=mermaid]
 erDiagram
   escolas ||--o{ turmas : tem
-  escolas ||--o{ users  : tem
-  turmas  ||--o{ users  : agrupa
-  experiencias ||..o{ progresso : "exp_id"
+  escolas ||--o{ users  : "escola_id; regional_id do gestor regional"
+  turmas  ||--o{ users  : "turma_id (cache da principal)"
+  escolas ||--o{ agente_professor_conversas : tem
+  users   ||--o{ agente_professor_conversas : "dono da sessao"
+  experiencias ||..o{ progresso : "exp_id (sem FK)"
   telemetria_eventos ||..o{ particoes : "ATTACH por mes"
 
   escolas {
     text id PK "MESMO valor do claim escola_id e do set_config"
     text nome
+    text codigo_inep
+    text tipo "rede|regional|escola - so a escola e tenant"
+    text pai_id FK "escolas: rede > regional > escola"
     timestamptz created_at
   }
   turmas {
     uuid id PK
     text escola_id FK
-    text nome "UNIQUE (escola_id, nome)"
+    uuid periodo_letivo_id FK
+    text nome "UNIQUE (escola_id, periodo_letivo_id, nome)"
     text serie "1EF..9EF | 1EM..3EM"
   }
   users {
     uuid id PK
-    text role "estudante|professor|gestor|admin-contrato"
-    text escola_id FK "NULL SO p/ admin-contrato (CHECK)"
-    uuid turma_id FK
+    text role "estudante|professor|gestor_escola|gestor_regional|gestor_contrato|admin"
+    text escola_id FK "NULL so p/ gestor_regional, gestor_contrato, admin (CHECK)"
+    text regional_id FK "escolas, p/ gestor_regional"
+    uuid turma_id FK "CACHE da matricula principal"
     text username "UNIQUE (escola_id, username)"
     text display_name
     text password_hash
+    text cpf
   }
   experiencias {
     text exp_id PK
     text nome
     text versao_ativa "rollback = UPDATE deste campo"
+    text produto
+    smallint unidade
     text_array series "VAZIO = TODAS as series"
     text_array capabilities
     jsonb viewport "presente => casca de aparelho"
     text publico "estudante|professor"
-    text_array permissoes "hoje so pointer-lock"
+    text_array permissoes
   }
   progresso {
     text escola_id PK
     text estudante_id PK
     text exp_id PK
     jsonb dados
+    timestamptz atualizado_em
   }
   ia_uso_diario {
     text escola_id PK
     text usuario_id PK
     text dia PK "YYYY-MM-DD"
     int tokens_usados
+  }
+  agente_professor_conversas {
+    uuid id PK
+    text escola_id FK
+    uuid usuario_id FK
+    text sessao_id "UNIQUE: uma sessao tem um dono so"
+    text titulo "CACHE do titulo_conversa do agente"
+    timestamptz criada_em
+    timestamptz atualizada_em
   }
   telemetria_eventos {
     uuid event_id PK "PK COMPOSTA: o Postgres exige a chave de particao"
@@ -1865,6 +1987,10 @@ erDiagram
     text objeto
     jsonb resultado
     jsonb contexto
+  }
+  particoes {
+    table telemetria_eventos_YYYY_MM "uma por mes, fora do Prisma"
+    table telemetria_eventos_default "rede de seguranca"
   }
 \end{lstlisting}
 
@@ -1887,6 +2013,7 @@ erDiagram
     date inicio
     date fim
     uuid pai_id FK "ano letivo -> bimestre; NULL = raiz"
+    text fonte_id
   }
   turmas {
     uuid id PK
@@ -1896,6 +2023,8 @@ erDiagram
     text serie "1EF..9EF | 1EM..3EM"
     text tipo "regular|componente (classType do OneRoster)"
     text turno
+    text codigo
+    text fonte_id
   }
   matriculas {
     uuid id PK "RLS por escola_id"
@@ -1906,6 +2035,7 @@ erDiagram
     boolean principal "alimenta o cache users.turma_id"
     date inicio
     date fim "sair e fim, nunca DELETE"
+    text fonte_id
   }
   liberacoes {
     uuid id PK "RLS por escola_id"
@@ -1921,6 +2051,8 @@ erDiagram
     uuid id PK
     text matricula_externa "o RA da rede; indice unico parcial por escola"
     uuid turma_id FK "CACHE da matricula principal — a verdade e matriculas"
+    text fonte_id
+    text email
     boolean ativo
     boolean senha_provisoria
   }
@@ -1948,6 +2080,12 @@ erDiagram
   exp08ef1b_runs ||--|| exp08ef1b_dossiers : gera
   exp08ef1b_runs ||--o{ exp08ef1b_comentarios_da_sessao : ancora
   exp08ef1b_activities ||--o{ exp08ef1b_app_70_perfis_importados : "largada"
+  exp08ef1b_activities ||--o{ exp08ef1b_posts : contem
+  exp08ef1b_authors    |o--o{ exp08ef1b_post_comments : "author_id; NULL = handle avulso"
+  exp08ef1b_posts      |o--o{ exp08ef1b_events : "post_id"
+  exp08ef1b_posts      |o--o{ exp08ef1b_comentarios_da_sessao : "post_id (XOR)"
+  exp08ef1b_student_posts |o--o{ exp08ef1b_comentarios_da_sessao : "student_post_id (XOR)"
+  exp08ef1b_runs ||..|| exp08ef1b_app_70_perfis_importados : "mesmo estudante e atividade (sem FK)"
 
   exp08ef1b_activities {
     uuid id PK
@@ -1999,12 +2137,12 @@ erDiagram
 
 \begin{lstlisting}[language=mermaid]
 erDiagram
-  app_70_sessoes ||--o{ app_70_perfis : "recalculado pelo servidor"
   app_70_perfis  ||..|| app_70_bolhas : "mesmo estudante"
+  app_70_sessoes ||--o{ app_70_perfis : "sessao_id"
   app_90_planos  ||..o{ app_90_referencias : "monta o prompt"
   app_91_ciclos  ||--o{ app_91_checkins : "7 check-ins"
 
-  exp04ef1b_sessoes {
+  backup_exp04ef1b_sessoes {
     text escola_id PK
     uuid estudante_id PK
     text_array salvos "CHECK cardinality <= 3"
@@ -2013,7 +2151,7 @@ erDiagram
   }
   app_70_sessoes {
     uuid id PK "EMITIDO pela API - o cliente colidia"
-    uuid turma_id FK "desnormalizado: turma NO MOMENTO da partida"
+    uuid turma_id "SEM FK, desnormalizado: turma NO MOMENTO da partida"
     text bolha "A|B|C - do SERVIDOR"
     smallint cartoes_servidos "!= apareceram"
     timestamptz aberta_em "relogio do SERVIDOR"
@@ -2068,10 +2206,11 @@ sequenceDiagram
   participant R as Rota do hub (servidor)
   participant A as API (NestJS)
 
-  R->>F: monta o embed: assina token RS256 (15 min)
-  R->>A: GET /experiencias/:expId (manifesto)
-  A-->>R: { versaoAtiva, viewport, permissoes }
-  F->>E: renderiza iframe src = URL versionada
+  R->>A: GET /experiencias/:expId
+  A-->>R: manifesto { versaoAtiva, viewport, permissoes }
+  R->>R: assina o token (RS256, 15 min)
+  R->>F: props: src, token, apiUrl
+  F->>E: renderiza o iframe com a URL versionada
   E->>E: connectToHub({ hubOrigin })
   loop a cada 400ms, ate o hub responder
     E->>F: exp:ready { protocolVersion: 2 }
@@ -2093,13 +2232,16 @@ sequenceDiagram
 
 \begin{lstlisting}[language=mermaid]
 flowchart TB
-  ini([inicio]) --> q{tem linha em experiencias?}
-  q -->|sim| com["{cdn}/{expId}/{versaoAtiva}/index.html?hubOrigin=..."]
-  q -->|nao| sem["{baseDev}/?hubOrigin=... (porta de lib/experiencias-dev.ts<br/>ou o src explicito de /dev-embed)"]
-  com --> vp1["viewport e permissoes vem do MANIFESTO"]
-  sem --> vp2["le {baseInterna}/experiencia.json<br/>baseInterna = EXP_INTERNAL_HOST aplicado a base"]
-  vp1 --> frame["ExpFrame: sandbox + allow,<br/>dentro de DispositivoFrame se houver viewport"]
-  vp2 --> frame
+  ini([inicio]) --> le["le em paralelo na api, com o token recem-assinado:<br/>GET /experiencias/:expId (manifesto) e<br/>GET /recursos/efetivos (versao fixada na escola)"]
+  le --> q1{tem manifesto?}
+  q1 -->|sim| vp1["viewport e permissoes vem do MANIFESTO"]
+  q1 -->|nao| vp2["le {baseInterna}/experiencia.json<br/>(EXP_INTERNAL_HOST aplicado a base)"]
+  vp1 --> q2{producao e com manifesto?}
+  vp2 --> q2
+  q2 -->|sim| com["{cdn}/{expId}/{versao}/index.html?hubOrigin=...<br/>versao: a fixada no escopo, senao a versaoAtiva"]
+  q2 -->|nao| sem["{base}/?hubOrigin=...<br/>base: em dev, o src de /dev-embed ou a porta de<br/>lib/experiencias-dev.ts; em producao, o CDN"]
+  com --> frame["ExpFrame: sandbox + allow,<br/>dentro de DispositivoFrame se houver viewport"]
+  sem --> frame
   frame --> fim([fim])
 
   %% A leitura do experiencia.json NAO e so de dev: stack com a tabela vazia
@@ -2111,10 +2253,11 @@ flowchart TB
 
 \begin{lstlisting}[language=mermaid]
 flowchart LR
-  v["app-70 (Vila do Lume)"] -->|payload bruto| mv["src/vila/ - quadrantes.ts: colapso 10 -> 4"]
-  mv -->|"POST /atividades/:id/perfis/da-vila (professor)"| t["exp08ef1b_app_70_perfis_importados"]
-  t -->|le| mi["src/perfis/largada.ts - decide o lado do feed"]
-  mi --> i["exp08ef1b (Instanooria)"]
+  prof(["Professor"]) -->|"POST /atividades/:id/perfis/da-vila"| mv
+  v["app-70 (Vila do Lume)"] -->|payload bruto| mv["vila/quadrantes.ts (modulo vila da api): colapso 10 -> 4"]
+  mv -->|"grava (upsert)"| t["exp08ef1b_app_70_perfis_importados (a tabela de contrato)"]
+  t -->|le| mi["perfis/largada.ts (modulo perfis da api): decide o lado do feed"]
+  mi -->|lado inicial| i["exp08ef1b (Instanooria)"]
 
   %% Duas travas que CUSTAM estudantes, de proposito:
   %%  1. valor nao observado (indicative|none) fica FORA da media — nunca zero
@@ -2131,8 +2274,8 @@ flowchart LR
   exp["Experiencia: track(verbo, objeto, dados)"] --> sdk["TelemetryClient<br/>buffer em memoria; lote de 50 ou 10s"]
   sdk -->|"<= 50 eventos"| batch["POST /telemetry/batch<br/>OidcGuard; identidade vem do TOKEN"]
   batch --> topic[["Pub/Sub topic -telemetria"]]
-  sdk -->|sendBeacon no pagehide| beacon["POST /telemetry/beacon<br/>token NO CORPO; responde 204 SEMPRE"]
-  beacon --> topic
+  sdk -->|sendBeacon| beacon["POST /telemetry/beacon<br/>pagehide; token NO CORPO; responde 204 SEMPRE"]
+  beacon -->|publica no mesmo topic| topic
   topic -->|push autenticado| ingest["POST /telemetry/ingest<br/>PubSubPushGuard: ID token do Google, aud, email"]
   ingest --> pg[("telemetria_eventos<br/>INSERT multi-linha<br/>ON CONFLICT (event_id, ts) DO NOTHING<br/>particionada por mes")]
 
@@ -2148,35 +2291,47 @@ flowchart LR
 C4Component
   title Camada de IA - src/ai e a UNICA porta
 
-  Container_Boundary(api, "API") {
-    Component(g, "geracao/", "", "exp08ef1b")
-    Component(m, "motor/", "", "exp08ef1b")
-    Component(p, "planos/", "", "app-90")
-    Component(b, "bemestar/", "", "app-91")
-    Component(a, "POST /ai/gerar", "", "SDK")
+  Container_Boundary(api, "API - apps/api/src") {
+    Component(ger, "geracao/, motor/", "", "exp08ef1b")
+    Component(dom, "modulos de dominio", "", "planos/, bemestar/ e os demais")
+    Component(sdk, "POST /ai/gerar", "", "a rota da SDK")
+    Component(age, "agente-professor/", "", "o chat do professor")
+    Component(aju, "ajuda/", "", "mascote e avatar")
 
-    Container_Boundary(ai, "src/ai/ - a UNICA porta") {
-      Component(q,  "QuotaService", "", "temSaldo(escola, usuario, perfil) ANTES; consumir DEPOIS")
-      Component(pr, "AiProvider", "", "generate, generateJson, generateImage")
-      Component(pp, "prompts.ts", "", "prompt de sistema; NUNCA sai daqui")
-      Component(vx, "vertex.provider.ts", "", "default; ADC + REST")
-      Component(mk, "mock.provider.ts", "", "testes e dev sem GCP")
+    Container_Boundary(ai, "src/ai/ - a UNICA porta para a IA") {
+      Component(q,   "QuotaService", "", "temSaldo ANTES, consumir DEPOIS; teto em ia_quotas, soma em ia_uso_diario")
+      Component(pr,  "AiProvider", "", "generate, generateJson, conversar, generateImage, generateSpeech; embrulhado pelo MedidorDeProvider")
+      Component(pag, "AgenteProfessorPort", "", "")
+      Component(pao, "VozAoVivoPort / AvatarAoVivoPort", "", "")
+      Component(vx,  "vertex.provider.ts", "", "default; ADC + REST")
+      Component(mk,  "mock.provider.ts", "", "so testes")
+      Component(pp,  "prompts.ts", "", "prompt de sistema; nao sai daqui")
+      Component(aec, "agent-engine.client.ts", "", "SSE, ADC")
+      Component(liv, "gemini-live.client.ts / liveavatar.client.ts", "", "")
     }
-    ComponentDb(ia, "ia_uso_diario", "", "quota persistida por (escola, usuario, dia)")
   }
-  System_Ext(vertex, "Vertex AI", "endpoint global")
+  System_Ext(vertex, "Vertex AI - Gemini", "global, reserva em us")
+  System_Ext(eng, "Agent Engine", "o agente do professor")
+  System_Ext(glive, "Gemini Live", "us-central1")
+  System_Ext(lav, "LiveAvatar", "HeyGen")
 
-  Rel(g, pr, "sem quota (ADR-74)")
-  Rel(m, pr, "sem quota (ADR-74)")
-  Rel(p, q, "1")
-  Rel(b, q, "1")
-  Rel(a, q, "1")
-  BiRel(q, ia, "incremento atomico")
-  Rel(q, pr, "SO com saldo")
-  Rel(pr, pp, "usa")
+  Rel(ger, pr, "sem quota (ADR-74)")
+  Rel(dom, q, "")
+  Rel(sdk, q, "")
+  Rel(age, q, "")
+  Rel(q, pr, "so com saldo")
+  Rel(q, pag, "")
+  Rel(aju, pao, "minutos por dia (ADR-132)")
   Rel(pr, vx, "AI_PROVIDER=vertex")
-  Rel(pr, mk, "AI_PROVIDER=mock")
-  Rel(vx, vertex, "HTTPS + ADC")
+  Rel(pr, mk, "so testes")
+  Rel(pr, pp, "usa")
+  Rel(pag, aec, "")
+  Rel(pao, liv, "")
+  Rel(vx, vertex, "HTTPS")
+  Rel(aec, eng, ":streamQuery")
+  Rel(liv, glive, "WSS")
+  BiRel(liv, lav, "")
+  %% Todas as portas registram o custo em ia_consumo_diario (ADR-161).
 \end{lstlisting}
 
 % ---------------------------------------------------------------------------
@@ -2190,6 +2345,7 @@ flowchart TB
   sinal -->|nao| saldo{tem saldo e provider?}
   saldo -->|nao| fall["texto FIXO do catalogo<br/>origem_texto = 'fallback'"]
   saldo -->|sim| ia["IA gera abertura, pergunta aberta e acolhimento<br/>recebe SO: dia da semana, mes, no do check-in,<br/>texto livre delimitado"]
+  ia -->|falha| fall
   ia --> val{validarTextoDaIa?}
   val -->|barrado| fall
   val -->|passou| ok["origem_texto = 'ia'"]
@@ -2227,7 +2383,8 @@ classDiagram
     numero: null
     SAI da conta - nao e zero
   }
-  note "A distincao mais importante do modelo e entre zero e none.\nTratar 'nao teve chance' como 'escolheu nao' faz uma crianca\nparecer ter recusado algo que nunca lhe foi oferecido."
+  note for indicative "Por que o tipo, e nao a tela: no app de origem a decisao vivia\nna interface, e uma tela nova podia imprimir 'Poder 100' de um sinal so."
+  note for none "A distincao mais importante do modelo e entre zero e none.\nTratar 'nao teve chance' como 'escolheu nao' faz uma crianca\nparecer ter recusado algo que nunca lhe foi oferecido."
 \end{lstlisting}
 
 % ---------------------------------------------------------------------------
@@ -2301,10 +2458,10 @@ flowchart TB
 flowchart TB
   subgraph PLAT["Plataforma - serve a todos os papeis"]
     au["/auth/login - sem papel"]; he["/healthz, /readyz - PUBLICO"]
-    ex["/experiencias - GET qualquer; PUT admin"]
+    ex["/experiencias - GET qualquer; PUT gestor de contrato, admin"]
     pg["/progresso/:expId - estudante"]; te["/telemetry/* - ver capitulo 10"]
     us["/usuarios/* - gestor, admin"]; ai["/ai/gerar - autenticado + quota"]
-    an["/analise/* - ADMIN-CONTRATO"]
+    an["/analise/* - GESTOR DE CONTRATO, admin"]
     ro["/rostering/* - gestor, admin"]
     tu["/turmas/* - prof. (as dele, por MATRICULA), gestor"]
     mt["/matriculas/:id - gestor, admin"]
@@ -2314,8 +2471,13 @@ flowchart TB
     sal["/salas/* - prof. libera, gestor le; /minhas: estudante (ADR-69)"]
     eq["/equipes/* - prof. monta, gestor le; /minha: estudante (ADR-111)"]
     ev["/evidencias/* - prof. confirma e ajusta, gestor le; estudante: so a pergunta e a resposta (ADR-112)"]
-    agp["/agente-professor/* - SO PROFESSOR, posse; a mensagem responde SSE (ADR-126)"]
+    agp["/agente-professor/* - SO PROFESSOR, posse; resposta em SSE (ADR-126)"]
     pod["/podcast/:expId/* - prof., gestor; nenhuma de estudante (ADR-150)"]
+    aj["/ajuda/* - prof. e gestao; teto em minutos por dia (ADR-132)"]
+    obs["/observabilidade/* - autenticado; /publico: sem sessao"]
+    prs["/prospeccao/* - /publico: visitante; cadastros: ADMIN (ADR-107)"]
+    esc["/escolas/* e /lotacoes - gestao; criar escola: gestor de contrato"]
+    est["/estudantes/:id/* - gestao: transferencia e portabilidade"]
   end
   subgraph E01["exp08ef1b - Instanooria"]
     atv["/atividades/* - professor"]; rn["/runs/* - estudante (/eventos: professor tb.)"]
@@ -2340,6 +2502,10 @@ flowchart TB
   end
   subgraph BE["app-91 - Bem-estar"]
     be["/bemestar/* - SO PROFESSOR, com posse"]
+  end
+  subgraph PE["app-92 - Plano de ensino"]
+    pe["/planejamento/* - PROFESSOR"]
+    pec["/planejamento/curriculo/* - prof, gestor - a Base"]
   end
   subgraph UG["exp02em1b - unooGPT"]
     ug["/unoogpt/* - estudante"]
@@ -2373,6 +2539,11 @@ flowchart TB
     ju["/juri-estadual/* - estudante - e as enquetes em /evidencias"]
     jut["/juri-estadual/turmas/* - prof, gestor - a mostra, a Galeria Oculta e a lousa"]
     jup["/juri-estadual/professor/* - prof, gestor - material do guia (so o esqueleto)"]
+  end
+  subgraph SE["exp07ef1b - A Selecao"]
+    sel["/a-selecao/* - estudante"]
+    selt["/a-selecao/turmas/* - prof, gestor - as coberturas, as imagens e o portao"]
+    selp["/a-selecao/professor/* - prof, gestor - material do guia"]
   end
 
   %% Duas areas por AUSENCIA deliberada: bem-estar nao tem rota de gestor nem
@@ -2410,38 +2581,52 @@ flowchart LR
 
 \begin{lstlisting}[language=mermaid]
 flowchart TB
-  push["push para main"] --> ver["PORTAO: ci.yml (typecheck, lint, test, build)"]
-  push --> diff["job mudancas: git diff HEAD^ HEAD -> api | hub | exps"]
+  push["push para dev ou hml (merge de um PR)"]
+  push --> ver["PORTAO verificar: ci.yml (typecheck, lint, test, build)"]
+  push --> diff["job mudancas: git diff HEAD^ HEAD"]
+  join{{"needs: [verificar, mudancas]"}}
+  ver --> join
+  diff --> join
 
-  subgraph api["job deploy-api (paralelo)"]
-    img["imagem da api (camada de deps do pnpm fetch + cache GHA)"]
-    img --> mig["Cloud Run Job -migrate (na VPC, --wait)"]
-    mig --> dep["gcloud run deploy api (revisao nova)"]
+  subgraph api["job deploy-api - a ORDEM importa"]
+    img["imagem da api (camada de deps com cache)"] --> mig["Cloud Run Job -migrate (na VPC, --wait)"]
+    mig --> dep["gcloud run deploy (revisao nova da api)"]
+    dep --> sapi["sonda pos-deploy: /readyz, ate 2 min"]
   end
 
-  subgraph hub["job deploy-hub (paralelo)"]
-    imgh["imagem do hub"] --> deph["gcloud run deploy hub"]
+  subgraph hub["job deploy-hub - em PARALELO"]
+    imgh["imagem do hub (camada de deps com cache)"] --> deph["gcloud run deploy (revisao nova do hub)"]
+    deph --> shub["sonda pos-deploy: /api/healthz e JWKS"]
   end
 
-  subgraph exps["job publicar-exps — DEPOIS do hub e da api"]
-    build["turbo build (filtrado, ou tudo se 'forcar')"]
-    build --> rsync["gcloud storage rsync -> gs://{bucket}/{exp}/{ver}/"]
-    rsync --> cc["Cache-Control: max-age=60 SO no index.html"]
-    cc --> man["publicar-manifesto.mjs -> PUT /experiencias/:expId (token de 5 min)"]
+  subgraph agente["job deploy-agente-professor - em PARALELO"]
+    imga["imagem do agente (uv sync --locked)"] --> pat["PATCH do Agent Engine (so a imageUri; espera a operacao)"]
   end
 
-  ver --> api
-  ver --> hub
-  diff --> api
-  diff --> hub
-  dep --> exps
-  deph --> exps
+  subgraph exps["job publicar-exps (sobe, inerte) -> job ativar-exps"]
+    build["turbo build (filtrado, ou tudo se forcar)"]
+    build --> rsync["gcloud storage rsync (caminho com a versao, sem .map)"]
+    rsync --> cc["Cache-Control: max-age=60 so no index.html"]
+    cc --> man["ativar-exps: PUT do manifesto (versaoAtiva)"]
+  end
 
-  %% ORDEM 1: migracao ANTES do deploy — o schema novo tem de estar no banco
+  join --> img
+  join --> imgh
+  join --> imga
+  join --> build
+  sapi --> man
+  shub --> man
+  man --> smoke["job smoke: e2e publico/01 contra o ambiente"]
+
+  %% ORDEM 1: migracao ANTES do deploy - o schema novo tem de estar no banco
   %%          antes de a revisao nova receber trafego. --wait faz falhar.
-  %% ORDEM 2: experiencias DEPOIS do hub — o PUT do manifesto e validado contra
-  %%          o JWKS que o HUB serve. Deploys PULADOS nao bloqueiam
-  %%          (!cancelled() + result != 'failure').
+  %% ORDEM 2: SUBIR o bundle nao espera nada alem do portao (o caminho carrega
+  %%          a versao, o upload e inerte); ATIVAR espera api e hub, porque o
+  %%          PUT do manifesto e validado contra o JWKS que o HUB serve. Deploys
+  %%          PULADOS nao bloqueiam (!cancelled() + result != 'failure').
+  %% AGENTE: sem engine ainda (vars.AGENTE_PROFESSOR_ENGINE vazia), o job so
+  %%          publica a imagem e avisa; o engine nasce no apply 2 do Terraform.
+  %%          O smoke nao espera este job.
 \end{lstlisting}
 
 % ---------------------------------------------------------------------------
@@ -2449,16 +2634,17 @@ flowchart TB
 
 \begin{lstlisting}[language=mermaid]
 flowchart TB
-  v["PONTA A PONTA - Playwright, navegador real<br/>scripts/e2e por papel: publico, estudante,<br/>professor, gestor, admin-contrato + probe-pointerlock"]
-  c["CONTRATO EXTERNO<br/>telemetria-push (guard do Pub/Sub), vertex-provider (cadeia ADC)"]
-  i["INTEGRACAO COM POSTGRES<br/>tenancy, planos-tenancy, motor-concorrencia, motor-postgres,<br/>unootube-postgres, vila-postgres, vila-ato1, usuarios, planos, bemestar"]
-  u["REGRA PURA - Vitest/Jest, milissegundos, sem banco<br/>vila-regras, unootube-regras, bemestar-regras, motor-pesos,<br/>motor-bolha, motor-sugestoes, motor-reversibilidade, bridge.test"]
-  u --- i --- c --- v
+  v["PONTA A PONTA - Playwright, navegador real<br/>scripts/e2e/, uma pasta por PAPEL: publico, estudante, professor,<br/>gestor_escola, gestor_contrato, admin; e o probe-pointerlock"]
+  c["CONTRATO EXTERNO - o que quebra em producao sem aviso<br/>telemetria-push (guard do Pub/Sub), vertex-provider (cadeia ADC e<br/>formato da requisicao), agente-professor-cliente (stream do Agent Engine)"]
+  i["INTEGRACAO COM POSTGRES - o que nao da para afirmar sem banco<br/>o *-postgres.spec.ts de cada modulo, tenancy, matriculas-tenancy,<br/>planos-tenancy, motor-concorrencia, geracao-paginacao"]
+  u["REGRA PURA - Vitest / Jest / pytest, milissegundos, sem banco<br/>o *-regras.spec.ts de cada modulo, motor-pesos, dossie-relatorio,<br/>bridge.test do SDK, lib/ do hub e o pytest do agente de IA do professor"]
+  v --- c --- i --- u
 
-  %% A base e larga de proposito: regras.ts puro em todo modulo de dominio.
-  %% E o TOPO nao e "E2E de fluxo": e verificacao de que a INTERFACE apareceu.
-  %% Icone virando texto, iframe vazio, cor inexistente, fonte removida pelo
-  %% Next — tudo INVISIVEL para o compilador.
+  %% Piramide: a base (regra pura) e a mais larga, de proposito - regras.ts
+  %% puro em todo modulo de dominio. E o TOPO nao e "E2E de fluxo": e
+  %% verificacao de que a INTERFACE apareceu. Icone virando texto, iframe
+  %% vazio, cor inexistente, fonte removida pelo Next - tudo INVISIVEL para o
+  %% compilador.
 \end{lstlisting}
 
 % ---------------------------------------------------------------------------
@@ -2475,9 +2661,12 @@ flowchart LR
   lb  -.- v1["ve-se: contagem e latencia por host<br/>cego: quem foi afetado (sem correlacao)"]
   hub -.- v2["ve-se: log de requisicao, instancias, CPU/mem<br/>cego: null do apiDoServidor, redirect em laco, erro de render"]
   api -.- v3["ve-se: idem + /readyz (se alguem abrir)<br/>cego: causa do 500, latencia da IA, descarte de telemetria, fila em erro"]
-  sql -.- v4["ve-se: conexoes, CPU, disco, backlog<br/>cego: query lenta por rota; dead letter (nao existe)"]
+  sql -.- v4["SQL e Pub/Sub - ve-se: conexoes, CPU, disco, backlog<br/>cego: query lenta por rota; dead letter (nao existe)"]
+  ps -.- v4
 
   %% Nenhum elo propaga identificador de correlacao.
+  %% Retrato de 1o de setembro de 2026 (o ponto de partida), nao o estado
+  %% corrente: por isso o Agent Engine (agente de IA do professor) nao aparece.
 \end{lstlisting}
 
 % ---------------------------------------------------------------------------
@@ -2498,7 +2687,7 @@ sequenceDiagram
   A->>L: stdout JSON, severity ERROR, @type ReportedErrorEvent
   L->>L: agrupa por assinatura; "novo na versao X"
   A-->>E: 204 (ou 429: cota da sessao)
-  E-->>H: exp:erro (opcional, targetOrigin explicito)
+  E->>H: exp:erro (opcional, targetOrigin explicito)
   Note over H: mostra "algo deu errado" e oferece recarregar
 \end{lstlisting}
 
@@ -2515,24 +2704,65 @@ quadrantChart
   quadrant-3 "Monitorar"
   quadrant-4 "Prob. alta, impacto baixo"
 
-  "R-01 carga nao verificada": [0.55, 0.92]
-  "R-02 retencao indefinida":  [0.90, 0.90]
-  "R-04 fator humano unico":   [0.98, 0.88]
-  "R-06 sem revisao externa":  [0.85, 0.86]
-  "R-05 sem alerting":         [0.85, 0.58]
-  "R-07 acessibilidade":       [0.85, 0.55]
-  "R-12 catalogo de modelos":  [0.82, 0.50]
-  "R-03 localidade de IA":     [0.98, 0.55]
-  "R-08 particao sem job":     [0.20, 0.50]
-  "R-09 midia manual":         [0.85, 0.22]
-  "R-10 orfa sem retomada":    [0.50, 0.20]
-  "R-11 dependencia do DS":    [0.50, 0.22]
-  "R-13 WSO2 nao e o emissor": [0.50, 0.18]
-  "R-14 virada do ano letivo": [0.85, 0.90]
-  "R-15 senha compartilhada":  [0.52, 0.52]
-  "R-16 replay sobre menor":   [0.88, 0.94]
-  "R-17 latencia de IA":       [0.55, 0.86]
-  "R-18 custo de IA exp02em1b":   [0.96, 0.60]
-  "R-19 guia da exp02em1b":       [0.96, 0.84]
-  "R-21 texto livre de menor": [0.96, 0.52]
+  %% Fonte: a tabela de riscos do cap. 19. Certa conta como alta (x=0.94);
+  %% possivel, como media (x=0.52).
+  "R-01 carga nao verificada": [0.45, 0.91]
+  "R-02 retencao indefinida": [0.82, 0.91]
+  "R-03 localidade de IA": [0.94, 0.56]
+  "R-04 fator humano unico": [0.94, 0.91]
+  "R-05 sem alerting": [0.82, 0.56]
+  "R-06 sem revisao externa": [0.82, 0.88]
+  "R-07 acessibilidade so por maquina": [0.45, 0.56]
+  "R-08 particao sem job": [0.15, 0.56]
+  "R-09 midia manual": [0.82, 0.21]
+  "R-10 orfa sem retomada": [0.45, 0.21]
+  "R-11 dependencia do DS": [0.45, 0.18]
+  "R-12 catalogo de modelos": [0.82, 0.53]
+  "R-13 WSO2 nao e o emissor": [0.45, 0.15]
+  "R-14 virada do ano letivo": [0.82, 0.85]
+  "R-15 senha compartilhada": [0.45, 0.53]
+  "R-16 replay sobre menor": [0.82, 0.82]
+  "R-17 latencia de IA": [0.45, 0.88]
+  "R-18 custo de IA exp02em1b": [0.94, 0.53]
+  "R-19 guia da exp02em1b": [0.94, 0.88]
+  "R-21 texto livre de menor": [0.94, 0.50]
+  "R-23 turma sem missao liberada": [0.82, 0.50]
+  "R-24 alavanca de incidente": [0.52, 0.91]
+  "R-25 versao fixada divergindo": [0.52, 0.56]
+  "R-26 historico sem prazo": [0.94, 0.21]
+  "R-27 quota do Agent Engine": [0.82, 0.79]
+  "R-28 ADK muda a cada 2 semanas": [0.82, 0.47]
+  "R-29 stream truncado": [0.45, 0.50]
+  "R-30 residencia do agente": [0.94, 0.47]
+  "R-31 expire_time sem maximo": [0.45, 0.47]
+  "R-32 data store nao avaliado": [0.45, 0.85]
+  "R-33 Ajuda depende de vendor": [0.45, 0.44]
+  "R-34 endpoint publico": [0.15, 0.53]
+  "R-35 custo por minuto": [0.45, 0.56]
+  "R-36 avatar mudo no erro": [0.45, 0.53]
+  "R-37 base da Ajuda cresce": [0.82, 0.44]
+  "R-38 painel nao e a fatura": [0.82, 0.56]
+\end{lstlisting}
+
+% ---------------------------------------------------------------------------
+\section{Figura~\ref{fig:cronograma-pendencias} --- Cronograma das pendências}
+
+\begin{lstlisting}[language=mermaid]
+gantt
+  title Cronograma de resolucao das pendencias (cor = prioridade)
+  dateFormat YYYY-MM-DD
+  axisFormat %b
+  section Alta
+  PEND-01 emissor para o WSO2 IS     :a1, 2026-10-01, 2026-10-31
+  PEND-02 e2e do gestor regional     :a2, 2026-10-01, 2026-10-31
+  PEND-05 RLS nas migracoes          :a5, 2026-09-01, 2026-09-30
+  section Media
+  PEND-03 alarmes de quota de IA     :m3, 2026-11-01, 2026-11-30
+  PEND-04 OpenAPI no CI              :m4, 2026-09-01, 2026-09-30
+  PEND-07 DLQ da telemetria          :m7, 2026-10-01, 2026-10-31
+  section Baixa
+  PEND-06 componentes vs. DS (continua, sem janela) :b6, 2026-09-01, 2026-12-31
+  PEND-08 bundles 08 a 69            :b8, 2026-11-01, 2026-11-30
+  section Marco
+  Entrada em producao                :milestone, 2026-11-01, 0d
 \end{lstlisting}

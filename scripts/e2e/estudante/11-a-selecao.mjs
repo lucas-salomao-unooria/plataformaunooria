@@ -277,7 +277,7 @@ await suite(
     const p = await r.pagina("estudante", { viewport: { width: 1280, height: 950 } });
     await r.entrar(p, PRIMEIRO.login);
     await p.goto(`${HUB}/exp/exp07ef1b`, { waitUntil: "domcontentloaded" });
-    const q = () => p.frameLocator('iframe[title="experiencia"]');
+    const q = () => p.frameLocator('iframe[data-experiencia]');
     await q().getByRole("button", { name: /Abrir Feed da Cobertura/i }).waitFor({ timeout: 40_000 });
     await r.registrar(p, "dm-da-amara", {
       titulo: "O pedido da Amara",
@@ -384,7 +384,7 @@ await suite(
     await r.entrar(p2, SEGUNDO.login);
     await p2.goto(`${HUB}/exp/exp07ef1b`, { waitUntil: "domcontentloaded" });
     await p2
-      .frameLocator('iframe[title="experiencia"]')
+      .frameLocator('iframe[data-experiencia]')
       .getByRole("button", { name: /Abrir Feed da Cobertura/i })
       .waitFor({ timeout: 40_000 });
     await api(p2, "a-selecao/passo", { para: "feed" });

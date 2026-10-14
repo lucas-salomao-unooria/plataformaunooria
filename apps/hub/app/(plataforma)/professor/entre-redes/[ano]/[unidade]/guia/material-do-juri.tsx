@@ -1,5 +1,5 @@
 import { Card, Tag } from "@edu/ui/ds";
-import type { MaterialDoJuri } from "@/lib/juri-estadual-tipos";
+import { TOTAL_DE_PROJETOS, type MaterialDoJuri } from "@/lib/juri-estadual-tipos";
 
 /**
  * Os BLOCOS VIVOS do guia da exp06ef1b — de `GET /juri-estadual/professor/material`
@@ -77,9 +77,15 @@ export function GabaritoDoJuri({ dados }: { dados: MaterialDoJuri | null }) {
             Comentar e compartilhar não contam: o app avisa que estão fechados no julgamento.
           </li>
           <li>
-            Quando uma área chega a {regra.limiar} pontos, o resto do feed é só dela — os mesmos projetos voltam em
-            outros formatos (bastidor, protótipo, depoimento da equipe), sem aviso nenhum na tela. É a regra “se…
-            então…” que a cadeia e a terceira enquete pedem para descrever.
+            Quando uma área chega a {regra.limiar} pontos, o resto do feed é só dela — outros projetos da mesma área,
+            nenhum repetido, sem aviso nenhum na tela. É a regra “se… então…” que a cadeia e a terceira enquete pedem
+            para descrever.
+          </li>
+          <li>
+            Com {TOTAL_DE_PROJETOS} estandes e {regra.postsNoFeed} publicações, todo computador que chega ao fim do feed
+            fica com {TOTAL_DE_PROJETOS - regra.postsNoFeed} estandes fora dele — o número é o mesmo para todos. O que
+            muda é QUAIS áreas sumiram: a Galeria Oculta mostra a cada um quantos viu de cada área e o feed que ele
+            teria visto “sem as suas curtidas”.
           </li>
         </ul>
 

@@ -41,13 +41,23 @@ describe("a copy da missão", () => {
     expect([...E5.ponteLeo.matchAll(/!/g)]).toHaveLength(1);
   });
 
-  test("nenhuma taxa cravada: o badge e o subtítulo levam o número REAL da sessão", () => {
+  test("nenhuma taxa cravada: a moldura é \"X de Y\", os dois números REAIS da sessão", () => {
     const tudo = TODOS.flatMap((g) => textosDo(g)).join("\n");
     expect(tudo).not.toMatch(/75\s*%/);
     expect(tudo).not.toMatch(/12 projetos/);
-    expect(E4.badge(69)).toBe("69% dos projetos da feira ficaram fora do seu feed");
-    expect(E4.subtitulo(11)).toBe("Estes 11 projetos concorrentes nunca foram entregues à sua tela.");
+    /* Sem porcentagem nenhuma (0.5.0): com 40 estandes o total escondido é igual para todos. */
+    expect(tudo).not.toMatch(/%/);
+    expect(E4.badge(30, 40)).toBe("30 de 40 estandes nunca chegaram ao seu feed");
+    expect(E4.badge(12, 16)).toBe("12 de 16 estandes nunca chegaram ao seu feed");
+    expect(E4.subtitulo(9)).toBe("Estes 9 projetos concorrentes nunca foram entregues à sua tela.");
     expect(E4.subtitulo(1)).toBe("Este projeto concorrente nunca foi entregue à sua tela.");
+    expect(E4.subtitulo(0)).toBe("Nenhum projeto desta área ficou fora do seu feed.");
+  });
+
+  test("a galeria por área e o contraste sem as curtidas, na voz da comissão", () => {
+    expect(E4.vistosNaArea("Tecnologia", 7, 10)).toBe("Tecnologia: você viu 7 de 10");
+    expect(E4.semCurtidas).toBe("Sem as suas curtidas, o seu feed teria trazido:");
+    expect(E4.semCurtidasDaArea("Saúde", 2)).toBe("Saúde 2");
   });
 
   test("a copy literal do PRD v2 nas chaves que a e2e e o PO conferem", () => {
