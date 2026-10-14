@@ -1,3 +1,4 @@
+import type { AtribuicaoDoConsumo } from "./consumo-de-ia";
 export interface AiRequest {
   system: string;
   user: string;
@@ -175,6 +176,12 @@ export interface AiImagemOpcoes {
   proporcao?: AiProporcao;
   /** O que a geração cobrou (o `usageMetadata` da resposta). Só o medidor passa. */
   aoUsarTokens?: (tokens: number, divisao?: DivisaoDeTokens) => void;
+  /**
+   * A quem o painel de custos atribui a imagem (ADR-161), quando NÃO é o que a
+   * rota diz — as imagens do banco padrão do Júri, custo da plataforma e não da
+   * turma. Ausente = o contexto da requisição. Só o medidor lê.
+   */
+  atribuicao?: AtribuicaoDoConsumo;
 }
 
 /**

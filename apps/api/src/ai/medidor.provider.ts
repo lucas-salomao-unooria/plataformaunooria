@@ -1,5 +1,5 @@
 import { Metricas, rotuloDeFinishReason } from "../observabilidade/metricas";
-import { estimarFala, type ModalidadeDeIa, type RegistrarConsumo } from "./consumo-de-ia";
+import { estimarFala, type AtribuicaoDoConsumo, type ModalidadeDeIa, type RegistrarConsumo } from "./consumo-de-ia";
 import {
   ErroDeGeracao,
   type AiConversaRequest,
@@ -69,6 +69,7 @@ export class MedidorDeProvider implements AiProvider {
     modalidade: ModalidadeDeIa,
     ok: boolean,
     pago: { entrada: number; saida: number; imagens?: number; segundos?: number; estimado?: boolean },
+    atribuicao?: AtribuicaoDoConsumo,
   ): void {
     this.registrar?.({
       operacao,
@@ -80,6 +81,7 @@ export class MedidorDeProvider implements AiProvider {
       imagens: pago.imagens,
       segundos: pago.segundos,
       estimado: pago.estimado,
+      ...(atribuicao ? { atribuicao } : {}),
     });
   }
 
@@ -132,7 +134,7 @@ export class MedidorDeProvider implements AiProvider {
         return imagem;
       },
       false,
-      (ok) => this.consumo("generateImage", modelo, "imagem", ok, { ...pago, imagens }),
+      (ok) => this.consumo("generateImage", modelo, "imagem", ok, { ...pago, imagens }, opcoes?.atribuicao),
     );
   }
 

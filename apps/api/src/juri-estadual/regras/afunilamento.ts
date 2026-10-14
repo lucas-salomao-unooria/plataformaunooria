@@ -14,11 +14,18 @@
  * (`pesos`). Salvar NÃO pesa (melhoria 6 do PRD v2): fica na lista para a tela
  * e para a telemetria, e o motor não o lê.
  *
- * A SATURAÇÃO (melhoria 1, 2026-10-10): com a área em FOCO, os posts 5 a 10 são
- * só dela e repetem os projetos que já chegaram em FORMATOS diferentes
- * (apresentação, bastidor, protótipo, depoimento) — no máximo um projeto novo
- * dela entra. Quem curte vê 5 projetos distintos e 11 de 16 ficam fora do feed
- * (69%); a taxa é REAL, e a galeria mostra o número desta sessão.
+ * NENHUM POST SE REPETE (3.0.0, 2026-10-14): a mostra tem quarenta projetos,
+ * dez por área, e o motor serve só a `apresentacao`. Com a área em FOCO, os
+ * posts seguintes são projetos NOVOS dela (o da abertura e até mais seis: ela
+ * tem dez). Quem curte cedo vê 7 projetos da área dela e 1 de cada outra; quem
+ * não interage vê dez projetos variados. Os dois ficam com 30 de 40 fora do
+ * feed — o que muda é QUAIS, e é isso que a galeria mostra (por área, e o
+ * contrafactual sem curtidas, `servirAte` sobre o `FEED_VAZIO`).
+ *
+ * A saturação por FORMATOS da 0.4.x (a área em foco repetindo os projetos dela
+ * em bastidor, protótipo e depoimento) SAIU. As sessões 2.0.0 têm esses posts
+ * gravados, e o motor continua a partir deles sem servir formato nenhum além da
+ * apresentação: o projeto já visto, em qualquer formato, conta como visto.
  */
 import {
   AREAS,
@@ -28,8 +35,6 @@ import {
   POSTS_DE_ABERTURA,
   POSTS_NO_FEED,
   TETO_DO_FEED_MS,
-  TIPOS_DE_POST,
-  TOTAL_DE_PROJETOS,
   areaDoProjeto,
   idDoPost,
   projetoDoPost,
@@ -193,24 +198,18 @@ function projetosServidos(servidos: readonly string[]): Set<string> {
   return new Set(servidos.map(projetoDoPost));
 }
 
-/** Os projetos servidos, na ordem em que chegaram pela primeira vez. */
-function projetosNaOrdem(servidos: readonly string[]): string[] {
-  return [...new Set(servidos.map(projetoDoPost))];
-}
-
-/** Quantos projetos DISTINTOS da área em foco podem chegar ao feed (o da abertura e mais um). */
-export const PROJETOS_DA_AREA_EM_FOCO = 2;
-
 /**
  * O próximo post do feed, ou `null` se o feed já tem os dez.
  *
+ * Todo post é a APRESENTAÇÃO de um projeto que o feed ainda não mostrou —
+ * nenhum se repete.
+ *
  * - Os quatro primeiros: a abertura (um de cada área).
- * - COM área em FOCO (`areaEmFoco`): só ela. Enquanto ela tiver menos de dois
- *   projetos no feed, a apresentação de um projeto NOVO dela; depois, os
- *   formatos que faltam dos projetos dela que já chegaram (apresentação,
- *   bastidor, protótipo, depoimento), na ordem em que chegaram — é a SATURAÇÃO.
- * - SEM foco (ninguém curtiu nem ficou num post): a apresentação de um projeto
- *   novo da área MENOS vista — quem não interage vê um feed variado.
+ * - COM área em FOCO (`areaEmFoco`): um projeto NOVO dela. A área tem dez, e o
+ *   feed precisa de no máximo sete (o da abertura e os posts 5 a 10).
+ * - SEM foco (ninguém curtiu nem ficou num post), ou com a área em foco
+ *   esgotada (só no pacote legado de dezesseis, que tem quatro por área): um
+ *   projeto novo da área MENOS vista — quem não interage vê um feed variado.
  */
 export function proximoPost(
   projetos: readonly ProjetoDoMotor[],
@@ -222,47 +221,25 @@ export function proximoPost(
     return abertura(projetos, semente)[estado.servidos.length] ?? null;
   }
 
-  const jaServidos = new Set(estado.servidos);
   const vistos = projetosServidos(estado.servidos);
   const posicao = estado.servidos.length;
   const ordenados = embaralhar(projetos, semente, `posicao:${posicao}`);
-
-  const apresentacaoNova = (area: Area | null) =>
-    ordenados.find(
-      (p) => (area === null || p.area === area) && !vistos.has(p.id) && !jaServidos.has(idDoPost(p.id, "apresentacao")),
-    );
-  const formatoQueFalta = (area: Area | null): string | null => {
-    for (const projetoId of projetosNaOrdem(estado.servidos)) {
-      if (area !== null && areaDoProjeto(projetoId) !== area) continue;
-      for (const tipo of TIPOS_DE_POST) {
-        const post = idDoPost(projetoId, tipo);
-        if (!jaServidos.has(post)) return post;
-      }
-    }
-    return null;
-  };
+  const novoDa = (area: Area) => ordenados.find((p) => p.area === area && !vistos.has(p.id));
 
   const foco = areaEmFoco(estado);
   if (foco) {
-    const vistosDoFoco = projetosNaOrdem(estado.servidos).filter((id) => areaDoProjeto(id) === foco);
-    if (vistosDoFoco.length < PROJETOS_DA_AREA_EM_FOCO) {
-      const nova = apresentacaoNova(foco);
-      if (nova) return idDoPost(nova.id, "apresentacao");
-    }
-    const repetido = formatoQueFalta(foco);
-    if (repetido) return repetido;
-    const nova = apresentacaoNova(foco);
-    if (nova) return idDoPost(nova.id, "apresentacao");
+    const novo = novoDa(foco);
+    if (novo) return idDoPost(novo.id, "apresentacao");
   }
 
   // Sem foco (ou a área esgotou): a menos vista, para o feed seguir variado.
   const vistosPorArea = (area: Area) => projetos.filter((x) => x.area === area && vistos.has(x.id)).length;
   const areas = embaralhar(AREAS, semente, `variado:${posicao}`).sort((x, y) => vistosPorArea(x) - vistosPorArea(y));
   for (const area of areas) {
-    const nova = apresentacaoNova(area);
-    if (nova) return idDoPost(nova.id, "apresentacao");
+    const novo = novoDa(area);
+    if (novo) return idDoPost(novo.id, "apresentacao");
   }
-  return formatoQueFalta(null);
+  return null;
 }
 
 /** Serve posts até `quantos` (ou até o feed completar). Puro: devolve a lista nova. */
@@ -340,26 +317,54 @@ export function aplicarPermanencia(estado: EstadoDoFeed, postId: string): Estado
 
 // --------------------------------------------------------- o que não chegou
 
-/** Os projetos que o feed NUNCA mostrou (nenhum dos dois posts). */
+/** Os projetos que o feed NUNCA mostrou (em nenhum formato), na ordem do pacote. */
 export function projetosOcultos(projetos: readonly ProjetoDoMotor[], servidos: readonly string[]): string[] {
   const vistos = projetosServidos(servidos);
   return projetos.filter((p) => !vistos.has(p.id)).map((p) => p.id);
 }
 
 /**
- * A taxa REAL de invisibilidade (decisão de 2026-10-02): os projetos que não
- * chegaram sobre os dezesseis. Não é o "75%" da spec — é o que esta sessão
- * produziu, e quem não afunilou vê o número dele, menor.
+ * Quantos projetos do pacote o feed NUNCA mostrou, sobre o total DO PACOTE
+ * (40, ou 16 no pacote legado) — "30 de 40". Com quarenta e dez posts sem
+ * repetição, o número é o mesmo para toda criança que viu os dez; quem parou
+ * antes pelos 8 minutos vê o dele, maior.
  */
-export function invisibilidade(servidos: readonly string[]): {
-  vistos: number;
-  ocultos: number;
-  total: number;
-  percentual: number;
-} {
-  const vistos = projetosServidos(servidos).size;
-  const ocultos = TOTAL_DE_PROJETOS - vistos;
-  return { vistos, ocultos, total: TOTAL_DE_PROJETOS, percentual: Math.round((ocultos / TOTAL_DE_PROJETOS) * 100) };
+export function invisibilidade(
+  projetos: readonly ProjetoDoMotor[],
+  servidos: readonly string[],
+): { ocultos: number; total: number } {
+  return { ocultos: projetosOcultos(projetos, servidos).length, total: projetos.length };
+}
+
+/** Quantos projetos DISTINTOS de cada área chegaram ao feed, sobre os da área no pacote. */
+export function vistosPorArea(
+  projetos: readonly ProjetoDoMotor[],
+  servidos: readonly string[],
+): { area: Area; vistos: number; total: number }[] {
+  const vistos = projetosServidos(servidos);
+  return AREAS.map((area) => {
+    const daArea = projetos.filter((p) => p.area === area);
+    return { area, vistos: daArea.filter((p) => vistos.has(p.id)).length, total: daArea.length };
+  });
+}
+
+/**
+ * O CONTRAFACTUAL: o feed que ESTA sessão teria tido sem nenhuma curtida e
+ * nenhuma permanência — o mesmo motor, a mesma semente e o mesmo número de
+ * posts que a criança viu (`quantos`; o feed pode ter parado antes de dez
+ * pelos 8 minutos). Por área, com os projetos na ordem do pacote. Roda no
+ * SERVIDOR: o motor nunca vai ao bundle (regra 3), só o resultado.
+ */
+export function feedSemCurtidas(
+  projetos: readonly ProjetoDoMotor[],
+  semente: string,
+  quantos: number,
+): { area: Area; posts: string[] }[] {
+  const contrafactual = projetosServidos(servirAte(projetos, FEED_VAZIO, semente, quantos));
+  return AREAS.map((area) => ({
+    area,
+    posts: projetos.filter((p) => p.area === area && contrafactual.has(p.id)).map((p) => p.id),
+  }));
 }
 
 /** O voto só vale para projeto que o feed mostrou: é a cédula "do seu feed". */

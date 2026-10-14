@@ -8,7 +8,8 @@ import { rateLimit } from "../comum/rate-limit";
 import { professorDoToken } from "../comum/turmas-do-professor";
 import { ehUuid } from "../motor/guardas";
 import { Contrato } from "../openapi/contrato";
-import { conteudoDoBancoPadrao } from "./banco-padrao";
+import { conteudoDoBancoPadrao, ehConteudoDoBancoPadrao } from "./banco-padrao";
+import { ImagensDoBancoPadraoService } from "./banco-padrao-imagens.service";
 import {
   BancoPadraoSchema,
   EmAndamentoSchema,
@@ -107,6 +108,7 @@ export class JuriEstadualTurmasController {
     private readonly missao: JuriEstadualService,
     private readonly preparo: PreparoDaExp06ef1bService,
     private readonly midia: MidiaDaExp06ef1bService,
+    private readonly imagensDoBanco: ImagensDoBancoPadraoService,
   ) {}
 
   @Get()
@@ -288,7 +290,7 @@ export class JuriEstadualTurmasController {
     notas: [
       "Depois de `aprovar-imagens`, **409** `imagens-ja-aprovadas`: a turma pode estar olhando para elas.",
       "Quota do professor, com o custo estimado de uma imagem. Sem saldo, **429** `sem-saldo-de-ia`; com o provedor fora do ar, **503** `ia-indisponivel` — e o estande fica com a imagem que tinha.",
-      "`projetoId` fora de `proj-a1`…`proj-d4` responde **400** `payload-invalido`.",
+      "`projetoId` fora de `proj-a1`…`proj-d10` responde **400** `payload-invalido`.",
     ],
   })
   refazerImagem(
@@ -315,9 +317,9 @@ export class JuriEstadualTurmasController {
   @Post(":turmaId/gerar-conteudo")
   @HttpCode(200)
   @Contrato({
-    resumo: "Gera um RASCUNHO da mostra com IA: 4 áreas e 16 projetos sobre o tema do professor — ou o banco padrão.",
+    resumo: "Gera um RASCUNHO da mostra com IA: 4 áreas e 40 projetos sobre o tema do professor — ou o banco padrão.",
     descricao:
-      "**Não persiste nada**: o que volta é rascunho para a tela editar, e criar a atividade é o `POST homologar`. A IA escreve as quatro áreas e os dezesseis projetos (com os quatro formatos de post); a saída que fere as regras da missão é regerada uma vez.\n\n**Fallback (RF-007, §12.2):** sem saldo de IA ou com a IA fora do ar, a resposta é **200** com o BANCO PADRÃO (os dezesseis projetos do PRD), `usouIa: false`, `origem: \"padrao\"` e `motivo` (`sem-saldo-de-ia` ou `ia-indisponivel`). A tela mostra o aviso e segue com um toque.",
+      "**Não persiste nada**: o que volta é rascunho para a tela editar, e criar a atividade é o `POST homologar`. A IA escreve as quatro áreas e os quarenta projetos (dez por área: título, escola, perfil, legenda, bastidor, hashtags e a imagem) em cinco chamadas — as categorias, depois as quatro áreas em paralelo — e regera sozinha o estande que repetir o título ou o perfil de outra área; a saída que fere as regras da missão é regerada uma vez. Medido com IA real: cerca de 45 s.\n\n**Fallback (RF-007, §12.2):** sem saldo de IA ou com a IA fora do ar, a resposta é **200** com o BANCO PADRÃO (os quarenta projetos), `usouIa: false`, `origem: \"padrao\"`, `motivo` (`sem-saldo-de-ia` ou `ia-indisponivel`) e, em `imagens`, as imagens do banco que já existem. A tela mostra o aviso e segue com um toque. O rascunho da IA vem com `imagens` vazio.",
     params: PARAMS,
     query: QUERY,
     corpo: ParametrosDoPreparoSchema,
@@ -341,9 +343,16 @@ export class JuriEstadualTurmasController {
     await this.missao.exigirTurmaVisivel(escolaId, turma, professorDoToken(req.auth));
     const r = await this.preparo.gerar(escolaId, req.auth.usuarioId, req.auth.perfil, parametros);
     if (r.chamouIa) await this.missao.registrarGeracao(escolaId, turma, r.tokens);
-    if (r.ok) return { parametros, conteudo: r.valor, usouIa: true, origem: "ia" as const, motivo: null };
-    /* Sem cota ou sem IA: o banco padrão, para a aula acontecer (RF-007, §12.2). */
-    return { parametros, conteudo: conteudoDoBancoPadrao(), usouIa: false, origem: "padrao" as const, motivo: r.codigo };
+    if (r.ok) return { parametros, conteudo: r.valor, usouIa: true, origem: "ia" as const, motivo: null, imagens: {} };
+    /* Sem cota ou sem IA: o banco padrão, para a aula acontecer (RF-007, §12.2), com as imagens dele que já existem. */
+    return {
+      parametros,
+      conteudo: conteudoDoBancoPadrao(),
+      usouIa: false,
+      origem: "padrao" as const,
+      motivo: r.codigo,
+      imagens: await this.imagensDoBanco.existentes(),
+    };
   }
 
   @Post(":turmaId/banco-padrao")
@@ -351,26 +360,31 @@ export class JuriEstadualTurmasController {
   @Contrato({
     resumo: '"Usar Banco Padrão Oficial" — a atividade pronta, sem IA, em um toque (e no ar, com `porNoAr`).',
     descricao:
-      "O caminho curto do professor (E0-PROF-02, RF-007): cria a ATIVIDADE com os dezesseis projetos do banco padrão (`origem: \"padrao\"`), sem chamada de IA, sem curadoria e com as imagens já aprovadas (os estandes usam a arte procedural). Se a turma já tem esse pacote, reaproveita. Com `porNoAr: true`, põe em andamento na mesma chamada — o \"Usar Banco Padrão e Pôr no ar\" (as mesmas regras de `POST …/em-andamento`). O podcast dele é o roteiro fixo do sheet: não há falas a revisar.",
+      "O caminho curto do professor (E0-PROF-02, RF-007): cria a ATIVIDADE com os quarenta projetos do banco padrão (`origem: \"padrao\"`), sem chamada de IA, sem curadoria e com as imagens já aprovadas: as imagens do banco que já existem no storage entram na `midia` (`GET /juri-estadual/banco-padrao/imagens`), e o estande sem imagem usa a arte procedural. Se a turma já tem esse pacote, reaproveita (e, fora do ar, ele ganha as imagens do banco que faltavam nele). Com `porNoAr: true`, põe em andamento na mesma chamada — o \"Usar Banco Padrão e Pôr no ar\" (as mesmas regras de `POST …/em-andamento`). O podcast dele é o roteiro fixo do sheet: não há falas a revisar.",
     params: PARAMS,
     query: QUERY,
     corpo: BancoPadraoSchema,
     resposta: PacoteHomologadoSchema,
     notas: ["Turma que o professor não leciona responde **404** `turma-nao-encontrada`."],
   })
-  bancoPadrao(
+  async bancoPadrao(
     @Param("turmaId") turmaId: string,
     @Query("escolaId") escolaIdPedida: string | undefined,
     @Body() corpo: unknown,
     @Req() req: Autenticado,
   ) {
     const { porNoAr } = valida(BancoPadraoSchema, corpo ?? {});
+    const escolaId = escolaAlvo(req.auth, escolaIdPedida);
+    const turma = turmaOu404(turmaId);
+    /* A guarda de turma ANTES de ler o storage. */
+    await this.missao.exigirTurmaVisivel(escolaId, turma, professorDoToken(req.auth));
     return this.missao.usarBancoPadrao(
-      escolaAlvo(req.auth, escolaIdPedida),
-      turmaOu404(turmaId),
+      escolaId,
+      turma,
       professorDoToken(req.auth),
       req.auth.usuarioId,
       porNoAr,
+      await this.imagensDoBanco.existentes(),
     );
   }
 
@@ -421,24 +435,27 @@ export class JuriEstadualTurmasController {
     corpo: HomologacaoSchema,
     resposta: PacoteHomologadoSchema,
     notas: [
-      "O pacote é recusado com **400** `pacote-invalido` e a LISTA de problemas em `erros`, em frases para o professor: quatro categorias, uma por área, com hashtags diferentes no formato `#minusculas`; os dezesseis projetos `proj-a1` a `proj-d4`, cada um na área que o id diz e começando pela hashtag da área; perfil com @; legenda até 60 palavras, e bastidor, protótipo e depoimento até 40; e nenhuma marca ou plataforma real no que a criança lê. (`.superRefine()` some do OpenAPI; daí esta nota.)",
+      "O pacote é recusado com **400** `pacote-invalido` e a LISTA de problemas em `erros`, em frases para o professor: quatro categorias, uma por área, com hashtags diferentes no formato `#minusculas`; os QUARENTA projetos `proj-a1` a `proj-d10` (dez por área), cada um na área que o id diz e começando pela hashtag da área; perfil com @; legenda até 60 palavras e bastidor até 40; e nenhuma marca ou plataforma real no que a criança lê. O pacote de dezesseis da 0.4.x continua legível, mas não se homologa mais. `prototipo` e `depoimento` (formatos da 0.4.x) são descartados. (`.superRefine()` some do OpenAPI; daí esta nota.)",
       "`podcast` são as três falas do podcast de recapitulação que o professor revisou na criação (ADR-150, ADR-151): `dois`, `rafa` e `mesa`, cada uma de 12 a 60 palavras, até 400 bytes, sem link, e-mail nem @. Vão para `podcast_roteiros` na MESMA transação, também no segundo clique — que as substitui.",
-      "O conteúdo IGUAL ao banco padrão (o fallback homologado como veio) cria o pacote com `origem: \"padrao\"`. `preparoIniciadoEm` (opcional) é quando a tela de criação abriu (EVT-P01); a homologação grava `aprovado_em`/`aprovado_por` (EVT-P03).",
+      "O conteúdo IGUAL ao banco padrão (o fallback homologado como veio) cria o pacote com `origem: \"padrao\"` e com as imagens do banco que já existem no storage na `midia`. `preparoIniciadoEm` (opcional) é quando a tela de criação abriu (EVT-P01); a homologação grava `aprovado_em`/`aprovado_por` (EVT-P03).",
     ],
   })
-  homologar(
+  async homologar(
     @Param("turmaId") turmaId: string,
     @Query("escolaId") escolaIdPedida: string | undefined,
     @Body() corpo: unknown,
     @Req() req: Autenticado,
   ) {
     const pacote = valida(HomologacaoSchema, corpo, "pacote-invalido");
+    /* Só o banco padrão intocado leva as imagens do banco; o storage só é lido nesse caso. */
+    const imagens = ehConteudoDoBancoPadrao(pacote.conteudo) ? await this.imagensDoBanco.existentes() : {};
     return this.missao.homologar(
       escolaAlvo(req.auth, escolaIdPedida),
       turmaOu404(turmaId),
       professorDoToken(req.auth),
       req.auth.usuarioId,
       pacote,
+      imagens,
     );
   }
 
@@ -447,7 +464,7 @@ export class JuriEstadualTurmasController {
   @Contrato({
     resumo: "Gera as próximas imagens dos estandes de uma atividade — incremental.",
     descricao:
-      "As dezesseis imagens não cabem nos 30 s que o BFF dá a uma chamada: cada chamada gera ATÉ DUAS novas (4:3), grava as URLs no pacote e devolve o progresso. **Repita enquanto `completo` for `false` e a chamada anterior tiver gerado alguma** — `falharam` diz o que não saiu, e esses estandes seguem com a arte procedural.\n\nIdempotente: o que já tem URL é pulado, e a imagem de mesma descrição que já está no bucket entra sem custo.",
+      "As quarenta imagens não cabem nos 180 s que o BFF dá a uma chamada: cada chamada gera ATÉ QUATRO novas (4:3), grava as URLs no pacote e devolve o progresso — umas dez chamadas. **Repita enquanto `completo` for `false` e a chamada anterior tiver gerado alguma** — `falharam` diz o que não saiu, e esses estandes seguem com a arte procedural.\n\nIdempotente: o que já tem URL é pulado, e a imagem de mesma descrição que já está no bucket entra sem custo.",
     params: PARAMS,
     query: QueryDoPacoteSchema,
     resposta: ProgressoDaMidiaSchema,

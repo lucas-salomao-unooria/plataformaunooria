@@ -31,12 +31,14 @@ import {
   cedulaLiberada,
   embaralhar,
   feedCompleto,
+  feedSemCurtidas,
   fimDoFeed,
   invisibilidade,
   projetoFoiExibido,
   projetosOcultos,
   servirAte,
   tempoDoFeedEsgotado,
+  vistosPorArea,
   type EstadoDoFeed,
   type ProjetoDoMotor,
 } from "./regras/afunilamento";
@@ -58,7 +60,7 @@ import {
   type AcaoDaGaleria,
 } from "./regras/galeria";
 import { blocosDaSessao, idsDaSessao, ordemCertaDaCadeia, ordemConfere } from "./regras/ordem";
-import { mediaDasTaxas, ociosoNaCedula, votosPorArea } from "./regras/painel";
+import { concentracaoDaTurma, ociosoNaCedula, votosPorArea } from "./regras/painel";
 import { parSimulado } from "./regras/par";
 import {
   ETAPA_INICIAL,
@@ -82,12 +84,13 @@ import {
   AREAS,
   DISCIPLINAS,
   EXP_ID,
-  IDS_DE_PROJETO,
   ID_DE_PROJETO_RE,
   ORIGENS_DO_PACOTE,
   POSTS_DE_ABERTURA,
   VERSAO_DO_INSTRUMENTO,
   areaDoProjeto,
+  compararIdsDeProjeto,
+  idsDoPacoteCom,
   type AcaoDaRevisao,
   type Conviccao,
   type Disciplina,
@@ -109,19 +112,27 @@ export { EXP_ID } from "./vocabulario";
  * (curtiu, ficou mais de 5 s) e o servidor decide o próximo post. O bundle
  * nunca recebe o acervo nem a regra: antes da galeria, só os posts que o feed
  * serviu descem (`regras/publico.ts`, uma allowlist), e a Galeria Oculta — os
- * dezesseis, com a taxa REAL desta sessão — só com a etapa `galeria` aberta.
+ * quarenta, com a contagem por área e o contrafactual sem curtidas desta
+ * sessão — só com a etapa `galeria` aberta.
  *
  * **A ordem certa dos blocos nunca desce**: os itens chegam com
  * ids OPACOS e embaralhados pela semente da sessão, e quem confere é o
  * servidor (`regras/ordem.ts`, regra 3).
  */
 
-/** Como o pacote é LIDO do JSONB: a forma, sem a régua da homologação. */
+/**
+ * Como o pacote é LIDO do JSONB: a forma, sem a régua da homologação — com 40
+ * projetos, ou com os 16 do pacote da 0.4.x (que continua legível até a turma
+ * trocar de atividade; só a ESCRITA exige os quarenta).
+ */
 const LeituraDoConteudoSchema = z.object({
   tema: z.string(),
   categorias: z.array(z.object({ area: AreaSchema, nome: z.string(), hashtag: z.string() })).length(AREAS.length),
-  projetos: z.array(ProjetoDoPacoteSchema).length(IDS_DE_PROJETO.length),
+  projetos: z.array(ProjetoDoPacoteSchema).refine((lista) => idsDoPacoteCom(lista.length) !== null),
 });
+
+/** O pacote LIDO: o escrito hoje (40) ou o da 0.4.x (16, com protótipo e depoimento). */
+export type ConteudoLido = z.infer<typeof LeituraDoConteudoSchema>;
 
 export interface PacoteLido {
   id: string;
@@ -132,7 +143,7 @@ export interface PacoteLido {
   assuntos: string;
   contexto: string | null;
   origem: OrigemDoPacote;
-  conteudo: ConteudoDoPacote;
+  conteudo: ConteudoLido;
   midia: Record<string, string>;
 }
 
@@ -176,15 +187,16 @@ function ehOrigem(valor: string): valor is OrigemDoPacote {
  * padrão nesta missão): vira a porta fechada, com o log que impede o "a missão
  * sumiu" de ser mudo.
  */
-function conteudoDaLinha(bruto: Prisma.JsonValue, contexto: { escolaId: string; pacoteId: string }): ConteudoDoPacote {
+function conteudoDaLinha(bruto: Prisma.JsonValue, contexto: { escolaId: string; pacoteId: string }): ConteudoLido {
   const lido = LeituraDoConteudoSchema.safeParse(bruto);
   if (lido.success) {
+    const ids = idsDoPacoteCom(lido.data.projetos.length) ?? [];
     const porId = new Map(lido.data.projetos.map((p) => [p.id, p]));
-    const projetos = IDS_DE_PROJETO.map((id) => porId.get(id)).filter((p): p is NonNullable<typeof p> => Boolean(p));
+    const projetos = ids.map((id) => porId.get(id)).filter((p): p is NonNullable<typeof p> => Boolean(p));
     const categorias = AREAS.map((a) => lido.data.categorias.find((c) => c.area === a)).filter(
       (c): c is NonNullable<typeof c> => Boolean(c),
     );
-    if (projetos.length === IDS_DE_PROJETO.length && categorias.length === AREAS.length) {
+    if (ids.length > 0 && projetos.length === ids.length && categorias.length === AREAS.length) {
       return { tema: lido.data.tema, categorias, projetos };
     }
   }
@@ -536,11 +548,13 @@ export class JuriEstadualService implements OnModuleInit {
   }
 
   /**
-   * A Galeria Oculta: os dezesseis estandes, os que NÃO chegaram ao feed
-   * primeiro, e a taxa REAL desta sessão — o número do badge e o tamanho da
-   * grade. Só com o passo efetivo `galeria` ou além — o voto lacrado E a etapa
-   * liberada pelo professor. `podeManter` diz se o "Manter meu voto inicial"
-   * já vale (abriu ao menos um oculto).
+   * A Galeria Oculta: os quarenta estandes (dezesseis no pacote legado), os que
+   * NÃO chegaram ao feed primeiro; "30 de 40" (`invisibilidade`); os projetos
+   * vistos POR ÁREA; e o CONTRAFACTUAL — o feed que esta sessão teria tido sem
+   * curtidas nem permanências, com o mesmo número de posts que ela viu,
+   * calculado aqui (o motor não desce). Só com o passo efetivo `galeria` ou
+   * além — o voto lacrado E a etapa liberada pelo professor. `podeManter` diz
+   * se o "Manter meu voto inicial" já vale (abriu ao menos um oculto).
    */
   async galeria(escolaId: string, estudanteId: string, turmaId: string | null) {
     return this.prisma.comTenancy(async (tx) => {
@@ -549,11 +563,17 @@ export class JuriEstadualService implements OnModuleInit {
       if (!passoNoMinimo(efetivo, "galeria")) throw erroDeJogo("galeria-nao-liberada");
       const { servidos } = feedDaLinha(ctx.sessao);
       const porId = new Map(ctx.pacote.conteudo.projetos.map((p) => [p.id, p]));
-      const ocultos = projetosOcultos(projetosDoMotor(ctx.pacote), servidos);
+      const motor = projetosDoMotor(ctx.pacote);
+      const ocultos = projetosOcultos(motor, servidos);
       const abertos = ocultosAbertos(auditoriaDaLinha(ctx.sessao.auditoria), ocultos);
       return {
-        invisibilidade: invisibilidade(servidos),
-        projetos: ordemDaGaleria(servidos)
+        invisibilidade: invisibilidade(motor, servidos),
+        porArea: vistosPorArea(motor, servidos),
+        semCurtidas: feedSemCurtidas(motor, ctx.sessao.semente, servidos.length),
+        projetos: ordemDaGaleria(
+          motor.map((p) => p.id),
+          servidos,
+        )
           .map((id) => porId.get(id))
           .filter((p): p is NonNullable<typeof p> => Boolean(p))
           .map((p) => projetoDaGaleria(p, ctx.pacote.midia, projetoFoiExibido(servidos, p.id))),
@@ -576,6 +596,9 @@ export class JuriEstadualService implements OnModuleInit {
       if (efetivo !== "galeria") {
         throw erroDeJogo(passoAntes(efetivo, "galeria") ? "galeria-nao-liberada" : "passo-invalido");
       }
+      if (acao.tipo === "abrir" && !ctx.pacote.conteudo.projetos.some((p) => p.id === acao.projetoId)) {
+        throw erroDeJogo("payload-invalido");
+      }
       const r = registrarAcao(auditoriaDaLinha(ctx.sessao.auditoria), acao);
       if (r.mudou) {
         await tx.exp06ef1bSessao.update({
@@ -589,8 +612,8 @@ export class JuriEstadualService implements OnModuleInit {
   /**
    * "Manter meu voto inicial" ou "Confirmar Voto Revisado" — O LATCH 2, só da
    * galeria. `manter` exige ao menos UM estande oculto aberto (409
-   * `galeria-sem-inspecao`, melhoria 6); `trocar` aceita qualquer um dos
-   * dezesseis, menos o voto lacrado. Ação, voto FINAL, carimbo e o passo
+   * `galeria-sem-inspecao`, melhoria 6); `trocar` aceita qualquer estande do
+   * pacote (40, ou 16 no legado), menos o voto lacrado. Ação, voto FINAL, carimbo e o passo
    * `revisada` no mesmo update, e as marcas da EF06CO10 (`auditoria`) e da
    * EF06CO01 (`classificacao`) na mesma transação — com os status gravados
    * também na sessão (PRD §11.1). A régua que devolve `null` não marca.
@@ -619,6 +642,8 @@ export class JuriEstadualService implements OnModuleInit {
       let final = voto;
       if (revisao.acao === "trocar") {
         if (!revisao.projetoId || revisao.projetoId === voto) throw erroDeJogo("payload-invalido");
+        /* A regex aceita `proj-a10`; o pacote legado de dezesseis não o tem. */
+        if (!ctx.pacote.conteudo.projetos.some((p) => p.id === revisao.projetoId)) throw erroDeJogo("payload-invalido");
         final = revisao.projetoId;
       } else if (ocultosAbertos(auditoria, ocultos) < 1) {
         throw erroDeJogo("galeria-sem-inspecao");
@@ -757,7 +782,8 @@ export class JuriEstadualService implements OnModuleInit {
    * **Só progresso por linha** (`regras/painel.ts#PROIBIDO_NA_LINHA_DO_PAINEL`):
    * o painel é projetado na lousa no pico (PED-07), então o voto, a taxa e o
    * nível de cada um não estão na linha. A lousa lê o RESUMO, anônimo: votos por
-   * área (o inicial e o revisado), a taxa média, quantos mantiveram e trocaram.
+   * área (o inicial e o revisado), a CONCENTRAÇÃO do feed de quem curtiu e de
+   * quem não curtiu, quantos mantiveram e trocaram.
    */
   async painel(escolaId: string, turmaId: string, professorId?: string) {
     return this.prisma.comTenancy(async (tx) => {
@@ -826,13 +852,13 @@ export class JuriEstadualService implements OnModuleInit {
 
       const iniciais: string[] = [];
       const revisados: string[] = [];
-      const taxas: number[] = [];
+      const feeds: { servidos: readonly string[]; curtidos: readonly string[] }[] = [];
       const revisao = { mantiveram: 0, trocaram: 0 };
       for (const { linha } of unidades) {
         const s = linha._sessao;
         if (!s?.votadoEm || !s.votoProjeto) continue;
         iniciais.push(s.votoProjeto);
-        taxas.push(invisibilidade(feedDaLinha(s).servidos).percentual);
+        feeds.push(feedDaLinha(s));
         if (s.revisadoEm && s.votoRevisado) {
           revisados.push(s.votoRevisado);
           /* O `complementar` das sessões da 0.3.0 manteve o voto: conta como manter. */
@@ -872,7 +898,7 @@ export class JuriEstadualService implements OnModuleInit {
           computadores: { votaram, total: computadores ?? saida.length },
           porComputador: mapa.size > 0,
           votosPorArea: pacote.conteudo.categorias.map((c) => ({ ...c, votos: porArea[c.area] })),
-          invisibilidadeMedia: mediaDasTaxas(taxas),
+          concentracao: concentracaoDaTurma(feeds),
           revisao,
           votosRevisadosPorArea: pacote.conteudo.categorias.map((c) => ({ ...c, votos: porAreaRevisado[c.area] })),
         },
@@ -1112,6 +1138,12 @@ export class JuriEstadualService implements OnModuleInit {
       /** Quando o professor abriu o preparo (EVT-P01); sem ele, agora. */
       preparoIniciadoEm?: string;
     },
+    /**
+     * As imagens do banco padrão que já existem no storage. Só valem quando o
+     * conteúdo É o banco padrão (o fallback homologado como veio): entram na
+     * `midia` do pacote onde a herança não pôs outra.
+     */
+    imagensDoBanco: Readonly<Record<string, string>> = {},
   ) {
     return this.prisma.comTenancy(async (tx) => {
       await this.turmaVisivel(tx, escolaId, turmaId, professorId);
@@ -1164,7 +1196,7 @@ export class JuriEstadualService implements OnModuleInit {
       }
       const herdada: Record<string, string> = {};
       for (const p of conteudo.projetos) {
-        const url = urlDaDescricao.get(p.imagem.descricao);
+        const url = urlDaDescricao.get(p.imagem.descricao) ?? (origem === "padrao" ? imagensDoBanco[p.id] : undefined);
         if (url) herdada[p.id] = url;
       }
 
@@ -1197,12 +1229,17 @@ export class JuriEstadualService implements OnModuleInit {
 
   /**
    * "Usar Banco Padrão Oficial" (E0-PROF-02, RF-007) — o caminho curto do
-   * professor: sem IA, sem curadoria e sem imagem gerada. Cria (ou reaproveita,
-   * se a turma já tem) o pacote `padrao` com os dezesseis projetos do 01e, já
-   * com as imagens APROVADAS (os estandes usam a arte procedural, que não muda),
-   * e com `porNoAr` o põe em andamento na mesma transação — o "Usar Banco
-   * Padrão e Pôr no ar" de dois toques (Anexo §9a). O podcast dele é o roteiro
-   * fixo do sheet (`podcast.ts`): não há falas a gravar.
+   * professor: sem IA e sem curadoria. Cria (ou reaproveita, se a turma já tem)
+   * o pacote `padrao` com os quarenta projetos do banco, já com as imagens
+   * APROVADAS, e com `porNoAr` o põe em andamento na mesma transação — o "Usar
+   * Banco Padrão e Pôr no ar" de dois toques (Anexo §9a). O podcast dele é o
+   * roteiro fixo do sheet (`podcast.ts`): não há falas a gravar.
+   *
+   * `imagensDoBanco` são as imagens do banco que JÁ existem no storage
+   * (`BancoPadraoImagensService#existentes`, lidas pelo controller): entram na
+   * `midia` do pacote. O projeto sem imagem fica sem, e a experiência desenha a
+   * arte procedural. O pacote reaproveitado que ainda não está no ar ganha as
+   * que faltavam nele.
    */
   async usarBancoPadrao(
     escolaId: string,
@@ -1210,6 +1247,7 @@ export class JuriEstadualService implements OnModuleInit {
     professorId: string | undefined,
     criadoPor: string,
     porNoAr: boolean,
+    imagensDoBanco: Readonly<Record<string, string>> = {},
   ) {
     const pacote = await this.prisma.comTenancy(async (tx) => {
       await this.turmaVisivel(tx, escolaId, turmaId, professorId);
@@ -1218,10 +1256,18 @@ export class JuriEstadualService implements OnModuleInit {
       const existentes = await tx.exp06ef1bPacote.findMany({
         where: { escolaId, turmaId, origem: "padrao" },
         orderBy: { criadoEm: "desc" },
-        select: { id: true, tema: true, ativo: true, conteudo: true },
+        select: { id: true, tema: true, ativo: true, conteudo: true, midia: true },
       });
       const igual = existentes.find((p) => canonico(p.conteudo) === canonico(conteudo));
-      if (igual) return { id: igual.id, tema: igual.tema, ativo: igual.ativo };
+      if (igual) {
+        const midia = midiaDaLinha(igual.midia);
+        const faltavam = Object.fromEntries(Object.entries(imagensDoBanco).filter(([id]) => !midia[id]));
+        /* No ar, as imagens não mudam no meio da aula. */
+        if (!igual.ativo && Object.keys(faltavam).length > 0) {
+          await tx.exp06ef1bPacote.update({ where: { id: igual.id }, data: { midia: { ...midia, ...faltavam } } });
+        }
+        return { id: igual.id, tema: igual.tema, ativo: igual.ativo };
+      }
       const agora = new Date();
       const novo = await tx.exp06ef1bPacote.create({
         data: {
@@ -1233,7 +1279,7 @@ export class JuriEstadualService implements OnModuleInit {
           assuntos: ASSUNTOS_DO_BANCO_PADRAO,
           contexto: null,
           conteudo: conteudo as unknown as Prisma.InputJsonValue,
-          midia: {},
+          midia: { ...imagensDoBanco },
           imagensAprovadasEm: agora,
           ativo: false,
           criadoPor,
@@ -1343,13 +1389,15 @@ export class JuriEstadualService implements OnModuleInit {
 
   // ────────────────────────────────────────────────────────────── privados
 
-  /** O conteúdo com categorias e projetos na ordem do vocabulário: a comparação e o banco não dependem da tela. */
+  /**
+   * O conteúdo com categorias e projetos na ordem do vocabulário (a numérica:
+   * `proj-a9` antes de `proj-a10`): a comparação e o banco não dependem da tela.
+   */
   private emOrdem(conteudo: ConteudoDoPacote): ConteudoDoPacote {
-    const posicao = (id: string) => (IDS_DE_PROJETO as readonly string[]).indexOf(id);
     return {
       tema: conteudo.tema,
       categorias: [...conteudo.categorias].sort((a, b) => AREAS.indexOf(a.area) - AREAS.indexOf(b.area)),
-      projetos: [...conteudo.projetos].sort((a, b) => posicao(a.id) - posicao(b.id)),
+      projetos: [...conteudo.projetos].sort((a, b) => compararIdsDeProjeto(a.id, b.id)),
     };
   }
 

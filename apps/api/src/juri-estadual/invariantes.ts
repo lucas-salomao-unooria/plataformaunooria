@@ -6,7 +6,7 @@
  *
  * Puro e sem dependência de Nest ou Prisma.
  */
-import { AREAS, IDS_DE_PROJETO, areaDoProjeto, type Area } from "./vocabulario";
+import { AREAS, IDS_DE_PROJETO, PROJETOS_POR_AREA, areaDoProjeto, type Area } from "./vocabulario";
 
 /** Teto de leitura de Anos Finais (PRD): legenda até 60 palavras, bastidor até 40. */
 export const MAX_PALAVRAS_DA_LEGENDA = 60;
@@ -69,9 +69,6 @@ export type ProjetoParaInvariante = {
   perfil: string;
   legenda: string;
   bastidor: string;
-  /** Os formatos da saturação (opcionais: o banco padrão não os tem, e o post cai no bastidor e na legenda). */
-  prototipo?: string;
-  depoimento?: string;
   hashtags: readonly string[];
   imagem: { descricao: string; alt: string };
 };
@@ -87,10 +84,12 @@ export type ConteudoParaInvariante = {
  * Lista vazia = pacote válido.
  *
  * - quatro categorias, uma por área, com hashtags diferentes;
- * - dezesseis projetos, os ids exatos, cada um na área que o id diz;
+ * - QUARENTA projetos (dez por área), os ids exatos, cada um na área que o id
+ *   diz — a régua é da ESCRITA: o pacote de dezesseis da 0.4.x continua
+ *   legível, mas não se homologa mais;
  * - a PRIMEIRA hashtag de cada projeto é a da área dele (é a que o chip da
  *   busca encontra);
- * - legenda até 60 palavras; bastidor, protótipo e depoimento até 40;
+ * - legenda até 60 palavras; bastidor até 40;
  * - nenhum termo proibido em texto que a criança lê.
  */
 export function problemasDoPacote(conteudo: ConteudoParaInvariante): string[] {
@@ -108,31 +107,31 @@ export function problemasDoPacote(conteudo: ConteudoParaInvariante): string[] {
 
   const ids = conteudo.projetos.map((p) => p.id);
   if (ids.length !== IDS_DE_PROJETO.length || IDS_DE_PROJETO.some((id) => !ids.includes(id))) {
-    problemas.push("o pacote precisa dos dezesseis projetos, quatro por área");
+    problemas.push(`o pacote precisa dos ${IDS_DE_PROJETO.length} projetos, ${PROJETOS_POR_AREA} por área`);
   }
 
   const hashtagDaArea = new Map(conteudo.categorias.map((c) => [c.area, c.hashtag]));
-  for (const p of conteudo.projetos) {
-    if (areaDoProjeto(p.id) !== p.area) problemas.push(`${p.id} está na área errada`);
-    if (p.hashtags[0] !== hashtagDaArea.get(p.area)) {
-      problemas.push(`${p.id} precisa começar pela hashtag da área`);
-    }
-    if (!PERFIL_RE.test(p.perfil)) problemas.push(`perfil inválido em ${p.id}`);
-    if (contarPalavras(p.legenda) > MAX_PALAVRAS_DA_LEGENDA) problemas.push(`legenda longa demais em ${p.id}`);
-    if (contarPalavras(p.bastidor) > MAX_PALAVRAS_DO_BASTIDOR) problemas.push(`bastidor longo demais em ${p.id}`);
-    if (p.prototipo !== undefined && contarPalavras(p.prototipo) > MAX_PALAVRAS_DO_BASTIDOR) {
-      problemas.push(`protótipo longo demais em ${p.id}`);
-    }
-    if (p.depoimento !== undefined && contarPalavras(p.depoimento) > MAX_PALAVRAS_DO_BASTIDOR) {
-      problemas.push(`depoimento longo demais em ${p.id}`);
-    }
-    const proibidos = termosProibidosEm(
-      [p.titulo, p.escola, p.legenda, p.bastidor, p.prototipo ?? "", p.depoimento ?? "", p.imagem.alt].join(" "),
-    );
-    if (proibidos.length > 0) problemas.push(`${p.id} cita ${proibidos.join(", ")}`);
-  }
+  for (const p of conteudo.projetos) problemas.push(...problemasDoProjeto(p, hashtagDaArea.get(p.area)));
   const proibidosNoTema = termosProibidosEm(conteudo.tema);
   if (proibidosNoTema.length > 0) problemas.push(`o tema cita ${proibidosNoTema.join(", ")}`);
 
+  return problemas;
+}
+
+/**
+ * Os problemas de UM projeto — a parte da régua que não depende do resto do
+ * pacote. O preparo por área (dez projetos por chamada) a aplica a cada
+ * chamada, antes de o pacote inteiro existir; `problemasDoPacote` a aplica a
+ * cada projeto do pacote.
+ */
+export function problemasDoProjeto(p: ProjetoParaInvariante, hashtagDaArea: string | undefined): string[] {
+  const problemas: string[] = [];
+  if (areaDoProjeto(p.id) !== p.area) problemas.push(`${p.id} está na área errada`);
+  if (p.hashtags[0] !== hashtagDaArea) problemas.push(`${p.id} precisa começar pela hashtag da área`);
+  if (!PERFIL_RE.test(p.perfil)) problemas.push(`perfil inválido em ${p.id}`);
+  if (contarPalavras(p.legenda) > MAX_PALAVRAS_DA_LEGENDA) problemas.push(`legenda longa demais em ${p.id}`);
+  if (contarPalavras(p.bastidor) > MAX_PALAVRAS_DO_BASTIDOR) problemas.push(`bastidor longo demais em ${p.id}`);
+  const proibidos = termosProibidosEm([p.titulo, p.escola, p.legenda, p.bastidor, p.imagem.alt].join(" "));
+  if (proibidos.length > 0) problemas.push(`${p.id} cita ${proibidos.join(", ")}`);
   return problemas;
 }

@@ -14,7 +14,8 @@ import {
   ORIGENS_DO_PACOTE,
   POSTS_NO_FEED,
   TIPOS_DE_BUSCA,
-  TIPOS_DE_POST,
+  TIPOS_DE_POST_LIDOS,
+  TOTAIS_DE_PROJETOS_LIDOS,
   TOTAL_DE_PROJETOS,
 } from "./vocabulario";
 
@@ -28,9 +29,10 @@ import {
  *
  * - o ACERVO: antes da galeria, o estudante só recebe os posts que o feed
  *   serviu — os outros projetos existem só no servidor. A galeria (com todos os
- *   dezesseis e a taxa real) desce no `GET galeria`, com a etapa `galeria`
- *   liberada pelo professor;
- * - a REGRA do motor: nenhum peso, nenhuma área líder;
+ *   quarenta, a contagem por área e o contrafactual sem curtidas) desce no
+ *   `GET galeria`, com a etapa `galeria` liberada pelo professor;
+ * - a REGRA do motor: nenhum peso, nenhuma área líder. O contrafactual é
+ *   CALCULADO no servidor e desce pronto: o motor nunca vai ao bundle;
  * - a ORDEM certa dos blocos e o cartão certo: os itens descem
  *   embaralhados, com ids opacos, e quem confere é o servidor (regra 3) — a
  *   ordem errada é 422 `ordem-incorreta`, e a tentativa conta;
@@ -136,19 +138,27 @@ const ImagemPublicaSchema = z.object({
   alt: z.string(),
 });
 
-/** Um post do feed — ALLOWLIST. A área é pública (a hashtag está no post). */
+/**
+ * Um post do feed — ALLOWLIST. A área é pública (a hashtag está no post).
+ *
+ * O motor serve só `apresentacao` (instrumento 3.0.0); `bastidor`, `prototipo`
+ * e `depoimento` só chegam no feed gravado de uma sessão 2.0.0, e a tela
+ * continua sabendo desenhá-los.
+ */
 export const PostPublicoSchema = z.object({
   id: IdDePostSchema,
   projetoId: IdDeProjetoSchema,
-  tipo: z.enum(TIPOS_DE_POST),
+  tipo: z.enum(TIPOS_DE_POST_LIDOS),
   area: AreaSchema,
   titulo: z.string(),
   escola: z.string(),
   perfil: z.string(),
-  /** O texto do FORMATO: a legenda, o bastidor, o protótipo ou o depoimento. */
+  /** O texto do FORMATO: a legenda na apresentação (nas sessões 2.0.0, o do formato legado). */
   texto: z.string(),
   /** A legenda do ESTANDE, em qualquer formato (o "...mais" da apresentação). */
   legenda: z.string(),
+  /** O resumo técnico do estande (o bastidor): a segunda lâmina do carrossel do post. */
+  bastidor: z.string(),
   hashtags: z.array(z.string()),
   imagem: ImagemPublicaSchema,
 });
@@ -182,19 +192,52 @@ export const ProjetoDaGaleriaSchema = z.object({
   exibidoNoSeuFeed: z.boolean(),
 });
 
+/** Um pacote tem 40 projetos (ou 16, o legado da 0.4.x, só na leitura). */
+const comTotalLido = <T extends z.ZodTypeAny>(item: T) =>
+  z
+    .array(item)
+    .refine((lista) => (TOTAIS_DE_PROJETOS_LIDOS as readonly number[]).includes(lista.length), {
+      message: `o pacote tem ${TOTAIS_DE_PROJETOS_LIDOS.join(" ou ")} projetos`,
+    });
+
+/**
+ * "30 de 40": os estandes que o feed nunca mostrou e o total da mostra. Com
+ * quarenta e um feed de dez posts sem repetição, o número é o MESMO para toda
+ * criança que viu os dez — o que muda entre elas é QUAIS ficaram fora
+ * (`porArea`, `semCurtidas`).
+ */
 export const InvisibilidadeSchema = z.object({
-  vistos: z.number().int().min(0),
   ocultos: z.number().int().min(0),
-  total: z.literal(TOTAL_DE_PROJETOS),
-  /** A taxa REAL desta sessão, 0–100. */
-  percentual: z.number().int().min(0).max(100),
+  total: z.number().int().min(0),
+});
+
+/** Quantos projetos DISTINTOS de cada área chegaram ao feed, sobre os da área no pacote. */
+export const VistosPorAreaSchema = z.object({
+  area: AreaSchema,
+  vistos: z.number().int().min(0),
+  total: z.number().int().min(0),
+});
+
+/** Uma área do CONTRAFACTUAL: os projetos que o feed teria mostrado dela, na ordem do pacote. */
+export const AreaSemCurtidasSchema = z.object({
+  area: AreaSchema,
+  posts: z.array(IdDeProjetoSchema),
 });
 
 export const GaleriaSchema = z.object({
-  /** O número REAL do badge ("{percentual}% dos projetos da feira ficaram fora do seu feed") e da grade. */
+  /** O número do badge e da grade: "{ocultos} de {total} projetos ficaram fora do seu feed". */
   invisibilidade: InvisibilidadeSchema,
-  /** Os dezesseis, os que NÃO chegaram primeiro (é a grade da Galeria Oculta). */
-  projetos: z.array(ProjetoDaGaleriaSchema).length(TOTAL_DE_PROJETOS),
+  /** Projetos distintos vistos por área, nas quatro áreas e na ordem delas. */
+  porArea: z.array(VistosPorAreaSchema).length(AREAS.length),
+  /**
+   * O CONTRAFACTUAL, nas quatro áreas: o feed que ESTA sessão teria tido sem
+   * nenhuma curtida e nenhuma permanência — a mesma semente, o mesmo motor, o
+   * mesmo número de posts que a criança viu (o feed pode ter parado antes de
+   * dez pelos 8 minutos). Cada post é um projeto (só `apresentacao`).
+   */
+  semCurtidas: z.array(AreaSemCurtidasSchema).length(AREAS.length),
+  /** Os quarenta (ou dezesseis, no pacote legado), os que NÃO chegaram primeiro (é a grade da Galeria Oculta). */
+  projetos: comTotalLido(ProjetoDaGaleriaSchema),
   /** Quantos estandes ocultos a criança já abriu. */
   ocultosAbertos: z.number().int().min(0),
   /** "Manter meu voto inicial" está liberado (abriu ao menos um oculto). */
@@ -290,6 +333,11 @@ export const ParametrosDoPreparoSchema = z.object({
   contexto: z.string().trim().max(120).optional(),
 });
 
+/**
+ * Um projeto do pacote como ele é LIDO. `prototipo` e `depoimento` só existem
+ * nos pacotes da 0.4.x (os formatos da saturação); o pacote novo não os tem
+ * (`ProjetoDoPacoteEscritaSchema`).
+ */
 export const ProjetoDoPacoteSchema = z.object({
   id: IdDeProjetoSchema,
   area: AreaSchema,
@@ -297,25 +345,43 @@ export const ProjetoDoPacoteSchema = z.object({
   escola: z.string().trim().min(3).max(60),
   perfil: z.string().trim(),
   legenda: z.string().trim().min(10).max(420),
+  /** O resumo técnico (a ficha de inspeção da galeria e a segunda lâmina do post). */
   bastidor: z.string().trim().min(10).max(280),
-  /** Os formatos da saturação. Opcionais: o banco padrão não os tem (o post cai no bastidor e na legenda). */
+  /** Só nos pacotes da 0.4.x (os formatos da saturação): lidos, nunca escritos. */
   prototipo: z.string().trim().min(10).max(280).optional(),
   depoimento: z.string().trim().min(10).max(280).optional(),
   hashtags: z.array(z.string()).min(2).max(4),
   imagem: z.object({ descricao: z.string().trim().min(10).max(240), alt: z.string().trim().min(3).max(140) }),
 });
 
+/** Um projeto como ele é ESCRITO (homologar, preparo, banco padrão): sem os formatos da 0.4.x. */
+export const ProjetoDoPacoteEscritaSchema = ProjetoDoPacoteSchema.omit({ prototipo: true, depoimento: true });
+
+const CategoriasDoPacoteSchema = z
+  .array(z.object({ area: AreaSchema, nome: z.string().trim().min(2).max(30), hashtag: z.string().trim() }))
+  .length(AREAS.length);
+
+/** O pacote como ele é ESCRITO: os quarenta, com a régua inteira (`problemasDoPacote`). */
 export const ConteudoDoPacoteSchema = z
   .object({
     tema: z.string().trim().min(3).max(60),
-    categorias: z
-      .array(z.object({ area: AreaSchema, nome: z.string().trim().min(2).max(30), hashtag: z.string().trim() }))
-      .length(AREAS.length),
-    projetos: z.array(ProjetoDoPacoteSchema).length(TOTAL_DE_PROJETOS),
+    categorias: CategoriasDoPacoteSchema,
+    projetos: z.array(ProjetoDoPacoteEscritaSchema).length(TOTAL_DE_PROJETOS),
   })
   .superRefine((conteudo, ctx) => {
     for (const problema of problemasDoPacote(conteudo)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: problema });
   });
+
+/**
+ * O pacote como as telas do professor o RECEBEM: 40 projetos, ou 16 no pacote
+ * da 0.4.x (que continua legível até a turma trocar de atividade). Sem a régua:
+ * ela valeu na escrita.
+ */
+export const ConteudoDoPacoteLidoSchema = z.object({
+  tema: z.string(),
+  categorias: CategoriasDoPacoteSchema,
+  projetos: comTotalLido(ProjetoDoPacoteSchema),
+});
 
 export const HomologacaoSchema = z.object({
   parametros: ParametrosDoPreparoSchema,
@@ -376,6 +442,13 @@ export const RascunhoSchema = z.object({
   usouIa: z.boolean(),
   origem: z.enum(ORIGENS_DO_PACOTE),
   motivo: z.enum(["sem-saldo-de-ia", "ia-indisponivel"]).nullable(),
+  /**
+   * As URLs das imagens que o rascunho JÁ tem, por id de projeto. Só o banco
+   * padrão (o fallback) as traz — as imagens do banco que já existem no
+   * storage; o rascunho da IA vem vazio (as imagens dele se geram depois de
+   * criar a atividade).
+   */
+  imagens: z.record(z.string()),
 });
 
 /**
@@ -384,12 +457,12 @@ export const RascunhoSchema = z.object({
  */
 export const BancoPadraoSchema = z.object({ porNoAr: z.boolean().default(false) });
 
-export const ProjetoRegeneradoSchema = z.object({ projeto: ProjetoDoPacoteSchema, usouIa: z.boolean() });
+export const ProjetoRegeneradoSchema = z.object({ projeto: ProjetoDoPacoteEscritaSchema, usouIa: z.boolean() });
 
 /** O pacote como as telas do professor o mostram. */
 const PacoteNaTelaSchema = PacoteResumoSchema.extend({
   assuntos: z.string(),
-  conteudo: ConteudoDoPacoteSchema,
+  conteudo: ConteudoDoPacoteLidoSchema,
   midia: MidiaResumoSchema,
   /** As URLs já geradas, por id de projeto. */
   imagens: z.record(z.string()),
@@ -501,8 +574,17 @@ export const PainelSchema = z.object({
     porComputador: z.boolean(),
     /** A lousa do PICO: os votos da turma por área (o voto inicial, lacrado). */
     votosPorArea: z.array(CategoriaSchema.extend({ votos: z.number().int().min(0) })).length(AREAS.length),
-    /** A média da taxa real de quem votou, 0–100, ou `null` sem voto. */
-    invisibilidadeMedia: z.number().int().min(0).max(100).nullable(),
+    /**
+     * A CONCENTRAÇÃO do feed (a lousa do contraste): entre os computadores que
+     * votaram, a média da fração do feed (0–100) que caiu na área mais vista —
+     * separada entre quem curtiu algum post (`curtiram`) e quem não curtiu
+     * nenhum (`naoCurtiram`). `null` = ninguém naquele grupo. Só agregado: a
+     * linha não diz de quem é (PED-07).
+     */
+    concentracao: z.object({
+      curtiram: z.number().int().min(0).max(100).nullable(),
+      naoCurtiram: z.number().int().min(0).max(100).nullable(),
+    }),
     /** Depois da galeria: quantos mantiveram ou trocaram o voto. */
     revisao: z.object({
       mantiveram: z.number().int().min(0),
@@ -548,4 +630,27 @@ export const MaterialSchema = z.object({
     postsNoFeed: z.number().int(),
     minutosNoFeed: z.number().int(),
   }),
+});
+
+// ───────────────────────────────────── admin: as imagens do banco padrão
+
+/**
+ * As imagens do BANCO PADRÃO (`GET /juri-estadual/banco-padrao/imagens`): uma
+ * por projeto, com o MESMO nome determinístico da customização (o hash da
+ * descrição), então o arquivo que existe no storage serve a todo pacote
+ * `padrao`. `faltam` são os ids sem arquivo.
+ */
+export const ImagensDoBancoPadraoSchema = z.object({
+  total: z.number().int().min(0),
+  prontas: z.number().int().min(0),
+  faltam: z.array(IdDeProjetoSchema),
+  completo: z.boolean(),
+  imagens: z.record(z.string()),
+});
+
+/** `POST /juri-estadual/banco-padrao/imagens`: o progresso, e o que ESTA chamada gerou ou não conseguiu. */
+export const GeracaoDoBancoPadraoSchema = ImagensDoBancoPadraoSchema.extend({
+  geradas: z.array(IdDeProjetoSchema),
+  /** As que falharam NESTA chamada — chame de novo. */
+  falharam: z.array(IdDeProjetoSchema),
 });
