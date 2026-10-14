@@ -22,9 +22,23 @@ import { PreparoDaExp06ef1bService } from "../src/juri-estadual/preparo.service"
 import { ordemCertaDaCadeia } from "../src/juri-estadual/regras/ordem";
 import { PROIBIDO_NA_LINHA_DO_PAINEL } from "../src/juri-estadual/regras/painel";
 import { ETAPAS, PASSOS } from "../src/juri-estadual/regras/passos";
-import { DISCIPLINAS, areaDoProjeto, type Area } from "../src/juri-estadual/vocabulario";
+import { AREAS, DISCIPLINAS, ID_DE_PROJETO_RE, VERSAO_DO_INSTRUMENTO, areaDoProjeto, type Area } from "../src/juri-estadual/vocabulario";
 import { PrismaService } from "../src/prisma/prisma.service";
-import { PARAMETROS_DE_TESTE, conteudoDeTeste, saidaDaIaDeTeste } from "./juri-estadual-fixture";
+import {
+  PARAMETROS_DE_TESTE,
+  areaDaIaDeTeste,
+  categoriasDaIaDeTeste,
+  conteudoDeTeste,
+  conteudoLegadoDeTeste,
+} from "./juri-estadual-fixture";
+
+/** A IA do preparo por área: as categorias, ou os dez projetos da área que o prompt pede. */
+const respostaDoPreparo = (estragar?: Area) => (req: AiJsonRequest<unknown>) => {
+  const area = AREAS.find((a) => req.prompt.includes(`A área destes projetos é ${a}`));
+  if (!area) return categoriasDaIaDeTeste();
+  if (area === estragar) return { projetos: [] };
+  return areaDaIaDeTeste(area);
+};
 import { liberarParaTeste } from "./liberar-de-teste";
 import { criarRoleDeRuntime, urlDeRuntime } from "./role-de-runtime";
 import { criarTurmaDeTeste } from "./turma-de-teste";
@@ -56,7 +70,11 @@ const prisma = new PrismaService({ datasources: { db: { url: URL } } }) as Prism
  */
 const runtime = new PrismaService({ datasources: { db: { url: urlDeRuntime(URL) } } }) as PrismaService & PrismaClient;
 
-/** A IA controlada pela suíte. Por padrão ela FALHA, como o mock. */
+/**
+ * A IA controlada pela suíte. Por padrão ela FALHA, como o mock. `resposta`
+ * pode ser uma função do pedido: o preparo faz cinco chamadas diferentes (as
+ * categorias e as quatro áreas).
+ */
 class IaControlada implements AiProvider {
   resposta: unknown = null;
   tokens = 20;
@@ -65,7 +83,7 @@ class IaControlada implements AiProvider {
     this.chamadas += 1;
     req.aoUsarTokens?.(this.tokens);
     if (this.resposta === null) throw new Error("IA de teste desligada");
-    return req.validar(this.resposta);
+    return req.validar(typeof this.resposta === "function" ? (this.resposta as (r: AiJsonRequest<T>) => unknown)(req) : this.resposta);
   }
   generate(): Promise<AiResult> {
     throw new Error("não usado");
@@ -461,16 +479,43 @@ describe("os CHECKs recusam o que dizem recusar", () => {
     await naSessao("concluida_em = now()");
   });
 
-  test("o pacote: `ia` ou `padrao`, 16 projetos, e UM ativo por turma", async () => {
-    const conteudo = JSON.stringify(conteudoDeTeste()).replace(/'/g, "''");
-    const inserir = (origem: string, json: string, ativo: boolean) =>
-      `INSERT INTO exp06ef1b_pacotes (escola_id, turma_id, origem, disciplina, tema, assuntos, conteudo, ativo, criado_por) VALUES ('${ESCOLA}', '${ids.turma}'::uuid, '${origem}', 'ciencias', 'Um tema', 'Assuntos da mostra de teste', '${json}'::jsonb, ${ativo}, '${ids.professora}'::uuid)`;
+  test("PROVA 7: o pacote: `ia` ou `padrao`, 40 projetos (ou os 16 da 0.4.x, nunca 15), e UM ativo por turma", async () => {
+    const json = (c: unknown) => JSON.stringify(c).replace(/'/g, "''");
+    const conteudo = json(conteudoDeTeste());
+    const inserir = (origem: string, j: string, ativo: boolean) =>
+      `INSERT INTO exp06ef1b_pacotes (escola_id, turma_id, origem, disciplina, tema, assuntos, conteudo, ativo, criado_por) VALUES ('${ESCOLA}', '${ids.turma}'::uuid, '${origem}', 'ciencias', 'Um tema', 'Assuntos da mostra de teste', '${j}'::jsonb, ${ativo}, '${ids.professora}'::uuid)`;
     await falha(inserir("outra", conteudo, false));
-    await falha(inserir("ia", JSON.stringify({ ...conteudoDeTeste(), projetos: [] }), false));
+    await falha(inserir("ia", json({ ...conteudoDeTeste(), projetos: [] }), false));
+    await falha(inserir("ia", json({ ...conteudoDeTeste(), projetos: conteudoLegadoDeTeste().projetos.slice(0, 15) }), false));
+    await falha(inserir("ia", json({ ...conteudoDeTeste(), projetos: conteudoDeTeste().projetos.slice(0, 39) }), false));
     // O índice único PARCIAL: a turma já tem a atividade em andamento.
     await falha(inserir("ia", conteudo, true));
     await prisma.$executeRawUnsafe(inserir("ia", conteudo, false));
     await prisma.$executeRawUnsafe(inserir("padrao", conteudo, false));
+    /* O pacote de dezesseis da 0.4.x continua aceito: ele existe no banco. */
+    await prisma.$executeRawUnsafe(inserir("ia", json(conteudoLegadoDeTeste()), false));
+    const def16 = await def("exp06ef1b_pacotes_conteudo_check");
+    expect(def16).toMatch(/ANY \(ARRAY\[16, 40\]\)|IN \(16, 40\)/);
+  });
+
+  test("PROVA 7: o id de projeto é `proj-[a-d](10|[1-9])` — o mesmo texto do código, nas três colunas", async () => {
+    const vocabulario = await def("exp06ef1b_sessoes_vocabulario_check");
+    const regex = ID_DE_PROJETO_RE.source;
+    expect(vocabulario.split(regex).length - 1).toBe(3);
+    expect(vocabulario).not.toContain("[1-4]");
+    for (const ruim of ["proj-e1", "proj-a11", "proj-a0", "proj-a"]) {
+      await naSessao(`voto_projeto = '${ruim}', conviccao = 'vi_tudo', votado_em = now(), passo = 'lacrada'`);
+    }
+    await prisma.$executeRawUnsafe(
+      `UPDATE exp06ef1b_sessoes SET voto_projeto = 'proj-d10', voto_revisado = NULL WHERE id = '${sessao}'::uuid AND voto_projeto IS NOT NULL AND revisado_em IS NULL`,
+    );
+    /* Numa linha nova (a da Bia), sem os outros carimbos atrapalhando. */
+    await entrar(ids.bia);
+    const bia = (await sessaoDe(ids.bia)).id;
+    await prisma.$executeRawUnsafe(
+      `UPDATE exp06ef1b_sessoes SET voto_projeto = 'proj-d10', conviccao = 'vi_tudo', votado_em = now(), passo = 'lacrada' WHERE id = '${bia}'::uuid`,
+    );
+    expect((await sessaoDe(ids.bia)).votoProjeto).toBe("proj-d10");
   });
 
   test("o gate: o carimbo da galeria coerente com a etapa, e o desvio fora do vocabulário", async () => {
@@ -562,20 +607,21 @@ describe("o feed afunilado, servido pelo motor", () => {
     expect(await codigoDe(service.eventosDoFeed(ESCOLA, ids.bia, ids.turma, semEventos))).toBe("passo-invalido");
   });
 
-  test("duas curtidas na mesma área: do 5º post em diante só ela, em formatos, e 11 de 16 ficam fora", async () => {
+  test("curtir uma área: do 5º post em diante só ela, com projetos NOVOS — dez projetos distintos, só apresentações", async () => {
     const feed = await rolarFeed(ids.ana, "area_c");
     expect(feed.posts).toHaveLength(10);
     expect(feed.completo).toBe(true);
     expect(feed.cedulaLiberada).toBe(true);
     expect(feed.curtidos.length).toBeGreaterThanOrEqual(1);
-    /* A saturação: do 5º ao 10º, só a área líder, sem post repetido. */
+    /* Do 5º ao 10º, só a área em foco; nenhum post, nem projeto, repetido. */
     expect(feed.posts.slice(4).every((p) => p.area === "area_c")).toBe(true);
-    expect(new Set(feed.posts.map((p) => p.id)).size).toBe(10);
-    expect(new Set(feed.posts.map((p) => p.tipo)).size).toBeGreaterThanOrEqual(3);
+    expect(new Set(feed.posts.map((p) => p.projetoId)).size).toBe(10);
+    expect(feed.posts.every((p) => p.tipo === "apresentacao" && p.texto === p.legenda && p.bastidor.length > 0)).toBe(true);
     /* O próximo além dos dez não existe. */
     expect((await service.eventosDoFeed(ESCOLA, ids.ana, ids.turma, semEventos)).posts).toHaveLength(10);
     const linha = await sessaoDe(ids.ana);
-    expect(new Set((linha.postsServidos as string[]).map((p) => p.split(":")[0])).size).toBe(5);
+    expect(new Set((linha.postsServidos as string[]).map((p) => p.split(":")[0])).size).toBe(10);
+    expect(linha.versaoInstrumento).toBe(VERSAO_DO_INSTRUMENTO);
     /* A 1ª rolagem ligou o relógio de 8 minutos do servidor. */
     expect(linha.feedIniciadoEm).not.toBeNull();
     expect(feed.encerraEm).not.toBeNull();
@@ -684,18 +730,40 @@ describe("a Galeria Oculta e a revisão do voto", () => {
     expect((await entrar(ids.ana)).passo).toBe("galeria");
   });
 
-  test("a galeria traz os dezesseis, os ocultos primeiro, e a taxa REAL da sessão", async () => {
+  test("a galeria traz os quarenta, os ocultos primeiro, 30 de 40, por área e o contrafactual desta sessão", async () => {
     const g = GaleriaSchema.parse(await service.galeria(ESCOLA, ids.ana, ids.turma));
-    expect(g.invisibilidade).toEqual({ vistos: 5, ocultos: 11, total: 16, percentual: 69 });
-    expect(g.projetos.slice(0, 11).every((p) => !p.exibidoNoSeuFeed)).toBe(true);
-    expect(g.projetos.slice(11).every((p) => p.exibidoNoSeuFeed)).toBe(true);
+    expect(g.invisibilidade).toEqual({ ocultos: 30, total: 40 });
+    expect(g.projetos).toHaveLength(40);
+    expect(g.projetos.slice(0, 30).every((p) => !p.exibidoNoSeuFeed)).toBe(true);
+    expect(g.projetos.slice(30).every((p) => p.exibidoNoSeuFeed)).toBe(true);
+    /* Curtiu a B: 7 dela e 1 de cada outra. */
+    expect(g.porArea).toEqual([
+      { area: "area_a", vistos: 1, total: 10 },
+      { area: "area_b", vistos: 7, total: 10 },
+      { area: "area_c", vistos: 1, total: 10 },
+      { area: "area_d", vistos: 1, total: 10 },
+    ]);
+    /* O contrafactual: a mesma semente sem curtidas — variado, dez posts, e o mesmo a cada leitura. */
+    expect(g.semCurtidas.map((a) => a.posts.length).sort()).toEqual([2, 2, 3, 3]);
+    expect(GaleriaSchema.parse(await service.galeria(ESCOLA, ids.ana, ids.turma)).semCurtidas).toEqual(g.semCurtidas);
     expect(g).toMatchObject({ ocultosAbertos: 0, podeManter: false });
     expect(JSON.stringify(g)).not.toContain("descricao");
+    expect(JSON.stringify(g)).not.toMatch(/"(semente|pesos?|lider)":/);
+  });
+
+  test("PROVA 4: sem curtida nem permanência, o contrafactual é IGUAL ao feed real", async () => {
+    const semToque = await rolarFeed(ids.enzo);
+    await service.votar(ESCOLA, ids.enzo, ids.turma, { projetoId: semToque.posts[0]!.projetoId, conviccao: "vi_tudo" });
+    const g = GaleriaSchema.parse(await service.galeria(ESCOLA, ids.enzo, ids.turma));
+    const reais = new Set(semToque.posts.map((p) => p.projetoId));
+    expect(new Set(g.semCurtidas.flatMap((a) => a.posts))).toEqual(reais);
+    expect(g.porArea.map((a) => a.vistos).sort()).toEqual([2, 2, 3, 3]);
+    expect(g.invisibilidade).toEqual({ ocultos: 30, total: 40 });
   });
 
   test("as ações da galeria gravam a auditoria — sem o texto da busca", async () => {
     const g = GaleriaSchema.parse(await service.galeria(ESCOLA, ids.ana, ids.turma));
-    /* Votou na área B: a D inteira ficou fora do feed. */
+    /* Votou na área B: da D, só um projeto chegou ao feed (o da abertura). */
     expect(areaDoProjeto(votoDaAna)).toBe("area_b");
     const ocultoFora = g.projetos.find((p) => !p.exibidoNoSeuFeed && p.area === "area_d")!;
     await service.acaoDaGaleria(ESCOLA, ids.ana, ids.turma, { tipo: "abrir", projetoId: ocultoFora.id });
@@ -876,7 +944,7 @@ describe("atividade × rodada", () => {
     expect(await service.colocarEmAndamento(ESCOLA, ids.turma, ids.professora, nova.id)).toMatchObject({ rodada: 1, mudou: true });
     expect(await entrar(ids.ana)).toMatchObject({ pacoteId: nova.id, rodada: 1, passo: "credencial" });
     const pacotes = PacotesSchema.parse(await service.pacotes(ESCOLA, ids.turma, ids.professora));
-    expect(pacotes.ativo).toMatchObject({ id: nova.id, midia: { total: 16, prontas: 0 } });
+    expect(pacotes.ativo).toMatchObject({ id: nova.id, midia: { total: 40, prontas: 0 } });
     expect(pacotes.historico.map((p) => [p.ativo, p.rodadas])).toEqual([
       [true, 1],
       [false, 1],
@@ -967,13 +1035,42 @@ describe("atividade × rodada", () => {
     const s = SessaoSchema.parse(await entrar(ids.ana));
     expect(s).toMatchObject({ pacoteId: criado.id, tema: "Feira de Ciências e Sustentabilidade" });
     expect(s.categorias.map((c) => c.hashtag)).toEqual(["#robotica", "#meioambiente", "#artes", "#saude"]);
-    /* Homologar o rascunho do fallback como veio também é `padrao`. */
-    const homologado = await service.homologar(ESCOLA, ids.turma, ids.professora, ids.professora, {
-      parametros: { disciplina: "ciencias", tema: "Feira de Ciências e Sustentabilidade", assuntos: "Banco padrão oficial da mostra." },
-      conteudo: conteudoDoBancoPadrao(),
-      podcast: FALAS_DO_TEMA_PADRAO,
-    });
+    /* Homologar o rascunho do fallback como veio também é `padrao` — e leva as imagens do banco que já existem. */
+    const homologado = await service.homologar(
+      ESCOLA,
+      ids.turma,
+      ids.professora,
+      ids.professora,
+      {
+        parametros: { disciplina: "ciencias", tema: "Feira de Ciências e Sustentabilidade", assuntos: "Banco padrão oficial da mostra." },
+        conteudo: conteudoDoBancoPadrao(),
+        podcast: FALAS_DO_TEMA_PADRAO,
+      },
+      { "proj-c10": "https://cdn/banco-c10.webp" },
+    );
     expect(homologado.origem).toBe("padrao");
+    expect((await prisma.exp06ef1bPacote.findUniqueOrThrow({ where: { id: homologado.id } })).midia).toEqual({
+      "proj-c10": "https://cdn/banco-c10.webp",
+    });
+  });
+
+  test("PROVA 9 (ligação): o banco padrão nasce com a `midia` das imagens do banco que existem; o reaproveitado fora do ar ganha as que faltavam", async () => {
+    await limparMissao();
+    const imagens = { "proj-a1": "https://cdn/banco-a1.webp", "proj-d10": "https://cdn/banco-d10.webp" };
+    const criado = await service.usarBancoPadrao(ESCOLA, ids.turma, ids.professora, ids.professora, false, imagens);
+    expect((await prisma.exp06ef1bPacote.findUniqueOrThrow({ where: { id: criado.id } })).midia).toEqual(imagens);
+    /* De novo, com uma imagem a mais no storage: o pacote (ainda fora do ar) a ganha, sem perder as outras. */
+    const mais = { ...imagens, "proj-b5": "https://cdn/banco-b5.webp" };
+    expect((await service.usarBancoPadrao(ESCOLA, ids.turma, ids.professora, ids.professora, false, mais)).id).toBe(criado.id);
+    expect((await prisma.exp06ef1bPacote.findUniqueOrThrow({ where: { id: criado.id } })).midia).toEqual(mais);
+    /* No ar, a imagem não muda no meio da aula. */
+    await service.usarBancoPadrao(ESCOLA, ids.turma, ids.professora, ids.professora, true, mais);
+    await service.usarBancoPadrao(ESCOLA, ids.turma, ids.professora, ids.professora, false, { ...mais, "proj-c1": "https://cdn/x.webp" });
+    expect((await prisma.exp06ef1bPacote.findUniqueOrThrow({ where: { id: criado.id } })).midia).toEqual(mais);
+    /* O post do estudante leva a URL do banco; o sem imagem, `null` (a arte procedural). */
+    await entrar(ids.ana);
+    const feed = FeedSchema.parse(await service.pedirPasso(ESCOLA, ids.ana, ids.turma, "feed"));
+    for (const p of feed.posts) expect(p.imagem.url).toBe((mais as Record<string, string>)[p.projetoId] ?? null);
   });
 });
 
@@ -1025,7 +1122,9 @@ describe("o painel POR COMPUTADOR, e a cópia para a equipe", () => {
       ["area_d", 0],
     ]);
     expect(painel.resumo.votosRevisadosPorArea.find((v) => v.area === "area_a")?.votos).toBe(1);
-    expect(painel.resumo.invisibilidadeMedia).toBe(69);
+    /* A concentração: a Ana curtiu (7 de 10 na área dela); ninguém votou sem curtir. */
+    expect(painel.resumo.concentracao).toEqual({ curtiram: 70, naoCurtiram: null });
+    expect(painel.resumo).not.toHaveProperty("invisibilidadeMedia");
     expect(painel.resumo.revisao).toEqual({ mantiveram: 0, trocaram: 1 });
     expect(painel.resumo.ociosos).toBe(0);
   });
@@ -1036,7 +1135,8 @@ describe("o painel POR COMPUTADOR, e a cópia para a equipe", () => {
     for (const proibido of PROIBIDO_NA_LINHA_DO_PAINEL) {
       expect({ proibido, colisao: [...new Set(chaves.filter((c) => c.includes(proibido)))] }).toEqual({ proibido, colisao: [] });
     }
-    expect(JSON.stringify(painel.linhas)).not.toMatch(/proj-[a-d][1-4]/);
+    expect(JSON.stringify(painel.linhas)).not.toMatch(/proj-[a-d](10|[1-9])/);
+    expect(JSON.stringify(painel.linhas)).not.toMatch(/concentra/i);
   });
 });
 
@@ -1045,24 +1145,24 @@ describe("o preparo com IA falsa", () => {
 
   test("válida: o rascunho sai normalizado, e a geração conta no pacote em sala", async () => {
     const preparo = new PreparoDaExp06ef1bService(ia, quota);
-    ia.resposta = saidaDaIaDeTeste();
+    ia.resposta = respostaDoPreparo();
     const r = await preparo.gerar(ESCOLA, ids.professora, "professor", PARAMETROS_DE_TESTE);
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.valor).toEqual(conteudoDeTeste(PARAMETROS_DE_TESTE.tema));
     await service.registrarGeracao(ESCOLA, ids.turma, r.tokens);
     const pacote = await prisma.exp06ef1bPacote.findFirstOrThrow({ where: { escolaId: ESCOLA, turmaId: ids.turma, ativo: true } });
-    expect(pacote).toMatchObject({ iaGeracoes: 1, iaTokens: 20 });
-    expect(await quota.usadoHoje(ESCOLA, ids.professora)).toBe(20);
+    /* Cinco chamadas (as categorias e as quatro áreas), 20 tokens cada: uma geração, 100 tokens. */
+    expect(pacote).toMatchObject({ iaGeracoes: 1, iaTokens: 100 });
+    expect(await quota.usadoHoje(ESCOLA, ids.professora)).toBe(100);
   });
 
   test("a saída fora da régua é regerada e, nas duas, `ia-indisponivel` — com o que foi pago debitado", async () => {
     const preparo = new PreparoDaExp06ef1bService(ia, quota);
-    const ruim = saidaDaIaDeTeste() as { projetos: unknown[] };
-    ruim.projetos.pop();
-    ia.resposta = ruim;
+    ia.resposta = respostaDoPreparo("area_c");
     const r = await preparo.gerar(ESCOLA, ids.professora, "professor", PARAMETROS_DE_TESTE);
     expect(r).toMatchObject({ ok: false, codigo: "ia-indisponivel", chamouIa: true });
-    expect(await quota.usadoHoje(ESCOLA, ids.professora)).toBeGreaterThan(0);
+    /* As cinco chamadas (a IA de teste não refaz a tentativa), a ruim inclusive: tudo pago, tudo debitado. */
+    expect(await quota.usadoHoje(ESCOLA, ids.professora)).toBe(100);
   });
 
   test("sem saldo: `sem-saldo-de-ia`, sem chamar a IA", async () => {
@@ -1084,5 +1184,97 @@ describe("o preparo com IA falsa", () => {
       ok: false,
       codigo: "ia-indisponivel",
     });
+  });
+});
+
+describe("PROVA 6: a 0.4.x continua legível — o pacote de 16 e a sessão 2.0.0", () => {
+  let pacoteId = "";
+  beforeAll(async () => {
+    await limparMissao();
+    /* O pacote de DEZESSEIS, com protótipo e depoimento, gravado como a 0.4.x gravava. */
+    const legado = await prisma.exp06ef1bPacote.create({
+      data: {
+        escolaId: ESCOLA,
+        turmaId: ids.turma,
+        origem: "ia",
+        disciplina: "ciencias",
+        tema: "Mostra antiga",
+        assuntos: "Assuntos da mostra antiga de teste",
+        conteudo: conteudoLegadoDeTeste("Mostra antiga") as never,
+        midia: {},
+        ativo: false,
+        criadoPor: ids.professora,
+        imagensAprovadasEm: new Date(),
+      },
+    });
+    pacoteId = legado.id;
+    await service.colocarEmAndamento(ESCOLA, ids.turma, ids.professora, pacoteId);
+    /* A sessão 2.0.0 da Ana: a saturação por formatos, gravada e votada. */
+    await entrar(ids.ana);
+    await prisma.exp06ef1bSessao.updateMany({
+      where: { escolaId: ESCOLA, estudanteId: ids.ana, pacoteId },
+      data: {
+        versaoInstrumento: "2.0.0",
+        passo: "lacrada",
+        postsServidos: [
+          "proj-a1:apresentacao",
+          "proj-b2:apresentacao",
+          "proj-c3:apresentacao",
+          "proj-d4:apresentacao",
+          "proj-b2:bastidor",
+          "proj-b1:apresentacao",
+          "proj-b2:prototipo",
+          "proj-b2:depoimento",
+          "proj-b1:bastidor",
+          "proj-b1:prototipo",
+        ],
+        curtidos: ["proj-b2:apresentacao", "proj-b2:depoimento"],
+        votoProjeto: "proj-b2",
+        conviccao: "vi_tudo",
+        votadoEm: new Date(),
+      },
+    });
+    await etapa("galeria");
+  });
+
+  test("a sessão antiga é lida: o post `proj-b2:depoimento` desce com o texto do depoimento", async () => {
+    const s = SessaoSchema.parse(await entrar(ids.ana));
+    expect(s.feed.posts).toHaveLength(10);
+    const depoimento = s.feed.posts.find((p) => p.id === "proj-b2:depoimento");
+    const b2 = conteudoLegadoDeTeste().projetos.find((p) => p.id === "proj-b2");
+    expect(depoimento).toMatchObject({ tipo: "depoimento", texto: b2?.depoimento });
+    expect(s.feed.curtidos).toContain("proj-b2:depoimento");
+  });
+
+  test("a galeria do pacote de 16 funciona: 11 de 16, por área de 4, contrafactual de 10", async () => {
+    const g = GaleriaSchema.parse(await service.galeria(ESCOLA, ids.ana, ids.turma));
+    expect(g.projetos).toHaveLength(16);
+    expect(g.invisibilidade).toEqual({ ocultos: 11, total: 16 });
+    expect(g.porArea).toEqual([
+      { area: "area_a", vistos: 1, total: 4 },
+      { area: "area_b", vistos: 2, total: 4 },
+      { area: "area_c", vistos: 1, total: 4 },
+      { area: "area_d", vistos: 1, total: 4 },
+    ]);
+    expect(g.semCurtidas.flatMap((a) => a.posts)).toHaveLength(10);
+    /* A troca só aceita estande do pacote: `proj-a10` não existe no de dezesseis. */
+    expect(await codigoDe(service.revisar(ESCOLA, ids.ana, ids.turma, { acao: "trocar", projetoId: "proj-a10" }))).toBe("payload-invalido");
+    expect(await codigoDe(service.acaoDaGaleria(ESCOLA, ids.ana, ids.turma, { tipo: "abrir", projetoId: "proj-c10" }))).toBe(
+      "payload-invalido",
+    );
+  });
+
+  test("o painel do pacote de 16 funciona, com a concentração da sessão antiga (7 de 10 na B)", async () => {
+    const painel = PainelSchema.parse(await service.painel(ESCOLA, ids.turma, ids.professora));
+    expect(painel.pacote.midia).toEqual({ total: 16, prontas: 0 });
+    expect(painel.resumo.concentracao).toEqual({ curtiram: 70, naoCurtiram: null });
+    expect(PacotesSchema.parse(await service.pacotes(ESCOLA, ids.turma, ids.professora)).ativo?.conteudo.projetos).toHaveLength(16);
+  });
+
+  test("uma sessão NOVA no pacote de 16 joga com o motor novo: dez projetos distintos, sem repetir", async () => {
+    const feed = await rolarFeed(ids.bia, "area_a");
+    expect(feed.posts).toHaveLength(10);
+    expect(new Set(feed.posts.map((p) => p.projetoId)).size).toBe(10);
+    expect(feed.posts.every((p) => p.tipo === "apresentacao")).toBe(true);
   });
 });
