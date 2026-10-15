@@ -66,7 +66,7 @@ Os diagramas entidade-relacionamento estão no Capítulo~\ref{cap:dados}.
 \zebra \cd{agente\_professor\_conversas} & Tenant & \textbf{A posse} das conversas do agente de IA do professor; o conteúdo mora no Agent Engine (\adrr{ADR-126})\\
 \cd{ajuda\_limites} & \textbf{Catálogo} & \textbf{Os minutos da Ajuda}, por pessoa e dia e por sessão, os mesmos para o avatar e o mascote --- o par de \cd{ia\_quotas} (\adrr{ADR-132}, \adrr{ADR-158})\\
 \zebra \cd{ajuda\_sessoes} & \textbf{Medidor sem RLS} & Uma linha por sessão da Ajuda (avatar ou mascote): início, teto e fim, nenhuma palavra da conversa. \cd{escola\_id} nulo nos papéis de contrato (\adrr{ADR-132})\\
-\cd{ajuda\_configuracao} & \textbf{Catálogo} & \textbf{Quem atende na Ajuda}: linha única com o atendente padrão, a troca e os ajustes do mascote (\adrr{ADR-158})\\
+\cd{ajuda\_configuracao} & \textbf{Catálogo} & \textbf{Quem atende na Ajuda}: linha única com o atendente padrão, a troca, os ajustes do mascote (\adrr{ADR-158}) e as instruções de cada atendente (\adrr{ADR-165})\\
 \zebra \cd{ia\_consumo\_diario} & \textbf{Agregado de contrato} & \textbf{O que a IA consumiu}, por dia, escola, perfil, recurso, operação e modelo --- sem \cd{usuario\_id} (\adrr{ADR-161})\\
 \cd{ia\_precos} & \textbf{Catálogo} & \textbf{O preço de cada modelo}, com vigência e motivo; só se insere (\adrr{ADR-161})\\
 \zebra \cd{cotacoes\_dolar} & \textbf{Catálogo} & A PTAX de venda do Banco Central por dia útil (\adrr{ADR-161})\\
@@ -957,7 +957,7 @@ depois da sessão. Migração \arq{20260930120000\_\B agente\_\B professor}.
 \emph{token} (exceção à regra 5). A Ajuda lê as linhas a cada abertura de sessão,
 sem \emph{cache}: o teto da sessão é o menor entre \cd{minutos-por-sessao} e o
 que sobra de \cd{minutos-por-dia} da pessoa. Escopo do CONTRATO inteiro, semeada
-pela migração e sobrescrita só pelo \cd{admin} em \rota{/unooria/uso-de-ia}
+pela migração e sobrescrita só pelo \cd{admin} em \rota{/unooria/ajuda}
 (\rota{PUT /recursos/\B limites-da-ajuda/:chave}); o histórico vive em
 \cd{recursos\_auditoria} (ação \cd{quota-alterada}, \cd{recurso\_id}
 \cd{ajuda:<chave>}, com \cd{\{de, para\}}). Vale na PRÓXIMA sessão; a que está no
@@ -1061,10 +1061,11 @@ de uma pessoa. \emph{Grant} da role de runtime: \cd{SELECT, INSERT, UPDATE}, sem
 
 \textbf{Quem atende na Ajuda} (\adrr{ADR-158}): o atendente padrão da rede (o
 mascote 3D, pelo Gemini Live, ou o avatar em vídeo do LiveAvatar), se a pessoa
-pode trocar, e os ajustes do mascote. \textbf{Uma linha só}, escopo do contrato
+pode trocar, os ajustes do mascote e as instruções de \enquote{como responder}
+de cada atendente (\adrr{ADR-165}). \textbf{Uma linha só}, escopo do contrato
 inteiro, como \cd{ia\_quotas} e \cd{ajuda\_limites}: lida a cada abertura de
 sessão, sem \emph{cache}, e sobrescrita só pelo \cd{admin} em
-\rota{/unooria/uso-de-ia} (\rota{PUT /recursos/\B configuracao-da-ajuda}, com
+\rota{/unooria/ajuda} (\rota{PUT /recursos/\B configuracao-da-ajuda}, com
 TODOS os campos e motivo obrigatório); o histórico vive em
 \cd{recursos\_auditoria} (ação \cd{configuracao-alterada}, \cd{recurso\_id}
 \cd{ajuda:configuracao}). Vale na PRÓXIMA sessão; a conversa no ar mantém a voz
@@ -1101,11 +1102,22 @@ o outro (\cd{atendenteEfetivo}).
   navegador na abertura da sessão.\\
 \cd{mascote\_antecipacao\_ms} & \cd{INTEGER} & \cd{DEFAULT 60}. Quanto a boca
   se adianta ao áudio, de 0 a 200\,ms (mesmo \emph{CHECK}).\\
-\zebra \cd{motivo} & \cd{TEXT?} & Obrigatório na rota (Zod), sempre. A semente
+\zebra \cd{instrucoes\_mascote}, \cd{instrucoes\_avatar} & \cd{TEXT?} &
+  As instruções de \enquote{como responder} de cada atendente
+  (\adrr{ADR-165}). \cd{NULL} = o texto padrão do código
+  (\cd{instrucoesPadrao}, em \arq{src/ajuda/prompt.ts}); a rota grava \cd{NULL}
+  também o texto igual ao padrão. \emph{CHECK}
+  (\cd{ck\_ajuda\_configuracao\_instrucoes}): nulo ou de 20 a \num{8000}
+  caracteres depois do \cd{btrim}, o teto do Zod
+  (\cd{MAXIMO\_DAS\_INSTRUCOES}). Só o comportamento: o cabeçalho
+  \cd{CONHECIMENTO}, a base gerada e \enquote{quem está falando} a api monta
+  sempre depois. \textbf{Não vão ao navegador de quem conversa} (regra 2): o
+  avatar as lê a cada turno do LLM; o mascote, na abertura da sessão de voz.\\
+\cd{motivo} & \cd{TEXT?} & Obrigatório na rota (Zod), sempre. A semente
   traz o motivo do padrão da plataforma.\\
-\cd{definido\_por} & \cd{UUID?} & \textbf{Sem FK}, pela razão de
+\zebra \cd{definido\_por} & \cd{UUID?} & \textbf{Sem FK}, pela razão de
   \cd{ajuda\_limites}. \cd{NULL} = veio da migração.\\
-\zebra \cd{definido\_em}, \cd{atualizado\_em} & \cd{TIMESTAMPTZ(6)} & \\
+\cd{definido\_em}, \cd{atualizado\_em} & \cd{TIMESTAMPTZ(6)} & \\
 \bottomrule
 \end{tabularx}
 
@@ -1116,8 +1128,9 @@ o outro (\cd{atendenteEfetivo}).
 no \emph{token}. \emph{Grant} da role de runtime: \cd{SELECT, INSERT, UPDATE},
 sem \cd{DELETE} --- sem a linha, vale a constante do código
 (\cd{CONFIGURACAO\_PADRAO}) e o registro acusa
-\cd{ajuda-configuracao-sem-linha}. Migração
-\arq{20261012120000\_\B ajuda\_\B mascote}.
+\cd{ajuda-configuracao-sem-linha}. Migrações
+\arq{20261012120000\_\B ajuda\_\B mascote} e
+\arq{20261015120000\_\B ajuda\_\B instrucoes} (as duas colunas de instruções).
 
 \subsection{\cd{ia\_consumo\_diario} (agregado de contrato, sem RLS)}
 

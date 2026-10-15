@@ -25,7 +25,7 @@
 \id{F10.1} & Ligar e desligar produtos e missões & \pronto\\
 \zebra \id{F10.2} & Histórico que a rede também lê & \pronto\\
 \id{F10.3} & Versões das missões & \pronto\\
-\zebra \id{F10.4} & Uso de IA & \pronto\\
+\zebra \id{F10.4} & Uso de IA e Ajuda & \pronto\\
 \id{F10.5} & Prospecção & \pronto\\
 \zebra \id{F10.6} & Experiências arquivadas & \pronto\\
 \id{F10.7} & Custos de IA & \pronto\\
@@ -189,7 +189,12 @@ tempo sem ser solta}{não deixar uma escola esquecida numa versão antiga}
 \end{historia}
 
 % ---------------------------------------------------------------------------
-\feature{F10.4}{Uso de IA}{\pronto}
+\feature{F10.4}{Uso de IA e Ajuda}{\pronto}
+
+O limite de IA de cada perfil fica em \enquote{Uso de IA}. Tudo o que é da
+Ajuda --- quem atende, o jeito de responder de cada atendente e os minutos ---
+fica num item próprio do menu do painel, \enquote{Ajuda}: no fim da tela de uso
+de IA, quem procurava não achava.
 
 \begin{historia}{H10.4.1}{Definir quanto de IA cada perfil pode usar}{\pronto}
 \hu{Administrador Unooria}{definir o limite diário de IA dos estudantes e dos
@@ -215,7 +220,7 @@ Ajuda cada pessoa tem}{manter previsível o custo do atendente em vídeo, que é
 cobrado por minuto}
 \aceite
 \begin{itemize}
-  \item Na mesma tela do uso de IA, o quadro \enquote{Ajuda com atendente}
+  \item No item \enquote{Ajuda} do menu do painel, o quadro \enquote{Ajuda com atendente}
     tem dois limites: \enquote{Minutos por dia} (somando todas as conversas da
     pessoa) e \enquote{Minutos por conversa} (ao chegar nele, o atendente se
     despede e a janela fecha).
@@ -237,7 +242,7 @@ atendimento que faz mais sentido para a rede, sabendo que os dois custam
 diferente}
 \aceite
 \begin{itemize}
-  \item Na mesma tela do uso de IA, acima dos minutos, o quadro
+  \item No item \enquote{Ajuda} do menu do painel, acima dos minutos, o quadro
     \enquote{Quem atende na Ajuda} mostra o \enquote{Atendente padrão}
     (\enquote{Mascote da Unooria} ou \enquote{Atendente em vídeo}), se
     \enquote{A pessoa pode trocar de atendente}, a voz do mascote e o modelo
@@ -255,6 +260,32 @@ diferente}
     avisa que a Ajuda não abre.
   \item A mudança entra no \enquote{Histórico da Ajuda}, com quem mudou,
     quando e por quê. A rede não vê nem altera.
+\end{itemize}
+\end{historia}
+
+\begin{historia}{H10.4.4}{Ajustar as instruções de cada atendente}{\pronto}
+\hu{Administrador Unooria}{ajustar o jeito de responder do mascote e do
+atendente em vídeo}{corrigir o tom ou o tamanho das respostas sem esperar o time
+técnico}
+\aceite
+\begin{itemize}
+  \item No item \enquote{Ajuda} do menu do painel, o quadro
+    \enquote{Instruções de cada atendente} mostra o começo do texto do
+    \enquote{Mascote da Unooria} e o do \enquote{Atendente em vídeo}, cada um
+    marcado \enquote{Texto padrão} ou \enquote{Personalizado}.
+  \item \enquote{Editar instruções} abre a janela com os dois textos inteiros.
+    Ela explica que o texto muda só o jeito de responder (tom, tamanho da
+    resposta, o que evitar): o que o atendente sabe da plataforma e quem está
+    perguntando entram sempre depois, e não precisam estar ali.
+  \item Cada texto tem de 20 a 8 mil caracteres, com o contador à vista.
+    \enquote{Restaurar o texto padrão} devolve o texto da plataforma; deixar
+    igual ao padrão é o mesmo que não personalizar, e a rede passa a receber as
+    melhorias que a Unooria fizer nele.
+  \item Mudar exige motivo e vale para a rede inteira: no atendente em vídeo, a
+    partir da próxima pergunta; no mascote, a partir da próxima conversa aberta.
+  \item A mudança entra no \enquote{Histórico da Ajuda}, com quem mudou,
+    quando e por quê. Quem conversa com a Ajuda nunca vê estas instruções, e a
+    rede não vê nem altera.
 \end{itemize}
 \end{historia}
 
