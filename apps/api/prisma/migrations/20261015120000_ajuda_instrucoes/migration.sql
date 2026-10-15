@@ -1,6 +1,6 @@
 -- AS INSTRUÇÕES DA AJUDA NO PAINEL (ADR-165): o texto de "como responder" de
 -- cada atendente — o mascote (ADR-158) e o avatar (ADR-132) — passa a ser
--- editável pelo `admin` em /unooria/ajuda.
+-- editável pelo `admin` em /unooria/uso-de-ia.
 --
 -- NULO = vale o texto padrão do código (`instrucoesPadrao` em
 -- src/ajuda/prompt.ts). Só a parte editável mora aqui: o cabeçalho do

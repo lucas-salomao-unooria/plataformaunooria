@@ -380,9 +380,8 @@ turno do atendente chama \cd{conversarEmFluxo} sem \cd{temSaldo} e sem
 \cd{consumir}. O que custa na Ajuda é o \textbf{minuto de vídeo} que o
 \emph{vendor} cobra (\emph{FULL Mode}: 2 créditos por minuto), e não o
 \emph{token}: a torneira dela é \cd{ajuda\_limites} (\cd{minutos-por-dia} e
-\cd{minutos-por-sessao}, semente 30 e 10), editada só pelo \cd{admin} em
-\rota{/unooria/ajuda} (item próprio do menu desde a \adrr{ADR-165}), com o mesmo
-histórico. Os \emph{tokens}
+\cd{minutos-por-sessao}, semente 30 e 10), editada só pelo \cd{admin} na mesma
+tela \rota{/unooria/uso-de-ia}, com o mesmo histórico. Os \emph{tokens}
 continuam medidos pelo \cd{MedidorDeProvider} (operação
 \cd{conversarEmFluxo}); só não debitam de ninguém. A exceção \textbf{não se
 estende}: produto novo que queira ficar fora da quota pede ADR própria
@@ -907,7 +906,7 @@ do que está na base, não cria.
 \textbf{As instruções são editáveis no painel; o resto do \emph{prompt}, não}
 (\adrr{ADR-165}). O texto acima é o PADRÃO de cada atendente
 (\cd{instrucoesPadrao(atendente)}, em \arq{src/ajuda/prompt.ts}); o \cd{admin}
-pode reescrevê-lo em \rota{/unooria/ajuda}, num cartão por atendente, com motivo
+pode reescrevê-lo em \rota{/unooria/uso-de-ia}, num cartão por atendente, com motivo
 obrigatório e \enquote{Restaurar o texto padrão}. A versão do painel mora em
 \cd{ajuda\_configuracao} (\cd{instrucoes\_mascote}, \cd{instrucoes\_avatar};
 \cd{NULL} = o padrão, de 20 a \num{8000} caracteres) e \textbf{substitui só o

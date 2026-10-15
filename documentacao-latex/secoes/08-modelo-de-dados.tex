@@ -415,7 +415,7 @@ PLATAFORMA, sem prefixo: a Ajuda é o produto \cd{ajuda}, não uma experiência
     desenho: uma linha por chave de um vocabulário FECHADO
     (\cd{minutos-por-dia}, \cd{minutos-por-sessao}), escopo do contrato, semeada
     pela migração (30 e 10 --- três conversas de dez minutos por pessoa por dia)
-    e sobrescrita só pelo \cd{admin} em \rota{/unooria/ajuda}, com o
+    e sobrescrita só pelo \cd{admin} em \rota{/unooria/uso-de-ia}, com o
     histórico em \cd{recursos\_auditoria} (\cd{quota-alterada}, \cd{recurso\_id}
     \cd{ajuda:<chave>}). \textbf{Zero é recusado} pelo \emph{CHECK}: fechar a
     Ajuda é desligar o produto (\adrr{ADR-87}), não zerar o limite. Os tetos de
@@ -496,7 +496,7 @@ A migração \arq{20261015120000\_\B{}ajuda\_\B{}instrucoes} acrescenta a
 \cd{ajuda\_configuracao} duas colunas \cd{TEXT} nuláveis,
 \cd{instrucoes\_mascote} e \cd{instrucoes\_avatar}: o texto de
 \enquote{como responder} de cada atendente, editado pelo \cd{admin} em
-\rota{/unooria/ajuda}. \textbf{\cd{NULL} é o texto padrão do código}
+\rota{/unooria/uso-de-ia}. \textbf{\cd{NULL} é o texto padrão do código}
 (\cd{instrucoesPadrao}, em \arq{src/ajuda/prompt.ts}), e a rota grava
 \cd{NULL} também quando o texto enviado é igual ao padrão: quem nunca
 personalizou de verdade recebe a melhoria do padrão. O \emph{CHECK}

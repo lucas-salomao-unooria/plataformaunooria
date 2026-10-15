@@ -672,8 +672,7 @@ estado não é. \rota{GET /recursos/painel} e as escritas seguem em 403 para o
 IA uma rede pode gastar por dia é o custo variável da fornecedora. Aqui nem a
 leitura volta atrás da linha --- o \cd{gestor\_contrato} recebe 403 no GET e no
 PUT, e a tela \rota{/unooria/uso-de-ia} o manda embora pelo \emph{middleware}.
-Pelo mesmo motivo, na tela \rota{/unooria/ajuda} (item próprio do menu desde a
-\adrr{ADR-165}), ficam \textbf{os minutos da Ajuda}
+Na mesma tela, e pelo mesmo motivo, ficam \textbf{os minutos da Ajuda}
 (\rota{/recursos/limites-da-ajuda/*}, \adrr{ADR-132}): o vendor cobra
 por minuto de vídeo, e quanto uma rede pode gastar por dia é decisão comercial
 da fornecedora. Também só \cd{admin}, na leitura e na escrita. E, desde a
@@ -1276,7 +1275,7 @@ acredita ter declarado algo.
     navegador recebe só o bilhete de entrada e os ajustes da boca. As
     instruções de cada atendente editadas no painel (\adrr{ADR-165}) ficam em
     \cd{ajuda\_configuracao} e só a api as lê para montar o \emph{prompt}; a
-    única tela que as mostra é a do \cd{admin}, \rota{/unooria/ajuda}, por
+    única tela que as mostra é a do \cd{admin}, \rota{/unooria/uso-de-ia}, por
     \rota{GET /recursos/configuracao-da-ajuda}, que responde 403 a qualquer
     outro papel.
   \item O gabarito do UnooTube arquivado (\cd{factual}, hoje em

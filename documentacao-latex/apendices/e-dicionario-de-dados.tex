@@ -957,7 +957,7 @@ depois da sessão. Migração \arq{20260930120000\_\B agente\_\B professor}.
 \emph{token} (exceção à regra 5). A Ajuda lê as linhas a cada abertura de sessão,
 sem \emph{cache}: o teto da sessão é o menor entre \cd{minutos-por-sessao} e o
 que sobra de \cd{minutos-por-dia} da pessoa. Escopo do CONTRATO inteiro, semeada
-pela migração e sobrescrita só pelo \cd{admin} em \rota{/unooria/ajuda}
+pela migração e sobrescrita só pelo \cd{admin} em \rota{/unooria/uso-de-ia}
 (\rota{PUT /recursos/\B limites-da-ajuda/:chave}); o histórico vive em
 \cd{recursos\_auditoria} (ação \cd{quota-alterada}, \cd{recurso\_id}
 \cd{ajuda:<chave>}, com \cd{\{de, para\}}). Vale na PRÓXIMA sessão; a que está no
@@ -1065,7 +1065,7 @@ pode trocar, os ajustes do mascote e as instruções de \enquote{como responder}
 de cada atendente (\adrr{ADR-165}). \textbf{Uma linha só}, escopo do contrato
 inteiro, como \cd{ia\_quotas} e \cd{ajuda\_limites}: lida a cada abertura de
 sessão, sem \emph{cache}, e sobrescrita só pelo \cd{admin} em
-\rota{/unooria/ajuda} (\rota{PUT /recursos/\B configuracao-da-ajuda}, com
+\rota{/unooria/uso-de-ia} (\rota{PUT /recursos/\B configuracao-da-ajuda}, com
 TODOS os campos e motivo obrigatório); o histórico vive em
 \cd{recursos\_auditoria} (ação \cd{configuracao-alterada}, \cd{recurso\_id}
 \cd{ajuda:configuracao}). Vale na PRÓXIMA sessão; a conversa no ar mantém a voz

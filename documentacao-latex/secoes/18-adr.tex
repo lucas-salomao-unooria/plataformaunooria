@@ -215,7 +215,7 @@ que a cercam.
 \zebra \adrr{ADR-162} & Acessibilidade WCAG 2.2 AA: o axe como portão, e a correção no \emph{design system}, não na tela & 2026-10-13 & Aceita; reclassifica o risco R-07\\
 \adrr{ADR-163} & O texto alternativo da imagem do post é o \emph{brief} que a gerou; as fotos fixas são descritas no \emph{bundle} & 2026-10-13 & Aceita; corrige uma consequência da \adrr{ADR-162}\\
 \zebra \adrr{ADR-164} & O Júri Estadual com quarenta projetos: o feed sem repetir post, a galeria mostra O QUE sumiu, e o banco padrão ganha imagens & 2026-10-14 & Aceita; supera em parte a \adrr{ADR-157}\\
-\adrr{ADR-165} & As instruções da Ajuda no painel: o \enquote{como responder} é dado, e a Ajuda ganha item próprio no painel da Unooria & 2026-10-15 & Aceita; complementa a \adrr{ADR-132} e a \adrr{ADR-158}\\
+\adrr{ADR-165} & As instruções da Ajuda no painel: o \enquote{como responder} de cada atendente é dado & 2026-10-15 & Aceita; complementa a \adrr{ADR-132} e a \adrr{ADR-158}\\
 \bottomrule
 \end{tabularx}
 
@@ -14868,7 +14868,7 @@ curtiu numa turma real; ou o PO pedir mudança nos vinte e quatro projetos novos
 do banco.
 
 % ---------------------------------------------------------------------------
-\section{ADR-165 --- As instruções da Ajuda no painel: o \enquote{como responder} é dado, e a Ajuda ganha item próprio}
+\section{ADR-165 --- As instruções da Ajuda no painel: o \enquote{como responder} de cada atendente é dado}
 \label{adr:ajuda-instrucoes-no-painel}
 
 \textbf{Data.} 2026-10-15. \textbf{Status.} Aceita. \textbf{Complementa} a
@@ -14880,9 +14880,6 @@ do banco.
     \adrr{ADR-158}, que a voz e os \emph{prompts} de sistema da Ajuda ficassem
     no painel da Unooria. A voz e o modelo do mascote entraram; as instruções
     ficaram fixas no código (\cd{src/ajuda/prompt.ts}).
-  \item \textbf{A tela não era achada.} A configuração da Ajuda morava no fim de
-    \enquote{Uso de IA}, embaixo das quotas e do histórico delas: o \cd{admin}
-    procurou e não encontrou.
 \end{itemize}
 \end{especificacao}
 
@@ -14901,9 +14898,9 @@ do banco.
     banco e só a api o lê (regra 2).
   \item \textbf{Vale já}: o avatar relê a configuração a cada turno do LLM; o
     mascote, a cada sessão de voz.
-  \item \textbf{A Ajuda ganha item próprio no painel} (\cd{/unooria/ajuda}):
-    quem atende, voz e boca do mascote, as instruções e os minutos.
-    \enquote{Uso de IA} fica só com as quotas.
+  \item \textbf{Na mesma tela} de \cd{/unooria/uso-de-ia}, logo abaixo de
+    quem atende: um cartão por atendente, com \enquote{Restaurar o texto
+    padrão}.
 \end{enumerate}
 
 \textbf{Alternativas descartadas.}
@@ -14912,6 +14909,9 @@ do banco.
   \item \textbf{O \emph{prompt} inteiro editável}, base incluída. A base é
     gerada do mapa de produto (cerca de 84 mil \emph{tokens}) e se regera a cada
     mudança dele; editada à mão, ela divergiria do produto na primeira entrega.
+  \item \textbf{Uma página própria da Ajuda no menu do painel.} Chegou a ser
+    feita e foi desfeita a pedido do dono do produto: a Ajuda continua no fim
+    de \enquote{Uso de IA}, ao lado das quotas.
   \item \textbf{Instruções por escola ou regional.} O atendente é um só por
     rede, como a voz; não houve pedido de variação.
   \item \textbf{Guardar o texto padrão no banco} na migração. Congelaria a

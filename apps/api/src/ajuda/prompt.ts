@@ -43,7 +43,7 @@ const QUEM_ATENDE: Record<Atendente, { apresentacao: string; fala: string }> = {
 
 /**
  * As INSTRUÇÕES padrão de cada atendente — o texto que o `admin` vê (e pode
- * reescrever) em `/unooria/ajuda`. Só a parte de COMO responder é editável: o
+ * reescrever) em `/unooria/uso-de-ia`. Só a parte de COMO responder é editável: o
  * cabeçalho do conhecimento, a base gerada e "quem está falando" são montados
  * aqui embaixo, sempre, para uma edição não poder tirar a base do prompt.
  */

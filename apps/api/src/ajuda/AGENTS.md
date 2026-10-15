@@ -58,7 +58,7 @@ sem linha em `disponibilidades`, ele fica fora do ar e o item some do menu. O
 Decisão do dono do produto: a Ajuda não passa pelo `QuotaService`. O que a
 limita é o tempo de vídeo, que o vendor cobra (FULL = 2 créditos/min):
 `ajuda_limites` (`minutos-por-dia`, `minutos-por-sessao`; semente 30/10, só o
-`admin` edita em `/unooria/ajuda`) e `ajuda_sessoes`, o medidor.
+`admin` edita em `/unooria/uso-de-ia`) e `ajuda_sessoes`, o medidor.
 
 - **Sessão sem `fim` conta o teto INTEIRO** — falha para o lado do custo.
   Abrir fecha a anterior que ficou aberta; vendor fora do ar fecha a linha com
@@ -138,7 +138,7 @@ pendurado no servidor HTTP do Nest — não há `@nestjs/websockets`).
 ## As instruções no painel (ADR-165)
 
 `ajuda_configuracao.instrucoes_mascote` / `instrucoes_avatar`: o "como
-responder" de cada atendente, editado pelo `admin` em `/unooria/ajuda`. NULO =
+responder" de cada atendente, editado pelo `admin` em `/unooria/uso-de-ia`. NULO =
 `instrucoesPadrao(atendente)` de `prompt.ts`; texto igual ao padrão é gravado
 NULO (a melhoria do código chega a quem nunca personalizou). **Só essa parte é
 editável**: `prefixoDoPrompt` acrescenta SEMPRE `CONHECIMENTO` + a base gerada,

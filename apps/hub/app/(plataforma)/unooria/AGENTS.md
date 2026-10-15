@@ -8,7 +8,6 @@ capacidade que `admin` tem e `gestor_contrato` não.
 Área própria, papel `admin`, layout próprio (e portanto trilha própria).
 `NavUnooria` + `lib/recursos.ts` + `app/(plataforma)/unooria/recursos/` +
 `app/(plataforma)/unooria/uso-de-ia/` (ADR-105) +
-`app/(plataforma)/unooria/ajuda/` (ADR-165) +
 `app/(plataforma)/unooria/custos-de-ia/` (ADR-161, com `AGENTS.md` próprio) +
 `app/(plataforma)/unooria/prospeccao/` (ADR-107) +
 `app/(plataforma)/unooria/arquivados/` (ADR-116).
@@ -55,10 +54,9 @@ que todo papel entra na própria casa e que ninguém além do `admin` entra em
 **`homeDoPapel("admin")` é `/unooria/recursos`**: a casa da conta da Unooria é o
 painel dela, não a área da escola.
 
-### A Ajuda tem item próprio: `/unooria/ajuda` (ADR-158, ADR-165)
-
-Quem atende, as instruções e os minutos, com UM histórico (`prefixo="ajuda:"`).
-Saiu do fim de "Uso de IA", onde não era achada.
+**Embaixo, a Ajuda** (ADR-132/158/165): quem atende, as instruções
+(`painel-das-instrucoes.tsx`) e os minutos, com UM histórico. O cartão avisa quando o
+padrão escolhido não está montado na stack (a Ajuda abriria o outro calada).
 
 ### O terceiro item: Prospecção (ADR-107, 2026-09-16)
 
