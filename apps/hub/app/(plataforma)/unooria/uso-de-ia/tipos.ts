@@ -50,6 +50,9 @@ export interface CamposDaConfiguracao {
   mascoteSuavizacao: number;
   mascoteAntecipacaoMs: number;
   mascoteBocaRepouso: number;
+  /** As instruções de "como responder" (ADR-165). `null` = o texto padrão. */
+  instrucoesMascote: string | null;
+  instrucoesAvatar: string | null;
 }
 
 export interface ConfiguracaoDaAjuda extends CamposDaConfiguracao {
@@ -61,4 +64,6 @@ export interface ConfiguracaoDaAjuda extends CamposDaConfiguracao {
   disponiveis: Record<Atendente, boolean>;
   /** A lista fechada de vozes do mascote, com o jeito de cada uma. */
   vozes: Array<{ nome: string; jeito: string }>;
+  /** O texto padrão das instruções de cada atendente (ADR-165). */
+  instrucoesPadrao: Record<Atendente, string>;
 }

@@ -1766,13 +1766,25 @@ dois atendentes custam diferente (o avatar por minuto de vídeo, o mascote por
     quatro ajustes da boca), com a autoria, o que está montado nesta stack
     (\cd{disponiveis}, pela MESMA regra que a janela da Ajuda usa) e a lista
     fechada das 30 vozes com o jeito de cada uma. Sem a linha, a constante.
+    Desde a \adrr{ADR-165}, também \cd{instrucoesMascote} e
+    \cd{instrucoesAvatar} (\cd{string} $|$ \cd{null}; \cd{null} = vale o texto
+    padrão do código) e \cd{instrucoesPadrao} (\cd{\{ mascote,\allowbreak{}
+    avatar \}}), o texto padrão de cada atendente, que o painel mostra e
+    oferece para restaurar.
   \item \rota{PUT /recursos/configuracao-da-ajuda} --- sobrescreve a linha com
     TODOS os campos (o painel manda o formulário inteiro) e motivo obrigatório.
     Nada mudou devolve \cd{alterada: false} e não grava nem historia. Registra
     \cd{codigo: ajuda-configuracao-alterada} com os nomes e valores dos campos
     que mudaram, e a linha de \cd{recursos\_auditoria} (ação
     \cd{configuracao-alterada}, \cd{recurso\_id} \cd{ajuda:configuracao}, sem
-    \cd{detalhe}). Vale na PRÓXIMA sessão.
+    \cd{detalhe}). Vale na PRÓXIMA sessão. \cd{instrucoesMascote} e
+    \cd{instrucoesAvatar} são \cd{string} de 20 a \num{8000} caracteres (sem
+    os brancos das pontas) ou \cd{null}, que volta ao padrão; \textbf{texto
+    igual ao padrão é gravado como \cd{null}}, para quem nunca personalizou de
+    verdade receber a melhoria do padrão. No \emph{log}, das instruções vai só
+    o tamanho, nunca o texto. O avatar lê as instruções a cada turno, e a
+    edição vale na pergunta seguinte; o mascote, na abertura da sessão de voz
+    (\adrr{ADR-165}).
 \end{itemize}
 
 \textbf{Os CUSTOS DE IA moram no mesmo prefixo} (\adrr{ADR-161}). O

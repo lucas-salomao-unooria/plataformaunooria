@@ -3,6 +3,7 @@ import { PERFIS_COM_QUOTA } from "../ai/quota.service";
 import { PRODUTOS } from "./catalogo";
 import { DetalheDeQuotaSchema } from "./auditoria";
 import { COMPONENTES_DE_PRECO, MODELO_DE_PRECO_RE, ehDiaValido } from "./custos-de-ia";
+import { MAXIMO_DAS_INSTRUCOES } from "../ajuda/prompt";
 import { ATENDENTES, CHAVES_DE_LIMITE, MAXIMO_POR_DIA, MODELO_DO_MASCOTE_RE, NOMES_DAS_VOZES } from "../ajuda/regras";
 
 /**
@@ -331,6 +332,12 @@ export const LimiteAlteradoSchema = LimiteDaAjudaSchema.extend({
    (`configuracao-alterada`, `recurso_id` = `ajuda:configuracao`).
    ========================================================================== */
 
+const InstrucoesSchema = z
+  .string()
+  .trim()
+  .min(20, "escreva as instruções — vazio, vale o texto padrão")
+  .max(MAXIMO_DAS_INSTRUCOES, `até ${MAXIMO_DAS_INSTRUCOES} caracteres`);
+
 export const ConfiguracaoDaAjudaSchema = z.object({
   atendentePadrao: z.enum(ATENDENTES),
   permitirTroca: z.boolean(),
@@ -340,9 +347,18 @@ export const ConfiguracaoDaAjudaSchema = z.object({
   mascoteSuavizacao: z.number().min(0).max(1),
   mascoteAntecipacaoMs: z.number().int().min(0).max(200),
   mascoteBocaRepouso: z.number().min(0).max(1),
+  /**
+   * As instruções de "como responder" de cada atendente (ADR-165). `null` = o
+   * texto padrão do código. Só o comportamento é editável: a base de
+   * conhecimento e "quem está falando" a api monta sempre.
+   */
+  instrucoesMascote: InstrucoesSchema.nullable(),
+  instrucoesAvatar: InstrucoesSchema.nullable(),
 });
 
 export const ConfiguracaoDaAjudaLidaSchema = ConfiguracaoDaAjudaSchema.extend({
+  /** O texto padrão de cada atendente — o painel mostra e oferece "restaurar". */
+  instrucoesPadrao: z.object({ mascote: z.string(), avatar: z.string() }),
   motivo: z.string().nullable(),
   /** `null` = veio da migration; ninguém decidiu ainda. */
   definidoPorNome: z.string().nullable(),

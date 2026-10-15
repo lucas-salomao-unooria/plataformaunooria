@@ -135,3 +135,15 @@ pendurado no servidor HTTP do Nest — não há `@nestjs/websockets`).
   `configuracao-alterada` no histórico). Voz é lista fechada
   (`VOZES_DO_MASCOTE`); o CHECK do banco cobra o formato da voz e do modelo.
 
+## As instruções no painel (ADR-165)
+
+`ajuda_configuracao.instrucoes_mascote` / `instrucoes_avatar`: o "como
+responder" de cada atendente, editado pelo `admin` em `/unooria/uso-de-ia`. NULO =
+`instrucoesPadrao(atendente)` de `prompt.ts`; texto igual ao padrão é gravado
+NULO (a melhoria do código chega a quem nunca personalizou). **Só essa parte é
+editável**: `prefixoDoPrompt` acrescenta SEMPRE `CONHECIMENTO` + a base gerada,
+e `promptDoAtendente`, quem está falando — uma edição não tira a base. O avatar
+relê a configuração a cada turno (`responder`); o mascote, a cada sessão
+(`abrirVozDoMascote`). O texto nunca sai da api (regra 2): o hub do admin o lê
+pela rota de `recursos`, só `admin`.
+

@@ -3517,6 +3517,10 @@ model AjudaConfiguracao {
   mascoteSuavizacao    Float    @default(0.5) @map("mascote_suavizacao")
   mascoteAntecipacaoMs Int      @default(60) @map("mascote_antecipacao_ms")
   mascoteBocaRepouso   Float    @default(0.5) @map("mascote_boca_repouso")
+  /// As instruções de "como responder" editadas no painel (ADR-165). NULO =
+  /// o texto padrão do código (`instrucoesPadrao`).
+  instrucoesMascote    String?  @map("instrucoes_mascote")
+  instrucoesAvatar     String?  @map("instrucoes_avatar")
   motivo               String?
   definidoPor          String?  @map("definido_por") @db.Uuid
   definidoEm           DateTime @default(now()) @map("definido_em") @db.Timestamptz(6)

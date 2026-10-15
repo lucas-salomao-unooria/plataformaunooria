@@ -150,6 +150,7 @@ export class AjudaService {
         antecipacaoMs: linha.mascoteAntecipacaoMs,
         bocaRepouso: linha.mascoteBocaRepouso,
       },
+      instrucoes: { mascote: linha.instrucoesMascote, avatar: linha.instrucoesAvatar },
     };
   }
 
@@ -296,7 +297,7 @@ export class AjudaService {
     return this.voz.abrir({
       modelo: config.mascote.modelo,
       voz: config.mascote.voz,
-      instrucao: promptDoAtendente(claims.perfil, "mascote"),
+      instrucao: promptDoAtendente(claims.perfil, "mascote", config.instrucoes.mascote),
       // O WebSocket chega fora do contexto da requisição: o custo diz de quem é (ADR-161).
       atribuicao: { escolaId: claims.escola ?? null, perfil: claims.perfil, recurso: "ajuda" },
     });
@@ -414,8 +415,11 @@ export class AjudaService {
             }, this.esperaAteAFalaDeEsperaMs)
           : null;
         try {
+          // As instruções do painel (ADR-165), lidas a cada turno: uma edição
+          // vale já na próxima pergunta, como a voz vale na próxima sessão.
+          const { instrucoes } = await this.configuracao();
           for await (const evento of this.ia.conversarEmFluxo({
-            system: promptDoAtendente(entrada.claims.perfil),
+            system: promptDoAtendente(entrada.claims.perfil, "avatar", instrucoes.avatar),
             historico,
             maxTokens: MAXIMO_DE_TOKENS_DA_RESPOSTA,
             temperatura: TEMPERATURA,

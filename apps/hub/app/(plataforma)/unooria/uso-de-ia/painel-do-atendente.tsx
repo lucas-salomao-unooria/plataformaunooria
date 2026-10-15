@@ -20,6 +20,7 @@ import {
   TextField,
   Toggle,
 } from "@edu/ui/ds";
+import { PainelDasInstrucoes } from "./painel-das-instrucoes";
 import type { Atendente, CamposDaConfiguracao, ConfiguracaoDaAjuda } from "./tipos";
 
 /**
@@ -102,6 +103,9 @@ function paraRascunho(c: CamposDaConfiguracao): Rascunho {
     mascoteSuavizacao: String(c.mascoteSuavizacao).replace(".", ","),
     mascoteAntecipacaoMs: String(c.mascoteAntecipacaoMs),
     mascoteBocaRepouso: String(c.mascoteBocaRepouso).replace(".", ","),
+    // As instruções têm janela própria (`PainelDasInstrucoes`): aqui só seguem como estão.
+    instrucoesMascote: c.instrucoesMascote,
+    instrucoesAvatar: c.instrucoesAvatar,
   };
 }
 
@@ -152,6 +156,8 @@ export function PainelDoAtendente({ inicial, aoMudar }: { inicial: ConfiguracaoD
           permitirTroca: rascunho.permitirTroca,
           mascoteVoz: rascunho.mascoteVoz,
           mascoteModelo: rascunho.mascoteModelo.trim(),
+          instrucoesMascote: rascunho.instrucoesMascote,
+          instrucoesAvatar: rascunho.instrucoesAvatar,
           ...(Object.fromEntries(lidos.map((l) => [l.ajuste.campo, l.valor])) as Record<CampoDeAjuste, number>),
         }
       : null;
@@ -335,6 +341,15 @@ export function PainelDoAtendente({ inicial, aoMudar }: { inicial: ConfiguracaoD
           </Button>
         </ModalFooter>
       </Modal>
+
+      <PainelDasInstrucoes
+        config={config}
+        aoGravar={(nova) => {
+          setConfig(nova);
+          aoMudar();
+          setAviso("Instruções gravadas. No atendente em vídeo valem na próxima pergunta; no mascote, na próxima conversa.");
+        }}
+      />
 
       {aviso ? <Snackbar severity="success" title={aviso} onClose={() => setAviso(null)} /> : null}
     </div>

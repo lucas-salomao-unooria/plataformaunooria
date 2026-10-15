@@ -54,8 +54,8 @@ que todo papel entra na própria casa e que ninguém além do `admin` entra em
 **`homeDoPapel("admin")` é `/unooria/recursos`**: a casa da conta da Unooria é o
 painel dela, não a área da escola.
 
-**Embaixo, a Ajuda** (ADR-132, ADR-158): quem atende (`painel-do-atendente.tsx`)
-e os minutos, com UM histórico (`prefixo="ajuda:"`). O cartão avisa quando o
+**Embaixo, a Ajuda** (ADR-132/158/165): quem atende, as instruções
+(`painel-das-instrucoes.tsx`) e os minutos, com UM histórico. O cartão avisa quando o
 padrão escolhido não está montado na stack (a Ajuda abriria o outro calada).
 
 ### O terceiro item: Prospecção (ADR-107, 2026-09-16)

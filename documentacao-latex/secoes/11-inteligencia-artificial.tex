@@ -902,6 +902,24 @@ plataforma; e nunca pedir nem repetir nome, CPF, e-mail ou dado de estudante. A
 temperatura é 0,3 (o \emph{vendor} manda 0,5 e é ignorado): o atendente responde
 do que está na base, não cria.
 
+\begin{decisao}
+\textbf{As instruções são editáveis no painel; o resto do \emph{prompt}, não}
+(\adrr{ADR-165}). O texto acima é o PADRÃO de cada atendente
+(\cd{instrucoesPadrao(atendente)}, em \arq{src/ajuda/prompt.ts}); o \cd{admin}
+pode reescrevê-lo em \rota{/unooria/uso-de-ia}, num cartão por atendente, com motivo
+obrigatório e \enquote{Restaurar o texto padrão}. A versão do painel mora em
+\cd{ajuda\_configuracao} (\cd{instrucoes\_mascote}, \cd{instrucoes\_avatar};
+\cd{NULL} = o padrão, de 20 a \num{8000} caracteres) e \textbf{substitui só o
+\enquote{como responder}}: o cabeçalho \cd{CONHECIMENTO}, a base gerada e
+\enquote{quem está falando} \cd{prefixoDoPrompt} e \cd{promptDoAtendente}
+montam sempre depois, para uma edição não poder tirar a base do \emph{prompt}
+nem trocar o papel de quem pergunta. O texto fica no banco e só a api o lê ---
+não vai ao \emph{vendor} nem ao navegador de quem conversa (regra 2). O avatar
+lê a linha a cada turno do LLM, e a edição vale na pergunta seguinte; o mascote,
+na abertura da sessão de voz. O prefixo continua igual entre perfis: uma edição
+custa ao \emph{cache} implícito uma única leitura cheia da base.
+\end{decisao}
+
 O histórico chega no formato OpenAI e \cd{paraHistorico} o traduz: descarta o
 \cd{system}, junta falas seguidas do mesmo papel (o Gemini quer a conversa
 alternada, e duas falas seguidas da pessoa acontecem quando a resposta anterior
@@ -1018,10 +1036,11 @@ semeada com o mascote); se o padrão não está montado na stack, abre o outro.
     \emph{LITE Mode} descartado na \adrr{ADR-132}: lá a chave e o \emph{prompt}
     iriam para a HeyGen; aqui, nem para o navegador.
   \item \textbf{O \emph{prompt} é o mesmo}, com a apresentação trocada
-    (\cd{promptDoAtendente(perfil, "mascote")}): \enquote{você é o mascote da
-    Unooria}, fala em voz alta e acolhedora, as mesmas quatro frases curtas e
-    a mesma base gerada. Vai na \cd{systemInstruction} da abertura, uma vez por
-    sessão.
+    (\cd{promptDoAtendente(perfil, "mascote", instrucoes)}): \enquote{você é o
+    mascote da Unooria}, fala em voz alta e acolhedora, as mesmas quatro frases
+    curtas e a mesma base gerada. As instruções do mascote têm versão própria
+    no painel (\cd{instrucoes\_mascote}, \adrr{ADR-165}), lida na abertura. Vai
+    na \cd{systemInstruction} da abertura, uma vez por sessão.
   \item \textbf{A região é outra}: o Live não está no \cd{global} do texto, e
     a sessão abre em \env{AJUDA\_MASCOTE\_REGIAO} (padrão \cd{us-central1}). O
     modelo (\cd{gemini-3.8-live}) e a voz vêm do painel, não de \emph{env}.

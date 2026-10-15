@@ -574,7 +574,7 @@ repassa WebSocket, então o \emph{cookie} do hub não chega lá). As trancas:
 \textbf{\cd{ajuda\_configuracao} também fica sem RLS e sem \cd{escola\_id}},
 como \cd{ia\_quotas} e \cd{ajuda\_limites}: é UMA linha de configuração comercial
 da rede (quem atende por padrão, se a pessoa pode trocar, a voz e o modelo do
-mascote), não dado de pessoa. A escrita é só do \cd{admin}
+mascote, e as instruções de cada atendente, \adrr{ADR-165}), não dado de pessoa. A escrita é só do \cd{admin}
 (\rota{/recursos/configuracao-da-ajuda}), com motivo obrigatório e histórico em
 \cd{recursos\_auditoria}. A voz e o modelo vão ao pedido de abertura do Gemini, e
 por isso são lista fechada (voz) e formato de nome (modelo) no Zod e no
@@ -679,7 +679,8 @@ da fornecedora. Também só \cd{admin}, na leitura e na escrita. E, desde a
 \adrr{ADR-158}, \textbf{quem atende na Ajuda}
 (\rota{/recursos/configuracao-da-ajuda}): o mascote e o avatar custam diferente
 (\emph{token} de áudio do Gemini e minuto de vídeo), e a escolha também é da
-fornecedora.
+fornecedora; na mesma rota, desde a \adrr{ADR-165}, as instruções de
+\enquote{como responder} de cada atendente.
 
 \textbf{E os custos de IA} (\rota{/recursos/custos-de-ia/*}, \adrr{ADR-161}),
 na tela \rota{/unooria/custos-de-ia}: quanto a IA da rede custa à Unooria, em
@@ -1271,7 +1272,12 @@ acredita ter declarado algo.
     ficam na api; o navegador recebe só o \emph{token} da sala de vídeo daquela
     sessão (Seção~\ref{sec:ajuda-seguranca}). No mascote (\adrr{ADR-158}), a
     instrução do sistema vai da api ao Gemini Live na abertura da conversa, e o
-    navegador recebe só o bilhete de entrada e os ajustes da boca.
+    navegador recebe só o bilhete de entrada e os ajustes da boca. As
+    instruções de cada atendente editadas no painel (\adrr{ADR-165}) ficam em
+    \cd{ajuda\_configuracao} e só a api as lê para montar o \emph{prompt}; a
+    única tela que as mostra é a do \cd{admin}, \rota{/unooria/uso-de-ia}, por
+    \rota{GET /recursos/configuracao-da-ajuda}, que responde 403 a qualquer
+    outro papel.
   \item O gabarito do UnooTube arquivado (\cd{factual}, hoje em
     \arq{backup-unootube}) não era persistido no estado do estudante nem
     devolvido em nenhuma rota de estudante.

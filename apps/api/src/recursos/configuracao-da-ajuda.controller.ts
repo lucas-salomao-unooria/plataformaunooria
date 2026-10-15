@@ -2,6 +2,7 @@ import { Body, Controller, Get, Inject, Put, Req, UseGuards } from "@nestjs/comm
 import { ConfigService } from "@nestjs/config";
 import { AVATAR_AO_VIVO, type AvatarAoVivoPort } from "../ai/avatar-ao-vivo.port";
 import { VOZ_AO_VIVO, type VozAoVivoPort } from "../ai/voz-ao-vivo.port";
+import { instrucoesPadrao } from "../ajuda/prompt";
 import { atendentesMontados, CONFIGURACAO_PADRAO, VOZES_DO_MASCOTE } from "../ajuda/regras";
 import type { AuthClaims } from "../auth/oidc.guard";
 import { OidcGuard } from "../auth/oidc.guard";
@@ -28,7 +29,18 @@ const PADRAO: Campos = {
   mascoteSuavizacao: CONFIGURACAO_PADRAO.mascote.suavizacao,
   mascoteAntecipacaoMs: CONFIGURACAO_PADRAO.mascote.antecipacaoMs,
   mascoteBocaRepouso: CONFIGURACAO_PADRAO.mascote.bocaRepouso,
+  instrucoesMascote: null,
+  instrucoesAvatar: null,
 };
+
+/**
+ * Texto igual ao padrão é gravado como NULO: assim, quando o padrão do código
+ * melhorar, quem nunca personalizou de verdade recebe a melhoria.
+ */
+function normalizarInstrucoes(texto: string | null, atendente: "mascote" | "avatar"): string | null {
+  if (!texto) return null;
+  return texto.trim() === instrucoesPadrao(atendente).trim() ? null : texto.trim();
+}
 
 const CAMPOS = Object.keys(PADRAO) as Array<keyof Campos>;
 
@@ -73,6 +85,8 @@ export class ConfiguracaoDaAjudaController {
           mascoteSuavizacao: linha.mascoteSuavizacao,
           mascoteAntecipacaoMs: linha.mascoteAntecipacaoMs,
           mascoteBocaRepouso: linha.mascoteBocaRepouso,
+          instrucoesMascote: linha.instrucoesMascote,
+          instrucoesAvatar: linha.instrucoesAvatar,
         }
       : PADRAO;
     return {
@@ -87,6 +101,7 @@ export class ConfiguracaoDaAjudaController {
         segredoDoLlm: this.config.get("AJUDA_LLM_SEGREDO"),
       }),
       vozes: VOZES_DO_MASCOTE.map(([nome, jeito]) => ({ nome, jeito })),
+      instrucoesPadrao: { mascote: instrucoesPadrao("mascote"), avatar: instrucoesPadrao("avatar") },
     };
   }
 
@@ -115,7 +130,12 @@ export class ConfiguracaoDaAjudaController {
     ],
   })
   async definir(@Body() body: unknown, @Req() req: { auth: AuthClaims }) {
-    const { motivo, ...campos } = DefinirConfiguracaoDaAjudaSchema.parse(body);
+    const { motivo, ...lidos } = DefinirConfiguracaoDaAjudaSchema.parse(body);
+    const campos: Campos = {
+      ...lidos,
+      instrucoesMascote: normalizarInstrucoes(lidos.instrucoesMascote, "mascote"),
+      instrucoesAvatar: normalizarInstrucoes(lidos.instrucoesAvatar, "avatar"),
+    };
     const atual = await this.ler();
     const mudou = CAMPOS.filter((c) => atual[c] !== campos[c]);
     if (mudou.length === 0) return { ...atual, alterada: false };
@@ -147,6 +167,12 @@ export class ConfiguracaoDaAjudaController {
   }
 }
 
-function pick<T extends object>(obj: T, chaves: Array<keyof T>): Partial<T> {
-  return Object.fromEntries(chaves.map((c) => [c, obj[c]])) as Partial<T>;
+/** Os valores mudados, para o log — das instruções vai só o tamanho (o texto inteiro poluiria a linha). */
+function pick<T extends object>(obj: T, chaves: Array<keyof T>): Record<string, unknown> {
+  return Object.fromEntries(
+    chaves.map((c) => {
+      const v = obj[c];
+      return [c, String(c).startsWith("instrucoes") ? (typeof v === "string" ? `${v.length} caracteres` : "padrão") : v];
+    }),
+  );
 }
