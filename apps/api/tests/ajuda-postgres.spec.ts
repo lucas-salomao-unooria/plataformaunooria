@@ -83,6 +83,8 @@ describe("ajuda_configuracao", () => {
       permitirTroca: CONFIGURACAO_PADRAO.permitirTroca,
       mascoteVoz: CONFIGURACAO_PADRAO.mascote.voz,
       mascoteModelo: CONFIGURACAO_PADRAO.mascote.modelo,
+      instrucoesMascote: null,
+      instrucoesAvatar: null,
     });
   });
 
@@ -104,6 +106,13 @@ describe("ajuda_configuracao", () => {
     await expect(prisma.$executeRaw`UPDATE ajuda_configuracao SET mascote_antecipacao_ms = 500`).rejects.toThrow(
       /ck_ajuda_configuracao_boca/,
     );
+    // As instruções (ADR-165): vazio não é instrução — é NULO; e há teto.
+    await expect(prisma.$executeRaw`UPDATE ajuda_configuracao SET instrucoes_mascote = '   '`).rejects.toThrow(
+      /ck_ajuda_configuracao_instrucoes/,
+    );
+    await expect(
+      prisma.$executeRaw`UPDATE ajuda_configuracao SET instrucoes_avatar = ${"x".repeat(8001)}`,
+    ).rejects.toThrow(/ck_ajuda_configuracao_instrucoes/);
   });
 });
 

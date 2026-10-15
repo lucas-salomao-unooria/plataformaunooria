@@ -209,6 +209,8 @@ const NOS: Record<string, NoDaTrilha> = {
   "/unooria/recursos/imagens-do-juri": { rotulo: "Imagens do banco padrão do Júri" },
   // A quota diária de IA por perfil (ADR-105).
   "/unooria/uso-de-ia": { rotulo: "Uso de IA" },
+  // Quem atende, as instruções e os minutos da Ajuda (ADR-158, ADR-165).
+  "/unooria/ajuda": { rotulo: "Ajuda" },
   // O FinOps: o custo da IA em tokens, dólar e real (ADR-161).
   "/unooria/custos-de-ia": { rotulo: "Custos de IA" },
   "/unooria/prospeccao": { rotulo: "Prospecção" },

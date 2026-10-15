@@ -388,3 +388,57 @@ describe("POST /ajuda/sessoes com o mascote", () => {
     await expect(montar().hub.abrir(req, { atendente: "robo" })).rejects.toMatchObject({ status: 400 });
   });
 });
+
+/* ------------------------------------------------ as instruções no painel (ADR-165) */
+
+describe("as instruções editadas no painel", () => {
+  const MINHAS = "Você é o mascote da Unooria. Responda sempre em uma frase só, com alegria.";
+
+  it("substituem só o COMO RESPONDER: a base e quem fala a api monta sempre", () => {
+    const prompt = promptDoAtendente("professor", "mascote", MINHAS);
+    expect(prompt.startsWith(MINHAS)).toBe(true);
+    expect(prompt).not.toContain("COMO RESPONDER");
+    expect(prompt).toContain("\n\nCONHECIMENTO\n");
+    expect(prompt).toContain("QUEM ESTÁ FALANDO COM VOCÊ AGORA");
+    // Vazio ou nulo = o texto padrão.
+    expect(promptDoAtendente("professor", "mascote", "   ")).toBe(promptDoAtendente("professor", "mascote"));
+    expect(promptDoAtendente("professor", "avatar", null)).toBe(promptDoAtendente("professor"));
+  });
+
+  it("chegam ao Gemini Live na abertura da voz do mascote", async () => {
+    const pedidos: Array<{ instrucao: string }> = [];
+    const prisma = {
+      ajudaConfiguracao: {
+        findUnique: async () => ({
+          atendentePadrao: "mascote",
+          permitirTroca: true,
+          mascoteVoz: "Leda",
+          mascoteModelo: "gemini-3.8-live",
+          mascoteSensibilidade: 0.5,
+          mascoteSuavizacao: 0.5,
+          mascoteAntecipacaoMs: 60,
+          mascoteBocaRepouso: 0.5,
+          instrucoesMascote: MINHAS,
+          instrucoesAvatar: null,
+        }),
+      },
+    };
+    const voz: VozAoVivoPort = {
+      ligada: true,
+      abrir: async (pedido) => {
+        pedidos.push(pedido);
+        return new ConversaFalsa();
+      },
+    };
+    const service = new AjudaService(
+      prisma as unknown as PrismaService,
+      { get: () => undefined } as unknown as ConfigService,
+      { ligado: false } as AvatarAoVivoPort,
+      new MockProvider(),
+      voz,
+    );
+    await service.abrirVozDoMascote(CLAIMS);
+    expect(pedidos[0]!.instrucao.startsWith(MINHAS)).toBe(true);
+    expect(pedidos[0]!.instrucao).toContain("CONHECIMENTO");
+  });
+});

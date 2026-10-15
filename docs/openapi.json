@@ -8893,6 +8893,34 @@
                       "minimum": 0,
                       "maximum": 1
                     },
+                    "instrucoesMascote": {
+                      "type": "string",
+                      "minLength": 20,
+                      "maxLength": 8000,
+                      "nullable": true
+                    },
+                    "instrucoesAvatar": {
+                      "type": "string",
+                      "minLength": 20,
+                      "maxLength": 8000,
+                      "nullable": true
+                    },
+                    "instrucoesPadrao": {
+                      "type": "object",
+                      "properties": {
+                        "mascote": {
+                          "type": "string"
+                        },
+                        "avatar": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "mascote",
+                        "avatar"
+                      ],
+                      "additionalProperties": false
+                    },
                     "motivo": {
                       "type": "string",
                       "nullable": true
@@ -8950,6 +8978,9 @@
                     "mascoteSuavizacao",
                     "mascoteAntecipacaoMs",
                     "mascoteBocaRepouso",
+                    "instrucoesMascote",
+                    "instrucoesAvatar",
+                    "instrucoesPadrao",
                     "motivo",
                     "definidoPorNome",
                     "definidoEm",
@@ -9057,6 +9088,34 @@
                       "minimum": 0,
                       "maximum": 1
                     },
+                    "instrucoesMascote": {
+                      "type": "string",
+                      "minLength": 20,
+                      "maxLength": 8000,
+                      "nullable": true
+                    },
+                    "instrucoesAvatar": {
+                      "type": "string",
+                      "minLength": 20,
+                      "maxLength": 8000,
+                      "nullable": true
+                    },
+                    "instrucoesPadrao": {
+                      "type": "object",
+                      "properties": {
+                        "mascote": {
+                          "type": "string"
+                        },
+                        "avatar": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "mascote",
+                        "avatar"
+                      ],
+                      "additionalProperties": false
+                    },
                     "motivo": {
                       "type": "string",
                       "nullable": true
@@ -9117,6 +9176,9 @@
                     "mascoteSuavizacao",
                     "mascoteAntecipacaoMs",
                     "mascoteBocaRepouso",
+                    "instrucoesMascote",
+                    "instrucoesAvatar",
+                    "instrucoesPadrao",
                     "motivo",
                     "definidoPorNome",
                     "definidoEm",
@@ -9220,6 +9282,18 @@
                     "minimum": 0,
                     "maximum": 1
                   },
+                  "instrucoesMascote": {
+                    "type": "string",
+                    "minLength": 20,
+                    "maxLength": 8000,
+                    "nullable": true
+                  },
+                  "instrucoesAvatar": {
+                    "type": "string",
+                    "minLength": 20,
+                    "maxLength": 8000,
+                    "nullable": true
+                  },
                   "motivo": {
                     "type": "string",
                     "minLength": 3,
@@ -9235,6 +9309,8 @@
                   "mascoteSuavizacao",
                   "mascoteAntecipacaoMs",
                   "mascoteBocaRepouso",
+                  "instrucoesMascote",
+                  "instrucoesAvatar",
                   "motivo"
                 ],
                 "additionalProperties": false

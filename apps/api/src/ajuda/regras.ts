@@ -226,6 +226,11 @@ export interface ConfiguracaoDaAjuda {
     /** 0 a 1: parado, de boca fechada (0) até o sorriso original do modelo (1). */
     bocaRepouso: number;
   };
+  /**
+   * As instruções de "como responder" editadas no painel (ADR-165). `null` =
+   * o texto padrão do código (`instrucoesPadrao`, em `prompt.ts`).
+   */
+  instrucoes: Record<Atendente, string | null>;
 }
 
 /**
@@ -236,6 +241,7 @@ export const CONFIGURACAO_PADRAO: ConfiguracaoDaAjuda = {
   atendentePadrao: "mascote",
   permitirTroca: true,
   mascote: { voz: "Leda", modelo: "gemini-3.8-live", sensibilidade: 0.5, suavizacao: 0.5, antecipacaoMs: 60, bocaRepouso: 0.5 },
+  instrucoes: { mascote: null, avatar: null },
 };
 
 /**

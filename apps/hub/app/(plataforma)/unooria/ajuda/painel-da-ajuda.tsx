@@ -130,7 +130,7 @@ export function PainelDaAjuda({
 
       <SectionHeader
         title="Minutos da Ajuda"
-        description="A Ajuda não usa a quota de tokens acima: o custo dela é o tempo de conversa, com o mascote ou com o atendente em vídeo. Estes limites valem para cada pessoa, na rede inteira, a partir da próxima conversa."
+        description="A Ajuda não usa a quota de tokens de Uso de IA: o custo dela é o tempo de conversa, com o mascote ou com o atendente em vídeo. Estes limites valem para cada pessoa, na rede inteira, a partir da próxima conversa."
       />
 
       {erro && !editando ? <FeedbackAlert type="error" title="Não deu" description={erro} /> : null}
