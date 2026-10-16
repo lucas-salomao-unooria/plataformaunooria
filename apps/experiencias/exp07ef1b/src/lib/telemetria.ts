@@ -12,9 +12,9 @@ import type { ExperienciaHandle } from "@edu/sdk";
  *
  * **O que NUNCA sai daqui** (regra 6 e RNF-PRIV-002): a legenda dos Stories, a
  * reflexão, nome, e-mail. De um texto autoral sai o TAMANHO, em code points, e
- * só. E da enquete sai QUAL pergunta foi respondida, nunca QUAL alternativa: o
- * id da alternativa é o nível da habilidade para quem conhece a ficha, e esse
- * mapa é segredo de servidor (regra 3).
+ * só. E da marcação (ADR-170) sai se foi um post ou "nada", nunca QUAL post: o
+ * id do post do colega, para quem conhece a cobertura, é o enquadramento — e o
+ * enquadramento é o nível da EF07CO08, segredo de servidor (regra 3).
  *
  * O id do POST salvo sai, e é de propósito: ele é o objeto editorial, não a
  * criança — o painel da professora já mostra a tríade e a matriz de cada
@@ -102,18 +102,20 @@ export const telemetria = {
   /** Tocou "Ir para a Reflexão". */
   foiParaReflexao: () => track("progressed", "explicar:ir-reflexao"),
 
-  // E6 e enquetes
+  // E4-ALU-01B, E6 e o fim
   /** Entregou a reflexão (o latch dela). Só o TAMANHO — nunca o texto. */
   enviouReflexao: (chars: number) => track("completed", "reflexao:enviar", { contexto: { chars } }),
-  /** Respondeu uma enquete. A PERGUNTA, nunca a alternativa — ver a nota do topo. */
-  respondeuEnquete: (perguntaId: string) =>
-    track("interacted", "enquete:responder", { contexto: { perguntaId } }),
-  /** A enquete falhou (409, rede, 404) e a tela pulou para o fim. */
-  pulouEnquete: (perguntaId: string, status: number) =>
-    track("interacted", "enquete:pulada", { contexto: { perguntaId, status } }),
+  /**
+   * Marcou na E4-ALU-01B (ADR-170): SÓ se foi um post ou "nada" — nunca QUAL
+   * post (o id, para quem conhece a cobertura, é o enquadramento, e o
+   * enquadramento é o nível). E o "por quê?" nunca: só o tamanho.
+   */
+  marcou: (tipo: "post" | "nenhum") => track("interacted", "mural:marcacao", { contexto: { tipo } }),
+  explicouAMarcacao: (caracteres: number) =>
+    track("interacted", "mural:marcacao-porque", { resultado: { caracteres } }),
 
-  /** "Missão concluída!", depois do `POST /a-selecao/concluir`. */
-  concluiu: (enquetes: number) => track("completed", "missao:concluida", { resultado: { enquetes } }),
+  /** "Missão concluída!" — desde a ADR-170, a reflexão enviada encerra a missão. */
+  concluiu: () => track("completed", "missao:concluida"),
 
   /** Um aviso global acendeu (rede ou sessão). Sem detalhe: é diagnóstico de sala. */
   caiu: (motivo: "rede" | "sessao") => track("interacted", "conexao:aviso", { contexto: { motivo } }),

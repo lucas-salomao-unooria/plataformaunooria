@@ -19,7 +19,6 @@ import {
   salvosValidos,
   segundosDesde,
   selecionados,
-  separarEnunciado,
   situacaoDaSelecao,
   telaDoPasso,
   temaNaFrase,
@@ -67,10 +66,11 @@ describe("passoEfetivo — a mesma resposta da api num F5", () => {
     const esperado: Record<Etapa, Passo> = {
       exploracao: "publicado",
       mural: "mural",
+      marcacao: "marcacao",
       fichas: "fichas",
       explicacao: "explicacao",
     };
-    for (const passo of ["publicado", "mural", "fichas", "explicacao"] as const) {
+    for (const passo of ["publicado", "mural", "marcacao", "fichas", "explicacao"] as const) {
       for (const etapa of ETAPAS) expect(passoEfetivo(passo, etapa)).toBe(esperado[etapa]);
     }
   });
@@ -83,14 +83,15 @@ describe("passoEfetivo — a mesma resposta da api num F5", () => {
 
   test("etapaAntes segue a ordem do botão único da professora", () => {
     expect(etapaAntes("exploracao", "mural")).toBe(true);
-    expect(etapaAntes("mural", "fichas")).toBe(true);
+    expect(etapaAntes("mural", "marcacao")).toBe(true);
+    expect(etapaAntes("marcacao", "fichas")).toBe(true);
     expect(etapaAntes("fichas", "fichas")).toBe(false);
     expect(etapaAntes("explicacao", "mural")).toBe(false);
   });
 });
 
 describe("a tela de cada passo", () => {
-  test("todo passo tem tela, e o Mural é uma tela só nas duas etapas", () => {
+  test("todo passo tem tela; o Mural é uma tela só nas duas etapas, e a marcação é a dela", () => {
     const telas = PASSOS.map(telaDoPasso);
     expect(telas).toEqual([
       "desafio",
@@ -98,16 +99,18 @@ describe("a tela de cada passo", () => {
       "salvos",
       "espera",
       "mural",
+      "marcacao",
       "mural",
       "explicacao",
       "reflexao",
-      "enquetes",
+      /* `enquetes` é do Canal B, que saiu (ADR-170): a sessão de antes vai ao fim. */
+      "fim",
       "fim",
     ]);
   });
 
-  test("só o Mural e as fichas leem o Mural", () => {
-    expect(PASSOS.filter(precisaDoMural)).toEqual(["mural", "fichas"]);
+  test("o Mural, a marcação e as fichas leem o Mural", () => {
+    expect(PASSOS.filter(precisaDoMural)).toEqual(["mural", "marcacao", "fichas"]);
   });
 });
 
@@ -258,35 +261,6 @@ describe("o toque no Story do Mural", () => {
   });
 });
 
-describe("o enunciado da enquete: a mensagem da Amara e a pergunta", () => {
-  /** Os enunciados REAIS da ficha da api — o teste vale para o texto que vai à tela. */
-  function enunciadosDaFicha(): string[] {
-    const fonte = readFileSync("../../api/src/evidencias/fichas/exp07ef1b.ts", "utf8");
-    return [...fonte.matchAll(/enunciado:\s*"((?:[^"\\]|\\.)*)"/g)].map((m) => JSON.parse(`"${m[1] ?? ""}"`) as string);
-  }
-
-  test("os dois enunciados da ficha são só a pergunta do PO, sem balão de contexto", () => {
-    const [p1, p2] = enunciadosDaFicha();
-    expect(p1 && separarEnunciado(p1)).toEqual({
-      contexto: null,
-      pergunta:
-        "Imagina que alguém da escola viu os Stories que você publicou e mandou: 'Valeu pelo resumo! Agora já sei tudo sobre o que aconteceu.' O que você diria?",
-    });
-    expect(p2 && separarEnunciado(p2)).toEqual({
-      contexto: null,
-      pergunta:
-        "Lembra quando você viu os Stories do colega no Mural e a história parecia outra? Os dois partiram do mesmo feed. O que faz mais sentido pensar sobre isso?",
-    });
-  });
-
-  test("sem a linha em branco, tudo é pergunta — nada some", () => {
-    expect(separarEnunciado("Só a pergunta?")).toEqual({ contexto: null, pergunta: "Só a pergunta?" });
-  });
-
-  test("separador sem pergunta depois não apaga o texto", () => {
-    expect(separarEnunciado("Só o contexto.\n\n   ")).toEqual({ contexto: null, pergunta: "Só o contexto." });
-  });
-});
 
 describe("a espera entre tentativas", () => {
   test("2 s, 4 s, 8 s e depois 15 s", () => {

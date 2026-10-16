@@ -19,13 +19,18 @@
  * Mural sem tríade seria mostrar a ela a comparação sem o que comparar.
  */
 
-/** Passos do estudante, na ordem em que ele os percorre. */
+/**
+ * Passos do estudante, na ordem em que ele os percorre. `enquetes` é do Canal
+ * B, que saiu na ADR-170: a reflexão leva direto a `fim`, e o passo fica no
+ * vocabulário (e no CHECK) só para as sessões de antes, paradas nele.
+ */
 export const PASSOS = [
   "desafio",
   "feed",
   "salvos",
   "publicado",
   "mural",
+  "marcacao",
   "fichas",
   "explicacao",
   "reflexao",
@@ -35,7 +40,13 @@ export const PASSOS = [
 export type Passo = (typeof PASSOS)[number];
 
 /** Etapas da turma, na ordem em que a professora as abre. */
-export const ETAPAS = ["exploracao", "mural", "fichas", "explicacao"] as const;
+/**
+ * `marcacao` (ADR-170) mora ENTRE o Mural e as fichas: a criança já viu a
+ * publicação do colega e ainda não recebeu a resposta ("nenhum veículo
+ * mentiu"). É a janela em que a ação da EF07CO08 não vem contaminada. É
+ * obrigatória como as outras: o botão único nunca pula uma etapa.
+ */
+export const ETAPAS = ["exploracao", "mural", "marcacao", "fichas", "explicacao"] as const;
 export type Etapa = (typeof ETAPAS)[number];
 
 export const ETAPA_INICIAL: Etapa = "exploracao";
@@ -46,7 +57,7 @@ export const PASSOS_ANTES_DA_PUBLICACAO: readonly Passo[] = ["desafio", "feed", 
 
 /**
  * Os passos que a própria criança pede, por `POST passo`. Os do meio
- * (`publicado`, `mural`, `fichas`, `explicacao`) são da TURMA: ninguém os pede,
+ * (`publicado`, `mural`, `marcacao`, `fichas`, `explicacao`) são da TURMA: ninguém os pede,
  * a etapa os impõe. `enquetes` e `fim` nascem das rotas que os carimbam
  * (`reflexao`, `concluir`).
  */
@@ -57,6 +68,7 @@ export type PassoPedido = (typeof PASSOS_PEDIDOS)[number];
 const PASSO_DA_ETAPA: Record<Etapa, Passo> = {
   exploracao: "publicado",
   mural: "mural",
+  marcacao: "marcacao",
   fichas: "fichas",
   explicacao: "explicacao",
 };
@@ -125,7 +137,7 @@ export function passoEfetivo(passo: Passo, etapa: Etapa): Passo {
  */
 export function aguardandoOProfessor(passo: Passo, etapa: Etapa): boolean {
   const efetivo = passoEfetivo(passo, etapa);
-  return efetivo === "publicado" || efetivo === "mural" || efetivo === "fichas";
+  return efetivo === "publicado" || efetivo === "mural" || efetivo === "marcacao" || efetivo === "fichas";
 }
 
 /** A etapa seguinte, ou `null` na última — é o rótulo do botão único do painel. */

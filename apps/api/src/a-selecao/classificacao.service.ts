@@ -3,58 +3,58 @@ import { z } from "zod";
 import { AI_PROVIDER, type AiProvider } from "../ai/provider";
 import { QuotaService } from "../ai/quota.service";
 import { rateLimit } from "../comum/rate-limit";
-import { STATUS_DE_MARCA, type Nivel } from "../evidencias/regras";
+import type { Nivel } from "../evidencias/regras";
 import { logger } from "../observabilidade/logger";
 import {
-  MOTIVOS_DO_CANAL_A,
-  NIVEL_DO_MOTIVO,
   SCHEMA_DO_CANAL_A,
   SYSTEM_DO_CANAL_A,
+  nivelDosIndicadores,
   promptDoCanalA,
-  type MotivoDoCanalA,
+  type IndicadoresDaLegenda,
 } from "./prompts";
 
 /**
- * O CANAL A: a legenda dos Stories graduada nos três níveis da EF07CO11.
+ * O CANAL A: a legenda dos Stories lida para a EF07CO11 (ADR-170).
  *
  * É a exceção ao princípio "IA não decide desfecho", e por isso é cercada de
  * guardrails, todos aqui, na ORDEM em que rodam:
  *
- *   1. RATE LIMIT por estudante — três classificações a cada dez minutos. O
- *      latch já faz haver uma por rodada; o teto é para o "Zerar" repetido.
- *   2. QUOTA do perfil `estudante` (`temSaldo` ANTES, regra inviolável nº 5).
- *   3. `generateJson` com o modelo padrão, temperatura 0, UMA tentativa (não
- *      há reforço útil: ou a leitura sai, ou fica "Não avaliado"), o
- *      `responseSchema` com o enum dos níveis e o código do motivo, um
- *      `validar` Zod que recusa motivo incoerente com o nível. SEM teto de
- *      saída (ADR-148): o Gemini 3 raciocina mesmo com `thinkingBudget: 0`, e
- *      com 64 tokens a resposta era cortada antes do JSON — a legenda ficava
- *      "Não avaliado" em silêncio.
- *   4. TETO DE TEMPO por `Promise.race` (~6 s): o provider só corta em 15 min e
- *      não aceita `signal`, então o teto de N s é `Promise.race`, e a
- *      publicação da criança espera esta resposta.
- *   5. O débito da quota vai no `aoUsarTokens`, e não depois do `await`: a
- *      chamada que PERDE a corrida para o teto chega depois, e é cobrada igual
- *      — ela foi paga ao vendor (ADR-74).
+ *   1. RATE LIMIT por estudante — o latch faz haver uma leitura por rodada, e
+ *      cada leitura tem até três tentativas; o teto é para o "Zerar" repetido.
+ *   2. QUOTA DE AVALIAÇÃO da escola (ADR-169), `temSaldoDaAvaliacao` ANTES
+ *      (regra inviolável nº 5): avaliar não sai da quota do estudante — quem
+ *      usou o tutor de manhã não pode ser lido por uma régua pior à tarde.
+ *   3. `generateJson` com o modelo padrão, temperatura 0, UMA tentativa do
+ *      provider, o `responseSchema` com os três indicadores e um `validar` Zod
+ *      que recusa a combinação incoerente ("sem relação" com "conteúdo"). SEM
+ *      teto de saída (ADR-148): o Gemini 3 raciocina mesmo com
+ *      `thinkingBudget: 0`.
+ *   4. TETO DE TEMPO por `Promise.race` (60 s, como a leitura da reflexão da
+ *      exp08ef1b): a criança NÃO espera — a leitura roda depois da resposta do
+ *      latch (`void`), fora do teto de 30 s do BFF.
+ *   5. ATÉ TRÊS TENTATIVAS só para a FALHA TÉCNICA (tempo esgotado, provider
+ *      fora, saída recusada), com recuo de 2 s e 4 s. Sem saldo e o rate limit
+ *      não são falha técnica: encerram na hora.
+ *   6. O débito vai no `aoUsarTokens`, e não depois do `await`: a chamada que
+ *      PERDE a corrida para o teto chega depois e é cobrada igual (ADR-74).
  *
- * **Falhou qualquer passo, nada é marcado.** Sem saldo, teto de tempo, saída
- * inválida, provider fora do ar, o mock (que SEMPRE lança em `generateJson`):
- * a EF07CO11 fica "Não avaliado" nesta marca, e o professor decide. Em dev e
- * na e2e, portanto, este canal sempre cai aqui — e a enquete P1 continua
- * medindo a mesma habilidade (vale a melhor das duas).
- *
- * Nada do que o modelo escreve é gravado nem registrado: o log leva o CÓDIGO
- * da falha ou do motivo, e nunca a legenda (texto livre de menor).
+ * O modelo devolve INDICADORES; o nível é do servidor (`nivelDosIndicadores`).
+ * Falhou tudo? Quem chama cai na regra de RESERVA (`regras/legenda-reserva.ts`),
+ * que grava só uma sugestão para a professora. Nada do que o modelo escreve é
+ * gravado nem registrado: o log leva o CÓDIGO da falha, nunca a legenda.
  */
 
-/** Quanto a publicação espera a IA antes de desistir. */
-export const TETO_DO_CANAL_A_MS = 6000;
-
+/** Quanto cada tentativa espera a IA. A criança não espera nenhuma delas. */
+export const TETO_DO_CANAL_A_MS = 60_000;
 /** Token de injeção do teto — a suíte o encurta; em produção vale o padrão. */
 export const TETO_DO_CANAL_A = "TETO_DO_CANAL_A";
 
-/** Três classificações a cada dez minutos, por estudante. */
-export const LIMITE_DO_CANAL_A = { usos: 3, janelaMs: 10 * 60_000 } as const;
+export const TENTATIVAS_DO_CANAL_A = 3;
+export const RECUO_DO_CANAL_A_MS = 2000;
+export const RECUO_DO_CANAL_A = "RECUO_DO_CANAL_A";
+
+/** Duas leituras completas (com as três tentativas) a cada dez minutos, por estudante. */
+export const LIMITE_DO_CANAL_A = { usos: 2 * TENTATIVAS_DO_CANAL_A, janelaMs: 10 * 60_000 } as const;
 
 export interface EntradaDoCanalA {
   legenda: string;
@@ -63,57 +63,74 @@ export interface EntradaDoCanalA {
 
 export type FalhaDoCanalA = "limite" | "sem-saldo" | "tempo-esgotado" | "saida-invalida" | "provedor-falhou";
 
+/** As falhas que tentam de novo. */
+const FALHA_TECNICA: readonly FalhaDoCanalA[] = ["tempo-esgotado", "saida-invalida", "provedor-falhou"];
+
 export type ResultadoDoCanalA =
-  | { ok: true; nivel: Nivel; motivo: MotivoDoCanalA }
-  | { ok: false; codigo: FalhaDoCanalA };
+  | { ok: true; nivel: Nivel; indicadores: IndicadoresDaLegenda; tentativas: number }
+  | { ok: false; codigo: FalhaDoCanalA; tentativas: number };
 
 /**
- * A saída que vale: um nível, um motivo, e os dois COERENTES. "atingiu por ser
- * desconexa" é o modelo se contradizendo, e a contradição não vira marca.
+ * A saída que vale: os três indicadores, COERENTES. "Sem relação" com
+ * "conteúdo" é o modelo se contradizendo, e a contradição não vira marca.
  */
-export const ClassificacaoSchema = z
-  .object({ nivel: z.enum(STATUS_DE_MARCA), motivo: z.enum(MOTIVOS_DO_CANAL_A) })
-  .refine((c) => NIVEL_DO_MOTIVO[c.motivo] === c.nivel, "motivo incoerente com o nível");
+export const IndicadoresSchema = z
+  .object({ razao: z.boolean(), conteudo: z.boolean(), semRelacao: z.boolean() })
+  .refine((i) => !(i.semRelacao && i.conteudo), "sem relação com os posts e com conteúdo deles ao mesmo tempo");
 
-export function validarClassificacao(bruto: unknown): { nivel: Nivel; motivo: MotivoDoCanalA } {
-  return ClassificacaoSchema.parse(bruto);
+export function validarIndicadores(bruto: unknown): IndicadoresDaLegenda {
+  return IndicadoresSchema.parse(bruto);
 }
+
+type Tentativa = { ok: true; indicadores: IndicadoresDaLegenda } | { ok: false; codigo: FalhaDoCanalA };
 
 @Injectable()
 export class ClassificacaoService {
   private readonly tetoMs: number;
+  private readonly recuoMs: number;
 
   constructor(
     @Inject(AI_PROVIDER) private readonly ia: AiProvider,
     private readonly quota: QuotaService,
     @Optional() @Inject(TETO_DO_CANAL_A) tetoMs?: number,
+    @Optional() @Inject(RECUO_DO_CANAL_A) recuoMs?: number,
   ) {
     this.tetoMs = tetoMs ?? TETO_DO_CANAL_A_MS;
+    this.recuoMs = recuoMs ?? RECUO_DO_CANAL_A_MS;
   }
 
   /**
-   * Classifica a legenda. NUNCA lança: toda falha vira `{ ok: false, codigo }`,
-   * porque quem chama já gravou a publicação e não pode responder erro à
-   * criança por causa da IA.
+   * Lê a legenda. NUNCA lança: toda falha vira `{ ok: false, codigo }`, porque
+   * quem chama já respondeu à criança e cai na reserva.
    */
   async classificar(escolaId: string, estudanteId: string, entrada: EntradaDoCanalA): Promise<ResultadoDoCanalA> {
-    const resultado = await this.tentar(escolaId, estudanteId, entrada);
+    let tentativas = 0;
+    let ultima: Tentativa = { ok: false, codigo: "provedor-falhou" };
+    while (tentativas < TENTATIVAS_DO_CANAL_A) {
+      if (tentativas > 0) await new Promise((r) => setTimeout(r, this.recuoMs * 2 ** (tentativas - 1)));
+      tentativas += 1;
+      ultima = await this.tentar(escolaId, estudanteId, entrada);
+      if (ultima.ok || !FALHA_TECNICA.includes(ultima.codigo)) break;
+    }
+    const resultado: ResultadoDoCanalA = ultima.ok
+      ? { ok: true, nivel: nivelDosIndicadores(ultima.indicadores), indicadores: ultima.indicadores, tentativas }
+      : { ok: false, codigo: ultima.codigo, tentativas };
     logger.info(
       resultado.ok
-        ? { codigo: "exp07ef1b-canal-a-avaliado", escolaId, motivo: resultado.motivo }
-        : { codigo: "exp07ef1b-canal-a-nao-avaliado", escolaId, motivo: resultado.codigo },
-      resultado.ok ? "legenda graduada pelo Canal A" : "Canal A sem avaliação; fica Não avaliado",
+        ? { codigo: "exp07ef1b-canal-a-avaliado", escolaId, nivel: resultado.nivel, tentativas }
+        : { codigo: "exp07ef1b-canal-a-nao-avaliado", escolaId, motivo: resultado.codigo, tentativas },
+      resultado.ok ? "legenda lida pelo Canal A" : "Canal A sem leitura; vale a reserva",
     );
     return resultado;
   }
 
-  private async tentar(escolaId: string, estudanteId: string, entrada: EntradaDoCanalA): Promise<ResultadoDoCanalA> {
+  private async tentar(escolaId: string, estudanteId: string, entrada: EntradaDoCanalA): Promise<Tentativa> {
     /* Por usuário, nunca por IP: a turma inteira sai pelo mesmo NAT. */
     const limite = rateLimit(`a-selecao:canal-a:${estudanteId}`, LIMITE_DO_CANAL_A.usos, LIMITE_DO_CANAL_A.janelaMs);
     if (!limite.ok) return { ok: false, codigo: "limite" };
 
     try {
-      if (!(await this.quota.temSaldo(escolaId, estudanteId, "estudante"))) return { ok: false, codigo: "sem-saldo" };
+      if (!(await this.quota.temSaldoDaAvaliacao(escolaId))) return { ok: false, codigo: "sem-saldo" };
     } catch {
       return { ok: false, codigo: "provedor-falhou" };
     }
@@ -129,7 +146,7 @@ export class ClassificacaoService {
       tentativas: 1,
       validar: (bruto) => {
         try {
-          return validarClassificacao(bruto);
+          return validarIndicadores(bruto);
         } catch (erro) {
           saidaInvalida = true;
           throw erro;
@@ -138,7 +155,7 @@ export class ClassificacaoService {
       aoUsarTokens: (tokens) => {
         if (tokens <= 0) return;
         debitos.push(
-          this.quota.consumir(escolaId, estudanteId, tokens).catch(() => {
+          this.quota.consumirDaAvaliacao(escolaId, tokens).catch(() => {
             logger.warn({ codigo: "exp07ef1b-canal-a-debito-falhou", escolaId }, "débito do Canal A não gravado");
           }),
         );
@@ -158,7 +175,7 @@ export class ClassificacaoService {
       const vencedor = await Promise.race([chamada, teto]);
       if (vencedor === "tempo-esgotado") return { ok: false, codigo: "tempo-esgotado" };
       await Promise.allSettled(debitos);
-      return { ok: true, nivel: vencedor.nivel, motivo: vencedor.motivo };
+      return { ok: true, indicadores: vencedor };
     } catch {
       await Promise.allSettled(debitos);
       return { ok: false, codigo: saidaInvalida ? "saida-invalida" : "provedor-falhou" };

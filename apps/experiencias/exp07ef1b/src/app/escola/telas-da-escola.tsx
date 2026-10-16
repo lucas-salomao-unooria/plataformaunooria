@@ -12,8 +12,8 @@ import type { Limites } from "../../lib/tipos";
  * é a ficha técnica sobre o Story). A reflexão sai do clone de propósito: a
  * pergunta de transferência é sobre um jornal cobrindo OUTRA escola, e fazê-la
  * dentro do Instagram a devolveria para dentro da ficção — a transferência para
- * fora da tela é o que a Etapa 6 existe para produzir. As enquetes voltam ao
- * clone (é a Amara quem pergunta), e o fim volta à escola.
+ * fora da tela é o que a Etapa 6 existe para produzir. Ela encerra a missão
+ * (ADR-170: as enquetes saíram), e o fim é da escola.
  *
  * Nenhum `Icon` da plataforma aqui, e é de propósito: os ícones dela são o
  * Material Symbols por ligadura, 5,36 MB que só descem se a família for
@@ -90,7 +90,7 @@ export function Reflexao({
   );
 }
 
-/** A confirmação do envio — o texto do PO — antes de a Amara voltar com as enquetes. */
+/** A confirmação do envio — o texto do PO — antes da tela final. */
 export function ReflexaoEnviada({ aoContinuar }: { aoContinuar: () => void }) {
   return (
     <div className="escola escola--centrada">

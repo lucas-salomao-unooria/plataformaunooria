@@ -7,6 +7,8 @@ import {
   descreverMatriz,
   ordenarLinhas,
   rotuloDoPost,
+  textoDaLeitura,
+  textoDaMarcacao,
   textoDoPar,
   type LinhaDoPainel,
   type PostDaCobertura,
@@ -97,10 +99,40 @@ function demaisColunas(posts: readonly PostDaCobertura[]): TableColumn<Linha>[] 
       title: "Legenda",
       minWidth: 200,
       render: (_, l) =>
-        l.legenda ? (
-          <span className="block max-w-[260px] text-unooria-neutral-800">“{l.legenda}”</span>
-        ) : l.publicou ? (
-          "entregou"
+        l.publicou ? (
+          <span className="flex max-w-[260px] flex-col gap-1">
+            {l.legenda ? <span className="text-unooria-neutral-800">“{l.legenda}”</span> : "entregou"}
+            {textoDaLeitura(l.leituraDaLegenda) ? (
+              <span
+                className={`text-[11px] leading-snug ${
+                  l.leituraDaLegenda?.estado === "reserva" ? "text-unooria-coral-600" : "text-unooria-neutral-500"
+                }`}
+              >
+                {textoDaLeitura(l.leituraDaLegenda)}
+              </span>
+            ) : null}
+            {l.podados ? (
+              <span className="text-[11px] text-unooria-neutral-500">
+                Tirou {l.podados} {l.podados === 1 ? "post" : "posts"} dos salvos antes de publicar
+              </span>
+            ) : null}
+          </span>
+        ) : (
+          "—"
+        ),
+    },
+    {
+      key: "marcacao",
+      title: "Marcação do colega",
+      minWidth: 220,
+      render: (_, l) =>
+        textoDaMarcacao(l.marcacao, posts) ? (
+          <span className="flex max-w-[260px] flex-col gap-1">
+            <span className="text-unooria-neutral-800">{textoDaMarcacao(l.marcacao, posts)}</span>
+            {l.marcacaoPorque ? (
+              <span className="text-[12px] text-unooria-neutral-700">Por quê: “{l.marcacaoPorque}”</span>
+            ) : null}
+          </span>
         ) : (
           "—"
         ),

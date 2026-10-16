@@ -1,11 +1,11 @@
-import { BadRequestException, Injectable, type OnModuleInit } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import { Prisma, type Exp07ef1bSessao } from "@prisma/client";
 import { z } from "zod";
 import { exigirMissaoLiberada } from "../comum/liberacao";
 import { ondeAsTurmasSaoVisiveis, professorLeciona } from "../comum/turmas-do-professor";
 import { computadoresDaMontagem, equipeDoEstudante, mapaDeEquipes } from "../equipes/consulta";
 import { colapsarEmUnidades, rotulosSemRepeticao, type EquipeDoMapa } from "../equipes/regras";
-import { EvidenciasService, type ContextoDaAtividade } from "../evidencias/evidencias.service";
+import { EvidenciasService } from "../evidencias/evidencias.service";
 import { apagarEvidenciaDaAtividade } from "../evidencias/apagar-da-atividade";
 import { logger } from "../observabilidade/logger";
 import { ehUuid } from "../motor/guardas";
@@ -23,6 +23,8 @@ import {
   type PostDaCobertura,
 } from "./catalogo";
 import { ClassificacaoService, type EntradaDoCanalA } from "./classificacao.service";
+import { VERSAO_DO_PROMPT_DO_CANAL_A } from "./prompts";
+import { VERSAO_DA_RESERVA, lerPelaReserva, type EntradaDaReserva } from "./regras/legenda-reserva";
 import { PostDaCoberturaSchema } from "./contrato-de-rotas";
 import { erroDeJogo } from "./erros";
 import { FALAS_DO_TEMA_PADRAO, type FalasDoTema } from "./podcast";
@@ -54,6 +56,7 @@ import {
   selecaoValida,
 } from "./regras/sessao";
 import { sanitizarLegenda } from "./sanitizador";
+import { nivelDaMarcacao } from "./regras/marcacao";
 
 /**
  * Persistência e regras aplicadas da exp07ef1b.
@@ -83,6 +86,9 @@ export const EXP_ID = "exp07ef1b";
 
 /** O marcador de AÇÃO da EF07CO11 na ficha (`evidencias/fichas/exp07ef1b.ts`). */
 export const MARCADOR_DA_LEGENDA = "legenda-publicada";
+
+/** O marcador de AÇÃO da EF07CO08 — a marcação do post do colega (ADR-170). */
+export const MARCADOR_DA_MARCACAO = "marcacao-colega";
 
 type PostPublico = {
   id: IdDePost;
@@ -125,10 +131,13 @@ interface ContextoDoEstudante {
 
 /** O que a decisão entrega ao Canal A, lido na transação 1. */
 interface ParaOCanalA {
+  sessaoId: string;
   turmaId: string;
   coberturaId: string;
   rodada: number;
   entrada: EntradaDoCanalA;
+  /** O que a regra de reserva lê, se a IA falhar — o tema e os posts completos. */
+  reserva: EntradaDaReserva;
 }
 
 const ListaDePostsSchema = z.array(PostDaCoberturaSchema).length(POSTS_PADRAO.length);
@@ -283,6 +292,20 @@ function resumoDaMidia(cobertura: CoberturaLida): { total: number; prontas: numb
   return { total: pedem.length, prontas: pedem.filter((p) => cobertura.midia[p.id]).length };
 }
 
+/**
+ * O estado da leitura da legenda de uma linha do painel — SEM nível. Na
+ * reserva, os dois indicadores da regra de palavras, ditos como o que ela viu.
+ */
+function leituraDaLinha(
+  s: { legendaLeitura: string | null; legendaRazao: boolean | null; legendaConteudo: boolean | null } | undefined,
+): { estado: "pendente" | "ia" | "reserva"; explicaAEscolha: boolean | null; falaDosPosts: boolean | null } | null {
+  if (!s?.legendaLeitura) return null;
+  const estado = s.legendaLeitura === "ia" || s.legendaLeitura === "reserva" ? s.legendaLeitura : "pendente";
+  return estado === "reserva"
+    ? { estado, explicaAEscolha: s.legendaRazao, falaDosPosts: s.legendaConteudo }
+    : { estado, explicaAEscolha: null, falaDosPosts: null };
+}
+
 function selecaoDaLinha(s: { selecao: string[] }): IdDePost[] | null {
   const ids = s.selecao.filter(ehIdDePost);
   return ids.length === TAMANHO_DA_SELECAO ? ids : null;
@@ -314,55 +337,12 @@ function pesoDaLinha(publicadaEm: Date | null, atualizadaEm: Date | null): numbe
 }
 
 @Injectable()
-export class ASelecaoService implements OnModuleInit {
+export class ASelecaoService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly evidencias: EvidenciasService,
     private readonly classificacao: ClassificacaoService,
   ) {}
-
-  /**
-   * O contexto da evidência pedagógica: o resolvedor que diz, para um
-   * estudante, a atividade e a rodada em andamento — é por ele que a enquete
-   * da DM (`/evidencias/exp07ef1b/perguntas/:id/resposta`) cai na rodada certa,
-   * sem o cliente dizer qual. No teste, quem chama isto é a suíte.
-   */
-  onModuleInit(): void {
-    this.evidencias.registrarContexto(EXP_ID, (tx, escolaId, estudanteId) =>
-      this.contextoDaAtividade(tx, escolaId, estudanteId),
-    );
-  }
-
-  /**
-   * A atividade em andamento para as ENQUETES — ou `null`.
-   *
-   * A turma sai da sessão MAIS RECENTE do estudante, porque o resolvedor não
-   * recebe o token. E `null` em dois casos, os dois de propósito:
-   *   - o passo está antes de `enquetes`: a enquete vem DEPOIS da reflexão (a
-   *     ordem do PO — perguntar antes sugeriria a resposta escrita), e uma
-   *     resposta mandada por fora da tela não pode furar a fila;
-   *   - a sessão não é da (cobertura, rodada) que o gate diz: a professora
-   *     zerou ou trocou o tema, e uma resposta atrasada cairia numa rodada que
-   *     já acabou — e enganaria o recálculo das equipes (ADR-112).
-   */
-  async contextoDaAtividade(
-    tx: Prisma.TransactionClient,
-    escolaId: string,
-    estudanteId: string,
-  ): Promise<ContextoDaAtividade | null> {
-    const sessao = await tx.exp07ef1bSessao.findFirst({
-      where: { escolaId, estudanteId },
-      orderBy: { criadaEm: "desc" },
-      select: { turmaId: true, coberturaId: true, rodada: true, passo: true },
-    });
-    if (!sessao || passoAntes(normalizarPasso(sessao.passo), "enquetes")) return null;
-    const gate = await tx.exp07ef1bGateTurma.findUnique({
-      where: { escolaId_turmaId: { escolaId, turmaId: sessao.turmaId } },
-      select: { coberturaId: true, rodada: true },
-    });
-    if (!gate || gate.coberturaId !== sessao.coberturaId || gate.rodada !== sessao.rodada) return null;
-    return { turmaId: sessao.turmaId, atividadeId: sessao.coberturaId, rodada: sessao.rodada };
-  }
 
   // ───────────────────────────────────────────────────── rotas do estudante
 
@@ -490,7 +470,7 @@ export class ASelecaoService implements OnModuleInit {
     escolaId: string,
     estudanteId: string,
     turmaId: string | null,
-    decisao: { selecao: string[]; legenda: string },
+    decisao: { selecao: string[]; legenda: string; podados?: number },
   ) {
     const limpa = sanitizarLegenda(decisao.legenda, ARROBAS_DA_FICCAO);
     if (!limpa.ok) throw erroDeJogo(limpa.codigo);
@@ -527,6 +507,10 @@ export class ASelecaoService implements OnModuleInit {
           matriz: matriz as unknown as Prisma.InputJsonValue,
           publicadaEm,
           passo: "publicado",
+          /* A leitura da legenda nasce PENDENTE aqui, no mesmo gesto do latch:
+             o painel sabe que ela está a caminho mesmo se o processo cair. */
+          legendaLeitura: "pendente",
+          nPodados: decisao.podados ?? null,
           ...par,
         },
       });
@@ -537,24 +521,34 @@ export class ASelecaoService implements OnModuleInit {
         include: { reflexao: { select: { sessaoId: true } } },
       });
       const porId = new Map(ctx.cobertura.posts.map((p) => [p.id as string, p]));
+      const publicados = decisao.selecao.map((id) => porId.get(id)).filter((p): p is PostDaCobertura => Boolean(p));
       return {
         estado: this.estado(sessao, gate),
         paraOCanalA: {
+          sessaoId: ctx.sessao.id,
           turmaId: ctx.turmaId,
           coberturaId: gate.coberturaId,
           rodada: gate.rodada,
           entrada: {
             legenda: decisao.legenda,
-            posts: decisao.selecao
-              .map((id) => porId.get(id))
-              .filter((p): p is PostDaCobertura => Boolean(p))
-              .map((p) => ({ perfil: p.perfil, legenda: p.legenda })),
+            posts: publicados.map((p) => ({ perfil: p.perfil, legenda: p.legenda })),
+          },
+          reserva: {
+            legenda: decisao.legenda,
+            tema: ctx.cobertura.tema,
+            posts: publicados.map((p) => ({
+              perfil: p.perfil,
+              legenda: p.legenda,
+              ...(p.autoridadeCitada ? { autoridadeCitada: p.autoridadeCitada } : {}),
+            })),
           },
         } satisfies ParaOCanalA,
       };
     }, escolaId);
 
-    await this.classificarEMarcar(escolaId, estudanteId, paraOCanalA);
+    /* A criança NÃO espera a leitura (até 3 tentativas de 60 s): ela roda
+       depois da resposta, como a da reflexão da exp08ef1b (ADR-167). */
+    this.agendarLeitura(escolaId, estudanteId, paraOCanalA);
     return estado;
   }
 
@@ -613,7 +607,9 @@ export class ASelecaoService implements OnModuleInit {
   }
 
   /**
-   * A reflexão da Etapa 6 — LATCH, e leva a sessão às enquetes.
+   * A reflexão da Etapa 6 — LATCH, e ENCERRA a missão (ADR-170: o Canal B
+   * saiu, e não há mais enquetes depois dela). Passo `fim` e `concluidaEm` no
+   * mesmo update: o CHECK `fim ⇔ concluida_em` vale por statement.
    *
    * Caixa livre de menor: não vai a log, não vai à telemetria, e só o professor
    * da turma a lê (o recorte da ADR-108 no painel). A contagem gravada em
@@ -624,7 +620,7 @@ export class ASelecaoService implements OnModuleInit {
       const ctx = await this.garantirSessao(tx, escolaId, estudanteId, turmaId);
       const atual = normalizarPasso(ctx.sessao.passo);
       if (!publicou(atual)) throw erroDeJogo("stories-nao-publicados");
-      if (ctx.sessao.reflexao || !passoAntes(atual, "enquetes")) throw erroDeJogo("reflexao-ja-enviada");
+      if (ctx.sessao.reflexao || passoAntes("reflexao", atual)) throw erroDeJogo("reflexao-ja-enviada");
       if (ctx.gate.etapa !== "explicacao") throw erroDeJogo("reflexao-nao-liberada");
 
       await tx.exp07ef1bReflexao.create({
@@ -632,7 +628,45 @@ export class ASelecaoService implements OnModuleInit {
       });
       const sessao = await tx.exp07ef1bSessao.update({
         where: { id: ctx.sessao.id },
-        data: { passo: "enquetes" },
+        data: { passo: "fim", concluidaEm: new Date() },
+        include: { reflexao: { select: { sessaoId: true } } },
+      });
+      return this.estado(sessao, ctx.gate);
+    }, escolaId);
+  }
+
+  // ───────────────────────────────────────── a marcação (EF07CO08, ADR-170)
+
+  /**
+   * A MARCAÇÃO: o post do colega que a publicação da criança deixou de fora —
+   * ou "Nada que mude a história". Só na etapa `marcacao` (409
+   * `marcacao-fechada` fora dela), só um dos três posts do PAR (422
+   * `marcacao-fora-do-par`), e a última chamada vale: dá para trocar até a
+   * professora revelar as fichas. O NÍVEL não sai aqui — ele congela na
+   * abertura das fichas (`congelarMarcacoes`), e a criança nunca o vê.
+   */
+  async marcar(
+    escolaId: string,
+    estudanteId: string,
+    turmaId: string | null,
+    corpo: { postId: string } | { nenhum: true },
+  ) {
+    return this.prisma.comTenancy(async (tx) => {
+      const ctx = await this.garantirSessao(tx, escolaId, estudanteId, turmaId);
+      const minha = selecaoDaLinha(ctx.sessao);
+      if (!ctx.sessao.publicadaEm || !minha) throw erroDeJogo("stories-nao-publicados");
+      if (ctx.gate.etapa !== "marcacao") throw erroDeJogo("marcacao-fechada");
+
+      if ("postId" in corpo) {
+        const doPar = await this.selecaoDoPar(tx, escolaId, ctx, minha);
+        if (!doPar.includes(corpo.postId)) throw erroDeJogo("marcacao-fora-do-par");
+      }
+      const sessao = await tx.exp07ef1bSessao.update({
+        where: { id: ctx.sessao.id },
+        data:
+          "postId" in corpo
+            ? { marcacaoPostId: corpo.postId, marcacaoNenhum: null, marcacaoEm: new Date() }
+            : { marcacaoPostId: null, marcacaoNenhum: true, marcacaoEm: new Date() },
         include: { reflexao: { select: { sessaoId: true } } },
       });
       return this.estado(sessao, ctx.gate);
@@ -640,9 +674,104 @@ export class ASelecaoService implements OnModuleInit {
   }
 
   /**
-   * "Missão concluída!" — idempotente. As enquetes são opcionais para concluir
-   * (a enquete que falha pula para o fim, decisão da experiência); a reflexão,
-   * não.
+   * O "por quê?" da marcação — opcional, texto livre de MENOR, FORA do nível.
+   * Só depois de marcar e enquanto a marcação está aberta; passa pelo mesmo
+   * sanitizador da legenda. Não vai a log nem a telemetria, e só o professor
+   * da turma o lê (o recorte da ADR-108 no painel).
+   */
+  async explicarMarcacao(escolaId: string, estudanteId: string, turmaId: string | null, texto: string) {
+    const limpa = sanitizarLegenda(texto, ARROBAS_DA_FICCAO);
+    if (!limpa.ok) throw erroDeJogo(limpa.codigo);
+    return this.prisma.comTenancy(async (tx) => {
+      const ctx = await this.garantirSessao(tx, escolaId, estudanteId, turmaId);
+      if (ctx.gate.etapa !== "marcacao") throw erroDeJogo("marcacao-fechada");
+      if (!ctx.sessao.marcacaoEm) throw erroDeJogo("marcacao-pendente");
+      const sessao = await tx.exp07ef1bSessao.update({
+        where: { id: ctx.sessao.id },
+        data: { marcacaoPorque: texto },
+        include: { reflexao: { select: { sessaoId: true } } },
+      });
+      return this.estado(sessao, ctx.gate);
+    }, escolaId);
+  }
+
+  /** Os três ids do PAR desta sessão: a sessão congelada no pareamento, ou o colega virtual. */
+  private async selecaoDoPar(
+    tx: Prisma.TransactionClient,
+    escolaId: string,
+    ctx: ContextoDoEstudante,
+    minha: readonly string[],
+  ): Promise<readonly string[]> {
+    if (ctx.sessao.parSessaoId) {
+      const outra = await tx.exp07ef1bSessao.findFirst({
+        where: { id: ctx.sessao.parSessaoId, escolaId },
+        select: { selecao: true },
+      });
+      const selecao = outra ? selecaoDaLinha(outra) : null;
+      if (selecao) return selecao;
+    }
+    const minhaMatriz = matrizDoJson(ctx.sessao.matriz) ?? matrizDaSelecao(minha, lenteDaCobertura(ctx.cobertura));
+    const id: ColegaVirtual = ehColegaVirtual(ctx.sessao.parVirtual)
+      ? ctx.sessao.parVirtual
+      : virtualMaisDistante(minhaMatriz, virtuaisDa(ctx.cobertura));
+    return COLEGAS_VIRTUAIS[id].selecao;
+  }
+
+  /**
+   * O CONGELAMENTO: na abertura das fichas, a marcação de cada sessão da
+   * rodada vira o nível da EF07CO08 (`regras/marcacao.ts`), na MESMA transação
+   * da troca de etapa. Sem marcação, sem marca ("Não avaliado"). A cópia para
+   * a equipe e a projeção "a revisar" saem do `marcar` da evidência.
+   */
+  private async congelarMarcacoes(
+    tx: Prisma.TransactionClient,
+    escolaId: string,
+    turmaId: string,
+    gate: GateLido,
+    cobertura: CoberturaLida,
+  ): Promise<number> {
+    const sessoes = await tx.exp07ef1bSessao.findMany({
+      where: {
+        escolaId,
+        turmaId,
+        coberturaId: gate.coberturaId,
+        rodada: gate.rodada,
+        publicadaEm: { not: null },
+        marcacaoEm: { not: null },
+      },
+      select: { estudanteId: true, selecao: true, marcacaoPostId: true, marcacaoNenhum: true },
+      orderBy: { publicadaEm: "asc" },
+    });
+    const lente = lenteDaCobertura(cobertura);
+    let marcadas = 0;
+    for (const s of sessoes) {
+      const minha = selecaoDaLinha(s);
+      if (!minha) continue;
+      const nivel = nivelDaMarcacao({
+        marcacao: s.marcacaoPostId ? { postId: s.marcacaoPostId } : s.marcacaoNenhum ? { nenhum: true } : null,
+        minha,
+        enquadramentoDe: lente,
+      });
+      if (!nivel) continue;
+      await this.evidencias.marcar(tx, {
+        escolaId,
+        turmaId,
+        expId: EXP_ID,
+        atividadeId: gate.coberturaId,
+        rodada: gate.rodada,
+        estudanteId: s.estudanteId,
+        marcador: MARCADOR_DA_MARCACAO,
+        status: nivel,
+      });
+      marcadas += 1;
+    }
+    return marcadas;
+  }
+
+  /**
+   * "Missão concluída!" — idempotente. Desde a ADR-170 a reflexão já leva ao
+   * `fim`; a rota fica para a sessão de antes, parada em `enquetes` (o passo do
+   * Canal B, que saiu), e para a tela antiga em cache.
    */
   async concluir(escolaId: string, estudanteId: string, turmaId: string | null) {
     return this.prisma.comTenancy(async (tx) => {
@@ -741,6 +870,18 @@ export class ASelecaoService implements OnModuleInit {
           legenda: professorId ? (s?.legenda ?? null) : null,
           par: s?.parRotulo ? { rotulo: s.parRotulo, virtual: s.parVirtual !== null } : null,
           tempoFeedS: s?.tempoFeedS ?? null,
+          /* A PODA (ADR-170): indicador, nunca nível. */
+          podados: s?.nPodados ?? null,
+          /* A leitura da legenda como ESTADO, sem nível (o nível é do painel
+             de evidência — `PROIBIDO_NO_PAINEL`). Na reserva, o que a regra de
+             palavras viu, para a professora conferir antes de ajustar. */
+          leituraDaLegenda: leituraDaLinha(s),
+          /* A marcação (EF07CO08): o post do par apontado, ou "nada". O "por
+             quê?" é texto livre de menor — só para quem dá aula (ADR-108). */
+          marcacao: s?.marcacaoEm
+            ? { postId: s.marcacaoPostId, nenhum: s.marcacaoNenhum === true }
+            : null,
+          marcacaoPorque: professorId ? (s?.marcacaoPorque ?? null) : null,
           entregouReflexao: texto !== null,
           reflexaoTexto: professorId ? texto : null,
           concluiu: Boolean(s?.concluidaEm),
@@ -778,6 +919,8 @@ export class ASelecaoService implements OnModuleInit {
           iniciaram: unidades.filter((u) => u.iniciou).length,
           publicaram: publicaram.length,
           entregaram: unidades.filter((u) => u.entregouReflexao).length,
+          /* O "{n} de {total} marcaram" da etapa da marcação (ADR-170). */
+          marcaram: publicaram.filter((u) => u.marcacao !== null).length,
           concluiram: unidades.filter((u) => u.concluiu).length,
           computadores: { publicaram: publicaram.length, total: computadores ?? unidades.length },
           porComputador: mapa.size > 0,
@@ -811,6 +954,9 @@ export class ASelecaoService implements OnModuleInit {
       let atualizadoEm = gate.atualizadoEm;
       if (r.mudou) {
         if (para === "mural") pareadas = await this.parearSala(tx, escolaId, turmaId, gate, cobertura);
+        /* A marcação congela ANTES de a etapa virar: a abertura das fichas é o
+           instante em que a resposta ("nenhum veículo mentiu") desce. */
+        if (para === "fichas") await this.congelarMarcacoes(tx, escolaId, turmaId, gate, cobertura);
         const linha = await tx.exp07ef1bGateTurma.update({
           where: { escolaId_turmaId: { escolaId, turmaId } },
           data: { etapa: para },
@@ -1176,6 +1322,15 @@ export class ASelecaoService implements OnModuleInit {
       legenda: sessao.legenda,
       reflexaoEnviada: Boolean(sessao.reflexao) || !passoAntes(passo, "enquetes"),
       concluidaEm: sessao.concluidaEm?.toISOString() ?? null,
+      /* A marcação DA PRÓPRIA criança — é o que o F5 restaura na tela. Sem o
+         nível: ele congela nas fichas e só o professor o vê. */
+      marcacao: sessao.marcacaoEm
+        ? {
+            postId: sessao.marcacaoPostId,
+            nenhum: sessao.marcacaoNenhum === true,
+            porque: sessao.marcacaoPorque,
+          }
+        : null,
     };
   }
 
@@ -1459,42 +1614,81 @@ export class ASelecaoService implements OnModuleInit {
    * Nada daqui derruba a resposta: a publicação JÁ foi gravada, e um 500 agora
    * faria a criança tocar em "Publicar" de novo e receber "já publicado".
    */
-  private async classificarEMarcar(escolaId: string, estudanteId: string, alvo: ParaOCanalA): Promise<void> {
-    const resultado = await this.classificacao.classificar(escolaId, estudanteId, alvo.entrada);
-    if (!resultado.ok) return;
+  /** As leituras em voo — só a suíte as espera (`esperarLeituras`); a rota nunca. */
+  private readonly leituras = new Set<Promise<void>>();
+
+  private agendarLeitura(escolaId: string, estudanteId: string, alvo: ParaOCanalA): void {
+    const leitura = this.lerALegenda(escolaId, estudanteId, alvo).finally(() => this.leituras.delete(leitura));
+    this.leituras.add(leitura);
+  }
+
+  /** Para a suíte: espera as leituras de legenda agendadas terminarem. */
+  async esperarLeituras(): Promise<void> {
+    while (this.leituras.size > 0) await Promise.allSettled([...this.leituras]);
+  }
+
+  /**
+   * A LEITURA DA LEGENDA (EF07CO11, ADR-170), depois do latch. NUNCA lança.
+   *
+   * - A IA leu: grava os indicadores e o nível na sessão (`ia`) e MARCA a
+   *   evidência — numa transação só dela, e só se a (cobertura, rodada) do
+   *   gate ainda é a lida no latch (o "Zerar" no meio não recebe marca velha).
+   * - A IA falhou (depois das tentativas): a REGRA DE RESERVA grava os
+   *   indicadores dela e a SUGESTÃO (`reserva`), SEM marca. O painel mostra
+   *   "pendente de revisão", e a professora confirma no ajuste.
+   */
+  private async lerALegenda(escolaId: string, estudanteId: string, alvo: ParaOCanalA): Promise<void> {
     try {
+      const r = await this.classificacao.classificar(escolaId, estudanteId, alvo.entrada);
       await this.prisma.comTenancy(async (tx) => {
+        if (!r.ok) {
+          const reserva = lerPelaReserva(alvo.reserva);
+          await tx.exp07ef1bSessao.updateMany({
+            where: { id: alvo.sessaoId, escolaId, legendaLeitura: "pendente" },
+            data: {
+              legendaLeitura: "reserva",
+              legendaRazao: reserva.razao,
+              legendaConteudo: reserva.conteudo,
+              legendaSemRelacao: null,
+              legendaNivel: reserva.sugestao,
+              legendaLeituraMeta: { regra: VERSAO_DA_RESERVA, falha: r.codigo, tentativas: r.tentativas },
+            },
+          });
+          return;
+        }
+        const { count } = await tx.exp07ef1bSessao.updateMany({
+          where: { id: alvo.sessaoId, escolaId, legendaLeitura: "pendente" },
+          data: {
+            legendaLeitura: "ia",
+            legendaRazao: r.indicadores.razao,
+            legendaConteudo: r.indicadores.conteudo,
+            legendaSemRelacao: r.indicadores.semRelacao,
+            legendaNivel: r.nivel,
+            legendaLeituraMeta: { modelo: "padrao", prompt: VERSAO_DO_PROMPT_DO_CANAL_A, tentativas: r.tentativas },
+          },
+        });
+        if (count === 0) return;
         const gate = await this.lerGate(tx, escolaId, alvo.turmaId);
         if (!gate || gate.coberturaId !== alvo.coberturaId || gate.rodada !== alvo.rodada) {
           logger.info({ codigo: "exp07ef1b-canal-a-rodada-mudou", escolaId }, "a rodada mudou antes da marca");
           return;
         }
-        try {
-          await this.evidencias.marcar(tx, {
-            escolaId,
-            turmaId: alvo.turmaId,
-            expId: EXP_ID,
-            atividadeId: alvo.coberturaId,
-            rodada: alvo.rodada,
-            estudanteId,
-            marcador: MARCADOR_DA_LEGENDA,
-            status: resultado.nivel,
-          });
-        } catch (erro) {
-          /* O 400 do `marcar` (ficha sem o marcador, atividade fora do formato)
-             é falha de CONFIGURAÇÃO, e é recusado antes de qualquer escrita — a
-             transação segue sã. Outro erro sobe e é pego abaixo. */
-          if (erro instanceof BadRequestException) {
-            logger.warn({ codigo: "exp07ef1b-canal-a-marca-recusada", escolaId }, "a evidência recusou a marca");
-            return;
-          }
-          throw erro;
-        }
+        await this.evidencias.marcar(tx, {
+          escolaId,
+          turmaId: alvo.turmaId,
+          expId: EXP_ID,
+          atividadeId: alvo.coberturaId,
+          rodada: alvo.rodada,
+          estudanteId,
+          marcador: MARCADOR_DA_LEGENDA,
+          status: r.nivel,
+        });
       }, escolaId);
     } catch (erro) {
-      logger.error({ codigo: "exp07ef1b-canal-a-marca-falhou", escolaId, err: erro }, "a marca do Canal A falhou");
+      logger.error({ codigo: "exp07ef1b-canal-a-marca-falhou", escolaId, err: erro }, "a leitura da legenda não encerrou");
     }
   }
+
 }
 
 function ehColegaVirtual(valor: string | null): valor is ColegaVirtual {

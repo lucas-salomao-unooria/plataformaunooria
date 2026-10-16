@@ -67,6 +67,12 @@ export const DecisaoSchema = z.object({
     .max(2000)
     .transform(normalizarLegenda)
     .refine((s) => dentroDe(s, LEGENDA_MIN, LEGENDA_MAX), `de ${LEGENDA_MIN} a ${LEGENDA_MAX} caracteres`),
+  /**
+   * Quantos posts a criança salvou e depois TIROU dos salvos (a poda) —
+   * indicador para o professor, nunca nível (ADR-170). Opcional: a tela antiga
+   * não manda, e a publicação não depende dele.
+   */
+  podados: z.number().int().min(0).max(9).optional(),
 });
 
 /** A reflexão da Etapa 6, de 100 a 500 code points. */
@@ -76,6 +82,24 @@ export const ReflexaoSchema = z.object({
     .max(4000)
     .transform(normalizarReflexao)
     .refine((s) => dentroDe(s, REFLEXAO_MIN, REFLEXAO_MAX), `de ${REFLEXAO_MIN} a ${REFLEXAO_MAX} caracteres`),
+});
+
+/**
+ * A MARCAÇÃO (EF07CO08, ADR-170): um dos três posts do par, OU "Nada que mude
+ * a história". O nível não volta: congela nas fichas e só o professor o vê.
+ */
+export const MarcacaoSchema = z.union([
+  z.object({ postId: IdDePostSchema }).strict(),
+  z.object({ nenhum: z.literal(true) }).strict(),
+]);
+
+/** O "por quê?" opcional da marcação: 1 a 140 code points, depois de juntar espaços. */
+export const PorqueDaMarcacaoSchema = z.object({
+  texto: z
+    .string()
+    .max(2000)
+    .transform(normalizarLegenda)
+    .refine((s) => dentroDe(s, 1, LEGENDA_MAX), `de 1 a ${LEGENDA_MAX} caracteres`),
 });
 
 /** O botão único do painel: a etapa de DESTINO. */
@@ -155,6 +179,11 @@ export const HomologacaoSchema = z.object({
    * do sheet (ou editadas).
    */
   podcast: FalasDoTemaSchema,
+  /**
+   * Os posts que a professora EDITOU (ADR-170): só eles passam pela conferência
+   * do enquadramento por IA. Vazio ou ausente = nada a conferir.
+   */
+  editados: z.array(IdDePostSchema).max(TOTAL_DE_POSTS).optional(),
 });
 
 // --------------------------------------------------------------- saída
@@ -211,6 +240,10 @@ export const EstadoSchema = z.object({
   legenda: z.string().nullable(),
   reflexaoEnviada: z.boolean(),
   concluidaEm: z.string().nullable(),
+  /** A marcação da PRÓPRIA criança (o F5 a restaura) — nunca o nível. */
+  marcacao: z
+    .object({ postId: z.enum(IDS_DE_POST).nullable(), nenhum: z.boolean(), porque: z.string().nullable() })
+    .nullable(),
 });
 
 export const SessaoSchema = EstadoSchema.extend({
@@ -321,6 +354,23 @@ const LinhaDoPainelSchema = z.object({
   legenda: z.string().nullable(),
   par: z.object({ rotulo: z.string(), virtual: z.boolean() }).nullable(),
   tempoFeedS: z.number().int().nullable(),
+  /** A poda (ADR-170): quantos posts saíram dos salvos antes de publicar. Indicador, nunca nível. */
+  podados: z.number().int().nullable(),
+  /**
+   * A leitura da legenda como ESTADO (ADR-170) — o nível é do painel de
+   * evidência. Na `reserva`, o que a regra de palavras viu, para conferir.
+   */
+  leituraDaLegenda: z
+    .object({
+      estado: z.enum(["pendente", "ia", "reserva"]),
+      explicaAEscolha: z.boolean().nullable(),
+      falaDosPosts: z.boolean().nullable(),
+    })
+    .nullable(),
+  /** A marcação do post do colega (EF07CO08): o id apontado, ou "nada". */
+  marcacao: z.object({ postId: z.enum(IDS_DE_POST).nullable(), nenhum: z.boolean() }).nullable(),
+  /** O "por quê?" da marcação — texto livre de menor, só para quem leciona (ADR-108). */
+  marcacaoPorque: z.string().nullable(),
   entregouReflexao: z.boolean(),
   reflexaoTexto: z.string().nullable(),
   concluiu: z.boolean(),
@@ -339,6 +389,8 @@ export const PainelSchema = z.object({
     iniciaram: z.number().int().min(0),
     publicaram: z.number().int().min(0),
     entregaram: z.number().int().min(0),
+    /** Quantos computadores que publicaram já marcaram (a etapa `marcacao`). */
+    marcaram: z.number().int().min(0),
     concluiram: z.number().int().min(0),
     /** "X de Y computadores publicaram". Y sai da montagem das equipes quando há. */
     computadores: z.object({ publicaram: z.number().int().min(0), total: z.number().int().min(0) }),
@@ -406,6 +458,12 @@ export const CoberturaHomologadaSchema = CoberturaResumoSchema.extend({
   ativa: z.literal(false),
   posts: z.array(PostDaCoberturaSchema).length(TOTAL_DE_POSTS),
   podcast: FalasDoTemaSaidaSchema,
+  /**
+   * A conferência do enquadramento dos posts editados (ADR-170): `conferida`,
+   * `sem-edicao` (nada a conferir) ou `nao-conferida` (a IA falhou — a
+   * atividade foi criada mesmo assim, e a tela avisa).
+   */
+  conferencia: z.enum(["conferida", "sem-edicao", "nao-conferida"]).optional(),
 });
 
 /** UMA atividade, em andamento ou não — a página dela. */
@@ -475,7 +533,7 @@ export const MaterialDoProfessorSchema = z.object({
   /** As três falas do podcast do sheet — o ponto de partida da cobertura pronta (ADR-130). */
   podcast: FalasDoTemaSaidaSchema,
   roteiroDaEtapa4: z.object({ aviso: z.string(), perguntas: z.array(z.string()).length(3) }),
-  gatilhos: z.object({ mural: z.string(), fichas: z.string(), explicacao: z.string() }),
+  gatilhos: z.object({ mural: z.string(), marcacao: z.string(), fichas: z.string(), explicacao: z.string() }),
   colegasVirtuais: z.array(
     z.object({
       id: z.enum(COLEGAS_VIRTUAIS_IDS),

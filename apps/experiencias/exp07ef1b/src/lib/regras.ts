@@ -4,7 +4,7 @@ import type { Estado, Etapa, Passo, RespostaGate } from "./tipos";
  * As poucas regras que são do CLIENTE — e por que são tão poucas.
  *
  * Tudo o que decide o que VALE (o latch da publicação, a matriz da tríade, o
- * pareamento, o relógio da turma, o nível das enquetes) mora no servidor, em
+ * pareamento, o relógio da turma, o nível das ações) mora no servidor, em
  * `apps/api/src/a-selecao/regras/`. O que sobra aqui é o que a tela precisa
  * decidir sozinha, sem ida à api: qual tela o passo pede, se o botão de
  * publicar pode acender, quanto falta na reflexão, para onde vai o toque no
@@ -52,20 +52,22 @@ const ORDEM: Record<Passo, number> = {
   salvos: 2,
   publicado: 3,
   mural: 4,
-  fichas: 5,
-  explicacao: 6,
-  reflexao: 7,
-  enquetes: 8,
-  fim: 9,
+  marcacao: 5,
+  fichas: 6,
+  explicacao: 7,
+  reflexao: 8,
+  enquetes: 9,
+  fim: 10,
 };
 const PASSO_DA_ETAPA: Record<Etapa, Passo> = {
   exploracao: "publicado",
   mural: "mural",
+  marcacao: "marcacao",
   fichas: "fichas",
   explicacao: "explicacao",
 };
 
-const ORDEM_DA_ETAPA: Record<Etapa, number> = { exploracao: 0, mural: 1, fichas: 2, explicacao: 3 };
+const ORDEM_DA_ETAPA: Record<Etapa, number> = { exploracao: 0, mural: 1, marcacao: 2, fichas: 3, explicacao: 4 };
 
 /** A etapa `a` vem antes de `b` no relógio da turma? */
 export function etapaAntes(a: Etapa, b: Etapa): boolean {
@@ -87,6 +89,11 @@ export function passoEfetivo(passo: Passo, etapa: Etapa): Passo {
  * `fichas`): a revelação é a gaveta que acende sobre o Story que a criança já
  * está olhando, não uma troca de tela — trocar de tela no instante da
  * revelação faria ela perder o post em que estava.
+ *
+ * A MARCAÇÃO (ADR-170) é tela própria, depois de um botão da professora: o
+ * Mural continua nu (o não-negociável 2), e a pergunta só aparece quando a
+ * conversa da sala já aconteceu. O passo `enquetes` é do Canal B, que saiu:
+ * a sessão antiga parada nele vai para o fim.
  */
 export type Tela =
   | "desafio"
@@ -94,9 +101,9 @@ export type Tela =
   | "salvos"
   | "espera"
   | "mural"
+  | "marcacao"
   | "explicacao"
   | "reflexao"
-  | "enquetes"
   | "fim";
 
 export function telaDoPasso(passo: Passo): Tela {
@@ -112,12 +119,13 @@ export function telaDoPasso(passo: Passo): Tela {
     case "mural":
     case "fichas":
       return "mural";
+    case "marcacao":
+      return "marcacao";
     case "explicacao":
       return "explicacao";
     case "reflexao":
       return "reflexao";
     case "enquetes":
-      return "enquetes";
     case "fim":
       return "fim";
   }
@@ -125,7 +133,7 @@ export function telaDoPasso(passo: Passo): Tela {
 
 /** A tela deste passo lê o Mural (`GET /a-selecao/mural`)? */
 export function precisaDoMural(passo: Passo): boolean {
-  return passo === "mural" || passo === "fichas";
+  return passo === "mural" || passo === "marcacao" || passo === "fichas";
 }
 
 /**
@@ -307,23 +315,6 @@ export function voltar(p: PosicaoNoMural, total: number): PosicaoNoMural {
   if (p.indice > 0) return { lado: p.lado, indice: p.indice - 1 };
   if (p.lado === "par") return { lado: "minha", indice: total - 1 };
   return p;
-}
-
-// ──────────────────────────────────────────────────────────── as enquetes
-
-/**
- * O enunciado da enquete é UM texto com dois balões dentro: a mensagem de
- * contexto da Amara e a pergunta da enquete, separadas por uma linha em branco
- * (a ficha, `evidencias/fichas/exp07ef1b.ts`). Sem separador, tudo é pergunta
- * — uma ficha futura sem mensagem de contexto não pode sumir com a pergunta.
- */
-export function separarEnunciado(enunciado: string): { contexto: string | null; pergunta: string } {
-  const i = enunciado.indexOf("\n\n");
-  if (i < 0) return { contexto: null, pergunta: enunciado.trim() };
-  const contexto = enunciado.slice(0, i).trim();
-  const pergunta = enunciado.slice(i + 2).trim();
-  if (!pergunta) return { contexto: null, pergunta: contexto };
-  return { contexto: contexto || null, pergunta };
 }
 
 // ──────────────────────────────────────────────────── a espera entre tentativas
