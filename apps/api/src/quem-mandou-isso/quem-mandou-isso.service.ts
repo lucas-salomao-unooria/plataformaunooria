@@ -1,4 +1,4 @@
-import { Injectable, type OnModuleInit } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import { Prisma, type Exp05ef1bPacote, type Exp05ef1bSessao } from "@prisma/client";
 import type { z } from "zod";
 import type { Perfil } from "../auth/claims";
@@ -6,7 +6,7 @@ import { exigirMissaoLiberada } from "../comum/liberacao";
 import { professorLeciona } from "../comum/turmas-do-professor";
 import { mapaDeEquipes } from "../equipes/consulta";
 import { colapsarEmUnidades, type EquipeDoMapa } from "../equipes/regras";
-import { EvidenciasService, type ContextoDaAtividade } from "../evidencias/evidencias.service";
+import { EvidenciasService } from "../evidencias/evidencias.service";
 import { apagarEvidenciaDaAtividade } from "../evidencias/apagar-da-atividade";
 import { FICHA_EXP05EF1B } from "../evidencias/fichas/exp05ef1b";
 import { logger } from "../observabilidade/logger";
@@ -18,7 +18,8 @@ import {
   ENCAMINHAMENTOS,
   ENCERRAMENTO_DA_NINA,
   EXP_ID,
-  FALAS_ANTES_DAS_PERGUNTAS,
+  FALA_DO_CARTAO,
+  FALA_DO_TIO,
   GRUPO,
   INSTRUCOES_DO_CONSOLE,
   MOTIVOS,
@@ -40,7 +41,38 @@ import { MensagemDoPacoteSchema, type CorpoDaAprovacao, type RevelacaoSchema } f
 import { gravarFalasDoPodcast } from "../podcast/podcast.service";
 import { erroDeJogo } from "./erros";
 import { PreparoDaExp05ef1bService, type MotivoDoPadrao } from "./preparo.service";
-import { MARCADOR_DA_SELECAO, nivelCO08 } from "./regras/evidencia";
+import { MARCADOR_DA_REGRA, MARCADOR_DA_SELECAO, MARCADOR_DO_CARTAO, nivelCO08 } from "./regras/evidencia";
+import {
+  RESPOSTAS,
+  acertosDoCartao,
+  acertosPorOperador,
+  frasesDoCartao,
+  nivelCO03,
+  sementeDoCartao,
+  type FraseDoCartao,
+  type Resposta,
+} from "./regras/operacoes";
+import {
+  ACOES,
+  CONDICOES,
+  MAX_TESTES,
+  RESULTADO_DO_TESTE,
+  ROTULO_DA_ACAO,
+  ROTULO_DA_CONDICAO,
+  ROTULO_DA_PREVISAO,
+  SITUACOES,
+  conferirRegra,
+  ehSituacao,
+  mesmaRegra,
+  nivelCO04,
+  pegaOAudio,
+  regraEmPalavras,
+  simular,
+  tipoDaAcao,
+  type Regra,
+  type Situacao,
+  type TesteDaRegra,
+} from "./regras/regra";
 import {
   FASE_DA_ACAO,
   FASE_INICIAL,
@@ -88,7 +120,20 @@ interface ContextoDaTurma {
 
 type LinhaDaSessao = Pick<
   Exp05ef1bSessao,
-  "entrouEm" | "selecao" | "confirmadoEm" | "motivo" | "votouEm" | "concluidoEm" | "tempoFeedSegundos" | "atualizadoEm"
+  | "entrouEm"
+  | "selecao"
+  | "confirmadoEm"
+  | "motivo"
+  | "votouEm"
+  | "frasesOperacoes"
+  | "respostasOperacoes"
+  | "operacoesEm"
+  | "regraTestes"
+  | "regraFinal"
+  | "regraEm"
+  | "concluidoEm"
+  | "tempoFeedSegundos"
+  | "atualizadoEm"
 >;
 
 const CAMPOS_DA_SESSAO = {
@@ -97,6 +142,12 @@ const CAMPOS_DA_SESSAO = {
   confirmadoEm: true,
   motivo: true,
   votouEm: true,
+  frasesOperacoes: true,
+  respostasOperacoes: true,
+  operacoesEm: true,
+  regraTestes: true,
+  regraFinal: true,
+  regraEm: true,
   concluidoEm: true,
   tempoFeedSegundos: true,
   atualizadoEm: true,
@@ -108,8 +159,60 @@ function marcosDe(s: LinhaDaSessao | null | undefined): MarcosDaSessao | null {
     entrou: true,
     confirmou: s.confirmadoEm !== null,
     votou: s.votouEm !== null,
+    respondeuCartao: s.operacoesEm !== null,
     concluiu: s.concluidoEm !== null,
   };
+}
+
+// ── O JSON das ações do Canal A. O CHECK garante a forma no banco; aqui a
+//    leitura é defensiva do mesmo jeito que `lerMensagens`: linha gravada por
+//    outra versão não pode derrubar a tela.
+
+function ehObjeto(v: unknown): v is Record<string, unknown> {
+  return typeof v === "object" && v !== null && !Array.isArray(v);
+}
+
+function lerRegra(bruto: unknown): Regra | null {
+  if (!ehObjeto(bruto) || typeof bruto.condicao !== "string" || !Array.isArray(bruto.acoes)) return null;
+  return conferirRegra(bruto.condicao, bruto.acoes.filter((a): a is string => typeof a === "string"));
+}
+
+function lerTestes(bruto: Prisma.JsonValue): TesteDaRegra[] {
+  if (!Array.isArray(bruto)) return [];
+  return bruto.flatMap((t) => {
+    const regra = lerRegra(t);
+    if (!regra || !ehObjeto(t) || typeof t.previsao !== "string" || typeof t.situacao !== "string") return [];
+    if (!ehSituacao(t.previsao) || !ehSituacao(t.situacao)) return [];
+    return [{ regra, previsao: t.previsao, situacao: t.situacao }];
+  });
+}
+
+function lerRespostas(bruto: Prisma.JsonValue | null): Map<string, Resposta> {
+  const mapa = new Map<string, Resposta>();
+  if (!Array.isArray(bruto)) return mapa;
+  for (const r of bruto) {
+    if (ehObjeto(r) && typeof r.fraseId === "string" && (RESPOSTAS as readonly unknown[]).includes(r.resposta)) {
+      mapa.set(r.fraseId, r.resposta as Resposta);
+    }
+  }
+  return mapa;
+}
+
+function lerFrases(bruto: Prisma.JsonValue | null): FraseDoCartao[] {
+  if (!Array.isArray(bruto)) return [];
+  return bruto.filter(
+    (f): f is FraseDoCartao & Prisma.JsonObject =>
+      ehObjeto(f) &&
+      typeof f.id === "string" &&
+      typeof f.texto === "string" &&
+      typeof f.msgId === "string" &&
+      (f.operador === "E" || f.operador === "OU" || f.operador === "NAO") &&
+      (f.esperado === "sim" || f.esperado === "nao"),
+  );
+}
+
+function regraMontada(regra: Regra) {
+  return { condicao: regra.condicao, acoes: [...regra.acoes], emPalavras: regraEmPalavras(regra) };
 }
 
 function ehMotivo(v: string | null): v is Motivo {
@@ -199,6 +302,15 @@ function opcoes() {
   };
 }
 
+/** As peças da regra e as previsões — só id e rótulo: o tipo de cada uma fica aqui. */
+function pecas() {
+  return {
+    condicoes: CONDICOES.map((id) => ({ id, rotulo: ROTULO_DA_CONDICAO[id] })),
+    acoes: ACOES.map((id) => ({ id, rotulo: ROTULO_DA_ACAO[id] })),
+    previsoes: SITUACOES.map((id) => ({ id, rotulo: ROTULO_DA_PREVISAO[id] })),
+  };
+}
+
 function padrao() {
   return {
     nome: PACOTE_PADRAO.nome,
@@ -223,6 +335,8 @@ function paraAConta(l: LinhaDaTurma): UnidadeDaConta {
     entrou: Boolean(s),
     selecao: s?.confirmadoEm ? s.selecao : null,
     motivo: s && ehMotivo(s.motivo) ? s.motivo : null,
+    respondeuCartao: Boolean(s?.operacoesEm),
+    enviouRegra: Boolean(s?.regraEm),
     concluiu: Boolean(s?.concluidoEm),
   };
 }
@@ -231,24 +345,20 @@ function gabaritoDe(pacote: PacoteDaTurma): GabaritoDaConta {
   return new Map(pacote.mensagens.map((m) => [m.id, { veracidade: m.veracidade, tom: m.tom }]));
 }
 
+/**
+ * Sem resolvedor de contexto da E14 (desde a 2.4.0): a missão não tem mais
+ * pergunta de múltipla escolha — toda marca é de AÇÃO, gravada aqui, na
+ * transação da jogada, com a atividade (o pacote) e a rodada que o servidor já
+ * conhece. Sem o resolvedor, `GET /evidencias/exp05ef1b/perguntas/*` responde
+ * 404 (a ficha não tem pergunta), como na exp08ef1b.
+ */
 @Injectable()
-export class QuemMandouIssoService implements OnModuleInit {
+export class QuemMandouIssoService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly evidencias: EvidenciasService,
     private readonly preparo: PreparoDaExp05ef1bService,
   ) {}
-
-  /**
-   * O CONTEXTO DA EVIDÊNCIA (E14): para as perguntas P1 e P2 caírem na
-   * atividade e na rodada certas, sem o cliente dizer nenhuma das duas. No
-   * teste, quem chama isto é a suíte.
-   */
-  onModuleInit(): void {
-    this.evidencias.registrarContexto(EXP_ID, (tx, escolaId, estudanteId) =>
-      this.contextoDaEvidencia(tx, escolaId, estudanteId),
-    );
-  }
 
   // ─────────────────────────────────────────────────────────── leituras
 
@@ -282,11 +392,12 @@ export class QuemMandouIssoService implements OnModuleInit {
           nina: {
             convite: ctx.pacote ? falaDaNina(ctx.pacote.tema) : null,
             encerramento: ENCERRAMENTO_DA_NINA,
+            cartao: FALA_DO_CARTAO,
+            tio: FALA_DO_TIO,
           },
-          perguntas: FALAS_ANTES_DAS_PERGUNTAS.map((p) => ({ ...p })),
         },
-        opcoes: opcoes(),
-        limites: { encaminhamentos: ENCAMINHAMENTOS },
+        opcoes: { ...opcoes(), ...pecas() },
+        limites: { encaminhamentos: ENCAMINHAMENTOS, testes: MAX_TESTES },
       };
     }, escolaId);
   }
@@ -392,15 +503,11 @@ export class QuemMandouIssoService implements OnModuleInit {
       /* Toda rodada mede a EF05CO08 de novo, inclusive no MESMO pacote
          (ADR-145): o resultado da atividade é a melhor rodada de cada
          habilidade, então medir outra vez só pode subir o nível. */
-      const marca = {
-        escolaId,
-        expId: EXP_ID,
-        atividadeId: pacote.id,
-        rodada: pacote.rodada,
-        estudanteId,
+      await this.evidencias.marcar(tx, {
+        ...this.marcaDe(escolaId, estudanteId, pacote),
         marcador: MARCADOR_DA_SELECAO,
-      };
-      await this.evidencias.marcar(tx, { ...marca, turmaId: pacote.turmaId, status: nivelCO08(escolhidas) });
+        status: nivelCO08(escolhidas),
+      });
     });
   }
 
@@ -421,13 +528,104 @@ export class QuemMandouIssoService implements OnModuleInit {
   }
 
   /**
-   * O fim da missão, depois das perguntas de evidência. NÃO exige as
-   * respostas: quem sai antes delas fica "Não avaliado" em CO03/CO04 (a
-   * ausência de marca), nunca "não atingiu". Idempotente.
+   * O CARTÃO DE FRASES (EF05CO03) — o latch 3, e a marca na MESMA transação.
    *
-   * As perguntas SÃO a reflexão (Etapa 6, ADR-145): abrem quando o professor
-   * libera a reflexão, para quem já votou. Não há mais a regra Se/Então antes
-   * delas.
+   * Abre quando O ESTUDANTE vê os crachás (voto dado E revelação aberta pela
+   * turma), em qualquer fase dali em diante, e fecha quando ele envia: o
+   * cartão segue o caminho da criança, não o botão do professor. Quem votou
+   * atrasado também responde, e na reflexão ele vem antes da regra.
+   *
+   * As frases são RECALCULADAS aqui da mesma semente que a tela recebeu (a
+   * sessão), e gravadas com a resposta esperada: o cliente só manda "sim" ou
+   * "não" por id. A mesma resposta de novo é idempotente; outra, 409.
+   */
+  responderCartao(escolaId: string, estudanteId: string, respostas: readonly { fraseId: string; resposta: Resposta }[]) {
+    return this.comSessao(escolaId, estudanteId, async (tx, pacote, sessao, fase) => {
+      if (!sessao) throw erroDeJogo("grupo-nao-aberto");
+      if (!sessao.votouEm) throw erroDeJogo("enquete-nao-votada");
+      if (!revelacaoAberta(marcosDe(sessao), fase)) throw erroDeJogo("cartao-nao-liberado");
+      const enviadas = new Map(respostas.map((r) => [r.fraseId, r.resposta]));
+
+      if (sessao.operacoesEm) {
+        const anteriores = lerRespostas(sessao.respostasOperacoes);
+        const iguais = anteriores.size === enviadas.size && [...enviadas].every(([id, r]) => anteriores.get(id) === r);
+        if (iguais) return;
+        throw erroDeJogo("cartao-ja-enviado");
+      }
+
+      const frases = this.frasesDe(escolaId, estudanteId, pacote, sessao);
+      if (!frases || frases.some((f) => !enviadas.has(f.id))) throw erroDeJogo("payload-invalido");
+
+      await tx.exp05ef1bSessao.update({
+        where: { escolaId_estudanteId_pacoteId_rodada: this.chave(escolaId, estudanteId, pacote) },
+        data: {
+          frasesOperacoes: frases as unknown as Prisma.InputJsonValue,
+          respostasOperacoes: frases.map((f) => ({ fraseId: f.id, resposta: enviadas.get(f.id) ?? null })),
+          operacoesEm: new Date(),
+        },
+      });
+      await this.evidencias.marcar(tx, {
+        ...this.marcaDe(escolaId, estudanteId, pacote),
+        marcador: MARCADOR_DO_CARTAO,
+        status: nivelCO03(acertosDoCartao(frases, enviadas)),
+      });
+    });
+  }
+
+  /**
+   * "Testar no áudio do tio" — a regra e a PREVISÃO. Grava o teste e devolve,
+   * no estado, o que a regra fez. Só na reflexão, com o cartão enviado e a
+   * regra ainda não enviada; no máximo `MAX_TESTES` (limite técnico).
+   *
+   * A previsão vem ANTES do resultado e não muda depois: é ela que mostra que
+   * a criança simulou a regra. O primeiro teste é o que a régua lê.
+   */
+  testarRegra(escolaId: string, estudanteId: string, condicao: string, acoes: readonly string[], previsao: Situacao) {
+    return this.comSessao(escolaId, estudanteId, async (tx, pacote, sessao, fase) => {
+      this.exigirEtapaDaRegra(sessao, fase);
+      const regra = conferirRegra(condicao, acoes);
+      if (!regra) throw erroDeJogo("regra-invalida");
+      const testes = Array.isArray(sessao?.regraTestes) ? sessao.regraTestes : [];
+      if (testes.length >= MAX_TESTES) throw erroDeJogo("testes-esgotados");
+      const teste = { condicao: regra.condicao, acoes: [...regra.acoes], previsao, situacao: simular(regra), em: new Date().toISOString() };
+      await tx.exp05ef1bSessao.update({
+        where: { escolaId_estudanteId_pacoteId_rodada: this.chave(escolaId, estudanteId, pacote) },
+        data: { regraTestes: [...testes, teste] as Prisma.InputJsonValue },
+      });
+    });
+  }
+
+  /**
+   * "Enviar minha regra" — o latch 4, e a marca da EF05CO04 na MESMA
+   * transação. Enviar sem testar é permitido (fica "em processo" no máximo).
+   * A mesma regra de novo é idempotente; outra, 409.
+   */
+  enviarRegra(escolaId: string, estudanteId: string, condicao: string, acoes: readonly string[]) {
+    return this.comSessao(escolaId, estudanteId, async (tx, pacote, sessao, fase) => {
+      const regra = conferirRegra(condicao, acoes);
+      if (!regra) throw erroDeJogo("regra-invalida");
+      if (sessao?.regraEm) {
+        const enviada = lerRegra(sessao.regraFinal);
+        if (enviada && mesmaRegra(enviada, regra)) return;
+        throw erroDeJogo("regra-ja-enviada");
+      }
+      this.exigirEtapaDaRegra(sessao, fase);
+      await tx.exp05ef1bSessao.update({
+        where: { escolaId_estudanteId_pacoteId_rodada: this.chave(escolaId, estudanteId, pacote) },
+        data: { regraFinal: { condicao: regra.condicao, acoes: [...regra.acoes] }, regraEm: new Date() },
+      });
+      await this.evidencias.marcar(tx, {
+        ...this.marcaDe(escolaId, estudanteId, pacote),
+        marcador: MARCADOR_DA_REGRA,
+        status: nivelCO04(regra, lerTestes(sessao?.regraTestes ?? [])),
+      });
+    });
+  }
+
+  /**
+   * O fim da missão, depois da regra do tio. NÃO exige o cartão nem a regra:
+   * quem sai antes fica "Não avaliado" nelas (a ausência de marca), nunca "não
+   * atingiu". Idempotente.
    */
   concluir(escolaId: string, estudanteId: string) {
     return this.comSessao(escolaId, estudanteId, async (tx, pacote, sessao, fase) => {
@@ -768,6 +966,11 @@ export class QuemMandouIssoService implements OnModuleInit {
             selecao: s?.confirmadoEm ? s.selecao : null,
             motivo: s && ehMotivo(s.motivo) ? s.motivo : null,
             tempoFeedSegundos: s?.tempoFeedSegundos ?? null,
+            cartao: s?.operacoesEm ? this.cartaoDaFolha(s) : null,
+            regra: (() => {
+              const enviada = s?.regraEm ? lerRegra(s.regraFinal) : null;
+              return enviada && s ? { emPalavras: regraEmPalavras(enviada), testes: lerTestes(s.regraTestes).length } : null;
+            })(),
           };
         }),
         roteiro: ROTEIRO,
@@ -776,26 +979,32 @@ export class QuemMandouIssoService implements OnModuleInit {
   }
 
   /**
-   * O material do GUIA DA AULA: o banco curado COM gabarito, o roteiro e as
-   * perguntas de evidência COM o nível de cada alternativa. Catálogo da
-   * missão, igual para todo contrato: sem tenancy.
+   * O material do GUIA DA AULA: o banco curado COM gabarito, o roteiro, e as
+   * duas ações de evidência por dentro — um cartão de frases do banco curado
+   * já com a resposta esperada, e as peças da regra com o tipo de cada uma
+   * (o gabarito da regra, que só o professor vê). Catálogo da missão, igual
+   * para todo contrato: sem tenancy.
    */
   material() {
-    const fala = new Map<string, string>(FALAS_ANTES_DAS_PERGUNTAS.map((p) => [p.perguntaId, p.fala]));
-    const habilidadeDe = new Map<string, string>();
-    for (const h of FICHA_EXP05EF1B.habilidades) {
-      for (const m of h.marcadores) if (m.perguntaId) habilidadeDe.set(m.perguntaId, h.codigo);
-    }
+    /* O exemplo do guia: as três primeiras mensagens do banco curado, que
+       misturam verdadeira e falsa — uma trinca como as que a criança forma. */
+    const exemplo = mensagensDoPadrao().slice(0, ENCAMINHAMENTOS);
     return {
       padrao: { ...padrao(), convite: falaDaNina(PACOTE_PADRAO.tema) },
       roteiro: ROTEIRO,
-      textos: { encerramento: ENCERRAMENTO_DA_NINA },
-      perguntasDeEvidencia: FICHA_EXP05EF1B.perguntas.map((p) => ({
-        perguntaId: p.id,
-        habilidade: habilidadeDe.get(p.id) ?? "",
-        fala: fala.get(p.id) ?? "",
-        enunciado: p.enunciado,
-        alternativas: p.alternativas.map((a) => ({ ...a })),
+      textos: { encerramento: ENCERRAMENTO_DA_NINA, cartao: FALA_DO_CARTAO, tio: FALA_DO_TIO },
+      cartao: {
+        exemplo: frasesDoCartao(exemplo, "guia").map((f) => ({ operador: f.operador, texto: f.texto, esperado: f.esperado })),
+      },
+      regra: {
+        condicoes: CONDICOES.map((id) => ({ id, rotulo: ROTULO_DA_CONDICAO[id], pegaOAudio: pegaOAudio(id) })),
+        acoes: ACOES.map((id) => ({ id, rotulo: ROTULO_DA_ACAO[id], tipo: tipoDaAcao(id) })),
+        previsoes: SITUACOES.map((id) => ({ id, rotulo: ROTULO_DA_PREVISAO[id] })),
+      },
+      habilidades: FICHA_EXP05EF1B.habilidades.map((h) => ({
+        codigo: h.codigo,
+        rotulo: h.marcadores[0]?.rotulo ?? h.codigo,
+        criterios: { atingiu: h.criterios.atingiu, em_processo: h.criterios.em_processo, nao_atingiu: h.criterios.nao_atingiu },
       })),
       opcoes: opcoes(),
     };
@@ -803,28 +1012,11 @@ export class QuemMandouIssoService implements OnModuleInit {
 
   // ─────────────────────────────────────────────────────────── privados
 
-  /**
-   * O resolvedor da E14: a turma, a atividade (o pacote ativo) e a rodada —
-   * mas SÓ no passo das perguntas (voto dado, reflexão liberada pela turma, a
-   * missão não concluída). Antes disso, ou depois de concluir, `null`: a
-   * resposta vira 409 `sem-atividade-em-andamento`, e uma P1 respondida por um
-   * POST direto antes do Mural não mede nada.
-   */
-  private async contextoDaEvidencia(
-    tx: Prisma.TransactionClient,
-    escolaId: string,
-    estudanteId: string,
-  ): Promise<ContextoDaAtividade | null> {
-    const estudante = await tx.user.findFirst({ where: { id: estudanteId, escolaId }, select: { turmaId: true } });
-    if (!estudante?.turmaId) return null;
-    const ctx = await this.contextoDaTurma(tx, escolaId, estudante.turmaId);
-    if (!ctx.pacote || ctx.fase !== "reflexao") return null;
-    const sessao = await tx.exp05ef1bSessao.findUnique({
-      where: { escolaId_estudanteId_pacoteId_rodada: this.chave(escolaId, estudanteId, ctx.pacote) },
-      select: { votouEm: true, concluidoEm: true },
-    });
-    if (!sessao?.votouEm || sessao.concluidoEm) return null;
-    return { turmaId: estudante.turmaId, atividadeId: ctx.pacote.id, rodada: ctx.pacote.rodada };
+  /** O cartão enviado, como a folha do professor o lê: acertos e por operador (o nível é da evidência). */
+  private cartaoDaFolha(s: LinhaDaSessao) {
+    const frases = lerFrases(s.frasesOperacoes);
+    const respostas = lerRespostas(s.respostasOperacoes);
+    return { acertos: acertosDoCartao(frases, respostas), porOperador: acertosPorOperador(frases, respostas) };
   }
 
   /** O estado do estudante, depois de uma leitura ou de uma mutação. */
@@ -861,8 +1053,37 @@ export class QuemMandouIssoService implements OnModuleInit {
       };
     }
 
+    /* O cartão desce junto com a revelação do estudante (depende do gabarito
+       das três dele) — e sem a resposta esperada. */
+    const frases = revelacao && pacote && sessao ? this.frasesDe(escolaId, estudanteId, pacote, sessao) : null;
+    const cartao = frases
+      ? {
+          frases: frases.map((f) => ({ id: f.id, operador: f.operador, texto: f.texto })),
+          enviado: Boolean(sessao?.operacoesEm),
+        }
+      : null;
+
+    const passo = passoEfetivo(marcos, ctx.fase);
+    const regra =
+      sessao && (passo === "regra" || passo === "concluida") && sessao.operacoesEm
+        ? (() => {
+            const testes = lerTestes(sessao.regraTestes);
+            const enviada = lerRegra(sessao.regraFinal);
+            return {
+              testes: testes.map((t) => ({
+                ...regraMontada(t.regra),
+                previsao: t.previsao,
+                situacao: t.situacao,
+                resultado: RESULTADO_DO_TESTE[t.situacao],
+              })),
+              podeTestar: !sessao.regraEm && !sessao.concluidoEm && testes.length < MAX_TESTES,
+              enviada: enviada ? regraMontada(enviada) : null,
+            };
+          })()
+        : null;
+
     return {
-      passo: passoEfetivo(marcos, ctx.fase),
+      passo,
       fase: pacote ? ctx.fase : null,
       preparada: pacote !== null,
       atividade: pacote ? { pacoteId: pacote.id, rodada: pacote.rodada } : null,
@@ -871,6 +1092,8 @@ export class QuemMandouIssoService implements OnModuleInit {
       motivo: sessao && ehMotivo(sessao.motivo) ? sessao.motivo : null,
       concluido: Boolean(sessao?.concluidoEm),
       revelacao,
+      cartao,
+      regra,
     };
   }
 
@@ -953,6 +1176,40 @@ export class QuemMandouIssoService implements OnModuleInit {
 
   private chave(escolaId: string, estudanteId: string, pacote: PacoteDaTurma) {
     return { escolaId, estudanteId, pacoteId: pacote.id, rodada: pacote.rodada };
+  }
+
+  /** A marca de uma ação desta missão: a atividade é o pacote, a rodada é a da turma. */
+  private marcaDe(escolaId: string, estudanteId: string, pacote: PacoteDaTurma) {
+    return { escolaId, expId: EXP_ID, turmaId: pacote.turmaId, atividadeId: pacote.id, rodada: pacote.rodada, estudanteId };
+  }
+
+  /**
+   * As seis frases do cartão desta sessão: as GRAVADAS, se ele já foi enviado
+   * (a foto da tentativa), ou as calculadas da semente — as mesmas que a tela
+   * recebeu. `null` sem as três mensagens do Mural.
+   */
+  private frasesDe(
+    escolaId: string,
+    estudanteId: string,
+    pacote: PacoteDaTurma,
+    sessao: LinhaDaSessao,
+  ): FraseDoCartao[] | null {
+    if (sessao.operacoesEm) {
+      const gravadas = lerFrases(sessao.frasesOperacoes);
+      if (gravadas.length > 0) return gravadas;
+    }
+    const mensagens = sessao.selecao.flatMap((id) => pacote.mensagens.filter((m) => m.id === id));
+    if (mensagens.length !== ENCAMINHAMENTOS) return null;
+    return frasesDoCartao(mensagens, sementeDoCartao(escolaId, estudanteId, pacote));
+  }
+
+  /** A guarda da regra do tio: na reflexão, depois do cartão, antes de enviar e de concluir. */
+  private exigirEtapaDaRegra(sessao: LinhaDaSessao | null, fase: Fase | null): asserts sessao is LinhaDaSessao {
+    if (!sessao) throw erroDeJogo("grupo-nao-aberto");
+    if (!sessao.votouEm) throw erroDeJogo("enquete-nao-votada");
+    if (fase !== "reflexao") throw erroDeJogo("reflexao-nao-liberada");
+    if (!sessao.operacoesEm) throw erroDeJogo("cartao-pendente");
+    if (sessao.regraEm || sessao.concluidoEm) throw erroDeJogo("regra-ja-enviada");
   }
 
   private sessaoDe(

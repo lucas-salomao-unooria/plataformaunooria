@@ -22,6 +22,12 @@ export type CodigoErro =
   | "enquete-ja-votada"
   | "enquete-nao-votada"
   | "reflexao-nao-liberada"
+  | "cartao-nao-liberado"
+  | "cartao-ja-enviado"
+  | "cartao-pendente"
+  | "regra-invalida"
+  | "regra-ja-enviada"
+  | "testes-esgotados"
   | "pacote-nao-aprovado"
   | "pacote-invalido"
   | "preparo-invalido"
@@ -42,6 +48,12 @@ export const STATUS: Readonly<Record<CodigoErro, number>> = {
   "enquete-ja-votada": 409,
   "enquete-nao-votada": 409,
   "reflexao-nao-liberada": 409,
+  "cartao-nao-liberado": 409,
+  "cartao-ja-enviado": 409,
+  "cartao-pendente": 409,
+  "regra-invalida": 400,
+  "regra-ja-enviada": 409,
+  "testes-esgotados": 409,
   "pacote-nao-aprovado": 409,
   "pacote-invalido": 400,
   "preparo-invalido": 400,
@@ -65,6 +77,12 @@ export const MENSAGENS: Readonly<Record<CodigoErro, string>> = {
   "enquete-nao-votada": "Vote na enquete do Mural primeiro.",
   // O relógio da turma. A criança não fez nada errado.
   "reflexao-nao-liberada": "Aguarde o professor liberar a próxima etapa.",
+  "cartao-nao-liberado": "As frases aparecem depois dos crachás. Aguarde o professor liberar a revelação.",
+  "cartao-ja-enviado": "Suas respostas já foram enviadas.",
+  "cartao-pendente": "Responda as frases sobre as suas mensagens primeiro.",
+  "regra-invalida": "Escolha uma condição e uma ou duas ações diferentes.",
+  "regra-ja-enviada": "Sua regra já foi enviada.",
+  "testes-esgotados": "Você já testou bastante. Envie a sua regra.",
   // As de PROFESSOR, lidas no hub.
   "pacote-nao-aprovado": "Aprove um pacote de mensagens para esta turma antes.",
   "pacote-invalido": "O pacote não pôde ser aprovado.",

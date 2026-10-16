@@ -9,8 +9,11 @@ import {
   EstadoSchema,
   GateDoEstudanteSchema,
   MuralSchema,
+  OperacoesSchema,
+  RegraSchema,
   SelecaoSchema,
   SessaoSchema,
+  TesteDaRegraSchema,
 } from "./contrato-de-rotas";
 import { erroDeJogo } from "./erros";
 import { QuemMandouIssoService } from "./quem-mandou-isso.service";
@@ -55,12 +58,13 @@ export class QuemMandouIssoController {
   @Contrato({
     resumo: "O estado da missão e as 8 mensagens do grupo, sem o gabarito.",
     descricao:
-      "As mensagens saem **sem `veracidade` e `tom`** — o tipo do servidor é um `Omit`. O gabarito só aparece em `revelacao`, e `revelacao` é `null` até o estudante VOTAR na enquete e a turma abrir a revelação; ela traz só as TRÊS mensagens dele.\n\n`pacote` é `null` enquanto o professor não aprovou um pacote para a turma: **a missão nasce vazia** e a tela é de espera.\n\n`passo` é DERIVADO no servidor (os latches da sessão × a fase da turma): `abertura → grupo → enquete → espera → revelacao → sintese → perguntas → concluida`. `grupo` cobre o grupo E o Mural (as duas vistas da mesma seleção); `selecao` restaura um F5.",
+      "As mensagens saem **sem `veracidade` e `tom`** — o tipo do servidor é um `Omit`. O gabarito só aparece em `revelacao`, e `revelacao` é `null` até o estudante VOTAR na enquete e a turma abrir a revelação; ela traz só as TRÊS mensagens dele.\n\n`pacote` é `null` enquanto o professor não aprovou um pacote para a turma: **a missão nasce vazia** e a tela é de espera.\n\n`passo` é DERIVADO no servidor (os latches da sessão × a fase da turma): `abertura → grupo → enquete → espera → revelacao → sintese → cartao → regra → concluida`. `grupo` cobre o grupo E o Mural (as duas vistas da mesma seleção); `selecao` restaura um F5.\n\n`cartao` (as seis frases com E, OU e NÃO, sem a resposta esperada) desce junto com `revelacao`; `regra` (os testes e a regra enviada), no passo `regra`.",
     resposta: SessaoSchema,
     notas: [
       NOTA_DA_PORTA,
-      "Quem ainda não confirmou o Mural quando a turma abre a revelação CONTINUA no grupo; depois de votar, recebe `revelacao` junto com o passo da turma (que pode já ser `sintese` ou `perguntas`) — a tela mostra os crachás antes do passo corrente.",
-      "`textos.perguntas` são as falas da Nina que antecedem as perguntas de evidência (`p1`, `p2`). O enunciado e as alternativas vêm de `GET /evidencias/exp05ef1b/perguntas/:perguntaId` — embaralhadas, sem o nível —, e a resposta vai a `POST /evidencias/exp05ef1b/perguntas/:perguntaId/resposta`, que só aceita no passo `perguntas`.",
+      "Quem ainda não confirmou o Mural quando a turma abre a revelação CONTINUA no grupo; depois de votar, recebe `revelacao` (e o `cartao`) junto com o passo da turma — a tela mostra os crachás antes do passo corrente.",
+      "Na reflexão, quem ainda não enviou o cartão cai no passo `cartao`, ANTES da `regra`: o cartão segue o caminho do estudante, não o botão do professor.",
+      "Só o Canal A (2.4.0): a missão não tem pergunta de múltipla escolha, e `GET /evidencias/exp05ef1b/perguntas/*` responde **404**.",
     ],
   })
   sessao(@Req() req: Autenticado) {
@@ -119,7 +123,7 @@ export class QuemMandouIssoController {
   @Contrato({
     resumo: '"Confirmar envio" no Mural da Turma — o latch 1 (exatamente 3).',
     descricao:
-      "O corpo leva as três que o estudante está VENDO no Mural, e são elas que fecham. Irreversível: a partir daqui a seleção não muda.\n\nNa MESMA transação, a marca da **EF05CO08** (evidência E14): 3 verdadeiras → atingiu; 2 verdadeiras e a falsa é emocional → atingiu; 2 verdadeiras e a falsa é neutra → em processo; ≤ 1 verdadeira → não atingiu. Se a marca falhar, o Mural não fecha.",
+      "O corpo leva as três que o estudante está VENDO no Mural, e são elas que fecham. Irreversível: a partir daqui a seleção não muda.\n\nNa MESMA transação, a marca da **EF05CO08** (evidência E14): 3 verdadeiras → atingiu; 2 verdadeiras e 1 falsa (emocional ou neutra) → em processo; ≤ 1 verdadeira → não atingiu (a régua v2, ADR-120). Se a marca falhar, o Mural não fecha.",
     corpo: MuralSchema,
     resposta: EstadoSchema,
     notas: [
@@ -154,16 +158,75 @@ export class QuemMandouIssoController {
     return this.missao.votar(req.auth.escolaId, req.auth.usuarioId, motivo);
   }
 
-  @Post("concluir")
+  @Post("operacoes")
   @HttpCode(200)
   @Contrato({
-    resumo: "Encerra a missão, depois das perguntas de evidência.",
+    resumo: "O cartão de frases com E, OU e NÃO — o latch 3 (EF05CO03).",
     descricao:
-      "Não exige as respostas de P1 e P2: quem sai antes delas fica **Não avaliado** em EF05CO03/EF05CO04 (a ausência de marca), nunca \"não atingiu\". Depois disto as perguntas não aceitam mais resposta.",
+      "As seis respostas (`sim`/`nao`) por id de frase, todas de uma vez. O servidor recalcula as frases da sessão, grava-as com a resposta esperada, e na MESMA transação marca a **EF05CO03**: 5 ou 6 acertos → atingiu; 3 ou 4 → em processo; 0 a 2 → não atingiu. Nada do acerto volta ao estudante.",
+    corpo: OperacoesSchema,
     resposta: EstadoSchema,
     notas: [
       NOTA_DA_PORTA,
-      "**409** `enquete-nao-votada` antes do voto e `reflexao-nao-liberada` antes de o professor liberar a reflexão (as perguntas são a Etapa 6, ADR-145). Idempotente.",
+      "Aceito a partir da revelação DO ESTUDANTE (voto dado e revelação aberta pela turma), em qualquer fase dali em diante: **409** `enquete-nao-votada` e `cartao-nao-liberado` antes disso.",
+      "Idempotente para o duplo toque: as MESMAS respostas devolvem o estado; outras são **409** `cartao-ja-enviado`. Frase faltando ou repetida é **400** `payload-invalido`.",
+    ],
+  })
+  operacoes(@Body() corpo: unknown, @Req() req: Autenticado) {
+    limitar(req.auth.usuarioId);
+    const { respostas } = valida(OperacoesSchema, corpo);
+    return this.missao.responderCartao(req.auth.escolaId, req.auth.usuarioId, respostas);
+  }
+
+  @Post("regra/teste")
+  @HttpCode(200)
+  @Contrato({
+    resumo: "Testa a regra do tio — com a previsão do estudante ANTES do resultado (EF05CO04).",
+    descricao:
+      "A regra montada com peças (`condicao` e uma ou duas `acoes`, em ordem) e a `previsao` do que ela vai fazer com o áudio do tio. Grava o teste; o resultado volta em `regra.testes` do estado (`situacao` e a frase). O primeiro teste é o que a régua lê.",
+    corpo: TesteDaRegraSchema,
+    resposta: EstadoSchema,
+    notas: [
+      NOTA_DA_PORTA,
+      "Só na reflexão, com o cartão enviado e a regra ainda não enviada: **409** `reflexao-nao-liberada`, `cartao-pendente` e `regra-ja-enviada`. No máximo 5 testes (**409** `testes-esgotados`).",
+      "**400** `regra-invalida` com a mesma ação duas vezes.",
+    ],
+  })
+  testarRegra(@Body() corpo: unknown, @Req() req: Autenticado) {
+    limitar(req.auth.usuarioId);
+    const { condicao, acoes, previsao } = valida(TesteDaRegraSchema, corpo);
+    return this.missao.testarRegra(req.auth.escolaId, req.auth.usuarioId, condicao, acoes, previsao);
+  }
+
+  @Post("regra")
+  @HttpCode(200)
+  @Contrato({
+    resumo: '"Enviar minha regra" — o latch 4 (EF05CO04).',
+    descricao:
+      "A regra final. Na MESMA transação, a marca da **EF05CO04**: não atingiu se encaminha antes de checar; atingiu se a PRIMEIRA regra testada já pegava o áudio e mandava checar, a primeira previsão acertou, e a enviada continua assim; em processo em todo o resto (inclusive enviar sem testar).",
+    corpo: RegraSchema,
+    resposta: EstadoSchema,
+    notas: [
+      NOTA_DA_PORTA,
+      "Os mesmos **409** do teste. Idempotente: a MESMA regra de novo devolve o estado; outra é **409** `regra-ja-enviada`.",
+    ],
+  })
+  enviarRegra(@Body() corpo: unknown, @Req() req: Autenticado) {
+    limitar(req.auth.usuarioId);
+    const { condicao, acoes } = valida(RegraSchema, corpo);
+    return this.missao.enviarRegra(req.auth.escolaId, req.auth.usuarioId, condicao, acoes);
+  }
+
+  @Post("concluir")
+  @HttpCode(200)
+  @Contrato({
+    resumo: "Encerra a missão, depois da regra do tio.",
+    descricao:
+      "Não exige o cartão nem a regra: quem sai antes fica **Não avaliado** em EF05CO03/EF05CO04 (a ausência de marca), nunca \"não atingiu\".",
+    resposta: EstadoSchema,
+    notas: [
+      NOTA_DA_PORTA,
+      "**409** `enquete-nao-votada` antes do voto e `reflexao-nao-liberada` antes de o professor liberar a reflexão. Idempotente.",
     ],
   })
   concluir(@Req() req: Autenticado) {
