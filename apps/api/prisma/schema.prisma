@@ -3659,6 +3659,8 @@ model LeituraDaReflexao {
   nivel       String?
   /// O código do motivo (nunca texto do estudante).
   motivo      String?
+  /// Quantas chamadas à IA a leitura fez (até 3; só a falha técnica tenta de novo).
+  tentativas  Int       @default(0) @db.SmallInt
   criadaEm    DateTime  @default(now()) @map("criada_em") @db.Timestamptz(6)
   lidaEm      DateTime? @map("lida_em") @db.Timestamptz(6)
 
