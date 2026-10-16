@@ -1900,7 +1900,7 @@ em produção, que é onde ela existe.
 \end{atencao}
 
 
-\section{As cinco tabelas da exp02em1b}
+\section{As sete tabelas da exp02em1b}
 \label{sec:tabelas-exp02em1b}
 
 \begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
@@ -1934,6 +1934,17 @@ em produção, que é onde ela existe.
   pedagógica (\adrr{ADR-154}): só o \enquote{Zerar a turma} a sobe, e ela
   sobrevive ao zerar, que apaga o relógio e a evidência da turma
   (\adrr{ADR-155}). Ausência de linha = rodada 1.\\
+\cd{exp02em1b\_tarefas} & As \textbf{tarefas do Canal A} (\adrr{ADR-172},
+  migração \arq{20261016200000\_\B{}exp02em1b\_\B{}canal\_\B{}a}): uma linha
+  por (sessão, rodada da turma, tentativa, tarefa), com a APRESENTAÇÃO que o
+  servidor montou --- os pares da leitura, os cartões das fontes, as
+  comparações do \enquote{E se\ldots}, a ordem das opções --- e as respostas.
+  Só ids de escolha fechada, nenhum texto livre. \emph{CHECKs} do vocabulário
+  (sete tarefas) e de respondida com data. Sai com a sessão (cascata do par),
+  e o \enquote{Zerar a turma} apaga as sessões. A sessão ganhou
+  \cd{registro\_concluido\_em} (o desfecho fica retido até ele),
+  \cd{oferta\_saude\_em} e \cd{inicio\_com\_relogio\_aberto}; o relógio da
+  turma, \cd{fechamento\_aberto\_em}.\\
 \bottomrule
 \end{tabularx}
 
