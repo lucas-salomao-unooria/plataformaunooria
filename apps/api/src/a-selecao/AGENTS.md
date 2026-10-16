@@ -70,16 +70,33 @@ e a primeira em que o dado do MURAL é do computador (E13, o gatilho da ADR-111)
   `professorId`. `professorLeciona` responde `true` a `undefined` (gestor vê a
   escola), então quem só olha o `@Roles` conclui o contrário do que acontece.
   Sem nível nem nota por criança (`PROIBIDO_NO_PAINEL`, com teste).
-- **O CANAL A** (`classificacao.service.ts`): a legenda graduada para a EF07CO11
-  DEPOIS do latch, fora da transação dele — rate limit, `temSaldo`, `generateJson`
-  (padrão, temperatura 0, uma tentativa, schema com enum, `validar` que recusa
-  motivo incoerente, SEM teto de saída — o Gemini 3 raciocina e o raciocínio sai do mesmo orçamento, ADR-148), teto de ~6 s por `Promise.race` (o provider não
-  tem timeout) e o débito no `aoUsarTokens`, para cobrar a chamada que perde a
-  corrida. A marca vai numa transação SÓ DELA, e só se a (cobertura, rodada) do
-  gate ainda é a lida no latch. **Falhou qualquer passo, nada é marcado** ("Não
-  avaliado"); em dev e na e2e, com o mock, é sempre assim. Nada do que a IA
-  escreve é gravado; o log leva o código. Nunca derruba a resposta: a
-  publicação já foi gravada.
+- **O CANAL A da legenda** (EF07CO11, ADR-170, `classificacao.service.ts`): a
+  leitura nasce `pendente` no latch e roda DEPOIS da resposta (`agendarLeitura`,
+  `void` — a suíte espera com `esperarLeituras`): rate limit, a QUOTA DE
+  AVALIAÇÃO da escola (ADR-169, nunca a do estudante), `generateJson` (padrão,
+  temperatura 0, SEM teto de saída, ADR-148), teto de 60 s por tentativa e até
+  3 tentativas para a falha técnica. A IA devolve só INDICADORES (`razao`,
+  `conteudo`, `semRelacao`); o nível é `prompts.ts#nivelDosIndicadores`. A marca
+  vai numa transação só dela, e só se a (cobertura, rodada) do gate ainda é a do
+  latch. **Falhou tudo: a RESERVA** (`regras/legenda-reserva.ts`) grava os
+  indicadores dela e a SUGESTÃO na sessão (`legenda_leitura = 'reserva'`), SEM
+  marca — "Não avaliado" até o professor ajustar; ela nunca sugere
+  `nao_atingiu`. Nada do que a IA escreve é gravado.
+- **A MARCAÇÃO** (EF07CO08, ADR-170): etapa `marcacao` da turma, obrigatória,
+  entre `mural` e `fichas`. `POST marcacao` (`{postId}` do PAR ou `{nenhum}`,
+  a última vale; 409 `marcacao-fechada` fora da etapa, 422
+  `marcacao-fora-do-par`) e `POST marcacao/porque` (texto de menor, sanitizado,
+  só o professor lê; em `CAMPOS_SENSIVEIS`). O nível CONGELA na
+  transição para `fichas` (`congelarMarcacoes`, `regras/marcacao.ts`); sem
+  marcação, sem marca. "Alternou para o colega" não entra: o Mural já abre no
+  par.
+- **A conferência do enquadramento** (ADR-170, `conferencia.service.ts`): na
+  `homologar`, os posts que a professora EDITOU (`editados`) passam por UMA
+  chamada de IA, na quota do professor; divergiu → 422
+  `enquadramento-divergente` com `posts`, e nada é gravado; a IA falhou → cria
+  mesmo assim, com `conferencia: "nao-conferida"`.
+- **Sem enquetes** (o Canal B saiu): a reflexão leva ao `fim`. O passo
+  `enquetes` fica no vocabulário só para sessão de antes; `concluir` a fecha.
 - **O sanitizador da legenda** (`sanitizador.ts`) barra link, telefone, e-mail,
   `@` de fora da ficção e palavrão com 422 e código estável — outra criança vai
   ler. As contas da ficção (`ARROBAS_DA_FICCAO`) podem ser citadas: citar a fonte
@@ -108,12 +125,12 @@ e a primeira em que o dado do MURAL é do computador (E13, o gatilho da ADR-111)
 
 ## A evidência (E14)
 
-A ficha é `evidencias/fichas/exp07ef1b.ts`: EF07CO11 por `legenda-publicada`
-(ação, o Canal A) e `p1`; EF07CO08 por `p2`. As enquetes usam as rotas genéricas
-`/evidencias/exp07ef1b/perguntas/:id`, que embaralham as alternativas a cada
-leitura para toda ficha (ADR-118). O resolvedor
-(`contextoDaAtividade`) devolve `null` antes de `enquetes` e quando a sessão não é
-a (cobertura, rodada) do gate — por isso o zerar tranca a resposta atrasada.
+A ficha é `evidencias/fichas/exp07ef1b.ts`, versão 2 (ADR-170): EF07CO11 por
+`legenda-publicada` e EF07CO08 por `marcacao-colega`, as duas AÇÃO e com
+`rotulo`, e nenhuma pergunta. Sem resolvedor de contexto: nenhuma rota de
+pergunta conta aqui. O painel da aula NÃO leva nível (`PROIBIDO_NO_PAINEL`): a
+leitura da legenda vai como ESTADO (`leituraDaLegenda`) e a marcação como o post
+apontado.
 
 ## O podcast de recapitulação (é do PROFESSOR)
 
@@ -150,11 +167,12 @@ a fonte (`podcast-fonte.ts`, registrada no `onModuleInit`).
 - `tests/a-selecao-postgres.spec.ts` — o que só o banco responde: a RLS ISOLANDO
   (com a role sem `BYPASSRLS`), os CHECKs, o latch sob dois toques, zerar e tema
   novo, pares por computador e o par que sobrevive ao `PUT` das equipes, o recorte
-  do gestor, o resolvedor, o Canal A com IA falsa (válida, inválida, sem saldo,
-  atrasada) e a cópia para a equipe e a projeção `a_revisar`.
+  do gestor, a marcação (janela, par, por quê, congelamento), a leitura da
+  legenda com IA falsa (indicadores, pendente, reserva, sem saldo de avaliação)
+  e a cópia para a equipe e a projeção `a_revisar`.
 
 Armadilha que a suíte já pagou: **o rate limit do Canal A é em memória e por
-estudante** (três por janela), e cada publicação passa por ele mesmo com a IA
+estudante** (seis por janela: duas leituras de três tentativas), e cada publicação passa por ele mesmo com a IA
 desligada. Um estudante que publica em vários blocos da suíte esgota o limite, e
 o Canal A do bloco seguinte cai em `limite` em silêncio — daí os estudantes
 próprios do bloco do Canal A.

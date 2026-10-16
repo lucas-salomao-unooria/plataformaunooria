@@ -22,8 +22,10 @@ ar é erro, nunca "0 de 40".
 
 ### O segundo item: Uso de IA (ADR-105, 2026-09-15)
 
-`/unooria/uso-de-ia` — o teto diário de tokens por perfil, um cartão por perfil
-(`estudante`, `professor`), lido de `GET /recursos/quotas-de-ia` e alterado por
+`/unooria/uso-de-ia` — o teto diário de tokens por perfil, um cartão por linha
+(`estudante`, `professor` e, desde a ADR-169, `avaliacao` — a leitura da
+plataforma para a evidência, com teto POR ESCOLA: a régua diz "por escola", não
+"por pessoa"), lido de `GET /recursos/quotas-de-ia` e alterado por
 `PUT /recursos/quotas-de-ia/:perfil` pelo BFF (prefixo `recursos`, já na
 allowlist). O histórico é o MESMO `HistoricoDeRecursos`, com `prefixo="quota:"`
 e `key={mudancas}` para remontar depois de cada gravação — a doutrina do painel.

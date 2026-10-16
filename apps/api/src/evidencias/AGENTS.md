@@ -14,12 +14,13 @@ ficha. **A primeira é Quem Mandou Isso? v2.2** (`fichas/exp05ef1b.ts`): a
 EF05CO08 por uma AÇÃO (a seleção do Mural, marcada na transação do latch) e a
 EF05CO03/EF05CO04 por duas perguntas de múltipla escolha — o molde para a
 próxima.
-**A segunda é A Seleção (`exp07ef1b`)**: `fichas/exp07ef1b.ts` (EF07CO11 pela
-legenda graduada por IA — o Canal A — e pela enquete P1; EF07CO08 pela P2),
-o contexto registrado no `onModuleInit` de `a-selecao.service.ts` e a marca da
-legenda numa transação SÓ DELA, depois do latch da publicação: a IA leva até
-6 s, e a transação da jogada não pode esperar. Falhando a IA, não há marca:
-"Não avaliado", e o professor decide.
+**A segunda é A Seleção (`exp07ef1b`)**: `fichas/exp07ef1b.ts` v2 (ADR-170,
+que tirou as enquetes P1/P2): EF07CO11 pela legenda lida por IA, marcada numa
+transação só dela DEPOIS da resposta; EF07CO08 pela marcação do post do colega,
+congelada na abertura das fichas. Sem resolvedor. Falhando a IA, não há marca:
+"Não avaliado", com a sugestão da reserva na lista da aula, e o professor
+ajusta — com `motivo` opcional (ADR-170, `MOTIVOS_DE_AJUSTE`), que vai só para
+o histórico (`evidencias_eventos.para.motivo`), para todas as missões.
 **A terceira é o Jornal da Escola (`exp04ef1b`)**: `fichas/exp04ef1b.ts`
 (EF15CO04 por `pistas`, EF15CO02 por `chave`, EF04CO08 por `edicao-2`, `p1` e
 `p2`), as três ações marcadas DENTRO das transações dos latches e da Chave.

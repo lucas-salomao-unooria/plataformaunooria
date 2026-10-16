@@ -6,8 +6,8 @@ chamada a provedor de IA acontece fora desta pasta.**
 ## A quota diária é DADO, não env (ADR-105, 2026-09-15)
 
 `QuotaService.limite(perfil)` lê `ia_quotas` a cada `temSaldo` — uma linha por
-perfil (`PERFIS_COM_QUOTA = ["estudante", "professor"]`, CHECK espelhando a
-tupla), escopo do contrato, **sem cache** de propósito: a tela promete "vale na
+linha (`PERFIS_COM_QUOTA = ["estudante", "professor", "avaliacao"]`, CHECK
+espelhando a tupla), escopo do contrato, **sem cache** de propósito: a tela promete "vale na
 próxima chamada", e com `min-instances: 3` um cache faria cada instância mudar
 em hora diferente. Todo perfil que não é `estudante` cai em `professor`
 (`perfilDaQuota`), que é o que já valia com as envs.
@@ -24,6 +24,14 @@ em hora diferente. Todo perfil que não é `estudante` cai em `professor`
   como `planos.spec.ts` e `quotas-de-ia-postgres.spec.ts` fazem. Escrever um
   valor baixo em `ia_quotas` recusaria a IA de toda suíte que rodasse junto — é
   tabela de contrato, sem `escola_id`.
+- **A linha `avaliacao` NÃO é perfil de token** (ADR-169): é a leitura que a
+  plataforma faz do trabalho da criança para a evidência (o Canal A da
+  exp07ef1b). Teto POR ESCOLA, contado em `ia_uso_diario` com o usuário
+  `USUARIO_DA_AVALIACAO` (`temSaldoDaAvaliacao`/`consumirDaAvaliacao`), e o
+  débito que cruza 80% loga `ia-quota-avaliacao-80`. `perfilDaQuota` nunca a
+  devolve: a escada dos perfis de token continua `estudante`/`professor`. Outra
+  leitura de avaliação (a reflexão da exp08ef1b ainda usa a do estudante) entra
+  por aqui, não pela quota do perfil.
 - **Perfil novo com IA** (gestor, admin) entra em TRÊS lugares no mesmo commit:
   a tupla, o CHECK da migration e a semente. Um só é o modo de falhar mudo.
 - Continuam FORA do funil, e são cartão à parte: o motor da exp08ef1b (`geracao/`)

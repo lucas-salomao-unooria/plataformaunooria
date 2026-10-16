@@ -1842,7 +1842,13 @@ Retenção & A da vigência contratual, sem rotina de expurgo (\adrr{ADR-13}).\\
   (três ids distintos do feed), a legenda (10 a 140 \emph{code points}), a matriz
   (as três lentes somando 3), o par (\cd{par\_sessao\_id} sem FK ou
   \cd{par\_virtual}, e o rótulo congelado). Os \emph{CHECK} amarram o
-  \emph{latch}: publicado equivale a tríade, legenda e matriz.\\
+  \emph{latch}: publicado equivale a tríade, legenda e matriz. Desde a
+  \adrr{ADR-170}: a leitura da legenda (\cd{legenda\_leitura}
+  \cd{pendente}/\cd{ia}/\cd{reserva}, os três indicadores, o nível ou a
+  sugestão, que na reserva nunca é \cd{nao\_atingiu}), a poda
+  (\cd{n\_podados}) e a marcação do post do colega (\cd{marcacao\_post\_id}
+  ou \cd{marcacao\_nenhum}, nunca os dois, e o \cd{marcacao\_porque}, texto de
+  menor só do professor).\\
 \zebra \cd{exp07ef1b\_reflexoes} & A reflexão: 100 a 500 caracteres de
   \textbf{texto livre de menor}, com \cd{chars = char\_length(texto)}. Fora de
   \emph{log} e da telemetria, e só sai para quem leciona a turma

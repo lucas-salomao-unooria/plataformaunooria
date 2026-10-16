@@ -8455,7 +8455,8 @@
                             "type": "string",
                             "enum": [
                               "estudante",
-                              "professor"
+                              "professor",
+                              "avaliacao"
                             ]
                           },
                           "tokensPorDia": {
@@ -8524,7 +8525,8 @@
               "type": "string",
               "enum": [
                 "estudante",
-                "professor"
+                "professor",
+                "avaliacao"
               ]
             }
           }
@@ -8541,7 +8543,8 @@
                       "type": "string",
                       "enum": [
                         "estudante",
-                        "professor"
+                        "professor",
+                        "avaliacao"
                       ]
                     },
                     "tokensPorDia": {
@@ -13205,6 +13208,15 @@
                             "em_processo",
                             "nao_atingiu",
                             "nao_participou"
+                          ]
+                        },
+                        "motivo": {
+                          "type": "string",
+                          "enum": [
+                            "presente_sem_participar",
+                            "problema_tecnico",
+                            "legenda_revisada",
+                            "outro"
                           ]
                         }
                       },
@@ -45050,6 +45062,7 @@
                       "enum": [
                         "exploracao",
                         "mural",
+                        "marcacao",
                         "fichas",
                         "explicacao"
                       ]
@@ -45062,6 +45075,7 @@
                         "salvos",
                         "publicado",
                         "mural",
+                        "marcacao",
                         "fichas",
                         "explicacao",
                         "reflexao",
@@ -45077,6 +45091,7 @@
                         "salvos",
                         "publicado",
                         "mural",
+                        "marcacao",
                         "fichas",
                         "explicacao",
                         "reflexao",
@@ -45124,6 +45139,43 @@
                     },
                     "concluidaEm": {
                       "type": "string",
+                      "nullable": true
+                    },
+                    "marcacao": {
+                      "type": "object",
+                      "properties": {
+                        "postId": {
+                          "type": "string",
+                          "enum": [
+                            "post_a_1",
+                            "post_a_2",
+                            "post_a_3",
+                            "post_a_4",
+                            "post_b_1",
+                            "post_b_2",
+                            "post_b_3",
+                            "post_b_4",
+                            "post_c_1",
+                            "post_c_2",
+                            "post_c_3",
+                            "post_c_4"
+                          ],
+                          "nullable": true
+                        },
+                        "nenhum": {
+                          "type": "boolean"
+                        },
+                        "porque": {
+                          "type": "string",
+                          "nullable": true
+                        }
+                      },
+                      "required": [
+                        "postId",
+                        "nenhum",
+                        "porque"
+                      ],
+                      "additionalProperties": false,
                       "nullable": true
                     },
                     "cobertura": {
@@ -45346,6 +45398,7 @@
                     "legenda",
                     "reflexaoEnviada",
                     "concluidaEm",
+                    "marcacao",
                     "cobertura",
                     "limites"
                   ],
@@ -45388,6 +45441,7 @@
                       "enum": [
                         "exploracao",
                         "mural",
+                        "marcacao",
                         "fichas",
                         "explicacao"
                       ]
@@ -45411,6 +45465,7 @@
                         "salvos",
                         "publicado",
                         "mural",
+                        "marcacao",
                         "fichas",
                         "explicacao",
                         "reflexao",
@@ -45485,6 +45540,7 @@
                       "enum": [
                         "exploracao",
                         "mural",
+                        "marcacao",
                         "fichas",
                         "explicacao"
                       ]
@@ -45497,6 +45553,7 @@
                         "salvos",
                         "publicado",
                         "mural",
+                        "marcacao",
                         "fichas",
                         "explicacao",
                         "reflexao",
@@ -45512,6 +45569,7 @@
                         "salvos",
                         "publicado",
                         "mural",
+                        "marcacao",
                         "fichas",
                         "explicacao",
                         "reflexao",
@@ -45560,6 +45618,43 @@
                     "concluidaEm": {
                       "type": "string",
                       "nullable": true
+                    },
+                    "marcacao": {
+                      "type": "object",
+                      "properties": {
+                        "postId": {
+                          "type": "string",
+                          "enum": [
+                            "post_a_1",
+                            "post_a_2",
+                            "post_a_3",
+                            "post_a_4",
+                            "post_b_1",
+                            "post_b_2",
+                            "post_b_3",
+                            "post_b_4",
+                            "post_c_1",
+                            "post_c_2",
+                            "post_c_3",
+                            "post_c_4"
+                          ],
+                          "nullable": true
+                        },
+                        "nenhum": {
+                          "type": "boolean"
+                        },
+                        "porque": {
+                          "type": "string",
+                          "nullable": true
+                        }
+                      },
+                      "required": [
+                        "postId",
+                        "nenhum",
+                        "porque"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true
                     }
                   },
                   "required": [
@@ -45575,7 +45670,8 @@
                     "selecao",
                     "legenda",
                     "reflexaoEnviada",
-                    "concluidaEm"
+                    "concluidaEm",
+                    "marcacao"
                   ],
                   "additionalProperties": false
                 }
@@ -45658,6 +45754,7 @@
                       "enum": [
                         "exploracao",
                         "mural",
+                        "marcacao",
                         "fichas",
                         "explicacao"
                       ]
@@ -45670,6 +45767,7 @@
                         "salvos",
                         "publicado",
                         "mural",
+                        "marcacao",
                         "fichas",
                         "explicacao",
                         "reflexao",
@@ -45685,6 +45783,7 @@
                         "salvos",
                         "publicado",
                         "mural",
+                        "marcacao",
                         "fichas",
                         "explicacao",
                         "reflexao",
@@ -45733,6 +45832,43 @@
                     "concluidaEm": {
                       "type": "string",
                       "nullable": true
+                    },
+                    "marcacao": {
+                      "type": "object",
+                      "properties": {
+                        "postId": {
+                          "type": "string",
+                          "enum": [
+                            "post_a_1",
+                            "post_a_2",
+                            "post_a_3",
+                            "post_a_4",
+                            "post_b_1",
+                            "post_b_2",
+                            "post_b_3",
+                            "post_b_4",
+                            "post_c_1",
+                            "post_c_2",
+                            "post_c_3",
+                            "post_c_4"
+                          ],
+                          "nullable": true
+                        },
+                        "nenhum": {
+                          "type": "boolean"
+                        },
+                        "porque": {
+                          "type": "string",
+                          "nullable": true
+                        }
+                      },
+                      "required": [
+                        "postId",
+                        "nenhum",
+                        "porque"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true
                     }
                   },
                   "required": [
@@ -45748,7 +45884,8 @@
                     "selecao",
                     "legenda",
                     "reflexaoEnviada",
-                    "concluidaEm"
+                    "concluidaEm",
+                    "marcacao"
                   ],
                   "additionalProperties": false
                 }
@@ -45760,7 +45897,7 @@
           "a-selecao"
         ],
         "summary": "\"Confirmar publicação\" — os 3 posts e a legenda nos Stories (latch).",
-        "description": "O gesto que a missão mede, e ele é IRREVERSÍVEL. A api confere a tríade contra a cobertura da turma, calcula a matriz de enquadramento AQUI (o cliente nunca a manda) e grava carimbo e passo juntos.\n\nA legenda passa pelo **sanitizador** antes: outro estudante vai lê-la no Mural. Link, telefone, e-mail, `@` de fora da ficção e palavrão respondem **422** com o código do que tirar — `legenda-com-link`, `legenda-com-telefone`, `legenda-com-email`, `legenda-com-mencao`, `legenda-com-palavrao`. As contas da ficção (`@folhaoficial_`, `@voz_coletiva`, `@metrica_urbana`, `@estudante_gremio`) podem ser citadas.\n\nDepois do latch, fora da transação dele, a legenda é graduada para a evidência pedagógica (Canal A). A resposta não diz o resultado: **o estudante não vê o nível**.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- `selecao`: exatamente 3 ids diferentes, de `post_a_1` a `post_c_4`. `legenda`: 10 a 140 caracteres contados em code points, depois de juntar espaços e quebras de linha. (Os `.refine()` somem do OpenAPI; daí esta nota.)\n- Segunda publicação — inclusive duas simultâneas — responde **409** `latch-ja-confirmado`. Id fora da cobertura da turma responde **400** `selecao-invalida`.\n- Com o Mural já aberto, quem publica recebe o par do computador dele, ou o colega virtual mais distante (Tomás ou Malu).\n- A graduação por IA tem teto de ~6 s. Sem saldo, fora do tempo ou com saída inválida, nada é marcado: fica \"Não avaliado\", e o professor decide.",
+        "description": "O gesto que a missão mede, e ele é IRREVERSÍVEL. A api confere a tríade contra a cobertura da turma, calcula a matriz de enquadramento AQUI (o cliente nunca a manda) e grava carimbo e passo juntos.\n\nA legenda passa pelo **sanitizador** antes: outro estudante vai lê-la no Mural. Link, telefone, e-mail, `@` de fora da ficção e palavrão respondem **422** com o código do que tirar — `legenda-com-link`, `legenda-com-telefone`, `legenda-com-email`, `legenda-com-mencao`, `legenda-com-palavrao`. As contas da ficção (`@folhaoficial_`, `@voz_coletiva`, `@metrica_urbana`, `@estudante_gremio`) podem ser citadas.\n\nDepois do latch, fora da transação dele, a legenda é graduada para a evidência pedagógica (Canal A). A resposta não diz o resultado: **o estudante não vê o nível**.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- `selecao`: exatamente 3 ids diferentes, de `post_a_1` a `post_c_4`. `legenda`: 10 a 140 caracteres contados em code points, depois de juntar espaços e quebras de linha. (Os `.refine()` somem do OpenAPI; daí esta nota.)\n- Segunda publicação — inclusive duas simultâneas — responde **409** `latch-ja-confirmado`. Id fora da cobertura da turma responde **400** `selecao-invalida`.\n- Com o Mural já aberto, quem publica recebe o par do computador dele, ou o colega virtual mais distante (Tomás ou Malu).\n- A leitura da legenda pela IA roda DEPOIS da resposta (a criança não espera): até 3 tentativas de 60 s, na quota de AVALIAÇÃO da escola (ADR-169). Falhando, a regra de palavras grava só uma sugestão, sem marca, e o professor confirma.",
         "security": [
           {
             "token-da-plataforma": []
@@ -45789,6 +45926,11 @@
                   "legenda": {
                     "type": "string",
                     "maxLength": 2000
+                  },
+                  "podados": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9
                   }
                 },
                 "required": [
@@ -45819,6 +45961,7 @@
                       "enum": [
                         "exploracao",
                         "mural",
+                        "marcacao",
                         "fichas",
                         "explicacao"
                       ]
@@ -46347,9 +46490,9 @@
         "x-acesso": "token"
       }
     },
-    "/a-selecao/reflexao": {
+    "/a-selecao/marcacao": {
       "post": {
-        "operationId": "ASelecaoController_reflexao",
+        "operationId": "ASelecaoController_marcacao",
         "parameters": [],
         "responses": {
           "200": {
@@ -46377,6 +46520,7 @@
                       "enum": [
                         "exploracao",
                         "mural",
+                        "marcacao",
                         "fichas",
                         "explicacao"
                       ]
@@ -46389,6 +46533,7 @@
                         "salvos",
                         "publicado",
                         "mural",
+                        "marcacao",
                         "fichas",
                         "explicacao",
                         "reflexao",
@@ -46404,6 +46549,7 @@
                         "salvos",
                         "publicado",
                         "mural",
+                        "marcacao",
                         "fichas",
                         "explicacao",
                         "reflexao",
@@ -46452,6 +46598,43 @@
                     "concluidaEm": {
                       "type": "string",
                       "nullable": true
+                    },
+                    "marcacao": {
+                      "type": "object",
+                      "properties": {
+                        "postId": {
+                          "type": "string",
+                          "enum": [
+                            "post_a_1",
+                            "post_a_2",
+                            "post_a_3",
+                            "post_a_4",
+                            "post_b_1",
+                            "post_b_2",
+                            "post_b_3",
+                            "post_b_4",
+                            "post_c_1",
+                            "post_c_2",
+                            "post_c_3",
+                            "post_c_4"
+                          ],
+                          "nullable": true
+                        },
+                        "nenhum": {
+                          "type": "boolean"
+                        },
+                        "porque": {
+                          "type": "string",
+                          "nullable": true
+                        }
+                      },
+                      "required": [
+                        "postId",
+                        "nenhum",
+                        "porque"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true
                     }
                   },
                   "required": [
@@ -46467,7 +46650,8 @@
                     "selecao",
                     "legenda",
                     "reflexaoEnviada",
-                    "concluidaEm"
+                    "concluidaEm",
+                    "marcacao"
                   ],
                   "additionalProperties": false
                 }
@@ -46478,8 +46662,437 @@
         "tags": [
           "a-selecao"
         ],
-        "summary": "A reflexão individual da Etapa 6 (latch) — leva às enquetes.",
-        "description": "Texto livre de 100 a 500 caracteres, contados em code points. É caixa escrita por menor de idade: não vai a log nem à telemetria, e só o professor que leciona a turma o lê no painel (LGPD art. 14; recorte da ADR-108).\n\nDepois dela vêm as duas enquetes da DM da Amara, pelas rotas de `/evidencias/exp07ef1b/perguntas`.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- O `trim` é anterior à contagem: cem espaços são uma reflexão em branco.\n- Sem publicação responde **409** `stories-nao-publicados`; antes da etapa `explicacao`, **409** `reflexao-nao-liberada`; a segunda, **409** `reflexao-ja-enviada`.",
+        "summary": "A marcação do post do colega (EF07CO08) — só na etapa `marcacao`.",
+        "description": "A pergunta da tela: \"Tem algo na publicação do colega que a sua deixou de fora e muda a história?\". O corpo é `{ postId }` (um dos três posts do PAR) ou `{ nenhum: true }` (\"Nada que mude a história\"). A última chamada vale: dá para trocar até o professor revelar as fichas. O nível congela na abertura das fichas e **o estudante não o vê** (ADR-170).\n\n**Papéis:** estudante.\n\n**Restrições:**\n- Fora da etapa `marcacao` responde **409** `marcacao-fechada`; sem publicação, **409** `stories-nao-publicados`.\n- Post que não é do par responde **422** `marcacao-fora-do-par`.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "postId": {
+                        "type": "string",
+                        "pattern": "^post_[abc]_[1-4]$"
+                      }
+                    },
+                    "required": [
+                      "postId"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "nenhum": {
+                        "type": "boolean",
+                        "enum": [
+                          true
+                        ]
+                      }
+                    },
+                    "required": [
+                      "nenhum"
+                    ],
+                    "additionalProperties": false
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/a-selecao/marcacao/porque": {
+      "post": {
+        "operationId": "ASelecaoController_porque",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "sessaoId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "coberturaId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "rodada": {
+                      "type": "integer",
+                      "exclusiveMinimum": true,
+                      "minimum": 0
+                    },
+                    "etapa": {
+                      "type": "string",
+                      "enum": [
+                        "exploracao",
+                        "mural",
+                        "marcacao",
+                        "fichas",
+                        "explicacao"
+                      ]
+                    },
+                    "passo": {
+                      "type": "string",
+                      "enum": [
+                        "desafio",
+                        "feed",
+                        "salvos",
+                        "publicado",
+                        "mural",
+                        "marcacao",
+                        "fichas",
+                        "explicacao",
+                        "reflexao",
+                        "enquetes",
+                        "fim"
+                      ]
+                    },
+                    "passoDoEstudante": {
+                      "type": "string",
+                      "enum": [
+                        "desafio",
+                        "feed",
+                        "salvos",
+                        "publicado",
+                        "mural",
+                        "marcacao",
+                        "fichas",
+                        "explicacao",
+                        "reflexao",
+                        "enquetes",
+                        "fim"
+                      ]
+                    },
+                    "aguardandoOProfessor": {
+                      "type": "boolean"
+                    },
+                    "publicada": {
+                      "type": "boolean"
+                    },
+                    "publicadaEm": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "selecao": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "post_a_1",
+                          "post_a_2",
+                          "post_a_3",
+                          "post_a_4",
+                          "post_b_1",
+                          "post_b_2",
+                          "post_b_3",
+                          "post_b_4",
+                          "post_c_1",
+                          "post_c_2",
+                          "post_c_3",
+                          "post_c_4"
+                        ]
+                      },
+                      "nullable": true
+                    },
+                    "legenda": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "reflexaoEnviada": {
+                      "type": "boolean"
+                    },
+                    "concluidaEm": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "marcacao": {
+                      "type": "object",
+                      "properties": {
+                        "postId": {
+                          "type": "string",
+                          "enum": [
+                            "post_a_1",
+                            "post_a_2",
+                            "post_a_3",
+                            "post_a_4",
+                            "post_b_1",
+                            "post_b_2",
+                            "post_b_3",
+                            "post_b_4",
+                            "post_c_1",
+                            "post_c_2",
+                            "post_c_3",
+                            "post_c_4"
+                          ],
+                          "nullable": true
+                        },
+                        "nenhum": {
+                          "type": "boolean"
+                        },
+                        "porque": {
+                          "type": "string",
+                          "nullable": true
+                        }
+                      },
+                      "required": [
+                        "postId",
+                        "nenhum",
+                        "porque"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "sessaoId",
+                    "coberturaId",
+                    "rodada",
+                    "etapa",
+                    "passo",
+                    "passoDoEstudante",
+                    "aguardandoOProfessor",
+                    "publicada",
+                    "publicadaEm",
+                    "selecao",
+                    "legenda",
+                    "reflexaoEnviada",
+                    "concluidaEm",
+                    "marcacao"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "a-selecao"
+        ],
+        "summary": "O \"por quê?\" opcional da marcação — texto livre, fora do nível.",
+        "description": "Uma frase de 1 a 140 caracteres (code points), depois de marcar e enquanto a marcação está aberta. Passa pelo mesmo sanitizador da legenda. É texto escrito por menor de idade: não vai a log nem à telemetria, e só o professor que leciona a turma o lê (recorte da ADR-108).\n\n**Papéis:** estudante.\n\n**Restrições:**\n- Antes de marcar responde **409** `marcacao-pendente`; fora da etapa, **409** `marcacao-fechada`.\n- Link, telefone, e-mail, `@` de fora da ficção e palavrão respondem **422** com o código da legenda.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "texto": {
+                    "type": "string",
+                    "maxLength": 2000
+                  }
+                },
+                "required": [
+                  "texto"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/a-selecao/reflexao": {
+      "post": {
+        "operationId": "ASelecaoController_reflexao",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "sessaoId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "coberturaId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "rodada": {
+                      "type": "integer",
+                      "exclusiveMinimum": true,
+                      "minimum": 0
+                    },
+                    "etapa": {
+                      "type": "string",
+                      "enum": [
+                        "exploracao",
+                        "mural",
+                        "marcacao",
+                        "fichas",
+                        "explicacao"
+                      ]
+                    },
+                    "passo": {
+                      "type": "string",
+                      "enum": [
+                        "desafio",
+                        "feed",
+                        "salvos",
+                        "publicado",
+                        "mural",
+                        "marcacao",
+                        "fichas",
+                        "explicacao",
+                        "reflexao",
+                        "enquetes",
+                        "fim"
+                      ]
+                    },
+                    "passoDoEstudante": {
+                      "type": "string",
+                      "enum": [
+                        "desafio",
+                        "feed",
+                        "salvos",
+                        "publicado",
+                        "mural",
+                        "marcacao",
+                        "fichas",
+                        "explicacao",
+                        "reflexao",
+                        "enquetes",
+                        "fim"
+                      ]
+                    },
+                    "aguardandoOProfessor": {
+                      "type": "boolean"
+                    },
+                    "publicada": {
+                      "type": "boolean"
+                    },
+                    "publicadaEm": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "selecao": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "post_a_1",
+                          "post_a_2",
+                          "post_a_3",
+                          "post_a_4",
+                          "post_b_1",
+                          "post_b_2",
+                          "post_b_3",
+                          "post_b_4",
+                          "post_c_1",
+                          "post_c_2",
+                          "post_c_3",
+                          "post_c_4"
+                        ]
+                      },
+                      "nullable": true
+                    },
+                    "legenda": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "reflexaoEnviada": {
+                      "type": "boolean"
+                    },
+                    "concluidaEm": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "marcacao": {
+                      "type": "object",
+                      "properties": {
+                        "postId": {
+                          "type": "string",
+                          "enum": [
+                            "post_a_1",
+                            "post_a_2",
+                            "post_a_3",
+                            "post_a_4",
+                            "post_b_1",
+                            "post_b_2",
+                            "post_b_3",
+                            "post_b_4",
+                            "post_c_1",
+                            "post_c_2",
+                            "post_c_3",
+                            "post_c_4"
+                          ],
+                          "nullable": true
+                        },
+                        "nenhum": {
+                          "type": "boolean"
+                        },
+                        "porque": {
+                          "type": "string",
+                          "nullable": true
+                        }
+                      },
+                      "required": [
+                        "postId",
+                        "nenhum",
+                        "porque"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "sessaoId",
+                    "coberturaId",
+                    "rodada",
+                    "etapa",
+                    "passo",
+                    "passoDoEstudante",
+                    "aguardandoOProfessor",
+                    "publicada",
+                    "publicadaEm",
+                    "selecao",
+                    "legenda",
+                    "reflexaoEnviada",
+                    "concluidaEm",
+                    "marcacao"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "a-selecao"
+        ],
+        "summary": "A reflexão individual da Etapa 6 (latch) — encerra a missão.",
+        "description": "Texto livre de 100 a 500 caracteres, contados em code points. É caixa escrita por menor de idade: não vai a log nem à telemetria, e só o professor que leciona a turma o lê no painel (LGPD art. 14; recorte da ADR-108).\n\nEla ENCERRA a missão: desde a ADR-170 não há mais enquetes depois dela (o Canal B saiu), e a sessão vai a `fim` com `concluidaEm` no mesmo update.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- O `trim` é anterior à contagem: cem espaços são uma reflexão em branco.\n- Sem publicação responde **409** `stories-nao-publicados`; antes da etapa `explicacao`, **409** `reflexao-nao-liberada`; a segunda, **409** `reflexao-ja-enviada`.",
         "security": [
           {
             "token-da-plataforma": []
@@ -46541,6 +47154,7 @@
                       "enum": [
                         "exploracao",
                         "mural",
+                        "marcacao",
                         "fichas",
                         "explicacao"
                       ]
@@ -46553,6 +47167,7 @@
                         "salvos",
                         "publicado",
                         "mural",
+                        "marcacao",
                         "fichas",
                         "explicacao",
                         "reflexao",
@@ -46568,6 +47183,7 @@
                         "salvos",
                         "publicado",
                         "mural",
+                        "marcacao",
                         "fichas",
                         "explicacao",
                         "reflexao",
@@ -46616,6 +47232,43 @@
                     "concluidaEm": {
                       "type": "string",
                       "nullable": true
+                    },
+                    "marcacao": {
+                      "type": "object",
+                      "properties": {
+                        "postId": {
+                          "type": "string",
+                          "enum": [
+                            "post_a_1",
+                            "post_a_2",
+                            "post_a_3",
+                            "post_a_4",
+                            "post_b_1",
+                            "post_b_2",
+                            "post_b_3",
+                            "post_b_4",
+                            "post_c_1",
+                            "post_c_2",
+                            "post_c_3",
+                            "post_c_4"
+                          ],
+                          "nullable": true
+                        },
+                        "nenhum": {
+                          "type": "boolean"
+                        },
+                        "porque": {
+                          "type": "string",
+                          "nullable": true
+                        }
+                      },
+                      "required": [
+                        "postId",
+                        "nenhum",
+                        "porque"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true
                     }
                   },
                   "required": [
@@ -46631,7 +47284,8 @@
                     "selecao",
                     "legenda",
                     "reflexaoEnviada",
-                    "concluidaEm"
+                    "concluidaEm",
+                    "marcacao"
                   ],
                   "additionalProperties": false
                 }
@@ -46643,7 +47297,7 @@
           "a-selecao"
         ],
         "summary": "\"Missão concluída!\" — idempotente.",
-        "description": "Leva a sessão a `fim` e carimba `concluidaEm`, no mesmo update. As enquetes não são exigidas (a enquete que falha pula para o fim); a reflexão, sim.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- Antes da reflexão responde **409** `reflexao-pendente`. Concluir de novo devolve o mesmo estado.",
+        "description": "Leva a sessão a `fim` e carimba `concluidaEm`, no mesmo update. Desde a ADR-170 a reflexão já encerra a missão: esta rota fica para a sessão de antes, parada no passo `enquetes` (o Canal B, que saiu), e para a tela antiga.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- Antes da reflexão responde **409** `reflexao-pendente`. Concluir de novo devolve o mesmo estado.",
         "security": [
           {
             "token-da-plataforma": []
@@ -46847,6 +47501,7 @@
                       "enum": [
                         "exploracao",
                         "mural",
+                        "marcacao",
                         "fichas",
                         "explicacao"
                       ]
@@ -46856,6 +47511,7 @@
                       "enum": [
                         "exploracao",
                         "mural",
+                        "marcacao",
                         "fichas",
                         "explicacao"
                       ],
@@ -46905,6 +47561,7 @@
                               "salvos",
                               "publicado",
                               "mural",
+                              "marcacao",
                               "fichas",
                               "explicacao",
                               "reflexao",
@@ -46989,6 +47646,74 @@
                             "type": "integer",
                             "nullable": true
                           },
+                          "podados": {
+                            "type": "integer",
+                            "nullable": true
+                          },
+                          "leituraDaLegenda": {
+                            "type": "object",
+                            "properties": {
+                              "estado": {
+                                "type": "string",
+                                "enum": [
+                                  "pendente",
+                                  "ia",
+                                  "reserva"
+                                ]
+                              },
+                              "explicaAEscolha": {
+                                "type": "boolean",
+                                "nullable": true
+                              },
+                              "falaDosPosts": {
+                                "type": "boolean",
+                                "nullable": true
+                              }
+                            },
+                            "required": [
+                              "estado",
+                              "explicaAEscolha",
+                              "falaDosPosts"
+                            ],
+                            "additionalProperties": false,
+                            "nullable": true
+                          },
+                          "marcacao": {
+                            "type": "object",
+                            "properties": {
+                              "postId": {
+                                "type": "string",
+                                "enum": [
+                                  "post_a_1",
+                                  "post_a_2",
+                                  "post_a_3",
+                                  "post_a_4",
+                                  "post_b_1",
+                                  "post_b_2",
+                                  "post_b_3",
+                                  "post_b_4",
+                                  "post_c_1",
+                                  "post_c_2",
+                                  "post_c_3",
+                                  "post_c_4"
+                                ],
+                                "nullable": true
+                              },
+                              "nenhum": {
+                                "type": "boolean"
+                              }
+                            },
+                            "required": [
+                              "postId",
+                              "nenhum"
+                            ],
+                            "additionalProperties": false,
+                            "nullable": true
+                          },
+                          "marcacaoPorque": {
+                            "type": "string",
+                            "nullable": true
+                          },
                           "entregouReflexao": {
                             "type": "boolean"
                           },
@@ -47014,6 +47739,10 @@
                           "legenda",
                           "par",
                           "tempoFeedS",
+                          "podados",
+                          "leituraDaLegenda",
+                          "marcacao",
+                          "marcacaoPorque",
                           "entregouReflexao",
                           "reflexaoTexto",
                           "concluiu"
@@ -47037,6 +47766,10 @@
                           "minimum": 0
                         },
                         "entregaram": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "marcaram": {
                           "type": "integer",
                           "minimum": 0
                         },
@@ -47094,6 +47827,7 @@
                         "iniciaram",
                         "publicaram",
                         "entregaram",
+                        "marcaram",
                         "concluiram",
                         "computadores",
                         "porComputador",
@@ -47203,6 +47937,7 @@
                       "enum": [
                         "exploracao",
                         "mural",
+                        "marcacao",
                         "fichas",
                         "explicacao"
                       ]
@@ -47212,6 +47947,7 @@
                       "enum": [
                         "exploracao",
                         "mural",
+                        "marcacao",
                         "fichas",
                         "explicacao"
                       ],
@@ -47270,6 +48006,7 @@
                     "enum": [
                       "exploracao",
                       "mural",
+                      "marcacao",
                       "fichas",
                       "explicacao"
                     ]
@@ -47329,6 +48066,7 @@
                       "enum": [
                         "exploracao",
                         "mural",
+                        "marcacao",
                         "fichas",
                         "explicacao"
                       ]
@@ -47426,6 +48164,7 @@
                           "enum": [
                             "exploracao",
                             "mural",
+                            "marcacao",
                             "fichas",
                             "explicacao"
                           ]
@@ -47826,6 +48565,7 @@
                       "enum": [
                         "exploracao",
                         "mural",
+                        "marcacao",
                         "fichas",
                         "explicacao"
                       ],
@@ -48173,6 +48913,7 @@
                       "enum": [
                         "exploracao",
                         "mural",
+                        "marcacao",
                         "fichas",
                         "explicacao"
                       ]
@@ -48979,6 +49720,14 @@
                         "estatistico"
                       ],
                       "additionalProperties": false
+                    },
+                    "conferencia": {
+                      "type": "string",
+                      "enum": [
+                        "conferida",
+                        "sem-edicao",
+                        "nao-conferida"
+                      ]
                     }
                   },
                   "required": [
@@ -49000,7 +49749,7 @@
           "a-selecao"
         ],
         "summary": "\"Criar atividade\" — a curadoria humana (ADR-66/67).",
-        "description": "Grava os 12 posts como a professora os deixou, numa ATIVIDADE NOVA que nasce **pronta, não no ar** (ADR-130): a em andamento continua em andamento, e quem escolhe o que a turma faz é a professora (`POST :turmaId/coberturas/:coberturaId/em-andamento`).\n\nO corpo carrega os posts INTEIROS porque curadoria é editar: a professora pode reescrever qualquer legenda antes de aprovar.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- O lote é recusado com **400** `lote-invalido` e a LISTA de problemas em `erros`, em frases para a professora: 12 posts; ids de `post_a_1` a `post_c_4`, cada um uma vez; bloco `a` = `@folhaoficial_`/institucional, `b` = `@voz_coletiva`/comunitário, `c` = `@metrica_urbana`/estatístico (4:4:4); legenda de 20 a 45 palavras; nenhum termo que antecipe a revelação na legenda, na descrição da imagem ou nos comentários. (`.superRefine()` some do OpenAPI; daí esta nota.)\n- As imagens de post com a MESMA descrição de uma cobertura recente da turma são herdadas — o arquivo no bucket é o hash da descrição.\n- `podcast` é obrigatório: as três falas do Bloco 2 que a professora revisou (no tema curado, as do sheet). Fora de 12 a 60 palavras, acima de 400 bytes, ou com link, e-mail ou @, o 400 `lote-invalido` diz qual fala.",
+        "description": "Grava os 12 posts como a professora os deixou, numa ATIVIDADE NOVA que nasce **pronta, não no ar** (ADR-130): a em andamento continua em andamento, e quem escolhe o que a turma faz é a professora (`POST :turmaId/coberturas/:coberturaId/em-andamento`).\n\nO corpo carrega os posts INTEIROS porque curadoria é editar: a professora pode reescrever qualquer legenda antes de aprovar.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- O lote é recusado com **400** `lote-invalido` e a LISTA de problemas em `erros`, em frases para a professora: 12 posts; ids de `post_a_1` a `post_c_4`, cada um uma vez; bloco `a` = `@folhaoficial_`/institucional, `b` = `@voz_coletiva`/comunitário, `c` = `@metrica_urbana`/estatístico (4:4:4); legenda de 20 a 45 palavras; nenhum termo que antecipe a revelação na legenda, na descrição da imagem ou nos comentários. (`.superRefine()` some do OpenAPI; daí esta nota.)\n- As imagens de post com a MESMA descrição de uma cobertura recente da turma são herdadas — o arquivo no bucket é o hash da descrição.\n- `podcast` é obrigatório: as três falas do Bloco 2 que a professora revisou (no tema curado, as do sheet). Fora de 12 a 60 palavras, acima de 400 bytes, ou com link, e-mail ou @, o 400 `lote-invalido` diz qual fala.\n- `editados` (ADR-170): os posts que a professora reescreveu passam por UMA conferência de IA, na quota do professor, que diz se cada legenda ainda mostra o lado do veículo dela. Divergiu → **422** `enquadramento-divergente` com `posts` (os ids), e nada é gravado. A IA falhou → a atividade é criada mesmo assim, com `conferencia: \"nao-conferida\"`.",
         "security": [
           {
             "token-da-plataforma": []
@@ -49255,6 +50004,14 @@
                       "estatistico"
                     ],
                     "additionalProperties": false
+                  },
+                  "editados": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "pattern": "^post_[abc]_[1-4]$"
+                    },
+                    "maxItems": 12
                   }
                 },
                 "required": [
@@ -49666,6 +50423,9 @@
                         "mural": {
                           "type": "string"
                         },
+                        "marcacao": {
+                          "type": "string"
+                        },
                         "fichas": {
                           "type": "string"
                         },
@@ -49675,6 +50435,7 @@
                       },
                       "required": [
                         "mural",
+                        "marcacao",
                         "fichas",
                         "explicacao"
                       ],

@@ -9,7 +9,7 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{167 decisões}, numeradas até ADR-167. A 160 (o painel de habilidades pelo total) e a 161 (os custos de IA) nasceram no mesmo dia, em frentes paralelas, e a 161 foi escrita depois de conferir que a 160 já estava tomada em \cd{dev-local}. A 153 (a evidência do Unoovista) e a 154 (a da Missão Tempestade) nasceram no mesmo dia, em frentes paralelas. A 132 (a Ajuda com
+São \textbf{169 decisões}, numeradas até ADR-170: a 168 é da frente paralela do Canal A do 4º ano, e entra com ela. A 169 (a quota de avaliação) e a 170 (o Canal A da A Seleção) nasceram juntas. A 160 (o painel de habilidades pelo total) e a 161 (os custos de IA) nasceram no mesmo dia, em frentes paralelas, e a 161 foi escrita depois de conferir que a 160 já estava tomada em \cd{dev-local}. A 153 (a evidência do Unoovista) e a 154 (a da Missão Tempestade) nasceram no mesmo dia, em frentes paralelas. A 132 (a Ajuda com
 avatar) entrou no código antes de ter seção aqui, e por um dia o número foi
 citado sem existir; a 133 pulou para não colidir com ela. A 133 e a 134 nasceram no mesmo dia, em frentes paralelas
 (Unoovista e Unoochat), e entraram juntas no merge; a 135 e a 136 levaram as
@@ -155,7 +155,7 @@ que a cercam.
 \adrr{ADR-102} & A doutrina é uma fonte só, lida por quatro agentes & 2026-09-15 & Aceita\\
 \zebra \adrr{ADR-103} & A frente mergeada se enterra sozinha & 2026-09-15 & Aceita\\
 \adrr{ADR-104} & A base se realinha sozinha depois da promoção & 2026-09-15 & Aceita\\
-\zebra \adrr{ADR-105} & A quota de IA é dado, editável pela Unooria, e não variável de ambiente & 2026-09-15 & Aceita\\
+\zebra \adrr{ADR-105} & A quota de IA é dado, editável pela Unooria, e não variável de ambiente & 2026-09-15 & Aceita; a \adrr{ADR-169} acrescenta a linha da avaliação\\
 \adrr{ADR-106} & O \cd{\_template} nasce com a fiação inteira e sem componente de interface & 2026-09-16 & Aceita\\
 \zebra \adrr{ADR-107} & O site público entra no hub como porte, e o cadastro de interesse passa pela api & 2026-09-16 & Aceita\\
 \adrr{ADR-108} & A missão de sala nasce vazia, e a revelação é do relógio da turma & 2026-09-17 & Aceita; a v1 saiu (\adrr{ADR-114}) e a v2.2 a retoma (\adrr{ADR-118})\\
@@ -165,7 +165,7 @@ que a cercam.
 \zebra \adrr{ADR-112} & A evidência é por atividade e rodada, e a melhor rodada vale por habilidade & 2026-09-25 & Aceita\\
 \adrr{ADR-113} & A Seleção substitui o Eco no Grupo, e a limpeza vem antes & 2026-09-25 & Aceita\\
 \zebra \adrr{ADR-114} & Quem mandou isso? v1 é retirada; a v2.2 entra com o mesmo código & 2026-09-25 & Aceita\\
-\adrr{ADR-115} & A Seleção: o par do Mural é do computador, e a IA gradua a legenda & 2026-09-25 & Aceita; a leitura da legenda ficou sem teto de saída (\adrr{ADR-148})\\
+\adrr{ADR-115} & A Seleção: o par do Mural é do computador, e a IA gradua a legenda & 2026-09-25 & Aceita; a leitura da legenda ficou sem teto de saída (\adrr{ADR-148}); superada em parte pela \adrr{ADR-170}\\
 \zebra \adrr{ADR-116} & A experiência que perde o código é arquivada, não apagada & 2026-09-25 & Aceita\\
 \adrr{ADR-117} & Jornal da Escola: a redação é da Unooria, o professor abre o resultado e a revisão, e a IA só escolhe o layout & 2026-09-27 & Aceita; as imagens passam pelo OK do professor, uma a uma (\adrr{ADR-147}); a diagramação ficou sem teto de saída (\adrr{ADR-148})\\
 \zebra \adrr{ADR-118} & Quem mandou isso? v2.2: atividade é o pacote, rodada é a reaplicação, e a régua mede pela seleção e pelas perguntas do PO & 2026-09-25 & Aceita; a régua foi substituída pela \adrr{ADR-120}\\
@@ -218,6 +218,8 @@ que a cercam.
 \adrr{ADR-165} & As instruções da Ajuda no painel: o \enquote{como responder} de cada atendente é dado & 2026-10-15 & Aceita; complementa a \adrr{ADR-132} e a \adrr{ADR-158}\\
 \zebra \adrr{ADR-166} & De onde veio o nível: a evidência guarda o marcador que a deu, e o consolidado conta à parte o \enquote{em processo} limitado pela atividade & 2026-10-16 & Aceita; complementa a \adrr{ADR-112} e a \adrr{ADR-144}\\
 \adrr{ADR-167} & O Canal A do Unoovista: toda habilidade por ação --- o Raio-x antes do debate, os termos e o envio depois do cinza, e a reflexão lida pela IA; as perguntas do fim saem & 2026-10-16 & Aceita; supera em parte a \adrr{ADR-153}\\
+\zebra \adrr{ADR-169} & A quota de avaliação: a leitura da plataforma para a evidência pedagógica tem teto próprio, por escola, fora da quota do estudante & 2026-10-16 & Aceita; segunda exceção à regra 5, complementa a \adrr{ADR-105}\\
+\adrr{ADR-170} & O Canal A da A Seleção: a legenda lida por indicadores, a marcação do post do colega entre o Mural e as fichas, e as enquetes saem & 2026-10-16 & Aceita; supera em parte a \adrr{ADR-115}; usa a \adrr{ADR-166} e a \adrr{ADR-169}\\
 \bottomrule
 \end{tabularx}
 
@@ -15130,3 +15132,145 @@ onde veio o nível).
 régua dura demais, ou a leitura da IA divergir do professor nos ajustes do
 painel.
 
+% ---------------------------------------------------------------------------
+\section{ADR-169 --- A quota de avaliação: a leitura da plataforma tem teto próprio}
+\label{adr:quota-de-avaliacao}
+
+\textbf{Data.} 2026-10-16. \textbf{Status.} Aceita. \textbf{Segunda exceção}
+à regra inviolável 5 (a primeira é a Ajuda com avatar, \adrr{ADR-132}) e
+\textbf{complementa} a \adrr{ADR-105}.
+
+\begin{especificacao}{Contexto}
+\begin{itemize}
+  \item \textbf{A leitura não é uso do estudante.} Quando a IA lê a legenda dos
+    Stories para a evidência pedagógica, é a PLATAFORMA avaliando, não a
+    criança usando a IA como ferramenta. Até aqui a leitura debitava a quota do
+    perfil \cd{estudante}: quem gastou a quota no tutor de outra missão, de
+    manhã, caía à tarde na régua de reserva --- mais fraca --- pelo mesmo
+    trabalho que o colega teve lido pela IA.
+  \item \textbf{O pedido.} O dono do produto escolheu a solução pedagógica,
+    independente do trabalho de implementação.
+\end{itemize}
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{enumerate}
+  \item \textbf{Uma terceira linha em \cd{ia\_quotas}}, \cd{avaliacao}, que NÃO é
+    perfil de token: é a linha da plataforma. O CHECK e a tupla
+    \cd{PERFIS\_COM\_QUOTA} a acrescentam juntos; a semente é de 4 milhões de
+    tokens por dia.
+  \item \textbf{O teto é POR ESCOLA}, contado em \cd{ia\_uso\_diario} com o
+    usuário \cd{avaliacao} (a coluna é texto e sem FK desde o início).
+  \item \textbf{O admin edita em \arq{/unooria/uso-de-ia}}, no mesmo cartão das
+    outras linhas, com a régua \enquote{leituras de legenda por escola}.
+  \item \textbf{Aviso antes de esgotar}: o débito que cruza 80\% do teto escreve o
+    log \cd{ia-quota-avaliacao-80}; o esgotado, \cd{ia-quota-avaliacao-esgotada}.
+    O alerta no Cloud Monitoring é métrica a partir deles, no Terraform.
+  \item \textbf{Esgotada, a aula não trava}: a leitura cai na regra de reserva e
+    vai para a revisão do professor (\adrr{ADR-170}).
+\end{enumerate}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Manter a quota do estudante.} Custo zero, mas a avaliação
+    competiria com o uso da ferramenta, e o estudante mais engajado no tutor
+    seria lido pela régua pior.
+  \item \textbf{Sem teto nenhum.} Um laço de leituras não teria freio, e o custo
+    só apareceria na fatura.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{O teto é da escola inteira}: se ele estourar, todas as legendas
+    da escola daquele dia vão para a revisão do professor.
+  \item \textbf{É precedente}: outra leitura de avaliação (a reflexão do 8º ano,
+    \adrr{ADR-167}) pede a mesma linha; a mudança dela ficou para depois.
+\end{itemize}
+
+% ---------------------------------------------------------------------------
+\section{ADR-170 --- O Canal A da A Seleção: toda habilidade por ação}
+\label{adr:exp07ef1b-canal-a}
+
+\textbf{Data.} 2026-10-16. \textbf{Status.} Aceita. \textbf{Supera em parte} a
+\adrr{ADR-115} (a enquete P1 valendo o melhor com a legenda, e a P2 como a
+única medida da EF07CO08), \textbf{usa} a \adrr{ADR-166} (de onde veio o nível)
+e a \adrr{ADR-169} (a quota de avaliação).
+
+\begin{especificacao}{Contexto}
+\begin{itemize}
+  \item \textbf{O pedido.} A equipe pedagógica (Artur) propôs avaliar a A
+    Seleção só pelo Canal A, e o PO (Vinicius) fechou as decisões no card da
+    missão. A EF07CO08 não tinha nenhuma ação do estudante que a medisse: só a
+    enquete P2.
+  \item \textbf{O que a proposta trazia e não ficou.} A condição
+    \enquote{alternou para a publicação do colega} (o Mural abre no Story do
+    colega desde a \adrr{ADR-146}, então valeria para todos), a regra de
+    palavras como leitora única da legenda, e tabelas e telas que a plataforma
+    já tinha (o ajuste do professor, o painel de habilidades, as equipes).
+\end{itemize}
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{enumerate}
+  \item \textbf{EF07CO11 pela legenda, lida por indicadores.} A IA responde três
+    perguntas de sim ou não --- explica a escolha, fala do conteúdo dos posts,
+    não tem relação --- e o servidor dá o nível: sem relação é \enquote{não
+    atingiu}; razão e conteúdo, \enquote{atingiu}; o resto, \enquote{em
+    processo}. A leitura roda DEPOIS da resposta ao estudante (como a da
+    \adrr{ADR-167}), com teto de 60\,s e até 3 tentativas para a falha técnica,
+    na quota de avaliação. Nada que a IA escreve é gravado.
+  \item \textbf{A regra de reserva.} Falhando a IA, a regra de palavras (a do
+    Artur, mais o \enquote{pq} da criança) grava só uma SUGESTÃO, sem marca:
+    a célula fica \enquote{Não avaliado} e a lista da aula diz o que a regra
+    viu. A reserva nunca sugere \enquote{não atingiu}. A calibragem vem dos
+    testes e do piloto.
+  \item \textbf{EF07CO08 pela marcação}, uma etapa nova e obrigatória da turma,
+    entre o Mural e as fichas: \enquote{Tem algo na publicação do colega que a
+    sua deixou de fora e muda a história?}. O estudante toca num post do
+    colega ou em \enquote{Nada que mude a história}, e pode dizer por quê numa
+    frase que só o professor lê, fora do nível. O nível congela na abertura das
+    fichas: post de um lado que falta no trio é \enquote{atingiu}; de um lado
+    que o trio já tem, \enquote{em processo}; \enquote{nada que mude},
+    \enquote{não atingiu} (o pareamento garante que o colega mostrou outro
+    lado), salvo o trio com os três lados, que fica \enquote{em processo}; o
+    post que o próprio estudante publicou, \enquote{não atingiu}. Sem marcação,
+    \enquote{Não avaliado}.
+  \item \textbf{As enquetes P1 e P2 saem por completo} (o Canal B): a reflexão
+    encerra a missão. Os níveis já dados por elas ficam no histórico.
+  \item \textbf{A conferência do enquadramento na criação.} Os posts que a
+    professora EDITOU passam por uma conferência de IA, na quota dela, que diz
+    se cada legenda ainda mostra o lado do veículo; divergiu, o card avisa e a
+    aprovação espera a correção. A IA falhando, a atividade é criada com aviso.
+  \item \textbf{O motivo do ajuste} (revisei o trabalho, presente sem
+    participar, problema técnico, outro) entra no ajuste do professor da
+    plataforma, para todas as missões, e vai só para o histórico.
+\end{enumerate}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{A regra de palavras como leitora única.} Erra a legenda que
+    explica sem conectivo e aceita \enquote{porque} com uma palavra copiada.
+  \item \textbf{A resposta ao Story do colega, lida por IA}, para a EF07CO08.
+    Mais próxima do texto da BNCC, mas o PO preferiu a marcação, mais simples.
+  \item \textbf{As enquetes como informação no piloto.} O PO pediu tirá-las de
+    vez: elas só tinham sentido como rede de segurança.
+  \item \textbf{Uma tabela de ajuste e um relatório só do 7º ano.} O ajuste e o
+    painel são da plataforma; duas fontes de nível divergiriam.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{O \enquote{atingiu} da marcação é uma medida fraca}: com o par mais
+    distante, um toque ao acaso tende a cair num lado que falta. O PO aceitou e
+    a ficha diz isso ao professor, que confirma pelo \enquote{por quê?}.
+  \item \textbf{A marcação mede tomada de perspectiva, não empatia afetiva.}
+  \item \textbf{Sem rede de segurança}: quem falta, atrasa ou não marca fica
+    \enquote{Não avaliado}, e o professor ajusta à mão.
+  \item \textbf{Mais um botão do professor} na aula, e cerca de 3 minutos.
+\end{itemize}
