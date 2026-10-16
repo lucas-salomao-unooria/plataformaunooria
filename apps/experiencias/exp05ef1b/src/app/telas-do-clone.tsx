@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   AdminOnlyNotice,
   BottomSheet,
@@ -30,10 +30,12 @@ import {
   horarioDaMensagem,
   tomDoRemetente,
   iniciais,
+  cartaoCompleto,
   outrosParticipantes,
+  partesDaFrase,
 } from "../lib/regras";
 import { TEXTOS } from "../lib/textos";
-import type { MensagemPublica, Opcao, PacotePublico, Pergunta, Revelacao } from "../lib/tipos";
+import type { Cartao, MensagemPublica, Opcao, PacotePublico, Resposta, Revelacao } from "../lib/tipos";
 import { BalaoDaMensagem, MidiaAberta } from "./componentes/balao";
 /* A foto da Nina é ilustração em SVG, importada pelo Vite: entra no bundle
    versionado, e a missão continua sem mídia binária (ADR-145). */
@@ -43,8 +45,8 @@ import { LaminaDaSintese, TermometroDaTurma, altDoTermometro } from "./component
 /**
  * As telas de DENTRO do mensageiro. Aqui quem fala é o APP clonado, e só ele:
  * nenhum componente, token ou palavra da plataforma entra (`@edu/ui/ds-unoochat`
- * e mais nada). O disfarce vale do convite da Nina até a síntese, e volta a
- * valer no chat da Nina das perguntas finais — ver o `AGENTS.md` da pasta.
+ * e mais nada). O disfarce vale do convite da Nina até o cartão de frases, no
+ * Mural; a regra do tio e o fim são da escola — ver o `AGENTS.md` da pasta.
  *
  * As falhas também falam na voz do app: "Conectando..." no lugar da presença do
  * cabeçalho (como o app real faz sem sinal), nunca "erro de servidor".
@@ -415,11 +417,11 @@ export function GrupoDaTurma({
 /**
  * Em que ponto o Mural está. É UMA conversa só, que vai ganhando mensagens:
  * as três encaminhadas, a enquete, a espera, e — depois dos botões do
- * professor — os crachás, o termômetro e a lâmina. `atrasada` é quem votou
- * depois de a turma já estar na reflexão: vê revelação e síntese de uma vez, e
- * segue com "Continuar".
+ * professor — os crachás, o termômetro, o cartão de frases e a lâmina.
+ * `cartao` é a reflexão de quem ainda não enviou o cartão (inclusive quem
+ * votou atrasado): vê tudo de uma vez, e o cartão no fim.
  */
-export type EtapaDoMural = "revisao" | "enquete" | "espera" | "revelacao" | "sintese" | "atrasada";
+export type EtapaDoMural = "revisao" | "enquete" | "espera" | "revelacao" | "sintese" | "cartao";
 
 export function MuralDaTurma({
   etapa,
@@ -428,12 +430,16 @@ export function MuralDaTurma({
   motivos,
   motivo,
   revelacao,
+  cartao,
+  falaDoCartao,
+  respostas,
   conectado,
   ocupado,
   aoRevisar,
   aoConfirmar,
   aoVotar,
-  aoContinuar,
+  aoResponderFrase,
+  aoEnviarCartao,
 }: {
   etapa: EtapaDoMural;
   /** As três escolhidas, na ordem do grupo. */
@@ -443,27 +449,36 @@ export function MuralDaTurma({
   motivos: Opcao[];
   motivo: string | null;
   revelacao: Revelacao | null;
+  /** O cartão de frases (EF05CO03) — chega junto com a revelação desta criança. */
+  cartao: Cartao | null;
+  falaDoCartao: string;
+  /** As respostas marcadas nesta aba, antes do envio. */
+  respostas: Readonly<Record<string, Resposta>>;
   conectado: boolean;
   ocupado: boolean;
   aoRevisar: () => void;
   aoConfirmar: () => void;
   aoVotar: (motivo: string) => void;
-  aoContinuar: () => void;
+  aoResponderFrase: (fraseId: string, resposta: Resposta) => void;
+  aoEnviarCartao: () => void;
 }) {
   const [escolha, setEscolha] = useState<string | null>(motivo);
   const [midia, setMidia] = useState<{ mensagem: MensagemPublica; hora: string } | null>(null);
   const topo = useRef<HTMLDivElement>(null);
   const fim = useRef<HTMLDivElement>(null);
 
-  const revelado = etapa === "revelacao" || etapa === "sintese" || etapa === "atrasada";
-  const comSintese = etapa === "sintese" || etapa === "atrasada";
+  const revelado = etapa === "revelacao" || etapa === "sintese" || etapa === "cartao";
+  const comSintese = etapa === "sintese" || etapa === "cartao";
+  const cartaoAberto = revelado && cartao !== null && !cartao.enviado;
+  const completo = cartao !== null && cartaoCompleto(cartao.frases, respostas);
   const confirmado = etapa !== "revisao";
   const votou = etapa !== "revisao" && etapa !== "enquete";
 
   /* A revelação abre no TOPO (os crachás em cima das três mensagens são o que
-     salta); a síntese e as etapas anteriores, no FIM (a mensagem nova). */
+     salta); a síntese, o cartão pendente da reflexão e as etapas anteriores,
+     no FIM (a mensagem nova). */
   useEffect(() => {
-    if (etapa === "revelacao" || etapa === "atrasada") topo.current?.scrollIntoView({ block: "start" });
+    if (etapa === "revelacao") topo.current?.scrollIntoView({ block: "start" });
     else fim.current?.scrollIntoView({ block: "end" });
   }, [etapa]);
 
@@ -569,6 +584,20 @@ export function MuralDaTurma({
               {etapa === "sintese" && <SystemMessage role="status">{TEXTOS.sintese.trava}</SystemMessage>}
             </>
           )}
+
+          {/* O cartão de frases vem por último: é a mensagem que espera resposta. */}
+          {revelado && cartao && (
+            <CartaoDeFrases
+              cartao={cartao}
+              fala={falaDoCartao}
+              respostas={respostas}
+              ocupado={ocupado}
+              aoResponder={aoResponderFrase}
+            />
+          )}
+          {etapa === "cartao" && cartao && !cartao.enviado && (
+            <SystemMessage role="status">{TEXTOS.cartao.antesDoDesafio}</SystemMessage>
+          )}
           <div ref={fim} />
         </div>
       </ChatWallpaper>
@@ -584,10 +613,10 @@ export function MuralDaTurma({
             </Button>
           </div>
         )}
-        {etapa === "atrasada" && (
+        {cartaoAberto && (
           <div className="rodape__acao">
-            <Button size="lg" block onClick={aoContinuar}>
-              {TEXTOS.revelacao.continuar}
+            <Button size="lg" block onClick={aoEnviarCartao} disabled={!completo || ocupado}>
+              {TEXTOS.cartao.enviar}
             </Button>
           </div>
         )}
@@ -618,97 +647,65 @@ function CrachasDaMensagem({ veracidade, tom }: { veracidade: "verdadeira" | "fa
   );
 }
 
-// ─────────────────────────── as perguntas finais: de volta ao chat da Nina
+// ─────────────────────── E4: o cartão de frases (EF05CO03), no Mural
 
 /**
- * O chat da Nina, de novo: as perguntas de evidência (Canal B) são a
- * reflexão da Etapa 6 (ADR-145), no mensageiro, na voz da Nina, com a MESMA
- * enquete da Etapa 3.
+ * O cartão: seis frases com E, OU e NÃO sobre as três mensagens que a criança
+ * encaminhou, cada uma com Sim/Não. Vem DEPOIS dos crachás — eles dão os
+ * valores simples, e a frase pede a operação sobre eles, que é o que a
+ * habilidade mede.
  *
- * O enunciado e as alternativas vêm de `GET /evidencias/exp05ef1b/perguntas/:id`
- * — embaralhadas a cada leitura, sem o nível. A tela mostra na ordem que
- * recebeu e responde pelo `id`; o recibo é sempre `{ enviada: true }`, então
- * nada aqui sabe (nem mostra) se a criança acertou.
+ * A resposta certa não está aqui (ela nunca desce): a tela só guarda o que a
+ * criança marcou e envia as seis de uma vez. Depois do envio, tudo congela, e
+ * nada diz se ela acertou. A dica do OU fica sempre à vista: em português
+ * "ou" costuma soar exclusivo, e o erro seria de leitura, não de lógica.
  */
-export function ChatDasPerguntas({
-  falas,
-  perguntas,
-  respondidas,
-  despedida,
-  mostrarDespedida,
-  conectado,
+function CartaoDeFrases({
+  cartao,
+  fala,
+  respostas,
   ocupado,
   aoResponder,
 }: {
-  /** As falas da Nina antes de cada pergunta, na ordem (`textos.perguntas`). */
-  falas: { perguntaId: string; fala: string }[];
-  perguntas: Readonly<Record<string, Pergunta>>;
-  respondidas: Readonly<Record<string, string>>;
-  despedida: string;
-  mostrarDespedida: boolean;
-  conectado: boolean;
+  cartao: Cartao;
+  fala: string;
+  respostas: Readonly<Record<string, Resposta>>;
   ocupado: boolean;
-  aoResponder: (perguntaId: string, alternativaId: string) => void;
+  aoResponder: (fraseId: string, resposta: Resposta) => void;
 }) {
-  const [escolhas, setEscolhas] = useState<Record<string, string>>({});
-  const visiveis: ReactNode[] = [];
-  for (const { perguntaId, fala } of falas) {
-    const pergunta = perguntas[perguntaId];
-    const respondida = respondidas[perguntaId];
-    visiveis.push(
-      <MessageBubble direction="in" key={`fala-${perguntaId}`}>
-        {fala}
-      </MessageBubble>,
-    );
-    if (!pergunta) break;
-    visiveis.push(
-      <MessageBubble direction="in" tail={false} key={`enquete-${perguntaId}`} maxWidth={300}>
-        <Poll
-          question={pergunta.enunciado}
-          options={pergunta.alternativas.map((a) => ({ id: a.id, label: a.texto }))}
-          value={respondida ?? escolhas[perguntaId] ?? null}
-          onChange={(id) => setEscolhas((e) => ({ ...e, [perguntaId]: id }))}
-          onVote={() => {
-            const alternativa = escolhas[perguntaId];
-            if (alternativa) aoResponder(perguntaId, alternativa);
-          }}
-          voted={respondida !== undefined}
-          disabled={ocupado}
-          voteLabel={TEXTOS.enquete.votar}
-          votedLabel={TEXTOS.perguntas.respostaEnviada}
-        />
-      </MessageBubble>,
-    );
-    if (respondida === undefined) break;
-  }
-  if (mostrarDespedida) {
-    visiveis.push(
-      <MessageBubble direction="in" key="despedida">
-        {despedida}
-      </MessageBubble>,
-    );
-  }
-  const fim = useRolarAoFim(visiveis.length);
-
+  const travado = cartao.enviado || ocupado;
   return (
-    <div className="app">
-      <BarraDoAparelho />
-      <ChatHeader
-        name={TEXTOS.lista.nina}
-        initials="N"
-        avatarSrc={FOTO_DA_NINA}
-        presence={conectado ? TEXTOS.nina.presenca : TEXTOS.erros.conectando}
-      />
-      {/* A conversa rola: foco e nome para o teclado alcançá-la (WCAG 2.1.1, ADR-162). */}
-      <ChatWallpaper className="app__corpo" role="region" tabIndex={0} aria-label="Conversa">
-        <div className="conversa">
-          {/* Sem o convite da abertura: repetido aqui, ele mandava a criança de
-              novo ao grupo e ao Mural, que já ficaram para trás (o PO, 2026-10-05). */}
-          {visiveis}
-          <div ref={fim} />
+    <>
+      <MessageBubble direction="in">{fala}</MessageBubble>
+      <MessageBubble direction="in" tail={false} maxWidth={320}>
+        <div className="cartao">
+          <p className="cartao__instrucao">{TEXTOS.cartao.instrucao}</p>
+          <p className="cartao__dica">{TEXTOS.cartao.dicaOu}</p>
+          {cartao.frases.map((f) => (
+            <fieldset className="cartao__frase" key={f.id} disabled={travado}>
+              <legend className="cartao__texto">
+                {partesDaFrase(f.texto).map((parte, i) =>
+                  parte.operador ? <strong key={i}>{parte.texto}</strong> : <span key={i}>{parte.texto}</span>,
+                )}
+              </legend>
+              <div className="cartao__opcoes">
+                {(["sim", "nao"] as const).map((r) => (
+                  <Radio
+                    key={r}
+                    name={`frase-${f.id}`}
+                    value={r}
+                    label={r === "sim" ? TEXTOS.cartao.sim : TEXTOS.cartao.nao}
+                    checked={respostas[f.id] === r}
+                    onChange={() => aoResponder(f.id, r)}
+                    disabled={travado}
+                  />
+                ))}
+              </div>
+            </fieldset>
+          ))}
         </div>
-      </ChatWallpaper>
-      <CampoInerte />
-    </div>
+      </MessageBubble>
+      {cartao.enviado && <SystemMessage role="status">{TEXTOS.cartao.enviado}</SystemMessage>}
+    </>
   );
 }

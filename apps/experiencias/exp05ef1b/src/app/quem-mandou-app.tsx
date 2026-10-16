@@ -3,14 +3,13 @@ import { Dialog, TextButton, Toast } from "@edu/ui/ds-unoochat";
 import { api, classificar, concluir, enviarEstado, reportarErro } from "../lib/api";
 import {
   INTERVALO_DO_GATE_MS,
-  MS_DA_DESPEDIDA,
   MS_DO_AVISO,
   VISTA_INICIAL,
   alternarSelecao,
+  cartaoCompleto,
   gateDoPasso,
   gateMudou,
   grupoChegaEmSequencia,
-  marcaComoVista,
   mensagensDoMural,
   mesclarSessao,
   mesmaAtividade,
@@ -19,17 +18,9 @@ import {
 } from "../lib/regras";
 import { telemetria, type GateVisto } from "../lib/telemetria";
 import { TEXTOS } from "../lib/textos";
-import type { ClasseDeFalha, Estado, Gate, Pergunta, RespostaEnviada, Sessao } from "../lib/tipos";
-import { EXP_ID } from "../lib/tipos";
-import {
-  ChatDasPerguntas,
-  ChatDoConvite,
-  GrupoDaTurma,
-  ListaDeConversas,
-  MuralDaTurma,
-  type EtapaDoMural,
-} from "./telas-do-clone";
-import { TelaConcluida } from "./telas-da-escola";
+import type { ClasseDeFalha, Estado, Gate, Regra, Resposta, Sessao } from "../lib/tipos";
+import { ChatDoConvite, GrupoDaTurma, ListaDeConversas, MuralDaTurma, type EtapaDoMural } from "./telas-do-clone";
+import { TelaConcluida, TelaDaRegra } from "./telas-da-escola";
 
 /**
  * A casca da missão: uma máquina de telas sobre o que o SERVIDOR diz.
@@ -37,9 +28,9 @@ import { TelaConcluida } from "./telas-da-escola";
  * Três regras valem para tudo aqui:
  *
  * 1. **O passo é do servidor** (`passoEfetivo(latches, fase)`), e a tela é
- *    `telaDe(passo, vista)`. A vista (lista ou chat da Nina, grupo ou Mural, a
- *    confirmação da regra, a despedida) é o que só esta aba sabe — e nada dela
- *    vale como estado: um F5 cai sempre na tela certa do passo.
+ *    `telaDe(passo, vista)`. A vista (lista ou chat da Nina, grupo ou Mural) é
+ *    o que só esta aba sabe — e nada dela vale como estado: um F5 cai sempre
+ *    na tela certa do passo.
  * 2. **Nenhuma comparação com o gabarito.** Ele não existe no pacote: chega só
  *    dentro de `revelacao`, depois do voto e da revelação aberta pela turma.
  * 3. **Toda ação que falha FALA** — na voz do app ("Conectando...", o aviso na
@@ -55,8 +46,11 @@ export function QuemMandouApp({ inicial }: { inicial: Sessao }) {
   const [bloqueada, setBloqueada] = useState(false);
   const [aviso, setAviso] = useState<string | null>(null);
   const [ocupado, setOcupado] = useState(false);
-  const [perguntas, setPerguntas] = useState<Record<string, Pergunta>>({});
-  const [respondidas, setRespondidas] = useState<Record<string, string>>({});
+  /** O que a criança marcou no cartão, antes de enviar. Só desta aba: o F5 começa de novo. */
+  const [respostas, setRespostas] = useState<Record<string, Resposta>>({});
+  /** A falha de rede de um envio da casca (a regra): a casca fala por um alerta, não pelo aviso do app. */
+  const [falhaDaRegra, setFalhaDaRegra] = useState<"rede" | null>(null);
+  const [tentativa, setTentativa] = useState(0);
 
   /** Para o polling (um `setInterval`) ler a sessão de AGORA, não a da montagem. */
   const atual = useRef(sessao);
@@ -84,8 +78,8 @@ export function QuemMandouApp({ inicial }: { inicial: Sessao }) {
 
   /**
    * Relê a sessão inteira. Atividade NOVA (pacote novo aprovado, ou "Zerar a
-   * turma") zera tudo o que a aba sabia: a vista, as perguntas carregadas e as
-   * respostas desta aba eram de outro grupo.
+   * turma") zera tudo o que a aba sabia: a vista e as respostas do cartão
+   * eram de outro grupo.
    */
   const recarregar = useCallback(async () => {
     try {
@@ -93,8 +87,8 @@ export function QuemMandouApp({ inicial }: { inicial: Sessao }) {
       deuCerto();
       if (!mesmaAtividade(atual.current.atividade, nova.atividade)) {
         setVista(VISTA_INICIAL);
-        setPerguntas({});
-        setRespondidas({});
+        setRespostas({});
+        concluindo.current = false;
         gatesVistos.current.clear();
       }
       setSessao((s) => mesclarSessao(s, nova));
@@ -200,13 +194,6 @@ export function QuemMandouApp({ inicial }: { inicial: Sessao }) {
     }
   }, [sessao.passo]);
 
-  /* Desenhou os crachás (revelação ou síntese): quando a turma for para a
-     reflexão, a casca pode tomar a tela direto. A `revelacao-atrasada` NÃO
-     marca sozinha — é o "Continuar" dela que marca. */
-  useEffect(() => {
-    if (marcaComoVista(tela)) setVista((v) => (v.viuRevelacao ? v : { ...v, viuRevelacao: true }));
-  }, [tela]);
-
   /* O Mural fecha quando o grupo acaba (latch 1, ou a turma andou). */
   useEffect(() => {
     if (sessao.passo !== "grupo") setVista((v) => (v.muralAberto ? { ...v, muralAberto: false } : v));
@@ -302,90 +289,96 @@ export function QuemMandouApp({ inicial }: { inicial: Sessao }) {
     [aplicar, tratarFalhaDeAcao],
   );
 
-  const continuarDaRevelacao = useCallback(() => setVista((v) => ({ ...v, viuRevelacao: true })), []);
+  // ─────────────────────────────── o cartão de frases (EF05CO03)
 
-  /* As perguntas da evidência: carregadas UMA vez por aba (cada GET embaralha
-     de novo, e a ordem não pode trocar na frente da criança). Falhou? Tenta de
-     novo no próximo ciclo. */
-  const idsDasPerguntas = sessao.textos.perguntas.map((p) => p.perguntaId);
-  const faltaCarregar = idsDasPerguntas.filter((id) => !perguntas[id]).join(",");
-  const [tentativa, setTentativa] = useState(0);
-  useEffect(() => {
-    if (tela !== "perguntas" || !faltaCarregar) return;
-    let vivo = true;
-    void (async () => {
-      for (const id of faltaCarregar.split(",")) {
-        try {
-          const p = await api.get<Pergunta>(`/evidencias/${EXP_ID}/perguntas/${encodeURIComponent(id)}`);
-          if (!vivo) return;
-          deuCerto();
-          setPerguntas((atuais) => (atuais[id] ? atuais : { ...atuais, [id]: p }));
-        } catch (erro) {
-          if (!vivo) return;
-          tratarFalhaDeLeitura(erro);
-          window.setTimeout(() => vivo && setTentativa((t) => t + 1), INTERVALO_DO_GATE_MS);
-          return;
-        }
-      }
-    })();
-    return () => {
-      vivo = false;
-    };
-  }, [tela, faltaCarregar, tentativa, deuCerto]);
+  const responderFrase = useCallback((fraseId: string, resposta: Resposta) => {
+    setRespostas((r) => ({ ...r, [fraseId]: resposta }));
+  }, []);
 
   /**
-   * Uma resposta de P1/P2. O recibo é sempre `{ enviada: true }` — a criança
-   * não sabe, pela resposta, se acertou nem se já tinha respondido. Um 409
-   * (`sem-atividade-em-andamento`) é quem já concluiu ou mudou de rodada: relê.
+   * "Enviar respostas" — as seis de uma vez (o latch 3). Nada volta dizendo se
+   * acertou: o estado só traz `cartao.enviado`. Um 409 é o cartão já enviado
+   * em outra aba, ou a turma andando: relê.
    */
-  const responder = useCallback(
-    async (perguntaId: string, alternativaId: string) => {
+  const enviarCartao = useCallback(async () => {
+    const frases = atual.current.cartao?.frases ?? [];
+    if (!cartaoCompleto(frases, respostas)) return;
+    setOcupado(true);
+    try {
+      const estado = await api.post<Estado>("/quem-mandou-isso/operacoes", {
+        respostas: frases.map((f) => ({ fraseId: f.id, resposta: respostas[f.id] })),
+      });
+      aplicar(estado);
+      telemetria.respondeuOCartao();
+    } catch (erro) {
+      tratarFalhaDeAcao(erro, true);
+    } finally {
+      setOcupado(false);
+    }
+  }, [aplicar, respostas, tratarFalhaDeAcao]);
+
+  // ─────────────────────────────────── a regra do tio (EF05CO04)
+
+  /** Uma ação da casca. A rede falha num alerta da própria casca; o resto, como no clone. */
+  const acaoDaCasca = useCallback(
+    async (caminho: string, corpo: unknown): Promise<Estado | null> => {
       setOcupado(true);
+      setFalhaDaRegra(null);
       try {
-        await api.post<RespostaEnviada>(
-          `/evidencias/${EXP_ID}/perguntas/${encodeURIComponent(perguntaId)}/resposta`,
-          { alternativaId },
-        );
-        deuCerto();
-        setRespondidas((r) => ({ ...r, [perguntaId]: alternativaId }));
+        const estado = await api.post<Estado>(caminho, corpo);
+        aplicar(estado);
+        return estado;
       } catch (erro) {
-        tratarFalhaDeAcao(erro, true);
+        if (tratarFalhaDeAcao(erro, false) === "rede") setFalhaDaRegra("rede");
+        return null;
       } finally {
         setOcupado(false);
       }
     },
-    [deuCerto, tratarFalhaDeAcao],
+    [aplicar, tratarFalhaDeAcao],
+  );
+
+  /** "Testar no áudio do tio" — a regra e a PREVISÃO; o resultado volta em `regra.testes`. */
+  const testarRegra = useCallback(
+    async (regra: Regra, previsao: string) => {
+      const estado = await acaoDaCasca("/quem-mandou-isso/regra/teste", { ...regra, previsao });
+      if (estado?.regra) telemetria.testouARegra(estado.regra.testes.length);
+    },
+    [acaoDaCasca],
+  );
+
+  /** "Enviar minha regra" — o latch 4. O fim da missão sai logo depois (o efeito abaixo). */
+  const enviarRegra = useCallback(
+    async (regra: Regra) => {
+      const estado = await acaoDaCasca("/quem-mandou-isso/regra", regra);
+      if (estado?.regra) telemetria.enviouARegra(estado.regra.testes.length);
+    },
+    [acaoDaCasca],
   );
 
   /**
-   * Respondeu as duas: a despedida da Nina aparece e o `POST /concluir` sai
-   * JUNTO — a missão fecha no servidor antes da casca, e fechar a aba no meio
-   * da despedida não perde nada. A casca "Missão Concluída" entra depois de
-   * `MS_DA_DESPEDIDA`, para a despedida ser lida.
+   * A regra enviada fecha a missão: o `POST /concluir` sai sozinho, e a casca
+   * "Missão Concluída" mostra a regra. Sem rede, tenta de novo no ciclo
+   * seguinte (o `concluir` é idempotente no servidor).
    */
-  const todasRespondidas = idsDasPerguntas.length > 0 && idsDasPerguntas.every((id) => id in respondidas);
+  const regraEnviada = Boolean(sessao.regra?.enviada);
   useEffect(() => {
-    if (!todasRespondidas || sessao.passo !== "perguntas" || concluindo.current) return;
+    if (!regraEnviada || sessao.passo !== "regra" || concluindo.current) return;
     concluindo.current = true;
     void (async () => {
       try {
-        const estado = await api.post<Estado>("/quem-mandou-isso/concluir");
-        setVista((v) => ({ ...v, segurandoDespedida: true }));
-        aplicar(estado);
+        aplicar(await api.post<Estado>("/quem-mandou-isso/concluir"));
         telemetria.concluiu();
         concluir({});
-        window.setTimeout(() => setVista((v) => ({ ...v, segurandoDespedida: false })), MS_DA_DESPEDIDA);
       } catch (erro) {
         tratarFalhaDeAcao(erro, false);
-        /* Sem rede: a despedida continua na tela e a próxima tentativa sai no
-           ciclo seguinte (o `concluir` é idempotente no servidor). */
         window.setTimeout(() => {
           concluindo.current = false;
           setTentativa((t) => t + 1);
         }, INTERVALO_DO_GATE_MS);
       }
     })();
-  }, [todasRespondidas, sessao.passo, tentativa, aplicar, tratarFalhaDeAcao]);
+  }, [regraEnviada, sessao.passo, tentativa, aplicar, tratarFalhaDeAcao]);
 
   // ─────────────────────────────────────────────────────────── a tela
 
@@ -441,10 +434,9 @@ export function QuemMandouApp({ inicial }: { inicial: Sessao }) {
       case "espera":
       case "revelacao":
       case "sintese":
-      case "revelacao-atrasada": {
+      case "cartao": {
         if (!pacote) return null;
-        const etapa: EtapaDoMural =
-          tela === "mural" ? "revisao" : tela === "revelacao-atrasada" ? "atrasada" : tela;
+        const etapa: EtapaDoMural = tela === "mural" ? "revisao" : tela;
         return (
           <MuralDaTurma
             etapa={etapa}
@@ -453,32 +445,37 @@ export function QuemMandouApp({ inicial }: { inicial: Sessao }) {
             motivos={opcoes.motivos}
             motivo={sessao.motivo}
             revelacao={sessao.revelacao}
+            cartao={sessao.cartao}
+            falaDoCartao={textos.nina.cartao}
+            respostas={respostas}
             conectado={conectado}
             ocupado={ocupado}
             aoRevisar={revisar}
             aoConfirmar={() => void confirmarMural()}
             aoVotar={(m) => void votar(m)}
-            aoContinuar={continuarDaRevelacao}
+            aoResponderFrase={responderFrase}
+            aoEnviarCartao={() => void enviarCartao()}
           />
         );
       }
 
-      case "perguntas":
+      case "regra":
         return (
-          <ChatDasPerguntas
-            falas={textos.perguntas}
-            perguntas={perguntas}
-            respondidas={respondidas}
-            despedida={textos.nina.encerramento}
-            mostrarDespedida={todasRespondidas || sessao.passo === "concluida"}
-            conectado={conectado}
-            ocupado={ocupado}
-            aoResponder={(p, a) => void responder(p, a)}
+          <TelaDaRegra
+            tio={textos.nina.tio}
+            condicoes={opcoes.condicoes}
+            acoes={opcoes.acoes}
+            previsoes={opcoes.previsoes}
+            regra={sessao.regra}
+            falha={falhaDaRegra}
+            ocupado={ocupado || regraEnviada}
+            aoTestar={(r, p) => void testarRegra(r, p)}
+            aoEnviar={(r) => void enviarRegra(r)}
           />
         );
 
       case "concluida":
-        return <TelaConcluida />;
+        return <TelaConcluida regra={sessao.regra?.enviada?.emPalavras ?? null} encerramento={textos.nina.encerramento} />;
     }
   };
 

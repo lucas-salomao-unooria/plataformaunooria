@@ -5,17 +5,21 @@ ADR-114; esta é a v2.2, com o MESMO código de experiência.
 
 | Manifesto | Dev | DS | api | e2e |
 |---|---|---|---|---|
-| `exp05ef1b` · 5EF · unidade 1 · `entre-redes` · `viewport` 375×812 · `permissoes: ["forms"]` | `:5184` (`strictPort`), hub `/exp/exp05ef1b` | `@edu/ui/ds-unoochat` (clone, tema claro, DS ≥ 0.2.9) + `@edu/ui/ds` (casca) | `apps/api/src/quem-mandou-isso` ↔ `/quem-mandou-isso/*` e `apps/api/src/evidencias` ↔ `/evidencias/exp05ef1b/perguntas/*` | `scripts/e2e/estudante/10-quem-mandou-isso.mjs` (dois contextos) e o passo da ficha em `professor/10-equipes-na-missao.mjs` |
+| `exp05ef1b` · 5EF · unidade 1 · `entre-redes` · `viewport` 375×812 · `permissoes: ["forms"]` | `:5184` (`strictPort`), hub `/exp/exp05ef1b` | `@edu/ui/ds-unoochat` (clone, tema claro, DS ≥ 0.2.9) + `@edu/ui/ds` (casca) | `apps/api/src/quem-mandou-isso` ↔ `/quem-mandou-isso/*` (a evidência é marcada lá, nas ações; não há pergunta) | `scripts/e2e/estudante/10-quem-mandou-isso.mjs` (dois contextos) e o passo da ficha em `professor/10-equipes-na-missao.mjs` |
 
 O percurso: lista de conversas → chat da Nina (convite) → grupo "Turma 5ºB"
 (encaminhar exatamente 3 ao Mural) → Mural (confirmar) → enquete do motivo →
-espera → revelação → síntese → **clone**: a reflexão, as perguntas P1 e P2 no
-chat da Nina → **casca**: "Missão Concluída".
+espera → revelação (crachás + **cartão de frases**) → síntese → **casca**: o
+desafio do tio (a **regra montada com peças**, prevista e testada) → "Missão
+Concluída".
 
-**A regra Se/Então saiu (ADR-145, 0.4.0).** O PO a achou confusa: a missão mede
-as habilidades por critérios fixos, e só ela era texto livre. As perguntas de
-múltipla escolha SÃO a reflexão (Etapa 6), e o chat delas não repete o convite
-da abertura (que mandava a criança de volta ao grupo).
+**Só o Canal A (0.5.0, ADR-168).** As três habilidades são medidas pelo que a
+criança FAZ: a seleção do Mural (EF05CO08), o cartão de frases com E/OU/NÃO
+depois dos crachás (EF05CO03) e a regra do tio montada com peças, com a
+previsão antes de cada teste (EF05CO04). As perguntas P1 e P2 saíram, como no
+8º ano. A regra voltou SEM texto livre: o PO tinha tirado o Se/Então de texto
+(ADR-145) por ser a única etapa sem critério fixo, e as peças têm critério
+fixo.
 
 ## A fronteira do disfarce cruza UMA vez, no fim
 
@@ -29,11 +33,13 @@ aqui ele produz um vaivém que parece inconsistência e não é:
    (`MessageBubble.Media` desenhada) — mensageiro não tem gráfico, mas recebe
    foto de gráfico. É a diferença para a exp06ef2b, onde o visualizador de
    topologia não existe em app nenhum e por isso fala pela escola (ADR-72).
-2. **As perguntas P1/P2 ficam no clone** (decisão do Lucas): são a Nina
-   perguntando no chat dela, com a MESMA enquete (`Poll`) da Etapa 3. O
-   enunciado e as alternativas são da ficha (E14); a fala que as antecede é da
-   missão (`textos.perguntas`).
-3. **"Missão Concluída" é a casca**: a escola fechando a missão.
+2. **O cartão de frases fica no clone**, no fim do Mural revelado: a Nina
+   (`textos.nina.cartao`) pede para conferir as frases, e cada frase é um
+   grupo Sim/Não com o `Radio` do Unoochat (`fieldset` + `legend`).
+3. **O desafio do tio e "Missão Concluída" são a casca**: o desafio não é
+   sobre o grupo da turma, é sobre o grupo da FAMÍLIA, e montar a regra dentro
+   do clone a devolveria à ficção que a missão acabou de desmontar. A fala da
+   Nina aparece num `Card` com o rosto dela, não num balão.
 
 Arquivo por família: `telas-do-clone.tsx` importa só `@edu/ui/ds-unoochat`;
 `telas-da-escola.tsx` só `@edu/ui/ds`. No CSS a fronteira está MARCADA — e
@@ -51,12 +57,16 @@ O bundle é público, e o segredo aqui não é escondido: **ele não desce**.
   a monta por `Omit`. O gabarito cruza a fronteira UMA vez, dentro de
   `revelacao`, só o das três do estudante, e só depois do voto E da revelação
   aberta pela turma.
-- As alternativas de P1/P2 chegam embaralhadas e SEM o nível; o recibo é sempre
-  `{ enviada: true }`. A tela responde pelo `id`, nunca pela posição, e carrega
-  cada pergunta UMA vez por aba (cada GET embaralha de novo).
-- O pacote (as 8 mensagens), o convite da Nina com o `{tema}`, a despedida,
-  as falas antes das perguntas, os rótulos de motivo e o callback do motivo
-  vêm da api. `lib/textos.ts` tem só a copy da TELA.
+- As frases do cartão chegam SEM a resposta esperada (o servidor as gera das
+  três mensagens, com semente na sessão, e guarda a resposta certa no envio).
+  O recibo é o estado com `cartao.enviado` — nada diz se a criança acertou.
+- As peças da regra chegam só com `id` e rótulo: o tipo de cada ação e quais
+  condições pegam o áudio são o gabarito dela, e quem simula a regra é o
+  servidor (o resultado volta pronto em `regra.testes`).
+- O pacote (as 8 mensagens), o convite da Nina com o `{tema}`, a despedida, a
+  fala do cartão, o desafio do tio, os rótulos de motivo, das peças e das
+  previsões, e o callback do motivo vêm da api. `lib/textos.ts` tem só a copy
+  da TELA.
 
 **O grep do bundle é por CONTEÚDO, não por nome de prop.** `veracidade` e
 `Verdadeira` aparecem no `dist/` e está certo: são as chaves e os rótulos dos
@@ -66,7 +76,8 @@ crachás. O que prova o segredo são perguntas que têm de vir vazias:
 A=apps/experiencias/exp05ef1b/dist/assets
 grep -ohE "Pedro Henrique|portão lateral|Ofício Circular|passeio ao museu" $A/*.js   # o banco curado
 grep -ohE "msg_[1-8][^;]{0,60}(verdadeira|falsa|emocional|neutra)" $A/*.js          # o par id ↔ gabarito
-grep -ohE "Não dá pra saber só pelo tom|nao_atingiu|em_processo" $A/*.js            # as alternativas e o nível
+grep -ohE "nao_atingiu|em_processo" $A/*.js                                         # o nível
+grep -ohE 'comparo com uma fonte|Sua regra pegou|pegaOAudio|"checagem"|esperado' $A/*.js  # o gabarito da regra e do cartão
 ```
 
 `src/lib/textos.test.ts` faz a mesma varredura sobre o `src/` (sem precisar de
@@ -76,20 +87,19 @@ build), para quem copiar texto da api para cá descobrir no `vitest`.
 
 `passo` vem pronto (`passoEfetivo(latches, fase)` na api) e `telaDe(passo, vista)`
 (`lib/regras.ts`) escolhe a tela. A `Vista` é o que só a aba sabe — lista ou
-chat da Nina, grupo ou Mural, a despedida — e nenhum
+chat da Nina, grupo ou Mural — e nenhum
 campo dela vale como estado: um F5 cai sempre numa tela certa do passo.
 
 Dois casos que não são óbvios:
 
-- **Quem votou atrasado** (confirmou o Mural depois da revelação) cai direto no
-  passo da TURMA. Em `sintese` os crachás estão no histórico do Mural; em
-  `perguntas` o chat da Nina tomaria a tela sem ele ter visto nada — então
-  aparece o Mural revelado com "Continuar" (`revelacao-atrasada`). O servidor
-  não guarda "já viu": um F5 mostra de novo, sem dano. A `revelacao-atrasada`
-  NÃO marca `viuRevelacao` ao aparecer — se marcasse, `telaDe` pularia para as
-  perguntas no mesmo render.
-- **A despedida da Nina segura a casca por 6 s** (`MS_DA_DESPEDIDA`), com o
-  `POST /concluir` JÁ feito: fechar a aba no meio não perde nada.
+- **O cartão segue o caminho da criança, não o botão do professor.** Ele
+  aparece com os crachás (na revelação e na síntese) e só fecha quando ela o
+  envia. Na reflexão, quem ainda não o enviou cai no passo `cartao` — o Mural
+  inteiro, com o cartão no fim — e só depois na `regra`. É o que cobre quem
+  votou atrasado: ninguém chega ao tio sem ter visto os crachás.
+- **Enviar a regra fecha a missão**: o `POST /concluir` sai sozinho depois do
+  `POST /regra` (idempotente, e tenta de novo sem rede), e a casca "Missão
+  Concluída" mostra a regra e a despedida da Nina.
 
 ## O polling compara QUATRO coisas
 
@@ -97,7 +107,7 @@ Dois casos que não são óbvios:
 mudou `passo`, `preparada`, `fase` OU `atividade` (`gateMudou`). A `fase` é a
 que não parece necessária e é: quem ainda está no grupo quando a revelação abre
 continua no grupo (o passo não muda). A `atividade` pega "Zerar a turma" e o
-pacote novo — aí a aba zera a vista, as perguntas e as respostas, porque tudo
+pacote novo — aí a aba zera a vista e as respostas do cartão, porque tudo
 era de outro grupo. Na releitura, com a mesma atividade e ainda no grupo, a
 SELEÇÃO da tela vence a do servidor: o `PUT` do último toque pode estar em voo.
 
@@ -116,13 +126,13 @@ ação que o recebeu:
 
 | Status | No clone | Na casca |
 |---|---|---|
-| sem rede, 5xx, 429 | presença do cabeçalho vira "Conectando..." (e aviso rápido se foi toque) | — (a casca só mostra "Missão Concluída") |
+| sem rede, 5xx, 429 | presença do cabeçalho vira "Conectando..." (e aviso rápido se foi toque) | um `AlertBox` de erro na tela da regra |
 | 401 | janela "Sua conexão expirou. Toque para reconectar." — reconectar é RELER; o hub renova o token sozinho | a mesma janela |
 | 403 | "Este grupo ainda não abriu para a sua turma…" | idem |
 | 409 | relê a sessão (o relógio da turma andou) — sem mensagem | idem |
 
-A missão não tem mais texto livre de menor: a regra Se/Então e o
-`POST /reflexao` saíram (ADR-145).
+A missão não tem texto livre de menor: a regra é montada com peças, e o
+`POST /reflexao` (o Se/Então de texto, ADR-145) não volta.
 
 ## O mensageiro é o Unoochat, não o clone do WhatsApp (ADR-134, 0.3.0)
 
@@ -169,7 +179,7 @@ quem mexer depois:
 - `CardHeader` (seção `unooria`) declara `avatar` no tipo e não o desenha: use
   `icon`. `AlertBox` nasce `theme="dark"` — na casca clara, passe `light`.
 - `Poll` é controlado de ponta a ponta e vive DENTRO de um `MessageBubble`
-  (`maxWidth={300}`: as alternativas de P1/P2 são frases longas).
+  (`maxWidth={300}`: os motivos da enquete são frases longas).
 
 ## Compensações sobre o DS: nenhuma aberta
 
@@ -207,6 +217,6 @@ Os pedidos visuais do PO de 2026-10-05:
 
 ## `permissoes: ["forms"]`
 
-Era para o `TextArea` e o `Selection` da regra Se/Então, que saíram (ADR-145).
-Fica: os rádios do `Poll` são campos de formulário, e sem o token no `sandbox`
-do iframe um formulário morre em silêncio (a lição da exp02em1b).
+Os rádios do `Poll` e do cartão e os `Selection` da regra são campos de
+formulário, e sem o token no `sandbox` do iframe um formulário morre em
+silêncio (a lição da exp02em1b).
