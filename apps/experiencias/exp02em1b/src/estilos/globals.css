@@ -95,3 +95,47 @@ body {
   overflow-y: auto;
   overscroll-behavior: contain;
 }
+
+/* ═══════════════════ o pedido pelo WhatsApp (unoochat, SÓ a peça — ADR-173) */
+
+/* O contêiner do balão: o recebido é branco e foi calibrado para o fundo do
+   mensageiro, e sobre o branco do UnooriaAI ele some. É o retângulo do tamanho
+   da peça, pintado com o `--unc-color-surface-base` — não o `ChatWallpaper`
+   (o FUNDO do app, que a peça não traz). Molde: o `.peca-unoochat` da
+   exp04ef1b. */
+.peca-unoochat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--unc-spacing-xxs, 6px);
+  padding: var(--unc-spacing-m, 12px) var(--unc-spacing-l, 16px);
+  border-radius: 12px;
+  background: var(--unc-color-surface-base, #efeef5);
+}
+
+/* ═════════════ o "E se…": a faixa de 20 tempestades (compensação declarada) */
+
+/* LACUNA DO DS: a seção `unooriaai` não publica uma faixa de células
+   categóricas (nem `Heatmap`, nem `Sparkline` de categoria). Esta é a
+   compensação local, SÓ com token `--uai-*`, e a leitura para leitor de tela
+   vai numa lista ao lado (`componentes/e-se.tsx`). Morre quando o pacote
+   publicar a peça. */
+.faixa-de-tempestades {
+  display: grid;
+  grid-template-columns: repeat(20, minmax(0, 1fr));
+  gap: 3px;
+}
+.faixa-de-tempestades > span {
+  aspect-ratio: 1;
+  border-radius: 3px;
+  background: var(--uai-fill-2);
+}
+/* Cores fora do par das Equipes (azul e roxo), para o quadradinho não ser lido
+   como "a Alfa" ou "a Bravo": a outra decisão é a superfície invertida, e a
+   de referência, o contorno; o empate fica no fundo translúcido. */
+.faixa-de-tempestades > span[data-quem="outra"] {
+  background: var(--uai-bg-inverse);
+}
+.faixa-de-tempestades > span[data-quem="referencia"] {
+  background: var(--uai-bg-primary);
+  box-shadow: inset 0 0 0 2px var(--uai-border-strong);
+}

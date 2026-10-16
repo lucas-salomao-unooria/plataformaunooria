@@ -10,7 +10,8 @@ import { api } from '../../lib/api';
 import type { Desfecho, MarcoDaTrilha, Tentativa } from '../../lib/tipos';
 import { agruparEmpatados } from '../../lib/visao';
 import { IconeDaFonte } from '../arte/icones';
-import { Perguntas } from './perguntas';
+import { ESe } from './e-se';
+import { Fechamento } from './fechamento';
 
 const milhar = (n: number) => n.toLocaleString('pt-BR');
 
@@ -234,25 +235,29 @@ function Empates({
 }
 
 /**
- * "E se eu tivesse mandado para ___?"
+ * "E se eu tivesse mandado para ___?" — o LIVRE, que não dá marca.
  *
- * A mesma tempestade, na mesma hora, com outro destino. Existe porque o estudante
- * lê a tabela, vê um bairro grande sem equipe e não tem como saber o que teria
- * mudado — então guarda o resultado como acaso, em vez de método.
+ * As duas decisões nas MESMAS 200 tempestades (o servidor pareia as corridas):
+ * a tela compara média com média, nunca a média da outra com o resultado único
+ * desta rodada — isso misturava a decisão com a sorte da tempestade.
  *
  * A conta é do servidor: aqui só entram nomes e números.
  */
 function Contrafactual({
   bairros,
   alocacao,
-  salvasReais,
 }: {
   bairros: { slug: string; nome: string }[];
   alocacao: { alfa: string | null; bravo: string | null };
-  salvasReais: number;
 }) {
   const [escolha, setEscolha] = useState(alocacao);
-  const [conta, setConta] = useState<{ salvas: number; faixa: [number, number] } | null>(null);
+  const [conta, setConta] = useState<{
+    media: number;
+    faixa: [number, number];
+    sua: number;
+    maisEm: number;
+    corridas: number;
+  } | null>(null);
   const [ocupado, setOcupado] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
@@ -265,11 +270,19 @@ function Contrafactual({
       // Não grava e não debita: é a pergunta que o estudante faz ao VER o
       // resultado, e transformá-la em tentativa nova apagaria a diferença
       // entre a decisão que ele tomou e a que imaginou depois.
-      const r = await api.post<{ media: number; faixa: readonly [number, number] }>(
-        '/unoogpt/contrafactual',
-        escolha,
-      );
-      setConta({ salvas: r.media, faixa: [r.faixa[0], r.faixa[1]] });
+      const r = await api.post<{
+        media: number;
+        faixa: readonly [number, number];
+        sua: { media: number };
+        comparacao: { corridas: number; maisEm: number };
+      }>('/unoogpt/contrafactual', escolha);
+      setConta({
+        media: r.media,
+        faixa: [r.faixa[0], r.faixa[1]],
+        sua: r.sua.media,
+        maisEm: r.comparacao.maisEm,
+        corridas: r.comparacao.corridas,
+      });
     } catch {
       setErro('Não deu para calcular agora.');
     } finally {
@@ -283,7 +296,7 @@ function Contrafactual({
     <div className="mt-6 max-w-3xl rounded-uai-xl border border-uai-borda p-5">
       <p className="font-semibold text-uai-tinta">E se você tivesse mandado para outro lugar?</p>
       <p className="mt-1 text-sm text-uai-suave-60">
-        Mesma tempestade, mesma hora de saída. Só o destino muda.
+        As mesmas tempestades, a mesma hora de saída. Só o destino muda.
       </p>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -319,11 +332,12 @@ function Contrafactual({
 
       {conta && (
         <div className="mt-4 rounded-uai-xl bg-uai-superficie p-4 text-sm leading-relaxed text-uai-tinta">
-          Com Alfa em <strong>{nome(escolha.alfa)}</strong> e Bravo em{' '}
-          <strong>{nome(escolha.bravo)}</strong>, esta mesma tempestade teria dado{' '}
-          <strong>{milhar(conta.salvas)}</strong> resgatadas — contra {milhar(salvasReais)} do que
-          você mandou. Essa outra decisão costuma ficar entre {milhar(conta.faixa[0])} e{' '}
-          {milhar(conta.faixa[1])}: um número só continua não sendo prova.
+          Nas mesmas {milhar(conta.corridas)} tempestades, com Alfa em{' '}
+          <strong>{nome(escolha.alfa)}</strong> e Bravo em <strong>{nome(escolha.bravo)}</strong>, a
+          média seria <strong>{milhar(conta.media)}</strong> resgatadas — a da sua decisão é{' '}
+          {milhar(conta.sua)}. Essa outra resgatou mais em {milhar(conta.maisEm)} das{' '}
+          {milhar(conta.corridas)} tempestades, e costuma ficar entre {milhar(conta.faixa[0])} e{' '}
+          {milhar(conta.faixa[1])}.
         </div>
       )}
     </div>
@@ -348,8 +362,13 @@ export function Resultado({
   sobrou,
   onRecomecar,
   ocupado,
-  rodadaDaTurma,
-}: DadosDoResultado & { onRecomecar?: () => void; ocupado?: boolean; rodadaDaTurma: number }) {
+  fechamentoAberto,
+}: DadosDoResultado & {
+  onRecomecar?: () => void;
+  ocupado?: boolean;
+  /** O professor abriu o fechamento (ADR-172): ele aparece, e o "Tentar de novo" some. */
+  fechamentoAberto: boolean;
+}) {
   // Qual rodada está na tela. A última é a que acabou de acontecer; as
   // anteriores continuam abertas, porque comparar decisões é a Missão.
   const rodadas = tentativas ?? [];
@@ -418,7 +437,7 @@ export function Resultado({
               })}
             </div>
           )}
-          {onRecomecar && (
+          {onRecomecar && !fechamentoAberto && (
             <Button variant="outline" size="sm" onClick={onRecomecar} disabled={ocupado}>
               Tentar de novo
             </Button>
@@ -606,9 +625,11 @@ export function Resultado({
         </div>
       )}
 
-      {/* Só na rodada mais recente: o servidor recalcula sobre a tempestade da
-          última simulação, e oferecer isto numa rodada antiga responderia a
-          pergunta com a tempestade errada. */}
+      {/* As duas comparações do "E se…" (ADR-172) e o "E se…" livre: só na
+          rodada mais recente — o servidor compara a decisão da última
+          simulação, e oferecer isto numa rodada antiga responderia a pergunta
+          com a decisão errada. */}
+      {vendo === null && <ESe key={rodadas[rodadas.length - 1]?.ordem ?? 1} />}
       {vendo === null && (
         <Contrafactual
           bairros={porBairro.map((b) => ({ slug: b.bairro, nome: b.nome }))}
@@ -616,14 +637,11 @@ export function Resultado({
             alfa: porBairro.find((b) => b.equipe === 'alfa')?.bairro ?? null,
             bravo: porBairro.find((b) => b.equipe === 'bravo')?.bairro ?? null,
           }}
-          salvasReais={totais.salvas}
         />
       )}
 
-      {/* As perguntas de evidência (ADR-154): só na rodada mais recente, que é
-          a que a resposta descreve. Elas reaparecem a cada "Tentar de novo", e
-          o servidor guarda a melhor; nada aqui segura o recomeço. */}
-      {vendo === null && <Perguntas rodadaDaTurma={rodadaDaTurma} tentativa={rodadas[rodadas.length - 1]?.ordem ?? 1} />}
+      {/* O fechamento, quando o professor o abre (ADR-172). */}
+      {vendo === null && fechamentoAberto && <Fechamento />}
 
       {/* Uma rodada só ensina que aconteceu; duas ensinam que podia ter sido
           diferente. Recomeçar é livre e precisa ser dito aqui, no momento em

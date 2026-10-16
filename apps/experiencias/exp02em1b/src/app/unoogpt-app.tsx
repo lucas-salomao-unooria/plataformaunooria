@@ -10,7 +10,10 @@ import type {
   Passo,
   Projecao,
   RespostaEstado,
+  RespostaRegistro,
+  RespostaRelogio,
   RespostaResultado,
+  RespostaSaude,
   RespostaSessao,
   RespostaTurno,
   SessaoPublica,
@@ -19,6 +22,8 @@ import { VISOES, type Visao } from "../lib/visao";
 import { Abertura } from "./componentes/abertura";
 import { Decisao } from "./componentes/decisao";
 import { Operacao } from "./componentes/operacao";
+import { Registro } from "./componentes/registro";
+import { LigacaoDaSaude } from "./componentes/saude";
 import { PainelCientista } from "./componentes/painel-cientista";
 import { RelogioDaTempestade, useContagem, useRelogioDaTurma } from "./componentes/relogio";
 import { Resultado, type DadosDoResultado } from "./componentes/resultado";
@@ -43,6 +48,18 @@ import { Mapa, type EquipeNoMapa } from "./arte/mapa";
  * equipe e o minuto da cidade. Todas dependiam do modelo, e um bundle capaz de
  * computá-las deixaria o estudante antecipar o desfecho antes de enviar.
  */
+/** O resultado como a tela o guarda. */
+function paraResultado(r: RespostaResultado): DadosDoResultado {
+  return {
+    desfecho: r.desfecho,
+    esperado: r.esperado,
+    naoConsultados: r.naoConsultados,
+    tentativas: r.tentativas,
+    sobrou: r.sobrou,
+    trilha: r.trilha,
+  };
+}
+
 export function MissaoApp({ inicial }: { inicial: RespostaSessao }) {
   const [sessao, setSessao] = useState<SessaoPublica>(inicial.sessao);
   const [mapa, setMapa] = useState<BairroPublico[]>(inicial.mapa);
@@ -60,6 +77,15 @@ export function MissaoApp({ inicial }: { inicial: RespostaSessao }) {
   const [decidindo, setDecidindo] = useState(false);
   const [operacao, setOperacao] = useState<DadosDoResultado | null>(null);
   const [bairroSelecionado, setSelecionado] = useState<string | null>(null);
+  /** O registro da operação (ADR-172): entre "Enviar equipes" e o resultado, sem relógio. */
+  const [registro, setRegistro] = useState<RespostaRegistro | null>(null);
+  /** A ligação da Saúde (ADR-172) e se ela está na tela agora. */
+  const [saude, setSaude] = useState<RespostaSaude | null>(null);
+  const [saudeNaTela, setSaudeNaTela] = useState(false);
+  /** Abrir a decisão espera a ligação da Saúde fechar: dois diálogos de uma vez prendem o foco. */
+  const [decidirDepois, setDecidirDepois] = useState(false);
+  /** O professor abriu o fechamento (ADR-172). */
+  const [fechamentoAberto, setFechamentoAberto] = useState(inicial.relogio.fechamentoAberto);
 
   // Fechar um `Modal` do design system TEM que ser a mesma funcao entre renders.
   // O `Modal` da secao `chatgpt` mantem `onClose` nas dependencias do efeito que
@@ -70,6 +96,7 @@ export function MissaoApp({ inicial }: { inicial: RespostaSessao }) {
   // clicava nele, e um Enter reflexo fechava o modal. Ver o AGENTS.md da pasta.
   const fecharDecisao = useCallback(() => setDecidindo(false), []);
   const fecharReinicio = useCallback(() => setConfirmandoReinicio(false), []);
+  const fecharSaude = useCallback(() => setSaudeNaTela(false), []);
 
   const alocacao = sessao.alocacao;
   const justificativas = sessao.justificativas;
@@ -89,6 +116,99 @@ export function MissaoApp({ inicial }: { inicial: RespostaSessao }) {
   useEffect(() => {
     enviarEstado({ passo: sessao.passo, tentativa: sessao.tentativa });
   }, [sessao.passo, sessao.tentativa]);
+
+  /**
+   * F5 depois de "Enviar equipes": o registro volta, ou o resultado, conforme o
+   * servidor (ADR-172). O passo `resultado` sem nada na tela era uma coluna em
+   * branco.
+   */
+  useEffect(() => {
+    if (inicial.sessao.passo !== "resultado") return;
+    let viva = true;
+    void (async () => {
+      try {
+        if (!inicial.sessao.registroConcluido) {
+          const r = await api.get<RespostaRegistro>("/unoogpt/registro");
+          if (viva) setRegistro(r);
+        } else {
+          const r = await api.get<RespostaResultado>("/unoogpt/resultado");
+          if (viva) setResultado(paraResultado(r));
+        }
+      } catch {
+        /* sem resultado nesta tentativa: o estudante recomeça pelo botão */
+      }
+    })();
+    return () => {
+      viva = false;
+    };
+  }, [inicial.sessao.passo, inicial.sessao.registroConcluido]);
+
+  /**
+   * A ligação da Saúde aparece quando o SERVIDOR a ofereceu (primeiro destino
+   * ou abrir a decisão) e ainda não foi respondida — inclusive depois de um F5.
+   */
+  useEffect(() => {
+    if (!sessao.ofertaSaude || sessao.passo !== "investigacao" || saude?.respondida) return;
+    let viva = true;
+    api
+      .get<RespostaSaude>("/unoogpt/saude")
+      .then((r) => {
+        if (!viva) return;
+        setSaude(r);
+        if (r.ofertada && !r.respondida) setSaudeNaTela(true);
+      })
+      .catch(() => undefined);
+    return () => {
+      viva = false;
+    };
+  }, [sessao.ofertaSaude, sessao.passo, sessao.tentativa, saude?.respondida]);
+
+  /** Fechada a ligação, a decisão que esperava por ela abre. */
+  useEffect(() => {
+    if (!saudeNaTela && decidirDepois) {
+      setDecidirDepois(false);
+      setDecidindo(true);
+    }
+  }, [saudeNaTela, decidirDepois]);
+
+  /**
+   * No Resultado, o fechamento chega quando o PROFESSOR o abre: o relógio da
+   * turma o diz, consultado a cada 8 s até aparecer.
+   */
+  useEffect(() => {
+    if (sessao.passo !== "resultado" || !resultado || fechamentoAberto) return;
+    const id = setInterval(() => {
+      api
+        .get<RespostaRelogio>("/unoogpt/relogio")
+        .then((r) => setFechamentoAberto(r.relogio.fechamentoAberto))
+        .catch(() => undefined);
+    }, 8000);
+    return () => clearInterval(id);
+  }, [sessao.passo, resultado, fechamentoAberto]);
+
+  /**
+   * Abrir a decisão. Na primeira vez da tentativa, a ligação da Saúde vem antes
+   * (o servidor decide; ADR-172), e a decisão abre quando ela fechar.
+   */
+  async function abrirDecisao() {
+    if (sessao.ofertaSaude) {
+      setDecidindo(true);
+      return;
+    }
+    try {
+      const r = await api.post<RespostaSaude>("/unoogpt/saude/abrir");
+      setSaude(r);
+      setSessao((x) => ({ ...x, ofertaSaude: r.ofertada }));
+      if (r.ofertada && !r.respondida) {
+        setSaudeNaTela(true);
+        setDecidirDepois(true);
+        return;
+      }
+    } catch {
+      /* a ligação não veio: a decisão abre assim mesmo */
+    }
+    setDecidindo(true);
+  }
 
   /**
    * Traduz a falha em uma frase de tela.
@@ -143,6 +263,9 @@ export function MissaoApp({ inicial }: { inicial: RespostaSessao }) {
       if (dados.sessao.conjuntos.length > sessao.conjuntos.length) {
         telemetria.fontesCarregadas(dados.sessao.conjuntos.length);
       }
+      // Ele confirmou na conversa: quem manda é o botão "Enviar equipes", e a
+      // decisão abre para ele (ADR-172).
+      if (dados.abrirEnvio) await abrirDecisao();
       // A tempestade aconteceu NESTE turno. Mesmo confirmada pelo chat ela passa
       // pela operação no mapa: era estranho o desfecho pelo painel ter as
       // equipes cruzando a cidade e o desfecho pela conversa cair direto na
@@ -163,15 +286,8 @@ export function MissaoApp({ inicial }: { inicial: RespostaSessao }) {
   /** Lê o desfecho e monta a operação — as equipes cruzando o mapa. */
   async function abrirOperacao() {
     const r = await api.get<RespostaResultado>("/unoogpt/resultado");
-    const dados: DadosDoResultado = {
-      desfecho: r.desfecho,
-      esperado: r.esperado,
-      naoConsultados: r.naoConsultados,
-      tentativas: r.tentativas,
-      sobrou: r.sobrou,
-      trilha: r.trilha,
-    };
-    setOperacao(dados);
+    setRegistro(null);
+    setOperacao(paraResultado(r));
     telemetria.tempestadeEnfrentada({
       salvas: r.desfecho.totais.salvas,
       fontesUsadas: sessao.conjuntos.length,
@@ -220,21 +336,13 @@ export function MissaoApp({ inicial }: { inicial: RespostaSessao }) {
     }
     setOcupado(true);
     try {
-      const r = await api.postLento<RespostaResultado>("/unoogpt/simular");
+      // "Enviar equipes" congela a saída e abre o REGISTRO DA OPERAÇÃO: o
+      // desfecho fica retido no servidor até ele (ADR-172).
+      const r = await api.post<RespostaRegistro>("/unoogpt/mandar");
       setDecidindo(false);
-      setOperacao({
-        desfecho: r.desfecho,
-        esperado: r.esperado,
-        naoConsultados: r.naoConsultados,
-        tentativas: r.tentativas,
-        sobrou: r.sobrou,
-        trilha: r.trilha,
-      });
+      setRegistro(r);
+      setSessao((x) => ({ ...x, passo: "resultado" }));
       setAviso(null);
-      telemetria.tempestadeEnfrentada({
-        salvas: r.desfecho.totais.salvas,
-        fontesUsadas: sessao.conjuntos.length,
-      });
     } catch (erro) {
       reclamar(erro);
     } finally {
@@ -310,6 +418,9 @@ export function MissaoApp({ inicial }: { inicial: RespostaSessao }) {
       setFalas([]);
       setResultado(null);
       setOperacao(null);
+      setRegistro(null);
+      setSaude(null);
+      setSaudeNaTela(false);
       setAviso(null);
       telemetria.recomecou(dados.sessao.tentativa);
     } catch (erro) {
@@ -428,8 +539,12 @@ export function MissaoApp({ inicial }: { inicial: RespostaSessao }) {
                       }))}
                     onRecomecar={() => reiniciar("resultado")}
                     ocupado={ocupado}
-                    rodadaDaTurma={sessao.rodadaDaTurma}
+                    fechamentoAberto={fechamentoAberto}
                   />
+                )}
+
+                {registro && !operacao && !resultado && (
+                  <Registro registro={registro} onMudou={setRegistro} onVerResultado={() => void abrirOperacao()} />
                 )}
 
                 {operacao && (
@@ -479,7 +594,7 @@ export function MissaoApp({ inicial }: { inicial: RespostaSessao }) {
                     // registrado — e o estudante que não conseguiu registrar nada
                     // pelo chat ficava sem saída: no playtest o relógio zerou
                     // com o campo desabilitado e nenhum botão na tela.
-                    onDecidir={sessao.passo === 'investigacao' ? () => setDecidindo(true) : null}
+                    onDecidir={sessao.passo === 'investigacao' ? () => void abrirDecisao() : null}
                     onEnviar={alocacao.alfa || alocacao.bravo ? enfrentarAgora : null}
                     destinos={(['alfa', 'bravo'] as const).map((equipe) => ({
                       equipe,
@@ -550,7 +665,9 @@ export function MissaoApp({ inicial }: { inicial: RespostaSessao }) {
                     sessao.passo === 'investigacao' && !operacao ? trocarDestino : undefined
                   }
                   equipes={equipesNoMapa}
-                  emOperacao={operacao !== null}
+                  // No registro as equipes já estão a caminho: a hora de saída
+                  // foi a do clique (ADR-172).
+                  emOperacao={operacao !== null || registro !== null}
                 />
               </div>
             </div>
@@ -561,6 +678,10 @@ export function MissaoApp({ inicial }: { inicial: RespostaSessao }) {
       {/* Apagar a conversa inteira nao se confirma numa faixa do cabecalho: era
           um "Recomecar" ao lado de outro "Recomecar", e o de cima ja tinha sido
           clicado. Aqui a pergunta trava o foco e diz o que se perde. */}
+      {saudeNaTela && saude && !decidindo && (
+        <LigacaoDaSaude estado={saude} onMudou={setSaude} onFechar={fecharSaude} />
+      )}
+
       {confirmandoReinicio && (
         <Modal onClose={fecharReinicio} title="Recomeçar a Missão?">
           <Modal.Body>
