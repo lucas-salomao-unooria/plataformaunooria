@@ -10,10 +10,13 @@ import {
   ModalHeader,
   ModalTitle,
   RadioGroup,
+  Selection,
 } from "@edu/ui/ds";
 import {
+  OPCOES_DE_MOTIVO,
   ROTULO_DA_ORIGEM,
   type LeituraDaCelula,
+  type MotivoDeAjuste,
   type StatusDaEvidencia,
 } from "@/lib/evidencias";
 
@@ -46,10 +49,11 @@ export function AjustarCelula({
   alvo: CelulaEmAjuste;
   ocupado: boolean;
   erro: Erro | null;
-  onSalvar: (status: StatusDaEvidencia) => void;
+  onSalvar: (status: StatusDaEvidencia, motivo?: MotivoDeAjuste) => void;
   onFechar: () => void;
 }) {
   const [escolha, setEscolha] = useState<StatusDaEvidencia | "">(alvo.leitura.status ?? "");
+  const [motivo, setMotivo] = useState<MotivoDeAjuste | "">("");
   const { leitura } = alvo;
   const hoje = leitura.origem ? `${leitura.rotulo} · ${ROTULO_DA_ORIGEM[leitura.origem]}` : leitura.rotulo;
 
@@ -86,6 +90,16 @@ export function AjustarCelula({
             onChange={(valor) => setEscolha(String(valor) as StatusDaEvidencia)}
             options={OPCOES_DE_NIVEL}
           />
+          <Selection
+            label="Motivo (opcional)"
+            value={motivo}
+            options={OPCOES_DE_MOTIVO}
+            onChange={(valor) => setMotivo(String(valor) as MotivoDeAjuste | "")}
+            helperText="Fica no histórico do ajuste. Não muda o nível."
+            disabled={ocupado}
+            showOptionCheckbox={false}
+            fullWidth
+          />
           <ErroDoPainel erro={erro} />
         </div>
       </ModalBody>
@@ -98,7 +112,7 @@ export function AjustarCelula({
           size="md"
           isDisabled={!escolha || ocupado}
           isLoading={ocupado}
-          onClick={() => escolha && onSalvar(escolha)}
+          onClick={() => escolha && onSalvar(escolha, motivo || undefined)}
         >
           Salvar
         </Button>

@@ -104,11 +104,24 @@ export interface PainelDeHabilidades {
   pendentes: Record<string, number>;
 }
 
+/** POR QUE o professor ajustou (ADR-170) — cópia de `MOTIVOS_DE_AJUSTE` da api. Vai só para o histórico. */
+export type MotivoDeAjuste = "presente_sem_participar" | "problema_tecnico" | "legenda_revisada" | "outro";
+
+/** As opções do "Motivo" na janela de ajuste; `""` = sem motivo (é opcional). */
+export const OPCOES_DE_MOTIVO: { value: MotivoDeAjuste | ""; label: string }[] = [
+  { value: "", label: "Sem motivo" },
+  { value: "legenda_revisada", label: "Revisei o trabalho do estudante" },
+  { value: "presente_sem_participar", label: "Estava presente e não quis participar" },
+  { value: "problema_tecnico", label: "Problema técnico" },
+  { value: "outro", label: "Outro" },
+];
+
 /** Um item do corpo do `PATCH …/ajustes`. */
 export interface AjusteDeEvidencia {
   estudanteId: string;
   habilidade: string;
   status: StatusDaEvidencia;
+  motivo?: MotivoDeAjuste;
 }
 
 /**
@@ -430,8 +443,9 @@ export function ajustesEmMassa(
   ids: readonly string[],
   habilidade: string,
   status: StatusDaEvidencia,
+  motivo?: MotivoDeAjuste,
 ): AjusteDeEvidencia[] {
-  return [...new Set(ids)].map((estudanteId) => ({ estudanteId, habilidade, status }));
+  return [...new Set(ids)].map((estudanteId) => ({ estudanteId, habilidade, status, ...(motivo ? { motivo } : {}) }));
 }
 
 /** O endereço do painel no BFF — o prefixo `evidencias` está na allowlist. */

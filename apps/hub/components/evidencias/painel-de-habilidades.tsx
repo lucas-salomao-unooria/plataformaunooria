@@ -369,9 +369,9 @@ function PainelComFicha({ turmaId, expId, atividadeId, inicial, podeEditar, roda
           ocupado={ocupado}
           erro={erro}
           onFechar={fecharJanelas}
-          onSalvar={(status: StatusDaEvidencia) =>
+          onSalvar={(status: StatusDaEvidencia, motivo) =>
             void ajustar(
-              [{ estudanteId: emAjuste.estudanteId, habilidade: emAjuste.codigo, status }],
+              [{ estudanteId: emAjuste.estudanteId, habilidade: emAjuste.codigo, status, ...(motivo ? { motivo } : {}) }],
               emAjuste.rodada,
               false,
             )
@@ -387,8 +387,8 @@ function PainelComFicha({ turmaId, expId, atividadeId, inicial, podeEditar, roda
           ocupado={ocupado}
           erro={erro}
           onFechar={fecharJanelas}
-          onSalvar={(habilidade, status) =>
-            void ajustar(ajustesEmMassa(marcados, habilidade, status), rodada, true)
+          onSalvar={(habilidade, status, motivo) =>
+            void ajustar(ajustesEmMassa(marcados, habilidade, status, motivo), rodada, true)
           }
         />
       ) : null}

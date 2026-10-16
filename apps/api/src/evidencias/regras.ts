@@ -77,6 +77,16 @@ export const ID_DA_FICHA_RE = ATIVIDADE_ID_RE;
 /** Quantos ajustes cabem num `PATCH` — uma turma grande vezes a ficha, com folga. */
 export const AJUSTES_MAX = 200;
 
+/**
+ * POR QUE o professor ajustou (ADR-170) — opcional, e vai só para o HISTÓRICO
+ * (`evidencias_eventos.para.motivo`): o nível continua sendo o que ele
+ * escolheu. Existe porque, meses depois, "Atingiu ajustado" sem motivo não diz
+ * se foi a legenda revisada, um problema técnico ou a criança presente que não
+ * quis participar — e são leituras diferentes do mesmo número.
+ */
+export const MOTIVOS_DE_AJUSTE = ["presente_sem_participar", "problema_tecnico", "legenda_revisada", "outro"] as const;
+export type MotivoDeAjuste = (typeof MOTIVOS_DE_AJUSTE)[number];
+
 /** A ESCALA, do menor para o maior. É o que `melhor` compara. */
 export const NIVEL: Readonly<Record<Nivel, number>> = { nao_atingiu: 1, em_processo: 2, atingiu: 3 };
 
