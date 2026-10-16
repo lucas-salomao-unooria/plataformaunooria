@@ -942,6 +942,48 @@ passou por playtest em sala} --- estão marcados no código como ponto de partid
 para revisão pedagógica, não palavra final.
 \end{limitacao}
 
+\subsection{Seis brechas fechadas no servidor (out/2026)}
+
+Uma revisão do código achou seis lugares em que a decisão podia sair diferente
+do que a tela e o assistente prometem. Todas foram fechadas na API, sem mudar a
+experiência; a prova de cada uma está em \arq{tests/unoogpt-postgres.spec.ts}
+(\enquote{as brechas da Tempestade}) e em \arq{tests/unoogpt/modelo-tempestade.spec.ts}.
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
+\toprule
+\headrow \thd{Brecha} & \thd{Correção}\\
+\midrule
+Confirmar pela conversa pulava a justificativa &
+  O envio tem \textbf{um portão só}, \cd{aoConfirmar}, para o botão
+  \enquote{Enviar equipes} e para a ferramenta \cd{confirmar\_alocacao}. Sem o
+  porquê de cada equipe com destino, nada sai, e a ferramenta devolve ao
+  assistente o motivo, para ele pedir o porquê em vez de narrar a tempestade.\\
+\zebra Trocar o destino pela conversa mantinha o porquê antigo &
+  Destino novo apaga a justificativa daquela equipe pelos dois caminhos
+  (\cd{alocar} e \cd{aoAlocar}); repetir o mesmo destino não apaga.\\
+Carregar fonte pelo painel sem relógio &
+  \rota{PUT /unoogpt/conjuntos} só aceita com o relógio da turma aberto e a
+  tentativa em curso, como uma pergunta (409 \cd{relogio-nao-comecou},
+  \cd{relogio-encerrado} ou \cd{sessao-encerrada}). A tela não usava a rota,
+  mas quem a chamasse direto fabricava o \enquote{pediu dados} depois da
+  investigação.\\
+\zebra O \enquote{E se\ldots} não comparava nas mesmas tempestades &
+  \rota{POST /unoogpt/contrafactual} roda as duas decisões nas \textbf{mesmas}
+  200 tempestades, com a mesma sorte da operação em cada uma
+  (\cd{corridasPareadas}); a semente deixou de levar a decisão. A resposta
+  ganhou \cd{sua} (a decisão do estudante nas mesmas corridas) e
+  \cd{comparacao} (em quantas a outra resgatou mais, menos ou igual).\\
+O cartão \enquote{O que os dados mostram} e o mapa divergiam &
+  O cartão sorteava com a rodada de antes da carga da fonte, e o mapa com a de
+  depois; com o ruído de até 10\%, um empate aparecia num e não no outro.
+  Agora o turno anda a rodada junto com a carga.\\
+\zebra Equipe na base recusada com a frase errada &
+  Mandar com uma equipe na base é permitido, como dizem a tela e o assistente.
+  Sem destino nenhum, a recusa tem código próprio, \cd{sem-destino}, em vez de
+  \cd{falta-justificar}.\\
+\bottomrule
+\end{tabularx}
+
 \subsection{A evidência pedagógica: vale a melhor, conta ao encerrar}
 
 A ficha \arq{evidencias/fichas/exp02em1b.ts} (\adrr{ADR-154}) mede quatro

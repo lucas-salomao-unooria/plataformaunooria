@@ -27624,7 +27624,7 @@
           "unoogpt"
         ],
         "summary": "Carrega fontes no modelo pelo painel.",
-        "description": "`PUT` porque é atribuição de conjunto. As camadas ACUMULAM.\n\n**Papéis:** estudante.",
+        "description": "`PUT` porque é atribuição de conjunto. As camadas ACUMULAM.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- Só com o relógio da turma ABERTO e a tentativa em curso, como uma pergunta: antes da largada `relogio-nao-comecou`, depois do fim `relogio-encerrado`, depois de enviar `sessao-encerrada` (todos **409**). Sem isso, chamar a rota direto fabricava o \"pediu dados\" depois da investigação.",
         "security": [
           {
             "token-da-plataforma": []
@@ -28368,7 +28368,7 @@
           "unoogpt"
         ],
         "summary": "Enfrenta a tempestade e fecha a tentativa.",
-        "description": "Exige justificativa de **cada equipe com destino** — sem isso, `falta-justificar`. Devolve o mesmo que `GET /unoogpt/resultado`.\n\n**Papéis:** estudante.",
+        "description": "Exige justificativa de **cada equipe com destino** — sem isso, `falta-justificar`. Uma equipe na base é permitido; nenhuma equipe com destino é `sem-destino`. O mesmo portão vale para a confirmação pela conversa com o Cientista. Devolve o mesmo que `GET /unoogpt/resultado`.\n\n**Papéis:** estudante.",
         "security": [
           {
             "token-da-plataforma": []
@@ -28886,12 +28886,64 @@
                           "type": "number"
                         }
                       ]
+                    },
+                    "sua": {
+                      "type": "object",
+                      "properties": {
+                        "media": {
+                          "type": "number"
+                        },
+                        "faixa": {
+                          "type": "array",
+                          "minItems": 2,
+                          "maxItems": 2,
+                          "items": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "number"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "media",
+                        "faixa"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "comparacao": {
+                      "type": "object",
+                      "properties": {
+                        "corridas": {
+                          "type": "integer"
+                        },
+                        "maisEm": {
+                          "type": "integer"
+                        },
+                        "menosEm": {
+                          "type": "integer"
+                        },
+                        "empates": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "corridas",
+                        "maisEm",
+                        "menosEm",
+                        "empates"
+                      ],
+                      "additionalProperties": false
                     }
                   },
                   "required": [
                     "alocacao",
                     "media",
-                    "faixa"
+                    "faixa",
+                    "sua",
+                    "comparacao"
                   ],
                   "additionalProperties": false
                 }
@@ -28903,7 +28955,7 @@
           "unoogpt"
         ],
         "summary": "\"E se eu tivesse mandado para…\" — calculado e descartado.",
-        "description": "**Não grava e não debita**: é a pergunta que o estudante faz ao VER o resultado, e transformá-la em tentativa nova apagaria a diferença entre a decisão que ele tomou e a que ele imaginou depois.\n\n**Papéis:** estudante.",
+        "description": "**Não grava e não debita**: é a pergunta que o estudante faz ao VER o resultado, e transformá-la em tentativa nova apagaria a diferença entre a decisão que ele tomou e a que ele imaginou depois.\n\n**Pareado:** a decisão do estudante (`sua`) e a outra rodam nas MESMAS 200 tempestades, com a mesma sorte da operação em cada uma; `comparacao` conta em quantas a outra resgatou mais, menos ou igual.\n\n**Papéis:** estudante.",
         "security": [
           {
             "token-da-plataforma": []
