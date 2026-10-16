@@ -35,14 +35,16 @@ import { MARCADOR_DA_REFLEXAO } from "./vocabulario";
  * Os guardrails, na ordem: rate limit por estudante, `temSaldo` da quota do
  * perfil `estudante` ANTES (regra 5), `generateJson` com temperatura 0 e UMA
  * tentativa, o `validar` Zod que recusa motivo incoerente com o resultado, o
- * teto de ~6 s por `Promise.race`, e o débito no `aoUsarTokens` (a chamada
+ * teto de 60 s por `Promise.race` (a criança não espera: a leitura roda depois
+ * da resposta do salvamento, fora do teto de 30 s do BFF), e o débito no `aoUsarTokens` (a chamada
  * que perde a corrida também foi paga). A medição de custo vem do
  * `MedidorDeProvider`, como toda chamada pelo `AiProvider`.
  *
  * Nenhum log leva o texto da criança: só o código do motivo ou da falha.
  */
 
-export const TETO_DA_LEITURA_MS = 6000;
+/** Próprio desta missão — o da A Seleção (`TETO_DO_CANAL_A_MS`) continua o dele. */
+export const TETO_DA_LEITURA_MS = 60_000;
 export const TETO_DA_LEITURA = "TETO_DA_LEITURA_DA_REFLEXAO";
 export const LIMITE_DA_LEITURA = { usos: 3, janelaMs: 10 * 60_000 } as const;
 
