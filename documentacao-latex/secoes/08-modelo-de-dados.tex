@@ -909,7 +909,14 @@ Uma evidência por habilidade por rodada & \cd{UNIQUE (escola\_id, exp\_id,
   \cd{projecao}; \cd{fonte\_estudante\_id} se e só se for cópia
   (\cd{equipe}/\cd{projecao}); \cd{editado\_por} se e só se for ajuste
   (\cd{professor}). A linha que o código montar errada é recusada pelo banco, em
-  vez de chegar ao painel como um estado que ele não sabe mostrar.\\
+  vez de chegar ao painel como um estado que ele não sabe mostrar.
+  \cd{marcador} (\adrr{ADR-166}, migração
+  \arq{20261016120000\_\B{}evidencia\_\B{}origem\_\B{}do\_\B{}nivel}) só na
+  origem \cd{propria}.\\
+\zebra O marcador que deu o nível NA linha & A evidência própria guarda de que
+  marcador veio (\adrr{ADR-166}). Derivá-lo das marcas a cada leitura faria o
+  consolidado da rede ler também as marcas de todas as turmas, só para separar
+  o \enquote{em processo} que mede a atividade e não o estudante.\\
 \zebra O vocabulário em dois lugares & Os \emph{CHECKs} de \cd{status},
   \cd{origem}, \cd{situacao}, \cd{tipo} e o \emph{regex} de \cd{atividade\_id}
   repetem as constantes de \arq{evidencias/regras.ts}, e

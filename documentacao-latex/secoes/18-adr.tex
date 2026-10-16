@@ -9,7 +9,7 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{165 decisões}, numeradas até ADR-165. A 160 (o painel de habilidades pelo total) e a 161 (os custos de IA) nasceram no mesmo dia, em frentes paralelas, e a 161 foi escrita depois de conferir que a 160 já estava tomada em \cd{dev-local}. A 153 (a evidência do Unoovista) e a 154 (a da Missão Tempestade) nasceram no mesmo dia, em frentes paralelas. A 132 (a Ajuda com
+São \textbf{166 decisões}, numeradas até ADR-166. A 160 (o painel de habilidades pelo total) e a 161 (os custos de IA) nasceram no mesmo dia, em frentes paralelas, e a 161 foi escrita depois de conferir que a 160 já estava tomada em \cd{dev-local}. A 153 (a evidência do Unoovista) e a 154 (a da Missão Tempestade) nasceram no mesmo dia, em frentes paralelas. A 132 (a Ajuda com
 avatar) entrou no código antes de ter seção aqui, e por um dia o número foi
 citado sem existir; a 133 pulou para não colidir com ela. A 133 e a 134 nasceram no mesmo dia, em frentes paralelas
 (Unoovista e Unoochat), e entraram juntas no merge; a 135 e a 136 levaram as
@@ -216,6 +216,7 @@ que a cercam.
 \adrr{ADR-163} & O texto alternativo da imagem do post é o \emph{brief} que a gerou; as fotos fixas são descritas no \emph{bundle} & 2026-10-13 & Aceita; corrige uma consequência da \adrr{ADR-162}\\
 \zebra \adrr{ADR-164} & O Júri Estadual com quarenta projetos: o feed sem repetir post, a galeria mostra O QUE sumiu, e o banco padrão ganha imagens & 2026-10-14 & Aceita; supera em parte a \adrr{ADR-157}\\
 \adrr{ADR-165} & As instruções da Ajuda no painel: o \enquote{como responder} de cada atendente é dado & 2026-10-15 & Aceita; complementa a \adrr{ADR-132} e a \adrr{ADR-158}\\
+\zebra \adrr{ADR-166} & De onde veio o nível: a evidência guarda o marcador que a deu, e o consolidado conta à parte o \enquote{em processo} limitado pela atividade & 2026-10-16 & Aceita; complementa a \adrr{ADR-112} e a \adrr{ADR-144}\\
 \bottomrule
 \end{tabularx}
 
@@ -14932,4 +14933,91 @@ do banco.
 
 \textbf{Gatilho.} Pedido de instruções por escola ou por papel, ou um incidente
 causado por instrução editada.
+
+% ---------------------------------------------------------------------------
+\section{ADR-166 --- De onde veio o nível: a evidência guarda o marcador que a deu, e o consolidado conta à parte o \enquote{em processo} limitado pela atividade}
+\label{adr:evidencia-origem-do-nivel}
+
+\textbf{Data.} 2026-10-16. \textbf{Status.} Aceita. \textbf{Complementa} a
+\adrr{ADR-112} e a \adrr{ADR-144}.
+
+\begin{especificacao}{Contexto}
+\begin{itemize}
+  \item \textbf{O pedido.} O dono do produto aprovou medir TODAS as
+    habilidades do 8º ano por ação (o Canal A da exp08ef1b), e a EF08CO11 passa
+    a ter duas ações: o Raio-x do feed e a reflexão lida pela IA. Vale a melhor
+    (\adrr{ADR-112}), mas o professor precisa saber QUAL das duas deu o nível
+    --- sobretudo quando ele vem da leitura da IA, que é sugestão --- e, quando
+    elas divergem, o nível de cada uma.
+  \item \textbf{O limite da atividade.} O envio do 8º ano só mede a
+    confiabilidade quando o acervo da atividade tem página de fofoca ou de
+    humor nos dois lados. Nas atividades sem isso, o envio vai no máximo a
+    \enquote{em processo}: esse nível diz da ATIVIDADE escolhida, não do
+    estudante, e o consolidado da escola e da rede o somava como se dissesse.
+  \item \textbf{O que havia.} A linha de \cd{evidencias} guardava o nível, a
+    origem e a situação; o marcador ficava só em \cd{evidencias\_marcas}. O
+    painel não sabia de onde veio a evidência própria, e o consolidado não
+    tinha como separar o limitado.
+\end{itemize}
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{enumerate}
+  \item \textbf{A evidência própria guarda o marcador que deu o nível}
+    (coluna \cd{evidencias.marcador}, nula na cópia, no ajuste e nas linhas
+    anteriores). É o marcador da melhor marca da habilidade na rodada
+    (\cd{regras.ts\#marcadorDoNivel}); no empate, o que NÃO é limitado pela
+    atividade ganha, e depois a ordem da ficha. Dois \emph{CHECKs}: o alfabeto
+    dos ids da ficha, e marcador só na origem \cd{propria}.
+  \item \textbf{A ficha dá rótulo às ações}: \cd{MarcadorDaFicha.rotulo}
+    (\enquote{Raio-x}, \enquote{Reflexão --- sugestão da IA}) e
+    \cd{limitadoPelaAtividade}. O painel da atividade diz, embaixo do nível, a
+    ação que o deu e, quando duas ações da habilidade divergem na rodada, o
+    nível de cada uma --- também depois do ajuste do professor. Missão sem
+    rótulo não recebe nada disso: o painel dela não muda.
+  \item \textbf{O consolidado conta à parte o \enquote{em processo} limitado}:
+    \cd{emProcessoLimitado}, fora de \cd{emProcesso} e dentro do \cd{total},
+    que continua sendo a soma das caixas. Entre atividades, \textbf{o empate
+    entre um \enquote{em processo} limitado e um comum guarda o comum}: houve
+    uma atividade que mediu o estudante. A barra ganha o quinto segmento só
+    quando há criança nele.
+\end{enumerate}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Derivar o marcador das marcas a cada leitura}, sem coluna
+    nova. O painel da atividade conseguiria, mas o consolidado da rede lê
+    escola por escola em lotes (\adrr{ADR-82}) e passaria a ler também as
+    marcas de todas as turmas --- o dobro de linhas para separar uma caixa.
+  \item \textbf{Contar o limitado DENTRO do \enquote{em processo}}, com um
+    \enquote{dos quais} ao lado. A barra continuaria somando ao estudante um
+    nível que mediu a atividade; a coordenação compara turmas pela porcentagem
+    e não leria a nota de rodapé.
+  \item \textbf{Esconder o nível da IA até o professor confirmar}. O dono do
+    produto decidiu que a marca da reflexão vale desde o início; o painel diz
+    \enquote{sugestão da IA} e o professor ajusta como qualquer nível.
+  \item \textbf{A regra \enquote{a pergunta só conta sem tarefa}}, que chegou a
+    ser desenhada junto. Saiu com as perguntas do 8º ano e da 2ª série: sem
+    pergunta, não há o que ignorar.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{A cópia da equipe não carrega o marcador.} O colega de
+    computador que recebe um \enquote{em processo} limitado é contado como
+    \enquote{em processo} comum no consolidado. Aceito: a cópia já é uma
+    aproximação (\adrr{ADR-111}), e o professor ajusta um a um.
+  \item \textbf{As linhas anteriores à coluna ficam sem \enquote{de onde
+    veio}.} Nenhuma missão tinha rótulo antes desta decisão, então nada some do
+    painel.
+  \item \textbf{O limitado depende da ficha de hoje.} Se uma versão nova da
+    ficha deixar de marcar um marcador como limitado, o consolidado passa a
+    contá-lo como comum também no passado.
+\end{itemize}
+
+\textbf{Gatilho.} Uma segunda missão com marcador limitado pela atividade, ou
+pedido do dono do produto para que a cópia da equipe carregue a origem.
 

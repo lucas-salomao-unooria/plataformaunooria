@@ -513,7 +513,13 @@ numa atividade, numa rodada. É o que o painel do professor lê.
 \zebra \cd{editado\_por} & \cd{UUID} & Quem ajustou. Preenchida se e só se a
   origem for \cd{professor} (\cd{evidencias\_\B{}editado\_\B{}por\_\B{}check}). \textbf{Sem
   FK}: carimbo não trava a saída de um professor da rede.\\
-\cd{atualizado\_em} & \cd{TIMESTAMPTZ} & \cd{@updatedAt}.\\
+\cd{marcador} & \cd{TEXT} & O marcador da ficha que deu o nível
+  (\adrr{ADR-166}): o \enquote{de onde veio} do painel e o que separa, no
+  consolidado, o \enquote{em processo} limitado pela atividade. Só na origem
+  \cd{propria} (\cd{evidencias\_\B{}marcador\_\B{}so\_\B{}na\_\B{}propria\_\B{}check}), no
+  alfabeto dos ids da ficha (\cd{evidencias\_\B{}marcador\_\B{}check}); nula na
+  cópia, no ajuste e nas linhas anteriores à coluna.\\
+\zebra \cd{atualizado\_em} & \cd{TIMESTAMPTZ} & \cd{@updatedAt}.\\
 \bottomrule
 \end{tabularx}
 
