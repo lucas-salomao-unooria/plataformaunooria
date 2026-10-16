@@ -1,5 +1,6 @@
 import { BFF, HUB, suite } from "../lib/roteiro.mjs";
 import { conta } from "../lib/credenciais.mjs";
+import { vigiarFalhasDaApi } from "../lib/smoke.mjs";
 
 /**
  * A MISSÃO INTEIRA do Unoovista (exp08ef1b), ponta a ponta, com as duas pessoas que a
@@ -41,7 +42,12 @@ await suite(
       "O estudante PUBLICA um post seu e as personas reagem a ele",
       "As sete etapas da aula avançam só pelo professor, e chegam ao estudante em segundos",
       "O relatório expande o aparelho SEM recarregar a experiência, e volta a contrair",
-      "A reflexão escrita é gravada e sobrevive à recarga",
+      "O Raio-x (6a) vem logo depois da resposta, ainda no disfarce, sem devolutiva no envio",
+      "A revelação tem dez telas, com a ponte do Raio-x, os termos e o registro",
+      "Depois do cinza, os termos (6b) e o envio (6c), sem o lado nas miniaturas",
+      "A reflexão escrita é gravada, sobrevive à recarga e é lida pela IA real, uma vez só",
+      "As três perguntas do fim não aparecem mais (o Canal B saiu)",
+      "O painel do professor diz de qual tarefa veio cada nível",
       "O que ela fez virou medida: o dossiê é computado dos eventos da sessão",
     ],
     comando: "node scripts/e2e/estudante/02-instanooria.mjs",
@@ -108,6 +114,10 @@ await suite(
     // ═══ o estudante entra ════════════════════════════════════════════════
     const estudante = conta("estudante", { serie: SERIE });
     const p = await r.pagina("estudante", { viewport: { width: 1280, height: 950 } });
+    /* As rotas do Canal A (`/runs/:id/raio-x`, `termos`, `envio`) que falharem
+       aparecem com o corpo, em vez de virar timeout num seletor. */
+    const falhasDaApi = [];
+    vigiarFalhasDaApi(p, falhasDaApi, "estudante");
     await r.entrar(p, estudante.login);
 
     await p.goto(`${HUB}/exp/exp08ef1b`, { waitUntil: "domcontentloaded" });
@@ -373,6 +383,20 @@ await suite(
     await tela.locator('button[aria-label="Início"]').click();
     await p.waitForTimeout(1500);
 
+    /* ROLAR DE VERDADE antes de a investigação fechar. O Raio-x (6a) só usa
+       posts que ela VIU no feed (a tela cinza nunca entra), dos dois lados e
+       neutros: com três posts rolados ele não fecharia 6, e a habilidade
+       ficaria só com a reflexão — o caso de quem quase não rolou. Um post por
+       vez, o tempo de o dwell (≥60% visível) contar, e o feed pede blocos novos
+       sozinho. */
+    for (let i = 0; i < 24; i += 1) {
+      const doFeed = tela.locator("article[data-post-id]");
+      if (i >= (await doFeed.count())) break;
+      await doFeed.nth(i).scrollIntoViewIfNeeded();
+      await p.waitForTimeout(1300);
+    }
+    await p.waitForTimeout(5000); // o lote de eventos do motor sai a cada 4 s
+
     // ═══ o professor move a turma: RESPOSTA ═══════════════════════════════
     await moverEtapa(prof, atividade.id, "conclusao");
     await tela.locator("text=E aí, o que você acha?").waitFor({ timeout: 40_000 });
@@ -395,6 +419,49 @@ await suite(
       prova:
         "'Ainda em dúvida' é uma resposta legítima e conta como tal. Forçar um lado inventaria " +
         "convicção onde havia hesitação.",
+    });
+
+    // ═══ O RAIO-X (6a), na mesma tela, ainda no disfarce ═════════════════
+    const raioX = tela.locator('section[aria-label="Raio-x do feed"]');
+    await raioX
+      .getByText("Antes da conversa: de cada post abaixo, o que ele faz?")
+      .waitFor({ timeout: 30_000 })
+      .catch(() => {
+        throw new Error(
+          `o Raio-x não apareceu depois da resposta${falhasDaApi.length ? ` — falhas da api: ${falhasDaApi.join(" | ")}` : ""}`,
+        );
+      });
+    const textoDoRaioX = await raioX.innerText();
+    r.exigir(
+      !/algoritmo|bolha|lado inicial|lado de partida/i.test(textoDoRaioX),
+      "o Raio-x não fala de algoritmo, bolha nem lado inicial — o disfarce continua",
+    );
+    await r.registrar(p, "raio-x", {
+      titulo: "O Raio-x do feed, antes do debate",
+      mostra: "Um post que ela viu, e três opções: puxa para um lado, puxa para o outro, ou informa sem tomar lado.",
+      prova:
+        "Os 6 posts são posts que ELA viu (nenhum da tela cinza), e o aparelho nem sabe o lado deles: " +
+        "a composição, o gabarito e a régua ficam na api.",
+    });
+    const ESCOLHAS = [/^puxa para/, /^informa sem tomar lado$/];
+    for (let i = 0; i < 6; i += 1) {
+      const opcoesDoPost = raioX.getByRole("radio", { name: ESCOLHAS[i % 2] });
+      await opcoesDoPost.first().click();
+      const seguir = raioX.getByRole("button", { name: i === 5 ? "Enviar" : "Próximo" });
+      await seguir.click();
+    }
+    await raioX.getByText("Enviado.").waitFor({ timeout: 20_000 });
+    const depoisDoEnvio = await raioX.innerText();
+    r.exigir(
+      !/acert|errou|certo|errado|de onde veio/i.test(depoisDoEnvio),
+      "o envio não dá devolutiva: nem acerto, nem de onde cada post veio (isso fica para a revelação)",
+    );
+    await r.registrar(p, "raio-x-enviado", {
+      titulo: "Raio-x enviado",
+      mostra: "Só \"Enviado.\" — nada de certo, errado ou contagem.",
+      prova:
+        "A devolutiva do Raio-x entra DENTRO da revelação, como ponte. Dizer agora de onde cada post " +
+        "veio entregaria a revelação antes do debate.",
     });
 
     // ═══ DEBATE ══════════════════════════════════════════════════════════
@@ -433,13 +500,40 @@ await suite(
     });
 
     let telasDaRevelacao = 0;
-    for (let i = 0; i < 12; i += 1) {
+    let viuAPonte = false;
+    let viuOsTermos = false;
+    let viuORegistro = false;
+    for (let i = 0; i < 14; i += 1) {
+      if (!viuAPonte && (await tela.getByText("Os 6 posts do Raio-x, antes do debate:").count())) {
+        viuAPonte = true;
+        const ponte = tela.getByRole("list", { name: "De onde veio cada post" });
+        await ponte.waitFor({ timeout: 10_000 });
+        const itens = await ponte.getByRole("listitem").count();
+        r.exigir(itens === 6, `a ponte mostra os 6 posts do Raio-x (${itens})`);
+        const textoDaPonte = await ponte.innerText();
+        r.exigir(
+          /escrito para (defender|informar)/.test(textoDaPonte) && !/acert|errou|certo|errado/i.test(textoDaPonte),
+          "cada post diz de onde veio, sem certo ou errado",
+        );
+        await r.registrar(p, "ponte-do-raio-x", {
+          titulo: "A ponte do Raio-x, dentro da revelação",
+          mostra: "Os 6 posts do Raio-x, cada um com \"escrito para defender [lado]\" ou \"escrito para informar, sem defender lado\".",
+          prova:
+            "A devolutiva fala do post, nunca do estudante: sem contagem e sem certo ou errado. Ela só " +
+            "existe da revelação em diante, e só para quem enviou o Raio-x.",
+        });
+      }
+      if (await tela.getByText("Nos termos de uso — que quase ninguém lê, nem adulto.").count()) viuOsTermos = true;
+      if (await tela.getByText("O registro, não.").count()) viuORegistro = true;
       const continuar = tela.locator("button", { hasText: "Continuar" });
       if (!(await continuar.count())) break;
       await continuar.click();
       telasDaRevelacao += 1;
       await p.waitForTimeout(700);
     }
+    r.exigir(viuAPonte, "a revelação teve a ponte do Raio-x");
+    r.exigir(viuOsTermos && viuORegistro, "a revelação teve as duas telas novas: os termos e o registro");
+    r.exigir(telasDaRevelacao + 1 === 10, `a revelação tem dez telas para quem fez o Raio-x (${telasDaRevelacao + 1})`);
     const verRelatorio = tela.locator("button", { hasText: "Ver meu relatório" });
     await verRelatorio.waitFor({ timeout: 15_000 });
     const caixaAntes = await aparelho.boundingBox();
@@ -515,16 +609,96 @@ await suite(
       detalhe: `iframe de volta a ${Math.round(caixaPerdidos.width)}px`,
     });
 
+    // ═══ AS TAREFAS DEPOIS DO CINZA: 6b os termos, 6c o envio ════════════
+    await tela.getByRole("button", { name: "Continuar" }).click();
+    await tela
+      .getByText("Estes seriam os termos de uso de uma plataforma como o Unoovista.")
+      .waitFor({ timeout: 30_000 })
+      .catch(() => {
+        throw new Error(`os termos (6b) não abriram${falhasDaApi.length ? ` — falhas da api: ${falhasDaApi.join(" | ")}` : ""}`);
+      });
+    await r.registrar(p, "termos", {
+      titulo: "Os termos (6b)",
+      mostra: "As 5 regras, fictícias: marcar as que explicam o feed, dizer o efeito de cada uma e escolher a mudança.",
+      prova:
+        "Os termos aparecem pela primeira vez aqui, depois da revelação. Marcar todas dá \"não atingiu\": " +
+        "a régua cobra localizar, explicar o efeito e julgar — e o gabarito fica na api.",
+    });
+    /* As três que explicam, cada uma com o seu efeito, e a mudança que dá controle. */
+    for (const [clausula, efeito] of [
+      ["Registramos suas curtidas", "e1"],
+      ["Usamos o seu histórico de interações", "e2"],
+      ["Guardamos o histórico das suas interações", "e3"],
+    ]) {
+      /* O `<input>` do `Checkbox` do DS é só para leitor de tela (sr-only, fora da
+         área visível): quem marca é o toque no RÓTULO, como o dedo da criança. */
+      await tela.getByText(new RegExp(clausula)).click();
+      r.exigir(await tela.getByRole("checkbox", { name: new RegExp(clausula) }).isChecked(), `a regra "${clausula}…" ficou marcada`);
+      const grupo = clausula === "Registramos suas curtidas" ? "c1" : clausula.startsWith("Usamos") ? "c3" : "c5";
+      await tela.locator(`input[type="radio"][name="efeito-${grupo}"][value="${efeito}"]`).check({ force: true });
+    }
+    await tela.locator('input[type="radio"][name="mudanca"][value="controle"]').check({ force: true });
+    await tela.getByRole("button", { name: "Enviar" }).click();
+
+    await tela
+      .getByText("Um colega de outra turma não viu nada", { exact: false })
+      .waitFor({ timeout: 30_000 })
+      .catch(() => {
+        throw new Error(`o envio (6c) não abriu${falhasDaApi.length ? ` — falhas da api: ${falhasDaApi.join(" | ")}` : ""}`);
+      });
+    const postsDoEnvio = await tela.getByRole("checkbox", { name: "mandar este" }).count();
+    r.exigir(postsDoEnvio === 9, `o envio oferece 9 posts (${postsDoEnvio})`);
+    const textoDoEnvio = await tela.getByRole("list", { name: "Os posts" }).innerText();
+    r.exigir(!/lado A|lado B|sem lado/i.test(textoDoEnvio), "as miniaturas não dizem o lado de cada post");
+    await r.registrar(p, "envio", {
+      titulo: "Mandar pra quem não viu (6c)",
+      mostra: "9 posts, com quem publicou e a descrição do perfil, 4 mensagens e uma frase opcional.",
+      prova:
+        "A miniatura não diz o lado: montar \"os dois lados\" é reconhecê-los. A descrição do perfil é o que " +
+        "mostra a página de fofoca ou de humor — e o servidor classifica pelo lado gravado.",
+    });
+    const marcar = tela.getByRole("checkbox", { name: "mandar este" });
+    await tela.getByText("mandar este").nth(0).click();
+    await tela.getByText("mandar este").nth(1).click();
+    r.exigir((await marcar.nth(0).isChecked()) && (await marcar.nth(1).isChecked()), "dois posts escolhidos para mandar");
+    await tela.locator('input[type="radio"][name="mensagem"][value="m1"]').check({ force: true });
+    await tela.locator("textarea").fill("Olha os dois lados antes de decidir.");
+    await tela.getByRole("button", { name: "Enviar" }).click();
+
+    /* Feitas as duas, o cinza volta com "Rever meu relatório". */
+    const rever = tela.getByRole("button", { name: "Rever meu relatório" });
+    await rever.waitFor({ timeout: 30_000 });
+    await rever.click();
+    await tela.locator("button", { hasText: "Copiar relatório" }).waitFor({ timeout: 30_000 });
+    await p.waitForTimeout(1200);
+    const caixaRever = await aparelho.boundingBox();
+    r.exigir(caixaRever.width > caixaPerdidos.width * 1.5, "\"Rever meu relatório\" abre o relatório em tela cheia, a pedido");
+    await r.registrar(p, "rever-relatorio", {
+      titulo: "Rever meu relatório",
+      mostra: "O relatório de novo, em tela cheia, com \"Voltar\".",
+      prova:
+        "Na versão em duas aulas, as duplas e a reflexão acontecem dias depois: rever o relatório evita que o " +
+        "gesto próprio que a reflexão pede vire memória.",
+    });
+    await tela.getByRole("button", { name: "Voltar" }).click();
+    await p.waitForTimeout(1500);
+
     // ═══ REFLEXÃO ════════════════════════════════════════════════════════
     await moverEtapa(prof, atividade.id, "reflexao");
     const escrita = tela.locator("textarea");
     await escrita.waitFor({ timeout: 40_000 });
     const TEXTO_REFLEXAO =
-      "Eu salvei os posts que já combinavam com o que eu pensava, e nem percebi que era sempre o mesmo lado.";
+      "Como eu parava e salvava os posts de um lado, o feed foi me mostrando cada vez mais deles e os do outro lado quase não chegaram. Eu nem percebi que era sempre o mesmo lado.";
     await escrita.pressSequentially(TEXTO_REFLEXAO, { delay: 8 });
+    const aviso = await tela
+      .getByText("Um programa de IA lê o primeiro texto que você salvar e sugere a ele um nível; quem decide é ele.", {
+        exact: false,
+      })
+      .count();
+    r.exigir(aviso > 0, "a tela avisa que o professor lê e que a IA lê o primeiro texto salvo");
     await r.registrar(p, "reflexao-escrita", {
       titulo: "A reflexão final",
-      mostra: "Campo de escrita livre, com andaimes opcionais para quem travou.",
+      mostra: "Campo de escrita livre, com o aviso de quem lê o texto e andaimes opcionais para quem travou.",
       prova:
         "É a única produção textual longa da missão, e ela é do estudante — o professor lê no " +
         "relatório da turma, ninguém mais.",
@@ -553,38 +727,11 @@ await suite(
       detalhe: `${voltou.length} caracteres devolvidos pelo servidor`,
     });
 
-    // ═══ AS PERGUNTAS DE EVIDÊNCIA (E14) ═════════════════════════════════
-    /* Três perguntas do PO, DEPOIS da reflexão salva, uma de cada vez. As
-       alternativas chegam embaralhadas a cada leitura, então a escolha é pelo
-       TEXTO (o nome acessível do rádio), nunca pela posição. Uma resposta de cada
-       nível, para o painel mostrar os três. */
-    const RESPOSTAS = [
-      { pergunta: "O que fez a plataforma montar esse feed", escolha: /O resto ficou de fora/ },
-      { pergunta: "O que isso tem a ver com as regras", escolha: /é assim que o algoritmo funciona/ },
-      { pergunta: "o que muda quando alguém compartilha", escolha: /circula incompleta/ },
-    ];
-    for (const [i, resposta] of RESPOSTAS.entries()) {
-      await telaDepois.getByText(resposta.pergunta, { exact: false }).waitFor({ timeout: 20_000 });
-      await telaDepois.getByRole("radio", { name: resposta.escolha }).check();
-      await telaDepois.getByRole("button", { name: "Enviar resposta" }).click();
-      await telaDepois.getByText("Resposta enviada ✓").nth(i).waitFor({ timeout: 20_000 });
-    }
-    await telaDepois.getByText("Pronto. Suas respostas foram enviadas.").waitFor({ timeout: 20_000 });
-    await r.registrar(p, "perguntas-de-evidencia", {
-      titulo: "As três perguntas depois da reflexão",
-      mostra: "As perguntas do PO, uma de cada vez, com a resposta escolhida e enviada.",
-      prova:
-        "A tela nunca diz se acertou: o gabarito mora na api, que devolve as alternativas " +
-        "embaralhadas e sem o nível, e responde igual para qualquer escolha.",
-    });
-
-    /* No F5, as três voltam TRAVADAS: a api guarda a primeira resposta, e a tela
-       não convida a um segundo envio que não valeria nada. */
-    await p.reload({ waitUntil: "domcontentloaded" });
-    const telaTravada = p.frameLocator('iframe[data-experiencia]');
-    await telaTravada.getByText("Pronto. Suas respostas foram enviadas.").waitFor({ timeout: 40_000 });
-    const travadas = await telaTravada.getByText("Resposta enviada ✓").count();
-    r.exigir(travadas === 3, `as três perguntas reabrem travadas depois do F5 (${travadas} de 3)`);
+    // ═══ O CANAL B SAIU: nada de perguntas do fim ═══════════════════════
+    await p.waitForTimeout(2500);
+    const perguntas = await telaDepois.getByRole("button", { name: "Enviar resposta" }).count();
+    const cabecalho = await telaDepois.getByText("mais três perguntas").count();
+    r.exigir(perguntas === 0 && cabecalho === 0, "as três perguntas do fim não aparecem mais depois da reflexão salva");
 
     // ═══ A TELEMETRIA CHEGOU? ════════════════════════════════════════════
     /* O dwell de cada post é a medida central da missão, e ela viaja por dois
@@ -610,6 +757,32 @@ await suite(
         Boolean(explicacao?.origem && explicacao?.ladoRotulo),
         `o relatório sabe de onde veio o lado do feed dela (origem: ${explicacao?.origem})`,
       );
+
+      /* A LEITURA DA REFLEXÃO pela IA REAL (Vertex): ela roda depois da resposta
+         ao estudante. A espera corre contra o erro: a leitura que ENCERROU como
+         falha (sem saldo, tempo, saída inválida) reprova na hora, com o motivo —
+         nunca um timeout cego. */
+      let leitura = null;
+      const limite = Date.now() + 90_000;
+      while (Date.now() < limite) {
+        const det = await prof.request.get(`${BFF}/atividades/${atividade.id}/estudantes/${linha.runId}`);
+        leitura = (await det.json())?.sessao?.canalA?.leitura ?? null;
+        if (leitura?.lidaEm) break;
+        await p.waitForTimeout(2000);
+      }
+      r.exigir(Boolean(leitura?.lidaEm), "a IA leu a reflexão (a leitura encerrou)");
+      r.exigir(
+        leitura?.resultado === "nivel",
+        `a leitura da IA real deu um nível (resultado: ${leitura?.resultado}, nível: ${leitura?.nivel}, motivo: ${leitura?.motivo})`,
+      );
+      const detalhe = await (await prof.request.get(`${BFF}/atividades/${atividade.id}/estudantes/${linha.runId}`)).json();
+      const canalA = detalhe?.sessao?.canalA;
+      r.exigir(
+        canalA?.raioX && canalA?.termos && canalA?.envio && canalA?.revelacaoConcluida,
+        "o professor vê que ela terminou a revelação e fez o Raio-x, os termos e o envio",
+      );
+      r.exigir(canalA?.fraseDoEnvio === "Olha os dois lados antes de decidir.", "e lê a frase própria do envio");
+      r.exigir(String(canalA?.textoLido ?? "").startsWith("Como eu parava"), "e o texto que a IA leu");
     }
 
     // ═══ FIM: o professor encerra e vê a turma ═══════════════════════════
@@ -620,6 +793,10 @@ await suite(
     r.exigir(
       ["EF08CO11", "EF08CO09", "EF08CO07"].every((c) => paginaDoProfessor.includes(c)),
       "o painel \"Habilidades da BNCC\" da atividade mostra as três habilidades do Unoovista",
+    );
+    r.exigir(
+      /Os termos de uso/.test(paginaDoProfessor) && /Envio/.test(paginaDoProfessor) && /Raio-x do feed|Reflexão — sugestão da IA/.test(paginaDoProfessor),
+      "cada nível diz de qual tarefa veio (o \"de onde veio\" do painel, ADR-166)",
     );
     await r.registrar(prof, "professor-ao-fim", {
       titulo: "A turma, pelo lado do professor",

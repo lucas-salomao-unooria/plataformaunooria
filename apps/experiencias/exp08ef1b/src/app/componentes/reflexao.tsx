@@ -1,7 +1,14 @@
+/**
+ * As folhas da PLATAFORMA, no chunk da reflexão: ela já chega por `React.lazy`
+ * (`instanooria-app.tsx`), então o CSS do DS só desce depois da revelação.
+ */
+import '@unooria/design-system/unooria.css';
+import '@unooria/design-system/fonts/unooria.css';
+
 import { useEffect, useState } from 'react';
+import { Button } from '@edu/ui/ds';
 
 import { api } from '../../lib/api';
-import { Perguntas } from './perguntas';
 
 /**
  * A REFLEXÃO que fecha a atividade (fluxo v2). É pós-revelação: aqui o
@@ -29,23 +36,13 @@ import { Perguntas } from './perguntas';
  */
 const MINIMO_ATE_A_API_RESPONDER = 60;
 
-export function Reflexao({ runId }: { runId: string }) {
+export function Reflexao({ runId, aoReverRelatorio }: { runId: string; aoReverRelatorio?: () => void }) {
   const [texto, setTexto] = useState('');
   const [carregado, setCarregado] = useState(false);
   const [salvando, setSalvando] = useState(false);
   const [salvo, setSalvo] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [minimo, setMinimo] = useState(MINIMO_ATE_A_API_RESPONDER);
-  /**
-   * As perguntas de evidência abrem depois da PRIMEIRA reflexão salva e não
-   * fecham mais: voltar a editar o texto apaga o "salvo", mas não pode sumir com
-   * a pergunta que a criança está respondendo. A api confere o mesmo (sem
-   * reflexão, a resposta é 409).
-   */
-  const [perguntasAbertas, setPerguntasAbertas] = useState(false);
-  useEffect(() => {
-    if (salvo) setPerguntasAbertas(true);
-  }, [salvo]);
 
   /** Recupera o que ele já escreveu: reabrir a tela não pode perder texto. */
   useEffect(() => {
@@ -91,6 +88,11 @@ export function Reflexao({ runId }: { runId: string }) {
           </h1>
           <p className="text-[17px] font-semibold leading-snug text-brand-coral">
             O que isso te faz pensar?
+          </p>
+          {/* A transparência da leitura pela IA (ADR-167): quem lê, o quê, e quem decide. */}
+          <p className="text-[13px] leading-relaxed text-white/70">
+            Seu professor lê este texto. Um programa de IA lê o primeiro texto que você salvar e sugere a ele
+            um nível; quem decide é ele.
           </p>
         </header>
 
@@ -147,7 +149,11 @@ export function Reflexao({ runId }: { runId: string }) {
           </p>
         ) : null}
 
-        {perguntasAbertas ? <Perguntas runId={runId} /> : null}
+        {aoReverRelatorio ? (
+          <Button theme="dark" variant="ghost" fullWidth onClick={aoReverRelatorio}>
+            Rever meu relatório
+          </Button>
+        ) : null}
       </div>
     </div>
   );

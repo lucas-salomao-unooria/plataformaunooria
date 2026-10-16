@@ -234,6 +234,19 @@ export const LinhaDoMonitorSchema = z.object({
   /** Tamanho da reflexão escrita — nunca o texto, que é de criança. */
   caracteresDaReflexao: z.number().int().nonnegative(),
   publicou: z.boolean(),
+  /**
+   * O Canal A (ADR-167), em sim/não — nunca o que a criança respondeu ou
+   * escreveu: terminou a revelação, fez cada tarefa, mandou com frase, refez
+   * depois de um reinício.
+   */
+  canalA: z.object({
+    revelacaoConcluida: z.boolean(),
+    raioX: z.boolean(),
+    termos: z.boolean(),
+    envio: z.boolean(),
+    comFrase: z.boolean(),
+    refeita: z.boolean(),
+  }),
 });
 
 export const MonitorSchema = z.object({
@@ -252,6 +265,8 @@ export const MonitorSchema = z.object({
     ociosos: z.number().int().nonnegative(),
     salvosNaTurma: z.number().int().nonnegative(),
     salvosDoOutroLado: z.number().int().nonnegative(),
+    /** Já na revelação (explicabilidade em diante) e ainda sem chegar à última tela. */
+    naRevelacao: z.number().int().nonnegative(),
   }),
   limiteDeOciosidadeMs: z.number().int().positive(),
 });
@@ -277,6 +292,29 @@ export const EstudanteDaAtividadeSchema = z.object({
     respondeuRotulo: z.string().nullable(),
     reflexao: z.string().nullable(),
     postouNoApp: z.string().nullable(),
+    /** O Canal A (ADR-167): só o professor lê esta rota. */
+    canalA: z.object({
+      revelacaoConcluida: z.boolean(),
+      raioX: z.boolean(),
+      termos: z.boolean(),
+      envio: z.boolean(),
+      refeita: z.boolean(),
+      /** A frase opcional do envio — texto da criança, só aqui. */
+      fraseDoEnvio: z.string().nullable(),
+      /** A leitura da reflexão pela IA: resultado e motivo, nunca texto da IA. */
+      leitura: z
+        .object({
+          resultado: z.enum(["nivel", "sem_marca", "falha"]).nullable(),
+          nivel: z.enum(["atingiu", "em_processo", "nao_atingiu"]).nullable(),
+          motivo: z.string().nullable(),
+          lidaEm: z.string().nullable(),
+        })
+        .nullable(),
+      /** O texto que a IA leu — só quando a reflexão de agora é a que foi lida. */
+      textoLido: z.string().nullable(),
+      /** A reflexão lida saiu num reinício: o professor vê o nível, não o texto. */
+      textoLidoApagado: z.boolean(),
+    }),
   }),
   resumo: z.object({
     salvos: z.number().int().nonnegative(),

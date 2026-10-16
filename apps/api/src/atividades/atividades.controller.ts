@@ -403,6 +403,17 @@ export class AtividadesController {
         );
       }
       if (vazias.length > 0) pendencias.push(`Sem nenhum post nestas combinações de lado e perfil: ${vazias.join(", ")}.`);
+      /* O envio (6c) só mede a confiabilidade com página de fofoca ou de humor
+         nos DOIS lados (ADR-167). A atividade antiga não tem: a geração passou
+         a exigir depois. Aviso com a saída — não há "gerar de novo" no lugar. */
+      const deFofocaOuHumor = await tx.post.groupBy({
+        by: ["lado"],
+        where: { activityId: id, aprovado: true, lado: { in: ["A", "B"] }, author: { tipo: { in: ["fofoca_tema", "humor"] } } },
+        _count: { _all: true },
+      });
+      if (!["A", "B"].every((lado) => deFofocaOuHumor.some((l) => l.lado === lado))) {
+        pendencias.push(AVISO_SEM_CONFIABILIDADE);
+      }
       if (rasas.length > 0) {
         pendencias.push(
           `Combinações com pouquíssimo conteúdo (menos de ${Math.round(
@@ -636,11 +647,23 @@ export class AtividadesController {
       const atividade = await atividadeDoProfessor(tx, id, req.auth.usuarioId, req.auth.escolaId);
       if (!atividade) naoEncontrado();
 
-      const [metricas, dossies] = await Promise.all([
+      const [metricas, dossies, doCanalA] = await Promise.all([
         metricasDaAtividade(tx, id),
         tx.dossier.findMany({ where: { run: { activityId: id } }, select: { runId: true } }),
+        /* O Canal A (ADR-167): sim/não por run — a frase do envio entra só
+           como "tem frase", nunca o texto. */
+        tx.run.findMany({
+          where: { activityId: id },
+          select: {
+            id: true,
+            fase: true,
+            revelacaoConcluidaEm: true,
+            tarefas: { select: { tarefa: true, enviadaEm: true, refeita: true, frase: true } },
+          },
+        }),
       ]);
       const comDossie = new Set(dossies.map((registro) => registro.runId));
+      const canalA = new Map(doCanalA.map((r) => [r.id, resumoDoCanalA(r)]));
 
       const linhas = metricas.map((estudante) => ({
         runId: estudante.runId,
@@ -685,6 +708,7 @@ export class AtividadesController {
          * conteúdo, que é texto de criança e não passeia por listagem.
          */
         caracteresDaReflexao: estudante.reflexao?.caracteres ?? 0,
+        canalA: canalA.get(estudante.runId)?.linha ?? CANAL_A_VAZIO,
       }));
 
       const comLado = linhas.filter((linha) => linha.ladoDominante !== "neutro");
@@ -713,6 +737,7 @@ export class AtividadesController {
           ociosos: linhas.filter((l) => l.alertaDeOcioso).length,
           salvosNaTurma: linhas.reduce((soma, l) => soma + l.colecao.total, 0),
           salvosDoOutroLado: linhas.reduce((soma, l) => soma + l.colecao.doOutroLado, 0),
+          naRevelacao: [...canalA.values()].filter((c) => c.naRevelacao).length,
         },
         limiteDeOciosidadeMs: OCIOSO_ALERTA_MS,
       };
@@ -753,8 +778,14 @@ export class AtividadesController {
           engineState: true,
           estudante: { select: { username: true, displayName: true } },
           conclusao: { select: { inclinacao: true } },
-          reflexao: { select: { texto: true } },
+          reflexao: { select: { texto: true, primeiroTexto: true, createdAt: true } },
           studentPosts: { select: { texto: true, ladoInferido: true, createdAt: true } },
+          revelacaoConcluidaEm: true,
+          tarefas: { select: { tarefa: true, enviadaEm: true, refeita: true, frase: true } },
+          leiturasDaReflexao: {
+            where: { activityId: id },
+            select: { resultado: true, nivel: true, motivo: true, criadaEm: true, lidaEm: true },
+          },
         },
       });
       if (!run) naoEncontrado();
@@ -883,6 +914,7 @@ export class AtividadesController {
           respondeuRotulo: run.conclusao ? rotulo(run.conclusao.inclinacao) : null,
           reflexao: run.reflexao?.texto ?? null,
           postouNoApp: run.studentPosts[0]?.texto ?? null,
+          canalA: canalADoEstudante(run),
         },
         resumo: {
           salvos: salvosDoLado + salvosDoOutro + salvosNeutros,
@@ -896,4 +928,77 @@ export class AtividadesController {
       };
     });
   }
+}
+
+/**
+ * O aviso de atividade que não mede a confiabilidade do envio (ADR-167), com
+ * a saída: uma atividade nova com a mesma pergunta já nasce com as páginas.
+ */
+export const AVISO_SEM_CONFIABILIDADE =
+  "Esta atividade não tem página de fofoca ou de humor nos dois lados, então o envio não mede a confiabilidade e vai no máximo a \"em processo\". Para medir, crie uma atividade nova com a mesma pergunta: o acervo novo já vem com essas páginas.";
+
+const CANAL_A_VAZIO = {
+  revelacaoConcluida: false,
+  raioX: false,
+  termos: false,
+  envio: false,
+  comFrase: false,
+  refeita: false,
+};
+
+type TarefaDaRun = { tarefa: string; enviadaEm: Date | null; refeita: boolean; frase: string | null };
+
+const enviada = (tarefas: readonly TarefaDaRun[], t: string) => tarefas.some((x) => x.tarefa === t && x.enviadaEm !== null);
+
+/** A linha do Canal A no monitor: sim/não, nunca o que a criança escreveu. */
+function resumoDoCanalA(r: { fase: string; revelacaoConcluidaEm: Date | null; tarefas: TarefaDaRun[] }) {
+  const naRevelacao =
+    ["explicabilidade", "perdidos", "reflexao", "fim", "revelacao", "dossie"].includes(r.fase) && r.revelacaoConcluidaEm === null;
+  return {
+    naRevelacao,
+    linha: {
+      revelacaoConcluida: r.revelacaoConcluidaEm !== null,
+      raioX: enviada(r.tarefas, "raio-x"),
+      termos: enviada(r.tarefas, "termos"),
+      envio: enviada(r.tarefas, "envio"),
+      comFrase: r.tarefas.some((x) => x.tarefa === "envio" && x.frase !== null),
+      refeita: r.tarefas.some((x) => x.refeita),
+    },
+  };
+}
+
+/**
+ * O Canal A no detalhe do estudante — só o professor lê esta rota.
+ *
+ * O "texto lido" só é o primeiro texto da reflexão de AGORA quando ela é
+ * anterior à leitura (decisão 7a de 2026-10-16): a reflexão mais nova que a
+ * leitura nasceu depois de um reinício, e o texto que a IA leu saiu com a
+ * reflexão antiga. Aí o professor vê o nível e o motivo, e não o texto.
+ */
+function canalADoEstudante(run: {
+  revelacaoConcluidaEm: Date | null;
+  tarefas: TarefaDaRun[];
+  reflexao: { primeiroTexto: string | null; createdAt: Date } | null;
+  leiturasDaReflexao: { resultado: string | null; nivel: string | null; motivo: string | null; criadaEm: Date; lidaEm: Date | null }[];
+}) {
+  const leitura = run.leiturasDaReflexao[0] ?? null;
+  const reflexaoLida = Boolean(leitura && run.reflexao && run.reflexao.createdAt.getTime() <= leitura.criadaEm.getTime());
+  return {
+    revelacaoConcluida: run.revelacaoConcluidaEm !== null,
+    raioX: enviada(run.tarefas, "raio-x"),
+    termos: enviada(run.tarefas, "termos"),
+    envio: enviada(run.tarefas, "envio"),
+    refeita: run.tarefas.some((x) => x.refeita),
+    fraseDoEnvio: run.tarefas.find((x) => x.tarefa === "envio")?.frase ?? null,
+    leitura: leitura
+      ? {
+          resultado: leitura.resultado as "nivel" | "sem_marca" | "falha" | null,
+          nivel: leitura.nivel as "atingiu" | "em_processo" | "nao_atingiu" | null,
+          motivo: leitura.motivo,
+          lidaEm: leitura.lidaEm?.toISOString() ?? null,
+        }
+      : null,
+    textoLido: reflexaoLida ? (run.reflexao?.primeiroTexto ?? null) : null,
+    textoLidoApagado: leitura !== null && !reflexaoLida,
+  };
 }

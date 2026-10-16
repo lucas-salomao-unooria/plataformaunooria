@@ -24,12 +24,14 @@ legenda numa transação SÓ DELA, depois do latch da publicação: a IA leva at
 (EF15CO04 por `pistas`, EF15CO02 por `chave`, EF04CO08 por `edicao-2`, `p1` e
 `p2`), as três ações marcadas DENTRO das transações dos latches e da Chave.
 A quarta é o Júri Estadual (`exp06ef1b`, ADR-151/152).
-**A quinta é o Unoovista (`exp08ef1b`, ADR-153)**: `fichas/exp08ef1b.ts`, três
-perguntas do PO (EF08CO11, EF08CO09, EF08CO07) e NENHUMA ação. O contexto é o
-provider `motor/contexto-da-evidencia.ts` (o `MotorModule` importa o
-`EvidenciasModule`): a run mais recente numa atividade ativa, `null` sem
-reflexão salva ou em atividade sem turma, e a **rodada sempre 1** — o motor não
-tem rodada, e aplicar de novo é criar outra atividade.
+**A quinta é o Unoovista (`exp08ef1b`)**: `fichas/exp08ef1b.ts` v2 (ADR-167,
+que tirou as três perguntas da ADR-153): toda habilidade por AÇÃO — `raio-x` e
+`reflexao` (EF08CO11), `termos` (EF08CO09), `envio` e `envio-sem-confiabilidade`
+(EF08CO07, limitado pela atividade), todos com `rotulo`. Sem resolvedor
+registrado: as tarefas marcam da run do próprio estudante
+(`motor/contexto-da-evidencia.ts#contextoDaRun`, `null` em atividade sem turma)
+e a **rodada é sempre 1**. Vale o PRIMEIRO envio: o reinício reabre a tarefa e
+não apaga a marca, e a missão confere `jaMarcou` antes de marcar.
 **A sexta é a Missão Tempestade (`exp02em1b`, ADR-154)**, com duas regras só
 dela, na ficha: `respostas: "melhor"` (a marca única só muda para melhor) e
 `contaAoEncerrarAMissao` (vira evidência só no encerramento da missão na Sala
@@ -131,8 +133,8 @@ Missão com ficha faz TRÊS coisas, no mesmo trabalho:
 
 `registrarFicha` existe **só para teste**. A suíte da plataforma registra uma
 ficha FALSA da exp08ef1b, que SUBSTITUI a real só na instância dela, de
-propósito (as regras pedem marcador de ação, e a real só tem perguntas); a real
-e o resolvedor do motor são provados em `tests/motor-evidencia-postgres.spec.ts`.
+propósito (as regras pedem uma pergunta de múltipla escolha, que a real não tem
+mais); a real e as tarefas do motor são provadas em `tests/motor-evidencia-postgres.spec.ts`.
 A ficha real vai no registro estático, onde a trava a confere.
 
 O resolvedor da missão devolve `null` sempre que a resposta não deve contar:

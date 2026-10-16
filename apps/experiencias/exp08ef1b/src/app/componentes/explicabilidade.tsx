@@ -1,6 +1,6 @@
 import { Suspense, lazy, useState } from 'react';
 
-import { experiencia } from '../../lib/api';
+import { api, experiencia } from '../../lib/api';
 
 import { Revelacao } from './revelacao';
 
@@ -14,19 +14,44 @@ import { Revelacao } from './revelacao';
  * divergência, empurrava o estudante de volta para a revelação. A cada 5 segundos.
  * Reassistir a revelação em loop é o pior desfecho possível para esta tela.
  *
- * A troca de passo é estado LOCAL. O servidor não precisa saber se o estudante já
- * passou dos 7 slides; ele precisa saber que o estudante está na explicabilidade.
+ * A troca de passo é estado LOCAL. O que o servidor precisa saber desde o Canal
+ * A (ADR-167) é que o estudante CHEGOU à última tela: o toque em "Ver meu
+ * relatório" grava o fim da revelação (`POST /runs/:id/revelacao/concluida`),
+ * que abre o 6b e o 6c e fecha o Raio-x. Falhou a rede, o relatório abre do
+ * mesmo jeito, e o próximo toque (ou o próximo "Continuar") tenta de novo.
  *
- * O HUB, esse sim, precisa saber: é o passo que tira o relatório do aparelho de
+ * O HUB também precisa saber: é o passo que tira o relatório do aparelho de
  * 375px e o abre em tela cheia (`ExpHost`). Por isso o `enviarEstado` daqui, e
  * por isso ele carrega a FASE junto — o hub SUBSTITUI o estado inteiro a cada
  * mensagem, e publicar só o passo apagaria a fase que a moldura dos perdidos lê.
+ *
+ * `aoContinuar` existe para quem foi puxado ADIANTE pela turma (a fase já é o
+ * cinza ou a reflexão): o relatório ganha "Continuar", e só então vêm o feed em
+ * cinza e as tarefas.
  */
 const Relatorio = lazy(() =>
   import('./dossie/dossie').then((modulo) => ({ default: modulo.Dossie })),
 );
+const RelatorioComSaida = lazy(() =>
+  import('./relatorio-a-pedido').then((modulo) => ({ default: modulo.RelatorioComSaida })),
+);
 
-export function Explicabilidade({ runId }: { runId: string }) {
+export function concluirRevelacao(runId: string): Promise<boolean> {
+  return api
+    .post(`/runs/${runId}/revelacao/concluida`)
+    .then(() => true)
+    .catch(() => false);
+}
+
+export function Explicabilidade({
+  runId,
+  fase = 'explicabilidade',
+  aoContinuar,
+}: {
+  runId: string;
+  fase?: string;
+  aoContinuar?: () => void;
+}) {
   const [passo, setPasso] = useState<'revelacao' | 'relatorio'>('revelacao');
 
   if (passo === 'revelacao') {
@@ -34,7 +59,8 @@ export function Explicabilidade({ runId }: { runId: string }) {
       <Revelacao
         runId={runId}
         aoTerminar={() => {
-          experiencia().enviarEstado({ fase: 'explicabilidade', passo: 'relatorio' });
+          void concluirRevelacao(runId);
+          experiencia().enviarEstado({ fase, passo: 'relatorio' });
           setPasso('relatorio');
         }}
       />
@@ -43,7 +69,18 @@ export function Explicabilidade({ runId }: { runId: string }) {
 
   return (
     <Suspense fallback={null}>
-      <Relatorio runId={runId} />
+      {aoContinuar ? (
+        <RelatorioComSaida
+          runId={runId}
+          fase={fase}
+          rotulo="Continuar"
+          aoSair={() => {
+            void concluirRevelacao(runId).then(() => aoContinuar());
+          }}
+        />
+      ) : (
+        <Relatorio runId={runId} />
+      )}
     </Suspense>
   );
 }

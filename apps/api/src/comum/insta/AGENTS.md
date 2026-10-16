@@ -33,9 +33,25 @@ por teto compila e sai errado em 30 telas ao mesmo tempo, no meio de uma aula.
   marco, que a fase não guarda), fixada nos dois sentidos em
   `tests/insta-etapas.spec.ts`. Não "conserte" um dos dois sem ler a ADR-92.
 - **Voltar não é `reset`.** `POST /runs/:id/reset` apaga eventos, posts salvos,
-  comentários, conclusão e reflexão; `moverEtapa` não apaga nada disso. Corrigir
+  comentários, conclusão, reflexão, as tarefas do Canal A e o fim da revelação
+  (a marca de evidência e a leitura da reflexão ficam: vale o primeiro envio, ADR-167); `moverEtapa` não apaga nada disso. Corrigir
   um clique do adulto destruindo a produção de trinta crianças é desproporcional
   — e era a única saída que o produto oferecia.
 - **Fase legada NUNCA vira `onboarding` por fallback** (`normalizarFase`): uma
   run em `dossie` era EXPULSA para o seletor de avatar no meio da
   explicabilidade.
+
+## O Canal A (ADR-167): as travas moram em `motor/canal-a/`
+
+- **O 6a Raio-x abre da resposta em diante e FECHA no fim da revelação**
+  (`runs.revelacao_concluida_em`, gravado pelo `POST :id/revelacao/concluida`);
+  o 6b e o 6c só abrem do `perdidos` em diante COM a revelação terminada. Quem
+  não teve feed com lado não recebe tarefa. A situação sai de `GET :id/tarefas`,
+  e é ela que decide o desvio por fase no aparelho.
+- **"Visto" sai dos EVENTOS também, não só do `engine_state`**: o motor só
+  processa os eventos quando o aparelho pede o próximo bloco, e os do último
+  bloco ficariam fora do Raio-x (a e2e mostrou: `vistosPorPost` vazio com 21
+  eventos `visto` gravados).
+- **O relatório do estudante esconde lado, intensidade e categoria do
+  `topDwell` enquanto o Raio-x está pendente** — o post do lado dele em que mais
+  parou entra sempre no Raio-x.
