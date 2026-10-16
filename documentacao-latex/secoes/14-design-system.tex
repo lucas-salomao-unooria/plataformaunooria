@@ -656,9 +656,10 @@ trouxe a segunda leva do \cd{instanooria} e o \cd{AudioPlayer} da plataforma
   enviar mensagens} no lugar do teclado.\\
 \cd{SystemMessage} & A entrada no grupo, a espera, o motivo declarado e a trava
   da síntese.\\
-\zebra \cd{Poll} & A enquete de motivo (Etapa 3) \textbf{e} as duas perguntas da
-  Nina --- o mesmo componente, controlado de ponta a ponta, dentro de um
-  \cd{MessageBubble}.\\
+\zebra \cd{Poll} & A enquete de motivo (Etapa 3), controlada de ponta a ponta,
+  dentro de um \cd{MessageBubble}. Até a 0.4.0 levava também as duas perguntas
+  da Nina, que saíram na 0.5.0 (\adrr{ADR-171}); o cartão de frases, que veio
+  no lugar, usa o \cd{Radio} do Unoochat, um grupo Sim/Não por frase.\\
 \cd{MessageTag} & Os crachás da revelação, pictograma e rótulo, sem variante de
   cor: quem distingue é a palavra e a forma.\\
 \zebra \cd{Toast} & Os avisos rápidos (limite de 3, faltam mensagens, falha de
