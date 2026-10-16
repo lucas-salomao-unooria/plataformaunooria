@@ -937,9 +937,8 @@ export class QuemMandouIssoService {
    * (`colapsarEmUnidades`): a linha de quem jogou representa o computador.
    *
    * Antes da revelação, SÓ progresso; o Termômetro é `null`. Nenhum nome entra
-   * nele. O `entao` da regra é texto livre de menor: só para quem leciona
-   * (`professorId` presente) — `professorLeciona(undefined)` é `true` para o
-   * gestor, e é por isso que a distinção mora aqui, e não no `@Roles`.
+   * nele. Não há texto livre de menor: o cartão vai como acertos e a regra
+   * em palavras montadas das peças — a mesma linha para professor e gestor.
    */
   async painel(escolaId: string, turmaId: string, professorId?: string) {
     return this.prisma.comTenancy(async (tx) => {

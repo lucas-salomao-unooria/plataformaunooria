@@ -10,10 +10,9 @@ do ar, acertou a pergunta) e isso morria dentro da experiência; aqui vira o
 nível que o professor lê, corrige e leva para o boletim.
 
 A plataforma entrou primeiro; as missões entram uma a uma, cada uma com a sua
-ficha. **A primeira é Quem Mandou Isso? v2.2** (`fichas/exp05ef1b.ts`): a
-EF05CO08 por uma AÇÃO (a seleção do Mural, marcada na transação do latch) e a
-EF05CO03/EF05CO04 por duas perguntas de múltipla escolha — o molde para a
-próxima.
+ficha. **A primeira é Quem Mandou Isso?** (`fichas/exp05ef1b.ts` v4, ADR-171,
+sem as P1/P2): só ações rotuladas, cada uma na transação do próprio envio —
+Mural (EF05CO08), cartão de frases (CO03), regra do tio (CO04). Sem resolvedor.
 **A segunda é A Seleção (`exp07ef1b`)**: `fichas/exp07ef1b.ts` (EF07CO11 pela
 legenda graduada por IA — o Canal A — e pela enquete P1; EF07CO08 pela P2),
 o contexto registrado no `onModuleInit` de `a-selecao.service.ts` e a marca da
