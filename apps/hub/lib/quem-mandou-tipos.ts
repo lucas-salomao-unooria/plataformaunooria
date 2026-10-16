@@ -56,7 +56,8 @@ export type Passo =
   | "espera"
   | "revelacao"
   | "sintese"
-  | "perguntas"
+  | "cartao"
+  | "regra"
   | "concluida";
 
 /** Uma mensagem COMPLETA do pacote — com o gabarito. Só entra e sai por rota de professor. */
@@ -196,6 +197,10 @@ export interface ProgressoDaTurma {
   entraram: number;
   confirmaram: number;
   votaram: number;
+  /** Enviaram o cartão de frases (EF05CO03). */
+  responderamCartao: number;
+  /** Enviaram a regra do tio (EF05CO04). */
+  enviaramRegra: number;
   concluiram: number;
 }
 
@@ -222,6 +227,10 @@ export interface LinhaDoPainel {
   selecao: string[] | null;
   motivo: string | null;
   tempoFeedSegundos: number | null;
+  /** O cartão enviado: acertos (0–6) e por operador. O NÍVEL é da evidência, no painel de habilidades. */
+  cartao: { acertos: number; porOperador: { E: number; OU: number; NAO: number } } | null;
+  /** A regra enviada, em palavras (montada com peças: não é texto livre), e quantos testes levou. */
+  regra: { emPalavras: string; testes: number } | null;
 }
 
 /** O roteiro da roda de conversa e as instruções fixas dos botões (D0-5), literais da api. */
@@ -256,22 +265,39 @@ export interface OpcoesDaMissao {
 
 /**
  * `GET /quem-mandou-isso/professor/material` — o guia da aula: o banco curado
- * COM gabarito, o roteiro e as perguntas de evidência COM o nível de cada
- * alternativa. Sem tenancy: é o catálogo da missão, igual em todo contrato.
+ * COM gabarito, o roteiro e as duas ações de evidência por dentro (um cartão
+ * de frases do banco curado com a resposta esperada, e as peças da regra com o
+ * tipo de cada uma). Sem tenancy: é o catálogo da missão, igual em todo
+ * contrato.
  */
 export interface MaterialDoProfessor {
   padrao: PadraoDoPacote & { convite: string };
   roteiro: RoteiroDaAula;
-  textos: { encerramento: string };
-  perguntasDeEvidencia: Array<{
-    perguntaId: string;
-    habilidade: string;
-    fala: string;
-    enunciado: string;
-    alternativas: Array<{ id: string; texto: string; status: "atingiu" | "em_processo" | "nao_atingiu" }>;
+  textos: { encerramento: string; cartao: string; tio: string };
+  cartao: { exemplo: Array<{ operador: "E" | "OU" | "NAO"; texto: string; esperado: "sim" | "nao" }> };
+  regra: {
+    condicoes: Array<OpcaoDaMissao & { pegaOAudio: boolean }>;
+    acoes: Array<OpcaoDaMissao & { tipo: TipoDeAcaoDaRegra }>;
+    previsoes: OpcaoDaMissao[];
+  };
+  /** O nível de cada ação, contado em palavras (a ficha). */
+  habilidades: Array<{
+    codigo: string;
+    rotulo: string;
+    criterios: { atingiu: string; em_processo: string; nao_atingiu: string };
   }>;
   opcoes: OpcoesDaMissao;
 }
+
+/** O tipo de cada peça de ação da regra — o gabarito dela, que só o professor vê. */
+export type TipoDeAcaoDaRegra = "checagem" | "espera" | "condicional" | "repasse";
+
+export const ROTULO_DO_TIPO_DE_ACAO: Readonly<Record<TipoDeAcaoDaRegra, string>> = {
+  checagem: "confere a notícia",
+  espera: "só espera",
+  condicional: "encaminha só se confirmar (depois de conferir)",
+  repasse: "encaminha sem conferir",
+};
 
 /** O corpo de um erro de domínio da api: `codigo` estável, a frase e, no 400 do pacote, TODAS as frases. */
 export interface ErroDaMissao {
@@ -324,7 +350,8 @@ export const ROTULO_DO_PASSO: Readonly<Record<Passo, string>> = {
   espera: "Votou e aguarda a revelação",
   revelacao: "Vendo a revelação",
   sintese: "Vendo a síntese",
-  perguntas: "Respondendo às perguntas da Nina",
+  cartao: "Respondendo o cartão de frases",
+  regra: "Montando a regra do tio",
   concluida: "Concluiu",
 };
 

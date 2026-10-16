@@ -710,7 +710,7 @@ export const MISSAO_QUEM_MANDOU_ISSO: Missao = {
     duracao: "1 aula de 50 min (ou 2 sessões de 25 min)",
     formato:
       "Unoochat, o aplicativo de mensagens da Unooria, em tema claro: a conversa com a Nina, o grupo da " +
-      "turma com 8 mensagens, o Mural da Turma, a enquete e as duas perguntas finais.",
+      "turma com 8 mensagens, o Mural da Turma, a enquete e o cartão de frases; o desafio final, a regra do tio, é na tela da escola.",
     atos: [
       {
         rotulo: "1 — Desafiar: o pedido da Nina",
@@ -739,8 +739,9 @@ export const MISSAO_QUEM_MANDOU_ISSO: Missao = {
         texto:
           "Você aperta Liberar Revelação: o painel mostra o Termômetro da Turma para projetar, e cada " +
           "aparelho ganha os dois selos sobre as 3 mensagens encaminhadas, com o motivo votado e o " +
-          "lembrete do bimestre. Quem ainda não tinha confirmado continua, confirma e vê a própria " +
-          "revelação depois.",
+          "lembrete do bimestre — e o cartão de frases: seis frases com E, OU e NÃO sobre as 3 " +
+          "mensagens, que registra a EF05CO03. Quem ainda não tinha confirmado continua, confirma e vê a " +
+          "própria revelação depois.",
       },
       {
         rotulo: "5 — Explicar: a síntese e a roda de conversa",
@@ -750,11 +751,12 @@ export const MISSAO_QUEM_MANDOU_ISSO: Missao = {
           "minutos. A síntese pode ser pulada.",
       },
       {
-        rotulo: "6 — Refletir: as perguntas da Nina",
+        rotulo: "6 — Refletir: a regra do tio",
         texto:
-          "Liberar Reflexão leva cada aparelho de volta ao chat da Nina, que faz duas perguntas de " +
-          "múltipla escolha: se o tom diz se a mensagem é verdadeira, e qual regra funciona antes de " +
-          "repassar. As respostas registram a EF05CO03 e a EF05CO04 no painel de habilidades.",
+          "Liberar Reflexão leva cada aparelho ao desafio do tio: quem ainda não respondeu o cartão " +
+          "responde primeiro; depois a criança monta uma regra com peças (“SE a mensagem for… ENTÃO " +
+          "eu…”), prevê o que ela faz com o áudio assustado do tio e testa. A regra registra a EF05CO04 " +
+          "no painel de habilidades.",
       },
     ],
     preparo: [
