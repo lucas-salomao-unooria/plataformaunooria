@@ -12,6 +12,12 @@ import { ICONE_A_REVISAR, ICONE_DA_ORIGEM, descricaoDaCelula, type LeituraDaCelu
  * atividade não se edita (ele é derivado das rodadas), e a coordenação só lê.
  * A `Tag` do DS com `onClick` já vira botão (papel, foco e teclado); o nome
  * acessível diz quem, qual habilidade e o que está lá hoje.
+ *
+ * DE ONDE VEIO O NÍVEL (ADR-166): quando a ficha da missão dá rótulo às ações,
+ * a linha discreta diz qual ação deu o nível ("Reflexão — sugestão da IA") e,
+ * quando duas ações da habilidade divergem, o nível de cada uma — no mesmo
+ * texto pequeno da marca de origem. A missão sem rótulo não manda nada disso,
+ * e a célula fica como sempre foi.
  */
 export function CelulaDaHabilidade({
   nome,
@@ -51,6 +57,14 @@ export function CelulaDaHabilidade({
           {leitura.marca}
         </span>
       ) : null}
+      {leitura.deOndeVeio ? (
+        <span className="text-[11px] leading-tight text-unooria-neutral-500">{leitura.deOndeVeio}</span>
+      ) : null}
+      {leitura.acoes?.map((acao) => (
+        <span key={acao} className="text-[11px] leading-tight text-unooria-neutral-500">
+          {acao}
+        </span>
+      ))}
     </span>
   );
 }

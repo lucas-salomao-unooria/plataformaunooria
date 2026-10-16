@@ -3,6 +3,7 @@ import {
   DISTRIBUICAO_VAZIA,
   distribuir,
   habilidadesDaMissao,
+  limitadosDaMissao,
   missaoDaTurma,
   niveisDaMissao,
   ordemDaSerie,
@@ -73,6 +74,7 @@ describe("a distribuição da turma", () => {
     expect(distribuir(["ana", "bia", "caio", "duda", "eli"], niveis, "EF05CO08")).toEqual({
       atingiu: 1,
       emProcesso: 1,
+      emProcessoLimitado: 0,
       naoAtingiu: 1,
       naoAvaliado: 2,
       total: 5,
@@ -91,6 +93,7 @@ describe("a distribuição da turma", () => {
     expect(somar(somar(DISTRIBUICAO_VAZIA, a), b)).toEqual({
       atingiu: 1,
       emProcesso: 1,
+      emProcessoLimitado: 0,
       naoAtingiu: 1,
       naoAvaliado: 1,
       total: 4,
@@ -129,6 +132,7 @@ describe("a soma por série (o painel da rede)", () => {
   const d = (atingiu: number, naoAvaliado: number) => ({
     atingiu,
     emProcesso: 0,
+    emProcessoLimitado: 0,
     naoAtingiu: 0,
     naoAvaliado,
     total: atingiu + naoAvaliado,
@@ -183,5 +187,45 @@ describe("a soma por série (o painel da rede)", () => {
     expect(juntas[0]).toEqual(escolaA[0]);
     // E juntar uma lista só devolve ela mesma.
     expect(juntarSeries([escolaA])).toEqual(escolaA);
+  });
+});
+
+describe('o "em processo" limitado pela atividade (ADR-166)', () => {
+  const lim = (estudanteId: string, status: LinhaDoConsolidado["status"], limitado: boolean): LinhaDoConsolidado => ({
+    ...linha(estudanteId, "EF08CO07", status, "valida", "exp08ef1b"),
+    limitado,
+  });
+
+  test("conta à parte, fora do 'em processo', e o total continua sendo a soma das caixas", () => {
+    const linhas = [lim("ana", "em_processo", true), lim("bia", "em_processo", false), lim("caio", "atingiu", false)];
+    const niveis = niveisDaMissao(linhas, "exp08ef1b");
+    const d = distribuir(["ana", "bia", "caio", "duda"], niveis, "EF08CO07", limitadosDaMissao(linhas, "exp08ef1b"));
+    expect(d).toEqual({ atingiu: 1, emProcesso: 1, emProcessoLimitado: 1, naoAtingiu: 0, naoAvaliado: 1, total: 4 });
+    expect(d.atingiu + d.emProcesso + d.emProcessoLimitado + d.naoAtingiu + d.naoAvaliado).toBe(d.total);
+  });
+
+  test("empate entre o limitado e o comum, em duas atividades: fica o COMUM", () => {
+    const linhas = [lim("ana", "em_processo", true), lim("ana", "em_processo", false)];
+    expect(limitadosDaMissao(linhas, "exp08ef1b").size).toBe(0);
+    const d = distribuir(["ana"], niveisDaMissao(linhas, "exp08ef1b"), "EF08CO07", limitadosDaMissao(linhas, "exp08ef1b"));
+    expect(d).toMatchObject({ emProcesso: 1, emProcessoLimitado: 0 });
+  });
+
+  test("o limitado nunca segura um nível melhor de outra atividade", () => {
+    const linhas = [lim("ana", "em_processo", true), lim("ana", "atingiu", false)];
+    expect(limitadosDaMissao(linhas, "exp08ef1b").size).toBe(0);
+  });
+
+  test("a projeção a confirmar não conta, nem como limitada", () => {
+    const linhas = [{ ...lim("ana", "em_processo", true), situacao: "a_revisar" as const }];
+    expect(limitadosDaMissao(linhas, "exp08ef1b").size).toBe(0);
+  });
+
+  test("sem o conjunto de limitados (as outras missões), a distribuição é a de sempre", () => {
+    const linhas = [lim("ana", "em_processo", true)];
+    expect(distribuir(["ana"], niveisDaMissao(linhas, "exp08ef1b"), "EF08CO07")).toMatchObject({
+      emProcesso: 1,
+      emProcessoLimitado: 0,
+    });
   });
 });

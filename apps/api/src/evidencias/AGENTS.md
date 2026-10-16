@@ -88,6 +88,21 @@ com `escola_id` + RLS forçada:
   posição. O teste de Postgres lê 60 vezes e cobra mais de uma ordem.
   Ficha com `ordemDasAlternativas: "por-estudante"` (Júri): ordem fixa por
   estudante (`regras.ts#aleatorioDe`).
+- **De onde veio o nível (ADR-166).** A evidência PRÓPRIA guarda o marcador
+  que a deu (`evidencias.marcador`, `regras.ts#marcadorDoNivel`): o da melhor
+  marca; no empate, o que NÃO é `limitadoPelaAtividade`, depois a ordem da
+  ficha. Cópia e ajuste ficam com `null` (CHECK
+  `evidencias_marcador_so_na_propria_check`). Com `rotulo` no marcador da
+  ficha, o painel traz `marcador`/`rotulo` na célula, `acoes` (o nível de cada
+  ação rotulada) quando elas DIVERGEM na rodada, e `origemDoResultado`. **Ficha
+  sem `rotulo` não recebe nada disso** — é o que mantém o painel das missões
+  antigas igual, e a suíte cobra (`o painel › a forma`).
+- **O "em processo" limitado pela atividade** (`limitadoPelaAtividade`, só em
+  marcador de ação): a missão nunca grava ali acima de `em_processo`. O
+  consolidado o conta em `emProcessoLimitado`, FORA de `emProcesso` e dentro do
+  `total`; entre atividades, empate limitado × comum guarda o COMUM
+  (`regras-do-consolidado.ts#limitadosDaMissao`). O limitado sai da ficha de
+  HOJE (`fichaDe`), e a cópia da equipe não o carrega.
 - **O professor ajusta a qualquer momento**, mesmo com a missão encerrada, um ou
   vários (1..200); cada mudança vai para o histórico. **Gestor só LÊ. O
   estudante nunca vê o próprio resultado. Não há ranking em lugar nenhum.**

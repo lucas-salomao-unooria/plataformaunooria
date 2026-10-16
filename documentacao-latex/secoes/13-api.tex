@@ -551,6 +551,10 @@ atualizado, para a tela não precisar reler.
     estudante da turma a equipe dele na missão, \cd{porRodada} (cada habilidade
     com \cd{status}, \cd{origem} e \cd{situacao}) e o \cd{resultado} --- a
     melhor rodada por habilidade, só com o que vale. Habilidade ausente é N/A.
+    Quando a ficha dá rótulo às ações, a célula traz também de onde veio o
+    nível (\cd{marcador} e \cd{rotulo}, só na evidência própria) e, se as ações
+    da habilidade divergem na rodada, \cd{acoes} com o nível de cada uma; o
+    \cd{origemDoResultado} faz o mesmo para o resultado (\adrr{ADR-166}).
     \cd{pendentes} conta, por rodada, as cópias da projeção a revisar. Missão
     SEM ficha responde \textbf{200} com \cd{temFicha: false} e tudo vazio, e não
     400: é por esta resposta que o hub decide se desenha o bloco. A ordem é a
@@ -600,7 +604,10 @@ atualizado, para a tela não precisar reler.
 evidência somada, todas em contagem --- a tela faz a porcentagem ---, com a
 UNIDADE da missão como coluna e o nível de cada criança na missão como o
 MELHOR entre as atividades. Quem não tem evidência que conte é
-\cd{naoAvaliado}, nunca \cd{naoAtingiu}.
+\cd{naoAvaliado}, nunca \cd{naoAtingiu}. O \enquote{em processo} que veio de
+um marcador limitado pela atividade sai à parte, em \cd{emProcessoLimitado}
+--- fora de \cd{emProcesso}, dentro do \cd{total}; no empate entre
+atividades, fica o comum (\adrr{ADR-166}).
 
 \begin{itemize}
   \item \rota{GET /evidencias/turma/\B :turmaId/consolidado} (professor que

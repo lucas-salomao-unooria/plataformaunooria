@@ -446,6 +446,24 @@ A tela é o painel de habilidades da escola e da regional (\id{H14.7.2},
 \id{H14.7.3}): dele, a coordenação abre a turma e o estudante, só para ler.
 \end{historia}
 
+\begin{historia}{H14.4.5}{Saber de onde veio cada nível}{\pronto}
+\hu{Professor}{ver qual atividade da missão deu o nível de cada estudante, e o
+que cada uma disse quando elas não concordam}{conferir a sugestão da IA e
+decidir o ajuste sabendo o que cada atividade mostrou}
+\aceite
+\begin{itemize}
+  \item Quando a missão diz o nome de cada atividade da régua, a célula mostra,
+    embaixo do nível, qual atividade o deu --- por exemplo, \enquote{Reflexão
+    --- sugestão da IA}.
+  \item Quando duas atividades da mesma habilidade dão níveis diferentes, a
+    célula mostra o nível de cada uma. Continua valendo o melhor.
+  \item Na janela de ajuste, o professor vê de onde veio o nível de hoje e o
+    que cada atividade disse; depois do ajuste, o nível passa a ser dele, e o
+    que as atividades disseram continua visível.
+  \item A missão que não dá nome às atividades mantém a célula de sempre.
+\end{itemize}
+\end{historia}
+
 % ---------------------------------------------------------------------------
 \feature{F14.5}{A pergunta de múltipla escolha}{\pronto}
 
@@ -540,6 +558,11 @@ abrir missão por missão}
     vazia.
   \item Cada habilidade de cada missão aplicada mostra quantos atingiram, estão
     em processo, não atingiram e não foram avaliados, em contagem.
+  \item O \enquote{em processo} que vem do limite da atividade escolhida (e
+    não do estudante) aparece numa faixa à parte, \enquote{Em processo
+    (limitado pela atividade)}, só quando há alguém nela; o total continua sendo
+    a turma inteira. Se o estudante tem esse nível numa atividade e o
+    \enquote{em processo} comum em outra, conta o comum.
   \item A missão que a turma ainda não aplicou aparece como tal, sem números.
   \item Posso ordenar as habilidades da mais atingida para a menos atingida
     (é a ordem das habilidades, nunca dos estudantes).

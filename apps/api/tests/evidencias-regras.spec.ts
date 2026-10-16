@@ -9,6 +9,7 @@ import {
   ehProjecao,
   embaralhar,
   marcadorDaFicha,
+  marcadorDoNivel,
   marcadoresDaPergunta,
   melhor,
   melhorRodadaPorHabilidade,
@@ -426,5 +427,79 @@ describe("a ordem das alternativas (embaralhar)", () => {
     expect(embaralhar(["A1", "A2", "A3"], () => 0.9999999).sort()).toEqual(["A1", "A2", "A3"]);
     expect(embaralhar(["A1", "A2", "A3"], () => 1).sort()).toEqual(["A1", "A2", "A3"]);
     expect(embaralhar([], Math.random)).toEqual([]);
+  });
+});
+
+describe("de onde veio o nível (`marcadorDoNivel`, ADR-166)", () => {
+  const ficha: FichaPedagogica = {
+    expId: "exp08ef1b",
+    versao: 1,
+    perguntas: [],
+    habilidades: [
+      {
+        codigo: "EF08CO11",
+        marcadores: [
+          { id: "raio-x", tipo: "acao", rotulo: "Raio-x" },
+          { id: "reflexao", tipo: "acao", rotulo: "Reflexão — sugestão da IA" },
+        ],
+        criterios: { atingiu: "a", em_processo: "b", nao_atingiu: "c" },
+      },
+      {
+        codigo: "EF08CO07",
+        marcadores: [
+          { id: "envio", tipo: "acao", rotulo: "Envio" },
+          { id: "envio-sem-confiabilidade", tipo: "acao", rotulo: "Envio — limitado", limitadoPelaAtividade: true },
+        ],
+        criterios: { atingiu: "a", em_processo: "b", nao_atingiu: "c" },
+      },
+    ],
+  };
+
+  test("é o marcador do MELHOR nível", () => {
+    expect(
+      marcadorDoNivel(ficha, [
+        { marcador: "raio-x", status: "em_processo" },
+        { marcador: "reflexao", status: "atingiu" },
+      ]),
+    ).toBe("reflexao");
+  });
+
+  test("empate: o que não é limitado pela atividade ganha, venha antes ou depois", () => {
+    const a = { marcador: "envio-sem-confiabilidade", status: "em_processo" as const };
+    const b = { marcador: "envio", status: "em_processo" as const };
+    expect(marcadorDoNivel(ficha, [a, b])).toBe("envio");
+    expect(marcadorDoNivel(ficha, [b, a])).toBe("envio");
+  });
+
+  test("empate entre dois comuns: a ordem da ficha, e não a do banco", () => {
+    const a = { marcador: "reflexao", status: "atingiu" as const };
+    const b = { marcador: "raio-x", status: "atingiu" as const };
+    expect(marcadorDoNivel(ficha, [a, b])).toBe("raio-x");
+    expect(marcadorDoNivel(ficha, [b, a])).toBe("raio-x");
+  });
+
+  test("sem marca, nenhum marcador", () => {
+    expect(marcadorDoNivel(ficha, [])).toBeNull();
+  });
+
+  test("o validador recusa rótulo vazio e limite fora de marcador de ação", () => {
+    const ruim: FichaPedagogica = {
+      ...ficha,
+      perguntas: [{ id: "p1", enunciado: "?", alternativas: [{ id: "a", texto: "a", status: "atingiu" }, { id: "b", texto: "b", status: "nao_atingiu" }] }],
+      habilidades: [
+        {
+          codigo: "EF08CO11",
+          marcadores: [
+            { id: "raio-x", tipo: "acao", rotulo: "  " },
+            { id: "p1", tipo: "multipla_escolha", perguntaId: "p1", limitadoPelaAtividade: true },
+          ],
+          criterios: { atingiu: "a", em_processo: "b", nao_atingiu: "c" },
+        },
+      ],
+    };
+    expect(validarFicha(ruim, { has: () => true })).toEqual([
+      'ficha de exp08ef1b: o marcador "raio-x" tem rótulo vazio.',
+      'ficha de exp08ef1b: o marcador "p1" só pode ser limitado pela atividade se for de ação.',
+    ]);
   });
 });

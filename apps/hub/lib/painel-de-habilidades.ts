@@ -22,6 +22,12 @@ import { SERIES, rotuloDaSerie, type Serie } from "./series";
 export interface Distribuicao {
   atingiu: number;
   emProcesso: number;
+  /**
+   * O "em processo" que mede a ATIVIDADE escolhida, e não a criança (ADR-166):
+   * o acervo dela não deixava ir além. À parte, fora de `emProcesso`, e dentro
+   * do `total`. Opcional para a resposta de uma api anterior à coluna.
+   */
+  emProcessoLimitado?: number;
   naoAtingiu: number;
   naoAvaliado: number;
   total: number;
@@ -107,13 +113,18 @@ export interface RedeConsolidada {
 
 // ── as cores e os textos ────────────────────────────────────────────────
 
-/** As quatro caixas, na ordem em que a barra as desenha. */
-export const NIVEIS_DA_BARRA = ["atingiu", "emProcesso", "naoAtingiu", "naoAvaliado"] as const;
+/**
+ * As caixas, na ordem em que a barra as desenha. O "em processo limitado pela
+ * atividade" fica logo depois do "em processo", e só entra na barra quando
+ * alguma criança está nele (`segmentosDaBarra`).
+ */
+export const NIVEIS_DA_BARRA = ["atingiu", "emProcesso", "emProcessoLimitado", "naoAtingiu", "naoAvaliado"] as const;
 export type NivelDaBarra = (typeof NIVEIS_DA_BARRA)[number];
 
 export const ROTULO_DO_NIVEL_DA_BARRA: Record<NivelDaBarra, string> = {
   atingiu: "Atingiu",
   emProcesso: "Em processo",
+  emProcessoLimitado: "Em processo (limitado pela atividade)",
   naoAtingiu: "Não atingiu",
   naoAvaliado: "Não avaliado",
 };
@@ -121,7 +132,8 @@ export const ROTULO_DO_NIVEL_DA_BARRA: Record<NivelDaBarra, string> = {
 /**
  * A cor de cada caixa, da paleta de dataviz do DS (`UNOORIA_DATAVIZ_PALETTE`,
  * copiada aqui em hex porque este arquivo é puro e não importa o pacote):
- * verde no atingiu, azul no em processo, LARANJA — e não vermelho — no não
+ * verde no atingiu, azul no em processo (o pastel da mesma família no limitado
+ * pela atividade: é "em processo", mas não diz da criança), LARANJA — e não vermelho — no não
  * atingiu (é leitura pedagógica, não erro, o mesmo critério das `Tag` do
  * painel da atividade). O não avaliado é TRACEJADO (`pattern: "dashed"`, DS
  * 0.2.16): contorno sem preenchimento, porque é AUSÊNCIA e não mais um nível —
@@ -131,6 +143,7 @@ export const ROTULO_DO_NIVEL_DA_BARRA: Record<NivelDaBarra, string> = {
 export const COR_DO_NIVEL_DA_BARRA: Record<NivelDaBarra, string> = {
   atingiu: "#01B574",
   emProcesso: "#7FA5E2",
+  emProcessoLimitado: "#BDD0EF",
   naoAtingiu: "#DD5202",
   naoAvaliado: "#617379",
 };
@@ -146,16 +159,18 @@ export interface SegmentoDaBarra {
 }
 
 /**
- * Os quatro segmentos da barra. O DS calcula a porcentagem a partir dos
+ * Os segmentos da barra — quatro, e o quinto (o "em processo" limitado pela
+ * atividade) só quando há criança nele: a missão que não o tem fica igual. O DS calcula a porcentagem a partir dos
  * valores e mostra "contagem (porcentagem)" na legenda — a mesma barra serve
  * ao professor (que quer QUANTOS) e à coordenação (que compara turmas de
  * tamanhos diferentes pela porcentagem).
  */
 export function segmentosDaBarra(d: Distribuicao): SegmentoDaBarra[] {
-  return NIVEIS_DA_BARRA.map((nivel) => ({
+  const valor = (nivel: NivelDaBarra) => d[nivel] ?? 0;
+  return NIVEIS_DA_BARRA.filter((nivel) => nivel !== "emProcessoLimitado" || valor(nivel) > 0).map((nivel) => ({
     label: ROTULO_DO_NIVEL_DA_BARRA[nivel],
-    value: d[nivel],
-    amountText: String(d[nivel]),
+    value: valor(nivel),
+    amountText: String(valor(nivel)),
     color: COR_DO_NIVEL_DA_BARRA[nivel],
     ...(nivel === "naoAvaliado" ? { pattern: "dashed" as const } : {}),
   }));

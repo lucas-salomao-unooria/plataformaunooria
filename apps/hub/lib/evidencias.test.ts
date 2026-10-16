@@ -103,6 +103,53 @@ describe("a célula", () => {
   });
 });
 
+describe("de onde veio o nível (ADR-166)", () => {
+  const rui = estudante({
+    id: "r",
+    nome: "Rui Lima",
+    porRodada: {
+      "1": {
+        [COD]: {
+          status: "atingiu",
+          origem: "propria",
+          situacao: "valida",
+          marcador: "reflexao",
+          rotulo: "Reflexão — sugestão da IA",
+          acoes: [
+            { rotulo: "Raio-x", status: "em_processo" },
+            { rotulo: "Reflexão — sugestão da IA", status: "atingiu" },
+          ],
+        },
+      },
+    },
+    resultado: { [COD]: "atingiu" },
+    origemDoResultado: { [COD]: { marcador: "reflexao", rotulo: "Reflexão — sugestão da IA" } },
+  });
+
+  test("a célula da rodada diz a ação que deu o nível e, quando divergem, o nível de cada ação", () => {
+    expect(celula(rui, 1, COD)).toMatchObject({
+      rotulo: "Atingiu",
+      deOndeVeio: "Reflexão — sugestão da IA",
+      acoes: ["Raio-x: Em processo", "Reflexão — sugestão da IA: Atingiu"],
+    });
+  });
+
+  test("o resultado da atividade também diz de onde veio", () => {
+    expect(celula(rui, RESULTADO, COD)).toEqual({
+      rotulo: "Atingiu",
+      variante: "success",
+      status: "atingiu",
+      deOndeVeio: "Reflexão — sugestão da IA",
+    });
+  });
+
+  test("o nome acessível leva a ação", () => {
+    expect(descricaoDaCelula("Rui Lima", COD, celula(rui, RESULTADO, COD))).toBe(
+      "Rui Lima, EF08CO11: Atingiu (Reflexão — sugestão da IA)",
+    );
+  });
+});
+
 describe("as rodadas", () => {
   test("sem evidência nenhuma, a rodada 1 existe assim mesmo", () => {
     expect(rodadasDoPainel({ rodadas: [] })).toEqual([1]);

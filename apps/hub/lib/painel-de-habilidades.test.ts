@@ -49,6 +49,20 @@ describe("a barra", () => {
     ]);
   });
 
+  test('o "em processo" limitado pela atividade entra logo depois do "em processo", e só quando há criança nele', () => {
+    const comLimitado = { ...d(3, 2, 1, 4), emProcessoLimitado: 2, total: 12 };
+    const segmentos = segmentosDaBarra(comLimitado);
+    expect(segmentos.map((s) => s.label)).toEqual([
+      "Atingiu",
+      "Em processo",
+      "Em processo (limitado pela atividade)",
+      "Não atingiu",
+      "Não avaliado",
+    ]);
+    expect(segmentos.map((s) => s.value)).toEqual([3, 2, 2, 1, 4]);
+    expect(segmentosDaBarra({ ...d(3, 2, 1, 4), emProcessoLimitado: 0 })).toHaveLength(4);
+  });
+
   test("turma vazia não divide por zero", () => {
     expect(proporcaoAtingiu(d(0, 0, 0, 0))).toBe(0);
     expect(porcentagem(0, 0)).toBe("0%");

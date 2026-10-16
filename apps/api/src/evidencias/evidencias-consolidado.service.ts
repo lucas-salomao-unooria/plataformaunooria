@@ -12,6 +12,7 @@ import {
   DISTRIBUICAO_VAZIA,
   distribuir,
   habilidadesDaMissao,
+  limitadosDaMissao,
   missaoDaTurma,
   niveisDaMissao,
   ordemDaSerie,
@@ -19,7 +20,7 @@ import {
   type Distribuicao,
   type LinhaDoConsolidado,
 } from "./regras-do-consolidado";
-import type { Situacao, Status } from "./regras";
+import { marcadorDaFicha, type Situacao, type Status } from "./regras";
 
 /** Uma missão com ficha, como o painel a descreve. */
 interface MissaoDoPainel {
@@ -167,9 +168,23 @@ export class EvidenciasConsolidadoService {
     if (turmaIds.length === 0 || expIds.length === 0) return [];
     const linhas = await tx.evidencia.findMany({
       where: { escolaId, turmaId: { in: [...turmaIds] }, expId: { in: [...expIds] } },
-      select: { turmaId: true, estudanteId: true, expId: true, habilidade: true, status: true, situacao: true },
+      select: {
+        turmaId: true,
+        estudanteId: true,
+        expId: true,
+        habilidade: true,
+        status: true,
+        situacao: true,
+        marcador: true,
+      },
     });
-    return linhas.map((l) => ({ ...l, status: l.status as Status, situacao: l.situacao as Situacao }));
+    /* O "em processo" limitado pela atividade sai do marcador que deu o nível,
+       pela ficha de HOJE: a ficha é quem diz que aquele marcador mede o acervo. */
+    return linhas.map(({ marcador, ...l }) => {
+      const ficha = marcador ? this.evidencias.fichaDe(l.expId) : null;
+      const limitado = ficha && marcador ? marcadorDaFicha(ficha, marcador)?.marcador.limitadoPelaAtividade === true : false;
+      return { ...l, status: l.status as Status, situacao: l.situacao as Situacao, limitado };
+    });
   }
 
   /** O que UMA turma mediu em cada missão que vale para ela. */
@@ -184,6 +199,7 @@ export class EvidenciasConsolidadoService {
       .filter((m) => missaoDaTurma(m, serie, aplicadas))
       .map((m) => {
         const niveis = niveisDaMissao(linhas, m.expId);
+        const limitados = limitadosDaMissao(linhas, m.expId);
         const codigos = habilidadesDaMissao(
           m.habilidades.map((h) => h.codigo),
           linhas,
@@ -192,7 +208,7 @@ export class EvidenciasConsolidadoService {
         return {
           expId: m.expId,
           aplicada: aplicadas.has(m.expId),
-          habilidades: codigos.map((codigo) => ({ codigo, distribuicao: distribuir(estudantes, niveis, codigo) })),
+          habilidades: codigos.map((codigo) => ({ codigo, distribuicao: distribuir(estudantes, niveis, codigo, limitados) })),
         };
       });
   }
