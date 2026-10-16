@@ -362,8 +362,18 @@ export const ResultadoSchema = z.object({
 /** "E se eu tivesse mandado para…". **Não grava e não debita.** */
 export const ContrafactualRespostaSchema = z.object({
   alocacao: z.object({ alfa: z.string().nullable(), bravo: z.string().nullable() }),
+  /** A outra decisão, nas mesmas tempestades que `sua`. */
   media: z.number(),
   faixa: z.tuple([z.number(), z.number()]),
+  /** A decisão do estudante nas MESMAS corridas: é com esta média que se compara, não com o resultado único dele. */
+  sua: z.object({ media: z.number(), faixa: z.tuple([z.number(), z.number()]) }),
+  /** Tempestade a tempestade: em quantas a outra decisão resgatou mais, menos ou igual. */
+  comparacao: z.object({
+    corridas: z.number().int(),
+    maisEm: z.number().int(),
+    menosEm: z.number().int(),
+    empates: z.number().int(),
+  }),
 });
 
 /** `passo` e `reiniciar` devolvem só a sessão — a tela recarrega o resto. */

@@ -47,6 +47,29 @@ Complementa o `AGENTS.md` de `apps/api`, que vence em conflito.
   aceita resposta no passo `resultado` e da sessão da rodada vigente. NÃO use a
   `tentativa` como rodada: com "Tentar de novo" livre e a melhor rodada, o
   estudante chega a "atingiu" por exclusão.
+- **O envio tem UM portão, `aoConfirmar`, para o botão e para a conversa.**
+  Ele confere, sob o lock da sessão, o porquê de cada equipe COM destino
+  (`faltaJustificar`) e devolve a recusa com motivo
+  (`ResultadoDaConfirmacao`): `falta-justificar` ou `sem-destino`. Mandar com
+  UMA equipe na base é permitido — a tela e o Cientista dizem isso —, e o que
+  se recusa é nenhuma equipe ter destino (`sem-destino`, código próprio). Antes
+  "pode mandar" no chat pulava a justificativa, e a equipe na base caía em
+  `falta-justificar`, uma frase que acusava um porquê que não faltava.
+- **Destino novo apaga o porquê, pelos dois caminhos** (`alocar` e
+  `aoAlocar`): a razão era do bairro antigo. Repetir o mesmo destino não apaga.
+- **Fonte só entra com o relógio aberto.** `PUT /unoogpt/conjuntos` (o painel,
+  sem o Cientista) recusa antes da largada, depois do fim e depois do envio,
+  como uma pergunta. Sem isso, chamar a rota direto fabricava o "pediu dados".
+- **O cartão de leitura sorteia com a rodada DEPOIS da carga**, a mesma do
+  mapa: `aoUsarDados` devolve `{ conjuntos, rodadas }`, e o turno anda a
+  `rodadaAtual` com ela. Com a rodada de antes, o cartão "O que os dados
+  mostram" e o mapa davam números diferentes (o ruído é de até 10%) para a
+  mesma leitura, e um empate aparecia num e não no outro.
+- **O "E se…" é PAREADO** (`corridasPareadas`, `modelo/tempestade.ts`): as
+  duas decisões nas mesmas tempestades, com a mesma sorte da operação em cada
+  corrida; a semente não leva a decisão. `esperadoDe` continua servindo a faixa
+  de UMA decisão, e não serve para comparar duas — a semente dela leva a
+  alocação. Mesma alocação nas duas pontas dá diferença zero em toda corrida.
 - **O podcast de recapitulação é FIXO** (ADR-156, `podcast.ts` +
   `podcast-fonte.ts`): o mesmo roteiro em toda turma, sem vaga, sem IA e sem
   edição do professor, com a atividade `"turma"`. Ele cita três vieses das

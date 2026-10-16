@@ -127,6 +127,9 @@ export class UnoogptController {
     descricao: "`PUT` porque é atribuição de conjunto. As camadas ACUMULAM.",
     corpo: ConjuntosSchema,
     resposta: EstadoDoJogoSchema,
+    notas: [
+      "Só com o relógio da turma ABERTO e a tentativa em curso, como uma pergunta: antes da largada `relogio-nao-comecou`, depois do fim `relogio-encerrado`, depois de enviar `sessao-encerrada` (todos **409**). Sem isso, chamar a rota direto fabricava o \"pediu dados\" depois da investigação.",
+    ],
   })
   async conjuntos(@Req() req: { auth: AuthClaims }, @Body() corpo: unknown) {
     const { escolaId, estudanteId } = this.quem(req);
@@ -162,7 +165,7 @@ export class UnoogptController {
   @Contrato({
     resumo: "Enfrenta a tempestade e fecha a tentativa.",
     descricao:
-      "Exige justificativa de **cada equipe com destino** — sem isso, `falta-justificar`. Devolve o mesmo que `GET /unoogpt/resultado`.",
+      "Exige justificativa de **cada equipe com destino** — sem isso, `falta-justificar`. Uma equipe na base é permitido; nenhuma equipe com destino é `sem-destino`. O mesmo portão vale para a confirmação pela conversa com o Cientista. Devolve o mesmo que `GET /unoogpt/resultado`.",
     resposta: ResultadoSchema,
   })
   async simular(@Req() req: { auth: AuthClaims }) {
@@ -192,7 +195,7 @@ export class UnoogptController {
   @Contrato({
     resumo: "\"E se eu tivesse mandado para…\" — calculado e descartado.",
     descricao:
-      "**Não grava e não debita**: é a pergunta que o estudante faz ao VER o resultado, e transformá-la em tentativa nova apagaria a diferença entre a decisão que ele tomou e a que ele imaginou depois.",
+      "**Não grava e não debita**: é a pergunta que o estudante faz ao VER o resultado, e transformá-la em tentativa nova apagaria a diferença entre a decisão que ele tomou e a que ele imaginou depois.\n\n**Pareado:** a decisão do estudante (`sua`) e a outra rodam nas MESMAS 200 tempestades, com a mesma sorte da operação em cada uma; `comparacao` conta em quantas a outra resgatou mais, menos ou igual.",
     corpo: ContrafactualSchema,
     resposta: ContrafactualRespostaSchema,
   })

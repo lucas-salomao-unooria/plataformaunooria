@@ -16,6 +16,7 @@ export type CodigoErro =
   | "relogio-encerrado"
   | "sem-perguntas"
   | "falta-justificar"
+  | "sem-destino"
   | "bairro-desconhecido"
   | "ja-simulou"
   | "passo-invalido"
@@ -29,6 +30,7 @@ export const STATUS: Record<CodigoErro, number> = {
   "relogio-encerrado": 409,
   "sem-perguntas": 409,
   "falta-justificar": 409,
+  "sem-destino": 409,
   "bairro-desconhecido": 400,
   "ja-simulou": 409,
   "passo-invalido": 400,
@@ -46,6 +48,10 @@ export const MENSAGENS: Record<CodigoErro, string> = {
   // tomá-la. Esta mensagem só aparece se ele insistir em investigar.
   "sem-perguntas": "Suas 3 perguntas acabaram. Você ainda pode mandar as equipes.",
   "falta-justificar": "Falta dizer por que cada equipe vai para lá.",
+  // Mandar com UMA equipe na base é permitido (a tela e o Cientista dizem
+  // isso); o que não dá é mandar sem destino nenhum. Antes este caso caía em
+  // `falta-justificar`, e a frase acusava um porquê que não faltava.
+  "sem-destino": "Escolha o destino de pelo menos uma equipe antes de mandar.",
   "bairro-desconhecido": "Não reconheci esse bairro.",
   "ja-simulou": "Esta tempestade já foi enfrentada.",
   "passo-invalido": "Não é possível ir para essa etapa agora.",
