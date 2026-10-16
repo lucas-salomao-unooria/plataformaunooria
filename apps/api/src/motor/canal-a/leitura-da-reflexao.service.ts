@@ -24,7 +24,8 @@ import { MARCADOR_DA_REFLEXAO } from "./vocabulario";
  * A LEITURA DA REFLEXÃO pela IA (EF08CO11, ADR-167) — no molde do Canal A da
  * A Seleção (`a-selecao/classificacao.service.ts`).
  *
- * UMA LEITURA SÓ, do PRIMEIRO texto salvo, qualquer que seja o resultado: a
+ * UMA LEITURA SÓ, do PRIMEIRO texto salvo, com até 3 tentativas dentro dela
+ * para a falha técnica (`TENTATIVAS_DA_LEITURA`), qualquer que seja o resultado: a
  * linha em `exp08ef1b_leituras_da_reflexao` nasce na transação do primeiro
  * salvamento (a unicidade por atividade e estudante impede a segunda, mesmo
  * com dois salvamentos ao mesmo tempo), e esta chamada, DEPOIS da transação e
@@ -46,7 +47,20 @@ import { MARCADOR_DA_REFLEXAO } from "./vocabulario";
 /** Próprio desta missão — o da A Seleção (`TETO_DO_CANAL_A_MS`) continua o dele. */
 export const TETO_DA_LEITURA_MS = 60_000;
 export const TETO_DA_LEITURA = "TETO_DA_LEITURA_DA_REFLEXAO";
-export const LIMITE_DA_LEITURA = { usos: 3, janelaMs: 10 * 60_000 } as const;
+/**
+ * ATÉ 3 TENTATIVAS dentro da leitura única: só a FALHA TÉCNICA (tempo
+ * esgotado, provider fora, saída que o Zod recusa) tenta de novo, com recuo de
+ * 2 s e 4 s. Resultado válido (nível ou "sem marca") encerra na hora; sem
+ * saldo (ou o rate limit) não é falha técnica e encerra sem nova tentativa.
+ */
+export const TENTATIVAS_DA_LEITURA = 3;
+export const RECUO_DA_LEITURA_MS = 2000;
+export const RECUO_DA_LEITURA = "RECUO_DA_LEITURA_DA_REFLEXAO";
+/** O rate limit cabe as 3 tentativas de uma leitura (que é uma só por atividade). */
+export const LIMITE_DA_LEITURA = { usos: TENTATIVAS_DA_LEITURA, janelaMs: 10 * 60_000 } as const;
+
+/** As falhas que tentam de novo. */
+const FALHA_TECNICA: readonly FalhaDaLeitura[] = ["tempo-esgotado", "saida-invalida", "provedor-falhou"];
 
 export type FalhaDaLeitura = "limite" | "sem-saldo" | "tempo-esgotado" | "saida-invalida" | "provedor-falhou";
 export type ResultadoDaLeitura =
@@ -70,6 +84,7 @@ export interface LeituraAgendada {
 @Injectable()
 export class LeituraDaReflexaoService {
   private readonly tetoMs: number;
+  private readonly recuoMs: number;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -77,8 +92,10 @@ export class LeituraDaReflexaoService {
     private readonly quota: QuotaService,
     private readonly evidencias: EvidenciasService,
     @Optional() @Inject(TETO_DA_LEITURA) tetoMs?: number,
+    @Optional() @Inject(RECUO_DA_LEITURA) recuoMs?: number,
   ) {
     this.tetoMs = tetoMs ?? TETO_DA_LEITURA_MS;
+    this.recuoMs = recuoMs ?? RECUO_DA_LEITURA_MS;
   }
 
   /**
@@ -96,11 +113,17 @@ export class LeituraDaReflexaoService {
         if (!leitura || leitura.lidaEm) return null;
         return leitura.run.reflexao?.primeiroTexto ?? null;
       }, agendada.escolaId);
-      /* A reflexão saiu (reinício) antes da leitura: encerra sem marca. */
-      const resultado: ResultadoDaLeitura = texto
-        ? await this.classificar(agendada.escolaId, agendada.estudanteId, texto)
-        : { ok: false, codigo: "provedor-falhou" };
-      await this.encerrar(agendada, resultado);
+      /* A reflexão saiu (reinício) antes da leitura: encerra sem marca. Toda
+         tentativa lê o MESMO primeiro texto, lido uma vez aqui. */
+      let resultado: ResultadoDaLeitura = { ok: false, codigo: "provedor-falhou" };
+      let tentativas = 0;
+      while (texto && tentativas < TENTATIVAS_DA_LEITURA) {
+        if (tentativas > 0) await new Promise((r) => setTimeout(r, this.recuoMs * 2 ** (tentativas - 1)));
+        tentativas += 1;
+        resultado = await this.classificar(agendada.escolaId, agendada.estudanteId, texto);
+        if (resultado.ok || !FALHA_TECNICA.includes(resultado.codigo)) break;
+      }
+      await this.encerrar(agendada, resultado, tentativas);
     } catch (erro) {
       logger.warn(
         { codigo: "exp08ef1b-leitura-da-reflexao-nao-encerrada", escolaId: agendada.escolaId, erro: (erro as Error).name },
@@ -109,7 +132,7 @@ export class LeituraDaReflexaoService {
     }
   }
 
-  private async encerrar(agendada: LeituraAgendada, r: ResultadoDaLeitura): Promise<void> {
+  private async encerrar(agendada: LeituraAgendada, r: ResultadoDaLeitura, tentativas: number): Promise<void> {
     await this.prisma.comTenancy(async (tx) => {
       const nivel = r.ok && r.resultado !== "sem_marca" ? r.resultado : null;
       const atualizada = await tx.leituraDaReflexao.updateMany({
@@ -118,6 +141,7 @@ export class LeituraDaReflexaoService {
           resultado: r.ok ? (nivel ? "nivel" : "sem_marca") : "falha",
           nivel,
           motivo: r.ok ? r.motivo : r.codigo,
+          tentativas,
           lidaEm: new Date(),
         },
       });

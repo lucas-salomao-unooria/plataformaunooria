@@ -784,7 +784,7 @@ export class AtividadesController {
           tarefas: { select: { tarefa: true, enviadaEm: true, refeita: true, frase: true } },
           leiturasDaReflexao: {
             where: { activityId: id },
-            select: { resultado: true, nivel: true, motivo: true, criadaEm: true, lidaEm: true },
+            select: { resultado: true, nivel: true, motivo: true, tentativas: true, criadaEm: true, lidaEm: true },
           },
         },
       });
@@ -979,7 +979,14 @@ function canalADoEstudante(run: {
   revelacaoConcluidaEm: Date | null;
   tarefas: TarefaDaRun[];
   reflexao: { primeiroTexto: string | null; createdAt: Date } | null;
-  leiturasDaReflexao: { resultado: string | null; nivel: string | null; motivo: string | null; criadaEm: Date; lidaEm: Date | null }[];
+  leiturasDaReflexao: {
+    resultado: string | null;
+    nivel: string | null;
+    motivo: string | null;
+    tentativas: number;
+    criadaEm: Date;
+    lidaEm: Date | null;
+  }[];
 }) {
   const leitura = run.leiturasDaReflexao[0] ?? null;
   const reflexaoLida = Boolean(leitura && run.reflexao && run.reflexao.createdAt.getTime() <= leitura.criadaEm.getTime());
@@ -995,6 +1002,7 @@ function canalADoEstudante(run: {
           resultado: leitura.resultado as "nivel" | "sem_marca" | "falha" | null,
           nivel: leitura.nivel as "atingiu" | "em_processo" | "nao_atingiu" | null,
           motivo: leitura.motivo,
+          tentativas: leitura.tentativas,
           lidaEm: leitura.lidaEm?.toISOString() ?? null,
         }
       : null,

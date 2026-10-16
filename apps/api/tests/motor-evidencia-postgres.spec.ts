@@ -40,12 +40,17 @@ const prisma = new PrismaService({ datasources: { db: { url: URL } } }) as Prism
 /** A IA da leitura, controlada pela suíte. Por padrão ela FALHA, como o mock. */
 class IaControlada implements AiProvider {
   resposta: unknown = null;
+  /** Uma resposta por chamada, na ordem; `null` = a chamada falha. Vazia, vale `resposta`. */
+  fila: unknown[] = [];
   chamadas = 0;
+  prompts: string[] = [];
   async generateJson<T>(req: AiJsonRequest<T>): Promise<T> {
     this.chamadas += 1;
+    this.prompts.push(req.prompt);
     req.aoUsarTokens?.(40);
-    if (this.resposta === null) throw new Error("IA de teste desligada");
-    return req.validar(this.resposta);
+    const resposta = this.fila.length > 0 ? this.fila.shift() : this.resposta;
+    if (resposta === null) throw new Error("IA de teste desligada");
+    return req.validar(resposta);
   }
   generate(): Promise<AiResult> {
     throw new Error("não usado");
@@ -75,7 +80,7 @@ const quota = new QuotaService(prisma);
 const evidencias = new EvidenciasService(prisma, new EquipesService(prisma));
 evidencias.onModuleInit();
 const tarefas = new TarefasDoUnoovista(prisma, evidencias);
-const leitura = new LeituraDaReflexaoService(prisma, ia, quota, evidencias, 300);
+const leitura = new LeituraDaReflexaoService(prisma, ia, quota, evidencias, 300, 10);
 const runsController = new RunsController(prisma, new MockProvider(), tarefas, leitura);
 
 let turmaId = "";
@@ -220,7 +225,7 @@ beforeAll(async () => {
       select: { id: true },
     })
   ).id;
-  for (const nome of ["ana", "bia", "caio", "dani", "eli", "fabi"]) {
+  for (const nome of ["ana", "bia", "caio", "dani", "eli", "fabi", "gil"]) {
     estudantes[nome] = (
       await prisma.user.create({
         data: { role: "estudante", escolaId: ESCOLA, turmaId, username: `mev.${nome}`, displayName: nome, passwordHash: "x" },
@@ -501,12 +506,74 @@ describe("a reflexão lida pela IA", () => {
     expect(reflexao.primeiroTexto).toMatch(/^O feed/);
   });
 
-  test("falha da IA também encerra a leitura: sem marca, e nada é lido de novo", async () => {
+  test("falha da IA também encerra a leitura (depois das 3 tentativas): sem marca, e nada é lido de novo", async () => {
     ia.resposta = null;
     await fase(runs.bia!, "reflexao");
     await salvar("bia", "Eu achei muito legal a aula de hoje e gostei bastante de usar o aplicativo do feed.");
-    expect(await esperarLeitura("bia")).toMatchObject({ resultado: "falha", nivel: null });
+    expect(await esperarLeitura("bia")).toMatchObject({ resultado: "falha", nivel: null, tentativas: 3 });
     expect(await evidenciaDe(estudantes.bia!, "EF08CO11")).toBeNull();
+  });
+
+  /** Uma leitura agendada à mão, como o primeiro salvamento a criaria. */
+  async function agendar(nome: string, runId: string, activityId: string, turma: string | null, texto: string) {
+    await prisma.reflexao.create({ data: { runId, escolaId: ESCOLA, texto: `${texto} (editado depois)`, primeiroTexto: texto } });
+    const l = await prisma.leituraDaReflexao.create({
+      data: { escolaId: ESCOLA, activityId, estudanteId: estudantes[nome]!, runId },
+      select: { id: true },
+    });
+    return { leituraId: l.id, escolaId: ESCOLA, estudanteId: estudantes[nome]!, activityId, turmaId: turma };
+  }
+
+  test("falha técnica 2 vezes e acerta na 3ª: a marca é gravada, e as 3 leram o MESMO primeiro texto", async () => {
+    ia.fila = [null, { resultado: "nivel_invalido", motivo: "x" }, { resultado: "em_processo", motivo: "mecanismo-sem-gesto-proprio" }];
+    const antes = ia.prompts.length;
+    await leitura.ler(await agendar("dani", runs.dani!, atividadeLimitadaId, turmaId, "O feed escolhia pelo que eu curtia."));
+    const lida = await prisma.leituraDaReflexao.findUniqueOrThrow({
+      where: { activityId_estudanteId: { activityId: atividadeLimitadaId, estudanteId: estudantes.dani! } },
+    });
+    expect(lida).toMatchObject({ resultado: "nivel", nivel: "em_processo", tentativas: 3 });
+    const lidos = ia.prompts.slice(antes);
+    expect(lidos).toHaveLength(3);
+    expect(lidos.every((p) => p.includes("O feed escolhia pelo que eu curtia.") && !p.includes("editado depois"))).toBe(true);
+    expect(await evidenciaDe(estudantes.dani!, "EF08CO11", atividadeLimitadaId)).toMatchObject({ status: "em_processo", marcador: "reflexao" });
+  });
+
+  test("falha técnica 3 vezes: a leitura fica \"falha\" e encerra", async () => {
+    ia.fila = [null, null, null];
+    const antes = ia.chamadas;
+    const gil = await criarRun("gil", atividadeSemTurmaId, [], "reflexao");
+    await leitura.ler(await agendar("gil", gil, atividadeSemTurmaId, null, "Um texto qualquer sobre o feed."));
+    expect(ia.chamadas - antes).toBe(3);
+    expect(
+      await prisma.leituraDaReflexao.findUniqueOrThrow({
+        where: { activityId_estudanteId: { activityId: atividadeSemTurmaId, estudanteId: estudantes.gil! } },
+      }),
+    ).toMatchObject({ resultado: "falha", tentativas: 3, nivel: null });
+  });
+
+  test("\"sem marca\" de primeira encerra na hora, sem nova tentativa", async () => {
+    ia.fila = [{ resultado: "sem_marca", motivo: "outro-texto" }];
+    const antes = ia.chamadas;
+    await leitura.ler(await agendar("fabi", runs.fabi!, atividadeSemTurmaId, null, "Gostei da aula."));
+    expect(ia.chamadas - antes).toBe(1);
+    expect(
+      await prisma.leituraDaReflexao.findUniqueOrThrow({
+        where: { activityId_estudanteId: { activityId: atividadeSemTurmaId, estudanteId: estudantes.fabi! } },
+      }),
+    ).toMatchObject({ resultado: "sem_marca", tentativas: 1 });
+  });
+
+  test("sem saldo não é falha técnica: encerra sem tentar de novo", async () => {
+    const semSaldo = new LeituraDaReflexaoService(prisma, ia, new QuotaZeradaDoEstudante(prisma), evidencias, 300, 10);
+    const antes = ia.chamadas;
+    const ana2 = await criarRun("ana", atividadeSemTurmaId, [], "reflexao");
+    await semSaldo.ler(await agendar("ana", ana2, atividadeSemTurmaId, null, "Texto."));
+    expect(ia.chamadas).toBe(antes);
+    expect(
+      await prisma.leituraDaReflexao.findUniqueOrThrow({
+        where: { activityId_estudanteId: { activityId: atividadeSemTurmaId, estudanteId: estudantes.ana! } },
+      }),
+    ).toMatchObject({ resultado: "falha", motivo: "sem-saldo", tentativas: 1 });
   });
 
   test("sem saldo: a IA nem é chamada, e a leitura encerra como falha", async () => {

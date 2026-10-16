@@ -52,6 +52,12 @@ por teto compila e sai errado em 30 telas ao mesmo tempo, no meio de uma aula.
   processa os eventos quando o aparelho pede o próximo bloco, e os do último
   bloco ficariam fora do Raio-x (a e2e mostrou: `vistosPorPost` vazio com 21
   eventos `visto` gravados).
+- **A leitura da reflexão é UMA, com até 3 tentativas** (`motor/canal-a/leitura-da-reflexao.service.ts`):
+  só a falha técnica tenta de novo, sempre o mesmo `primeiro_texto`, com teto
+  de 60 s por tentativa. Ela é disparada sem `await` depois da transação do
+  salvamento (`void this.leitura.ler(...)`): a criança não espera, e nada dela
+  passa pelo teto de 30 s do BFF. Reiniciar a api no meio perde a leitura em
+  andamento (a linha fica sem `lida_em`).
 - **O relatório do estudante esconde lado, intensidade e categoria do
   `topDwell` enquanto o Raio-x está pendente** — o post do lado dele em que mais
   parou entra sempre no Raio-x.

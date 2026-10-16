@@ -307,6 +307,8 @@ export const EstudanteDaAtividadeSchema = z.object({
           resultado: z.enum(["nivel", "sem_marca", "falha"]).nullable(),
           nivel: z.enum(["atingiu", "em_processo", "nao_atingiu"]).nullable(),
           motivo: z.string().nullable(),
+          /** Quantas chamadas à IA a leitura fez (até 3: só a falha técnica tenta de novo). */
+          tentativas: z.number().int().min(0).max(3),
           lidaEm: z.string().nullable(),
         })
         .nullable(),

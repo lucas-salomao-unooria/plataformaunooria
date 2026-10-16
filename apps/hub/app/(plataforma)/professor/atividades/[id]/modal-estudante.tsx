@@ -93,6 +93,7 @@ interface Dados {
         resultado: "nivel" | "sem_marca" | "falha" | null;
         nivel: "atingiu" | "em_processo" | "nao_atingiu" | null;
         motivo: string | null;
+        tentativas?: number;
         lidaEm: string | null;
       } | null;
       textoLido: string | null;
@@ -562,7 +563,7 @@ const RESULTADO_DA_LEITURA: Record<string, string> = {
   em_processo: "Em processo",
   nao_atingiu: "Não atingiu",
   sem_marca: "sem marca (o texto não fala do mecanismo do feed)",
-  falha: "sem leitura (a IA não respondeu a tempo ou ficou sem saldo)",
+  falha: "sem leitura (a IA não respondeu depois de três tentativas, ou ficou sem saldo)",
 };
 
 /**
