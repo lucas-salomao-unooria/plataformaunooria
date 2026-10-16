@@ -13,7 +13,7 @@ espera → revelação (crachás + **cartão de frases**) → síntese → **cas
 desafio do tio (a **regra montada com peças**, prevista e testada) → "Missão
 Concluída".
 
-**Só o Canal A (0.5.0, ADR-168).** As três habilidades são medidas pelo que a
+**Só o Canal A (0.5.0, ADR-171).** As três habilidades são medidas pelo que a
 criança FAZ: a seleção do Mural (EF05CO08), o cartão de frases com E/OU/NÃO
 depois dos crachás (EF05CO03) e a regra do tio montada com peças, com a
 previsão antes de cada teste (EF05CO04). As perguntas P1 e P2 saíram, como no

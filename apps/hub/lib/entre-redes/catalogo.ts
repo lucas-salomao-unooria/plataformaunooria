@@ -679,8 +679,8 @@ export const MISSAO_FOTO_CONTA: Missao = {
  *    síntese (que pode ser pulada) e a reflexão.
  *
  * As habilidades avaliadas são SÓ as de Computação — EF05CO08 pela seleção do
- * Mural, EF05CO03 e EF05CO04 pelas duas perguntas finais da Nina (a ficha E14
- * da api). Os códigos de Língua Portuguesa do one-pager ("a confirmar") não
+ * Mural, EF05CO03 pelo cartão de frases e EF05CO04 pela regra do tio (a ficha
+ * E14 da api, v4: só ações). Os códigos de Língua Portuguesa do one-pager ("a confirmar") não
  * entram como habilidade avaliada.
  */
 export const MISSAO_QUEM_MANDOU_ISSO: Missao = {
