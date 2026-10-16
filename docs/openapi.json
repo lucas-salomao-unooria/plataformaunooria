@@ -19764,6 +19764,11 @@
                                   "type": "string",
                                   "nullable": true
                                 },
+                                "tentativas": {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 3
+                                },
                                 "lidaEm": {
                                   "type": "string",
                                   "nullable": true
@@ -19773,6 +19778,7 @@
                                 "resultado",
                                 "nivel",
                                 "motivo",
+                                "tentativas",
                                 "lidaEm"
                               ],
                               "additionalProperties": false,
