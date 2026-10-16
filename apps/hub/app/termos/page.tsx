@@ -470,6 +470,7 @@ const SECOES: SecaoLegal[] = [
           <li>no feed do Unoovista, criando os perfis, as publicações e as reações dos personagens;</li>
           <li>no UnooriaAI, na conversa com o personagem que responde às suas perguntas;</li>
           <li>na A Seleção, lendo a legenda que você publica nos Stories para sugerir ao professor um nível de habilidade;</li>
+          <li>no Unoovista, lendo uma vez só o primeiro texto que você salva na reflexão, para sugerir ao professor um nível de habilidade;</li>
           <li>nas ferramentas do professor: no rascunho do plano de aula, no preparo das publicações e das imagens da A Seleção e no texto do acompanhamento de bem-estar.</li>
         </ul>
         <h3>O que você precisa saber sobre ela</h3>
@@ -480,12 +481,12 @@ const SECOES: SecaoLegal[] = [
         </p>
         <p>
           <strong>Ela não substitui o professor.</strong> A IA não dá nota e não decide nada sobre a
-          sua vida escolar. Na A Seleção, o nível que ela sugere a partir da sua legenda não aparece
-          para você, e é o professor quem confere e decide. Quem lê, interpreta e avalia é o professor.
+          sua vida escolar. Na A Seleção e no Unoovista, o nível que ela sugere a partir da sua legenda
+          ou da sua reflexão não aparece para você, e é o professor quem confere e decide. Quem lê, interpreta e avalia é o professor.
         </p>
         <p>
           <strong>O que você escreve é enviado para processamento.</strong> Para gerar a resposta (ou,
-          na A Seleção, para ler a legenda), o texto que você digitou sai da plataforma e vai para o serviço de inteligência artificial que
+          na A Seleção e no Unoovista, para ler a legenda ou a reflexão), o texto que você digitou sai da plataforma e vai para o serviço de inteligência artificial que
           a plataforma utiliza. Ele fica registrado na plataforma e fica visível para o professor da sua turma.
           Por isso: não escreva ali informação pessoal sua ou de outra pessoa.
         </p>

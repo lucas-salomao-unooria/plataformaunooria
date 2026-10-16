@@ -223,7 +223,7 @@ da missão injeta o que só ela sabe montar:
 
 \begin{itemize}
   \item \textbf{exp08ef1b} --- a tabela dos momentos do painel vem de
-    \cd{CONTROLE\_DO\_PROFESSOR}, e as sete telas da revelação de
+    \cd{CONTROLE\_DO\_PROFESSOR}, e as dez telas da revelação de
     \arq{lib/insta/copy-da-revelacao.ts} --- \textbf{cópia gêmea} do arquivo
     homônimo da exp08ef1b, não a mesma fonte: as duas mudam juntas, e nada no
     \emph{build} cobra isso.
@@ -370,14 +370,27 @@ Largada por perfil, sorteio ou redistribuição & \arq{perfis/largada.ts},
   desistia e o estudante nunca as via. As duas faltas vieram com a 1.2.0 e só a
   suíte as mostrou.\\
 Evidência pedagógica (E14) & A ficha \arq{evidencias/fichas/exp08ef1b.ts}, a quinta
-  da plataforma (\adrr{ADR-153}): \textbf{EF08CO11}, \textbf{EF08CO09} e
-  \textbf{EF08CO07}, uma pergunta de múltipla escolha cada, com o texto do PO,
-  DEPOIS da reflexão salva e na mesma tela escura (\cd{RadioGroup} da seção
-  \cd{unooria}, no \emph{chunk} tardio). O resolvedor
-  \arq{motor/contexto-da-evidencia.ts} devolve a atividade da run e a
-  \textbf{rodada 1, sempre}: aplicar de novo é criar outra atividade. Sem
-  reflexão salva, ou em atividade sem turma, a resposta é 409. O painel é o da
-  página da atividade, que já estava montado.\\
+  da plataforma, na versão 2 (\adrr{ADR-167}, que substitui o Canal B da
+  \adrr{ADR-153}): toda habilidade por AÇÃO. \textbf{EF08CO11} pelo
+  \textbf{6a Raio-x} (logo depois da resposta, ainda no disfarce: de 6 posts
+  que ele VIU, o que cada um faz; regra dos 3) e pela \textbf{reflexão lida
+  pela IA} (uma vez só, o primeiro texto salvo), vale a melhor;
+  \textbf{EF08CO09} pelo \textbf{6b} (as 5 regras fictícias: localizar,
+  explicar o efeito, julgar a mudança); \textbf{EF08CO07} pelo \textbf{6c}
+  (de 9 posts sem o lado, até 3 e uma mensagem). As réguas são puras, em
+  \arq{motor/canal-a/}, e os gabaritos ficam na api. Vale o PRIMEIRO envio,
+  mesmo depois de um reinício. A atividade sem página de fofoca ou de humor
+  nos dois lados grava, só na casa que a trava muda, o marcador limitado
+  \cd{envio-sem-confiabilidade} (\adrr{ADR-166}). Rodada 1, sempre; atividade
+  sem turma não tem evidência.\\
+Canal A: travas e ciclo de vida & O 6a abre da resposta em diante e fecha no
+  fim da revelação (\cd{runs.revelacao\_concluida\_em}, gravado no \enquote{Ver
+  meu relatório}); o 6b e o 6c só abrem do cinza em diante, com a revelação
+  terminada. A devolutiva do Raio-x entra na revelação, como ponte. Enquanto o
+  Raio-x está pendente, o relatório do estudante chega sem lado, intensidade e
+  categoria dos posts em que ele mais parou. O reinício apaga as tarefas e o
+  fim da revelação; a marca e a leitura da reflexão ficam. \enquote{Apagar as
+  sessões} leva tudo, em cascata (\adrr{ADR-155}).\\
 \bottomrule
 \end{tabularx}
 

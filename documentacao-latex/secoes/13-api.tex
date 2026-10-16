@@ -425,7 +425,22 @@ papel \cd{estudante}, com duas exceções marcadas.
   o relógio coletivo da turma.\\
 \rota{POST /runs/:id/conclusao} & estudante & Inclinação escolhida (A, B ou dúvida).\\
 \zebra \rota{POST /runs/:id/reflexao}, \rota{GET .../reflexao} & estudante &
-  Texto livre de fechamento, sem limite de caracteres.\\
+  Texto livre de fechamento, sem limite de caracteres. O PRIMEIRO salvamento
+  guarda o texto lido e cria a leitura da IA, que roda depois da resposta
+  (\adrr{ADR-167}).\\
+\rota{GET /runs/:id/tarefas} & estudante & A situação das três tarefas do
+  Canal A e do fim da revelação: é por ela que a experiência decide o desvio
+  por fase (\adrr{ADR-167}).\\
+\zebra \rota{GET|POST /runs/:id/raio-x}, \rota{GET .../raio-x/devolutiva} &
+  estudante & O 6a: os 6 posts que ele viu, sem lado; o envio corrigido no
+  servidor; a devolutiva só da explicabilidade em diante. Envio repetido é
+  \textbf{409} \cd{tarefa-ja-enviada}; fora da hora, \cd{tarefa-indisponivel}.\\
+\rota{POST /runs/:id/revelacao/concluida} & estudante & O \enquote{Ver meu
+  relatório}: abre o 6b e o 6c e fecha o Raio-x. Idempotente.\\
+\zebra \rota{GET|POST /runs/:id/termos}, \rota{GET|POST .../envio} & estudante &
+  O 6b e o 6c, do cinza em diante e com a revelação terminada. O envio aceita
+  até 3 posts dos 9, uma mensagem e uma frase opcional de até 140 caracteres.
+  Todo envio responde \cd{\{ enviada: true \}}.\\
 \rota{POST /runs/:id/student-post} & estudante & Post publicado pelo estudante.\\
 \zebra \rota{POST /runs/:id/reacoes} & estudante & Dispara reações de persona ao vivo
   (se \cd{ia\_ao\_vivo}).\\

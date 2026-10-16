@@ -88,18 +88,22 @@ test("a ficha da exp05ef1b está no registro, com as três habilidades da régua
   ]);
 });
 
-test("a ficha da exp08ef1b está no registro: três perguntas, uma por habilidade, gabarito do PO", () => {
+test("a ficha da exp08ef1b está no registro: o Canal A em toda habilidade, sem pergunta (ADR-167)", () => {
   const ficha = FICHAS.find((f) => f.expId === "exp08ef1b");
-  expect(ficha?.habilidades.map((h) => [h.codigo, h.marcadores.map((m) => [m.id, m.tipo, m.perguntaId ?? null])])).toEqual([
-    ["EF08CO11", [["p1", "multipla_escolha", "p1"]]],
-    ["EF08CO09", [["p2", "multipla_escolha", "p2"]]],
-    ["EF08CO07", [["p3", "multipla_escolha", "p3"]]],
+  expect(ficha?.versao).toBe(2);
+  expect(
+    ficha?.habilidades.map((h) => [
+      h.codigo,
+      h.marcadores.map((m) => [m.id, m.tipo, m.limitadoPelaAtividade ?? false]),
+    ]),
+  ).toEqual([
+    ["EF08CO11", [["raio-x", "acao", false], ["reflexao", "acao", false]]],
+    ["EF08CO09", [["termos", "acao", false]]],
+    ["EF08CO07", [["envio", "acao", false], ["envio-sem-confiabilidade", "acao", true]]],
   ]);
-  expect(ficha?.perguntas.map((p) => [p.id, p.alternativas.map((a) => [a.id, a.status])])).toEqual([
-    ["p1", [["A1", "atingiu"], ["A2", "em_processo"], ["A3", "nao_atingiu"]]],
-    ["p2", [["B1", "atingiu"], ["B2", "em_processo"], ["B3", "nao_atingiu"]]],
-    ["p3", [["C1", "atingiu"], ["C2", "em_processo"], ["C3", "nao_atingiu"]]],
-  ]);
+  expect(ficha?.perguntas).toEqual([]);
+  /* Toda ação tem rótulo: é o "de onde veio o nível" do painel (ADR-166). */
+  expect(ficha?.habilidades.flatMap((h) => h.marcadores).every((m) => Boolean(m.rotulo))).toBe(true);
 });
 
 test("a ficha da exp02em1b está no registro: quatro perguntas, vale a melhor, conta ao encerrar", () => {

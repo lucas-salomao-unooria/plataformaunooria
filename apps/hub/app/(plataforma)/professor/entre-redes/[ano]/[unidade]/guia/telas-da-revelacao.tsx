@@ -1,9 +1,13 @@
 import { Card } from "@edu/ui/ds";
 import {
+  PONTE_DO_RAIO_X,
   REVELACAO_FIXA,
   TELA_DA_LINGUAGEM,
+  TELA_DO_REGISTRO,
+  TELA_DOS_TERMOS,
   TELA_FINAL,
   telaDoLadoSemeado,
+  type TelaDaRevelacao,
 } from "@/lib/insta/copy-da-revelacao";
 
 /**
@@ -22,19 +26,30 @@ const ORIGEM_EM_PALAVRAS: Record<"perfil" | "redistribuido" | "sorteio", string>
   sorteio: "Quem entrou sem perfil",
 };
 
+/** A ordem do roteiro; `null` é a tela do lado de partida, que muda por estudante. */
+const ROTEIRO: (TelaDaRevelacao | null)[] = [
+  ...REVELACAO_FIXA,
+  PONTE_DO_RAIO_X,
+  TELA_DOS_TERMOS,
+  TELA_DO_REGISTRO,
+  null,
+  TELA_DA_LINGUAGEM,
+  TELA_FINAL,
+];
+
 export function TelasDaRevelacao() {
   return (
     <div className="guia-bloco guia-bloco--longo">
       <Card variant="outlined" title="O que a turma lê na revelação">
         <p className="text-[14px] leading-relaxed text-unooria-neutral-800">
-          São <strong>{REVELACAO_FIXA.length + 3} telas</strong> de fundo preto, uma frase por
-          vez, no ritmo de cada estudante — não um cartão. Leia antes da aula: é o argumento
+          São <strong>{ROTEIRO.length} telas</strong> de fundo preto ({ROTEIRO.length - 1} para quem
+          não fez o Raio-x), uma frase por vez, no ritmo de cada estudante — não um cartão. Leia antes da aula: é o argumento
           inteiro da atividade, e a conversa que vem depois parte daqui. O tom nunca culpa a
           criança: o sujeito da frase é sempre o sistema.
         </p>
 
         <ol className="mt-4 flex flex-col gap-3">
-          {[...REVELACAO_FIXA, null, TELA_DA_LINGUAGEM, TELA_FINAL].map((tela, indice) =>
+          {ROTEIRO.map((tela, indice) =>
             tela === null ? (
               <li
                 key="lado-semeado"
@@ -71,6 +86,7 @@ export function TelasDaRevelacao() {
               >
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-unooria-neutral-500">
                   tela {indice + 1}
+                  {tela.ponte ? " · só para quem enviou o Raio-x" : ""}
                 </p>
                 <p className="mt-1 text-[15px] leading-relaxed text-unooria-neutral-950">
                   {tela.texto}
@@ -84,6 +100,13 @@ export function TelasDaRevelacao() {
                     <span className="text-unooria-neutral-700"> {tela.complemento}</span>
                   ) : null}
                 </p>
+                {tela.ponte ? (
+                  <p className="mt-1 text-[13px] leading-relaxed text-unooria-neutral-700">
+                    Embaixo, os 6 posts que o estudante classificou, cada um com “escrito para defender
+                    [o lado]” ou “escrito para informar, sem defender lado”. Sem certo ou errado e sem
+                    contagem: é a devolutiva do Raio-x, que o envio não deu.
+                  </p>
+                ) : null}
               </li>
             ),
           )}

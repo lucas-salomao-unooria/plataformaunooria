@@ -39,6 +39,14 @@ const Reflexao = lazy(() =>
   import("./componentes/reflexao").then((modulo) => ({ default: modulo.Reflexao })),
 );
 
+/** As tarefas 6b e 6c e o relatório a pedido: pós-revelação, no chunk da plataforma (ADR-167). */
+const TarefasPosRevelacao = lazy(() =>
+  import("./componentes/tarefas-pos-revelacao").then((modulo) => ({ default: modulo.TarefasPosRevelacao })),
+);
+const RelatorioComSaida = lazy(() =>
+  import("./componentes/relatorio-a-pedido").then((modulo) => ({ default: modulo.RelatorioComSaida })),
+);
+
 import { LogoUnv, PostCard as PostCardUnv } from "@edu/ui/ds-unoovista";
 
 import { retratoDe } from "./componentes/avatar-perfil";
@@ -46,6 +54,8 @@ import { BottomNav, type Aba } from "./componentes/bottom-nav";
 import { ComentariosSheet } from "./componentes/comentarios-sheet";
 import { Compositor, TEMPLATES } from "./componentes/compositor";
 import { Conclusao } from "./componentes/conclusao";
+import { RaioX } from "./componentes/raio-x";
+import { desvioDaFase, pede, type SituacaoDasTarefas } from "../lib/canal-a";
 import { Debate } from "./componentes/debate";
 import { Onboarding } from "./componentes/onboarding";
 import { PostCard, type AcoesDoPost } from "./componentes/post-card";
@@ -143,6 +153,18 @@ export function InstanooriaApp({
   const [compositorAberto, setCompositorAberto] = useState(false);
   const [menuDaContaAberto, setMenuDaContaAberto] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+
+  /**
+   * O CANAL A (ADR-167): a situação das três tarefas e da revelação, lida do
+   * servidor a cada fase nova do fim e depois de cada envio. É ela que decide o
+   * desvio por fase (`desvioDaFase`): o Raio-x pendente antes da revelação, a
+   * revelação antes das tarefas, a tarefa pendente antes da reflexão.
+   */
+  const [tarefas, setTarefas] = useState<SituacaoDasTarefas | null>(null);
+  /** No cinza: o estudante tocou em "Continuar" e foi às tarefas. */
+  const [nasTarefas, setNasTarefas] = useState(false);
+  /** "Rever meu relatório", no cinza e na reflexão. */
+  const [relatorioAberto, setRelatorioAberto] = useState(false);
 
   const buffer = useRef<BufferDeEventos | null>(null);
   const dwell = useRef<RastreadorDeDwell | null>(null);
@@ -463,6 +485,23 @@ export function InstanooriaApp({
     return () => window.clearInterval(intervalo);
   }, [fase, runId]);
 
+  // ---- o Canal A: a situação das tarefas a cada fase do fim -------------
+  const carregarTarefas = useCallback(async () => {
+    if (!runId) return;
+    try {
+      setTarefas(await api.get<SituacaoDasTarefas>(`/runs/${runId}/tarefas`));
+    } catch {
+      // Rede instável: sem a situação, o aparelho mostra a tela da fase (nunca trava).
+      setTarefas((atual) => atual ?? { revelacaoConcluida: true, raioX: "indisponivel", termos: "indisponivel", envio: "indisponivel" });
+    }
+  }, [runId]);
+
+  const faseDoFim = !["onboarding", "feed", "encerramento"].includes(fase);
+  useEffect(() => {
+    if (!faseDoFim) return;
+    void carregarTarefas();
+  }, [carregarTarefas, faseDoFim, fase]);
+
   if (fase === "onboarding") {
     return (
       <Onboarding
@@ -507,7 +546,60 @@ export function InstanooriaApp({
             return false;
           }
         }}
+        /* O 6a Raio-x mora na mesma tela, depois de "registrado" (ADR-167). */
+        depoisDeRegistrar={
+          tarefas && (tarefas.raioX === "pendente" || tarefas.raioX === "enviada") ? (
+            <RaioX runId={runId} embutido aoEnviar={() => void carregarTarefas()} />
+          ) : null
+        }
       />
+    );
+  }
+
+  /**
+   * "Rever meu relatório" (ADR-167): o relatório em tela cheia, com "Voltar".
+   * Vale no cinza e na reflexão — o relatório já é legível nas etapas do fim.
+   */
+  if (relatorioAberto && runId) {
+    return (
+      <Suspense fallback={null}>
+        <RelatorioComSaida runId={runId} fase={fase} rotulo="Voltar" aoSair={() => setRelatorioAberto(false)} />
+      </Suspense>
+    );
+  }
+
+  /**
+   * O DESVIO POR FASE (ADR-167), antes da tela da fase: o Raio-x pendente vem
+   * antes da revelação; quem foi puxado adiante vê a revelação (e o relatório,
+   * com "Continuar") antes do cinza e das tarefas; tarefa pendente vem antes da
+   * reflexão. Enquanto a situação não chega, uma espera curta — mostrar a tela
+   * da fase e trocá-la em seguida confundiria quem está lendo.
+   */
+  const desvio = desvioDaFase(fase, tarefas);
+  const fimComTarefas = ["explicabilidade", "revelacao", "dossie", "perdidos", "reflexao", "fim"].includes(fase);
+  if (fimComTarefas && runId && !tarefas) {
+    return (
+      <main className="flex min-h-dvh items-center justify-center bg-night px-8 text-center">
+        <p className="text-[15px] text-white/70">abrindo…</p>
+      </main>
+    );
+  }
+  if (desvio === "raio-x" && runId) {
+    return <RaioX runId={runId} aoEnviar={() => void carregarTarefas()} />;
+  }
+  if (desvio === "revelacao" && runId) {
+    return (
+      <Suspense fallback={null}>
+        <Explicabilidade runId={runId} fase={fase} aoContinuar={() => void carregarTarefas()} />
+      </Suspense>
+    );
+  }
+  const tarefaPendente = pede(tarefas?.termos) || pede(tarefas?.envio);
+  if (tarefas && runId && (desvio === "tarefas" || (fase === "perdidos" && nasTarefas && tarefaPendente))) {
+    return (
+      <Suspense fallback={null}>
+        <TarefasPosRevelacao runId={runId} fase={fase} situacao={tarefas} aoTerminar={() => void carregarTarefas()} />
+      </Suspense>
     );
   }
 
@@ -544,7 +636,16 @@ export function InstanooriaApp({
   if (fase === "perdidos" && runId) {
     return (
       <Suspense fallback={null}>
-        <Perdidos runId={runId} />
+        <Perdidos
+          runId={runId}
+          saida={
+            tarefaPendente
+              ? { rotulo: "Continuar", aoTocar: () => setNasTarefas(true) }
+              : tarefas?.revelacaoConcluida
+                ? { rotulo: "Rever meu relatório", aoTocar: () => setRelatorioAberto(true) }
+                : undefined
+          }
+        />
       </Suspense>
     );
   }
@@ -552,7 +653,7 @@ export function InstanooriaApp({
   if ((fase === "reflexao" || fase === "fim") && runId) {
     return (
       <Suspense fallback={null}>
-        <Reflexao runId={runId} />
+        <Reflexao runId={runId} aoReverRelatorio={tarefas?.revelacaoConcluida ? () => setRelatorioAberto(true) : undefined} />
       </Suspense>
     );
   }

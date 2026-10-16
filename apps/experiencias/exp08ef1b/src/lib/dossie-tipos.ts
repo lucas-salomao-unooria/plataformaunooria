@@ -179,7 +179,9 @@ export interface PostDoDossie {
 export interface RespostaDossie {
   dossie: DossierData;
   posts: {
-    topDwell: (PostDoDossie & { dwellMs: number; segundos: number })[];
+    /** Para o estudante, sem lado, intensidade e categoria enquanto o Raio-x está pendente (ADR-167). */
+    topDwell: (Omit<PostDoDossie, 'lado' | 'intensidade' | 'categoria'> &
+      Partial<Pick<PostDoDossie, 'lado' | 'intensidade' | 'categoria'>> & { dwellMs: number; segundos: number })[];
     ocultados: PostDoDossie[];
   };
 }

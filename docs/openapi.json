@@ -16935,13 +16935,10 @@
                             },
                             "required": [
                               "id",
-                              "lado",
-                              "intensidade",
                               "caption",
                               "imageUrl",
                               "imageAlt",
                               "imageStatus",
-                              "categoria",
                               "handle",
                               "fallbackArt",
                               "dwellMs",
@@ -17050,6 +17047,1137 @@
           "professor"
         ],
         "x-acesso": "token"
+      }
+    },
+    "/runs/{id}/tarefas": {
+      "get": {
+        "operationId": "TarefasController_situacao",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "revelacaoConcluida": {
+                      "type": "boolean"
+                    },
+                    "raioX": {
+                      "type": "string",
+                      "enum": [
+                        "indisponivel",
+                        "aguardando",
+                        "pendente",
+                        "enviada",
+                        "encerrada"
+                      ]
+                    },
+                    "termos": {
+                      "type": "string",
+                      "enum": [
+                        "indisponivel",
+                        "aguardando",
+                        "pendente",
+                        "enviada",
+                        "encerrada"
+                      ]
+                    },
+                    "envio": {
+                      "type": "string",
+                      "enum": [
+                        "indisponivel",
+                        "aguardando",
+                        "pendente",
+                        "enviada",
+                        "encerrada"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "revelacaoConcluida",
+                    "raioX",
+                    "termos",
+                    "envio"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "runs"
+        ],
+        "summary": "A situação das três tarefas do Canal A e da revelação.",
+        "description": "É por ela que a experiência decide o desvio por fase: o Raio-x pendente antes da revelação, a revelação antes das tarefas, a tarefa pendente antes da reflexão.\n\n**Papéis:** estudante.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/runs/{id}/raio-x": {
+      "get": {
+        "operationId": "TarefasController_lerRaioX",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "situacao": {
+                      "type": "string",
+                      "enum": [
+                        "indisponivel",
+                        "aguardando",
+                        "pendente",
+                        "enviada",
+                        "encerrada"
+                      ]
+                    },
+                    "rotulos": {
+                      "type": "object",
+                      "properties": {
+                        "A": {
+                          "type": "string"
+                        },
+                        "B": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "A",
+                        "B"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "posts": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "author": {
+                            "type": "object",
+                            "properties": {
+                              "handle": {
+                                "type": "string"
+                              },
+                              "displayName": {
+                                "type": "string"
+                              },
+                              "verificado": {
+                                "type": "boolean"
+                              },
+                              "avatarSeed": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "handle",
+                              "displayName",
+                              "verificado",
+                              "avatarSeed"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "imageUrl": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "imageAlt": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "fallbackArt": {
+                            "type": "object",
+                            "properties": {
+                              "corFundo": {
+                                "type": "string"
+                              },
+                              "emojis": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "corFundo",
+                              "emojis"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "caption": {
+                            "type": "string"
+                          },
+                          "hashtags": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "likesCount": {
+                            "type": "integer"
+                          },
+                          "timestampLabel": {
+                            "type": "string"
+                          },
+                          "sugerido": {
+                            "type": "boolean"
+                          },
+                          "commentsPreview": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "handle": {
+                                  "type": "string"
+                                },
+                                "texto": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "handle",
+                                "texto"
+                              ],
+                              "additionalProperties": false
+                            }
+                          },
+                          "commentsTotal": {
+                            "type": "integer"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "author",
+                          "imageUrl",
+                          "imageAlt",
+                          "caption",
+                          "hashtags",
+                          "likesCount",
+                          "timestampLabel",
+                          "sugerido",
+                          "commentsPreview",
+                          "commentsTotal"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "situacao",
+                    "rotulos",
+                    "posts"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "runs"
+        ],
+        "summary": "O 6a Raio-x: os 6 posts que o estudante viu, sem o lado.",
+        "description": "Só da resposta à pergunta-chave até o fim da revelação, para quem teve feed com lado. A composição é gravada na primeira leitura.\n\n**Papéis:** estudante.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token"
+      },
+      "post": {
+        "operationId": "TarefasController_enviarRaioX",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "enviada": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "enviada"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "runs"
+        ],
+        "summary": "O envio do 6a Raio-x.",
+        "description": "Corrigido no servidor pelo lado gravado de cada post. Vale o primeiro envio. Enviar de novo é **409**.\n\n**Papéis:** estudante.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "respostas": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "string",
+                      "enum": [
+                        "A",
+                        "B",
+                        "neutro"
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "respostas"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/runs/{id}/raio-x/devolutiva": {
+      "get": {
+        "operationId": "TarefasController_devolutiva",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "posts": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "author": {
+                            "type": "object",
+                            "properties": {
+                              "handle": {
+                                "type": "string"
+                              },
+                              "displayName": {
+                                "type": "string"
+                              },
+                              "verificado": {
+                                "type": "boolean"
+                              },
+                              "avatarSeed": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "handle",
+                              "displayName",
+                              "verificado",
+                              "avatarSeed"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "imageUrl": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "imageAlt": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "fallbackArt": {
+                            "type": "object",
+                            "properties": {
+                              "corFundo": {
+                                "type": "string"
+                              },
+                              "emojis": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "corFundo",
+                              "emojis"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "caption": {
+                            "type": "string"
+                          },
+                          "hashtags": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "likesCount": {
+                            "type": "integer"
+                          },
+                          "timestampLabel": {
+                            "type": "string"
+                          },
+                          "sugerido": {
+                            "type": "boolean"
+                          },
+                          "commentsPreview": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "handle": {
+                                  "type": "string"
+                                },
+                                "texto": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "handle",
+                                "texto"
+                              ],
+                              "additionalProperties": false
+                            }
+                          },
+                          "commentsTotal": {
+                            "type": "integer"
+                          },
+                          "origem": {
+                            "type": "string",
+                            "enum": [
+                              "A",
+                              "B",
+                              "neutro"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "author",
+                          "imageUrl",
+                          "imageAlt",
+                          "caption",
+                          "hashtags",
+                          "likesCount",
+                          "timestampLabel",
+                          "sugerido",
+                          "commentsPreview",
+                          "commentsTotal",
+                          "origem"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "posts"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "runs"
+        ],
+        "summary": "A ponte da revelação: de onde veio cada post do Raio-x.",
+        "description": "Só da explicabilidade em diante, e só para quem enviou o 6a. Sem certo ou errado, sem contagem.\n\n**Papéis:** estudante.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/runs/{id}/revelacao/concluida": {
+      "post": {
+        "operationId": "TarefasController_concluirRevelacao",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "runs"
+        ],
+        "summary": "O estudante chegou à última tela da revelação.",
+        "description": "O toque em \"Ver meu relatório\". Abre o 6b e o 6c e fecha o Raio-x. Idempotente.\n\n**Papéis:** estudante.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/runs/{id}/termos": {
+      "get": {
+        "operationId": "TarefasController_lerTermos",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "situacao": {
+                      "type": "string",
+                      "enum": [
+                        "indisponivel",
+                        "aguardando",
+                        "pendente",
+                        "enviada",
+                        "encerrada"
+                      ]
+                    },
+                    "clausulas": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "texto": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "texto"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "efeitos": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "texto": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "texto"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "mudancas": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "texto": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "texto"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "situacao",
+                    "clausulas",
+                    "efeitos",
+                    "mudancas"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "runs"
+        ],
+        "summary": "O 6b: as 5 cláusulas, os efeitos e as mudanças, sem gabarito.",
+        "description": "Só depois do cinza, para quem teve feed com lado e terminou a revelação.\n\n**Papéis:** estudante.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token"
+      },
+      "post": {
+        "operationId": "TarefasController_enviarTermos",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "enviada": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "enviada"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "runs"
+        ],
+        "summary": "O envio do 6b.",
+        "description": "As regras marcadas, o efeito de cada uma e a mudança. Vale o primeiro envio.\n\n**Papéis:** estudante.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "marcadas": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "c1",
+                        "c2",
+                        "c3",
+                        "c4",
+                        "c5"
+                      ]
+                    },
+                    "maxItems": 5
+                  },
+                  "efeitos": {
+                    "type": "object",
+                    "required": [
+                      "c1",
+                      "c2",
+                      "c3",
+                      "c4",
+                      "c5"
+                    ],
+                    "properties": {
+                      "c1": {
+                        "type": "string",
+                        "enum": [
+                          "e1",
+                          "e2",
+                          "e3"
+                        ]
+                      },
+                      "c2": {
+                        "type": "string",
+                        "enum": [
+                          "e1",
+                          "e2",
+                          "e3"
+                        ]
+                      },
+                      "c3": {
+                        "type": "string",
+                        "enum": [
+                          "e1",
+                          "e2",
+                          "e3"
+                        ]
+                      },
+                      "c4": {
+                        "type": "string",
+                        "enum": [
+                          "e1",
+                          "e2",
+                          "e3"
+                        ]
+                      },
+                      "c5": {
+                        "type": "string",
+                        "enum": [
+                          "e1",
+                          "e2",
+                          "e3"
+                        ]
+                      }
+                    },
+                    "additionalProperties": false
+                  },
+                  "mudanca": {
+                    "type": "string",
+                    "enum": [
+                      "controle",
+                      "forma",
+                      "aceitacao"
+                    ]
+                  }
+                },
+                "required": [
+                  "marcadas",
+                  "efeitos",
+                  "mudanca"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/runs/{id}/envio": {
+      "get": {
+        "operationId": "TarefasController_lerEnvio",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "situacao": {
+                      "type": "string",
+                      "enum": [
+                        "indisponivel",
+                        "aguardando",
+                        "pendente",
+                        "enviada",
+                        "encerrada"
+                      ]
+                    },
+                    "posts": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "author": {
+                            "type": "object",
+                            "properties": {
+                              "handle": {
+                                "type": "string"
+                              },
+                              "displayName": {
+                                "type": "string"
+                              },
+                              "verificado": {
+                                "type": "boolean"
+                              },
+                              "avatarSeed": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "handle",
+                              "displayName",
+                              "verificado",
+                              "avatarSeed"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "imageUrl": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "imageAlt": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "fallbackArt": {
+                            "type": "object",
+                            "properties": {
+                              "corFundo": {
+                                "type": "string"
+                              },
+                              "emojis": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "corFundo",
+                              "emojis"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "caption": {
+                            "type": "string"
+                          },
+                          "hashtags": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "likesCount": {
+                            "type": "integer"
+                          },
+                          "timestampLabel": {
+                            "type": "string"
+                          },
+                          "sugerido": {
+                            "type": "boolean"
+                          },
+                          "commentsPreview": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "handle": {
+                                  "type": "string"
+                                },
+                                "texto": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "handle",
+                                "texto"
+                              ],
+                              "additionalProperties": false
+                            }
+                          },
+                          "commentsTotal": {
+                            "type": "integer"
+                          },
+                          "bio": {
+                            "type": "string",
+                            "nullable": true
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "author",
+                          "imageUrl",
+                          "imageAlt",
+                          "caption",
+                          "hashtags",
+                          "likesCount",
+                          "timestampLabel",
+                          "sugerido",
+                          "commentsPreview",
+                          "commentsTotal",
+                          "bio"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "mensagens": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "texto": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "texto"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "situacao",
+                    "posts",
+                    "mensagens"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "runs"
+        ],
+        "summary": "O 6c: os 9 posts (sem lado, com a descrição do perfil) e as 4 mensagens.",
+        "description": "Só depois do cinza, para quem teve feed com lado e terminou a revelação.\n\n**Papéis:** estudante.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token"
+      },
+      "post": {
+        "operationId": "TarefasController_enviarEnvio",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "enviada": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "enviada"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "runs"
+        ],
+        "summary": "O envio do 6c.",
+        "description": "Até 3 posts, uma mensagem e uma frase opcional (até 140 caracteres, só o professor lê, não entra no nível). Vale o primeiro envio.\n\n**Papéis:** estudante.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "posts": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "minItems": 1,
+                    "maxItems": 3
+                  },
+                  "mensagem": {
+                    "type": "string",
+                    "enum": [
+                      "m1",
+                      "m2",
+                      "m3",
+                      "m4"
+                    ]
+                  },
+                  "frase": {
+                    "type": "string",
+                    "maxLength": 140,
+                    "nullable": true
+                  }
+                },
+                "required": [
+                  "posts",
+                  "mensagem"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
       }
     },
     "/posts/{id}/comentarios": {
@@ -18304,6 +19432,38 @@
                           },
                           "publicou": {
                             "type": "boolean"
+                          },
+                          "canalA": {
+                            "type": "object",
+                            "properties": {
+                              "revelacaoConcluida": {
+                                "type": "boolean"
+                              },
+                              "raioX": {
+                                "type": "boolean"
+                              },
+                              "termos": {
+                                "type": "boolean"
+                              },
+                              "envio": {
+                                "type": "boolean"
+                              },
+                              "comFrase": {
+                                "type": "boolean"
+                              },
+                              "refeita": {
+                                "type": "boolean"
+                              }
+                            },
+                            "required": [
+                              "revelacaoConcluida",
+                              "raioX",
+                              "termos",
+                              "envio",
+                              "comFrase",
+                              "refeita"
+                            ],
+                            "additionalProperties": false
                           }
                         },
                         "required": [
@@ -18330,7 +19490,8 @@
                           "alertaDeOcioso",
                           "temDossie",
                           "caracteresDaReflexao",
-                          "publicou"
+                          "publicou",
+                          "canalA"
                         ],
                         "additionalProperties": false
                       }
@@ -18404,6 +19565,10 @@
                         "salvosDoOutroLado": {
                           "type": "integer",
                           "minimum": 0
+                        },
+                        "naRevelacao": {
+                          "type": "integer",
+                          "minimum": 0
                         }
                       },
                       "required": [
@@ -18419,7 +19584,8 @@
                         "concluiram",
                         "ociosos",
                         "salvosNaTurma",
-                        "salvosDoOutroLado"
+                        "salvosDoOutroLado",
+                        "naRevelacao"
                       ],
                       "additionalProperties": false
                     },
@@ -18550,6 +19716,94 @@
                         "postouNoApp": {
                           "type": "string",
                           "nullable": true
+                        },
+                        "canalA": {
+                          "type": "object",
+                          "properties": {
+                            "revelacaoConcluida": {
+                              "type": "boolean"
+                            },
+                            "raioX": {
+                              "type": "boolean"
+                            },
+                            "termos": {
+                              "type": "boolean"
+                            },
+                            "envio": {
+                              "type": "boolean"
+                            },
+                            "refeita": {
+                              "type": "boolean"
+                            },
+                            "fraseDoEnvio": {
+                              "type": "string",
+                              "nullable": true
+                            },
+                            "leitura": {
+                              "type": "object",
+                              "properties": {
+                                "resultado": {
+                                  "type": "string",
+                                  "enum": [
+                                    "nivel",
+                                    "sem_marca",
+                                    "falha"
+                                  ],
+                                  "nullable": true
+                                },
+                                "nivel": {
+                                  "type": "string",
+                                  "enum": [
+                                    "atingiu",
+                                    "em_processo",
+                                    "nao_atingiu"
+                                  ],
+                                  "nullable": true
+                                },
+                                "motivo": {
+                                  "type": "string",
+                                  "nullable": true
+                                },
+                                "tentativas": {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 3
+                                },
+                                "lidaEm": {
+                                  "type": "string",
+                                  "nullable": true
+                                }
+                              },
+                              "required": [
+                                "resultado",
+                                "nivel",
+                                "motivo",
+                                "tentativas",
+                                "lidaEm"
+                              ],
+                              "additionalProperties": false,
+                              "nullable": true
+                            },
+                            "textoLido": {
+                              "type": "string",
+                              "nullable": true
+                            },
+                            "textoLidoApagado": {
+                              "type": "boolean"
+                            }
+                          },
+                          "required": [
+                            "revelacaoConcluida",
+                            "raioX",
+                            "termos",
+                            "envio",
+                            "refeita",
+                            "fraseDoEnvio",
+                            "leitura",
+                            "textoLido",
+                            "textoLidoApagado"
+                          ],
+                          "additionalProperties": false
                         }
                       },
                       "required": [
@@ -18562,7 +19816,8 @@
                         "respondeu",
                         "respondeuRotulo",
                         "reflexao",
-                        "postouNoApp"
+                        "postouNoApp",
+                        "canalA"
                       ],
                       "additionalProperties": false
                     },

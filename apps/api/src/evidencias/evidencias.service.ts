@@ -462,6 +462,31 @@ export class EvidenciasService implements OnModuleInit {
   }
 
   /**
+   * O estudante JÁ TEM marca de algum destes marcadores nesta atividade e
+   * rodada? É o "vale o primeiro envio" das missões cujo reinício reabre a
+   * tarefa (o Unoovista, ADR-167): o reinício apaga o que a criança produziu,
+   * e não as marcas — a missão confere aqui antes de marcar de novo.
+   */
+  async jaMarcou(
+    tx: Prisma.TransactionClient,
+    m: Pick<MarcaDaMissao, "escolaId" | "expId" | "atividadeId" | "rodada" | "estudanteId">,
+    marcadores: readonly string[],
+  ): Promise<boolean> {
+    const linha = await tx.evidenciaMarca.findFirst({
+      where: {
+        escolaId: m.escolaId,
+        expId: m.expId,
+        atividadeId: m.atividadeId,
+        rodada: m.rodada,
+        estudanteId: m.estudanteId,
+        marcador: { in: [...marcadores] },
+      },
+      select: { marcador: true },
+    });
+    return linha !== null;
+  }
+
+  /**
    * A EVIDÊNCIA PRÓPRIA de uma habilidade numa rodada — os passos 3 a 5 de
    * `marcar`, e o caminho do encerramento (`aoEncerrarAMissao`).
    *
