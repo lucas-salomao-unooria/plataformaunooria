@@ -2,6 +2,10 @@ import { z } from "zod";
 import { CONDUTAS } from "./leitura";
 import { PASSOS } from "./regras/passos";
 import { TIPOS_DE_MARCO } from "./regras/trilha";
+import { IDS_DAS_PERGUNTAS } from "./regras/cartoes-das-fontes";
+import { IDS_DO_E_SE } from "./regras/e-se";
+import { IDS_DA_SAUDE } from "./regras/saude";
+import { IDS_DA_RESPOSTA, IDS_DO_AVISO } from "./regras/whatsapp";
 import { BAIRROS_VALIDOS, CONJUNTOS_VALIDOS, JUSTIFICATIVAS_VALIDAS } from "./unoogpt.service";
 
 const EquipeSchema = z.enum(["alfa", "bravo"]);
@@ -34,6 +38,39 @@ export const ContrafactualSchema = z.object({
 });
 
 export const PassoSchema = z.object({ para: z.enum(PASSOS) });
+
+// ── o Canal A (ADR-169): só ids de escolha fechada, nenhum texto livre ────────
+
+/** Id de opção que a apresentação gravada confere (`regras/*`). */
+const IdDeOpcao = z.string().min(1).max(40);
+
+/** A ligação da Saúde. `null` = fechou o cartão sem responder: sem marca. */
+export const SaudeRespostaSchema = z.object({ opcao: z.enum(IDS_DA_SAUDE).nullable() });
+
+/** A leitura dos dados: um bairro ou `cruzam` por par, pela posição na tela. */
+export const LeituraRespostaSchema = z.object({ respostas: z.object({ p1: IdDeOpcao, p2: IdDeOpcao }) });
+
+/** As fontes: uma das cinco perguntas por cartão. */
+export const FontesRespostaSchema = z.object({
+  respostas: z.object({ c1: z.enum(IDS_DAS_PERGUNTAS), c2: z.enum(IDS_DAS_PERGUNTAS) }),
+});
+
+/** O alerta: uma opção por parte. */
+export const AlertaRespostaSchema = z.object({ frequencia: IdDeOpcao, tom: IdDeOpcao, conteudo: IdDeOpcao });
+
+/** O "E se…": uma resposta por comparação, pela posição na tela. */
+export const ESeRespostaSchema = z.object({ respostas: z.object({ e1: z.enum(IDS_DO_E_SE), e2: z.enum(IDS_DO_E_SE) }) });
+
+/** O WhatsApp: o que responde e o que mais faz. */
+export const WhatsappRespostaSchema = z.object({ resposta: z.enum(IDS_DA_RESPOSTA), aviso: z.enum(IDS_DO_AVISO) });
+
+/** A moradora: uma frase por parte. */
+export const MoradoraRespostaSchema = z.object({
+  dados: IdDeOpcao,
+  criterio: IdDeOpcao,
+  quem: IdDeOpcao,
+  contestar: IdDeOpcao,
+});
 
 /** Qual botão: a lixeira da Investigação ou o "Tentar de novo" do Resultado.
  *  É a única coisa do recomeço que SÓ o cliente sabe; o resto (relógio,
@@ -110,6 +147,8 @@ export const RelogioPublicoSchema = z.object({
   pivoSeg: z.number(),
   pivoMin: z.number(),
   agora: z.string(),
+  /** O professor abriu o fechamento (ADR-169). */
+  fechamentoAberto: z.boolean(),
 });
 
 export const EstadoDoRelogioSchema = z.object({
@@ -133,6 +172,10 @@ export const SessaoPublicaSchema = z.object({
   rodadaDaTurma: z.number(),
   alocacao: z.object({ alfa: z.string().nullable(), bravo: z.string().nullable() }),
   justificativas: z.object({ alfa: z.string().nullable(), bravo: z.string().nullable() }),
+  /** A ligação da Saúde já apareceu nesta tentativa (ADR-169). */
+  ofertaSaude: z.boolean(),
+  /** O registro da operação está feito: o resultado só sai depois dele (ADR-169). */
+  registroConcluido: z.boolean(),
 });
 
 /**
@@ -261,6 +304,8 @@ export const RelogioDoEstudanteSchema = z.object({
 export const TurnoDoCientistaSchema = z.object({
   texto: z.string(),
   anexo: AnexoSchema.nullable(),
+  /** Ele confirmou na conversa: a tela abre a decisão com "Enviar equipes" (ADR-169). */
+  abrirEnvio: z.boolean(),
   sessao: SessaoPublicaSchema,
   relogio: RelogioPublicoSchema,
   mapa: z.array(BairroPublicoSchema),
@@ -379,6 +424,92 @@ export const ContrafactualRespostaSchema = z.object({
 /** `passo` e `reiniciar` devolvem só a sessão — a tela recarrega o resto. */
 export const SoASessaoSchema = z.object({ sessao: SessaoPublicaSchema });
 
+// ── o Canal A, como a tela o vê: sem gabarito, sem nível ──────────────────────
+
+const OpcaoSchema = z.object({ id: z.string(), texto: z.string() });
+
+export const SaudeSchema = z.object({
+  ofertada: z.boolean(),
+  respondida: z.boolean(),
+  texto: z.string(),
+  opcoes: z.array(OpcaoSchema),
+  /** A consequência do pedido: a contagem, e o aviso de quem pediu lista. */
+  entrega: z
+    .object({
+      contagem: z.array(z.object({ bairro: z.string(), pessoas: z.number().int() })).nullable(),
+      aviso: z.string().nullable(),
+    })
+    .nullable(),
+});
+
+/**
+ * O REGISTRO DA OPERAÇÃO. Cada cartão é `null` quando não se aplica (a tabela
+ * sem os dois pares, as fontes sem dois cartões, o alerta já respondido na
+ * rodada). Os ids dos pares e das comparações são POSIÇÃO: o tipo é gabarito.
+ */
+export const RegistroSchema = z.object({
+  concluido: z.boolean(),
+  leitura: z
+    .object({
+      enviada: z.boolean(),
+      tabela: z.array(
+        z.object({ bairro: z.string(), nome: z.string(), min: z.number(), esperado: z.number(), max: z.number() }),
+      ),
+      pares: z.array(z.object({ id: z.string(), pergunta: z.string(), opcoes: z.array(OpcaoSchema) })),
+    })
+    .nullable(),
+  fontes: z
+    .object({
+      enviada: z.boolean(),
+      cartoes: z.array(z.object({ id: z.string(), texto: z.string() })),
+      perguntas: z.array(OpcaoSchema),
+    })
+    .nullable(),
+  alerta: z
+    .object({
+      enviada: z.boolean(),
+      enunciado: z.string(),
+      partes: z.array(z.object({ id: z.string(), titulo: z.string(), opcoes: z.array(OpcaoSchema) })),
+    })
+    .nullable(),
+});
+
+const DecisaoPorNomeSchema = z.object({ alfa: z.string(), bravo: z.string() });
+
+/** As duas comparações nas mesmas 20 tempestades. `null` = a busca não achou as duas. */
+export const ESeSchema = z.object({
+  enviada: z.boolean(),
+  opcoes: z.array(OpcaoSchema).optional(),
+  comparacoes: z
+    .array(
+      z.object({
+        id: z.string(),
+        pergunta: z.string(),
+        referencia: DecisaoPorNomeSchema.extend({ sua: z.boolean() }),
+        outra: DecisaoPorNomeSchema,
+        /** Uma por tempestade: quem resgatou mais nela. */
+        quadradinhos: z.array(z.enum(["referencia", "outra", "empate"])),
+      }),
+    )
+    .nullable(),
+});
+
+export const FechamentoSchema = z.object({
+  whatsapp: z.object({
+    enviada: z.boolean(),
+    mensagem: z.string(),
+    perguntaDaResposta: z.string(),
+    respostas: z.array(OpcaoSchema),
+    perguntaDoAviso: z.string(),
+    avisos: z.array(OpcaoSchema),
+  }),
+  moradora: z.object({
+    enviada: z.boolean(),
+    enunciado: z.string(),
+    partes: z.array(z.object({ id: z.string(), titulo: z.string(), opcoes: z.array(OpcaoSchema) })),
+  }),
+});
+
 // ==================================== professor e gestor ====================
 
 const Uuid = z.string().uuid();
@@ -391,6 +522,8 @@ export const AcaoDoRelogioSchema = z.object({
     "modo-livre",
     "modo-cronometrado",
     "redefinir",
+    /** Abre o fechamento (o WhatsApp e a moradora) para a turma (ADR-169). */
+    "abrir-fechamento",
   ]),
 });
 
@@ -436,6 +569,18 @@ export const EquipeDaFolhaSchema = z.object({
 export const TurmaDoProfessorSchema = z.object({
   turma: z.object({ id: Uuid, nome: z.string(), serie: z.string() }),
   relogio: RelogioDoProfessorSchema,
+  /** O fechamento (ADR-169): aberto, e quantas linhas que chegaram ao resultado já o enviaram. */
+  fechamento: z.object({
+    aberto: z.boolean(),
+    enviaram: z.number().int().nonnegative(),
+    de: z.number().int().nonnegative(),
+  }),
+  /** O que cada grupo perguntou sobre cada fonte, no registro: contagens para o debate. */
+  perguntasPorFonte: z.array(
+    z.object({ fonte: z.string(), bairro: z.string(), pergunta: z.string(), grupos: z.number().int().positive() }),
+  ),
+  /** A frase fixa do alcance do alerta: é do debate, nunca vai ao grupo. */
+  alcanceDoAlerta: z.string(),
   retrato: z.object({
     /** Quantas LINHAS a folha tem — computadores, quando `porComputador`. */
     estudantes: z.number().int().nonnegative().optional(),
@@ -605,6 +750,10 @@ export const EstudanteDoProfessorSchema = z.object({
     .nullable(),
   tentativas: z.array(TentativaDoProfessorSchema),
   rodadas: z.array(RodadaDoProfessorSchema),
+  /** As escolhas do Canal A, por tentativa: escolha fechada em texto, nunca o nível (ADR-169). */
+  canalA: z.array(
+    z.object({ tentativa: z.number().int(), tarefa: z.string(), escolhas: z.array(z.string()) }),
+  ),
   trilha: z.array(MarcoDoProfessorSchema),
   /** A TRANSCRIÇÃO — o que a criança escreveu ao Cientista. Só o professor. */
   conversa: z.array(FalaDoProfessorSchema),

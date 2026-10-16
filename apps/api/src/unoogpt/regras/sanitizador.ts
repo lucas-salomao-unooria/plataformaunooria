@@ -53,6 +53,8 @@ export interface RelogioPublico {
   pivoSeg: number;
   pivoMin: number;
   agora: string;
+  /** O professor abriu o fechamento (ADR-169): o WhatsApp e a moradora aparecem. */
+  fechamentoAberto: boolean;
 }
 
 export function sanitizarRelogio(
@@ -63,6 +65,7 @@ export function sanitizarRelogio(
     encerradoEm: Date | null;
     pivoSeg: number;
     pivoMin: number;
+    fechamentoAbertoEm?: Date | null;
   },
   agora: Date,
 ): RelogioPublico {
@@ -74,6 +77,7 @@ export function sanitizarRelogio(
     pivoSeg: bruto.pivoSeg,
     pivoMin: bruto.pivoMin,
     agora: agora.toISOString(),
+    fechamentoAberto: Boolean(bruto.fechamentoAbertoEm),
   };
 }
 
@@ -104,6 +108,10 @@ export interface SessaoPublica {
   rodadaDaTurma: number;
   alocacao: { alfa: string | null; bravo: string | null };
   justificativas: { alfa: string | null; bravo: string | null };
+  /** A ligação da Saúde já apareceu nesta tentativa (ADR-169). */
+  ofertaSaude: boolean;
+  /** O registro da operação está feito: só então o resultado aparece (ADR-169). */
+  registroConcluido: boolean;
 }
 
 interface SessaoBruta {
@@ -118,6 +126,8 @@ interface SessaoBruta {
   alocacaoBravo: string | null;
   justificativaAlfa: string | null;
   justificativaBravo: string | null;
+  ofertaSaudeEm?: Date | null;
+  registroConcluidoEm?: Date | null;
   [extra: string]: unknown;
 }
 
@@ -132,6 +142,8 @@ export function sanitizarSessao(bruta: SessaoBruta): SessaoPublica {
     rodadaDaTurma: bruta.rodada,
     alocacao: { alfa: bruta.alocacaoAlfa, bravo: bruta.alocacaoBravo },
     justificativas: { alfa: bruta.justificativaAlfa, bravo: bruta.justificativaBravo },
+    ofertaSaude: Boolean(bruta.ofertaSaudeEm),
+    registroConcluido: Boolean(bruta.registroConcluidoEm),
   };
 }
 

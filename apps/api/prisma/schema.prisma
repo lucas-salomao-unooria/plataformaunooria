@@ -1469,10 +1469,19 @@ model UnoogptSessao {
   atualizadoEm DateTime  @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
   concluidoEm  DateTime? @map("concluido_em") @db.Timestamptz(6)
 
+  /// O registro da operação (ADR-169): o desfecho fica RETIDO até aqui.
+  registroConcluidoEm    DateTime? @map("registro_concluido_em") @db.Timestamptz(6)
+  /// Quando a ligação da Saúde apareceu nesta tentativa (ADR-169).
+  ofertaSaudeEm          DateTime? @map("oferta_saude_em") @db.Timestamptz(6)
+  /// Gravado ao entrar na investigação: a tentativa que COMEÇOU com o relógio
+  /// fechado não marca a leitura nem as fontes (ADR-169). Null = antes da coluna.
+  inicioComRelogioAberto Boolean?  @map("inicio_com_relogio_aberto")
+
   estudante  User               @relation("UnoogptEstudante", fields: [estudanteId], references: [id], onDelete: Cascade)
   mensagens  UnoogptMensagem[]
   marcos     UnoogptMarco[]
   simulacoes UnoogptSimulacao[]
+  tarefas    UnoogptTarefa[]
 
   @@id([escolaId, estudanteId])
   @@index([escolaId])
@@ -1604,6 +1613,8 @@ model UnoogptRelogioTurma {
   /// aos 4:00 de 5:00 o estudante está no minuto 48, e recalcular com 7:00 daria 34.
   pivoSeg     Int       @default(0) @map("pivo_seg")
   pivoMin     Int       @default(0) @map("pivo_min")
+  /// O professor abriu o fechamento (o WhatsApp e a moradora, ADR-169).
+  fechamentoAbertoEm DateTime? @map("fechamento_aberto_em") @db.Timestamptz(6)
 
   atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
 
@@ -3670,4 +3681,28 @@ model LeituraDaReflexao {
   @@unique([activityId, estudanteId])
   @@index([escolaId])
   @@map("exp08ef1b_leituras_da_reflexao")
+}
+
+/// As TAREFAS DO CANAL A da Missão Tempestade (ADR-169): uma linha por
+/// (sessão, rodada da turma, tentativa, tarefa), com a APRESENTAÇÃO que o
+/// servidor montou e as respostas — só ids de escolha fechada, nenhum texto
+/// livre. `tarefa` tem CHECK (`regras/canal-a.ts#TAREFAS`).
+model UnoogptTarefa {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  escolaId     String    @map("escola_id")
+  estudanteId  String    @map("estudante_id") @db.Uuid
+  /// A rodada da TURMA (`exp02em1b_gate_turma`): é a unidade da evidência.
+  rodada       Int
+  tentativa    Int       @db.SmallInt
+  tarefa       String
+  apresentacao Json
+  respostas    Json?
+  enviadaEm    DateTime? @map("enviada_em") @db.Timestamptz(6)
+  criadaEm     DateTime  @default(now()) @map("criada_em") @db.Timestamptz(6)
+
+  sessao UnoogptSessao @relation(fields: [escolaId, estudanteId], references: [escolaId, estudanteId], onDelete: Cascade)
+
+  @@unique([escolaId, estudanteId, rodada, tentativa, tarefa], map: "exp02em1b_tarefas_unica")
+  @@index([escolaId])
+  @@map("exp02em1b_tarefas")
 }

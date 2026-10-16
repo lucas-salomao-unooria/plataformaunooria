@@ -1,3 +1,4 @@
+import { canalADeTeste } from "./canal-a-de-teste";
 import { randomUUID } from "node:crypto";
 import { HttpException } from "@nestjs/common";
 import { PrismaClient } from "@prisma/client";
@@ -29,7 +30,7 @@ const OUTRA_ESCOLA = "teste-unoogpt-outra";
 
 const prisma = new PrismaService({ datasources: { db: { url: URL } } }) as PrismaService & PrismaClient;
 const quota = new QuotaService(prisma);
-const service = new UnoogptService(prisma, new MockProvider(), quota);
+const service = new UnoogptService(prisma, new MockProvider(), quota, canalADeTeste(prisma));
 
 let turmaId = "";
 let outraTurmaId = "";
@@ -664,7 +665,7 @@ class ProvedorComRoteiro extends MockProvider {
  */
 describe("as brechas da Tempestade", () => {
   const roteiro = new ProvedorComRoteiro();
-  const comRoteiro = new UnoogptService(prisma, roteiro, quota);
+  const comRoteiro = new UnoogptService(prisma, roteiro, quota, canalADeTeste(prisma));
   let turma2D = "";
   const quem = { gil: "", hel: "", ivo: "", jon: "", kim: "" };
 
@@ -708,21 +709,26 @@ describe("as brechas da Tempestade", () => {
     }
   });
 
-  it("confirmar pela CONVERSA sem o porquê é recusado, como o botão", async () => {
+  it("confirmar pela CONVERSA não manda as equipes: abre a tela de envio, que tem o portão do porquê", async () => {
     await service.alocar(ESCOLA, quem.hel, "alfa", "ribeirinha", null);
     await service.alocar(ESCOLA, quem.hel, "bravo", "morroalto", null);
     roteiro.roteiro = [["confirmar_alocacao", { confirmado: true }]];
-    await comRoteiro.pergunta(ESCOLA, quem.hel, "estudante", "pode mandar");
+    const turno = await comRoteiro.pergunta(ESCOLA, quem.hel, "estudante", "pode mandar");
 
-    expect(roteiro.devolvido[0]!.saida).toMatchObject({ disparado: false });
-    expect(JSON.stringify(roteiro.devolvido[0]!.saida)).toContain("por que cada equipe");
+    // ADR-169: a conversa pede para a tela abrir a decisão; quem manda é o botão.
+    expect(turno.abrirEnvio).toBe(true);
+    expect(roteiro.devolvido[0]!.saida).toMatchObject({ disparado: false, telaDeEnvio: "aberta" });
     expect(await prisma.unoogptSimulacao.count({ where: { escolaId: ESCOLA, estudanteId: quem.hel } })).toBe(0);
     expect((await sessaoDe(quem.hel)).concluidoEm).toBeNull();
 
-    // Com o porquê das duas, a mesma fala manda.
+    // O botão recusa sem o porquê, e manda com ele.
+    expect(await codigoDe(service.mandar(ESCOLA, quem.hel))).toBe("falta-justificar");
     await service.alocar(ESCOLA, quem.hel, "alfa", "ribeirinha", "intuicao");
     await service.alocar(ESCOLA, quem.hel, "bravo", "morroalto", "intuicao");
+    // Mesmo com o porquê, a conversa continua sem mandar.
     await comRoteiro.pergunta(ESCOLA, quem.hel, "estudante", "pode mandar");
+    expect(await prisma.unoogptSimulacao.count({ where: { escolaId: ESCOLA, estudanteId: quem.hel } })).toBe(0);
+    await service.mandar(ESCOLA, quem.hel);
     expect(await prisma.unoogptSimulacao.count({ where: { escolaId: ESCOLA, estudanteId: quem.hel } })).toBe(1);
   });
 
