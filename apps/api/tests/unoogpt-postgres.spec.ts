@@ -715,7 +715,7 @@ describe("as brechas da Tempestade", () => {
     roteiro.roteiro = [["confirmar_alocacao", { confirmado: true }]];
     const turno = await comRoteiro.pergunta(ESCOLA, quem.hel, "estudante", "pode mandar");
 
-    // ADR-169: a conversa pede para a tela abrir a decisão; quem manda é o botão.
+    // ADR-172: a conversa pede para a tela abrir a decisão; quem manda é o botão.
     expect(turno.abrirEnvio).toBe(true);
     expect(roteiro.devolvido[0]!.saida).toMatchObject({ disparado: false, telaDeEnvio: "aberta" });
     expect(await prisma.unoogptSimulacao.count({ where: { escolaId: ESCOLA, estudanteId: quem.hel } })).toBe(0);

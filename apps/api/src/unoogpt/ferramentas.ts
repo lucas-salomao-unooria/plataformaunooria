@@ -112,7 +112,7 @@ export const FERRAMENTA_ALOCAR: AiFerramenta = {
 };
 
 /**
- * Confirmar: ABRE a tela de envio na tela do estudante (ADR-169). Quem manda as
+ * Confirmar: ABRE a tela de envio na tela do estudante (ADR-172). Quem manda as
  * equipes é ele, no botão "Enviar equipes" — que passa pelo porquê de cada
  * equipe e leva ao registro da operação.
  */

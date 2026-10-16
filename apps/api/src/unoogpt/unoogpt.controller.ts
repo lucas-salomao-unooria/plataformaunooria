@@ -175,12 +175,12 @@ export class UnoogptController {
     );
   }
 
-  /** "Enviar equipes": congela a saída e abre o registro da operação (ADR-169). */
+  /** "Enviar equipes": congela a saída e abre o registro da operação (ADR-172). */
   @Post("mandar")
   @Contrato({
     resumo: "Manda as equipes: congela a saída e abre o registro da operação.",
     descricao:
-      "Exige justificativa de **cada equipe com destino** — sem isso, `falta-justificar`; uma equipe na base é permitido, nenhuma com destino é `sem-destino`. A conversa com o Cientista NÃO manda: ela abre a tela deste botão (ADR-169). Devolve o REGISTRO DA OPERAÇÃO — o desfecho fica retido até ele (`GET /unoogpt/resultado` responde `registro-pendente`).",
+      "Exige justificativa de **cada equipe com destino** — sem isso, `falta-justificar`; uma equipe na base é permitido, nenhuma com destino é `sem-destino`. A conversa com o Cientista NÃO manda: ela abre a tela deste botão (ADR-172). Devolve o REGISTRO DA OPERAÇÃO — o desfecho fica retido até ele (`GET /unoogpt/resultado` responde `registro-pendente`).",
     resposta: RegistroSchema,
   })
   async mandar(@Req() req: { auth: AuthClaims }) {
@@ -203,7 +203,7 @@ export class UnoogptController {
     return this.service.simular(escolaId, estudanteId);
   }
 
-  // ── o Canal A (ADR-169) ────────────────────────────────────────────────
+  // ── o Canal A (ADR-172) ────────────────────────────────────────────────
 
   @Get("saude")
   @Contrato({

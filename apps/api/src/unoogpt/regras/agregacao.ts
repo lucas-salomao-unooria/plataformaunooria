@@ -1,7 +1,7 @@
 import type { Tarefa } from './canal-a';
 
 /**
- * AS DUAS RÉGUAS DE AGREGAÇÃO do Canal A da Tempestade (ADR-169). PURO.
+ * AS DUAS RÉGUAS DE AGREGAÇÃO do Canal A da Tempestade (ADR-172). PURO.
  *
  * - **Primeira da rodada** (a Saúde, o alerta, o "E se…", o WhatsApp e a
  *   moradora): escolha fechada que uma devolutiva pode ensinar, ou com mais de

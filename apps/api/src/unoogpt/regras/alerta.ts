@@ -3,7 +3,7 @@ import { lista, nomeDoBairro, ORDEM_DO_MAPA } from './canal-a';
 
 /**
  * O ALERTA para os bairros sem equipe, no registro da operação (EM13CO24,
- * ADR-169). PURO.
+ * ADR-172). PURO.
  *
  * Três partes, quatro opções em cada uma: a certa, duas erradas extremas e uma
  * errada MODERADA — para a certa não ser sempre "a do meio". Frequência e tom

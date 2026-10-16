@@ -1,7 +1,7 @@
 import type { Nivel } from '../../evidencias/regras';
 
 /**
- * A LIGAÇÃO DA SECRETARIA DE SAÚDE (EM13CO26, ADR-169). PURO.
+ * A LIGAÇÃO DA SECRETARIA DE SAÚDE (EM13CO26, ADR-172). PURO.
  *
  * Aparece na investigação, no primeiro destino escolhido ou ao abrir a decisão
  * — o que vier antes. O grupo decide o que pedir de dados de terceiros, como

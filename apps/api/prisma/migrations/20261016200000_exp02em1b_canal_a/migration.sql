@@ -1,4 +1,4 @@
--- exp02em1b-canal-a: o Canal A da Missão Tempestade (ADR-169).
+-- exp02em1b-canal-a: o Canal A da Missão Tempestade (ADR-172).
 --
 -- 1. `exp02em1b_tarefas` — as sete tarefas por ação: a leitura dos dados
 --    (EM13CO12), as fontes (EM13CO14) e o alerta (EM13CO24) no registro da

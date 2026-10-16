@@ -2,7 +2,7 @@ import { MISSAO_TEMPESTADE } from '../cenario';
 import { CONJUNTO_POR_SLUG } from '../modelo/conjuntos';
 
 /**
- * O VOCABULÁRIO do Canal A da Missão Tempestade (ADR-169). PURO.
+ * O VOCABULÁRIO do Canal A da Missão Tempestade (ADR-172). PURO.
  *
  * As sete tarefas por ação, cada uma um marcador da ficha
  * (`evidencias/fichas/exp02em1b.ts`). O MESMO vocabulário do CHECK

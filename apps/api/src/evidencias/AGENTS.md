@@ -33,7 +33,7 @@ registrado: as tarefas marcam da run do próprio estudante
 e a **rodada é sempre 1**. Vale o PRIMEIRO envio: o reinício reabre a tarefa e
 não apaga a marca, e a missão confere `jaMarcou` antes de marcar.
 **A sexta é a Missão Tempestade (`exp02em1b`)**: `fichas/exp02em1b.ts` v2
-(ADR-169, que tirou as quatro perguntas da ADR-154): toda habilidade por AÇÃO
+(ADR-172, que tirou as quatro perguntas da ADR-154): toda habilidade por AÇÃO
 — `leitura`, `fontes`, `e-se`, `whatsapp`, `alerta`, `saude` e `moradora`,
 todos com `rotulo` —, marcadas pelas tarefas de `unoogpt/canal-a.service.ts`
 (as que são "primeira da rodada" conferem `jaMarcou`). Continua com

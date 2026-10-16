@@ -326,7 +326,7 @@ export class UnoogptService {
             ...(debita ? { perguntasGastas: { increment: 1 } } : {}),
             tokensGastos: { increment: tokens },
             chamadasIa: { increment: 1 },
-            // A conversa não manda mais as equipes (ADR-169): o passo só muda
+            // A conversa não manda mais as equipes (ADR-172): o passo só muda
             // pelo botão "Enviar equipes".
             passo: passoDerivado({ confirmou: false }, atual.passo as PassoDerivavel),
           },
@@ -459,7 +459,7 @@ export class UnoogptService {
           minutosGastos: estado.minutosGastos,
         },
       });
-      // O primeiro destino traz a ligação da Saúde (ADR-169).
+      // O primeiro destino traz a ligação da Saúde (ADR-172).
       if (alocacao.alfa || alocacao.bravo) await this.canalA.ofertarNaTransacao(tx, atual);
       await this.gravarMarco(
         tx,
@@ -604,7 +604,7 @@ export class UnoogptService {
       const alvo = equipe === "alfa" ? "alocacaoAlfa" : "alocacaoBravo";
       const porque = equipe === "alfa" ? "justificativaAlfa" : "justificativaBravo";
       const estado = await this.relogioAgora(tx, escolaId, atual.turmaId);
-      // O primeiro destino traz a ligação da Saúde (ADR-169). Antes do update,
+      // O primeiro destino traz a ligação da Saúde (ADR-172). Antes do update,
       // para a sessão devolvida já dizer que ela apareceu.
       if (bairro !== null) await this.canalA.ofertarNaTransacao(tx, atual);
       const atualizada = await tx.unoogptSessao.update({
@@ -647,7 +647,7 @@ export class UnoogptService {
   }
 
   /**
-   * O botão "Enviar equipes" (ADR-169). Exige o porquê de cada equipe COM
+   * O botão "Enviar equipes" (ADR-172). Exige o porquê de cada equipe COM
    * destino (`aoConfirmar`), CONGELA a saída e abre o REGISTRO DA OPERAÇÃO: o
    * desfecho fica retido até ele, sem relógio. Devolve o registro, não o
    * resultado.
@@ -732,7 +732,7 @@ export class UnoogptService {
         if (jaComecou === 0) {
           const estado = await this.relogioAgora(tx, escolaId, atual.turmaId);
           // A tentativa que COMEÇA com o relógio fechado não marca a leitura nem
-          // as fontes (ADR-169, "melhor tentativa com o relógio aberto").
+          // as fontes (ADR-172, "melhor tentativa com o relógio aberto").
           await tx.unoogptSessao.update({
             where: { escolaId_estudanteId: { escolaId, estudanteId: estudanteId } },
             data: { inicioComRelogioAberto: estado.fase !== "encerrado" },
@@ -773,7 +773,7 @@ export class UnoogptService {
       // estudante via: qual botão (`origem` vem do cliente, é a única coisa que
       // só ele sabe), e se a aula estava correndo, encerrada ou nem começada.
       const relogio = await this.relogioDaTurma(tx, escolaId, atual.turmaId);
-      // Com o fechamento aberto, o "Tentar de novo" some (ADR-169): o grupo
+      // Com o fechamento aberto, o "Tentar de novo" some (ADR-172): o grupo
       // está respondendo ao WhatsApp e à moradora da decisão que tomou.
       if (relogio.fechamentoAbertoEm) throw erroDeJogo("fechamento-aberto");
       const estado = estadoDoRelogio(relogio, new Date());
@@ -818,7 +818,7 @@ export class UnoogptService {
         where: { escolaId_estudanteId_ordem: { escolaId, estudanteId: estudanteId, ordem: atual.tentativa } },
       });
       if (!sim) throw erroDeJogo("sessao-encerrada");
-      // O desfecho fica RETIDO até o registro da operação (ADR-169).
+      // O desfecho fica RETIDO até o registro da operação (ADR-172).
       if (!atual.registroConcluidoEm) throw erroDeJogo("registro-pendente");
 
       const desfecho = sim.desfecho as unknown as ReturnType<typeof simular>;
@@ -1107,7 +1107,7 @@ export class UnoogptService {
         if (!atual.iniciadoEm) throw erroDeJogo("relogio-nao-comecou");
         if (!atual.encerradoEm) dados.encerradoEm = agora;
       } else if (acao === "abrir-fechamento") {
-        // O fechamento (o WhatsApp e a moradora, ADR-169) aparece junto para a
+        // O fechamento (o WhatsApp e a moradora, ADR-172) aparece junto para a
         // turma, depois do debate. Idempotente: abrir de novo não muda a hora.
         if (!atual.fechamentoAbertoEm) dados.fechamentoAbertoEm = agora;
       } else if (acao === "modo-livre" || acao === "modo-cronometrado") {
@@ -1228,7 +1228,7 @@ export class UnoogptService {
         (l) => atualizadoEm.get(l.estudanteId) ?? 0,
       ).map((u) => ({ ...u.linha, equipe: u.equipe }));
 
-      /* O Canal A da turma (ADR-169): quantas LINHAS enviaram o fechamento — a
+      /* O Canal A da turma (ADR-172): quantas LINHAS enviaram o fechamento — a
          equipe conta pelo login de quem entrou —, o que cada grupo perguntou
          sobre cada fonte e o alcance do alerta. Só contagens. */
       const canalA = await this.canalA.daTurma(tx, escolaId, estudantes.map((e) => e.id));
@@ -1454,7 +1454,7 @@ export class UnoogptService {
           : null,
         tentativas,
         rodadas,
-        /** As escolhas do Canal A, por tentativa (ADR-169). Escolha fechada, em texto; nunca o nível. */
+        /** As escolhas do Canal A, por tentativa (ADR-172). Escolha fechada, em texto; nunca o nível. */
         canalA: await this.canalA.escolhasDoEstudante(tx, escolaId, estudanteId),
         trilha: marcos.map((m) => ({
           tentativa: m.tentativa,

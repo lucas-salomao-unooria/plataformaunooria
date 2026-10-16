@@ -3,7 +3,7 @@ import { agruparEmpatados } from '../modelo/estimativa';
 import { noBairro } from './canal-a';
 
 /**
- * A LEITURA DOS DADOS, no registro da operação (EM13CO12, ADR-169). PURO.
+ * A LEITURA DOS DADOS, no registro da operação (EM13CO12, ADR-172). PURO.
  *
  * Volta à tela a última tabela que o grupo pediu ao Cientista — bairro, pessoas
  * em risco e o "pode ser X ou Y", SEM a frase de empate — e duas perguntas, uma

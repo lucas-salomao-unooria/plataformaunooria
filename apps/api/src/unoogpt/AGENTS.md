@@ -44,7 +44,7 @@ Complementa o `AGENTS.md` de `apps/api`, que vence em conflito.
   turma, marcas e níveis de todas as rodadas (ADR-155), e as tarefas (cascata
   da sessão). NÃO use a `tentativa` como rodada: com "Tentar de novo" livre, a
   resposta repetida chegaria a "demonstra" por exclusão.
-- **O Canal A (ADR-169) mora em `canal-a.service.ts`, as réguas em `regras/`**
+- **O Canal A (ADR-172) mora em `canal-a.service.ts`, as réguas em `regras/`**
   (uma por tarefa, puras, com a conferência de exaustividade em
   `tests/unoogpt/canal-a-regras.spec.ts`). Sete tarefas, cada uma um marcador
   da ficha v2 e uma linha em `exp02em1b_tarefas` com a APRESENTAÇÃO montada no

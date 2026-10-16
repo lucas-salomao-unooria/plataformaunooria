@@ -6,7 +6,7 @@ import { SalasService } from "../src/salas/salas.service";
 import { CanalADaTempestade } from "../src/unoogpt/canal-a.service";
 
 /**
- * O Canal A da Missão Tempestade (ADR-169) para as suítes que montam o
+ * O Canal A da Missão Tempestade (ADR-172) para as suítes que montam o
  * `UnoogptService` à mão: ele marca a evidência pela porta `marcar`, então
  * precisa de um `EvidenciasService` de verdade (com equipes e salas).
  */

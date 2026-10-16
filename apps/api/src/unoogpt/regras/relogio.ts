@@ -42,7 +42,7 @@ export interface RelogioDaTurma {
   pivoSeg: number;
   /** Minuto da cidade naquele instante. */
   pivoMin: number;
-  /** O professor abriu o fechamento (ADR-169). Não mexe no tempo da cidade. */
+  /** O professor abriu o fechamento (ADR-172). Não mexe no tempo da cidade. */
   fechamentoAbertoEm?: Date | null;
 }
 

@@ -2,7 +2,7 @@ import type { FichaPedagogica } from "./tipos";
 
 /**
  * A FICHA da Missão Tempestade (exp02em1b, UnooriaAI, 2ª série EM, unidade 1) —
- * versão 2, de 2026-10-16 (ADR-169, que substitui a régua de perguntas da
+ * versão 2, de 2026-10-16 (ADR-172, que substitui a régua de perguntas da
  * ADR-154).
  *
  * Toda habilidade por AÇÃO (o Canal A), nenhuma pergunta: o Canal B saiu por

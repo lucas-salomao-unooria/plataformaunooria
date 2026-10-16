@@ -18,7 +18,7 @@ import { UnoogptService } from "../src/unoogpt/unoogpt.service";
 import { criarTurmaDeTeste } from "./turma-de-teste";
 
 /**
- * O CANAL A DA MISSÃO TEMPESTADE (exp02em1b, ADR-169) no Postgres, com a FICHA
+ * O CANAL A DA MISSÃO TEMPESTADE (exp02em1b, ADR-172) no Postgres, com a FICHA
  * REAL (v2, sem pergunta) e as tarefas de verdade:
  *
  *   - a tabela nova tem RLS e o vocabulário do CHECK é o do código;

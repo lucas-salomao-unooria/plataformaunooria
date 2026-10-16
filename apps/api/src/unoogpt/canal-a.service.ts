@@ -79,7 +79,7 @@ const opcoesDoEsquema = <T extends { id: string; texto: string }>(xs: readonly T
   xs.map((x) => ({ id: x.id, texto: x.texto }));
 
 /**
- * O CANAL A DA MISSÃO TEMPESTADE (exp02em1b, ADR-169): as sete tarefas por ação
+ * O CANAL A DA MISSÃO TEMPESTADE (exp02em1b, ADR-172): as sete tarefas por ação
  * e as marcas da evidência pedagógica.
  *
  *   - a LIGAÇÃO DA SAÚDE, na investigação (EM13CO26);

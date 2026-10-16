@@ -25,7 +25,7 @@ import { problemasDeTamanho } from './tamanho';
  * no fim, protocolo por tipo de turno, e a cidade com quatro bairros. O painel
  * do professor usa isto para não misturar partidas de prompts diferentes.
  *
- * 5 (ADR-169): quem manda as equipes é o estudante, no botão "Enviar equipes" —
+ * 5 (ADR-172): quem manda as equipes é o estudante, no botão "Enviar equipes" —
  * `confirmar_alocacao` ABRE essa tela em vez de mandar; e o Cientista não
  * comenta a contagem da Secretaria de Saúde.
  */
@@ -268,7 +268,7 @@ export interface RespostaDoCientista {
   alocou: { alfa: string | null; bravo: string | null } | null;
   /**
    * Ele confirmou na conversa, e a ferramenta pediu para a tela abrir a decisão
-   * com "Enviar equipes" (ADR-169). As equipes NÃO saíram: quem manda é o botão.
+   * com "Enviar equipes" (ADR-172). As equipes NÃO saíram: quem manda é o botão.
    */
   pediuEnvio: boolean;
   /** As duas alternativas que ele pôs na mesa nesta resposta, se pôs. */
@@ -543,7 +543,7 @@ export async function responder(
 
         if (nome === 'confirmar_alocacao') {
           if (argumentos.confirmado !== true) return { disparado: false };
-          // A conversa NÃO manda as equipes (ADR-169): ela abre a decisão, onde
+          // A conversa NÃO manda as equipes (ADR-172): ela abre a decisão, onde
           // o botão "Enviar equipes" passa pelo portão do porquê e leva ao
           // registro da operação. Mandar pela conversa pularia os dois.
           pediuEnvio = true;
@@ -576,7 +576,7 @@ export async function responder(
     // O cartão que acompanha a fala. Ordem importa: a alocação primeiro; as
     // opções vêm com a leitura junto, porque é dela que sai o número mostrado
     // em cada botão. O desfecho não vem mais pela conversa: as equipes saem no
-    // botão "Enviar equipes" (ADR-169).
+    // botão "Enviar equipes" (ADR-172).
     anexo: alocou
       ? { tipo: 'alocacao' as const, ...(alocou as object) }
       : opcoes && executada

@@ -3,7 +3,7 @@ import { INTUICAO } from './justificativa';
 import { ORDEM_DO_MAPA, nomeDoBairro, noBairro, paraOBairro, pelaFonte, aFonte } from './canal-a';
 
 /**
- * "O QUE VOCÊ PRECISARIA SABER" de cada fonte, no registro (EM13CO14, ADR-169).
+ * "O QUE VOCÊ PRECISARIA SABER" de cada fonte, no registro (EM13CO14, ADR-172).
  * PURO.
  *
  * Sempre dois cartões, cada um com um par (fonte, bairro), e as MESMAS cinco

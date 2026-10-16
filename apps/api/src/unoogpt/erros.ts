@@ -58,7 +58,7 @@ export const MENSAGENS: Record<CodigoErro, string> = {
   // isso); o que não dá é mandar sem destino nenhum. Antes este caso caía em
   // `falta-justificar`, e a frase acusava um porquê que não faltava.
   "sem-destino": "Escolha o destino de pelo menos uma equipe antes de mandar.",
-  // O desfecho fica retido até o registro da operação (ADR-169).
+  // O desfecho fica retido até o registro da operação (ADR-172).
   "registro-pendente": "As equipes já saíram. Registre a operação para ver o resultado.",
   "fechamento-fechado": "O fechamento ainda não foi aberto pelo professor.",
   // "Tentar de novo" some quando o professor abre o fechamento.

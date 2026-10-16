@@ -3,7 +3,7 @@ import { INTUICAO } from './justificativa';
 import { aFonte, doBairro, lista } from './canal-a';
 
 /**
- * A RESPOSTA À MORADORA, no fechamento (EM13CO26, ADR-169). PURO.
+ * A RESPOSTA À MORADORA, no fechamento (EM13CO26, ADR-172). PURO.
  *
  * A Ouvidoria repassa a pergunta de uma moradora do bairro sem equipe com mais
  * gente em risco; o grupo monta a resposta com uma frase de cada parte. As

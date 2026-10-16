@@ -825,7 +825,7 @@ export class EvidenciasService implements OnModuleInit {
 
     /* Só marcador da ficha VIGENTE vira nível. Uma turma com a missão aberta
        no dia em que a ficha muda tem marcas de marcador que saiu (as `p1`–`p4`
-       da exp02em1b v1, ADR-169): sem este filtro, o encerramento as
+       da exp02em1b v1, ADR-172): sem este filtro, o encerramento as
        transformaria em nível pelo caminho que o pedagógico tirou. A marca fica
        no banco; só não conta. */
     const vigentes = marcas.filter((x) => marcadorDaFicha(ficha, x.marcador) !== null);

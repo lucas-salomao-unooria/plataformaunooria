@@ -53,7 +53,7 @@ export interface RelogioPublico {
   pivoSeg: number;
   pivoMin: number;
   agora: string;
-  /** O professor abriu o fechamento (ADR-169): o WhatsApp e a moradora aparecem. */
+  /** O professor abriu o fechamento (ADR-172): o WhatsApp e a moradora aparecem. */
   fechamentoAberto: boolean;
 }
 
@@ -108,9 +108,9 @@ export interface SessaoPublica {
   rodadaDaTurma: number;
   alocacao: { alfa: string | null; bravo: string | null };
   justificativas: { alfa: string | null; bravo: string | null };
-  /** A ligação da Saúde já apareceu nesta tentativa (ADR-169). */
+  /** A ligação da Saúde já apareceu nesta tentativa (ADR-172). */
   ofertaSaude: boolean;
-  /** O registro da operação está feito: só então o resultado aparece (ADR-169). */
+  /** O registro da operação está feito: só então o resultado aparece (ADR-172). */
   registroConcluido: boolean;
 }
 

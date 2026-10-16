@@ -3,7 +3,7 @@ import { corridasPareadas, type Alocacao } from '../modelo/tempestade';
 import { ORDEM_DO_MAPA } from './canal-a';
 
 /**
- * "E SE…", no resultado (EM13CO11, ADR-169). PURO.
+ * "E SE…", no resultado (EM13CO11, ADR-172). PURO.
  *
  * "Duas outras decisões, nas mesmas 20 tempestades": para cada comparação, uma
  * faixa de 20 quadradinhos, cada um dizendo qual das duas decisões resgatou

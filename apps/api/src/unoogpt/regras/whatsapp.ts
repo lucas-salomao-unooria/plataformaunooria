@@ -1,7 +1,7 @@
 import type { Nivel } from '../../evidencias/regras';
 
 /**
- * O PEDIDO PELO WHATSAPP, no fechamento (EM13CO08, ADR-169). PURO.
+ * O PEDIDO PELO WHATSAPP, no fechamento (EM13CO08, ADR-172). PURO.
  *
  * Um número desconhecido pede a lista de pessoas com deficiência ou mobilidade
  * reduzida. Duas perguntas obrigatórias, e a régua 4 × 3 (decisão do PO,

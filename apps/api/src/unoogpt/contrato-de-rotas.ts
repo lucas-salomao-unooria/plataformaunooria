@@ -39,7 +39,7 @@ export const ContrafactualSchema = z.object({
 
 export const PassoSchema = z.object({ para: z.enum(PASSOS) });
 
-// ── o Canal A (ADR-169): só ids de escolha fechada, nenhum texto livre ────────
+// ── o Canal A (ADR-172): só ids de escolha fechada, nenhum texto livre ────────
 
 /** Id de opção que a apresentação gravada confere (`regras/*`). */
 const IdDeOpcao = z.string().min(1).max(40);
@@ -147,7 +147,7 @@ export const RelogioPublicoSchema = z.object({
   pivoSeg: z.number(),
   pivoMin: z.number(),
   agora: z.string(),
-  /** O professor abriu o fechamento (ADR-169). */
+  /** O professor abriu o fechamento (ADR-172). */
   fechamentoAberto: z.boolean(),
 });
 
@@ -172,9 +172,9 @@ export const SessaoPublicaSchema = z.object({
   rodadaDaTurma: z.number(),
   alocacao: z.object({ alfa: z.string().nullable(), bravo: z.string().nullable() }),
   justificativas: z.object({ alfa: z.string().nullable(), bravo: z.string().nullable() }),
-  /** A ligação da Saúde já apareceu nesta tentativa (ADR-169). */
+  /** A ligação da Saúde já apareceu nesta tentativa (ADR-172). */
   ofertaSaude: z.boolean(),
-  /** O registro da operação está feito: o resultado só sai depois dele (ADR-169). */
+  /** O registro da operação está feito: o resultado só sai depois dele (ADR-172). */
   registroConcluido: z.boolean(),
 });
 
@@ -304,7 +304,7 @@ export const RelogioDoEstudanteSchema = z.object({
 export const TurnoDoCientistaSchema = z.object({
   texto: z.string(),
   anexo: AnexoSchema.nullable(),
-  /** Ele confirmou na conversa: a tela abre a decisão com "Enviar equipes" (ADR-169). */
+  /** Ele confirmou na conversa: a tela abre a decisão com "Enviar equipes" (ADR-172). */
   abrirEnvio: z.boolean(),
   sessao: SessaoPublicaSchema,
   relogio: RelogioPublicoSchema,
@@ -522,7 +522,7 @@ export const AcaoDoRelogioSchema = z.object({
     "modo-livre",
     "modo-cronometrado",
     "redefinir",
-    /** Abre o fechamento (o WhatsApp e a moradora) para a turma (ADR-169). */
+    /** Abre o fechamento (o WhatsApp e a moradora) para a turma (ADR-172). */
     "abrir-fechamento",
   ]),
 });
@@ -569,7 +569,7 @@ export const EquipeDaFolhaSchema = z.object({
 export const TurmaDoProfessorSchema = z.object({
   turma: z.object({ id: Uuid, nome: z.string(), serie: z.string() }),
   relogio: RelogioDoProfessorSchema,
-  /** O fechamento (ADR-169): aberto, e quantas linhas que chegaram ao resultado já o enviaram. */
+  /** O fechamento (ADR-172): aberto, e quantas linhas que chegaram ao resultado já o enviaram. */
   fechamento: z.object({
     aberto: z.boolean(),
     enviaram: z.number().int().nonnegative(),
@@ -750,7 +750,7 @@ export const EstudanteDoProfessorSchema = z.object({
     .nullable(),
   tentativas: z.array(TentativaDoProfessorSchema),
   rodadas: z.array(RodadaDoProfessorSchema),
-  /** As escolhas do Canal A, por tentativa: escolha fechada em texto, nunca o nível (ADR-169). */
+  /** As escolhas do Canal A, por tentativa: escolha fechada em texto, nunca o nível (ADR-172). */
   canalA: z.array(
     z.object({ tentativa: z.number().int(), tarefa: z.string(), escolhas: z.array(z.string()) }),
   ),
