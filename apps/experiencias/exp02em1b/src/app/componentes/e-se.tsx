@@ -37,15 +37,11 @@ function Faixa({ c }: { c: Comparacao }) {
       </ol>
       <p className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-uai-suave-60" aria-hidden="true">
         <span>
-          <span className="faixa-de-tempestades inline-grid w-3 align-middle">
-            <span data-quem="outra" />
-          </span>{' '}
+          <span className="faixa-legenda" data-quem="outra" />{' '}
           {c.referencia.sua ? 'a outra resgatou mais' : 'a segunda resgatou mais'}
         </span>
         <span>
-          <span className="faixa-de-tempestades inline-grid w-3 align-middle">
-            <span data-quem="referencia" />
-          </span>{' '}
+          <span className="faixa-legenda" data-quem="referencia" />{' '}
           {c.referencia.sua ? 'a sua resgatou mais' : 'a primeira resgatou mais'}
         </span>
       </p>
@@ -83,6 +79,23 @@ export function ESe() {
         enunciado="Cada quadradinho é uma tempestade. Ele mostra qual das duas decisões resgatou mais naquela tempestade."
         enviada={estado.enviada}
         rotuloEnviado="Respostas enviadas ✓"
+        filhos={
+          /* Enviadas, as faixas ficam na tela: elas são o material do bloco
+             "por que um modelo honesto entrega faixa", no debate. */
+          estado.enviada ? (
+            <div className="mt-3 flex flex-col gap-4">
+              {estado.comparacoes.map((c) => (
+                <div key={c.id}>
+                  <p className="text-xs text-uai-suave-60">
+                    {c.referencia.sua ? 'A sua' : 'A primeira'}: {decisao(c.referencia)} ·{' '}
+                    {c.referencia.sua ? 'A outra' : 'A segunda'}: {decisao(c.outra)}
+                  </p>
+                  <Faixa c={c} />
+                </div>
+              ))}
+            </div>
+          ) : undefined
+        }
         perguntas={estado.comparacoes.map((c) => ({
           id: c.id,
           pergunta: (

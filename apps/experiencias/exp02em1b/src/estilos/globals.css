@@ -132,10 +132,22 @@ body {
 /* Cores fora do par das Equipes (azul e roxo), para o quadradinho não ser lido
    como "a Alfa" ou "a Bravo": a outra decisão é a superfície invertida, e a
    de referência, o contorno; o empate fica no fundo translúcido. */
-.faixa-de-tempestades > span[data-quem="outra"] {
+.faixa-de-tempestades > span,
+.faixa-legenda {
+  display: inline-block;
+}
+.faixa-legenda {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  vertical-align: middle;
+}
+.faixa-de-tempestades > span[data-quem="outra"],
+.faixa-legenda[data-quem="outra"] {
   background: var(--uai-bg-inverse);
 }
-.faixa-de-tempestades > span[data-quem="referencia"] {
+.faixa-de-tempestades > span[data-quem="referencia"],
+.faixa-legenda[data-quem="referencia"] {
   background: var(--uai-bg-primary);
   box-shadow: inset 0 0 0 2px var(--uai-border-strong);
 }

@@ -372,6 +372,14 @@ await suite(
       (await comparacoes.locator("ol.sr-only li").count()) === 40,
       "e o leitor de tela ouve as duas, tempestade a tempestade",
     );
+    await comparacoes.scrollIntoViewIfNeeded();
+    await r.registrar(p, "e-se-nas-mesmas-tempestades", {
+      titulo: "Duas outras decisões, nas mesmas 20 tempestades",
+      mostra: "Duas faixas de 20 quadradinhos, cada uma com a pergunta sobre o que ela permite afirmar.",
+      prova:
+        "As comparações são montadas pelo servidor — uma clara e uma que depende — e as duas decisões " +
+        "rodam nas mesmas tempestades. O grupo interpreta o que o modelo prevê; a tela não diz se acertou.",
+    });
     for (let volta = 0; volta < 4; volta++) {
       const aberta = comparacoes.locator('[role="radiogroup"]:not(:has([aria-checked="true"]))').first();
       if ((await aberta.count()) === 0) break;
@@ -387,14 +395,10 @@ await suite(
       "não há mais as quatro perguntas de múltipla escolha no resultado (o Canal B saiu)",
     );
     r.exigir(!pediuPerguntas, "e a tela não pede pergunta nenhuma à evidência");
-    await comparacoes.scrollIntoViewIfNeeded();
-    await r.registrar(p, "e-se-nas-mesmas-tempestades", {
-      titulo: "Duas outras decisões, nas mesmas 20 tempestades",
-      mostra: "Duas faixas de 20 quadradinhos, cada uma com a pergunta sobre o que ela permite afirmar.",
-      prova:
-        "As comparações são montadas pelo servidor — uma clara e uma que depende — e as duas decisões " +
-        "rodam nas mesmas tempestades. O grupo interpreta o que o modelo prevê; a tela não diz se acertou.",
-    });
+    r.exigir(
+      (await comparacoes.locator(".faixa-de-tempestades span[data-quem]").count()) >= 40,
+      "enviadas as respostas, as faixas continuam na tela para o debate",
+    );
 
     // ═══ PROFESSOR: abre o fechamento depois do debate ═══════════════════
     await prof.goto(resultadosDaTurma, { waitUntil: "domcontentloaded" });
