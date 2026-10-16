@@ -2504,6 +2504,11 @@ model Evidencia {
   equipeId         String? @map("equipe_id") @db.Uuid
   /// Quem ajustou (origem `professor`), e só nela. Carimbo, sem FK.
   editadoPor       String? @map("editado_por") @db.Uuid
+  /// O marcador da ficha que deu o nível (ADR-166), e só na origem `propria`:
+  /// é o "de onde veio" do painel e o que separa, no consolidado, o "em
+  /// processo" limitado pela atividade. Nulo na cópia, no ajuste e nas linhas
+  /// anteriores à coluna. CHECKs na migration.
+  marcador         String?
 
   atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
 
