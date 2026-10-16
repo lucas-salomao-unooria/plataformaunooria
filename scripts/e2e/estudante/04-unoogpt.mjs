@@ -1,6 +1,7 @@
 import { HUB, suite } from "../lib/roteiro.mjs";
 import { conta } from "../lib/credenciais.mjs";
 import { provarPodcastNaAula } from "../lib/podcast.mjs";
+import { esperarOuFalharPorHttp } from "../lib/smoke.mjs";
 
 /**
  * A Missão Tempestade (exp02em1b), nas duas pontas da sala.
@@ -39,7 +40,10 @@ await suite(
       "A folha da turma não tem coluna de resgatados — não é ranking de crianças",
       "Ao encerrar a missão, o nível aparece no painel aberto, sem recarregar",
       "Zerar a turma apaga as habilidades, e o painel recomeça do zero",
-      "As perguntas de evidência chegam sem resposta marcada, mesmo numa aba usada antes",
+      "A ligação da Saúde aparece antes da decisão, e o pedido só da contagem traz a contagem por bairro",
+      "\"Enviar equipes\" abre o registro da operação, sem relógio, antes de qualquer resultado",
+      "O resultado traz as duas comparações nas mesmas 20 tempestades, e não há mais pergunta de múltipla escolha",
+      "O fechamento só aparece quando o professor o abre, com o balão do mensageiro em tema claro, e o painel conta quem enviou",
       "A tela individual traz a transcrição inteira para o professor",
       "A conclusão da operação cabe na coluna ao lado do mapa, sem nada cortado",
     ],
@@ -240,14 +244,49 @@ await suite(
       inteira: true,
     });
 
-    // ═══ ESTUDANTE: decide, envia e vê a tempestade passar ═══════════════
-    /* O caminho é o do painel de decisão, que existe desde o começo da
-       Investigação: destino das duas equipes, o "por quê" de cada uma, Enviar.
-       Cada troca de destino é um POST — espera-se o select da justificativa
-       aparecer, que só existe depois de o servidor registrar o bairro. */
+    // ═══ ESTUDANTE: a ligação da Saúde, antes da decisão (ADR-172) ═══════
+    /* A ligação aparece no PRIMEIRO destino escolhido ou ao abrir a decisão. O
+       turno com o Cientista pode já ter registrado um destino — então ela pode
+       estar na tela antes do clique; os dois caminhos levam ao mesmo cartão. */
     const q4 = p.frameLocator('iframe[data-experiencia]');
-    await q4.locator("button", { hasText: /Definir destinos|Ver detalhes/ }).first().click();
+    const ligacao = q4.locator('[aria-label="Ligação da Secretaria de Saúde"]');
+    if ((await ligacao.count()) === 0) {
+      await q4.locator("button", { hasText: /Definir destinos|Ver detalhes/ }).first().click();
+    }
+    await ligacao.waitFor({ timeout: 20_000 });
+    await r.registrar(p, "ligacao-da-saude", {
+      titulo: "A Secretaria de Saúde liga",
+      mostra: "O cartão com quatro pedidos possíveis de dados de pessoas com deficiência ou mobilidade reduzida.",
+      prova:
+        "Decidir o que coletar de terceiros é conduta de quem trata o dado (EM13CO26). A tela não diz " +
+        "qual pedido é o certo: o grupo escolhe, e recebe a consequência.",
+    });
+    await ligacao.getByRole("radio", { name: /Só o número dessas pessoas/ }).click();
+    await esperarOuFalharPorHttp(p, ligacao.getByText("2.150 pessoas"), /\/unoogpt\/saude/, {
+      timeout: 20_000,
+      oQue: "a resposta à Saúde",
+    });
+    r.exigir(
+      (await ligacao.getByText(/ficam no sistema/).count()) === 0,
+      "quem pediu só a contagem não recebe nome nenhum — o aviso dos nomes é de quem pediu lista",
+    );
+    await r.registrar(p, "contagem-da-saude", {
+      titulo: "A contagem chega",
+      mostra: "Ribeirinha 2.150, Vale Verde 980, Morro Alto 850 e Industrial 190 pessoas.",
+      prova:
+        "A consequência é a contagem, sem nomes. Ela usa a base do cadastro antigo, e o Morro Alto " +
+        "aparece com menos da metade: mais uma visão parcial para o debate.",
+    });
+    await ligacao.locator("button", { hasText: "Voltar para a operação" }).click();
+
+    // ═══ ESTUDANTE: decide e manda as equipes ═══════════════════════════
+    /* Fechada a ligação, a decisão abre (ou abre no botão). Destino das duas
+       equipes, o "por quê" de cada uma, Enviar. Cada troca de destino é um POST
+       — espera-se o select da justificativa aparecer. */
     const modal = q4.locator('[aria-label="Decisão operacional"]');
+    if ((await modal.count()) === 0) {
+      await q4.locator("button", { hasText: /Definir destinos|Ver detalhes/ }).first().click();
+    }
     await modal.waitFor({ timeout: 20_000 });
     for (const [equipe, indice] of [["alfa", 1], ["bravo", 2]]) {
       await modal.locator(`select[aria-label="Destino da equipe ${equipe}"]`).selectOption({ index: indice });
@@ -256,6 +295,42 @@ await suite(
       await porque.selectOption({ index: 1 });
     }
     await modal.locator("button", { hasText: /enviar/i }).first().click();
+
+    // ═══ ESTUDANTE: o registro da operação, sem relógio (ADR-172) ═══════
+    const registro = q4.locator('[aria-label="Registro da operação"]');
+    await esperarOuFalharPorHttp(p, registro, /\/unoogpt\/mandar/, { timeout: 30_000, oQue: "Enviar equipes" });
+    r.exigir(
+      (await q4.locator("text=A tempestade passou").count()) === 0,
+      "o resultado fica RETIDO até o registro: nada da tempestade aparece antes dele",
+    );
+    const cartoes = await registro.locator("section").count();
+    r.exigir(cartoes >= 1, `o registro tem os cartões que se aplicam a este grupo (${cartoes})`);
+    await r.registrar(p, "registro-da-operacao", {
+      titulo: "O registro da operação",
+      mostra:
+        "As equipes já saíram, e o grupo registra o que leu, o que perguntaria às fontes e o alerta para quem ficou sem equipe.",
+      prova:
+        "Sem relógio: a hora de saída foi a do clique, e cada cartão mede uma habilidade sem a pressa da " +
+        "investigação. O resultado só vem depois, e a tela nunca diz se acertou.",
+      detalhe: `${cartoes} cartão(ões)`,
+      inteira: true,
+    });
+    /* Responde o primeiro rádio de cada pergunta ainda aberta, cartão a
+       cartão: o cartão vai inteiro quando a última pergunta dele é escolhida. */
+    for (let volta = 0; volta < 12; volta++) {
+      const aberta = registro.locator('[role="radiogroup"]:not(:has([aria-checked="true"]))').first();
+      if ((await aberta.count()) === 0) break;
+      await aberta.getByRole("radio").first().click();
+      await p.waitForTimeout(700);
+    }
+    const verResultado = registro.locator("button", { hasText: "Ver o que aconteceu" });
+    await esperarOuFalharPorHttp(p, verResultado, /\/unoogpt\/registro/, { timeout: 30_000, oQue: "o registro" });
+    await r.registrar(p, "registro-feito", {
+      titulo: "Operação registrada",
+      mostra: "Os cartões marcados como registrados e o botão para ver o que aconteceu.",
+      prova: "O desfecho estava no servidor desde o envio; ele só desce agora, com o registro feito.",
+    });
+    await verResultado.click();
 
     /* "A tempestade passou" só aparece depois da animação das equipes (4,8 s);
        antes disso o painel diz "Operação em curso". O que se prova aqui é o
@@ -283,49 +358,106 @@ await suite(
       detalhe: `${largura.conteudo}px de conteúdo em ${largura.coluna}px de coluna`,
     });
 
-    // ═══ ESTUDANTE: o resultado e as perguntas de evidência (ADR-154) ═══
-    /* As quatro perguntas do PO, no Resultado, com o `ChoicePoll` do UnooriaAI.
-       As alternativas chegam embaralhadas: a escolha é pelo TEXTO (o nome do
-       rádio), nunca pela posição. O voto é definitivo no toque. */
-    /* A RECLAMAÇÃO (1.4.1): as perguntas chegavam com a resposta marcada. A
-       memória de F5 mora no `sessionStorage` da ABA, e a chave era só a
-       tentativa — depois do "Zerar a turma", ou com outro estudante na mesma
-       aba, a resposta de antes voltava marcada e travada. Aqui a aba já chega
-       "suja", no formato velho e no de outro estudante, e nenhuma opção pode
-       vir marcada. */
-    const aparelho = await p.locator('iframe[data-experiencia]').elementHandle();
-    await (await aparelho.contentFrame()).evaluate(() => {
-      const velhas = { p1: "A1", p2: "B1", p3: "C1", p4: "D1" };
-      window.sessionStorage.setItem("exp02em1b:perguntas:1", JSON.stringify(velhas));
-      window.sessionStorage.setItem("exp02em1b:perguntas:outro-estudante:1:1", JSON.stringify(velhas));
+    // ═══ ESTUDANTE: o "E se…" nas mesmas tempestades, e nada de Canal B ══
+    let pediuPerguntas = false;
+    p.on("request", (req) => {
+      if (/\/evidencias\/exp02em1b\/perguntas/.test(req.url())) pediuPerguntas = true;
     });
     await q4.locator("button", { hasText: /Ver o resultado completo/ }).first().click();
-    await q4.getByText("Antes de fechar").waitFor({ timeout: 30_000 });
-    await q4.getByRole("radio").first().waitFor({ timeout: 20_000 });
-    const marcadas = await q4.locator('[role="radio"][aria-checked="true"]').count();
-    r.exigir(marcadas === 0, `as perguntas chegam sem resposta marcada, mesmo com a aba de outra partida (${marcadas} marcadas)`);
+    const comparacoes = q4.locator('[aria-label="Duas outras decisões, nas mesmas 20 tempestades"]');
+    await esperarOuFalharPorHttp(p, comparacoes, /\/unoogpt\/e-se/, { timeout: 30_000, oQue: "o \"E se…\"" });
+    const quadradinhos = await comparacoes.locator(".faixa-de-tempestades").first().locator("span").count();
+    r.exigir(quadradinhos === 20, `cada comparação mostra 20 tempestades (${quadradinhos})`);
     r.exigir(
-      (await q4.getByText("Resposta enviada ✓").count()) === 0,
-      "nenhuma pergunta chega como já enviada",
+      (await comparacoes.locator("ol.sr-only li").count()) === 40,
+      "e o leitor de tela ouve as duas, tempestade a tempestade",
     );
-    const ESCOLHAS = [
-      /previsão firme e o que é estimativa/,
-      /corretos e atualizados/,
-      /segurança física das pessoas/,
-      /reclamar se o bairro delas/,
-    ];
-    for (const [i, escolha] of ESCOLHAS.entries()) {
-      await q4.getByRole("radio", { name: escolha }).click();
-      await q4.getByText("Resposta enviada ✓").nth(i).waitFor({ timeout: 20_000 });
+    for (let volta = 0; volta < 4; volta++) {
+      const aberta = comparacoes.locator('[role="radiogroup"]:not(:has([aria-checked="true"]))').first();
+      if ((await aberta.count()) === 0) break;
+      await aberta.getByRole("radio", { name: /Depende/ }).click();
+      await p.waitForTimeout(700);
     }
-    await r.registrar(p, "perguntas-de-evidencia", {
-      titulo: "Quatro perguntas no resultado",
-      mostra: "As perguntas do PO dentro do UnooriaAI, cada uma travada com \"Resposta enviada\".",
+    await esperarOuFalharPorHttp(p, comparacoes.getByText("Respostas enviadas ✓"), /\/unoogpt\/e-se/, {
+      timeout: 20_000,
+      oQue: "as respostas do \"E se…\"",
+    });
+    r.exigir(
+      (await q4.getByText(/Antes de fechar|Quatro perguntas sobre o que você viveu/).count()) === 0,
+      "não há mais as quatro perguntas de múltipla escolha no resultado (o Canal B saiu)",
+    );
+    r.exigir(!pediuPerguntas, "e a tela não pede pergunta nenhuma à evidência");
+    await comparacoes.scrollIntoViewIfNeeded();
+    await r.registrar(p, "e-se-nas-mesmas-tempestades", {
+      titulo: "Duas outras decisões, nas mesmas 20 tempestades",
+      mostra: "Duas faixas de 20 quadradinhos, cada uma com a pergunta sobre o que ela permite afirmar.",
       prova:
-        "A tela nunca diz se acertou. As perguntas voltam a cada \"Tentar de novo\" e o servidor " +
-        "guarda a melhor resposta; o nível só conta quando o professor encerra a missão.",
+        "As comparações são montadas pelo servidor — uma clara e uma que depende — e as duas decisões " +
+        "rodam nas mesmas tempestades. O grupo interpreta o que o modelo prevê; a tela não diz se acertou.",
+    });
+
+    // ═══ PROFESSOR: abre o fechamento depois do debate ═══════════════════
+    await prof.goto(resultadosDaTurma, { waitUntil: "domcontentloaded" });
+    await prof.locator("button", { hasText: "Abrir o fechamento" }).click();
+    await prof.locator("[data-fechamento-aberto]").waitFor({ timeout: 20_000 });
+    await r.registrar(prof, "fechamento-aberto", {
+      titulo: "O professor abre o fechamento",
+      mostra: "O relógio da aula com o fechamento aberto e quantos grupos já enviaram.",
+      prova:
+        "O WhatsApp e a moradora aparecem juntos para a turma, depois do debate. O painel é o sinal " +
+        "para as perguntas faladas sobre cuidado com os dados e direitos.",
+    });
+
+    // ═══ ESTUDANTE: o fechamento — o pedido pelo WhatsApp e a moradora ═══
+    const fechamento = q4.locator('[aria-label="Fechamento da operação"]');
+    await fechamento.waitFor({ timeout: 40_000 });
+    const peca = fechamento.locator(".peca-unoochat");
+    r.exigir((await peca.getAttribute("data-unc-theme")) === "light", "o balão do mensageiro é a peça do unoochat, em tema claro");
+    r.exigir(
+      !/\b\d{1,2}:\d{2}\b/.test(await peca.innerText()),
+      "e o balão não traz hora nem tiques",
+    );
+    r.exigir(
+      (await q4.locator("button", { hasText: "Tentar de novo" }).count()) === 0,
+      "com o fechamento aberto, o \"Tentar de novo\" some",
+    );
+    await peca.scrollIntoViewIfNeeded();
+    await r.registrar(p, "pedido-pelo-whatsapp", {
+      titulo: "Um pedido pelo WhatsApp",
+      mostra: "O balão de um número desconhecido pedindo a lista das pessoas com deficiência do Morro Alto.",
+      prova:
+        "Só a mensagem tem a cara do mensageiro (clone dentro de clone, ADR-173): as perguntas em volta " +
+        "continuam no UnooriaAI. O grupo decide o que responde e se reporta o pedido (EM13CO08).",
+    });
+    await fechamento.getByRole("radio", { name: "Não mando nenhum dado por este canal" }).click();
+    await p.waitForTimeout(500);
+    await fechamento.getByRole("radio", { name: "Aviso a coordenação" }).click();
+    await esperarOuFalharPorHttp(p, fechamento.getByText("Registrado ✓"), /\/unoogpt\/fechamento/, {
+      timeout: 20_000,
+      oQue: "a resposta ao WhatsApp",
+    });
+    for (let volta = 0; volta < 6; volta++) {
+      const aberta = fechamento.locator('[role="radiogroup"]:not(:has([aria-checked="true"]))').first();
+      if ((await aberta.count()) === 0) break;
+      await aberta.getByRole("radio").first().click();
+      await p.waitForTimeout(700);
+    }
+    await esperarOuFalharPorHttp(p, fechamento.getByText("Resposta enviada ✓"), /\/unoogpt\/fechamento/, {
+      timeout: 20_000,
+      oQue: "a resposta à moradora",
+    });
+    await r.registrar(p, "resposta-a-moradora", {
+      titulo: "A resposta à moradora",
+      mostra: "As quatro partes da resposta à moradora do bairro que ficou sem equipe, enviadas.",
+      prova:
+        "As frases certas de \"Os dados\" e \"Quem decidiu\" são montadas pelo servidor com o que o grupo fez. " +
+        "A tela nunca diz se acertou.",
       inteira: true,
     });
+
+    await prof.reload({ waitUntil: "domcontentloaded" });
+    const contagem = await prof.locator("[data-fechamento-aberto]").innerText();
+    r.exigir(/^\s*1 de \d+/.test(contagem), `o painel conta o fechamento enviado (${contagem.split(".")[0]})`);
 
     // ═══ PROFESSOR: o painel espera o encerramento ══════════════════════
     await prof.goto(resultadosDaTurma, { waitUntil: "domcontentloaded" });
@@ -336,8 +468,8 @@ await suite(
       titulo: "As habilidades esperam o encerramento",
       mostra: "O bloco \"Habilidades da BNCC\" nos resultados, avisando que o nível vem ao encerrar.",
       prova:
-        "Com a missão aberta, as respostas estão guardadas mas não viram nível: a melhor resposta " +
-        "de cada estudante só vale depois que o professor encerra a missão na Sala de Aula.",
+        "Com a missão aberta, as tarefas estão guardadas mas não viram nível: elas só valem depois " +
+        "que o professor encerra a missão na Sala de Aula.",
     });
 
     // ═══ PROFESSOR: encerrar acende o nível SEM recarregar a página ═════
@@ -378,7 +510,7 @@ await suite(
     await prof.locator("[data-habilidades-da-tempestade]").scrollIntoViewIfNeeded();
     await r.registrar(prof, "habilidades-sem-recarregar", {
       titulo: "O nível aparece sozinho ao encerrar",
-      mostra: "O bloco \"Habilidades da BNCC\" com o nível das respostas, na mesma página, sem recarregar.",
+      mostra: "O bloco \"Habilidades da BNCC\" com o nível das tarefas, na mesma página, sem recarregar.",
       prova:
         "A página dos resultados acompanha a aula: ao encerrar a missão na Sala de Aula, o nível " +
         "chega em até 10 segundos, sem o professor apertar F5.",
