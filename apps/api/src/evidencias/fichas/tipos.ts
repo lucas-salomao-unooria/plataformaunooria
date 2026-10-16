@@ -74,6 +74,22 @@ export interface MarcadorDaFicha {
   readonly tipo: TipoDeMarcador;
   /** Só na múltipla escolha: a pergunta que este marcador corrige. */
   readonly perguntaId?: string;
+  /**
+   * DE ONDE VEIO O NÍVEL, em texto para o professor ("Raio-x", "Reflexão —
+   * sugestão da IA"). Com rótulo, o painel diz embaixo do nível qual ação o deu
+   * e, quando duas ações da mesma habilidade divergem, o nível de cada uma.
+   * Sem rótulo, a célula fica como sempre foi: a missão que não o declara não
+   * muda de painel.
+   */
+  readonly rotulo?: string;
+  /**
+   * O nível deste marcador mede a ATIVIDADE escolhida, e não só o estudante:
+   * o acervo dela não permitia ir além (ex.: o envio da exp08ef1b numa
+   * atividade sem página de fofoca ou de humor nos dois lados). O consolidado
+   * conta o "em processo" que vem daqui à parte (`emProcessoLimitado`), e a
+   * missão nunca grava aqui um nível acima de "em processo".
+   */
+  readonly limitadoPelaAtividade?: true;
 }
 
 export interface PerguntaDaFicha {
