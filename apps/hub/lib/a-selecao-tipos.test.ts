@@ -37,6 +37,10 @@ const linha = (nome: string, extra: Partial<LinhaDoPainel> = {}): LinhaDoPainel 
   legenda: null,
   par: null,
   tempoFeedS: null,
+  podados: null,
+  leituraDaLegenda: null,
+  marcacao: null,
+  marcacaoPorque: null,
   entregouReflexao: false,
   reflexaoTexto: null,
   concluiu: false,
@@ -144,6 +148,7 @@ describe("quantos publicaram", () => {
       iniciaram: total,
       publicaram: total,
       entregaram: concluiram,
+      marcaram: total,
       concluiram,
       computadores: { publicaram: total, total },
       porComputador: false,
@@ -158,14 +163,24 @@ describe("quantos publicaram", () => {
 });
 
 describe("o que faz o painel de habilidades se atualizar sozinho", () => {
-  const painel = (resumo: Partial<{ publicaram: number; entregaram: number; concluiram: number }> = {}, rodada = 1, id = "c1") => ({
+  const painel = (
+    resumo: Partial<{ publicaram: number; entregaram: number; concluiram: number }> = {},
+    rodada = 1,
+    id = "c1",
+    extra: { etapa?: "mural" | "marcacao" | "fichas"; leituras?: ("pendente" | "ia" | "reserva")[] } = {},
+  ) => ({
     cobertura: { id, tema: "t", foco: null, origem: "padrao" as const, midia: { total: 8, prontas: 8 } },
     rodada,
+    etapa: extra.etapa ?? ("marcacao" as const),
+    linhas: (extra.leituras ?? ["pendente"]).map((estado, i) =>
+      linha(`L${i}`, { leituraDaLegenda: { estado, explicaAEscolha: null, falaDosPosts: null } }),
+    ),
     resumo: {
       total: 5,
       iniciaram: 5,
       publicaram: 2,
       entregaram: 1,
+      marcaram: 0,
       concluiram: 1,
       computadores: { publicaram: 2, total: 5 },
       porComputador: false,
@@ -174,7 +189,7 @@ describe("o que faz o painel de habilidades se atualizar sozinho", () => {
     },
   });
 
-  test("relê quando alguém publica (Canal A), responde as enquetes ou conclui, e quando a atividade ou a rodada trocam", () => {
+  test("relê quando alguém publica, a leitura da legenda termina, a etapa vira, alguém conclui, e quando a atividade ou a rodada trocam", () => {
     const antes = painel();
     expect(mudouAEvidencia(antes, painel())).toBe(false);
     expect(mudouAEvidencia(antes, painel({ publicaram: 3 }))).toBe(true);
@@ -182,6 +197,10 @@ describe("o que faz o painel de habilidades se atualizar sozinho", () => {
     expect(mudouAEvidencia(antes, painel({ concluiram: 2 }))).toBe(true);
     expect(mudouAEvidencia(antes, painel({}, 2))).toBe(true);
     expect(mudouAEvidencia(antes, painel({}, 1, "c2"))).toBe(true);
+    /* ADR-170: a leitura da legenda termina DEPOIS da publicação, e a marcação congela nas fichas. */
+    expect(mudouAEvidencia(antes, painel({}, 1, "c1", { leituras: ["ia"] }))).toBe(true);
+    expect(mudouAEvidencia(antes, painel({}, 1, "c1", { leituras: ["reserva"] }))).toBe(true);
+    expect(mudouAEvidencia(antes, painel({}, 1, "c1", { etapa: "fichas" }))).toBe(true);
   });
 });
 

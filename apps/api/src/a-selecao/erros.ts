@@ -40,7 +40,11 @@ export type CodigoErro =
   | "legenda-com-telefone"
   | "legenda-com-email"
   | "legenda-com-mencao"
-  | "legenda-com-palavrao";
+  | "legenda-com-palavrao"
+  | "marcacao-fechada"
+  | "marcacao-fora-do-par"
+  | "marcacao-pendente"
+  | "enquadramento-divergente";
 
 export const STATUS: Record<CodigoErro, number> = {
   "payload-invalido": 400,
@@ -73,6 +77,10 @@ export const STATUS: Record<CodigoErro, number> = {
   "legenda-com-email": 422,
   "legenda-com-mencao": 422,
   "legenda-com-palavrao": 422,
+  "marcacao-fechada": 409,
+  "marcacao-fora-do-par": 422,
+  "marcacao-pendente": 409,
+  "enquadramento-divergente": 422,
 };
 
 export const MENSAGENS: Record<CodigoErro, string> = {
@@ -111,6 +119,11 @@ export const MENSAGENS: Record<CodigoErro, string> = {
   "legenda-com-email": "Tire o e-mail da legenda para publicar.",
   "legenda-com-mencao": "Tire a marcação de @ da legenda para publicar.",
   "legenda-com-palavrao": "Reescreva a legenda sem palavrão: ela vai aparecer para a turma.",
+  "marcacao-fechada": "A marcação está fechada: ela só vale enquanto o professor não revela as fichas.",
+  "marcacao-fora-do-par": "Escolha um dos posts da publicação do seu colega.",
+  "marcacao-pendente": "Escolha um post do colega, ou a última opção, antes de dizer por quê.",
+  "enquadramento-divergente":
+    "Alguns posts editados não mostram mais o lado do veículo deles. Ajuste a legenda desses posts para manter o equilíbrio da atividade.",
 };
 
 export class ErroDeJogo extends HttpException {

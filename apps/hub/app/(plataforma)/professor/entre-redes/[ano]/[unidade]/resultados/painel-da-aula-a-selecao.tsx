@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { Button, Card, FeedbackAlert, Icon, MetricCard, ProgressBar } from "@edu/ui/ds";
 import {
+  GUIA_DA_REFLEXAO,
   PISO_DO_MURAL,
   ROTULO_DA_ETAPA,
   aulaEmAndamento,
@@ -27,8 +28,9 @@ import { ListaDaSelecao } from "./lista-da-selecao";
  * folha da turma, AO VIVO.
  *
  * **UM botão, e ele diz a etapa de DESTINO.** O rótulo sai de
- * `proximaEtapa`, que a api calcula: Liberar Mural da Turma → Revelar Fichas
- * Técnicas → Liberar Conclusão Individual, e depois nada. Ele avança uma etapa
+ * `proximaEtapa`, que a api calcula: Liberar Mural da Turma → Abrir marcação do
+ * colega (ADR-170) → Revelar Fichas Técnicas → Liberar Conclusão Individual, e
+ * depois nada. Ele avança uma etapa
  * por vez e nunca volta (409 `transicao-de-etapa-invalida`) — são as três
  * pausas do PRD, e a leitura da ADR-108 de que a professora conduz a turma com
  * o mínimo de controles. Não há "voltar" como na exp05ef1b: o Mural pareia a
@@ -182,6 +184,14 @@ export function PainelDaAulaASelecao({
               variant={percentual >= PISO_DO_MURAL ? "success" : "brand"}
               data-envio
             />
+            {painel.etapa === "marcacao" ? (
+              <p className="text-[13px] text-unooria-neutral-700" data-marcaram>
+                <strong className="text-unooria-neutral-950">
+                  {resumo.marcaram} de {resumo.computadores.publicaram}
+                </strong>{" "}
+                marcaram o post do colega.
+              </p>
+            ) : null}
             {proxima === "mural" ? (
               <p className="text-[12px] leading-snug text-unooria-neutral-600">
                 {percentual >= PISO_DO_MURAL
@@ -236,6 +246,7 @@ export function PainelDaAulaASelecao({
           title="Entregaram a reflexão"
           value={`${resumo.entregaram}/${resumo.computadores.total}`}
         />
+        <MetricCard title="Marcaram o post do colega" value={`${resumo.marcaram}/${resumo.computadores.publicaram}`} />
         <MetricCard title="Concluíram" value={`${resumo.concluiram}/${resumo.computadores.total}`} />
       </div>
       {distribuicao || resumo.porComputador ? (
@@ -261,6 +272,16 @@ export function PainelDaAulaASelecao({
             <strong>Números</strong> a @metrica_urbana — a mesma divisão que o gráfico da ficha
             técnica mostra à turma.
           </p>
+        </div>
+        {/* O guia de leitura da reflexão (ADR-170): ela segue SEM nível, como texto
+            formativo, e estas três perguntas ajudam a ler o que a turma escreveu. */}
+        <div className="flex flex-col gap-1 text-[12px] leading-snug text-unooria-neutral-600" data-guia-da-reflexao>
+          <strong className="text-unooria-neutral-800">{GUIA_DA_REFLEXAO.titulo}</strong>
+          <ul className="list-disc pl-5">
+            {GUIA_DA_REFLEXAO.perguntas.map((p) => (
+              <li key={p}>{p}</li>
+            ))}
+          </ul>
         </div>
         <ListaDaSelecao
           linhas={painel.linhas}

@@ -12,7 +12,7 @@ import {
   RadioGroup,
   Selection,
 } from "@edu/ui/ds";
-import type { HabilidadeDaFicha, StatusDaEvidencia } from "@/lib/evidencias";
+import { OPCOES_DE_MOTIVO, type HabilidadeDaFicha, type MotivoDeAjuste, type StatusDaEvidencia } from "@/lib/evidencias";
 
 import { ErroDoPainel, OPCOES_DE_NIVEL, type Erro } from "./erro-do-painel";
 
@@ -39,11 +39,12 @@ export function AjustarSelecionados({
   habilidades: readonly HabilidadeDaFicha[];
   ocupado: boolean;
   erro: Erro | null;
-  onSalvar: (habilidade: string, status: StatusDaEvidencia) => void;
+  onSalvar: (habilidade: string, status: StatusDaEvidencia, motivo?: MotivoDeAjuste) => void;
   onFechar: () => void;
 }) {
   const [habilidade, setHabilidade] = useState(habilidades.length === 1 ? habilidades[0]!.codigo : "");
   const [status, setStatus] = useState<StatusDaEvidencia | "">("");
+  const [motivo, setMotivo] = useState<MotivoDeAjuste | "">("");
   const escolhida = habilidades.find((h) => h.codigo === habilidade);
   const alvo = quantos === 1 ? "1 estudante" : `${quantos} estudantes`;
 
@@ -77,6 +78,16 @@ export function AjustarSelecionados({
             onChange={(valor) => setStatus(String(valor) as StatusDaEvidencia)}
             options={OPCOES_DE_NIVEL}
           />
+          <Selection
+            label="Motivo (opcional)"
+            value={motivo}
+            options={OPCOES_DE_MOTIVO}
+            onChange={(valor) => setMotivo(String(valor) as MotivoDeAjuste | "")}
+            helperText="Fica no histórico do ajuste. Não muda o nível."
+            disabled={ocupado}
+            showOptionCheckbox={false}
+            fullWidth
+          />
           <ErroDoPainel erro={erro} />
         </div>
       </ModalBody>
@@ -89,7 +100,7 @@ export function AjustarSelecionados({
           size="md"
           isDisabled={!habilidade || !status || ocupado}
           isLoading={ocupado}
-          onClick={() => habilidade && status && onSalvar(habilidade, status)}
+          onClick={() => habilidade && status && onSalvar(habilidade, status, motivo || undefined)}
         >
           {`Aplicar a ${alvo}`}
         </Button>

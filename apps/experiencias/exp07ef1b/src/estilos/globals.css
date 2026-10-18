@@ -198,6 +198,48 @@ body {
   box-shadow: var(--unv-elevation-hairline-top);
 }
 
+/* ───────────────────────── E4-ALU-01B: a marcação (EF07CO08, ADR-170) */
+
+/* Composição da tela, não componente: a pergunta, a grade do colega, o "nada",
+   o "por quê?" e a própria publicação, um embaixo do outro, com o respiro e a
+   tipografia dos tokens do Unoovista. */
+.marcacao__corpo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--unv-spacing-md, 12px);
+  padding: var(--unv-spacing-md, 12px) var(--unv-gutter, 16px) var(--unv-spacing-2xl, 32px);
+}
+
+.marcacao__pergunta {
+  margin: 0;
+  color: var(--unv-color-text-primary, #22272a);
+  font-size: var(--unv-font-body-lg-size, 16px);
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.marcacao__como,
+.marcacao__sua {
+  margin: 0;
+  color: var(--unv-color-text-secondary, #5c6670);
+  font-size: var(--unv-font-body-md-size, 14px);
+}
+
+.marcacao__sua {
+  margin-top: var(--unv-spacing-md, 12px);
+}
+
+.marcacao__porque {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--unv-spacing-sm, 8px);
+}
+
+.marcacao__porque > :first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
 /* ───────────────────────────── E3-SIS-01, E4: o Story e o Mural */
 
 .espera__status {

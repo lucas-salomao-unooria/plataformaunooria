@@ -420,6 +420,10 @@ Nativas do Google Cloud & Cloud Run: \cd{request\_count} por
   --- o teto diário de IA de um perfil mudou (\adrr{ADR-105}), com \cd{de},
   \cd{para} e motivo, e \cd{ia-quota-sem-linha} quando a api está aplicando a
   constante do código porque a linha de \cd{ia\_quotas} não existe;
+  \enquote{linhas com \cd{codigo=ia-quota-avaliacao-80}} e
+  \cd{ia-quota-avaliacao-esgotada} --- a quota de avaliação de uma escola
+  passou de 80\% ou acabou (\adrr{ADR-169}), e as leituras de legenda caem na
+  reserva; o alerta é métrica de log no Terraform;
   \enquote{linhas com \cd{codigo=ia-consumo-nao-gravado}} --- a chamada de IA
   foi feita e paga, mas a linha do painel de custos não foi gravada
   (\adrr{ADR-161}: o registro nunca derruba a chamada), com operação, modelo e

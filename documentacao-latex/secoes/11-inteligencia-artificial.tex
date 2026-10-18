@@ -365,7 +365,9 @@ não consegue gerar um plano}.
 \begin{decisao}
 \textbf{O limite é DADO, não variável de ambiente} (\adrr{ADR-105}). Uma linha
 por perfil em \cd{ia\_quotas} (\cd{estudante}, \cd{professor}; vocabulário
-fechado por CHECK), escopo do contrato inteiro, semeada pela \emph{migration}
+fechado por CHECK), mais a linha \cd{avaliacao} da \adrr{ADR-169} --- a
+leitura da plataforma para a evidência pedagógica, com teto POR ESCOLA, contada
+em \cd{ia\_uso\_diario} com o usuário \cd{avaliacao}, que não é perfil de token, escopo do contrato inteiro, semeada pela \emph{migration}
 com os valores acima. O \cd{QuotaService} a lê a cada \cd{temSaldo} --- sem
 \emph{cache}, para que a alteração valha na chamada seguinte em todas as
 instâncias --- e todo perfil que não é \cd{estudante} cai na linha

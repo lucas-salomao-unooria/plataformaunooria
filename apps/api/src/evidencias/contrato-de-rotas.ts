@@ -2,6 +2,7 @@ import { z } from "zod";
 import { EXP_ID_RE, FORMATO_DO_EXP_ID } from "../comum/codigo-da-experiencia";
 import {
   AJUSTES_MAX,
+  MOTIVOS_DE_AJUSTE,
   ATIVIDADE_ID_RE,
   FORMATO_DO_ATIVIDADE_ID,
   ID_DA_FICHA_RE,
@@ -134,6 +135,8 @@ export const AjustesSchema = z.object({
         estudanteId: Uuid,
         habilidade: z.string().min(1).max(20),
         status: StatusSchema,
+        /** Opcional (ADR-170): só vai para o histórico, nunca muda o nível. */
+        motivo: z.enum(MOTIVOS_DE_AJUSTE).optional(),
       }),
     )
     .min(1)

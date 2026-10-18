@@ -1618,8 +1618,11 @@ escreve uma legenda e publica, sem volta. No Mural, a tríade dele aparece ao la
 da de um colega que escolheu outra coisa; quando a professora revela as fichas
 técnicas (fonte ouvida, ângulo da imagem e o equilíbrio das três lentes), a sala
 descobre que ninguém mentiu, e que cada seleção deixou dois terços de fora. A
-explicação vem em três cards com trava de 8 s; a reflexão, na voz da escola; e
-as duas enquetes da Amara, na DM, fecham a missão (\adrr{ADR-115}).
+explicação vem em três cards com trava de 8 s; e a reflexão, na voz da escola,
+fecha a missão. Entre o Mural e as fichas, uma etapa da turma pede a MARCAÇÃO:
+o estudante aponta o post do colega que a publicação dele deixou de fora, ou
+\enquote{Nada que mude a história} (\adrr{ADR-170}; as duas enquetes da Amara,
+da \adrr{ADR-115}, saíram).
 
 \begin{tabularx}{\linewidth}{@{}L{34mm}X@{}}
 \toprule
@@ -1659,14 +1662,17 @@ O que o bundle não sabe & A lente de cada post, as tags e a matriz vêm da
   \emph{CHECK} do banco). A legenda passa por um sanitizador (link, telefone,
   e-mail, menção, palavrão) porque outro estudante a lê no Mural; a reflexão é
   só do professor da turma (\adrr{ADR-108}).\\
-Evidência & A ficha \arq{evidencias/fichas/exp07ef1b.ts}: EF07CO11 com a
-  leitura da legenda por IA (o Canal A) e a enquete \cd{p1}; EF07CO08 com a
-  enquete \cd{p2}. As alternativas são embaralhadas a cada exibição. Sem IA, o
-  Canal A não marca nada, e fica \enquote{Não avaliado}; a leitura não tem teto
-  de saída, porque com 64 \emph{tokens} o raciocínio do modelo a cortava e ela
-  nunca marcava (\adrr{ADR-148}). Durante a aula, o
-  painel de habilidades se refaz quando a evidência muda, e mais uma vez na
-  volta seguinte, porque o Canal A chega depois (\adrr{ADR-146}).\\
+Evidência & A ficha \arq{evidencias/fichas/exp07ef1b.ts}, versão 2
+  (\adrr{ADR-170}): só AÇÃO. A EF07CO11 pela legenda, lida pela IA DEPOIS da
+  resposta ao estudante (teto de 60\,s, até 3 tentativas para a falha técnica,
+  na quota de avaliação da \adrr{ADR-169}): ela devolve três indicadores
+  (razão, conteúdo, sem relação) e o servidor dá o nível
+  (\cd{prompts.ts\#nivelDosIndicadores}). Falhando a IA, a regra de palavras
+  (\arq{regras/legenda-reserva.ts}) grava só a SUGESTÃO na sessão, sem marca:
+  \enquote{Não avaliado} até o professor ajustar. A EF07CO08 pela marcação
+  (\arq{regras/marcacao.ts}), congelada na abertura das fichas. Sem teto de
+  saída (\adrr{ADR-148}). O painel de habilidades se refaz quando uma leitura
+  termina ou a etapa vira (\cd{mudouAEvidencia}).\\
 \zebra Mídia & As imagens se geram na segunda fase da aprovação (2 por chamada,
   porque o BFF corta em 30 s), com cache no \emph{bucket} por contrato em
   \cd{experiencias/exp07ef1b/selecao/}, pelo \emph{hash} da descrição.
@@ -1738,9 +1744,8 @@ reabre) e o Mural aberto no par ---, e termina no podcast: as
 três falas no preparo, a transcrição e o áudio. Desde a \adrr{ADR-148} ela
 roda com a IA de verdade (Vertex, com o ADC válido), nunca com o \emph{mock}:
 gera a cobertura com a IA (exige \cd{usouIa} e a origem \cd{ia}), exige todas
-as imagens geradas, prova a marca do Canal A no painel de evidências ANTES da
-enquete \cd{p1} --- que também marca a EF07CO11, e esconderia a falta dele ---
-e exige o \emph{podcast} pronto, com a voz do TTS. Antes, a suíte aceitava o
+as imagens geradas, prova a marca da legenda e a da marcação no painel de
+evidências, e exige o \emph{podcast} pronto, com a voz do TTS. Antes, a suíte aceitava o
 \enquote{Não avaliado} e a transcrição sozinha como verdes, dizendo que em
 \emph{dev} a IA era o \emph{mock}.
 

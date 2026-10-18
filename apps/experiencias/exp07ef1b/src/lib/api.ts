@@ -25,8 +25,8 @@ export const api = {
 
 /**
  * Fecha a missão no hub. **Sem `score`**: a missão não pontua criança, e o
- * nível das habilidades é do servidor (a ficha da E14, com a IA e as
- * enquetes). O que vai é progresso, só números e booleanos.
+ * nível das habilidades é do servidor (a ficha da E14: a legenda lida pela IA e
+ * a marcação). O que vai é progresso, só números e booleanos.
  */
 export function concluir(dados: Record<string, number | boolean>) {
   exigir().concluir({ dados });
@@ -105,7 +105,7 @@ export interface OpcoesDaRepeticao {
  *
  * É seguro repetir todas as mutações desta missão, e isso não é por acaso:
  * `POST passo` pede um destino (pedir o mesmo duas vezes é o mesmo destino),
- * `POST concluir` é idempotente, a enquete guarda a primeira resposta, e as
+ * `POST concluir` é idempotente, a marcação vale pela última chamada, e as
  * duas escritas de latch (`decisao` e `reflexao`) respondem 409 na segunda
  * vez. Quando a primeira tentativa chegou ao servidor mas a resposta se
  * perdeu, a repetição volta com 409 e a tela relê a sessão — **o latch nunca

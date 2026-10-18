@@ -46,7 +46,7 @@ export const GUIA_EXP07EF1B: GuiaDaAula = {
       titulo: "Um botão só conduz a aula, e ele não volta",
       texto:
         "Em A aula e os resultados, o mesmo botão mostra sempre a próxima etapa: Liberar Mural " +
-        "da Turma, Revelar Fichas Técnicas e Liberar Conclusão Individual. Ele avança uma etapa " +
+        "da Turma, Abrir marcação do colega, Revelar Fichas Técnicas e Liberar Conclusão Individual. Ele avança uma etapa " +
         "por vez, para a turma inteira, e não desfaz. Espere cerca de 80% dos computadores " +
         "publicarem antes do primeiro clique.",
     },
@@ -63,23 +63,22 @@ export const GUIA_EXP07EF1B: GuiaDaAula = {
     {
       /* A PRINCIPAL, verbatim do complemento de Computação à BNCC (a mesma
          linha de `apps/api/src/curriculo/dados/habilidades-computacao.ts`).
-         É a que a ficha pedagógica mede pela legenda (Canal A) e pela
-         primeira enquete da Amara. */
+         É a que a ficha pedagógica mede pela legenda (Canal A, ADR-170). */
       codigo: "EF07CO11",
       texto:
         "Criar, documentar e publicar, de forma individual ou colaborativa, produtos (vídeos, podcasts, web sites) usando recursos de tecnologia.",
       eixo: "Cultura Digital",
       principal: true,
       ondeAcontece:
-        "Etapas 2 e 3: o estudante garimpa o feed, poda os salvos até três, documenta a intenção editorial na legenda e publica nos Stories do grêmio — sem volta. A inteligência artificial lê a legenda e sugere um nível no painel de habilidades, que você confere.",
+        "Etapas 2 e 3: o estudante garimpa o feed, poda os salvos até três, documenta a intenção editorial na legenda e publica nos Stories do grêmio — sem volta. A inteligência artificial lê a legenda depois da publicação e dá o nível no painel de habilidades, que você confere. Quando ela não consegue ler, a célula fica \"Não avaliado\" com o que a leitura automática viu, e você decide.",
     },
     {
-      /* Verbatim do mesmo documento. A segunda enquete da Amara mede esta. */
+      /* Verbatim do mesmo documento. A marcação do post do colega mede esta (ADR-170). */
       codigo: "EF07CO08",
       texto: "Demonstrar empatia sobre opiniões divergentes na web.",
       eixo: "Cultura Digital",
       ondeAcontece:
-        "Etapa 4: no Mural, a publicação do colega conta outra história com os mesmos fatos. A mediação pede que a turma entenda a escolha do outro antes de julgá-la, e a última enquete registra essa leitura.",
+        "Etapa 4: no Mural, a publicação do colega conta outra história com os mesmos fatos. Depois da conversa, cada estudante aponta o post do colega que a publicação dele deixou de fora e muda a história — ou diz que nada muda. É essa marcação que dá o nível no painel de habilidades: ela mede se o estudante reconhece o ponto de vista do outro.",
     },
   ],
 
@@ -165,10 +164,17 @@ export const GUIA_EXP07EF1B: GuiaDaAula = {
         botao: "Liberar Mural da Turma",
       },
       {
-        tempo: "28–36",
+        tempo: "26–29",
+        momento: "A marcação do post do colega",
+        professor:
+          "Depois dos primeiros comentários, aperte. Cada aparelho pergunta o que a publicação do colega mostrou e a sua deixou de fora; o estudante toca num post ou em \"Nada que mude a história\", e pode dizer por quê numa frase que só você lê. Acompanhe o \"X de Y marcaram\" no painel.",
+        botao: "Abrir marcação do colega",
+      },
+      {
+        tempo: "29–36",
         momento: "As fichas técnicas",
         professor:
-          "Aperte depois de ouvir os primeiros comentários sobre as diferenças. As etiquetas mostram quem cada post ouviu; puxe a pergunta 3 e a escada abaixo.",
+          "Aperte quando a maioria tiver marcado: a marcação fecha aqui. As etiquetas mostram quem cada post ouviu; puxe a pergunta 3 e a escada abaixo.",
         botao: "Revelar Fichas Técnicas",
       },
       {
@@ -180,7 +186,7 @@ export const GUIA_EXP07EF1B: GuiaDaAula = {
       },
       {
         tempo: "44–50",
-        momento: "A reflexão e as enquetes",
+        momento: "A reflexão",
         professor:
           "Diga antes que só você lê o texto, e deixe escrever em silêncio. Feche com a síntese em voz alta.",
       },
@@ -251,7 +257,7 @@ export const GUIA_EXP07EF1B: GuiaDaAula = {
       },
     ],
     nota:
-      "O E é a evidência que nenhum número do painel captura: a empatia com a versão do outro acontecendo em voz alta. A última enquete da Amara mede a mesma habilidade, num toque.",
+      "O E é a evidência que nenhum número do painel captura: a empatia com a versão do outro acontecendo em voz alta. A marcação do post do colega, logo antes das fichas, mede a mesma habilidade.",
   },
 
   mediacao: [
@@ -297,7 +303,7 @@ export const GUIA_EXP07EF1B: GuiaDaAula = {
       "Antes de acreditar numa cobertura, pergunte: quem foi ouvido, e quem ficou de fora?",
     ],
     registro:
-      "A reflexão individual da Etapa 6 — o repórter que cobre a reforma de uma escola ouvindo só a diretoria. Fica na folha da turma, e só você a lê. As duas enquetes da Amara, logo depois, alimentam o painel de habilidades.",
+      "A reflexão individual da Etapa 6 — o repórter que cobre a reforma de uma escola ouvindo só a diretoria. Fica na folha da turma, e só você a lê, com três perguntas de leitura ao lado. Não dá nível: é texto formativo. Ela encerra a missão.",
     produto: {
       titulo: "Os Stories da turma: a cobertura por inteiro",
       itens: [
@@ -308,7 +314,7 @@ export const GUIA_EXP07EF1B: GuiaDaAula = {
     },
     rubrica: {
       nota:
-        "Formativa, e sobre o RACIOCÍNIO — nunca sobre qual lente a criança escolheu. O painel de habilidades já traz a leitura da legenda (sugerida pela IA, que você confere) e as enquetes; esta rubrica é para a conversa e para a reflexão escrita.",
+        "Formativa, e sobre o RACIOCÍNIO — nunca sobre qual lente a criança escolheu. O painel de habilidades já traz a leitura da legenda (pela IA, que você confere) e a marcação do post do colega; esta rubrica é para a conversa e para a reflexão escrita.",
       criterios: [
         {
           criterio: "Justificar a seleção",
@@ -390,7 +396,7 @@ export const GUIA_EXP07EF1B: GuiaDaAula = {
     {
       pergunta: "A IA dá nota para a legenda?",
       resposta:
-        "Não dá nota. Ela lê a legenda e sugere um de três níveis da EF07CO11 no painel de habilidades, que só você vê — e vale o melhor entre essa leitura e a primeira enquete. Você confere e corrige. O estudante não vê o nível.",
+        "Não dá nota. Ela lê a legenda e dá um de três níveis da EF07CO11 no painel de habilidades, que só você vê. Você confere e corrige no ajuste. Quando ela não consegue ler, a célula fica \"Não avaliado\" e a lista da aula mostra o que a leitura automática viu. O estudante não vê o nível.",
     },
     {
       pergunta: "Posso aplicar de novo na mesma turma?",

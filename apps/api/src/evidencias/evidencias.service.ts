@@ -1175,7 +1175,7 @@ export class EvidenciasService implements OnModuleInit {
           habilidade: a.habilidade,
           tipo: "ajuste",
           de: atual ? { ...estadoDe(atual) } : null,
-          para: { status: a.status, origem: "professor", situacao: "valida" },
+          para: { status: a.status, origem: "professor", situacao: "valida", ...(a.motivo ? { motivo: a.motivo } : {}) },
           autorId: professorId,
         });
       }

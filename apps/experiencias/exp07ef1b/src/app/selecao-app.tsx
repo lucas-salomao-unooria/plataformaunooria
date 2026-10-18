@@ -19,7 +19,6 @@ import { telemetria } from "../lib/telemetria";
 import { E1 } from "../lib/textos";
 import type {
   Estado,
-  IdDaEnquete,
   PassoPedido,
   PostPublico,
   RespostaGate,
@@ -28,7 +27,7 @@ import type {
 } from "../lib/tipos";
 import { Avisos } from "./avisos";
 import { AcaoDaDm, BalaoDaAmara, DmDaAmara } from "./clone/dm-da-amara";
-import { Enquetes } from "./clone/enquetes";
+import { Marcacao, type ResultadoDoPorque } from "./clone/marcacao";
 import { Espera } from "./clone/espera";
 import { Feed } from "./clone/feed";
 import { Mural } from "./clone/mural";
@@ -54,7 +53,7 @@ const Explicar = preguicoso(() => import("./clone/explicar"));
  *    latch à prova de rede ruim — ele só existe quando o servidor o confirmou.
  * 3. **Toda chamada passa por `conexao.executar`**, que repete a de rede e a de
  *    sessão com o aviso diegético aceso. As exceções são o polling do gate (que
- *    já se repete a cada 5 s) e as enquetes (que pulam para o fim).
+ *    já se repete a cada 5 s).
  * 4. **409 e 400 relêem a sessão.** O relógio da turma andou, a rodada mudou,
  *    o latch já estava fechado: tentar de novo daria o mesmo erro. Quem resolve
  *    é ler de novo o que o servidor diz.
@@ -66,7 +65,7 @@ export function SelecaoApp({ inicial, conexao }: { inicial: RespostaSessao; cone
   const [ocupado, setOcupado] = useState(false);
   /** A legenda em edição. Só na memória: texto de menor não vai ao `sessionStorage`. */
   const [legenda, setLegenda] = useState("");
-  /** A reflexão acabou de ir: mostra a confirmação antes da DM das enquetes. */
+  /** A reflexão acabou de ir: mostra a confirmação antes da tela final (ADR-170). */
   const [recemEnviada, setRecemEnviada] = useState(false);
   const { executar, sinalizar } = conexao;
 
@@ -286,7 +285,13 @@ export function SelecaoApp({ inicial, conexao }: { inicial: RespostaSessao; cone
     setOcupado(true);
     try {
       const estado = await executar(() =>
-        api.post<Estado>("/a-selecao/decisao", { selecao: tresPosts, legenda: texto }),
+        api.post<Estado>("/a-selecao/decisao", {
+          selecao: tresPosts,
+          legenda: texto,
+          /* A PODA (ADR-170): quantos salvos saíram antes de publicar. Indicador
+             para o professor, nunca nível. */
+          podados: Math.min(9, Math.max(0, salvos.length - tresPosts.length)),
+        }),
       );
       telemetria.publicou(codePoints(texto));
       aplicar(estado);
@@ -311,6 +316,11 @@ export function SelecaoApp({ inicial, conexao }: { inicial: RespostaSessao; cone
       telemetria.enviouReflexao(codePoints(texto));
       setRecemEnviada(true);
       aplicar(estado);
+      /* Desde a ADR-170 a reflexão ENCERRA a missão (o Canal B saiu): a api já
+         devolve o `fim`, e o hub recebe a conclusão aqui. Sem `score`: o nível
+         das habilidades é do servidor, e nenhum número aparece em tela. */
+      telemetria.concluiu();
+      concluir({ publicou: estado.publicada, reflexao: true });
     } catch (erro) {
       tratarFalha(erro);
     } finally {
@@ -318,17 +328,49 @@ export function SelecaoApp({ inicial, conexao }: { inicial: RespostaSessao; cone
     }
   }
 
-  async function concluirMissao(respondidas: number) {
+  /**
+   * A sessão de ANTES da ADR-170, parada em `enquetes` (o passo do Canal B,
+   * que saiu): a tela a leva ao fim sozinha, pelo `POST concluir` idempotente.
+   */
+  const concluindoAntiga = useRef(false);
+  useEffect(() => {
+    if (sessao.passo !== "enquetes" || concluindoAntiga.current) return;
+    concluindoAntiga.current = true;
+    void (async () => {
+      try {
+        aplicar(await executar(() => api.post<Estado>("/a-selecao/concluir")));
+        telemetria.concluiu();
+        concluir({ publicou: true, reflexao: true });
+      } catch (erro) {
+        tratarFalha(erro);
+      }
+    })();
+  }, [sessao.passo, aplicar, executar, tratarFalha]);
+
+  /** A marcação do post do colega (E4-ALU-01B): grava ao tocar, e a última vale. */
+  async function marcar(escolha: { postId: string } | { nenhum: true }) {
     setOcupado(true);
     try {
-      const estado = await executar(() => api.post<Estado>("/a-selecao/concluir"));
-      aplicar(estado);
-      telemetria.concluiu(respondidas);
-      /* Sem `score`: a missão não pontua criança. O nível das habilidades é do
-         servidor (a ficha da E14), e nenhum desses números aparece em tela. */
-      concluir({ publicou: estado.publicada, reflexao: estado.reflexaoEnviada, enquetes: respondidas });
+      aplicar(await executar(() => api.post<Estado>("/a-selecao/marcacao", escolha)));
+      telemetria.marcou("postId" in escolha ? "post" : "nenhum");
     } catch (erro) {
       tratarFalha(erro);
+    } finally {
+      setOcupado(false);
+    }
+  }
+
+  /** O "por quê?" opcional — texto de menor, que só o professor lê. */
+  async function explicarAMarcacao(texto: string): Promise<ResultadoDoPorque> {
+    setOcupado(true);
+    try {
+      aplicar(await executar(() => api.post<Estado>("/a-selecao/marcacao/porque", { texto })));
+      telemetria.explicouAMarcacao(codePoints(texto));
+      return "guardado";
+    } catch (erro) {
+      if (tipoDaFalha(erro) === "recusada") return "recusado";
+      tratarFalha(erro);
+      return "outra";
     } finally {
       setOcupado(false);
     }
@@ -338,7 +380,7 @@ export function SelecaoApp({ inicial, conexao }: { inicial: RespostaSessao; cone
 
   if (bloqueada) return <Indisponivel />;
 
-  const vozDaEscola = tela === "reflexao" || tela === "fim" || (tela === "enquetes" && recemEnviada);
+  const vozDaEscola = tela === "reflexao" || tela === "fim";
 
   const desenhar = () => {
     switch (tela) {
@@ -409,6 +451,20 @@ export function SelecaoApp({ inicial, conexao }: { inicial: RespostaSessao; cone
           <div className="tela tela--story" data-unv-theme="dark" aria-busy="true" />
         );
 
+      case "marcacao":
+        return mural ? (
+          <Marcacao
+            key={sessao.sessaoId}
+            mural={mural}
+            marcacao={sessao.marcacao}
+            ocupado={ocupado}
+            aoMarcar={(escolha) => void marcar(escolha)}
+            aoExplicar={explicarAMarcacao}
+          />
+        ) : (
+          <div className="tela tela--clara" aria-busy="true" />
+        );
+
       case "explicacao":
         return (
           <Suspense fallback={<div className="tela tela--clara" aria-busy="true" />}>
@@ -428,23 +484,8 @@ export function SelecaoApp({ inicial, conexao }: { inicial: RespostaSessao; cone
       case "reflexao":
         return <Reflexao limites={sessao.limites} enviando={ocupado} aoEnviar={(t) => void enviarReflexao(t)} />;
 
-      case "enquetes":
-        return recemEnviada ? (
-          <ReflexaoEnviada aoContinuar={() => setRecemEnviada(false)} />
-        ) : (
-          <Enquetes
-            key={sessao.sessaoId}
-            votosGuardados={lerMemoria(sessao.sessaoId).votos}
-            concluindo={ocupado}
-            aoVotar={(id: IdDaEnquete, alternativa) =>
-              gravarMemoria(sessao.sessaoId, { votos: { ...lerMemoria(sessao.sessaoId).votos, [id]: alternativa } })
-            }
-            aoConcluir={(n) => void concluirMissao(n)}
-          />
-        );
-
       case "fim":
-        return <Concluida />;
+        return recemEnviada ? <ReflexaoEnviada aoContinuar={() => setRecemEnviada(false)} /> : <Concluida />;
     }
   };
 

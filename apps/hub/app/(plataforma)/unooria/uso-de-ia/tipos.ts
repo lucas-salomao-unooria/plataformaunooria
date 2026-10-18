@@ -7,7 +7,8 @@
  * schema fora de produção.
  */
 
-export type PerfilDaQuota = "estudante" | "professor";
+/** `avaliacao` não é perfil de pessoa: é a leitura da plataforma para a evidência (ADR-169), com teto por escola. */
+export type PerfilDaQuota = "estudante" | "professor" | "avaliacao";
 
 export interface QuotaDeIa {
   perfil: PerfilDaQuota;

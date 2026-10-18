@@ -2879,7 +2879,7 @@ model Exp07ef1bGateTurma {
   coberturaId String @map("cobertura_id") @db.Uuid
   /// ≥ 1 (CHECK). "Zerar turma" soma um; tema novo volta a 1.
   rodada      Int    @default(1)
-  /// exploracao | mural | fichas | explicacao (CHECK; a ordem é `regras/passos.ts`).
+  /// exploracao | mural | marcacao | fichas | explicacao (CHECK; a ordem é `regras/passos.ts`).
   etapa       String @default("exploracao")
 
   atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
@@ -2904,8 +2904,8 @@ model Exp07ef1bSessao {
   coberturaId String @map("cobertura_id") @db.Uuid
   rodada      Int
 
-  /// desafio | feed | salvos | publicado | mural | fichas | explicacao |
-  /// reflexao | enquetes | fim (CHECK; a ordem é `regras/passos.ts`).
+  /// desafio | feed | salvos | publicado | mural | marcacao | fichas |
+  /// explicacao | reflexao | enquetes | fim (CHECK; a ordem é `regras/passos.ts`).
   passo String @default("desafio")
 
   /// Os 3 ids publicados. Nulo antes do latch; com ele, os três juntos com a
@@ -2933,8 +2933,38 @@ model Exp07ef1bSessao {
   /// renomear a equipe depois do Mural não muda o que a sala já viu.
   parRotulo   String? @map("par_rotulo")
 
-  /// A versão do instrumento, para reprocessamento histórico (DAD-06).
-  versaoInstrumento String @default("1.0.0") @map("versao_instrumento")
+  /// A versão do instrumento, para reprocessamento histórico (DAD-06). 1.1.0 =
+  /// o Canal A obrigatório (ADR-170).
+  versaoInstrumento String @default("1.1.0") @map("versao_instrumento")
+
+  /// Quantos posts a criança salvou e depois tirou dos salvos antes de publicar
+  /// — a PODA. Indicador para o professor, nunca nível (salvar só três também é
+  /// decisão editorial). Nulo antes do latch ou em sessão antiga.
+  nPodados Int? @map("n_podados") @db.SmallInt
+
+  /// A LEITURA DA LEGENDA (EF07CO11, ADR-170): `pendente` nasce no latch; `ia`
+  /// = a IA leu e o nível foi marcado; `reserva` = a IA falhou e a regra de
+  /// palavras gravou só a SUGESTÃO (sem marca), que a professora confirma.
+  legendaLeitura     String?  @map("legenda_leitura")
+  /// Os indicadores — da IA ou da reserva. `semRelacao` só a IA enxerga.
+  legendaRazao       Boolean? @map("legenda_razao")
+  legendaConteudo    Boolean? @map("legenda_conteudo")
+  legendaSemRelacao  Boolean? @map("legenda_sem_relacao")
+  /// Na IA, o nível marcado; na reserva, a sugestão (nunca `nao_atingiu`).
+  legendaNivel       String?  @map("legenda_nivel")
+  /// `{ modelo, prompt, regra, tentativas }` — de onde veio a leitura. Nada do
+  /// que a IA escreve é gravado.
+  legendaLeituraMeta Json?    @map("legenda_leitura_meta")
+
+  /// A MARCAÇÃO (EF07CO08, ADR-170): o post do colega que a publicação da
+  /// criança deixou de fora, ou "Nada que mude a história". Um ou outro (CHECK).
+  marcacaoPostId String?   @map("marcacao_post_id")
+  marcacaoNenhum Boolean?  @map("marcacao_nenhum")
+  marcacaoEm     DateTime? @map("marcacao_em") @db.Timestamptz(6)
+  /// O "por quê?" opcional da marcação — texto livre de MENOR, fora do nível:
+  /// só a professora da turma o lê (o recorte da ADR-108), nunca a log nem a
+  /// telemetria. Passa pelo sanitizador da legenda.
+  marcacaoPorque String?   @map("marcacao_porque") @db.VarChar(140)
 
   criadaEm     DateTime @default(now()) @map("criada_em") @db.Timestamptz(6)
   atualizadaEm DateTime @default(now()) @updatedAt @map("atualizada_em") @db.Timestamptz(6)

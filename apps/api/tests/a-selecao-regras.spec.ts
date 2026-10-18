@@ -17,7 +17,9 @@ import {
   blocoDe,
   type PostDaCobertura,
 } from "../src/a-selecao/catalogo";
-import { ClassificacaoService, validarClassificacao } from "../src/a-selecao/classificacao.service";
+import { ClassificacaoService, LIMITE_DO_CANAL_A, validarIndicadores } from "../src/a-selecao/classificacao.service";
+import { lerPelaReserva } from "../src/a-selecao/regras/legenda-reserva";
+import { nivelDaMarcacao } from "../src/a-selecao/regras/marcacao";
 import { z } from "zod";
 import {
   DecisaoSchema,
@@ -28,7 +30,7 @@ import {
 } from "../src/a-selecao/contrato-de-rotas";
 import { CAMPOS_SENSIVEIS, PROIBIDO_NO_PAINEL, TERMOS_PROIBIDOS_NA_TELA, termosProibidosEm } from "../src/a-selecao/invariantes";
 import { FALAS_DO_TEMA_PADRAO } from "../src/a-selecao/podcast";
-import { promptDoCanalA, semDelimitadores } from "../src/a-selecao/prompts";
+import { nivelDosIndicadores, promptDoCanalA, semDelimitadores } from "../src/a-selecao/prompts";
 import { LoteDaIaSchema, palavras, postsDaIa, problemasDoLote, type LoteDaIa } from "../src/a-selecao/regras/lote";
 import { distancia, matrizDaSelecao, mediaDaSala, percentuais, type Matriz } from "../src/a-selecao/regras/matriz";
 import { parear, virtualMaisDistante, type VirtualDoMural } from "../src/a-selecao/regras/pareamento";
@@ -264,13 +266,14 @@ describe("o passo que a tela mostra (`passoEfetivo` × etapa)", () => {
       "salvos",
       "publicado",
       "mural",
+      "marcacao",
       "fichas",
       "explicacao",
       "reflexao",
       "enquetes",
       "fim",
     ]);
-    expect([...ETAPAS]).toEqual(["exploracao", "mural", "fichas", "explicacao"]);
+    expect([...ETAPAS]).toEqual(["exploracao", "mural", "marcacao", "fichas", "explicacao"]);
   });
 
   test("os passos que a criança pede", () => {
@@ -289,7 +292,8 @@ describe("o passo que a tela mostra (`passoEfetivo` × etapa)", () => {
 describe("as transições do gate", () => {
   test("anda UMA etapa por vez, e o destino igual é o segundo clique (aceito, sem mudar)", () => {
     expect(transicaoDoGate("exploracao", "mural")).toEqual({ ok: true, mudou: true });
-    expect(transicaoDoGate("mural", "fichas")).toEqual({ ok: true, mudou: true });
+    expect(transicaoDoGate("mural", "marcacao")).toEqual({ ok: true, mudou: true });
+    expect(transicaoDoGate("marcacao", "fichas")).toEqual({ ok: true, mudou: true });
     expect(transicaoDoGate("fichas", "explicacao")).toEqual({ ok: true, mudou: true });
     expect(transicaoDoGate("mural", "mural")).toEqual({ ok: true, mudou: false });
   });
@@ -297,6 +301,8 @@ describe("as transições do gate", () => {
   test("nunca pula e nunca volta", () => {
     const recusa = { ok: false, codigo: "transicao-de-etapa-invalida" };
     expect(transicaoDoGate("exploracao", "fichas")).toEqual(recusa);
+    /* A marcação é obrigatória (ADR-170): do Mural não se pula para as fichas. */
+    expect(transicaoDoGate("mural", "fichas")).toEqual(recusa);
     expect(transicaoDoGate("exploracao", "explicacao")).toEqual(recusa);
     expect(transicaoDoGate("fichas", "mural")).toEqual(recusa);
     expect(transicaoDoGate("explicacao", "exploracao")).toEqual(recusa);
@@ -625,44 +631,48 @@ describe("o Zod do lote gerado por IA (§2.5 do brief)", () => {
   });
 });
 
-describe("a ficha pedagógica da A Seleção", () => {
-  test("EF07CO11 com a ação da legenda e a P1; EF07CO08 com a P2", () => {
-    expect(FICHA_EXP07EF1B.habilidades.map((h) => [h.codigo, h.marcadores.map((m) => m.id)])).toEqual([
-      ["EF07CO11", ["legenda-publicada", "p1"]],
-      ["EF07CO08", ["p2"]],
+describe("a ficha pedagógica da A Seleção (v2, ADR-170)", () => {
+  test("Canal A obrigatório: uma AÇÃO por habilidade, nenhuma pergunta", () => {
+    expect(FICHA_EXP07EF1B.versao).toBe(2);
+    expect(FICHA_EXP07EF1B.habilidades.map((h) => [h.codigo, h.marcadores.map((m) => [m.id, m.tipo])])).toEqual([
+      ["EF07CO11", [["legenda-publicada", "acao"]]],
+      ["EF07CO08", [["marcacao-colega", "acao"]]],
     ]);
-    expect(FICHA_EXP07EF1B.perguntas.map((p) => p.id)).toEqual(["p1", "p2"]);
+    expect(FICHA_EXP07EF1B.perguntas).toEqual([]);
   });
 
-  test("o gabarito é o do PO: A1/B1 atingiu, A2/B2 em processo, A3/B3 não atingiu", () => {
-    const gabarito = FICHA_EXP07EF1B.perguntas.flatMap((p) => p.alternativas.map((a) => [a.id, a.status]));
-    expect(gabarito).toEqual([
-      ["A1", "atingiu"],
-      ["A2", "em_processo"],
-      ["A3", "nao_atingiu"],
-      ["B1", "atingiu"],
-      ["B2", "em_processo"],
-      ["B3", "nao_atingiu"],
-    ]);
+  test("todo marcador diz de onde veio o nível (rótulo, ADR-166)", () => {
+    for (const h of FICHA_EXP07EF1B.habilidades) {
+      for (const m of h.marcadores) expect(m.rotulo?.trim()).toBeTruthy();
+    }
   });
 
-  test("nenhum TERMOS_PROIBIDOS_NA_TELA nos enunciados nem nas alternativas", () => {
-    for (const p of FICHA_EXP07EF1B.perguntas) {
-      const textos = [p.enunciado, ...p.alternativas.map((a) => a.texto)];
-      expect({ pergunta: p.id, termos: textos.flatMap(termosProibidosEm) }).toEqual({ pergunta: p.id, termos: [] });
+  test("nenhum TERMOS_PROIBIDOS_NA_TELA nos critérios que o professor lê", () => {
+    for (const h of FICHA_EXP07EF1B.habilidades) {
+      const textos = Object.values(h.criterios).filter((t): t is string => typeof t === "string");
+      expect({ habilidade: h.codigo, termos: textos.flatMap(termosProibidosEm) }).toEqual({ habilidade: h.codigo, termos: [] });
     }
   });
 });
 
-describe("o Canal A", () => {
-  test("a saída vale só COERENTE: o motivo tem de sustentar o nível", () => {
-    expect(validarClassificacao({ nivel: "atingiu", motivo: "criterio-explicito" })).toEqual({
-      nivel: "atingiu",
-      motivo: "criterio-explicito",
+describe("o Canal A devolve INDICADORES, e o nível é do servidor", () => {
+  test("a régua: sem relação = não atingiu; razão e conteúdo = atingiu; o resto = em processo", () => {
+    expect(nivelDosIndicadores({ razao: true, conteudo: true, semRelacao: false })).toBe("atingiu");
+    expect(nivelDosIndicadores({ razao: true, conteudo: false, semRelacao: false })).toBe("em_processo");
+    expect(nivelDosIndicadores({ razao: false, conteudo: true, semRelacao: false })).toBe("em_processo");
+    expect(nivelDosIndicadores({ razao: false, conteudo: false, semRelacao: false })).toBe("em_processo");
+    expect(nivelDosIndicadores({ razao: true, conteudo: false, semRelacao: true })).toBe("nao_atingiu");
+  });
+
+  test("a saída vale só COERENTE: sem relação com conteúdo é contradição", () => {
+    expect(validarIndicadores({ razao: true, conteudo: true, semRelacao: false })).toEqual({
+      razao: true,
+      conteudo: true,
+      semRelacao: false,
     });
-    expect(() => validarClassificacao({ nivel: "atingiu", motivo: "desconexa" })).toThrow();
-    expect(() => validarClassificacao({ nivel: "otimo", motivo: "generica" })).toThrow();
-    expect(() => validarClassificacao("atingiu")).toThrow();
+    expect(() => validarIndicadores({ razao: false, conteudo: true, semRelacao: true })).toThrow();
+    expect(() => validarIndicadores({ nivel: "atingiu" })).toThrow();
+    expect(() => validarIndicadores("atingiu")).toThrow();
   });
 
   test("a legenda e os posts entram DELIMITADOS, e a criança não fecha o delimitador", () => {
@@ -677,25 +687,111 @@ describe("o Canal A", () => {
 });
 
 /**
- * O FALLBACK do Canal A, sem banco: uma quota em memória (a subclasse que o
- * `ai/AGENTS.md` pede para teto apertado) e providers falsos. Toda falha é
- * `{ ok: false }` — nunca exceção —, porque a publicação já foi gravada.
+ * A REGRA DE RESERVA, sem banco. Ela só SUGERE (a professora confirma), e os
+ * dois limites conhecidos ficam escritos aqui como o que ela é — não como
+ * defeito a esconder.
  */
-describe("o Canal A cai em Não avaliado quando a IA não serve", () => {
+describe("a regra de reserva da legenda", () => {
+  const POSTS = [
+    { perfil: "@voz_coletiva", legenda: "Moradores do bairro reclamam do barulho da obra na praça.", autoridadeCitada: "Dona Cida" },
+    { perfil: "@metrica_urbana", legenda: "Pesquisa mostra que 60% dos comerciantes perderam clientes." },
+    { perfil: "@folhaoficial_", legenda: "A prefeitura anuncia a reforma da praça com nova pista de skate." },
+  ];
+  const ler = (legenda: string) => lerPelaReserva({ legenda, tema: "A reforma da Praça Central", posts: POSTS });
+
+  test("razão e conteúdo dos posts: sugere atingiu (com o exemplo do Artur)", () => {
+    expect(ler("Escolhi esses porque mostram a obra e o que os moradores acharam")).toEqual({
+      razao: true,
+      conteudo: true,
+      sugestao: "atingiu",
+    });
+  });
+
+  test("a escrita da criança conta: 'pq', sem acento, sem pontuação", () => {
+    expect(ler("escolhi pq os comerciantes e os moradores tbm falam").sugestao).toBe("atingiu");
+  });
+
+  test("genérica ou só com razão: sugere em processo", () => {
+    expect(ler("São os melhores posts!!")).toEqual({ razao: false, conteudo: false, sugestao: "em_processo" });
+    expect(ler("Essas notícias contam o que aconteceu")).toMatchObject({ razao: true, conteudo: false });
+  });
+
+  test("as palavras do TEMA não contam como conteúdo (a tela já as sugere)", () => {
+    expect(ler("Escolhi porque falam da reforma da praça central").conteudo).toBe(false);
+  });
+
+  test("nunca sugere 'não atingiu': texto sem relação ela não enxerga", () => {
+    expect(ler("kkkkk bom dia turma").sugestao).toBe("em_processo");
+  });
+
+  test("LIMITE CONHECIDO: explica a escolha sem conectivo da lista e fica em processo", () => {
+    expect(ler("Juntei a prefeitura, os comerciantes e os dados para a escola ver os três lados").sugestao).toBe(
+      "em_processo",
+    );
+  });
+
+  test("LIMITE CONHECIDO: 'porque' + uma palavra copiada do post basta", () => {
+    expect(ler("Escolhi porque comerciantes").sugestao).toBe("atingiu");
+  });
+});
+
+/** A MARCAÇÃO da EF07CO08, sem banco: a tabela de `regras/marcacao.ts`. */
+describe("o nível da marcação", () => {
+  const lente = (id: string) =>
+    id.startsWith("post_a") ? "institucional" : id.startsWith("post_b") ? "comunitario" : id.startsWith("post_c") ? "estatistico" : undefined;
+  const nivel = (minha: string[], marcacao: Parameters<typeof nivelDaMarcacao>[0]["marcacao"]) =>
+    nivelDaMarcacao({ marcacao, minha, enquadramentoDe: lente });
+
+  test("post de um lado que FALTA no trio: atingiu", () => {
+    expect(nivel(["post_a_1", "post_a_2", "post_a_3"], { postId: "post_b_1" })).toBe("atingiu");
+  });
+
+  test("post de um lado que o trio já tem: em processo", () => {
+    expect(nivel(["post_a_1", "post_a_2", "post_b_3"], { postId: "post_b_1" })).toBe("em_processo");
+  });
+
+  test("'nada que mude': não atingiu — salvo o trio 1/1/1, que fica em processo", () => {
+    expect(nivel(["post_a_1", "post_a_2", "post_a_3"], { nenhum: true })).toBe("nao_atingiu");
+    expect(nivel(["post_a_1", "post_b_2", "post_c_3"], { nenhum: true })).toBe("em_processo");
+  });
+
+  test("trio 1/1/1 e um post que ele não publicou: atingiu", () => {
+    expect(nivel(["post_a_1", "post_b_2", "post_c_3"], { postId: "post_c_1" })).toBe("atingiu");
+  });
+
+  test("um post que a própria criança publicou: não atingiu", () => {
+    expect(nivel(["post_a_1", "post_a_2", "post_b_3"], { postId: "post_b_3" })).toBe("nao_atingiu");
+  });
+
+  test("sem marcação: sem nível (Não avaliado), nunca não atingiu", () => {
+    expect(nivel(["post_a_1", "post_a_2", "post_a_3"], null)).toBeNull();
+  });
+});
+
+/**
+ * A leitura da legenda, sem banco: uma quota de avaliação em memória (a
+ * subclasse que o `ai/AGENTS.md` pede para teto apertado) e providers falsos.
+ * Toda falha é `{ ok: false }` — nunca exceção —, porque a publicação já foi
+ * gravada e quem chama cai na reserva.
+ */
+describe("o Canal A sem IA que sirva", () => {
   class QuotaEmMemoria extends QuotaService {
     consumido = 0;
     constructor(private readonly teto: number) {
       super({} as PrismaService);
     }
-    override async limite(): Promise<number> {
+    override async limiteDaLinha(): Promise<number> {
       return this.teto;
     }
-    override async temSaldo(): Promise<boolean> {
+    override async temSaldoDaAvaliacao(): Promise<boolean> {
       return this.consumido < this.teto;
     }
-    override async consumir(_e: string, _u: string, tokens: number): Promise<number> {
+    override async consumirDaAvaliacao(_e: string, tokens: number): Promise<number> {
       this.consumido += tokens;
       return this.consumido;
+    }
+    override async temSaldo(): Promise<boolean> {
+      throw new Error("a leitura da legenda não usa a quota do estudante (ADR-169)");
     }
   }
 
@@ -730,57 +826,61 @@ describe("o Canal A cai em Não avaliado quando a IA não serve", () => {
   }
 
   const ENTRADA = { legenda: "Escolhi os moradores e os números.", posts: [] };
+  const BOA = { razao: true, conteudo: true, semRelacao: false };
 
-  test("válida: devolve o nível e debita o que o vendor cobrou", async () => {
+  test("válida: o nível sai dos indicadores, e a QUOTA DE AVALIAÇÃO paga", async () => {
     const quota = new QuotaEmMemoria(1000);
-    const canal = new ClassificacaoService(new ProviderFalso({ nivel: "atingiu", motivo: "criterio-explicito" }), quota, 200);
+    const canal = new ClassificacaoService(new ProviderFalso(BOA), quota, 200, 1);
     expect(await canal.classificar("e", "canal-valida", ENTRADA)).toEqual({
       ok: true,
       nivel: "atingiu",
-      motivo: "criterio-explicito",
+      indicadores: BOA,
+      tentativas: 1,
     });
     expect(quota.consumido).toBe(40);
   });
 
-  test("inválida: nada — e a chamada foi cobrada igual", async () => {
+  test("inválida: tenta três vezes, e cada tentativa foi cobrada", async () => {
     const quota = new QuotaEmMemoria(1000);
-    const canal = new ClassificacaoService(new ProviderFalso({ nivel: "atingiu", motivo: "desconexa" }), quota, 200);
-    expect(await canal.classificar("e", "canal-invalida", ENTRADA)).toEqual({ ok: false, codigo: "saida-invalida" });
-    expect(quota.consumido).toBe(40);
+    const provider = new ProviderFalso({ razao: false, conteudo: true, semRelacao: true });
+    const canal = new ClassificacaoService(provider, quota, 200, 1);
+    expect(await canal.classificar("e", "canal-invalida", ENTRADA)).toEqual({
+      ok: false,
+      codigo: "saida-invalida",
+      tentativas: 3,
+    });
+    expect(provider.chamadas).toBe(3);
+    expect(quota.consumido).toBe(120);
   });
 
-  test("sem saldo: nem chama o provider", async () => {
-    const provider = new ProviderFalso({ nivel: "atingiu", motivo: "criterio-explicito" });
-    const canal = new ClassificacaoService(provider, new QuotaEmMemoria(0), 200);
-    expect(await canal.classificar("e", "canal-sem-saldo", ENTRADA)).toEqual({ ok: false, codigo: "sem-saldo" });
+  test("sem saldo: nem chama o provider, e não tenta de novo", async () => {
+    const provider = new ProviderFalso(BOA);
+    const canal = new ClassificacaoService(provider, new QuotaEmMemoria(0), 200, 1);
+    expect(await canal.classificar("e", "canal-sem-saldo", ENTRADA)).toEqual({
+      ok: false,
+      codigo: "sem-saldo",
+      tentativas: 1,
+    });
     expect(provider.chamadas).toBe(0);
   });
 
   test("atrasada: perde para o teto, e é cobrada quando chega", async () => {
     const quota = new QuotaEmMemoria(1000);
-    const canal = new ClassificacaoService(
-      new ProviderFalso({ nivel: "atingiu", motivo: "criterio-explicito" }, 120),
-      quota,
-      20,
-    );
-    expect(await canal.classificar("e", "canal-atrasada", ENTRADA)).toEqual({ ok: false, codigo: "tempo-esgotado" });
-    expect(quota.consumido).toBe(0);
-    await new Promise((r) => setTimeout(r, 200));
-    expect(quota.consumido).toBe(40);
+    const canal = new ClassificacaoService(new ProviderFalso(BOA, 120), quota, 20, 1);
+    const r = await canal.classificar("e", "canal-atrasada", ENTRADA);
+    expect(r).toMatchObject({ ok: false, codigo: "tempo-esgotado", tentativas: 3 });
+    await new Promise((res) => setTimeout(res, 250));
+    expect(quota.consumido).toBe(120);
   });
 
-  test("o mock (que sempre lança em generateJson) é Não avaliado — o caminho de dev e da e2e", async () => {
-    const canal = new ClassificacaoService(new MockProvider(), new QuotaEmMemoria(1000), 200);
-    expect(await canal.classificar("e", "canal-mock", ENTRADA)).toEqual({ ok: false, codigo: "provedor-falhou" });
+  test("o mock (que sempre lança em generateJson) cai na reserva — o caminho de dev sem Vertex", async () => {
+    const canal = new ClassificacaoService(new MockProvider(), new QuotaEmMemoria(1000), 200, 1);
+    expect(await canal.classificar("e", "canal-mock", ENTRADA)).toMatchObject({ ok: false, codigo: "provedor-falhou" });
   });
 
-  test("o rate limit por estudante freia de verdade: três por janela", async () => {
-    const canal = new ClassificacaoService(
-      new ProviderFalso({ nivel: "em_processo", motivo: "generica" }),
-      new QuotaEmMemoria(10_000),
-      200,
-    );
-    for (let i = 0; i < 3; i++) expect((await canal.classificar("e", "canal-limite", ENTRADA)).ok).toBe(true);
-    expect(await canal.classificar("e", "canal-limite", ENTRADA)).toEqual({ ok: false, codigo: "limite" });
+  test("o rate limit por estudante freia de verdade", async () => {
+    const canal = new ClassificacaoService(new ProviderFalso(BOA), new QuotaEmMemoria(10_000), 200, 1);
+    for (let i = 0; i < LIMITE_DO_CANAL_A.usos; i++) expect((await canal.classificar("e", "canal-limite", ENTRADA)).ok).toBe(true);
+    expect(await canal.classificar("e", "canal-limite", ENTRADA)).toMatchObject({ ok: false, codigo: "limite" });
   });
 });

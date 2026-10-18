@@ -1,7 +1,7 @@
 import { HttpException } from "@nestjs/common";
 import type { PrismaClient } from "@prisma/client";
 import type { AiJsonRequest, AiProvider, AiResult } from "../src/ai/provider";
-import { QuotaService, perfilDaQuota } from "../src/ai/quota.service";
+import { QuotaService, USUARIO_DA_AVALIACAO, type PerfilDaQuota } from "../src/ai/quota.service";
 import { ASelecaoService, EXP_ID } from "../src/a-selecao/a-selecao.service";
 import { POSTS_PADRAO, TEMA_PADRAO, type PostDaCobertura } from "../src/a-selecao/catalogo";
 import { ClassificacaoService } from "../src/a-selecao/classificacao.service";
@@ -77,9 +77,9 @@ class IaControlada implements AiProvider {
 }
 
 /** A subclasse do `ai/AGENTS.md`: teto apertado sem mexer em `ia_quotas`, que é do contrato. */
-class QuotaZeradaDoEstudante extends QuotaService {
-  override async limite(perfil: string): Promise<number> {
-    return perfilDaQuota(perfil) === "estudante" ? 0 : super.limite(perfil);
+class QuotaDeAvaliacaoZerada extends QuotaService {
+  override async limiteDaLinha(linha: PerfilDaQuota): Promise<number> {
+    return linha === "avaliacao" ? 0 : super.limiteDaLinha(linha);
   }
 }
 
@@ -88,8 +88,7 @@ const quota = new QuotaService(prisma);
 const equipes = new EquipesService(prisma);
 const evidencias = new EvidenciasService(prisma, equipes);
 evidencias.onModuleInit();
-const service = new ASelecaoService(prisma, evidencias, new ClassificacaoService(ia, quota, 300));
-service.onModuleInit();
+const service = new ASelecaoService(prisma, evidencias, new ClassificacaoService(ia, quota, 300, 1));
 
 const ids = {
   turma: "",
@@ -188,10 +187,25 @@ async function publicar(estudanteId: string, selecao: string[], legenda = "Escol
   await entrar(estudanteId);
   await service.pedirPasso(ESCOLA, estudanteId, ids.turma, { para: "feed" });
   await service.pedirPasso(ESCOLA, estudanteId, ids.turma, { para: "salvos" });
-  return service.decidir(ESCOLA, estudanteId, ids.turma, { selecao, legenda });
+  const estado = await service.decidir(ESCOLA, estudanteId, ids.turma, { selecao, legenda });
+  /* A leitura da legenda roda DEPOIS da resposta (ADR-170): a suíte a espera
+     para afirmar o que ela gravou. A rota nunca espera. */
+  await service.esperarLeituras();
+  return estado;
 }
 
-const etapa = (para: (typeof ETAPAS)[number]) => service.mudarEtapa(ESCOLA, ids.turma, ids.professora, para);
+/**
+ * A professora leva a turma ATÉ `para`, uma etapa por vez (o botão único nunca
+ * pula — e a marcação, entre o Mural e as fichas, é obrigatória).
+ */
+async function etapa(para: (typeof ETAPAS)[number]) {
+  const gate = await prisma.exp07ef1bGateTurma.findFirstOrThrow({ where: { escolaId: ESCOLA, turmaId: ids.turma } });
+  let r = await service.mudarEtapa(ESCOLA, ids.turma, ids.professora, gate.etapa as (typeof ETAPAS)[number]);
+  for (let i = ETAPAS.indexOf(gate.etapa as (typeof ETAPAS)[number]) + 1; i <= ETAPAS.indexOf(para); i++) {
+    r = await service.mudarEtapa(ESCOLA, ids.turma, ids.professora, ETAPAS[i]!);
+  }
+  return r;
+}
 
 /** A atividade em andamento na turma — a montagem das equipes é dela (ADR-130). */
 async function atividadeAtual(): Promise<string> {
@@ -559,7 +573,7 @@ describe("o pareamento POR COMPUTADOR, e o par que sobrevive a um PUT das equipe
 
   test("abrir o Mural pareia os dois computadores entre si, com o nome da equipe congelado", async () => {
     const r = await etapa("mural");
-    expect(r).toMatchObject({ etapa: "mural", proximaEtapa: "fichas", pareadas: 2 });
+    expect(r).toMatchObject({ etapa: "mural", proximaEtapa: "marcacao", pareadas: 2 });
 
     const mural = MuralSchema.parse(await service.mural(ESCOLA, ids.ana, ids.turma));
     expect(mural.par).toMatchObject({ rotulo: "Equipe 2", virtual: false, legenda: "Escolhi quem mora perto da praça." });
@@ -578,8 +592,11 @@ describe("o pareamento POR COMPUTADOR, e o par que sobrevive a um PUT das equipe
 
   test("o segundo clique no botão não pareia de novo; pular etapa é 409", async () => {
     expect(await etapa("mural")).toMatchObject({ etapa: "mural", pareadas: 0 });
-    expect(await codigoDe(etapa("explicacao"))).toBe("transicao-de-etapa-invalida");
-    expect(await codigoDe(etapa("exploracao"))).toBe("transicao-de-etapa-invalida");
+    const pedir = (para: (typeof ETAPAS)[number]) => service.mudarEtapa(ESCOLA, ids.turma, ids.professora, para);
+    expect(await codigoDe(pedir("explicacao"))).toBe("transicao-de-etapa-invalida");
+    /* A marcação é obrigatória (ADR-170): do Mural não se pula para as fichas. */
+    expect(await codigoDe(pedir("fichas"))).toBe("transicao-de-etapa-invalida");
+    expect(await codigoDe(pedir("exploracao"))).toBe("transicao-de-etapa-invalida");
   });
 
   test("quem publica DEPOIS do Mural aberto recebe o colega virtual mais distante", async () => {
@@ -788,53 +805,37 @@ describe("atividade × rodada: zerar guarda a sessão (a evidência sai), a ativ
   });
 });
 
-describe("a reflexão, as enquetes e o resolvedor da evidência", () => {
+describe("a reflexão encerra a missão (o Canal B saiu, ADR-170)", () => {
   beforeAll(zerarMissao);
 
-  test("o resolvedor devolve `null` antes da reflexão — e a enquete responde 409", async () => {
+  test("a reflexão só com a explicação liberada, e leva direto ao fim", async () => {
     await publicar(ids.ana, INSTITUCIONAL, "Escolhi o que a prefeitura anunciou.");
-    const contexto = await prisma.comTenancy((tx) => service.contextoDaAtividade(tx, ESCOLA, ids.ana), ESCOLA);
-    expect(contexto).toBeNull();
-    expect(await codigoDe(evidencias.responder(ESCOLA, ids.ana, EXP_ID, "p1", "A1"))).toBe("sem-atividade-em-andamento");
-  });
-
-  test("a reflexão só com a explicação liberada, e leva às enquetes", async () => {
     expect(await codigoDe(service.refletir(ESCOLA, ids.ana, ids.turma, REFLEXAO))).toBe("reflexao-nao-liberada");
-    await etapa("mural");
-    await etapa("fichas");
     await etapa("explicacao");
     const r = await service.pedirPasso(ESCOLA, ids.ana, ids.turma, { para: "reflexao" });
     expect(r.passo).toBe("reflexao");
 
     const comEmoji = `${REFLEXAO} 😀`;
     const estado = await service.refletir(ESCOLA, ids.ana, ids.turma, comEmoji);
-    expect(estado).toMatchObject({ passo: "enquetes", reflexaoEnviada: true });
+    expect(estado).toMatchObject({ passo: "fim", reflexaoEnviada: true });
+    expect(estado.concluidaEm).not.toBeNull();
     const linha = await prisma.exp07ef1bReflexao.findFirstOrThrow({ where: { escolaId: ESCOLA } });
     expect(linha.chars).toBe([...comEmoji].length);
     expect(await codigoDe(service.refletir(ESCOLA, ids.ana, ids.turma, REFLEXAO))).toBe("reflexao-ja-enviada");
   });
 
-  test("com a reflexão enviada, o resolvedor diz a atividade e a rodada — e a primeira resposta vale", async () => {
-    const s = await entrar(ids.ana);
-    const contexto = await prisma.comTenancy((tx) => service.contextoDaAtividade(tx, ESCOLA, ids.ana), ESCOLA);
-    expect(contexto).toEqual({ turmaId: ids.turma, atividadeId: s.coberturaId, rodada: 1 });
-
-    expect(await evidencias.responder(ESCOLA, ids.ana, EXP_ID, "p1", "A1")).toEqual({ enviada: true });
-    expect(await evidencias.responder(ESCOLA, ids.ana, EXP_ID, "p1", "A3")).toEqual({ enviada: true });
-    expect(await evidencias.responder(ESCOLA, ids.ana, EXP_ID, "p2", "B2")).toEqual({ enviada: true });
-    expect(await evidenciaDe(ids.ana, "EF07CO11")).toEqual([
-      { status: "atingiu", origem: "propria", situacao: "valida", rodada: 1, atividadeId: s.coberturaId },
-    ]);
-    expect(await evidenciaDe(ids.ana, "EF07CO08")).toMatchObject([{ status: "em_processo" }]);
-  });
-
-  test("concluir é idempotente e carimba `concluidaEm`", async () => {
+  test("concluir é idempotente (fica para a sessão de antes e para a tela antiga)", async () => {
     const a = await service.concluir(ESCOLA, ids.ana, ids.turma);
     expect(a.passo).toBe("fim");
-    expect(a.concluidaEm).not.toBeNull();
     const b = await service.concluir(ESCOLA, ids.ana, ids.turma);
     expect(b.concluidaEm).toBe(a.concluidaEm);
     expect(await codigoDe(service.concluir(ESCOLA, ids.bia, ids.turma))).toBe("reflexao-pendente");
+  });
+
+  test("a sessão de antes, parada em `enquetes`, ainda conclui", async () => {
+    await publicar(ids.bia, COMUNITARIO);
+    await prisma.exp07ef1bSessao.updateMany({ where: { escolaId: ESCOLA, estudanteId: ids.bia }, data: { passo: "enquetes" } });
+    expect((await service.concluir(ESCOLA, ids.bia, ids.turma)).passo).toBe("fim");
   });
 
   test("o recorte do gestor: a legenda e a reflexão só para quem leciona", async () => {
@@ -846,31 +847,79 @@ describe("a reflexão, as enquetes e o resolvedor da evidência", () => {
     expect(linhaP.reflexaoTexto).toContain("salas quebradas");
     expect(linhaG).toMatchObject({ entregouReflexao: true, publicou: true, legenda: null, reflexaoTexto: null });
   });
+});
 
-  test("depois de zerar, a evidência da cobertura sai (ADR-155) e o resolvedor devolve `null` — a resposta atrasada não cai na rodada nova", async () => {
-    const naTurma = { escolaId: ESCOLA, turmaId: ids.turma, expId: EXP_ID };
-    expect(await prisma.evidenciaMarca.count({ where: naTurma })).toBeGreaterThan(0);
-    await service.zerar(ESCOLA, ids.turma, ids.professora);
-    expect(await prisma.evidenciaMarca.count({ where: naTurma })).toBe(0);
-    expect(await prisma.evidencia.count({ where: naTurma })).toBe(0);
-    const contexto = await prisma.comTenancy((tx) => service.contextoDaAtividade(tx, ESCOLA, ids.ana), ESCOLA);
-    expect(contexto).toBeNull();
-    expect(await codigoDe(evidencias.responder(ESCOLA, ids.ana, EXP_ID, "p2", "B1"))).toBe("sem-atividade-em-andamento");
+describe("a marcação do post do colega (EF07CO08, ADR-170)", () => {
+  beforeAll(async () => {
+    await zerarMissao();
+    /* Ana institucional × Bia comunitária: o pareamento as junta (a maior distância). */
+    await publicar(ids.ana, INSTITUCIONAL);
+    await publicar(ids.bia, COMUNITARIO);
+    await publicar(ids.caio, MISTA);
+    await etapa("mural");
   });
 
-  test("as alternativas da enquete saem embaralhadas a cada exibição, sem o gabarito", async () => {
-    const ordens = new Set<string>();
-    for (let i = 0; i < 30; i++) {
-      const p = await evidencias.pergunta(ESCOLA, ids.ana, EXP_ID, "p1");
-      expect(p.alternativas.map((a) => a.id).sort()).toEqual(["A1", "A2", "A3"]);
-      expect(JSON.stringify(p)).not.toMatch(/atingiu|em_processo|status/);
-      ordens.add(p.alternativas.map((a) => a.id).join(","));
-    }
-    expect(ordens.size).toBeGreaterThan(1);
+  const marcaDaMarcacao = (estudanteId: string) =>
+    prisma.evidenciaMarca.findMany({
+      where: { escolaId: ESCOLA, expId: EXP_ID, marcador: "marcacao-colega", estudanteId },
+      select: { status: true },
+    });
+
+  test("fora da etapa `marcacao`: 409 marcacao-fechada", async () => {
+    expect(await codigoDe(service.marcar(ESCOLA, ids.ana, ids.turma, { postId: "post_b_1" }))).toBe("marcacao-fechada");
+  });
+
+  test("só um post do PAR: o resto é 422 marcacao-fora-do-par", async () => {
+    await etapa("marcacao");
+    expect(await codigoDe(service.marcar(ESCOLA, ids.ana, ids.turma, { postId: "post_c_4" }))).toBe(
+      "marcacao-fora-do-par",
+    );
+  });
+
+  test("o por quê só depois de marcar, e passa pelo sanitizador", async () => {
+    expect(await codigoDe(service.explicarMarcacao(ESCOLA, ids.ana, ids.turma, "porque sim"))).toBe("marcacao-pendente");
+    const estado = await service.marcar(ESCOLA, ids.ana, ids.turma, { postId: "post_b_1" });
+    expect(estado.marcacao).toEqual({ postId: "post_b_1", nenhum: false, porque: null });
+    expect(await codigoDe(service.explicarMarcacao(ESCOLA, ids.ana, ids.turma, "veja www.site.com"))).toBe(
+      "legenda-com-link",
+    );
+    const com = await service.explicarMarcacao(ESCOLA, ids.ana, ids.turma, "os moradores contam o outro lado");
+    expect(com.marcacao?.porque).toBe("os moradores contam o outro lado");
+  });
+
+  test("a última marcação vale, e 'nada' e post não convivem", async () => {
+    await service.marcar(ESCOLA, ids.bia, ids.turma, { postId: "post_a_1" });
+    const estado = await service.marcar(ESCOLA, ids.bia, ids.turma, { nenhum: true });
+    expect(estado.marcacao).toMatchObject({ postId: null, nenhum: true });
+  });
+
+  test("o painel conta quem marcou, e o por quê só para quem leciona", async () => {
+    const daProfessora = await service.painel(ESCOLA, ids.turma, ids.professora);
+    expect(daProfessora.resumo.marcaram).toBe(2);
+    expect(daProfessora.linhas.find((l) => l.estudanteId === ids.ana)).toMatchObject({
+      marcacao: { postId: "post_b_1", nenhum: false },
+      marcacaoPorque: "os moradores contam o outro lado",
+    });
+    const doGestor = await service.painel(ESCOLA, ids.turma, undefined);
+    expect(doGestor.linhas.find((l) => l.estudanteId === ids.ana)?.marcacaoPorque).toBeNull();
+  });
+
+  test("NENHUMA marca antes das fichas: o nível congela na abertura delas", async () => {
+    expect(await marcaDaMarcacao(ids.ana)).toEqual([]);
+    await etapa("fichas");
+    expect(await marcaDaMarcacao(ids.ana)).toEqual([{ status: "atingiu" }]);
+    expect(await marcaDaMarcacao(ids.bia)).toEqual([{ status: "nao_atingiu" }]);
+    /* Caio não marcou: sem marca — "Não avaliado", nunca "não atingiu". */
+    expect(await marcaDaMarcacao(ids.caio)).toEqual([]);
+    expect(await evidenciaDe(ids.ana, "EF07CO08")).toMatchObject([{ status: "atingiu", origem: "propria" }]);
+  });
+
+  test("depois das fichas a marcação fecha", async () => {
+    expect(await codigoDe(service.marcar(ESCOLA, ids.caio, ids.turma, { nenhum: true }))).toBe("marcacao-fechada");
   });
 });
 
-describe("o Canal A com IA falsa", () => {
+describe("a leitura da legenda com IA falsa (EF07CO11, ADR-170)", () => {
   beforeEach(zerarMissao);
 
   const marcasDaLegenda = () =>
@@ -878,50 +927,62 @@ describe("o Canal A com IA falsa", () => {
       where: { escolaId: ESCOLA, expId: EXP_ID, marcador: "legenda-publicada" },
       select: { estudanteId: true, status: true },
     });
+  const leituraDe = (estudanteId: string) =>
+    prisma.exp07ef1bSessao.findFirstOrThrow({
+      where: { escolaId: ESCOLA, estudanteId },
+      select: { legendaLeitura: true, legendaRazao: true, legendaConteudo: true, legendaNivel: true },
+    });
 
-  test("válida: a EF07CO11 é marcada com o nível que a IA leu, e a quota do estudante é debitada", async () => {
-    ia.resposta = { nivel: "atingiu", motivo: "criterio-explicito" };
+  test("válida: os indicadores viram o nível, a EF07CO11 é marcada, e paga a quota de AVALIAÇÃO", async () => {
+    ia.resposta = { razao: true, conteudo: true, semRelacao: false };
+    const avaliacaoAntes = await quota.usadoHoje(ESCOLA, USUARIO_DA_AVALIACAO);
     await publicar(ids.gabi, MISTA, "Juntei a prefeitura, os moradores e os números.");
     expect(await marcasDaLegenda()).toEqual([{ estudanteId: ids.gabi, status: "atingiu" }]);
-    expect(await evidenciaDe(ids.gabi)).toMatchObject([{ status: "atingiu", origem: "propria" }]);
-    expect(await quota.usadoHoje(ESCOLA, ids.gabi)).toBe(50);
+    expect(await leituraDe(ids.gabi)).toEqual({
+      legendaLeitura: "ia",
+      legendaRazao: true,
+      legendaConteudo: true,
+      legendaNivel: "atingiu",
+    });
+    expect(await quota.usadoHoje(ESCOLA, USUARIO_DA_AVALIACAO)).toBe(avaliacaoAntes + 50);
+    expect(await quota.usadoHoje(ESCOLA, ids.gabi)).toBe(0);
   });
 
-  test("inválida (motivo incoerente): nada é marcado — fica Não avaliado", async () => {
-    ia.resposta = { nivel: "atingiu", motivo: "desconexa" };
-    await publicar(ids.hugo, MISTA);
+  test("a resposta do latch não espera a IA: a leitura nasce PENDENTE", async () => {
+    ia.resposta = { razao: false, conteudo: true, semRelacao: false };
+    await entrar(ids.hugo);
+    await service.pedirPasso(ESCOLA, ids.hugo, ids.turma, { para: "feed" });
+    await service.pedirPasso(ESCOLA, ids.hugo, ids.turma, { para: "salvos" });
+    await service.decidir(ESCOLA, ids.hugo, ids.turma, { selecao: MISTA, legenda: "A praça vai ter pista de skate." });
+    expect((await leituraDe(ids.hugo)).legendaLeitura).toBe("pendente");
+    await service.esperarLeituras();
+    expect(await leituraDe(ids.hugo)).toMatchObject({ legendaLeitura: "ia", legendaNivel: "em_processo" });
+  });
+
+  test("a IA falhou: a RESERVA grava só a sugestão — sem marca, Não avaliado até o professor", async () => {
+    ia.resposta = null;
+    await publicar(ids.iris, INSTITUCIONAL, "Escolhi porque a prefeitura anunciou a reforma da praça.");
     expect(await marcasDaLegenda()).toEqual([]);
-    expect(await evidenciaDe(ids.hugo)).toEqual([]);
+    expect(await leituraDe(ids.iris)).toMatchObject({ legendaLeitura: "reserva", legendaRazao: true });
+    const linha = (await service.painel(ESCOLA, ids.turma, ids.professora)).linhas.find((l) => l.estudanteId === ids.iris);
+    expect(linha?.leituraDaLegenda).toMatchObject({ estado: "reserva", explicaAEscolha: true });
   });
 
-  test("sem saldo: nem chama a IA, e nada é marcado", async () => {
-    const semSaldo = new ASelecaoService(
-      prisma,
-      evidencias,
-      new ClassificacaoService(ia, new QuotaZeradaDoEstudante(prisma), 300),
-    );
-    ia.resposta = { nivel: "atingiu", motivo: "criterio-explicito" };
+  test("sem saldo de AVALIAÇÃO: nem chama a IA, cai na reserva", async () => {
+    const semSaldo = new ASelecaoService(prisma, evidencias, new ClassificacaoService(ia, new QuotaDeAvaliacaoZerada(prisma), 300, 1));
+    ia.resposta = { razao: true, conteudo: true, semRelacao: false };
     const antes = ia.chamadas;
-    await entrar(ids.iris);
-    await semSaldo.decidir(ESCOLA, ids.iris, ids.turma, { selecao: MISTA, legenda: "Escolhi um de cada veículo." });
+    await entrar(ids.joao);
+    await semSaldo.decidir(ESCOLA, ids.joao, ids.turma, { selecao: MISTA, legenda: "Escolhi um de cada veículo." });
+    await semSaldo.esperarLeituras();
     expect(ia.chamadas).toBe(antes);
     expect(await marcasDaLegenda()).toEqual([]);
-  });
-
-  test("atrasada: perde para o teto, a publicação sai e não marca — e a chamada é cobrada quando chega", async () => {
-    ia.resposta = { nivel: "atingiu", motivo: "criterio-explicito" };
-    ia.atrasoMs = 700;
-    const estado = await publicar(ids.joao, MISTA);
-    expect(estado.publicada).toBe(true);
-    expect(await marcasDaLegenda()).toEqual([]);
-    await new Promise((r) => setTimeout(r, 900));
-    expect(await quota.usadoHoje(ESCOLA, ids.joao)).toBe(50);
-    expect(await marcasDaLegenda()).toEqual([]);
+    expect((await leituraDe(ids.joao)).legendaLeitura).toBe("reserva");
   });
 
   test("a cópia para a EQUIPE: o colega de computador recebe o nível, valendo", async () => {
     await montarEquipes([[ids.lara, ids.bia], [ids.caio]], 2);
-    ia.resposta = { nivel: "em_processo", motivo: "so-descritiva" };
+    ia.resposta = { razao: false, conteudo: true, semRelacao: false };
     await publicar(ids.lara, INSTITUCIONAL, "A praça vai ter pista nova e segurança.");
     expect(await evidenciaDe(ids.lara)).toMatchObject([{ status: "em_processo", origem: "propria", situacao: "valida" }]);
     expect(await evidenciaDe(ids.bia)).toMatchObject([{ status: "em_processo", origem: "equipe", situacao: "valida" }]);
@@ -929,7 +990,7 @@ describe("o Canal A com IA falsa", () => {
 
   test("a PROJEÇÃO (um computador): a cópia nasce `a_revisar` até o professor confirmar", async () => {
     await montarEquipes([[ids.gabi, ids.bia, ids.caio, ids.duda, ids.enzo]], 1);
-    ia.resposta = { nivel: "atingiu", motivo: "criterio-explicito" };
+    ia.resposta = { razao: true, conteudo: true, semRelacao: false };
     await publicar(ids.gabi, MISTA, "Juntei as três fontes para mostrar o evento inteiro.");
     expect(await evidenciaDe(ids.caio)).toMatchObject([{ status: "atingiu", origem: "projecao", situacao: "a_revisar" }]);
   });

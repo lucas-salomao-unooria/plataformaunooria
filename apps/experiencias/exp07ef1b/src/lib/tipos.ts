@@ -1,6 +1,6 @@
 /**
- * O contrato de `/a-selecao/*` e das enquetes (`/evidencias/exp07ef1b/*`)
- * como o CLIENTE o vê.
+ * O contrato de `/a-selecao/*` como o CLIENTE o vê (as enquetes saíram na
+ * ADR-170; a marcação do post do colega entrou).
  *
  * Espelha `apps/api/src/a-selecao/contrato-de-rotas.ts` — e espelha só o que a
  * TELA precisa ver. **Não existe tipo para o gabarito do post** (enquadramento,
@@ -24,7 +24,7 @@ export const EXP_ID = "exp07ef1b";
  * IMUTÁVEL no bucket, e a divergência já causou bug — o `versao.test.ts`
  * compara os três (ADR-84).
  */
-export const EXP_VERSION = "1.2.1";
+export const EXP_VERSION = "1.3.0";
 
 // ──────────────────────────────────────────────────────────── vocabulário
 
@@ -39,6 +39,7 @@ export const PASSOS = [
   "salvos",
   "publicado",
   "mural",
+  "marcacao",
   "fichas",
   "explicacao",
   "reflexao",
@@ -48,7 +49,7 @@ export const PASSOS = [
 export type Passo = (typeof PASSOS)[number];
 
 /** As etapas da turma — o botão único da professora anda uma por vez. */
-export const ETAPAS = ["exploracao", "mural", "fichas", "explicacao"] as const;
+export const ETAPAS = ["exploracao", "mural", "marcacao", "fichas", "explicacao"] as const;
 export type Etapa = (typeof ETAPAS)[number];
 
 /** Os passos que a própria criança pede por `POST /a-selecao/passo`. */
@@ -106,6 +107,8 @@ export interface Estado {
   legenda: string | null;
   reflexaoEnviada: boolean;
   concluidaEm: string | null;
+  /** A marcação desta criança — o F5 a restaura. `null` = ainda não marcou. */
+  marcacao: MarcacaoDoEstudante | null;
 }
 
 export interface Limites {
@@ -166,16 +169,15 @@ export interface RespostaMural {
   par: Triade & { rotulo: string; virtual: boolean };
 }
 
-// ──────────────────────────────────────────────────────────── as enquetes
+// ──────────────────────────────────────────────────────────── a marcação
 
-/** A pergunta de evidência como o estudante a vê: sem o nível de cada alternativa. */
-export interface PerguntaDaEnquete {
-  /** "mensagem da Amara\n\npergunta da enquete". */
-  enunciado: string;
-  /** Embaralhadas a cada chamada: guarde o `id`, nunca a posição. */
-  alternativas: { id: string; texto: string }[];
+/**
+ * A marcação da PRÓPRIA criança (EF07CO08, ADR-170), como o estado a devolve:
+ * o post do colega que ela apontou, ou "Nada que mude a história", e o "por
+ * quê?" opcional. Nunca o nível — ele congela nas fichas e só o professor vê.
+ */
+export interface MarcacaoDoEstudante {
+  postId: string | null;
+  nenhum: boolean;
+  porque: string | null;
 }
-
-/** As duas enquetes da DM, na ordem do PO (P1 = EF07CO11, P2 = EF07CO08). */
-export const ENQUETES = ["p1", "p2"] as const;
-export type IdDaEnquete = (typeof ENQUETES)[number];

@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, test } from "vitest";
-import { CONTAS, E1, E2, E3, E4, E6, ENQUETE, ESCOLA, ESPERA, GLOBAL } from "./textos";
+import { CONTAS, E1, E2, E3, E4, E6, ESCOLA, MARCACAO, ESPERA, GLOBAL } from "./textos";
 import { E5 } from "./textos-da-explicacao";
 import { FICHA } from "./textos-da-ficha";
 
@@ -102,12 +102,12 @@ describe("as telas depois da revelação também não rotulam a criança", () =>
      "você errou", "alienado", "ingênuo", nota, ranking. */
   const rotulos = ["você errou", "alienado", "alienada", "ingênuo", "ingênua", "sua nota", "nota final", "pontuação", "ranking", "aluno", "alunos"];
 
-  test("E5, E6, as enquetes e o fim", () => {
+  test("E5, E6, a marcação e o fim", () => {
     const depois = [
       ...E5.cards.flatMap((c) => [c.titulo, c.corpo]),
       ...textosDo({ ...E5, cards: {} }),
       ...textosDo(E6),
-      ...textosDo(ENQUETE),
+      ...textosDo(MARCACAO),
       ...textosDo(ESCOLA),
     ];
     const achados = depois.filter((t) => termosEm(t, rotulos).length > 0);
