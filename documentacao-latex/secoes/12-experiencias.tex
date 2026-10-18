@@ -411,23 +411,27 @@ Evidência pedagógica (E14) & A ficha \arq{evidencias/fichas/exp08ef1b.ts}, a q
 \textbf{4º ano \textperiodcentered{} Unidade 1 \textperiodcentered{} redação
 própria da Unooria, sem imitar aplicativo \textperiodcentered{} \cd{unooria},
 com o post em \cd{unoovista} e a mensagem em \cd{unoochat} (\adrr{ADR-136})
-\textperiodcentered{} 2.2.0}
+\textperiodcentered{} 3.0.0, Canal A puro (\adrr{ADR-168})}
 
 O Bento cuida do jornal da escola e pede ajuda com a edição de hoje. A mesa tem
 oito notícias de oito meios --- jornal, rádio, telejornal, blog, portal, rede
 social, mensagem encaminhada e mural --- e a primeira página tem três vagas. A
 criança abre, se quiser, as pistas de cada notícia (de onde veio, quando
-aconteceu, quem assina), põe três na capa e publica, sem volta. Logo depois diz
-como escolheu --- pelas fotos e pela urgência, ou pela checagem --- e espera.
+aconteceu, quem assina) e, logo depois de ler cada uma, diz se confia nela;
+põe três na capa e publica, sem volta. Logo depois diz como escolheu --- porque
+chamou atenção, ou porque conferiu as pistas --- e espera.
 Quando o professor libera o resultado, os leitores da escola reagem às três
 notícias publicadas, e a tela diz quantas estavam verificadas (0, 33, 67 ou
 100\,\%: a descrição da SELEÇÃO, nunca da criança). Depois da conversa com a
-turma, o professor libera a revisão: a Chave do Editor junta fonte, data e
-autoria, a mesa volta com um marcador em cada vaga, e a criança publica a 2ª
-edição e compara as duas. O Desafio Final, individual e fora da redação, fecha a
-missão com duas perguntas que não mostram acerto. As decisões estão na
-\adrr{ADR-117}; o PDF da proposta revisada vence o PRD da esteira quando os dois
-divergem.
+turma (a pausa entre duas aulas cabe aqui), o professor libera a revisão: a
+criança MONTA a Chave do Editor --- três blocos entre seis, as condições de cada
+um, o que fazer quando uma pista falha e se vale para todas as notícias ---, a
+mesa volta com um marcador em cada vaga, ela publica a 2ª edição e compara as
+duas. Depois, testa a Chave dela em duas matérias novas e, por fim, recebe uma
+mensagem urgente com \enquote{Repassar para o grupo} à mão. Nenhuma tela pede
+resposta de múltipla escolha que valha nível (\adrr{ADR-168}). As decisões estão
+na \adrr{ADR-117} e na \adrr{ADR-168}; o PDF da proposta revisada vence o PRD da
+esteira quando os dois divergem.
 
 \begin{tabularx}{\linewidth}{@{}L{34mm}X@{}}
 \toprule
@@ -481,17 +485,27 @@ O motivo depois do \emph{latch} & A pergunta --- \enquote{Como as três
   pista desce no \rota{POST /jornal-escola/pista}, que é o registro da
   EF15CO04; as reações, no \rota{GET /jornal-escola/resultado} com a etapa
   \cd{resultado} aberta, e só das três escolhidas; o pilar em falta de cada
-  vaga, no \rota{GET /jornal-escola/revisao}, depois da Chave; o conjunto certo
-  da Chave, nunca. As verificadas são calculadas no \emph{latch}, NO SERVIDOR.
+  vaga, no \rota{GET /jornal-escola/revisao}, depois da Chave; o lado certo de
+  cada cartão de condição da Chave e o gabarito das matérias da simulação,
+  nunca. As verificadas e a fidelidade da simulação são calculadas NO SERVIDOR.
   Um \emph{grep} no \cd{dist/} prova que o \emph{bundle} não tem gabarito,
   prompt nem a lista das iscas.\\
-A Chave do Editor & Seis blocos --- os três pilares e três ISCAS
+A Chave do Editor, montada & Seis blocos --- os três pilares e três ISCAS
   (\enquote{foto}, \enquote{urgência}, \enquote{compartilhada}) ---, na ordem
   embaralhada por sessão e estável num F5 (FNV-1a e \emph{mulberry32} sobre o
-  id da sessão). Cada envio é uma tentativa, e a isca volta à bandeja e conta:
-  sem isca, a EF15CO02 daria \enquote{atingiu} para toda criança que tocasse
-  três blocos. O número da tentativa vem da tela, e o reenvio da rede não
-  soma.\\
+  id da sessão). Desde a 3.0.0 a criança MONTA a Chave em três vagas: o bloco,
+  o lado de cada um dos dois cartões de condição dele (a ordem dos cartões
+  também é embaralhada), \enquote{Não publico} ou \enquote{Olho a próxima
+  pista} quando ela falha, e \enquote{em TODAS as notícias} ou \enquote{só na
+  primeira}. UM envio, sem correção: a resposta não diz se está certa, e o
+  reenvio igual da rede devolve o estado.\\
+\zebra A simulação e a transferência & Depois do comparativo, a criança aplica
+  a Chave DELA a duas matérias novas e sem imagem (geradas no preparo, ou as do
+  banco padrão): as pistas ficam tocáveis em qualquer ordem, o \enquote{Confio
+  / Não confio} é obrigatório, e a decisão fecha a matéria; mede-se a
+  fidelidade à regra dela, e todos recebem depois a mesma regra de referência.
+  A transferência é o boato de \enquote{todas as escolas do bairro}, fixo, numa
+  tela neutra, com \enquote{Repassar para o grupo} à mão desde o início.\\
 \zebra A diagramação em sala & A IA escolhe UM de três layouts (\cd{classic},
   \cd{hero-image}, \cd{columns} --- os \cd{NEWSPAPER\_LAYOUTS} do DS) e nada
   mais (Capítulo~\ref{cap:ia}). Falhou qualquer coisa, o modelo automático
@@ -504,16 +518,15 @@ Equipes & A missão nasce com equipes (\adrr{ADR-111}): o painel, o
   progresso --- nenhum campo de \cd{PROIBIDO\_NA\_LINHA\_DO\_PAINEL}, com teste
   ---; as verificadas vivem no histograma anônimo de 0 a 3, e o radar é do
   OBJETO editorial: em quantas capas cada notícia foi.\\
-\zebra Evidência & A ficha \arq{evidencias/fichas/exp04ef1b.ts}, a terceira da
-  plataforma: EF15CO04 pelas pistas abertas antes de publicar (os três tipos em
-  duas notícias é \cd{atingiu}); EF15CO02 pela Chave (uma tentativa,
-  \cd{atingiu}; duas ou três, \cd{em\_processo}); EF04CO08 pela 2ª edição (os
-  pares notícia $\times$ tipo abertos nas duas fases e as verificadas) e pelas
-  perguntas \cd{p1} e \cd{p2}, valendo o melhor --- o que afrouxa o
-  \enquote{E} do PRD. Toda rodada mede as três ações de novo, também no mesmo
-  pacote (\adrr{ADR-145}), e elas são copiadas aos colegas
-  de computador. A síntese final é UMA só: o recibo das perguntas é
-  \cd{\{ enviada: true \}} para qualquer alternativa.\\
+\zebra Evidência & A ficha \arq{evidencias/fichas/exp04ef1b.ts}, versão 2, Canal
+  A puro (\adrr{ADR-168}): EF15CO04 pelos julgamentos da mesa e pela coerência
+  da capa; EF15CO02 pela Chave montada (com teto em \cd{em\_processo}) e pela
+  simulação (a fidelidade combinada com a montagem); EF04CO08 pela 2ª edição
+  (com teto) e pela transferência (o combinado). O teto do marcador parcial é o
+  que faz a régua \enquote{atingiu só com as duas} caber no \enquote{vale o
+  melhor} da plataforma. Toda rodada mede de novo, também no mesmo pacote
+  (\adrr{ADR-145}), e as marcas são copiadas aos colegas de computador. Não há
+  pergunta, nem resolvedor de contexto; a síntese final é UMA só.\\
 Mídia & As imagens são do professor, na criação: 640 por 360, duas por
   chamada (o BFF corta em 30\,s), com o nome igual ao \emph{hash} da descrição,
   em \cd{experiencias/exp04ef1b/jornal/} --- fora de
@@ -525,7 +538,7 @@ Mídia & As imagens são do professor, na criação: 640 por 360, duas por
   ficou para a notícia que não pede imagem e para a que o professor trocou com
   a atividade no ar, até o novo OK.\\
 \zebra Sem texto livre & Toda resposta da criança é vocabulário fechado: ids de
-  notícia, tipo de pista, bloco da Chave, motivo e alternativa. Não há campo
+  notícia, tipo de pista, veredito, bloco e cartão da Chave, motivo e decisão. Não há campo
   aberto a conter, e por isso o gestor lê o mesmo painel que o professor
   (Capítulo~\ref{cap:tenancy}).\\
 \bottomrule
