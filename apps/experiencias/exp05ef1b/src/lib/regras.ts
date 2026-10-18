@@ -1,4 +1,4 @@
-import type { Atividade, Estado, Gate, MensagemPublica, Passo, Revelacao, Sessao } from "./tipos";
+import type { Atividade, Estado, FraseDoCartao, Gate, MensagemPublica, Passo, Resposta, Revelacao, Sessao } from "./tipos";
 import type { GateVisto } from "./telemetria";
 
 /**
@@ -7,10 +7,10 @@ import type { GateVisto } from "./telemetria";
  * Tudo o que decide o que vale mora no servidor
  * (`apps/api/src/quem-mandou-isso/regras/`): o passo (`passoEfetivo`), o limite
  * de três, o latch de cada etapa, o filtro de texto sem sentido, a régua da
- * EF05CO08 e a veracidade de cada mensagem. O que sobra aqui é o que o servidor
- * não tem como saber: qual VISTA da mesma etapa está aberta (grupo ou Mural,
- * lista ou chat da Nina), há quanto tempo a tela está parada, e se esta aba já
- * mostrou os crachás de quem votou atrasado.
+ * EF05CO08, a resposta certa de cada frase do cartão e o que a regra do tio
+ * faz com o áudio. O que sobra aqui é o que o servidor não tem como saber:
+ * qual VISTA da mesma etapa está aberta (grupo ou Mural, lista ou chat da
+ * Nina) e há quanto tempo a tela está parada.
  */
 
 /** O polling do gate (ADR-93: HTTP de 3 s, nunca WebSocket). */
@@ -22,19 +22,12 @@ export const SEGUNDOS_ATE_O_APOIO = 90;
 /** Quanto o aviso rápido fica na base da tela. */
 export const MS_DO_AVISO = 3_500;
 
-/**
- * Quanto a despedida da Nina fica na tela antes da casca "Missão Concluída".
- * A missão já está concluída no servidor nesse intervalo (o `POST /concluir`
- * sai junto com a despedida): fechar a aba aqui não perde nada.
- */
-export const MS_DA_DESPEDIDA = 6_000;
-
 // ─────────────────────────────────────────────────────── a tela da vez
 
 /**
  * As telas. Uma etapa do servidor pode ter MAIS de uma vista (`abertura` é a
- * lista e o chat da Nina; `grupo` é o grupo e o Mural; `perguntas` começa com a
- * confirmação da regra), e o que escolhe a vista é o cliente.
+ * lista e o chat da Nina; `grupo` é o grupo e o Mural), e o que escolhe a
+ * vista é o cliente.
  */
 export type Tela =
   | "preparo"
@@ -46,8 +39,8 @@ export type Tela =
   | "espera"
   | "revelacao"
   | "sintese"
-  | "revelacao-atrasada"
-  | "perguntas"
+  | "cartao"
+  | "regra"
   | "concluida";
 
 /** O que só esta aba sabe. Nenhum destes campos vai ao servidor. */
@@ -56,24 +49,18 @@ export interface Vista {
   ninaAberta: boolean;
   /** Tocou "Ir para o Mural da Turma" (e não voltou com "Revisar seleção no grupo"). */
   muralAberto: boolean;
-  /** Esta aba já MOSTROU os crachás. O servidor não guarda "já viu" — um F5 mostra de novo, sem dano. */
-  viuRevelacao: boolean;
   /**
    * As 8 mensagens do grupo já CHEGARAM, uma a uma, nesta aba. Quem volta do
    * Mural para o grupo vê tudo de uma vez: a chegada é a primeira impressão do
    * grupo, não um enfeite a repetir.
    */
   grupoChegou: boolean;
-  /** A despedida da Nina ainda está na tela, com a missão já concluída no servidor. */
-  segurandoDespedida: boolean;
 }
 
 export const VISTA_INICIAL: Vista = {
   ninaAberta: false,
   muralAberto: false,
-  viuRevelacao: false,
   grupoChegou: false,
-  segurandoDespedida: false,
 };
 
 /**
@@ -83,15 +70,13 @@ export const VISTA_INICIAL: Vista = {
  * no grupo com `pacote === null` seria um mensageiro sem mensagem nenhuma — que
  * a criança leria como app quebrado.
  *
- * O caso que não é óbvio é o de **quem votou atrasado**. A revelação não
- * empurra a triagem: quem confirmou o Mural depois de o professor abrir a
- * revelação vota e cai direto no passo da TURMA — que pode já ser `perguntas`.
- * Em `sintese` os crachás estão no histórico do Mural, acima da lâmina; em
- * `perguntas` o chat da Nina tomaria a tela sem ele ter visto nada, então o
- * Mural aparece antes, com "Continuar". Um F5 mostra de novo — rever os
- * crachás não custa nada.
+ * **O cartão segue o caminho da criança.** Na revelação e na síntese ele está
+ * dentro do Mural, embaixo dos crachás. Na reflexão, quem ainda não o enviou
+ * cai no passo `cartao` — o Mural inteiro (crachás, termômetro, lâmina) com o
+ * cartão no fim —, e só depois na `regra`. É o que cobre quem votou atrasado:
+ * ninguém chega ao tio sem ter visto os crachás e respondido o cartão.
  */
-export function telaDe(estado: Pick<Estado, "passo" | "preparada" | "revelacao">, vista: Vista): Tela {
+export function telaDe(estado: Pick<Estado, "passo" | "preparada">, vista: Vista): Tela {
   if (!estado.preparada) return "preparo";
   switch (estado.passo) {
     case "abertura":
@@ -99,37 +84,22 @@ export function telaDe(estado: Pick<Estado, "passo" | "preparada" | "revelacao">
     case "grupo":
       return vista.muralAberto ? "mural" : "grupo";
     case "enquete":
-      return "enquete";
     case "espera":
-      return "espera";
     case "revelacao":
-      return "revelacao";
     case "sintese":
-      return "sintese";
-    case "perguntas":
-      return estado.revelacao && !vista.viuRevelacao ? "revelacao-atrasada" : "perguntas";
+    case "cartao":
+    case "regra":
     case "concluida":
-      return vista.segurandoDespedida ? "perguntas" : "concluida";
+      return estado.passo;
   }
-}
-
-/**
- * Telas que, ao serem DESENHADAS, contam como "já viu os crachás": a revelação
- * e a síntese (que tem os crachás no histórico). A `revelacao-atrasada` fica de
- * fora de propósito — se ela marcasse ao aparecer, `telaDe` passaria direto
- * para a casca no mesmo instante e a criança não veria nada; quem marca ali é
- * o toque em "Continuar".
- */
-export function marcaComoVista(tela: Tela): boolean {
-  return tela === "revelacao" || tela === "sintese";
 }
 
 /** O `progressed gate:*` de cada passo que o professor abre. */
 export function gateDoPasso(passo: Passo): GateVisto | null {
   if (passo === "revelacao") return "revelacao";
   if (passo === "sintese") return "sintese";
-  /* As perguntas SÃO a reflexão (ADR-145): o gate que o professor abriu é o mesmo. */
-  if (passo === "perguntas") return "reflexao";
+  /* O cartão pendente e a regra são a reflexão: o gate que o professor abriu. */
+  if (passo === "cartao" || passo === "regra") return "reflexao";
   return null;
 }
 
@@ -219,15 +189,35 @@ export function percentualDaBarra(valor: number): number {
   return Math.min(100, Math.max(0, Math.round(valor)));
 }
 
-// ─────────────────────────────────────────────── as perguntas finais
+// ─────────────────────────────────────────── o cartão de frases
+
+/** O cartão só envia com as seis respondidas: não existe resultado parcial. */
+export function cartaoCompleto(frases: readonly FraseDoCartao[], respostas: Readonly<Record<string, Resposta>>): boolean {
+  return frases.length > 0 && frases.every((f) => respostas[f.id] === "sim" || respostas[f.id] === "nao");
+}
 
 /**
- * Qual pergunta da Nina está aberta: a primeira sem resposta NESTA aba. Depois
- * de um F5 as duas voltam — responder de novo é inofensivo (vale a primeira
- * resposta, no servidor, e o recibo é o mesmo).
+ * A frase em pedaços, com os operadores marcados para o destaque (E, OU,
+ * NÃO). Só o operador ISOLADO, em maiúsculas: "verdadeira" e "Então" não
+ * acendem nada.
  */
-export function perguntaDaVez(ids: readonly string[], respondidas: Readonly<Record<string, string>>): string | null {
-  return ids.find((id) => !(id in respondidas)) ?? null;
+export function partesDaFrase(texto: string): { texto: string; operador: boolean }[] {
+  return texto
+    .split(/(?<= )(E|OU|NÃO)(?= )/u)
+    .filter((p) => p !== "")
+    .map((p) => ({ texto: p, operador: p === "E" || p === "OU" || p === "NÃO" }));
+}
+
+// ─────────────────────────────────────────── a regra do tio
+
+/** A regra está montada o bastante para testar ou enviar: condição e a primeira ação. */
+export function regraMontada(condicao: string | null, acao1: string | null): boolean {
+  return Boolean(condicao && acao1);
+}
+
+/** As ações da regra, em ordem: a segunda só se escolhida e diferente da primeira. */
+export function acoesDaRegra(acao1: string, acao2: string | null): string[] {
+  return acao2 && acao2 !== acao1 ? [acao1, acao2] : [acao1];
 }
 
 // ─────────────────────────────────────────── o desenho das mídias

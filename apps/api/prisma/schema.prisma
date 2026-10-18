@@ -674,22 +674,22 @@ model Run {
 
   /// Nome que o estudante digitou no aparelho, e o avatar que escolheu. Ficam na
   /// run porque a conta é do APARELHO: outra turma reusa o mesmo login.
-  nomeNoApp       String? @map("nome_no_app")
-  avatarEscolhido String? @map("avatar_escolhido")
+  nomeNoApp            String?   @map("nome_no_app")
+  avatarEscolhido      String?   @map("avatar_escolhido")
   /// Quando o estudante chegou à ÚLTIMA tela da revelação (o "Ver meu
   /// relatório", ADR-167). As tarefas 6b e 6c só abrem com ele preenchido, e o
   /// Raio-x (6a) fecha. O reinício o zera.
   revelacaoConcluidaEm DateTime? @map("revelacao_concluida_em") @db.Timestamptz(6)
 
-  activity     Activity             @relation(fields: [activityId], references: [id])
-  estudante    User                 @relation(fields: [estudanteId], references: [id])
-  events       Event[]
-  studentPosts StudentPost[]
-  conclusao    Conclusao?
-  reflexao     Reflexao?
-  comentarios  ComentarioDaSessao[]
-  dossier      Dossier?
-  tarefas      TarefaDaSessao[]
+  activity           Activity             @relation(fields: [activityId], references: [id])
+  estudante          User                 @relation(fields: [estudanteId], references: [id])
+  events             Event[]
+  studentPosts       StudentPost[]
+  conclusao          Conclusao?
+  reflexao           Reflexao?
+  comentarios        ComentarioDaSessao[]
+  dossier            Dossier?
+  tarefas            TarefaDaSessao[]
   leiturasDaReflexao LeituraDaReflexao[]
 
   @@unique([activityId, estudanteId])
@@ -816,15 +816,15 @@ model Dossier {
 /// Fechamento da atividade: o que o estudante entendeu sobre viés, algoritmo e as
 /// próprias escolhas. Sem limite de caracteres de propósito.
 model Reflexao {
-  runId     String   @id @map("run_id") @db.Uuid
-  escolaId  String   @map("escola_id")
-  texto     String
+  runId         String   @id @map("run_id") @db.Uuid
+  escolaId      String   @map("escola_id")
+  texto         String
   /// O PRIMEIRO texto salvo (ADR-167): o que a IA lê, uma vez só. Gravado na
   /// criação da linha e nunca no update; sai com a reflexão (reinício e
   /// "Apagar as sessões"). Só o professor o lê. Nulo nas linhas de antes.
-  primeiroTexto String? @map("primeiro_texto")
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  primeiroTexto String?  @map("primeiro_texto")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   run Run @relation(fields: [runId], references: [id], onDelete: Cascade)
 
@@ -1600,19 +1600,19 @@ model UnoogptRelogioTurma {
   turmaId  String @map("turma_id") @db.Uuid
 
   /// cronometrado | livre (CHECK na migration).
-  modo        String    @default("cronometrado")
+  modo               String    @default("cronometrado")
   /// Null = a missão ainda não começou: o estudante vê o cronômetro parado e não
   /// consegue falar com o Cientista.
-  iniciadoEm  DateTime? @map("iniciado_em") @db.Timestamptz(6)
+  iniciadoEm         DateTime? @map("iniciado_em") @db.Timestamptz(6)
   /// Duração em segundos de parede. "+2 min" soma 120.
-  duracaoSeg  Int       @default(300) @map("duracao_seg")
+  duracaoSeg         Int       @default(300) @map("duracao_seg")
   /// O professor encerrou antes da hora.
-  encerradoEm DateTime? @map("encerrado_em") @db.Timestamptz(6)
+  encerradoEm        DateTime? @map("encerrado_em") @db.Timestamptz(6)
   /// Pivô da extensão (`regras/relogio.ts`): onde o relógio da cidade estava
   /// quando a duração mudou. É o que impede o minuto narrativo de rebobinar —
   /// aos 4:00 de 5:00 o estudante está no minuto 48, e recalcular com 7:00 daria 34.
-  pivoSeg     Int       @default(0) @map("pivo_seg")
-  pivoMin     Int       @default(0) @map("pivo_min")
+  pivoSeg            Int       @default(0) @map("pivo_seg")
+  pivoMin            Int       @default(0) @map("pivo_min")
   /// O professor abriu o fechamento (o WhatsApp e a moradora, ADR-172).
   fechamentoAbertoEm DateTime? @map("fechamento_aberto_em") @db.Timestamptz(6)
 
@@ -2717,23 +2717,35 @@ model Exp05ef1bSessao {
   /// Denormalizada do pacote: o painel lê por turma o tempo todo.
   turmaId     String @map("turma_id") @db.Uuid
 
-  entrouEm          DateTime  @default(now()) @map("entrou_em") @db.Timestamptz(6)
+  entrouEm           DateTime  @default(now()) @map("entrou_em") @db.Timestamptz(6)
   /// 0 a 3 ids do pacote (CHECK). Antes do latch é rascunho; depois, o Mural.
-  selecao           String[]  @default([])
+  selecao            String[]  @default([])
   /// O LATCH 1 — e o gesto que a EF05CO08 mede.
-  confirmadoEm      DateTime? @map("confirmado_em") @db.Timestamptz(6)
+  confirmadoEm       DateTime? @map("confirmado_em") @db.Timestamptz(6)
   /// Segundos entre entrar e confirmar (D0-3). Anda junto do latch 1 (CHECK).
-  tempoFeedSegundos Int?      @map("tempo_feed_segundos")
+  tempoFeedSegundos  Int?      @map("tempo_feed_segundos")
   /// urgencia | confianca_remetente | medo_indignacao | imagem_link_real (CHECK).
-  motivo            String?
+  motivo             String?
   /// O LATCH 2.
-  votouEm           DateTime? @map("votou_em") @db.Timestamptz(6)
+  votouEm            DateTime? @map("votou_em") @db.Timestamptz(6)
   /// HISTÓRICO: o latch da regra Se/Então, que saiu da missão (ADR-145). Nenhuma
   /// rota o escreve mais; concluir exige o voto (`concluido_check`).
-  reflexaoEm        DateTime? @map("reflexao_em") @db.Timestamptz(6)
-  concluidoEm       DateTime? @map("concluido_em") @db.Timestamptz(6)
+  reflexaoEm         DateTime? @map("reflexao_em") @db.Timestamptz(6)
+  /// O CARTÃO DE FRASES (EF05CO03, 2.4.0): as seis frases como a criança as
+  /// viu (com a resposta esperada — nunca desce) e as respostas dela, gravadas
+  /// no envio, junto do carimbo (CHECK `operacoes_check`).
+  frasesOperacoes    Json?     @map("frases_operacoes")
+  respostasOperacoes Json?     @map("respostas_operacoes")
+  operacoesEm        DateTime? @map("operacoes_em") @db.Timestamptz(6)
+  /// A REGRA DO TIO (EF05CO04, 2.4.0): os testes em ordem
+  /// ([{condicao, acoes, previsao, situacao, em}], no máximo 5) e a regra
+  /// enviada ({condicao, acoes}). A régua lê o PRIMEIRO teste.
+  regraTestes        Json      @default("[]") @map("regra_testes")
+  regraFinal         Json?     @map("regra_final")
+  regraEm            DateTime? @map("regra_em") @db.Timestamptz(6)
+  concluidoEm        DateTime? @map("concluido_em") @db.Timestamptz(6)
   /// A versão do instrumento, na linha, para reprocessar o histórico se ele mudar.
-  versaoInstrumento String    @default("2.2.0") @map("versao_instrumento")
+  versaoInstrumento  String    @default("2.4.0") @map("versao_instrumento")
 
   criadoEm     DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
   atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
@@ -3650,21 +3662,21 @@ model CotacaoDolar {
 /// entre a leitura e o envio) e completada no envio. É produção do estudante:
 /// sai no reinício e em "Apagar as sessões". A marca de evidência, não.
 model TarefaDaSessao {
-  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  escolaId    String    @map("escola_id")
-  runId       String    @map("run_id") @db.Uuid
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  escolaId   String    @map("escola_id")
+  runId      String    @map("run_id") @db.Uuid
   /// raio-x | termos | envio — CHECK na migration.
-  tarefa      String
+  tarefa     String
   /// O que foi mostrado (ids na ordem da tela, as alternativas embaralhadas).
-  composicao  Json
+  composicao Json
   /// O que o estudante respondeu; nulo até o envio.
-  respostas   Json?
-  enviadaEm   DateTime? @map("enviada_em") @db.Timestamptz(6)
+  respostas  Json?
+  enviadaEm  DateTime? @map("enviada_em") @db.Timestamptz(6)
   /// Enviada de novo depois de um reinício: vale o primeiro envio, e esta não marca.
-  refeita     Boolean   @default(false)
+  refeita    Boolean   @default(false)
   /// Só no envio (6c): a frase opcional do estudante. Só o professor a lê.
-  frase       String?
-  criadaEm    DateTime  @default(now()) @map("criada_em") @db.Timestamptz(6)
+  frase      String?
+  criadaEm   DateTime  @default(now()) @map("criada_em") @db.Timestamptz(6)
 
   run Run @relation(fields: [runId], references: [id], onDelete: Cascade)
 

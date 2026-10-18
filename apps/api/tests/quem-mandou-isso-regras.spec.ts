@@ -4,7 +4,8 @@ import { CHAVES_REDIGIDAS } from "../src/observabilidade/redaction";
 import {
   CALLBACK_DO_MOTIVO,
   ENCERRAMENTO_DA_NINA,
-  FALAS_ANTES_DAS_PERGUNTAS,
+  FALA_DO_CARTAO,
+  FALA_DO_TIO,
   GRUPO,
   MURAL,
   NINA_ANTES_DO_TEMA,
@@ -20,7 +21,37 @@ import {
   type Quadrante,
 } from "../src/quem-mandou-isso/catalogo";
 import { validarSaidaDoPreparo, promptDoPreparo } from "../src/quem-mandou-isso/prompts";
-import { MARCADOR_DA_SELECAO, nivelCO08 } from "../src/quem-mandou-isso/regras/evidencia";
+import {
+  MARCADOR_DA_REGRA,
+  MARCADOR_DA_SELECAO,
+  MARCADOR_DO_CARTAO,
+  nivelCO08,
+} from "../src/quem-mandou-isso/regras/evidencia";
+import {
+  OPERADORES,
+  acertosDoCartao,
+  acertosPorOperador,
+  avaliarFrase,
+  frasesDoCartao,
+  nivelCO03,
+  referenciaDa,
+  type Resposta,
+} from "../src/quem-mandou-isso/regras/operacoes";
+import {
+  ACOES,
+  CONDICOES,
+  RESULTADO_DO_TESTE,
+  ROTULO_DA_ACAO,
+  ROTULO_DA_CONDICAO,
+  ROTULO_DA_PREVISAO,
+  SITUACOES,
+  conferirRegra,
+  nivelCO04,
+  regraEmPalavras,
+  repassaSemChecar,
+  simular,
+  type Regra,
+} from "../src/quem-mandou-isso/regras/regra";
 import {
   contarPalavras,
   sortearMolde,
@@ -245,37 +276,37 @@ describe("o tema e a fala da Nina", () => {
 });
 
 describe("as falas fixas da experiência (dentro do clone e na casca)", () => {
-  test("as perguntas são as do PO, LITERAIS: o contexto na fala da Nina e a última frase no título da enquete", () => {
-    expect(FALAS_ANTES_DAS_PERGUNTAS.map((f) => f.perguntaId)).toEqual(FICHA_EXP05EF1B.perguntas.map((p) => p.id));
-    const [p1, p2] = FICHA_EXP05EF1B.perguntas;
-    expect(`${FALAS_ANTES_DAS_PERGUNTAS[0]?.fala} ${p1?.enunciado}`).toBe(
-      "Uma colega sua recebeu uma mensagem com tom calmo e formal, cheia de dados e números. Ela diz: 'Pode confiar, essa é verdadeira, olha como é séria.' Você concorda?",
-    );
-    expect(`${FALAS_ANTES_DAS_PERGUNTAS[1]?.fala} ${p2?.enunciado}`).toBe(
-      "Três colegas escreveram regras pra decidir o que fazer antes de repassar uma mensagem. Qual dessas funciona de verdade?",
-    );
-    expect(p1?.alternativas.map((a) => [a.id, a.status, a.texto])).toEqual([
-      ["A1", "atingiu", "Não dá pra saber só pelo tom. Uma mensagem pode ser falsa mesmo parecendo séria, ou verdadeira mesmo sendo exagerada."],
-      ["A2", "em_processo", "Ela tem razão de desconfiar menos, mas ainda assim é bom checar."],
-      ["A3", "nao_atingiu", "Se a mensagem é séria e organizada, é porque quem escreveu pesquisou. Pode confiar."],
+  test("a ficha é só Canal A (v4): três ações com rótulo, nenhuma pergunta", () => {
+    expect(FICHA_EXP05EF1B.versao).toBe(4);
+    expect(FICHA_EXP05EF1B.perguntas).toEqual([]);
+    expect(FICHA_EXP05EF1B.habilidades.map((h) => [h.codigo, h.marcadores.map((m) => [m.id, m.tipo, Boolean(m.rotulo)])])).toEqual([
+      ["EF05CO08", [[MARCADOR_DA_SELECAO, "acao", true]]],
+      ["EF05CO03", [[MARCADOR_DO_CARTAO, "acao", true]]],
+      ["EF05CO04", [[MARCADOR_DA_REGRA, "acao", true]]],
     ]);
-    expect(p2?.alternativas.map((a) => [a.id, a.status, a.texto])).toEqual([
-      ["B1", "atingiu", "Se a mensagem pedir pra repassar rápido, então eu primeiro procuro a mesma notícia em outro lugar antes de encaminhar."],
-      ["B2", "em_processo", "Se a mensagem parecer estranha, então eu tomo mais cuidado."],
-      ["B3", "nao_atingiu", "Eu sempre mando pro grupo porque é melhor avisar do que deixar de avisar."],
-    ]);
+  });
+
+  test("o tio é URGENTE e ALARMANTE e é um PARENTE: é o que a regra assume sobre o áudio", () => {
+    expect(FALA_DO_TIO).toMatch(/meu tio/);
+    expect(FALA_DO_TIO).toMatch(/assustada/);
+    expect(FALA_DO_TIO).toMatch(/repassar correndo/);
   });
 
   test("tudo que a criança lê: até 45 palavras e nenhum termo proibido", () => {
     const textos = [
       falaDaNina(PACOTE_PADRAO.tema),
       ENCERRAMENTO_DA_NINA,
+      FALA_DO_CARTAO,
+      FALA_DO_TIO,
       GRUPO.nome,
       MURAL.nome,
-      ...FALAS_ANTES_DAS_PERGUNTAS.map((f) => f.fala),
-      ...FICHA_EXP05EF1B.perguntas.flatMap((p) => [p.enunciado, ...p.alternativas.map((a) => a.texto)]),
       ...Object.values(ROTULO_DO_MOTIVO),
       ...Object.values(CALLBACK_DO_MOTIVO),
+      ...Object.values(ROTULO_DA_CONDICAO),
+      ...Object.values(ROTULO_DA_ACAO),
+      ...Object.values(ROTULO_DA_PREVISAO),
+      ...Object.values(RESULTADO_DO_TESTE),
+      ...frasesDoCartao(mensagensDoPadrao().slice(0, 3), "qualquer").map((f) => f.texto),
     ];
     for (const texto of textos) {
       expect({ texto, palavras: contarPalavras(texto) <= 45, proibidos: termosProibidosEm(texto) }).toEqual({
@@ -304,9 +335,10 @@ describe("o gabarito não desce antes da hora", () => {
 });
 
 describe("o passo efetivo = f(sessão, fase)", () => {
-  const nada: MarcosDaSessao = { entrou: true, confirmou: false, votou: false, concluiu: false };
+  const nada: MarcosDaSessao = { entrou: true, confirmou: false, votou: false, respondeuCartao: false, concluiu: false };
   const confirmou = { ...nada, confirmou: true };
   const votou = { ...confirmou, votou: true };
+  const respondeu = { ...votou, respondeuCartao: true };
   const concluiu = { ...votou, concluiu: true };
 
   test("sem sessão (ou sem entrar) é abertura, em qualquer fase", () => {
@@ -328,8 +360,15 @@ describe("o passo efetivo = f(sessão, fase)", () => {
     expect(passoEfetivo(votou, "triagem")).toBe("espera");
     expect(passoEfetivo(votou, "revelacao")).toBe("revelacao");
     expect(passoEfetivo(votou, "explicar")).toBe("sintese");
-    /* As perguntas SÃO a reflexão (ADR-145): não há mais a tela da regra. */
-    expect(passoEfetivo(votou, "reflexao")).toBe("perguntas");
+    /* Na reflexão, o cartão vem ANTES da regra do tio: quem não o enviou
+       (inclusive quem votou atrasado) cai nele primeiro. */
+    expect(passoEfetivo(votou, "reflexao")).toBe("cartao");
+    expect(passoEfetivo(respondeu, "reflexao")).toBe("regra");
+  });
+
+  test("o cartão enviado não muda o passo antes da reflexão (ele vive na revelação e na síntese)", () => {
+    expect(passoEfetivo(respondeu, "revelacao")).toBe("revelacao");
+    expect(passoEfetivo(respondeu, "explicar")).toBe("sintese");
   });
 
   test("o latch do estudante vence a fase: concluída = concluída", () => {
@@ -412,7 +451,7 @@ describe("a EF05CO08 pela seleção do Mural", () => {
 
   test("o marcador que o módulo marca é o de AÇÃO da EF05CO08 na ficha", () => {
     const co08 = FICHA_EXP05EF1B.habilidades.find((h) => h.codigo === "EF05CO08");
-    expect(co08?.marcadores).toEqual([{ id: MARCADOR_DA_SELECAO, tipo: "acao" }]);
+    expect(co08?.marcadores).toEqual([{ id: MARCADOR_DA_SELECAO, tipo: "acao", rotulo: "Seleção do Mural" }]);
   });
 });
 
@@ -448,6 +487,8 @@ describe("as contas do Termômetro", () => {
     entrou: true,
     selecao,
     motivo,
+    respondeuCartao: false,
+    enviouRegra: false,
     concluiu: false,
   });
   /* Pelo preset: VE = msg_1, msg_5; VN = msg_3, msg_8; FE = msg_4, msg_7; FN = msg_2, msg_6. */
@@ -528,6 +569,8 @@ describe("as contas do Termômetro", () => {
       entraram: 2,
       confirmaram: 2,
       votaram: 0,
+      responderamCartao: 0,
+      enviaramRegra: 0,
       concluiram: 0,
     });
     expect(termometro(unidades, gabarito).falsaNeutra).toEqual({ unidades: 1, percentual: 50 });
@@ -609,5 +652,160 @@ describe("o molde sorteado da IA", () => {
     expect(prompt).toContain("TEMA DO BOATO: <<<a água dos bebedouros>>>");
     expect(prompt).toContain("<<<limpeza da caixa d'água; laudo falso; foto do encanador>>>");
     expect(prompt).toContain(`1. formato "${molde[0]?.tipo}"`);
+  });
+});
+
+describe("o cartão de frases da EF05CO03", () => {
+  const padrao = mensagensDoPadrao();
+  /** As 56 trincas de 3 entre as 8 mensagens do preset. */
+  const trincas = padrao.flatMap((a, i) =>
+    padrao.slice(i + 1).flatMap((b, j) => padrao.slice(i + j + 2).map((c) => [a, b, c] as const)),
+  );
+
+  /** Lê a frase de volta, do texto, e recalcula a resposta do zero — sem confiar no gerador. */
+  function respostaPeloTexto(texto: string, m: (typeof padrao)[number]): { operador: string; resposta: Resposta } {
+    const corpo = texto.slice(referenciaDa(m).length);
+    const nao = /^ NÃO é (\w+)\.$/u.exec(corpo);
+    if (nao) return { operador: "NAO", resposta: avaliarFrase(m, "NAO", nao[1] as never) };
+    const comp = /^ é (\w+) (E|OU) (\w+)\.$/u.exec(corpo);
+    if (!comp) throw new Error(`frase fora do molde: ${texto}`);
+    const [, a, op, b] = comp;
+    expect(["verdadeira", "falsa"]).toContain(a);
+    expect(["emocional", "neutra"]).toContain(b);
+    return { operador: op as string, resposta: avaliarFrase(m, op as "E" | "OU", a as never, b as never) };
+  }
+
+  test("nas 56 trincas: 2 E, 2 OU e 2 NÃO; 3 Sim e 3 Não; cada mensagem em 2 frases com operadores diferentes", () => {
+    expect(trincas).toHaveLength(56);
+    for (const [k, trinca] of trincas.entries()) {
+      const frases = frasesDoCartao(trinca, `sessao-${k}`);
+      expect(frases.map((f) => f.id)).toEqual(["f1", "f2", "f3", "f4", "f5", "f6"]);
+      for (const op of OPERADORES) expect(frases.filter((f) => f.operador === op)).toHaveLength(2);
+      expect(frases.filter((f) => f.esperado === "sim")).toHaveLength(3);
+      for (const m of trinca) {
+        const dela = frases.filter((f) => f.msgId === m.id);
+        expect(dela).toHaveLength(2);
+        expect(dela[0]?.operador).not.toBe(dela[1]?.operador);
+        for (const f of dela) {
+          expect(f.texto.startsWith(referenciaDa(m))).toBe(true);
+          expect(respostaPeloTexto(f.texto, m)).toEqual({ operador: f.operador, resposta: f.esperado });
+        }
+      }
+    }
+  });
+
+  test("a mesma sessão dá as mesmas frases (o F5); outra sessão sorteia de novo", () => {
+    const trinca = trincas[10] as (typeof trincas)[number];
+    expect(frasesDoCartao(trinca, "a")).toEqual(frasesDoCartao(trinca, "a"));
+    const variam = new Set(Array.from({ length: 20 }, (_, i) => JSON.stringify(frasesDoCartao(trinca, `s${i}`))));
+    expect(variam.size).toBeGreaterThan(1);
+  });
+
+  test("a referência é quem mandou e o começo do texto — nunca 'mensagem 1'", () => {
+    const m = padrao[0] as (typeof padrao)[number];
+    expect(referenciaDa(m)).toBe(`A mensagem de ${m.remetente} “Gente, vocês viram isso…”`);
+    expect(referenciaDa({ remetente: "Ana", texto: "Oi gente" })).toBe("A mensagem de Ana “Oi gente”");
+  });
+
+  test("a régua 5–6 / 3–4 / 0–2 e as chances no chute: 10,9% / 54,7% / 34,4%", () => {
+    expect([0, 1, 2, 3, 4, 5, 6].map(nivelCO03)).toEqual([
+      "nao_atingiu", "nao_atingiu", "nao_atingiu", "em_processo", "em_processo", "atingiu", "atingiu",
+    ]);
+    expect(() => nivelCO03(7)).toThrow();
+    const frases = frasesDoCartao(trincas[0] as (typeof trincas)[number], "chute");
+    const conta = { atingiu: 0, em_processo: 0, nao_atingiu: 0 };
+    for (let bits = 0; bits < 64; bits++) {
+      const respostas = new Map<string, Resposta>(frases.map((f, i) => [f.id, bits & (1 << i) ? "sim" : "nao"]));
+      conta[nivelCO03(acertosDoCartao(frases, respostas))] += 1;
+    }
+    expect(conta).toEqual({ atingiu: 7, em_processo: 35, nao_atingiu: 22 });
+  });
+
+  test("responder tudo igual acerta só 3 — em processo, nunca atingiu", () => {
+    const frases = frasesDoCartao(trincas[5] as (typeof trincas)[number], "igual");
+    for (const r of ["sim", "nao"] as const) {
+      const respostas = new Map<string, Resposta>(frases.map((f) => [f.id, r]));
+      expect(acertosDoCartao(frases, respostas)).toBe(3);
+    }
+  });
+
+  test("os acertos por operador somam os acertos", () => {
+    const frases = frasesDoCartao(trincas[3] as (typeof trincas)[number], "op");
+    const respostas = new Map<string, Resposta>(frases.map((f, i) => [f.id, i % 2 ? f.esperado : "sim"]));
+    const por = acertosPorOperador(frases, respostas);
+    expect(por.E + por.OU + por.NAO).toBe(acertosDoCartao(frases, respostas));
+  });
+});
+
+describe("a regra do tio da EF05CO04", () => {
+  const r = (condicao: string, ...acoes: string[]) => conferirRegra(condicao, acoes) as Regra;
+  /** Todas as regras possíveis: 4 condições × (8 ações sozinhas + 8×7 pares em ordem). */
+  const todas: Regra[] = CONDICOES.flatMap((c) =>
+    ACOES.flatMap((a1) => [r(c, a1), ...ACOES.filter((a2) => a2 !== a1).map((a2) => r(c, a1, a2))]),
+  );
+
+  test("a forma: condição conhecida, 1 ou 2 ações conhecidas, sem repetir", () => {
+    expect(todas).toHaveLength(256);
+    expect(conferirRegra("chuva", ["esperar"])).toBeNull();
+    expect(conferirRegra("urgente_alarmante", [])).toBeNull();
+    expect(conferirRegra("urgente_alarmante", ["esperar", "esperar"])).toBeNull();
+    expect(conferirRegra("urgente_alarmante", ["esperar", "comparar_fonte", "encaminhar_logo"])).toBeNull();
+    expect(conferirRegra("urgente_alarmante", ["voar"])).toBeNull();
+  });
+
+  test("o que a regra faz com o áudio: as cinco situações", () => {
+    expect(simular(r("link_nao_checado", "comparar_fonte"))).toBe("deixa_passar");
+    expect(simular(r("promessa_incrivel", "encaminhar_logo"))).toBe("deixa_passar");
+    expect(simular(r("urgente_alarmante", "comparar_fonte"))).toBe("checa");
+    expect(simular(r("parente_proximo", "perguntar_adulto", "encaminhar_se_confirmar"))).toBe("checa");
+    expect(simular(r("urgente_alarmante", "comparar_fonte", "encaminhar_logo"))).toBe("checa_e_repassa");
+    expect(simular(r("urgente_alarmante", "esperar"))).toBe("sem_conferir");
+    expect(simular(r("urgente_alarmante", "encaminhar_se_confirmar"))).toBe("sem_conferir");
+    expect(simular(r("urgente_alarmante", "encaminhar_logo", "comparar_fonte"))).toBe("repassa_antes");
+    expect(simular(r("parente_proximo", "esperar", "encaminhar_pedir"))).toBe("repassa_antes");
+  });
+
+  test("encaminhar antes de checar vale para QUALQUER condição (é o não atingiu)", () => {
+    expect(repassaSemChecar(r("link_nao_checado", "encaminhar_logo"))).toBe(true);
+    expect(repassaSemChecar(r("urgente_alarmante", "comparar_fonte", "encaminhar_logo"))).toBe(false);
+    expect(nivelCO04(r("link_nao_checado", "encaminhar_logo"), [])).toBe("nao_atingiu");
+  });
+
+  test("a régua lê a PRIMEIRA regra testada e a PRIMEIRA previsão", () => {
+    const boa = r("urgente_alarmante", "comparar_fonte", "encaminhar_se_confirmar");
+    const fraca = r("urgente_alarmante", "esperar");
+    const teste = (regra: Regra, previsao: (typeof SITUACOES)[number]) => ({ regra, previsao, situacao: simular(regra) });
+
+    expect(nivelCO04(boa, [teste(boa, "checa")])).toBe("atingiu");
+    // Previu errado o que a própria regra faria: não simulou.
+    expect(nivelCO04(boa, [teste(boa, "deixa_passar")])).toBe("em_processo");
+    // Chegou à regra boa só depois do retorno do teste.
+    expect(nivelCO04(boa, [teste(fraca, "sem_conferir"), teste(boa, "checa")])).toBe("em_processo");
+    // Enviou sem testar.
+    expect(nivelCO04(boa, [])).toBe("em_processo");
+    // Testou a boa e enviou outra.
+    expect(nivelCO04(fraca, [teste(boa, "checa")])).toBe("em_processo");
+    // Checa e encaminha de qualquer jeito: teto em processo.
+    const checaERepassa = r("urgente_alarmante", "comparar_fonte", "encaminhar_logo");
+    expect(nivelCO04(checaERepassa, [teste(checaERepassa, "checa_e_repassa")])).toBe("em_processo");
+    // "Só se confirmar" sem checagem antes não basta.
+    const semChecar = r("urgente_alarmante", "encaminhar_se_confirmar");
+    expect(nivelCO04(semChecar, [teste(semChecar, "sem_conferir")])).toBe("em_processo");
+  });
+
+  test("no chute (regra, previsão e envio ao acaso, um teste): 5,0% atingem", () => {
+    const conta = { atingiu: 0, em_processo: 0, nao_atingiu: 0 };
+    for (const regra of todas) {
+      for (const previsao of SITUACOES) conta[nivelCO04(regra, [{ regra, previsao, situacao: simular(regra) }])] += 1;
+    }
+    const total = todas.length * SITUACOES.length;
+    expect(conta.atingiu).toBe(64);
+    expect(Math.round((1000 * conta.atingiu) / total) / 10).toBe(5);
+  });
+
+  test("a regra em palavras", () => {
+    expect(regraEmPalavras(r("urgente_alarmante", "comparar_fonte", "encaminhar_se_confirmar"))).toBe(
+      "Se a mensagem for urgente e alarmante, então eu comparo com uma fonte confiável e depois encaminho só se a notícia se confirmar.",
+    );
   });
 });

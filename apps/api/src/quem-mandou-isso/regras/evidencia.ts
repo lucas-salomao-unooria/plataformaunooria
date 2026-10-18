@@ -33,3 +33,7 @@ export function nivelCO08(escolhidas: readonly { veracidade: Veracidade; tom: To
 
 /** Os ids dos marcadores da ficha (`evidencias/fichas/exp05ef1b.ts`) que ESTA missão marca. */
 export const MARCADOR_DA_SELECAO = "selecao-do-mural";
+/** EF05CO03 — `regras/operacoes.ts#nivelCO03`. */
+export const MARCADOR_DO_CARTAO = "cartao-de-frases";
+/** EF05CO04 — `regras/regra.ts#nivelCO04`. */
+export const MARCADOR_DA_REGRA = "regra-do-tio";

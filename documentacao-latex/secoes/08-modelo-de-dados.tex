@@ -878,8 +878,9 @@ de uma missão, rodada a rodada. São três tabelas de plataforma, na migração
 \arq{20260925150000\_\B{}evidencia\_\B{}pedagogica}, e elas separam o que a missão
 VIU (\cd{evidencias\_marcas}) do nível que o professor LÊ e pode corrigir
 (\cd{evidencias}), com toda mudança no histórico (\cd{evidencias\_eventos}). A
-primeira missão a escrever nelas é a exp05ef1b (\adrr{ADR-118}): a marca da
-EF05CO08 na transação do Mural, e as da EF05CO03 e EF05CO04 pelas perguntas.
+primeira missão a escrever nelas é a exp05ef1b (\adrr{ADR-118}): hoje só por
+ação (\adrr{ADR-171}) --- a marca da EF05CO08 na transação do Mural, a da
+EF05CO03 na do cartão de frases e a da EF05CO04 na da regra do tio.
 
 \begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
 \toprule
@@ -1552,9 +1553,16 @@ nenhuma sequência: as chaves são \cd{uuid} ou compostas, e o \cd{GRANT} à
   pacote, chave \cd{(escola\_id, estudante\_id, pacote\_id, rodada)}: nasce no
   \enquote{Entrar no grupo}, e zerar a turma abre outra linha em vez de apagar
   esta. Guarda a seleção (0 a 3) e os carimbos dos \emph{latches} ---
-  \cd{confirmado\_em}, \cd{votou\_em}, \cd{reflexao\_em}, \cd{concluido\_em} ---,
-  o motivo votado, o \cd{tempo\_feed\_segundos} e a \cd{versao\_instrumento}.
-  \textbf{Não tem coluna de passo} nem de pontuação.\\
+  \cd{confirmado\_em}, \cd{votou\_em}, \cd{operacoes\_em}, \cd{regra\_em},
+  \cd{concluido\_em} (\cd{reflexao\_em} só pelo histórico) ---, o motivo
+  votado, o \cd{tempo\_feed\_segundos} e a \cd{versao\_instrumento} (2.4.0
+  desde a \adrr{ADR-171}). Desde a mesma ADR, o dado bruto das duas ações do
+  Canal A: as seis frases do cartão COMO a criança as viu, com a resposta
+  esperada (\cd{frases\_operacoes}), e as respostas dela
+  (\cd{respostas\_operacoes}); os testes da regra do tio, em ordem, com a
+  previsão e o que a regra fez (\cd{regra\_testes}, até 5), e a regra enviada
+  (\cd{regra\_final}). \textbf{Não tem coluna de passo} nem de pontuação: o
+  nível é da evidência.\\
 \zebra \cd{exp05ef1b\_reflexoes} & \textbf{Histórico desde a \adrr{ADR-145}}:
   nenhuma rota escreve mais nela. A regra Se/Então, 1:1 com a sessão: a
   condição (\cd{condicional\_se}) e o \enquote{Então} (\cd{acao\_entao}, 15 a
@@ -1568,11 +1576,15 @@ nenhuma sequência: as chaves são \cd{uuid} ou compostas, e o \cd{GRANT} à
 \begin{regra}
 \textbf{Os \emph{latches} estão em ordem no banco.} Cada carimbo exige o
 anterior: confirmar o Mural exige \textbf{exatamente três} na seleção, votar
-exige ter confirmado (e motivo e carimbo andam juntos), a regra exige o voto, e
-concluir exige a regra. O \emph{CHECK} vale por \emph{statement}, então o
-\emph{service} grava carimbo e dado no MESMO \cd{UPDATE} --- a seleção com o
-\cd{confirmado\_em}, o motivo com o \cd{votou\_em} ---, senão o estado
-intermediário reprova. A seleção fica dentro dos oito ids (\cd{<@ ARRAY['msg\_1'
+exige ter confirmado (e motivo e carimbo andam juntos), o cartão de frases
+exige o voto e seis frases e seis respostas, testar a regra exige o cartão (e
+no máximo cinco testes), enviar a regra exige o cartão e uma condição do
+vocabulário, e concluir exige só o voto --- quem sai antes de uma ação fica
+\enquote{Não avaliado} nela, nunca travado (\adrr{ADR-145}, \adrr{ADR-171}). O
+\emph{CHECK} vale por \emph{statement}, então o \emph{service} grava carimbo e
+dado no MESMO \cd{UPDATE} --- a seleção com o \cd{confirmado\_em}, o motivo
+com o \cd{votou\_em}, as frases e as respostas com o \cd{operacoes\_em}, a
+regra com o \cd{regra\_em} ---, senão o estado intermediário reprova. A seleção fica dentro dos oito ids (\cd{<@ ARRAY['msg\_1'
 \ldots 'msg\_8']}) e com no máximo três; o \cd{tempo\_feed\_segundos} existe
 exatamente quando o Mural fechou.
 
@@ -2327,6 +2339,18 @@ decisão \emph{futura}, com DPA e \emph{k}-anonimato --- e não sai de um
   \cd{ck\_ajuda\_configuracao\_instrucoes} (nulo ou de 20 a \num{8000}
   caracteres sem os brancos das pontas). Sem RLS e sem \cd{escola\_id}, como a
   linha.\\
+\arq{20261017090000\_\B{}exp05ef1b\_\B{}canal\_\B{}a} & Quem mandou isso? só com o
+  Canal A (\adrr{ADR-171}): em \cd{exp05ef1b\_sessoes}, o cartão de frases
+  (\cd{frases\_operacoes}, \cd{respostas\_operacoes}, \cd{operacoes\_em}) e a
+  regra do tio (\cd{regra\_testes} \cd{JSONB NOT NULL DEFAULT '[]'},
+  \cd{regra\_final}, \cd{regra\_em}), e o padrão da \cd{versao\_instrumento}
+  passa a 2.4.0. Quatro \emph{CHECKs} novos: \cd{exp05ef1b\_sessoes\_operacoes\_check}
+  (o cartão exige o voto, seis frases e seis respostas),
+  \cd{exp05ef1b\_sessoes\_regra\_testes\_check} (\emph{array} de até cinco, e só
+  com o cartão), \cd{exp05ef1b\_sessoes\_regra\_check} (a regra exige o cartão e
+  uma das quatro condições) e \cd{exp05ef1b\_sessoes\_regra\_final\_check}
+  (regra e carimbo nulos juntos). O nível não mora aqui: é da evidência. Sem
+  RLS nova.\\
 \bottomrule
 \end{tabularx}
 

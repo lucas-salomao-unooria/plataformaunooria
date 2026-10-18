@@ -1,99 +1,63 @@
 import type { FichaPedagogica } from "./tipos";
 
 /**
- * A FICHA DE "QUEM MANDOU ISSO?" v2.2 (exp05ef1b, 5º ano, unidade 1) — versão
- * 3, de 2026-10-01 (ADR-131): as perguntas voltam a ser as do PO, LITERAIS.
+ * A FICHA DE "QUEM MANDOU ISSO?" (exp05ef1b, 5º ano, unidade 1) — versão 4,
+ * de 2026-10-16: só o Canal A. Toda habilidade é medida pelo que a criança
+ * FAZ; as perguntas P1 e P2 do PO (ficha v3, ADR-131) saíram, como no 8º ano
+ * (ADR-167). Os níveis que elas deram em atividades já jogadas ficam no
+ * histórico, gravados com a versão 3.
  *
- *   - **EF05CO08** pela SELEÇÃO do Mural — marcador de AÇÃO gravado no
- *     `POST /mural`, na mesma transação do latch. Só três verdadeiras atingem
- *     (`quem-mandou-isso/regras/evidencia.ts#nivelCO08`), e toda rodada a mede
- *     de novo, também no mesmo pacote (ADR-145).
- *   - **EF05CO03** pela P1 do PO: tom não é veracidade — separar os dois eixos.
- *   - **EF05CO04** pela P2 do PO: reconhecer a regra completa (condição
- *     verificável, ação concreta e sequência). O CRIAR é o Se/Então da Etapa 6,
- *     que a máquina não corrige: o professor o classifica na rubrica da folha
- *     da turma, e o ajuste dele vale sobre a pergunta (ADR-120).
+ *   - **EF05CO08** pela SELEÇÃO do Mural, marcada no `POST /mural`, na mesma
+ *     transação do latch. Só três verdadeiras atingem
+ *     (`quem-mandou-isso/regras/evidencia.ts#nivelCO08`).
+ *   - **EF05CO03** pelo CARTÃO DE FRASES com E, OU e NÃO sobre as três
+ *     mensagens que a criança encaminhou, depois dos crachás
+ *     (`regras/operacoes.ts#nivelCO03`).
+ *   - **EF05CO04** pela REGRA DO TIO montada com peças, com a previsão antes
+ *     de cada teste (`regras/regra.ts#nivelCO04`).
  *
- * Enunciado e alternativas são o texto do PO. A pergunta do PO chega em duas
- * partes: o contexto é a fala da Nina que antecede a enquete
- * (`quem-mandou-isso/catalogo.ts#FALAS_ANTES_DAS_PERGUNTAS`), e a última frase
- * é o título da enquete — juntas, o texto do PO sem uma palavra a mais. O
- * estudante recebe as alternativas EMBARALHADAS a cada leitura
- * (`EvidenciasService.pergunta`), e nunca o `status`.
- *
- * Quem sai antes das perguntas fica "Não avaliado" em CO03/CO04 — a AUSÊNCIA
- * de marca —, nunca "não atingiu". Os registros das versões 1 e 2 guardam a
- * versão deles.
+ * Toda rodada mede as três de novo (ADR-145). Quem não fez a ação fica "Não
+ * avaliado" — a AUSÊNCIA de marca —, nunca "não atingiu", e o professor ajusta.
  */
 export const FICHA_EXP05EF1B: FichaPedagogica = {
   expId: "exp05ef1b",
-  versao: 3,
+  versao: 4,
   habilidades: [
     {
       codigo: "EF05CO08",
-      marcadores: [{ id: "selecao-do-mural", tipo: "acao" }],
+      marcadores: [{ id: "selecao-do-mural", tipo: "acao", rotulo: "Seleção do Mural" }],
       criterios: {
         atingiu: "Encaminha ao Mural da Turma as 3 mensagens verdadeiras.",
         em_processo: "Encaminha 2 mensagens verdadeiras e 1 falsa.",
         nao_atingiu: "Encaminha 2 ou 3 mensagens falsas.",
-        observacao: "Medida em toda rodada; o resultado é a melhor rodada.",
+        observacao:
+          'Medida em toda rodada; o resultado é a melhor rodada. Sem o envio ao Mural, a habilidade fica "Não avaliado", e você pode ajustar.',
       },
     },
     {
       codigo: "EF05CO03",
-      marcadores: [{ id: "pergunta-tom-e-veracidade", tipo: "multipla_escolha", perguntaId: "p1" }],
+      marcadores: [{ id: "cartao-de-frases", tipo: "acao", rotulo: "Cartão de frases" }],
       criterios: {
-        atingiu: "Na 1ª pergunta, responde que o tom não diz se a mensagem é verdadeira: ela pode ser séria e falsa, ou exagerada e verdadeira.",
-        em_processo: "Na 1ª pergunta, desconfia menos da mensagem séria, mas ainda acha bom checar.",
-        nao_atingiu: "Na 1ª pergunta, confia na mensagem porque ela parece séria e organizada.",
+        atingiu: "No cartão de frases, acerta 5 ou 6 das 6 frases com E, OU e NÃO sobre as mensagens que encaminhou.",
+        em_processo: "No cartão de frases, acerta 3 ou 4 das 6 frases.",
+        nao_atingiu: "No cartão de frases, acerta 2 frases ou menos.",
+        observacao:
+          'O cartão vem depois dos crachás: a criança já sabe se cada mensagem é verdadeira e se é emocional ou neutra, e precisa combinar esses valores. Responder tudo igual acerta só 3. Sem o cartão enviado, a habilidade fica "Não avaliado", e você pode ajustar.',
       },
     },
     {
       codigo: "EF05CO04",
-      marcadores: [{ id: "pergunta-regra-condicional", tipo: "multipla_escolha", perguntaId: "p2" }],
+      marcadores: [{ id: "regra-do-tio", tipo: "acao", rotulo: "Regra do tio" }],
       criterios: {
-        atingiu: "Na 2ª pergunta, escolhe a regra completa: uma condição que dá para conferir e uma ação concreta antes de encaminhar.",
-        em_processo: "Na 2ª pergunta, escolhe uma regra vaga, sem ação concreta (\"tomo mais cuidado\").",
-        nao_atingiu: "Na 2ª pergunta, escolhe encaminhar sempre, sem regra nenhuma.",
+        atingiu:
+          "Monta, já na primeira tentativa, uma regra que pega o áudio do tio e manda checar antes de encaminhar, e prevê certo o que ela vai fazer.",
+        em_processo:
+          "Chega à regra que checa antes de encaminhar só depois de testar, ou erra a previsão, ou monta uma regra que só manda esperar, que não pega o áudio ou que checa e encaminha de qualquer jeito.",
+        nao_atingiu: "Envia uma regra que encaminha a mensagem antes de checar.",
+        observacao:
+          'A previsão antes do teste é a simulação que a habilidade pede: a criança diz o que a regra vai fazer antes de ver. A missão cobre a seleção condicional e a sequência de duas ações; repetição e colaboração ficam fora. Sem a regra enviada, a habilidade fica "Não avaliado", e você pode ajustar.',
       },
     },
   ],
-  perguntas: [
-    {
-      id: "p1",
-      enunciado: "Você concorda?",
-      alternativas: [
-        {
-          id: "A1",
-          texto:
-            "Não dá pra saber só pelo tom. Uma mensagem pode ser falsa mesmo parecendo séria, ou verdadeira mesmo sendo exagerada.",
-          status: "atingiu",
-        },
-        { id: "A2", texto: "Ela tem razão de desconfiar menos, mas ainda assim é bom checar.", status: "em_processo" },
-        {
-          id: "A3",
-          texto: "Se a mensagem é séria e organizada, é porque quem escreveu pesquisou. Pode confiar.",
-          status: "nao_atingiu",
-        },
-      ],
-    },
-    {
-      id: "p2",
-      enunciado: "Qual dessas funciona de verdade?",
-      alternativas: [
-        {
-          id: "B1",
-          texto:
-            "Se a mensagem pedir pra repassar rápido, então eu primeiro procuro a mesma notícia em outro lugar antes de encaminhar.",
-          status: "atingiu",
-        },
-        { id: "B2", texto: "Se a mensagem parecer estranha, então eu tomo mais cuidado.", status: "em_processo" },
-        {
-          id: "B3",
-          texto: "Eu sempre mando pro grupo porque é melhor avisar do que deixar de avisar.",
-          status: "nao_atingiu",
-        },
-      ],
-    },
-  ],
+  perguntas: [],
 };

@@ -33,6 +33,7 @@ import {
 import { PreparoDaExp05ef1bService } from "../src/quem-mandou-isso/preparo.service";
 import { QuemMandouIssoTurmasController } from "../src/quem-mandou-isso/quem-mandou-isso-turmas.controller";
 import { QuemMandouIssoService } from "../src/quem-mandou-isso/quem-mandou-isso.service";
+import { frasesDoCartao, sementeDoCartao, type Resposta } from "../src/quem-mandou-isso/regras/operacoes";
 import { FASES } from "../src/quem-mandou-isso/regras/passos";
 import { liberarParaTeste } from "./liberar-de-teste";
 import { criarRoleDeRuntime, urlDeRuntime } from "./role-de-runtime";
@@ -90,7 +91,6 @@ const preparo = new PreparoDaExp05ef1bService(ia, quota);
 const service = new QuemMandouIssoService(prisma, evidencias, preparo);
 const controller = new QuemMandouIssoTurmasController(service);
 evidencias.onModuleInit();
-service.onModuleInit();
 
 const TABELAS = ["exp05ef1b_pacotes", "exp05ef1b_gates_turma", "exp05ef1b_sessoes", "exp05ef1b_reflexoes"] as const;
 
@@ -188,6 +188,20 @@ async function aprovar(turmaId: string, professorId: string, corpo: unknown, esc
   return controller.aprovar(turmaId, undefined, corpo, { auth: { ...req(professorId).auth, escolaId } });
 }
 
+/**
+ * As respostas do cartão de um estudante: `certas` (o gabarito recalculado da
+ * MESMA semente que o servidor usa) ou todas iguais. A tela não sabe o
+ * gabarito; quem o recalcula aqui é o teste.
+ */
+async function respostasDoCartao(estudanteId: string, como: "certas" | Resposta, pacoteId = pacote5A, rodada = 1) {
+  const s = await prisma.exp05ef1bSessao.findFirstOrThrow({ where: { escolaId: ESCOLA, estudanteId, pacoteId, rodada } });
+  const msgs = s.selecao.map((id) => mensagensDoPadrao().find((m) => m.id === id) as MensagemDoPacote);
+  return frasesDoCartao(msgs, sementeDoCartao(ESCOLA, estudanteId, { id: pacoteId, rodada })).map((f) => ({
+    fraseId: f.id,
+    resposta: como === "certas" ? f.esperado : como,
+  }));
+}
+
 /** As chaves do gabarito, em qualquer profundidade de um JSON. */
 function chavesDeGabarito(valor: unknown): string[] {
   const achadas: string[] = [];
@@ -265,9 +279,10 @@ describe("a porta da sala (ADR-69)", () => {
       () => service.enviarAoMural(ESCOLA, ids.fabi, ["msg_1", "msg_2", "msg_3"]),
       () => service.votar(ESCOLA, ids.fabi, "urgencia"),
       () => service.concluir(ESCOLA, ids.fabi),
-      /* As perguntas de evidência (E14) passam pela mesma porta. */
-      () => evidencias.pergunta(ESCOLA, ids.fabi, EXP_ID, "p1"),
-      () => evidencias.responder(ESCOLA, ids.fabi, EXP_ID, "p1", "A1"),
+      /* As ações do Canal A (o cartão e a regra) passam pela mesma porta. */
+      () => service.responderCartao(ESCOLA, ids.fabi, []),
+      () => service.testarRegra(ESCOLA, ids.fabi, "urgente_alarmante", ["comparar_fonte"], "checa"),
+      () => service.enviarRegra(ESCOLA, ids.fabi, "urgente_alarmante", ["comparar_fonte"]),
     ]) {
       expect(await recusa(chamada())).toEqual(naoLiberada);
     }
@@ -464,7 +479,14 @@ describe("a aula na 5A — os três latches, a evidência e a revelação", () =
     expect(sessao.atividade).toEqual({ pacoteId: pacote5A, rodada: 1 });
     expect(sessao.pacote?.grupo).toEqual({ nome: "Turma 5ºB", participantes: 4 });
     expect(sessao.textos.nina.convite).toBe(falaDaNina(PACOTE_PADRAO.tema));
-    expect(sessao.textos.perguntas.map((p) => p.perguntaId)).toEqual(["p1", "p2"]);
+    expect(sessao.textos.nina.tio).toMatch(/meu tio mandou um áudio/);
+    expect(sessao.opcoes.condicoes.map((c) => c.id)).toEqual([...CONDICOES]);
+    /* As peças descem só com id e rótulo: o tipo de cada ação e quais
+       condições pegam o áudio são o gabarito da regra. */
+    for (const lista of Object.values(sessao.opcoes)) {
+      for (const opcao of lista) expect(Object.keys(opcao).sort()).toEqual(["id", "rotulo"]);
+    }
+    expect(sessao).toMatchObject({ cartao: null, regra: null });
     expect(chavesDeGabarito(sessao)).toEqual([]);
     const texto = JSON.stringify(sessao.pacote);
     for (const valor of ["verdadeira", "falsa", "emocional", "neutra"]) expect(texto).not.toContain(`"${valor}"`);
@@ -525,10 +547,15 @@ describe("a aula na 5A — os três latches, a evidência e a revelação", () =
     expect((await service.votar(ESCOLA, ids.ana, "urgencia")).passo).toBe("espera");
     expect((await service.votar(ESCOLA, ids.ana, "urgencia")).motivo).toBe("urgencia");
     expect(await codigo(service.votar(ESCOLA, ids.ana, "medo_indignacao"))).toBe("enquete-ja-votada");
-    /* As perguntas (a reflexão) só abrem com a fase da turma: concluir antes é 409. */
+    /* A reflexão só abre com a fase da turma: concluir antes é 409. */
     expect(await codigo(service.concluir(ESCOLA, ids.ana))).toBe("reflexao-nao-liberada");
-    /* A pergunta de evidência só abre no passo das perguntas. */
-    expect(await codigo(evidencias.responder(ESCOLA, ids.ana, EXP_ID, "p1", "A1"))).toBe("sem-atividade-em-andamento");
+    /* O cartão só abre com a revelação DELA, e a regra só na reflexão. */
+    expect(await codigo(service.responderCartao(ESCOLA, ids.ana, await respostasDoCartao(ids.ana, "sim")))).toBe(
+      "cartao-nao-liberado",
+    );
+    expect(await codigo(service.testarRegra(ESCOLA, ids.ana, "urgente_alarmante", ["comparar_fonte"], "checa"))).toBe(
+      "reflexao-nao-liberada",
+    );
   });
 
   test("equipe: Bia e Caio num computador — Bia joga (com uma falsa neutra) e o Caio recebe a CÓPIA do nível", async () => {
@@ -568,7 +595,15 @@ describe("a aula na 5A — os três latches, a evidência e a revelação", () =
     expect(painel).toMatchObject({ fase: "triagem", porComputador: true, termometro: null });
     expect(painel.atividade).toEqual({ pacoteId: pacote5A, rodada: 1, tema: PACOTE_PADRAO.tema });
     /* Ana, a Equipe 1 (Bia + Caio) e a Duda: três computadores, não quatro crianças. */
-    expect(painel.progresso).toEqual({ unidades: 3, entraram: 3, confirmaram: 3, votaram: 3, concluiram: 0 });
+    expect(painel.progresso).toEqual({
+      unidades: 3,
+      entraram: 3,
+      confirmaram: 3,
+      votaram: 3,
+      responderamCartao: 0,
+      enviaramRegra: 0,
+      concluiram: 0,
+    });
     const linhas = painel.linhas.map((l) => [l.nome, l.equipe?.membros.map((m) => m.nome) ?? null, l.passo]);
     expect(linhas).toEqual([
       ["Ana Teste", null, "espera"],
@@ -580,6 +615,8 @@ describe("a aula na 5A — os três latches, a evidência e a revelação", () =
   test("antes da revelação, a sessão de quem votou continua SEM gabarito", async () => {
     const sessao = await service.sessao(ESCOLA, ids.bia);
     expect(sessao.revelacao).toBeNull();
+    /* O cartão depende do gabarito das três dela: também não desce. */
+    expect(sessao.cartao).toBeNull();
     expect(chavesDeGabarito(sessao)).toEqual([]);
   });
 
@@ -624,53 +661,145 @@ describe("a aula na 5A — os três latches, a evidência e a revelação", () =
     expect(chavesDeGabarito(sessao.pacote)).toEqual([]);
   });
 
+  test("o cartão da Ana: seis frases SEM a resposta esperada, que ela responde depois dos crachás", async () => {
+    const sessao = SessaoSchema.parse(await service.sessao(ESCOLA, ids.ana));
+    expect(sessao.cartao?.enviado).toBe(false);
+    expect(sessao.cartao?.frases.map((f) => f.id)).toEqual(["f1", "f2", "f3", "f4", "f5", "f6"]);
+    expect(JSON.stringify(sessao.cartao)).not.toContain("esperado");
+    /* As mesmas frases a cada leitura (a semente é a sessão): um F5 não troca o cartão. */
+    expect((await service.sessao(ESCOLA, ids.ana)).cartao).toEqual(sessao.cartao);
+
+    const estado = EstadoSchema.parse(await service.responderCartao(ESCOLA, ids.ana, await respostasDoCartao(ids.ana, "certas")));
+    expect(estado.cartao?.enviado).toBe(true);
+    expect(JSON.stringify(estado)).not.toContain("esperado");
+    const marca = await prisma.evidenciaMarca.findFirstOrThrow({ where: { escolaId: ESCOLA, estudanteId: ids.ana, habilidade: "EF05CO03" } });
+    expect(marca).toMatchObject({ marcador: "cartao-de-frases", status: "atingiu", atividadeId: pacote5A, rodada: 1 });
+    /* A foto da tentativa: as frases COM a resposta esperada, e as respostas dela. */
+    const linha = await prisma.exp05ef1bSessao.findFirstOrThrow({ where: { escolaId: ESCOLA, estudanteId: ids.ana } });
+    expect(linha.frasesOperacoes).toHaveLength(6);
+    expect(JSON.stringify(linha.frasesOperacoes)).toContain("esperado");
+  });
+
+  test("o cartão é um latch: as MESMAS respostas são idempotentes, outras são 409 — e nada muda", async () => {
+    await service.responderCartao(ESCOLA, ids.ana, await respostasDoCartao(ids.ana, "certas"));
+    expect(await codigo(service.responderCartao(ESCOLA, ids.ana, await respostasDoCartao(ids.ana, "sim")))).toBe("cartao-ja-enviado");
+    expect(await prisma.evidenciaMarca.count({ where: { escolaId: ESCOLA, estudanteId: ids.ana, habilidade: "EF05CO03" } })).toBe(1);
+    /* Faltando uma frase: o cartão não envia pela metade. */
+    const cinco = (await respostasDoCartao(ids.duda, "sim")).slice(0, 5);
+    expect(await codigo(service.responderCartao(ESCOLA, ids.duda, cinco))).toBe("payload-invalido");
+  });
+
   test("a fase só anda para a frente: síntese, e a revelação de novo não volta", async () => {
     await service.mudarGate(ESCOLA, ids.turma5A, ids.professora, "apresentar_sintese");
     expect((await service.mudarGate(ESCOLA, ids.turma5A, ids.professora, "liberar_revelacao")).fase).toBe("explicar");
     expect((await service.gate(ESCOLA, ids.ana)).passo).toBe("sintese");
   });
 
-  test("liberar a reflexão leva direto às perguntas: elas SÃO a reflexão (ADR-145)", async () => {
+  test("o cartão segue o caminho da criança: a Duda responde na SÍNTESE, e tudo igual dá 3 — em processo", async () => {
+    await service.responderCartao(ESCOLA, ids.duda, await respostasDoCartao(ids.duda, "nao"));
+    const marca = await prisma.evidenciaMarca.findFirstOrThrow({ where: { escolaId: ESCOLA, estudanteId: ids.duda, habilidade: "EF05CO03" } });
+    expect(marca.status).toBe("em_processo");
+  });
+
+  test("liberar a reflexão: quem enviou o cartão vai à regra; quem não enviou, ao cartão PRIMEIRO", async () => {
     await service.mudarGate(ESCOLA, ids.turma5A, ids.professora, "liberar_reflexao");
-    expect((await service.gate(ESCOLA, ids.ana)).passo).toBe("perguntas");
-    expect(SessaoSchema.parse(await service.sessao(ESCOLA, ids.ana)).passo).toBe("perguntas");
-    /* A regra Se/Então saiu: nenhuma rota escreve mais na tabela, que só guarda o que já foi escrito. */
+    expect((await service.gate(ESCOLA, ids.ana)).passo).toBe("regra");
+    expect((await service.gate(ESCOLA, ids.bia)).passo).toBe("cartao");
+    expect(await codigo(service.testarRegra(ESCOLA, ids.bia, "urgente_alarmante", ["comparar_fonte"], "checa"))).toBe("cartao-pendente");
+    const painel = PainelSchema.parse(await service.painel(ESCOLA, ids.turma5A, ids.professora));
+    expect(painel.progresso).toMatchObject({ responderamCartao: 2, enviaramRegra: 0 });
+    /* A tabela da regra Se/Então de texto livre (2.2) segue sem escrita nova. */
     expect(await prisma.exp05ef1bReflexao.count({ where: { escolaId: ESCOLA } })).toBe(0);
   });
 
-  test("as perguntas de evidência: embaralhadas, sem nível, e a resposta cai na atividade e na rodada da missão", async () => {
-    const p1 = await evidencias.pergunta(ESCOLA, ids.ana, EXP_ID, "p1");
-    expect(p1.enunciado).toBe("Você concorda?");
-    expect(p1.alternativas.map((a) => a.id).sort()).toEqual(["A1", "A2", "A3"]);
-    expect(JSON.stringify(p1)).not.toContain("status");
-    expect(await evidencias.responder(ESCOLA, ids.ana, EXP_ID, "p1", "A1")).toEqual({ enviada: true });
-    expect(await evidencias.responder(ESCOLA, ids.ana, EXP_ID, "p2", "B2")).toEqual({ enviada: true });
-    const marcas = await prisma.evidenciaMarca.findMany({
-      where: { escolaId: ESCOLA, estudanteId: ids.ana },
-      orderBy: { habilidade: "asc" },
-    });
-    expect(marcas.map((m) => [m.habilidade, m.marcador, m.status, m.atividadeId, m.rodada])).toEqual([
-      ["EF05CO03", "pergunta-tom-e-veracidade", "atingiu", pacote5A, 1],
-      ["EF05CO04", "pergunta-regra-condicional", "em_processo", pacote5A, 1],
-      ["EF05CO08", "selecao-do-mural", "atingiu", pacote5A, 1],
+  test("a Bia responde o cartão na reflexão, e o Caio recebe a cópia do nível pela equipe", async () => {
+    expect((await service.responderCartao(ESCOLA, ids.bia, await respostasDoCartao(ids.bia, "certas"))).passo).toBe("regra");
+    const caio = await prisma.evidencia.findFirstOrThrow({ where: { escolaId: ESCOLA, estudanteId: ids.caio, habilidade: "EF05CO03" } });
+    expect(caio).toMatchObject({ status: "atingiu", origem: "equipe", fonteEstudanteId: ids.bia });
+  });
+
+  test("a regra da Ana: o teste devolve o que a regra fez, e a régua lê o PRIMEIRO teste", async () => {
+    /* Primeiro teste: só espera — e ela previu certo o que essa regra faria. */
+    let estado = EstadoSchema.parse(await service.testarRegra(ESCOLA, ids.ana, "urgente_alarmante", ["esperar"], "sem_conferir"));
+    expect(estado.regra?.testes.map((t) => [t.situacao, t.previsao])).toEqual([["sem_conferir", "sem_conferir"]]);
+    expect(estado.regra?.testes[0]?.resultado).toBe("Sua regra pegou o áudio, mas não diz como conferir.");
+    /* Corrige depois do retorno do teste. */
+    estado = EstadoSchema.parse(
+      await service.testarRegra(ESCOLA, ids.ana, "urgente_alarmante", ["comparar_fonte", "encaminhar_se_confirmar"], "checa"),
+    );
+    expect(estado.regra?.testes.map((t) => t.situacao)).toEqual(["sem_conferir", "checa"]);
+    estado = EstadoSchema.parse(await service.enviarRegra(ESCOLA, ids.ana, "urgente_alarmante", ["comparar_fonte", "encaminhar_se_confirmar"]));
+    expect(estado.regra?.enviada?.emPalavras).toBe(
+      "Se a mensagem for urgente e alarmante, então eu comparo com uma fonte confiável e depois encaminho só se a notícia se confirmar.",
+    );
+    expect(estado.regra?.podeTestar).toBe(false);
+    /* Chegou à regra boa só DEPOIS do teste: em processo. */
+    const marcas = await prisma.evidenciaMarca.findMany({ where: { escolaId: ESCOLA, estudanteId: ids.ana }, orderBy: { habilidade: "asc" } });
+    expect(marcas.map((m) => [m.habilidade, m.marcador, m.status])).toEqual([
+      ["EF05CO03", "cartao-de-frases", "atingiu"],
+      ["EF05CO04", "regra-do-tio", "em_processo"],
+      ["EF05CO08", "selecao-do-mural", "atingiu"],
     ]);
   });
 
-  test("concluir fecha as perguntas: depois dele a resposta é 409, e quem pulou fica Não avaliado", async () => {
-    /* O Caio recebeu a cópia da equipe e nunca abriu o grupo: não há o que concluir. */
+  test("a regra enviada é um latch: a mesma é idempotente; outra, ou um teste depois, é 409", async () => {
+    await service.enviarRegra(ESCOLA, ids.ana, "urgente_alarmante", ["comparar_fonte", "encaminhar_se_confirmar"]);
+    expect(await codigo(service.enviarRegra(ESCOLA, ids.ana, "parente_proximo", ["esperar"]))).toBe("regra-ja-enviada");
+    expect(await codigo(service.testarRegra(ESCOLA, ids.ana, "parente_proximo", ["esperar"], "sem_conferir"))).toBe("regra-ja-enviada");
+    expect(await prisma.evidenciaMarca.count({ where: { escolaId: ESCOLA, estudanteId: ids.ana, habilidade: "EF05CO04" } })).toBe(1);
+  });
+
+  test("a Duda acerta de primeira e prevê certo: atingiu", async () => {
+    await service.testarRegra(ESCOLA, ids.duda, "parente_proximo", ["perguntar_adulto"], "checa");
+    await service.enviarRegra(ESCOLA, ids.duda, "parente_proximo", ["perguntar_adulto"]);
+    const marca = await prisma.evidenciaMarca.findFirstOrThrow({ where: { escolaId: ESCOLA, estudanteId: ids.duda, habilidade: "EF05CO04" } });
+    expect(marca.status).toBe("atingiu");
+  });
+
+  test("a Bia: ação repetida é 400, o sexto teste é 409, e encaminhar antes de checar é não atingiu", async () => {
+    expect(await codigo(service.testarRegra(ESCOLA, ids.bia, "urgente_alarmante", ["esperar", "esperar"], "sem_conferir"))).toBe(
+      "regra-invalida",
+    );
+    for (let i = 0; i < 5; i++) await service.testarRegra(ESCOLA, ids.bia, "urgente_alarmante", ["encaminhar_logo"], "repassa_antes");
+    expect(await codigo(service.testarRegra(ESCOLA, ids.bia, "urgente_alarmante", ["encaminhar_logo"], "repassa_antes"))).toBe(
+      "testes-esgotados",
+    );
+    await service.enviarRegra(ESCOLA, ids.bia, "urgente_alarmante", ["encaminhar_logo"]);
+    const caio = await prisma.evidencia.findFirstOrThrow({ where: { escolaId: ESCOLA, estudanteId: ids.caio, habilidade: "EF05CO04" } });
+    expect(caio).toMatchObject({ status: "nao_atingiu", origem: "equipe" });
+  });
+
+  test("só o Canal A: a missão não tem pergunta — a rota de perguntas é 404", async () => {
+    expect(await recusa(evidencias.pergunta(ESCOLA, ids.ana, EXP_ID, "p1"))).toMatchObject({
+      status: 404,
+      corpo: expect.objectContaining({ codigo: "pergunta-nao-encontrada" }),
+    });
+  });
+
+  test("concluir: o Caio nunca abriu o grupo, e depois do fim a regra não aceita mais teste", async () => {
     expect(await codigo(service.concluir(ESCOLA, ids.caio))).toBe("grupo-nao-aberto");
     expect((await service.concluir(ESCOLA, ids.ana)).passo).toBe("concluida");
     expect((await service.concluir(ESCOLA, ids.ana)).concluido).toBe(true);
-    expect(await codigo(evidencias.responder(ESCOLA, ids.ana, EXP_ID, "p2", "B1"))).toBe("sem-atividade-em-andamento");
+    expect(await codigo(service.testarRegra(ESCOLA, ids.ana, "urgente_alarmante", ["esperar"], "sem_conferir"))).toBe("regra-ja-enviada");
   });
 
-  test("a folha não tem mais texto livre de menor: a linha é a mesma para professor e gestor", async () => {
+  test("a folha: o cartão e a regra de cada linha, sem texto livre — a mesma para professor e gestor", async () => {
     const daProfessora = PainelSchema.parse(await service.painel(ESCOLA, ids.turma5A, ids.professora));
     const doGestor = PainelSchema.parse(await service.painel(ESCOLA, ids.turma5A));
     const linhaDaAna = (p: typeof daProfessora) => p.linhas.find((l) => l.estudanteId === ids.ana);
     expect(linhaDaAna(doGestor)).toEqual(linhaDaAna(daProfessora));
-    expect(linhaDaAna(doGestor)).toMatchObject({ passo: "concluida", motivo: "urgencia", selecao: ["msg_1", "msg_5", "msg_3"] });
-    expect(Object.keys(linhaDaAna(doGestor) ?? {})).not.toContain("reflexao");
+    expect(linhaDaAna(doGestor)).toMatchObject({
+      passo: "concluida",
+      motivo: "urgencia",
+      selecao: ["msg_1", "msg_5", "msg_3"],
+      cartao: { acertos: 6, porOperador: { E: 2, OU: 2, NAO: 2 } },
+      regra: {
+        emPalavras:
+          "Se a mensagem for urgente e alarmante, então eu comparo com uma fonte confiável e depois encaminho só se a notícia se confirmar.",
+        testes: 2,
+      },
+    });
+    expect(daProfessora.progresso).toMatchObject({ responderamCartao: 3, enviaramRegra: 3, concluiram: 1 });
   });
 });
 
@@ -871,6 +1000,12 @@ describe("os CHECKs recusam o que dizem recusar", () => {
     ["regra sem o voto", `UPDATE exp05ef1b_sessoes SET reflexao_em = now(), motivo = NULL, votou_em = NULL, concluido_em = NULL WHERE {S}`],
     ["concluída sem o voto", `UPDATE exp05ef1b_sessoes SET motivo = NULL, votou_em = NULL WHERE {S}`],
     ["tempo de feed negativo", `UPDATE exp05ef1b_sessoes SET tempo_feed_segundos = -1 WHERE {S}`],
+    ["cartão sem o voto", `UPDATE exp05ef1b_sessoes SET motivo = NULL, votou_em = NULL, concluido_em = NULL WHERE {S}`],
+    ["cartão com 5 frases", `UPDATE exp05ef1b_sessoes SET frases_operacoes = frases_operacoes - 0 WHERE {S}`],
+    ["regra sem o cartão", `UPDATE exp05ef1b_sessoes SET operacoes_em = NULL WHERE {S}`],
+    ["regra sem carimbo", `UPDATE exp05ef1b_sessoes SET regra_em = NULL WHERE {S}`],
+    ["condição da regra fora do vocabulário", `UPDATE exp05ef1b_sessoes SET regra_final = '{"condicao":"sempre","acoes":["esperar"]}' WHERE {S}`],
+    ["seis testes", `UPDATE exp05ef1b_sessoes SET regra_testes = regra_testes || regra_testes || regra_testes WHERE {S}`],
     ["Então de espaços", `UPDATE exp05ef1b_reflexoes SET acao_entao = '                    ' WHERE {S}`],
     ["Então curto", `UPDATE exp05ef1b_reflexoes SET acao_entao = 'curto demais' WHERE {S}`],
     ["condição fora do vocabulário", `UPDATE exp05ef1b_reflexoes SET condicional_se = 'sempre' WHERE {S}`],
@@ -911,18 +1046,24 @@ describe("os CHECKs recusam o que dizem recusar", () => {
     expect(await def("exp05ef1b_sessoes_motivo_check")).toEqual([...MOTIVOS]);
     expect(await def("exp05ef1b_reflexoes_condicional_check")).toEqual([...CONDICOES]);
     expect(await def("exp05ef1b_gates_turma_fase_check")).toEqual([...FASES]);
+    /* O CHECK da regra também tem 'object' e 'condicao': as condições são o fim dele. */
+    expect((await def("exp05ef1b_sessoes_regra_check")).slice(-CONDICOES.length)).toEqual([...CONDICOES]);
   });
 });
 
 describe("o guia da aula", () => {
-  test("o banco curado COM gabarito e as perguntas de evidência COM o nível — para quem dá aula", () => {
+  test("o banco curado COM gabarito e as duas ações por dentro — para quem dá aula", () => {
     const m = MaterialSchema.parse(service.material());
     expect(m.padrao.convite).toBe(falaDaNina(PACOTE_PADRAO.tema));
-    expect(m.perguntasDeEvidencia.map((p) => [p.perguntaId, p.habilidade])).toEqual([
-      ["p1", "EF05CO03"],
-      ["p2", "EF05CO04"],
+    expect(m.cartao.exemplo).toHaveLength(6);
+    expect(m.cartao.exemplo.filter((f) => f.esperado === "sim")).toHaveLength(3);
+    expect(m.regra.condicoes.filter((c) => c.pegaOAudio).map((c) => c.id)).toEqual(["urgente_alarmante", "parente_proximo"]);
+    expect(m.regra.acoes.filter((a) => a.tipo === "checagem")).toHaveLength(4);
+    expect(m.habilidades.map((h) => [h.codigo, h.rotulo])).toEqual([
+      ["EF05CO08", "Seleção do Mural"],
+      ["EF05CO03", "Cartão de frases"],
+      ["EF05CO04", "Regra do tio"],
     ]);
-    expect(m.perguntasDeEvidencia[0]?.alternativas[0]).toMatchObject({ id: "A1", status: "atingiu" });
     expect(m.roteiro.perguntas).toHaveLength(3);
   });
 });

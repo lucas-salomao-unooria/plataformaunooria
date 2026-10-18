@@ -182,7 +182,7 @@ export class QuemMandouIssoTurmasController {
     resposta: PainelSchema,
     notas: [
       NOTA_DO_404,
-      "`reflexao.entao` é TEXTO LIVRE DE MENOR: preenchido só para o professor que leciona na turma. Gestor e admin recebem a mesma linha com `entao: null` (LGPD art. 14).",
+"Sem texto livre de menor: `cartao` traz os acertos (0–6, e por operador) e `regra` a regra em palavras, montada das peças, e o número de testes. Professor e gestor recebem a mesma linha. O NÍVEL de cada habilidade é da evidência (E14).",
       "Sem coluna de acerto por criança: o nível por habilidade é da evidência (E14), onde o professor também o ajusta.",
     ],
   })
