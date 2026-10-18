@@ -1,5 +1,5 @@
-import type { NoticiaDoPacote } from "./contrato-de-rotas";
-import { IDS_DE_BLOCO, TIPOS_DE_PISTA, type IdDeBloco } from "./vocabulario";
+import type { MateriaDaSimulacao, NoticiaDoPacote } from "./contrato-de-rotas";
+import { BLOCOS_ISCA, IDS_DE_BLOCO, TIPOS_DE_PISTA, type IdDeBloco } from "./vocabulario";
 
 /**
  * O CATÁLOGO da exp04ef1b — o BANCO PADRÃO "Feira de Ciências e Notícias da
@@ -311,9 +311,24 @@ export function ehPilar(id: IdDeBloco): boolean {
   return (TIPOS_DE_PISTA as readonly string[]).includes(id);
 }
 
-/** Os seis blocos, na ordem canônica, com o `pilar` — o material do professor. */
-export function blocosDoProfessor(): Array<{ id: IdDeBloco; rotulo: string; legenda: string; pilar: boolean }> {
-  return IDS_DE_BLOCO.map((id) => ({ id, ...BLOCOS_DA_CHAVE[id], pilar: ehPilar(id) }));
+/**
+ * Os seis blocos, na ordem canônica, com o `pilar` e os dois cartões — com o
+ * lado CERTO de cada cartão dos pilares (`null` nas iscas). É o material do
+ * professor: ele projeta a Chave de referência na conversa depois da aula.
+ */
+export function blocosDoProfessor(): Array<{
+  id: IdDeBloco;
+  rotulo: string;
+  legenda: string;
+  pilar: boolean;
+  cartoes: Array<{ texto: string; exemplo: string; lado: "aprova" | "reprova" | null }>;
+}> {
+  return IDS_DE_BLOCO.map((id) => ({
+    id,
+    ...BLOCOS_DA_CHAVE[id],
+    pilar: ehPilar(id),
+    cartoes: CARTOES_DA_CHAVE[id].map((c, i) => ({ ...c, lado: ehPilar(id) ? (i === 0 ? "aprova" : "reprova") : null })),
+  }));
 }
 
 /**
@@ -332,7 +347,7 @@ export const ROTEIRO_DA_MEDIACAO = {
     "Quais são as três perguntas que todo editor precisa fazer antes de apertar o botão de publicar?",
   ] as const,
   gatilhoDaRevisao:
-    "Acabei de liberar nos aparelhos de vocês a ferramenta do Bento. Conectem os três pilares que descobrimos para destravar a nossa mesa de revisão e consertar o jornal!",
+    "Acabei de liberar nos aparelhos de vocês a ferramenta do Bento. Cada dupla monta a sua Chave do Editor — combinem antes de tocar — para destravar a nossa mesa de revisão e consertar o jornal!",
 } as const;
 
 /**
@@ -343,3 +358,121 @@ export const ROTEIRO_DA_MEDIACAO = {
  */
 export const CURIOSIDADE_DA_ESPERA =
   "O primeiro jornal impresso escolar do Brasil foi feito por estudantes há mais de cem anos!";
+
+// ───────────────────────────────────────────── Canal A puro (3.0.0, ADR-168)
+
+/**
+ * Os cartões de CONDIÇÃO da Chave: dois por bloco, cada um com um exemplo
+ * curto (o plenário pediu: "canal oficial" sozinho é abstrato aos 9 anos). Nos
+ * pilares, o `-1` faz a pista PASSAR e o `-2` a faz FALHAR
+ * (`regras/montagem.ts#LADO_CERTO`) — o lado certo não desce à criança, e a
+ * tela embaralha a ordem dos dois por sessão. Nas iscas não há lado certo: o
+ * cartão da isca conta como errado na régua.
+ */
+export const CARTOES_DA_CHAVE: Readonly<Record<IdDeBloco, readonly [CartaoDaChave, CartaoDaChave]>> = {
+  fonte: [
+    { texto: "Veio de um canal oficial ou conhecido", exemplo: "o site da prefeitura" },
+    { texto: "Ninguém sabe de onde veio", exemplo: "“me mandaram no grupo”" },
+  ],
+  data: [
+    { texto: "Aconteceu agora ou vai acontecer", exemplo: "“publicado ontem”" },
+    { texto: "É de muito tempo atrás", exemplo: "“em 2018”" },
+  ],
+  autoria: [
+    { texto: "Tem o nome de quem escreveu", exemplo: "“por Marta Ribeiro”" },
+    { texto: "Ninguém assina o texto", exemplo: "sem nome no fim" },
+  ],
+  foto: [
+    { texto: "Tem foto bonita e colorida", exemplo: "uma foto grande" },
+    { texto: "Não tem foto", exemplo: "só o texto" },
+  ],
+  urgencia: [
+    { texto: "Diz que é URGENTE", exemplo: "“corram, repassem já!”" },
+    { texto: "Fala com calma", exemplo: "sem pressa" },
+  ],
+  compartilhada: [
+    { texto: "Todo mundo já mandou", exemplo: "“está em todos os grupos”" },
+    { texto: "Pouca gente mandou", exemplo: "chegou para poucos" },
+  ],
+};
+
+export interface CartaoDaChave {
+  texto: string;
+  exemplo: string;
+}
+
+/**
+ * Na simulação, a vaga com ISCA é pulada pela tela: a matéria não traz o que
+ * a isca olharia. A frase é neutra e serve para cada uma — sem soar como
+ * bronca (o plenário pediu).
+ */
+export const PULO_DA_ISCA: Readonly<Record<(typeof BLOCOS_ISCA)[number], string>> = {
+  foto: "Esta matéria não tem foto. Siga para o próximo passo.",
+  urgencia: "Esta matéria não diz se é urgente. Siga para o próximo passo.",
+  compartilhada: "Não dá para saber quanta gente mandou esta matéria. Siga para o próximo passo.",
+};
+
+/**
+ * As duas matérias da SIMULAÇÃO do banco padrão: inéditas, sem imagem, uma
+ * publicável e uma com furo (a autoria — a pista que a criança só vê se
+ * seguir a Chave até o fim, quando a autoria não é a 1ª vaga). Valem também
+ * para os pacotes anteriores à 3.0.0, que não têm a coluna `simulacao`.
+ */
+export const SIMULACAO_PADRAO: readonly MateriaDaSimulacao[] = [
+  {
+    id: "s1",
+    meio: "jornal",
+    veiculo: "Jornal do Bairro",
+    falante: null,
+    manchete: "Biblioteca do bairro ganha cantinho de leitura para crianças",
+    resumo:
+      "A biblioteca do bairro abriu um cantinho de leitura com tapete, almofadas e livros novos para crianças. O espaço funciona de segunda a sexta, das 9h às 17h.",
+    pistas: {
+      fonte: "Jornal do Bairro: o jornal impresso que circula na região há muitos anos.",
+      data: "Publicado ontem. O cantinho abriu nesta semana.",
+      autoria: "Texto assinado pelo repórter Caio Mendes.",
+    },
+    gabarito: { publicavel: true, pilarEmFalta: null, explicacao: "Jornal conhecido, notícia desta semana e repórter que assina: pode ir para a capa." },
+  },
+  {
+    id: "s2",
+    meio: "blog",
+    veiculo: "Blog Novidades da Cidade",
+    falante: null,
+    manchete: "Parque da cidade vai ganhar uma piscina gigante",
+    resumo:
+      "Um blog conta que o parque da cidade vai ganhar uma piscina gigante no mês que vem, com escorregador e entrada grátis para as escolas.",
+    pistas: {
+      fonte: "O blog diz que a informação veio da Secretaria de Esportes e põe o link do anúncio oficial.",
+      data: "Publicado hoje de manhã.",
+      autoria: "O texto não tem o nome de ninguém: nem do blog, nem de quem escreveu.",
+    },
+    gabarito: {
+      publicavel: false,
+      pilarEmFalta: "autoria",
+      explicacao: "Ninguém assina o texto: sem saber quem escreveu, não dá para publicar.",
+    },
+  },
+];
+
+/** Uma cópia profunda das matérias da simulação do banco padrão. */
+export function simulacaoPadrao(): MateriaDaSimulacao[] {
+  return SIMULACAO_PADRAO.map((m) => ({ ...m, pistas: { ...m.pistas }, gabarito: { ...m.gabarito } }));
+}
+
+/**
+ * O boato da TRANSFERÊNCIA — o de "todas as escolas do bairro", VERBATIM do
+ * Desafio Final da 2.x (`e6.cenario.boato_chat`), diferente do da mesa. As
+ * pistas são FIXAS e mostram as três faltas, porque o boato é o mesmo em toda
+ * atividade: a transferência mede o gesto de verificar, não o conteúdo.
+ */
+export const BOATO_DA_TRANSFERENCIA = {
+  remetente: "Grupo da turma",
+  mensagem:
+    "URGENTE: A prefeitura avisou que a água de todas as escolas do bairro vai ser cortada amanhã e ninguém deve ir para a aula! Repassem para todo mundo!",
+  pistas: {
+    fonte: "A mensagem foi encaminhada muitas vezes e não tem link de nenhum canal oficial da prefeitura.",
+    data: "A mensagem não diz quando foi escrita: não tem data nenhuma.",
+    autoria: "Ninguém assina: não aparece o nome de nenhuma pessoa ou autoridade responsável.",
+  },
+} as const;

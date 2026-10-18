@@ -71,18 +71,18 @@ model Escola {
   /// Sigla de 2 letras — CHECK na migration.
   uf        String?
 
-  pai               Escola?           @relation("EscolaPai", fields: [paiId], references: [id])
-  filhas            Escola[]          @relation("EscolaPai")
-  turmas            Turma[]
-  usuarios          User[]
-  lotacoes          Lotacao[]
-  perfisPortateis   PerfilPortatil[]
+  pai                      Escola?                   @relation("EscolaPai", fields: [paiId], references: [id])
+  filhas                   Escola[]                  @relation("EscolaPai")
+  turmas                   Turma[]
+  usuarios                 User[]
+  lotacoes                 Lotacao[]
+  perfisPortateis          PerfilPortatil[]
   /// Os `gestor_regional` que cobrem esta regional (vazio numa `escola`).
-  gestoresRegionais User[]            @relation("RegionalDoGestor")
+  gestoresRegionais        User[]                    @relation("RegionalDoGestor")
   /// As exceções de disponibilidade DESTE escopo — vale tanto para uma unidade
   /// (`tipo='escola'`) quanto para uma regional, que é o nível de cima na mesma
   /// tabela. As do CONTRATO não aparecem aqui: elas têm `escola_id` nulo.
-  disponibilidades  Disponibilidade[]
+  disponibilidades         Disponibilidade[]
   /// As conversas do agente de IA do professor NESTA escola (a posse é por
   /// professor E escola ativa — `docs/regras/agente-professor.md`).
   agenteProfessorConversas AgenteProfessorConversa[]
@@ -230,42 +230,42 @@ model Turma {
   /// O Relógio da AULA da exp02em1b mora em tabela DA EXPERIÊNCIA, não em coluna
   /// aqui: `turmas` serve a plataforma inteira, e uma coluna de cronômetro de
   /// uma missão só faria toda experiência futura herdar o vocabulário dela.
-  unoogptRelogio    UnoogptRelogioTurma[]
-  unoogptGate       UnoogptGateTurma[]
-  rastroGates       RastroGateTurma[]
-  manifestoGates    Exp08ef4bGateTurma[]
+  unoogptRelogio     UnoogptRelogioTurma[]
+  unoogptGate        UnoogptGateTurma[]
+  rastroGates        RastroGateTurma[]
+  manifestoGates     Exp08ef4bGateTurma[]
   /// O pacote curado da exp08ef4b é POR TURMA: cada professora contextualiza os
   /// dilemas com o caso da escola dela (exigência 8.1).
-  manifestoConteudo Exp08ef4bConteudoTurma[]
+  manifestoConteudo  Exp08ef4bConteudoTurma[]
   /// A configuração da aula da exp01ef1b (pacote de fotos + o latch da roda).
-  fotoContaConfigs  FotoContaTurmaConfig[]
+  fotoContaConfigs   FotoContaTurmaConfig[]
   /// Quem divide um computador em cada missão desta turma (E13, ADR-111).
-  equipesMontagens  EquipesMontagem[]
+  equipesMontagens   EquipesMontagem[]
   /// As coberturas da exp07ef1b (a ATIVIDADE é a cobertura homologada), o
   /// relógio da aula e as sessões — todas POR TURMA, e todas saem com ela.
-  selecaoCoberturas Exp07ef1bCobertura[]
-  selecaoGates      Exp07ef1bGateTurma[]
-  selecaoSessoes    Exp07ef1bSessao[]
+  selecaoCoberturas  Exp07ef1bCobertura[]
+  selecaoGates       Exp07ef1bGateTurma[]
+  selecaoSessoes     Exp07ef1bSessao[]
   /// A evidência pedagógica das missões desta turma (E14). As três relações
   /// existem só pela FK com cascata — nenhuma leitura parte da turma.
-  evidenciasMarcas  EvidenciaMarca[]
-  evidencias        Evidencia[]
-  evidenciasEventos EvidenciaEvento[]
+  evidenciasMarcas   EvidenciaMarca[]
+  evidencias         Evidencia[]
+  evidenciasEventos  EvidenciaEvento[]
   /// Quem Mandou Isso? v2.2 (exp05ef1b): o pacote aprovado é POR TURMA (e é a
   /// atividade da evidência), a fase é da turma, e a sessão carrega a turma.
-  quemMandouPacotes Exp05ef1bPacote[]
-  quemMandouGates   Exp05ef1bGateTurma[]
-  quemMandouSessoes Exp05ef1bSessao[]
+  quemMandouPacotes  Exp05ef1bPacote[]
+  quemMandouGates    Exp05ef1bGateTurma[]
+  quemMandouSessoes  Exp05ef1bSessao[]
   /// O Jornal da Escola (exp04ef1b): o pacote homologado é POR TURMA (e é a
   /// atividade da evidência), o relógio é da turma, e a sessão carrega a turma.
-  jornalPacotes     Exp04ef1bPacote[]
-  jornalGates       Exp04ef1bGateTurma[]
-  jornalSessoes     Exp04ef1bSessao[]
+  jornalPacotes      Exp04ef1bPacote[]
+  jornalGates        Exp04ef1bGateTurma[]
+  jornalSessoes      Exp04ef1bSessao[]
   /// O Júri Estadual de Projetos (exp06ef1b): o pacote homologado é POR TURMA
   /// (e é a atividade da evidência), o relógio é da turma, e a sessão carrega a turma.
-  juriPacotes       Exp06ef1bPacote[]
-  juriGates         Exp06ef1bGateTurma[]
-  juriSessoes       Exp06ef1bSessao[]
+  juriPacotes        Exp06ef1bPacote[]
+  juriGates          Exp06ef1bGateTurma[]
+  juriSessoes        Exp06ef1bSessao[]
   juriGatesHistorico Exp06ef1bGateHistorico[]
 
   @@unique([escolaId, periodoLetivoId, nome])
@@ -2976,11 +2976,14 @@ model Exp04ef1bPacote {
   noticias Json
 
   /// As URLs das imagens geradas, por id de notícia (`{ "n1": url }`).
-  midia Json @default("{}")
+  midia         Json  @default("{}")
   /// As URLs que o professor APROVOU, por id de notícia (ADR-147). A imagem só
   /// chega ao estudante quando a URL daqui é a mesma de `midia`: gerar outra
   /// troca `midia`, e aquela notícia espera o novo OK.
-  midiaAprovada Json @default("{}") @map("midia_aprovada")
+  midiaAprovada Json  @default("{}") @map("midia_aprovada")
+  /// As duas matérias da SIMULAÇÃO (`s1`, `s2`, sem imagem — ADR-168). Nulo nos
+  /// pacotes anteriores à 3.0.0: a turma usa as do banco padrão (`catalogo.ts`).
+  simulacao     Json?
 
   /// Quem homologou. Carimbo sem FK, como `exp07ef1b_coberturas.aprovada_por`:
   /// a saída de um professor da rede não pode travar a atividade da turma.
@@ -3002,7 +3005,7 @@ model Exp04ef1bPacote {
   criadoEm     DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
   atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
 
-  turma        Turma                   @relation(fields: [turmaId], references: [id], onDelete: Cascade)
+  turma        Turma                  @relation(fields: [turmaId], references: [id], onDelete: Cascade)
   gates        Exp04ef1bGateTurma[]
   sessoes      Exp04ef1bSessao[]
   diagramacoes Exp04ef1bDiagramacao[]
@@ -3054,40 +3057,57 @@ model Exp04ef1bSessao {
   rodada      Int
 
   /// desafio | mesa | motivo | publicada | resultado | chave | revisao |
-  /// comparativo | transferencia | fim (CHECK; a ordem é `regras/passos.ts`).
+  /// comparativo | simulacao | transferencia | fim (CHECK; a ordem é `regras/passos.ts`).
   /// `resultado` e `chave` nunca são GRAVADOS: a etapa da turma os impõe.
   passo String @default("desafio")
 
   /// As pistas abertas, `[{ noticiaId, tipo, fase, em }]`, sem repetir o par
-  /// na mesma fase. É o registro da EF15CO04 (fase 1) e do `edicao-2` (as duas).
+  /// na mesma fase. É o registro do `edicao-2` (as duas fases) e o que a tela
+  /// do ✓/✗ oferece para julgar.
   pistas Json @default("[]")
+
+  /// Os julgamentos ✓/✗ da mesa, `[{ noticiaId, tipo, veredito, decisao, em }]`:
+  /// o PRIMEIRO de cada (notícia, pista), só antes da 1ª publicação. É o dado da
+  /// EF15CO04 (ADR-168).
+  julgamentos Json @default("[]")
 
   /// As 3 vagas da 1ª edição, na ORDEM (a primeira é a manchete principal).
   /// Vazias antes do latch; com ele, três junto com o layout e o carimbo (CHECK).
-  slotsEd1         String[]  @default([]) @map("slots_ed1")
-  layoutEd1        String?   @map("layout_ed1")
+  slotsEd1        String[]  @default([]) @map("slots_ed1")
+  layoutEd1       String?   @map("layout_ed1")
   /// ia | modelo — quem diagramou a página que a criança viu.
-  origemLayoutEd1  String?   @map("origem_layout_ed1")
+  origemLayoutEd1 String?   @map("origem_layout_ed1")
   /// 0 a 3, calculado NO SERVIDOR no latch (regra 3).
-  verificadasEd1   Int?      @map("verificadas_ed1")
+  verificadasEd1  Int?      @map("verificadas_ed1")
   /// visual | checagem — a pergunta de DEPOIS do latch, uma vez só.
-  motivoEd1        String?   @map("motivo_ed1")
-  publicada1Em     DateTime? @map("publicada1_em") @db.Timestamptz(6)
+  motivoEd1       String?   @map("motivo_ed1")
+  publicada1Em    DateTime? @map("publicada1_em") @db.Timestamptz(6)
 
   /// Cada envio da Chave é uma tentativa (a isca também conta).
-  chaveTentativas  Int       @default(0) @map("chave_tentativas")
-  chaveFormadaEm   DateTime? @map("chave_formada_em") @db.Timestamptz(6)
+  chaveTentativas Int       @default(0) @map("chave_tentativas")
+  chaveFormadaEm  DateTime? @map("chave_formada_em") @db.Timestamptz(6)
+  /// A Chave como a criança a MONTOU (3.0.0, ADR-168): blocos, condições,
+  /// "se falhar" e a repetição. Uma vez só, sem correção — é o dado da EF15CO02.
+  chaveMontagem   Json?     @map("chave_montagem")
 
-  slotsEd2         String[]  @default([]) @map("slots_ed2")
-  layoutEd2        String?   @map("layout_ed2")
-  origemLayoutEd2  String?   @map("origem_layout_ed2")
-  verificadasEd2   Int?      @map("verificadas_ed2")
-  publicada2Em     DateTime? @map("publicada2_em") @db.Timestamptz(6)
+  slotsEd2        String[]  @default([]) @map("slots_ed2")
+  layoutEd2       String?   @map("layout_ed2")
+  origemLayoutEd2 String?   @map("origem_layout_ed2")
+  verificadasEd2  Int?      @map("verificadas_ed2")
+  publicada2Em    DateTime? @map("publicada2_em") @db.Timestamptz(6)
+
+  /// A execução da Chave nas duas matérias novas (EF15CO02, ADR-168).
+  simulacao     Json?
+  simuladaEm    DateTime? @map("simulada_em") @db.Timestamptz(6)
+  /// O boato com "Repassar" à mão: as pistas abertas e a decisão (EF04CO08).
+  transferencia Json?
+  transferidaEm DateTime? @map("transferida_em") @db.Timestamptz(6)
 
   concluidaEm DateTime? @map("concluida_em") @db.Timestamptz(6)
 
-  /// A versão do instrumento, para reprocessamento histórico (DAD-06).
-  versaoInstrumento String @default("1.0.0") @map("versao_instrumento")
+  /// A versão do instrumento, para reprocessamento histórico (DAD-06): 2.0.0 é
+  /// o Canal A puro (ADR-168); as sessões da 2.x ficaram na 1.0.0.
+  versaoInstrumento String @default("2.0.0") @map("versao_instrumento")
 
   criadoEm     DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
   atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
@@ -3108,8 +3128,8 @@ model Exp04ef1bSessao {
 /// usadas. Só entra aqui o que a IA respondeu; o modelo automático não é
 /// gravado (ele é determinístico e de graça).
 model Exp04ef1bDiagramacao {
-  escolaId String @map("escola_id")
-  pacoteId String @map("pacote_id") @db.Uuid
+  escolaId String   @map("escola_id")
+  pacoteId String   @map("pacote_id") @db.Uuid
   /// Os três ids na ordem, separados por vírgula (`n2,n5,n1`) — CHECK.
   chave    String
   /// classic | hero-image | columns (CHECK) — o `NEWSPAPER_LAYOUTS` do DS.

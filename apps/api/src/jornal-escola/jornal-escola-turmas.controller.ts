@@ -359,7 +359,8 @@ export class JornalEscolaTurmasController {
       topicos: parametros.topicos?.trim() || null,
       origem: "ia" as const,
       usouIa: true,
-      noticias: r.valor,
+      noticias: r.valor.noticias,
+      simulacao: r.valor.simulacao,
     };
   }
 

@@ -2,7 +2,7 @@ import { HttpException } from "@nestjs/common";
 import type { AiProvider } from "../src/ai/provider";
 import type { QuotaService } from "../src/ai/quota.service";
 import type { AssetsService } from "../src/assets/assets.service";
-import { noticiasPadrao } from "../src/jornal-escola/catalogo";
+import { noticiasPadrao, simulacaoPadrao } from "../src/jornal-escola/catalogo";
 import {
   imagensProntasParaAula,
   midiaAprovada,
@@ -37,6 +37,7 @@ function pacote(midia: Partial<Record<IdDeNoticia, string>>, aprovada: Partial<R
     topicos: null,
     origem: "padrao",
     noticias: NOTICIAS,
+    simulacao: simulacaoPadrao(),
     midia,
     midiaAprovada: aprovada,
   };
