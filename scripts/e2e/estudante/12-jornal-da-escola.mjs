@@ -1,31 +1,53 @@
 import { BFF, HUB, suite } from "../lib/roteiro.mjs";
 import { conta, contasDe } from "../lib/credenciais.mjs";
-import { ALERTA_DE_ERRO, esperarOuFalharCedo } from "../lib/smoke.mjs";
+import { ALERTA_DE_ERRO, esperarOuFalharCedo, esperarOuFalharPorHttp, vigiarFalhasDaApi } from "../lib/smoke.mjs";
 import { esperarFalasDoTema, provarFalasNaCriacao, provarPodcastNaAula } from "../lib/podcast.mjs";
 
 /**
- * Jornal da Escola: A Edição de Bento (exp04ef1b), nas duas pontas da sala: a
- * professora cria a atividade e conduz, e dois estudantes da mesma turma editam.
+ * Jornal da Escola: A Edição de Bento (exp04ef1b 3.0.0, "Canal A puro",
+ * ADR-168), nas duas pontas da sala: a professora cria a atividade e conduz, e
+ * dois estudantes da mesma turma editam.
  *
  * O que esta suíte cobra, e por que cada item é uma regra do software:
  *
  * 1. **A redação é da Unooria, e a peça imitada fala na voz de onde veio**
  *    (ADR-117, ADR-136): o post abre como o post do Unoovista, a mensagem como o
  *    balão do Unoochat — dentro da mesma gaveta da Unooria.
- * 2. **A pista desce do servidor** quando a criança a abre: o texto não está na
- *    sessão (é o registro que mede a EF15CO04).
+ * 2. **A pista desce do servidor** quando a criança a abre, e logo abaixo dela
+ *    vem o "✓ Confio / ✗ Não confio" (ADR-168): o PRIMEIRO julgamento vale — a
+ *    marca não muda num segundo toque nem no F5. É o dado da EF15CO04.
  * 3. **Publicar é um latch, e o motivo vem DEPOIS dele**: o modal de publicar
  *    não pergunta nada, e a pergunta aparece só depois de a edição sair.
  * 4. **O resultado e a revisão são da professora** — UM botão que avança —, e
  *    chegam pelo polling (ADR-93). Um F5 no meio devolve a mesma tela, e antes
  *    do botão o resultado não existe nem pela api.
- * 5. **A Chave tem iscas**: a isca volta à bandeja, e a Chave só se forma com
- *    fonte, data e autoria.
- * 6. **A 2ª edição mostra o antes e o depois**, e o desafio final sai da
- *    redação, sem mostrar acerto.
- * 7. **O painel da professora não tem nota nem acerto por criança**: o número
- *    de verificadas só aparece no histograma anônimo, e as habilidades da BNCC
- *    ficam no painel de habilidades.
+ * 5. **A Chave do Editor é MONTADA, num envio, sem correção**: três blocos,
+ *    o lado de cada cartão, o "se falhar" e a repetição; o "Pronto" só acende
+ *    completo, pede confirmação, e nada na tela diz se a Chave está certa.
+ * 6. **A 2ª edição mostra o antes e o depois**; na revisão as pistas abrem SEM
+ *    julgamento.
+ * 7. **A Chave é TESTADA em duas matérias novas** (a simulação): a criança abre
+ *    as pistas na ordem da Chave, marca cada uma (obrigatório aqui) e decide; a
+ *    resposta é a mesma frase de referência para todos.
+ * 8. **A transferência é um boato numa tela neutra**, com "Repassar" e "Não
+ *    repassar" à mão desde o início — e a síntese não diz se acertou.
+ * 9. **O painel da professora não tem nota nem acerto por criança**: o número
+ *    de verificadas só aparece no histograma anônimo, a Chave e a mensagem nova
+ *    só AGREGADAS no roteiro da conversa, e as habilidades da BNCC ficam no
+ *    painel de habilidades — com os níveis que as réguas dão a esta jornada.
+ *
+ * A JORNADA do primeiro estudante é escolhida para as três habilidades
+ * "atingiu" (as réguas de `apps/api/src/jornal-escola/regras/evidencia.ts`):
+ * - EF15CO04: julga certo TODA pista que abre, cada tipo em ≥ 2 notícias, pega
+ *   o furo de uma notícia antiga que fica FORA da capa, e não marca "não
+ *   confio" em nenhuma notícia da capa. A capa da 1ª edição continua sendo
+ *   [antiga, publicável, sem fonte] — a criança abriu delas só as pistas que
+ *   passam —, para a revisão e o "1 de 3 ➔ 3 de 3" seguirem de pé;
+ * - EF15CO02: a Chave certa (fonte, data, autoria; os seis cartões do lado
+ *   certo; "Não publico" nas três; "em TODAS as notícias") e a simulação FIEL
+ *   a ela;
+ * - EF04CO08: a 2ª edição 3/3 com as três pistas de cada matéria abertas (as
+ *   duas novas, na revisão), e no boato abre a fonte e não repassa.
  *
  * O segundo estudante publica pela api (pelo BFF, com a sessão dele): o que a
  * suíte precisa dele é uma segunda edição no histograma, não as mesmas capturas
@@ -82,6 +104,74 @@ const N = {};
 /** O que nunca pode aparecer na tela da criança: carimbo, nota, acerto. */
 const CARIMBO_OU_ACERTO = /\b(fake news|falsa|falso|mentira|errou|acertou|correta|incorreta|pontos|sua nota)\b/i;
 
+/** Na Chave montada, nem correção nem nova tentativa: o que a 2.x dizia e a 3.0.0 não diz. */
+const CORRECAO_DA_CHAVE = /(Voltou para a bandeja|Esse bloco não abre a chave|Chave do Editor ativada|tente de novo|nova tentativa|\bcerta\b|\berrada\b)/i;
+
+/**
+ * OS TEXTOS DE QUE A SUÍTE DEPENDE — copiados de
+ * `apps/experiencias/exp04ef1b/src/lib/textos.ts` (e a frase de referência, de
+ * `apps/api/src/jornal-escola/jornal-escola.service.ts#REGRA_DE_REFERENCIA`).
+ * A suíte casa por TEXTO EXATO: mudar a copy lá sem mudar aqui reprova a e2e.
+ */
+const TXT = {
+  abrindoPista: "Abrindo a pista…",
+  julgar: "Você confia nesta pista?",
+  veredito: { confio: "✓ Confio", nao_confio: "✗ Não confio" },
+  marcado: (v) => `Marcado: ${v}`,
+  motivo: { visual: "Escolhi porque chamou atenção", checagem: "Escolhi porque conferi as pistas" },
+  chave: {
+    titulo: "Ferramenta de Checagem do Bento",
+    combinem: "Combinem antes de tocar.",
+    bandeja: "Blocos periciais",
+    escolhido: (rotulo) => `${rotulo} escolhido. Toque numa vaga para colocar.`,
+    adicionar: "Adicionar na próxima vaga",
+    colocarNaVaga: (rotulo, vaga) => `Colocar ${rotulo} na vaga ${vaga}`,
+    cartao: (texto, exemplo) => `${texto} (ex.: ${exemplo})`,
+    lado: { aprova: "A pista passa", reprova: "A pista falha" },
+    seFalhar: "Se esta pista falhar:",
+    naoPublico: "Não publico",
+    repeticao: "Onde usar estes passos?",
+    emTodas: "Usar estes passos em TODAS as notícias",
+    pronto: "Pronto",
+    falta: "Escolha os três blocos e marque todas as opções para terminar a Chave.",
+    confirmarTitulo: "Enviar a Chave do Editor?",
+    confirmarDescricao: "Depois de enviar, a Chave não muda.",
+    enviar: "Enviar a Chave",
+    montada: "Chave do Editor montada! A mesa de revisão está aberta.",
+    irParaRevisao: "Abrir a Mesa de Revisão",
+  },
+  testarAChave: "Testar a minha Chave",
+  sim: {
+    titulo: "Teste da Chave do Editor",
+    suaChave: "Sua Chave do Editor",
+    seFalharNaoPublico: "Se falhar: Não publico",
+    combinadoEmTodas: "Combinado: Usar estes passos em TODAS as notícias",
+    materia: (n, total) => `Matéria ${n} de ${total}`,
+    marqueParaSeguir: "Marque se você confia nesta pista para seguir.",
+    decisao: { publicar: "Publicar", nao_publicar: "Não publicar" },
+    referencia: "Para pensar",
+    continuar: "Continuar",
+    frase: "Bons editores olham a fonte, a data e quem escreveu — e param se uma delas falhar.",
+  },
+  boato: {
+    titulo: "Chegou uma mensagem",
+    oQueFazer: "O que você faz com esta mensagem?",
+    repassar: "Repassar para o grupo",
+    naoRepassar: "Não repassar",
+    sintese:
+      "Antes de repassar qualquer aviso, pare e procure a fonte, a data e o autor para não espalhar enganos na escola.",
+    conversa: "Daqui a pouco, a turma vai conversar sobre esta mensagem com a professora.",
+    concluir: "Concluir Missão",
+  },
+};
+
+/** O lado da pista pelo gabarito da notícia — a regra de `regras/julgamentos.ts#vereditoCerto`. */
+const vereditoCerto = (gabarito, tipo) => (!gabarito.publicavel && gabarito.pilarEmFalta === tipo ? "nao_confio" : "confio");
+
+/** A ordem da Chave que a criança monta — é também a ordem em que a simulação abre as pistas. */
+const ORDEM_DA_CHAVE = ["fonte", "data", "autoria"];
+const ROTULO_DA_PISTA = { fonte: "Fonte", data: "Data", autoria: "Autoria" };
+
 /** A api pelo BFF do hub, com a sessão do navegador. */
 async function lerApi(p, caminho) {
   const resposta = await p.request.get(`${BFF}${caminho}`);
@@ -105,27 +195,46 @@ async function hidratado(p, locator) {
   });
 }
 
+/** Lê a api até a condição valer — e falha com a última leitura, nunca com o relógio. */
+async function esperarNaApi(p, caminho, condicao, { oQue, timeout = 20_000 } = {}) {
+  const limite = Date.now() + timeout;
+  let ultima = null;
+  while (Date.now() < limite) {
+    ultima = await lerApi(p, caminho);
+    if (ultima.status >= 400) {
+      throw new Error(`${oQue}: HTTP ${ultima.status} em ${caminho} — ${JSON.stringify(ultima.corpo).slice(0, 300)}`);
+    }
+    if (condicao(ultima.corpo)) return ultima.corpo;
+    await p.waitForTimeout(500);
+  }
+  throw new Error(
+    `${oQue}: a api não chegou ao estado esperado em ${timeout / 1000}s (última leitura: ${JSON.stringify(ultima?.corpo).slice(0, 300)})`,
+  );
+}
+
 await suite(
   {
     slug: "estudante/12-jornal-da-escola",
     papel: "estudante",
     titulo: "Jornal da Escola — a edição de Bento",
-    subtitulo: "escolher três de oito notícias, ver o que os leitores sentiram, checar e publicar de novo",
+    subtitulo:
+      "julgar as pistas, escolher três de oito notícias, ver o que os leitores sentiram, montar a Chave, publicar de novo, testar a Chave e decidir sobre um boato",
     contexto:
       "A redação da escola recebeu oito notícias de oito meios, e a primeira página tem três vagas. A " +
-      "criança escolhe, publica e só depois descobre o que os leitores viveram: uma oficina que já " +
-      "passou, um aviso que ninguém assina. A Chave do Editor ensina a checar fonte, data e autoria, " +
-      "e a segunda edição mostra o antes e o depois.",
+      "criança abre as pistas e diz se confia em cada uma, escolhe, publica e só depois descobre o que os " +
+      "leitores viveram. Ela monta a própria Chave do Editor, sem correção, refaz a capa, testa a Chave em " +
+      "duas matérias novas e, numa tela neutra, decide o que faz com um boato.",
     prova: [
-      "A atividade nasce da professora, pelo assistente — a IA escreve as notícias, a professora aprova textos e imagens, e criar com “no ar agora” abre a turma",
+      "A atividade nasce da professora, pelo assistente — a IA escreve as oito notícias e as duas matérias da simulação, a professora aprova textos e imagens, e criar com “no ar agora” abre a turma",
       "O post abre no formato do Unoovista e a mensagem no do Unoochat, dentro da redação da Unooria",
-      "A pista de fonte, data e autoria só existe depois que a criança a abre",
+      "A pista só existe depois que a criança a abre, e o “✓ Confio / ✗ Não confio” marcado não muda num segundo toque nem no F5",
       "Publicar não pergunta nada; a pergunta de motivo vem depois do latch",
       "O resultado e a revisão chegam pelo botão único da professora, e a F5 volta à mesma tela",
-      "A isca volta para a bandeja, e a Chave só se forma com fonte, data e autoria",
-      "O comparativo mostra 1 de 3 na 1ª edição e 3 de 3 na 2ª",
-      "O desafio final sai da redação e não mostra acerto",
-      "O painel da professora não tem nota por criança, e as habilidades da BNCC aparecem",
+      "A Chave é montada num envio só: o “Pronto” só acende completo, pede confirmação e nada diz se ela está certa",
+      "Na revisão as pistas abrem sem julgamento, e o comparativo mostra 1 de 3 na 1ª edição e 3 de 3 na 2ª",
+      "Na simulação a criança segue a própria Chave, marca cada pista e recebe a mesma frase de referência que todos",
+      "O boato chega numa tela neutra, com “Repassar” e “Não repassar” desde o início, e a síntese não mostra acerto",
+      "O painel da professora não tem nota por criança, traz o roteiro agregado da Chave e as colunas “Teste da Chave” e “Fim da missão”, e as três habilidades chegam a “atingiu”",
     ],
     comando: "node scripts/e2e/estudante/12-jornal-da-escola.mjs",
   },
@@ -237,14 +346,34 @@ await suite(
       noticiasNaMesa.length === 8 && ["n1", "n2", "n3", "n4", "n5", "n6", "n7", "n8"].every((id) => noticiasNaMesa.includes(id)),
       `a mesa da criação tem as oito notícias geradas (${noticiasNaMesa.join(", ")})`,
     );
+    /* AS DUAS MATÉRIAS DA SIMULAÇÃO (3.0.0, ADR-168) vêm no MESMO rascunho da
+       IA e aparecem abaixo da mesa, para a professora ler e editar como as oito. */
+    r.exigir(
+      Array.isArray(gerado?.simulacao) && gerado.simulacao.length === 2,
+      `a IA escreveu as duas matérias da simulação junto das oito (${gerado?.simulacao?.length ?? 0})`,
+    );
+    const simulacaoNaCriacao = prof.locator("[data-simulacao-do-preparo]");
+    await simulacaoNaCriacao.waitFor({ timeout: 10_000 });
+    const materiasNaCriacao = await simulacaoNaCriacao
+      .locator("[data-materia-da-simulacao]")
+      .evaluateAll((ns) => ns.map((n) => n.getAttribute("data-materia-da-simulacao")));
+    r.exigir(
+      materiasNaCriacao.length === 2 && ["s1", "s2"].every((id) => materiasNaCriacao.includes(id)),
+      `abaixo da mesa, as duas matérias da simulação (${materiasNaCriacao.join(", ") || "nenhuma"})`,
+    );
+    r.exigir(
+      (await simulacaoNaCriacao.getByText("As duas matérias para testar a Chave do Editor", { exact: true }).count()) === 1,
+      "a faixa da simulação diz para que servem as duas matérias",
+    );
     await r.registrar(prof, "criacao-gerada-com-ia", {
       titulo: "O conteúdo da atividade: escrito pela IA",
       mostra:
         `O passo Conteúdo da criação com as oito notícias que a IA escreveu sobre “${PARAMETROS_DA_GERACAO.tema}”, ` +
-        "para a professora ler e editar.",
+        "e, abaixo da mesa, as duas matérias em que a turma vai testar a Chave do Editor — para a professora ler e editar.",
       prova:
         "A IA escreve o pacote de verdade (Vertex): oito notícias de oito meios, com o gabarito, as pistas e a " +
-        "consequência de cada uma, no molde sorteado no servidor. É rascunho: nada vai à turma sem o clique em Criar.",
+        "consequência de cada uma, no molde sorteado no servidor, mais as duas matérias da simulação (uma " +
+        "publicável, uma com furo). É rascunho: nada vai à turma sem o clique em Criar.",
       inteira: true,
     });
     /* O PODCAST na criação (ADR-150): a IA escreve as três falas que contam
@@ -412,19 +541,25 @@ await suite(
     const doPacote = pacotesDepois?.ativo?.noticias ?? [];
     const comPilar = (pilar) => doPacote.filter((n) => !n.gabarito.publicavel && n.gabarito.pilarEmFalta === pilar);
     const publicaveis = doPacote.filter((n) => n.gabarito.publicavel);
-    const [antiga] = comPilar("data");
+    const [antiga, outraAntiga] = comPilar("data");
     const [semFonte] = comPilar("fonte");
     const post = doPacote.find((n) => n.meio === "rede_social");
     const mensagem = doPacote.find((n) => n.meio === "mensagem");
     if (
       !r.exigir(
-        Boolean(antiga && semFonte && publicaveis.length >= 3 && post && mensagem),
-        `o pacote gerado tem o molde que a missão garante (${publicaveis.length} publicáveis, antiga ${Boolean(antiga)}, sem fonte ${Boolean(semFonte)}, post ${Boolean(post)}, mensagem ${Boolean(mensagem)})`,
+        Boolean(antiga && outraAntiga && semFonte && publicaveis.length >= 3 && post && mensagem),
+        `o pacote gerado tem o molde que a missão garante (${publicaveis.length} publicáveis, antigas ${comPilar("data").length}, sem fonte ${Boolean(semFonte)}, post ${Boolean(post)}, mensagem ${Boolean(mensagem)})`,
       )
     )
       return;
     Object.assign(N, {
       antiga: manchete(antiga.manchete),
+      /* A antiga que a criança JULGA e deixa fora da capa: é o furo pego da EF15CO04. */
+      outraAntiga: manchete(outraAntiga.manchete),
+      gabaritoDaOutraAntiga: outraAntiga.gabarito,
+      gabaritoDaAntiga: antiga.gabarito,
+      gabaritoDaSemFonte: semFonte.gabarito,
+      gabaritoDaPublicavel1: publicaveis[0].gabarito,
       semFonte: manchete(semFonte.manchete),
       publicavel1: manchete(publicaveis[0].manchete),
       publicavel2: manchete(publicaveis[1].manchete),
@@ -432,6 +567,29 @@ await suite(
       post: manchete(post.manchete),
       mensagem: manchete(mensagem.manchete),
     });
+    /* O gabarito das duas matérias da simulação, pela manchete (a tela da
+       criança não o recebe): com ele a suíte marca cada pista como a criança
+       que lê bem marcaria — e para no furo, como a Chave dela manda. */
+    const simulacaoDoPacote = pacotesDepois?.ativo?.simulacao ?? [];
+    r.exigir(
+      simulacaoDoPacote.length === 2 && simulacaoDoPacote.filter((m) => m.gabarito?.publicavel).length === 1,
+      `a atividade em andamento leva as duas matérias da simulação, uma publicável e uma com furo (${simulacaoDoPacote.length})`,
+    );
+
+    /* Os blocos da Chave com o lado CERTO de cada cartão: material do
+       professor (`GET /jornal-escola/professor/material`) — a criança nunca o
+       recebe. A suíte monta a Chave certa a partir dele, sem fixar a copy. */
+    const material = await lerApi(prof, "/jornal-escola/professor/material");
+    const pilares = (material.corpo?.blocos ?? []).filter((b) => b.pilar);
+    if (
+      !r.exigir(
+        material.status === 200 && ORDEM_DA_CHAVE.every((id) => pilares.some((b) => b.id === id && b.cartoes?.length === 2)),
+        `o material do professor traz os três pilares da Chave com os dois cartões (HTTP ${material.status})`,
+      )
+    )
+      return;
+    const pilar = (id) => pilares.find((b) => b.id === id);
+
     const jaExistia = (pacotesAntes.corpo?.historico ?? []).some((h) => h.id === atividadeId);
     if (!jaExistia) {
       r.exigir(
@@ -463,19 +621,28 @@ await suite(
       );
     }
     await prof.waitForSelector('[data-etapa="exploracao"]', { timeout: 20_000 });
+    r.exigir(
+      (await prof.locator("[data-simulacao-do-pacote] [data-materia-da-simulacao]").count()) === 2,
+      "a página da atividade mostra, só para a professora, as duas matérias em que a turma testa a Chave",
+    );
     await r.registrar(prof, "atividade-em-andamento", {
       titulo: "A atividade em andamento e o botão que move a sala",
       mostra:
         "A página da atividade criada: em andamento, as equipes (um aluno por computador), as imagens " +
-        "aprovadas e o painel da aula com o botão único na exploração.",
+        "aprovadas, as duas matérias da simulação e o painel da aula com o botão único na exploração.",
       prova:
         "Criar com “Pôr no ar agora” abriu uma rodada nova desta atividade — o que só é possível com as " +
-        "imagens aprovadas na criação (ADR-147). Trocar uma imagem aqui a tira da turma até o novo OK.",
+        "imagens aprovadas na criação (ADR-147). Trocar uma imagem aqui a tira da turma até o novo OK. As " +
+        "matérias da simulação vêm com a etiqueta do gabarito: é a resposta, e por isso não se projeta.",
       inteira: true,
     });
 
     // ═══ ESTUDANTE 1: o Bento e a mesa ════════════════════════════════════
     const p = await r.pagina("estudante", { viewport: { width: 1280, height: 950 } });
+    /* As respostas 4xx/5xx da api ficam anotadas para o relatório: a missão
+       renderiza falha em `<p>` avulso, e sem isto a causa some (lib/smoke.mjs). */
+    const falhasDaApi = [];
+    vigiarFalhasDaApi(p, falhasDaApi, "estudante");
     /* A DIAGRAMAÇÃO é IA em sala, com o modelo automático de reserva que a tela
        não mostra: a prova é a resposta do `POST /jornal-escola/diagramar`
        (direto à api, de dentro do iframe), que diz a `origem`. */
@@ -507,6 +674,10 @@ await suite(
               .map((a) => a.finished.catch(() => undefined)),
           ),
         );
+    /** A resposta de uma rota da missão (o iframe fala direto com a api): a espera nasce ANTES do clique. */
+    const respostaDe = (metodo, rota, timeout = 30_000) =>
+      p.waitForResponse((res) => res.request().method() === metodo && rota.test(new URL(res.url()).pathname), { timeout });
+
     const explorar = q().getByRole("button", { name: /Explorar Mesa de Notícias/ });
     await explorar.waitFor({ timeout: 40_000 });
     r.exigir(
@@ -547,14 +718,49 @@ await suite(
       await gaveta().getByRole("button", { name: /Voltar para a Mesa/ }).click();
       await gavetaFechada();
     };
-    /** Abre a pista e ESPERA o desfecho: o botão da pista aberto (`aria-expanded`). */
-    const abrirPista = async (rotulo) => {
-      const pista = gaveta().getByRole("button", { name: new RegExp(`^${rotulo}`) }).first();
-      await pista.click();
-      await gaveta()
-        .locator(`button[aria-expanded="true"]`, { hasText: rotulo })
-        .first()
-        .waitFor({ timeout: 10_000 });
+    /**
+     * A pista (o `RevealClue` do DS) pelo RÓTULO exato. O nome acessível do
+     * gatilho junta rótulo e pergunta ("Fonte De onde veio?"), e na simulação o
+     * bloco travado da Chave também se chama "Fonte": pelo rótulo do chip não
+     * há ambiguidade.
+     */
+    const pistaEm = (raiz, tipo) =>
+      raiz
+        .locator(".unooria-reveal-clue")
+        .filter({ has: q().locator(".unooria-reveal-clue__label", { hasText: new RegExp(`^${ROTULO_DA_PISTA[tipo]}$`) }) })
+        .first();
+    /** O painel da pista aberta, com o texto já na tela (não mais "Abrindo a pista…"). */
+    const textoDaPista = (pista) => pista.locator(".unooria-reveal-clue__panel").filter({ hasNotText: TXT.abrindoPista });
+    /**
+     * Abre a pista e ESPERA o texto do servidor — correndo contra o `POST
+     * pista`: se a api recusa, a tela só fecha o chip, sem alerta no DOM.
+     */
+    const abrirPista = async (tipo, raiz = gaveta()) => {
+      const pista = pistaEm(raiz, tipo);
+      const gatilho = pista.locator(".unooria-reveal-clue__trigger");
+      if ((await gatilho.getAttribute("aria-expanded")) !== "true") await gatilho.click();
+      await esperarOuFalharPorHttp(p, textoDaPista(pista), /\/jornal-escola\/pista$/, {
+        timeout: 15_000,
+        oQue: `abrir a pista ${ROTULO_DA_PISTA[tipo]}`,
+      });
+      return pista;
+    };
+    /** "✓ Confio" / "✗ Não confio" sob a pista aberta, e o desfecho: a marca que a api DEVOLVEU. */
+    const julgar = async (pista, veredito) => {
+      await pista
+        .getByRole("group", { name: TXT.julgar })
+        .getByRole("button", { name: TXT.veredito[veredito], exact: true })
+        .click();
+      await esperarOuFalharPorHttp(
+        p,
+        pista.getByText(TXT.marcado(TXT.veredito[veredito]), { exact: true }),
+        /\/jornal-escola\/julgamento$/,
+        { timeout: 15_000, oQue: `marcar “${TXT.veredito[veredito]}”` },
+      );
+    };
+    /** Abre cada pista pedida e julga logo depois, pelo gabarito: é a criança que lê bem. */
+    const abrirEJulgar = async (gabarito, tipos) => {
+      for (const tipo of tipos) await julgar(await abrirPista(tipo), vereditoCerto(gabarito, tipo));
     };
     const noJornal = async () => {
       await gaveta().getByRole("button", { name: /Adicionar ao Jornal/ }).click();
@@ -589,25 +795,94 @@ await suite(
     });
     await voltarParaAMesa();
 
-    // As pistas: o texto só existe depois do toque.
-    await abrir(N.antiga);
+    // ═══ As pistas e o julgamento: o furo pego numa notícia fora da capa ═══
+    await abrir(N.outraAntiga);
     const antesDaPista = await gaveta().innerText();
-    for (const tipo of ["Fonte", "Data", "Autoria"]) await abrirPista(tipo);
+    r.exigir(
+      (await gaveta().getByRole("group", { name: TXT.julgar }).count()) === 0,
+      "com as pistas fechadas, não há o que julgar: o “Confio / Não confio” só nasce sob a pista aberta",
+    );
+    const fonteDaOutra = await abrirPista("fonte");
+    r.exigir(
+      (await fonteDaOutra.getByRole("group", { name: TXT.julgar }).getByRole("button").count()) === 2,
+      "logo abaixo da pista aberta, os dois botões: “✓ Confio” e “✗ Não confio”",
+    );
+    await r.registrar(p, "pista-e-julgamento", {
+      titulo: "Abrir a pista e dizer se confia",
+      mostra: "A pista de fonte aberta, com o texto que o servidor revelou e, logo abaixo, “✓ Confio” e “✗ Não confio”.",
+      prova:
+        "O texto desce do servidor no toque (é o registro que a api exige antes de julgar), e o julgamento " +
+        "vem ANTES da decisão da capa: julgado depois, ele viraria justificativa de uma escolha já feita. Os " +
+        "dois botões têm o mesmo peso — nenhum é a resposta “esperada”.",
+    });
+    await julgar(fonteDaOutra, vereditoCerto(N.gabaritoDaOutraAntiga, "fonte"));
+    await abrirEJulgar(N.gabaritoDaOutraAntiga, ["data", "autoria"]);
     const depoisDaPista = await gaveta().innerText();
     r.exigir(depoisDaPista.length > antesDaPista.length, "abrir as pistas acrescenta o que o servidor revelou");
-    await r.registrar(p, "pistas-abertas", {
-      titulo: "Fonte, data e autoria",
-      mostra: "A notícia antiga da mesa com as três pistas abertas.",
+    const furo = pistaEm(gaveta(), "data");
+    r.exigir(
+      (await furo.getByText(TXT.marcado(TXT.veredito.nao_confio), { exact: true }).count()) === 1 &&
+        (await gaveta().getByRole("group", { name: TXT.julgar }).count()) === 0,
+      "julgada, cada pista mostra a marca e os botões somem: a data da notícia antiga ficou “✗ Não confio”",
+    );
+    await r.registrar(p, "pistas-julgadas", {
+      titulo: "Fonte, data e autoria, julgadas",
+      mostra: "Uma notícia antiga da mesa com as três pistas abertas e a marca de cada uma — a data, “✗ Não confio”.",
       prova:
-        "O texto de cada pista desce do servidor no toque: abrir é o registro que mede a EF15CO04, e " +
-        "uma pista lida sem registro seria evidência que a plataforma não vê.",
+        "O veredito marcado é um Tag neutro, sem verde nem vermelho: a tela não diz se a criança acertou. É " +
+        "o dado da EF15CO04, que a api corrige contra o gabarito na 1ª publicação.",
     });
+
+    /* O PRIMEIRO julgamento vale: um segundo toque (a repetição da rede, outra
+       aba) devolve o gravado com `novo: false`, e a tela segue com a marca. */
+    const segundoToque = await mandarApi(p, "/jornal-escola/julgamento", {
+      noticiaId: outraAntiga.id,
+      tipo: "data",
+      veredito: "confio",
+    });
+    r.exigir(
+      segundoToque.status === 200 && segundoToque.corpo?.veredito === "nao_confio" && segundoToque.corpo?.novo === false,
+      `um segundo julgamento da mesma pista não muda nada: a api devolve o primeiro (veio ${segundoToque.status} ${segundoToque.corpo?.veredito ?? ""} novo=${segundoToque.corpo?.novo})`,
+    );
+    await voltarParaAMesa();
+
+    /* E o F5: a marca volta da api (`estado.julgamentos`), com a pista aberta. */
+    await p.reload({ waitUntil: "domcontentloaded" });
+    await q().locator("text=Pautas da Semana").first().waitFor({ timeout: 40_000 });
+    await abrir(N.outraAntiga);
+    const furoDepoisDoF5 = pistaEm(gaveta(), "data");
+    await furoDepoisDoF5.getByText(TXT.marcado(TXT.veredito.nao_confio), { exact: true }).waitFor({ timeout: 10_000 });
+    r.exigir(
+      (await furoDepoisDoF5.locator(".unooria-reveal-clue__trigger").getAttribute("aria-expanded")) === "true" &&
+        (await gaveta().getByRole("group", { name: TXT.julgar }).count()) === 0,
+      "depois do F5, a pista reabre aberta, com a mesma marca e sem os botões",
+    );
+    await r.registrar(p, "julgamento-depois-do-f5", {
+      titulo: "A marca não muda",
+      mostra: "A mesma notícia depois de recarregar a página: as três pistas abertas, cada uma com a marca de antes.",
+      prova:
+        "Vale o primeiro julgamento de cada pista — nem o F5 nem um segundo toque o reescrevem (a suíte " +
+        "mandou “confio” de novo pela api e ela devolveu o “não confio” gravado). Mudar de ideia depois não " +
+        "reescreve a evidência.",
+    });
+    /* Fica FORA da capa: é a notícia em que ela não confiou. */
+    await voltarParaAMesa();
+
+    /* A capa da 1ª edição: [antiga, publicável, sem fonte] — das duas com furo
+       ela abre só as pistas que passam (e as julga "confio", certo); da
+       publicável, as três. Cada tipo fica julgado em ≥ 2 notícias, todo
+       julgamento certo, o furo aberto pego, e nenhum "não confio" na capa. */
+    await abrir(N.antiga);
+    await abrirEJulgar(N.gabaritoDaAntiga, ["fonte", "autoria"]);
     await noJornal();
 
     await abrir(N.publicavel1);
-    for (const tipo of ["Fonte", "Data", "Autoria"]) await abrirPista(tipo);
+    await abrirEJulgar(N.gabaritoDaPublicavel1, ORDEM_DA_CHAVE);
     await noJornal();
-    await adicionar(N.semFonte);
+
+    await abrir(N.semFonte);
+    await abrirEJulgar(N.gabaritoDaSemFonte, ["data", "autoria"]);
+    await noJornal();
 
     // ═══ A primeira página e o latch ═════════════════════════════════════
     const aba = (nome) => q().getByRole("tab", { name: nome }).or(q().getByRole("button", { name: nome })).first();
@@ -686,17 +961,28 @@ await suite(
     await q().getByRole("button", { name: /Distribuir Jornal Agora/ }).click();
 
     // ═══ O motivo, depois do latch ═══════════════════════════════════════
-    await q().locator("text=/Como as três matérias foram escolhidas\\?/").first().waitFor({ timeout: 20_000 });
+    await esperarOuFalharPorHttp(
+      p,
+      q().locator("text=/Como as três matérias foram escolhidas\\?/"),
+      /\/jornal-escola\/publicar$/,
+      { timeout: 20_000, oQue: "publicar a 1ª edição" },
+    );
     r.exigir(
       (await q().locator("text=/dupla/").count()) === 0,
       "a pergunta não diz “dupla”: quantos dividem o computador é o professor quem decide",
     );
-    await q().getByRole("radio", { name: /Escolhemos as fotos mais chamativas/ }).click();
+    r.exigir(
+      (await q().getByRole("radio", { name: TXT.motivo.visual, exact: true }).count()) === 1 &&
+        (await q().getByRole("radio", { name: TXT.motivo.checagem, exact: true }).count()) === 1,
+      `as duas respostas com os rótulos da 3.0.0: “${TXT.motivo.visual}” e “${TXT.motivo.checagem}”`,
+    );
+    await q().getByRole("radio", { name: TXT.motivo.visual, exact: true }).click();
     await r.registrar(p, "motivo", {
       titulo: "Como as três matérias foram escolhidas",
-      mostra: "As duas respostas, a ingênua e a auditada, depois de a edição sair.",
+      mostra: `As duas respostas — “${TXT.motivo.visual}” e “${TXT.motivo.checagem}” —, depois de a edição sair.`,
       prova:
-        "Perguntar depois do latch e antes do resultado: nem antecipa a descoberta, nem contamina a resposta.",
+        "Perguntar depois do latch e antes do resultado: nem antecipa a descoberta, nem contamina a resposta. " +
+        "A pergunta não avalia nada: registra como a escolha foi feita.",
     });
     await q().getByRole("button", { name: /Enviar resposta/ }).click();
     await q().locator("text=Edição em Análise na Escola").first().waitFor({ timeout: 20_000 });
@@ -736,12 +1022,23 @@ await suite(
     // ═══ PROFESSORA libera o resultado ═══════════════════════════════════
     await prof.reload({ waitUntil: "domcontentloaded" });
     await apertar(prof, "resultado");
+    /* A PAUSA (3.0.0): a missão cabe em uma ou em duas aulas, e o lugar de
+       parar é aqui, antes de "Liberar revisão". */
+    const pausa = prof.locator("[data-pausa]");
+    await pausa.waitFor({ timeout: 10_000 });
+    r.exigir(
+      (await pausa.innerText()).includes("A missão cabe em uma ou em duas aulas."),
+      "antes de “Liberar revisão”, o painel diz que a aula pode parar aqui e voltar pela Chave do Editor",
+    );
     await r.registrar(prof, "painel-resultado", {
       titulo: "O painel da aula",
-      mostra: "Quantos computadores publicaram, o histograma anônimo de verificadas e o motivo da sala.",
+      mostra:
+        "Quantos computadores publicaram, o histograma anônimo de verificadas, o motivo da sala e, antes de " +
+        "“Liberar revisão”, a pausa: a missão cabe em uma ou em duas aulas.",
       prova:
         "O número de verificadas só existe agregado, sem nome: não há ranking nem exposição de quem " +
-        "errou. O botão diz a próxima etapa, e não pula nenhuma.",
+        "errou. O botão diz a próxima etapa, e não pula nenhuma — e o que cada computador fez fica salvo " +
+        "se a aula acabar aqui.",
       inteira: true,
     });
 
@@ -756,32 +1053,131 @@ await suite(
         "seleção, não a criança. Nenhuma palavra de acerto.",
     });
 
-    // ═══ PROFESSORA libera a revisão; a Chave do Editor ═════════════════
+    // ═══ PROFESSORA libera a revisão; a Chave do Editor, MONTADA ══════════
     await apertar(prof, "revisao");
-    await q().locator("text=Ferramenta de Checagem do Bento").first().waitFor({ timeout: 30_000 });
+    await q().getByText(TXT.chave.titulo, { exact: true }).first().waitFor({ timeout: 30_000 });
+    const pronto = q().getByRole("button", { name: TXT.chave.pronto, exact: true });
+    const bandeja = q().getByRole("list", { name: TXT.chave.bandeja });
+    await bandeja.waitFor({ timeout: 10_000 });
+    r.exigir((await bandeja.getByRole("button").count()) === 6, "a bandeja tem os seis blocos: três pilares e três iscas");
+    r.exigir(
+      (await q().getByText(TXT.chave.combinem, { exact: true }).count()) === 1,
+      "o lembrete da dupla aparece: “Combinem antes de tocar.”",
+    );
+    r.exigir(
+      (await pronto.isDisabled()) && (await q().getByText(TXT.chave.falta, { exact: true }).count()) === 1,
+      "com a Chave vazia, o “Pronto” fica desabilitado e a linha diz o que falta",
+    );
     await r.registrar(p, "chave-do-editor", {
-      titulo: "A Chave do Editor",
-      mostra: "O Bento de volta, a calha com três vagas e os seis blocos da bandeja.",
-      prova: "Três blocos são pilares e três são iscas, e nada na forma do bloco diz qual é qual.",
+      titulo: "A Chave do Editor: o Montador",
+      mostra: "O Bento de volta, a calha com três vagas ordenadas, os seis blocos da bandeja e o “Pronto” apagado.",
+      prova:
+        "Três blocos são pilares e três são armadilhas, e nada na forma do bloco diz qual é qual: quais são os " +
+        "pilares, e o lado certo de cada cartão, ficam no servidor.",
     });
-    /* Pelo rótulo, sem caixa: a caixa alta é do CSS do `PuzzleBlock`, e o nome
-       acessível é o texto do DOM (`Fonte`, `Foto`). */
-    const bloco = (rotulo) => q().getByRole("button", { name: new RegExp(`^${rotulo}`, "i") }).first();
-    await bloco("FOTO").click();
-    await bloco("FONTE").click();
-    await bloco("DATA").click();
-    await q().locator("text=/Esse bloco não abre a chave/").first().waitFor({ timeout: 15_000 });
-    r.exigir((await q().locator("text=Voltou para a bandeja").count()) > 0, "a isca volta para a bandeja");
-    await r.registrar(p, "isca-devolvida", {
-      titulo: "A isca volta",
-      mostra: "A foto bonita devolvida à bandeja, e fonte e data presas na calha.",
-      prova: "A Chave corrige no servidor, e cada envio conta: é das tentativas que sai a EF15CO02.",
+
+    /* Só toques: o bloco fica escolhido e vai para a vaga — "Adicionar na
+       próxima vaga" ou o "Colocar aqui" de uma vaga. Ordem: fonte, data, autoria. */
+    /* Pelo rótulo, sem caixa: a caixa alta é do CSS do `PuzzleBlock`. */
+    const bloco = (rotulo) => bandeja.getByRole("button", { name: new RegExp(`^${rotulo}$`, "i") });
+    await bloco("Fonte").click();
+    await q().getByText(TXT.chave.escolhido("Fonte"), { exact: true }).first().waitFor({ timeout: 5_000 });
+    await q().getByRole("button", { name: TXT.chave.adicionar, exact: true }).click();
+    await bloco("Data").click();
+    await q().getByRole("button", { name: TXT.chave.colocarNaVaga("Data", 2), exact: true }).click();
+    await bloco("Autoria").click();
+    await q().getByRole("button", { name: TXT.chave.adicionar, exact: true }).click();
+    await q().getByRole("radiogroup", { name: TXT.chave.seFalhar, exact: true }).nth(2).waitFor({ timeout: 5_000 });
+    r.exigir(
+      await pronto.isDisabled(),
+      "com os três blocos nas vagas e nenhuma opção marcada, o “Pronto” continua desabilitado",
+    );
+
+    /* Os dois cartões de cada pilar, do lado certo (pelo material do
+       professor): a tela os mostra embaralhados, e o grupo se acha pelo texto. */
+    for (const id of ORDEM_DA_CHAVE) {
+      for (const c of pilar(id).cartoes) {
+        const grupo = q().getByRole("radiogroup", { name: TXT.chave.cartao(c.texto, c.exemplo), exact: true });
+        const lado = grupo.getByRole("radio", { name: TXT.chave.lado[c.lado], exact: true });
+        await lado.click();
+        r.exigir(await lado.isChecked(), `o cartão “${c.texto}” fica com “${TXT.chave.lado[c.lado]}”`);
+      }
+    }
+    const seFalhar = q().getByRole("radiogroup", { name: TXT.chave.seFalhar, exact: true });
+    r.exigir((await seFalhar.count()) === 3, "cada vaga cheia tem o seu “Se esta pista falhar:”");
+    for (let i = 0; i < 3; i += 1) await seFalhar.nth(i).getByRole("radio", { name: TXT.chave.naoPublico, exact: true }).click();
+    r.exigir(
+      await pronto.isDisabled(),
+      "falta só a repetição, e o “Pronto” ainda não acende: ele espera TODAS as escolhas",
+    );
+    await q()
+      .getByRole("radiogroup", { name: TXT.chave.repeticao, exact: true })
+      .getByRole("radio", { name: TXT.chave.emTodas, exact: true })
+      .click();
+    for (let i = 0; i < 20 && (await pronto.isDisabled()); i += 1) await p.waitForTimeout(250);
+    r.exigir(!(await pronto.isDisabled()), "com os três blocos, os seis cartões, os três “se falhar” e a repetição, o “Pronto” acende");
+    await semAnimacao();
+    await r.registrar(p, "chave-montada-na-tela", {
+      titulo: "A Chave, montada",
+      mostra:
+        "Fonte, data e autoria nas três vagas, cada cartão com “A pista passa” ou “A pista falha”, “Não publico” " +
+        "nas três e “Usar estes passos em TODAS as notícias” — e o “Pronto” aceso.",
+      prova:
+        "O “Pronto” só acende com tudo escolhido. A criança diz quando cada pista passa ou falha, o que fazer " +
+        "quando ela falha e se a regra vale para todas: é a Chave DELA, um algoritmo que ela vai testar depois.",
+      inteira: true,
     });
-    await bloco("AUTORIA").click();
-    await q().locator("text=/Chave do Editor ativada!/").first().waitFor({ timeout: 15_000 });
+
+    await pronto.click();
+    const confirmacao = q().getByRole("dialog", { name: TXT.chave.confirmarTitulo });
+    await confirmacao.waitFor({ timeout: 10_000 });
+    r.exigir(
+      (await confirmacao.getByText(TXT.chave.confirmarDescricao, { exact: true }).count()) === 1,
+      "a confirmação avisa: “Depois de enviar, a Chave não muda.”",
+    );
+    await r.registrar(p, "chave-confirmar", {
+      titulo: "Um envio, sem volta",
+      mostra: "A janela “Enviar a Chave do Editor?”, com “Depois de enviar, a Chave não muda.”",
+      prova: "A Chave vai à api UMA vez: sem correção, sem “devolvidos” e sem nova tentativa.",
+    });
+    const respostaDaChave = respostaDe("POST", /\/jornal-escola\/chave$/);
+    await confirmacao.getByRole("button", { name: TXT.chave.enviar, exact: true }).click();
+    await esperarOuFalharPorHttp(p, q().getByText(TXT.chave.montada, { exact: true }), /\/jornal-escola\/chave$/, {
+      timeout: 20_000,
+      oQue: "enviar a Chave do Editor",
+    });
+    const chaveEnviada = await respostaDaChave;
+    const corpoDaChave = chaveEnviada.request().postDataJSON();
+    r.exigir(
+      JSON.stringify(corpoDaChave?.vagas?.map((v) => v.bloco)) === JSON.stringify(ORDEM_DA_CHAVE) &&
+        corpoDaChave.vagas.every((v) => v.seFalhar === "parar" && v.lados?.[0] === "aprova" && v.lados?.[1] === "reprova") &&
+        corpoDaChave.repeticao === "todas",
+      `a tela manda a Chave na posição CANÔNICA dos cartões, mesmo os mostrando embaralhados (${JSON.stringify(corpoDaChave).slice(0, 240)})`,
+    );
+    const devolvido = await chaveEnviada.json().catch(() => null);
+    r.exigir(
+      devolvido !== null && Object.keys(devolvido).join(",") === "estado",
+      `a resposta da Chave não diz se ela está certa: só o estado (chaves: ${Object.keys(devolvido ?? {}).join(", ")})`,
+    );
+    const textoDaChave = await q().locator("body").innerText();
+    r.exigir(
+      !CORRECAO_DA_CHAVE.test(textoDaChave) && !CARIMBO_OU_ACERTO.test(textoDaChave),
+      "montada, a Chave não tem mensagem de certo ou errado, nem bloco devolvido, nem nova tentativa",
+    );
+    r.exigir(
+      (await q().getByRole("button", { name: TXT.chave.pronto, exact: true }).count()) === 0,
+      "depois do envio, não há “Pronto” de novo: a Chave não muda",
+    );
+    await r.registrar(p, "chave-montada", {
+      titulo: "A Chave enviada",
+      mostra: "“Chave do Editor montada! A mesa de revisão está aberta.”, os blocos travados e “Abrir a Mesa de Revisão”.",
+      prova:
+        "A tela não sabe se a Chave está certa — e não diz. A api a corrige campo a campo para a EF15CO02, e a " +
+        "Chave errada também segue: ela é TESTADA na simulação, não corrigida aqui.",
+    });
 
     // ═══ A revisão e a 2ª edição ═════════════════════════════════════════
-    await q().getByRole("button", { name: /Abrir a Mesa de Revisão/ }).click();
+    await q().getByRole("button", { name: TXT.chave.irParaRevisao, exact: true }).click();
     await q().locator("text=Mesa de Revisão Pericial").first().waitFor({ timeout: 20_000 });
     /* A revisão ABRE na Primeira Página: o aviso da Chave pede a troca, e o
        "Trocar Matéria" está lá (ajuste do PO). */
@@ -797,17 +1193,35 @@ await suite(
     await r.registrar(p, "mesa-de-revisao", {
       titulo: "A Chave marca as vagas",
       mostra: "A 1ª edição com um marcador em cada vaga: o fato que já passou, a fonte sem confirmação, a verificada.",
-      prova: "Os marcadores só existem depois de a Chave se formar — antes disso o pilar em falta não desce.",
+      prova: "Os marcadores só existem depois de a Chave ser montada — antes disso o pilar em falta não desce.",
     });
 
     /* A 1ª edição foi [antiga, publicável, sem fonte]: troca a 1ª vaga (a
-       antiga) e a 3ª (a sem fonte) por duas publicáveis. */
+       antiga) e a 3ª (a sem fonte) por duas publicáveis — conferindo as três
+       pistas de cada uma ANTES de pôr na capa (é a metade da EF04CO08). */
     const trocar = (i) => q().getByRole("button", { name: /Trocar Matéria/ }).nth(i);
+    const conferirEAdicionar = async (manchete) => {
+      await abrir(manchete);
+      for (const tipo of ORDEM_DA_CHAVE) await abrirPista(tipo);
+      r.exigir(
+        (await gaveta().getByRole("group", { name: TXT.julgar }).count()) === 0,
+        "na revisão, as pistas abrem SEM “Confio / Não confio”: o julgamento é só da mesa da 1ª edição",
+      );
+    };
     await trocar(0).click();
-    await adicionar(N.publicavel2);
+    await conferirEAdicionar(N.publicavel2);
+    await r.registrar(p, "revisao-pistas-sem-julgamento", {
+      titulo: "Conferir antes de trocar",
+      mostra: "Na mesa de revisão, a gaveta de uma notícia nova com as três pistas abertas — e sem os botões de julgar.",
+      prova:
+        "A revisão registra a consulta da fase 2 (a api guarda cada pista por fase), e é dela que sai a 2ª " +
+        "edição “conferida”: 3 de 3 só vale com as três pistas de cada matéria abertas.",
+    });
+    await noJornal();
     r.exigir(await ficaSelecionada(/Primeira Página/), "a vaga preenchida de novo devolve a mesa à Primeira Página");
     await trocar(2).click();
-    await adicionar(N.publicavel3);
+    await conferirEAdicionar(N.publicavel3);
+    await noJornal();
     r.exigir(await ficaSelecionada(/Primeira Página/), "a segunda troca também volta sozinha à página");
     const publicar2 = q().getByRole("button", { name: /Publicar 2ª Edição Revisada/ });
     await acesa(publicar2);
@@ -815,64 +1229,293 @@ await suite(
     await publicar2.click();
     await q().getByRole("button", { name: /Distribuir Jornal Agora/ }).click();
 
-    await q()
-      .locator("text=/1ª Edição: 1 de 3 verificadas ➔ 2ª Edição: 3 de 3 verificadas!/")
-      .first()
-      .waitFor({ timeout: 30_000 });
+    await esperarOuFalharPorHttp(
+      p,
+      q().locator("text=/1ª Edição: 1 de 3 verificadas ➔ 2ª Edição: 3 de 3 verificadas!/"),
+      /\/jornal-escola\/(republicar|comparativo)$/,
+      { timeout: 30_000, oQue: "publicar a 2ª edição e abrir o comparativo" },
+    );
     r.exigir((await q().locator("text=/Agora sim!/").count()) > 0, "com as três verificadas, a comunidade agradece");
+    r.exigir(
+      (await q().getByRole("button", { name: TXT.testarAChave, exact: true }).count()) === 1,
+      "o comparativo leva ao “Testar a minha Chave”",
+    );
     await r.registrar(p, "comparativo", {
       titulo: "O antes e o depois",
-      mostra: "As duas edições lado a lado, 1 de 3 e 3 de 3, e a reação da comunidade.",
+      mostra: "As duas edições lado a lado, 1 de 3 e 3 de 3, a reação da comunidade e “Testar a minha Chave”.",
       prova: "A devolutiva final mostra o efeito da checagem sobre os leitores, sem nota.",
     });
 
-    // ═══ O desafio final, fora da redação ════════════════════════════════
-    await q().getByRole("button", { name: /Avançar para Desafio Final/ }).click();
-    await q().locator("text=Desafio Individual de Checagem").first().waitFor({ timeout: 20_000 });
-    r.exigir((await q().locator("text=/Bento/").count()) === 0, "o desafio final sai da redação e não tem o Bento");
-    /* As alternativas vêm EMBARALHADAS a cada leitura: casa-se pelo texto, pelo papel. */
-    await q().getByRole("radio", { name: /canal oficial da prefeitura com data de hoje/ }).click({ timeout: 30_000 });
-    await r.registrar(p, "desafio-final", {
-      titulo: "O boato do corte de água",
-      mostra: "A mensagem encaminhada, sem link, data nem autoridade, e a primeira pergunta.",
-      prova: "A criança transfere o que aprendeu para um caso novo, individualmente; o gabarito fica no servidor.",
+    // ═══ A simulação: a Chave DELA em duas matérias novas ════════════════
+    await q().getByRole("button", { name: TXT.testarAChave, exact: true }).click();
+    const materia = (n) => q().getByRole("region", { name: TXT.sim.materia(n, 2), exact: true });
+    await esperarOuFalharPorHttp(p, materia(1), /\/jornal-escola\/(passo|simulacao)$/, {
+      timeout: 20_000,
+      oQue: "abrir a simulação da Chave",
     });
-    await q().getByRole("button", { name: /^Responder/ }).click();
-    await q().getByRole("radio", { name: /Pode fazer a escola inteira parar/ }).click({ timeout: 30_000 });
-    await q().getByRole("button", { name: /^Responder/ }).click();
-    await q().locator("text=/Antes de repassar qualquer aviso/").first().waitFor({ timeout: 20_000 });
+    r.exigir((await q().getByText(TXT.sim.titulo, { exact: true }).count()) > 0, "a tela se chama “Teste da Chave do Editor”");
+    r.exigir((await q().locator("text=/Bento/").count()) === 0, "na simulação, o Bento fica calado: quem fala é a redação");
+    const roteiro = q().getByRole("group", { name: TXT.sim.suaChave, exact: true });
+    const rotulosDoRoteiro = await roteiro.locator(".unooria-puzzle-block__label").allInnerTexts();
+    r.exigir(
+      rotulosDoRoteiro.map((t) => t.trim().toLowerCase()).join(",") === ORDEM_DA_CHAVE.join(","),
+      `a Chave dela aparece como roteiro, na ordem das vagas (${rotulosDoRoteiro.join(", ")})`,
+    );
+    r.exigir(
+      (await roteiro.getByText(TXT.sim.seFalharNaoPublico, { exact: true }).count()) === 3 &&
+        (await roteiro.getByText(TXT.sim.combinadoEmTodas, { exact: true }).count()) === 1,
+      "o roteiro diz o “se falhar” de cada vaga e a repetição que ela escolheu",
+    );
+
+    /**
+     * O gabarito da matéria na tela, pela manchete — vem do pacote da
+     * professora. Sem ele (não deveria faltar), a criança confia em tudo e
+     * continua fiel à Chave.
+     */
+    const gabaritoDaMateria = async (secao) => {
+      const texto = await secao.innerText();
+      return simulacaoDoPacote.find((m) => texto.includes(m.manchete))?.gabarito ?? { publicavel: true, pilarEmFalta: null };
+    };
+    /** Aplica a Chave: abre na ordem dela, marca cada pista, e para no primeiro "não confio". */
+    const aplicarAChave = async (n) => {
+      const secao = materia(n);
+      await secao.waitFor({ timeout: 10_000 });
+      const gabarito = await gabaritoDaMateria(secao);
+      const passos = [];
+      for (const tipo of ORDEM_DA_CHAVE) {
+        const pista = pistaEm(secao, tipo);
+        await pista.locator(".unooria-reveal-clue__trigger").click();
+        await textoDaPista(pista).waitFor({ timeout: 10_000 });
+        const veredito = vereditoCerto(gabarito, tipo);
+        if (n === 1 && passos.length === 0) {
+          /* A marcação é OBRIGATÓRIA aqui: com a pista esperando, nem outra
+             pista abre nem a decisão acende. */
+          const outra = pistaEm(secao, "data").locator(".unooria-reveal-clue__trigger");
+          await outra.click();
+          r.exigir(
+            (await outra.getAttribute("aria-expanded")) === "false" &&
+              (await secao.getByText(TXT.sim.marqueParaSeguir, { exact: true }).count()) === 1 &&
+              (await secao.getByRole("button", { name: TXT.sim.decisao.publicar, exact: true }).isDisabled()) &&
+              (await secao.getByRole("button", { name: TXT.sim.decisao.nao_publicar, exact: true }).isDisabled()),
+            "na simulação, a pista aberta precisa da marca: outra pista não abre e “Publicar”/“Não publicar” ficam apagados",
+          );
+          await r.registrar(p, "simulacao-marcar-para-seguir", {
+            titulo: "Testar a Chave numa matéria nova",
+            mostra:
+              "A Chave dela como roteiro (Fonte, Data, Autoria, “Se falhar: Não publico”), a 1ª matéria nova e a " +
+              "pista de fonte aberta, com “Marque se você confia nesta pista para seguir.”",
+            prova:
+              "A ordem é a evidência, e a tela não a força: as três pistas ficam tocáveis. Mas, aberta, a pista " +
+              "só deixa seguir marcada — é o que torna “seguiu a própria regra” sempre decidível na api.",
+            inteira: true,
+          });
+        }
+        await pista
+          .getByRole("group", { name: TXT.julgar })
+          .getByRole("button", { name: TXT.veredito[veredito], exact: true })
+          .click();
+        await pista.getByText(TXT.marcado(TXT.veredito[veredito]), { exact: true }).waitFor({ timeout: 5_000 });
+        passos.push({ tipo, veredito });
+        if (veredito === "nao_confio") break; // a Chave diz "Não publico": para aqui
+      }
+      const decisao = passos.some((x) => x.veredito === "nao_confio") ? "nao_publicar" : "publicar";
+      return { secao, passos, decisao };
+    };
+
+    const primeiraMateria = await aplicarAChave(1);
+    await primeiraMateria.secao.getByRole("button", { name: TXT.sim.decisao[primeiraMateria.decisao], exact: true }).click();
+    const segundaMateria = await aplicarAChave(2);
+    await r.registrar(p, "simulacao-segunda-materia", {
+      titulo: "A Chave na segunda matéria",
+      mostra: "A 2ª matéria com as pistas abertas na ordem da Chave e marcadas, antes da decisão.",
+      prova:
+        "Ela para onde a regra DELA manda: depois de um “não confio” numa vaga “Não publico”, não abre mais " +
+        "nada e não publica. É a fidelidade à regra que a api mede, não o acerto do conteúdo.",
+    });
+    const respostaDaSimulacao = respostaDe("POST", /\/jornal-escola\/simulacao$/);
+    await segundaMateria.secao.getByRole("button", { name: TXT.sim.decisao[segundaMateria.decisao], exact: true }).click();
+    await esperarOuFalharPorHttp(p, q().getByText(TXT.sim.frase, { exact: true }), /\/jornal-escola\/simulacao$/, {
+      timeout: 20_000,
+      oQue: "enviar a simulação",
+    });
+    const simulacaoEnviada = await respostaDaSimulacao;
+    const corpoDaSimulacao = simulacaoEnviada.request().postDataJSON();
+    const esperadoDaSimulacao = [primeiraMateria, segundaMateria].map((m) => ({ passos: m.passos, decisao: m.decisao }));
+    r.exigir(
+      JSON.stringify((corpoDaSimulacao?.materias ?? []).map((m) => ({ passos: m.passos, decisao: m.decisao }))) ===
+        JSON.stringify(esperadoDaSimulacao),
+      `a simulação vai de uma vez, com as pistas NA ORDEM em que ela abriu e as marcas (${JSON.stringify(corpoDaSimulacao?.materias).slice(0, 300)})`,
+    );
+    const daSimulacao = await simulacaoEnviada.json().catch(() => null);
+    r.exigir(
+      daSimulacao?.referencia === TXT.sim.frase,
+      `a resposta é a frase de referência, a MESMA para todos (“${daSimulacao?.referencia ?? "nada"}”)`,
+    );
+    r.exigir(
+      (await q().getByText(TXT.sim.referencia, { exact: true }).count()) === 1 &&
+        !CARIMBO_OU_ACERTO.test(await q().locator("body").innerText()),
+      "a tela mostra “Para pensar” e a frase, sem comparar com a Chave dela nem dizer se acertou",
+    );
+    await r.registrar(p, "simulacao-referencia", {
+      titulo: "A regra de referência",
+      mostra: `“${TXT.sim.referencia}” e a frase: “${TXT.sim.frase}”`,
+      prova:
+        "A frase é igual para todos e desce só quando a medição já terminou: a Chave montada errada não sai da " +
+        "aula reforçada, e a tela não diz a ninguém se a dele estava certa.",
+    });
+
+    // ═══ A transferência: o boato, numa tela neutra ══════════════════════
+    await q().getByRole("button", { name: TXT.sim.continuar, exact: true }).click();
+    const decisaoDoBoato = q().getByRole("group", { name: TXT.boato.oQueFazer, exact: true });
+    await esperarOuFalharPorHttp(p, decisaoDoBoato, /\/jornal-escola\/transferencia$/, {
+      timeout: 20_000,
+      oQue: "abrir a mensagem nova",
+    });
+    r.exigir((await q().getByText(TXT.boato.titulo, { exact: true }).count()) > 0, "a tela se chama “Chegou uma mensagem”");
+    r.exigir((await q().locator("text=/Bento/").count()) === 0, "o boato sai da redação e não tem o Bento");
+    r.exigir((await q().locator(".unc-messagebubble").count()) === 1, "o boato chega no balão encaminhado do Unoochat");
+    const repassar = decisaoDoBoato.getByRole("button", { name: TXT.boato.repassar, exact: true });
+    const naoRepassar = decisaoDoBoato.getByRole("button", { name: TXT.boato.naoRepassar, exact: true });
+    r.exigir(
+      !(await repassar.isDisabled()) && !(await naoRepassar.isDisabled()),
+      "“Repassar para o grupo” e “Não repassar” estão à mão desde o início, antes de qualquer pista",
+    );
+    r.exigir(
+      (await q().locator('.unooria-reveal-clue__trigger[aria-expanded="true"]').count()) === 0,
+      "as três pistas nascem fechadas, sem destaque: nada na tela pede para verificar",
+    );
+    await r.registrar(p, "boato", {
+      titulo: "Chegou uma mensagem",
+      mostra: "O boato encaminhado no balão do Unoochat, as três pistas fechadas e os dois botões, com o mesmo peso.",
+      prova:
+        "A tela é NEUTRA: sem fala de ninguém e sem pedir checagem. O que se mede é se a criança abre alguma " +
+        "pista ANTES de decidir — à mão, como faria no grupo da turma.",
+    });
+    const fonteDoBoato = pistaEm(q().locator(".tela--escola"), "fonte");
+    await fonteDoBoato.locator(".unooria-reveal-clue__trigger").click();
+    await textoDaPista(fonteDoBoato).waitFor({ timeout: 10_000 });
+    const respostaDoBoato = respostaDe("POST", /\/jornal-escola\/transferencia$/);
+    await naoRepassar.click();
+    await esperarOuFalharPorHttp(p, q().getByText(TXT.boato.sintese, { exact: true }), /\/jornal-escola\/transferencia$/, {
+      timeout: 20_000,
+      oQue: "decidir sobre o boato",
+    });
+    const corpoDoBoato = (await respostaDoBoato).request().postDataJSON();
+    r.exigir(
+      JSON.stringify(corpoDoBoato?.pistas) === JSON.stringify(["fonte"]) && corpoDoBoato?.decisao === "nao_repassar",
+      `a decisão vai com as pistas abertas ANTES dela (${JSON.stringify(corpoDoBoato)})`,
+    );
+    r.exigir(
+      (await q().getByText(TXT.boato.conversa, { exact: true }).count()) === 1 &&
+        (await q().getByRole("button", { name: TXT.boato.repassar, exact: true }).count()) === 0,
+      "decidido, a síntese e a conversa com a professora; os botões de decidir saem",
+    );
     r.exigir(!CARIMBO_OU_ACERTO.test(await q().locator("body").innerText()), "a síntese não diz se a criança acertou");
-    await q().getByRole("button", { name: /Concluir Missão/ }).click();
+    await r.registrar(p, "sintese", {
+      titulo: "A síntese, a mesma para todos",
+      mostra: "A pista de fonte aberta, a síntese única e o aviso da conversa com a turma — e o “Concluir Missão”.",
+      prova: "A tela não sabe se a decisão “foi boa”, e não diz: a síntese é igual para quem repassou e para quem não.",
+    });
+    await q().getByRole("button", { name: TXT.boato.concluir, exact: true }).click();
     await q().locator("text=Edição Publicada — Modo Leitura").first().waitFor({ timeout: 20_000 });
     await r.registrar(p, "modo-leitura", {
       titulo: "Missão concluída",
       mostra: "As duas edições em modo leitura.",
-      prova: "A síntese é a mesma para todos: a resposta às perguntas não diz à criança se ela acertou.",
+      prova: "Nenhuma tela da missão mostrou nível, acerto ou nota: as habilidades ficam com a professora.",
     });
+    if (falhasDaApi.length > 0) r.ressalva(`respostas 4xx/5xx da api durante a missão: ${falhasDaApi.join(" | ").slice(0, 400)}`);
 
-    // ═══ PROFESSORA: a folha por computador e as habilidades ═════════════
+    // ═══ PROFESSORA: a folha, o roteiro da Chave e as habilidades ═════════
     await prof.reload({ waitUntil: "domcontentloaded" });
     await prof.getByText("EF15CO04").first().waitFor({ timeout: 30_000 });
     const folha = await prof.locator("main").innerText();
     /* Pelos CABEÇALHOS das colunas, não pelo texto da página: o painel explica
        à professora que o número "não é nota", e a frase que nega a nota não
        pode reprovar a suíte que prova a ausência dela. */
-    const colunas = await prof.locator("main").getByRole("columnheader").allInnerTexts();
+    const colunas = (await prof.locator("main").getByRole("columnheader").allInnerTexts()).map((c) => c.trim());
     r.exigir(colunas.length > 0, "a folha da turma está na tela, com as colunas");
     r.exigir(
       !colunas.some((c) => /\b(pontos|nota|score|ranking|acerto|verificadas)\b/i.test(c)),
       `a folha da turma não tem coluna de pontos (colunas: ${colunas.join(", ")})`,
     );
     r.exigir(
+      ["Teste da Chave", "Fim da missão"].every((c) => colunas.includes(c)) && !colunas.includes("Desafio final"),
+      `a folha tem “Teste da Chave” e “Fim da missão”, e não mais “Desafio final” (colunas: ${colunas.join(", ")})`,
+    );
+    const linhaDoPrimeiro = prof.locator("main tr", { hasText: PRIMEIRO.nome }).first();
+    r.exigir(
+      (await linhaDoPrimeiro.count()) === 1 && /testou/.test(await linhaDoPrimeiro.innerText()) && /concluiu/.test(await linhaDoPrimeiro.innerText()),
+      `a linha de ${PRIMEIRO.nome} diz que testou a Chave e concluiu — só o progresso, sem nível`,
+    );
+    r.exigir(
       ["EF04CO08", "EF15CO04", "EF15CO02"].every((codigo) => folha.includes(codigo)),
       "o painel de habilidades mostra as três habilidades da ficha",
     );
+
+    /* O ROTEIRO DA CONVERSA (3.0.0): a Chave e a mensagem nova, só AGREGADAS. */
+    const roteiroDaConversa = prof.locator("[data-roteiro-da-chave]");
+    await roteiroDaConversa.waitFor({ timeout: 20_000 });
+    r.exigir(
+      (await prof.getByText("Roteiro da conversa: a Chave e a mensagem nova", { exact: true }).count()) === 1,
+      "o painel tem o card “Roteiro da conversa: a Chave e a mensagem nova”",
+    );
+    r.exigir(
+      (await roteiroDaConversa.locator("[data-iscas-da-chave]").innerText()).includes(
+        "Nenhuma Chave usou foto, urgência ou compartilhamento como critério.",
+      ),
+      "a única Chave montada nesta rodada não tem armadilha, e o roteiro diz isso sem nome",
+    );
+    r.exigir(
+      (await roteiroDaConversa.locator("[data-repassaram-sem-abrir]").innerText()).trim().startsWith("0 "),
+      "ninguém repassou a mensagem sem abrir pista — o número vem agregado, sem nome",
+    );
+    r.exigir(
+      !CARIMBO_OU_ACERTO.test(await roteiroDaConversa.innerText()) && (await roteiroDaConversa.getByText(PRIMEIRO.nome).count()) === 0,
+      "o roteiro não tem nome de criança nem palavra de acerto",
+    );
+    await roteiroDaConversa.scrollIntoViewIfNeeded();
+    await r.registrar(prof, "roteiro-da-chave", {
+      titulo: "O roteiro da conversa: a Chave e a mensagem nova",
+      mostra:
+        "O card com as armadilhas mais escolhidas na Chave, quantos puseram “Olho a próxima pista” ou “Só na " +
+        "primeira notícia”, e o que a turma fez com a mensagem nova.",
+      prova:
+        "São as escolhas da turma somadas, sem nome e sem nível, para puxar a conversa do fechamento — o que " +
+        "cada criança pôs na Chave ou decidiu diante do boato não aparece na folha.",
+    });
+
+    /* OS NÍVEIS desta jornada (`regras/evidencia.ts`): as três "atingiu". */
+    const rodadaAgora = (await lerApi(prof, `/jornal-escola/turmas/${turmaId}/pacotes`)).corpo?.ativo?.rodada;
+    const doEstudante = (c) => c?.estudantes?.find((e) => e.nome === PRIMEIRO.nome);
+    const esperado = { EF15CO04: "atingiu", EF15CO02: "atingiu", EF04CO08: "atingiu" };
+    const habilidades = await esperarNaApi(
+      prof,
+      `/evidencias/turma/${turmaId}/missao/${EXP_ID}/atividade/${atividadeId}`,
+      (c) => Object.keys(doEstudante(c)?.porRodada?.[String(rodadaAgora)] ?? {}).length >= Object.keys(esperado).length,
+      { oQue: "as três marcas do primeiro estudante na evidência" },
+    );
+    r.exigir(habilidades.temFicha === true, "a exp04ef1b tem ficha pedagógica: o bloco de habilidades acende");
+    const marcas = doEstudante(habilidades).porRodada[String(rodadaAgora)];
+    const motivoDoNivel = {
+      EF15CO04: "julgou certo cada tipo de pista em 2+ notícias, pegou o furo e não pôs na capa a notícia em que não confiou",
+      EF15CO02: "Chave certa e simulação fiel a ela",
+      EF04CO08: "2ª edição 3/3 com as três pistas de cada matéria, e no boato abriu a fonte e não repassou",
+    };
+    for (const [codigo, nivel] of Object.entries(esperado)) {
+      r.exigir(
+        marcas[codigo]?.status === nivel,
+        `${codigo}: o painel registra “${marcas[codigo]?.status ?? "nada"}”, e a régua dá “${nivel}” (${motivoDoNivel[codigo]})`,
+      );
+    }
     await r.registrar(prof, "resultados-e-habilidades", {
       titulo: "A turma por computador, e as habilidades",
-      mostra: "Quem publicou cada edição e formou a Chave, e o painel de habilidades da BNCC do pacote.",
+      mostra:
+        "Quem publicou cada edição, montou e testou a Chave e chegou ao fim da missão, e o painel de habilidades " +
+        "da BNCC do pacote.",
       prova:
-        "A folha diz só o progresso; o nível de cada habilidade vem das pistas, da Chave, da 2ª edição e " +
-        "das duas perguntas, e fica no painel de habilidades, com o ajuste da professora.",
+        "A folha diz só o progresso; o nível de cada habilidade vem só de AÇÕES — o “confio / não confio” da " +
+        "mesa, a Chave montada e testada, a 2ª edição e a decisão diante do boato — e fica no painel de " +
+        "habilidades, com o ajuste da professora.",
       inteira: true,
     });
 
