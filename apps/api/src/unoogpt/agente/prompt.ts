@@ -1,6 +1,6 @@
 import { MISSAO_TEMPESTADE } from '../cenario';
 import { CONJUNTOS, CONJUNTO_POR_SLUG } from '../modelo/conjuntos';
-import { chegaATempo } from '../modelo/tempestade';
+import { chegaATempo, type Desfecho } from '../modelo/tempestade';
 import { FERRAMENTAS, rodarModelo } from '../ferramentas';
 import { validarOpcoes, type Opcoes } from '../regras/opcoes';
 import type { AiProvider } from '../../ai/provider';
@@ -240,6 +240,24 @@ export function montarSystemPrompt(entrada: {
   ].join('\n');
 }
 
+/**
+ * O que o portão do envio (`aoConfirmar`, no serviço) responde. A recusa tem
+ * MOTIVO, porque o Cientista precisa dizer ao estudante o que fazer — antes
+ * ela voltava como `null`, e "falta o porquê" e "nenhuma equipe tem destino"
+ * viravam a mesma frase errada.
+ */
+export type ResultadoDaConfirmacao =
+  | { desfecho: Desfecho }
+  | { recusa: 'falta-justificar' | 'sem-destino' };
+
+/** O que a ferramenta devolve ao Cientista quando o envio é recusado. */
+export const MOTIVO_DA_RECUSA: Record<'falta-justificar' | 'sem-destino', string> = {
+  'falta-justificar':
+    'as equipes NÃO saíram: falta dizer por que cada equipe vai para lá. Não narre a tempestade. Diga a ele, em uma frase, que antes de mandar ele escolhe o porquê de cada equipe em "Enviar equipes".',
+  'sem-destino':
+    'as equipes NÃO saíram: nenhuma equipe tem destino. Não narre a tempestade. Pergunte para onde ele quer mandar cada equipe.',
+};
+
 export interface RespostaDoCientista {
   texto: string;
   /**
@@ -312,12 +330,13 @@ export async function responder(
   tempo: { segundosAteFechar: number | null; minutosGastos: number },
   historico: { papel: 'estudante' | 'agente'; texto: string }[],
   texto: string,
-  aoUsarDados: (dados: string[]) => Promise<string[]>,
+  /** Devolve as fontes em uso E a rodada depois da carga: o cartão sorteia com ela, como o mapa. */
+  aoUsarDados: (dados: string[]) => Promise<{ conjuntos: string[]; rodadas: number }>,
   aoAlocar: (destinos: {
     alfa?: string;
     bravo?: string;
   }) => Promise<{ alfa: string | null; bravo: string | null } | null>,
-  aoConfirmar: () => Promise<unknown>,
+  aoConfirmar: () => Promise<ResultadoDaConfirmacao>,
   /**
    * O que o servidor já sabe sobre o estado da Missão. Sem isto o mesmo texto
    * ("manda ver") é indistinguível entre confirmar um envio e pedir que a IA
@@ -342,6 +361,11 @@ export async function responder(
   let confirmou: unknown = null;
   let opcoes: Opcoes | null = null;
   let emUso = [...conjuntos];
+  /* A rodada do sorteio ANDA com a carga: `aoUsarDados` soma 1 quando entra
+     fonte nova, e o mapa (que o serviço monta depois do turno) sorteia com a
+     rodada nova. O cartão deste turno tem de sortear igual — com a de antes, o
+     cartão e o mapa mostravam números diferentes para a mesma leitura. */
+  let rodadaAtual = rodada;
   let ultimaFonte: string | undefined;
   const tempoQueResta = tempoRestante(tempo.segundosAteFechar);
 
@@ -436,7 +460,9 @@ export async function responder(
             ? (argumentos.dados as string[]).filter((d) => CONJUNTO_POR_SLUG.has(d))
             : [];
           const antes = new Set(emUso);
-          emUso = await aoUsarDados(pedidos);
+          const carga = await aoUsarDados(pedidos);
+          emUso = carga.conjuntos;
+          rodadaAtual = carga.rodadas;
           usados = emUso;
           ultimaFonte = emUso.find((c) => !antes.has(c)) ?? ultimaFonte;
           // Carregar uma fonte e reler a cidade são UM ato — é o que a fala do
@@ -446,7 +472,7 @@ export async function responder(
           // ninguém tinha produzido; quando a guarda barrava isso, ele gastava
           // duas tentativas e vinte segundos para chegar ao mesmo lugar.
           if (emUso.length > 0) {
-            executada = rodarModelo(sessaoId, rodada, emUso, ultimaFonte);
+            executada = rodarModelo(sessaoId, rodadaAtual, emUso, ultimaFonte);
           }
           return {
             usandoAgora: emUso.map((s) => CONJUNTO_POR_SLUG.get(s)?.comoFalar ?? s),
@@ -514,7 +540,7 @@ export async function responder(
           // turno, chamar rodar_modelo em seguida e então emudecer — o estudante
           // esperava meio minuto e recebia "não consegui responder agora".
           if (!executada && emUso.length > 0) {
-            executada = rodarModelo(sessaoId, rodada, emUso, ultimaFonte);
+            executada = rodarModelo(sessaoId, rodadaAtual, emUso, ultimaFonte);
           }
           const r = validarOpcoes(argumentos, { jaCruzou: executada !== null });
           if (!r.aceito) return { aceito: false, motivo: r.motivo };
@@ -524,12 +550,16 @@ export async function responder(
 
         if (nome === 'confirmar_alocacao') {
           if (argumentos.confirmado !== true) return { disparado: false };
-          confirmou = await aoConfirmar();
-          return confirmou ?? { disparado: false, motivo: 'as duas equipes precisam de destino' };
+          // O MESMO portão do botão "Enviar equipes": sem o porquê de cada equipe
+          // com destino, nada sai. Antes a conversa pulava a justificativa.
+          const r = await aoConfirmar();
+          if ('recusa' in r) return { disparado: false, motivo: MOTIVO_DA_RECUSA[r.recusa] };
+          confirmou = r.desfecho;
+          return confirmou;
         }
 
         // A última fonte somada nesta conversa explica o que mudou na leitura.
-        executada = rodarModelo(sessaoId, rodada, emUso, ultimaFonte);
+        executada = rodarModelo(sessaoId, rodadaAtual, emUso, ultimaFonte);
         return executada;
       },
     },

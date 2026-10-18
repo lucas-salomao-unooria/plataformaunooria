@@ -5,6 +5,7 @@ import {
   AMOSTRAS_NA_TELA,
   alcancaveisAgora,
   chegaATempo,
+  corridasPareadas,
   eficienciaDoTempo,
   esperadoDe,
   simular,
@@ -233,5 +234,40 @@ describe('a variância que o estudante enxerga', () => {
     const a = simular(alocacao, 42, opcoes).totais.salvas;
     const b = simular({ alfa: 'ribeirinha', bravo: 'industrial' }, 42, opcoes).totais.salvas;
     expect(a).not.toBe(b);
+  });
+});
+
+describe('o "E se…" pareado: as duas decisões nas MESMAS tempestades', () => {
+  it('a mesma alocação nas duas pontas dá diferença ZERO em toda corrida', () => {
+    // Se a semente levasse a decisão, como a de `esperadoDe`, a mesma decisão
+    // daria números diferentes nas duas colunas — e a comparação mediria sorte.
+    const a = alocacao('ribeirinha', 'morroalto');
+    const par = corridasPareadas(a, a, { saidaEmMinutos: 20 }, 50);
+    expect(par.sua.corridas).toEqual(par.outra.corridas);
+    expect(par.comparacao).toEqual({ corridas: 50, maisEm: 0, menosEm: 0, empates: 50 });
+    expect(par.sua.media).toBe(par.outra.media);
+  });
+
+  it('a chuva de cada corrida NÃO depende da decisão', () => {
+    // Bairro sem equipe nas duas decisões: a gente em risco ali é a mesma, corrida
+    // a corrida, porque a tempestade é a mesma.
+    const op = sementeDe('par:operacao:3');
+    const sorte = { sementeDaTempestade: sementeDe('par:tempestade:3'), saidaEmMinutos: 10 };
+    const x = simular(alocacao('ribeirinha', null), op, sorte);
+    const y = simular(alocacao('industrial', null), op, sorte);
+    const emRisco = (d: typeof x, slug: string) => d.porBairro.find((b) => b.bairro === slug)!.emRisco;
+    for (const slug of ['valeverde', 'morroalto']) expect(emRisco(x, slug)).toBe(emRisco(y, slug));
+  });
+
+  it('decisões diferentes contam, tempestade a tempestade, quem resgatou mais', () => {
+    const par = corridasPareadas(
+      alocacao('ribeirinha', 'morroalto'),
+      alocacao('industrial', 'valeverde'),
+      { saidaEmMinutos: 15 },
+      40,
+    );
+    expect(par.comparacao.maisEm + par.comparacao.menosEm + par.comparacao.empates).toBe(40);
+    expect(par.sua.corridas).toHaveLength(40);
+    expect(par.outra.corridas).toHaveLength(40);
   });
 });

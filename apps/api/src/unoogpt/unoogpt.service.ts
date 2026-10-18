@@ -18,10 +18,10 @@ import { MISSAO_TEMPESTADE } from "./cenario";
 /** Quanto cada toque em "+2 min" acrescenta ao relógio da aula. */
 export const INCREMENTO_SEG = 120;
 import { erroDeJogo } from "./erros";
-import { VERSAO_PROMPT, responder } from "./agente/prompt";
+import { VERSAO_PROMPT, responder, type ResultadoDaConfirmacao } from "./agente/prompt";
 import { classificarTurno } from "./agente/turno";
 import { CONJUNTOS, CONJUNTO_POR_SLUG } from "./modelo/conjuntos";
-import { type Alocacao, esperadoDe, simular } from "./modelo/tempestade";
+import { type Alocacao, type Desfecho, corridasPareadas, esperadoDe, simular } from "./modelo/tempestade";
 import { sementeDe } from "./modelo/aleatorio";
 import { passoDerivado, type PassoDerivavel } from "./regras/anexos";
 import { montarMapa, naoCarregados, oQueSobrou } from "./regras/camadas";
@@ -371,20 +371,42 @@ export class UnoogptService {
   // Ferramentas do Cientista (chamadas de dentro do turno)
   // =========================================================================
 
-  /** ADICIONA conjuntos ao que já está carregado. Investigação é em camadas. */
-  private async aoUsarDados(escolaId: string, estudanteId: string, pedidos: string[]): Promise<string[]> {
+  /**
+   * ADICIONA conjuntos ao que já está carregado. Investigação é em camadas.
+   *
+   * Devolve também a RODADA depois da carga: é com ela que o mapa sorteia, e o
+   * cartão de leitura do mesmo turno tem de sortear igual. Com a rodada de antes,
+   * o cartão "O que os dados mostram" e o mapa mostravam números diferentes para
+   * a mesma fonte, e um empate aparecia num lugar e não no outro.
+   *
+   * `exigirRelogioAberto` é da rota do painel (`PUT /unoogpt/conjuntos`): ela
+   * carregava fonte sem relógio e sem passar pelo Cientista, e quem a chamasse
+   * direto fabricava o "pediu dados" depois do fim da investigação. Dentro do
+   * turno o portão é o do próprio turno, conferido antes da chamada ao modelo.
+   */
+  private async aoUsarDados(
+    escolaId: string,
+    estudanteId: string,
+    pedidos: string[],
+    opcoes: { exigirRelogioAberto?: boolean } = {},
+  ): Promise<{ conjuntos: string[]; rodadas: number }> {
     const validos = pedidos.filter((p) => CONJUNTO_POR_SLUG.has(p));
     return this.prisma.comTenancy(async (tx) => {
       await this.lock(tx, escolaId, estudanteId);
       const atual = await tx.unoogptSessao.findUniqueOrThrow({
         where: { escolaId_estudanteId: { escolaId, estudanteId: estudanteId } },
       });
-      const somadas = validos.filter((v) => !atual.conjuntos.includes(v));
-      if (somadas.length === 0) return atual.conjuntos;
-
       // O relógio de AGORA, não `atual.minutosGastos`: aquele é o instante do
       // último turno, e um turno leva de 10 a 30 s (2 a 6 minutos da cidade).
       const estado = await this.relogioAgora(tx, escolaId, atual.turmaId);
+      if (opcoes.exigirRelogioAberto) {
+        if (atual.concluidoEm) throw erroDeJogo("sessao-encerrada");
+        if (estado.fase === "aguardando") throw erroDeJogo("relogio-nao-comecou");
+        if (!podePerguntar(estado)) throw erroDeJogo("relogio-encerrado");
+      }
+      const somadas = validos.filter((v) => !atual.conjuntos.includes(v));
+      if (somadas.length === 0) return { conjuntos: atual.conjuntos, rodadas: atual.rodadas };
+
       const conjuntos = [...atual.conjuntos, ...somadas];
       const atualizada = await tx.unoogptSessao.update({
         where: { escolaId_estudanteId: { escolaId, estudanteId: estudanteId } },
@@ -398,7 +420,7 @@ export class UnoogptService {
         marcoDeFontes(estado.minutosGastos, somadas),
         estado,
       );
-      return atualizada.conjuntos;
+      return { conjuntos: atualizada.conjuntos, rodadas: atualizada.rodadas };
     }, escolaId);
   }
 
@@ -423,7 +445,17 @@ export class UnoogptService {
       const estado = await this.relogioAgora(tx, escolaId, atual.turmaId);
       await tx.unoogptSessao.update({
         where: { escolaId_estudanteId: { escolaId, estudanteId: estudanteId } },
-        data: { alocacaoAlfa: alocacao.alfa, alocacaoBravo: alocacao.bravo, minutosGastos: estado.minutosGastos },
+        data: {
+          alocacaoAlfa: alocacao.alfa,
+          alocacaoBravo: alocacao.bravo,
+          // Destino novo pela conversa apaga o porquê, como já faz `alocar`: a
+          // razão era do bairro antigo. Sem isto o "foi pelo cadastro" da
+          // Ribeirinha ficava grudado no Industrial, e a tempestade saía com
+          // uma justificativa que o estudante nunca deu para aquele bairro.
+          ...(alocacao.alfa !== atual.alocacaoAlfa ? { justificativaAlfa: null } : {}),
+          ...(alocacao.bravo !== atual.alocacaoBravo ? { justificativaBravo: null } : {}),
+          minutosGastos: estado.minutosGastos,
+        },
       });
       await this.gravarMarco(
         tx,
@@ -437,19 +469,38 @@ export class UnoogptService {
     }, escolaId);
   }
 
-  /** Enfrentar a tempestade. Ponto sem volta, e idempotente por tentativa. */
-  private async aoConfirmar(escolaId: string, estudanteId: string, _perfil: Perfil) {
+  /**
+   * Enfrentar a tempestade. Ponto sem volta, e idempotente por tentativa.
+   *
+   * É o PORTÃO ÚNICO do envio, pelo botão e pela conversa: os dois chegam aqui,
+   * sob o lock da sessão. Antes o botão conferia a justificativa fora daqui e a
+   * conversa não conferia nada — "pode mandar" no chat pulava o "por que vai
+   * para lá". E mandar com UMA equipe na base é permitido, como dizem a tela e o
+   * Cientista; o que se recusa é mandar sem destino nenhum.
+   */
+  private async aoConfirmar(
+    escolaId: string,
+    estudanteId: string,
+    _perfil: Perfil,
+  ): Promise<ResultadoDaConfirmacao> {
     return this.prisma.comTenancy(async (tx) => {
       await this.lock(tx, escolaId, estudanteId);
       const atual = await tx.unoogptSessao.findUniqueOrThrow({
         where: { escolaId_estudanteId: { escolaId, estudanteId: estudanteId } },
       });
-      if (!atual.alocacaoAlfa || !atual.alocacaoBravo) return null;
 
       const ja = await tx.unoogptSimulacao.findUnique({
         where: { escolaId_estudanteId_ordem: { escolaId, estudanteId: estudanteId, ordem: atual.tentativa } },
       });
-      if (ja) return ja.desfecho;
+      if (ja) return { desfecho: ja.desfecho as unknown as Desfecho };
+
+      if (!atual.alocacaoAlfa && !atual.alocacaoBravo) return { recusa: "sem-destino" };
+      const pendentes = faltaJustificar(
+        { alfa: atual.alocacaoAlfa, bravo: atual.alocacaoBravo },
+        { alfa: atual.justificativaAlfa, bravo: atual.justificativaBravo },
+        atual.conjuntos,
+      );
+      if (pendentes.length > 0) return { recusa: "falta-justificar" };
 
       // A hora da SAÍDA é a hora de agora no relógio da turma. Antes era
       // `atual.minutosGastos`, que só o turno do Cientista atualizava: quem
@@ -502,7 +553,7 @@ export class UnoogptService {
         }),
         estado,
       );
-      return desfecho;
+      return { desfecho };
     }, escolaId);
   }
 
@@ -510,10 +561,13 @@ export class UnoogptService {
   // Rotas de mutação direta (mapa, painel, botões)
   // =========================================================================
 
-  /** Carregar fontes pelo painel, sem passar pelo Cientista. */
+  /**
+   * Carregar fontes pelo painel, sem passar pelo Cientista. Só com o relógio da
+   * turma aberto e a tentativa em curso, como uma pergunta.
+   */
   async carregarConjuntos(escolaId: string, estudanteId: string, conjuntos: string[]) {
-    const emUso = await this.aoUsarDados(escolaId, estudanteId, conjuntos);
-    return this.estadoPublico(escolaId, estudanteId, emUso);
+    const emUso = await this.aoUsarDados(escolaId, estudanteId, conjuntos, { exigirRelogioAberto: true });
+    return this.estadoPublico(escolaId, estudanteId, emUso.conjuntos);
   }
 
   /**
@@ -585,22 +639,13 @@ export class UnoogptService {
     }, escolaId);
   }
 
-  /** O botão "enfrentar a tempestade". Exige as duas justificativas. */
+  /**
+   * O botão "Enviar equipes". Exige o porquê de cada equipe COM destino; a
+   * conferência mora em `aoConfirmar`, o mesmo portão da conversa.
+   */
   async simular(escolaId: string, estudanteId: string) {
-    const pendentes = await this.prisma.comTenancy(async (tx) => {
-      const atual = await tx.unoogptSessao.findUniqueOrThrow({
-        where: { escolaId_estudanteId: { escolaId, estudanteId: estudanteId } },
-      });
-      return faltaJustificar(
-        { alfa: atual.alocacaoAlfa, bravo: atual.alocacaoBravo },
-        { alfa: atual.justificativaAlfa, bravo: atual.justificativaBravo },
-        atual.conjuntos,
-      );
-    }, escolaId);
-    if (pendentes.length > 0) throw erroDeJogo("falta-justificar");
-
-    const desfecho = await this.aoConfirmar(escolaId, estudanteId, "estudante");
-    if (!desfecho) throw erroDeJogo("falta-justificar");
+    const r = await this.aoConfirmar(escolaId, estudanteId, "estudante");
+    if ("recusa" in r) throw erroDeJogo(r.recusa);
     return this.resultado(escolaId, estudanteId);
   }
 
@@ -611,14 +656,31 @@ export class UnoogptService {
    * transformá-la em tentativa nova apagaria a diferença entre a decisão que
    * ele tomou e a que ele imaginou depois.
    */
+  /*
+   * PAREADO: a decisão do estudante e a outra rodam nas MESMAS tempestades, com
+   * a mesma sorte da operação em cada uma (`corridasPareadas`). A tela promete
+   * "a mesma tempestade", e antes cada decisão sorteava as próprias chuvas: a
+   * diferença entre as duas misturava a decisão com o sorteio.
+   */
   async contrafactual(escolaId: string, estudanteId: string, alocacao: Alocacao) {
     return this.prisma.comTenancy(async (tx) => {
+      const sessao = await tx.unoogptSessao.findUniqueOrThrow({
+        where: { escolaId_estudanteId: { escolaId, estudanteId: estudanteId } },
+      });
       const real = await tx.unoogptSimulacao.findUnique({
-        where: { escolaId_estudanteId_ordem: { escolaId, estudanteId: estudanteId, ordem: (await tx.unoogptSessao.findUniqueOrThrow({ where: { escolaId_estudanteId: { escolaId, estudanteId: estudanteId } } })).tentativa } },
+        where: { escolaId_estudanteId_ordem: { escolaId, estudanteId: estudanteId, ordem: sessao.tentativa } },
       });
       if (!real) throw erroDeJogo("sessao-encerrada");
-      const faixa = esperadoDe(alocacao, { saidaEmMinutos: real.minutoDaSaida }, 200);
-      return { alocacao, media: faixa.media, faixa: faixa.faixa };
+      const gravada = real.alocacao as { alfa?: string | null; bravo?: string | null };
+      const sua: Alocacao = { alfa: gravada.alfa ?? null, bravo: gravada.bravo ?? null };
+      const par = corridasPareadas(sua, alocacao, { saidaEmMinutos: real.minutoDaSaida }, 200);
+      return {
+        alocacao,
+        media: par.outra.media,
+        faixa: par.outra.faixa,
+        sua: { media: par.sua.media, faixa: par.sua.faixa },
+        comparacao: par.comparacao,
+      };
     }, escolaId);
   }
 
