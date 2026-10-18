@@ -90,6 +90,30 @@ describe("as duas decisões que mudaram o sheet", () => {
   });
 });
 
+describe("o Canal A (3.0.0): sem P1/P2, sem correção, e a tela do boato neutra", () => {
+  test("não sobra copy do desafio de múltipla escolha", () => {
+    for (const t of TODOS) {
+      expect(t).not.toBe("Responder");
+      expect(t).not.toContain("Desafio Individual");
+      expect(t).not.toContain("Avançar para Desafio Final");
+    }
+  });
+
+  test("a Chave não promete encaixe certo: sem \"destravar\", \"abre a chave\" ou \"ativada\"", () => {
+    const daChave = textosDo(TEXTOS.E5);
+    for (const t of daChave) expect(t).not.toMatch(/destrav|abre a chave|ativad|tente outro/i);
+  });
+
+  test("a tela do boato não pede para verificar antes da decisão", () => {
+    const antes = [TEXTOS.E6.titulo, TEXTOS.E6.oQueFazer, ...Object.values(TEXTOS.E6.decisao)];
+    for (const t of antes) expect(t).not.toMatch(/confer|checa|verifi|pista/i);
+  });
+
+  test("o símbolo do veredito vem SEMPRE com o texto", () => {
+    expect(TEXTOS.VEREDITO).toEqual({ confio: "✓ Confio", nao_confio: "✗ Não confio" });
+  });
+});
+
 describe("a copy literal do sheet (as chaves que a e2e casa por texto exato)", () => {
   test.each([
     [TEXTOS.E1.explorarMesa, "Explorar Mesa de Notícias"],
@@ -102,6 +126,17 @@ describe("a copy literal do sheet (as chaves que a e2e casa por texto exato)", (
     [TEXTOS.EREV.publicar2, "Publicar 2ª Edição Revisada"],
     [TEXTOS.EREV.contraste(1, 3), "1ª Edição: 1 de 3 verificadas ➔ 2ª Edição: 3 de 3 verificadas!"],
     [TEXTOS.E6.concluir, "Concluir Missão"],
+    [TEXTOS.MOTIVO.opcoes.visual, "Escolhi porque chamou atenção"],
+    [TEXTOS.MOTIVO.opcoes.checagem, "Escolhi porque conferi as pistas"],
+    [TEXTOS.EREV.irParaSimulacao, "Testar a minha Chave"],
+    [TEXTOS.E5.pronto, "Pronto"],
+    [TEXTOS.E5.confirmarDescricao, "Depois de enviar, a Chave não muda."],
+    [TEXTOS.E5.opcoesSeFalhar.parar, "Não publico"],
+    [TEXTOS.E5.opcoesSeFalhar.seguir, "Olho a próxima pista"],
+    [TEXTOS.E5.opcoesRepeticao.todas, "Usar estes passos em TODAS as notícias"],
+    [TEXTOS.E5.opcoesRepeticao.so_a_primeira, "Só na primeira notícia"],
+    [TEXTOS.E6.decisao.repassar, "Repassar para o grupo"],
+    [TEXTOS.E6.decisao.nao_repassar, "Não repassar"],
     [TEXTOS.ERROS.semSinal, "Conexão com a gráfica oscilou. Suas matérias continuam salvas na mesa editorial!"],
   ])("%s", (texto, esperado) => {
     expect(texto).toBe(esperado);

@@ -1,23 +1,36 @@
-import { readFileSync } from "node:fs";
 import { describe, expect, test } from "vitest";
 import {
+  abrirNaSimulacao,
   adicionar,
+  blocosNasVagas,
   chaveDasVagas,
   completas,
-  desencaixar,
-  devolver,
-  encaixar,
+  corpoDaChave,
+  corpoDaSimulacao,
+  decidirNaSimulacao,
   esperaDaTentativa,
   esvaziar,
   gateMudou,
-  JOGADA_INICIAL,
+  marcarLado,
+  marcarNaSimulacao,
+  marcarRepeticao,
+  marcarSeFalhar,
+  MATERIA_NOVA,
+  materiaValida,
+  montagemValida,
+  montagemVazia,
+  pistasDoBoatoValidas,
+  porNaVaga,
   preenchidas,
+  proximaVagaLivre,
+  registrarPistaDoBoato,
   retirar,
   segundosDesde,
-  separarEnunciado,
   TELA_DO_PASSO,
+  tirarDaVaga,
   VAGAS_VAZIAS,
   vagasValidas,
+  type MontagemDaChave,
 } from "./regras";
 import type { GatePublico } from "./tipos";
 
@@ -57,25 +70,122 @@ describe("as vagas da página", () => {
   });
 });
 
-describe("a bandeja e a calha da Chave (quem corrige é a api)", () => {
-  test("encaixa na próxima vaga até três, e não repete", () => {
-    let j = encaixar(JOGADA_INICIAL, "foto", 3);
-    j = encaixar(j, "fonte", 3);
-    j = encaixar(j, "fonte", 3);
-    expect(j.vagas).toEqual(["foto", "fonte"]);
-    j = encaixar(encaixar(j, "data", 3), "autoria", 3);
-    expect(j.vagas).toEqual(["foto", "fonte", "data"]);
+describe("a Chave em montagem (quem corrige é a api — aqui nada corrige)", () => {
+  /** Uma Chave completa: três blocos, os dois cartões de cada um, o "se falhar" e a repetição. */
+  function completa(): MontagemDaChave {
+    let m = montagemVazia(3);
+    (["data", "foto", "autoria"] as const).forEach((b, i) => {
+      m = porNaVaga(m, i, b);
+      m = marcarLado(marcarLado(m, i, 0, "aprova"), i, 1, "reprova");
+      m = marcarSeFalhar(m, i, i === 1 ? "seguir" : "parar");
+    });
+    return marcarRepeticao(m, "so_a_primeira");
+  }
+
+  test("o bloco vai para a vaga vazia escolhida; vaga cheia e bloco repetido não mudam nada", () => {
+    let m = porNaVaga(montagemVazia(3), 1, "fonte");
+    expect(m.vagas.map((v) => v.bloco)).toEqual([null, "fonte", null]);
+    expect(proximaVagaLivre(m)).toBe(0);
+    expect(porNaVaga(m, 1, "data")).toBe(m);
+    expect(porNaVaga(m, 0, "fonte")).toBe(m);
+    m = porNaVaga(m, 0, "foto");
+    expect([...blocosNasVagas(m)].sort()).toEqual(["fonte", "foto"]);
   });
 
-  test("a tentativa que não abriu devolve as iscas e mantém os outros", () => {
-    const j = devolver({ vagas: ["foto", "fonte", "data"], devolvidos: [] }, ["foto"]);
-    expect(j).toEqual({ vagas: ["fonte", "data"], devolvidos: ["foto"] });
+  test("tocar na vaga cheia devolve o bloco e apaga as escolhas dele", () => {
+    let m = porNaVaga(montagemVazia(3), 0, "fonte");
+    m = marcarSeFalhar(marcarLado(m, 0, 1, "reprova"), 0, "parar");
+    m = tirarDaVaga(m, 0);
+    expect(m.vagas[0]).toEqual({ bloco: null, lados: [null, null], seFalhar: null });
   });
 
-  test("o estado `returned` é breve: some na jogada seguinte", () => {
-    const j = { vagas: ["fonte", "data"] as const, devolvidos: ["foto"] as const };
-    expect(encaixar(j, "autoria", 3).devolvidos).toEqual([]);
-    expect(desencaixar(j, "data")).toEqual({ vagas: ["fonte"], devolvidos: [] });
+  test("o lado vai pela posição CANÔNICA do cartão, não pela ordem da tela", () => {
+    const m = marcarLado(porNaVaga(montagemVazia(3), 0, "fonte"), 0, 1, "aprova");
+    expect(m.vagas[0]?.lados).toEqual([null, "aprova"]);
+    expect(marcarLado(montagemVazia(3), 0, 0, "aprova").vagas[0]?.lados).toEqual([null, null]);
+  });
+
+  test("o Pronto só acende com TUDO escolhido — e a Chave errada também é uma Chave", () => {
+    expect(corpoDaChave(montagemVazia(3))).toBeNull();
+    const m = completa();
+    expect(corpoDaChave(m)).toEqual({
+      vagas: [
+        { bloco: "data", lados: ["aprova", "reprova"], seFalhar: "parar" },
+        { bloco: "foto", lados: ["aprova", "reprova"], seFalhar: "seguir" },
+        { bloco: "autoria", lados: ["aprova", "reprova"], seFalhar: "parar" },
+      ],
+      repeticao: "so_a_primeira",
+    });
+    expect(corpoDaChave({ ...m, repeticao: null })).toBeNull();
+    expect(corpoDaChave(marcarSeFalhar(tirarDaVaga(m, 2), 2, "parar"))).toBeNull();
+    const semUmLado = { ...m, vagas: m.vagas.map((v, i) => (i === 0 ? { ...v, lados: ["aprova", null] as const } : v)) };
+    expect(corpoDaChave(semUmLado)).toBeNull();
+  });
+
+  test("a memória da aba só devolve uma montagem desta bandeja", () => {
+    const blocos = new Set(["fonte", "data", "autoria", "foto", "urgencia", "compartilhada"]);
+    const m = completa();
+    expect(montagemValida(JSON.parse(JSON.stringify(m)), blocos, 3)).toEqual(m);
+    expect(montagemValida({ vagas: [{ bloco: "nada" }, { bloco: null }, { bloco: null }] }, blocos, 3)).toBeNull();
+    expect(montagemValida({ vagas: [{ bloco: "fonte" }, { bloco: "fonte" }, { bloco: null }] }, blocos, 3)).toBeNull();
+    expect(montagemValida({ vagas: [] }, blocos, 3)).toBeNull();
+    expect(montagemValida({ vagas: [{ bloco: "fonte", lados: ["x", "reprova"], seFalhar: "y" }, { bloco: null }, { bloco: null }] }, blocos, 3))
+      .toEqual({ vagas: [{ bloco: "fonte", lados: [null, "reprova"], seFalhar: null }, ...montagemVazia(3).vagas.slice(1)], repeticao: null });
+  });
+});
+
+describe("a simulação: a ordem é a da criança, e a marcação é obrigatória", () => {
+  test("aberta, a pista espera a marcação: nenhuma outra abre e nada se decide", () => {
+    let m = abrirNaSimulacao(MATERIA_NOVA, "autoria");
+    expect(m.pendente).toBe("autoria");
+    expect(abrirNaSimulacao(m, "fonte")).toBe(m);
+    expect(decidirNaSimulacao(m, "publicar")).toBe(m);
+    m = marcarNaSimulacao(m, "nao_confio");
+    m = marcarNaSimulacao(abrirNaSimulacao(m, "fonte"), "confio");
+    expect(m.passos).toEqual([
+      { tipo: "autoria", veredito: "nao_confio" },
+      { tipo: "fonte", veredito: "confio" },
+    ]);
+    expect(abrirNaSimulacao(m, "autoria")).toBe(m);
+  });
+
+  test("a decisão fecha a matéria, a qualquer momento (até sem abrir pista)", () => {
+    const m = decidirNaSimulacao(MATERIA_NOVA, "nao_publicar");
+    expect(m.decisao).toBe("nao_publicar");
+    expect(abrirNaSimulacao(m, "data")).toBe(m);
+  });
+
+  test("o corpo só sai com as duas decididas, na ordem dos ids", () => {
+    const s1 = decidirNaSimulacao(marcarNaSimulacao(abrirNaSimulacao(MATERIA_NOVA, "data"), "confio"), "publicar");
+    expect(corpoDaSimulacao(["s1", "s2"], { s1 })).toBeNull();
+    expect(corpoDaSimulacao(["s1", "s2"], { s1, s2: decidirNaSimulacao(MATERIA_NOVA, "nao_publicar") })).toEqual({
+      materias: [
+        { id: "s1", passos: [{ tipo: "data", veredito: "confio" }], decisao: "publicar" },
+        { id: "s2", passos: [], decisao: "nao_publicar" },
+      ],
+    });
+  });
+
+  test("a memória da aba devolve só passos válidos e sem pista repetida", () => {
+    expect(materiaValida({ passos: [{ tipo: "fonte", veredito: "confio" }], pendente: "data", decisao: null })).toEqual({
+      passos: [{ tipo: "fonte", veredito: "confio" }],
+      pendente: "data",
+      decisao: null,
+    });
+    expect(materiaValida({ passos: [{ tipo: "fonte", veredito: "talvez" }] })).toBeNull();
+    expect(materiaValida({ passos: [{ tipo: "fonte", veredito: "confio" }, { tipo: "fonte", veredito: "confio" }] })).toBeNull();
+  });
+});
+
+describe("o boato: as pistas abertas ANTES da decisão, uma vez, na ordem", () => {
+  test("registra na ordem, sem repetir, e para de contar depois da decisão", () => {
+    let p = registrarPistaDoBoato([], "data", false);
+    p = registrarPistaDoBoato(p, "fonte", false);
+    p = registrarPistaDoBoato(p, "data", false);
+    expect(p).toEqual(["data", "fonte"]);
+    expect(registrarPistaDoBoato(p, "autoria", true)).toEqual(["data", "fonte"]);
+    expect(pistasDoBoatoValidas(["autoria", "x", "autoria"])).toEqual(["autoria"]);
+    expect(pistasDoBoatoValidas("fonte")).toEqual([]);
   });
 });
 
@@ -117,42 +227,10 @@ describe("a tela de cada passo", () => {
       "chave",
       "revisao",
       "comparativo",
+      "simulacao",
       "desafio-final",
       "leitura",
     ]);
-  });
-});
-
-describe("o enunciado de P1: boato, detalhe e pergunta", () => {
-  /** O enunciado REAL da ficha da api — o teste vale para o texto que vai à tela. */
-  function enunciadosDaFicha(): string[] {
-    const fonte = readFileSync("../../api/src/evidencias/fichas/exp04ef1b.ts", "utf8");
-    return [...fonte.matchAll(/enunciado:\s*"((?:[^"\\]|\\.)*)"/g)].map((m) => JSON.parse(`"${m[1] ?? ""}"`) as string);
-  }
-
-  test("a P1 da ficha se separa no boato encaminhado, no detalhe e na pergunta; a P2 é só pergunta", () => {
-    const [p1, p2] = enunciadosDaFicha();
-    expect(p1 && separarEnunciado(p1)).toEqual({
-      boato:
-        "URGENTE: A prefeitura avisou que a água de todas as escolas do bairro vai ser cortada amanhã e ninguém deve ir para a aula! Repassem para todo mundo!",
-      detalhe: "Mensagem sem link oficial, sem carimbo de data e sem nome de autoridade responsável.",
-      pergunta:
-        "Você recebeu esse aviso no celular. Antes de comemorar que não vai ter aula e repassar para os colegas, o que você precisa conferir para saber se essa mensagem é confiável?",
-    });
-    expect(p2 && separarEnunciado(p2).boato).toBeNull();
-  });
-
-  test("três blocos separados por linha em branco", () => {
-    expect(separarEnunciado("URGENTE: corte de água!\n\nSem link oficial.\n\nO que conferir?")).toEqual({
-      boato: "URGENTE: corte de água!",
-      detalhe: "Sem link oficial.",
-      pergunta: "O que conferir?",
-    });
-  });
-
-  test("dois blocos: o primeiro é o boato; um bloco: tudo é pergunta — nada some", () => {
-    expect(separarEnunciado("Boato.\n\nPergunta?")).toEqual({ boato: "Boato.", detalhe: null, pergunta: "Pergunta?" });
-    expect(separarEnunciado("Só a pergunta?")).toEqual({ boato: null, detalhe: null, pergunta: "Só a pergunta?" });
   });
 });
 

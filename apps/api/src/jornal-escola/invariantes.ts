@@ -278,3 +278,59 @@ export function problemasDoPacote(noticias: readonly NoticiaParaARegua[]): strin
 export function paraLog(texto: string): string {
   return `<${[...texto].length} caracteres>`;
 }
+
+// ───────────────────────────────────────────── a simulação (3.0.0, ADR-168)
+
+/** A forma que a régua da simulação precisa. */
+export interface MateriaParaARegua {
+  readonly id: string;
+  readonly meio: Meio;
+  readonly veiculo: string;
+  readonly manchete: string;
+  readonly resumo: string;
+  readonly pistas: { readonly fonte: string; readonly data: string; readonly autoria: string };
+  readonly gabarito: { readonly publicavel: boolean; readonly pilarEmFalta: PilarEmFalta | null; readonly explicacao: string };
+}
+
+/**
+ * Os meios da simulação: os que existem SEM imagem e sem falante — a matéria
+ * da simulação não tem foto (a vaga da isca "Foto bonita" é pulada) nem
+ * consequência, e só testa a Chave.
+ */
+export const MEIOS_DA_SIMULACAO: readonly Meio[] = ["jornal", "blog", "portal", "mural"];
+
+/**
+ * A régua de UMA matéria da simulação: a mesma de palavras e de termos da
+ * mesa, e o gabarito coerente (a publicável sem pista em falta, a outra com
+ * uma) — a regra do PO de que cada pista tem resposta sem ambiguidade é da
+ * IA geradora e da curadoria do professor; aqui fica o que se confere.
+ */
+export function problemasDaMateriaDaSimulacao(m: MateriaParaARegua): string[] {
+  const p: string[] = [];
+  const r = REGUAS_DE_PALAVRAS;
+  const entre = (campo: string, texto: string, regua: { min: number; max: number }) => {
+    const n = palavras(texto);
+    if (n < regua.min || n > regua.max) p.push(`A matéria ${m.id} da simulação: "${campo}" com ${n} palavras (de ${regua.min} a ${regua.max}).`);
+  };
+  if (!MEIOS_DA_SIMULACAO.includes(m.meio)) p.push(`A matéria ${m.id} da simulação é de um meio sem texto próprio.`);
+  entre("manchete", m.manchete, r.manchete);
+  entre("resumo", m.resumo, r.resumo);
+  entre("pista de fonte", m.pistas.fonte, r.pista);
+  entre("pista de data", m.pistas.data, r.pista);
+  entre("pista de autoria", m.pistas.autoria, r.pista);
+  entre("explicação", m.gabarito.explicacao, r.explicacao);
+  const coerente = m.gabarito.publicavel ? m.gabarito.pilarEmFalta === null : m.gabarito.pilarEmFalta !== null;
+  if (!coerente) p.push(`A matéria ${m.id} da simulação tem o gabarito incoerente.`);
+  const visivel = [m.veiculo, m.manchete, m.resumo, m.pistas.fonte, m.pistas.data, m.pistas.autoria].join(" ");
+  for (const termo of termosProibidosEm(visivel)) p.push(`A matéria ${m.id} da simulação usa "${termo}".`);
+  return p;
+}
+
+/** As duas matérias: uma publicável, uma com furo, meios diferentes. */
+export function problemasDaSimulacao(ms: readonly MateriaParaARegua[]): string[] {
+  const p = ms.flatMap(problemasDaMateriaDaSimulacao);
+  if (ms.length !== 2) p.push("A simulação tem exatamente duas matérias.");
+  if (ms.filter((m) => m.gabarito.publicavel).length !== 1) p.push("A simulação tem uma matéria publicável e uma com furo.");
+  if (new Set(ms.map((m) => m.meio)).size !== ms.length) p.push("As duas matérias da simulação são de meios diferentes.");
+  return p;
+}

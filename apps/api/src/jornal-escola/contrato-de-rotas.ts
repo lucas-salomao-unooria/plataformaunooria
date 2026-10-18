@@ -1,17 +1,25 @@
 import { z } from "zod";
 import { falasDoTemaSchema } from "../podcast/roteiro";
 import { VAGAS_DO_PODCAST } from "./podcast";
-import { problemasDoPacote } from "./invariantes";
+import { problemasDaSimulacao, problemasDoPacote } from "./invariantes";
+import { MontagemSchema } from "./regras/montagem";
 import { ETAPAS, PASSOS, PASSOS_PEDIDOS } from "./regras/passos";
+import { SimulacaoSchema } from "./regras/simulacao";
+import { TransferenciaSchema } from "./regras/transferencia";
 import {
+  BLOCOS_ISCA,
   IDS_DE_BLOCO,
   IDS_DE_NOTICIA,
+  IDS_DE_SIMULACAO,
+  LADOS_DA_CONDICAO,
+  REPETICOES,
+  SE_FALHAR,
+  VEREDITOS,
   LAYOUTS,
   MEIOS,
   MOTIVOS,
   ORIGENS_DO_LAYOUT,
   ORIGENS_DO_PACOTE,
-  TAMANHO_DA_CHAVE,
   TAMANHO_DA_EDICAO,
   TIPOS_DE_PISTA,
   TOTAL_DE_NOTICIAS,
@@ -77,20 +85,34 @@ export const PublicarSchema = z.object({
 export const MotivoSchema = z.object({ motivo: z.enum(MOTIVOS) });
 
 /**
- * Uma tentativa da Chave do Editor: três blocos, em qualquer ordem.
- *
- * `tentativa` é o número que a TELA acha que está enviando (1, 2, 3…). Com ele o
- * servidor descarta a repetição da rede: um envio com número já contado devolve
- * o resultado gravado, sem somar. Sem ele, a resposta perdida e reenviada
- * contaria duas vezes — e a EF15CO02 sai do número de tentativas.
+ * O julgamento de uma pista JÁ ABERTA (3.0.0, ADR-168): "confio" ou "não
+ * confio", logo depois de abrir e antes de decidir a capa. Só na mesa da 1ª
+ * edição; o primeiro de cada par vale (o segundo responde `novo: false`).
  */
-export const ChaveSchema = z.object({
-  blocos: z
-    .array(z.enum(IDS_DE_BLOCO))
-    .length(TAMANHO_DA_CHAVE)
-    .refine((b) => new Set(b).size === b.length, "três blocos diferentes"),
-  tentativa: z.number().int().min(1).max(100).optional(),
+export const JulgarSchema = z.object({
+  noticiaId: IdDeNoticiaSchema,
+  tipo: z.enum(TIPOS_DE_PISTA),
+  veredito: z.enum(VEREDITOS),
 });
+
+/**
+ * A Chave do Editor MONTADA (3.0.0, ADR-168): três vagas completas e distintas
+ * — o bloco, o lado de cada um dos dois cartões dele, o "se esta pista falhar"
+ * — e a repetição. Um envio, sem correção: a resposta não diz se está certa.
+ * Os cartões vão na ordem canônica do bloco (`<bloco>-1`, `<bloco>-2`), não na
+ * embaralhada da tela.
+ */
+export const ChaveSchema = MontagemSchema;
+
+/**
+ * A execução da Chave nas duas matérias da simulação, enviada inteira no fim:
+ * por matéria, as pistas na ORDEM em que a criança as abriu, cada uma com o
+ * "confio / não confio" (obrigatório na simulação), e a decisão.
+ */
+export const SimularSchema = SimulacaoSchema;
+
+/** O boato: as pistas abertas ANTES da decisão, na ordem, e a decisão. */
+export const TransferirSchema = TransferenciaSchema;
 
 /** O botão único do painel: a etapa de DESTINO. */
 export const GateSchema = z.object({ para: z.enum(ETAPAS) });
@@ -142,6 +164,41 @@ export const NoticiaDoPacoteSchema = z.object({
 export type NoticiaDoPacote = z.infer<typeof NoticiaDoPacoteSchema>;
 
 /**
+ * Uma matéria da SIMULAÇÃO (3.0.0, ADR-168), COMPLETA — com o gabarito. Inédita,
+ * sem imagem e sem consequência: ela não vai para nenhuma capa, só testa a
+ * Chave da criança. Ids `s1` e `s2`, fora da mesa.
+ */
+export const MateriaDaSimulacaoSchema = z.object({
+  id: z.enum(IDS_DE_SIMULACAO),
+  meio: z.enum(MEIOS),
+  veiculo: Texto(2, 60),
+  falante: Texto(2, 60).nullable(),
+  manchete: Texto(5, 120),
+  resumo: Texto(20, 320),
+  pistas: z.object({ fonte: Texto(2, 200), data: Texto(2, 200), autoria: Texto(2, 200) }),
+  gabarito: z.object({
+    publicavel: z.boolean(),
+    pilarEmFalta: z.enum(TIPOS_DE_PISTA).nullable(),
+    explicacao: Texto(5, 280),
+  }),
+});
+export type MateriaDaSimulacao = z.infer<typeof MateriaDaSimulacaoSchema>;
+
+/**
+ * As duas matérias, uma publicável e uma com UMA pista em falta, de meios
+ * diferentes e sem imagem (`invariantes.ts#problemasDaSimulacao`). O
+ * `.superRefine` some do OpenAPI; a nota do `@Contrato` repete a regra.
+ */
+export const SimulacaoDoPacoteSchema = z
+  .array(MateriaDaSimulacaoSchema)
+  .length(IDS_DE_SIMULACAO.length)
+  .superRefine((ms, ctx) => {
+    const ids = new Set(ms.map((m) => m.id));
+    if (ids.size !== ms.length) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "s1 e s2, uma vez cada." });
+    for (const problema of problemasDaSimulacao(ms)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: problema });
+  });
+
+/**
  * A homologação: o clique em "Aprovar pacote". O corpo leva as oito notícias
  * INTEIRAS porque curadoria é editar — e editar uma notícia edita também o
  * gabarito e a consequência dela (PDF §10), então as três partes viajam juntas.
@@ -164,6 +221,12 @@ export const HomologacaoSchema = z.object({
    * assinatura. No banco padrão, as do sheet.
    */
   podcast: falasDoTemaSchema(VAGAS_DO_PODCAST),
+  /**
+   * As duas matérias da SIMULAÇÃO (3.0.0, ADR-168). Opcional: a tela do
+   * professor anterior à 3.0.0 não as manda, e aí o pacote fica com as do banco
+   * padrão.
+   */
+  simulacao: SimulacaoDoPacoteSchema.optional(),
 });
 
 /**
@@ -240,6 +303,16 @@ export const BlocoSchema = z.object({
   legenda: z.string(),
 });
 
+/**
+ * Um cartão de condição, como a tela da Chave o mostra. `indice` é a posição
+ * CANÔNICA do cartão no bloco (0 ou 1 — o `lados[indice]` do envio); a ordem
+ * da lista é a embaralhada desta sessão. NÃO diz o lado certo.
+ */
+export const CartaoSchema = z.object({ indice: z.union([z.literal(0), z.literal(1)]), texto: z.string(), exemplo: z.string() });
+
+/** O bloco com os dois cartões — o que a bandeja da Chave recebe. */
+export const BlocoDaChaveSchema = BlocoSchema.extend({ cartoes: z.array(CartaoSchema).length(2) });
+
 const EdicaoDoEstudanteSchema = z.object({
   slots: z.array(IdDeNoticiaSchema).length(TAMANHO_DA_EDICAO),
   layout: LayoutSchema,
@@ -263,10 +336,14 @@ export const EstadoSchema = z.object({
   edicao1: EdicaoDoEstudanteSchema.nullable(),
   motivoRespondido: z.boolean(),
   chaveFormada: z.boolean(),
-  /** Quantos envios da Chave já contaram — a base do `tentativa` do próximo `POST chave`. */
-  chaveTentativas: z.number().int().min(0),
   edicao2: EdicaoDoEstudanteSchema.nullable(),
   pistasAbertas: z.array(PistaAbertaSchema),
+  /** Os "confio / não confio" já marcados na mesa — o F5 reabre a pista como estava. */
+  julgamentos: z.array(z.object({ noticiaId: IdDeNoticiaSchema, tipo: z.enum(TIPOS_DE_PISTA), veredito: z.enum(VEREDITOS) })),
+  /** A simulação já foi enviada. */
+  simulada: z.boolean(),
+  /** A transferência já foi decidida. */
+  transferida: z.boolean(),
   /** Quando a sessão nasceu (o `criado_em`): base do tempo total da telemetria, indicativo. */
   iniciadaEm: z.string(),
   concluidaEm: z.string().nullable(),
@@ -278,8 +355,8 @@ export const SessaoSchema = EstadoSchema.extend({
     /** As oito notícias na ORDEM DA MESA (a mesma que o professor projeta), sem gabarito. */
     noticias: z.array(NoticiaPublicaSchema).length(TOTAL_DE_NOTICIAS),
   }),
-  /** Os seis blocos na ordem da bandeja DESTA sessão; `null` antes de a revisão abrir. */
-  blocos: z.array(BlocoSchema).nullable(),
+  /** Os seis blocos na ordem da bandeja DESTA sessão, com os cartões; `null` antes de a revisão abrir. */
+  blocos: z.array(BlocoDaChaveSchema).nullable(),
   limites: z.object({ edicao: z.number().int().positive(), chave: z.number().int().positive() }),
 });
 
@@ -329,13 +406,58 @@ export const EdicaoComResultadoSchema = z.object({
 
 export const ResultadoSchema = z.object({ edicao1: EdicaoComResultadoSchema });
 
-/** Uma tentativa da Chave. `devolvidos` são as iscas, que voltam à bandeja. */
-export const TentativaDaChaveSchema = z.object({
-  sucesso: z.boolean(),
-  tentativas: z.number().int().min(1),
-  devolvidos: z.array(z.enum(IDS_DE_BLOCO)),
-  estado: EstadoSchema,
+/** O julgamento gravado. `novo: false` = o par já tinha um, e vale o primeiro. */
+export const JulgamentoSchema = z.object({
+  noticiaId: IdDeNoticiaSchema,
+  tipo: z.enum(TIPOS_DE_PISTA),
+  /** O veredito que VALE — o primeiro do par. */
+  veredito: z.enum(VEREDITOS),
+  novo: z.boolean(),
 });
+
+/** A Chave montada: só o estado. A resposta NÃO diz se a Chave está certa. */
+export const ChaveMontadaSchema = z.object({ estado: EstadoSchema });
+
+/** Uma matéria da simulação como a CRIANÇA a recebe: com as pistas, sem o gabarito. */
+export const MateriaDaSimulacaoPublicaSchema = MateriaDaSimulacaoSchema.omit({ gabarito: true });
+
+/**
+ * A tela da simulação: as duas matérias e a Chave DELA, como roteiro — o
+ * bloco de cada vaga, o "se falhar" e a repetição, mais a frase neutra de pulo
+ * para a vaga com isca.
+ */
+export const SimulacaoDaTelaSchema = z.object({
+  materias: z.array(MateriaDaSimulacaoPublicaSchema).length(IDS_DE_SIMULACAO.length),
+  chave: z.object({
+    vagas: z.array(
+      z.object({
+        bloco: z.enum(IDS_DE_BLOCO),
+        rotulo: z.string(),
+        seFalhar: z.enum(SE_FALHAR),
+        /** A frase de pulo, quando o bloco é isca (`null` nos pilares). */
+        pulo: z.string().nullable(),
+      }),
+    ),
+    repeticao: z.enum(REPETICOES),
+  }),
+});
+
+/**
+ * A simulação enviada. `referencia` é a REGRA DE REFERÊNCIA, igual para todos e
+ * sem comparar com a da criança (o plenário pediu: a Chave errada não pode sair
+ * reforçada). A medição já terminou quando ela desce.
+ */
+export const SimulacaoEnviadaSchema = z.object({ estado: EstadoSchema, referencia: z.string() });
+
+/** A tela da transferência: o boato e as três pistas dele (fixos). */
+export const TransferenciaDaTelaSchema = z.object({
+  remetente: z.string(),
+  mensagem: z.string(),
+  pistas: z.object({ fonte: z.string(), data: z.string(), autoria: z.string() }),
+});
+
+/** A transferência decidida: o estado. A síntese é a mesma para todos (na copy da experiência). */
+export const TransferenciaEnviadaSchema = z.object({ estado: EstadoSchema });
 
 const VagaMarcadaSchema = z.object({ noticiaId: IdDeNoticiaSchema, pilarEmFalta: PilarOuNuloSchema });
 
@@ -406,6 +528,8 @@ const LinhaDoPainelSchema = z.object({
   publicouAPrimeira: z.boolean(),
   chaveFormada: z.boolean(),
   publicouASegunda: z.boolean(),
+  /** Aplicou a Chave nas duas matérias novas (3.0.0). */
+  simulou: z.boolean(),
   concluiu: z.boolean(),
 });
 
@@ -433,6 +557,26 @@ export const PainelSchema = z.object({
     histograma: z.object({ edicao1: HistogramaSchema, edicao2: HistogramaSchema }),
     /** O motivo agregado da 1ª edição (a pergunta depois do latch). */
     motivos: z.object({ visual: z.number().int().min(0), checagem: z.number().int().min(0) }),
+    /**
+     * A Chave da turma, AGREGADA (3.0.0) — o roteiro da conversa, nunca o nível
+     * de alguém: quantos computadores puseram cada isca, quantos "Olho a
+     * próxima pista" e quantos "Só na primeira notícia".
+     */
+    chave: z.object({
+      montaram: z.number().int().min(0),
+      iscas: z.object(Object.fromEntries(BLOCOS_ISCA.map((b) => [b, z.number().int().min(0)])) as Record<
+        (typeof BLOCOS_ISCA)[number],
+        z.ZodNumber
+      >),
+      seguir: z.number().int().min(0),
+      soNaPrimeira: z.number().int().min(0),
+    }),
+    /** O boato, AGREGADO: quantos decidiram, quantos repassaram sem abrir pista nenhuma. */
+    transferencia: z.object({
+      decidiram: z.number().int().min(0),
+      repassaramSemAbrir: z.number().int().min(0),
+      naoRepassaram: z.number().int().min(0),
+    }),
     /**
      * O radar CALCULADO (os 68 % do PRD eram ilustração): por notícia, quantos
      * computadores a puseram na 1ª e na 2ª edição. É do OBJETO editorial — "a
@@ -471,6 +615,8 @@ export const ZerarTurmaSchema = z.object({
 const PacoteNaTelaSchema = PacoteResumoSchema.extend({
   topicos: z.string().nullable(),
   noticias: z.array(NoticiaDoPacoteSchema),
+  /** As duas matérias da simulação — as do banco padrão nos pacotes anteriores à 3.0.0. */
+  simulacao: z.array(MateriaDaSimulacaoSchema).length(IDS_DE_SIMULACAO.length),
   midia: MidiaResumoSchema,
   /** As URLs já geradas, por id de notícia. */
   imagens: z.record(z.string()),
@@ -508,6 +654,8 @@ export const RascunhoSchema = z.object({
   origem: z.enum(ORIGENS_DO_PACOTE),
   usouIa: z.boolean(),
   noticias: z.array(NoticiaDoPacoteSchema).length(TOTAL_DE_NOTICIAS),
+  /** As duas matérias da simulação (3.0.0). */
+  simulacao: z.array(MateriaDaSimulacaoSchema).length(IDS_DE_SIMULACAO.length),
 });
 
 export const NoticiaRegeneradaSchema = z.object({ noticia: NoticiaDoPacoteSchema, usouIa: z.boolean() });
@@ -595,7 +743,15 @@ export const ConteudoDaAulaSchema = z.object({
   disciplina: z.string(),
   tema: z.string(),
   noticias: z.array(NoticiaDoPacoteSchema).length(TOTAL_DE_NOTICIAS),
-  blocos: z.array(BlocoSchema.extend({ pilar: z.boolean() })),
+  /** As duas matérias da simulação, com o gabarito. */
+  simulacao: z.array(MateriaDaSimulacaoSchema).length(IDS_DE_SIMULACAO.length),
+  /** Os seis blocos com os cartões e o lado CERTO de cada cartão (o do professor; nas iscas, `null`). */
+  blocos: z.array(
+    BlocoSchema.extend({
+      pilar: z.boolean(),
+      cartoes: z.array(z.object({ texto: z.string(), exemplo: z.string(), lado: z.enum(LADOS_DA_CONDICAO).nullable() })).length(2),
+    }),
+  ),
   roteiro: z.object({
     gatilhoDoResultado: z.string(),
     perguntas: z.array(z.string()).length(3),

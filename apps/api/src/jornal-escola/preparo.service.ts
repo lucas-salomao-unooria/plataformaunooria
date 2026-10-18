@@ -4,7 +4,7 @@ import { QuotaService } from "../ai/quota.service";
 import type { Perfil } from "../auth/claims";
 import { logger } from "../observabilidade/logger";
 import type { z } from "zod";
-import type { NoticiaDeContextoSchema, NoticiaDoPacote } from "./contrato-de-rotas";
+import type { MateriaDaSimulacao, NoticiaDeContextoSchema, NoticiaDoPacote } from "./contrato-de-rotas";
 import {
   MAX_TOKENS_DA_REGENERACAO,
   MAX_TOKENS_DO_PREPARO,
@@ -15,7 +15,7 @@ import {
   promptDaRegeneracao,
   promptDoPreparo,
 } from "./prompts";
-import { noticiaRegeneradaDaIa, pacoteDaIa, sortearMolde, vagaDoContexto } from "./regras/molde";
+import { noticiaRegeneradaDaIa, preparoDaIa, sortearMolde, sortearMoldeDaSimulacao, vagaDoContexto } from "./regras/molde";
 import type { IdDeNoticia } from "./vocabulario";
 
 /**
@@ -62,18 +62,19 @@ export class PreparoDaExp04ef1bService {
     this.aleatorio = aleatorio ?? Math.random;
   }
 
-  /** O rascunho das oito notícias. Nunca lança: a falha volta com o código. */
+  /** O rascunho das oito notícias e das duas da simulação. Nunca lança: a falha volta com o código. */
   async gerar(
     escolaId: string,
     usuarioId: string,
     perfil: Perfil,
     parametros: Parametros,
-  ): Promise<ResultadoDoPreparo<NoticiaDoPacote[]>> {
+  ): Promise<ResultadoDoPreparo<{ noticias: NoticiaDoPacote[]; simulacao: MateriaDaSimulacao[] }>> {
     const molde = sortearMolde(this.aleatorio);
+    const moldeDaSimulacao = sortearMoldeDaSimulacao(this.aleatorio);
     return this.chamar(escolaId, usuarioId, perfil, "preparo", (aoUsarTokens) =>
       this.ia.generateJson({
         system: SYSTEM_DO_PREPARO,
-        prompt: promptDoPreparo(parametros, molde),
+        prompt: promptDoPreparo(parametros, molde, moldeDaSimulacao),
         responseSchema: SCHEMA_DO_PREPARO,
         maxTokens: MAX_TOKENS_DO_PREPARO,
         tentativas: TENTATIVAS_DO_PREPARO,
@@ -81,7 +82,7 @@ export class PreparoDaExp04ef1bService {
         // Baixa de propósito: conteúdo coerente dentro de um molde fixo.
         temperatura: 0.5,
         aoUsarTokens,
-        validar: (bruto) => pacoteDaIa(bruto, molde),
+        validar: (bruto) => preparoDaIa(bruto, molde, moldeDaSimulacao),
       }),
     );
   }

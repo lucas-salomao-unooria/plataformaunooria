@@ -52519,6 +52519,7 @@
                         "chave",
                         "revisao",
                         "comparativo",
+                        "simulacao",
                         "transferencia",
                         "fim"
                       ]
@@ -52534,6 +52535,7 @@
                         "chave",
                         "revisao",
                         "comparativo",
+                        "simulacao",
                         "transferencia",
                         "fim"
                       ]
@@ -52595,10 +52597,6 @@
                     },
                     "chaveFormada": {
                       "type": "boolean"
-                    },
-                    "chaveTentativas": {
-                      "type": "integer",
-                      "minimum": 0
                     },
                     "edicao2": {
                       "type": "object",
@@ -52703,6 +52701,54 @@
                         ],
                         "additionalProperties": false
                       }
+                    },
+                    "julgamentos": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "noticiaId": {
+                            "type": "string",
+                            "enum": [
+                              "n1",
+                              "n2",
+                              "n3",
+                              "n4",
+                              "n5",
+                              "n6",
+                              "n7",
+                              "n8"
+                            ]
+                          },
+                          "tipo": {
+                            "type": "string",
+                            "enum": [
+                              "fonte",
+                              "data",
+                              "autoria"
+                            ]
+                          },
+                          "veredito": {
+                            "type": "string",
+                            "enum": [
+                              "confio",
+                              "nao_confio"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "noticiaId",
+                          "tipo",
+                          "veredito"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "simulada": {
+                      "type": "boolean"
+                    },
+                    "transferida": {
+                      "type": "boolean"
                     },
                     "iniciadaEm": {
                       "type": "string"
@@ -52831,12 +52877,51 @@
                           },
                           "legenda": {
                             "type": "string"
+                          },
+                          "cartoes": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "indice": {
+                                  "anyOf": [
+                                    {
+                                      "type": "number",
+                                      "enum": [
+                                        0
+                                      ]
+                                    },
+                                    {
+                                      "type": "number",
+                                      "enum": [
+                                        1
+                                      ]
+                                    }
+                                  ]
+                                },
+                                "texto": {
+                                  "type": "string"
+                                },
+                                "exemplo": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "indice",
+                                "texto",
+                                "exemplo"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "minItems": 2,
+                            "maxItems": 2
                           }
                         },
                         "required": [
                           "id",
                           "rotulo",
-                          "legenda"
+                          "legenda",
+                          "cartoes"
                         ],
                         "additionalProperties": false
                       },
@@ -52874,9 +52959,11 @@
                     "edicao1",
                     "motivoRespondido",
                     "chaveFormada",
-                    "chaveTentativas",
                     "edicao2",
                     "pistasAbertas",
+                    "julgamentos",
+                    "simulada",
+                    "transferida",
                     "iniciadaEm",
                     "concluidaEm",
                     "pacote",
@@ -52947,6 +53034,7 @@
                         "chave",
                         "revisao",
                         "comparativo",
+                        "simulacao",
                         "transferencia",
                         "fim"
                       ]
@@ -53032,6 +53120,7 @@
                         "chave",
                         "revisao",
                         "comparativo",
+                        "simulacao",
                         "transferencia",
                         "fim"
                       ]
@@ -53047,6 +53136,7 @@
                         "chave",
                         "revisao",
                         "comparativo",
+                        "simulacao",
                         "transferencia",
                         "fim"
                       ]
@@ -53108,10 +53198,6 @@
                     },
                     "chaveFormada": {
                       "type": "boolean"
-                    },
-                    "chaveTentativas": {
-                      "type": "integer",
-                      "minimum": 0
                     },
                     "edicao2": {
                       "type": "object",
@@ -53217,6 +53303,54 @@
                         "additionalProperties": false
                       }
                     },
+                    "julgamentos": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "noticiaId": {
+                            "type": "string",
+                            "enum": [
+                              "n1",
+                              "n2",
+                              "n3",
+                              "n4",
+                              "n5",
+                              "n6",
+                              "n7",
+                              "n8"
+                            ]
+                          },
+                          "tipo": {
+                            "type": "string",
+                            "enum": [
+                              "fonte",
+                              "data",
+                              "autoria"
+                            ]
+                          },
+                          "veredito": {
+                            "type": "string",
+                            "enum": [
+                              "confio",
+                              "nao_confio"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "noticiaId",
+                          "tipo",
+                          "veredito"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "simulada": {
+                      "type": "boolean"
+                    },
+                    "transferida": {
+                      "type": "boolean"
+                    },
                     "iniciadaEm": {
                       "type": "string"
                     },
@@ -53236,9 +53370,11 @@
                     "edicao1",
                     "motivoRespondido",
                     "chaveFormada",
-                    "chaveTentativas",
                     "edicao2",
                     "pistasAbertas",
+                    "julgamentos",
+                    "simulada",
+                    "transferida",
                     "iniciadaEm",
                     "concluidaEm"
                   ],
@@ -53251,8 +53387,8 @@
         "tags": [
           "jornal-escola"
         ],
-        "summary": "Registra o passo que a própria criança deu: a mesa, ou o Desafio Final.",
-        "description": "`mesa` vale do desafio (\"Explorar Mesa de Notícias\"); pedir de novo, ou depois da 1ª publicação, devolve o passo em que ela está — a escada é de sentido único. `transferencia` é o \"Avançar para Desafio Final\", só do comparativo.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- `transferencia` antes do comparativo responde **409** `passo-invalido`.\n- Missão não liberada na turma responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`). Estudante sem turma responde **409** `sem-turma`. Corpo fora do formato responde **400** `payload-invalido`.",
+        "summary": "Registra o passo que a própria criança deu: a mesa, ou a simulação da Chave.",
+        "description": "`mesa` vale do desafio (\"Explorar Mesa de Notícias\"); pedir de novo, ou depois da 1ª publicação, devolve o passo em que ela está — a escada é de sentido único. `simulacao` é o \"Testar a minha Chave\", só do comparativo. A rodada da 2.x, sem Chave MONTADA, vai direto à `transferencia`.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- `simulacao` antes do comparativo responde **409** `passo-invalido`.\n- Missão não liberada na turma responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`). Estudante sem turma responde **409** `sem-turma`. Corpo fora do formato responde **400** `payload-invalido`.",
         "security": [
           {
             "token-da-plataforma": []
@@ -53273,7 +53409,7 @@
                     "type": "string",
                     "enum": [
                       "mesa",
-                      "transferencia"
+                      "simulacao"
                     ]
                   }
                 },
@@ -53361,7 +53497,7 @@
           "jornal-escola"
         ],
         "summary": "Abre uma pista (fonte, data ou autoria) de uma notícia — o texto vem do servidor.",
-        "description": "O texto da pista desce AQUI, e não na sessão: o registro de quem abriu o quê é o dado da EF15CO04 (decompor \"posso confiar?\" em três perguntas), e uma pista lida sem registro seria evidência que a plataforma não vê. Abrir um campo não prova compreensão (PDF §11) — o registro apoia a observação do professor.\n\nSó na mesa da 1ª edição (fase 1) e na mesa de revisão (fase 2). Idempotente por par na mesma fase: abrir de novo devolve o mesmo texto e não conta.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- Fora da mesa e da revisão responde **409** `passo-invalido`.\n- `fase` diz onde a pista foi aberta (1 = mesa, 2 = revisão); `abertas` conta os pares (notícia, tipo) distintos das duas fases. No `pistasAbertas` da sessão, o par aberto nas duas fases aparece duas vezes.\n- Missão não liberada na turma responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`). Estudante sem turma responde **409** `sem-turma`. Corpo fora do formato responde **400** `payload-invalido`.",
+        "description": "O texto da pista desce AQUI, e não na sessão: o registro de quem abriu o quê é o que o `POST julgamento` exige antes de julgar, e a metade do `edicao-2` da EF04CO08 — uma pista lida sem registro seria evidência que a plataforma não vê.\n\nSó na mesa da 1ª edição (fase 1) e na mesa de revisão (fase 2). Idempotente por par na mesma fase: abrir de novo devolve o mesmo texto e não conta.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- Fora da mesa e da revisão responde **409** `passo-invalido`.\n- `fase` diz onde a pista foi aberta (1 = mesa, 2 = revisão); `abertas` conta os pares (notícia, tipo) distintos das duas fases. No `pistasAbertas` da sessão, o par aberto nas duas fases aparece duas vezes.\n- Missão não liberada na turma responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`). Estudante sem turma responde **409** `sem-turma`. Corpo fora do formato responde **400** `payload-invalido`.",
         "security": [
           {
             "token-da-plataforma": []
@@ -53403,6 +53539,124 @@
                 "required": [
                   "noticiaId",
                   "tipo"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/jornal-escola/julgamento": {
+      "post": {
+        "operationId": "JornalEscolaController_julgamento",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "noticiaId": {
+                      "type": "string",
+                      "enum": [
+                        "n1",
+                        "n2",
+                        "n3",
+                        "n4",
+                        "n5",
+                        "n6",
+                        "n7",
+                        "n8"
+                      ]
+                    },
+                    "tipo": {
+                      "type": "string",
+                      "enum": [
+                        "fonte",
+                        "data",
+                        "autoria"
+                      ]
+                    },
+                    "veredito": {
+                      "type": "string",
+                      "enum": [
+                        "confio",
+                        "nao_confio"
+                      ]
+                    },
+                    "novo": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "noticiaId",
+                    "tipo",
+                    "veredito",
+                    "novo"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "jornal-escola"
+        ],
+        "summary": "\"Confio / Não confio\" numa pista já aberta — o registro da EF15CO04.",
+        "description": "Logo depois de abrir a pista e ANTES de decidir a capa (o plenário pôs o julgamento antes da decisão). Opcional: a pista aberta e não julgada só não conta. O PRIMEIRO julgamento de cada (notícia, pista) vale; o segundo devolve o gravado, com `novo: false`. A EF15CO04 é marcada na 1ª publicação, sobre estes julgamentos e a capa publicada.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- Fora da mesa da 1ª edição responde **409** `passo-invalido`; pista sem abertura registrada, **409** `pista-nao-aberta`.\n- Missão não liberada na turma responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`). Estudante sem turma responde **409** `sem-turma`. Corpo fora do formato responde **400** `payload-invalido`.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "noticiaId": {
+                    "type": "string",
+                    "enum": [
+                      "n1",
+                      "n2",
+                      "n3",
+                      "n4",
+                      "n5",
+                      "n6",
+                      "n7",
+                      "n8"
+                    ]
+                  },
+                  "tipo": {
+                    "type": "string",
+                    "enum": [
+                      "fonte",
+                      "data",
+                      "autoria"
+                    ]
+                  },
+                  "veredito": {
+                    "type": "string",
+                    "enum": [
+                      "confio",
+                      "nao_confio"
+                    ]
+                  }
+                },
+                "required": [
+                  "noticiaId",
+                  "tipo",
+                  "veredito"
                 ],
                 "additionalProperties": false
               }
@@ -53543,6 +53797,7 @@
                         "chave",
                         "revisao",
                         "comparativo",
+                        "simulacao",
                         "transferencia",
                         "fim"
                       ]
@@ -53558,6 +53813,7 @@
                         "chave",
                         "revisao",
                         "comparativo",
+                        "simulacao",
                         "transferencia",
                         "fim"
                       ]
@@ -53619,10 +53875,6 @@
                     },
                     "chaveFormada": {
                       "type": "boolean"
-                    },
-                    "chaveTentativas": {
-                      "type": "integer",
-                      "minimum": 0
                     },
                     "edicao2": {
                       "type": "object",
@@ -53728,6 +53980,54 @@
                         "additionalProperties": false
                       }
                     },
+                    "julgamentos": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "noticiaId": {
+                            "type": "string",
+                            "enum": [
+                              "n1",
+                              "n2",
+                              "n3",
+                              "n4",
+                              "n5",
+                              "n6",
+                              "n7",
+                              "n8"
+                            ]
+                          },
+                          "tipo": {
+                            "type": "string",
+                            "enum": [
+                              "fonte",
+                              "data",
+                              "autoria"
+                            ]
+                          },
+                          "veredito": {
+                            "type": "string",
+                            "enum": [
+                              "confio",
+                              "nao_confio"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "noticiaId",
+                          "tipo",
+                          "veredito"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "simulada": {
+                      "type": "boolean"
+                    },
+                    "transferida": {
+                      "type": "boolean"
+                    },
                     "iniciadaEm": {
                       "type": "string"
                     },
@@ -53747,9 +54047,11 @@
                     "edicao1",
                     "motivoRespondido",
                     "chaveFormada",
-                    "chaveTentativas",
                     "edicao2",
                     "pistasAbertas",
+                    "julgamentos",
+                    "simulada",
+                    "transferida",
                     "iniciadaEm",
                     "concluidaEm"
                   ],
@@ -53763,7 +54065,7 @@
           "jornal-escola"
         ],
         "summary": "\"Distribuir Jornal Agora\" — a 1ª edição (latch).",
-        "description": "O gesto que a missão mede, e ele é IRREVERSÍVEL. A api calcula as verificadas AQUI, contra o gabarito do pacote (o cliente só manda os três ids), e grava vagas, layout, carimbo e o passo `motivo` juntos. **A resposta não traz o resultado**: ele só desce no `GET /jornal-escola/resultado`, depois do motivo e com o portão do professor aberto.\n\nMarca a EF15CO04 (`pistas`) pelas pistas que a criança abriu antes de publicar.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- `slots`: exatamente 3 ids diferentes, de `n1` a `n8`. `layout` e `origemDoLayout` são o que a tela desenhou (o `POST diagramar`): cosméticos, não valem na correção.\n- Segunda publicação — inclusive duas simultâneas — responde **409** `edicao-ja-publicada`. Do desafio, **409** `passo-invalido`. Com a rodada trocada no meio (o professor zerou), **409** `rodada-mudou`.\n- Missão não liberada na turma responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`). Estudante sem turma responde **409** `sem-turma`. Corpo fora do formato responde **400** `payload-invalido`.",
+        "description": "O gesto que a missão mede, e ele é IRREVERSÍVEL. A api calcula as verificadas AQUI, contra o gabarito do pacote (o cliente só manda os três ids), e grava vagas, layout, carimbo e o passo `motivo` juntos. **A resposta não traz o resultado**: ele só desce no `GET /jornal-escola/resultado`, depois do motivo e com o portão do professor aberto.\n\nMarca a EF15CO04 (`julgamentos`) pelos \"confio / não confio\" da mesa e pela coerência da capa publicada.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- `slots`: exatamente 3 ids diferentes, de `n1` a `n8`. `layout` e `origemDoLayout` são o que a tela desenhou (o `POST diagramar`): cosméticos, não valem na correção.\n- Segunda publicação — inclusive duas simultâneas — responde **409** `edicao-ja-publicada`. Do desafio, **409** `passo-invalido`. Com a rodada trocada no meio (o professor zerou), **409** `rodada-mudou`.\n- Missão não liberada na turma responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`). Estudante sem turma responde **409** `sem-turma`. Corpo fora do formato responde **400** `payload-invalido`.",
         "security": [
           {
             "token-da-plataforma": []
@@ -53870,6 +54172,7 @@
                         "chave",
                         "revisao",
                         "comparativo",
+                        "simulacao",
                         "transferencia",
                         "fim"
                       ]
@@ -53885,6 +54188,7 @@
                         "chave",
                         "revisao",
                         "comparativo",
+                        "simulacao",
                         "transferencia",
                         "fim"
                       ]
@@ -53946,10 +54250,6 @@
                     },
                     "chaveFormada": {
                       "type": "boolean"
-                    },
-                    "chaveTentativas": {
-                      "type": "integer",
-                      "minimum": 0
                     },
                     "edicao2": {
                       "type": "object",
@@ -54055,6 +54355,54 @@
                         "additionalProperties": false
                       }
                     },
+                    "julgamentos": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "noticiaId": {
+                            "type": "string",
+                            "enum": [
+                              "n1",
+                              "n2",
+                              "n3",
+                              "n4",
+                              "n5",
+                              "n6",
+                              "n7",
+                              "n8"
+                            ]
+                          },
+                          "tipo": {
+                            "type": "string",
+                            "enum": [
+                              "fonte",
+                              "data",
+                              "autoria"
+                            ]
+                          },
+                          "veredito": {
+                            "type": "string",
+                            "enum": [
+                              "confio",
+                              "nao_confio"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "noticiaId",
+                          "tipo",
+                          "veredito"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "simulada": {
+                      "type": "boolean"
+                    },
+                    "transferida": {
+                      "type": "boolean"
+                    },
                     "iniciadaEm": {
                       "type": "string"
                     },
@@ -54074,9 +54422,11 @@
                     "edicao1",
                     "motivoRespondido",
                     "chaveFormada",
-                    "chaveTentativas",
                     "edicao2",
                     "pistasAbertas",
+                    "julgamentos",
+                    "simulada",
+                    "transferida",
                     "iniciadaEm",
                     "concluidaEm"
                   ],
@@ -54267,27 +54617,6 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "sucesso": {
-                      "type": "boolean"
-                    },
-                    "tentativas": {
-                      "type": "integer",
-                      "minimum": 1
-                    },
-                    "devolvidos": {
-                      "type": "array",
-                      "items": {
-                        "type": "string",
-                        "enum": [
-                          "fonte",
-                          "data",
-                          "autoria",
-                          "foto",
-                          "urgencia",
-                          "compartilhada"
-                        ]
-                      }
-                    },
                     "estado": {
                       "type": "object",
                       "properties": {
@@ -54323,6 +54652,7 @@
                             "chave",
                             "revisao",
                             "comparativo",
+                            "simulacao",
                             "transferencia",
                             "fim"
                           ]
@@ -54338,6 +54668,7 @@
                             "chave",
                             "revisao",
                             "comparativo",
+                            "simulacao",
                             "transferencia",
                             "fim"
                           ]
@@ -54399,10 +54730,6 @@
                         },
                         "chaveFormada": {
                           "type": "boolean"
-                        },
-                        "chaveTentativas": {
-                          "type": "integer",
-                          "minimum": 0
                         },
                         "edicao2": {
                           "type": "object",
@@ -54508,6 +54835,54 @@
                             "additionalProperties": false
                           }
                         },
+                        "julgamentos": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "noticiaId": {
+                                "type": "string",
+                                "enum": [
+                                  "n1",
+                                  "n2",
+                                  "n3",
+                                  "n4",
+                                  "n5",
+                                  "n6",
+                                  "n7",
+                                  "n8"
+                                ]
+                              },
+                              "tipo": {
+                                "type": "string",
+                                "enum": [
+                                  "fonte",
+                                  "data",
+                                  "autoria"
+                                ]
+                              },
+                              "veredito": {
+                                "type": "string",
+                                "enum": [
+                                  "confio",
+                                  "nao_confio"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "noticiaId",
+                              "tipo",
+                              "veredito"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "simulada": {
+                          "type": "boolean"
+                        },
+                        "transferida": {
+                          "type": "boolean"
+                        },
                         "iniciadaEm": {
                           "type": "string"
                         },
@@ -54527,9 +54902,11 @@
                         "edicao1",
                         "motivoRespondido",
                         "chaveFormada",
-                        "chaveTentativas",
                         "edicao2",
                         "pistasAbertas",
+                        "julgamentos",
+                        "simulada",
+                        "transferida",
                         "iniciadaEm",
                         "concluidaEm"
                       ],
@@ -54537,9 +54914,6 @@
                     }
                   },
                   "required": [
-                    "sucesso",
-                    "tentativas",
-                    "devolvidos",
                     "estado"
                   ],
                   "additionalProperties": false
@@ -54551,8 +54925,8 @@
         "tags": [
           "jornal-escola"
         ],
-        "summary": "Uma tentativa da Chave do Editor: três blocos, em qualquer ordem.",
-        "description": "Cada envio é uma TENTATIVA — a isca também conta. Sucesso é o conjunto dos três pilares, corrigido no servidor (o conjunto certo nunca desce ao bundle). `devolvidos` são as iscas enviadas, que voltam à bandeja. No sucesso, o passo vai a `revisao` e a EF15CO02 é marcada pelo número de tentativas (1 = atingiu, 2–3 = em processo, mais = não atingiu).\n\nCom a Chave já formada, responde `sucesso: true` sem contar outra tentativa.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- `blocos`: exatamente 3 ids diferentes dos seis da bandeja. (Os `.refine()` somem do OpenAPI; daí esta nota.)\n- `tentativa` (opcional, 1 a 100) é o número que a tela acha que está enviando. Número já contado é REENVIO: devolve o resultado gravado, sem somar tentativa nem marcar de novo — com a Chave formada, `sucesso: true`; senão, `sucesso: false` com os `devolvidos` recalculados sobre os blocos enviados. Sem o número, todo envio conta.\n- Antes de a revisão abrir para esta criança responde **409** `revisao-nao-liberada`.\n- Missão não liberada na turma responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`). Estudante sem turma responde **409** `sem-turma`. Corpo fora do formato responde **400** `payload-invalido`.",
+        "summary": "A Chave do Editor MONTADA — um envio, sem correção (3.0.0).",
+        "description": "Três vagas — o bloco (entre seis: três pilares e três iscas), o lado de cada um dos dois cartões de condição dele (`aprova`/`reprova`, na ordem canônica `<bloco>-1`, `<bloco>-2`) e o \"se esta pista falhar\" (`parar` = \"Não publico\", `seguir` = \"Olho a próxima pista\") — e a repetição (`todas` / `so_a_primeira`). **Não há correção nem nova tentativa**, e a resposta não diz se a Chave está certa: o lado certo dos cartões nunca desce ao bundle. Grava a montagem, o passo vai a `revisao` e a EF15CO02 é marcada (`montagem`, com teto em \"em processo\": o \"atingiu\" só vem da simulação).\n\n**Papéis:** estudante.\n\n**Restrições:**\n- `vagas`: exatamente 3, com blocos diferentes. (Os `.refine()` somem do OpenAPI; daí esta nota.)\n- O reenvio da MESMA montagem devolve o estado; outra montagem depois de formada responde **409** `chave-ja-montada`.\n- Antes de a revisão abrir para esta criança responde **409** `revisao-nao-liberada`.\n- Missão não liberada na turma responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`). Estudante sem turma responde **409** `sem-turma`. Corpo fora do formato responde **400** `payload-invalido`.",
         "security": [
           {
             "token-da-plataforma": []
@@ -54569,30 +54943,72 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "blocos": {
+                  "vagas": {
                     "type": "array",
                     "items": {
-                      "type": "string",
-                      "enum": [
-                        "fonte",
-                        "data",
-                        "autoria",
-                        "foto",
-                        "urgencia",
-                        "compartilhada"
-                      ]
+                      "type": "object",
+                      "properties": {
+                        "bloco": {
+                          "type": "string",
+                          "enum": [
+                            "fonte",
+                            "data",
+                            "autoria",
+                            "foto",
+                            "urgencia",
+                            "compartilhada"
+                          ]
+                        },
+                        "lados": {
+                          "type": "array",
+                          "minItems": 2,
+                          "maxItems": 2,
+                          "items": [
+                            {
+                              "type": "string",
+                              "enum": [
+                                "aprova",
+                                "reprova"
+                              ]
+                            },
+                            {
+                              "type": "string",
+                              "enum": [
+                                "aprova",
+                                "reprova"
+                              ]
+                            }
+                          ]
+                        },
+                        "seFalhar": {
+                          "type": "string",
+                          "enum": [
+                            "parar",
+                            "seguir"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "bloco",
+                        "lados",
+                        "seFalhar"
+                      ],
+                      "additionalProperties": false
                     },
                     "minItems": 3,
                     "maxItems": 3
                   },
-                  "tentativa": {
-                    "type": "integer",
-                    "minimum": 1,
-                    "maximum": 100
+                  "repeticao": {
+                    "type": "string",
+                    "enum": [
+                      "todas",
+                      "so_a_primeira"
+                    ]
                   }
                 },
                 "required": [
-                  "blocos"
+                  "vagas",
+                  "repeticao"
                 ],
                 "additionalProperties": false
               }
@@ -54720,6 +55136,7 @@
                         "chave",
                         "revisao",
                         "comparativo",
+                        "simulacao",
                         "transferencia",
                         "fim"
                       ]
@@ -54735,6 +55152,7 @@
                         "chave",
                         "revisao",
                         "comparativo",
+                        "simulacao",
                         "transferencia",
                         "fim"
                       ]
@@ -54796,10 +55214,6 @@
                     },
                     "chaveFormada": {
                       "type": "boolean"
-                    },
-                    "chaveTentativas": {
-                      "type": "integer",
-                      "minimum": 0
                     },
                     "edicao2": {
                       "type": "object",
@@ -54905,6 +55319,54 @@
                         "additionalProperties": false
                       }
                     },
+                    "julgamentos": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "noticiaId": {
+                            "type": "string",
+                            "enum": [
+                              "n1",
+                              "n2",
+                              "n3",
+                              "n4",
+                              "n5",
+                              "n6",
+                              "n7",
+                              "n8"
+                            ]
+                          },
+                          "tipo": {
+                            "type": "string",
+                            "enum": [
+                              "fonte",
+                              "data",
+                              "autoria"
+                            ]
+                          },
+                          "veredito": {
+                            "type": "string",
+                            "enum": [
+                              "confio",
+                              "nao_confio"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "noticiaId",
+                          "tipo",
+                          "veredito"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "simulada": {
+                      "type": "boolean"
+                    },
+                    "transferida": {
+                      "type": "boolean"
+                    },
                     "iniciadaEm": {
                       "type": "string"
                     },
@@ -54924,9 +55386,11 @@
                     "edicao1",
                     "motivoRespondido",
                     "chaveFormada",
-                    "chaveTentativas",
                     "edicao2",
                     "pistasAbertas",
+                    "julgamentos",
+                    "simulada",
+                    "transferida",
                     "iniciadaEm",
                     "concluidaEm"
                   ],
@@ -54940,7 +55404,7 @@
           "jornal-escola"
         ],
         "summary": "\"Publicar 2ª Edição Revisada\" — a 2ª edição (latch).",
-        "description": "O mesmo corpo da 1ª. Pode repetir as três vagas da 1ª edição: quem acertou de primeira confirma, sem trocar à força (PDF §9). Marca a EF04CO08 (`edicao-2`) pelas pistas das duas fases e as verificadas da 2ª.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- Segunda republicação — inclusive duas simultâneas — responde **409** `edicao-ja-publicada`; antes da Chave, **409** `chave-nao-formada`; com a rodada trocada no meio, **409** `rodada-mudou`.\n- Missão não liberada na turma responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`). Estudante sem turma responde **409** `sem-turma`. Corpo fora do formato responde **400** `payload-invalido`.",
+        "description": "O mesmo corpo da 1ª. Pode repetir as três vagas da 1ª edição: quem acertou de primeira confirma, sem trocar à força (PDF §9). Marca a EF04CO08 (`edicao-2`, com teto em \"em processo\") pelas pistas das duas fases e as verificadas da 2ª; o \"atingiu\" só vem da transferência.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- Segunda republicação — inclusive duas simultâneas — responde **409** `edicao-ja-publicada`; antes da Chave, **409** `chave-nao-formada`; com a rodada trocada no meio, **409** `rodada-mudou`.\n- Missão não liberada na turma responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`). Estudante sem turma responde **409** `sem-turma`. Corpo fora do formato responde **400** `payload-invalido`.",
         "security": [
           {
             "token-da-plataforma": []
@@ -55262,6 +55726,1032 @@
         "x-acesso": "token"
       }
     },
+    "/jornal-escola/simulacao": {
+      "get": {
+        "operationId": "JornalEscolaController_simulacao",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "materias": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "enum": [
+                              "s1",
+                              "s2"
+                            ]
+                          },
+                          "meio": {
+                            "type": "string",
+                            "enum": [
+                              "jornal",
+                              "radio",
+                              "tv",
+                              "blog",
+                              "portal",
+                              "rede_social",
+                              "mensagem",
+                              "mural"
+                            ]
+                          },
+                          "veiculo": {
+                            "type": "string",
+                            "minLength": 2,
+                            "maxLength": 60
+                          },
+                          "falante": {
+                            "type": "string",
+                            "minLength": 2,
+                            "maxLength": 60,
+                            "nullable": true
+                          },
+                          "manchete": {
+                            "type": "string",
+                            "minLength": 5,
+                            "maxLength": 120
+                          },
+                          "resumo": {
+                            "type": "string",
+                            "minLength": 20,
+                            "maxLength": 320
+                          },
+                          "pistas": {
+                            "type": "object",
+                            "properties": {
+                              "fonte": {
+                                "type": "string",
+                                "minLength": 2,
+                                "maxLength": 200
+                              },
+                              "data": {
+                                "type": "string",
+                                "minLength": 2,
+                                "maxLength": 200
+                              },
+                              "autoria": {
+                                "type": "string",
+                                "minLength": 2,
+                                "maxLength": 200
+                              }
+                            },
+                            "required": [
+                              "fonte",
+                              "data",
+                              "autoria"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "meio",
+                          "veiculo",
+                          "falante",
+                          "manchete",
+                          "resumo",
+                          "pistas"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "minItems": 2,
+                      "maxItems": 2
+                    },
+                    "chave": {
+                      "type": "object",
+                      "properties": {
+                        "vagas": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "bloco": {
+                                "type": "string",
+                                "enum": [
+                                  "fonte",
+                                  "data",
+                                  "autoria",
+                                  "foto",
+                                  "urgencia",
+                                  "compartilhada"
+                                ]
+                              },
+                              "rotulo": {
+                                "type": "string"
+                              },
+                              "seFalhar": {
+                                "type": "string",
+                                "enum": [
+                                  "parar",
+                                  "seguir"
+                                ]
+                              },
+                              "pulo": {
+                                "type": "string",
+                                "nullable": true
+                              }
+                            },
+                            "required": [
+                              "bloco",
+                              "rotulo",
+                              "seFalhar",
+                              "pulo"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "repeticao": {
+                          "type": "string",
+                          "enum": [
+                            "todas",
+                            "so_a_primeira"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "vagas",
+                        "repeticao"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "materias",
+                    "chave"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "jornal-escola"
+        ],
+        "summary": "A simulação: as duas matérias novas e a Chave DELA como roteiro (3.0.0).",
+        "description": "As matérias vêm com as pistas e SEM o gabarito; a Chave, com o bloco de cada vaga, o \"se falhar\" e a repetição — e, na vaga com isca, a frase neutra de pulo (a matéria não traz o que a isca olharia).\n\n**Papéis:** estudante.\n\n**Restrições:**\n- Antes do passo `simulacao` responde **409** `passo-invalido`; sem Chave montada, **409** `chave-nao-formada`.\n- Missão não liberada na turma responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`). Estudante sem turma responde **409** `sem-turma`. Corpo fora do formato responde **400** `payload-invalido`.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token"
+      },
+      "post": {
+        "operationId": "JornalEscolaController_simular",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "estado": {
+                      "type": "object",
+                      "properties": {
+                        "sessaoId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "pacoteId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "rodada": {
+                          "type": "integer",
+                          "exclusiveMinimum": true,
+                          "minimum": 0
+                        },
+                        "etapa": {
+                          "type": "string",
+                          "enum": [
+                            "exploracao",
+                            "resultado",
+                            "revisao"
+                          ]
+                        },
+                        "passo": {
+                          "type": "string",
+                          "enum": [
+                            "desafio",
+                            "mesa",
+                            "motivo",
+                            "publicada",
+                            "resultado",
+                            "chave",
+                            "revisao",
+                            "comparativo",
+                            "simulacao",
+                            "transferencia",
+                            "fim"
+                          ]
+                        },
+                        "passoDoEstudante": {
+                          "type": "string",
+                          "enum": [
+                            "desafio",
+                            "mesa",
+                            "motivo",
+                            "publicada",
+                            "resultado",
+                            "chave",
+                            "revisao",
+                            "comparativo",
+                            "simulacao",
+                            "transferencia",
+                            "fim"
+                          ]
+                        },
+                        "aguardandoOProfessor": {
+                          "type": "boolean"
+                        },
+                        "edicao1": {
+                          "type": "object",
+                          "properties": {
+                            "slots": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "enum": [
+                                  "n1",
+                                  "n2",
+                                  "n3",
+                                  "n4",
+                                  "n5",
+                                  "n6",
+                                  "n7",
+                                  "n8"
+                                ]
+                              },
+                              "minItems": 3,
+                              "maxItems": 3
+                            },
+                            "layout": {
+                              "type": "string",
+                              "enum": [
+                                "classic",
+                                "hero-image",
+                                "columns"
+                              ]
+                            },
+                            "origemDoLayout": {
+                              "type": "string",
+                              "enum": [
+                                "ia",
+                                "modelo"
+                              ]
+                            },
+                            "publicadaEm": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "slots",
+                            "layout",
+                            "origemDoLayout",
+                            "publicadaEm"
+                          ],
+                          "additionalProperties": false,
+                          "nullable": true
+                        },
+                        "motivoRespondido": {
+                          "type": "boolean"
+                        },
+                        "chaveFormada": {
+                          "type": "boolean"
+                        },
+                        "edicao2": {
+                          "type": "object",
+                          "properties": {
+                            "slots": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "enum": [
+                                  "n1",
+                                  "n2",
+                                  "n3",
+                                  "n4",
+                                  "n5",
+                                  "n6",
+                                  "n7",
+                                  "n8"
+                                ]
+                              },
+                              "minItems": 3,
+                              "maxItems": 3
+                            },
+                            "layout": {
+                              "type": "string",
+                              "enum": [
+                                "classic",
+                                "hero-image",
+                                "columns"
+                              ]
+                            },
+                            "origemDoLayout": {
+                              "type": "string",
+                              "enum": [
+                                "ia",
+                                "modelo"
+                              ]
+                            },
+                            "publicadaEm": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "slots",
+                            "layout",
+                            "origemDoLayout",
+                            "publicadaEm"
+                          ],
+                          "additionalProperties": false,
+                          "nullable": true
+                        },
+                        "pistasAbertas": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "noticiaId": {
+                                "type": "string",
+                                "enum": [
+                                  "n1",
+                                  "n2",
+                                  "n3",
+                                  "n4",
+                                  "n5",
+                                  "n6",
+                                  "n7",
+                                  "n8"
+                                ]
+                              },
+                              "tipo": {
+                                "type": "string",
+                                "enum": [
+                                  "fonte",
+                                  "data",
+                                  "autoria"
+                                ]
+                              },
+                              "fase": {
+                                "anyOf": [
+                                  {
+                                    "type": "number",
+                                    "enum": [
+                                      1
+                                    ]
+                                  },
+                                  {
+                                    "type": "number",
+                                    "enum": [
+                                      2
+                                    ]
+                                  }
+                                ]
+                              },
+                              "texto": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "noticiaId",
+                              "tipo",
+                              "fase",
+                              "texto"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "julgamentos": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "noticiaId": {
+                                "type": "string",
+                                "enum": [
+                                  "n1",
+                                  "n2",
+                                  "n3",
+                                  "n4",
+                                  "n5",
+                                  "n6",
+                                  "n7",
+                                  "n8"
+                                ]
+                              },
+                              "tipo": {
+                                "type": "string",
+                                "enum": [
+                                  "fonte",
+                                  "data",
+                                  "autoria"
+                                ]
+                              },
+                              "veredito": {
+                                "type": "string",
+                                "enum": [
+                                  "confio",
+                                  "nao_confio"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "noticiaId",
+                              "tipo",
+                              "veredito"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "simulada": {
+                          "type": "boolean"
+                        },
+                        "transferida": {
+                          "type": "boolean"
+                        },
+                        "iniciadaEm": {
+                          "type": "string"
+                        },
+                        "concluidaEm": {
+                          "type": "string",
+                          "nullable": true
+                        }
+                      },
+                      "required": [
+                        "sessaoId",
+                        "pacoteId",
+                        "rodada",
+                        "etapa",
+                        "passo",
+                        "passoDoEstudante",
+                        "aguardandoOProfessor",
+                        "edicao1",
+                        "motivoRespondido",
+                        "chaveFormada",
+                        "edicao2",
+                        "pistasAbertas",
+                        "julgamentos",
+                        "simulada",
+                        "transferida",
+                        "iniciadaEm",
+                        "concluidaEm"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "referencia": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "estado",
+                    "referencia"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "jornal-escola"
+        ],
+        "summary": "A Chave aplicada às duas matérias — enviada de uma vez (3.0.0).",
+        "description": "Por matéria, as pistas na ORDEM em que a criança as abriu, cada uma com o \"confio / não confio\" (obrigatório na simulação: a marcação é a execução) e a decisão. A api mede a FIDELIDADE à regra dela — a ordem das vagas, a parada no \"Não publico\", a decisão coerente — e marca a EF15CO02 (`simulacao`, o combinado com a montagem). O passo vai a `transferencia`, e a resposta traz a regra de referência, igual para todos.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- `materias`: `s1` e `s2`, uma vez cada; até 3 passos por matéria, sem repetir pista. (Os `.refine()` somem do OpenAPI.)\n- Segundo envio responde **409** `simulacao-ja-enviada`; fora do passo, **409** `passo-invalido`.\n- Missão não liberada na turma responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`). Estudante sem turma responde **409** `sem-turma`. Corpo fora do formato responde **400** `payload-invalido`.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "materias": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "enum": [
+                            "s1",
+                            "s2"
+                          ]
+                        },
+                        "passos": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "tipo": {
+                                "type": "string",
+                                "enum": [
+                                  "fonte",
+                                  "data",
+                                  "autoria"
+                                ]
+                              },
+                              "veredito": {
+                                "type": "string",
+                                "enum": [
+                                  "confio",
+                                  "nao_confio"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "tipo",
+                              "veredito"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "maxItems": 3
+                        },
+                        "decisao": {
+                          "type": "string",
+                          "enum": [
+                            "publicar",
+                            "nao_publicar"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "passos",
+                        "decisao"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "minItems": 2,
+                    "maxItems": 2
+                  }
+                },
+                "required": [
+                  "materias"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/jornal-escola/transferencia": {
+      "get": {
+        "operationId": "JornalEscolaController_transferencia",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "remetente": {
+                      "type": "string"
+                    },
+                    "mensagem": {
+                      "type": "string"
+                    },
+                    "pistas": {
+                      "type": "object",
+                      "properties": {
+                        "fonte": {
+                          "type": "string"
+                        },
+                        "data": {
+                          "type": "string"
+                        },
+                        "autoria": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "fonte",
+                        "data",
+                        "autoria"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "remetente",
+                    "mensagem",
+                    "pistas"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "jornal-escola"
+        ],
+        "summary": "O boato da transferência e as três pistas dele (fixos).",
+        "description": "O de \"todas as escolas do bairro\", diferente do da mesa: aqui é transferência, e não memória. A tela é NEUTRA — nada nela pede para verificar.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- Antes do passo `transferencia` responde **409** `passo-invalido`.\n- Missão não liberada na turma responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`). Estudante sem turma responde **409** `sem-turma`. Corpo fora do formato responde **400** `payload-invalido`.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token"
+      },
+      "post": {
+        "operationId": "JornalEscolaController_transferir",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "estado": {
+                      "type": "object",
+                      "properties": {
+                        "sessaoId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "pacoteId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "rodada": {
+                          "type": "integer",
+                          "exclusiveMinimum": true,
+                          "minimum": 0
+                        },
+                        "etapa": {
+                          "type": "string",
+                          "enum": [
+                            "exploracao",
+                            "resultado",
+                            "revisao"
+                          ]
+                        },
+                        "passo": {
+                          "type": "string",
+                          "enum": [
+                            "desafio",
+                            "mesa",
+                            "motivo",
+                            "publicada",
+                            "resultado",
+                            "chave",
+                            "revisao",
+                            "comparativo",
+                            "simulacao",
+                            "transferencia",
+                            "fim"
+                          ]
+                        },
+                        "passoDoEstudante": {
+                          "type": "string",
+                          "enum": [
+                            "desafio",
+                            "mesa",
+                            "motivo",
+                            "publicada",
+                            "resultado",
+                            "chave",
+                            "revisao",
+                            "comparativo",
+                            "simulacao",
+                            "transferencia",
+                            "fim"
+                          ]
+                        },
+                        "aguardandoOProfessor": {
+                          "type": "boolean"
+                        },
+                        "edicao1": {
+                          "type": "object",
+                          "properties": {
+                            "slots": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "enum": [
+                                  "n1",
+                                  "n2",
+                                  "n3",
+                                  "n4",
+                                  "n5",
+                                  "n6",
+                                  "n7",
+                                  "n8"
+                                ]
+                              },
+                              "minItems": 3,
+                              "maxItems": 3
+                            },
+                            "layout": {
+                              "type": "string",
+                              "enum": [
+                                "classic",
+                                "hero-image",
+                                "columns"
+                              ]
+                            },
+                            "origemDoLayout": {
+                              "type": "string",
+                              "enum": [
+                                "ia",
+                                "modelo"
+                              ]
+                            },
+                            "publicadaEm": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "slots",
+                            "layout",
+                            "origemDoLayout",
+                            "publicadaEm"
+                          ],
+                          "additionalProperties": false,
+                          "nullable": true
+                        },
+                        "motivoRespondido": {
+                          "type": "boolean"
+                        },
+                        "chaveFormada": {
+                          "type": "boolean"
+                        },
+                        "edicao2": {
+                          "type": "object",
+                          "properties": {
+                            "slots": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "enum": [
+                                  "n1",
+                                  "n2",
+                                  "n3",
+                                  "n4",
+                                  "n5",
+                                  "n6",
+                                  "n7",
+                                  "n8"
+                                ]
+                              },
+                              "minItems": 3,
+                              "maxItems": 3
+                            },
+                            "layout": {
+                              "type": "string",
+                              "enum": [
+                                "classic",
+                                "hero-image",
+                                "columns"
+                              ]
+                            },
+                            "origemDoLayout": {
+                              "type": "string",
+                              "enum": [
+                                "ia",
+                                "modelo"
+                              ]
+                            },
+                            "publicadaEm": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "slots",
+                            "layout",
+                            "origemDoLayout",
+                            "publicadaEm"
+                          ],
+                          "additionalProperties": false,
+                          "nullable": true
+                        },
+                        "pistasAbertas": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "noticiaId": {
+                                "type": "string",
+                                "enum": [
+                                  "n1",
+                                  "n2",
+                                  "n3",
+                                  "n4",
+                                  "n5",
+                                  "n6",
+                                  "n7",
+                                  "n8"
+                                ]
+                              },
+                              "tipo": {
+                                "type": "string",
+                                "enum": [
+                                  "fonte",
+                                  "data",
+                                  "autoria"
+                                ]
+                              },
+                              "fase": {
+                                "anyOf": [
+                                  {
+                                    "type": "number",
+                                    "enum": [
+                                      1
+                                    ]
+                                  },
+                                  {
+                                    "type": "number",
+                                    "enum": [
+                                      2
+                                    ]
+                                  }
+                                ]
+                              },
+                              "texto": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "noticiaId",
+                              "tipo",
+                              "fase",
+                              "texto"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "julgamentos": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "noticiaId": {
+                                "type": "string",
+                                "enum": [
+                                  "n1",
+                                  "n2",
+                                  "n3",
+                                  "n4",
+                                  "n5",
+                                  "n6",
+                                  "n7",
+                                  "n8"
+                                ]
+                              },
+                              "tipo": {
+                                "type": "string",
+                                "enum": [
+                                  "fonte",
+                                  "data",
+                                  "autoria"
+                                ]
+                              },
+                              "veredito": {
+                                "type": "string",
+                                "enum": [
+                                  "confio",
+                                  "nao_confio"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "noticiaId",
+                              "tipo",
+                              "veredito"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "simulada": {
+                          "type": "boolean"
+                        },
+                        "transferida": {
+                          "type": "boolean"
+                        },
+                        "iniciadaEm": {
+                          "type": "string"
+                        },
+                        "concluidaEm": {
+                          "type": "string",
+                          "nullable": true
+                        }
+                      },
+                      "required": [
+                        "sessaoId",
+                        "pacoteId",
+                        "rodada",
+                        "etapa",
+                        "passo",
+                        "passoDoEstudante",
+                        "aguardandoOProfessor",
+                        "edicao1",
+                        "motivoRespondido",
+                        "chaveFormada",
+                        "edicao2",
+                        "pistasAbertas",
+                        "julgamentos",
+                        "simulada",
+                        "transferida",
+                        "iniciadaEm",
+                        "concluidaEm"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "estado"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "jornal-escola"
+        ],
+        "summary": "A decisão diante do boato: repassar ou não — uma vez (3.0.0).",
+        "description": "As pistas abertas ANTES da decisão, na ordem, e a decisão. Marca a EF04CO08 (`transferencia`): o COMBINADO com a 2ª edição — \"atingiu\" só com a 2ª edição e a transferência no \"atingiu\". O passo continua `transferencia`; quem leva ao fim é o \"Concluir Missão\".\n\n**Papéis:** estudante.\n\n**Restrições:**\n- Segunda decisão responde **409** `transferencia-ja-decidida`; fora do passo, **409** `passo-invalido`.\n- Missão não liberada na turma responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`). Estudante sem turma responde **409** `sem-turma`. Corpo fora do formato responde **400** `payload-invalido`.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "pistas": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "fonte",
+                        "data",
+                        "autoria"
+                      ]
+                    },
+                    "maxItems": 3
+                  },
+                  "decisao": {
+                    "type": "string",
+                    "enum": [
+                      "repassar",
+                      "nao_repassar"
+                    ]
+                  }
+                },
+                "required": [
+                  "pistas",
+                  "decisao"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
     "/jornal-escola/concluir": {
       "post": {
         "operationId": "JornalEscolaController_concluir",
@@ -55306,6 +56796,7 @@
                         "chave",
                         "revisao",
                         "comparativo",
+                        "simulacao",
                         "transferencia",
                         "fim"
                       ]
@@ -55321,6 +56812,7 @@
                         "chave",
                         "revisao",
                         "comparativo",
+                        "simulacao",
                         "transferencia",
                         "fim"
                       ]
@@ -55382,10 +56874,6 @@
                     },
                     "chaveFormada": {
                       "type": "boolean"
-                    },
-                    "chaveTentativas": {
-                      "type": "integer",
-                      "minimum": 0
                     },
                     "edicao2": {
                       "type": "object",
@@ -55491,6 +56979,54 @@
                         "additionalProperties": false
                       }
                     },
+                    "julgamentos": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "noticiaId": {
+                            "type": "string",
+                            "enum": [
+                              "n1",
+                              "n2",
+                              "n3",
+                              "n4",
+                              "n5",
+                              "n6",
+                              "n7",
+                              "n8"
+                            ]
+                          },
+                          "tipo": {
+                            "type": "string",
+                            "enum": [
+                              "fonte",
+                              "data",
+                              "autoria"
+                            ]
+                          },
+                          "veredito": {
+                            "type": "string",
+                            "enum": [
+                              "confio",
+                              "nao_confio"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "noticiaId",
+                          "tipo",
+                          "veredito"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "simulada": {
+                      "type": "boolean"
+                    },
+                    "transferida": {
+                      "type": "boolean"
+                    },
                     "iniciadaEm": {
                       "type": "string"
                     },
@@ -55510,9 +57046,11 @@
                     "edicao1",
                     "motivoRespondido",
                     "chaveFormada",
-                    "chaveTentativas",
                     "edicao2",
                     "pistasAbertas",
+                    "julgamentos",
+                    "simulada",
+                    "transferida",
                     "iniciadaEm",
                     "concluidaEm"
                   ],
@@ -55526,7 +57064,7 @@
           "jornal-escola"
         ],
         "summary": "\"Concluir Missão\" — idempotente.",
-        "description": "Leva a sessão de `transferencia` a `fim` e carimba `concluidaEm`, no mesmo update. P1 e P2 do Desafio Final vão pelas rotas genéricas de `/evidencias/exp04ef1b/perguntas`, e não são exigidas para concluir.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- Antes do Desafio Final responde **409** `passo-invalido`. Concluir de novo devolve o mesmo estado.\n- Missão não liberada na turma responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`). Estudante sem turma responde **409** `sem-turma`. Corpo fora do formato responde **400** `payload-invalido`.",
+        "description": "Leva a sessão de `transferencia` a `fim` e carimba `concluidaEm`, no mesmo update — com o boato já decidido. A 3.0.0 não tem pergunta de múltipla escolha (ADR-168).\n\n**Papéis:** estudante.\n\n**Restrições:**\n- Antes da transferência responde **409** `passo-invalido`; sem a decisão do boato, **409** `transferencia-pendente`. Concluir de novo devolve o mesmo estado.\n- Missão não liberada na turma responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`). Estudante sem turma responde **409** `sem-turma`. Corpo fora do formato responde **400** `payload-invalido`.",
         "security": [
           {
             "token-da-plataforma": []
@@ -55796,6 +57334,7 @@
                               "chave",
                               "revisao",
                               "comparativo",
+                              "simulacao",
                               "transferencia",
                               "fim"
                             ]
@@ -55811,6 +57350,9 @@
                             "type": "boolean"
                           },
                           "publicouASegunda": {
+                            "type": "boolean"
+                          },
+                          "simulou": {
                             "type": "boolean"
                           },
                           "concluiu": {
@@ -55829,6 +57371,7 @@
                           "publicouAPrimeira",
                           "chaveFormada",
                           "publicouASegunda",
+                          "simulou",
                           "concluiu"
                         ],
                         "additionalProperties": false
@@ -55928,6 +57471,76 @@
                           ],
                           "additionalProperties": false
                         },
+                        "chave": {
+                          "type": "object",
+                          "properties": {
+                            "montaram": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "iscas": {
+                              "type": "object",
+                              "properties": {
+                                "foto": {
+                                  "type": "integer",
+                                  "minimum": 0
+                                },
+                                "urgencia": {
+                                  "type": "integer",
+                                  "minimum": 0
+                                },
+                                "compartilhada": {
+                                  "type": "integer",
+                                  "minimum": 0
+                                }
+                              },
+                              "required": [
+                                "foto",
+                                "urgencia",
+                                "compartilhada"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "seguir": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "soNaPrimeira": {
+                              "type": "integer",
+                              "minimum": 0
+                            }
+                          },
+                          "required": [
+                            "montaram",
+                            "iscas",
+                            "seguir",
+                            "soNaPrimeira"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "transferencia": {
+                          "type": "object",
+                          "properties": {
+                            "decidiram": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "repassaramSemAbrir": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "naoRepassaram": {
+                              "type": "integer",
+                              "minimum": 0
+                            }
+                          },
+                          "required": [
+                            "decidiram",
+                            "repassaramSemAbrir",
+                            "naoRepassaram"
+                          ],
+                          "additionalProperties": false
+                        },
                         "radar": {
                           "type": "array",
                           "items": {
@@ -56007,6 +57620,8 @@
                         "porComputador",
                         "histograma",
                         "motivos",
+                        "chave",
+                        "transferencia",
                         "radar"
                       ],
                       "additionalProperties": false
@@ -56481,6 +58096,122 @@
                             "additionalProperties": false
                           }
                         },
+                        "simulacao": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "enum": [
+                                  "s1",
+                                  "s2"
+                                ]
+                              },
+                              "meio": {
+                                "type": "string",
+                                "enum": [
+                                  "jornal",
+                                  "radio",
+                                  "tv",
+                                  "blog",
+                                  "portal",
+                                  "rede_social",
+                                  "mensagem",
+                                  "mural"
+                                ]
+                              },
+                              "veiculo": {
+                                "type": "string",
+                                "minLength": 2,
+                                "maxLength": 60
+                              },
+                              "falante": {
+                                "type": "string",
+                                "minLength": 2,
+                                "maxLength": 60,
+                                "nullable": true
+                              },
+                              "manchete": {
+                                "type": "string",
+                                "minLength": 5,
+                                "maxLength": 120
+                              },
+                              "resumo": {
+                                "type": "string",
+                                "minLength": 20,
+                                "maxLength": 320
+                              },
+                              "pistas": {
+                                "type": "object",
+                                "properties": {
+                                  "fonte": {
+                                    "type": "string",
+                                    "minLength": 2,
+                                    "maxLength": 200
+                                  },
+                                  "data": {
+                                    "type": "string",
+                                    "minLength": 2,
+                                    "maxLength": 200
+                                  },
+                                  "autoria": {
+                                    "type": "string",
+                                    "minLength": 2,
+                                    "maxLength": 200
+                                  }
+                                },
+                                "required": [
+                                  "fonte",
+                                  "data",
+                                  "autoria"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "gabarito": {
+                                "type": "object",
+                                "properties": {
+                                  "publicavel": {
+                                    "type": "boolean"
+                                  },
+                                  "pilarEmFalta": {
+                                    "type": "string",
+                                    "enum": [
+                                      "fonte",
+                                      "data",
+                                      "autoria"
+                                    ],
+                                    "nullable": true
+                                  },
+                                  "explicacao": {
+                                    "type": "string",
+                                    "minLength": 5,
+                                    "maxLength": 280
+                                  }
+                                },
+                                "required": [
+                                  "publicavel",
+                                  "pilarEmFalta",
+                                  "explicacao"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "meio",
+                              "veiculo",
+                              "falante",
+                              "manchete",
+                              "resumo",
+                              "pistas",
+                              "gabarito"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "minItems": 2,
+                          "maxItems": 2
+                        },
                         "midia": {
                           "type": "object",
                           "properties": {
@@ -56547,6 +58278,7 @@
                         "origem",
                         "topicos",
                         "noticias",
+                        "simulacao",
                         "midia",
                         "imagens",
                         "aprovadas",
@@ -56857,6 +58589,122 @@
                         "additionalProperties": false
                       }
                     },
+                    "simulacao": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "enum": [
+                              "s1",
+                              "s2"
+                            ]
+                          },
+                          "meio": {
+                            "type": "string",
+                            "enum": [
+                              "jornal",
+                              "radio",
+                              "tv",
+                              "blog",
+                              "portal",
+                              "rede_social",
+                              "mensagem",
+                              "mural"
+                            ]
+                          },
+                          "veiculo": {
+                            "type": "string",
+                            "minLength": 2,
+                            "maxLength": 60
+                          },
+                          "falante": {
+                            "type": "string",
+                            "minLength": 2,
+                            "maxLength": 60,
+                            "nullable": true
+                          },
+                          "manchete": {
+                            "type": "string",
+                            "minLength": 5,
+                            "maxLength": 120
+                          },
+                          "resumo": {
+                            "type": "string",
+                            "minLength": 20,
+                            "maxLength": 320
+                          },
+                          "pistas": {
+                            "type": "object",
+                            "properties": {
+                              "fonte": {
+                                "type": "string",
+                                "minLength": 2,
+                                "maxLength": 200
+                              },
+                              "data": {
+                                "type": "string",
+                                "minLength": 2,
+                                "maxLength": 200
+                              },
+                              "autoria": {
+                                "type": "string",
+                                "minLength": 2,
+                                "maxLength": 200
+                              }
+                            },
+                            "required": [
+                              "fonte",
+                              "data",
+                              "autoria"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "gabarito": {
+                            "type": "object",
+                            "properties": {
+                              "publicavel": {
+                                "type": "boolean"
+                              },
+                              "pilarEmFalta": {
+                                "type": "string",
+                                "enum": [
+                                  "fonte",
+                                  "data",
+                                  "autoria"
+                                ],
+                                "nullable": true
+                              },
+                              "explicacao": {
+                                "type": "string",
+                                "minLength": 5,
+                                "maxLength": 280
+                              }
+                            },
+                            "required": [
+                              "publicavel",
+                              "pilarEmFalta",
+                              "explicacao"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "meio",
+                          "veiculo",
+                          "falante",
+                          "manchete",
+                          "resumo",
+                          "pistas",
+                          "gabarito"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "minItems": 2,
+                      "maxItems": 2
+                    },
                     "midia": {
                       "type": "object",
                       "properties": {
@@ -56935,6 +58783,7 @@
                     "origem",
                     "topicos",
                     "noticias",
+                    "simulacao",
                     "midia",
                     "imagens",
                     "aprovadas",
@@ -57590,6 +59439,122 @@
                       },
                       "minItems": 8,
                       "maxItems": 8
+                    },
+                    "simulacao": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "enum": [
+                              "s1",
+                              "s2"
+                            ]
+                          },
+                          "meio": {
+                            "type": "string",
+                            "enum": [
+                              "jornal",
+                              "radio",
+                              "tv",
+                              "blog",
+                              "portal",
+                              "rede_social",
+                              "mensagem",
+                              "mural"
+                            ]
+                          },
+                          "veiculo": {
+                            "type": "string",
+                            "minLength": 2,
+                            "maxLength": 60
+                          },
+                          "falante": {
+                            "type": "string",
+                            "minLength": 2,
+                            "maxLength": 60,
+                            "nullable": true
+                          },
+                          "manchete": {
+                            "type": "string",
+                            "minLength": 5,
+                            "maxLength": 120
+                          },
+                          "resumo": {
+                            "type": "string",
+                            "minLength": 20,
+                            "maxLength": 320
+                          },
+                          "pistas": {
+                            "type": "object",
+                            "properties": {
+                              "fonte": {
+                                "type": "string",
+                                "minLength": 2,
+                                "maxLength": 200
+                              },
+                              "data": {
+                                "type": "string",
+                                "minLength": 2,
+                                "maxLength": 200
+                              },
+                              "autoria": {
+                                "type": "string",
+                                "minLength": 2,
+                                "maxLength": 200
+                              }
+                            },
+                            "required": [
+                              "fonte",
+                              "data",
+                              "autoria"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "gabarito": {
+                            "type": "object",
+                            "properties": {
+                              "publicavel": {
+                                "type": "boolean"
+                              },
+                              "pilarEmFalta": {
+                                "type": "string",
+                                "enum": [
+                                  "fonte",
+                                  "data",
+                                  "autoria"
+                                ],
+                                "nullable": true
+                              },
+                              "explicacao": {
+                                "type": "string",
+                                "minLength": 5,
+                                "maxLength": 280
+                              }
+                            },
+                            "required": [
+                              "publicavel",
+                              "pilarEmFalta",
+                              "explicacao"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "meio",
+                          "veiculo",
+                          "falante",
+                          "manchete",
+                          "resumo",
+                          "pistas",
+                          "gabarito"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "minItems": 2,
+                      "maxItems": 2
                     }
                   },
                   "required": [
@@ -57598,7 +59563,8 @@
                     "topicos",
                     "origem",
                     "usouIa",
-                    "noticias"
+                    "noticias",
+                    "simulacao"
                   ],
                   "additionalProperties": false
                 }
@@ -58456,6 +60422,122 @@
                       "boato"
                     ],
                     "additionalProperties": false
+                  },
+                  "simulacao": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "enum": [
+                            "s1",
+                            "s2"
+                          ]
+                        },
+                        "meio": {
+                          "type": "string",
+                          "enum": [
+                            "jornal",
+                            "radio",
+                            "tv",
+                            "blog",
+                            "portal",
+                            "rede_social",
+                            "mensagem",
+                            "mural"
+                          ]
+                        },
+                        "veiculo": {
+                          "type": "string",
+                          "minLength": 2,
+                          "maxLength": 60
+                        },
+                        "falante": {
+                          "type": "string",
+                          "minLength": 2,
+                          "maxLength": 60,
+                          "nullable": true
+                        },
+                        "manchete": {
+                          "type": "string",
+                          "minLength": 5,
+                          "maxLength": 120
+                        },
+                        "resumo": {
+                          "type": "string",
+                          "minLength": 20,
+                          "maxLength": 320
+                        },
+                        "pistas": {
+                          "type": "object",
+                          "properties": {
+                            "fonte": {
+                              "type": "string",
+                              "minLength": 2,
+                              "maxLength": 200
+                            },
+                            "data": {
+                              "type": "string",
+                              "minLength": 2,
+                              "maxLength": 200
+                            },
+                            "autoria": {
+                              "type": "string",
+                              "minLength": 2,
+                              "maxLength": 200
+                            }
+                          },
+                          "required": [
+                            "fonte",
+                            "data",
+                            "autoria"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "gabarito": {
+                          "type": "object",
+                          "properties": {
+                            "publicavel": {
+                              "type": "boolean"
+                            },
+                            "pilarEmFalta": {
+                              "type": "string",
+                              "enum": [
+                                "fonte",
+                                "data",
+                                "autoria"
+                              ],
+                              "nullable": true
+                            },
+                            "explicacao": {
+                              "type": "string",
+                              "minLength": 5,
+                              "maxLength": 280
+                            }
+                          },
+                          "required": [
+                            "publicavel",
+                            "pilarEmFalta",
+                            "explicacao"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "meio",
+                        "veiculo",
+                        "falante",
+                        "manchete",
+                        "resumo",
+                        "pistas",
+                        "gabarito"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "minItems": 2,
+                    "maxItems": 2
                   }
                 },
                 "required": [
@@ -58786,6 +60868,122 @@
                       "minItems": 8,
                       "maxItems": 8
                     },
+                    "simulacao": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "enum": [
+                              "s1",
+                              "s2"
+                            ]
+                          },
+                          "meio": {
+                            "type": "string",
+                            "enum": [
+                              "jornal",
+                              "radio",
+                              "tv",
+                              "blog",
+                              "portal",
+                              "rede_social",
+                              "mensagem",
+                              "mural"
+                            ]
+                          },
+                          "veiculo": {
+                            "type": "string",
+                            "minLength": 2,
+                            "maxLength": 60
+                          },
+                          "falante": {
+                            "type": "string",
+                            "minLength": 2,
+                            "maxLength": 60,
+                            "nullable": true
+                          },
+                          "manchete": {
+                            "type": "string",
+                            "minLength": 5,
+                            "maxLength": 120
+                          },
+                          "resumo": {
+                            "type": "string",
+                            "minLength": 20,
+                            "maxLength": 320
+                          },
+                          "pistas": {
+                            "type": "object",
+                            "properties": {
+                              "fonte": {
+                                "type": "string",
+                                "minLength": 2,
+                                "maxLength": 200
+                              },
+                              "data": {
+                                "type": "string",
+                                "minLength": 2,
+                                "maxLength": 200
+                              },
+                              "autoria": {
+                                "type": "string",
+                                "minLength": 2,
+                                "maxLength": 200
+                              }
+                            },
+                            "required": [
+                              "fonte",
+                              "data",
+                              "autoria"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "gabarito": {
+                            "type": "object",
+                            "properties": {
+                              "publicavel": {
+                                "type": "boolean"
+                              },
+                              "pilarEmFalta": {
+                                "type": "string",
+                                "enum": [
+                                  "fonte",
+                                  "data",
+                                  "autoria"
+                                ],
+                                "nullable": true
+                              },
+                              "explicacao": {
+                                "type": "string",
+                                "minLength": 5,
+                                "maxLength": 280
+                              }
+                            },
+                            "required": [
+                              "publicavel",
+                              "pilarEmFalta",
+                              "explicacao"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "meio",
+                          "veiculo",
+                          "falante",
+                          "manchete",
+                          "resumo",
+                          "pistas",
+                          "gabarito"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "minItems": 2,
+                      "maxItems": 2
+                    },
                     "blocos": {
                       "type": "array",
                       "items": {
@@ -58810,13 +61008,44 @@
                           },
                           "pilar": {
                             "type": "boolean"
+                          },
+                          "cartoes": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "texto": {
+                                  "type": "string"
+                                },
+                                "exemplo": {
+                                  "type": "string"
+                                },
+                                "lado": {
+                                  "type": "string",
+                                  "enum": [
+                                    "aprova",
+                                    "reprova"
+                                  ],
+                                  "nullable": true
+                                }
+                              },
+                              "required": [
+                                "texto",
+                                "exemplo",
+                                "lado"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "minItems": 2,
+                            "maxItems": 2
                           }
                         },
                         "required": [
                           "id",
                           "rotulo",
                           "legenda",
-                          "pilar"
+                          "pilar",
+                          "cartoes"
                         ],
                         "additionalProperties": false
                       }
@@ -58851,6 +61080,7 @@
                     "disciplina",
                     "tema",
                     "noticias",
+                    "simulacao",
                     "blocos",
                     "roteiro"
                   ],
@@ -58864,7 +61094,7 @@
           "jornal-escola"
         ],
         "summary": "O banco padrão com o gabarito, os blocos da Chave e o roteiro da mediação.",
-        "description": "**Professor e gestores.** É o \"Usar Banco Padrão: Feira de Ciências e Notícias da Cidade\" do preparo — o hub o manda de volta no `POST :turmaId/homologar` com `origem: \"padrao\"` — e o bloco vivo do guia: com um computador só, o professor projeta as notícias e conduz a turma (PDF §11).\n\nÉ o BANCO PADRÃO da Unooria, não o pacote da turma: se o professor homologou outro, ele está em `GET /jornal-escola/turmas/:turmaId/pacotes`.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Nada aqui é escopado por escola: é o catálogo da missão, igual para todo contrato.\n- `blocos[].pilar` diz quais três formam a Chave — é gabarito, e só existe nesta rota de professor.\n- `roteiro` é o da copy revisada (§4b): o gatilho do resultado, as três perguntas do debate e o gatilho da revisão.",
+        "description": "**Professor e gestores.** É o \"Usar Banco Padrão: Feira de Ciências e Notícias da Cidade\" do preparo — o hub o manda de volta no `POST :turmaId/homologar` com `origem: \"padrao\"` — e o bloco vivo do guia: com um computador só, o professor projeta as notícias e conduz a turma (PDF §11).\n\nÉ o BANCO PADRÃO da Unooria, não o pacote da turma: se o professor homologou outro, ele está em `GET /jornal-escola/turmas/:turmaId/pacotes`.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Nada aqui é escopado por escola: é o catálogo da missão, igual para todo contrato.\n- `blocos[].pilar` diz quais três formam a Chave, e `blocos[].cartoes[].lado` o lado certo de cada cartão de condição — é gabarito, e só existe nesta rota de professor.\n- `simulacao`: as duas matérias da simulação do banco padrão, com o gabarito.\n- `roteiro` é o da copy revisada (§4b): o gatilho do resultado, as três perguntas do debate e o gatilho da revisão.",
         "security": [
           {
             "token-da-plataforma": []

@@ -1,6 +1,6 @@
 import { NEWS_MEDIUM_LABELS, NewsArticle } from "@edu/ui/ds";
 import { MEIO_PARA_MEDIUM, PECA_DO_MEIO } from "../../lib/meios";
-import type { NoticiaPublica } from "../../lib/tipos";
+import type { MateriaNaTela } from "../../lib/tipos";
 import { MensagemEncaminhada } from "../pecas/mensagem-encaminhada";
 import { PostDeRedeSocial } from "../pecas/post-de-rede-social";
 
@@ -18,7 +18,7 @@ import { PostDeRedeSocial } from "../pecas/post-de-rede-social";
  * o que a criança leria no recorte de verdade; o que ele É — canal oficial,
  * perfil anônimo — é a pista de FONTE, que ela revela à parte.
  */
-export function MateriaOriginal({ noticia, aoFalharMidia }: { noticia: NoticiaPublica; aoFalharMidia: () => void }) {
+export function MateriaOriginal({ noticia, aoFalharMidia }: { noticia: MateriaNaTela; aoFalharMidia: () => void }) {
   const peca = PECA_DO_MEIO[noticia.meio];
 
   if (peca.secao === "unoovista") return <PostDeRedeSocial noticia={noticia} aoFalharMidia={aoFalharMidia} />;

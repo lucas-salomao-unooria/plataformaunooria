@@ -1,6 +1,6 @@
 import { PostCard } from "@edu/ui/ds-unoovista";
 import { ERROS } from "../../lib/textos";
-import type { NoticiaPublica } from "../../lib/tipos";
+import type { MateriaNaTela } from "../../lib/tipos";
 
 /**
  * A matéria original de uma notícia que veio de REDE SOCIAL — o `PostCard` da
@@ -20,7 +20,7 @@ import type { NoticiaPublica } from "../../lib/tipos";
  * cartão sem `theme` herda o `data-unv-theme` de quem estiver em volta, e
  * a redação em volta é clara.
  */
-export function PostDeRedeSocial({ noticia, aoFalharMidia }: { noticia: NoticiaPublica; aoFalharMidia: () => void }) {
+export function PostDeRedeSocial({ noticia, aoFalharMidia }: { noticia: MateriaNaTela; aoFalharMidia: () => void }) {
   const url = noticia.imagem?.url ?? undefined;
   return (
     <div className="peca-unoovista">

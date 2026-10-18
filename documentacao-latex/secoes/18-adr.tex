@@ -9,7 +9,7 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{167 decisões}, numeradas até ADR-167. A 160 (o painel de habilidades pelo total) e a 161 (os custos de IA) nasceram no mesmo dia, em frentes paralelas, e a 161 foi escrita depois de conferir que a 160 já estava tomada em \cd{dev-local}. A 153 (a evidência do Unoovista) e a 154 (a da Missão Tempestade) nasceram no mesmo dia, em frentes paralelas. A 132 (a Ajuda com
+São \textbf{170 decisões}, numeradas até ADR-173: a 169, a 170 e a 171 estão reservadas por frentes paralelas abertas no mesmo dia (o Canal A de A Seleção e de Quem mandou isso?), e a 168 é a do Jornal da Escola, escrita depois de conferir \cd{origin/dev-local}, as branches e as worktrees. A 160 (o painel de habilidades pelo total) e a 161 (os custos de IA) nasceram no mesmo dia, em frentes paralelas, e a 161 foi escrita depois de conferir que a 160 já estava tomada em \cd{dev-local}. A 153 (a evidência do Unoovista) e a 154 (a da Missão Tempestade) nasceram no mesmo dia, em frentes paralelas. A 132 (a Ajuda com
 avatar) entrou no código antes de ter seção aqui, e por um dia o número foi
 citado sem existir; a 133 pulou para não colidir com ela. A 133 e a 134 nasceram no mesmo dia, em frentes paralelas
 (Unoovista e Unoochat), e entraram juntas no merge; a 135 e a 136 levaram as
@@ -218,8 +218,9 @@ que a cercam.
 \adrr{ADR-165} & As instruções da Ajuda no painel: o \enquote{como responder} de cada atendente é dado & 2026-10-15 & Aceita; complementa a \adrr{ADR-132} e a \adrr{ADR-158}\\
 \zebra \adrr{ADR-166} & De onde veio o nível: a evidência guarda o marcador que a deu, e o consolidado conta à parte o \enquote{em processo} limitado pela atividade & 2026-10-16 & Aceita; complementa a \adrr{ADR-112} e a \adrr{ADR-144}\\
 \adrr{ADR-167} & O Canal A do Unoovista: toda habilidade por ação --- o Raio-x antes do debate, os termos e o envio depois do cinza, e a reflexão lida pela IA; as perguntas do fim saem & 2026-10-16 & Aceita; supera em parte a \adrr{ADR-153}\\
-\zebra \adrr{ADR-172} & O Canal A da Missão Tempestade: toda habilidade por ação --- a ligação da Saúde, o registro da operação, o \enquote{E se\ldots} pareado e o fechamento aberto pelo professor; as perguntas saem & 2026-10-16 & Aceita; supera em parte a \adrr{ADR-154}\\
-\adrr{ADR-173} & Clone dentro de clone: a peça de outra plataforma dentro de uma experiência disfarçada & 2026-10-16 & Aceita; estende a \adrr{ADR-117}\\
+\zebra \adrr{ADR-168} & O Jornal da Escola em Canal A puro: julgar cada pista, montar a Chave, simulá-la e decidir diante do boato --- sem múltipla escolha & 2026-10-16 & Aceita; supera em parte a \adrr{ADR-117} e a \adrr{ADR-147}\\
+\adrr{ADR-172} & O Canal A da Missão Tempestade: toda habilidade por ação --- a ligação da Saúde, o registro da operação, o \enquote{E se\ldots} pareado e o fechamento aberto pelo professor; as perguntas saem & 2026-10-16 & Aceita; supera em parte a \adrr{ADR-154}\\
+\zebra \adrr{ADR-173} & Clone dentro de clone: a peça de outra plataforma dentro de uma experiência disfarçada & 2026-10-16 & Aceita; estende a \adrr{ADR-117}\\
 \bottomrule
 \end{tabularx}
 
@@ -15132,6 +15133,120 @@ onde veio o nível).
 régua dura demais, ou a leitura da IA divergir do professor nos ajustes do
 painel.
 
+
+% ---------------------------------------------------------------------------
+\section{ADR-168 --- O Jornal da Escola em Canal A puro: julgar cada pista, montar a Chave, simulá-la e decidir diante do boato}
+\label{adr:exp04ef1b-canal-a}
+
+\textbf{Data.} 2026-10-16. \textbf{Status.} Aceita. \textbf{Supera em parte}
+a \adrr{ADR-117} (a Chave por tentativas e o Desafio Final de múltipla
+escolha) e a \adrr{ADR-147} (a missão de oito notícias passa a ter dez).
+
+\begin{especificacao}{Contexto}
+\begin{itemize}
+  \item \textbf{O pedido.} O dono do produto descontinuou o Canal B (a pergunta
+    de múltipla escolha que vale nota): toda habilidade da ficha precisa de uma
+    AÇÃO voluntária na missão que sustente sozinha o atingiu, o em processo e o
+    não atingiu. No Jornal (\cd{exp04ef1b}, 4º ano), as três habilidades já
+    tinham marcador de ação, mas a EF04CO08 valia o melhor entre a 2ª edição e
+    as perguntas P1/P2.
+  \item \textbf{As três versões da proposta.} A primeira descrevia uma versão
+    antiga da missão (um \emph{feed}); a segunda, já sobre o Jornal, trazia
+    furos que a revisão apontou --- a ordem livre das vagas não prova
+    sequência, repetir a tarefa não é construir uma repetição, a Chave entregava
+    as três peças certas, e o julgamento de cada pista só nas matérias adicionadas impedia a criança
+    que acertava tudo de chegar ao atingiu. A terceira corrigiu, e um plenário
+    pedagógico de três avaliadores (avaliação educacional, currículo da BNCC
+    Computação, sala de aula e proteção da criança) aprovou a especificação por
+    unanimidade, depois de três rodadas.
+\end{itemize}
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{enumerate}
+  \item \textbf{EF15CO04 (decomposição) pelo julgamento de cada pista.} Logo
+    depois de abrir uma pista, e ANTES de decidir a capa, a criança marca
+    \enquote{Confio} ou \enquote{Não confio} (\cd{POST julgamento}; o primeiro
+    vale; opcional). Atingiu = cada tipo de pista julgado em pelo menos duas
+    notícias, pelo menos 80\% dos julgamentos certos, o furo percebido em pelo
+    menos metade das pistas com furo que ela abriu (no mínimo uma) e a capa
+    publicada coerente com os próprios julgamentos. O gabarito por pista sai do
+    da notícia (\cd{pilarEmFalta}).
+  \item \textbf{EF15CO02 (construir e simular) pela Chave MONTADA e pela
+    simulação.} A Chave do Editor deixa de ser tentativa e erro: a criança
+    escolhe três blocos entre seis (os três pilares e três armadilhas), decide o
+    lado de cada cartão de condição, o \enquote{se esta pista falhar} (\enquote{Não
+    publico} ou \enquote{Olho a próxima pista}) e a repetição (\enquote{em TODAS
+    as notícias} ou \enquote{só na primeira}) --- um envio, sem correção. Depois
+    da 2ª edição, ela aplica a Chave dela a duas matérias novas; mede-se a
+    FIDELIDADE à regra dela (a ordem das vagas, a parada, a decisão coerente),
+    não se a regra está certa.
+  \item \textbf{EF04CO08 pela 2ª edição e pela transferência.} O boato de
+    \enquote{todas as escolas do bairro} chega com \enquote{Repassar para o
+    grupo} à mão desde o início, numa tela neutra; conta abrir a pista de
+    fonte (ou duas pistas) e não repassar. A 2ª edição só vale o atingiu com as
+    três verificadas E as três pistas de cada uma conferidas --- a revisão marca
+    os furos, e o 3/3 sozinho viria do retorno da tela.
+  \item \textbf{A combinação cabe no \enquote{vale o melhor} da plataforma}, sem
+    regra nova nela: o marcador PARCIAL (a montagem, a 2ª edição) tem teto em
+    \enquote{em processo}, e o FINAL (a simulação, a transferência) grava o
+    COMBINADO. Quem não chega ao fim fica com o parcial; as tabelas do dono do
+    produto saem inteiras do melhor dos dois.
+  \item \textbf{O Canal B sai inteiro}: a ficha vai à versão 2, sem perguntas, e a
+    missão não registra resolvedor de contexto --- as rotas de pergunta de
+    \cd{/evidencias} não respondem por ela. A pergunta de motivo (depois da 1ª
+    publicação) fica: não avalia, e serve à conversa do professor.
+  \item \textbf{O resto do desenho}: as duas matérias da simulação são geradas
+    no preparo, sem imagem (não somam curadoria de imagem); o boato é fixo;
+    depois da simulação todos recebem a mesma regra de referência; o painel da
+    aula ganha só AGREGADOS da Chave e do boato; a aula pode ter uma pausa
+    oficial depois do resultado (1 ou 2 aulas).
+\end{enumerate}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{A ordem livre das vagas como prova de sequência.} Conferir fonte,
+    data e autoria dá o mesmo veredito em qualquer ordem; a ordem só ganha
+    função na execução, e é lá que se mede.
+  \item \textbf{A escolha binária \enquote{verifico antes / publico agora}} como
+    transferência: depois de ver as famílias no portão, mede o que a criança sabe
+    que deve dizer, não o que faz.
+  \item \textbf{O julgamento só ao adicionar à capa}, com um \enquote{Não confio} certo obrigatório: a
+    criança que deixa as ruins de fora nunca o marca. O botão \enquote{Deixar de
+    fora} resolveria, mas o julgamento logo depois de abrir resolve também a
+    ordem (julgar antes de decidir) e dispensa o botão.
+  \item \textbf{A Chave com só os três pilares.} Escolher o que importa entre
+    armadilhas é a parte mais difícil de construir a regra; sem elas, as peças
+    certas chegariam prontas.
+  \item \textbf{Uma regra nova de combinação na plataforma de evidência.} O teto
+    no marcador parcial dá o mesmo resultado sem tocar a porta \cd{marcar}, que
+    serve a todas as missões.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{A missão ficou mais longa} (a Chave montada, a simulação e a
+    transferência); o guia admite 1 ou 2 aulas. O tempo real só se sabe numa
+    turma piloto.
+  \item \textbf{O professor revisa dez matérias por atividade}, e não oito --- as
+    duas a mais são curtas e sem imagem.
+  \item \textbf{A transferência mede \enquote{verificou espontaneamente}}, o
+    comportamento associado a reconhecer a importância, e não o reconhecimento
+    declarado. É o limite de uma medição só por ação.
+  \item \textbf{A janela de chute da 2ª edição} sobe para cerca de 2,7\% quando a
+    criança reabre pistas ao acaso na revisão; aceita, porque é na revisão que ela
+    precisa conferir a matéria que entra no lugar do furo.
+  \item \textbf{As rodadas da 2.x} ficam com as marcas antigas (\cd{versao\_ficha
+    = 1}); a sessão que estava no comparativo sem Chave montada vai direto à
+    transferência.
+\end{itemize}
+
+\textbf{Gatilho.} O resultado de uma turma piloto (tempo de aula, taxa de
+chute observada, a fala das professoras sobre o painel), ou a ficha de outra
+missão pedindo uma combinação que o teto não resolva.
 
 % ---------------------------------------------------------------------------
 \section{ADR-172 --- O Canal A da Missão Tempestade: toda habilidade por ação, sem pergunta}
