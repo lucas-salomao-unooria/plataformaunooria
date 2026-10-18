@@ -1,26 +1,30 @@
 import type { ExperienciaHandle } from "@edu/sdk";
 import { esperaDaTentativa } from "./regras";
-import {
-  EXP_ID,
-  type Comparativo,
-  type Diagramacao,
-  type Estado,
-  type GatePublico,
-  type IdDaPergunta,
-  type IdDeBloco,
-  type IdDeNoticia,
-  type Layout,
-  type Motivo,
-  type OrigemDoLayout,
-  type PassoPedido,
-  type Pergunta,
-  type PistaRevelada,
-  type RespostaEnviada,
-  type Resultado,
-  type Revisao,
-  type Sessao,
-  type TentativaDaChave,
-  type TipoDePista,
+import type {
+  ChaveMontada,
+  Comparativo,
+  CorpoDaChave,
+  CorpoDaSimulacao,
+  CorpoDaTransferencia,
+  Diagramacao,
+  Estado,
+  GatePublico,
+  IdDeNoticia,
+  Julgamento,
+  Layout,
+  Motivo,
+  OrigemDoLayout,
+  PassoPedido,
+  PistaRevelada,
+  Resultado,
+  Revisao,
+  Sessao,
+  SimulacaoDaTela,
+  SimulacaoEnviada,
+  TipoDePista,
+  TransferenciaDaTela,
+  TransferenciaEnviada,
+  Veredito,
 } from "./tipos";
 
 /**
@@ -55,7 +59,8 @@ export interface CorpoDaPublicacao {
 /**
  * As rotas da missão, uma por linha da tabela do spec — o caminho e o tipo da
  * resposta num lugar só. Quem chama decide se repete (`conexao.executar`) ou
- * não (o polling, a diagramação e as perguntas finais não repetem).
+ * não (o polling e a diagramação não repetem). Nenhuma rota de evidências:
+ * a 3.0.0 mede tudo por AÇÃO, e as perguntas P1/P2 saíram (ADR-168).
  */
 export const rotas = {
   sessao: () => api.get<Sessao>("/jornal-escola/sessao"),
@@ -66,21 +71,20 @@ export const rotas = {
   diagramar: (slots: IdDeNoticia[]) => api.post<Diagramacao>("/jornal-escola/diagramar", { slots }),
   publicar: (corpo: CorpoDaPublicacao) => api.post<Estado>("/jornal-escola/publicar", corpo),
   motivo: (motivo: Motivo) => api.post<Estado>("/jornal-escola/motivo", { motivo }),
+  /** "Confio / não confio" numa pista JÁ aberta, na mesa da 1ª edição. Vale o primeiro. */
+  julgamento: (noticiaId: IdDeNoticia, tipo: TipoDePista, veredito: Veredito) =>
+    api.post<Julgamento>("/jornal-escola/julgamento", { noticiaId, tipo, veredito }),
   resultado: () => api.get<Resultado>("/jornal-escola/resultado"),
-  /**
-   * `tentativa` é o número que a tela está mandando (`estado.chaveTentativas`
-   * + 1): a repetição da rede leva o mesmo número, e a api a descarta em vez de
-   * contar de novo.
-   */
-  chave: (blocos: IdDeBloco[], tentativa: number) =>
-    api.post<TentativaDaChave>("/jornal-escola/chave", { blocos, tentativa }),
+  /** A Chave MONTADA, num envio só. O reenvio idêntico (a repetição da rede) devolve o estado. */
+  chave: (corpo: CorpoDaChave) => api.post<ChaveMontada>("/jornal-escola/chave", corpo),
   revisao: () => api.get<Revisao>("/jornal-escola/revisao"),
   republicar: (corpo: CorpoDaPublicacao) => api.post<Estado>("/jornal-escola/republicar", corpo),
   comparativo: () => api.get<Comparativo>("/jornal-escola/comparativo"),
+  simulacao: () => api.get<SimulacaoDaTela>("/jornal-escola/simulacao"),
+  simular: (corpo: CorpoDaSimulacao) => api.post<SimulacaoEnviada>("/jornal-escola/simulacao", corpo),
+  transferencia: () => api.get<TransferenciaDaTela>("/jornal-escola/transferencia"),
+  transferir: (corpo: CorpoDaTransferencia) => api.post<TransferenciaEnviada>("/jornal-escola/transferencia", corpo),
   concluir: () => api.post<Estado>("/jornal-escola/concluir"),
-  pergunta: (id: IdDaPergunta) => api.get<Pergunta>(`/evidencias/${EXP_ID}/perguntas/${id}`),
-  responder: (id: IdDaPergunta, alternativaId: string) =>
-    api.post<RespostaEnviada>(`/evidencias/${EXP_ID}/perguntas/${id}/resposta`, { alternativaId }),
 };
 
 /**
@@ -171,10 +175,10 @@ export interface OpcoesDaRepeticao {
  *
  * É seguro repetir todas as mutações desta missão, e isso não é por acaso: a
  * pista é idempotente por par, `POST passo` pede um destino, `concluir` é
- * idempotente em `fim`, e as três escritas de latch (`publicar`, `motivo`,
- * `republicar`) respondem 409 na segunda vez. A Chave, em que cada envio CONTA
- * como tentativa (a EF15CO02 sai do número), manda o número da tentativa, e a
- * api descarta a repetição com número já contado (`rotas.chave`). Quando a
+ * idempotente em `fim`, o julgamento grava o PRIMEIRO de cada par, e as escritas
+ * de latch (`publicar`, `motivo`, `republicar`, `simulacao`, `transferencia`)
+ * respondem 409 na segunda vez. A Chave é um envio só, sem tentativa: o reenvio
+ * IDÊNTICO devolve o estado, e outro responde 409 (`chave-ja-montada`). Quando a
  * primeira tentativa de um latch chegou mas a resposta se perdeu, a repetição
  * volta com 409 e a tela relê a sessão —
  * **o latch nunca se perde e nunca duplica, porque só vale quando a api o

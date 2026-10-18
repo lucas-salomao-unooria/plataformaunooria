@@ -1,18 +1,24 @@
 import type {
-  Bloco,
+  BlocoDaChave,
+  CorpoDaChave,
+  CorpoDaSimulacao,
+  CorpoDaTransferencia,
   EdicaoComResultado,
   EdicaoDoEstudante,
   Estado,
   Etapa,
   GatePublico,
-  IdDeBloco,
   IdDeNoticia,
+  JulgamentoGravado,
   Motivo,
   NoticiaPublica,
   Passo,
   PistaAberta,
   Sessao,
+  SimulacaoDaTela,
   TipoDePista,
+  TransferenciaDaTela,
+  Veredito,
 } from "../lib/tipos";
 
 /**
@@ -36,6 +42,7 @@ const PASSOS: readonly Passo[] = [
   "chave",
   "revisao",
   "comparativo",
+  "simulacao",
   "transferencia",
   "fim",
 ];
@@ -69,25 +76,110 @@ export const NOTICIAS_DE_TESTE: NoticiaPublica[] = MEIOS_DA_MESA.map((meio, i) =
 });
 
 const PILAR_DE_TESTE: Partial<Record<IdDeNoticia, TipoDePista>> = { n2: "data", n3: "fonte", n5: "autoria" };
-const ISCAS_DE_TESTE: readonly IdDeBloco[] = ["foto", "urgencia", "compartilhada"];
 
-/** A bandeja desta sessão, já "embaralhada" — a ordem que a api devolveria. */
 /**
- * Os rótulos como o catálogo da api os manda: caixa NORMAL e sem emoji nos seis
- * (a caixa alta é do CSS do `PuzzleBlock`; escrito "FONTE", o leitor de tela
- * soletraria).
+ * A bandeja desta sessão, já "embaralhada" — a ordem que a api devolveria —,
+ * com os rótulos como o catálogo da api os manda: caixa NORMAL e sem emoji (a
+ * caixa alta é do CSS do `PuzzleBlock`; escrito "FONTE", o leitor de tela
+ * soletraria). Os cartões também vêm embaralhados: o `indice` é a posição
+ * canônica, e a ordem da lista não é ela (a `fonte` mostra o `indice: 1` primeiro).
  */
-export const BLOCOS_DE_TESTE: Bloco[] = [
-  { id: "foto", rotulo: "Foto", legenda: "Tem foto bonita? Chama a atenção de quem vê?" },
-  { id: "fonte", rotulo: "Fonte", legenda: "De onde veio? É canal oficial ou confiável?" },
-  { id: "urgencia", rotulo: "Urgência", legenda: "Diz que é urgente? Pede pressa para espalhar?" },
-  { id: "data", rotulo: "Data", legenda: "Quando aconteceu? É de hoje ou do passado?" },
-  { id: "compartilhada", rotulo: "Compartilhada", legenda: "Muita gente já mandou? Está em todos os grupos?" },
-  { id: "autoria", rotulo: "Autoria", legenda: "Quem assina? Alguém se responsabiliza pelo texto?" },
+export const BLOCOS_DE_TESTE: BlocoDaChave[] = [
+  {
+    id: "foto",
+    rotulo: "Foto",
+    legenda: "Tem foto bonita? Chama a atenção de quem vê?",
+    cartoes: [
+      { indice: 0, texto: "Tem foto bonita e colorida", exemplo: "uma foto grande" },
+      { indice: 1, texto: "Não tem foto", exemplo: "só o texto" },
+    ],
+  },
+  {
+    id: "fonte",
+    rotulo: "Fonte",
+    legenda: "De onde veio? É canal oficial ou confiável?",
+    cartoes: [
+      { indice: 1, texto: "Ninguém sabe de onde veio", exemplo: "me mandaram no grupo" },
+      { indice: 0, texto: "Veio de um canal oficial ou conhecido", exemplo: "o site da prefeitura" },
+    ],
+  },
+  {
+    id: "urgencia",
+    rotulo: "Urgência",
+    legenda: "Diz que é urgente? Pede pressa para espalhar?",
+    cartoes: [
+      { indice: 0, texto: "Diz que é URGENTE", exemplo: "corram, repassem já!" },
+      { indice: 1, texto: "Fala com calma", exemplo: "sem pressa" },
+    ],
+  },
+  {
+    id: "data",
+    rotulo: "Data",
+    legenda: "Quando aconteceu? É de hoje ou do passado?",
+    cartoes: [
+      { indice: 0, texto: "Aconteceu agora ou vai acontecer", exemplo: "publicado ontem" },
+      { indice: 1, texto: "É de muito tempo atrás", exemplo: "em 2018" },
+    ],
+  },
+  {
+    id: "compartilhada",
+    rotulo: "Compartilhada",
+    legenda: "Muita gente já mandou? Está em todos os grupos?",
+    cartoes: [
+      { indice: 0, texto: "Todo mundo já mandou", exemplo: "está em todos os grupos" },
+      { indice: 1, texto: "Pouca gente mandou", exemplo: "chegou para poucos" },
+    ],
+  },
+  {
+    id: "autoria",
+    rotulo: "Autoria",
+    legenda: "Quem assina? Alguém se responsabiliza pelo texto?",
+    cartoes: [
+      { indice: 1, texto: "Ninguém assina o texto", exemplo: "sem nome no fim" },
+      { indice: 0, texto: "Tem o nome de quem escreveu", exemplo: "por Marta Ribeiro" },
+    ],
+  },
 ];
 
-export const BOATO_DE_TESTE = "URGENTE: boato de teste sobre o corte de água. Repassem para todo mundo!";
-export const DETALHE_DE_TESTE = "Mensagem sem link oficial, sem data e sem autoridade.";
+/** As frases de pulo da isca, como o catálogo da api as manda. */
+const PULO_DE_TESTE: Record<string, string> = {
+  foto: "Esta matéria não tem foto. Siga para o próximo passo.",
+  urgencia: "Esta matéria não diz se é urgente. Siga para o próximo passo.",
+  compartilhada: "Não dá para saber quanta gente mandou esta matéria. Siga para o próximo passo.",
+};
+
+export const REFERENCIA_DE_TESTE = "Bons editores olham a fonte, a data e a autoria em todas as notícias.";
+
+export const MATERIAS_DE_TESTE: SimulacaoDaTela["materias"] = [
+  {
+    id: "s1",
+    meio: "jornal",
+    veiculo: "Jornal do Bairro",
+    falante: null,
+    manchete: "Manchete da matéria s1",
+    resumo: "Resumo da matéria s1 da simulação, com contexto para a criança testar a Chave.",
+    pistas: { fonte: "Pista de fonte da s1", data: "Pista de data da s1", autoria: "Pista de autoria da s1" },
+  },
+  {
+    id: "s2",
+    meio: "blog",
+    veiculo: "Blog Novidades",
+    falante: null,
+    manchete: "Manchete da matéria s2",
+    resumo: "Resumo da matéria s2 da simulação, com contexto para a criança testar a Chave.",
+    pistas: { fonte: "Pista de fonte da s2", data: "Pista de data da s2", autoria: "Pista de autoria da s2" },
+  },
+];
+
+export const BOATO_DE_TESTE: TransferenciaDaTela = {
+  remetente: "Grupo da turma",
+  mensagem: "URGENTE: boato de teste sobre o corte de água. Repassem para todo mundo!",
+  pistas: {
+    fonte: "Pista de fonte do boato",
+    data: "Pista de data do boato",
+    autoria: "Pista de autoria do boato",
+  },
+};
 
 function erro(metodo: string, caminho: string, status: number): Error {
   return new Error(`API ${metodo} ${caminho} → ${status}`);
@@ -102,14 +194,16 @@ export class RedacaoFalsa {
   edicao1: EdicaoDoEstudante | null = null;
   edicao2: EdicaoDoEstudante | null = null;
   motivo: Motivo | null = null;
-  chaveFormada = false;
-  tentativas = 0;
-  /** O número de tentativa que cada envio da Chave levou (`undefined` = sem número). */
-  readonly numerosDaChave: (number | undefined)[] = [];
+  /** A Chave montada como a api a gravou (o corpo do primeiro envio). */
+  chave: CorpoDaChave | null = null;
+  /** Quantos `POST chave` chegaram (o reenvio idêntico também conta aqui). */
+  enviosDaChave = 0;
   pistas: PistaAberta[] = [];
+  julgamentos: JulgamentoGravado[] = [];
+  simulacao: CorpoDaSimulacao | null = null;
+  transferencia: CorpoDaTransferencia | null = null;
   iniciadaEm = "2026-09-27T11:00:00.000Z";
   concluidaEm: string | null = null;
-  respostas: Record<string, string> = {};
   /** Cada chamada, como "GET /jornal-escola/gate". */
   readonly chamadas: string[] = [];
 
@@ -125,10 +219,12 @@ export class RedacaoFalsa {
       aguardandoOProfessor: passo === "publicada" || passo === "resultado",
       edicao1: this.edicao1,
       motivoRespondido: this.motivo !== null,
-      chaveFormada: this.chaveFormada,
-      chaveTentativas: this.tentativas,
+      chaveFormada: this.chave !== null,
       edicao2: this.edicao2,
       pistasAbertas: [...this.pistas],
+      julgamentos: [...this.julgamentos],
+      simulada: this.simulacao !== null,
+      transferida: this.transferencia !== null,
       iniciadaEm: this.iniciadaEm,
       concluidaEm: this.concluidaEm,
     };
@@ -194,7 +290,7 @@ export class RedacaoFalsa {
         if (this.etapa === "exploracao") throw erro("GET", caminho, 409);
         return { edicao1: this.comResultado(this.edicao1) };
       case "/jornal-escola/revisao":
-        if (!this.chaveFormada || !this.edicao1) throw erro("GET", caminho, 409);
+        if (!this.chave || !this.edicao1) throw erro("GET", caminho, 409);
         return { vagas: this.edicao1.slots.map((id) => ({ noticiaId: id, pilarEmFalta: PILAR_DE_TESTE[id] ?? null })) };
       case "/jornal-escola/comparativo": {
         if (!this.edicao1 || !this.edicao2) throw erro("GET", caminho, 409);
@@ -205,25 +301,27 @@ export class RedacaoFalsa {
           vagas: ids.map((id) => ({ noticiaId: id, pilarEmFalta: PILAR_DE_TESTE[id] ?? null })),
         };
       }
-      case "/evidencias/exp04ef1b/perguntas/p1":
-        this.exigirPasso("GET", caminho, "transferencia", "fim");
-        return {
-          enunciado: `${BOATO_DE_TESTE}\n\n${DETALHE_DE_TESTE}\n\nO que você precisa conferir antes de repassar?`,
-          alternativas: [
-            { id: "p1b", texto: "Quantos colegas já receberam." },
-            { id: "p1a", texto: "Se veio de canal oficial, com data e assinatura." },
-            { id: "p1c", texto: "Se tem a palavra URGENTE." },
-          ],
+      case "/jornal-escola/simulacao": {
+        this.exigirPasso("GET", caminho, "simulacao", "transferencia");
+        const chave = this.chave;
+        if (!chave) throw erro("GET", caminho, 409);
+        const tela: SimulacaoDaTela = {
+          materias: MATERIAS_DE_TESTE,
+          chave: {
+            vagas: chave.vagas.map((v) => ({
+              bloco: v.bloco,
+              rotulo: BLOCOS_DE_TESTE.find((b) => b.id === v.bloco)?.rotulo ?? v.bloco,
+              seFalhar: v.seFalhar,
+              pulo: PULO_DE_TESTE[v.bloco] ?? null,
+            })),
+            repeticao: chave.repeticao,
+          },
         };
-      case "/evidencias/exp04ef1b/perguntas/p2":
+        return tela;
+      }
+      case "/jornal-escola/transferencia":
         this.exigirPasso("GET", caminho, "transferencia", "fim");
-        return {
-          enunciado: "O que acontece quando as pessoas repassam sem conferir?",
-          alternativas: [
-            { id: "p2a", texto: "Pode fazer a escola inteira parar." },
-            { id: "p2c", texto: "O celular apaga as mensagens." },
-          ],
-        };
+        return BOATO_DE_TESTE;
       default:
         throw erro("GET", caminho, 404);
     }
@@ -237,9 +335,11 @@ export class RedacaoFalsa {
       case "/jornal-escola/passo": {
         if (c.para === "mesa") {
           if (this.passo === "desafio") this.passo = "mesa";
-        } else if (c.para === "transferencia") {
-          if (this.passo === "comparativo") this.passo = "transferencia";
-          else if (this.passo !== "transferencia" && this.passo !== "fim") throw erro("POST", caminho, 409);
+        } else if (c.para === "simulacao") {
+          if (this.passo === "comparativo") this.passo = this.chave ? "simulacao" : "transferencia";
+          else if (this.passo !== "simulacao" && this.passo !== "transferencia" && this.passo !== "fim") {
+            throw erro("POST", caminho, 409);
+          }
         }
         return this.estado();
       }
@@ -255,6 +355,20 @@ export class RedacaoFalsa {
         }
         const abertas = new Set(this.pistas.map((p) => `${p.noticiaId}:${p.tipo}`)).size;
         return { noticiaId, tipo, fase, texto, abertas };
+      }
+      case "/jornal-escola/julgamento": {
+        // Só na mesa da 1ª edição, só de pista aberta, e o PRIMEIRO vale (`regras/julgamentos.ts`).
+        this.exigirPasso("POST", caminho, "mesa");
+        const noticiaId = c.noticiaId as IdDeNoticia;
+        const tipo = c.tipo as TipoDePista;
+        if (!this.pistas.some((p) => p.noticiaId === noticiaId && p.tipo === tipo && p.fase === 1)) {
+          throw erro("POST", caminho, 409);
+        }
+        const gravado = this.julgamentos.find((j) => j.noticiaId === noticiaId && j.tipo === tipo);
+        if (gravado) return { ...gravado, novo: false };
+        const novo = { noticiaId, tipo, veredito: c.veredito as Veredito };
+        this.julgamentos.push(novo);
+        return { ...novo, novo: true };
       }
       case "/jornal-escola/diagramar":
         this.exigirPasso("POST", caminho, "mesa", "revisao");
@@ -277,22 +391,18 @@ export class RedacaoFalsa {
         this.passo = "publicada";
         return this.estado();
       case "/jornal-escola/chave": {
-        this.exigirPasso("POST", caminho, "chave");
-        const blocos = c.blocos as IdDeBloco[];
-        const numero = typeof c.tentativa === "number" ? c.tentativa : undefined;
-        this.numerosDaChave.push(numero);
-        const devolvidos = blocos.filter((b) => ISCAS_DE_TESTE.includes(b));
-        // A repetição com número já contado não soma (o contrato do `ChaveSchema.tentativa`).
-        if (numero !== undefined && numero <= this.tentativas) {
-          return { sucesso: false, tentativas: this.tentativas, devolvidos, estado: this.estado() };
+        // Um envio, SEM correção: o reenvio idêntico devolve o estado; outro, 409.
+        this.exigirPasso("POST", caminho, "chave", "revisao");
+        this.enviosDaChave += 1;
+        const corpo = c as unknown as CorpoDaChave;
+        if (this.chave) {
+          if (JSON.stringify(this.chave) !== JSON.stringify(corpo)) throw erro("POST", caminho, 409);
+          return { estado: this.estado() };
         }
-        this.tentativas += 1;
-        const sucesso = devolvidos.length === 0 && blocos.length === 3;
-        if (sucesso) {
-          this.chaveFormada = true;
-          this.passo = "revisao";
-        }
-        return { sucesso, tentativas: this.tentativas, devolvidos, estado: this.estado() };
+        if (this.etapa !== "revisao") throw erro("POST", caminho, 409);
+        this.chave = corpo;
+        this.passo = "revisao";
+        return { estado: this.estado() };
       }
       case "/jornal-escola/republicar": {
         this.exigirPasso("POST", caminho, "revisao");
@@ -306,17 +416,25 @@ export class RedacaoFalsa {
         this.passo = "comparativo";
         return this.estado();
       }
+      case "/jornal-escola/simulacao": {
+        this.exigirPasso("POST", caminho, "simulacao");
+        if (this.simulacao) throw erro("POST", caminho, 409);
+        this.simulacao = c as unknown as CorpoDaSimulacao;
+        this.passo = "transferencia";
+        return { estado: this.estado(), referencia: REFERENCIA_DE_TESTE };
+      }
+      case "/jornal-escola/transferencia": {
+        this.exigirPasso("POST", caminho, "transferencia");
+        if (this.transferencia) throw erro("POST", caminho, 409);
+        this.transferencia = c as unknown as CorpoDaTransferencia;
+        return { estado: this.estado() };
+      }
       case "/jornal-escola/concluir":
         this.exigirPasso("POST", caminho, "transferencia", "fim");
+        if (!this.transferencia) throw erro("POST", caminho, 409);
         this.passo = "fim";
         this.concluidaEm = "2026-09-27T11:50:00.000Z";
         return this.estado();
-      case "/evidencias/exp04ef1b/perguntas/p1/resposta":
-      case "/evidencias/exp04ef1b/perguntas/p2/resposta": {
-        const id = caminho.includes("/p1/") ? "p1" : "p2";
-        this.respostas[id] ??= String(c.alternativaId);
-        return { enviada: true };
-      }
       default:
         throw erro("POST", caminho, 404);
     }

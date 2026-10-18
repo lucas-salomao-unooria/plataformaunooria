@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { AlertBox } from "@edu/ui/ds";
 import type { CorpoDaPublicacao } from "../../lib/api";
 import { EREV, REDACAO } from "../../lib/textos";
-import type { IdDeNoticia, NoticiaPublica, Revisao, TipoDePista } from "../../lib/tipos";
+import type { IdDeNoticia, NoticiaPublica, Revisao, TipoDePista, Veredito } from "../../lib/tipos";
 import { Cabecalho } from "./cabecalho";
 import { MesaDeEdicao } from "./mesa-de-edicao";
 import { useMontagem } from "./montagem";
@@ -21,8 +21,16 @@ interface PropsComuns {
   aoFalharMidia: () => void;
 }
 
-/** E2/E3 — a 1ª edição: a mesa, a página em branco e o latch. */
-export function PrimeiraEdicao(props: PropsComuns) {
+/**
+ * E2/E3 — a 1ª edição: a mesa, a página em branco, o "confio / não confio" de
+ * cada pista aberta (só aqui, 3.0.0) e o latch.
+ */
+export function PrimeiraEdicao(
+  props: PropsComuns & {
+    julgamentos: ReadonlyMap<string, Veredito>;
+    aoJulgar: (noticiaId: IdDeNoticia, tipo: TipoDePista, veredito: Veredito) => Promise<boolean>;
+  },
+) {
   const ids = useMemo(() => new Set(props.noticias.map((n) => n.id)), [props.noticias]);
   const m = useMontagem({ sessaoId: props.sessaoId, edicao: 1, ids });
   return (
@@ -38,6 +46,8 @@ export function PrimeiraEdicao(props: PropsComuns) {
       aoMudarVagas={m.mudarVagas}
       aoRevelar={props.aoRevelar}
       abertaDeInicio={props.abertaDeInicio}
+      julgamentos={props.julgamentos}
+      aoJulgar={props.aoJulgar}
       aoFalharMidia={props.aoFalharMidia}
       aoPublicar={() => {
         if (!m.slots || !m.diagramacao) return;
@@ -56,7 +66,8 @@ export function PrimeiraEdicao(props: PropsComuns) {
  * já montada com as três da 1ª edição e o marcador que a Chave pôs em cada vaga
  * (`GET revisao`). A criança troca o que quiser — ou nada: republicar as três
  * da 1ª é caminho previsto (PDF §9, "se acertou tudo de primeira, o aluno
- * confirma") — e as pistas continuam abertas como estavam.
+ * confirma") — e as pistas continuam abertas como estavam, SEM julgamento: o
+ * "confio / não confio" é só da mesa da 1ª edição.
  */
 export function SegundaEdicao({
   primeira,

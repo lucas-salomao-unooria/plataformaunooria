@@ -3,6 +3,7 @@ import { describe, expect, test } from "vitest";
 import { NEWS_MEDIUMS, NEWSPAPER_LAYOUTS } from "@edu/ui/ds";
 import { ICONE_DA_PISTA, ICONE_DO_BLOCO, MEIO_PARA_MEDIUM, PECA_DO_MEIO } from "./meios";
 import { TELA_DO_PASSO } from "./regras";
+import { E5, E6, SIM, VEREDITO } from "./textos";
 import {
   ETAPAS,
   IDS_DE_NOTICIA,
@@ -63,6 +64,27 @@ describe("o vocabulário é o da api, na mesma ordem", () => {
     ["PASSOS_PEDIDOS", PASSOS_PEDIDOS],
   ] as const)("%s (regras/passos.ts)", (nome, lista) => {
     expect([...lista]).toEqual(listaDoArquivo(PASSOS_DA_API, nome));
+  });
+
+  /*
+   * O vocabulário do Canal A (3.0.0) é SÓ tipo na experiência — uma constante
+   * `["aprova", "reprova"]` seria o `LADO_CERTO` da api escrito no bundle. O
+   * que o cobre são os `Record` de rótulos de `textos.ts`, exaustivos pelo tipo:
+   * aqui eles se comparam com as listas da api (sem ordem, de propósito).
+   */
+  test.each([
+    ["VEREDITOS", VEREDITO],
+    ["LADOS_DA_CONDICAO", E5.lado],
+    ["SE_FALHAR", E5.opcoesSeFalhar],
+    ["REPETICOES", E5.opcoesRepeticao],
+    ["DECISOES_DA_SIMULACAO", SIM.decisao],
+    ["DECISOES_DA_TRANSFERENCIA", E6.decisao],
+  ] as const)("%s tem um rótulo para cada valor da api", (nome, rotulos) => {
+    expect(Object.keys(rotulos).sort()).toEqual(listaDoArquivo(VOCABULARIO, nome).sort());
+  });
+
+  test("as duas matérias da simulação têm os ids da api", () => {
+    expect(listaDoArquivo(VOCABULARIO, "IDS_DE_SIMULACAO")).toEqual(["s1", "s2"]);
   });
 
   test("os seis blocos da Chave têm ícone — e o bundle não guarda a lista dos pilares", () => {

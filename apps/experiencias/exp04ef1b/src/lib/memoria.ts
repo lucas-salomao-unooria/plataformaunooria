@@ -1,14 +1,15 @@
 /**
  * A memória DA ABA — o que a api não guarda e um F5 não pode apagar.
  *
- * A api guarda tudo o que VALE (as edições publicadas, as pistas abertas, o
- * motivo, a Chave). O que ela não guarda é a página EM MONTAGEM: as vagas antes
- * do latch. Sem isto, um F5 no meio da escolha devolveria a página vazia — e a
- * copy promete o contrário ("Suas matérias continuam salvas na mesa
- * editorial!"). Guarda também as alternativas já respondidas de P1/P2, para a
- * pergunta reabrir travada.
+ * A api guarda tudo o que VALE (as edições publicadas, as pistas abertas e
+ * julgadas, o motivo, a Chave montada, a simulação e a decisão do boato). O que
+ * ela não guarda é o que ainda está EM CURSO antes de cada envio único: as vagas
+ * antes do latch, a Chave antes do "Pronto", a simulação antes da segunda
+ * decisão e as pistas do boato antes de decidir. Sem isto, um F5 no meio
+ * devolveria tudo vazio — e a copy promete o contrário ("Suas matérias
+ * continuam salvas na mesa editorial!").
  *
- * **Só ids e números, nunca texto** (a missão não tem texto de criança), e
+ * **Só ids e escolhas fechadas, nunca texto** (a missão não tem texto de criança), e
  * **`sessionStorage`, nunca `localStorage`**: a máquina da escola é
  * compartilhada. A chave leva o `sessaoId`: "Zerar a turma" cria outra sessão,
  * e a página montada na rodada anterior não reaparece. Sem `sessionStorage`
@@ -20,8 +21,12 @@ export interface Memoria {
   vagas1?: unknown;
   /** As vagas da 2ª edição em montagem. */
   vagas2?: unknown;
-  /** As alternativas já enviadas de P1 e P2 (o id, opaco). */
-  respostas?: Record<string, string>;
+  /** A Chave em montagem: o bloco de cada vaga, o lado de cada cartão, o "se falhar", a repetição. */
+  chave?: unknown;
+  /** A simulação em curso, por matéria (`s1`, `s2`): as pistas marcadas na ordem e a decisão. */
+  simulacao?: unknown;
+  /** As pistas do boato abertas ANTES da decisão, na ordem. */
+  boato?: unknown;
 }
 
 function chave(sessaoId: string): string {
