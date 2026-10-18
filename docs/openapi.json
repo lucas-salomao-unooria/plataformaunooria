@@ -12394,6 +12394,38 @@
                                       "valida",
                                       "a_revisar"
                                     ]
+                                  },
+                                  "marcador": {
+                                    "type": "string",
+                                    "pattern": "^[A-Za-z0-9_.:-]{1,100}$"
+                                  },
+                                  "rotulo": {
+                                    "type": "string"
+                                  },
+                                  "acoes": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "rotulo": {
+                                          "type": "string"
+                                        },
+                                        "status": {
+                                          "type": "string",
+                                          "enum": [
+                                            "atingiu",
+                                            "em_processo",
+                                            "nao_atingiu"
+                                          ]
+                                        }
+                                      },
+                                      "required": [
+                                        "rotulo",
+                                        "status"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    "minItems": 2
                                   }
                                 },
                                 "required": [
@@ -12414,6 +12446,47 @@
                                 "em_processo",
                                 "nao_atingiu"
                               ]
+                            }
+                          },
+                          "origemDoResultado": {
+                            "type": "object",
+                            "additionalProperties": {
+                              "type": "object",
+                              "properties": {
+                                "marcador": {
+                                  "type": "string",
+                                  "pattern": "^[A-Za-z0-9_.:-]{1,100}$"
+                                },
+                                "rotulo": {
+                                  "type": "string"
+                                },
+                                "acoes": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "rotulo": {
+                                        "type": "string"
+                                      },
+                                      "status": {
+                                        "type": "string",
+                                        "enum": [
+                                          "atingiu",
+                                          "em_processo",
+                                          "nao_atingiu"
+                                        ]
+                                      }
+                                    },
+                                    "required": [
+                                      "rotulo",
+                                      "status"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  "minItems": 2
+                                }
+                              },
+                              "additionalProperties": false
                             }
                           }
                         },
@@ -12644,6 +12717,38 @@
                                       "valida",
                                       "a_revisar"
                                     ]
+                                  },
+                                  "marcador": {
+                                    "type": "string",
+                                    "pattern": "^[A-Za-z0-9_.:-]{1,100}$"
+                                  },
+                                  "rotulo": {
+                                    "type": "string"
+                                  },
+                                  "acoes": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "rotulo": {
+                                          "type": "string"
+                                        },
+                                        "status": {
+                                          "type": "string",
+                                          "enum": [
+                                            "atingiu",
+                                            "em_processo",
+                                            "nao_atingiu"
+                                          ]
+                                        }
+                                      },
+                                      "required": [
+                                        "rotulo",
+                                        "status"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    "minItems": 2
                                   }
                                 },
                                 "required": [
@@ -12664,6 +12769,47 @@
                                 "em_processo",
                                 "nao_atingiu"
                               ]
+                            }
+                          },
+                          "origemDoResultado": {
+                            "type": "object",
+                            "additionalProperties": {
+                              "type": "object",
+                              "properties": {
+                                "marcador": {
+                                  "type": "string",
+                                  "pattern": "^[A-Za-z0-9_.:-]{1,100}$"
+                                },
+                                "rotulo": {
+                                  "type": "string"
+                                },
+                                "acoes": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "rotulo": {
+                                        "type": "string"
+                                      },
+                                      "status": {
+                                        "type": "string",
+                                        "enum": [
+                                          "atingiu",
+                                          "em_processo",
+                                          "nao_atingiu"
+                                        ]
+                                      }
+                                    },
+                                    "required": [
+                                      "rotulo",
+                                      "status"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  "minItems": 2
+                                }
+                              },
+                              "additionalProperties": false
                             }
                           }
                         },
@@ -12890,6 +13036,38 @@
                                       "valida",
                                       "a_revisar"
                                     ]
+                                  },
+                                  "marcador": {
+                                    "type": "string",
+                                    "pattern": "^[A-Za-z0-9_.:-]{1,100}$"
+                                  },
+                                  "rotulo": {
+                                    "type": "string"
+                                  },
+                                  "acoes": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "rotulo": {
+                                          "type": "string"
+                                        },
+                                        "status": {
+                                          "type": "string",
+                                          "enum": [
+                                            "atingiu",
+                                            "em_processo",
+                                            "nao_atingiu"
+                                          ]
+                                        }
+                                      },
+                                      "required": [
+                                        "rotulo",
+                                        "status"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    "minItems": 2
                                   }
                                 },
                                 "required": [
@@ -12910,6 +13088,47 @@
                                 "em_processo",
                                 "nao_atingiu"
                               ]
+                            }
+                          },
+                          "origemDoResultado": {
+                            "type": "object",
+                            "additionalProperties": {
+                              "type": "object",
+                              "properties": {
+                                "marcador": {
+                                  "type": "string",
+                                  "pattern": "^[A-Za-z0-9_.:-]{1,100}$"
+                                },
+                                "rotulo": {
+                                  "type": "string"
+                                },
+                                "acoes": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "rotulo": {
+                                        "type": "string"
+                                      },
+                                      "status": {
+                                        "type": "string",
+                                        "enum": [
+                                          "atingiu",
+                                          "em_processo",
+                                          "nao_atingiu"
+                                        ]
+                                      }
+                                    },
+                                    "required": [
+                                      "rotulo",
+                                      "status"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  "minItems": 2
+                                }
+                              },
+                              "additionalProperties": false
                             }
                           }
                         },
@@ -13302,6 +13521,10 @@
                                       "type": "integer",
                                       "minimum": 0
                                     },
+                                    "emProcessoLimitado": {
+                                      "type": "integer",
+                                      "minimum": 0
+                                    },
                                     "naoAtingiu": {
                                       "type": "integer",
                                       "minimum": 0
@@ -13318,6 +13541,7 @@
                                   "required": [
                                     "atingiu",
                                     "emProcesso",
+                                    "emProcessoLimitado",
                                     "naoAtingiu",
                                     "naoAvaliado",
                                     "total"
@@ -13525,6 +13749,10 @@
                                             "type": "integer",
                                             "minimum": 0
                                           },
+                                          "emProcessoLimitado": {
+                                            "type": "integer",
+                                            "minimum": 0
+                                          },
                                           "naoAtingiu": {
                                             "type": "integer",
                                             "minimum": 0
@@ -13541,6 +13769,7 @@
                                         "required": [
                                           "atingiu",
                                           "emProcesso",
+                                          "emProcessoLimitado",
                                           "naoAtingiu",
                                           "naoAvaliado",
                                           "total"
@@ -13624,6 +13853,10 @@
                                             "type": "integer",
                                             "minimum": 0
                                           },
+                                          "emProcessoLimitado": {
+                                            "type": "integer",
+                                            "minimum": 0
+                                          },
                                           "naoAtingiu": {
                                             "type": "integer",
                                             "minimum": 0
@@ -13640,6 +13873,7 @@
                                         "required": [
                                           "atingiu",
                                           "emProcesso",
+                                          "emProcessoLimitado",
                                           "naoAtingiu",
                                           "naoAvaliado",
                                           "total"
@@ -13861,6 +14095,10 @@
                                             "type": "integer",
                                             "minimum": 0
                                           },
+                                          "emProcessoLimitado": {
+                                            "type": "integer",
+                                            "minimum": 0
+                                          },
                                           "naoAtingiu": {
                                             "type": "integer",
                                             "minimum": 0
@@ -13877,6 +14115,7 @@
                                         "required": [
                                           "atingiu",
                                           "emProcesso",
+                                          "emProcessoLimitado",
                                           "naoAtingiu",
                                           "naoAvaliado",
                                           "total"
@@ -13972,6 +14211,10 @@
                                                   "type": "integer",
                                                   "minimum": 0
                                                 },
+                                                "emProcessoLimitado": {
+                                                  "type": "integer",
+                                                  "minimum": 0
+                                                },
                                                 "naoAtingiu": {
                                                   "type": "integer",
                                                   "minimum": 0
@@ -13988,6 +14231,7 @@
                                               "required": [
                                                 "atingiu",
                                                 "emProcesso",
+                                                "emProcessoLimitado",
                                                 "naoAtingiu",
                                                 "naoAvaliado",
                                                 "total"
@@ -14093,6 +14337,10 @@
                                                   "type": "integer",
                                                   "minimum": 0
                                                 },
+                                                "emProcessoLimitado": {
+                                                  "type": "integer",
+                                                  "minimum": 0
+                                                },
                                                 "naoAtingiu": {
                                                   "type": "integer",
                                                   "minimum": 0
@@ -14109,6 +14357,7 @@
                                               "required": [
                                                 "atingiu",
                                                 "emProcesso",
+                                                "emProcessoLimitado",
                                                 "naoAtingiu",
                                                 "naoAvaliado",
                                                 "total"
@@ -16686,13 +16935,10 @@
                             },
                             "required": [
                               "id",
-                              "lado",
-                              "intensidade",
                               "caption",
                               "imageUrl",
                               "imageAlt",
                               "imageStatus",
-                              "categoria",
                               "handle",
                               "fallbackArt",
                               "dwellMs",
@@ -16801,6 +17047,1137 @@
           "professor"
         ],
         "x-acesso": "token"
+      }
+    },
+    "/runs/{id}/tarefas": {
+      "get": {
+        "operationId": "TarefasController_situacao",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "revelacaoConcluida": {
+                      "type": "boolean"
+                    },
+                    "raioX": {
+                      "type": "string",
+                      "enum": [
+                        "indisponivel",
+                        "aguardando",
+                        "pendente",
+                        "enviada",
+                        "encerrada"
+                      ]
+                    },
+                    "termos": {
+                      "type": "string",
+                      "enum": [
+                        "indisponivel",
+                        "aguardando",
+                        "pendente",
+                        "enviada",
+                        "encerrada"
+                      ]
+                    },
+                    "envio": {
+                      "type": "string",
+                      "enum": [
+                        "indisponivel",
+                        "aguardando",
+                        "pendente",
+                        "enviada",
+                        "encerrada"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "revelacaoConcluida",
+                    "raioX",
+                    "termos",
+                    "envio"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "runs"
+        ],
+        "summary": "A situação das três tarefas do Canal A e da revelação.",
+        "description": "É por ela que a experiência decide o desvio por fase: o Raio-x pendente antes da revelação, a revelação antes das tarefas, a tarefa pendente antes da reflexão.\n\n**Papéis:** estudante.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/runs/{id}/raio-x": {
+      "get": {
+        "operationId": "TarefasController_lerRaioX",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "situacao": {
+                      "type": "string",
+                      "enum": [
+                        "indisponivel",
+                        "aguardando",
+                        "pendente",
+                        "enviada",
+                        "encerrada"
+                      ]
+                    },
+                    "rotulos": {
+                      "type": "object",
+                      "properties": {
+                        "A": {
+                          "type": "string"
+                        },
+                        "B": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "A",
+                        "B"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "posts": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "author": {
+                            "type": "object",
+                            "properties": {
+                              "handle": {
+                                "type": "string"
+                              },
+                              "displayName": {
+                                "type": "string"
+                              },
+                              "verificado": {
+                                "type": "boolean"
+                              },
+                              "avatarSeed": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "handle",
+                              "displayName",
+                              "verificado",
+                              "avatarSeed"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "imageUrl": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "imageAlt": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "fallbackArt": {
+                            "type": "object",
+                            "properties": {
+                              "corFundo": {
+                                "type": "string"
+                              },
+                              "emojis": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "corFundo",
+                              "emojis"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "caption": {
+                            "type": "string"
+                          },
+                          "hashtags": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "likesCount": {
+                            "type": "integer"
+                          },
+                          "timestampLabel": {
+                            "type": "string"
+                          },
+                          "sugerido": {
+                            "type": "boolean"
+                          },
+                          "commentsPreview": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "handle": {
+                                  "type": "string"
+                                },
+                                "texto": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "handle",
+                                "texto"
+                              ],
+                              "additionalProperties": false
+                            }
+                          },
+                          "commentsTotal": {
+                            "type": "integer"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "author",
+                          "imageUrl",
+                          "imageAlt",
+                          "caption",
+                          "hashtags",
+                          "likesCount",
+                          "timestampLabel",
+                          "sugerido",
+                          "commentsPreview",
+                          "commentsTotal"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "situacao",
+                    "rotulos",
+                    "posts"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "runs"
+        ],
+        "summary": "O 6a Raio-x: os 6 posts que o estudante viu, sem o lado.",
+        "description": "Só da resposta à pergunta-chave até o fim da revelação, para quem teve feed com lado. A composição é gravada na primeira leitura.\n\n**Papéis:** estudante.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token"
+      },
+      "post": {
+        "operationId": "TarefasController_enviarRaioX",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "enviada": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "enviada"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "runs"
+        ],
+        "summary": "O envio do 6a Raio-x.",
+        "description": "Corrigido no servidor pelo lado gravado de cada post. Vale o primeiro envio. Enviar de novo é **409**.\n\n**Papéis:** estudante.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "respostas": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "string",
+                      "enum": [
+                        "A",
+                        "B",
+                        "neutro"
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "respostas"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/runs/{id}/raio-x/devolutiva": {
+      "get": {
+        "operationId": "TarefasController_devolutiva",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "posts": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "author": {
+                            "type": "object",
+                            "properties": {
+                              "handle": {
+                                "type": "string"
+                              },
+                              "displayName": {
+                                "type": "string"
+                              },
+                              "verificado": {
+                                "type": "boolean"
+                              },
+                              "avatarSeed": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "handle",
+                              "displayName",
+                              "verificado",
+                              "avatarSeed"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "imageUrl": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "imageAlt": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "fallbackArt": {
+                            "type": "object",
+                            "properties": {
+                              "corFundo": {
+                                "type": "string"
+                              },
+                              "emojis": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "corFundo",
+                              "emojis"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "caption": {
+                            "type": "string"
+                          },
+                          "hashtags": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "likesCount": {
+                            "type": "integer"
+                          },
+                          "timestampLabel": {
+                            "type": "string"
+                          },
+                          "sugerido": {
+                            "type": "boolean"
+                          },
+                          "commentsPreview": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "handle": {
+                                  "type": "string"
+                                },
+                                "texto": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "handle",
+                                "texto"
+                              ],
+                              "additionalProperties": false
+                            }
+                          },
+                          "commentsTotal": {
+                            "type": "integer"
+                          },
+                          "origem": {
+                            "type": "string",
+                            "enum": [
+                              "A",
+                              "B",
+                              "neutro"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "author",
+                          "imageUrl",
+                          "imageAlt",
+                          "caption",
+                          "hashtags",
+                          "likesCount",
+                          "timestampLabel",
+                          "sugerido",
+                          "commentsPreview",
+                          "commentsTotal",
+                          "origem"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "posts"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "runs"
+        ],
+        "summary": "A ponte da revelação: de onde veio cada post do Raio-x.",
+        "description": "Só da explicabilidade em diante, e só para quem enviou o 6a. Sem certo ou errado, sem contagem.\n\n**Papéis:** estudante.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/runs/{id}/revelacao/concluida": {
+      "post": {
+        "operationId": "TarefasController_concluirRevelacao",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "runs"
+        ],
+        "summary": "O estudante chegou à última tela da revelação.",
+        "description": "O toque em \"Ver meu relatório\". Abre o 6b e o 6c e fecha o Raio-x. Idempotente.\n\n**Papéis:** estudante.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/runs/{id}/termos": {
+      "get": {
+        "operationId": "TarefasController_lerTermos",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "situacao": {
+                      "type": "string",
+                      "enum": [
+                        "indisponivel",
+                        "aguardando",
+                        "pendente",
+                        "enviada",
+                        "encerrada"
+                      ]
+                    },
+                    "clausulas": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "texto": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "texto"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "efeitos": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "texto": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "texto"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "mudancas": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "texto": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "texto"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "situacao",
+                    "clausulas",
+                    "efeitos",
+                    "mudancas"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "runs"
+        ],
+        "summary": "O 6b: as 5 cláusulas, os efeitos e as mudanças, sem gabarito.",
+        "description": "Só depois do cinza, para quem teve feed com lado e terminou a revelação.\n\n**Papéis:** estudante.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token"
+      },
+      "post": {
+        "operationId": "TarefasController_enviarTermos",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "enviada": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "enviada"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "runs"
+        ],
+        "summary": "O envio do 6b.",
+        "description": "As regras marcadas, o efeito de cada uma e a mudança. Vale o primeiro envio.\n\n**Papéis:** estudante.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "marcadas": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "c1",
+                        "c2",
+                        "c3",
+                        "c4",
+                        "c5"
+                      ]
+                    },
+                    "maxItems": 5
+                  },
+                  "efeitos": {
+                    "type": "object",
+                    "required": [
+                      "c1",
+                      "c2",
+                      "c3",
+                      "c4",
+                      "c5"
+                    ],
+                    "properties": {
+                      "c1": {
+                        "type": "string",
+                        "enum": [
+                          "e1",
+                          "e2",
+                          "e3"
+                        ]
+                      },
+                      "c2": {
+                        "type": "string",
+                        "enum": [
+                          "e1",
+                          "e2",
+                          "e3"
+                        ]
+                      },
+                      "c3": {
+                        "type": "string",
+                        "enum": [
+                          "e1",
+                          "e2",
+                          "e3"
+                        ]
+                      },
+                      "c4": {
+                        "type": "string",
+                        "enum": [
+                          "e1",
+                          "e2",
+                          "e3"
+                        ]
+                      },
+                      "c5": {
+                        "type": "string",
+                        "enum": [
+                          "e1",
+                          "e2",
+                          "e3"
+                        ]
+                      }
+                    },
+                    "additionalProperties": false
+                  },
+                  "mudanca": {
+                    "type": "string",
+                    "enum": [
+                      "controle",
+                      "forma",
+                      "aceitacao"
+                    ]
+                  }
+                },
+                "required": [
+                  "marcadas",
+                  "efeitos",
+                  "mudanca"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/runs/{id}/envio": {
+      "get": {
+        "operationId": "TarefasController_lerEnvio",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "situacao": {
+                      "type": "string",
+                      "enum": [
+                        "indisponivel",
+                        "aguardando",
+                        "pendente",
+                        "enviada",
+                        "encerrada"
+                      ]
+                    },
+                    "posts": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "author": {
+                            "type": "object",
+                            "properties": {
+                              "handle": {
+                                "type": "string"
+                              },
+                              "displayName": {
+                                "type": "string"
+                              },
+                              "verificado": {
+                                "type": "boolean"
+                              },
+                              "avatarSeed": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "handle",
+                              "displayName",
+                              "verificado",
+                              "avatarSeed"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "imageUrl": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "imageAlt": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "fallbackArt": {
+                            "type": "object",
+                            "properties": {
+                              "corFundo": {
+                                "type": "string"
+                              },
+                              "emojis": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "corFundo",
+                              "emojis"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "caption": {
+                            "type": "string"
+                          },
+                          "hashtags": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "likesCount": {
+                            "type": "integer"
+                          },
+                          "timestampLabel": {
+                            "type": "string"
+                          },
+                          "sugerido": {
+                            "type": "boolean"
+                          },
+                          "commentsPreview": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "handle": {
+                                  "type": "string"
+                                },
+                                "texto": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "handle",
+                                "texto"
+                              ],
+                              "additionalProperties": false
+                            }
+                          },
+                          "commentsTotal": {
+                            "type": "integer"
+                          },
+                          "bio": {
+                            "type": "string",
+                            "nullable": true
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "author",
+                          "imageUrl",
+                          "imageAlt",
+                          "caption",
+                          "hashtags",
+                          "likesCount",
+                          "timestampLabel",
+                          "sugerido",
+                          "commentsPreview",
+                          "commentsTotal",
+                          "bio"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "mensagens": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "texto": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "texto"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "situacao",
+                    "posts",
+                    "mensagens"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "runs"
+        ],
+        "summary": "O 6c: os 9 posts (sem lado, com a descrição do perfil) e as 4 mensagens.",
+        "description": "Só depois do cinza, para quem teve feed com lado e terminou a revelação.\n\n**Papéis:** estudante.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token"
+      },
+      "post": {
+        "operationId": "TarefasController_enviarEnvio",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "enviada": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "enviada"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "runs"
+        ],
+        "summary": "O envio do 6c.",
+        "description": "Até 3 posts, uma mensagem e uma frase opcional (até 140 caracteres, só o professor lê, não entra no nível). Vale o primeiro envio.\n\n**Papéis:** estudante.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "posts": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "minItems": 1,
+                    "maxItems": 3
+                  },
+                  "mensagem": {
+                    "type": "string",
+                    "enum": [
+                      "m1",
+                      "m2",
+                      "m3",
+                      "m4"
+                    ]
+                  },
+                  "frase": {
+                    "type": "string",
+                    "maxLength": 140,
+                    "nullable": true
+                  }
+                },
+                "required": [
+                  "posts",
+                  "mensagem"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
       }
     },
     "/posts/{id}/comentarios": {
@@ -18055,6 +19432,38 @@
                           },
                           "publicou": {
                             "type": "boolean"
+                          },
+                          "canalA": {
+                            "type": "object",
+                            "properties": {
+                              "revelacaoConcluida": {
+                                "type": "boolean"
+                              },
+                              "raioX": {
+                                "type": "boolean"
+                              },
+                              "termos": {
+                                "type": "boolean"
+                              },
+                              "envio": {
+                                "type": "boolean"
+                              },
+                              "comFrase": {
+                                "type": "boolean"
+                              },
+                              "refeita": {
+                                "type": "boolean"
+                              }
+                            },
+                            "required": [
+                              "revelacaoConcluida",
+                              "raioX",
+                              "termos",
+                              "envio",
+                              "comFrase",
+                              "refeita"
+                            ],
+                            "additionalProperties": false
                           }
                         },
                         "required": [
@@ -18081,7 +19490,8 @@
                           "alertaDeOcioso",
                           "temDossie",
                           "caracteresDaReflexao",
-                          "publicou"
+                          "publicou",
+                          "canalA"
                         ],
                         "additionalProperties": false
                       }
@@ -18155,6 +19565,10 @@
                         "salvosDoOutroLado": {
                           "type": "integer",
                           "minimum": 0
+                        },
+                        "naRevelacao": {
+                          "type": "integer",
+                          "minimum": 0
                         }
                       },
                       "required": [
@@ -18170,7 +19584,8 @@
                         "concluiram",
                         "ociosos",
                         "salvosNaTurma",
-                        "salvosDoOutroLado"
+                        "salvosDoOutroLado",
+                        "naRevelacao"
                       ],
                       "additionalProperties": false
                     },
@@ -18301,6 +19716,94 @@
                         "postouNoApp": {
                           "type": "string",
                           "nullable": true
+                        },
+                        "canalA": {
+                          "type": "object",
+                          "properties": {
+                            "revelacaoConcluida": {
+                              "type": "boolean"
+                            },
+                            "raioX": {
+                              "type": "boolean"
+                            },
+                            "termos": {
+                              "type": "boolean"
+                            },
+                            "envio": {
+                              "type": "boolean"
+                            },
+                            "refeita": {
+                              "type": "boolean"
+                            },
+                            "fraseDoEnvio": {
+                              "type": "string",
+                              "nullable": true
+                            },
+                            "leitura": {
+                              "type": "object",
+                              "properties": {
+                                "resultado": {
+                                  "type": "string",
+                                  "enum": [
+                                    "nivel",
+                                    "sem_marca",
+                                    "falha"
+                                  ],
+                                  "nullable": true
+                                },
+                                "nivel": {
+                                  "type": "string",
+                                  "enum": [
+                                    "atingiu",
+                                    "em_processo",
+                                    "nao_atingiu"
+                                  ],
+                                  "nullable": true
+                                },
+                                "motivo": {
+                                  "type": "string",
+                                  "nullable": true
+                                },
+                                "tentativas": {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 3
+                                },
+                                "lidaEm": {
+                                  "type": "string",
+                                  "nullable": true
+                                }
+                              },
+                              "required": [
+                                "resultado",
+                                "nivel",
+                                "motivo",
+                                "tentativas",
+                                "lidaEm"
+                              ],
+                              "additionalProperties": false,
+                              "nullable": true
+                            },
+                            "textoLido": {
+                              "type": "string",
+                              "nullable": true
+                            },
+                            "textoLidoApagado": {
+                              "type": "boolean"
+                            }
+                          },
+                          "required": [
+                            "revelacaoConcluida",
+                            "raioX",
+                            "termos",
+                            "envio",
+                            "refeita",
+                            "fraseDoEnvio",
+                            "leitura",
+                            "textoLido",
+                            "textoLidoApagado"
+                          ],
+                          "additionalProperties": false
                         }
                       },
                       "required": [
@@ -18313,7 +19816,8 @@
                         "respondeu",
                         "respondeuRotulo",
                         "reflexao",
-                        "postouNoApp"
+                        "postouNoApp",
+                        "canalA"
                       ],
                       "additionalProperties": false
                     },
@@ -23812,6 +25316,12 @@
                             "bravo"
                           ],
                           "additionalProperties": false
+                        },
+                        "ofertaSaude": {
+                          "type": "boolean"
+                        },
+                        "registroConcluido": {
+                          "type": "boolean"
                         }
                       },
                       "required": [
@@ -23823,7 +25333,9 @@
                         "tentativa",
                         "rodadaDaTurma",
                         "alocacao",
-                        "justificativas"
+                        "justificativas",
+                        "ofertaSaude",
+                        "registroConcluido"
                       ],
                       "additionalProperties": false
                     },
@@ -23856,6 +25368,9 @@
                         },
                         "agora": {
                           "type": "string"
+                        },
+                        "fechamentoAberto": {
+                          "type": "boolean"
                         }
                       },
                       "required": [
@@ -23865,7 +25380,8 @@
                         "encerradoEm",
                         "pivoSeg",
                         "pivoMin",
-                        "agora"
+                        "agora",
+                        "fechamentoAberto"
                       ],
                       "additionalProperties": false
                     },
@@ -24767,6 +26283,9 @@
                         },
                         "agora": {
                           "type": "string"
+                        },
+                        "fechamentoAberto": {
+                          "type": "boolean"
                         }
                       },
                       "required": [
@@ -24776,7 +26295,8 @@
                         "encerradoEm",
                         "pivoSeg",
                         "pivoMin",
-                        "agora"
+                        "agora",
+                        "fechamentoAberto"
                       ],
                       "additionalProperties": false
                     },
@@ -25392,6 +26912,9 @@
                       ],
                       "nullable": true
                     },
+                    "abrirEnvio": {
+                      "type": "boolean"
+                    },
                     "sessao": {
                       "type": "object",
                       "properties": {
@@ -25460,6 +26983,12 @@
                             "bravo"
                           ],
                           "additionalProperties": false
+                        },
+                        "ofertaSaude": {
+                          "type": "boolean"
+                        },
+                        "registroConcluido": {
+                          "type": "boolean"
                         }
                       },
                       "required": [
@@ -25471,7 +27000,9 @@
                         "tentativa",
                         "rodadaDaTurma",
                         "alocacao",
-                        "justificativas"
+                        "justificativas",
+                        "ofertaSaude",
+                        "registroConcluido"
                       ],
                       "additionalProperties": false
                     },
@@ -25504,6 +27035,9 @@
                         },
                         "agora": {
                           "type": "string"
+                        },
+                        "fechamentoAberto": {
+                          "type": "boolean"
                         }
                       },
                       "required": [
@@ -25513,7 +27047,8 @@
                         "encerradoEm",
                         "pivoSeg",
                         "pivoMin",
-                        "agora"
+                        "agora",
+                        "fechamentoAberto"
                       ],
                       "additionalProperties": false
                     },
@@ -25750,6 +27285,7 @@
                   "required": [
                     "texto",
                     "anexo",
+                    "abrirEnvio",
                     "sessao",
                     "relogio",
                     "mapa",
@@ -25879,6 +27415,12 @@
                             "bravo"
                           ],
                           "additionalProperties": false
+                        },
+                        "ofertaSaude": {
+                          "type": "boolean"
+                        },
+                        "registroConcluido": {
+                          "type": "boolean"
                         }
                       },
                       "required": [
@@ -25890,7 +27432,9 @@
                         "tentativa",
                         "rodadaDaTurma",
                         "alocacao",
-                        "justificativas"
+                        "justificativas",
+                        "ofertaSaude",
+                        "registroConcluido"
                       ],
                       "additionalProperties": false
                     },
@@ -26120,7 +27664,7 @@
           "unoogpt"
         ],
         "summary": "Carrega fontes no modelo pelo painel.",
-        "description": "`PUT` porque é atribuição de conjunto. As camadas ACUMULAM.\n\n**Papéis:** estudante.",
+        "description": "`PUT` porque é atribuição de conjunto. As camadas ACUMULAM.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- Só com o relógio da turma ABERTO e a tentativa em curso, como uma pergunta: antes da largada `relogio-nao-comecou`, depois do fim `relogio-encerrado`, depois de enviar `sessao-encerrada` (todos **409**). Sem isso, chamar a rota direto fabricava o \"pediu dados\" depois da investigação.",
         "security": [
           {
             "token-da-plataforma": []
@@ -26246,6 +27790,12 @@
                             "bravo"
                           ],
                           "additionalProperties": false
+                        },
+                        "ofertaSaude": {
+                          "type": "boolean"
+                        },
+                        "registroConcluido": {
+                          "type": "boolean"
                         }
                       },
                       "required": [
@@ -26257,7 +27807,9 @@
                         "tentativa",
                         "rodadaDaTurma",
                         "alocacao",
-                        "justificativas"
+                        "justificativas",
+                        "ofertaSaude",
+                        "registroConcluido"
                       ],
                       "additionalProperties": false
                     },
@@ -26413,6 +27965,245 @@
             }
           }
         }
+      }
+    },
+    "/unoogpt/mandar": {
+      "post": {
+        "operationId": "UnoogptController_mandar",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "concluido": {
+                      "type": "boolean"
+                    },
+                    "leitura": {
+                      "type": "object",
+                      "properties": {
+                        "enviada": {
+                          "type": "boolean"
+                        },
+                        "tabela": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "bairro": {
+                                "type": "string"
+                              },
+                              "nome": {
+                                "type": "string"
+                              },
+                              "min": {
+                                "type": "number"
+                              },
+                              "esperado": {
+                                "type": "number"
+                              },
+                              "max": {
+                                "type": "number"
+                              }
+                            },
+                            "required": [
+                              "bairro",
+                              "nome",
+                              "min",
+                              "esperado",
+                              "max"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "pares": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "pergunta": {
+                                "type": "string"
+                              },
+                              "opcoes": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "id": {
+                                      "type": "string"
+                                    },
+                                    "texto": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "id",
+                                    "texto"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "pergunta",
+                              "opcoes"
+                            ],
+                            "additionalProperties": false
+                          }
+                        }
+                      },
+                      "required": [
+                        "enviada",
+                        "tabela",
+                        "pares"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true
+                    },
+                    "fontes": {
+                      "type": "object",
+                      "properties": {
+                        "enviada": {
+                          "type": "boolean"
+                        },
+                        "cartoes": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "texto": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "texto"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "perguntas": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "texto": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "texto"
+                            ],
+                            "additionalProperties": false
+                          }
+                        }
+                      },
+                      "required": [
+                        "enviada",
+                        "cartoes",
+                        "perguntas"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true
+                    },
+                    "alerta": {
+                      "type": "object",
+                      "properties": {
+                        "enviada": {
+                          "type": "boolean"
+                        },
+                        "enunciado": {
+                          "type": "string"
+                        },
+                        "partes": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "titulo": {
+                                "type": "string"
+                              },
+                              "opcoes": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "id": {
+                                      "type": "string"
+                                    },
+                                    "texto": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "id",
+                                    "texto"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "titulo",
+                              "opcoes"
+                            ],
+                            "additionalProperties": false
+                          }
+                        }
+                      },
+                      "required": [
+                        "enviada",
+                        "enunciado",
+                        "partes"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "concluido",
+                    "leitura",
+                    "fontes",
+                    "alerta"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "unoogpt"
+        ],
+        "summary": "Manda as equipes: congela a saída e abre o registro da operação.",
+        "description": "Exige justificativa de **cada equipe com destino** — sem isso, `falta-justificar`; uma equipe na base é permitido, nenhuma com destino é `sem-destino`. A conversa com o Cientista NÃO manda: ela abre a tela deste botão (ADR-172). Devolve o REGISTRO DA OPERAÇÃO — o desfecho fica retido até ele (`GET /unoogpt/resultado` responde `registro-pendente`).\n\n**Papéis:** estudante.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token"
       }
     },
     "/unoogpt/simular": {
@@ -26863,8 +28654,8 @@
         "tags": [
           "unoogpt"
         ],
-        "summary": "Enfrenta a tempestade e fecha a tentativa.",
-        "description": "Exige justificativa de **cada equipe com destino** — sem isso, `falta-justificar`. Devolve o mesmo que `GET /unoogpt/resultado`.\n\n**Papéis:** estudante.",
+        "summary": "Alias de `POST /mandar` para o cliente anterior ao registro (até a 1.4.x).",
+        "description": "Manda as equipes, fecha o registro da operação SEM tarefa e sem marca, e devolve o resultado como antes. Quem pula o registro por aqui só deixa de ser avaliado nele. Mesmo portão de `POST /mandar`.\n\n**Papéis:** estudante.",
         "security": [
           {
             "token-da-plataforma": []
@@ -26874,6 +28665,2268 @@
           "estudante"
         ],
         "x-acesso": "token"
+      }
+    },
+    "/unoogpt/saude": {
+      "get": {
+        "operationId": "UnoogptController_saude",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ofertada": {
+                      "type": "boolean"
+                    },
+                    "respondida": {
+                      "type": "boolean"
+                    },
+                    "texto": {
+                      "type": "string"
+                    },
+                    "opcoes": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "texto": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "texto"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "entrega": {
+                      "type": "object",
+                      "properties": {
+                        "contagem": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "bairro": {
+                                "type": "string"
+                              },
+                              "pessoas": {
+                                "type": "integer"
+                              }
+                            },
+                            "required": [
+                              "bairro",
+                              "pessoas"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "nullable": true
+                        },
+                        "aviso": {
+                          "type": "string",
+                          "nullable": true
+                        }
+                      },
+                      "required": [
+                        "contagem",
+                        "aviso"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "ofertada",
+                    "respondida",
+                    "texto",
+                    "opcoes",
+                    "entrega"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "unoogpt"
+        ],
+        "summary": "A ligação da Secretaria de Saúde: o estado do cartão.",
+        "description": "Sem gabarito: `entrega` é a consequência do pedido (a contagem; e, a quem pediu lista, o aviso de que os nomes ficaram no sistema).\n\n**Papéis:** estudante.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token"
+      },
+      "post": {
+        "operationId": "UnoogptController_responderSaude",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ofertada": {
+                      "type": "boolean"
+                    },
+                    "respondida": {
+                      "type": "boolean"
+                    },
+                    "texto": {
+                      "type": "string"
+                    },
+                    "opcoes": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "texto": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "texto"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "entrega": {
+                      "type": "object",
+                      "properties": {
+                        "contagem": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "bairro": {
+                                "type": "string"
+                              },
+                              "pessoas": {
+                                "type": "integer"
+                              }
+                            },
+                            "required": [
+                              "bairro",
+                              "pessoas"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "nullable": true
+                        },
+                        "aviso": {
+                          "type": "string",
+                          "nullable": true
+                        }
+                      },
+                      "required": [
+                        "contagem",
+                        "aviso"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "ofertada",
+                    "respondida",
+                    "texto",
+                    "opcoes",
+                    "entrega"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "unoogpt"
+        ],
+        "summary": "Responde à ligação da Saúde.",
+        "description": "`opcao: null` = fechou o cartão sem responder (sem marca). Vale a primeira resposta da tentativa; a marca, a primeira da rodada da turma.\n\n**Papéis:** estudante.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "opcao": {
+                    "type": "string",
+                    "enum": [
+                      "contagem",
+                      "lista-completa",
+                      "lista-apagada",
+                      "nada"
+                    ],
+                    "nullable": true
+                  }
+                },
+                "required": [
+                  "opcao"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/unoogpt/saude/abrir": {
+      "post": {
+        "operationId": "UnoogptController_abrirSaude",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ofertada": {
+                      "type": "boolean"
+                    },
+                    "respondida": {
+                      "type": "boolean"
+                    },
+                    "texto": {
+                      "type": "string"
+                    },
+                    "opcoes": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "texto": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "texto"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "entrega": {
+                      "type": "object",
+                      "properties": {
+                        "contagem": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "bairro": {
+                                "type": "string"
+                              },
+                              "pessoas": {
+                                "type": "integer"
+                              }
+                            },
+                            "required": [
+                              "bairro",
+                              "pessoas"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "nullable": true
+                        },
+                        "aviso": {
+                          "type": "string",
+                          "nullable": true
+                        }
+                      },
+                      "required": [
+                        "contagem",
+                        "aviso"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "ofertada",
+                    "respondida",
+                    "texto",
+                    "opcoes",
+                    "entrega"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "unoogpt"
+        ],
+        "summary": "Faz a ligação da Saúde aparecer (ao abrir a decisão).",
+        "description": "O primeiro destino escolhido também a faz aparecer, no servidor. Uma vez por tentativa; só na investigação.\n\n**Papéis:** estudante.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/unoogpt/registro": {
+      "get": {
+        "operationId": "UnoogptController_registro",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "concluido": {
+                      "type": "boolean"
+                    },
+                    "leitura": {
+                      "type": "object",
+                      "properties": {
+                        "enviada": {
+                          "type": "boolean"
+                        },
+                        "tabela": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "bairro": {
+                                "type": "string"
+                              },
+                              "nome": {
+                                "type": "string"
+                              },
+                              "min": {
+                                "type": "number"
+                              },
+                              "esperado": {
+                                "type": "number"
+                              },
+                              "max": {
+                                "type": "number"
+                              }
+                            },
+                            "required": [
+                              "bairro",
+                              "nome",
+                              "min",
+                              "esperado",
+                              "max"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "pares": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "pergunta": {
+                                "type": "string"
+                              },
+                              "opcoes": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "id": {
+                                      "type": "string"
+                                    },
+                                    "texto": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "id",
+                                    "texto"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "pergunta",
+                              "opcoes"
+                            ],
+                            "additionalProperties": false
+                          }
+                        }
+                      },
+                      "required": [
+                        "enviada",
+                        "tabela",
+                        "pares"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true
+                    },
+                    "fontes": {
+                      "type": "object",
+                      "properties": {
+                        "enviada": {
+                          "type": "boolean"
+                        },
+                        "cartoes": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "texto": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "texto"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "perguntas": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "texto": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "texto"
+                            ],
+                            "additionalProperties": false
+                          }
+                        }
+                      },
+                      "required": [
+                        "enviada",
+                        "cartoes",
+                        "perguntas"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true
+                    },
+                    "alerta": {
+                      "type": "object",
+                      "properties": {
+                        "enviada": {
+                          "type": "boolean"
+                        },
+                        "enunciado": {
+                          "type": "string"
+                        },
+                        "partes": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "titulo": {
+                                "type": "string"
+                              },
+                              "opcoes": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "id": {
+                                      "type": "string"
+                                    },
+                                    "texto": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "id",
+                                    "texto"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "titulo",
+                              "opcoes"
+                            ],
+                            "additionalProperties": false
+                          }
+                        }
+                      },
+                      "required": [
+                        "enviada",
+                        "enunciado",
+                        "partes"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "concluido",
+                    "leitura",
+                    "fontes",
+                    "alerta"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "unoogpt"
+        ],
+        "summary": "O registro da operação: a leitura dos dados, as fontes e o alerta.",
+        "description": "Montado no servidor e gravado (um F5 mostra o mesmo). Sem relógio e sem gabarito. Cada cartão é `null` quando não se aplica.\n\n**Papéis:** estudante.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/unoogpt/registro/leitura": {
+      "post": {
+        "operationId": "UnoogptController_registroLeitura",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "concluido": {
+                      "type": "boolean"
+                    },
+                    "leitura": {
+                      "type": "object",
+                      "properties": {
+                        "enviada": {
+                          "type": "boolean"
+                        },
+                        "tabela": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "bairro": {
+                                "type": "string"
+                              },
+                              "nome": {
+                                "type": "string"
+                              },
+                              "min": {
+                                "type": "number"
+                              },
+                              "esperado": {
+                                "type": "number"
+                              },
+                              "max": {
+                                "type": "number"
+                              }
+                            },
+                            "required": [
+                              "bairro",
+                              "nome",
+                              "min",
+                              "esperado",
+                              "max"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "pares": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "pergunta": {
+                                "type": "string"
+                              },
+                              "opcoes": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "id": {
+                                      "type": "string"
+                                    },
+                                    "texto": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "id",
+                                    "texto"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "pergunta",
+                              "opcoes"
+                            ],
+                            "additionalProperties": false
+                          }
+                        }
+                      },
+                      "required": [
+                        "enviada",
+                        "tabela",
+                        "pares"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true
+                    },
+                    "fontes": {
+                      "type": "object",
+                      "properties": {
+                        "enviada": {
+                          "type": "boolean"
+                        },
+                        "cartoes": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "texto": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "texto"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "perguntas": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "texto": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "texto"
+                            ],
+                            "additionalProperties": false
+                          }
+                        }
+                      },
+                      "required": [
+                        "enviada",
+                        "cartoes",
+                        "perguntas"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true
+                    },
+                    "alerta": {
+                      "type": "object",
+                      "properties": {
+                        "enviada": {
+                          "type": "boolean"
+                        },
+                        "enunciado": {
+                          "type": "string"
+                        },
+                        "partes": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "titulo": {
+                                "type": "string"
+                              },
+                              "opcoes": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "id": {
+                                      "type": "string"
+                                    },
+                                    "texto": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "id",
+                                    "texto"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "titulo",
+                              "opcoes"
+                            ],
+                            "additionalProperties": false
+                          }
+                        }
+                      },
+                      "required": [
+                        "enviada",
+                        "enunciado",
+                        "partes"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "concluido",
+                    "leitura",
+                    "fontes",
+                    "alerta"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "unoogpt"
+        ],
+        "summary": "Responde à leitura dos dados (dois pares).",
+        "description": "**Papéis:** estudante.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "respostas": {
+                    "type": "object",
+                    "properties": {
+                      "p1": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 40
+                      },
+                      "p2": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 40
+                      }
+                    },
+                    "required": [
+                      "p1",
+                      "p2"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "respostas"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/unoogpt/registro/fontes": {
+      "post": {
+        "operationId": "UnoogptController_registroFontes",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "concluido": {
+                      "type": "boolean"
+                    },
+                    "leitura": {
+                      "type": "object",
+                      "properties": {
+                        "enviada": {
+                          "type": "boolean"
+                        },
+                        "tabela": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "bairro": {
+                                "type": "string"
+                              },
+                              "nome": {
+                                "type": "string"
+                              },
+                              "min": {
+                                "type": "number"
+                              },
+                              "esperado": {
+                                "type": "number"
+                              },
+                              "max": {
+                                "type": "number"
+                              }
+                            },
+                            "required": [
+                              "bairro",
+                              "nome",
+                              "min",
+                              "esperado",
+                              "max"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "pares": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "pergunta": {
+                                "type": "string"
+                              },
+                              "opcoes": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "id": {
+                                      "type": "string"
+                                    },
+                                    "texto": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "id",
+                                    "texto"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "pergunta",
+                              "opcoes"
+                            ],
+                            "additionalProperties": false
+                          }
+                        }
+                      },
+                      "required": [
+                        "enviada",
+                        "tabela",
+                        "pares"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true
+                    },
+                    "fontes": {
+                      "type": "object",
+                      "properties": {
+                        "enviada": {
+                          "type": "boolean"
+                        },
+                        "cartoes": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "texto": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "texto"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "perguntas": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "texto": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "texto"
+                            ],
+                            "additionalProperties": false
+                          }
+                        }
+                      },
+                      "required": [
+                        "enviada",
+                        "cartoes",
+                        "perguntas"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true
+                    },
+                    "alerta": {
+                      "type": "object",
+                      "properties": {
+                        "enviada": {
+                          "type": "boolean"
+                        },
+                        "enunciado": {
+                          "type": "string"
+                        },
+                        "partes": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "titulo": {
+                                "type": "string"
+                              },
+                              "opcoes": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "id": {
+                                      "type": "string"
+                                    },
+                                    "texto": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "id",
+                                    "texto"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "titulo",
+                              "opcoes"
+                            ],
+                            "additionalProperties": false
+                          }
+                        }
+                      },
+                      "required": [
+                        "enviada",
+                        "enunciado",
+                        "partes"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "concluido",
+                    "leitura",
+                    "fontes",
+                    "alerta"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "unoogpt"
+        ],
+        "summary": "Responde ao que precisaria saber de cada fonte (dois cartões).",
+        "description": "**Papéis:** estudante.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "respostas": {
+                    "type": "object",
+                    "properties": {
+                      "c1": {
+                        "type": "string",
+                        "enum": [
+                          "quando",
+                          "conta",
+                          "enxerga",
+                          "quem",
+                          "nada"
+                        ]
+                      },
+                      "c2": {
+                        "type": "string",
+                        "enum": [
+                          "quando",
+                          "conta",
+                          "enxerga",
+                          "quem",
+                          "nada"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "c1",
+                      "c2"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "respostas"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/unoogpt/registro/alerta": {
+      "post": {
+        "operationId": "UnoogptController_registroAlerta",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "concluido": {
+                      "type": "boolean"
+                    },
+                    "leitura": {
+                      "type": "object",
+                      "properties": {
+                        "enviada": {
+                          "type": "boolean"
+                        },
+                        "tabela": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "bairro": {
+                                "type": "string"
+                              },
+                              "nome": {
+                                "type": "string"
+                              },
+                              "min": {
+                                "type": "number"
+                              },
+                              "esperado": {
+                                "type": "number"
+                              },
+                              "max": {
+                                "type": "number"
+                              }
+                            },
+                            "required": [
+                              "bairro",
+                              "nome",
+                              "min",
+                              "esperado",
+                              "max"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "pares": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "pergunta": {
+                                "type": "string"
+                              },
+                              "opcoes": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "id": {
+                                      "type": "string"
+                                    },
+                                    "texto": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "id",
+                                    "texto"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "pergunta",
+                              "opcoes"
+                            ],
+                            "additionalProperties": false
+                          }
+                        }
+                      },
+                      "required": [
+                        "enviada",
+                        "tabela",
+                        "pares"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true
+                    },
+                    "fontes": {
+                      "type": "object",
+                      "properties": {
+                        "enviada": {
+                          "type": "boolean"
+                        },
+                        "cartoes": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "texto": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "texto"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "perguntas": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "texto": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "texto"
+                            ],
+                            "additionalProperties": false
+                          }
+                        }
+                      },
+                      "required": [
+                        "enviada",
+                        "cartoes",
+                        "perguntas"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true
+                    },
+                    "alerta": {
+                      "type": "object",
+                      "properties": {
+                        "enviada": {
+                          "type": "boolean"
+                        },
+                        "enunciado": {
+                          "type": "string"
+                        },
+                        "partes": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "titulo": {
+                                "type": "string"
+                              },
+                              "opcoes": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "id": {
+                                      "type": "string"
+                                    },
+                                    "texto": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "id",
+                                    "texto"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "titulo",
+                              "opcoes"
+                            ],
+                            "additionalProperties": false
+                          }
+                        }
+                      },
+                      "required": [
+                        "enviada",
+                        "enunciado",
+                        "partes"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "concluido",
+                    "leitura",
+                    "fontes",
+                    "alerta"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "unoogpt"
+        ],
+        "summary": "Monta o alerta para os bairros sem equipe.",
+        "description": "**Papéis:** estudante.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "frequencia": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 40
+                  },
+                  "tom": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 40
+                  },
+                  "conteudo": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 40
+                  }
+                },
+                "required": [
+                  "frequencia",
+                  "tom",
+                  "conteudo"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/unoogpt/e-se": {
+      "get": {
+        "operationId": "UnoogptController_eSe",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "enviada": {
+                      "type": "boolean"
+                    },
+                    "opcoes": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "texto": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "texto"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "comparacoes": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "pergunta": {
+                            "type": "string"
+                          },
+                          "referencia": {
+                            "type": "object",
+                            "properties": {
+                              "alfa": {
+                                "type": "string"
+                              },
+                              "bravo": {
+                                "type": "string"
+                              },
+                              "sua": {
+                                "type": "boolean"
+                              }
+                            },
+                            "required": [
+                              "alfa",
+                              "bravo",
+                              "sua"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "outra": {
+                            "type": "object",
+                            "properties": {
+                              "alfa": {
+                                "type": "string"
+                              },
+                              "bravo": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "alfa",
+                              "bravo"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "quadradinhos": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "enum": [
+                                "referencia",
+                                "outra",
+                                "empate"
+                              ]
+                            }
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "pergunta",
+                          "referencia",
+                          "outra",
+                          "quadradinhos"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "enviada",
+                    "comparacoes"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "unoogpt"
+        ],
+        "summary": "\"E se…\": duas outras decisões nas mesmas 20 tempestades.",
+        "description": "Montadas pelo servidor (uma clara e uma que depende), em ordem embaralhada. Só com o registro feito.\n\n**Papéis:** estudante.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token"
+      },
+      "post": {
+        "operationId": "UnoogptController_responderESe",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "enviada": {
+                      "type": "boolean"
+                    },
+                    "opcoes": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "texto": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "texto"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "comparacoes": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "pergunta": {
+                            "type": "string"
+                          },
+                          "referencia": {
+                            "type": "object",
+                            "properties": {
+                              "alfa": {
+                                "type": "string"
+                              },
+                              "bravo": {
+                                "type": "string"
+                              },
+                              "sua": {
+                                "type": "boolean"
+                              }
+                            },
+                            "required": [
+                              "alfa",
+                              "bravo",
+                              "sua"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "outra": {
+                            "type": "object",
+                            "properties": {
+                              "alfa": {
+                                "type": "string"
+                              },
+                              "bravo": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "alfa",
+                              "bravo"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "quadradinhos": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "enum": [
+                                "referencia",
+                                "outra",
+                                "empate"
+                              ]
+                            }
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "pergunta",
+                          "referencia",
+                          "outra",
+                          "quadradinhos"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "enviada",
+                    "comparacoes"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "unoogpt"
+        ],
+        "summary": "Responde às duas comparações do \"E se…\".",
+        "description": "**Papéis:** estudante.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "respostas": {
+                    "type": "object",
+                    "properties": {
+                      "e1": {
+                        "type": "string",
+                        "enum": [
+                          "mais",
+                          "menos",
+                          "depende"
+                        ]
+                      },
+                      "e2": {
+                        "type": "string",
+                        "enum": [
+                          "mais",
+                          "menos",
+                          "depende"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "e1",
+                      "e2"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "respostas"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/unoogpt/fechamento": {
+      "get": {
+        "operationId": "UnoogptController_fechamento",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "whatsapp": {
+                      "type": "object",
+                      "properties": {
+                        "enviada": {
+                          "type": "boolean"
+                        },
+                        "mensagem": {
+                          "type": "string"
+                        },
+                        "perguntaDaResposta": {
+                          "type": "string"
+                        },
+                        "respostas": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "texto": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "texto"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "perguntaDoAviso": {
+                          "type": "string"
+                        },
+                        "avisos": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "texto": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "texto"
+                            ],
+                            "additionalProperties": false
+                          }
+                        }
+                      },
+                      "required": [
+                        "enviada",
+                        "mensagem",
+                        "perguntaDaResposta",
+                        "respostas",
+                        "perguntaDoAviso",
+                        "avisos"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "moradora": {
+                      "type": "object",
+                      "properties": {
+                        "enviada": {
+                          "type": "boolean"
+                        },
+                        "enunciado": {
+                          "type": "string"
+                        },
+                        "partes": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "titulo": {
+                                "type": "string"
+                              },
+                              "opcoes": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "id": {
+                                      "type": "string"
+                                    },
+                                    "texto": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "id",
+                                    "texto"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "titulo",
+                              "opcoes"
+                            ],
+                            "additionalProperties": false
+                          }
+                        }
+                      },
+                      "required": [
+                        "enviada",
+                        "enunciado",
+                        "partes"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "whatsapp",
+                    "moradora"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "unoogpt"
+        ],
+        "summary": "O fechamento: o pedido pelo WhatsApp e a resposta à moradora.",
+        "description": "**409 `fechamento-fechado`** enquanto o professor não abrir (`POST /unoogpt/professor/turmas/:turmaId/relogio` com `abrir-fechamento`).\n\n**Papéis:** estudante.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/unoogpt/fechamento/whatsapp": {
+      "post": {
+        "operationId": "UnoogptController_fechamentoWhatsapp",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "whatsapp": {
+                      "type": "object",
+                      "properties": {
+                        "enviada": {
+                          "type": "boolean"
+                        },
+                        "mensagem": {
+                          "type": "string"
+                        },
+                        "perguntaDaResposta": {
+                          "type": "string"
+                        },
+                        "respostas": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "texto": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "texto"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "perguntaDoAviso": {
+                          "type": "string"
+                        },
+                        "avisos": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "texto": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "texto"
+                            ],
+                            "additionalProperties": false
+                          }
+                        }
+                      },
+                      "required": [
+                        "enviada",
+                        "mensagem",
+                        "perguntaDaResposta",
+                        "respostas",
+                        "perguntaDoAviso",
+                        "avisos"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "moradora": {
+                      "type": "object",
+                      "properties": {
+                        "enviada": {
+                          "type": "boolean"
+                        },
+                        "enunciado": {
+                          "type": "string"
+                        },
+                        "partes": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "titulo": {
+                                "type": "string"
+                              },
+                              "opcoes": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "id": {
+                                      "type": "string"
+                                    },
+                                    "texto": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "id",
+                                    "texto"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "titulo",
+                              "opcoes"
+                            ],
+                            "additionalProperties": false
+                          }
+                        }
+                      },
+                      "required": [
+                        "enviada",
+                        "enunciado",
+                        "partes"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "whatsapp",
+                    "moradora"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "unoogpt"
+        ],
+        "summary": "Responde ao pedido pelo WhatsApp.",
+        "description": "**Papéis:** estudante.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "resposta": {
+                    "type": "string",
+                    "enum": [
+                      "nenhum-dado",
+                      "contagem",
+                      "lista-se-provar",
+                      "lista-para-conferir"
+                    ]
+                  },
+                  "aviso": {
+                    "type": "string",
+                    "enum": [
+                      "coordenacao",
+                      "pergunta-quem",
+                      "ignora"
+                    ]
+                  }
+                },
+                "required": [
+                  "resposta",
+                  "aviso"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/unoogpt/fechamento/moradora": {
+      "post": {
+        "operationId": "UnoogptController_fechamentoMoradora",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "whatsapp": {
+                      "type": "object",
+                      "properties": {
+                        "enviada": {
+                          "type": "boolean"
+                        },
+                        "mensagem": {
+                          "type": "string"
+                        },
+                        "perguntaDaResposta": {
+                          "type": "string"
+                        },
+                        "respostas": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "texto": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "texto"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "perguntaDoAviso": {
+                          "type": "string"
+                        },
+                        "avisos": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "texto": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "texto"
+                            ],
+                            "additionalProperties": false
+                          }
+                        }
+                      },
+                      "required": [
+                        "enviada",
+                        "mensagem",
+                        "perguntaDaResposta",
+                        "respostas",
+                        "perguntaDoAviso",
+                        "avisos"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "moradora": {
+                      "type": "object",
+                      "properties": {
+                        "enviada": {
+                          "type": "boolean"
+                        },
+                        "enunciado": {
+                          "type": "string"
+                        },
+                        "partes": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "titulo": {
+                                "type": "string"
+                              },
+                              "opcoes": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "id": {
+                                      "type": "string"
+                                    },
+                                    "texto": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "id",
+                                    "texto"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "titulo",
+                              "opcoes"
+                            ],
+                            "additionalProperties": false
+                          }
+                        }
+                      },
+                      "required": [
+                        "enviada",
+                        "enunciado",
+                        "partes"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "whatsapp",
+                    "moradora"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "unoogpt"
+        ],
+        "summary": "Monta a resposta à moradora.",
+        "description": "**Papéis:** estudante.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "dados": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 40
+                  },
+                  "criterio": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 40
+                  },
+                  "quem": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 40
+                  },
+                  "contestar": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 40
+                  }
+                },
+                "required": [
+                  "dados",
+                  "criterio",
+                  "quem",
+                  "contestar"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
       }
     },
     "/unoogpt/resultado": {
@@ -27382,12 +31435,64 @@
                           "type": "number"
                         }
                       ]
+                    },
+                    "sua": {
+                      "type": "object",
+                      "properties": {
+                        "media": {
+                          "type": "number"
+                        },
+                        "faixa": {
+                          "type": "array",
+                          "minItems": 2,
+                          "maxItems": 2,
+                          "items": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "number"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "media",
+                        "faixa"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "comparacao": {
+                      "type": "object",
+                      "properties": {
+                        "corridas": {
+                          "type": "integer"
+                        },
+                        "maisEm": {
+                          "type": "integer"
+                        },
+                        "menosEm": {
+                          "type": "integer"
+                        },
+                        "empates": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "corridas",
+                        "maisEm",
+                        "menosEm",
+                        "empates"
+                      ],
+                      "additionalProperties": false
                     }
                   },
                   "required": [
                     "alocacao",
                     "media",
-                    "faixa"
+                    "faixa",
+                    "sua",
+                    "comparacao"
                   ],
                   "additionalProperties": false
                 }
@@ -27399,7 +31504,7 @@
           "unoogpt"
         ],
         "summary": "\"E se eu tivesse mandado para…\" — calculado e descartado.",
-        "description": "**Não grava e não debita**: é a pergunta que o estudante faz ao VER o resultado, e transformá-la em tentativa nova apagaria a diferença entre a decisão que ele tomou e a que ele imaginou depois.\n\n**Papéis:** estudante.",
+        "description": "**Não grava e não debita**: é a pergunta que o estudante faz ao VER o resultado, e transformá-la em tentativa nova apagaria a diferença entre a decisão que ele tomou e a que ele imaginou depois.\n\n**Pareado:** a decisão do estudante (`sua`) e a outra rodam nas MESMAS 200 tempestades, com a mesma sorte da operação em cada uma; `comparacao` conta em quantas a outra resgatou mais, menos ou igual.\n\n**Papéis:** estudante.",
         "security": [
           {
             "token-da-plataforma": []
@@ -27528,6 +31633,12 @@
                             "bravo"
                           ],
                           "additionalProperties": false
+                        },
+                        "ofertaSaude": {
+                          "type": "boolean"
+                        },
+                        "registroConcluido": {
+                          "type": "boolean"
                         }
                       },
                       "required": [
@@ -27539,7 +31650,9 @@
                         "tentativa",
                         "rodadaDaTurma",
                         "alocacao",
-                        "justificativas"
+                        "justificativas",
+                        "ofertaSaude",
+                        "registroConcluido"
                       ],
                       "additionalProperties": false
                     }
@@ -27674,6 +31787,12 @@
                             "bravo"
                           ],
                           "additionalProperties": false
+                        },
+                        "ofertaSaude": {
+                          "type": "boolean"
+                        },
+                        "registroConcluido": {
+                          "type": "boolean"
                         }
                       },
                       "required": [
@@ -27685,7 +31804,9 @@
                         "tentativa",
                         "rodadaDaTurma",
                         "alocacao",
-                        "justificativas"
+                        "justificativas",
+                        "ofertaSaude",
+                        "registroConcluido"
                       ],
                       "additionalProperties": false
                     }
@@ -27893,6 +32014,9 @@
                         "agora": {
                           "type": "string"
                         },
+                        "fechamentoAberto": {
+                          "type": "boolean"
+                        },
                         "fase": {
                           "type": "string"
                         },
@@ -27919,6 +32043,7 @@
                         "pivoSeg",
                         "pivoMin",
                         "agora",
+                        "fechamentoAberto",
                         "fase",
                         "minutosGastos",
                         "segundosAteFechar",
@@ -27926,6 +32051,60 @@
                         "incrementoSeg"
                       ],
                       "additionalProperties": false
+                    },
+                    "fechamento": {
+                      "type": "object",
+                      "properties": {
+                        "aberto": {
+                          "type": "boolean"
+                        },
+                        "enviaram": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "de": {
+                          "type": "integer",
+                          "minimum": 0
+                        }
+                      },
+                      "required": [
+                        "aberto",
+                        "enviaram",
+                        "de"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "perguntasPorFonte": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "fonte": {
+                            "type": "string"
+                          },
+                          "bairro": {
+                            "type": "string"
+                          },
+                          "pergunta": {
+                            "type": "string"
+                          },
+                          "grupos": {
+                            "type": "integer",
+                            "exclusiveMinimum": true,
+                            "minimum": 0
+                          }
+                        },
+                        "required": [
+                          "fonte",
+                          "bairro",
+                          "pergunta",
+                          "grupos"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "alcanceDoAlerta": {
+                      "type": "string"
                     },
                     "retrato": {
                       "type": "object",
@@ -28074,6 +32253,9 @@
                   "required": [
                     "turma",
                     "relogio",
+                    "fechamento",
+                    "perguntasPorFonte",
+                    "alcanceDoAlerta",
                     "retrato",
                     "linhas"
                   ],
@@ -28225,6 +32407,9 @@
                     "agora": {
                       "type": "string"
                     },
+                    "fechamentoAberto": {
+                      "type": "boolean"
+                    },
                     "fase": {
                       "type": "string"
                     },
@@ -28251,6 +32436,7 @@
                     "pivoSeg",
                     "pivoMin",
                     "agora",
+                    "fechamentoAberto",
                     "fase",
                     "minutosGastos",
                     "segundosAteFechar",
@@ -28294,7 +32480,8 @@
                       "encerrar",
                       "modo-livre",
                       "modo-cronometrado",
-                      "redefinir"
+                      "redefinir",
+                      "abrir-fechamento"
                     ]
                   }
                 },
@@ -28816,6 +33003,32 @@
                         "additionalProperties": false
                       }
                     },
+                    "canalA": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "tentativa": {
+                            "type": "integer"
+                          },
+                          "tarefa": {
+                            "type": "string"
+                          },
+                          "escolhas": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "required": [
+                          "tentativa",
+                          "tarefa",
+                          "escolhas"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
                     "trilha": {
                       "type": "array",
                       "items": {
@@ -28919,6 +33132,7 @@
                     "justificativas",
                     "tentativas",
                     "rodadas",
+                    "canalA",
                     "trilha",
                     "conversa"
                   ],

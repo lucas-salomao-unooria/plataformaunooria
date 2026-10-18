@@ -28,6 +28,7 @@ import {
   embaralhar,
   ehProjecao,
   marcadorDaFicha,
+  marcadorDoNivel,
   marcadoresDaPergunta,
   melhor,
   melhorRodadaPorHabilidade,
@@ -96,6 +97,7 @@ const CAMPOS_DA_EVIDENCIA = {
   situacao: true,
   fonteEstudanteId: true,
   equipeId: true,
+  marcador: true,
 } satisfies Prisma.EvidenciaSelect;
 
 type LinhaDaEvidencia = Prisma.EvidenciaGetPayload<{ select: typeof CAMPOS_DA_EVIDENCIA }>;
@@ -139,6 +141,87 @@ interface Evento {
   de: Prisma.InputJsonValue | null;
   para: Prisma.InputJsonValue | null;
   autorId: string | null;
+}
+
+/** De onde veio o nível de uma célula (ADR-166) — o contrato é `DeOndeVeioSchema`. */
+interface DeOndeVeio {
+  marcador?: string;
+  rotulo?: string;
+  acoes?: { rotulo: string; status: Nivel }[];
+}
+
+/**
+ * DE ONDE VEIO O NÍVEL de cada célula do painel: o rótulo do marcador que o deu
+ * (só na evidência própria) e, quando as AÇÕES da habilidade divergem na
+ * rodada, o nível de cada uma. Só entram marcadores com `rotulo` na ficha — a
+ * missão que não os declara recebe `{}` e mantém o painel de sempre.
+ */
+function deOndeVeioDoNivel(
+  ficha: FichaPedagogica,
+  marcas: readonly { estudanteId: string; rodada: number; habilidade: string; marcador: string; status: string }[],
+): (l: { estudanteId: string; rodada: number; habilidade: string; origem: string; marcador: string | null }) => DeOndeVeio {
+  const ordem = ficha.habilidades.flatMap((h) => h.marcadores);
+  const rotuloDe = (id: string) => ordem.find((m) => m.id === id)?.rotulo;
+  const porCelula = new Map<string, { rotulo: string; status: Nivel; posicao: number }[]>();
+  for (const x of marcas) {
+    const rotulo = rotuloDe(x.marcador);
+    if (!rotulo || !ehNivel(x.status)) continue;
+    const chave = [x.estudanteId, x.rodada, x.habilidade].join("|");
+    porCelula.set(chave, [
+      ...(porCelula.get(chave) ?? []),
+      { rotulo, status: x.status, posicao: ordem.findIndex((m) => m.id === x.marcador) },
+    ]);
+  }
+  return (l) => {
+    const r: DeOndeVeio = {};
+    const rotulo = l.origem === "propria" && l.marcador ? rotuloDe(l.marcador) : undefined;
+    if (rotulo && l.marcador) {
+      r.marcador = l.marcador;
+      r.rotulo = rotulo;
+    }
+    const acoes = [...(porCelula.get([l.estudanteId, l.rodada, l.habilidade].join("|")) ?? [])].sort(
+      (a, b) => a.posicao - b.posicao,
+    );
+    if (acoes.length >= 2 && new Set(acoes.map((a) => a.status)).size > 1) {
+      r.acoes = acoes.map(({ rotulo: ro, status }) => ({ rotulo: ro, status }));
+    }
+    return r;
+  };
+}
+
+/**
+ * DE ONDE VEIO CADA NÍVEL DO RESULTADO da atividade: a célula da rodada que o
+ * deu — a primeira com aquele nível, preferindo a que não é limitada pela
+ * atividade (o mesmo desempate de `marcadorDoNivel`). Só as habilidades que
+ * têm o que dizer.
+ */
+function origemDoResultadoDe(
+  ficha: FichaPedagogica,
+  minhas: readonly {
+    estudanteId: string;
+    rodada: number;
+    habilidade: string;
+    status: string;
+    origem: string;
+    situacao: string;
+    marcador: string | null;
+  }[],
+  resultado: ReadonlyMap<string, Nivel>,
+  deOndeVeio: ReturnType<typeof deOndeVeioDoNivel>,
+): Record<string, DeOndeVeio> {
+  const limitado = (id: string | null) =>
+    id !== null && marcadorDaFicha(ficha, id)?.marcador.limitadoPelaAtividade === true;
+  const saida: Record<string, DeOndeVeio> = {};
+  for (const [habilidade, nivel] of resultado) {
+    const candidatas = minhas.filter(
+      (l) => l.habilidade === habilidade && l.situacao === "valida" && l.status === nivel,
+    );
+    const linha = candidatas.find((l) => !limitado(l.marcador)) ?? candidatas[0];
+    if (!linha) continue;
+    const d = deOndeVeio(linha);
+    if (d.rotulo || d.acoes) saida[habilidade] = d;
+  }
+  return saida;
 }
 
 /**
@@ -364,10 +447,43 @@ export class EvidenciasService implements OnModuleInit {
         estudanteId: m.estudanteId,
         habilidade,
       },
-      select: { status: true },
+      select: { marcador: true, status: true },
     });
-    const proprio = statusProprio(marcasDaHabilidade.map((x) => ({ status: x.status as Nivel }))) ?? m.status;
-    return this.gravarPropria(tx, m, habilidade, proprio, { marcador: marcador.id, marca: m.status, marcaAnterior });
+    const marcas = marcasDaHabilidade.map((x) => ({ marcador: x.marcador, status: x.status as Nivel }));
+    const proprio = statusProprio(marcas) ?? m.status;
+    return this.gravarPropria(
+      tx,
+      m,
+      habilidade,
+      proprio,
+      { marcador: marcador.id, marca: m.status, marcaAnterior },
+      marcadorDoNivel(ficha, marcas),
+    );
+  }
+
+  /**
+   * O estudante JÁ TEM marca de algum destes marcadores nesta atividade e
+   * rodada? É o "vale o primeiro envio" das missões cujo reinício reabre a
+   * tarefa (o Unoovista, ADR-167): o reinício apaga o que a criança produziu,
+   * e não as marcas — a missão confere aqui antes de marcar de novo.
+   */
+  async jaMarcou(
+    tx: Prisma.TransactionClient,
+    m: Pick<MarcaDaMissao, "escolaId" | "expId" | "atividadeId" | "rodada" | "estudanteId">,
+    marcadores: readonly string[],
+  ): Promise<boolean> {
+    const linha = await tx.evidenciaMarca.findFirst({
+      where: {
+        escolaId: m.escolaId,
+        expId: m.expId,
+        atividadeId: m.atividadeId,
+        rodada: m.rodada,
+        estudanteId: m.estudanteId,
+        marcador: { in: [...marcadores] },
+      },
+      select: { marcador: true },
+    });
+    return linha !== null;
   }
 
   /**
@@ -377,6 +493,10 @@ export class EvidenciasService implements OnModuleInit {
    * `daMarca` é a marca que acabou de chegar, e vai para o histórico. `null` é o
    * encerramento: aí a evidência que já está igual não é reescrita, não
    * historia nem copia de novo — encerrar duas vezes não duplica nada.
+   *
+   * `deOndeVeio` é o marcador que deu o nível (`regras.ts#marcadorDoNivel`),
+   * gravado na linha: é o que o painel mostra ("de onde veio o nível") e o que
+   * o consolidado lê para separar o "em processo" limitado pela atividade.
    */
   private async gravarPropria(
     tx: Prisma.TransactionClient,
@@ -384,6 +504,7 @@ export class EvidenciasService implements OnModuleInit {
     habilidade: string,
     proprio: Nivel,
     daMarca: { marcador: string; marca: Nivel; marcaAnterior: Nivel | null } | null,
+    deOndeVeio: string | null,
   ): Promise<ResultadoDaMarca> {
     const daRodada = {
       escolaId: m.escolaId,
@@ -403,7 +524,8 @@ export class EvidenciasService implements OnModuleInit {
     /* PRECEDÊNCIA: o ajuste do professor fica. A cópia da equipe perde para a
        marca própria — mesmo que a cópia fosse melhor: o que a criança fez com o
        próprio login é dela. */
-    if (atual?.origem !== "professor" && !(atual?.origem === "propria" && atual.status === proprio)) {
+    const mesmoNivel = atual?.origem === "propria" && atual.status === proprio;
+    if (atual?.origem !== "professor" && !(mesmoNivel && atual?.marcador === deOndeVeio)) {
       const dados = {
         turmaId: m.turmaId,
         status: proprio,
@@ -412,6 +534,7 @@ export class EvidenciasService implements OnModuleInit {
         fonteEstudanteId: null,
         equipeId: null,
         editadoPor: null,
+        marcador: deOndeVeio,
       };
       const nova = await tx.evidencia.createMany({ data: [{ ...chaveDaEvidencia, ...dados }], skipDuplicates: true });
       if (nova.count === 0) {
@@ -422,7 +545,10 @@ export class EvidenciasService implements OnModuleInit {
           data: dados,
         });
       }
-      depois = { status: proprio, origem: "propria", situacao: "valida" };
+      /* Só o marcador mudou no encerramento (empate que passou do limitado para
+         o comum): a linha é regravada, o nível é o mesmo — nada a historiar. */
+      if (mesmoNivel && !daMarca) return { registrada: false, evidencia: proprio, copias: 0 };
+      if (!mesmoNivel) depois = { status: proprio, origem: "propria", situacao: "valida" };
     }
     if (!daMarca && depois === antes) return { registrada: false, evidencia: antes?.status ?? null, copias: 0 };
 
@@ -693,13 +819,28 @@ export class EvidenciasService implements OnModuleInit {
     const ids = (await this.estudantesDaTurma(tx, escolaId, turmaId)).map((e) => e.id);
     const marcas = await tx.evidenciaMarca.findMany({
       where: { escolaId, turmaId, expId, estudanteId: { in: ids } },
-      select: { atividadeId: true, rodada: true, estudanteId: true, habilidade: true, status: true },
+      select: { atividadeId: true, rodada: true, estudanteId: true, habilidade: true, status: true, marcador: true },
       orderBy: [{ atividadeId: "asc" }, { rodada: "asc" }, { estudanteId: "asc" }, { habilidade: "asc" }],
     });
 
+    /* Só marcador da ficha VIGENTE vira nível. Uma turma com a missão aberta
+       no dia em que a ficha muda tem marcas de marcador que saiu (as `p1`–`p4`
+       da exp02em1b v1, ADR-172): sem este filtro, o encerramento as
+       transformaria em nível pelo caminho que o pedagógico tirou. A marca fica
+       no banco; só não conta. */
+    const vigentes = marcas.filter((x) => marcadorDaFicha(ficha, x.marcador) !== null);
+
     /* Dois marcadores da mesma habilidade na mesma rodada: vale o MELHOR. */
-    const grupos = new Map<string, { m: Omit<MarcaDaMissao, "marcador" | "status">; habilidade: string; status: Nivel }>();
-    for (const x of marcas) {
+    const grupos = new Map<
+      string,
+      {
+        m: Omit<MarcaDaMissao, "marcador" | "status">;
+        habilidade: string;
+        status: Nivel;
+        marcas: { marcador: string; status: Nivel }[];
+      }
+    >();
+    for (const x of vigentes) {
       const chave = [x.atividadeId, x.rodada, x.estudanteId, x.habilidade].join("|");
       const atual = grupos.get(chave);
       const status = melhor(atual?.status, x.status as Nivel) ?? (x.status as Nivel);
@@ -707,10 +848,11 @@ export class EvidenciasService implements OnModuleInit {
         m: { escolaId, turmaId, expId, atividadeId: x.atividadeId, rodada: x.rodada, estudanteId: x.estudanteId },
         habilidade: x.habilidade,
         status,
+        marcas: [...(atual?.marcas ?? []), { marcador: x.marcador, status: x.status as Nivel }],
       });
     }
     for (const g of grupos.values()) {
-      await this.gravarPropria(tx, g.m, g.habilidade, g.status, null);
+      await this.gravarPropria(tx, g.m, g.habilidade, g.status, null, marcadorDoNivel(ficha, g.marcas));
     }
   }
 
@@ -804,15 +946,28 @@ export class EvidenciasService implements OnModuleInit {
     const aguardandoEncerramento =
       ficha.contaAoEncerrarAMissao === true && !(await missaoEncerrada(tx, escolaId, turmaId, expId));
 
-    const [estudantes, mapa, linhas] = await Promise.all([
+    const [estudantes, mapa, linhas, marcas] = await Promise.all([
       this.estudantesDaTurma(tx, escolaId, turmaId),
       mapaDeEquipes(tx, escolaId, turmaId, expId, atividadeId),
       tx.evidencia.findMany({
         where: { escolaId, turmaId, expId, atividadeId },
-        select: { estudanteId: true, rodada: true, habilidade: true, status: true, origem: true, situacao: true },
+        select: {
+          estudanteId: true,
+          rodada: true,
+          habilidade: true,
+          status: true,
+          origem: true,
+          situacao: true,
+          marcador: true,
+        },
         orderBy: [{ rodada: "asc" }, { habilidade: "asc" }],
       }),
+      tx.evidenciaMarca.findMany({
+        where: { escolaId, turmaId, expId, atividadeId },
+        select: { estudanteId: true, rodada: true, habilidade: true, marcador: true, status: true },
+      }),
     ]);
+    const deOndeVeio = deOndeVeioDoNivel(ficha, marcas);
 
     /* Só quem AINDA é da turma: a linha de quem saiu fica no banco (é dela), e
        volta a aparecer se a criança voltar. */
@@ -843,20 +998,21 @@ export class EvidenciasService implements OnModuleInit {
       rodadas,
       estudantes: estudantes.map((e) => {
         const minhas = porEstudante.get(e.id) ?? [];
-        const porRodada: Record<string, Record<string, EstadoDaEvidencia>> = {};
+        const porRodada: Record<string, Record<string, EstadoDaEvidencia & DeOndeVeio>> = {};
         for (const l of minhas) {
           const r = String(l.rodada);
-          porRodada[r] = { ...(porRodada[r] ?? {}), [l.habilidade]: estadoDe(l) };
+          porRodada[r] = { ...(porRodada[r] ?? {}), [l.habilidade]: { ...estadoDe(l), ...deOndeVeio(l) } };
         }
         const equipe = mapa.get(e.id);
+        const resultado = melhorRodadaPorHabilidade(minhas.map((l) => ({ ...l, ...estadoDe(l) })));
+        const origemDoResultado = origemDoResultadoDe(ficha, minhas, resultado, deOndeVeio);
         return {
           id: e.id,
           nome: e.displayName,
           equipe: equipe ? { id: equipe.id, nome: equipe.nome } : null,
           porRodada,
-          resultado: Object.fromEntries(
-            melhorRodadaPorHabilidade(minhas.map((l) => ({ ...l, ...estadoDe(l) }))),
-          ),
+          resultado: Object.fromEntries(resultado),
+          ...(Object.keys(origemDoResultado).length > 0 ? { origemDoResultado } : {}),
         };
       }),
       pendentes,

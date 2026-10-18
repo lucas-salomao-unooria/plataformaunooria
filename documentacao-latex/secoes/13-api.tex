@@ -425,7 +425,22 @@ papel \cd{estudante}, com duas exceções marcadas.
   o relógio coletivo da turma.\\
 \rota{POST /runs/:id/conclusao} & estudante & Inclinação escolhida (A, B ou dúvida).\\
 \zebra \rota{POST /runs/:id/reflexao}, \rota{GET .../reflexao} & estudante &
-  Texto livre de fechamento, sem limite de caracteres.\\
+  Texto livre de fechamento, sem limite de caracteres. O PRIMEIRO salvamento
+  guarda o texto lido e cria a leitura da IA, que roda depois da resposta
+  (\adrr{ADR-167}).\\
+\rota{GET /runs/:id/tarefas} & estudante & A situação das três tarefas do
+  Canal A e do fim da revelação: é por ela que a experiência decide o desvio
+  por fase (\adrr{ADR-167}).\\
+\zebra \rota{GET|POST /runs/:id/raio-x}, \rota{GET .../raio-x/devolutiva} &
+  estudante & O 6a: os 6 posts que ele viu, sem lado; o envio corrigido no
+  servidor; a devolutiva só da explicabilidade em diante. Envio repetido é
+  \textbf{409} \cd{tarefa-ja-enviada}; fora da hora, \cd{tarefa-indisponivel}.\\
+\rota{POST /runs/:id/revelacao/concluida} & estudante & O \enquote{Ver meu
+  relatório}: abre o 6b e o 6c e fecha o Raio-x. Idempotente.\\
+\zebra \rota{GET|POST /runs/:id/termos}, \rota{GET|POST .../envio} & estudante &
+  O 6b e o 6c, do cinza em diante e com a revelação terminada. O envio aceita
+  até 3 posts dos 9, uma mensagem e uma frase opcional de até 140 caracteres.
+  Todo envio responde \cd{\{ enviada: true \}}.\\
 \rota{POST /runs/:id/student-post} & estudante & Post publicado pelo estudante.\\
 \zebra \rota{POST /runs/:id/reacoes} & estudante & Dispara reações de persona ao vivo
   (se \cd{ia\_ao\_vivo}).\\
@@ -435,6 +450,38 @@ papel \cd{estudante}, com duas exceções marcadas.
   viu. É a virada pedagógica da missão.\\
 \rota{POST /runs/:id/reset} & \textbf{professor} & Zera a sessão. Recalcula a
   largada pela \emph{mesma} regra do primeiro início.\\
+\bottomrule
+\end{tabularx}
+
+\subsection{O Canal A da Missão Tempestade (exp02em1b)}
+
+As tarefas por ação da Missão Tempestade (\adrr{ADR-172}), todas de papel
+\cd{estudante}, com a identidade vinda do \emph{token} (não há id de sessão) e
+o \emph{lock} da sessão em cada uma. Nenhuma devolve nível nem gabarito: a
+resposta é o estado da tela, e os ids dos pares e das comparações são a
+posição, porque o tipo é a resposta.
+
+\begin{tabularx}{\linewidth}{@{}L{48mm}X@{}}
+\toprule
+\headrow \thd{Rota} & \thd{Semântica}\\
+\midrule
+\rota{POST /unoogpt/mandar} & \enquote{Enviar equipes}: o portão do porquê,
+  a saída congelada e o registro da operação na resposta. O desfecho fica
+  retido: \rota{GET /unoogpt/resultado} responde \textbf{409}
+  \cd{registro-pendente} até o registro. \rota{POST /unoogpt/simular} é o
+  alias do cliente 1.4.x, sem tarefa nem marca.\\
+\zebra \rota{GET /unoogpt/saude}, \rota{POST .../saude/abrir},
+  \rota{POST .../saude} & A ligação da Saúde: o estado, a oferta ao abrir a
+  decisão (o primeiro destino também oferece) e a resposta, com
+  \cd{opcao: null} para fechar sem responder.\\
+\rota{GET /unoogpt/registro}, \rota{POST .../registro/leitura|fontes|alerta} &
+  O registro da operação, montado e gravado no servidor; cada cartão é
+  \cd{null} quando não se aplica.\\
+\zebra \rota{GET|POST /unoogpt/e-se} & As duas comparações nas mesmas 20
+  tempestades, depois do registro.\\
+\rota{GET /unoogpt/fechamento}, \rota{POST .../fechamento/whatsapp|moradora} &
+  O fechamento: \textbf{409} \cd{fechamento-fechado} até o professor abrir
+  (\cd{abrir-fechamento} em \rota{POST /unoogpt/professor/turmas/:turmaId/relogio}).\\
 \bottomrule
 \end{tabularx}
 
@@ -551,6 +598,10 @@ atualizado, para a tela não precisar reler.
     estudante da turma a equipe dele na missão, \cd{porRodada} (cada habilidade
     com \cd{status}, \cd{origem} e \cd{situacao}) e o \cd{resultado} --- a
     melhor rodada por habilidade, só com o que vale. Habilidade ausente é N/A.
+    Quando a ficha dá rótulo às ações, a célula traz também de onde veio o
+    nível (\cd{marcador} e \cd{rotulo}, só na evidência própria) e, se as ações
+    da habilidade divergem na rodada, \cd{acoes} com o nível de cada uma; o
+    \cd{origemDoResultado} faz o mesmo para o resultado (\adrr{ADR-166}).
     \cd{pendentes} conta, por rodada, as cópias da projeção a revisar. Missão
     SEM ficha responde \textbf{200} com \cd{temFicha: false} e tudo vazio, e não
     400: é por esta resposta que o hub decide se desenha o bloco. A ordem é a
@@ -600,7 +651,10 @@ atualizado, para a tela não precisar reler.
 evidência somada, todas em contagem --- a tela faz a porcentagem ---, com a
 UNIDADE da missão como coluna e o nível de cada criança na missão como o
 MELHOR entre as atividades. Quem não tem evidência que conte é
-\cd{naoAvaliado}, nunca \cd{naoAtingiu}.
+\cd{naoAvaliado}, nunca \cd{naoAtingiu}. O \enquote{em processo} que veio de
+um marcador limitado pela atividade sai à parte, em \cd{emProcessoLimitado}
+--- fora de \cd{emProcesso}, dentro do \cd{total}; no empate entre
+atividades, fica o comum (\adrr{ADR-166}).
 
 \begin{itemize}
   \item \rota{GET /evidencias/turma/\B :turmaId/consolidado} (professor que

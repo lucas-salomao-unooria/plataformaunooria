@@ -60,6 +60,17 @@ const ROTULO_DO_GRAU: Record<LinhaDeLeitura["grau"], string> = {
   none: "a oportunidade não chegou",
 };
 
+/** O nome de cada tarefa do Canal A (ADR-172), como o professor a reconhece da aula. */
+const ROTULO_DA_TAREFA: Record<string, string> = {
+  saude: "Ligação da Saúde",
+  leitura: "Leitura dos dados",
+  fontes: "O que precisaria saber de cada fonte",
+  alerta: "Alerta aos bairros sem equipe",
+  "e-se": "\"E se…\" nas mesmas tempestades",
+  whatsapp: "Pedido pelo WhatsApp",
+  moradora: "Resposta à moradora",
+};
+
 export default async function EstudantePage({
   params,
 }: {
@@ -380,6 +391,29 @@ export default async function EstudantePage({
             cobriam — a sorte da rodada mexe no resgate, não nisto. “Na faixa” compara com corridas
             da MESMA decisão: fora dela é sorte ou azar visível, não mérito nem culpa.
           </p>
+        </Card>
+      )}
+
+      {/* AS ESCOLHAS DO CANAL A (ADR-172): o registro da operação, a ligação da
+          Saúde, o "E se…" e o fechamento, por tentativa. Escolha fechada, em
+          texto — o nível fica no painel de habilidades, e a coordenação vê só
+          ele. */}
+      {(relatorio.canalA ?? []).length > 0 && (
+        <Card variant="elevated" title="O que o grupo escolheu">
+          <div className="flex flex-col gap-4" data-escolhas-do-canal-a>
+            {(relatorio.canalA ?? []).map((t) => (
+              <div key={`${t.tentativa}-${t.tarefa}`}>
+                <p className="text-[12px] uppercase tracking-widest text-unooria-neutral-500">
+                  Tentativa {t.tentativa} · {ROTULO_DA_TAREFA[t.tarefa] ?? t.tarefa}
+                </p>
+                <ul className="mt-1 flex list-disc flex-col gap-1 pl-5 text-[13px] leading-relaxed text-unooria-neutral-800">
+                  {t.escolhas.map((e, i) => (
+                    <li key={i}>{e}</li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
         </Card>
       )}
 

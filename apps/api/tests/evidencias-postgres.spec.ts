@@ -395,6 +395,8 @@ describe("tenancy no banco (regra inviolável nº 1)", () => {
     expect(valores("evidencias_origem_check")).toEqual([...ORIGENS].sort());
     expect(valores("evidencias_situacao_check")).toEqual([...SITUACOES].sort());
     expect(valores("evidencias_eventos_tipo_check")).toEqual([...TIPOS_DE_EVENTO].sort());
+    expect(def.get("evidencias_marcador_check")).toContain("^[A-Za-z0-9_.:-]{1,100}$");
+    expect(def.get("evidencias_marcador_so_na_propria_check")).toContain("'propria'");
     for (const tabela of TABELAS) {
       expect(def.get(`${tabela}_atividade_id_check`)).toContain("^[A-Za-z0-9_.:-]{1,100}$");
       expect(def.get(`${tabela}_rodada_check`)).toContain(">= 1");
@@ -420,6 +422,10 @@ describe("tenancy no banco (regra inviolável nº 1)", () => {
       { origem: "propria", situacao: "valida", status: "nao_participou" },
       { origem: "propria", situacao: "valida", atividadeId: "com espaço" },
       { origem: "propria", situacao: "valida", rodada: 0 },
+      /* ADR-166: só a evidência própria sabe de que marcador veio, e o id segue o alfabeto da ficha. */
+      { origem: "equipe", situacao: "valida", fonteEstudanteId: ids.ana, marcador: "h1-acao" },
+      { origem: "professor", situacao: "valida", editadoPor: ids.prof8A, marcador: "h1-acao" },
+      { origem: "propria", situacao: "valida", marcador: "com espaço" },
     ]) {
       await expect(prisma.evidencia.create({ data: { ...base, ...ruim } })).rejects.toThrow();
     }
@@ -982,6 +988,112 @@ describe("o painel", () => {
     });
     /* E turma de outra escola, para o gestor, também. */
     expect((await recusa(evidencias.painel(ESCOLA, ids.turmaVizinha, INSTA, ATV, undefined))).status).toBe(404);
+  });
+});
+
+describe("de onde veio o nível (ADR-166)", () => {
+  /* Uma ficha com RÓTULOS e um marcador limitado pela atividade, numa instância
+     só dela: a ficha de cima (sem rótulo) continua provando que a missão que
+     não os declara mantém o painel de sempre (`a forma`, no painel). */
+  const ROTULADA: FichaPedagogica = {
+    expId: INSTA,
+    versao: 1,
+    habilidades: [
+      {
+        codigo: H1,
+        marcadores: [
+          { id: "raio-x", tipo: "acao", rotulo: "Raio-x" },
+          { id: "reflexao", tipo: "acao", rotulo: "Reflexão — sugestão da IA" },
+        ],
+        criterios: { atingiu: "a", em_processo: "b", nao_atingiu: "c" },
+      },
+      {
+        codigo: H2,
+        marcadores: [
+          { id: "envio", tipo: "acao", rotulo: "Envio" },
+          {
+            id: "envio-limitado",
+            tipo: "acao",
+            rotulo: "Envio — confiabilidade não medida nesta atividade",
+            limitadoPelaAtividade: true,
+          },
+        ],
+        criterios: { atingiu: "a", em_processo: "b", nao_atingiu: "c" },
+      },
+    ],
+    perguntas: [],
+  };
+  const rotulados = new EvidenciasService(prisma, equipes);
+  rotulados.registrarFicha(ROTULADA);
+  const marcarR = (estudanteId: string, marcador: string, status: Nivel) =>
+    marcar(estudanteId, marcador, status, {}, rotulados);
+  const marcadorDe = async (estudanteId: string, habilidade: string) =>
+    (
+      await prisma.evidencia.findFirst({
+        where: { escolaId: ESCOLA, expId: INSTA, atividadeId: ATV, rodada: 1, estudanteId, habilidade },
+        select: { marcador: true },
+      })
+    )?.marcador;
+
+  beforeAll(async () => {
+    await zerar();
+  });
+
+  test("a evidência própria grava o marcador que deu o nível — e troca quando outro marcador dá um nível melhor", async () => {
+    await marcarR(ids.ana, "raio-x", "em_processo");
+    expect(await marcadorDe(ids.ana, H1)).toBe("raio-x");
+    await marcarR(ids.ana, "reflexao", "atingiu");
+    expect(await marcadorDe(ids.ana, H1)).toBe("reflexao");
+  });
+
+  test("o painel diz de onde veio e, quando as ações divergem, o nível de cada uma", async () => {
+    const painel = PainelDaAtividadeSchema.parse(await rotulados.painel(ESCOLA, ids.turma8A, INSTA, ATV, ids.prof8A));
+    const ana = painel.estudantes.find((e) => e.id === ids.ana)!;
+    expect(ana.porRodada["1"]?.[H1]).toEqual({
+      status: "atingiu",
+      origem: "propria",
+      situacao: "valida",
+      marcador: "reflexao",
+      rotulo: "Reflexão — sugestão da IA",
+      acoes: [
+        { rotulo: "Raio-x", status: "em_processo" },
+        { rotulo: "Reflexão — sugestão da IA", status: "atingiu" },
+      ],
+    });
+    expect(ana.origemDoResultado?.[H1]).toMatchObject({ rotulo: "Reflexão — sugestão da IA" });
+  });
+
+  test("duas ações com o MESMO nível não trazem a lista das ações", async () => {
+    await marcarR(ids.bia, "raio-x", "atingiu");
+    await marcarR(ids.bia, "reflexao", "atingiu");
+    const painel = await rotulados.painel(ESCOLA, ids.turma8A, INSTA, ATV, ids.prof8A);
+    const celula = painel.estudantes.find((e) => e.id === ids.bia)!.porRodada["1"]?.[H1];
+    expect(celula).toMatchObject({ rotulo: "Raio-x" });
+    expect(celula).not.toHaveProperty("acoes");
+  });
+
+  test("empate entre o limitado e o comum: fica o comum — e a linha troca de marcador sem mudar de nível", async () => {
+    await marcarR(ids.caio, "envio-limitado", "em_processo");
+    expect(await marcadorDe(ids.caio, H2)).toBe("envio-limitado");
+    const antes = (await eventos("marca")).length;
+    await marcarR(ids.caio, "envio", "em_processo");
+    expect(await marcadorDe(ids.caio, H2)).toBe("envio");
+    /* A marca nova é historiada, como sempre foi; o nível não mudou. */
+    expect((await evidenciaDe(ids.caio, H2))?.status).toBe("em_processo");
+    expect((await eventos("marca")).length).toBe(antes + 1);
+  });
+
+  test("o ajuste do professor apaga o marcador: o nível passa a ser dele", async () => {
+    await rotulados.ajustar(ESCOLA, ids.turma8A, INSTA, ATV, 1, ids.prof8A, [
+      { estudanteId: ids.ana, habilidade: H1, status: "em_processo" },
+    ]);
+    expect(await marcadorDe(ids.ana, H1)).toBeNull();
+    const painel = await rotulados.painel(ESCOLA, ids.turma8A, INSTA, ATV, ids.prof8A);
+    const celula = painel.estudantes.find((e) => e.id === ids.ana)!.porRodada["1"]?.[H1];
+    expect(celula).toMatchObject({ origem: "professor" });
+    expect(celula).not.toHaveProperty("rotulo");
+    /* O professor ainda vê o que cada ação disse. */
+    expect(celula?.acoes).toHaveLength(2);
   });
 });
 

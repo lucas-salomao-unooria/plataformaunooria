@@ -909,7 +909,14 @@ Uma evidência por habilidade por rodada & \cd{UNIQUE (escola\_id, exp\_id,
   \cd{projecao}; \cd{fonte\_estudante\_id} se e só se for cópia
   (\cd{equipe}/\cd{projecao}); \cd{editado\_por} se e só se for ajuste
   (\cd{professor}). A linha que o código montar errada é recusada pelo banco, em
-  vez de chegar ao painel como um estado que ele não sabe mostrar.\\
+  vez de chegar ao painel como um estado que ele não sabe mostrar.
+  \cd{marcador} (\adrr{ADR-166}, migração
+  \arq{20261016120000\_\B{}evidencia\_\B{}origem\_\B{}do\_\B{}nivel}) só na
+  origem \cd{propria}.\\
+\zebra O marcador que deu o nível NA linha & A evidência própria guarda de que
+  marcador veio (\adrr{ADR-166}). Derivá-lo das marcas a cada leitura faria o
+  consolidado da rede ler também as marcas de todas as turmas, só para separar
+  o \enquote{em processo} que mede a atividade e não o estudante.\\
 \zebra O vocabulário em dois lugares & Os \emph{CHECKs} de \cd{status},
   \cd{origem}, \cd{situacao}, \cd{tipo} e o \emph{regex} de \cd{atividade\_id}
   repetem as constantes de \arq{evidencias/regras.ts}, e
@@ -1260,6 +1267,22 @@ tabelas \cd{exp08ef1b\_} mais a tabela de contrato com a app-70.
   está na migração.\\
 \zebra \cd{de\_ia} & Permite ao professor distinguir, na auditoria, o comentário
   escrito pela persona (modelo) do escrito pelo estudante.\\
+\cd{exp08ef1b\_tarefas} e \cd{runs.revelacao\_concluida\_em} (\adrr{ADR-167},
+  migração \arq{20261016180000\_\B{}exp08ef1b\_\B{}canal\_\B{}a}) & As tarefas
+  do Canal A, uma linha por (sessão, tarefa), criada na PRIMEIRA leitura com a
+  composição que a tela mostra: os posts do Raio-x e do envio não mudam entre a
+  leitura e o envio. É produção do estudante e sai no reinício, junto com o fim
+  da revelação; a MARCA de evidência fica, e vale o primeiro envio. \emph{CHECKs}
+  do vocabulário (\cd{raio-x}, \cd{termos}, \cd{envio}), de respondida com
+  data, e da frase só no envio, até 140 caracteres.\\
+\zebra \cd{exp08ef1b\_leituras\_da\_reflexao} e \cd{reflexoes.primeiro\_texto} &
+  A leitura da reflexão pela IA é UMA só por (atividade, estudante): a
+  unicidade impede a segunda, inclusive depois de um reinício, que não apaga a
+  sessão. A linha não guarda texto; o texto lido fica em \cd{primeiro\_texto},
+  gravado só na criação da reflexão, e sai com ela. \cd{run\_id} e
+  \cd{estudante\_id} em cascata: \enquote{Apagar as sessões} e a exclusão da
+  conta levam a leitura. As duas tabelas com \cd{escola\_id NOT NULL} e RLS
+  forçada.\\
 \bottomrule
 \end{tabularx}
 
@@ -1597,7 +1620,7 @@ O \enquote{Então} com \cd{btrim} & \cd{char\_length(btrim(acao\_entao)) BETWEEN
 
 O Jornal da Escola (\adrr{ADR-117}), na migração
 \arq{20260927120000\_\B{}exp04ef1b\_\B{}jornal\_\B{}da\_\B{}escola}, e o Canal A
-puro da 3.0.0 (\adrr{ADR-168}) na \arq{20261016120000\_\B{}exp04ef1b\_\B{}canal\_\B{}a},
+puro da 3.0.0 (\adrr{ADR-168}) na \arq{20261016130000\_\B{}exp04ef1b\_\B{}canal\_\B{}a},
 que só acrescenta colunas e \emph{CHECKs}. As quatro têm
 \cd{escola\_id NOT NULL}, RLS \cd{ENABLE} + \cd{FORCE} com a política por escola, e
 nenhuma sequência: as chaves são \cd{uuid} ou compostas, e o \cd{GRANT} à
@@ -1887,7 +1910,7 @@ em produção, que é onde ela existe.
 \end{atencao}
 
 
-\section{As cinco tabelas da exp02em1b}
+\section{As sete tabelas da exp02em1b}
 \label{sec:tabelas-exp02em1b}
 
 \begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
@@ -1921,6 +1944,17 @@ em produção, que é onde ela existe.
   pedagógica (\adrr{ADR-154}): só o \enquote{Zerar a turma} a sobe, e ela
   sobrevive ao zerar, que apaga o relógio e a evidência da turma
   (\adrr{ADR-155}). Ausência de linha = rodada 1.\\
+\cd{exp02em1b\_tarefas} & As \textbf{tarefas do Canal A} (\adrr{ADR-172},
+  migração \arq{20261016200000\_\B{}exp02em1b\_\B{}canal\_\B{}a}): uma linha
+  por (sessão, rodada da turma, tentativa, tarefa), com a APRESENTAÇÃO que o
+  servidor montou --- os pares da leitura, os cartões das fontes, as
+  comparações do \enquote{E se\ldots}, a ordem das opções --- e as respostas.
+  Só ids de escolha fechada, nenhum texto livre. \emph{CHECKs} do vocabulário
+  (sete tarefas) e de respondida com data. Sai com a sessão (cascata do par),
+  e o \enquote{Zerar a turma} apaga as sessões. A sessão ganhou
+  \cd{registro\_concluido\_em} (o desfecho fica retido até ele),
+  \cd{oferta\_saude\_em} e \cd{inicio\_com\_relogio\_aberto}; o relógio da
+  turma, \cd{fechamento\_aberto\_em}.\\
 \bottomrule
 \end{tabularx}
 

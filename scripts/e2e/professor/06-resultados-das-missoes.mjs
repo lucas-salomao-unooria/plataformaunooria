@@ -68,9 +68,19 @@ await suite(
     }
     const temRelogio = await p.locator("text=Relógio da aula").count();
     r.exigir(temRelogio > 0, "o relógio da aula fica na MESMA tela dos resultados");
+    /* O fechamento da Tempestade (ADR-172): o WhatsApp e a moradora são abertos
+       daqui, depois do debate, e o painel conta quem enviou. */
+    r.exigir(
+      (await p.locator("[data-fechamento]").count()) > 0,
+      "o fechamento (o WhatsApp e a moradora) é aberto do mesmo painel do relógio",
+    );
+    r.exigir(
+      (await p.locator("[data-alcance-do-alerta]").count()) > 0,
+      "o card do debate traz a frase do alcance do alerta, que nunca vai ao grupo",
+    );
     await r.registrar(p, "resultados-unoogpt", {
       titulo: "O relógio e os resultados do unooGPT",
-      mostra: "O relógio da turma (largada, tempo, encerrar) acima da folha da turma.",
+      mostra: "O relógio da turma (largada, tempo, encerrar e o fechamento) acima da folha da turma.",
       prova:
         "Conduzir e ler ficam juntos aqui porque a condução É durante a aula: obrigar o professor " +
         "a trocar de tela entre dar a largada e ver quem travou seria desenhar para a demonstração, " +

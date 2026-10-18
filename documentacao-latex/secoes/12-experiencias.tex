@@ -223,7 +223,7 @@ da missão injeta o que só ela sabe montar:
 
 \begin{itemize}
   \item \textbf{exp08ef1b} --- a tabela dos momentos do painel vem de
-    \cd{CONTROLE\_DO\_PROFESSOR}, e as sete telas da revelação de
+    \cd{CONTROLE\_DO\_PROFESSOR}, e as dez telas da revelação de
     \arq{lib/insta/copy-da-revelacao.ts} --- \textbf{cópia gêmea} do arquivo
     homônimo da exp08ef1b, não a mesma fonte: as duas mudam juntas, e nada no
     \emph{build} cobra isso.
@@ -370,14 +370,27 @@ Largada por perfil, sorteio ou redistribuição & \arq{perfis/largada.ts},
   desistia e o estudante nunca as via. As duas faltas vieram com a 1.2.0 e só a
   suíte as mostrou.\\
 Evidência pedagógica (E14) & A ficha \arq{evidencias/fichas/exp08ef1b.ts}, a quinta
-  da plataforma (\adrr{ADR-153}): \textbf{EF08CO11}, \textbf{EF08CO09} e
-  \textbf{EF08CO07}, uma pergunta de múltipla escolha cada, com o texto do PO,
-  DEPOIS da reflexão salva e na mesma tela escura (\cd{RadioGroup} da seção
-  \cd{unooria}, no \emph{chunk} tardio). O resolvedor
-  \arq{motor/contexto-da-evidencia.ts} devolve a atividade da run e a
-  \textbf{rodada 1, sempre}: aplicar de novo é criar outra atividade. Sem
-  reflexão salva, ou em atividade sem turma, a resposta é 409. O painel é o da
-  página da atividade, que já estava montado.\\
+  da plataforma, na versão 2 (\adrr{ADR-167}, que substitui o Canal B da
+  \adrr{ADR-153}): toda habilidade por AÇÃO. \textbf{EF08CO11} pelo
+  \textbf{6a Raio-x} (logo depois da resposta, ainda no disfarce: de 6 posts
+  que ele VIU, o que cada um faz; regra dos 3) e pela \textbf{reflexão lida
+  pela IA} (uma vez só, o primeiro texto salvo), vale a melhor;
+  \textbf{EF08CO09} pelo \textbf{6b} (as 5 regras fictícias: localizar,
+  explicar o efeito, julgar a mudança); \textbf{EF08CO07} pelo \textbf{6c}
+  (de 9 posts sem o lado, até 3 e uma mensagem). As réguas são puras, em
+  \arq{motor/canal-a/}, e os gabaritos ficam na api. Vale o PRIMEIRO envio,
+  mesmo depois de um reinício. A atividade sem página de fofoca ou de humor
+  nos dois lados grava, só na casa que a trava muda, o marcador limitado
+  \cd{envio-sem-confiabilidade} (\adrr{ADR-166}). Rodada 1, sempre; atividade
+  sem turma não tem evidência.\\
+Canal A: travas e ciclo de vida & O 6a abre da resposta em diante e fecha no
+  fim da revelação (\cd{runs.revelacao\_concluida\_em}, gravado no \enquote{Ver
+  meu relatório}); o 6b e o 6c só abrem do cinza em diante, com a revelação
+  terminada. A devolutiva do Raio-x entra na revelação, como ponte. Enquanto o
+  Raio-x está pendente, o relatório do estudante chega sem lado, intensidade e
+  categoria dos posts em que ele mais parou. O reinício apaga as tarefas e o
+  fim da revelação; a marca e a leitura da reflexão ficam. \enquote{Apagar as
+  sessões} leva tudo, em cascata (\adrr{ADR-155}).\\
 \bottomrule
 \end{tabularx}
 
@@ -942,32 +955,109 @@ passou por playtest em sala} --- estão marcados no código como ponto de partid
 para revisão pedagógica, não palavra final.
 \end{limitacao}
 
-\subsection{A evidência pedagógica: vale a melhor, conta ao encerrar}
+\subsection{Seis brechas fechadas no servidor (out/2026)}
 
-A ficha \arq{evidencias/fichas/exp02em1b.ts} (\adrr{ADR-154}) mede quatro
-habilidades por quatro perguntas de múltipla escolha do PO, na tela de
-resultado: \textbf{EM13CO14}, \textbf{EM13CO08}, \textbf{EM13CO24} e
-\textbf{EM13CO26}. A missão não tinha nem atividade nem rodada, e as duas
-foram resolvidas sem refazê-la:
+Uma revisão do código achou seis lugares em que a decisão podia sair diferente
+do que a tela e o assistente prometem. Todas foram fechadas na API, sem mudar a
+experiência; a prova de cada uma está em \arq{tests/unoogpt-postgres.spec.ts}
+(\enquote{as brechas da Tempestade}) e em \arq{tests/unoogpt/modelo-tempestade.spec.ts}.
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
+\toprule
+\headrow \thd{Brecha} & \thd{Correção}\\
+\midrule
+Confirmar pela conversa pulava a justificativa &
+  O envio tem \textbf{um portão só}, \cd{aoConfirmar}, para o botão
+  \enquote{Enviar equipes} e para a ferramenta \cd{confirmar\_alocacao}. Sem o
+  porquê de cada equipe com destino, nada sai, e a ferramenta devolve ao
+  assistente o motivo, para ele pedir o porquê em vez de narrar a tempestade.\\
+\zebra Trocar o destino pela conversa mantinha o porquê antigo &
+  Destino novo apaga a justificativa daquela equipe pelos dois caminhos
+  (\cd{alocar} e \cd{aoAlocar}); repetir o mesmo destino não apaga.\\
+Carregar fonte pelo painel sem relógio &
+  \rota{PUT /unoogpt/conjuntos} só aceita com o relógio da turma aberto e a
+  tentativa em curso, como uma pergunta (409 \cd{relogio-nao-comecou},
+  \cd{relogio-encerrado} ou \cd{sessao-encerrada}). A tela não usava a rota,
+  mas quem a chamasse direto fabricava o \enquote{pediu dados} depois da
+  investigação.\\
+\zebra O \enquote{E se\ldots} não comparava nas mesmas tempestades &
+  \rota{POST /unoogpt/contrafactual} roda as duas decisões nas \textbf{mesmas}
+  200 tempestades, com a mesma sorte da operação em cada uma
+  (\cd{corridasPareadas}); a semente deixou de levar a decisão. A resposta
+  ganhou \cd{sua} (a decisão do estudante nas mesmas corridas) e
+  \cd{comparacao} (em quantas a outra resgatou mais, menos ou igual).\\
+O cartão \enquote{O que os dados mostram} e o mapa divergiam &
+  O cartão sorteava com a rodada de antes da carga da fonte, e o mapa com a de
+  depois; com o ruído de até 10\%, um empate aparecia num e não no outro.
+  Agora o turno anda a rodada junto com a carga.\\
+\zebra Equipe na base recusada com a frase errada &
+  Mandar com uma equipe na base é permitido, como dizem a tela e o assistente.
+  Sem destino nenhum, a recusa tem código próprio, \cd{sem-destino}, em vez de
+  \cd{falta-justificar}.\\
+\bottomrule
+\end{tabularx}
+
+\subsection{A evidência pedagógica: o Canal A (1.5.0)}
+
+A ficha \arq{evidencias/fichas/exp02em1b.ts}, versão 2 (\adrr{ADR-172}, que
+supera em parte a \adrr{ADR-154}), mede seis habilidades por sete tarefas de
+AÇÃO, e nenhuma pergunta de múltipla escolha: o Canal B saiu, e quem não faz a
+tarefa de uma habilidade fica \enquote{Não avaliado} nela. As tarefas moram em
+\arq{unoogpt/canal-a.service.ts} e as réguas em \arq{unoogpt/regras/}, uma por
+tarefa, com a conferência de exaustividade.
+
+\begin{tabularx}{\linewidth}{@{}L{22mm}L{38mm}X@{}}
+\toprule
+\headrow \thd{Habilidade} & \thd{Tarefa (marcador)} & \thd{Onde, e a régua}\\
+\midrule
+EM13CO12 & Leitura dos dados (\cd{leitura}) &
+  Registro da operação: a última tabela que o grupo pediu volta, e ele compara
+  um par separado e um cruzado. Pedir dados dá \enquote{em desenvolvimento};
+  duas fontes e os dois pares certos, \enquote{demonstra}. Melhor tentativa
+  com o relógio aberto.\\
+\zebra EM13CO14 & O que precisaria saber (\cd{fontes}) &
+  Registro: dois cartões (fonte $\times$ bairro), as mesmas cinco perguntas.
+  O cartão cai sempre onde a fonte distorce ou não enxerga (o hipotético,
+  quando o bairro da equipe não é um deles). Sem dois cartões, sem marca.
+  Melhor tentativa com o relógio aberto.\\
+EM13CO11 & \enquote{E se\ldots} (\cd{e-se}) &
+  Resultado: duas comparações nas mesmas 20 tempestades, uma clara e uma que
+  depende. Primeira da rodada.\\
+\zebra EM13CO08 & Pedido pelo WhatsApp (\cd{whatsapp}) &
+  Fechamento: o que responde (4) $\times$ o que mais faz (3); só \enquote{não
+  mando nenhum dado} com \enquote{aviso a coordenação} demonstra. Primeira da
+  rodada.\\
+EM13CO24 & Alerta (\cd{alerta}) &
+  Registro: frequência, tom e conteúdo, quatro opções cada, uma errada
+  moderada em cada parte. Primeira da rodada: não volta na segunda tentativa.\\
+\zebra EM13CO26 & Ligação da Saúde (\cd{saude}) e moradora (\cd{moradora}) &
+  A Saúde na investigação (teto em \enquote{em desenvolvimento}); a moradora no
+  fechamento, com as frases de \enquote{Os dados} e \enquote{Quem decidiu}
+  montadas pelo servidor. Vale o melhor dos dois. Primeira da rodada.\\
+\bottomrule
+\end{tabularx}
 
 \begin{itemize}
-  \item \textbf{A atividade é a sintética \cd{"turma"}}, o mesmo id que as
-    equipes dela já usam (\cd{ATIVIDADE\_DA\_TURMA}): com outro, a cópia do
-    nível para os colegas de computador não acharia a equipe, em silêncio.
-  \item \textbf{A rodada é da turma}, em \cd{exp02em1b\_gate\_turma}, e só o
-    \enquote{Zerar a turma} a sobe --- e apaga as respostas e os níveis da
-    turma, de todas as rodadas (\adrr{ADR-155}): sem isso, o encerramento
-    seguinte relia as respostas de antes. A sessão grava a rodada em que nasceu, e o
-    resolvedor (\arq{unoogpt/contexto-da-evidencia.ts}) recusa a resposta fora
-    do passo \cd{resultado} ou de uma sessão de rodada que acabou.
-  \item \textbf{Vale a MELHOR resposta} (\cd{respostas: "melhor"} na ficha): a
-    pergunta reaparece no resultado de cada \enquote{Tentar de novo}, e a marca
-    única só muda quando a resposta nova é melhor.
-  \item \textbf{Só conta quando o professor ENCERRA a missão na Sala de Aula}
-    (\cd{contaAoEncerrarAMissao}): até lá a marca fica guardada e o painel vem
-    com \cd{aguardandoEncerramento}. O encerramento (\cd{SalasService.aoEncerrarMissao})
-    grava a evidência própria na transação de quem encerrou, e a porta da
-    missão, fechada, recusa resposta nova.
+  \item \textbf{O registro da operação retém o desfecho.} \enquote{Enviar
+    equipes} é \rota{POST /unoogpt/mandar}: congela a saída, monta o registro
+    (\cd{exp02em1b\_tarefas}, com a apresentação gravada) e o resultado só
+    desce com ele feito (\cd{registro-pendente}). A conversa não manda: o
+    Cientista que ouve \enquote{pode mandar} abre a decisão
+    (\cd{abrirEnvio}). \rota{POST /unoogpt/simular} ficou como alias do
+    cliente 1.4.x, sem tarefa nem marca.
+  \item \textbf{O fechamento é do professor}: \cd{abrir-fechamento} no relógio
+    da turma; o painel conta \enquote{N de M grupos enviaram}. Com ele aberto,
+    \enquote{Tentar de novo} é recusado.
+  \item \textbf{Só conta ao encerrar}, como antes (\cd{contaAoEncerrarAMissao}),
+    e o encerramento só transforma em nível marcador da ficha vigente: as
+    \cd{p1}--\cd{p4} de uma turma aberta no dia da troca não contam.
+  \item \textbf{A atividade é a sintética \cd{"turma"}} e a rodada é a da
+    turma (\cd{exp02em1b\_gate\_turma}); o \enquote{Zerar a turma} apaga as
+    sessões (e as tarefas, em cascata), o relógio (e o fechamento) e a
+    evidência (\adrr{ADR-155}).
+  \item \textbf{Clone dentro de clone} (\adrr{ADR-173}): o balão do pedido pelo
+    WhatsApp é o \cd{MessageBubble} do \cd{unoochat}, em tema claro, dentro do
+    UnooriaAI; só a peça.
 \end{itemize}
 
 % ---------------------------------------------------------------------------

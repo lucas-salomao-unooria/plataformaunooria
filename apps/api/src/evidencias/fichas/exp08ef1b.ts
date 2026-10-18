@@ -2,122 +2,84 @@ import type { FichaPedagogica } from "./tipos";
 
 /**
  * A FICHA de "O Conteúdo que não chegou" (exp08ef1b, Unoovista, 8º ano EF,
- * unidade 1) — versão 1, de 2026-10-07.
+ * unidade 1) — versão 2, de 2026-10-16 (ADR-167).
  *
- * Três habilidades, três perguntas de múltipla escolha (o Canal B), na tela
- * escura do fim, DEPOIS da reflexão escrita salva — a reflexão fica (decisão do
- * Lucas em 2026-10-02: o PO falava em trocá-la), e perguntar antes sugeriria a
- * resposta que ela pede:
+ * Toda habilidade é medida por AÇÃO (o Canal A); as três perguntas de
+ * múltipla escolha da versão 1 (ADR-153) saíram. Os níveis que elas deram em
+ * atividades encerradas ficam no histórico.
  *
- *   - **EF08CO11** (vieses em fontes eletrônicas) pela p1: o que montou o feed.
- *   - **EF08CO09** (termos de uso das plataformas) pela p2: a regra invisível.
- *   - **EF08CO07** (compartilhar entendendo a dinâmica da rede) pela p3: o que
- *     muda quando alguém compartilha o que viu.
+ *   - **EF08CO11** (vieses e abrangência de fontes eletrônicas) pelo 6a Raio-x
+ *     do feed (vieses) e pela reflexão lida pela IA (mecanismo e abrangência).
+ *     Vale a melhor das duas; o painel diz de qual veio (ADR-166).
+ *   - **EF08CO09** (termos de uso) pelo 6b: localizar, explicar o efeito e
+ *     julgar as regras.
+ *   - **EF08CO07** (compartilhar com responsabilidade) pelo 6c, o envio. Na
+ *     atividade sem página de fofoca ou de humor nos dois lados, a única casa
+ *     que a trava muda grava `envio-sem-confiabilidade`, limitado pela
+ *     atividade: o consolidado o conta à parte.
  *
- * Enunciado e alternativas são o texto do PO, LITERAL. Os critérios são o "Por
- * que essa calibragem" dele, contado para o professor. A rodada é sempre 1
- * (`motor/contexto-da-evidencia.ts`): uma nova aplicação é uma atividade nova.
- * Quem não chega às perguntas fica "Não avaliado" — a AUSÊNCIA de marca.
+ * As réguas moram em `motor/canal-a/` (puras, testadas sem banco); os
+ * critérios abaixo são elas contadas para o professor. A rodada é sempre 1
+ * (`motor/contexto-da-evidencia.ts`); vale o PRIMEIRO envio de cada tarefa,
+ * mesmo depois de um reinício.
  */
 export const FICHA_EXP08EF1B: FichaPedagogica = {
   expId: "exp08ef1b",
-  versao: 1,
+  versao: 2,
   habilidades: [
     {
       codigo: "EF08CO11",
-      marcadores: [{ id: "p1", tipo: "multipla_escolha", perguntaId: "p1" }],
+      marcadores: [
+        { id: "raio-x", tipo: "acao", rotulo: "Raio-x do feed" },
+        { id: "reflexao", tipo: "acao", rotulo: "Reflexão — sugestão da IA" },
+      ],
       criterios: {
         atingiu:
-          "Na 1ª pergunta, aponta os sinais que a plataforma usou (o que curtiu, salvou e onde parou mais tempo), o ranqueamento por esse padrão e a consequência: o resto ficou de fora.",
+          "No Raio-x, acerta de onde vieram 5 ou 6 dos 6 posts, incluindo o do lado dele em que mais parou. Ou, na reflexão, explica como o feed escolheu os posts e diz o que ficou de fora por causa de algo que ele mesmo fez.",
         em_processo:
-          "Na 1ª pergunta, reconhece que o feed foi personalizado, mas não diz quais sinais alimentaram a ordenação.",
-        nao_atingiu: "Na 1ª pergunta, não reconhece que houve filtragem: trata o feed como se já viesse pronto.",
+          "No Raio-x, acerta 4 posts, ou 5 errando o post em que mais parou. Ou, na reflexão, explica como o feed escolheu os posts, sem dizer o que ficou de fora por causa de algo que ele fez.",
+        nao_atingiu:
+          "No Raio-x, acerta 3 posts ou menos. Ou, na reflexão, atribui o feed inteiro ao acaso ou nega que houve escolha.",
+        observacao:
+          "Vale o melhor entre o Raio-x e a reflexão. O Raio-x mede os vieses das fontes; a reflexão mede o mecanismo e a abrangência (o que ficou de fora). Precisão e relevância das fontes não são medidas nesta missão. O nível da reflexão é uma sugestão da IA: confira e ajuste se discordar. Sem nenhuma das duas, a habilidade fica \"Não avaliado\", e você pode ajustar.",
       },
     },
     {
       codigo: "EF08CO09",
-      marcadores: [{ id: "p2", tipo: "multipla_escolha", perguntaId: "p2" }],
+      marcadores: [{ id: "termos", tipo: "acao", rotulo: "Os termos de uso" }],
       criterios: {
         atingiu:
-          "Na 2ª pergunta, liga a coleta e o uso das interações às regras da plataforma (os termos de uso) e percebe que essas regras não estavam visíveis enquanto navegava.",
+          "Marca as regras que explicam o feed com no máximo um engano, liga pelo menos duas delas ao efeito certo e escolhe a mudança que dá controle ao usuário.",
         em_processo:
-          "Na 2ª pergunta, explica como funcionamento automático do algoritmo, sem questionar a regra por trás.",
-        nao_atingiu: "Na 2ª pergunta, não vê problema: aceita o resultado sem questionar as regras que o produziram.",
+          "Marca as regras que explicam o feed com no máximo um engano e liga pelo menos uma ao efeito certo, mas não escolhe a mudança que dá controle.",
+        nao_atingiu:
+          "Erra duas regras ou mais (marcar todas também conta), ou não liga nenhuma regra ao efeito certo.",
+        observacao:
+          "Medida no 6b, depois da revelação. Sem a tarefa feita, a habilidade fica \"Não avaliado\", e você pode ajustar.",
       },
     },
     {
       codigo: "EF08CO07",
-      marcadores: [{ id: "p3", tipo: "multipla_escolha", perguntaId: "p3" }],
+      marcadores: [
+        { id: "envio", tipo: "acao", rotulo: "Envio para quem não viu" },
+        {
+          id: "envio-sem-confiabilidade",
+          tipo: "acao",
+          rotulo: "Envio — confiabilidade não medida nesta atividade",
+          limitadoPelaAtividade: true,
+        },
+      ],
       criterios: {
         atingiu:
-          "Na 3ª pergunta, liga a visão parcial do feed ao ato de compartilhar: quem compartilha e quem recebe não sabem o que ficou de fora, e a informação circula incompleta.",
+          "Manda posts dos dois lados, nenhum de página de fofoca ou de humor, com a mensagem que avisa que aquilo é só um pedaço.",
         em_processo:
-          "Na 3ª pergunta, nota que cada um vê coisas diferentes, mas não tira consequência para o compartilhamento.",
-        nao_atingiu: "Na 3ª pergunta, trata o que apareceu no feed como confiável só por ter aparecido.",
+          "Manda os dois lados com outra mensagem que não ridiculariza, ou manda fofoca ou humor junto, ou manda um lado só (ou só neutros) avisando que é só um pedaço.",
+        nao_atingiu:
+          "Ridiculariza o outro lado, ou passa um lado só como se fosse o todo, ou encerra a questão com um recorte.",
+        observacao:
+          "Medida no 6c, depois da revelação. Numa atividade sem página de fofoca ou de humor nos dois lados, a confiabilidade não é medida e o envio vai no máximo a \"Em processo\" — a célula diz isso. Para medir, crie uma atividade nova com a mesma pergunta. Sem a tarefa feita, a habilidade fica \"Não avaliado\", e você pode ajustar.",
       },
     },
   ],
-  perguntas: [
-    {
-      id: "p1",
-      enunciado: "Seu feed só mostrou posts de um lado da questão. O que fez a plataforma montar esse feed pra você?",
-      alternativas: [
-        {
-          id: "A1",
-          texto:
-            "Ela usou o que eu fiz no feed: o que curti, salvei e onde parei mais tempo. Com isso, ranqueou os posts e me mostrou só os que combinavam com esse padrão. O resto ficou de fora.",
-          status: "atingiu",
-        },
-        {
-          id: "A2",
-          texto: "Ela percebeu que eu preferia um lado e me mandou mais posts daquele tipo.",
-          status: "em_processo",
-        },
-        { id: "A3", texto: "O feed já veio assim. Só tinha aqueles posts pra mostrar.", status: "nao_atingiu" },
-      ],
-    },
-    {
-      id: "p2",
-      enunciado:
-        "Enquanto você navegava, a plataforma não avisou que estava usando suas interações pra decidir o que mostrar. O que isso tem a ver com as regras da plataforma?",
-      alternativas: [
-        {
-          id: "B1",
-          texto:
-            "Tem a ver com os termos de uso: a plataforma coletou o que eu fiz e usou pra filtrar meu feed, mas essas regras não estavam visíveis pra mim enquanto eu navegava.",
-          status: "atingiu",
-        },
-        {
-          id: "B2",
-          texto:
-            "A plataforma fez isso porque é assim que o algoritmo funciona. Ele filtra automaticamente pra cada pessoa.",
-          status: "em_processo",
-        },
-        { id: "B3", texto: "Não precisava avisar. O feed ficou organizado e funcionou bem.", status: "nao_atingiu" },
-      ],
-    },
-    {
-      id: "p3",
-      enunciado:
-        "Seus colegas receberam feeds opostos ao seu sobre a mesma questão. Se isso acontece nas redes sociais de verdade, o que muda quando alguém compartilha o que viu?",
-      alternativas: [
-        {
-          id: "C1",
-          texto:
-            "A pessoa compartilha achando que viu o assunto inteiro, mas só viu o que a rede mostrou pra ela. Quem recebe também não sabe o que ficou de fora, então a informação circula incompleta sem ninguém perceber.",
-          status: "atingiu",
-        },
-        {
-          id: "C2",
-          texto: "É estranho que cada um veja coisas diferentes, mas cada pessoa compartilha o que interessa pra ela.",
-          status: "em_processo",
-        },
-        {
-          id: "C3",
-          texto: "Não muda nada. Se a informação estava lá, é porque era confiável.",
-          status: "nao_atingiu",
-        },
-      ],
-    },
-  ],
+  perguntas: [],
 };

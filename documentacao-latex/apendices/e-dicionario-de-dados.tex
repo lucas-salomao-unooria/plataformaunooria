@@ -81,7 +81,9 @@ Os diagramas entidade-relacionamento estão no Capítulo~\ref{cap:dados}.
 \cd{exp08ef1b\_events} & Tenant & Canal \textbf{operacional} de telemetria\\
 \zebra \cd{exp08ef1b\_student\_posts} & Tenant & Posts publicados pelo estudante\\
 \cd{exp08ef1b\_conclusoes} & Tenant & Inclinação escolhida --- a ÚLTIMA em \cd{inclinacao} e a PRIMEIRA em \cd{inclinacao\_inicial}, com \cd{trocas}. A tela convida a mudar de ideia (``vale a última'') e o \cd{upsert} apagava a primeira; \cd{atualizado\_em} existe porque \cd{created\_at} congelava no primeiro envio e passava a mentir (ADR-43)\\
-\zebra \cd{exp08ef1b\_reflexoes} & Tenant & Texto de fechamento\\
+\zebra \cd{exp08ef1b\_reflexoes} & Tenant & Texto de fechamento; \cd{primeiro\_texto} guarda o que a IA leu e sai com a reflexão (\adrr{ADR-167})\\
+\cd{exp08ef1b\_tarefas} & Tenant & As tarefas do Canal A (6a Raio-x, 6b termos, 6c envio): a composição mostrada, as respostas, \cd{refeita} e a frase opcional do envio. Sai no reinício (\adrr{ADR-167})\\
+\zebra \cd{exp08ef1b\_leituras\_da\_reflexao} & Tenant & A leitura da reflexão pela IA, uma por estudante na atividade, SEM texto: resultado, nível, motivo, \cd{tentativas} (até 3, só a falha técnica tenta de novo) e data. O reinício não a apaga; \enquote{Apagar as sessões} sim, em cascata (\adrr{ADR-167})\\
 \cd{exp08ef1b\_dossiers} & Tenant & Dossiê calculado\\
 \zebra \cd{exp08ef1b\_comentarios\_da\_sessao} & Tenant & Comentários da sessão\\
 \cd{exp08ef1b\_app\_70\_perfis\_importados} & Tenant &
@@ -97,6 +99,7 @@ Os diagramas entidade-relacionamento estão no Capítulo~\ref{cap:dados}.
 \zebra \cd{exp02em1b\_simulacoes} & Tenant & Desfecho por tentativa\\
 \cd{exp02em1b\_relogio\_turma} & Tenant & O Relógio da Aula, por turma\\
 \cd{exp02em1b\_gate\_turma} & Tenant & A rodada da turma na evidência pedagógica\\
+\zebra \cd{exp02em1b\_tarefas} & Tenant & As tarefas do Canal A: a apresentação montada pelo servidor e as respostas, só escolha fechada (\adrr{ADR-172})\\
 \zebra \cd{exp01ef1b\_turma\_config} & Tenant & A aula da exp01ef1b por turma: pacote aprovado, latch e tentativa\\
 \cd{exp01ef1b\_runs} & Tenant & Execução por estudante e tentativa (reset arquiva, não apaga)\\
 \zebra \cd{exp01ef1b\_posts\_turma} & Tenant & O mural coletivo, assinado pela marca --- sem nome de criança\\
@@ -513,7 +516,13 @@ numa atividade, numa rodada. É o que o painel do professor lê.
 \zebra \cd{editado\_por} & \cd{UUID} & Quem ajustou. Preenchida se e só se a
   origem for \cd{professor} (\cd{evidencias\_\B{}editado\_\B{}por\_\B{}check}). \textbf{Sem
   FK}: carimbo não trava a saída de um professor da rede.\\
-\cd{atualizado\_em} & \cd{TIMESTAMPTZ} & \cd{@updatedAt}.\\
+\cd{marcador} & \cd{TEXT} & O marcador da ficha que deu o nível
+  (\adrr{ADR-166}): o \enquote{de onde veio} do painel e o que separa, no
+  consolidado, o \enquote{em processo} limitado pela atividade. Só na origem
+  \cd{propria} (\cd{evidencias\_\B{}marcador\_\B{}so\_\B{}na\_\B{}propria\_\B{}check}), no
+  alfabeto dos ids da ficha (\cd{evidencias\_\B{}marcador\_\B{}check}); nula na
+  cópia, no ajuste e nas linhas anteriores à coluna.\\
+\zebra \cd{atualizado\_em} & \cd{TIMESTAMPTZ} & \cd{@updatedAt}.\\
 \bottomrule
 \end{tabularx}
 
@@ -1866,6 +1875,31 @@ estudante só recebe os posts que o feed serviu até a galeria abrir
   onde o relógio da cidade estava quando a duração mudou. É o que impede o minuto
   narrativo de rebobinar --- aos 4:00 de 5:00 o estudante está no minuto 48, e
   recalcular com 7:00 daria 34.\\
+\cd{fechamento\_aberto\_em} & \cd{TIMESTAMPTZ?} & O professor abriu o
+  fechamento (o WhatsApp e a moradora, \adrr{ADR-172}). Nulo = fechado;
+  \enquote{Redefinir} e o \enquote{Zerar a turma} o fecham.\\
+\bottomrule
+\end{tabularx}
+
+\subsection{\cd{exp02em1b\_tarefas}}
+
+\begin{tabularx}{\linewidth}{@{}L{34mm}L{22mm}X@{}}
+\toprule
+\headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
+\midrule
+\pk{id} & \cd{UUID} & \cd{gen\_random\_uuid()}.\\
+\zebra \cd{(escola\_id, estudante\_id)} & FK & Para a sessão, em cascata. RLS
+  forçada por \cd{escola\_id}.\\
+\cd{rodada}, \cd{tentativa} & \cd{INT}, \cd{SMALLINT} & A rodada da TURMA (a
+  unidade da evidência) e a tentativa do estudante. Única por (escola,
+  estudante, rodada, tentativa, tarefa). \emph{CHECK} $\geq 1$.\\
+\zebra \cd{tarefa} & \cd{TEXT} & \emph{CHECK} \cd{IN ('leitura', 'fontes',
+  'alerta', 'saude', 'e-se', 'whatsapp', 'moradora')}, o mesmo vocabulário de
+  \arq{unoogpt/regras/canal-a.ts}.\\
+\cd{apresentacao} & \cd{JSONB} & O que o servidor montou e a tela mostrou,
+  com o gabarito --- só a api o lê.\\
+\zebra \cd{respostas}, \cd{enviada\_em} & \cd{JSONB?}, \cd{TIMESTAMPTZ?} &
+  Ids de escolha fechada. \emph{CHECK}: respondida $\Leftrightarrow$ com data.\\
 \bottomrule
 \end{tabularx}
 

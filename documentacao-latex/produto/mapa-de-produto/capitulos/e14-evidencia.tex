@@ -146,8 +146,8 @@ a missão de fato observa}
 \end{itemize}
 \pendencia{as réguas que existem são a de Quem mandou isso? (\id{H14.1.2}), a
 da A Seleção (\id{F06.12}), a do Jornal da Escola (\id{H06.10.4}), a do Júri
-Estadual (\id{F06.14}), a do Unoovista (\id{H06.6.8}) e a da Missão Tempestade
-(\id{H06.8.5}); as outras missões não têm régua.}
+Estadual (\id{F06.14}), a do Unoovista (\id{H06.6.9}) e a da Missão Tempestade
+(\id{H06.8.6}); as outras missões não têm régua.}
 \end{historia}
 
 \begin{historia}{H14.1.2}{A primeira missão entra com a régua}{\pronto}
@@ -202,19 +202,22 @@ demonstrou}
     feed dele, abrindo um projeto dela; e a EF06CO03 pela engrenagem do feed (pelo número de
     tentativas). Até 6 de outubro de 2026 a régua media a EF06CO07, pela
     curtida remontada em pacotes; as marcas antigas continuam guardadas.
-  \item A quinta é o Unoovista (\id{H06.6.8}), a candidata que tinha ficado
+  \item A quinta é o Unoovista (\id{H06.6.9}), a candidata que tinha ficado
     para trás: a atividade é a que o professor criou para a turma, e cada uma
-    tem uma rodada só. A régua mede três habilidades, cada uma por uma pergunta
-    do PO depois da reflexão escrita: a EF08CO11 (o que montou o feed), a
-    EF08CO09 (as regras da plataforma) e a EF08CO07 (o que muda ao
-    compartilhar).
-  \item A sexta é a Missão Tempestade (\id{H06.8.5}), a primeira do Ensino Médio, e a
-    única com duas regras próprias. Como a missão não tem atividades, a
-    atividade é a turma, e a rodada só muda quando o professor zera a turma. As
-    quatro perguntas do PO aparecem no resultado de cada tentativa e vale a
-    melhor resposta; e o nível só conta quando o professor encerra a missão na
-    Sala de Aula (\id{H06.8.6}). Mede a EM13CO14, a EM13CO08, a EM13CO24 e a
-    EM13CO26.
+    tem uma rodada só. Desde 16 de outubro de 2026 a régua mede as três
+    habilidades pelo que o estudante faz: a EF08CO11 pelo Raio-x e pela
+    reflexão lida pela IA, a EF08CO09 pelos termos e a EF08CO07 pelo envio
+    (\id{H06.6.11} a \id{H06.6.13}). Até ali, cada uma era medida por uma
+    pergunta depois da reflexão (\id{H06.6.8}).
+  \item A sexta é a Missão Tempestade (\id{H06.8.6}), a primeira do Ensino
+    Médio. Como a missão não tem atividades, a atividade é a turma, e a rodada
+    só muda quando o professor zera a turma; o nível só conta quando o
+    professor encerra a missão na Sala de Aula. Desde 16 de outubro de 2026 a
+    régua mede seis habilidades pelo que o grupo faz: a ligação da Saúde, o
+    registro da operação, as duas comparações do resultado e o fechamento
+    (\id{H06.8.8} a \id{H06.8.12}) --- a EM13CO12, a EM13CO14, a EM13CO11, a
+    EM13CO08, a EM13CO24 e a EM13CO26. Até ali, eram quatro perguntas no
+    resultado (\id{H06.8.5}).
 \end{itemize}
 \end{historia}
 
@@ -386,9 +389,8 @@ estudante}{saber o que a turma demonstrou e planejar a próxima aula}
     acabou de publicar, de responder ou de concluir aparece sem eu recarregar a
     página.
   \item O bloco aparece nos resultados de Quem mandou isso?, da A Seleção, do
-    Jornal da Escola e do Júri Estadual, as quatro missões com régua; a página da atividade do
-    Unoovista o mostrará
-    quando ele tiver a sua.
+    Jornal da Escola e do Júri Estadual, e na página da atividade do
+    Unoovista.
 \end{itemize}
 \end{historia}
 
@@ -448,6 +450,24 @@ estudante}{acompanhar a aprendizagem sem interferir na avaliação do professor}
 \end{itemize}
 A tela é o painel de habilidades da escola e da regional (\id{H14.7.2},
 \id{H14.7.3}): dele, a coordenação abre a turma e o estudante, só para ler.
+\end{historia}
+
+\begin{historia}{H14.4.5}{Saber de onde veio cada nível}{\pronto}
+\hu{Professor}{ver qual atividade da missão deu o nível de cada estudante, e o
+que cada uma disse quando elas não concordam}{conferir a sugestão da IA e
+decidir o ajuste sabendo o que cada atividade mostrou}
+\aceite
+\begin{itemize}
+  \item Quando a missão diz o nome de cada atividade da régua, a célula mostra,
+    embaixo do nível, qual atividade o deu --- por exemplo, \enquote{Reflexão
+    --- sugestão da IA}.
+  \item Quando duas atividades da mesma habilidade dão níveis diferentes, a
+    célula mostra o nível de cada uma. Continua valendo o melhor.
+  \item Na janela de ajuste, o professor vê de onde veio o nível de hoje e o
+    que cada atividade disse; depois do ajuste, o nível passa a ser dele, e o
+    que as atividades disseram continua visível.
+  \item A missão que não dá nome às atividades mantém a célula de sempre.
+\end{itemize}
 \end{historia}
 
 % ---------------------------------------------------------------------------
@@ -544,6 +564,11 @@ abrir missão por missão}
     vazia.
   \item Cada habilidade de cada missão aplicada mostra quantos atingiram, estão
     em processo, não atingiram e não foram avaliados, em contagem.
+  \item O \enquote{em processo} que vem do limite da atividade escolhida (e
+    não do estudante) aparece numa faixa à parte, \enquote{Em processo
+    (limitado pela atividade)}, só quando há alguém nela; o total continua sendo
+    a turma inteira. Se o estudante tem esse nível numa atividade e o
+    \enquote{em processo} comum em outra, conta o comum.
   \item A missão que a turma ainda não aplicou aparece como tal, sem números.
   \item Posso ordenar as habilidades da mais atingida para a menos atingida
     (é a ordem das habilidades, nunca dos estudantes).

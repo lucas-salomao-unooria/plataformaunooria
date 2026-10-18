@@ -68,6 +68,16 @@ export function AjustarCelula({
             Hoje: <span className="font-semibold text-unooria-neutral-800">{hoje}</span>
             {leitura.aRevisar ? " — ainda não conta até você confirmar a aula projetada ou ajustar aqui." : ""}
           </p>
+          {leitura.deOndeVeio || leitura.acoes ? (
+            <div className="flex flex-col gap-1 text-[13px] text-unooria-neutral-500">
+              {leitura.deOndeVeio ? (
+                <p>
+                  De onde veio: <span className="font-semibold text-unooria-neutral-800">{leitura.deOndeVeio}</span>
+                </p>
+              ) : null}
+              {leitura.acoes?.map((acao) => <p key={acao}>{acao}</p>)}
+            </div>
+          ) : null}
           <RadioGroup
             label="Nível nesta rodada"
             name={`nivel-${alvo.estudanteId}-${alvo.codigo}-${alvo.rodada}`}

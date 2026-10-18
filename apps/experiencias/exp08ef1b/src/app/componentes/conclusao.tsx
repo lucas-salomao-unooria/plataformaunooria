@@ -28,11 +28,17 @@ export function Conclusao({
   ladoALabel,
   ladoBLabel,
   aoEnviar,
+  depoisDeRegistrar,
 }: {
   perguntaChave: string;
   ladoALabel: string;
   ladoBLabel: string;
   aoEnviar: (inclinacao: Inclinacao) => Promise<boolean>;
+  /**
+   * O que vem na MESMA tela depois de "Resposta registrada" — o 6a Raio-x
+   * (ADR-167). A resposta não muda: o Raio-x fica embaixo dela.
+   */
+  depoisDeRegistrar?: React.ReactNode;
 }) {
   const [inclinacao, setInclinacao] = useState<Inclinacao | null>(null);
   const [registrada, setRegistrada] = useState<Inclinacao | null>(null);
@@ -108,6 +114,8 @@ export function Conclusao({
             Toca na opção que mais combina com o que você viu.
           </p>
         )}
+
+        {registrada ? depoisDeRegistrar : null}
       </div>
     </div>
   );

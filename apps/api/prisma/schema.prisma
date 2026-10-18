@@ -430,6 +430,8 @@ model User {
 
   activities                 Activity[]                  @relation("ActivityProfessor")
   runs                       Run[]
+  /// A leitura da reflexão pela IA na exp08ef1b (ADR-167): sai com a criança.
+  leiturasDaReflexao         LeituraDaReflexao[]         @relation("LeituraDaReflexaoEstudante")
   perfis                     PerfilImportado[]
   /// O UnooTube ARQUIVADO (ADR-116): a tabela ficou, sem rota que a sirva.
   backupUnootube             BackupUnootubeSessao[]
@@ -674,6 +676,10 @@ model Run {
   /// run porque a conta é do APARELHO: outra turma reusa o mesmo login.
   nomeNoApp       String? @map("nome_no_app")
   avatarEscolhido String? @map("avatar_escolhido")
+  /// Quando o estudante chegou à ÚLTIMA tela da revelação (o "Ver meu
+  /// relatório", ADR-167). As tarefas 6b e 6c só abrem com ele preenchido, e o
+  /// Raio-x (6a) fecha. O reinício o zera.
+  revelacaoConcluidaEm DateTime? @map("revelacao_concluida_em") @db.Timestamptz(6)
 
   activity     Activity             @relation(fields: [activityId], references: [id])
   estudante    User                 @relation(fields: [estudanteId], references: [id])
@@ -683,6 +689,8 @@ model Run {
   reflexao     Reflexao?
   comentarios  ComentarioDaSessao[]
   dossier      Dossier?
+  tarefas      TarefaDaSessao[]
+  leiturasDaReflexao LeituraDaReflexao[]
 
   @@unique([activityId, estudanteId])
   @@index([escolaId])
@@ -811,6 +819,10 @@ model Reflexao {
   runId     String   @id @map("run_id") @db.Uuid
   escolaId  String   @map("escola_id")
   texto     String
+  /// O PRIMEIRO texto salvo (ADR-167): o que a IA lê, uma vez só. Gravado na
+  /// criação da linha e nunca no update; sai com a reflexão (reinício e
+  /// "Apagar as sessões"). Só o professor o lê. Nulo nas linhas de antes.
+  primeiroTexto String? @map("primeiro_texto")
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
@@ -1457,10 +1469,19 @@ model UnoogptSessao {
   atualizadoEm DateTime  @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
   concluidoEm  DateTime? @map("concluido_em") @db.Timestamptz(6)
 
+  /// O registro da operação (ADR-172): o desfecho fica RETIDO até aqui.
+  registroConcluidoEm    DateTime? @map("registro_concluido_em") @db.Timestamptz(6)
+  /// Quando a ligação da Saúde apareceu nesta tentativa (ADR-172).
+  ofertaSaudeEm          DateTime? @map("oferta_saude_em") @db.Timestamptz(6)
+  /// Gravado ao entrar na investigação: a tentativa que COMEÇOU com o relógio
+  /// fechado não marca a leitura nem as fontes (ADR-172). Null = antes da coluna.
+  inicioComRelogioAberto Boolean?  @map("inicio_com_relogio_aberto")
+
   estudante  User               @relation("UnoogptEstudante", fields: [estudanteId], references: [id], onDelete: Cascade)
   mensagens  UnoogptMensagem[]
   marcos     UnoogptMarco[]
   simulacoes UnoogptSimulacao[]
+  tarefas    UnoogptTarefa[]
 
   @@id([escolaId, estudanteId])
   @@index([escolaId])
@@ -1592,6 +1613,8 @@ model UnoogptRelogioTurma {
   /// aos 4:00 de 5:00 o estudante está no minuto 48, e recalcular com 7:00 daria 34.
   pivoSeg     Int       @default(0) @map("pivo_seg")
   pivoMin     Int       @default(0) @map("pivo_min")
+  /// O professor abriu o fechamento (o WhatsApp e a moradora, ADR-172).
+  fechamentoAbertoEm DateTime? @map("fechamento_aberto_em") @db.Timestamptz(6)
 
   atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
 
@@ -2504,6 +2527,11 @@ model Evidencia {
   equipeId         String? @map("equipe_id") @db.Uuid
   /// Quem ajustou (origem `professor`), e só nela. Carimbo, sem FK.
   editadoPor       String? @map("editado_por") @db.Uuid
+  /// O marcador da ficha que deu o nível (ADR-166), e só na origem `propria`:
+  /// é o "de onde veio" do painel e o que separa, no consolidado, o "em
+  /// processo" limitado pela atividade. Nulo na cópia, no ajuste e nas linhas
+  /// anteriores à coluna. CHECKs na migration.
+  marcador         String?
 
   atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
 
@@ -3614,4 +3642,87 @@ model CotacaoDolar {
   buscadoEm DateTime @default(now()) @map("buscado_em") @db.Timestamptz(6)
 
   @@map("cotacoes_dolar")
+}
+
+/// As TAREFAS do Canal A da exp08ef1b (ADR-167): 6a Raio-x, 6b Termos, 6c
+/// Envio. Uma linha por (sessão, tarefa), criada na primeira leitura com a
+/// COMPOSIÇÃO que o estudante viu (os posts do Raio-x e do envio não mudam
+/// entre a leitura e o envio) e completada no envio. É produção do estudante:
+/// sai no reinício e em "Apagar as sessões". A marca de evidência, não.
+model TarefaDaSessao {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  escolaId    String    @map("escola_id")
+  runId       String    @map("run_id") @db.Uuid
+  /// raio-x | termos | envio — CHECK na migration.
+  tarefa      String
+  /// O que foi mostrado (ids na ordem da tela, as alternativas embaralhadas).
+  composicao  Json
+  /// O que o estudante respondeu; nulo até o envio.
+  respostas   Json?
+  enviadaEm   DateTime? @map("enviada_em") @db.Timestamptz(6)
+  /// Enviada de novo depois de um reinício: vale o primeiro envio, e esta não marca.
+  refeita     Boolean   @default(false)
+  /// Só no envio (6c): a frase opcional do estudante. Só o professor a lê.
+  frase       String?
+  criadaEm    DateTime  @default(now()) @map("criada_em") @db.Timestamptz(6)
+
+  run Run @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@unique([runId, tarefa])
+  @@index([escolaId])
+  @@map("exp08ef1b_tarefas")
+}
+
+/// A LEITURA DA REFLEXÃO pela IA na exp08ef1b (ADR-167): uma só por estudante
+/// na atividade, do PRIMEIRO texto salvo, SEM texto nenhum aqui. Nasce na
+/// transação do primeiro salvamento (a unicidade impede a segunda leitura) e a
+/// chamada à IA, depois, só preenche resultado e motivo. O reinício não a
+/// apaga; "Apagar as sessões" apaga as sessões, e a cascata a leva junto.
+model LeituraDaReflexao {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  escolaId    String    @map("escola_id")
+  activityId  String    @map("activity_id") @db.Uuid
+  estudanteId String    @map("estudante_id") @db.Uuid
+  runId       String    @map("run_id") @db.Uuid
+  /// nivel | sem_marca | falha — nulo enquanto a IA não respondeu. CHECK na migration.
+  resultado   String?
+  /// atingiu | em_processo | nao_atingiu — só com resultado `nivel`.
+  nivel       String?
+  /// O código do motivo (nunca texto do estudante).
+  motivo      String?
+  /// Quantas chamadas à IA a leitura fez (até 3; só a falha técnica tenta de novo).
+  tentativas  Int       @default(0) @db.SmallInt
+  criadaEm    DateTime  @default(now()) @map("criada_em") @db.Timestamptz(6)
+  lidaEm      DateTime? @map("lida_em") @db.Timestamptz(6)
+
+  run       Run  @relation(fields: [runId], references: [id], onDelete: Cascade)
+  estudante User @relation("LeituraDaReflexaoEstudante", fields: [estudanteId], references: [id], onDelete: Cascade)
+
+  @@unique([activityId, estudanteId])
+  @@index([escolaId])
+  @@map("exp08ef1b_leituras_da_reflexao")
+}
+
+/// As TAREFAS DO CANAL A da Missão Tempestade (ADR-172): uma linha por
+/// (sessão, rodada da turma, tentativa, tarefa), com a APRESENTAÇÃO que o
+/// servidor montou e as respostas — só ids de escolha fechada, nenhum texto
+/// livre. `tarefa` tem CHECK (`regras/canal-a.ts#TAREFAS`).
+model UnoogptTarefa {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  escolaId     String    @map("escola_id")
+  estudanteId  String    @map("estudante_id") @db.Uuid
+  /// A rodada da TURMA (`exp02em1b_gate_turma`): é a unidade da evidência.
+  rodada       Int
+  tentativa    Int       @db.SmallInt
+  tarefa       String
+  apresentacao Json
+  respostas    Json?
+  enviadaEm    DateTime? @map("enviada_em") @db.Timestamptz(6)
+  criadaEm     DateTime  @default(now()) @map("criada_em") @db.Timestamptz(6)
+
+  sessao UnoogptSessao @relation(fields: [escolaId, estudanteId], references: [escolaId, estudanteId], onDelete: Cascade)
+
+  @@unique([escolaId, estudanteId, rodada, tentativa, tarefa], map: "exp02em1b_tarefas_unica")
+  @@index([escolaId])
+  @@map("exp02em1b_tarefas")
 }

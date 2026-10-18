@@ -6,8 +6,8 @@ Complementa o `AGENTS.md` da raiz e o de `apps/experiencias`.
 |---|---|
 | Manifesto | `exp02em1b` · 2EM (unidade 1) · `telemetria, ia` · `permissoes: ["forms"]` |
 | Dev | `pnpm --filter @edu/exp02em1b dev` → :5178 · hub `/exp/exp02em1b` |
-| DS | `@edu/ui/ds-unooriaai` **na experiência inteira** (desde a 1.3.0, ADR-138; até a 1.2.7 era `ds-chatgpt`) |
-| api | módulo `unoogpt` — trilha pedagógica em `exp02em1b_marcos` |
+| DS | `@edu/ui/ds-unooriaai` **na experiência inteira** (desde a 1.3.0, ADR-138; até a 1.2.7 era `ds-chatgpt`), e o `MessageBubble` do `unoochat` numa peça só (ADR-173) |
+| api | módulo `unoogpt` — trilha pedagógica em `exp02em1b_marcos`, o Canal A em `exp02em1b_tarefas` |
 | e2e | `scripts/e2e/estudante/04-unoogpt.mjs` |
 
 **Ela não tem revelação no software.** Por isso nunca troca para a seção da
@@ -35,20 +35,44 @@ Unooria (ADR-138), e três diferenças morderam a troca:
   recolher a trilha são `<Icon name="arrowForward">` (a de recolher, com
   `rotate`). Sem `fonts/unooriaai.css` a tela escreve o nome do ícone.
 
-## As perguntas de evidência ficam no clone (1.4.0, ADR-154)
+## O Canal A (1.5.0, ADR-172): registro, "E se…" e fechamento
 
-As quatro perguntas do PO aparecem no Resultado, na rodada mais recente, com o
-`ChoicePoll` da seção `unooriaai` (`componentes/perguntas.tsx`) — nunca o
-`RadioGroup` da plataforma: aqui não há revelação. Elas reaparecem a cada
-"Tentar de novo" (o servidor guarda a MELHOR resposta e só a conta quando o
-professor encerra a missão), e a trava de F5 é por PARTIDA — estudante, rodada
-da turma (`rodadaDaTurma`, que a api devolve na sessão) e tentativa —, em
-`src/lib/memoria-das-perguntas.ts` (`sessionStorage`, só ids). **Nunca só a
-tentativa**: o `sessionStorage` é da aba, não do estudante, e com a chave
-`exp02em1b:perguntas:1` as perguntas chegavam já marcadas (e travadas) depois do
-"Zerar a turma" e para o próximo estudante na mesma aba (1.4.1). Ao montar, a
-tela apaga as chaves de outras partidas. Erro (409 fora do resultado ou da rodada da turma,
-403 com a missão encerrada) faz o bloco sumir, sem prender o Resultado.
+Não há mais pergunta de múltipla escolha (o Canal B saiu, e com ele
+`perguntas.tsx` e a memória de F5 no `sessionStorage`). As tarefas são do
+servidor (`apps/api/src/unoogpt/canal-a.service.ts`), e a tela só mostra o que
+ele montou e manda ids de escolha fechada — nunca o nível, nunca o gabarito:
+
+- **A ligação da Saúde** (`componentes/saude.tsx`) aparece quando a api a
+  oferece (`sessao.ofertaSaude`: o primeiro destino, ou `POST /saude/abrir` ao
+  abrir a decisão). A decisão espera ela fechar: dois `Modal` de uma vez
+  prendem o foco. Fechar sem responder é "Agora não" (registrado, sem marca).
+- **"Enviar equipes" é `POST /mandar`, e abre o REGISTRO DA OPERAÇÃO**
+  (`componentes/registro.tsx`), sem relógio, com as equipes andando no mapa.
+  O resultado só vem depois dele (a api responde `registro-pendente`). A
+  conversa não manda: quando o Cientista confirma, o turno traz `abrirEnvio`
+  e a decisão abre.
+- **O "E se…" pareado** (`componentes/e-se.tsx`): duas comparações de 20
+  tempestades. A faixa de quadradinhos é COMPENSAÇÃO declarada
+  (`.faixa-de-tempestades`, só token `--uai-*`), com a lista tempestade a
+  tempestade para leitor de tela, sem a contagem pronta. O "E se…" livre
+  continua, e compara MÉDIA com MÉDIA nas mesmas tempestades.
+- **O fechamento** (`componentes/fechamento.tsx`) aparece quando o professor o
+  abre (o polling do relógio no Resultado lê `fechamentoAberto`), e com ele o
+  "Tentar de novo" some.
+- **Os cartões** usam o `ChoicePoll` da seção (`componentes/escolhas.tsx`): o
+  voto é definitivo no toque, e o cartão vai inteiro quando a última pergunta
+  é escolhida; falhou, reabre.
+
+## Clone dentro de clone: o balão do `unoochat` (ADR-173)
+
+O pedido pelo WhatsApp do fechamento é o `MessageBubble` da seção `unoochat`
+(`app/pecas/mensagem-do-voluntario.tsx`), e SÓ ele: a ADR-173 estende a
+ADR-117 para "peça de outra plataforma dentro de um clone", com os mesmos
+limites — sem barra, abas nem fundo do app. `main.tsx` importa
+`unoochat.css` e `fonts/unoochat.css` só por isso; o contêiner
+`.peca-unoochat` (`estilos/globals.css`) prende os tokens `--unc-*` e o tema
+claro (`data-unc-theme`). Sem hora nem tiques. `src/canal-a.test.tsx` cobra
+que só a peça importa a ponte `ds-unoochat`.
 
 ## O timeout padrão do SDK está errado nesta experiência
 

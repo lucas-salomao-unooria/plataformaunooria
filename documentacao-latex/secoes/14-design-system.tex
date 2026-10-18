@@ -74,7 +74,7 @@ relatório era Tailwind do clone sobre \cd{bg-night}.
 
 Com a ADR-41 (\ref{adr:relatorio-expandido}) o relatório sai do aparelho e passa
 a ser claro e largo, e a autorização deixa de ser teórica. A fronteira não
-mudou: quem a marca é a REVELAÇÃO --- sete telas, fundo \cd{night}, sem nada da
+mudou: quem a marca é a REVELAÇÃO --- dez telas, fundo \cd{night}, sem nada da
 plataforma. Antes dela, o disfarce; depois, a língua da escola.
 
 A trava técnica continua a mesma e não pode cair: o CSS do DS entra por
@@ -168,6 +168,17 @@ na voz de onde veio, porque um post que não parece post não ensina a reconhece
 post.
 \end{regra}
 
+\textbf{Clone dentro de clone (\adrr{ADR-173}).} A mesma regra vale para a
+peça de outra plataforma DENTRO de uma experiência disfarçada, com os mesmos
+limites. O pedido pelo WhatsApp do fechamento da Missão Tempestade é o
+\cd{MessageBubble} do \cd{unoochat}, em tema claro e sem hora, dentro do
+UnooriaAI (\arq{exp02em1b/src/app/pecas/mensagem-do-voluntario.tsx}); as opções
+de resposta em volta continuam \cd{unooriaai}. Um teste da experiência cobra que
+só a peça importa a ponte \cd{@edu/ui/ds-unoochat}. Na mesma missão, a faixa de
+20 tempestades do \enquote{E se\ldots} é \textbf{compensação declarada}
+(\cd{.faixa-de-tempestades}, só token \cd{--uai-*}, com a lista para leitor de
+tela): a seção não publica uma faixa de células categóricas.
+
 A regra é por \textbf{PEÇA}, nunca por tela. O cromo em volta continua sendo da
 Unooria, e a peça do clone não traz a barra, as abas nem o fundo do aplicativo
 --- o balão do Unoochat vai num contêiner pintado com
@@ -206,7 +217,7 @@ pacote direto num componente:
 \cd{@edu/ui/ds-chatgpt} & \cd{chatgpt} & exp08ef4b (a exp02em1b saiu na \adrr{ADR-138})\\
 \cd{@edu/ui/ds-unooriaai} & \cd{unooriaai} & exp02em1b (\adrr{ADR-138}); o \cd{GPTCard} virou \cd{AssistantCard}, e não há \cd{gptGlyphs}\\
 \cd{@edu/ui/ds-whatsapp} & \cd{whatsappmobile} & exp06ef2b\\
-\cd{@edu/ui/ds-unoochat} & \cd{unoochat} & exp05ef1b (\adrr{ADR-134}) e o \cd{MessageBubble} da gaveta e do Desafio Final do Jornal (\adrr{ADR-136})\\
+\cd{@edu/ui/ds-unoochat} & \cd{unoochat} & exp05ef1b (\adrr{ADR-134}), o \cd{MessageBubble} da gaveta e do Desafio Final do Jornal (\adrr{ADR-136}) e o do pedido pelo WhatsApp da Missão Tempestade (\adrr{ADR-173})\\
 \end{tabularx}
 \end{regra}
 
@@ -402,6 +413,14 @@ texto secundário do DS no traço. Duas armadilhas da peça, já contornadas: o
 quebra --- por isso o total vai só com o número. Num \cd{Card}, a grade de
 barras usa a compensação \cd{plataforma-largura-cheia} (o \cd{Card} tem teto
 de 398px).
+
+O \enquote{em processo} limitado pela atividade (\adrr{ADR-166}) é um quinto
+segmento da mesma barra, logo depois do \enquote{em processo}, no azul pastel
+da mesma família da paleta (\cd{\#BDD0EF}): é \enquote{em processo}, mas não
+diz da criança. Ele só entra quando há criança nele, e a missão que não o tem
+continua com as quatro faixas. No painel da atividade, a ação que deu o nível
+vai no mesmo texto discreto da marca de origem, embaixo da \cd{Tag} --- sem
+componente novo.
 
 \section{Compensações locais}
 
