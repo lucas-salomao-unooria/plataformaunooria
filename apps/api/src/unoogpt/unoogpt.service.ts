@@ -14,6 +14,7 @@ import { mapaDeEquipes } from "../equipes/consulta";
 /* `ATIVIDADE_DA_TURMA`: missão SEM atividade (ADR-130) — uma montagem por turma. */
 import { ATIVIDADE_DA_TURMA, colapsarEmUnidades } from "../equipes/regras";
 import { MISSAO_TEMPESTADE } from "./cenario";
+import { CanalADaTempestade } from "./canal-a.service";
 
 /** Quanto cada toque em "+2 min" acrescenta ao relógio da aula. */
 export const INCREMENTO_SEG = 120;
@@ -100,6 +101,7 @@ export class UnoogptService {
     private readonly prisma: PrismaService,
     @Inject(AI_PROVIDER) private readonly provider: AiProvider,
     private readonly quota: QuotaService,
+    private readonly canalA: CanalADaTempestade,
   ) {}
 
   // =========================================================================
@@ -247,7 +249,6 @@ export class UnoogptService {
         // precisa estar durável antes de o modelo narrar o seguinte.
         (dados) => this.aoUsarDados(escolaId, estudanteId, dados),
         (destinos) => this.aoAlocar(escolaId, estudanteId, destinos),
-        () => this.aoConfirmar(escolaId, estudanteId, perfil),
         { temDestino: antes.sessao.alocacaoAlfa !== null || antes.sessao.alocacaoBravo !== null, tipo, perguntasRestantes: restantes },
       );
       tokens = resposta.tokensUsados;
@@ -325,16 +326,17 @@ export class UnoogptService {
             ...(debita ? { perguntasGastas: { increment: 1 } } : {}),
             tokensGastos: { increment: tokens },
             chamadasIa: { increment: 1 },
-            passo: passoDerivado(
-              { confirmou: resposta.confirmou !== null },
-              atual.passo as PassoDerivavel,
-            ),
+            // A conversa não manda mais as equipes (ADR-172): o passo só muda
+            // pelo botão "Enviar equipes".
+            passo: passoDerivado({ confirmou: false }, atual.passo as PassoDerivavel),
           },
         });
 
         return {
           texto: resposta.texto,
           anexo: anexo ?? null,
+          /** Ele confirmou na conversa: a tela abre a decisão com "Enviar equipes". */
+          abrirEnvio: resposta.pediuEnvio,
           sessao: sanitizarSessao(atualizada),
           relogio: sanitizarRelogio(relogioAgora, new Date()),
           mapa: montarMapa(semente, atualizada.rodadas, atualizada.conjuntos, depois.minutosGastos).bairros,
@@ -457,6 +459,8 @@ export class UnoogptService {
           minutosGastos: estado.minutosGastos,
         },
       });
+      // O primeiro destino traz a ligação da Saúde (ADR-172).
+      if (alocacao.alfa || alocacao.bravo) await this.canalA.ofertarNaTransacao(tx, atual);
       await this.gravarMarco(
         tx,
         escolaId,
@@ -600,6 +604,9 @@ export class UnoogptService {
       const alvo = equipe === "alfa" ? "alocacaoAlfa" : "alocacaoBravo";
       const porque = equipe === "alfa" ? "justificativaAlfa" : "justificativaBravo";
       const estado = await this.relogioAgora(tx, escolaId, atual.turmaId);
+      // O primeiro destino traz a ligação da Saúde (ADR-172). Antes do update,
+      // para a sessão devolvida já dizer que ela apareceu.
+      if (bairro !== null) await this.canalA.ofertarNaTransacao(tx, atual);
       const atualizada = await tx.unoogptSessao.update({
         where: { escolaId_estudanteId: { escolaId, estudanteId: estudanteId } },
         data: {
@@ -640,12 +647,26 @@ export class UnoogptService {
   }
 
   /**
-   * O botão "Enviar equipes". Exige o porquê de cada equipe COM destino; a
-   * conferência mora em `aoConfirmar`, o mesmo portão da conversa.
+   * O botão "Enviar equipes" (ADR-172). Exige o porquê de cada equipe COM
+   * destino (`aoConfirmar`), CONGELA a saída e abre o REGISTRO DA OPERAÇÃO: o
+   * desfecho fica retido até ele, sem relógio. Devolve o registro, não o
+   * resultado.
+   */
+  async mandar(escolaId: string, estudanteId: string) {
+    const r = await this.aoConfirmar(escolaId, estudanteId, "estudante");
+    if ("recusa" in r) throw erroDeJogo(r.recusa);
+    return this.canalA.registro(escolaId, estudanteId);
+  }
+
+  /**
+   * O ALIAS do cliente anterior ao registro (`POST /simular`, até a 1.4.x):
+   * manda, fecha o registro SEM tarefa e sem marca, e devolve o resultado como
+   * antes. Quem pula o registro por aqui só deixa de ser avaliado nele.
    */
   async simular(escolaId: string, estudanteId: string) {
     const r = await this.aoConfirmar(escolaId, estudanteId, "estudante");
     if ("recusa" in r) throw erroDeJogo(r.recusa);
+    await this.canalA.fecharRegistroSemTarefas(escolaId, estudanteId);
     return this.resultado(escolaId, estudanteId);
   }
 
@@ -710,6 +731,12 @@ export class UnoogptService {
         });
         if (jaComecou === 0) {
           const estado = await this.relogioAgora(tx, escolaId, atual.turmaId);
+          // A tentativa que COMEÇA com o relógio fechado não marca a leitura nem
+          // as fontes (ADR-172, "melhor tentativa com o relógio aberto").
+          await tx.unoogptSessao.update({
+            where: { escolaId_estudanteId: { escolaId, estudanteId: estudanteId } },
+            data: { inicioComRelogioAberto: estado.fase !== "encerrado" },
+          });
           await this.gravarMarco(
             tx,
             escolaId,
@@ -720,7 +747,10 @@ export class UnoogptService {
           );
         }
       }
-      return { sessao: sanitizarSessao(atualizada) };
+      const final = para === "investigacao"
+        ? await tx.unoogptSessao.findUniqueOrThrow({ where: { escolaId_estudanteId: { escolaId, estudanteId: estudanteId } } })
+        : atualizada;
+      return { sessao: sanitizarSessao(final) };
     }, escolaId);
   }
 
@@ -743,6 +773,9 @@ export class UnoogptService {
       // estudante via: qual botão (`origem` vem do cliente, é a única coisa que
       // só ele sabe), e se a aula estava correndo, encerrada ou nem começada.
       const relogio = await this.relogioDaTurma(tx, escolaId, atual.turmaId);
+      // Com o fechamento aberto, o "Tentar de novo" some (ADR-172): o grupo
+      // está respondendo ao WhatsApp e à moradora da decisão que tomou.
+      if (relogio.fechamentoAbertoEm) throw erroDeJogo("fechamento-aberto");
       const estado = estadoDoRelogio(relogio, new Date());
       await this.gravarMarco(
         tx,
@@ -766,6 +799,9 @@ export class UnoogptService {
           justificativaAlfa: null,
           justificativaBravo: null,
           concluidoEm: null,
+          registroConcluidoEm: null,
+          ofertaSaudeEm: null,
+          inicioComRelogioAberto: null,
         },
       });
       return { sessao: sanitizarSessao(atualizada) };
@@ -782,6 +818,8 @@ export class UnoogptService {
         where: { escolaId_estudanteId_ordem: { escolaId, estudanteId: estudanteId, ordem: atual.tentativa } },
       });
       if (!sim) throw erroDeJogo("sessao-encerrada");
+      // O desfecho fica RETIDO até o registro da operação (ADR-172).
+      if (!atual.registroConcluidoEm) throw erroDeJogo("registro-pendente");
 
       const desfecho = sim.desfecho as unknown as ReturnType<typeof simular>;
       const alocacao: Alocacao = { alfa: atual.alocacaoAlfa, bravo: atual.alocacaoBravo };
@@ -943,6 +981,7 @@ export class UnoogptService {
       encerradoEm: linha.encerradoEm,
       pivoSeg: linha.pivoSeg,
       pivoMin: linha.pivoMin,
+      fechamentoAbertoEm: linha.fechamentoAbertoEm,
     };
   }
 
@@ -1019,7 +1058,14 @@ export class UnoogptService {
   async mexerNoRelogio(
     escolaId: string,
     turmaId: string,
-    acao: "largada" | "mais-tempo" | "encerrar" | "modo-livre" | "modo-cronometrado" | "redefinir",
+    acao:
+      | "largada"
+      | "mais-tempo"
+      | "encerrar"
+      | "modo-livre"
+      | "modo-cronometrado"
+      | "redefinir"
+      | "abrir-fechamento",
     professorId?: string,
   ) {
     const agora = new Date();
@@ -1039,6 +1085,7 @@ export class UnoogptService {
         encerradoEm: atual.encerradoEm,
         pivoSeg: atual.pivoSeg,
         pivoMin: atual.pivoMin,
+        fechamentoAbertoEm: atual.fechamentoAbertoEm,
       };
 
       const dados: Prisma.UnoogptRelogioTurmaUpdateInput = {};
@@ -1059,6 +1106,10 @@ export class UnoogptService {
       } else if (acao === "encerrar") {
         if (!atual.iniciadoEm) throw erroDeJogo("relogio-nao-comecou");
         if (!atual.encerradoEm) dados.encerradoEm = agora;
+      } else if (acao === "abrir-fechamento") {
+        // O fechamento (o WhatsApp e a moradora, ADR-172) aparece junto para a
+        // turma, depois do debate. Idempotente: abrir de novo não muda a hora.
+        if (!atual.fechamentoAbertoEm) dados.fechamentoAbertoEm = agora;
       } else if (acao === "modo-livre" || acao === "modo-cronometrado") {
         dados.modo = acao === "modo-livre" ? "livre" : "cronometrado";
       } else {
@@ -1069,6 +1120,7 @@ export class UnoogptService {
         dados.duracaoSeg = RELOGIO.duracaoRealEmSegundos;
         dados.pivoSeg = 0;
         dados.pivoMin = 0;
+        dados.fechamentoAbertoEm = null;
       }
 
       const salvo = await tx.unoogptRelogioTurma.update({
@@ -1083,6 +1135,7 @@ export class UnoogptService {
           encerradoEm: salvo.encerradoEm,
           pivoSeg: salvo.pivoSeg,
           pivoMin: salvo.pivoMin,
+          fechamentoAbertoEm: salvo.fechamentoAbertoEm,
         },
         agora,
       );
@@ -1175,8 +1228,23 @@ export class UnoogptService {
         (l) => atualizadoEm.get(l.estudanteId) ?? 0,
       ).map((u) => ({ ...u.linha, equipe: u.equipe }));
 
+      /* O Canal A da turma (ADR-172): quantas LINHAS enviaram o fechamento — a
+         equipe conta pelo login de quem entrou —, o que cada grupo perguntou
+         sobre cada fonte e o alcance do alerta. Só contagens. */
+      const canalA = await this.canalA.daTurma(tx, escolaId, estudantes.map((e) => e.id));
+      const enviaram = linhas.filter((l) =>
+        [l.estudanteId, ...(l.equipe?.membros.map((m) => m.id) ?? [])].some((id) => id && canalA.enviaramFechamento.has(id)),
+      ).length;
+
       return {
         turma: { id: turma.id, nome: turma.nome, serie: turma.serie },
+        fechamento: {
+          aberto: Boolean(relogio.fechamentoAbertoEm),
+          enviaram,
+          de: linhas.filter((l) => l.concluiu).length,
+        },
+        perguntasPorFonte: canalA.perguntasPorFonte,
+        alcanceDoAlerta: canalA.alcanceDoAlerta,
         relogio: this.retratoDoRelogio(relogio, agora),
         // O RETRATO da turma, e ele fala de conduta, não de nota.
         retrato: {
@@ -1386,6 +1454,8 @@ export class UnoogptService {
           : null,
         tentativas,
         rodadas,
+        /** As escolhas do Canal A, por tentativa (ADR-172). Escolha fechada, em texto; nunca o nível. */
+        canalA: await this.canalA.escolhasDoEstudante(tx, escolaId, estudanteId),
         trilha: marcos.map((m) => ({
           tentativa: m.tentativa,
           ordem: m.ordem,

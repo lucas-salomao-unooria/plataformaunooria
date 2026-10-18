@@ -984,32 +984,67 @@ O cartão \enquote{O que os dados mostram} e o mapa divergiam &
 \bottomrule
 \end{tabularx}
 
-\subsection{A evidência pedagógica: vale a melhor, conta ao encerrar}
+\subsection{A evidência pedagógica: o Canal A (1.5.0)}
 
-A ficha \arq{evidencias/fichas/exp02em1b.ts} (\adrr{ADR-154}) mede quatro
-habilidades por quatro perguntas de múltipla escolha do PO, na tela de
-resultado: \textbf{EM13CO14}, \textbf{EM13CO08}, \textbf{EM13CO24} e
-\textbf{EM13CO26}. A missão não tinha nem atividade nem rodada, e as duas
-foram resolvidas sem refazê-la:
+A ficha \arq{evidencias/fichas/exp02em1b.ts}, versão 2 (\adrr{ADR-172}, que
+supera em parte a \adrr{ADR-154}), mede seis habilidades por sete tarefas de
+AÇÃO, e nenhuma pergunta de múltipla escolha: o Canal B saiu, e quem não faz a
+tarefa de uma habilidade fica \enquote{Não avaliado} nela. As tarefas moram em
+\arq{unoogpt/canal-a.service.ts} e as réguas em \arq{unoogpt/regras/}, uma por
+tarefa, com a conferência de exaustividade.
+
+\begin{tabularx}{\linewidth}{@{}L{22mm}L{38mm}X@{}}
+\toprule
+\headrow \thd{Habilidade} & \thd{Tarefa (marcador)} & \thd{Onde, e a régua}\\
+\midrule
+EM13CO12 & Leitura dos dados (\cd{leitura}) &
+  Registro da operação: a última tabela que o grupo pediu volta, e ele compara
+  um par separado e um cruzado. Pedir dados dá \enquote{em desenvolvimento};
+  duas fontes e os dois pares certos, \enquote{demonstra}. Melhor tentativa
+  com o relógio aberto.\\
+\zebra EM13CO14 & O que precisaria saber (\cd{fontes}) &
+  Registro: dois cartões (fonte $\times$ bairro), as mesmas cinco perguntas.
+  O cartão cai sempre onde a fonte distorce ou não enxerga (o hipotético,
+  quando o bairro da equipe não é um deles). Sem dois cartões, sem marca.
+  Melhor tentativa com o relógio aberto.\\
+EM13CO11 & \enquote{E se\ldots} (\cd{e-se}) &
+  Resultado: duas comparações nas mesmas 20 tempestades, uma clara e uma que
+  depende. Primeira da rodada.\\
+\zebra EM13CO08 & Pedido pelo WhatsApp (\cd{whatsapp}) &
+  Fechamento: o que responde (4) $\times$ o que mais faz (3); só \enquote{não
+  mando nenhum dado} com \enquote{aviso a coordenação} demonstra. Primeira da
+  rodada.\\
+EM13CO24 & Alerta (\cd{alerta}) &
+  Registro: frequência, tom e conteúdo, quatro opções cada, uma errada
+  moderada em cada parte. Primeira da rodada: não volta na segunda tentativa.\\
+\zebra EM13CO26 & Ligação da Saúde (\cd{saude}) e moradora (\cd{moradora}) &
+  A Saúde na investigação (teto em \enquote{em desenvolvimento}); a moradora no
+  fechamento, com as frases de \enquote{Os dados} e \enquote{Quem decidiu}
+  montadas pelo servidor. Vale o melhor dos dois. Primeira da rodada.\\
+\bottomrule
+\end{tabularx}
 
 \begin{itemize}
-  \item \textbf{A atividade é a sintética \cd{"turma"}}, o mesmo id que as
-    equipes dela já usam (\cd{ATIVIDADE\_DA\_TURMA}): com outro, a cópia do
-    nível para os colegas de computador não acharia a equipe, em silêncio.
-  \item \textbf{A rodada é da turma}, em \cd{exp02em1b\_gate\_turma}, e só o
-    \enquote{Zerar a turma} a sobe --- e apaga as respostas e os níveis da
-    turma, de todas as rodadas (\adrr{ADR-155}): sem isso, o encerramento
-    seguinte relia as respostas de antes. A sessão grava a rodada em que nasceu, e o
-    resolvedor (\arq{unoogpt/contexto-da-evidencia.ts}) recusa a resposta fora
-    do passo \cd{resultado} ou de uma sessão de rodada que acabou.
-  \item \textbf{Vale a MELHOR resposta} (\cd{respostas: "melhor"} na ficha): a
-    pergunta reaparece no resultado de cada \enquote{Tentar de novo}, e a marca
-    única só muda quando a resposta nova é melhor.
-  \item \textbf{Só conta quando o professor ENCERRA a missão na Sala de Aula}
-    (\cd{contaAoEncerrarAMissao}): até lá a marca fica guardada e o painel vem
-    com \cd{aguardandoEncerramento}. O encerramento (\cd{SalasService.aoEncerrarMissao})
-    grava a evidência própria na transação de quem encerrou, e a porta da
-    missão, fechada, recusa resposta nova.
+  \item \textbf{O registro da operação retém o desfecho.} \enquote{Enviar
+    equipes} é \rota{POST /unoogpt/mandar}: congela a saída, monta o registro
+    (\cd{exp02em1b\_tarefas}, com a apresentação gravada) e o resultado só
+    desce com ele feito (\cd{registro-pendente}). A conversa não manda: o
+    Cientista que ouve \enquote{pode mandar} abre a decisão
+    (\cd{abrirEnvio}). \rota{POST /unoogpt/simular} ficou como alias do
+    cliente 1.4.x, sem tarefa nem marca.
+  \item \textbf{O fechamento é do professor}: \cd{abrir-fechamento} no relógio
+    da turma; o painel conta \enquote{N de M grupos enviaram}. Com ele aberto,
+    \enquote{Tentar de novo} é recusado.
+  \item \textbf{Só conta ao encerrar}, como antes (\cd{contaAoEncerrarAMissao}),
+    e o encerramento só transforma em nível marcador da ficha vigente: as
+    \cd{p1}--\cd{p4} de uma turma aberta no dia da troca não contam.
+  \item \textbf{A atividade é a sintética \cd{"turma"}} e a rodada é a da
+    turma (\cd{exp02em1b\_gate\_turma}); o \enquote{Zerar a turma} apaga as
+    sessões (e as tarefas, em cascata), o relógio (e o fechamento) e a
+    evidência (\adrr{ADR-155}).
+  \item \textbf{Clone dentro de clone} (\adrr{ADR-173}): o balão do pedido pelo
+    WhatsApp é o \cd{MessageBubble} do \cd{unoochat}, em tema claro, dentro do
+    UnooriaAI; só a peça.
 \end{itemize}
 
 % ---------------------------------------------------------------------------

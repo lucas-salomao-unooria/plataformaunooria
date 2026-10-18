@@ -1,3 +1,4 @@
+import { canalADeTeste } from "./canal-a-de-teste";
 import { PrismaClient } from "@prisma/client";
 import { MockProvider } from "../src/ai/mock.provider";
 import { QuotaService } from "../src/ai/quota.service";
@@ -33,6 +34,7 @@ const unoogpt = new UnoogptService(
   prisma,
   new MockProvider(),
   new QuotaService(prisma),
+  canalADeTeste(prisma),
 );
 
 /** `undefined` é gestor/gestor_contrato: enxergam a escola inteira, de propósito. */

@@ -17,6 +17,9 @@ export type CodigoErro =
   | "sem-perguntas"
   | "falta-justificar"
   | "sem-destino"
+  | "registro-pendente"
+  | "fechamento-fechado"
+  | "fechamento-aberto"
   | "bairro-desconhecido"
   | "ja-simulou"
   | "passo-invalido"
@@ -31,6 +34,9 @@ export const STATUS: Record<CodigoErro, number> = {
   "sem-perguntas": 409,
   "falta-justificar": 409,
   "sem-destino": 409,
+  "registro-pendente": 409,
+  "fechamento-fechado": 409,
+  "fechamento-aberto": 409,
   "bairro-desconhecido": 400,
   "ja-simulou": 409,
   "passo-invalido": 400,
@@ -52,6 +58,11 @@ export const MENSAGENS: Record<CodigoErro, string> = {
   // isso); o que não dá é mandar sem destino nenhum. Antes este caso caía em
   // `falta-justificar`, e a frase acusava um porquê que não faltava.
   "sem-destino": "Escolha o destino de pelo menos uma equipe antes de mandar.",
+  // O desfecho fica retido até o registro da operação (ADR-172).
+  "registro-pendente": "As equipes já saíram. Registre a operação para ver o resultado.",
+  "fechamento-fechado": "O fechamento ainda não foi aberto pelo professor.",
+  // "Tentar de novo" some quando o professor abre o fechamento.
+  "fechamento-aberto": "O professor já abriu o fechamento: não dá para recomeçar agora.",
   "bairro-desconhecido": "Não reconheci esse bairro.",
   "ja-simulou": "Esta tempestade já foi enfrentada.",
   "passo-invalido": "Não é possível ir para essa etapa agora.",

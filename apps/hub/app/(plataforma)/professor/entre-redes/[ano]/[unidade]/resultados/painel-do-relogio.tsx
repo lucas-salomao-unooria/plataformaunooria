@@ -29,14 +29,24 @@ function cronometro(segundos: number | null): string {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 }
 
-type Acao = "largada" | "mais-tempo" | "encerrar" | "modo-livre" | "modo-cronometrado" | "redefinir";
+type Acao =
+  | "largada"
+  | "mais-tempo"
+  | "encerrar"
+  | "modo-livre"
+  | "modo-cronometrado"
+  | "redefinir"
+  | "abrir-fechamento";
 
 export function PainelDoRelogio({
   turmaId,
   inicial,
+  fechamento,
 }: {
   turmaId: string;
   inicial: RetratoDoRelogio;
+  /** Quantas linhas que chegaram ao resultado já enviaram o fechamento (ADR-172). */
+  fechamento: { enviaram: number; de: number };
 }) {
   const router = useRouter();
   const [relogio, setRelogio] = useState(inicial);
@@ -165,10 +175,43 @@ export function PainelDoRelogio({
           </Button>
         </div>
 
+        {/* O FECHAMENTO (ADR-172): o pedido pelo WhatsApp e a resposta à
+            moradora aparecem juntos para a turma quando o professor abre —
+            depois do debate, que vem antes deles. Com ele aberto, o "Tentar de
+            novo" some da tela do estudante. */}
+        <div className="flex flex-col gap-2 border-t border-unooria-neutral-200 pt-4" data-fechamento>
+          <p className="text-[12px] uppercase tracking-widest text-unooria-neutral-500">Fechamento</p>
+          {relogio.fechamentoAberto ? (
+            <p className="text-[14px] text-unooria-neutral-950" data-fechamento-aberto>
+              <strong>
+                {fechamento.enviaram} de {fechamento.de}
+              </strong>{" "}
+              {fechamento.de === 1 ? "grupo enviou" : "grupos enviaram"} o fechamento. Quando todos
+              enviarem, é a hora das perguntas faladas sobre cuidado com os dados e direitos.
+            </p>
+          ) : (
+            <>
+              <p className="text-[13px] leading-relaxed text-unooria-neutral-700">
+                Depois do debate: o pedido pelo WhatsApp e a resposta à moradora aparecem juntos
+                para a turma, e o &quot;Tentar de novo&quot; some.
+              </p>
+              <div>
+                <Button
+                  variant="secondary"
+                  onClick={() => void agir("abrir-fechamento")}
+                  disabled={enviando !== null || relogio.fase === "aguardando"}
+                >
+                  Abrir o fechamento
+                </Button>
+              </div>
+            </>
+          )}
+        </div>
+
         <p className="text-[13px] leading-relaxed text-unooria-neutral-600">
           Somar tempo <strong>não faz a chuva andar para trás</strong>: a cidade continua de onde
           estava, mais devagar, e chega às 18h00 no novo fim. Redefinir devolve o relógio ao estado
-          de antes da aula e <strong>não apaga partida nenhuma</strong>.
+          de antes da aula (e fecha o fechamento) e <strong>não apaga partida nenhuma</strong>.
         </p>
       </div>
     </Card>

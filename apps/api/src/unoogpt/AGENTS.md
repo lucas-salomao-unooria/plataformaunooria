@@ -38,23 +38,44 @@ Complementa o `AGENTS.md` de `apps/api`, que vence em conflito.
   é lido DENTRO do `comTenancy`: fora dele a RLS das equipes devolve vazio e a
   folha volta a contar por criança, em silêncio. A `equipe` da linha é gente
   diante da mesma tela — não confundir com as equipes Alfa e Bravo da cidade.
-- **A evidência pedagógica (E14, ADR-154) não tem atividade: é a `"turma"`**,
-  o mesmo id das equipes, e a rodada é da TURMA (`exp02em1b_gate_turma`). Só o
-  `zerarTurma` a sobe (o gate sobrevive ao zerar; o relógio, não) — e APAGA a
-  evidência da turma, marcas e níveis de todas as rodadas (ADR-155): sem isso,
-  o encerramento seguinte relia as respostas de antes. A sessão
-  grava a rodada em que nasceu. O resolvedor (`contexto-da-evidencia.ts`) só
-  aceita resposta no passo `resultado` e da sessão da rodada vigente. NÃO use a
-  `tentativa` como rodada: com "Tentar de novo" livre e a melhor rodada, o
-  estudante chega a "atingiu" por exclusão.
-- **O envio tem UM portão, `aoConfirmar`, para o botão e para a conversa.**
-  Ele confere, sob o lock da sessão, o porquê de cada equipe COM destino
-  (`faltaJustificar`) e devolve a recusa com motivo
+- **A evidência pedagógica não tem atividade: é a `"turma"`**, o mesmo id das
+  equipes, e a rodada é da TURMA (`exp02em1b_gate_turma`). Só o `zerarTurma` a
+  sobe (o gate sobrevive ao zerar; o relógio, não) — e APAGA a evidência da
+  turma, marcas e níveis de todas as rodadas (ADR-155), e as tarefas (cascata
+  da sessão). NÃO use a `tentativa` como rodada: com "Tentar de novo" livre, a
+  resposta repetida chegaria a "demonstra" por exclusão.
+- **O Canal A (ADR-172) mora em `canal-a.service.ts`, as réguas em `regras/`**
+  (uma por tarefa, puras, com a conferência de exaustividade em
+  `tests/unoogpt/canal-a-regras.spec.ts`). Sete tarefas, cada uma um marcador
+  da ficha v2 e uma linha em `exp02em1b_tarefas` com a APRESENTAÇÃO montada no
+  servidor (os pares, os cartões, as comparações, a ordem das opções) — o F5
+  mostra o mesmo, e o gabarito nunca desce: os ids da tela são POSIÇÃO (`p1`,
+  `e1`), porque o tipo do par ou da comparação é a resposta. Não há pergunta,
+  nem resolvedor: quem não fez a tarefa fica "não avaliado".
+- **Duas réguas de agregação** (`regras/agregacao.ts`): "primeira da rodada"
+  (Saúde, alerta, "E se…", WhatsApp, moradora) confere `jaMarcou` antes de
+  `marcar`; "melhor tentativa" (leitura, fontes) só marca se a tentativa
+  COMEÇOU com o relógio aberto (`sessoes.inicio_com_relogio_aberto`, gravado
+  ao entrar na investigação). As duas sob o lock da sessão.
+- **"Enviar equipes" é `POST /mandar`, e a conversa NÃO manda**:
+  `confirmar_alocacao` só devolve `abrirEnvio` (a tela abre a decisão). O
+  desfecho fica RETIDO até o registro (`GET /resultado` → 409
+  `registro-pendente`). `POST /simular` é o alias do cliente 1.4.x: manda e
+  fecha o registro sem tarefa nem marca.
+- **O fechamento é do professor** (`abrir-fechamento` no relógio,
+  `exp02em1b_relogio_turma.fechamento_aberto_em`): antes, 409
+  `fechamento-fechado`; aberto, `reiniciar` recusa (`fechamento-aberto`). O
+  "Zerar a turma" apaga o relógio e, com ele, o fechamento.
+- **A contagem da Saúde não toca o modelo nem o podcast**, e o Cientista não a
+  comenta (`VERSAO_PROMPT` 5). Mudou o texto do Cientista? Suba a versão e
+  confira o teto de tamanho do prompt (`tests/unoogpt/agente-prompt.spec.ts`).
+- **O envio tem UM portão, `aoConfirmar`** (de `mandar` e do alias
+  `simular`). Ele confere, sob o lock da sessão, o porquê de cada equipe COM
+  destino (`faltaJustificar`) e devolve a recusa com motivo
   (`ResultadoDaConfirmacao`): `falta-justificar` ou `sem-destino`. Mandar com
   UMA equipe na base é permitido — a tela e o Cientista dizem isso —, e o que
   se recusa é nenhuma equipe ter destino (`sem-destino`, código próprio). Antes
-  "pode mandar" no chat pulava a justificativa, e a equipe na base caía em
-  `falta-justificar`, uma frase que acusava um porquê que não faltava.
+  "pode mandar" no chat pulava a justificativa; hoje a conversa nem manda.
 - **Destino novo apaga o porquê, pelos dois caminhos** (`alocar` e
   `aoAlocar`): a razão era do bairro antigo. Repetir o mesmo destino não apaga.
 - **Fonte só entra com o relógio aberto.** `PUT /unoogpt/conjuntos` (o painel,

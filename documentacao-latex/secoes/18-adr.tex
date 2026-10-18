@@ -167,7 +167,7 @@ que a cercam.
 \zebra \adrr{ADR-114} & Quem mandou isso? v1 é retirada; a v2.2 entra com o mesmo código & 2026-09-25 & Aceita\\
 \adrr{ADR-115} & A Seleção: o par do Mural é do computador, e a IA gradua a legenda & 2026-09-25 & Aceita; a leitura da legenda ficou sem teto de saída (\adrr{ADR-148})\\
 \zebra \adrr{ADR-116} & A experiência que perde o código é arquivada, não apagada & 2026-09-25 & Aceita\\
-\adrr{ADR-117} & Jornal da Escola: a redação é da Unooria, o professor abre o resultado e a revisão, e a IA só escolhe o layout & 2026-09-27 & Aceita; as imagens passam pelo OK do professor, uma a uma (\adrr{ADR-147}); a diagramação ficou sem teto de saída (\adrr{ADR-148})\\
+\adrr{ADR-117} & Jornal da Escola: a redação é da Unooria, o professor abre o resultado e a revisão, e a IA só escolhe o layout & 2026-09-27 & Aceita; as imagens passam pelo OK do professor, uma a uma (\adrr{ADR-147}); a diagramação ficou sem teto de saída (\adrr{ADR-148}); estendida pela \adrr{ADR-173}\\
 \zebra \adrr{ADR-118} & Quem mandou isso? v2.2: atividade é o pacote, rodada é a reaplicação, e a régua mede pela seleção e pelas perguntas do PO & 2026-09-25 & Aceita; a régua foi substituída pela \adrr{ADR-120}\\
 \adrr{ADR-119} & O podcast da A Seleção é do professor, e a IA reescreve só as três falas que dependem do tema & 2026-09-26 & Aceita; revista pela \adrr{ADR-150} (o podcast vira recurso da plataforma, com rotas únicas)\\
 \zebra \adrr{ADR-120} & A régua v2 de Quem mandou isso?: cada habilidade pelo verbo dela, e refazer o mesmo pacote não mede memória & 2026-09-26 & Aceita; as perguntas voltaram às do PO (\adrr{ADR-131}); a medição única e a rubrica do Se/Então saíram (\adrr{ADR-145})\\
@@ -204,7 +204,7 @@ que a cercam.
 \zebra \adrr{ADR-151} & O Júri Estadual volta ao foco EF06CO10, aprova as imagens antes da turma e ganha o podcast & 2026-10-06 & Aceita; substitui em parte a \adrr{ADR-137}; complementada pela \adrr{ADR-152}\\
 \adrr{ADR-152} & O Júri Estadual recupera o ciclo do voto: salvar pesa, a justificativa vem antes e depois, complementar, e a rodada de desvio & 2026-10-07 & Aceita; complementa a \adrr{ADR-151}\\
 \zebra \adrr{ADR-153} & O Unoovista mede a evidência pelas três perguntas do PO, depois da reflexão, numa rodada só & 2026-10-07 & Aceita; aplica a \adrr{ADR-112}; superada em parte pela \adrr{ADR-167}\\
-\adrr{ADR-154} & A Missão Tempestade mede a evidência numa atividade sintética, com rodada da turma, a melhor resposta e o nível só ao encerrar a missão & 2026-10-07 & Aceita; aplica a \adrr{ADR-112}\\
+\adrr{ADR-154} & A Missão Tempestade mede a evidência numa atividade sintética, com rodada da turma, a melhor resposta e o nível só ao encerrar a missão & 2026-10-07 & Aceita; aplica a \adrr{ADR-112}; superada em parte pela \adrr{ADR-172}\\
 \zebra \adrr{ADR-155} & Zerar a turma apaga a evidência pedagógica da atividade & 2026-10-09 & Aceita; reverte parte da \adrr{ADR-112}\\
 \adrr{ADR-156} & O Unoovista ganha o podcast com as falas revisadas no Ativar, e a Missão Tempestade ganha o primeiro podcast fixo & 2026-10-10 & Aceita; aplica a \adrr{ADR-150}\\
 \zebra \adrr{ADR-157} & O Júri Estadual segue o PRD v2 (0.4.0) & 2026-10-10 & Aceita; supera em parte a \adrr{ADR-151} e a \adrr{ADR-152}; superada em parte pela \adrr{ADR-164}\\
@@ -218,6 +218,8 @@ que a cercam.
 \adrr{ADR-165} & As instruções da Ajuda no painel: o \enquote{como responder} de cada atendente é dado & 2026-10-15 & Aceita; complementa a \adrr{ADR-132} e a \adrr{ADR-158}\\
 \zebra \adrr{ADR-166} & De onde veio o nível: a evidência guarda o marcador que a deu, e o consolidado conta à parte o \enquote{em processo} limitado pela atividade & 2026-10-16 & Aceita; complementa a \adrr{ADR-112} e a \adrr{ADR-144}\\
 \adrr{ADR-167} & O Canal A do Unoovista: toda habilidade por ação --- o Raio-x antes do debate, os termos e o envio depois do cinza, e a reflexão lida pela IA; as perguntas do fim saem & 2026-10-16 & Aceita; supera em parte a \adrr{ADR-153}\\
+\zebra \adrr{ADR-172} & O Canal A da Missão Tempestade: toda habilidade por ação --- a ligação da Saúde, o registro da operação, o \enquote{E se\ldots} pareado e o fechamento aberto pelo professor; as perguntas saem & 2026-10-16 & Aceita; supera em parte a \adrr{ADR-154}\\
+\adrr{ADR-173} & Clone dentro de clone: a peça de outra plataforma dentro de uma experiência disfarçada & 2026-10-16 & Aceita; estende a \adrr{ADR-117}\\
 \bottomrule
 \end{tabularx}
 
@@ -15130,3 +15132,161 @@ onde veio o nível).
 régua dura demais, ou a leitura da IA divergir do professor nos ajustes do
 painel.
 
+
+% ---------------------------------------------------------------------------
+\section{ADR-172 --- O Canal A da Missão Tempestade: toda habilidade por ação, sem pergunta}
+\label{adr:exp02em1b-canal-a}
+
+\textbf{Data.} 2026-10-16. \textbf{Status.} Aceita. \textbf{Supera em parte} a
+\adrr{ADR-154} (as quatro perguntas do resultado e a régua de \enquote{vale a
+melhor}; continua valendo que só conta ao encerrar a missão) e \textbf{usa} a
+\adrr{ADR-166} (de onde veio o nível).
+
+\begin{especificacao}{Contexto}
+\begin{itemize}
+  \item \textbf{O pedido.} O dono do produto pediu evidência por AÇÃO em todas
+    as habilidades da ficha da 2ª série (o Canal A), com liberdade para mudar a
+    mecânica. Até aqui a missão media quatro habilidades só por quatro
+    perguntas de múltipla escolha no resultado (\adrr{ADR-154}), vencíveis por
+    exclusão com \enquote{Tentar de novo}.
+  \item \textbf{As decisões do PO (16/10).} O Canal B sai por inteiro; o
+    pedido pelo WhatsApp ganha três opções de aviso; o balão do pedido tem a
+    cara do mensageiro (\adrr{ADR-173}); e o cartão das fontes que cairia numa
+    célula em que a fonte não distorce vira hipotético.
+\end{itemize}
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{enumerate}
+  \item \textbf{Seis habilidades, sete marcadores de ação}, a ficha versão 2
+    (\arq{evidencias/fichas/exp02em1b.ts}), todos com rótulo: EM13CO12 pela
+    \textbf{leitura dos dados}, EM13CO14 pelas \textbf{fontes}, EM13CO11 pelo
+    \textbf{\enquote{E se\ldots}}, EM13CO08 pelo \textbf{WhatsApp}, EM13CO24
+    pelo \textbf{alerta} e EM13CO26 pela \textbf{ligação da Saúde} e pela
+    \textbf{resposta à moradora} (vale o melhor dos dois). A EM13CO10 fica
+    fora: trabalhada no debate, não medida.
+  \item \textbf{O registro da operação}, um passo novo dentro do resultado,
+    entre \enquote{Enviar equipes} e o desfecho, SEM relógio: a hora de saída é
+    a do clique, e o desfecho fica retido no servidor
+    (\rota{GET /unoogpt/resultado} responde \cd{registro-pendente}) até a
+    leitura dos dados, as fontes e o alerta.
+  \item \textbf{A conversa não manda as equipes}: \cd{confirmar\_alocacao}
+    abre a decisão na tela do estudante (\cd{abrirEnvio}), e quem manda é o
+    botão, que passa pelo porquê de cada equipe e leva ao registro
+    (\cd{VERSAO\_PROMPT} 5).
+  \item \textbf{As réguas} são regras puras em \arq{unoogpt/regras/}, cada uma
+    com a conferência de exaustividade: a leitura em dois pares (um separado,
+    com folga de 5\%, e um cruzado, tirado de um grupo de empate da própria
+    leitura); as fontes com as mesmas cinco perguntas para toda fonte e o
+    gabarito por célula (fonte $\times$ bairro); o alerta em três partes de
+    quatro opções, cada uma com uma errada moderada; a Saúde com teto em
+    \enquote{em desenvolvimento} (a contagem: Ribeirinha 2.150, Vale Verde
+    980, Morro Alto 850, Industrial 190); o WhatsApp em 4 $\times$ 3, com
+    \enquote{demonstra} só em \enquote{não mando nenhum dado} com
+    \enquote{aviso a coordenação}; a moradora com as frases certas de
+    \enquote{Os dados} e de \enquote{Quem decidiu} montadas pelo servidor,
+    em quatro perfis.
+  \item \textbf{O cartão das fontes nunca cai onde a fonte não distorce.} O
+    par real é a fonte citada (ou a primeira aberta, para quem foi por
+    intuição) no bairro da equipe; se ela não distorce ali, o cartão pergunta
+    \enquote{se fosse usar essa fonte} num bairro onde ela distorce ou não
+    enxerga. Os dois cartões coincidindo, o segundo é a mesma fonte no
+    próximo bairro assim; sem dois cartões válidos, não há marca.
+  \item \textbf{O \enquote{E se\ldots} pareado}: duas comparações montadas
+    pelo servidor (uma clara, uma que depende), nas mesmas 20 tempestades, em
+    ordem embaralhada. O \enquote{E se\ldots} livre continua, sem marca.
+  \item \textbf{O fechamento é aberto pelo professor}
+    (\cd{abrir-fechamento} no relógio da turma): o WhatsApp e a moradora
+    aparecem juntos, e o \enquote{Tentar de novo} some.
+  \item \textbf{Duas réguas de agregação.} \enquote{Primeira da rodada} (Saúde,
+    alerta, \enquote{E se\ldots}, WhatsApp, moradora): a missão confere
+    \cd{jaMarcou} antes de marcar, sob o lock da sessão. \enquote{Melhor
+    tentativa com o relógio aberto} (leitura e fontes): a marca de ação guarda
+    a melhor, e a tentativa que começou com o relógio fechado não marca.
+  \item \textbf{O encerramento só conta marcador da ficha vigente}
+    (\cd{aoEncerrarAMissao}): as marcas \cd{p1} a \cd{p4} de uma turma com a
+    missão aberta no dia da troca não viram nível.
+\end{enumerate}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{A pergunta como rede de segurança} (\enquote{só conta sem
+    tarefa}). Saiu com o Canal B, como no 8º ano (\adrr{ADR-167}).
+  \item \textbf{O aviso à coordenação como sim ou não.} Com duas opções, o
+    chute de \enquote{demonstra} era 12,5\%; com três, 8,3\%, e a resposta
+    \enquote{perguntar quem é} fica visível para o debate.
+  \item \textbf{O cartão das fontes na célula que não distorce}, aceitando
+    \enquote{Nada: aqui ela basta}. Levava o chute de \enquote{demonstra} a
+    32\% no pior caso; com o cartão hipotético, fica entre 4\% e 16\%.
+  \item \textbf{Um cartão das fontes só, quando não há dois.} O chute de um
+    cartão é de 20\% ou 40\%.
+  \item \textbf{Mandar as equipes pela conversa}, como antes. Pulava o
+    registro e o porquê.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{Sem rede de segurança}: quem falta ao fechamento fica
+    \enquote{Não avaliado} na EM13CO08, e só com a ligação da Saúde (no
+    máximo \enquote{em desenvolvimento}) na EM13CO26. O professor ajusta à mão.
+  \item \textbf{O WhatsApp é o único marcador da EM13CO08}, e o chute de
+    \enquote{em desenvolvimento} chega a 41,7\%.
+  \item \textbf{O cartão hipotético pergunta sobre um bairro para onde a
+    equipe não foi}: é de propósito, e o texto diz que é hipótese.
+  \item \textbf{O registro atrasa o resultado} em cerca de dois minutos.
+  \item \textbf{O cliente anterior} (\rota{POST /unoogpt/simular}, até a
+    1.4.x) pula o registro: a rota virou alias que manda e fecha o registro
+    sem tarefa nem marca.
+\end{itemize}
+
+\textbf{Gatilho.} A distribuição dos níveis do WhatsApp, das fontes ou da
+leitura mostrar a régua dura demais, ou o professor ajustar muitas marcas no
+painel.
+
+% ---------------------------------------------------------------------------
+\section{ADR-173 --- Clone dentro de clone: a peça de outra plataforma dentro de uma experiência disfarçada}
+\label{adr:clone-dentro-de-clone}
+
+\textbf{Data.} 2026-10-16. \textbf{Status.} Aceita. \textbf{Estende} a
+\adrr{ADR-117}.
+
+\begin{especificacao}{Contexto}
+A \adrr{ADR-117} deixa uma tela \emph{da Unooria} mostrar uma peça da
+plataforma que o conteúdo imita (o post do \cd{unoovista}, a mensagem do
+\cd{unoochat} na gaveta do Jornal). O pedido pelo WhatsApp do fechamento da
+Missão Tempestade (\adrr{ADR-172}) aparece dentro do UnooriaAI, que já é um
+clone, inteiro (\adrr{ADR-138}). Sem regra, ou o balão seria do UnooriaAI e não
+pareceria mensagem, ou a experiência importaria outra seção sem limite.
+\end{especificacao}
+
+\textbf{Decisão.} A regra da \adrr{ADR-117} vale também para \textbf{peça de
+outra plataforma dentro de um clone}, com os mesmos limites: só a peça, nunca a
+barra, as abas ou o fundo do app. Na Tempestade, o balão é o
+\cd{MessageBubble} da seção \cd{unoochat}, em tema claro, dentro de um
+contêiner do tamanho da peça (\cd{.peca-unoochat}, com o
+\cd{--unc-color-surface-base}), sem hora nem tiques
+(\arq{app/pecas/mensagem-do-voluntario.tsx}, no molde da exp04ef1b). As opções
+de resposta continuam no visual \cd{unooriaai}. A experiência importa as folhas
+\arq{unoochat.css} e \arq{fonts/unoochat.css} só por isso, e um teste cobra que
+só a peça importa a ponte \cd{@edu/ui/ds-unoochat}.
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{O balão do UnooriaAI} (\cd{ChatBubble}). Não parece mensagem de
+    número desconhecido, e o pedido suspeito é o que a tarefa ensina a
+    reconhecer.
+  \item \textbf{A tela do mensageiro inteira} (barra, fundo, campo). Trocaria
+    de app no meio da missão, que não tem revelação.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.} Duas folhas de seção na mesma página:
+um token \cd{--unc-*} usado fora do contêiner passaria sem erro. O tema claro
+fica preso ao contêiner (\cd{data-unc-theme}), e a revisão confere que nenhuma
+outra tela usa o prefixo.
+
+\textbf{Gatilho.} Uma segunda peça de outra seção dentro de um clone: aí a
+regra pede o próprio teste de fronteira, e não só o desta peça.

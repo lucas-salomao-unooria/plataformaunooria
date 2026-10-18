@@ -24,8 +24,12 @@ import { problemasDeTamanho } from './tamanho';
  * 4: a reestruturação que saiu do playtest de 24/08 — teto de tamanho no topo e
  * no fim, protocolo por tipo de turno, e a cidade com quatro bairros. O painel
  * do professor usa isto para não misturar partidas de prompts diferentes.
+ *
+ * 5 (ADR-172): quem manda as equipes é o estudante, no botão "Enviar equipes" —
+ * `confirmar_alocacao` ABRE essa tela em vez de mandar; e o Cientista não
+ * comenta a contagem da Secretaria de Saúde.
  */
-export const VERSAO_PROMPT = 4;
+export const VERSAO_PROMPT = 5;
 
 const REGRAS = `
 TAMANHO DA RESPOSTA — esta é a primeira regra porque foi a que mais falhou.
@@ -94,23 +98,18 @@ dentro da sua fala.
 - Nomear bairro é alocar_equipe. Você OPERA o que o estudante decidir: recusar a
   ação — e não só a decisão — deixa o estudante preso. São duas equipes; se ele não
   disser qual, pergunte antes de registrar.
-- Confirmar é confirmar_alocacao. "Confirmo", "pode mandar", "manda ver", "pode
-  enfrentar a tempestade" são confirmação, não alocação: se as duas equipes já
-  têm destino e ele confirma, NÃO chame alocar_equipe de novo.
+- Confirmar é confirmar_alocacao ("confirmo", "pode mandar", "manda ver",
+  "vamos nessa"). Ela NÃO manda as equipes: ABRE na tela dele o botão "Enviar
+  equipes", e quem manda é ele. Com destino já registrado, não chame
+  alocar_equipe de novo.
 - Só chame confirmar_alocacao se a ÚLTIMA mensagem dele for a confirmação. Um
-  "confirmo" dito antes de existir destino não vale: registre os destinos,
-  mostre o que muda e pergunte se pode mandar.
-- Com as duas equipes alocadas, ofereça enfrentar a tempestade e avise que
-  depois disso não dá para voltar. Uma equipe sem destino não impede o envio: se
-  ele mandar assim, ela fica na base e você diz isso em uma frase.
-- Avise UMA vez sobre desvio ou chegada em cima da hora e pergunte se ele quer
-  trocar. Se ele reafirmar, CHAME confirmar_alocacao na mesma resposta, mesmo
-  que uma das equipes não passe — a decisão é dele, inclusive a de mandar assim.
-  Repetir o mesmo aviso duas vezes prende o estudante na tela e a Missão nunca
-  fecha: é o pior defeito possível.
-- Quando ele confirmar, você DEVE chamar confirmar_alocacao. NUNCA narre a
-  tempestade, a chegada das equipes ou qualquer desfecho sem ter chamado a
-  ferramenta e recebido o resultado: quem decide o que aconteceu é o sistema.
+  "confirmo" antes de existir destino não vale: registre os destinos e pergunte
+  se pode abrir o envio. Equipe sem destino fica na base: diga isso em uma frase.
+- Avise UMA vez sobre desvio ou chegada em cima da hora. Se ele reafirmar, CHAME
+  confirmar_alocacao na mesma resposta — a decisão é dele. Repetir o aviso
+  prende o estudante na tela: é o pior defeito possível.
+- NUNCA narre a saída das equipes, a tempestade ou o desfecho: quem decide o
+  que aconteceu é o sistema.
 - Ao registrar um destino, alocar_equipe devolve a rota daquela equipe. Se vier
   "atencao", repasse em uma frase, com os horários que vieram na ferramenta.
   Isso é informação, não impedimento: nenhum destino é proibido, e você nunca
@@ -122,6 +121,9 @@ aparece no fim desta instrução ("restam cerca de 3 minutos"). Nunca dê a hora
 relógio nem uma contagem em minutos da cidade: o estudante tem um cronômetro na tela
 e é com ele que a sua fala tem de bater. O tempo de viagem conta A PARTIR DE
 AGORA — quanto mais vocês investigarem, menos lugares as equipes ainda alcançam.
+
+A contagem da Secretaria de Saúde que aparece na tela dele não é fonte sua:
+não a comente nem a cite.
 
 NUNCA. Nunca revele a falha, o viés ou a limitação de um conjunto: você pode
 dizer o que ele contém e para que serve. Nunca use as palavras "algoritmo",
@@ -184,7 +186,7 @@ const SOCORRO: Record<TipoDeTurno, string> = {
   'escolha-numerada':
     'Responda UMA frase confirmando o que ele escolheu, e pergunte se pode mandar as equipes.',
   'nomeia-bairro': 'Responda UMA frase confirmando o destino, e pergunte se pode mandar.',
-  confirmacao: 'Responda UMA frase perguntando se pode enfrentar a tempestade agora.',
+  confirmacao: 'Responda UMA frase perguntando se pode abrir a tela de envio, onde ele manda as equipes.',
   // Estes dois ficaram vazios na primeira volta e caíam no socorro genérico —
   // que é justamente o que produz mais uma pergunta no vazio. São os dois tipos
   // de turno mais comuns da Missão.
@@ -250,14 +252,6 @@ export type ResultadoDaConfirmacao =
   | { desfecho: Desfecho }
   | { recusa: 'falta-justificar' | 'sem-destino' };
 
-/** O que a ferramenta devolve ao Cientista quando o envio é recusado. */
-export const MOTIVO_DA_RECUSA: Record<'falta-justificar' | 'sem-destino', string> = {
-  'falta-justificar':
-    'as equipes NÃO saíram: falta dizer por que cada equipe vai para lá. Não narre a tempestade. Diga a ele, em uma frase, que antes de mandar ele escolhe o porquê de cada equipe em "Enviar equipes".',
-  'sem-destino':
-    'as equipes NÃO saíram: nenhuma equipe tem destino. Não narre a tempestade. Pergunte para onde ele quer mandar cada equipe.',
-};
-
 export interface RespostaDoCientista {
   texto: string;
   /**
@@ -272,8 +266,11 @@ export interface RespostaDoCientista {
   dadosUsados: string[] | null;
   /** Alocação registrada nesta resposta, quando houve. */
   alocou: { alfa: string | null; bravo: string | null } | null;
-  /** Desfecho, quando a tempestade foi enfrentada nesta resposta. */
-  confirmou: unknown | null;
+  /**
+   * Ele confirmou na conversa, e a ferramenta pediu para a tela abrir a decisão
+   * com "Enviar equipes" (ADR-172). As equipes NÃO saíram: quem manda é o botão.
+   */
+  pediuEnvio: boolean;
   /** As duas alternativas que ele pôs na mesa nesta resposta, se pôs. */
   opcoes: Opcoes | null;
   /** Cartão que acompanha a fala na Transcrição (ADR-0007). */
@@ -336,7 +333,6 @@ export async function responder(
     alfa?: string;
     bravo?: string;
   }) => Promise<{ alfa: string | null; bravo: string | null } | null>,
-  aoConfirmar: () => Promise<ResultadoDaConfirmacao>,
   /**
    * O que o servidor já sabe sobre o estado da Missão. Sem isto o mesmo texto
    * ("manda ver") é indistinguível entre confirmar um envio e pedir que a IA
@@ -358,7 +354,7 @@ export async function responder(
   let executada: ReturnType<typeof rodarModelo> | null = null;
   let usados: string[] | null = null;
   let alocou: { alfa: string | null; bravo: string | null } | null = null;
-  let confirmou: unknown = null;
+  let pediuEnvio = false;
   let opcoes: Opcoes | null = null;
   let emUso = [...conjuntos];
   /* A rodada do sorteio ANDA com a carga: `aoUsarDados` soma 1 quando entra
@@ -396,24 +392,21 @@ export async function responder(
       // Número sem ferramenta nenhuma ter rodado é número inventado — o defeito
       // mais grave possível numa Missão sobre confiar em dados.
       //
-      // `confirmou` conta: ao narrar o desfecho, os números vêm da tempestade,
-      // não do modelo. Sem essa ressalva a guarda derrubava a última fala da
-      // Missão e o estudante via "não consegui responder" no fim de tudo.
-      if (!executada && !confirmou && /\d+\s?%|\b\d{3,}\b|\d\.\d{3}/.test(saida)) {
+      if (!executada && /\d+\s?%|\b\d{3,}\b|\d\.\d{3}/.test(saida)) {
         problemas.push(
           'você deu números sem chamar rodar_modelo. Chame a ferramenta e use os números dela, ou responda sem número nenhum',
         );
       }
 
-      // Narrar a tempestade sem ter disparado é inventar o desfecho: quem
-      // decide o que aconteceu é o sistema.
+      // Narrar a tempestade é inventar o desfecho: as equipes só saem no botão
+      // "Enviar equipes", e quem decide o que aconteceu é o sistema.
       const narrouDesfecho =
-        /tempestade (chegou|passou|atingiu)|as equipes (foram|estão a caminho|chegaram)|operação (começou|terminou)/i.test(
+        /tempestade (chegou|passou|atingiu)|as equipes (foram|saíram|estão a caminho|chegaram)|operação (começou|terminou)/i.test(
           saida,
         );
-      if (!confirmou && narrouDesfecho) {
+      if (narrouDesfecho) {
         problemas.push(
-          'você narrou a tempestade sem chamar confirmar_alocacao. Chame a ferramenta e narre o resultado dela, ou apenas pergunte se ele confirma',
+          'você narrou a saída das equipes ou a tempestade. As equipes só saem quando ele aperta "Enviar equipes": diga que a tela de envio está aberta, ou pergunte se ele confirma',
         );
       }
 
@@ -550,12 +543,16 @@ export async function responder(
 
         if (nome === 'confirmar_alocacao') {
           if (argumentos.confirmado !== true) return { disparado: false };
-          // O MESMO portão do botão "Enviar equipes": sem o porquê de cada equipe
-          // com destino, nada sai. Antes a conversa pulava a justificativa.
-          const r = await aoConfirmar();
-          if ('recusa' in r) return { disparado: false, motivo: MOTIVO_DA_RECUSA[r.recusa] };
-          confirmou = r.desfecho;
-          return confirmou;
+          // A conversa NÃO manda as equipes (ADR-172): ela abre a decisão, onde
+          // o botão "Enviar equipes" passa pelo portão do porquê e leva ao
+          // registro da operação. Mandar pela conversa pularia os dois.
+          pediuEnvio = true;
+          return {
+            disparado: false,
+            telaDeEnvio: 'aberta',
+            motivo:
+              'a tela de envio abriu para ele. Diga em uma frase que é lá que ele confere o porquê de cada equipe e toca em "Enviar equipes". Não narre a tempestade.',
+          };
         }
 
         // A última fonte somada nesta conversa explica o que mudou na leitura.
@@ -574,21 +571,18 @@ export async function responder(
     rodada: executada,
     dadosUsados: usados,
     alocou,
-    confirmou,
+    pediuEnvio,
     opcoes,
-    // O cartão que acompanha a fala. Ordem importa: o desfecho encerra a
-    // Missão e ganha a tela; a alocação só aparece quando nada foi disparado.
-    // Ordem importa: o desfecho encerra a Missão e ganha a tela; a alocação só
-    // aparece quando nada foi disparado; as opções vêm com a leitura junto,
-    // porque é dela que sai o número mostrado em cada botão.
-    anexo: confirmou
-      ? { tipo: 'desfecho' as const, ...(confirmou as object) }
-      : alocou
-        ? { tipo: 'alocacao' as const, ...(alocou as object) }
-        : opcoes && executada
-          ? { tipo: 'opcoes' as const, opcoes: [...opcoes], rodada: executada }
-          : executada
-            ? { tipo: 'tendencia' as const, rodada: executada }
-            : null,
+    // O cartão que acompanha a fala. Ordem importa: a alocação primeiro; as
+    // opções vêm com a leitura junto, porque é dela que sai o número mostrado
+    // em cada botão. O desfecho não vem mais pela conversa: as equipes saem no
+    // botão "Enviar equipes" (ADR-172).
+    anexo: alocou
+      ? { tipo: 'alocacao' as const, ...(alocou as object) }
+      : opcoes && executada
+        ? { tipo: 'opcoes' as const, opcoes: [...opcoes], rodada: executada }
+        : executada
+          ? { tipo: 'tendencia' as const, rodada: executada }
+          : null,
   };
 }

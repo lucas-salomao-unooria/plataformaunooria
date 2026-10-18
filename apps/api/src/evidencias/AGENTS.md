@@ -32,11 +32,20 @@ registrado: as tarefas marcam da run do próprio estudante
 (`motor/contexto-da-evidencia.ts#contextoDaRun`, `null` em atividade sem turma)
 e a **rodada é sempre 1**. Vale o PRIMEIRO envio: o reinício reabre a tarefa e
 não apaga a marca, e a missão confere `jaMarcou` antes de marcar.
-**A sexta é a Missão Tempestade (`exp02em1b`, ADR-154)**, com duas regras só
-dela, na ficha: `respostas: "melhor"` (a marca única só muda para melhor) e
+**A sexta é a Missão Tempestade (`exp02em1b`)**: `fichas/exp02em1b.ts` v2
+(ADR-172, que tirou as quatro perguntas da ADR-154): toda habilidade por AÇÃO
+— `leitura`, `fontes`, `e-se`, `whatsapp`, `alerta`, `saude` e `moradora`,
+todos com `rotulo` —, marcadas pelas tarefas de `unoogpt/canal-a.service.ts`
+(as que são "primeira da rodada" conferem `jaMarcou`). Continua com
 `contaAoEncerrarAMissao` (vira evidência só no encerramento da missão na Sala
 de Aula: `SalasService.aoEncerrarMissao` → `aoEncerrarAMissao`, pelo mesmo
-`gravarPropria`). Atividade `"turma"` (a das equipes), rodada da turma.
+`gravarPropria`). Atividade `"turma"` (a das equipes), rodada da turma, sem
+resolvedor registrado: não há pergunta.
+**O encerramento só transforma em nível a marca de marcador que ESTÁ na ficha
+vigente** (`aoEncerrarAMissao`): a turma com a missão aberta no dia em que a
+ficha muda tem marcas de marcador que saiu (as `p1`–`p4` da Tempestade v1), e
+elas virariam nível pelo caminho que o pedagógico tirou. A marca fica no banco;
+só não conta.
 
 Três tabelas de PLATAFORMA (sem prefixo, como `liberacoes` e `equipes`), todas
 com `escola_id` + RLS forçada:

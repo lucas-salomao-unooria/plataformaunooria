@@ -453,6 +453,38 @@ papel \cd{estudante}, com duas exceções marcadas.
 \bottomrule
 \end{tabularx}
 
+\subsection{O Canal A da Missão Tempestade (exp02em1b)}
+
+As tarefas por ação da Missão Tempestade (\adrr{ADR-172}), todas de papel
+\cd{estudante}, com a identidade vinda do \emph{token} (não há id de sessão) e
+o \emph{lock} da sessão em cada uma. Nenhuma devolve nível nem gabarito: a
+resposta é o estado da tela, e os ids dos pares e das comparações são a
+posição, porque o tipo é a resposta.
+
+\begin{tabularx}{\linewidth}{@{}L{48mm}X@{}}
+\toprule
+\headrow \thd{Rota} & \thd{Semântica}\\
+\midrule
+\rota{POST /unoogpt/mandar} & \enquote{Enviar equipes}: o portão do porquê,
+  a saída congelada e o registro da operação na resposta. O desfecho fica
+  retido: \rota{GET /unoogpt/resultado} responde \textbf{409}
+  \cd{registro-pendente} até o registro. \rota{POST /unoogpt/simular} é o
+  alias do cliente 1.4.x, sem tarefa nem marca.\\
+\zebra \rota{GET /unoogpt/saude}, \rota{POST .../saude/abrir},
+  \rota{POST .../saude} & A ligação da Saúde: o estado, a oferta ao abrir a
+  decisão (o primeiro destino também oferece) e a resposta, com
+  \cd{opcao: null} para fechar sem responder.\\
+\rota{GET /unoogpt/registro}, \rota{POST .../registro/leitura|fontes|alerta} &
+  O registro da operação, montado e gravado no servidor; cada cartão é
+  \cd{null} quando não se aplica.\\
+\zebra \rota{GET|POST /unoogpt/e-se} & As duas comparações nas mesmas 20
+  tempestades, depois do registro.\\
+\rota{GET /unoogpt/fechamento}, \rota{POST .../fechamento/whatsapp|moradora} &
+  O fechamento: \textbf{409} \cd{fechamento-fechado} até o professor abrir
+  (\cd{abrir-fechamento} em \rota{POST /unoogpt/professor/turmas/:turmaId/relogio}).\\
+\bottomrule
+\end{tabularx}
+
 \subsection{A sala de aula: a missão dentro da turma}
 
 Três rotas, e elas são a camada entre \cd{turmas} e \cd{experiencias}

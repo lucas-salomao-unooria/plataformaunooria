@@ -99,6 +99,7 @@ Os diagramas entidade-relacionamento estão no Capítulo~\ref{cap:dados}.
 \zebra \cd{exp02em1b\_simulacoes} & Tenant & Desfecho por tentativa\\
 \cd{exp02em1b\_relogio\_turma} & Tenant & O Relógio da Aula, por turma\\
 \cd{exp02em1b\_gate\_turma} & Tenant & A rodada da turma na evidência pedagógica\\
+\zebra \cd{exp02em1b\_tarefas} & Tenant & As tarefas do Canal A: a apresentação montada pelo servidor e as respostas, só escolha fechada (\adrr{ADR-172})\\
 \zebra \cd{exp01ef1b\_turma\_config} & Tenant & A aula da exp01ef1b por turma: pacote aprovado, latch e tentativa\\
 \cd{exp01ef1b\_runs} & Tenant & Execução por estudante e tentativa (reset arquiva, não apaga)\\
 \zebra \cd{exp01ef1b\_posts\_turma} & Tenant & O mural coletivo, assinado pela marca --- sem nome de criança\\
@@ -1859,6 +1860,31 @@ estudante só recebe os posts que o feed serviu até a galeria abrir
   onde o relógio da cidade estava quando a duração mudou. É o que impede o minuto
   narrativo de rebobinar --- aos 4:00 de 5:00 o estudante está no minuto 48, e
   recalcular com 7:00 daria 34.\\
+\cd{fechamento\_aberto\_em} & \cd{TIMESTAMPTZ?} & O professor abriu o
+  fechamento (o WhatsApp e a moradora, \adrr{ADR-172}). Nulo = fechado;
+  \enquote{Redefinir} e o \enquote{Zerar a turma} o fecham.\\
+\bottomrule
+\end{tabularx}
+
+\subsection{\cd{exp02em1b\_tarefas}}
+
+\begin{tabularx}{\linewidth}{@{}L{34mm}L{22mm}X@{}}
+\toprule
+\headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
+\midrule
+\pk{id} & \cd{UUID} & \cd{gen\_random\_uuid()}.\\
+\zebra \cd{(escola\_id, estudante\_id)} & FK & Para a sessão, em cascata. RLS
+  forçada por \cd{escola\_id}.\\
+\cd{rodada}, \cd{tentativa} & \cd{INT}, \cd{SMALLINT} & A rodada da TURMA (a
+  unidade da evidência) e a tentativa do estudante. Única por (escola,
+  estudante, rodada, tentativa, tarefa). \emph{CHECK} $\geq 1$.\\
+\zebra \cd{tarefa} & \cd{TEXT} & \emph{CHECK} \cd{IN ('leitura', 'fontes',
+  'alerta', 'saude', 'e-se', 'whatsapp', 'moradora')}, o mesmo vocabulário de
+  \arq{unoogpt/regras/canal-a.ts}.\\
+\cd{apresentacao} & \cd{JSONB} & O que o servidor montou e a tela mostrou,
+  com o gabarito --- só a api o lê.\\
+\zebra \cd{respostas}, \cd{enviada\_em} & \cd{JSONB?}, \cd{TIMESTAMPTZ?} &
+  Ids de escolha fechada. \emph{CHECK}: respondida $\Leftrightarrow$ com data.\\
 \bottomrule
 \end{tabularx}
 
