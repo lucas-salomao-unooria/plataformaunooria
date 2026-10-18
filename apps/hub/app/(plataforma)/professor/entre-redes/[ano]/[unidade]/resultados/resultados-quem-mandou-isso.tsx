@@ -130,7 +130,7 @@ export async function ResultadosQuemMandouIsso({
      as escolhas com mensagens de outro pacote. */
   const atividadeDoPainel = painel?.atividade && painel.atividade.pacoteId === detalhe?.id ? painel.atividade : null;
   const mensagens = atividadeDoPainel && detalhe ? detalhe.mensagens : [];
-  const opcoes = material?.opcoes ?? { motivos: [], condicoes: [] };
+  const opcoes = material?.opcoes ?? { motivos: [] };
   /* A SALA (ADR-69) é a outra porta, e é da TURMA, não da atividade: sem a
      missão liberada na sala, o cartão fica com cadeado para as crianças, esteja
      a atividade em andamento ou não. A liberação acontece na sala — daqui, o

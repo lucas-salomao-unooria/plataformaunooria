@@ -18,7 +18,12 @@
  *   desafio → mesa ──(1ª publicação, LATCH)──→ motivo → publicada
  *     → [professor libera o resultado] → resultado
  *     → [professor libera a revisão]   → chave → revisao
- *     ──(2ª publicação, LATCH)──→ comparativo → transferencia → fim
+ *     ──(2ª publicação, LATCH)──→ comparativo → simulacao
+ *     ──(a simulação enviada)──→ transferencia → fim
+ *
+ * `simulacao` (3.0.0, ADR-168) é a Chave da criança aplicada a duas matérias
+ * novas; `transferencia` deixou de ser o Desafio Final de múltipla escolha e
+ * virou o boato com "Repassar" à mão.
  *
  * `resultado` e `chave` nunca são GRAVADOS: a etapa da turma os impõe a quem
  * está em `publicada`. O passo gravado sai de `publicada` só quando a Chave se
@@ -35,6 +40,7 @@ export const PASSOS = [
   "chave",
   "revisao",
   "comparativo",
+  "simulacao",
   "transferencia",
   "fim",
 ] as const;
@@ -59,9 +65,10 @@ const PASSOS_DA_TURMA: readonly Passo[] = ["publicada", "resultado", "chave"];
 /**
  * Os passos que a própria criança pede, por `POST passo`. Os outros nascem das
  * rotas que os carimbam: `motivo` (o latch da 1ª), `publicada` (o motivo),
- * `revisao` (a Chave formada), `comparativo` (o latch da 2ª), `fim` (concluir).
+ * `revisao` (a Chave montada), `comparativo` (o latch da 2ª), `transferencia`
+ * (a simulação enviada), `fim` (concluir, com o boato decidido).
  */
-export const PASSOS_PEDIDOS = ["mesa", "transferencia"] as const;
+export const PASSOS_PEDIDOS = ["mesa", "simulacao"] as const;
 export type PassoPedido = (typeof PASSOS_PEDIDOS)[number];
 
 /** O passo que cada etapa impõe a quem está na zona da turma. */
@@ -166,15 +173,16 @@ export type ResultadoDoPasso = { ok: true; passo: Passo } | { ok: false; codigo:
  * - `mesa`: do desafio para a mesa. Pedir de novo na mesa devolve a mesa; depois
  *   do latch, devolve o passo em que ela está (a escada é de sentido único, e um
  *   F5 não pode reabrir a 1ª edição).
- * - `transferencia`: só de quem está no comparativo (o "Avançar para o desafio
- *   final"). Depois dele, devolve o passo em que ela está.
+ * - `simulacao`: só de quem está no comparativo (o "Testar a minha Chave").
+ *   Depois dele, devolve o passo em que ela está. A `transferencia` não é mais
+ *   pedida: nasce da simulação enviada (3.0.0).
  */
 export function pedirPasso(atual: Passo, para: PassoPedido): ResultadoDoPasso {
   if (para === "mesa") {
     if (atual === "desafio" || atual === "mesa") return { ok: true, passo: "mesa" };
     return { ok: true, passo: atual };
   }
-  if (atual === "comparativo") return { ok: true, passo: "transferencia" };
-  if (atual === "transferencia" || atual === "fim") return { ok: true, passo: atual };
+  if (atual === "comparativo") return { ok: true, passo: "simulacao" };
+  if (atual === "simulacao" || atual === "transferencia" || atual === "fim") return { ok: true, passo: atual };
   return { ok: false, codigo: "passo-invalido" };
 }

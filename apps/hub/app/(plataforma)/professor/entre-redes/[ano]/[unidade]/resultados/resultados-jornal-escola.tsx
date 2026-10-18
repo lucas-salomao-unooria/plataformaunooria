@@ -27,6 +27,7 @@ import { normalizarSerie } from "@/lib/series";
 
 import { EscolhaDeTurma } from "./escolha-de-turma";
 import { ImagensDoPacote } from "./imagens-do-pacote";
+import { SimulacaoDoPacote } from "./materia-da-simulacao";
 import { PainelDaAulaJornalEscola } from "./painel-da-aula-jornal-escola";
 import { CartaoDoPodcast } from "./podcast-da-aula";
 import { ZerarTurmaJornalEscola } from "./zerar-turma-jornal-escola";
@@ -36,8 +37,9 @@ const EXP_ID = "exp04ef1b";
 /**
  * A PÁGINA DE UMA ATIVIDADE do JORNAL DA ESCOLA (ADR-130) — o pacote de
  * notícias que o professor criou, com tudo o que se faz com ele, nesta ordem:
- * pô-lo no ar (se está pronto), as equipes, as imagens, a aula ao vivo com o
- * botão único, o gráfico para projetar, o radar e a folha por computador, o
+ * pô-lo no ar (se está pronto), as equipes, as imagens, as duas matérias da
+ * simulação (só leitura), a aula ao vivo com o botão único, o gráfico para
+ * projetar, o roteiro agregado da Chave, o radar e a folha por computador, o
  * zerar (só o em andamento) e o painel de habilidades. Molde:
  * `resultados-a-selecao.tsx` (exp07ef1b).
  *
@@ -283,6 +285,10 @@ export async function ResultadosJornalEscola({
           />
 
           {emAndamento || prontaParaAula ? imagensDoPacote : null}
+
+          {/* As duas matérias em que a turma testa a Chave (3.0.0): sem imagem,
+              e por isso fora da grade de aprovação. */}
+          {detalhe.simulacao?.length ? <SimulacaoDoPacote simulacao={detalhe.simulacao} /> : null}
 
           {emAndamento && painel ? (
             <>

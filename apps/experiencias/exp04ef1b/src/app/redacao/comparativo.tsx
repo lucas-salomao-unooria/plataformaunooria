@@ -16,6 +16,9 @@ import { mapaDeMarcadores, vagasDaPagina } from "./pagina";
  * vaga ainda furada seria a tela afirmando o que não aconteceu. Quem acertou
  * tudo de primeira vê as duas edições iguais — e não é obrigado a trocar nada
  * (PDF §9).
+ *
+ * O botão de avançar é o "Testar a minha Chave" (3.0.0): `POST passo` para a
+ * `simulacao`, onde a Chave da criança roda em duas matérias novas.
  */
 export function TelaDoComparativo({
   comparativo,
@@ -71,7 +74,7 @@ export function TelaDoComparativo({
       </ScrollBar>
       <div className="tela__acao">
         <Button size="lg" fullWidth className="acao-crianca" disabled={!comparativo} isLoading={indo} onClick={aoAvancar}>
-          {EREV.irParaDesafio}
+          {EREV.irParaSimulacao}
         </Button>
       </div>
     </div>

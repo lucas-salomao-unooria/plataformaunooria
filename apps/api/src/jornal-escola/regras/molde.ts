@@ -1,19 +1,29 @@
 import { z } from "zod";
 import { NOTICIAS_PADRAO } from "../catalogo";
-import { NoticiaDoPacoteSchema, type NoticiaDoPacote } from "../contrato-de-rotas";
+import {
+  MateriaDaSimulacaoSchema,
+  NoticiaDoPacoteSchema,
+  type MateriaDaSimulacao,
+  type NoticiaDoPacote,
+} from "../contrato-de-rotas";
 import {
   MEIOS_COM_IMAGEM_OBRIGATORIA,
+  MEIOS_DA_SIMULACAO,
   normalizarParaRegua,
+  problemasDaMateriaDaSimulacao,
   problemasDaNoticia,
+  problemasDaSimulacao,
   problemasDoPacote,
 } from "../invariantes";
 import {
   IDS_DE_NOTICIA,
+  IDS_DE_SIMULACAO,
   MEIOS,
   MEIOS_DIGITAIS,
   MEIOS_TRADICIONAIS,
   TIPOS_DE_PISTA,
   type IdDeNoticia,
+  type IdDeSimulacao,
   type Meio,
   type PilarEmFalta,
 } from "../vocabulario";
@@ -294,4 +304,109 @@ export function emFormatoDaIa(n: NoticiaDoPacote): NoticiaDaIa {
     leitor: n.consequencia.leitor,
     fala_do_leitor: n.consequencia.fala,
   };
+}
+
+// ───────────────────────────────────────────── a simulação (3.0.0, ADR-168)
+
+/** A vaga de uma matéria da simulação: o id, o meio (sem imagem) e o papel. */
+export interface VagaDaSimulacao {
+  id: IdDeSimulacao;
+  meio: Meio;
+  papel: Papel;
+}
+
+/**
+ * O molde das duas matérias da simulação: uma publicável e uma com UM furo,
+ * em meios diferentes dos que existem sem imagem. Qual das duas é a
+ * publicável e qual pista falta na outra são SORTEADOS — fixo, a turma
+ * saberia que "a segunda é a ruim".
+ */
+export function sortearMoldeDaSimulacao(aleatorio: () => number = Math.random): VagaDaSimulacao[] {
+  const [m1, m2] = embaralhar(MEIOS_DA_SIMULACAO, aleatorio) as [Meio, Meio];
+  const furos: readonly Papel[] = ["antiga", "sem-fonte", "sem-autoria"];
+  const furo = furos[Math.floor(aleatorio() * furos.length)] ?? "sem-autoria";
+  const primeiraPublica = aleatorio() < 0.5;
+  return [
+    { id: "s1", meio: m1, papel: primeiraPublica ? "publicavel" : furo },
+    { id: "s2", meio: m2, papel: primeiraPublica ? furo : "publicavel" },
+  ];
+}
+
+/** A matéria da simulação como a IA a devolve — plana, como a notícia. */
+export const MateriaDaIaSchema = z.object({
+  id: z.enum(IDS_DE_SIMULACAO),
+  meio: z.enum(MEIOS),
+  veiculo: z.string(),
+  manchete: z.string(),
+  resumo: z.string(),
+  pista_fonte: z.string(),
+  pista_data: z.string(),
+  pista_autoria: z.string(),
+  publicavel: z.boolean(),
+  pilar_em_falta: z.enum([...TIPOS_DE_PISTA, "nenhum"]),
+  explicacao: z.string(),
+});
+
+/** Converte UMA matéria da simulação e a confere contra a vaga. Lança com os problemas. */
+export function materiaDaIa(bruto: unknown, vaga: VagaDaSimulacao): MateriaDaSimulacao {
+  const m = MateriaDaIaSchema.parse(bruto);
+  const problemas: string[] = [];
+  if (m.id !== vaga.id || m.meio !== vaga.meio) problemas.push(`A matéria ${vaga.id} da simulação mudou de id ou de meio.`);
+  const g = gabaritoDoPapel(vaga.papel);
+  const pilar = m.pilar_em_falta === "nenhum" ? null : m.pilar_em_falta;
+  if (m.publicavel !== g.publicavel || pilar !== g.pilarEmFalta) {
+    problemas.push(`A matéria ${vaga.id} da simulação mudou de papel no gabarito.`);
+  }
+  const convertida = {
+    id: vaga.id,
+    meio: vaga.meio,
+    veiculo: m.veiculo.trim(),
+    falante: null,
+    manchete: m.manchete.trim(),
+    resumo: m.resumo.trim(),
+    pistas: { fonte: m.pista_fonte.trim(), data: m.pista_data.trim(), autoria: m.pista_autoria.trim() },
+    gabarito: { ...g, explicacao: m.explicacao.trim() },
+  };
+  const tetos = MateriaDaSimulacaoSchema.safeParse(convertida);
+  if (!tetos.success) problemas.push(`A matéria ${vaga.id} da simulação passou dos limites de tamanho.`);
+  problemas.push(...problemasDaMateriaDaSimulacao(convertida));
+  if (problemas.length > 0) throw new Error(problemas.join(" "));
+  return tetos.success ? tetos.data : (convertida as MateriaDaSimulacao);
+}
+
+const PreparoDaIaSchema = z.object({
+  noticias: z.array(z.unknown()).length(IDS_DE_NOTICIA.length),
+  simulacao: z.array(z.unknown()).length(IDS_DE_SIMULACAO.length),
+});
+
+/**
+ * O preparo inteiro da IA (3.0.0): as oito notícias contra o molde e a régua do
+ * conjunto, e as duas matérias da simulação contra o molde delas. Lançar = regerar.
+ */
+export function preparoDaIa(
+  bruto: unknown,
+  molde: readonly VagaDoMolde[],
+  moldeDaSimulacao: readonly VagaDaSimulacao[],
+): { noticias: NoticiaDoPacote[]; simulacao: MateriaDaSimulacao[] } {
+  const corpo = PreparoDaIaSchema.parse(bruto);
+  const problemas: string[] = [];
+  let noticias: NoticiaDoPacote[] = [];
+  try {
+    noticias = pacoteDaIa({ noticias: corpo.noticias }, molde);
+  } catch (erro) {
+    problemas.push(erro instanceof Error ? erro.message : "As notícias vieram fora do formato.");
+  }
+  const simulacao: MateriaDaSimulacao[] = [];
+  corpo.simulacao.forEach((m, i) => {
+    const vaga = moldeDaSimulacao[i];
+    if (!vaga) return;
+    try {
+      simulacao.push(materiaDaIa(m, vaga));
+    } catch (erro) {
+      problemas.push(erro instanceof Error ? erro.message : `A matéria ${vaga.id} da simulação veio fora do formato.`);
+    }
+  });
+  if (problemas.length === 0) problemas.push(...problemasDaSimulacao(simulacao));
+  if (problemas.length > 0) throw new Error(problemas.join(" "));
+  return { noticias, simulacao };
 }

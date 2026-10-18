@@ -10,10 +10,9 @@ do ar, acertou a pergunta) e isso morria dentro da experiência; aqui vira o
 nível que o professor lê, corrige e leva para o boletim.
 
 A plataforma entrou primeiro; as missões entram uma a uma, cada uma com a sua
-ficha. **A primeira é Quem Mandou Isso? v2.2** (`fichas/exp05ef1b.ts`): a
-EF05CO08 por uma AÇÃO (a seleção do Mural, marcada na transação do latch) e a
-EF05CO03/EF05CO04 por duas perguntas de múltipla escolha — o molde para a
-próxima.
+ficha. **A primeira é Quem Mandou Isso?** (`fichas/exp05ef1b.ts` v4, ADR-171,
+sem as P1/P2): só ações rotuladas, cada uma na transação do próprio envio —
+Mural (EF05CO08), cartão de frases (CO03), regra do tio (CO04). Sem resolvedor.
 **A segunda é A Seleção (`exp07ef1b`)**: `fichas/exp07ef1b.ts` v2 (ADR-170,
 que tirou as enquetes P1/P2): EF07CO11 pela legenda lida por IA, marcada numa
 transação só dela DEPOIS da resposta; EF07CO08 pela marcação do post do colega,
@@ -21,9 +20,12 @@ congelada na abertura das fichas. Sem resolvedor. Falhando a IA, não há marca:
 "Não avaliado", com a sugestão da reserva na lista da aula, e o professor
 ajusta — com `motivo` opcional (ADR-170, `MOTIVOS_DE_AJUSTE`), que vai só para
 o histórico (`evidencias_eventos.para.motivo`), para todas as missões.
-**A terceira é o Jornal da Escola (`exp04ef1b`)**: `fichas/exp04ef1b.ts`
-(EF15CO04 por `pistas`, EF15CO02 por `chave`, EF04CO08 por `edicao-2`, `p1` e
-`p2`), as três ações marcadas DENTRO das transações dos latches e da Chave.
+**A terceira é o Jornal da Escola (`exp04ef1b`)**: `fichas/exp04ef1b.ts`,
+**versão 2, Canal A puro (ADR-168)** — EF15CO04 por `julgamentos`, EF15CO02 por
+`montagem` + `simulacao`, EF04CO08 por `edicao-2` + `transferencia`, todas AÇÃO,
+nenhuma pergunta e nenhum resolvedor de contexto. O marcador parcial tem teto
+em "em processo" e o final grava o COMBINADO: é assim que uma régua "A só com
+as duas" cabe no "vale o melhor" desta porta, sem regra nova na plataforma.
 A quarta é o Júri Estadual (`exp06ef1b`, ADR-151/152).
 **A quinta é o Unoovista (`exp08ef1b`)**: `fichas/exp08ef1b.ts` v2 (ADR-167,
 que tirou as três perguntas da ADR-153): toda habilidade por AÇÃO — `raio-x` e
@@ -33,11 +35,20 @@ registrado: as tarefas marcam da run do próprio estudante
 (`motor/contexto-da-evidencia.ts#contextoDaRun`, `null` em atividade sem turma)
 e a **rodada é sempre 1**. Vale o PRIMEIRO envio: o reinício reabre a tarefa e
 não apaga a marca, e a missão confere `jaMarcou` antes de marcar.
-**A sexta é a Missão Tempestade (`exp02em1b`, ADR-154)**, com duas regras só
-dela, na ficha: `respostas: "melhor"` (a marca única só muda para melhor) e
+**A sexta é a Missão Tempestade (`exp02em1b`)**: `fichas/exp02em1b.ts` v2
+(ADR-172, que tirou as quatro perguntas da ADR-154): toda habilidade por AÇÃO
+— `leitura`, `fontes`, `e-se`, `whatsapp`, `alerta`, `saude` e `moradora`,
+todos com `rotulo` —, marcadas pelas tarefas de `unoogpt/canal-a.service.ts`
+(as que são "primeira da rodada" conferem `jaMarcou`). Continua com
 `contaAoEncerrarAMissao` (vira evidência só no encerramento da missão na Sala
 de Aula: `SalasService.aoEncerrarMissao` → `aoEncerrarAMissao`, pelo mesmo
-`gravarPropria`). Atividade `"turma"` (a das equipes), rodada da turma.
+`gravarPropria`). Atividade `"turma"` (a das equipes), rodada da turma, sem
+resolvedor registrado: não há pergunta.
+**O encerramento só transforma em nível a marca de marcador que ESTÁ na ficha
+vigente** (`aoEncerrarAMissao`): a turma com a missão aberta no dia em que a
+ficha muda tem marcas de marcador que saiu (as `p1`–`p4` da Tempestade v1), e
+elas virariam nível pelo caminho que o pedagógico tirou. A marca fica no banco;
+só não conta.
 
 Três tabelas de PLATAFORMA (sem prefixo, como `liberacoes` e `equipes`), todas
 com `escola_id` + RLS forçada:

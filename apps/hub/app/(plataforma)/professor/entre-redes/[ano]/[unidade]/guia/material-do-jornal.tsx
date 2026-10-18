@@ -18,7 +18,9 @@ import {
  * - `PerguntasDoJornal`, no debate: as três perguntas da mediação (§4b),
  *   verbatim.
  * - `MesaDoJornal`, no preparo: as oito notícias do banco padrão COM o gabarito
- *   e a reação do leitor, e os seis blocos da Chave, com as iscas marcadas.
+ *   e a reação do leitor, os seis blocos da Chave com as armadilhas marcadas e
+ *   o lado certo de cada cartão de condição, e as duas matérias da simulação
+ *   (3.0.0, ADR-168) com o gabarito.
  *
  * Nada disso vira texto no guia (`guias/exp04ef1b.ts`): as perguntas e os
  * gatilhos moram na api para que corrigir uma frase não exija republicar o hub,
@@ -57,9 +59,13 @@ export function BotoesDoJornal({ dados }: { dados: MaterialDoJornal | null }) {
           </li>
           <li>
             <strong className="text-unooria-neutral-950">Liberar revisão</strong>, depois da conversa com as três
-            perguntas. Ao apertar, diga: “{dados.roteiro.gatilhoDaRevisao}”
+            perguntas — na mesma aula, ou no começo da próxima. Ao apertar, diga: “{dados.roteiro.gatilhoDaRevisao}”
           </li>
         </ol>
+        <p className="mt-3 text-[12px] leading-relaxed text-unooria-neutral-600">
+          Entre os dois botões cabe uma pausa: se a aula acabar depois da conversa, pare ali. O que cada computador
+          fez fica salvo, e a aula seguinte começa pela Chave do Editor, quando você apertar Liberar revisão.
+        </p>
       </Card>
     </div>
   );
@@ -130,25 +136,86 @@ export function MesaDoJornal({ dados }: { dados: MaterialDoJornal | null }) {
           })}
         </ul>
 
-        <p className="mt-5 text-[13px] font-semibold text-unooria-neutral-950">A Chave do Editor: seis blocos, três certos</p>
-        <p className="mt-1 text-[12px] leading-relaxed text-unooria-neutral-600">
-          A Chave se forma com os três pilares, em qualquer ordem. As iscas voltam para a bandeja quando entram — e
-          cada envio conta uma tentativa no painel de habilidades. A ordem da bandeja muda de computador para
-          computador.
+        <p className="mt-5 text-[13px] font-semibold text-unooria-neutral-950">
+          A Chave do Editor: seis blocos, três que valem e três armadilhas
         </p>
-        <ul className="mt-2 flex flex-wrap gap-2">
+        <p className="mt-1 text-[12px] leading-relaxed text-unooria-neutral-600">
+          Cada dupla monta a sua Chave, uma vez só e sem correção na tela: escolhe três blocos para as três vagas,
+          diz de que lado fica cada cartão (a pista passa ou falha), o que fazer quando uma pista falha (“Não
+          publico” ou “Olho a próxima pista”) e se a Chave vale para todas as notícias ou só para a primeira. A
+          Chave de referência é fonte, data e autoria, com os cartões do lado abaixo, “Não publico” em todas as vagas
+          e “todas as notícias”; a ordem das vagas não importa. A ordem da bandeja e dos cartões muda de computador
+          para computador.
+        </p>
+        <ul className="mt-2 grid gap-2 lg:grid-cols-3">
           {dados.blocos.map((b) => (
             <li key={b.id} className="flex flex-col gap-1 rounded-lg border border-unooria-neutral-200 p-2" data-bloco={b.id}>
               <span className="flex items-center gap-2">
                 <span className="text-[13px] font-semibold text-unooria-neutral-950">{b.rotulo}</span>
                 <Tag variant={b.pilar ? "success" : "neutral"} size="sm">
-                  {b.pilar ? "pilar" : "isca"}
+                  {b.pilar ? "vale" : "armadilha"}
                 </Tag>
               </span>
               <span className="text-[12px] text-unooria-neutral-600">{b.legenda}</span>
+              <ul className="flex flex-col gap-0.5 text-[12px] leading-snug text-unooria-neutral-700">
+                {b.cartoes.map((c) => (
+                  <li key={c.texto}>
+                    {c.texto} <span className="text-unooria-neutral-500">({c.exemplo})</span>
+                    {c.lado ? (
+                      <strong className="text-unooria-neutral-950">
+                        {" "}
+                        → {c.lado === "aprova" ? "a pista passa" : "a pista falha"}
+                      </strong>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
             </li>
           ))}
         </ul>
+
+        {dados.simulacao?.length ? (
+          <>
+            <p className="mt-5 text-[13px] font-semibold text-unooria-neutral-950">
+              As duas matérias para testar a Chave, depois da 2ª edição
+            </p>
+            <p className="mt-1 text-[12px] leading-relaxed text-unooria-neutral-600">
+              Cada computador abre as pistas na ordem da própria Chave e decide se publica. Sem imagem e sem capa: elas
+              só testam se a dupla segue a regra que montou. Depois, todos recebem na tela a mesma regra de referência.
+            </p>
+            <ul className="mt-2 grid gap-3 lg:grid-cols-2">
+              {dados.simulacao.map((m) => {
+                const escolha = escolhaDoGabarito(m.gabarito);
+                return (
+                  <li
+                    key={m.id}
+                    className="flex flex-col gap-2 rounded-lg border border-unooria-neutral-200 p-3"
+                    data-materia-da-simulacao={m.id}
+                  >
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-[12px] font-semibold text-unooria-neutral-600">
+                        {NEWS_MEDIUM_LABELS[MEIO_NO_DS[m.meio]]} · {m.veiculo}
+                      </span>
+                      <Tag variant={escolha === "publicavel" ? "success" : "warning"} size="sm">
+                        {ETIQUETA_DO_GABARITO[escolha]}
+                      </Tag>
+                    </div>
+                    <p className="text-[14px] font-semibold leading-snug text-unooria-neutral-950">{m.manchete}</p>
+                    <p className="text-[13px] leading-relaxed text-unooria-neutral-800">{m.gabarito.explicacao}</p>
+                    <dl className="grid grid-cols-[auto_1fr] gap-x-2 gap-y-0.5 text-[12px] leading-snug text-unooria-neutral-700">
+                      {TIPOS_DE_PISTA.map((tipo) => (
+                        <div key={tipo} className="contents">
+                          <dt className="font-semibold">{ROTULO_DA_PISTA[tipo]}:</dt>
+                          <dd>{m.pistas[tipo]}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                  </li>
+                );
+              })}
+            </ul>
+          </>
+        ) : null}
       </Card>
     </div>
   );

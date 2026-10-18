@@ -39,9 +39,7 @@ const quota = new QuotaService(prisma);
 const evidencias = new EvidenciasService(prisma, new EquipesService(prisma));
 evidencias.onModuleInit();
 const jornal = new JornalEscolaService(prisma, evidencias, new DiagramacaoService(ia, quota, prisma, 300));
-jornal.onModuleInit();
 const quem = new QuemMandouIssoService(prisma, evidencias, new PreparoDaExp05ef1bService(ia, quota));
-quem.onModuleInit();
 
 const assets = { midiaDeExperienciaExiste: async () => false } as unknown as AssetsService;
 const podcast = new PodcastService(ia, assets, quota, prisma);

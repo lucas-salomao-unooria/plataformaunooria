@@ -3,7 +3,8 @@ import { AlertBox, BottomSheet, Button, NEWS_MEDIUM_LABELS, RevealClue } from "@
 import { ICONE_DA_PISTA, MEIO_PARA_MEDIUM } from "../../lib/meios";
 import { chaveDaPista } from "../../lib/regras";
 import { E2, E3, PISTA } from "../../lib/textos";
-import { TIPOS_DE_PISTA, type NoticiaPublica, type TipoDePista } from "../../lib/tipos";
+import { TIPOS_DE_PISTA, type NoticiaPublica, type TipoDePista, type Veredito } from "../../lib/tipos";
+import { JulgarPista } from "./julgar-pista";
 import { MateriaOriginal } from "./materia-original";
 
 /**
@@ -24,6 +25,14 @@ import { MateriaOriginal } from "./materia-original";
  * quem navega por teclado cai no topo da mesa. Fechar é pelo X ("Voltar para a
  * Mesa"), Esc ou véu; nunca só por gesto.
  *
+ * **O julgamento (3.0.0, ADR-168).** Na mesa da 1ª edição, logo abaixo do texto
+ * da pista aberta, "✓ Confio" e "✗ Não confio" (`JulgarPista`). Marcar é
+ * OPCIONAL — fechar sem marcar só não conta — e o primeiro vale: o veredito
+ * desenhado é o que a api DEVOLVEU, e a pista já julgada (também depois do F5,
+ * pelo `estado.julgamentos`) mostra a marca e não deixa mudar. Na revisão
+ * (`julgamentos` ausente) as pistas abrem sem julgamento. Não há "Deixar de
+ * fora": a decisão é a capa.
+ *
  * O Bento não fala aqui: a mesa é silêncio (PRD §5, Etapa 2), e a tela não avisa
  * nada sobre a notícia — nem que é antiga, nem que falta autor.
  */
@@ -38,6 +47,8 @@ export function Gaveta({
   aoTrocar,
   aoRevelar,
   abertaDeInicio,
+  julgamentos,
+  aoJulgar,
   aoFalharMidia,
 }: {
   noticia: NoticiaPublica | null;
@@ -52,6 +63,10 @@ export function Gaveta({
   aoRevelar: (tipo: TipoDePista) => Promise<boolean>;
   /** O chip nasce aberto? Na mesa, o que a api já revelou; na revisão, o que já foi consultado NELA. */
   abertaDeInicio: (tipo: TipoDePista) => boolean;
+  /** Os vereditos que valem, pela chave `n3:fonte`. AUSENTE = esta fase não julga (a revisão). */
+  julgamentos?: ReadonlyMap<string, Veredito>;
+  /** O `POST julgamento`. `false` = falhou por um motivo que não se repete (a casca já tratou). */
+  aoJulgar?: (tipo: TipoDePista, veredito: Veredito) => Promise<boolean>;
   aoFalharMidia: () => void;
 }) {
   return (
@@ -85,6 +100,8 @@ export function Gaveta({
           pistas={pistas}
           aoRevelar={aoRevelar}
           abertaDeInicio={abertaDeInicio}
+          julgamentos={julgamentos}
+          aoJulgar={aoJulgar}
           aoFalharMidia={aoFalharMidia}
         />
       ) : (
@@ -101,6 +118,8 @@ function ConteudoDaGaveta({
   pistas,
   aoRevelar,
   abertaDeInicio,
+  julgamentos,
+  aoJulgar,
   aoFalharMidia,
 }: {
   noticia: NoticiaPublica;
@@ -109,8 +128,24 @@ function ConteudoDaGaveta({
   pistas: ReadonlyMap<string, string>;
   aoRevelar: (tipo: TipoDePista) => Promise<boolean>;
   abertaDeInicio: (tipo: TipoDePista) => boolean;
+  julgamentos?: ReadonlyMap<string, Veredito>;
+  aoJulgar?: (tipo: TipoDePista, veredito: Veredito) => Promise<boolean>;
   aoFalharMidia: () => void;
 }) {
+  const [julgando, setJulgando] = useState<ReadonlySet<TipoDePista>>(() => new Set());
+
+  function julgar(tipo: TipoDePista, veredito: Veredito) {
+    if (!aoJulgar || julgando.has(tipo)) return;
+    setJulgando((atual) => new Set(atual).add(tipo));
+    void aoJulgar(tipo, veredito).finally(() =>
+      setJulgando((atual) => {
+        const nova = new Set(atual);
+        nova.delete(tipo);
+        return nova;
+      }),
+    );
+  }
+
   /* A gaveta reabre como estava NESTA fase (`abertaDeInicio`). `key` no pai
      reinicia este estado quando a notícia muda. */
   const [abertas, setAbertas] = useState<ReadonlySet<TipoDePista>>(
@@ -141,7 +176,8 @@ function ConteudoDaGaveta({
 
       <div className="gaveta__pistas">
         {TIPOS_DE_PISTA.map((tipo) => {
-          const texto = pistas.get(chaveDaPista(noticia.id, tipo));
+          const chave = chaveDaPista(noticia.id, tipo);
+          const texto = pistas.get(chave);
           return (
             <RevealClue
               key={tipo}
@@ -151,7 +187,20 @@ function ConteudoDaGaveta({
               open={abertas.has(tipo)}
               onOpenChange={(aberta) => alternar(tipo, aberta)}
             >
-              {texto ?? <span aria-busy="true">{E2.abrindoPista}</span>}
+              {texto ? (
+                <>
+                  {texto}
+                  {julgamentos && (
+                    <JulgarPista
+                      veredito={julgamentos.get(chave) ?? null}
+                      enviando={julgando.has(tipo)}
+                      aoJulgar={(v) => julgar(tipo, v)}
+                    />
+                  )}
+                </>
+              ) : (
+                <span aria-busy="true">{E2.abrindoPista}</span>
+              )}
             </RevealClue>
           );
         })}

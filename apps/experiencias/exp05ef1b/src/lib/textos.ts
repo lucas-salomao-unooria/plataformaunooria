@@ -8,10 +8,12 @@
  *   que o professor aprovou, e corrigir uma palavra dele não pode exigir
  *   republicar um caminho imutável no bucket;
  * - as falas da Nina que dependem do servidor (o convite leva o `{tema}`), o
- *   encerramento, as falas antes das perguntas, os rótulos dos motivos e o
- *   callback do motivo — a api é quem sabe o motivo gravado;
- * - o enunciado e as alternativas das perguntas de evidência — a ficha (E14) é
- *   dona deles, e o nível de cada alternativa nunca desce.
+ *   encerramento, a fala do cartão, o desafio do tio, os rótulos dos motivos e
+ *   o callback do motivo — a api é quem sabe o motivo gravado;
+ * - as frases do cartão (o servidor as gera das três mensagens e guarda a
+ *   resposta certa), os rótulos das peças da regra e das previsões, e o
+ *   resultado de cada teste — o que cada peça faz com o áudio é o gabarito da
+ *   regra, e não desce.
  *
  * Tudo em pt-BR (ADR-91). Os textos marcados **[novo]** não existem no sheet:
  * foram escritos nesta frente e esperam a revisão do PO.
@@ -165,8 +167,6 @@ export const TEXTOS = {
       verdadeiraEmocional: "Mensagens verdadeiras descartadas por parecerem exageradas",
       verdadeiraEmocionalValor: (p: number) => `${p}% da turma descartou`,
     },
-    /** [novo] Só para quem votou DEPOIS de a turma passar da revelação: sai do Mural para a regra. */
-    continuar: "Continuar",
   },
 
   // ───────────────────────────────────────────────── Etapa 5: a síntese
@@ -192,14 +192,58 @@ export const TEXTOS = {
     trava: "Participe da conversa na sala. O professor liberará a atividade final em instantes.",
   },
 
-  perguntas: {
-    /** [novo] O rótulo do voto já enviado na enquete da Nina (o `Poll` desenha o tique). */
-    respostaEnviada: "Resposta enviada",
+  // ──────────────────────── Etapa 4: o cartão de frases (EF05CO03), no clone
+  cartao: {
+    /** `e4.instrucao.operacoes_corpo` [novo] */
+    instrucao: "Responda Sim se a frase está certa e Não se está errada.",
+    /** `e4.instrucao.operacoes_dica_ou` [novo] — "ou" em português costuma soar exclusivo. */
+    dicaOu: "OU vale se uma das partes for verdadeira, ou as duas.",
+    /** `e4.rotulo.operacoes_sim` / `_nao` [novo] */
+    sim: "Sim",
+    nao: "Não",
+    /** `e4.rotulo.operacoes_enviar` [novo] */
+    enviar: "Enviar respostas",
+    /** `e4.feedback.operacoes_pendente` [novo] */
+    pendente: "Responda as 6 frases para enviar.",
+    /** `e4.feedback.operacoes_enviado` [novo] */
+    enviado: "Respostas enviadas.",
+    /** [novo] Na reflexão, para quem ainda não respondeu: o cartão vem antes do desafio final. */
+    antesDoDesafio: "Responda as frases para seguir para o desafio final.",
+  },
+
+  // ─────────────────────────── Etapa 6: a regra do tio (EF05CO04), na casca
+  regra: {
+    /** [novo] */
+    titulo: "O desafio do tio",
+    /** `e6.instrucao.desafio_comando` [novo] */
+    comando: "Monte sua regra antes de encaminhar. Depois, teste no áudio do tio.",
+    /** `e6.rotulo.regra_se` / `_entao` / `_depois` [novo] */
+    se: "SE a mensagem for…",
+    entao: "ENTÃO eu…",
+    depois: "E DEPOIS (se quiser)…",
+    /** [novo] A opção vazia da segunda ação. */
+    semDepois: "Nada depois",
+    /** [novo] A previsão: prever é simular a regra antes de ver o resultado. */
+    previsao: "O que a sua regra vai fazer com o áudio do tio?",
+    /** `e6.rotulo.btn_testar` [novo] */
+    testar: "Testar no áudio do tio",
+    /** `e6.rotulo.btn_enviar_regra` [novo] */
+    enviar: "Enviar minha regra",
+    /** `e6.feedback.teste_pendente` [novo] */
+    testePendente: "Escolha a condição, a ação e o que você acha que a regra vai fazer.",
+    /** [novo] O título de cada teste já feito. */
+    teste: (n: number) => `Teste ${n}`,
+    /** [novo] A previsão que a criança escolheu, ao lado do resultado. */
+    voceDisse: (previsao: string) => `Você previu: ${previsao}`,
+    /** [novo] Esgotou o limite técnico de testes. */
+    testesEsgotados: "Você já testou bastante. Agora envie a sua regra.",
   },
 
   conclusao: {
     /** `e6.rotulo.conclusao_titulo` */
     titulo: "Missão Concluída",
+    /** `e6.rotulo.card_titulo` — o card com a regra enviada (`e6.rotulo.card_regra_pessoal`). */
+    cardTitulo: "Sua regra",
     /** `e6.instrucao.conclusao_rodape` */
     rodape: "Você completou todas as etapas desta missão no Unooria Hub.",
   },

@@ -112,13 +112,14 @@ export const FERRAMENTA_ALOCAR: AiFerramenta = {
 };
 
 /**
- * Confirmar e enfrentar a tempestade. Ponto sem volta — e o Cientista precisa
- * dizer isso ANTES de chamar.
+ * Confirmar: ABRE a tela de envio na tela do estudante (ADR-172). Quem manda as
+ * equipes é ele, no botão "Enviar equipes" — que passa pelo porquê de cada
+ * equipe e leva ao registro da operação.
  */
 export const FERRAMENTA_CONFIRMAR: AiFerramenta = {
   nome: 'confirmar_alocacao',
   descricao:
-    'Enfrenta a tempestade com a alocação já registrada. É esta a ferramenta para "confirmo", "pode mandar", "manda ver", "pode enfrentar", "vamos nessa" — qualquer confirmação sem bairro novo. Só depois de você ter avisado que não dá para voltar atrás. Exige as duas equipes já com destino.',
+    'Abre, na tela do estudante, a decisão com o botão "Enviar equipes" — ela NÃO manda as equipes. É esta a ferramenta para "confirmo", "pode mandar", "manda ver", "pode enfrentar", "vamos nessa" — qualquer confirmação sem bairro novo. Exige pelo menos uma equipe com destino.',
   parametros: {
     type: 'object',
     properties: {

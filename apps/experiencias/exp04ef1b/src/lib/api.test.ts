@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, test, vi } from "vitest";
 import { comRepeticao, statusDoErro, tipoDaFalha } from "./api";
 
@@ -57,5 +58,26 @@ describe("comRepeticao — a chamada que caiu na rede se repete; o latch fechado
     const chamada = vi.fn<() => Promise<string>>().mockRejectedValue(new TypeError("Failed to fetch"));
     await expect(comRepeticao(chamada, o)).rejects.toThrow("Failed to fetch");
     expect(chamada).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("as rotas da 3.0.0", () => {
+  const fonte = readFileSync("src/lib/api.ts", "utf8");
+
+  test("nenhuma rota de /evidencias: P1/P2 saíram (Canal A puro, ADR-168)", () => {
+    // O CAMINHO, entre aspas: o comentário que conta por que a rota saiu pode citá-la.
+    expect(fonte).not.toMatch(/["'`]\/evidencias/);
+    expect(fonte).not.toMatch(/["'`/]perguntas/);
+  });
+
+  test("as rotas novas do contrato estão lá", () => {
+    for (const rota of [
+      "/jornal-escola/julgamento",
+      "/jornal-escola/chave",
+      "/jornal-escola/simulacao",
+      "/jornal-escola/transferencia",
+    ]) {
+      expect(fonte).toContain(`"${rota}"`);
+    }
   });
 });

@@ -55,8 +55,8 @@ export async function ResultadosUnooGPT({
       ? "Você não tem turma de 2ª série do EM, e esta missão é dessa série. Para conduzir uma missão, entre pela turma em Minhas turmas."
       : undefined;
 
-  /* A evidência (E14, ADR-154): a missão não tem atividade, e a da evidência é
-     a sintética "turma" — a mesma das equipes. */
+  /* A evidência (E14; o Canal A, ADR-172): a missão não tem atividade, e a da
+     evidência é a sintética "turma" — a mesma das equipes. */
   const [folha, habilidades, session, podcast] = await Promise.all([
     turma ? apiDoServidor<FolhaDaTurma>(`/unoogpt/professor/turmas/${encodeURIComponent(turma)}`) : null,
     turma && missao.expId ? painelDeHabilidades(turma, missao.expId, ATIVIDADE_DA_TURMA) : null,
@@ -118,7 +118,7 @@ export async function ResultadosUnooGPT({
         />
       ) : (
         <>
-          <PainelDoRelogio turmaId={turma} inicial={folha.relogio} />
+          <PainelDoRelogio turmaId={turma} inicial={folha.relogio} fechamento={folha.fechamento} />
 
           <div className="grid gap-3 sm:grid-cols-3">
             <MetricCard
@@ -155,8 +155,45 @@ export async function ResultadosUnooGPT({
                 essa saída a pergunta viraria pegadinha e o estudante aprenderia a mentir para o
                 formulário.
               </li>
+              <li data-alcance-do-alerta>
+                <strong>O alcance do alerta</strong>, no bloco das fontes que discordam:{" "}
+                {folha.alcanceDoAlerta}
+              </li>
             </ul>
           </Card>
+
+          {/* O que cada grupo perguntou sobre cada fonte, no registro da
+              operação (ADR-172): contagens, para o bloco das fontes que
+              discordam. Nenhum nome, nenhum nível. */}
+          {folha.perguntasPorFonte.length > 0 ? (
+            <Card variant="outlined" title="O que cada grupo perguntou sobre cada fonte">
+              <ScrollBar orientation="both" autoHide className="tabela-rolavel">
+                <table className="w-full min-w-[520px] border-collapse text-[13px]" data-perguntas-por-fonte>
+                  <thead>
+                    <tr className="border-b border-unooria-neutral-200 text-left text-unooria-neutral-500">
+                      <th className="py-2 pr-3 font-semibold">Fonte</th>
+                      <th className="py-2 pr-3 font-semibold">Bairro</th>
+                      <th className="py-2 pr-3 font-semibold">O que perguntou</th>
+                      <th className="py-2 font-semibold">Grupos</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {folha.perguntasPorFonte.map((p) => (
+                      <tr
+                        key={`${p.fonte}-${p.bairro}-${p.pergunta}`}
+                        className="border-b border-unooria-neutral-100 text-unooria-neutral-800"
+                      >
+                        <td className="py-2 pr-3">{p.fonte}</td>
+                        <td className="py-2 pr-3">{p.bairro}</td>
+                        <td className="py-2 pr-3">{p.pergunta}</td>
+                        <td className="py-2 tabular-nums">{p.grupos}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </ScrollBar>
+            </Card>
+          ) : null}
 
           {/* O caminho de exclusão desta missão, no lugar de um prazo de
               retenção que nenhuma rotina cumpriria. Fica ACIMA da tabela: a
@@ -257,7 +294,7 @@ export async function ResultadosUnooGPT({
             />
           ) : null}
 
-          {/* O painel de habilidades (E14, ADR-154). Só conta quando a missão é
+          {/* O painel de habilidades (E14, ADR-172). Só conta quando a missão é
               encerrada na Sala de Aula: até lá ele diz isso, sem nível. Só o
               `professor` confirma e ajusta; a coordenação lê. */}
           {habilidades?.temFicha && missao.expId ? (

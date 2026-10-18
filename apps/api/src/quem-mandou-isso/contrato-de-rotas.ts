@@ -1,7 +1,6 @@
 import { z } from "zod";
 import { falasDoTemaSchema } from "../podcast/roteiro";
 import { VAGAS_DO_PODCAST } from "./podcast";
-import { STATUS_DE_MARCA } from "../evidencias/regras";
 import {
   ASSUNTOS_MAX,
   CONTEXTO_MAX_CARACTERES,
@@ -17,8 +16,10 @@ import {
   TOTAL_DE_MENSAGENS,
   VERACIDADES,
 } from "./catalogo";
+import { OPERADORES, RESPOSTAS, TOTAL_DE_FRASES } from "./regras/operacoes";
 import { validarAssuntos, validarContexto, validarPacote, validarTema } from "./regras/pacote";
 import { ACOES_DO_GATE, FASES, PASSOS } from "./regras/passos";
+import { ACOES, CONDICOES, SITUACOES } from "./regras/regra";
 
 /**
  * O contrato HTTP da exp05ef1b v2.2 — só schemas Zod. O OpenAPI é derivado
@@ -51,6 +52,29 @@ export const SelecaoSchema = z.object({
 export const MuralSchema = SelecaoSchema;
 
 export const EnqueteSchema = z.object({ motivo: MotivoSchema });
+
+const FraseIdSchema = z.enum(["f1", "f2", "f3", "f4", "f5", "f6"]);
+
+/**
+ * O CARTÃO DE FRASES (EF05CO03): as seis respostas, todas de uma vez — sem
+ * resultado parcial. Os ids precisam ser os seis, sem repetir (o serviço
+ * confere); a resposta esperada nunca veio ao cliente.
+ */
+export const OperacoesSchema = z.object({
+  respostas: z
+    .array(z.object({ fraseId: FraseIdSchema, resposta: z.enum(RESPOSTAS) }))
+    .length(TOTAL_DE_FRASES)
+    .refine((r) => new Set(r.map((x) => x.fraseId)).size === TOTAL_DE_FRASES, "cada frase uma vez"),
+});
+
+/** A regra montada com peças: a condição e uma ou duas ações, em ordem. */
+export const RegraSchema = z.object({
+  condicao: z.enum(CONDICOES),
+  acoes: z.array(z.enum(ACOES)).min(1).max(2),
+});
+
+/** O teste no áudio do tio: a regra e a PREVISÃO, que vem antes do resultado. */
+export const TesteDaRegraSchema = RegraSchema.extend({ previsao: z.enum(SITUACOES) });
 
 /**
  * O recorte da aula (E0-PROF-02). Os tetos chegam por `superRefine` das MESMAS
@@ -147,6 +171,36 @@ export const RevelacaoSchema = z.object({
   }),
 });
 
+/**
+ * O CARTÃO DE FRASES do estudante — `null` até a revelação dele (depende do
+ * gabarito das três mensagens). As frases saem SEM a resposta esperada.
+ */
+export const CartaoSchema = z.object({
+  frases: z.array(z.object({ id: FraseIdSchema, operador: z.enum(OPERADORES), texto: z.string() })).length(TOTAL_DE_FRASES),
+  /** Já enviou? Depois do envio o cartão trava (o latch). */
+  enviado: z.boolean(),
+});
+
+const RegraMontadaSchema = RegraSchema.extend({
+  /** A regra em palavras ("Se a mensagem for…, então eu…"). */
+  emPalavras: z.string(),
+});
+
+/** A regra do tio do estudante: os testes feitos e a regra enviada. */
+export const RegraDoEstudanteSchema = z.object({
+  testes: z.array(
+    RegraMontadaSchema.extend({
+      previsao: z.enum(SITUACOES),
+      /** O que a regra fez com o áudio — e a frase que a tela mostra. */
+      situacao: z.enum(SITUACOES),
+      resultado: z.string(),
+    }),
+  ),
+  /** Ainda pode testar? (limite técnico de testes) */
+  podeTestar: z.boolean(),
+  enviada: RegraMontadaSchema.nullable(),
+});
+
 export const EstadoSchema = z.object({
   /** O passo DERIVADO no servidor: `f(latches da sessão, fase da turma)`. */
   passo: PassoSchema,
@@ -161,6 +215,10 @@ export const EstadoSchema = z.object({
   motivo: MotivoSchema.nullable(),
   concluido: z.boolean(),
   revelacao: RevelacaoSchema.nullable(),
+  /** O cartão de frases (EF05CO03) — `null` antes da revelação do estudante. */
+  cartao: CartaoSchema.nullable(),
+  /** A regra do tio (EF05CO04) — `null` antes do passo `regra`. */
+  regra: RegraDoEstudanteSchema.nullable(),
 });
 
 const OpcaoSchema = z.object({ id: z.string(), rotulo: z.string() });
@@ -177,16 +235,22 @@ export const SessaoSchema = EstadoSchema.extend({
     .nullable(),
   /**
    * As falas da experiência que dependem do servidor (a da Nina leva o tema)
-   * ou que ele precisa conhecer (as que antecedem as perguntas de evidência,
-   * pelo id da pergunta). O enunciado e as alternativas das perguntas vêm de
-   * `GET /evidencias/exp05ef1b/perguntas/:id` — embaralhadas, e sem o nível.
+   * ou que são da missão: a que abre o cartão de frases e o desafio do tio.
    */
   textos: z.object({
-    nina: z.object({ convite: z.string().nullable(), encerramento: z.string() }),
-    perguntas: z.array(z.object({ perguntaId: z.string(), fala: z.string() })),
+    nina: z.object({ convite: z.string().nullable(), encerramento: z.string(), cartao: z.string(), tio: z.string() }),
   }),
-  opcoes: z.object({ motivos: z.array(OpcaoSchema) }),
-  limites: z.object({ encaminhamentos: z.number().int().positive() }),
+  /**
+   * Os rótulos das peças. O tipo de cada ação e quais condições pegam o áudio
+   * ficam no servidor: a tela recebe só id e rótulo.
+   */
+  opcoes: z.object({
+    motivos: z.array(OpcaoSchema),
+    condicoes: z.array(OpcaoSchema),
+    acoes: z.array(OpcaoSchema),
+    previsoes: z.array(OpcaoSchema),
+  }),
+  limites: z.object({ encaminhamentos: z.number().int().positive(), testes: z.number().int().positive() }),
 });
 
 export const GateDoEstudanteSchema = z.object({
@@ -297,6 +361,10 @@ const ProgressoSchema = z.object({
   entraram: z.number().int().nonnegative(),
   confirmaram: z.number().int().nonnegative(),
   votaram: z.number().int().nonnegative(),
+  /** Enviaram o cartão de frases (EF05CO03). */
+  responderamCartao: z.number().int().nonnegative(),
+  /** Enviaram a regra do tio (EF05CO04). */
+  enviaramRegra: z.number().int().nonnegative(),
   concluiram: z.number().int().nonnegative(),
 });
 
@@ -330,6 +398,15 @@ const LinhaDoPainelSchema = z.object({
   selecao: z.array(MensagemIdSchema).nullable(),
   motivo: MotivoSchema.nullable(),
   tempoFeedSegundos: z.number().int().nonnegative().nullable(),
+  /** O cartão de frases enviado: acertos (0–6) e por operador. O nível é da evidência. */
+  cartao: z
+    .object({
+      acertos: z.number().int().min(0).max(TOTAL_DE_FRASES),
+      porOperador: z.object({ E: z.number().int(), OU: z.number().int(), NAO: z.number().int() }),
+    })
+    .nullable(),
+  /** A regra enviada, em palavras, e quantos testes ela levou. */
+  regra: z.object({ emPalavras: z.string(), testes: z.number().int().nonnegative() }).nullable(),
 });
 
 export const PainelSchema = z.object({
@@ -346,18 +423,30 @@ export const PainelSchema = z.object({
   roteiro: z.object({ perguntas: z.array(z.string()), instrucoes: z.object({ revelacao: z.string(), reflexao: z.string() }) }),
 });
 
-/** O guia da aula: o banco curado COM gabarito, o roteiro e as perguntas de evidência COM o nível. */
+/**
+ * O guia da aula: o banco curado COM gabarito, o roteiro, e as duas AÇÕES de
+ * evidência que o professor precisa conhecer (o cartão de frases e a regra do
+ * tio) — com um exemplo do cartão já respondido e o que cada peça é.
+ */
 export const MaterialSchema = z.object({
   padrao: PadraoSchema.extend({ convite: z.string() }),
   roteiro: z.object({ perguntas: z.array(z.string()), instrucoes: z.object({ revelacao: z.string(), reflexao: z.string() }) }),
-  textos: z.object({ encerramento: z.string() }),
-  perguntasDeEvidencia: z.array(
+  textos: z.object({ encerramento: z.string(), cartao: z.string(), tio: z.string() }),
+  cartao: z.object({
+    /** Um cartão do banco curado, COM a resposta esperada — é o roteiro do professor. */
+    exemplo: z.array(z.object({ operador: z.enum(OPERADORES), texto: z.string(), esperado: z.enum(RESPOSTAS) })),
+  }),
+  regra: z.object({
+    condicoes: z.array(OpcaoSchema.extend({ pegaOAudio: z.boolean() })),
+    acoes: z.array(OpcaoSchema.extend({ tipo: z.enum(["checagem", "espera", "condicional", "repasse"]) })),
+    previsoes: z.array(OpcaoSchema),
+  }),
+  /** O nível de cada ação, contado em palavras (a ficha). */
+  habilidades: z.array(
     z.object({
-      perguntaId: z.string(),
-      habilidade: z.string(),
-      fala: z.string(),
-      enunciado: z.string(),
-      alternativas: z.array(z.object({ id: z.string(), texto: z.string(), status: z.enum(STATUS_DE_MARCA) })),
+      codigo: z.string(),
+      rotulo: z.string(),
+      criterios: z.object({ atingiu: z.string(), em_processo: z.string(), nao_atingiu: z.string() }),
     }),
   ),
   opcoes: z.object({ motivos: z.array(OpcaoSchema) }),

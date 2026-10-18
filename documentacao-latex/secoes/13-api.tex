@@ -270,7 +270,7 @@ nenhuma rota de gestão alcança
   % ---- exp04ef1b
   \node[exprot] at (0.1,-12.25) {\textbf{exp04ef1b}\\Jornal da\\Escola};
   \node[rt, minimum height=15mm] at (4.5,-12.25)
-    {\texttt{/jornal-escola/*}\desc{estudante --- e as perguntas\\em \texttt{/evidencias}}};
+    {\texttt{/jornal-escola/*}\desc{estudante --- toda a\\evidência por ação}};
   \node[rt, minimum height=15mm] at (9.05,-12.25)
     {\texttt{/jornal-escola/\B{}turmas/*}\desc{prof., gestor --- o pacote,\\os dois portões e o painel}};
   \node[rt, minimum height=15mm] at (13.6,-12.25)
@@ -279,7 +279,7 @@ nenhuma rota de gestão alcança
   % ---- exp05ef1b
   \node[exprot] at (0.1,-14.05) {\textbf{exp05ef1b}\\Quem mandou\\isso?};
   \node[rt, minimum height=15mm] at (4.5,-14.05)
-    {\texttt{/quem-mandou-isso/*}\desc{estudante --- e as perguntas\\em \texttt{/evidencias}}};
+    {\texttt{/quem-mandou-isso/*}\desc{estudante --- o Mural, o cartão\\e a regra do tio}};
   \node[rt, minimum height=15mm] at (9.05,-14.05)
     {\texttt{/quem-mandou-isso/\B{}turmas/*}\desc{prof., gestor --- o pacote\\E o relógio da turma}};
   \node[rt, minimum height=15mm] at (13.6,-14.05)
@@ -450,6 +450,38 @@ papel \cd{estudante}, com duas exceções marcadas.
   viu. É a virada pedagógica da missão.\\
 \rota{POST /runs/:id/reset} & \textbf{professor} & Zera a sessão. Recalcula a
   largada pela \emph{mesma} regra do primeiro início.\\
+\bottomrule
+\end{tabularx}
+
+\subsection{O Canal A da Missão Tempestade (exp02em1b)}
+
+As tarefas por ação da Missão Tempestade (\adrr{ADR-172}), todas de papel
+\cd{estudante}, com a identidade vinda do \emph{token} (não há id de sessão) e
+o \emph{lock} da sessão em cada uma. Nenhuma devolve nível nem gabarito: a
+resposta é o estado da tela, e os ids dos pares e das comparações são a
+posição, porque o tipo é a resposta.
+
+\begin{tabularx}{\linewidth}{@{}L{48mm}X@{}}
+\toprule
+\headrow \thd{Rota} & \thd{Semântica}\\
+\midrule
+\rota{POST /unoogpt/mandar} & \enquote{Enviar equipes}: o portão do porquê,
+  a saída congelada e o registro da operação na resposta. O desfecho fica
+  retido: \rota{GET /unoogpt/resultado} responde \textbf{409}
+  \cd{registro-pendente} até o registro. \rota{POST /unoogpt/simular} é o
+  alias do cliente 1.4.x, sem tarefa nem marca.\\
+\zebra \rota{GET /unoogpt/saude}, \rota{POST .../saude/abrir},
+  \rota{POST .../saude} & A ligação da Saúde: o estado, a oferta ao abrir a
+  decisão (o primeiro destino também oferece) e a resposta, com
+  \cd{opcao: null} para fechar sem responder.\\
+\rota{GET /unoogpt/registro}, \rota{POST .../registro/leitura|fontes|alerta} &
+  O registro da operação, montado e gravado no servidor; cada cartão é
+  \cd{null} quando não se aplica.\\
+\zebra \rota{GET|POST /unoogpt/e-se} & As duas comparações nas mesmas 20
+  tempestades, depois do registro.\\
+\rota{GET /unoogpt/fechamento}, \rota{POST .../fechamento/whatsapp|moradora} &
+  O fechamento: \textbf{409} \cd{fechamento-fechado} até o professor abrir
+  (\cd{abrir-fechamento} em \rota{POST /unoogpt/professor/turmas/:turmaId/relogio}).\\
 \bottomrule
 \end{tabularx}
 
@@ -1141,11 +1173,13 @@ aprovar o pacote curado com o Vertex indisponível.
 % gerado de `docs/openapi.json`. Confira LINHA A LINHA contra ele antes de mexer:
 % a tabela da v1 chegou a documentar rotas que nunca existiram.
 
-Quinze rotas em três \emph{controllers} (\adrr{ADR-118}): oito do estudante
+Vinte rotas em três \emph{controllers} (\adrr{ADR-118}): dez do estudante
 (\cd{@Roles("estudante")} na classe, e \cd{exigirMissaoLiberada} no funil de
-TODAS), seis por turma e uma de catálogo. As duas perguntas de evidência não são
-deste módulo: passam por \rota{/evidencias/exp05ef1b/perguntas/*}
-(Seção~\ref{sec:api-evidencias}).
+TODAS), nove por turma e uma de catálogo. Desde a 2.4.0 do instrumento
+(\adrr{ADR-171}) a missão não tem pergunta de evidência: as três habilidades
+são marcadas aqui, na transação de cada ação (o Mural, o cartão de frases e a
+regra do tio), e \rota{/evidencias/exp05ef1b/perguntas/*}
+(Seção~\ref{sec:api-evidencias}) responde 404.
 
 \begin{tabularx}{\linewidth}{@{}L{56mm}L{20mm}X@{}}
 \toprule
@@ -1170,12 +1204,23 @@ deste módulo: passam por \rota{/evidencias/exp05ef1b/perguntas/*}
 \zebra \rota{POST /quem-mandou-isso/enquete} & estudante & \textbf{O latch 2}: o
   motivo. O mesmo voto de novo é idempotente; outro, 409
   \cd{enquete-ja-votada}.\\
-\rota{POST /quem-mandou-isso/reflexao} & estudante & \textbf{O latch 3}: a regra
-  Se/Então, só com a reflexão liberada (antes, 409 \cd{reflexao-nao-liberada}).
-  Três recusas com código próprio: \cd{entao-curto}, \cd{entao-longo} e
-  \cd{entao-sem-sentido}. \textbf{Não recebe nota}: a regra não é corrigida.\\
-\zebra \rota{POST /quem-mandou-isso/concluir} & estudante & O fim, depois das
-  perguntas --- sem exigi-las. Idempotente.\\
+\rota{POST /quem-mandou-isso/operacoes} & estudante & \textbf{O latch 3}: o
+  cartão de frases, as seis respostas Sim/Não de uma vez, com a marca da
+  EF05CO03 na mesma transação. Abre na revelação DO ESTUDANTE (409
+  \cd{cartao-nao-liberado} antes); a mesma resposta de novo é idempotente,
+  outra é 409 \cd{cartao-ja-enviado}. Nada do acerto volta.\\
+\zebra \rota{POST /quem-mandou-isso/regra/teste} & estudante & Um teste da regra
+  do tio: as peças e a \textbf{previsão}, que vem antes do resultado. Só na
+  reflexão, com o cartão enviado (409 \cd{cartao-pendente}); até 5 testes (409
+  \cd{testes-esgotados}); a mesma ação duas vezes é 400 \cd{regra-invalida}.\\
+\rota{POST /quem-mandou-isso/regra} & estudante & \textbf{O latch 4}: a regra
+  enviada, com a marca da EF05CO04 na mesma transação. Enviar sem testar é
+  permitido; a mesma regra de novo é idempotente, outra é 409
+  \cd{regra-ja-enviada}.\\
+\zebra \rota{POST /quem-mandou-isso/concluir} & estudante & O fim, depois da
+  regra --- sem exigir o cartão nem a regra (quem sai antes fica \enquote{Não
+  avaliado}). A experiência o chama sozinha depois do envio da regra.
+  Idempotente.\\
 \rota{GET /quem-mandou-isso/\B{}turmas/\B{}:id/pacote} & prof., gestor & O ativo, o
   rascunho, o banco curado e os componentes curriculares --- \textbf{com} o
   gabarito.\\
@@ -1193,16 +1238,24 @@ deste módulo: passam por \rota{/evidencias/exp05ef1b/perguntas/*}
 \zebra \rota{POST .../gate} & \textbf{só professor} & Os três botões
   (\cd{liberar\_revelacao}, \cd{apresentar\_sintese}, \cd{liberar\_reflexao}).
   Só para a frente: o clique repetido ou fora de ordem não recua a fase.\\
-\rota{GET .../painel} & prof., gestor & O progresso, o Termômetro (\cd{null} antes
-  da revelação), a folha por computador e o roteiro. O \enquote{Então} vem
-  \cd{null} para quem não leciona na turma.\\
+\rota{GET .../painel} & prof., gestor & O progresso (com quantos responderam o
+  cartão e enviaram a regra), o Termômetro (\cd{null} antes da revelação), a
+  folha por computador --- os acertos do cartão por operador e a regra em
+  palavras --- e o roteiro.\\
 \zebra \rota{POST .../nova-rodada} & \textbf{só professor} & \enquote{Zerar Turma
   para Nova Aplicação}: a rodada que o professor VIU no corpo torna o duplo
   clique idempotente; rodada velha é 409 \cd{rodada-desatualizada}. Apaga a
   evidência do pacote (\adrr{ADR-155}).\\
+\rota{GET .../pacotes} e \rota{GET .../pacotes/:pacoteId} & prof., gestor & As
+  atividades da turma (os pacotes aprovados) e uma delas, inteira e com o
+  gabarito (\adrr{ADR-130}).\\
+\zebra \rota{POST .../pacotes/:pacoteId/em-andamento} & \textbf{só professor} &
+  \enquote{Usar esta atividade agora}: a atividade em andamento da turma, e a
+  fase volta à triagem. Idempotente.\\
 \rota{GET /quem-mandou-isso/\B{}professor/\B{}material} & prof., gestor & O guia da aula:
-  o banco curado com gabarito, o roteiro, as falas e as perguntas de evidência
-  COM o nível. Catálogo, sem \emph{tenancy} (\adrr{ADR-86}).\\
+  o banco curado com gabarito, o roteiro, as falas, um cartão de frases
+  respondido e as peças da regra com o que cada uma faz (o gabarito da regra),
+  e os critérios da ficha. Catálogo, sem \emph{tenancy} (\adrr{ADR-86}).\\
 \bottomrule
 \end{tabularx}
 
@@ -1222,14 +1275,14 @@ voto e da revelação aberta pela turma. A turma do estudante é
 % Esta tabela e ESCRITA A MAO; a verdade e o Apendice C (`apendices/c-endpoints.tex`),
 % gerado de `docs/openapi.json`. Confira LINHA A LINHA contra ele antes de mexer.
 
-Vinte e sete rotas em três \emph{controllers} (\adrr{ADR-117}): treze do
+Trinta e duas rotas em três \emph{controllers} (\adrr{ADR-117}): dezoito do
 estudante (\cd{@Roles("estudante")} na classe, e \cd{exigirMissaoLiberada} no
 funil \cd{garantirSessao} de TODAS, com a disponibilidade junto), treze por turma,
 para professor e gestores (as duas das imagens são da \adrr{ADR-147}), e uma de
 catálogo. A turma do estudante sai do
-\emph{token}, nunca do corpo. As duas perguntas do Desafio Final não são deste
-módulo: passam por \rota{/evidencias/exp04ef1b/perguntas/*}
-(Seção~\ref{sec:api-evidencias}).
+\emph{token}, nunca do corpo. Desde a 3.0.0 (\adrr{ADR-168}) a missão não tem
+pergunta de múltipla escolha: \rota{/evidencias/exp04ef1b/perguntas/*} não
+responde por ela.
 
 \begin{tabularx}{\linewidth}{@{}L{56mm}L{20mm}X@{}}
 \toprule
@@ -1244,36 +1297,48 @@ módulo: passam por \rota{/evidencias/exp04ef1b/perguntas/*}
   (\adrr{ADR-93}): etapa, rodada, pacote, passo e o \cd{agora} do SERVIDOR. Sem
   notícias e sem JOIN.\\
 \rota{POST /jornal-escola/passo} & estudante & Os dois passos que a criança
-  pede: \cd{mesa} e \cd{transferencia}. A escada é de sentido único.\\
+  pede: \cd{mesa} e \cd{simulacao}. A escada é de sentido único.\\
 \zebra \rota{POST /jornal-escola/pista} & estudante & Abre fonte, data ou
-  autoria de uma notícia e devolve o texto --- é o registro da EF15CO04.
-  Idempotente por par na mesma fase.\\
+  autoria de uma notícia e devolve o texto. Idempotente por par na mesma fase.\\
+\rota{POST /jornal-escola/julgamento} & estudante & \enquote{Confio} ou
+  \enquote{Não confio} numa pista já aberta, só na mesa da 1ª edição --- o
+  registro da EF15CO04. O primeiro de cada par vale.\\
 \rota{POST /jornal-escola/diagramar} & estudante & O layout da página com as
   três vagas de agora. \textbf{Nunca falha por causa da IA}: \emph{cache}, IA
   com a quota do estudante e teto de cerca de 6\,s, e o modelo automático
   (Capítulo~\ref{cap:ia}).\\
 \zebra \rota{POST /jornal-escola/publicar} & estudante & \textbf{O latch da 1ª
-  edição}: três ids, as verificadas calculadas AQUI, e a marca da EF15CO04 na
-  mesma transação. A resposta não traz o resultado. Outra publicação, 409
+  edição}: três ids, as verificadas calculadas AQUI, e a marca da EF15CO04
+  (julgamentos e coerência da capa) na mesma transação. A resposta não traz o resultado. Outra publicação, 409
   \cd{edicao-ja-publicada}; o professor zerou no meio, 409 \cd{rodada-mudou}.\\
 \rota{POST /jornal-escola/motivo} & estudante & A pergunta de depois do latch,
   uma vez só (\cd{visual} $|$ \cd{checagem}).\\
 \zebra \rota{GET /jornal-escola/resultado} & estudante & As verificadas e uma
   reação de leitor por vaga, só com o motivo respondido e a etapa
   \cd{resultado} aberta (antes, 409 \cd{resultado-nao-liberado}).\\
-\rota{POST /jornal-escola/chave} & estudante & Uma tentativa da Chave: três
-  blocos em qualquer ordem, corrigidos no servidor; \cd{devolvidos} são as
-  iscas. Na formação, a marca da EF15CO02. O número da tentativa descarta o
-  reenvio da rede.\\
+\rota{POST /jornal-escola/chave} & estudante & A Chave MONTADA, um envio sem
+  correção: três vagas (bloco, lado de cada cartão, \enquote{se falhar}) e a
+  repetição. A marca parcial da EF15CO02 (teto em processo). Outra montagem,
+  409 \cd{chave-ja-montada}.\\
 \zebra \rota{GET /jornal-escola/revisao} & estudante & O pilar em falta de cada
   vaga da 1ª edição, depois da Chave.\\
 \rota{POST /jornal-escola/republicar} & estudante & \textbf{O latch da 2ª
-  edição}, com a marca da EF04CO08 (\cd{edicao-2}). Pode repetir as três vagas
-  da 1ª.\\
+  edição}, com a marca parcial da EF04CO08 (\cd{edicao-2}, teto em processo).
+  Pode repetir as três vagas da 1ª.\\
 \zebra \rota{GET /jornal-escola/comparativo} & estudante & As duas edições, com
   o que cada uma causou e o pilar que faltava em cada notícia.\\
-\rota{POST /jornal-escola/concluir} & estudante & O fim, sem exigir as
-  perguntas. Idempotente.\\
+\rota{GET /jornal-escola/simulacao} & estudante & As duas matérias da
+  simulação, SEM gabarito, e a Chave da criança como roteiro.\\
+\zebra \rota{POST /jornal-escola/simulacao} & estudante & A Chave aplicada às
+  duas matérias, de uma vez: a fidelidade à regra dela marca a EF15CO02; a
+  resposta traz a regra de referência, igual para todos.\\
+\rota{GET /jornal-escola/transferencia} & estudante & O boato fixo e as três
+  pistas dele.\\
+\zebra \rota{POST /jornal-escola/transferencia} & estudante & As pistas
+  abertas antes de decidir e a decisão (repassar ou não): o combinado com a 2ª
+  edição marca a EF04CO08. Uma vez.\\
+\rota{POST /jornal-escola/concluir} & estudante & O fim, com o boato já
+  decidido (senão, 409 \cd{transferencia-pendente}). Idempotente.\\
 \zebra \rota{GET /jornal-escola/turmas} & prof., gestor & O seletor, por
   matrícula para o professor.\\
 \rota{GET .../turmas/:id/painel} & prof., gestor & O botão da próxima etapa e o
@@ -1530,8 +1595,8 @@ hub divergiria na primeira revisão de \emph{copy}.
   termômetro do \emph{latch} --- o material vem da API para a lousa e os
   tablets nunca discordarem.\\
 \rota{GET /quem-mandou-isso/\B{}professor/\B{}material} & prof., gestor & O banco curado
-  da exp05ef1b com o gabarito, o roteiro da roda, as falas da Nina e as
-  perguntas de evidência com o nível de cada alternativa.\\
+  da exp05ef1b com o gabarito, o roteiro da roda, as falas da Nina, um cartão
+  de frases respondido e as peças da regra do tio com o que cada uma faz.\\
 \zebra \rota{GET /jornal-escola/\B{}professor/\B{}material} & prof., gestor & O
   banco padrão do Jornal da Escola com o gabarito e a reação de cada notícia,
   os seis blocos da Chave com os pilares marcados, e o roteiro: o gatilho do

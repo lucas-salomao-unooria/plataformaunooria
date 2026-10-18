@@ -74,7 +74,7 @@ const PACOTE: MensagemDoPacote[] = [
 function painel(parcial: Partial<Pick<PainelDaTurma, "atividade" | "progresso">>): Pick<PainelDaTurma, "atividade" | "progresso"> {
   return {
     atividade: { pacoteId: "p1", rodada: 1, tema: "o passeio ao museu" },
-    progresso: { unidades: 4, entraram: 4, confirmaram: 2, votaram: 2, concluiram: 0 },
+    progresso: { unidades: 4, entraram: 4, confirmaram: 2, votaram: 2, responderamCartao: 0, enviaramRegra: 0, concluiram: 0 },
     ...parcial,
   };
 }
@@ -300,8 +300,8 @@ describe("o painel que se atualiza sozinho", () => {
   test("consulta enquanto há aula e alguém não concluiu", () => {
     expect(deveConsultar(painel({ atividade: null }))).toBe(false);
     expect(deveConsultar(painel({}))).toBe(true);
-    expect(deveConsultar(painel({ progresso: { unidades: 0, entraram: 0, confirmaram: 0, votaram: 0, concluiram: 0 } }))).toBe(true);
-    expect(deveConsultar(painel({ progresso: { unidades: 3, entraram: 3, confirmaram: 3, votaram: 3, concluiram: 3 } }))).toBe(false);
+    expect(deveConsultar(painel({ progresso: { unidades: 0, entraram: 0, confirmaram: 0, votaram: 0, responderamCartao: 0, enviaramRegra: 0, concluiram: 0 } }))).toBe(true);
+    expect(deveConsultar(painel({ progresso: { unidades: 3, entraram: 3, confirmaram: 3, votaram: 3, responderamCartao: 0, enviaramRegra: 0, concluiram: 3 } }))).toBe(false);
   });
 
   test("relê a página só quando muda o que a evidência registra", () => {
@@ -310,6 +310,9 @@ describe("o painel que se atualiza sozinho", () => {
     expect(mudouAEvidencia(antes, painel({ progresso: { ...antes.progresso, votaram: 3 } }))).toBe(false);
     expect(mudouAEvidencia(antes, painel({ progresso: { ...antes.progresso, confirmaram: 3 } }))).toBe(true);
     expect(mudouAEvidencia(antes, painel({ progresso: { ...antes.progresso, concluiram: 1 } }))).toBe(true);
+    /* O cartão e a regra marcam a EF05CO03 e a EF05CO04: o painel de habilidades acompanha. */
+    expect(mudouAEvidencia(antes, painel({ progresso: { ...antes.progresso, responderamCartao: 1 } }))).toBe(true);
+    expect(mudouAEvidencia(antes, painel({ progresso: { ...antes.progresso, enviaramRegra: 1 } }))).toBe(true);
     expect(mudouAEvidencia(antes, painel({ atividade: { pacoteId: "p1", rodada: 2, tema: "x" } }))).toBe(true);
   });
 });

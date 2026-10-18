@@ -30,10 +30,10 @@ E os módulos de experiência, um por missão:
 | Módulo | Experiência |
 |---|---|
 | [`src/comum/insta/`](src/comum/insta/AGENTS.md) | exp08ef1b Unoovista — o relógio da aula (ADR-92); com ficha (E14) e o Canal A (ADR-167): as tarefas e a leitura da reflexão em `src/motor/canal-a/` |
-| [`src/unoogpt/`](src/unoogpt/AGENTS.md) | exp02em1b Missão Tempestade — com ficha (E14, ADR-154: atividade "turma", vale a melhor, conta ao encerrar) e equipe (E13) |
+| [`src/unoogpt/`](src/unoogpt/AGENTS.md) | exp02em1b Missão Tempestade — com ficha (E14: atividade "turma", conta ao encerrar) e o Canal A (ADR-172): as sete tarefas em `canal-a.service.ts`; e equipe (E13) |
 | [`src/a-selecao/`](src/a-selecao/AGENTS.md) | exp07ef1b A Seleção — com ficha (E14) e o Mural pareado por computador (E13) |
 | [`src/quem-mandou-isso/`](src/quem-mandou-isso/AGENTS.md) | exp05ef1b Quem Mandou Isso? v2.2 — com ficha (E14) e equipe (E13) |
-| [`src/jornal-escola/`](src/jornal-escola/AGENTS.md) | exp04ef1b Jornal da Escola: A Edição de Bento — com ficha (E14), equipe (E13) e a IA que só diagrama |
+| [`src/jornal-escola/`](src/jornal-escola/AGENTS.md) | exp04ef1b Jornal da Escola: A Edição de Bento — com ficha (E14) e o Canal A (ADR-168): julgar cada pista, a Chave montada, a simulação e o boato; equipe (E13) e a IA que só diagrama |
 | [`src/juri-estadual/`](src/juri-estadual/AGENTS.md) | exp06ef1b O Júri Estadual de Projetos — 40 projetos (o pacote de 16 da 0.4.x segue legível), o motor do feed no servidor (sem repetir post, 8 min), a galeria por área com o contrafactual sem curtidas, a concentração na lousa, a mostra da IA (cinco chamadas) ou o banco padrão de 40 com as imagens geradas pelo `admin`, ficha (E14) e equipe (E13) |
 | [`src/vila/`](src/vila/AGENTS.md) | app-70 Vila do Lume |
 | [`src/backup-unootube/`](src/backup-unootube/AGENTS.md) | o UnooTube ARQUIVADO (`backup-exp04ef1b`, ADR-116): compila e é testado, mas não está no `app.module` |

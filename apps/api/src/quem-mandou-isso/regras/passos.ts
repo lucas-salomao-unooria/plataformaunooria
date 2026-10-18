@@ -6,9 +6,9 @@
  * - `exp05ef1b_gates_turma.fase` — o relógio da TURMA, que o professor move
  *   com os três botões do painel (revelação, síntese, reflexão);
  * - os CARIMBOS da sessão do estudante (`entrou_em`, `confirmado_em`,
- *   `votou_em`, `concluido_em`) — cada um é um latch. A `reflexao_em` ficou
- *   no banco só para o histórico: a regra Se/Então saiu (ADR-145), e as
- *   perguntas de múltipla escolha são a reflexão.
+ *   `votou_em`, `operacoes_em`, `regra_em`, `concluido_em`) — cada um é um
+ *   latch. A `reflexao_em` ficou no banco só para o histórico (a regra
+ *   Se/Então de texto livre, ADR-145).
  *
  * **O passo NÃO é coluna.** Ele é DERIVADO: `passoEfetivo(carimbos, fase)`.
  * Uma coluna `passo` seria uma terceira fonte que os latches já dizem — e que
@@ -70,7 +70,8 @@ export const PASSOS = [
   "espera",
   "revelacao",
   "sintese",
-  "perguntas",
+  "cartao",
+  "regra",
   "concluida",
 ] as const;
 export type Passo = (typeof PASSOS)[number];
@@ -80,6 +81,8 @@ export interface MarcosDaSessao {
   entrou: boolean;
   confirmou: boolean;
   votou: boolean;
+  /** Enviou o cartão de frases (EF05CO03) — `operacoes_em`. */
+  respondeuCartao: boolean;
   concluiu: boolean;
 }
 
@@ -93,13 +96,19 @@ export interface MarcosDaSessao {
  *    vota, e vê a própria revelação depois (default aceito). Empurrá-lo
  *    mediria outra coisa, e mostraria o gabarito a quem ainda escolhe.
  * 3. Depois do voto, a FASE decide: espera na triagem, e então revelação,
- *    síntese e as perguntas (a fase `reflexao`: elas SÃO a reflexão, ADR-145)
- *    conforme o professor abre.
+ *    síntese e a reflexão (a fase `reflexao`: a regra do tio), conforme o
+ *    professor abre.
+ * 4. **O cartão de frases segue o caminho DA CRIANÇA, não o botão do
+ *    professor.** Ele aparece com os crachás (na revelação e na síntese, a
+ *    experiência o mostra pelo `cartao` do estado) e só fecha quando ela o
+ *    envia. Na reflexão, quem ainda não o enviou cai no passo `cartao` ANTES
+ *    da `regra`: ninguém chega ao tio sem ter passado por ele — nem quem votou
+ *    atrasado.
  *
  * O aluno que vota DEPOIS de a turma passar da revelação cai direto no passo
- * da turma (`sintese` ou `perguntas`), e a revelação dele vai junto na resposta
- * (`revelacao` não é nula): a experiência mostra os crachás antes do passo
- * corrente. O servidor não guarda "já viu" — um F5 mostraria de novo, sem dano.
+ * da turma, e a revelação dele vai junto na resposta (`revelacao` não é
+ * nula): a experiência mostra os crachás antes do passo corrente. O servidor
+ * não guarda "já viu" — um F5 mostraria de novo, sem dano.
  */
 export function passoEfetivo(sessao: MarcosDaSessao | null, fase: Fase | null): Passo {
   if (!sessao || !sessao.entrou) return "abertura";
@@ -114,7 +123,7 @@ export function passoEfetivo(sessao: MarcosDaSessao | null, fase: Fase | null): 
     case "explicar":
       return "sintese";
     case "reflexao":
-      return "perguntas";
+      return sessao.respondeuCartao ? "regra" : "cartao";
   }
 }
 

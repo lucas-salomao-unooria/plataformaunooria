@@ -20,6 +20,15 @@ import { createRoot } from "react-dom/client";
  */
 import "@unooria/design-system/unooriaai.css";
 import "@unooria/design-system/fonts/unooriaai.css";
+/**
+ * E a seção `unoochat`, só para UMA peça: o balão do pedido pelo WhatsApp, no
+ * fechamento (`app/pecas/mensagem-do-voluntario.tsx`). É clone dentro de clone
+ * (ADR-173, que estende a ADR-117): a tela continua UnooriaAI, e só a mensagem
+ * fala na voz do mensageiro. Os tokens `--unc-*` ficam presos no contêiner
+ * `.peca-unoochat`, com o tema claro fixado nele.
+ */
+import "@unooria/design-system/unoochat.css";
+import "@unooria/design-system/fonts/unoochat.css";
 import "./estilos/globals.css";
 
 import { Bootstrap } from "./bootstrap";
