@@ -235,8 +235,9 @@ export const MISSAO_BACKUP_UNOOTUBE: Missao = {
  *
  * O professor tem DOIS portões, num botão só que avança: Liberar resultado
  * (as reações dos leitores e o "X de 3 notícias verificadas") e, depois da
- * conversa com a turma, Liberar revisão (a Chave do Editor e a 2ª edição).
- * Nenhum volta. E a missão NÃO nasce vazia, como a exp07ef1b: sem preparo, a
+ * conversa com a turma, Liberar revisão (a Chave do Editor, a 2ª edição, o
+ * teste da Chave e a mensagem nova). Nenhum volta, e entre os dois cabe a
+ * pausa de quem faz a missão em duas aulas (3.0.0, ADR-168). E a missão NÃO nasce vazia, como a exp07ef1b: sem preparo, a
  * turma roda o banco padrão "Feira de Ciências e Notícias da Cidade".
  *
  * Tem ficha pedagógica (E14): a atividade é o PACOTE homologado e a rodada é o
@@ -253,8 +254,8 @@ export const MISSAO_JORNAL_DA_ESCOLA: Missao = {
     "O Bento, que cuida do jornal da escola, recebe oito notícias de meios diferentes para uma " +
     "capa de três vagas. Cada computador escolhe as suas e publica a 1ª edição; quando você libera " +
     "o resultado, os leitores reagem ao que foi publicado. Depois da conversa com a turma, você " +
-    "libera a revisão: a Chave do Editor junta fonte, data e autoria, e cada um revisa a capa, " +
-    "publica a 2ª edição e compara as duas.",
+    "libera a revisão: cada dupla monta a sua Chave do Editor, revisa a capa, publica a 2ª edição, " +
+    "testa a Chave em duas matérias novas e decide o que fazer com uma mensagem urgente.",
   status: "disponivel",
   // Sem spoiler: é o desafio do PDF (§4), palavra por palavra. A missão mede o
   // que a criança escolhe quando ninguém avisou para checar.
@@ -269,11 +270,11 @@ export const MISSAO_JORNAL_DA_ESCOLA: Missao = {
       "Letramento midiático — conferir de onde veio, quando aconteceu e quem assina uma notícia " +
       "antes de publicá-la. BNCC Computação: EF04CO08 (verificar a confiabilidade das fontes), " +
       "EF15CO04 (decomposição) e EF15CO02 (algoritmos simples).",
-    duracao: "1 aula de 50 min (ou 2 de 25 min)",
+    duracao: "1 aula de 50 min, ou 2 aulas com a pausa depois do resultado",
     formato:
       "Uma redação digital da Unooria, sem imitar rede social: a mesa com 8 notícias de 8 meios, a " +
-      "primeira página com 3 vagas, o mural dos leitores e a Chave do Editor. O desafio final é numa " +
-      "tela limpa da Unooria, fora da redação.",
+      "primeira página com 3 vagas, o mural dos leitores e a Chave do Editor. A mensagem nova do fim " +
+      "chega numa tela limpa da Unooria, fora da redação.",
     atos: [
       {
         rotulo: "1 — O Bento e as três vagas",
@@ -287,7 +288,8 @@ export const MISSAO_JORNAL_DA_ESCOLA: Missao = {
           "Oito cartões de meios diferentes — jornal impresso, rádio, telejornal, blog, portal, rede " +
           "social, mensagem encaminhada e mural da escola. Cada notícia abre no formato original, com " +
           "três botões: de onde veio, quando aconteceu e quem assina. Nada obriga a abrir: quem já sabe " +
-          "checar checa sozinho, e é isso que o painel de habilidades registra.",
+          "checar checa sozinho. Cada pista aberta pede um Confio ou Não confio — é isso que o painel " +
+          "de habilidades registra.",
       },
       {
         rotulo: "3 — A 1ª edição",
@@ -304,22 +306,25 @@ export const MISSAO_JORNAL_DA_ESCOLA: Missao = {
           "Liberar resultado mostra, em cada computador, as reações dos leitores às notícias " +
           "escolhidas e “X de 3 notícias verificadas nesta edição”. Você projeta o gráfico anônimo da " +
           "turma e conduz a conversa com as três perguntas do painel. Não há ranking nem exposição de " +
-          "quem errou.",
+          "quem errou. Se a missão for em duas aulas, a primeira acaba aqui: o progresso fica salvo.",
       },
       {
         rotulo: "5 — A Chave e a revisão (o seu segundo botão)",
         texto:
-          "Liberar revisão traz o Bento de volta com seis blocos: fonte, data, autoria e três iscas. " +
-          "Formada a Chave do Editor, cada vaga da 1ª edição ganha um marcador, a turma troca o que " +
-          "não tinha evidência, publica a 2ª edição e compara as duas. Quem acertou de primeira " +
-          "confirma, sem precisar trocar.",
+          "Liberar revisão — na mesma aula ou no começo da segunda — traz o Bento de volta com seis " +
+          "blocos: fonte, data, autoria e três armadilhas. Cada dupla monta a sua Chave do Editor, uma " +
+          "vez só e sem correção: três blocos, quando cada pista passa ou falha, Não publico ou Olho a " +
+          "próxima pista, e se vale para todas as notícias ou só para a primeira. Depois, cada vaga da " +
+          "1ª edição ganha um marcador, a turma troca o que não tinha evidência, publica a 2ª edição e " +
+          "compara as duas.",
       },
       {
-        rotulo: "6 — O desafio final",
+        rotulo: "6 — O teste da Chave e a mensagem nova",
         texto:
-          "Fora da redação, numa tela limpa: um aviso de corte de água chega por mensagem, e a " +
-          "criança responde a duas perguntas sobre o que conferir antes de repassar. A síntese é a " +
-          "mesma para todos — ninguém vê nível —, e as respostas vão para o painel de habilidades.",
+          "A dupla aplica a própria Chave a duas matérias novas, sem imagem, e depois todos recebem a " +
+          "mesma regra de referência. Por fim, numa tela limpa, chega uma mensagem urgente sobre um " +
+          "corte de água, com Repassar à mão desde o começo. A tela não diz a ninguém se acertou: o " +
+          "nível de cada um fica no painel de habilidades, só para você.",
       },
     ],
     preparo: [
@@ -329,14 +334,15 @@ export const MISSAO_JORNAL_DA_ESCOLA: Missao = {
         "confirma em um toque.",
       "Para um tema da sua aula: escolha o componente curricular, escreva o tema e os tópicos, " +
         "gere o pacote com IA e revise cada notícia — inclusive se ela pode ir para a capa e a " +
-        "reação do leitor. Nada gerado por inteligência artificial chega à turma sem o seu clique " +
-        "em Aprovar Pacote.",
+        "reação do leitor — e as duas matérias do teste da Chave. Nada gerado por inteligência " +
+        "artificial chega à turma sem o seu clique em Aprovar Pacote.",
       "Depois de aprovar, gere as imagens no mesmo lugar: elas saem duas por vez. Notícia sem " +
         "imagem aparece desenhada pelo meio, e a missão roda igual.",
       "Se a turma divide computadores, monte as equipes aqui na ficha, em Equipes desta turma — " +
         "duplas é o arranjo recomendado. O painel conta por computador.",
       "Durante a aula são dois botões, na ordem — Liberar resultado e Liberar revisão —, e " +
-        "nenhum volta. Deixe o projetor pronto para o gráfico da turma.",
+        "nenhum volta. Em duas aulas, a pausa é entre os dois. Deixe o projetor pronto para o " +
+        "gráfico da turma.",
       "Não diga que a aula é sobre notícia falsa, nem peça que abram as pistas: a missão mede o " +
         "que a turma escolhe quando ninguém avisou para checar.",
     ],

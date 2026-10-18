@@ -1469,10 +1469,19 @@ model UnoogptSessao {
   atualizadoEm DateTime  @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
   concluidoEm  DateTime? @map("concluido_em") @db.Timestamptz(6)
 
+  /// O registro da operação (ADR-172): o desfecho fica RETIDO até aqui.
+  registroConcluidoEm    DateTime? @map("registro_concluido_em") @db.Timestamptz(6)
+  /// Quando a ligação da Saúde apareceu nesta tentativa (ADR-172).
+  ofertaSaudeEm          DateTime? @map("oferta_saude_em") @db.Timestamptz(6)
+  /// Gravado ao entrar na investigação: a tentativa que COMEÇOU com o relógio
+  /// fechado não marca a leitura nem as fontes (ADR-172). Null = antes da coluna.
+  inicioComRelogioAberto Boolean?  @map("inicio_com_relogio_aberto")
+
   estudante  User               @relation("UnoogptEstudante", fields: [estudanteId], references: [id], onDelete: Cascade)
   mensagens  UnoogptMensagem[]
   marcos     UnoogptMarco[]
   simulacoes UnoogptSimulacao[]
+  tarefas    UnoogptTarefa[]
 
   @@id([escolaId, estudanteId])
   @@index([escolaId])
@@ -1591,19 +1600,21 @@ model UnoogptRelogioTurma {
   turmaId  String @map("turma_id") @db.Uuid
 
   /// cronometrado | livre (CHECK na migration).
-  modo        String    @default("cronometrado")
+  modo               String    @default("cronometrado")
   /// Null = a missão ainda não começou: o estudante vê o cronômetro parado e não
   /// consegue falar com o Cientista.
-  iniciadoEm  DateTime? @map("iniciado_em") @db.Timestamptz(6)
+  iniciadoEm         DateTime? @map("iniciado_em") @db.Timestamptz(6)
   /// Duração em segundos de parede. "+2 min" soma 120.
-  duracaoSeg  Int       @default(300) @map("duracao_seg")
+  duracaoSeg         Int       @default(300) @map("duracao_seg")
   /// O professor encerrou antes da hora.
-  encerradoEm DateTime? @map("encerrado_em") @db.Timestamptz(6)
+  encerradoEm        DateTime? @map("encerrado_em") @db.Timestamptz(6)
   /// Pivô da extensão (`regras/relogio.ts`): onde o relógio da cidade estava
   /// quando a duração mudou. É o que impede o minuto narrativo de rebobinar —
   /// aos 4:00 de 5:00 o estudante está no minuto 48, e recalcular com 7:00 daria 34.
-  pivoSeg     Int       @default(0) @map("pivo_seg")
-  pivoMin     Int       @default(0) @map("pivo_min")
+  pivoSeg            Int       @default(0) @map("pivo_seg")
+  pivoMin            Int       @default(0) @map("pivo_min")
+  /// O professor abriu o fechamento (o WhatsApp e a moradora, ADR-172).
+  fechamentoAbertoEm DateTime? @map("fechamento_aberto_em") @db.Timestamptz(6)
 
   atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
 
@@ -3005,11 +3016,14 @@ model Exp04ef1bPacote {
   noticias Json
 
   /// As URLs das imagens geradas, por id de notícia (`{ "n1": url }`).
-  midia         Json @default("{}")
+  midia         Json  @default("{}")
   /// As URLs que o professor APROVOU, por id de notícia (ADR-147). A imagem só
   /// chega ao estudante quando a URL daqui é a mesma de `midia`: gerar outra
   /// troca `midia`, e aquela notícia espera o novo OK.
-  midiaAprovada Json @default("{}") @map("midia_aprovada")
+  midiaAprovada Json  @default("{}") @map("midia_aprovada")
+  /// As duas matérias da SIMULAÇÃO (`s1`, `s2`, sem imagem — ADR-168). Nulo nos
+  /// pacotes anteriores à 3.0.0: a turma usa as do banco padrão (`catalogo.ts`).
+  simulacao     Json?
 
   /// Quem homologou. Carimbo sem FK, como `exp07ef1b_coberturas.aprovada_por`:
   /// a saída de um professor da rede não pode travar a atividade da turma.
@@ -3083,13 +3097,19 @@ model Exp04ef1bSessao {
   rodada      Int
 
   /// desafio | mesa | motivo | publicada | resultado | chave | revisao |
-  /// comparativo | transferencia | fim (CHECK; a ordem é `regras/passos.ts`).
+  /// comparativo | simulacao | transferencia | fim (CHECK; a ordem é `regras/passos.ts`).
   /// `resultado` e `chave` nunca são GRAVADOS: a etapa da turma os impõe.
   passo String @default("desafio")
 
   /// As pistas abertas, `[{ noticiaId, tipo, fase, em }]`, sem repetir o par
-  /// na mesma fase. É o registro da EF15CO04 (fase 1) e do `edicao-2` (as duas).
+  /// na mesma fase. É o registro do `edicao-2` (as duas fases) e o que a tela
+  /// do ✓/✗ oferece para julgar.
   pistas Json @default("[]")
+
+  /// Os julgamentos ✓/✗ da mesa, `[{ noticiaId, tipo, veredito, decisao, em }]`:
+  /// o PRIMEIRO de cada (notícia, pista), só antes da 1ª publicação. É o dado da
+  /// EF15CO04 (ADR-168).
+  julgamentos Json @default("[]")
 
   /// As 3 vagas da 1ª edição, na ORDEM (a primeira é a manchete principal).
   /// Vazias antes do latch; com ele, três junto com o layout e o carimbo (CHECK).
@@ -3106,6 +3126,9 @@ model Exp04ef1bSessao {
   /// Cada envio da Chave é uma tentativa (a isca também conta).
   chaveTentativas Int       @default(0) @map("chave_tentativas")
   chaveFormadaEm  DateTime? @map("chave_formada_em") @db.Timestamptz(6)
+  /// A Chave como a criança a MONTOU (3.0.0, ADR-168): blocos, condições,
+  /// "se falhar" e a repetição. Uma vez só, sem correção — é o dado da EF15CO02.
+  chaveMontagem   Json?     @map("chave_montagem")
 
   slotsEd2        String[]  @default([]) @map("slots_ed2")
   layoutEd2       String?   @map("layout_ed2")
@@ -3113,10 +3136,18 @@ model Exp04ef1bSessao {
   verificadasEd2  Int?      @map("verificadas_ed2")
   publicada2Em    DateTime? @map("publicada2_em") @db.Timestamptz(6)
 
+  /// A execução da Chave nas duas matérias novas (EF15CO02, ADR-168).
+  simulacao     Json?
+  simuladaEm    DateTime? @map("simulada_em") @db.Timestamptz(6)
+  /// O boato com "Repassar" à mão: as pistas abertas e a decisão (EF04CO08).
+  transferencia Json?
+  transferidaEm DateTime? @map("transferida_em") @db.Timestamptz(6)
+
   concluidaEm DateTime? @map("concluida_em") @db.Timestamptz(6)
 
-  /// A versão do instrumento, para reprocessamento histórico (DAD-06).
-  versaoInstrumento String @default("1.0.0") @map("versao_instrumento")
+  /// A versão do instrumento, para reprocessamento histórico (DAD-06): 2.0.0 é
+  /// o Canal A puro (ADR-168); as sessões da 2.x ficaram na 1.0.0.
+  versaoInstrumento String @default("2.0.0") @map("versao_instrumento")
 
   criadoEm     DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
   atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
@@ -3682,4 +3713,28 @@ model LeituraDaReflexao {
   @@unique([activityId, estudanteId])
   @@index([escolaId])
   @@map("exp08ef1b_leituras_da_reflexao")
+}
+
+/// As TAREFAS DO CANAL A da Missão Tempestade (ADR-172): uma linha por
+/// (sessão, rodada da turma, tentativa, tarefa), com a APRESENTAÇÃO que o
+/// servidor montou e as respostas — só ids de escolha fechada, nenhum texto
+/// livre. `tarefa` tem CHECK (`regras/canal-a.ts#TAREFAS`).
+model UnoogptTarefa {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  escolaId     String    @map("escola_id")
+  estudanteId  String    @map("estudante_id") @db.Uuid
+  /// A rodada da TURMA (`exp02em1b_gate_turma`): é a unidade da evidência.
+  rodada       Int
+  tentativa    Int       @db.SmallInt
+  tarefa       String
+  apresentacao Json
+  respostas    Json?
+  enviadaEm    DateTime? @map("enviada_em") @db.Timestamptz(6)
+  criadaEm     DateTime  @default(now()) @map("criada_em") @db.Timestamptz(6)
+
+  sessao UnoogptSessao @relation(fields: [escolaId, estudanteId], references: [escolaId, estudanteId], onDelete: Cascade)
+
+  @@unique([escolaId, estudanteId, rodada, tentativa, tarefa], map: "exp02em1b_tarefas_unica")
+  @@index([escolaId])
+  @@map("exp02em1b_tarefas")
 }

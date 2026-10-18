@@ -4,12 +4,16 @@ import { join } from "node:path";
 import { describe, expect, test } from "vitest";
 
 import {
+  BLOCOS_ISCA,
   CARACTERES,
   COMPOSICAO,
   ETAPAS,
   IDS_DE_BLOCO,
   IDS_DE_NOTICIA,
+  IDS_DE_SIMULACAO,
+  LADOS_DA_CONDICAO,
   MEIOS,
+  MEIOS_DA_SIMULACAO,
   MEIOS_COM_IMAGEM_OBRIGATORIA,
   MEIOS_DIGITAIS,
   MEIOS_TRADICIONAIS,
@@ -18,6 +22,8 @@ import {
   PARAMETROS,
   PASSOS,
   REGUAS_DE_PALAVRAS,
+  ROTULO_DA_ISCA,
+  ROTULO_DO_MOTIVO,
   TERMOS_PROIBIDOS_NA_TELA,
   TIPOS_DE_PISTA,
   aulaEmAndamento,
@@ -31,15 +37,20 @@ import {
   falhasAcumuladas,
   gabaritoDaEscolha,
   histogramaEmPercentual,
+  iscasMaisEscolhidas,
   mudouAEvidencia,
+  normalizarMateria,
   normalizarNoticia,
   ordenarLinhas,
   percentual,
   problemasDaComposicao,
+  problemasDaMateria,
+  problemasDoParDaSimulacao,
   problemasDosParametros,
   problemasPorCampo,
   rotuloDoBotao,
   termosProibidosEm,
+  textoDasIscas,
   textoDasRodadas,
   textoDoDestaque,
   textoDoEnvio,
@@ -48,6 +59,7 @@ import {
   textoDoProgressoDaMidia,
   textoDoTermometro,
   type LinhaDoPainel,
+  type MateriaDaSimulacao,
   type Meio,
   type NoticiaDoPacote,
   type NoticiaNoRadar,
@@ -95,11 +107,28 @@ describe("o espelho do vocabulário da api", () => {
     expect([...ORIGENS_DO_PACOTE]).toEqual(listaDaApi(vocabulario, "ORIGENS_DO_PACOTE"));
     /* `IDS_DE_BLOCO` na api é `[...BLOCOS_VALIDOS, ...BLOCOS_ISCA]`, e `BLOCOS_VALIDOS` é `TIPOS_DE_PISTA`. */
     expect([...IDS_DE_BLOCO]).toEqual([...listaDaApi(vocabulario, "TIPOS_DE_PISTA"), ...listaDaApi(vocabulario, "BLOCOS_ISCA")]);
+    expect([...BLOCOS_ISCA]).toEqual(listaDaApi(vocabulario, "BLOCOS_ISCA"));
   });
 
-  test("os passos e as etapas, na ordem", () => {
+  test("o vocabulário da 3.0.0: as matérias da simulação e os lados dos cartões", () => {
+    expect([...IDS_DE_SIMULACAO]).toEqual(listaDaApi(vocabulario, "IDS_DE_SIMULACAO"));
+    expect([...LADOS_DA_CONDICAO]).toEqual(listaDaApi(vocabulario, "LADOS_DA_CONDICAO"));
+    expect([...MEIOS_DA_SIMULACAO]).toEqual(listaDaApi(ler("invariantes.ts"), "MEIOS_DA_SIMULACAO"));
+  });
+
+  test("o nome de cada armadilha é o da bandeja da Chave", () => {
+    const catalogo = ler("catalogo.ts");
+    for (const isca of BLOCOS_ISCA) {
+      const rotulo = new RegExp(`\\b${isca}: \\{ rotulo: "([^"]+)"`).exec(catalogo)?.[1];
+      expect(rotulo, `o rótulo de ${isca} não foi encontrado no catálogo`).toBe(ROTULO_DA_ISCA[isca]);
+    }
+  });
+
+  test("os passos e as etapas, na ordem — com a simulação entre o comparativo e a mensagem nova", () => {
     expect([...PASSOS]).toEqual(listaDaApi(passos, "PASSOS"));
     expect([...ETAPAS]).toEqual(listaDaApi(passos, "ETAPAS"));
+    expect(PASSOS.indexOf("simulacao")).toBe(PASSOS.indexOf("comparativo") + 1);
+    expect(PASSOS.indexOf("transferencia")).toBe(PASSOS.indexOf("simulacao") + 1);
   });
 });
 
@@ -155,6 +184,23 @@ describe("o espelho das invariantes e do contrato", () => {
     ]);
     expect(Number(/topicos: z\.string\(\)\.trim\(\)\.max\((\d+)\)/.exec(parametros)?.[1])).toBe(PARAMETROS.topicosMax);
   });
+
+  test("os tetos de caractere da matéria da simulação são os mesmos da notícia", () => {
+    const materia = /export const MateriaDaSimulacaoSchema = z\.object\(([\s\S]*?)\n\}\);/.exec(contrato)?.[1] ?? "";
+    const tetos = Object.fromEntries(
+      [...materia.matchAll(/(\w+): Texto\((\d+), (\d+)\)/g)].map((m) => [m[1]!, { min: Number(m[2]), max: Number(m[3]) }]),
+    );
+    expect(tetos).toEqual({
+      veiculo: CARACTERES.veiculo,
+      falante: CARACTERES.falante,
+      manchete: CARACTERES.manchete,
+      resumo: CARACTERES.resumo,
+      fonte: CARACTERES.pista,
+      data: CARACTERES.pista,
+      autoria: CARACTERES.pista,
+      explicacao: CARACTERES.explicacao,
+    });
+  });
 });
 
 // ─────────────────────────────────────────────────────────────── o painel
@@ -171,6 +217,7 @@ const linha = (nome: string, extra: Partial<LinhaDoPainel> = {}): LinhaDoPainel 
   publicouAPrimeira: false,
   chaveFormada: false,
   publicouASegunda: false,
+  simulou: false,
   concluiu: false,
   ...extra,
 });
@@ -214,10 +261,14 @@ describe("quantos publicaram", () => {
 });
 
 describe("o que faz o painel de habilidades se atualizar sozinho", () => {
-  type Contadores = Partial<{ publicaramAPrimeira: number; formaramAChave: number; publicaramASegunda: number; concluiram: number }>;
-  const painel = (resumo: Contadores = {}, rodada = 1, id = "p1") => ({
+  type Resumo = Parameters<typeof mudouAEvidencia>[0]["resumo"];
+  type Contadores = Partial<
+    Pick<Resumo, "publicaramAPrimeira" | "formaramAChave" | "publicaramASegunda" | "concluiram" | "chave" | "transferencia">
+  >;
+  const painel = (resumo: Contadores = {}, rodada = 1, id = "p1", linhas: LinhaDoPainel[] = [linha("Ana")]) => ({
     pacote: { id, disciplina: "portugues", tema: "t", origem: "padrao" as const, midia: { total: 8, prontas: 8, aprovadas: 8 } },
     rodada,
+    linhas,
     resumo: {
       total: 5,
       iniciaram: 5,
@@ -228,19 +279,25 @@ describe("o que faz o painel de habilidades se atualizar sozinho", () => {
       computadores: { publicaram: 3, total: 5 },
       porComputador: false,
       histograma: { edicao1: [0, 1, 1, 1], edicao2: [0, 0, 0, 1] },
-      motivos: {} as Parameters<typeof mudouAEvidencia>[0]["resumo"]["motivos"],
+      motivos: { visual: 0, checagem: 0 },
+      chave: { montaram: 2, iscas: { foto: 1, urgencia: 0, compartilhada: 0 }, seguir: 0, soNaPrimeira: 0 },
+      transferencia: { decidiram: 1, repassaramSemAbrir: 0, naoRepassaram: 1 },
       radar: [],
       ...resumo,
     },
   });
 
-  test("relê nas três jogadas que a api marca, no concluir depois do Desafio Final, e quando a atividade ou a rodada trocam", () => {
+  test("relê nas cinco jogadas que a api marca, e quando a atividade ou a rodada trocam", () => {
     const antes = painel();
     expect(mudouAEvidencia(antes, painel())).toBe(false);
     expect(mudouAEvidencia(antes, painel({ publicaramAPrimeira: 4 }))).toBe(true);
     expect(mudouAEvidencia(antes, painel({ formaramAChave: 3 }))).toBe(true);
     expect(mudouAEvidencia(antes, painel({ publicaramASegunda: 2 }))).toBe(true);
     expect(mudouAEvidencia(antes, painel({ concluiram: 2 }))).toBe(true);
+    expect(mudouAEvidencia(antes, painel({ transferencia: { decidiram: 2, repassaramSemAbrir: 1, naoRepassaram: 1 } }))).toBe(true);
+    expect(mudouAEvidencia(antes, painel({ chave: { ...antes.resumo.chave, montaram: 3 } }))).toBe(true);
+    /* A simulação não tem contador no resumo: conta pelas linhas. */
+    expect(mudouAEvidencia(antes, painel({}, 1, "p1", [linha("Ana", { simulou: true })]))).toBe(true);
     expect(mudouAEvidencia(antes, painel({}, 2))).toBe(true);
     expect(mudouAEvidencia(antes, painel({}, 1, "p2"))).toBe(true);
   });
@@ -248,6 +305,26 @@ describe("o que faz o painel de habilidades se atualizar sozinho", () => {
   test("o que não marca nada não relê a página: quem só abriu a missão, ou a etapa que o professor abriu", () => {
     const antes = painel();
     expect(mudouAEvidencia(antes, { ...antes, resumo: { ...antes.resumo, iniciaram: 6, total: 6 } })).toBe(false);
+  });
+});
+
+describe("o roteiro agregado da Chave", () => {
+  test("as armadilhas da mais escolhida para a menos, sem as que ninguém pôs", () => {
+    expect(iscasMaisEscolhidas({ foto: 2, urgencia: 5, compartilhada: 0 })).toEqual([
+      { isca: "urgencia", vezes: 5 },
+      { isca: "foto", vezes: 2 },
+    ]);
+    expect(textoDasIscas({ foto: 1, urgencia: 1, compartilhada: 3 }, true)).toBe(
+      "Compartilhada: 3 computadores · Foto: 1 computador · Urgência: 1 computador",
+    );
+    expect(textoDasIscas({ foto: 0, urgencia: 0, compartilhada: 0 }, false)).toBeNull();
+  });
+
+  test("o motivo da 1ª edição tem os rótulos da 3.0.0", () => {
+    expect(ROTULO_DO_MOTIVO).toEqual({
+      visual: "Escolhi porque chamou atenção",
+      checagem: "Escolhi porque conferi as pistas",
+    });
   });
 });
 
@@ -422,14 +499,79 @@ describe("o conjunto das oito", () => {
     expect(problemasDaComposicao(semVariedade)[0]).toMatch(/meio diferente/);
   });
 
-  test("os erros da api vão para a notícia que eles citam; o resto é do conjunto", () => {
-    const { porNoticia, geral } = distribuirErros([
+  test("os erros da api vão para a notícia ou a matéria que eles citam; o resto é do conjunto", () => {
+    const { porNoticia, porMateria, geral } = distribuirErros([
       "Notícia n3, manchete: 12 palavras (a régua é de 3 a 10).",
       "Notícia n3: termo que não pode aparecer na tela (falsa).",
+      'A matéria s2 da simulação: "resumo" com 12 palavras (de 25 a 35).',
+      "A simulação tem uma matéria publicável e uma com furo.",
       "Duas notícias têm a mesma manchete.",
     ]);
     expect(porNoticia.n3).toHaveLength(2);
-    expect(geral).toEqual(["Duas notícias têm a mesma manchete."]);
+    expect(porMateria.s2).toHaveLength(1);
+    expect(geral).toEqual(["A simulação tem uma matéria publicável e uma com furo.", "Duas notícias têm a mesma manchete."]);
+  });
+});
+
+function materiaValida(id: MateriaDaSimulacao["id"], meio: Meio, extra: Partial<MateriaDaSimulacao> = {}): MateriaDaSimulacao {
+  return {
+    id,
+    meio,
+    veiculo: "Jornal do Bairro",
+    falante: null,
+    manchete: "Biblioteca do bairro ganha cantinho de leitura",
+    resumo: TRINTA,
+    pistas: { fonte: "Jornal impresso da região", data: "Publicado ontem", autoria: "Repórter Caio Mendes" },
+    gabarito: { publicavel: true, pilarEmFalta: null, explicacao: "Jornal conhecido, data recente e assinatura." },
+    ...extra,
+  };
+}
+
+describe("as duas matérias da simulação", () => {
+  const furo = { publicavel: false, pilarEmFalta: "autoria" as const, explicacao: "Ninguém assina o texto do blog." };
+
+  test("uma matéria dentro das réguas não tem problema; a régua é a da mesa", () => {
+    expect(problemasDaMateria(materiaValida("s1", "jornal"))).toEqual({});
+    const p = problemasDaMateria(materiaValida("s1", "jornal", { manchete: "Curta", resumo: "poucas palavras aqui no resumo" }));
+    expect(p.manchete).toBe("Tem 1 palavra; o mínimo é 3.");
+    expect(p.resumo).toBe("Tem 5 palavras; o mínimo é 25.");
+  });
+
+  test("sem imagem nem locutor: o meio é jornal, blog, portal ou mural", () => {
+    expect(problemasDaMateria(materiaValida("s1", "tv")).meio).toMatch(/jornal, blog, portal ou mural/);
+    expect(problemasDaMateria(materiaValida("s1", "mural")).meio).toBeUndefined();
+  });
+
+  test("termo proibido acusa no que a criança lê, nunca na explicação", () => {
+    const p = problemasDaMateria(
+      materiaValida("s2", "blog", {
+        pistas: { fonte: "Um blog que diz mentira", data: "Publicado hoje", autoria: "Sem assinatura" },
+        gabarito: { ...furo, explicacao: "Não é falsa, mas ninguém assina." },
+      }),
+    );
+    expect(p.fonte).toMatch(/mentira/);
+    expect(p.explicacao).toBeUndefined();
+  });
+
+  test("o par: uma pode ir para a capa e a outra não, de meios diferentes", () => {
+    expect(problemasDoParDaSimulacao([materiaValida("s1", "jornal"), materiaValida("s2", "blog", { gabarito: furo })])).toEqual([]);
+    expect(problemasDoParDaSimulacao([materiaValida("s1", "jornal"), materiaValida("s2", "blog")])).toEqual([
+      "Das duas matérias da simulação, uma precisa poder ir para a capa e a outra não.",
+    ]);
+    expect(problemasDoParDaSimulacao([materiaValida("s1", "blog"), materiaValida("s2", "blog", { gabarito: furo })])).toEqual([
+      "As duas matérias da simulação precisam ser de meios diferentes.",
+    ]);
+    expect(problemasDoParDaSimulacao([])).toHaveLength(1);
+  });
+
+  test("a matéria viaja limpa: falante vazio vira null, e a publicável não leva pilar", () => {
+    const m = normalizarMateria({
+      ...materiaValida("s1", "portal", { falante: "  ", manchete: " Manchete com espaço nas pontas " }),
+      gabarito: { publicavel: true, pilarEmFalta: "data", explicacao: " Pode ir para a capa. " },
+    });
+    expect(m.falante).toBeNull();
+    expect(m.manchete).toBe("Manchete com espaço nas pontas");
+    expect(m.gabarito).toEqual({ publicavel: true, pilarEmFalta: null, explicacao: "Pode ir para a capa." });
   });
 });
 

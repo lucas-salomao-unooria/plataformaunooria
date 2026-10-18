@@ -13,12 +13,17 @@ import {
   corpoDosParametros,
   distribuirErros,
   erroDaResposta,
+  normalizarMateria,
   normalizarNoticia,
   problemasDaComposicao,
+  problemasDaMateria,
+  problemasDoParDaSimulacao,
   problemasDosParametros,
   problemasPorCampo,
   textoDaComposicao,
   type IdDeNoticia,
+  type IdDeSimulacao,
+  type MateriaDaSimulacao,
   type MaterialDoJornal,
   type NoticiaDoPacote,
   type NoticiaRegenerada,
@@ -29,6 +34,7 @@ import {
 } from "@/lib/jornal-escola-tipos";
 
 import { ImagensDoPacote } from "../../resultados/imagens-do-pacote";
+import { CartaoDaSimulacao, EditorDaMateria } from "../../resultados/materia-da-simulacao";
 import { CartaoDoPreparo, EditorDaNoticia } from "../../resultados/noticia-do-preparo";
 import { FalasDoPodcast, falasComProblema, pedirFalasDoTema } from "./falas-do-podcast";
 import { falasParaHomologar, type FalasEscritas } from "@/lib/podcast-tipos";
@@ -65,9 +71,11 @@ interface Rascunho {
   topicos: string;
   origem: OrigemDoPacote;
   noticias: NoticiaDoPacote[];
+  /** As duas matérias em que a criança testa a Chave (3.0.0). Vêm com as oito, e se revisam com elas. */
+  simulacao: MateriaDaSimulacao[];
 }
 
-const VAZIO: Rascunho = { disciplina: "", tema: "", topicos: "", origem: "padrao", noticias: [] };
+const VAZIO: Rascunho = { disciplina: "", tema: "", topicos: "", origem: "padrao", noticias: [], simulacao: [] };
 
 /** Os textos aprovados (a fase 1): o pacote GRAVADO, de UMA turma, com as imagens que ele já tem. */
 interface TextosAprovados {
@@ -123,7 +131,11 @@ function falhaDaIa(status: number, codigo: string | null): FalhaDaIa["tipo"] | n
  *
  * `gerar-conteudo` e `regenerar-noticia` NÃO persistem: devolvem rascunho, e o
  * que grava é `homologar`, com as oito notícias INTEIRAS — texto, pistas,
- * gabarito e consequência (PDF §10). O 429 (`sem-saldo-de-ia`) e o 503
+ * gabarito e consequência (PDF §10) — e as duas matérias da SIMULAÇÃO (3.0.0,
+ * ADR-168), em que a criança testa a Chave do Editor depois da 2ª edição. Elas
+ * vêm com o pacote (gerado ou o banco pronto), se revisam e se editam aqui como
+ * as oito, e não têm imagem nem regeneração isolada: gerar o pacote de novo
+ * reescreve as duas. O 429 (`sem-saldo-de-ia`) e o 503
  * (`ia-indisponivel`) vêm na voz da copy e oferecem o banco pronto.
  *
  * O `pacote-invalido` da api traz a LISTA de problemas em frases — cada uma
@@ -146,6 +158,7 @@ export function CriarJornalEscola({
      de outro assunto — a tela avisa, sem bloquear. */
   const [temaDasNoticias, setTemaDasNoticias] = useState("");
   const [editando, setEditando] = useState<IdDeNoticia | null>(null);
+  const [editandoMateria, setEditandoMateria] = useState<IdDeSimulacao | null>(null);
 
   const [gerando, setGerando] = useState(false);
   const [carregandoBanco, setCarregandoBanco] = useState(false);
@@ -174,16 +187,22 @@ export function CriarJornalEscola({
   const problemasDoConjunto = temNoticias ? problemasDaComposicao(rascunho.noticias) : [];
   const errosDaApi = distribuirErros(erro?.erros ?? []);
   const problemasDasFalas = falasComProblema(falas);
+  const problemasDeMateria = new Map(rascunho.simulacao.map((m) => [m.id, problemasDaMateria(m)] as const));
+  const materiasComProblema = rascunho.simulacao.filter((m) => Object.keys(problemasDeMateria.get(m.id) ?? {}).length > 0);
+  const problemasDaSimulacao = temNoticias ? problemasDoParDaSimulacao(rascunho.simulacao) : [];
   const pronto =
     temNoticias &&
     parametrosValidos &&
     noticiasComProblema.length === 0 &&
     problemasDoConjunto.length === 0 &&
+    materiasComProblema.length === 0 &&
+    problemasDaSimulacao.length === 0 &&
     falas !== null &&
     problemasDasFalas === 0 &&
     !escrevendoFalas;
   const ocupado = gerando || carregandoBanco || regenerando !== null;
   const noticiaEmEdicao = editando ? (rascunho.noticias.find((n) => n.id === editando) ?? null) : null;
+  const materiaEmEdicao = editandoMateria ? (rascunho.simulacao.find((m) => m.id === editandoMateria) ?? null) : null;
   const temaInvalido = Boolean(errosDosParametros.tema);
   /* A criação nasce vazia: o erro de um campo só aparece depois que o
      professor escreveu nele — campo vazio de saída não é engano dele. */
@@ -224,6 +243,10 @@ export function CriarJornalEscola({
     setRascunho((atual) => ({ ...atual, noticias: atual.noticias.map((n) => (n.id === nova.id ? nova : n)) }));
   }
 
+  function trocarMateria(nova: MateriaDaSimulacao) {
+    setRascunho((atual) => ({ ...atual, simulacao: atual.simulacao.map((m) => (m.id === nova.id ? nova : m)) }));
+  }
+
   async function gerar(turmaId: string) {
     if (!parametrosValidos) return;
     setGerando(true);
@@ -255,9 +278,11 @@ export function CriarJornalEscola({
         topicos: novo.topicos ?? "",
         origem: novo.origem,
         noticias: novo.noticias,
+        simulacao: novo.simulacao,
       });
       setTemaDasNoticias(novo.tema);
       setEditando(null);
+      setEditandoMateria(null);
       void escreverFalas(turmaId, novo.tema, novo.noticias);
       setAviso(
         novo.usouIa
@@ -349,9 +374,11 @@ export function CriarJornalEscola({
         topicos: "",
         origem: "padrao",
         noticias: material.noticias,
+        simulacao: material.simulacao,
       });
       setTemaDasNoticias(material.tema);
       setEditando(null);
+      setEditandoMateria(null);
       void escreverFalas(turmaId, material.tema, material.noticias);
       setAviso({
         tipo: "success",
@@ -382,6 +409,7 @@ export function CriarJornalEscola({
         ...corpoDosParametros(parametros),
         origem: rascunho.origem,
         noticias: rascunho.noticias.map(normalizarNoticia),
+        simulacao: rascunho.simulacao.map(normalizarMateria),
         podcast: falasParaHomologar(falas?.vagas ?? []),
         }),
       });
@@ -607,7 +635,9 @@ export function CriarJornalEscola({
                     <FeedbackAlert
                       type="error"
                       description={
-                        errosDaApi.geral.length > 0 || Object.keys(errosDaApi.porNoticia).length > 0 ? (
+                        errosDaApi.geral.length > 0 ||
+                        Object.keys(errosDaApi.porNoticia).length > 0 ||
+                        Object.keys(errosDaApi.porMateria).length > 0 ? (
                           <span className="flex flex-col gap-1">
                             <span>{erro.mensagem}</span>
                             {errosDaApi.geral.length > 0 ? (
@@ -619,6 +649,9 @@ export function CriarJornalEscola({
                             ) : null}
                             {Object.keys(errosDaApi.porNoticia).length > 0 ? (
                               <span>As notícias com ajuste estão marcadas abaixo.</span>
+                            ) : null}
+                            {Object.keys(errosDaApi.porMateria).length > 0 ? (
+                              <span>As matérias da simulação com ajuste estão marcadas abaixo.</span>
                             ) : null}
                           </span>
                         ) : (
@@ -650,6 +683,8 @@ export function CriarJornalEscola({
                         {!parametrosValidos ||
                         noticiasComProblema.length > 0 ||
                         problemasDoConjunto.length > 0 ||
+                        materiasComProblema.length > 0 ||
+                        problemasDaSimulacao.length > 0 ||
                         (!escrevendoFalas && (falas === null || problemasDasFalas > 0)) ? (
                           <div className="flex flex-col gap-1 text-[12px] leading-snug text-unooria-danger" role="status">
                             {!parametrosValidos ? <p>Falta o componente curricular ou o tema, nos campos acima.</p> : null}
@@ -675,6 +710,17 @@ export function CriarJornalEscola({
                             {problemasDoConjunto.map((p) => (
                               <p key={p}>{p}</p>
                             ))}
+                            {materiasComProblema.length > 0 ? (
+                              <p>
+                                {materiasComProblema.length === 1
+                                  ? "Uma matéria da simulação precisa"
+                                  : "As duas matérias da simulação precisam"}{" "}
+                                de ajuste. Elas estão marcadas abaixo da mesa.
+                              </p>
+                            ) : null}
+                            {problemasDaSimulacao.map((p) => (
+                              <p key={p}>{p}</p>
+                            ))}
                           </div>
                         ) : null}
 
@@ -695,9 +741,50 @@ export function CriarJornalEscola({
                             />
                           ))}
                         </div>
+
+                        {/* ───────────── as duas matérias da simulação (3.0.0) ───── */}
+                        <div className="flex flex-col gap-2 border-t border-unooria-neutral-200 pt-4" data-simulacao-do-preparo>
+                          <p className="text-[14px] font-semibold text-unooria-neutral-950">
+                            As duas matérias para testar a Chave do Editor
+                          </p>
+                          <p className="max-w-3xl text-[12px] leading-snug text-unooria-neutral-600">
+                            Depois da 2ª edição, cada computador aplica a Chave que montou a estas duas matérias novas.
+                            Elas não têm imagem e não vão para capa nenhuma: uma pode ir para a capa e a outra tem uma
+                            pista que falha. Leia e edite como as oito.
+                          </p>
+                          {rascunho.simulacao.length === 0 ? (
+                            <p className="text-[12px] leading-snug text-unooria-danger" role="status">
+                              Este pacote veio sem as matérias da simulação. Gere o pacote de novo ou use o banco pronto
+                              da Unooria.
+                            </p>
+                          ) : (
+                            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                              {rascunho.simulacao.map((m) => (
+                                <CartaoDaSimulacao
+                                  key={m.id}
+                                  materia={m}
+                                  problemas={Object.keys(problemasDeMateria.get(m.id) ?? {}).length}
+                                  errosDaApi={errosDaApi.porMateria[m.id] ?? []}
+                                  aoEditar={() => setEditandoMateria(m.id)}
+                                  ocupado={ocupado}
+                                />
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       </>
                     )}
                   </div>
+
+                  {materiaEmEdicao ? (
+                    <EditorDaMateria
+                      materia={materiaEmEdicao}
+                      problemas={problemasDeMateria.get(materiaEmEdicao.id) ?? {}}
+                      errosDaApi={errosDaApi.porMateria[materiaEmEdicao.id] ?? []}
+                      aoMudar={trocarMateria}
+                      aoFechar={() => setEditandoMateria(null)}
+                    />
+                  ) : null}
 
                   {noticiaEmEdicao ? (
                     <EditorDaNoticia

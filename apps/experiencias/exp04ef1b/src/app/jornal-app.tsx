@@ -3,15 +3,17 @@ import { concluir, enviarEstado, reportarErro, rotas, tipoDaFalha, type CorpoDaP
 import { chaveDaPista, ETAPA_DA_TELA, gateMudou, INTERVALO_DO_GATE_MS, segundosDesde, TELA_DO_PASSO } from "../lib/regras";
 import { telemetria } from "../lib/telemetria";
 import type {
+  CorpoDaChave,
+  CorpoDaSimulacao,
+  CorpoDaTransferencia,
   Estado,
   FaseDaPista,
-  IdDeBloco,
   IdDeNoticia,
   Motivo,
   PassoPedido,
   Sessao,
-  TentativaDaChave,
   TipoDePista,
+  Veredito,
 } from "../lib/tipos";
 import { Avisos } from "./avisos";
 import { useCarga } from "./carga";
@@ -27,6 +29,7 @@ import { Espera } from "./redacao/espera";
 import { ModoLeitura } from "./redacao/leitura";
 import { TelaDeMotivo } from "./redacao/motivo";
 import { TelaDeResultado } from "./redacao/resultado";
+import { TelaDaSimulacao } from "./redacao/simulacao";
 
 /**
  * A casca da missão: uma máquina de telas sobre o que o SERVIDOR diz.
@@ -41,21 +44,23 @@ import { TelaDeResultado } from "./redacao/resultado";
  *    dois latches à prova de rede ruim.
  * 3. **Toda chamada passa por `conexao.executar`**, que repete a de rede e a de
  *    sessão com o aviso aceso. As exceções são o polling do gate (que já se
- *    repete a cada 5 s), a diagramação (que tem reserva) e as perguntas finais
- *    (que pulam para a síntese).
+ *    repete a cada 5 s) e a diagramação (que tem reserva).
  * 4. **409 e 400 relêem a sessão.** O relógio da turma andou, a rodada mudou,
  *    o latch já estava fechado: quem resolve é ler de novo.
  *
  * **F5 é só um `GET sessao`**: ele devolve o passo, as edições publicadas, o
- * motivo, a Chave e as pistas abertas COM o texto — a tela se reconstrói daí.
- * O que a api não guarda (a página em montagem) vive na memória da aba.
+ * motivo, a Chave, as pistas abertas COM o texto e os julgamentos — a tela se
+ * reconstrói daí. O que a api não guarda (a página, a Chave e a simulação em
+ * montagem, as pistas do boato antes da decisão) vive na memória da aba.
  */
 export function JornalApp({ inicial, conexao }: { inicial: Sessao; conexao: Conexao }) {
   const [sessao, setSessao] = useState<Sessao>(inicial);
   const [bloqueada, setBloqueada] = useState(false);
   const [ocupado, setOcupado] = useState(false);
-  /** A Chave acabou de se formar: a tela dela fica de pé até "Abrir a Mesa de Revisão". */
+  /** A Chave acabou de ser montada: a tela dela fica de pé até "Abrir a Mesa de Revisão". */
   const [chaveNaTela, setChaveNaTela] = useState(false);
+  /** A simulação acabou de ser enviada: a frase de referência fica na tela até "Continuar". */
+  const [referencia, setReferencia] = useState<string | null>(null);
   /** A releitura trouxe outra sessão (409 `rodada-mudou`, ou o polling viu o zerar): o aviso da redação. */
   const [rodadaNova, setRodadaNova] = useState(false);
   const { executar, sinalizar } = conexao;
@@ -103,13 +108,22 @@ export function JornalApp({ inicial, conexao }: { inicial: Sessao; conexao: Cone
 
   // ────────────────────────────────────────────────── a tela e a etapa
 
-  const tela = chaveNaTela && sessao.passo === "revisao" ? "chave" : TELA_DO_PASSO[sessao.passo];
+  const tela =
+    chaveNaTela && sessao.passo === "revisao"
+      ? "chave"
+      : referencia !== null && sessao.passo === "transferencia"
+        ? "simulacao"
+        : TELA_DO_PASSO[sessao.passo];
   const etapa = ETAPA_DA_TELA[tela];
 
   const porId = useMemo(() => new Map(sessao.pacote.noticias.map((n) => [n.id, n])), [sessao.pacote.noticias]);
   const pistas = useMemo(
     () => new Map(sessao.pistasAbertas.map((p) => [chaveDaPista(p.noticiaId, p.tipo), p.texto])),
     [sessao.pistasAbertas],
+  );
+  const julgamentos = useMemo(
+    () => new Map(sessao.julgamentos.map((j) => [chaveDaPista(j.noticiaId, j.tipo), j.veredito])),
+    [sessao.julgamentos],
   );
 
   // EVT-U01 uma vez, na primeira tela.
@@ -128,6 +142,7 @@ export function JornalApp({ inicial, conexao }: { inicial: Sessao; conexao: Cone
     if (sessao.sessaoId === sessaoMostrada.current) return;
     sessaoMostrada.current = sessao.sessaoId;
     setChaveNaTela(false);
+    setReferencia(null);
     setRodadaNova(true);
     telemetria.viuErro("rodada-mudou", ETAPA_DA_TELA[TELA_DO_PASSO[sessao.passo]]);
   }, [sessao.sessaoId, sessao.passo]);
@@ -187,6 +202,12 @@ export function JornalApp({ inicial, conexao }: { inicial: Sessao; conexao: Cone
   const comparativo = useCarga(
     tela === "comparativo" ? chaveDaTela : null,
     () => executar(() => rotas.comparativo()),
+    tratarFalha,
+  );
+  const simulacao = useCarga(tela === "simulacao" ? chaveDaTela : null, () => executar(() => rotas.simulacao()), tratarFalha);
+  const boato = useCarga(
+    tela === "desafio-final" ? chaveDaTela : null,
+    () => executar(() => rotas.transferencia()),
     tratarFalha,
   );
 
@@ -284,30 +305,89 @@ export function JornalApp({ inicial, conexao }: { inicial: Sessao; conexao: Cone
   );
 
   /**
-   * Uma tentativa da Chave, com o NÚMERO dela: o que a api já contou
-   * (`estado.chaveTentativas`, que vem em toda resposta e no F5) + 1, calculado
-   * UMA vez antes da repetição — a repetição da rede leva o mesmo número e a api
-   * não conta de novo. O estado da resposta atualiza a contagem para o próximo.
+   * "Confio / não confio" numa pista aberta da mesa (3.0.0). O veredito que a
+   * tela desenha é o da RESPOSTA — o primeiro do par, que é o que vale —, e
+   * não o do toque: um segundo toque (outra aba, a repetição da rede) nunca
+   * troca a marca.
    */
-  const tentarChave = useCallback(
-    async (blocos: IdDeBloco[]): Promise<TentativaDaChave | null> => {
-      const numero = sessaoRef.current.chaveTentativas + 1;
+  const julgar = useCallback(
+    async (noticiaId: IdDeNoticia, tipo: TipoDePista, veredito: Veredito): Promise<boolean> => {
       try {
-        const tentativa = await executar(() => rotas.chave(blocos, numero));
-        telemetria.tentouAChave(tentativa.sucesso, tentativa.tentativas);
-        if (tentativa.sucesso) setChaveNaTela(true);
-        aplicar(tentativa.estado);
-        return tentativa;
+        const j = await executar(() => rotas.julgamento(noticiaId, tipo, veredito));
+        setSessao((s) => ({
+          ...s,
+          julgamentos: [
+            ...s.julgamentos.filter((x) => !(x.noticiaId === j.noticiaId && x.tipo === j.tipo)),
+            { noticiaId: j.noticiaId, tipo: j.tipo, veredito: j.veredito },
+          ],
+        }));
+        telemetria.julgou(noticiaId, tipo, j.novo);
+        return true;
       } catch (erro) {
         tratarFalha(erro);
-        return null;
+        return false;
+      }
+    },
+    [executar, tratarFalha],
+  );
+
+  /**
+   * A Chave MONTADA, num envio só (3.0.0): sem correção e sem tentativa. A
+   * repetição da rede manda o MESMO corpo, e a api devolve o estado. A
+   * resposta não diz se a Chave está certa; a casca só segura a tela até
+   * "Abrir a Mesa de Revisão".
+   */
+  const montarChave = useCallback(
+    async (corpo: CorpoDaChave): Promise<boolean> => {
+      try {
+        const { estado } = await executar(() => rotas.chave(corpo));
+        telemetria.montouAChave();
+        setChaveNaTela(true);
+        aplicar(estado);
+        return true;
+      } catch (erro) {
+        tratarFalha(erro);
+        return false;
+      }
+    },
+    [aplicar, executar, tratarFalha],
+  );
+
+  /** A simulação, enviada de uma vez: a resposta leva o passo à transferência e traz a frase de referência. */
+  const simular = useCallback(
+    async (corpo: CorpoDaSimulacao): Promise<boolean> => {
+      try {
+        const resposta = await executar(() => rotas.simular(corpo));
+        telemetria.simulou(corpo.materias.map((m) => m.passos.length));
+        setReferencia(resposta.referencia);
+        aplicar(resposta.estado);
+        return true;
+      } catch (erro) {
+        tratarFalha(erro);
+        return false;
+      }
+    },
+    [aplicar, executar, tratarFalha],
+  );
+
+  /** A decisão diante do boato, com as pistas abertas antes dela. O passo continua `transferencia`. */
+  const transferir = useCallback(
+    async (corpo: CorpoDaTransferencia): Promise<boolean> => {
+      try {
+        const { estado } = await executar(() => rotas.transferir(corpo));
+        telemetria.transferiu(corpo.pistas.length);
+        aplicar(estado);
+        return true;
+      } catch (erro) {
+        tratarFalha(erro);
+        return false;
       }
     },
     [aplicar, executar, tratarFalha],
   );
 
   const concluirMissao = useCallback(
-    async (respondidas: number) => {
+    async () => {
       setOcupado(true);
       try {
         const estado = await executar(() => rotas.concluir());
@@ -318,7 +398,12 @@ export function JornalApp({ inicial, conexao }: { inicial: Sessao; conexao: Cone
         telemetria.concluiu(Number.isNaN(inicio) ? 0 : segundosDesde(inicio, Date.now()));
         /* Sem `score`: a missão não pontua criança. O nível das habilidades é
            do servidor (a ficha da E14), e nenhum desses números aparece em tela. */
-        concluir({ publicouAPrimeira: estado.edicao1 !== null, publicouASegunda: estado.edicao2 !== null, respondidas });
+        concluir({
+          publicouAPrimeira: estado.edicao1 !== null,
+          publicouASegunda: estado.edicao2 !== null,
+          simulou: estado.simulada,
+          decidiu: estado.transferida,
+        });
       } catch (erro) {
         tratarFalha(erro);
       } finally {
@@ -349,6 +434,8 @@ export function JornalApp({ inicial, conexao }: { inicial: Sessao; conexao: Cone
             publicando={ocupado}
             aoRevelar={(id, tipo) => revelar(id, tipo, 1)}
             abertaDeInicio={(id, tipo) => pistaJaRegistrada(id, tipo, 1)}
+            julgamentos={julgamentos}
+            aoJulgar={julgar}
             aoPublicar={(corpo) => publicar(1, corpo)}
             aoFalharMidia={falhouMidia}
           />
@@ -367,9 +454,10 @@ export function JornalApp({ inicial, conexao }: { inicial: Sessao; conexao: Cone
         return sessao.blocos ? (
           <TelaDaChave
             key={sessao.sessaoId}
+            sessaoId={sessao.sessaoId}
             blocos={sessao.blocos}
             tamanho={sessao.limites.chave}
-            aoTentar={tentarChave}
+            aoEnviar={montarChave}
             aoIrParaRevisao={() => setChaveNaTela(false)}
           />
         ) : (
@@ -399,7 +487,19 @@ export function JornalApp({ inicial, conexao }: { inicial: Sessao; conexao: Cone
             comparativo={comparativo}
             porId={porId}
             indo={ocupado}
-            aoAvancar={() => void pedirPasso("transferencia")}
+            aoAvancar={() => void pedirPasso("simulacao")}
+          />
+        );
+
+      case "simulacao":
+        return (
+          <TelaDaSimulacao
+            key={sessao.sessaoId}
+            sessaoId={sessao.sessaoId}
+            dados={simulacao}
+            referencia={referencia}
+            aoEnviar={simular}
+            aoContinuar={() => setReferencia(null)}
           />
         );
 
@@ -408,8 +508,11 @@ export function JornalApp({ inicial, conexao }: { inicial: Sessao; conexao: Cone
           <DesafioFinal
             key={sessao.sessaoId}
             sessaoId={sessao.sessaoId}
+            dados={boato}
+            decidida={sessao.transferida}
             concluindo={ocupado}
-            aoConcluir={(n) => void concluirMissao(n)}
+            aoDecidir={transferir}
+            aoConcluir={() => void concluirMissao()}
           />
         );
 

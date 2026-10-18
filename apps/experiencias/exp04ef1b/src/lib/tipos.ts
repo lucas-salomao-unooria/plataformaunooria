@@ -1,6 +1,7 @@
 /**
- * O contrato de `/jornal-escola/*` e das perguntas finais
- * (`/evidencias/exp04ef1b/perguntas/*`) como o CLIENTE o vê.
+ * O contrato de `/jornal-escola/*` como o CLIENTE o vê. Desde a 3.0.0 (Canal A
+ * puro, ADR-168) a missão não tem pergunta de múltipla escolha: as rotas
+ * `/evidencias/exp04ef1b/perguntas/*` não existem mais para ela.
  *
  * Espelho DECLARADO de `apps/api/src/jornal-escola/contrato-de-rotas.ts`,
  * `vocabulario.ts` e `regras/passos.ts` — a experiência não importa a api (o
@@ -10,7 +11,7 @@
  *
  * **O que NÃO tem tipo aqui, de propósito** (regra inviolável 3): o gabarito de
  * cada notícia (`publicavel`, `pilarEmFalta`, `explicacao`), a `consequencia`,
- * e QUAIS blocos da Chave são pilares. Acrescentar um campo opcional "por
+ * QUAIS blocos da Chave são pilares e o LADO CERTO de cada cartão de condição. Acrescentar um campo opcional "por
  * garantia" seria escrever a suspeita de que eles podem descer — e a próxima
  * pessoa leria isso como permissão. O gabarito cruza a fronteira em três
  * momentos, cada um com o seu portão e o seu tipo: as REAÇÕES no `GET resultado`,
@@ -25,7 +26,7 @@ export const EXP_ID = "exp04ef1b";
  * IMUTÁVEL no bucket — e o `exp04ef1b/` pode ter o UnooTube 1.2.8 lá (ADR-116),
  * por isso a série do Jornal começa na 2.0.0. `versao.test.ts` compara os três.
  */
-export const EXP_VERSION = "2.2.1";
+export const EXP_VERSION = "3.0.0";
 
 // ──────────────────────────────────────────────── vocabulário (espelho)
 
@@ -65,6 +66,26 @@ export type Motivo = (typeof MOTIVOS)[number];
  */
 export type IdDeBloco = "fonte" | "data" | "autoria" | "foto" | "urgencia" | "compartilhada";
 
+/**
+ * O vocabulário do Canal A (3.0.0, ADR-168) — SÓ tipos, pela mesma razão da
+ * Chave: uma constante `["aprova", "reprova"]` no bundle seria, letra por
+ * letra, o `LADO_CERTO` da api (o 1º cartão de um pilar aprova, o 2º reprova).
+ * A exaustividade vem dos `Record` de rótulos em `lib/textos.ts`, e é com eles
+ * que o `espelho.test.ts` compara as listas da api.
+ */
+/** "✓ Confio" / "✗ Não confio" — o julgamento de uma pista aberta. */
+export type Veredito = "confio" | "nao_confio";
+/** O lado de um cartão de condição: a pista PASSA ou FALHA. */
+export type LadoDaCondicao = "aprova" | "reprova";
+/** "Se esta pista falhar": "Não publico" ou "Olho a próxima pista". */
+export type SeFalhar = "parar" | "seguir";
+/** "Usar estes passos em TODAS as notícias" ou "Só na primeira notícia". */
+export type Repeticao = "todas" | "so_a_primeira";
+/** As duas matérias da simulação — fora da mesa, ids próprios. */
+export type IdDeSimulacao = "s1" | "s2";
+export type DecisaoDaSimulacao = "publicar" | "nao_publicar";
+export type DecisaoDaTransferencia = "repassar" | "nao_repassar";
+
 /** Os passos do estudante, na ordem em que ele os percorre. */
 export const PASSOS = [
   "desafio",
@@ -75,6 +96,7 @@ export const PASSOS = [
   "chave",
   "revisao",
   "comparativo",
+  "simulacao",
   "transferencia",
   "fim",
 ] as const;
@@ -85,7 +107,7 @@ export const ETAPAS = ["exploracao", "resultado", "revisao"] as const;
 export type Etapa = (typeof ETAPAS)[number];
 
 /** Os passos que a própria criança pede por `POST /jornal-escola/passo`. */
-export const PASSOS_PEDIDOS = ["mesa", "transferencia"] as const;
+export const PASSOS_PEDIDOS = ["mesa", "simulacao"] as const;
 export type PassoPedido = (typeof PASSOS_PEDIDOS)[number];
 
 // ──────────────────────────────────────────────────────────── a mesa
@@ -129,6 +151,29 @@ export interface Bloco {
   legenda: string;
 }
 
+/**
+ * Um cartão de condição. `indice` é a posição CANÔNICA dele no bloco (o
+ * `lados[indice]` do envio); a ordem da lista é a embaralhada desta sessão.
+ * NÃO diz o lado certo.
+ */
+export interface Cartao {
+  indice: 0 | 1;
+  texto: string;
+  exemplo: string;
+}
+
+/** O bloco com os dois cartões — o que o Montador recebe em `sessao.blocos`. */
+export interface BlocoDaChave extends Bloco {
+  cartoes: Cartao[];
+}
+
+/** Um "confio / não confio" gravado. Vale o PRIMEIRO de cada par. */
+export interface JulgamentoGravado {
+  noticiaId: IdDeNoticia;
+  tipo: TipoDePista;
+  veredito: Veredito;
+}
+
 export interface EdicaoDoEstudante {
   slots: IdDeNoticia[];
   layout: Layout;
@@ -152,10 +197,14 @@ export interface Estado {
   edicao1: EdicaoDoEstudante | null;
   motivoRespondido: boolean;
   chaveFormada: boolean;
-  /** Quantos envios da Chave a api já contou — o próximo envio leva este + 1. */
-  chaveTentativas: number;
   edicao2: EdicaoDoEstudante | null;
   pistasAbertas: PistaAberta[];
+  /** Os "confio / não confio" já marcados na mesa — o F5 reabre a pista com o veredito. */
+  julgamentos: JulgamentoGravado[];
+  /** A simulação da Chave já foi enviada. */
+  simulada: boolean;
+  /** A decisão diante do boato já foi registrada. */
+  transferida: boolean;
   /** Quando a sessão nasceu (ISO, relógio do servidor): a base do tempo total do EVT-U03. */
   iniciadaEm: string;
   concluidaEm: string | null;
@@ -167,8 +216,8 @@ export interface Sessao extends Estado {
     /** As oito notícias na ORDEM DA MESA, sem gabarito. */
     noticias: NoticiaPublica[];
   };
-  /** Os seis blocos na ordem da bandeja DESTA sessão; `null` antes de a revisão abrir. */
-  blocos: Bloco[] | null;
+  /** Os seis blocos na ordem da bandeja DESTA sessão, com os cartões; `null` antes de a revisão abrir. */
+  blocos: BlocoDaChave[] | null;
   limites: { edicao: number; chave: number };
 }
 
@@ -218,11 +267,26 @@ export interface Resultado {
   edicao1: EdicaoComResultado;
 }
 
-/** Uma tentativa da Chave. `devolvidos` são os blocos que voltam à bandeja. */
-export interface TentativaDaChave {
-  sucesso: boolean;
-  tentativas: number;
-  devolvidos: IdDeBloco[];
+/** `POST julgamento`: o veredito que VALE (o primeiro do par); `novo: false` = já havia um. */
+export interface Julgamento extends JulgamentoGravado {
+  novo: boolean;
+}
+
+/** Uma vaga da Chave MONTADA: o bloco, o lado de cada cartão NA ORDEM CANÔNICA, e o "se falhar". */
+export interface VagaMontada {
+  bloco: IdDeBloco;
+  lados: [LadoDaCondicao, LadoDaCondicao];
+  seFalhar: SeFalhar;
+}
+
+/** O corpo do `POST chave`: um envio, sem correção. */
+export interface CorpoDaChave {
+  vagas: VagaMontada[];
+  repeticao: Repeticao;
+}
+
+/** A resposta do `POST chave`: só o estado — ela NÃO diz se a Chave está certa. */
+export interface ChaveMontada {
   estado: Estado;
 }
 
@@ -242,20 +306,76 @@ export interface Comparativo {
   vagas: VagaMarcada[];
 }
 
-// ──────────────────────────────────────────── as perguntas finais (E14)
+// ──────────────────────────────────── a simulação e a transferência (3.0.0)
 
-/** A pergunta como o estudante a vê: sem o nível de cada alternativa. */
-export interface Pergunta {
-  /** P1: "boato\n\ndetalhe\n\npergunta"; P2: só a pergunta. */
-  enunciado: string;
-  /** Na ordem que a api devolve (embaralhada a cada leitura): guarde o `id`, nunca a posição. */
-  alternativas: { id: string; texto: string }[];
+/** As pistas de uma matéria da simulação ou do boato — o texto vem inteiro no GET. */
+export interface PistasDoTexto {
+  fonte: string;
+  data: string;
+  autoria: string;
 }
 
-/** O recibo é sempre este: a criança nunca sabe, pela resposta, o nível. */
-export interface RespostaEnviada {
-  enviada: true;
+/** Uma matéria da simulação como a criança a recebe: sem imagem e sem o gabarito. */
+export interface MateriaDaSimulacao {
+  id: IdDeSimulacao;
+  meio: Meio;
+  veiculo: string;
+  falante: string | null;
+  manchete: string;
+  resumo: string;
+  pistas: PistasDoTexto;
 }
 
-export const PERGUNTAS = ["p1", "p2"] as const;
-export type IdDaPergunta = (typeof PERGUNTAS)[number];
+/** Uma vaga da Chave DELA, como roteiro da simulação. `pulo` só na vaga com isca. */
+export interface VagaDoRoteiro {
+  bloco: IdDeBloco;
+  rotulo: string;
+  seFalhar: SeFalhar;
+  pulo: string | null;
+}
+
+/** `GET simulacao`: as duas matérias e a Chave da criança. */
+export interface SimulacaoDaTela {
+  materias: MateriaDaSimulacao[];
+  chave: { vagas: VagaDoRoteiro[]; repeticao: Repeticao };
+}
+
+/** Uma pista aberta na simulação, com a marcação (obrigatória ali). */
+export interface PassoDaSimulacao {
+  tipo: TipoDePista;
+  veredito: Veredito;
+}
+
+/** O corpo do `POST simulacao`: por matéria, as pistas NA ORDEM em que ela abriu, e a decisão. */
+export interface CorpoDaSimulacao {
+  materias: { id: IdDeSimulacao; passos: PassoDaSimulacao[]; decisao: DecisaoDaSimulacao }[];
+}
+
+/** A resposta: o estado e a regra de REFERÊNCIA, igual para todos. */
+export interface SimulacaoEnviada {
+  estado: Estado;
+  referencia: string;
+}
+
+/** `GET transferencia`: o boato e as três pistas dele. */
+export interface TransferenciaDaTela {
+  remetente: string;
+  mensagem: string;
+  pistas: PistasDoTexto;
+}
+
+/** O corpo do `POST transferencia`: as pistas abertas ANTES da decisão, na ordem, e a decisão. */
+export interface CorpoDaTransferencia {
+  pistas: TipoDePista[];
+  decisao: DecisaoDaTransferencia;
+}
+
+export interface TransferenciaEnviada {
+  estado: Estado;
+}
+
+/**
+ * O que a peça da matéria ORIGINAL precisa para se desenhar — a notícia da mesa
+ * e a matéria da simulação (com o `resumo` no lugar do `corpo`) cabem nela.
+ */
+export type MateriaNaTela = Pick<NoticiaPublica, "meio" | "veiculo" | "falante" | "manchete" | "corpo" | "legenda" | "imagem">;

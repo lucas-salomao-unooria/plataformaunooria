@@ -203,8 +203,8 @@ export function protocoloDoTurno(tipo: TipoDeTurno, ctx: { temDados: boolean }):
   if (tipo === 'confirmacao') {
     return [
       cabeca,
-      'Ele está confirmando o envio. Se as duas equipes já têm destino, chame confirmar_alocacao',
-      'nesta mesma resposta. Se falta destino para alguma, diga em uma frase qual falta e pergunte.',
+      'Ele está confirmando o envio. Se as equipes já têm destino, chame confirmar_alocacao nesta',
+      'mesma resposta: ela abre a tela de envio, e é lá que ele manda. Se nenhuma tem destino, pergunte para onde.',
       'Não repita aviso que você já deu: repetir prende o estudante na tela.',
     ].join('\n');
   }

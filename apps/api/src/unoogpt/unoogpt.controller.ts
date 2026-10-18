@@ -5,7 +5,19 @@ import { Roles, RolesGuard } from "../auth/roles";
 import { rateLimit } from "../comum/rate-limit";
 import { erroDeJogo } from "./erros";
 import { Contrato } from "../openapi/contrato";
+import { CanalADaTempestade } from "./canal-a.service";
 import {
+  AlertaRespostaSchema,
+  ESeRespostaSchema,
+  ESeSchema,
+  FechamentoSchema,
+  FontesRespostaSchema,
+  LeituraRespostaSchema,
+  MoradoraRespostaSchema,
+  RegistroSchema,
+  SaudeRespostaSchema,
+  SaudeSchema,
+  WhatsappRespostaSchema,
   AlocacaoFeitaSchema,
   AlocacaoSchema,
   ConjuntosSchema,
@@ -39,7 +51,10 @@ import { UnoogptService } from "./unoogpt.service";
 @UseGuards(OidcGuard, RolesGuard)
 @Roles("estudante")
 export class UnoogptController {
-  constructor(private readonly service: UnoogptService) {}
+  constructor(
+    private readonly service: UnoogptService,
+    private readonly canalA: CanalADaTempestade,
+  ) {}
 
   /**
    * Quem está falando. Vem SÓ do token — nunca do corpo da requisição: aceitar
@@ -127,6 +142,9 @@ export class UnoogptController {
     descricao: "`PUT` porque é atribuição de conjunto. As camadas ACUMULAM.",
     corpo: ConjuntosSchema,
     resposta: EstadoDoJogoSchema,
+    notas: [
+      "Só com o relógio da turma ABERTO e a tentativa em curso, como uma pergunta: antes da largada `relogio-nao-comecou`, depois do fim `relogio-encerrado`, depois de enviar `sessao-encerrada` (todos **409**). Sem isso, chamar a rota direto fabricava o \"pediu dados\" depois da investigação.",
+    ],
   })
   async conjuntos(@Req() req: { auth: AuthClaims }, @Body() corpo: unknown) {
     const { escolaId, estudanteId } = this.quem(req);
@@ -157,18 +175,158 @@ export class UnoogptController {
     );
   }
 
-  /** Enfrentar a tempestade. Exige justificativa de cada equipe com destino. */
+  /** "Enviar equipes": congela a saída e abre o registro da operação (ADR-172). */
+  @Post("mandar")
+  @Contrato({
+    resumo: "Manda as equipes: congela a saída e abre o registro da operação.",
+    descricao:
+      "Exige justificativa de **cada equipe com destino** — sem isso, `falta-justificar`; uma equipe na base é permitido, nenhuma com destino é `sem-destino`. A conversa com o Cientista NÃO manda: ela abre a tela deste botão (ADR-172). Devolve o REGISTRO DA OPERAÇÃO — o desfecho fica retido até ele (`GET /unoogpt/resultado` responde `registro-pendente`).",
+    resposta: RegistroSchema,
+  })
+  async mandar(@Req() req: { auth: AuthClaims }) {
+    const { escolaId, estudanteId } = this.quem(req);
+    rateLimit(`unoogpt:simular:${estudanteId}`, 20, 60_000);
+    return this.service.mandar(escolaId, estudanteId);
+  }
+
+  /** O ALIAS do cliente anterior ao registro. */
   @Post("simular")
   @Contrato({
-    resumo: "Enfrenta a tempestade e fecha a tentativa.",
+    resumo: "Alias de `POST /mandar` para o cliente anterior ao registro (até a 1.4.x).",
     descricao:
-      "Exige justificativa de **cada equipe com destino** — sem isso, `falta-justificar`. Devolve o mesmo que `GET /unoogpt/resultado`.",
+      "Manda as equipes, fecha o registro da operação SEM tarefa e sem marca, e devolve o resultado como antes. Quem pula o registro por aqui só deixa de ser avaliado nele. Mesmo portão de `POST /mandar`.",
     resposta: ResultadoSchema,
   })
   async simular(@Req() req: { auth: AuthClaims }) {
     const { escolaId, estudanteId } = this.quem(req);
     rateLimit(`unoogpt:simular:${estudanteId}`, 20, 60_000);
     return this.service.simular(escolaId, estudanteId);
+  }
+
+  // ── o Canal A (ADR-172) ────────────────────────────────────────────────
+
+  @Get("saude")
+  @Contrato({
+    resumo: "A ligação da Secretaria de Saúde: o estado do cartão.",
+    descricao: "Sem gabarito: `entrega` é a consequência do pedido (a contagem; e, a quem pediu lista, o aviso de que os nomes ficaram no sistema).",
+    resposta: SaudeSchema,
+  })
+  async saude(@Req() req: { auth: AuthClaims }) {
+    const { escolaId, estudanteId } = this.quem(req);
+    return this.canalA.saude(escolaId, estudanteId);
+  }
+
+  @Post("saude/abrir")
+  @Contrato({
+    resumo: "Faz a ligação da Saúde aparecer (ao abrir a decisão).",
+    descricao: "O primeiro destino escolhido também a faz aparecer, no servidor. Uma vez por tentativa; só na investigação.",
+    resposta: SaudeSchema,
+  })
+  async abrirSaude(@Req() req: { auth: AuthClaims }) {
+    const { escolaId, estudanteId } = this.quem(req);
+    rateLimit(`unoogpt:canal-a:${estudanteId}`, 60, 60_000);
+    return this.canalA.abrirSaude(escolaId, estudanteId);
+  }
+
+  @Post("saude")
+  @Contrato({
+    resumo: "Responde à ligação da Saúde.",
+    descricao: "`opcao: null` = fechou o cartão sem responder (sem marca). Vale a primeira resposta da tentativa; a marca, a primeira da rodada da turma.",
+    corpo: SaudeRespostaSchema,
+    resposta: SaudeSchema,
+  })
+  async responderSaude(@Req() req: { auth: AuthClaims }, @Body() corpo: unknown) {
+    const { escolaId, estudanteId } = this.quem(req);
+    const { opcao } = this.valida(SaudeRespostaSchema, corpo);
+    rateLimit(`unoogpt:canal-a:${estudanteId}`, 60, 60_000);
+    return this.canalA.responderSaude(escolaId, estudanteId, opcao);
+  }
+
+  @Get("registro")
+  @Contrato({
+    resumo: "O registro da operação: a leitura dos dados, as fontes e o alerta.",
+    descricao: "Montado no servidor e gravado (um F5 mostra o mesmo). Sem relógio e sem gabarito. Cada cartão é `null` quando não se aplica.",
+    resposta: RegistroSchema,
+  })
+  async registro(@Req() req: { auth: AuthClaims }) {
+    const { escolaId, estudanteId } = this.quem(req);
+    return this.canalA.registro(escolaId, estudanteId);
+  }
+
+  @Post("registro/leitura")
+  @Contrato({ resumo: "Responde à leitura dos dados (dois pares).", corpo: LeituraRespostaSchema, resposta: RegistroSchema })
+  async registroLeitura(@Req() req: { auth: AuthClaims }, @Body() corpo: unknown) {
+    const { escolaId, estudanteId } = this.quem(req);
+    const { respostas } = this.valida(LeituraRespostaSchema, corpo);
+    rateLimit(`unoogpt:canal-a:${estudanteId}`, 60, 60_000);
+    return this.canalA.responderLeitura(escolaId, estudanteId, respostas);
+  }
+
+  @Post("registro/fontes")
+  @Contrato({ resumo: "Responde ao que precisaria saber de cada fonte (dois cartões).", corpo: FontesRespostaSchema, resposta: RegistroSchema })
+  async registroFontes(@Req() req: { auth: AuthClaims }, @Body() corpo: unknown) {
+    const { escolaId, estudanteId } = this.quem(req);
+    const { respostas } = this.valida(FontesRespostaSchema, corpo);
+    rateLimit(`unoogpt:canal-a:${estudanteId}`, 60, 60_000);
+    return this.canalA.responderFontes(escolaId, estudanteId, respostas);
+  }
+
+  @Post("registro/alerta")
+  @Contrato({ resumo: "Monta o alerta para os bairros sem equipe.", corpo: AlertaRespostaSchema, resposta: RegistroSchema })
+  async registroAlerta(@Req() req: { auth: AuthClaims }, @Body() corpo: unknown) {
+    const { escolaId, estudanteId } = this.quem(req);
+    const respostas = this.valida(AlertaRespostaSchema, corpo);
+    rateLimit(`unoogpt:canal-a:${estudanteId}`, 60, 60_000);
+    return this.canalA.responderAlerta(escolaId, estudanteId, respostas);
+  }
+
+  @Get("e-se")
+  @Contrato({
+    resumo: "\"E se…\": duas outras decisões nas mesmas 20 tempestades.",
+    descricao: "Montadas pelo servidor (uma clara e uma que depende), em ordem embaralhada. Só com o registro feito.",
+    resposta: ESeSchema,
+  })
+  async eSe(@Req() req: { auth: AuthClaims }) {
+    const { escolaId, estudanteId } = this.quem(req);
+    return this.canalA.eSe(escolaId, estudanteId);
+  }
+
+  @Post("e-se")
+  @Contrato({ resumo: "Responde às duas comparações do \"E se…\".", corpo: ESeRespostaSchema, resposta: ESeSchema })
+  async responderESe(@Req() req: { auth: AuthClaims }, @Body() corpo: unknown) {
+    const { escolaId, estudanteId } = this.quem(req);
+    const { respostas } = this.valida(ESeRespostaSchema, corpo);
+    rateLimit(`unoogpt:canal-a:${estudanteId}`, 60, 60_000);
+    return this.canalA.responderESe(escolaId, estudanteId, respostas);
+  }
+
+  @Get("fechamento")
+  @Contrato({
+    resumo: "O fechamento: o pedido pelo WhatsApp e a resposta à moradora.",
+    descricao: "**409 `fechamento-fechado`** enquanto o professor não abrir (`POST /unoogpt/professor/turmas/:turmaId/relogio` com `abrir-fechamento`).",
+    resposta: FechamentoSchema,
+  })
+  async fechamento(@Req() req: { auth: AuthClaims }) {
+    const { escolaId, estudanteId } = this.quem(req);
+    return this.canalA.fechamento(escolaId, estudanteId);
+  }
+
+  @Post("fechamento/whatsapp")
+  @Contrato({ resumo: "Responde ao pedido pelo WhatsApp.", corpo: WhatsappRespostaSchema, resposta: FechamentoSchema })
+  async fechamentoWhatsapp(@Req() req: { auth: AuthClaims }, @Body() corpo: unknown) {
+    const { escolaId, estudanteId } = this.quem(req);
+    const { resposta, aviso } = this.valida(WhatsappRespostaSchema, corpo);
+    rateLimit(`unoogpt:canal-a:${estudanteId}`, 60, 60_000);
+    return this.canalA.responderWhatsapp(escolaId, estudanteId, resposta, aviso);
+  }
+
+  @Post("fechamento/moradora")
+  @Contrato({ resumo: "Monta a resposta à moradora.", corpo: MoradoraRespostaSchema, resposta: FechamentoSchema })
+  async fechamentoMoradora(@Req() req: { auth: AuthClaims }, @Body() corpo: unknown) {
+    const { escolaId, estudanteId } = this.quem(req);
+    const respostas = this.valida(MoradoraRespostaSchema, corpo);
+    rateLimit(`unoogpt:canal-a:${estudanteId}`, 60, 60_000);
+    return this.canalA.responderMoradora(escolaId, estudanteId, respostas);
   }
 
   @Get("resultado")
@@ -192,7 +350,7 @@ export class UnoogptController {
   @Contrato({
     resumo: "\"E se eu tivesse mandado para…\" — calculado e descartado.",
     descricao:
-      "**Não grava e não debita**: é a pergunta que o estudante faz ao VER o resultado, e transformá-la em tentativa nova apagaria a diferença entre a decisão que ele tomou e a que ele imaginou depois.",
+      "**Não grava e não debita**: é a pergunta que o estudante faz ao VER o resultado, e transformá-la em tentativa nova apagaria a diferença entre a decisão que ele tomou e a que ele imaginou depois.\n\n**Pareado:** a decisão do estudante (`sua`) e a outra rodam nas MESMAS 200 tempestades, com a mesma sorte da operação em cada uma; `comparacao` conta em quantas a outra resgatou mais, menos ou igual.",
     corpo: ContrafactualSchema,
     resposta: ContrafactualRespostaSchema,
   })
@@ -240,7 +398,18 @@ export const ROTAS_DO_ESTUDANTE = [
   "pergunta",
   "conjuntos",
   "alocacao",
+  "mandar",
   "simular",
+  "saude",
+  "saude/abrir",
+  "registro",
+  "registro/leitura",
+  "registro/fontes",
+  "registro/alerta",
+  "e-se",
+  "fechamento",
+  "fechamento/whatsapp",
+  "fechamento/moradora",
   "resultado",
   "contrafactual",
   "passo",

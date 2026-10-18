@@ -17,6 +17,8 @@ export interface RetratoDoRelogio {
   pivoSeg: number;
   pivoMin: number;
   agora: string;
+  /** O professor abriu o fechamento (o WhatsApp e a moradora, ADR-172). */
+  fechamentoAberto: boolean;
   fase: "aguardando" | "correndo" | "encerrado";
   minutosGastos: number;
   segundosAteFechar: number | null;
@@ -53,6 +55,12 @@ export interface LinhaDaTurma {
 export interface FolhaDaTurma {
   turma: { id: string; nome: string; serie: string };
   relogio: RetratoDoRelogio;
+  /** O fechamento (ADR-172): aberto, e quantas linhas que chegaram ao resultado já o enviaram. */
+  fechamento: { aberto: boolean; enviaram: number; de: number };
+  /** O que cada grupo perguntou sobre cada fonte, no registro da operação: contagens para o debate. */
+  perguntasPorFonte: { fonte: string; bairro: string; pergunta: string; grupos: number }[];
+  /** A frase fixa do alcance do alerta: é do debate, nunca vai ao grupo. */
+  alcanceDoAlerta: string;
   retrato: {
     estudantes: number;
     comecaram: number;
@@ -162,6 +170,8 @@ export interface RelatorioDoEstudante {
   justificativas: { alfa: string; bravo: string } | null;
   tentativas: TentativaDoEstudante[];
   rodadas: RodadaDoEstudante[];
+  /** As escolhas do Canal A, por tentativa (ADR-172): escolha fechada em texto, nunca o nível. */
+  canalA: { tentativa: number; tarefa: string; escolhas: string[] }[];
   trilha: MarcoDaTrilha[];
   /**
    * A TRANSCRIÇÃO. Caixa livre escrita por menor de idade: só o professor da

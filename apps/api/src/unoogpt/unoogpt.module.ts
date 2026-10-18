@@ -1,6 +1,6 @@
 import { Module } from "@nestjs/common";
 import { EvidenciasModule } from "../evidencias/evidencias.module";
-import { ContextoDaEvidenciaDaTempestade } from "./contexto-da-evidencia";
+import { CanalADaTempestade } from "./canal-a.service";
 import { UnoogptAgregadoController } from "./unoogpt-agregado.controller";
 import { UnoogptTurmasController } from "./unoogpt-turmas.controller";
 import { UnoogptController } from "./unoogpt.controller";
@@ -20,6 +20,6 @@ import { PodcastDaExp02em1b } from "./podcast-fonte";
 @Module({
   imports: [EvidenciasModule],
   controllers: [UnoogptController, UnoogptTurmasController, UnoogptAgregadoController],
-  providers: [UnoogptService, ContextoDaEvidenciaDaTempestade, PodcastDaExp02em1b],
+  providers: [UnoogptService, CanalADaTempestade, PodcastDaExp02em1b],
 })
 export class UnoogptModule {}

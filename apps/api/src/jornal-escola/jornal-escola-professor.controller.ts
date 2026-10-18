@@ -3,7 +3,14 @@ import { GESTORES } from "../auth/claims";
 import { OidcGuard } from "../auth/oidc.guard";
 import { Roles, RolesGuard } from "../auth/roles";
 import { Contrato } from "../openapi/contrato";
-import { DISCIPLINA_PADRAO, ROTEIRO_DA_MEDIACAO, TEMA_PADRAO, blocosDoProfessor, noticiasPadrao } from "./catalogo";
+import {
+  DISCIPLINA_PADRAO,
+  ROTEIRO_DA_MEDIACAO,
+  TEMA_PADRAO,
+  blocosDoProfessor,
+  noticiasPadrao,
+  simulacaoPadrao,
+} from "./catalogo";
 import { ConteudoDaAulaSchema } from "./contrato-de-rotas";
 
 /**
@@ -30,7 +37,8 @@ export class JornalEscolaProfessorController {
     resposta: ConteudoDaAulaSchema,
     notas: [
       "Nada aqui é escopado por escola: é o catálogo da missão, igual para todo contrato.",
-      "`blocos[].pilar` diz quais três formam a Chave — é gabarito, e só existe nesta rota de professor.",
+      "`blocos[].pilar` diz quais três formam a Chave, e `blocos[].cartoes[].lado` o lado certo de cada cartão de condição — é gabarito, e só existe nesta rota de professor.",
+      "`simulacao`: as duas matérias da simulação do banco padrão, com o gabarito.",
       "`roteiro` é o da copy revisada (§4b): o gatilho do resultado, as três perguntas do debate e o gatilho da revisão.",
     ],
   })
@@ -39,6 +47,7 @@ export class JornalEscolaProfessorController {
       disciplina: DISCIPLINA_PADRAO,
       tema: TEMA_PADRAO,
       noticias: noticiasPadrao(),
+      simulacao: simulacaoPadrao(),
       blocos: blocosDoProfessor(),
       roteiro: {
         gatilhoDoResultado: ROTEIRO_DA_MEDIACAO.gatilhoDoResultado,

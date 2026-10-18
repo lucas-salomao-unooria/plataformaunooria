@@ -1631,7 +1631,9 @@ O \enquote{Então} com \cd{btrim} & \cd{char\_length(btrim(acao\_entao)) BETWEEN
 \label{sec:tabelas-exp04ef1b}
 
 O Jornal da Escola (\adrr{ADR-117}), na migração
-\arq{20260927120000\_\B{}exp04ef1b\_\B{}jornal\_\B{}da\_\B{}escola}. As quatro têm
+\arq{20260927120000\_\B{}exp04ef1b\_\B{}jornal\_\B{}da\_\B{}escola}, e o Canal A
+puro da 3.0.0 (\adrr{ADR-168}) na \arq{20261016130000\_\B{}exp04ef1b\_\B{}canal\_\B{}a},
+que só acrescenta colunas e \emph{CHECKs}. As quatro têm
 \cd{escola\_id NOT NULL}, RLS \cd{ENABLE} + \cd{FORCE} com a política por escola, e
 nenhuma sequência: as chaves são \cd{uuid} ou compostas, e o \cd{GRANT} à
 \emph{role} de \emph{runtime} é só de tabela, guardado. O prefixo não colide com
@@ -1651,7 +1653,9 @@ nenhuma sequência: as chaves são \cd{uuid} ou compostas, e o \cd{GRANT} à
   objeto) guarda a URL que o professor APROVOU por notícia (\adrr{ADR-147}): a
   imagem só chega ao estudante quando é a mesma de \cd{midia}, e o
   \enquote{Gerar outra} troca \cd{midia} e deixa só aquela notícia à espera do
-  novo OK.\\
+  novo OK. \cd{simulacao} (\cd{JSONB}, \emph{array} de duas ou nulo) guarda as
+  duas matérias da simulação com o gabarito; nula nos pacotes anteriores à
+  3.0.0, que usam as do banco padrão.\\
 \zebra \cd{exp04ef1b\_gates\_turma} & O \textbf{relógio da turma}:
   \cd{exploracao} $|$ \cd{resultado} $|$ \cd{revisao}, o pacote em andamento, a
   \textbf{rodada} e os carimbos dos dois portões. Chave
@@ -1662,7 +1666,10 @@ nenhuma sequência: as chaves são \cd{uuid} ou compostas, e o \cd{GRANT} à
   de cinco colunas, com o nome dado à mão). O passo gravado, as pistas abertas
   (\cd{JSONB}, uma entrada por par e fase), as vagas, o layout, a origem do
   layout e as verificadas de cada edição, o motivo, as tentativas da Chave e os
-  carimbos dos \emph{latches}. \textbf{Nenhum campo de texto livre.}\\
+  carimbos dos \emph{latches}. Desde a 3.0.0: os \cd{julgamentos} da mesa
+  (\cd{JSONB}, o primeiro de cada par), a \cd{chave\_montagem} (a Chave como foi
+  montada), a \cd{simulacao} e a \cd{transferencia} com os seus carimbos.
+  \textbf{Nenhum campo de texto livre.}\\
 \zebra \cd{exp04ef1b\_diagramacoes} & O \emph{cache} da diagramação por IA:
   pacote e as três vagas NA ORDEM (a \cd{chave}, como \cd{n1,n5,n3}) \seta{} layout, com
   os \emph{tokens} gastos. É o que limita o custo às combinações usadas. Fica sob
@@ -1675,7 +1682,10 @@ nenhuma sequência: as chaves são \cd{uuid} ou compostas, e o \cd{GRANT} à
 implicações: \cd{publicada1\_em} existe se e só se o passo saiu de \cd{desafio} e
 \cd{mesa}; o motivo, se e só se saiu também de \cd{motivo}; a Chave formada, se e
 só se o passo está de \cd{revisao} em diante; \cd{publicada2\_em}, de
-\cd{comparativo} em diante; e \cd{fim}, se e só se há \cd{concluida\_em}. Cada
+\cd{comparativo} em diante; e \cd{fim}, se e só se há \cd{concluida\_em}. Os da
+3.0.0 são IMPLICAÇÕES, porque a sessão da 2.x passou por passos que não
+existiam: a montagem só com a Chave formada; a simulação e a transferência, cada
+uma com o seu carimbo, só de \cd{transferencia} em diante. Cada
 edição publicada exige as três vagas DIFERENTES dentro dos oito ids, o layout, a
 origem e as verificadas no mesmo gesto. Os passos \cd{resultado} e \cd{chave}
 \textbf{nunca} são gravados --- a etapa os impõe a quem está em
@@ -1912,7 +1922,7 @@ em produção, que é onde ela existe.
 \end{atencao}
 
 
-\section{As cinco tabelas da exp02em1b}
+\section{As sete tabelas da exp02em1b}
 \label{sec:tabelas-exp02em1b}
 
 \begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
@@ -1946,6 +1956,17 @@ em produção, que é onde ela existe.
   pedagógica (\adrr{ADR-154}): só o \enquote{Zerar a turma} a sobe, e ela
   sobrevive ao zerar, que apaga o relógio e a evidência da turma
   (\adrr{ADR-155}). Ausência de linha = rodada 1.\\
+\cd{exp02em1b\_tarefas} & As \textbf{tarefas do Canal A} (\adrr{ADR-172},
+  migração \arq{20261016200000\_\B{}exp02em1b\_\B{}canal\_\B{}a}): uma linha
+  por (sessão, rodada da turma, tentativa, tarefa), com a APRESENTAÇÃO que o
+  servidor montou --- os pares da leitura, os cartões das fontes, as
+  comparações do \enquote{E se\ldots}, a ordem das opções --- e as respostas.
+  Só ids de escolha fechada, nenhum texto livre. \emph{CHECKs} do vocabulário
+  (sete tarefas) e de respondida com data. Sai com a sessão (cascata do par),
+  e o \enquote{Zerar a turma} apaga as sessões. A sessão ganhou
+  \cd{registro\_concluido\_em} (o desfecho fica retido até ele),
+  \cd{oferta\_saude\_em} e \cd{inicio\_com\_relogio\_aberto}; o relógio da
+  turma, \cd{fechamento\_aberto\_em}.\\
 \bottomrule
 \end{tabularx}
 

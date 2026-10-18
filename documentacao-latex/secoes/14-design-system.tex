@@ -168,6 +168,17 @@ na voz de onde veio, porque um post que não parece post não ensina a reconhece
 post.
 \end{regra}
 
+\textbf{Clone dentro de clone (\adrr{ADR-173}).} A mesma regra vale para a
+peça de outra plataforma DENTRO de uma experiência disfarçada, com os mesmos
+limites. O pedido pelo WhatsApp do fechamento da Missão Tempestade é o
+\cd{MessageBubble} do \cd{unoochat}, em tema claro e sem hora, dentro do
+UnooriaAI (\arq{exp02em1b/src/app/pecas/mensagem-do-voluntario.tsx}); as opções
+de resposta em volta continuam \cd{unooriaai}. Um teste da experiência cobra que
+só a peça importa a ponte \cd{@edu/ui/ds-unoochat}. Na mesma missão, a faixa de
+20 tempestades do \enquote{E se\ldots} é \textbf{compensação declarada}
+(\cd{.faixa-de-tempestades}, só token \cd{--uai-*}, com a lista para leitor de
+tela): a seção não publica uma faixa de células categóricas.
+
 A regra é por \textbf{PEÇA}, nunca por tela. O cromo em volta continua sendo da
 Unooria, e a peça do clone não traz a barra, as abas nem o fundo do aplicativo
 --- o balão do Unoochat vai num contêiner pintado com
@@ -206,7 +217,7 @@ pacote direto num componente:
 \cd{@edu/ui/ds-chatgpt} & \cd{chatgpt} & exp08ef4b (a exp02em1b saiu na \adrr{ADR-138})\\
 \cd{@edu/ui/ds-unooriaai} & \cd{unooriaai} & exp02em1b (\adrr{ADR-138}); o \cd{GPTCard} virou \cd{AssistantCard}, e não há \cd{gptGlyphs}\\
 \cd{@edu/ui/ds-whatsapp} & \cd{whatsappmobile} & exp06ef2b\\
-\cd{@edu/ui/ds-unoochat} & \cd{unoochat} & exp05ef1b (\adrr{ADR-134}) e o \cd{MessageBubble} da gaveta e do Desafio Final do Jornal (\adrr{ADR-136})\\
+\cd{@edu/ui/ds-unoochat} & \cd{unoochat} & exp05ef1b (\adrr{ADR-134}), o \cd{MessageBubble} da gaveta e do Desafio Final do Jornal (\adrr{ADR-136}) e o do pedido pelo WhatsApp da Missão Tempestade (\adrr{ADR-173})\\
 \end{tabularx}
 \end{regra}
 

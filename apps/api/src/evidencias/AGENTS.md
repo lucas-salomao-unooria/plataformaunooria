@@ -19,9 +19,12 @@ o contexto registrado no `onModuleInit` de `a-selecao.service.ts` e a marca da
 legenda numa transação SÓ DELA, depois do latch da publicação: a IA leva até
 6 s, e a transação da jogada não pode esperar. Falhando a IA, não há marca:
 "Não avaliado", e o professor decide.
-**A terceira é o Jornal da Escola (`exp04ef1b`)**: `fichas/exp04ef1b.ts`
-(EF15CO04 por `pistas`, EF15CO02 por `chave`, EF04CO08 por `edicao-2`, `p1` e
-`p2`), as três ações marcadas DENTRO das transações dos latches e da Chave.
+**A terceira é o Jornal da Escola (`exp04ef1b`)**: `fichas/exp04ef1b.ts`,
+**versão 2, Canal A puro (ADR-168)** — EF15CO04 por `julgamentos`, EF15CO02 por
+`montagem` + `simulacao`, EF04CO08 por `edicao-2` + `transferencia`, todas AÇÃO,
+nenhuma pergunta e nenhum resolvedor de contexto. O marcador parcial tem teto
+em "em processo" e o final grava o COMBINADO: é assim que uma régua "A só com
+as duas" cabe no "vale o melhor" desta porta, sem regra nova na plataforma.
 A quarta é o Júri Estadual (`exp06ef1b`, ADR-151/152).
 **A quinta é o Unoovista (`exp08ef1b`)**: `fichas/exp08ef1b.ts` v2 (ADR-167,
 que tirou as três perguntas da ADR-153): toda habilidade por AÇÃO — `raio-x` e
@@ -31,11 +34,20 @@ registrado: as tarefas marcam da run do próprio estudante
 (`motor/contexto-da-evidencia.ts#contextoDaRun`, `null` em atividade sem turma)
 e a **rodada é sempre 1**. Vale o PRIMEIRO envio: o reinício reabre a tarefa e
 não apaga a marca, e a missão confere `jaMarcou` antes de marcar.
-**A sexta é a Missão Tempestade (`exp02em1b`, ADR-154)**, com duas regras só
-dela, na ficha: `respostas: "melhor"` (a marca única só muda para melhor) e
+**A sexta é a Missão Tempestade (`exp02em1b`)**: `fichas/exp02em1b.ts` v2
+(ADR-172, que tirou as quatro perguntas da ADR-154): toda habilidade por AÇÃO
+— `leitura`, `fontes`, `e-se`, `whatsapp`, `alerta`, `saude` e `moradora`,
+todos com `rotulo` —, marcadas pelas tarefas de `unoogpt/canal-a.service.ts`
+(as que são "primeira da rodada" conferem `jaMarcou`). Continua com
 `contaAoEncerrarAMissao` (vira evidência só no encerramento da missão na Sala
 de Aula: `SalasService.aoEncerrarMissao` → `aoEncerrarAMissao`, pelo mesmo
-`gravarPropria`). Atividade `"turma"` (a das equipes), rodada da turma.
+`gravarPropria`). Atividade `"turma"` (a das equipes), rodada da turma, sem
+resolvedor registrado: não há pergunta.
+**O encerramento só transforma em nível a marca de marcador que ESTÁ na ficha
+vigente** (`aoEncerrarAMissao`): a turma com a missão aberta no dia em que a
+ficha muda tem marcas de marcador que saiu (as `p1`–`p4` da Tempestade v1), e
+elas virariam nível pelo caminho que o pedagógico tirou. A marca fica no banco;
+só não conta.
 
 Três tabelas de PLATAFORMA (sem prefixo, como `liberacoes` e `equipes`), todas
 com `escola_id` + RLS forçada:

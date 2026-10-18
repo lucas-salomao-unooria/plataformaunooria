@@ -24,6 +24,7 @@ const RELOGIO: RelogioPublico = {
   pivoSeg: 0,
   pivoMin: 0,
   agora: '2026-09-01T20:00:00.000Z',
+  fechamentoAberto: false,
 };
 
 const CORRENDO: EstadoDoRelogio = {

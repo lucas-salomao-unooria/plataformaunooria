@@ -91,7 +91,7 @@ Os diagramas entidade-relacionamento estão no Capítulo~\ref{cap:dados}.
 \zebra \cd{backup\_exp04ef1b\_sessoes} & Tenant & Estado da missão do UnooTube (arquivada, \adrr{ADR-116})\\
 \cd{exp04ef1b\_pacotes} & Tenant & A ATIVIDADE do Jornal da Escola: as 8 notícias com o gabarito e a consequência, as URLs das imagens e a URL que o professor aprovou por notícia (\cd{midia\_aprovada}, \adrr{ADR-147})\\
 \zebra \cd{exp04ef1b\_gates\_turma} & Tenant & A etapa da aula (os dois portões), o pacote e a rodada, por turma\\
-\cd{exp04ef1b\_sessoes} & Tenant & Uma sessão por estudante, pacote e rodada: as pistas abertas, as duas edições, o motivo e a Chave --- sem texto livre\\
+\cd{exp04ef1b\_sessoes} & Tenant & Uma sessão por estudante, pacote e rodada: as pistas abertas e julgadas, as duas edições, o motivo, a Chave montada, a simulação e a transferência --- sem texto livre\\
 \zebra \cd{exp04ef1b\_diagramacoes} & Tenant & O \emph{cache} do layout escolhido pela IA, por pacote e combinação de vagas\\
 \cd{exp02em1b\_sessoes} & Tenant & Estado da partida da Missão Tempestade\\
 \zebra \cd{exp02em1b\_mensagens} & Tenant & A Transcrição (texto livre do estudante)\\
@@ -99,6 +99,7 @@ Os diagramas entidade-relacionamento estão no Capítulo~\ref{cap:dados}.
 \zebra \cd{exp02em1b\_simulacoes} & Tenant & Desfecho por tentativa\\
 \cd{exp02em1b\_relogio\_turma} & Tenant & O Relógio da Aula, por turma\\
 \cd{exp02em1b\_gate\_turma} & Tenant & A rodada da turma na evidência pedagógica\\
+\zebra \cd{exp02em1b\_tarefas} & Tenant & As tarefas do Canal A: a apresentação montada pelo servidor e as respostas, só escolha fechada (\adrr{ADR-172})\\
 \zebra \cd{exp01ef1b\_turma\_config} & Tenant & A aula da exp01ef1b por turma: pacote aprovado, latch e tentativa\\
 \cd{exp01ef1b\_runs} & Tenant & Execução por estudante e tentativa (reset arquiva, não apaga)\\
 \zebra \cd{exp01ef1b\_posts\_turma} & Tenant & O mural coletivo, assinado pela marca --- sem nome de criança\\
@@ -1615,7 +1616,11 @@ colunas da sessão, que é onde os \emph{latches} moram.
   \arq{regras/passos.ts}. Nunca \cd{resultado} nem \cd{chave}: a etapa da turma os
   impõe.\\
 \cd{pistas} & \cd{JSONB} & \emph{Array} de \cd{\{noticiaId, tipo, fase, em\}}:
-  um registro por par e FASE (1 = mesa, 2 = revisão). É o dado da EF15CO04.\\
+  um registro por par e FASE (1 = mesa, 2 = revisão). É a metade do
+  \cd{edicao-2} e a condição para julgar.\\
+\zebra \cd{julgamentos} & \cd{JSONB} & \emph{Array} de \cd{\{noticiaId, tipo,
+  veredito, em\}} (\cd{confio} $|$ \cd{nao\_confio}): o PRIMEIRO de cada par, só
+  na mesa da 1ª edição. É o dado da EF15CO04 (\adrr{ADR-168}).\\
 \zebra \cd{slots\_ed1}, \cd{slots\_ed2} & \cd{TEXT[]} & Vazio ou três ids
   DIFERENTES entre \cd{n1} e \cd{n8}, na ordem das vagas.\\
 \cd{layout\_ed*}, \cd{origem\_layout\_ed*} & \cd{TEXT?} & \cd{classic} $|$
@@ -1625,10 +1630,21 @@ colunas da sessão, que é onde os \emph{latches} moram.
 \cd{motivo\_ed1} & \cd{TEXT?} & \cd{visual} $|$ \cd{checagem}, depois do
   \emph{latch} da 1ª.\\
 \zebra \cd{chave\_tentativas}, \cd{chave\_formada\_em} & \cd{INTEGER},
-  \cd{TIMESTAMPTZ?} & A base da EF15CO02. Formada exige ao menos uma tentativa.\\
+  \cd{TIMESTAMPTZ?} & Formada exige ao menos uma tentativa; na 3.0.0, a
+  montagem é UMA (\cd{chave\_tentativas = 1}).\\
+\cd{chave\_montagem} & \cd{JSONB?} & A Chave como foi montada: três vagas
+  \cd{\{bloco, lados, seFalhar\}} e a repetição. Só com a Chave formada; nula nas
+  sessões da 2.x. Metade da EF15CO02.\\
+\zebra \cd{simulacao}, \cd{simulada\_em} & \cd{JSONB?}, \cd{TIMESTAMPTZ?} & A
+  execução da Chave nas duas matérias (os passos na ordem e a decisão); o dado
+  e o carimbo andam juntos, e só de \cd{transferencia} em diante.\\
+\cd{transferencia}, \cd{transferida\_em} & \cd{JSONB?}, \cd{TIMESTAMPTZ?} & As
+  pistas do boato abertas antes de decidir e a decisão (\cd{repassar} $|$
+  \cd{nao\_repassar}); idem. Metade da EF04CO08.\\
 \cd{publicada1\_em}, \cd{publicada2\_em}, \cd{concluida\_em} &
   \cd{TIMESTAMPTZ?} & Os \emph{latches}, cada um EQUIVALENTE ao passo gravado.\\
-\zebra \cd{versao\_instrumento} & \cd{TEXT} & \cd{1.0.0}.\\
+\zebra \cd{versao\_instrumento} & \cd{TEXT} & \cd{2.0.0} desde o Canal A puro;
+  as sessões da 2.x ficaram em \cd{1.0.0}.\\
 \bottomrule
 \end{tabularx}
 
@@ -1859,6 +1875,31 @@ estudante só recebe os posts que o feed serviu até a galeria abrir
   onde o relógio da cidade estava quando a duração mudou. É o que impede o minuto
   narrativo de rebobinar --- aos 4:00 de 5:00 o estudante está no minuto 48, e
   recalcular com 7:00 daria 34.\\
+\cd{fechamento\_aberto\_em} & \cd{TIMESTAMPTZ?} & O professor abriu o
+  fechamento (o WhatsApp e a moradora, \adrr{ADR-172}). Nulo = fechado;
+  \enquote{Redefinir} e o \enquote{Zerar a turma} o fecham.\\
+\bottomrule
+\end{tabularx}
+
+\subsection{\cd{exp02em1b\_tarefas}}
+
+\begin{tabularx}{\linewidth}{@{}L{34mm}L{22mm}X@{}}
+\toprule
+\headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
+\midrule
+\pk{id} & \cd{UUID} & \cd{gen\_random\_uuid()}.\\
+\zebra \cd{(escola\_id, estudante\_id)} & FK & Para a sessão, em cascata. RLS
+  forçada por \cd{escola\_id}.\\
+\cd{rodada}, \cd{tentativa} & \cd{INT}, \cd{SMALLINT} & A rodada da TURMA (a
+  unidade da evidência) e a tentativa do estudante. Única por (escola,
+  estudante, rodada, tentativa, tarefa). \emph{CHECK} $\geq 1$.\\
+\zebra \cd{tarefa} & \cd{TEXT} & \emph{CHECK} \cd{IN ('leitura', 'fontes',
+  'alerta', 'saude', 'e-se', 'whatsapp', 'moradora')}, o mesmo vocabulário de
+  \arq{unoogpt/regras/canal-a.ts}.\\
+\cd{apresentacao} & \cd{JSONB} & O que o servidor montou e a tela mostrou,
+  com o gabarito --- só a api o lê.\\
+\zebra \cd{respostas}, \cd{enviada\_em} & \cd{JSONB?}, \cd{TIMESTAMPTZ?} &
+  Ids de escolha fechada. \emph{CHECK}: respondida $\Leftrightarrow$ com data.\\
 \bottomrule
 \end{tabularx}
 

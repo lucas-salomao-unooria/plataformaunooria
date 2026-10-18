@@ -92,7 +92,7 @@ describe("o manifesto do Jornal da Escola", () => {
     expect(Number(EXP_VERSION.split(".")[0])).toBeGreaterThanOrEqual(2);
   });
 
-  test("`forms` (o `RadioGroup` do motivo e de P1/P2 é campo de formulário) e as quatro capabilities", () => {
+  test("`forms` (o `RadioGroup` do motivo e da Chave é campo de formulário) e as quatro capabilities", () => {
     expect(manifesto.permissoes).toEqual(["forms"]);
     expect(manifesto.capabilities).toEqual(["telemetria", "progresso", "ia", "avaliacao"]);
     expect(manifesto.viewport).toEqual({ largura: 375, altura: 812 });

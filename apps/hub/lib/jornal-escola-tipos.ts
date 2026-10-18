@@ -53,6 +53,21 @@ export type TipoDePista = (typeof TIPOS_DE_PISTA)[number];
 export const IDS_DE_BLOCO = ["fonte", "data", "autoria", "foto", "urgencia", "compartilhada"] as const;
 export type IdDeBloco = (typeof IDS_DE_BLOCO)[number];
 
+/** As três ARMADILHAS da Chave — os blocos que parecem critério e não são. */
+export const BLOCOS_ISCA = ["foto", "urgencia", "compartilhada"] as const;
+export type BlocoIsca = (typeof BLOCOS_ISCA)[number];
+
+/** O lado de um cartão de condição na Chave: o que faz a pista passar, ou falhar. */
+export const LADOS_DA_CONDICAO = ["aprova", "reprova"] as const;
+export type LadoDaCondicao = (typeof LADOS_DA_CONDICAO)[number];
+
+/**
+ * As duas matérias da SIMULAÇÃO (3.0.0): inéditas, sem imagem, uma que pode ir
+ * para a capa e uma com UMA pista em falta. Ids próprios, fora da mesa.
+ */
+export const IDS_DE_SIMULACAO = ["s1", "s2"] as const;
+export type IdDeSimulacao = (typeof IDS_DE_SIMULACAO)[number];
+
 /** As duas respostas da pergunta de motivo, feita DEPOIS da 1ª publicação. */
 export const MOTIVOS = ["visual", "checagem"] as const;
 export type Motivo = (typeof MOTIVOS)[number];
@@ -74,6 +89,7 @@ export const PASSOS = [
   "chave",
   "revisao",
   "comparativo",
+  "simulacao",
   "transferencia",
   "fim",
 ] as const;
@@ -129,6 +145,29 @@ export interface NoticiaDoPacote {
   consequencia: { leitor: string; fala: string };
 }
 
+/**
+ * Uma matéria da SIMULAÇÃO (3.0.0), COMPLETA — com o gabarito. A criança aplica
+ * a Chave do Editor dela a esta matéria; ela não vai para capa nenhuma, não tem
+ * imagem, corpo nem reação do leitor. Só rota de professor a devolve inteira.
+ */
+export interface MateriaDaSimulacao {
+  id: IdDeSimulacao;
+  meio: Meio;
+  veiculo: string;
+  falante: string | null;
+  manchete: string;
+  resumo: string;
+  pistas: Record<TipoDePista, string>;
+  gabarito: NoticiaDoPacote["gabarito"];
+}
+
+/** Um cartão de condição de um bloco da Chave, com o lado CERTO — `null` nas armadilhas. Só o professor o recebe. */
+export interface CartaoDaChave {
+  texto: string;
+  exemplo: string;
+  lado: LadoDaCondicao | null;
+}
+
 // ─────────────────────────────────────────────────────── as rotas do professor
 
 /** `GET /jornal-escola/turmas`. `serie` é anulável no contrato (rostering sem série). */
@@ -175,6 +214,8 @@ export interface LinhaDoPainel {
   publicouAPrimeira: boolean;
   chaveFormada: boolean;
   publicouASegunda: boolean;
+  /** Aplicou a Chave nas duas matérias novas (3.0.0). */
+  simulou: boolean;
   concluiu: boolean;
 }
 
@@ -210,8 +251,17 @@ export interface PainelDoJornal {
     porComputador: boolean;
     /** [com 0, com 1, com 2, com 3 verificadas] — por computador, sem nome. */
     histograma: { edicao1: number[]; edicao2: number[] };
-    /** O motivo agregado da 1ª edição (a pergunta depois do latch). */
+    /** O motivo agregado da 1ª edição (a pergunta depois do latch). Não avalia: é roteiro da conversa. */
     motivos: Record<Motivo, number>;
+    /**
+     * A Chave da turma, AGREGADA (3.0.0) — o roteiro da conversa, nunca o nível
+     * de alguém: quantos montaram, quantos puseram cada armadilha, quantos
+     * escolheram "Olho a próxima pista" em alguma vaga e quantos "Só na
+     * primeira notícia".
+     */
+    chave: { montaram: number; iscas: Record<BlocoIsca, number>; seguir: number; soNaPrimeira: number };
+    /** A mensagem nova, AGREGADA: quantos decidiram, quantos repassaram sem abrir pista nenhuma, quantos não repassaram. */
+    transferencia: { decidiram: number; repassaramSemAbrir: number; naoRepassaram: number };
     radar: NoticiaNoRadar[];
   };
 }
@@ -237,6 +287,8 @@ export interface TurmaZerada {
 export interface PacoteComGabarito extends PacoteResumo {
   topicos: string | null;
   noticias: NoticiaDoPacote[];
+  /** As duas matérias da simulação — as do banco padrão nos pacotes anteriores à 3.0.0. */
+  simulacao: MateriaDaSimulacao[];
   midia: ResumoDaMidia;
   /** As URLs já geradas, por id de notícia. */
   imagens: Record<string, string>;
@@ -279,6 +331,8 @@ export interface RascunhoDoPacote {
   origem: OrigemDoPacote;
   usouIa: boolean;
   noticias: NoticiaDoPacote[];
+  /** As duas matérias da simulação (3.0.0), escritas junto das oito. */
+  simulacao: MateriaDaSimulacao[];
 }
 
 /** `POST regenerar-noticia`. */
@@ -340,16 +394,18 @@ export interface ImagemRegerada {
 }
 
 /**
- * `GET /jornal-escola/professor/material` — o BANCO PADRÃO com gabarito, a
- * Chave com os pilares marcados e o roteiro da mediação (copy revisada, §4b).
- * É o "Usar o banco pronto da Unooria" da criação da atividade, o roteiro do
- * painel e o bloco vivo do guia.
+ * `GET /jornal-escola/professor/material` — o BANCO PADRÃO com gabarito (as
+ * oito notícias e as duas matérias da simulação), a Chave com os pilares
+ * marcados e o lado certo de cada cartão, e o roteiro da mediação (copy
+ * revisada, §4b). É o "Usar o banco pronto da Unooria" da criação da
+ * atividade, o roteiro do painel e o bloco vivo do guia.
  */
 export interface MaterialDoJornal {
   disciplina: string;
   tema: string;
   noticias: NoticiaDoPacote[];
-  blocos: Array<{ id: IdDeBloco; rotulo: string; legenda: string; pilar: boolean }>;
+  simulacao: MateriaDaSimulacao[];
+  blocos: Array<{ id: IdDeBloco; rotulo: string; legenda: string; pilar: boolean; cartoes: CartaoDaChave[] }>;
   roteiro: { gatilhoDoResultado: string; perguntas: string[]; gatilhoDaRevisao: string };
 }
 
@@ -376,7 +432,7 @@ export function erroDaResposta(corpo: unknown, padrao: string): { codigo: string
 export const ROTULO_DA_ETAPA: Record<EtapaDaTurma, string> = {
   exploracao: "Exploração — cada computador monta e publica a 1ª edição",
   resultado: "Resultado liberado — as reações dos leitores e a conversa com a turma",
-  revisao: "Revisão liberada — a Chave do Editor, a 2ª edição e o desafio final",
+  revisao: "Revisão liberada — a Chave do Editor, a 2ª edição, o teste da Chave e a mensagem nova",
 };
 
 /**
@@ -404,7 +460,8 @@ export const ROTULO_DO_PASSO: Record<PassoDoEstudante, string> = {
   chave: "Montando a Chave do Editor",
   revisao: "Revisando a 1ª edição",
   comparativo: "Comparando as duas edições",
-  transferencia: "No desafio final",
+  simulacao: "Testando a Chave em duas matérias novas",
+  transferencia: "Decidindo sobre a mensagem nova",
   fim: "Concluiu",
 };
 
@@ -415,13 +472,25 @@ export const ROTULO_DA_ORIGEM: Record<OrigemDoPacote, string> = {
 };
 
 /**
- * As duas respostas da pergunta de motivo, VERBATIM da copy revisada
- * (`e3.modal.opcao_visual`/`opcao_auditada`) — é a frase que a criança tocou, e
- * o professor precisa lê-la igual para conduzir a conversa.
+ * As duas respostas da pergunta de motivo (3.0.0) — a frase que a criança
+ * tocou depois da 1ª publicação, e o professor precisa lê-la igual para
+ * conduzir a conversa. A pergunta NÃO avalia: nenhum marcador da ficha a lê.
  */
 export const ROTULO_DO_MOTIVO: Record<Motivo, string> = {
-  visual: "Escolhemos as fotos mais chamativas e os avisos mais urgentes.",
-  checagem: "Checamos quem postou, quando aconteceu e quem assina a matéria.",
+  visual: "Escolhi porque chamou atenção",
+  checagem: "Escolhi porque conferi as pistas",
+};
+
+/**
+ * O nome de cada armadilha da Chave, como a bandeja o mostra — espelho dos
+ * rótulos de `BLOCOS_DA_CHAVE` em `apps/api/src/jornal-escola/catalogo.ts` (o
+ * teste compara). Mora aqui porque o painel da aula os mostra sem ler o
+ * material.
+ */
+export const ROTULO_DA_ISCA: Record<BlocoIsca, string> = {
+  foto: "Foto",
+  urgencia: "Urgência",
+  compartilhada: "Compartilhada",
 };
 
 export const ROTULO_DA_PISTA: Record<TipoDePista, string> = {
@@ -502,28 +571,58 @@ export function aulaEmAndamento(p: Pick<PainelDoJornal, "etapa" | "resumo">): bo
   return !(p.etapa === "revisao" && p.resumo.total > 0 && p.resumo.concluiram >= p.resumo.total);
 }
 
+/** Quantas linhas do painel já aplicaram a Chave nas duas matérias novas. */
+export function quantosSimularam(linhas: readonly Pick<LinhaDoPainel, "simulou">[]): number {
+  return linhas.filter((l) => l.simulou).length;
+}
+
 /**
- * Mudou algo que a EVIDÊNCIA registra (ADR-146)? As três ações da ficha são
- * marcadas na MESMA transação da jogada que o painel conta: a EF15CO04 no latch
- * da 1ª edição, a EF15CO02 quando a Chave se forma e a EF04CO08 no latch da 2ª
- * — e as perguntas do Desafio Final vêm antes do "Concluir Missão". A atividade
- * troca com um pacote novo ou uma rodada nova. Só nesses casos o painel da aula
- * relê a página inteira, para o painel de habilidades acompanhar sem o
- * professor apertar F5. É o mesmo desenho da exp05ef1b (`mudouAEvidencia` em
+ * Mudou algo que a EVIDÊNCIA registra (ADR-146)? Os cinco marcadores da ficha
+ * v2 (3.0.0, só AÇÃO) são gravados na MESMA transação da jogada que o painel
+ * conta: os julgamentos das pistas (EF15CO04) no latch da 1ª edição, a Chave
+ * montada (EF15CO02, parcial) quando ela se forma, a 2ª edição (EF04CO08,
+ * parcial) no latch dela, a simulação (EF15CO02, final) quando a criança a
+ * envia e a mensagem nova (EF04CO08, final) quando ela decide. A simulação não
+ * tem contador no resumo: conta pelas linhas (`simulou`). A atividade troca com
+ * um pacote novo ou uma rodada nova. Só nesses casos o painel da aula relê a
+ * página inteira, para o painel de habilidades acompanhar sem o professor
+ * apertar F5. É o mesmo desenho da exp05ef1b (`mudouAEvidencia` em
  * `quem-mandou-regras.ts`).
  */
 export function mudouAEvidencia(
-  antes: Pick<PainelDoJornal, "pacote" | "rodada" | "resumo">,
-  depois: Pick<PainelDoJornal, "pacote" | "rodada" | "resumo">,
+  antes: Pick<PainelDoJornal, "pacote" | "rodada" | "resumo" | "linhas">,
+  depois: Pick<PainelDoJornal, "pacote" | "rodada" | "resumo" | "linhas">,
 ): boolean {
   return (
     antes.resumo.publicaramAPrimeira !== depois.resumo.publicaramAPrimeira ||
     antes.resumo.formaramAChave !== depois.resumo.formaramAChave ||
+    antes.resumo.chave.montaram !== depois.resumo.chave.montaram ||
     antes.resumo.publicaramASegunda !== depois.resumo.publicaramASegunda ||
+    quantosSimularam(antes.linhas) !== quantosSimularam(depois.linhas) ||
+    antes.resumo.transferencia.decidiram !== depois.resumo.transferencia.decidiram ||
     antes.resumo.concluiram !== depois.resumo.concluiram ||
     antes.pacote.id !== depois.pacote.id ||
     antes.rodada !== depois.rodada
   );
+}
+
+/**
+ * As armadilhas da Chave, da MAIS escolhida para a menos — o roteiro da
+ * conversa ("a Foto entrou em 5 Chaves: por que ela parece um bom critério?").
+ * Empate fica na ordem da bandeja canônica. Armadilha que ninguém pôs não
+ * entra: a lista vazia diz que a turma não caiu em nenhuma.
+ */
+export function iscasMaisEscolhidas(iscas: Record<BlocoIsca, number>): Array<{ isca: BlocoIsca; vezes: number }> {
+  return BLOCOS_ISCA.map((isca) => ({ isca, vezes: iscas[isca] ?? 0 }))
+    .filter((i) => i.vezes > 0)
+    .sort((a, b) => b.vezes - a.vezes);
+}
+
+/** "Foto: 5 computadores · Urgência: 2 computadores" — ou `null` quando nenhuma Chave tem armadilha. */
+export function textoDasIscas(iscas: Record<BlocoIsca, number>, porComputador: boolean): string | null {
+  const lista = iscasMaisEscolhidas(iscas);
+  if (lista.length === 0) return null;
+  return lista.map((i) => `${ROTULO_DA_ISCA[i.isca]}: ${i.vezes} ${sujeito(porComputador, i.vezes)}`).join(" · ");
 }
 
 /** Os rótulos das quatro faixas do histograma. Curtos: o eixo do `BarChart` do DS corta acima de ~8 caracteres. */
@@ -857,22 +956,28 @@ export function problemasDaComposicao(noticias: readonly NoticiaDoPacote[]): str
 }
 
 /**
- * Os problemas que a api devolveu no `pacote-invalido`, separados por notícia.
- * A frase da api começa por "Notícia n3, …" ou "Notícia n3: …" quando é de uma
- * notícia (`problemasDaNoticia`); o resto é do conjunto.
+ * Os problemas que a api devolveu no `pacote-invalido`, separados por notícia
+ * e por matéria da simulação. A frase da api começa por "Notícia n3, …" ou
+ * "Notícia n3: …" quando é de uma notícia (`problemasDaNoticia`), e por "A
+ * matéria s1 da simulação…" quando é de uma matéria
+ * (`problemasDaMateriaDaSimulacao`); o resto é do conjunto.
  */
 export function distribuirErros(erros: readonly string[]): {
   porNoticia: Partial<Record<IdDeNoticia, string[]>>;
+  porMateria: Partial<Record<IdDeSimulacao, string[]>>;
   geral: string[];
 } {
   const porNoticia: Partial<Record<IdDeNoticia, string[]>> = {};
+  const porMateria: Partial<Record<IdDeSimulacao, string[]>> = {};
   const geral: string[] = [];
   for (const erro of erros) {
     const id = /^Notícia (n[1-8])\b/.exec(erro)?.[1] as IdDeNoticia | undefined;
+    const materia = /^A matéria (s[12]) da simulação/.exec(erro)?.[1] as IdDeSimulacao | undefined;
     if (id) (porNoticia[id] ??= []).push(erro);
+    else if (materia) (porMateria[materia] ??= []).push(erro);
     else geral.push(erro);
   }
-  return { porNoticia, geral };
+  return { porNoticia, porMateria, geral };
 }
 
 /** O que falta nos parâmetros do preparo personalizado, por campo. */
@@ -926,6 +1031,77 @@ export function normalizarNoticia(n: NoticiaDoPacote): NoticiaDoPacote {
       explicacao: n.gabarito.explicacao.trim(),
     },
     consequencia: { leitor: n.consequencia.leitor.trim(), fala: n.consequencia.fala.trim() },
+  };
+}
+
+// ──────────────────────────────────────────────────── a simulação (3.0.0)
+
+/**
+ * Os meios que uma matéria da simulação pode ter: os que existem SEM imagem e
+ * sem locutor — espelho de `MEIOS_DA_SIMULACAO` em `invariantes.ts` da api.
+ */
+export const MEIOS_DA_SIMULACAO: readonly Meio[] = ["jornal", "blog", "portal", "mural"];
+
+/** Os campos editáveis de uma matéria da simulação — a chave com que a tela aponta o problema. */
+export type CampoDaMateria = "meio" | "veiculo" | "falante" | "manchete" | "resumo" | TipoDePista | "explicacao";
+
+/**
+ * O que impede cada campo de UMA matéria da simulação de ir para a turma.
+ * Espelho de `problemasDaMateriaDaSimulacao` da api, campo a campo: as mesmas
+ * réguas de palavras da mesa, os tetos de caractere do
+ * `MateriaDaSimulacaoSchema` (os mesmos da notícia) e os termos proibidos no
+ * que a criança lê. A explicação é do professor: sem régua de termos.
+ */
+export function problemasDaMateria(m: MateriaDaSimulacao): Partial<Record<CampoDaMateria, string>> {
+  const p: Partial<Record<CampoDaMateria, string>> = {};
+  const r = REGUAS_DE_PALAVRAS;
+  const c = CARACTERES;
+  const registrar = (campo: CampoDaMateria, problema: string | null) => {
+    if (problema) p[campo] = problema;
+  };
+  if (!MEIOS_DA_SIMULACAO.includes(m.meio)) registrar("meio", "A matéria da simulação é de jornal, blog, portal ou mural: não tem imagem nem locutor.");
+  registrar("veiculo", comTermos(conferirTexto(m.veiculo, c.veiculo), m.veiculo));
+  registrar("falante", conferirOpcional(m.falante, c.falante));
+  registrar("manchete", comTermos(conferirTexto(m.manchete, c.manchete, r.manchete), m.manchete));
+  registrar("resumo", comTermos(conferirTexto(m.resumo, c.resumo, r.resumo), m.resumo));
+  for (const tipo of TIPOS_DE_PISTA) {
+    registrar(tipo, comTermos(conferirTexto(m.pistas[tipo], c.pista, r.pista), m.pistas[tipo]));
+  }
+  registrar("explicacao", conferirTexto(m.gabarito.explicacao, c.explicacao, r.explicacao));
+  return p;
+}
+
+/**
+ * Os problemas das DUAS matérias juntas — espelho da metade de conjunto de
+ * `problemasDaSimulacao` da api: uma que pode ir para a capa e uma com furo,
+ * de meios diferentes. Mexer no gabarito de uma pode quebrar o par, e a tela
+ * diz isso antes do clique.
+ */
+export function problemasDoParDaSimulacao(ms: readonly MateriaDaSimulacao[]): string[] {
+  if (ms.length !== IDS_DE_SIMULACAO.length) return [`A simulação tem ${ms.length} matérias; precisa de ${IDS_DE_SIMULACAO.length}.`];
+  const p: string[] = [];
+  if (ms.filter((m) => m.gabarito.publicavel).length !== 1) {
+    p.push("Das duas matérias da simulação, uma precisa poder ir para a capa e a outra não.");
+  }
+  if (new Set(ms.map((m) => m.meio)).size !== ms.length) p.push("As duas matérias da simulação precisam ser de meios diferentes.");
+  return p;
+}
+
+/** A matéria como ela VIAJA na homologação: sem espaço nas pontas, `falante` vazio = `null`, as chaves na ordem do contrato. */
+export function normalizarMateria(m: MateriaDaSimulacao): MateriaDaSimulacao {
+  return {
+    id: m.id,
+    meio: m.meio,
+    veiculo: m.veiculo.trim(),
+    falante: limparOpcional(m.falante),
+    manchete: m.manchete.trim(),
+    resumo: m.resumo.trim(),
+    pistas: { fonte: m.pistas.fonte.trim(), data: m.pistas.data.trim(), autoria: m.pistas.autoria.trim() },
+    gabarito: {
+      publicavel: m.gabarito.publicavel,
+      pilarEmFalta: m.gabarito.publicavel ? null : m.gabarito.pilarEmFalta,
+      explicacao: m.gabarito.explicacao.trim(),
+    },
   };
 }
 

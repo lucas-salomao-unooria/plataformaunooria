@@ -43,3 +43,13 @@ export function ordemDaBandeja(semente: string): IdDeBloco[] {
   }
   return ordem;
 }
+
+/**
+ * A ORDEM DOS DOIS CARTÕES de condição de um bloco nesta sessão (3.0.0,
+ * ADR-168): `[0, 1]` ou `[1, 0]`, os índices canônicos do bloco. Embaralhada
+ * pela mesma razão da bandeja — "o de cima aprova" seria dica —, e estável num F5.
+ */
+export function ordemDosCartoes(semente: string, bloco: IdDeBloco): [0 | 1, 0 | 1] {
+  const aleatorio = mulberry32(fnv1a(`exp04ef1b:cartoes:${semente}:${bloco}`));
+  return aleatorio() < 0.5 ? [0, 1] : [1, 0];
+}

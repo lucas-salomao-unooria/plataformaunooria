@@ -1,4 +1,13 @@
-import type { Motivo, TipoDePista } from "./tipos";
+import type {
+  DecisaoDaSimulacao,
+  DecisaoDaTransferencia,
+  LadoDaCondicao,
+  Motivo,
+  Repeticao,
+  SeFalhar,
+  TipoDePista,
+  Veredito,
+} from "./tipos";
 
 /**
  * Só o que a TELA escreve — em português do Brasil, sempre (ADR-91).
@@ -13,17 +22,23 @@ import type { Motivo, TipoDePista } from "./tipos";
  *   MOTIVO, depois do latch (decisão de 2026-09-25: perguntar antes anteciparia
  *   a descoberta, PDF §4);
  * - a síntese final é ÚNICA (`e6.feedback.sintese_inicial` para todos): a
- *   resposta de P1/P2 é `{ enviada: true }` e a criança nunca sabe o nível.
+ *   criança nunca sabe o nível, e a tela também não.
+ *
+ * **A 3.0.0 (Canal A puro, ADR-168)** tirou P1/P2 e mediu tudo por ação: o
+ * "confio / não confio" na mesa, a Chave MONTADA (sem correção), a simulação e
+ * o boato com "Repassar" à mão. A copy dessas telas veio do desenho do plenário
+ * pedagógico; o que ele não escreveu está marcado ESCRITA AQUI.
  *
  * O CONTEÚDO da missão (as oito notícias, o texto das pistas, as reações dos
- * leitores, os blocos da Chave, o boato e as perguntas finais) NÃO mora aqui:
+ * leitores, os blocos e os cartões da Chave, as matérias da simulação, a frase
+ * de referência e o boato) NÃO mora aqui:
  * vem da api, e corrigir uma palavra dele não pode exigir republicar um caminho
  * imutável no bucket. `textos.test.ts` cobra que nada daqui use os termos que a
  * api proíbe na tela da criança (`TERMOS_PROIBIDOS_NA_TELA`).
  *
  * **Três vozes, e cada tela tem uma só**: o Bento (E1 e E5, e em nenhuma outra
- * — ele fica calado na mesa), a redação (seca, de gráfica) e a Unooria (o
- * desafio final, fora da redação).
+ * — ele fica calado na mesa), a redação (seca, de gráfica; a simulação também
+ * é dela) e a Unooria (o boato, fora da redação, numa tela NEUTRA).
  */
 
 // ─────────────────────────────────────────────────── a redação (moldura)
@@ -71,7 +86,20 @@ export const E2 = {
   voltarParaMesa: "Voltar para a Mesa",
   /** ESCRITA AQUI — o texto da pista enquanto o `POST pista` não volta. */
   abrindoPista: "Abrindo a pista…",
+  /** ESCRITA AQUI — o rótulo do par de botões sob a pista aberta (nomeia o grupo para o leitor de tela). */
+  julgar: "Você confia nesta pista?",
+  /** ESCRITA AQUI — o veredito já marcado (o primeiro vale; não muda mais). */
+  marcado: (veredito: string) => `Marcado: ${veredito}`,
 } as const;
+
+/**
+ * Os dois botões do julgamento — do desenho do plenário. O símbolo vai SEMPRE
+ * com o texto (nunca só ✓ ou ✗): a cor e o glifo não podem ser a única pista.
+ */
+export const VEREDITO: Record<Veredito, string> = {
+  confio: "✓ Confio",
+  nao_confio: "✗ Não confio",
+};
 
 /** Os três chips da gaveta: `e2.rotulo.chip_fonte`, `chip_data`, `chip_autoria` (o emoji virou o ícone do `RevealClue`). */
 export const PISTA: Record<TipoDePista, { rotulo: string; pergunta: string }> = {
@@ -110,11 +138,14 @@ export const E3 = {
 export const MOTIVO = {
   /** `e3.modal.pergunta` — saiu do modal e virou esta tela (decisão de 2026-09-25). */
   pergunta: "Como as três matérias foram escolhidas?",
+  /**
+   * Os rótulos da 3.0.0, do desenho do plenário (antes: `e3.modal.opcao_visual`
+   * e `e3.modal.opcao_auditada`). A pergunta não avalia nada: registra como a
+   * escolha foi feita.
+   */
   opcoes: {
-    /** `e3.modal.opcao_visual` */
-    visual: "Escolhemos as fotos mais chamativas e os avisos mais urgentes.",
-    /** `e3.modal.opcao_auditada` */
-    checagem: "Checamos quem postou, quando aconteceu e quem assina a matéria.",
+    visual: "Escolhi porque chamou atenção",
+    checagem: "Escolhi porque conferi as pistas",
   } satisfies Record<Motivo, string>,
   /** ESCRITA AQUI — o botão que envia a resposta (no sheet, a pergunta dividia o botão do latch). */
   enviar: "Enviar resposta",
@@ -143,30 +174,63 @@ export const E4 = {
   esperaRevisao: "Aguardando o professor liberar a mesa de revisão...",
 } as const;
 
-// ─────────────────────────────────────────────────────── E5: a Chave
+// ─────────────────────────────────────────────── E5: a Chave (o Montador)
 
 export const E5 = {
   /** `e5.ui.titulo_ferramenta` */
   titulo: "Ferramenta de Checagem do Bento",
-  /** `e5.narrativa.bento_algoritmo` */
+  /**
+   * ESCRITA AQUI — a fala do Bento no Montador. A do sheet
+   * (`e5.narrativa.bento_algoritmo`: "Conecte os três blocos periciais para
+   * destravar…") prometia um encaixe certo, e a 3.0.0 não corrige a Chave.
+   */
   bentoAlgoritmo:
-    "Uma notícia bonita pode enganar. Conecte os três blocos periciais para destravar a nossa Chave do Editor!",
+    "Uma notícia bonita pode enganar. Monte a sua Chave do Editor: escolha três blocos, diga quando a pista passa ou falha e o que fazer se ela falhar.",
   /** O nome da calha — é o nome que a copy dá à ferramenta inteira. */
   chave: "Chave do Editor",
-  /** `e5.feedback.chave_formada` */
-  chaveFormada: "Chave do Editor ativada! A mesa de revisão está liberada para a turma.",
-  /** ESCRITA AQUI — a linha de status da calha enquanto a criança encaixa. */
+  /** O lembrete da dupla — do desenho do plenário. */
+  combinem: "Combinem antes de tocar.",
+  /** ESCRITA AQUI — a linha de status da calha enquanto a criança monta. */
   preenchidas: (n: number, total: number) => `${n} de ${total} vagas preenchidas`,
-  /** ESCRITA AQUI — o envio em curso. */
-  testando: "Testando a Chave…",
-  /** ESCRITA AQUI — a tentativa que não abriu (os blocos voltam à bandeja). */
-  naoAbriu: (devolvidos: number) =>
-    devolvidos === 1 ? "Esse bloco não abre a chave. Tente outro." : "Esses blocos não abrem a chave. Tente outros.",
-  /** ESCRITA AQUI — o aviso escrito do `PuzzleBlock` devolvido (o padrão do DS diz o mesmo). */
-  voltouParaBandeja: "Voltou para a bandeja",
+  /** ESCRITA AQUI — o bloco escolhido na bandeja, esperando a vaga. */
+  escolhido: (rotulo: string) => `${rotulo} escolhido. Toque numa vaga para colocar.`,
   /** ESCRITA AQUI — o rótulo da bandeja (nomeia o grupo dos blocos soltos). */
   bandeja: "Blocos periciais",
-  /** ESCRITA AQUI — sair da Chave formada para a mesa de revisão. */
+  /** ESCRITA AQUI — pôr o bloco escolhido na primeira vaga livre. */
+  adicionar: "Adicionar na próxima vaga",
+  /** ESCRITA AQUI — o botão de uma vaga vazia quando há bloco escolhido. */
+  colocarAqui: "Colocar aqui",
+  /** ESCRITA AQUI — o nome acessível do botão da vaga vazia. */
+  colocarNaVaga: (rotulo: string, vaga: number) => `Colocar ${rotulo} na vaga ${vaga}`,
+  /** ESCRITA AQUI — a ordem de cada vaga, sobre o bloco. */
+  ordem: (vaga: number) => `${vaga}º passo`,
+  /** ESCRITA AQUI — o cartão de condição com o exemplo curto (os dois vêm da api). */
+  cartao: (texto: string, exemplo: string) => `${texto} (ex.: ${exemplo})`,
+  /** A escolha de cada cartão — do desenho do plenário (APROVA / REPROVA, em palavras de 9 anos). */
+  lado: { aprova: "A pista passa", reprova: "A pista falha" } satisfies Record<LadoDaCondicao, string>,
+  /** O "se esta pista falhar" de cada vaga — do desenho do plenário. */
+  seFalhar: "Se esta pista falhar:",
+  opcoesSeFalhar: { parar: "Não publico", seguir: "Olho a próxima pista" } satisfies Record<SeFalhar, string>,
+  /** ESCRITA AQUI — o rótulo do grupo da repetição (as duas opções são do plenário). */
+  repeticao: "Onde usar estes passos?",
+  opcoesRepeticao: {
+    todas: "Usar estes passos em TODAS as notícias",
+    so_a_primeira: "Só na primeira notícia",
+  } satisfies Record<Repeticao, string>,
+  /** O envio — do desenho do plenário. */
+  pronto: "Pronto",
+  /** ESCRITA AQUI — a linha sob o "Pronto" enquanto falta escolha. */
+  falta: "Escolha os três blocos e marque todas as opções para terminar a Chave.",
+  /** ESCRITA AQUI — o título da confirmação. */
+  confirmarTitulo: "Enviar a Chave do Editor?",
+  /** O aviso da confirmação — do desenho do plenário. */
+  confirmarDescricao: "Depois de enviar, a Chave não muda.",
+  /** ESCRITA AQUI — os dois botões da confirmação. */
+  enviar: "Enviar a Chave",
+  conferir: "Voltar e conferir",
+  /** ESCRITA AQUI — a Chave enviada (neutra: a tela não sabe se está certa). */
+  montada: "Chave do Editor montada! A mesa de revisão está aberta.",
+  /** ESCRITA AQUI — sair da Chave montada para a mesa de revisão. */
   irParaRevisao: "Abrir a Mesa de Revisão",
 } as const;
 
@@ -203,26 +267,64 @@ export const EREV = {
     "Agora sim! As notícias da 2ª edição têm data certa, fonte clara e ajudaram todo mundo na escola!",
   /** ESCRITA AQUI — quem fala o balão da comunidade. */
   comunidade: "Comunidade da escola",
-  /** `erev.rotulo.btn_ir_reflexao` */
-  irParaDesafio: "Avançar para Desafio Final",
+  /** O "Testar a minha Chave" — do desenho do plenário (antes, `erev.rotulo.btn_ir_reflexao`). */
+  irParaSimulacao: "Testar a minha Chave",
   /** ESCRITA AQUI — o nome de cada edição no cabeçalho da página. */
   edicao: (n: 1 | 2) => `${n}ª edição`,
 } as const;
 
-// ─────────────────────────────────── E6: o desafio final (a Unooria fala)
+// ──────────────────────────────── a simulação da Chave (a redação fala)
+
+export const SIM = {
+  /** ESCRITA AQUI — o título da tela. */
+  titulo: "Teste da Chave do Editor",
+  /** ESCRITA AQUI — a instrução: usar a Chave, sem dizer a ordem (a ordem é a evidência). */
+  instrucao: "Use a sua Chave nas duas matérias novas e decida se cada uma vai para o jornal.",
+  /** ESCRITA AQUI — o rótulo da Chave dela, mostrada como roteiro. */
+  suaChave: "Sua Chave do Editor",
+  /** ESCRITA AQUI — o "se falhar" de cada vaga no roteiro. */
+  seFalhar: (texto: string) => `Se falhar: ${texto}`,
+  /** ESCRITA AQUI — a repetição dela, sob o roteiro. */
+  repeticao: (texto: string) => `Combinado: ${texto}`,
+  /** ESCRITA AQUI — de qual matéria se trata. */
+  materia: (n: number, total: number) => `Matéria ${n} de ${total}`,
+  /** ESCRITA AQUI — a pista aberta que ainda espera a marcação (aqui ela é obrigatória). */
+  marqueParaSeguir: "Marque se você confia nesta pista para seguir.",
+  /** Os dois botões da decisão — do desenho do plenário. */
+  decisao: { publicar: "Publicar", nao_publicar: "Não publicar" } satisfies Record<DecisaoDaSimulacao, string>,
+  /** ESCRITA AQUI — o envio em curso. */
+  enviando: "Registrando o teste…",
+  /** ESCRITA AQUI — o título sobre a frase de referência (a mesma para todos, vinda da api). */
+  referencia: "Para pensar",
+  /** ESCRITA AQUI — seguir para o boato. */
+  continuar: "Continuar",
+} as const;
+
+// ─────────────────────────────── E6: a transferência (a Unooria fala)
 
 export const E6 = {
-  /** `e6.ui.titulo_desafio` */
-  titulo: "Desafio Individual de Checagem",
+  /**
+   * ESCRITA AQUI — o título da tela do boato. O do sheet ("Desafio Individual
+   * de Checagem", `e6.ui.titulo_desafio`) pedia para verificar, e a tela da
+   * 3.0.0 é NEUTRA: nada nela pede para conferir.
+   */
+  titulo: "Chegou uma mensagem",
   /** ESCRITA AQUI — o selo do balão encaminhado (o rótulo do próprio app, em português). */
   encaminhada: "Encaminhada",
-  /** ESCRITA AQUI — o botão que envia a alternativa marcada (a seleção no `RadioGroup` não envia sozinha). */
-  responder: "Responder",
+  /** As duas decisões — do desenho do plenário, disponíveis desde o início. */
+  decisao: {
+    repassar: "Repassar para o grupo",
+    nao_repassar: "Não repassar",
+  } satisfies Record<DecisaoDaTransferencia, string>,
+  /** ESCRITA AQUI — o nome do grupo dos dois botões. */
+  oQueFazer: "O que você faz com esta mensagem?",
   /**
    * `e6.feedback.sintese_inicial` — a síntese ÚNICA, para todos (decisão: a
    * criança nunca sabe o nível, e as outras duas sínteses do sheet diriam).
    */
   sintese: "Antes de repassar qualquer aviso, pare e procure a fonte, a data e o autor para não espalhar enganos na escola.",
+  /** ESCRITA AQUI — a conversa que vem depois (do desenho do plenário, a frase é desta tela). */
+  conversa: "Daqui a pouco, a turma vai conversar sobre esta mensagem com a professora.",
   /** `e6.rotulo.btn_concluir` */
   concluir: "Concluir Missão",
   /** `e6.ui.modo_leitura` */
