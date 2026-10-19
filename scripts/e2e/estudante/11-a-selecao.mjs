@@ -402,7 +402,14 @@ await suite(
     await q().getByRole("heading", { name: /Mural de Stories da Turma/i }).first().waitFor({ timeout: 30_000 });
     /* Abre no Story do PAR (ADR-146): o nome dele está na aba E no Story — daí
        o `.first()`. A legenda de cada post vem sobre a imagem. */
-    await q().locator(`text=Publicação de ${PRIMEIRO_NOME_DO_SEGUNDO}`).first().waitFor({ timeout: 15_000 });
+    const tituloDoPar = q().locator(`text=Publicação de ${PRIMEIRO_NOME_DO_SEGUNDO}`).first();
+    await tituloDoPar.waitFor({ timeout: 15_000 });
+    /* O RÓTULO do colega é o da tela, não o primeiro nome: com dois colegas de
+       mesmo nome na turma, a api desempata com a inicial ("Rafael M.",
+       `rotulosSemRepeticao`). Supor só o primeiro nome quebrava a busca exata
+       da pergunta da marcação e do `aria-label` da grade. */
+    const rotuloDoColega =
+      /Publicação de (\S+(?: [A-ZÀ-Ý][a-zà-ÿ]*\.?)?)/.exec(await tituloDoPar.innerText())?.[1] ?? PRIMEIRO_NOME_DO_SEGUNDO;
     await q().locator(".legenda-do-post").first().waitFor({ timeout: 10_000 });
     r.exigir(
       (await q().locator("text=/Ficha Técnica/i").count()) === 0,
@@ -410,7 +417,7 @@ await suite(
     );
     await r.registrar(p, "mural-pareado", {
       titulo: "O mesmo feed, outra história",
-      mostra: `O Mural aberto na tríade de ${PRIMEIRO_NOME_DO_SEGUNDO}, que escolheu só vozes da comunidade, com a legenda de cada post sobre a imagem; a própria fica na outra aba.`,
+      mostra: `O Mural aberto na tríade de ${rotuloDoColega}, que escolheu só vozes da comunidade, com a legenda de cada post sobre a imagem; a própria fica na outra aba.`,
       prova:
         "O par é o colega que mais se afastou da escolha da criança, e ele aparece pelo primeiro " +
         "nome. Tela nua: nenhuma tag, nenhuma nota — o estranhamento vem antes da teoria.",
@@ -419,11 +426,11 @@ await suite(
     // ═══ PROFESSORA abre a MARCAÇÃO (ADR-170) ════════════════════════════
     await apertar(prof, "marcacao");
     await q()
-      .locator(`text=Tem algo na publicação de ${PRIMEIRO_NOME_DO_SEGUNDO} que a sua deixou de fora`)
+      .locator(`text=Tem algo na publicação de ${rotuloDoColega} que a sua deixou de fora`)
       .first()
       .waitFor({ timeout: 30_000 });
     /* Um post do colega (só comunitário): pela GRADE do colega, nunca pela posição na tela. */
-    await q().locator(`[aria-label="Publicação de ${PRIMEIRO_NOME_DO_SEGUNDO}"] img`).first().click();
+    await q().locator(`[aria-label="Publicação de ${rotuloDoColega}"] img`).first().click();
     await q().locator("text=/Registrado\\. Você pode mudar/").first().waitFor({ timeout: 15_000 });
     const porque = q().getByRole("textbox").first();
     await porque.click();
@@ -436,7 +443,7 @@ await suite(
     );
     await r.registrar(p, "marcacao", {
       titulo: "O que a publicação do colega mostrou",
-      mostra: `A pergunta, os três posts de ${PRIMEIRO_NOME_DO_SEGUNDO} para tocar, \"Nada que mude a história\", o \"por quê?\" e a própria publicação embaixo.`,
+      mostra: `A pergunta, os três posts de ${rotuloDoColega} para tocar, \"Nada que mude a história\", o \"por quê?\" e a própria publicação embaixo.`,
       prova:
         "É a ação que mede a EF07CO08 (ADR-170): reconhecer o lado que o colega mostrou. Grava ao " +
         "tocar, troca até as fichas, e nenhuma resposta diz se está certa.",
