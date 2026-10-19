@@ -3,13 +3,11 @@
  * conveniência. Molde: `exp07ef1b/src/lib/memoria.ts`.
  *
  * O que VALE mora na api: as curtidas, as permanências, o voto lacrado, a
- * revisão, a ordem conferida da cadeia, os cartões, as respostas
- * das enquetes. Aqui fica só o que a api não guarda ANTES de o toque virar
- * latch, e cuja perda num F5 seria injusta com a criança: a dica do carrossel
- * já usada, as permanências já enviadas, a calha da cadeia montada pela
- * metade, os cartões tocados antes de "Registrar", e qual alternativa ela
- * tocou em cada enquete (para a enquete reabrir travada — a api guarda a
- * primeira resposta de qualquer jeito).
+ * separação enviada, a revisão, a regra enviada, os cartões. Aqui fica só o
+ * que a api não guarda ANTES de o toque virar latch, e cuja perda num F5 seria
+ * injusta com a criança: a dica do carrossel já usada, as permanências já
+ * enviadas, a separação feita pela metade, as peças da regra e os cartões
+ * tocados antes de enviar.
  *
  * Três regras, e as três já custaram em outra missão:
  *
@@ -17,7 +15,7 @@
  * - **Nunca texto**: nem a busca da galeria. Texto de menor não fica no
  *   aparelho nem viaja (o `AcaoDaGaleriaSchema` só leva o TIPO da busca).
  * - **A chave leva o estudante, a atividade e a rodada**: "Zerar a turma" e a
- *   atividade nova criam OUTRA sessão, e a calha da rodada anterior não pode
+ *   atividade nova criam OUTRA sessão, e a separação da rodada anterior não pode
  *   reaparecer na nova; o estudante seguinte na mesma aba não herda nada.
  *
  * Toda leitura e escrita vai em `try/catch`: em aba anônima ou com o
@@ -29,20 +27,23 @@ export interface Memoria {
   gestoUsado: boolean;
   /** Os posts cuja permanência já foi enviada (o servidor deduplica; isto poupa a ida). */
   permanencias: string[];
-  ordemDaCadeia: string[];
+  /** A área tocada em cada estande da separação (id opaco → `area_x`), antes de enviar. */
+  separacao: Record<string, string>;
+  /** As peças da regra tocadas antes de enviar (ids opacos). */
+  se: string | null;
+  entao: string | null;
   mecanismo: string | null;
   atitude: string | null;
-  /** A alternativa tocada em cada enquete (`p1` → id). */
-  votos: Record<string, string>;
 }
 
 const VAZIA: Memoria = {
   gestoUsado: false,
   permanencias: [],
-  ordemDaCadeia: [],
+  separacao: {},
+  se: null,
+  entao: null,
   mecanismo: null,
   atitude: null,
-  votos: {},
 };
 
 export interface ChaveDaSessao {
@@ -66,12 +67,13 @@ function id(valor: unknown): string | null {
   return typeof valor === "string" && ID_RE.test(valor) ? valor : null;
 }
 
-function votos(valor: unknown): Record<string, string> {
-  if (!valor || typeof valor !== "object") return {};
+/** Um mapa id → id (a separação: estande → área). Quem confere se a área existe é a tela. */
+function mapaDeIds(valor: unknown): Record<string, string> {
+  if (!valor || typeof valor !== "object" || Array.isArray(valor)) return {};
   const saida: Record<string, string> = {};
   for (const [k, v] of Object.entries(valor as Record<string, unknown>)) {
-    const alternativa = id(v);
-    if (ID_RE.test(k) && alternativa) saida[k] = alternativa;
+    const alvo = id(v);
+    if (ID_RE.test(k) && alvo) saida[k] = alvo;
   }
   return saida;
 }
@@ -85,10 +87,11 @@ export function lerMemoria(c: ChaveDaSessao): Memoria {
     return {
       gestoUsado: dado.gestoUsado === true,
       permanencias: ids(dado.permanencias),
-      ordemDaCadeia: ids(dado.ordemDaCadeia),
+      separacao: mapaDeIds(dado.separacao),
+      se: id(dado.se),
+      entao: id(dado.entao),
       mecanismo: id(dado.mecanismo),
       atitude: id(dado.atitude),
-      votos: votos(dado.votos),
     };
   } catch {
     return { ...VAZIA };

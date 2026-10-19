@@ -162,21 +162,3 @@ export function svgDoEstande(projetoId: string, titulo: string, paleta: Paleta, 
     `<rect x="303" y="${mesaY + 14}" width="8" height="64" fill="${escaparXml(paleta.secundario)}"/>`;
   return envelope(formato, paleta, titulo, corpo);
 }
-
-/**
- * O fundo das três histórias da consulta (tema escuro): o brasão da comissão
- * em anéis, na base. A figurinha da enquete fica por cima, no centro, e o
- * desenho não disputa com ela; o título da ata vai no rodapé da história, em
- * texto de verdade (um texto dentro do SVG ficaria sob o véu do topo e sem a
- * fonte do app, que um `<img>` não carrega).
- */
-export function svgDaConsulta(titulo: string, paleta: Paleta): string {
-  const h = ALTURA.story;
-  const aneis = [150, 118, 86]
-    .map(
-      (r, i) =>
-        `<circle cx="${375 / 2}" cy="${h - 120}" r="${r}" fill="none" stroke="${escaparXml(i === 2 ? paleta.destaque : paleta.borda)}" stroke-width="2" opacity="${(0.35 + i * 0.2).toFixed(2)}"/>`,
-    )
-    .join("");
-  return envelope("story", paleta, titulo, aneis);
-}

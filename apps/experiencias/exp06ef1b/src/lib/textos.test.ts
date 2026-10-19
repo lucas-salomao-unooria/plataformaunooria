@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, test } from "vitest";
-import { CONTAS, E1, E2, E3, E4, E5, E6, ENQUETE, ESCOLA, FIM, GLOBAL } from "./textos";
+import { CONTAS, E1, E2, E3, E4, E5, E6, ESCOLA, FIM, GLOBAL, SEPARACAO } from "./textos";
 
 /**
  * Todas as strings de um grupo de copy — as fixas e as montadas (as funções são
@@ -21,8 +21,9 @@ function textosDo(grupo: unknown): string[] {
   return [];
 }
 
-const TODOS = [CONTAS, GLOBAL, ESCOLA, E1, E2, E3, E4, E5, E6, ENQUETE, FIM];
-const ANTES_DA_GALERIA = [CONTAS, GLOBAL, E1, E2, E3];
+const TODOS = [CONTAS, GLOBAL, ESCOLA, E1, E2, E3, SEPARACAO, E4, E5, E6, FIM];
+/* A separação é depois do voto e ANTES da galeria (ADR-174): também não nomeia a descoberta. */
+const ANTES_DA_GALERIA = [CONTAS, GLOBAL, E1, E2, E3, SEPARACAO];
 
 /** O teto de palavras da copy (RNF-USA-001) e as exceções NOMEADAS da melhoria 5 (literais do PO). */
 const TETO_DE_PALAVRAS = 25;
@@ -68,14 +69,16 @@ describe("a copy da missão", () => {
     expect(E3.conviccao).toEqual({ examinei_bem: "Sim", vi_tudo: "Com certeza" });
     expect(E4.manter).toBe("Manter meu voto inicial");
     expect(E4.confirmarRevisao).toBe("Confirmar Voto Revisado");
-    expect(E5.validar).toBe("Validar Cadeia Lógica");
+    expect(E5.enviar).toBe("Enviar a Regra");
+    expect(SEPARACAO.enviar).toBe("Enviar Organização à Comissão");
     expect(E6.submeter).toBe("Submeter Análise do Júri");
   });
 
-  test("os feedbacks da cadeia são os da api (`FEEDBACK_DA_CADEIA`)", () => {
-    const fonte = readFileSync("../../api/src/juri-estadual/conteudo.ts", "utf8");
-    expect(fonte).toContain(E5.correta);
-    expect(fonte).toContain(E5.erro);
+  test("a revelação da regra diz o que ela fez NESTE feed, no tom de \"pode\", não de certeza", () => {
+    expect(E5.revelacao.curtidas("#robotica")).toContain("#robotica");
+    expect(E5.revelacao.curtidas("#robotica")).toMatch(/pode deixar o feed menos variado/);
+    expect(E5.revelacao.permanencia("#saude")).toContain("#saude");
+    expect(E5.revelacao.variado).toMatch(/não disparou/);
   });
 
   test("o teto de palavras vale para a moldura, menos as exceções nomeadas", () => {

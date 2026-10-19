@@ -4,6 +4,7 @@ import type {
   Categoria,
   Etapa,
   Gate,
+  ItemDaClassificacao,
   Passo,
   PostPublico,
   ProjetoDaGaleria,
@@ -17,12 +18,12 @@ import type {
  *
  * Tudo o que decide o que VALE (o motor do feed, a contagem dos ocultos e o
  * contrafactual "sem as suas curtidas", a
- * ordem certa dos blocos da cadeia, o cartão certo, o nível das enquetes,
+ * área de cada estande da separação, a peça certa da regra, o cartão certo,
  * o relógio da turma) mora no servidor, em `apps/api/src/juri-estadual/`. O que
  * sobra aqui é o que a tela decide sozinha, sem ida à api: qual tela o passo
- * pede, quais estandes entram na cédula, o que a busca da galeria mostra, como
- * a calha da cadeia se preenche — e o que o servidor não tem como saber (o
- * tempo de um post na tela).
+ * pede, quais estandes entram na cédula, o que a busca da galeria mostra, se a
+ * separação está completa — e o que o servidor não tem como saber (o tempo de
+ * um post na tela).
  *
  * Quando uma regra daqui ESPELHA uma do servidor (`passoEfetivo`), ela é cópia
  * declarada, e o teste compara as duas.
@@ -73,13 +74,14 @@ export function esperaDaTentativa(tentativa: number): number {
 const ORDEM: Record<Passo, number> = {
   credencial: 0,
   feed: 1,
-  lacrada: 2,
-  galeria: 3,
-  revisada: 4,
-  cadeia: 5,
-  mariana: 6,
-  enquetes: 7,
-  fim: 8,
+  classificacao: 2,
+  lacrada: 3,
+  galeria: 4,
+  revisada: 5,
+  cadeia: 6,
+  mariana: 7,
+  enquetes: 8,
+  fim: 9,
 };
 
 /**
@@ -98,38 +100,43 @@ export function passoNoMinimo(passo: Passo, piso: Passo): boolean {
 
 /**
  * As telas da missão. `lacrada` é a ESPERA (E3-ALU-02: o carimbo e o latch).
- * `revisada` é a passagem para a cadeia: a tela pede `POST passo
- * {para:"cadeia"}` sozinha (o "avançar" do PRD, §6.3), e num F5 também.
+ * `revisada` é a passagem para a regra: a tela pede `POST passo
+ * {para:"cadeia"}` sozinha (o "avançar" do PRD, §6.3), e num F5 também. O
+ * passo `cadeia` é a tela da REGRA desde a 0.6.0, e `enquetes` (só de sessão
+ * antiga) é a passagem para o fim: a tela pede `POST concluir` sozinha.
  */
 export type Tela =
   | "credencial"
   | "feed"
+  | "separacao"
   | "espera"
   | "galeria"
   | "avancando"
-  | "cadeia"
+  | "regra"
   | "mariana"
-  | "enquetes"
+  | "concluindo"
   | "fim";
 
 export const TELA_DO_PASSO: Record<Passo, Tela> = {
   credencial: "credencial",
   feed: "feed",
+  classificacao: "separacao",
   lacrada: "espera",
   galeria: "galeria",
   revisada: "avancando",
-  cadeia: "cadeia",
+  cadeia: "regra",
   mariana: "mariana",
-  enquetes: "enquetes",
+  enquetes: "concluindo",
   fim: "fim",
 };
 
 /**
  * Quem FALA em cada tela — e, por isso, em que seção do DS o aviso de rede
- * sai. PRD §10.1: a cadeia (E5) e o caso Mariana (E6-ALU-01) são a Unooria.
+ * sai. PRD §10.1: a regra (E5) e o caso Mariana (E6-ALU-01) são a Unooria. A
+ * separação é da comissão: é antes da galeria, com o disfarce de pé.
  */
 export function vozDaTela(tela: Tela): "clone" | "escola" {
-  return tela === "cadeia" || tela === "mariana" ? "escola" : "clone";
+  return tela === "regra" || tela === "mariana" ? "escola" : "clone";
 }
 
 /**
@@ -317,25 +324,32 @@ export function comCerquilha(hashtag: string): string {
   return `#${hashtag.replace(/^#+/, "")}`;
 }
 
-// ───────────────────────────────────────────────────── a calha da cadeia
+// ───────────────────────────────────────────── a separação (ADR-174)
 
 /**
- * O toque num bloco: na bandeja, ele vai para a próxima vaga livre; na calha,
- * ele volta para a bandeja (e quem estava depois dele sobe uma vaga). A calha
- * tem `vagas` lugares; tocar com a calha cheia não faz nada.
+ * As escolhas guardadas ainda valem para estes itens? (Rodada nova = ids
+ * novos; área fora do vocabulário = lixo do `sessionStorage`.)
  */
-export function tocarNoBloco(ordem: readonly string[], id: string, vagas: number): string[] {
-  if (ordem.includes(id)) return ordem.filter((x) => x !== id);
-  if (ordem.length >= vagas) return [...ordem];
-  return [...ordem, id];
+export function separacaoValida(
+  guardada: Readonly<Record<string, string>>,
+  itens: readonly Pick<ItemDaClassificacao, "id">[],
+  areas: readonly Area[],
+): Record<string, Area> {
+  const saida: Record<string, Area> = {};
+  for (const item of itens) {
+    const area = guardada[item.id];
+    if (area && (areas as readonly string[]).includes(area)) saida[item.id] = area as Area;
+  }
+  return saida;
 }
 
-/** A ordem guardada ainda vale para estes itens? (Rodada nova = ids novos.) */
-export function ordemValida(ordem: readonly string[], ids: readonly string[], vagas: number): string[] {
-  const existentes = new Set(ids);
-  const saida: string[] = [];
-  for (const id of ordem) if (existentes.has(id) && !saida.includes(id) && saida.length < vagas) saida.push(id);
-  return saida;
+/** O corpo do envio — `null` enquanto faltar estande sem área (o botão fica apagado). */
+export function respostasDaSeparacao(
+  itens: readonly Pick<ItemDaClassificacao, "id">[],
+  escolhas: Readonly<Record<string, Area>>,
+): { itemId: string; area: Area }[] | null {
+  const respostas = itens.map((i) => ({ itemId: i.id, area: escolhas[i.id] }));
+  return respostas.every((r): r is { itemId: string; area: Area } => Boolean(r.area)) ? respostas : null;
 }
 
 // ─────────────────────────────────────────────── o gesto na mídia do post

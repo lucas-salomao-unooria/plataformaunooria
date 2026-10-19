@@ -99,10 +99,6 @@ body {
   color: var(--unv-color-text-primary, #22272a);
 }
 
-.tela--story {
-  background: var(--unv-color-background-primary, #0e1039);
-}
-
 /* A área que rola. O `ScrollBar` do DS é da seção `unooria` e não entra num
    clone (`apps/experiencias/AGENTS.md`): aqui é a barra do sistema. */
 .rolagem {
@@ -415,6 +411,62 @@ body {
   display: none;
 }
 
+/* ──────────────────────── a separação, depois do voto (EF06CO01, ADR-174) */
+
+.separacao {
+  display: flex;
+  flex-direction: column;
+  gap: var(--unv-spacing-m, 12px);
+  padding: var(--unv-spacing-m, 12px) var(--unv-gutter, 16px) var(--unv-spacing-l, 16px);
+}
+
+.separacao__titulo {
+  margin: 0;
+  font-size: var(--unv-font-title-lg-size, 18px);
+  font-weight: 700;
+}
+
+.separacao__instrucao,
+.separacao__contador {
+  margin: 0;
+  font-size: var(--unv-font-body-md-size, 14px);
+  line-height: 1.45;
+}
+
+.separacao__contador {
+  color: var(--unv-color-text-secondary, #475157);
+}
+
+.separacao__lista {
+  display: flex;
+  flex-direction: column;
+  gap: var(--unv-spacing-s, 10px);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Um estande e as quatro áreas dele: o `ListItem` do DS e os `Chip` em linha que quebra. */
+.separacao__estande {
+  display: flex;
+  flex-direction: column;
+  gap: var(--unv-spacing-xs, 8px);
+  padding-bottom: var(--unv-spacing-s, 10px);
+  box-shadow: var(--unv-elevation-hairline-bottom);
+}
+
+/* A mesma compensação de `.escolha` (b): o `ListItem` corta o título numa linha. */
+.separacao__estande > .unv-list-item .unv-list-item__title {
+  white-space: normal;
+  overflow: visible;
+}
+
+.separacao__areas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--unv-spacing-xs, 8px);
+}
+
 /* ─────────────────────────────── E3-ALU-02: o voto lacrado e a espera */
 
 /* ─────────────────────────────── E4: a plenária — o PICO (3 elementos) */
@@ -634,40 +686,6 @@ body {
   gap: var(--unv-spacing-xxs, 6px);
 }
 
-/* ─────────────────────────────── a consulta nos Stories (tema escuro) */
-
-/* O contêiner do `StoryViewer`: a altura que sobra, DEFINIDA, para o
-   `height: 100%` do componente valer. */
-.story {
-  flex: 1 1 0;
-  min-height: 0;
-}
-
-.story__rodape {
-  flex: 1 1 auto;
-  width: 100%;
-  margin: 0;
-  padding: var(--unv-spacing-xs, 8px) 0;
-  text-align: center;
-  font-size: var(--unv-font-label-md-size, 14px);
-  font-weight: 600;
-  color: var(--unv-color-text-primary, #f5f5f5);
-}
-
-.consulta__encerrada {
-  position: absolute;
-  top: 50%;
-  left: 0;
-  right: 0;
-  margin: 0;
-  padding: 0 var(--unv-gutter, 16px);
-  transform: translateY(-50%);
-  text-align: center;
-  font-size: var(--unv-font-title-md-size, 16px);
-  font-weight: 600;
-  color: var(--unv-color-text-on-media, #fff);
-}
-
 /* ─────────────────────────────────────────── o fim (a comissão) */
 
 .fim__comissao {
@@ -694,7 +712,7 @@ body {
 
 /* ═══════════════════════════════════════════════════════════════════════
    A ESCOLA — tokens `--unooria-*`, e só eles.
-   A cadeia, o caso Mariana, o infográfico do fim e a missão ainda não aberta.
+   A regra SE … ENTÃO, o caso Mariana, o infográfico do fim e a missão ainda não aberta.
    ═══════════════════════════════════════════════════════════════════════ */
 
 /* O `ScrollBar` do DS é o contêiner que rola (aqui a seção É a `unooria`);
@@ -726,19 +744,6 @@ body {
   align-self: flex-start;
 }
 
-.escola__rotulo {
-  margin: 0 0 4px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--unooria-color-neutral-600, #536167);
-}
-
-.calha__bandeja {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
 /* O aviso de conexão nas telas da escola: o `AlertBox` da plataforma, preso
    no rodapé e fora do fluxo, pelo mesmo motivo da tarja do clone. */
 .aviso-da-escola {
@@ -758,36 +763,11 @@ body {
   line-height: 1.45;
 }
 
-/* O par simulado: os dois lados LADO A LADO (grade pura; cada lado é um `Card` do DS). */
-.par {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-}
-
-.par__principal {
-  margin: 4px 0 8px;
-  font-size: 13px;
-}
-
-.par__areas {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+/* A regra numa linha, dentro do `Card` do DS: só tipografia. */
+.regra__frase {
   margin: 0;
-  padding: 0;
-  list-style: none;
-  font-size: 13px;
-  line-height: 1.35;
-}
-
-.par__area {
-  display: block;
-  font-weight: 600;
-}
-
-.par__numeros {
-  color: var(--unooria-color-neutral-600, #536167);
+  font-size: 15px;
+  line-height: 1.5;
 }
 
 .mariana__caso {

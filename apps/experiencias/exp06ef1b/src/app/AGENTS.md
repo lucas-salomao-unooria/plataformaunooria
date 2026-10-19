@@ -58,11 +58,14 @@ teclado: o teclado já funcionava e escondia o defeito.
   `type="button"`, e o desabilitado aqui é `aria-disabled` + guarda no toque.
 - `TopBar` reserva os 44 px da status bar por padrão: vai com
   `withStatusBarInset={false}` (o aparelho do hub não desenha status bar).
-- `StoryViewer` e `MediaGrid` exigem `src`: a arte vai em `data:` URI, com a cor
-  lida dos tokens `--unv-*` (`componentes/midia.tsx#lerPaleta`, que lê o tema
-  escuro num elemento de prova). Texto dentro do SVG não pega a fonte do app (um
-  `<img>` não carrega a webfont) — por isso o título da consulta está no `footer`.
+- `PostCard.Media` e `AvatarUnv` exigem `src`: a arte vai em `data:` URI, com a
+  cor lida dos tokens `--unv-*` (`componentes/midia.tsx#lerPaleta`). Texto dentro
+  do SVG não pega a fonte do app (um `<img>` não carrega a webfont).
 - `BottomSheetUnv`, `FloatingButton` e `SnackbarUnv` se posicionam contra o
   contêiner posicionado mais próximo: `.tela` é `position: relative`.
-- O `PuzzleBlock` desenha o glifo por ligadura do Material Symbols: a folha
+- Os glifos da seção `unooria` são ligadura do Material Symbols: a folha
   `fonts/unooria.css` é obrigatória (sem ela, "mail" aparece escrito).
+- `Chip` aceita os atributos de `<button>`: na SEPARAÇÃO (0.6.0) ele é `radio`
+  num `radiogroup` (`aria-checked`), como a certeza da cédula. O `ListItem` do
+  estande vai com `as="div"`: sem `onClick`, um `<button>` seria um botão sem
+  ação no meio da lista do teclado.
