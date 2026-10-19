@@ -405,6 +405,49 @@ export class VertexProvider implements AiProvider {
     let tokensEntrada = 0;
     let tokensSaida = 0;
 
+    /**
+     * O TETO POR CHAMADA e o PRAZO DO TURNO (opcionais). Em horário de pico a
+     * capacidade compartilhada do Vertex enfileira: no dev, em 2026-10-19, o
+     * p99 do gemini-3.7-flash foi a 46–81 s numa janela e a 3–6 s na seguinte,
+     * e um turno da exp02em1b levou 194 s (três chamadas de 80, 56 e 52 s) —
+     * o navegador desiste em 45 s. Abortar e repetir pega a requisição que sai
+     * rápido. A chamada abortada pode ter sido cobrada sem devolver tokens: ela
+     * não entra na soma (consequência aceita, ADR-161 conta o que se mediu).
+     */
+    const inicioDoTurno = Date.now();
+    const restanteDoPrazo = () =>
+      req.prazoMs === undefined ? Number.POSITIVE_INFINITY : req.prazoMs - (Date.now() - inicioDoTurno);
+    const chamarComTeto = async (corpo: string) => {
+      for (let repeticao = 1; ; repeticao += 1) {
+        const restante = restanteDoPrazo();
+        if (restante <= 0) {
+          throw new ErroDeGeracao("O turno passou do prazo.", `prazo de ${req.prazoMs} ms; chamadas lentas na fila do Vertex`);
+        }
+        const teto = req.tetoPorChamadaMs === undefined ? restante : Math.min(req.tetoPorChamadaMs, restante);
+        try {
+          return await fetchDoUndici(this.endpoint(), {
+            method: "POST",
+            headers: {
+              authorization: `Bearer ${await this.accessToken()}`,
+              "content-type": "application/json",
+            },
+            body: corpo,
+            dispatcher,
+            ...(Number.isFinite(teto) ? { signal: AbortSignal.timeout(Math.max(1, Math.round(teto))) } : {}),
+          });
+        } catch (erro) {
+          // Pelo NOME, não por `instanceof Error`: o aborto chega como
+          // `DOMException`, que nem sempre é do mesmo realm do `Error` daqui.
+          const nome = (erro as { name?: unknown } | null)?.name;
+          const estourou = nome === "TimeoutError" || nome === "AbortError";
+          if (!estourou) throw erro;
+          if (repeticao >= 3 || restanteDoPrazo() <= 0) {
+            throw new ErroDeGeracao("O Vertex não respondeu a tempo.", `${repeticao} chamada(s) acima de ${Math.round(teto)} ms`);
+          }
+        }
+      }
+    };
+
     const umaTentativa = async (reforco: string): Promise<{ texto: string; voltas: number; finishReason?: string }> => {
       // O histórico é remontado a cada tentativa: a tentativa anterior foi
       // REJEITADA, e deixar a fala recusada no contexto ensinaria o erro.
@@ -414,24 +457,17 @@ export class VertexProvider implements AiProvider {
       }));
 
       for (let volta = 0; volta < maxVoltas; volta += 1) {
-        const res = await fetchDoUndici(this.endpoint(), {
-          method: "POST",
-          headers: {
-            authorization: `Bearer ${await this.accessToken()}`,
-            "content-type": "application/json",
+        const corpoDaVolta = JSON.stringify({
+          systemInstruction: { parts: [{ text: req.system + reforco }] },
+          contents,
+          ...(tools ? { tools } : {}),
+          generationConfig: {
+            maxOutputTokens: req.maxTokens ?? 3000,
+            ...(req.temperatura !== undefined ? { temperature: req.temperatura } : {}),
+            ...thinkingConfig(),
           },
-          body: JSON.stringify({
-            systemInstruction: { parts: [{ text: req.system + reforco }] },
-            contents,
-            ...(tools ? { tools } : {}),
-            generationConfig: {
-              maxOutputTokens: req.maxTokens ?? 3000,
-              ...(req.temperatura !== undefined ? { temperature: req.temperatura } : {}),
-              ...thinkingConfig(),
-            },
-          }),
-          dispatcher,
         });
+        const res = await chamarComTeto(corpoDaVolta);
         if (!res.ok) {
           const corpo = (await res.text()).slice(0, 300);
           throw new ErroDeGeracao(`Vertex respondeu ${res.status}`, corpo);
